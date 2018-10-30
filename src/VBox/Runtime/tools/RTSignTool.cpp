@@ -1802,8 +1802,16 @@ static int HandleShowExeWorkerPkcs7DisplayAttrib(PSHOWEXEPKCS7 pThis, size_t off
 
         /* Signing time (PKCS \#9), use pSigningTime. */
         case RTCRPKCS7ATTRIBUTETYPE_SIGNING_TIME:
-            RTPrintf("%sTODO: RTCRPKCS7ATTRIBUTETYPE_SIGNING_TIME! %u bytes\n",
-                     pThis->szPrefix, pAttr->uValues.pSigningTime->SetCore.Asn1Core.cb);
+            for (uint32_t i = 0; i < pAttr->uValues.pSigningTime->cItems; i++)
+            {
+                PCRTASN1TIME pTime = pAttr->uValues.pSigningTime->papItems[i];
+                char szTS[RTTIME_STR_LEN];
+                RTTimeToString(&pTime->Time, szTS, sizeof(szTS));
+                if (pAttr->uValues.pSigningTime->cItems == 1)
+                    RTPrintf("%s %s (%.*s)\n", pThis->szPrefix, szTS, pTime->Asn1Core.cb, pTime->Asn1Core.uData.pch);
+                else
+                    RTPrintf("%s #%u: %s (%.*s)\n", pThis->szPrefix, i, szTS, pTime->Asn1Core.cb, pTime->Asn1Core.uData.pch);
+            }
             break;
 
         /* Microsoft timestamp info (RFC-3161) signed data, use pContentInfo. */

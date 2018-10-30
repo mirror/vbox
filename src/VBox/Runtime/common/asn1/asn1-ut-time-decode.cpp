@@ -56,8 +56,15 @@ static int rtAsn1Time_NormalizeTime(PRTASN1CURSOR pCursor, PRTASN1TIME pThis, co
         && pThis->Time.u8Month  <= 12
         && pThis->Time.u8Hour   <  24
         && pThis->Time.u8Minute <  60
-        && pThis->Time.u8Second <  60) /** @todo what about leap seconds? */
+        && pThis->Time.u8Second <= 60)
     {
+        /* Suppress leap seconds and work around clever rounding error in DER_CFDateToUTCTime() on OS X. */
+        if (pThis->Time.u8Second < 60)
+        { /* likely */ }
+        else
+            pThis->Time.u8Second = 59;
+
+        /* Normalize and move on. */
         RTTIME const TimeCopy = pThis->Time;
         if (RTTimeNormalize(&pThis->Time))
         {
@@ -70,8 +77,12 @@ static int rtAsn1Time_NormalizeTime(PRTASN1CURSOR pCursor, PRTASN1TIME pThis, co
                 return VINF_SUCCESS;
 
             rc = RTAsn1CursorSetInfo(pCursor, VERR_ASN1_TIME_NORMALIZE_MISMATCH,
-                                     "%s: Normalized result not the same as %s: '%.*s'",
-                                     pszErrorTag, pszType, pThis->Asn1Core.cb, pThis->Asn1Core.uData.pch);
+                                     "%s: Normalized result not the same as %s: '%.*s' / %04u-%02u-%02uT%02u:%02u:%02u vs %04u-%02u-%02uT%02u:%02u:%02u",
+                                     pszErrorTag, pszType, pThis->Asn1Core.cb, pThis->Asn1Core.uData.pch,
+                                     TimeCopy.i32Year, TimeCopy.u8Month, TimeCopy.u8MonthDay,
+                                     TimeCopy.u8Hour, TimeCopy.u8Minute, TimeCopy.u8Second,
+                                     pThis->Time.i32Year, pThis->Time.u8Month, pThis->Time.u8MonthDay,
+                                     pThis->Time.u8Hour, pThis->Time.u8Minute, pThis->Time.u8Second);
         }
         else
             rc = RTAsn1CursorSetInfo(pCursor, VERR_ASN1_TIME_NORMALIZE_ERROR,
