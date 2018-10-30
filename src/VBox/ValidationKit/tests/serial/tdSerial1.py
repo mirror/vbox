@@ -232,7 +232,7 @@ class tdSerial1(vbox.TestDriver):
                 oFile = open(self.sLocation, 'rb');
                 sFmt = '=I';
                 cBytes = 4;
-                for i in xrange(1048576 / 4):
+                for i in xrange(1048576 // 4):
                     _ = i;
                     sData = oFile.read(cBytes);
                     tupUnpacked = struct.unpack(sFmt, sData);
