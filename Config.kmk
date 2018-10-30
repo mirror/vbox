@@ -3624,7 +3624,7 @@ ifdef VBOX_SIGNING_MODE
    ## @todo cannot handle $(2), the identifier. $(3) is hopefully either empty or --deep
    VBOX_SIGN_BUNDLE_FN = $(call MSG_TOOL,SIGNTOOL,,$(1),$(2))$(NLTAB) \
     ditto -c -k $(1) $(1).zip$(NLTAB) \
-    $(call VBOX_CCS_SIGN_CMD,apple,$(1),,$(3))$(NLTAB) \
+    $(call VBOX_CCS_SIGN_CMD,apple,$(1).zip,,$(3))$(NLTAB) \
 	ditto -x -k $(1).zip $(1)
   else
    VBOX_SIGN_BUNDLE_FN = $(call MSG_TOOL,SIGNTOOL,,$(1),$(2))$(NLTAB)$(VBOX_CODESIGN) \
