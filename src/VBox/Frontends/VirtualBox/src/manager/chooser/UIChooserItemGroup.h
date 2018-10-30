@@ -28,6 +28,7 @@
 
 /* Forward declarations: */
 class QGraphicsScene;
+class QLineEdit;
 class QMenu;
 class QMimeData;
 class QPainter;
