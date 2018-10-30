@@ -22,7 +22,7 @@ include $(KBUILD_PATH)/subheader.kmk
 # Python linting (can't live without pylint!).
 #
 ifdef VBOX_WITH_PYLINT
- TESTING +=
+TESTING +=
 endif
 BLDDIRS += $(PATH_TARGET)/pylint
 
