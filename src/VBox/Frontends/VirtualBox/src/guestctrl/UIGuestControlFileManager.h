@@ -60,7 +60,7 @@ public:
     bool bAskDeleteConfirmation;
 private:
     UIGuestControlFileManagerSettings();
-
+    ~UIGuestControlFileManagerSettings();
 
     static UIGuestControlFileManagerSettings *m_pInstance;
 };

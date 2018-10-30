@@ -51,6 +51,8 @@ protected:
 private:
 
     QString permissionString(QFileDevice::Permissions permissions);
+    void    prepareActionConnections();
+
 };
 
 #endif /* !___UIHostFileTable_h___ */

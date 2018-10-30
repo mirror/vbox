@@ -74,6 +74,12 @@ void UIGuestControlFileManagerSettings::create()
 void UIGuestControlFileManagerSettings::destroy()
 {
     delete m_pInstance;
+    m_pInstance = 0;
+}
+
+ UIGuestControlFileManagerSettings::~UIGuestControlFileManagerSettings()
+{
+
 }
 
 UIGuestControlFileManagerSettings::UIGuestControlFileManagerSettings()
@@ -670,7 +676,6 @@ bool UIGuestControlFileManager::createSession(const QString& strUserName, const 
         sltCloseSession();
         return false;
     }
-
     return true;
 }
 

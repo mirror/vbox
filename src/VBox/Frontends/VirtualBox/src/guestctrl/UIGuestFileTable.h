@@ -54,14 +54,13 @@ protected:
     virtual void    determineDriveLetters() /* override */;
     virtual void    prepareToolbar() /* override */;
 
-
 private:
 
     FileObjectType  fileType(const CFsObjInfo &fsInfo);
     FileObjectType  fileType(const CGuestFsObjInfo &fsInfo);
 
-    bool copyGuestToHost(const QString &guestSourcePath, const QString& hostDestinationPath);
-    bool copyHostToGuest(const QString& hostSourcePath, const QString &guestDestinationPath);
+    void prepareActionConnections();
+
     mutable CGuestSession m_comGuestSession;
 
 };

@@ -20,7 +20,6 @@
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 /* Qt includes: */
-// # include <QAction>
 # include <QDateTime>
 # include <QFileInfo>
 
@@ -29,6 +28,7 @@
 # include "UIActionPool.h"
 # include "UIErrorString.h"
 # include "UIGuestFileTable.h"
+# include "UIMessageCenter.h"
 # include "UIToolBar.h"
 
 /* COM includes: */
@@ -309,107 +309,52 @@ bool UIGuestFileTable::createDirectory(const QString &path, const QString &direc
     return true;
 }
 
-void UIGuestFileTable::copyGuestToHost(const QString& hostDestinationPath)
-{
-    QStringList selectedPathList = selectedItemPathList();
-    for (int i = 0; i < selectedPathList.size(); ++i)
-        copyGuestToHost(selectedPathList.at(i), hostDestinationPath);
-}
-
 void UIGuestFileTable::copyHostToGuest(const QStringList &hostSourcePathList)
 {
     QVector<QString> sourcePaths = hostSourcePathList.toVector();
     QVector<QString>  aFilters;
     QVector<QString>  aFlags;
-    m_comGuestSession.CopyToGuest(sourcePaths, aFilters, aFlags, currentDirectoryPath());
+    CProgress progress = m_comGuestSession.CopyToGuest(sourcePaths, aFilters, aFlags, currentDirectoryPath());
     if (!m_comGuestSession.isOk())
+    {
         emit sigLogOutput(UIErrorString::formatErrorInfo(m_comGuestSession));
+        //msgCenter().cannotRemoveMachine(machine);
+        return;
+    }
+
+    msgCenter().showModalProgressDialog(progress, "copying", ":/progress_delete_90px.png");
+    if (!progress.isOk() || progress.GetResultCode() != 0)
+    {
+        emit sigLogOutput(UIErrorString::formatErrorInfo(progress));
+        return;
+    }
+
     else
         refresh();
 }
 
-bool UIGuestFileTable::copyGuestToHost(const QString &guestSourcePath, const QString& hostDestinationPath)
+void UIGuestFileTable::copyGuestToHost(const QString& hostDestinationPath)
 {
-    if (m_comGuestSession.isNull())
-        return false;
-
-    /* Currently API expects a path including a file name for file copy*/
-    CGuestFsObjInfo fileInfo = guestFsObjectInfo(guestSourcePath, m_comGuestSession);
-    KFsObjType objectType = fileInfo.GetType();
-    if (objectType == KFsObjType_File)
-    {
-        QVector<KFileCopyFlag> flags(KFileCopyFlag_FollowLinks);
-        /* API expects a full file path as destionation: */
-        QString destinatioFilePath =  UIPathOperations::addTrailingDelimiters(hostDestinationPath);
-        /** @todo listen to CProgress object to monitor copy operation: */
-        /*CProgress comProgress =*/ m_comGuestSession.FileCopyFromGuest(guestSourcePath, destinatioFilePath, flags);
-
-    }
-    else if (objectType == KFsObjType_Directory)
-    {
-        QVector<KDirectoryCopyFlag> aFlags(KDirectoryCopyFlag_CopyIntoExisting);
-        QString destinatioFilePath =  UIPathOperations::addTrailingDelimiters(hostDestinationPath);
-        QString sourceWithDelimiter =  UIPathOperations::addTrailingDelimiters(guestSourcePath);
-
-        /** @todo listen to CProgress object to monitor copy operation: */
-        /*CProgress comProgress = */
-        // m_comGuestSession.DirectoryCopyFromGuest(guestSourcePath, hostDestinationPath/*destinatioFilePath*/ , aFlags);
-        // m_comGuestSession.DirectoryCopyFromGuest(guestSourcePath, destinatioFilePath , aFlags);
-        // m_comGuestSession.DirectoryCopyFromGuest(sourceWithDelimiter, destinatioFilePath , aFlags);
-        // m_comGuestSession.DirectoryCopyFromGuest(sourceWithDelimiter, hostDestinationPath , aFlags);
-
-    }
+    QVector<QString> sourcePaths;// = selectedItemPathList().toVector();
+    QVector<QString>  aFilters;
+    QVector<QString>  aFlags;
+    sourcePaths.append("opt/VBoxGuestAdditions-5.2.97/bin/");
+    CProgress progress = m_comGuestSession.CopyFromGuest(sourcePaths, aFilters, aFlags, hostDestinationPath);
     if (!m_comGuestSession.isOk())
     {
         emit sigLogOutput(UIErrorString::formatErrorInfo(m_comGuestSession));
-        return false;
+        return;
     }
 
-    return true;
+    msgCenter().showModalProgressDialog(progress, "copying", ":/progress_delete_90px.png");
+    if (!progress.isOk() || progress.GetResultCode() != 0)
+    {
+        emit sigLogOutput(UIErrorString::formatErrorInfo(progress));
+        return;
+    }
+    else
+        refresh();
 }
-
-// bool UIGuestFileTable::copyHostToGuest(const QString &hostSourcePath, const QString &guestDestinationPath)
-// {
-//     if (m_comGuestSession.isNull())
-//         return false;
-//     QFileInfo hostFileInfo(hostSourcePath);
-//     if (!hostFileInfo.exists())
-//         return false;
-//     CProgress comProgress;
-//     /* Currently API expects a path including a file name for file copy*/
-//     if (hostFileInfo.isFile() || hostFileInfo.isSymLink())
-//     {
-//         QVector<KFileCopyFlag> flags(KFileCopyFlag_FollowLinks);
-//         QString destinationFilePath =  UIPathOperations::addTrailingDelimiters(guestDestinationPath);
-//         /** @todo listen to CProgress object to monitor copy operation: */
-//         comProgress = m_comGuestSession.FileCopyToGuest(hostSourcePath, destinationFilePath, flags);
-//     }
-//     else if(hostFileInfo.isDir())
-//     {
-
-//         QVector<KDirectoryCopyFlag> aFlags(KDirectoryCopyFlag_CopyIntoExisting);
-//         QString destinationFilePath =  UIPathOperations::addTrailingDelimiters(guestDestinationPath);
-//         /** @todo listen to CProgress object to monitor copy operation: */
-//         comProgress = m_comGuestSession.DirectoryCopyToGuest(hostSourcePath, destinationFilePath, aFlags);
-//     }
-//     /** @todo currently I cannot get an errorfrom CProgress: */
-//     if (m_comGuestSession.isOk())
-//     {
-//         if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
-//         {
-//             emit sigLogOutput(UIErrorString::formatErrorInfo(comProgress));
-//             return false;
-//         }
-//     }
-//     else
-//     {
-//         emit sigLogOutput(UIErrorString::formatErrorInfo(m_comGuestSession));
-//         return false;
-//     }
-//     /** @todo we have to until CProgress finishes to refresh: */
-//     refresh();
-//     return true;
-// }
 
 FileObjectType UIGuestFileTable::fileType(const CFsObjInfo &fsInfo)
 {
@@ -523,8 +468,6 @@ void UIGuestFileTable::showProperties()
     if (fsPropertyString.isEmpty())
         return;
 
-    delete m_pPropertiesDialog;
-
     m_pPropertiesDialog = new UIPropertiesDialog();
     if (!m_pPropertiesDialog)
         return;
@@ -532,11 +475,8 @@ void UIGuestFileTable::showProperties()
     QStringList selectedObjects = selectedItemPathList();
     if (selectedObjects.size() == 0)
         return;
-    UIGuestDirectoryDiskUsageComputer *directoryThread = 0;
+    //UIGuestDirectoryDiskUsageComputer *directoryThread = 0;
 
-    /** @todo I have decided to look into this afterwards when API is more mature, for
-        currently this stuff runs into an assert in Main. this may be because that I will have to init deinit
-        COM. see UIThreadWorker: */
     /* if the selection include a directory or it is a multiple selection the create a worker thread
        to compute total size of the selection (recusively) */
     // bool createWorkerThread = (selectedObjects.size() > 1);
@@ -558,15 +498,18 @@ void UIGuestFileTable::showProperties()
     m_pPropertiesDialog->setPropertyText(fsPropertyString);
     m_pPropertiesDialog->execute();
 
-    if (directoryThread)
-    {
-        if (directoryThread->isRunning())
-            directoryThread->stopRecursion();
-        disconnect(directoryThread, &UIGuestDirectoryDiskUsageComputer::sigResultUpdated,
-                   this, &UIGuestFileTable::sltReceiveDirectoryStatistics/*, Qt::DirectConnection*/);
-    }
+    // if (directoryThread)
+    // {
+    //     if (directoryThread->isRunning())
+    //         directoryThread->stopRecursion();
+    //     disconnect(directoryThread, &UIGuestDirectoryDiskUsageComputer::sigResultUpdated,
+    //                this, &UIGuestFileTable::sltReceiveDirectoryStatistics/*, Qt::DirectConnection*/);
+    // }
+
 
     delete m_pPropertiesDialog;
+    m_pPropertiesDialog = 0;
+
 }
 
 void UIGuestFileTable::determineDriveLetters()
@@ -610,15 +553,41 @@ void UIGuestFileTable::prepareToolbar()
         m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Guest_InvertSelection));
         m_pToolBar->addSeparator();
         m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Guest_ShowProperties));
-
         m_selectionDependentActions.insert(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Guest_Delete));
         m_selectionDependentActions.insert(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Guest_Rename));
         m_selectionDependentActions.insert(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Guest_Copy));
         m_selectionDependentActions.insert(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Guest_Cut));
         m_selectionDependentActions.insert(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Guest_ShowProperties));
-
     }
     setSelectionDependentActionsEnabled(false);
+}
+
+void UIGuestFileTable::prepareActionConnections()
+{
+    connect(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Guest_GoUp), &QAction::triggered,
+            this, &UIGuestControlFileTable::sltGoUp);
+    connect(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Guest_GoHome), &QAction::triggered,
+            this, &UIGuestControlFileTable::sltGoHome);
+    connect(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Guest_Refresh), &QAction::triggered,
+            this, &UIGuestControlFileTable::sltRefresh);
+    connect(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Guest_Delete), &QAction::triggered,
+            this, &UIGuestControlFileTable::sltDelete);
+    connect(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Guest_Rename), &QAction::triggered,
+            this, &UIGuestControlFileTable::sltRename);
+    connect(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Guest_Copy), &QAction::triggered,
+            this, &UIGuestControlFileTable::sltCopy);
+    connect(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Guest_Cut), &QAction::triggered,
+            this, &UIGuestControlFileTable::sltCut);
+    connect(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Guest_Paste), &QAction::triggered,
+            this, &UIGuestControlFileTable::sltPaste);
+    connect(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Guest_SelectAll), &QAction::triggered,
+            this, &UIGuestControlFileTable::sltSelectAll);
+    connect(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Guest_InvertSelection), &QAction::triggered,
+            this, &UIGuestControlFileTable::sltInvertSelection);
+    connect(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Guest_ShowProperties), &QAction::triggered,
+            this, &UIGuestControlFileTable::sltShowProperties);
+    connect(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Guest_CreateNewDirectory), &QAction::triggered,
+            this, &UIGuestControlFileTable::sltCreateNewDirectory);
 }
 
 #include "UIGuestFileTable.moc"

@@ -293,8 +293,6 @@ protected:
     bool             eventFilter(QObject *pObject, QEvent *pEvent) /* override */;
     CGuestFsObjInfo  guestFsObjectInfo(const QString& path, CGuestSession &comGuestSession) const;
     void             setSelectionDependentActionsEnabled(bool fIsEnabled);
-    void             prepareActionConnections();
-
 
     UIFileTableItem         *m_pRootItem;
     QILabel                 *m_pLocationLabel;
@@ -308,13 +306,10 @@ protected:
     /** The set of actions which need some selection to work on. Like cut, copy etc. */
     QSet<QAction*> m_selectionDependentActions;
 
-protected slots:
+public slots:
 
     void sltReceiveDirectoryStatistics(UIDirectoryStatistics statictics);
     void sltCreateNewDirectory();
-
-private slots:
-
     /* index is passed by the item view and represents the double clicked object's 'proxy' model index */
     void sltItemDoubleClicked(const QModelIndex &index);
     void sltItemClicked(const QModelIndex &index);
@@ -327,7 +322,6 @@ private slots:
     void sltCut();
     void sltPaste();
     void sltShowProperties();
-
     void sltSelectionChanged(const QItemSelection & selected, const QItemSelection & deselected);
     void sltLocationComboCurrentChange(const QString &strLocation);
     void sltSelectAll();
