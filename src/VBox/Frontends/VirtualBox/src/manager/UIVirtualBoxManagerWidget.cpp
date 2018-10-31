@@ -27,7 +27,7 @@
 
 /* GUI includes: */
 # include "QISplitter.h"
-# include "UIActionPoolSelector.h"
+# include "UIActionPoolManager.h"
 # include "UIErrorString.h"
 # include "UIExtraDataManager.h"
 # include "UIChooser.h"

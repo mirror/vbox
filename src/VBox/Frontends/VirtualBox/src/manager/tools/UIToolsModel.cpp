@@ -32,7 +32,7 @@
 /* GUI includes: */
 # include "QIMessageBox.h"
 # include "VBoxGlobal.h"
-# include "UIActionPoolSelector.h"
+# include "UIActionPoolManager.h"
 # include "UIIconPool.h"
 # include "UITools.h"
 # include "UIToolsHandlerMouse.h"

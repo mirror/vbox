@@ -35,7 +35,7 @@
 # include "QIMessageBox.h"
 # include "QITabWidget.h"
 # include "VBoxGlobal.h"
-# include "UIActionPoolSelector.h"
+# include "UIActionPoolManager.h"
 # include "UIExtraDataManager.h"
 # include "UIMediumDetailsWidget.h"
 # include "UIMediumItem.h"

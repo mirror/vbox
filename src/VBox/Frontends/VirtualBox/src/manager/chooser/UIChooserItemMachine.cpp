@@ -32,7 +32,7 @@
 # include "UIChooserItemGroup.h"
 # include "UIChooserItemMachine.h"
 # include "UIChooserModel.h"
-# include "UIActionPoolSelector.h"
+# include "UIActionPoolManager.h"
 # include "UIIconPool.h"
 # include "UIImageTools.h"
 # include "UIVirtualBoxManager.h"

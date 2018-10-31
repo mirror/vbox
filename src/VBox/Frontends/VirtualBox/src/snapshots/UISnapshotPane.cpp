@@ -36,7 +36,7 @@
 /* GUI includes: */
 # include "QIMessageBox.h"
 # include "QITreeWidget.h"
-# include "UIActionPoolSelector.h"
+# include "UIActionPoolManager.h"
 # include "UIConverter.h"
 # include "UIExtraDataManager.h"
 # include "UIIconPool.h"

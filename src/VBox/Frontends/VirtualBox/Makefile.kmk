@@ -789,8 +789,8 @@ ifndef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/extradata/UIExtraDataDefs.h \
 	src/extradata/UIExtraDataManager.h \
 	src/globals/UIActionPool.h \
+	src/globals/UIActionPoolManager.h \
 	src/globals/UIActionPoolRuntime.h \
-	src/globals/UIActionPoolSelector.h \
 	src/globals/UIAnimationFramework.h \
 	src/globals/UIDesktopWidgetWatchdog.h \
 	src/globals/UIMainEventListener.h \
@@ -1068,8 +1068,8 @@ ifdef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/extradata/UIExtraDataDefs.h \
 	src/extradata/UIExtraDataManager.h \
 	src/globals/UIActionPool.h \
+	src/globals/UIActionPoolManager.h \
 	src/globals/UIActionPoolRuntime.h \
-	src/globals/UIActionPoolSelector.h \
 	src/globals/UIAnimationFramework.h \
 	src/globals/UIDesktopWidgetWatchdog.h \
 	src/globals/UIMainEventListener.h \
@@ -1200,8 +1200,8 @@ ifndef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/extensions/QISplitter.cpp \
 	src/extradata/UIExtraDataManager.cpp \
 	src/globals/UIActionPool.cpp \
+	src/globals/UIActionPoolManager.cpp \
 	src/globals/UIActionPoolRuntime.cpp \
-	src/globals/UIActionPoolSelector.cpp \
 	src/globals/UIMainEventListener.cpp \
 	src/globals/UIThreadPool.cpp \
 	src/globals/UIVirtualBoxEventHandler.cpp \
@@ -1281,8 +1281,8 @@ ifdef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/extensions/QISplitter.cpp \
 	src/extradata/UIExtraDataManager.cpp \
 	src/globals/UIActionPool.cpp \
+	src/globals/UIActionPoolManager.cpp \
 	src/globals/UIActionPoolRuntime.cpp \
-	src/globals/UIActionPoolSelector.cpp \
 	src/globals/UIMainEventListener.cpp \
 	src/globals/UIThreadPool.cpp \
 	src/globals/UIVirtualBoxEventHandler.cpp \
@@ -1481,8 +1481,8 @@ ifndef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/converter/UIConverterBackendGlobal.cpp \
 	src/globals/COMDefs.cpp \
 	src/globals/UIActionPool.cpp \
+	src/globals/UIActionPoolManager.cpp \
 	src/globals/UIActionPoolRuntime.cpp \
-	src/globals/UIActionPoolSelector.cpp \
 	src/globals/UIAnimationFramework.cpp \
 	src/globals/UIDefs.cpp \
 	src/globals/UIDesktopWidgetWatchdog.cpp \
@@ -1812,8 +1812,8 @@ ifdef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/converter/UIConverterBackendGlobal.cpp \
 	src/globals/COMDefs.cpp \
 	src/globals/UIActionPool.cpp \
+	src/globals/UIActionPoolManager.cpp \
 	src/globals/UIActionPoolRuntime.cpp \
-	src/globals/UIActionPoolSelector.cpp \
 	src/globals/UIAnimationFramework.cpp \
 	src/globals/UIDefs.cpp \
 	src/globals/UIDesktopWidgetWatchdog.cpp \

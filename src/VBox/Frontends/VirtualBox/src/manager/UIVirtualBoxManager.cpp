@@ -28,7 +28,7 @@
 
 /* GUI includes: */
 # include "QIFileDialog.h"
-# include "UIActionPoolSelector.h"
+# include "UIActionPoolManager.h"
 # include "UICloudProfileManager.h"
 # include "UIDesktopServices.h"
 # include "UIExtraDataManager.h"
@@ -1271,7 +1271,7 @@ void UIVirtualBoxManager::prepareMenuBar()
 #endif
 
     /* Create action-pool: */
-    m_pActionPool = UIActionPool::create(UIActionPoolType_Selector);
+    m_pActionPool = UIActionPool::create(UIActionPoolType_Manager);
 
     /* Build menu-bar: */
     foreach (QMenu *pMenu, actionPool()->menus())

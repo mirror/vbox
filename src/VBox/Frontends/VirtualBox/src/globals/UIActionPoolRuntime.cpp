@@ -4293,9 +4293,9 @@ void UIActionPoolRuntime::updateShortcuts()
 {
     /* Call to base-class: */
     UIActionPool::updateShortcuts();
-    /* Create temporary Selector UI pool to do the same: */
+    /* Create temporary Manager UI pool to do the same: */
     if (!m_fTemporary)
-        UIActionPool::createTemporary(UIActionPoolType_Selector);
+        UIActionPool::createTemporary(UIActionPoolType_Manager);
 }
 
 QString UIActionPoolRuntime::shortcutsExtraDataID() const

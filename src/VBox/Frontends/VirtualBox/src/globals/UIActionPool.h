@@ -34,13 +34,13 @@ class QString;
 class UIActionPolymorphicMenu;
 class UIActionPool;
 class UIActionPoolRuntime;
-class UIActionPoolSelector;
+class UIActionPoolManager;
 
 
 /** Action-pool types. */
 enum UIActionPoolType
 {
-    UIActionPoolType_Selector,
+    UIActionPoolType_Manager,
     UIActionPoolType_Runtime
 };
 
@@ -473,15 +473,15 @@ class SHARED_LIBRARY_STUFF UIActionPool : public QIWithRetranslateUI3<QObject>
 
     /** Pointer to menu update-handler for this class. */
     typedef void (UIActionPool::*PTFActionPool)();
-    /** Pointer to menu update-handler for Selector sub-class. */
-    typedef void (UIActionPoolSelector::*PTFActionPoolSelector)();
+    /** Pointer to menu update-handler for Manager sub-class. */
+    typedef void (UIActionPoolManager::*PTFActionPoolManager)();
     /** Pointer to menu update-handler for Runtime sub-class. */
     typedef void (UIActionPoolRuntime::*PTFActionPoolRuntime)();
     /** Union for two defines above. */
     union PointerToFunction
     {
         PTFActionPool ptf;
-        PTFActionPoolSelector ptfs;
+        PTFActionPoolManager ptfm;
         PTFActionPoolRuntime ptfr;
     };
 
@@ -508,8 +508,8 @@ public:
 
     /** Cast action-pool to Runtime one. */
     UIActionPoolRuntime *toRuntime();
-    /** Cast action-pool to Selector one. */
-    UIActionPoolSelector *toSelector();
+    /** Cast action-pool to Manager one. */
+    UIActionPoolManager *toManager();
 
     /** Returns action-pool type. */
     UIActionPoolType type() const { return m_enmType; }

@@ -481,7 +481,7 @@ void UIHotKeyTableModel::load(const UIShortcutCache &shortcuts)
     foreach (const UIDataShortcutRow &item, shortcuts)
     {
         /* Filter out unnecessary shortcuts: */
-        if ((m_type == UIActionPoolType_Selector && item.key().startsWith(GUI_Input_MachineShortcuts)) ||
+        if ((m_type == UIActionPoolType_Manager && item.key().startsWith(GUI_Input_MachineShortcuts)) ||
             (m_type == UIActionPoolType_Runtime && item.key().startsWith(GUI_Input_SelectorShortcuts)))
             continue;
         /* Load shortcut cache item into model: */
@@ -1088,7 +1088,7 @@ void UIGlobalSettingsInput::prepareTabSelector()
             }
 
             /* Create Selector UI model: */
-            m_pSelectorModel = new UIHotKeyTableModel(this, UIActionPoolType_Selector);
+            m_pSelectorModel = new UIHotKeyTableModel(this, UIActionPoolType_Manager);
 
             /* Create Selector UI table: */
             m_pSelectorTable = new UIHotKeyTable(pSelectorTab, m_pSelectorModel, "m_pSelectorTable");

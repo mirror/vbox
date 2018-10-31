@@ -29,7 +29,7 @@
 # include "QIDialogButtonBox.h"
 # include "QITreeWidget.h"
 # include "VBoxGlobal.h"
-# include "UIActionPoolSelector.h"
+# include "UIActionPoolManager.h"
 # include "UIExtraDataManager.h"
 # include "UIIconPool.h"
 # include "UICloudProfileDetailsWidget.h"

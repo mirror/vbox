@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIActionPoolSelector class implementation.
+ * VBox Qt GUI - UIActionPoolManager class implementation.
  */
 
 /*
@@ -21,7 +21,7 @@
 
 /* GUI includes: */
 # include "VBoxGlobal.h"
-# include "UIActionPoolSelector.h"
+# include "UIActionPoolManager.h"
 # include "UIExtraDataManager.h"
 # include "UIIconPool.h"
 # include "UIShortcutPool.h"
@@ -2494,15 +2494,15 @@ protected:
 
 
 /*********************************************************************************************************************************
-*   Class UIActionPoolSelector implementation.                                                                                   *
+*   Class UIActionPoolManager implementation.                                                                                    *
 *********************************************************************************************************************************/
 
-UIActionPoolSelector::UIActionPoolSelector(bool fTemporary /* = false */)
-    : UIActionPool(UIActionPoolType_Selector, fTemporary)
+UIActionPoolManager::UIActionPoolManager(bool fTemporary /* = false */)
+    : UIActionPool(UIActionPoolType_Manager, fTemporary)
 {
 }
 
-void UIActionPoolSelector::preparePool()
+void UIActionPoolManager::preparePool()
 {
     /* 'File' actions: */
     m_pool[UIActionIndexST_M_File] = new UIActionMenuSelectorFile(this);
@@ -2621,27 +2621,27 @@ void UIActionPoolSelector::preparePool()
     m_pool[UIActionIndexST_M_Cloud_S_Help] = new UIActionMenuSelectorCloudShowHelp(this);
 
     /* Prepare update-handlers for known menus: */
-    m_menuUpdateHandlers[UIActionIndexST_M_File].ptfs =                  &UIActionPoolSelector::updateMenuFile;
-    m_menuUpdateHandlers[UIActionIndexST_M_Welcome].ptfs =               &UIActionPoolSelector::updateMenuWelcome;
-    m_menuUpdateHandlers[UIActionIndexST_M_Group].ptfs =                 &UIActionPoolSelector::updateMenuGroup;
-    m_menuUpdateHandlers[UIActionIndexST_M_Machine].ptfs =               &UIActionPoolSelector::updateMenuMachine;
-    m_menuUpdateHandlers[UIActionIndexST_M_Group_M_StartOrShow].ptfs =   &UIActionPoolSelector::updateMenuGroupStartOrShow;
-    m_menuUpdateHandlers[UIActionIndexST_M_Machine_M_StartOrShow].ptfs = &UIActionPoolSelector::updateMenuMachineStartOrShow;
-    m_menuUpdateHandlers[UIActionIndexST_M_Group_M_Close].ptfs =         &UIActionPoolSelector::updateMenuGroupClose;
-    m_menuUpdateHandlers[UIActionIndexST_M_Machine_M_Close].ptfs =       &UIActionPoolSelector::updateMenuMachineClose;
-    m_menuUpdateHandlers[UIActionIndexST_M_MediumWindow].ptfs =          &UIActionPoolSelector::updateMenuMediumWindow;
-    m_menuUpdateHandlers[UIActionIndexST_M_Medium].ptfs =                &UIActionPoolSelector::updateMenuMedium;
-    m_menuUpdateHandlers[UIActionIndexST_M_NetworkWindow].ptfs =         &UIActionPoolSelector::updateMenuNetworkWindow;
-    m_menuUpdateHandlers[UIActionIndexST_M_Network].ptfs =               &UIActionPoolSelector::updateMenuNetwork;
-    m_menuUpdateHandlers[UIActionIndexST_M_CloudWindow].ptfs =           &UIActionPoolSelector::updateMenuCloudWindow;
-    m_menuUpdateHandlers[UIActionIndexST_M_Cloud].ptfs =                 &UIActionPoolSelector::updateMenuCloud;
-    m_menuUpdateHandlers[UIActionIndexST_M_Snapshot].ptfs =              &UIActionPoolSelector::updateMenuSnapshot;
+    m_menuUpdateHandlers[UIActionIndexST_M_File].ptfm =                  &UIActionPoolManager::updateMenuFile;
+    m_menuUpdateHandlers[UIActionIndexST_M_Welcome].ptfm =               &UIActionPoolManager::updateMenuWelcome;
+    m_menuUpdateHandlers[UIActionIndexST_M_Group].ptfm =                 &UIActionPoolManager::updateMenuGroup;
+    m_menuUpdateHandlers[UIActionIndexST_M_Machine].ptfm =               &UIActionPoolManager::updateMenuMachine;
+    m_menuUpdateHandlers[UIActionIndexST_M_Group_M_StartOrShow].ptfm =   &UIActionPoolManager::updateMenuGroupStartOrShow;
+    m_menuUpdateHandlers[UIActionIndexST_M_Machine_M_StartOrShow].ptfm = &UIActionPoolManager::updateMenuMachineStartOrShow;
+    m_menuUpdateHandlers[UIActionIndexST_M_Group_M_Close].ptfm =         &UIActionPoolManager::updateMenuGroupClose;
+    m_menuUpdateHandlers[UIActionIndexST_M_Machine_M_Close].ptfm =       &UIActionPoolManager::updateMenuMachineClose;
+    m_menuUpdateHandlers[UIActionIndexST_M_MediumWindow].ptfm =          &UIActionPoolManager::updateMenuMediumWindow;
+    m_menuUpdateHandlers[UIActionIndexST_M_Medium].ptfm =                &UIActionPoolManager::updateMenuMedium;
+    m_menuUpdateHandlers[UIActionIndexST_M_NetworkWindow].ptfm =         &UIActionPoolManager::updateMenuNetworkWindow;
+    m_menuUpdateHandlers[UIActionIndexST_M_Network].ptfm =               &UIActionPoolManager::updateMenuNetwork;
+    m_menuUpdateHandlers[UIActionIndexST_M_CloudWindow].ptfm =           &UIActionPoolManager::updateMenuCloudWindow;
+    m_menuUpdateHandlers[UIActionIndexST_M_Cloud].ptfm =                 &UIActionPoolManager::updateMenuCloud;
+    m_menuUpdateHandlers[UIActionIndexST_M_Snapshot].ptfm =              &UIActionPoolManager::updateMenuSnapshot;
 
     /* Call to base-class: */
     UIActionPool::preparePool();
 }
 
-void UIActionPoolSelector::prepareConnections()
+void UIActionPoolManager::prepareConnections()
 {
     /* Prepare connections: */
     connect(gShortcutPool, SIGNAL(sigSelectorShortcutsReloaded()), this, SLOT(sltApplyShortcuts()));
@@ -2651,7 +2651,7 @@ void UIActionPoolSelector::prepareConnections()
     UIActionPool::prepareConnections();
 }
 
-void UIActionPoolSelector::updateMenu(int iIndex)
+void UIActionPoolManager::updateMenu(int iIndex)
 {
     /* If index belongs to base-class => delegate to base-class: */
     if (iIndex < UIActionIndex_Max)
@@ -2662,10 +2662,10 @@ void UIActionPoolSelector::updateMenu(int iIndex)
     else if (   iIndex > UIActionIndex_Max
              && m_invalidations.contains(iIndex)
              && m_menuUpdateHandlers.contains(iIndex))
-             (this->*(m_menuUpdateHandlers.value(iIndex).ptfs))();
+             (this->*(m_menuUpdateHandlers.value(iIndex).ptfm))();
 }
 
-void UIActionPoolSelector::updateMenus()
+void UIActionPoolManager::updateMenus()
 {
     /* Clear menu list: */
     m_mainMenus.clear();
@@ -2719,7 +2719,7 @@ void UIActionPoolSelector::updateMenus()
     updateMenuHelp();
 }
 
-void UIActionPoolSelector::updateMenuFile()
+void UIActionPoolManager::updateMenuFile()
 {
     /* Get corresponding menu: */
     UIMenu *pMenu = action(UIActionIndexST_M_File)->menu();
@@ -2812,7 +2812,7 @@ void UIActionPoolSelector::updateMenuFile()
     m_invalidations.remove(UIActionIndexST_M_File);
 }
 
-void UIActionPoolSelector::updateMenuWelcome()
+void UIActionPoolManager::updateMenuWelcome()
 {
     /* Get corresponding menu: */
     UIMenu *pMenu = action(UIActionIndexST_M_Welcome)->menu();
@@ -2828,7 +2828,7 @@ void UIActionPoolSelector::updateMenuWelcome()
     m_invalidations.remove(UIActionIndexST_M_Welcome);
 }
 
-void UIActionPoolSelector::updateMenuGroup()
+void UIActionPoolManager::updateMenuGroup()
 {
     /* Get corresponding menu: */
     UIMenu *pMenu = action(UIActionIndexST_M_Group)->menu();
@@ -2861,7 +2861,7 @@ void UIActionPoolSelector::updateMenuGroup()
     m_invalidations.remove(UIActionIndexST_M_Group);
 }
 
-void UIActionPoolSelector::updateMenuMachine()
+void UIActionPoolManager::updateMenuMachine()
 {
     /* Get corresponding menu: */
     UIMenu *pMenu = action(UIActionIndexST_M_Machine)->menu();
@@ -2897,7 +2897,7 @@ void UIActionPoolSelector::updateMenuMachine()
     m_invalidations.remove(UIActionIndexST_M_Machine);
 }
 
-void UIActionPoolSelector::updateMenuGroupStartOrShow()
+void UIActionPoolManager::updateMenuGroupStartOrShow()
 {
     /* Get corresponding menu: */
     UIMenu *pMenu = action(UIActionIndexST_M_Group_M_StartOrShow)->menu();
@@ -2914,7 +2914,7 @@ void UIActionPoolSelector::updateMenuGroupStartOrShow()
     m_invalidations.remove(UIActionIndexST_M_Group_M_StartOrShow);
 }
 
-void UIActionPoolSelector::updateMenuMachineStartOrShow()
+void UIActionPoolManager::updateMenuMachineStartOrShow()
 {
     /* Get corresponding menu: */
     UIMenu *pMenu = action(UIActionIndexST_M_Machine_M_StartOrShow)->menu();
@@ -2931,7 +2931,7 @@ void UIActionPoolSelector::updateMenuMachineStartOrShow()
     m_invalidations.remove(UIActionIndexST_M_Machine_M_StartOrShow);
 }
 
-void UIActionPoolSelector::updateMenuGroupClose()
+void UIActionPoolManager::updateMenuGroupClose()
 {
     /* Get corresponding menu: */
     UIMenu *pMenu = action(UIActionIndexST_M_Group_M_Close)->menu();
@@ -2949,7 +2949,7 @@ void UIActionPoolSelector::updateMenuGroupClose()
     m_invalidations.remove(UIActionIndexST_M_Group_M_Close);
 }
 
-void UIActionPoolSelector::updateMenuMachineClose()
+void UIActionPoolManager::updateMenuMachineClose()
 {
     /* Get corresponding menu: */
     UIMenu *pMenu = action(UIActionIndexST_M_Machine_M_Close)->menu();
@@ -2967,7 +2967,7 @@ void UIActionPoolSelector::updateMenuMachineClose()
     m_invalidations.remove(UIActionIndexST_M_Machine_M_Close);
 }
 
-void UIActionPoolSelector::updateMenuMediumWindow()
+void UIActionPoolManager::updateMenuMediumWindow()
 {
     /* Update corresponding menu: */
     updateMenuMediumWrapper(action(UIActionIndexST_M_MediumWindow)->menu());
@@ -2976,7 +2976,7 @@ void UIActionPoolSelector::updateMenuMediumWindow()
     m_invalidations.remove(UIActionIndexST_M_MediumWindow);
 }
 
-void UIActionPoolSelector::updateMenuMedium()
+void UIActionPoolManager::updateMenuMedium()
 {
     /* Update corresponding menu: */
     updateMenuMediumWrapper(action(UIActionIndexST_M_Medium)->menu());
@@ -2985,7 +2985,7 @@ void UIActionPoolSelector::updateMenuMedium()
     m_invalidations.remove(UIActionIndexST_M_Medium);
 }
 
-void UIActionPoolSelector::updateMenuMediumWrapper(UIMenu *pMenu)
+void UIActionPoolManager::updateMenuMediumWrapper(UIMenu *pMenu)
 {
     /* Clear contents: */
     pMenu->clear();
@@ -3025,7 +3025,7 @@ void UIActionPoolSelector::updateMenuMediumWrapper(UIMenu *pMenu)
     fSeparator = addAction(pMenu, action(UIActionIndexST_M_Medium_S_Refresh)) || fSeparator;;
 }
 
-void UIActionPoolSelector::updateMenuNetworkWindow()
+void UIActionPoolManager::updateMenuNetworkWindow()
 {
     /* Update corresponding menu: */
     updateMenuNetworkWrapper(action(UIActionIndexST_M_NetworkWindow)->menu());
@@ -3034,7 +3034,7 @@ void UIActionPoolSelector::updateMenuNetworkWindow()
     m_invalidations.remove(UIActionIndexST_M_NetworkWindow);
 }
 
-void UIActionPoolSelector::updateMenuNetwork()
+void UIActionPoolManager::updateMenuNetwork()
 {
     /* Update corresponding menu: */
     updateMenuNetworkWrapper(action(UIActionIndexST_M_Network)->menu());
@@ -3043,7 +3043,7 @@ void UIActionPoolSelector::updateMenuNetwork()
     m_invalidations.remove(UIActionIndexST_M_Network);
 }
 
-void UIActionPoolSelector::updateMenuNetworkWrapper(UIMenu *pMenu)
+void UIActionPoolManager::updateMenuNetworkWrapper(UIMenu *pMenu)
 {
     /* Clear contents: */
     pMenu->clear();
@@ -3077,7 +3077,7 @@ void UIActionPoolSelector::updateMenuNetworkWrapper(UIMenu *pMenu)
 //    fSeparator = addAction(pMenu, action(UIActionIndexST_M_Network_S_Refresh)) || fSeparator;;
 }
 
-void UIActionPoolSelector::updateMenuCloudWindow()
+void UIActionPoolManager::updateMenuCloudWindow()
 {
     /* Update corresponding menu: */
     updateMenuCloudWrapper(action(UIActionIndexST_M_CloudWindow)->menu());
@@ -3086,7 +3086,7 @@ void UIActionPoolSelector::updateMenuCloudWindow()
     m_invalidations.remove(UIActionIndexST_M_CloudWindow);
 }
 
-void UIActionPoolSelector::updateMenuCloud()
+void UIActionPoolManager::updateMenuCloud()
 {
     /* Update corresponding menu: */
     updateMenuCloudWrapper(action(UIActionIndexST_M_Cloud)->menu());
@@ -3095,7 +3095,7 @@ void UIActionPoolSelector::updateMenuCloud()
     m_invalidations.remove(UIActionIndexST_M_Cloud);
 }
 
-void UIActionPoolSelector::updateMenuCloudWrapper(UIMenu *pMenu)
+void UIActionPoolManager::updateMenuCloudWrapper(UIMenu *pMenu)
 {
     /* Clear contents: */
     pMenu->clear();
@@ -3131,7 +3131,7 @@ void UIActionPoolSelector::updateMenuCloudWrapper(UIMenu *pMenu)
     fSeparator = addAction(pMenu, action(UIActionIndexST_M_Cloud_S_Help)) || fSeparator;
 }
 
-void UIActionPoolSelector::updateMenuSnapshot()
+void UIActionPoolManager::updateMenuSnapshot()
 {
     /* Get corresponding menu: */
     UIMenu *pMenu = action(UIActionIndexST_M_Snapshot)->menu();
@@ -3150,7 +3150,7 @@ void UIActionPoolSelector::updateMenuSnapshot()
     m_invalidations.remove(UIActionIndexST_M_Snapshot);
 }
 
-void UIActionPoolSelector::updateShortcuts()
+void UIActionPoolManager::updateShortcuts()
 {
     /* Call to base-class: */
     UIActionPool::updateShortcuts();
@@ -3159,7 +3159,7 @@ void UIActionPoolSelector::updateShortcuts()
         UIActionPool::createTemporary(UIActionPoolType_Runtime);
 }
 
-void UIActionPoolSelector::setShortcutsVisible(int iIndex, bool fVisible)
+void UIActionPoolManager::setShortcutsVisible(int iIndex, bool fVisible)
 {
     /* Prepare a list of actions: */
     QList<UIAction*> actions;
@@ -3234,10 +3234,10 @@ void UIActionPoolSelector::setShortcutsVisible(int iIndex, bool fVisible)
         fVisible ? pAction->showShortcut() : pAction->hideShortcut();
 }
 
-QString UIActionPoolSelector::shortcutsExtraDataID() const
+QString UIActionPoolManager::shortcutsExtraDataID() const
 {
     return GUI_Input_SelectorShortcuts;
 }
 
 
-#include "UIActionPoolSelector.moc"
+#include "UIActionPoolManager.moc"

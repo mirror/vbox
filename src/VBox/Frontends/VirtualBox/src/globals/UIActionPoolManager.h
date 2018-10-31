@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIActionPoolSelector class declaration.
+ * VBox Qt GUI - UIActionPoolManager class declaration.
  */
 
 /*
@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___UIActionPoolSelector_h___
-#define ___UIActionPoolSelector_h___
+#ifndef ___UIActionPoolManager_h___
+#define ___UIActionPoolManager_h___
 
 /* Qt includes: */
 #include <QList>
@@ -157,8 +157,8 @@ enum UIActionIndexST
 
 
 /** UIActionPool extension
-  * representing action-pool singleton for Selector UI. */
-class SHARED_LIBRARY_STUFF UIActionPoolSelector : public UIActionPool
+  * representing action-pool singleton for Manager UI. */
+class SHARED_LIBRARY_STUFF UIActionPoolManager : public UIActionPool
 {
     Q_OBJECT;
 
@@ -167,7 +167,7 @@ protected:
     /** Constructs action-pool.
       * @param  fTemporary  Brings whether this action-pool is temporary,
       *                     used to (re-)initialize shortcuts-pool. */
-    UIActionPoolSelector(bool fTemporary = false);
+    UIActionPoolManager(bool fTemporary = false);
 
     /** Prepares pool. */
     virtual void preparePool() /* override */;
@@ -236,5 +236,5 @@ private:
 };
 
 
-#endif /* !___UIActionPoolSelector_h___ */
+#endif /* !___UIActionPoolManager_h___ */
 

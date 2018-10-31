@@ -27,7 +27,7 @@
 # include <QUuid>
 
 /* GUI includes */
-# include "UIActionPoolSelector.h"
+# include "UIActionPoolManager.h"
 # include "UIErrorPane.h"
 # include "UIDetails.h"
 # include "UIIconPool.h"

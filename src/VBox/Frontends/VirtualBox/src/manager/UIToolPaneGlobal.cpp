@@ -27,7 +27,7 @@
 # include <QUuid>
 
 /* GUI includes */
-# include "UIActionPoolSelector.h"
+# include "UIActionPoolManager.h"
 # include "UICloudProfileManager.h"
 # include "UIHostNetworkManager.h"
 # include "UIMediumManager.h"

@@ -421,7 +421,7 @@
 #endif
 #include "UIActionPool.h"
 #include "UIActionPoolRuntime.h"
-#include "UIActionPoolSelector.h"
+#include "UIActionPoolManager.h"
 #include "UIAnimationFramework.h"
 #include "UIApplianceEditorWidget.h"
 #include "UIApplianceExportEditorWidget.h"

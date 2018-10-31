@@ -26,7 +26,7 @@
 /* GUI includes: */
 # include "VBoxGlobal.h"
 # include "UIActionPool.h"
-# include "UIActionPoolSelector.h"
+# include "UIActionPoolManager.h"
 # include "UIActionPoolRuntime.h"
 # include "UIConverter.h"
 # include "UIIconPool.h"
@@ -157,8 +157,8 @@ void UIAction::setName(const QString &strName)
 
 void UIAction::setShortcut(const QKeySequence &shortcut)
 {
-    /* Only for selector's action-pool: */
-    if (m_enmActionPoolType == UIActionPoolType_Selector)
+    /* Only for manager's action-pool: */
+    if (m_enmActionPoolType == UIActionPoolType_Manager)
     {
         /* If shortcut is visible: */
         if (!m_fShortcutHidden)
@@ -190,8 +190,8 @@ QString UIAction::nameInMenu() const
     /* Action-name format depends on action-pool type: */
     switch (m_enmActionPoolType)
     {
-        /* Unchanged name for Selector UI: */
-        case UIActionPoolType_Selector: return name();
+        /* Unchanged name for Manager UI: */
+        case UIActionPoolType_Manager: return name();
         /* Filtered name for Runtime UI: */
         case UIActionPoolType_Runtime: return VBoxGlobal::removeAccelMark(name());
     }
@@ -209,8 +209,8 @@ void UIAction::updateText()
     /* Action-text format depends on action-pool type: */
     switch (m_enmActionPoolType)
     {
-        /* The same as menu name for Selector UI: */
-        case UIActionPoolType_Selector:
+        /* The same as menu name for Manager UI: */
+        case UIActionPoolType_Manager:
         {
             setText(nameInMenu());
             break;
@@ -532,7 +532,7 @@ protected:
     {
         switch (actionPoolType)
         {
-            case UIActionPoolType_Selector: break;
+            case UIActionPoolType_Manager: break;
             case UIActionPoolType_Runtime: return QKeySequence("Q");
         }
         return QKeySequence();
@@ -714,7 +714,7 @@ protected:
     {
         switch (actionPoolType)
         {
-            case UIActionPoolType_Selector: return QKeySequence(QKeySequence::HelpContents);
+            case UIActionPoolType_Manager: return QKeySequence(QKeySequence::HelpContents);
             case UIActionPoolType_Runtime: break;
         }
         return QKeySequence();
@@ -1167,7 +1167,7 @@ protected:
     {
         switch (actionPool()->type())
         {
-            case UIActionPoolType_Selector: return QKeySequence("Ctrl+G");
+            case UIActionPoolType_Manager: return QKeySequence("Ctrl+G");
             case UIActionPoolType_Runtime: break;
         }
         return QKeySequence();
@@ -2080,7 +2080,7 @@ UIActionPool *UIActionPool::create(UIActionPoolType enmType)
     UIActionPool *pActionPool = 0;
     switch (enmType)
     {
-        case UIActionPoolType_Selector: pActionPool = new UIActionPoolSelector; break;
+        case UIActionPoolType_Manager: pActionPool = new UIActionPoolManager; break;
         case UIActionPoolType_Runtime: pActionPool = new UIActionPoolRuntime; break;
         default: AssertFailedReturn(0);
     }
@@ -2103,7 +2103,7 @@ void UIActionPool::createTemporary(UIActionPoolType enmType)
     UIActionPool *pActionPool = 0;
     switch (enmType)
     {
-        case UIActionPoolType_Selector: pActionPool = new UIActionPoolSelector(true); break;
+        case UIActionPoolType_Manager: pActionPool = new UIActionPoolManager(true); break;
         case UIActionPoolType_Runtime: pActionPool = new UIActionPoolRuntime(true); break;
         default: AssertFailedReturnVoid();
     }
@@ -2124,9 +2124,9 @@ UIActionPoolRuntime *UIActionPool::toRuntime()
     return qobject_cast<UIActionPoolRuntime*>(this);
 }
 
-UIActionPoolSelector *UIActionPool::toSelector()
+UIActionPoolManager *UIActionPool::toManager()
 {
-    return qobject_cast<UIActionPoolSelector*>(this);
+    return qobject_cast<UIActionPoolManager*>(this);
 }
 
 bool UIActionPool::isAllowedInMenuBar(UIExtraDataMetaDefs::MenuType enmType) const
@@ -2430,8 +2430,7 @@ void UIActionPool::updateConfiguration()
 void UIActionPool::updateMenu(int iIndex)
 {
     /* Make sure index belongs to this class: */
-    if (iIndex > UIActionIndex_Max)
-        return;
+    AssertReturnVoid(iIndex < UIActionIndex_Max);
 
     /* If menu with such index is invalidated
      * and there is update-handler => handle it here: */
