@@ -246,32 +246,6 @@ private:
         void prepareIcon();
         /** Prepares menu-bar. */
         void prepareMenuBar();
-        /** Prepares @a pMenu File. */
-        void prepareMenuFile(QMenu *pMenu);
-        /** Prepares @a pMenu Welcome. */
-        void prepareMenuWelcome(QMenu *pMenu);
-        /** Prepares @a pMenu Group. */
-        void prepareMenuGroup(QMenu *pMenu);
-        /** Prepares @a pMenu Machine. */
-        void prepareMenuMachine(QMenu *pMenu);
-        /** Prepares @a pMenu Group => Start or Show. */
-        void prepareMenuGroupStartOrShow(QMenu *pMenu);
-        /** Prepares @a pMenu Machine => Start or Show. */
-        void prepareMenuMachineStartOrShow(QMenu *pMenu);
-        /** Prepares @a pMenu Group => Close. */
-        void prepareMenuGroupClose(QMenu *pMenu);
-        /** Prepares @a pMenu Machine => Close. */
-        void prepareMenuMachineClose(QMenu *pMenu);
-        /** Prepares @a pMenu Snapshot. */
-        void prepareMenuSnapshot(QMenu *pMenu);
-        /** Prepares @a pMenu Log Viewer. */
-        void prepareMenuLogViewer(QMenu *pMenu);
-        /** Prepares @a pMenu Medium. */
-        void prepareMenuMedium(QMenu *pMenu);
-        /** Prepares @a pMenu Network. */
-        void prepareMenuNetwork(QMenu *pMenu);
-        /** Prepares @a pMenu Cloud. */
-        void prepareMenuCloud(QMenu *pMenu);
         /** Prepares status-bar. */
         void prepareStatusBar();
         /** Prepares toolbar. */
@@ -361,46 +335,6 @@ private:
 
     /** Holds the action-pool instance. */
     UIActionPool *m_pActionPool;
-
-    /** Holds the list of Welcome menu actions. */
-    QList<UIAction*>  m_welcomeActions;
-    /** Holds the Welcome menu parent action. */
-    QAction          *m_pWelcomeMenuAction;
-
-    /** Holds the list of Group menu actions. */
-    QList<UIAction*>  m_groupActions;
-    /** Holds the Group menu parent action. */
-    QAction          *m_pGroupMenuAction;
-
-    /** Holds the list of Machine menu actions. */
-    QList<UIAction*>  m_machineActions;
-    /** Holds the Machine menu parent action. */
-    QAction          *m_pMachineMenuAction;
-
-    /** Holds the list of Snapshot menu actions. */
-    QList<UIAction*>  m_snapshotActions;
-    /** Holds the Snapshot menu parent action. */
-    QAction          *m_pSnapshotMenuAction;
-
-    /** Holds the list of Log Viewer menu actions. */
-    QList<UIAction*>  m_logViewerActions;
-    /** Holds the Log Viewer menu parent action. */
-    QAction          *m_pLogViewerMenuAction;
-
-    /** Holds the list of Virtual Media Manager menu actions. */
-    QList<UIAction*>  m_virtualMediaManagerActions;
-    /** Holds the Virtual Media Manager menu parent action. */
-    QAction          *m_pVirtualMediaManagerMenuAction;
-
-    /** Holds the list of Host Network Manager menu actions. */
-    QList<UIAction*>  m_hostNetworkManagerActions;
-    /** Holds the Host Network Manager menu parent action. */
-    QAction          *m_pHostNetworkManagerMenuAction;
-
-    /** Holds the list of Cloud Profile Manager menu actions. */
-    QList<UIAction*>  m_cloudProfileManagerActions;
-    /** Holds the Cloud Profile Manager menu parent action. */
-    QAction          *m_pCloudProfileManagerMenuAction;
 
     /** Holds the Virtual Media Manager window instance. */
     QIManagerDialog *m_pManagerVirtualMedia;

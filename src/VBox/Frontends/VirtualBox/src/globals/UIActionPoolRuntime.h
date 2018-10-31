@@ -27,9 +27,6 @@
 #include "UIExtraDataDefs.h"
 #include "UILibraryDefs.h"
 
-/* Forward declarations: */
-class QSize;
-
 
 /** Runtime action-pool index enum.
   * Naming convention is following:
@@ -285,9 +282,6 @@ protected:
     /** Returns extra-data ID to save keyboard shortcuts under. */
     virtual QString shortcutsExtraDataID() const /* override */;
 
-    /** Returns the list of Runtime UI main menus. */
-    virtual QList<QMenu*> menus() const /* override */ { return m_mainMenus; }
-
 private:
 
     /** Holds the host-screen count. */
@@ -305,9 +299,6 @@ private:
 
     /** Holds the host-to-guest mapping scheme. */
     QMap<int, int>  m_mapHostScreenForGuestScreen;
-
-    /** Holds the list of Runtime UI main menus. */
-    QList<QMenu*>  m_mainMenus;
 
     /** Holds restricted action types of the Machine menu. */
     QMap<UIActionRestrictionLevel, UIExtraDataMetaDefs::RuntimeMenuMachineActionType>   m_restrictedActionsMenuMachine;

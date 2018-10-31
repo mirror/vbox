@@ -2554,7 +2554,7 @@ void UIActionPool::updateMenuHelp()
 
 #ifndef VBOX_WS_MAC
     /* 'About' action: */
-    fSeparator = addAction(pMenu, action(UIActionIndex_Simple_About)) || fSeparator;;
+    fSeparator = addAction(pMenu, action(UIActionIndex_Simple_About)) || fSeparator;
 #endif
 
     /* Mark menu as valid: */
@@ -2614,7 +2614,7 @@ void UIActionPool::updateMenuLogViewerWrapper(UIMenu *pMenu)
     }
 
     /* 'Refresh' action: */
-    fSeparator = addAction(pMenu, action(UIActionIndex_M_Log_S_Refresh)) || fSeparator;;
+    fSeparator = addAction(pMenu, action(UIActionIndex_M_Log_S_Refresh)) || fSeparator;
 }
 
 void UIActionPool::updateMenuGuestControlFileManager()

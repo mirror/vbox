@@ -519,6 +519,9 @@ public:
     /** Returns all the actions action-pool contains. */
     QList<UIAction*> actions() const { return m_pool.values(); }
 
+    /** Returns the list of main menus. */
+    QList<QMenu*> menus() const { return m_mainMenus; }
+
     /** Returns whether the menu with passed @a type is allowed in menu-bar. */
     bool isAllowedInMenuBar(UIExtraDataMetaDefs::MenuType type) const;
     /** Defines menu-bar @a enmRestriction for passed @a level. */
@@ -544,11 +547,11 @@ public:
     /** Hot-key processing delegate. */
     bool processHotKey(const QKeySequence &key);
 
+    /** Defines whether shortcuts of menu actions with specified @a iIndex should be visible. */
+    virtual void setShortcutsVisible(int iIndex, bool fVisible) { Q_UNUSED(iIndex); Q_UNUSED(fVisible); }
+
     /** Returns extra-data ID to save keyboard shortcuts under. */
     virtual QString shortcutsExtraDataID() const = 0;
-
-    /** Returns the list of main menus. */
-    virtual QList<QMenu*> menus() const = 0;
 
 public slots:
 
@@ -635,6 +638,9 @@ protected:
     QMap<int, PointerToFunction>  m_menuUpdateHandlers;
     /** Holds the set of invalidated action indexes. */
     QSet<int>                     m_invalidations;
+
+    /** Holds the list of main menus. */
+    QList<QMenu*>  m_mainMenus;
 
     /** Holds restricted menu types. */
     QMap<UIActionRestrictionLevel, UIExtraDataMetaDefs::MenuType>                   m_restrictedMenus;

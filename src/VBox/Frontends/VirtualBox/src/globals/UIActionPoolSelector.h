@@ -18,6 +18,9 @@
 #ifndef ___UIActionPoolSelector_h___
 #define ___UIActionPoolSelector_h___
 
+/* Qt includes: */
+#include <QList>
+
 /* GUI includes: */
 #include "UIActionPool.h"
 #include "UILibraryDefs.h"
@@ -171,8 +174,27 @@ protected:
     /** Prepares connections. */
     virtual void prepareConnections() /* override */;
 
+    /** Updates menu. */
+    virtual void updateMenu(int iIndex) /* override */;
     /** Updates menus. */
     virtual void updateMenus() /* override */;
+
+    /** Updates 'File' menu. */
+    void updateMenuFile();
+    /** Updates 'Welcome' menu. */
+    void updateMenuWelcome();
+    /** Updates 'Group' menu. */
+    void updateMenuGroup();
+    /** Updates 'Machine' menu. */
+    void updateMenuMachine();
+    /** Updates 'Group' / 'Start or Show' menu. */
+    void updateMenuGroupStartOrShow();
+    /** Updates 'Machine' / 'Start or Show' menu. */
+    void updateMenuMachineStartOrShow();
+    /** Updates 'Group' / 'Close' menu. */
+    void updateMenuGroupClose();
+    /** Updates 'Machine' / 'Close' menu. */
+    void updateMenuMachineClose();
 
     /** Updates 'Medium' window menu. */
     void updateMenuMediumWindow();
@@ -195,14 +217,17 @@ protected:
     /** Updates 'Cloud' @a pMenu. */
     void updateMenuCloudWrapper(UIMenu *pMenu);
 
+    /** Updates 'Snapshot' menu. */
+    void updateMenuSnapshot();
+
     /** Updates shortcuts. */
     virtual void updateShortcuts() /* override */;
 
+    /** Defines whether shortcuts of menu actions with specified @a iIndex should be visible. */
+    virtual void setShortcutsVisible(int iIndex, bool fVisible) /* override */;
+
     /** Returns extra-data ID to save keyboard shortcuts under. */
     virtual QString shortcutsExtraDataID() const /* override */;
-
-    /** Returns the list of Selector UI main menus. */
-    virtual QList<QMenu*> menus() const /* override */ { return QList<QMenu*>(); }
 
 private:
 

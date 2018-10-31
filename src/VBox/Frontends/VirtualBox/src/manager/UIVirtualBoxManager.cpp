@@ -62,8 +62,6 @@
 # endif
 
 /* COM includes: */
-# include "CExtPack.h"
-# include "CExtPackManager.h"
 # include "CSystemProperties.h"
 
 /* Other VBox stuff: */
@@ -113,14 +111,6 @@ UIVirtualBoxManager::UIVirtualBoxManager()
     : m_fPolished(false)
     , m_fFirstMediumEnumerationHandled(false)
     , m_pActionPool(0)
-    , m_pWelcomeMenuAction(0)
-    , m_pGroupMenuAction(0)
-    , m_pMachineMenuAction(0)
-    , m_pSnapshotMenuAction(0)
-    , m_pLogViewerMenuAction(0)
-    , m_pVirtualMediaManagerMenuAction(0)
-    , m_pHostNetworkManagerMenuAction(0)
-    , m_pCloudProfileManagerMenuAction(0)
     , m_pManagerVirtualMedia(0)
     , m_pManagerHostNetwork(0)
     , m_pManagerCloudProfile(0)
@@ -1269,579 +1259,38 @@ void UIVirtualBoxManager::prepareMenuBar()
 #ifndef VBOX_WS_MAC
     /* Create menu-bar: */
     setMenuBar(new UIMenuBar);
-
-    /* Make sure menu-bar fills own solid background: */
-    menuBar()->setAutoFillBackground(true);
-    QPalette pal = menuBar()->palette();
-    const QColor color = pal.color(QPalette::Active, QPalette::Mid).lighter(160);
-    pal.setColor(QPalette::Active, QPalette::Button, color);
-    menuBar()->setPalette(pal);
+    if (menuBar())
+    {
+        /* Make sure menu-bar fills own solid background: */
+        menuBar()->setAutoFillBackground(true);
+        QPalette pal = menuBar()->palette();
+        const QColor color = pal.color(QPalette::Active, QPalette::Mid).lighter(160);
+        pal.setColor(QPalette::Active, QPalette::Button, color);
+        menuBar()->setPalette(pal);
+    }
 #endif
 
     /* Create action-pool: */
     m_pActionPool = UIActionPool::create(UIActionPoolType_Selector);
 
-    /* Prepare File-menu: */
-    prepareMenuFile(actionPool()->action(UIActionIndexST_M_File)->menu());
-    menuBar()->addMenu(actionPool()->action(UIActionIndexST_M_File)->menu());
-
-    /* Prepare 'Welcome' menu: */
-    prepareMenuWelcome(actionPool()->action(UIActionIndexST_M_Welcome)->menu());
-    m_pWelcomeMenuAction = menuBar()->addMenu(actionPool()->action(UIActionIndexST_M_Welcome)->menu());
-
-    /* Prepare 'Group' / 'Start or Show' menu: */
-    prepareMenuGroupStartOrShow(actionPool()->action(UIActionIndexST_M_Group_M_StartOrShow)->menu());
-
-    /* Prepare 'Machine' / 'Start or Show' menu: */
-    prepareMenuMachineStartOrShow(actionPool()->action(UIActionIndexST_M_Machine_M_StartOrShow)->menu());
-
-    /* Prepare 'Group' / 'Close' menu: */
-    prepareMenuGroupClose(actionPool()->action(UIActionIndexST_M_Group_M_Close)->menu());
-
-    /* Prepare 'Machine' / 'Close' menu: */
-    prepareMenuMachineClose(actionPool()->action(UIActionIndexST_M_Machine_M_Close)->menu());
-
-    /* Prepare 'Group' menu: */
-    prepareMenuGroup(actionPool()->action(UIActionIndexST_M_Group)->menu());
-    m_pGroupMenuAction = menuBar()->addMenu(actionPool()->action(UIActionIndexST_M_Group)->menu());
-
-    /* Prepare 'Machine' menu: */
-    prepareMenuMachine(actionPool()->action(UIActionIndexST_M_Machine)->menu());
-    m_pMachineMenuAction = menuBar()->addMenu(actionPool()->action(UIActionIndexST_M_Machine)->menu());
-
-    /* Prepare 'Snapshot' menu: */
-    prepareMenuSnapshot(actionPool()->action(UIActionIndexST_M_Snapshot)->menu());
-    m_pSnapshotMenuAction = menuBar()->addMenu(actionPool()->action(UIActionIndexST_M_Snapshot)->menu());
-
-    /* Prepare 'Log Viewer' menu: */
-    prepareMenuLogViewer(actionPool()->action(UIActionIndex_M_Log)->menu());
-    m_pLogViewerMenuAction = menuBar()->addMenu(actionPool()->action(UIActionIndex_M_Log)->menu());
-
-    /* Prepare 'Medium' menu: */
-    prepareMenuMedium(actionPool()->action(UIActionIndexST_M_Medium)->menu());
-    m_pVirtualMediaManagerMenuAction = menuBar()->addMenu(actionPool()->action(UIActionIndexST_M_Medium)->menu());
-
-    /* Prepare 'Network' menu: */
-    prepareMenuNetwork(actionPool()->action(UIActionIndexST_M_Network)->menu());
-    m_pHostNetworkManagerMenuAction = menuBar()->addMenu(actionPool()->action(UIActionIndexST_M_Network)->menu());
-
-    /* Prepare 'Cloud' menu: */
-    prepareMenuCloud(actionPool()->action(UIActionIndexST_M_Cloud)->menu());
-    m_pCloudProfileManagerMenuAction = menuBar()->addMenu(actionPool()->action(UIActionIndexST_M_Cloud)->menu());
-
+    /* Build menu-bar: */
+    foreach (QMenu *pMenu, actionPool()->menus())
+    {
 #ifdef VBOX_WS_MAC
-    /* Prepare 'Window' menu: */
-    UIWindowMenuManager::create();
-    menuBar()->addMenu(gpWindowMenuManager->createMenu(this));
-    gpWindowMenuManager->addWindow(this);
+        /* Before 'Help' menu we should: */
+        if (pMenu == actionPool()->action(UIActionIndex_Menu_Help)->menu())
+        {
+            /* Insert 'Window' menu: */
+            UIWindowMenuManager::create();
+            menuBar()->addMenu(gpWindowMenuManager->createMenu(this));
+            gpWindowMenuManager->addWindow(this);
+        }
 #endif
+        menuBar()->addMenu(pMenu);
+    }
 
-    /* Prepare 'Help' menu: */
-    menuBar()->addMenu(actionPool()->action(UIActionIndex_Menu_Help)->menu());
-
-    /* Setup menubar policy: */
+    /* Setup menu-bar policy: */
     menuBar()->setContextMenuPolicy(Qt::CustomContextMenu);
-}
-
-void UIVirtualBoxManager::prepareMenuFile(QMenu *pMenu)
-{
-    /* Do not touch if filled already: */
-    if (!pMenu->isEmpty())
-        return;
-
-    /* Check if Ext Pack is ready, some of actions my depend on it: */
-    CExtPack extPack = vboxGlobal().virtualBox().GetExtensionPackManager().Find(GUI_ExtPackName);
-    const bool fExtPackAccessible = !extPack.isNull() && extPack.GetUsable();
-
-    /* The Application / 'File' menu contents is very different depending on host type. */
-
-#ifdef VBOX_WS_MAC
-
-    /* 'About' action goes to Application menu: */
-    pMenu->addAction(actionPool()->action(UIActionIndex_M_Application_S_About));
-# ifdef VBOX_GUI_WITH_NETWORK_MANAGER
-    /* 'Check for Updates' action goes to Application menu: */
-    if (gEDataManager->applicationUpdateEnabled())
-        pMenu->addAction(actionPool()->action(UIActionIndex_M_Application_S_CheckForUpdates));
-    /* 'Network Access Manager' action goes to Application menu: */
-    pMenu->addAction(actionPool()->action(UIActionIndex_M_Application_S_NetworkAccessManager));
-# endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
-    /* 'Reset Warnings' action goes to Application menu: */
-    pMenu->addAction(actionPool()->action(UIActionIndex_M_Application_S_ResetWarnings));
-    /* 'Preferences' action goes to Application menu: */
-    pMenu->addAction(actionPool()->action(UIActionIndex_M_Application_S_Preferences));
-    /* 'Close' action goes to Application menu: */
-    pMenu->addAction(actionPool()->action(UIActionIndexST_M_File_S_Close));
-
-    /* 'Import Appliance' action goes to 'File' menu: */
-    pMenu->addAction(actionPool()->action(UIActionIndexST_M_File_S_ImportAppliance));
-    /* 'Export Appliance' action goes to 'File' menu: */
-    pMenu->addAction(actionPool()->action(UIActionIndexST_M_File_S_ExportAppliance));
-# ifdef VBOX_GUI_WITH_EXTRADATA_MANAGER_UI
-    /* 'Show Extra-data Manager' action goes to 'File' menu for Debug build: */
-    pMenu->addAction(actionPool()->action(UIActionIndexST_M_File_S_ShowExtraDataManager));
-# endif /* VBOX_GUI_WITH_EXTRADATA_MANAGER_UI */
-    /* 'Show Virtual Medium Manager' action goes to 'File' menu: */
-    pMenu->addAction(actionPool()->action(UIActionIndexST_M_File_S_ShowVirtualMediumManager));
-    /* 'Show Host Network Manager' action goes to 'File' menu: */
-    pMenu->addAction(actionPool()->action(UIActionIndexST_M_File_S_ShowHostNetworkManager));
-    /* 'Show Cloud Profile Manager' action goes to 'File' menu: */
-    if (fExtPackAccessible)
-        pMenu->addAction(actionPool()->action(UIActionIndexST_M_File_S_ShowCloudProfileManager));
-
-#else /* !VBOX_WS_MAC */
-
-# ifdef VBOX_WS_X11
-    // WORKAROUND:
-    // There is an issue under Ubuntu which uses special kind of QPA
-    // plugin (appmenu-qt5) which redirects actions added to Qt menu-bar
-    // directly to Ubuntu Application menu-bar. In that case action
-    // shortcuts are not being handled by the Qt and that way ignored.
-    // As a workaround we can add those actions into QMainWindow as well.
-    addAction(actionPool()->action(UIActionIndex_M_Application_S_Preferences));
-    addAction(actionPool()->action(UIActionIndexST_M_File_S_ImportAppliance));
-    addAction(actionPool()->action(UIActionIndexST_M_File_S_ExportAppliance));
-#  ifdef VBOX_GUI_WITH_EXTRADATA_MANAGER_UI
-    addAction(actionPool()->action(UIActionIndexST_M_File_S_ShowExtraDataManager));
-#  endif /* VBOX_GUI_WITH_EXTRADATA_MANAGER_UI */
-    addAction(actionPool()->action(UIActionIndexST_M_File_S_ShowVirtualMediumManager));
-    addAction(actionPool()->action(UIActionIndexST_M_File_S_ShowHostNetworkManager));
-    if (fExtPackAccessible)
-        addAction(actionPool()->action(UIActionIndexST_M_File_S_ShowCloudProfileManager));
-#  ifdef VBOX_GUI_WITH_NETWORK_MANAGER
-    addAction(actionPool()->action(UIActionIndex_M_Application_S_NetworkAccessManager));
-    addAction(actionPool()->action(UIActionIndex_M_Application_S_CheckForUpdates));
-#  endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
-    addAction(actionPool()->action(UIActionIndex_M_Application_S_ResetWarnings));
-    addAction(actionPool()->action(UIActionIndexST_M_File_S_Close));
-# endif /* VBOX_WS_X11 */
-
-    /* 'Preferences' action goes to 'File' menu: */
-    pMenu->addAction(actionPool()->action(UIActionIndex_M_Application_S_Preferences));
-    /* Separator after 'Preferences' action of the 'File' menu: */
-    pMenu->addSeparator();
-    /* 'Import Appliance' action goes to 'File' menu: */
-    pMenu->addAction(actionPool()->action(UIActionIndexST_M_File_S_ImportAppliance));
-    /* 'Export Appliance' action goes to 'File' menu: */
-    pMenu->addAction(actionPool()->action(UIActionIndexST_M_File_S_ExportAppliance));
-    /* Separator after 'Export Appliance' action of the 'File' menu: */
-    pMenu->addSeparator();
-# ifdef VBOX_GUI_WITH_EXTRADATA_MANAGER_UI
-    /* 'Extra-data Manager' action goes to 'File' menu for Debug build: */
-    pMenu->addAction(actionPool()->action(UIActionIndexST_M_File_S_ShowExtraDataManager));
-# endif /* VBOX_GUI_WITH_EXTRADATA_MANAGER_UI */
-    /* 'Show Virtual Medium Manager' action goes to 'File' menu: */
-    pMenu->addAction(actionPool()->action(UIActionIndexST_M_File_S_ShowVirtualMediumManager));
-    /* 'Show Host Network Manager' action goes to 'File' menu: */
-    pMenu->addAction(actionPool()->action(UIActionIndexST_M_File_S_ShowHostNetworkManager));
-    /* 'Show Cloud Profile Manager' action goes to 'File' menu: */
-    if (fExtPackAccessible)
-        pMenu->addAction(actionPool()->action(UIActionIndexST_M_File_S_ShowCloudProfileManager));
-# ifdef VBOX_GUI_WITH_NETWORK_MANAGER
-    /* 'Network Access Manager' action goes to 'File' menu: */
-    pMenu->addAction(actionPool()->action(UIActionIndex_M_Application_S_NetworkAccessManager));
-    /* 'Check for Updates' action goes to 'File' menu: */
-    if (gEDataManager->applicationUpdateEnabled())
-        pMenu->addAction(actionPool()->action(UIActionIndex_M_Application_S_CheckForUpdates));
-# endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
-    /* Separator after tool actions of the 'File' menu: */
-    pMenu->addSeparator();
-    /* 'Reset Warnings' action goes 'File' menu: */
-    pMenu->addAction(actionPool()->action(UIActionIndex_M_Application_S_ResetWarnings));
-    /* Separator after 'Reset Warnings' action of the 'File' menu: */
-    pMenu->addSeparator();
-    /* 'Close' action goes to 'File' menu: */
-    pMenu->addAction(actionPool()->action(UIActionIndexST_M_File_S_Close));
-
-#endif /* !VBOX_WS_MAC */
-}
-
-void UIVirtualBoxManager::prepareMenuWelcome(QMenu *pMenu)
-{
-#ifdef VBOX_WS_X11
-    // WORKAROUND:
-    // There is an issue under Ubuntu which uses special kind of QPA
-    // plugin (appmenu-qt5) which redirects actions added to Qt menu-bar
-    // directly to Ubuntu Application menu-bar. In that case action
-    // shortcuts are not being handled by the Qt and that way ignored.
-    // As a workaround we can add those actions into QMainWindow as well.
-    addAction(actionPool()->action(UIActionIndexST_M_Welcome_S_New));
-    addAction(actionPool()->action(UIActionIndexST_M_Welcome_S_Add));
-#endif /* VBOX_WS_X11 */
-
-    /* Populate Machine-menu: */
-    pMenu->addAction(actionPool()->action(UIActionIndexST_M_Welcome_S_New));
-    pMenu->addAction(actionPool()->action(UIActionIndexST_M_Welcome_S_Add));
-
-    /* Remember action list: */
-    m_welcomeActions << actionPool()->action(UIActionIndexST_M_Welcome_S_New)
-                     << actionPool()->action(UIActionIndexST_M_Welcome_S_Add);
-}
-
-void UIVirtualBoxManager::prepareMenuGroup(QMenu *pMenu)
-{
-    /* Do not touch if filled already: */
-    if (!pMenu->isEmpty())
-        return;
-
-#ifdef VBOX_WS_X11
-    // WORKAROUND:
-    // There is an issue under Ubuntu which uses special kind of QPA
-    // plugin (appmenu-qt5) which redirects actions added to Qt menu-bar
-    // directly to Ubuntu Application menu-bar. In that case action
-    // shortcuts are not being handled by the Qt and that way ignored.
-    // As a workaround we can add those actions into QMainWindow as well.
-    addAction(actionPool()->action(UIActionIndexST_M_Group_S_New));
-    addAction(actionPool()->action(UIActionIndexST_M_Group_S_Add));
-    addAction(actionPool()->action(UIActionIndexST_M_Group_S_Rename));
-    addAction(actionPool()->action(UIActionIndexST_M_Group_S_Remove));
-    addAction(actionPool()->action(UIActionIndexST_M_Group_M_StartOrShow));
-    addAction(actionPool()->action(UIActionIndexST_M_Group_T_Pause));
-    addAction(actionPool()->action(UIActionIndexST_M_Group_S_Reset));
-    addAction(actionPool()->action(UIActionIndexST_M_Group_S_Discard));
-    addAction(actionPool()->action(UIActionIndexST_M_Group_S_ShowLogDialog));
-    addAction(actionPool()->action(UIActionIndexST_M_Group_S_Refresh));
-    addAction(actionPool()->action(UIActionIndexST_M_Group_S_ShowInFileManager));
-    addAction(actionPool()->action(UIActionIndexST_M_Group_S_CreateShortcut));
-    addAction(actionPool()->action(UIActionIndexST_M_Group_S_Sort));
-#endif /* VBOX_WS_X11 */
-
-    /* Populate Machine-menu: */
-    pMenu->addAction(actionPool()->action(UIActionIndexST_M_Group_S_New));
-    pMenu->addAction(actionPool()->action(UIActionIndexST_M_Group_S_Add));
-    pMenu->addSeparator();
-    pMenu->addAction(actionPool()->action(UIActionIndexST_M_Group_S_Rename));
-    pMenu->addAction(actionPool()->action(UIActionIndexST_M_Group_S_Remove));
-    pMenu->addSeparator();
-    pMenu->addAction(actionPool()->action(UIActionIndexST_M_Group_M_StartOrShow));
-    pMenu->addAction(actionPool()->action(UIActionIndexST_M_Group_T_Pause));
-    pMenu->addAction(actionPool()->action(UIActionIndexST_M_Group_S_Reset));
-    pMenu->addMenu(actionPool()->action(UIActionIndexST_M_Group_M_Close)->menu());
-    pMenu->addSeparator();
-    pMenu->addAction(actionPool()->action(UIActionIndexST_M_Group_S_Discard));
-    pMenu->addAction(actionPool()->action(UIActionIndexST_M_Group_S_ShowLogDialog));
-    pMenu->addAction(actionPool()->action(UIActionIndexST_M_Group_S_Refresh));
-    pMenu->addSeparator();
-    pMenu->addAction(actionPool()->action(UIActionIndexST_M_Group_S_ShowInFileManager));
-    pMenu->addAction(actionPool()->action(UIActionIndexST_M_Group_S_CreateShortcut));
-    pMenu->addSeparator();
-    pMenu->addAction(actionPool()->action(UIActionIndexST_M_Group_S_Sort));
-
-    /* Remember action list: */
-    m_groupActions << actionPool()->action(UIActionIndexST_M_Group_S_New)
-                   << actionPool()->action(UIActionIndexST_M_Group_S_Add)
-                   << actionPool()->action(UIActionIndexST_M_Group_S_Rename)
-                   << actionPool()->action(UIActionIndexST_M_Group_S_Remove)
-                   << actionPool()->action(UIActionIndexST_M_Group_M_StartOrShow)
-                   << actionPool()->action(UIActionIndexST_M_Group_T_Pause)
-                   << actionPool()->action(UIActionIndexST_M_Group_S_Reset)
-                   << actionPool()->action(UIActionIndexST_M_Group_S_Discard)
-                   << actionPool()->action(UIActionIndexST_M_Group_S_ShowLogDialog)
-                   << actionPool()->action(UIActionIndexST_M_Group_S_Refresh)
-                   << actionPool()->action(UIActionIndexST_M_Group_S_ShowInFileManager)
-                   << actionPool()->action(UIActionIndexST_M_Group_S_CreateShortcut)
-                   << actionPool()->action(UIActionIndexST_M_Group_S_Sort);
-}
-
-void UIVirtualBoxManager::prepareMenuMachine(QMenu *pMenu)
-{
-    /* Do not touch if filled already: */
-    if (!pMenu->isEmpty())
-        return;
-
-#ifdef VBOX_WS_X11
-    // WORKAROUND:
-    // There is an issue under Ubuntu which uses special kind of QPA
-    // plugin (appmenu-qt5) which redirects actions added to Qt menu-bar
-    // directly to Ubuntu Application menu-bar. In that case action
-    // shortcuts are not being handled by the Qt and that way ignored.
-    // As a workaround we can add those actions into QMainWindow as well.
-    addAction(actionPool()->action(UIActionIndexST_M_Machine_S_New));
-    addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Add));
-    addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Settings));
-    addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Clone));
-    addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Move));
-    addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Remove));
-    addAction(actionPool()->action(UIActionIndexST_M_Machine_S_AddGroup));
-    addAction(actionPool()->action(UIActionIndexST_M_Machine_M_StartOrShow));
-    addAction(actionPool()->action(UIActionIndexST_M_Machine_T_Pause));
-    addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Reset));
-    addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Discard));
-    addAction(actionPool()->action(UIActionIndexST_M_Machine_S_ShowLogDialog));
-    addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Refresh));
-    addAction(actionPool()->action(UIActionIndexST_M_Machine_S_ShowInFileManager));
-    addAction(actionPool()->action(UIActionIndexST_M_Machine_S_CreateShortcut));
-    addAction(actionPool()->action(UIActionIndexST_M_Machine_S_SortParent));
-#endif /* VBOX_WS_X11 */
-
-    /* Populate Machine-menu: */
-    pMenu->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_New));
-    pMenu->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Add));
-    pMenu->addSeparator();
-    pMenu->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Settings));
-    pMenu->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Clone));
-    pMenu->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Move));
-    pMenu->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Remove));
-    pMenu->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_AddGroup));
-    pMenu->addSeparator();
-    pMenu->addAction(actionPool()->action(UIActionIndexST_M_Machine_M_StartOrShow));
-    pMenu->addAction(actionPool()->action(UIActionIndexST_M_Machine_T_Pause));
-    pMenu->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Reset));
-    pMenu->addMenu(actionPool()->action(UIActionIndexST_M_Machine_M_Close)->menu());
-    pMenu->addSeparator();
-    pMenu->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Discard));
-    pMenu->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_ShowLogDialog));
-    pMenu->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Refresh));
-    pMenu->addSeparator();
-    pMenu->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_ShowInFileManager));
-    pMenu->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_CreateShortcut));
-    pMenu->addSeparator();
-    pMenu->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_SortParent));
-
-    /* Remember action list: */
-    m_machineActions << actionPool()->action(UIActionIndexST_M_Machine_S_New)
-                     << actionPool()->action(UIActionIndexST_M_Machine_S_Add)
-                     << actionPool()->action(UIActionIndexST_M_Machine_S_Settings)
-                     << actionPool()->action(UIActionIndexST_M_Machine_S_Clone)
-                     << actionPool()->action(UIActionIndexST_M_Machine_S_Move)
-                     << actionPool()->action(UIActionIndexST_M_Machine_S_Remove)
-                     << actionPool()->action(UIActionIndexST_M_Machine_S_AddGroup)
-                     << actionPool()->action(UIActionIndexST_M_Machine_M_StartOrShow)
-                     << actionPool()->action(UIActionIndexST_M_Machine_T_Pause)
-                     << actionPool()->action(UIActionIndexST_M_Machine_S_Reset)
-                     << actionPool()->action(UIActionIndexST_M_Machine_S_Discard)
-                     << actionPool()->action(UIActionIndexST_M_Machine_S_ShowLogDialog)
-                     << actionPool()->action(UIActionIndexST_M_Machine_S_Refresh)
-                     << actionPool()->action(UIActionIndexST_M_Machine_S_ShowInFileManager)
-                     << actionPool()->action(UIActionIndexST_M_Machine_S_CreateShortcut)
-                     << actionPool()->action(UIActionIndexST_M_Machine_S_SortParent);
-}
-
-void UIVirtualBoxManager::prepareMenuGroupStartOrShow(QMenu *pMenu)
-{
-    /* Do not touch if filled already: */
-    if (!pMenu->isEmpty())
-        return;
-
-#ifdef VBOX_WS_X11
-    // WORKAROUND:
-    // There is an issue under Ubuntu which uses special kind of QPA
-    // plugin (appmenu-qt5) which redirects actions added to Qt menu-bar
-    // directly to Ubuntu Application menu-bar. In that case action
-    // shortcuts are not being handled by the Qt and that way ignored.
-    // As a workaround we can add those actions into QMainWindow as well.
-    addAction(actionPool()->action(UIActionIndexST_M_Group_M_StartOrShow_S_StartNormal));
-    addAction(actionPool()->action(UIActionIndexST_M_Group_M_StartOrShow_S_StartHeadless));
-    addAction(actionPool()->action(UIActionIndexST_M_Group_M_StartOrShow_S_StartDetachable));
-#endif /* VBOX_WS_X11 */
-
-    /* Populate 'Group' / 'Start or Show' menu: */
-    pMenu->addAction(actionPool()->action(UIActionIndexST_M_Group_M_StartOrShow_S_StartNormal));
-    pMenu->addAction(actionPool()->action(UIActionIndexST_M_Group_M_StartOrShow_S_StartHeadless));
-    pMenu->addAction(actionPool()->action(UIActionIndexST_M_Group_M_StartOrShow_S_StartDetachable));
-
-    /* Remember action list: */
-    m_groupActions << actionPool()->action(UIActionIndexST_M_Group_M_StartOrShow_S_StartNormal)
-                   << actionPool()->action(UIActionIndexST_M_Group_M_StartOrShow_S_StartHeadless)
-                   << actionPool()->action(UIActionIndexST_M_Group_M_StartOrShow_S_StartDetachable);
-}
-
-void UIVirtualBoxManager::prepareMenuMachineStartOrShow(QMenu *pMenu)
-{
-    /* Do not touch if filled already: */
-    if (!pMenu->isEmpty())
-        return;
-
-#ifdef VBOX_WS_X11
-    // WORKAROUND:
-    // There is an issue under Ubuntu which uses special kind of QPA
-    // plugin (appmenu-qt5) which redirects actions added to Qt menu-bar
-    // directly to Ubuntu Application menu-bar. In that case action
-    // shortcuts are not being handled by the Qt and that way ignored.
-    // As a workaround we can add those actions into QMainWindow as well.
-    addAction(actionPool()->action(UIActionIndexST_M_Machine_M_StartOrShow_S_StartNormal));
-    addAction(actionPool()->action(UIActionIndexST_M_Machine_M_StartOrShow_S_StartHeadless));
-    addAction(actionPool()->action(UIActionIndexST_M_Machine_M_StartOrShow_S_StartDetachable));
-#endif /* VBOX_WS_X11 */
-
-    /* Populate 'Machine' / 'Start or Show' menu: */
-    pMenu->addAction(actionPool()->action(UIActionIndexST_M_Machine_M_StartOrShow_S_StartNormal));
-    pMenu->addAction(actionPool()->action(UIActionIndexST_M_Machine_M_StartOrShow_S_StartHeadless));
-    pMenu->addAction(actionPool()->action(UIActionIndexST_M_Machine_M_StartOrShow_S_StartDetachable));
-
-    /* Remember action list: */
-    m_machineActions << actionPool()->action(UIActionIndexST_M_Machine_M_StartOrShow_S_StartNormal)
-                     << actionPool()->action(UIActionIndexST_M_Machine_M_StartOrShow_S_StartHeadless)
-                     << actionPool()->action(UIActionIndexST_M_Machine_M_StartOrShow_S_StartDetachable);
-}
-
-void UIVirtualBoxManager::prepareMenuGroupClose(QMenu *pMenu)
-{
-    /* Do not touch if filled already: */
-    if (!pMenu->isEmpty())
-        return;
-
-#ifdef VBOX_WS_X11
-    // WORKAROUND:
-    // There is an issue under Ubuntu which uses special kind of QPA
-    // plugin (appmenu-qt5) which redirects actions added to Qt menu-bar
-    // directly to Ubuntu Application menu-bar. In that case action
-    // shortcuts are not being handled by the Qt and that way ignored.
-    // As a workaround we can add those actions into QMainWindow as well.
-    // addAction(actionPool()->action(UIActionIndexST_M_Group_M_Close_S_Detach));
-    addAction(actionPool()->action(UIActionIndexST_M_Group_M_Close_S_SaveState));
-    addAction(actionPool()->action(UIActionIndexST_M_Group_M_Close_S_Shutdown));
-    addAction(actionPool()->action(UIActionIndexST_M_Group_M_Close_S_PowerOff));
-#endif /* VBOX_WS_X11 */
-
-    /* Populate 'Group' / 'Close' menu: */
-    // pMenu->addAction(actionPool()->action(UIActionIndexST_M_Group_M_Close_S_Detach));
-    pMenu->addAction(actionPool()->action(UIActionIndexST_M_Group_M_Close_S_SaveState));
-    pMenu->addAction(actionPool()->action(UIActionIndexST_M_Group_M_Close_S_Shutdown));
-    pMenu->addAction(actionPool()->action(UIActionIndexST_M_Group_M_Close_S_PowerOff));
-
-    /* Remember action list: */
-    m_groupActions // << actionPool()->action(UIActionIndexST_M_Group_M_Close_S_Detach)
-                   << actionPool()->action(UIActionIndexST_M_Group_M_Close_S_SaveState)
-                   << actionPool()->action(UIActionIndexST_M_Group_M_Close_S_Shutdown)
-                   << actionPool()->action(UIActionIndexST_M_Group_M_Close_S_PowerOff);
-}
-
-void UIVirtualBoxManager::prepareMenuMachineClose(QMenu *pMenu)
-{
-    /* Do not touch if filled already: */
-    if (!pMenu->isEmpty())
-        return;
-
-#ifdef VBOX_WS_X11
-    // WORKAROUND:
-    // There is an issue under Ubuntu which uses special kind of QPA
-    // plugin (appmenu-qt5) which redirects actions added to Qt menu-bar
-    // directly to Ubuntu Application menu-bar. In that case action
-    // shortcuts are not being handled by the Qt and that way ignored.
-    // As a workaround we can add those actions into QMainWindow as well.
-    // addAction(actionPool()->action(UIActionIndexST_M_Machine_M_Close_S_Detach));
-    addAction(actionPool()->action(UIActionIndexST_M_Machine_M_Close_S_SaveState));
-    addAction(actionPool()->action(UIActionIndexST_M_Machine_M_Close_S_Shutdown));
-    addAction(actionPool()->action(UIActionIndexST_M_Machine_M_Close_S_PowerOff));
-#endif /* VBOX_WS_X11 */
-
-    /* Populate 'Machine' / 'Close' menu: */
-    // pMenu->addAction(actionPool()->action(UIActionIndexST_M_Machine_M_Close_S_Detach));
-    pMenu->addAction(actionPool()->action(UIActionIndexST_M_Machine_M_Close_S_SaveState));
-    pMenu->addAction(actionPool()->action(UIActionIndexST_M_Machine_M_Close_S_Shutdown));
-    pMenu->addAction(actionPool()->action(UIActionIndexST_M_Machine_M_Close_S_PowerOff));
-
-    /* Remember action list: */
-    m_machineActions // << actionPool()->action(UIActionIndexST_M_Machine_M_Close_S_Detach)
-                     << actionPool()->action(UIActionIndexST_M_Machine_M_Close_S_SaveState)
-                     << actionPool()->action(UIActionIndexST_M_Machine_M_Close_S_Shutdown)
-                     << actionPool()->action(UIActionIndexST_M_Machine_M_Close_S_PowerOff);
-}
-
-void UIVirtualBoxManager::prepareMenuSnapshot(QMenu *pMenu)
-{
-    /* Do not touch if filled already: */
-    if (!pMenu->isEmpty())
-        return;
-
-#ifdef VBOX_WS_X11
-    // WORKAROUND:
-    // There is an issue under Ubuntu which uses special kind of QPA
-    // plugin (appmenu-qt5) which redirects actions added to Qt menu-bar
-    // directly to Ubuntu Application menu-bar. In that case action
-    // shortcuts are not being handled by the Qt and that way ignored.
-    // As a workaround we can add those actions into QMainWindow as well.
-    addAction(actionPool()->action(UIActionIndexST_M_Snapshot_S_Take));
-    addAction(actionPool()->action(UIActionIndexST_M_Snapshot_S_Delete));
-    addAction(actionPool()->action(UIActionIndexST_M_Snapshot_S_Restore));
-    addAction(actionPool()->action(UIActionIndexST_M_Snapshot_T_Properties));
-    addAction(actionPool()->action(UIActionIndexST_M_Snapshot_S_Clone));
-#endif /* VBOX_WS_X11 */
-
-    /* Populate Snapshot-menu: */
-    pMenu->addAction(actionPool()->action(UIActionIndexST_M_Snapshot_S_Take));
-    pMenu->addAction(actionPool()->action(UIActionIndexST_M_Snapshot_S_Delete));
-    pMenu->addAction(actionPool()->action(UIActionIndexST_M_Snapshot_S_Restore));
-    pMenu->addAction(actionPool()->action(UIActionIndexST_M_Snapshot_T_Properties));
-    pMenu->addAction(actionPool()->action(UIActionIndexST_M_Snapshot_S_Clone));
-
-    /* Remember action list: */
-    m_snapshotActions << actionPool()->action(UIActionIndexST_M_Snapshot_S_Take)
-                      << actionPool()->action(UIActionIndexST_M_Snapshot_S_Delete)
-                      << actionPool()->action(UIActionIndexST_M_Snapshot_S_Restore)
-                      << actionPool()->action(UIActionIndexST_M_Snapshot_T_Properties)
-                      << actionPool()->action(UIActionIndexST_M_Snapshot_S_Clone);
-}
-
-void UIVirtualBoxManager::prepareMenuLogViewer(QMenu *pMenu)
-{
-    /* We are doing it inside the UIActionPool. */
-    Q_UNUSED(pMenu);
-
-    /* Do not touch if filled already: */
-    if (!m_logViewerActions.isEmpty())
-        return;
-
-    /* Remember action list: */
-    m_logViewerActions << actionPool()->action(UIActionIndex_M_Log_T_Find)
-                       << actionPool()->action(UIActionIndex_M_Log_T_Filter)
-                       << actionPool()->action(UIActionIndex_M_Log_T_Bookmark)
-                       << actionPool()->action(UIActionIndex_M_Log_T_Settings)
-                       << actionPool()->action(UIActionIndex_M_Log_S_Refresh)
-                       << actionPool()->action(UIActionIndex_M_Log_S_Save);
-}
-
-void UIVirtualBoxManager::prepareMenuMedium(QMenu *pMenu)
-{
-    /* We are doing it inside the UIActionPoolSelector. */
-    Q_UNUSED(pMenu);
-
-    /* Do not touch if filled already: */
-    if (!m_virtualMediaManagerActions.isEmpty())
-        return;
-
-    /* Remember action list: */
-    m_virtualMediaManagerActions << actionPool()->action(UIActionIndexST_M_Medium_S_Add)
-                                 << actionPool()->action(UIActionIndexST_M_Medium_S_Copy)
-                                 << actionPool()->action(UIActionIndexST_M_Medium_S_Move)
-                                 << actionPool()->action(UIActionIndexST_M_Medium_S_Remove)
-                                 << actionPool()->action(UIActionIndexST_M_Medium_S_Release)
-                                 << actionPool()->action(UIActionIndexST_M_Medium_T_Details)
-                                 << actionPool()->action(UIActionIndexST_M_Medium_S_Refresh);
-}
-
-void UIVirtualBoxManager::prepareMenuNetwork(QMenu *pMenu)
-{
-    /* We are doing it inside the UIActionPoolSelector. */
-    Q_UNUSED(pMenu);
-
-    /* Do not touch if filled already: */
-    if (!m_hostNetworkManagerActions.isEmpty())
-        return;
-
-    /* Remember action list: */
-    m_hostNetworkManagerActions << actionPool()->action(UIActionIndexST_M_Network_S_Create)
-                                << actionPool()->action(UIActionIndexST_M_Network_S_Remove)
-                                << actionPool()->action(UIActionIndexST_M_Network_T_Details)
-                                << actionPool()->action(UIActionIndexST_M_Network_S_Refresh);
-}
-
-void UIVirtualBoxManager::prepareMenuCloud(QMenu *pMenu)
-{
-    /* We are doing it inside the UIActionPoolSelector. */
-    Q_UNUSED(pMenu);
-
-    /* Do not touch if filled already: */
-    if (!m_cloudProfileManagerActions.isEmpty())
-        return;
-
-    /* Remember action list: */
-    m_cloudProfileManagerActions << actionPool()->action(UIActionIndexST_M_Cloud_S_Add)
-                                 << actionPool()->action(UIActionIndexST_M_Cloud_S_Import)
-                                 << actionPool()->action(UIActionIndexST_M_Cloud_S_Remove)
-                                 << actionPool()->action(UIActionIndexST_M_Cloud_T_Details)
-                                 << actionPool()->action(UIActionIndexST_M_Cloud_S_Help);
 }
 
 void UIVirtualBoxManager::prepareStatusBar()
@@ -2140,55 +1589,46 @@ void UIVirtualBoxManager::updateActionsVisibility()
 {
     /* Determine whether Machine or Group menu should be shown at all: */
     const bool fGlobalMenuShown  = m_pWidget->isGlobalItemSelected();
-    const bool fMachineMenuShown = m_pWidget->isMachineItemSelected() && !isSingleGroupSelected();
     const bool fGroupMenuShown   = m_pWidget->isGroupItemSelected()   &&  isSingleGroupSelected();
-    m_pWelcomeMenuAction->setVisible(fGlobalMenuShown);
-    m_pMachineMenuAction->setVisible(fMachineMenuShown);
-    m_pGroupMenuAction->setVisible(fGroupMenuShown);
+    const bool fMachineMenuShown = m_pWidget->isMachineItemSelected() && !isSingleGroupSelected();
+    actionPool()->action(UIActionIndexST_M_Welcome)->setVisible(fGlobalMenuShown);
+    actionPool()->action(UIActionIndexST_M_Group)->setVisible(fGroupMenuShown);
+    actionPool()->action(UIActionIndexST_M_Machine)->setVisible(fMachineMenuShown);
 
     /* Determine whether Media menu should be visible: */
     const bool fMediumMenuShown = fGlobalMenuShown && m_pWidget->currentGlobalTool() == UIToolType_Media;
-    m_pVirtualMediaManagerMenuAction->setVisible(fMediumMenuShown);
-
+    actionPool()->action(UIActionIndexST_M_Medium)->setVisible(fMediumMenuShown);
     /* Determine whether Network menu should be visible: */
     const bool fNetworkMenuShown = fGlobalMenuShown && m_pWidget->currentGlobalTool() == UIToolType_Network;
-    m_pHostNetworkManagerMenuAction->setVisible(fNetworkMenuShown);
-
+    actionPool()->action(UIActionIndexST_M_Network)->setVisible(fNetworkMenuShown);
     /* Determine whether Cloud menu should be visible: */
     const bool fCloudMenuShown = fGlobalMenuShown && m_pWidget->currentGlobalTool() == UIToolType_Cloud;
-    m_pCloudProfileManagerMenuAction->setVisible(fCloudMenuShown);
+    actionPool()->action(UIActionIndexST_M_Cloud)->setVisible(fCloudMenuShown);
 
     /* Determine whether Snapshots menu should be visible: */
     const bool fSnapshotMenuShown = (fMachineMenuShown || fGroupMenuShown) &&
                                     m_pWidget->currentMachineTool() == UIToolType_Snapshots;
-    m_pSnapshotMenuAction->setVisible(fSnapshotMenuShown);
-
+    actionPool()->action(UIActionIndexST_M_Snapshot)->setVisible(fSnapshotMenuShown);
     /* Determine whether Logs menu should be visible: */
     const bool fLogViewerMenuShown = (fMachineMenuShown || fGroupMenuShown) &&
                                      m_pWidget->currentMachineTool() == UIToolType_Logs;
-    m_pLogViewerMenuAction->setVisible(fLogViewerMenuShown);
+    actionPool()->action(UIActionIndex_M_Log)->setVisible(fLogViewerMenuShown);
 
     /* Hide action shortcuts: */
     if (!fGlobalMenuShown)
-        foreach (UIAction *pAction, m_welcomeActions)
-            pAction->hideShortcut();
-    if (!fMachineMenuShown)
-        foreach (UIAction *pAction, m_machineActions)
-            pAction->hideShortcut();
+        actionPool()->setShortcutsVisible(UIActionIndexST_M_Welcome, false);
     if (!fGroupMenuShown)
-        foreach (UIAction *pAction, m_groupActions)
-            pAction->hideShortcut();
+        actionPool()->setShortcutsVisible(UIActionIndexST_M_Group, false);
+    if (!fMachineMenuShown)
+        actionPool()->setShortcutsVisible(UIActionIndexST_M_Machine, false);
 
     /* Show action shortcuts: */
     if (fGlobalMenuShown)
-        foreach (UIAction *pAction, m_welcomeActions)
-            pAction->showShortcut();
-    if (fMachineMenuShown)
-        foreach (UIAction *pAction, m_machineActions)
-            pAction->showShortcut();
+        actionPool()->setShortcutsVisible(UIActionIndexST_M_Welcome, true);
     if (fGroupMenuShown)
-        foreach (UIAction *pAction, m_groupActions)
-            pAction->showShortcut();
+        actionPool()->setShortcutsVisible(UIActionIndexST_M_Group, true);
+    if (fMachineMenuShown)
+        actionPool()->setShortcutsVisible(UIActionIndexST_M_Machine, true);
 }
 
 void UIVirtualBoxManager::updateActionsAppearance()
