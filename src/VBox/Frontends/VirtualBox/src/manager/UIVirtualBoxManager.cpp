@@ -1577,6 +1577,7 @@ void UIVirtualBoxManager::prepareMenuMachine(QMenu *pMenu)
     /* Populate Machine-menu: */
     pMenu->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_New));
     pMenu->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Add));
+    pMenu->addSeparator();
     pMenu->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Settings));
     pMenu->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Clone));
     pMenu->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Move));
