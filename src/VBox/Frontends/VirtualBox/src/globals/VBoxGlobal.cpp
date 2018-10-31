@@ -4177,19 +4177,22 @@ void VBoxGlobal::prepare()
         gEDataManager->setRequestedVisualState(visualStateType, m_strManagedVMId);
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
-    /* setup the debugger gui. */
-    if (RTEnvExist("VBOX_GUI_NO_DEBUGGER"))
-        m_fDbgEnabled = m_fDbgAutoShow =  m_fDbgAutoShowCommandLine = m_fDbgAutoShowStatistics = false;
-    if (m_fDbgEnabled)
+    /* Setup the debugger gui if VM console process: */
+    if (isVMConsoleProcess())
     {
-        RTERRINFOSTATIC ErrInfo;
-        RTErrInfoInitStatic(&ErrInfo);
-        int vrc = SUPR3HardenedLdrLoadAppPriv("VBoxDbg", &m_hVBoxDbg, RTLDRLOAD_FLAGS_LOCAL, &ErrInfo.Core);
-        if (RT_FAILURE(vrc))
+        if (RTEnvExist("VBOX_GUI_NO_DEBUGGER"))
+            m_fDbgEnabled = m_fDbgAutoShow =  m_fDbgAutoShowCommandLine = m_fDbgAutoShowStatistics = false;
+        if (m_fDbgEnabled)
         {
-            m_hVBoxDbg = NIL_RTLDRMOD;
-            m_fDbgAutoShow = m_fDbgAutoShowCommandLine = m_fDbgAutoShowStatistics = false;
-            LogRel(("Failed to load VBoxDbg, rc=%Rrc - %s\n", vrc, ErrInfo.Core.pszMsg));
+            RTERRINFOSTATIC ErrInfo;
+            RTErrInfoInitStatic(&ErrInfo);
+            int vrc = SUPR3HardenedLdrLoadAppPriv("VBoxDbg", &m_hVBoxDbg, RTLDRLOAD_FLAGS_LOCAL, &ErrInfo.Core);
+            if (RT_FAILURE(vrc))
+            {
+                m_hVBoxDbg = NIL_RTLDRMOD;
+                m_fDbgAutoShow = m_fDbgAutoShowCommandLine = m_fDbgAutoShowStatistics = false;
+                LogRel(("Failed to load VBoxDbg, rc=%Rrc - %s\n", vrc, ErrInfo.Core.pszMsg));
+            }
         }
     }
 #endif
