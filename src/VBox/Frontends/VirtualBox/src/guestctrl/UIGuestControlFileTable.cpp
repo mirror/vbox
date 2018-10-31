@@ -325,6 +325,7 @@ void UIGuestControlFileView::selectionChanged(const QItemSelection & selected, c
     QTableView::selectionChanged(selected, deselected);
 }
 
+
 /*********************************************************************************************************************************
 *   UIFileStringInputDialog implementation.                                                                                      *
 *********************************************************************************************************************************/
@@ -424,6 +425,7 @@ UIDirectoryStatistics::UIDirectoryStatistics()
     , m_uSymlinkCount(0)
 {
 }
+
 
 /*********************************************************************************************************************************
 *   UIFileTableItem implementation.                                                                                              *
