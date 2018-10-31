@@ -2652,6 +2652,9 @@ void UIActionPoolSelector::updateMenus()
     /* 'Host Network Manager' menu: */
     updateMenuNetworkWindow();
     updateMenuNetwork();
+    /* 'Cloud Profile Manager' menu: */
+    updateMenuCloudWindow();
+    updateMenuCloud();
 }
 
 void UIActionPoolSelector::updateMenuMediumWindow()

@@ -139,7 +139,7 @@ enum UIActionIndexST
     UIActionIndexST_M_Network_T_Details,
     UIActionIndexST_M_Network_S_Refresh,
 
-    /* Host Cloud Profile actions: */
+    /* Cloud Profile Manager actions: */
     UIActionIndexST_M_CloudWindow,
     UIActionIndexST_M_Cloud,
     UIActionIndexST_M_Cloud_S_Add,
