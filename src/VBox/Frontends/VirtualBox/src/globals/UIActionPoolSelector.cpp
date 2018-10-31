@@ -1572,7 +1572,7 @@ protected:
         setName(QApplication::translate("UIActionPool", "&Take..."));
         setShortcutScope(QApplication::translate("UIActionPool", "Snapshot Pane"));
         setStatusTip(QApplication::translate("UIActionPool", "Take a snapshot of the current virtual machine state"));
-        setToolTip(tr("Take Snapshot (%1)").arg(shortcut().toString()));
+        setToolTip(QApplication::translate("UIActionPool", "Take Snapshot (%1)").arg(shortcut().toString()));
     }
 };
 
@@ -1612,7 +1612,7 @@ protected:
         setName(QApplication::translate("UIActionPool", "&Delete..."));
         setShortcutScope(QApplication::translate("UIActionPool", "Snapshot Pane"));
         setStatusTip(QApplication::translate("UIActionPool", "Delete selected snapshot of the virtual machine"));
-        setToolTip(tr("Delete Snapshot (%1)").arg(shortcut().toString()));
+        setToolTip(QApplication::translate("UIActionPool", "Delete Snapshot (%1)").arg(shortcut().toString()));
     }
 };
 
@@ -1652,7 +1652,7 @@ protected:
         setName(QApplication::translate("UIActionPool", "&Restore..."));
         setShortcutScope(QApplication::translate("UIActionPool", "Snapshot Pane"));
         setStatusTip(QApplication::translate("UIActionPool", "Restore selected snapshot of the virtual machine"));
-        setToolTip(tr("Restore Snapshot (%1)").arg(shortcut().toString()));
+        setToolTip(QApplication::translate("UIActionPool", "Restore Snapshot (%1)").arg(shortcut().toString()));
     }
 };
 
@@ -1692,7 +1692,7 @@ protected:
         setName(QApplication::translate("UIActionPool", "&Properties"));
         setShortcutScope(QApplication::translate("UIActionPool", "Snapshot Pane"));
         setStatusTip(QApplication::translate("UIActionPool", "Open pane with the selected snapshot properties"));
-        setToolTip(tr("Open Snapshot Properties (%1)").arg(shortcut().toString()));
+        setToolTip(QApplication::translate("UIActionPool", "Open Snapshot Properties (%1)").arg(shortcut().toString()));
     }
 };
 
@@ -1732,7 +1732,7 @@ protected:
         setName(QApplication::translate("UIActionPool", "&Clone..."));
         setShortcutScope(QApplication::translate("UIActionPool", "Snapshot Pane"));
         setStatusTip(QApplication::translate("UIActionPool", "Clone selected virtual machine"));
-        setToolTip(tr("Clone Virtual Machine (%1)").arg(shortcut().toString()));
+        setToolTip(QApplication::translate("UIActionPool", "Clone Virtual Machine (%1)").arg(shortcut().toString()));
     }
 };
 
@@ -1805,7 +1805,7 @@ protected:
         setName(QApplication::translate("UIActionPool", "&Add..."));
         setShortcutScope(QApplication::translate("UIActionPool", "Media Manager"));
         setStatusTip(QApplication::translate("UIActionPool", "Add a disk image file"));
-        setToolTip(tr("Add a Disk Image File (%1)").arg(shortcut().toString()));
+        setToolTip(QApplication::translate("UIActionPool", "Add a Disk Image File (%1)").arg(shortcut().toString()));
     }
 };
 
@@ -1849,7 +1849,7 @@ protected:
         setName(QApplication::translate("UIActionPool", "&Copy..."));
         setShortcutScope(QApplication::translate("UIActionPool", "Media Manager"));
         setStatusTip(QApplication::translate("UIActionPool", "Copy selected disk image file"));
-        setToolTip(tr("Copy Disk Image File (%1)").arg(shortcut().toString()));
+        setToolTip(QApplication::translate("UIActionPool", "Copy Disk Image File (%1)").arg(shortcut().toString()));
     }
 };
 
@@ -1893,7 +1893,7 @@ protected:
         setName(QApplication::translate("UIActionPool", "&Move..."));
         setShortcutScope(QApplication::translate("UIActionPool", "Media Manager"));
         setStatusTip(QApplication::translate("UIActionPool", "Move selected disk image file"));
-        setToolTip(tr("Move Disk Image File (%1)").arg(shortcut().toString()));
+        setToolTip(QApplication::translate("UIActionPool", "Move Disk Image File (%1)").arg(shortcut().toString()));
     }
 };
 
@@ -1937,7 +1937,7 @@ protected:
         setName(QApplication::translate("UIActionPool", "&Remove..."));
         setShortcutScope(QApplication::translate("UIActionPool", "Media Manager"));
         setStatusTip(QApplication::translate("UIActionPool", "Remove selected disk image file"));
-        setToolTip(tr("Remove Disk Image File (%1)").arg(shortcut().toString()));
+        setToolTip(QApplication::translate("UIActionPool", "Remove Disk Image File (%1)").arg(shortcut().toString()));
     }
 };
 
@@ -1981,7 +1981,7 @@ protected:
         setName(QApplication::translate("UIActionPool", "Re&lease..."));
         setShortcutScope(QApplication::translate("UIActionPool", "Media Manager"));
         setStatusTip(QApplication::translate("UIActionPool", "Release selected disk image file"));
-        setToolTip(tr("Release Disk Image File (%1)").arg(shortcut().toString()));
+        setToolTip(QApplication::translate("UIActionPool", "Release Disk Image File (%1)").arg(shortcut().toString()));
     }
 };
 
@@ -2025,7 +2025,7 @@ protected:
         setName(QApplication::translate("UIActionPool", "&Properties"));
         setShortcutScope(QApplication::translate("UIActionPool", "Media Manager"));
         setStatusTip(QApplication::translate("UIActionPool", "Open pane with selected disk image file properties"));
-        setToolTip(tr("Open Disk Image File Properties (%1)").arg(shortcut().toString()));
+        setToolTip(QApplication::translate("UIActionPool", "Open Disk Image File Properties (%1)").arg(shortcut().toString()));
     }
 };
 
@@ -2065,7 +2065,7 @@ protected:
         setName(QApplication::translate("UIActionPool", "Re&fresh..."));
         setShortcutScope(QApplication::translate("UIActionPool", "Media Manager"));
         setStatusTip(QApplication::translate("UIActionPool", "Refresh the list of disk image files"));
-        setToolTip(tr("Refresh Disk Image Files (%1)").arg(shortcut().toString()));
+        setToolTip(QApplication::translate("UIActionPool", "Refresh Disk Image Files (%1)").arg(shortcut().toString()));
     }
 };
 
@@ -2134,7 +2134,7 @@ protected:
         setName(QApplication::translate("UIActionPool", "&Create..."));
         setShortcutScope(QApplication::translate("UIActionPool", "Network Manager"));
         setStatusTip(QApplication::translate("UIActionPool", "Create new host-only network"));
-        setToolTip(tr("Create Host-only Network (%1)").arg(shortcut().toString()));
+        setToolTip(QApplication::translate("UIActionPool", "Create Host-only Network (%1)").arg(shortcut().toString()));
     }
 };
 
@@ -2174,7 +2174,7 @@ protected:
         setName(QApplication::translate("UIActionPool", "&Remove..."));
         setShortcutScope(QApplication::translate("UIActionPool", "Network Manager"));
         setStatusTip(QApplication::translate("UIActionPool", "Remove selected host-only network"));
-        setToolTip(tr("Remove Host-only Network (%1)").arg(shortcut().toString()));
+        setToolTip(QApplication::translate("UIActionPool", "Remove Host-only Network (%1)").arg(shortcut().toString()));
     }
 };
 
@@ -2214,7 +2214,7 @@ protected:
         setName(QApplication::translate("UIActionPool", "&Properties"));
         setShortcutScope(QApplication::translate("UIActionPool", "Network Manager"));
         setStatusTip(QApplication::translate("UIActionPool", "Open pane with selected host-only network properties"));
-        setToolTip(tr("Open Host-only Network Properties (%1)").arg(shortcut().toString()));
+        setToolTip(QApplication::translate("UIActionPool", "Open Host-only Network Properties (%1)").arg(shortcut().toString()));
     }
 };
 
@@ -2254,7 +2254,7 @@ protected:
         setName(QApplication::translate("UIActionPool", "Re&fresh..."));
         setShortcutScope(QApplication::translate("UIActionPool", "Network Manager"));
         setStatusTip(QApplication::translate("UIActionPool", "Refresh the list of host-only networks"));
-        setToolTip(tr("Refresh Host-only Networks (%1)").arg(shortcut().toString()));
+        setToolTip(QApplication::translate("UIActionPool", "Refresh Host-only Networks (%1)").arg(shortcut().toString()));
     }
 };
 
@@ -2324,7 +2324,7 @@ protected:
         setName(QApplication::translate("UIActionPool", "&Add Profile..."));
         setShortcutScope(QApplication::translate("UIActionPool", "Cloud Profile Manager"));
         setStatusTip(QApplication::translate("UIActionPool", "Add new cloud profile"));
-        setToolTip(tr("Add Cloud Profile (%1)").arg(shortcut().toString()));
+        setToolTip(QApplication::translate("UIActionPool", "Add Cloud Profile (%1)").arg(shortcut().toString()));
     }
 };
 
@@ -2365,7 +2365,7 @@ protected:
         setName(QApplication::translate("UIActionPool", "&Import Profiles..."));
         setShortcutScope(QApplication::translate("UIActionPool", "Cloud Profile Manager"));
         setStatusTip(QApplication::translate("UIActionPool", "Import the list of cloud profiles from external files"));
-        setToolTip(tr("Import Cloud Profiles (%1)").arg(shortcut().toString()));
+        setToolTip(QApplication::translate("UIActionPool", "Import Cloud Profiles (%1)").arg(shortcut().toString()));
     }
 };
 
@@ -2406,7 +2406,7 @@ protected:
         setName(QApplication::translate("UIActionPool", "&Remove Profile..."));
         setShortcutScope(QApplication::translate("UIActionPool", "Cloud Profile Manager"));
         setStatusTip(QApplication::translate("UIActionPool", "Remove selected cloud profile"));
-        setToolTip(tr("Remove Cloud Profile (%1)").arg(shortcut().toString()));
+        setToolTip(QApplication::translate("UIActionPool", "Remove Cloud Profile (%1)").arg(shortcut().toString()));
     }
 };
 
@@ -2447,7 +2447,7 @@ protected:
         setName(QApplication::translate("UIActionPool", "Profile &Properties"));
         setShortcutScope(QApplication::translate("UIActionPool", "Cloud Profile Manager"));
         setStatusTip(QApplication::translate("UIActionPool", "Open pane with selected cloud profile properties"));
-        setToolTip(tr("Open Cloud Profile Properties (%1)").arg(shortcut().toString()));
+        setToolTip(QApplication::translate("UIActionPool", "Open Cloud Profile Properties (%1)").arg(shortcut().toString()));
     }
 };
 
@@ -2488,7 +2488,7 @@ protected:
         setName(QApplication::translate("UIActionPool", "&Show Help..."));
         setShortcutScope(QApplication::translate("UIActionPool", "Cloud Profile Manager"));
         setStatusTip(QApplication::translate("UIActionPool", "Show cloud profile help"));
-        setToolTip(tr("Show Cloud Profile Help (%1)").arg(shortcut().toString()));
+        setToolTip(QApplication::translate("UIActionPool", "Show Cloud Profile Help (%1)").arg(shortcut().toString()));
     }
 };
 
