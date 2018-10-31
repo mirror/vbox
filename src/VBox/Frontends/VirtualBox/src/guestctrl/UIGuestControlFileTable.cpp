@@ -70,16 +70,6 @@ class UIGuestControlFileView : public QTableView
 
 signals:
 
-    void sigGoUp();
-    void sigGoHome();
-    void sigRefresh();
-    void sigRename();
-    void sigCreateNewDirectory();
-    void sigDelete();
-    void sigCut();
-    void sigCopy();
-    void sigPaste();
-    void sigShowProperties();
     void sigSelectionChanged(const QItemSelection & selected, const QItemSelection & deselected);
 
 public:
@@ -90,7 +80,6 @@ public:
 protected:
 
     virtual void selectionChanged(const QItemSelection & selected, const QItemSelection & deselected) /*override */;
-    void contextMenuEvent(QContextMenuEvent *pEvent);
 
 private:
 
@@ -311,6 +300,7 @@ UIGuestControlFileView::UIGuestControlFileView(QWidget *parent)
 
 void UIGuestControlFileView::configure()
 {
+    setContextMenuPolicy(Qt::CustomContextMenu);
     setShowGrid(false);
     setSelectionBehavior(QAbstractItemView::SelectRows);
     verticalHeader()->setVisible(false);
@@ -319,129 +309,6 @@ void UIGuestControlFileView::configure()
     verticalHeader()->setDefaultSectionSize(verticalHeader()->minimumSectionSize());
     setAlternatingRowColors(true);
     installEventFilter(m_pParent);
-}
-
-void UIGuestControlFileView::contextMenuEvent(QContextMenuEvent *pEvent)
-{
-    bool selectionAvaible = hasSelection();
-
-    QMenu *menu = new QMenu(this);
-    if (!menu)
-        return;
-
-    QAction *pActionGoUp = menu->addAction(QApplication::translate("UIGuestControlFileManager","Go up"));
-    if (pActionGoUp)
-    {
-        pActionGoUp->setIcon(UIIconPool::iconSet(QString(":/arrow_up_10px_x2.png")));
-        connect(pActionGoUp, &QAction::triggered, this, &UIGuestControlFileView::sigGoUp);
-    }
-    QAction *pActionGoHome = menu->addAction(QApplication::translate("UIGuestControlFileManager", "Go home"));
-    if (pActionGoHome)
-    {
-        pActionGoHome->setIcon(UIIconPool::iconSet(QString(":/nw_24px.png")));
-        connect(pActionGoHome, &QAction::triggered, this, &UIGuestControlFileView::sigGoHome);
-    }
-
-    QAction *pActionRefresh = menu->addAction(QApplication::translate("UIGuestControlFileManager", "Refresh"));
-    if (pActionRefresh)
-    {
-        pActionRefresh->setIcon(UIIconPool::iconSet(QString(":/refresh_24px.png")));
-        connect(pActionRefresh, &QAction::triggered, this, &UIGuestControlFileView::sigRefresh);
-    }
-
-    menu->addSeparator();
-    QAction *pActionDelete = menu->addAction(QApplication::translate("UIGuestControlFileManager", "Delete"));
-    if (pActionDelete)
-    {
-        pActionDelete->setIcon(UIIconPool::iconSet(QString(":/vm_delete_32px.png")));
-        pActionDelete->setEnabled(selectionAvaible);
-        connect(pActionDelete, &QAction::triggered, this, &UIGuestControlFileView::sigDelete);
-    }
-
-    QAction *pActionRename = menu->addAction(QApplication::translate("UIGuestControlFileManager", "Rename"));
-    if (pActionRename)
-    {
-        pActionRename->setIcon(UIIconPool::iconSet(QString(":/name_16px_x2.png")));
-        pActionRename->setEnabled(selectionAvaible);
-        pActionRename->setEnabled(selectionAvaible);
-        connect(pActionRename, &QAction::triggered, this, &UIGuestControlFileView::sigRename);
-    }
-
-    QAction *pActionCreateNewDirectory = menu->addAction(QApplication::translate("UIGuestControlFileManager", "Create New Directory"));
-    if (pActionCreateNewDirectory)
-    {
-        pActionCreateNewDirectory->setIcon(UIIconPool::iconSet(QString(":/sf_add_16px.png")));
-        connect(pActionCreateNewDirectory, &QAction::triggered, this, &UIGuestControlFileView::sigCreateNewDirectory);
-    }
-
-    QAction *pActionCopy = 0;
-    QAction *pActionCut = 0;
-    QAction *pActionPaste = 0;
-
-    bool isGuestFileTable = qobject_cast<UIGuestFileTable*>(parent());
-
-    if (isGuestFileTable)
-    {
-        pActionCopy = menu->addAction(QApplication::translate("UIGuestControlFileManager", "Copy"));
-        if (pActionCopy)
-        {
-            pActionCopy->setIcon(UIIconPool::iconSet(QString(":/fd_copy_32px.png")));
-            pActionCopy->setEnabled(selectionAvaible);
-            connect(pActionCopy, &QAction::triggered, this, &UIGuestControlFileView::sigCopy);
-        }
-
-        pActionCut = menu->addAction(QApplication::translate("UIGuestControlFileManager", "Cut"));
-        if (pActionCut)
-        {
-            pActionCut->setIcon(UIIconPool::iconSet(QString(":/fd_move_32px.png")));
-            pActionCut->setEnabled(selectionAvaible);
-            connect(pActionCut, &QAction::triggered, this, &UIGuestControlFileView::sigCut);
-        }
-
-        pActionPaste = menu->addAction(QApplication::translate("UIGuestControlFileManager", "Paste"));
-        if (pActionPaste)
-        {
-            pActionPaste->setIcon(UIIconPool::iconSet(QString(":/shared_clipboard_16px.png")));
-            connect(pActionPaste, &QAction::triggered, this, &UIGuestControlFileView::sigPaste);
-        }
-    }
-
-    menu->addSeparator();
-    QAction *pActionShowProperties = menu->addAction(QApplication::translate("UIGuestControlFileManager", "Properties"));
-    if (pActionShowProperties)
-    {
-        pActionShowProperties->setIcon(UIIconPool::iconSet(QString(":/session_info_32px.png")));
-        pActionShowProperties->setEnabled(selectionAvaible);
-        connect(pActionShowProperties, &QAction::triggered, this, &UIGuestControlFileView::sigShowProperties);
-    }
-
-    menu->exec(pEvent->globalPos());
-
-    if (pActionGoUp)
-        disconnect(pActionGoUp, &QAction::triggered, this, &UIGuestControlFileView::sigGoUp);
-    if (pActionGoHome)
-        disconnect(pActionGoHome, &QAction::triggered, this, &UIGuestControlFileView::sigGoHome);
-    if (pActionRefresh)
-        disconnect(pActionRefresh, &QAction::triggered, this, &UIGuestControlFileView::sigRefresh);
-    if (pActionDelete)
-        disconnect(pActionDelete, &QAction::triggered, this, &UIGuestControlFileView::sigDelete);
-    if (pActionRename)
-        disconnect(pActionRename, &QAction::triggered, this, &UIGuestControlFileView::sigRename);
-    if (pActionCreateNewDirectory)
-        disconnect(pActionCreateNewDirectory, &QAction::triggered, this, &UIGuestControlFileView::sigCreateNewDirectory);
-    if (isGuestFileTable)
-    {
-        if (pActionCopy)
-            disconnect(pActionCopy, &QAction::triggered, this, &UIGuestControlFileView::sigCopy);
-        if (pActionCut)
-            disconnect(pActionCut, &QAction::triggered, this, &UIGuestControlFileView::sigCut);
-        if (pActionPaste)
-            disconnect(pActionPaste, &QAction::triggered, this, &UIGuestControlFileView::sigPaste);
-    }
-    if (pActionShowProperties)
-        disconnect(pActionShowProperties, &QAction::triggered, this, &UIGuestControlFileView::sigShowProperties);
-
-    delete menu;
 }
 
 bool UIGuestControlFileView::hasSelection() const
@@ -457,7 +324,6 @@ void UIGuestControlFileView::selectionChanged(const QItemSelection & selected, c
     emit sigSelectionChanged(selected, deselected);
     QTableView::selectionChanged(selected, deselected);
 }
-
 
 /*********************************************************************************************************************************
 *   UIFileStringInputDialog implementation.                                                                                      *
@@ -558,7 +424,6 @@ UIDirectoryStatistics::UIDirectoryStatistics()
     , m_uSymlinkCount(0)
 {
 }
-
 
 /*********************************************************************************************************************************
 *   UIFileTableItem implementation.                                                                                              *
@@ -834,28 +699,10 @@ void UIGuestControlFileTable::prepareObjects()
                 this, &UIGuestControlFileTable::sltItemDoubleClicked);
         connect(m_pView, &UIGuestControlFileView::clicked,
                 this, &UIGuestControlFileTable::sltItemClicked);
-        connect(m_pView, &UIGuestControlFileView::sigGoUp,
-                this, &UIGuestControlFileTable::sltGoUp);
-        connect(m_pView, &UIGuestControlFileView::sigGoHome,
-                this, &UIGuestControlFileTable::sltGoHome);
-        connect(m_pView, &UIGuestControlFileView::sigRefresh,
-                this, &UIGuestControlFileTable::sltRefresh);
-        connect(m_pView, &UIGuestControlFileView::sigDelete,
-                this, &UIGuestControlFileTable::sltDelete);
-        connect(m_pView, &UIGuestControlFileView::sigRename,
-                this, &UIGuestControlFileTable::sltRename);
-        connect(m_pView, &UIGuestControlFileView::sigCreateNewDirectory,
-                this, &UIGuestControlFileTable::sltCreateNewDirectory);
-        connect(m_pView, &UIGuestControlFileView::sigCopy,
-                this, &UIGuestControlFileTable::sltCopy);
-        connect(m_pView, &UIGuestControlFileView::sigCut,
-                this, &UIGuestControlFileTable::sltCut);
-        connect(m_pView, &UIGuestControlFileView::sigPaste,
-                this, &UIGuestControlFileTable::sltPaste);
-        connect(m_pView, &UIGuestControlFileView::sigShowProperties,
-                this, &UIGuestControlFileTable::sltShowProperties);
         connect(m_pView, &UIGuestControlFileView::sigSelectionChanged,
                 this, &UIGuestControlFileTable::sltSelectionChanged);
+        connect(m_pView, &UIGuestControlFileView::customContextMenuRequested,
+                this, &UIGuestControlFileTable::sltCreateFileViewContextMenu);
 
     }
     m_pSearchLineEdit = new QILineEdit;
@@ -1235,6 +1082,14 @@ void UIGuestControlFileTable::sltInvertSelection()
 void UIGuestControlFileTable::sltSearchTextChanged(const QString &strText)
 {
     performSelectionSearch(strText);
+}
+
+void UIGuestControlFileTable::sltCreateFileViewContextMenu(const QPoint &point)
+{
+    QWidget *pSender = qobject_cast<QWidget*>(sender());
+    if (!pSender)
+        return;
+    createFileViewContextMenu(pSender, point);
 }
 
 void UIGuestControlFileTable::deSelectUpDirectoryItem()

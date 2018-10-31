@@ -562,6 +562,15 @@ void UIGuestFileTable::prepareToolbar()
     setSelectionDependentActionsEnabled(false);
 }
 
+void UIGuestFileTable::createFileViewContextMenu(const QWidget *pWidget, const QPoint &/*point*/)
+{
+    if (!pWidget)
+        return;
+
+    // QMenu menu;
+    // menu.exec(mapToGlobal(position));
+}
+
 void UIGuestFileTable::prepareActionConnections()
 {
     connect(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Guest_GoUp), &QAction::triggered,

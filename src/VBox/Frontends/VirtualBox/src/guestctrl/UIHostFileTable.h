@@ -47,6 +47,7 @@ protected:
     virtual void    showProperties() /* override */;
     virtual void    determineDriveLetters() /* override */;
     virtual void    prepareToolbar() /* override */;
+    virtual void    createFileViewContextMenu(const QWidget *pWidget, const QPoint &point) /* override */;
 
 private:
 

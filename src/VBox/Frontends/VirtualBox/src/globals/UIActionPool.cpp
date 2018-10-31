@@ -1702,7 +1702,7 @@ protected:
     /** Handles translation event. */
     virtual void retranslateUi() /* override */
     {
-        setName(QApplication::translate("UIActionPool", "GoHome"));
+        setName(QApplication::translate("UIActionPool", "Go Home"));
         setShortcutScope(QApplication::translate("UIActionPool", "Guest Control File Manager"));
         setStatusTip(QApplication::translate("UIActionPool", "Go to home folder"));
         setToolTip(QApplication::translate("UIActionPool", "Go to Home Folder"));
@@ -1846,7 +1846,7 @@ protected:
     /** Handles translation event. */
     virtual void retranslateUi() /* override */
     {
-        setName(QApplication::translate("UIActionPool", "CreateNewDirectory"));
+        setName(QApplication::translate("UIActionPool", "Create New Directory"));
         setShortcutScope(QApplication::translate("UIActionPool", "Guest Control File Manager"));
         setStatusTip(QApplication::translate("UIActionPool", "Create New Directory"));
         setToolTip(QApplication::translate("UIActionPool", "Create New Directory"));
@@ -1987,7 +1987,7 @@ protected:
     /** Handles translation event. */
     virtual void retranslateUi() /* override */
     {
-        setName(QApplication::translate("UIActionPool", "SelectAll"));
+        setName(QApplication::translate("UIActionPool", "Select All"));
         setShortcutScope(QApplication::translate("UIActionPool", "Guest Control File Manager"));
         setStatusTip(QApplication::translate("UIActionPool", "Select all files objects"));
         setToolTip(QApplication::translate("UIActionPool", "Select All Files Objects"));
@@ -2023,7 +2023,7 @@ protected:
     /** Handles translation event. */
     virtual void retranslateUi() /* override */
     {
-        setName(QApplication::translate("UIActionPool", "InvertSelection"));
+        setName(QApplication::translate("UIActionPool", "Invert Selection"));
         setShortcutScope(QApplication::translate("UIActionPool", "Guest Control File Manager"));
         setStatusTip(QApplication::translate("UIActionPool", "Invert the current selection"));
         setToolTip(QApplication::translate("UIActionPool", "Invert The Current Selection"));
@@ -2059,7 +2059,7 @@ protected:
     /** Handles translation event. */
     virtual void retranslateUi() /* override */
     {
-        setName(QApplication::translate("UIActionPool", "ShowProperties"));
+        setName(QApplication::translate("UIActionPool", "Show Properties"));
         setShortcutScope(QApplication::translate("UIActionPool", "Guest Control File Manager"));
         setStatusTip(QApplication::translate("UIActionPool", "Show the properties of currently selected file object(s)"));
         setToolTip(QApplication::translate("UIActionPool", "Show the Properties of Currently Selected File Object(s)"));

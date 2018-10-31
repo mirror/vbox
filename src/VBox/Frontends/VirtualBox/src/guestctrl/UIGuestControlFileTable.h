@@ -282,6 +282,7 @@ protected:
      *  drive letters */
     virtual void     determineDriveLetters() = 0;
     virtual void     prepareToolbar() = 0;
+    virtual void     createFileViewContextMenu(const QWidget *pWidget, const QPoint &point) = 0;
     QString          fileTypeString(FileObjectType type);
     /* @p item index is item location in model not in 'proxy' model */
     void             goIntoDirectory(const QModelIndex &itemIndex);
@@ -322,10 +323,14 @@ public slots:
     void sltCut();
     void sltPaste();
     void sltShowProperties();
-    void sltSelectionChanged(const QItemSelection & selected, const QItemSelection & deselected);
-    void sltLocationComboCurrentChange(const QString &strLocation);
     void sltSelectAll();
     void sltInvertSelection();
+
+private slots:
+
+    void sltCreateFileViewContextMenu(const QPoint &point);
+    void sltSelectionChanged(const QItemSelection & selected, const QItemSelection & deselected);
+    void sltLocationComboCurrentChange(const QString &strLocation);
     void sltSearchTextChanged(const QString &strText);
 
 private:
