@@ -127,9 +127,6 @@ protected:
       * @{ */
         /** Handles translation event. */
         virtual void retranslateUi() /* override */;
-
-        /** Handles @a pShow event. */
-        virtual void showEvent(QShowEvent *pEvent) /* override */;
     /** @} */
 
 public slots:

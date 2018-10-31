@@ -252,16 +252,6 @@ void UIMediumManagerWidget::retranslateUi()
         sltRefreshAll();
 }
 
-void UIMediumManagerWidget::showEvent(QShowEvent *pEvent)
-{
-    /* Call to base-class: */
-    QIWithRetranslateUI<QWidget>::showEvent(pEvent);
-
-    /* Focus current tree-widget: */
-    if (currentTreeWidget())
-        currentTreeWidget()->setFocus();
-}
-
 void UIMediumManagerWidget::sltResetMediumDetailsChanges()
 {
     /* Push the current item data into details-widget: */
