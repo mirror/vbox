@@ -113,10 +113,6 @@ public:
     QFont currentFont() const;
     void setCurrentFont(QFont font);
 
-protected:
-
-    virtual void showEvent(QShowEvent *pEvent) /* override */;
-
 private slots:
 
     void sltAddBookmark(LogBookmark bookmark);

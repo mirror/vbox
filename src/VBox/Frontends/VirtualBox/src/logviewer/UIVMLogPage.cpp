@@ -246,13 +246,6 @@ void UIVMLogPage::setBookmarkVector(const QVector<LogBookmark>& bookmarks)
     updateTextEditBookmarkLineSet();
 }
 
-void UIVMLogPage::showEvent(QShowEvent *pEvent)
-{
-    if (m_pTextEdit)
-        m_pTextEdit->setFocus();
-    QWidget::showEvent(pEvent);
-}
-
 void UIVMLogPage::sltAddBookmark(LogBookmark bookmark)
 {
     m_bookmarkVector.push_back(bookmark);
