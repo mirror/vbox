@@ -273,8 +273,8 @@ void UIMachineWindowNormal::prepareMenu()
         menuBar()->setContextMenuPolicy(Qt::CustomContextMenu);
         connect(menuBar(), SIGNAL(customContextMenuRequested(const QPoint&)),
                 this, SLOT(sltHandleMenuBarContextMenuRequest(const QPoint&)));
-        connect(gEDataManager, SIGNAL(sigMenuBarConfigurationChange(const QString&)),
-                this, SLOT(sltHandleMenuBarConfigurationChange(const QString&)));
+        connect(gEDataManager, SIGNAL(sigMenuBarConfigurationChange(const QUuid &)),
+                this, SLOT(sltHandleMenuBarConfigurationChange(const QUuid &)));
         /* Update menu-bar: */
         updateMenu();
     }

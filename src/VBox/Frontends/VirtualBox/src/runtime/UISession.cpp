@@ -1073,8 +1073,8 @@ void UISession::prepareActions()
         AssertPtrReturnVoid(m_pMenuBar);
         {
             /* Configure Mac OS X menu-bar: */
-            connect(gEDataManager, SIGNAL(sigMenuBarConfigurationChange(const QString&)),
-                    this, SLOT(sltHandleMenuBarConfigurationChange(const QString&)));
+            connect(gEDataManager, SIGNAL(sigMenuBarConfigurationChange(const QUuid &)),
+                    this, SLOT(sltHandleMenuBarConfigurationChange(const QUuid &)));
             /* Update Mac OS X menu-bar: */
             updateMenu();
         }
