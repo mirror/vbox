@@ -3711,6 +3711,24 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitTaskSwitch(PVMCPU pVCpu, IEMTASKSWITCH enmTa
 
 
 /**
+ * VMX VM-exit handler for VM-exits due to expiry of the preemption timer.
+ *
+ * @returns VBox strict status code.
+ * @param   pVCpu           The cross context virtual CPU structure.
+ */
+IEM_STATIC VBOXSTRICTRC iemVmxVmexitPreemptTimer(PVMCPU pVCpu)
+{
+    PCVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
+    Assert(pVmcs);
+    Assert(pVmcs->u32PinCtls & VMX_PIN_CTLS_PREEMPT_TIMER);
+    NOREF(pVmcs);
+
+    iemVmxVmcsSetExitQual(pVCpu, 0);
+    return iemVmxVmexit(pVCpu, VMX_EXIT_PREEMPT_TIMER);
+}
+
+
+/**
  * VMX VM-exit handler for VM-exits due to external interrupts.
  *
  * @returns VBox strict status code.
