@@ -1048,24 +1048,55 @@ void UIChooserItemMachine::paintBackground(QPainter *pPainter, const QRect &rect
     if (dragTokenPlace() != DragToken_Off)
     {
         /* Window color: */
-        QColor base = pal.color(QPalette::Active, model()->currentItems().contains(unconst(this)) ?
-                                QPalette::Highlight : QPalette::Window);
+        QColor color1;
+        QColor color2;
+
         QLinearGradient dragTokenGradient;
         QRect dragTokenRect = rectangle;
         if (dragTokenPlace() == DragToken_Up)
         {
+            /* Selection background: */
+            if (model()->currentItems().contains(unconst(this)))
+            {
+                QColor backgroundColor = pal.color(QPalette::Active, QPalette::Highlight);
+                color1 = backgroundColor.lighter(m_iHighlightLightnessMax);
+                color2 = backgroundColor.lighter(m_iHighlightLightnessMax - 70);
+            }
+            /* Default background: */
+            else
+            {
+                QColor backgroundColor = pal.color(QPalette::Active, QPalette::Mid);
+                color1 = backgroundColor.lighter(m_iDefaultLightnessMax);
+                color2 = backgroundColor.lighter(m_iDefaultLightnessMax - 70);
+            }
+
             dragTokenRect.setHeight(5);
             dragTokenGradient.setStart(dragTokenRect.bottomLeft());
             dragTokenGradient.setFinalStop(dragTokenRect.topLeft());
         }
         else if (dragTokenPlace() == DragToken_Down)
         {
-            dragTokenRect.setTopLeft(dragTokenRect.bottomLeft() - QPoint(0, 5));
+            /* Selection background: */
+            if (model()->currentItems().contains(unconst(this)))
+            {
+                QColor backgroundColor = pal.color(QPalette::Active, QPalette::Highlight);
+                color1 = backgroundColor.lighter(m_iHighlightLightnessMin);
+                color2 = backgroundColor.lighter(m_iHighlightLightnessMin - 40);
+            }
+            /* Default background: */
+            else
+            {
+                QColor backgroundColor = pal.color(QPalette::Active, QPalette::Mid);
+                color1 = backgroundColor.lighter(m_iDefaultLightnessMin);
+                color2 = backgroundColor.lighter(m_iDefaultLightnessMin - 40);
+            }
+
+            dragTokenRect.setTopLeft(dragTokenRect.bottomLeft() - QPoint(0, 4));
             dragTokenGradient.setStart(dragTokenRect.topLeft());
             dragTokenGradient.setFinalStop(dragTokenRect.bottomLeft());
         }
-        dragTokenGradient.setColorAt(0, base.darker(dragTokenDarkness()));
-        dragTokenGradient.setColorAt(1, base.darker(dragTokenDarkness() + 40));
+        dragTokenGradient.setColorAt(0, color1);
+        dragTokenGradient.setColorAt(1, color2);
         pPainter->fillRect(dragTokenRect, dragTokenGradient);
     }
 
@@ -1098,8 +1129,10 @@ void UIChooserItemMachine::paintFrame(QPainter *pPainter, const QRect &rectangle
     pPainter->setPen(pen);
 
     /* Draw borders: */
-    pPainter->drawLine(rectangle.topLeft(),    rectangle.topRight()    + QPoint(1, 0));
-    pPainter->drawLine(rectangle.bottomLeft(), rectangle.bottomRight() + QPoint(1, 0));
+    if (dragTokenPlace() != DragToken_Up)
+        pPainter->drawLine(rectangle.topLeft(),    rectangle.topRight()    + QPoint(1, 0));
+    if (dragTokenPlace() != DragToken_Down)
+        pPainter->drawLine(rectangle.bottomLeft(), rectangle.bottomRight() + QPoint(1, 0));
     pPainter->drawLine(rectangle.topLeft(),    rectangle.bottomLeft());
 
     /* Restore painter: */
