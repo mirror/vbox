@@ -1619,6 +1619,13 @@ void UIMessageCenter::cannotAcquireCloudProviderManager(const CVirtualBox &comVB
           UIErrorString::formatErrorInfo(comVBox));
 }
 
+void UIMessageCenter::cannotAcquireCloudProviderManagerParameter(const CCloudProviderManager &comManager, QWidget *pParent /* = 0 */) const
+{
+    error(pParent, MessageType_Error,
+          tr("Failed to acquire cloud provider manager parameter."),
+          UIErrorString::formatErrorInfo(comManager));
+}
+
 void UIMessageCenter::cannotFindCloudProvider(const CCloudProviderManager &comManager, const QUuid &uId, QWidget *pParent /* = 0 */) const
 {
     error(pParent, MessageType_Error,

@@ -149,6 +149,8 @@ protected:
 
     /** Holds the Cloud Provider Manager reference. */
     CCloudProviderManager  m_comCloudProviderManager;
+    /** Holds the Cloud Provider object reference. */
+    CCloudProvider         m_comCloudProvider;
     /** Holds the Cloud Profile object reference. */
     CCloudProfile          m_comCloudProfile;
 

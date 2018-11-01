@@ -38,6 +38,7 @@
 # include "UIConverter.h"
 # include "UIEmptyFilePathSelector.h"
 # include "UIIconPool.h"
+# include "UIMessageCenter.h"
 # include "UIVirtualBoxManager.h"
 # include "UIWizardExportApp.h"
 # include "UIWizardExportAppDefs.h"
@@ -72,11 +73,6 @@ UIWizardExportAppPage2::UIWizardExportAppPage2()
     , m_pAccountToolButton(0)
     , m_pAccountPropertyTable(0)
 {
-    /* Init Cloud Provider Manager: */
-    CVirtualBox comVBox = vboxGlobal().virtualBox();
-    m_comCloudProviderManager = comVBox.GetCloudProviderManager();
-    AssertMsg(comVBox.isOk() && m_comCloudProviderManager.isNotNull(),
-              ("Unable to acquire Cloud Provider Manager"));
 }
 
 void UIWizardExportAppPage2::populateFormats()
@@ -96,19 +92,36 @@ void UIWizardExportAppPage2::populateFormats()
         m_pFormatComboBox->setItemData(m_pFormatComboBox->count() - 1, strShortName, FormatData_ShortName);
     }
 
-    /* Iterate through existing providers: */
-    foreach (const CCloudProvider &comProvider, m_comCloudProviderManager.GetProviders())
+    /* Initialize Cloud Provider Manager: */
+    CVirtualBox comVBox = vboxGlobal().virtualBox();
+    m_comCloudProviderManager = comVBox.GetCloudProviderManager();
+    /* Show error message if necessary: */
+    if (!comVBox.isOk())
+        msgCenter().cannotAcquireCloudProviderManager(comVBox);
+    else
     {
-        /* Skip if we have nothing to populate (file missing?): */
-        if (comProvider.isNull())
-            continue;
+        /* Acquire existing providers: */
+        const QVector<CCloudProvider> providers = m_comCloudProviderManager.GetProviders();
+        /* Show error message if necessary: */
+        if (!m_comCloudProviderManager.isOk())
+            msgCenter().cannotAcquireCloudProviderManagerParameter(m_comCloudProviderManager);
+        else
+        {
+            /* Iterate through existing providers: */
+            foreach (const CCloudProvider &comProvider, providers)
+            {
+                /* Skip if we have nothing to populate (file missing?): */
+                if (comProvider.isNull())
+                    continue;
 
-        /* Compose empty item, fill it's data: */
-        m_pFormatComboBox->addItem(QString());
-        m_pFormatComboBox->setItemData(m_pFormatComboBox->count() - 1, comProvider.GetId(),        FormatData_ID);
-        m_pFormatComboBox->setItemData(m_pFormatComboBox->count() - 1, comProvider.GetName(),      FormatData_Name);
-        m_pFormatComboBox->setItemData(m_pFormatComboBox->count() - 1, comProvider.GetShortName(), FormatData_ShortName);
-        m_pFormatComboBox->setItemData(m_pFormatComboBox->count() - 1, true,                       FormatData_IsItCloudFormat);
+                /* Compose empty item, fill it's data: */
+                m_pFormatComboBox->addItem(QString());
+                m_pFormatComboBox->setItemData(m_pFormatComboBox->count() - 1, comProvider.GetId(),        FormatData_ID);
+                m_pFormatComboBox->setItemData(m_pFormatComboBox->count() - 1, comProvider.GetName(),      FormatData_Name);
+                m_pFormatComboBox->setItemData(m_pFormatComboBox->count() - 1, comProvider.GetShortName(), FormatData_ShortName);
+                m_pFormatComboBox->setItemData(m_pFormatComboBox->count() - 1, true,                       FormatData_IsItCloudFormat);
+            }
+        }
     }
 
     /* Set default: */
@@ -134,21 +147,37 @@ void UIWizardExportAppPage2::populateAccounts()
 {
     /* Clear combo initially: */
     m_pAccountComboBox->clear();
+
     /* Return if no provider chosen: */
     if (providerId().isNull())
         return;
 
-    /* Acquire Cloud Provider: */
-    CCloudProvider comCloudProvider = m_comCloudProviderManager.GetProviderById(providerId());
-    /* Return if the provider has disappeared: */
-    if (comCloudProvider.isNull())
-        return;
-
-    /* Iterate through profile names: */
-    foreach (const QString &strProfileName, comCloudProvider.GetProfileNames())
+    /* (Re)initialize Cloud Provider: */
+    m_comCloudProvider = m_comCloudProviderManager.GetProviderById(providerId());
+    /* Show error message if necessary: */
+    if (!m_comCloudProviderManager.isOk())
+        msgCenter().cannotFindCloudProvider(m_comCloudProviderManager, providerId());
+    else
     {
-        m_pAccountComboBox->addItem(strProfileName);
-        m_pAccountComboBox->setItemData(m_pAccountComboBox->count() - 1, strProfileName, AccountData_ProfileName);
+        /* Acquire existing profile names: */
+        const QVector<QString> profileNames = m_comCloudProvider.GetProfileNames();
+        /* Show error message if necessary: */
+        if (!m_comCloudProvider.isOk())
+            msgCenter().cannotAcquireCloudProviderParameter(m_comCloudProvider);
+        else
+        {
+            /* Iterate through existing profile names: */
+            foreach (const QString &strProfileName, profileNames)
+            {
+                /* Skip if we have nothing to show (wtf happened?): */
+                if (strProfileName.isEmpty())
+                    continue;
+
+                /* Compose item, fill it's data: */
+                m_pAccountComboBox->addItem(strProfileName);
+                m_pAccountComboBox->setItemData(m_pAccountComboBox->count() - 1, strProfileName, AccountData_ProfileName);
+            }
+        }
     }
 
     /* Set default: */
@@ -162,72 +191,81 @@ void UIWizardExportAppPage2::populateAccountProperties()
     m_pAccountPropertyTable->clear();
     m_pAccountPropertyTable->setRowCount(0);
     m_pAccountPropertyTable->setColumnCount(0);
-    /* Return if no provider chosen: */
-    if (providerId().isNull())
-        return;
 
-    /* Acquire Cloud Provider: */
-    CCloudProvider comCloudProvider = m_comCloudProviderManager.GetProviderById(providerId());
-    /* Return if the provider has disappeared: */
-    if (comCloudProvider.isNull())
+    /* Return if no provider initialized: */
+    if (m_comCloudProvider.isNull())
+        return;
+    /* Return if no profile chosen: */
+    if (profileName().isNull())
         return;
 
     /* Acquire Cloud Profile: */
-    m_comCloudProfile = comCloudProvider.GetProfileByName(profileName());
-    /* Return if the profile has disappeared: */
-    if (m_comCloudProfile.isNull())
-        return;
-
-    /* Acquire properties: */
-    QVector<QString> keys;
-    QVector<QString> values;
-    values = m_comCloudProfile.GetProperties(QString(), keys);
-
-    /* Configure table: */
-    m_pAccountPropertyTable->setRowCount(keys.size());
-    m_pAccountPropertyTable->setColumnCount(2);
-
-    /* Push acquired keys/values to data fields: */
-    for (int i = 0; i < m_pAccountPropertyTable->rowCount(); ++i)
+    m_comCloudProfile = m_comCloudProvider.GetProfileByName(profileName());
+    /* Show error message if necessary: */
+    if (!m_comCloudProvider.isOk())
+        msgCenter().cannotFindCloudProfile(m_comCloudProvider, profileName());
+    else
     {
-        /* Create key item: */
-        QTableWidgetItem *pItemK = new QTableWidgetItem(keys.at(i));
-        if (pItemK)
+        /* Acquire properties: */
+        QVector<QString> keys;
+        QVector<QString> values;
+        values = m_comCloudProfile.GetProperties(QString(), keys);
+        /* Show error message if necessary: */
+        if (!m_comCloudProfile.isOk())
+            msgCenter().cannotAcquireCloudProfileParameter(m_comCloudProfile);
+        else
         {
-            /* Non-editable for sure, but non-selectable? */
-            pItemK->setFlags(pItemK->flags() & ~Qt::ItemIsEditable);
-            pItemK->setFlags(pItemK->flags() & ~Qt::ItemIsSelectable);
+            /* Configure table: */
+            m_pAccountPropertyTable->setRowCount(keys.size());
+            m_pAccountPropertyTable->setColumnCount(2);
 
-            /* Use non-translated description as tool-tip: */
-            const QString strToolTip = m_comCloudProfile.GetPropertyDescription(keys.at(i));
-            pItemK->setData(Qt::UserRole, strToolTip);
+            /* Push acquired keys/values to data fields: */
+            for (int i = 0; i < m_pAccountPropertyTable->rowCount(); ++i)
+            {
+                /* Create key item: */
+                QTableWidgetItem *pItemK = new QTableWidgetItem(keys.at(i));
+                if (pItemK)
+                {
+                    /* Non-editable for sure, but non-selectable? */
+                    pItemK->setFlags(pItemK->flags() & ~Qt::ItemIsEditable);
+                    pItemK->setFlags(pItemK->flags() & ~Qt::ItemIsSelectable);
 
-            /* Insert into table: */
-            m_pAccountPropertyTable->setItem(i, 0, pItemK);
-        }
+                    /* Use non-translated description as tool-tip: */
+                    const QString strToolTip = m_comCloudProfile.GetPropertyDescription(keys.at(i));
+                    /* Show error message if necessary: */
+                    if (!m_comCloudProfile.isOk())
+                        msgCenter().cannotAcquireCloudProfileParameter(m_comCloudProfile);
+                    else
+                        pItemK->setData(Qt::UserRole, strToolTip);
 
-        /* Create value item: */
-        QTableWidgetItem *pItemV = new QTableWidgetItem(values.at(i));
-        if (pItemV)
-        {
-            /* Non-editable for sure, but non-selectable? */
-            pItemV->setFlags(pItemV->flags() & ~Qt::ItemIsEditable);
-            pItemV->setFlags(pItemV->flags() & ~Qt::ItemIsSelectable);
+                    /* Insert into table: */
+                    m_pAccountPropertyTable->setItem(i, 0, pItemK);
+                }
 
-            /* Use the value as tool-tip, there can be quite long values: */
-            const QString strToolTip = values.at(i);
-            pItemV->setToolTip(strToolTip);
+                /* Create value item: */
+                QTableWidgetItem *pItemV = new QTableWidgetItem(values.at(i));
+                if (pItemV)
+                {
+                    /* Non-editable for sure, but non-selectable? */
+                    pItemV->setFlags(pItemV->flags() & ~Qt::ItemIsEditable);
+                    pItemV->setFlags(pItemV->flags() & ~Qt::ItemIsSelectable);
 
-            /* Insert into table: */
-            m_pAccountPropertyTable->setItem(i, 1, pItemV);
+                    /* Use the value as tool-tip, there can be quite long values: */
+                    const QString strToolTip = values.at(i);
+                    pItemV->setToolTip(strToolTip);
+
+                    /* Insert into table: */
+                    m_pAccountPropertyTable->setItem(i, 1, pItemV);
+                }
+            }
+
+            /* Update table tool-tips: */
+            updateAccountPropertyTableToolTips();
+
+            /* Adjust the table: */
+            adjustAccountPropertyTable();
         }
     }
-
-    /* Update table tool-tips: */
-    updateAccountPropertyTableToolTips();
-
-    /* Adjust the table: */
-    adjustAccountPropertyTable();
 }
 
 void UIWizardExportAppPage2::updatePageAppearance()
