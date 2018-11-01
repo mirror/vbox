@@ -145,6 +145,14 @@ void UIWizardExportAppPage2::populateMACAddressPolicies()
 
 void UIWizardExportAppPage2::populateAccounts()
 {
+    /* Block signals while updating: */
+    m_pAccountComboBox->blockSignals(true);
+
+    /* Remember current item data to be able to restore it: */
+    QString strOldData;
+    if (m_pAccountComboBox->currentIndex() != -1)
+        strOldData = m_pAccountComboBox->itemData(m_pAccountComboBox->currentIndex(), AccountData_ProfileName).toString();
+
     /* Clear combo initially: */
     m_pAccountComboBox->clear();
 
@@ -180,9 +188,19 @@ void UIWizardExportAppPage2::populateAccounts()
         }
     }
 
-    /* Set default: */
-    if (m_pAccountComboBox->count() != 0)
-        m_pAccountComboBox->setCurrentIndex(0);
+    /* Set previous/default item if possible: */
+    int iNewIndex = -1;
+    if (   iNewIndex == -1
+        && !strOldData.isNull())
+        iNewIndex = m_pAccountComboBox->findData(strOldData, AccountData_ProfileName);
+    if (   iNewIndex == -1
+        && m_pAccountComboBox->count() > 0)
+        iNewIndex = 0;
+    if (iNewIndex != -1)
+        m_pAccountComboBox->setCurrentIndex(iNewIndex);
+
+    /* Unblock signals after update: */
+    m_pAccountComboBox->blockSignals(false);
 }
 
 void UIWizardExportAppPage2::populateAccountProperties()
