@@ -78,10 +78,10 @@ void UIWizardExportAppPage3::populateCloudClientParameters()
 }
 
 /* static */
-QList<AbstractVSDParameter> UIWizardExportAppPage3::parseJsonDocument(const QJsonDocument &document)
+AbstractVSDParameterList UIWizardExportAppPage3::parseJsonDocument(const QJsonDocument &document)
 {
     /* Prepare parameters: */
-    QList<AbstractVSDParameter> parameters;
+    AbstractVSDParameterList parameters;
 
     /* Convert document to object, make sure it isn't empty: */
     QJsonObject documentObject = document.object();

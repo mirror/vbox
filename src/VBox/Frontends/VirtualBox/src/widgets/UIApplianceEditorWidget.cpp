@@ -1517,7 +1517,7 @@ void UIApplianceModel::setVirtualSystemBaseFolder(const QString& path)
     }
 }
 
-void UIApplianceModel::setVsdHints(const QList<AbstractVSDParameter> &hints)
+void UIApplianceModel::setVsdHints(const AbstractVSDParameterList &hints)
 {
     m_listVsdHints = hints;
 }
@@ -1841,7 +1841,7 @@ UIApplianceEditorWidget::UIApplianceEditorWidget(QWidget *pParent /* = 0 */)
     retranslateUi();
 }
 
-void UIApplianceEditorWidget::setVsdHints(const QList<AbstractVSDParameter> &hints)
+void UIApplianceEditorWidget::setVsdHints(const AbstractVSDParameterList &hints)
 {
     /* Save here as well: */
     m_listVsdHints = hints;
