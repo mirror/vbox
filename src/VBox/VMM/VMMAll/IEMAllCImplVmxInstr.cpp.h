@@ -2864,7 +2864,7 @@ DECLINLINE(VBOXSTRICTRC) iemVmxVmexitInstrWithInfo(PVMCPU pVCpu, PCVMXVEXITINFO 
      *
      * In our implementation in IEM, all undefined fields are generally cleared. However,
      * if the caller supplies information (from say the physical CPU directly) it is
-     * then possible that the undefined fields not cleared.
+     * then possible that the undefined fields are not cleared.
      *
      * See Intel spec. 27.2.1 "Basic VM-Exit Information".
      * See Intel spec. 27.2.4 "Information for VM Exits Due to Instruction Execution".
@@ -6178,15 +6178,21 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmlaunchVmresume(PVMCPU pVCpu, uint8_t cbInstr, VM
 
                                 /*
                                  * The priority of potential VM-exits during VM-entry is important.
-                                 * The priorities are listed from highest to lowest as follows:
+                                 * The priorities of VM-exits and events are listed from highest
+                                 * to lowest as follows:
                                  *
-                                 * 1. Debug exceptions.
-                                 * 2. VMX-preemption timer.
-                                 * 3. NMI-window exit.
-                                 * 4. NMI injection.
-                                 * 5. Interrupt-window exit.
-                                 * 6. Interrupt injection.
-                                 * 7. MTF exit.
+                                 * 1.  Event injection.
+                                 * 2.  TPR below threshold.
+                                 * 3.  SMI.
+                                 * 4.  INIT.
+                                 * 5.  MTF exit.
+                                 * 6.  Pending debug exceptions.
+                                 * 7.  Debug-trap exceptions.
+                                 * 8.  VMX-preemption timer.
+                                 * 9.  NMI-window exit.
+                                 * 10. NMI injection.
+                                 * 11. Interrupt-window exit.
+                                 * 12. Interrupt injection.
                                  */
 
                                 /* Setup the VMX-preemption timer. */
