@@ -56,6 +56,7 @@
 # endif
 
 /* COM includes: */
+# include "CCloudClient.h"
 # include "CCloudProfile.h"
 # include "CCloudProvider.h"
 # include "CCloudProviderManager.h"
@@ -1680,6 +1681,20 @@ void UIMessageCenter::cannotAssignCloudProfileParameter(const CCloudProfile &com
     error(pParent, MessageType_Error,
           tr("Failed to assign cloud profile parameter."),
           UIErrorString::formatErrorInfo(comProfile));
+}
+
+void UIMessageCenter::cannotCreateCloudClient(const CCloudProfile &comProfile, QWidget *pParent /* = 0 */) const
+{
+    error(pParent, MessageType_Error,
+          tr("Failed to create cloud client."),
+          UIErrorString::formatErrorInfo(comProfile));
+}
+
+void UIMessageCenter::cannotAcquireCloudClientParameter(const CCloudClient &comClient, QWidget *pParent /* = 0 */) const
+{
+    error(pParent, MessageType_Error,
+          tr("Failed to acquire cloud client parameter."),
+          UIErrorString::formatErrorInfo(comClient));
 }
 
 bool UIMessageCenter::confirmCloudProfileRemoval(const QString &strName, QWidget *pParent /* = 0 */) const

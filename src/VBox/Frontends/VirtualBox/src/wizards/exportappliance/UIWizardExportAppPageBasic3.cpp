@@ -63,18 +63,24 @@ void UIWizardExportAppPage3::populateCloudClientParameters()
 
     /* Create Cloud Client: */
     CCloudClient comCloudClient = comCloudProfile.CreateCloudClient();
-    AssertMsgReturnVoid(comCloudProfile.isOk() && comCloudClient.isNotNull(),
-                        ("Can't create Cloud Client object!"));
-
-    /* Read Cloud Client parameters for Export VM operation: */
-    QString strJSON = comCloudClient.GetExportParameters();
-
-    /* Create JSON document on the basis of it, make sure it isn't empty: */
-    const QJsonDocument document = QJsonDocument::fromJson(strJSON.toUtf8());
-    AssertMsgReturnVoid(!document.isEmpty(), ("JSON document is empty!"));
-
-    /* Parse JSON document: */
-    m_listCloudClientParameters = parseJsonDocument(document);
+    /* Show error message if necessary: */
+    if (!comCloudProfile.isOk())
+        msgCenter().cannotCreateCloudClient(comCloudProfile);
+    else
+    {
+        /* Read Cloud Client parameters for Export VM operation: */
+        const QString strJSON = comCloudClient.GetExportParameters();
+        /* Show error message if necessary: */
+        if (!comCloudClient.isOk())
+            msgCenter().cannotAcquireCloudClientParameter(comCloudClient);
+        else
+        {
+            /* Create JSON document and parse it: */
+            const QJsonDocument document = QJsonDocument::fromJson(strJSON.toUtf8());
+            if (!document.isEmpty())
+                m_listCloudClientParameters = parseJsonDocument(document);
+        }
+    }
 }
 
 /* static */
