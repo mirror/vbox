@@ -4131,6 +4131,16 @@ void UIExtraDataManager::setGuestControlFileManagerDialogGeometry(const QRect &g
     setDialogGeometry(GUI_GuestControl_FileManagerDialogGeometry, geometry, fMaximized);
 }
 
+void UIExtraDataManager::setGuestControlFileManagerVisiblePanels(const QStringList &panelNameList)
+{
+    setExtraDataStringList(GUI_GuestControl_FileManagerVisiblePanels, panelNameList);
+}
+
+QStringList UIExtraDataManager::guestControlFileManagerVisiblePanels()
+{
+    return extraDataStringList(GUI_GuestControl_FileManagerVisiblePanels);
+}
+
 QRect UIExtraDataManager::guestProcessControlDialogGeometry(QWidget *pWidget, const QRect &defaultGeometry)
 {
     return dialogGeometry(GUI_GuestControl_ProcessControlDialogGeometry, pWidget, defaultGeometry);

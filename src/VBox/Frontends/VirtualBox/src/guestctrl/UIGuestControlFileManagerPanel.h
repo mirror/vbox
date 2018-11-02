@@ -40,6 +40,7 @@ public:
 
     UIGuestControlFileManagerPanel(UIGuestControlFileManager *pManagerWidget, QWidget *pParent);
     void setCloseButtonShortCut(QKeySequence shortCut);
+    virtual QString panelName() const = 0;
 
 protected:
 

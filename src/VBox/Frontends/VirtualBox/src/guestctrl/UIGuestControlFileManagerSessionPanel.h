@@ -36,6 +36,7 @@ public:
     UIGuestControlFileManagerSessionPanel(UIGuestControlFileManager *pManagerWidget, QWidget *pParent);
     void switchSessionCloseMode();
     void switchSessionCreateMode();
+    virtual QString panelName() const /* override */;
 
 signals:
 

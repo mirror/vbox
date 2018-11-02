@@ -36,7 +36,6 @@
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
-
 UIGuestControlFileManagerSettingsPanel::UIGuestControlFileManagerSettingsPanel(UIGuestControlFileManager *pManagerWidget,
                                                                                QWidget *pParent, UIGuestControlFileManagerSettings *pFileManagerSettings)
     : UIGuestControlFileManagerPanel(pManagerWidget, pParent)
@@ -45,6 +44,11 @@ UIGuestControlFileManagerSettingsPanel::UIGuestControlFileManagerSettingsPanel(U
     , m_pFileManagerSettings(pFileManagerSettings)
 {
     prepare();
+}
+
+QString UIGuestControlFileManagerSettingsPanel::panelName() const
+{
+    return "SettingsPanel";
 }
 
 void UIGuestControlFileManagerSettingsPanel::prepareWidgets()
@@ -84,13 +88,6 @@ void UIGuestControlFileManagerSettingsPanel::prepareConnections()
     if (m_pListDirectoriesOnTopCheckBox)
         connect(m_pListDirectoriesOnTopCheckBox, &QCheckBox::toggled,
                 this, &UIGuestControlFileManagerSettingsPanel::sltListDirectoryCheckBoxToogled);
-    // if (m_pWrapLinesCheckBox)
-    //     connect(m_pWrapLinesCheckBox, &QCheckBox::toggled, this, &UIGuestControlFileManagerSettingsPanel::sigWrapLines);
-    // if (m_pFontSizeSpinBox)
-    //     connect(m_pFontSizeSpinBox, static_cast<void(QSpinBox::*)(int)>(&QSpinBox::valueChanged),
-    //             this, &UIGuestControlFileManagerSettingsPanel::sigChangeFontSizeInPoints);
-    // if (m_pResetToDefaultsButton)
-    //     connect(m_pResetToDefaultsButton, &QIToolButton::clicked, this, &UIGuestControlFileManagerSettingsPanel::sigResetToDefaults);
 }
 
 void UIGuestControlFileManagerSettingsPanel::retranslateUi()

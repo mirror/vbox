@@ -237,6 +237,11 @@ void UIGuestControlFileManagerSessionPanel::switchSessionCreateMode()
         m_pSessionCreateWidget->switchSessionCreateMode();
 }
 
+QString UIGuestControlFileManagerSessionPanel::panelName() const
+{
+    return "SessionPanel";
+}
+
 void UIGuestControlFileManagerSessionPanel::prepareWidgets()
 {
     if (!mainLayout())

@@ -37,6 +37,7 @@ public:
 
     UIGuestControlFileManagerSettingsPanel(UIGuestControlFileManager *pManagerWidget,
                                            QWidget *pParent, UIGuestControlFileManagerSettings *pFileManagerSettings);
+    virtual QString panelName() const /* override */;
 
 signals:
 

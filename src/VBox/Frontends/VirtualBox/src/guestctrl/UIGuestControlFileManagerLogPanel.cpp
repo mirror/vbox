@@ -93,6 +93,18 @@ UIGuestControlFileManagerLogPanel::UIGuestControlFileManagerLogPanel(UIGuestCont
     prepare();
 }
 
+void UIGuestControlFileManagerLogPanel::appendLog(const QString &strLog)
+{
+    if (!m_pLogTextEdit)
+        return;
+    m_pLogTextEdit->append(strLog);
+}
+
+QString UIGuestControlFileManagerLogPanel::panelName() const
+{
+    return "LogPanel";
+}
+
 void UIGuestControlFileManagerLogPanel::prepareWidgets()
 {
     if (!mainLayout())
@@ -115,11 +127,5 @@ void UIGuestControlFileManagerLogPanel::retranslateUi()
 
 }
 
-void UIGuestControlFileManagerLogPanel::appendLog(const QString &strLog)
-{
-    if (!m_pLogTextEdit)
-        return;
-    m_pLogTextEdit->append(strLog);
-}
 
 #include "UIGuestControlFileManagerLogPanel.moc"

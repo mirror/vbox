@@ -614,10 +614,28 @@ QStringList UIGuestControlFileManager::getFsObjInfoStringList(const T &fsObjectI
 
 void UIGuestControlFileManager::saveSettings()
 {
+    /* Save a list of currently visible panels: */
+    QStringList strNameList;
+    foreach(UIGuestControlFileManagerPanel* pPanel, m_visiblePanelsList)
+        strNameList.append(pPanel->panelName());
+    gEDataManager->setGuestControlFileManagerVisiblePanels(strNameList);
 }
 
 void UIGuestControlFileManager::loadSettings()
 {
+    /* Load the visible panel list and show them: */
+    QStringList strNameList = gEDataManager->guestControlFileManagerVisiblePanels();
+    foreach(const QString strName, strNameList)
+    {
+        foreach(UIGuestControlFileManagerPanel* pPanel, m_panelActionMap.keys())
+        {
+            if (strName == pPanel->panelName())
+            {
+                showPanel(pPanel);
+                break;
+            }
+        }
+    }
 }
 
 void UIGuestControlFileManager::hidePanel(UIGuestControlFileManagerPanel* panel)

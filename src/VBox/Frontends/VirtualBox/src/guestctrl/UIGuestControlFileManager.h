@@ -154,9 +154,6 @@ private:
     //UIFileOperationsList       *m_pFileOperationsList;
     UIGuestControlConsole      *m_pConsole;
     UIGuestControlInterface    *m_pControlInterface;
-    // /* m_pSessionCreateWidget is a QWidget extension enabling user to start/stop
-    //  * a Guest Control session with password/username fields etc.. */
-    // UIGuestSessionCreateWidget *m_pSessionCreateWidget;
     UIGuestFileTable           *m_pGuestFileTable;
     UIHostFileTable            *m_pHostFileTable;
 

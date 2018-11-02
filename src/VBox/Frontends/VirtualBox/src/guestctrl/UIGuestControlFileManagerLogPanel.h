@@ -33,8 +33,8 @@ class UIGuestControlFileManagerLogPanel : public UIGuestControlFileManagerPanel
 public:
 
     UIGuestControlFileManagerLogPanel(UIGuestControlFileManager *pManagerWidget, QWidget *pParent);
-
     void appendLog(const QString &str);
+    virtual QString panelName() const /* override */;
 
 signals:
 
