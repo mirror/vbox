@@ -424,6 +424,7 @@ RuntimeR3_SOURCES       = \
 	common/dbg/dbgmodexports.cpp \
 	common/dbg/dbgmodcodeview.cpp \
 	common/dbg/dbgmoddwarf.cpp \
+	common/dbg/dbgmodmapsym.cpp \
 	common/dbg/dbgmodnm.cpp \
 	common/dvm/dvm.cpp \
 	common/dvm/dvmbsdlabel.cpp \
@@ -1599,6 +1600,7 @@ RuntimeBldProg_SOURCES         = \
 	common/dbg/dbgmoddwarf.cpp \
 	common/dbg/dbgmodexports.cpp \
 	common/dbg/dbgmodldr.cpp \
+	common/dbg/dbgmodmapsym.cpp \
 	common/dbg/dbgmodnm.cpp \
 	common/err/errinfo-alloc.cpp \
 	common/err/errinfo.cpp \
