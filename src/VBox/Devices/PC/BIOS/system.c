@@ -464,10 +464,18 @@ void BIOSCALL int15_function(sys_regs_t r)
 #if VBOX_BIOS_CPU >= 80286
         AX = (inb_cmos(0x31) << 8) | inb_cmos(0x30);
 
+#if VBOX_BIOS_CPU >= 80386
         // According to Ralf Brown's interrupt the limit should be 15M,
         // but real machines mostly return max. 63M.
         if(AX > 0xffc0)
             AX = 0xffc0;
+#else
+        // An AT compatible cannot have more than 15M extended memory.
+        // If more is reported, some software (e.g. Windows 3.1) gets
+        // quite upset.
+        if(AX > 0x3c00)
+            AX = 0x3c00;
+#endif
 
         CLEAR_CF();
 #else
