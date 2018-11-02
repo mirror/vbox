@@ -79,7 +79,7 @@ BEGINPROC_EXPORTED RTDbgStackDumpSelf
         push    xSI
         SEH64_PUSH_GREG xSI
 %ifdef RT_ARCH_AMD64
-        mov     r10, [xBP + xCB * 2]        ; Caller RBP.
+        mov     r10, [xBP]                  ; Caller RBP.
         push    r10
         lea     r10, [xBP + xCB * 2]        ; Caller RSP.
         push    r10

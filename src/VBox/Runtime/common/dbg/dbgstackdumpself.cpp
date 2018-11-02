@@ -46,6 +46,8 @@
 #ifdef RT_OS_WINDOWS
 # include <iprt/param.h>
 # include <iprt/win/windows.h>
+#elif defined(RT_OS_LINUX)
+# include <dlfcn.h>
 #endif
 
 
@@ -272,6 +274,46 @@ static PRTDBGSTACKSELFMOD rtDbgStackDumpSelfQueryModForPC(uintptr_t uPc, PRTLIST
                 }
                 RTMemFree(pMod);
             }
+        }
+    }
+#elif defined(RT_OS_LINUX)
+    Dl_info Info = { NULL, NULL, NULL, NULL };
+    int rc = dladdr((const void *)uPc, &Info);
+    if (rc != 0)
+    {
+        pMod = (PRTDBGSTACKSELFMOD)RTMemAllocZ(sizeof(*pMod));
+        if (pMod)
+        {
+            /** @todo better filename translation... */
+            rc = RTStrCopy(pMod->szFilename, sizeof(pMod->szFilename), Info.dli_fname);
+            if (RT_SUCCESS(rc))
+            {
+                RTStrPurgeEncoding(pMod->szFilename);
+
+                const char *pszFilename = RTPathFilename(pMod->szFilename);
+                pMod->offName   = pszFilename ? pszFilename - &pMod->szFilename[0] : 0;
+                pMod->uMapping  = (uintptr_t)Info.dli_fbase;
+                pMod->cbMapping = 0;
+                pMod->hLdrMod   = NIL_RTLDRMOD;
+                pMod->hDbgMod   = NIL_RTDBGMOD;
+
+                rc = RTLdrOpen(pMod->szFilename, RTLDR_O_FOR_DEBUG, RTLdrGetHostArch(), &pMod->hLdrMod);
+                if (RT_SUCCESS(rc))
+                {
+                    pMod->cbMapping = RTLdrSize(pMod->hLdrMod);
+
+                    /* Try open debug info for the module. */
+                    //uint32_t uTimeDateStamp = 0;
+                    //RTLdrQueryProp(pMod->hLdrMod, RTLDRPROP_TIMESTAMP_SECONDS, &uTimeDateStamp, sizeof(uTimeDateStamp));
+                    //RTDbgModCreateFromImage()??
+                    //rc = RTDbgModCreateFromPeImage(&pMod->hDbgMod, pMod->szFilename, &pMod->szFilename[pMod->offName],
+                    //                               &pMod->hLdrMod, (uint32_t)pMod->cbMapping, uTimeDateStamp, NIL_RTDBGCFG);
+
+                    RTListPrepend(pCachedModules, &pMod->ListEntry);
+                    return pMod;
+                }
+            }
+            RTMemFree(pMod);
         }
     }
 #endif

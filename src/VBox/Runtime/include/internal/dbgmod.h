@@ -707,8 +707,9 @@ DECLHIDDEN(int) rtDbgModDeferredCreate(PRTDBGMODINT pDbgMod, PFNRTDBGMODDEFERRED
 
 DECLHIDDEN(int) rtDbgModLdrOpenFromHandle(PRTDBGMODINT pDbgMod, RTLDRMOD hLdrMod);
 
-DECLHIDDEN(int) rtDwarfUnwind_EhData(void const *pvSection, size_t cbSection, RTDBGSEGIDX idxSeg, RTUINTPTR offSeg,
-                                     RTUINTPTR uRva, PRTDBGUNWINDSTATE pState, RTLDRARCH enmArch);
+DECLHIDDEN(int) rtDwarfUnwind_EhData(void const *pvSection, size_t cbSection, RTUINTPTR uRvaSection,
+                                     RTDBGSEGIDX idxSeg, RTUINTPTR offSeg, RTUINTPTR uRva,
+                                     PRTDBGUNWINDSTATE pState, RTLDRARCH enmArch);
 
 /** @} */
 

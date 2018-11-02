@@ -1418,7 +1418,7 @@ RTLDRELF_NAME(UnwindFrame)(PRTLDRMODINTERNAL pMod, void const *pvBits, uint32_t 
      */
     int rc;
     RTLDRADDR uRva = off;
-    if (iSeg == RTDBGSEGIDX_RVA)
+    if (iSeg == UINT32_MAX)
         rc = RTLDRELF_NAME(RvaToSegOffset)(pMod, uRva, &iSeg, &off);
     else
         rc = RTLDRELF_NAME(SegOffsetToRva)(pMod, iSeg, off, &uRva);
@@ -1453,13 +1453,13 @@ RTLDRELF_NAME(UnwindFrame)(PRTLDRMODINTERNAL pMod, void const *pvBits, uint32_t 
                 && pszName[7] == 'm'
                 && pszName[8] == 'e')
             {
-                if (pszName[8] == '\0')
+                if (pszName[9] == '\0')
                     pThis->iShEhFrame = iShdr;
-                else if (   pszName[8] == '_'
-                         && pszName[9] == 'h'
-                         && pszName[10] == 'd'
-                         && pszName[11] == 'r'
-                         && pszName[12] == '\0')
+                else if (   pszName[9] == '_'
+                         && pszName[10] == 'h'
+                         && pszName[11] == 'd'
+                         && pszName[12] == 'r'
+                         && pszName[13] == '\0')
                     pThis->iShEhFrameHdr = iShdr;
                 else
                     continue;
@@ -1478,12 +1478,11 @@ RTLDRELF_NAME(UnwindFrame)(PRTLDRMODINTERNAL pMod, void const *pvBits, uint32_t 
     {
         if (pThis->paShdrs[iShdr].sh_flags & SHF_ALLOC)
             return rtDwarfUnwind_EhData((uint8_t const *)pThis->pvBits + pThis->paShdrs[iShdr].sh_addr,
-                                        pThis->paShdrs[iShdr].sh_size, iSeg, off, uRva, pState, pThis->Core.enmArch);
+                                        pThis->paShdrs[iShdr].sh_size, pThis->paShdrs[iShdr].sh_addr,
+                                        iSeg, off, uRva, pState, pThis->Core.enmArch);
     }
     return VERR_DBG_NO_UNWIND_INFO;
 }
-
-
 
 
 /**
@@ -1979,6 +1978,8 @@ static int RTLDRELF_NAME(Open)(PRTLDRREADER pReader, uint32_t fFlags, RTLDRARCH 
                         AssertFailed();
                         rc = VERR_LDR_GENERAL_FAILURE;
                     }
+                    if (pModElf->Ehdr.e_type == ET_DYN && pModElf->LinkAddress < 0x1000)
+                        pModElf->LinkAddress = 0;
                 }
 
                 /*

@@ -142,6 +142,7 @@ RTDECL(void) RTAssertMsg1(const char *pszExpr, unsigned uLine, const char *pszFi
 
 #ifdef IPRT_WITH_ASSERT_STACK
         /* The stack dump. */
+        static volatile bool s_fDumpingStackAlready = false; /* for simple recursion prevention */
         char   szStack[sizeof(g_szRTAssertStack)];
         size_t cchStack = 0;
 # if defined(IN_RING3) && defined(RT_OS_WINDOWS) /** @todo make this stack on/off thing more modular. */
@@ -151,10 +152,13 @@ RTDECL(void) RTAssertMsg1(const char *pszExpr, unsigned uLine, const char *pszFi
 # else
         bool   fStack = true;
 # endif
-        if (fStack)
+        szStack[0] = '\0';
+        if (fStack && !s_fDumpingStackAlready)
+        {
+            s_fDumpingStackAlready = true;
             cchStack = RTDbgStackDumpSelf(szStack, sizeof(szStack), 0);
-        else
-            szStack[0] = '\0';
+            s_fDumpingStackAlready = false;
+        }
         memcpy(g_szRTAssertStack, szStack, cchStack + 1);
 #endif
 

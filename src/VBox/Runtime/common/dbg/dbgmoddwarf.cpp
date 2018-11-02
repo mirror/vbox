@@ -45,6 +45,7 @@
 #include <iprt/path.h>
 #include <iprt/string.h>
 #include <iprt/strcache.h>
+#include <iprt/x86.h>
 #include "internal/dbgmod.h"
 
 
@@ -394,7 +395,7 @@
 #define DW_CFA_offset_extended      UINT8_C(0x05) /**< op1: ULEB128 register; op2: ULEB128 offset. */
 #define DW_CFA_offset_extended_sf   UINT8_C(0x11) /**< op1: ULEB128 register; op2: SLEB128 offset. */
 #define DW_CFA_restore              UINT8_C(0xc0) /**< low 6 bits: register. */
-#define DW_CFA_restore_extended     UINT8_C(0x06) /**< op1: ULEB128 register; op2: ULEB128 offset. */
+#define DW_CFA_restore_extended     UINT8_C(0x06) /**< op1: ULEB128 register. */
 #define DW_CFA_undefined            UINT8_C(0x07) /**< op1: ULEB128 register. */
 #define DW_CFA_same_value           UINT8_C(0x08) /**< op1: ULEB128 register. */
 #define DW_CFA_register             UINT8_C(0x09) /**< op1: ULEB128 destination register; op2: ULEB128 source register. */
@@ -420,6 +421,123 @@
 #define DW_CFA_GNU_args_size        UINT8_C(0x2e) /**< op1: ??; op2: ?? */
 #define DW_CFA_GNU_negative_offset_extended UINT8_C(0x2f) /**< op1: ??; op2: ?? */
 #define DW_CFA_hi_user              UINT8_C(0x3f) /**< User defined operands. */
+/** @} */
+
+
+/** @name DWREG_X86_XXX - 386+ register number mappings.
+ * @{  */
+#define DWREG_X86_EAX       0
+#define DWREG_X86_ECX       1
+#define DWREG_X86_EDX       2
+#define DWREG_X86_EBX       3
+#define DWREG_X86_ESP       4
+#define DWREG_X86_EBP       5
+#define DWREG_X86_ESI       6
+#define DWREG_X86_EDI       7
+#define DWREG_X86_RA        8   /* return address (=EIP) */
+#define DWREG_X86_EFLAGS    9
+#define DWREG_X86_ST1       11
+#define DWREG_X86_ST2       12
+#define DWREG_X86_ST3       13
+#define DWREG_X86_ST4       14
+#define DWREG_X86_ST5       15
+#define DWREG_X86_ST6       16
+#define DWREG_X86_ST7       17
+#define DWREG_X86_XMM0      21
+#define DWREG_X86_XMM1      22
+#define DWREG_X86_XMM2      23
+#define DWREG_X86_XMM3      24
+#define DWREG_X86_XMM4      25
+#define DWREG_X86_XMM5      26
+#define DWREG_X86_XMM6      27
+#define DWREG_X86_XMM7      28
+#define DWREG_X86_MM0       29
+#define DWREG_X86_MM1       30
+#define DWREG_X86_MM2       31
+#define DWREG_X86_MM3       32
+#define DWREG_X86_MM4       33
+#define DWREG_X86_MM5       34
+#define DWREG_X86_MM6       35
+#define DWREG_X86_MM7       36
+#define DWREG_X86_MXCSR     39
+#define DWREG_X86_ES        40
+#define DWREG_X86_CS        41
+#define DWREG_X86_SS        42
+#define DWREG_X86_DS        43
+#define DWREG_X86_FS        44
+#define DWREG_X86_GS        45
+#define DWREG_X86_TR        48
+#define DWREG_X86_LDTR      49
+/** @} */
+
+
+/** @name DWREG_AMD64_XXX - AMD64 register number mappings.
+ * @note This for some braindead reason the first 8 GPR are in intel encoding
+ *       order, unlike the DWREG_X86_XXX variant.  Utter stupidity.
+ * @{ */
+#define DWREG_AMD64_RAX     0
+#define DWREG_AMD64_RDX     1
+#define DWREG_AMD64_RCX     2
+#define DWREG_AMD64_RBX     3
+#define DWREG_AMD64_RSI     4
+#define DWREG_AMD64_RDI     5
+#define DWREG_AMD64_RBP     6
+#define DWREG_AMD64_RSP     7
+#define DWREG_AMD64_R8      8
+#define DWREG_AMD64_R9      9
+#define DWREG_AMD64_R10     10
+#define DWREG_AMD64_R11     11
+#define DWREG_AMD64_R12     12
+#define DWREG_AMD64_R13     13
+#define DWREG_AMD64_R14     14
+#define DWREG_AMD64_R15     15
+#define DWREG_AMD64_RA      16   /* return address (=RIP) */
+#define DWREG_AMD64_XMM0    17
+#define DWREG_AMD64_XMM1    18
+#define DWREG_AMD64_XMM2    19
+#define DWREG_AMD64_XMM3    20
+#define DWREG_AMD64_XMM4    21
+#define DWREG_AMD64_XMM5    22
+#define DWREG_AMD64_XMM6    23
+#define DWREG_AMD64_XMM7    24
+#define DWREG_AMD64_XMM8    25
+#define DWREG_AMD64_XMM9    26
+#define DWREG_AMD64_XMM10   27
+#define DWREG_AMD64_XMM11   28
+#define DWREG_AMD64_XMM12   29
+#define DWREG_AMD64_XMM13   30
+#define DWREG_AMD64_XMM14   31
+#define DWREG_AMD64_XMM15   32
+#define DWREG_AMD64_ST0     33
+#define DWREG_AMD64_ST1     34
+#define DWREG_AMD64_ST2     35
+#define DWREG_AMD64_ST3     36
+#define DWREG_AMD64_ST4     37
+#define DWREG_AMD64_ST5     38
+#define DWREG_AMD64_ST6     39
+#define DWREG_AMD64_ST7     40
+#define DWREG_AMD64_MM0     41
+#define DWREG_AMD64_MM1     42
+#define DWREG_AMD64_MM2     43
+#define DWREG_AMD64_MM3     44
+#define DWREG_AMD64_MM4     45
+#define DWREG_AMD64_MM5     46
+#define DWREG_AMD64_MM6     47
+#define DWREG_AMD64_MM7     48
+#define DWREG_AMD64_RFLAGS  49
+#define DWREG_AMD64_ES      50
+#define DWREG_AMD64_CS      51
+#define DWREG_AMD64_SS      52
+#define DWREG_AMD64_DS      53
+#define DWREG_AMD64_FS      54
+#define DWREG_AMD64_GS      55
+#define DWREG_AMD64_FS_BASE 58
+#define DWREG_AMD64_GS_BASE 59
+#define DWREG_AMD64_TR      62
+#define DWREG_AMD64_LDTR    63
+#define DWREG_AMD64_MXCSR   64
+#define DWREG_AMD64_FCW     65
+#define DWREG_AMD64_FSW     66
 /** @} */
 
 
@@ -1319,13 +1437,18 @@ static DECLCALLBACK(int) rtDbgModDwarfAddSegmentsCallback(RTLDRMOD hLdrMod, PCRT
         return RTDbgModSegmentAdd(pThis->hCnt, 0, 0, pSeg->pszName, 0 /*fFlags*/, NULL);
 
     /* The link address is 0 for all segments in a relocatable ELF image. */
-    RTLDRADDR cb = RT_MAX(pSeg->cb, pSeg->cbMapped);
+    RTLDRADDR cb = pSeg->cb;
+    if (   cb < pSeg->cbMapped
+        && RTLdrGetFormat(hLdrMod) != RTLDRFMT_LX /* for debugging our drivers; 64KB section align by linker, 4KB by loader. */
+       )
+        cb = pSeg->cbMapped;
     return RTDbgModSegmentAdd(pThis->hCnt, pSeg->RVA, cb, pSeg->pszName, 0 /*fFlags*/, NULL);
 }
 
 
 /**
- * Calls pfnSegmentAdd for each segment in the executable image.
+ * Calls rtDbgModDwarfAddSegmentsCallback for each segment in the executable
+ * image.
  *
  * @returns IPRT status code.
  * @param   pThis               The DWARF instance.
@@ -1589,6 +1712,16 @@ static int rtDbgModDwarfLinkAddressToSegOffset(PRTDBGMODDWARF pThis, RTSEL uSegm
 
     if (pThis->fUseLinkAddress)
         return pThis->pImgMod->pImgVt->pfnLinkAddressToSegOffset(pThis->pImgMod, LinkAddress, piSeg, poffSeg);
+
+    /* If we have a non-zero segment number, assume it's correct for now.
+       This helps loading watcom linked LX drivers. */
+    if (uSegment > 0)
+    {
+        *piSeg   = uSegment - 1;
+        *poffSeg = LinkAddress;
+        return VINF_SUCCESS;
+    }
+
     return pThis->pImgMod->pImgVt->pfnRvaToSegOffset(pThis->pImgMod, LinkAddress, piSeg, poffSeg);
 }
 
@@ -2214,7 +2347,7 @@ static uint64_t rtDwarfCursor_GetPtrEnc(PRTDWARFCURSOR pCursor, uint8_t bPtrEnc,
  * @returns The unit length.
  * @param   pCursor             The cursor.
  */
-static uint64_t rtDwarfCursor_GetInitalLength(PRTDWARFCURSOR pCursor)
+static uint64_t rtDwarfCursor_GetInitialLength(PRTDWARFCURSOR pCursor)
 {
     /*
      * Read the initial length.
@@ -2525,6 +2658,8 @@ typedef struct RTDWARFCIEINFO
     uint8_t         bAddressPtrEnc;
     /** The segment size (v4). */
     uint8_t         cbSegment;
+    /** The return register column.  UINT8_MAX if default register. */
+    uint8_t         bRetReg;
     /** The LSDA pointer encoding. */
     uint8_t         bLsdaPtrEnc;
 
@@ -2564,25 +2699,834 @@ typedef RTDWARFCIEINFO *PRTDWARFCIEINFO;
 /** Pointer to const CIE info. */
 typedef RTDWARFCIEINFO const *PCRTDWARFCIEINFO;
 
-#if 0
 
-typedef struct RTDWARFCFEXPR
-{
+/** Number of registers we care about.
+ * @note We're currently not expecting to be decoding ppc, arm, ia64 or such,
+ *       only x86 and x86_64.  We can easily increase the column count. */
+#define RTDWARFCF_MAX_REGISTERS         96
 
-};
 
 /**
- * Call frame engine state.
+ * Call frame state row.
  */
-typedef struct RTDWARFCFSTATE
+typedef struct RTDWARFCFROW
 {
     /** Stack worked by DW_CFA_remember_state and DW_CFA_restore_state. */
-    struct RTDWARFCFSTATE      *pNextOnStack;
+    struct RTDWARFCFROW    *pNextOnStack;
+
+    /** @name CFA - Canonical frame address expression.
+     * Since there are partial CFA instructions, we cannot be lazy like with the
+     * register but keep register+offset around.  For DW_CFA_def_cfa_expression
+     * we just take down the program location, though.
+     * @{ */
+    /** Pointer to DW_CFA_def_cfa_expression instruction, NULL if reg+offset. */
+    uint8_t const          *pbCfaExprInstr;
+    /** The CFA register offset. */
+    int64_t                 offCfaReg;
+    /** The CFA base register number. */
+    uint16_t                uCfaBaseReg;
+    /** Set if we've got a valid CFA definition. */
+    bool                    fCfaDefined : 1;
+    /** @} */
+
+    /** Set if on the heap and needs freeing. */
+    bool                    fOnHeap : 1;
+    /** Pointer to the instructions bytes defining registers.
+     * NULL means  */
+    uint8_t const          *apbRegInstrs[RTDWARFCF_MAX_REGISTERS];
+} RTDWARFCFROW;
+typedef RTDWARFCFROW *PRTDWARFCFROW;
+typedef RTDWARFCFROW const *PCRTDWARFCFROW;
+
+/** Row program execution state. */
+typedef struct RTDWARFCFEXEC
+{
+    PRTDWARFCFROW       pRow;
+    /** Number of PC bytes left to advance before we get a hit. */
+    uint64_t            cbLeftToAdvance;
+    /** Number of pushed rows. */
+    uint32_t            cPushes;
+    /** Set if little endian, clear if big endian. */
+    bool                fLittleEndian;
+    /** The CIE.  */
+    PCRTDWARFCIEINFO    pCie;
+    /** The program counter value for the FDE.  Subjected to segment.
+     * Needed for DW_CFA_set_loc.  */
+    uint64_t            uPcBegin;
+    /** The offset relative to uPcBegin for which we're searching for a row.
+     * Needed for DW_CFA_set_loc.  */
+    uint64_t            offInRange;
+} RTDWARFCFEXEC;
+typedef RTDWARFCFEXEC *PRTDWARFCFEXEC;
+
+
+/* Set of macros for getting and skipping operands. */
+#define SKIP_ULEB128_OR_LEB128() \
+    do \
+    { \
+        AssertReturn(offInstr < cbInstr, VERR_DBG_MALFORMED_UNWIND_INFO); \
+    } while (pbInstr[offInstr++] & 0x80)
+
+#define GET_ULEB128_AS_U14(a_uDst) \
+    do \
+    { \
+        AssertReturn(offInstr < cbInstr, VERR_DBG_MALFORMED_UNWIND_INFO); \
+        uint8_t b = pbInstr[offInstr++]; \
+        (a_uDst) = b & 0x7f; \
+        if (b & 0x80) \
+        { \
+            AssertReturn(offInstr < cbInstr, VERR_DBG_MALFORMED_UNWIND_INFO); \
+            b = pbInstr[offInstr++]; \
+            AssertReturn(!(b & 0x80), VERR_DBG_MALFORMED_UNWIND_INFO); \
+            (a_uDst) |= (uint16_t)b << 7; \
+        } \
+    } while (0)
+#define GET_ULEB128_AS_U63(a_uDst) \
+    do \
+    { \
+        AssertReturn(offInstr < cbInstr, VERR_DBG_MALFORMED_UNWIND_INFO); \
+        uint8_t b = pbInstr[offInstr++]; \
+        (a_uDst) = b & 0x7f; \
+        if (b & 0x80) \
+        { \
+            unsigned cShift = 7; \
+            do \
+            { \
+                AssertReturn(offInstr < cbInstr, VERR_DBG_MALFORMED_UNWIND_INFO); \
+                AssertReturn(cShift < 63, VERR_DWARF_LEB_OVERFLOW); \
+                b = pbInstr[offInstr++]; \
+                (a_uDst) |= (uint16_t)(b & 0x7f) << cShift; \
+                cShift += 7; \
+            } while (b & 0x80); \
+        } \
+    } while (0)
+#define GET_LEB128_AS_I63(a_uDst) \
+    do \
+    { \
+        AssertReturn(offInstr < cbInstr, VERR_DBG_MALFORMED_UNWIND_INFO); \
+        uint8_t b = pbInstr[offInstr++]; \
+        if (!(b & 0x80)) \
+            (a_uDst) = !(b & 0x40) ? b : (int64_t)(int8_t)(b | 0x80); \
+        else \
+        { \
+            /* Read value into unsigned variable: */ \
+            unsigned cShift = 7; \
+            uint64_t uTmp   = b & 0x7f; \
+            do \
+            { \
+                AssertReturn(offInstr < cbInstr, VERR_DBG_MALFORMED_UNWIND_INFO); \
+                AssertReturn(cShift < 63, VERR_DWARF_LEB_OVERFLOW); \
+                b = pbInstr[offInstr++]; \
+                uTmp |= (uint16_t)(b & 0x7f) << cShift; \
+                cShift += 7; \
+            } while (b & 0x80); \
+            /* Sign extend before setting the destination value: */ \
+            cShift -= 7 + 1; \
+            if (uTmp & RT_BIT_64(cShift)) \
+                uTmp |= ~(RT_BIT_64(cShift) - 1); \
+            (a_uDst) = (int64_t)uTmp; \
+        } \
+    } while (0)
+
+#define SKIP_BLOCK() \
+    do \
+    { \
+        uint16_t cbBlock; \
+        GET_ULEB128_AS_U14(cbBlock); \
+        AssertReturn(offInstr + cbBlock <= cbInstr, VERR_DBG_MALFORMED_UNWIND_INFO); \
+        offInstr += cbBlock; \
+    } while (0)
+
+
+static int rtDwarfUnwind_Execute(PRTDWARFCFEXEC pExecState, uint8_t const *pbInstr, uint32_t cbInstr)
+{
+    PRTDWARFCFROW pRow = pExecState->pRow;
+    for (uint32_t offInstr = 0; offInstr < cbInstr;)
+    {
+        /*
+         * Instruction switches.
+         */
+        uint8_t const bInstr = pbInstr[offInstr++];
+        switch (bInstr & DW_CFA_high_bit_mask)
+        {
+            case DW_CFA_advance_loc:
+            {
+                uint8_t const cbAdvance = bInstr & ~DW_CFA_high_bit_mask;
+                if (cbAdvance > pExecState->cbLeftToAdvance)
+                    return VINF_SUCCESS;
+                pExecState->cbLeftToAdvance -= cbAdvance;
+                break;
+            }
+
+            case DW_CFA_offset:
+            {
+                uint8_t iReg = bInstr & ~DW_CFA_high_bit_mask;
+                if (iReg < RT_ELEMENTS(pRow->apbRegInstrs))
+                    pRow->apbRegInstrs[iReg] = &pbInstr[offInstr - 1];
+                SKIP_ULEB128_OR_LEB128();
+                break;
+            }
+
+            case 0:
+                switch (bInstr)
+                {
+                    case DW_CFA_nop:
+                        break;
+
+                    /*
+                     * Register instructions.
+                     */
+                    case DW_CFA_register:
+                    case DW_CFA_offset_extended:
+                    case DW_CFA_offset_extended_sf:
+                    case DW_CFA_val_offset:
+                    case DW_CFA_val_offset_sf:
+                    {
+                        uint8_t const * const pbCurInstr = &pbInstr[offInstr - 1];
+                        uint16_t              iReg;
+                        GET_ULEB128_AS_U14(iReg);
+                        if (iReg < RT_ELEMENTS(pRow->apbRegInstrs))
+                            pRow->apbRegInstrs[iReg] = pbCurInstr;
+                        SKIP_ULEB128_OR_LEB128();
+                        break;
+                    }
+
+                    case DW_CFA_expression:
+                    case DW_CFA_val_expression:
+                    {
+                        uint8_t const * const pbCurInstr = &pbInstr[offInstr - 1];
+                        uint16_t              iReg;
+                        GET_ULEB128_AS_U14(iReg);
+                        if (iReg < RT_ELEMENTS(pRow->apbRegInstrs))
+                            pRow->apbRegInstrs[iReg] = pbCurInstr;
+                        SKIP_BLOCK();
+                        break;
+                    }
+
+                    case DW_CFA_restore_extended:
+                    {
+                        uint8_t const * const pbCurInstr = &pbInstr[offInstr - 1];
+                        uint16_t              iReg;
+                        GET_ULEB128_AS_U14(iReg);
+                        if (iReg < RT_ELEMENTS(pRow->apbRegInstrs))
+                            pRow->apbRegInstrs[iReg] = pbCurInstr;
+                        break;
+                    }
+
+                    case DW_CFA_undefined:
+                    {
+                        uint16_t iReg;
+                        GET_ULEB128_AS_U14(iReg);
+                        if (iReg < RT_ELEMENTS(pRow->apbRegInstrs))
+                            pRow->apbRegInstrs[iReg] = NULL;
+                        break;
+                    }
+
+                    case DW_CFA_same_value:
+                    {
+                        uint8_t const * const pbCurInstr = &pbInstr[offInstr - 1];
+                        uint16_t              iReg;
+                        GET_ULEB128_AS_U14(iReg);
+                        if (iReg < RT_ELEMENTS(pRow->apbRegInstrs))
+                            pRow->apbRegInstrs[iReg] = pbCurInstr;
+                        break;
+                    }
+
+
+                    /*
+                     * CFA instructions.
+                     */
+                    case DW_CFA_def_cfa:
+                    {
+                        GET_ULEB128_AS_U14(pRow->uCfaBaseReg);
+                        uint64_t offCfaReg;
+                        GET_ULEB128_AS_U63(offCfaReg);
+                        pRow->offCfaReg        = offCfaReg;
+                        pRow->pbCfaExprInstr   = NULL;
+                        pRow->fCfaDefined      = true;
+                        break;
+                    }
+
+                    case DW_CFA_def_cfa_register:
+                    {
+                        GET_ULEB128_AS_U14(pRow->uCfaBaseReg);
+                        pRow->pbCfaExprInstr   = NULL;
+                        pRow->fCfaDefined      = true;
+                        /* Leaves offCfaReg as is. */
+                        break;
+                    }
+
+                    case DW_CFA_def_cfa_offset:
+                    {
+                        uint64_t offCfaReg;
+                        GET_ULEB128_AS_U63(offCfaReg);
+                        pRow->offCfaReg        = offCfaReg;
+                        pRow->pbCfaExprInstr   = NULL;
+                        pRow->fCfaDefined      = true;
+                        /* Leaves uCfaBaseReg as is. */
+                        break;
+                    }
+
+                    case DW_CFA_def_cfa_sf:
+                        GET_ULEB128_AS_U14(pRow->uCfaBaseReg);
+                        GET_LEB128_AS_I63(pRow->offCfaReg);
+                        pRow->pbCfaExprInstr   = NULL;
+                        pRow->fCfaDefined      = true;
+                        break;
+
+                    case DW_CFA_def_cfa_offset_sf:
+                        GET_LEB128_AS_I63(pRow->offCfaReg);
+                        pRow->pbCfaExprInstr   = NULL;
+                        pRow->fCfaDefined      = true;
+                        /* Leaves uCfaBaseReg as is. */
+                        break;
+
+                    case DW_CFA_def_cfa_expression:
+                        pRow->pbCfaExprInstr   = &pbInstr[offInstr - 1];
+                        pRow->fCfaDefined      = true;
+                        SKIP_BLOCK();
+                        break;
+
+                    /*
+                     * Less likely instructions:
+                     */
+                    case DW_CFA_advance_loc1:
+                    {
+                        AssertReturn(offInstr < cbInstr, VERR_DBG_MALFORMED_UNWIND_INFO);
+                        uint8_t const cbAdvance = pbInstr[offInstr++];
+                        if (cbAdvance > pExecState->cbLeftToAdvance)
+                            return VINF_SUCCESS;
+                        pExecState->cbLeftToAdvance -= cbAdvance;
+                        break;
+                    }
+
+                    case DW_CFA_advance_loc2:
+                    {
+                        AssertReturn(offInstr + 1 < cbInstr, VERR_DBG_MALFORMED_UNWIND_INFO);
+                        uint16_t const cbAdvance = pExecState->fLittleEndian
+                                                 ? RT_MAKE_U16(pbInstr[offInstr], pbInstr[offInstr + 1])
+                                                 : RT_MAKE_U16(pbInstr[offInstr + 1], pbInstr[offInstr]);
+                        if (cbAdvance > pExecState->cbLeftToAdvance)
+                            return VINF_SUCCESS;
+                        pExecState->cbLeftToAdvance -= cbAdvance;
+                        offInstr += 2;
+                        break;
+                    }
+
+                    case DW_CFA_advance_loc4:
+                    {
+                        AssertReturn(offInstr + 3 < cbInstr, VERR_DBG_MALFORMED_UNWIND_INFO);
+                        uint32_t const cbAdvance = pExecState->fLittleEndian
+                                                 ? RT_MAKE_U32_FROM_U8(pbInstr[offInstr + 0], pbInstr[offInstr + 1],
+                                                                       pbInstr[offInstr + 2], pbInstr[offInstr + 3])
+                                                 : RT_MAKE_U32_FROM_U8(pbInstr[offInstr + 3], pbInstr[offInstr + 2],
+                                                                       pbInstr[offInstr + 1], pbInstr[offInstr + 0]);
+                        if (cbAdvance > pExecState->cbLeftToAdvance)
+                            return VINF_SUCCESS;
+                        pExecState->cbLeftToAdvance -= cbAdvance;
+                        offInstr += 4;
+                        break;
+                    }
+
+                    /*
+                     * This bugger is really annoying and probably never used.
+                     */
+                    case DW_CFA_set_loc:
+                    {
+                        /* Ignore the segment number. */
+                        if (pExecState->pCie->cbSegment)
+                        {
+                            offInstr += pExecState->pCie->cbSegment;
+                            AssertReturn(offInstr < cbInstr, VERR_DBG_MALFORMED_UNWIND_INFO);
+                        }
+
+                        /* Retrieve the address. sigh. */
+                        uint64_t uAddress;
+                        switch (pExecState->pCie->bAddressPtrEnc & (DW_EH_PE_FORMAT_MASK | DW_EH_PE_indirect))
+                        {
+                            case DW_EH_PE_udata2:
+                                AssertReturn(offInstr + 1 < cbInstr, VERR_DBG_MALFORMED_UNWIND_INFO);
+                                if (pExecState->fLittleEndian)
+                                    uAddress = RT_MAKE_U16(pbInstr[offInstr], pbInstr[offInstr + 1]);
+                                else
+                                    uAddress = RT_MAKE_U16(pbInstr[offInstr + 1], pbInstr[offInstr]);
+                                offInstr += 2;
+                                break;
+                            case DW_EH_PE_sdata2:
+                                AssertReturn(offInstr + 1 < cbInstr, VERR_DBG_MALFORMED_UNWIND_INFO);
+                                if (pExecState->fLittleEndian)
+                                    uAddress = (int64_t)(int16_t)RT_MAKE_U16(pbInstr[offInstr], pbInstr[offInstr + 1]);
+                                else
+                                    uAddress = (int64_t)(int16_t)RT_MAKE_U16(pbInstr[offInstr + 1], pbInstr[offInstr]);
+                                offInstr += 2;
+                                break;
+                            case DW_EH_PE_udata4:
+                                AssertReturn(offInstr + 3 < cbInstr, VERR_DBG_MALFORMED_UNWIND_INFO);
+                                if (pExecState->fLittleEndian)
+                                    uAddress = RT_MAKE_U32_FROM_U8(pbInstr[offInstr + 0], pbInstr[offInstr + 1],
+                                                                   pbInstr[offInstr + 2], pbInstr[offInstr + 3]);
+                                else
+                                    uAddress = RT_MAKE_U32_FROM_U8(pbInstr[offInstr + 3], pbInstr[offInstr + 2],
+                                                                   pbInstr[offInstr + 1], pbInstr[offInstr + 0]);
+
+                                offInstr += 4;
+                                break;
+                            case DW_EH_PE_sdata4:
+                                AssertReturn(offInstr + 3 < cbInstr, VERR_DBG_MALFORMED_UNWIND_INFO);
+                                if (pExecState->fLittleEndian)
+                                    uAddress = (int64_t)(int32_t)RT_MAKE_U32_FROM_U8(pbInstr[offInstr + 0], pbInstr[offInstr + 1],
+                                                                                     pbInstr[offInstr + 2], pbInstr[offInstr + 3]);
+                                else
+                                    uAddress = (int64_t)(int32_t)RT_MAKE_U32_FROM_U8(pbInstr[offInstr + 3], pbInstr[offInstr + 2],
+                                                                                     pbInstr[offInstr + 1], pbInstr[offInstr + 0]);
+                                offInstr += 4;
+                                break;
+                            case DW_EH_PE_udata8:
+                            case DW_EH_PE_sdata8:
+                                AssertReturn(offInstr + 7 < cbInstr, VERR_DBG_MALFORMED_UNWIND_INFO);
+                                if (pExecState->fLittleEndian)
+                                    uAddress = RT_MAKE_U64_FROM_U8(pbInstr[offInstr + 0], pbInstr[offInstr + 1],
+                                                                   pbInstr[offInstr + 2], pbInstr[offInstr + 3],
+                                                                   pbInstr[offInstr + 4], pbInstr[offInstr + 5],
+                                                                   pbInstr[offInstr + 6], pbInstr[offInstr + 7]);
+                                else
+                                    uAddress = RT_MAKE_U64_FROM_U8(pbInstr[offInstr + 7], pbInstr[offInstr + 6],
+                                                                   pbInstr[offInstr + 5], pbInstr[offInstr + 4],
+                                                                   pbInstr[offInstr + 3], pbInstr[offInstr + 2],
+                                                                   pbInstr[offInstr + 1], pbInstr[offInstr + 0]);
+                                offInstr += 8;
+                                break;
+                            case DW_EH_PE_sleb128:
+                            case DW_EH_PE_uleb128:
+                            default:
+                                AssertMsgFailedReturn(("%#x\n", pExecState->pCie->bAddressPtrEnc), VERR_DWARF_TODO);
+                        }
+                        AssertReturn(uAddress >= pExecState->uPcBegin, VERR_DBG_MALFORMED_UNWIND_INFO);
+
+                        /* Did we advance past the desire address already? */
+                        if (uAddress > pExecState->uPcBegin + pExecState->offInRange)
+                            return VINF_SUCCESS;
+                        pExecState->cbLeftToAdvance = pExecState->uPcBegin + pExecState->offInRange - uAddress;
+                        break;
+
+
+                        /*
+                         * Row state push/pop instructions.
+                         */
+
+                        case DW_CFA_remember_state:
+                        {
+                            AssertReturn(pExecState->cPushes < 10, VERR_DBG_MALFORMED_UNWIND_INFO);
+                            PRTDWARFCFROW pNewRow = (PRTDWARFCFROW)RTMemTmpAlloc(sizeof(*pNewRow));
+                            AssertReturn(pNewRow, VERR_NO_TMP_MEMORY);
+                            memcpy(pNewRow, pRow, sizeof(*pNewRow));
+                            pNewRow->pNextOnStack = pRow;
+                            pNewRow->fOnHeap      = true;
+                            pExecState->pRow      = pNewRow;
+                            pExecState->cPushes  += 1;
+                            pRow = pNewRow;
+                            break;
+                        }
+
+                        case DW_CFA_restore_state:
+                            AssertReturn(pRow->pNextOnStack, VERR_DBG_MALFORMED_UNWIND_INFO);
+                            Assert(pRow->fOnHeap);
+                            Assert(pExecState->cPushes > 0);
+                            pExecState->cPushes -= 1;
+                            pExecState->pRow     = pRow->pNextOnStack;
+                            RTMemTmpFree(pRow);
+                            pRow = pExecState->pRow;
+                            break;
+                    }
+                }
+                break;
+
+            case DW_CFA_restore:
+            {
+                uint8_t const * const pbCurInstr = &pbInstr[offInstr - 1];
+                uint8_t const         iReg       = bInstr & ~DW_CFA_high_bit_mask;
+                if (iReg < RT_ELEMENTS(pRow->apbRegInstrs))
+                    pRow->apbRegInstrs[iReg] = pbCurInstr;
+                break;
+            }
+        }
+    }
+    return VINF_TRY_AGAIN;
+}
+
+
+/**
+ * Register getter for AMD64.
+ *
+ * @returns true if found, false if not.
+ * @param   pState              The unwind state to get the register from.
+ * @param   iReg                The dwarf register number.
+ * @param   puValue             Where to store the register value.
+ */
+static bool rtDwarfUnwind_Amd64GetRegFromState(PCRTDBGUNWINDSTATE pState, uint16_t iReg, uint64_t *puValue)
+{
+    switch (iReg)
+    {
+        case DWREG_AMD64_RAX:       *puValue = pState->u.x86.auRegs[X86_GREG_xAX];  return true;
+        case DWREG_AMD64_RDX:       *puValue = pState->u.x86.auRegs[X86_GREG_xDX];  return true;
+        case DWREG_AMD64_RCX:       *puValue = pState->u.x86.auRegs[X86_GREG_xCX];  return true;
+        case DWREG_AMD64_RBX:       *puValue = pState->u.x86.auRegs[X86_GREG_xBX];  return true;
+        case DWREG_AMD64_RSI:       *puValue = pState->u.x86.auRegs[X86_GREG_xSI];  return true;
+        case DWREG_AMD64_RDI:       *puValue = pState->u.x86.auRegs[X86_GREG_xDI];  return true;
+        case DWREG_AMD64_RBP:       *puValue = pState->u.x86.auRegs[X86_GREG_xBP];  return true;
+        case DWREG_AMD64_RSP:       *puValue = pState->u.x86.auRegs[X86_GREG_xSP];  return true;
+        case DWREG_AMD64_R8:        *puValue = pState->u.x86.auRegs[X86_GREG_x8];   return true;
+        case DWREG_AMD64_R9:        *puValue = pState->u.x86.auRegs[X86_GREG_x9];   return true;
+        case DWREG_AMD64_R10:       *puValue = pState->u.x86.auRegs[X86_GREG_x10];  return true;
+        case DWREG_AMD64_R11:       *puValue = pState->u.x86.auRegs[X86_GREG_x11];  return true;
+        case DWREG_AMD64_R12:       *puValue = pState->u.x86.auRegs[X86_GREG_x12];  return true;
+        case DWREG_AMD64_R13:       *puValue = pState->u.x86.auRegs[X86_GREG_x13];  return true;
+        case DWREG_AMD64_R14:       *puValue = pState->u.x86.auRegs[X86_GREG_x14];  return true;
+        case DWREG_AMD64_R15:       *puValue = pState->u.x86.auRegs[X86_GREG_x15];  return true;
+        case DWREG_AMD64_RFLAGS:    *puValue = pState->u.x86.uRFlags;               return true;
+        case DWREG_AMD64_ES:        *puValue = pState->u.x86.auSegs[X86_SREG_ES];   return true;
+        case DWREG_AMD64_CS:        *puValue = pState->u.x86.auSegs[X86_SREG_CS];   return true;
+        case DWREG_AMD64_SS:        *puValue = pState->u.x86.auSegs[X86_SREG_SS];   return true;
+        case DWREG_AMD64_DS:        *puValue = pState->u.x86.auSegs[X86_SREG_DS];   return true;
+        case DWREG_AMD64_FS:        *puValue = pState->u.x86.auSegs[X86_SREG_FS];   return true;
+        case DWREG_AMD64_GS:        *puValue = pState->u.x86.auSegs[X86_SREG_GS];   return true;
+    }
+    return false;
+}
+
+
+/**
+ * Register getter for 386+.
+ *
+ * @returns true if found, false if not.
+ * @param   pState              The unwind state to get the register from.
+ * @param   iReg                The dwarf register number.
+ * @param   puValue             Where to store the register value.
+ */
+static bool rtDwarfUnwind_X86GetRegFromState(PCRTDBGUNWINDSTATE pState, uint16_t iReg, uint64_t *puValue)
+{
+    switch (iReg)
+    {
+        case DWREG_X86_EAX:         *puValue = pState->u.x86.auRegs[X86_GREG_xAX];  return true;
+        case DWREG_X86_ECX:         *puValue = pState->u.x86.auRegs[X86_GREG_xCX];  return true;
+        case DWREG_X86_EDX:         *puValue = pState->u.x86.auRegs[X86_GREG_xDX];  return true;
+        case DWREG_X86_EBX:         *puValue = pState->u.x86.auRegs[X86_GREG_xBX];  return true;
+        case DWREG_X86_ESP:         *puValue = pState->u.x86.auRegs[X86_GREG_xSP];  return true;
+        case DWREG_X86_EBP:         *puValue = pState->u.x86.auRegs[X86_GREG_xBP];  return true;
+        case DWREG_X86_ESI:         *puValue = pState->u.x86.auRegs[X86_GREG_xSI];  return true;
+        case DWREG_X86_EDI:         *puValue = pState->u.x86.auRegs[X86_GREG_xDI];  return true;
+        case DWREG_X86_EFLAGS:      *puValue = pState->u.x86.uRFlags;               return true;
+        case DWREG_X86_ES:          *puValue = pState->u.x86.auSegs[X86_SREG_ES];   return true;
+        case DWREG_X86_CS:          *puValue = pState->u.x86.auSegs[X86_SREG_CS];   return true;
+        case DWREG_X86_SS:          *puValue = pState->u.x86.auSegs[X86_SREG_SS];   return true;
+        case DWREG_X86_DS:          *puValue = pState->u.x86.auSegs[X86_SREG_DS];   return true;
+        case DWREG_X86_FS:          *puValue = pState->u.x86.auSegs[X86_SREG_FS];   return true;
+        case DWREG_X86_GS:          *puValue = pState->u.x86.auSegs[X86_SREG_GS];   return true;
+    }
+    return false;
+}
+
+/** Register getter. */
+typedef bool FNDWARFUNWINDGEREGFROMSTATE(PCRTDBGUNWINDSTATE pState, uint16_t iReg, uint64_t *puValue);
+/** Pointer to a register getter. */
+typedef FNDWARFUNWINDGEREGFROMSTATE *PFNDWARFUNWINDGEREGFROMSTATE;
 
 
 
-} RTDWARFCFSTATE;
-#endif
+/**
+ * Does the heavy work for figuring out the return value of a register.
+ *
+ * @returns IPRT status code.
+ * @retval  VERR_NOT_FOUND if register is undefined.
+ *
+ * @param   pRow        The DWARF unwind table "row" to use.
+ * @param   uReg        The DWARF register number.
+ * @param   pCie        The corresponding CIE.
+ * @param   uCfa        The canonical frame address to use.
+ * @param   pState      The unwind to use when reading stack.
+ * @param   pOldState   The unwind state to get register values from.
+ * @param   pfnGetReg   The register value getter.
+ * @param   puValue     Where to store the return value.
+ * @param   cbValue     The size this register would have on the stack.
+ */
+static int rtDwarfUnwind_CalcRegisterValue(PRTDWARFCFROW pRow, unsigned uReg, PCRTDWARFCIEINFO pCie, uint64_t uCfa,
+                                           PRTDBGUNWINDSTATE pState, PCRTDBGUNWINDSTATE pOldState,
+                                           PFNDWARFUNWINDGEREGFROMSTATE pfnGetReg, uint64_t *puValue, uint8_t cbValue)
+{
+    Assert(uReg < RT_ELEMENTS(pRow->apbRegInstrs));
+    uint8_t const *pbInstr = pRow->apbRegInstrs[uReg];
+    if (!pbInstr)
+        return VERR_NOT_FOUND;
+
+    uint32_t      cbInstr  = UINT32_MAX / 2;
+    uint32_t      offInstr = 1;
+    uint8_t const bInstr   = *pbInstr;
+    switch (bInstr)
+    {
+        default:
+            if ((bInstr & DW_CFA_high_bit_mask) == DW_CFA_offset)
+            {
+                uint64_t offCfa;
+                GET_ULEB128_AS_U63(offCfa);
+                int rc = pState->pfnReadStack(pState, uCfa + (int64_t)offCfa * pCie->iDataAlignFactor, cbValue, puValue);
+                Log8(("rtDwarfUnwind_CalcRegisterValue(%#x): DW_CFA_offset %#RX64: %Rrc, %#RX64\n", uReg, uCfa + (int64_t)offCfa * pCie->iDataAlignFactor, rc, *puValue));
+                return rc;
+            }
+            AssertReturn((bInstr & DW_CFA_high_bit_mask) == DW_CFA_restore, VERR_INTERNAL_ERROR);
+            RT_FALL_THRU();
+        case DW_CFA_restore_extended:
+            /* Need to search the CIE for the rule. */
+            Log8(("rtDwarfUnwind_CalcRegisterValue(%#x): DW_CFA_restore/extended:\n", uReg));
+            AssertFailedReturn(VERR_DWARF_TODO);
+
+        case DW_CFA_offset_extended:
+        {
+            SKIP_ULEB128_OR_LEB128();
+            uint64_t offCfa;
+            GET_ULEB128_AS_U63(offCfa);
+            int rc = pState->pfnReadStack(pState, uCfa + (int64_t)offCfa * pCie->iDataAlignFactor, cbValue, puValue);
+            Log8(("rtDwarfUnwind_CalcRegisterValue(%#x): DW_CFA_offset_extended %#RX64: %Rrc, %#RX64\n", uReg, uCfa + (int64_t)offCfa * pCie->iDataAlignFactor, rc, *puValue));
+            return rc;
+        }
+
+        case DW_CFA_offset_extended_sf:
+        {
+            SKIP_ULEB128_OR_LEB128();
+            int64_t offCfa;
+            GET_LEB128_AS_I63(offCfa);
+            int rc = pState->pfnReadStack(pState, uCfa + offCfa * pCie->iDataAlignFactor, cbValue, puValue);
+            Log8(("rtDwarfUnwind_CalcRegisterValue(%#x): DW_CFA_offset_extended_sf %#RX64: %Rrc, %#RX64\n", uReg, uCfa + offCfa * pCie->iDataAlignFactor, rc, *puValue));
+            return rc;
+        }
+
+        case DW_CFA_val_offset:
+        {
+            SKIP_ULEB128_OR_LEB128();
+            uint64_t offCfa;
+            GET_ULEB128_AS_U63(offCfa);
+            *puValue = uCfa + (int64_t)offCfa * pCie->iDataAlignFactor;
+            Log8(("rtDwarfUnwind_CalcRegisterValue(%#x): DW_CFA_val_offset: %#RX64\n", uReg, *puValue));
+            return VINF_SUCCESS;
+        }
+
+        case DW_CFA_val_offset_sf:
+        {
+            SKIP_ULEB128_OR_LEB128();
+            int64_t offCfa;
+            GET_LEB128_AS_I63(offCfa);
+            *puValue = uCfa + offCfa * pCie->iDataAlignFactor;
+            Log8(("rtDwarfUnwind_CalcRegisterValue(%#x): DW_CFA_val_offset_sf: %#RX64\n", uReg, *puValue));
+            return VINF_SUCCESS;
+        }
+
+        case DW_CFA_register:
+        {
+            SKIP_ULEB128_OR_LEB128();
+            uint16_t iSrcReg;
+            GET_ULEB128_AS_U14(iSrcReg);
+            if (pfnGetReg(pOldState, uReg, puValue))
+            {
+                Log8(("rtDwarfUnwind_CalcRegisterValue(%#x): DW_CFA_register: %#RX64\n", uReg, *puValue));
+                return VINF_SUCCESS;
+            }
+            Log8(("rtDwarfUnwind_CalcRegisterValue(%#x): DW_CFA_register: VERR_NOT_FOUND\n", uReg));
+            return VERR_NOT_FOUND;
+        }
+
+        case DW_CFA_expression:
+            Log8(("rtDwarfUnwind_CalcRegisterValue(%#x): DW_CFA_expression: TODO\n", uReg));
+            AssertFailedReturn(VERR_DWARF_TODO);
+
+        case DW_CFA_val_expression:
+            Log8(("rtDwarfUnwind_CalcRegisterValue(%#x): DW_CFA_val_expression: TODO\n", uReg));
+            AssertFailedReturn(VERR_DWARF_TODO);
+
+        case DW_CFA_undefined:
+            Log8(("rtDwarfUnwind_CalcRegisterValue(%#x): DW_CFA_undefined\n", uReg));
+            return VERR_NOT_FOUND;
+
+        case DW_CFA_same_value:
+            if (pfnGetReg(pOldState, uReg, puValue))
+            {
+                Log8(("rtDwarfUnwind_CalcRegisterValue(%#x): DW_CFA_same_value: %#RX64\n", uReg, *puValue));
+                return VINF_SUCCESS;
+            }
+            Log8(("rtDwarfUnwind_CalcRegisterValue(%#x): DW_CFA_same_value: VERR_NOT_FOUND\n", uReg));
+            return VERR_NOT_FOUND;
+    }
+}
+
+
+DECLINLINE(void) rtDwarfUnwind_UpdateX86GRegFromRow(PRTDBGUNWINDSTATE pState, PCRTDBGUNWINDSTATE pOldState, unsigned idxGReg,
+                                                    PRTDWARFCFROW pRow, unsigned idxDwReg, PCRTDWARFCIEINFO pCie,
+                                                    uint64_t uCfa, PFNDWARFUNWINDGEREGFROMSTATE pfnGetReg, uint8_t cbGReg)
+{
+    int rc = rtDwarfUnwind_CalcRegisterValue(pRow, idxDwReg, pCie, uCfa, pState, pOldState, pfnGetReg,
+                                             &pState->u.x86.auRegs[idxGReg], cbGReg);
+    if (RT_SUCCESS(rc))
+        pState->u.x86.Loaded.s.fRegs |= RT_BIT_32(idxGReg);
+}
+
+
+DECLINLINE(void) rtDwarfUnwind_UpdateX86SRegFromRow(PRTDBGUNWINDSTATE pState, PCRTDBGUNWINDSTATE pOldState, unsigned idxSReg,
+                                                    PRTDWARFCFROW pRow, unsigned idxDwReg, PCRTDWARFCIEINFO pCie,
+                                                    uint64_t uCfa, PFNDWARFUNWINDGEREGFROMSTATE pfnGetReg)
+{
+    uint64_t uValue = pState->u.x86.auSegs[idxSReg];
+    int rc = rtDwarfUnwind_CalcRegisterValue(pRow, idxDwReg, pCie, uCfa, pState, pOldState, pfnGetReg, &uValue, sizeof(uint16_t));
+    if (RT_SUCCESS(rc))
+    {
+        pState->u.x86.auSegs[idxSReg] = (uint16_t)uValue;
+        pState->u.x86.Loaded.s.fSegs |= RT_BIT_32(idxSReg);
+    }
+}
+
+
+DECLINLINE(void) rtDwarfUnwind_UpdateX86RFlagsFromRow(PRTDBGUNWINDSTATE pState, PCRTDBGUNWINDSTATE pOldState,
+                                                      PRTDWARFCFROW pRow, unsigned idxDwReg, PCRTDWARFCIEINFO pCie,
+                                                      uint64_t uCfa, PFNDWARFUNWINDGEREGFROMSTATE pfnGetReg)
+{
+    int rc = rtDwarfUnwind_CalcRegisterValue(pRow, idxDwReg, pCie, uCfa, pState, pOldState, pfnGetReg,
+                                             &pState->u.x86.uRFlags, sizeof(uint32_t));
+    if (RT_SUCCESS(rc))
+        pState->u.x86.Loaded.s.fRFlags = 1;
+}
+
+
+DECLINLINE(void) rtDwarfUnwind_UpdatePCFromRow(PRTDBGUNWINDSTATE pState, PCRTDBGUNWINDSTATE pOldState,
+                                               PRTDWARFCFROW pRow, unsigned idxDwReg, PCRTDWARFCIEINFO pCie,
+                                               uint64_t uCfa, PFNDWARFUNWINDGEREGFROMSTATE pfnGetReg, uint8_t cbPc)
+{
+    if (pCie->bRetReg != UINT8_MAX)
+        idxDwReg = pCie->bRetReg;
+    int rc = rtDwarfUnwind_CalcRegisterValue(pRow, idxDwReg, pCie, uCfa, pState, pOldState, pfnGetReg, &pState->uPc, cbPc);
+    if (RT_SUCCESS(rc))
+        pState->u.x86.Loaded.s.fPc = 1;
+    else
+    {
+        rc = pState->pfnReadStack(pState, uCfa - cbPc, cbPc, &pState->uPc);
+        if (RT_SUCCESS(rc))
+            pState->u.x86.Loaded.s.fPc = 1;
+    }
+}
+
+
+
+/**
+ * Updates @a pState with the rules found in @a pRow.
+ *
+ * @returns IPRT status code.
+ * @param   pState          The unwind state to update.
+ * @param   pRow            The "row" in the dwarf unwind table.
+ * @param   pCie            The CIE structure for the row.
+ */
+static int rtDwarfUnwind_UpdateStateFromRow(PRTDBGUNWINDSTATE pState, PRTDWARFCFROW pRow, PCRTDWARFCIEINFO pCie)
+{
+    /*
+     * We need to make a copy of the current state so we can get at the
+     * current register values while calculating the ones of the next frame.
+     */
+    RTDBGUNWINDSTATE const Old = *pState;
+
+    /*
+     * Get the register state getter.
+     */
+    PFNDWARFUNWINDGEREGFROMSTATE pfnGetReg;
+    switch (pState->enmArch)
+    {
+        case RTLDRARCH_AMD64:
+            pfnGetReg = rtDwarfUnwind_Amd64GetRegFromState;
+            break;
+        case RTLDRARCH_X86_32:
+        case RTLDRARCH_X86_16:
+            pfnGetReg = rtDwarfUnwind_X86GetRegFromState;
+            break;
+        default:
+            return VERR_NOT_SUPPORTED;
+    }
+
+    /*
+     * Calc the canonical frame address for the current row.
+     */
+    AssertReturn(pRow->fCfaDefined, VERR_DBG_MALFORMED_UNWIND_INFO);
+    uint64_t uCfa = 0;
+    if (!pRow->pbCfaExprInstr)
+    {
+        pfnGetReg(&Old, pRow->uCfaBaseReg, &uCfa);
+        uCfa += pRow->offCfaReg;
+    }
+    else
+    {
+        AssertFailed();
+        return VERR_DWARF_TODO;
+    }
+    Log8(("rtDwarfUnwind_UpdateStateFromRow: uCfa=%RX64\n", uCfa));
+
+    /*
+     * Do the architecture specific register updating.
+     */
+    switch (pState->enmArch)
+    {
+        case RTLDRARCH_AMD64:
+            pState->u.x86.FrameAddr.off       = uCfa - 8*2;
+            pState->u.x86.Loaded.fAll         = 0;
+            pState->u.x86.Loaded.s.fFrameAddr = 1;
+            rtDwarfUnwind_UpdatePCFromRow(pState, &Old,                    pRow, DWREG_AMD64_RA,  pCie, uCfa, pfnGetReg, sizeof(uint64_t));
+            rtDwarfUnwind_UpdateX86RFlagsFromRow(pState, &Old,             pRow, DWREG_AMD64_RFLAGS, pCie, uCfa, pfnGetReg);
+            rtDwarfUnwind_UpdateX86GRegFromRow(pState, &Old, X86_GREG_xAX, pRow, DWREG_AMD64_RAX, pCie, uCfa, pfnGetReg, sizeof(uint64_t));
+            rtDwarfUnwind_UpdateX86GRegFromRow(pState, &Old, X86_GREG_xCX, pRow, DWREG_AMD64_RCX, pCie, uCfa, pfnGetReg, sizeof(uint64_t));
+            rtDwarfUnwind_UpdateX86GRegFromRow(pState, &Old, X86_GREG_xDX, pRow, DWREG_AMD64_RDX, pCie, uCfa, pfnGetReg, sizeof(uint64_t));
+            rtDwarfUnwind_UpdateX86GRegFromRow(pState, &Old, X86_GREG_xBX, pRow, DWREG_AMD64_RBX, pCie, uCfa, pfnGetReg, sizeof(uint64_t));
+            rtDwarfUnwind_UpdateX86GRegFromRow(pState, &Old, X86_GREG_xSP, pRow, DWREG_AMD64_RSP, pCie, uCfa, pfnGetReg, sizeof(uint64_t));
+            rtDwarfUnwind_UpdateX86GRegFromRow(pState, &Old, X86_GREG_xBP, pRow, DWREG_AMD64_RBP, pCie, uCfa, pfnGetReg, sizeof(uint64_t));
+            rtDwarfUnwind_UpdateX86GRegFromRow(pState, &Old, X86_GREG_xSI, pRow, DWREG_AMD64_RSI, pCie, uCfa, pfnGetReg, sizeof(uint64_t));
+            rtDwarfUnwind_UpdateX86GRegFromRow(pState, &Old, X86_GREG_xDI, pRow, DWREG_AMD64_RDI, pCie, uCfa, pfnGetReg, sizeof(uint64_t));
+            rtDwarfUnwind_UpdateX86GRegFromRow(pState, &Old, X86_GREG_x8,  pRow, DWREG_AMD64_R8,  pCie, uCfa, pfnGetReg, sizeof(uint64_t));
+            rtDwarfUnwind_UpdateX86GRegFromRow(pState, &Old, X86_GREG_x9,  pRow, DWREG_AMD64_R9,  pCie, uCfa, pfnGetReg, sizeof(uint64_t));
+            rtDwarfUnwind_UpdateX86GRegFromRow(pState, &Old, X86_GREG_x10, pRow, DWREG_AMD64_R10, pCie, uCfa, pfnGetReg, sizeof(uint64_t));
+            rtDwarfUnwind_UpdateX86GRegFromRow(pState, &Old, X86_GREG_x11, pRow, DWREG_AMD64_R11, pCie, uCfa, pfnGetReg, sizeof(uint64_t));
+            rtDwarfUnwind_UpdateX86GRegFromRow(pState, &Old, X86_GREG_x12, pRow, DWREG_AMD64_R12, pCie, uCfa, pfnGetReg, sizeof(uint64_t));
+            rtDwarfUnwind_UpdateX86GRegFromRow(pState, &Old, X86_GREG_x13, pRow, DWREG_AMD64_R13, pCie, uCfa, pfnGetReg, sizeof(uint64_t));
+            rtDwarfUnwind_UpdateX86GRegFromRow(pState, &Old, X86_GREG_x14, pRow, DWREG_AMD64_R14, pCie, uCfa, pfnGetReg, sizeof(uint64_t));
+            rtDwarfUnwind_UpdateX86GRegFromRow(pState, &Old, X86_GREG_x15, pRow, DWREG_AMD64_R15, pCie, uCfa, pfnGetReg, sizeof(uint64_t));
+            rtDwarfUnwind_UpdateX86SRegFromRow(pState, &Old, X86_SREG_ES,  pRow, DWREG_AMD64_ES,  pCie, uCfa, pfnGetReg);
+            rtDwarfUnwind_UpdateX86SRegFromRow(pState, &Old, X86_SREG_CS,  pRow, DWREG_AMD64_CS,  pCie, uCfa, pfnGetReg);
+            rtDwarfUnwind_UpdateX86SRegFromRow(pState, &Old, X86_SREG_SS,  pRow, DWREG_AMD64_SS,  pCie, uCfa, pfnGetReg);
+            rtDwarfUnwind_UpdateX86SRegFromRow(pState, &Old, X86_SREG_DS,  pRow, DWREG_AMD64_DS,  pCie, uCfa, pfnGetReg);
+            rtDwarfUnwind_UpdateX86SRegFromRow(pState, &Old, X86_SREG_FS,  pRow, DWREG_AMD64_FS,  pCie, uCfa, pfnGetReg);
+            rtDwarfUnwind_UpdateX86SRegFromRow(pState, &Old, X86_SREG_GS,  pRow, DWREG_AMD64_GS,  pCie, uCfa, pfnGetReg);
+            break;
+
+        case RTLDRARCH_X86_32:
+        case RTLDRARCH_X86_16:
+            pState->u.x86.FrameAddr.off       = uCfa - 4*2;
+            pState->u.x86.Loaded.fAll         = 0;
+            pState->u.x86.Loaded.s.fFrameAddr = 1;
+            rtDwarfUnwind_UpdatePCFromRow(pState, &Old,                    pRow, DWREG_X86_RA,  pCie, uCfa, pfnGetReg, sizeof(uint32_t));
+            rtDwarfUnwind_UpdateX86RFlagsFromRow(pState, &Old,             pRow, DWREG_X86_EFLAGS, pCie, uCfa, pfnGetReg);
+            rtDwarfUnwind_UpdateX86GRegFromRow(pState, &Old, X86_GREG_xAX, pRow, DWREG_X86_EAX, pCie, uCfa, pfnGetReg, sizeof(uint32_t));
+            rtDwarfUnwind_UpdateX86GRegFromRow(pState, &Old, X86_GREG_xCX, pRow, DWREG_X86_ECX, pCie, uCfa, pfnGetReg, sizeof(uint32_t));
+            rtDwarfUnwind_UpdateX86GRegFromRow(pState, &Old, X86_GREG_xDX, pRow, DWREG_X86_EDX, pCie, uCfa, pfnGetReg, sizeof(uint32_t));
+            rtDwarfUnwind_UpdateX86GRegFromRow(pState, &Old, X86_GREG_xBX, pRow, DWREG_X86_EBX, pCie, uCfa, pfnGetReg, sizeof(uint32_t));
+            rtDwarfUnwind_UpdateX86GRegFromRow(pState, &Old, X86_GREG_xSP, pRow, DWREG_X86_ESP, pCie, uCfa, pfnGetReg, sizeof(uint32_t));
+            rtDwarfUnwind_UpdateX86GRegFromRow(pState, &Old, X86_GREG_xBP, pRow, DWREG_X86_EBP, pCie, uCfa, pfnGetReg, sizeof(uint32_t));
+            rtDwarfUnwind_UpdateX86GRegFromRow(pState, &Old, X86_GREG_xSI, pRow, DWREG_X86_ESI, pCie, uCfa, pfnGetReg, sizeof(uint32_t));
+            rtDwarfUnwind_UpdateX86GRegFromRow(pState, &Old, X86_GREG_xDI, pRow, DWREG_X86_EDI, pCie, uCfa, pfnGetReg, sizeof(uint32_t));
+            rtDwarfUnwind_UpdateX86SRegFromRow(pState, &Old, X86_SREG_ES,  pRow, DWREG_X86_ES,  pCie, uCfa, pfnGetReg);
+            rtDwarfUnwind_UpdateX86SRegFromRow(pState, &Old, X86_SREG_CS,  pRow, DWREG_X86_CS,  pCie, uCfa, pfnGetReg);
+            rtDwarfUnwind_UpdateX86SRegFromRow(pState, &Old, X86_SREG_SS,  pRow, DWREG_X86_SS,  pCie, uCfa, pfnGetReg);
+            rtDwarfUnwind_UpdateX86SRegFromRow(pState, &Old, X86_SREG_DS,  pRow, DWREG_X86_DS,  pCie, uCfa, pfnGetReg);
+            rtDwarfUnwind_UpdateX86SRegFromRow(pState, &Old, X86_SREG_FS,  pRow, DWREG_X86_FS,  pCie, uCfa, pfnGetReg);
+            rtDwarfUnwind_UpdateX86SRegFromRow(pState, &Old, X86_SREG_GS,  pRow, DWREG_X86_GS,  pCie, uCfa, pfnGetReg);
+            break;
+
+        default:
+            AssertFailedReturn(VERR_NOT_SUPPORTED);
+    }
+
+    return VINF_SUCCESS;
+}
+
 
 /**
  * Processes a FDE, taking over after the PC range field.
@@ -2635,17 +3579,37 @@ static int rtDwarfUnwind_ProcessFde(PRTDWARFCURSOR pCursor, PCRTDWARFCIEINFO pCi
         return pCursor->rc;
 
     /*
-     * The crazy part.  Table program execution.
+     * Now "execute" the programs till we've constructed the desired row.
      */
-    if (pCie->cbInstructions > 0)
-    {
-        /** @todo continue here later.   */
-    }
+    RTDWARFCFROW            Row;
+    RTDWARFCFEXEC           ExecState = { &Row, offInRange, 0, true /** @todo byte-order*/, pCie, uPcBegin, offInRange };
+    RT_ZERO(Row);
+
+    int rc = rtDwarfUnwind_Execute(&ExecState, pCie->pbInstructions, (uint32_t)pCie->cbInstructions);
+    if (rc == VINF_TRY_AGAIN)
+        rc = rtDwarfUnwind_Execute(&ExecState, pCursor->pb, (uint32_t)pCursor->cbUnitLeft);
+
+    /* On success, extract whatever state we've got. */
+    if (RT_SUCCESS(rc))
+        rc = rtDwarfUnwind_UpdateStateFromRow(pState, &Row, pCie);
+
+    /*
+     * Clean up allocations in case of pushes.
+     */
+    if (ExecState.pRow == &Row)
+        Assert(!ExecState.pRow->fOnHeap);
+    else
+        do
+        {
+            PRTDWARFCFROW pPopped = ExecState.pRow;
+            ExecState.pRow = ExecState.pRow->pNextOnStack;
+            Assert(pPopped->fOnHeap);
+            RTMemTmpFree(pPopped);
+        } while (ExecState.pRow && ExecState.pRow != &Row);
 
     RT_NOREF(pState, uPcBegin, cbPcRange, offInRange);
-    return VINF_SUCCESS;
+    return rc;
 }
-
 
 
 /**
@@ -2662,6 +3626,7 @@ static int rtDwarfUnwind_ProcessFde(PRTDWARFCURSOR pCursor, PCRTDWARFCIEINFO pCi
  */
 static int rtDwarfUnwind_LoadCie(PRTDWARFCURSOR pCursor, PRTDWARFCIEINFO pNewCie, uint64_t offUnit, uint8_t bDefaultPtrEnc)
 {
+Log8(("%#08RX64: rtDwarfUnwind_LoadCie: %.*Rhxs\n", offUnit, pCursor->cbUnitLeft, pCursor->pb));
     /*
      * Initialize the CIE record and get the version.
      */
@@ -2672,7 +3637,12 @@ static int rtDwarfUnwind_LoadCie(PRTDWARFCURSOR pCursor, PRTDWARFCIEINFO pNewCie
     pNewCie->uDwarfVer      = rtDwarfCursor_GetUByte(pCursor, 0);
     if (   pNewCie->uDwarfVer >= 1 /* Note! Some GCC versions may emit v1 here. */
         && pNewCie->uDwarfVer <= 5)
+    { /* likely */ }
+    else
+    {
+        Log(("rtDwarfUnwind_LoadCie(%RX64): uDwarfVer=%u: VERR_VERSION_MISMATCH\n", offUnit, pNewCie->uDwarfVer));
         return VERR_VERSION_MISMATCH;
+    }
 
     /*
      * The augmentation string.
@@ -2726,6 +3696,7 @@ static int rtDwarfUnwind_LoadCie(PRTDWARFCURSOR pCursor, PRTDWARFCIEINFO pNewCie
     }
     pNewCie->uCodeAlignFactor = rtDwarfCursor_GetULeb128(pCursor, 1);
     pNewCie->iDataAlignFactor = rtDwarfCursor_GetSLeb128(pCursor, 1);
+    pNewCie->bRetReg          = rtDwarfCursor_GetU8(pCursor, UINT8_MAX);
 
     /*
      * Augmentation data.
@@ -2738,13 +3709,22 @@ static int rtDwarfUnwind_LoadCie(PRTDWARFCURSOR pCursor, PRTDWARFCIEINFO pNewCie
         {
             uint64_t cbAugData = rtDwarfCursor_GetULeb128(pCursor, UINT64_MAX);
             if (RT_FAILURE(pCursor->rc))
+            {
+                Log(("rtDwarfUnwind_LoadCie(%#RX64): rtDwarfCursor_GetULeb128 -> %Rrc!\n", offUnit, pCursor->rc));
                 return pCursor->rc;
+            }
             if (cbAugData > pCursor->cbUnitLeft)
+            {
+                Log(("rtDwarfUnwind_LoadCie(%#RX64): cbAugData=%#x pCursor->cbUnitLeft=%#x -> VERR_DBG_MALFORMED_UNWIND_INFO!\n", offUnit, cbAugData, pCursor->cbUnitLeft));
                 return VERR_DBG_MALFORMED_UNWIND_INFO;
+            }
             cbInstr = pCursor->cbUnitLeft - cbAugData;
         }
         else if (pNewCie->fHasUnknowAugmentation)
+        {
+            Log(("rtDwarfUnwind_LoadCie(%#RX64): fHasUnknowAugmentation=%1 -> VERR_DBG_MALFORMED_UNWIND_INFO!\n", offUnit));
             return VERR_DBG_MALFORMED_UNWIND_INFO;
+        }
 
         /* Parse the string. */
         for (const char *pszAug = pNewCie->pszAugmentation; *pszAug != '\0'; pszAug++)
@@ -2774,7 +3754,7 @@ static int rtDwarfUnwind_LoadCie(PRTDWARFCURSOR pCursor, PRTDWARFCIEINFO pNewCie
     pNewCie->cbInstructions = pCursor->cbUnitLeft;
 
     /*
-     * Determine the target address encoding.
+     * Determine the target address encoding.  Make sure we resolve DW_EH_PE_ptr.
      */
     if (pNewCie->bAddressPtrEnc == DW_EH_PE_omit)
         switch (cbAddress)
@@ -2784,6 +3764,8 @@ static int rtDwarfUnwind_LoadCie(PRTDWARFCURSOR pCursor, PRTDWARFCIEINFO pNewCie
             case 8:     pNewCie->bAddressPtrEnc = DW_EH_PE_udata8; break;
             default:    pNewCie->bAddressPtrEnc = bDefaultPtrEnc;  break;
         }
+    else if ((pNewCie->bAddressPtrEnc & DW_EH_PE_FORMAT_MASK) == DW_EH_PE_ptr)
+        pNewCie->bAddressPtrEnc = bDefaultPtrEnc;
 
     return VINF_SUCCESS;
 }
@@ -2794,6 +3776,7 @@ static int rtDwarfUnwind_LoadCie(PRTDWARFCURSOR pCursor, PRTDWARFCIEINFO pNewCie
  *
  * @returns IPRT status code.
  * @param   pCursor         The cursor.
+ * @param   uRvaCursor      The RVA corrsponding to the cursor start location.
  * @param   idxSeg          The segment of the PC location.
  * @param   offSeg          The segment offset of the PC location.
  * @param   uRva            The RVA of the PC location.
@@ -2802,9 +3785,12 @@ static int rtDwarfUnwind_LoadCie(PRTDWARFCURSOR pCursor, PRTDWARFCIEINFO pNewCie
  * @param   fIsEhFrame      Set if this is a '.eh_frame'.  GCC generate these
  *                          with different CIE_pointer values.
  */
-DECLHIDDEN(int) rtDwarfUnwind_Slow(PRTDWARFCURSOR pCursor, RTDBGSEGIDX idxSeg, RTUINTPTR offSeg, RTUINTPTR uRva,
+DECLHIDDEN(int) rtDwarfUnwind_Slow(PRTDWARFCURSOR pCursor, RTUINTPTR uRvaCursor,
+                                   RTDBGSEGIDX idxSeg, RTUINTPTR offSeg, RTUINTPTR uRva,
                                    PRTDBGUNWINDSTATE pState, uint8_t bDefaultPtrEnc, bool fIsEhFrame)
 {
+    Log8(("rtDwarfUnwind_Slow: idxSeg=%#x offSeg=%RTptr uRva=%RTptr enmArch=%d PC=%#RX64\n", idxSeg, offSeg, uRva, pState->enmArch, pState->uPc));
+
     /*
      * CIE info we collect.
      */
@@ -2816,12 +3802,12 @@ DECLHIDDEN(int) rtDwarfUnwind_Slow(PRTDWARFCURSOR pCursor, RTDBGSEGIDX idxSeg, R
      * Do the scanning.
      */
     int rc = VERR_DBG_UNWIND_INFO_NOT_FOUND;
-    while (   !rtDwarfCursor_IsAtEnd(pCursor)
-           && RT_SUCCESS(rc))
+    while (!rtDwarfCursor_IsAtEnd(pCursor))
     {
         uint64_t const offUnit = rtDwarfCursor_CalcSectOffsetU32(pCursor);
-        if (rtDwarfCursor_GetInitalLength(pCursor) == 0)
+        if (rtDwarfCursor_GetInitialLength(pCursor) == 0)
             break;
+Log8(("%#08RX64: rtDwarfCursor_GetInitialLength -> %#x\n", offUnit, pCursor->cbUnitLeft));
 
         uint64_t const offRelCie = rtDwarfCursor_GetUOff(pCursor, 0);
         if (   offRelCie != 0
@@ -2833,7 +3819,7 @@ DECLHIDDEN(int) rtDwarfUnwind_Slow(PRTDWARFCURSOR pCursor, RTDBGSEGIDX idxSeg, R
             /* Locate the corresponding CIE.  The CIE pointer is self relative
                in .eh_frame and section relative in .debug_frame. */
             PRTDWARFCIEINFO pCieForFde;
-            uint64_t offCie = fIsEhFrame ? offUnit - offRelCie : offRelCie;
+            uint64_t offCie = fIsEhFrame ? offUnit + 4 - offRelCie : offRelCie;
             if (pCieHint && pCieHint->offCie == offCie)
                 pCieForFde = pCieHint;
             else
@@ -2849,18 +3835,33 @@ DECLHIDDEN(int) rtDwarfUnwind_Slow(PRTDWARFCURSOR pCursor, RTDBGSEGIDX idxSeg, R
             }
             if (pCieForFde)
             {
-                /* Read the PC range covered by this FDE (the fields are also
-                   known as initial_location & instructions). */
+                /* Read the PC range covered by this FDE (the fields are also known as initial_location). */
                 RTDBGSEGIDX idxFdeSeg = RTDBGSEGIDX_RVA;
                 if (pCieForFde->cbSegment)
                     idxFdeSeg = rtDwarfCursor_GetVarSizedU(pCursor, pCieForFde->cbSegment, RTDBGSEGIDX_RVA);
-                uint64_t uPcBegin  = rtDwarfCursor_GetPtrEnc(pCursor, pCieForFde->bAddressPtrEnc, 0);
+                uint64_t uPcBegin;
+                switch (pCieForFde->bAddressPtrEnc & DW_EH_PE_APPL_MASK)
+                {
+                    default: AssertFailed();
+                        RT_FALL_THRU();
+                    case DW_EH_PE_absptr:
+                        uPcBegin = rtDwarfCursor_GetPtrEnc(pCursor, pCieForFde->bAddressPtrEnc, 0);
+                        break;
+                    case DW_EH_PE_pcrel:
+                    {
+                        uPcBegin = rtDwarfCursor_CalcSectOffsetU32(pCursor) + uRvaCursor;
+                        uPcBegin += rtDwarfCursor_GetPtrEnc(pCursor, pCieForFde->bAddressPtrEnc, 0);
+                        break;
+                    }
+                }
                 uint64_t cbPcRange = rtDwarfCursor_GetPtrEnc(pCursor, pCieForFde->bAddressPtrEnc, 0);
 
                 /* Match it with what we're looking for. */
                 bool fMatch = idxFdeSeg == RTDBGSEGIDX_RVA
                             ? uRva - uPcBegin < cbPcRange
                             : idxSeg == idxFdeSeg && offSeg - uPcBegin < cbPcRange;
+                Log8(("%#08RX64: FDE pCie=%p idxFdeSeg=%#x uPcBegin=%#RX64 cbPcRange=%#x fMatch=%d\n",
+                      offUnit, pCieForFde, idxFdeSeg, uPcBegin, cbPcRange, fMatch));
                 if (fMatch)
                 {
                     rc = rtDwarfUnwind_ProcessFde(pCursor, pCieForFde, uPcBegin, cbPcRange,
@@ -2869,6 +3870,8 @@ DECLHIDDEN(int) rtDwarfUnwind_Slow(PRTDWARFCURSOR pCursor, RTDBGSEGIDX idxSeg, R
                     break;
                 }
             }
+            else
+                Log8(("%#08RX64: FDE -  pCie=NULL!!  offCie=%#RX64 offRelCie=%#RX64 fIsEhFrame=%d\n", offUnit, offCie, offRelCie, fIsEhFrame));
         }
         else
         {
@@ -2886,9 +3889,13 @@ DECLHIDDEN(int) rtDwarfUnwind_Slow(PRTDWARFCURSOR pCursor, RTDBGSEGIDX idxSeg, R
                     break;
                 }
             }
+            Log8(("%#08RX64: CIE\n", offUnit));
             int rc2 = rtDwarfUnwind_LoadCie(pCursor, &paCies[cCies], offUnit, bDefaultPtrEnc);
             if (RT_SUCCESS(rc2))
+            {
+                Log8(("%#08RX64: CIE #%u: offCie=%#RX64\n", offUnit, cCies, paCies[cCies].offCie));
                 cCies++;
+            }
         }
         rtDwarfCursor_SkipUnit(pCursor);
     }
@@ -2898,6 +3905,7 @@ DECLHIDDEN(int) rtDwarfUnwind_Slow(PRTDWARFCURSOR pCursor, RTDBGSEGIDX idxSeg, R
      */
     if (paCies)
         RTMemFree(paCies);
+    Log8(("rtDwarfUnwind_Slow: returns %Rrc PC=%#RX64\n", rc, pState->uPc));
     return rc;
 }
 
@@ -2937,19 +3945,25 @@ static uint8_t rtDwarfUnwind_ArchToPtrEnc(RTLDRARCH enmLdrArch)
  * @returns IPRT status.
  * @param   pvSection       The '.eh_frame' section data.
  * @param   cbSection       The size of the '.eh_frame' section data.
+ * @param   uRvaSection     The RVA of the '.eh_frame' section.
  * @param   idxSeg          The segment of the PC location.
  * @param   offSeg          The segment offset of the PC location.
  * @param   uRva            The RVA of the PC location.
  * @param   pState          The unwind state to work.
  * @param   enmArch         The image architecture.
  */
-DECLHIDDEN(int) rtDwarfUnwind_EhData(void const *pvSection, size_t cbSection, RTDBGSEGIDX idxSeg, RTUINTPTR offSeg,
-                                     RTUINTPTR uRva, PRTDBGUNWINDSTATE pState, RTLDRARCH enmArch)
+DECLHIDDEN(int) rtDwarfUnwind_EhData(void const *pvSection, size_t cbSection, RTUINTPTR uRvaSection,
+                                     RTDBGSEGIDX idxSeg, RTUINTPTR offSeg, RTUINTPTR uRva,
+                                     PRTDBGUNWINDSTATE pState, RTLDRARCH enmArch)
 {
     RTDWARFCURSOR Cursor;
     rtDwarfCursor_InitForMem(&Cursor, pvSection, cbSection);
-    int rc = rtDwarfUnwind_Slow(&Cursor, idxSeg, offSeg, uRva, pState, rtDwarfUnwind_ArchToPtrEnc(enmArch), true /*fIsEhFrame*/);
-    return rtDwarfCursor_Delete(&Cursor, rc);
+    int rc = rtDwarfUnwind_Slow(&Cursor, uRvaSection, idxSeg, offSeg, uRva, pState,
+                                rtDwarfUnwind_ArchToPtrEnc(enmArch), true /*fIsEhFrame*/);
+    LogFlow(("rtDwarfUnwind_EhData: rtDwarfUnwind_Slow -> %Rrc\n", rc));
+    rc = rtDwarfCursor_Delete(&Cursor, rc);
+    LogFlow(("rtDwarfUnwind_EhData: returns %Rrc\n", rc));
+    return rc;
 }
 
 
@@ -3397,7 +4411,7 @@ static int rtDwarfLine_ExplodeUnit(PRTDBGMODDWARF pThis, PRTDWARFCURSOR pCursor)
     /*
      * Parse the header.
      */
-    rtDwarfCursor_GetInitalLength(pCursor);
+    rtDwarfCursor_GetInitialLength(pCursor);
     LnState.Hdr.uVer           = rtDwarfCursor_GetUHalf(pCursor, 0);
     if (   LnState.Hdr.uVer < 2
         || LnState.Hdr.uVer > 4)
@@ -4952,7 +5966,7 @@ static int rtDwarfInfo_LoadUnit(PRTDBGMODDWARF pThis, PRTDWARFCURSOR pCursor, bo
      * Read the compilation unit header.
      */
     uint64_t offUnit = rtDwarfCursor_CalcSectOffsetU32(pCursor);
-    uint64_t cbUnit  = rtDwarfCursor_GetInitalLength(pCursor);
+    uint64_t cbUnit  = rtDwarfCursor_GetInitialLength(pCursor);
     cbUnit += rtDwarfCursor_CalcSectOffsetU32(pCursor) - offUnit;
     uint16_t const uVer = rtDwarfCursor_GetUHalf(pCursor, 0);
     if (   uVer < 2
@@ -5242,7 +6256,8 @@ static DECLCALLBACK(int) rtDbgModDwarf_UnwindFrame(PRTDBGMODINT pMod, RTDBGSEGID
                 rtDbgModDwarfSegOffsetToRva(pThis, iSeg, off, &uRva);
 
             /* Do the work */
-            rc = rtDwarfUnwind_Slow(&Cursor, iSeg, off, uRva, pState, bPtrEnc, false /*fIsEhFrame*/);
+            rc = rtDwarfUnwind_Slow(&Cursor, 0 /** @todo .debug_frame RVA*/, iSeg, off, uRva,
+                                    pState, bPtrEnc, false /*fIsEhFrame*/);
 
             rc = rtDwarfCursor_Delete(&Cursor, rc);
         }
