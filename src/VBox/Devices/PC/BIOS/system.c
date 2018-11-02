@@ -70,8 +70,6 @@
 
 #define ACPI_DATA_SIZE    0x00010000L   /** @todo configurable? put elsewhere? */
 
-#define BX_CPU                  3
-
 extern  int pmode_IDT;
 extern  int rmode_IDT;
 
@@ -325,29 +323,6 @@ bx_bool set_enable_a20(bx_bool val)
     return((oldval & 0x02) != 0);
 }
 
-typedef struct {
-    uint32_t    start;
-    uint32_t    xstart;
-    uint32_t    len;
-    uint32_t    xlen;
-    uint32_t    type;
-} mem_range_t;
-
-void set_e820_range(uint16_t ES, uint16_t DI, uint32_t start, uint32_t end,
-                    uint8_t extra_start, uint8_t extra_end, uint16_t type)
-{
-    mem_range_t __far   *range;
-
-    range = ES :> (mem_range_t *)DI;
-    range->start  = start;
-    range->xstart = extra_start;
-    end -= start;
-    extra_end -= extra_start;
-    range->len    = end;
-    range->xlen   = extra_end;
-    range->type   = type;
-}
-
 /// @todo move elsewhere?
 #define AX      r.gr.u.r16.ax
 #define BX      r.gr.u.r16.bx
@@ -427,10 +402,10 @@ void BIOSCALL int15_function(sys_regs_t r)
     //       but not handle this as an unknown function (regardless of CPU type).
     case 0x4f:
         /* keyboard intercept */
-#if BX_CPU < 2
-        SET_AH(UNSUPPORTED_FUNCTION);
-#else
+#if VBOX_BIOS_CPU >= 80286
         // nop
+#else
+        SET_AH(UNSUPPORTED_FUNCTION);
 #endif
         SET_CF();
         break;
@@ -477,12 +452,16 @@ void BIOSCALL int15_function(sys_regs_t r)
         break;
         }
 
+    case 0x86:
+        // Wait for CX:DX microseconds. currently using the
+        // refresh request port 0x61 bit4, toggling every 15usec
+        int_enable();
+        timer_wait(((uint32_t)CX << 16) | DX);
+        break;
+
     case 0x88:
         // Get the amount of extended memory (above 1M)
-#if BX_CPU < 2
-        SET_AH(UNSUPPORTED_FUNCTION);
-        SET_CF();
-#else
+#if VBOX_BIOS_CPU >= 80286
         AX = (inb_cmos(0x31) << 8) | inb_cmos(0x30);
 
         // According to Ralf Brown's interrupt the limit should be 15M,
@@ -491,6 +470,9 @@ void BIOSCALL int15_function(sys_regs_t r)
             AX = 0xffc0;
 
         CLEAR_CF();
+#else
+        SET_AH(UNSUPPORTED_FUNCTION);
+        SET_CF();
 #endif
         break;
 
@@ -587,6 +569,31 @@ undecoded:
     }
 }
 
+#if VBOX_BIOS_CPU >= 80386
+
+typedef struct {
+    uint32_t    start;
+    uint32_t    xstart;
+    uint32_t    len;
+    uint32_t    xlen;
+    uint32_t    type;
+} mem_range_t;
+
+void set_e820_range(uint16_t reg_ES, uint16_t reg_DI, uint32_t start, uint32_t end,
+                    uint8_t extra_start, uint8_t extra_end, uint16_t type)
+{
+    mem_range_t __far   *range;
+
+    range = reg_ES :> (mem_range_t *)reg_DI;
+    range->start  = start;
+    range->xstart = extra_start;
+    end -= start;
+    extra_end -= extra_start;
+    range->len    = end;
+    range->xlen   = extra_end;
+    range->type   = type;
+}
+
 void BIOSCALL int15_function32(sys32_regs_t r)
 {
     uint32_t    extended_memory_size=0; // 64bits long
@@ -597,13 +604,6 @@ void BIOSCALL int15_function32(sys32_regs_t r)
     BX_DEBUG_INT15("int15 AX=%04x\n",AX);
 
     switch (GET_AH()) {
-    case 0x86:
-        // Wait for CX:DX microseconds. currently using the
-        // refresh request port 0x61 bit4, toggling every 15usec
-        int_enable();
-        timer_wait(((uint32_t)CX << 16) | DX);
-        break;
-
     case 0xd0:
         if (GET_AL() != 0x4f)
             goto int15_unimplemented;
@@ -839,6 +839,7 @@ void BIOSCALL int15_function32(sys32_regs_t r)
         break;
     }
 }
+#endif  /* VBOX_BIOS_CPU >= 80386 */
 
 #if VBOX_BIOS_CPU >= 80286
 
@@ -929,4 +930,4 @@ void BIOSCALL int15_blkmove(disk_regs_t r)
     SET_AH(0);
     CLEAR_CF();
 }
-#endif
+#endif  /* VBOX_BIOS_CPU >= 80286 */

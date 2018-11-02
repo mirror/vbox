@@ -124,7 +124,6 @@ extrn           _int13_harddisk_ext:near
 extrn           _int14_function:near
 extrn           _int15_function:near
 extrn           _int15_function_mouse:near
-extrn           _int15_function32:near
 extrn           _int16_function:near
 extrn           _int17_function:near
 extrn           _int19_function:near
@@ -148,6 +147,7 @@ if VBOX_BIOS_CPU ge 80286
 extrn           _int15_blkmove:near
 endif
 if VBOX_BIOS_CPU ge 80386
+extrn           _int15_function32:near
 extrn           _apic_setup:near
 endif
 
@@ -1722,12 +1722,14 @@ endif
                 push    ds
                 push    es
                 C_SETUP
-                cmp     ah, 86h
-                je      int15_handler32
+if VBOX_BIOS_CPU ge 80386
+                ;; int15_function32 exists in 386+ BIOS only, but INT 15h is
+                ;; not 386-specific
                 cmp     ah, 0E8h
                 je      int15_handler32
                 cmp     ah, 0d0h
                 je      int15_handler32
+endif
                 DO_pusha
                 cmp     ah, 53h         ; APM function?
                 je      apm_call
@@ -1737,7 +1739,9 @@ endif
                 call    _int15_function
 int15_handler_popa_ret:
                 DO_popa
+if VBOX_BIOS_CPU ge 80386
 int15_handler32_ret:
+endif
                 pop     es
                 pop     ds
                 popf
@@ -1751,20 +1755,16 @@ int15_handler_mouse:
                 call    _int15_function_mouse
                 jmp     int15_handler_popa_ret
 
-int15_handler32:
 if VBOX_BIOS_CPU ge 80386
+int15_handler32:
                 ;; need to save/restore 32-bit registers
                 .386
                 pushad
                 call    _int15_function32
                 popad
                 .286
-else
-                DO_pusha
-                call    _int15_function32
-                DO_popa
-endif
                 jmp     int15_handler32_ret
+endif
 
 ;;
 ;; Perform an IRET but retain the current carry flag value
