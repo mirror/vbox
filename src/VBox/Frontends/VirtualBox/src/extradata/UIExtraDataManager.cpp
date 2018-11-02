@@ -2031,7 +2031,6 @@ QStringList UIExtraDataManagerWindow::knownExtraDataKeys()
            << GUI_InformationWindowGeometry
            << GUI_InformationWindowElements
            << GUI_GuestControl_ProcessControlSplitterHints
-           << GUI_GuestControl_FileManagerSplitterHints
            << GUI_GuestControl_FileManagerDialogGeometry
            << GUI_GuestControl_ProcessControlDialogGeometry
            << GUI_DefaultCloseAction << GUI_RestrictedCloseActions
@@ -4103,30 +4102,6 @@ QList<int> UIExtraDataManager::guestControlProcessControlSplitterHints()
 {
     /* Get corresponding extra-data: */
     const QStringList data = extraDataStringList(GUI_GuestControl_ProcessControlSplitterHints);
-
-    /* Parse loaded data: */
-    QList<int> hints;
-    hints << (data.size() > 0 ? data[0].toInt() : 0);
-    hints << (data.size() > 1 ? data[1].toInt() : 0);
-
-    /* Return hints: */
-    return hints;
-}
-
-void UIExtraDataManager::setGuestControlFileManagerSplitterHints(const QList<int> &hints)
-{
-    QStringList data;
-    data << (hints.size() > 0 ? QString::number(hints[0]) : QString());
-    data << (hints.size() > 1 ? QString::number(hints[1]) : QString());
-
-    /* Re-cache corresponding extra-data: */
-    setExtraDataStringList(GUI_GuestControl_FileManagerSplitterHints, data);
-}
-
-QList<int> UIExtraDataManager::guestControlFileManagerSplitterHints()
-{
-    /* Get corresponding extra-data: */
-    const QStringList data = extraDataStringList(GUI_GuestControl_FileManagerSplitterHints);
 
     /* Parse loaded data: */
     QList<int> hints;

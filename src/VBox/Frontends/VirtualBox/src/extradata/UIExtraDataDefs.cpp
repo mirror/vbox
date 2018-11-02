@@ -195,7 +195,6 @@ const char *UIExtraDataDefs::GUI_Scaling_Optimization = "GUI/Scaling/Optimizatio
 const char *UIExtraDataDefs::GUI_InformationWindowGeometry = "GUI/InformationWindowGeometry";
 const char *UIExtraDataDefs::GUI_InformationWindowElements = "GUI/InformationWindowElements";
 const char *UIExtraDataDefs::GUI_GuestControl_ProcessControlSplitterHints = "GUI/GuestControl/ProcessControlSplitterHints";
-const char *UIExtraDataDefs::GUI_GuestControl_FileManagerSplitterHints = "GUI/GuestControl/FileManagerSplitterHints";
 const char *UIExtraDataDefs::GUI_GuestControl_FileManagerDialogGeometry = "GUI/GuestControl/FileManagerDialogGeometry";
 const char *UIExtraDataDefs::GUI_GuestControl_ProcessControlDialogGeometry = "GUI/GuestControl/ProcessControlDialogGeometry";
 

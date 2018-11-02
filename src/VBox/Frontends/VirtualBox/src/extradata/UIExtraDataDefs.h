@@ -348,9 +348,12 @@ namespace UIExtraDataDefs
         /** Holds information-window elements. */
         SHARED_LIBRARY_STUFF extern const char *GUI_InformationWindowElements;
         extern const char *GUI_GuestControl_ProcessControlSplitterHints;
-        extern const char *GUI_GuestControl_FileManagerSplitterHints;
-        extern const char *GUI_GuestControl_FileManagerDialogGeometry;
         extern const char *GUI_GuestControl_ProcessControlDialogGeometry;
+    /** @} */
+
+    /** @name Guest Control UI related data
+      * @{ */
+        extern const char *GUI_GuestControl_FileManagerDialogGeometry;
     /** @} */
 
     /** @name Virtual Machine: Close dialog
