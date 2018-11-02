@@ -3871,6 +3871,160 @@ IEM_CIMPL_DEF_1(iemCImpl_iret, IEMMODE, enmEffOpSize)
 }
 
 
+static void iemLoadallSetSelector(PVMCPU pVCpu, uint8_t iSegReg, uint16_t uSel)
+{
+    PCPUMSELREGHID  pHid = iemSRegGetHid(pVCpu, iSegReg);
+
+    pHid->Sel      = uSel;
+    pHid->ValidSel = uSel;
+    pHid->fFlags   = CPUMSELREG_FLAGS_VALID;
+}
+
+
+static void iemLoadall286SetDescCache(PVMCPU pVCpu, uint8_t iSegReg, uint8_t const *pbMem)
+{
+    PCPUMSELREGHID  pHid = iemSRegGetHid(pVCpu, iSegReg);
+
+    /* The base is in the first three bytes. */
+    pHid->u64Base  = pbMem[0] + (pbMem[1] << 8) + (pbMem[2] << 16);
+    /* The attributes are in the fourth byte. */
+    pHid->Attr.u   = pbMem[3];
+    /* The limit is in the last two bytes. */
+    pHid->u32Limit = pbMem[4] + (pbMem[5] << 8);
+}
+
+
+/**
+ * Implements 286 LOADALL (286 CPUs only).
+ */
+IEM_CIMPL_DEF_0(iemCImpl_loadall286)
+{
+    NOREF(cbInstr);
+
+    /* Data is loaded from a buffer at 800h. No checks are done on the
+     * validity of loaded state.
+     *
+     * LOADALL only loads the internal CPU state, it does not access any
+     * GDT, LDT, or similar tables.
+     */
+
+    if (pVCpu->iem.s.uCpl != 0)
+    {
+        Log(("loadall286: CPL must be 0 not %u -> #GP(0)\n", pVCpu->iem.s.uCpl));
+        return iemRaiseGeneralProtectionFault0(pVCpu);
+    }
+
+    uint8_t const *pbMem = NULL;
+    uint16_t const *pa16Mem;
+    uint8_t const *pa8Mem;
+    RTGCPHYS GCPtrStart = 0x800;    /* Fixed table location. */
+    VBOXSTRICTRC rcStrict = iemMemMap(pVCpu, (void **)&pbMem, 0x66, UINT8_MAX, GCPtrStart, IEM_ACCESS_SYS_R);
+    if (rcStrict != VINF_SUCCESS)
+        return rcStrict;
+
+    /* The MSW is at offset 0x06. */
+    pa16Mem = (uint16_t const *)(pbMem + 0x06);
+    /* Even LOADALL can't clear the MSW.PE bit, though it can set it. */
+    uint64_t uNewCr0 = pVCpu->cpum.GstCtx.cr0 & ~(X86_CR0_MP | X86_CR0_EM | X86_CR0_TS);
+    uNewCr0 |= *pa16Mem & (X86_CR0_PE | X86_CR0_MP | X86_CR0_EM | X86_CR0_TS);
+    uint64_t const uOldCr0 = pVCpu->cpum.GstCtx.cr0;
+
+    CPUMSetGuestCR0(pVCpu, uNewCr0);
+    Assert(pVCpu->cpum.GstCtx.cr0 == uNewCr0);
+
+    /* Inform PGM if mode changed. */
+    if ((uNewCr0 & X86_CR0_PE) != (uOldCr0 & X86_CR0_PE))
+    {
+        int rc = PGMFlushTLB(pVCpu, pVCpu->cpum.GstCtx.cr3, true /* global */);
+        AssertRCReturn(rc, rc);
+        /* ignore informational status codes */
+    }
+    rcStrict = PGMChangeMode(pVCpu, pVCpu->cpum.GstCtx.cr0, pVCpu->cpum.GstCtx.cr4, pVCpu->cpum.GstCtx.msrEFER);
+
+    /* TR selector is at offset 0x16. */
+    pa16Mem = (uint16_t const *)(pbMem + 0x16);
+    pVCpu->cpum.GstCtx.tr.Sel      = pa16Mem[0];
+    pVCpu->cpum.GstCtx.tr.ValidSel = pa16Mem[0];
+    pVCpu->cpum.GstCtx.tr.fFlags   = CPUMSELREG_FLAGS_VALID;
+
+    /* Followed by FLAGS... */
+    pVCpu->cpum.GstCtx.eflags.u = pa16Mem[1] | X86_EFL_1;
+    pVCpu->cpum.GstCtx.ip       = pa16Mem[2];   /* ...and IP. */
+
+    /* LDT is at offset 0x1C. */
+    pa16Mem = (uint16_t const *)(pbMem + 0x1C);
+    pVCpu->cpum.GstCtx.ldtr.Sel      = pa16Mem[0];
+    pVCpu->cpum.GstCtx.ldtr.ValidSel = pa16Mem[0];
+    pVCpu->cpum.GstCtx.ldtr.fFlags   = CPUMSELREG_FLAGS_VALID;
+
+    /* Segment registers are at offset 0x1E. */
+    pa16Mem = (uint16_t const *)(pbMem + 0x1E);
+    iemLoadallSetSelector(pVCpu, X86_SREG_DS, pa16Mem[0]);
+    iemLoadallSetSelector(pVCpu, X86_SREG_SS, pa16Mem[1]);
+    iemLoadallSetSelector(pVCpu, X86_SREG_CS, pa16Mem[2]);
+    iemLoadallSetSelector(pVCpu, X86_SREG_ES, pa16Mem[3]);
+
+    /* GPRs are at offset 0x26. */
+    pa16Mem = (uint16_t const *)(pbMem + 0x26);
+    pVCpu->cpum.GstCtx.di = pa16Mem[0];
+    pVCpu->cpum.GstCtx.si = pa16Mem[1];
+    pVCpu->cpum.GstCtx.bp = pa16Mem[2];
+    pVCpu->cpum.GstCtx.sp = pa16Mem[3];
+    pVCpu->cpum.GstCtx.bx = pa16Mem[4];
+    pVCpu->cpum.GstCtx.dx = pa16Mem[5];
+    pVCpu->cpum.GstCtx.cx = pa16Mem[6];
+    pVCpu->cpum.GstCtx.ax = pa16Mem[7];
+
+    /* Descriptor caches are at offset 0x36, 6 bytes per entry. */
+    iemLoadall286SetDescCache(pVCpu, X86_SREG_ES, pbMem + 0x36);
+    iemLoadall286SetDescCache(pVCpu, X86_SREG_CS, pbMem + 0x3C);
+    iemLoadall286SetDescCache(pVCpu, X86_SREG_SS, pbMem + 0x42);
+    iemLoadall286SetDescCache(pVCpu, X86_SREG_DS, pbMem + 0x48);
+
+    /* GDTR contents are at offset 0x4E, 6 bytes. */
+    RTGCPHYS GCPtrBase;
+    uint16_t cbLimit;
+    pa8Mem = pbMem + 0x4E;
+    /* NB: Fourth byte "should be zero"; we are ignoring it. */
+    GCPtrBase = pa8Mem[0] + (pa8Mem[1] << 8) + (pa8Mem[2] << 16);
+    cbLimit = pa8Mem[4] + (pa8Mem[5] << 8);
+    CPUMSetGuestGDTR(pVCpu, GCPtrBase, cbLimit);
+
+    /* IDTR contents are at offset 0x5A, 6 bytes. */
+    pa8Mem = pbMem + 0x5A;
+    GCPtrBase = pa8Mem[0] + (pa8Mem[1] << 8) + (pa8Mem[2] << 16);
+    cbLimit = pa8Mem[4] + (pa8Mem[5] << 8);
+    CPUMSetGuestIDTR(pVCpu, GCPtrBase, cbLimit);
+
+    Log(("LOADALL: GDTR:%08RX64/%04X, IDTR:%08RX64/%04X\n", pVCpu->cpum.GstCtx.gdtr.pGdt, pVCpu->cpum.GstCtx.gdtr.cbGdt, pVCpu->cpum.GstCtx.idtr.pIdt, pVCpu->cpum.GstCtx.idtr.cbIdt));
+    Log(("LOADALL: CS:%04X, CS base:%08X, limit:%04X, attrs:%02X\n", pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.cs.u64Base, pVCpu->cpum.GstCtx.cs.u32Limit, pVCpu->cpum.GstCtx.cs.Attr.u));
+    Log(("LOADALL: DS:%04X, DS base:%08X, limit:%04X, attrs:%02X\n", pVCpu->cpum.GstCtx.ds.Sel, pVCpu->cpum.GstCtx.ds.u64Base, pVCpu->cpum.GstCtx.ds.u32Limit, pVCpu->cpum.GstCtx.ds.Attr.u));
+    Log(("LOADALL: ES:%04X, ES base:%08X, limit:%04X, attrs:%02X\n", pVCpu->cpum.GstCtx.es.Sel, pVCpu->cpum.GstCtx.es.u64Base, pVCpu->cpum.GstCtx.es.u32Limit, pVCpu->cpum.GstCtx.es.Attr.u));
+    Log(("LOADALL: SS:%04X, SS base:%08X, limit:%04X, attrs:%02X\n", pVCpu->cpum.GstCtx.ss.Sel, pVCpu->cpum.GstCtx.ss.u64Base, pVCpu->cpum.GstCtx.ss.u32Limit, pVCpu->cpum.GstCtx.ss.Attr.u));
+    Log(("LOADALL: SI:%04X, DI:%04X, AX:%04X, BX:%04X, CX:%04X, DX:%04X\n", pVCpu->cpum.GstCtx.si, pVCpu->cpum.GstCtx.di, pVCpu->cpum.GstCtx.bx, pVCpu->cpum.GstCtx.bx, pVCpu->cpum.GstCtx.cx, pVCpu->cpum.GstCtx.dx));
+
+    rcStrict = iemMemCommitAndUnmap(pVCpu, (void *)pbMem, IEM_ACCESS_SYS_R);
+    if (rcStrict != VINF_SUCCESS)
+        return rcStrict;
+
+    /* The CPL may change. It is taken from the "DPL fields of the SS and CS
+     * descriptor caches" but there is no word as to what happens if those are
+     * not identical (probably bad things).
+     */
+    pVCpu->iem.s.uCpl = pVCpu->cpum.GstCtx.cs.Attr.n.u2Dpl;
+
+    CPUMSetChangedFlags(pVCpu, CPUM_CHANGED_HIDDEN_SEL_REGS | CPUM_CHANGED_IDTR | CPUM_CHANGED_GDTR | CPUM_CHANGED_TR | CPUM_CHANGED_LDTR);
+
+    /* Flush the prefetch buffer. */
+#ifdef IEM_WITH_CODE_TLB
+    pVCpu->iem.s.pbInstrBuf = NULL;
+#else
+    pVCpu->iem.s.cbOpcode = pVCpu->iem.s.offOpcode;
+#endif
+    return rcStrict;
+}
+
+
 /**
  * Implements SYSCALL (AMD and Intel64).
  *
@@ -3878,6 +4032,12 @@ IEM_CIMPL_DEF_1(iemCImpl_iret, IEMMODE, enmEffOpSize)
  */
 IEM_CIMPL_DEF_0(iemCImpl_syscall)
 {
+#ifdef IEM_WITH_LOADALL286
+    /** @todo hack, LOADALL should be decoded as such on a 286. */
+    if (pVCpu->iem.s.uTargetCpu == IEMTARGETCPU_286)
+        return iemCImpl_loadall286(pVCpu, cbInstr);
+#endif
+
     /*
      * Check preconditions.
      *
