@@ -69,6 +69,8 @@ protected:
 
     /** Performs page initialization. */
     virtual void initializePage() /* override */;
+    /** Performs page uninitialization. */
+    virtual void cleanupPage() /* override */;
 
     /** Returns whether page is complete. */
     virtual bool isComplete() const /* override */;

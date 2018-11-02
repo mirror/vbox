@@ -508,6 +508,11 @@ void UIWizardExportAppPageExpert::initializePage()
     refreshApplianceSettingsWidget();
 }
 
+void UIWizardExportAppPageExpert::cleanupPage()
+{
+    /* Do nothing, we don't want field values to be reseted. */
+}
+
 bool UIWizardExportAppPageExpert::isComplete() const
 {
     bool fResult = true;
@@ -522,7 +527,7 @@ bool UIWizardExportAppPageExpert::isComplete() const
         const bool fOVF =    field("format").toString() == "ovf-0.9"
                           || field("format").toString() == "ovf-1.0"
                           || field("format").toString() == "ovf-2.0";
-        const bool fCSP =    isFormatCloudOne();
+        const bool fCSP =    field("isFormatCloudOne").toBool();
 
         const QString &strFile = field("path").toString().toLower();
         const QString &strAccount = field("profileName").toString();
