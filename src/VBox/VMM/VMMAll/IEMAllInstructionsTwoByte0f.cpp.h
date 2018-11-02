@@ -9480,10 +9480,13 @@ FNIEMOP_DEF(iemOp_ud0)
     {
         uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm); RT_NOREF(bRm);
 #ifndef TST_IEM_CHECK_MC
-        RTGCPTR      GCPtrEff;
-        VBOXSTRICTRC rcStrict = iemOpHlpCalcRmEffAddr(pVCpu, bRm, 0, &GCPtrEff);
-        if (rcStrict != VINF_SUCCESS)
-            return rcStrict;
+        if ((bRm & X86_MODRM_MOD_MASK) != (3 << X86_MODRM_MOD_SHIFT))
+        {
+            RTGCPTR      GCPtrEff;
+            VBOXSTRICTRC rcStrict = iemOpHlpCalcRmEffAddr(pVCpu, bRm, 0, &GCPtrEff);
+            if (rcStrict != VINF_SUCCESS)
+                return rcStrict;
+        }
 #endif
         IEMOP_HLP_DONE_DECODING();
     }
