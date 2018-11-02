@@ -3722,7 +3722,7 @@ Log8(("%#08RX64: rtDwarfUnwind_LoadCie: %.*Rhxs\n", offUnit, pCursor->cbUnitLeft
         }
         else if (pNewCie->fHasUnknowAugmentation)
         {
-            Log(("rtDwarfUnwind_LoadCie(%#RX64): fHasUnknowAugmentation=%1 -> VERR_DBG_MALFORMED_UNWIND_INFO!\n", offUnit));
+            Log(("rtDwarfUnwind_LoadCie(%#RX64): fHasUnknowAugmentation=1 -> VERR_DBG_MALFORMED_UNWIND_INFO!\n", offUnit));
             return VERR_DBG_MALFORMED_UNWIND_INFO;
         }
 
