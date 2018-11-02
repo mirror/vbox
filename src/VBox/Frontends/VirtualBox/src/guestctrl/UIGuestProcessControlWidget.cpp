@@ -28,11 +28,13 @@
 
 /* GUI includes: */
 # include "QITreeWidget.h"
+# include "UIActionPool.h"
 # include "UIExtraDataManager.h"
 # include "UIGuestControlConsole.h"
 # include "UIGuestControlInterface.h"
 # include "UIGuestControlTreeItem.h"
 # include "UIGuestProcessControlWidget.h"
+# include "UIToolBar.h"
 # include "UIVMInformationDialog.h"
 # include "VBoxGlobal.h"
 
@@ -165,7 +167,7 @@ private slots:
 };
 
 UIGuestProcessControlWidget::UIGuestProcessControlWidget(EmbedTo enmEmbedding, UIActionPool *pActionPool,
-                                                         const CGuest &comGuest, QWidget *pParent)
+                                                         const CGuest &comGuest, QWidget *pParent, bool fShowToolbar /* = false */)
     :QIWithRetranslateUI<QWidget>(pParent)
     , m_comGuest(comGuest)
     , m_pMainLayout(0)
@@ -175,11 +177,14 @@ UIGuestProcessControlWidget::UIGuestProcessControlWidget(EmbedTo enmEmbedding, U
     , m_pControlInterface(0)
     , m_enmEmbedding(enmEmbedding)
     , m_pActionPool(pActionPool)
+    , m_pToolBar(0)
     , m_pQtListener(0)
+    , m_fShowToolbar(fShowToolbar)
 {
     prepareListener();
     prepareObjects();
     prepareConnections();
+    prepareToolBar();
     initGuestSessionTree();
     loadSettings();
 }
@@ -347,6 +352,35 @@ void UIGuestProcessControlWidget::prepareListener()
     {
         /* Register event sources in their listeners as well: */
         m_pQtListener->getWrapped()->registerSource(comEventSource, m_comEventListener);
+    }
+}
+
+void UIGuestProcessControlWidget::prepareToolBar()
+{
+    /* Create toolbar: */
+    m_pToolBar = new UIToolBar(parentWidget());
+    if (m_pToolBar)
+    {
+        /* Configure toolbar: */
+        const int iIconMetric = (int)(QApplication::style()->pixelMetric(QStyle::PM_LargeIconSize));
+        m_pToolBar->setIconSize(QSize(iIconMetric, iIconMetric));
+        m_pToolBar->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
+
+        /* Add toolbar actions: */
+        m_pToolBar->addSeparator();
+        m_pToolBar->addSeparator();
+
+#ifdef VBOX_WS_MAC
+        /* Check whether we are embedded into a stack: */
+        if (m_enmEmbedding == EmbedTo_Stack)
+        {
+            /* Add into layout: */
+            m_pMainLayout->addWidget(m_pToolBar);
+        }
+#else
+        /* Add into layout: */
+        m_pMainLayout->addWidget(m_pToolBar);
+#endif
     }
 }
 

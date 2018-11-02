@@ -26,7 +26,6 @@
 # include <QHeaderView>
 # include <QTextEdit>
 # include <QPushButton>
-# include <QSplitter>
 # include <QGridLayout>
 
 /* GUI includes: */
@@ -41,6 +40,9 @@
 # include "UIIconPool.h"
 # include "UIGuestControlConsole.h"
 # include "UIGuestControlFileManager.h"
+# include "UIGuestControlFileManagerSessionPanel.h"
+# include "UIGuestControlFileManagerSettingsPanel.h"
+# include "UIGuestControlFileManagerLogPanel.h"
 # include "UIGuestFileTable.h"
 # include "UIGuestControlInterface.h"
 # include "UIHostFileTable.h"
@@ -57,27 +59,7 @@
 # include "CGuestSessionStateChangedEvent.h"
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
-/*********************************************************************************************************************************
-*   UIFileManagerLogViewer definition.                                                                                   *
-*********************************************************************************************************************************/
 
-class UIFileManagerLogViewer : public QTextEdit
-{
-
-    Q_OBJECT;
-
-public:
-
-    UIFileManagerLogViewer(QWidget *pParent = 0);
-
-protected:
-
-    virtual void contextMenuEvent(QContextMenuEvent * event) /* override */;
-
-private slots:
-
-    void sltClear();
-};
 
 /*********************************************************************************************************************************
 *   UIFileOperationsList definition.                                                                                   *
@@ -93,71 +75,6 @@ public:
 private:
 };
 
-/*********************************************************************************************************************************
-*   UIGuestSessionCreateWidget definition.                                                                                   *
-*********************************************************************************************************************************/
-
-class UIGuestSessionCreateWidget : public QIWithRetranslateUI<QWidget>
-{
-    Q_OBJECT;
-
-signals:
-
-    void sigCreateSession(QString strUserName, QString strPassword);
-    void sigCloseButtonClick();
-
-public:
-
-    UIGuestSessionCreateWidget(QWidget *pParent = 0);
-    void switchSessionCreateMode();
-    void switchSessionCloseMode();
-
-protected:
-
-    void retranslateUi();
-    void keyPressEvent(QKeyEvent * pEvent);
-
-private slots:
-
-    void sltCreateButtonClick();
-    void sltShowHidePassword(bool flag);
-
-private:
-    void         prepareWidgets();
-    QILineEdit   *m_pUserNameEdit;
-    QILineEdit   *m_pPasswordEdit;
-    QPushButton  *m_pCreateButton;
-    QPushButton  *m_pCloseButton;
-    QHBoxLayout  *m_pMainLayout;
-    QCheckBox    *m_pShowPasswordCheckBox;
-
-};
-
-/*********************************************************************************************************************************
-*   UIFileManagerLogViewer implementation.                                                                                   *
-*********************************************************************************************************************************/
-
-UIFileManagerLogViewer::UIFileManagerLogViewer(QWidget *pParent /* = 0 */)
-    :QTextEdit(pParent)
-{
-}
-
-void UIFileManagerLogViewer::contextMenuEvent(QContextMenuEvent *event)
-{
-    QMenu *menu = createStandardContextMenu();
-    void sltClear();
-
-    QAction *pClearAction = menu->addAction(tr("Clear"));
-    connect(pClearAction, &QAction::triggered, this, &UIFileManagerLogViewer::sltClear);
-    menu->exec(event->globalPos());
-    delete menu;
-}
-
-void UIFileManagerLogViewer::sltClear()
-{
-    clear();
-}
-
 
 /*********************************************************************************************************************************
 *   UIGuestControlFileManagerSettings implementation.                                                                            *
@@ -167,6 +84,8 @@ UIGuestControlFileManagerSettings *UIGuestControlFileManagerSettings::m_pInstanc
 
 UIGuestControlFileManagerSettings* UIGuestControlFileManagerSettings::instance()
 {
+    if (!m_pInstance)
+    m_pInstance = new UIGuestControlFileManagerSettings;
     return m_pInstance;
 }
 
@@ -204,163 +123,26 @@ UIFileOperationsList::UIFileOperationsList(QWidget *pParent)
 
 
 /*********************************************************************************************************************************
-*   UIGuestSessionCreateWidget implementation.                                                                                   *
-*********************************************************************************************************************************/
-
-UIGuestSessionCreateWidget::UIGuestSessionCreateWidget(QWidget *pParent /* = 0 */)
-    : QIWithRetranslateUI<QWidget>(pParent)
-    , m_pUserNameEdit(0)
-    , m_pPasswordEdit(0)
-    , m_pCreateButton(0)
-    , m_pCloseButton(0)
-    , m_pMainLayout(0)
-    , m_pShowPasswordCheckBox(0)
-{
-    prepareWidgets();
-}
-
-void UIGuestSessionCreateWidget::prepareWidgets()
-{
-    m_pMainLayout = new QHBoxLayout(this);
-    if (!m_pMainLayout)
-        return;
-
-    m_pUserNameEdit = new QILineEdit;
-    if (m_pUserNameEdit)
-    {
-        m_pMainLayout->addWidget(m_pUserNameEdit, 2);
-        m_pUserNameEdit->setPlaceholderText("User Name");
-    }
-
-    m_pPasswordEdit = new QILineEdit;
-    if (m_pPasswordEdit)
-    {
-        m_pMainLayout->addWidget(m_pPasswordEdit, 2);
-        m_pPasswordEdit->setPlaceholderText("Password");
-        m_pPasswordEdit->setEchoMode(QLineEdit::Password);
-    }
-
-    m_pShowPasswordCheckBox = new QCheckBox;
-    if (m_pShowPasswordCheckBox)
-    {
-        m_pShowPasswordCheckBox->setText("Show Password");
-        m_pMainLayout->addWidget(m_pShowPasswordCheckBox);
-        connect(m_pShowPasswordCheckBox, &QCheckBox::toggled,
-                this, &UIGuestSessionCreateWidget::sltShowHidePassword);
-    }
-
-    m_pCreateButton = new QPushButton;
-    if (m_pCreateButton)
-    {
-        m_pMainLayout->addWidget(m_pCreateButton);
-        connect(m_pCreateButton, &QPushButton::clicked, this, &UIGuestSessionCreateWidget::sltCreateButtonClick);
-    }
-
-    m_pCloseButton = new QPushButton;
-    if (m_pCloseButton)
-    {
-        m_pMainLayout->addWidget(m_pCloseButton);
-        connect(m_pCloseButton, &QPushButton::clicked, this, &UIGuestSessionCreateWidget::sigCloseButtonClick);
-    }
-    m_pMainLayout->insertStretch(-1, 1);
-    retranslateUi();
-}
-
-void UIGuestSessionCreateWidget::sltCreateButtonClick()
-{
-    if (m_pUserNameEdit && m_pPasswordEdit)
-        emit sigCreateSession(m_pUserNameEdit->text(), m_pPasswordEdit->text());
-}
-
-void UIGuestSessionCreateWidget::sltShowHidePassword(bool flag)
-{
-    if (!m_pPasswordEdit)
-        return;
-    if (flag)
-        m_pPasswordEdit->setEchoMode(QLineEdit::Normal);
-    else
-        m_pPasswordEdit->setEchoMode(QLineEdit::Password);
-}
-
-void UIGuestSessionCreateWidget::retranslateUi()
-{
-    if (m_pUserNameEdit)
-    {
-        m_pUserNameEdit->setToolTip(QApplication::translate("UIGuestProcessControlWidget", "User name to authenticate session creation"));
-        m_pUserNameEdit->setPlaceholderText(QApplication::translate("UIGuestProcessControlWidget", "User Name"));
-
-    }
-    if (m_pPasswordEdit)
-    {
-        m_pPasswordEdit->setToolTip(QApplication::translate("UIGuestProcessControlWidget", "Password to authenticate session creation"));
-        m_pPasswordEdit->setPlaceholderText(QApplication::translate("UIGuestProcessControlWidget", "Password"));
-    }
-
-    if (m_pCreateButton)
-        m_pCreateButton->setText(QApplication::translate("UIGuestProcessControlWidget", "Create Session"));
-    if (m_pCloseButton)
-        m_pCloseButton->setText(QApplication::translate("UIGuestProcessControlWidget", "Close Session"));
-}
-
-void UIGuestSessionCreateWidget::keyPressEvent(QKeyEvent * pEvent)
-{
-    /* Emit sigCreateSession upon enter press: */
-    if (pEvent->key() == Qt::Key_Enter || pEvent->key() == Qt::Key_Return)
-    {
-        if ((m_pUserNameEdit && m_pUserNameEdit->hasFocus()) ||
-            (m_pPasswordEdit && m_pPasswordEdit->hasFocus()))
-            sigCreateSession(m_pUserNameEdit->text(), m_pPasswordEdit->text());
-    }
-    QWidget::keyPressEvent(pEvent);
-}
-
-void UIGuestSessionCreateWidget::switchSessionCreateMode()
-{
-    if (m_pUserNameEdit)
-        m_pUserNameEdit->setEnabled(true);
-    if (m_pPasswordEdit)
-        m_pPasswordEdit->setEnabled(true);
-    if (m_pCreateButton)
-        m_pCreateButton->setEnabled(true);
-    if (m_pCloseButton)
-        m_pCloseButton->setEnabled(false);
-}
-
-void UIGuestSessionCreateWidget::switchSessionCloseMode()
-{
-    if (m_pUserNameEdit)
-        m_pUserNameEdit->setEnabled(false);
-    if (m_pPasswordEdit)
-        m_pPasswordEdit->setEnabled(false);
-    if (m_pCreateButton)
-        m_pCreateButton->setEnabled(false);
-    if (m_pCloseButton)
-        m_pCloseButton->setEnabled(true);
-}
-
-
-/*********************************************************************************************************************************
 *   UIGuestControlFileManager implementation.                                                                                    *
 *********************************************************************************************************************************/
 
 UIGuestControlFileManager::UIGuestControlFileManager(EmbedTo enmEmbedding, UIActionPool *pActionPool,
-                                                     const CGuest &comGuest, QWidget *pParent)
+                                                     const CGuest &comGuest, QWidget *pParent, bool fShowToolbar /* = true */)
     : QIWithRetranslateUI<QWidget>(pParent)
     , m_iMaxRecursionDepth(1)
     , m_comGuest(comGuest)
     , m_pMainLayout(0)
-    , m_pVerticalSplitter(0)
-    , m_pLogOutput(0)
     , m_pToolBar(0)
     , m_pFileTableContainerWidget(0)
     , m_pFileTableContainerLayout(0)
-    , m_pTabWidget(0)
-    , m_pFileOperationsList(0)
-    , m_pSessionCreateWidget(0)
     , m_pGuestFileTable(0)
     , m_pHostFileTable(0)
     , m_enmEmbedding(enmEmbedding)
     , m_pActionPool(pActionPool)
+    , m_fShowToolbar(fShowToolbar)
+    , m_pSettingsPanel(0)
+    , m_pLogPanel(0)
+    , m_pSessionPanel(0)
 {
     prepareGuestListener();
     prepareObjects();
@@ -389,9 +171,6 @@ QMenu *UIGuestControlFileManager::menu() const
 
 void UIGuestControlFileManager::retranslateUi()
 {
-    m_pTabWidget->setTabText(0, QApplication::translate("UIGuestProcessControlWidget", "Log"));
-    m_pTabWidget->setTabText(1, QApplication::translate("UIGuestProcessControlWidget", "File Operations"));
-    m_pTabWidget->setTabText(2, QApplication::translate("UIGuestProcessControlWidget", "Terminal"));
 }
 
 void UIGuestControlFileManager::prepareGuestListener()
@@ -416,19 +195,14 @@ void UIGuestControlFileManager::prepareObjects()
     /* Configure layout: */
     m_pMainLayout->setSpacing(0);
 
-    m_pSessionCreateWidget = new UIGuestSessionCreateWidget();
-    if (m_pSessionCreateWidget)
-    {
-        m_pMainLayout->addWidget(m_pSessionCreateWidget);
-    }
+    if (m_fShowToolbar)
+        prepareToolBar();
 
-    m_pVerticalSplitter = new QSplitter;
-    if (m_pVerticalSplitter)
-    {
-        m_pMainLayout->addWidget(m_pVerticalSplitter);
-        m_pVerticalSplitter->setOrientation(Qt::Vertical);
-        m_pVerticalSplitter->setHandleWidth(4);
-    }
+    // m_pSessionCreateWidget = new UIGuestSessionCreateWidget();
+    // if (m_pSessionCreateWidget)
+    // {
+    //     m_pMainLayout->addWidget(m_pSessionCreateWidget);
+    // }
 
     m_pFileTableContainerWidget = new QWidget;
     m_pFileTableContainerLayout = new QHBoxLayout;
@@ -450,7 +224,7 @@ void UIGuestControlFileManager::prepareObjects()
                         this, &UIGuestControlFileManager::sltReceieveLogOutput);
                 m_pFileTableContainerLayout->addWidget(m_pHostFileTable);
             }
-            prepareToolBar();
+            prepareVerticalToolBar();
              if (m_pGuestFileTable)
             {
                 connect(m_pGuestFileTable, &UIGuestFileTable::sigLogOutput,
@@ -459,35 +233,54 @@ void UIGuestControlFileManager::prepareObjects()
             }
 
         }
-        m_pVerticalSplitter->addWidget(m_pFileTableContainerWidget);
+        m_pMainLayout->addWidget(m_pFileTableContainerWidget);
     }
 
-    m_pTabWidget = new QITabWidget;
-    if (m_pTabWidget)
+    // m_pFileOperationsList = new UIFileOperationsList;
+    // if (m_pFileOperationsList)
+    // {
+    //     m_pTabWidget->addTab(m_pFileOperationsList, "File Operatiions");
+    //     m_pFileOperationsList->header()->hide();
+    // }
+
+    /* Create the settings-panel: */
+    m_pLogPanel = new UIGuestControlFileManagerLogPanel(this /* manager dialog */, 0 /*parent */);
+    if (m_pLogPanel)
     {
-        m_pVerticalSplitter->addWidget(m_pTabWidget);
-        m_pTabWidget->setTabPosition(QTabWidget::South);
+        /* Configure panel: */
+        m_pLogPanel->hide();
+        m_panelActionMap.insert(m_pLogPanel, m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_T_Log));
+        /* Add into layout: */
+        m_pMainLayout->addWidget(m_pLogPanel);
     }
-
-    m_pLogOutput = new UIFileManagerLogViewer;
-    if (m_pLogOutput)
+    m_pSessionPanel = new UIGuestControlFileManagerSessionPanel(this /* manager dialog */, 0 /*parent */);
+    if (m_pSessionPanel)
     {
-        m_pTabWidget->addTab(m_pLogOutput, "Log");
-        m_pLogOutput->setReadOnly(true);
+        /* Configure panel: */
+        m_pSessionPanel->hide();
+        m_panelActionMap.insert(m_pSessionPanel, m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_T_Session));
+        /* Add into layout: */
+        m_pMainLayout->addWidget(m_pSessionPanel);
     }
 
-    m_pFileOperationsList = new UIFileOperationsList;
-    if (m_pFileOperationsList)
+    /* Create the settings-panel: */
+    m_pSettingsPanel =
+        new UIGuestControlFileManagerSettingsPanel(this /* manager dialog */,
+                                                   0 /*parent */, UIGuestControlFileManagerSettings::instance());
+    if (m_pSettingsPanel)
     {
-        m_pTabWidget->addTab(m_pFileOperationsList, "File Operatiions");
-        m_pFileOperationsList->header()->hide();
+        /* Configure panel: */
+        m_pSettingsPanel->hide();
+        m_panelActionMap.insert(m_pSettingsPanel, m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_T_Settings));
+        connect(m_pSettingsPanel, &UIGuestControlFileManagerSettingsPanel::sigListDirectoriesFirstChanged,
+                this, &UIGuestControlFileManager::sltListDirectoriesBeforeChanged);
+        /* Add into layout: */
+        m_pMainLayout->addWidget(m_pSettingsPanel);
     }
 
-    m_pVerticalSplitter->setStretchFactor(0, 3);
-    m_pVerticalSplitter->setStretchFactor(1, 1);
 }
 
-void UIGuestControlFileManager::prepareToolBar()
+void UIGuestControlFileManager::prepareVerticalToolBar()
 {
     m_pToolBar = new UIToolBar;
     if (!m_pToolBar)
@@ -524,14 +317,52 @@ void UIGuestControlFileManager::prepareConnections()
         connect(m_pQtGuestListener->getWrapped(), &UIMainEventListener::sigGuestSessionUnregistered,
                 this, &UIGuestControlFileManager::sltGuestSessionUnregistered);
     }
-    if (m_pSessionCreateWidget)
+    if (m_pSessionPanel)
     {
-        connect(m_pSessionCreateWidget, &UIGuestSessionCreateWidget::sigCreateSession,
+        connect(m_pSessionPanel, &UIGuestControlFileManagerSessionPanel::sigCreateSession,
                 this, &UIGuestControlFileManager::sltCreateSession);
-        connect(m_pSessionCreateWidget, &UIGuestSessionCreateWidget::sigCloseButtonClick,
+        connect(m_pSessionPanel, &UIGuestControlFileManagerSessionPanel::sigCloseSession,
                 this, &UIGuestControlFileManager::sltCloseSession);
     }
 }
+
+void UIGuestControlFileManager::prepareToolBar()
+{
+    /* Create toolbar: */
+    m_pToolBar = new UIToolBar(parentWidget());
+    if (m_pToolBar)
+    {
+        /* Configure toolbar: */
+        const int iIconMetric = (int)(QApplication::style()->pixelMetric(QStyle::PM_LargeIconSize));
+        m_pToolBar->setIconSize(QSize(iIconMetric, iIconMetric));
+        m_pToolBar->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
+
+        m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_T_Session));
+        m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_T_Settings));
+        m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_T_Log));
+        m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_T_FileOperations));
+
+        connect(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_T_Settings), &QAction::toggled,
+                this, &UIGuestControlFileManager::sltPanelActionToggled);
+        connect(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_T_Log), &QAction::toggled,
+                this, &UIGuestControlFileManager::sltPanelActionToggled);
+        connect(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_T_Session), &QAction::toggled,
+                this, &UIGuestControlFileManager::sltPanelActionToggled);
+
+#ifdef VBOX_WS_MAC
+        /* Check whether we are embedded into a stack: */
+        if (m_enmEmbedding == EmbedTo_Stack)
+        {
+            /* Add into layout: */
+            m_pMainLayout->addWidget(m_pToolBar);
+        }
+#else
+        /* Add into layout: */
+        m_pMainLayout->addWidget(m_pToolBar);
+#endif
+    }
+}
+
 
 void UIGuestControlFileManager::sltGuestSessionUnregistered(CGuestSession guestSession)
 {
@@ -548,17 +379,13 @@ void UIGuestControlFileManager::sltCreateSession(QString strUserName, QString st
 {
     if (!UIGuestControlInterface::isGuestAdditionsAvailable(m_comGuest))
     {
-        if (m_pLogOutput)
-        {
-            m_pLogOutput->append("Could not find Guest Additions");
-            postSessionClosed();
-            return;
-        }
+        appendLog("Could not find Guest Additions");
+        postSessionClosed();
+        return;
     }
     if (strUserName.isEmpty())
     {
-        if (m_pLogOutput)
-            m_pLogOutput->append("No user name is given");
+        appendLog("No user name is given");
         return;
     }
     createSession(strUserName, strPassword);
@@ -568,7 +395,7 @@ void UIGuestControlFileManager::sltCloseSession()
 {
     if (!m_comGuestSession.isOk())
     {
-        m_pLogOutput->append("Guest session is not valid");
+        appendLog("Guest session is not valid");
         postSessionClosed();
         return;
     }
@@ -579,7 +406,7 @@ void UIGuestControlFileManager::sltCloseSession()
         cleanupListener(m_pQtSessionListener, m_comSessionListener, m_comGuestSession.GetEventSource());
 
     m_comGuestSession.Close();
-    m_pLogOutput->append("Guest session is closed");
+    appendLog("Guest session is closed");
     postSessionClosed();
 }
 
@@ -589,9 +416,7 @@ void UIGuestControlFileManager::sltGuestSessionStateChanged(const CGuestSessionS
     {
         CVirtualBoxErrorInfo cErrorInfo = cEvent.GetError();
         if (cErrorInfo.isOk())
-        {
-            m_pLogOutput->append(cErrorInfo.GetText());
-        }
+            appendLog(cErrorInfo.GetText());
     }
     if (m_comGuestSession.GetStatus() == KGuestSessionStatus_Started)
     {
@@ -600,14 +425,13 @@ void UIGuestControlFileManager::sltGuestSessionStateChanged(const CGuestSessionS
     }
     else
     {
-        m_pLogOutput->append("Session status has changed");
+        appendLog("Session status has changed");
     }
 }
 
 void UIGuestControlFileManager::sltReceieveLogOutput(QString strOutput)
 {
-    if (m_pLogOutput)
-        m_pLogOutput->append(strOutput);
+    appendLog(strOutput);
 }
 
 void UIGuestControlFileManager::sltCopyGuestToHost()
@@ -628,6 +452,35 @@ void UIGuestControlFileManager::sltCopyHostToGuest()
     m_pGuestFileTable->refresh();
 }
 
+void UIGuestControlFileManager::sltPanelActionToggled(bool fChecked)
+{
+    QAction *pSenderAction = qobject_cast<QAction*>(sender());
+    if (!pSenderAction)
+        return;
+    UIGuestControlFileManagerPanel* pPanel = 0;
+    /* Look for the sender() within the m_panelActionMap's values: */
+    for (QMap<UIGuestControlFileManagerPanel*, QAction*>::const_iterator iterator = m_panelActionMap.begin();
+        iterator != m_panelActionMap.end(); ++iterator)
+    {
+        if (iterator.value() == pSenderAction)
+            pPanel = iterator.key();
+    }
+    if (!pPanel)
+        return;
+    if (fChecked)
+        showPanel(pPanel);
+    else
+        hidePanel(pPanel);
+}
+
+void UIGuestControlFileManager::sltListDirectoriesBeforeChanged()
+{
+    if (m_pGuestFileTable)
+        m_pGuestFileTable->relist();
+    if (m_pHostFileTable)
+        m_pHostFileTable->relist();
+}
+
 void UIGuestControlFileManager::initFileTable()
 {
     if (!m_comGuestSession.isOk() || m_comGuestSession.GetStatus() != KGuestSessionStatus_Started)
@@ -639,8 +492,8 @@ void UIGuestControlFileManager::initFileTable()
 
 void UIGuestControlFileManager::postSessionCreated()
 {
-    if (m_pSessionCreateWidget)
-        m_pSessionCreateWidget->switchSessionCloseMode();
+    if (m_pSessionPanel)
+        m_pSessionPanel->switchSessionCloseMode();
     if (m_pGuestFileTable)
         m_pGuestFileTable->setEnabled(true);
     if (m_pToolBar)
@@ -649,8 +502,8 @@ void UIGuestControlFileManager::postSessionCreated()
 
 void UIGuestControlFileManager::postSessionClosed()
 {
-    if (m_pSessionCreateWidget)
-        m_pSessionCreateWidget->switchSessionCreateMode();
+    if (m_pSessionPanel)
+        m_pSessionPanel->switchSessionCreateMode();
     if (m_pGuestFileTable)
         m_pGuestFileTable->setEnabled(false);
     if (m_pToolBar)
@@ -669,13 +522,12 @@ bool UIGuestControlFileManager::createSession(const QString& strUserName, const 
 
     if (!m_comGuestSession.isOk())
     {
-        m_pLogOutput->append(UIErrorString::formatErrorInfo(m_comGuestSession));
+        appendLog(UIErrorString::formatErrorInfo(m_comGuestSession));
         return false;
     }
-
-    m_pLogOutput->append("Guest session has been created");
-    if (m_pSessionCreateWidget)
-        m_pSessionCreateWidget->switchSessionCloseMode();
+    appendLog("Guest session has been created");
+    if (m_pSessionPanel)
+        m_pSessionPanel->switchSessionCloseMode();
 
     /* Prepare session listener */
     QVector<KVBoxEventType> eventTypes;
@@ -692,12 +544,12 @@ bool UIGuestControlFileManager::createSession(const QString& strUserName, const 
             this, &UIGuestControlFileManager::sltGuestSessionStateChanged);
      /* Wait session to start. For some reason we cannot get GuestSessionStatusChanged event
         consistently. So we wait: */
-    m_pLogOutput->append("Waiting the session to start");
+    appendLog("Waiting the session to start");
     const ULONG waitTimeout = 2000;
     KGuestSessionWaitResult waitResult = m_comGuestSession.WaitFor(KGuestSessionWaitForFlag_Start, waitTimeout);
     if (waitResult != KGuestSessionWaitResult_Start)
     {
-        m_pLogOutput->append("The session did not start");
+        appendLog("The session did not start");
         sltCloseSession();
         return false;
     }
@@ -762,20 +614,64 @@ QStringList UIGuestControlFileManager::getFsObjInfoStringList(const T &fsObjectI
 
 void UIGuestControlFileManager::saveSettings()
 {
-    if (!m_pVerticalSplitter)
-        return;
-    gEDataManager->setGuestControlFileManagerSplitterHints(m_pVerticalSplitter->sizes());
 }
 
 void UIGuestControlFileManager::loadSettings()
 {
-    if (!m_pVerticalSplitter)
+}
+
+void UIGuestControlFileManager::hidePanel(UIGuestControlFileManagerPanel* panel)
+{
+    if (panel && panel->isVisible())
+        panel->setVisible(false);
+    QMap<UIGuestControlFileManagerPanel*, QAction*>::iterator iterator = m_panelActionMap.find(panel);
+    if (iterator != m_panelActionMap.end())
+    {
+        if (iterator.value() && iterator.value()->isChecked())
+            iterator.value()->setChecked(false);
+    }
+    m_visiblePanelsList.removeOne(panel);
+    manageEscapeShortCut();
+}
+
+void UIGuestControlFileManager::showPanel(UIGuestControlFileManagerPanel* panel)
+{
+    if (panel && panel->isHidden())
+        panel->setVisible(true);
+    QMap<UIGuestControlFileManagerPanel*, QAction*>::iterator iterator = m_panelActionMap.find(panel);
+    if (iterator != m_panelActionMap.end())
+    {
+        if (!iterator.value()->isChecked())
+            iterator.value()->setChecked(true);
+    }
+    m_visiblePanelsList.push_back(panel);
+    manageEscapeShortCut();
+}
+
+void UIGuestControlFileManager::manageEscapeShortCut()
+{
+    /* if there is no visible panels give the escape shortcut to parent dialog: */
+    if (m_visiblePanelsList.isEmpty())
+    {
+        emit sigSetCloseButtonShortCut(QKeySequence(Qt::Key_Escape));
         return;
-    QList<int> splitterHints = gEDataManager->guestControlFileManagerSplitterHints();
-    if (splitterHints.size() != 2)
+    }
+    /* Take the escape shortcut from the dialog: */
+    emit sigSetCloseButtonShortCut(QKeySequence());
+    /* Just loop thru the visible panel list and set the esc key to the
+       panel which made visible latest */
+    for (int i = 0; i < m_visiblePanelsList.size() - 1; ++i)
+    {
+        m_visiblePanelsList[i]->setCloseButtonShortCut(QKeySequence());
+    }
+    m_visiblePanelsList.back()->setCloseButtonShortCut(QKeySequence(Qt::Key_Escape));
+}
+
+void UIGuestControlFileManager::appendLog(const QString &strLog)
+{
+    if (!m_pLogPanel)
         return;
-    if (splitterHints[0] != 0 && splitterHints[1] != 0)
-        m_pVerticalSplitter->setSizes(splitterHints);
+    m_pLogPanel->appendLog(strLog);
 }
 
 #include "UIGuestControlFileManager.moc"

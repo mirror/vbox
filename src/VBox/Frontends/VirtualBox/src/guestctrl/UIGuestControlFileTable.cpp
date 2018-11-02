@@ -960,6 +960,13 @@ void UIGuestControlFileTable::refresh()
     setSelectionDependentActionsEnabled(m_pView->hasSelection());
 }
 
+void UIGuestControlFileTable::relist()
+{
+    if (!m_pProxyModel)
+        return;
+    m_pProxyModel->invalidate();
+}
+
 void UIGuestControlFileTable::sltDelete()
 {
     if (!m_pView || !m_pModel)

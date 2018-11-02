@@ -250,14 +250,14 @@ public:
     UIGuestControlFileTable(UIActionPool *pActionPool, QWidget *pParent = 0);
     virtual ~UIGuestControlFileTable();
     /** Deletes all the tree nodes */
-    void reset();
-    void emitLogOutput(const QString& strOutput);
+    void        reset();
+    void        emitLogOutput(const QString& strOutput);
     /** Returns the path of the rootIndex */
     QString     currentDirectoryPath() const;
     /** Returns the paths of the selected items (if any) as a list */
     QStringList selectedItemPathList();
     virtual void refresh();
-
+    void         relist();
     static const unsigned    m_iKiloByte;
     static QString humanReadableSize(ULONG64 size);
 

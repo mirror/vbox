@@ -40,7 +40,7 @@ class UIGuestControlConsole;
 class UIGuestControlInterface;
 class UIGuestSessionsEventHandler;
 class UIGuestControlTreeWidget;
-
+class UIToolBar;
 
 /** QWidget extension
   * providing GUI with guest session information and control tab in session-information window. */
@@ -51,7 +51,7 @@ class UIGuestProcessControlWidget : public QIWithRetranslateUI<QWidget>
 public:
 
     UIGuestProcessControlWidget(EmbedTo enmEmbedding, UIActionPool *pActionPool,
-                                const CGuest &comGuest, QWidget *pParent);
+                                const CGuest &comGuest, QWidget *pParent, bool fShowToolbar = false);
     ~UIGuestProcessControlWidget();
 
 protected:
@@ -75,6 +75,7 @@ private:
 
     void prepareObjects();
     void prepareConnections();
+    void prepareToolBar();
     void prepareListener();
     void initGuestSessionTree();
     void updateTreeWidget();
@@ -91,11 +92,13 @@ private:
     UIGuestControlInterface  *m_pControlInterface;
     const EmbedTo             m_enmEmbedding;
     UIActionPool             *m_pActionPool;
+    UIToolBar                *m_pToolBar;
 
     /** Holds the Qt event listener instance. */
     ComObjPtr<UIMainEventListenerImpl> m_pQtListener;
     /** Holds the COM event listener instance. */
     CEventListener m_comEventListener;
+    const bool     m_fShowToolbar;
 };
 
 #endif /* !___UIGuestProcessControlWidget_h___ */
