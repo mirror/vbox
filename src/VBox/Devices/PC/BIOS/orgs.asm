@@ -213,6 +213,13 @@ public          font8x8
 
 endif
 
+;; Keyboard related constants
+KBDC_DISABLE    EQU     0ADh
+KBDC_ENABLE     EQU     0AEh
+KBC_CMD         EQU     64h
+KBC_DATA        EQU     60h
+
+
 ;; NOTE: The last 8K of the ROM BIOS are peppered with fixed locations which
 ;; must be retained for compatibility. As a consequence, some of the space is
 ;; going to be wasted, but the gaps should be filled with miscellaneous code
@@ -249,11 +256,17 @@ set_int_vects   proc    near
 set_int_vects   endp
 
 eoi_jmp_post:
-                call    eoi_both_pics
+;; Calling eoi_both_pics can't be done because it writes to stack, potentially
+;; corrupting memory. AT BIOS also only clears the master PIC, not both.
+                ;; clear keyboard buffer (and possible interrupt)
+                in      al, KBC_DATA
+                mov     al, PIC_CMD_EOI
+                out     PIC_MASTER, al
+
 no_eoi_jmp_post:
-                xor     ax, ax
+                mov     ax, 40h
                 mov     ds, ax
-                jmp     dword ptr ds:[0467h]
+                jmp     dword ptr ds:[67h]
 
 seg_40_value:   dw 40h ;; Replaces a push 40; pop ds.
 
@@ -352,6 +365,7 @@ check_shutdown:
                 jmp     return_blkmove
 check_next_std:
 
+                mov     sp, 400h
                 ;; 05h = EOI + jump through 40:67
                 cmp     al, 5
                 je      eoi_jmp_post
@@ -943,11 +957,6 @@ include pmode.inc
 include pmsetup.inc
 endif
 
-
-KBDC_DISABLE    EQU     0ADh
-KBDC_ENABLE     EQU     0AEh
-KBC_CMD         EQU     64h
-KBC_DATA        EQU     60h
 
 ;; --------------------------------------------------------
 ;; INT 09h handler - Keyboard ISR (IRQ 1)
