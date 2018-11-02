@@ -42,28 +42,11 @@ protected:
     /** Constructs 3rd page base. */
     UIWizardExportAppPage3();
 
-    /** Populates cloud client parameters. */
-    void populateCloudClientParameters();
-
-    /** Parses JSON @a document. */
-    static AbstractVSDParameterList parseJsonDocument(const QJsonDocument &document);
-    /** Parses JSON bool @a field. */
-    static bool parseJsonFieldBool(const QString &strFieldName, const QJsonValue &field);
-    /** Parses JSON double @a field. */
-    static double parseJsonFieldDouble(const QString &strFieldName, const QJsonValue &field);
-    /** Parses JSON string @a field. */
-    static QString parseJsonFieldString(const QString &strFieldName, const QJsonValue &field);
-    /** Parses JSON array @a field. */
-    static QIStringPairList parseJsonFieldArray(const QString &strFieldName, const QJsonValue &field);
-
     /** Refreshes appliance settings widget. */
     void refreshApplianceSettingsWidget();
 
     /** Returns the appliance widget reference. */
     ExportAppliancePointer applianceWidget() const { return m_pApplianceWidget; }
-
-    /** Holds the cloud client parameters. */
-    AbstractVSDParameterList  m_listCloudClientParameters;
 
     /** Holds the appliance widget reference. */
     UIApplianceExportEditorWidget *m_pApplianceWidget;

@@ -20,10 +20,6 @@
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 /* Qt includes: */
-# include <QJsonArray>
-# include <QJsonDocument>
-# include <QJsonObject>
-# include <QJsonValue>
 # include <QVBoxLayout>
 
 /* GUI includes: */
@@ -36,8 +32,6 @@
 
 /* COM includes: */
 # include "CAppliance.h"
-# include "CCloudClient.h"
-# include "CCloudProfile.h"
 # include "CMachine.h"
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
@@ -49,203 +43,6 @@
 
 UIWizardExportAppPage3::UIWizardExportAppPage3()
 {
-}
-
-void UIWizardExportAppPage3::populateCloudClientParameters()
-{
-    /* Forget current parameters: */
-    m_listCloudClientParameters.clear();
-
-    /* Make sure Cloud Profile is not null: */
-    CCloudProfile comCloudProfile = fieldImp("profile").value<CCloudProfile>();
-    if (comCloudProfile.isNull())
-        return;
-
-    /* Create Cloud Client: */
-    CCloudClient comCloudClient = comCloudProfile.CreateCloudClient();
-    /* Show error message if necessary: */
-    if (!comCloudProfile.isOk())
-        msgCenter().cannotCreateCloudClient(comCloudProfile);
-    else
-    {
-        /* Read Cloud Client parameters for Export VM operation: */
-        const QString strJSON = comCloudClient.GetExportParameters();
-        /* Show error message if necessary: */
-        if (!comCloudClient.isOk())
-            msgCenter().cannotAcquireCloudClientParameter(comCloudClient);
-        else
-        {
-            /* Create JSON document and parse it: */
-            const QJsonDocument document = QJsonDocument::fromJson(strJSON.toUtf8());
-            if (!document.isEmpty())
-                m_listCloudClientParameters = parseJsonDocument(document);
-        }
-    }
-}
-
-/* static */
-AbstractVSDParameterList UIWizardExportAppPage3::parseJsonDocument(const QJsonDocument &document)
-{
-    /* Prepare parameters: */
-    AbstractVSDParameterList parameters;
-
-    /* Convert document to object, make sure it isn't empty: */
-    QJsonObject documentObject = document.object();
-    AssertMsgReturn(!documentObject.isEmpty(), ("Document object is empty!"), parameters);
-
-    /* Iterate through document object values: */
-    foreach (const QString &strElementName, documentObject.keys())
-    {
-        //printf("Element name: \"%s\"\n", strElementName.toUtf8().constData());
-
-        /* Prepare parameter: */
-        AbstractVSDParameter parameter;
-
-        /* Assign name: */
-        parameter.name = strElementName;
-
-        /* Acquire element, make sure it's an object: */
-        const QJsonValue element = documentObject.value(strElementName);
-        AssertMsg(element.isObject(), ("Element '%s' has wrong structure!", strElementName.toUtf8().constData()));
-        if (!element.isObject())
-            continue;
-
-        /* Convert element to object, make sure it isn't empty: */
-        const QJsonObject elementObject = element.toObject();
-        AssertMsg(!elementObject.isEmpty(), ("Element '%s' object has wrong structure!", strElementName.toUtf8().constData()));
-        if (elementObject.isEmpty())
-            continue;
-
-        /* Iterate through element object values: */
-        foreach (const QString &strFieldName, elementObject.keys())
-        {
-            //printf(" Field name: \"%s\"\n", strFieldName.toUtf8().constData());
-
-            /* Acquire field: */
-            const QJsonValue field = elementObject.value(strFieldName);
-
-            /* Parse known fields: */
-            if (strFieldName == "type")
-                parameter.type = (KVirtualSystemDescriptionType)(int)parseJsonFieldDouble(strFieldName, field);
-            else
-            if (strFieldName == "bool")
-            {
-                AbstractVSDParameterBool get;
-                get.value = parseJsonFieldBool(strFieldName, field);
-                parameter.get = QVariant::fromValue(get);
-                parameter.kind = ParameterKind_Bool;
-            }
-            else
-            if (strFieldName == "min")
-            {
-                AbstractVSDParameterDouble get = parameter.get.value<AbstractVSDParameterDouble>();
-                get.minimum = parseJsonFieldDouble(strFieldName, field);
-                parameter.get = QVariant::fromValue(get);
-                parameter.kind = ParameterKind_Double;
-            }
-            else
-            if (strFieldName == "max")
-            {
-                AbstractVSDParameterDouble get = parameter.get.value<AbstractVSDParameterDouble>();
-                get.maximum = parseJsonFieldDouble(strFieldName, field);
-                parameter.get = QVariant::fromValue(get);
-                parameter.kind = ParameterKind_Double;
-            }
-            else
-            if (strFieldName == "unit")
-            {
-                AbstractVSDParameterDouble get = parameter.get.value<AbstractVSDParameterDouble>();
-                get.unit = parseJsonFieldString(strFieldName, field);
-                parameter.get = QVariant::fromValue(get);
-                parameter.kind = ParameterKind_Double;
-            }
-            else
-            if (strFieldName == "items")
-            {
-                AbstractVSDParameterArray get;
-                get.values = parseJsonFieldArray(strFieldName, field);
-                parameter.get = QVariant::fromValue(get);
-                parameter.kind = ParameterKind_Array;
-            }
-        }
-
-        /* Append parameter: */
-        parameters << parameter;
-    }
-
-    /* Return parameters: */
-    return parameters;
-}
-
-/* static */
-bool UIWizardExportAppPage3::parseJsonFieldBool(const QString &strFieldName, const QJsonValue &field)
-{
-    /* Make sure field is bool: */
-    Q_UNUSED(strFieldName);
-    AssertMsgReturn(field.isBool(), ("Field '%s' has wrong structure!", strFieldName.toUtf8().constData()), false);
-    const bool fFieldValue = field.toBool();
-    //printf("  Field value: \"%s\"\n", fFieldValue ? "true" : "false");
-
-    return fFieldValue;
-}
-
-/* static */
-double UIWizardExportAppPage3::parseJsonFieldDouble(const QString &strFieldName, const QJsonValue &field)
-{
-    /* Make sure field is double: */
-    Q_UNUSED(strFieldName);
-    AssertMsgReturn(field.isDouble(), ("Field '%s' has wrong structure!", strFieldName.toUtf8().constData()), 0);
-    const double dFieldValue = field.toDouble();
-    //printf("  Field value: \"%f\"\n", dFieldValue);
-
-    return dFieldValue;
-}
-
-/* static */
-QString UIWizardExportAppPage3::parseJsonFieldString(const QString &strFieldName, const QJsonValue &field)
-{
-    /* Make sure field is string: */
-    Q_UNUSED(strFieldName);
-    AssertMsgReturn(field.isString(), ("Field '%s' has wrong structure!", strFieldName.toUtf8().constData()), QString());
-    const QString strFieldValue = field.toString();
-    //printf("  Field value: \"%s\"\n", strFieldValue.toUtf8().constData());
-
-    return strFieldValue;
-}
-
-/* static */
-QIStringPairList UIWizardExportAppPage3::parseJsonFieldArray(const QString &strFieldName, const QJsonValue &field)
-{
-    /* Make sure field is array: */
-    Q_UNUSED(strFieldName);
-    AssertMsgReturn(field.isArray(), ("Field '%s' has wrong structure!", strFieldName.toUtf8().constData()), QIStringPairList());
-    const QJsonArray fieldValueArray = field.toArray();
-    QIStringPairList fieldValueStringPairList;
-    /* Parse array: */
-    for (int i = 0; i < fieldValueArray.count(); ++i)
-    {
-        /* Parse current array value: */
-        const QJsonValue value = fieldValueArray[i];
-        /* If value is of string type, we just take it: */
-        if (value.isString())
-            fieldValueStringPairList << qMakePair(fieldValueArray[i].toString(), QString());
-        /* If value is of object type, we take object key/value pairs: */
-        else if (value.isObject())
-        {
-            const QJsonObject valueObject = value.toObject();
-            foreach (const QString &strKey, valueObject.keys())
-                fieldValueStringPairList << qMakePair(strKey, valueObject.value(strKey).toString());
-        }
-    }
-    //QStringList test;
-    //foreach (const QIStringPair &pair, fieldValueStringPairList)
-    //    if (pair.second.isNull())
-    //        test << QString("{%1}").arg(pair.first);
-    //    else
-    //        test << QString("{%1 : %2}").arg(pair.first, pair.second);
-    //printf("  Field value: \"%s\"\n", test.join(", ").toUtf8().constData());
-
-    return fieldValueStringPairList;
 }
 
 void UIWizardExportAppPage3::refreshApplianceSettingsWidget()
@@ -269,12 +66,13 @@ void UIWizardExportAppPage3::refreshApplianceSettingsWidget()
                 {
                     if (fieldImp("isFormatCloudOne").toBool())
                     {
-                        /* Populate Cloud Client parameters: */
-                        populateCloudClientParameters();
+                        /* Acquire Cloud Client parameters: */
+                        const AbstractVSDParameterList cloudClientParameters =
+                            fieldImp("cloudClientParameters").value<AbstractVSDParameterList>();
                         /* Pass them as a list of hints to help editor with names/values: */
-                        m_pApplianceWidget->setVsdHints(m_listCloudClientParameters);
+                        m_pApplianceWidget->setVsdHints(cloudClientParameters);
                         /* Add corresponding Cloud Client fields with default values: */
-                        foreach (const AbstractVSDParameter &parameter, m_listCloudClientParameters)
+                        foreach (const AbstractVSDParameter &parameter, cloudClientParameters)
                         {
                             QString strValue;
                             switch (parameter.kind)

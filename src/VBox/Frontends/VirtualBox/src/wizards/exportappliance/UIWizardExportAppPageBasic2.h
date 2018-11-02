@@ -22,6 +22,7 @@
 #include <QVariant>
 
 /* GUI includes: */
+#include "UIApplianceEditorWidget.h"
 #include "UIWizardPage.h"
 
 /* COM includes: */
@@ -85,6 +86,19 @@ protected:
     void populateAccounts();
     /** Populates account properties. */
     void populateAccountProperties();
+    /** Populates cloud client parameters. */
+    void populateCloudClientParameters();
+
+    /** Parses JSON @a document. */
+    static AbstractVSDParameterList parseJsonDocument(const QJsonDocument &document);
+    /** Parses JSON bool @a field. */
+    static bool parseJsonFieldBool(const QString &strFieldName, const QJsonValue &field);
+    /** Parses JSON double @a field. */
+    static double parseJsonFieldDouble(const QString &strFieldName, const QJsonValue &field);
+    /** Parses JSON string @a field. */
+    static QString parseJsonFieldString(const QString &strFieldName, const QJsonValue &field);
+    /** Parses JSON array @a field. */
+    static QIStringPairList parseJsonFieldArray(const QString &strFieldName, const QJsonValue &field);
 
     /** Updates page appearance. */
     virtual void updatePageAppearance();
@@ -146,13 +160,17 @@ protected:
     QString profileName() const;
     /** Returns Cloud Profile object. */
     CCloudProfile profile() const;
+    /** Returns Cloud Client parameters. */
+    AbstractVSDParameterList cloudClientParameters() const;
 
     /** Holds the Cloud Provider Manager reference. */
-    CCloudProviderManager  m_comCloudProviderManager;
+    CCloudProviderManager     m_comCloudProviderManager;
     /** Holds the Cloud Provider object reference. */
-    CCloudProvider         m_comCloudProvider;
+    CCloudProvider            m_comCloudProvider;
     /** Holds the Cloud Profile object reference. */
-    CCloudProfile          m_comCloudProfile;
+    CCloudProfile             m_comCloudProfile;
+    /** Holds the cloud client parameters. */
+    AbstractVSDParameterList  m_cloudClientParameters;
 
     /** Holds the default appliance name. */
     QString  m_strDefaultApplianceName;
@@ -218,6 +236,7 @@ class UIWizardExportAppPageBasic2 : public UIWizardPage, public UIWizardExportAp
     Q_PROPERTY(QString providerShortName READ providerShortName);
     Q_PROPERTY(QString profileName READ profileName);
     Q_PROPERTY(CCloudProfile profile READ profile);
+    Q_PROPERTY(AbstractVSDParameterList cloudClientParameters READ cloudClientParameters);
 
 public:
 
@@ -240,6 +259,9 @@ protected:
 
     /** Returns whether page is complete. */
     virtual bool isComplete() const /* override */;
+
+    /** Performs page validation. */
+    virtual bool validatePage() /* override */;
 
     /** Updates page appearance. */
     virtual void updatePageAppearance() /* override */;

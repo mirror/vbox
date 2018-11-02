@@ -44,6 +44,7 @@ class UIWizardExportAppPageExpert : public UIWizardPage,
     Q_PROPERTY(QString providerShortName READ providerShortName);
     Q_PROPERTY(QString profileName READ profileName);
     Q_PROPERTY(CCloudProfile profile READ profile);
+    Q_PROPERTY(AbstractVSDParameterList cloudClientParameters READ cloudClientParameters);
     Q_PROPERTY(ExportAppliancePointer applianceWidget READ applianceWidget);
 
 public:
