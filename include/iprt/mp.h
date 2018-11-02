@@ -336,7 +336,7 @@ RTDECL(bool) RTMpOnAllIsConcurrentSafe(void);
 RTDECL(int) RTMpOnAll(PFNRTMPWORKER pfnWorker, void *pvUser1, void *pvUser2);
 
 /**
- * Executes a function on a all other (online) CPUs in the system.
+ * Executes a function on all other (online) CPUs in the system.
  *
  * The caller must disable preemption prior to calling this API if the outcome
  * is to make any sense. But do *not* disable interrupts.
