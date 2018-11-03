@@ -1749,6 +1749,10 @@ static int rtDbgModCvLoadDirectory(PRTDBGMODCV pThis)
     {
         /*
          * 32-bit type (reading too much for NB04 is no problem).
+         *
+         * Note! The watcom linker (v1.9) seems to overwrite the directory
+         *       header and more under some conditions.  So, if this code fails
+         *       you might be so lucky as to have reproduce that issue...
          */
         RTCVDIRHDR32EX DirHdr;
         rc = rtDbgModCvReadAt(pThis, pThis->offDir, &DirHdr, sizeof(DirHdr));
@@ -1757,25 +1761,25 @@ static int rtDbgModCvLoadDirectory(PRTDBGMODCV pThis)
             if (   DirHdr.Core.cbHdr != sizeof(DirHdr.Core)
                 && DirHdr.Core.cbHdr != sizeof(DirHdr))
             {
-                Log(("Unexpected CV directory size: %#x\n", DirHdr.Core.cbHdr));
+                Log(("Unexpected CV directory size: %#x [wlink screwup?]\n", DirHdr.Core.cbHdr));
                 rc = VERR_CV_BAD_FORMAT;
             }
             if (   DirHdr.Core.cbHdr == sizeof(DirHdr)
                 && (   DirHdr.offNextDir != 0
                     || DirHdr.fFlags     != 0) )
             {
-                Log(("Extended CV directory headers fields are not zero: fFlags=%#x offNextDir=%#x\n",
+                Log(("Extended CV directory headers fields are not zero: fFlags=%#x offNextDir=%#x [wlink screwup?]\n",
                      DirHdr.fFlags, DirHdr.offNextDir));
                 rc = VERR_CV_BAD_FORMAT;
             }
             if (DirHdr.Core.cbEntry != sizeof(RTCVDIRENT32))
             {
-                Log(("Unexpected CV directory entry size: %#x (expected %#x)\n", DirHdr.Core.cbEntry, sizeof(RTCVDIRENT32)));
+                Log(("Unexpected CV directory entry size: %#x (expected %#x) [wlink screwup?]\n", DirHdr.Core.cbEntry, sizeof(RTCVDIRENT32)));
                 rc = VERR_CV_BAD_FORMAT;
             }
             if (DirHdr.Core.cEntries < 2 || DirHdr.Core.cEntries >= _512K)
             {
-                Log(("CV directory count is out of considered valid range: %#x\n", DirHdr.Core.cEntries));
+                Log(("CV directory count is out of considered valid range: %#x [wlink screwup?]\n", DirHdr.Core.cEntries));
                 rc = VERR_CV_BAD_FORMAT;
             }
             if (RT_SUCCESS(rc))
@@ -2881,7 +2885,7 @@ static int rtDbgModCvProbeCommon(PRTDBGMODINT pDbgMod, PRTCVHDR pCvHdr, RTCVFILE
            the area defined by the debug info we got from the loader. */
         if (pCvHdr->off < cb && pCvHdr->off >= sizeof(*pCvHdr))
         {
-            Log(("RTDbgModCv: Found %c%c%c%c at %#RTfoff - size %#x, directory at %#x. file type %d\n",
+            Log(("RTDbgModCv: Found %c%c%c%c at %#x - size %#x, directory at %#x. file type %d\n",
                  RT_BYTE1(pCvHdr->u32Magic), RT_BYTE2(pCvHdr->u32Magic), RT_BYTE3(pCvHdr->u32Magic), RT_BYTE4(pCvHdr->u32Magic),
                  off, cb, pCvHdr->off, enmFileType));
 
