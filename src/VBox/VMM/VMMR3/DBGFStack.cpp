@@ -542,9 +542,17 @@ DECL_NO_INLINE(static, int) dbgfR3StackWalk(PDBGFUNWINDCTX pUnwindCtx, PDBGFSTAC
                 }
                 else if (pFrame->enmReturnType == RTDBGRETURNTYPE_NEAR32)
                 {
+#if 1
+                    /* Assumes returning 32-bit code. */
                     pFrame->fFlags       |= DBGFSTACKFRAME_FLAGS_USED_ODD_EVEN;
                     pFrame->enmReturnType = RTDBGRETURNTYPE_FAR32;
                     cbRetAddr = 8;
+#else
+                    /* Assumes returning 16-bit code. */
+                    pFrame->fFlags       |= DBGFSTACKFRAME_FLAGS_USED_ODD_EVEN;
+                    pFrame->enmReturnType = RTDBGRETURNTYPE_FAR16;
+                    cbRetAddr = 4;
+#endif
                 }
             }
             else if (pFrame->fFlags & DBGFSTACKFRAME_FLAGS_USED_ODD_EVEN)
@@ -609,6 +617,8 @@ DECL_NO_INLINE(static, int) dbgfR3StackWalk(PDBGFUNWINDCTX pUnwindCtx, PDBGFSTAC
                                  pUnwindCtx->m_State.u.x86.auSegs[X86_SREG_CS], pUnwindCtx->m_State.uPc);
     }
     else
+    {
+        int rc2;
         switch (pFrame->enmReturnType)
         {
             case RTDBGRETURNTYPE_NEAR16:
@@ -639,10 +649,24 @@ DECL_NO_INLINE(static, int) dbgfR3StackWalk(PDBGFUNWINDCTX pUnwindCtx, PDBGFSTAC
                     DBGFR3AddrFromFlat(pUnwindCtx->m_pUVM, &pFrame->AddrReturnPC, *uRet.pu64);
                 break;
             case RTDBGRETURNTYPE_FAR16:
-                DBGFR3AddrFromSelOff(pUnwindCtx->m_pUVM, pUnwindCtx->m_idCpu, &pFrame->AddrReturnPC, uRet.pu16[1], uRet.pu16[0]);
+                rc2 = DBGFR3AddrFromSelOff(pUnwindCtx->m_pUVM, pUnwindCtx->m_idCpu, &pFrame->AddrReturnPC, uRet.pu16[1], uRet.pu16[0]);
+                if (RT_SUCCESS(rc2))
+                    break;
+                rc2 = DBGFR3AddrFromSelOff(pUnwindCtx->m_pUVM, pUnwindCtx->m_idCpu, &pFrame->AddrReturnPC, pFrame->AddrPC.Sel, uRet.pu16[0]);
+                if (RT_SUCCESS(rc2))
+                    pFrame->enmReturnType = RTDBGRETURNTYPE_NEAR16;
+                else
+                    DBGFR3AddrFromSelOff(pUnwindCtx->m_pUVM, pUnwindCtx->m_idCpu, &pFrame->AddrReturnPC, uRet.pu16[1], uRet.pu16[0]);
                 break;
             case RTDBGRETURNTYPE_FAR32:
-                DBGFR3AddrFromSelOff(pUnwindCtx->m_pUVM, pUnwindCtx->m_idCpu, &pFrame->AddrReturnPC, uRet.pu16[2], uRet.pu32[0]);
+                rc2 = DBGFR3AddrFromSelOff(pUnwindCtx->m_pUVM, pUnwindCtx->m_idCpu, &pFrame->AddrReturnPC, uRet.pu16[2], uRet.pu32[0]);
+                if (RT_SUCCESS(rc2))
+                    break;
+                rc2 = DBGFR3AddrFromSelOff(pUnwindCtx->m_pUVM, pUnwindCtx->m_idCpu, &pFrame->AddrReturnPC, pFrame->AddrPC.Sel, uRet.pu32[0]);
+                if (RT_SUCCESS(rc2))
+                    pFrame->enmReturnType = RTDBGRETURNTYPE_NEAR32;
+                else
+                    DBGFR3AddrFromSelOff(pUnwindCtx->m_pUVM, pUnwindCtx->m_idCpu, &pFrame->AddrReturnPC, uRet.pu16[2], uRet.pu32[0]);
                 break;
             case RTDBGRETURNTYPE_FAR64:
                 DBGFR3AddrFromSelOff(pUnwindCtx->m_pUVM, pUnwindCtx->m_idCpu, &pFrame->AddrReturnPC, uRet.pu16[4], uRet.pu64[0]);
@@ -666,6 +690,7 @@ DECL_NO_INLINE(static, int) dbgfR3StackWalk(PDBGFUNWINDCTX pUnwindCtx, PDBGFSTAC
                 AssertMsgFailed(("enmReturnType=%d\n", pFrame->enmReturnType));
                 return VERR_INVALID_PARAMETER;
         }
+    }
 
 
     pFrame->pSymReturnPC  = DBGFR3AsSymbolByAddrA(pUnwindCtx->m_pUVM, pUnwindCtx->m_hAs, &pFrame->AddrReturnPC,
@@ -725,6 +750,7 @@ DECL_NO_INLINE(static, int) dbgfR3StackWalk(PDBGFUNWINDCTX pUnwindCtx, PDBGFSTAC
         if (!(pFrame->fFlags & DBGFSTACKFRAME_FLAGS_USED_UNWIND_INFO))
         {
             dbgfR3UnwindCtxSetPcAndSp(pUnwindCtx, &pFrame->AddrReturnPC, &pFrame->AddrReturnStack);
+            pUnwindCtx->m_State.u.x86.auRegs[X86_GREG_xBP] = pFrame->AddrReturnFrame.off;
         }
         /** @todo Reevaluate CS if the previous frame return type isn't near. */
         if (   pUnwindCtx->m_State.enmArch == RTLDRARCH_AMD64
