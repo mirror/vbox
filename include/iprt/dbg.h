@@ -673,9 +673,9 @@ RTDECL(int) RTDbgCfgSetLogCallback(RTDBGCFG hDbgCfg, PFNRTDBGCFGLOG pfnCallback,
  *          VERR_CALLBACK_RETURN the search will continue till the end of the
  *          list.  These status codes will not necessarily be propagated to the
  *          caller in any consistent manner.
- * @retval  VINF_CALLBACK_RETURN if successuflly opened the file and it's time
+ * @retval  VINF_CALLBACK_RETURN if successfully opened the file and it's time
  *          to return
- * @retval  VERR_CALLBACK_RETURN if we shouldn't stop searching.
+ * @retval  VERR_CALLBACK_RETURN if we should stop searching immediately.
  *
  * @param   hDbgCfg             The debugging configuration handle.
  * @param   pszFilename         The path to the file that should be tried out.
@@ -687,6 +687,9 @@ typedef DECLCALLBACK(int) FNRTDBGCFGOPEN(RTDBGCFG hDbgCfg, const char *pszFilena
 typedef FNRTDBGCFGOPEN *PFNRTDBGCFGOPEN;
 
 
+RTDECL(int) RTDbgCfgOpenEx(RTDBGCFG hDbgCfg, const char *pszFilename, const char *pszCacheSubDir,
+                           const char *pszUuidMappingSubDir, uint32_t fFlags,
+                           PFNRTDBGCFGOPEN pfnCallback, void *pvUser1, void *pvUser2);
 RTDECL(int) RTDbgCfgOpenPeImage(RTDBGCFG hDbgCfg, const char *pszFilename, uint32_t cbImage, uint32_t uTimestamp,
                                 PFNRTDBGCFGOPEN pfnCallback, void *pvUser1, void *pvUser2);
 RTDECL(int) RTDbgCfgOpenPdb70(RTDBGCFG hDbgCfg, const char *pszFilename, PCRTUUID pUuid, uint32_t uAge,
@@ -701,6 +704,28 @@ RTDECL(int) RTDbgCfgOpenDsymBundle(RTDBGCFG hDbgCfg, const char *pszFilename, PC
                                    PFNRTDBGCFGOPEN pfnCallback, void *pvUser1, void *pvUser2);
 RTDECL(int) RTDbgCfgOpenMachOImage(RTDBGCFG hDbgCfg, const char *pszFilename, PCRTUUID pUuid,
                                    PFNRTDBGCFGOPEN pfnCallback, void *pvUser1, void *pvUser2);
+
+/** @name RTDBGCFG_O_XXX - Open flags for RTDbgCfgOpen.
+ * @{ */
+/** The operative system mask.  The values are RT_OPSYS_XXX. */
+#define RTDBGCFG_O_OPSYS_MASK           UINT32_C(0x000000ff)
+/** Same as RTDBGCFG_FLAGS_NO_SYSTEM_PATHS. */
+#define RTDBGCFG_O_NO_SYSTEM_PATHS      RT_BIT_32(25)
+/** The files may be compressed MS styled. */
+#define RTDBGCFG_O_MAYBE_COMPRESSED_MS  RT_BIT_32(26)
+/** Whether to make a recursive search. */
+#define RTDBGCFG_O_RECURSIVE            RT_BIT_32(27)
+/** We're looking for a separate debug file. */
+#define RTDBGCFG_O_EXT_DEBUG_FILE       RT_BIT_32(28)
+/** We're looking for an executable image. */
+#define RTDBGCFG_O_EXECUTABLE_IMAGE     RT_BIT_32(29)
+/** The file search should be done in an case insensitive fashion. */
+#define RTDBGCFG_O_CASE_INSENSITIVE     RT_BIT_32(30)
+/** Use Windbg style symbol servers when encountered in the path. */
+#define RTDBGCFG_O_SYMSRV               RT_BIT_32(31)
+/** Mask of valid flags. */
+#define RTDBGCFG_O_VALID_MASK           UINT32_C(0xfe0000ff)
+/** @} */
 
 
 /** @name Static symbol cache configuration
@@ -1523,6 +1548,8 @@ RTDECL(RTUINTPTR)   RTDbgModSegmentRva(RTDBGMOD hDbgMod, RTDBGSEGIDX iSeg);
  *          end of the segment.
  * @retval  VERR_DBG_ADDRESS_WRAP if off+cb wraps around.
  * @retval  VERR_INVALID_PARAMETER if the symbol flags sets undefined bits.
+ * @retval  VERR_DBG_DUPLICATE_SYMBOL
+ * @retval  VERR_DBG_ADDRESS_CONFLICT
  *
  * @param   hDbgMod         The module handle.
  * @param   pszSymbol       The symbol name.

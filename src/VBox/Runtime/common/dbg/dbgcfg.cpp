@@ -132,25 +132,6 @@ typedef struct RTDBGCFGU64MNEMONIC
 typedef RTDBGCFGU64MNEMONIC const *PCRTDBGCFGU64MNEMONIC;
 
 
-/** @name Open flags.
- * @{ */
-/** The operative system mask.  The values are RT_OPSYS_XXX. */
-#define RTDBGCFG_O_OPSYS_MASK           UINT32_C(0x000000ff)
-/** The files may be compressed MS styled. */
-#define RTDBGCFG_O_MAYBE_COMPRESSED_MS  RT_BIT_32(26)
-/** Whether to make a recursive search. */
-#define RTDBGCFG_O_RECURSIVE            RT_BIT_32(27)
-/** We're looking for a separate debug file. */
-#define RTDBGCFG_O_EXT_DEBUG_FILE       RT_BIT_32(28)
-/** We're looking for an executable image. */
-#define RTDBGCFG_O_EXECUTABLE_IMAGE     RT_BIT_32(29)
-/** The file search should be done in an case insensitive fashion. */
-#define RTDBGCFG_O_CASE_INSENSITIVE     RT_BIT_32(30)
-/** Use Windbg style symbol servers when encountered in the path. */
-#define RTDBGCFG_O_SYMSRV               RT_BIT_32(31)
-/** @} */
-
-
 /*********************************************************************************************************************************
 *   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
@@ -630,6 +611,7 @@ static int rtDbgCfgTryOpenDir(PRTDBGCFGINT pThis, char *pszPath, PRTPATHSPLIT pS
      * Do a recursive search if requested.
      */
     if (   (fFlags & RTDBGCFG_O_RECURSIVE)
+        && pThis
         && !(pThis->fFlags & RTDBGCFG_FLAGS_NO_RECURSIV_SEARCH) )
     {
         /** @todo Recursive searching will be done later. */
@@ -745,6 +727,8 @@ static int rtDbgCfgTryDownloadAndOpen(PRTDBGCFGINT pThis, const char *pszServer,
     if (pThis->fFlags & RTDBGCFG_FLAGS_NO_SYM_SRV)
         return VWRN_NOT_FOUND;
     if (!pszCacheSubDir || !*pszCacheSubDir)
+        return VWRN_NOT_FOUND;
+    if (!(fFlags & RTDBGCFG_O_SYMSRV))
         return VWRN_NOT_FOUND;
 
     /*
@@ -1206,15 +1190,16 @@ static int rtDbgCfgOpenWithSubDir(RTDBGCFG hDbgCfg, const char *pszFilename, con
     AssertPtrReturn(pszFilename, VERR_INVALID_POINTER);
     AssertPtrReturn(pszCacheSubDir, VERR_INVALID_POINTER);
     AssertPtrReturn(pfnCallback, VERR_INVALID_POINTER);
+    AssertReturn(!(fFlags & ~RTDBGCFG_O_VALID_MASK), VERR_INVALID_FLAGS);
 
     /*
      * Do some guessing as to the way we should parse the filename and whether
      * it's case exact or not.
      */
-    bool fDosPath = strchr(pszFilename, ':')  != NULL
-                 || strchr(pszFilename, '\\') != NULL
-                 || RT_OPSYS_USES_DOS_PATHS(fFlags & RTDBGCFG_O_OPSYS_MASK)
-                 || (fFlags & RTDBGCFG_O_CASE_INSENSITIVE);
+    bool fDosPath = RT_OPSYS_USES_DOS_PATHS(fFlags & RTDBGCFG_O_OPSYS_MASK)
+                 || (fFlags & RTDBGCFG_O_CASE_INSENSITIVE)
+                 || strchr(pszFilename, ':')  != NULL
+                 || strchr(pszFilename, '\\') != NULL;
     if (fDosPath)
         fFlags |= RTDBGCFG_O_CASE_INSENSITIVE;
 
@@ -1281,6 +1266,7 @@ static int rtDbgCfgOpenWithSubDir(RTDBGCFG hDbgCfg, const char *pszFilename, con
                 if (   rc2 != VINF_CALLBACK_RETURN
                     && rc2 != VERR_CALLBACK_RETURN
                     && (fFlags & RTDBGCFG_O_EXECUTABLE_IMAGE)
+                    && !(fFlags & RTDBGCFG_O_NO_SYSTEM_PATHS)
                     && !(pThis->fFlags & RTDBGCFG_FLAGS_NO_SYSTEM_PATHS) )
                 {
                     rc2 = rtDbgCfgTryOpenList(pThis, &pThis->NtExecutablePathList, pSplitFn, pszCacheSubDir,
@@ -1291,6 +1277,7 @@ static int rtDbgCfgOpenWithSubDir(RTDBGCFG hDbgCfg, const char *pszFilename, con
 
                 if (   rc2 != VINF_CALLBACK_RETURN
                     && rc2 != VERR_CALLBACK_RETURN
+                    && !(fFlags & RTDBGCFG_O_NO_SYSTEM_PATHS)
                     && !(pThis->fFlags & RTDBGCFG_FLAGS_NO_SYSTEM_PATHS) )
                 {
                     rc2 = rtDbgCfgTryOpenList(pThis, &pThis->NtSymbolPathList, pSplitFn, pszCacheSubDir,
@@ -1314,6 +1301,17 @@ static int rtDbgCfgOpenWithSubDir(RTDBGCFG hDbgCfg, const char *pszFilename, con
         rcRet = VERR_NOT_FOUND;
     return rcRet;
 }
+
+
+RTDECL(int) RTDbgCfgOpenEx(RTDBGCFG hDbgCfg, const char *pszFilename, const char *pszCacheSubDir,
+                           const char *pszUuidMappingSubDir, uint32_t fFlags,
+                           PFNRTDBGCFGOPEN pfnCallback, void *pvUser1, void *pvUser2)
+{
+    return rtDbgCfgOpenWithSubDir(hDbgCfg, pszFilename, pszCacheSubDir, pszUuidMappingSubDir, fFlags,
+                                  pfnCallback, pvUser1, pvUser2);
+}
+
+
 
 
 RTDECL(int) RTDbgCfgOpenPeImage(RTDBGCFG hDbgCfg, const char *pszFilename, uint32_t cbImage, uint32_t uTimestamp,
@@ -1916,6 +1914,7 @@ static int rtDbgCfgChangeStringList(PRTDBGCFGINT pThis, RTDBGCFGOP enmOp, const 
     if (enmOp == RTDBGCFGOP_SET)
         rtDbgCfgFreeStrList(pList);
 
+    PRTLISTNODE pPrependTo = pList;
     while (*pszValue)
     {
         /* Skip separators. */
@@ -1964,7 +1963,10 @@ static int rtDbgCfgChangeStringList(PRTDBGCFGINT pThis, RTDBGCFGOP enmOp, const 
             pNew->sz[cchPath] = '\0';
 
             if (enmOp == RTDBGCFGOP_PREPEND)
-                RTListPrepend(pList, &pNew->ListEntry);
+            {
+                RTListNodeInsertAfter(pPrependTo, &pNew->ListEntry);
+                pPrependTo = &pNew->ListEntry;
+            }
             else
                 RTListAppend(pList, &pNew->ListEntry);
         }
