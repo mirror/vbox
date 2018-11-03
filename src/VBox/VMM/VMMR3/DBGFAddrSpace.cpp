@@ -203,6 +203,7 @@ int dbgfR3AsInit(PUVM pUVM)
             if (RT_FAILURE(rc))
                 return VMR3SetError(pUVM, rc, RT_SRC_POS,
                                     "DBGF Config Error: /DBGF/%s=%s -> %Rrc", s_aProps[i].pszCfgName, pszCfgValue, rc);
+            MMR3HeapFree(pszCfgValue);
         }
     }
 
