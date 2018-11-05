@@ -4778,12 +4778,13 @@
     </desc>
 
     <method name="isFeatureEnabled">
-      <desc>TODO</desc>
+      <desc>Returns whether a particular capturing feature is enabled for this
+        screen or not.</desc>
       <param name="feature" type="CaptureFeature" dir="in">
-        <desc>TODO</desc>
+        <desc>Feature to check for.</desc>
       </param>
       <param name="enabled" type="boolean" dir="return">
-        <desc>TODO</desc>
+        <desc>@c true if the feature is enabled, @c false if not.</desc>
       </param>
     </method>
 
@@ -4905,12 +4906,12 @@
     </desc>
 
     <method name="getScreenSettings">
-      <desc>TODO</desc>
+      <desc>Returns the capturing settings for a particular screen.</desc>
       <param name="screenId" type="unsigned long" dir="in">
-        <desc>TODO</desc>
+        <desc>Screen ID to retrieve capturing screen settings for.</desc>
       </param>
       <param name="captureScreenSettings" type="ICaptureScreenSettings" dir="return">
-        <desc>TODO</desc>
+        <desc>Capturing screen settings for the requested screen.</desc>
       </param>
     </method>
 
