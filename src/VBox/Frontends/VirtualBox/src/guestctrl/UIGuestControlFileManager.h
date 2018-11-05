@@ -35,6 +35,7 @@
 
 /* Forward declarations: */
 class QHBoxLayout;
+class QSplitter;
 class QTextEdit;
 class QVBoxLayout;
 class QITabWidget;
@@ -111,7 +112,7 @@ private:
     void prepareObjects();
     void prepareGuestListener();
     void prepareConnections();
-    void prepareVerticalToolBar();
+    void prepareVerticalToolBar(QHBoxLayout *layout);
     void prepareToolBar();
     bool createSession(const QString& strUserName, const QString& strPassword,
                        const QString& strDomain = QString() /* not used currently */);
@@ -138,7 +139,6 @@ private:
         - assigned it to the most recently "unhidden" panel */
     void manageEscapeShortCut();
 
-
     template<typename T>
     QStringList       getFsObjInfoStringList(const T &fsObjectInfo) const;
     void              appendLog(const QString &strLog);
@@ -146,10 +146,8 @@ private:
     CGuest                      m_comGuest;
     CGuestSession               m_comGuestSession;
     QVBoxLayout                *m_pMainLayout;
-
+    QSplitter                  *m_pVerticalSplitter;
     UIToolBar                  *m_pToolBar;
-    QWidget                    *m_pFileTableContainerWidget;
-    QHBoxLayout                *m_pFileTableContainerLayout;
 
     //UIFileOperationsList       *m_pFileOperationsList;
     UIGuestControlConsole      *m_pConsole;

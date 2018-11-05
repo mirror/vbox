@@ -26,6 +26,7 @@
 # include <QHeaderView>
 # include <QTextEdit>
 # include <QPushButton>
+# include <QSplitter>
 # include <QGridLayout>
 
 /* GUI includes: */
@@ -132,9 +133,8 @@ UIGuestControlFileManager::UIGuestControlFileManager(EmbedTo enmEmbedding, UIAct
     , m_iMaxRecursionDepth(1)
     , m_comGuest(comGuest)
     , m_pMainLayout(0)
+    , m_pVerticalSplitter(0)
     , m_pToolBar(0)
-    , m_pFileTableContainerWidget(0)
-    , m_pFileTableContainerLayout(0)
     , m_pGuestFileTable(0)
     , m_pHostFileTable(0)
     , m_enmEmbedding(enmEmbedding)
@@ -187,53 +187,59 @@ void UIGuestControlFileManager::prepareGuestListener()
 
 void UIGuestControlFileManager::prepareObjects()
 {
-    /* Create layout: */
+    /* m_pMainLayout is the outer most layout containing the main toolbar and splitter widget: */
     m_pMainLayout = new QVBoxLayout(this);
     if (!m_pMainLayout)
         return;
 
     /* Configure layout: */
     m_pMainLayout->setSpacing(0);
+    m_pMainLayout->setContentsMargins(0, 0, 0, 0);
 
     if (m_fShowToolbar)
         prepareToolBar();
+    /* Two widgets are inserted into this splitter. Upper pWidget widget is a container with file tables and all the panels
+       except the log panel and lower widget is the log panel: */
+    m_pVerticalSplitter = new QSplitter;
+    if (!m_pVerticalSplitter)
+        return;
 
-    // m_pSessionCreateWidget = new UIGuestSessionCreateWidget();
-    // if (m_pSessionCreateWidget)
-    // {
-    //     m_pMainLayout->addWidget(m_pSessionCreateWidget);
-    // }
+    m_pMainLayout->addWidget(m_pVerticalSplitter);
+    m_pVerticalSplitter->setOrientation(Qt::Vertical);
+    m_pVerticalSplitter->setHandleWidth(4);
 
-    m_pFileTableContainerWidget = new QWidget;
-    m_pFileTableContainerLayout = new QHBoxLayout;
+    QHBoxLayout *pFileTableContainerLayout = new QHBoxLayout;
+    pFileTableContainerLayout->setSpacing(0);
+    pFileTableContainerLayout->setContentsMargins(0, 0, 0, 0);
 
-    if (m_pFileTableContainerWidget)
+    QWidget *pTopWidget = new QWidget;
+    QVBoxLayout *pTopLayout = new QVBoxLayout;
+    pTopLayout->setSpacing(0);
+    pTopLayout->setContentsMargins(0, 0, 0, 0);
+
+    pTopWidget->setLayout(pTopLayout);
+
+    if (pFileTableContainerLayout)
     {
-        if (m_pFileTableContainerLayout)
+        pFileTableContainerLayout->setSpacing(0);
+        pFileTableContainerLayout->setContentsMargins(0, 0, 0, 0);
+        m_pGuestFileTable = new UIGuestFileTable(m_pActionPool);
+        m_pGuestFileTable->setEnabled(false);
+
+        m_pHostFileTable = new UIHostFileTable(m_pActionPool);
+        if (m_pHostFileTable)
         {
-            m_pFileTableContainerWidget->setLayout(m_pFileTableContainerLayout);
-            m_pFileTableContainerLayout->setSpacing(0);
-            m_pFileTableContainerLayout->setContentsMargins(0, 0, 0, 0);
-            m_pGuestFileTable = new UIGuestFileTable(m_pActionPool);
-            m_pGuestFileTable->setEnabled(false);
-
-            m_pHostFileTable = new UIHostFileTable(m_pActionPool);
-            if (m_pHostFileTable)
-            {
-                connect(m_pHostFileTable, &UIHostFileTable::sigLogOutput,
-                        this, &UIGuestControlFileManager::sltReceieveLogOutput);
-                m_pFileTableContainerLayout->addWidget(m_pHostFileTable);
-            }
-            prepareVerticalToolBar();
-             if (m_pGuestFileTable)
-            {
-                connect(m_pGuestFileTable, &UIGuestFileTable::sigLogOutput,
-                        this, &UIGuestControlFileManager::sltReceieveLogOutput);
-                m_pFileTableContainerLayout->addWidget(m_pGuestFileTable);
-            }
-
+            connect(m_pHostFileTable, &UIHostFileTable::sigLogOutput,
+                    this, &UIGuestControlFileManager::sltReceieveLogOutput);
+            pFileTableContainerLayout->addWidget(m_pHostFileTable);
         }
-        m_pMainLayout->addWidget(m_pFileTableContainerWidget);
+        prepareVerticalToolBar(pFileTableContainerLayout);
+        if (m_pGuestFileTable)
+        {
+            connect(m_pGuestFileTable, &UIGuestFileTable::sigLogOutput,
+                    this, &UIGuestControlFileManager::sltReceieveLogOutput);
+            pFileTableContainerLayout->addWidget(m_pGuestFileTable);
+        }
     }
 
     // m_pFileOperationsList = new UIFileOperationsList;
@@ -242,45 +248,41 @@ void UIGuestControlFileManager::prepareObjects()
     //     m_pTabWidget->addTab(m_pFileOperationsList, "File Operatiions");
     //     m_pFileOperationsList->header()->hide();
     // }
-
-    /* Create the settings-panel: */
-    m_pLogPanel = new UIGuestControlFileManagerLogPanel(this /* manager dialog */, 0 /*parent */);
-    if (m_pLogPanel)
-    {
-        /* Configure panel: */
-        m_pLogPanel->hide();
-        m_panelActionMap.insert(m_pLogPanel, m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_T_Log));
-        /* Add into layout: */
-        m_pMainLayout->addWidget(m_pLogPanel);
-    }
+    pTopLayout->addLayout(pFileTableContainerLayout);
     m_pSessionPanel = new UIGuestControlFileManagerSessionPanel(this /* manager dialog */, 0 /*parent */);
     if (m_pSessionPanel)
     {
-        /* Configure panel: */
         m_pSessionPanel->hide();
         m_panelActionMap.insert(m_pSessionPanel, m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_T_Session));
-        /* Add into layout: */
-        m_pMainLayout->addWidget(m_pSessionPanel);
+        pTopLayout->addWidget(m_pSessionPanel);
     }
 
-    /* Create the settings-panel: */
     m_pSettingsPanel =
         new UIGuestControlFileManagerSettingsPanel(this /* manager dialog */,
                                                    0 /*parent */, UIGuestControlFileManagerSettings::instance());
     if (m_pSettingsPanel)
     {
-        /* Configure panel: */
         m_pSettingsPanel->hide();
         m_panelActionMap.insert(m_pSettingsPanel, m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_T_Settings));
         connect(m_pSettingsPanel, &UIGuestControlFileManagerSettingsPanel::sigListDirectoriesFirstChanged,
                 this, &UIGuestControlFileManager::sltListDirectoriesBeforeChanged);
-        /* Add into layout: */
-        m_pMainLayout->addWidget(m_pSettingsPanel);
+        pTopLayout->addWidget(m_pSettingsPanel);
     }
+    m_pVerticalSplitter->addWidget(pTopWidget);
 
+    m_pLogPanel = new UIGuestControlFileManagerLogPanel(this /* manager dialog */, 0 /*parent */);
+    if (m_pLogPanel)
+    {
+        m_pLogPanel->hide();
+        m_panelActionMap.insert(m_pLogPanel, m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_T_Log));
+    }
+    m_pVerticalSplitter->addWidget(pTopWidget);
+    m_pVerticalSplitter->addWidget(m_pLogPanel);
+    m_pVerticalSplitter->setCollapsible(m_pVerticalSplitter->indexOf(pTopWidget), false);
+    m_pVerticalSplitter->setCollapsible(m_pVerticalSplitter->indexOf(m_pLogPanel), false);
 }
 
-void UIGuestControlFileManager::prepareVerticalToolBar()
+void UIGuestControlFileManager::prepareVerticalToolBar(QHBoxLayout *layout)
 {
     m_pToolBar = new UIToolBar;
     if (!m_pToolBar)
@@ -305,9 +307,9 @@ void UIGuestControlFileManager::prepareVerticalToolBar()
     connect(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_CopyToHost), &QAction::triggered,
             this, &UIGuestControlFileManager::sltCopyHostToGuest);
     connect(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_CopyToGuest), &QAction::triggered,
-            this, &UIGuestControlFileManager::sltCopyGuestToHost);
+             this, &UIGuestControlFileManager::sltCopyGuestToHost);
 
-    m_pFileTableContainerLayout->addWidget(m_pToolBar);
+    layout ->addWidget(m_pToolBar);
 }
 
 void UIGuestControlFileManager::prepareConnections()
