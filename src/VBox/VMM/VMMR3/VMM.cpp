@@ -1586,7 +1586,7 @@ static DECLCALLBACK(int) vmmR3SendStarupIpi(PVM pVM, VMCPUID idCpu, uint32_t uVe
     {
         /* If the CPU is in VMX non-root mode we must cause a VM-exit. */
         if (CPUMIsGuestInVmxNonRootMode(pCtx))
-            return IEMExecVmxVmexitStartupIpi(pVCpu, uVector);
+            return VBOXSTRICTRC_TODO(IEMExecVmxVmexitStartupIpi(pVCpu, uVector));
 
         /* If the CPU is in VMX root mode (and not in VMX non-root mode) SIPIs are blocked. */
         return VINF_SUCCESS;
@@ -1634,7 +1634,7 @@ static DECLCALLBACK(int) vmmR3SendInitIpi(PVM pVM, VMCPUID idCpu)
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
     PCPUMCTX pCtx = CPUMQueryGuestCtxPtr(pVCpu);
     if (CPUMIsGuestInVmxNonRootMode(pCtx))
-        return IEMExecVmxVmexitInitIpi(pVCpu);
+        return VBOXSTRICTRC_TODO(IEMExecVmxVmexitInitIpi(pVCpu));
 #endif
 
     /** @todo Figure out how to handle a nested-guest intercepts here for INIT
