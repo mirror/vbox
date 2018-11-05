@@ -27,7 +27,6 @@ namespace settings
     struct CaptureSettings;
 }
 
-class ICaptureScreenSettings;
 class CaptureScreenSettings;
 
 class ATL_NO_VTABLE CaptureSettings :
