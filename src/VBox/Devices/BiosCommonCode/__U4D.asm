@@ -76,7 +76,7 @@ else
                 ;
                 test    cx, cx
                 jnz     do_it_the_hard_way
-                
+
                 div     bx              ; dx:ax / bx -> ax=quotient, dx=remainder
 
                 mov     bx, dx          ; remainder in cx:bx, and we know cx=0
