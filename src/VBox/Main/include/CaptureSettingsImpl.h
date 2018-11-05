@@ -24,7 +24,7 @@
 
 namespace settings
 {
-    struct CaptureSettings;
+    class CaptureSettings;
 }
 
 class CaptureScreenSettings;

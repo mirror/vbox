@@ -222,7 +222,7 @@ HRESULT CaptureScreenSettings::setEnabled(BOOL enabled)
         m->pMachine->i_setModified(Machine::IsModified_Capture);
 
         alock.acquire();
-        m->bd->fEnabled = enabled;
+        m->bd->fEnabled = RT_BOOL(enabled);
         alock.release();
 
         /** Save settings if online - @todo why is this required? -- @bugref{6818} */
@@ -507,7 +507,7 @@ HRESULT CaptureScreenSettings::setVideoFPS(ULONG aVideoFPS)
 bool CaptureScreenSettings::i_canChangeSettings(void)
 {
     AutoAnyStateDependency adep(m->pMachine);
-    AssertComRCReturn(adep.rc(), E_UNEXPECTED);
+    AssertComRCReturn(adep.rc(), false);
 
     if (   Global::IsOnline(adep.machineState())
         && m->bd->fEnabled)
