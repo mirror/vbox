@@ -2974,7 +2974,7 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                         }
 
                         if (cMonitors > saCaptureScreenScreens.size()) /* Paranoia. */
-                            cMonitors = saCaptureScreenScreens.size();
+                            cMonitors = (ULONG)saCaptureScreenScreens.size();
 
                         for (size_t i = 0; i < cMonitors; ++i)
                             CHECK_ERROR_BREAK(saCaptureScreenScreens[i], COMSETTER(Enabled)(screens[i]));

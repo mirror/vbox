@@ -752,11 +752,10 @@ int CaptureStream::initInternal(uint32_t uScreen, const settings::CaptureScreenS
 
     if (RT_SUCCESS(rc))
     {
-        this->pCtx      = pCtx;
-        this->fEnabled  = true;
-        this->uScreenID = uScreen;
-        this->tsStartMs = RTTimeMilliTS();
-        this->ScreenSettings  = Settings;
+        this->fEnabled       = true;
+        this->uScreenID      = uScreen;
+        this->tsStartMs      = RTTimeMilliTS();
+        this->ScreenSettings = Settings;
     }
     else
     {
