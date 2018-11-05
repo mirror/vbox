@@ -827,7 +827,7 @@ static DECLCALLBACK(int) drvAudioVideoRecStreamPlay(PPDMIHOSTAUDIO pInterface, P
             {
                 case AVRECCONTAINERTYPE_MAIN_CONSOLE:
                 {
-                    HRESULT hr = pSink->Con.Main.pConsole->i_audioVideoRecSendAudio(pStreamAV->pvDstBuf, cbDst, uPTSMs);
+                    HRESULT hr = pSink->Con.Main.pConsole->i_videoRecSendAudio(pStreamAV->pvDstBuf, cbDst, uPTSMs);
                     Assert(hr == S_OK);
                     RT_NOREF(hr);
 
@@ -1085,12 +1085,12 @@ AudioVideoRec::~AudioVideoRec(void)
  * Applies a video recording configuration to this driver instance.
  *
  * @returns IPRT status code.
- * @param   pVideoRecCfg        Pointer to video recording configuration to apply.
+ * @param   Settings        Capturing configuration to apply.
  */
-int AudioVideoRec::applyConfiguration(const PVIDEORECCFG pVideoRecCfg)
+int AudioVideoRec::applyConfiguration(const settings::CaptureSettings &a_Settings)
 {
     /** @todo Do some validation here. */
-    mVideoRecCfg = *pVideoRecCfg; /* Note: Does have an own copy operator. */
+    mVideoRecCfg = a_Settings; /* Note: Does have an own copy operator. */
     return VINF_SUCCESS;
 }
 
@@ -1100,23 +1100,27 @@ int AudioVideoRec::applyConfiguration(const PVIDEORECCFG pVideoRecCfg)
  */
 int AudioVideoRec::configureDriver(PCFGMNODE pLunCfg)
 {
-    int rc = CFGMR3InsertInteger(pLunCfg, "Object",    (uintptr_t)mpConsole->i_getAudioVideoRec());
+    int rc = CFGMR3InsertInteger(pLunCfg, "Object",    (uintptr_t)mpConsole->i_videoRecGetAudioDrv());
     AssertRCReturn(rc, rc);
     rc = CFGMR3InsertInteger(pLunCfg, "ObjectConsole", (uintptr_t)mpConsole);
     AssertRCReturn(rc, rc);
 
-    rc = CFGMR3InsertInteger(pLunCfg, "ContainerType", (uint64_t)mVideoRecCfg.enmDst);
+    /** @todo For now we're using the configuration of the first screen here audio-wise. */
+    Assert(mVideoRecCfg.mapScreens.size() >= 1);
+    const settings::CaptureScreenSettings &Screen0Settings = mVideoRecCfg.mapScreens[0];
+
+    rc = CFGMR3InsertInteger(pLunCfg, "ContainerType", (uint64_t)Screen0Settings.enmDest);
     AssertRCReturn(rc, rc);
-    if (mVideoRecCfg.enmDst == VIDEORECDEST_FILE)
+    if (Screen0Settings.enmDest == CaptureDestination_File)
     {
-        rc = CFGMR3InsertString(pLunCfg, "ContainerFileName", Utf8Str(mVideoRecCfg.File.strName).c_str());
+        rc = CFGMR3InsertString(pLunCfg, "ContainerFileName", Utf8Str(Screen0Settings.File.strName).c_str());
         AssertRCReturn(rc, rc);
     }
-    rc = CFGMR3InsertInteger(pLunCfg, "CodecHz", mVideoRecCfg.Audio.uHz);
+    rc = CFGMR3InsertInteger(pLunCfg, "CodecHz", Screen0Settings.Audio.uHz);
     AssertRCReturn(rc, rc);
-    rc = CFGMR3InsertInteger(pLunCfg, "CodecBits", mVideoRecCfg.Audio.cBits);
+    rc = CFGMR3InsertInteger(pLunCfg, "CodecBits", Screen0Settings.Audio.cBits);
     AssertRCReturn(rc, rc);
-    rc = CFGMR3InsertInteger(pLunCfg, "CodecChannels", mVideoRecCfg.Audio.cChannels);
+    rc = CFGMR3InsertInteger(pLunCfg, "CodecChannels", Screen0Settings.Audio.cChannels);
     AssertRCReturn(rc, rc);
     rc = CFGMR3InsertInteger(pLunCfg, "CodecBitrate", 0); /* Let Opus decide for now. */
     AssertRCReturn(rc, rc);

@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2010-2017 Oracle Corporation
+ * Copyright (C) 2010-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -76,6 +76,7 @@
 
 /* COM includes: */
 # include "CAudioAdapter.h"
+# include "CCaptureSettings.h"
 # include "CVirtualBoxErrorInfo.h"
 # include "CMachineDebugger.h"
 # include "CSnapshot.h"
@@ -1051,8 +1052,8 @@ void UIMachineLogic::prepareActionGroups()
     m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_View_S_AdjustWindow));
     m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_View_S_TakeScreenshot));
     m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_View_M_VideoCapture));
-    m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_View_M_VideoCapture_S_Settings));
-    m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_View_M_VideoCapture_T_Start));
+    m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_View_M_Capture_S_Settings));
+    m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_View_M_Capture_T_Start));
     m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_View_T_VRDEServer));
     m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_View_M_MenuBar));
     m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_View_M_MenuBar_S_Settings));
@@ -1135,10 +1136,10 @@ void UIMachineLogic::prepareActionConnections()
             this, SLOT(sltToggleGuestAutoresize(bool)));
     connect(actionPool()->action(UIActionIndexRT_M_View_S_TakeScreenshot), SIGNAL(triggered()),
             this, SLOT(sltTakeScreenshot()));
-    connect(actionPool()->action(UIActionIndexRT_M_View_M_VideoCapture_S_Settings), SIGNAL(triggered()),
-            this, SLOT(sltOpenVideoCaptureOptions()));
-    connect(actionPool()->action(UIActionIndexRT_M_View_M_VideoCapture_T_Start), SIGNAL(toggled(bool)),
-            this, SLOT(sltToggleVideoCapture(bool)));
+    connect(actionPool()->action(UIActionIndexRT_M_View_M_Capture_S_Settings), SIGNAL(triggered()),
+            this, SLOT(sltOpenCaptureOptions()));
+    connect(actionPool()->action(UIActionIndexRT_M_View_M_Capture_T_Start), SIGNAL(toggled(bool)),
+            this, SLOT(sltToggleCapture(bool)));
     connect(actionPool()->action(UIActionIndexRT_M_View_T_VRDEServer), SIGNAL(toggled(bool)),
             this, SLOT(sltToggleVRDE(bool)));
 
@@ -2089,30 +2090,31 @@ void UIMachineLogic::sltTakeScreenshot()
     QFile::remove(strTempFile);
 }
 
-void UIMachineLogic::sltOpenVideoCaptureOptions()
+void UIMachineLogic::sltOpenCaptureOptions()
 {
     /* Open VM settings : Display page : Video Capture tab: */
     sltOpenVMSettingsDialog("#display", "m_pCheckboxVideoCapture");
 }
 
-void UIMachineLogic::sltToggleVideoCapture(bool fEnabled)
+void UIMachineLogic::sltToggleCapture(bool fEnabled)
 {
     /* Do not process if window(s) missed! */
     if (!isMachineWindowsCreated())
         return;
 
     /* Make sure something had changed: */
-    if (machine().GetVideoCaptureEnabled() == static_cast<BOOL>(fEnabled))
+    CCaptureSettings captureSettings = machine().GetCaptureSettings();
+    if (captureSettings.GetEnabled() == static_cast<BOOL>(fEnabled))
         return;
 
     /* Update Video Capture state: */
-    machine().SetVideoCaptureEnabled(fEnabled);
-    if (!machine().isOk())
+    captureSettings.SetEnabled(fEnabled);
+    if (!captureSettings.isOk())
     {
         /* Make sure action is updated: */
-        uisession()->updateStatusVideoCapture();
+        uisession()->updateStatusCapture();
         /* Notify about the error: */
-        return popupCenter().cannotToggleVideoCapture(activeMachineWindow(), machine(), fEnabled);
+        return popupCenter().cannotToggleCapture(activeMachineWindow(), machine(), fEnabled);
     }
 
     /* Save machine-settings: */
@@ -2120,7 +2122,7 @@ void UIMachineLogic::sltToggleVideoCapture(bool fEnabled)
     if (!machine().isOk())
     {
         /* Make sure action is updated: */
-        uisession()->updateStatusVideoCapture();
+        uisession()->updateStatusCapture();
         /* Notify about the error: */
         return msgCenter().cannotSaveMachineSettings(machine());
     }

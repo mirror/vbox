@@ -22,12 +22,14 @@
 #include <VBox/com/string.h>
 #include <VBox/com/VirtualBox.h>
 #include <VBox/err.h>
+#include <VBox/settings.h>
 
 using namespace com;
 
 #include "VideoRecInternals.h"
 #include "VideoRecStream.h"
 
+#if 0
 /**
  * Enumeration for definining a video / audio
  * profile setting.
@@ -53,12 +55,12 @@ typedef uint32_t VIDEORECFEATURES;
 #define VIDEORECFEATURE_AUDIO       RT_BIT(1)
 
 /**
- * Structure for keeping a video recording configuration.
+ * Structure for keeping a screen recording configuration.
  */
-typedef struct VIDEORECCFG
+typedef struct VIDEORECSCREENCFG
 {
-    VIDEORECCFG(void)
-        :  enmDst(VIDEORECDEST_INVALID)
+    VIDEORECSCREENCFG(void)
+        : enmDst(VIDEORECDEST_INVALID)
         , uMaxTimeS(0)
     {
 #ifdef VBOX_WITH_AUDIO_VIDEOREC
@@ -67,9 +69,21 @@ typedef struct VIDEORECCFG
         RT_ZERO(Video);
     }
 
-    /** Array of all screens containing whether they're enabled
-     *  for recording or not.  */
-    com::SafeArray<BOOL>    aScreens;
+    VIDEORECSCREENCFG& operator=(const VIDEORECSCREENCFG &that)
+    {
+        enmDst          = that.enmDst;
+
+        File.strName    = that.File.strName;
+        File.uMaxSizeMB = that.File.uMaxSizeMB;
+#ifdef VBOX_WITH_AUDIO_VIDEOREC
+        Audio           = that.Audio;
+#endif
+        Video           = that.Video;
+        uMaxTimeS       = that.uMaxTimeS;
+        return *this;
+    }
+
+    unsigned long           uScreenId;
     /** Destination where to write the stream to. */
     VIDEORECDEST            enmDst;
 
@@ -134,54 +148,85 @@ typedef struct VIDEORECCFG
 #endif
 
     } Video;
+
     /** Maximum time (in s) to record.
      *  Specify 0 to disable this check. */
     uint32_t                uMaxTimeS;
-
-    VIDEORECCFG& operator=(const VIDEORECCFG &that)
-    {
-        aScreens.resize(that.aScreens.size());
-        for (size_t i = 0; i < that.aScreens.size(); ++i)
-            aScreens[i] = that.aScreens[i];
-
-        enmDst   = that.enmDst;
-
-        File.strName    = that.File.strName;
-        File.uMaxSizeMB = that.File.uMaxSizeMB;
-#ifdef VBOX_WITH_AUDIO_VIDEOREC
-        Audio           = that.Audio;
+} VIDEORECSCREENCFG, *PVIDEORECSCREENCFG;
 #endif
-        Video           = that.Video;
-        uMaxTimeS       = that.uMaxTimeS;
-        return *this;
-    }
 
-} VIDEORECCFG, *PVIDEORECCFG;
+class Console;
 
 /**
- * Structure for keeping a video recording context.
+ * Class for managing a capturing context.
  */
-typedef struct VIDEORECCONTEXT
+class CaptureContext
 {
+public:
+
+    CaptureContext(Console *pConsole);
+
+    CaptureContext(Console *pConsole, const settings::CaptureSettings &a_Settings);
+
+    virtual ~CaptureContext(void);
+
+public:
+
+    const settings::CaptureSettings &GetConfig(void) const;
+    CaptureStream *GetStream(unsigned uScreen) const;
+    size_t GetStreamCount(void) const;
+
+    int Create(const settings::CaptureSettings &a_Settings);
+    int Destroy(void);
+
+    int SendAudioFrame(const void *pvData, size_t cbData, uint64_t uTimestampMs);
+    int SendVideoFrame(uint32_t uScreen,
+                       uint32_t x, uint32_t y, uint32_t uPixelFormat, uint32_t uBPP,
+                       uint32_t uBytesPerLine, uint32_t uSrcWidth, uint32_t uSrcHeight,
+                       uint8_t *puSrcData, uint64_t uTimeStampMs);
+public:
+
+    bool IsFeatureEnabled(CaptureFeature_T enmFeature) const;
+    bool IsReady(void) const;
+    bool IsReady(uint32_t uScreen, uint64_t uTimeStampMs) const;
+    bool IsStarted(void) const;
+    bool IsLimitReached(uint32_t uScreen, uint64_t tsNowMs) const;
+
+protected:
+
+    int createInternal(const settings::CaptureSettings &a_Settings);
+
+    int destroyInternal(void);
+
+    CaptureStream *getStreamInternal(unsigned uScreen) const;
+
+    static DECLCALLBACK(int) threadMain(RTTHREAD hThreadSelf, void *pvUser);
+
+    int threadNotify(void);
+
+protected:
+
+    /** Pointer to the console object. */
+    Console                  *pConsole;
     /** Used recording configuration. */
-    VIDEORECCFG         Cfg;
+    settings::CaptureSettings Settings;
     /** The current state. */
-    uint32_t            enmState;
+    uint32_t                  enmState;
     /** Critical section to serialize access. */
-    RTCRITSECT          CritSect;
+    RTCRITSECT                CritSect;
     /** Semaphore to signal the encoding worker thread. */
-    RTSEMEVENT          WaitEvent;
-    /** Whether this conext is in started state or not. */
-    bool                fStarted;
+    RTSEMEVENT                WaitEvent;
+    /** Whether this context is in started state or not. */
+    bool                      fStarted;
     /** Shutdown indicator. */
-    bool                fShutdown;
+    bool                      fShutdown;
     /** Worker thread. */
-    RTTHREAD            Thread;
+    RTTHREAD                  Thread;
     /** Vector of current recording streams.
      *  Per VM screen (display) one recording stream is being used. */
-    VideoRecStreams     vecStreams;
+    VideoRecStreams           vecStreams;
     /** Timestamp (in ms) of when recording has been started. */
-    uint64_t            tsStartMs;
+    uint64_t                  tsStartMs;
     /** Block map of common blocks which need to get multiplexed
      *  to all recording streams. This common block maps should help
      *  reducing the time spent in EMT and avoid doing the (expensive)
@@ -189,23 +234,7 @@ typedef struct VIDEORECCONTEXT
      *
      *  For now this only affects audio, e.g. all recording streams
      *  need to have the same audio data at a specific point in time. */
-    VideoRecBlockMap    mapBlocksCommon;
-} VIDEORECCONTEXT, *PVIDEORECCONTEXT;
-
-int VideoRecContextCreate(uint32_t cScreens, PVIDEORECCFG pVideoRecCfg, PVIDEORECCONTEXT *ppCtx);
-int VideoRecContextDestroy(PVIDEORECCONTEXT pCtx);
-
-VIDEORECFEATURES VideoRecGetFeatures(PVIDEORECCFG pCfg);
-PVIDEORECSTREAM VideoRecGetStream(PVIDEORECCONTEXT pCtx, uint32_t uScreen);
-
-int VideoRecSendAudioFrame(PVIDEORECCONTEXT pCtx, const void *pvData, size_t cbData, uint64_t uTimestampMs);
-int VideoRecSendVideoFrame(PVIDEORECCONTEXT pCtx, uint32_t uScreen,
-                            uint32_t x, uint32_t y, uint32_t uPixelFormat, uint32_t uBPP,
-                            uint32_t uBytesPerLine, uint32_t uSrcWidth, uint32_t uSrcHeight,
-                            uint8_t *puSrcData, uint64_t uTimeStampMs);
-bool VideoRecIsReady(PVIDEORECCONTEXT pCtx, uint32_t uScreen, uint64_t uTimeStampMs);
-bool VideoRecIsStarted(PVIDEORECCONTEXT pCtx);
-bool VideoRecIsLimitReached(PVIDEORECCONTEXT pCtx, uint32_t uScreen, uint64_t tsNowMs);
-
+    VideoRecBlockMap          mapBlocksCommon;
+};
 #endif /* !____H_VIDEOREC */
 

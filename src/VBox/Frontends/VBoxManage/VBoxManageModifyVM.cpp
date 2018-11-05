@@ -2928,100 +2928,151 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
             }
 #ifdef VBOX_WITH_VIDEOREC
             case MODIFYVM_CAPTURE:
-            {
-                CHECK_ERROR(sessionMachine, COMSETTER(VideoCaptureEnabled)(ValueUnion.f));
-                break;
-            }
+                RT_FALL_THROUGH();
             case MODIFYVM_CAPTURE_SCREENS:
-            {
-                ULONG cMonitors = 64;
-                CHECK_ERROR(sessionMachine, COMGETTER(MonitorCount)(&cMonitors));
-                com::SafeArray<BOOL> screens(cMonitors);
-                if (parseScreens(ValueUnion.psz, &screens))
-                {
-                    errorArgument("Invalid list of screens specified\n");
-                    rc = E_FAIL;
-                    break;
-                }
-                CHECK_ERROR(sessionMachine, COMSETTER(VideoCaptureScreens)(ComSafeArrayAsInParam(screens)));
-                break;
-            }
+                RT_FALL_THROUGH();
             case MODIFYVM_CAPTURE_FILENAME:
-            {
-                Bstr bstr;
-                /* empty string will fall through, leaving bstr empty */
-                if (*ValueUnion.psz)
-                {
-                    char szVCFileAbs[RTPATH_MAX] = "";
-                    int vrc = RTPathAbs(ValueUnion.psz, szVCFileAbs, sizeof(szVCFileAbs));
-                    if (RT_FAILURE(vrc))
-                    {
-                        errorArgument("Cannot convert filename \"%s\" to absolute path\n", ValueUnion.psz);
-                        rc = E_FAIL;
-                        break;
-                    }
-                    bstr = szVCFileAbs;
-                }
-                CHECK_ERROR(sessionMachine, COMSETTER(VideoCaptureFile)(bstr.raw()));
-                break;
-            }
+                RT_FALL_THROUGH();
             case MODIFYVM_CAPTURE_WIDTH:
-            {
-                CHECK_ERROR(sessionMachine, COMSETTER(VideoCaptureWidth)(ValueUnion.u32));
-                break;
-            }
+                RT_FALL_THROUGH();
             case MODIFYVM_CAPTURE_HEIGHT:
-            {
-                CHECK_ERROR(sessionMachine, COMSETTER(VideoCaptureHeight)(ValueUnion.u32));
-                break;
-            }
+                RT_FALL_THROUGH();
             case MODIFYVM_CAPTURE_VIDEO_RES:
-            {
-                uint32_t uWidth = 0;
-                char *pszNext;
-                int vrc = RTStrToUInt32Ex(ValueUnion.psz, &pszNext, 0, &uWidth);
-                if (RT_FAILURE(vrc) || vrc != VWRN_TRAILING_CHARS || !pszNext || *pszNext != 'x')
-                {
-                    errorArgument("Error parsing geomtry '%s' (expected <width>x<height>)", ValueUnion.psz);
-                    rc = E_FAIL;
-                    break;
-                }
-                uint32_t uHeight = 0;
-                vrc = RTStrToUInt32Ex(pszNext+1, NULL, 0, &uHeight);
-                if (vrc != VINF_SUCCESS)
-                {
-                    errorArgument("Error parsing geomtry '%s' (expected <width>x<height>)", ValueUnion.psz);
-                    rc = E_FAIL;
-                    break;
-                }
-                CHECK_ERROR(sessionMachine, COMSETTER(VideoCaptureWidth)(uWidth));
-                CHECK_ERROR(sessionMachine, COMSETTER(VideoCaptureHeight)(uHeight));
-                break;
-            }
+                RT_FALL_THROUGH();
             case MODIFYVM_CAPTURE_VIDEO_RATE:
-            {
-                CHECK_ERROR(sessionMachine, COMSETTER(VideoCaptureRate)(ValueUnion.u32));
-                break;
-            }
+                RT_FALL_THROUGH();
             case MODIFYVM_CAPTURE_VIDEO_FPS:
-            {
-                CHECK_ERROR(sessionMachine, COMSETTER(VideoCaptureFPS)(ValueUnion.u32));
-                break;
-            }
+                RT_FALL_THROUGH();
             case MODIFYVM_CAPTURE_MAXTIME:
-            {
-                CHECK_ERROR(sessionMachine, COMSETTER(VideoCaptureMaxTime)(ValueUnion.u32));
-                break;
-            }
+                RT_FALL_THROUGH();
             case MODIFYVM_CAPTURE_MAXSIZE:
-            {
-                CHECK_ERROR(sessionMachine, COMSETTER(VideoCaptureMaxFileSize)(ValueUnion.u32));
-                break;
-            }
+                RT_FALL_THROUGH();
             case MODIFYVM_CAPTURE_OPTIONS:
             {
-                Bstr bstr(ValueUnion.psz);
-                CHECK_ERROR(sessionMachine, COMSETTER(VideoCaptureOptions)(bstr.raw()));
+                ComPtr<ICaptureSettings> captureSettings;
+                CHECK_ERROR_BREAK(machine, COMGETTER(CaptureSettings)(captureSettings.asOutParam()));
+                SafeIfaceArray <ICaptureScreenSettings> saCaptureScreenScreens;
+                CHECK_ERROR_BREAK(captureSettings, COMGETTER(Screens)(ComSafeArrayAsOutParam(saCaptureScreenScreens)));
+
+                switch (c)
+                {
+                    case MODIFYVM_CAPTURE:
+                    {
+                        CHECK_ERROR(captureSettings, COMSETTER(Enabled)(ValueUnion.f));
+                        break;
+                    }
+                    case MODIFYVM_CAPTURE_SCREENS:
+                    {
+                        ULONG cMonitors = 64;
+                        CHECK_ERROR(sessionMachine, COMGETTER(MonitorCount)(&cMonitors));
+                        com::SafeArray<BOOL> screens(cMonitors);
+                        if (parseScreens(ValueUnion.psz, &screens))
+                        {
+                            errorArgument("Invalid list of screens specified\n");
+                            rc = E_FAIL;
+                            break;
+                        }
+
+                        if (cMonitors > saCaptureScreenScreens.size()) /* Paranoia. */
+                            cMonitors = saCaptureScreenScreens.size();
+
+                        for (size_t i = 0; i < cMonitors; ++i)
+                            CHECK_ERROR_BREAK(saCaptureScreenScreens[i], COMSETTER(Enabled)(screens[i]));
+                        break;
+                    }
+                    case MODIFYVM_CAPTURE_FILENAME:
+                    {
+                        Bstr bstr;
+                        /* empty string will fall through, leaving bstr empty */
+                        if (*ValueUnion.psz)
+                        {
+                            char szVCFileAbs[RTPATH_MAX] = "";
+                            int vrc = RTPathAbs(ValueUnion.psz, szVCFileAbs, sizeof(szVCFileAbs));
+                            if (RT_FAILURE(vrc))
+                            {
+                                errorArgument("Cannot convert filename \"%s\" to absolute path\n", ValueUnion.psz);
+                                rc = E_FAIL;
+                                break;
+                            }
+                            bstr = szVCFileAbs;
+                        }
+
+                        for (size_t i = 0; i < saCaptureScreenScreens.size(); ++i)
+                            CHECK_ERROR(saCaptureScreenScreens[i], COMSETTER(FileName)(bstr.raw()));
+                        break;
+                    }
+                    case MODIFYVM_CAPTURE_WIDTH:
+                    {
+                        for (size_t i = 0; i < saCaptureScreenScreens.size(); ++i)
+                            CHECK_ERROR(saCaptureScreenScreens[i], COMSETTER(VideoWidth)(ValueUnion.u32));
+                        break;
+                    }
+                    case MODIFYVM_CAPTURE_HEIGHT:
+                    {
+                        for (size_t i = 0; i < saCaptureScreenScreens.size(); ++i)
+                            CHECK_ERROR(saCaptureScreenScreens[i], COMSETTER(VideoHeight)(ValueUnion.u32));
+                        break;
+                    }
+                    case MODIFYVM_CAPTURE_VIDEO_RES:
+                    {
+                        uint32_t uWidth = 0;
+                        char *pszNext;
+                        int vrc = RTStrToUInt32Ex(ValueUnion.psz, &pszNext, 0, &uWidth);
+                        if (RT_FAILURE(vrc) || vrc != VWRN_TRAILING_CHARS || !pszNext || *pszNext != 'x')
+                        {
+                            errorArgument("Error parsing geomtry '%s' (expected <width>x<height>)", ValueUnion.psz);
+                            rc = E_FAIL;
+                            break;
+                        }
+                        uint32_t uHeight = 0;
+                        vrc = RTStrToUInt32Ex(pszNext+1, NULL, 0, &uHeight);
+                        if (vrc != VINF_SUCCESS)
+                        {
+                            errorArgument("Error parsing geomtry '%s' (expected <width>x<height>)", ValueUnion.psz);
+                            rc = E_FAIL;
+                            break;
+                        }
+
+                        for (size_t i = 0; i < saCaptureScreenScreens.size(); ++i)
+                        {
+                            CHECK_ERROR(saCaptureScreenScreens[i], COMSETTER(VideoWidth)(uWidth));
+                            CHECK_ERROR(saCaptureScreenScreens[i], COMSETTER(VideoHeight)(uHeight));
+                        }
+                        break;
+                    }
+                    case MODIFYVM_CAPTURE_VIDEO_RATE:
+                    {
+                        for (size_t i = 0; i < saCaptureScreenScreens.size(); ++i)
+                            CHECK_ERROR(saCaptureScreenScreens[i], COMSETTER(VideoRate)(ValueUnion.u32));
+                        break;
+                    }
+                    case MODIFYVM_CAPTURE_VIDEO_FPS:
+                    {
+                        for (size_t i = 0; i < saCaptureScreenScreens.size(); ++i)
+                            CHECK_ERROR(saCaptureScreenScreens[i], COMSETTER(VideoFPS)(ValueUnion.u32));
+                        break;
+                    }
+                    case MODIFYVM_CAPTURE_MAXTIME:
+                    {
+                        for (size_t i = 0; i < saCaptureScreenScreens.size(); ++i)
+                            CHECK_ERROR(saCaptureScreenScreens[i], COMSETTER(MaxTime)(ValueUnion.u32));
+                        break;
+                    }
+                    case MODIFYVM_CAPTURE_MAXSIZE:
+                    {
+                        for (size_t i = 0; i < saCaptureScreenScreens.size(); ++i)
+                            CHECK_ERROR(saCaptureScreenScreens[i], COMSETTER(MaxFileSize)(ValueUnion.u32));
+                        break;
+                    }
+                    case MODIFYVM_CAPTURE_OPTIONS:
+                    {
+                        Bstr bstr(ValueUnion.psz);
+                        for (size_t i = 0; i < saCaptureScreenScreens.size(); ++i)
+                            CHECK_ERROR(saCaptureScreenScreens[i], COMSETTER(Options)(bstr.raw()));
+                        break;
+                    }
+                }
+
                 break;
             }
 #endif

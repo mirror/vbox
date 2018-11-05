@@ -19,6 +19,7 @@
 #define ____H_DRVAUDIOVIDEOREC
 
 #include <VBox/com/ptr.h>
+#include <VBox/settings.h>
 #include <VBox/vmm/pdmdrv.h>
 #include <VBox/vmm/pdmifs.h>
 
@@ -43,7 +44,7 @@ public:
 
 public:
 
-    int applyConfiguration(const PVIDEORECCFG pVideoRecCfg);
+    int applyConfiguration(const settings::CaptureSettings &a_Settings);
 
 public:
 
@@ -57,9 +58,9 @@ private:
     int configureDriver(PCFGMNODE pLunCfg);
 
     /** Pointer to the associated video recording audio driver. */
-    struct DRVAUDIOVIDEOREC *mpDrv;
-    /** Video recording configuration used for configuring the driver. */
-    struct VIDEORECCFG       mVideoRecCfg;
+    struct DRVAUDIOVIDEOREC         *mpDrv;
+    /** Capturing configuration used for configuring the driver. */
+    struct settings::CaptureSettings mVideoRecCfg;
 };
 
 #endif /* !____H_DRVAUDIOVIDEOREC */

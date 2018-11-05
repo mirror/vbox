@@ -187,7 +187,7 @@ void UIConsoleEventHandlerProxy::prepareListener()
         << KVBoxEventType_OnMediumChanged
         << KVBoxEventType_OnVRDEServerChanged
         << KVBoxEventType_OnVRDEServerInfoChanged
-        << KVBoxEventType_OnVideoCaptureChanged
+        << KVBoxEventType_OnCaptureChanged
         << KVBoxEventType_OnUSBControllerChanged
         << KVBoxEventType_OnUSBDeviceStateChanged
         << KVBoxEventType_OnSharedFolderChanged

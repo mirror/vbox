@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2004-2017 Oracle Corporation
+ * Copyright (C) 2004-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -167,16 +167,6 @@ Machine::HWData::HWData()
     mAccelerate3DEnabled = false;
     mAccelerate2DVideoEnabled = false;
     mMonitorCount = 1;
-    mVideoCaptureWidth = 1024;
-    mVideoCaptureHeight = 768;
-    mVideoCaptureRate = 512;
-    mVideoCaptureFPS = 25;
-    mVideoCaptureMaxTime = 0;
-    mVideoCaptureMaxFileSize = 0;
-    mVideoCaptureEnabled = false;
-    for (unsigned i = 0; i < RT_ELEMENTS(maVideoCaptureScreens); ++i)
-        maVideoCaptureScreens[i] = true;
-
     mHWVirtExEnabled = true;
     mHWVirtExNestedPagingEnabled = true;
 #if HC_ARCH_BITS == 64 && !defined(RT_OS_LINUX)
@@ -364,8 +354,11 @@ HRESULT Machine::init(VirtualBox *aParent,
             mHWData->mX2APIC = false;
         }
 
-        /* Apply BIOS defaults */
+        /* Apply BIOS defaults. */
         mBIOSSettings->i_applyDefaults(aOsType);
+
+        /* Apply capture defaults. */
+        mCaptureSettings->i_applyDefaults();
 
         /* Apply network adapters defaults */
         for (ULONG slot = 0; slot < mNetworkAdapters.size(); ++slot)
@@ -1731,278 +1724,6 @@ HRESULT Machine::setHPETEnabled(BOOL aHPETEnabled)
     return rc;
 }
 
-HRESULT Machine::getVideoCaptureEnabled(BOOL *aVideoCaptureEnabled)
-{
-    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    *aVideoCaptureEnabled = mHWData->mVideoCaptureEnabled;
-    return S_OK;
-}
-
-HRESULT Machine::setVideoCaptureEnabled(BOOL aVideoCaptureEnabled)
-{
-    HRESULT rc = S_OK;
-
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    i_setModified(IsModified_MachineData);
-    mHWData.backup();
-    mHWData->mVideoCaptureEnabled = aVideoCaptureEnabled;
-
-    alock.release();
-    rc = i_onVideoCaptureChange();
-    alock.acquire();
-    if (FAILED(rc))
-    {
-        /*
-         * Normally we would do the actual change _after_ i_onVideoCaptureChange() succeeded.
-         * We cannot do this because that function uses Machine::GetVideoCaptureEnabled to
-         * determine if it should start or stop capturing. Therefore we need to manually
-         * undo change.
-         */
-        mHWData->mVideoCaptureEnabled = mHWData.backedUpData()->mVideoCaptureEnabled;
-        return rc;
-    }
-
-    /** Save settings if online - @todo why is this required? -- @bugref{6818} */
-    if (Global::IsOnline(mData->mMachineState))
-        i_saveSettings(NULL);
-
-    return rc;
-}
-
-HRESULT Machine::getVideoCaptureScreens(std::vector<BOOL> &aVideoCaptureScreens)
-{
-    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-    aVideoCaptureScreens.resize(mHWData->mMonitorCount);
-    for (unsigned i = 0; i < mHWData->mMonitorCount; ++i)
-        aVideoCaptureScreens[i] = mHWData->maVideoCaptureScreens[i];
-    return S_OK;
-}
-
-HRESULT Machine::setVideoCaptureScreens(const std::vector<BOOL> &aVideoCaptureScreens)
-{
-    AssertReturn(aVideoCaptureScreens.size() <= RT_ELEMENTS(mHWData->maVideoCaptureScreens), E_INVALIDARG);
-    bool fChanged = false;
-
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    for (unsigned i = 0; i < aVideoCaptureScreens.size(); ++i)
-    {
-        if (mHWData->maVideoCaptureScreens[i] != RT_BOOL(aVideoCaptureScreens[i]))
-        {
-            mHWData->maVideoCaptureScreens[i] = RT_BOOL(aVideoCaptureScreens[i]);
-            fChanged = true;
-        }
-    }
-    if (fChanged)
-    {
-        alock.release();
-        HRESULT rc = i_onVideoCaptureChange();
-        alock.acquire();
-        if (FAILED(rc)) return rc;
-        i_setModified(IsModified_MachineData);
-
-        /** Save settings if online - @todo why is this required? -- @bugref{6818} */
-        if (Global::IsOnline(mData->mMachineState))
-            i_saveSettings(NULL);
-    }
-
-    return S_OK;
-}
-
-HRESULT Machine::getVideoCaptureFile(com::Utf8Str &aVideoCaptureFile)
-{
-    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-    if (mHWData->mVideoCaptureFile.isEmpty())
-        i_getDefaultVideoCaptureFile(aVideoCaptureFile);
-    else
-        aVideoCaptureFile = mHWData->mVideoCaptureFile;
-    return S_OK;
-}
-
-HRESULT Machine::setVideoCaptureFile(const com::Utf8Str &aVideoCaptureFile)
-{
-    Utf8Str strFile(aVideoCaptureFile);
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    if (   Global::IsOnline(mData->mMachineState)
-        && mHWData->mVideoCaptureEnabled)
-        return setError(E_INVALIDARG, tr("Cannot change parameters while capturing is enabled"));
-
-    if (!RTPathStartsWithRoot(strFile.c_str()))
-        return setError(E_INVALIDARG, tr("Video capture file name '%s' is not absolute"), strFile.c_str());
-
-    if (!strFile.isEmpty())
-    {
-        Utf8Str defaultFile;
-        i_getDefaultVideoCaptureFile(defaultFile);
-        if (!RTPathCompare(strFile.c_str(), defaultFile.c_str()))
-            strFile.setNull();
-    }
-
-    i_setModified(IsModified_MachineData);
-    mHWData.backup();
-    mHWData->mVideoCaptureFile = strFile;
-
-    return S_OK;
-}
-
-HRESULT Machine::getVideoCaptureWidth(ULONG *aVideoCaptureWidth)
-{
-    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-    *aVideoCaptureWidth = mHWData->mVideoCaptureWidth;
-    return S_OK;
-}
-
-HRESULT Machine::setVideoCaptureWidth(ULONG aVideoCaptureWidth)
-{
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    if (   Global::IsOnline(mData->mMachineState)
-        && mHWData->mVideoCaptureEnabled)
-        return setError(E_INVALIDARG, tr("Cannot change parameters while capturing is enabled"));
-
-    i_setModified(IsModified_MachineData);
-    mHWData.backup();
-    mHWData->mVideoCaptureWidth = aVideoCaptureWidth;
-
-    return S_OK;
-}
-
-HRESULT Machine::getVideoCaptureHeight(ULONG *aVideoCaptureHeight)
-{
-    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-    *aVideoCaptureHeight = mHWData->mVideoCaptureHeight;
-    return S_OK;
-}
-
-HRESULT Machine::setVideoCaptureHeight(ULONG aVideoCaptureHeight)
-{
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    if (   Global::IsOnline(mData->mMachineState)
-        && mHWData->mVideoCaptureEnabled)
-        return setError(E_INVALIDARG, tr("Cannot change parameters while capturing is enabled"));
-
-    i_setModified(IsModified_MachineData);
-    mHWData.backup();
-    mHWData->mVideoCaptureHeight = aVideoCaptureHeight;
-
-    return S_OK;
-}
-
-HRESULT Machine::getVideoCaptureRate(ULONG *aVideoCaptureRate)
-{
-    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-    *aVideoCaptureRate = mHWData->mVideoCaptureRate;
-    return S_OK;
-}
-
-HRESULT Machine::setVideoCaptureRate(ULONG aVideoCaptureRate)
-{
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    if (   Global::IsOnline(mData->mMachineState)
-        && mHWData->mVideoCaptureEnabled)
-        return setError(E_INVALIDARG, tr("Cannot change parameters while capturing is enabled"));
-
-    i_setModified(IsModified_MachineData);
-    mHWData.backup();
-    mHWData->mVideoCaptureRate = aVideoCaptureRate;
-
-    return S_OK;
-}
-
-HRESULT Machine::getVideoCaptureFPS(ULONG *aVideoCaptureFPS)
-{
-    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-    *aVideoCaptureFPS = mHWData->mVideoCaptureFPS;
-    return S_OK;
-}
-
-HRESULT Machine::setVideoCaptureFPS(ULONG aVideoCaptureFPS)
-{
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    if (   Global::IsOnline(mData->mMachineState)
-        && mHWData->mVideoCaptureEnabled)
-        return setError(E_INVALIDARG, tr("Cannot change parameters while capturing is enabled"));
-
-    i_setModified(IsModified_MachineData);
-    mHWData.backup();
-    mHWData->mVideoCaptureFPS = aVideoCaptureFPS;
-
-    return S_OK;
-}
-
-HRESULT Machine::getVideoCaptureMaxTime(ULONG *aVideoCaptureMaxTime)
-{
-    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-    *aVideoCaptureMaxTime = mHWData->mVideoCaptureMaxTime;
-    return S_OK;
-}
-
-HRESULT Machine::setVideoCaptureMaxTime(ULONG aVideoCaptureMaxTime)
-{
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    if (   Global::IsOnline(mData->mMachineState)
-        && mHWData->mVideoCaptureEnabled)
-        return setError(E_INVALIDARG, tr("Cannot change parameters while capturing is enabled"));
-
-    i_setModified(IsModified_MachineData);
-    mHWData.backup();
-    mHWData->mVideoCaptureMaxTime = aVideoCaptureMaxTime;
-
-    return S_OK;
-}
-
-HRESULT Machine::getVideoCaptureMaxFileSize(ULONG *aVideoCaptureMaxFileSize)
-{
-    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-    *aVideoCaptureMaxFileSize = mHWData->mVideoCaptureMaxFileSize;
-    return S_OK;
-}
-
-HRESULT Machine::setVideoCaptureMaxFileSize(ULONG aVideoCaptureMaxFileSize)
-{
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    if (   Global::IsOnline(mData->mMachineState)
-        && mHWData->mVideoCaptureEnabled)
-        return setError(E_INVALIDARG, tr("Cannot change parameters while capturing is enabled"));
-
-    i_setModified(IsModified_MachineData);
-    mHWData.backup();
-    mHWData->mVideoCaptureMaxFileSize = aVideoCaptureMaxFileSize;
-
-    return S_OK;
-}
-
-HRESULT Machine::getVideoCaptureOptions(com::Utf8Str &aVideoCaptureOptions)
-{
-    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    aVideoCaptureOptions = mHWData->mVideoCaptureOptions;
-    return S_OK;
-}
-
-HRESULT Machine::setVideoCaptureOptions(const com::Utf8Str &aVideoCaptureOptions)
-{
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    if (   Global::IsOnline(mData->mMachineState)
-        && mHWData->mVideoCaptureEnabled)
-        return setError(E_INVALIDARG, tr("Cannot change parameters while capturing is enabled"));
-
-    i_setModified(IsModified_MachineData);
-    mHWData.backup();
-    mHWData->mVideoCaptureOptions = aVideoCaptureOptions;
-
-    return S_OK;
-}
-
 HRESULT Machine::getGraphicsControllerType(GraphicsControllerType_T *aGraphicsControllerType)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
@@ -2214,6 +1935,14 @@ HRESULT Machine::getBIOSSettings(ComPtr<IBIOSSettings> &aBIOSSettings)
 {
     /* mBIOSSettings is constant during life time, no need to lock */
     aBIOSSettings = mBIOSSettings;
+
+    return S_OK;
+}
+
+HRESULT Machine::getCaptureSettings(ComPtr<ICaptureSettings> &aCaptureSettings)
+{
+    /* mCaptureSettings is constant during life time, no need to lock */
+    aCaptureSettings = mCaptureSettings;
 
     return S_OK;
 }
@@ -7653,21 +7382,6 @@ void Machine::i_composeSavedStateFilename(Utf8Str &strStateFilePath)
 }
 
 /**
- *  Returns the full path to the default video capture file.
- */
-void Machine::i_getDefaultVideoCaptureFile(Utf8Str &strFile)
-{
-    AutoCaller autoCaller(this);
-    AssertComRCReturnVoid(autoCaller.rc());
-
-    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    strFile = mData->m_strConfigFileFull;       // path/to/machinesfolder/vmname/vmname.vbox
-    strFile.stripSuffix();                      // path/to/machinesfolder/vmname/vmname
-    strFile.append(".webm");                    // path/to/machinesfolder/vmname/vmname.webm
-}
-
-/**
  * Returns whether at least one USB controller is present for the VM.
  */
 bool Machine::i_isUSBControllerPresent()
@@ -8544,6 +8258,10 @@ HRESULT Machine::initDataAndChildObjects()
     unconst(mBIOSSettings).createObject();
     mBIOSSettings->init(this);
 
+    /* create associated capture settings object */
+    unconst(mCaptureSettings).createObject();
+    mCaptureSettings->init(this);
+
     /* create an associated VRDE object (default is disabled) */
     unconst(mVRDEServer).createObject();
     mVRDEServer->init(this);
@@ -8657,6 +8375,12 @@ void Machine::uninitDataAndChildObjects()
     {
         mBIOSSettings->uninit();
         unconst(mBIOSSettings).setNull();
+    }
+
+    if (mCaptureSettings)
+    {
+        mCaptureSettings->uninit();
+        unconst(mCaptureSettings).setNull();
     }
 
     /* Deassociate media (only when a real Machine or a SnapshotMachine
@@ -9156,19 +8880,6 @@ HRESULT Machine::i_loadHardware(const Guid *puuidRegistry,
         mHWData->mMonitorCount  = data.cMonitors;
         mHWData->mAccelerate3DEnabled = data.fAccelerate3D;
         mHWData->mAccelerate2DVideoEnabled = data.fAccelerate2DVideo;
-        mHWData->mVideoCaptureWidth = data.ulVideoCaptureHorzRes;
-        mHWData->mVideoCaptureHeight = data.ulVideoCaptureVertRes;
-        mHWData->mVideoCaptureEnabled = data.fVideoCaptureEnabled;
-        for (unsigned i = 0; i < RT_ELEMENTS(mHWData->maVideoCaptureScreens); ++i)
-            mHWData->maVideoCaptureScreens[i] = ASMBitTest(&data.u64VideoCaptureScreens, i);
-        AssertCompile(RT_ELEMENTS(mHWData->maVideoCaptureScreens) == sizeof(data.u64VideoCaptureScreens) * 8);
-        mHWData->mVideoCaptureRate = data.ulVideoCaptureRate;
-        mHWData->mVideoCaptureFPS = data.ulVideoCaptureFPS;
-        if (!data.strVideoCaptureFile.isEmpty())
-            i_calculateFullPath(data.strVideoCaptureFile, mHWData->mVideoCaptureFile);
-        else
-            mHWData->mVideoCaptureFile.setNull();
-        mHWData->mVideoCaptureOptions = data.strVideoCaptureOptions;
         mHWData->mFirmwareType = data.firmwareType;
         mHWData->mPointingHIDType = data.pointingHIDType;
         mHWData->mKeyboardHIDType = data.keyboardHIDType;
@@ -9186,11 +8897,15 @@ HRESULT Machine::i_loadHardware(const Guid *puuidRegistry,
         rc = mBIOSSettings->i_loadSettings(data.biosSettings);
         if (FAILED(rc)) return rc;
 
+        /* Capture settings */
+        rc = mCaptureSettings->i_loadSettings(data.captureSettings);
+        if (FAILED(rc)) return rc;
+
         // Bandwidth control (must come before network adapters)
         rc = mBandwidthControl->i_loadSettings(data.ioSettings);
         if (FAILED(rc)) return rc;
 
-        /* Shared folders */
+        /* USB controllers */
         for (settings::USBControllerList::const_iterator
              it = data.usbSettings.llUSBControllers.begin();
              it != data.usbSettings.llUSBControllers.end();
@@ -10492,28 +10207,17 @@ HRESULT Machine::i_saveHardware(settings::Hardware &data, settings::Debugging *p
         data.cMonitors = mHWData->mMonitorCount;
         data.fAccelerate3D = !!mHWData->mAccelerate3DEnabled;
         data.fAccelerate2DVideo = !!mHWData->mAccelerate2DVideoEnabled;
-        data.ulVideoCaptureHorzRes = mHWData->mVideoCaptureWidth;
-        data.ulVideoCaptureVertRes = mHWData->mVideoCaptureHeight;
-        data.ulVideoCaptureRate = mHWData->mVideoCaptureRate;
-        data.ulVideoCaptureFPS = mHWData->mVideoCaptureFPS;
-        data.fVideoCaptureEnabled  = !!mHWData->mVideoCaptureEnabled;
-        for (unsigned i = 0; i < sizeof(data.u64VideoCaptureScreens) * 8; ++i)
-        {
-            if (mHWData->maVideoCaptureScreens[i])
-                ASMBitSet(&data.u64VideoCaptureScreens, i);
-            else
-                ASMBitClear(&data.u64VideoCaptureScreens, i);
-        }
-        /* store relative video capture file if possible */
-        i_copyPathRelativeToMachine(mHWData->mVideoCaptureFile, data.strVideoCaptureFile);
-        data.strVideoCaptureOptions = mHWData->mVideoCaptureOptions;
 
         /* VRDEServer settings (optional) */
         rc = mVRDEServer->i_saveSettings(data.vrdeSettings);
         if (FAILED(rc)) throw rc;
 
-        /* BIOS (required) */
+        /* BIOS settings (required) */
         rc = mBIOSSettings->i_saveSettings(data.biosSettings);
+        if (FAILED(rc)) throw rc;
+
+        /* Capture settings (required) */
+        rc = mCaptureSettings->i_saveSettings(data.captureSettings);
         if (FAILED(rc)) throw rc;
 
         /* USB Controller (required) */
@@ -12018,6 +11722,9 @@ void Machine::i_rollback(bool aNotify)
     if (mBIOSSettings)
         mBIOSSettings->i_rollback();
 
+    if (mCaptureSettings && (mData->flModifications & IsModified_Capture))
+        mCaptureSettings->i_rollback();
+
     if (mVRDEServer && (mData->flModifications & IsModified_VRDEServer))
         mVRDEServer->i_rollback();
 
@@ -12128,6 +11835,7 @@ void Machine::i_commit()
         i_commitMedia(Global::IsOnline(mData->mMachineState));
 
     mBIOSSettings->i_commit();
+    mCaptureSettings->i_commit();
     mVRDEServer->i_commit();
     mAudioAdapter->i_commit();
     mUSBDeviceFilters->i_commit();
@@ -12380,6 +12088,7 @@ void Machine::i_copyFrom(Machine *aThat)
     }
 
     mBIOSSettings->i_copyFrom(aThat->mBIOSSettings);
+    mCaptureSettings->i_copyFrom(aThat->mCaptureSettings);
     mVRDEServer->i_copyFrom(aThat->mVRDEServer);
     mAudioAdapter->i_copyFrom(aThat->mAudioAdapter);
     mUSBDeviceFilters->i_copyFrom(aThat->mUSBDeviceFilters);
@@ -12753,6 +12462,8 @@ HRESULT SessionMachine::init(Machine *aMachine)
 
     unconst(mBIOSSettings).createObject();
     mBIOSSettings->init(this, aMachine->mBIOSSettings);
+    unconst(mCaptureSettings).createObject();
+    mCaptureSettings->init(this, aMachine->mCaptureSettings);
     /* create another VRDEServer object that will be mutable */
     unconst(mVRDEServer).createObject();
     mVRDEServer->init(this, aMachine->mVRDEServer);
@@ -14386,7 +14097,7 @@ HRESULT SessionMachine::i_onVRDEServerChange(BOOL aRestart)
 /**
  * @note Locks this object for reading.
  */
-HRESULT SessionMachine::i_onVideoCaptureChange()
+HRESULT SessionMachine::i_onCaptureChange()
 {
     LogFlowThisFunc(("\n"));
 
@@ -14404,7 +14115,7 @@ HRESULT SessionMachine::i_onVideoCaptureChange()
     if (!directControl)
         return S_OK;
 
-    return directControl->OnVideoCaptureChange();
+    return directControl->OnCaptureChange();
 }
 
 /**
@@ -15337,6 +15048,9 @@ HRESULT Machine::applyDefaults(const com::Utf8Str &aFlags)
 
     /* This one covers IOAPICEnabled. */
     mBIOSSettings->i_applyDefaults(osType);
+
+    /* Initialize default capture settings. */
+    mCaptureSettings->i_applyDefaults();
 
     /* Initialize default BIOS settings here */
     mHWData->mAPIC = osType->i_recommendedIOAPIC();

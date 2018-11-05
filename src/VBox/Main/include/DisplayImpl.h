@@ -31,11 +31,6 @@
 # include <VBox/HostServices/VBoxCrOpenGLSvc.h>
 #endif
 
-#ifdef VBOX_WITH_VIDEOREC
-# include "VideoRec.h"
-struct VIDEORECCONTEXT;
-#endif
-
 #include "DisplaySourceBitmapWrap.h"
 #include "GuestScreenInfoWrap.h"
 
@@ -183,12 +178,9 @@ public:
     void  i_handleCrVRecScreenshotPerform(uint32_t uScreen,
                                           uint32_t x, uint32_t y, uint32_t uPixelFormat, uint32_t uBitsPerPixel,
                                           uint32_t uBytesPerLine, uint32_t uGuestWidth, uint32_t uGuestHeight,
-                                          uint8_t *pu8BufferAddress, uint64_t u64TimeStamp);
-    /** @todo r=bird: u64TimeStamp - using the 'u64' prefix add nothing.
-     *        However, using one of the prefixes indicating the timestamp unit
-     *        would be very valuable!  */
-    bool i_handleCrVRecScreenshotBegin(uint32_t uScreen, uint64_t u64TimeStamp);
-    void i_handleCrVRecScreenshotEnd(uint32_t uScreen, uint64_t u64TimeStamp);
+                                          uint8_t *pu8BufferAddress, uint64_t uTimestampMs);
+    bool i_handleCrVRecScreenshotBegin(uint32_t uScreen, uint64_t uTimestampMs);
+    void i_handleCrVRecScreenshotEnd(uint32_t uScreen, uint64_t uTimestampMs);
     void i_handleVRecCompletion();
 #endif
 
@@ -208,14 +200,8 @@ public:
     void VideoAccelFlushVMMDev(void);
 
 #ifdef VBOX_WITH_VIDEOREC
-    PVIDEORECCFG             i_videoRecGetConfig(void) { return &mVideoRecCfg; }
-    VIDEORECFEATURES         i_videoRecGetFeatures(void);
-    bool                     i_videoRecStarted(void);
-    void                     i_videoRecInvalidate();
-    int                      i_videoRecSendAudio(const void *pvData, size_t cbData, uint64_t uTimestampMs);
-    int                      i_videoRecStart(void);
-    void                     i_videoRecStop(void);
-    void                     i_videoRecScreenChanged(unsigned uScreenId);
+    int  i_videoRecInvalidate(void);
+    void i_videoRecScreenChanged(unsigned uScreenId);
 #endif
 
     void i_notifyPowerDown(void);
@@ -485,11 +471,7 @@ private:
 #ifdef VBOX_WITH_VIDEOREC
     /* Serializes access to video recording source bitmaps. */
     RTCRITSECT           mVideoRecLock;
-    /** The current video recording configuration being used. */
-    VIDEORECCFG          mVideoRecCfg;
-    /** The video recording context. */
-    VIDEORECCONTEXT     *mpVideoRecCtx;
-    /** Array which defines which screens are being enabled for recording. */
+    /** Array which defines which screens are being enabled for capturing. */
     bool                 maVideoRecEnabled[SchemaDefs::MaxGuestMonitors];
 #endif
 

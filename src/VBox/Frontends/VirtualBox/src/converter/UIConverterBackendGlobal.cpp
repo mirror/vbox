@@ -1402,7 +1402,7 @@ template<> QString toInternalString(const IndicatorType &indicatorType)
         case IndicatorType_USB:           strResult = "USB"; break;
         case IndicatorType_SharedFolders: strResult = "SharedFolders"; break;
         case IndicatorType_Display:       strResult = "Display"; break;
-        case IndicatorType_VideoCapture:  strResult = "VideoCapture"; break;
+        case IndicatorType_Capture:       strResult = "VideoCapture"; break;
         case IndicatorType_Features:      strResult = "Features"; break;
         case IndicatorType_Mouse:         strResult = "Mouse"; break;
         case IndicatorType_Keyboard:      strResult = "Keyboard"; break;
@@ -1429,7 +1429,7 @@ template<> IndicatorType fromInternalString<IndicatorType>(const QString &strInd
     keys << "USB";           values << IndicatorType_USB;
     keys << "SharedFolders"; values << IndicatorType_SharedFolders;
     keys << "Display";       values << IndicatorType_Display;
-    keys << "VideoCapture";  values << IndicatorType_VideoCapture;
+    keys << "VideoCapture";  values << IndicatorType_Capture;
     keys << "Features";      values << IndicatorType_Features;
     keys << "Mouse";         values << IndicatorType_Mouse;
     keys << "Keyboard";      values << IndicatorType_Keyboard;
@@ -1454,7 +1454,7 @@ template<> QString toString(const IndicatorType &indicatorType)
         case IndicatorType_USB:           strResult = QApplication::translate("VBoxGlobal", "USB", "IndicatorType"); break;
         case IndicatorType_SharedFolders: strResult = QApplication::translate("VBoxGlobal", "Shared Folders", "IndicatorType"); break;
         case IndicatorType_Display:       strResult = QApplication::translate("VBoxGlobal", "Display", "IndicatorType"); break;
-        case IndicatorType_VideoCapture:  strResult = QApplication::translate("VBoxGlobal", "Video Capture", "IndicatorType"); break;
+        case IndicatorType_Capture:  strResult = QApplication::translate("VBoxGlobal", "Video Capture", "IndicatorType"); break;
         case IndicatorType_Features:      strResult = QApplication::translate("VBoxGlobal", "Features", "IndicatorType"); break;
         case IndicatorType_Mouse:         strResult = QApplication::translate("VBoxGlobal", "Mouse", "IndicatorType"); break;
         case IndicatorType_Keyboard:      strResult = QApplication::translate("VBoxGlobal", "Keyboard", "IndicatorType"); break;
@@ -1480,7 +1480,7 @@ template<> QIcon toIcon(const IndicatorType &indicatorType)
         case IndicatorType_USB:           return UIIconPool::iconSet(":/usb_16px.png");
         case IndicatorType_SharedFolders: return UIIconPool::iconSet(":/sf_16px.png");
         case IndicatorType_Display:       return UIIconPool::iconSet(":/display_software_16px.png");
-        case IndicatorType_VideoCapture:  return UIIconPool::iconSet(":/video_capture_16px.png");
+        case IndicatorType_Capture:  return UIIconPool::iconSet(":/video_capture_16px.png");
         case IndicatorType_Features:      return UIIconPool::iconSet(":/vtx_amdv_16px.png");
         case IndicatorType_Mouse:         return UIIconPool::iconSet(":/mouse_16px.png");
         case IndicatorType_Keyboard:      return UIIconPool::iconSet(":/hostkey_16px.png");

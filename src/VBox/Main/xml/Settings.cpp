@@ -2370,6 +2370,170 @@ bool BIOSSettings::operator==(const BIOSSettings &d) const
             && strLogoImagePath    == d.strLogoImagePath);
 }
 
+CaptureScreenSettings::CaptureScreenSettings(void)
+{
+    applyDefaults();
+}
+
+CaptureScreenSettings::~CaptureScreenSettings()
+{
+
+}
+
+void CaptureScreenSettings::applyDefaults(void)
+{
+    /*
+     * Set sensible defaults.
+     */
+
+    fEnabled            = true;
+    enmDest             = CaptureDestination_File;
+    ulMaxTimeS          = 0;
+    strOptions          = "";
+    File.ulMaxSizeMB    = 0;
+    Video.enmCodec      = CaptureVideoCodec_VP8;
+    Video.ulWidth       = 1024;
+    Video.ulHeight      = 768;
+    Video.ulRate        = 512;
+    Video.ulFPS         = 25;
+    Audio.enmAudioCodec = CaptureAudioCodec_Opus;
+    Audio.cBits         = 16;
+    Audio.cChannels     = 2;
+    Audio.uHz           = 22050;
+
+    featureMap[CaptureFeature_Video] = true;
+    featureMap[CaptureFeature_Audio] = false;
+
+    //i_calculateFullPath
+}
+
+/**
+ * Check if all settings have default values.
+ */
+bool CaptureScreenSettings::areDefaultSettings(void) const
+{
+    const bool fDefault =    fEnabled            == true
+                          && enmDest             == CaptureDestination_File
+                          && ulMaxTimeS          == 0
+                          && strOptions          == ""
+                          && File.ulMaxSizeMB    == 0
+                          && Video.enmCodec      == CaptureVideoCodec_VP8
+                          && Video.ulWidth       == 1024
+                          && Video.ulHeight      == 768
+                          && Video.ulRate        == 512
+                          && Video.ulFPS         == 25
+                          && Audio.enmAudioCodec == CaptureAudioCodec_Opus
+                          && Audio.cBits         == 16
+                          && Audio.cChannels     == 2
+                          && Audio.uHz           == 22050;
+
+    return fDefault;
+}
+
+bool CaptureScreenSettings::isFeatureEnabled(CaptureFeature_T enmFeature) const
+{
+    CaptureFeatureMap::const_iterator itFeature = featureMap.find(enmFeature);
+    if (itFeature != featureMap.end())
+        return itFeature->second;
+
+    return false;
+}
+
+/**
+ * Comparison operator. This gets called from MachineConfigFile::operator==,
+ * which in turn gets called from Machine::saveSettings to figure out whether
+ * machine settings have really changed and thus need to be written out to disk.
+ */
+bool CaptureScreenSettings::operator==(const CaptureScreenSettings &d) const
+{
+    return    fEnabled            == d.fEnabled
+           && enmDest             == d.enmDest
+           && featureMap          == d.featureMap
+           && ulMaxTimeS          == d.ulMaxTimeS
+           && strOptions          == d.strOptions
+           && File.ulMaxSizeMB    == d.File.ulMaxSizeMB
+           && Video.enmCodec      == d.Video.enmCodec
+           && Video.ulWidth       == d.Video.ulWidth
+           && Video.ulHeight      == d.Video.ulHeight
+           && Video.ulRate        == d.Video.ulRate
+           && Video.ulFPS         == d.Video.ulFPS
+           && Audio.enmAudioCodec == d.Audio.enmAudioCodec
+           && Audio.cBits         == d.Audio.cBits
+           && Audio.cChannels     == d.Audio.cChannels
+           && Audio.uHz           == d.Audio.uHz;
+}
+
+/**
+ * Constructor. Needs to set sane defaults which stand the test of time.
+ */
+CaptureSettings::CaptureSettings()
+{
+    applyDefaults();
+}
+
+void CaptureSettings::applyDefaults(void)
+{
+    fEnabled = false;
+
+    mapScreens.clear();
+
+    CaptureScreenSettings screenSettings; /* Apply default settings. */
+    for (unsigned long l = 0; l < SchemaDefs::MaxGuestMonitors; l++)
+    {
+        mapScreens[l] = screenSettings;
+    }
+}
+
+/**
+ * Check if all settings have default values.
+ */
+bool CaptureSettings::areDefaultSettings() const
+{
+    CaptureScreenMap::const_iterator itScreen = mapScreens.begin();
+    while (itScreen != mapScreens.end())
+    {
+        if (!itScreen->second.areDefaultSettings())
+            return false;
+
+        ++itScreen;
+    }
+
+    return true;
+}
+
+/**
+ * Comparison operator. This gets called from MachineConfigFile::operator==,
+ * which in turn gets called from Machine::saveSettings to figure out whether
+ * machine settings have really changed and thus need to be written out to disk.
+ */
+bool CaptureSettings::operator==(const CaptureSettings &d) const
+{
+    if (this == &d)
+        return true;
+
+    if (   fEnabled          != d.fEnabled
+        || mapScreens.size() != d.mapScreens.size())
+        return false;
+
+    CaptureScreenMap::const_iterator itScreen = mapScreens.begin();
+    size_t i = 0;
+    while (itScreen != mapScreens.end())
+    {
+        CaptureScreenMap::const_iterator itScreenThat = d.mapScreens.find(i);
+        if (itScreen->second == itScreenThat->second)
+        {
+            /* Nothing to do in here (yet). */
+        }
+        else
+            return false;
+
+        ++itScreen;
+        ++i;
+    }
+
+    return true;
+}
+
 /**
  * Constructor. Needs to set sane defaults which stand the test of time.
  */
@@ -2900,15 +3064,6 @@ Hardware::Hardware() :
     cMonitors(1),
     fAccelerate3D(false),
     fAccelerate2DVideo(false),
-    ulVideoCaptureHorzRes(1024),
-    ulVideoCaptureVertRes(768),
-    ulVideoCaptureRate(512),
-    ulVideoCaptureFPS(25),
-    ulVideoCaptureMaxTime(0),
-    ulVideoCaptureMaxSize(0),
-    fVideoCaptureEnabled(false),
-    u64VideoCaptureScreens(UINT64_C(0xffffffffffffffff)),
-    strVideoCaptureFile(""),
     firmwareType(FirmwareType_BIOS),
     pointingHIDType(PointingHIDType_PS2Mouse),
     keyboardHIDType(KeyboardHIDType_PS2Keyboard),
@@ -2988,23 +3143,6 @@ bool Hardware::areDisplayDefaultSettings() const
 }
 
 /**
- * Check if all Video Capture settings have default values.
- */
-bool Hardware::areVideoCaptureDefaultSettings() const
-{
-    return    !fVideoCaptureEnabled
-           && u64VideoCaptureScreens == UINT64_C(0xffffffffffffffff)
-           && strVideoCaptureFile.isEmpty()
-           && ulVideoCaptureHorzRes == 1024
-           && ulVideoCaptureVertRes == 768
-           && ulVideoCaptureRate == 512
-           && ulVideoCaptureFPS == 25
-           && ulVideoCaptureMaxTime == 0
-           && ulVideoCaptureMaxSize == 0
-           && strVideoCaptureOptions.isEmpty();
-}
-
-/**
  * Check if all Network Adapter settings have default values.
  */
 bool Hardware::areAllNetworkAdaptersDefaultSettings(SettingsVersion_T sv) const
@@ -3061,16 +3199,6 @@ bool Hardware::operator==(const Hardware& h) const
             && cMonitors                 == h.cMonitors
             && fAccelerate3D             == h.fAccelerate3D
             && fAccelerate2DVideo        == h.fAccelerate2DVideo
-            && fVideoCaptureEnabled      == h.fVideoCaptureEnabled
-            && u64VideoCaptureScreens    == h.u64VideoCaptureScreens
-            && strVideoCaptureFile       == h.strVideoCaptureFile
-            && ulVideoCaptureHorzRes     == h.ulVideoCaptureHorzRes
-            && ulVideoCaptureVertRes     == h.ulVideoCaptureVertRes
-            && ulVideoCaptureRate        == h.ulVideoCaptureRate
-            && ulVideoCaptureFPS         == h.ulVideoCaptureFPS
-            && ulVideoCaptureMaxTime     == h.ulVideoCaptureMaxTime
-            && ulVideoCaptureMaxSize     == h.ulVideoCaptureMaxTime
-            && strVideoCaptureOptions    == h.strVideoCaptureOptions
             && firmwareType              == h.firmwareType
             && pointingHIDType           == h.pointingHIDType
             && keyboardHIDType           == h.keyboardHIDType
@@ -4275,16 +4403,34 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
         }
         else if (pelmHwChild->nameEquals("VideoCapture"))
         {
-            pelmHwChild->getAttributeValue("enabled",   hw.fVideoCaptureEnabled);
-            pelmHwChild->getAttributeValue("screens",   hw.u64VideoCaptureScreens);
-            pelmHwChild->getAttributeValuePath("file",  hw.strVideoCaptureFile);
-            pelmHwChild->getAttributeValue("horzRes",   hw.ulVideoCaptureHorzRes);
-            pelmHwChild->getAttributeValue("vertRes",   hw.ulVideoCaptureVertRes);
-            pelmHwChild->getAttributeValue("rate",      hw.ulVideoCaptureRate);
-            pelmHwChild->getAttributeValue("fps",       hw.ulVideoCaptureFPS);
-            pelmHwChild->getAttributeValue("maxTime",   hw.ulVideoCaptureMaxTime);
-            pelmHwChild->getAttributeValue("maxSize",   hw.ulVideoCaptureMaxSize);
-            pelmHwChild->getAttributeValue("options",   hw.strVideoCaptureOptions);
+            pelmHwChild->getAttributeValue("enabled",   hw.captureSettings.fEnabled);
+
+            /* Right now I don't want to bump the settings version, so just convert the enabled
+             * screens to the former uint6t_t bit array and vice versa. */
+            uint64_t u64VideoCaptureScreens;
+            pelmHwChild->getAttributeValue("screens",   u64VideoCaptureScreens);
+
+            /* At the moment we only support one capturing configuration, that is, all screens
+             * have the same configuration. So load/save to/from screen 0. */
+            CaptureScreenSettings &screen0Settings = hw.captureSettings.mapScreens[0];
+
+            pelmHwChild->getAttributeValue("maxTime",   screen0Settings.ulMaxTimeS);
+            pelmHwChild->getAttributeValue("options",   screen0Settings.strOptions);
+            pelmHwChild->getAttributeValuePath("file",  screen0Settings.File.strName);
+            pelmHwChild->getAttributeValue("maxSize",   screen0Settings.File.ulMaxSizeMB);
+            pelmHwChild->getAttributeValue("horzRes",   screen0Settings.Video.ulWidth);
+            pelmHwChild->getAttributeValue("vertRes",   screen0Settings.Video.ulHeight);
+            pelmHwChild->getAttributeValue("rate",      screen0Settings.Video.ulRate);
+            pelmHwChild->getAttributeValue("fps",       screen0Settings.Video.ulFPS);
+
+            for (unsigned i = 0; i < 64; i++)
+            {
+                if (u64VideoCaptureScreens & RT_BIT(i)) /* Screen i enabled? */
+                {
+                    hw.captureSettings.mapScreens[i] = screen0Settings;
+                    hw.captureSettings.mapScreens[i].fEnabled = true;
+                }
+            }
         }
         else if (pelmHwChild->nameEquals("RemoteDisplay"))
         {
@@ -5667,30 +5813,52 @@ void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
         }
     }
 
-    if (m->sv >= SettingsVersion_v1_14 && !hw.areVideoCaptureDefaultSettings())
+    if (m->sv >= SettingsVersion_v1_14 && !hw.captureSettings.areDefaultSettings())
     {
         xml::ElementNode *pelmVideoCapture = pelmHardware->createChild("VideoCapture");
-        if (hw.fVideoCaptureEnabled)
-            pelmVideoCapture->setAttribute("enabled",      hw.fVideoCaptureEnabled);
-        if (hw.u64VideoCaptureScreens != UINT64_C(0xffffffffffffffff))
-            pelmVideoCapture->setAttribute("screens",      hw.u64VideoCaptureScreens);
-        if (!hw.strVideoCaptureFile.isEmpty())
-            pelmVideoCapture->setAttributePath("file",     hw.strVideoCaptureFile);
-        if (hw.ulVideoCaptureHorzRes != 1024 || hw.ulVideoCaptureVertRes != 768)
+
+        if (hw.captureSettings.fEnabled)
+            pelmVideoCapture->setAttribute("enabled", hw.captureSettings.fEnabled);
+
+        /* Right now I don't want to bump the settings version, so just convert the enabled
+         * screens to the former uint6t_t bit array and vice versa. */
+        uint64_t u64VideoCaptureScreens = 0;
+        CaptureScreenMap::const_iterator itScreen = hw.captureSettings.mapScreens.begin();
+        while (itScreen != hw.captureSettings.mapScreens.end())
         {
-            pelmVideoCapture->setAttribute("horzRes",      hw.ulVideoCaptureHorzRes);
-            pelmVideoCapture->setAttribute("vertRes",      hw.ulVideoCaptureVertRes);
+            if (itScreen->second.fEnabled)
+               u64VideoCaptureScreens |= RT_BIT(itScreen->first);
+            ++itScreen;
         }
-        if (hw.ulVideoCaptureRate != 512)
-            pelmVideoCapture->setAttribute("rate",         hw.ulVideoCaptureRate);
-        if (hw.ulVideoCaptureFPS)
-            pelmVideoCapture->setAttribute("fps",          hw.ulVideoCaptureFPS);
-        if (hw.ulVideoCaptureMaxTime)
-            pelmVideoCapture->setAttribute("maxTime",      hw.ulVideoCaptureMaxTime);
-        if (hw.ulVideoCaptureMaxSize)
-            pelmVideoCapture->setAttribute("maxSize",      hw.ulVideoCaptureMaxSize);
-        if (!hw.strVideoCaptureOptions.isEmpty())
-            pelmVideoCapture->setAttributePath("options",  hw.strVideoCaptureOptions);
+
+        if (u64VideoCaptureScreens)
+            pelmVideoCapture->setAttribute("screens",      u64VideoCaptureScreens);
+
+        /* At the moment we only support one capturing configuration, that is, all screens
+         * have the same configuration. So load/save to/from screen 0. */
+        Assert(hw.captureSettings.mapScreens.size());
+        const CaptureScreenMap::const_iterator itScreen0Settings = hw.captureSettings.mapScreens.find(0);
+
+        if (itScreen0Settings->second.ulMaxTimeS)
+            pelmVideoCapture->setAttribute("maxTime",      itScreen0Settings->second.ulMaxTimeS);
+        if (itScreen0Settings->second.strOptions.isNotEmpty())
+            pelmVideoCapture->setAttributePath("options",  itScreen0Settings->second.strOptions);
+
+        if (!itScreen0Settings->second.File.strName.isEmpty())
+            pelmVideoCapture->setAttributePath("file",     itScreen0Settings->second.File.strName);
+        if (itScreen0Settings->second.File.ulMaxSizeMB)
+            pelmVideoCapture->setAttribute("maxSize",      itScreen0Settings->second.File.ulMaxSizeMB);
+
+        if (   itScreen0Settings->second.Video.ulWidth  != 1024
+            || itScreen0Settings->second.Video.ulHeight != 768)
+        {
+            pelmVideoCapture->setAttribute("horzRes",      itScreen0Settings->second.Video.ulWidth);
+            pelmVideoCapture->setAttribute("vertRes",      itScreen0Settings->second.Video.ulHeight);
+        }
+        if (itScreen0Settings->second.Video.ulRate != 512)
+            pelmVideoCapture->setAttribute("rate",         itScreen0Settings->second.Video.ulRate);
+        if (itScreen0Settings->second.Video.ulFPS)
+            pelmVideoCapture->setAttribute("fps",          itScreen0Settings->second.Video.ulFPS);
     }
 
     if (!hw.vrdeSettings.areDefaultSettings(m->sv))
@@ -7261,12 +7429,12 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
     if (m->sv < SettingsVersion_v1_14)
     {
         // VirtualBox 4.3 adds default frontend setting, graphics controller
-        // setting, explicit long mode setting, video capturing and NAT networking.
+        // setting, explicit long mode setting, (video) capturing and NAT networking.
         if (   !hardwareMachine.strDefaultFrontend.isEmpty()
             || hardwareMachine.graphicsControllerType != GraphicsControllerType_VBoxVGA
             || hardwareMachine.enmLongMode != Hardware::LongMode_Legacy
             || machineUserData.ovIcon.size() > 0
-            || hardwareMachine.fVideoCaptureEnabled)
+            || hardwareMachine.captureSettings.fEnabled)
         {
             m->sv = SettingsVersion_v1_14;
             return;

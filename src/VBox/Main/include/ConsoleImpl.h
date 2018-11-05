@@ -23,6 +23,9 @@
 #include "EventImpl.h"
 #include "SecretKeyStore.h"
 #include "ConsoleWrap.h"
+#ifdef VBOX_WITH_VIDEOREC
+# include "VideoRec.h"
+#endif
 
 class Guest;
 class Keyboard;
@@ -138,8 +141,12 @@ public:
     AudioVRDE *i_getAudioVRDE() const { return mAudioVRDE; }
 #endif
 #ifdef VBOX_WITH_AUDIO_VIDEOREC
-    AudioVideoRec *i_getAudioVideoRec() const { return mAudioVideoRec; }
-    HRESULT i_audioVideoRecSendAudio(const void *pvData, size_t cbData, uint64_t uDurationMs);
+    int i_videoRecLoad(settings::CaptureSettings &Settings);
+    int i_videoRecStart(void);
+    int i_videoRecStop(void);
+    AudioVideoRec *i_videoRecGetAudioDrv(void) const { return Capture.mAudioVideoRec; }
+    CaptureContext *i_videoRecGetContext(void) const { return Capture.mpVideoRecCtx; }
+    HRESULT i_videoRecSendAudio(const void *pvData, size_t cbData, uint64_t uDurationMs);
 #endif
 
     const ComPtr<IMachine> &i_machine() const { return mMachine; }
@@ -168,7 +175,7 @@ public:
     HRESULT i_onClipboardModeChange(ClipboardMode_T aClipboardMode);
     HRESULT i_onDnDModeChange(DnDMode_T aDnDMode);
     HRESULT i_onVRDEServerChange(BOOL aRestart);
-    HRESULT i_onVideoCaptureChange();
+    HRESULT i_onCaptureChange();
     HRESULT i_onUSBControllerChange();
     HRESULT i_onSharedFolderChange(BOOL aGlobal);
     HRESULT i_onUSBDeviceAttach(IUSBDevice *aDevice, IVirtualBoxErrorInfo *aError, ULONG aMaskedIfs,
@@ -938,10 +945,6 @@ private:
 
     VMMDev *                    m_pVMMDev;
     AudioVRDE * const           mAudioVRDE;
-#ifdef VBOX_WITH_AUDIO_VIDEOREC
-    /** The video recording audio backend. */
-    AudioVideoRec * const       mAudioVideoRec;
-#endif
     Nvram   * const             mNvram;
 #ifdef VBOX_WITH_USB_CARDREADER
     UsbCardReader * const       mUsbCardReader;
@@ -1026,6 +1029,22 @@ private:
     ComPtr<IProgress> mptrCancelableProgress;
 
     ComPtr<IEventListener> mVmListener;
+
+#ifdef VBOX_WITH_VIDEOREC
+    struct Capture
+    {
+        Capture()
+            : mpVideoRecCtx(NULL)
+            , mAudioVideoRec(NULL) { }
+
+        /** The capturing context. */
+        CaptureContext       *mpVideoRecCtx;
+# ifdef VBOX_WITH_AUDIO_VIDEOREC
+        /** Pointer to capturing audio backend. */
+        AudioVideoRec * const mAudioVideoRec;
+# endif
+    } Capture;
+#endif /* VBOX_WITH_VIDEOREC */
 
     friend class VMTask;
     friend class ConsoleVRDPServer;

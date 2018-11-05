@@ -4688,6 +4688,246 @@
 
   </interface>
 
+  <enum
+    name="CaptureDestination"
+    uuid="E54603A9-6751-4255-93F8-C69E61693391"
+    >
+    <desc>
+      Capturing destination enumeration.
+    </desc>
+
+    <const name="None"                  value="0">
+      <desc>No destination.</desc>
+    </const>
+    <const name="File"                  value="1">
+      <desc>Destination is a regular file.</desc>
+    </const>
+  </enum>
+
+  <enum
+    name="CaptureFeature"
+    uuid="F606CDDB-91B2-4E41-9DFE-4713D4DBA96F"
+    >
+    <desc>
+      Capturing features enumeration.
+    </desc>
+
+    <const name="None"                  value="0">
+      <desc>No feature set.</desc>
+    </const>
+    <const name="Video"                 value="1">
+      <desc>Video capturing.</desc>
+    </const>
+    <const name="Audio"                 value="2">
+      <desc>Audio capturing.</desc>
+    </const>
+  </enum>
+
+  <enum
+    name="CaptureAudioCodec"
+    uuid="9B80C37F-7984-412C-A755-C18FE5859554"
+    >
+    <desc>
+      Capturing audio codec enumeration.
+    </desc>
+
+    <const name="None"                  value="0">
+      <desc>No codec set.</desc>
+    </const>
+    <const name="WavPCM"                value="1">
+      <desc>WAV format, linear PCM, uncompressed.
+        Not implemented yet.</desc>
+    </const>
+    <const name="Opus"                  value="2">
+      <desc>Opus Audio.</desc>
+    </const>
+  </enum>
+
+  <enum
+    name="CaptureVideoCodec"
+    uuid="98BBC021-E119-497D-8C66-4336D539A8D6"
+    >
+    <desc>
+      Capturing video codec enumeration.
+    </desc>
+
+    <const name="None"                  value="0">
+      <desc>No codec set.</desc>
+    </const>
+    <const name="VP8"                   value="1">
+      <desc>VP8 codec.</desc>
+    </const>
+    <const name="VP9"                   value="2">
+      <desc>VP9 codec. Not implemented yet.</desc>
+    </const>
+    <const name="AV1"                   value="3">
+      <desc>AV1 codec. Not implemented yet.</desc>
+    </const>
+  </enum>
+
+  <interface
+    name="ICaptureScreenSettings" extends="$unknown"
+    uuid="9C8FE192-DD9A-45E9-B17B-2BA23B5951F7"
+    wsmap="managed"
+    >
+
+    <desc>
+      The ICaptureScreenSettings interface represents capturing settings of a
+      singke virtual screen. This is used only in the <link to="ICaptureSettings" />
+      interface.
+    </desc>
+
+    <method name="isFeatureEnabled">
+      <desc>TODO</desc>
+      <param name="feature" type="CaptureFeature" dir="in">
+        <desc>TODO</desc>
+      </param>
+      <param name="enabled" type="boolean" dir="return">
+        <desc>TODO</desc>
+      </param>
+    </method>
+
+    <attribute name="enabled" type="boolean" default="false">
+      <desc>
+        This setting determines whether this screen is enabled while capturing.
+      </desc>
+    </attribute>
+
+    <attribute name="features" type="unsigned long">
+      <desc>This setting determines all enabled capturing features for this
+        screen.</desc>
+    </attribute>
+
+    <attribute name="destination" type="CaptureDestination">
+      <desc>This setting determines the capturing destination for this
+        screen.</desc>
+    </attribute>
+
+    <attribute name="fileName" type="wstring">
+      <desc>
+        This setting determines the filename VirtualBox uses to save
+        the recorded content. This setting cannot be changed while video
+        capturing is enabled.
+        <note>
+          When setting this attribute, the specified path has to be
+          absolute (full path). When reading this attribute, a full path is
+          always returned.
+        </note>
+      </desc>
+    </attribute>
+
+    <attribute name="maxTime" type="unsigned long" default="0">
+      <desc>
+        This setting defines the maximum amount of time in milliseconds
+        to capture. Capturing will stop as soon as the defined time
+        interval has elapsed. If this value is zero, capturing will not be
+        limited by time. This setting cannot be changed while capturing is
+        enabled.
+      </desc>
+    </attribute>
+
+    <attribute name="maxFileSize" type="unsigned long" default="0">
+      <desc>
+        This setting determines the maximal number of captured file
+        size in MB. Capturing will stop as soon as the file size has
+        reached the defined value. If this value is zero, capturing
+        will not be limited by the file size. This setting cannot be changed
+        while capturing is enabled.
+      </desc>
+    </attribute>
+
+    <attribute name="options" type="wstring">
+      <desc>
+        This setting contains any additional capturing options
+        required in comma-separated key=value format. This setting
+        cannot be changed while capturing is enabled.
+
+        The following keys and their corresponding values are available:
+
+        <table>
+          <tr>
+            <td>ac_enabled</td>
+            <td>Enables audio recording when set to <pre>true</pre>, otherwise
+                set to <pre>false</pre> to disable.
+
+                <b>This feature is considered being experimental.</b></td>
+          </tr>
+        </table>
+
+      </desc>
+    </attribute>
+
+    <attribute name="videoWidth" type="unsigned long" default="1024">
+      <desc>
+        This setting determines the horizontal resolution of the recorded
+        video. This setting cannot be changed while capturing is enabled.
+      </desc>
+    </attribute>
+
+    <attribute name="videoHeight" type="unsigned long" default="768">
+      <desc>
+        This setting determines the vertical resolution of the recorded
+        video. This setting cannot be changed while capturing is enabled.
+      </desc>
+    </attribute>
+
+    <attribute name="videoRate" type="unsigned long" default="512">
+      <desc>
+        This setting determines the bitrate in kilobits per second.
+        Increasing this value makes the video look better for the
+        cost of an increased file size. This setting cannot be changed
+        while capturing is enabled.
+      </desc>
+    </attribute>
+
+    <attribute name="videoFPS" type="unsigned long" default="25">
+      <desc>
+        This setting determines the maximum number of frames per second.
+        Frames with a higher frequency will be skipped. Reducing this
+        value increases the number of skipped frames and reduces the
+        file size. This setting cannot be changed while capturing
+        is enabled.
+      </desc>
+    </attribute>
+
+  </interface>
+
+  <interface
+    name="ICaptureSettings" extends="$unknown"
+    uuid="F35B5C06-F6F0-475D-908A-F5FECC820043"
+    wsmap="managed"
+    >
+
+    <desc>
+      The ICaptureSettings interface represents capturing settings of the virtual
+      machine. This is used only in the <link to="IMachine::CaptureSettings" />
+      attribute.
+    </desc>
+
+    <method name="getScreenSettings">
+      <desc>TODO</desc>
+      <param name="screenId" type="unsigned long" dir="in">
+        <desc>TODO</desc>
+      </param>
+      <param name="captureScreenSettings" type="ICaptureScreenSettings" dir="return">
+        <desc>TODO</desc>
+      </param>
+    </method>
+
+    <attribute name="enabled" type="boolean" default="false">
+      <desc>
+        This setting determines whether VirtualBox uses capturing to record a
+        VM session.</desc>
+    </attribute>
+
+    <attribute name="screens" type="ICaptureScreenSettings" readonly="yes" safearray="yes">
+      <desc>
+        This setting returns an array for capturing settings of all configured
+        virtual screens.</desc>
+    </attribute>
+
+  </interface>
+
   <interface
     name="IPCIAddress" extends="$unknown"
     uuid="c984d15f-e191-400b-840e-970f3dad7296"
@@ -4882,7 +5122,7 @@
 
   <interface
     name="IMachine" extends="$unknown"
-    uuid="fecae8e8-46da-44cf-8fc0-2ba9aeb796a7"
+    uuid="316A9802-03A5-44BE-B2A6-51261A021353"
     wsmap="managed"
     wrap-hint-server-addinterfaces="IInternalMachineControl"
     wrap-hint-server="manualaddinterfaces"
@@ -5163,109 +5403,12 @@
       </desc>
     </attribute>
 
-    <attribute name="videoCaptureEnabled" type="boolean" default="false">
-      <desc>
-        This setting determines whether VirtualBox uses video capturing to
-        record a VM session.</desc>
-    </attribute>
-
-    <attribute name="videoCaptureScreens" type="boolean" safearray="yes">
-      <desc>
-        This setting determines for which screens video capturing is
-        enabled.</desc>
-    </attribute>
-
-    <attribute name="videoCaptureFile" type="wstring">
-      <desc>
-        This setting determines the filename VirtualBox uses to save
-        the recorded content. This setting cannot be changed while video
-        capturing is enabled.
-        <note>
-          When setting this attribute, the specified path has to be
-          absolute (full path). When reading this attribute, a full path is
-          always returned.
-        </note>
-      </desc>
-    </attribute>
-
-    <attribute name="videoCaptureWidth" type="unsigned long" default="640">
-      <desc>
-        This setting determines the horizontal resolution of the recorded
-        video. This setting cannot be changed while video capturing is
-        enabled.
-      </desc>
-    </attribute>
-
-    <attribute name="videoCaptureHeight" type="unsigned long" default="480">
-      <desc>
-        This setting determines the vertical resolution of the recorded
-        video. This setting cannot be changed while video capturing is
-        enabled.
-      </desc>
-    </attribute>
-
-    <attribute name="videoCaptureRate" type="unsigned long" default="512">
-      <desc>
-        This setting determines the bitrate in kilobits per second.
-        Increasing this value makes the video look better for the
-        cost of an increased file size. This setting cannot be changed
-        while video capturing is enabled.
-      </desc>
-    </attribute>
-
-    <attribute name="videoCaptureFPS" type="unsigned long" default="25">
-      <desc>
-        This setting determines the maximum number of frames per second.
-        Frames with a higher frequency will be skipped. Reducing this
-        value increases the number of skipped frames and reduces the
-        file size. This setting cannot be changed while video capturing
-        is enabled.
-      </desc>
-    </attribute>
-
-    <attribute name="videoCaptureMaxTime" type="unsigned long" default="0">
-      <desc>
-        This setting determines the maximum amount of time in milliseconds
-        the video capture will work for. The capture stops as the defined time
-        interval  has elapsed. If this value is zero the capturing will not be
-        limited by time. This setting cannot be changed while video capturing is
-        enabled.
-      </desc>
-    </attribute>
-
-    <attribute name="videoCaptureMaxFileSize" type="unsigned long" default="0">
-      <desc>
-        This setting determines the maximal number of captured video file
-        size in MB. The capture stops as the captured video file size
-        has reached the defined. If this value is zero the capturing
-        will not be limited by file size. This setting cannot be changed
-        while video capturing is enabled.
-      </desc>
-    </attribute>
-
-    <attribute name="videoCaptureOptions" type="wstring">
-      <desc>
-        This setting contains any additional video capture options
-        required in comma-separated key=value format. This setting
-        cannot be changed while video capturing is enabled.
-
-        The following keys and their corresponding values are available:
-
-        <table>
-          <tr>
-            <td>ac_enabled</td>
-            <td>Enables audio recording when set to <pre>true</pre>, otherwise
-                set to <pre>false</pre> to disable.
-
-                <b>This feature is considered being experimental.</b></td>
-          </tr>
-        </table>
-
-      </desc>
-    </attribute>
-
     <attribute name="BIOSSettings" type="IBIOSSettings" readonly="yes">
       <desc>Object containing all BIOS settings.</desc>
+    </attribute>
+
+    <attribute name="captureSettings" type="ICaptureSettings" readonly="yes">
+      <desc>Object containing all capturing settings.</desc>
     </attribute>
 
     <attribute name="firmwareType" type="FirmwareType">
@@ -20410,7 +20553,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IInternalSessionControl" extends="$unknown"
-    uuid="747e397e-69c8-45a0-88d9-f7f070960718"
+    uuid="96BDA9B7-92E6-402F-AA8C-2E77818DAE6E"
     internal="yes"
     wsmap="suppress"
     >
@@ -20710,9 +20853,9 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </param>
     </method>
 
-    <method name="onVideoCaptureChange">
+    <method name="onCaptureChange">
       <desc>
-        Triggered when video capture settings have changed.
+        Triggered when capture settings have changed.
       </desc>
     </method>
 
@@ -22894,9 +23037,9 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
           not unnecessarily overflow the event queue.</note>
       </desc>
     </const>
-    <const name="OnVideoCaptureChanged" value="91">
+    <const name="OnCaptureChanged" value="91">
       <desc>
-        See <link to="IVideoCaptureChangedEvent">IVideoCapturedChangeEvent</link>.
+        See <link to="ICaptureChangedEvent">ICapturedChangeEvent</link>.
       </desc>
     </const>
     <const name="OnGuestUserStateChanged" value="92">
@@ -24281,12 +24424,12 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   </interface>
 
   <interface
-    name="IVideoCaptureChangedEvent" extends="IEvent"
-    uuid="6215d169-25dd-4719-ab34-c908701efb58"
-    wsmap="managed" autogen="VBoxEvent" id="OnVideoCaptureChanged"
+    name="ICaptureChangedEvent" extends="IEvent"
+    uuid="C694687C-F432-4435-B457-F2E55B845C81"
+    wsmap="managed" autogen="VBoxEvent" id="OnCaptureChanged"
     >
     <desc>
-      Notification when video capture settings have changed.
+      Notification when capture settings have changed.
     </desc>
     <attribute name="midlDoesNotLikeEmptyInterfaces" readonly="yes" type="boolean"/>
   </interface>

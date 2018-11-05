@@ -764,7 +764,7 @@ enum IndicatorType
     IndicatorType_USB,
     IndicatorType_SharedFolders,
     IndicatorType_Display,
-    IndicatorType_VideoCapture,
+    IndicatorType_Capture,
     IndicatorType_Features,
     IndicatorType_Mouse,
     IndicatorType_Keyboard,

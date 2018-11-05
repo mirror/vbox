@@ -2378,21 +2378,27 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
         BOOL fCaptureAudio = FALSE;
 # endif
 
-        CHECK_ERROR_RET(machine, COMGETTER(VideoCaptureEnabled)(&fCaptureVideo), rc);
-        com::SafeArray<BOOL> screens;
-        CHECK_ERROR_RET(machine, COMGETTER(VideoCaptureScreens)(ComSafeArrayAsOutParam(screens)), rc);
+        ComPtr<ICaptureSettings> captureSettings;
+        CHECK_ERROR_RET(machine, COMGETTER(CaptureSettings)(captureSettings.asOutParam()), rc);
+
+        SafeIfaceArray <ICaptureScreenSettings> saCaptureScreenScreens;
+        CHECK_ERROR_RET(captureSettings, COMGETTER(Screens)(ComSafeArrayAsOutParam(saCaptureScreenScreens)), rc);
+
+        /* For now all screens have the same configuration; so take screen 0 and work with that. */
+        ULONG fFeatures;
+        CHECK_ERROR_RET(saCaptureScreenScreens[0], COMGETTER(Features)(&fFeatures), rc);
         ULONG Width;
-        CHECK_ERROR_RET(machine, COMGETTER(VideoCaptureWidth)(&Width), rc);
+        CHECK_ERROR_RET(saCaptureScreenScreens[0], COMGETTER(VideoWidth)(&Width), rc);
         ULONG Height;
-        CHECK_ERROR_RET(machine, COMGETTER(VideoCaptureHeight)(&Height), rc);
+        CHECK_ERROR_RET(saCaptureScreenScreens[0], COMGETTER(VideoHeight)(&Height), rc);
         ULONG Rate;
-        CHECK_ERROR_RET(machine, COMGETTER(VideoCaptureRate)(&Rate), rc);
+        CHECK_ERROR_RET(saCaptureScreenScreens[0], COMGETTER(VideoRate)(&Rate), rc);
         ULONG Fps;
-        CHECK_ERROR_RET(machine, COMGETTER(VideoCaptureFPS)(&Fps), rc);
+        CHECK_ERROR_RET(saCaptureScreenScreens[0], COMGETTER(VideoFPS)(&Fps), rc);
         Bstr  bstrFile;
-        CHECK_ERROR_RET(machine, COMGETTER(VideoCaptureFile)(bstrFile.asOutParam()), rc);
+        CHECK_ERROR_RET(saCaptureScreenScreens[0], COMGETTER(FileName)(bstrFile.asOutParam()), rc);
         Bstr  bstrOptions;
-        CHECK_ERROR_RET(machine, COMGETTER(VideoCaptureOptions)(bstrOptions.asOutParam()), rc);
+        CHECK_ERROR_RET(saCaptureScreenScreens[0], COMGETTER(Options)(bstrOptions.asOutParam()), rc);
 
         Utf8Str strOptions(bstrOptions);
         size_t pos = 0;
@@ -2416,16 +2422,20 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
         SHOW_BOOL_VALUE_EX("videocapaudio", "Capture audio:", fCaptureAudio, "active", "not active");
 # endif
         szValue[0] = '\0';
-        for (size_t i = 0, off = 0; i < screens.size(); i++)
-            if (screens[i] && off < sizeof(szValue) - 3)
+        for (size_t i = 0, off = 0; i < saCaptureScreenScreens.size(); i++)
+        {
+            BOOL fEnabled;
+            CHECK_ERROR_RET(saCaptureScreenScreens[i], COMGETTER(Enabled)(&fEnabled), rc);
+            if (fEnabled && off < sizeof(szValue) - 3)
                 off += RTStrPrintf(&szValue[off], sizeof(szValue) - off, off ? ",%zu" : "%zu", i);
-        SHOW_UTF8_STRING("videocapscreens", "Capture screens:", szValue);
-        SHOW_BSTR_STRING("videocapfile", "Capture file:", bstrFile);
+        }
+        SHOW_UTF8_STRING("capturescreens", "Capture screens:", szValue);
+        SHOW_BSTR_STRING("capturefilename", "Capture file:", bstrFile);
         RTStrPrintf(szValue, sizeof(szValue), "%ux%u", Width, Height);
-        SHOW_UTF8_STRING("videocapres", "Capture dimensions:", szValue);
-        SHOW_ULONG_VALUE("videocaprate", "Capture rate:", Rate, "kbps");
-        SHOW_ULONG_VALUE("videocapfps", "Capture FPS:", Fps, "kbps");
-        SHOW_BSTR_STRING("videocapopts", "Capture options:", bstrOptions);
+        SHOW_UTF8_STRING("captureres", "Capture dimensions:", szValue);
+        SHOW_ULONG_VALUE("capturevideorate", "Capture rate:", Rate, "kbps");
+        SHOW_ULONG_VALUE("capturevideofps", "Capture FPS:", Fps, "kbps");
+        SHOW_BSTR_STRING("captureopts", "Capture options:", bstrOptions);
 
         if (details != VMINFO_MACHINEREADABLE)
             RTPrintf("\n");

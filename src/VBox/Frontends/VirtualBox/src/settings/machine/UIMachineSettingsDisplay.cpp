@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2008-2017 Oracle Corporation
+ * Copyright (C) 2008-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -30,6 +30,8 @@
 # include "VBox2DHelpers.h"
 
 /* COM includes: */
+# include "CCaptureSettings.h"
+# include "CCaptureScreenSettings.h"
 # include "CExtPack.h"
 # include "CExtPackManager.h"
 # include "CVRDEServer.h"
@@ -379,16 +381,29 @@ void UIMachineSettingsDisplay::loadToCacheFrom(QVariant &data)
         oldDisplayData.m_fRemoteDisplayMultiConnAllowed = comServer.GetAllowMultiConnection();
     }
 
-    /* Gather old 'Video Capture' data: */
-    oldDisplayData.m_fVideoCaptureEnabled = m_machine.GetVideoCaptureEnabled();
-    oldDisplayData.m_strVideoCaptureFolder = QFileInfo(m_machine.GetSettingsFilePath()).absolutePath();
-    oldDisplayData.m_strVideoCaptureFilePath = m_machine.GetVideoCaptureFile();
-    oldDisplayData.m_iVideoCaptureFrameWidth = m_machine.GetVideoCaptureWidth();
-    oldDisplayData.m_iVideoCaptureFrameHeight = m_machine.GetVideoCaptureHeight();
-    oldDisplayData.m_iVideoCaptureFrameRate = m_machine.GetVideoCaptureFPS();
-    oldDisplayData.m_iVideoCaptureBitRate = m_machine.GetVideoCaptureRate();
-    oldDisplayData.m_screens = m_machine.GetVideoCaptureScreens();
-    oldDisplayData.m_strVideoCaptureOptions = m_machine.GetVideoCaptureOptions();
+    /* Gather old 'Capture' data: */
+    CCaptureSettings captureSettings = m_machine.GetCaptureSettings();
+    oldDisplayData.m_fVideoCaptureEnabled = captureSettings.GetEnabled();
+
+    /* For now we're using the same settings for all screens; so get settings from screen 0 and work with that. */
+    CCaptureScreenSettings captureScreen0Settings = captureSettings.GetScreenSettings(0);
+    if (!captureScreen0Settings.isNull())
+    {
+        oldDisplayData.m_strVideoCaptureFolder = QFileInfo(m_machine.GetSettingsFilePath()).absolutePath();
+        oldDisplayData.m_strVideoCaptureFilePath = captureScreen0Settings.GetFileName();
+        oldDisplayData.m_iVideoCaptureFrameWidth = captureScreen0Settings.GetVideoWidth();
+        oldDisplayData.m_iVideoCaptureFrameHeight = captureScreen0Settings.GetVideoHeight();
+        oldDisplayData.m_iVideoCaptureFrameRate = captureScreen0Settings.GetVideoFPS();
+        oldDisplayData.m_iVideoCaptureBitRate = captureScreen0Settings.GetVideoRate();
+        oldDisplayData.m_strVideoCaptureOptions = captureScreen0Settings.GetOptions();
+    }
+
+    CCaptureScreenSettingsVector captureScreenSettingsVector = captureSettings.GetScreens();
+    for (int iScreenIndex = 0; iScreenIndex < captureScreenSettingsVector.size(); ++iScreenIndex)
+    {
+        CCaptureScreenSettings captureScreenSettings = captureScreenSettingsVector.at(iScreenIndex);
+        oldDisplayData.m_screens[iScreenIndex] = captureScreenSettings.GetEnabled();
+    }
 
     /* Gather other old display data: */
     m_iInitialVRAM = RT_MIN(oldDisplayData.m_iCurrentVRAM, m_iMaxVRAM);
@@ -1492,79 +1507,93 @@ bool UIMachineSettingsDisplay::saveVideoCaptureData()
         /* Get new display data from the cache: */
         const UIDataSettingsMachineDisplay &newDisplayData = m_pCache->data();
 
+        CCaptureSettings captureSettings = m_machine.GetCaptureSettings();
+
         /* Save new 'Video Capture' data for online case: */
         if (isMachineOnline())
         {
             /* If 'Video Capture' was *enabled*: */
             if (oldDisplayData.m_fVideoCaptureEnabled)
             {
+                /* Save whether capture is enabled: */
+                if (fSuccess && newDisplayData.m_fVideoCaptureEnabled != oldDisplayData.m_fVideoCaptureEnabled)
+                {
+                    captureSettings.SetEnabled(newDisplayData.m_fVideoCaptureEnabled);
+                    fSuccess = captureSettings.isOk();
+                }
+
                 // We can still save the *screens* option.
-                // And finally we should *disable* 'Video Capture' if necessary.
                 /* Save video capture screens: */
                 if (fSuccess && newDisplayData.m_screens != oldDisplayData.m_screens)
                 {
-                    m_machine.SetVideoCaptureScreens(newDisplayData.m_screens);
-                    fSuccess = m_machine.isOk();
-                }
-                /* Save whether video capture is enabled: */
-                if (fSuccess && newDisplayData.m_fVideoCaptureEnabled != oldDisplayData.m_fVideoCaptureEnabled)
-                {
-                    m_machine.SetVideoCaptureEnabled(newDisplayData.m_fVideoCaptureEnabled);
-                    fSuccess = m_machine.isOk();
+                    CCaptureScreenSettingsVector captureScreenSettingsVector = captureSettings.GetScreens();
+                    for (int iScreenIndex = 0; fSuccess && iScreenIndex < captureScreenSettingsVector.size(); ++iScreenIndex)
+                    {
+                        CCaptureScreenSettings captureScreenSettings = captureScreenSettingsVector.at(iScreenIndex);
+                        captureScreenSettings.SetEnabled(newDisplayData.m_screens[iScreenIndex]);
+                        fSuccess = captureScreenSettings.isOk();
+                    }
                 }
             }
             /* If 'Video Capture' was *disabled*: */
             else
             {
-                // We should save all the options *before* 'Video Capture' activation.
-                // And finally we should *enable* Video Capture if necessary.
-                /* Save video capture file path: */
-                if (fSuccess && newDisplayData.m_strVideoCaptureFilePath != oldDisplayData.m_strVideoCaptureFilePath)
-                {
-                    m_machine.SetVideoCaptureFile(newDisplayData.m_strVideoCaptureFilePath);
-                    fSuccess = m_machine.isOk();
-                }
-                /* Save video capture frame width: */
-                if (fSuccess && newDisplayData.m_iVideoCaptureFrameWidth != oldDisplayData.m_iVideoCaptureFrameWidth)
-                {
-                    m_machine.SetVideoCaptureWidth(newDisplayData.m_iVideoCaptureFrameWidth);
-                    fSuccess = m_machine.isOk();
-                }
-                /* Save video capture frame height: */
-                if (fSuccess && newDisplayData.m_iVideoCaptureFrameHeight != oldDisplayData.m_iVideoCaptureFrameHeight)
-                {
-                    m_machine.SetVideoCaptureHeight(newDisplayData.m_iVideoCaptureFrameHeight);
-                    fSuccess = m_machine.isOk();
-                }
-                /* Save video capture frame rate: */
-                if (fSuccess && newDisplayData.m_iVideoCaptureFrameRate != oldDisplayData.m_iVideoCaptureFrameRate)
-                {
-                    m_machine.SetVideoCaptureFPS(newDisplayData.m_iVideoCaptureFrameRate);
-                    fSuccess = m_machine.isOk();
-                }
-                /* Save video capture frame bit rate: */
-                if (fSuccess && newDisplayData.m_iVideoCaptureBitRate != oldDisplayData.m_iVideoCaptureBitRate)
-                {
-                    m_machine.SetVideoCaptureRate(newDisplayData.m_iVideoCaptureBitRate);
-                    fSuccess = m_machine.isOk();
-                }
-                /* Save video capture screens: */
-                if (fSuccess && newDisplayData.m_screens != oldDisplayData.m_screens)
-                {
-                    m_machine.SetVideoCaptureScreens(newDisplayData.m_screens);
-                    fSuccess = m_machine.isOk();
-                }
-                /* Save video capture options: */
-                if (fSuccess && newDisplayData.m_strVideoCaptureOptions != oldDisplayData.m_strVideoCaptureOptions)
-                {
-                    m_machine.SetVideoCaptureOptions(newDisplayData.m_strVideoCaptureOptions);
-                    fSuccess = m_machine.isOk();
-                }
-                /* Save whether video capture is enabled: */
+                /* Save whether capture is enabled: */
                 if (fSuccess && newDisplayData.m_fVideoCaptureEnabled != oldDisplayData.m_fVideoCaptureEnabled)
                 {
-                    m_machine.SetVideoCaptureEnabled(newDisplayData.m_fVideoCaptureEnabled);
-                    fSuccess = m_machine.isOk();
+                    captureSettings.SetEnabled(newDisplayData.m_fVideoCaptureEnabled);
+                    fSuccess = captureSettings.isOk();
+                }
+
+                CCaptureScreenSettingsVector captureScreenSettingsVector = captureSettings.GetScreens();
+                for (int iScreenIndex = 0; fSuccess && iScreenIndex < captureScreenSettingsVector.size(); ++iScreenIndex)
+                {
+                    CCaptureScreenSettings captureScreenSettings = captureScreenSettingsVector.at(iScreenIndex);
+
+                    // We should save all the options *before* 'Video Capture' activation.
+                    // And finally we should *enable* Video Capture if necessary.
+                    /* Save video capture file path: */
+                    if (fSuccess && newDisplayData.m_strVideoCaptureFilePath != oldDisplayData.m_strVideoCaptureFilePath)
+                    {
+                        captureScreenSettings.SetFileName(newDisplayData.m_strVideoCaptureFilePath);
+                        fSuccess = captureScreenSettings.isOk();
+                    }
+                    /* Save video capture frame width: */
+                    if (fSuccess && newDisplayData.m_iVideoCaptureFrameWidth != oldDisplayData.m_iVideoCaptureFrameWidth)
+                    {
+                        captureScreenSettings.SetVideoWidth(newDisplayData.m_iVideoCaptureFrameWidth);
+                        fSuccess = captureScreenSettings.isOk();
+                    }
+                    /* Save video capture frame height: */
+                    if (fSuccess && newDisplayData.m_iVideoCaptureFrameHeight != oldDisplayData.m_iVideoCaptureFrameHeight)
+                    {
+                        captureScreenSettings.SetVideoHeight(newDisplayData.m_iVideoCaptureFrameHeight);
+                        fSuccess = captureScreenSettings.isOk();
+                    }
+                    /* Save video capture frame rate: */
+                    if (fSuccess && newDisplayData.m_iVideoCaptureFrameRate != oldDisplayData.m_iVideoCaptureFrameRate)
+                    {
+                        captureScreenSettings.SetVideoFPS(newDisplayData.m_iVideoCaptureFrameRate);
+                        fSuccess = captureScreenSettings.isOk();
+                    }
+                    /* Save video capture frame bit rate: */
+                    if (fSuccess && newDisplayData.m_iVideoCaptureBitRate != oldDisplayData.m_iVideoCaptureBitRate)
+                    {
+                        captureScreenSettings.SetVideoRate(newDisplayData.m_iVideoCaptureBitRate);
+                        fSuccess = captureScreenSettings.isOk();
+                    }
+                    /* Save video capture screens: */
+                    if (fSuccess && newDisplayData.m_screens != oldDisplayData.m_screens)
+                    {
+                        captureScreenSettings.SetEnabled(newDisplayData.m_screens[iScreenIndex]);
+                        fSuccess = captureScreenSettings.isOk();
+                    }
+                    /* Save video capture options: */
+                    if (fSuccess && newDisplayData.m_strVideoCaptureOptions != oldDisplayData.m_strVideoCaptureOptions)
+                    {
+                        captureScreenSettings.SetOptions(newDisplayData.m_strVideoCaptureOptions);
+                        fSuccess = captureScreenSettings.isOk();
+                    }
                 }
             }
         }
@@ -1575,50 +1604,57 @@ bool UIMachineSettingsDisplay::saveVideoCaptureData()
             /* Save whether video capture is enabled: */
             if (fSuccess && newDisplayData.m_fVideoCaptureEnabled != oldDisplayData.m_fVideoCaptureEnabled)
             {
-                m_machine.SetVideoCaptureEnabled(newDisplayData.m_fVideoCaptureEnabled);
-                fSuccess = m_machine.isOk();
+                captureSettings.SetEnabled(newDisplayData.m_fVideoCaptureEnabled);
+                fSuccess = captureSettings.isOk();
             }
-            /* Save video capture file path: */
-            if (fSuccess && newDisplayData.m_strVideoCaptureFilePath != oldDisplayData.m_strVideoCaptureFilePath)
+
+            CCaptureScreenSettingsVector captureScreenSettingsVector = captureSettings.GetScreens();
+            for (int iScreenIndex = 0; fSuccess && iScreenIndex < captureScreenSettingsVector.size(); ++iScreenIndex)
             {
-                m_machine.SetVideoCaptureFile(newDisplayData.m_strVideoCaptureFilePath);
-                fSuccess = m_machine.isOk();
-            }
-            /* Save video capture frame width: */
-            if (fSuccess && newDisplayData.m_iVideoCaptureFrameWidth != oldDisplayData.m_iVideoCaptureFrameWidth)
-            {
-                m_machine.SetVideoCaptureWidth(newDisplayData.m_iVideoCaptureFrameWidth);
-                fSuccess = m_machine.isOk();
-            }
-            /* Save video capture frame height: */
-            if (fSuccess && newDisplayData.m_iVideoCaptureFrameHeight != oldDisplayData.m_iVideoCaptureFrameHeight)
-            {
-                m_machine.SetVideoCaptureHeight(newDisplayData.m_iVideoCaptureFrameHeight);
-                fSuccess = m_machine.isOk();
-            }
-            /* Save video capture frame rate: */
-            if (fSuccess && newDisplayData.m_iVideoCaptureFrameRate != oldDisplayData.m_iVideoCaptureFrameRate)
-            {
-                m_machine.SetVideoCaptureFPS(newDisplayData.m_iVideoCaptureFrameRate);
-                fSuccess = m_machine.isOk();
-            }
-            /* Save video capture frame bit rate: */
-            if (fSuccess && newDisplayData.m_iVideoCaptureBitRate != oldDisplayData.m_iVideoCaptureBitRate)
-            {
-                m_machine.SetVideoCaptureRate(newDisplayData.m_iVideoCaptureBitRate);
-                fSuccess = m_machine.isOk();
-            }
-            /* Save video capture screens: */
-            if (fSuccess && newDisplayData.m_screens != oldDisplayData.m_screens)
-            {
-                m_machine.SetVideoCaptureScreens(newDisplayData.m_screens);
-                fSuccess = m_machine.isOk();
-            }
-            /* Save video capture options: */
-            if (fSuccess && newDisplayData.m_strVideoCaptureOptions != oldDisplayData.m_strVideoCaptureOptions)
-            {
-                m_machine.SetVideoCaptureOptions(newDisplayData.m_strVideoCaptureOptions);
-                fSuccess = m_machine.isOk();
+                CCaptureScreenSettings captureScreenSettings = captureScreenSettingsVector.at(iScreenIndex);
+
+                /* Save video capture file path: */
+                if (fSuccess && newDisplayData.m_strVideoCaptureFilePath != oldDisplayData.m_strVideoCaptureFilePath)
+                {
+                    captureScreenSettings.SetFileName(newDisplayData.m_strVideoCaptureFilePath);
+                    fSuccess = captureScreenSettings.isOk();
+                }
+                /* Save video capture frame width: */
+                if (fSuccess && newDisplayData.m_iVideoCaptureFrameWidth != oldDisplayData.m_iVideoCaptureFrameWidth)
+                {
+                    captureScreenSettings.SetVideoWidth(newDisplayData.m_iVideoCaptureFrameWidth);
+                    fSuccess = captureScreenSettings.isOk();
+                }
+                /* Save video capture frame height: */
+                if (fSuccess && newDisplayData.m_iVideoCaptureFrameHeight != oldDisplayData.m_iVideoCaptureFrameHeight)
+                {
+                    captureScreenSettings.SetVideoHeight(newDisplayData.m_iVideoCaptureFrameHeight);
+                    fSuccess = captureScreenSettings.isOk();
+                }
+                /* Save video capture frame rate: */
+                if (fSuccess && newDisplayData.m_iVideoCaptureFrameRate != oldDisplayData.m_iVideoCaptureFrameRate)
+                {
+                    captureScreenSettings.SetVideoFPS(newDisplayData.m_iVideoCaptureFrameRate);
+                    fSuccess = captureScreenSettings.isOk();
+                }
+                /* Save video capture frame bit rate: */
+                if (fSuccess && newDisplayData.m_iVideoCaptureBitRate != oldDisplayData.m_iVideoCaptureBitRate)
+                {
+                    captureScreenSettings.SetVideoRate(newDisplayData.m_iVideoCaptureBitRate);
+                    fSuccess = captureScreenSettings.isOk();
+                }
+                /* Save capture options: */
+                if (fSuccess && newDisplayData.m_strVideoCaptureOptions != oldDisplayData.m_strVideoCaptureOptions)
+                {
+                    captureScreenSettings.SetOptions(newDisplayData.m_strVideoCaptureOptions);
+                    fSuccess = captureScreenSettings.isOk();
+                }
+                /* Save screen enabled state: */
+                if (fSuccess && newDisplayData.m_screens != oldDisplayData.m_screens)
+                {
+                    captureScreenSettings.SetEnabled(newDisplayData.m_screens[iScreenIndex]);
+                    fSuccess = captureScreenSettings.isOk();
+                }
             }
         }
 

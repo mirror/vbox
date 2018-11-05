@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2012-2017 Oracle Corporation
+ * Copyright (C) 2012-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -43,6 +43,8 @@
 # include "CStorageController.h"
 # include "CMediumAttachment.h"
 # include "CAudioAdapter.h"
+# include "CCaptureSettings.h"
+# include "CCaptureScreenSettings.h"
 # include "CNetworkAdapter.h"
 # include "CSerialPort.h"
 # include "CUSBController.h"
@@ -446,18 +448,24 @@ void UIDetailsUpdateTaskDisplay::run()
                                          QApplication::translate("UIDetails", "Disabled", "details (display/vrde/VRDE server)"));
         }
 
-        /* Video Capture info: */
-        if (machine.GetVideoCaptureEnabled())
+        /* Capture info: */
+        CCaptureSettings captureSettings = machine.GetCaptureSettings();
+        if (captureSettings.GetEnabled())
         {
+            /* For now all screens have the same config: */
+            CCaptureScreenSettings captureScreen0Settings = captureSettings.GetScreenSettings(0);
+
+            /** @todo r=andy Refine these texts (wrt audio and/or video). */
             table << UITextTableLine(QApplication::translate("UIDetails", "Video Capture File", "details (display/video capture)"),
-                                     machine.GetVideoCaptureFile());
+                                     captureScreen0Settings.GetFileName());
             table << UITextTableLine(QApplication::translate("UIDetails", "Video Capture Attributes", "details (display/video capture)"),
                                      QApplication::translate("UIDetails", "Frame Size: %1x%2, Frame Rate: %3fps, Bit Rate: %4kbps")
-                                         .arg(machine.GetVideoCaptureWidth()).arg(machine.GetVideoCaptureHeight())
-                                         .arg(machine.GetVideoCaptureFPS()).arg(machine.GetVideoCaptureRate()));
+                                         .arg(captureScreen0Settings.GetVideoWidth()).arg(captureScreen0Settings.GetVideoHeight())
+                                         .arg(captureScreen0Settings.GetVideoFPS()).arg(captureScreen0Settings.GetVideoRate()));
         }
         else
         {
+            /** @todo r=andy Refine these texts (wrt audio and/or video). */
             table << UITextTableLine(QApplication::translate("UIDetails", "Video Capture", "details (display/video capture)"),
                                      QApplication::translate("UIDetails", "Disabled", "details (display/video capture)"));
         }

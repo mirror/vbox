@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2017 Oracle Corporation
+ * Copyright (C) 2006-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -394,11 +394,11 @@ RTEXITCODE handleControlVM(HandlerArg *a)
     {
         /* get the associated console */
         CHECK_ERROR_BREAK(a->session, COMGETTER(Console)(console.asOutParam()));
-        /* ... and session machine */
-        CHECK_ERROR_BREAK(a->session, COMGETTER(Machine)(sessionMachine.asOutParam()));
-
         if (!console)
             return RTMsgErrorExit(RTEXITCODE_FAILURE, "Machine '%s' is not currently running", a->argv[0]);
+
+        /* ... and session machine */
+        CHECK_ERROR_BREAK(a->session, COMGETTER(Machine)(sessionMachine.asOutParam()));
 
         /* which command? */
         if (!strcmp(a->argv[1], "pause"))
@@ -1854,238 +1854,225 @@ RTEXITCODE handleControlVM(HandlerArg *a)
             RTFileClose(pngFile);
         }
 #ifdef VBOX_WITH_VIDEOREC
-        /*
-         * Note: Commands starting with "vcp" are the deprecated versions and are
-         *       kept to ensure backwards compatibility.
-         */
-        else if (   !strcmp(a->argv[1], "videocap")
-                 || !strcmp(a->argv[1], "vcpenabled"))
+        else if (!strcmp(a->argv[1], "capture"))
         {
-            if (a->argc != 3)
+            if (a->argc < 3)
             {
                 errorSyntax(USAGE_CONTROLVM, "Incorrect number of parameters");
                 rc = E_FAIL;
                 break;
             }
-            if (!strcmp(a->argv[2], "on"))
-            {
-                CHECK_ERROR_RET(sessionMachine, COMSETTER(VideoCaptureEnabled)(TRUE), RTEXITCODE_FAILURE);
-            }
-            else if (!strcmp(a->argv[2], "off"))
-            {
-                CHECK_ERROR_RET(sessionMachine, COMSETTER(VideoCaptureEnabled)(FALSE), RTEXITCODE_FAILURE);
-            }
-            else
-            {
-                errorArgument("Invalid state '%s'", Utf8Str(a->argv[2]).c_str());
-                rc = E_FAIL;
-                break;
-            }
-        }
-        else if (   !strcmp(a->argv[1], "videocapscreens")
-                 || !strcmp(a->argv[1], "vcpscreens"))
-        {
-            ULONG cMonitors = 64;
-            CHECK_ERROR_BREAK(machine, COMGETTER(MonitorCount)(&cMonitors));
-            com::SafeArray<BOOL> saScreens(cMonitors);
-            if (   a->argc == 3
-                && !strcmp(a->argv[2], "all"))
-            {
-                /* enable all screens */
-                for (unsigned i = 0; i < cMonitors; i++)
-                    saScreens[i] = true;
-            }
-            else if (   a->argc == 3
-                     && !strcmp(a->argv[2], "none"))
-            {
-                /* disable all screens */
-                for (unsigned i = 0; i < cMonitors; i++)
-                    saScreens[i] = false;
 
-                /** @todo r=andy What if this is specified? */
-            }
-            else
+            ComPtr<ICaptureSettings> captureSettings;
+            CHECK_ERROR_BREAK(machine, COMGETTER(CaptureSettings)(captureSettings.asOutParam()));
+
+            SafeIfaceArray <ICaptureScreenSettings> saCaptureScreenScreens;
+            CHECK_ERROR_BREAK(captureSettings, COMGETTER(Screens)(ComSafeArrayAsOutParam(saCaptureScreenScreens)));
+
+            /* Note: For now all screens have the same configuration. */
+
+            /*
+             * Note: Commands starting with "vcp" are the deprecated versions and are
+             *       kept to ensure backwards compatibility.
+             */
+            if (!strcmp(a->argv[2], "enable"))
             {
-                /* enable selected screens */
-                for (unsigned i = 0; i < cMonitors; i++)
-                    saScreens[i] = false;
-                for (int i = 2; SUCCEEDED(rc) && i < a->argc; i++)
+                CHECK_ERROR_RET(captureSettings, COMSETTER(Enabled)(TRUE), RTEXITCODE_FAILURE);
+            }
+            else if (!strcmp(a->argv[2], "disable"))
+            {
+                CHECK_ERROR_RET(captureSettings, COMSETTER(Enabled)(FALSE), RTEXITCODE_FAILURE);
+            }
+            else if (!strcmp(a->argv[2], "screens"))
+            {
+                ULONG cMonitors = 64;
+                CHECK_ERROR_BREAK(machine, COMGETTER(MonitorCount)(&cMonitors));
+                com::SafeArray<BOOL> saScreens(cMonitors);
+                if (   a->argc == 4
+                    && !strcmp(a->argv[3], "all"))
                 {
-                    uint32_t iScreen;
-                    int vrc = RTStrToUInt32Ex(a->argv[i], NULL, 0, &iScreen);
-                    if (vrc != VINF_SUCCESS)
+                    /* enable all screens */
+                    for (unsigned i = 0; i < cMonitors; i++)
+                        saScreens[i] = true;
+                }
+                else if (   a->argc == 4
+                         && !strcmp(a->argv[3], "none"))
+                {
+                    /* disable all screens */
+                    for (unsigned i = 0; i < cMonitors; i++)
+                        saScreens[i] = false;
+
+                    /** @todo r=andy What if this is specified? */
+                }
+                else
+                {
+                    /* enable selected screens */
+                    for (unsigned i = 0; i < cMonitors; i++)
+                        saScreens[i] = false;
+                    for (int i = 3; SUCCEEDED(rc) && i < a->argc; i++)
                     {
-                        errorArgument("Error parsing display number '%s'", a->argv[i]);
-                        rc = E_FAIL;
-                        break;
+                        uint32_t iScreen;
+                        int vrc = RTStrToUInt32Ex(a->argv[i], NULL, 0, &iScreen);
+                        if (vrc != VINF_SUCCESS)
+                        {
+                            errorArgument("Error parsing display number '%s'", a->argv[i]);
+                            rc = E_FAIL;
+                            break;
+                        }
+                        if (iScreen >= cMonitors)
+                        {
+                            errorArgument("Invalid screen ID specified '%u'", iScreen);
+                            rc = E_FAIL;
+                            break;
+                        }
+                        saScreens[iScreen] = true;
                     }
-                    if (iScreen >= cMonitors)
-                    {
-                        errorArgument("Invalid screen ID specified '%u'", iScreen);
-                        rc = E_FAIL;
-                        break;
-                    }
-                    saScreens[iScreen] = true;
+                }
+
+                for (size_t i = 0; i < saCaptureScreenScreens.size(); ++i)
+                    CHECK_ERROR_BREAK(saCaptureScreenScreens[i], COMSETTER(Enabled)(saScreens[i]));
+            }
+            else if (!strcmp(a->argv[2], "filename"))
+            {
+                if (a->argc != 3)
+                {
+                    errorSyntax(USAGE_CONTROLVM, "Incorrect number of parameters");
+                    rc = E_FAIL;
+                    break;
+                }
+
+                for (size_t i = 0; i < saCaptureScreenScreens.size(); ++i)
+                    CHECK_ERROR_BREAK(saCaptureScreenScreens[i], COMSETTER(FileName)(Bstr(a->argv[2]).raw()));
+            }
+            else if (   !strcmp(a->argv[2], "res")
+                     || !strcmp(a->argv[2], "resolution"))
+            {
+                if (a->argc != 5)
+                {
+                    errorSyntax(USAGE_CONTROLVM, "Incorrect number of parameters");
+                    rc = E_FAIL;
+                    break;
+                }
+
+                uint32_t uVal;
+                int vrc = RTStrToUInt32Ex(a->argv[3], NULL, 0, &uVal);
+                if (RT_FAILURE(vrc))
+                {
+                    errorArgument("Error parsing width '%s'", a->argv[3]);
+                    rc = E_FAIL;
+                    break;
+                }
+
+                vrc = RTStrToUInt32Ex(a->argv[4], NULL, 0, &uVal);
+                if (RT_FAILURE(vrc))
+                {
+                    errorArgument("Error parsing height '%s'", a->argv[4]);
+                    rc = E_FAIL;
+                    break;
+                }
+
+                for (size_t i = 0; i < saCaptureScreenScreens.size(); ++i)
+                {
+                    CHECK_ERROR_BREAK(saCaptureScreenScreens[i], COMSETTER(VideoWidth)(uVal));
+                    CHECK_ERROR_BREAK(saCaptureScreenScreens[i], COMSETTER(VideoHeight)(uVal));
                 }
             }
+            else if (!strcmp(a->argv[2], "videorate"))
+            {
+                if (a->argc != 4)
+                {
+                    errorSyntax(USAGE_CONTROLVM, "Incorrect number of parameters");
+                    rc = E_FAIL;
+                    break;
+                }
 
-            CHECK_ERROR_BREAK(sessionMachine, COMSETTER(VideoCaptureScreens)(ComSafeArrayAsInParam(saScreens)));
-        }
-        else if (   !strcmp(a->argv[1], "videocapfile")
-                 || !strcmp(a->argv[1], "vcpfile"))
-        {
-            if (a->argc != 3)
-            {
-                errorSyntax(USAGE_CONTROLVM, "Incorrect number of parameters");
-                rc = E_FAIL;
-                break;
-            }
+                uint32_t uVal;
+                int vrc = RTStrToUInt32Ex(a->argv[3], NULL, 0, &uVal);
+                if (RT_FAILURE(vrc))
+                {
+                    errorArgument("Error parsing rate '%s'", a->argv[3]);
+                    rc = E_FAIL;
+                    break;
+                }
 
-            CHECK_ERROR_BREAK(sessionMachine, COMSETTER(VideoCaptureFile)(Bstr(a->argv[2]).raw()));
-        }
-        else if (!strcmp(a->argv[1], "videocapres"))
-        {
-            if (a->argc != 4)
-            {
-                errorSyntax(USAGE_CONTROLVM, "Incorrect number of parameters");
-                rc = E_FAIL;
-                break;
+                for (size_t i = 0; i < saCaptureScreenScreens.size(); ++i)
+                    CHECK_ERROR_BREAK(saCaptureScreenScreens[i], COMSETTER(VideoRate)(uVal));
             }
+            else if (!strcmp(a->argv[2], "videofps"))
+            {
+                if (a->argc != 4)
+                {
+                    errorSyntax(USAGE_CONTROLVM, "Incorrect number of parameters");
+                    rc = E_FAIL;
+                    break;
+                }
 
-            uint32_t uVal;
-            int vrc = RTStrToUInt32Ex(a->argv[2], NULL, 0, &uVal);
-            if (RT_FAILURE(vrc))
-            {
-                errorArgument("Error parsing width '%s'", a->argv[2]);
-                rc = E_FAIL;
-                break;
-            }
-            CHECK_ERROR_BREAK(sessionMachine, COMSETTER(VideoCaptureWidth)(uVal));
+                uint32_t uVal;
+                int vrc = RTStrToUInt32Ex(a->argv[3], NULL, 0, &uVal);
+                if (RT_FAILURE(vrc))
+                {
+                    errorArgument("Error parsing FPS '%s'", a->argv[3]);
+                    rc = E_FAIL;
+                    break;
+                }
 
-            vrc = RTStrToUInt32Ex(a->argv[3], NULL, 0, &uVal);
-            if (RT_FAILURE(vrc))
-            {
-                errorArgument("Error parsing height '%s'", a->argv[3]);
-                rc = E_FAIL;
-                break;
+                for (size_t i = 0; i < saCaptureScreenScreens.size(); ++i)
+                    CHECK_ERROR_BREAK(saCaptureScreenScreens[i], COMSETTER(VideoFPS)(uVal));
             }
-            CHECK_ERROR_BREAK(sessionMachine, COMSETTER(VideoCaptureHeight)(uVal));
-        }
-        else if (!strcmp(a->argv[1], "vcpwidth")) /* Deprecated; keeping for compatibility. */
-        {
-            uint32_t uVal;
-            int vrc = RTStrToUInt32Ex(a->argv[2], NULL, 0, &uVal);
-            if (RT_FAILURE(vrc))
+            else if (!strcmp(a->argv[2], "maxtime"))
             {
-                errorArgument("Error parsing width '%s'", a->argv[2]);
-                rc = E_FAIL;
-                break;
-            }
-            CHECK_ERROR_BREAK(sessionMachine, COMSETTER(VideoCaptureWidth)(uVal));
-        }
-        else if (!strcmp(a->argv[1], "vcpheight")) /* Deprecated; keeping for compatibility. */
-        {
-            uint32_t uVal;
-            int vrc = RTStrToUInt32Ex(a->argv[2], NULL, 0, &uVal);
-            if (RT_FAILURE(vrc))
-            {
-                errorArgument("Error parsing height '%s'", a->argv[2]);
-                rc = E_FAIL;
-                break;
-            }
-            CHECK_ERROR_BREAK(sessionMachine, COMSETTER(VideoCaptureHeight)(uVal));
-        }
-        else if (   !strcmp(a->argv[1], "videocaprate")
-                 || !strcmp(a->argv[1], "vcprate"))
-        {
-            if (a->argc != 3)
-            {
-                errorSyntax(USAGE_CONTROLVM, "Incorrect number of parameters");
-                rc = E_FAIL;
-                break;
-            }
+                if (a->argc != 4)
+                {
+                    errorSyntax(USAGE_CONTROLVM, "Incorrect number of parameters");
+                    rc = E_FAIL;
+                    break;
+                }
 
-            uint32_t uVal;
-            int vrc = RTStrToUInt32Ex(a->argv[2], NULL, 0, &uVal);
-            if (RT_FAILURE(vrc))
-            {
-                errorArgument("Error parsing rate '%s'", a->argv[2]);
-                rc = E_FAIL;
-                break;
-            }
-            CHECK_ERROR_BREAK(sessionMachine, COMSETTER(VideoCaptureRate)(uVal));
-        }
-        else if (   !strcmp(a->argv[1], "videocapfps")
-                 || !strcmp(a->argv[1], "vcpfps"))
-        {
-            if (a->argc != 3)
-            {
-                errorSyntax(USAGE_CONTROLVM, "Incorrect number of parameters");
-                rc = E_FAIL;
-                break;
-            }
+                uint32_t uVal;
+                int vrc = RTStrToUInt32Ex(a->argv[3], NULL, 0, &uVal);
+                if (RT_FAILURE(vrc))
+                {
+                    errorArgument("Error parsing maximum time '%s'", a->argv[3]);
+                    rc = E_FAIL;
+                    break;
+                }
 
-            uint32_t uVal;
-            int vrc = RTStrToUInt32Ex(a->argv[2], NULL, 0, &uVal);
-            if (RT_FAILURE(vrc))
-            {
-                errorArgument("Error parsing FPS '%s'", a->argv[2]);
-                rc = E_FAIL;
-                break;
+                for (size_t i = 0; i < saCaptureScreenScreens.size(); ++i)
+                    CHECK_ERROR_BREAK(saCaptureScreenScreens[i], COMSETTER(MaxTime)(uVal));
             }
-            CHECK_ERROR_BREAK(sessionMachine, COMSETTER(VideoCaptureFPS)(uVal));
-        }
-        else if (   !strcmp(a->argv[1], "videocapmaxtime")
-                 || !strcmp(a->argv[1], "vcpmaxtime"))
-        {
-            if (a->argc != 3)
+            else if (!strcmp(a->argv[2], "maxfilesize"))
             {
-                errorSyntax(USAGE_CONTROLVM, "Incorrect number of parameters");
-                rc = E_FAIL;
-                break;
-            }
+                if (a->argc != 4)
+                {
+                    errorSyntax(USAGE_CONTROLVM, "Incorrect number of parameters");
+                    rc = E_FAIL;
+                    break;
+                }
 
-            uint32_t uVal;
-            int vrc = RTStrToUInt32Ex(a->argv[2], NULL, 0, &uVal);
-            if (RT_FAILURE(vrc))
-            {
-                errorArgument("Error parsing maximum time '%s'", a->argv[2]);
-                rc = E_FAIL;
-                break;
-            }
-            CHECK_ERROR_BREAK(sessionMachine, COMSETTER(VideoCaptureMaxTime)(uVal));
-        }
-        else if (   !strcmp(a->argv[1], "videocapmaxsize")
-                 || !strcmp(a->argv[1], "vcpmaxsize"))
-        {
-            if (a->argc != 3)
-            {
-                errorSyntax(USAGE_CONTROLVM, "Incorrect number of parameters");
-                rc = E_FAIL;
-                break;
-            }
+                uint32_t uVal;
+                int vrc = RTStrToUInt32Ex(a->argv[3], NULL, 0, &uVal);
+                if (RT_FAILURE(vrc))
+                {
+                    errorArgument("Error parsing maximum file size '%s'", a->argv[3]);
+                    rc = E_FAIL;
+                    break;
+                }
 
-            uint32_t uVal;
-            int vrc = RTStrToUInt32Ex(a->argv[2], NULL, 0, &uVal);
-            if (RT_FAILURE(vrc))
-            {
-                errorArgument("Error parsing maximum file size '%s'", a->argv[2]);
-                rc = E_FAIL;
-                break;
+                for (size_t i = 0; i < saCaptureScreenScreens.size(); ++i)
+                    CHECK_ERROR_BREAK(saCaptureScreenScreens[i], COMSETTER(MaxFileSize)(uVal));
             }
-            CHECK_ERROR_BREAK(sessionMachine, COMSETTER(VideoCaptureMaxFileSize)(uVal));
-        }
-        else if (   !strcmp(a->argv[1], "videocapopts")
-                 || !strcmp(a->argv[1], "vcpoptions"))
-        {
-            if (a->argc != 3)
+            else if (!strcmp(a->argv[2], "opts"))
             {
-                errorSyntax(USAGE_CONTROLVM, "Incorrect number of parameters");
-                rc = E_FAIL;
-                break;
-            }
+                if (a->argc != 4)
+                {
+                    errorSyntax(USAGE_CONTROLVM, "Incorrect number of parameters");
+                    rc = E_FAIL;
+                    break;
+                }
 
-            CHECK_ERROR_BREAK(sessionMachine, COMSETTER(VideoCaptureOptions)(Bstr(a->argv[3]).raw()));
+                for (size_t i = 0; i < saCaptureScreenScreens.size(); ++i)
+                    CHECK_ERROR_BREAK(saCaptureScreenScreens[i], COMSETTER(Options)(Bstr(a->argv[3]).raw()));
+            }
         }
 #endif /* VBOX_WITH_VIDEOREC */
         else if (!strcmp(a->argv[1], "webcam"))

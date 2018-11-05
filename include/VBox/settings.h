@@ -17,7 +17,7 @@
  */
 
 /*
- * Copyright (C) 2007-2017 Oracle Corporation
+ * Copyright (C) 2007-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -480,6 +480,97 @@ struct BIOSSettings
     com::Utf8Str    strLogoImagePath;
 };
 
+/** List for keeping a capturing feature list. */
+typedef std::map<CaptureFeature_T, bool> CaptureFeatureMap;
+
+class CaptureScreenSettings
+{
+public:
+
+    CaptureScreenSettings();
+
+    virtual ~CaptureScreenSettings();
+
+    void applyDefaults(void);
+
+    bool areDefaultSettings(void) const;
+
+    bool isFeatureEnabled(CaptureFeature_T enmFeature) const;
+
+    bool operator==(const CaptureScreenSettings &d) const;
+
+    bool                 fEnabled;       // requires settings version 1.14 (VirtualBox 4.3)
+    CaptureDestination_T enmDest;        // new since VirtualBox 6.0.
+    CaptureFeatureMap    featureMap;     // new since VirtualBox 6.0.
+    uint32_t             ulMaxTimeS;     // requires settings version 1.14 (VirtualBox 4.3)
+    com::Utf8Str         strOptions;     // new since VirtualBox 5.2.
+
+    struct Audio
+    {
+        Audio()
+            : enmAudioCodec(CaptureAudioCodec_Opus)
+            , uHz(22050)
+            , cBits(16)
+            , cChannels(2) { }
+
+        /** The audio codec type to use. */
+        CaptureAudioCodec_T enmAudioCodec; // new since VirtualBox 6.0.
+        /** Hz rate. */
+        uint16_t            uHz;           // new since VirtualBox 6.0.
+        /** Bits per sample. */
+        uint8_t             cBits;         // new since VirtualBox 6.0.
+        /** Number of audio channels. */
+        uint8_t             cChannels;     // new since VirtualBox 6.0.
+    } Audio;
+
+    struct Video
+    {
+        Video()
+            : enmCodec(CaptureVideoCodec_VP8)
+            , ulWidth(1024)
+            , ulHeight(768)
+            , ulRate(512)
+            , ulFPS(25) { }
+
+        CaptureVideoCodec_T  enmCodec;  // new since VirtualBox 6.0.
+        uint32_t             ulWidth;   // requires settings version 1.14 (VirtualBox 4.3)
+        uint32_t             ulHeight;  // requires settings version 1.14 (VirtualBox 4.3)
+        uint32_t             ulRate;    // requires settings version 1.14 (VirtualBox 4.3)
+        uint32_t             ulFPS;     // requires settings version 1.14 (VirtualBox 4.3)
+    } Video;
+
+    struct File
+    {
+        File()
+            : ulMaxSizeMB(0) { }
+
+        uint32_t     ulMaxSizeMB; // requires settings version 1.14 (VirtualBox 4.3)
+        com::Utf8Str strName;     // requires settings version 1.14 (VirtualBox 4.3)
+    } File;
+};
+
+/** Map for keeping settings per virtual screen. */
+typedef std::map<unsigned long, CaptureScreenSettings> CaptureScreenMap;
+
+/**
+ * NOTE: If you add any fields in here, you must update a) the constructor and b)
+ * the operator== which is used by MachineConfigFile::operator==(), or otherwise
+ * your settings might never get saved.
+ */
+struct CaptureSettings
+{
+    CaptureSettings();
+
+    void applyDefaults(void);
+
+    bool areDefaultSettings(void) const;
+
+    bool operator==(const CaptureSettings &d) const;
+
+    bool             fEnabled;       // requires settings version 1.14 (VirtualBox 4.3)
+    CaptureScreenMap mapScreens;
+};
+
 /**
  * NOTE: If you add any fields in here, you must update a) the constructor and b)
  * the operator== which is used by MachineConfigFile::operator==(), or otherwise
@@ -889,7 +980,6 @@ struct Hardware
     bool areParavirtDefaultSettings(SettingsVersion_T sv) const;
     bool areBootOrderDefaultSettings() const;
     bool areDisplayDefaultSettings() const;
-    bool areVideoCaptureDefaultSettings() const;
     bool areAllNetworkAdaptersDefaultSettings(SettingsVersion_T sv) const;
 
     bool operator==(const Hardware&) const;
@@ -936,17 +1026,6 @@ struct Hardware
     bool                fAccelerate3D,
                         fAccelerate2DVideo;     // requires settings version 1.8 (VirtualBox 3.1)
 
-    uint32_t            ulVideoCaptureHorzRes;  // requires settings version 1.14 (VirtualBox 4.3)
-    uint32_t            ulVideoCaptureVertRes;  // requires settings version 1.14 (VirtualBox 4.3)
-    uint32_t            ulVideoCaptureRate;     // requires settings version 1.14 (VirtualBox 4.3)
-    uint32_t            ulVideoCaptureFPS;      // requires settings version 1.14 (VirtualBox 4.3)
-    uint32_t            ulVideoCaptureMaxTime;  // requires settings version 1.14 (VirtualBox 4.3)
-    uint32_t            ulVideoCaptureMaxSize;  // requires settings version 1.14 (VirtualBox 4.3)
-    bool                fVideoCaptureEnabled;   // requires settings version 1.14 (VirtualBox 4.3)
-    uint64_t            u64VideoCaptureScreens; // requires settings version 1.14 (VirtualBox 4.3)
-    com::Utf8Str        strVideoCaptureFile;    // requires settings version 1.14 (VirtualBox 4.3)
-    com::Utf8Str        strVideoCaptureOptions; // new since VirtualBox 5.2.
-
     FirmwareType_T      firmwareType;           // requires settings version 1.9 (VirtualBox 3.1)
 
     PointingHIDType_T   pointingHIDType;        // requires settings version 1.10 (VirtualBox 3.2)
@@ -961,6 +1040,7 @@ struct Hardware
     VRDESettings        vrdeSettings;
 
     BIOSSettings        biosSettings;
+    CaptureSettings     captureSettings;
     USB                 usbSettings;
     NetworkAdaptersList llNetworkAdapters;
     SerialPortsList     llSerialPorts;

@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2008-2017 Oracle Corporation
+ * Copyright (C) 2008-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -47,6 +47,8 @@
 
 /* COM includes: */
 # include "CAudioAdapter.h"
+# include "CCaptureSettings.h"
+# include "CCaptureScreenSettings.h"
 # include "CMachine.h"
 # include "CMedium.h"
 # include "CMediumAttachment.h"
@@ -1744,17 +1746,20 @@ QStringList UISnapshotDetailsWidget::videoCaptureReport(CMachine comMachine)
 {
     /* Prepare report: */
     QStringList aReport;
-    /* Acquire video capture status: */
-    if (comMachine.GetVideoCaptureEnabled())
+    /* Acquire capture status: */
+    CCaptureSettings captureSettings = comMachine.GetCaptureSettings();
+    /* For now all screens have the same config: */
+    CCaptureScreenSettings captureScreen0Settings = captureSettings.GetScreenSettings(0);
+    if (captureScreen0Settings.GetEnabled())
     {
         /* Video Capture File: */
-        aReport << comMachine.GetVideoCaptureFile();
+        aReport << captureScreen0Settings.GetFileName();
         /* Video Capture Attributes: */
         aReport << QApplication::translate("UIGDetails", "Frame Size: %1x%2, Frame Rate: %3fps, Bit Rate: %4kbps")
-                                           .arg(comMachine.GetVideoCaptureWidth())
-                                           .arg(comMachine.GetVideoCaptureHeight())
-                                           .arg(comMachine.GetVideoCaptureFPS())
-                                           .arg(comMachine.GetVideoCaptureRate());
+                                           .arg(captureScreen0Settings.GetVideoWidth())
+                                           .arg(captureScreen0Settings.GetVideoHeight())
+                                           .arg(captureScreen0Settings.GetVideoFPS())
+                                           .arg(captureScreen0Settings.GetVideoRate());
     }
     /* Return report: */
     return aReport;

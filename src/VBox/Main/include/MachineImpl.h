@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2017 Oracle Corporation
+ * Copyright (C) 2006-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -31,6 +31,7 @@
 #include "SerialPortImpl.h"
 #include "ParallelPortImpl.h"
 #include "BIOSSettingsImpl.h"
+#include "CaptureSettingsImpl.h"
 #include "StorageControllerImpl.h"          // required for MachineImpl.h to compile on Windows
 #include "USBControllerImpl.h"              // required for MachineImpl.h to compile on Windows
 #include "BandwidthControlImpl.h"
@@ -264,16 +265,7 @@ public:
         BOOL                mPageFusionEnabled;
         GraphicsControllerType_T mGraphicsControllerType;
         ULONG               mVRAMSize;
-        ULONG               mVideoCaptureWidth;
-        ULONG               mVideoCaptureHeight;
-        ULONG               mVideoCaptureRate;
-        ULONG               mVideoCaptureFPS;
-        ULONG               mVideoCaptureMaxTime;
-        ULONG               mVideoCaptureMaxFileSize;
-        Utf8Str             mVideoCaptureOptions;
-        Utf8Str             mVideoCaptureFile;
-        BOOL                mVideoCaptureEnabled;
-        BOOL                maVideoCaptureScreens[SchemaDefs::MaxGuestMonitors];
+        settings::CaptureSettings mCaptureSettings;
         ULONG               mMonitorCount;
         BOOL                mHWVirtExEnabled;
         BOOL                mHWVirtExNestedPagingEnabled;
@@ -483,7 +475,8 @@ public:
         IsModified_BIOS                 = 0x0200,
         IsModified_SharedFolders        = 0x0400,
         IsModified_Snapshots            = 0x0800,
-        IsModified_BandwidthControl     = 0x1000
+        IsModified_BandwidthControl     = 0x1000,
+        IsModified_Capture              = 0x2000
     };
 
     /**
@@ -527,7 +520,7 @@ public:
     virtual HRESULT i_onBandwidthGroupChange(IBandwidthGroup * /* aBandwidthGroup */) { return S_OK; }
     virtual HRESULT i_onStorageDeviceChange(IMediumAttachment * /* mediumAttachment */, BOOL /* remove */,
                                             BOOL /* silent */) { return S_OK; }
-    virtual HRESULT i_onVideoCaptureChange() { return S_OK; }
+    virtual HRESULT i_onCaptureChange() { return S_OK; }
 
     HRESULT i_saveRegistryEntry(settings::MachineRegistryEntry &data);
 
@@ -539,8 +532,6 @@ public:
     Utf8Str i_getHardeningLogFilename(void);
 
     void i_composeSavedStateFilename(Utf8Str &strStateFilePath);
-
-    void i_getDefaultVideoCaptureFile(Utf8Str &strFile);
 
     bool i_isUSBControllerPresent();
 
@@ -782,6 +773,7 @@ protected:
     const ComObjPtr<AudioAdapter>      mAudioAdapter;
     const ComObjPtr<USBDeviceFilters>  mUSBDeviceFilters;
     const ComObjPtr<BIOSSettings>      mBIOSSettings;
+    const ComObjPtr<CaptureSettings>   mCaptureSettings;
     const ComObjPtr<BandwidthControl>  mBandwidthControl;
 
     typedef std::vector<ComObjPtr<NetworkAdapter> > NetworkAdapterVector;
@@ -828,9 +820,11 @@ protected:
     class DeleteConfigTask;
     void i_deleteConfigHandler(DeleteConfigTask &task);
 
+    friend class Appliance;
+    friend class CaptureSettings;
+    friend class CaptureScreenSettings;
     friend class SessionMachine;
     friend class SnapshotMachine;
-    friend class Appliance;
     friend class VirtualBox;
 
     friend class MachineCloneVM;
@@ -881,27 +875,8 @@ private:
     HRESULT setAccelerate2DVideoEnabled(BOOL aAccelerate2DVideoEnabled);
     HRESULT getMonitorCount(ULONG *aMonitorCount);
     HRESULT setMonitorCount(ULONG aMonitorCount);
-    HRESULT getVideoCaptureEnabled(BOOL *aVideoCaptureEnabled);
-    HRESULT setVideoCaptureEnabled(BOOL aVideoCaptureEnabled);
-    HRESULT getVideoCaptureScreens(std::vector<BOOL> &aVideoCaptureScreens);
-    HRESULT setVideoCaptureScreens(const std::vector<BOOL> &aVideoCaptureScreens);
-    HRESULT getVideoCaptureFile(com::Utf8Str &aVideoCaptureFile);
-    HRESULT setVideoCaptureFile(const com::Utf8Str &aVideoCaptureFile);
-    HRESULT getVideoCaptureWidth(ULONG *aVideoCaptureWidth);
-    HRESULT setVideoCaptureWidth(ULONG aVideoCaptureWidth);
-    HRESULT getVideoCaptureHeight(ULONG *aVideoCaptureHeight);
-    HRESULT setVideoCaptureHeight(ULONG aVideoCaptureHeight);
-    HRESULT getVideoCaptureRate(ULONG *aVideoCaptureRate);
-    HRESULT setVideoCaptureRate(ULONG aVideoCaptureRate);
-    HRESULT getVideoCaptureFPS(ULONG *aVideoCaptureFPS);
-    HRESULT setVideoCaptureFPS(ULONG aVideoCaptureFPS);
-    HRESULT getVideoCaptureMaxTime(ULONG *aVideoCaptureMaxTime);
-    HRESULT setVideoCaptureMaxTime(ULONG aVideoCaptureMaxTime);
-    HRESULT getVideoCaptureMaxFileSize(ULONG *aVideoCaptureMaxFileSize);
-    HRESULT setVideoCaptureMaxFileSize(ULONG aVideoCaptureMaxFileSize);
-    HRESULT getVideoCaptureOptions(com::Utf8Str &aVideoCaptureOptions);
-    HRESULT setVideoCaptureOptions(const com::Utf8Str &aVideoCaptureOptions);
     HRESULT getBIOSSettings(ComPtr<IBIOSSettings> &aBIOSSettings);
+    HRESULT getCaptureSettings(ComPtr<ICaptureSettings> &aCaptureSettings);
     HRESULT getFirmwareType(FirmwareType_T *aFirmwareType);
     HRESULT setFirmwareType(FirmwareType_T aFirmwareType);
     HRESULT getPointingHIDType(PointingHIDType_T *aPointingHIDType);
@@ -1347,7 +1322,7 @@ public:
     HRESULT i_onParallelPortChange(IParallelPort *parallelPort);
     HRESULT i_onCPUChange(ULONG aCPU, BOOL aRemove);
     HRESULT i_onVRDEServerChange(BOOL aRestart);
-    HRESULT i_onVideoCaptureChange();
+    HRESULT i_onCaptureChange();
     HRESULT i_onUSBControllerChange();
     HRESULT i_onUSBDeviceAttach(IUSBDevice *aDevice,
                                 IVirtualBoxErrorInfo *aError,

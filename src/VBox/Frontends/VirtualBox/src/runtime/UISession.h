@@ -258,7 +258,7 @@ public:
     /** Updates VRDE Server action state. */
     void updateStatusVRDE() { sltVRDEChange(); }
     /** Updates Video Capture action state. */
-    void updateStatusVideoCapture() { sltVideoCaptureChange(); }
+    void updateStatusCapture() { sltCaptureChange(); }
     /** Updates Audio output action state. */
     void updateAudioOutput() { sltAudioAdapterChange(); }
     /** Updates Audio input action state. */
@@ -304,7 +304,7 @@ signals:
     void sigStorageDeviceChange(const CMediumAttachment &attachment, bool fRemoved, bool fSilent);
     void sigMediumChange(const CMediumAttachment &mediumAttachment);
     void sigVRDEChange();
-    void sigVideoCaptureChange();
+    void sigCaptureChange();
     void sigUSBControllerChange();
     void sigUSBDeviceStateChange(const CUSBDevice &device, bool bIsAttached, const CVirtualBoxErrorInfo &error);
     void sigSharedFolderChange();
@@ -356,7 +356,7 @@ private slots:
     void sltStateChange(KMachineState state);
     void sltAdditionsChange();
     void sltVRDEChange();
-    void sltVideoCaptureChange();
+    void sltCaptureChange();
     void sltGuestMonitorChange(KGuestMonitorChangedEventType changeType, ulong uScreenId, QRect screenGeo);
     /** Handles storage device change for @a attachment, which was @a fRemoved and it was @a fSilent for guest. */
     void sltHandleStorageDeviceChange(const CMediumAttachment &attachment, bool fRemoved, bool fSilent);

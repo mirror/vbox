@@ -353,6 +353,12 @@ typedef enum LOGGROUP
     LOG_GROUP_MAIN_BANDWIDTHGROUPCHANGEDEVENT,
     /** Main group, IBIOSSettings. */
     LOG_GROUP_MAIN_BIOSSETTINGS,
+    /** Main group, ICaptureChangedEvent. */
+    LOG_GROUP_MAIN_CAPTURECHANGEDEVENT,
+    /** Main group, ICaptureSettings. */
+    LOG_GROUP_MAIN_CAPTURESETTINGS,
+    /** Main group, ICaptureScreenSettings. */
+    LOG_GROUP_MAIN_CAPTURESCREENSETTINGS,
     /** Main group, ICanShowWindowEvent. */
     LOG_GROUP_MAIN_CANSHOWWINDOWEVENT,
     /** Main group, ICertificate. */
@@ -661,8 +667,6 @@ typedef enum LOGGROUP
     LOG_GROUP_MAIN_VETOEVENT,
     /** Main group, IVFSExplorer. */
     LOG_GROUP_MAIN_VFSEXPLORER,
-    /** Main group, IVideoCaptureChangedEvent. */
-    LOG_GROUP_MAIN_VIDEOCAPTURECHANGEDEVENT,
     /** Main group, IVirtualBox. */
     LOG_GROUP_MAIN_VIRTUALBOX,
     /** Main group, IVirtualBoxClient. */
@@ -999,6 +1003,9 @@ typedef enum LOGGROUP
     "MAIN_BANDWIDTHGROUP", \
     "MAIN_BANDWIDTHGROUPCHANGEDEVENT", \
     "MAIN_BIOSSETTINGS", \
+    "MAIN_CAPTURECHANGEDEVENT", \
+    "MAIN_CAPTURESETTINGS", \
+    "MAIN_CAPTURESCREENSETTINGS", \
     "MAIN_CANSHOWWINDOWEVENT", \
     "MAIN_CERTIFICATE", \
     "MAIN_CLIPBOARDMODECHANGEDEVENT", \

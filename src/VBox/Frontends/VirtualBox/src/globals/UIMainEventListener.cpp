@@ -374,9 +374,9 @@ STDMETHODIMP UIMainEventListener::HandleEvent(VBoxEventType_T, IEvent *pEvent)
             emit sigVRDEChange();
             break;
         }
-        case KVBoxEventType_OnVideoCaptureChanged:
+        case KVBoxEventType_OnCaptureChanged:
         {
-            emit sigVideoCaptureChange();
+            emit sigCaptureChange();
             break;
         }
         case KVBoxEventType_OnUSBControllerChanged:

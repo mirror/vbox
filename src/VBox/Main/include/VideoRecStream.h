@@ -26,23 +26,21 @@
 #include <VBox/com/array.h>
 #include <VBox/com/VirtualBox.h>
 #include <VBox/err.h>
+#include <VBox/settings.h>
 
 #include "VideoRecInternals.h"
 
 class WebMWriter;
 
-struct VIDEORECCFG;
-typedef struct VIDEORECCFG *PVIDEORECCFG;
-
-struct VIDEORECCONTEXT;
-typedef struct VIDEORECCONTEXT *PVIDEORECCONTEXT;
+struct CaptureContext;
+typedef struct CaptureContext *PVIDEORECCONTEXT;
 
 
 /** Structure for queuing all blocks bound to a single timecode.
  *  This can happen if multiple tracks are being involved. */
-struct VideoRecBlocks
+struct CaptureBlocks
 {
-    virtual ~VideoRecBlocks()
+    virtual ~CaptureBlocks()
     {
         Clear();
     }
@@ -70,23 +68,23 @@ struct VideoRecBlocks
 /** A block map containing all currently queued blocks.
  *  The key specifies a unique timecode, whereas the value
  *  is a list of blocks which all correlate to the same key (timecode). */
-typedef std::map<uint64_t, VideoRecBlocks *> VideoRecBlockMap;
+typedef std::map<uint64_t, CaptureBlocks *> VideoRecBlockMap;
 
 /**
- * Structure for holding a set of video recording (data) blocks.
+ * Structure for holding a set of recording (data) blocks.
  */
-struct VideoRecBlockSet
+struct CaptureBlockSet
 {
-    virtual ~VideoRecBlockSet()
+    virtual ~CaptureBlockSet()
     {
         Clear();
     }
 
     /**
-     * Resets a video recording block set by removing (destroying)
+     * Resets a recording block set by removing (destroying)
      * all current elements.
      */
-    void Clear()
+    void Clear(void)
     {
         VideoRecBlockMap::iterator it = Map.begin();
         while (it != Map.end())
@@ -107,14 +105,58 @@ struct VideoRecBlockSet
 };
 
 /**
- * Structure for maintaining a video recording stream.
+ * Class for managing a recording stream.
  */
-typedef struct VIDEORECSTREAM
+class CaptureStream
 {
-    /** Video recording context this stream is associated to. */
-    PVIDEORECCONTEXT            pCtx;
-    /** Destination where to write the stream to. */
-    VIDEORECDEST                enmDst;
+public:
+
+    CaptureStream(void);
+
+    CaptureStream(uint32_t a_uScreen, const settings::CaptureScreenSettings &a_Settings);
+
+    virtual ~CaptureStream(void);
+
+public:
+
+    int Init(uint32_t a_uScreen, const settings::CaptureScreenSettings &a_Settings);
+    int Uninit(void);
+
+    int Process(VideoRecBlockMap &mapBlocksCommon);
+    int SendVideoFrame(uint32_t x, uint32_t y, uint32_t uPixelFormat, uint32_t uBPP, uint32_t uBytesPerLine,
+                       uint32_t uSrcWidth, uint32_t uSrcHeight, uint8_t *puSrcData, uint64_t uTimeStampMs);
+
+    const settings::CaptureScreenSettings &GetConfig(void) const;
+    bool IsLimitReached(uint64_t tsNowMs) const;
+    bool IsReady(void) const;
+
+protected:
+
+    int open(void);
+    int close(void);
+
+    int initInternal(uint32_t a_uScreen, const settings::CaptureScreenSettings &a_Settings);
+    int uninitInternal(void);
+
+    int initVideo(void);
+    int unitVideo(void);
+
+    int initAudio(void);
+
+#ifdef VBOX_WITH_LIBVPX
+    int initVideoVPX(void);
+    int uninitVideoVPX(void);
+    int writeVideoVPX(uint64_t uTimeStampMs, PVIDEORECVIDEOFRAME pFrame);
+#endif
+    void lock(void);
+    void unlock(void);
+
+    int parseOptionsString(const com::Utf8Str &strOptions);
+
+protected:
+
+    /** Recording context this stream is associated to. */
+    CaptureContext             *pCtx;
     union
     {
         struct
@@ -122,11 +164,12 @@ typedef struct VIDEORECSTREAM
             /** File handle to use for writing. */
             RTFILE              hFile;
             /** File name being used for this stream. */
-            char               *pszFile;
+            Utf8Str             strName;
             /** Pointer to WebM writer instance being used. */
             WebMWriter         *pWEBM;
         } File;
     };
+    bool                fEnabled;
 #ifdef VBOX_WITH_AUDIO_VIDEOREC
     /** Track number of audio stream. */
     uint8_t             uTrackAudio;
@@ -135,50 +178,31 @@ typedef struct VIDEORECSTREAM
     uint8_t             uTrackVideo;
     /** Screen ID. */
     uint16_t            uScreenID;
-    /** Whether video recording is enabled or not. */
-    bool                fEnabled;
     /** Critical section to serialize access. */
     RTCRITSECT          CritSect;
+    /** Timestamp (in ms) of when recording has been start. */
+    uint64_t            tsStartMs;
 
     struct
     {
-        /** Codec-specific data. */
-        VIDEORECVIDEOCODEC  Codec;
         /** Minimal delay (in ms) between two video frames.
          *  This value is based on the configured FPS rate. */
         uint32_t            uDelayMs;
-        /** Target X resolution (in pixels). */
-        uint32_t            uWidth;
-        /** Target Y resolution (in pixels). */
-        uint32_t            uHeight;
         /** Time stamp (in ms) of the last video frame we encoded. */
         uint64_t            uLastTimeStampMs;
         /** Number of failed attempts to encode the current video frame in a row. */
         uint16_t            cFailedEncodingFrames;
+        VIDEORECVIDEOCODEC  Codec;
     } Video;
 
+    settings::CaptureScreenSettings Settings;
     /** Common set of video recording (data) blocks, needed for
      *  multiplexing to all recording streams. */
-    VideoRecBlockSet Blocks;
-} VIDEORECSTREAM, *PVIDEORECSTREAM;
+    CaptureBlockSet                 Blocks;
+};
 
 /** Vector of video recording streams. */
-typedef std::vector <PVIDEORECSTREAM> VideoRecStreams;
-
-int VideoRecStreamClose(PVIDEORECSTREAM pStream);
-int VideoRecStreamOpen(PVIDEORECSTREAM pStream, PVIDEORECCFG pCfg);
-int VideoRecStreamProcess(PVIDEORECSTREAM pStream);
-int VideoRecStreamInit(PVIDEORECSTREAM pStream, PVIDEORECCONTEXT pCtx, uint32_t uScreen);
-int VideoRecStreamUninit(PVIDEORECSTREAM pStream);
-int VideoRecStreamUnitVideo(PVIDEORECSTREAM pStream);
-int VideoRecStreamInitVideo(PVIDEORECSTREAM pStream, PVIDEORECCFG pCfg);
-#ifdef VBOX_WITH_LIBVPX
-int VideoRecStreamInitVideoVPX(PVIDEORECSTREAM pStream, PVIDEORECCFG pCfg);
-int VideoRecStreamUninitVideoVPX(PVIDEORECSTREAM pStream);
-int VideoRecStreamWriteVideoVPX(PVIDEORECSTREAM pStream, uint64_t uTimeStampMs, PVIDEORECVIDEOFRAME pFrame);
-#endif
-void VideoRecStreamLock(PVIDEORECSTREAM pStream);
-void VideoRecStreamUnlock(PVIDEORECSTREAM pStream);
+typedef std::vector <CaptureStream *> VideoRecStreams;
 
 #endif /* ____H_VIDEOREC_STREAM */
 

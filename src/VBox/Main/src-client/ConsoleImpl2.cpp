@@ -2997,7 +2997,7 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
             CFGMR3InsertNodeF(pInst, &pLunL0, "LUN#%RU8", uAudioLUN);
                 InsertConfigString(pLunL0, "Driver", "AUDIO");
             AudioDriverCfg DrvCfgVideoRec(strAudioDevice, 0 /* Instance */, uAudioLUN, "AudioVideoRec");
-            rc = mAudioVideoRec->InitializeConfig(&DrvCfgVideoRec);
+            rc = Capture.mAudioVideoRec->InitializeConfig(&DrvCfgVideoRec);
             if (RT_SUCCESS(rc))
                 uAudioLUN++;
 #endif /* VBOX_WITH_AUDIO_VIDEOREC */

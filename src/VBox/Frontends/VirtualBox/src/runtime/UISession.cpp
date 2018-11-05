@@ -59,6 +59,7 @@
 
 /* COM includes: */
 # include "CAudioAdapter.h"
+# include "CCaptureSettings.h"
 # include "CSystemProperties.h"
 # include "CStorageController.h"
 # include "CMediumAttachment.h"
@@ -720,15 +721,17 @@ void UISession::sltVRDEChange()
     emit sigVRDEChange();
 }
 
-void UISession::sltVideoCaptureChange()
+void UISession::sltCaptureChange()
 {
-    /* Check/Uncheck Video Capture action depending on feature status: */
-    actionPool()->action(UIActionIndexRT_M_View_M_VideoCapture_T_Start)->blockSignals(true);
-    actionPool()->action(UIActionIndexRT_M_View_M_VideoCapture_T_Start)->setChecked(machine().GetVideoCaptureEnabled());
-    actionPool()->action(UIActionIndexRT_M_View_M_VideoCapture_T_Start)->blockSignals(false);
+    CCaptureSettings captureSettings = machine().GetCaptureSettings();
 
-    /* Notify listeners about Video Capture change: */
-    emit sigVideoCaptureChange();
+    /* Check/Uncheck Capture action depending on feature status: */
+    actionPool()->action(UIActionIndexRT_M_View_M_Capture_T_Start)->blockSignals(true);
+    actionPool()->action(UIActionIndexRT_M_View_M_Capture_T_Start)->setChecked(captureSettings.GetEnabled());
+    actionPool()->action(UIActionIndexRT_M_View_M_Capture_T_Start)->blockSignals(false);
+
+    /* Notify listeners about Capture change: */
+    emit sigCaptureChange();
 }
 
 void UISession::sltGuestMonitorChange(KGuestMonitorChangedEventType changeType, ulong uScreenId, QRect screenGeo)
@@ -1130,7 +1133,7 @@ void UISession::prepareConsoleEventHandlers()
             this, SLOT(sltVRDEChange()));
 
     connect(gConsoleEvents, SIGNAL(sigVideoCaptureChange()),
-            this, SLOT(sltVideoCaptureChange()));
+            this, SLOT(sltCaptureChange()));
 
     connect(gConsoleEvents, SIGNAL(sigNetworkAdapterChange(CNetworkAdapter)),
             this, SIGNAL(sigNetworkAdapterChange(CNetworkAdapter)));

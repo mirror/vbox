@@ -3306,8 +3306,8 @@ void UIActionPoolRuntime::preparePool()
     m_pool[UIActionIndexRT_M_View_T_GuestAutoresize] = new UIActionToggleRuntimeGuestAutoresize(this);
     m_pool[UIActionIndexRT_M_View_S_TakeScreenshot] = new UIActionSimpleRuntimePerformTakeScreenshot(this);
     m_pool[UIActionIndexRT_M_View_M_VideoCapture] = new UIActionMenuRuntimeVideoCapture(this);
-    m_pool[UIActionIndexRT_M_View_M_VideoCapture_S_Settings] = new UIActionSimpleRuntimeShowVideoCaptureSettings(this);
-    m_pool[UIActionIndexRT_M_View_M_VideoCapture_T_Start] = new UIActionToggleRuntimeVideoCapture(this);
+    m_pool[UIActionIndexRT_M_View_M_Capture_S_Settings] = new UIActionSimpleRuntimeShowVideoCaptureSettings(this);
+    m_pool[UIActionIndexRT_M_View_M_Capture_T_Start] = new UIActionToggleRuntimeVideoCapture(this);
     m_pool[UIActionIndexRT_M_View_T_VRDEServer] = new UIActionToggleRuntimeVRDEServer(this);
     m_pool[UIActionIndexRT_M_View_M_MenuBar] = new UIActionMenuRuntimeMenuBar(this);
     m_pool[UIActionIndexRT_M_View_M_MenuBar_S_Settings] = new UIActionSimpleRuntimeShowMenuBarSettings(this);
@@ -3661,7 +3661,7 @@ void UIActionPoolRuntime::updateMenuView()
     fSeparator = addAction(pMenu, action(UIActionIndexRT_M_View_M_VideoCapture), false) || fSeparator;
     updateMenuViewVideoCapture();
     /* 'Video Capture Start' action: */
-    fSeparator = addAction(pMenu, action(UIActionIndexRT_M_View_M_VideoCapture_T_Start)) || fSeparator;
+    fSeparator = addAction(pMenu, action(UIActionIndexRT_M_View_M_Capture_T_Start)) || fSeparator;
     /* 'VRDE Server' action: */
     fSeparator = addAction(pMenu, action(UIActionIndexRT_M_View_T_VRDEServer)) || fSeparator;
 
@@ -3776,7 +3776,7 @@ void UIActionPoolRuntime::updateMenuViewVideoCapture()
     bool fSeparator = false;
 
     /* 'Video Capture Settings' action: */
-    fSeparator = addAction(pMenu, action(UIActionIndexRT_M_View_M_VideoCapture_S_Settings)) || fSeparator;
+    fSeparator = addAction(pMenu, action(UIActionIndexRT_M_View_M_Capture_S_Settings)) || fSeparator;
 
     /* Separator: */
     if (fSeparator)
@@ -3786,7 +3786,7 @@ void UIActionPoolRuntime::updateMenuViewVideoCapture()
     }
 
     /* 'Start Video Capture' action: */
-    fSeparator = addAction(pMenu, action(UIActionIndexRT_M_View_M_VideoCapture_T_Start)) || fSeparator;
+    fSeparator = addAction(pMenu, action(UIActionIndexRT_M_View_M_Capture_T_Start)) || fSeparator;
 
     /* Mark menu as valid: */
     m_invalidations.remove(UIActionIndexRT_M_View_M_VideoCapture);
