@@ -203,7 +203,7 @@ HRESULT CaptureScreenSettings::getEnabled(BOOL *enabled)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    *enabled = m->bd->fEnabled;
+    *enabled = m->bd->fEnabled ? TRUE : FALSE;
 
     return S_OK;
 }
@@ -212,7 +212,7 @@ HRESULT CaptureScreenSettings::setEnabled(BOOL enabled)
 {
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    if (m->bd->fEnabled != enabled)
+    if (m->bd->fEnabled != RT_BOOL(enabled))
     {
         alock.release();
 
