@@ -6892,12 +6892,12 @@ int Console::i_videoRecLoad(settings::CaptureSettings &Settings)
     AssertComRCReturn(hrc, VERR_INVALID_PARAMETER);
 
     SafeIfaceArray<ICaptureScreenSettings> paCaptureScreens;
-    hrc = pCaptureSettings->GetScreens(ComSafeArrayAsOutParam(paCaptureScreens));
+    hrc = pCaptureSettings->COMGETTER(Screens)(ComSafeArrayAsOutParam(paCaptureScreens));
     AssertComRCReturn(hrc, VERR_INVALID_PARAMETER);
 
     Settings.mapScreens.clear();
 
-    for (size_t i = 0; i < paCaptureScreens.size(); ++i)
+    for (unsigned long i = 0; i < (unsigned long)paCaptureScreens.size(); ++i)
     {
         settings::CaptureScreenSettings CaptureScreenSettings;
         ComPtr<ICaptureScreenSettings> pCaptureScreenSettings = paCaptureScreens[i];

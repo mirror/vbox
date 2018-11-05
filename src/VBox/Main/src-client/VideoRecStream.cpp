@@ -1063,8 +1063,6 @@ int CaptureStream::writeVideoVPX(uint64_t uTimeStampMs, PVIDEORECVIDEOFRAME pFra
 
 /**
  * Locks a recording stream.
- *
- * @param   pStream             Recording stream to lock.
  */
 void CaptureStream::lock(void)
 {
@@ -1074,8 +1072,6 @@ void CaptureStream::lock(void)
 
 /**
  * Unlocks a locked recording stream.
- *
- * @param   pStream             Recording stream to unlock.
  */
 void CaptureStream::unlock(void)
 {
