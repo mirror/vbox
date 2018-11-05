@@ -483,10 +483,8 @@ struct BIOSSettings
 /** List for keeping a capturing feature list. */
 typedef std::map<CaptureFeature_T, bool> CaptureFeatureMap;
 
-class CaptureScreenSettings
+struct CaptureScreenSettings
 {
-public:
-
     CaptureScreenSettings();
 
     virtual ~CaptureScreenSettings();
