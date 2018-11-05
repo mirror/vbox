@@ -2516,7 +2516,7 @@ bool CaptureSettings::operator==(const CaptureSettings &d) const
         return false;
 
     CaptureScreenMap::const_iterator itScreen = mapScreens.begin();
-    size_t i = 0;
+    unsigned long i = 0;
     while (itScreen != mapScreens.end())
     {
         CaptureScreenMap::const_iterator itScreenThat = d.mapScreens.find(i);
@@ -4425,7 +4425,7 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
 
             for (unsigned i = 0; i < 64; i++)
             {
-                if (u64VideoCaptureScreens & RT_BIT(i)) /* Screen i enabled? */
+                if (u64VideoCaptureScreens & RT_BIT_64(i)) /* Screen i enabled? */
                 {
                     hw.captureSettings.mapScreens[i] = screen0Settings;
                     hw.captureSettings.mapScreens[i].fEnabled = true;
@@ -5827,7 +5827,7 @@ void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
         while (itScreen != hw.captureSettings.mapScreens.end())
         {
             if (itScreen->second.fEnabled)
-               u64VideoCaptureScreens |= RT_BIT(itScreen->first);
+               u64VideoCaptureScreens |= RT_BIT_64(itScreen->first);
             ++itScreen;
         }
 
