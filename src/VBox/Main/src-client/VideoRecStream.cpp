@@ -46,10 +46,10 @@ CaptureStream::CaptureStream(void)
 {
 }
 
-CaptureStream::CaptureStream(uint32_t a_uScreen, const settings::CaptureScreenSettings &a_Settings)
+CaptureStream::CaptureStream(uint32_t uScreen, const settings::CaptureScreenSettings &Settings)
     : tsStartMs(0)
 {
-    int rc2 = initInternal(a_uScreen, a_Settings);
+    int rc2 = initInternal(uScreen, Settings);
     if (RT_FAILURE(rc2))
         throw rc2;
 }
@@ -67,17 +67,17 @@ CaptureStream::~CaptureStream(void)
  */
 int CaptureStream::open(void)
 {
-    Assert(Settings.enmDest == CaptureDestination_None);
+    Assert(ScreenSettings.enmDest == CaptureDestination_None);
 
     int rc;
 
-    switch (Settings.enmDest)
+    switch (ScreenSettings.enmDest)
     {
         case CaptureDestination_File:
         {
-            Assert(Settings.File.strName.isNotEmpty());
+            Assert(ScreenSettings.File.strName.isNotEmpty());
 
-            char *pszAbsPath = RTPathAbsDup(Settings.File.strName.c_str());
+            char *pszAbsPath = RTPathAbsDup(ScreenSettings.File.strName.c_str());
             AssertPtrReturn(pszAbsPath, VERR_NO_MEMORY);
 
             RTPathStripSuffix(pszAbsPath);
@@ -171,11 +171,11 @@ int CaptureStream::parseOptionsString(const com::Utf8Str &strOptions)
         if (key.compare("vc_quality", Utf8Str::CaseInsensitive) == 0)
         {
 #ifdef VBOX_WITH_LIBVPX
-            Assert(this->Settings.Video.ulFPS);
+            Assert(this->ScreenSettings.Video.ulFPS);
             if (value.compare("realtime", Utf8Str::CaseInsensitive) == 0)
                 this->Video.Codec.VPX.uEncoderDeadline = VPX_DL_REALTIME;
             else if (value.compare("good", Utf8Str::CaseInsensitive) == 0)
-                this->Video.Codec.VPX.uEncoderDeadline = 1000000 / this->Settings.Video.ulFPS;
+                this->Video.Codec.VPX.uEncoderDeadline = 1000000 / this->ScreenSettings.Video.ulFPS;
             else if (value.compare("best", Utf8Str::CaseInsensitive) == 0)
                 this->Video.Codec.VPX.uEncoderDeadline = VPX_DL_BEST_QUALITY;
             else
@@ -189,7 +189,7 @@ int CaptureStream::parseOptionsString(const com::Utf8Str &strOptions)
         {
             if (value.compare("false", Utf8Str::CaseInsensitive) == 0)
             {
-                this->Settings.featureMap[CaptureFeature_Video] = false;
+                this->ScreenSettings.featureMap[CaptureFeature_Video] = false;
 #ifdef VBOX_WITH_AUDIO_VIDEOREC
                 LogRel(("VideoRec: Only audio will be recorded\n"));
 #endif
@@ -200,7 +200,7 @@ int CaptureStream::parseOptionsString(const com::Utf8Str &strOptions)
 #ifdef VBOX_WITH_AUDIO_VIDEOREC
             if (value.compare("true", Utf8Str::CaseInsensitive) == 0)
             {
-                this->Settings.featureMap[CaptureFeature_Audio] = true;
+                this->ScreenSettings.featureMap[CaptureFeature_Audio] = true;
             }
             else
                 LogRel(("VideoRec: Only video will be recorded\n"));
@@ -211,9 +211,9 @@ int CaptureStream::parseOptionsString(const com::Utf8Str &strOptions)
 #ifdef VBOX_WITH_AUDIO_VIDEOREC
             if (value.compare("low", Utf8Str::CaseInsensitive) == 0)
             {
-                this->Settings.Audio.uHz       = 8000;
-                this->Settings.Audio.cBits     = 16;
-                this->Settings.Audio.cChannels = 1;
+                this->ScreenSettings.Audio.uHz       = 8000;
+                this->ScreenSettings.Audio.cBits     = 16;
+                this->ScreenSettings.Audio.cChannels = 1;
             }
             else if (value.startsWith("med" /* "med[ium]" */, Utf8Str::CaseInsensitive) == 0)
             {
@@ -221,9 +221,9 @@ int CaptureStream::parseOptionsString(const com::Utf8Str &strOptions)
             }
             else if (value.compare("high", Utf8Str::CaseInsensitive) == 0)
             {
-                this->Settings.Audio.uHz       = 48000;
-                this->Settings.Audio.cBits     = 16;
-                this->Settings.Audio.cChannels = 2;
+                this->ScreenSettings.Audio.uHz       = 48000;
+                this->ScreenSettings.Audio.cBits     = 16;
+                this->ScreenSettings.Audio.cChannels = 2;
             }
 #endif
         }
@@ -237,7 +237,7 @@ int CaptureStream::parseOptionsString(const com::Utf8Str &strOptions)
 
 const settings::CaptureScreenSettings &CaptureStream::GetConfig(void) const
 {
-    return this->Settings;
+    return this->ScreenSettings;
 }
 
 /**
@@ -251,19 +251,19 @@ bool CaptureStream::IsLimitReached(uint64_t tsNowMs) const
     if (!IsReady())
         return true;
 
-    if (   Settings.ulMaxTimeS
-        && tsNowMs >= this->tsStartMs + (Settings.ulMaxTimeS * RT_MS_1SEC))
+    if (   this->ScreenSettings.ulMaxTimeS
+        && tsNowMs >= this->tsStartMs + (this->ScreenSettings.ulMaxTimeS * RT_MS_1SEC))
     {
         return true;
     }
 
-    if (Settings.enmDest == CaptureDestination_File)
+    if (this->ScreenSettings.enmDest == CaptureDestination_File)
     {
 
-        if (Settings.File.ulMaxSizeMB)
+        if (this->ScreenSettings.File.ulMaxSizeMB)
         {
             uint64_t sizeInMB = this->File.pWEBM->GetFileSize() / _1M;
-            if(sizeInMB >= Settings.File.ulMaxSizeMB)
+            if(sizeInMB >= this->ScreenSettings.File.ulMaxSizeMB)
                 return true;
         }
 
@@ -296,7 +296,7 @@ int CaptureStream::Process(VideoRecBlockMap &mapBlocksCommon)
 {
     lock();
 
-    if (!Settings.fEnabled)
+    if (!this->ScreenSettings.fEnabled)
     {
         unlock();
         return VINF_SUCCESS;
@@ -326,7 +326,7 @@ int CaptureStream::Process(VideoRecBlockMap &mapBlocksCommon)
                                       /* Destination */
                                       this->Video.Codec.VPX.pu8YuvBuf, pVideoFrame->uWidth, pVideoFrame->uHeight,
                                       /* Source */
-                                      pVideoFrame->pu8RGBBuf, this->Settings.Video.ulWidth, this->Settings.Video.ulHeight);
+                                      pVideoFrame->pu8RGBBuf, this->ScreenSettings.Video.ulWidth, this->ScreenSettings.Video.ulHeight);
                 if (RT_SUCCESS(rc))
                 {
                     rc = writeVideoVPX(uTimeStampMs, pVideoFrame);
@@ -439,7 +439,7 @@ int CaptureStream::SendVideoFrame(uint32_t x, uint32_t y, uint32_t uPixelFormat,
 
         this->Video.uLastTimeStampMs = uTimeStampMs;
 
-        int xDiff = ((int)this->Settings.Video.ulWidth - (int)uSrcWidth) / 2;
+        int xDiff = ((int)this->ScreenSettings.Video.ulWidth - (int)uSrcWidth) / 2;
         uint32_t w = uSrcWidth;
         if ((int)w + xDiff + (int)x <= 0)  /* Nothing visible. */
         {
@@ -458,7 +458,7 @@ int CaptureStream::SendVideoFrame(uint32_t x, uint32_t y, uint32_t uPixelFormat,
             destX = x + xDiff;
 
         uint32_t h = uSrcHeight;
-        int yDiff = ((int)this->Settings.Video.ulHeight - (int)uSrcHeight) / 2;
+        int yDiff = ((int)this->ScreenSettings.Video.ulHeight - (int)uSrcHeight) / 2;
         if ((int)h + yDiff + (int)y <= 0)  /* Nothing visible. */
         {
             rc = VERR_INVALID_PARAMETER;
@@ -475,18 +475,18 @@ int CaptureStream::SendVideoFrame(uint32_t x, uint32_t y, uint32_t uPixelFormat,
         else
             destY = y + yDiff;
 
-        if (   destX > this->Settings.Video.ulWidth
-            || destY > this->Settings.Video.ulHeight)
+        if (   destX > this->ScreenSettings.Video.ulWidth
+            || destY > this->ScreenSettings.Video.ulHeight)
         {
             rc = VERR_INVALID_PARAMETER;  /* Nothing visible. */
             break;
         }
 
-        if (destX + w > this->Settings.Video.ulWidth)
-            w = this->Settings.Video.ulWidth - destX;
+        if (destX + w > this->ScreenSettings.Video.ulWidth)
+            w = this->ScreenSettings.Video.ulWidth - destX;
 
-        if (destY + h > this->Settings.Video.ulHeight)
-            h = this->Settings.Video.ulHeight - destY;
+        if (destY + h > this->ScreenSettings.Video.ulHeight)
+            h = this->ScreenSettings.Video.ulHeight - destY;
 
         pFrame = (PVIDEORECVIDEOFRAME)RTMemAllocZ(sizeof(VIDEORECVIDEOFRAME));
         AssertBreakStmt(pFrame, rc = VERR_NO_MEMORY);
@@ -514,8 +514,8 @@ int CaptureStream::SendVideoFrame(uint32_t x, uint32_t y, uint32_t uPixelFormat,
         else
             AssertMsgFailedBreakStmt(("Unknown pixel format (%RU32)\n", uPixelFormat), rc = VERR_NOT_SUPPORTED);
 
-        const size_t cbRGBBuf =   this->Settings.Video.ulWidth
-                                * this->Settings.Video.ulHeight
+        const size_t cbRGBBuf =   this->ScreenSettings.Video.ulWidth
+                                * this->ScreenSettings.Video.ulHeight
                                 * uBytesPerPixel;
         AssertBreakStmt(cbRGBBuf, rc = VERR_INVALID_PARAMETER);
 
@@ -527,15 +527,15 @@ int CaptureStream::SendVideoFrame(uint32_t x, uint32_t y, uint32_t uPixelFormat,
 
         /* If the current video frame is smaller than video resolution we're going to encode,
          * clear the frame beforehand to prevent artifacts. */
-        if (   uSrcWidth  < this->Settings.Video.ulWidth
-            || uSrcHeight < this->Settings.Video.ulHeight)
+        if (   uSrcWidth  < this->ScreenSettings.Video.ulWidth
+            || uSrcHeight < this->ScreenSettings.Video.ulHeight)
         {
             RT_BZERO(pFrame->pu8RGBBuf, pFrame->cbRGBBuf);
         }
 
         /* Calculate start offset in source and destination buffers. */
         uint32_t offSrc = y * uBytesPerLine + x * uBytesPerPixel;
-        uint32_t offDst = (destY * this->Settings.Video.ulWidth + destX) * uBytesPerPixel;
+        uint32_t offDst = (destY * this->ScreenSettings.Video.ulWidth + destX) * uBytesPerPixel;
 
 #ifdef VBOX_VIDEOREC_DUMP
         VIDEORECBMPHDR bmpHdr;
@@ -575,7 +575,7 @@ int CaptureStream::SendVideoFrame(uint32_t x, uint32_t y, uint32_t uPixelFormat,
         {
             /* Overflow check. */
             Assert(offSrc + w * uBytesPerPixel <= uSrcHeight * uBytesPerLine);
-            Assert(offDst + w * uBytesPerPixel <= this->Settings.Video.ulHeight * this->Settings.Video.ulWidth * uBytesPerPixel);
+            Assert(offDst + w * uBytesPerPixel <= this->ScreenSettings.Video.ulHeight * this->ScreenSettings.Video.ulWidth * uBytesPerPixel);
 
             memcpy(pFrame->pu8RGBBuf + offDst, puSrcData + offSrc, w * uBytesPerPixel);
 
@@ -584,7 +584,7 @@ int CaptureStream::SendVideoFrame(uint32_t x, uint32_t y, uint32_t uPixelFormat,
                 RTFileWrite(fh, pFrame->pu8RGBBuf + offDst, w * uBytesPerPixel, NULL);
 #endif
             offSrc += uBytesPerLine;
-            offDst += this->Settings.Video.ulWidth * uBytesPerPixel;
+            offDst += this->ScreenSettings.Video.ulWidth * uBytesPerPixel;
         }
 
 #ifdef VBOX_VIDEOREC_DUMP
@@ -633,9 +633,9 @@ int CaptureStream::SendVideoFrame(uint32_t x, uint32_t y, uint32_t uPixelFormat,
     return rc;
 }
 
-int CaptureStream::Init(uint32_t a_uScreen, const settings::CaptureScreenSettings &a_Settings)
+int CaptureStream::Init(uint32_t uScreen, const settings::CaptureScreenSettings &Settings)
 {
-    return initInternal(a_uScreen, a_Settings);
+    return initInternal(uScreen, Settings);
 }
 
 /**
@@ -643,11 +643,11 @@ int CaptureStream::Init(uint32_t a_uScreen, const settings::CaptureScreenSetting
  *
  * @returns IPRT status code.
  * @param   uScreen             Screen number to use for this recording stream.
- * @param   Cfg                 Recording screen configuration to use for initialization.
+ * @param   Settings            Capturing configuration to use for initialization.
  */
-int CaptureStream::initInternal(uint32_t a_uScreen, const settings::CaptureScreenSettings &a_Settings)
+int CaptureStream::initInternal(uint32_t uScreen, const settings::CaptureScreenSettings &Settings)
 {
-    int rc = parseOptionsString(a_Settings.strOptions);
+    int rc = parseOptionsString(Settings.strOptions);
     if (RT_FAILURE(rc))
         return rc;
 
@@ -659,8 +659,8 @@ int CaptureStream::initInternal(uint32_t a_uScreen, const settings::CaptureScree
     if (RT_FAILURE(rc))
         return rc;
 
-    const bool fVideoEnabled = a_Settings.isFeatureEnabled(CaptureFeature_Video);
-    const bool fAudioEnabled = a_Settings.isFeatureEnabled(CaptureFeature_Audio);
+    const bool fVideoEnabled = Settings.isFeatureEnabled(CaptureFeature_Video);
+    const bool fAudioEnabled = Settings.isFeatureEnabled(CaptureFeature_Audio);
 
     if (fVideoEnabled)
         rc = initVideo();
@@ -668,20 +668,20 @@ int CaptureStream::initInternal(uint32_t a_uScreen, const settings::CaptureScree
     if (fAudioEnabled)
         rc = initAudio();
 
-    switch (this->Settings.enmDest)
+    switch (this->ScreenSettings.enmDest)
     {
         case CaptureDestination_File:
         {
-            const char *pszFile = this->Settings.File.strName.c_str();
+            const char *pszFile = this->ScreenSettings.File.strName.c_str();
 
             rc = File.pWEBM->OpenEx(pszFile, &this->File.hFile,
 #ifdef VBOX_WITH_AUDIO_VIDEOREC
-                                      a_Settings.isFeatureEnabled(CaptureFeature_Audio)
+                                      Settings.isFeatureEnabled(CaptureFeature_Audio)
                                     ? WebMWriter::AudioCodec_Opus : WebMWriter::AudioCodec_None,
 #else
                                       WebMWriter::AudioCodec_None,
 #endif
-                                      a_Settings.isFeatureEnabled(CaptureFeature_Video)
+                                      Settings.isFeatureEnabled(CaptureFeature_Video)
                                     ? WebMWriter::VideoCodec_VP8 : WebMWriter::VideoCodec_None);
             if (RT_FAILURE(rc))
             {
@@ -691,8 +691,8 @@ int CaptureStream::initInternal(uint32_t a_uScreen, const settings::CaptureScree
 
             if (fVideoEnabled)
             {
-                rc = this->File.pWEBM->AddVideoTrack(a_Settings.Video.ulWidth, a_Settings.Video.ulHeight,
-                                                     a_Settings.Video.ulFPS, &this->uTrackVideo);
+                rc = this->File.pWEBM->AddVideoTrack(Settings.Video.ulWidth, Settings.Video.ulHeight,
+                                                     Settings.Video.ulFPS, &this->uTrackVideo);
                 if (RT_FAILURE(rc))
                 {
                     LogRel(("VideoRec: Failed to add video track to output file '%s' (%Rrc)\n", pszFile, rc));
@@ -700,14 +700,14 @@ int CaptureStream::initInternal(uint32_t a_uScreen, const settings::CaptureScree
                 }
 
                 LogRel(("VideoRec: Recording video of screen #%u with %RU32x%RU32 @ %RU32 kbps, %RU32 FPS (track #%RU8)\n",
-                        this->uScreenID, a_Settings.Video.ulWidth, a_Settings.Video.ulHeight, a_Settings.Video.ulRate,
-                        a_Settings.Video.ulFPS, this->uTrackVideo));
+                        this->uScreenID, Settings.Video.ulWidth, Settings.Video.ulHeight, Settings.Video.ulRate,
+                        Settings.Video.ulFPS, this->uTrackVideo));
             }
 
 #ifdef VBOX_WITH_AUDIO_VIDEOREC
             if (fAudioEnabled)
             {
-                rc = this->File.pWEBM->AddAudioTrack(a_Settings.Audio.uHz, a_Settings.Audio.cChannels, a_Settings.Audio.cBits,
+                rc = this->File.pWEBM->AddAudioTrack(Settings.Audio.uHz, Settings.Audio.cChannels, Settings.Audio.cBits,
                                                      &this->uTrackAudio);
                 if (RT_FAILURE(rc))
                 {
@@ -716,8 +716,8 @@ int CaptureStream::initInternal(uint32_t a_uScreen, const settings::CaptureScree
                 }
 
                 LogRel(("VideoRec: Recording audio in %RU16Hz, %RU8 bit, %RU8 %s (track #%RU8)\n",
-                        a_Settings.Audio.uHz, a_Settings.Audio.cBits, a_Settings.Audio.cChannels,
-                        a_Settings.Audio.cChannels ? "channels" : "channel", this->uTrackAudio));
+                        Settings.Audio.uHz, Settings.Audio.cBits, Settings.Audio.cChannels,
+                        Settings.Audio.cChannels ? "channels" : "channel", this->uTrackAudio));
             }
 #endif
 
@@ -754,9 +754,9 @@ int CaptureStream::initInternal(uint32_t a_uScreen, const settings::CaptureScree
     {
         this->pCtx      = pCtx;
         this->fEnabled  = true;
-        this->uScreenID = a_uScreen;
+        this->uScreenID = uScreen;
         this->tsStartMs = RTTimeMilliTS();
-        this->Settings  = a_Settings;
+        this->ScreenSettings  = Settings;
     }
     else
     {
@@ -781,7 +781,7 @@ int CaptureStream::close(void)
 
     if (this->fEnabled)
     {
-        switch (this->Settings.enmDest)
+        switch (this->ScreenSettings.enmDest)
         {
             case CaptureDestination_File:
             {
@@ -806,7 +806,7 @@ int CaptureStream::close(void)
         return rc;
     }
 
-    switch (this->Settings.enmDest)
+    switch (this->ScreenSettings.enmDest)
     {
         case CaptureDestination_File:
         {
@@ -815,11 +815,11 @@ int CaptureStream::close(void)
                 rc = RTFileClose(this->File.hFile);
                 if (RT_SUCCESS(rc))
                 {
-                    LogRel(("VideoRec: Closed file '%s'\n", this->Settings.File.strName.c_str()));
+                    LogRel(("VideoRec: Closed file '%s'\n", this->ScreenSettings.File.strName.c_str()));
                 }
                 else
                 {
-                    LogRel(("VideoRec: Error closing file '%s', rc=%Rrc\n", this->Settings.File.strName.c_str(), rc));
+                    LogRel(("VideoRec: Error closing file '%s', rc=%Rrc\n", this->ScreenSettings.File.strName.c_str(), rc));
                     break;
                 }
             }
@@ -857,7 +857,7 @@ int CaptureStream::uninitInternal(void)
     if (RT_FAILURE(rc))
         return rc;
 
-    if (this->Settings.isFeatureEnabled(CaptureFeature_Video))
+    if (this->ScreenSettings.isFeatureEnabled(CaptureFeature_Video))
     {
         int rc2 = unitVideo();
         if (RT_SUCCESS(rc))
@@ -910,13 +910,13 @@ int CaptureStream::uninitVideoVPX(void)
 int CaptureStream::initVideo(void)
 {
     /* Sanity. */
-    AssertReturn(this->Settings.Video.ulRate,   VERR_INVALID_PARAMETER);
-    AssertReturn(this->Settings.Video.ulWidth,  VERR_INVALID_PARAMETER);
-    AssertReturn(this->Settings.Video.ulHeight, VERR_INVALID_PARAMETER);
-    AssertReturn(this->Settings.Video.ulFPS,    VERR_INVALID_PARAMETER);
+    AssertReturn(this->ScreenSettings.Video.ulRate,   VERR_INVALID_PARAMETER);
+    AssertReturn(this->ScreenSettings.Video.ulWidth,  VERR_INVALID_PARAMETER);
+    AssertReturn(this->ScreenSettings.Video.ulHeight, VERR_INVALID_PARAMETER);
+    AssertReturn(this->ScreenSettings.Video.ulFPS,    VERR_INVALID_PARAMETER);
 
     this->Video.cFailedEncodingFrames = 0;
-    this->Video.uDelayMs = RT_MS_1SEC / this->Settings.Video.ulFPS;
+    this->Video.uDelayMs = RT_MS_1SEC / this->ScreenSettings.Video.ulFPS;
 
 #ifdef VBOX_WITH_LIBVPX
     /* At the moment we only have VPX. */
@@ -950,11 +950,11 @@ int CaptureStream::initVideoVPX(void)
     }
 
     /* Target bitrate in kilobits per second. */
-    pCodec->VPX.Cfg.rc_target_bitrate = this->Settings.Video.ulRate;
+    pCodec->VPX.Cfg.rc_target_bitrate = this->ScreenSettings.Video.ulRate;
     /* Frame width. */
-    pCodec->VPX.Cfg.g_w = this->Settings.Video.ulWidth;
+    pCodec->VPX.Cfg.g_w = this->ScreenSettings.Video.ulWidth;
     /* Frame height. */
-    pCodec->VPX.Cfg.g_h = this->Settings.Video.ulHeight;
+    pCodec->VPX.Cfg.g_h = this->ScreenSettings.Video.ulHeight;
     /* 1ms per frame. */
     pCodec->VPX.Cfg.g_timebase.num = 1;
     pCodec->VPX.Cfg.g_timebase.den = 1000;
@@ -970,10 +970,10 @@ int CaptureStream::initVideoVPX(void)
     }
 
     if (!vpx_img_alloc(&pCodec->VPX.RawImage, VPX_IMG_FMT_I420,
-                       this->Settings.Video.ulWidth, this->Settings.Video.ulHeight, 1))
+                       this->ScreenSettings.Video.ulWidth, this->ScreenSettings.Video.ulHeight, 1))
     {
         LogRel(("VideoRec: Failed to allocate image %RU32x%RU32\n",
-                this->Settings.Video.ulWidth, this->Settings.Video.ulHeight));
+                this->ScreenSettings.Video.ulWidth, this->ScreenSettings.Video.ulHeight));
         return VERR_NO_MEMORY;
     }
 
@@ -987,12 +987,12 @@ int CaptureStream::initVideoVPX(void)
 int CaptureStream::initAudio(void)
 {
 #ifdef VBOX_WITH_AUDIO_VIDEOREC
-    if (this->Settings.isFeatureEnabled(CaptureFeature_Audio))
+    if (this->ScreenSettings.isFeatureEnabled(CaptureFeature_Audio))
     {
         /* Sanity. */
-        AssertReturn(this->Settings.Audio.uHz,       VERR_INVALID_PARAMETER);
-        AssertReturn(this->Settings.Audio.cBits,     VERR_INVALID_PARAMETER);
-        AssertReturn(this->Settings.Audio.cChannels, VERR_INVALID_PARAMETER);
+        AssertReturn(this->ScreenSettings.Audio.uHz,       VERR_INVALID_PARAMETER);
+        AssertReturn(this->ScreenSettings.Audio.cBits,     VERR_INVALID_PARAMETER);
+        AssertReturn(this->ScreenSettings.Audio.cChannels, VERR_INVALID_PARAMETER);
     }
 #endif
 

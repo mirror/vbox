@@ -31,10 +31,7 @@
 #include "VideoRecInternals.h"
 
 class WebMWriter;
-
-struct CaptureContext;
-typedef struct CaptureContext *PVIDEORECCONTEXT;
-
+class CaptureContext;
 
 /** Structure for queuing all blocks bound to a single timecode.
  *  This can happen if multiple tracks are being involved. */
@@ -113,13 +110,13 @@ public:
 
     CaptureStream(void);
 
-    CaptureStream(uint32_t a_uScreen, const settings::CaptureScreenSettings &a_Settings);
+    CaptureStream(uint32_t uScreen, const settings::CaptureScreenSettings &Settings);
 
     virtual ~CaptureStream(void);
 
 public:
 
-    int Init(uint32_t a_uScreen, const settings::CaptureScreenSettings &a_Settings);
+    int Init(uint32_t uScreen, const settings::CaptureScreenSettings &Settings);
     int Uninit(void);
 
     int Process(VideoRecBlockMap &mapBlocksCommon);
@@ -135,7 +132,7 @@ protected:
     int open(void);
     int close(void);
 
-    int initInternal(uint32_t a_uScreen, const settings::CaptureScreenSettings &a_Settings);
+    int initInternal(uint32_t uScreen, const settings::CaptureScreenSettings &Settings);
     int uninitInternal(void);
 
     int initVideo(void);
@@ -157,18 +154,15 @@ protected:
 
     /** Recording context this stream is associated to. */
     CaptureContext             *pCtx;
-    union
+    struct
     {
-        struct
-        {
-            /** File handle to use for writing. */
-            RTFILE              hFile;
-            /** File name being used for this stream. */
-            Utf8Str             strName;
-            /** Pointer to WebM writer instance being used. */
-            WebMWriter         *pWEBM;
-        } File;
-    };
+        /** File handle to use for writing. */
+        RTFILE              hFile;
+        /** File name being used for this stream. */
+        Utf8Str             strName;
+        /** Pointer to WebM writer instance being used. */
+        WebMWriter         *pWEBM;
+    } File;
     bool                fEnabled;
 #ifdef VBOX_WITH_AUDIO_VIDEOREC
     /** Track number of audio stream. */
@@ -195,7 +189,7 @@ protected:
         VIDEORECVIDEOCODEC  Codec;
     } Video;
 
-    settings::CaptureScreenSettings Settings;
+    settings::CaptureScreenSettings ScreenSettings;
     /** Common set of video recording (data) blocks, needed for
      *  multiplexing to all recording streams. */
     CaptureBlockSet                 Blocks;

@@ -44,7 +44,7 @@ public:
 
 public:
 
-    int applyConfiguration(const settings::CaptureSettings &a_Settings);
+    int applyConfiguration(const settings::CaptureSettings &Settings);
 
 public:
 
