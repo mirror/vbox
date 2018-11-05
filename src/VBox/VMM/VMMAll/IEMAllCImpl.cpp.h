@@ -4032,11 +4032,9 @@ IEM_CIMPL_DEF_0(iemCImpl_loadall286)
  */
 IEM_CIMPL_DEF_0(iemCImpl_syscall)
 {
-#ifdef IEM_WITH_LOADALL286
     /** @todo hack, LOADALL should be decoded as such on a 286. */
-    if (pVCpu->iem.s.uTargetCpu == IEMTARGETCPU_286)
+    if (RT_UNLIKELY(pVCpu->iem.s.uTargetCpu == IEMTARGETCPU_286))
         return iemCImpl_loadall286(pVCpu, cbInstr);
-#endif
 
     /*
      * Check preconditions.
