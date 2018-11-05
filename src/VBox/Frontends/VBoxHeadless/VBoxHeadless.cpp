@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2017 Oracle Corporation
+ * Copyright (C) 2006-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -626,7 +626,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     unsigned fCSAM  = ~0U;
     unsigned fPaused = 0;
 #ifdef VBOX_WITH_VIDEOREC
-    bool fVideoRec = 0;
+    bool fVideoRec = false;
     unsigned long ulFrameWidth = 800;
     unsigned long ulFrameHeight = 600;
     unsigned long ulBitRate = 300000; /** @todo r=bird: The COM type ULONG isn't unsigned long, it's 32-bit unsigned int. */
@@ -960,11 +960,22 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
 #ifdef VBOX_WITH_VIDEOREC
         if (fVideoRec)
         {
-            CHECK_ERROR_BREAK(machine, COMSETTER(VideoCaptureFile)(Bstr(szMpegFile).raw()));
-            CHECK_ERROR_BREAK(machine, COMSETTER(VideoCaptureWidth)(ulFrameWidth));
-            CHECK_ERROR_BREAK(machine, COMSETTER(VideoCaptureHeight)(ulFrameHeight));
-            CHECK_ERROR_BREAK(machine, COMSETTER(VideoCaptureRate)(ulBitRate));
-            CHECK_ERROR_BREAK(machine, COMSETTER(VideoCaptureEnabled)(TRUE));
+            ComPtr<ICaptureSettings> captureSettings;
+            CHECK_ERROR_BREAK(machine, COMGETTER(CaptureSettings)(captureSettings.asOutParam()));
+            CHECK_ERROR_BREAK(captureSettings, COMSETTER(Enabled)(TRUE));
+
+            SafeIfaceArray <ICaptureScreenSettings> saCaptureScreenScreens;
+            CHECK_ERROR_BREAK(captureSettings, COMGETTER(Screens)(ComSafeArrayAsOutParam(saCaptureScreenScreens)));
+
+            /* Note: For now all screens have the same configuration. */
+            for (size_t i = 0; i < saCaptureScreenScreens.size(); ++i)
+            {
+                CHECK_ERROR_BREAK(saCaptureScreenScreens[i], COMSETTER(Enabled)(TRUE));
+                CHECK_ERROR_BREAK(saCaptureScreenScreens[i], COMSETTER(FileName)(Bstr(szMpegFile).raw()));
+                CHECK_ERROR_BREAK(saCaptureScreenScreens[i], COMSETTER(VideoWidth)(ulFrameWidth));
+                CHECK_ERROR_BREAK(saCaptureScreenScreens[i], COMSETTER(VideoHeight)(ulFrameHeight));
+                CHECK_ERROR_BREAK(saCaptureScreenScreens[i], COMSETTER(VideoRate)(ulBitRate));
+            }
         }
 #endif /* defined(VBOX_WITH_VIDEOREC) */
 
@@ -1219,9 +1230,13 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         if (fVideoRec)
         {
             if (!machine.isNull())
-                machine->COMSETTER(VideoCaptureEnabled)(FALSE);
+            {
+                ComPtr<ICaptureSettings> captureSettings;
+                CHECK_ERROR_BREAK(machine, COMGETTER(CaptureSettings)(captureSettings.asOutParam()));
+                CHECK_ERROR_BREAK(captureSettings, COMSETTER(Enabled)(FALSE));
+            }
         }
-#endif /* defined(VBOX_WITH_VIDEOREC) */
+#endif /* VBOX_WITH_VIDEOREC */
 
         /* we don't have to disable VRDE here because we don't save the settings of the VM */
     }
