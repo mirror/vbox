@@ -193,8 +193,12 @@ void UIGuestControlFileManager::prepareObjects()
         return;
 
     /* Configure layout: */
-    m_pMainLayout->setSpacing(0);
     m_pMainLayout->setContentsMargins(0, 0, 0, 0);
+#ifdef VBOX_WS_MAC
+    m_pMainLayout->setSpacing(10);
+#else
+    m_pMainLayout->setSpacing(qApp->style()->pixelMetric(QStyle::PM_LayoutVerticalSpacing) / 2);
+#endif
 
     if (m_fShowToolbar)
         prepareToolBar();
@@ -209,8 +213,12 @@ void UIGuestControlFileManager::prepareObjects()
     m_pVerticalSplitter->setHandleWidth(4);
 
     QHBoxLayout *pFileTableContainerLayout = new QHBoxLayout;
-    pFileTableContainerLayout->setSpacing(0);
     pFileTableContainerLayout->setContentsMargins(0, 0, 0, 0);
+#ifdef VBOX_WS_MAC
+    pFileTableContainerLayout->setSpacing(10);
+#else
+    pFileTableContainerLayout->setSpacing(qApp->style()->pixelMetric(QStyle::PM_LayoutVerticalSpacing) / 2);
+#endif
 
     QWidget *pTopWidget = new QWidget;
     QVBoxLayout *pTopLayout = new QVBoxLayout;

@@ -99,8 +99,8 @@ void UIGuestControlFileManagerDialog::configureCentralWidget()
 #ifdef VBOX_WS_MAC
         //setWidgetToolbar(pWidget->toolbar());
 #endif
-        // connect(pWidget, &UIGuestControlWidget::sigSetCloseButtonShortCut,
-        //         this, &UIGuestControlWidget::sltSetCloseButtonShortCut);
+        connect(pWidget, &UIGuestControlFileManager::sigSetCloseButtonShortCut,
+                this, &UIGuestControlFileManagerDialog::sltSetCloseButtonShortCut);
 
         /* Add into layout: */
         centralWidget()->layout()->addWidget(pWidget);
