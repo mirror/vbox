@@ -6976,13 +6976,12 @@ int Console::i_videoRecStart(void)
  */
 int Console::i_videoRecStop(void)
 {
-    if (Capture.mpVideoRecCtx && Capture.mpVideoRecCtx->IsStarted())
+    if (!Capture.mpVideoRecCtx || !Capture.mpVideoRecCtx->IsStarted())
         return VINF_SUCCESS;
 
     LogRel(("VideoRec: Stopping ...\n"));
 
     const size_t cStreams = Capture.mpVideoRecCtx->GetStreamCount();
-
     for (unsigned uScreen = 0; uScreen < cStreams; ++uScreen)
         mDisplay->i_videoRecScreenChanged(uScreen);
 
