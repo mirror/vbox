@@ -163,7 +163,7 @@ endif
 ifdef VBOX_SIGNING_MODE
  ifndef VBOX_WITHOUT_SIGNED_DMG
 	@# Sign the created dmg.
-	$(call VBOX_SIGN_FILE_FN,$@,org.virtualbox.dmg)
+	$(call VBOX_SIGN_DMG_FN,$@,org.virtualbox.dmg)
  endif
 endif
 
@@ -238,6 +238,12 @@ $(VBOX_PATH_PACK_TMP)/DiskImage/VirtualBox.pkg: \
 		--version $(VBOX_VERSION_MAJOR).$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD) \
 		$(if $(VBOX_MACOSX_INSTALLER_SIGN),--sign "$(VBOX_MACOSX_INSTALLER_SIGN)",) \
 		$@
+ifdef VBOX_SIGNING_MODE
+ ifdef VBOX_WITH_CORP_CODE_SIGNING
+	@# Sign the created pkg.
+	$(call VBOX_SIGN_PKG_FN,$@,org.VirtualBox.mpkg.virtualbox)
+ endif
+endif
 	@# Cleanup.
 	sudo rm -Rf \
 		$(VBOX_PATH_PACK_TMP)/VirtualBox.dist.root \
@@ -324,6 +330,12 @@ endif
 		--ownership preserve \
 		$(if $(VBOX_MACOSX_INSTALLER_SIGN),--sign "$(VBOX_MACOSX_INSTALLER_SIGN)",) \
 		$@
+ifdef VBOX_SIGNING_MODE
+ ifdef VBOX_WITH_CORP_CODE_SIGNING
+	@# Sign the created pkg.
+	$(call VBOX_SIGN_PKG_FN,$@,org.virtualbox.pkg.vboxkexts)
+ endif
+endif
 	@# Cleanup
 	sudo chown -R "$(shell whoami)" \
 		$(VBOX_PATH_PACK_TMP)/VBoxKEXTs.pkg.root
@@ -815,6 +827,12 @@ endif
 		--preserve-xattr \
 		$(if $(VBOX_MACOSX_INSTALLER_SIGN),--sign "$(VBOX_MACOSX_INSTALLER_SIGN)",) \
 		$@
+ifdef VBOX_SIGNING_MODE
+ ifdef VBOX_WITH_CORP_CODE_SIGNING
+	@# Sign the created pkg.
+	$(call VBOX_SIGN_PKG_FN,$@,org.virtualbox.pkg.virtualbox)
+ endif
+endif
 	@# Cleanup
 	sudo chown -R "$(shell whoami)" \
 		$(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root
@@ -890,6 +908,12 @@ endif
 		--ownership preserve \
 		$(if $(VBOX_MACOSX_INSTALLER_SIGN),--sign "$(VBOX_MACOSX_INSTALLER_SIGN)",) \
 		$@
+ifdef VBOX_SIGNING_MODE
+ ifdef VBOX_WITH_CORP_CODE_SIGNING
+	@# Sign the created pkg.
+	$(call VBOX_SIGN_PKG_FN,$@,org.virtualbox.pkg.virtualboxcli)
+ endif
+endif
 	@# Cleanup
 	sudo chown -R "$(shell whoami)" \
 		$(VBOX_PATH_PACK_TMP)/VirtualBoxCLI.pkg.root

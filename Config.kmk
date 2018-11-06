@@ -3620,28 +3620,35 @@ ifdef VBOX_SIGNING_MODE
    VBOX_DARWIN_KEXT_SIGN_FILES = CodeResources
   endif
 
-  # The above version with complicated requirements is what Xcode 5.0.1GM suggest for kexts.
+  ## Sign an application bundle, framework or kernel extension.
+  # @param 1  The bundle to sign.
+  # @param 2  Identifier, optional.
+  # @param 3  Additional codesign command line parameters, optional.
   ifdef VBOX_WITH_CORP_CODE_SIGNING
    ## @todo cannot handle $(2), the identifier. $(3) is hopefully either empty or --deep
    VBOX_SIGN_BUNDLE_FN = $(call MSG_TOOL,SIGNTOOL,,$(1),$(2))$(NLTAB) \
-    ditto -c -k $(1) $(1).zip$(NLTAB) \
-    $(call VBOX_CCS_SIGN_CMD,apple,$(1).zip,,$(3))$(NLTAB) \
-	ditto -x -k $(1).zip $(1)
+	ditto -c -k --keepParent $(1) $(1).zip$(NLTAB) \
+	$(call VBOX_CCS_SIGN_CMD,apple,$(1).zip,,$(3))$(NLTAB) \
+	ditto -x -k $(1).zip $(1)/../
   else
    VBOX_SIGN_BUNDLE_FN = $(call MSG_TOOL,SIGNTOOL,,$(1),$(2))$(NLTAB)$(VBOX_CODESIGN) \
 	--verbose=9 \
 	--force \
 	--file-list - \
 	$(if-expr defined(VBOX_TSA_URL),--timestamp="$(VBOX_TSA_URL)") \
-       $(3) \
+	$(3) \
 	$(VBOX_CERTIFICATE_SUBJECT_NAME_ARGS) \
 	$(1) $(if $(2),--identifier "$(2)",)
   endif
 
   ## Sign a Mach-O image.
-  # @param 1  The bundle to sign.
+  # @param 1  The file to sign.
   # @param 2  Identifier, optional.
-  VBOX_SIGN_MACHO_FN = $(call MSG_TOOL,SIGNTOOL,,$(1),$(2))$(NLTAB)$(VBOX_CODESIGN) \
+  ifdef VBOX_WITH_CORP_CODE_SIGNING
+   ## @todo cannot handle $(2), the identifier.
+   VBOX_SIGN_MACHO_FN = $(call MSG_TOOL,SIGNTOOL,,$(1),$(2))$(NLTAB)$(call VBOX_CCS_SIGN_CMD,binary,$(1))
+  else
+   VBOX_SIGN_MACHO_FN = $(call MSG_TOOL,SIGNTOOL,,$(1),$(2))$(NLTAB)$(VBOX_CODESIGN) \
 	--verbose=9 \
 	--force \
 	--file-list - \
@@ -3649,16 +3656,21 @@ ifdef VBOX_SIGNING_MODE
 	$(VBOX_CERTIFICATE_SUBJECT_NAME_ARGS) \
 	$(1) \
 	$(if $(2),--identifier "$(2)",)
+  endif
 
   ## Sign a VMM Mach-O image.
-  # @param 1  The bundle to sign.
+  # @param 1  The file to sign.
   # @param 2  Identifier, optional.
   VBOX_SIGN_VMM_MOD_FN = $(VBOX_SIGN_MACHO_FN)
 
   ## Sign a non-executable file.
-  # @param 1  The bundle to sign.
+  # @param 1  The file to sign.
   # @param 2  Identifier, optional.
-  VBOX_SIGN_FILE_FN = $(call MSG_TOOL,SIGNTOOL,,$(1),$(2))$(NLTAB)$(VBOX_CODESIGN) \
+  ifdef VBOX_WITH_CORP_CODE_SIGNING
+   ## @todo cannot handle $(2), the identifier.
+   VBOX_SIGN_FILE_FN = $(call MSG_TOOL,SIGNTOOL,,$(1),$(2))$(NLTAB)$(call VBOX_CCS_SIGN_CMD,binary,$(1))
+  else
+   VBOX_SIGN_FILE_FN = $(call MSG_TOOL,SIGNTOOL,,$(1),$(2))$(NLTAB)$(VBOX_CODESIGN) \
 	--verbose=9 \
 	--force \
 	--file-list - \
@@ -3666,6 +3678,27 @@ ifdef VBOX_SIGNING_MODE
 	$(VBOX_CERTIFICATE_SUBJECT_NAME_ARGS) \
 	$(1) \
 	$(if $(2),--identifier "$(2)",)
+  endif
+
+  ## Sign a DMG image.
+  # @param 1  The file to sign.
+  # @param 2  Identifier, optional.
+  ifdef VBOX_WITH_CORP_CODE_SIGNING
+   ## @todo cannot handle $(2), the identifier.
+   VBOX_SIGN_DMG_FN = $(call MSG_TOOL,SIGNTOOL,,$(1),$(2))$(NLTAB) \
+	$(call VBOX_CCS_SIGN_CMD,mac_dmg,$(1))$(NLTAB) \
+	ditto -x -k $(1).zip $(dir $(1))
+  else
+   VBOX_SIGN_DMG_FN = $(VBOX_SIGN_FILE_FN)
+  endif
+
+  ## Sign a PKG file. Used with corp code signing only.
+  # @param 1  The file to sign.
+  # @param 2  Identifier, optional.
+  ifdef VBOX_WITH_CORP_CODE_SIGNING
+   ## @todo cannot handle $(2), the identifier.
+   VBOX_SIGN_PKG_FN = $(call MSG_TOOL,SIGNTOOL,,$(1),$(2))$(NLTAB)$(call VBOX_CCS_SIGN_CMD,mac_pkg,$(1)) \
+  endif
 
   ## @def VBOX_TEST_SIGN_KEXT
   # Adds test signing to a $1.kext target (the plist installer target).
