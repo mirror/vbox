@@ -945,7 +945,6 @@ int  VBOXCALL   supdrvOSLdrValidatePointer(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAG
  */
 int  VBOXCALL   supdrvOSLdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage, const uint8_t *pbImageBits, PSUPLDRLOAD pReq);
 
-
 /**
  * Unload the image (only called if supdrvOSLdrOpen returned success).
  *
@@ -964,6 +963,19 @@ void VBOXCALL   supdrvOSLdrUnload(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage)
  * @param   pImage              The image handle.
  */
 void VBOXCALL   supdrvOSLdrNotifyUnloaded(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage);
+
+/**
+ * Queries a symbol address is a native module.
+ *
+ * @returns IPRT status code.
+ * @param   pDevExt             The device globals.
+ * @param   pImage              The image to search.
+ * @param   pszSymbol           The symbol to search for.
+ * @param   cchSymbol           The length of the symbol.
+ * @param   ppvSymbol           Where to return the symbol address if found.
+ */
+int  VBOXCALL   supdrvOSLdrQuerySymbol(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage,
+                                       const char *pszSymbol, size_t cchSymbol, void **ppvSymbol);
 
 
 #ifdef SUPDRV_WITH_MSR_PROBER

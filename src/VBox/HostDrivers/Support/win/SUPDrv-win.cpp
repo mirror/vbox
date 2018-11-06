@@ -2082,20 +2082,23 @@ void VBOXCALL   supdrvOSLdrNotifyOpened(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE p
     NOREF(pDevExt); NOREF(pImage); NOREF(pszFilename);
 }
 
+
 void VBOXCALL   supdrvOSLdrNotifyUnloaded(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage)
 {
     NOREF(pDevExt); NOREF(pImage);
 }
 
-/*
- * Note! Similar code in rtR0DbgKrnlNtParseModule.
+
+/**
+ * Common worker for supdrvOSLdrQuerySymbol and supdrvOSLdrValidatePointer.
+ *
+ * @note    Similar code in rtR0DbgKrnlNtParseModule.
  */
-int  VBOXCALL   supdrvOSLdrValidatePointer(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage, void *pv,
-                                           const uint8_t *pbImageBits, const char *pszSymbol)
+static int supdrvOSLdrValidatePointerOrQuerySymbol(PSUPDRVLDRIMAGE pImage, void *pv, const char *pszSymbol,
+                                                   size_t cchSymbol, void **ppvSymbol)
 {
-#if 1
-    RT_NOREF(pDevExt, pbImageBits);
     AssertReturn(pImage->pvNtSectionObj, VERR_INVALID_STATE);
+    Assert(pszSymbol || !ppvSymbol);
 
     /*
      * Locate the export directory in the loaded image.
@@ -2103,7 +2106,7 @@ int  VBOXCALL   supdrvOSLdrValidatePointer(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAG
     uint8_t const  *pbMapping      = (uint8_t const  *)pImage->pvImage;
     uint32_t const  cbMapping      = pImage->cbImageBits;
     uint32_t const  uRvaToValidate = (uint32_t)((uintptr_t)pv - (uintptr_t)pbMapping);
-    AssertReturn(uRvaToValidate < cbMapping, VERR_INTERNAL_ERROR_3);
+    AssertReturn(uRvaToValidate < cbMapping || ppvSymbol, VERR_INTERNAL_ERROR_3);
 
     uint32_t const  offNtHdrs = *(uint16_t *)pbMapping == IMAGE_DOS_SIGNATURE
                               ? ((IMAGE_DOS_HEADER const *)pbMapping)->e_lfanew
@@ -2127,7 +2130,7 @@ int  VBOXCALL   supdrvOSLdrValidatePointer(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAG
     if (!ExpDir.Size)
     {
         SUPR0Printf("SUPDrv: No exports in %s!\n", pImage->szName);
-        return VERR_NOT_FOUND;
+        return ppvSymbol ? VERR_SYMBOL_NOT_FOUND : VERR_NOT_FOUND;
     }
     AssertReturn(   ExpDir.Size >= sizeof(IMAGE_EXPORT_DIRECTORY)
                  && ExpDir.VirtualAddress >= offEndSectHdrs
@@ -2142,7 +2145,7 @@ int  VBOXCALL   supdrvOSLdrValidatePointer(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAG
     if (pExpDir->NumberOfFunctions == 0 || cNamedExports == 0)
     {
         SUPR0Printf("SUPDrv: No exports in %s!\n", pImage->szName);
-        return VERR_NOT_FOUND;
+        return ppvSymbol ? VERR_SYMBOL_NOT_FOUND : VERR_NOT_FOUND;
     }
 
     uint32_t const cExports = RT_MAX(cNamedExports, pExpDir->NumberOfFunctions);
@@ -2169,52 +2172,80 @@ int  VBOXCALL   supdrvOSLdrValidatePointer(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAG
      * Validate the entrypoint RVA by scanning the export table.
      */
     uint32_t iExportOrdinal = UINT32_MAX;
-    for (uint32_t i = 0; i < cExports; i++)
-        if (paoffExports[i] == uRvaToValidate)
-        {
-            iExportOrdinal = i;
-            break;
-        }
-    if (iExportOrdinal == UINT32_MAX)
+    if (!ppvSymbol)
     {
-        SUPR0Printf("SUPDrv: No export with rva %#x (%s) in %s!\n", uRvaToValidate, pszSymbol, pImage->szName);
-        return VERR_NOT_FOUND;
+        for (uint32_t i = 0; i < cExports; i++)
+            if (paoffExports[i] == uRvaToValidate)
+            {
+                iExportOrdinal = i;
+                break;
+            }
+        if (iExportOrdinal == UINT32_MAX)
+        {
+            SUPR0Printf("SUPDrv: No export with rva %#x (%s) in %s!\n", uRvaToValidate, pszSymbol, pImage->szName);
+            return VERR_NOT_FOUND;
+        }
     }
 
     /*
-     * Can we validate the symbol name too?  If so, just do a linear search.
+     * Can we validate the symbol name too or should we find a name?
+     * If so, just do a linear search.
      */
-    if (pszSymbol && RT_C_IS_UPPER(*pszSymbol))
+    if (pszSymbol && (RT_C_IS_UPPER(*pszSymbol) || ppvSymbol))
     {
-        size_t const cchSymbol  = strlen(pszSymbol);
         for (uint32_t i = 0; i < cNamedExports; i++)
         {
             uint32_t const     offName = paoffNamedExports[i];
             AssertReturn(offName < cbMapping, VERR_BAD_EXE_FORMAT);
             uint32_t const     cchMaxName = cbMapping - offName;
-            const char * const pszName    = (const char *)&pbImageBits[offName];
+            const char * const pszName    = (const char *)&pbMapping[offName];
             const char * const pszEnd     = (const char *)memchr(pszName, '\0', cchMaxName);
             AssertReturn(pszEnd, VERR_BAD_EXE_FORMAT);
 
             if (   cchSymbol == (size_t)(pszEnd - pszName)
                 && memcmp(pszName, pszSymbol, cchSymbol) == 0)
             {
-                if (pau16NameOrdinals[i] == iExportOrdinal)
+                if (ppvSymbol)
+                {
+                    iExportOrdinal = pau16NameOrdinals[i];
+                    if (   iExportOrdinal < cExports
+                        && paoffExports[iExportOrdinal] < cbMapping)
+                    {
+                        *ppvSymbol = (void *)(paoffExports[iExportOrdinal] + pbMapping);
+                        return VINF_SUCCESS;
+                    }
+                }
+                else if (pau16NameOrdinals[i] == iExportOrdinal)
                     return VINF_SUCCESS;
-                SUPR0Printf("SUPDrv: Different exports found for %s and rva %#x in %s: %#x vs %#x\n",
-                            pszSymbol, uRvaToValidate, pImage->szName, pau16NameOrdinals[i], iExportOrdinal);
+                else
+                    SUPR0Printf("SUPDrv: Different exports found for %s and rva %#x in %s: %#x vs %#x\n",
+                                pszSymbol, uRvaToValidate, pImage->szName, pau16NameOrdinals[i], iExportOrdinal);
                 return VERR_LDR_BAD_FIXUP;
             }
         }
-        SUPR0Printf("SUPDrv: No export named %s (%#x) in %s!\n", pszSymbol, uRvaToValidate, pImage->szName);
+        if (!ppvSymbol)
+            SUPR0Printf("SUPDrv: No export named %s (%#x) in %s!\n", pszSymbol, uRvaToValidate, pImage->szName);
         return VERR_SYMBOL_NOT_FOUND;
     }
     return VINF_SUCCESS;
+}
 
-#else
-    NOREF(pDevExt); NOREF(pImage); NOREF(pv); NOREF(pbImageBits); NOREF(pszSymbol);
-    return VERR_NOT_SUPPORTED;
-#endif
+
+int  VBOXCALL   supdrvOSLdrValidatePointer(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage, void *pv,
+                                           const uint8_t *pbImageBits, const char *pszSymbol)
+{
+    RT_NOREF(pDevExt, pbImageBits);
+    return supdrvOSLdrValidatePointerOrQuerySymbol(pImage, pv, pszSymbol, pszSymbol ? strlen(pszSymbol) : 0, NULL);
+}
+
+
+int  VBOXCALL   supdrvOSLdrQuerySymbol(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage,
+                                       const char *pszSymbol, size_t cchSymbol, void **ppvSymbol)
+{
+    RT_NOREF(pDevExt);
+    AssertReturn(ppvSymbol, VERR_INVALID_PARAMETER);
+    AssertReturn(pszSymbol, VERR_INVALID_PARAMETER);
+    return supdrvOSLdrValidatePointerOrQuerySymbol(pImage, NULL, pszSymbol, cchSymbol, ppvSymbol);
 }
 
 

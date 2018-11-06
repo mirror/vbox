@@ -1536,6 +1536,30 @@ int  VBOXCALL   supdrvOSLdrValidatePointer(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAG
 }
 
 
+int  VBOXCALL   supdrvOSLdrQuerySymbol(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage,
+                                       const char *pszSymbol, size_t cchSymbol, void **ppvSymbol)
+{
+#ifdef VBOX_WITH_DARWIN_R0_DARWIN_IMAGE_VERIFICATION
+    /*
+     * Just hand the problem to RTLdrGetSymbolEx.
+     */
+    RTLDRADDR uValueFound;
+    int rc = RTLdrGetSymbolEx(pImage->hLdrMod, pImage->pvImage, (uintptr_t)pImage->pvImage, UINT32_MAX, pszSymbol, &uValueFound);
+    if (RT_SUCCESS(rc))
+    {
+        *ppvSymbol = (void *)(uintptr_t)uValueFound;
+        return VINF_SUCCESS;
+    }
+    RT_NOREF(pDevExt, cchSymbol);
+    return rc;
+
+#else
+    RT_NOREF(pDevExt, pImage, pszSymbol, cchSymbol, ppvSymbol);
+    return VERR_WRONG_ORDER;
+#endif
+}
+
+
 int  VBOXCALL   supdrvOSLdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage, const uint8_t *pbImageBits, PSUPLDRLOAD pReq)
 {
 #ifdef VBOX_WITH_DARWIN_R0_DARWIN_IMAGE_VERIFICATION

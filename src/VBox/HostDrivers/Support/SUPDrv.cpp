@@ -137,7 +137,7 @@ static int                  supdrvIOCtl_LdrOpen(PSUPDRVDEVEXT pDevExt, PSUPDRVSE
 static int                  supdrvIOCtl_LdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PSUPLDRLOAD pReq);
 static int                  supdrvIOCtl_LdrFree(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PSUPLDRFREE pReq);
 static int                  supdrvIOCtl_LdrLockDown(PSUPDRVDEVEXT pDevExt);
-static int                  supdrvIOCtl_LdrGetSymbol(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PSUPLDRGETSYMBOL pReq);
+static int                  supdrvIOCtl_LdrQuerySymbol(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PSUPLDRGETSYMBOL pReq);
 static int                  supdrvIDC_LdrGetSymbol(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PSUPDRVIDCREQGETSYM pReq);
 static int                  supdrvLdrSetVMMR0EPs(PSUPDRVDEVEXT pDevExt, void *pvVMMR0, void *pvVMMR0EntryFast, void *pvVMMR0EntryEx);
 static void                 supdrvLdrUnsetVMMR0EPs(PSUPDRVDEVEXT pDevExt);
@@ -1802,7 +1802,7 @@ static int supdrvIOCtlInnerUnrestricted(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt,
             REQ_CHECK_EXPR(SUP_IOCTL_LDR_GET_SYMBOL, RTStrEnd(pReq->u.In.szSymbol, sizeof(pReq->u.In.szSymbol)));
 
             /* execute */
-            pReq->Hdr.rc = supdrvIOCtl_LdrGetSymbol(pDevExt, pSession, pReq);
+            pReq->Hdr.rc = supdrvIOCtl_LdrQuerySymbol(pDevExt, pSession, pReq);
             return 0;
         }
 
@@ -5151,30 +5151,33 @@ static int supdrvIOCtl_LdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
     SUPDRV_CHECK_SMAP_CHECK(pDevExt, RT_NOTHING);
 
     /*
-     * Allocate and copy the tables.
+     * Allocate and copy the tables if non-native.
      * (No need to do try/except as this is a buffered request.)
      */
-    pImage->cbStrTab = pReq->u.In.cbStrTab;
-    if (pImage->cbStrTab)
+    if (pImage->fNative)
     {
-        pImage->pachStrTab = (char *)RTMemAlloc(pImage->cbStrTab);
-        if (pImage->pachStrTab)
-            memcpy(pImage->pachStrTab, &pReq->u.In.abImage[pReq->u.In.offStrTab], pImage->cbStrTab);
-        else
-            rc = supdrvLdrLoadError(VERR_NO_MEMORY, pReq, "Out of memory for string table: %#x", pImage->cbStrTab);
-        SUPDRV_CHECK_SMAP_CHECK(pDevExt, RT_NOTHING);
-    }
+        pImage->cbStrTab = pReq->u.In.cbStrTab;
+        if (pImage->cbStrTab)
+        {
+            pImage->pachStrTab = (char *)RTMemAlloc(pImage->cbStrTab);
+            if (pImage->pachStrTab)
+                memcpy(pImage->pachStrTab, &pReq->u.In.abImage[pReq->u.In.offStrTab], pImage->cbStrTab);
+            else
+                rc = supdrvLdrLoadError(VERR_NO_MEMORY, pReq, "Out of memory for string table: %#x", pImage->cbStrTab);
+            SUPDRV_CHECK_SMAP_CHECK(pDevExt, RT_NOTHING);
+        }
 
-    pImage->cSymbols = pReq->u.In.cSymbols;
-    if (RT_SUCCESS(rc) && pImage->cSymbols)
-    {
-        size_t  cbSymbols = pImage->cSymbols * sizeof(SUPLDRSYM);
-        pImage->paSymbols = (PSUPLDRSYM)RTMemAlloc(cbSymbols);
-        if (pImage->paSymbols)
-            memcpy(pImage->paSymbols, &pReq->u.In.abImage[pReq->u.In.offSymbols], cbSymbols);
-        else
-            rc = supdrvLdrLoadError(VERR_NO_MEMORY, pReq, "Out of memory for symbol table: %#x", cbSymbols);
-        SUPDRV_CHECK_SMAP_CHECK(pDevExt, RT_NOTHING);
+        pImage->cSymbols = pReq->u.In.cSymbols;
+        if (RT_SUCCESS(rc) && pImage->cSymbols)
+        {
+            size_t  cbSymbols = pImage->cSymbols * sizeof(SUPLDRSYM);
+            pImage->paSymbols = (PSUPLDRSYM)RTMemAlloc(cbSymbols);
+            if (pImage->paSymbols)
+                memcpy(pImage->paSymbols, &pReq->u.In.abImage[pReq->u.In.offSymbols], cbSymbols);
+            else
+                rc = supdrvLdrLoadError(VERR_NO_MEMORY, pReq, "Out of memory for symbol table: %#x", cbSymbols);
+            SUPDRV_CHECK_SMAP_CHECK(pDevExt, RT_NOTHING);
+        }
     }
 
     /*
@@ -5400,14 +5403,14 @@ static int supdrvIOCtl_LdrLockDown(PSUPDRVDEVEXT pDevExt)
 
 
 /**
- * Gets the address of a symbol in an open image.
+ * Queries the address of a symbol in an open image.
  *
  * @returns IPRT status code.
  * @param   pDevExt     Device globals.
  * @param   pSession    Session data.
  * @param   pReq        The request buffer.
  */
-static int supdrvIOCtl_LdrGetSymbol(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PSUPLDRGETSYMBOL pReq)
+static int supdrvIOCtl_LdrQuerySymbol(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PSUPLDRGETSYMBOL pReq)
 {
     PSUPDRVLDRIMAGE pImage;
     PSUPDRVLDRUSAGE pUsage;
@@ -5417,7 +5420,7 @@ static int supdrvIOCtl_LdrGetSymbol(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSessi
     const size_t    cbSymbol = strlen(pReq->u.In.szSymbol) + 1;
     void           *pvSymbol = NULL;
     int             rc = VERR_SYMBOL_NOT_FOUND;
-    Log3(("supdrvIOCtl_LdrGetSymbol: pvImageBase=%p szSymbol=\"%s\"\n", pReq->u.In.pvImageBase, pReq->u.In.szSymbol));
+    Log3(("supdrvIOCtl_LdrQuerySymbol: pvImageBase=%p szSymbol=\"%s\"\n", pReq->u.In.pvImageBase, pReq->u.In.szSymbol));
 
     /*
      * Find the ldr image.
@@ -5442,21 +5445,26 @@ static int supdrvIOCtl_LdrGetSymbol(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSessi
     }
 
     /*
-     * Search the symbol strings.
+     * Search the image exports / symbol strings.
      *
      * Note! The int32_t is for native loading on solaris where the data
      *       and text segments are in very different places.
      */
-    pchStrings = pImage->pachStrTab;
-    paSyms     = pImage->paSymbols;
-    for (i = 0; i < pImage->cSymbols; i++)
+    if (pImage->fNative)
+        rc = supdrvOSLdrQuerySymbol(pDevExt, pImage, pReq->u.In.szSymbol, cbSymbol - 1, &pvSymbol);
+    else
     {
-        if (    paSyms[i].offName + cbSymbol <= pImage->cbStrTab
-            &&  !memcmp(pchStrings + paSyms[i].offName, pReq->u.In.szSymbol, cbSymbol))
+        pchStrings = pImage->pachStrTab;
+        paSyms     = pImage->paSymbols;
+        for (i = 0; i < pImage->cSymbols; i++)
         {
-            pvSymbol = (uint8_t *)pImage->pvImage + (int32_t)paSyms[i].offSymbol;
-            rc = VINF_SUCCESS;
-            break;
+            if (    paSyms[i].offName + cbSymbol <= pImage->cbStrTab
+                &&  !memcmp(pchStrings + paSyms[i].offName, pReq->u.In.szSymbol, cbSymbol))
+            {
+                pvSymbol = (uint8_t *)pImage->pvImage + (int32_t)paSyms[i].offSymbol;
+                rc = VINF_SUCCESS;
+                break;
+            }
         }
     }
     supdrvLdrUnlock(pDevExt);
@@ -5528,21 +5536,31 @@ static int supdrvIDC_LdrGetSymbol(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession
         if (pImage && pImage->uState == SUP_IOCTL_LDR_LOAD)
         {
             /*
-             * Search the symbol strings.
+             * Search the image exports / symbol strings.
              */
-            const char *pchStrings = pImage->pachStrTab;
-            PCSUPLDRSYM paSyms     = pImage->paSymbols;
-            for (i = 0; i < pImage->cSymbols; i++)
+            if (pImage->fNative)
             {
-                if (    paSyms[i].offName + cbSymbol <= pImage->cbStrTab
-                    &&  !memcmp(pchStrings + paSyms[i].offName, pszSymbol, cbSymbol))
-                {
-                    /*
-                     * Found it! Calc the symbol address and add a reference to the module.
-                     */
-                    pReq->u.Out.pfnSymbol = (PFNRT)((uintptr_t)pImage->pvImage + (int32_t)paSyms[i].offSymbol);
+                rc = supdrvOSLdrQuerySymbol(pDevExt, pImage, pszSymbol, cbSymbol - 1, (void **)&pReq->u.Out.pfnSymbol);
+                if (RT_SUCCESS(rc))
                     rc = supdrvLdrAddUsage(pSession, pImage);
-                    break;
+            }
+            else
+            {
+                const char *pchStrings = pImage->pachStrTab;
+                PCSUPLDRSYM paSyms     = pImage->paSymbols;
+                rc = VERR_SYMBOL_NOT_FOUND;
+                for (i = 0; i < pImage->cSymbols; i++)
+                {
+                    if (    paSyms[i].offName + cbSymbol <= pImage->cbStrTab
+                        &&  !memcmp(pchStrings + paSyms[i].offName, pszSymbol, cbSymbol))
+                    {
+                        /*
+                         * Found it! Calc the symbol address and add a reference to the module.
+                         */
+                        pReq->u.Out.pfnSymbol = (PFNRT)((uintptr_t)pImage->pvImage + (int32_t)paSyms[i].offSymbol);
+                        rc = supdrvLdrAddUsage(pSession, pImage);
+                        break;
+                    }
                 }
             }
         }
