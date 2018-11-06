@@ -71,6 +71,7 @@ public:
 
 protected:
 
+    virtual void prepare() /* override */;
     /** @name Event-handling stuff.
       * @{ */
         /** Handles translation event. */
@@ -104,6 +105,7 @@ private slots:
 
 private:
 
+    void manageEscapeShortCut();
     UIActionPool *m_pActionPool;
     CGuest      m_comGuest;
     QString     m_strMachineName;

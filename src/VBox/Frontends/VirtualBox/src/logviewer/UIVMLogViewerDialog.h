@@ -77,6 +77,7 @@ public:
 
 protected:
 
+    virtual void prepare() /* override */;
     /** @name Event-handling stuff.
       * @{ */
         /** Handles translation event. */
@@ -111,6 +112,7 @@ private slots:
 
 private:
 
+    void manageEscapeShortCut();
     /** Holds the action-pool reference. */
     UIActionPool *m_pActionPool;
     /** Holds the machine reference. */

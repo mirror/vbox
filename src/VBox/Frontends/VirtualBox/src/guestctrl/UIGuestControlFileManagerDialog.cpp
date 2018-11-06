@@ -71,6 +71,12 @@ UIGuestControlFileManagerDialog::UIGuestControlFileManagerDialog(QWidget *pCente
 {
 }
 
+void UIGuestControlFileManagerDialog::prepare()
+{
+    QIManagerDialog::prepare();
+    manageEscapeShortCut();
+}
+
 void UIGuestControlFileManagerDialog::retranslateUi()
 {
     /* Translate window title: */
@@ -156,4 +162,12 @@ void UIGuestControlFileManagerDialog::sltSetCloseButtonShortCut(QKeySequence sho
 {
     if (button(ButtonType_Close))
         button(ButtonType_Close)->setShortcut(shortcut);
+}
+
+void UIGuestControlFileManagerDialog::manageEscapeShortCut()
+{
+    UIGuestControlFileManager *pWidget = qobject_cast<UIGuestControlFileManager*>(widget());
+    if (!pWidget)
+        return;
+    pWidget->manageEscapeShortCut();
 }

@@ -73,6 +73,12 @@ UIVMLogViewerDialog::UIVMLogViewerDialog(QWidget *pCenterWidget, UIActionPool *p
 {
 }
 
+void UIVMLogViewerDialog::prepare()
+{
+    QIManagerDialog::prepare();
+    manageEscapeShortCut();
+}
+
 void UIVMLogViewerDialog::retranslateUi()
 {
     /* Translate window title: */
@@ -172,4 +178,12 @@ void UIVMLogViewerDialog::sltSetCloseButtonShortCut(QKeySequence shortcut)
 {
     if (button(ButtonType_Close))
         button(ButtonType_Close)->setShortcut(shortcut);
+}
+
+void UIVMLogViewerDialog::manageEscapeShortCut()
+{
+    UIVMLogViewerWidget *pWidget = qobject_cast<UIVMLogViewerWidget*>(widget());
+    if (!pWidget)
+        return;
+    pWidget->manageEscapeShortCut();
 }

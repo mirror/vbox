@@ -231,6 +231,7 @@ private:
     friend class UIVMLogViewerSearchPanel;
     friend class UIVMLogViewerSettingsPanel;
     friend class UIVMLogViewerPanel;
+    friend class UIVMLogViewerDialog;
 };
 
 #endif /* !___UIVMLogViewerWidget_h___ */

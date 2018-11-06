@@ -67,6 +67,7 @@ public:
     bool bAskDeleteConfirmation;
 
 private:
+
     UIGuestControlFileManagerSettings();
     ~UIGuestControlFileManagerSettings();
 
@@ -169,6 +170,7 @@ private:
     UIGuestControlFileManagerSessionPanel          *m_pSessionPanel;
     friend class UIGuestControlFileManagerSettingsPanel;
     friend class UIGuestControlFileManagerPanel;
+    friend class UIGuestControlFileManagerDialog;
 };
 
 #endif /* !___UIGuestControlFileManager_h___ */
