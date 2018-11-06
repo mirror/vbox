@@ -399,6 +399,7 @@ void UIMachineSettingsDisplay::loadToCacheFrom(QVariant &data)
     }
 
     CCaptureScreenSettingsVector recordingScreenSettingsVector = recordingSettings.GetScreens();
+    oldDisplayData.m_vecRecordingScreens.resize(recordingScreenSettingsVector.size());
     for (int iScreenIndex = 0; iScreenIndex < recordingScreenSettingsVector.size(); ++iScreenIndex)
     {
         CCaptureScreenSettings captureScreenSettings = recordingScreenSettingsVector.at(iScreenIndex);
