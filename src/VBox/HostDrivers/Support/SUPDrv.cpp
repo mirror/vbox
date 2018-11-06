@@ -5154,7 +5154,7 @@ static int supdrvIOCtl_LdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
      * Allocate and copy the tables if non-native.
      * (No need to do try/except as this is a buffered request.)
      */
-    if (pImage->fNative)
+    if (!pImage->fNative)
     {
         pImage->cbStrTab = pReq->u.In.cbStrTab;
         if (pImage->cbStrTab)
