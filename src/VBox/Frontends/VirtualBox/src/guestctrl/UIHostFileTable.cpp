@@ -493,52 +493,28 @@ QString UIHostFileTable::permissionString(QFileDevice::Permissions permissions)
 
 void UIHostFileTable::prepareActionConnections()
 {
-    connect(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Guest_GoUp), &QAction::triggered,
-            this, &UIGuestControlFileTable::sltGoUp);
     connect(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Host_GoUp), &QAction::triggered,
             this, &UIGuestControlFileTable::sltGoUp);
-    connect(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Guest_GoHome), &QAction::triggered,
-            this, &UIGuestControlFileTable::sltGoHome);
     connect(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Host_GoHome), &QAction::triggered,
             this, &UIGuestControlFileTable::sltGoHome);
-    connect(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Guest_Refresh), &QAction::triggered,
-            this, &UIGuestControlFileTable::sltRefresh);
     connect(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Host_Refresh), &QAction::triggered,
             this, &UIGuestControlFileTable::sltRefresh);
-    connect(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Guest_Delete), &QAction::triggered,
-            this, &UIGuestControlFileTable::sltDelete);
     connect(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Host_Delete), &QAction::triggered,
             this, &UIGuestControlFileTable::sltDelete);
-    connect(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Guest_Rename), &QAction::triggered,
-            this, &UIGuestControlFileTable::sltRename);
     connect(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Host_Rename), &QAction::triggered,
             this, &UIGuestControlFileTable::sltRename);
-    connect(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Guest_Copy), &QAction::triggered,
-            this, &UIGuestControlFileTable::sltCopy);
     connect(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Host_Copy), &QAction::triggered,
             this, &UIGuestControlFileTable::sltCopy);
-    connect(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Guest_Cut), &QAction::triggered,
-            this, &UIGuestControlFileTable::sltCut);
     connect(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Host_Cut), &QAction::triggered,
             this, &UIGuestControlFileTable::sltCut);
-    connect(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Guest_Paste), &QAction::triggered,
-            this, &UIGuestControlFileTable::sltPaste);
     connect(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Host_Paste), &QAction::triggered,
             this, &UIGuestControlFileTable::sltPaste);
-    connect(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Guest_SelectAll), &QAction::triggered,
-            this, &UIGuestControlFileTable::sltSelectAll);
     connect(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Host_SelectAll), &QAction::triggered,
             this, &UIGuestControlFileTable::sltSelectAll);
-    connect(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Guest_InvertSelection), &QAction::triggered,
-            this, &UIGuestControlFileTable::sltInvertSelection);
     connect(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Host_InvertSelection), &QAction::triggered,
             this, &UIGuestControlFileTable::sltInvertSelection);
-    connect(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Guest_ShowProperties), &QAction::triggered,
-            this, &UIGuestControlFileTable::sltShowProperties);
     connect(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Host_ShowProperties), &QAction::triggered,
             this, &UIGuestControlFileTable::sltShowProperties);
-    connect(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Guest_CreateNewDirectory), &QAction::triggered,
-            this, &UIGuestControlFileTable::sltCreateNewDirectory);
     connect(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Host_CreateNewDirectory), &QAction::triggered,
             this, &UIGuestControlFileTable::sltCreateNewDirectory);
 }
