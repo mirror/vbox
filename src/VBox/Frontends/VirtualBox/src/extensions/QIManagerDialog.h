@@ -103,7 +103,7 @@ protected:
       * @{ */
         /** Prepares all.
           * @note Normally you don't need to reimplement it. */
-        virtual void prepare();
+        void prepare();
         /** Configures all.
           * @note Injected into prepare(), reimplement to configure all there. */
         virtual void configure() {}

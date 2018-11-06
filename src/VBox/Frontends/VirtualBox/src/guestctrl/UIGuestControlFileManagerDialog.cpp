@@ -71,12 +71,6 @@ UIGuestControlFileManagerDialog::UIGuestControlFileManagerDialog(QWidget *pCente
 {
 }
 
-void UIGuestControlFileManagerDialog::prepare()
-{
-    QIManagerDialog::prepare();
-    manageEscapeShortCut();
-}
-
 void UIGuestControlFileManagerDialog::retranslateUi()
 {
     /* Translate window title: */
@@ -117,6 +111,7 @@ void UIGuestControlFileManagerDialog::finalize()
 {
     /* Apply language settings: */
     retranslateUi();
+    manageEscapeShortCut();
 }
 
 void UIGuestControlFileManagerDialog::loadSettings()
@@ -160,6 +155,7 @@ bool UIGuestControlFileManagerDialog::shouldBeMaximized() const
 
 void UIGuestControlFileManagerDialog::sltSetCloseButtonShortCut(QKeySequence shortcut)
 {
+    printf("%s\n", qPrintable(shortcut.toString()));
     if (button(ButtonType_Close))
         button(ButtonType_Close)->setShortcut(shortcut);
 }

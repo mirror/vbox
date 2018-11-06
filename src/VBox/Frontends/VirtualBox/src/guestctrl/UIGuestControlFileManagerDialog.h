@@ -71,7 +71,6 @@ public:
 
 protected:
 
-    virtual void prepare() /* override */;
     /** @name Event-handling stuff.
       * @{ */
         /** Handles translation event. */
