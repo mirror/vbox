@@ -4765,9 +4765,50 @@
     </const>
   </enum>
 
+  <enum
+    name="CaptureVideoScalingMethod"
+    uuid="17DA29A9-3F41-482E-A9BB-3D183BA3EE59"
+    >
+    <desc>
+      Capturing video scaling method enumeration.
+    </desc>
+
+    <const name="None"                  value="0">
+      <desc>No scaling performed.</desc>
+    </const>
+    <const name="NearestNeighbor"       value="1">
+      <desc>Performs scaling via nearest-neighbor interpolation.
+        Not yet implemented.</desc>
+    </const>
+    <const name="Bilinear"              value="2">
+      <desc>Performs scaling via bilinear interpolation.
+        Not yet implemented.</desc>
+    </const>
+    <const name="Bicubic"               value="3">
+      <desc>Performs scaling via bicubic interpolation.
+        Not yet implemented.</desc>
+    </const>
+  </enum>
+
+  <enum
+    name="CaptureVideoRateControlMode"
+    uuid="5D392E29-04EC-4FD7-989C-82452F54414C"
+    >
+    <desc>
+      Capturing video rate control mode enumeration.
+    </desc>
+
+    <const name="CBR" value="0">
+      <desc>Constant bit rate (CBR).</desc>
+    </const>
+    <const name="VBR" value="1">
+      <desc>Variable bit rate (VBR). Not yet implemented.</desc>
+    </const>
+  </enum>
+
   <interface
     name="ICaptureScreenSettings" extends="$unknown"
-    uuid="9C8FE192-DD9A-45E9-B17B-2BA23B5951F7"
+    uuid="17DA29A9-3F41-482E-A9BB-3D183BA3EE59"
     wsmap="managed"
     >
 
@@ -4858,36 +4899,86 @@
       </desc>
     </attribute>
 
+    <attribute name="audioCodec" type="CaptureAudioCodec">
+      <desc>
+        Determines the audio codec to use for encoding the
+        recorded audio data. This setting cannot be changed while capturing is
+        enabled.
+      </desc>
+    </attribute>
+
+    <attribute name="audioHz" type="unsigned long" default="22050">
+      <desc>
+        Determines the Hertz (Hz) rate of the recorded audio data. This setting
+        cannot be changed while capturing is enabled.
+      </desc>
+    </attribute>
+
+    <attribute name="audioBits" type="unsigned long" default="16">
+      <desc>
+        Determines the bits per sample of the recorded audio data. This setting
+        cannot be changed while capturing is enabled.
+      </desc>
+    </attribute>
+
+    <attribute name="audioChannels" type="unsigned long" default="2">
+      <desc>
+        Determines the audio channels of the recorded audio data.
+        Specifiy 2 for stereo or 1 for mono. More than stereo (2) channels
+        are not supported at the moment. This setting cannot be changed while
+        capturing is enabled.
+      </desc>
+    </attribute>
+
+    <attribute name="videoCodec" type="CaptureVideoCodec">
+      <desc>
+        Determines the video codec to use for encoding the recorded video data.
+        This setting cannot be changed while capturing is enabled.
+      </desc>
+    </attribute>
+
     <attribute name="videoWidth" type="unsigned long" default="1024">
       <desc>
-        This setting determines the horizontal resolution of the recorded
-        video. This setting cannot be changed while capturing is enabled.
+        Determines the horizontal resolution of the recorded video data. This
+        setting cannot be changed while capturing is enabled.
       </desc>
     </attribute>
 
     <attribute name="videoHeight" type="unsigned long" default="768">
       <desc>
-        This setting determines the vertical resolution of the recorded
-        video. This setting cannot be changed while capturing is enabled.
+        Determines the vertical resolution of the recorded video data. This
+        setting cannot be changed while capturing is enabled.
       </desc>
     </attribute>
 
     <attribute name="videoRate" type="unsigned long" default="512">
       <desc>
-        This setting determines the bitrate in kilobits per second.
-        Increasing this value makes the video look better for the
-        cost of an increased file size. This setting cannot be changed
+        Determines the bitrate in kilobits per second. Increasing this value
+        makes the video look better for the cost of an increased file size or
+        transfer rate. This setting cannot be changed while capturing is enabled.
+      </desc>
+    </attribute>
+
+    <attribute name="videoRateControlMode" type="CaptureVideoRateControlMode">
+      <desc>
+        Determines the rate control mode. This setting cannot be changed
         while capturing is enabled.
       </desc>
     </attribute>
 
     <attribute name="videoFPS" type="unsigned long" default="25">
       <desc>
-        This setting determines the maximum number of frames per second.
-        Frames with a higher frequency will be skipped. Reducing this
-        value increases the number of skipped frames and reduces the
-        file size. This setting cannot be changed while capturing
-        is enabled.
+        Determines the maximum number of frames per second (FPS). Frames with
+        a higher frequency will be skipped. Reducing this value increases the
+        number of skipped frames and reduces the file size or transfer rate.
+        This setting cannot be changed while capturing is enabled.
+      </desc>
+    </attribute>
+
+    <attribute name="videoScalingMethod" type="CaptureVideoScalingMethod">
+      <desc>
+        Determines the video scaling method to use.
+        This setting cannot be changed while capturing is enabled.
       </desc>
     </attribute>
 

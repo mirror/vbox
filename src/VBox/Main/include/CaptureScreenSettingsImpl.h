@@ -74,14 +74,29 @@ private:
     HRESULT getOptions(com::Utf8Str &aOptions);
     HRESULT setOptions(const com::Utf8Str &aOptions);
 
+    HRESULT getAudioCodec(CaptureAudioCodec_T *aCodec);
+    HRESULT setAudioCodec(CaptureAudioCodec_T aCodec);
+    HRESULT getAudioHz(ULONG *aHz);
+    HRESULT setAudioHz(ULONG aHz);
+    HRESULT getAudioBits(ULONG *aBits);
+    HRESULT setAudioBits(ULONG aBits);
+    HRESULT getAudioChannels(ULONG *aChannels);
+    HRESULT setAudioChannels(ULONG aChannels);
+
+    HRESULT getVideoCodec(CaptureVideoCodec_T *aCodec);
+    HRESULT setVideoCodec(CaptureVideoCodec_T aCodec);
     HRESULT getVideoWidth(ULONG *aVideoWidth);
     HRESULT setVideoWidth(ULONG aVideoWidth);
     HRESULT getVideoHeight(ULONG *aVideoHeight);
     HRESULT setVideoHeight(ULONG aVideoHeight);
     HRESULT getVideoRate(ULONG *aVideoRate);
     HRESULT setVideoRate(ULONG aVideoRate);
+    HRESULT getVideoRateControlMode(CaptureVideoRateControlMode_T *aMode);
+    HRESULT setVideoRateControlMode(CaptureVideoRateControlMode_T aMode);
     HRESULT getVideoFPS(ULONG *aVideoFPS);
     HRESULT setVideoFPS(ULONG aVideoFPS);
+    HRESULT getVideoScalingMethod(CaptureVideoScalingMethod_T *aMode);
+    HRESULT setVideoScalingMethod(CaptureVideoScalingMethod_T aMode);
 
 private:
 

@@ -408,6 +408,126 @@ HRESULT CaptureScreenSettings::setOptions(const com::Utf8Str &aOptions)
     return S_OK;
 }
 
+HRESULT CaptureScreenSettings::getAudioCodec(CaptureAudioCodec_T *aCodec)
+{
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    *aCodec = m->bd->Audio.enmAudioCodec;
+
+    return S_OK;
+}
+
+HRESULT CaptureScreenSettings::setAudioCodec(CaptureAudioCodec_T aCodec)
+{
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    if (!i_canChangeSettings())
+        return setError(E_INVALIDARG, tr("Cannot change audio codec while capturing is enabled"));
+
+    m->pMachine->i_setModified(Machine::IsModified_Capture);
+    m->bd.backup();
+
+    m->bd->Audio.enmAudioCodec = aCodec;
+
+    return S_OK;
+}
+
+HRESULT CaptureScreenSettings::getAudioHz(ULONG *aHz)
+{
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    *aHz = m->bd->Audio.uHz;
+
+    return S_OK;
+}
+
+HRESULT CaptureScreenSettings::setAudioHz(ULONG aHz)
+{
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    if (!i_canChangeSettings())
+        return setError(E_INVALIDARG, tr("Cannot change audio Hertz rate while capturing is enabled"));
+
+    m->pMachine->i_setModified(Machine::IsModified_Capture);
+    m->bd.backup();
+
+    m->bd->Audio.uHz = (uint16_t)aHz;
+
+    return S_OK;
+}
+
+HRESULT CaptureScreenSettings::getAudioBits(ULONG *aBits)
+{
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    *aBits = m->bd->Audio.cBits;
+
+    return S_OK;
+}
+
+HRESULT CaptureScreenSettings::setAudioBits(ULONG aBits)
+{
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    if (!i_canChangeSettings())
+        return setError(E_INVALIDARG, tr("Cannot change audio bits while capturing is enabled"));
+
+    m->pMachine->i_setModified(Machine::IsModified_Capture);
+    m->bd.backup();
+
+    m->bd->Audio.cBits = (uint8_t)aBits;
+
+    return S_OK;
+}
+
+HRESULT CaptureScreenSettings::getAudioChannels(ULONG *aChannels)
+{
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    *aChannels = m->bd->Audio.cChannels;
+
+    return S_OK;
+}
+
+HRESULT CaptureScreenSettings::setAudioChannels(ULONG aChannels)
+{
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    if (!i_canChangeSettings())
+        return setError(E_INVALIDARG, tr("Cannot change audio channels while capturing is enabled"));
+
+    m->pMachine->i_setModified(Machine::IsModified_Capture);
+    m->bd.backup();
+
+    m->bd->Audio.cChannels = (uint8_t)aChannels;
+
+    return S_OK;
+}
+
+HRESULT CaptureScreenSettings::getVideoCodec(CaptureVideoCodec_T *aCodec)
+{
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    *aCodec = m->bd->Video.enmCodec;
+
+    return S_OK;
+}
+
+HRESULT CaptureScreenSettings::setVideoCodec(CaptureVideoCodec_T aCodec)
+{
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    if (!i_canChangeSettings())
+        return setError(E_INVALIDARG, tr("Cannot change video codec while capturing is enabled"));
+
+    m->pMachine->i_setModified(Machine::IsModified_Capture);
+    m->bd.backup();
+
+    m->bd->Video.enmCodec = aCodec;
+
+    return S_OK;
+}
+
 HRESULT CaptureScreenSettings::getVideoWidth(ULONG *aVideoWidth)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
@@ -480,6 +600,28 @@ HRESULT CaptureScreenSettings::setVideoRate(ULONG aVideoRate)
     return S_OK;
 }
 
+HRESULT CaptureScreenSettings::getVideoRateControlMode(CaptureVideoRateControlMode_T *aMode)
+{
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    *aMode = CaptureVideoRateControlMode_CBR; /** @todo Implement VBR. */
+
+    return S_OK;
+}
+
+HRESULT CaptureScreenSettings::setVideoRateControlMode(CaptureVideoRateControlMode_T aMode)
+{
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    if (!i_canChangeSettings())
+        return setError(E_INVALIDARG, tr("Cannot change video rate control mode while capturing is enabled"));
+
+    /** @todo Implement this. */
+    RT_NOREF(aMode);
+
+    return E_NOTIMPL;
+}
+
 HRESULT CaptureScreenSettings::getVideoFPS(ULONG *aVideoFPS)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
@@ -494,7 +636,7 @@ HRESULT CaptureScreenSettings::setVideoFPS(ULONG aVideoFPS)
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     if (!i_canChangeSettings())
-        return setError(E_INVALIDARG, tr("Cannot change parameters while capturing is enabled"));
+        return setError(E_INVALIDARG, tr("Cannot change video FPS while capturing is enabled"));
 
     m->pMachine->i_setModified(Machine::IsModified_Capture);
     m->bd.backup();
@@ -502,6 +644,28 @@ HRESULT CaptureScreenSettings::setVideoFPS(ULONG aVideoFPS)
     m->bd->Video.ulFPS = aVideoFPS;
 
     return S_OK;
+}
+
+HRESULT CaptureScreenSettings::getVideoScalingMethod(CaptureVideoScalingMethod_T *aMode)
+{
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    *aMode = CaptureVideoScalingMethod_None; /** @todo Implement this. */
+
+    return S_OK;
+}
+
+HRESULT CaptureScreenSettings::setVideoScalingMethod(CaptureVideoScalingMethod_T aMode)
+{
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    if (!i_canChangeSettings())
+        return setError(E_INVALIDARG, tr("Cannot change video rate scaling method while capturing is enabled"));
+
+    /** @todo Implement this. */
+    RT_NOREF(aMode);
+
+    return E_NOTIMPL;
 }
 
 bool CaptureScreenSettings::i_canChangeSettings(void)
