@@ -548,7 +548,7 @@ struct CaptureScreenSettings
 };
 
 /** Map for keeping settings per virtual screen. */
-typedef std::map<unsigned long, CaptureScreenSettings> CaptureScreenMap;
+typedef std::map<uint32_t, CaptureScreenSettings> CaptureScreenMap;
 
 /**
  * NOTE: If you add any fields in here, you must update a) the constructor and b)

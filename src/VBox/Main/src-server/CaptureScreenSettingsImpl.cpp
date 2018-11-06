@@ -42,7 +42,7 @@ struct CaptureScreenSettings::Data
 
     Machine * const                  pMachine;
     ComObjPtr<CaptureScreenSettings> pPeer;
-    unsigned long                    uScreenId;
+    uint32_t                         uScreenId;
 
     // use the XML settings structure in the members for simplicity
     Backupable<settings::CaptureScreenSettings> bd;
@@ -72,7 +72,7 @@ void CaptureScreenSettings::FinalRelease()
  *
  * @returns COM result indicator
  */
-HRESULT CaptureScreenSettings::init(Machine *aParent, unsigned long uScreenId, const settings::CaptureScreenSettings &data)
+HRESULT CaptureScreenSettings::init(Machine *aParent, uint32_t uScreenId, const settings::CaptureScreenSettings& data)
 {
     LogFlowThisFuncEnter();
     LogFlowThisFunc(("aParent: %p\n", aParent));

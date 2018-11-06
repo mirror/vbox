@@ -67,7 +67,7 @@ private:
 private:
 
     /** Map of screen settings objects. The key specifies the screen ID. */
-    typedef std::map <ULONG, ComObjPtr<CaptureScreenSettings> > CaptureScreenSettingsMap;
+    typedef std::map <uint32_t, ComObjPtr<CaptureScreenSettings> > CaptureScreenSettingsMap;
 
     struct Data;
     Data *m;

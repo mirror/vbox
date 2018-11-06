@@ -291,6 +291,8 @@ HRESULT CaptureSettings::i_loadSettings(const settings::CaptureSettings &data)
 
     HRESULT rc = S_OK;
 
+    m->mapScreenSettings.clear();
+
     settings::CaptureScreenMap::const_iterator itScreen = data.mapScreens.begin();
     while (itScreen != data.mapScreens.end())
     {
@@ -302,6 +304,8 @@ HRESULT CaptureSettings::i_loadSettings(const settings::CaptureSettings &data)
         rc = captureScreenSettings->init(m->pMachine, itScreen->first /* uScreenId */, itScreen->second /* Settings */);
         if (FAILED(rc))
             break;
+
+        m->mapScreenSettings[itScreen->first] = captureScreenSettings;
 
         ++itScreen;
     }

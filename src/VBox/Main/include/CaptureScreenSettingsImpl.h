@@ -38,7 +38,7 @@ public:
     void FinalRelease();
 
     // public initializer/uninitializer for internal purposes only
-    HRESULT init(Machine *aParent, unsigned long uScreenId, const settings::CaptureScreenSettings& data);
+    HRESULT init(Machine *aParent, uint32_t uScreenId, const settings::CaptureScreenSettings& data);
     HRESULT init(Machine *aParent, CaptureScreenSettings *that);
     HRESULT initCopy(Machine *aParent, CaptureScreenSettings *that);
     void uninit();
