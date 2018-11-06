@@ -303,7 +303,7 @@ IOService * org_virtualbox_VBoxVFS::waitForCoreService(void)
     if (!serviceToMatch)
     {
         PINFO("unable to create matching dictionary");
-        return false;
+        return NULL;
     }
 
     /* Wait 10 seconds for VBoxGuest to be started */

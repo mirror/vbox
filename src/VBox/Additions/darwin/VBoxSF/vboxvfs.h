@@ -15,21 +15,18 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#define MODULE_NAME "VBoxVFS"
+#define MODULE_NAME "VBoxSF"
 
 #ifdef KERNEL
 # include <libkern/libkern.h>
 # include <sys/lock.h>
 #endif
 
-#define PINFO(fmt, args...) \
-    printf(MODULE_NAME ": INFO: " fmt "\n", ## args)
-#define PDEBUG(fmt, args...) \
-    printf(MODULE_NAME ": %s(): DEBUG: " fmt "\n", __FUNCTION__, ## args)
-#define PERROR(fmt, args...) \
-    printf(MODULE_NAME ": ERROR: " fmt "\n", ## args)
+#define PINFO(fmt, args...)     printf(MODULE_NAME ": INFO: " fmt "\n", ## args)
+#define PDEBUG(fmt, args...)    printf(MODULE_NAME ": %s(): DEBUG: " fmt "\n", __FUNCTION__, ## args)
+#define PERROR(fmt, args...)    printf(MODULE_NAME ": ERROR: " fmt "\n", ## args)
 
-#define VBOXVBFS_NAME               "vboxvfs"
+#define VBOXVBFS_NAME               "vboxsf"
 #define VBOXVFS_MOUNTINFO_MAGIC     (0xCAFE)
 
 #ifdef KERNEL
@@ -47,7 +44,7 @@ extern VBGLSFCLIENT g_vboxSFClient;
 /** Private data assigned to each mounted shared folder. Assigned to mp structure. */
 typedef struct vboxvfs_mount_data
 {
-    VBSFMAP             pMap;               /** Shared folder mapping */
+    VBGLSFMAP           pMap;               /** Shared folder mapping */
     SHFLSTRING         *pShareName;         /** VBoxVFS share name */
     uint64_t            cFileIdCounter;     /** Counter that used in order to assign unique ID to each vnode within mounted share */
     vnode_t             pRootVnode;         /** VFS object: vnode that corresponds shared folder root */
@@ -200,7 +197,7 @@ extern mode_t vboxvfs_h2g_mode_inernal(RTFMODE fHostMode);
  */
 extern uint32_t vboxvfs_g2h_mode_inernal(mode_t fGuestMode);
 
-extern SHFLSTRING *vboxvfs_construct_shflstring(char *szName, size_t cbName);
+extern SHFLSTRING *vboxvfs_construct_shflstring(const char *pszName, size_t cchName);
 
 #endif /* KERNEL */
 

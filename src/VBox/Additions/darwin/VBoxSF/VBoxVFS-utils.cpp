@@ -571,34 +571,29 @@ vboxvfs_g2h_mode_inernal(mode_t fGuestMode)
 /**
  * Mount helper: Contruct SHFLSTRING which contains VBox share name or path.
  *
- * @param szName        Char * string containing share name.
- * @param cbName        Length of pShareName.
- *
- * @return Allocated SHFLSTRING which contains VBox share name or path, NULL otherwise.
+ * @returns Initialize string buffer on success, NULL if out of memory.
+ * @param   pachName    The string to pack in a buffer.  Does not need to be
+ *                      zero terminated.
+ * @param   cchName     The length of pachName to use.  RTSTR_MAX for strlen.
  */
 SHFLSTRING *
-vboxvfs_construct_shflstring(char *szName, size_t cbName)
+vboxvfs_construct_shflstring(const char *pachName, size_t cchName)
 {
-    size_t      cbSHFLString;
-    SHFLSTRING *pSHFLString;
+    AssertReturn(pachName, NULL);
 
-    AssertReturn(szName, NULL);
+    if (cchName == RTSTR_MAX)
+        cchName = strlen(pachName);
 
-    cbSHFLString = offsetof(SHFLSTRING, String.utf8) + cbName + 1;
-    pSHFLString = (SHFLSTRING *)RTMemAllocZ(cbSHFLString);
-
+    SHFLSTRING *pSHFLString = (SHFLSTRING *)RTMemAlloc(SHFLSTRING_HEADER_SIZE + cchName + 1);
     if (pSHFLString)
     {
-        pSHFLString->u16Length = cbSHFLString;
-        pSHFLString->u16Size   = cbSHFLString + 1;
-
-        /* Do not do that for empty strings */
-        if (cbName > 0)
-            memcpy(pSHFLString->String.utf8, szName, cbName + 1);
+        pSHFLString->u16Length = cchName;
+        pSHFLString->u16Size   = cchName + 1;
+        memcpy(pSHFLString->String.utf8, pachName, cchName);
+        pSHFLString->String.utf8[cchName] = '\0';
 
         return pSHFLString;
     }
-
     return NULL;
 }
 
