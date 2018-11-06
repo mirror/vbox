@@ -143,11 +143,7 @@ typedef struct RTDBGKRNLINFOINT
 *********************************************************************************************************************************/
 /** Pointer to MmGetSystemRoutineAddress.
  * @note Added in NT v5.0. */
-#ifdef IPRT_TARGET_NT4
 static decltype(MmGetSystemRoutineAddress) *g_pfnMmGetSystemRoutineAddress = NULL;
-#else
-static decltype(MmGetSystemRoutineAddress) *g_pfnMmGetSystemRoutineAddress = MmGetSystemRoutineAddress;
-#endif
 /** Info about the ntoskrnl.exe mapping. */
 static RTDBGNTKRNLMODINFO   g_NtOsKrnlInfo = { "ntoskrnl.exe", NULL, NULL, false, 0, 0, 0, 0, 0, NULL, 0, 0, NULL, NULL };
 /** Info about the hal.dll mapping. */
@@ -347,6 +343,14 @@ static bool rtR0DbgKrnlNtParseModule(PRTDBGNTKRNLMODINFO pModInfo, uint8_t const
 static int rtR0DbgKrnlNtInit(PRTDBGNTKRNLMODINFO pModInfo)
 {
     RTR0DBG_NT_DEBUG_LOG(("rtR0DbgKrnlNtInit: pModInfo=%p\n", pModInfo));
+
+#ifndef IPRT_TARGET_NT4
+    /*
+     * Must manually initialize g_pfnMmGetSystemRoutineAddress, otherwise compiler
+     * generates its own dynamic init code that might not necessarily be called.
+     */
+    g_pfnMmGetSystemRoutineAddress = MmGetSystemRoutineAddress;
+#endif
 
     /*
      * Allocate a reasonably large buffer and get the information we need.  We don't
