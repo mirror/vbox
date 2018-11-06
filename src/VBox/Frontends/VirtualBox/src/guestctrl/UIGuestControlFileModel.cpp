@@ -111,7 +111,7 @@ bool UIGuestControlFileModel::setData(const QModelIndex &index, const QVariant &
             else
             {
                 if (m_pParent)
-                    m_pParent->emitLogOutput(QString(item->path()).append(" could not be renamed"));
+                    m_pParent->emitLogOutput(QString(item->path()).append(" could not be renamed"), FileManagerLogType_Error);
             }
             return true;
         }

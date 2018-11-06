@@ -643,9 +643,9 @@ void UIGuestControlFileTable::reset()
     }
 }
 
-void UIGuestControlFileTable::emitLogOutput(const QString& strOutput)
+void UIGuestControlFileTable::emitLogOutput(const QString& strOutput, FileManagerLogType eLogType)
 {
-    emit sigLogOutput(strOutput);
+    emit sigLogOutput(strOutput, eLogType);
 }
 
 void UIGuestControlFileTable::prepareObjects()

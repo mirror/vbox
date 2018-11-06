@@ -31,6 +31,7 @@
 /* GUI includes: */
 #include "QIManagerDialog.h"
 #include "QIWithRetranslateUI.h"
+#include "UIGuestControlDefs.h"
 #include "UIMainEventListener.h"
 
 /* Forward declarations: */
@@ -45,8 +46,8 @@ class UIFileOperationsList;
 class UIGuestControlConsole;
 class UIGuestControlInterface;
 class UIGuestControlFileManagerPanel;
-class UIGuestControlFileManagerSessionPanel;
 class UIGuestControlFileManagerLogPanel;
+class UIGuestControlFileManagerSessionPanel;
 class UIGuestControlFileManagerSettingsPanel;
 class UIGuestFileTable;
 class UIHostFileTable;
@@ -102,7 +103,7 @@ private slots:
     void sltCreateSession(QString strUserName, QString strPassword);
     void sltCloseSession();
     void sltGuestSessionStateChanged(const CGuestSessionStateChangedEvent &cEvent);
-    void sltReceieveLogOutput(QString strOutput);
+    void sltReceieveLogOutput(QString strOutput, FileManagerLogType eLogType);
     void sltCopyGuestToHost();
     void sltCopyHostToGuest();
     void sltPanelActionToggled(bool fChecked);
@@ -141,20 +142,20 @@ private:
     void manageEscapeShortCut();
 
     template<typename T>
-    QStringList       getFsObjInfoStringList(const T &fsObjectInfo) const;
-    void              appendLog(const QString &strLog);
-    const int                   m_iMaxRecursionDepth;
-    CGuest                      m_comGuest;
-    CGuestSession               m_comGuestSession;
-    QVBoxLayout                *m_pMainLayout;
-    QSplitter                  *m_pVerticalSplitter;
-    UIToolBar                  *m_pToolBar;
+    QStringList               getFsObjInfoStringList(const T &fsObjectInfo) const;
+    void                      appendLog(const QString &strLog, FileManagerLogType eLogType);
+    const int                 m_iMaxRecursionDepth;
+    CGuest                    m_comGuest;
+    CGuestSession             m_comGuestSession;
+    QVBoxLayout              *m_pMainLayout;
+    QSplitter                *m_pVerticalSplitter;
+    UIToolBar                *m_pToolBar;
 
     //UIFileOperationsList       *m_pFileOperationsList;
-    UIGuestControlConsole      *m_pConsole;
-    UIGuestControlInterface    *m_pControlInterface;
-    UIGuestFileTable           *m_pGuestFileTable;
-    UIHostFileTable            *m_pHostFileTable;
+    UIGuestControlConsole    *m_pConsole;
+    UIGuestControlInterface  *m_pControlInterface;
+    UIGuestFileTable         *m_pGuestFileTable;
+    UIHostFileTable          *m_pHostFileTable;
 
     ComObjPtr<UIMainEventListenerImpl> m_pQtGuestListener;
     ComObjPtr<UIMainEventListenerImpl> m_pQtSessionListener;

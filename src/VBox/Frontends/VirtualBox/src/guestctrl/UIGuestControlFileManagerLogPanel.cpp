@@ -95,7 +95,7 @@ UIGuestControlFileManagerLogPanel::UIGuestControlFileManagerLogPanel(UIGuestCont
     prepare();
 }
 
-void UIGuestControlFileManagerLogPanel::appendLog(const QString &strLog)
+void UIGuestControlFileManagerLogPanel::appendLog(const QString &strLog, FileManagerLogType)
 {
     if (!m_pLogTextEdit)
         return;

@@ -183,7 +183,7 @@ void UIGuestFileTable::readDirectory(const QString& strPath,
     directory = m_comGuestSession.DirectoryOpen(UIPathOperations::sanitize(strPath), /*aFilter*/ "", flag);
     if (!m_comGuestSession.isOk())
     {
-        emit sigLogOutput(UIErrorString::formatErrorInfo(m_comGuestSession));
+        emit sigLogOutput(UIErrorString::formatErrorInfo(m_comGuestSession), FileManagerLogType_Error);
         return;
     }
 
@@ -248,8 +248,8 @@ void UIGuestFileTable::deleteByItem(UIFileTableItem *item)
         m_comGuestSession.FsObjRemove(item->path());
     if (!m_comGuestSession.isOk())
     {
-        emit sigLogOutput(QString(item->path()).append(" could not be deleted"));
-        emit sigLogOutput(UIErrorString::formatErrorInfo(m_comGuestSession));
+        emit sigLogOutput(QString(item->path()).append(" could not be deleted"), FileManagerLogType_Error);
+        emit sigLogOutput(UIErrorString::formatErrorInfo(m_comGuestSession), FileManagerLogType_Error);
     }
 }
 
@@ -266,7 +266,7 @@ void UIGuestFileTable::goToHomeDirectory()
     QString userHome = UIPathOperations::sanitize(m_comGuestSession.GetUserHome());
     if (!m_comGuestSession.isOk())
     {
-        emit sigLogOutput(UIErrorString::formatErrorInfo(m_comGuestSession));
+        emit sigLogOutput(UIErrorString::formatErrorInfo(m_comGuestSession), FileManagerLogType_Error);
         return;
     }
     QStringList pathList = userHome.split(UIPathOperations::delimiter, QString::SkipEmptyParts);
@@ -284,7 +284,7 @@ bool UIGuestFileTable::renameItem(UIFileTableItem *item, QString newBaseName)
     m_comGuestSession.FsObjRename(item->path(), newPath, aFlags);
     if (!m_comGuestSession.isOk())
     {
-        emit sigLogOutput(UIErrorString::formatErrorInfo(m_comGuestSession));
+        emit sigLogOutput(UIErrorString::formatErrorInfo(m_comGuestSession), FileManagerLogType_Error);
         return false;
     }
 
@@ -301,11 +301,11 @@ bool UIGuestFileTable::createDirectory(const QString &path, const QString &direc
 
     if (!m_comGuestSession.isOk())
     {
-        emit sigLogOutput(newDirectoryPath.append(" could not be created"));
-        emit sigLogOutput(UIErrorString::formatErrorInfo(m_comGuestSession));
+        emit sigLogOutput(newDirectoryPath.append(" could not be created"), FileManagerLogType_Error);
+        emit sigLogOutput(UIErrorString::formatErrorInfo(m_comGuestSession), FileManagerLogType_Error);
         return false;
     }
-    emit sigLogOutput(newDirectoryPath.append(" has been created"));
+    emit sigLogOutput(newDirectoryPath.append(" has been created"), FileManagerLogType_Info);
     return true;
 }
 
@@ -317,7 +317,7 @@ void UIGuestFileTable::copyHostToGuest(const QStringList &hostSourcePathList)
     CProgress progress = m_comGuestSession.CopyToGuest(sourcePaths, aFilters, aFlags, currentDirectoryPath());
     if (!m_comGuestSession.isOk())
     {
-        emit sigLogOutput(UIErrorString::formatErrorInfo(m_comGuestSession));
+        emit sigLogOutput(UIErrorString::formatErrorInfo(m_comGuestSession), FileManagerLogType_Error);
         //msgCenter().cannotRemoveMachine(machine);
         return;
     }
@@ -325,7 +325,7 @@ void UIGuestFileTable::copyHostToGuest(const QStringList &hostSourcePathList)
     msgCenter().showModalProgressDialog(progress, "copying", ":/progress_delete_90px.png");
     if (!progress.isOk() || progress.GetResultCode() != 0)
     {
-        emit sigLogOutput(UIErrorString::formatErrorInfo(progress));
+        emit sigLogOutput(UIErrorString::formatErrorInfo(progress), FileManagerLogType_Error);
         return;
     }
 
@@ -342,14 +342,14 @@ void UIGuestFileTable::copyGuestToHost(const QString& hostDestinationPath)
     CProgress progress = m_comGuestSession.CopyFromGuest(sourcePaths, aFilters, aFlags, hostDestinationPath);
     if (!m_comGuestSession.isOk())
     {
-        emit sigLogOutput(UIErrorString::formatErrorInfo(m_comGuestSession));
+        emit sigLogOutput(UIErrorString::formatErrorInfo(m_comGuestSession), FileManagerLogType_Error);
         return;
     }
 
     msgCenter().showModalProgressDialog(progress, "copying", ":/progress_delete_90px.png");
     if (!progress.isOk() || progress.GetResultCode() != 0)
     {
-        emit sigLogOutput(UIErrorString::formatErrorInfo(progress));
+        emit sigLogOutput(UIErrorString::formatErrorInfo(progress), FileManagerLogType_Error);
         return;
     }
     else
@@ -398,7 +398,7 @@ QString UIGuestFileTable::fsObjectPropertyString()
         CGuestFsObjInfo fileInfo = m_comGuestSession.FsObjQueryInfo(selectedObjects.at(0), true);
         if (!m_comGuestSession.isOk())
         {
-            emit sigLogOutput(UIErrorString::formatErrorInfo(m_comGuestSession));
+            emit sigLogOutput(UIErrorString::formatErrorInfo(m_comGuestSession), FileManagerLogType_Error);
             return QString();
         }
 
@@ -437,7 +437,7 @@ QString UIGuestFileTable::fsObjectPropertyString()
         CGuestFsObjInfo fileInfo = m_comGuestSession.FsObjQueryInfo(selectedObjects.at(0), true);
         if (!m_comGuestSession.isOk())
         {
-            emit sigLogOutput(UIErrorString::formatErrorInfo(m_comGuestSession));
+            emit sigLogOutput(UIErrorString::formatErrorInfo(m_comGuestSession), FileManagerLogType_Error);
             continue;
         }
 

@@ -288,6 +288,8 @@ void UIGuestControlFileManager::prepareObjects()
     m_pVerticalSplitter->addWidget(m_pLogPanel);
     m_pVerticalSplitter->setCollapsible(m_pVerticalSplitter->indexOf(pTopWidget), false);
     m_pVerticalSplitter->setCollapsible(m_pVerticalSplitter->indexOf(m_pLogPanel), false);
+    m_pVerticalSplitter->setStretchFactor(0, 3);
+    m_pVerticalSplitter->setStretchFactor(1, 1);
 }
 
 void UIGuestControlFileManager::prepareVerticalToolBar(QHBoxLayout *layout)
@@ -389,13 +391,13 @@ void UIGuestControlFileManager::sltCreateSession(QString strUserName, QString st
 {
     if (!UIGuestControlInterface::isGuestAdditionsAvailable(m_comGuest))
     {
-        appendLog("Could not find Guest Additions");
+        appendLog("Could not find Guest Additions", FileManagerLogType_Error);
         postSessionClosed();
         return;
     }
     if (strUserName.isEmpty())
     {
-        appendLog("No user name is given");
+        appendLog("No user name is given", FileManagerLogType_Error);
         return;
     }
     createSession(strUserName, strPassword);
@@ -405,7 +407,7 @@ void UIGuestControlFileManager::sltCloseSession()
 {
     if (!m_comGuestSession.isOk())
     {
-        appendLog("Guest session is not valid");
+        appendLog("Guest session is not valid", FileManagerLogType_Error);
         postSessionClosed();
         return;
     }
@@ -416,7 +418,7 @@ void UIGuestControlFileManager::sltCloseSession()
         cleanupListener(m_pQtSessionListener, m_comSessionListener, m_comGuestSession.GetEventSource());
 
     m_comGuestSession.Close();
-    appendLog("Guest session is closed");
+    appendLog("Guest session is closed", FileManagerLogType_Info);
     postSessionClosed();
 }
 
@@ -426,7 +428,7 @@ void UIGuestControlFileManager::sltGuestSessionStateChanged(const CGuestSessionS
     {
         CVirtualBoxErrorInfo cErrorInfo = cEvent.GetError();
         if (cErrorInfo.isOk())
-            appendLog(cErrorInfo.GetText());
+            appendLog(cErrorInfo.GetText(), FileManagerLogType_Error);
     }
     if (m_comGuestSession.GetStatus() == KGuestSessionStatus_Started)
     {
@@ -435,13 +437,13 @@ void UIGuestControlFileManager::sltGuestSessionStateChanged(const CGuestSessionS
     }
     else
     {
-        appendLog("Session status has changed");
+        appendLog("Session status has changed", FileManagerLogType_Info);
     }
 }
 
-void UIGuestControlFileManager::sltReceieveLogOutput(QString strOutput)
+void UIGuestControlFileManager::sltReceieveLogOutput(QString strOutput, FileManagerLogType eLogType)
 {
-    appendLog(strOutput);
+    appendLog(strOutput, eLogType);
 }
 
 void UIGuestControlFileManager::sltCopyGuestToHost()
@@ -532,10 +534,10 @@ bool UIGuestControlFileManager::createSession(const QString& strUserName, const 
 
     if (!m_comGuestSession.isOk())
     {
-        appendLog(UIErrorString::formatErrorInfo(m_comGuestSession));
+        appendLog(UIErrorString::formatErrorInfo(m_comGuestSession), FileManagerLogType_Error);
         return false;
     }
-    appendLog("Guest session has been created");
+    appendLog("Guest session has been created", FileManagerLogType_Info);
     if (m_pSessionPanel)
         m_pSessionPanel->switchSessionCloseMode();
 
@@ -554,12 +556,12 @@ bool UIGuestControlFileManager::createSession(const QString& strUserName, const 
             this, &UIGuestControlFileManager::sltGuestSessionStateChanged);
      /* Wait session to start. For some reason we cannot get GuestSessionStatusChanged event
         consistently. So we wait: */
-    appendLog("Waiting the session to start");
+    appendLog("Waiting the session to start", FileManagerLogType_Info);
     const ULONG waitTimeout = 2000;
     KGuestSessionWaitResult waitResult = m_comGuestSession.WaitFor(KGuestSessionWaitForFlag_Start, waitTimeout);
     if (waitResult != KGuestSessionWaitResult_Start)
     {
-        appendLog("The session did not start");
+        appendLog("The session did not start", FileManagerLogType_Error);
         sltCloseSession();
         return false;
     }
@@ -695,11 +697,11 @@ void UIGuestControlFileManager::manageEscapeShortCut()
     m_visiblePanelsList.back()->setCloseButtonShortCut(QKeySequence(Qt::Key_Escape));
 }
 
-void UIGuestControlFileManager::appendLog(const QString &strLog)
+void UIGuestControlFileManager::appendLog(const QString &strLog, FileManagerLogType eLogType)
 {
     if (!m_pLogPanel)
         return;
-    m_pLogPanel->appendLog(strLog);
+    m_pLogPanel->appendLog(strLog, eLogType);
 }
 
 #include "UIGuestControlFileManager.moc"

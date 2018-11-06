@@ -270,7 +270,7 @@ void UIHostFileTable::deleteByItem(UIFileTableItem *item)
     bool deleteSuccess = itemToDelete.removeRecursively();
 
      if (!deleteSuccess)
-         emit sigLogOutput(QString(item->path()).append(" could not be deleted"));
+         emit sigLogOutput(QString(item->path()).append(" could not be deleted"), FileManagerLogType_Error);
 }
 
 void UIHostFileTable::goToHomeDirectory()
@@ -304,7 +304,7 @@ bool UIHostFileTable::createDirectory(const QString &path, const QString &direct
     QDir parentDir(path);
     if (!parentDir.mkdir(directoryName))
     {
-        emit sigLogOutput(UIPathOperations::mergePaths(path, directoryName).append(" could not be created"));
+        emit sigLogOutput(UIPathOperations::mergePaths(path, directoryName).append(" could not be created"), FileManagerLogType_Error);
         return false;
     }
 
