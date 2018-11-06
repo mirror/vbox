@@ -9824,6 +9824,7 @@ static VBOXSTRICTRC hmR0VmxHandleExitDtraceEvents(PVMCPU pVCpu, PVMXTRANSIENT pV
     if (   enmEvent1 != DBGFEVENT_END
         && DBGF_IS_EVENT_ENABLED(pVM, enmEvent1))
     {
+        HMVMX_CPUMCTX_IMPORT_STATE(pVCpu, CPUMCTX_EXTRN_CS | CPUMCTX_EXTRN_RIP);
         VBOXSTRICTRC rcStrict = DBGFEventGenericWithArgs(pVM, pVCpu, enmEvent1, DBGFEVENTCTX_HM, 1, uEventArg);
         if (rcStrict != VINF_SUCCESS)
             return rcStrict;
@@ -9831,6 +9832,7 @@ static VBOXSTRICTRC hmR0VmxHandleExitDtraceEvents(PVMCPU pVCpu, PVMXTRANSIENT pV
     else if (   enmEvent2 != DBGFEVENT_END
              && DBGF_IS_EVENT_ENABLED(pVM, enmEvent2))
     {
+        HMVMX_CPUMCTX_IMPORT_STATE(pVCpu, CPUMCTX_EXTRN_CS | CPUMCTX_EXTRN_RIP);
         VBOXSTRICTRC rcStrict = DBGFEventGenericWithArgs(pVM, pVCpu, enmEvent2, DBGFEVENTCTX_HM, 1, uEventArg);
         if (rcStrict != VINF_SUCCESS)
             return rcStrict;
