@@ -115,7 +115,9 @@ HRESULT CaptureSettings::init(Machine *aParent, CaptureSettings *that)
     m->pPeer = that;
 
     AutoWriteLock thatlock(that COMMA_LOCKVAL_SRC_POS);
+
     m->bd.share(that->m->bd);
+    m->mapScreenSettings = that->m->mapScreenSettings;
 
     autoInitSpan.setSucceeded();
 
@@ -145,7 +147,9 @@ HRESULT CaptureSettings::initCopy(Machine *aParent, CaptureSettings *that)
     // mPeer is left null
 
     AutoWriteLock thatlock(that COMMA_LOCKVAL_SRC_POS);
+
     m->bd.attachCopy(that->m->bd);
+    m->mapScreenSettings = that->m->mapScreenSettings;
 
     autoInitSpan.setSucceeded();
 
@@ -309,6 +313,9 @@ HRESULT CaptureSettings::i_loadSettings(const settings::CaptureSettings &data)
 
         ++itScreen;
     }
+
+    ComAssertComRC(rc);
+    Assert(m->mapScreenSettings.size() == data.mapScreens.size());
 
     // simply copy
     m->bd.assignCopy(&data);
