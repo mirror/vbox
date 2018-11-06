@@ -4767,7 +4767,7 @@
 
   <enum
     name="CaptureVideoScalingMethod"
-    uuid="17DA29A9-3F41-482E-A9BB-3D183BA3EE59"
+    uuid="8315399B-4F31-416E-970E-D7480BDA1ACF"
     >
     <desc>
       Capturing video scaling method enumeration.
