@@ -177,7 +177,7 @@ int RTCRestClientApiBase::reinitHttpInstance() RT_NOEXCEPT
     if (m_hHttp != NIL_RTHTTP)
     {
 #if 0   /** @todo XXX: disable for now as it causes the RTHTTP handle state and curl state to get out of sync. */
-        return RTHttpDestroy(m_hHttp, 0 /*fFlags*/);
+        return RTHttpReset(m_hHttp, 0 /*fFlags*/);
 #else
         RTHttpDestroy(m_hHttp);
         m_hHttp = NIL_RTHTTP;
