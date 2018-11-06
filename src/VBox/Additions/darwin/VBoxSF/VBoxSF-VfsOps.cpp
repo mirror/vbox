@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBoxVFS - Filesystem operations.
+ * VBoxFS - Darwin Shared Folders, Virtual File System Operations.
  */
 
 /*
@@ -15,18 +15,16 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#include <mach/kmod.h>
-#include <libkern/libkern.h>
-#include <mach/mach_types.h>
 
-#include <sys/mount.h>
-#include <sys/vnode.h>
+/*********************************************************************************************************************************
+*   Header Files                                                                                                                 *
+*********************************************************************************************************************************/
+#include "VBoxSFInternal.h"
 
 #include <iprt/assert.h>
 #include <iprt/mem.h>
 #include <iprt/asm.h>
 
-#include "vboxvfs.h"
 
 /* States of VBoxVFS object used in atomic variables
  * in order to reach sync between several concurrently running threads. */
@@ -45,20 +43,20 @@
  * @return 0 on success or BSD error code otherwise.
  */
 static int
-vboxvfs_get_mount_info(user_addr_t pUserData, struct vboxvfs_mount_info *pKernelData)
+vboxvfs_get_mount_info(user_addr_t pUserData, PVBOXSFDRWNMOUNTINFO pKernelData)
 {
     AssertReturn(pKernelData, EINVAL);
     AssertReturn(pUserData,   EINVAL);
 
     /* Get mount parameters from user space */
-    if (copyin(pUserData, pKernelData, sizeof(struct vboxvfs_mount_info)) != 0)
+    if (copyin(pUserData, pKernelData, sizeof(*pKernelData)) != 0)
     {
         PERROR("Unable to copy mount parameters from user space");
         return EINVAL;
     }
 
     /* Validate data magic */
-    if (pKernelData->magic != VBOXVFS_MOUNTINFO_MAGIC)
+    if (pKernelData->u32Magic != VBOXSFDRWNMOUNTINFO_MAGIC)
     {
         PERROR("Mount parameter magic mismatch");
         return EINVAL;
@@ -194,7 +192,7 @@ vboxvfs_alloc_internal_data(struct mount *mp, user_addr_t pUserData)
         rc = vboxvfs_get_mount_info(pUserData, &mountInfo);
         if (rc == 0)
         {
-            PDEBUG("Mounting shared folder '%s'", mountInfo.name);
+            PDEBUG("Mounting shared folder '%s'", mountInfo.szFolder);
 
             /* Prepare for locking. We prepare locking group and attr data here,
              * but allocate and initialize real lock in vboxvfs_create_vnode_internal().
@@ -202,10 +200,10 @@ vboxvfs_alloc_internal_data(struct mount *mp, user_addr_t pUserData)
             rc = vboxvfs_prepare_locking(pMount);
             if (rc == 0)
             {
-                rc = vboxvfs_set_share_name(mp, (char *)&mountInfo.name, &cbShareName);
+                rc = vboxvfs_set_share_name(mp, (char *)mountInfo.szFolder, &cbShareName);
                 if (rc == 0)
                 {
-                    pMount->pShareName = vboxvfs_construct_shflstring((char *)&mountInfo.name, cbShareName);
+                    pMount->pShareName = vboxvfs_construct_shflstring(mountInfo.szFolder, cbShareName);
                     if (pMount->pShareName)
                     {
                         /* Remember user who mounted this share */

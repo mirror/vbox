@@ -1,10 +1,10 @@
 # $Id$
 ## @file
-# sub-makefile for the Mac OS addition file system driver.
+# sub-makefile for Darwin Shared Folders.
 #
 
 #
-# Copyright (C) 2007-2017 Oracle Corporation
+# Copyright (C) 2007-2018 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -28,10 +28,10 @@ VBoxSF_DEFS     = VBOX_WITH_HGCM
 VBoxSF_CXXFLAGS = -Wno-unused -Wno-unused-parameter
 VBoxSF_LIBS     = $(VBOX_LIB_VBGL_R0)
 VBoxSF_SOURCES  = \
-	VBoxVFS.cpp \
-	VBoxVFS-VFSOps.cpp \
-	VBoxVFS-VNODEOps.cpp \
-	VBoxVFS-utils.cpp
+	VBoxSF.cpp \
+	VBoxSF-VfsOps.cpp \
+	VBoxSF-VNodeOps.cpp \
+	VBoxSF-Utils.cpp
 
 
 #
@@ -63,7 +63,7 @@ $$(VBoxSF.kext_0_OUTDIR)/Info.plist: \
 #
 PROGRAMS += mount.vboxsf
 mount.vboxsf_TEMPLATE = NewVBoxGuestR3Exe
-mount.vboxsf_SOURCES  = mount.vboxsf.c
+mount.vboxsf_SOURCES  = mount.vboxsf.cpp
 mount.vboxsf_INST     = $(INST_ADDITIONS)VBoxSF.kext/Contents/MacOS/
 
 

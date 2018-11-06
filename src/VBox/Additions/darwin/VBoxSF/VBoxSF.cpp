@@ -1,10 +1,10 @@
 /* $Id$ */
 /** @file
- * VBoxVFS - Guest Additions Shared Folders driver. KEXT entry point.
+ * VBoxSF - Darwin Shared Folders, KEXT entry points.
  */
 
 /*
- * Copyright (C) 2013-2017 Oracle Corporation
+ * Copyright (C) 2013-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -15,31 +15,22 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#include <IOKit/IOLib.h> /* Assert as function */
-#include <IOKit/IOService.h>
-#include <mach/mach_port.h>
 
+/*********************************************************************************************************************************
+*   Header Files                                                                                                                 *
+*********************************************************************************************************************************/
+#define LOG_GROUP LOG_GROUP_DEFAULT
+#include "VBoxSFInternal.h"
 
-#include <mach/kmod.h>
-#include <libkern/libkern.h>
-#include <mach/mach_types.h>
-#include <sys/mount.h>
-
-#include <iprt/cdefs.h>
-#include <iprt/types.h>
-#include <sys/param.h>
-#include <VBox/version.h>
 #include <iprt/asm.h>
-
+#include <iprt/assert.h>
+#include <VBox/version.h>
 #include <VBox/log.h>
-
-#include "vboxvfs.h"
 
 
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
 *********************************************************************************************************************************/
-
 /**
  * The service class for dealing with Share Folder filesystem.
  */
@@ -149,7 +140,7 @@ int VBoxVFSRegisterFilesystem(void)
             VFS_TBLFSNODELOCK |
             VFS_TBLNOTYPENUM;
 
-    memcpy(oVFsEntry.vfe_fsname, VBOXVBFS_NAME, MFSNAMELEN);
+    memcpy(oVFsEntry.vfe_fsname, VBOXSF_DARWIN_FS_NAME, MFSNAMELEN);
 
     rc = vfs_fsadd(&oVFsEntry, &g_oVBoxVFSHandle);
     if (rc)

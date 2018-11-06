@@ -1,10 +1,10 @@
 /* $Id$ */
 /** @file
- * VBoxVFS - common header used across all the driver source files.
+ * VBoxSF - Darwin Shared Folders, internal header.
  */
 
 /*
- * Copyright (C) 2013-2017 Oracle Corporation
+ * Copyright (C) 2013-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -15,32 +15,46 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#define MODULE_NAME "VBoxSF"
+#ifndef ___VBoxSFInternal_h___
+#define ___VBoxSFInternal_h___
 
-#ifdef KERNEL
-# include <libkern/libkern.h>
-# include <sys/lock.h>
-#endif
 
-#define PINFO(fmt, args...)     printf(MODULE_NAME ": INFO: " fmt "\n", ## args)
-#define PDEBUG(fmt, args...)    printf(MODULE_NAME ": %s(): DEBUG: " fmt "\n", __FUNCTION__, ## args)
-#define PERROR(fmt, args...)    printf(MODULE_NAME ": ERROR: " fmt "\n", ## args)
+/*********************************************************************************************************************************
+*   Header Files                                                                                                                 *
+*********************************************************************************************************************************/
+#include "VBoxSFMount.h"
 
-#define VBOXVBFS_NAME               "vboxsf"
-#define VBOXVFS_MOUNTINFO_MAGIC     (0xCAFE)
-
-#ifdef KERNEL
-
+#include <libkern/libkern.h>
 #include <iprt/types.h>
-#undef PVM
+#include <IOKit/IOLib.h>
+#include <IOKit/IOService.h>
+#include <mach/mach_port.h>
+#include <mach/kmod.h>
+#include <mach/mach_types.h>
+#include <sys/errno.h>
+#include <sys/dirent.h>
+#include <sys/lock.h>
+#include <sys/fcntl.h>
+#include <sys/mount.h>
+#include <sys/param.h>
 #include <sys/vnode.h>
+#undef PVM
 
 #include <VBox/VBoxGuestLibSharedFolders.h>
 
 
-/** Global refernce to host service connection */
-extern VBGLSFCLIENT g_vboxSFClient;
+/*********************************************************************************************************************************
+*   Defined Constants And Macros                                                                                                 *
+*********************************************************************************************************************************/
+/** @todo misguided, should use Log() and LogRel. sigh... */
+#define PINFO(fmt, args...)     printf(VBOXSF_DARWIN_FS_NAME ": INFO: " fmt "\n", ## args)
+#define PDEBUG(fmt, args...)    printf(VBOXSF_DARWIN_FS_NAME ": %s(): DEBUG: " fmt "\n", __FUNCTION__, ## args)
+#define PERROR(fmt, args...)    printf(VBOXSF_DARWIN_FS_NAME ": ERROR: " fmt "\n", ## args)
 
+
+/*********************************************************************************************************************************
+*   Structures and Typedefs                                                                                                      *
+*********************************************************************************************************************************/
 /** Private data assigned to each mounted shared folder. Assigned to mp structure. */
 typedef struct vboxvfs_mount_data
 {
@@ -62,6 +76,25 @@ typedef struct vboxvfs_vnode_data
     lck_attr_t     *pLockAttr;              /** BSD locking stuff */
     lck_rw_t       *pLock;                  /** BSD locking stuff */
 } vboxvfs_vnode_t;
+
+
+/*********************************************************************************************************************************
+*   Global Variables                                                                                                             *
+*********************************************************************************************************************************/
+/** Global refernce to host service connection */
+extern VBGLSFCLIENT g_vboxSFClient;
+
+/* VFS options */
+extern struct vfsops g_oVBoxVFSOpts;
+
+extern int (**g_VBoxVFSVnodeDirOpsVector)(void *);
+extern int g_cVBoxVFSVnodeOpvDescListSize;
+extern struct vnodeopv_desc *g_VBoxVFSVnodeOpvDescList[];
+
+
+/*********************************************************************************************************************************
+*   Functions                                                                                                                    *
+*********************************************************************************************************************************/
 
 /**
  * Helper function to create XNU VFS vnode object.
@@ -199,22 +232,9 @@ extern uint32_t vboxvfs_g2h_mode_inernal(mode_t fGuestMode);
 
 extern SHFLSTRING *vboxvfs_construct_shflstring(const char *pszName, size_t cchName);
 
-#endif /* KERNEL */
-
 extern int vboxvfs_register_filesystem(void);
 extern int vboxvfs_unregister_filesystem(void);
 
-/* VFS options */
-extern struct vfsops g_oVBoxVFSOpts;
 
-extern int (**g_VBoxVFSVnodeDirOpsVector)(void *);
-extern int g_cVBoxVFSVnodeOpvDescListSize;
-extern struct vnodeopv_desc *g_VBoxVFSVnodeOpvDescList[];
-
-/* Mount info */
-struct vboxvfs_mount_info
-{
-    uint32_t    magic;
-    char        name[MAXPATHLEN];   /* share name */
-};
+#endif
 
