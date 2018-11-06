@@ -155,7 +155,6 @@ bool UIGuestControlFileManagerDialog::shouldBeMaximized() const
 
 void UIGuestControlFileManagerDialog::sltSetCloseButtonShortCut(QKeySequence shortcut)
 {
-    printf("%s\n", qPrintable(shortcut.toString()));
     if (button(ButtonType_Close))
         button(ButtonType_Close)->setShortcut(shortcut);
 }
