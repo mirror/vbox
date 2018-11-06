@@ -19,32 +19,17 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
-
 #define LOG_GROUP LOG_GROUP_DEFAULT /** @todo log group */
-#define VBox_WITH_XPCOM
+#define UNUSED(x) (void)(x)
 
 #define FUSE_USE_VERSION 27
 #if defined(RT_OS_DARWIN) || defined(RT_OS_LINUX) || defined(RT_OS_FEEBSD)
-#   define UNIXY
+#   define UNIX_DERIVATIVE
 #endif
 #define MAX_READERS (INT32_MAX / 32)
 
-#include <VBox/vd.h>
-#include <VBox/log.h>
-#include <VBox/err.h>
-#include <iprt/critsect.h>
-#include <iprt/assert.h>
-#include <iprt/message.h>
-#include <iprt/asm.h>
-#include <iprt/mem.h>
-#include <iprt/string.h>
-#include <iprt/initterm.h>
-#include <iprt/stream.h>
-#include <iprt/types.h>
-#include <iprt/path.h>
-
 #include <fuse.h>
-#ifdef UNIXY
+#ifdef UNIX_DERIVATIVE
 #include <errno.h>
 #include <fcntl.h>
 #include <stdlib.h>
@@ -56,19 +41,36 @@
 # include <sys/param.h>
 # undef PVM     /* Blasted old BSD mess still hanging around darwin. */
 #endif
-
-/*
- * Include the XPCOM headers
- */
+#ifdef RT_OS_LINUX
+# include <linux/fs.h>
+# include <linux/hdreg.h>
+#endif
 #include <VirtualBox_XPCOM.h>
-#include <nsIComponentRegistrar.h>
-#include <nsIServiceManager.h>
-#include <nsEventQueueUtils.h>
-#include <nsIExceptionService.h>
-#include <nsMemory.h>
-#include <nsArray.h>
-#include <nsString.h>
-#include <nsReadableUtils.h>
+#include <VBox/com/VirtualBox.h>
+#include <VBox/vd.h>
+#include <VBox/log.h>
+#include <VBox/err.h>
+#include <VBox/com/ErrorInfo.h>
+#include <VBox/com/NativeEventQueue.h>
+#include <VBox/com/com.h>
+#include <VBox/com/string.h>
+#include <VBox/com/Guid.h>
+#include <VBox/com/array.h>
+#include <VBox/com/errorprint.h>
+
+#include <iprt/initterm.h>
+#include <iprt/critsect.h>
+#include <iprt/assert.h>
+#include <iprt/message.h>
+#include <iprt/asm.h>
+#include <iprt/mem.h>
+#include <iprt/string.h>
+#include <iprt/initterm.h>
+#include <iprt/stream.h>
+#include <iprt/types.h>
+#include <iprt/path.h>
+
+using namespace com;
 
 enum {
      USAGE_FLAG,
@@ -91,6 +93,7 @@ union
 
 #define PADMAX                      50
 #define MAX_ID_LEN                  256
+#define CSTR(arg) Utf8Str(arg).c_str()
 
 static struct fuse_operations   g_vboxrawOps;
 PVDISK      g_pVDisk;
@@ -102,14 +105,7 @@ char        *g_pszBaseImagePath;
 
 char *nsIDToString(nsID *guid);
 void printErrorInfo();
-
 /** XPCOM stuff */
-static struct {
-    nsCOMPtr<nsIServiceManager>     serviceManager;
-    nsCOMPtr<nsIEventQueue>         eventQ;
-    nsCOMPtr<nsIComponentManager>   manager;
-    nsCOMPtr<IVirtualBox>           virtualBox;
-} g_XPCOM;
 
 static struct vboxrawOpts {
      char *pszVm;
@@ -117,7 +113,8 @@ static struct vboxrawOpts {
      char *pszImageUuid;
      uint32_t cHddImageDiffMax;
      uint32_t fList;
-     uint32_t fWriteable;
+     uint32_t fAllowRoot;
+     uint32_t fRW;
      uint32_t fVerbose;
 } g_vboxrawOpts;
 
@@ -125,11 +122,12 @@ static struct vboxrawOpts {
 
 static struct fuse_opt vboxrawOptDefs[] = {
     OPTION("--list",          fList,            1),
+    OPTION("--root",          fAllowRoot,       1),
     OPTION("--vm=%s",         pszVm,            0),
     OPTION("--maxdiff=%d",    cHddImageDiffMax, 1),
     OPTION("--diff=%d",       cHddImageDiffMax, 1),
     OPTION("--image=%s",      pszImage,         0),
-    OPTION("--writable",      fWriteable,       1),
+    OPTION("--rw",            fRW,              1),
     OPTION("--verbose",       fVerbose,         1),
     FUSE_OPT_KEY("-h",        USAGE_FLAG),
     FUSE_OPT_KEY("--help",    USAGE_FLAG),
@@ -148,6 +146,8 @@ static int vboxrawOptHandler(void *data, const char *arg, int optKey, struct fus
             RTPrintf("usage: %s [options] <mountpoint>\n\n"
                 "%s options:\n"
                 "    [--list]                              List media\n"
+                "    [--root]                              Same as -o allow_root\n"
+                "    [--rw]                                writeable (default = readonly)\n"
                 "    [--vm <name | UUID >]                 vm UUID (limit media list to specific VM)\n\n"
                 "    [--diff=<diff #> ]                    Apply diffs to base image up "
                                                           "to and including specified diff #\n"
@@ -180,7 +180,7 @@ static int vboxrawOp_open(const char *pszPath, struct fuse_file_info *pInfo)
     uint32_t notsup = 0;
     int rc = 0;
 
-#ifdef UNIXY
+#ifdef UNIX_DERIVATIVE
 #   ifdef RT_OS_DARWIN
         notsup = O_APPEND | O_NONBLOCK | O_SYMLINK | O_NOCTTY | O_SHLOCK | O_EXLOCK |
                  O_ASYNC  | O_CREAT    | O_TRUNC   | O_EXCL | O_EVTONLY;
@@ -188,7 +188,7 @@ static int vboxrawOp_open(const char *pszPath, struct fuse_file_info *pInfo)
         notsup = O_APPEND | O_ASYNC | O_DIRECT | O_NOATIME | O_NOCTTY | O_NOFOLLOW | O_NONBLOCK;
                  /* | O_LARGEFILE | O_SYNC | ? */
 #   elif defined(RT_OS_FREEBSD)
-        notsup = O_APPEND | O_ASYNC | O_DIRECT | O_NOCTTY | O_NOFOLLOW | O_NONBLOCK';
+        notsup = O_APPEND | O_ASYNC | O_DIRECT | O_NOCTTY | O_NOFOLLOW | O_NONBLOCK;
                  /* | O_LARGEFILE | O_SYNC | ? */
 #   endif
 #else
@@ -198,7 +198,7 @@ static int vboxrawOp_open(const char *pszPath, struct fuse_file_info *pInfo)
 if (pInfo->flags & notsup)
     rc -EINVAL;
 
-#ifdef UNIXY
+#ifdef UNIX_DERIVATIVE
     if ((pInfo->flags & O_ACCMODE) == O_ACCMODE)
         rc = -EINVAL;
 #   ifdef O_DIRECTORY
@@ -259,6 +259,19 @@ static int vboxrawOp_release(const char *pszPath, struct fuse_file_info *pInfo)
     return 0;
 }
 
+static int retryableVDRead(PVDISK pvDisk, uint64_t offset, void *pvBuf, size_t cbRead)
+{
+    int rc = -1;
+    int cRetry = 5;
+    do
+    {
+        if (cRetry < 5)
+            Log(("(rc=%d retrying read)\n", rc));
+        rc = VDRead(pvDisk, offset, pvBuf, cbRead);
+    } while (RT_FAILURE(rc) && --cRetry);
+    return rc;
+}
+
 /** @copydoc fuse_operations::read */
 static int vboxrawOp_read(const char *pszPath, char *pbBuf, size_t cbBuf,
                            off_t offset, struct fuse_file_info *pInfo)
@@ -294,7 +307,15 @@ static int vboxrawOp_read(const char *pszPath, char *pbBuf, size_t cbBuf,
         int rc2;
         if (    !(offset & VBoxRAW_MIN_SIZE_MASK_OFF)
             &&  !(cbBuf   & VBoxRAW_MIN_SIZE_MASK_OFF))
-            rc2 = VDRead(g_pVDisk, offset, pbBuf, cbBuf);
+        {
+                rc2 = retryableVDRead(g_pVDisk, offset, pbBuf, cbBuf);
+                if (RT_FAILURE(rc2))
+                {
+                    rc = -RTErrConvertToErrno(rc2);
+                    LogFlowFunc(("error: rc2=%d, rc=%d, %s\n", rc2, rc, strerror(rc)));
+                    return rc;
+                }
+        }
         else
         {
             /*
@@ -304,9 +325,17 @@ static int vboxrawOp_read(const char *pszPath, char *pbBuf, size_t cbBuf,
             if (((offset + cbBuf) & VBoxRAW_MIN_SIZE_MASK_BLK) == (offset & VBoxRAW_MIN_SIZE_MASK_BLK))
             {
                 /* a single partial block. */
-                rc2 = VDRead(g_pVDisk, offset & VBoxRAW_MIN_SIZE_MASK_BLK, abBlock, VBoxRAW_MIN_SIZE);
+                rc2 = retryableVDRead(g_pVDisk, offset & VBoxRAW_MIN_SIZE_MASK_BLK, abBlock, VBoxRAW_MIN_SIZE);
                 if (RT_SUCCESS(rc2))
+                {
                     memcpy(pbBuf, &abBlock[offset & VBoxRAW_MIN_SIZE_MASK_OFF], cbBuf);
+                }
+                else
+                {
+                    rc = -RTErrConvertToErrno(rc2);
+                    LogFlowFunc(("error: rc2=%d, rc=%d, %s\n", rc2, rc, strerror(rc)));
+                    return rc;
+                }
             }
             else
             {
@@ -314,7 +343,7 @@ static int vboxrawOp_read(const char *pszPath, char *pbBuf, size_t cbBuf,
                 rc2 = VINF_SUCCESS;
                 if (offset & VBoxRAW_MIN_SIZE_MASK_OFF)
                 {
-                    rc2 = VDRead(g_pVDisk, offset & VBoxRAW_MIN_SIZE_MASK_BLK, abBlock, VBoxRAW_MIN_SIZE);
+                    rc2 = retryableVDRead(g_pVDisk, offset & VBoxRAW_MIN_SIZE_MASK_BLK, abBlock, VBoxRAW_MIN_SIZE);
                     if (RT_SUCCESS(rc2))
                     {
                         size_t cbCopy = VBoxRAW_MIN_SIZE - (offset & VBoxRAW_MIN_SIZE_MASK_OFF);
@@ -323,6 +352,12 @@ static int vboxrawOp_read(const char *pszPath, char *pbBuf, size_t cbBuf,
                         offset += cbCopy;
                         cbBuf   -= cbCopy;
                     }
+                    else
+                    {
+                        rc = -RTErrConvertToErrno(rc2);
+                        LogFlowFunc(("error: rc2=%d, rc=%d, %s\n", rc2, rc, strerror(rc)));
+                        return rc;
+                    }
                 }
 
                 /* read the middle. */
@@ -330,12 +365,18 @@ static int vboxrawOp_read(const char *pszPath, char *pbBuf, size_t cbBuf,
                 if (cbBuf >= VBoxRAW_MIN_SIZE && RT_SUCCESS(rc2))
                 {
                     size_t cbRead = cbBuf & VBoxRAW_MIN_SIZE_MASK_BLK;
-                    rc2 = VDRead(g_pVDisk, offset, pbBuf, cbRead);
+                    rc2 = retryableVDRead(g_pVDisk, offset, pbBuf, cbRead);
                     if (RT_SUCCESS(rc2))
                     {
                         pbBuf   += cbRead;
                         offset += cbRead;
                         cbBuf   -= cbRead;
+                    }
+                    else
+                    {
+                        rc = -RTErrConvertToErrno(rc2);
+                        LogFlowFunc(("error: rc2=%d, rc=%d, %s\n", rc2, rc, strerror(rc)));
+                        return rc;
                     }
                 }
 
@@ -344,9 +385,16 @@ static int vboxrawOp_read(const char *pszPath, char *pbBuf, size_t cbBuf,
                 Assert(!(offset & VBoxRAW_MIN_SIZE_MASK_OFF));
                 if (cbBuf && RT_SUCCESS(rc2))
                 {
-                    rc2 = VDRead(g_pVDisk, offset, abBlock, VBoxRAW_MIN_SIZE);
-                    if (RT_SUCCESS(rc2))
+                    rc2 = retryableVDRead(g_pVDisk, offset, abBlock, VBoxRAW_MIN_SIZE);
+                    if (RT_SUCCESS(rc2)) {
                         memcpy(pbBuf, &abBlock[0], cbBuf);
+                    }
+                    else
+                    {
+                        rc = -RTErrConvertToErrno(rc2);
+                        LogFlowFunc(("error: rc2=%d, rc=%d, %s\n", rc2, rc, strerror(rc)));
+                        return rc;
+                    }
                 }
             }
         }
@@ -355,7 +403,10 @@ static int vboxrawOp_read(const char *pszPath, char *pbBuf, size_t cbBuf,
         if (RT_SUCCESS(rc2))
             rc = cbBuf;
         else
+        {
             rc = -RTErrConvertToErrno(rc2);
+            LogFlowFunc(("Error rc2=%d, rc=%d=%s\n", rc2, rc, strerror(rc)));
+        }
         return rc;
     }
     return rc;
@@ -369,15 +420,19 @@ static int vboxrawOp_write(const char *pszPath, const char *pbBuf, size_t cbBuf,
     (void) pszPath;
     (void) pInfo;
 
+
     AssertReturn((int)cbBuf >= 0, -EINVAL);
     AssertReturn((unsigned)cbBuf == cbBuf, -EINVAL);
     AssertReturn(offset >= 0, -EINVAL);
     AssertReturn((off_t)(offset + cbBuf) >= offset, -EINVAL);
 
+
     LogFlowFunc(("offset=%#llx size=%#zx path=\"%s\"\n", (uint64_t)offset, cbBuf, pszPath));
 
     int rc;
-    if ((off_t)(offset + cbBuf) < offset)
+    if (!g_vboxrawOpts.fRW)
+        rc = -EPERM;
+    else if ((off_t)(offset + cbBuf) < offset)
         rc = -EINVAL;
     else if (offset >= g_cbPrimary)
         rc = 0;
@@ -395,7 +450,15 @@ static int vboxrawOp_write(const char *pszPath, const char *pbBuf, size_t cbBuf,
         int rc2;
         if (    !(offset & VBoxRAW_MIN_SIZE_MASK_OFF)
             &&  !(cbBuf   & VBoxRAW_MIN_SIZE_MASK_OFF))
-            rc2 = VDWrite(g_pVDisk, offset, pbBuf, cbBuf);
+        {
+                rc2 = VDWrite(g_pVDisk, offset, pbBuf, cbBuf);
+                if (RT_FAILURE(rc2))
+                {
+                    rc = -RTErrConvertToErrno(rc2);
+                    LogFlowFunc(("error: rc2=%d, rc=%d, %s\n", rc2, rc, strerror(rc)));
+                    return rc;
+                }
+        }
         else
         {
             /*
@@ -411,6 +474,18 @@ static int vboxrawOp_write(const char *pszPath, const char *pbBuf, size_t cbBuf,
                     memcpy(&abBlock[offset & VBoxRAW_MIN_SIZE_MASK_OFF], pbBuf, cbBuf);
                     /* Update the block */
                     rc2 = VDWrite(g_pVDisk, offset & VBoxRAW_MIN_SIZE_MASK_BLK, abBlock, VBoxRAW_MIN_SIZE);
+                    if (RT_FAILURE(rc2))
+                    {
+                        rc = -RTErrConvertToErrno(rc2);
+                        LogFlowFunc(("error: rc2=%d, rc=%d, %s\n", rc2, rc, strerror(rc)));
+                        return rc;
+                    }
+                }
+                else
+                {
+                    rc = -RTErrConvertToErrno(rc2);
+                    LogFlowFunc(("error: rc2=%d, rc=%d, %s\n", rc2, rc, strerror(rc)));
+                    return rc;
                 }
             }
             else
@@ -428,6 +503,18 @@ static int vboxrawOp_write(const char *pszPath, const char *pbBuf, size_t cbBuf,
                         offset += cbCopy;
                         cbBuf   -= cbCopy;
                         rc2 = VDWrite(g_pVDisk, offset & VBoxRAW_MIN_SIZE_MASK_BLK, abBlock, VBoxRAW_MIN_SIZE);
+                        if (RT_FAILURE(rc2))
+                        {
+                            rc = -RTErrConvertToErrno(rc2);
+                            LogFlowFunc(("error: rc2=%d, rc=%d, %s\n", rc2, rc, strerror(rc)));
+                            return rc;
+                        }
+                    }
+                    else
+                    {
+                        rc = -RTErrConvertToErrno(rc2);
+                        LogFlowFunc(("error: rc2=%d, rc=%d, %s\n", rc2, rc, strerror(rc)));
+                        return rc;
                     }
                 }
 
@@ -443,6 +530,12 @@ static int vboxrawOp_write(const char *pszPath, const char *pbBuf, size_t cbBuf,
                         offset += cbWrite;
                         cbBuf   -= cbWrite;
                     }
+                    if (RT_FAILURE(rc2))
+                    {
+                        rc = -RTErrConvertToErrno(rc2);
+                        LogFlowFunc(("error: rc2=%d, rc=%d, %s\n", rc2, rc, strerror(rc)));
+                        return rc;
+                    }
                 }
 
                 /* unaligned tail write. */
@@ -455,6 +548,18 @@ static int vboxrawOp_write(const char *pszPath, const char *pbBuf, size_t cbBuf,
                     {
                         memcpy(&abBlock[0], pbBuf, cbBuf);
                         rc2 = VDWrite(g_pVDisk, offset, abBlock, VBoxRAW_MIN_SIZE);
+                        if (RT_FAILURE(rc2))
+                        {
+                            rc = -RTErrConvertToErrno(rc2);
+                            LogFlowFunc(("error: rc2=%d, rc=%d, %s\n", rc2, rc, strerror(rc)));
+                            return rc;
+                        }
+                    }
+                    else
+                    {
+                        rc = -RTErrConvertToErrno(rc2);
+                        LogFlowFunc(("error: rc2=%d, rc=%d, %s\n", rc2, rc, strerror(rc)));
+                        return rc;
                     }
                 }
             }
@@ -464,15 +569,18 @@ static int vboxrawOp_write(const char *pszPath, const char *pbBuf, size_t cbBuf,
         if (RT_SUCCESS(rc2))
             rc = cbBuf;
         else
+        {
             rc = -RTErrConvertToErrno(rc2);
+            LogFlowFunc(("Error rc2=%d, rc=%d=%s\n", rc2, rc, strerror(rc)));
             return rc;
+        }
     }
     return rc;
 }
 
 /** @copydoc fuse_operations::getattr */
-static int vboxrawOp_getattr(const char *pszPath,
-            struct stat *stbuf)
+static int
+vboxrawOp_getattr(const char *pszPath, struct stat *stbuf)
 {
     int rc = 0;
 
@@ -490,6 +598,8 @@ static int vboxrawOp_getattr(const char *pszPath,
         rc = stat(g_pszBaseImagePath, stbuf);
         if (rc < 0)
             return rc;
+
+        stbuf->st_size = VDGetSize(g_pVDisk, 0);
         stbuf->st_nlink = 1;
     }
     else if (RTStrCmp(pszPath + 1, g_pszBaseImageName) == 0)
@@ -500,6 +610,8 @@ static int vboxrawOp_getattr(const char *pszPath,
         stbuf->st_size = 0;
         stbuf->st_mode = S_IFLNK | 0444;
         stbuf->st_nlink = 1;
+        stbuf->st_uid = 0;
+        stbuf->st_gid = 0;
     } else
         rc = -ENOENT;
 
@@ -507,7 +619,8 @@ static int vboxrawOp_getattr(const char *pszPath,
 }
 
 /** @copydoc fuse_operations::readdir */
-static int vboxrawOp_readdir(const char *pszPath, void *pvBuf, fuse_fill_dir_t pfnFiller,
+static int
+vboxrawOp_readdir(const char *pszPath, void *pvBuf, fuse_fill_dir_t pfnFiller,
                               off_t offset, struct fuse_file_info *pInfo)
 
 {
@@ -542,221 +655,157 @@ static int vboxrawOp_readdir(const char *pszPath, void *pvBuf, fuse_fill_dir_t p
 }
 
 /** @copydoc fuse_operations::readlink */
-static int vboxrawOp_readlink(const char *pszPath, char *buf, size_t size)
+static int
+vboxrawOp_readlink(const char *pszPath, char *buf, size_t size)
 {
     (void) pszPath;
     RTStrCopy(buf, size, g_pszBaseImagePath);
     return 0;
 }
 
-
-static int
+static void
 listMedia(IMachine *pMachine)
 {
-    IMediumAttachment **pMediumAttachments = NULL;
-    PRUint32 pMediumAttachmentsSize = 0;
-    nsresult rc = pMachine->GetMediumAttachments(&pMediumAttachmentsSize,  &pMediumAttachments);
-    if (NS_SUCCEEDED(rc))
+    int rc = 0;
+    com::SafeIfaceArray<IMediumAttachment> pMediumAttachments;
+
+    CHECK_ERROR(pMachine, COMGETTER(MediumAttachments)(ComSafeArrayAsOutParam(pMediumAttachments)));
+    for (size_t i = 0; i < pMediumAttachments.size(); i++)
     {
-        for (PRUint32 i = 0; i < pMediumAttachmentsSize; i++)
+        ComPtr<IMedium> pMedium;
+        DeviceType_T deviceType;
+        Bstr pMediumUuid;
+        Bstr pMediumName;
+        Bstr pMediumPath;
+
+        CHECK_ERROR(pMediumAttachments[i], COMGETTER(Type)(&deviceType));
+
+        if (deviceType == DeviceType_HardDisk)
         {
-            IMedium *pMedium;
-            DeviceType_T deviceType;
-            nsXPIDLString pMediumUuid;
-            nsXPIDLString pMediumName;
-            nsXPIDLString pMediumPath;
+            CHECK_ERROR(pMediumAttachments[i], COMGETTER(Medium)(pMedium.asOutParam()));
+            if (pMedium.isNull())
+                return;
 
-            pMediumAttachments[i]->GetType(&deviceType);
-            if (deviceType == DeviceType_HardDisk)
+            MediumState_T state;
+            CHECK_ERROR(pMedium, COMGETTER(State)(&state));
+            if (FAILED(rc))
+                return;
+            if (state == MediumState_Inaccessible)
             {
-                rc = pMediumAttachments[i]->GetMedium(&pMedium);
-                if (NS_SUCCEEDED(rc) && pMedium)
-                {
-                    IMedium *pParent = pMedium;
-                    IMedium *pEarliestAncestor;
-                    while (pParent != nsnull)
-                    {
-                        pEarliestAncestor = pParent;
-                        pParent->GetParent(&pParent);
-                    }
-                    PRUint32 cChildren = 1;
-                    IMedium **aMediumChildren = nsnull;
-                    IMedium *pChild = pEarliestAncestor;
-                    uint32_t ancestorNumber = 0;
-                    RTPrintf("\n");
-                    do
-                    {
-                        rc = pChild->GetName(getter_Copies(pMediumName));
-                        if (NS_FAILED(rc))
-                             return RTMsgErrorExitFailure("vboxraw: VBox API/XPCOM ERROR: "
-                                "Couldn't access pMedium name rc=%#x\n", rc);
-
-                        rc = pChild->GetId(getter_Copies(pMediumUuid));
-                        if (NS_FAILED(rc))
-                             return RTMsgErrorExitFailure("vboxraw: VBox API/XPCOM ERROR: "
-                                "Couldn't access pMedium ID rc=%#x\n", rc);
-
-                        rc = pChild->GetLocation(getter_Copies(pMediumPath));
-                        if (NS_FAILED(rc))
-                             return RTMsgErrorExitFailure("vboxraw: VBox API/XPCOM ERROR: "
-                                "Couldn't access pMedium location rc=%#x\n", rc);
-
-                        const char *pszMediumName = ToNewCString(pMediumName);
-                        const char *pszMediumUuid = ToNewCString(pMediumUuid);
-                        const char *pszMediumPath = ToNewCString(pMediumPath);
-
-                        if (ancestorNumber == 0)
-                        {
-                            RTPrintf("   -----------------------\n");
-                            RTPrintf("   HDD base:   \"%s\"\n",   pszMediumName);
-                            RTPrintf("   UUID:       %s\n",       pszMediumUuid);
-                            RTPrintf("   Location:   %s\n\n",     pszMediumPath);
-                        }
-                        else
-                        {
-                            RTPrintf("     Diff %d:\n", ancestorNumber);
-                            RTPrintf("          UUID:       %s\n",   pszMediumUuid);
-                            RTPrintf("          Location:   %s\n\n", pszMediumPath);
-                        }
-
-                        free((void*)pszMediumName);
-                        free((void*)pszMediumUuid);
-                        free((void*)pszMediumPath);
-
-                        rc = pChild->GetChildren(&cChildren, &aMediumChildren);
-                        if (NS_FAILED(rc))
-                             return RTMsgErrorExitFailure("vboxraw: VBox API/XPCOM ERROR: "
-                                "could not get children of media! rc=%#x\n", rc);
-
-                        pChild = aMediumChildren[0];
-                        ++ancestorNumber;
-                    } while(NS_SUCCEEDED(rc) && cChildren);
-                }
-                pMedium->Release();
+                CHECK_ERROR(pMedium, RefreshState(&state));
+                if (FAILED(rc))
+                return;
             }
+
+            ComPtr<IMedium> pEarliestAncestor;
+            CHECK_ERROR(pMedium, COMGETTER(Base)(pEarliestAncestor.asOutParam()));
+            ComPtr<IMedium> pChild = pEarliestAncestor;
+            uint32_t ancestorNumber = 0;
+            if (pEarliestAncestor.isNull())
+                return;
+            RTPrintf("\n");
+            do
+            {
+                com::SafeIfaceArray<IMedium> aMediumChildren;
+                CHECK_ERROR(pChild, COMGETTER(Name)(pMediumName.asOutParam()));
+                CHECK_ERROR(pChild, COMGETTER(Id)(pMediumUuid.asOutParam()));
+                CHECK_ERROR(pChild, COMGETTER(Location)(pMediumPath.asOutParam()));
+
+                if (ancestorNumber == 0)
+                {
+                    RTPrintf("   -----------------------\n");
+                    RTPrintf("   HDD base:   \"%s\"\n",   CSTR(pMediumName));
+                    RTPrintf("   UUID:       %s\n",       CSTR(pMediumUuid));
+                    RTPrintf("   Location:   %s\n\n",     CSTR(pMediumPath));
+                }
+                else
+                {
+                    RTPrintf("     Diff %d:\n", ancestorNumber);
+                    RTPrintf("          UUID:       %s\n",    CSTR(pMediumUuid));
+                    RTPrintf("          Location:   %s\n\n",  CSTR(pMediumPath));
+                }
+                CHECK_ERROR_BREAK(pChild, COMGETTER(Children)(ComSafeArrayAsOutParam(aMediumChildren)));
+                pChild = (aMediumChildren.size()) ? aMediumChildren[0] : NULL;
+                ++ancestorNumber;
+            } while(pChild);
         }
     }
-    return rc;
-
 }
 /**
  * Display all registered VMs on the screen with some information about each
  *
  * @param virtualBox VirtualBox instance object.
  */
-static int
-listVMs(IVirtualBox *virtualBox)
+static void
+listVMs(IVirtualBox *pVirtualBox)
 {
-    IMachine **ppMachines = NULL;
-    PRUint32 cMachines = 0;
-    nsresult rc;
-
-    rc = virtualBox->GetMachines(&cMachines, &ppMachines);
-    if (NS_SUCCEEDED(rc))
+    HRESULT rc = 0;
+    com::SafeIfaceArray<IMachine> pMachines;
+    CHECK_ERROR(pVirtualBox, COMGETTER(Machines)(ComSafeArrayAsOutParam(pMachines)));
+    for (size_t i = 0; i < pMachines.size(); ++i)
     {
-        for (PRUint32 i = 0; i < cMachines; ++ i)
+        ComPtr<IMachine> pMachine = pMachines[i];
+        if (pMachine)
         {
-            IMachine *pMachine = ppMachines[i];
-            if (pMachine)
+            BOOL fAccessible;
+            CHECK_ERROR(pMachines[i], COMGETTER(Accessible)(&fAccessible));
+            if (fAccessible)
             {
-                PRBool isAccessible = PR_FALSE;
-                pMachine->GetAccessible(&isAccessible);
+                Bstr pMachineName;
+                Bstr pMachineUuid;
+                Bstr pDescription;
+                Bstr pMachineLocation;
 
-                if (isAccessible)
+                CHECK_ERROR(pMachine, COMGETTER(Name)(pMachineName.asOutParam()));
+                CHECK_ERROR(pMachine, COMGETTER(Id)(pMachineUuid.asOutParam()));
+                CHECK_ERROR(pMachine, COMGETTER(Description)(pDescription.asOutParam()));
+                CHECK_ERROR(pMachine, COMGETTER(SettingsFilePath)(pMachineLocation.asOutParam()));
+
+                if (   g_vboxrawOpts.pszVm == NULL
+                    || RTStrNCmp(CSTR(pMachineUuid), g_vboxrawOpts.pszVm, MAX_ID_LEN) == 0
+                    || RTStrNCmp((const char *)pMachineName.raw(), g_vboxrawOpts.pszVm, MAX_ID_LEN) == 0)
                 {
-                    nsXPIDLString pMachineUuid;
-                    nsXPIDLString pMachineName;
-                    nsXPIDLString pMachinePath;
+                    RTPrintf("------------------------------------------------------\n");
+                    RTPrintf("VM Name:   \"%s\"\n", CSTR(pMachineName));
+                    RTPrintf("UUID:      %s\n",     CSTR(pMachineUuid));
+                    if (*pDescription.raw() != '\0')
+                        RTPrintf("Description:  %s\n",      CSTR(pDescription));
+                    RTPrintf("Location:  %s\n",      CSTR(pMachineLocation));
 
-                    rc = pMachine->GetName(getter_Copies(pMachineName));
-                    if (NS_FAILED(rc))
-                         return RTMsgErrorExitFailure("vboxraw: VBox API/XPCOM ERROR: "
-                            "Couldn't access pMachine name rc=%#x\n", rc);
+                    listMedia(pMachine);
 
-                    rc = pMachine->GetId(getter_Copies(pMachineUuid));
-                    if (NS_FAILED(rc))
-                         return RTMsgErrorExitFailure("vboxraw: VBox API/XPCOM ERROR: "
-                            "Couldn't access pMachine Id rc=%#x\n", rc);
-
-                    rc = pMachine->GetStateFilePath(getter_Copies(pMachinePath));
-                    if (NS_FAILED(rc))
-                         return RTMsgErrorExitFailure("vboxraw: VBox API/XPCOM ERROR: "
-                            "Couldn't access pMachine Location rc=%#x\n", rc);
-
-                    const char *pszMachineName = ToNewCString(pMachineName);
-                    const char *pszMachineUuid = ToNewCString(pMachineUuid);
-                    const char *pszMachinePath = ToNewCString(pMachinePath);
-
-                    if (   g_vboxrawOpts.pszVm == NULL
-                        || RTStrNCmp(pszMachineUuid, g_vboxrawOpts.pszVm, MAX_ID_LEN) == 0
-                        || RTStrNCmp(pszMachineName, g_vboxrawOpts.pszVm, MAX_ID_LEN) == 0)
-                    {
-                        RTPrintf("------------------------------------------------------\n");
-                        RTPrintf("VM Name:   \"%s\"\n", pszMachineName);
-                        RTPrintf("UUID:      %s\n",     pszMachineUuid);
-                        RTPrintf("Location:  %s\n",     pszMachinePath);
-
-                        rc = listMedia(pMachine);
-                        if (NS_FAILED(rc))
-                            return rc;
-
-                        RTPrintf("\n");
-                    }
-                    free((void *)pszMachineUuid);
-                    free((void *)pszMachineName);
-                    free((void *)pszMachinePath);
+                    RTPrintf("\n");
                 }
-                pMachine->Release();
             }
         }
     }
-    return rc;
 }
 
-static int
-searchForBaseImage(IVirtualBox *virtualBox, char *pszImageString, IMedium **baseImage)
+static void
+searchForBaseImage(IVirtualBox *pVirtualBox, char *pszImageString, ComPtr<IMedium> *pBaseImage)
 {
-    PRUint32 cDisks;
-    IMedium **ppDisks;
+    int rc = 0;
+    com::SafeIfaceArray<IMedium> aDisks;
 
-    nsresult rc = virtualBox->GetHardDisks(&cDisks, &ppDisks);
-    if (NS_SUCCEEDED(rc))
+    CHECK_ERROR(pVirtualBox, COMGETTER(HardDisks)(ComSafeArrayAsOutParam(aDisks)));
+    for (size_t i = 0; i < aDisks.size() && aDisks[i]; i++)
     {
-        for (PRUint32 i = 0; i < cDisks && ppDisks[i]; i++)
+        if (aDisks[i])
         {
-            if (ppDisks[i])
+            Bstr pMediumUuid;
+            Bstr pMediumName;
+
+            CHECK_ERROR(aDisks[i], COMGETTER(Name)(pMediumName.asOutParam()));
+            CHECK_ERROR(aDisks[i], COMGETTER(Id)(pMediumUuid.asOutParam()));
+
+            if (   RTStrCmp(pszImageString, CSTR(pMediumUuid)) == 0
+                || RTStrCmp(pszImageString, CSTR(pMediumName)) == 0)
             {
-                nsXPIDLString pMediumUuid;
-                nsXPIDLString pMediumName;
-
-                rc = ppDisks[i]->GetName(getter_Copies(pMediumName));
-                if (NS_FAILED(rc))
-                     return RTMsgErrorExitFailure("vboxraw: VBox API/XPCOM ERROR: "
-                        "Couldn't access pMedium name rc=%#x\n", rc);
-
-                rc = ppDisks[i]->GetId(getter_Copies(pMediumUuid));
-                if (NS_FAILED(rc))
-                     return RTMsgErrorExitFailure("vboxraw: VBox API/XPCOM ERROR: "
-                        "Couldn't access pMedium Id rc=%#x\n", rc);
-
-                const char *pszMediumName = ToNewCString(pMediumName);
-                const char *pszMediumUuid = ToNewCString(pMediumUuid);
-
-                if (   RTStrCmp(pszImageString, pszMediumUuid) == 0
-                    || RTStrCmp(pszImageString, pszMediumName) == 0)
-                {
-                    *baseImage = ppDisks[i];
-                    free((void*)pszMediumUuid);
-                    free((void*)pszMediumName);
-                    return rc;
-                }
-                ppDisks[i]->Release();
-                free((void*)pszMediumUuid);
-                free((void*)pszMediumName);
+                *pBaseImage = aDisks[i];
+                return;
             }
         }
     }
-    return rc;
 }
 
 int
@@ -779,60 +828,68 @@ main(int argc, char **argv)
     g_vboxrawOps.release     = vboxrawOp_release;
     g_vboxrawOps.readdir     = vboxrawOp_readdir;
     g_vboxrawOps.readlink    = vboxrawOp_readlink;
-
     struct fuse_args args = FUSE_ARGS_INIT(argc, argv);
 
     memset(&g_vboxrawOpts, 0, sizeof(g_vboxrawOpts));
 
     rc = fuse_opt_parse(&args, &g_vboxrawOpts, vboxrawOptDefs, vboxrawOptHandler);
+    if (g_vboxrawOpts.fAllowRoot)
+        fuse_opt_add_arg(&args, "-oallow_root");
+
     if (rc == -1)
         return RTMsgErrorExitFailure("vboxraw: ERROR: Couldn't parse fuse options, rc=%Rrc\n", rc);
 
     /*
-     * Initialize XPCOM to so we can use the API
+     * Initialize COM.
      */
-    rc = NS_InitXPCOM2(getter_AddRefs(g_XPCOM.serviceManager), nsnull, nsnull);
-    if (NS_FAILED(rc))
-         return RTMsgErrorExitFailure("vboxraw: ERROR: "
-            "XPCOM could not be initialized! rc=%#x\n", rc);
+    using namespace com;
+    HRESULT hrc = com::Initialize();
+    if (FAILED(hrc))
+    {
+# ifdef VBOX_WITH_XPCOM
+        if (hrc == NS_ERROR_FILE_ACCESS_DENIED)
+        {
+            char szHome[RTPATH_MAX] = "";
+            com::GetVBoxUserHomeDirectory(szHome, sizeof(szHome));
+            return RTMsgErrorExit(RTEXITCODE_FAILURE,
+                   "Failed to initialize COM because the global settings directory '%s' is not accessible!", szHome);
+        }
+# endif
+            return RTMsgErrorExit(RTEXITCODE_FAILURE, "Failed to initialize COM! (hrc=%Rhrc)", hrc);
+    }
 
-    rc = NS_GetMainEventQ(getter_AddRefs(g_XPCOM.eventQ));
-    if (NS_FAILED(rc))
-         return RTMsgErrorExitFailure("vboxraw: ERROR: "
-            "could not get main event queue! rc=%#x\n", rc);
+    /*
+     * Get the remote VirtualBox object and create a local session object.
+     */
+    ComPtr<IVirtualBoxClient> pVirtualBoxClient;
+    ComPtr<IVirtualBox> pVirtualBox;
 
-    rc = NS_GetComponentManager(getter_AddRefs(g_XPCOM.manager));
-    if (NS_FAILED(rc))
-         return RTMsgErrorExitFailure("vboxraw: ERROR: "
-            "couldn't get the component manager! rc=%#x\n", rc);
-
-    rc = g_XPCOM.manager->CreateInstanceByContractID(NS_VIRTUALBOX_CONTRACTID,
-                                             nsnull,
-                                             NS_GET_IID(IVirtualBox),
-                                             getter_AddRefs(g_XPCOM.virtualBox));
-    if (NS_FAILED(rc))
-         return RTMsgErrorExitFailure("vboxraw: ERROR: "
-            "could not instantiate VirtualBox object! rc=%#x\n", rc);
+    hrc = pVirtualBoxClient.createInprocObject(CLSID_VirtualBoxClient);
+    if (SUCCEEDED(hrc))
+        hrc = pVirtualBoxClient->COMGETTER(VirtualBox)(pVirtualBox.asOutParam());
+    if (FAILED(hrc))
+         return RTMsgErrorExit(RTEXITCODE_FAILURE, "Failed to get IVirtualBox object! (hrc=%Rhrc)", hrc);
 
     if (g_vboxrawOpts.fVerbose)
         RTPrintf("vboxraw: VirtualBox XPCOM object created\n");
 
     if (g_vboxrawOpts.fList)
-        return listVMs(g_XPCOM.virtualBox);
+    {
+         listVMs(pVirtualBox);
+         return 0;
+    }
 
     if (g_vboxrawOpts.pszImage == NULL)
+    {
             RTMsgErrorExitFailure("vboxraw: ERROR: "
                 "Must provide at at least --list or --image option\n");
-
-    IMedium *pBaseImageMedium = NULL;
+            return 0;
+    }
+    ComPtr<IMedium> pBaseImageMedium = NULL;
     char    *pszFormat;
     VDTYPE  enmType;
 
-    rc = searchForBaseImage(g_XPCOM.virtualBox, g_vboxrawOpts.pszImage, &pBaseImageMedium);
-    if (NS_FAILED(rc))
-        RTMsgErrorExitFailure("vboxraw: ERROR: "
-            "Couldn't locate base image \"%s\"\n", g_vboxrawOpts.pszImage);
-
+    searchForBaseImage(pVirtualBox, g_vboxrawOpts.pszImage, &pBaseImageMedium);
     if (pBaseImageMedium == NULL)
     {
         /*
@@ -843,28 +900,9 @@ main(int argc, char **argv)
         if (cbNameMax < 0)
             return cbNameMax;
 
-        char *pszBounceA = (char *)RTMemAlloc(cbNameMax + 1);
-        if (!pszBounceA)
-            return VERR_NO_MEMORY;
-        memset(pszBounceA, 0, cbNameMax + 1);
-
-        char *pszBounceB = (char *)RTMemAlloc(cbNameMax + 1);
-        if (!pszBounceB)
-            return VERR_NO_MEMORY;
-        memset(pszBounceB, 0, cbNameMax + 1);
-
-        RTStrCopy(pszBounceA, cbNameMax, g_vboxrawOpts.pszImage);
-        while (readlink(pszBounceA, pszBounceB, cbNameMax) >= 0)
-            RTStrCopy(pszBounceA, cbNameMax, pszBounceB);
-
-        free(g_vboxrawOpts.pszImage);
-
-        g_pszBaseImagePath = RTStrDup(pszBounceA);
+        g_pszBaseImagePath = RTStrDup(g_vboxrawOpts.pszImage);
         if (g_pszBaseImagePath == NULL)
             return RTMsgErrorExitFailure("vboxraw: out of memory\n");
-
-        RTMemFree(pszBounceA);
-        RTMemFree(pszBounceB);
 
         if (access(g_pszBaseImagePath, F_OK) < 0)
             return RTMsgErrorExitFailure("vboxraw: ERROR: "
@@ -874,7 +912,7 @@ main(int argc, char **argv)
              return RTMsgErrorExitFailure("vboxraw: ERROR: "
                     "Virtual disk image not readable: \"%s\"\n", g_pszBaseImagePath);
 
-        if ( g_vboxrawOpts.fWriteable && access(g_vboxrawOpts.pszImage, W_OK) < 0)
+        if ( g_vboxrawOpts.fRW && access(g_vboxrawOpts.pszImage, W_OK) < 0)
              return RTMsgErrorExitFailure("vboxraw: ERROR: "
                     "Virtual disk image not writeable: \"%s\"\n", g_pszBaseImagePath);
         rc = RTPathSplit(g_pszBaseImagePath, &g_u.split, sizeof(g_u), 0);
@@ -888,7 +926,7 @@ main(int argc, char **argv)
                     "RTPATH_PROP_FILENAME not set for: '%s'",  g_pszBaseImagePath);
 
         g_pszBaseImageName = g_u.split.apszComps[g_u.split.cComps - 1];
-        rc = searchForBaseImage(g_XPCOM.virtualBox, g_pszBaseImageName, &pBaseImageMedium);
+        searchForBaseImage(pVirtualBox, g_pszBaseImageName, &pBaseImageMedium);
 
         if (pBaseImageMedium == NULL)
         {
@@ -922,47 +960,24 @@ main(int argc, char **argv)
 
     if (g_pVDisk == NULL)
     {
-        IMedium **aMediumChildren = nsnull;
-        IMedium *pChild = pBaseImageMedium;
-        PRUint32 cChildren;
+        com::SafeIfaceArray<IMedium> aMediumChildren;
+        ComPtr<IMedium> pChild = pBaseImageMedium;
         uint32_t diffNumber = 0; /* diff # 0 = base image */
-
         do
         {
-            nsXPIDLString pMediumUuid;
-            nsXPIDLString pMediumName;
-            nsXPIDLString pMediumPath;
+            Bstr pMediumName;
+            Bstr pMediumPath;
 
-            rc = pChild->GetName(getter_Copies(pMediumName));
-            if (NS_FAILED(rc))
-                 return RTMsgErrorExitFailure("vboxraw: VBox API/XPCOM ERROR: "
-                    "Couldn't access pMedium name rc=%#x\n", rc);
-
-            rc = pChild->GetId(getter_Copies(pMediumUuid));
-            if (NS_FAILED(rc))
-                 return RTMsgErrorExitFailure("vboxraw: VBox API/XPCOM ERROR: "
-                    "Couldn't access pMedium ID rc=%#x\n", rc);
-
-            rc = pChild->GetLocation(getter_Copies(pMediumPath));
-            if (NS_FAILED(rc))
-                 return RTMsgErrorExitFailure("vboxraw: VBox API/XPCOM ERROR: "
-                    "Couldn't access pMedium location rc=%#x\n", rc);
-
-            const char *pszMediumName = ToNewCString(pMediumName);
-            const char *pszMediumUuid = ToNewCString(pMediumUuid);
-            const char *pszMediumPath = ToNewCString(pMediumPath);
+            CHECK_ERROR(pChild, COMGETTER(Name)(pMediumName.asOutParam()));
+            CHECK_ERROR(pChild, COMGETTER(Location)(pMediumPath.asOutParam()));
 
             if (pChild == pBaseImageMedium)
             {
                 free((void *)g_pszBaseImageName);
-                g_pszBaseImageName = RTStrDup(pszMediumName);
+                g_pszBaseImageName = RTStrDup(CSTR(pMediumName));
 
                 free((void *)g_pszBaseImagePath);
-                g_pszBaseImagePath = RTStrDup(pszMediumPath);
-
-                free((void *)pszMediumUuid);
-                free((void *)pszMediumName);
-
+                g_pszBaseImagePath = RTStrDup(CSTR(pMediumPath));
                 if (g_pszBaseImageName == NULL)
                     return RTMsgErrorExitFailure("vboxraw: out of memory\n");
 
@@ -976,7 +991,6 @@ main(int argc, char **argv)
                 if (RT_FAILURE(rc))
                     return RTMsgErrorExitFailure("vboxraw: VDGetFormat(,,%s,,) "
                         "failed (during HDD container creation), rc=%Rrc\n", g_pszBaseImagePath, rc);
-
                 if (g_vboxrawOpts.fVerbose)
                     RTPrintf("vboxraw: Creating container for base image of format %s\n", pszFormat);
 
@@ -985,11 +999,6 @@ main(int argc, char **argv)
                 if (NS_FAILED(rc))
                     return RTMsgErrorExitFailure("vboxraw: ERROR: Couldn't create virtual disk container\n");
             }
-            else
-            {
-                free((void *)pszMediumUuid);
-                free((void *)pszMediumName);
-            }
             if ( g_vboxrawOpts.cHddImageDiffMax != 0 && diffNumber > g_vboxrawOpts.cHddImageDiffMax)
                 break;
 
@@ -997,34 +1006,32 @@ main(int argc, char **argv)
             {
                 if (diffNumber == 0)
                     RTPrintf("\nvboxraw: Opening base image into container:\n       %s\n",
-                        pszMediumPath);
+                        g_pszBaseImagePath);
                 else
                     RTPrintf("\nvboxraw: Opening difference image #%d into container:\n       %s\n",
-                        diffNumber, pszMediumPath);
+                        diffNumber, g_pszBaseImagePath);
             }
 
-            rc = VDOpen(g_pVDisk, pszFormat, pszMediumPath, 0, NULL /* pVDIfsImage */);
+            rc = VDOpen(g_pVDisk, pszFormat, g_pszBaseImagePath, 0, NULL /* pVDIfsImage */);
             if (RT_FAILURE(rc))
             {
                 VDClose(g_pVDisk, false /* fDeletes */);
-                free((void *)pszMediumPath);
-                return RTMsgErrorExitFailure("vboxraw: VDOpen(,,%s,,) failed, rc=%Rrc\n", pszMediumPath, rc);
+                return RTMsgErrorExitFailure("vboxraw: VDOpen(,,%s,,) failed, rc=%Rrc\n",
+                   g_pszBaseImagePath, rc);
             }
 
-            rc = pChild->GetChildren(&cChildren, &aMediumChildren);
-            if (NS_FAILED(rc))
-            {
-                free((void *)pszMediumPath);
-                return RTMsgErrorExitFailure("vboxraw: VBox API/XPCOM ERROR: "
-                    "Couldn't get children of medium, rc=%Rrc\n", pszMediumPath, rc);
+            CHECK_ERROR(pChild, COMGETTER(Children)(ComSafeArrayAsOutParam(aMediumChildren)));
+
+            if (aMediumChildren.size() != 0) {
+                pChild = aMediumChildren[0];
             }
 
-            pChild = aMediumChildren[0];
+            aMediumChildren.setNull();
+
             ++diffNumber;
-            free((void *)pszMediumPath);
 
 
-        } while(NS_SUCCEEDED(rc) && cChildren);
+        } while(NS_SUCCEEDED(rc) && aMediumChildren.size());
     }
 
     g_cReaders    = VDIsReadOnly(g_pVDisk) ? INT32_MAX / 2 : 0;
