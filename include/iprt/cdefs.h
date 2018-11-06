@@ -3179,7 +3179,7 @@
 /** @def RT_NOREF11
  * RT_NOREF_PV shorthand taking eleven parameters.  */
 #define RT_NOREF11(var1, var2, var3, var4, var5, var6, var7, var8, var9, var10, var11) \
-    RT_NOREF_PV(var1); RT_NOREF10(var2, var3, var4, var5, var6, var7, var8, var9, var10)
+    RT_NOREF_PV(var1); RT_NOREF10(var2, var3, var4, var5, var6, var7, var8, var9, var10, var11)
 /** @def RT_NOREF12
  * RT_NOREF_PV shorthand taking twelve parameters.  */
 #define RT_NOREF12(var1, var2, var3, var4, var5, var6, var7, var8, var9, var10, var11, var12) \
