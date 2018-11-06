@@ -448,7 +448,7 @@ void UIDetailsUpdateTaskDisplay::run()
                                          QApplication::translate("UIDetails", "Disabled", "details (display/vrde/VRDE server)"));
         }
 
-        /* Capture info: */
+        /* Recording info: */
         CCaptureSettings captureSettings = machine.GetCaptureSettings();
         if (captureSettings.GetEnabled())
         {
@@ -456,9 +456,9 @@ void UIDetailsUpdateTaskDisplay::run()
             CCaptureScreenSettings captureScreen0Settings = captureSettings.GetScreenSettings(0);
 
             /** @todo r=andy Refine these texts (wrt audio and/or video). */
-            table << UITextTableLine(QApplication::translate("UIDetails", "Video Capture File", "details (display/video capture)"),
+            table << UITextTableLine(QApplication::translate("UIDetails", "Recording File", "details (display/video capture)"),
                                      captureScreen0Settings.GetFileName());
-            table << UITextTableLine(QApplication::translate("UIDetails", "Video Capture Attributes", "details (display/video capture)"),
+            table << UITextTableLine(QApplication::translate("UIDetails", "Recording Attributes", "details (display/video capture)"),
                                      QApplication::translate("UIDetails", "Frame Size: %1x%2, Frame Rate: %3fps, Bit Rate: %4kbps")
                                          .arg(captureScreen0Settings.GetVideoWidth()).arg(captureScreen0Settings.GetVideoHeight())
                                          .arg(captureScreen0Settings.GetVideoFPS()).arg(captureScreen0Settings.GetVideoRate()));
@@ -466,7 +466,7 @@ void UIDetailsUpdateTaskDisplay::run()
         else
         {
             /** @todo r=andy Refine these texts (wrt audio and/or video). */
-            table << UITextTableLine(QApplication::translate("UIDetails", "Video Capture", "details (display/video capture)"),
+            table << UITextTableLine(QApplication::translate("UIDetails", "Recording", "details (display/video capture)"),
                                      QApplication::translate("UIDetails", "Disabled", "details (display/video capture)"));
         }
     }

@@ -721,17 +721,17 @@ void UISession::sltVRDEChange()
     emit sigVRDEChange();
 }
 
-void UISession::sltCaptureChange()
+void UISession::sltRecordingChange()
 {
     CCaptureSettings captureSettings = machine().GetCaptureSettings();
 
     /* Check/Uncheck Capture action depending on feature status: */
-    actionPool()->action(UIActionIndexRT_M_View_M_Capture_T_Start)->blockSignals(true);
-    actionPool()->action(UIActionIndexRT_M_View_M_Capture_T_Start)->setChecked(captureSettings.GetEnabled());
-    actionPool()->action(UIActionIndexRT_M_View_M_Capture_T_Start)->blockSignals(false);
+    actionPool()->action(UIActionIndexRT_M_View_M_Recording_T_Start)->blockSignals(true);
+    actionPool()->action(UIActionIndexRT_M_View_M_Recording_T_Start)->setChecked(captureSettings.GetEnabled());
+    actionPool()->action(UIActionIndexRT_M_View_M_Recording_T_Start)->blockSignals(false);
 
     /* Notify listeners about Capture change: */
-    emit sigCaptureChange();
+    emit sigRecordingChange();
 }
 
 void UISession::sltGuestMonitorChange(KGuestMonitorChangedEventType changeType, ulong uScreenId, QRect screenGeo)
@@ -1132,8 +1132,8 @@ void UISession::prepareConsoleEventHandlers()
     connect(gConsoleEvents, SIGNAL(sigVRDEChange()),
             this, SLOT(sltVRDEChange()));
 
-    connect(gConsoleEvents, SIGNAL(sigVideoCaptureChange()),
-            this, SLOT(sltCaptureChange()));
+    connect(gConsoleEvents, SIGNAL(sigRecordingChange()),
+            this, SLOT(sltRecordingChange()));
 
     connect(gConsoleEvents, SIGNAL(sigNetworkAdapterChange(CNetworkAdapter)),
             this, SIGNAL(sigNetworkAdapterChange(CNetworkAdapter)));

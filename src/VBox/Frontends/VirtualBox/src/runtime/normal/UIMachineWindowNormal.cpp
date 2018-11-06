@@ -70,7 +70,7 @@ void UIMachineWindowNormal::sltMachineStateChanged()
     UIMachineWindow::sltMachineStateChanged();
 
     /* Update indicator-pool and virtualization stuff: */
-    updateAppearanceOf(UIVisualElement_IndicatorPoolStuff | UIVisualElement_VideoCapture | UIVisualElement_FeaturesStuff);
+    updateAppearanceOf(UIVisualElement_IndicatorPoolStuff | UIVisualElement_Recording | UIVisualElement_FeaturesStuff);
 }
 
 void UIMachineWindowNormal::sltMediumChange(const CMediumAttachment &attachment)
@@ -115,10 +115,10 @@ void UIMachineWindowNormal::sltSharedFolderChange()
     updateAppearanceOf(UIVisualElement_SharedFolderStuff);
 }
 
-void UIMachineWindowNormal::sltVideoCaptureChange()
+void UIMachineWindowNormal::sltRecordingChange()
 {
     /* Update video-capture stuff: */
-    updateAppearanceOf(UIVisualElement_VideoCapture);
+    updateAppearanceOf(UIVisualElement_Recording);
 }
 
 void UIMachineWindowNormal::sltCPUExecutionCapChange()
@@ -218,7 +218,7 @@ void UIMachineWindowNormal::sltHandleIndicatorContextMenuRequest(IndicatorType i
         case IndicatorType_USB:           pAction = actionPool()->action(UIActionIndexRT_M_Devices_M_USBDevices);     break;
         case IndicatorType_SharedFolders: pAction = actionPool()->action(UIActionIndexRT_M_Devices_M_SharedFolders);  break;
         case IndicatorType_Display:       pAction = actionPool()->action(UIActionIndexRT_M_ViewPopup);                break;
-        case IndicatorType_Capture:  pAction = actionPool()->action(UIActionIndexRT_M_View_M_VideoCapture);      break;
+        case IndicatorType_Recording:  pAction = actionPool()->action(UIActionIndexRT_M_View_M_Recording);      break;
         case IndicatorType_Mouse:         pAction = actionPool()->action(UIActionIndexRT_M_Input_M_Mouse);            break;
         case IndicatorType_Keyboard:      pAction = actionPool()->action(UIActionIndexRT_M_Input_M_Keyboard);         break;
         default: break;
@@ -254,8 +254,8 @@ void UIMachineWindowNormal::prepareSessionConnections()
             this, SLOT(sltNetworkAdapterChange()));
     connect(machineLogic()->uisession(), SIGNAL(sigSharedFolderChange()),
             this, SLOT(sltSharedFolderChange()));
-    connect(machineLogic()->uisession(), SIGNAL(sigVideoCaptureChange()),
-            this, SLOT(sltVideoCaptureChange()));
+    connect(machineLogic()->uisession(), SIGNAL(sigRecordingChange()),
+            this, SLOT(sltRecordingChange()));
     connect(machineLogic()->uisession(), SIGNAL(sigCPUExecutionCapChange()),
             this, SLOT(sltCPUExecutionCapChange()));
     connect(machineLogic()->uisession(), SIGNAL(sigInitialized()),
@@ -463,8 +463,8 @@ void UIMachineWindowNormal::cleanupSessionConnections()
                this, &UIMachineWindowNormal::sltAudioAdapterChange);
     disconnect(machineLogic()->uisession(), SIGNAL(sigSharedFolderChange()),
                this, SLOT(sltSharedFolderChange()));
-    disconnect(machineLogic()->uisession(), SIGNAL(sigVideoCaptureChange()),
-               this, SLOT(sltVideoCaptureChange()));
+    disconnect(machineLogic()->uisession(), SIGNAL(sigRecordingChange()),
+               this, SLOT(sltRecordingChange()));
     disconnect(machineLogic()->uisession(), SIGNAL(sigCPUExecutionCapChange()),
                this, SLOT(sltCPUExecutionCapChange()));
 
@@ -638,8 +638,8 @@ void UIMachineWindowNormal::updateAppearanceOf(int iElement)
         /* If VM is running or paused: */
         if (uisession()->isRunning() || uisession()->isPaused())
         {
-            if (iElement & UIVisualElement_VideoCapture)
-                m_pIndicatorsPool->updateAppearance(IndicatorType_Capture);
+            if (iElement & UIVisualElement_Recording)
+                m_pIndicatorsPool->updateAppearance(IndicatorType_Recording);
         }
     }
 }

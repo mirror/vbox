@@ -35,7 +35,7 @@ enum UIVisualElement
     UIVisualElement_USBStuff              = RT_BIT(8),
     UIVisualElement_SharedFolderStuff     = RT_BIT(9),
     UIVisualElement_Display               = RT_BIT(10),
-    UIVisualElement_VideoCapture          = RT_BIT(11),
+    UIVisualElement_Recording             = RT_BIT(11),
     UIVisualElement_FeaturesStuff         = RT_BIT(12),
 #ifndef VBOX_WS_MAC
     UIVisualElement_MiniToolBar           = RT_BIT(13),

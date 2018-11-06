@@ -376,7 +376,7 @@ STDMETHODIMP UIMainEventListener::HandleEvent(VBoxEventType_T, IEvent *pEvent)
         }
         case KVBoxEventType_OnCaptureChanged:
         {
-            emit sigCaptureChange();
+            emit sigRecordingChange();
             break;
         }
         case KVBoxEventType_OnUSBControllerChanged:

@@ -290,8 +290,8 @@ private slots:
     void sltAdjustMachineWindows();
     void sltToggleGuestAutoresize(bool fEnabled);
     void sltTakeScreenshot();
-    void sltOpenCaptureOptions();
-    void sltToggleCapture(bool fEnabled);
+    void sltOpenRecordingOptions();
+    void sltToggleRecording(bool fEnabled);
     void sltToggleVRDE(bool fEnabled);
 
     /* "Device" menu functionality: */

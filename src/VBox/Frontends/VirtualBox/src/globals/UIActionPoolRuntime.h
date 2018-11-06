@@ -63,9 +63,9 @@ enum UIActionIndexRT
     UIActionIndexRT_M_View_S_AdjustWindow,
     UIActionIndexRT_M_View_T_GuestAutoresize,
     UIActionIndexRT_M_View_S_TakeScreenshot,
-    UIActionIndexRT_M_View_M_VideoCapture,
-    UIActionIndexRT_M_View_M_Capture_S_Settings,
-    UIActionIndexRT_M_View_M_Capture_T_Start,
+    UIActionIndexRT_M_View_M_Recording,
+    UIActionIndexRT_M_View_M_Recording_S_Settings,
+    UIActionIndexRT_M_View_M_Recording_T_Start,
     UIActionIndexRT_M_View_T_VRDEServer,
     UIActionIndexRT_M_View_M_MenuBar,
     UIActionIndexRT_M_View_M_MenuBar_S_Settings,
@@ -241,8 +241,8 @@ protected:
     void updateMenuView();
     /** Updates 'View' : 'Popup' menu. */
     void updateMenuViewPopup();
-    /** Updates 'View' : 'Video Capture' menu. */
-    void updateMenuViewVideoCapture();
+    /** Updates 'View' : 'Recording' menu. */
+    void updateMenuViewRecording();
     /** Updates 'View' : 'Menu Bar' menu. */
     void updateMenuViewMenuBar();
     /** Updates 'View' : 'Status Bar' menu. */

@@ -781,43 +781,43 @@ private:
 };
 
 
-/** UISessionStateStatusBarIndicator extension for Runtime UI: Video-capture indicator. */
-class UIIndicatorCapture : public UISessionStateStatusBarIndicator
+/** UISessionStateStatusBarIndicator extension for Runtime UI: Recording indicator. */
+class UIIndicatorRecording : public UISessionStateStatusBarIndicator
 {
     Q_OBJECT;
     Q_PROPERTY(double rotationAngleStart READ rotationAngleStart);
     Q_PROPERTY(double rotationAngleFinal READ rotationAngleFinal);
     Q_PROPERTY(double rotationAngle READ rotationAngle WRITE setRotationAngle);
 
-    /** Capture states. */
-    enum UIIndicatorStateCapture
+    /** Recording states. */
+    enum UIIndicatorStateRecording
     {
-        UIIndicatorStateCapture_Disabled = 0,
-        UIIndicatorStateCapture_Enabled  = 1,
-        UIIndicatorStateCapture_Paused   = 2
+        UIIndicatorStateRecording_Disabled = 0,
+        UIIndicatorStateRecording_Enabled  = 1,
+        UIIndicatorStateRecording_Paused   = 2
     };
 
-    /** Capture modes. */
-    enum UIIndicatorStateCaptureMode
+    /** Recording modes. */
+    enum UIIndicatorStateRecordingMode
     {
-        UIIndicatorStateCaptureMode_None   = RT_BIT(0),
-        UIIndicatorStateCaptureMode_Video  = RT_BIT(1),
-        UIIndicatorStateCaptureMode_Audio  = RT_BIT(2)
+        UIIndicatorStateRecordingMode_None  = RT_BIT(0),
+        UIIndicatorStateRecordingMode_Video = RT_BIT(1),
+        UIIndicatorStateRecordingMode_Audio = RT_BIT(2)
     };
 
 public:
 
     /** Constructor, passes @a pSession to the UISessionStateStatusBarIndicator constructor. */
-    UIIndicatorCapture(UISession *pSession)
-        : UISessionStateStatusBarIndicator(IndicatorType_Capture, pSession)
+    UIIndicatorRecording(UISession *pSession)
+        : UISessionStateStatusBarIndicator(IndicatorType_Recording, pSession)
         , m_pAnimation(0)
         , m_dRotationAngle(0)
-        , m_eCaptureMode(UIIndicatorStateCaptureMode_None)
+        , m_eRecordingMode(UIIndicatorStateRecordingMode_None)
     {
         /* Assign state-icons: */
-        setStateIcon(UIIndicatorStateCapture_Disabled, UIIconPool::iconSet(":/video_capture_16px.png"));
-        setStateIcon(UIIndicatorStateCapture_Enabled,  UIIconPool::iconSet(":/movie_reel_16px.png"));
-        setStateIcon(UIIndicatorStateCapture_Paused,   UIIconPool::iconSet(":/movie_reel_16px.png"));
+        setStateIcon(UIIndicatorStateRecording_Disabled, UIIconPool::iconSet(":/video_capture_16px.png"));
+        setStateIcon(UIIndicatorStateRecording_Enabled,  UIIconPool::iconSet(":/movie_reel_16px.png"));
+        setStateIcon(UIIndicatorStateRecording_Paused,   UIIconPool::iconSet(":/movie_reel_16px.png"));
         /* Create *enabled* state animation: */
         m_pAnimation = UIAnimationLoop::installAnimationLoop(this, "rotationAngle",
                                                                    "rotationAngleStart", "rotationAngleFinal",
@@ -834,14 +834,14 @@ private slots:
         /* Update animation state: */
         switch (iState)
         {
-            case UIIndicatorStateCapture_Disabled:
+            case UIIndicatorStateRecording_Disabled:
                 m_pAnimation->stop();
                 m_dRotationAngle = 0;
                 break;
-            case UIIndicatorStateCapture_Enabled:
+            case UIIndicatorStateRecording_Enabled:
                 m_pAnimation->start();
                 break;
-            case UIIndicatorStateCapture_Paused:
+            case UIIndicatorStateRecording_Paused:
                 m_pAnimation->stop();
                 break;
             default:
@@ -859,7 +859,7 @@ private:
         /* Create new painter: */
         QPainter painter(this);
         /* Configure painter for *enabled* state: */
-        if (state() == UIIndicatorStateCapture_Enabled)
+        if (state() == UIIndicatorStateRecording_Enabled)
         {
             /* Configure painter for smooth animation: */
             painter.setRenderHint(QPainter::Antialiasing);
@@ -884,37 +884,39 @@ private:
 
         /* Update indicator state early: */
         CCaptureSettings captureSettings = machine.GetCaptureSettings();
+        Assert(captureSettings.isOk());
         /* For now all screens have the same config: */
         CCaptureScreenSettings captureScreen0Settings = captureSettings.GetScreenSettings(0);
+        Assert(captureScreen0Settings.isOk());
         if (!captureScreen0Settings.GetEnabled())
-            setState(UIIndicatorStateCapture_Disabled);
+            setState(UIIndicatorStateRecording_Disabled);
         else if (!fMachinePaused)
-            setState(UIIndicatorStateCapture_Enabled);
+            setState(UIIndicatorStateRecording_Enabled);
         else
-            setState(UIIndicatorStateCapture_Paused);
+            setState(UIIndicatorStateRecording_Paused);
 
-        updateCaptureMode();
+        updateRecordingMode();
 
         /* Prepare tool-tip: */
         QString strFullData;
         switch (state())
         {
-            case UIIndicatorStateCapture_Disabled:
+            case UIIndicatorStateRecording_Disabled:
             {
                 strFullData += s_strTableRow1 /** @todo r=andy Refine this tooltip (audio and/or video). */
                     .arg(QApplication::translate("UIIndicatorsPool", "Video capture disabled", "Video capture tooltip"));
                 break;
             }
-            case UIIndicatorStateCapture_Enabled:
-            case UIIndicatorStateCapture_Paused:
+            case UIIndicatorStateRecording_Enabled:
+            case UIIndicatorStateRecording_Paused:
             {
                 QString strToolTip;
-                if ( m_eCaptureMode & UIIndicatorStateCaptureMode_Audio &&
-                    m_eCaptureMode & UIIndicatorStateCaptureMode_Video)
+                if ( m_eRecordingMode & UIIndicatorStateRecordingMode_Audio &&
+                    m_eRecordingMode & UIIndicatorStateRecordingMode_Video)
                     strToolTip = "Video/audio capture file";
-                else if (m_eCaptureMode & UIIndicatorStateCaptureMode_Audio)
+                else if (m_eRecordingMode & UIIndicatorStateRecordingMode_Audio)
                     strToolTip = "Audio capture file";
-                else if (m_eCaptureMode & UIIndicatorStateCaptureMode_Video)
+                else if (m_eRecordingMode & UIIndicatorStateRecordingMode_Video)
                     strToolTip = "Video capture file";
 
                 strFullData += s_strTableRow2 /** @todo r=andy Refine this tooltip (audio and/or video). */
@@ -939,10 +941,10 @@ private:
     /** Defines current rotation angle. */
     void setRotationAngle(double dRotationAngle) { m_dRotationAngle = dRotationAngle; update(); }
 
-    /* Parses CaptureScreenSettings::Options and updates m_eCaptureMode accordingly. */
-    void updateCaptureMode()
+    /* Parses CaptureScreenSettings::Options and updates m_eRecordingMode accordingly. */
+    void updateRecordingMode()
     {
-        m_eCaptureMode = UIIndicatorStateCaptureMode_None;
+        m_eRecordingMode = UIIndicatorStateRecordingMode_None;
 
         /* Get machine: */
         if (!m_pSession)
@@ -951,21 +953,21 @@ private:
         if (machine.isNull())
             return;
 
-        CCaptureSettings captureSettings = machine.GetCaptureSettings();
+        CCaptureSettings recordingSettings = machine.GetCaptureSettings();
         /* For now all screens have the same config: */
-        CCaptureScreenSettings captureScreen0Settings = captureSettings.GetScreenSettings(0);
+        CCaptureScreenSettings recordingScreen0Settings = recordingSettings.GetScreenSettings(0);
 
-        QStringList strOptionsPairList = captureScreen0Settings.GetOptions().split(",", QString::SkipEmptyParts);
+        QStringList strOptionsPairList = recordingScreen0Settings.GetOptions().split(",", QString::SkipEmptyParts);
 
         for (int i = 0; i < strOptionsPairList.size(); ++i)
         {
             if (strOptionsPairList.at(i).contains("vc_enabled", Qt::CaseInsensitive) &&
                 strOptionsPairList.at(i).contains("true", Qt::CaseInsensitive))
-                m_eCaptureMode = (UIIndicatorStateCaptureMode)((int)m_eCaptureMode | (int)UIIndicatorStateCaptureMode_Video);
+                m_eRecordingMode = (UIIndicatorStateRecordingMode)((int)m_eRecordingMode | (int)UIIndicatorStateRecordingMode_Video);
 
             if (strOptionsPairList.at(i).contains("ac_enabled", Qt::CaseInsensitive) &&
                 strOptionsPairList.at(i).contains("true", Qt::CaseInsensitive))
-                m_eCaptureMode = (UIIndicatorStateCaptureMode)((int)m_eCaptureMode | (int)UIIndicatorStateCaptureMode_Audio);
+                m_eRecordingMode = (UIIndicatorStateRecordingMode)((int)m_eRecordingMode | (int)UIIndicatorStateRecordingMode_Audio);
         }
     }
 
@@ -974,7 +976,7 @@ private:
     /** Holds current rotation angle. */
     double m_dRotationAngle;
 
-    UIIndicatorStateCaptureMode m_eCaptureMode;
+    UIIndicatorStateRecordingMode m_eRecordingMode;
 };
 
 
@@ -1473,7 +1475,7 @@ void UIIndicatorsPool::updatePool()
                 case IndicatorType_USB:               m_pool[indicatorType] = new UIIndicatorUSB(m_pSession);           break;
                 case IndicatorType_SharedFolders:     m_pool[indicatorType] = new UIIndicatorSharedFolders(m_pSession); break;
                 case IndicatorType_Display:           m_pool[indicatorType] = new UIIndicatorDisplay(m_pSession);       break;
-                case IndicatorType_Capture:      m_pool[indicatorType] = new UIIndicatorCapture(m_pSession);  break;
+                case IndicatorType_Recording:         m_pool[indicatorType] = new UIIndicatorRecording(m_pSession);     break;
                 case IndicatorType_Features:          m_pool[indicatorType] = new UIIndicatorFeatures(m_pSession);      break;
                 case IndicatorType_Mouse:             m_pool[indicatorType] = new UIIndicatorMouse(m_pSession);         break;
                 case IndicatorType_Keyboard:          m_pool[indicatorType] = new UIIndicatorKeyboard(m_pSession);      break;

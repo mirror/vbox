@@ -58,8 +58,8 @@ private slots:
     void sltNetworkAdapterChange();
     /** Handles shared folder change event. */
     void sltSharedFolderChange();
-    /** Handles video capture change event. */
-    void sltVideoCaptureChange();
+    /** Handles recording change event. */
+    void sltRecordingChange();
     /** Handles CPU execution cap change event. */
     void sltCPUExecutionCapChange();
     /** Handles UISession initialized event. */

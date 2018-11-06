@@ -93,23 +93,23 @@ private slots:
     /** Handles Guest Screen count editor change. */
     void sltHandleGuestScreenCountEditorChange();
 
-    /** Handles Video Capture toggle. */
-    void sltHandleVideoCaptureCheckboxToggle();
-    /** Handles Video Capture frame size change. */
-    void sltHandleVideoCaptureFrameSizeComboboxChange();
-    /** Handles Video Capture frame width change. */
-    void sltHandleVideoCaptureFrameWidthEditorChange();
-    /** Handles Video Capture frame height change. */
-    void sltHandleVideoCaptureFrameHeightEditorChange();
-    /** Handles Video Capture frame rate slider change. */
-    void sltHandleVideoCaptureFrameRateSliderChange();
-    /** Handles Video Capture frame rate editor change. */
-    void sltHandleVideoCaptureFrameRateEditorChange();
-    /** Handles Video Capture quality slider change. */
-    void sltHandleVideoCaptureQualitySliderChange();
-    /** Handles Video Capture bit-rate editor change. */
-    void sltHandleVideoCaptureBitRateEditorChange();
-    void sltHandleCaptureComboBoxChange();
+    /** Handles recording toggle. */
+    void sltHandleRecordingCheckboxToggle();
+    /** Handles recording frame size change. */
+    void sltHandleRecordingVideoFrameSizeComboboxChange();
+    /** Handles recording frame width change. */
+    void sltHandleRecordingVideoFrameWidthEditorChange();
+    /** Handles recording frame height change. */
+    void sltHandleRecordingVideoFrameHeightEditorChange();
+    /** Handles recording frame rate slider change. */
+    void sltHandleRecordingVideoFrameRateSliderChange();
+    /** Handles recording frame rate editor change. */
+    void sltHandleRecordingVideoFrameRateEditorChange();
+    /** Handles recording quality slider change. */
+    void sltHandleRecordingVideoQualitySliderChange();
+    /** Handles recording bit-rate editor change. */
+    void sltHandleRecordingVideoBitRateEditorChange();
+    void sltHandleRecordingComboBoxChange();
 
 private:
 
@@ -119,8 +119,8 @@ private:
     void prepareTabScreen();
     /** Prepares 'Remote Display' tab. */
     void prepareTabRemoteDisplay();
-    /** Prepares 'Video Capture' tab. */
-    void prepareTabVideoCapture();
+    /** Prepares 'Recording' tab. */
+    void prepareTabRecording();
     /** Prepares connections. */
     void prepareConnections();
     /** Cleanups all. */
@@ -137,13 +137,13 @@ private:
     void lookForCorrespondingFrameSizePreset();
     /** Updates guest-screen count. */
     void updateGuestScreenCount();
-    /** Updates video capture file size hint. */
-    void updateVideoCaptureFileSizeHint();
+    /** Updates recording file size hint. */
+    void updateRecordingFileSizeHint();
     /** Searches for the @a data field in corresponding @a pComboBox. */
     static void lookForCorrespondingPreset(QComboBox *pComboBox, const QVariant &data);
-    /** Calculates Video Capture bit-rate for passed @a iFrameWidth, @a iFrameHeight, @a iFrameRate and @a iQuality. */
+    /** Calculates recording video bit-rate for passed @a iFrameWidth, @a iFrameHeight, @a iFrameRate and @a iQuality. */
     static int calculateBitRate(int iFrameWidth, int iFrameHeight, int iFrameRate, int iQuality);
-    /** Calculates Video Capture quality for passed @a iFrameWidth, @a iFrameHeight, @a iFrameRate and @a iBitRate. */
+    /** Calculates recording video quality for passed @a iFrameWidth, @a iFrameHeight, @a iFrameRate and @a iBitRate. */
     static int calculateQuality(int iFrameWidth, int iFrameHeight, int iFrameRate, int iBitRate);
     /** Saves existing display data from the cache. */
     bool saveDisplayData();
@@ -151,10 +151,10 @@ private:
     bool saveScreenData();
     /** Saves existing 'Remote Display' data from the cache. */
     bool saveRemoteDisplayData();
-    /** Saves existing 'Video Capture' data from the cache. */
-    bool saveVideoCaptureData();
-    /** Decide which of the capture related widgets are to be disabled/enabled. */
-    void enableDisableCaptureWidgets();
+    /** Saves existing 'Recording' data from the cache. */
+    bool saveRecordingData();
+    /** Decide which of the recording related widgets are to be disabled/enabled. */
+    void enableDisableRecordingWidgets();
 
     /** Holds the guest OS type ID. */
     CGuestOSType  m_comGuestOSType;

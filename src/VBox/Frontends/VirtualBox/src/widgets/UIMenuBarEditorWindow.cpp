@@ -1303,7 +1303,7 @@ void UIMenuBarEditorWidget::prepareMenuView()
         prepareCopiedAction(pMenu, actionPool()->action(UIActionIndexRT_M_View_T_GuestAutoresize));
         pMenu->addSeparator();
         prepareCopiedAction(pMenu, actionPool()->action(UIActionIndexRT_M_View_S_TakeScreenshot));
-        prepareCopiedAction(pMenu, actionPool()->action(UIActionIndexRT_M_View_M_Capture_T_Start));
+        prepareCopiedAction(pMenu, actionPool()->action(UIActionIndexRT_M_View_M_Recording_T_Start));
         prepareCopiedAction(pMenu, actionPool()->action(UIActionIndexRT_M_View_T_VRDEServer));
         pMenu->addSeparator();
         prepareCopiedAction(pMenu, actionPool()->action(UIActionIndexRT_M_View_M_MenuBar));

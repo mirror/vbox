@@ -161,8 +161,8 @@ private:
     static QString displayAccelerationReport(CMachine comMachine);
     /** Acquires @a comMachine VRDE server report. */
     static QStringList vrdeServerReport(CMachine comMachine);
-    /** Acquires @a comMachine video capture report. */
-    static QStringList videoCaptureReport(CMachine comMachine);
+    /** Acquires @a comMachine recording report. */
+    static QStringList recordingReport(CMachine comMachine);
     /** Acquires @a comMachine storage report. */
     static QPair<QStringList, QList<QMap<QString, QString> > > storageReport(CMachine comMachine);
     /** Acquires @a comMachine audio report. */

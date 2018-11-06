@@ -1051,9 +1051,9 @@ void UIMachineLogic::prepareActionGroups()
 #endif /* !VBOX_WS_MAC */
     m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_View_S_AdjustWindow));
     m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_View_S_TakeScreenshot));
-    m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_View_M_VideoCapture));
-    m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_View_M_Capture_S_Settings));
-    m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_View_M_Capture_T_Start));
+    m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_View_M_Recording));
+    m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_View_M_Recording_S_Settings));
+    m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_View_M_Recording_T_Start));
     m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_View_T_VRDEServer));
     m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_View_M_MenuBar));
     m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_View_M_MenuBar_S_Settings));
@@ -1136,10 +1136,10 @@ void UIMachineLogic::prepareActionConnections()
             this, SLOT(sltToggleGuestAutoresize(bool)));
     connect(actionPool()->action(UIActionIndexRT_M_View_S_TakeScreenshot), SIGNAL(triggered()),
             this, SLOT(sltTakeScreenshot()));
-    connect(actionPool()->action(UIActionIndexRT_M_View_M_Capture_S_Settings), SIGNAL(triggered()),
-            this, SLOT(sltOpenCaptureOptions()));
-    connect(actionPool()->action(UIActionIndexRT_M_View_M_Capture_T_Start), SIGNAL(toggled(bool)),
-            this, SLOT(sltToggleCapture(bool)));
+    connect(actionPool()->action(UIActionIndexRT_M_View_M_Recording_S_Settings), SIGNAL(triggered()),
+            this, SLOT(sltOpenRecordingOptions()));
+    connect(actionPool()->action(UIActionIndexRT_M_View_M_Recording_T_Start), SIGNAL(toggled(bool)),
+            this, SLOT(sltToggleRecording(bool)));
     connect(actionPool()->action(UIActionIndexRT_M_View_T_VRDEServer), SIGNAL(toggled(bool)),
             this, SLOT(sltToggleVRDE(bool)));
 
@@ -2090,31 +2090,31 @@ void UIMachineLogic::sltTakeScreenshot()
     QFile::remove(strTempFile);
 }
 
-void UIMachineLogic::sltOpenCaptureOptions()
+void UIMachineLogic::sltOpenRecordingOptions()
 {
-    /* Open VM settings : Display page : Video Capture tab: */
+    /* Open VM settings : Display page : Recording tab: */
     sltOpenVMSettingsDialog("#display", "m_pCheckboxVideoCapture");
 }
 
-void UIMachineLogic::sltToggleCapture(bool fEnabled)
+void UIMachineLogic::sltToggleRecording(bool fEnabled)
 {
     /* Do not process if window(s) missed! */
     if (!isMachineWindowsCreated())
         return;
 
     /* Make sure something had changed: */
-    CCaptureSettings captureSettings = machine().GetCaptureSettings();
-    if (captureSettings.GetEnabled() == static_cast<BOOL>(fEnabled))
+    CCaptureSettings recordingSettings = machine().GetCaptureSettings();
+    if (recordingSettings.GetEnabled() == static_cast<BOOL>(fEnabled))
         return;
 
-    /* Update Video Capture state: */
-    captureSettings.SetEnabled(fEnabled);
-    if (!captureSettings.isOk())
+    /* Update recording state: */
+    recordingSettings.SetEnabled(fEnabled);
+    if (!recordingSettings.isOk())
     {
         /* Make sure action is updated: */
-        uisession()->updateStatusCapture();
+        uisession()->updateStatusRecording();
         /* Notify about the error: */
-        return popupCenter().cannotToggleCapture(activeMachineWindow(), machine(), fEnabled);
+        return popupCenter().cannotToggleRecording(activeMachineWindow(), machine(), fEnabled);
     }
 
     /* Save machine-settings: */
@@ -2122,7 +2122,7 @@ void UIMachineLogic::sltToggleCapture(bool fEnabled)
     if (!machine().isOk())
     {
         /* Make sure action is updated: */
-        uisession()->updateStatusCapture();
+        uisession()->updateStatusRecording();
         /* Notify about the error: */
         return msgCenter().cannotSaveMachineSettings(machine());
     }

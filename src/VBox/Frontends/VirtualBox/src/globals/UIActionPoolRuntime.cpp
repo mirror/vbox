@@ -1050,14 +1050,14 @@ protected:
 };
 
 /** Menu action extension, used as 'View' menu class. */
-class UIActionMenuRuntimeVideoCapture : public UIActionMenu
+class UIActionMenuRuntimeRecording : public UIActionMenu
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionMenuRuntimeVideoCapture(UIActionPool *pParent)
+    UIActionMenuRuntimeRecording(UIActionPool *pParent)
         : UIActionMenu(pParent)
     {}
 
@@ -1066,17 +1066,17 @@ protected:
     /** Returns action extra-data ID. */
     virtual int extraDataID() const /* override */
     {
-        return UIExtraDataMetaDefs::RuntimeMenuViewActionType_VideoCapture;
+        return UIExtraDataMetaDefs::RuntimeMenuViewActionType_Recording;
     }
     /** Returns action extra-data key. */
     virtual QString extraDataKey() const /* override */
     {
-        return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuViewActionType_VideoCapture);
+        return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuViewActionType_Recording);
     }
     /** Returns whether action is allowed. */
     virtual bool isAllowed() const /* override */
     {
-        return actionPool()->toRuntime()->isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_VideoCapture);
+        return actionPool()->toRuntime()->isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_Recording);
     }
 
     /** Handles translation event. */
@@ -1086,15 +1086,15 @@ protected:
     }
 };
 
-/** Simple action extension, used as 'Show Video Capture Settings' action class. */
-class UIActionSimpleRuntimeShowVideoCaptureSettings : public UIActionSimple
+/** Simple action extension, used as 'Show Recording Settings' action class. */
+class UIActionSimpleRuntimeShowRecordingSettings : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionSimpleRuntimeShowVideoCaptureSettings(UIActionPool *pParent)
+    UIActionSimpleRuntimeShowRecordingSettings(UIActionPool *pParent)
         : UIActionSimple(pParent, ":/video_capture_settings_16px.png", ":/video_capture_settings_16px.png", true)
     {}
 
@@ -1103,17 +1103,17 @@ protected:
     /** Returns action extra-data ID. */
     virtual int extraDataID() const /* override */
     {
-        return UIExtraDataMetaDefs::RuntimeMenuViewActionType_VideoCaptureSettings;
+        return UIExtraDataMetaDefs::RuntimeMenuViewActionType_RecordingSettings;
     }
     /** Returns action extra-data key. */
     virtual QString extraDataKey() const /* override */
     {
-        return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuViewActionType_VideoCaptureSettings);
+        return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuViewActionType_RecordingSettings);
     }
     /** Returns whether action is allowed. */
     virtual bool isAllowed() const /* override */
     {
-        return actionPool()->toRuntime()->isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_VideoCaptureSettings);
+        return actionPool()->toRuntime()->isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_RecordingSettings);
     }
 
     /** Returns shortcut extra-data ID. */
@@ -1130,15 +1130,15 @@ protected:
     }
 };
 
-/** Toggle action extension, used as 'Video Capture' action class. */
-class UIActionToggleRuntimeVideoCapture : public UIActionToggle
+/** Toggle action extension, used as 'Recording' action class. */
+class UIActionToggleRuntimeRecording : public UIActionToggle
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionToggleRuntimeVideoCapture(UIActionPool *pParent)
+    UIActionToggleRuntimeRecording(UIActionPool *pParent)
         : UIActionToggle(pParent,
                          ":/video_capture_on_16px.png", ":/video_capture_16px.png",
                          ":/video_capture_on_disabled_16px.png", ":/video_capture_disabled_16px.png",
@@ -1150,17 +1150,17 @@ protected:
     /** Returns action extra-data ID. */
     virtual int extraDataID() const /* override */
     {
-        return UIExtraDataMetaDefs::RuntimeMenuViewActionType_StartVideoCapture;
+        return UIExtraDataMetaDefs::RuntimeMenuViewActionType_StartRecording;
     }
     /** Returns action extra-data key. */
     virtual QString extraDataKey() const /* override */
     {
-        return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuViewActionType_StartVideoCapture);
+        return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuViewActionType_StartRecording);
     }
     /** Returns whether action is allowed. */
     virtual bool isAllowed() const /* override */
     {
-        return actionPool()->toRuntime()->isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_StartVideoCapture);
+        return actionPool()->toRuntime()->isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_StartRecording);
     }
 
     /** Returns shortcut extra-data ID. */
@@ -3305,9 +3305,9 @@ void UIActionPoolRuntime::preparePool()
     m_pool[UIActionIndexRT_M_View_S_AdjustWindow] = new UIActionSimpleRuntimePerformWindowAdjust(this);
     m_pool[UIActionIndexRT_M_View_T_GuestAutoresize] = new UIActionToggleRuntimeGuestAutoresize(this);
     m_pool[UIActionIndexRT_M_View_S_TakeScreenshot] = new UIActionSimpleRuntimePerformTakeScreenshot(this);
-    m_pool[UIActionIndexRT_M_View_M_VideoCapture] = new UIActionMenuRuntimeVideoCapture(this);
-    m_pool[UIActionIndexRT_M_View_M_Capture_S_Settings] = new UIActionSimpleRuntimeShowVideoCaptureSettings(this);
-    m_pool[UIActionIndexRT_M_View_M_Capture_T_Start] = new UIActionToggleRuntimeVideoCapture(this);
+    m_pool[UIActionIndexRT_M_View_M_Recording] = new UIActionMenuRuntimeRecording(this);
+    m_pool[UIActionIndexRT_M_View_M_Recording_S_Settings] = new UIActionSimpleRuntimeShowRecordingSettings(this);
+    m_pool[UIActionIndexRT_M_View_M_Recording_T_Start] = new UIActionToggleRuntimeRecording(this);
     m_pool[UIActionIndexRT_M_View_T_VRDEServer] = new UIActionToggleRuntimeVRDEServer(this);
     m_pool[UIActionIndexRT_M_View_M_MenuBar] = new UIActionMenuRuntimeMenuBar(this);
     m_pool[UIActionIndexRT_M_View_M_MenuBar_S_Settings] = new UIActionSimpleRuntimeShowMenuBarSettings(this);
@@ -3376,7 +3376,7 @@ void UIActionPoolRuntime::preparePool()
     m_menuUpdateHandlers[UIActionIndexRT_M_Machine].ptfr =                 &UIActionPoolRuntime::updateMenuMachine;
     m_menuUpdateHandlers[UIActionIndexRT_M_View].ptfr =                    &UIActionPoolRuntime::updateMenuView;
     m_menuUpdateHandlers[UIActionIndexRT_M_ViewPopup].ptfr =               &UIActionPoolRuntime::updateMenuViewPopup;
-    m_menuUpdateHandlers[UIActionIndexRT_M_View_M_VideoCapture].ptfr =     &UIActionPoolRuntime::updateMenuViewVideoCapture;
+    m_menuUpdateHandlers[UIActionIndexRT_M_View_M_Recording].ptfr =        &UIActionPoolRuntime::updateMenuViewRecording;
     m_menuUpdateHandlers[UIActionIndexRT_M_View_M_MenuBar].ptfr =          &UIActionPoolRuntime::updateMenuViewMenuBar;
     m_menuUpdateHandlers[UIActionIndexRT_M_View_M_StatusBar].ptfr =        &UIActionPoolRuntime::updateMenuViewStatusBar;
     m_menuUpdateHandlers[UIActionIndexRT_M_Input].ptfr =                   &UIActionPoolRuntime::updateMenuInput;
@@ -3451,7 +3451,7 @@ void UIActionPoolRuntime::updateConfiguration()
         m_restrictedActionsMenuMachine[UIActionRestrictionLevel_Base] = (UIExtraDataMetaDefs::RuntimeMenuMachineActionType)
             (m_restrictedActionsMenuMachine[UIActionRestrictionLevel_Base] | UIExtraDataMetaDefs::RuntimeMenuMachineActionType_SettingsDialog);
         m_restrictedActionsMenuView[UIActionRestrictionLevel_Base] = (UIExtraDataMetaDefs::RuntimeMenuViewActionType)
-            (m_restrictedActionsMenuView[UIActionRestrictionLevel_Base] | UIExtraDataMetaDefs::RuntimeMenuViewActionType_VideoCaptureSettings);
+            (m_restrictedActionsMenuView[UIActionRestrictionLevel_Base] | UIExtraDataMetaDefs::RuntimeMenuViewActionType_RecordingSettings);
         m_restrictedActionsMenuInput[UIActionRestrictionLevel_Base] = (UIExtraDataMetaDefs::RuntimeMenuInputActionType)
             (m_restrictedActionsMenuInput[UIActionRestrictionLevel_Base] | UIExtraDataMetaDefs::RuntimeMenuInputActionType_KeyboardSettings);
         m_restrictedActionsMenuDevices[UIActionRestrictionLevel_Base] = (UIExtraDataMetaDefs::RuntimeMenuDevicesActionType)
@@ -3657,11 +3657,11 @@ void UIActionPoolRuntime::updateMenuView()
 
     /* 'Take Screenshot' action: */
     fSeparator = addAction(pMenu, action(UIActionIndexRT_M_View_S_TakeScreenshot)) || fSeparator;
-    /* 'Video Capture' submenu: */
-    fSeparator = addAction(pMenu, action(UIActionIndexRT_M_View_M_VideoCapture), false) || fSeparator;
-    updateMenuViewVideoCapture();
-    /* 'Video Capture Start' action: */
-    fSeparator = addAction(pMenu, action(UIActionIndexRT_M_View_M_Capture_T_Start)) || fSeparator;
+    /* 'Recording' submenu: */
+    fSeparator = addAction(pMenu, action(UIActionIndexRT_M_View_M_Recording), false) || fSeparator;
+    updateMenuViewRecording();
+    /* 'Recording Start' action: */
+    fSeparator = addAction(pMenu, action(UIActionIndexRT_M_View_M_Recording_T_Start)) || fSeparator;
     /* 'VRDE Server' action: */
     fSeparator = addAction(pMenu, action(UIActionIndexRT_M_View_T_VRDEServer)) || fSeparator;
 
@@ -3764,10 +3764,10 @@ void UIActionPoolRuntime::updateMenuViewPopup()
     m_invalidations.remove(UIActionIndexRT_M_ViewPopup);
 }
 
-void UIActionPoolRuntime::updateMenuViewVideoCapture()
+void UIActionPoolRuntime::updateMenuViewRecording()
 {
     /* Get corresponding menu: */
-    UIMenu *pMenu = action(UIActionIndexRT_M_View_M_VideoCapture)->menu();
+    UIMenu *pMenu = action(UIActionIndexRT_M_View_M_Recording)->menu();
     AssertPtrReturnVoid(pMenu);
     /* Clear contents: */
     pMenu->clear();
@@ -3775,8 +3775,8 @@ void UIActionPoolRuntime::updateMenuViewVideoCapture()
     /* Separator: */
     bool fSeparator = false;
 
-    /* 'Video Capture Settings' action: */
-    fSeparator = addAction(pMenu, action(UIActionIndexRT_M_View_M_Capture_S_Settings)) || fSeparator;
+    /* 'Recording Settings' action: */
+    fSeparator = addAction(pMenu, action(UIActionIndexRT_M_View_M_Recording_S_Settings)) || fSeparator;
 
     /* Separator: */
     if (fSeparator)
@@ -3785,11 +3785,11 @@ void UIActionPoolRuntime::updateMenuViewVideoCapture()
         fSeparator = false;
     }
 
-    /* 'Start Video Capture' action: */
-    fSeparator = addAction(pMenu, action(UIActionIndexRT_M_View_M_Capture_T_Start)) || fSeparator;
+    /* 'Start Recording' action: */
+    fSeparator = addAction(pMenu, action(UIActionIndexRT_M_View_M_Recording_T_Start)) || fSeparator;
 
     /* Mark menu as valid: */
-    m_invalidations.remove(UIActionIndexRT_M_View_M_VideoCapture);
+    m_invalidations.remove(UIActionIndexRT_M_View_M_Recording);
 }
 
 void UIActionPoolRuntime::updateMenuViewMenuBar()

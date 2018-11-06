@@ -124,7 +124,7 @@ signals:
         /** Notifies about VRDE device state change. */
         void sigVRDEChange();
         /** Notifies about capture state change. */
-        void sigCaptureChange();
+        void sigRecordingChange();
         /** Notifies about USB controller state change. */
         void sigUSBControllerChange();
         /** Notifies about USB @a device state change to @a fAttached, holding additional @a error information. */

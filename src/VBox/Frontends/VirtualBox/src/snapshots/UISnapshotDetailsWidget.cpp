@@ -1370,23 +1370,23 @@ QString UISnapshotDetailsWidget::detailsReport(DetailsElementType enmType,
                                                          empReport(QApplication::translate("UIGDetails", "Disabled", "details (display/vrde/VRDE server)"), aVrdeReportOld.isEmpty()));
             }
 
-            /* Video Capture: */
-            QStringList aVideoCaptureReport = videoCaptureReport(comMachine);
-            QStringList aVideoCaptureReportOld = videoCaptureReport(comMachineOld);
-            if (!aVideoCaptureReport.isEmpty())
+            /* Recording: */
+            QStringList aRecordingReport = recordingReport(comMachine);
+            QStringList aRecordingReportOld = recordingReport(comMachineOld);
+            if (!aRecordingReport.isEmpty())
             {
                 ++iRowCount;
-                strItem += QString(sSectionItemTpl2).arg(QApplication::translate("UIGDetails", "Video Capture File", "details (display/video capture)"),
-                                                         empReport(aVideoCaptureReport.value(0), aVideoCaptureReportOld.value(0)));
+                strItem += QString(sSectionItemTpl2).arg(QApplication::translate("UIGDetails", "Recording File", "details (display/video capture)"),
+                                                         empReport(aRecordingReport.value(0), aRecordingReportOld.value(0)));
                 ++iRowCount;
-                strItem += QString(sSectionItemTpl2).arg(QApplication::translate("UIGDetails", "Video Capture Attributes", "details (display/video capture)"),
-                                                         empReport(aVideoCaptureReport.value(1), aVideoCaptureReportOld.value(1)));
+                strItem += QString(sSectionItemTpl2).arg(QApplication::translate("UIGDetails", "Recording Attributes", "details (display/video capture)"),
+                                                         empReport(aRecordingReport.value(1), aRecordingReportOld.value(1)));
             }
             else
             {
                 ++iRowCount;
-                strItem += QString(sSectionItemTpl2).arg(QApplication::translate("UIGDetails", "Video Capture", "details (display/video capture)"),
-                                                         empReport(QApplication::translate("UIGDetails", "Disabled", "details (display/video capture)"), aVideoCaptureReportOld.isEmpty()));
+                strItem += QString(sSectionItemTpl2).arg(QApplication::translate("UIGDetails", "Recording", "details (display/video capture)"),
+                                                         empReport(QApplication::translate("UIGDetails", "Disabled", "details (display/video capture)"), aRecordingReportOld.isEmpty()));
             }
 
             break;
@@ -1742,24 +1742,24 @@ QStringList UISnapshotDetailsWidget::vrdeServerReport(CMachine comMachine)
 }
 
 /* static */
-QStringList UISnapshotDetailsWidget::videoCaptureReport(CMachine comMachine)
+QStringList UISnapshotDetailsWidget::recordingReport(CMachine comMachine)
 {
     /* Prepare report: */
     QStringList aReport;
-    /* Acquire capture status: */
-    CCaptureSettings captureSettings = comMachine.GetCaptureSettings();
+    /* Acquire recording status: */
+    CCaptureSettings recordingSettings = comMachine.GetCaptureSettings();
     /* For now all screens have the same config: */
-    CCaptureScreenSettings captureScreen0Settings = captureSettings.GetScreenSettings(0);
-    if (captureScreen0Settings.GetEnabled())
+    CCaptureScreenSettings recordingScreen0Settings = recordingSettings.GetScreenSettings(0);
+    if (recordingScreen0Settings.GetEnabled())
     {
-        /* Video Capture File: */
-        aReport << captureScreen0Settings.GetFileName();
-        /* Video Capture Attributes: */
+        /* Recording ile: */
+        aReport << recordingScreen0Settings.GetFileName();
+        /* Recording attributes: */
         aReport << QApplication::translate("UIGDetails", "Frame Size: %1x%2, Frame Rate: %3fps, Bit Rate: %4kbps")
-                                           .arg(captureScreen0Settings.GetVideoWidth())
-                                           .arg(captureScreen0Settings.GetVideoHeight())
-                                           .arg(captureScreen0Settings.GetVideoFPS())
-                                           .arg(captureScreen0Settings.GetVideoRate());
+                                           .arg(recordingScreen0Settings.GetVideoWidth())
+                                           .arg(recordingScreen0Settings.GetVideoHeight())
+                                           .arg(recordingScreen0Settings.GetVideoFPS())
+                                           .arg(recordingScreen0Settings.GetVideoRate());
     }
     /* Return report: */
     return aReport;

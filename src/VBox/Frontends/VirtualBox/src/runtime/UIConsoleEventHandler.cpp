@@ -63,8 +63,8 @@ signals:
     void sigMediumChange(CMediumAttachment attachment);
     /** Notifies about VRDE device state change. */
     void sigVRDEChange();
-    /** Notifies about Video Capture device state change. */
-    void sigVideoCaptureChange();
+    /** Notifies about recording state change. */
+    void sigRecordingChange();
     /** Notifies about USB controller state change. */
     void sigUSBControllerChange();
     /** Notifies about USB @a device state change to @a fAttached, holding additional @a error information. */
@@ -242,8 +242,8 @@ void UIConsoleEventHandlerProxy::prepareConnections()
     connect(m_pQtListener->getWrapped(), SIGNAL(sigVRDEChange()),
             this, SIGNAL(sigVRDEChange()),
             Qt::DirectConnection);
-    connect(m_pQtListener->getWrapped(), SIGNAL(sigVideoCaptureChange()),
-            this, SIGNAL(sigVideoCaptureChange()),
+    connect(m_pQtListener->getWrapped(), SIGNAL(sigRecordingChange()),
+            this, SIGNAL(sigRecordingChange()),
             Qt::DirectConnection);
     connect(m_pQtListener->getWrapped(), SIGNAL(sigUSBControllerChange()),
             this, SIGNAL(sigUSBControllerChange()),
@@ -401,8 +401,8 @@ void UIConsoleEventHandler::prepareConnections()
     connect(m_pProxy, SIGNAL(sigVRDEChange()),
             this, SIGNAL(sigVRDEChange()),
             Qt::QueuedConnection);
-    connect(m_pProxy, SIGNAL(sigVideoCaptureChange()),
-            this, SIGNAL(sigVideoCaptureChange()),
+    connect(m_pProxy, SIGNAL(sigRecordingChange()),
+            this, SIGNAL(sigRecordingChange()),
             Qt::QueuedConnection);
     connect(m_pProxy, SIGNAL(sigUSBControllerChange()),
             this, SIGNAL(sigUSBControllerChange()),

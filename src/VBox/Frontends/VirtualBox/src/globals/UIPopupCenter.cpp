@@ -569,7 +569,7 @@ void UIPopupCenter::cannotDetachWebCam(QWidget *pParent, const CEmulatedUSB &com
                      UIErrorString::formatErrorInfo(comDispatcher));
 }
 
-void UIPopupCenter::cannotToggleCapture(QWidget *pParent, const CMachine &comMachine, bool fEnable)
+void UIPopupCenter::cannotToggleRecording(QWidget *pParent, const CMachine &comMachine, bool fEnable)
 {
     /* Get machine-name preserving error-info: */
     QString strMachineName(CMachine(comMachine).GetName());
