@@ -3697,7 +3697,7 @@ ifdef VBOX_SIGNING_MODE
   # @param 2  Identifier, optional.
   ifdef VBOX_WITH_CORP_CODE_SIGNING
    ## @todo cannot handle $(2), the identifier.
-   VBOX_SIGN_PKG_FN = $(call MSG_TOOL,SIGNTOOL,,$(1),$(2))$(NLTAB)$(call VBOX_CCS_SIGN_CMD,mac_pkg,$(1)) \
+   VBOX_SIGN_PKG_FN = $(call MSG_TOOL,SIGNTOOL,,$(1),$(2))$(NLTAB)$(call VBOX_CCS_SIGN_CMD,mac_pkg,$(1))
   endif
 
   ## @def VBOX_TEST_SIGN_KEXT
