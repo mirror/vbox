@@ -24,10 +24,10 @@
 # include <QCheckBox>
 # include <QHBoxLayout>
 # include <QHeaderView>
-# include <QTextEdit>
 # include <QPushButton>
 # include <QSplitter>
-# include <QGridLayout>
+# include <QTableWidget>
+# include <QTextEdit>
 
 /* GUI includes: */
 # include "QILabel.h"
@@ -44,6 +44,7 @@
 # include "UIGuestControlFileManagerSessionPanel.h"
 # include "UIGuestControlFileManagerSettingsPanel.h"
 # include "UIGuestControlFileManagerLogPanel.h"
+# include "UIGuestControlFileManagerOperationsPanel.h"
 # include "UIGuestFileTable.h"
 # include "UIGuestControlInterface.h"
 # include "UIHostFileTable.h"
@@ -143,6 +144,7 @@ UIGuestControlFileManager::UIGuestControlFileManager(EmbedTo enmEmbedding, UIAct
     , m_pSettingsPanel(0)
     , m_pLogPanel(0)
     , m_pSessionPanel(0)
+    , m_pOperationsPanel(0)
 {
     prepareGuestListener();
     prepareObjects();
@@ -276,6 +278,16 @@ void UIGuestControlFileManager::prepareObjects()
                 this, &UIGuestControlFileManager::sltListDirectoriesBeforeChanged);
         pTopLayout->addWidget(m_pSettingsPanel);
     }
+
+    m_pOperationsPanel =
+        new UIGuestControlFileManagerOperationsPanel(this /* manager dialog */, 0 /*parent */);
+    if (m_pOperationsPanel)
+    {
+        m_pOperationsPanel->hide();
+        m_panelActionMap.insert(m_pOperationsPanel, m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_T_FileOperations));
+        pTopLayout->addWidget(m_pOperationsPanel);
+    }
+
     m_pVerticalSplitter->addWidget(pTopWidget);
 
     m_pLogPanel = new UIGuestControlFileManagerLogPanel(this /* manager dialog */, 0 /*parent */);
@@ -359,6 +371,8 @@ void UIGuestControlFileManager::prepareToolBar()
         connect(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_T_Log), &QAction::toggled,
                 this, &UIGuestControlFileManager::sltPanelActionToggled);
         connect(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_T_Session), &QAction::toggled,
+                this, &UIGuestControlFileManager::sltPanelActionToggled);
+        connect(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_T_FileOperations), &QAction::toggled,
                 this, &UIGuestControlFileManager::sltPanelActionToggled);
 
 #ifdef VBOX_WS_MAC

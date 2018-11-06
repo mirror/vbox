@@ -844,6 +844,7 @@ ifndef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/guestctrl/UIGuestControlFileManagerPanel.h \
 	src/guestctrl/UIGuestControlFileManagerSessionPanel.h \
 	src/guestctrl/UIGuestControlFileManagerLogPanel.h \
+	src/guestctrl/UIGuestControlFileManagerOperationsPanel.h \
 	src/guestctrl/UIGuestControlFileManagerSettingsPanel.h \
 	src/guestctrl/UIGuestControlFileModel.h \
 	src/guestctrl/UIGuestControlFileTable.h \
@@ -999,6 +1000,7 @@ ifdef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/guestctrl/UIGuestControlFileManagerPanel.h \
 	src/guestctrl/UIGuestControlFileManagerSessionPanel.h \
 	src/guestctrl/UIGuestControlFileManagerLogPanel.h \
+	src/guestctrl/UIGuestControlFileManagerOperationsPanel.h \
 	src/guestctrl/UIGuestControlFileManagerSettingsPanel.h \
 	src/guestctrl/UIGuestControlFileModel.h \
 	src/guestctrl/UIGuestControlFileTable.h \
@@ -1224,8 +1226,8 @@ ifndef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/runtime/UIFrameBuffer.cpp \
 	src/runtime/UIIndicatorsPool.cpp \
 	src/guestctrl/UIGuestControlFileManager.cpp \
-	src/guestctrl/UIGuestControlFileManagerAccounPanel.cpp \
 	src/guestctrl/UIGuestControlFileManagerLogPanel.cpp \
+	src/guestctrl/UIGuestControlFileManagerOperationsPanel.cpp \
 	src/guestctrl/UIGuestControlFileTable.cpp \
 	src/guestctrl/UIGuestFileTable.cpp \
 	src/guestctrl/UIGuestProcessControlWidget.cpp \
@@ -1278,6 +1280,7 @@ ifdef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/guestctrl/UIGuestControlFileManager.cpp \
 	src/guestctrl/UIGuestControlFileManagerSessionPanel.cpp \
 	src/guestctrl/UIGuestControlFileManagerLogPanel.cpp \
+	src/guestctrl/UIGuestControlFileManagerOperationsPanel.cpp \
 	src/guestctrl/UIGuestControlFileTable.cpp \
 	src/guestctrl/UIGuestFileTable.cpp \
 	src/guestctrl/UIGuestProcessControlWidget.cpp \
@@ -1557,6 +1560,7 @@ ifndef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/guestctrl/UIGuestControlFileManagerPanel.cpp \
 	src/guestctrl/UIGuestControlFileManagerSessionPanel.cpp \
 	src/guestctrl/UIGuestControlFileManagerLogPanel.cpp \
+	src/guestctrl/UIGuestControlFileManagerOperationsPanel.cpp \
 	src/guestctrl/UIGuestControlFileManagerSettingsPanel.cpp \
 	src/guestctrl/UIGuestControlFileModel.cpp \
 	src/guestctrl/UIGuestControlFileTable.cpp \
@@ -1735,6 +1739,7 @@ ifdef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/guestctrl/UIGuestControlFileManagerPanel.cpp \
 	src/guestctrl/UIGuestControlFileManagerSessionPanel.cpp \
 	src/guestctrl/UIGuestControlFileManagerLogPanel.cpp \
+	src/guestctrl/UIGuestControlFileManagerOperationsPanel.cpp \
 	src/guestctrl/UIGuestControlFileManagerSettingsPanel.cpp \
 	src/guestctrl/UIGuestControlFileModel.cpp \
 	src/guestctrl/UIGuestControlFileTable.cpp \

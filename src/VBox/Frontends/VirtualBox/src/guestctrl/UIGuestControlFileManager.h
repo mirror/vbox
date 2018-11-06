@@ -37,6 +37,7 @@
 /* Forward declarations: */
 class QHBoxLayout;
 class QSplitter;
+class QTableWidget;
 class QTextEdit;
 class QVBoxLayout;
 class QITabWidget;
@@ -47,6 +48,7 @@ class UIGuestControlConsole;
 class UIGuestControlInterface;
 class UIGuestControlFileManagerPanel;
 class UIGuestControlFileManagerLogPanel;
+class UIGuestControlFileManagerOperationsPanel;
 class UIGuestControlFileManagerSessionPanel;
 class UIGuestControlFileManagerSettingsPanel;
 class UIGuestFileTable;
@@ -151,7 +153,7 @@ private:
     QSplitter                *m_pVerticalSplitter;
     UIToolBar                *m_pToolBar;
 
-    //UIFileOperationsList       *m_pFileOperationsList;
+    //QTableView               *m_pFileOperationsTable;
     UIGuestControlConsole    *m_pConsole;
     UIGuestControlInterface  *m_pControlInterface;
     UIGuestFileTable         *m_pGuestFileTable;
@@ -169,6 +171,7 @@ private:
     UIGuestControlFileManagerSettingsPanel         *m_pSettingsPanel;
     UIGuestControlFileManagerLogPanel              *m_pLogPanel;
     UIGuestControlFileManagerSessionPanel          *m_pSessionPanel;
+    UIGuestControlFileManagerOperationsPanel       *m_pOperationsPanel;
     friend class UIGuestControlFileManagerSettingsPanel;
     friend class UIGuestControlFileManagerPanel;
     friend class UIGuestControlFileManagerDialog;
