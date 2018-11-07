@@ -2116,9 +2116,20 @@ void UIExtraDataManager::hotloadMachineExtraDataMap(const QUuid &uID)
 
 QString UIExtraDataManager::extraDataString(const QString &strKey, const QUuid &uID /* = GlobalID */)
 {
-    /* Get the value. Return 'QString()' if not found: */
-    const QString strValue = extraDataStringUnion(strKey, uID);
+    /* Get the actual value: */
+    QString strValue = extraDataStringUnion(strKey, uID);
+    /* If actual value is null we might be able to find old one: */
     if (strValue.isNull())
+    {
+        foreach (const QString &strOldKey, g_mapOfObsoleteKeys.values(strKey))
+        {
+            strValue = extraDataStringUnion(strOldKey, uID);
+            if (!strValue.isNull())
+                break;
+        }
+    }
+    /* Return null string if result is empty: */
+    if (strValue.isEmpty())
         return QString();
 
     /* Returns corresponding value: */
@@ -2150,6 +2161,16 @@ void UIExtraDataManager::setExtraDataString(const QString &strKey, const QString
         comVBox.SetExtraData(strKey, strValue);
         if (!comVBox.isOk())
             msgCenter().cannotSetExtraData(comVBox, strKey, strValue);
+        /* Wipe out old keys: */
+        foreach (const QString &strOldKey, g_mapOfObsoleteKeys.values(strKey))
+        {
+            comVBox.SetExtraData(strOldKey, QString());
+            if (!comVBox.isOk())
+            {
+                msgCenter().cannotSetExtraData(comVBox, strOldKey, strValue);
+                break;
+            }
+        }
     }
     /* Machine extra-data: */
     else
@@ -2175,15 +2196,36 @@ void UIExtraDataManager::setExtraDataString(const QString &strKey, const QString
         comSessionMachine.SetExtraData(strKey, strValue);
         if (!comSessionMachine.isOk())
             msgCenter().cannotSetExtraData(comSessionMachine, strKey, strValue);
+        /* Wipe out old keys: */
+        foreach (const QString &strOldKey, g_mapOfObsoleteKeys.values(strKey))
+        {
+            comSessionMachine.SetExtraData(strOldKey, QString());
+            if (!comSessionMachine.isOk())
+            {
+                msgCenter().cannotSetExtraData(comSessionMachine, strOldKey, strValue);
+                break;
+            }
+        }
         comSession.UnlockMachine();
     }
 }
 
 QStringList UIExtraDataManager::extraDataStringList(const QString &strKey, const QUuid &uID /* = GlobalID */)
 {
-    /* Get the value. Return 'QStringList()' if not found: */
-    const QString strValue = extraDataStringUnion(strKey, uID);
+    /* Get the actual value: */
+    QString strValue = extraDataStringUnion(strKey, uID);
+    /* If actual value is null we might be able to find old one: */
     if (strValue.isNull())
+    {
+        foreach (const QString &strOldKey, g_mapOfObsoleteKeys.values(strKey))
+        {
+            strValue = extraDataStringUnion(strOldKey, uID);
+            if (!strValue.isNull())
+                break;
+        }
+    }
+    /* Return empty string list if result is empty: */
+    if (strValue.isEmpty())
         return QStringList();
 
     /* Few old extra-data string-lists were separated with 'semicolon' symbol.
@@ -2216,6 +2258,16 @@ void UIExtraDataManager::setExtraDataStringList(const QString &strKey, const QSt
         comVBox.SetExtraDataStringList(strKey, value);
         if (!comVBox.isOk())
             msgCenter().cannotSetExtraData(comVBox, strKey, value.join(","));
+        /* Wipe out old keys: */
+        foreach (const QString &strOldKey, g_mapOfObsoleteKeys.values(strKey))
+        {
+            comVBox.SetExtraData(strOldKey, QString());
+            if (!comVBox.isOk())
+            {
+                msgCenter().cannotSetExtraData(comVBox, strOldKey, value.join(","));
+                break;
+            }
+        }
     }
     /* Machine extra-data: */
     else
@@ -2241,6 +2293,16 @@ void UIExtraDataManager::setExtraDataStringList(const QString &strKey, const QSt
         comSessionMachine.SetExtraDataStringList(strKey, value);
         if (!comSessionMachine.isOk())
             msgCenter().cannotSetExtraData(comSessionMachine, strKey, value.join(","));
+        /* Wipe out old keys: */
+        foreach (const QString &strOldKey, g_mapOfObsoleteKeys.values(strKey))
+        {
+            comSessionMachine.SetExtraData(strOldKey, QString());
+            if (!comSessionMachine.isOk())
+            {
+                msgCenter().cannotSetExtraData(comSessionMachine, strOldKey, value.join(","));
+                break;
+            }
+        }
         comSession.UnlockMachine();
     }
 }

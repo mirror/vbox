@@ -221,6 +221,16 @@ const char *UIExtraDataDefs::GUI_LogViewerShowLineNumbersDisabled = "showLineNum
 const char *UIExtraDataDefs::GUI_LogViewerNoFontStyleName = "noFontStyleName";
 
 
+/* Obsolete keys: */
+QMap<QString, QString> UIExtraDataDefs::prepareObsoleteKeysMap()
+{
+    QMap<QString, QString> map;
+    // Define substitutes here..
+    return map;
+}
+QMap<QString, QString> UIExtraDataDefs::g_mapOfObsoleteKeys = UIExtraDataDefs::prepareObsoleteKeysMap();
+
+
 bool UIToolStuff::isTypeOfClass(UIToolType enmType, UIToolClass enmClass)
 {
     switch (enmClass)

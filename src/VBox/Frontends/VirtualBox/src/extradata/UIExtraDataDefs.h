@@ -19,6 +19,7 @@
 #define ___UIExtraDataDefs_h___
 
 /* Qt includes: */
+#include <QMap>
 #include <QMetaType>
 #include <QObject>
 
@@ -393,6 +394,15 @@ namespace UIExtraDataDefs
         SHARED_LIBRARY_STUFF extern const char *GUI_LogViewerNoFontStyleName;
     /** @} */
 
+
+    /** @name Old key support stuff.
+      * @{ */
+        /** Prepares obsolete keys map. */
+        SHARED_LIBRARY_STUFF QMap<QString, QString> prepareObsoleteKeysMap();
+
+        /** Holds the obsolete keys map. */
+        SHARED_LIBRARY_STUFF extern QMap<QString, QString> g_mapOfObsoleteKeys;
+    /** @} */
 }
 
 
