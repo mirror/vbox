@@ -3627,9 +3627,10 @@ ifdef VBOX_SIGNING_MODE
   ifdef VBOX_WITH_CORP_CODE_SIGNING
    ## @todo cannot handle $(2), the identifier. $(3) is hopefully either empty or --deep
    VBOX_SIGN_BUNDLE_FN = $(call MSG_TOOL,SIGNTOOL,,$(1),$(2))$(NLTAB) \
-	ditto -c -k --keepParent $(1) $(1).zip$(NLTAB) \
+	ditto -c -k --keepParent "$(1)" "$(1).zip"$(NLTAB) \
 	$(call VBOX_CCS_SIGN_CMD,apple,$(1).zip,,$(if $(eq $(3),--deep),-deep,))$(NLTAB) \
-	ditto -x -k $(1).zip $(1)/../
+	ditto -x -k "$(1).zip" "$(1)/../"$(NLTAB) \
+	$(RM) -f -- "$(1).zip"
   else
    VBOX_SIGN_BUNDLE_FN = $(call MSG_TOOL,SIGNTOOL,,$(1),$(2))$(NLTAB)$(VBOX_CODESIGN) \
 	--verbose=9 \
@@ -3687,7 +3688,8 @@ ifdef VBOX_SIGNING_MODE
    ## @todo cannot handle $(2), the identifier.
    VBOX_SIGN_DMG_FN = $(call MSG_TOOL,SIGNTOOL,,$(1),$(2))$(NLTAB) \
 	$(call VBOX_CCS_SIGN_CMD,mac_dmg,$(1))$(NLTAB) \
-	ditto -x -k $(1).zip $(dir $(1))
+	ditto -x -k "$(1).zip" "$(dir $(1))"$(NLTAB) \
+	$(RM) -f -- "$(1).zip"
   else
    VBOX_SIGN_DMG_FN = $(VBOX_SIGN_FILE_FN)
   endif
