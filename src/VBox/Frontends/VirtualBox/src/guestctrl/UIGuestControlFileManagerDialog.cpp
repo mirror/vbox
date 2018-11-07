@@ -82,7 +82,7 @@ void UIGuestControlFileManagerDialog::retranslateUi()
 void UIGuestControlFileManagerDialog::configure()
 {
     /* Apply window icons: */
-    //setWindowIcon(UIIconPool::iconSetFull(":/vm_show_logs_32px.png", ":/vm_show_logs_16px.png"));
+    setWindowIcon(UIIconPool::iconSetFull(":/file_manager_32px.png", ":/file_manager_16px.png"));
 }
 
 void UIGuestControlFileManagerDialog::configureCentralWidget()

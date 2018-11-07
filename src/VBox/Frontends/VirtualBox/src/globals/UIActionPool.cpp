@@ -1537,8 +1537,8 @@ public:
 
     /** Constructs action passing @a pParent to the base-class. */
     UIActionMenuGuestControlFileManagerCopyToGuest(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/arrow_left_10px_x2.png", ":/arrow_left_disabled_10px_x2.png")
-    {}
+        : UIActionSimple(pParent, ":/file_manager_copy_to_guest_24px.png", ":/file_manager_copy_to_guest_16px.png",
+                         ":/file_manager_copy_to_guest_disabled_24px.png", ":/file_manager_copy_to_guest_disabled_16px.png"){}
 
 protected:
 
@@ -1573,8 +1573,8 @@ public:
 
     /** Constructs action passing @a pParent to the base-class. */
     UIActionMenuGuestControlFileManagerCopyToHost(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/arrow_right_10px_x2.png", ":/arrow_right_disabled_10px_x2.png")
-    {}
+        : UIActionSimple(pParent, ":/file_manager_copy_to_host_24px.png", ":/file_manager_copy_to_host_16px.png",
+                         ":/file_manager_copy_to_host_disabled_24px.png", ":/file_manager_copy_to_host_disabled_16px.png"){}
 
 protected:
 
@@ -1600,6 +1600,78 @@ protected:
     }
 };
 
+/** Simple action extension, used as 'Move to Guest' in guest control file manager action class. */
+class UIActionMenuGuestControlFileManagerMoveToGuest : public UIActionSimple
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs action passing @a pParent to the base-class. */
+    UIActionMenuGuestControlFileManagerMoveToGuest(UIActionPool *pParent)
+        : UIActionSimple(pParent, ":/file_manager_move_to_guest_24px.png", ":/file_manager_move_to_guest_16px.png",
+                         ":/file_manager_move_to_guest_disabled_24px.png", ":/file_manager_move_to_guest_disabled_16px.png"){}
+
+protected:
+
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
+    {
+        return QString("FileManagerMoveToGuest");
+    }
+
+    /** Returns default shortcut. */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
+    {
+        return QKeySequence();
+    }
+
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
+    {
+        setName(QApplication::translate("UIActionPool", "Move to guest"));
+        setShortcutScope(QApplication::translate("UIActionPool", "Guest Control File Manager"));
+        setToolTip(QApplication::translate("UIActionPool", "Move the Selected Object(s) from Host to Guest"));
+        setStatusTip(QApplication::translate("UIActionPool", "Move the selected object(s) from host to guest"));
+    }
+};
+
+/** Simple action extension, used as 'Move to Host' in guest control file manager action class. */
+class UIActionMenuGuestControlFileManagerMoveToHost : public UIActionSimple
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs action passing @a pParent to the base-class. */
+    UIActionMenuGuestControlFileManagerMoveToHost(UIActionPool *pParent)
+        : UIActionSimple(pParent, ":/file_manager_move_to_host_24px.png", ":/file_manager_move_to_host_16px.png",
+                         ":/file_manager_move_to_host_disabled_24px.png", ":/file_manager_move_to_host_disabled_16px.png"){}
+
+protected:
+
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
+    {
+        return QString("FileManagerMoveToHost");
+    }
+
+    /** Returns default shortcut. */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
+    {
+        return QKeySequence();
+    }
+
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
+    {
+        setName(QApplication::translate("UIActionPool", "Move to host"));
+        setShortcutScope(QApplication::translate("UIActionPool", "Guest Control File Manager"));
+        setToolTip(QApplication::translate("UIActionPool", "Move the Selected Object(s) from Guest to Host"));
+        setStatusTip(QApplication::translate("UIActionPool", "Move the selected object(s) from guest to host"));
+    }
+};
+
 /** Toggle action extension, used to toggle 'File Manager Settings' panel in guest control file manager. */
 class UIActionMenuGuestControlFileManagerSettings : public UIActionToggle
 {
@@ -1610,10 +1682,8 @@ public:
     /** Constructs action passing @a pParent to the base-class. */
     UIActionMenuGuestControlFileManagerSettings(UIActionPool *pParent)
         : UIActionToggle(pParent,
-                         ":/log_viewer_bookmark_32px.png", ":/log_viewer_bookmark_disabled_32px.png")
-    {
-        setShortcutContext(Qt::WidgetWithChildrenShortcut);
-    }
+                         ":/file_manager_settings_32px.png", ":/file_manager_settings_16px.png",
+                         ":/file_manager_settings_disabled_32px.png", ":/file_manager_settings_disabled_16px.png"){}
 
 protected:
 
@@ -1649,7 +1719,8 @@ public:
     /** Constructs action passing @a pParent to the base-class. */
     UIActionMenuGuestControlFileManagerLog(UIActionPool *pParent)
         : UIActionToggle(pParent,
-                         ":/log_viewer_bookmark_32px.png", ":/log_viewer_bookmark_disabled_32px.png")
+                         ":/file_manager_log_32px.png", ":/file_manager_log_16px.png",
+                         ":/file_manager_log_disabled_32px.png", ":/file_manager_log_disabled_16px.png")
     {
         setShortcutContext(Qt::WidgetWithChildrenShortcut);
     }
@@ -1688,7 +1759,8 @@ public:
     /** Constructs action passing @a pParent to the base-class. */
     UIActionMenuGuestControlFileManagerFileOperations(UIActionPool *pParent)
         : UIActionToggle(pParent,
-                         ":/log_viewer_bookmark_32px.png", ":/log_viewer_bookmark_disabled_32px.png")
+                         ":/file_manager_operations_32px.png", ":/file_manager_operations_16px.png",
+                         ":/file_manager_operations_disabled_32px.png", ":/file_manager_operations_disabled_16px.png")
     {
         setShortcutContext(Qt::WidgetWithChildrenShortcut);
     }
@@ -1727,7 +1799,8 @@ public:
     /** Constructs action passing @a pParent to the base-class. */
     UIActionMenuGuestControlFileManagerSession(UIActionPool *pParent)
         : UIActionToggle(pParent,
-                         ":/log_viewer_bookmark_32px.png", ":/log_viewer_bookmark_disabled_32px.png")
+                         ":/file_manager_session_32px.png", ":/file_manager_session_16px.png",
+                         ":/file_manager_session_disabled_32px.png", ":/file_manager_session_disabled_16px.png")
     {
         setShortcutContext(Qt::WidgetWithChildrenShortcut);
     }
@@ -1765,7 +1838,8 @@ public:
 
     /** Constructs action passing @a pParent to the base-class. */
     UIActionMenuGuestControlFileManagerGoUp(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/arrow_up_10px_x2.png", ":/arrow_up_10px_x2.png")
+        : UIActionSimple(pParent, ":/file_manager_go_up_24px.png", ":/file_manager_go_up_16px.png",
+                         ":/file_manager_go_up_disabled_24px.png", ":/file_manager_go_up_disabled_16px.png")
     {}
 
 protected:
@@ -1802,7 +1876,8 @@ public:
 
     /** Constructs action passing @a pParent to the base-class. */
     UIActionMenuGuestControlFileManagerGoHome(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/nw_24px.png", ":/nw_disabled_24px.png")
+        : UIActionSimple(pParent, ":/file_manager_go_home_24px.png", ":/file_manager_go_home_16px.png",
+                         ":/file_manager_go_home_disabled_24px.png", ":/file_manager_go_home_disabled_16px.png")
     {}
 
 protected:
@@ -1830,7 +1905,7 @@ protected:
 };
 
 
-/** Simple action extension, used as 'Perform Copy' in guest control file manager action class. */
+/** Simple action extension, used as 'Perform Delete' in guest control file manager action class. */
 class UIActionMenuGuestControlFileManagerDelete : public UIActionSimple
 {
     Q_OBJECT;
@@ -1839,7 +1914,8 @@ public:
 
     /** Constructs action passing @a pParent to the base-class. */
     UIActionMenuGuestControlFileManagerDelete(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/vm_delete_32px.png", ":/vm_delete_disabled_32px.png")
+        : UIActionSimple(pParent, ":/file_manager_delete_24px.png", ":/file_manager_delete_16px.png",
+                         ":/file_manager_delete_disabled_24px.png", ":/file_manager_delete_disabled_16px.png")
     {}
 
 protected:
@@ -1875,7 +1951,8 @@ public:
 
     /** Constructs action passing @a pParent to the base-class. */
     UIActionMenuGuestControlFileManagerRefresh(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/refresh_16px.png", ":/refresh_disabled_16px.png")
+        : UIActionSimple(pParent, ":/file_manager_refresh_24px.png", ":/file_manager_refresh_16px.png",
+                         ":/file_manager_refresh_disabled_24px.png", ":/file_manager_refresh_disabled_16px.png")
     {}
 
 protected:
@@ -1912,7 +1989,8 @@ public:
 
     /** Constructs action passing @a pParent to the base-class. */
     UIActionMenuGuestControlFileManagerRename(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/name_16px.png", ":/name_16px.png"){}
+          : UIActionSimple(pParent, ":/file_manager_rename_24px.png", ":/file_manager_rename_16px.png",
+                         ":/file_manager_rename_disabled_24px.png", ":/file_manager_rename_disabled_16px.png"){}
 
 protected:
 
@@ -1947,7 +2025,8 @@ public:
 
     /** Constructs action passing @a pParent to the base-class. */
     UIActionMenuGuestControlFileManagerCreateNewDirectory(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/sf_add_16px.png", ":/sf_add_disabled_16px.png"){}
+        : UIActionSimple(pParent, ":/file_manager_new_directory_24px.png", ":/file_manager_new_directory_16px.png",
+                         ":/file_manager_new_directory_disabled_24px.png", ":/file_manager_new_directory_disabled_16px.png"){}
 
 protected:
 
@@ -1983,7 +2062,8 @@ public:
 
     /** Constructs action passing @a pParent to the base-class. */
     UIActionMenuGuestControlFileManagerCopy(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/fd_copy_32px.png", ":/fd_copy_disabled_32px.png"){}
+        : UIActionSimple(pParent, ":/file_manager_copy_24px.png", ":/file_manager_copy_16px.png",
+                         ":/file_manager_copy_disabled_24px.png", ":/file_manager_copy_disabled_16px.png"){}
 
 protected:
 
@@ -2018,7 +2098,8 @@ public:
 
     /** Constructs action passing @a pParent to the base-class. */
     UIActionMenuGuestControlFileManagerCut(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/fd_move_32px.png", ":/fd_move_disabled_32px.png"){}
+        : UIActionSimple(pParent, ":/file_manager_cut_24px.png", ":/file_manager_cut_16px.png",
+                         ":/file_manager_cut_disabled_24px.png", ":/file_manager_cut_disabled_16px.png"){}
 
 protected:
 
@@ -2053,7 +2134,8 @@ public:
 
     /** Constructs action passing @a pParent to the base-class. */
     UIActionMenuGuestControlFileManagerPaste(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/shared_clipboard_16px.png", ":/shared_clipboard_disabled_16px.png"){}
+        : UIActionSimple(pParent, ":/file_manager_paste_24px.png", ":/file_manager_paste_16px.png",
+                         ":/file_manager_paste_disabled_24px.png", ":/file_manager_paste_disabled_16px.png"){}
 
 protected:
 
@@ -2088,7 +2170,8 @@ public:
 
     /** Constructs action passing @a pParent to the base-class. */
     UIActionMenuGuestControlFileManagerSelectAll(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/session_info_32px.png", ":/session_info_disabled_32px.png"){}
+        : UIActionSimple(pParent, ":/file_manager_select_all_24px.png", ":/file_manager_select_all_16px.png",
+                         ":/file_manager_select_all_disabled_24px.png", ":/file_manager_select_all_disabled_16px.png"){}
 
 protected:
 
@@ -2124,7 +2207,8 @@ public:
 
     /** Constructs action passing @a pParent to the base-class. */
     UIActionMenuGuestControlFileManagerInvertSelection(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/session_info_32px.png", ":/session_info_disabled_32px.png"){}
+   : UIActionSimple(pParent, ":/file_manager_invert_selection_24px.png", ":/file_manager_invert_selection_16px.png",
+                    ":/file_manager_invert_selection_disabled_24px.png", ":/file_manager_invert_selection_disabled_16px.png"){}
 
 protected:
 
@@ -2146,7 +2230,7 @@ protected:
         setName(QApplication::translate("UIActionPool", "Invert Selection"));
         setShortcutScope(QApplication::translate("UIActionPool", "Guest Control File Manager"));
         setStatusTip(QApplication::translate("UIActionPool", "Invert the current selection"));
-        setToolTip(QApplication::translate("UIActionPool", "Invert The Current Selection"));
+        setToolTip(QApplication::translate("UIActionPool", "Invert the Current Selection"));
     }
 };
 
@@ -2160,7 +2244,8 @@ public:
 
     /** Constructs action passing @a pParent to the base-class. */
     UIActionMenuGuestControlFileManagerShowProperties(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/session_info_32px.png", ":/session_info_disabled_32px.png"){}
+        : UIActionSimple(pParent, ":/file_manager_properties_24px.png", ":/file_manager_properties_16px.png",
+                         ":/file_manager_properties_disabled_24px.png", ":/file_manager_properties_disabled_16px.png"){}
 
 protected:
 
@@ -2401,6 +2486,8 @@ void UIActionPool::preparePool()
     m_pool[UIActionIndex_M_GuestControlFileManager_M_GuestSubmenu] = new UIActionMenuGuestControlFileManagerGuestSubmenu(this);
     m_pool[UIActionIndex_M_GuestControlFileManager_S_CopyToGuest] = new  UIActionMenuGuestControlFileManagerCopyToGuest(this);
     m_pool[UIActionIndex_M_GuestControlFileManager_S_CopyToHost] = new  UIActionMenuGuestControlFileManagerCopyToHost(this);
+    m_pool[UIActionIndex_M_GuestControlFileManager_S_MoveToGuest] = new  UIActionMenuGuestControlFileManagerMoveToGuest(this);
+    m_pool[UIActionIndex_M_GuestControlFileManager_S_MoveToHost] = new  UIActionMenuGuestControlFileManagerMoveToHost(this);
 
     m_pool[UIActionIndex_M_GuestControlFileManager_T_Settings] = new UIActionMenuGuestControlFileManagerSettings(this);
     m_pool[UIActionIndex_M_GuestControlFileManager_T_Log] = new UIActionMenuGuestControlFileManagerLog(this);
