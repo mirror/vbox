@@ -303,7 +303,7 @@ static void uartIrqUpdate(PUARTCORE pThis)
              && (   !(pThis->uRegFcr & UART_REG_FCR_FIFO_EN)
                  || pThis->FifoRecv.cbUsed >= pThis->FifoRecv.cbItl))
         uRegIirNew = UART_REG_IIR_ID_SET(UART_REG_IIR_ID_RDA);
-    else if (   (pThis->uRegLsr & UART_REG_LSR_THRE)
+    else if (   (pThis->uRegIer & UART_REG_IER_ETBEI)
              && pThis->fThreEmptyPending)
         uRegIirNew = UART_REG_IIR_ID_SET(UART_REG_IIR_ID_THRE);
     else if (   (pThis->uRegMsr & UART_REG_MSR_BITS_IIR_MS)
