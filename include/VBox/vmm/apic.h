@@ -139,6 +139,8 @@
 #define XAPIC_OFF_LVT_EXT_START              XAPIC_OFF_LVT_CMCI
 /** Offset of LVT extended range end (inclusive). */
 #define XAPIC_OFF_LVT_EXT_END                XAPIC_OFF_LVT_CMCI
+/** Offset of the last register (incl. reserved) in the xAPIC/x2APIC range. */
+#define XAPIC_OFF_END                        0x3F0
 
 /**
  * xAPIC trigger mode.
