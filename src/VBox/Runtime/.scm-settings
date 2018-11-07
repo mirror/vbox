@@ -91,6 +91,7 @@
 /r0drv/os2/timerA-r0drv-os2.asm                : --external-copyright
 
 /r3/os2/time-os2.cpp                           : --external-copyright
+/r3/os2/RTTimeSet-os2.cpp                      : --external-copyright
 /r0drv/os2/os2imports.imp                      : --external-copyright --treat-as .def
 
 /r3/win/VBoxRT-msvcp100-win32.def              : --external-copyright
