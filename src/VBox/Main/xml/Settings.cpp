@@ -2482,6 +2482,7 @@ void CaptureSettings::applyDefaults(void)
     {
         /* Always add screen 0 to the default configuration. */
         CaptureScreenSettings screenSettings; /* Apply default settings for screen 0. */
+        screenSettings.fEnabled = true;       /* Enabled by default. */
         mapScreens[0] = screenSettings;
     }
     catch (std::bad_alloc &)

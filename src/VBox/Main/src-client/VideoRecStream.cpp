@@ -41,20 +41,23 @@
 #include "WebMWriter.h"
 
 
-CaptureStream::CaptureStream(void)
-    : tsStartMs(0)
+CaptureStream::CaptureStream(CaptureContext *a_pCtx)
+    : pCtx(a_pCtx)
+    , enmState(RECORDINGSTREAMSTATE_UNINITIALIZED)
+    , tsStartMs(0)
 {
     File.pWEBM = NULL;
     File.hFile = NIL_RTFILE;
 }
 
-CaptureStream::CaptureStream(uint32_t uScreen, const settings::CaptureScreenSettings &Settings)
-    : tsStartMs(0)
+CaptureStream::CaptureStream(CaptureContext *a_pCtx, uint32_t uScreen, const settings::CaptureScreenSettings &Settings)
+    : enmState(RECORDINGSTREAMSTATE_UNINITIALIZED)
+    , tsStartMs(0)
 {
     File.pWEBM = NULL;
     File.hFile = NIL_RTFILE;
 
-    int rc2 = initInternal(uScreen, Settings);
+    int rc2 = initInternal(a_pCtx, uScreen, Settings);
     if (RT_FAILURE(rc2))
         throw rc2;
 }
@@ -644,24 +647,33 @@ int CaptureStream::SendVideoFrame(uint32_t x, uint32_t y, uint32_t uPixelFormat,
     if (RT_FAILURE(rc))
         VideoRecVideoFrameFree(pFrame);
 
-    lock();
+    unlock();
 
     return rc;
-}
-
-int CaptureStream::Init(uint32_t uScreen, const settings::CaptureScreenSettings &Settings)
-{
-    return initInternal(uScreen, Settings);
 }
 
 /**
  * Initializes a recording stream.
  *
  * @returns IPRT status code.
+ * @param   a_pCtx              Pointer to recording context.
  * @param   uScreen             Screen number to use for this recording stream.
  * @param   Settings            Capturing configuration to use for initialization.
  */
-int CaptureStream::initInternal(uint32_t uScreen, const settings::CaptureScreenSettings &Settings)
+int CaptureStream::Init(CaptureContext *a_pCtx, uint32_t uScreen, const settings::CaptureScreenSettings &Settings)
+{
+    return initInternal(a_pCtx, uScreen, Settings);
+}
+
+/**
+ * Initializes a recording stream, internal version.
+ *
+ * @returns IPRT status code.
+ * @param   a_pCtx              Pointer to recording context.
+ * @param   uScreen             Screen number to use for this recording stream.
+ * @param   Settings            Capturing configuration to use for initialization.
+ */
+int CaptureStream::initInternal(CaptureContext *a_pCtx, uint32_t uScreen, const settings::CaptureScreenSettings &Settings)
 {
     int rc = parseOptionsString(Settings.strOptions);
     if (RT_FAILURE(rc))
@@ -769,6 +781,8 @@ int CaptureStream::initInternal(uint32_t uScreen, const settings::CaptureScreenS
 
     if (RT_SUCCESS(rc))
     {
+        this->pCtx           = a_pCtx;
+        this->enmState       = RECORDINGSTREAMSTATE_INITIALIZED;
         this->fEnabled       = true;
         this->uScreenID      = uScreen;
         this->tsStartMs      = RTTimeMilliTS();
@@ -869,6 +883,9 @@ int CaptureStream::Uninit(void)
 
 int CaptureStream::uninitInternal(void)
 {
+    if (this->enmState != RECORDINGSTREAMSTATE_INITIALIZED)
+        return VINF_SUCCESS;
+
     int rc = close();
     if (RT_FAILURE(rc))
         return rc;
@@ -882,6 +899,7 @@ int CaptureStream::uninitInternal(void)
 
     RTCritSectDelete(&this->CritSect);
 
+    this->enmState = RECORDINGSTREAMSTATE_UNINITIALIZED;
     this->fEnabled = false;
 
     return rc;
@@ -910,7 +928,10 @@ int CaptureStream::unitVideo(void)
  */
 int CaptureStream::uninitVideoVPX(void)
 {
-    vpx_img_free(&this->Video.Codec.VPX.RawImage);
+    PVIDEORECVIDEOCODEC pCodec = &this->Video.Codec;
+    vpx_img_free(&pCodec->VPX.RawImage);
+    pCodec->VPX.pu8YuvBuf = NULL; /* Was pointing to VPX.RawImage. */
+
     vpx_codec_err_t rcv = vpx_codec_destroy(&this->Video.Codec.VPX.Ctx);
     Assert(rcv == VPX_CODEC_OK); RT_NOREF(rcv);
 

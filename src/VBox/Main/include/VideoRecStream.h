@@ -108,15 +108,15 @@ class CaptureStream
 {
 public:
 
-    CaptureStream(void);
+    CaptureStream(CaptureContext *pCtx);
 
-    CaptureStream(uint32_t uScreen, const settings::CaptureScreenSettings &Settings);
+    CaptureStream(CaptureContext *pCtx, uint32_t uScreen, const settings::CaptureScreenSettings &Settings);
 
     virtual ~CaptureStream(void);
 
 public:
 
-    int Init(uint32_t uScreen, const settings::CaptureScreenSettings &Settings);
+    int Init(CaptureContext *pCtx, uint32_t uScreen, const settings::CaptureScreenSettings &Settings);
     int Uninit(void);
 
     int Process(VideoRecBlockMap &mapBlocksCommon);
@@ -132,7 +132,7 @@ protected:
     int open(const settings::CaptureScreenSettings &Settings);
     int close(void);
 
-    int initInternal(uint32_t uScreen, const settings::CaptureScreenSettings &Settings);
+    int initInternal(CaptureContext *pCtx, uint32_t uScreen, const settings::CaptureScreenSettings &Settings);
     int uninitInternal(void);
 
     int initVideo(void);
@@ -152,8 +152,23 @@ protected:
 
 protected:
 
+    /**
+     * Enumeration for a recording stream state.
+     */
+    enum RECORDINGSTREAMSTATE
+    {
+        /** Stream not initialized. */
+        RECORDINGSTREAMSTATE_UNINITIALIZED = 0,
+        /** Stream was initialized. */
+        RECORDINGSTREAMSTATE_INITIALIZED   = 1,
+        /** The usual 32-bit hack. */
+        RECORDINGSTREAMSTATE_32BIT_HACK    = 0x7fffffff
+    };
+
     /** Recording context this stream is associated to. */
-    CaptureContext             *pCtx;
+    CaptureContext         *pCtx;
+    /** The current state. */
+    RECORDINGSTREAMSTATE    enmState;
     struct
     {
         /** File handle to use for writing. */

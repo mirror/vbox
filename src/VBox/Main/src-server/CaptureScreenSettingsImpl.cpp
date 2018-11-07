@@ -291,10 +291,10 @@ HRESULT CaptureScreenSettings::getFeatures(ULONG *aFeatures)
 
 HRESULT CaptureScreenSettings::setFeatures(ULONG aFeatures)
 {
-    if (!i_canChangeSettings())
-        return setError(E_INVALIDARG, tr("Cannot change features while capturing is enabled"));
-
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    if (m->bd->fEnabled)
+        return setError(E_INVALIDARG, tr("Cannot change features while capturing is enabled"));
 
     m->bd.backup();
     m->bd->featureMap.clear();
@@ -324,10 +324,10 @@ HRESULT CaptureScreenSettings::getDestination(CaptureDestination_T *aDestination
 
 HRESULT CaptureScreenSettings::setDestination(CaptureDestination_T aDestination)
 {
-    if (!i_canChangeSettings())
-        return setError(E_INVALIDARG, tr("Cannot change destination type while capturing is enabled"));
-
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    if (m->bd->fEnabled)
+        return setError(E_INVALIDARG, tr("Cannot change destination type while capturing is enabled"));
 
     m->bd.backup();
     m->bd->enmDest = aDestination;
@@ -352,10 +352,10 @@ HRESULT CaptureScreenSettings::getFileName(com::Utf8Str &aFileName)
 
 HRESULT CaptureScreenSettings::setFileName(const com::Utf8Str &aFileName)
 {
-    if (!i_canChangeSettings())
-        return setError(E_INVALIDARG, tr("Cannot change file name while capturing is enabled"));
-
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    if (m->bd->fEnabled)
+        return setError(E_INVALIDARG, tr("Cannot change file name while capturing is enabled"));
 
     Utf8Str strFile(aFileName);
 
@@ -387,7 +387,7 @@ HRESULT CaptureScreenSettings::setMaxTime(ULONG aMaxTimeS)
 {
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    if (!i_canChangeSettings())
+    if (m->bd->fEnabled)
         return setError(E_INVALIDARG, tr("Cannot change maximum time while capturing is enabled"));
 
     m->bd.backup();
@@ -413,7 +413,7 @@ HRESULT CaptureScreenSettings::setMaxFileSize(ULONG aMaxFileSize)
 {
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    if (!i_canChangeSettings())
+    if (m->bd->fEnabled)
         return setError(E_INVALIDARG, tr("Cannot change maximum file size while capturing is enabled"));
 
     m->bd.backup();
@@ -439,15 +439,15 @@ HRESULT CaptureScreenSettings::setOptions(const com::Utf8Str &aOptions)
 {
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    if (!i_canChangeSettings())
-        return setError(E_INVALIDARG, tr("Cannot change options string while capturing is enabled"));
+    if (m->bd->fEnabled)
+        return setError(E_INVALIDARG, tr("Cannot change options while capturing is enabled"));
 
     m->bd.backup();
     m->bd->strOptions = aOptions;
 
+    alock.release();
     AutoWriteLock mlock(m->pMachine COMMA_LOCKVAL_SRC_POS);
     m->pMachine->i_setModified(Machine::IsModified_Capture);
-    mlock.release();
 
     return S_OK;
 }
@@ -465,7 +465,7 @@ HRESULT CaptureScreenSettings::setAudioCodec(CaptureAudioCodec_T aCodec)
 {
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    if (!i_canChangeSettings())
+    if (m->bd->fEnabled)
         return setError(E_INVALIDARG, tr("Cannot change audio codec while capturing is enabled"));
 
     m->bd.backup();
@@ -491,7 +491,7 @@ HRESULT CaptureScreenSettings::setAudioHz(ULONG aHz)
 {
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    if (!i_canChangeSettings())
+    if (m->bd->fEnabled)
         return setError(E_INVALIDARG, tr("Cannot change audio Hertz rate while capturing is enabled"));
 
     m->bd.backup();
@@ -517,7 +517,7 @@ HRESULT CaptureScreenSettings::setAudioBits(ULONG aBits)
 {
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    if (!i_canChangeSettings())
+    if (m->bd->fEnabled)
         return setError(E_INVALIDARG, tr("Cannot change audio bits while capturing is enabled"));
 
     m->bd.backup();
@@ -543,7 +543,7 @@ HRESULT CaptureScreenSettings::setAudioChannels(ULONG aChannels)
 {
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    if (!i_canChangeSettings())
+    if (m->bd->fEnabled)
         return setError(E_INVALIDARG, tr("Cannot change audio channels while capturing is enabled"));
 
     m->bd.backup();
@@ -569,7 +569,7 @@ HRESULT CaptureScreenSettings::setVideoCodec(CaptureVideoCodec_T aCodec)
 {
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    if (!i_canChangeSettings())
+    if (m->bd->fEnabled)
         return setError(E_INVALIDARG, tr("Cannot change video codec while capturing is enabled"));
 
     m->bd.backup();
@@ -595,7 +595,7 @@ HRESULT CaptureScreenSettings::setVideoWidth(ULONG aVideoWidth)
 {
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    if (!i_canChangeSettings())
+    if (m->bd->fEnabled)
         return setError(E_INVALIDARG, tr("Cannot change video width while capturing is enabled"));
 
     m->bd.backup();
@@ -621,7 +621,7 @@ HRESULT CaptureScreenSettings::setVideoHeight(ULONG aVideoHeight)
 {
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    if (!i_canChangeSettings())
+    if (m->bd->fEnabled)
         return setError(E_INVALIDARG, tr("Cannot change video height while capturing is enabled"));
 
     m->bd.backup();
@@ -647,7 +647,7 @@ HRESULT CaptureScreenSettings::setVideoRate(ULONG aVideoRate)
 {
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    if (!i_canChangeSettings())
+    if (m->bd->fEnabled)
         return setError(E_INVALIDARG, tr("Cannot change video rate while capturing is enabled"));
 
     m->bd.backup();
@@ -673,7 +673,7 @@ HRESULT CaptureScreenSettings::setVideoRateControlMode(CaptureVideoRateControlMo
 {
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    if (!i_canChangeSettings())
+    if (m->bd->fEnabled)
         return setError(E_INVALIDARG, tr("Cannot change video rate control mode while capturing is enabled"));
 
     /** @todo Implement this. */
@@ -695,7 +695,7 @@ HRESULT CaptureScreenSettings::setVideoFPS(ULONG aVideoFPS)
 {
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    if (!i_canChangeSettings())
+    if (m->bd->fEnabled)
         return setError(E_INVALIDARG, tr("Cannot change video FPS while capturing is enabled"));
 
     m->bd.backup();
@@ -721,25 +721,13 @@ HRESULT CaptureScreenSettings::setVideoScalingMethod(CaptureVideoScalingMethod_T
 {
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    if (!i_canChangeSettings())
+    if (m->bd->fEnabled)
         return setError(E_INVALIDARG, tr("Cannot change video rate scaling method while capturing is enabled"));
 
     /** @todo Implement this. */
     RT_NOREF(aMode);
 
     return E_NOTIMPL;
-}
-
-bool CaptureScreenSettings::i_canChangeSettings(void)
-{
-    AutoAnyStateDependency adep(m->pMachine);
-    AssertComRCReturn(adep.rc(), false);
-
-    if (   Global::IsOnline(adep.machineState())
-        && m->bd->fEnabled)
-        return false;
-
-    return true;
 }
 
 /**

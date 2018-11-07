@@ -1586,16 +1586,16 @@ bool UIMachineSettingsDisplay::saveRecordingData()
                         recordingScreenSettings.SetVideoRate(newDisplayData.m_iRecordingVideoBitRate);
                         fSuccess = recordingScreenSettings.isOk();
                     }
-                    /* Save recording screens: */
-                    if (fSuccess && newDisplayData.m_vecRecordingScreens != oldDisplayData.m_vecRecordingScreens)
-                    {
-                        recordingScreenSettings.SetEnabled(newDisplayData.m_vecRecordingScreens[iScreenIndex]);
-                        fSuccess = recordingScreenSettings.isOk();
-                    }
                     /* Save recording options: */
                     if (fSuccess && newDisplayData.m_strRecordingVideoOptions != oldDisplayData.m_strRecordingVideoOptions)
                     {
                         recordingScreenSettings.SetOptions(newDisplayData.m_strRecordingVideoOptions);
+                        fSuccess = recordingScreenSettings.isOk();
+                    }
+                    /* Save recording screens: */
+                    if (fSuccess && newDisplayData.m_vecRecordingScreens != oldDisplayData.m_vecRecordingScreens)
+                    {
+                        recordingScreenSettings.SetEnabled(newDisplayData.m_vecRecordingScreens[iScreenIndex]);
                         fSuccess = recordingScreenSettings.isOk();
                     }
                 }

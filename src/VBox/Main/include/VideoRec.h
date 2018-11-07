@@ -29,132 +29,6 @@ using namespace com;
 #include "VideoRecInternals.h"
 #include "VideoRecStream.h"
 
-#if 0
-/**
- * Enumeration for definining a video / audio
- * profile setting.
- */
-typedef enum VIDEORECPROFILE
-{
-    VIDEORECPROFILE_NONE   = 0,
-    VIDEORECPROFILE_LOW,
-    VIDEORECPROFILE_MEDIUM,
-    VIDEORECPROFILE_HIGH,
-    VIDEORECPROFILE_BEST,
-    VIDEORECPROFILE_REALTIME
-} VIDEORECPROFILE;
-
-/** Stores video recording features. */
-typedef uint32_t VIDEORECFEATURES;
-
-/** Video recording is disabled completely. */
-#define VIDEORECFEATURE_NONE        0
-/** Capturing video is enabled. */
-#define VIDEORECFEATURE_VIDEO       RT_BIT(0)
-/** Capturing audio is enabled. */
-#define VIDEORECFEATURE_AUDIO       RT_BIT(1)
-
-/**
- * Structure for keeping a screen recording configuration.
- */
-typedef struct VIDEORECSCREENCFG
-{
-    VIDEORECSCREENCFG(void)
-        : enmDst(VIDEORECDEST_INVALID)
-        , uMaxTimeS(0)
-    {
-#ifdef VBOX_WITH_AUDIO_VIDEOREC
-        RT_ZERO(Audio);
-#endif
-        RT_ZERO(Video);
-    }
-
-    VIDEORECSCREENCFG& operator=(const VIDEORECSCREENCFG &that)
-    {
-        enmDst          = that.enmDst;
-
-        File.strName    = that.File.strName;
-        File.uMaxSizeMB = that.File.uMaxSizeMB;
-#ifdef VBOX_WITH_AUDIO_VIDEOREC
-        Audio           = that.Audio;
-#endif
-        Video           = that.Video;
-        uMaxTimeS       = that.uMaxTimeS;
-        return *this;
-    }
-
-    unsigned long           uScreenId;
-    /** Destination where to write the stream to. */
-    VIDEORECDEST            enmDst;
-
-    /**
-     * Structure for keeping recording parameters if
-     * destination is a file.
-     */
-    struct
-    {
-        /** File name (as absolute path). */
-        com::Bstr       strName;
-        /** Maximum file size (in MB) to record. */
-        uint32_t        uMaxSizeMB;
-    } File;
-
-#ifdef VBOX_WITH_AUDIO_VIDEOREC
-    /**
-     * Structure for keeping the audio recording parameters.
-     */
-    struct
-    {
-        /** Whether audio recording is enabled or not. */
-        bool                fEnabled;
-        /** The device LUN the audio driver is attached / configured to. */
-        unsigned            uLUN;
-        /** Hertz (Hz) rate. */
-        uint16_t            uHz;
-        /** Bits per sample. */
-        uint8_t             cBits;
-        /** Number of audio channels. */
-        uint8_t             cChannels;
-        /** Audio profile which is being used. */
-        VIDEORECPROFILE     enmProfile;
-    } Audio;
-#endif
-
-    /**
-     * Structure for keeping the video recording parameters.
-     */
-    struct
-    {
-        /** Whether video recording is enabled or not. */
-        bool                fEnabled;
-        /** Target width (in pixels). */
-        uint32_t            uWidth;
-        /** Target height (in pixels). */
-        uint32_t            uHeight;
-        /** Target encoding rate. */
-        uint32_t            uRate;
-        /** Target FPS. */
-        uint32_t            uFPS;
-
-#ifdef VBOX_WITH_LIBVPX
-        union
-        {
-            struct
-            {
-                /** Encoder deadline. */
-                unsigned int uEncoderDeadline;
-            } VPX;
-        } Codec;
-#endif
-
-    } Video;
-
-    /** Maximum time (in s) to record.
-     *  Specify 0 to disable this check. */
-    uint32_t                uMaxTimeS;
-} VIDEORECSCREENCFG, *PVIDEORECSCREENCFG;
-#endif
-
 class Console;
 
 /**
@@ -211,18 +85,31 @@ protected:
 
 protected:
 
+    /**
+     * Enumeration for a recording context state.
+     */
+    enum VIDEORECSTS
+    {
+        /** Context not initialized. */
+        VIDEORECSTS_UNINITIALIZED = 0,
+        /** Context was created. */
+        VIDEORECSTS_CREATED       = 1,
+        /** Context was started. */
+        VIDEORECSTS_STARTED       = 2,
+        /** The usual 32-bit hack. */
+        VIDEORECSTS_32BIT_HACK    = 0x7fffffff
+    };
+
     /** Pointer to the console object. */
     Console                  *pConsole;
     /** Used recording configuration. */
     settings::CaptureSettings Settings;
     /** The current state. */
-    uint32_t                  enmState;
+    VIDEORECSTS               enmState;
     /** Critical section to serialize access. */
     RTCRITSECT                CritSect;
     /** Semaphore to signal the encoding worker thread. */
     RTSEMEVENT                WaitEvent;
-    /** Whether this context is in started state or not. */
-    bool                      fStarted;
     /** Shutdown indicator. */
     bool                      fShutdown;
     /** Worker thread. */

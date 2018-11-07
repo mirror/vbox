@@ -101,7 +101,6 @@ private:
 private:
 
     // internal methods
-    bool i_canChangeSettings();
     int  i_getDefaultFileName(Utf8Str &strFile);
     int  i_initInternal();
 

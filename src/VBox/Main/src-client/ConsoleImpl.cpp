@@ -5628,9 +5628,6 @@ int Console::i_videoRecEnable(BOOL fEnable, util::AutoWriteLock *pAutoLock)
             {
                 vrc = i_videoRecCreate();
                 if (RT_SUCCESS(vrc))
-                    vrc = i_videoRecStart();
-
-                if (RT_SUCCESS(vrc))
                 {
 # ifdef VBOX_WITH_AUDIO_VIDEOREC
                     /* Attach the video recording audio driver if required. */
@@ -6898,21 +6895,29 @@ int Console::i_videoRecGetSettings(settings::CaptureSettings &Settings)
 {
     Assert(mMachine.isNotNull());
 
+    Settings.applyDefaults();
+
     ComPtr<ICaptureSettings> pCaptureSettings;
     HRESULT hrc = mMachine->COMGETTER(CaptureSettings)(pCaptureSettings.asOutParam());
     AssertComRCReturn(hrc, VERR_INVALID_PARAMETER);
 
+    BOOL fTemp;
+    hrc = pCaptureSettings->COMGETTER(Enabled)(&fTemp);
+    AssertComRCReturn(hrc, VERR_INVALID_PARAMETER);
+    Settings.fEnabled = RT_BOOL(fTemp);
+
     SafeIfaceArray<ICaptureScreenSettings> paCaptureScreens;
     hrc = pCaptureSettings->COMGETTER(Screens)(ComSafeArrayAsOutParam(paCaptureScreens));
     AssertComRCReturn(hrc, VERR_INVALID_PARAMETER);
-
-    Settings.applyDefaults();
 
     for (unsigned long i = 0; i < (unsigned long)paCaptureScreens.size(); ++i)
     {
         settings::CaptureScreenSettings CaptureScreenSettings;
         ComPtr<ICaptureScreenSettings> pCaptureScreenSettings = paCaptureScreens[i];
 
+        hrc = pCaptureScreenSettings->COMGETTER(Enabled)(&fTemp);
+        AssertComRCReturn(hrc, VERR_INVALID_PARAMETER);
+        CaptureScreenSettings.fEnabled = RT_BOOL(fTemp);
         hrc = pCaptureScreenSettings->COMGETTER(MaxTime)((ULONG *)&CaptureScreenSettings.ulMaxTimeS);
         AssertComRCReturn(hrc, VERR_INVALID_PARAMETER);
         hrc = pCaptureScreenSettings->COMGETTER(MaxFileSize)((ULONG *)&CaptureScreenSettings.File.ulMaxSizeMB);
@@ -7005,10 +7010,12 @@ int Console::i_videoRecStart(void)
 
     LogRel(("VideoRec: Starting ...\n"));
 
-    int rc = VINF_SUCCESS;
-
-    for (unsigned uScreen = 0; uScreen < Capture.mpVideoRecCtx->GetStreamCount(); uScreen++)
-        mDisplay->i_videoRecScreenChanged(uScreen);
+    int rc = Capture.mpVideoRecCtx->Start();
+    if (RT_SUCCESS(rc))
+    {
+        for (unsigned uScreen = 0; uScreen < Capture.mpVideoRecCtx->GetStreamCount(); uScreen++)
+            mDisplay->i_videoRecScreenChanged(uScreen);
+    }
 
     if (RT_FAILURE(rc))
         LogRel(("VideoRec: Failed to start video recording (%Rrc)\n", rc));
@@ -7028,20 +7035,26 @@ int Console::i_videoRecStop(void)
 
     LogRel(("VideoRec: Stopping ...\n"));
 
-    const size_t cStreams = Capture.mpVideoRecCtx->GetStreamCount();
-    for (unsigned uScreen = 0; uScreen < cStreams; ++uScreen)
-        mDisplay->i_videoRecScreenChanged(uScreen);
+    int rc = Capture.mpVideoRecCtx->Stop();
+    if (RT_SUCCESS(rc))
+    {
+        const size_t cStreams = Capture.mpVideoRecCtx->GetStreamCount();
+        for (unsigned uScreen = 0; uScreen < cStreams; ++uScreen)
+            mDisplay->i_videoRecScreenChanged(uScreen);
 
-    ComPtr<ICaptureSettings> pCaptureSettings;
-    HRESULT hrc = mMachine->COMGETTER(CaptureSettings)(pCaptureSettings.asOutParam());
-    ComAssertComRC(hrc);
-    hrc = pCaptureSettings->COMSETTER(Enabled)(false);
-    ComAssertComRC(hrc);
+        ComPtr<ICaptureSettings> pCaptureSettings;
+        HRESULT hrc = mMachine->COMGETTER(CaptureSettings)(pCaptureSettings.asOutParam());
+        ComAssertComRC(hrc);
+        hrc = pCaptureSettings->COMSETTER(Enabled)(false);
+        ComAssertComRC(hrc);
 
-    LogRel(("VideoRec: Stopped\n"));
+        LogRel(("VideoRec: Stopped\n"));
+    }
+    else
+        LogRel(("VideoRec: Failed to stop video recording (%Rrc)\n", rc));
 
-    LogFlowFuncLeaveRC(VINF_SUCCESS);
-    return VINF_SUCCESS;
+    LogFlowFuncLeaveRC(rc);
+    return rc;
 }
 #endif /* VBOX_WITH_VIDEOREC */
 
