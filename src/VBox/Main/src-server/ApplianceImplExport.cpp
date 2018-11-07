@@ -960,14 +960,14 @@ HRESULT Appliance::i_writeOCIImpl(const LocationInfo &aLocInfo, ComObjPtr<Progre
             m->m_OciExportData.strBucketId = bucketId.front()->strVBoxCurrent;
             LogRel(("OCI bucket name: %s\n", m->m_OciExportData.strBucketId.c_str()));
 
-            std::list<VirtualSystemDescriptionEntry*> vcn =
-                vsdescThis->i_findByType(VirtualSystemDescriptionType_CloudOCIVCN);
-            if (vcn.empty())
+            std::list<VirtualSystemDescriptionEntry*> subnet =
+                vsdescThis->i_findByType(VirtualSystemDescriptionType_CloudOCISubnet);
+            if (subnet.empty())
                 throw rc = setError(VBOX_E_OBJECT_NOT_FOUND,
-                                    tr("OCI: VCN wasn't found"));
+                                    tr("OCI: Subnet wasn't found"));
 
-            m->m_OciExportData.strVCN = vcn.front()->strVBoxCurrent;
-            LogRel(("OCI VCN name: %s\n", m->m_OciExportData.strVCN.c_str()));
+            m->m_OciExportData.strSubnet = subnet.front()->strVBoxCurrent;
+            LogRel(("OCI Subnet name: %s\n", m->m_OciExportData.strSubnet.c_str()));
 
             std::list<VirtualSystemDescriptionEntry*> publicIP =
                 vsdescThis->i_findByType(VirtualSystemDescriptionType_CloudOCIPublicIP);

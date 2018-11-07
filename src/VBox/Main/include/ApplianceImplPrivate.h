@@ -238,7 +238,7 @@ struct Appliance::Data
         Utf8Str strDomainName;
         Utf8Str strBootDiskSize;
         Utf8Str strBucketId;
-        Utf8Str strVCN;
+        Utf8Str strSubnet;
         bool    fPublicIP;
         Utf8Str strUserId;
         Utf8Str strBootImageName;
