@@ -912,39 +912,6 @@ DECLINLINE(uint64_t) iemVmxVmcsGetCr3TargetValue(PCVMXVVMCS pVmcs, uint8_t idxCr
 
 
 /**
- * Reads a 32-bit register from the virtual-APIC page at the given offset.
- *
- * @returns The register from the virtual-APIC page.
- * @param   pVCpu       The cross context virtual CPU structure.
- * @param   offReg      The offset of the register being read.
- */
-DECLINLINE(uint32_t) iemVmxVirtApicReadRaw32(PVMCPU pVCpu, uint8_t offReg)
-{
-    Assert(offReg <= VMX_V_VIRT_APIC_SIZE - sizeof(uint32_t));
-    uint8_t  const *pbVirtApic = (const uint8_t *)pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pvVirtApicPage);
-    Assert(pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pvVirtApicPage));
-    uint32_t const uReg = *(const uint32_t *)(pbVirtApic + offReg);
-    return uReg;
-}
-
-
-/**
- * Writes a 32-bit register to the virtual-APIC page at the given offset.
- *
- * @param   pVCpu       The cross context virtual CPU structure.
- * @param   uReg        The register value to write.
- * @param   offReg      The offset of the register being written.
- */
-DECLINLINE(void) iemVmxVirtApicWriteRaw32(PVMCPU pVCpu, uint32_t uReg, uint8_t offReg)
-{
-    Assert(offReg <= VMX_V_VIRT_APIC_SIZE - sizeof(uint32_t));
-    uint8_t *pbVirtApic = (uint8_t *)pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pvVirtApicPage);
-    Assert(pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pvVirtApicPage));
-    *(uint32_t *)(pbVirtApic + offReg) = uReg;
-}
-
-
-/**
  * Masks the nested-guest CR0/CR4 mask subjected to the corresponding guest/host
  * mask and the read-shadow (CR0/CR4 read).
  *
@@ -1923,7 +1890,7 @@ IEM_STATIC void iemVmxVmentrySaveForceFlags(PVMCPU pVCpu)
     Assert(pVCpu->cpum.GstCtx.hwvirt.fLocalForcedActions == 0);
 
     /* MTF should not be set outside VMX non-root mode. */
-    Assert(!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_MTF));
+    Assert(!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_VMX_MTF));
 
     /*
      * Preserve the required force-flags.
@@ -3993,6 +3960,334 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitTripleFault(PVMCPU pVCpu)
 
 
 /**
+ * Reads a 32-bit register from the virtual-APIC page at the given offset.
+ *
+ * @returns The register from the virtual-APIC page.
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   offReg      The offset of the register being read.
+ */
+DECLINLINE(uint32_t) iemVmxVirtApicReadRaw32(PVMCPU pVCpu, uint16_t offReg)
+{
+    Assert(offReg <= VMX_V_VIRT_APIC_SIZE - sizeof(uint32_t));
+    uint8_t  const *pbVirtApic = (const uint8_t *)pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pvVirtApicPage);
+    Assert(pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pvVirtApicPage));
+    uint32_t const uReg = *(const uint32_t *)(pbVirtApic + offReg);
+    return uReg;
+}
+
+
+/**
+ * Writes a 32-bit register to the virtual-APIC page at the given offset.
+ *
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   offReg      The offset of the register being written.
+ * @param   uReg        The register value to write.
+ */
+DECLINLINE(void) iemVmxVirtApicWriteRaw32(PVMCPU pVCpu, uint16_t offReg, uint32_t uReg)
+{
+    Assert(offReg <= VMX_V_VIRT_APIC_SIZE - sizeof(uint32_t));
+    uint8_t *pbVirtApic = (uint8_t *)pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pvVirtApicPage);
+    Assert(pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pvVirtApicPage));
+    *(uint32_t *)(pbVirtApic + offReg) = uReg;
+}
+
+
+/**
+ * Checks if an access of the APIC page must cause an APIC-access VM-exit.
+ *
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   offAccess   The offset of the register being accessed.
+ * @param   cbAccess    The size of the access in bytes.
+ * @param   fAccess     The type of access (must be IEM_ACCESS_TYPE_READ or
+ *                      IEM_ACCESS_TYPE_WRITE).
+ */
+IEM_STATIC bool iemVmxVirtApicIsAccessIntercepted(PVMCPU pVCpu, uint16_t offAccess, uint32_t cbAccess, uint32_t fAccess)
+{
+    PCVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
+    Assert(pVmcs);
+    Assert(fAccess == IEM_ACCESS_TYPE_READ || fAccess == IEM_ACCESS_TYPE_WRITE);
+
+    /*
+     * We must cause a VM-exit if any of the following are true:
+     *   - TPR shadowing isn't active.
+     *   - The access size exceeds 32-bits.
+     *   - The access is not contained within low 4 bytes of a 16-byte aligned offset.
+     *
+     * See Intel spec. 29.4.2 "Virtualizing Reads from the APIC-Access Page".
+     * See Intel spec. 29.4.3.1 "Determining Whether a Write Access is Virtualized".
+     */
+    if (   !(pVmcs->u32ProcCtls & VMX_PROC_CTLS_USE_TPR_SHADOW)
+        || cbAccess > sizeof(uint32_t)
+        || ((offAccess + cbAccess - 1) & 0xc)
+        || offAccess >= XAPIC_OFF_END + 4)
+        return true;
+
+    /*
+     * If the access is part of an operation where we have already
+     * virtualized a virtual TPR write, we must cause a VM-exit.
+     */
+    if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_VMX_UPDATE_VAPIC))
+        return true;
+
+    /*
+     * Check read accesses to the APIC-access page that cause VM-exits.
+     */
+    if (fAccess == IEM_ACCESS_TYPE_READ)
+    {
+        if (pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_APIC_REG_VIRT)
+        {
+            /*
+             * With APIC-register virtualization, a read access to any of the
+             * following registers are virtualized. Accessing any other register
+             * causes a VM-exit.
+             */
+            uint16_t const offAlignedAccess = offAccess & 0xfffc;
+            switch (offAlignedAccess)
+            {
+                /** @todo r=ramshankar: What about XAPIC_OFF_LVT_CMCI? */
+                case XAPIC_OFF_ID:
+                case XAPIC_OFF_VERSION:
+                case XAPIC_OFF_TPR:
+                case XAPIC_OFF_EOI:
+                case XAPIC_OFF_LDR:
+                case XAPIC_OFF_DFR:
+                case XAPIC_OFF_SVR:
+                case XAPIC_OFF_ISR0:    case XAPIC_OFF_ISR1:    case XAPIC_OFF_ISR2:    case XAPIC_OFF_ISR3:
+                case XAPIC_OFF_ISR4:    case XAPIC_OFF_ISR5:    case XAPIC_OFF_ISR6:    case XAPIC_OFF_ISR7:
+                case XAPIC_OFF_TMR0:    case XAPIC_OFF_TMR1:    case XAPIC_OFF_TMR2:    case XAPIC_OFF_TMR3:
+                case XAPIC_OFF_TMR4:    case XAPIC_OFF_TMR5:    case XAPIC_OFF_TMR6:    case XAPIC_OFF_TMR7:
+                case XAPIC_OFF_IRR0:    case XAPIC_OFF_IRR1:    case XAPIC_OFF_IRR2:    case XAPIC_OFF_IRR3:
+                case XAPIC_OFF_IRR4:    case XAPIC_OFF_IRR5:    case XAPIC_OFF_IRR6:    case XAPIC_OFF_IRR7:
+                case XAPIC_OFF_ESR:
+                case XAPIC_OFF_ICR_LO:
+                case XAPIC_OFF_ICR_HI:
+                case XAPIC_OFF_LVT_TIMER:
+                case XAPIC_OFF_LVT_THERMAL:
+                case XAPIC_OFF_LVT_PERF:
+                case XAPIC_OFF_LVT_LINT0:
+                case XAPIC_OFF_LVT_LINT1:
+                case XAPIC_OFF_LVT_ERROR:
+                case XAPIC_OFF_TIMER_ICR:
+                case XAPIC_OFF_TIMER_DCR:
+                    break;
+                default:
+                    return true;
+            }
+        }
+        else
+        {
+            /* Without APIC-register virtualization, only TPR accesses are virtualized. */
+            if (offAccess == XAPIC_OFF_TPR)
+            { /* likely */ }
+            else
+                return true;
+        }
+    }
+    else
+    {
+        /*
+         * Check write accesses to the APIC-access page that cause VM-exits.
+         */
+        if (pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_APIC_REG_VIRT)
+        {
+            /*
+             * With APIC-register virtualization, a write access to any of the
+             * following registers are virtualized. Accessing any other register
+             * causes a VM-exit.
+             */
+            uint16_t const offAlignedAccess = offAccess & 0xfffc;
+            switch (offAlignedAccess)
+            {
+                case XAPIC_OFF_ID:
+                case XAPIC_OFF_TPR:
+                case XAPIC_OFF_EOI:
+                case XAPIC_OFF_LDR:
+                case XAPIC_OFF_DFR:
+                case XAPIC_OFF_SVR:
+                case XAPIC_OFF_ESR:
+                case XAPIC_OFF_ICR_LO:
+                case XAPIC_OFF_ICR_HI:
+                case XAPIC_OFF_LVT_TIMER:
+                case XAPIC_OFF_LVT_THERMAL:
+                case XAPIC_OFF_LVT_PERF:
+                case XAPIC_OFF_LVT_LINT0:
+                case XAPIC_OFF_LVT_LINT1:
+                case XAPIC_OFF_LVT_ERROR:
+                case XAPIC_OFF_TIMER_ICR:
+                case XAPIC_OFF_TIMER_DCR:
+                    break;
+                default:
+                    return true;
+            }
+        }
+        else if (pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_VIRT_INT_DELIVERY)
+        {
+            /*
+             * With virtual-interrupt delivery, a write access to any of the
+             * following registers are virtualized. Accessing any other register
+             * causes a VM-exit.
+             *
+             * Note! The specification does not allow writing to offsets in-between
+             * these registers (e.g. TPR + 1 byte) unlike read accesses.
+             */
+            switch (offAccess)
+            {
+                case XAPIC_OFF_TPR:
+                case XAPIC_OFF_EOI:
+                case XAPIC_OFF_ICR_LO:
+                    break;
+                default:
+                    return true;
+            }
+        }
+        else
+        {
+            /*
+             * Without APIC-register virtualization or virtual-interrupt delivery,
+             * only TPR accesses are virtualized.
+             */
+            if (offAccess == XAPIC_OFF_TPR)
+            { /* likely */ }
+            else
+                return true;
+        }
+    }
+
+    /* The APIC-access is virtualized, does not cause a VM-exit. */
+    return false;
+}
+
+
+/**
+ * VMX VM-exit handler for APIC-write VM-exits.
+ *
+ * @param   pVCpu       The cross context virtual CPU structure.
+ */
+IEM_STATIC VBOXSTRICTRC iemVmxVmexitApicWrite(PVMCPU pVCpu)
+{
+    iemVmxVmcsSetExitQual(pVCpu, pVCpu->cpum.GstCtx.hwvirt.vmx.offVirtApicWrite);
+    return iemVmxVmexit(pVCpu, VMX_EXIT_APIC_WRITE);
+}
+
+
+/**
+ * VMX VM-exit handler for APIC-accesses.
+ *
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   offAccess   The offset of the register being accessed.
+ * @param   fAccess     The type of access (must be IEM_ACCESS_TYPE_READ or
+ *                      IEM_ACCESS_TYPE_WRITE).
+ */
+IEM_STATIC VBOXSTRICTRC iemVmxVmexitApicAccess(PVMCPU pVCpu, uint16_t offAccess, uint32_t fAccess)
+{
+    Assert(fAccess == IEM_ACCESS_TYPE_READ || fAccess == IEM_ACCESS_TYPE_WRITE);
+
+    VMXAPICACCESS enmAccess;
+    bool const fInEventDelivery = IEMGetCurrentXcpt(pVCpu, NULL, NULL, NULL, NULL);
+    if (fInEventDelivery)
+        enmAccess = VMXAPICACCESS_LINEAR_EVENT_DELIVERY;
+    else if (fAccess == IEM_ACCESS_TYPE_READ)
+        enmAccess = VMXAPICACCESS_LINEAR_READ;
+    else
+        enmAccess = VMXAPICACCESS_LINEAR_WRITE;
+
+    uint64_t const uExitQual = RT_BF_MAKE(VMX_BF_EXIT_QUAL_APIC_ACCESS_OFFSET, offAccess)
+                             | RT_BF_MAKE(VMX_BF_EXIT_QUAL_APIC_ACCESS_TYPE,   enmAccess);
+    iemVmxVmcsSetExitQual(pVCpu, uExitQual);
+    return iemVmxVmexit(pVCpu, VMX_EXIT_APIC_ACCESS);
+}
+
+
+/**
+ * Virtualizes an APIC read access.
+ *
+ * @returns VBox strict status code.
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   offAccess   The offset of the register being read.
+ * @param   cbAccess    The size of the APIC access.
+ * @param   pvData      Where to store the read data.
+ */
+IEM_STATIC VBOXSTRICTRC iemVmxVirtApicRead(PVMCPU pVCpu, uint16_t offAccess, uint32_t cbAccess, void *pvData)
+{
+    PCVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
+    Assert(pVmcs);
+    Assert(pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_VIRT_APIC_ACCESS);
+    Assert(pvData);
+
+    /* Check if we need to cause a VM-exit for this APIC access. */
+    bool const fIntercept = iemVmxVirtApicIsAccessIntercepted(pVCpu, offAccess, cbAccess, IEM_ACCESS_TYPE_READ);
+    if (fIntercept)
+        return iemVmxVmexitApicAccess(pVCpu, offAccess, IEM_ACCESS_TYPE_READ);
+
+    /*
+     * A read access from the APIC-access page that is virtualized (rather than
+     * causing a VM-exit) returns data from the virtual-APIC page.
+     *
+     * See Intel spec. 29.4.2 "Virtualizing Reads from the APIC-Access Page".
+     */
+    Assert(cbAccess <= 4);
+    Assert(offAccess < XAPIC_OFF_END + 4);
+    static uint32_t const s_auAccessSizeMasks[] = { 0, 0xff, 0xffff, 0xffffff, 0xffffffff };
+
+    uint32_t u32Data = iemVmxVirtApicReadRaw32(pVCpu, offAccess);
+    u32Data &= s_auAccessSizeMasks[cbAccess];
+    *(uint32_t *)pvData = u32Data;
+    return VINF_VMX_INTERCEPT_NOT_ACTIVE;
+}
+
+
+/**
+ * Virtualizes an APIC write access.
+ *
+ * @returns VBox strict status code.
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   offAccess   The offset of the register being written.
+ * @param   cbAccess    The size of the APIC access.
+ * @param   pvData      Pointer to the data being written.
+ */
+IEM_STATIC VBOXSTRICTRC iemVmxVirtApicWrite(PVMCPU pVCpu, uint16_t offAccess, uint32_t cbAccess, void *pvData)
+{
+    PCVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
+    Assert(pVmcs);
+    Assert(pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_VIRT_APIC_ACCESS);
+    Assert(pvData);
+
+    /* Check if we need to cause a VM-exit for this APIC access. */
+    bool const fIntercept = iemVmxVirtApicIsAccessIntercepted(pVCpu, offAccess, cbAccess, IEM_ACCESS_TYPE_WRITE);
+    if (fIntercept)
+        return iemVmxVmexitApicAccess(pVCpu, offAccess, IEM_ACCESS_TYPE_WRITE);
+
+    /*
+     * A write access to the APIC-access page that is virtualized (rather than
+     * causing a VM-exit) writes data to the virtual-APIC page.
+     */
+    uint32_t const u32Data = *(uint32_t *)pvData;
+    iemVmxVirtApicWriteRaw32(pVCpu, offAccess, u32Data);
+
+    /*
+     * Record the currently updated APIC offset, as we need this later for figuring
+     * out what to do as well as the exit qualification when causing an APIC-write VM-exit.
+     */
+    pVCpu->cpum.GstCtx.hwvirt.vmx.offVirtApicWrite = offAccess;
+
+    /*
+     * After completion of the current operation, we need to perform TPR virtualization,
+     * EOI virtualization or APIC-write VM-exit depending on which register was written.
+     *
+     * The current operation may be a REP-prefixed string instruction, execution of any
+     * other instruction, or delivery of an event through the IDT.
+     *
+     * Thus things like clearing bytes 3:1 of the VTPR, clearing VEOI are not to be
+     * performed now but later after completion of the current operation.
+     *
+     * See Intel spec. 29.4.3.2 "APIC-Write Emulation".
+     */
+    VMCPU_FF_SET(pVCpu, VMCPU_FF_VMX_UPDATE_VAPIC);
+    return VINF_VMX_INTERCEPT_NOT_ACTIVE;
+}
+
+
+/**
  * VMX VM-exit handler for TPR virtualization.
  *
  * @returns VBox strict status code.
@@ -5465,7 +5760,7 @@ IEM_STATIC int iemVmxVmentryCheckExecCtls(PVMCPU pVCpu, const char *pszInstr)
     if (pVmcs->u32ProcCtls & VMX_PROC_CTLS_USE_TPR_SHADOW)
     {
         /* Virtual-APIC page physical address. */
-        RTGCPHYS GCPhysVirtApic = pVmcs->u64AddrVirtApic.u;
+        RTGCPHYS const GCPhysVirtApic = pVmcs->u64AddrVirtApic.u;
         if (   (GCPhysVirtApic & X86_PAGE_4K_OFFSET_MASK)
             || (GCPhysVirtApic >> IEM_GET_GUEST_CPU_FEATURES(pVCpu)->cVmxMaxPhysAddrWidth)
             || !PGMPhysIsGCPhysNormal(pVCpu->CTX_SUFF(pVM), GCPhysVirtApic))
@@ -5522,11 +5817,25 @@ IEM_STATIC int iemVmxVmentryCheckExecCtls(PVMCPU pVCpu, const char *pszInstr)
     if (pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_VIRT_APIC_ACCESS)
     {
         /* APIC-access physical address. */
-        RTGCPHYS GCPhysApicAccess = pVmcs->u64AddrApicAccess.u;
+        RTGCPHYS const GCPhysApicAccess = pVmcs->u64AddrApicAccess.u;
         if (   (GCPhysApicAccess & X86_PAGE_4K_OFFSET_MASK)
             || (GCPhysApicAccess >> IEM_GET_GUEST_CPU_FEATURES(pVCpu)->cVmxMaxPhysAddrWidth)
             || !PGMPhysIsGCPhysNormal(pVCpu->CTX_SUFF(pVM), GCPhysApicAccess))
             IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_AddrApicAccess);
+
+        /*
+         * Disallow APIC-access page and virtual-APIC page from being the same address.
+         * Note! This is not an Intel requirement, but one imposed by our implementation.
+         */
+        /** @todo r=ramshankar: This is done primarily to simplify recursion scenarios while
+         *        redirecting accesses between the APIC-access page and the virtual-APIC
+         *        page. If any nested hypervisor requires this, we can implement it later. */
+        if (pVmcs->u32ProcCtls & VMX_PROC_CTLS_USE_TPR_SHADOW)
+        {
+            RTGCPHYS const GCPhysVirtApic = pVmcs->u64AddrVirtApic.u;
+            if (GCPhysVirtApic == GCPhysApicAccess)
+                IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_AddrApicAccessEqVirtApic);
+        }
     }
 
     /* Virtualize-x2APIC mode is mutually exclusive with virtualize-APIC accesses. */
@@ -5558,14 +5867,14 @@ IEM_STATIC int iemVmxVmentryCheckExecCtls(PVMCPU pVCpu, const char *pszInstr)
     if (pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_VMCS_SHADOWING)
     {
         /* VMREAD-bitmap physical address. */
-        RTGCPHYS GCPhysVmreadBitmap = pVmcs->u64AddrVmreadBitmap.u;
+        RTGCPHYS const GCPhysVmreadBitmap = pVmcs->u64AddrVmreadBitmap.u;
         if (   ( GCPhysVmreadBitmap & X86_PAGE_4K_OFFSET_MASK)
             || ( GCPhysVmreadBitmap >> IEM_GET_GUEST_CPU_FEATURES(pVCpu)->cVmxMaxPhysAddrWidth)
             || !PGMPhysIsGCPhysNormal(pVCpu->CTX_SUFF(pVM), GCPhysVmreadBitmap))
             IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_AddrVmreadBitmap);
 
         /* VMWRITE-bitmap physical address. */
-        RTGCPHYS GCPhysVmwriteBitmap = pVmcs->u64AddrVmreadBitmap.u;
+        RTGCPHYS const GCPhysVmwriteBitmap = pVmcs->u64AddrVmreadBitmap.u;
         if (   ( GCPhysVmwriteBitmap & X86_PAGE_4K_OFFSET_MASK)
             || ( GCPhysVmwriteBitmap >> IEM_GET_GUEST_CPU_FEATURES(pVCpu)->cVmxMaxPhysAddrWidth)
             || !PGMPhysIsGCPhysNormal(pVCpu->CTX_SUFF(pVM), GCPhysVmwriteBitmap))
@@ -5997,7 +6306,7 @@ IEM_STATIC int iemVmxVmentryInjectEvent(PVMCPU pVCpu, const char *pszInstr)
         if (uType == VMX_ENTRY_INT_INFO_TYPE_OTHER_EVENT)
         {
             Assert(VMX_ENTRY_INT_INFO_VECTOR(uEntryIntInfo) == VMX_ENTRY_INT_INFO_VECTOR_MTF);
-            VMCPU_FF_SET(pVCpu, VMCPU_FF_MTF);
+            VMCPU_FF_SET(pVCpu, VMCPU_FF_VMX_MTF);
             return VINF_SUCCESS;
         }
 

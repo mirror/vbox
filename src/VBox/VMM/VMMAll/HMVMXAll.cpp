@@ -130,6 +130,7 @@ static const char * const g_apszVmxVDiagDesc[] =
     VMXV_DIAG_DESC(kVmxVDiag_Vmread_VmxRoot                   , "VmxRoot"                   ),
     /* VMLAUNCH/VMRESUME. */
     VMXV_DIAG_DESC(kVmxVDiag_Vmentry_AddrApicAccess           , "AddrApicAccess"            ),
+    VMXV_DIAG_DESC(kVmxVDiag_Vmentry_AddrApicAccessEqVirtApic , "AddrApicAccessEqVirtApic"  ),
     VMXV_DIAG_DESC(kVmxVDiag_Vmentry_AddrEntryMsrLoad         , "AddrEntryMsrLoad"          ),
     VMXV_DIAG_DESC(kVmxVDiag_Vmentry_AddrExitMsrLoad          , "AddrExitMsrLoad"           ),
     VMXV_DIAG_DESC(kVmxVDiag_Vmentry_AddrExitMsrStore         , "AddrExitMsrStore"          ),

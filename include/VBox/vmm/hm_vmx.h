@@ -2078,7 +2078,7 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_PROC_CTLS_, UINT32_C(0), UINT32_MAX,
 /** @name Secondary Processor-based VM-execution controls.
  * @{
  */
-/** Virtualize APIC access. */
+/** Virtualize APIC accesses. */
 #define VMX_PROC_CTLS2_VIRT_APIC_ACCESS                         RT_BIT(0)
 /** EPT supported/enabled. */
 #define VMX_PROC_CTLS2_EPT                                      RT_BIT(1)
@@ -2851,17 +2851,27 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_EXIT_QUAL_IO_, UINT64_C(0), UINT64_MAX,
 /** 12-15: Access type. */
 #define VMX_EXIT_QUAL_APIC_ACCESS_TYPE(a)                       (((a) & 0xf000) >> 12)
 /* Rest reserved. */
+
+/** Bit fields for Exit qualification for APIC-access VM-exits. */
+#define VMX_BF_EXIT_QUAL_APIC_ACCESS_OFFSET_SHIFT               0
+#define VMX_BF_EXIT_QUAL_APIC_ACCESS_OFFSET_MASK                UINT64_C(0x0000000000000fff)
+#define VMX_BF_EXIT_QUAL_APIC_ACCESS_TYPE_SHIFT                 12
+#define VMX_BF_EXIT_QUAL_APIC_ACCESS_TYPE_MASK                  UINT64_C(0x000000000000f000)
+#define VMX_BF_EXIT_QUAL_APIC_ACCESS_RSVD_16_63_SHIFT           16
+#define VMX_BF_EXIT_QUAL_APIC_ACCESS_RSVD_16_63_MASK            UINT64_C(0xffffffffffff0000)
+RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_EXIT_QUAL_APIC_ACCESS_, UINT64_C(0), UINT64_MAX,
+                            (OFFSET, TYPE, RSVD_16_63));
 /** @} */
 
 
 /** @name Exit qualification for linear address APIC-access types.
  * @{
  */
-/** Linear read access. */
+/** Linear access for a data read during instruction execution. */
 #define VMX_APIC_ACCESS_TYPE_LINEAR_READ                        0
-/** Linear write access. */
+/** Linear access for a data write during instruction execution. */
 #define VMX_APIC_ACCESS_TYPE_LINEAR_WRITE                       1
-/** Linear instruction fetch access. */
+/** Linear access for an instruction fetch. */
 #define VMX_APIC_ACCESS_TYPE_LINEAR_INSTR_FETCH                 2
 /** Linear read/write access during event delivery. */
 #define VMX_APIC_ACCESS_TYPE_LINEAR_EVENT_DELIVERY              3
@@ -2869,6 +2879,20 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_EXIT_QUAL_IO_, UINT64_C(0), UINT64_MAX,
 #define VMX_APIC_ACCESS_TYPE_PHYSICAL_EVENT_DELIVERY            10
 /** Physical access for an instruction fetch or during instruction execution. */
 #define VMX_APIC_ACCESS_TYPE_PHYSICAL_INSTR                     15
+
+/**
+ * APIC-access type.
+ */
+typedef enum
+{
+    VMXAPICACCESS_LINEAR_READ             = VMX_APIC_ACCESS_TYPE_LINEAR_READ,
+    VMXAPICACCESS_LINEAR_WRITE            = VMX_APIC_ACCESS_TYPE_LINEAR_WRITE,
+    VMXAPICACCESS_LINEAR_INSTR_FETCH      = VMX_APIC_ACCESS_TYPE_LINEAR_INSTR_FETCH,
+    VMXAPICACCESS_LINEAR_EVENT_DELIVERY   = VMX_APIC_ACCESS_TYPE_LINEAR_EVENT_DELIVERY,
+    VMXAPICACCESS_PHYSICAL_EVENT_DELIVERY = VMX_APIC_ACCESS_TYPE_PHYSICAL_EVENT_DELIVERY,
+    VMXAPICACCESS_PHYSICAL_INSTR          = VMX_APIC_ACCESS_TYPE_PHYSICAL_INSTR
+} VMXAPICACCESS;
+AssertCompileSize(VMXAPICACCESS, 4);
 /** @} */
 
 
@@ -3802,6 +3826,7 @@ typedef enum
     kVmxVDiag_Vmread_VmxRoot,
     /* VMLAUNCH/VMRESUME. */
     kVmxVDiag_Vmentry_AddrApicAccess,
+    kVmxVDiag_Vmentry_AddrApicAccessEqVirtApic,
     kVmxVDiag_Vmentry_AddrEntryMsrLoad,
     kVmxVDiag_Vmentry_AddrExitMsrLoad,
     kVmxVDiag_Vmentry_AddrExitMsrStore,
