@@ -102,7 +102,8 @@ private:
 
     // internal methods
     bool i_canChangeSettings();
-    int  i_getDefaultCaptureFile(Utf8Str &strFile);
+    int  i_getDefaultFileName(Utf8Str &strFile);
+    int  i_initInternal();
 
 private:
 

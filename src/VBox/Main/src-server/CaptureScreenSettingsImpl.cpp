@@ -85,18 +85,30 @@ HRESULT CaptureScreenSettings::init(Machine *aParent, uint32_t uScreenId, const 
 
     m = new Data();
 
-    /* share the parent weakly */
+    /* Share the parent weakly. */
     unconst(m->pMachine) = aParent;
+    /* mPeer is left null. */
 
     /* Simply copy the settings data. */
     m->uScreenId = uScreenId;
     m->bd.allocate();
     m->bd->operator=(data);
 
-    autoInitSpan.setSucceeded();
+    HRESULT rc = S_OK;
+
+    int vrc = i_initInternal();
+    if (RT_SUCCESS(vrc))
+    {
+        autoInitSpan.setSucceeded();
+    }
+    else
+    {
+        autoInitSpan.setFailed();
+        rc = E_UNEXPECTED;
+    }
 
     LogFlowThisFuncLeave();
-    return S_OK;
+    return rc;
 }
 
 /**
@@ -128,10 +140,21 @@ HRESULT CaptureScreenSettings::init(Machine *aParent, CaptureScreenSettings *tha
     m->uScreenId = that->m->uScreenId;
     m->bd.share(that->m->bd);
 
-    autoInitSpan.setSucceeded();
+    HRESULT rc = S_OK;
+
+    int vrc = i_initInternal();
+    if (RT_SUCCESS(vrc))
+    {
+        autoInitSpan.setSucceeded();
+    }
+    else
+    {
+        autoInitSpan.setFailed();
+        rc = E_UNEXPECTED;
+    }
 
     LogFlowThisFuncLeave();
-    return S_OK;
+    return rc;
 }
 
 /**
@@ -153,17 +176,28 @@ HRESULT CaptureScreenSettings::initCopy(Machine *aParent, CaptureScreenSettings 
     m = new Data();
 
     unconst(m->pMachine) = aParent;
-    // mPeer is left null
+    /* mPeer is left null. */
 
     AutoWriteLock thatlock(that COMMA_LOCKVAL_SRC_POS);
 
     m->uScreenId = that->m->uScreenId;
     m->bd.attachCopy(that->m->bd);
 
-    autoInitSpan.setSucceeded();
+    HRESULT rc = S_OK;
+
+    int vrc = i_initInternal();
+    if (RT_SUCCESS(vrc))
+    {
+        autoInitSpan.setSucceeded();
+    }
+    else
+    {
+        autoInitSpan.setFailed();
+        rc = E_UNEXPECTED;
+    }
 
     LogFlowThisFuncLeave();
-    return S_OK;
+    return rc;
 }
 
 /**
@@ -215,16 +249,16 @@ HRESULT CaptureScreenSettings::setEnabled(BOOL enabled)
 
     if (m->bd->fEnabled != RT_BOOL(enabled))
     {
+        m->bd.backup();
+        m->bd->fEnabled = RT_BOOL(enabled);
         alock.release();
+
+        AutoWriteLock mlock(m->pMachine COMMA_LOCKVAL_SRC_POS);
+        m->pMachine->i_setModified(Machine::IsModified_Capture);
+        mlock.release();
 
         HRESULT rc = m->pMachine->i_onCaptureChange();
         if (FAILED(rc)) return rc;
-
-        m->pMachine->i_setModified(Machine::IsModified_Capture);
-
-        alock.acquire();
-        m->bd->fEnabled = RT_BOOL(enabled);
-        alock.release();
 
         /** Save settings if online - @todo why is this required? -- @bugref{6818} */
         AutoAnyStateDependency adep(m->pMachine);
@@ -262,15 +296,19 @@ HRESULT CaptureScreenSettings::setFeatures(ULONG aFeatures)
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    m->pMachine->i_setModified(Machine::IsModified_Capture);
     m->bd.backup();
-
     m->bd->featureMap.clear();
 
     if (aFeatures & CaptureFeature_Audio)
         m->bd->featureMap[CaptureFeature_Audio] = true;
     if (aFeatures & CaptureFeature_Video)
         m->bd->featureMap[CaptureFeature_Video] = true;
+
+    alock.release();
+
+    AutoWriteLock mlock(m->pMachine COMMA_LOCKVAL_SRC_POS);
+    m->pMachine->i_setModified(Machine::IsModified_Capture);
+    mlock.release();
 
     return S_OK;
 }
@@ -291,9 +329,14 @@ HRESULT CaptureScreenSettings::setDestination(CaptureDestination_T aDestination)
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    m->pMachine->i_setModified(Machine::IsModified_Capture);
     m->bd.backup();
     m->bd->enmDest = aDestination;
+
+    alock.release();
+
+    AutoWriteLock mlock(m->pMachine COMMA_LOCKVAL_SRC_POS);
+    m->pMachine->i_setModified(Machine::IsModified_Capture);
+    mlock.release();
 
     return S_OK;
 }
@@ -302,10 +345,7 @@ HRESULT CaptureScreenSettings::getFileName(com::Utf8Str &aFileName)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    if (m->bd->File.strName.isEmpty())
-        i_getDefaultCaptureFile(aFileName);
-    else
-        aFileName = m->bd->File.strName;
+    aFileName = m->bd->File.strName;
 
     return S_OK;
 }
@@ -322,17 +362,14 @@ HRESULT CaptureScreenSettings::setFileName(const com::Utf8Str &aFileName)
     if (!RTPathStartsWithRoot(strFile.c_str()))
         return setError(E_INVALIDARG, tr("Capture file name '%s' is not absolute"), strFile.c_str());
 
-    if (!strFile.isEmpty())
-    {
-        Utf8Str defaultFile;
-        i_getDefaultCaptureFile(defaultFile);
-        if (!RTPathCompare(strFile.c_str(), defaultFile.c_str()))
-            strFile.setNull();
-    }
-
-    m->pMachine->i_setModified(Machine::IsModified_Capture);
     m->bd.backup();
     m->bd->File.strName = strFile;
+
+    alock.release();
+
+    AutoWriteLock mlock(m->pMachine COMMA_LOCKVAL_SRC_POS);
+    m->pMachine->i_setModified(Machine::IsModified_Capture);
+    mlock.release();
 
     return S_OK;
 }
@@ -353,10 +390,12 @@ HRESULT CaptureScreenSettings::setMaxTime(ULONG aMaxTimeS)
     if (!i_canChangeSettings())
         return setError(E_INVALIDARG, tr("Cannot change maximum time while capturing is enabled"));
 
-    m->pMachine->i_setModified(Machine::IsModified_Capture);
     m->bd.backup();
-
     m->bd->ulMaxTimeS = aMaxTimeS;
+
+    AutoWriteLock mlock(m->pMachine COMMA_LOCKVAL_SRC_POS);
+    m->pMachine->i_setModified(Machine::IsModified_Capture);
+    mlock.release();
 
     return S_OK;
 }
@@ -377,10 +416,12 @@ HRESULT CaptureScreenSettings::setMaxFileSize(ULONG aMaxFileSize)
     if (!i_canChangeSettings())
         return setError(E_INVALIDARG, tr("Cannot change maximum file size while capturing is enabled"));
 
-    m->pMachine->i_setModified(Machine::IsModified_Capture);
     m->bd.backup();
-
     m->bd->File.ulMaxSizeMB = aMaxFileSize;
+
+    AutoWriteLock mlock(m->pMachine COMMA_LOCKVAL_SRC_POS);
+    m->pMachine->i_setModified(Machine::IsModified_Capture);
+    mlock.release();
 
     return S_OK;
 }
@@ -401,10 +442,12 @@ HRESULT CaptureScreenSettings::setOptions(const com::Utf8Str &aOptions)
     if (!i_canChangeSettings())
         return setError(E_INVALIDARG, tr("Cannot change options string while capturing is enabled"));
 
-    m->pMachine->i_setModified(Machine::IsModified_Capture);
     m->bd.backup();
-
     m->bd->strOptions = aOptions;
+
+    AutoWriteLock mlock(m->pMachine COMMA_LOCKVAL_SRC_POS);
+    m->pMachine->i_setModified(Machine::IsModified_Capture);
+    mlock.release();
 
     return S_OK;
 }
@@ -425,10 +468,12 @@ HRESULT CaptureScreenSettings::setAudioCodec(CaptureAudioCodec_T aCodec)
     if (!i_canChangeSettings())
         return setError(E_INVALIDARG, tr("Cannot change audio codec while capturing is enabled"));
 
-    m->pMachine->i_setModified(Machine::IsModified_Capture);
     m->bd.backup();
-
     m->bd->Audio.enmAudioCodec = aCodec;
+
+    AutoWriteLock mlock(m->pMachine COMMA_LOCKVAL_SRC_POS);
+    m->pMachine->i_setModified(Machine::IsModified_Capture);
+    mlock.release();
 
     return S_OK;
 }
@@ -449,10 +494,12 @@ HRESULT CaptureScreenSettings::setAudioHz(ULONG aHz)
     if (!i_canChangeSettings())
         return setError(E_INVALIDARG, tr("Cannot change audio Hertz rate while capturing is enabled"));
 
-    m->pMachine->i_setModified(Machine::IsModified_Capture);
     m->bd.backup();
-
     m->bd->Audio.uHz = (uint16_t)aHz;
+
+    AutoWriteLock mlock(m->pMachine COMMA_LOCKVAL_SRC_POS);
+    m->pMachine->i_setModified(Machine::IsModified_Capture);
+    mlock.release();
 
     return S_OK;
 }
@@ -473,10 +520,12 @@ HRESULT CaptureScreenSettings::setAudioBits(ULONG aBits)
     if (!i_canChangeSettings())
         return setError(E_INVALIDARG, tr("Cannot change audio bits while capturing is enabled"));
 
-    m->pMachine->i_setModified(Machine::IsModified_Capture);
     m->bd.backup();
-
     m->bd->Audio.cBits = (uint8_t)aBits;
+
+    AutoWriteLock mlock(m->pMachine COMMA_LOCKVAL_SRC_POS);
+    m->pMachine->i_setModified(Machine::IsModified_Capture);
+    mlock.release();
 
     return S_OK;
 }
@@ -497,10 +546,12 @@ HRESULT CaptureScreenSettings::setAudioChannels(ULONG aChannels)
     if (!i_canChangeSettings())
         return setError(E_INVALIDARG, tr("Cannot change audio channels while capturing is enabled"));
 
-    m->pMachine->i_setModified(Machine::IsModified_Capture);
     m->bd.backup();
-
     m->bd->Audio.cChannels = (uint8_t)aChannels;
+
+    AutoWriteLock mlock(m->pMachine COMMA_LOCKVAL_SRC_POS);
+    m->pMachine->i_setModified(Machine::IsModified_Capture);
+    mlock.release();
 
     return S_OK;
 }
@@ -521,10 +572,12 @@ HRESULT CaptureScreenSettings::setVideoCodec(CaptureVideoCodec_T aCodec)
     if (!i_canChangeSettings())
         return setError(E_INVALIDARG, tr("Cannot change video codec while capturing is enabled"));
 
-    m->pMachine->i_setModified(Machine::IsModified_Capture);
     m->bd.backup();
-
     m->bd->Video.enmCodec = aCodec;
+
+    AutoWriteLock mlock(m->pMachine COMMA_LOCKVAL_SRC_POS);
+    m->pMachine->i_setModified(Machine::IsModified_Capture);
+    mlock.release();
 
     return S_OK;
 }
@@ -545,10 +598,12 @@ HRESULT CaptureScreenSettings::setVideoWidth(ULONG aVideoWidth)
     if (!i_canChangeSettings())
         return setError(E_INVALIDARG, tr("Cannot change video width while capturing is enabled"));
 
-    m->pMachine->i_setModified(Machine::IsModified_Capture);
     m->bd.backup();
-
     m->bd->Video.ulWidth = aVideoWidth;
+
+    AutoWriteLock mlock(m->pMachine COMMA_LOCKVAL_SRC_POS);
+    m->pMachine->i_setModified(Machine::IsModified_Capture);
+    mlock.release();
 
     return S_OK;
 }
@@ -569,10 +624,12 @@ HRESULT CaptureScreenSettings::setVideoHeight(ULONG aVideoHeight)
     if (!i_canChangeSettings())
         return setError(E_INVALIDARG, tr("Cannot change video height while capturing is enabled"));
 
-    m->pMachine->i_setModified(Machine::IsModified_Capture);
     m->bd.backup();
-
     m->bd->Video.ulHeight = aVideoHeight;
+
+    AutoWriteLock mlock(m->pMachine COMMA_LOCKVAL_SRC_POS);
+    m->pMachine->i_setModified(Machine::IsModified_Capture);
+    mlock.release();
 
     return S_OK;
 }
@@ -593,10 +650,12 @@ HRESULT CaptureScreenSettings::setVideoRate(ULONG aVideoRate)
     if (!i_canChangeSettings())
         return setError(E_INVALIDARG, tr("Cannot change video rate while capturing is enabled"));
 
-    m->pMachine->i_setModified(Machine::IsModified_Capture);
     m->bd.backup();
-
     m->bd->Video.ulRate = aVideoRate;
+
+    AutoWriteLock mlock(m->pMachine COMMA_LOCKVAL_SRC_POS);
+    m->pMachine->i_setModified(Machine::IsModified_Capture);
+    mlock.release();
 
     return S_OK;
 }
@@ -639,10 +698,12 @@ HRESULT CaptureScreenSettings::setVideoFPS(ULONG aVideoFPS)
     if (!i_canChangeSettings())
         return setError(E_INVALIDARG, tr("Cannot change video FPS while capturing is enabled"));
 
-    m->pMachine->i_setModified(Machine::IsModified_Capture);
     m->bd.backup();
-
     m->bd->Video.ulFPS = aVideoFPS;
+
+    AutoWriteLock mlock(m->pMachine COMMA_LOCKVAL_SRC_POS);
+    m->pMachine->i_setModified(Machine::IsModified_Capture);
+    mlock.release();
 
     return S_OK;
 }
@@ -684,7 +745,7 @@ bool CaptureScreenSettings::i_canChangeSettings(void)
 /**
  * Returns the full path to the default video capture file.
  */
-int CaptureScreenSettings::i_getDefaultCaptureFile(Utf8Str &strFile)
+int CaptureScreenSettings::i_getDefaultFileName(Utf8Str &strFile)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -693,5 +754,16 @@ int CaptureScreenSettings::i_getDefaultCaptureFile(Utf8Str &strFile)
     strFile.append(".webm");                        // path/to/machinesfolder/vmname/vmname.webm
 
     return VINF_SUCCESS;
+}
+
+/**
+ * Initializes data, internal version.
+ *
+ * @returns IPRT status code.
+ */
+int CaptureScreenSettings::i_initInternal(void)
+{
+    Assert(m);
+    return i_getDefaultFileName(m->bd->File.strName);
 }
 

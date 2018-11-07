@@ -25,6 +25,7 @@
 namespace settings
 {
     struct CaptureSettings;
+    struct CaptureScreenSettings;
 }
 
 class CaptureScreenSettings;
@@ -53,6 +54,10 @@ public:
     void i_commit();
     void i_copyFrom(CaptureSettings *aThat);
     void i_applyDefaults(void);
+
+private:
+
+    int i_addScreen(uint32_t uScreenId, const settings::CaptureScreenSettings &data);
 
 private:
 

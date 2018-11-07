@@ -179,6 +179,9 @@ public:
     int Create(const settings::CaptureSettings &a_Settings);
     int Destroy(void);
 
+    int Start(void);
+    int Stop(void);
+
     int SendAudioFrame(const void *pvData, size_t cbData, uint64_t uTimestampMs);
     int SendVideoFrame(uint32_t uScreen,
                        uint32_t x, uint32_t y, uint32_t uPixelFormat, uint32_t uBPP,
@@ -195,6 +198,8 @@ public:
 protected:
 
     int createInternal(const settings::CaptureSettings &a_Settings);
+    int startInternal(void);
+    int stopInternal(void);
 
     int destroyInternal(void);
 

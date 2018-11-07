@@ -956,19 +956,11 @@ private:
         CCaptureSettings recordingSettings = machine.GetCaptureSettings();
         /* For now all screens have the same config: */
         CCaptureScreenSettings recordingScreen0Settings = recordingSettings.GetScreenSettings(0);
+        if (recordingScreen0Settings.IsFeatureEnabled(KCaptureFeature_Video))
+            m_eRecordingMode = (UIIndicatorStateRecordingMode)((int)m_eRecordingMode | (int)UIIndicatorStateRecordingMode_Video);
 
-        QStringList strOptionsPairList = recordingScreen0Settings.GetOptions().split(",", QString::SkipEmptyParts);
-
-        for (int i = 0; i < strOptionsPairList.size(); ++i)
-        {
-            if (strOptionsPairList.at(i).contains("vc_enabled", Qt::CaseInsensitive) &&
-                strOptionsPairList.at(i).contains("true", Qt::CaseInsensitive))
-                m_eRecordingMode = (UIIndicatorStateRecordingMode)((int)m_eRecordingMode | (int)UIIndicatorStateRecordingMode_Video);
-
-            if (strOptionsPairList.at(i).contains("ac_enabled", Qt::CaseInsensitive) &&
-                strOptionsPairList.at(i).contains("true", Qt::CaseInsensitive))
-                m_eRecordingMode = (UIIndicatorStateRecordingMode)((int)m_eRecordingMode | (int)UIIndicatorStateRecordingMode_Audio);
-        }
+        if (recordingScreen0Settings.IsFeatureEnabled(KCaptureFeature_Audio))
+            m_eRecordingMode = (UIIndicatorStateRecordingMode)((int)m_eRecordingMode | (int)UIIndicatorStateRecordingMode_Audio);
     }
 
     /** Holds the rotation animation instance. */

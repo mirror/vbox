@@ -2386,11 +2386,12 @@ void CaptureScreenSettings::applyDefaults(void)
      * Set sensible defaults.
      */
 
-    fEnabled            = true;
+    fEnabled            = false;
     enmDest             = CaptureDestination_File;
     ulMaxTimeS          = 0;
     strOptions          = "";
     File.ulMaxSizeMB    = 0;
+    File.strName        = "";
     Video.enmCodec      = CaptureVideoCodec_VP8;
     Video.ulWidth       = 1024;
     Video.ulHeight      = 768;
@@ -2403,8 +2404,6 @@ void CaptureScreenSettings::applyDefaults(void)
 
     featureMap[CaptureFeature_Video] = true;
     featureMap[CaptureFeature_Audio] = false;
-
-    //i_calculateFullPath
 }
 
 /**
@@ -2412,22 +2411,21 @@ void CaptureScreenSettings::applyDefaults(void)
  */
 bool CaptureScreenSettings::areDefaultSettings(void) const
 {
-    const bool fDefault =    fEnabled            == true
-                          && enmDest             == CaptureDestination_File
-                          && ulMaxTimeS          == 0
-                          && strOptions          == ""
-                          && File.ulMaxSizeMB    == 0
-                          && Video.enmCodec      == CaptureVideoCodec_VP8
-                          && Video.ulWidth       == 1024
-                          && Video.ulHeight      == 768
-                          && Video.ulRate        == 512
-                          && Video.ulFPS         == 25
-                          && Audio.enmAudioCodec == CaptureAudioCodec_Opus
-                          && Audio.cBits         == 16
-                          && Audio.cChannels     == 2
-                          && Audio.uHz           == 22050;
-
-    return fDefault;
+    return    fEnabled            == false
+           && enmDest             == CaptureDestination_File
+           && ulMaxTimeS          == 0
+           && strOptions          == ""
+           && File.ulMaxSizeMB    == 0
+           && File.strName        == ""
+           && Video.enmCodec      == CaptureVideoCodec_VP8
+           && Video.ulWidth       == 1024
+           && Video.ulHeight      == 768
+           && Video.ulRate        == 512
+           && Video.ulFPS         == 25
+           && Audio.enmAudioCodec == CaptureAudioCodec_Opus
+           && Audio.cBits         == 16
+           && Audio.cChannels     == 2
+           && Audio.uHz           == 22050;
 }
 
 bool CaptureScreenSettings::isFeatureEnabled(CaptureFeature_T enmFeature) const
@@ -2471,16 +2469,24 @@ CaptureSettings::CaptureSettings()
     applyDefaults();
 }
 
+/**
+ * Applies the default settings.
+ */
 void CaptureSettings::applyDefaults(void)
 {
     fEnabled = false;
 
     mapScreens.clear();
 
-    CaptureScreenSettings screenSettings; /* Apply default settings. */
-    for (uint32_t l = 0; l < SchemaDefs::MaxGuestMonitors; l++)
+    try
     {
-        mapScreens[l] = screenSettings;
+        /* Always add screen 0 to the default configuration. */
+        CaptureScreenSettings screenSettings; /* Apply default settings for screen 0. */
+        mapScreens[0] = screenSettings;
+    }
+    catch (std::bad_alloc &)
+    {
+        AssertFailed();
     }
 }
 
@@ -2489,16 +2495,14 @@ void CaptureSettings::applyDefaults(void)
  */
 bool CaptureSettings::areDefaultSettings() const
 {
+    const bool fDefault =    fEnabled          == false
+                          && mapScreens.size() == 1;
+    if (!fDefault)
+        return false;
+
     CaptureScreenMap::const_iterator itScreen = mapScreens.begin();
-    while (itScreen != mapScreens.end())
-    {
-        if (!itScreen->second.areDefaultSettings())
-            return false;
-
-        ++itScreen;
-    }
-
-    return true;
+    return    itScreen->first == 0
+           && itScreen->second.areDefaultSettings();
 }
 
 /**
@@ -4412,6 +4416,7 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
 
             /* At the moment we only support one capturing configuration, that is, all screens
              * have the same configuration. So load/save to/from screen 0. */
+            Assert(hw.captureSettings.mapScreens.size()); /* At least screen must be present. */
             CaptureScreenSettings &screen0Settings = hw.captureSettings.mapScreens[0];
 
             pelmHwChild->getAttributeValue("maxTime",   screen0Settings.ulMaxTimeS);
@@ -4423,7 +4428,7 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
             pelmHwChild->getAttributeValue("rate",      screen0Settings.Video.ulRate);
             pelmHwChild->getAttributeValue("fps",       screen0Settings.Video.ulFPS);
 
-            for (unsigned i = 0; i < 64; i++)
+            for (unsigned i = 0; i < hw.cMonitors; i++) /* Don't add more settings than we have monitors configured. */
             {
                 if (u64VideoCaptureScreens & RT_BIT_64(i)) /* Screen i enabled? */
                 {
@@ -5838,6 +5843,7 @@ void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
          * have the same configuration. So load/save to/from screen 0. */
         Assert(hw.captureSettings.mapScreens.size());
         const CaptureScreenMap::const_iterator itScreen0Settings = hw.captureSettings.mapScreens.find(0);
+        Assert(itScreen0Settings != hw.captureSettings.mapScreens.end());
 
         if (itScreen0Settings->second.ulMaxTimeS)
             pelmVideoCapture->setAttribute("maxTime",      itScreen0Settings->second.ulMaxTimeS);

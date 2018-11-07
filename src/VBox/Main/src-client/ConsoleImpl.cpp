@@ -5615,10 +5615,10 @@ int Console::i_videoRecEnable(BOOL fEnable, util::AutoWriteLock *pAutoLock)
     Display *pDisplay = i_getDisplay();
     if (pDisplay)
     {
-        const bool fEnabled =    Capture.mpVideoRecCtx
-                              && Capture.mpVideoRecCtx->IsStarted();
+        const bool fIsEnabled =    Capture.mpVideoRecCtx
+                                && Capture.mpVideoRecCtx->IsStarted();
 
-        if (RT_BOOL(fEnable) != fEnabled)
+        if (RT_BOOL(fEnable) != fIsEnabled)
         {
             LogRel(("VideoRec: %s\n", fEnable ? "Enabling" : "Disabling"));
 
@@ -5627,6 +5627,9 @@ int Console::i_videoRecEnable(BOOL fEnable, util::AutoWriteLock *pAutoLock)
             if (fEnable)
             {
                 vrc = i_videoRecCreate();
+                if (RT_SUCCESS(vrc))
+                    vrc = i_videoRecStart();
+
                 if (RT_SUCCESS(vrc))
                 {
 # ifdef VBOX_WITH_AUDIO_VIDEOREC
@@ -6903,7 +6906,7 @@ int Console::i_videoRecGetSettings(settings::CaptureSettings &Settings)
     hrc = pCaptureSettings->COMGETTER(Screens)(ComSafeArrayAsOutParam(paCaptureScreens));
     AssertComRCReturn(hrc, VERR_INVALID_PARAMETER);
 
-    Settings.mapScreens.clear();
+    Settings.applyDefaults();
 
     for (unsigned long i = 0; i < (unsigned long)paCaptureScreens.size(); ++i)
     {
@@ -6933,6 +6936,8 @@ int Console::i_videoRecGetSettings(settings::CaptureSettings &Settings)
         Settings.mapScreens[i] = CaptureScreenSettings;
     }
 
+    Assert(Settings.mapScreens.size() == paCaptureScreens.size());
+
     return VINF_SUCCESS;
 }
 
@@ -6960,6 +6965,15 @@ int Console::i_videoRecCreate(void)
         return rc2;
     }
 
+    settings::CaptureSettings Settings;
+    rc = i_videoRecGetSettings(Settings);
+    if (RT_SUCCESS(rc))
+    {
+        AssertPtr(Capture.mpVideoRecCtx);
+        rc = Capture.mpVideoRecCtx->Create(Settings);
+    }
+
+    LogFlowFuncLeaveRC(rc);
     return rc;
 }
 
@@ -6969,7 +6983,12 @@ int Console::i_videoRecCreate(void)
 void Console::i_videoRecDestroy(void)
 {
     if (Capture.mpVideoRecCtx)
+    {
         delete Capture.mpVideoRecCtx;
+        Capture.mpVideoRecCtx = NULL;
+    }
+
+    LogFlowThisFuncLeave();
 }
 
 /**
@@ -6986,21 +7005,15 @@ int Console::i_videoRecStart(void)
 
     LogRel(("VideoRec: Starting ...\n"));
 
-    settings::CaptureSettings Settings;
-    int rc = i_videoRecGetSettings(Settings);
-    if (RT_SUCCESS(rc))
-    {
-        rc = Capture.mpVideoRecCtx->Create(Settings);
-        if (RT_SUCCESS(rc))
-        {
-            for (unsigned uScreen = 0; uScreen < Capture.mpVideoRecCtx->GetStreamCount(); uScreen++)
-                mDisplay->i_videoRecScreenChanged(uScreen);
-        }
-    }
+    int rc = VINF_SUCCESS;
+
+    for (unsigned uScreen = 0; uScreen < Capture.mpVideoRecCtx->GetStreamCount(); uScreen++)
+        mDisplay->i_videoRecScreenChanged(uScreen);
 
     if (RT_FAILURE(rc))
         LogRel(("VideoRec: Failed to start video recording (%Rrc)\n", rc));
 
+    LogFlowFuncLeaveRC(rc);
     return rc;
 }
 
@@ -7009,9 +7022,8 @@ int Console::i_videoRecStart(void)
  */
 int Console::i_videoRecStop(void)
 {
-    AssertPtrReturn(Capture.mpVideoRecCtx, VERR_WRONG_ORDER);
-
-    if (!Capture.mpVideoRecCtx->IsStarted())
+    if (   !Capture.mpVideoRecCtx
+        || !Capture.mpVideoRecCtx->IsStarted())
         return VINF_SUCCESS;
 
     LogRel(("VideoRec: Stopping ...\n"));
@@ -7019,9 +7031,6 @@ int Console::i_videoRecStop(void)
     const size_t cStreams = Capture.mpVideoRecCtx->GetStreamCount();
     for (unsigned uScreen = 0; uScreen < cStreams; ++uScreen)
         mDisplay->i_videoRecScreenChanged(uScreen);
-
-    delete Capture.mpVideoRecCtx;
-    Capture.mpVideoRecCtx = NULL;
 
     ComPtr<ICaptureSettings> pCaptureSettings;
     HRESULT hrc = mMachine->COMGETTER(CaptureSettings)(pCaptureSettings.asOutParam());
@@ -7031,6 +7040,7 @@ int Console::i_videoRecStop(void)
 
     LogRel(("VideoRec: Stopped\n"));
 
+    LogFlowFuncLeaveRC(VINF_SUCCESS);
     return VINF_SUCCESS;
 }
 #endif /* VBOX_WITH_VIDEOREC */

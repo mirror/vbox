@@ -57,14 +57,16 @@ using namespace com;
 #endif
 
 /**
- * Enumeration for a video recording state.
+ * Enumeration for a recording state.
  */
 enum VIDEORECSTS
 {
     /** Not initialized. */
     VIDEORECSTS_UNINITIALIZED = 0,
-    /** Initialized. */
-    VIDEORECSTS_INITIALIZED   = 1,
+    /** Created. */
+    VIDEORECSTS_CREATED       = 1,
+    /** Started. */
+    VIDEORECSTS_STARTED       = 2,
     /** The usual 32-bit hack. */
     VIDEORECSTS_32BIT_HACK    = 0x7fffffff
 };
@@ -104,10 +106,12 @@ AssertCompileSize(VIDEORECBMPDIBHDR, 40);
 
 
 CaptureContext::CaptureContext(Console *a_pConsole)
-    : pConsole(a_pConsole) { }
+    : pConsole(a_pConsole)
+    , enmState(VIDEORECSTS_UNINITIALIZED) { }
 
 CaptureContext::CaptureContext(Console *a_pConsole, const settings::CaptureSettings &a_Settings)
     : pConsole(a_pConsole)
+    , enmState(VIDEORECSTS_UNINITIALIZED)
 {
     int rc = CaptureContext::createInternal(a_Settings);
     if (RT_FAILURE(rc))
@@ -213,7 +217,7 @@ int CaptureContext::createInternal(const settings::CaptureSettings &a_Settings)
     if (RT_SUCCESS(rc))
     {
         this->tsStartMs = RTTimeMilliTS();
-        this->enmState  = VIDEORECSTS_UNINITIALIZED;
+        this->enmState  = VIDEORECSTS_CREATED;
         this->fStarted  = false;
         this->fShutdown = false;
 
@@ -222,18 +226,6 @@ int CaptureContext::createInternal(const settings::CaptureSettings &a_Settings)
 
         rc = RTSemEventCreate(&this->WaitEvent);
         AssertRCReturn(rc, rc);
-
-        rc = RTThreadCreate(&this->Thread, CaptureContext::threadMain, (void *)this, 0,
-                            RTTHREADTYPE_MAIN_WORKER, RTTHREADFLAGS_WAITABLE, "VideoRec");
-
-        if (RT_SUCCESS(rc)) /* Wait for the thread to start. */
-            rc = RTThreadUserWait(this->Thread, 30 * RT_MS_1SEC /* 30s timeout */);
-
-        if (RT_SUCCESS(rc))
-        {
-            this->enmState = VIDEORECSTS_INITIALIZED;
-            this->fStarted = true;
-        }
     }
 
     if (RT_FAILURE(rc))
@@ -245,6 +237,46 @@ int CaptureContext::createInternal(const settings::CaptureSettings &a_Settings)
     return rc;
 }
 
+int CaptureContext::startInternal(void)
+{
+    if (this->enmState == VIDEORECSTS_STARTED)
+        return VINF_SUCCESS;
+
+    Assert(this->enmState == VIDEORECSTS_CREATED);
+
+    int rc = RTThreadCreate(&this->Thread, CaptureContext::threadMain, (void *)this, 0,
+                            RTTHREADTYPE_MAIN_WORKER, RTTHREADFLAGS_WAITABLE, "VideoRec");
+
+    if (RT_SUCCESS(rc)) /* Wait for the thread to start. */
+        rc = RTThreadUserWait(this->Thread, 30 * RT_MS_1SEC /* 30s timeout */);
+
+    if (RT_SUCCESS(rc))
+    {
+        this->enmState = VIDEORECSTS_STARTED;
+        this->fStarted = true;
+    }
+
+    return rc;
+}
+
+int CaptureContext::stopInternal(void)
+{
+    if (this->enmState != VIDEORECSTS_STARTED)
+        return VINF_SUCCESS;
+
+    LogFunc(("Shutting down thread ...\n"));
+
+    /* Set shutdown indicator. */
+    ASMAtomicWriteBool(&this->fShutdown, true);
+
+    /* Signal the thread and wait for it to shut down. */
+    int rc = threadNotify();
+    if (RT_SUCCESS(rc))
+        rc = RTThreadWait(this->Thread, 30 * 1000 /* 10s timeout */, NULL);
+
+    return rc;
+}
+
 /**
  * Destroys a video recording context.
  */
@@ -252,18 +284,9 @@ int CaptureContext::destroyInternal(void)
 {
     int rc = VINF_SUCCESS;
 
-    if (this->enmState == VIDEORECSTS_INITIALIZED)
+    if (this->enmState == VIDEORECSTS_STARTED)
     {
-        LogFunc(("Shutting down thread ...\n"));
-
-        /* Set shutdown indicator. */
-        ASMAtomicWriteBool(&this->fShutdown, true);
-
-        /* Signal the thread and wait for it to shut down. */
-        rc = threadNotify();
-        if (RT_SUCCESS(rc))
-            rc = RTThreadWait(this->Thread, 30 * 1000 /* 10s timeout */, NULL);
-
+        rc = stopInternal();
         if (RT_SUCCESS(rc))
         {
             /* Disable the context. */
@@ -364,6 +387,16 @@ int CaptureContext::Destroy(void)
     return destroyInternal();
 }
 
+int CaptureContext::Start(void)
+{
+    return startInternal();
+}
+
+int CaptureContext::Stop(void)
+{
+    return stopInternal();
+}
+
 bool CaptureContext::IsFeatureEnabled(CaptureFeature_T enmFeature) const
 {
     VideoRecStreams::const_iterator itStream = this->vecStreams.begin();
@@ -393,7 +426,7 @@ bool CaptureContext::IsReady(uint32_t uScreen, uint64_t uTimeStampMs) const
 {
     RT_NOREF(uTimeStampMs);
 
-    if (this->enmState != VIDEORECSTS_INITIALIZED)
+    if (this->enmState != VIDEORECSTS_STARTED)
         return false;
 
     bool fIsReady = false;

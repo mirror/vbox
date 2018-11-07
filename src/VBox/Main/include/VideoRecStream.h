@@ -129,7 +129,7 @@ public:
 
 protected:
 
-    int open(void);
+    int open(const settings::CaptureScreenSettings &Settings);
     int close(void);
 
     int initInternal(uint32_t uScreen, const settings::CaptureScreenSettings &Settings);

@@ -369,20 +369,21 @@ void UIMachineSettingsDisplay::loadToCacheFrom(QVariant &data)
 #endif
 
     /* Check whether remote display server is valid: */
-    const CVRDEServer &comServer = m_machine.GetVRDEServer();
-    oldDisplayData.m_fRemoteDisplayServerSupported = !comServer.isNull();
-    if (!comServer.isNull())
+    const CVRDEServer &vrdeServer = m_machine.GetVRDEServer();
+    oldDisplayData.m_fRemoteDisplayServerSupported = !vrdeServer.isNull();
+    if (!vrdeServer.isNull())
     {
         /* Gather old 'Remote Display' data: */
-        oldDisplayData.m_fRemoteDisplayServerEnabled = comServer.GetEnabled();
-        oldDisplayData.m_strRemoteDisplayPort = comServer.GetVRDEProperty("TCP/Ports");
-        oldDisplayData.m_remoteDisplayAuthType = comServer.GetAuthType();
-        oldDisplayData.m_uRemoteDisplayTimeout = comServer.GetAuthTimeout();
-        oldDisplayData.m_fRemoteDisplayMultiConnAllowed = comServer.GetAllowMultiConnection();
+        oldDisplayData.m_fRemoteDisplayServerEnabled = vrdeServer.GetEnabled();
+        oldDisplayData.m_strRemoteDisplayPort = vrdeServer.GetVRDEProperty("TCP/Ports");
+        oldDisplayData.m_remoteDisplayAuthType = vrdeServer.GetAuthType();
+        oldDisplayData.m_uRemoteDisplayTimeout = vrdeServer.GetAuthTimeout();
+        oldDisplayData.m_fRemoteDisplayMultiConnAllowed = vrdeServer.GetAllowMultiConnection();
     }
 
     /* Gather old 'Recording' data: */
     CCaptureSettings recordingSettings = m_machine.GetCaptureSettings();
+    Assert(recordingSettings.isNotNull());
     oldDisplayData.m_fRecordingEnabled = recordingSettings.GetEnabled();
 
     /* For now we're using the same settings for all screens; so get settings from screen 0 and work with that. */
@@ -402,8 +403,9 @@ void UIMachineSettingsDisplay::loadToCacheFrom(QVariant &data)
     oldDisplayData.m_vecRecordingScreens.resize(recordingScreenSettingsVector.size());
     for (int iScreenIndex = 0; iScreenIndex < recordingScreenSettingsVector.size(); ++iScreenIndex)
     {
-        CCaptureScreenSettings captureScreenSettings = recordingScreenSettingsVector.at(iScreenIndex);
-        oldDisplayData.m_vecRecordingScreens[iScreenIndex] = captureScreenSettings.GetEnabled();
+        CCaptureScreenSettings recordingScreenSettings = recordingScreenSettingsVector.at(iScreenIndex);
+        if (!recordingScreenSettings.isNull())
+            oldDisplayData.m_vecRecordingScreens[iScreenIndex] = recordingScreenSettings.GetEnabled();
     }
 
     /* Gather other old display data: */
@@ -1509,6 +1511,7 @@ bool UIMachineSettingsDisplay::saveRecordingData()
         const UIDataSettingsMachineDisplay &newDisplayData = m_pCache->data();
 
         CCaptureSettings recordingSettings = m_machine.GetCaptureSettings();
+        Assert(recordingSettings.isNotNull());
 
         /* Save new 'Recording' data for online case: */
         if (isMachineOnline())

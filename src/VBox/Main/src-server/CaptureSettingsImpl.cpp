@@ -43,6 +43,7 @@ struct CaptureSettings::Data
     Machine * const             pMachine;
     ComObjPtr<CaptureSettings>  pPeer;
     CaptureScreenSettingsMap    mapScreenSettings;
+    bool                        fHasMachineLock;
 
     // use the XML settings structure in the members for simplicity
     Backupable<settings::CaptureSettings> bd;
@@ -83,6 +84,7 @@ HRESULT CaptureSettings::init(Machine *aParent)
     unconst(m->pMachine) = aParent;
 
     m->bd.allocate();
+    m->fHasMachineLock = false;
 
     autoInitSpan.setSucceeded();
 
@@ -118,6 +120,7 @@ HRESULT CaptureSettings::init(Machine *aParent, CaptureSettings *that)
 
     m->bd.share(that->m->bd);
     m->mapScreenSettings = that->m->mapScreenSettings;
+    m->fHasMachineLock = false;
 
     autoInitSpan.setSucceeded();
 
@@ -150,6 +153,7 @@ HRESULT CaptureSettings::initCopy(Machine *aParent, CaptureSettings *that)
 
     m->bd.attachCopy(that->m->bd);
     m->mapScreenSettings = that->m->mapScreenSettings;
+    m->fHasMachineLock = false;
 
     autoInitSpan.setSucceeded();
 
@@ -195,10 +199,6 @@ HRESULT CaptureSettings::getEnabled(BOOL *enabled)
 
 HRESULT CaptureSettings::setEnabled(BOOL enable)
 {
-    /* the machine needs to be mutable */
-    AutoMutableStateDependency adep(m->pMachine);
-    if (FAILED(adep.rc())) return adep.rc();
-
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     const bool fEnabled = RT_BOOL(enable);
@@ -215,8 +215,8 @@ HRESULT CaptureSettings::setEnabled(BOOL enable)
         if (FAILED(rc))
         {
             /*
-             * Normally we would do the actual change _after_ i_onVideoCaptureChange() succeeded.
-             * We cannot do this because that function uses Machine::GetVideoCaptureEnabled to
+             * Normally we would do the actual change _after_ i_onCaptureChange() succeeded.
+             * We cannot do this because that function uses CaptureSettings::GetEnabled to
              * determine if it should start or stop capturing. Therefore we need to manually
              * undo change.
              */
@@ -229,9 +229,15 @@ HRESULT CaptureSettings::setEnabled(BOOL enable)
             AutoWriteLock mlock(m->pMachine COMMA_LOCKVAL_SRC_POS);  // mParent is const, needs no locking
             m->pMachine->i_setModified(Machine::IsModified_Capture);
 
+            /* We need to indicate here that we just took the machine lock, as Machine::i_saveSettings() will
+             * call i_commit(), which in turn also wants to lock the machine for writing. */
+            m->fHasMachineLock = true;
+
             /** Save settings if online - @todo why is this required? -- @bugref{6818} */
-            if (Global::IsOnline(adep.machineState()))
-                m->pMachine->i_saveSettings(NULL);
+            if (Global::IsOnline(m->pMachine->i_getMachineState()))
+                rc = m->pMachine->i_saveSettings(NULL);
+
+            m->fHasMachineLock = false;
         }
     }
 
@@ -250,9 +256,12 @@ HRESULT CaptureSettings::getScreens(std::vector<ComPtr<ICaptureScreenSettings> >
     while (itScreenSettings != m->mapScreenSettings.end())
     {
         itScreenSettings->second.queryInterfaceTo(aCaptureScreenSettings[i].asOutParam());
+        Assert(aCaptureScreenSettings[i].isNotNull());
         ++i;
         ++itScreenSettings;
     }
+
+    Assert(aCaptureScreenSettings.size() == m->mapScreenSettings.size());
 
     return S_OK;
 }
@@ -279,6 +288,44 @@ HRESULT CaptureSettings::getScreenSettings(ULONG uScreenId, ComPtr<ICaptureScree
 /////////////////////////////////////////////////////////////////////////////
 
 /**
+ * Adds a screen settings object to the recording settings.
+ *
+ * @returns IPRT status code. VERR_ALREADY_EXISTS if the object in question already exists.
+ * @param   uScreenId           Screen ID to add settings for.
+ * @param   data                Recording screen settings to use for that screen.
+ */
+int CaptureSettings::i_addScreen(uint32_t uScreenId, const settings::CaptureScreenSettings &data)
+{
+    if (m->mapScreenSettings.find(uScreenId) != m->mapScreenSettings.end())
+    {
+        AssertFailed();
+        return VERR_ALREADY_EXISTS;
+    }
+
+    int vrc = VINF_SUCCESS;
+
+    ComObjPtr<CaptureScreenSettings> captureScreenSettings;
+    HRESULT rc = captureScreenSettings.createObject();
+    if (SUCCEEDED(rc))
+    {
+        rc = captureScreenSettings->init(m->pMachine, uScreenId, data);
+        if (SUCCEEDED(rc))
+        {
+            try
+            {
+                m->mapScreenSettings[uScreenId] = captureScreenSettings;
+            }
+            catch (std::bad_alloc &)
+            {
+                vrc = VERR_NO_MEMORY;
+            }
+        }
+    }
+
+    return vrc;
+}
+
+/**
  * Loads settings from the given settings.
  * May be called once right after this object creation.
  *
@@ -300,19 +347,18 @@ HRESULT CaptureSettings::i_loadSettings(const settings::CaptureSettings &data)
     settings::CaptureScreenMap::const_iterator itScreen = data.mapScreens.begin();
     while (itScreen != data.mapScreens.end())
     {
-        ComObjPtr<CaptureScreenSettings> captureScreenSettings;
-        rc = captureScreenSettings.createObject();
-        if (FAILED(rc))
+        int vrc = i_addScreen(itScreen->first /* uScreenId */, itScreen->second /* Settings */);
+        if (RT_FAILURE(vrc))
+        {
+            rc = E_OUTOFMEMORY;
             break;
-
-        rc = captureScreenSettings->init(m->pMachine, itScreen->first /* uScreenId */, itScreen->second /* Settings */);
-        if (FAILED(rc))
-            break;
-
-        m->mapScreenSettings[itScreen->first] = captureScreenSettings;
+        }
 
         ++itScreen;
     }
+
+    if (FAILED(rc))
+        return rc;
 
     ComAssertComRC(rc);
     Assert(m->mapScreenSettings.size() == data.mapScreens.size());
@@ -377,7 +423,9 @@ void CaptureSettings::i_commit()
         if (m->pPeer)
         {
             /* attach new data to the peer and reshare it */
-            AutoWriteLock peerlock(m->pPeer COMMA_LOCKVAL_SRC_POS);
+            AutoWriteLock peerlock(RT_SRC_POS);
+            if (!m->fHasMachineLock)
+                peerlock.attach(m->pPeer);
             m->pPeer->m->bd.attach(m->bd);
         }
     }

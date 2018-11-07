@@ -44,11 +44,16 @@
 CaptureStream::CaptureStream(void)
     : tsStartMs(0)
 {
+    File.pWEBM = NULL;
+    File.hFile = NIL_RTFILE;
 }
 
 CaptureStream::CaptureStream(uint32_t uScreen, const settings::CaptureScreenSettings &Settings)
     : tsStartMs(0)
 {
+    File.pWEBM = NULL;
+    File.hFile = NIL_RTFILE;
+
     int rc2 = initInternal(uScreen, Settings);
     if (RT_FAILURE(rc2))
         throw rc2;
@@ -65,19 +70,20 @@ CaptureStream::~CaptureStream(void)
  *
  * @returns IPRT status code.
  */
-int CaptureStream::open(void)
+int CaptureStream::open(const settings::CaptureScreenSettings &Settings)
 {
-    Assert(ScreenSettings.enmDest == CaptureDestination_None);
+    /* Sanity. */
+    Assert(Settings.enmDest != CaptureDestination_None);
 
     int rc;
 
-    switch (ScreenSettings.enmDest)
+    switch (Settings.enmDest)
     {
         case CaptureDestination_File:
         {
-            Assert(ScreenSettings.File.strName.isNotEmpty());
+            Assert(Settings.File.strName.isNotEmpty());
 
-            char *pszAbsPath = RTPathAbsDup(ScreenSettings.File.strName.c_str());
+            char *pszAbsPath = RTPathAbsDup(Settings.File.strName.c_str());
             AssertPtrReturn(pszAbsPath, VERR_NO_MEMORY);
 
             RTPathStripSuffix(pszAbsPath);
@@ -131,6 +137,16 @@ int CaptureStream::open(void)
 
                     if (RT_SUCCESS(rc))
                         rc = RTFileOpen(&hFile, pszFile, fOpen);
+                }
+
+                try
+                {
+                    Assert(File.pWEBM == NULL);
+                    File.pWEBM = new WebMWriter();
+                }
+                catch (std::bad_alloc &)
+               {
+                    rc = VERR_NO_MEMORY;
                 }
 
                 if (RT_SUCCESS(rc))
@@ -655,7 +671,7 @@ int CaptureStream::initInternal(uint32_t uScreen, const settings::CaptureScreenS
     if (RT_FAILURE(rc))
         return rc;
 
-    rc = open();
+    rc = open(Settings);
     if (RT_FAILURE(rc))
         return rc;
 
@@ -674,6 +690,7 @@ int CaptureStream::initInternal(uint32_t uScreen, const settings::CaptureScreenS
         {
             const char *pszFile = this->ScreenSettings.File.strName.c_str();
 
+            AssertPtr(File.pWEBM);
             rc = File.pWEBM->OpenEx(pszFile, &this->File.hFile,
 #ifdef VBOX_WITH_AUDIO_VIDEOREC
                                       Settings.isFeatureEnabled(CaptureFeature_Audio)
