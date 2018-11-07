@@ -1973,7 +1973,8 @@ QStringList UIExtraDataManagerWindow::knownExtraDataKeys()
            << GUI_Tools_LastItemsSelected
            << GUI_Statusbar
            << GUI_GroupDefinitions << GUI_LastItemSelected
-           << GUI_DetailsPageBoxes << GUI_PreviewUpdate
+           << GUI_Details_Elements
+           << GUI_Details_Elements_Preview_UpdateInterval
            << GUI_SnapshotManager_Details_Expanded
            << GUI_VirtualMediaManager_Details_Expanded
            << GUI_HostNetworkManager_Details_Expanded
@@ -2868,7 +2869,7 @@ void UIExtraDataManager::setSelectorWindowLastItemChosen(const QString &strItemI
 QMap<DetailsElementType, bool> UIExtraDataManager::selectorWindowDetailsElements()
 {
     /* Get corresponding extra-data: */
-    const QStringList data = extraDataStringList(GUI_DetailsPageBoxes);
+    const QStringList data = extraDataStringList(GUI_Details_Elements);
 
     /* Desearialize passed elements: */
     QMap<DetailsElementType, bool> elements;
@@ -2878,11 +2879,11 @@ QMap<DetailsElementType, bool> UIExtraDataManager::selectorWindowDetailsElements
         if (strItem.endsWith("Closed", Qt::CaseInsensitive))
         {
             fOpened = false;
-            strItem.remove("Closed");
+            strItem.remove("Closed", Qt::CaseInsensitive);
         }
-        DetailsElementType type = gpConverter->fromInternalString<DetailsElementType>(strItem);
-        if (type != DetailsElementType_Invalid)
-            elements[type] = fOpened;
+        const DetailsElementType enmType = gpConverter->fromInternalString<DetailsElementType>(strItem);
+        if (enmType != DetailsElementType_Invalid)
+            elements[enmType] = fOpened;
     }
 
     /* Return elements: */
@@ -2895,26 +2896,26 @@ void UIExtraDataManager::setSelectorWindowDetailsElements(const QMap<DetailsElem
     QStringList data;
 
     /* Searialize passed elements: */
-    foreach (DetailsElementType type, elements.keys())
+    foreach (DetailsElementType enmType, elements.keys())
     {
-        QString strValue = gpConverter->toInternalString(type);
-        if (!elements[type])
+        QString strValue = gpConverter->toInternalString(enmType);
+        if (!elements[enmType])
             strValue += "Closed";
         data << strValue;
     }
 
     /* Re-cache corresponding extra-data: */
-    setExtraDataStringList(GUI_DetailsPageBoxes, data);
+    setExtraDataStringList(GUI_Details_Elements, data);
 }
 
 PreviewUpdateIntervalType UIExtraDataManager::selectorWindowPreviewUpdateInterval()
 {
-    return gpConverter->fromInternalString<PreviewUpdateIntervalType>(extraDataString(GUI_PreviewUpdate));
+    return gpConverter->fromInternalString<PreviewUpdateIntervalType>(extraDataString(GUI_Details_Elements_Preview_UpdateInterval));
 }
 
 void UIExtraDataManager::setSelectorWindowPreviewUpdateInterval(PreviewUpdateIntervalType interval)
 {
-    setExtraDataString(GUI_PreviewUpdate, gpConverter->toInternalString(interval));
+    setExtraDataString(GUI_Details_Elements_Preview_UpdateInterval, gpConverter->toInternalString(interval));
 }
 
 bool UIExtraDataManager::snapshotManagerDetailsExpanded()

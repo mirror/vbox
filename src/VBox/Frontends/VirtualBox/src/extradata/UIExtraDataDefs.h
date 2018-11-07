@@ -166,9 +166,15 @@ namespace UIExtraDataDefs
         /** Holds last item chosen in selector-window chooser-pane. */
         SHARED_LIBRARY_STUFF extern const char *GUI_LastItemSelected;
         /** Holds selector-window details-pane' elements. */
+        /// @todo remove GUI_DetailsPageBoxes in 6.2
         SHARED_LIBRARY_STUFF extern const char *GUI_DetailsPageBoxes;
+        /// @todo remove GUI_PreviewUpdate in 6.2
         /** Holds selector-window details-pane' preview update interval. */
         SHARED_LIBRARY_STUFF extern const char *GUI_PreviewUpdate;
+        /** Holds VirtualBox Manager Details-pane elements. */
+        SHARED_LIBRARY_STUFF extern const char *GUI_Details_Elements;
+        /** Holds VirtualBox Manager Details-pane / Preview element update interval. */
+        SHARED_LIBRARY_STUFF extern const char *GUI_Details_Elements_Preview_UpdateInterval;
     /** @} */
 
     /** @name Snapshot Manager

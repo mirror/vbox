@@ -97,6 +97,8 @@ const char *UIExtraDataDefs::GUI_GroupDefinitions = "GUI/GroupDefinitions";
 const char *UIExtraDataDefs::GUI_LastItemSelected = "GUI/LastItemSelected";
 const char *UIExtraDataDefs::GUI_DetailsPageBoxes = "GUI/DetailsPageBoxes";
 const char *UIExtraDataDefs::GUI_PreviewUpdate = "GUI/PreviewUpdate";
+const char *UIExtraDataDefs::GUI_Details_Elements = "GUI/Details/Elements";
+const char *UIExtraDataDefs::GUI_Details_Elements_Preview_UpdateInterval = "GUI/Details/Elements/Preview/UpdateInterval";
 
 /* Snapshot Manager: */
 const char *UIExtraDataDefs::GUI_SnapshotManager_Details_Expanded = "GUI/SnapshotManager/Details/Expanded";
@@ -225,7 +227,8 @@ const char *UIExtraDataDefs::GUI_LogViewerNoFontStyleName = "noFontStyleName";
 QMap<QString, QString> UIExtraDataDefs::prepareObsoleteKeysMap()
 {
     QMap<QString, QString> map;
-    // Define substitutes here..
+    map.insertMulti(GUI_Details_Elements, GUI_DetailsPageBoxes);
+    map.insertMulti(GUI_Details_Elements_Preview_UpdateInterval, GUI_PreviewUpdate);
     return map;
 }
 QMap<QString, QString> UIExtraDataDefs::g_mapOfObsoleteKeys = UIExtraDataDefs::prepareObsoleteKeysMap();
