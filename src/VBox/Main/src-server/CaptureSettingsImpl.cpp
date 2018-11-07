@@ -423,9 +423,7 @@ void CaptureSettings::i_commit()
         if (m->pPeer)
         {
             /* attach new data to the peer and reshare it */
-            AutoWriteLock peerlock(RT_SRC_POS);
-            if (!m->fHasMachineLock)
-                peerlock.attach(m->pPeer);
+            AutoWriteLock peerlock(m->pPeer COMMA_LOCKVAL_SRC_POS);
             m->pPeer->m->bd.attach(m->bd);
         }
     }
