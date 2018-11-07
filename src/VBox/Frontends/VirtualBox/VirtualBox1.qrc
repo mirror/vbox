@@ -243,7 +243,7 @@
         <file alias="file_manager_select_all_disabled_24px.png">images/file_manager_select_all_disabled_24px.png</file>
         <file alias="file_manager_session_16px.png">images/file_manager_session_16px.png</file>
         <file alias="file_manager_session_32px.png">images/file_manager_session_32px.png</file>
-        <file alias="file_manager_session_disable_32px.png">images/file_manager_session_disable_32px.png</file>
+        <file alias="file_manager_session_disabled_32px.png">images/file_manager_session_disabled_32px.png</file>
         <file alias="file_manager_session_disabled_16px.png">images/file_manager_session_disabled_16px.png</file>
         <file alias="file_manager_settings_16px.png">images/file_manager_settings_16px.png</file>
         <file alias="file_manager_settings_32px.png">images/file_manager_settings_32px.png</file>
