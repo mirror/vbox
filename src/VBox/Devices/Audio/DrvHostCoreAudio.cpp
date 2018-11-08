@@ -1372,11 +1372,11 @@ int coreAudioInputQueueProcBuffer(PCOREAUDIOSTREAM pCAStream, AudioQueueBufferRe
         /* Try to acquire the necessary block from the ring buffer. */
         RTCircBufAcquireWriteBlock(pCircBuf, cbLeft, (void **)&pvDst, &cbToWrite);
 
-        if (cbToWrite)
-        {
-            /* Copy the data from our ring buffer to the core audio buffer. */
-            memcpy((UInt8 *)pvDst, pvSrc + cbWritten, cbToWrite);
-        }
+        if (!cbToWrite)
+            break;
+
+        /* Copy the data from our ring buffer to the core audio buffer. */
+        memcpy((UInt8 *)pvDst, pvSrc + cbWritten, cbToWrite);
 
         /* Release the read buffer, so it could be used for new data. */
         RTCircBufReleaseWriteBlock(pCircBuf, cbToWrite);
