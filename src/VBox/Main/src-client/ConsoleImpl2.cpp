@@ -5312,7 +5312,7 @@ int Console::i_configNetwork(const char *pszDevice,
 
 # if defined(RT_OS_DARWIN)
                 /* The name is on the form 'ifX: long name', chop it off at the colon. */
-                char szTrunk[8];
+                char szTrunk[INTNET_MAX_TRUNK_NAME];
                 RTStrCopy(szTrunk, sizeof(szTrunk), pszBridgedIfName);
                 char *pszColon = (char *)memchr(szTrunk, ':', sizeof(szTrunk));
 // Quick fix for @bugref{5633}
