@@ -1516,10 +1516,6 @@
         <source>Add Profile</source>
         <translation type="unfinished"></translation>
     </message>
-    <message>
-        <source>Name:</source>
-        <translation type="unfinished"></translation>
-    </message>
 </context>
 <context>
     <name>UIDetails</name>
@@ -1681,12 +1677,12 @@
     <message>
         <source>Video Capture File</source>
         <comment>details (display/video capture)</comment>
-        <translation type="unfinished">Videooptagelsesfil</translation>
+        <translation type="obsolete">Videooptagelsesfil</translation>
     </message>
     <message>
         <source>Video Capture Attributes</source>
         <comment>details (display/video capture)</comment>
-        <translation type="unfinished">Egenskaber for videooptagelse</translation>
+        <translation type="obsolete">Egenskaber for videooptagelse</translation>
     </message>
     <message>
         <source>Frame Size: %1x%2, Frame Rate: %3fps, Bit Rate: %4kbps</source>
@@ -1695,12 +1691,12 @@
     <message>
         <source>Video Capture</source>
         <comment>details (display/video capture)</comment>
-        <translation type="unfinished">Videooptagelse</translation>
+        <translation type="obsolete">Videooptagelse</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details (display/video capture)</comment>
-        <translation type="unfinished">Deaktiveret</translation>
+        <translation type="obsolete">Deaktiveret</translation>
     </message>
     <message>
         <source>[Optical Drive]</source>
@@ -1901,6 +1897,26 @@
         <source>None</source>
         <comment>details (description)</comment>
         <translation type="unfinished">Ingen</translation>
+    </message>
+    <message>
+        <source>Recording File</source>
+        <comment>details (display/recording)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Recording Attributes</source>
+        <comment>details (display/recording)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Recording</source>
+        <comment>details (display/recording)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>details (display/recording)</comment>
+        <translation type="unfinished">Deaktiveret</translation>
     </message>
 </context>
 <context>
@@ -2399,22 +2415,22 @@
     <message>
         <source>Video Capture File</source>
         <comment>details (display/video capture)</comment>
-        <translation>Videooptagelsesfil</translation>
+        <translation type="vanished">Videooptagelsesfil</translation>
     </message>
     <message>
         <source>Video Capture Attributes</source>
         <comment>details (display/video capture)</comment>
-        <translation>Egenskaber for videooptagelse</translation>
+        <translation type="vanished">Egenskaber for videooptagelse</translation>
     </message>
     <message>
         <source>Video Capture</source>
         <comment>details (display/video capture)</comment>
-        <translation>Videooptagelse</translation>
+        <translation type="vanished">Videooptagelse</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details (display/video capture)</comment>
-        <translation>Deaktiveret</translation>
+        <translation type="vanished">Deaktiveret</translation>
     </message>
     <message>
         <source>NAT Network, &apos;%1&apos;</source>
@@ -2584,6 +2600,26 @@
         <source>Settings File Location</source>
         <comment>details (general)</comment>
         <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Recording File</source>
+        <comment>details (display/recording)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Recording Attributes</source>
+        <comment>details (display/recording)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Recording</source>
+        <comment>details (display/recording)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>details (display/recording)</comment>
+        <translation type="unfinished">Deaktiveret</translation>
     </message>
 </context>
 <context>

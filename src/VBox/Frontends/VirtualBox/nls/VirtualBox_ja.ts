@@ -2268,10 +2268,6 @@
         <source>Add Profile</source>
         <translation type="unfinished"></translation>
     </message>
-    <message>
-        <source>Name:</source>
-        <translation type="unfinished"></translation>
-    </message>
 </context>
 <context>
     <name>UIDescriptionPagePrivate</name>
@@ -2448,12 +2444,12 @@
     <message>
         <source>Video Capture File</source>
         <comment>details (display/video capture)</comment>
-        <translation type="unfinished">ビデオキャプチャーしたファイル</translation>
+        <translation type="obsolete">ビデオキャプチャーしたファイル</translation>
     </message>
     <message>
         <source>Video Capture Attributes</source>
         <comment>details (display/video capture)</comment>
-        <translation type="unfinished">ビデオキャプチャーの属性</translation>
+        <translation type="obsolete">ビデオキャプチャーの属性</translation>
     </message>
     <message>
         <source>Frame Size: %1x%2, Frame Rate: %3fps, Bit Rate: %4kbps</source>
@@ -2462,12 +2458,12 @@
     <message>
         <source>Video Capture</source>
         <comment>details (display/video capture)</comment>
-        <translation type="unfinished">ビデオキャプチャー</translation>
+        <translation type="obsolete">ビデオキャプチャー</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details (display/video capture)</comment>
-        <translation type="unfinished">無効</translation>
+        <translation type="obsolete">無効</translation>
     </message>
     <message>
         <source>[Optical Drive]</source>
@@ -2668,6 +2664,26 @@
         <source>None</source>
         <comment>details (description)</comment>
         <translation type="unfinished">なし</translation>
+    </message>
+    <message>
+        <source>Recording File</source>
+        <comment>details (display/recording)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Recording Attributes</source>
+        <comment>details (display/recording)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Recording</source>
+        <comment>details (display/recording)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>details (display/recording)</comment>
+        <translation type="unfinished">無効</translation>
     </message>
 </context>
 <context>
@@ -4242,12 +4258,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Video Capture File</source>
         <comment>details (display/video capture)</comment>
-        <translation>ビデオキャプチャーしたファイル</translation>
+        <translation type="vanished">ビデオキャプチャーしたファイル</translation>
     </message>
     <message>
         <source>Video Capture Attributes</source>
         <comment>details (display/video capture)</comment>
-        <translation>ビデオキャプチャーの属性</translation>
+        <translation type="vanished">ビデオキャプチャーの属性</translation>
     </message>
     <message>
         <source>Frame Size: %1x%2, Frame Rate: %3fps, Bit Rate: %4kbps</source>
@@ -4256,12 +4272,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Video Capture</source>
         <comment>details (display/video capture)</comment>
-        <translation>ビデオキャプチャー</translation>
+        <translation type="vanished">ビデオキャプチャー</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details (display/video capture)</comment>
-        <translation>無効</translation>
+        <translation type="vanished">無効</translation>
     </message>
     <message>
         <source>Not Attached</source>
@@ -4537,6 +4553,26 @@ p, li { white-space: pre-wrap; }
         <source>Settings File Location</source>
         <comment>details (general)</comment>
         <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Recording File</source>
+        <comment>details (display/recording)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Recording Attributes</source>
+        <comment>details (display/recording)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Recording</source>
+        <comment>details (display/recording)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>details (display/recording)</comment>
+        <translation type="unfinished">無効</translation>
     </message>
 </context>
 <context>

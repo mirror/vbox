@@ -1909,10 +1909,6 @@
         <source>Add Profile</source>
         <translation type="unfinished"></translation>
     </message>
-    <message>
-        <source>Name:</source>
-        <translation type="unfinished"></translation>
-    </message>
 </context>
 <context>
     <name>UIDescriptionPagePrivate</name>
@@ -2089,12 +2085,12 @@
     <message>
         <source>Video Capture File</source>
         <comment>details (display/video capture)</comment>
-        <translation type="unfinished">Plik przechwytywanego obrazu</translation>
+        <translation type="obsolete">Plik przechwytywanego obrazu</translation>
     </message>
     <message>
         <source>Video Capture Attributes</source>
         <comment>details (display/video capture)</comment>
-        <translation type="unfinished">Parametry przechwytywanego obrazu</translation>
+        <translation type="obsolete">Parametry przechwytywanego obrazu</translation>
     </message>
     <message>
         <source>Frame Size: %1x%2, Frame Rate: %3fps, Bit Rate: %4kbps</source>
@@ -2103,12 +2099,7 @@
     <message>
         <source>Video Capture</source>
         <comment>details (display/video capture)</comment>
-        <translation type="unfinished">Przechwytywanie obrazu</translation>
-    </message>
-    <message>
-        <source>Disabled</source>
-        <comment>details (display/video capture)</comment>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Przechwytywanie obrazu</translation>
     </message>
     <message>
         <source>[Optical Drive]</source>
@@ -2309,6 +2300,26 @@
         <source>None</source>
         <comment>details (description)</comment>
         <translation type="unfinished">Brak</translation>
+    </message>
+    <message>
+        <source>Recording File</source>
+        <comment>details (display/recording)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Recording Attributes</source>
+        <comment>details (display/recording)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Recording</source>
+        <comment>details (display/recording)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>details (display/recording)</comment>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -3774,22 +3785,22 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Video Capture File</source>
         <comment>details (display/video capture)</comment>
-        <translation>Plik przechwytywanego obrazu</translation>
+        <translation type="vanished">Plik przechwytywanego obrazu</translation>
     </message>
     <message>
         <source>Video Capture Attributes</source>
         <comment>details (display/video capture)</comment>
-        <translation>Parametry przechwytywanego obrazu</translation>
+        <translation type="vanished">Parametry przechwytywanego obrazu</translation>
     </message>
     <message>
         <source>Video Capture</source>
         <comment>details (display/video capture)</comment>
-        <translation>Przechwytywanie obrazu</translation>
+        <translation type="vanished">Przechwytywanie obrazu</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details (display/video capture)</comment>
-        <translation>Wyłączone</translation>
+        <translation type="vanished">Wyłączone</translation>
     </message>
     <message>
         <source>NAT Network, &apos;%1&apos;</source>
@@ -3953,6 +3964,26 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Settings File Location</source>
         <comment>details (general)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Recording File</source>
+        <comment>details (display/recording)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Recording Attributes</source>
+        <comment>details (display/recording)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Recording</source>
+        <comment>details (display/recording)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>details (display/recording)</comment>
         <translation type="unfinished"></translation>
     </message>
 </context>

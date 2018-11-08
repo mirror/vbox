@@ -1468,10 +1468,6 @@
         <source>Add Profile</source>
         <translation type="unfinished"></translation>
     </message>
-    <message>
-        <source>Name:</source>
-        <translation type="unfinished"></translation>
-    </message>
 </context>
 <context>
     <name>UIDetails</name>
@@ -1633,12 +1629,12 @@
     <message>
         <source>Video Capture File</source>
         <comment>details (display/video capture)</comment>
-        <translation type="unfinished">ไฟล์สำหรับการจับภาพวิดีโอ</translation>
+        <translation type="obsolete">ไฟล์สำหรับการจับภาพวิดีโอ</translation>
     </message>
     <message>
         <source>Video Capture Attributes</source>
         <comment>details (display/video capture)</comment>
-        <translation type="unfinished">ลักษณะเฉพาะของการจับภาพวิดีโอ</translation>
+        <translation type="obsolete">ลักษณะเฉพาะของการจับภาพวิดีโอ</translation>
     </message>
     <message>
         <source>Frame Size: %1x%2, Frame Rate: %3fps, Bit Rate: %4kbps</source>
@@ -1647,12 +1643,12 @@
     <message>
         <source>Video Capture</source>
         <comment>details (display/video capture)</comment>
-        <translation type="unfinished">การจับภาพวิดีโอ</translation>
+        <translation type="obsolete">การจับภาพวิดีโอ</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details (display/video capture)</comment>
-        <translation type="unfinished">ไม่ใช้</translation>
+        <translation type="obsolete">ไม่ใช้</translation>
     </message>
     <message>
         <source>[Optical Drive]</source>
@@ -1853,6 +1849,26 @@
         <source>None</source>
         <comment>details (description)</comment>
         <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Recording File</source>
+        <comment>details (display/recording)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Recording Attributes</source>
+        <comment>details (display/recording)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Recording</source>
+        <comment>details (display/recording)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>details (display/recording)</comment>
+        <translation type="unfinished">ไม่ใช้</translation>
     </message>
 </context>
 <context>
@@ -2323,22 +2339,22 @@
     <message>
         <source>Video Capture File</source>
         <comment>details (display/video capture)</comment>
-        <translation>ไฟล์สำหรับการจับภาพวิดีโอ</translation>
+        <translation type="vanished">ไฟล์สำหรับการจับภาพวิดีโอ</translation>
     </message>
     <message>
         <source>Video Capture Attributes</source>
         <comment>details (display/video capture)</comment>
-        <translation>ลักษณะเฉพาะของการจับภาพวิดีโอ</translation>
+        <translation type="vanished">ลักษณะเฉพาะของการจับภาพวิดีโอ</translation>
     </message>
     <message>
         <source>Video Capture</source>
         <comment>details (display/video capture)</comment>
-        <translation>การจับภาพวิดีโอ</translation>
+        <translation type="vanished">การจับภาพวิดีโอ</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details (display/video capture)</comment>
-        <translation>ไม่ใช้</translation>
+        <translation type="vanished">ไม่ใช้</translation>
     </message>
     <message>
         <source>NAT Network, &apos;%1&apos;</source>
@@ -2508,6 +2524,26 @@
         <source>Settings File Location</source>
         <comment>details (general)</comment>
         <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Recording File</source>
+        <comment>details (display/recording)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Recording Attributes</source>
+        <comment>details (display/recording)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Recording</source>
+        <comment>details (display/recording)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>details (display/recording)</comment>
+        <translation type="unfinished">ไม่ใช้</translation>
     </message>
 </context>
 <context>
