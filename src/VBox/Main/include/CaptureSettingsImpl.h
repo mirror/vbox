@@ -55,9 +55,20 @@ public:
     void i_copyFrom(CaptureSettings *aThat);
     void i_applyDefaults(void);
 
+    int i_getDefaultFileName(Utf8Str &strFile);
+    bool i_canChangeSettings(void);
+    void i_onSettingsChanged(void);
+
 private:
 
-    int i_addScreen(uint32_t uScreenId, const settings::CaptureScreenSettings &data);
+    /** Map of screen settings objects. The key specifies the screen ID. */
+    typedef std::map <uint32_t, ComObjPtr<CaptureScreenSettings> > CaptureScreenSettingsMap;
+
+    void i_reset(void);
+    int i_syncToMachineDisplays(void);
+    int i_createScreenObj(CaptureScreenSettingsMap &screenSettingsMap, uint32_t uScreenId, const settings::CaptureScreenSettings &data);
+    int i_destroyScreenObj(CaptureScreenSettingsMap &screenSettingsMap, uint32_t uScreenId);
+    int i_destroyAllScreenObj(CaptureScreenSettingsMap &screenSettingsMap);
 
 private:
 
@@ -70,9 +81,6 @@ private:
     HRESULT getScreenSettings(ULONG uScreenId, ComPtr<ICaptureScreenSettings> &aCaptureScreenSettings);
 
 private:
-
-    /** Map of screen settings objects. The key specifies the screen ID. */
-    typedef std::map <uint32_t, ComObjPtr<CaptureScreenSettings> > CaptureScreenSettingsMap;
 
     struct Data;
     Data *m;

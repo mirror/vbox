@@ -16,6 +16,9 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#define LOG_GROUP LOG_GROUP_MAIN_CAPTURESETTINGS
+#include "LoggingNew.h"
+
 #include "CaptureSettingsImpl.h"
 #include "CaptureScreenSettingsImpl.h"
 #include "MachineImpl.h"
@@ -26,7 +29,6 @@
 #include "AutoStateDep.h"
 #include "AutoCaller.h"
 #include "Global.h"
-#include "Logging.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 //
@@ -42,7 +44,7 @@ struct CaptureSettings::Data
 
     Machine * const             pMachine;
     ComObjPtr<CaptureSettings>  pPeer;
-    CaptureScreenSettingsMap    mapScreenSettings;
+    CaptureScreenSettingsMap    mapScreenObj;
     bool                        fHasMachineLock;
 
     // use the XML settings structure in the members for simplicity
@@ -119,7 +121,7 @@ HRESULT CaptureSettings::init(Machine *aParent, CaptureSettings *that)
     AutoWriteLock thatlock(that COMMA_LOCKVAL_SRC_POS);
 
     m->bd.share(that->m->bd);
-    m->mapScreenSettings = that->m->mapScreenSettings;
+    m->mapScreenObj = that->m->mapScreenObj;
     m->fHasMachineLock = false;
 
     autoInitSpan.setSucceeded();
@@ -152,7 +154,7 @@ HRESULT CaptureSettings::initCopy(Machine *aParent, CaptureSettings *that)
     AutoWriteLock thatlock(that COMMA_LOCKVAL_SRC_POS);
 
     m->bd.attachCopy(that->m->bd);
-    m->mapScreenSettings = that->m->mapScreenSettings;
+    m->mapScreenObj = that->m->mapScreenObj;
     m->fHasMachineLock = false;
 
     autoInitSpan.setSucceeded();
@@ -173,6 +175,9 @@ void CaptureSettings::uninit()
     AutoUninitSpan autoUninitSpan(this);
     if (autoUninitSpan.uninitDone())
         return;
+
+    /* Note: Do *not* call i_reset() here, as the shared recording configuration
+     *       otherwise gets destructed when this object goes out of scope or is destroyed. */
 
     m->bd.free();
 
@@ -199,6 +204,8 @@ HRESULT CaptureSettings::getEnabled(BOOL *enabled)
 
 HRESULT CaptureSettings::setEnabled(BOOL enable)
 {
+    LogFlowThisFuncEnter();
+
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     const bool fEnabled = RT_BOOL(enable);
@@ -222,7 +229,6 @@ HRESULT CaptureSettings::setEnabled(BOOL enable)
              */
             alock.acquire();
             m->bd->fEnabled = m->bd.backedUpData()->fEnabled;
-            return rc;
         }
         else
         {
@@ -246,14 +252,18 @@ HRESULT CaptureSettings::setEnabled(BOOL enable)
 
 HRESULT CaptureSettings::getScreens(std::vector<ComPtr<ICaptureScreenSettings> > &aCaptureScreenSettings)
 {
+    LogFlowThisFuncEnter();
+
+    i_syncToMachineDisplays();
+
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     aCaptureScreenSettings.clear();
-    aCaptureScreenSettings.resize(m->mapScreenSettings.size());
+    aCaptureScreenSettings.resize(m->mapScreenObj.size());
 
-    CaptureScreenSettingsMap::const_iterator itScreenSettings = m->mapScreenSettings.begin();
+    CaptureScreenSettingsMap::const_iterator itScreenSettings = m->mapScreenObj.begin();
     size_t i = 0;
-    while (itScreenSettings != m->mapScreenSettings.end())
+    while (itScreenSettings != m->mapScreenObj.end())
     {
         itScreenSettings->second.queryInterfaceTo(aCaptureScreenSettings[i].asOutParam());
         Assert(aCaptureScreenSettings[i].isNotNull());
@@ -261,18 +271,24 @@ HRESULT CaptureSettings::getScreens(std::vector<ComPtr<ICaptureScreenSettings> >
         ++itScreenSettings;
     }
 
-    Assert(aCaptureScreenSettings.size() == m->mapScreenSettings.size());
+    Assert(aCaptureScreenSettings.size() == m->mapScreenObj.size());
 
     return S_OK;
 }
 
 HRESULT CaptureSettings::getScreenSettings(ULONG uScreenId, ComPtr<ICaptureScreenSettings> &aCaptureScreenSettings)
 {
-    if (uScreenId + 1 > m->mapScreenSettings.size())
+    LogFlowThisFuncEnter();
+
+    i_syncToMachineDisplays();
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    if (uScreenId + 1 > m->mapScreenObj.size())
         return setError(E_INVALIDARG, tr("Invalid screen ID specified"));
 
-    CaptureScreenSettingsMap::const_iterator itScreenSettings = m->mapScreenSettings.find(uScreenId);
-    if (itScreenSettings != m->mapScreenSettings.end())
+    CaptureScreenSettingsMap::const_iterator itScreenSettings = m->mapScreenObj.find(uScreenId);
+    if (itScreenSettings != m->mapScreenObj.end())
     {
         itScreenSettings->second.queryInterfaceTo(aCaptureScreenSettings.asOutParam());
         return S_OK;
@@ -288,15 +304,19 @@ HRESULT CaptureSettings::getScreenSettings(ULONG uScreenId, ComPtr<ICaptureScree
 /////////////////////////////////////////////////////////////////////////////
 
 /**
- * Adds a screen settings object to the recording settings.
+ * Adds a screen settings object to a particular map.
  *
  * @returns IPRT status code. VERR_ALREADY_EXISTS if the object in question already exists.
+ * @param   screenSettingsMap   Map to add screen settings to.
  * @param   uScreenId           Screen ID to add settings for.
  * @param   data                Recording screen settings to use for that screen.
  */
-int CaptureSettings::i_addScreen(uint32_t uScreenId, const settings::CaptureScreenSettings &data)
+int CaptureSettings::i_createScreenObj(CaptureScreenSettingsMap &screenSettingsMap,
+                                       uint32_t uScreenId, const settings::CaptureScreenSettings &data)
 {
-    if (m->mapScreenSettings.find(uScreenId) != m->mapScreenSettings.end())
+    LogFlowThisFunc(("Screen %RU32\n", uScreenId));
+
+    if (screenSettingsMap.find(uScreenId) != screenSettingsMap.end())
     {
         AssertFailed();
         return VERR_ALREADY_EXISTS;
@@ -308,12 +328,12 @@ int CaptureSettings::i_addScreen(uint32_t uScreenId, const settings::CaptureScre
     HRESULT rc = captureScreenSettings.createObject();
     if (SUCCEEDED(rc))
     {
-        rc = captureScreenSettings->init(m->pMachine, uScreenId, data);
+        rc = captureScreenSettings->init(this, uScreenId, data);
         if (SUCCEEDED(rc))
         {
             try
             {
-                m->mapScreenSettings[uScreenId] = captureScreenSettings;
+                screenSettingsMap[uScreenId] = captureScreenSettings;
             }
             catch (std::bad_alloc &)
             {
@@ -326,6 +346,64 @@ int CaptureSettings::i_addScreen(uint32_t uScreenId, const settings::CaptureScre
 }
 
 /**
+ * Removes a screen settings object from a particular map.
+ *
+ * @returns IPRT status code. VERR_NOT_FOUND if specified screen was not found.
+ * @param   screenSettingsMap   Map to remove screen settings from.
+ * @param   uScreenId           ID of screen to remove.
+ */
+int CaptureSettings::i_destroyScreenObj(CaptureScreenSettingsMap &screenSettingsMap, uint32_t uScreenId)
+{
+    LogFlowThisFunc(("Screen %RU32\n", uScreenId));
+
+    AssertReturn(uScreenId > 0, VERR_INVALID_PARAMETER); /* Removing screen 0 isn't a good idea. */
+
+    CaptureScreenSettingsMap::iterator itScreen = screenSettingsMap.find(uScreenId);
+    if (itScreen == screenSettingsMap.end())
+    {
+        AssertFailed();
+        return VERR_NOT_FOUND;
+    }
+
+    /* Make sure to consume the pointer before the one of the
+     * iterator gets released. */
+    ComObjPtr<CaptureScreenSettings> pScreenSettings = itScreen->second;
+
+    screenSettingsMap.erase(itScreen);
+
+    pScreenSettings.setNull();
+
+    return VINF_SUCCESS;
+}
+
+/**
+ * Destroys all screen settings objects of a particular map.
+ *
+ * @returns IPRT status code.
+ * @param   screenSettingsMap   Map to destroy screen settings objects for.
+ */
+int CaptureSettings::i_destroyAllScreenObj(CaptureScreenSettingsMap &screenSettingsMap)
+{
+    LogFlowThisFuncEnter();
+
+    CaptureScreenSettingsMap::const_iterator itScreen = screenSettingsMap.begin();
+    if (itScreen != screenSettingsMap.end())
+    {
+        /* Make sure to consume the pointer before the one of the
+         * iterator gets released. */
+        ComObjPtr<CaptureScreenSettings> pScreenSettings = itScreen->second;
+
+        screenSettingsMap.erase(itScreen);
+
+        pScreenSettings.setNull();
+
+        itScreen = screenSettingsMap.begin();
+    }
+
+    return VINF_SUCCESS;
+}
+
+/**
  * Loads settings from the given settings.
  * May be called once right after this object creation.
  *
@@ -335,6 +413,8 @@ int CaptureSettings::i_addScreen(uint32_t uScreenId, const settings::CaptureScre
  */
 HRESULT CaptureSettings::i_loadSettings(const settings::CaptureSettings &data)
 {
+    LogFlowThisFuncEnter();
+
     AutoCaller autoCaller(this);
     AssertComRCReturnRC(autoCaller.rc());
 
@@ -342,12 +422,15 @@ HRESULT CaptureSettings::i_loadSettings(const settings::CaptureSettings &data)
 
     HRESULT rc = S_OK;
 
-    m->mapScreenSettings.clear();
+    i_reset();
+
+    LogFlowThisFunc(("Data has %zu screens\n", data.mapScreens.size()));
 
     settings::CaptureScreenMap::const_iterator itScreen = data.mapScreens.begin();
     while (itScreen != data.mapScreens.end())
     {
-        int vrc = i_addScreen(itScreen->first /* uScreenId */, itScreen->second /* Settings */);
+        int vrc = i_createScreenObj(m->mapScreenObj,
+                                    itScreen->first /* uScreenId */, itScreen->second /* Settings */);
         if (RT_FAILURE(vrc))
         {
             rc = E_OUTOFMEMORY;
@@ -361,12 +444,24 @@ HRESULT CaptureSettings::i_loadSettings(const settings::CaptureSettings &data)
         return rc;
 
     ComAssertComRC(rc);
-    Assert(m->mapScreenSettings.size() == data.mapScreens.size());
+    Assert(m->mapScreenObj.size() == data.mapScreens.size());
 
     // simply copy
     m->bd.assignCopy(&data);
 
+    LogFlowThisFunc(("Returning %Rhrc\n", rc));
     return rc;
+}
+
+/**
+ * Resets the internal object state by destroying all screen settings objects.
+ */
+void CaptureSettings::i_reset(void)
+{
+    LogFlowThisFuncEnter();
+
+    i_destroyAllScreenObj(m->mapScreenObj);
+    m->bd->mapScreens.clear();
 }
 
 /**
@@ -378,8 +473,13 @@ HRESULT CaptureSettings::i_loadSettings(const settings::CaptureSettings &data)
  */
 HRESULT CaptureSettings::i_saveSettings(settings::CaptureSettings &data)
 {
+    LogFlowThisFuncEnter();
+
     AutoCaller autoCaller(this);
     AssertComRCReturnRC(autoCaller.rc());
+
+    int rc2 = i_syncToMachineDisplays();
+    AssertRC(rc2);
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -394,6 +494,7 @@ HRESULT CaptureSettings::i_saveSettings(settings::CaptureSettings &data)
         ++itScreen;
     }
 
+    LogFlowThisFuncLeave();
     return S_OK;
 }
 
@@ -459,5 +560,102 @@ void CaptureSettings::i_applyDefaults(void)
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     /* Initialize default capturing settings here. */
+}
+
+/**
+ * Returns the full path to the default video capture file.
+ */
+int CaptureSettings::i_getDefaultFileName(Utf8Str &strFile)
+{
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    strFile = m->pMachine->i_getSettingsFileFull(); // path/to/machinesfolder/vmname/vmname.vbox
+    strFile.stripSuffix();                          // path/to/machinesfolder/vmname/vmname
+    strFile.append(".webm");                        // path/to/machinesfolder/vmname/vmname.webm
+
+    return VINF_SUCCESS;
+}
+
+/**
+ * Determines whether the recording settings currently can be changed or not.
+ *
+ * @returns \c true if the settings can be changed, \c false if not.
+ */
+bool CaptureSettings::i_canChangeSettings(void)
+{
+    AutoAnyStateDependency adep(m->pMachine);
+    if (FAILED(adep.rc()))
+        return false;
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    /* Only allow settings to be changed when recording is disabled. */
+    return m->bd->fEnabled == false;
+}
+
+/**
+ * Gets called when the machine object needs to know that the recording settings
+ * have been changed.
+ */
+void CaptureSettings::i_onSettingsChanged(void)
+{
+    LogFlowThisFuncEnter();
+
+    AutoWriteLock mlock(m->pMachine COMMA_LOCKVAL_SRC_POS);
+    m->pMachine->i_setModified(Machine::IsModified_Capture);
+    mlock.release();
+
+    LogFlowThisFuncLeave();
+}
+
+/**
+ * Synchronizes the screen settings (COM) objects and configuration data
+ * to the number of the machine's configured displays.
+ */
+int CaptureSettings::i_syncToMachineDisplays(void)
+{
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    AssertPtr(m->pMachine);
+    const ULONG cMonitors = m->pMachine->i_getMonitorCount();
+
+    LogFlowThisFunc(("cMonitors=%RU32\n", cMonitors));
+    LogFlowThisFunc(("Data screen count = %zu, COM object count = %zu\n", m->bd->mapScreens.size(), m->mapScreenObj.size()));
+
+    /* If counts match, take a shortcut. */
+    if (cMonitors == m->mapScreenObj.size())
+        return VINF_SUCCESS;
+
+    /* Create all new screen settings objects which are not there yet. */
+    for (ULONG i = 0; i < cMonitors; i++)
+    {
+        if (m->mapScreenObj.find(i) == m->mapScreenObj.end())
+        {
+            settings::CaptureScreenMap::const_iterator itScreen = m->bd->mapScreens.find(i);
+            if (itScreen == m->bd->mapScreens.end())
+            {
+                settings::CaptureScreenSettings defaultScreenSettings; /* Apply default settings. */
+                m->bd->mapScreens[i] = defaultScreenSettings;
+            }
+
+            int vrc2 = i_createScreenObj(m->mapScreenObj, i /* Screen ID */, m->bd->mapScreens[i]);
+            AssertRC(vrc2);
+        }
+    }
+
+    /* Remove all left over screen settings objects which are not needed anymore. */
+    const ULONG cSettings = (ULONG)m->mapScreenObj.size();
+    for (ULONG i = cMonitors; i < cSettings; i++)
+    {
+        m->bd->mapScreens.erase(i);
+        int vrc2 = i_destroyScreenObj(m->mapScreenObj, i /* Screen ID */);
+        AssertRC(vrc2);
+    }
+
+    Assert(m->mapScreenObj.size() == cMonitors);
+    Assert(m->bd->mapScreens.size() == cMonitors);
+
+    LogFlowThisFuncLeave();
+    return VINF_SUCCESS;
 }
 

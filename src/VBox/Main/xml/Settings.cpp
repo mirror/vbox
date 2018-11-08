@@ -4431,11 +4431,11 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
 
             for (unsigned i = 0; i < hw.cMonitors; i++) /* Don't add more settings than we have monitors configured. */
             {
+                /* Add screen i to config in any case. */
+                hw.captureSettings.mapScreens[i] = screen0Settings;
+
                 if (u64VideoCaptureScreens & RT_BIT_64(i)) /* Screen i enabled? */
-                {
-                    hw.captureSettings.mapScreens[i] = screen0Settings;
                     hw.captureSettings.mapScreens[i].fEnabled = true;
-                }
             }
         }
         else if (pelmHwChild->nameEquals("RemoteDisplay"))
