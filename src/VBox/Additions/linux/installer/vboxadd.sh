@@ -269,6 +269,20 @@ start()
     rm -f /etc/ld.so.conf.d/00vboxvideo.conf
     rm -Rf /var/lib/VBoxGuestAdditions/lib
     if /usr/bin/VBoxClient --check3d 2>/dev/null; then
+        setup_gl=true;
+    else
+        unset setup_gl
+    fi
+    # Disable 3D if Xwayland is found, except on Ubuntu 18.04.
+    if type Xwayland >/dev/null 2>&1; then
+        unset PRETTY_NAME
+        . /etc/os-release 2>/dev/null
+        case "${PRETTY_NAME}" in
+            "Ubuntu 18.04"*) ;;
+            *) unset setup_gl ;;
+        esac
+    fi
+    if test -n "${setup_gl}"; then
         mkdir -p /var/lib/VBoxGuestAdditions/lib
         ln -sf "${INSTALL_DIR}/lib/VBoxOGL.so" /var/lib/VBoxGuestAdditions/lib/libGL.so.1
         # SELinux for the OpenGL libraries, so that gdm can load them during the
