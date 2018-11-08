@@ -723,14 +723,14 @@ void UISession::sltVRDEChange()
 
 void UISession::sltRecordingChange()
 {
-    CCaptureSettings captureSettings = machine().GetCaptureSettings();
+    CCaptureSettings comRecordingSettings = machine().GetCaptureSettings();
 
     /* Check/Uncheck Capture action depending on feature status: */
     actionPool()->action(UIActionIndexRT_M_View_M_Recording_T_Start)->blockSignals(true);
-    actionPool()->action(UIActionIndexRT_M_View_M_Recording_T_Start)->setChecked(captureSettings.GetEnabled());
+    actionPool()->action(UIActionIndexRT_M_View_M_Recording_T_Start)->setChecked(comRecordingSettings.GetEnabled());
     actionPool()->action(UIActionIndexRT_M_View_M_Recording_T_Start)->blockSignals(false);
 
-    /* Notify listeners about Capture change: */
+    /* Notify listeners about Recording change: */
     emit sigRecordingChange();
 }
 

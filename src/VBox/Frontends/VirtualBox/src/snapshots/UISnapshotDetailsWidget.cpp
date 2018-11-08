@@ -1376,17 +1376,17 @@ QString UISnapshotDetailsWidget::detailsReport(DetailsElementType enmType,
             if (!aRecordingReport.isEmpty())
             {
                 ++iRowCount;
-                strItem += QString(sSectionItemTpl2).arg(QApplication::translate("UIGDetails", "Recording File", "details (display/video capture)"),
+                strItem += QString(sSectionItemTpl2).arg(QApplication::translate("UIGDetails", "Recording File", "details (display/recording)"),
                                                          empReport(aRecordingReport.value(0), aRecordingReportOld.value(0)));
                 ++iRowCount;
-                strItem += QString(sSectionItemTpl2).arg(QApplication::translate("UIGDetails", "Recording Attributes", "details (display/video capture)"),
+                strItem += QString(sSectionItemTpl2).arg(QApplication::translate("UIGDetails", "Recording Attributes", "details (display/recording)"),
                                                          empReport(aRecordingReport.value(1), aRecordingReportOld.value(1)));
             }
             else
             {
                 ++iRowCount;
-                strItem += QString(sSectionItemTpl2).arg(QApplication::translate("UIGDetails", "Recording", "details (display/video capture)"),
-                                                         empReport(QApplication::translate("UIGDetails", "Disabled", "details (display/video capture)"), aRecordingReportOld.isEmpty()));
+                strItem += QString(sSectionItemTpl2).arg(QApplication::translate("UIGDetails", "Recording", "details (display/recording)"),
+                                                         empReport(QApplication::translate("UIGDetails", "Disabled", "details (display/recording)"), aRecordingReportOld.isEmpty()));
             }
 
             break;
@@ -1747,19 +1747,19 @@ QStringList UISnapshotDetailsWidget::recordingReport(CMachine comMachine)
     /* Prepare report: */
     QStringList aReport;
     /* Acquire recording status: */
-    CCaptureSettings recordingSettings = comMachine.GetCaptureSettings();
+    CCaptureSettings comRecordingSettings = comMachine.GetCaptureSettings();
     /* For now all screens have the same config: */
-    CCaptureScreenSettings recordingScreen0Settings = recordingSettings.GetScreenSettings(0);
-    if (recordingScreen0Settings.GetEnabled())
+    CCaptureScreenSettings comRecordingScreen0Settings = comRecordingSettings.GetScreenSettings(0);
+    if (comRecordingScreen0Settings.GetEnabled())
     {
-        /* Recording ile: */
-        aReport << recordingScreen0Settings.GetFileName();
+        /* Recording file: */
+        aReport << comRecordingScreen0Settings.GetFileName();
         /* Recording attributes: */
         aReport << QApplication::translate("UIGDetails", "Frame Size: %1x%2, Frame Rate: %3fps, Bit Rate: %4kbps")
-                                           .arg(recordingScreen0Settings.GetVideoWidth())
-                                           .arg(recordingScreen0Settings.GetVideoHeight())
-                                           .arg(recordingScreen0Settings.GetVideoFPS())
-                                           .arg(recordingScreen0Settings.GetVideoRate());
+                                           .arg(comRecordingScreen0Settings.GetVideoWidth())
+                                           .arg(comRecordingScreen0Settings.GetVideoHeight())
+                                           .arg(comRecordingScreen0Settings.GetVideoFPS())
+                                           .arg(comRecordingScreen0Settings.GetVideoRate());
     }
     /* Return report: */
     return aReport;

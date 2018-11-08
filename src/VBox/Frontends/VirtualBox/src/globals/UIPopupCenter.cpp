@@ -573,10 +573,10 @@ void UIPopupCenter::cannotToggleRecording(QWidget *pParent, const CMachine &comM
 {
     /* Get machine-name preserving error-info: */
     QString strMachineName(CMachine(comMachine).GetName());
-    alertWithDetails(pParent, "cannotToggleVideoCapture",
+    alertWithDetails(pParent, "cannotToggleRecording",
                      fEnable ?
-                     QApplication::translate("UIMessageCenter", "Failed to enable video capturing for the virtual machine <b>%1</b>.").arg(strMachineName) :
-                     QApplication::translate("UIMessageCenter", "Failed to disable video capturing for the virtual machine <b>%1</b>.").arg(strMachineName),
+                     QApplication::translate("UIMessageCenter", "Failed to enable recording for the virtual machine <b>%1</b>.").arg(strMachineName) :
+                     QApplication::translate("UIMessageCenter", "Failed to disable recording for the virtual machine <b>%1</b>.").arg(strMachineName),
                      UIErrorString::formatErrorInfo(comMachine));
 }
 

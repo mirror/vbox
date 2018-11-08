@@ -257,7 +257,7 @@ public:
 
     /** Updates VRDE Server action state. */
     void updateStatusVRDE() { sltVRDEChange(); }
-    /** Updates Video Capture action state. */
+    /** Updates Recording action state. */
     void updateStatusRecording() { sltRecordingChange(); }
     /** Updates Audio output action state. */
     void updateAudioOutput() { sltAudioAdapterChange(); }

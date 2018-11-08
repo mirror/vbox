@@ -2103,13 +2103,13 @@ void UIMachineLogic::sltToggleRecording(bool fEnabled)
         return;
 
     /* Make sure something had changed: */
-    CCaptureSettings recordingSettings = machine().GetCaptureSettings();
-    if (recordingSettings.GetEnabled() == static_cast<BOOL>(fEnabled))
+    CCaptureSettings comRecordingSettings = machine().GetCaptureSettings();
+    if (comRecordingSettings.GetEnabled() == static_cast<BOOL>(fEnabled))
         return;
 
     /* Update recording state: */
-    recordingSettings.SetEnabled(fEnabled);
-    if (!recordingSettings.isOk())
+    comRecordingSettings.SetEnabled(fEnabled);
+    if (!comRecordingSettings.isOk())
     {
         /* Make sure action is updated: */
         uisession()->updateStatusRecording();

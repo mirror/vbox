@@ -608,9 +608,9 @@ template<> QString toInternalString(const UIExtraDataMetaDefs::RuntimeMenuViewAc
         case UIExtraDataMetaDefs::RuntimeMenuViewActionType_AdjustWindow:         strResult = "AdjustWindow"; break;
         case UIExtraDataMetaDefs::RuntimeMenuViewActionType_GuestAutoresize:      strResult = "GuestAutoresize"; break;
         case UIExtraDataMetaDefs::RuntimeMenuViewActionType_TakeScreenshot:       strResult = "TakeScreenshot"; break;
-        case UIExtraDataMetaDefs::RuntimeMenuViewActionType_Recording:            strResult = "VideoCapture"; break;
-        case UIExtraDataMetaDefs::RuntimeMenuViewActionType_RecordingSettings:    strResult = "VideoCaptureSettings"; break;
-        case UIExtraDataMetaDefs::RuntimeMenuViewActionType_StartRecording:       strResult = "StartVideoCapture"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuViewActionType_Recording:            strResult = "Recording"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuViewActionType_RecordingSettings:    strResult = "RecordingSettings"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuViewActionType_StartRecording:       strResult = "StartRecording"; break;
         case UIExtraDataMetaDefs::RuntimeMenuViewActionType_VRDEServer:           strResult = "VRDEServer"; break;
         case UIExtraDataMetaDefs::RuntimeMenuViewActionType_MenuBar:              strResult = "MenuBar"; break;
         case UIExtraDataMetaDefs::RuntimeMenuViewActionType_MenuBarSettings:      strResult = "MenuBarSettings"; break;
@@ -648,9 +648,9 @@ template<> UIExtraDataMetaDefs::RuntimeMenuViewActionType fromInternalString<UIE
     keys << "AdjustWindow";         values << UIExtraDataMetaDefs::RuntimeMenuViewActionType_AdjustWindow;
     keys << "GuestAutoresize";      values << UIExtraDataMetaDefs::RuntimeMenuViewActionType_GuestAutoresize;
     keys << "TakeScreenshot";       values << UIExtraDataMetaDefs::RuntimeMenuViewActionType_TakeScreenshot;
-    keys << "VideoCapture";         values << UIExtraDataMetaDefs::RuntimeMenuViewActionType_Recording;
-    keys << "VideoCaptureSettings"; values << UIExtraDataMetaDefs::RuntimeMenuViewActionType_RecordingSettings;
-    keys << "StartVideoCapture";    values << UIExtraDataMetaDefs::RuntimeMenuViewActionType_StartRecording;
+    keys << "Recording";            values << UIExtraDataMetaDefs::RuntimeMenuViewActionType_Recording;
+    keys << "RecordingSettings";    values << UIExtraDataMetaDefs::RuntimeMenuViewActionType_RecordingSettings;
+    keys << "StartRecording";       values << UIExtraDataMetaDefs::RuntimeMenuViewActionType_StartRecording;
     keys << "VRDEServer";           values << UIExtraDataMetaDefs::RuntimeMenuViewActionType_VRDEServer;
     keys << "MenuBar";              values << UIExtraDataMetaDefs::RuntimeMenuViewActionType_MenuBar;
     keys << "MenuBarSettings";      values << UIExtraDataMetaDefs::RuntimeMenuViewActionType_MenuBarSettings;
@@ -1402,7 +1402,7 @@ template<> QString toInternalString(const IndicatorType &indicatorType)
         case IndicatorType_USB:           strResult = "USB"; break;
         case IndicatorType_SharedFolders: strResult = "SharedFolders"; break;
         case IndicatorType_Display:       strResult = "Display"; break;
-        case IndicatorType_Recording:     strResult = "VideoCapture"; break;
+        case IndicatorType_Recording:     strResult = "Recording"; break;
         case IndicatorType_Features:      strResult = "Features"; break;
         case IndicatorType_Mouse:         strResult = "Mouse"; break;
         case IndicatorType_Keyboard:      strResult = "Keyboard"; break;
@@ -1429,7 +1429,7 @@ template<> IndicatorType fromInternalString<IndicatorType>(const QString &strInd
     keys << "USB";           values << IndicatorType_USB;
     keys << "SharedFolders"; values << IndicatorType_SharedFolders;
     keys << "Display";       values << IndicatorType_Display;
-    keys << "VideoCapture";  values << IndicatorType_Recording;
+    keys << "Recording";     values << IndicatorType_Recording;
     keys << "Features";      values << IndicatorType_Features;
     keys << "Mouse";         values << IndicatorType_Mouse;
     keys << "Keyboard";      values << IndicatorType_Keyboard;
@@ -1454,7 +1454,7 @@ template<> QString toString(const IndicatorType &indicatorType)
         case IndicatorType_USB:           strResult = QApplication::translate("VBoxGlobal", "USB", "IndicatorType"); break;
         case IndicatorType_SharedFolders: strResult = QApplication::translate("VBoxGlobal", "Shared Folders", "IndicatorType"); break;
         case IndicatorType_Display:       strResult = QApplication::translate("VBoxGlobal", "Display", "IndicatorType"); break;
-        case IndicatorType_Recording:     strResult = QApplication::translate("VBoxGlobal", "Video Capture", "IndicatorType"); break;
+        case IndicatorType_Recording:     strResult = QApplication::translate("VBoxGlobal", "Recording", "IndicatorType"); break;
         case IndicatorType_Features:      strResult = QApplication::translate("VBoxGlobal", "Features", "IndicatorType"); break;
         case IndicatorType_Mouse:         strResult = QApplication::translate("VBoxGlobal", "Mouse", "IndicatorType"); break;
         case IndicatorType_Keyboard:      strResult = QApplication::translate("VBoxGlobal", "Keyboard", "IndicatorType"); break;

@@ -1082,7 +1082,7 @@ protected:
     /** Handles translation event. */
     virtual void retranslateUi() /* override */
     {
-        setName(QApplication::translate("UIActionPool", "Audio/&Video Capture"));
+        setName(QApplication::translate("UIActionPool", "&Recording"));
     }
 };
 
@@ -1119,14 +1119,14 @@ protected:
     /** Returns shortcut extra-data ID. */
     virtual QString shortcutExtraDataID() const /* override */
     {
-        return QString("VideoCaptureSettingsDialog");
+        return QString("RecordingSettingsDialog");
     }
 
     /** Handles translation event. */
     virtual void retranslateUi() /* override */
     {
-        setName(QApplication::translate("UIActionPool", "&Video Capture Settings..."));
-        setStatusTip(QApplication::translate("UIActionPool", "Display virtual machine settings window to configure video capture"));
+        setName(QApplication::translate("UIActionPool", "&Recording Settings..."));
+        setStatusTip(QApplication::translate("UIActionPool", "Display virtual machine settings window to configure video/audio recording"));
     }
 };
 
@@ -1166,14 +1166,14 @@ protected:
     /** Returns shortcut extra-data ID. */
     virtual QString shortcutExtraDataID() const /* override */
     {
-        return QString("VideoCapture");
+        return QString("Recording");
     }
 
     /** Handles translation event. */
     virtual void retranslateUi() /* override */
     {
-        setName(QApplication::translate("UIActionPool", "Audio/&Video Capture"));
-        setStatusTip(QApplication::translate("UIActionPool", "Enable guest display video capture"));
+        setName(QApplication::translate("UIActionPool", "&Recording"));
+        setStatusTip(QApplication::translate("UIActionPool", "Enable guest video/audio recording"));
     }
 };
 

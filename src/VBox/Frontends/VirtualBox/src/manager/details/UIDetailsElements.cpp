@@ -449,25 +449,25 @@ void UIDetailsUpdateTaskDisplay::run()
         }
 
         /* Recording info: */
-        CCaptureSettings captureSettings = machine.GetCaptureSettings();
-        if (captureSettings.GetEnabled())
+        CCaptureSettings comRecordingSettings = machine.GetCaptureSettings();
+        if (comRecordingSettings.GetEnabled())
         {
             /* For now all screens have the same config: */
-            CCaptureScreenSettings captureScreen0Settings = captureSettings.GetScreenSettings(0);
+            CCaptureScreenSettings comRecordingScreen0Settings = comRecordingSettings.GetScreenSettings(0);
 
             /** @todo r=andy Refine these texts (wrt audio and/or video). */
-            table << UITextTableLine(QApplication::translate("UIDetails", "Recording File", "details (display/video capture)"),
-                                     captureScreen0Settings.GetFileName());
-            table << UITextTableLine(QApplication::translate("UIDetails", "Recording Attributes", "details (display/video capture)"),
+            table << UITextTableLine(QApplication::translate("UIDetails", "Recording File", "details (display/recording)"),
+                                     comRecordingScreen0Settings.GetFileName());
+            table << UITextTableLine(QApplication::translate("UIDetails", "Recording Attributes", "details (display/recording)"),
                                      QApplication::translate("UIDetails", "Frame Size: %1x%2, Frame Rate: %3fps, Bit Rate: %4kbps")
-                                         .arg(captureScreen0Settings.GetVideoWidth()).arg(captureScreen0Settings.GetVideoHeight())
-                                         .arg(captureScreen0Settings.GetVideoFPS()).arg(captureScreen0Settings.GetVideoRate()));
+                                         .arg(comRecordingScreen0Settings.GetVideoWidth()).arg(comRecordingScreen0Settings.GetVideoHeight())
+                                         .arg(comRecordingScreen0Settings.GetVideoFPS()).arg(comRecordingScreen0Settings.GetVideoRate()));
         }
         else
         {
             /** @todo r=andy Refine these texts (wrt audio and/or video). */
-            table << UITextTableLine(QApplication::translate("UIDetails", "Recording", "details (display/video capture)"),
-                                     QApplication::translate("UIDetails", "Disabled", "details (display/video capture)"));
+            table << UITextTableLine(QApplication::translate("UIDetails", "Recording", "details (display/recording)"),
+                                     QApplication::translate("UIDetails", "Disabled", "details (display/recording)"));
         }
     }
     else

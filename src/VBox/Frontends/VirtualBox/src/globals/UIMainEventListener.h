@@ -123,7 +123,7 @@ signals:
         void sigMediumChange(CMediumAttachment comAttachment);
         /** Notifies about VRDE device state change. */
         void sigVRDEChange();
-        /** Notifies about capture state change. */
+        /** Notifies about recording state change. */
         void sigRecordingChange();
         /** Notifies about USB controller state change. */
         void sigUSBControllerChange();
