@@ -34,6 +34,7 @@
 *********************************************************************************************************************************/
 #define LOG_GROUP RTLOGGROUP_TIME
 #define INCL_DOSDATETIME
+#define INCL_DOSERRORS
 #include <os2.h>
 
 #include <iprt/time.h>
@@ -51,7 +52,7 @@ RTDECL(int) RTTimeSet(PCRTTIMESPEC pTime)
     int64_t    cNsLocalDelta = RTTimeLocalDeltaNanoFor(pTime);
     RTTIMESPEC TimeLocal     = *pTime;
     RTTIME     Exploded;
-    if (RTTimeExplode(&Exploded, RTTimeSpecAddNano(&TimeLocal, cNsLocalDelta))))
+    if (RTTimeExplode(&Exploded, RTTimeSpecAddNano(&TimeLocal, cNsLocalDelta)))
     {
         /*
          * Fill in the OS/2 structure and make the call.
