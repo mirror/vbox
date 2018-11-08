@@ -1961,6 +1961,24 @@ DECLINLINE(bool) CPUMIsGuestVmxExitCtlsSet(PVMCPU pVCpu, PCCPUMCTX pCtx, uint32_
     return RT_BOOL(pCtx->hwvirt.vmx.CTX_SUFF(pVmcs)->u32ExitCtls & uExitCtls);
 }
 
+
+/**
+ * Returns the guest-physical address of the APIC-access page when executing a
+ * nested-guest.
+ *
+ * @returns The APIC-access page guest-physical address.
+ * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
+ * @param   pCtx        Pointer to the context.
+ */
+DECLINLINE(uint64_t) CPUMGetGuestVmxApicAccessPageAddr(PVMCPU pVCpu, PCCPUMCTX pCtx)
+{
+    RT_NOREF(pVCpu);
+    Assert(pCtx->hwvirt.enmHwvirt == CPUMHWVIRT_VMX);
+    Assert(pCtx->hwvirt.vmx.fInVmxNonRootMode);
+    Assert(pCtx->hwvirt.vmx.CTX_SUFF(pVmcs));
+    return pCtx->hwvirt.vmx.CTX_SUFF(pVmcs)->u64AddrApicAccess.u;
+}
+
 # endif /* !IN_RC */
 
 #endif /* IPRT_WITHOUT_NAMED_UNIONS_AND_STRUCTS */

@@ -446,6 +446,9 @@ typedef enum IEMXCPTCLASS
 # define IEM_VMX_VMEXIT_TRIPLE_FAULT_RET(a_pVCpu) \
     do { return iemVmxVmexitTripleFault(a_pVCpu); } while (0)
 
+# define IEM_VMX_VMEXIT_APIC_ACCESS_RET(a_pVCpu, a_offAccess, a_fAccess) \
+    do { return iemVmxVmexitApicAccess((a_pVCpu), (a_offAccess), (a_fAccess)); } while (0)
+
 #else
 # define IEM_VMX_IS_ROOT_MODE(a_pVCpu)                                          (false)
 # define IEM_VMX_IS_NON_ROOT_MODE(a_pVCpu)                                      (false)
@@ -457,6 +460,7 @@ typedef enum IEMXCPTCLASS
 # define IEM_VMX_VMEXIT_TASK_SWITCH_RET(a_pVCpu, a_enmTaskSwitch, a_SelNewTss, a_cbInstr)    do { return VERR_VMX_IPE_1; } while (0)
 # define IEM_VMX_VMEXIT_MWAIT_RET(a_pVCpu, a_fMonitorArmed, a_cbInstr)          do { return VERR_VMX_IPE_1; } while (0)
 # define IEM_VMX_VMEXIT_TRIPLE_FAULT_RET(a_pVCpu)                               do { return VERR_VMX_IPE_1; } while (0)
+# define IEM_VMX_VMEXIT_APIC_ACCESS_RET(a_pVCpu, a_offAccess, a_fAccess)        do { return VERR_VMX_IPE_1; } while (0)
 
 #endif
 
@@ -975,20 +979,20 @@ IEM_STATIC uint64_t         iemSRegBaseFetchU64(PVMCPU pVCpu, uint8_t iSegReg);
 
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
 IEM_STATIC VBOXSTRICTRC     iemVmxVmexitTaskSwitch(PVMCPU pVCpu, IEMTASKSWITCH enmTaskSwitch, RTSEL SelNewTss, uint8_t cbInstr);
-IEM_STATIC VBOXSTRICTRC     iemVmxVmexitEvent(PVMCPU pVCpu, uint8_t uVector, uint32_t fFlags, uint32_t uErrCode, uint64_t uCr2,
-                                              uint8_t cbInstr);
+IEM_STATIC VBOXSTRICTRC     iemVmxVmexitEvent(PVMCPU pVCpu, uint8_t uVector, uint32_t fFlags, uint32_t uErrCode, uint64_t uCr2, uint8_t cbInstr);
 IEM_STATIC VBOXSTRICTRC     iemVmxVmexitTripleFault(PVMCPU pVCpu);
 IEM_STATIC VBOXSTRICTRC     iemVmxVmexitPreemptTimer(PVMCPU pVCpu);
 IEM_STATIC VBOXSTRICTRC     iemVmxVmexitExtInt(PVMCPU pVCpu, uint8_t uVector, bool fIntPending);
 IEM_STATIC VBOXSTRICTRC     iemVmxVmexitStartupIpi(PVMCPU pVCpu, uint8_t uVector);
 IEM_STATIC VBOXSTRICTRC     iemVmxVmexitInitIpi(PVMCPU pVCpu);
 IEM_STATIC VBOXSTRICTRC     iemVmxVmexitIntWindow(PVMCPU pVCpu);
+IEM_STATIC VBOXSTRICTRC     iemVmxVirtApicAccessMem(PVMCPU pVCpu, uint16_t offAccess, size_t cbAccess, void *pvData, uint32_t fAccess);
+IEM_STATIC VBOXSTRICTRC     iemVmxVmexitApicAccess(PVMCPU pVCpu, uint16_t offAccess, uint32_t fAccess);
 #endif
 
 #ifdef VBOX_WITH_NESTED_HWVIRT_SVM
 IEM_STATIC VBOXSTRICTRC     iemSvmVmexit(PVMCPU pVCpu, uint64_t uExitCode, uint64_t uExitInfo1, uint64_t uExitInfo2);
-IEM_STATIC VBOXSTRICTRC     iemHandleSvmEventIntercept(PVMCPU pVCpu, uint8_t u8Vector, uint32_t fFlags, uint32_t uErr,
-                                                       uint64_t uCr2);
+IEM_STATIC VBOXSTRICTRC     iemHandleSvmEventIntercept(PVMCPU pVCpu, uint8_t u8Vector, uint32_t fFlags, uint32_t uErr, uint64_t uCr2);
 #endif
 
 
@@ -8598,6 +8602,31 @@ iemMemBounceBufferMapCrossPage(PVMCPU pVCpu, int iMemMap, void **ppvMem, size_t 
         return rcStrict;
     GCPhysSecond &= ~(RTGCPHYS)PAGE_OFFSET_MASK;
 
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
+    /*
+     * Check if we need to cause an APIC-access VM-exit.
+     *
+     * The reason we do have to check whether the access is to be virtualized here is that
+     * we already know we're crossing a page-boundary. Any cross-page access (which is at
+     * most 4 bytes) involves accessing offsets prior to XAPIC_OFF_ID or extends well beyond
+     * XAPIC_OFF_END + 4 bytes of the APIC-access page and hence must cause a VM-exit.
+     */
+    if (   CPUMIsGuestInVmxNonRootMode(IEM_GET_CTX(pVCpu))
+        && IEM_VMX_IS_PROCCTLS2_SET(pVCpu, VMX_PROC_CTLS2_VIRT_APIC_ACCESS))
+    {
+        RTGCPHYS const GCPhysMemFirst  = GCPhysFirst  & ~(RTGCPHYS)PAGE_OFFSET_MASK;
+        RTGCPHYS const GCPhysMemSecond = GCPhysSecond & ~(RTGCPHYS)PAGE_OFFSET_MASK;
+        RTGCPHYS const GCPhysApicAccessBase = CPUMGetGuestVmxApicAccessPageAddr(pVCpu, IEM_GET_CTX(pVCpu))
+                                            & ~(RTGCPHYS)PAGE_OFFSET_MASK;
+        if (   GCPhysMemFirst  == GCPhysApicAccessBase
+            || GCPhysMemSecond == GCPhysApicAccessBase)
+        {
+            uint16_t const offAccess = GCPhysFirst & (RTGCPHYS)PAGE_OFFSET_MASK;
+            IEM_VMX_VMEXIT_APIC_ACCESS_RET(pVCpu, offAccess, fAccess);
+        }
+    }
+#endif
+
     PVM pVM = pVCpu->CTX_SUFF(pVM);
 
     /*
@@ -8878,6 +8907,26 @@ iemMemMap(PVMCPU pVCpu, void **ppvMem, size_t cbMem, uint8_t iSegReg, RTGCPTR GC
 
     iemMemUpdateWrittenCounter(pVCpu, fAccess, cbMem);
     *ppvMem = pvMem;
+
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
+    /*
+     * Check if this is an APIC-access and whether it needs to be virtualized.
+     */
+    if (   CPUMIsGuestInVmxNonRootMode(IEM_GET_CTX(pVCpu))
+        && IEM_VMX_IS_PROCCTLS2_SET(pVCpu, VMX_PROC_CTLS2_VIRT_APIC_ACCESS))
+    {
+        RTGCPHYS const GCPhysMemAccessBase  = GCPhysFirst & ~(RTGCPHYS)PAGE_OFFSET_MASK;
+        RTGCPHYS const GCPhysApicAccessBase = CPUMGetGuestVmxApicAccessPageAddr(pVCpu, IEM_GET_CTX(pVCpu))
+                                            & ~(RTGCPHYS)PAGE_OFFSET_MASK;
+        if (GCPhysMemAccessBase == GCPhysApicAccessBase)
+        {
+            Assert(pvMem);
+            uint16_t const offAccess = GCPhysFirst & (RTGCPHYS)PAGE_OFFSET_MASK;
+            return iemVmxVirtApicAccessMem(pVCpu, offAccess, cbMem, pvMem, fAccess);
+        }
+    }
+#endif
+
     return VINF_SUCCESS;
 }
 
@@ -13893,12 +13942,14 @@ DECL_FORCE_INLINE(VBOXSTRICTRC) iemExecStatusCodeFiddling(PVMCPU pVCpu, VBOXSTRI
                       || rcStrict == VINF_PATM_CHECK_PATCH_PAGE
                       /* nested hw.virt codes: */
                       || rcStrict == VINF_VMX_VMEXIT
+                      || rcStrict == VINF_VMX_MODIFIES_BEHAVIOR
                       || rcStrict == VINF_SVM_VMEXIT
                       , ("rcStrict=%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
 /** @todo adjust for VINF_EM_RAW_EMULATE_INSTR. */
             int32_t const rcPassUp = pVCpu->iem.s.rcPassUp;
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
-            if (   rcStrict == VINF_VMX_VMEXIT
+            if (   (   rcStrict == VINF_VMX_VMEXIT
+                    || rcStrict == VINF_VMX_MODIFIES_BEHAVIOR)
                 && rcPassUp == VINF_SUCCESS)
                 rcStrict = VINF_SUCCESS;
             else
