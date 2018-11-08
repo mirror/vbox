@@ -386,7 +386,7 @@ int CaptureSettings::i_destroyAllScreenObj(CaptureScreenSettingsMap &screenSetti
 {
     LogFlowThisFuncEnter();
 
-    CaptureScreenSettingsMap::const_iterator itScreen = screenSettingsMap.begin();
+    CaptureScreenSettingsMap::iterator itScreen = screenSettingsMap.begin();
     if (itScreen != screenSettingsMap.end())
     {
         /* Make sure to consume the pointer before the one of the
