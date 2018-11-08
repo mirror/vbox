@@ -1399,7 +1399,8 @@ static int hdaRegWriteSDCTL(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
                 AssertRC(rc2);
 
                 /* Remove the old stream from the device setup. */
-                hdaR3RemoveStream(pThis, &pStream->State.Cfg);
+                rc2 = hdaR3RemoveStream(pThis, &pStream->State.Cfg);
+                AssertRC(rc2);
 
                 /* Add the stream to the device setup. */
                 rc2 = hdaR3AddStream(pThis, &pStream->State.Cfg);
@@ -2908,9 +2909,11 @@ static DECLCALLBACK(void) hdaR3Timer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *
 
     hdaR3StreamUpdate(pStream, true /* fInTimer */);
 
-    /* Flag indicating whether to kick the timer again for a
-     * new data processing round. */
-    const bool fSinkActive = AudioMixerSinkIsActive(pStream->pMixSink->pMixSink);
+    /* Flag indicating whether to kick the timer again for a new data processing round. */
+    bool fSinkActive = false;
+    if (pStream->pMixSink)
+        fSinkActive = AudioMixerSinkIsActive(pStream->pMixSink->pMixSink);
+
     if (fSinkActive)
     {
         const bool fTimerScheduled = hdaR3StreamTransferIsScheduled(pStream);
