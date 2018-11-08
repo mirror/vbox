@@ -60,6 +60,7 @@ private:
     HRESULT isFeatureEnabled(CaptureFeature_T aFeature, BOOL *aEnabled);
 
     // wrapped ICaptureScreenSettings properties
+    HRESULT getId(ULONG *id);
     HRESULT getEnabled(BOOL *enabled);
     HRESULT setEnabled(BOOL enabled);
     HRESULT getFeatures(ULONG *aFeatures);

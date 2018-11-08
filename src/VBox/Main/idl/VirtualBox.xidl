@@ -4808,7 +4808,7 @@
 
   <interface
     name="ICaptureScreenSettings" extends="$unknown"
-    uuid="17DA29A9-3F41-482E-A9BB-3D183BA3EE59"
+    uuid="B19FFA8A-686C-4221-AB29-3C1FA33946CA"
     wsmap="managed"
     >
 
@@ -4828,6 +4828,12 @@
         <desc>@c true if the feature is enabled, @c false if not.</desc>
       </param>
     </method>
+
+    <attribute name="id" type="unsigned long" readonly="yes">
+      <desc>
+        This attribute contains the screen ID bound to these settings.
+      </desc>
+    </attribute>
 
     <attribute name="enabled" type="boolean" default="false">
       <desc>

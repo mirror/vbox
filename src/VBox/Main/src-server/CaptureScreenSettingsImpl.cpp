@@ -242,6 +242,18 @@ HRESULT CaptureScreenSettings::isFeatureEnabled(CaptureFeature_T aFeature, BOOL 
     return S_OK;
 }
 
+HRESULT CaptureScreenSettings::getId(ULONG *id)
+{
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    *id = m->uScreenId;
+
+    return S_OK;
+}
+
 HRESULT CaptureScreenSettings::getEnabled(BOOL *enabled)
 {
     AutoCaller autoCaller(this);
