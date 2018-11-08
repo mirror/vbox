@@ -1579,7 +1579,6 @@ static DECLCALLBACK(int) vmmR3SendStarupIpi(PVM pVM, VMCPUID idCpu, uint32_t uVe
     if (EMGetState(pVCpu) != EMSTATE_WAIT_SIPI)
         return VINF_SUCCESS;
 
-
     PCPUMCTX pCtx = CPUMQueryGuestCtxPtr(pVCpu);
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
     if (CPUMIsGuestInVmxRootMode(pCtx))
@@ -1632,12 +1631,12 @@ static DECLCALLBACK(int) vmmR3SendInitIpi(PVM pVM, VMCPUID idCpu)
 
     /* If the CPU is in VMX non-root mode, INIT signals cause VM-exits. */
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
-    PCPUMCTX pCtx = CPUMQueryGuestCtxPtr(pVCpu);
+    PCCPUMCTX pCtx = CPUMQueryGuestCtxPtr(pVCpu);
     if (CPUMIsGuestInVmxNonRootMode(pCtx))
         return VBOXSTRICTRC_TODO(IEMExecVmxVmexitInitIpi(pVCpu));
 #endif
 
-    /** @todo Figure out how to handle a nested-guest intercepts here for INIT
+    /** @todo Figure out how to handle a SVM nested-guest intercepts here for INIT
      *  IPI (e.g. SVM_EXIT_INIT). */
 
     PGMR3ResetCpu(pVM, pVCpu);
