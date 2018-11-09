@@ -1854,7 +1854,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
             RTFileClose(pngFile);
         }
 #ifdef VBOX_WITH_RECORDING
-        else if (!strcmp(a->argv[1], "record"))
+        else if (!strcmp(a->argv[1], "recording"))
         {
             if (a->argc < 3)
             {

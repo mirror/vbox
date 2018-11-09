@@ -1885,7 +1885,7 @@ UUID="457af700-bc0a-4258-aa3c-13b03da171f2"
 
     </sect2>
 
-    <sect2 id="vboxmanage-modifyvm-record">
+    <sect2 id="vboxmanage-modifyvm-recording">
 
       <title>Recording Settings</title>
 
@@ -1899,7 +1899,7 @@ UUID="457af700-bc0a-4258-aa3c-13b03da171f2"
 
         <listitem>
           <para>
-            <computeroutput>--record on|off</computeroutput>: This
+            <computeroutput>--recording on|off</computeroutput>: This
             option enables or disables recording a VM session into a
             file. If this option is enabled, recording will start when the
             VM session is started.
@@ -1908,7 +1908,7 @@ UUID="457af700-bc0a-4258-aa3c-13b03da171f2"
 
         <listitem>
           <para>
-            <computeroutput>--recordscreens all|&lt;screen ID&gt;
+            <computeroutput>--recordingscreens all|&lt;screen ID&gt;
             [&lt;screen ID&gt; ...]</computeroutput>: This option allows
             to specify which screens of the VM are being recorded. Each
             screen is recorded into a separate file.
@@ -1917,7 +1917,7 @@ UUID="457af700-bc0a-4258-aa3c-13b03da171f2"
 
         <listitem>
           <para>
-            <computeroutput>--recordfile
+            <computeroutput>--recordingfile
             &lt;filename&gt;</computeroutput>: This option sets the
             filename VirtualBox uses to save the recorded content.
           </para>
@@ -1925,7 +1925,7 @@ UUID="457af700-bc0a-4258-aa3c-13b03da171f2"
 
         <listitem>
           <para>
-            <computeroutput>--recordmaxtime
+            <computeroutput>--recordingmaxtime
             &lt;ms&gt;</computeroutput>: This option sets the maximum
             time in milliseconds the recording will be enabled
             since activation. The recording stops when the defined time
@@ -1936,7 +1936,7 @@ UUID="457af700-bc0a-4258-aa3c-13b03da171f2"
 
         <listitem>
           <para>
-            <computeroutput>--recordmaxsize
+            <computeroutput>--recordingmaxsize
             &lt;MB&gt;</computeroutput>: This option limits the maximum
             size of the recorded file (in MB). The recording stops
             when the file size has reached the specified size. If this
@@ -1946,7 +1946,7 @@ UUID="457af700-bc0a-4258-aa3c-13b03da171f2"
 
         <listitem>
           <para>
-            <computeroutput>--recordopts &lt;key=value&gt;
+            <computeroutput>--recordingopts &lt;key=value&gt;
             [,&lt;key=value&gt; ...]</computeroutput>: This format can
             be used to specify additional recording options. These
             options only are for advanced users and must be specified in
@@ -1957,7 +1957,7 @@ UUID="457af700-bc0a-4258-aa3c-13b03da171f2"
 
         <listitem>
           <para>
-            <computeroutput>--recordvideores
+            <computeroutput>--recordingvideores
             &lt;width&gt;x&lt;height&gt;</computeroutput>: This option
             sets the video resolution (in pixels) of the recorded file.
           </para>
@@ -1965,7 +1965,7 @@ UUID="457af700-bc0a-4258-aa3c-13b03da171f2"
 
         <listitem>
           <para>
-            <computeroutput>--recordvideorate
+            <computeroutput>--recordingvideorate
             &lt;rate&gt;</computeroutput>: This option sets the video bitrate
             in kilobits (kb) per second. Increasing this value makes the
             video look better for the cost of an increased file size.
@@ -1974,7 +1974,7 @@ UUID="457af700-bc0a-4258-aa3c-13b03da171f2"
 
         <listitem>
           <para>
-            <computeroutput>--recordvideofps &lt;fps&gt;</computeroutput>:
+            <computeroutput>--recordingvideofps &lt;fps&gt;</computeroutput>:
             This option sets the maximum number of video frames per second
             (FPS) to be recorded. Frames with a higher frequency will be
             skipped. Reducing this value increases the number of skipped

@@ -214,18 +214,18 @@ enum
     MODIFYVM_USBCARDREADER,
 #endif
 #ifdef VBOX_WITH_RECORDING
-    MODIFYVM_RECORD,
-    MODIFYVM_RECORD_FEATURES,
-    MODIFYVM_RECORD_SCREENS,
-    MODIFYVM_RECORD_FILENAME,
-    MODIFYVM_RECORD_VIDEO_WIDTH,
-    MODIFYVM_RECORD_VIDEO_HEIGHT,
-    MODIFYVM_RECORD_VIDEO_RES,
-    MODIFYVM_RECORD_VIDEO_RATE,
-    MODIFYVM_RECORD_VIDEO_FPS,
-    MODIFYVM_RECORD_MAXTIME,
-    MODIFYVM_RECORD_MAXSIZE,
-    MODIFYVM_RECORD_OPTIONS,
+    MODIFYVM_RECORDING,
+    MODIFYVM_RECORDING_FEATURES,
+    MODIFYVM_RECORDING_SCREENS,
+    MODIFYVM_RECORDING_FILENAME,
+    MODIFYVM_RECORDING_VIDEO_WIDTH,
+    MODIFYVM_RECORDING_VIDEO_HEIGHT,
+    MODIFYVM_RECORDING_VIDEO_RES,
+    MODIFYVM_RECORDING_VIDEO_RATE,
+    MODIFYVM_RECORDING_VIDEO_FPS,
+    MODIFYVM_RECORDING_MAXTIME,
+    MODIFYVM_RECORDING_MAXSIZE,
+    MODIFYVM_RECORDING_OPTIONS,
 #endif
     MODIFYVM_CHIPSET,
     MODIFYVM_DEFAULTFRONTEND
@@ -394,16 +394,17 @@ static const RTGETOPTDEF g_aModifyVMOptions[] =
     { "--faulttolerancesyncinterval", MODIFYVM_FAULT_TOLERANCE_SYNC_INTERVAL, RTGETOPT_REQ_UINT32 },
     { "--chipset",                  MODIFYVM_CHIPSET,                   RTGETOPT_REQ_STRING },
 #ifdef VBOX_WITH_RECORDING
-    { "--record",                   MODIFYVM_RECORD,                    RTGETOPT_REQ_BOOL_ONOFF },
-    { "--recordscreens",            MODIFYVM_RECORD_SCREENS,            RTGETOPT_REQ_STRING },
-    { "--recordfile",               MODIFYVM_RECORD_FILENAME,           RTGETOPT_REQ_STRING },
-    { "--recordmaxtime",            MODIFYVM_RECORD_MAXTIME,            RTGETOPT_REQ_INT32  },
-    { "--recordmaxsize",            MODIFYVM_RECORD_MAXSIZE,            RTGETOPT_REQ_INT32  },
-    { "--recordopts",               MODIFYVM_RECORD_OPTIONS,            RTGETOPT_REQ_STRING },
-    { "--recordoptions",            MODIFYVM_RECORD_OPTIONS,            RTGETOPT_REQ_STRING },
-    { "--recordvideores",           MODIFYVM_RECORD_VIDEO_RES,          RTGETOPT_REQ_STRING },
-    { "--recordvideorate",          MODIFYVM_RECORD_VIDEO_RATE,         RTGETOPT_REQ_UINT32 },
-    { "--recordvideofps",           MODIFYVM_RECORD_VIDEO_FPS,          RTGETOPT_REQ_UINT32 },
+    { "--recording",                MODIFYVM_RECORDING,                 RTGETOPT_REQ_BOOL_ONOFF },
+    { "--recordingscreens",         MODIFYVM_RECORDING_SCREENS,         RTGETOPT_REQ_STRING },
+    { "--recordingfile",            MODIFYVM_RECORDING_FILENAME,        RTGETOPT_REQ_STRING },
+    { "--recordingmaxtime",         MODIFYVM_RECORDING_MAXTIME,         RTGETOPT_REQ_INT32  },
+    { "--recordingmaxsize",         MODIFYVM_RECORDING_MAXSIZE,         RTGETOPT_REQ_INT32  },
+    { "--recordingopts",            MODIFYVM_RECORDING_OPTIONS,         RTGETOPT_REQ_STRING },
+    { "--recordingoptions",         MODIFYVM_RECORDING_OPTIONS,         RTGETOPT_REQ_STRING },
+    { "--recordingvideores",        MODIFYVM_RECORDING_VIDEO_RES,       RTGETOPT_REQ_STRING },
+    { "--recordingvideoresolution", MODIFYVM_RECORDING_VIDEO_RES,       RTGETOPT_REQ_STRING },
+    { "--recordingvideorate",       MODIFYVM_RECORDING_VIDEO_RATE,      RTGETOPT_REQ_UINT32 },
+    { "--recordingvideofps",        MODIFYVM_RECORDING_VIDEO_FPS,       RTGETOPT_REQ_UINT32 },
 #endif
     { "--autostart-enabled",        MODIFYVM_AUTOSTART_ENABLED,         RTGETOPT_REQ_BOOL_ONOFF },
     { "--autostart-delay",          MODIFYVM_AUTOSTART_DELAY,           RTGETOPT_REQ_UINT32 },
@@ -2927,27 +2928,27 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                 break;
             }
 #ifdef VBOX_WITH_RECORDING
-            case MODIFYVM_RECORD:
+            case MODIFYVM_RECORDING:
                 RT_FALL_THROUGH();
-            case MODIFYVM_RECORD_SCREENS:
+            case MODIFYVM_RECORDING_SCREENS:
                 RT_FALL_THROUGH();
-            case MODIFYVM_RECORD_FILENAME:
+            case MODIFYVM_RECORDING_FILENAME:
                 RT_FALL_THROUGH();
-            case MODIFYVM_RECORD_VIDEO_WIDTH:
+            case MODIFYVM_RECORDING_VIDEO_WIDTH:
                 RT_FALL_THROUGH();
-            case MODIFYVM_RECORD_VIDEO_HEIGHT:
+            case MODIFYVM_RECORDING_VIDEO_HEIGHT:
                 RT_FALL_THROUGH();
-            case MODIFYVM_RECORD_VIDEO_RES:
+            case MODIFYVM_RECORDING_VIDEO_RES:
                 RT_FALL_THROUGH();
-            case MODIFYVM_RECORD_VIDEO_RATE:
+            case MODIFYVM_RECORDING_VIDEO_RATE:
                 RT_FALL_THROUGH();
-            case MODIFYVM_RECORD_VIDEO_FPS:
+            case MODIFYVM_RECORDING_VIDEO_FPS:
                 RT_FALL_THROUGH();
-            case MODIFYVM_RECORD_MAXTIME:
+            case MODIFYVM_RECORDING_MAXTIME:
                 RT_FALL_THROUGH();
-            case MODIFYVM_RECORD_MAXSIZE:
+            case MODIFYVM_RECORDING_MAXSIZE:
                 RT_FALL_THROUGH();
-            case MODIFYVM_RECORD_OPTIONS:
+            case MODIFYVM_RECORDING_OPTIONS:
             {
                 ComPtr<IRecordingSettings> recordingSettings;
                 CHECK_ERROR_BREAK(machine, COMGETTER(RecordingSettings)(recordingSettings.asOutParam()));
@@ -2956,12 +2957,12 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
 
                 switch (c)
                 {
-                    case MODIFYVM_RECORD:
+                    case MODIFYVM_RECORDING:
                     {
                         CHECK_ERROR(recordingSettings, COMSETTER(Enabled)(ValueUnion.f));
                         break;
                     }
-                    case MODIFYVM_RECORD_SCREENS:
+                    case MODIFYVM_RECORDING_SCREENS:
                     {
                         ULONG cMonitors = 64;
                         CHECK_ERROR(sessionMachine, COMGETTER(MonitorCount)(&cMonitors));
@@ -2980,7 +2981,7 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                             CHECK_ERROR_BREAK(saRecordingScreenScreens[i], COMSETTER(Enabled)(screens[i]));
                         break;
                     }
-                    case MODIFYVM_RECORD_FILENAME:
+                    case MODIFYVM_RECORDING_FILENAME:
                     {
                         Bstr bstr;
                         /* empty string will fall through, leaving bstr empty */
@@ -3001,19 +3002,19 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                             CHECK_ERROR(saRecordingScreenScreens[i], COMSETTER(FileName)(bstr.raw()));
                         break;
                     }
-                    case MODIFYVM_RECORD_VIDEO_WIDTH:
+                    case MODIFYVM_RECORDING_VIDEO_WIDTH:
                     {
                         for (size_t i = 0; i < saRecordingScreenScreens.size(); ++i)
                             CHECK_ERROR(saRecordingScreenScreens[i], COMSETTER(VideoWidth)(ValueUnion.u32));
                         break;
                     }
-                    case MODIFYVM_RECORD_VIDEO_HEIGHT:
+                    case MODIFYVM_RECORDING_VIDEO_HEIGHT:
                     {
                         for (size_t i = 0; i < saRecordingScreenScreens.size(); ++i)
                             CHECK_ERROR(saRecordingScreenScreens[i], COMSETTER(VideoHeight)(ValueUnion.u32));
                         break;
                     }
-                    case MODIFYVM_RECORD_VIDEO_RES:
+                    case MODIFYVM_RECORDING_VIDEO_RES:
                     {
                         uint32_t uWidth = 0;
                         char *pszNext;
@@ -3040,31 +3041,31 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                         }
                         break;
                     }
-                    case MODIFYVM_RECORD_VIDEO_RATE:
+                    case MODIFYVM_RECORDING_VIDEO_RATE:
                     {
                         for (size_t i = 0; i < saRecordingScreenScreens.size(); ++i)
                             CHECK_ERROR(saRecordingScreenScreens[i], COMSETTER(VideoRate)(ValueUnion.u32));
                         break;
                     }
-                    case MODIFYVM_RECORD_VIDEO_FPS:
+                    case MODIFYVM_RECORDING_VIDEO_FPS:
                     {
                         for (size_t i = 0; i < saRecordingScreenScreens.size(); ++i)
                             CHECK_ERROR(saRecordingScreenScreens[i], COMSETTER(VideoFPS)(ValueUnion.u32));
                         break;
                     }
-                    case MODIFYVM_RECORD_MAXTIME:
+                    case MODIFYVM_RECORDING_MAXTIME:
                     {
                         for (size_t i = 0; i < saRecordingScreenScreens.size(); ++i)
                             CHECK_ERROR(saRecordingScreenScreens[i], COMSETTER(MaxTime)(ValueUnion.u32));
                         break;
                     }
-                    case MODIFYVM_RECORD_MAXSIZE:
+                    case MODIFYVM_RECORDING_MAXSIZE:
                     {
                         for (size_t i = 0; i < saRecordingScreenScreens.size(); ++i)
                             CHECK_ERROR(saRecordingScreenScreens[i], COMSETTER(MaxFileSize)(ValueUnion.u32));
                         break;
                     }
-                    case MODIFYVM_RECORD_OPTIONS:
+                    case MODIFYVM_RECORDING_OPTIONS:
                     {
                         Bstr bstr(ValueUnion.psz);
                         for (size_t i = 0; i < saRecordingScreenScreens.size(); ++i)
