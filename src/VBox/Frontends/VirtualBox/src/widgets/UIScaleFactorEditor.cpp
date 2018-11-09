@@ -73,8 +73,14 @@ void UIScaleFactorEditor::setMonitorCount(int iMonitorCount)
             m_pMonitorComboBox->removeItem(i);
     }
     m_pMonitorComboBox->setEnabled(iMonitorCount > 1);
+    /* If we have a single monitor select the "All Monitors" item in the combo
+       but make sure we retain the scale factor of the 0th monitor: */
     if (iMonitorCount <= 1)
+    {
+        if (m_scaleFactors.size() >= 2)
+            m_scaleFactors[0] = m_scaleFactors[1];
         m_pMonitorComboBox->setCurrentIndex(0);
+    }
     m_pMonitorComboBox->blockSignals(false);
     /* Update the slider and spinbox values if the combobox index has changed: */
     if (iCurrentMonitorIndex != m_pMonitorComboBox->currentIndex())
