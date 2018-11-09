@@ -64,13 +64,13 @@ def _ControllerTypeToName(eControllerType):
 def crc32_of_file(filepath):
     fileobj = open(filepath,'rb');
     current = 0;
-    
+
     while True:
         buf = fileobj.read(1024 * 1024);
         if not buf:
             break
         current = zlib.crc32(buf, current);
-        
+
     fileobj.close();
     return current % 2**32;
 
@@ -132,24 +132,24 @@ class tdStorageSnapshot(vbox.TestDriver):                                      #
         """
         fRc = self.test1();
         return fRc;
-    
+
     def resizeMedium(self, oMedium, cbNewSize):
         if oMedium.deviceType is not vboxcon.DeviceType_HardDisk:
             return False;
-        
+
         if oMedium.type is not vboxcon.MediumType_Normal:
             return False;
-        
+
         #currently only VDI can be resizable. Medium variant is not checked, because testcase creates disks itself
         oMediumFormat = oMedium.mediumFormat;
         if oMediumFormat.id != 'VDI':
             return False;
-        
+
         cbCurrSize = oMedium.logicalSize;
         # currently reduce is not supported
-        if cbNewSize < cbCurrSize: 
+        if cbNewSize < cbCurrSize:
             return False;
-        
+
         try:
             oProgressCom = oMedium.resize(cbNewSize);
             oProgress = vboxwrappers.ProgressWrapper(oProgressCom, self.oVBoxMgr, self.oVBox.oTstDrv,
@@ -159,12 +159,12 @@ class tdStorageSnapshot(vbox.TestDriver):                                      #
         except:
             reporter.logXcpt('IMedium::resize failed on %s' % (oMedium.name));
             return False;
-        
+
         return True;
-    
+
     def getMedium(self, oVM, sController):
         oMediumAttachments = oVM.getMediumAttachmentsOfController(sController);
-        
+
         for oAttachment in oMediumAttachments:
             oMedium = oAttachment.medium;
             if oMedium.deviceType is not vboxcon.DeviceType_HardDisk:
@@ -172,20 +172,20 @@ class tdStorageSnapshot(vbox.TestDriver):                                      #
             if oMedium.type is not vboxcon.MediumType_Normal:
                 continue;
             return oMedium;
-        
-        return None; 
-    
+
+        return None;
+
     def getSnapshotMedium(self, oSnapshot, sController):
         oVM = oSnapshot.machine;
         oMedium = self.getMedium(oVM, sController);
-        
+
         for oChildMedium in oMedium.children:
             for uSnapshotId in oChildMedium.getSnapshotIds(oVM.id):
                 if uSnapshotId == oVM.id:
                     return oChildMedium;
-                
+
         return None;
-    
+
     def openMedium(self, sHd, fImmutable = False):
         """
         Opens medium in readonly mode.
@@ -202,27 +202,27 @@ class tdStorageSnapshot(vbox.TestDriver):                                      #
                     oHd = self.oVBox.openMedium(sFullName, vboxcon.DeviceType_HardDisk, vboxcon.AccessMode_ReadOnly);
                 else:
                     oHd = self.oVBox.openHardDisk(sFullName, vboxcon.AccessMode_ReadOnly, False, "", False, "");
-                    
+
             except:
                 reporter.errorXcpt('failed to open hd "%s"' % (sFullName));
                 return False;
-            
+
         try:
             if fImmutable:
                 oHd.type = vboxcon.MediumType_Immutable;
             else:
                 oHd.type = vboxcon.MediumType_Normal;
-                
+
         except:
             if fImmutable:
                 reporter.errorXcpt('failed to set hd "%s" immutable' % (sHd));
             else:
                 reporter.errorXcpt('failed to set hd "%s" normal' % (sHd));
-            
+
             return None;
-        
+
         return oHd;
-    
+
     def cloneMedium(self, oSrcHd, oTgtHd):
         """
         Clones medium into target medium.
@@ -236,9 +236,9 @@ class tdStorageSnapshot(vbox.TestDriver):                                      #
         except:
             reporter.errorXcpt('failed to clone medium %s to %s' % (oSrcHd.name, oTgtHd.name));
             return False;
-        
+
         return True;
-    
+
     def deleteVM(self, oVM):
         try:
             oVM.unregister(vboxcon.CleanupMode_DetachAllReturnNone);
@@ -252,16 +252,16 @@ class tdStorageSnapshot(vbox.TestDriver):                                      #
                 else:
                     oProgress = oVM.delete(None);
                 self.waitOnProgress(oProgress);
-                
+
             except:
                 reporter.logXcpt();
-                
+
         else:
             try:    oVM.deleteSettings();
             except: reporter.logXcpt();
-            
+
         return None;
-    
+
     #
     # Test execution helpers.
     #
@@ -273,39 +273,39 @@ class tdStorageSnapshot(vbox.TestDriver):                                      #
         Returns a success indicator on the general test execution. This is not
         the actual test result.
         """
-        
+
         (asExts, aTypes) = oDskFmt.describeFileExtensions()
         for i in range(0, len(asExts)): #pylint: disable=consider-using-enumerate
             if aTypes[i] is vboxcon.DeviceType_HardDisk:
                 sExt = '.' + asExts[i]
                 break
-            
+
         if sExt is None:
             return False;
-        
+
         oOrigBaseHd = self.openMedium('5.3/storage/mergeMedium/t-orig.vdi');
         if oOrigBaseHd is None:
             return False;
-        
+
         #currently only VDI can be resizable. Medium variant is not checked, because testcase creates disks itself
-        fFmtDynamic = oDskFmt.id == 'VDI'; 
+        fFmtDynamic = oDskFmt.id == 'VDI';
         sOrigWithDiffHd = '5.3/storage/mergeMedium/t-fixed.vdi'
         uOrigCrc = 0x7a417cbb;
-        
+
         if fFmtDynamic:
             sOrigWithDiffHd = '5.3/storage/mergeMedium/t-resized.vdi';
             uOrigCrc = 0xa8f5daa3;
-            
+
         oOrigWithDiffHd = self.openMedium(sOrigWithDiffHd);
         if oOrigWithDiffHd is None:
             return False;
-        
+
         oVM = self.createTestVM('testvm', 1, None);
         if oVM is None:
             return False;
-        
+
         sController = _ControllerTypeToName(eStorageController);
-        
+
         # Reconfigure the VM
         oSession = self.openSession(oVM);
         if oSession is None:
@@ -319,25 +319,25 @@ class tdStorageSnapshot(vbox.TestDriver):                                      #
         #if oSession.createBaseHd can't create disk because it exists, oHd will point to some stub object anyway
         fRc = fRc and oHd is not None and (oHd.logicalSize == oOrigBaseHd.logicalSize);
         fRc = fRc and self.cloneMedium(oOrigBaseHd, oHd);
-            
+
         fRc = fRc and oSession.ensureControllerAttached(sController);
         fRc = fRc and oSession.setStorageControllerType(eStorageController, sController);
         fRc = fRc and oSession.saveSettings();
         fRc = fRc and oSession.attachHd(sHddPath, sController, iPort = 0, fImmutable=False, fForceResource=False)
-        
+
         if fRc:
             oSession.takeSnapshot('Base snapshot');
             oSnapshot = oSession.findSnapshot('Base snapshot');
-            
+
             if oSnapshot is not None:
                 oSnapshotMedium = self.getSnapshotMedium(oSnapshot, sController);
                 fRc = oSnapshotMedium is not None;
-                
+
                 if fFmtDynamic:
                     fRc = fRc and self.resizeMedium(oSnapshotMedium, oOrigWithDiffHd.logicalSize);
                 fRc = fRc and self.cloneMedium(oOrigWithDiffHd, oSnapshotMedium);
                 fRc = fRc and oSession.deleteSnapshot(oSnapshot.id, cMsTimeout = 120 * 1000);
-                
+
                 if fRc:
                     # disk for result test by checksum
                     sResFilePath = os.path.join(self.oVBox.oTstDrv.sScratchPath, 't_res.vmdk');
@@ -417,4 +417,3 @@ class tdStorageSnapshot(vbox.TestDriver):                                      #
 
 if __name__ == '__main__':
     sys.exit(tdStorageSnapshot().main(sys.argv));
-
