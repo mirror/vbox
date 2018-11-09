@@ -3926,7 +3926,7 @@ AuthResult AUTHCALL AuthEntry(
           <itemizedlist>
             <listitem><para>All attributes which were living in <link linkend="IMachine">IMachine</link> before
               have been moved to an own, dedicated interface named <link linkend="IRecordingSettings">IRecordingSettings</link>.
-              This new interface can be accessed via the new <link linkend="IMachine__getRecordingSettings">IMachine::getRecordingSettings</link>
+              This new interface can be accessed via the new <link linkend="IMachine__recordingSettings">IMachine::recordingSettings</link>
               attribute. This should emphasize that recording is not limited to video capturing as such.</para>
             </listitem>
 
