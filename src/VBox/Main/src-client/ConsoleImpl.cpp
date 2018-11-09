@@ -5615,8 +5615,8 @@ int Console::i_recordingEnable(BOOL fEnable, util::AutoWriteLock *pAutoLock)
     Display *pDisplay = i_getDisplay();
     if (pDisplay)
     {
-        const bool fIsEnabled =    Recording.mpRecordCtx
-                                && Recording.mpRecordCtx->IsStarted();
+        const bool fIsEnabled =    Recording.mpCtx
+                                && Recording.mpCtx->IsStarted();
 
         if (RT_BOOL(fEnable) != fIsEnabled)
         {
@@ -5631,16 +5631,16 @@ int Console::i_recordingEnable(BOOL fEnable, util::AutoWriteLock *pAutoLock)
                 {
 # ifdef VBOX_WITH_AUDIO_RECORDING
                     /* Attach the video recording audio driver if required. */
-                    if (   Recording.mpRecordCtx->IsFeatureEnabled(RecordFeature_Audio)
+                    if (   Recording.mpCtx->IsFeatureEnabled(RecordFeature_Audio)
                         && Recording.mAudioRec)
                     {
-                        vrc = Recording.mAudioRec->applyConfiguration(Recording.mpRecordCtx->GetConfig());
+                        vrc = Recording.mAudioRec->applyConfiguration(Recording.mpCtx->GetConfig());
                         if (RT_SUCCESS(vrc))
                             vrc = Recording.mAudioRec->doAttachDriverViaEmt(mpUVM, pAutoLock);
                     }
 # endif
                     if (   RT_SUCCESS(vrc)
-                        && Recording.mpRecordCtx->IsReady()) /* Any video recording (audio and/or video) feature enabled? */
+                        && Recording.mpCtx->IsReady()) /* Any video recording (audio and/or video) feature enabled? */
                     {
                         vrc = i_recordingStart();
                     }
@@ -6877,13 +6877,13 @@ HRESULT Console::i_cancelSaveState()
  */
 HRESULT Console::i_recordingSendAudio(const void *pvData, size_t cbData, uint64_t uTimestampMs)
 {
-    if (!Recording.mpRecordCtx)
+    if (!Recording.mpCtx)
         return S_OK;
 
-    if (   Recording.mpRecordCtx->IsStarted()
-        && Recording.mpRecordCtx->IsFeatureEnabled(RecordFeature_Audio))
+    if (   Recording.mpCtx->IsStarted()
+        && Recording.mpCtx->IsFeatureEnabled(RecordFeature_Audio))
     {
-        return Recording.mpRecordCtx->SendAudioFrame(pvData, cbData, uTimestampMs);
+        return Recording.mpCtx->SendAudioFrame(pvData, cbData, uTimestampMs);
     }
 
     return S_OK;
@@ -6906,14 +6906,14 @@ int Console::i_recordingGetSettings(settings::RecordSettings &Settings)
     AssertComRCReturn(hrc, VERR_INVALID_PARAMETER);
     Settings.fEnabled = RT_BOOL(fTemp);
 
-    SafeIfaceArray<IRecordScreenSettings> paCaptureScreens;
-    hrc = pRecordSettings->COMGETTER(Screens)(ComSafeArrayAsOutParam(paCaptureScreens));
+    SafeIfaceArray<IRecordScreenSettings> paRecordingScreens;
+    hrc = pRecordSettings->COMGETTER(Screens)(ComSafeArrayAsOutParam(paRecordingScreens));
     AssertComRCReturn(hrc, VERR_INVALID_PARAMETER);
 
-    for (unsigned long i = 0; i < (unsigned long)paCaptureScreens.size(); ++i)
+    for (unsigned long i = 0; i < (unsigned long)paRecordingScreens.size(); ++i)
     {
         settings::RecordScreenSettings RecordScreenSettings;
-        ComPtr<IRecordScreenSettings> pRecordScreenSettings = paCaptureScreens[i];
+        ComPtr<IRecordScreenSettings> pRecordScreenSettings = paRecordingScreens[i];
 
         hrc = pRecordScreenSettings->COMGETTER(Enabled)(&fTemp);
         AssertComRCReturn(hrc, VERR_INVALID_PARAMETER);
@@ -6941,7 +6941,7 @@ int Console::i_recordingGetSettings(settings::RecordSettings &Settings)
         Settings.mapScreens[i] = RecordScreenSettings;
     }
 
-    Assert(Settings.mapScreens.size() == paCaptureScreens.size());
+    Assert(Settings.mapScreens.size() == paRecordingScreens.size());
 
     return VINF_SUCCESS;
 }
@@ -6953,13 +6953,13 @@ int Console::i_recordingGetSettings(settings::RecordSettings &Settings)
  */
 int Console::i_recordingCreate(void)
 {
-    AssertReturn(Recording.mpRecordCtx == NULL, VERR_WRONG_ORDER);
+    AssertReturn(Recording.mpCtx == NULL, VERR_WRONG_ORDER);
 
     int rc = VINF_SUCCESS;
 
     try
     {
-        Recording.mpRecordCtx = new CaptureContext(this);
+        Recording.mpCtx = new RecordingContext(this);
     }
     catch (std::bad_alloc &)
     {
@@ -6974,8 +6974,8 @@ int Console::i_recordingCreate(void)
     rc = i_recordingGetSettings(Settings);
     if (RT_SUCCESS(rc))
     {
-        AssertPtr(Recording.mpRecordCtx);
-        rc = Recording.mpRecordCtx->Create(Settings);
+        AssertPtr(Recording.mpCtx);
+        rc = Recording.mpCtx->Create(Settings);
     }
 
     LogFlowFuncLeaveRC(rc);
@@ -6987,10 +6987,10 @@ int Console::i_recordingCreate(void)
  */
 void Console::i_recordingDestroy(void)
 {
-    if (Recording.mpRecordCtx)
+    if (Recording.mpCtx)
     {
-        delete Recording.mpRecordCtx;
-        Recording.mpRecordCtx = NULL;
+        delete Recording.mpCtx;
+        Recording.mpCtx = NULL;
     }
 
     LogFlowThisFuncLeave();
@@ -7003,17 +7003,17 @@ void Console::i_recordingDestroy(void)
  */
 int Console::i_recordingStart(void)
 {
-    AssertPtrReturn(Recording.mpRecordCtx, VERR_WRONG_ORDER);
+    AssertPtrReturn(Recording.mpCtx, VERR_WRONG_ORDER);
 
-    if (Recording.mpRecordCtx->IsStarted())
+    if (Recording.mpCtx->IsStarted())
         return VINF_SUCCESS;
 
     LogRel(("Recording: Starting ...\n"));
 
-    int rc = Recording.mpRecordCtx->Start();
+    int rc = Recording.mpCtx->Start();
     if (RT_SUCCESS(rc))
     {
-        for (unsigned uScreen = 0; uScreen < Recording.mpRecordCtx->GetStreamCount(); uScreen++)
+        for (unsigned uScreen = 0; uScreen < Recording.mpCtx->GetStreamCount(); uScreen++)
             mDisplay->i_recordingScreenChanged(uScreen);
     }
 
@@ -7029,16 +7029,16 @@ int Console::i_recordingStart(void)
  */
 int Console::i_recordingStop(void)
 {
-    if (   !Recording.mpRecordCtx
-        || !Recording.mpRecordCtx->IsStarted())
+    if (   !Recording.mpCtx
+        || !Recording.mpCtx->IsStarted())
         return VINF_SUCCESS;
 
     LogRel(("Recording: Stopping ...\n"));
 
-    int rc = Recording.mpRecordCtx->Stop();
+    int rc = Recording.mpCtx->Stop();
     if (RT_SUCCESS(rc))
     {
-        const size_t cStreams = Recording.mpRecordCtx->GetStreamCount();
+        const size_t cStreams = Recording.mpCtx->GetStreamCount();
         for (unsigned uScreen = 0; uScreen < cStreams; ++uScreen)
             mDisplay->i_recordingScreenChanged(uScreen);
 

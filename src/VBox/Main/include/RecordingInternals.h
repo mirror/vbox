@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ____H_VIDEOREC_INTERNALS
-#define ____H_VIDEOREC_INTERNALS
+#ifndef ____H_RECORDING_INTERNALS
+#define ____H_RECORDING_INTERNALS
 
 #include <iprt/types.h> /* drag in stdint.h before vpx does it. */
 #include <list>
@@ -29,9 +29,9 @@
 #endif /* VBOX_WITH_LIBVPX */
 
 /**
- * Structure for keeping specific video recording codec data.
+ * Structure for keeping specific recording video codec data.
  */
-typedef struct VIDEORECVIDEOCODEC
+typedef struct RECORDINGVIDEOCODEC
 {
 #ifdef VBOX_WITH_LIBVPX
     union
@@ -50,29 +50,29 @@ typedef struct VIDEORECVIDEOCODEC
         } VPX;
     };
 #endif /* VBOX_WITH_LIBVPX */
-} VIDEORECVIDEOCODEC, *PVIDEORECVIDEOCODEC;
+} RECORDINGVIDEOCODEC, *PRECORDINGVIDEOCODEC;
 
 /**
  * Enumeration for supported pixel formats.
  */
-enum VIDEORECPIXELFMT
+enum RECORDINGPIXELFMT
 {
     /** Unknown pixel format. */
-    VIDEORECPIXELFMT_UNKNOWN    = 0,
+    RECORDINGPIXELFMT_UNKNOWN    = 0,
     /** RGB 24. */
-    VIDEORECPIXELFMT_RGB24      = 1,
+    RECORDINGPIXELFMT_RGB24      = 1,
     /** RGB 24. */
-    VIDEORECPIXELFMT_RGB32      = 2,
+    RECORDINGPIXELFMT_RGB32      = 2,
     /** RGB 565. */
-    VIDEORECPIXELFMT_RGB565     = 3,
+    RECORDINGPIXELFMT_RGB565     = 3,
     /** The usual 32-bit hack. */
-    VIDEORECPIXELFMT_32BIT_HACK = 0x7fffffff
+    RECORDINGPIXELFMT_32BIT_HACK = 0x7fffffff
 };
 
 /**
- * Structure for keeping a single video recording video frame.
+ * Structure for keeping a single recording video frame.
  */
-typedef struct VIDEORECVIDEOFRAME
+typedef struct RECORDINGVIDEOFRAME
 {
     /** X resolution of this frame. */
     uint32_t            uWidth;
@@ -84,43 +84,43 @@ typedef struct VIDEORECVIDEOFRAME
     uint8_t            *pu8RGBBuf;
     /** Size (in bytes) of the RGB buffer. */
     size_t              cbRGBBuf;
-} VIDEORECVIDEOFRAME, *PVIDEORECVIDEOFRAME;
+} RECORDINGVIDEOFRAME, *PRECORDINGVIDEOFRAME;
 
 #ifdef VBOX_WITH_AUDIO_RECORDING
 /**
- * Structure for keeping a single video recording audio frame.
+ * Structure for keeping a single recording audio frame.
  */
-typedef struct VIDEORECAUDIOFRAME
+typedef struct RECORDINGAUDIOFRAME
 {
     /** Pointer to audio data. */
     uint8_t            *pvBuf;
     /** Size (in bytes) of audio data. */
     size_t              cbBuf;
-} VIDEORECAUDIOFRAME, *PVIDEORECAUDIOFRAME;
+} RECORDINGAUDIOFRAME, *PRECORDINGAUDIOFRAME;
 #endif
 
 /**
  * Enumeration for specifying a video recording block type.
  */
-typedef enum VIDEORECBLOCKTYPE
+typedef enum RECORDINGBLOCKTYPE
 {
     /** Uknown block type, do not use. */
-    VIDEORECBLOCKTYPE_UNKNOWN = 0,
+    RECORDINGBLOCKTYPE_UNKNOWN = 0,
     /** The block is a video frame. */
-    VIDEORECBLOCKTYPE_VIDEO,
+    RECORDINGBLOCKTYPE_VIDEO,
 #ifdef VBOX_WITH_AUDIO_RECORDING
     /** The block is an audio frame. */
-    VIDEORECBLOCKTYPE_AUDIO
+    RECORDINGBLOCKTYPE_AUDIO
 #endif
-} VIDEORECBLOCKTYPE;
+} RECORDINGBLOCKTYPE;
 
 /**
  * Generic structure for keeping a single video recording (data) block.
  */
-typedef struct VIDEORECBLOCK
+typedef struct RECORDINGBLOCK
 {
     /** The block's type. */
-    VIDEORECBLOCKTYPE  enmType;
+    RECORDINGBLOCKTYPE enmType;
     /** Number of references held of this block. */
     uint16_t           cRefs;
     /** The (absolute) time stamp (in ms, PTS) of this block. */
@@ -129,15 +129,15 @@ typedef struct VIDEORECBLOCK
     void              *pvData;
     /** Size (in bytes) of the (opaque) data block. */
     size_t             cbData;
-} VIDEORECBLOCK, *PVIDEORECBLOCK;
+} RECORDINGBLOCK, *PRECORDINGBLOCK;
 
 /** List for keeping video recording (data) blocks. */
-typedef std::list<PVIDEORECBLOCK> VideoRecBlockList;
+typedef std::list<PRECORDINGBLOCK> RECORDINGBLOCKList;
 
-void VideoRecBlockFree(PVIDEORECBLOCK pBlock);
+void RecordingBlockFree(PRECORDINGBLOCK pBlock);
 #ifdef VBOX_WITH_AUDIO_RECORDING
-void VideoRecAudioFrameFree(PVIDEORECAUDIOFRAME pFrame);
+void RecordingAudioFrameFree(PRECORDINGAUDIOFRAME pFrame);
 #endif
-void VideoRecVideoFrameFree(PVIDEORECVIDEOFRAME pFrame);
+void RecordingVideoFrameFree(PRECORDINGVIDEOFRAME pFrame);
 
-#endif /* ____H_VIDEOREC_INTERNALS */
+#endif /* ____H_RECORDING_INTERNALS */

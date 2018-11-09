@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ____H_VIDEOREC_STREAM
-#define ____H_VIDEOREC_STREAM
+#ifndef ____H_RECORDING_STREAM
+#define ____H_RECORDING_STREAM
 
 #include <map>
 #include <vector>
@@ -31,27 +31,27 @@
 #include "RecordingInternals.h"
 
 class WebMWriter;
-class CaptureContext;
+class RecordingContext;
 
 /** Structure for queuing all blocks bound to a single timecode.
  *  This can happen if multiple tracks are being involved. */
-struct CaptureBlocks
+struct RecordingBlocks
 {
-    virtual ~CaptureBlocks()
+    virtual ~RecordingBlocks()
     {
         Clear();
     }
 
     /**
-     * Resets a video recording block list by removing (destroying)
+     * Resets a recording block list by removing (destroying)
      * all current elements.
      */
     void Clear()
     {
         while (!List.empty())
         {
-            PVIDEORECBLOCK pBlock = List.front();
-            VideoRecBlockFree(pBlock);
+            PRECORDINGBLOCK pBlock = List.front();
+            RecordingBlockFree(pBlock);
             List.pop_front();
         }
 
@@ -59,20 +59,20 @@ struct CaptureBlocks
     }
 
     /** The actual block list for this timecode. */
-    VideoRecBlockList List;
+    RECORDINGBLOCKList List;
 };
 
 /** A block map containing all currently queued blocks.
  *  The key specifies a unique timecode, whereas the value
  *  is a list of blocks which all correlate to the same key (timecode). */
-typedef std::map<uint64_t, CaptureBlocks *> VideoRecBlockMap;
+typedef std::map<uint64_t, RecordingBlocks *> RecordingBlockMap;
 
 /**
  * Structure for holding a set of recording (data) blocks.
  */
-struct CaptureBlockSet
+struct RecordingBlockSet
 {
-    virtual ~CaptureBlockSet()
+    virtual ~RecordingBlockSet()
     {
         Clear();
     }
@@ -83,7 +83,7 @@ struct CaptureBlockSet
      */
     void Clear(void)
     {
-        VideoRecBlockMap::iterator it = Map.begin();
+        RecordingBlockMap::iterator it = Map.begin();
         while (it != Map.end())
         {
             it->second->Clear();
@@ -98,28 +98,28 @@ struct CaptureBlockSet
     /** Timestamp (in ms) when this set was last processed. */
     uint64_t         tsLastProcessedMs;
     /** All blocks related to this block set. */
-    VideoRecBlockMap Map;
+    RecordingBlockMap Map;
 };
 
 /**
  * Class for managing a recording stream.
  */
-class CaptureStream
+class RecordingStream
 {
 public:
 
-    CaptureStream(CaptureContext *pCtx);
+    RecordingStream(RecordingContext *pCtx);
 
-    CaptureStream(CaptureContext *pCtx, uint32_t uScreen, const settings::RecordScreenSettings &Settings);
+    RecordingStream(RecordingContext *pCtx, uint32_t uScreen, const settings::RecordScreenSettings &Settings);
 
-    virtual ~CaptureStream(void);
+    virtual ~RecordingStream(void);
 
 public:
 
-    int Init(CaptureContext *pCtx, uint32_t uScreen, const settings::RecordScreenSettings &Settings);
+    int Init(RecordingContext *pCtx, uint32_t uScreen, const settings::RecordScreenSettings &Settings);
     int Uninit(void);
 
-    int Process(VideoRecBlockMap &mapBlocksCommon);
+    int Process(RecordingBlockMap &mapBlocksCommon);
     int SendVideoFrame(uint32_t x, uint32_t y, uint32_t uPixelFormat, uint32_t uBPP, uint32_t uBytesPerLine,
                        uint32_t uSrcWidth, uint32_t uSrcHeight, uint8_t *puSrcData, uint64_t uTimeStampMs);
 
@@ -132,7 +132,7 @@ protected:
     int open(const settings::RecordScreenSettings &Settings);
     int close(void);
 
-    int initInternal(CaptureContext *pCtx, uint32_t uScreen, const settings::RecordScreenSettings &Settings);
+    int initInternal(RecordingContext *pCtx, uint32_t uScreen, const settings::RecordScreenSettings &Settings);
     int uninitInternal(void);
 
     int initVideo(void);
@@ -143,7 +143,7 @@ protected:
 #ifdef VBOX_WITH_LIBVPX
     int initVideoVPX(void);
     int uninitVideoVPX(void);
-    int writeVideoVPX(uint64_t uTimeStampMs, PVIDEORECVIDEOFRAME pFrame);
+    int writeVideoVPX(uint64_t uTimeStampMs, PRECORDINGVIDEOFRAME pFrame);
 #endif
     void lock(void);
     void unlock(void);
@@ -166,7 +166,7 @@ protected:
     };
 
     /** Recording context this stream is associated to. */
-    CaptureContext         *pCtx;
+    RecordingContext         *pCtx;
     /** The current state. */
     RECORDINGSTREAMSTATE    enmState;
     struct
@@ -201,17 +201,17 @@ protected:
         uint64_t            uLastTimeStampMs;
         /** Number of failed attempts to encode the current video frame in a row. */
         uint16_t            cFailedEncodingFrames;
-        VIDEORECVIDEOCODEC  Codec;
+        RECORDINGVIDEOCODEC Codec;
     } Video;
 
     settings::RecordScreenSettings ScreenSettings;
     /** Common set of video recording (data) blocks, needed for
      *  multiplexing to all recording streams. */
-    CaptureBlockSet                 Blocks;
+    RecordingBlockSet              Blocks;
 };
 
 /** Vector of video recording streams. */
-typedef std::vector <CaptureStream *> VideoRecStreams;
+typedef std::vector <RecordingStream *> RecordingStreams;
 
-#endif /* ____H_VIDEOREC_STREAM */
+#endif /* ____H_RECORDING_STREAM */
 

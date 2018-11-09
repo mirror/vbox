@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ____H_DRVAUDIOVIDEOREC
-#define ____H_DRVAUDIOVIDEOREC
+#ifndef ____H_DRVAUDIORECORDING
+#define ____H_DRVAUDIORECORDING
 
 #include <VBox/com/ptr.h>
 #include <VBox/settings.h>
@@ -58,10 +58,10 @@ private:
     int configureDriver(PCFGMNODE pLunCfg);
 
     /** Pointer to the associated video recording audio driver. */
-    struct DRVAUDIOVIDEOREC         *mpDrv;
+    struct DRVAUDIORECORDING         *mpDrv;
     /** Capturing configuration used for configuring the driver. */
     struct settings::RecordSettings mVideoRecCfg;
 };
 
-#endif /* !____H_DRVAUDIOVIDEOREC */
+#endif /* !____H_DRVAUDIORECORDING */
 

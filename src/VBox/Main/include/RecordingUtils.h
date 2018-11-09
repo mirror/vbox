@@ -15,6 +15,9 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#ifndef ____H_RECORDING_UTILS
+#define ____H_RECORDING_UTILS
+
 #include <iprt/asm.h>
 #include <iprt/assert.h>
 #include <iprt/critsect.h>
@@ -194,6 +197,9 @@ private:
     uint8_t *mBuf;
 };
 
-int videoRecRGBToYUV(uint32_t uPixelFormat,
-                     uint8_t *paDst, uint32_t uDstWidth, uint32_t uDstHeight,
-                     uint8_t *paSrc, uint32_t uSrcWidth, uint32_t uSrcHeight);
+int recordingRGBToYUV(uint32_t uPixelFormat,
+                      uint8_t *paDst, uint32_t uDstWidth, uint32_t uDstHeight,
+                      uint8_t *paSrc, uint32_t uSrcWidth, uint32_t uSrcHeight);
+
+#endif /* ____H_RECORDING_UTILS */
+

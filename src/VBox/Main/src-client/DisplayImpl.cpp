@@ -2412,7 +2412,7 @@ HRESULT Display::takeScreenShotToArray(ULONG aScreenId,
  */
 int Display::i_recordingInvalidate(void)
 {
-    CaptureContext *pCtx = mParent->i_recordingGetContext();
+    RecordingContext *pCtx = mParent->i_recordingGetContext();
     if (!pCtx || !pCtx->IsStarted())
         return VINF_SUCCESS;
 
@@ -2421,7 +2421,7 @@ int Display::i_recordingInvalidate(void)
      */
     for (unsigned uScreen = 0; uScreen < mcMonitors; uScreen++)
     {
-        CaptureStream *pRecordingStream = pCtx->GetStream(uScreen);
+        RecordingStream *pRecordingStream = pCtx->GetStream(uScreen);
 
         const bool fStreamEnabled = pRecordingStream->IsReady();
               bool fChanged       = maRecordingEnabled[uScreen] != fStreamEnabled;
@@ -2437,7 +2437,7 @@ int Display::i_recordingInvalidate(void)
 
 void Display::i_recordingScreenChanged(unsigned uScreenId)
 {
-    CaptureContext *pCtx = mParent->i_recordingGetContext();
+    RecordingContext *pCtx = mParent->i_recordingGetContext();
 
     if (   RT_LIKELY(!maRecordingEnabled[uScreenId])
         || !pCtx || !pCtx->IsStarted())
@@ -3388,7 +3388,7 @@ DECLCALLBACK(void) Display::i_displayUpdateCallback(PPDMIDISPLAYCONNECTOR pInter
 
 #ifdef VBOX_WITH_RECORDING
     AssertPtr(pDisplay->mParent);
-    CaptureContext *pCtx = pDisplay->mParent->i_recordingGetContext();
+    RecordingContext *pCtx = pDisplay->mParent->i_recordingGetContext();
 
     if (   pCtx
         && pCtx->IsStarted()
@@ -3832,7 +3832,7 @@ int Display::i_crCtlSubmitSyncIfHasDataForScreen(uint32_t u32ScreenID, struct VB
 bool  Display::i_handleCrVRecScreenshotBegin(uint32_t uScreen, uint64_t uTimestampMs)
 {
 # ifdef VBOX_WITH_RECORDING
-    CaptureContext *pCtx = mParent->i_recordingGetContext();
+    RecordingContext *pCtx = mParent->i_recordingGetContext();
     return (      pCtx
                && pCtx->IsReady(uScreen, uTimestampMs));
 # else
@@ -3854,7 +3854,7 @@ void  Display::i_handleCrVRecScreenshotPerform(uint32_t uScreen,
 {
     Assert(mfCrOglVideoRecState == CRVREC_STATE_SUBMITTED);
 # ifdef VBOX_WITH_RECORDING
-    CaptureContext *pCtx = mParent->i_recordingGetContext();
+    RecordingContext *pCtx = mParent->i_recordingGetContext();
 
     if (   pCtx
         && pCtx->IsStarted()

@@ -146,23 +146,23 @@ inline bool videoRecColorConvWriteRGB24(unsigned aWidth, unsigned aHeight,
  * @param   uSrcWidth           Width (X, in pixels) of source buffer.
  * @param   uSrcHeight          Height (Y, in pixels) of source buffer.
  */
-int videoRecRGBToYUV(uint32_t uPixelFormat,
+int recordingRGBToYUV(uint32_t uPixelFormat,
                      uint8_t *paDst, uint32_t uDstWidth, uint32_t uDstHeight,
                      uint8_t *paSrc, uint32_t uSrcWidth, uint32_t uSrcHeight)
 {
     switch (uPixelFormat)
     {
-        case VIDEORECPIXELFMT_RGB32:
+        case RECORDINGPIXELFMT_RGB32:
             if (!videoRecColorConvWriteYUV420p<ColorConvBGRA32Iter>(paDst, uDstWidth, uDstHeight,
                                                             paSrc, uSrcWidth, uSrcHeight))
                 return VERR_INVALID_PARAMETER;
             break;
-        case VIDEORECPIXELFMT_RGB24:
+        case RECORDINGPIXELFMT_RGB24:
             if (!videoRecColorConvWriteYUV420p<ColorConvBGR24Iter>(paDst, uDstWidth, uDstHeight,
                                                            paSrc, uSrcWidth, uSrcHeight))
                 return VERR_INVALID_PARAMETER;
             break;
-        case VIDEORECPIXELFMT_RGB565:
+        case RECORDINGPIXELFMT_RGB565:
             if (!videoRecColorConvWriteYUV420p<ColorConvBGR565Iter>(paDst, uDstWidth, uDstHeight,
                                                             paSrc, uSrcWidth, uSrcHeight))
                 return VERR_INVALID_PARAMETER;

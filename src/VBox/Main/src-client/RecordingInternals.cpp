@@ -26,7 +26,7 @@
  *
  * @param   pFrame              Audio frame to free. The pointer will be invalid after return.
  */
-void VideoRecAudioFrameFree(PVIDEORECAUDIOFRAME pFrame)
+void RecordingAudioFrameFree(PRECORDINGAUDIOFRAME pFrame)
 {
     if (!pFrame)
         return;
@@ -47,7 +47,7 @@ void VideoRecAudioFrameFree(PVIDEORECAUDIOFRAME pFrame)
  * @returns IPRT status code.
  * @param   pFrame              Pointer to video frame to free. The pointer will be invalid after return.
  */
-void VideoRecVideoFrameFree(PVIDEORECVIDEOFRAME pFrame)
+void RecordingVideoFrameFree(PRECORDINGVIDEOFRAME pFrame)
 {
     if (!pFrame)
         return;
@@ -66,20 +66,20 @@ void VideoRecVideoFrameFree(PVIDEORECVIDEOFRAME pFrame)
  * @returns IPRT status code.
  * @param   pBlock              Video recording (data) block to free. The pointer will be invalid after return.
  */
-void VideoRecBlockFree(PVIDEORECBLOCK pBlock)
+void RECORDINGBLOCKFree(PRECORDINGBLOCK pBlock)
 {
     if (!pBlock)
         return;
 
     switch (pBlock->enmType)
     {
-        case VIDEORECBLOCKTYPE_VIDEO:
-            VideoRecVideoFrameFree((PVIDEORECVIDEOFRAME)pBlock->pvData);
+        case RECORDINGBLOCKTYPE_VIDEO:
+            RecordingVideoFrameFree((PRECORDINGVIDEOFRAME)pBlock->pvData);
             break;
 
 #ifdef VBOX_WITH_AUDIO_RECORDING
-        case VIDEORECBLOCKTYPE_AUDIO:
-            VideoRecAudioFrameFree((PVIDEORECAUDIOFRAME)pBlock->pvData);
+        case RECORDINGBLOCKTYPE_AUDIO:
+            RecordingAudioFrameFree((PRECORDINGAUDIOFRAME)pBlock->pvData);
             break;
 #endif
         default:

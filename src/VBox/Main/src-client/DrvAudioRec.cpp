@@ -271,7 +271,7 @@ typedef struct AVRECSTREAM
 /**
  * Video recording audio driver instance data.
  */
-typedef struct DRVAUDIOVIDEOREC
+typedef struct DRVAUDIORECORDING
 {
     /** Pointer to audio video recording object. */
     AudioVideoRec       *pAudioVideoRec;
@@ -289,11 +289,11 @@ typedef struct DRVAUDIOVIDEOREC
     AVRECCODECPARMS      CodecParms;
     /** The driver's sink for writing output to. */
     AVRECSINK            Sink;
-} DRVAUDIOVIDEOREC, *PDRVAUDIOVIDEOREC;
+} DRVAUDIORECORDING, *PDRVAUDIORECORDING;
 
-/** Makes DRVAUDIOVIDEOREC out of PDMIHOSTAUDIO. */
-#define PDMIHOSTAUDIO_2_DRVAUDIOVIDEOREC(pInterface) /* (clang doesn't think it is a POD, thus _DYN.) */ \
-    ( (PDRVAUDIOVIDEOREC)((uintptr_t)pInterface - RT_UOFFSETOF_DYN(DRVAUDIOVIDEOREC, IHostAudio)) )
+/** Makes DRVAUDIORECORDING out of PDMIHOSTAUDIO. */
+#define PDMIHOSTAUDIO_2_DRVAUDIORECORDING(pInterface) /* (clang doesn't think it is a POD, thus _DYN.) */ \
+    ( (PDRVAUDIORECORDING)((uintptr_t)pInterface - RT_UOFFSETOF_DYN(DRVAUDIORECORDING, IHostAudio)) )
 
 /**
  * Initializes a recording sink.
@@ -304,7 +304,7 @@ typedef struct DRVAUDIOVIDEOREC
  * @param   pConParms           Container parameters to set.
  * @param   pCodecParms         Codec parameters to set.
  */
-static int avRecSinkInit(PDRVAUDIOVIDEOREC pThis, PAVRECSINK pSink, PAVRECCONTAINERPARMS pConParms, PAVRECCODECPARMS pCodecParms)
+static int avRecSinkInit(PDRVAUDIORECORDING pThis, PAVRECSINK pSink, PAVRECCONTAINERPARMS pConParms, PAVRECCODECPARMS pCodecParms)
 {
     uint32_t uHz       = pCodecParms->PCMProps.uHz;
     uint8_t  cBytes    = pCodecParms->PCMProps.cBytes;
@@ -512,7 +512,7 @@ static void avRecSinkShutdown(PAVRECSINK pSink)
  * @param   pCfgReq             Requested configuration by the audio backend.
  * @param   pCfgAcq             Acquired configuration by the audio output stream.
  */
-static int avRecCreateStreamOut(PDRVAUDIOVIDEOREC pThis, PAVRECSTREAM pStreamAV,
+static int avRecCreateStreamOut(PDRVAUDIORECORDING pThis, PAVRECSTREAM pStreamAV,
                                 PAVRECSINK pSink, PPDMAUDIOSTREAMCFG pCfgReq, PPDMAUDIOSTREAMCFG pCfgAcq)
 {
     AssertPtrReturn(pThis,     VERR_INVALID_POINTER);
@@ -584,7 +584,7 @@ static int avRecCreateStreamOut(PDRVAUDIOVIDEOREC pThis, PAVRECSTREAM pStreamAV,
  * @param   pThis               Driver instance.
  * @param   pStreamAV           Audio output stream to destroy.
  */
-static int avRecDestroyStreamOut(PDRVAUDIOVIDEOREC pThis, PAVRECSTREAM pStreamAV)
+static int avRecDestroyStreamOut(PDRVAUDIORECORDING pThis, PAVRECSTREAM pStreamAV)
 {
     RT_NOREF(pThis);
 
@@ -620,7 +620,7 @@ static int avRecDestroyStreamOut(PDRVAUDIOVIDEOREC pThis, PAVRECSTREAM pStreamAV
  * @param   pStreamAV           Audio output stream to control.
  * @param   enmStreamCmd        Stream command to issue.
  */
-static int avRecControlStreamOut(PDRVAUDIOVIDEOREC pThis,
+static int avRecControlStreamOut(PDRVAUDIORECORDING pThis,
                                  PAVRECSTREAM pStreamAV, PDMAUDIOSTREAMCMD enmStreamCmd)
 {
     RT_NOREF(pThis, pStreamAV);
@@ -653,7 +653,7 @@ static DECLCALLBACK(int) drvAudioVideoRecInit(PPDMIHOSTAUDIO pInterface)
 
     LogFlowFuncEnter();
 
-    PDRVAUDIOVIDEOREC pThis = PDMIHOSTAUDIO_2_DRVAUDIOVIDEOREC(pInterface);
+    PDRVAUDIORECORDING pThis = PDMIHOSTAUDIO_2_DRVAUDIORECORDING(pInterface);
 
     LogRel(("Recording: Audio driver is using %RU32Hz, %RU16bit, %RU8 %s\n",
             pThis->CodecParms.PCMProps.uHz, pThis->CodecParms.PCMProps.cBytes * 8,
@@ -698,7 +698,7 @@ static DECLCALLBACK(int) drvAudioVideoRecStreamPlay(PPDMIHOSTAUDIO pInterface, P
     AssertReturn(cxBuf,         VERR_INVALID_PARAMETER);
     /* pcxWritten is optional. */
 
-    PDRVAUDIOVIDEOREC pThis     = PDMIHOSTAUDIO_2_DRVAUDIOVIDEOREC(pInterface);
+    PDRVAUDIORECORDING pThis     = PDMIHOSTAUDIO_2_DRVAUDIORECORDING(pInterface);
     RT_NOREF(pThis);
     PAVRECSTREAM      pStreamAV = (PAVRECSTREAM)pStream;
 
@@ -899,7 +899,7 @@ static DECLCALLBACK(void) drvAudioVideoRecShutdown(PPDMIHOSTAUDIO pInterface)
 {
     LogFlowFuncEnter();
 
-    PDRVAUDIOVIDEOREC pThis = PDMIHOSTAUDIO_2_DRVAUDIOVIDEOREC(pInterface);
+    PDRVAUDIORECORDING pThis = PDMIHOSTAUDIO_2_DRVAUDIORECORDING(pInterface);
 
     avRecSinkShutdown(&pThis->Sink);
 }
@@ -932,7 +932,7 @@ static DECLCALLBACK(int) drvAudioVideoRecStreamCreate(PPDMIHOSTAUDIO pInterface,
 
     AssertPtrReturn(pStream,    VERR_INVALID_POINTER);
 
-    PDRVAUDIOVIDEOREC pThis     = PDMIHOSTAUDIO_2_DRVAUDIOVIDEOREC(pInterface);
+    PDRVAUDIORECORDING pThis     = PDMIHOSTAUDIO_2_DRVAUDIORECORDING(pInterface);
     PAVRECSTREAM      pStreamAV = (PAVRECSTREAM)pStream;
 
     /* For now we only have one sink, namely the driver's one.
@@ -959,7 +959,7 @@ static DECLCALLBACK(int) drvAudioVideoRecStreamDestroy(PPDMIHOSTAUDIO pInterface
     AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
     AssertPtrReturn(pStream,    VERR_INVALID_POINTER);
 
-    PDRVAUDIOVIDEOREC pThis     = PDMIHOSTAUDIO_2_DRVAUDIOVIDEOREC(pInterface);
+    PDRVAUDIORECORDING pThis     = PDMIHOSTAUDIO_2_DRVAUDIORECORDING(pInterface);
     PAVRECSTREAM      pStreamAV = (PAVRECSTREAM)pStream;
 
     if (!pStreamAV->pCfg) /* Not (yet) configured? Skip. */
@@ -989,7 +989,7 @@ static DECLCALLBACK(int) drvAudioVideoRecStreamControl(PPDMIHOSTAUDIO pInterface
     AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
     AssertPtrReturn(pStream,    VERR_INVALID_POINTER);
 
-    PDRVAUDIOVIDEOREC pThis     = PDMIHOSTAUDIO_2_DRVAUDIOVIDEOREC(pInterface);
+    PDRVAUDIORECORDING pThis     = PDMIHOSTAUDIO_2_DRVAUDIORECORDING(pInterface);
     PAVRECSTREAM      pStreamAV = (PAVRECSTREAM)pStream;
 
     if (!pStreamAV->pCfg) /* Not (yet) configured? Skip. */
@@ -1056,7 +1056,7 @@ static DECLCALLBACK(int) drvAudioVideoRecStreamIterate(PPDMIHOSTAUDIO pInterface
 static DECLCALLBACK(void *) drvAudioVideoRecQueryInterface(PPDMIBASE pInterface, const char *pszIID)
 {
     PPDMDRVINS pDrvIns = PDMIBASE_2_PDMDRV(pInterface);
-    PDRVAUDIOVIDEOREC pThis = PDMINS_2_DATA(pDrvIns, PDRVAUDIOVIDEOREC);
+    PDRVAUDIORECORDING pThis = PDMINS_2_DATA(pDrvIns, PDRVAUDIORECORDING);
 
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE, &pDrvIns->IBase);
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIHOSTAUDIO, &pThis->IHostAudio);
@@ -1138,7 +1138,7 @@ int AudioVideoRec::configureDriver(PCFGMNODE pLunCfg)
 DECLCALLBACK(int) AudioVideoRec::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint32_t fFlags)
 {
     PDMDRV_CHECK_VERSIONS_RETURN(pDrvIns);
-    PDRVAUDIOVIDEOREC pThis = PDMINS_2_DATA(pDrvIns, PDRVAUDIOVIDEOREC);
+    PDRVAUDIORECORDING pThis = PDMINS_2_DATA(pDrvIns, PDRVAUDIORECORDING);
     RT_NOREF(fFlags);
 
     LogRel(("Audio: Initializing video recording audio driver\n"));
@@ -1246,7 +1246,7 @@ DECLCALLBACK(int) AudioVideoRec::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
 DECLCALLBACK(void) AudioVideoRec::drvDestruct(PPDMDRVINS pDrvIns)
 {
     PDMDRV_CHECK_VERSIONS_RETURN_VOID(pDrvIns);
-    PDRVAUDIOVIDEOREC pThis = PDMINS_2_DATA(pDrvIns, PDRVAUDIOVIDEOREC);
+    PDRVAUDIORECORDING pThis = PDMINS_2_DATA(pDrvIns, PDRVAUDIORECORDING);
 
     LogFlowFuncEnter();
 
@@ -1322,7 +1322,7 @@ const PDMDRVREG AudioVideoRec::DrvReg =
     /* cMaxInstances */
     ~0U,
     /* cbInstance */
-    sizeof(DRVAUDIOVIDEOREC),
+    sizeof(DRVAUDIORECORDING),
     /* pfnConstruct */
     AudioVideoRec::drvConstruct,
     /* pfnDestruct */

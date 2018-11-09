@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ____H_VIDEOREC
-#define ____H_VIDEOREC
+#ifndef ____H_RECORDING
+#define ____H_RECORDING
 
 #include <VBox/com/array.h>
 #include <VBox/com/string.h>
@@ -34,20 +34,20 @@ class Console;
 /**
  * Class for managing a capturing context.
  */
-class CaptureContext
+class RecordingContext
 {
 public:
 
-    CaptureContext(Console *pConsole);
+    RecordingContext(Console *pConsole);
 
-    CaptureContext(Console *pConsole, const settings::RecordSettings &a_Settings);
+    RecordingContext(Console *pConsole, const settings::RecordSettings &a_Settings);
 
-    virtual ~CaptureContext(void);
+    virtual ~RecordingContext(void);
 
 public:
 
     const settings::RecordSettings &GetConfig(void) const;
-    CaptureStream *GetStream(unsigned uScreen) const;
+    RecordingStream *GetStream(unsigned uScreen) const;
     size_t GetStreamCount(void) const;
 
     int Create(const settings::RecordSettings &a_Settings);
@@ -77,7 +77,7 @@ protected:
 
     int destroyInternal(void);
 
-    CaptureStream *getStreamInternal(unsigned uScreen) const;
+    RecordingStream *getStreamInternal(unsigned uScreen) const;
 
     static DECLCALLBACK(int) threadMain(RTTHREAD hThreadSelf, void *pvUser);
 
@@ -88,24 +88,24 @@ protected:
     /**
      * Enumeration for a recording context state.
      */
-    enum VIDEORECSTS
+    enum RECORDINGSTS
     {
         /** Context not initialized. */
-        VIDEORECSTS_UNINITIALIZED = 0,
+        RECORDINGSTS_UNINITIALIZED = 0,
         /** Context was created. */
-        VIDEORECSTS_CREATED       = 1,
+        RECORDINGSTS_CREATED       = 1,
         /** Context was started. */
-        VIDEORECSTS_STARTED       = 2,
+        RECORDINGSTS_STARTED       = 2,
         /** The usual 32-bit hack. */
-        VIDEORECSTS_32BIT_HACK    = 0x7fffffff
+        RECORDINGSTS_32BIT_HACK    = 0x7fffffff
     };
 
     /** Pointer to the console object. */
     Console                  *pConsole;
     /** Used recording configuration. */
-    settings::RecordSettings Settings;
+    settings::RecordSettings  Settings;
     /** The current state. */
-    VIDEORECSTS               enmState;
+    RECORDINGSTS              enmState;
     /** Critical section to serialize access. */
     RTCRITSECT                CritSect;
     /** Semaphore to signal the encoding worker thread. */
@@ -116,7 +116,7 @@ protected:
     RTTHREAD                  Thread;
     /** Vector of current recording streams.
      *  Per VM screen (display) one recording stream is being used. */
-    VideoRecStreams           vecStreams;
+    RecordingStreams          vecStreams;
     /** Timestamp (in ms) of when recording has been started. */
     uint64_t                  tsStartMs;
     /** Block map of common blocks which need to get multiplexed
@@ -126,7 +126,7 @@ protected:
      *
      *  For now this only affects audio, e.g. all recording streams
      *  need to have the same audio data at a specific point in time. */
-    VideoRecBlockMap          mapBlocksCommon;
+    RecordingBlockMap         mapBlocksCommon;
 };
-#endif /* !____H_VIDEOREC */
+#endif /* !____H_RECORDING */
 

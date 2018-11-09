@@ -41,7 +41,7 @@
 #include "WebMWriter.h"
 
 
-CaptureStream::CaptureStream(CaptureContext *a_pCtx)
+RecordingStream::RecordingStream(RecordingContext *a_pCtx)
     : pCtx(a_pCtx)
     , enmState(RECORDINGSTREAMSTATE_UNINITIALIZED)
     , tsStartMs(0)
@@ -50,7 +50,7 @@ CaptureStream::CaptureStream(CaptureContext *a_pCtx)
     File.hFile = NIL_RTFILE;
 }
 
-CaptureStream::CaptureStream(CaptureContext *a_pCtx, uint32_t uScreen, const settings::RecordScreenSettings &Settings)
+RecordingStream::RecordingStream(RecordingContext *a_pCtx, uint32_t uScreen, const settings::RecordScreenSettings &Settings)
     : enmState(RECORDINGSTREAMSTATE_UNINITIALIZED)
     , tsStartMs(0)
 {
@@ -62,7 +62,7 @@ CaptureStream::CaptureStream(CaptureContext *a_pCtx, uint32_t uScreen, const set
         throw rc2;
 }
 
-CaptureStream::~CaptureStream(void)
+RecordingStream::~RecordingStream(void)
 {
     int rc2 = uninitInternal();
     AssertRC(rc2);
@@ -73,7 +73,7 @@ CaptureStream::~CaptureStream(void)
  *
  * @returns IPRT status code.
  */
-int CaptureStream::open(const settings::RecordScreenSettings &Settings)
+int RecordingStream::open(const settings::RecordScreenSettings &Settings)
 {
     /* Sanity. */
     Assert(Settings.enmDest != RecordDestination_None);
@@ -181,7 +181,7 @@ int CaptureStream::open(const settings::RecordScreenSettings &Settings)
     return rc;
 }
 
-int CaptureStream::parseOptionsString(const com::Utf8Str &strOptions)
+int RecordingStream::parseOptionsString(const com::Utf8Str &strOptions)
 {
     size_t pos = 0;
     com::Utf8Str key, value;
@@ -254,7 +254,7 @@ int CaptureStream::parseOptionsString(const com::Utf8Str &strOptions)
     return VINF_SUCCESS;
 }
 
-const settings::RecordScreenSettings &CaptureStream::GetConfig(void) const
+const settings::RecordScreenSettings &RecordingStream::GetConfig(void) const
 {
     return this->ScreenSettings;
 }
@@ -265,7 +265,7 @@ const settings::RecordScreenSettings &CaptureStream::GetConfig(void) const
  * @returns true if any limit has been reached.
  * @param   tsNowMs             Current time stamp (in ms).
  */
-bool CaptureStream::IsLimitReached(uint64_t tsNowMs) const
+bool RecordingStream::IsLimitReached(uint64_t tsNowMs) const
 {
     if (!IsReady())
         return true;
@@ -298,7 +298,7 @@ bool CaptureStream::IsLimitReached(uint64_t tsNowMs) const
     return false;
 }
 
-bool CaptureStream::IsReady(void) const
+bool RecordingStream::IsReady(void) const
 {
     return this->fEnabled;
 }
@@ -311,7 +311,7 @@ bool CaptureStream::IsReady(void) const
  * @returns IPRT status code.
  * @param   mapBlocksCommon     Map of common block to process for this stream.
  */
-int CaptureStream::Process(VideoRecBlockMap &mapBlocksCommon)
+int RecordingStream::Process(RecordingBlockMap &mapBlocksCommon)
 {
     lock();
 
@@ -323,29 +323,29 @@ int CaptureStream::Process(VideoRecBlockMap &mapBlocksCommon)
 
     int rc = VINF_SUCCESS;
 
-    VideoRecBlockMap::iterator itStreamBlocks = Blocks.Map.begin();
+    RecordingBlockMap::iterator itStreamBlocks = Blocks.Map.begin();
     while (itStreamBlocks != Blocks.Map.end())
     {
-        const uint64_t        uTimeStampMs = itStreamBlocks->first;
-              CaptureBlocks *pBlocks       = itStreamBlocks->second;
+        const uint64_t         uTimeStampMs = itStreamBlocks->first;
+              RecordingBlocks *pBlocks      = itStreamBlocks->second;
 
         AssertPtr(pBlocks);
 
         while (!pBlocks->List.empty())
         {
-            PVIDEORECBLOCK pBlock = pBlocks->List.front();
+            PRECORDINGBLOCK pBlock = pBlocks->List.front();
             AssertPtr(pBlock);
 
 #ifdef VBOX_WITH_LIBVPX
-            if (pBlock->enmType == VIDEORECBLOCKTYPE_VIDEO)
+            if (pBlock->enmType == RECORDINGBLOCKTYPE_VIDEO)
             {
-                PVIDEORECVIDEOFRAME pVideoFrame  = (PVIDEORECVIDEOFRAME)pBlock->pvData;
+                PRECORDINGVIDEOFRAME pVideoFrame  = (PRECORDINGVIDEOFRAME)pBlock->pvData;
 
-                rc = videoRecRGBToYUV(pVideoFrame->uPixelFormat,
-                                      /* Destination */
-                                      this->Video.Codec.VPX.pu8YuvBuf, pVideoFrame->uWidth, pVideoFrame->uHeight,
-                                      /* Source */
-                                      pVideoFrame->pu8RGBBuf, this->ScreenSettings.Video.ulWidth, this->ScreenSettings.Video.ulHeight);
+                rc = recordingRGBToYUV(pVideoFrame->uPixelFormat,
+                                       /* Destination */
+                                       this->Video.Codec.VPX.pu8YuvBuf, pVideoFrame->uWidth, pVideoFrame->uHeight,
+                                       /* Source */
+                                       pVideoFrame->pu8RGBBuf, this->ScreenSettings.Video.ulWidth, this->ScreenSettings.Video.ulHeight);
                 if (RT_SUCCESS(rc))
                 {
                     rc = writeVideoVPX(uTimeStampMs, pVideoFrame);
@@ -354,7 +354,7 @@ int CaptureStream::Process(VideoRecBlockMap &mapBlocksCommon)
                     break;
             }
 #endif
-            VideoRecBlockFree(pBlock);
+            RecordingBlockFree(pBlock);
             pBlock = NULL;
 
             pBlocks->List.pop_front();
@@ -368,18 +368,18 @@ int CaptureStream::Process(VideoRecBlockMap &mapBlocksCommon)
 
     /* As each (enabled) screen has to get the same audio data, look for common (audio) data which needs to be
      * written to the screen's assigned recording stream. */
-    VideoRecBlockMap::iterator itCommonBlocks = mapBlocksCommon.begin();
+    RecordingBlockMap::iterator itCommonBlocks = mapBlocksCommon.begin();
     while (itCommonBlocks != mapBlocksCommon.end())
     {
-        VideoRecBlockList::iterator itBlock = itCommonBlocks->second->List.begin();
+        RECORDINGBLOCKList::iterator itBlock = itCommonBlocks->second->List.begin();
         while (itBlock != itCommonBlocks->second->List.end())
         {
-            PVIDEORECBLOCK pBlockCommon = (PVIDEORECBLOCK)(*itBlock);
+            PRECORDINGBLOCK pBlockCommon = (PRECORDINGBLOCK)(*itBlock);
             switch (pBlockCommon->enmType)
             {
-                case VIDEORECBLOCKTYPE_AUDIO:
+                case RECORDINGBLOCKTYPE_AUDIO:
                 {
-                    PVIDEORECAUDIOFRAME pAudioFrame = (PVIDEORECAUDIOFRAME)pBlockCommon->pvData;
+                    PRECORDINGAUDIOFRAME pAudioFrame = (PRECORDINGAUDIOFRAME)pBlockCommon->pvData;
                     AssertPtr(pAudioFrame);
                     AssertPtr(pAudioFrame->pvBuf);
                     Assert(pAudioFrame->cbBuf);
@@ -403,7 +403,7 @@ int CaptureStream::Process(VideoRecBlockMap &mapBlocksCommon)
             pBlockCommon->cRefs--;
             if (pBlockCommon->cRefs == 0)
             {
-                VideoRecBlockFree(pBlockCommon);
+                RecordingBlockFree(pBlockCommon);
                 itCommonBlocks->second->List.erase(itBlock);
                 itBlock = itCommonBlocks->second->List.begin();
             }
@@ -433,12 +433,12 @@ int CaptureStream::Process(VideoRecBlockMap &mapBlocksCommon)
     return rc;
 }
 
-int CaptureStream::SendVideoFrame(uint32_t x, uint32_t y, uint32_t uPixelFormat, uint32_t uBPP, uint32_t uBytesPerLine,
+int RecordingStream::SendVideoFrame(uint32_t x, uint32_t y, uint32_t uPixelFormat, uint32_t uBPP, uint32_t uBytesPerLine,
                                   uint32_t uSrcWidth, uint32_t uSrcHeight, uint8_t *puSrcData, uint64_t uTimeStampMs)
 {
     lock();
 
-    PVIDEORECVIDEOFRAME pFrame = NULL;
+    PRECORDINGVIDEOFRAME pFrame = NULL;
 
     int rc = VINF_SUCCESS;
 
@@ -507,7 +507,7 @@ int CaptureStream::SendVideoFrame(uint32_t x, uint32_t y, uint32_t uPixelFormat,
         if (destY + h > this->ScreenSettings.Video.ulHeight)
             h = this->ScreenSettings.Video.ulHeight - destY;
 
-        pFrame = (PVIDEORECVIDEOFRAME)RTMemAllocZ(sizeof(VIDEORECVIDEOFRAME));
+        pFrame = (PRECORDINGVIDEOFRAME)RTMemAllocZ(sizeof(RECORDINGVIDEOFRAME));
         AssertBreakStmt(pFrame, rc = VERR_NO_MEMORY);
 
         /* Calculate bytes per pixel and set pixel format. */
@@ -517,13 +517,13 @@ int CaptureStream::SendVideoFrame(uint32_t x, uint32_t y, uint32_t uPixelFormat,
             switch (uBPP)
             {
                 case 32:
-                    pFrame->uPixelFormat = VIDEORECPIXELFMT_RGB32;
+                    pFrame->uPixelFormat = RECORDINGPIXELFMT_RGB32;
                     break;
                 case 24:
-                    pFrame->uPixelFormat = VIDEORECPIXELFMT_RGB24;
+                    pFrame->uPixelFormat = RECORDINGPIXELFMT_RGB24;
                     break;
                 case 16:
-                    pFrame->uPixelFormat = VIDEORECPIXELFMT_RGB565;
+                    pFrame->uPixelFormat = RECORDINGPIXELFMT_RGB565;
                     break;
                 default:
                     AssertMsgFailedBreakStmt(("Unknown color depth (%RU32)\n", uBPP), rc = VERR_NOT_SUPPORTED);
@@ -556,18 +556,18 @@ int CaptureStream::SendVideoFrame(uint32_t x, uint32_t y, uint32_t uPixelFormat,
         uint32_t offSrc = y * uBytesPerLine + x * uBytesPerPixel;
         uint32_t offDst = (destY * this->ScreenSettings.Video.ulWidth + destX) * uBytesPerPixel;
 
-#ifdef VBOX_VIDEOREC_DUMP
-        VIDEORECBMPHDR bmpHdr;
+#ifdef VBOX_RECORDING_DUMP
+        RECORDINGBMPHDR bmpHdr;
         RT_ZERO(bmpHdr);
 
-        VIDEORECBMPDIBHDR bmpDIBHdr;
+        RECORDINGBMPDIBHDR bmpDIBHdr;
         RT_ZERO(bmpDIBHdr);
 
         bmpHdr.u16Magic   = 0x4d42; /* Magic */
-        bmpHdr.u32Size    = (uint32_t)(sizeof(VIDEORECBMPHDR) + sizeof(VIDEORECBMPDIBHDR) + (w * h * uBytesPerPixel));
-        bmpHdr.u32OffBits = (uint32_t)(sizeof(VIDEORECBMPHDR) + sizeof(VIDEORECBMPDIBHDR));
+        bmpHdr.u32Size    = (uint32_t)(sizeof(RECORDINGBMPHDR) + sizeof(RECORDINGBMPDIBHDR) + (w * h * uBytesPerPixel));
+        bmpHdr.u32OffBits = (uint32_t)(sizeof(RECORDINGBMPHDR) + sizeof(RECORDINGBMPDIBHDR));
 
-        bmpDIBHdr.u32Size          = sizeof(VIDEORECBMPDIBHDR);
+        bmpDIBHdr.u32Size          = sizeof(RECORDINGBMPDIBHDR);
         bmpDIBHdr.u32Width         = w;
         bmpDIBHdr.u32Height        = h;
         bmpDIBHdr.u16Planes        = 1;
@@ -598,7 +598,7 @@ int CaptureStream::SendVideoFrame(uint32_t x, uint32_t y, uint32_t uPixelFormat,
 
             memcpy(pFrame->pu8RGBBuf + offDst, puSrcData + offSrc, w * uBytesPerPixel);
 
-#ifdef VBOX_VIDEOREC_DUMP
+#ifdef VBOX_RECORDING_DUMP
             if (RT_SUCCESS(rc2))
                 RTFileWrite(fh, pFrame->pu8RGBBuf + offDst, w * uBytesPerPixel, NULL);
 #endif
@@ -606,7 +606,7 @@ int CaptureStream::SendVideoFrame(uint32_t x, uint32_t y, uint32_t uPixelFormat,
             offDst += this->ScreenSettings.Video.ulWidth * uBytesPerPixel;
         }
 
-#ifdef VBOX_VIDEOREC_DUMP
+#ifdef VBOX_RECORDING_DUMP
         if (RT_SUCCESS(rc2))
             RTFileClose(fh);
 #endif
@@ -615,22 +615,22 @@ int CaptureStream::SendVideoFrame(uint32_t x, uint32_t y, uint32_t uPixelFormat,
 
     if (rc == VINF_SUCCESS) /* Note: Also could be VINF_TRY_AGAIN. */
     {
-        PVIDEORECBLOCK pBlock = (PVIDEORECBLOCK)RTMemAlloc(sizeof(VIDEORECBLOCK));
+        PRECORDINGBLOCK pBlock = (PRECORDINGBLOCK)RTMemAlloc(sizeof(RECORDINGBLOCK));
         if (pBlock)
         {
             AssertPtr(pFrame);
 
-            pBlock->enmType = VIDEORECBLOCKTYPE_VIDEO;
+            pBlock->enmType = RECORDINGBLOCKTYPE_VIDEO;
             pBlock->pvData  = pFrame;
-            pBlock->cbData  = sizeof(VIDEORECVIDEOFRAME) + pFrame->cbRGBBuf;
+            pBlock->cbData  = sizeof(RECORDINGVIDEOFRAME) + pFrame->cbRGBBuf;
 
             try
             {
-                CaptureBlocks *pVideoRecBlocks = new CaptureBlocks();
-                pVideoRecBlocks->List.push_back(pBlock);
+                RecordingBlocks *pRECORDINGBLOCKs = new RecordingBlocks();
+                pRECORDINGBLOCKs->List.push_back(pBlock);
 
                 Assert(this->Blocks.Map.find(uTimeStampMs) == this->Blocks.Map.end());
-                this->Blocks.Map.insert(std::make_pair(uTimeStampMs, pVideoRecBlocks));
+                this->Blocks.Map.insert(std::make_pair(uTimeStampMs, pRECORDINGBLOCKs));
             }
             catch (const std::exception &ex)
             {
@@ -645,7 +645,7 @@ int CaptureStream::SendVideoFrame(uint32_t x, uint32_t y, uint32_t uPixelFormat,
     }
 
     if (RT_FAILURE(rc))
-        VideoRecVideoFrameFree(pFrame);
+        RecordingVideoFrameFree(pFrame);
 
     unlock();
 
@@ -660,7 +660,7 @@ int CaptureStream::SendVideoFrame(uint32_t x, uint32_t y, uint32_t uPixelFormat,
  * @param   uScreen             Screen number to use for this recording stream.
  * @param   Settings            Capturing configuration to use for initialization.
  */
-int CaptureStream::Init(CaptureContext *a_pCtx, uint32_t uScreen, const settings::RecordScreenSettings &Settings)
+int RecordingStream::Init(RecordingContext *a_pCtx, uint32_t uScreen, const settings::RecordScreenSettings &Settings)
 {
     return initInternal(a_pCtx, uScreen, Settings);
 }
@@ -673,7 +673,7 @@ int CaptureStream::Init(CaptureContext *a_pCtx, uint32_t uScreen, const settings
  * @param   uScreen             Screen number to use for this recording stream.
  * @param   Settings            Capturing configuration to use for initialization.
  */
-int CaptureStream::initInternal(CaptureContext *a_pCtx, uint32_t uScreen, const settings::RecordScreenSettings &Settings)
+int RecordingStream::initInternal(RecordingContext *a_pCtx, uint32_t uScreen, const settings::RecordScreenSettings &Settings)
 {
     int rc = parseOptionsString(Settings.strOptions);
     if (RT_FAILURE(rc))
@@ -805,7 +805,7 @@ int CaptureStream::initInternal(CaptureContext *a_pCtx, uint32_t uScreen, const 
  *
  * @returns IPRT status code.
  */
-int CaptureStream::close(void)
+int RecordingStream::close(void)
 {
     int rc = VINF_SUCCESS;
 
@@ -876,12 +876,12 @@ int CaptureStream::close(void)
  *
  * @returns IPRT status code.
  */
-int CaptureStream::Uninit(void)
+int RecordingStream::Uninit(void)
 {
     return uninitInternal();
 }
 
-int CaptureStream::uninitInternal(void)
+int RecordingStream::uninitInternal(void)
 {
     if (this->enmState != RECORDINGSTREAMSTATE_INITIALIZED)
         return VINF_SUCCESS;
@@ -910,7 +910,7 @@ int CaptureStream::uninitInternal(void)
  *
  * @returns IPRT status code.
  */
-int CaptureStream::unitVideo(void)
+int RecordingStream::unitVideo(void)
 {
 #ifdef VBOX_WITH_LIBVPX
     /* At the moment we only have VPX. */
@@ -926,9 +926,9 @@ int CaptureStream::unitVideo(void)
  *
  * @returns IPRT status code.
  */
-int CaptureStream::uninitVideoVPX(void)
+int RecordingStream::uninitVideoVPX(void)
 {
-    PVIDEORECVIDEOCODEC pCodec = &this->Video.Codec;
+    PRECORDINGVIDEOCODEC pCodec = &this->Video.Codec;
     vpx_img_free(&pCodec->VPX.RawImage);
     pCodec->VPX.pu8YuvBuf = NULL; /* Was pointing to VPX.RawImage. */
 
@@ -944,7 +944,7 @@ int CaptureStream::uninitVideoVPX(void)
  *
  * @returns IPRT status code.
  */
-int CaptureStream::initVideo(void)
+int RecordingStream::initVideo(void)
 {
     /* Sanity. */
     AssertReturn(this->ScreenSettings.Video.ulRate,   VERR_INVALID_PARAMETER);
@@ -969,7 +969,7 @@ int CaptureStream::initVideo(void)
  *
  * @returns IPRT status code.
  */
-int CaptureStream::initVideoVPX(void)
+int RecordingStream::initVideoVPX(void)
 {
 # ifdef VBOX_WITH_LIBVPX_VP9
     vpx_codec_iface_t *pCodecIface = vpx_codec_vp9_cx();
@@ -977,7 +977,7 @@ int CaptureStream::initVideoVPX(void)
     vpx_codec_iface_t *pCodecIface = vpx_codec_vp8_cx();
 # endif
 
-    PVIDEORECVIDEOCODEC pCodec = &this->Video.Codec;
+    PRECORDINGVIDEOCODEC pCodec = &this->Video.Codec;
 
     vpx_codec_err_t rcv = vpx_codec_enc_config_default(pCodecIface, &pCodec->VPX.Cfg, 0 /* Reserved */);
     if (rcv != VPX_CODEC_OK)
@@ -1021,7 +1021,7 @@ int CaptureStream::initVideoVPX(void)
 }
 #endif
 
-int CaptureStream::initAudio(void)
+int RecordingStream::initAudio(void)
 {
 #ifdef VBOX_WITH_AUDIO_RECORDING
     if (this->ScreenSettings.isFeatureEnabled(RecordFeature_Audio))
@@ -1044,13 +1044,13 @@ int CaptureStream::initAudio(void)
  * @param   uTimeStampMs        Absolute timestamp (PTS) of frame (in ms) to encode.
  * @param   pFrame              Frame to encode and submit.
  */
-int CaptureStream::writeVideoVPX(uint64_t uTimeStampMs, PVIDEORECVIDEOFRAME pFrame)
+int RecordingStream::writeVideoVPX(uint64_t uTimeStampMs, PRECORDINGVIDEOFRAME pFrame)
 {
     AssertPtrReturn(pFrame, VERR_INVALID_POINTER);
 
     int rc;
 
-    PVIDEORECVIDEOCODEC pCodec = &this->Video.Codec;
+    PRECORDINGVIDEOCODEC pCodec = &this->Video.Codec;
 
     /* Presentation Time Stamp (PTS). */
     vpx_codec_pts_t pts = uTimeStampMs;
@@ -1102,7 +1102,7 @@ int CaptureStream::writeVideoVPX(uint64_t uTimeStampMs, PVIDEORECVIDEOFRAME pFra
 /**
  * Locks a recording stream.
  */
-void CaptureStream::lock(void)
+void RecordingStream::lock(void)
 {
     int rc = RTCritSectEnter(&CritSect);
     AssertRC(rc);
@@ -1111,7 +1111,7 @@ void CaptureStream::lock(void)
 /**
  * Unlocks a locked recording stream.
  */
-void CaptureStream::unlock(void)
+void RecordingStream::unlock(void)
 {
     int rc = RTCritSectLeave(&CritSect);
     AssertRC(rc);

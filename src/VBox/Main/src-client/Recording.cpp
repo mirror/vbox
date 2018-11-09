@@ -53,10 +53,10 @@ using namespace com;
 
 #ifdef DEBUG_andy
 /** Enables dumping audio / video data for debugging reasons. */
-//# define VBOX_VIDEOREC_DUMP
+//# define VBOX_RECORDING_DUMP
 #endif
 
-#ifdef VBOX_VIDEOREC_DUMP
+#ifdef VBOX_RECORDING_DUMP
 #pragma pack(push)
 #pragma pack(1)
 typedef struct
@@ -66,8 +66,8 @@ typedef struct
     uint16_t u16Reserved1;
     uint16_t u16Reserved2;
     uint32_t u32OffBits;
-} VIDEORECBMPHDR, *PVIDEORECBMPHDR;
-AssertCompileSize(VIDEORECBMPHDR, 14);
+} RECORDINGBMPHDR, *PRECORDINGBMPHDR;
+AssertCompileSize(RECORDINGBMPHDR, 14);
 
 typedef struct
 {
@@ -82,39 +82,39 @@ typedef struct
     uint32_t u32YPelsPerMeter;
     uint32_t u32ClrUsed;
     uint32_t u32ClrImportant;
-} VIDEORECBMPDIBHDR, *PVIDEORECBMPDIBHDR;
-AssertCompileSize(VIDEORECBMPDIBHDR, 40);
+} RECORDINGBMPDIBHDR, *PRECORDINGBMPDIBHDR;
+AssertCompileSize(RECORDINGBMPDIBHDR, 40);
 
 #pragma pack(pop)
-#endif /* VBOX_VIDEOREC_DUMP */
+#endif /* VBOX_RECORDING_DUMP */
 
 
-CaptureContext::CaptureContext(Console *a_pConsole)
+RecordingContext::RecordingContext(Console *a_pConsole)
     : pConsole(a_pConsole)
-    , enmState(VIDEORECSTS_UNINITIALIZED) { }
+    , enmState(RECORDINGSTS_UNINITIALIZED) { }
 
-CaptureContext::CaptureContext(Console *a_pConsole, const settings::RecordSettings &a_Settings)
+RecordingContext::RecordingContext(Console *a_pConsole, const settings::RecordSettings &a_Settings)
     : pConsole(a_pConsole)
-    , enmState(VIDEORECSTS_UNINITIALIZED)
+    , enmState(RECORDINGSTS_UNINITIALIZED)
 {
-    int rc = CaptureContext::createInternal(a_Settings);
+    int rc = RecordingContext::createInternal(a_Settings);
     if (RT_FAILURE(rc))
         throw rc;
 }
 
-CaptureContext::~CaptureContext(void)
+RecordingContext::~RecordingContext(void)
 {
     destroyInternal();
 }
 
 /**
- * Worker thread for all streams of a video recording context.
+ * Worker thread for all streams of a recording context.
  *
  * For video frames, this also does the RGB/YUV conversion and encoding.
  */
-DECLCALLBACK(int) CaptureContext::threadMain(RTTHREAD hThreadSelf, void *pvUser)
+DECLCALLBACK(int) RecordingContext::threadMain(RTTHREAD hThreadSelf, void *pvUser)
 {
-    CaptureContext *pThis = (CaptureContext *)pvUser;
+    RecordingContext *pThis = (RecordingContext *)pvUser;
 
     /* Signal that we're up and rockin'. */
     RTThreadUserSignal(hThreadSelf);
@@ -131,10 +131,10 @@ DECLCALLBACK(int) CaptureContext::threadMain(RTTHREAD hThreadSelf, void *pvUser)
         /** @todo r=andy This is inefficient -- as we already wake up this thread
          *               for every screen from Main, we here go again (on every wake up) through
          *               all screens.  */
-        VideoRecStreams::iterator itStream = pThis->vecStreams.begin();
+        RecordingStreams::iterator itStream = pThis->vecStreams.begin();
         while (itStream != pThis->vecStreams.end())
         {
-            CaptureStream *pStream = (*itStream);
+            RecordingStream *pStream = (*itStream);
 
             rc = pStream->Process(pThis->mapBlocksCommon);
             if (RT_FAILURE(rc))
@@ -165,7 +165,7 @@ DECLCALLBACK(int) CaptureContext::threadMain(RTTHREAD hThreadSelf, void *pvUser)
  *
  * @returns IPRT status code.
  */
-int CaptureContext::threadNotify(void)
+int RecordingContext::threadNotify(void)
 {
     return RTSemEventSignal(this->WaitEvent);
 }
@@ -176,7 +176,7 @@ int CaptureContext::threadNotify(void)
  * @returns IPRT status code.
  * @param   a_Settings          Capture settings to use for context creation.
  */
-int CaptureContext::createInternal(const settings::RecordSettings &a_Settings)
+int RecordingContext::createInternal(const settings::RecordSettings &a_Settings)
 {
     int rc = RTCritSectInit(&this->CritSect);
     if (RT_FAILURE(rc))
@@ -185,10 +185,10 @@ int CaptureContext::createInternal(const settings::RecordSettings &a_Settings)
     settings::RecordScreenMap::const_iterator itScreen = a_Settings.mapScreens.begin();
     while (itScreen != a_Settings.mapScreens.end())
     {
-        CaptureStream *pStream = NULL;
+        RecordingStream *pStream = NULL;
         try
         {
-            pStream = new CaptureStream(this, itScreen->first /* Screen ID */, itScreen->second);
+            pStream = new RecordingStream(this, itScreen->first /* Screen ID */, itScreen->second);
             this->vecStreams.push_back(pStream);
         }
         catch (std::bad_alloc &)
@@ -203,7 +203,7 @@ int CaptureContext::createInternal(const settings::RecordSettings &a_Settings)
     if (RT_SUCCESS(rc))
     {
         this->tsStartMs = RTTimeMilliTS();
-        this->enmState  = VIDEORECSTS_CREATED;
+        this->enmState  = RECORDINGSTS_CREATED;
         this->fShutdown = false;
 
         /* Copy the settings to our context. */
@@ -222,14 +222,14 @@ int CaptureContext::createInternal(const settings::RecordSettings &a_Settings)
     return rc;
 }
 
-int CaptureContext::startInternal(void)
+int RecordingContext::startInternal(void)
 {
-    if (this->enmState == VIDEORECSTS_STARTED)
+    if (this->enmState == RECORDINGSTS_STARTED)
         return VINF_SUCCESS;
 
-    Assert(this->enmState == VIDEORECSTS_CREATED);
+    Assert(this->enmState == RECORDINGSTS_CREATED);
 
-    int rc = RTThreadCreate(&this->Thread, CaptureContext::threadMain, (void *)this, 0,
+    int rc = RTThreadCreate(&this->Thread, RecordingContext::threadMain, (void *)this, 0,
                             RTTHREADTYPE_MAIN_WORKER, RTTHREADFLAGS_WAITABLE, "Record");
 
     if (RT_SUCCESS(rc)) /* Wait for the thread to start. */
@@ -237,15 +237,15 @@ int CaptureContext::startInternal(void)
 
     if (RT_SUCCESS(rc))
     {
-        this->enmState = VIDEORECSTS_STARTED;
+        this->enmState = RECORDINGSTS_STARTED;
     }
 
     return rc;
 }
 
-int CaptureContext::stopInternal(void)
+int RecordingContext::stopInternal(void)
 {
-    if (this->enmState != VIDEORECSTS_STARTED)
+    if (this->enmState != RECORDINGSTS_STARTED)
         return VINF_SUCCESS;
 
     LogThisFunc(("Shutting down thread ...\n"));
@@ -260,7 +260,7 @@ int CaptureContext::stopInternal(void)
 
     if (RT_SUCCESS(rc))
     {
-        this->enmState = VIDEORECSTS_CREATED;
+        this->enmState = RECORDINGSTS_CREATED;
     }
 
     LogFlowThisFunc(("%Rrc\n", rc));
@@ -270,7 +270,7 @@ int CaptureContext::stopInternal(void)
 /**
  * Destroys a video recording context.
  */
-int CaptureContext::destroyInternal(void)
+int RecordingContext::destroyInternal(void)
 {
     int rc = stopInternal();
     if (RT_FAILURE(rc))
@@ -284,10 +284,10 @@ int CaptureContext::destroyInternal(void)
     rc = RTCritSectEnter(&this->CritSect);
     if (RT_SUCCESS(rc))
     {
-        VideoRecStreams::iterator it = this->vecStreams.begin();
+        RecordingStreams::iterator it = this->vecStreams.begin();
         while (it != this->vecStreams.end())
         {
-            CaptureStream *pStream = (*it);
+            RecordingStream *pStream = (*it);
 
             int rc2 = pStream->Uninit();
             if (RT_SUCCESS(rc))
@@ -317,14 +317,14 @@ int CaptureContext::destroyInternal(void)
     return rc;
 }
 
-const settings::RecordSettings &CaptureContext::GetConfig(void) const
+const settings::RecordSettings &RecordingContext::GetConfig(void) const
 {
     return this->Settings;
 }
 
-CaptureStream *CaptureContext::getStreamInternal(unsigned uScreen) const
+RecordingStream *RecordingContext::getStreamInternal(unsigned uScreen) const
 {
-    CaptureStream *pStream;
+    RecordingStream *pStream;
 
     try
     {
@@ -344,39 +344,39 @@ CaptureStream *CaptureContext::getStreamInternal(unsigned uScreen) const
  * @returns Pointer to recording stream if found, or NULL if not found.
  * @param   uScreen             Screen number of recording stream to look up.
  */
-CaptureStream *CaptureContext::GetStream(unsigned uScreen) const
+RecordingStream *RecordingContext::GetStream(unsigned uScreen) const
 {
     return getStreamInternal(uScreen);
 }
 
-size_t CaptureContext::GetStreamCount(void) const
+size_t RecordingContext::GetStreamCount(void) const
 {
     return this->vecStreams.size();
 }
 
-int CaptureContext::Create(const settings::RecordSettings &a_Settings)
+int RecordingContext::Create(const settings::RecordSettings &a_Settings)
 {
     return createInternal(a_Settings);
 }
 
-int CaptureContext::Destroy(void)
+int RecordingContext::Destroy(void)
 {
     return destroyInternal();
 }
 
-int CaptureContext::Start(void)
+int RecordingContext::Start(void)
 {
     return startInternal();
 }
 
-int CaptureContext::Stop(void)
+int RecordingContext::Stop(void)
 {
     return stopInternal();
 }
 
-bool CaptureContext::IsFeatureEnabled(RecordFeature_T enmFeature) const
+bool RecordingContext::IsFeatureEnabled(RecordFeature_T enmFeature) const
 {
-    VideoRecStreams::const_iterator itStream = this->vecStreams.begin();
+    RecordingStreams::const_iterator itStream = this->vecStreams.begin();
     while (itStream != this->vecStreams.end())
     {
         if ((*itStream)->GetConfig().isFeatureEnabled(enmFeature))
@@ -392,9 +392,9 @@ bool CaptureContext::IsFeatureEnabled(RecordFeature_T enmFeature) const
  *
  * @returns @c true if recording context is ready, @c false if not.
  */
-bool CaptureContext::IsReady(void) const
+bool RecordingContext::IsReady(void) const
 {
-    return (this->enmState >= VIDEORECSTS_CREATED);
+    return (this->enmState >= RECORDINGSTS_CREATED);
 }
 
 /**
@@ -404,16 +404,16 @@ bool CaptureContext::IsReady(void) const
  * @param   uScreen             Screen ID.
  * @param   uTimeStampMs        Current time stamp (in ms). Currently not being used.
  */
-bool CaptureContext::IsReady(uint32_t uScreen, uint64_t uTimeStampMs) const
+bool RecordingContext::IsReady(uint32_t uScreen, uint64_t uTimeStampMs) const
 {
     RT_NOREF(uTimeStampMs);
 
-    if (this->enmState != VIDEORECSTS_STARTED)
+    if (this->enmState != RECORDINGSTS_STARTED)
         return false;
 
     bool fIsReady = false;
 
-    const CaptureStream *pStream = GetStream(uScreen);
+    const RecordingStream *pStream = GetStream(uScreen);
     if (pStream)
         fIsReady = pStream->IsReady();
 
@@ -429,9 +429,9 @@ bool CaptureContext::IsReady(uint32_t uScreen, uint64_t uTimeStampMs) const
  *
  * @returns true if active, false if not.
  */
-bool CaptureContext::IsStarted(void) const
+bool RecordingContext::IsStarted(void) const
 {
-    return (this->enmState == VIDEORECSTS_STARTED);
+    return (this->enmState == RECORDINGSTS_STARTED);
 }
 
 /**
@@ -441,9 +441,9 @@ bool CaptureContext::IsStarted(void) const
  * @param   uScreen             Screen ID.
  * @param   tsNowMs             Current time stamp (in ms).
  */
-bool CaptureContext::IsLimitReached(uint32_t uScreen, uint64_t tsNowMs) const
+bool RecordingContext::IsLimitReached(uint32_t uScreen, uint64_t tsNowMs) const
 {
-    const CaptureStream *pStream = GetStream(uScreen);
+    const RecordingStream *pStream = GetStream(uScreen);
     if (   !pStream
         || pStream->IsLimitReached(tsNowMs))
     {
@@ -463,7 +463,7 @@ bool CaptureContext::IsLimitReached(uint32_t uScreen, uint64_t tsNowMs) const
  * @param   cbData              Size (in bytes) of (encoded) audio frame data.
  * @param   uTimeStampMs        Time stamp (in ms) of audio playback.
  */
-int CaptureContext::SendAudioFrame(const void *pvData, size_t cbData, uint64_t uTimeStampMs)
+int RecordingContext::SendAudioFrame(const void *pvData, size_t cbData, uint64_t uTimeStampMs)
 {
 #ifdef VBOX_WITH_AUDIO_RECORDING
     AssertPtrReturn(pvData, VERR_INVALID_POINTER);
@@ -474,11 +474,11 @@ int CaptureContext::SendAudioFrame(const void *pvData, size_t cbData, uint64_t u
      * The multiplexing is needed to supply all recorded (enabled) screens with the same
      * audio data at the same given point in time.
      */
-    PVIDEORECBLOCK pBlock = (PVIDEORECBLOCK)RTMemAlloc(sizeof(VIDEORECBLOCK));
+    PRECORDINGBLOCK pBlock = (PRECORDINGBLOCK)RTMemAlloc(sizeof(RECORDINGBLOCK));
     AssertPtrReturn(pBlock, VERR_NO_MEMORY);
-    pBlock->enmType = VIDEORECBLOCKTYPE_AUDIO;
+    pBlock->enmType = RECORDINGBLOCKTYPE_AUDIO;
 
-    PVIDEORECAUDIOFRAME pFrame = (PVIDEORECAUDIOFRAME)RTMemAlloc(sizeof(VIDEORECAUDIOFRAME));
+    PRECORDINGAUDIOFRAME pFrame = (PRECORDINGAUDIOFRAME)RTMemAlloc(sizeof(RECORDINGAUDIOFRAME));
     AssertPtrReturn(pFrame, VERR_NO_MEMORY);
 
     pFrame->pvBuf = (uint8_t *)RTMemAlloc(cbData);
@@ -488,7 +488,7 @@ int CaptureContext::SendAudioFrame(const void *pvData, size_t cbData, uint64_t u
     memcpy(pFrame->pvBuf, pvData, cbData);
 
     pBlock->pvData       = pFrame;
-    pBlock->cbData       = sizeof(VIDEORECAUDIOFRAME) + cbData;
+    pBlock->cbData       = sizeof(RECORDINGAUDIOFRAME) + cbData;
     pBlock->cRefs        = (uint16_t)this->vecStreams.size(); /* All streams need the same audio data. */
     pBlock->uTimeStampMs = uTimeStampMs;
 
@@ -498,13 +498,13 @@ int CaptureContext::SendAudioFrame(const void *pvData, size_t cbData, uint64_t u
 
     try
     {
-        VideoRecBlockMap::iterator itBlocks = this->mapBlocksCommon.find(uTimeStampMs);
+        RecordingBlockMap::iterator itBlocks = this->mapBlocksCommon.find(uTimeStampMs);
         if (itBlocks == this->mapBlocksCommon.end())
         {
-            CaptureBlocks *pVideoRecBlocks = new CaptureBlocks();
-            pVideoRecBlocks->List.push_back(pBlock);
+            RecordingBlocks *pRecordingBlocks = new RecordingBlocks();
+            pRecordingBlocks->List.push_back(pBlock);
 
-            this->mapBlocksCommon.insert(std::make_pair(uTimeStampMs, pVideoRecBlocks));
+            this->mapBlocksCommon.insert(std::make_pair(uTimeStampMs, pRecordingBlocks));
         }
         else
             itBlocks->second->List.push_back(pBlock);
@@ -546,7 +546,7 @@ int CaptureContext::SendAudioFrame(const void *pvData, size_t cbData, uint64_t u
  * @param   puSrcData          Pointer to video frame data.
  * @param   uTimeStampMs       Time stamp (in ms).
  */
-int CaptureContext::SendVideoFrame(uint32_t uScreen, uint32_t x, uint32_t y,
+int RecordingContext::SendVideoFrame(uint32_t uScreen, uint32_t x, uint32_t y,
                                    uint32_t uPixelFormat, uint32_t uBPP, uint32_t uBytesPerLine,
                                    uint32_t uSrcWidth, uint32_t uSrcHeight, uint8_t *puSrcData,
                                    uint64_t uTimeStampMs)
@@ -558,7 +558,7 @@ int CaptureContext::SendVideoFrame(uint32_t uScreen, uint32_t x, uint32_t y,
     int rc = RTCritSectEnter(&this->CritSect);
     AssertRC(rc);
 
-    CaptureStream *pStream = GetStream(uScreen);
+    RecordingStream *pStream = GetStream(uScreen);
     if (!pStream)
     {
         rc = RTCritSectLeave(&this->CritSect);
