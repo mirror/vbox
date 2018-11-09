@@ -350,6 +350,17 @@ void UIMachineLogicNormal::cleanupMenu()
 }
 #endif /* !VBOX_WS_MAC */
 
+void UIMachineLogicNormal::prepareActionGroups()
+{
+    /* Call to base-class: */
+    UIMachineLogic::prepareActionGroups();
+
+    /* Restrict 'Adjust Window', 'Guest Autoresize', 'Status Bar' and 'Resize' actions for 'View' menu: */
+    actionPool()->toRuntime()->setRestrictionForMenuView(UIActionRestrictionLevel_Logic,
+                                                         (UIExtraDataMetaDefs::RuntimeMenuViewActionType)
+                                                         (UIExtraDataMetaDefs::RuntimeMenuViewActionType_Multiscreen));
+}
+
 void UIMachineLogicNormal::cleanupMachineWindows()
 {
     /* Do not destroy machine-window(s) if they destroyed already: */
@@ -387,4 +398,3 @@ void UIMachineLogicNormal::cleanupActionConnections()
     /* Call to base-class: */
     UIMachineLogic::cleanupActionConnections();
 }
-

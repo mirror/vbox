@@ -74,6 +74,7 @@ private slots:
 private:
 
     /* Prepare helpers: */
+    virtual void prepareActionGroups() /* override */;
     void prepareActionConnections();
     void prepareMachineWindows();
 #ifndef VBOX_WS_MAC
@@ -97,4 +98,3 @@ private:
 };
 
 #endif /* !___UIMachineLogicNormal_h___ */
-

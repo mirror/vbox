@@ -3229,18 +3229,20 @@ void UIActionPoolRuntime::sltPrepareMenuViewScreen()
     QMenu *pMenu = qobject_cast<QMenu*>(sender());
     AssertPtrReturnVoid(pMenu);
 
-    /* Call to corresponding handler: */
-    updateMenuViewScreen(pMenu);
-}
+    const bool fAllowToShowActionResize = isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_Resize);
+    const bool fAllowToShowActionScaleFactor = isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_ScaleFactor);
+    const bool fAllowToShowActionMultiscreen = isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_Multiscreen);
 
-void UIActionPoolRuntime::sltPrepareMenuViewMultiscreen()
-{
-    /* Make sure sender is valid: */
-    QMenu *pMenu = qobject_cast<QMenu*>(sender());
-    AssertPtrReturnVoid(pMenu);
+    /* Clear contents: */
+    pMenu->clear();
 
-    /* Call to corresponding handler: */
-    updateMenuViewMultiscreen(pMenu);
+    /* Resize, scale factor, and multiscreen menu items are inserted into the same sub-menu: */
+    if (fAllowToShowActionResize)
+        updateMenuViewScreen(pMenu);
+    if (fAllowToShowActionScaleFactor)
+        updateMenuViewScaleFactor(pMenu);
+    if (fAllowToShowActionMultiscreen && m_cHostScreens > 1)
+        updateMenuViewMultiscreen(pMenu);
 }
 
 void UIActionPoolRuntime::sltHandleActionTriggerViewScreenToggle()
@@ -3686,10 +3688,12 @@ void UIActionPoolRuntime::updateMenuView()
         fSeparator = false;
     }
 
-    /* Do we have to show resize or multiscreen menu? */
+    /* Do we have to show resize, scale factor, or multiscreen menu? */
     const bool fAllowToShowActionResize = isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_Resize);
+    const bool fAllowToShowActionScaleFactor = isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_ScaleFactor);
     const bool fAllowToShowActionMultiscreen = isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_Multiscreen);
-    if (fAllowToShowActionResize)
+
+    if (fAllowToShowActionResize || fAllowToShowActionScaleFactor || fAllowToShowActionMultiscreen)
     {
         for (int iGuestScreenIndex = 0; iGuestScreenIndex < m_cGuestScreens; ++iGuestScreenIndex)
         {
@@ -3699,22 +3703,6 @@ void UIActionPoolRuntime::updateMenuView()
                                              QApplication::translate("UIMultiScreenLayout", "Virtual Screen %1").arg(iGuestScreenIndex + 1));
             pSubMenu->setProperty("Guest Screen Index", iGuestScreenIndex);
             connect(pSubMenu, SIGNAL(aboutToShow()), this, SLOT(sltPrepareMenuViewScreen()));
-        }
-    }
-    else if (fAllowToShowActionMultiscreen)
-    {
-        /* Only for multi-screen host case: */
-        if (m_cHostScreens > 1)
-        {
-            for (int iGuestScreenIndex = 0; iGuestScreenIndex < m_cGuestScreens; ++iGuestScreenIndex)
-            {
-                /* Add 'Virtual Screen %1' menu: */
-                QMenu *pSubMenu = pMenu->addMenu(UIIconPool::iconSet(":/virtual_screen_16px.png",
-                                                                     ":/virtual_screen_disabled_16px.png"),
-                                                 QApplication::translate("UIMultiScreenLayout", "Virtual Screen %1").arg(iGuestScreenIndex + 1));
-                pSubMenu->setProperty("Guest Screen Index", iGuestScreenIndex);
-                connect(pSubMenu, SIGNAL(aboutToShow()), this, SLOT(sltPrepareMenuViewMultiscreen()));
-            }
         }
     }
 
@@ -3747,7 +3735,8 @@ void UIActionPoolRuntime::updateMenuViewPopup()
 
     /* Do we have to show resize menu? */
     const bool fAllowToShowActionResize = isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_Resize);
-    if (fAllowToShowActionResize)
+    const bool fAllowToShowActionScaleFactor = isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_ScaleFactor);
+    if (fAllowToShowActionResize || fAllowToShowActionScaleFactor)
     {
         for (int iGuestScreenIndex = 0; iGuestScreenIndex < m_cGuestScreens; ++iGuestScreenIndex)
         {
@@ -3759,7 +3748,6 @@ void UIActionPoolRuntime::updateMenuViewPopup()
             connect(pSubMenu, SIGNAL(aboutToShow()), this, SLOT(sltPrepareMenuViewScreen()));
         }
     }
-
     /* Mark menu as valid: */
     m_invalidations.remove(UIActionIndexRT_M_ViewPopup);
 }
@@ -3912,9 +3900,7 @@ void UIActionPoolRuntime::updateMenuViewScaleFactor(QMenu *pMenu)
 
 void UIActionPoolRuntime::updateMenuViewScreen(QMenu *pMenu)
 {
-    /* Clear contents: */
-    pMenu->clear();
-
+    AssertPtrReturnVoid(pMenu);
     /* Prepare new contents: */
     const QList<QSize> sizes = QList<QSize>()
                                << QSize(640, 480)
@@ -3983,14 +3969,11 @@ void UIActionPoolRuntime::updateMenuViewScreen(QMenu *pMenu)
         connect(pActionGroup, SIGNAL(triggered(QAction*)),
                 this, SLOT(sltHandleActionTriggerViewScreenResize(QAction*)));
     }
-    updateMenuViewScaleFactor(pMenu);
 }
 
 void UIActionPoolRuntime::updateMenuViewMultiscreen(QMenu *pMenu)
 {
-    /* Clear contents: */
-    pMenu->clear();
-
+    AssertPtrReturnVoid(pMenu);
     /* Get corresponding screen index and size: */
     const int iGuestScreenIndex = pMenu->property("Guest Screen Index").toInt();
 

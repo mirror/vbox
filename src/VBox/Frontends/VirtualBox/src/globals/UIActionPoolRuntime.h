@@ -205,8 +205,6 @@ protected slots:
 
     /** Prepares 'View' : 'Virtual Screen #' menu (Normal, Scale). */
     void sltPrepareMenuViewScreen();
-    /** Prepares 'View' : 'Virtual Screen #' menu (Fullscreen, Seamless). */
-    void sltPrepareMenuViewMultiscreen();
 
     /** Handles 'View' : 'Virtual Screen #' menu : 'Toggle' action trigger. */
     void sltHandleActionTriggerViewScreenToggle();
