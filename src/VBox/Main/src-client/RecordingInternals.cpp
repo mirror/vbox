@@ -64,9 +64,9 @@ void RecordingVideoFrameFree(PRECORDINGVIDEOFRAME pFrame)
  * Frees a recording (data) block.
  *
  * @returns IPRT status code.
- * @param   pBlock              Video recording (data) block to free. The pointer will be invalid after return.
+ * @param   pBlock              Recording (data) block to free. The pointer will be invalid after return.
  */
-void RecordingFree(PRECORDINGBLOCK pBlock)
+void RecordingBlockFree(PRECORDINGBLOCK pBlock)
 {
     if (!pBlock)
         return;
