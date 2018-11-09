@@ -85,7 +85,7 @@
 #define LOG_GROUP LOG_GROUP_DRV_HOST_AUDIO
 #include "LoggingNew.h"
 
-#include "DrvAudioVideoRec.h"
+#include "DrvAudioRec.h"
 #include "ConsoleImpl.h"
 
 #include "../../Devices/Audio/DrvAudio.h"
@@ -321,7 +321,7 @@ static int avRecSinkInit(PDRVAUDIOVIDEOREC pThis, PAVRECSINK pSink, PAVRECCONTAI
 
     if (cChannels > 2)
     {
-        LogRel(("VideoRec: Warning: More than 2 (stereo) channels are not supported at the moment\n"));
+        LogRel(("Recording: Warning: More than 2 (stereo) channels are not supported at the moment\n"));
         cChannels = 2;
     }
 
@@ -329,7 +329,7 @@ static int avRecSinkInit(PDRVAUDIOVIDEOREC pThis, PAVRECSINK pSink, PAVRECCONTAI
     OpusEncoder *pEnc = opus_encoder_create(uHz, cChannels, OPUS_APPLICATION_AUDIO, &orc);
     if (orc != OPUS_OK)
     {
-        LogRel(("VideoRec: Audio codec failed to initialize: %s\n", opus_strerror(orc)));
+        LogRel(("Recording: Audio codec failed to initialize: %s\n", opus_strerror(orc)));
         return VERR_AUDIO_BACKEND_INIT_FAILED;
     }
 
@@ -343,7 +343,7 @@ static int avRecSinkInit(PDRVAUDIOVIDEOREC pThis, PAVRECSINK pSink, PAVRECCONTAI
             opus_encoder_destroy(pEnc);
             pEnc = NULL;
 
-            LogRel(("VideoRec: Audio codec failed to set bitrate (%RU32): %s\n", uBitrate, opus_strerror(orc)));
+            LogRel(("Recording: Audio codec failed to set bitrate (%RU32): %s\n", uBitrate, opus_strerror(orc)));
             return VERR_AUDIO_BACKEND_INIT_FAILED;
         }
     }
@@ -356,7 +356,7 @@ static int avRecSinkInit(PDRVAUDIOVIDEOREC pThis, PAVRECSINK pSink, PAVRECCONTAI
         opus_encoder_destroy(pEnc);
         pEnc = NULL;
 
-        LogRel(("VideoRec: Audio codec failed to %s VBR mode: %s\n", fUseVBR ? "enable" : "disable", opus_strerror(orc)));
+        LogRel(("Recording: Audio codec failed to %s VBR mode: %s\n", fUseVBR ? "enable" : "disable", opus_strerror(orc)));
         return VERR_AUDIO_BACKEND_INIT_FAILED;
     }
 
@@ -397,13 +397,13 @@ static int avRecSinkInit(PDRVAUDIOVIDEOREC pThis, PAVRECSINK pSink, PAVRECCONTAI
                                                                   &pSink->Con.WebM.uTrack);
                         if (RT_SUCCESS(rc))
                         {
-                            LogRel(("VideoRec: Recording audio to audio file '%s'\n", pszFile));
+                            LogRel(("Recording: Recording audio to audio file '%s'\n", pszFile));
                         }
                         else
-                            LogRel(("VideoRec: Error creating audio track for audio file '%s' (%Rrc)\n", pszFile, rc));
+                            LogRel(("Recording: Error creating audio track for audio file '%s' (%Rrc)\n", pszFile, rc));
                     }
                     else
-                        LogRel(("VideoRec: Error creating audio file '%s' (%Rrc)\n", pszFile, rc));
+                        LogRel(("Recording: Error creating audio file '%s' (%Rrc)\n", pszFile, rc));
                 }
                 break;
             }
@@ -453,7 +453,7 @@ static int avRecSinkInit(PDRVAUDIOVIDEOREC pThis, PAVRECSINK pSink, PAVRECCONTAI
             pEnc = NULL;
         }
 
-        LogRel(("VideoRec: Error creating sink (%Rrc)\n", rc));
+        LogRel(("Recording: Error creating sink (%Rrc)\n", rc));
     }
 
     return rc;
@@ -483,7 +483,7 @@ static void avRecSinkShutdown(PAVRECSINK pSink)
         {
             if (pSink->Con.WebM.pWebM)
             {
-                LogRel2(("VideoRec: Finished recording audio to file '%s' (%zu bytes)\n",
+                LogRel2(("Recording: Finished recording audio to file '%s' (%zu bytes)\n",
                          pSink->Con.WebM.pWebM->GetFileName().c_str(), pSink->Con.WebM.pWebM->GetFileSize()));
 
                 int rc2 = pSink->Con.WebM.pWebM->Close();
@@ -525,7 +525,7 @@ static int avRecCreateStreamOut(PDRVAUDIOVIDEOREC pThis, PAVRECSTREAM pStreamAV,
     {
         AssertFailed();
 
-        LogRel2(("VideoRec: Support for surround audio not implemented yet\n"));
+        LogRel2(("Recording: Support for surround audio not implemented yet\n"));
         return VERR_NOT_SUPPORTED;
     }
 
@@ -655,17 +655,17 @@ static DECLCALLBACK(int) drvAudioVideoRecInit(PPDMIHOSTAUDIO pInterface)
 
     PDRVAUDIOVIDEOREC pThis = PDMIHOSTAUDIO_2_DRVAUDIOVIDEOREC(pInterface);
 
-    LogRel(("VideoRec: Audio driver is using %RU32Hz, %RU16bit, %RU8 %s\n",
+    LogRel(("Recording: Audio driver is using %RU32Hz, %RU16bit, %RU8 %s\n",
             pThis->CodecParms.PCMProps.uHz, pThis->CodecParms.PCMProps.cBytes * 8,
             pThis->CodecParms.PCMProps.cChannels, pThis->CodecParms.PCMProps.cChannels == 1 ? "channel" : "channels"));
 
     int rc = avRecSinkInit(pThis, &pThis->Sink, &pThis->ContainerParms, &pThis->CodecParms);
     if (RT_FAILURE(rc))
     {
-        LogRel(("VideoRec: Audio recording driver failed to initialize, rc=%Rrc\n", rc));
+        LogRel(("Recording: Audio recording driver failed to initialize, rc=%Rrc\n", rc));
     }
     else
-        LogRel2(("VideoRec: Audio recording driver initialized\n"));
+        LogRel2(("Recording: Audio recording driver initialized\n"));
 
     return rc;
 }

@@ -24,7 +24,7 @@
 #include <VBox/vmm/pdmifs.h>
 
 #include "AudioDriver.h"
-#include "VideoRec.h"
+#include "Recording.h"
 
 using namespace com;
 

@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Video recording internals code.
+ * Recording internals code.
  */
 
 /*
@@ -15,7 +15,7 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#include "VideoRecInternals.h"
+#include "RecordingInternals.h"
 
 #include <iprt/assert.h>
 #include <iprt/mem.h>

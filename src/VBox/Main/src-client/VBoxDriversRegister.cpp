@@ -31,7 +31,7 @@
 # include "DrvAudioVRDE.h"
 #endif
 #ifdef VBOX_WITH_AUDIO_VIDEOREC
-# include "DrvAudioVideoRec.h"
+# include "DrvAudioRec.h"
 #endif
 #include "Nvram.h"
 #include "UsbWebcamInterface.h"

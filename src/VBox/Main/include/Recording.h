@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Video recording code header.
+ * Recording code header.
  */
 
 /*
@@ -26,8 +26,8 @@
 
 using namespace com;
 
-#include "VideoRecInternals.h"
-#include "VideoRecStream.h"
+#include "RecordingInternals.h"
+#include "RecordingStream.h"
 
 class Console;
 

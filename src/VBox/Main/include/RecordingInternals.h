@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Video recording internals header.
+ * Recording internals header.
  */
 
 /*

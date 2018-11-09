@@ -54,7 +54,7 @@
 
 #ifdef VBOX_WITH_VIDEOREC
 # include <iprt/path.h>
-# include "VideoRec.h"
+# include "Recording.h"
 
 # ifdef VBOX_WITH_LIBVPX
 #  ifdef _MSC_VER

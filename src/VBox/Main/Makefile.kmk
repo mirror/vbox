@@ -803,12 +803,12 @@ ifdef VBOX_WITH_VIDEOREC
    VBoxC_SDKS += VBOX_VPX
    VBoxC_DEFS += VBOX_WITH_LIBVPX
    VBoxC_SOURCES += \
-	src-client/VideoRec.cpp \
-	src-client/VideoRecInternals.cpp \
-	src-client/VideoRecStream.cpp \
-	src-client/VideoRecUtils.cpp
+	src-client/Recording.cpp \
+	src-client/RecordingInternals.cpp \
+	src-client/RecordingStream.cpp \
+	src-client/RecordingUtils.cpp
   else
-   $(error "VBox: No alternative for VPX when using video capturing support yet")
+   $(error "VBox: No alternative for VPX when using recording support yet")
   endif
 endif
 
@@ -817,7 +817,7 @@ ifdef VBOX_WITH_AUDIO_VIDEOREC
    VBoxC_SDKS += VBOX_OPUS
    VBoxC_DEFS += VBOX_WITH_LIBOPUS
   else
-   $(error "VBox: No alternative for Opus when using audio support for video capturing yet")
+   $(error "VBox: No alternative for Opus when using audio support for recording yet")
   endif
 endif
 
@@ -932,7 +932,7 @@ VBoxC_SOURCES += \
 	../Devices/Audio/DrvAudioCommon.cpp \
 	src-client/AudioDriver.cpp \
 	$(if $(VBOX_WITH_AUDIO_VRDE),src-client/DrvAudioVRDE.cpp,) \
-	$(if $(VBOX_WITH_AUDIO_VIDEOREC),src-client/DrvAudioVideoRec.cpp,)
+	$(if $(VBOX_WITH_AUDIO_VIDEOREC),src-client/DrvAudioRec.cpp,)
 
 VBoxC_SOURCES.win = \
 	src-client/win/dllmain.cpp \

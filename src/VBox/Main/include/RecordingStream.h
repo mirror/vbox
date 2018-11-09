@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Video recording stream code header.
+ * Recording stream code header.
  */
 
 /*
@@ -28,7 +28,7 @@
 #include <VBox/err.h>
 #include <VBox/settings.h>
 
-#include "VideoRecInternals.h"
+#include "RecordingInternals.h"
 
 class WebMWriter;
 class CaptureContext;

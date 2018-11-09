@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Video recording stream code.
+ * Recording stream code.
  */
 
 /*
@@ -35,9 +35,9 @@
 #include <VBox/err.h>
 #include <VBox/com/VirtualBox.h>
 
-#include "VideoRec.h"
-#include "VideoRecStream.h"
-#include "VideoRecUtils.h"
+#include "Recording.h"
+#include "RecordingStream.h"
+#include "RecordingUtils.h"
 #include "WebMWriter.h"
 
 
@@ -164,7 +164,7 @@ int CaptureStream::open(const settings::RecordScreenSettings &Settings)
 
             if (RT_FAILURE(rc))
             {
-                LogRel(("VideoRec: Failed to open file '%s' for screen %RU32, rc=%Rrc\n",
+                LogRel(("Recording: Failed to open file '%s' for screen %RU32, rc=%Rrc\n",
                         pszFile ? pszFile : "<Unnamed>", this->uScreenID, rc));
             }
 
@@ -199,7 +199,7 @@ int CaptureStream::parseOptionsString(const com::Utf8Str &strOptions)
                 this->Video.Codec.VPX.uEncoderDeadline = VPX_DL_BEST_QUALITY;
             else
             {
-                LogRel(("VideoRec: Setting encoder deadline to '%s'\n", value.c_str()));
+                LogRel(("Recording: Setting encoder deadline to '%s'\n", value.c_str()));
                 this->Video.Codec.VPX.uEncoderDeadline = value.toUInt32();
 #endif
             }
@@ -210,7 +210,7 @@ int CaptureStream::parseOptionsString(const com::Utf8Str &strOptions)
             {
                 this->ScreenSettings.featureMap[RecordFeature_Video] = false;
 #ifdef VBOX_WITH_AUDIO_VIDEOREC
-                LogRel(("VideoRec: Only audio will be recorded\n"));
+                LogRel(("Recording: Only audio will be recorded\n"));
 #endif
             }
         }
@@ -222,7 +222,7 @@ int CaptureStream::parseOptionsString(const com::Utf8Str &strOptions)
                 this->ScreenSettings.featureMap[RecordFeature_Audio] = true;
             }
             else
-                LogRel(("VideoRec: Only video will be recorded\n"));
+                LogRel(("Recording: Only video will be recorded\n"));
 #endif
         }
         else if (key.compare("ac_profile", Utf8Str::CaseInsensitive) == 0)
@@ -247,7 +247,7 @@ int CaptureStream::parseOptionsString(const com::Utf8Str &strOptions)
 #endif
         }
         else
-            LogRel(("VideoRec: Unknown option '%s' (value '%s'), skipping\n", key.c_str(), value.c_str()));
+            LogRel(("Recording: Unknown option '%s' (value '%s'), skipping\n", key.c_str(), value.c_str()));
 
     } /* while */
 
@@ -290,7 +290,7 @@ bool CaptureStream::IsLimitReached(uint64_t tsNowMs) const
         if (   this->File.pWEBM
             && this->File.pWEBM->GetAvailableSpace() < 0x100000) /** @todo r=andy WTF? Fix this. */
         {
-            LogRel(("VideoRec: Not enough free storage space available, stopping video capture\n"));
+            LogRel(("Recording: Not enough free storage space available, stopping video capture\n"));
             return true;
         }
     }
@@ -714,7 +714,7 @@ int CaptureStream::initInternal(CaptureContext *a_pCtx, uint32_t uScreen, const 
                                     ? WebMWriter::VideoCodec_VP8 : WebMWriter::VideoCodec_None);
             if (RT_FAILURE(rc))
             {
-                LogRel(("VideoRec: Failed to create the capture output file '%s' (%Rrc)\n", pszFile, rc));
+                LogRel(("Recording: Failed to create the capture output file '%s' (%Rrc)\n", pszFile, rc));
                 break;
             }
 
@@ -724,11 +724,11 @@ int CaptureStream::initInternal(CaptureContext *a_pCtx, uint32_t uScreen, const 
                                                      Settings.Video.ulFPS, &this->uTrackVideo);
                 if (RT_FAILURE(rc))
                 {
-                    LogRel(("VideoRec: Failed to add video track to output file '%s' (%Rrc)\n", pszFile, rc));
+                    LogRel(("Recording: Failed to add video track to output file '%s' (%Rrc)\n", pszFile, rc));
                     break;
                 }
 
-                LogRel(("VideoRec: Recording video of screen #%u with %RU32x%RU32 @ %RU32 kbps, %RU32 FPS (track #%RU8)\n",
+                LogRel(("Recording: Recording video of screen #%u with %RU32x%RU32 @ %RU32 kbps, %RU32 FPS (track #%RU8)\n",
                         this->uScreenID, Settings.Video.ulWidth, Settings.Video.ulHeight, Settings.Video.ulRate,
                         Settings.Video.ulFPS, this->uTrackVideo));
             }
@@ -740,11 +740,11 @@ int CaptureStream::initInternal(CaptureContext *a_pCtx, uint32_t uScreen, const 
                                                      &this->uTrackAudio);
                 if (RT_FAILURE(rc))
                 {
-                    LogRel(("VideoRec: Failed to add audio track to output file '%s' (%Rrc)\n", pszFile, rc));
+                    LogRel(("Recording: Failed to add audio track to output file '%s' (%Rrc)\n", pszFile, rc));
                     break;
                 }
 
-                LogRel(("VideoRec: Recording audio in %RU16Hz, %RU8 bit, %RU8 %s (track #%RU8)\n",
+                LogRel(("Recording: Recording audio in %RU16Hz, %RU8 bit, %RU8 %s (track #%RU8)\n",
                         Settings.Audio.uHz, Settings.Audio.cBits, Settings.Audio.cChannels,
                         Settings.Audio.cChannels ? "channels" : "channel", this->uTrackAudio));
             }
@@ -767,7 +767,7 @@ int CaptureStream::initInternal(CaptureContext *a_pCtx, uint32_t uScreen, const 
                     RTStrCat(szWhat, sizeof(szWhat), "audio");
                 }
 #endif
-                LogRel(("VideoRec: Recording %s to '%s'\n", szWhat, pszFile));
+                LogRel(("Recording: Recording %s to '%s'\n", szWhat, pszFile));
             }
 
             break;
@@ -827,12 +827,12 @@ int CaptureStream::close(void)
 
         this->Blocks.Clear();
 
-        LogRel(("VideoRec: Recording screen #%u stopped\n", this->uScreenID));
+        LogRel(("Recording: Recording screen #%u stopped\n", this->uScreenID));
     }
 
     if (RT_FAILURE(rc))
     {
-        LogRel(("VideoRec: Error stopping recording screen #%u, rc=%Rrc\n", this->uScreenID, rc));
+        LogRel(("Recording: Error stopping recording screen #%u, rc=%Rrc\n", this->uScreenID, rc));
         return rc;
     }
 
@@ -845,11 +845,11 @@ int CaptureStream::close(void)
                 rc = RTFileClose(this->File.hFile);
                 if (RT_SUCCESS(rc))
                 {
-                    LogRel(("VideoRec: Closed file '%s'\n", this->ScreenSettings.File.strName.c_str()));
+                    LogRel(("Recording: Closed file '%s'\n", this->ScreenSettings.File.strName.c_str()));
                 }
                 else
                 {
-                    LogRel(("VideoRec: Error closing file '%s', rc=%Rrc\n", this->ScreenSettings.File.strName.c_str(), rc));
+                    LogRel(("Recording: Error closing file '%s', rc=%Rrc\n", this->ScreenSettings.File.strName.c_str(), rc));
                     break;
                 }
             }
@@ -982,7 +982,7 @@ int CaptureStream::initVideoVPX(void)
     vpx_codec_err_t rcv = vpx_codec_enc_config_default(pCodecIface, &pCodec->VPX.Cfg, 0 /* Reserved */);
     if (rcv != VPX_CODEC_OK)
     {
-        LogRel(("VideoRec: Failed to get default config for VPX encoder: %s\n", vpx_codec_err_to_string(rcv)));
+        LogRel(("Recording: Failed to get default config for VPX encoder: %s\n", vpx_codec_err_to_string(rcv)));
         return VERR_AVREC_CODEC_INIT_FAILED;
     }
 
@@ -1002,14 +1002,14 @@ int CaptureStream::initVideoVPX(void)
     rcv = vpx_codec_enc_init(&pCodec->VPX.Ctx, pCodecIface, &pCodec->VPX.Cfg, 0 /* Flags */);
     if (rcv != VPX_CODEC_OK)
     {
-        LogRel(("VideoRec: Failed to initialize VPX encoder: %s\n", vpx_codec_err_to_string(rcv)));
+        LogRel(("Recording: Failed to initialize VPX encoder: %s\n", vpx_codec_err_to_string(rcv)));
         return VERR_AVREC_CODEC_INIT_FAILED;
     }
 
     if (!vpx_img_alloc(&pCodec->VPX.RawImage, VPX_IMG_FMT_I420,
                        this->ScreenSettings.Video.ulWidth, this->ScreenSettings.Video.ulHeight, 1))
     {
-        LogRel(("VideoRec: Failed to allocate image %RU32x%RU32\n",
+        LogRel(("Recording: Failed to allocate image %RU32x%RU32\n",
                 this->ScreenSettings.Video.ulWidth, this->ScreenSettings.Video.ulHeight));
         return VERR_NO_MEMORY;
     }
@@ -1064,7 +1064,7 @@ int CaptureStream::writeVideoVPX(uint64_t uTimeStampMs, PVIDEORECVIDEOFRAME pFra
     {
         if (this->Video.cFailedEncodingFrames++ < 64) /** @todo Make this configurable. */
         {
-            LogRel(("VideoRec: Failed to encode video frame: %s\n", vpx_codec_err_to_string(rcv)));
+            LogRel(("Recording: Failed to encode video frame: %s\n", vpx_codec_err_to_string(rcv)));
             return VERR_GENERAL_FAILURE;
         }
     }

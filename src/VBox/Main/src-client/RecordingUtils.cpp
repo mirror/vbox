@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Video recording utility code.
+ * Recording utility code.
  */
 
 /*
@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#include "VideoRec.h"
-#include "VideoRecUtils.h"
+#include "Recording.h"
+#include "RecordingUtils.h"
 
 #include <iprt/asm.h>
 #include <iprt/assert.h>

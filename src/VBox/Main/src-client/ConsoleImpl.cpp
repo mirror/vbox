@@ -62,7 +62,7 @@
 # include "DrvAudioVRDE.h"
 #endif
 #ifdef VBOX_WITH_AUDIO_VIDEOREC
-# include "DrvAudioVideoRec.h"
+# include "DrvAudioRec.h"
 #endif
 #include "Nvram.h"
 #ifdef VBOX_WITH_USB_CARDREADER
@@ -83,7 +83,7 @@
 #include "ThreadTask.h"
 
 #ifdef VBOX_WITH_VIDEOREC
-# include "VideoRec.h"
+# include "Recording.h"
 #endif
 
 #include <VBox/com/array.h>
@@ -5620,7 +5620,7 @@ int Console::i_videoRecEnable(BOOL fEnable, util::AutoWriteLock *pAutoLock)
 
         if (RT_BOOL(fEnable) != fIsEnabled)
         {
-            LogRel(("VideoRec: %s\n", fEnable ? "Enabling" : "Disabling"));
+            LogRel(("Recording: %s\n", fEnable ? "Enabling" : "Disabling"));
 
             pDisplay->i_videoRecInvalidate();
 
@@ -5656,7 +5656,7 @@ int Console::i_videoRecEnable(BOOL fEnable, util::AutoWriteLock *pAutoLock)
             }
 
             if (RT_FAILURE(vrc))
-                LogRel(("VideoRec: %s failed with %Rrc\n", fEnable ? "Enabling" : "Disabling", vrc));
+                LogRel(("Recording: %s failed with %Rrc\n", fEnable ? "Enabling" : "Disabling", vrc));
         }
         else /* Should not happen. */
             vrc = VERR_NO_CHANGE;
@@ -7008,7 +7008,7 @@ int Console::i_videoRecStart(void)
     if (Capture.mpVideoRecCtx->IsStarted())
         return VINF_SUCCESS;
 
-    LogRel(("VideoRec: Starting ...\n"));
+    LogRel(("Recording: Starting ...\n"));
 
     int rc = Capture.mpVideoRecCtx->Start();
     if (RT_SUCCESS(rc))
@@ -7018,7 +7018,7 @@ int Console::i_videoRecStart(void)
     }
 
     if (RT_FAILURE(rc))
-        LogRel(("VideoRec: Failed to start video recording (%Rrc)\n", rc));
+        LogRel(("Recording: Failed to start video recording (%Rrc)\n", rc));
 
     LogFlowFuncLeaveRC(rc);
     return rc;
@@ -7033,7 +7033,7 @@ int Console::i_videoRecStop(void)
         || !Capture.mpVideoRecCtx->IsStarted())
         return VINF_SUCCESS;
 
-    LogRel(("VideoRec: Stopping ...\n"));
+    LogRel(("Recording: Stopping ...\n"));
 
     int rc = Capture.mpVideoRecCtx->Stop();
     if (RT_SUCCESS(rc))
@@ -7048,10 +7048,10 @@ int Console::i_videoRecStop(void)
         hrc = pRecordSettings->COMSETTER(Enabled)(false);
         ComAssertComRC(hrc);
 
-        LogRel(("VideoRec: Stopped\n"));
+        LogRel(("Recording: Stopped\n"));
     }
     else
-        LogRel(("VideoRec: Failed to stop video recording (%Rrc)\n", rc));
+        LogRel(("Recording: Failed to stop video recording (%Rrc)\n", rc));
 
     LogFlowFuncLeaveRC(rc);
     return rc;
@@ -10161,7 +10161,7 @@ void Console::i_powerUpThreadTask(VMPowerUpTask *pTask)
                 fireRecordChangedEvent(pConsole->mEventSource);
             }
             else
-               LogRel(("VideoRec: Failed with %Rrc on VM power up\n", vrc2));
+               LogRel(("Recording: Failed with %Rrc on VM power up\n", vrc2));
 
             /** Note: Do not use vrc here, as starting the video recording isn't critical to
              *        powering up the VM. */

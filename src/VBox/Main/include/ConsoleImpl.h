@@ -24,7 +24,7 @@
 #include "SecretKeyStore.h"
 #include "ConsoleWrap.h"
 #ifdef VBOX_WITH_VIDEOREC
-# include "VideoRec.h"
+# include "Recording.h"
 #endif
 
 class Guest;
