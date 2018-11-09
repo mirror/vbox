@@ -1853,7 +1853,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
             }
             RTFileClose(pngFile);
         }
-#ifdef VBOX_WITH_VIDEOREC
+#ifdef VBOX_WITH_RECORDING
         else if (!strcmp(a->argv[1], "record"))
         {
             if (a->argc < 3)
@@ -2074,7 +2074,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
                     CHECK_ERROR_BREAK(saRecordScreenScreens[i], COMSETTER(Options)(Bstr(a->argv[3]).raw()));
             }
         }
-#endif /* VBOX_WITH_VIDEOREC */
+#endif /* VBOX_WITH_RECORDING */
         else if (!strcmp(a->argv[1], "webcam"))
         {
             if (a->argc < 3)

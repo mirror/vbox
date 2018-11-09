@@ -711,7 +711,7 @@ void printUsage(USAGECATEGORY fCategory, uint32_t fSubCategory, PRTSTREAM pStrm)
                      "                            [--autostop-type disabled|savestate|poweroff|\n"
                      "                                             acpishutdown]\n"
 #endif
-#ifdef VBOX_WITH_VIDEOREC
+#ifdef VBOX_WITH_RECORDING
                      "                            [--record on|off]\n"
                      "                            [--record screens all|<screen ID> [<screen ID> ...]]\n"
                      "                            [--record filename <filename>]\n"
@@ -830,7 +830,7 @@ void printUsage(USAGECATEGORY fCategory, uint32_t fSubCategory, PRTSTREAM pStrm)
                      "                                              [<xorigin> <yorigin>]]] |\n"
                      "                            setscreenlayout <display> on|primary <xorigin> <yorigin> <xres> <yres> <bpp> | off\n"
                      "                            screenshotpng <file> [display] |\n"
-#ifdef VBOX_WITH_VIDEOREC
+#ifdef VBOX_WITH_RECORDING
                      "                            record on|off |\n"
                      "                            record screens all|none|<screen>,[<screen>...] |\n"
                      "                            record filename <file> |\n"
@@ -839,7 +839,7 @@ void printUsage(USAGECATEGORY fCategory, uint32_t fSubCategory, PRTSTREAM pStrm)
                      "                            record videofps <fps> |\n"
                      "                            record maxtime <s> |\n"
                      "                            record maxfilesize <MB> |\n"
-#endif /* VBOX_WITH_VIDEOREC */
+#endif /* VBOX_WITH_RECORDING */
                      "                            setcredentials <username>\n"
                      "                                           --passwordfile <file> | <password>\n"
                      "                                           <domain>\n"

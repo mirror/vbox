@@ -685,13 +685,13 @@ VBOX_WITH_VDITOOL =
 # Enable this to build vbox-img even if VBOX_WITH_TESTCASES is disabled
 VBOX_WITH_VBOX_IMG =
 if1of ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH), darwin.x86 darwin.amd64 linux.x86 linux.amd64 solaris.amd64 win.x86 win.amd64)
- # Enables the video capturing support.
- VBOX_WITH_VIDEOREC = 1
+ # Enables recording support.
+ VBOX_WITH_RECORDING = 1
  # Enable VPX (VP8 / VP9 codec), used for video capturing.
  VBOX_WITH_LIBVPX = 1
- # Enables audio support for VM video capturing.
- VBOX_WITH_AUDIO_VIDEOREC = 1
- # Enables libopus (Opus), used for encoding audio into VM video capturing files.
+ # Enables audio support for recording.
+ VBOX_WITH_AUDIO_RECORDING = 1
+ # Enables libopus (Opus), used for encoding audio into recorded data.
  VBOX_WITH_LIBOPUS = 1
  # Enable SEE (+ AVX) optimizations for Opus.
  VBOX_WITH_OPUS_SSE = 1
@@ -1207,9 +1207,9 @@ ifdef VBOX_OSE
   # Undefine codec libraries which are not needed.
   VBOX_WITH_LIBVPX=
   VBOX_WITH_LIBOPUS=
-  # Disable video recording (with audio support).
-  VBOX_WITH_VIDEOREC=
-  VBOX_WITH_AUDIO_VIDEOREC=
+  # Disable recording (with audio support).
+  VBOX_WITH_RECORDING=
+  VBOX_WITH_AUDIO_RECORDING=
   endif
  # branding
  VBOX_BRAND_LICENSE_HTML             := $(PATH_ROOT)/doc/License-gpl-2.0.html
@@ -3620,36 +3620,28 @@ ifdef VBOX_SIGNING_MODE
    VBOX_DARWIN_KEXT_SIGN_FILES = CodeResources
   endif
 
-  ## Sign an application bundle, framework or kernel extension.
-  # @param 1  The bundle to sign.
-  # @param 2  Identifier, optional.
-  # @param 3  Additional codesign command line parameters, optional.
+  # The above version with complicated requirements is what Xcode 5.0.1GM suggest for kexts.
   ifdef VBOX_WITH_CORP_CODE_SIGNING
    ## @todo cannot handle $(2), the identifier. $(3) is hopefully either empty or --deep
    VBOX_SIGN_BUNDLE_FN = $(call MSG_TOOL,SIGNTOOL,,$(1),$(2))$(NLTAB) \
-	ditto -c -k --keepParent "$(1)" "$(1).zip"$(NLTAB) \
-	$(call VBOX_CCS_SIGN_CMD,apple,$(1).zip,,$(if $(eq $(3),--deep),-deep,))$(NLTAB) \
-	ditto -x -k "$(1).zip" "$(1)/../"$(NLTAB) \
-	$(RM) -f -- "$(1).zip"
+    ditto -c -k $(1) $(1).zip$(NLTAB) \
+    $(call VBOX_CCS_SIGN_CMD,apple,$(1).zip,,$(3))$(NLTAB) \
+	ditto -x -k $(1).zip $(1)
   else
    VBOX_SIGN_BUNDLE_FN = $(call MSG_TOOL,SIGNTOOL,,$(1),$(2))$(NLTAB)$(VBOX_CODESIGN) \
 	--verbose=9 \
 	--force \
 	--file-list - \
 	$(if-expr defined(VBOX_TSA_URL),--timestamp="$(VBOX_TSA_URL)") \
-	$(3) \
+       $(3) \
 	$(VBOX_CERTIFICATE_SUBJECT_NAME_ARGS) \
 	$(1) $(if $(2),--identifier "$(2)",)
   endif
 
   ## Sign a Mach-O image.
-  # @param 1  The file to sign.
+  # @param 1  The bundle to sign.
   # @param 2  Identifier, optional.
-  ifdef VBOX_WITH_CORP_CODE_SIGNING
-   ## @todo cannot handle $(2), the identifier.
-   VBOX_SIGN_MACHO_FN = $(call MSG_TOOL,SIGNTOOL,,$(1),$(2))$(NLTAB)$(call VBOX_CCS_SIGN_CMD,binary,$(1))
-  else
-   VBOX_SIGN_MACHO_FN = $(call MSG_TOOL,SIGNTOOL,,$(1),$(2))$(NLTAB)$(VBOX_CODESIGN) \
+  VBOX_SIGN_MACHO_FN = $(call MSG_TOOL,SIGNTOOL,,$(1),$(2))$(NLTAB)$(VBOX_CODESIGN) \
 	--verbose=9 \
 	--force \
 	--file-list - \
@@ -3657,21 +3649,16 @@ ifdef VBOX_SIGNING_MODE
 	$(VBOX_CERTIFICATE_SUBJECT_NAME_ARGS) \
 	$(1) \
 	$(if $(2),--identifier "$(2)",)
-  endif
 
   ## Sign a VMM Mach-O image.
-  # @param 1  The file to sign.
+  # @param 1  The bundle to sign.
   # @param 2  Identifier, optional.
   VBOX_SIGN_VMM_MOD_FN = $(VBOX_SIGN_MACHO_FN)
 
   ## Sign a non-executable file.
-  # @param 1  The file to sign.
+  # @param 1  The bundle to sign.
   # @param 2  Identifier, optional.
-  ifdef VBOX_WITH_CORP_CODE_SIGNING
-   ## @todo cannot handle $(2), the identifier.
-   VBOX_SIGN_FILE_FN = $(call MSG_TOOL,SIGNTOOL,,$(1),$(2))$(NLTAB)$(call VBOX_CCS_SIGN_CMD,binary,$(1))
-  else
-   VBOX_SIGN_FILE_FN = $(call MSG_TOOL,SIGNTOOL,,$(1),$(2))$(NLTAB)$(VBOX_CODESIGN) \
+  VBOX_SIGN_FILE_FN = $(call MSG_TOOL,SIGNTOOL,,$(1),$(2))$(NLTAB)$(VBOX_CODESIGN) \
 	--verbose=9 \
 	--force \
 	--file-list - \
@@ -3679,28 +3666,6 @@ ifdef VBOX_SIGNING_MODE
 	$(VBOX_CERTIFICATE_SUBJECT_NAME_ARGS) \
 	$(1) \
 	$(if $(2),--identifier "$(2)",)
-  endif
-
-  ## Sign a DMG image.
-  # @param 1  The file to sign.
-  # @param 2  Identifier, optional.
-  ifdef VBOX_WITH_CORP_CODE_SIGNING
-   ## @todo cannot handle $(2), the identifier.
-   VBOX_SIGN_DMG_FN = $(call MSG_TOOL,SIGNTOOL,,$(1),$(2))$(NLTAB) \
-	$(call VBOX_CCS_SIGN_CMD,mac_dmg,$(1))$(NLTAB) \
-	ditto -x -k "$(1).zip" "$(dir $(1))"$(NLTAB) \
-	$(RM) -f -- "$(1).zip"
-  else
-   VBOX_SIGN_DMG_FN = $(VBOX_SIGN_FILE_FN)
-  endif
-
-  ## Sign a PKG file. Used with corp code signing only.
-  # @param 1  The file to sign.
-  # @param 2  Identifier, optional.
-  ifdef VBOX_WITH_CORP_CODE_SIGNING
-   ## @todo cannot handle $(2), the identifier.
-   VBOX_SIGN_PKG_FN = $(call MSG_TOOL,SIGNTOOL,,$(1),$(2))$(NLTAB)$(call VBOX_CCS_SIGN_CMD,mac_pkg,$(1))
-  endif
 
   ## @def VBOX_TEST_SIGN_KEXT
   # Adds test signing to a $1.kext target (the plist installer target).
@@ -4531,35 +4496,12 @@ $(QUIET)$$(APPEND) -t "$$@" "done")
 endif
 
 ifeq ($(KBUILD_TARGET),os2)
- ifndef VBOX_USE_WATCOM_FOR_OS2
 TEMPLATE_VBOXR0DRV_TOOL                = GXX3OMF
 TEMPLATE_VBOXR0DRV_CXXFLAGS            = -g $(VBOX_GCC_pipe) $(VBOX_GCC_PEDANTIC_CXX) $(VBOX_GCC_Wno-variadic-macros) $(VBOX_GCC_R0_OPT) $(VBOX_GCC_R0_FP) -fno-strict-aliasing -fno-exceptions -fno-rtti
 TEMPLATE_VBOXR0DRV_CFLAGS              = -g $(VBOX_GCC_pipe) $(VBOX_GCC_PEDANTIC_C)   $(VBOX_GCC_Wno-variadic-macros) $(VBOX_GCC_R0_OPT) $(VBOX_GCC_R0_FP) -fno-strict-aliasing -fno-exceptions
 TEMPLATE_VBOXR0DRV_LIBS                = $(VBOX_GCC_LIBGCC)
 # wlink thinks physdevice doesn't need fixups and should have a stack - stupid!
 TEMPLATE_VBOXR0DRV_LDFLAGS             = -Zlinker Option -Zlinker internalrelocs, -Zlinker togglerelocs
-  else
-TEMPLATE_VBOXR0DRV_TOOL     = OPENWATCOM
-TEMPLATE_VBOXR0DRV_CTOOL    = OPENWATCOM
-TEMPLATE_VBOXR0DRV_CXXTOOL  = OPENWATCOM
-TEMPLATE_VBOXR0DRV_LDTOOL   = OPENWATCOM-WL
-TEMPLATE_VBOXR0DRV_ARTOOL   = OPENWATCOM
-TEMPLATE_VBOXR0DRV_ASTOOL   = NASM
-TEMPLATE_VBOXR0DRV_ASFLAGS  = -fobj -DASM_FORMAT_OMF -D__NASM__ -w+orphan-labels #-g -F borland
-TEMPLATE_VBOXR0DRV_DEFS.os2 = #_OS2EMX_H
-TEMPLATE_VBOXR0DRV_INCS     = \
-	$(PATH_TOOL_OPENWATCOM)/h \
-	$(PATH_TOOL_OPENWATCOM)/h/os2 \
-	$(PATH_ROOT)/include \
-	$(PATH_KLIBC_TRUNK)/libc/include # for os2ddk
-TEMPLATE_VBOXR0DRV_CFLAGS   = -s -ze -w4 -hd -d1+ -nt=TEXT32 -nc=CODE -4 -of+
-TEMPLATE_VBOXR0DRV_CXXFLAGS = -s -ze -w4 -hd -d2t -nt=TEXT32 -nc=CODE -4 -of+
-TEMPLATE_VBOXR0DRV_LDFLAGS  = \
-	form os2 lx physdevice \
-	option NODefaultlibs, internalrelocs, togglerelocs \
-	debug dwarf all #option symfile
-#	debug codeview all option symfile - wlink generates bad info, overwritten mod dir header.
- endif
 endif
 
 ifeq ($(KBUILD_TARGET),darwin)
@@ -7101,7 +7043,6 @@ ifn1of (darwin os2 win, $(KBUILD_TARGET))
  TEMPLATE_VBOXGUESTR0_CFLAGS     = $(patsubst %/VBox/SUPDrvMangling.h,%/VBox/VBoxGuestMangling.h,$(TEMPLATE_VBOXR0DRV_CFLAGS))
  TEMPLATE_VBOXGUESTR0_CXXFLAGS   = $(patsubst %/VBox/SUPDrvMangling.h,%/VBox/VBoxGuestMangling.h,$(TEMPLATE_VBOXR0DRV_CXXFLAGS))
 endif
-
 
 #
 # Template for building R0 libraries for the guest additions.

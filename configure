@@ -2755,11 +2755,11 @@ fi
 [ $WITH_VMMRAW    -eq 0 ] && cnf_append "VBOX_WITH_RAW_MODE" ""
 if [ $WITH_LIBVPX -eq 0 ]; then
   cnf_append "VBOX_WITH_LIBVPX" ""
-  cnf_append "VBOX_WITH_VIDEOREC" ""
+  cnf_append "VBOX_WITH_RECORDING" ""
 fi
 if [ $WITH_LIBOPUS -eq 0 ]; then
   cnf_append "VBOX_WITH_LIBOPUS" ""
-  cnf_append "VBOX_WITH_AUDIO_VIDEOREC" ""
+  cnf_append "VBOX_WITH_AUDIO_RECORDING" ""
 fi
 
 # Darwin-specific

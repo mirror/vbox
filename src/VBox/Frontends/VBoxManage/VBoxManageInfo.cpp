@@ -2370,11 +2370,11 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
             RTPrintf("\n");
     }
 
-#ifdef VBOX_WITH_VIDEOREC
+#ifdef VBOX_WITH_RECORDING
     {
         /* Video capture */
         BOOL fCaptureVideo = FALSE;
-# ifdef VBOX_WITH_AUDIO_VIDEOREC
+# ifdef VBOX_WITH_AUDIO_RECORDING
         BOOL fCaptureAudio = FALSE;
 # endif
 
@@ -2411,14 +2411,14 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
             }
             else if (key.compare("ac_enabled", Utf8Str::CaseInsensitive) == 0)
             {
-# ifdef VBOX_WITH_AUDIO_VIDEOREC
+# ifdef VBOX_WITH_AUDIO_RECORDING
                 fCaptureAudio = value.compare("true", Utf8Str::CaseInsensitive) == 0;
 # endif
             }
         }
 
         SHOW_BOOL_VALUE_EX("videocap", "Capturing:", fCaptureVideo, "active", "not active");
-# ifdef VBOX_WITH_AUDIO_VIDEOREC
+# ifdef VBOX_WITH_AUDIO_RECORDING
         SHOW_BOOL_VALUE_EX("videocapaudio", "Capture audio:", fCaptureAudio, "active", "not active");
 # endif
         szValue[0] = '\0';
@@ -2441,7 +2441,7 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
             RTPrintf("\n");
         /** @todo Add more audio capturing profile / information here. */
     }
-#endif /* VBOX_WITH_VIDEOREC */
+#endif /* VBOX_WITH_RECORDING */
 
     if (    details == VMINFO_STANDARD
         ||  details == VMINFO_FULL

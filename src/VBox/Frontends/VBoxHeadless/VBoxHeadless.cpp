@@ -43,7 +43,7 @@ using namespace com;
 #include <VBox/err.h>
 #include <VBoxVideo.h>
 
-#ifdef VBOX_WITH_VIDEOREC
+#ifdef VBOX_WITH_RECORDING
 # include <cstdlib>
 # include <cerrno>
 # include <iprt/process.h>
@@ -463,7 +463,7 @@ static void show_usage()
              "   --settingspwfile <file>           Specify a file containing the\n"
              "                                       settings password\n"
              "   -start-paused, --start-paused     Start the VM in paused state\n"
-#ifdef VBOX_WITH_VIDEOREC
+#ifdef VBOX_WITH_RECORDING
              "   -c, -record, --record             Record the VM screen output to a file\n"
              "   -w, --videowidth                  Video frame width when recording\n"
              "   -h, --videoheight                 Video frame height when recording\n"
@@ -474,7 +474,7 @@ static void show_usage()
              "\n");
 }
 
-#ifdef VBOX_WITH_VIDEOREC
+#ifdef VBOX_WITH_RECORDING
 /**
  * Parse the environment for variables which can influence the VIDEOREC settings.
  * purely for backwards compatibility.
@@ -523,7 +523,7 @@ static void parse_environ(uint32_t *pulFrameWidth, uint32_t *pulFrameHeight,
     if ((pszEnvTemp = RTEnvGet("VBOX_RECORDFILE")) != 0)
         *ppszFileName = pszEnvTemp;
 }
-#endif /* VBOX_WITH_VIDEOREC defined */
+#endif /* VBOX_WITH_RECORDING defined */
 
 static RTEXITCODE readPasswordFile(const char *pszFilename, com::Utf8Str *pPasswd)
 {
@@ -625,14 +625,14 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     unsigned fPATM  = ~0U;
     unsigned fCSAM  = ~0U;
     unsigned fPaused = 0;
-#ifdef VBOX_WITH_VIDEOREC
+#ifdef VBOX_WITH_RECORDING
     bool fRecordEnabled = false;
     uint32_t ulRecordVideoWidth = 800;
     uint32_t ulRecordVideoHeight = 600;
     uint32_t ulRecordVideoRate = 300000;
     char szRecordFileName[RTPATH_MAX];
     const char *pszRecordFileNameTemplate = "VBox-%d.webm"; /* .webm container by default. */
-#endif /* VBOX_WITH_VIDEOREC */
+#endif /* VBOX_WITH_RECORDING */
 #ifdef RT_OS_WINDOWS
     ATL::CComModule _Module; /* Required internally by ATL (constructor records instance in global variable). */
 #endif
@@ -642,7 +642,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
              "(C) 2008-" VBOX_C_YEAR " " VBOX_VENDOR "\n"
              "All rights reserved.\n\n");
 
-#ifdef VBOX_WITH_VIDEOREC
+#ifdef VBOX_WITH_RECORDING
     /* Parse the environment */
     parse_environ(&ulRecordVideoWidth, &ulRecordVideoHeight, &ulRecordVideoRate, &pszRecordFileNameTemplate);
 #endif
@@ -695,14 +695,14 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         { "--nocsam", OPT_NO_CSAM, 0 },
         { "--settingspw", OPT_SETTINGSPW, RTGETOPT_REQ_STRING },
         { "--settingspwfile", OPT_SETTINGSPW_FILE, RTGETOPT_REQ_STRING },
-#ifdef VBOX_WITH_VIDEOREC
+#ifdef VBOX_WITH_RECORDING
         { "-record", 'c', 0 },
         { "--record", 'c', 0 },
         { "--videowidth", 'w', RTGETOPT_REQ_UINT32 },
         { "--videoheight", 'h', RTGETOPT_REQ_UINT32 }, /* great choice of short option! */
         { "--videorate", 'r', RTGETOPT_REQ_UINT32 },
         { "--filename", 'f', RTGETOPT_REQ_STRING },
-#endif /* VBOX_WITH_VIDEOREC defined */
+#endif /* VBOX_WITH_RECORDING defined */
         { "-comment", OPT_COMMENT, RTGETOPT_REQ_STRING },
         { "--comment", OPT_COMMENT, RTGETOPT_REQ_STRING },
         { "-start-paused", OPT_PAUSED, 0 },
@@ -779,7 +779,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
             case OPT_PAUSED:
                 fPaused = true;
                 break;
-#ifdef VBOX_WITH_VIDEOREC
+#ifdef VBOX_WITH_RECORDING
             case 'c':
                 fRecordEnabled = true;
                 break;
@@ -792,9 +792,9 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
             case 'f':
                 pszRecordFileNameTemplate = ValueUnion.psz;
                 break;
-#endif /* VBOX_WITH_VIDEOREC defined */
+#endif /* VBOX_WITH_RECORDING defined */
             case 'h':
-#ifdef VBOX_WITH_VIDEOREC
+#ifdef VBOX_WITH_RECORDING
                 if ((GetState.pDef->fFlags & RTGETOPT_REQ_MASK) != RTGETOPT_REQ_NOTHING)
                 {
                     ulRecordVideoHeight = ValueUnion.u32;
@@ -816,7 +816,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         }
     }
 
-#ifdef VBOX_WITH_VIDEOREC
+#ifdef VBOX_WITH_RECORDING
     if (ulRecordVideoWidth < 512 || ulRecordVideoWidth > 2048 || ulRecordVideoWidth % 2)
     {
         LogError("VBoxHeadless: ERROR: please specify an even video frame width between 512 and 2048", 0);
@@ -846,7 +846,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         return 1;
     }
     RTStrPrintf(&szRecordFileName[0], RTPATH_MAX, pszRecordFileNameTemplate, RTProcSelf());
-#endif /* defined VBOX_WITH_VIDEOREC */
+#endif /* defined VBOX_WITH_RECORDING */
 
     if (!pcszNameOrUUID)
     {
@@ -957,7 +957,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         ComPtr<IDisplay> display;
         CHECK_ERROR_BREAK(console, COMGETTER(Display)(display.asOutParam()));
 
-#ifdef VBOX_WITH_VIDEOREC
+#ifdef VBOX_WITH_RECORDING
         if (fRecordEnabled)
         {
             ComPtr<IRecordSettings> RecordSettings;
@@ -977,7 +977,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
                 CHECK_ERROR_BREAK(saRecordScreenScreens[i], COMSETTER(VideoRate)(ulRecordVideoRate));
             }
         }
-#endif /* defined(VBOX_WITH_VIDEOREC) */
+#endif /* defined(VBOX_WITH_RECORDING) */
 
         /* get the machine debugger (isn't necessarily available) */
         ComPtr <IMachineDebugger> machineDebugger;
@@ -1226,7 +1226,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
 
         Log(("VBoxHeadless: event loop has terminated...\n"));
 
-#ifdef VBOX_WITH_VIDEOREC
+#ifdef VBOX_WITH_RECORDING
         if (fRecordEnabled)
         {
             if (!machine.isNull())
@@ -1236,7 +1236,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
                 CHECK_ERROR_BREAK(RecordSettings, COMSETTER(Enabled)(FALSE));
             }
         }
-#endif /* VBOX_WITH_VIDEOREC */
+#endif /* VBOX_WITH_RECORDING */
 
         /* we don't have to disable VRDE here because we don't save the settings of the VM */
     }

@@ -52,7 +52,7 @@
 
 #include <VBox/com/array.h>
 
-#ifdef VBOX_WITH_VIDEOREC
+#ifdef VBOX_WITH_RECORDING
 # include <iprt/path.h>
 # include "Recording.h"
 
@@ -145,7 +145,7 @@ HRESULT Display::FinalConstruct()
     mfHostCursorCapabilities = 0;
 #endif
 
-#ifdef VBOX_WITH_VIDEOREC
+#ifdef VBOX_WITH_RECORDING
     rc = RTCritSectInit(&mVideoRecLock);
     AssertRC(rc);
 
@@ -177,7 +177,7 @@ void Display::FinalRelease()
 {
     uninit();
 
-#ifdef VBOX_WITH_VIDEOREC
+#ifdef VBOX_WITH_RECORDING
     if (RTCritSectIsInitialized(&mVideoRecLock))
     {
         RTCritSectDelete(&mVideoRecLock);
@@ -728,7 +728,7 @@ void Display::uninit()
         maFramebuffers[uScreenId].updateImage.pu8Address = NULL;
         maFramebuffers[uScreenId].updateImage.cbLine = 0;
         maFramebuffers[uScreenId].pFramebuffer.setNull();
-#ifdef VBOX_WITH_VIDEOREC
+#ifdef VBOX_WITH_RECORDING
         maFramebuffers[uScreenId].videoRec.pSourceBitmap.setNull();
 #endif
     }
@@ -1056,7 +1056,7 @@ int Display::i_handleDisplayResize(unsigned uScreenId, uint32_t bpp, void *pvVRA
     if (mfSeamlessEnabled)
         i_handleSetVisibleRegion(mcRectVisibleRegion, mpRectVisibleRegion);
 
-#ifdef VBOX_WITH_VIDEOREC
+#ifdef VBOX_WITH_RECORDING
     i_videoRecScreenChanged(uScreenId);
 #endif
 
@@ -2404,7 +2404,7 @@ HRESULT Display::takeScreenShotToArray(ULONG aScreenId,
     return rc;
 }
 
-#ifdef VBOX_WITH_VIDEOREC
+#ifdef VBOX_WITH_RECORDING
 /**
  * Invalidates the capturing configuration.
  *
@@ -2459,7 +2459,7 @@ void Display::i_videoRecScreenChanged(unsigned uScreenId)
         AssertRC(rc2);
     }
 }
-#endif /* VBOX_WITH_VIDEOREC */
+#endif /* VBOX_WITH_RECORDING */
 
 int Display::i_drawToScreenEMT(Display *pDisplay, ULONG aScreenId, BYTE *address,
                                ULONG x, ULONG y, ULONG width, ULONG height)
@@ -3386,7 +3386,7 @@ DECLCALLBACK(void) Display::i_displayUpdateCallback(PPDMIDISPLAYCONNECTOR pInter
         }
     }
 
-#ifdef VBOX_WITH_VIDEOREC
+#ifdef VBOX_WITH_RECORDING
     AssertPtr(pDisplay->mParent);
     CaptureContext *pCtx = pDisplay->mParent->i_videoRecGetContext();
 
@@ -3485,7 +3485,7 @@ DECLCALLBACK(void) Display::i_displayUpdateCallback(PPDMIDISPLAYCONNECTOR pInter
             }
         } while (0);
     }
-#endif /* VBOX_WITH_VIDEOREC */
+#endif /* VBOX_WITH_RECORDING */
 
 #ifdef DEBUG_sunlover_2
     LogFlowFunc(("leave\n"));
@@ -3831,7 +3831,7 @@ int Display::i_crCtlSubmitSyncIfHasDataForScreen(uint32_t u32ScreenID, struct VB
 
 bool  Display::i_handleCrVRecScreenshotBegin(uint32_t uScreen, uint64_t uTimestampMs)
 {
-# ifdef VBOX_WITH_VIDEOREC
+# ifdef VBOX_WITH_RECORDING
     CaptureContext *pCtx = mParent->i_videoRecGetContext();
     return (      pCtx
                && pCtx->IsReady(uScreen, uTimestampMs));
@@ -3853,7 +3853,7 @@ void  Display::i_handleCrVRecScreenshotPerform(uint32_t uScreen,
                                                uint8_t *pu8BufferAddress, uint64_t uTimestampMs)
 {
     Assert(mfCrOglVideoRecState == CRVREC_STATE_SUBMITTED);
-# ifdef VBOX_WITH_VIDEOREC
+# ifdef VBOX_WITH_RECORDING
     CaptureContext *pCtx = mParent->i_videoRecGetContext();
 
     if (   pCtx
@@ -3871,7 +3871,7 @@ void  Display::i_handleCrVRecScreenshotPerform(uint32_t uScreen,
 # else
     RT_NOREF(uScreen, x, y, uPixelFormat, \
              uBitsPerPixel, uBytesPerLine, uGuestWidth, uGuestHeight, pu8BufferAddress, uTimestampMs);
-# endif /* VBOX_WITH_VIDEOREC */
+# endif /* VBOX_WITH_RECORDING */
 }
 
 void  Display::i_handleVRecCompletion()
@@ -4497,7 +4497,7 @@ DECLCALLBACK(void) Display::i_drvDestruct(PPDMDRVINS pDrvIns)
     if (pThis->pDisplay)
     {
         AutoWriteLock displayLock(pThis->pDisplay COMMA_LOCKVAL_SRC_POS);
-#ifdef VBOX_WITH_VIDEOREC
+#ifdef VBOX_WITH_RECORDING
         pThis->pDisplay->mParent->i_videoRecStop();
 #endif
 #ifdef VBOX_WITH_CRHGSMI

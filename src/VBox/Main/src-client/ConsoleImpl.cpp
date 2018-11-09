@@ -61,7 +61,7 @@
 #ifdef VBOX_WITH_AUDIO_VRDE
 # include "DrvAudioVRDE.h"
 #endif
-#ifdef VBOX_WITH_AUDIO_VIDEOREC
+#ifdef VBOX_WITH_AUDIO_RECORDING
 # include "DrvAudioRec.h"
 #endif
 #include "Nvram.h"
@@ -82,7 +82,7 @@
 #include "AutoCaller.h"
 #include "ThreadTask.h"
 
-#ifdef VBOX_WITH_VIDEOREC
+#ifdef VBOX_WITH_RECORDING
 # include "Recording.h"
 #endif
 
@@ -585,7 +585,7 @@ HRESULT Console::init(IMachine *aMachine, IInternalMachineControl *aControl, Loc
         unconst(mAudioVRDE) = new AudioVRDE(this);
         AssertReturn(mAudioVRDE, E_FAIL);
 #endif
-#ifdef VBOX_WITH_AUDIO_VIDEOREC
+#ifdef VBOX_WITH_AUDIO_RECORDING
         unconst(Capture.mAudioVideoRec) = new AudioVideoRec(this);
         AssertReturn(Capture.mAudioVideoRec, E_FAIL);
 #endif
@@ -733,7 +733,7 @@ void Console::uninit()
     }
 #endif
 
-#ifdef VBOX_WITH_AUDIO_VIDEOREC
+#ifdef VBOX_WITH_AUDIO_RECORDING
     if (Capture.mAudioVideoRec)
     {
         delete Capture.mAudioVideoRec;
@@ -5598,7 +5598,7 @@ HRESULT Console::i_sendACPIMonitorHotPlugEvent()
     return rc;
 }
 
-#ifdef VBOX_WITH_VIDEOREC
+#ifdef VBOX_WITH_RECORDING
 /**
  * Enables or disables video (audio) capturing of a VM.
  *
@@ -5629,7 +5629,7 @@ int Console::i_videoRecEnable(BOOL fEnable, util::AutoWriteLock *pAutoLock)
                 vrc = i_videoRecCreate();
                 if (RT_SUCCESS(vrc))
                 {
-# ifdef VBOX_WITH_AUDIO_VIDEOREC
+# ifdef VBOX_WITH_AUDIO_RECORDING
                     /* Attach the video recording audio driver if required. */
                     if (   Capture.mpVideoRecCtx->IsFeatureEnabled(RecordFeature_Audio)
                         && Capture.mAudioVideoRec)
@@ -5649,7 +5649,7 @@ int Console::i_videoRecEnable(BOOL fEnable, util::AutoWriteLock *pAutoLock)
             else
             {
                 i_videoRecStop();
-# ifdef VBOX_WITH_AUDIO_VIDEOREC
+# ifdef VBOX_WITH_AUDIO_RECORDING
                 Capture.mAudioVideoRec->doDetachDriverViaEmt(mpUVM, pAutoLock);
 # endif
                 i_videoRecDestroy();
@@ -5664,7 +5664,7 @@ int Console::i_videoRecEnable(BOOL fEnable, util::AutoWriteLock *pAutoLock)
 
     return vrc;
 }
-#endif /* VBOX_WITH_VIDEOREC */
+#endif /* VBOX_WITH_RECORDING */
 
 HRESULT Console::i_onRecordChange()
 {
@@ -5674,7 +5674,7 @@ HRESULT Console::i_onRecordChange()
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     HRESULT rc = S_OK;
-#ifdef VBOX_WITH_VIDEOREC
+#ifdef VBOX_WITH_RECORDING
     /* Don't trigger video capture changes if the VM isn't running. */
     SafeVMPtrQuiet ptrVM(this);
     if (ptrVM.isOk())
@@ -5696,7 +5696,7 @@ HRESULT Console::i_onRecordChange()
 
         ptrVM.release();
     }
-#endif /* VBOX_WITH_VIDEOREC */
+#endif /* VBOX_WITH_RECORDING */
 
     return rc;
 }
@@ -6866,7 +6866,7 @@ HRESULT Console::i_cancelSaveState()
     return S_OK;
 }
 
-#ifdef VBOX_WITH_AUDIO_VIDEOREC
+#ifdef VBOX_WITH_AUDIO_RECORDING
 /**
  * Sends audio (frame) data to the display's video capturing routines.
  *
@@ -6888,9 +6888,9 @@ HRESULT Console::i_videoRecSendAudio(const void *pvData, size_t cbData, uint64_t
 
     return S_OK;
 }
-#endif /* VBOX_WITH_AUDIO_VIDEOREC */
+#endif /* VBOX_WITH_AUDIO_RECORDING */
 
-#ifdef VBOX_WITH_VIDEOREC
+#ifdef VBOX_WITH_RECORDING
 int Console::i_videoRecGetSettings(settings::RecordSettings &Settings)
 {
     Assert(mMachine.isNotNull());
@@ -7056,7 +7056,7 @@ int Console::i_videoRecStop(void)
     LogFlowFuncLeaveRC(rc);
     return rc;
 }
-#endif /* VBOX_WITH_VIDEOREC */
+#endif /* VBOX_WITH_RECORDING */
 
 /**
  * Gets called by Session::UpdateMachineState()
@@ -10144,7 +10144,7 @@ void Console::i_powerUpThreadTask(VMPowerUpTask *pTask)
         /* Enable client connections to the VRDP server. */
         pConsole->i_consoleVRDPServer()->EnableConnections();
 
-#ifdef VBOX_WITH_VIDEOREC
+#ifdef VBOX_WITH_RECORDING
         ComPtr<IRecordSettings> RecordSettings;
         rc = pConsole->mMachine->COMGETTER(RecordSettings)(RecordSettings.asOutParam());
         AssertComRCReturnVoid(rc);
