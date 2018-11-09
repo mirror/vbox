@@ -115,7 +115,7 @@ HRESULT RecordingScreenSettings::init(RecordingSettings *aParent, uint32_t uScre
 }
 
 /**
- *  Initializes the capture settings object given another capture settings object
+ *  Initializes the recording settings object given another recording settings object
  *  (a kind of copy constructor). This object shares data with
  *  the object passed as an argument.
  *
@@ -385,10 +385,18 @@ HRESULT RecordingScreenSettings::setFileName(const com::Utf8Str &aFileName)
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
+    /* Get default file name if an empty string or a single "." is passed. */
     Utf8Str strFile(aFileName);
+    if (   strFile.isEmpty()
+        || strFile.equals("."))
+    {
+        int vrc = m->pParent->i_getDefaultFileName(strFile);
+        if (RT_FAILURE(vrc))
+            return setError(E_INVALIDARG, tr("Error retrieving default file name"));
+    }
 
     if (!RTPathStartsWithRoot(strFile.c_str()))
-        return setError(E_INVALIDARG, tr("Capture file name '%s' is not absolute"), strFile.c_str());
+        return setError(E_INVALIDARG, tr("Recording file name '%s' is not absolute"), strFile.c_str());
 
     m->bd.backup();
     m->bd->File.strName = strFile;
@@ -476,6 +484,10 @@ HRESULT RecordingScreenSettings::setOptions(const com::Utf8Str &aOptions)
 
     m->bd.backup();
     m->bd->strOptions = aOptions;
+
+    int vrc = RecordingScreenSettings::i_parseOptionsString(aOptions, *m->bd.data());
+    if (RT_FAILURE(vrc))
+        return setError(E_INVALIDARG, tr("Invalid option specified"));
 
     return S_OK;
 }
@@ -813,5 +825,82 @@ int RecordingScreenSettings::i_initInternal(void)
     }
 
     return rc;
+}
+
+/**
+ * Parses a recording screen options string and stores the parsed result in the specified screen settings.
+ *
+ * @returns IPRT status code.
+ * @param   strOptions          Options string to parse.
+ * @param   screenSettings      Where to store the parsed result into.
+ */
+/* static */
+int RecordingScreenSettings::i_parseOptionsString(const com::Utf8Str &strOptions,
+                                                  settings::RecordingScreenSettings &screenSettings)
+{
+    /*
+     * Parse options string.
+     */
+    size_t pos = 0;
+    com::Utf8Str key, value;
+    while ((pos = strOptions.parseKeyValue(key, value, pos)) != com::Utf8Str::npos)
+    {
+        if (key.compare("vc_quality", Utf8Str::CaseInsensitive) == 0)
+        {
+#ifdef VBOX_WITH_LIBVPX
+            if (value.compare("realtime", Utf8Str::CaseInsensitive) == 0)
+                mVideoRecCfg.Video.Codec.VPX.uEncoderDeadline = VPX_DL_REALTIME;
+            else if (value.compare("good", Utf8Str::CaseInsensitive) == 0)
+                mVideoRecCfg.Video.Codec.VPX.uEncoderDeadline = 1000000 / mVideoRecCfg.Video.uFPS;
+            else if (value.compare("best", Utf8Str::CaseInsensitive) == 0)
+                mVideoRecCfg.Video.Codec.VPX.uEncoderDeadline = VPX_DL_BEST_QUALITY;
+            else
+            {
+                mVideoRecCfg.Video.Codec.VPX.uEncoderDeadline = value.toUInt32();
+            }
+#endif
+        }
+        else if (key.compare("vc_enabled", Utf8Str::CaseInsensitive) == 0)
+        {
+            if (value.compare("false", Utf8Str::CaseInsensitive) == 0)
+            {
+                screenSettings.featureMap[RecordingFeature_Video] = false;
+            }
+        }
+        else if (key.compare("ac_enabled", Utf8Str::CaseInsensitive) == 0)
+        {
+#ifdef VBOX_WITH_AUDIO_RECORDING
+            if (value.compare("true", Utf8Str::CaseInsensitive) == 0)
+            {
+                screenSettings.featureMap[RecordingFeature_Audio] = true;
+            }
+#endif
+        }
+        else if (key.compare("ac_profile", Utf8Str::CaseInsensitive) == 0)
+        {
+#ifdef VBOX_WITH_AUDIO_RECORDING
+            if (value.compare("low", Utf8Str::CaseInsensitive) == 0)
+            {
+                screenSettings.Audio.uHz       = 8000;
+                screenSettings.Audio.cBits     = 16;
+                screenSettings.Audio.cChannels = 1;
+            }
+            else if (value.startsWith("med" /* "med[ium]" */, Utf8Str::CaseInsensitive) == 0)
+            {
+                /* Stay with the default set above. */
+            }
+            else if (value.compare("high", Utf8Str::CaseInsensitive) == 0)
+            {
+                screenSettings.Audio.uHz       = 48000;
+                screenSettings.Audio.cBits     = 16;
+                screenSettings.Audio.cChannels = 2;
+            }
+#endif
+        }
+        /* else just ignore. */
+
+    } /* while */
+
+    return VINF_SUCCESS;
 }
 
