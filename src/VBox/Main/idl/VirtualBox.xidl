@@ -4998,7 +4998,7 @@
 
     <desc>
       The IRecordingSettings interface represents recording settings of the virtual
-      machine. This is used only in the <link to="IMachine::recordSettings" />
+      machine. This is used only in the <link to="IMachine::recordingSettings" />
       attribute.
     </desc>
 
