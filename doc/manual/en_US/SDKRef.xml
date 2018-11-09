@@ -3918,9 +3918,30 @@ AuthResult AUTHCALL AuthEntry(
     existing client code.</para>
 
     <sect1>
-      <title>Incompatible API changes with version x.x</title>
+      <title>Incompatible API changes with version 6.0</title>
 
       <itemizedlist>
+
+        <listitem><para>Video recording APIs for were changed as follows:
+          <itemizedlist>
+            <listitem><para>All attributes which were living in <link linkend="IMachine">IMachine</link> before
+              have been moved to an own, dedicated interface named <link linkend="IRecordingSettings">IRecordingSettings</link>.
+              This new interface can be accessed via the new <link linkend="IMachine__getRecordingSettings">IMachine::getRecordingSettings</link>
+              attribute. This should emphasize that recording is not limited to video capturing as such.</para>
+            </listitem>
+
+            <listitem><para>For further flexibility all specific per-VM-screen settings have been moved to a new interface
+              called <link linkend="IRecordingScreenSettings">IRecordingScreenSettings</link>. Such settings now exist per configured
+              VM display and can be retrieved via the <link linkend="IRecordingSettings__screens">IRecordingSettings::screens</link>
+              attribute or the <link linkend="IRecordingSettings__getScreenSettings">IRecordingSettings::getScreenSettings</link>
+              method.
+              <note><para>For now all screen settings will share the same settings, e.g. different settings on a per-screen basis
+                is not implemented yet.</para></note>
+              </para>
+            </listitem>
+
+          </itemizedlist>
+        </para></listitem>
 
         <listitem><para>Guest Control APIs were changed as follows:
           <itemizedlist>
