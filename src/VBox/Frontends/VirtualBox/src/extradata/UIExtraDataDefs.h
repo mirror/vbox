@@ -527,9 +527,9 @@ public:
         RuntimeMenuViewActionType_StatusBar            = RT_BIT(14),
         RuntimeMenuViewActionType_StatusBarSettings    = RT_BIT(15),
         RuntimeMenuViewActionType_ToggleStatusBar      = RT_BIT(16),
-        RuntimeMenuViewActionType_ScaleFactor          = RT_BIT(17),
-        RuntimeMenuViewActionType_Resize               = RT_BIT(18),
-        RuntimeMenuViewActionType_Multiscreen          = RT_BIT(19),
+        RuntimeMenuViewActionType_Resize               = RT_BIT(17),
+        RuntimeMenuViewActionType_Remap                = RT_BIT(18),
+        RuntimeMenuViewActionType_Rescale              = RT_BIT(19),
         RuntimeMenuViewActionType_All                  = 0xFFFF
     };
 
