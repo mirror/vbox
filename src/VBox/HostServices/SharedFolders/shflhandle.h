@@ -1,7 +1,6 @@
+/* $Id$ */
 /** @file
- *
- * Shared Folders:
- * Handles helper functions header.
+ * Shared Folders Host Service - Handles helper functions header.
  */
 
 /*
@@ -16,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __SHFLHANDLE__H
-#define __SHFLHANDLE__H
+#ifndef ___SHFLHANDLE_H
+#define ___SHFLHANDLE_H
 
 #include "shfl.h"
 #include <VBox/shflsvc.h>
@@ -75,4 +74,4 @@ SHFLFILEHANDLE *vbsfQueryDirHandle(PSHFLCLIENTDATA pClient, SHFLHANDLE handle);
 uint32_t        vbsfQueryHandleType(PSHFLCLIENTDATA pClient,
                                     SHFLHANDLE handle);
 
-#endif /* __SHFLHANDLE__H */
+#endif /* !___SHFLHANDLE_H */

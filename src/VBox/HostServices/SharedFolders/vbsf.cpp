@@ -1903,7 +1903,7 @@ int vbsfRename(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING *pSrc, SHFLSTR
     int rc = VINF_SUCCESS;
 
     /* Validate input */
-    if (   flags & ~(SHFL_REMOVE_FILE|SHFL_REMOVE_DIR|SHFL_RENAME_REPLACE_IF_EXISTS)
+    if (   flags & ~(SHFL_RENAME_FILE|SHFL_RENAME_DIR|SHFL_RENAME_REPLACE_IF_EXISTS)
         || pSrc == 0
         || pDest == 0)
     {
@@ -1934,7 +1934,12 @@ int vbsfRename(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING *pSrc, SHFLSTR
 
         if (RT_SUCCESS(rc))
         {
-            if (flags & SHFL_RENAME_FILE)
+            if ((flags & (SHFL_RENAME_FILE | SHFL_RENAME_DIR)) == (SHFL_RENAME_FILE | SHFL_RENAME_DIR))
+            {
+                rc = RTPathRename(pszFullPathSrc, pszFullPathDest,
+                                  flags & SHFL_RENAME_REPLACE_IF_EXISTS ? RTPATHRENAME_FLAGS_REPLACE : 0);
+            }
+            else if (flags & SHFL_RENAME_FILE)
             {
                 rc = RTFileMove(pszFullPathSrc, pszFullPathDest,
                                   ((flags & SHFL_RENAME_REPLACE_IF_EXISTS) ? RTFILEMOVE_FLAGS_REPLACE : 0));
