@@ -3684,15 +3684,7 @@ ifdef VBOX_SIGNING_MODE
   ## Sign a DMG image.
   # @param 1  The file to sign.
   # @param 2  Identifier, optional.
-  ifdef VBOX_WITH_CORP_CODE_SIGNING
-   ## @todo cannot handle $(2), the identifier.
-   VBOX_SIGN_DMG_FN = $(call MSG_TOOL,SIGNTOOL,,$(1),$(2))$(NLTAB) \
-	$(call VBOX_CCS_SIGN_CMD,mac_dmg,$(1))$(NLTAB) \
-	ditto -x -k "$(1).zip" "$(dir $(1))"$(NLTAB) \
-	$(RM) -f -- "$(1).zip"
-  else
-   VBOX_SIGN_DMG_FN = $(VBOX_SIGN_FILE_FN)
-  endif
+  VBOX_SIGN_DMG_FN = $(VBOX_SIGN_FILE_FN)
 
   ## Sign a PKG file. Used with corp code signing only.
   # @param 1  The file to sign.
