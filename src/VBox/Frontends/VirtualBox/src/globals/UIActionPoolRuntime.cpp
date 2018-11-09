@@ -3229,10 +3229,10 @@ void UIActionPoolRuntime::sltPrepareMenuViewScreen()
     QMenu *pMenu = qobject_cast<QMenu*>(sender());
     AssertPtrReturnVoid(pMenu);
 
-    /* Do we have to show resize, multiscreen or scale factor actions? */
+    /* Do we have to show resize, remap or rescale actions? */
     const bool fAllowToShowActionResize = isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_Resize);
-    const bool fAllowToShowActionMultiscreen = isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_Multiscreen);
-    const bool fAllowToShowActionScaleFactor = isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_ScaleFactor);
+    const bool fAllowToShowActionRemap = isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_Remap);
+    const bool fAllowToShowActionRescale = isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_Rescale);
 
     /* Clear contents: */
     pMenu->clear();
@@ -3254,8 +3254,8 @@ void UIActionPoolRuntime::sltPrepareMenuViewScreen()
         fSeparator = false;
     }
 
-    /* Multiscreen actions: */
-    if (fAllowToShowActionMultiscreen && (m_cHostScreens > 1 || m_cGuestScreens > 1))
+    /* Remap actions: */
+    if (fAllowToShowActionRemap && (m_cHostScreens > 1 || m_cGuestScreens > 1))
     {
         updateMenuViewMultiscreen(pMenu);
         fSeparator = true;
@@ -3268,8 +3268,8 @@ void UIActionPoolRuntime::sltPrepareMenuViewScreen()
         fSeparator = false;
     }
 
-    /* Scale factor actions: */
-    if (fAllowToShowActionScaleFactor)
+    /* Rescale actions: */
+    if (fAllowToShowActionRescale)
     {
         updateMenuViewScaleFactor(pMenu);
         fSeparator = true;
@@ -3719,12 +3719,11 @@ void UIActionPoolRuntime::updateMenuView()
         fSeparator = false;
     }
 
-    /* Do we have to show resize, multiscreen or scale factor actions? */
+    /* Do we have to show resize, remap or rescale actions? */
     const bool fAllowToShowActionResize = isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_Resize);
-    const bool fAllowToShowActionMultiscreen = isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_Multiscreen);
-    const bool fAllowToShowActionScaleFactor = isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_ScaleFactor);
-
-    if (fAllowToShowActionResize || fAllowToShowActionMultiscreen || fAllowToShowActionScaleFactor)
+    const bool fAllowToShowActionRemap = isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_Remap);
+    const bool fAllowToShowActionRescale = isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_Rescale);
+    if (fAllowToShowActionResize || fAllowToShowActionRemap || fAllowToShowActionRescale)
     {
         for (int iGuestScreenIndex = 0; iGuestScreenIndex < m_cGuestScreens; ++iGuestScreenIndex)
         {
@@ -3764,10 +3763,10 @@ void UIActionPoolRuntime::updateMenuViewPopup()
         fSeparator = false;
     }
 
-    /* Do we have to show resize menu? */
+    /* Do we have to show resize or rescale actions? */
     const bool fAllowToShowActionResize = isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_Resize);
-    const bool fAllowToShowActionScaleFactor = isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_ScaleFactor);
-    if (fAllowToShowActionResize || fAllowToShowActionScaleFactor)
+    const bool fAllowToShowActionRescale = isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_Rescale);
+    if (fAllowToShowActionResize || fAllowToShowActionRescale)
     {
         for (int iGuestScreenIndex = 0; iGuestScreenIndex < m_cGuestScreens; ++iGuestScreenIndex)
         {
@@ -3779,6 +3778,7 @@ void UIActionPoolRuntime::updateMenuViewPopup()
             connect(pSubMenu, SIGNAL(aboutToShow()), this, SLOT(sltPrepareMenuViewScreen()));
         }
     }
+
     /* Mark menu as valid: */
     m_invalidations.remove(UIActionIndexRT_M_ViewPopup);
 }

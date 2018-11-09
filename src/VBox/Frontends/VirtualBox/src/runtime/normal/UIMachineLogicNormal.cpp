@@ -273,10 +273,10 @@ void UIMachineLogicNormal::prepareActionGroups()
     /* Call to base-class: */
     UIMachineLogic::prepareActionGroups();
 
-    /* Restrict 'Multiscreen' actions for 'View' menu: */
+    /* Restrict 'Remap' actions for 'View' menu: */
     actionPool()->toRuntime()->setRestrictionForMenuView(UIActionRestrictionLevel_Logic,
                                                          (UIExtraDataMetaDefs::RuntimeMenuViewActionType)
-                                                         (UIExtraDataMetaDefs::RuntimeMenuViewActionType_Multiscreen));
+                                                         (UIExtraDataMetaDefs::RuntimeMenuViewActionType_Remap));
 }
 
 void UIMachineLogicNormal::prepareActionConnections()

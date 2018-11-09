@@ -1312,9 +1312,12 @@ void UIMenuBarEditorWidget::prepareMenuView()
         prepareNamedAction(pMenu, tr("Virtual Screen Resize"),
                            UIExtraDataMetaDefs::RuntimeMenuViewActionType_Resize,
                            gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuViewActionType_Resize));
-        prepareNamedAction(pMenu, tr("Virtual Screen Mapping"),
-                           UIExtraDataMetaDefs::RuntimeMenuViewActionType_Multiscreen,
-                           gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuViewActionType_Multiscreen));
+        prepareNamedAction(pMenu, tr("Virtual Screen Remap"),
+                           UIExtraDataMetaDefs::RuntimeMenuViewActionType_Remap,
+                           gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuViewActionType_Remap));
+        prepareNamedAction(pMenu, tr("Virtual Screen Rescale"),
+                           UIExtraDataMetaDefs::RuntimeMenuViewActionType_Rescale,
+                           gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuViewActionType_Rescale));
     }
 }
 
