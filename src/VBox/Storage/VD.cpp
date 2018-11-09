@@ -594,29 +594,36 @@ static int vdRegionListConv(PCVDREGIONLIST pRegionList, uint32_t fFlags, PPVDREG
 static uint64_t vdImageGetSize(PVDIMAGE pImage)
 {
     uint64_t cbImage = 0;
-    PCVDREGIONLIST pRegionList = NULL;
-    int rc = pImage->Backend->pfnQueryRegions(pImage->pBackendData, &pRegionList);
-    if (RT_SUCCESS(rc))
+
+    if (pImage->cbImage == VD_IMAGE_SIZE_UNINITIALIZED)
     {
-        if (pRegionList->fFlags & VD_REGION_LIST_F_LOC_SIZE_BLOCKS)
+        PCVDREGIONLIST pRegionList = NULL;
+        int rc = pImage->Backend->pfnQueryRegions(pImage->pBackendData, &pRegionList);
+        if (RT_SUCCESS(rc))
         {
-            PVDREGIONLIST pRegionListConv = NULL;
-            rc = vdRegionListConv(pRegionList, 0, &pRegionListConv);
-            if (RT_SUCCESS(rc))
+            if (pRegionList->fFlags & VD_REGION_LIST_F_LOC_SIZE_BLOCKS)
             {
-                for (uint32_t i = 0; i < pRegionListConv->cRegions; i++)
-                    cbImage += pRegionListConv->aRegions[i].cRegionBlocksOrBytes;
+                PVDREGIONLIST pRegionListConv = NULL;
+                rc = vdRegionListConv(pRegionList, 0, &pRegionListConv);
+                if (RT_SUCCESS(rc))
+                {
+                    for (uint32_t i = 0; i < pRegionListConv->cRegions; i++)
+                        cbImage += pRegionListConv->aRegions[i].cRegionBlocksOrBytes;
 
-                VDRegionListFree(pRegionListConv);
+                    VDRegionListFree(pRegionListConv);
+                }
             }
-        }
-        else
-            for (uint32_t i = 0; i < pRegionList->cRegions; i++)
-                cbImage += pRegionList->aRegions[i].cRegionBlocksOrBytes;
+            else
+                for (uint32_t i = 0; i < pRegionList->cRegions; i++)
+                    cbImage += pRegionList->aRegions[i].cRegionBlocksOrBytes;
 
-        AssertPtr(pImage->Backend->pfnRegionListRelease);
-        pImage->Backend->pfnRegionListRelease(pImage->pBackendData, pRegionList);
+            AssertPtr(pImage->Backend->pfnRegionListRelease);
+            pImage->Backend->pfnRegionListRelease(pImage->pBackendData, pRegionList);
+            pImage->cbImage = cbImage; /* Cache the value. */
+        }
     }
+    else
+        cbImage = pImage->cbImage;
 
     return cbImage;
 }
@@ -3311,6 +3318,7 @@ static DECLCALLBACK(int) vdIOReadAsyncFallback(void *pvUser, void *pStorage, uin
                                                void **ppTask)
 {
     RT_NOREF8(pvUser, pStorage, uOffset, paSegments, cSegments, cbRead, pvCompletion, ppTask);
+    AssertFailed();
     return VERR_NOT_IMPLEMENTED;
 }
 
@@ -3323,6 +3331,7 @@ static DECLCALLBACK(int) vdIOWriteAsyncFallback(void *pvUser, void *pStorage, ui
                                                 void **ppTask)
 {
     RT_NOREF8(pvUser, pStorage, uOffset, paSegments, cSegments, cbWrite, pvCompletion, ppTask);
+    AssertFailed();
     return VERR_NOT_IMPLEMENTED;
 }
 
@@ -3333,6 +3342,7 @@ static DECLCALLBACK(int) vdIOFlushAsyncFallback(void *pvUser, void *pStorage,
                                                 void *pvCompletion, void **ppTask)
 {
     RT_NOREF4(pvUser, pStorage, pvCompletion, ppTask);
+    AssertFailed();
     return VERR_NOT_IMPLEMENTED;
 }
 
@@ -5626,6 +5636,7 @@ VBOXDDU_DECL(int) VDOpen(PVDISK pDisk, const char *pszBackend,
             break;
         }
 
+        pImage->cbImage     = VD_IMAGE_SIZE_UNINITIALIZED;
         pImage->VDIo.pDisk  = pDisk;
         pImage->pVDIfsImage = pVDIfsImage;
 
@@ -6273,6 +6284,7 @@ VBOXDDU_DECL(int) VDCreateBase(PVDISK pDisk, const char *pszBackend,
             rc = VERR_NO_MEMORY;
             break;
         }
+        pImage->cbImage     = VD_IMAGE_SIZE_UNINITIALIZED;
         pImage->VDIo.pDisk  = pDisk;
         pImage->pVDIfsImage = pVDIfsImage;
 
@@ -6576,6 +6588,7 @@ VBOXDDU_DECL(int) VDCreateDiff(PVDISK pDisk, const char *pszBackend,
             break;
         }
 
+        pImage->cbImage     = VD_IMAGE_SIZE_UNINITIALIZED;
         pImage->VDIo.pDisk  = pDisk;
         pImage->pVDIfsImage = pVDIfsImage;
 
@@ -7063,9 +7076,19 @@ VBOXDDU_DECL(int) VDMerge(PVDISK pDisk, unsigned nImageFrom,
                          pCurrImage != NULL && pCurrImage != pImageFrom->pPrev && rc == VERR_VD_BLOCK_FREE;
                          pCurrImage = pCurrImage->pPrev)
                     {
-                        rc = pCurrImage->Backend->pfnRead(pCurrImage->pBackendData,
-                                                          uOffset, cbThisRead,
-                                                          &IoCtx, &cbThisRead);
+                        /*
+                         * Skip reading when offset exceeds image size which can happen when the target is
+                         * bigger than the source.
+                         */
+                        if (uOffset < pCurrImage->cbImage)
+                        {
+                            cbThisRead = RT_MIN(cbThisRead, pCurrImage->cbImage - uOffset);
+                            rc = pCurrImage->Backend->pfnRead(pCurrImage->pBackendData,
+                                                              uOffset, cbThisRead,
+                                                              &IoCtx, &cbThisRead);
+                        }
+                        else
+                            rc = VERR_VD_BLOCK_FREE;
                     }
 
                     if (rc != VERR_VD_BLOCK_FREE)
@@ -7190,9 +7213,19 @@ VBOXDDU_DECL(int) VDMerge(PVDISK pDisk, unsigned nImageFrom,
                      pCurrImage != NULL && pCurrImage != pImageTo && rc == VERR_VD_BLOCK_FREE;
                      pCurrImage = pCurrImage->pPrev)
                 {
-                    rc = pCurrImage->Backend->pfnRead(pCurrImage->pBackendData,
-                                                           uOffset, cbThisRead,
-                                                           &IoCtx, &cbThisRead);
+                    /*
+                     * Skip reading when offset exceeds image size which can happen when the target is
+                     * bigger than the source.
+                     */
+                    if (uOffset < pCurrImage->cbImage)
+                    {
+                        cbThisRead = RT_MIN(cbThisRead, pCurrImage->cbImage - uOffset);
+                        rc = pCurrImage->Backend->pfnRead(pCurrImage->pBackendData,
+                                                          uOffset, cbThisRead,
+                                                          &IoCtx, &cbThisRead);
+                    }
+                    else
+                        rc = VERR_VD_BLOCK_FREE;
                 }
 
                 if (rc != VERR_VD_BLOCK_FREE)
@@ -7979,6 +8012,9 @@ VBOXDDU_DECL(int) VDResize(PVDISK pDisk, uint64_t cbSize,
                                             pDisk->pVDIfsDisk,
                                             pImage->pVDIfsImage,
                                             pVDIfsOperation);
+        /* Mark the image size as uninitialized so it gets recalculated the next time. */
+        if (RT_SUCCESS(rc))
+            pImage->cbImage = VD_IMAGE_SIZE_UNINITIALIZED;
     } while (0);
 
     if (RT_UNLIKELY(fLockWrite))
