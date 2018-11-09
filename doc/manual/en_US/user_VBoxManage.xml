@@ -1885,12 +1885,12 @@ UUID="457af700-bc0a-4258-aa3c-13b03da171f2"
 
     </sect2>
 
-    <sect2 id="vboxmanage-modifyvm-capture">
+    <sect2 id="vboxmanage-modifyvm-record">
 
-      <title>Capture Settings</title>
+      <title>Recording Settings</title>
 
       <para>
-        The following settings for changing video and/or audio capture
+        The following settings for changing video and/or audio recording
         parameters are available through <computeroutput>VBoxManage
         modifyvm</computeroutput>.
       </para>
@@ -1899,7 +1899,7 @@ UUID="457af700-bc0a-4258-aa3c-13b03da171f2"
 
         <listitem>
           <para>
-            <computeroutput>--capture on|off</computeroutput>: This
+            <computeroutput>--record on|off</computeroutput>: This
             option enables or disables recording a VM session into a
             file. If this option is enabled, recording will start when the
             VM session is started.
@@ -1908,7 +1908,7 @@ UUID="457af700-bc0a-4258-aa3c-13b03da171f2"
 
         <listitem>
           <para>
-            <computeroutput>--capturescreens all|&lt;screen ID&gt;
+            <computeroutput>--recordscreens all|&lt;screen ID&gt;
             [&lt;screen ID&gt; ...]</computeroutput>: This option allows
             to specify which screens of the VM are being recorded. Each
             screen is recorded into a separate file.
@@ -1917,7 +1917,7 @@ UUID="457af700-bc0a-4258-aa3c-13b03da171f2"
 
         <listitem>
           <para>
-            <computeroutput>--capturefile
+            <computeroutput>--recordfile
             &lt;filename&gt;</computeroutput>: This option sets the
             filename VirtualBox uses to save the recorded content.
           </para>
@@ -1925,30 +1925,30 @@ UUID="457af700-bc0a-4258-aa3c-13b03da171f2"
 
         <listitem>
           <para>
-            <computeroutput>--capturemaxtime
+            <computeroutput>--recordmaxtime
             &lt;ms&gt;</computeroutput>: This option sets the maximum
-            time in milliseconds the capturing will be enabled
-            since activation. The capturing stops when the defined time
-            interval has elapsed. If this value is zero the capturing is
+            time in milliseconds the recording will be enabled
+            since activation. The recording stops when the defined time
+            interval has elapsed. If this value is zero the recording is
             not limited by time.
           </para>
         </listitem>
 
         <listitem>
           <para>
-            <computeroutput>--capturemaxsize
+            <computeroutput>--recordmaxsize
             &lt;MB&gt;</computeroutput>: This option limits the maximum
-            size of the captured file (in MB). The capturing stops
+            size of the recorded file (in MB). The recording stops
             when the file size has reached the specified size. If this
-            value is zero the capturing will not be limited by file size.
+            value is zero the recording will not be limited by file size.
           </para>
         </listitem>
 
         <listitem>
           <para>
-            <computeroutput>--captureopts &lt;key=value&gt;
+            <computeroutput>--recordopts &lt;key=value&gt;
             [,&lt;key=value&gt; ...]</computeroutput>: This format can
-            be used to specify additional capturing options. These
+            be used to specify additional recording options. These
             options only are for advanced users and must be specified in
             a comma-separated key=value format. For example:
             <computeroutput>foo=bar,a=b</computeroutput>.
@@ -1957,7 +1957,7 @@ UUID="457af700-bc0a-4258-aa3c-13b03da171f2"
 
         <listitem>
           <para>
-            <computeroutput>--capturevideores
+            <computeroutput>--recordvideores
             &lt;width&gt;x&lt;height&gt;</computeroutput>: This option
             sets the video resolution (in pixels) of the recorded file.
           </para>
@@ -1965,7 +1965,7 @@ UUID="457af700-bc0a-4258-aa3c-13b03da171f2"
 
         <listitem>
           <para>
-            <computeroutput>--capturevideorate
+            <computeroutput>--recordvideorate
             &lt;rate&gt;</computeroutput>: This option sets the video bitrate
             in kilobits (kb) per second. Increasing this value makes the
             video look better for the cost of an increased file size.
@@ -1974,7 +1974,7 @@ UUID="457af700-bc0a-4258-aa3c-13b03da171f2"
 
         <listitem>
           <para>
-            <computeroutput>--capturevideofps &lt;fps&gt;</computeroutput>:
+            <computeroutput>--recordvideofps &lt;fps&gt;</computeroutput>:
             This option sets the maximum number of video frames per second
             (FPS) to be recorded. Frames with a higher frequency will be
             skipped. Reducing this value increases the number of skipped
@@ -3642,95 +3642,89 @@ Virtual system 0:
 
       <listitem>
         <para>
-          <computeroutput>videocap on|off</computeroutput> enables or
+          <computeroutput>record on|off</computeroutput> enables or
           disables recording a VM session into a WebM/VP8 file.
         </para>
       </listitem>
 
       <listitem>
         <para>
-          <computeroutput>videocapscreens all|&lt;screen ID&gt;
+          <computeroutput>recordscreens all|&lt;screen ID&gt;
           [&lt;screen ID&gt; ...]]</computeroutput> allows to specify
           which screens of the VM are being recorded. This setting
-          cannot be changed while video capturing is enabled. Each
+          cannot be changed while recording is enabled. Each
           screen is recorded into a separate file.
         </para>
       </listitem>
 
       <listitem>
         <para>
-          <computeroutput>videocapfile &lt;file&gt;</computeroutput>
+          <computeroutput>recordfile &lt;file&gt;</computeroutput>
           sets the filename VirtualBox uses to save the recorded
-          content. This setting cannot be changed while video capturing
+          content. This setting cannot be changed while recording
           is enabled.
         </para>
       </listitem>
 
       <listitem>
         <para>
-          <computeroutput>videocapres &lt;width&gt;
+          <computeroutput>recordvideores &lt;width&gt;
           &lt;height&gt;</computeroutput> sets the resolution (in
           pixels) of the recorded video. This setting cannot be changed
-          while video capturing is enabled.
+          while recording is enabled.
         </para>
       </listitem>
 
       <listitem>
-<!-- @todo r=andy Clarify rate. -->
-
         <para>
-          <computeroutput>videocaprate &lt;rate&gt;</computeroutput>
+          <computeroutput>recordvideorate &lt;rate&gt;</computeroutput>
           sets the bitrate in kilobits (kb) per second. Increasing this
           value makes the video look better for the cost of an increased
-          file size. This setting cannot be changed while video
-          capturing is enabled.
+          file size. This setting cannot be changed while recording is enabled.
         </para>
       </listitem>
 
       <listitem>
         <para>
-          <computeroutput>videocapfps &lt;fps&gt;</computeroutput> sets
+          <computeroutput>recordvideofps &lt;fps&gt;</computeroutput> sets
           the maximum number of frames per second (FPS) to be recorded.
           Frames with a higher frequency will be skipped. Reducing this
           value increases the number of skipped frames and reduces the
-          file size. This setting cannot be changed while video
-          capturing is enabled.
+          file size. This setting cannot be changed while recording is enabled.
         </para>
       </listitem>
 
       <listitem>
-<!-- @todo r=andy Clarify time format. -->
-
         <para>
-          <computeroutput>videocapmaxtime &lt;ms&gt;</computeroutput>
-          sets the maximum time in milliseconds the video capturing will
-          be enabled since activation. The capturing stops when the
+          <computeroutput>recordmaxtime &lt;ms&gt;</computeroutput>
+          sets the maximum time in milliseconds the recording will
+          be enabled since activation. The recording stops when the
           defined time interval has elapsed. If this value is zero the
-          capturing is not limited by time. This setting cannot be
-          changed while video capturing is enabled.
+          recording is not limited by time. This setting cannot be
+          changed while recording is enabled.
         </para>
       </listitem>
 
       <listitem>
         <para>
-          <computeroutput>videocapmaxsize &lt;MB&gt;</computeroutput>
-          limits the maximum size of the captured video file, in MB. The
-          capturing stops when the file size has reached the specified
-          size. If this value is zero the capturing will not be limited
-          by file size. This setting cannot be changed while video
-          capturing is enabled.
+          <computeroutput>recordmaxsize &lt;MB&gt;</computeroutput>
+          limits the maximum size of the recorded file, in MB. The
+          recording stops when the file size has reached the specified
+          size. If this value is zero the recording will not be limited
+          by file size. This setting cannot be changed while recording
+          is enabled.
         </para>
       </listitem>
 
       <listitem>
         <para>
-          <computeroutput>videocapopts
+          <computeroutput>recordopts
           &lt;key=value&gt;[,&lt;key=value&gt; ...]</computeroutput> can
-          be used to specify additional video capturing options. These
+          be used to specify additional recording options. These
           options only are for advanced users and must be specified in a
           comma-separated key=value format, e.g.
           <computeroutput>foo=bar,a=b</computeroutput>. This setting
-          cannot be changed while video capturing is enabled.
+          cannot be changed while recording is enabled.
         </para>
       </listitem>
 
