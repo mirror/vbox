@@ -589,8 +589,14 @@ bool RecordingSettings::i_canChangeSettings(void)
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    /* Only allow settings to be changed when recording is disabled. */
-    return m->bd->fEnabled == false;
+    /* Only allow settings to be changed when recording is disabled when the machine is running. */
+    if (   Global::IsOnline(adep.machineState())
+        && m->bd->fEnabled)
+    {
+        return false;
+    }
+
+    return true;
 }
 
 /**
