@@ -137,8 +137,8 @@ private:
         void loadCloudStuff();
         /** Loads cloud @a comProvider data to passed @a data container. */
         void loadCloudProvider(const CCloudProvider &comProvider, UIDataCloudProvider &data);
-        /** Loads cloud @a comProfile data to passed @a data container. */
-        void loadCloudProfile(const CCloudProfile &comProfile, UIDataCloudProfile &data);
+        /** Loads cloud @a comProfile data to passed @a profileData container, using @a providerData as hint. */
+        void loadCloudProfile(const CCloudProfile &comProfile, const UIDataCloudProvider &providerData, UIDataCloudProfile &profileData);
     /** @} */
 
     /** @name Tree-widget stuff.

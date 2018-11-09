@@ -264,7 +264,7 @@ void UICloudProfileManagerWidget::sltApplyCloudProfileDetailsChanges()
                 {
                     /* Update profile in the tree: */
                     UIDataCloudProfile data;
-                    loadCloudProfile(comCloudProfile, data);
+                    loadCloudProfile(comCloudProfile, *pProviderItem, data);
                     updateItemForCloudProfile(data, true, pProfileItem);
 
                     /* Make sure current item fetched: */
@@ -332,8 +332,8 @@ void UICloudProfileManagerWidget::sltAddCloudProfile()
         else
         {
             /* Create new profile: */
-            QVector<QString> keys;
-            QVector<QString> values;
+            const QVector<QString> keys = pProviderItem->m_propertyDescriptions.keys().toVector();
+            const QVector<QString> values(keys.size());
             comCloudProvider.CreateProfile(strProfileName, keys, values);
 
             /* Show error message if necessary: */
@@ -350,26 +350,8 @@ void UICloudProfileManagerWidget::sltAddCloudProfile()
                 {
                     /* Add profile to the tree: */
                     UIDataCloudProfile data;
-                    loadCloudProfile(comCloudProfile, data);
+                    loadCloudProfile(comCloudProfile, *pProviderItem, data);
                     createItemForCloudProfile(pProviderItem, data, true);
-
-                    /* If profile still Ok: */
-                    if (comCloudProfile.isOk())
-                    {
-                        /* Acquire supported property names: */
-                        const QVector<QString> supportedNames = comCloudProvider.GetSupportedPropertyNames();
-                        /* Show error message if necessary: */
-                        if (!comCloudProfile.isOk())
-                            msgCenter().cannotAcquireCloudProfileParameter(comCloudProfile, this);
-                        else
-                        {
-                            /* Add unknown supported properties to known properties list.
-                             * That allows to have at least something if we have nothing. */
-                            foreach (const QString &strSupportedName, supportedNames)
-                                if (!data.m_data.contains(strSupportedName))
-                                    data.m_data[strSupportedName] = qMakePair(QString(), QString());
-                        }
-                    }
 
                     /* If profile still Ok: */
                     if (comCloudProfile.isOk())
@@ -389,7 +371,7 @@ void UICloudProfileManagerWidget::sltAddCloudProfile()
                         {
                             /* Update profile in the tree: */
                             UIDataCloudProfile updatedData;
-                            loadCloudProfile(comCloudProfile, updatedData);
+                            loadCloudProfile(comCloudProfile, *pProviderItem, updatedData);
                             updateItemForCloudProfile(updatedData, true, static_cast<UIItemCloudProfile*>(m_pTreeWidget->currentItem()));
                             sltHandleCurrentItemChange();
                         }
@@ -777,7 +759,7 @@ void UICloudProfileManagerWidget::loadCloudStuff()
             {
                 /* Load profile data: */
                 UIDataCloudProfile profileData;
-                loadCloudProfile(comCloudProfile, profileData);
+                loadCloudProfile(comCloudProfile, providerData, profileData);
                 createItemForCloudProfile(pItem, profileData, false);
             }
 
@@ -793,28 +775,24 @@ void UICloudProfileManagerWidget::loadCloudStuff()
 
 void UICloudProfileManagerWidget::loadCloudProvider(const CCloudProvider &comProvider, UIDataCloudProvider &data)
 {
-    Q_UNUSED(comProvider);
-    Q_UNUSED(data);
-
     /* Gather provider settings: */
     if (comProvider.isOk())
         data.m_uuid = comProvider.GetId();
     if (comProvider.isOk())
         data.m_strName = comProvider.GetName();
+    foreach (const QString &strSupportedPropertyName, comProvider.GetSupportedPropertyNames())
+        data.m_propertyDescriptions[strSupportedPropertyName] = comProvider.GetPropertyDescription(strSupportedPropertyName);
 
     /* Show error message if necessary: */
     if (!comProvider.isOk())
         msgCenter().cannotAcquireCloudProviderParameter(comProvider, this);
 }
 
-void UICloudProfileManagerWidget::loadCloudProfile(const CCloudProfile &comProfile, UIDataCloudProfile &data)
+void UICloudProfileManagerWidget::loadCloudProfile(const CCloudProfile &comProfile, const UIDataCloudProvider &providerData, UIDataCloudProfile &profileData)
 {
-    Q_UNUSED(comProfile);
-    Q_UNUSED(data);
-
     /* Gather profile settings: */
     if (comProfile.isOk())
-        data.m_strName = comProfile.GetName();
+        profileData.m_strName = comProfile.GetName();
 
     if (comProfile.isOk())
     {
@@ -830,17 +808,9 @@ void UICloudProfileManagerWidget::loadCloudProfile(const CCloudProfile &comProfi
 
         if (comProfile.isOk())
         {
-            /* Acquire descriptions: */
-//          for (int i = 0; i < keys.size(); ++i)
-//          {
-//              descriptions[i] = comProfile.GetPropertyDescription(keys.at(i));
-//              if (!comProfile.isOk())
-//                  continue;
-//          }
-
             /* Enumerate all the keys: */
             for (int i = 0; i < keys.size(); ++i)
-                data.m_data[keys.at(i)] = qMakePair(values.at(i), descriptions.at(i));
+                profileData.m_data[keys.at(i)] = qMakePair(values.at(i), providerData.m_propertyDescriptions.value(keys.at(i)));
         }
     }
 

@@ -19,6 +19,7 @@
 #define ___UICloudProfileDetailsWidget_h___
 
 /* Qt includes: */
+#include <QMap>
 #include <QUuid>
 #include <QWidget>
 
@@ -61,6 +62,9 @@ struct UIDataCloudProvider
     QUuid    m_uuid;
     /** Holds the provider name. */
     QString  m_strName;
+
+    /** Holds the profile supported property descriptions. */
+    QMap<QString, QString>  m_propertyDescriptions;
 };
 
 /** Cloud Profile data structure. */
