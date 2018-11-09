@@ -1863,11 +1863,11 @@ RTEXITCODE handleControlVM(HandlerArg *a)
                 break;
             }
 
-            ComPtr<IRecordSettings> RecordSettings;
-            CHECK_ERROR_BREAK(machine, COMGETTER(RecordSettings)(RecordSettings.asOutParam()));
+            ComPtr<IRecordingSettings> recordingSettings;
+            CHECK_ERROR_BREAK(machine, COMGETTER(RecordingSettings)(recordingSettings.asOutParam()));
 
-            SafeIfaceArray <IRecordScreenSettings> saRecordScreenScreens;
-            CHECK_ERROR_BREAK(RecordSettings, COMGETTER(Screens)(ComSafeArrayAsOutParam(saRecordScreenScreens)));
+            SafeIfaceArray <IRecordingScreenSettings> saRecordingScreenScreens;
+            CHECK_ERROR_BREAK(recordingSettings, COMGETTER(Screens)(ComSafeArrayAsOutParam(saRecordingScreenScreens)));
 
             /* Note: For now all screens have the same configuration. */
 
@@ -1877,11 +1877,11 @@ RTEXITCODE handleControlVM(HandlerArg *a)
              */
             if (!strcmp(a->argv[2], "on"))
             {
-                CHECK_ERROR_RET(RecordSettings, COMSETTER(Enabled)(TRUE), RTEXITCODE_FAILURE);
+                CHECK_ERROR_RET(recordingSettings, COMSETTER(Enabled)(TRUE), RTEXITCODE_FAILURE);
             }
             else if (!strcmp(a->argv[2], "off"))
             {
-                CHECK_ERROR_RET(RecordSettings, COMSETTER(Enabled)(FALSE), RTEXITCODE_FAILURE);
+                CHECK_ERROR_RET(recordingSettings, COMSETTER(Enabled)(FALSE), RTEXITCODE_FAILURE);
             }
             else if (!strcmp(a->argv[2], "screens"))
             {
@@ -1929,8 +1929,8 @@ RTEXITCODE handleControlVM(HandlerArg *a)
                     }
                 }
 
-                for (size_t i = 0; i < saRecordScreenScreens.size(); ++i)
-                    CHECK_ERROR_BREAK(saRecordScreenScreens[i], COMSETTER(Enabled)(saScreens[i]));
+                for (size_t i = 0; i < saRecordingScreenScreens.size(); ++i)
+                    CHECK_ERROR_BREAK(saRecordingScreenScreens[i], COMSETTER(Enabled)(saScreens[i]));
             }
             else if (!strcmp(a->argv[2], "filename"))
             {
@@ -1941,8 +1941,8 @@ RTEXITCODE handleControlVM(HandlerArg *a)
                     break;
                 }
 
-                for (size_t i = 0; i < saRecordScreenScreens.size(); ++i)
-                    CHECK_ERROR_BREAK(saRecordScreenScreens[i], COMSETTER(FileName)(Bstr(a->argv[2]).raw()));
+                for (size_t i = 0; i < saRecordingScreenScreens.size(); ++i)
+                    CHECK_ERROR_BREAK(saRecordingScreenScreens[i], COMSETTER(FileName)(Bstr(a->argv[2]).raw()));
             }
             else if (   !strcmp(a->argv[2], "videores")
                      || !strcmp(a->argv[2], "videoresolution"))
@@ -1971,10 +1971,10 @@ RTEXITCODE handleControlVM(HandlerArg *a)
                     break;
                 }
 
-                for (size_t i = 0; i < saRecordScreenScreens.size(); ++i)
+                for (size_t i = 0; i < saRecordingScreenScreens.size(); ++i)
                 {
-                    CHECK_ERROR_BREAK(saRecordScreenScreens[i], COMSETTER(VideoWidth)(uVal));
-                    CHECK_ERROR_BREAK(saRecordScreenScreens[i], COMSETTER(VideoHeight)(uVal));
+                    CHECK_ERROR_BREAK(saRecordingScreenScreens[i], COMSETTER(VideoWidth)(uVal));
+                    CHECK_ERROR_BREAK(saRecordingScreenScreens[i], COMSETTER(VideoHeight)(uVal));
                 }
             }
             else if (!strcmp(a->argv[2], "videorate"))
@@ -1995,8 +1995,8 @@ RTEXITCODE handleControlVM(HandlerArg *a)
                     break;
                 }
 
-                for (size_t i = 0; i < saRecordScreenScreens.size(); ++i)
-                    CHECK_ERROR_BREAK(saRecordScreenScreens[i], COMSETTER(VideoRate)(uVal));
+                for (size_t i = 0; i < saRecordingScreenScreens.size(); ++i)
+                    CHECK_ERROR_BREAK(saRecordingScreenScreens[i], COMSETTER(VideoRate)(uVal));
             }
             else if (!strcmp(a->argv[2], "videofps"))
             {
@@ -2016,8 +2016,8 @@ RTEXITCODE handleControlVM(HandlerArg *a)
                     break;
                 }
 
-                for (size_t i = 0; i < saRecordScreenScreens.size(); ++i)
-                    CHECK_ERROR_BREAK(saRecordScreenScreens[i], COMSETTER(VideoFPS)(uVal));
+                for (size_t i = 0; i < saRecordingScreenScreens.size(); ++i)
+                    CHECK_ERROR_BREAK(saRecordingScreenScreens[i], COMSETTER(VideoFPS)(uVal));
             }
             else if (!strcmp(a->argv[2], "maxtime"))
             {
@@ -2037,8 +2037,8 @@ RTEXITCODE handleControlVM(HandlerArg *a)
                     break;
                 }
 
-                for (size_t i = 0; i < saRecordScreenScreens.size(); ++i)
-                    CHECK_ERROR_BREAK(saRecordScreenScreens[i], COMSETTER(MaxTime)(uVal));
+                for (size_t i = 0; i < saRecordingScreenScreens.size(); ++i)
+                    CHECK_ERROR_BREAK(saRecordingScreenScreens[i], COMSETTER(MaxTime)(uVal));
             }
             else if (!strcmp(a->argv[2], "maxfilesize"))
             {
@@ -2058,8 +2058,8 @@ RTEXITCODE handleControlVM(HandlerArg *a)
                     break;
                 }
 
-                for (size_t i = 0; i < saRecordScreenScreens.size(); ++i)
-                    CHECK_ERROR_BREAK(saRecordScreenScreens[i], COMSETTER(MaxFileSize)(uVal));
+                for (size_t i = 0; i < saRecordingScreenScreens.size(); ++i)
+                    CHECK_ERROR_BREAK(saRecordingScreenScreens[i], COMSETTER(MaxFileSize)(uVal));
             }
             else if (!strcmp(a->argv[2], "opts"))
             {
@@ -2070,8 +2070,8 @@ RTEXITCODE handleControlVM(HandlerArg *a)
                     break;
                 }
 
-                for (size_t i = 0; i < saRecordScreenScreens.size(); ++i)
-                    CHECK_ERROR_BREAK(saRecordScreenScreens[i], COMSETTER(Options)(Bstr(a->argv[3]).raw()));
+                for (size_t i = 0; i < saRecordingScreenScreens.size(); ++i)
+                    CHECK_ERROR_BREAK(saRecordingScreenScreens[i], COMSETTER(Options)(Bstr(a->argv[3]).raw()));
             }
         }
 #endif /* VBOX_WITH_RECORDING */

@@ -5631,7 +5631,7 @@ int Console::i_recordingEnable(BOOL fEnable, util::AutoWriteLock *pAutoLock)
                 {
 # ifdef VBOX_WITH_AUDIO_RECORDING
                     /* Attach the video recording audio driver if required. */
-                    if (   Recording.mpCtx->IsFeatureEnabled(RecordFeature_Audio)
+                    if (   Recording.mpCtx->IsFeatureEnabled(RecordingFeature_Audio)
                         && Recording.mAudioRec)
                     {
                         vrc = Recording.mAudioRec->applyConfiguration(Recording.mpCtx->GetConfig());
@@ -5666,7 +5666,7 @@ int Console::i_recordingEnable(BOOL fEnable, util::AutoWriteLock *pAutoLock)
 }
 #endif /* VBOX_WITH_RECORDING */
 
-HRESULT Console::i_onRecordChange()
+HRESULT Console::i_onRecordingChange()
 {
     AutoCaller autoCaller(this);
     AssertComRCReturnRC(autoCaller.rc());
@@ -5679,19 +5679,19 @@ HRESULT Console::i_onRecordChange()
     SafeVMPtrQuiet ptrVM(this);
     if (ptrVM.isOk())
     {
-        ComPtr<IRecordSettings> RecordSettings;
-        rc = mMachine->COMGETTER(RecordSettings)(RecordSettings.asOutParam());
+        ComPtr<IRecordingSettings> recordingSettings;
+        rc = mMachine->COMGETTER(RecordingSettings)(recordingSettings.asOutParam());
         AssertComRCReturnRC(rc);
 
         BOOL fEnabled;
-        rc = RecordSettings->COMGETTER(Enabled)(&fEnabled);
+        rc = recordingSettings->COMGETTER(Enabled)(&fEnabled);
         AssertComRCReturnRC(rc);
 
         int vrc = i_recordingEnable(fEnabled, &alock);
         if (RT_SUCCESS(vrc))
         {
             alock.release();
-            fireRecordChangedEvent(mEventSource);
+            fireRecordingChangedEvent(mEventSource);
         }
 
         ptrVM.release();
@@ -6881,7 +6881,7 @@ HRESULT Console::i_recordingSendAudio(const void *pvData, size_t cbData, uint64_
         return S_OK;
 
     if (   Recording.mpCtx->IsStarted()
-        && Recording.mpCtx->IsFeatureEnabled(RecordFeature_Audio))
+        && Recording.mpCtx->IsFeatureEnabled(RecordingFeature_Audio))
     {
         return Recording.mpCtx->SendAudioFrame(pvData, cbData, uTimestampMs);
     }
@@ -6891,14 +6891,14 @@ HRESULT Console::i_recordingSendAudio(const void *pvData, size_t cbData, uint64_
 #endif /* VBOX_WITH_AUDIO_RECORDING */
 
 #ifdef VBOX_WITH_RECORDING
-int Console::i_recordingGetSettings(settings::RecordSettings &Settings)
+int Console::i_recordingGetSettings(settings::RecordingSettings &Settings)
 {
     Assert(mMachine.isNotNull());
 
     Settings.applyDefaults();
 
-    ComPtr<IRecordSettings> pRecordSettings;
-    HRESULT hrc = mMachine->COMGETTER(RecordSettings)(pRecordSettings.asOutParam());
+    ComPtr<IRecordingSettings> pRecordSettings;
+    HRESULT hrc = mMachine->COMGETTER(RecordingSettings)(pRecordSettings.asOutParam());
     AssertComRCReturn(hrc, VERR_INVALID_PARAMETER);
 
     BOOL fTemp;
@@ -6906,14 +6906,14 @@ int Console::i_recordingGetSettings(settings::RecordSettings &Settings)
     AssertComRCReturn(hrc, VERR_INVALID_PARAMETER);
     Settings.fEnabled = RT_BOOL(fTemp);
 
-    SafeIfaceArray<IRecordScreenSettings> paRecordingScreens;
+    SafeIfaceArray<IRecordingScreenSettings> paRecordingScreens;
     hrc = pRecordSettings->COMGETTER(Screens)(ComSafeArrayAsOutParam(paRecordingScreens));
     AssertComRCReturn(hrc, VERR_INVALID_PARAMETER);
 
     for (unsigned long i = 0; i < (unsigned long)paRecordingScreens.size(); ++i)
     {
-        settings::RecordScreenSettings RecordScreenSettings;
-        ComPtr<IRecordScreenSettings> pRecordScreenSettings = paRecordingScreens[i];
+        settings::RecordingScreenSettings RecordScreenSettings;
+        ComPtr<IRecordingScreenSettings> pRecordScreenSettings = paRecordingScreens[i];
 
         hrc = pRecordScreenSettings->COMGETTER(Enabled)(&fTemp);
         AssertComRCReturn(hrc, VERR_INVALID_PARAMETER);
@@ -6970,7 +6970,7 @@ int Console::i_recordingCreate(void)
         return rc2;
     }
 
-    settings::RecordSettings Settings;
+    settings::RecordingSettings Settings;
     rc = i_recordingGetSettings(Settings);
     if (RT_SUCCESS(rc))
     {
@@ -7042,8 +7042,8 @@ int Console::i_recordingStop(void)
         for (unsigned uScreen = 0; uScreen < cStreams; ++uScreen)
             mDisplay->i_recordingScreenChanged(uScreen);
 
-        ComPtr<IRecordSettings> pRecordSettings;
-        HRESULT hrc = mMachine->COMGETTER(RecordSettings)(pRecordSettings.asOutParam());
+        ComPtr<IRecordingSettings> pRecordSettings;
+        HRESULT hrc = mMachine->COMGETTER(RecordingSettings)(pRecordSettings.asOutParam());
         ComAssertComRC(hrc);
         hrc = pRecordSettings->COMSETTER(Enabled)(false);
         ComAssertComRC(hrc);
@@ -10145,20 +10145,20 @@ void Console::i_powerUpThreadTask(VMPowerUpTask *pTask)
         pConsole->i_consoleVRDPServer()->EnableConnections();
 
 #ifdef VBOX_WITH_RECORDING
-        ComPtr<IRecordSettings> RecordSettings;
-        rc = pConsole->mMachine->COMGETTER(RecordSettings)(RecordSettings.asOutParam());
+        ComPtr<IRecordingSettings> recordingSettings;
+        rc = pConsole->mMachine->COMGETTER(RecordingSettings)(recordingSettings.asOutParam());
         AssertComRCReturnVoid(rc);
 
-        BOOL fCaptureEnabled;
-        rc = RecordSettings->COMGETTER(Enabled)(&fCaptureEnabled);
+        BOOL fRecordingEnabled;
+        rc = recordingSettings->COMGETTER(Enabled)(&fRecordingEnabled);
         AssertComRCReturnVoid(rc);
 
-        if (fCaptureEnabled)
+        if (fRecordingEnabled)
         {
-            int vrc2 = pConsole->i_recordingEnable(fCaptureEnabled, &alock);
+            int vrc2 = pConsole->i_recordingEnable(fRecordingEnabled, &alock);
             if (RT_SUCCESS(vrc2))
             {
-                fireRecordChangedEvent(pConsole->mEventSource);
+                fireRecordingChangedEvent(pConsole->mEventSource);
             }
             else
                LogRel(("Recording: Failed with %Rrc on VM power up\n", vrc2));

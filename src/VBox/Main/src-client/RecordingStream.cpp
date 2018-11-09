@@ -50,7 +50,7 @@ RecordingStream::RecordingStream(RecordingContext *a_pCtx)
     File.hFile = NIL_RTFILE;
 }
 
-RecordingStream::RecordingStream(RecordingContext *a_pCtx, uint32_t uScreen, const settings::RecordScreenSettings &Settings)
+RecordingStream::RecordingStream(RecordingContext *a_pCtx, uint32_t uScreen, const settings::RecordingScreenSettings &Settings)
     : enmState(RECORDINGSTREAMSTATE_UNINITIALIZED)
     , tsStartMs(0)
 {
@@ -73,16 +73,16 @@ RecordingStream::~RecordingStream(void)
  *
  * @returns IPRT status code.
  */
-int RecordingStream::open(const settings::RecordScreenSettings &Settings)
+int RecordingStream::open(const settings::RecordingScreenSettings &Settings)
 {
     /* Sanity. */
-    Assert(Settings.enmDest != RecordDestination_None);
+    Assert(Settings.enmDest != RecordingDestination_None);
 
     int rc;
 
     switch (Settings.enmDest)
     {
-        case RecordDestination_File:
+        case RecordingDestination_File:
         {
             Assert(Settings.File.strName.isNotEmpty());
 
@@ -208,7 +208,7 @@ int RecordingStream::parseOptionsString(const com::Utf8Str &strOptions)
         {
             if (value.compare("false", Utf8Str::CaseInsensitive) == 0)
             {
-                this->ScreenSettings.featureMap[RecordFeature_Video] = false;
+                this->ScreenSettings.featureMap[RecordingFeature_Video] = false;
 #ifdef VBOX_WITH_AUDIO_RECORDING
                 LogRel(("Recording: Only audio will be recorded\n"));
 #endif
@@ -219,7 +219,7 @@ int RecordingStream::parseOptionsString(const com::Utf8Str &strOptions)
 #ifdef VBOX_WITH_AUDIO_RECORDING
             if (value.compare("true", Utf8Str::CaseInsensitive) == 0)
             {
-                this->ScreenSettings.featureMap[RecordFeature_Audio] = true;
+                this->ScreenSettings.featureMap[RecordingFeature_Audio] = true;
             }
             else
                 LogRel(("Recording: Only video will be recorded\n"));
@@ -254,7 +254,7 @@ int RecordingStream::parseOptionsString(const com::Utf8Str &strOptions)
     return VINF_SUCCESS;
 }
 
-const settings::RecordScreenSettings &RecordingStream::GetConfig(void) const
+const settings::RecordingScreenSettings &RecordingStream::GetConfig(void) const
 {
     return this->ScreenSettings;
 }
@@ -276,7 +276,7 @@ bool RecordingStream::IsLimitReached(uint64_t tsNowMs) const
         return true;
     }
 
-    if (this->ScreenSettings.enmDest == RecordDestination_File)
+    if (this->ScreenSettings.enmDest == RecordingDestination_File)
     {
 
         if (this->ScreenSettings.File.ulMaxSizeMB)
@@ -660,7 +660,7 @@ int RecordingStream::SendVideoFrame(uint32_t x, uint32_t y, uint32_t uPixelForma
  * @param   uScreen             Screen number to use for this recording stream.
  * @param   Settings            Capturing configuration to use for initialization.
  */
-int RecordingStream::Init(RecordingContext *a_pCtx, uint32_t uScreen, const settings::RecordScreenSettings &Settings)
+int RecordingStream::Init(RecordingContext *a_pCtx, uint32_t uScreen, const settings::RecordingScreenSettings &Settings)
 {
     return initInternal(a_pCtx, uScreen, Settings);
 }
@@ -673,7 +673,7 @@ int RecordingStream::Init(RecordingContext *a_pCtx, uint32_t uScreen, const sett
  * @param   uScreen             Screen number to use for this recording stream.
  * @param   Settings            Capturing configuration to use for initialization.
  */
-int RecordingStream::initInternal(RecordingContext *a_pCtx, uint32_t uScreen, const settings::RecordScreenSettings &Settings)
+int RecordingStream::initInternal(RecordingContext *a_pCtx, uint32_t uScreen, const settings::RecordingScreenSettings &Settings)
 {
     int rc = parseOptionsString(Settings.strOptions);
     if (RT_FAILURE(rc))
@@ -687,8 +687,8 @@ int RecordingStream::initInternal(RecordingContext *a_pCtx, uint32_t uScreen, co
     if (RT_FAILURE(rc))
         return rc;
 
-    const bool fVideoEnabled = Settings.isFeatureEnabled(RecordFeature_Video);
-    const bool fAudioEnabled = Settings.isFeatureEnabled(RecordFeature_Audio);
+    const bool fVideoEnabled = Settings.isFeatureEnabled(RecordingFeature_Video);
+    const bool fAudioEnabled = Settings.isFeatureEnabled(RecordingFeature_Audio);
 
     if (fVideoEnabled)
         rc = initVideo();
@@ -698,19 +698,19 @@ int RecordingStream::initInternal(RecordingContext *a_pCtx, uint32_t uScreen, co
 
     switch (this->ScreenSettings.enmDest)
     {
-        case RecordDestination_File:
+        case RecordingDestination_File:
         {
             const char *pszFile = this->ScreenSettings.File.strName.c_str();
 
             AssertPtr(File.pWEBM);
             rc = File.pWEBM->OpenEx(pszFile, &this->File.hFile,
 #ifdef VBOX_WITH_AUDIO_RECORDING
-                                      Settings.isFeatureEnabled(RecordFeature_Audio)
+                                      Settings.isFeatureEnabled(RecordingFeature_Audio)
                                     ? WebMWriter::AudioCodec_Opus : WebMWriter::AudioCodec_None,
 #else
                                       WebMWriter::AudioCodec_None,
 #endif
-                                      Settings.isFeatureEnabled(RecordFeature_Video)
+                                      Settings.isFeatureEnabled(RecordingFeature_Video)
                                     ? WebMWriter::VideoCodec_VP8 : WebMWriter::VideoCodec_None);
             if (RT_FAILURE(rc))
             {
@@ -813,7 +813,7 @@ int RecordingStream::close(void)
     {
         switch (this->ScreenSettings.enmDest)
         {
-            case RecordDestination_File:
+            case RecordingDestination_File:
             {
                 if (this->File.pWEBM)
                     rc = this->File.pWEBM->Close();
@@ -838,7 +838,7 @@ int RecordingStream::close(void)
 
     switch (this->ScreenSettings.enmDest)
     {
-        case RecordDestination_File:
+        case RecordingDestination_File:
         {
             if (RTFileIsValid(this->File.hFile))
             {
@@ -890,7 +890,7 @@ int RecordingStream::uninitInternal(void)
     if (RT_FAILURE(rc))
         return rc;
 
-    if (this->ScreenSettings.isFeatureEnabled(RecordFeature_Video))
+    if (this->ScreenSettings.isFeatureEnabled(RecordingFeature_Video))
     {
         int rc2 = unitVideo();
         if (RT_SUCCESS(rc))
@@ -1024,7 +1024,7 @@ int RecordingStream::initVideoVPX(void)
 int RecordingStream::initAudio(void)
 {
 #ifdef VBOX_WITH_AUDIO_RECORDING
-    if (this->ScreenSettings.isFeatureEnabled(RecordFeature_Audio))
+    if (this->ScreenSettings.isFeatureEnabled(RecordingFeature_Audio))
     {
         /* Sanity. */
         AssertReturn(this->ScreenSettings.Audio.uHz,       VERR_INVALID_PARAMETER);

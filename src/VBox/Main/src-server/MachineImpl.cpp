@@ -358,7 +358,7 @@ HRESULT Machine::init(VirtualBox *aParent,
         mBIOSSettings->i_applyDefaults(aOsType);
 
         /* Apply record defaults. */
-        mRecordSettings->i_applyDefaults();
+        mRecordingSettings->i_applyDefaults();
 
         /* Apply network adapters defaults */
         for (ULONG slot = 0; slot < mNetworkAdapters.size(); ++slot)
@@ -1939,10 +1939,10 @@ HRESULT Machine::getBIOSSettings(ComPtr<IBIOSSettings> &aBIOSSettings)
     return S_OK;
 }
 
-HRESULT Machine::getRecordSettings(ComPtr<IRecordSettings> &aRecordSettings)
+HRESULT Machine::getRecordingSettings(ComPtr<IRecordingSettings> &aRecordingSettings)
 {
-    /* mRecordSettings is constant during life time, no need to lock */
-    aRecordSettings = mRecordSettings;
+    /* mRecordingSettings is constant during life time, no need to lock */
+    aRecordingSettings = mRecordingSettings;
 
     return S_OK;
 }
@@ -8259,8 +8259,8 @@ HRESULT Machine::initDataAndChildObjects()
     mBIOSSettings->init(this);
 
     /* create associated record settings object */
-    unconst(mRecordSettings).createObject();
-    mRecordSettings->init(this);
+    unconst(mRecordingSettings).createObject();
+    mRecordingSettings->init(this);
 
     /* create an associated VRDE object (default is disabled) */
     unconst(mVRDEServer).createObject();
@@ -8377,10 +8377,10 @@ void Machine::uninitDataAndChildObjects()
         unconst(mBIOSSettings).setNull();
     }
 
-    if (mRecordSettings)
+    if (mRecordingSettings)
     {
-        mRecordSettings->uninit();
-        unconst(mRecordSettings).setNull();
+        mRecordingSettings->uninit();
+        unconst(mRecordingSettings).setNull();
     }
 
     /* Deassociate media (only when a real Machine or a SnapshotMachine
@@ -8897,8 +8897,8 @@ HRESULT Machine::i_loadHardware(const Guid *puuidRegistry,
         rc = mBIOSSettings->i_loadSettings(data.biosSettings);
         if (FAILED(rc)) return rc;
 
-        /* Record settings */
-        rc = mRecordSettings->i_loadSettings(data.recordSettings);
+        /* Recording settings */
+        rc = mRecordingSettings->i_loadSettings(data.recordingSettings);
         if (FAILED(rc)) return rc;
 
         // Bandwidth control (must come before network adapters)
@@ -10216,8 +10216,8 @@ HRESULT Machine::i_saveHardware(settings::Hardware &data, settings::Debugging *p
         rc = mBIOSSettings->i_saveSettings(data.biosSettings);
         if (FAILED(rc)) throw rc;
 
-        /* Record settings (required) */
-        rc = mRecordSettings->i_saveSettings(data.recordSettings);
+        /* Recording settings (required) */
+        rc = mRecordingSettings->i_saveSettings(data.recordingSettings);
         if (FAILED(rc)) throw rc;
 
         /* USB Controller (required) */
@@ -11722,8 +11722,8 @@ void Machine::i_rollback(bool aNotify)
     if (mBIOSSettings)
         mBIOSSettings->i_rollback();
 
-    if (mRecordSettings && (mData->flModifications & IsModified_Record))
-        mRecordSettings->i_rollback();
+    if (mRecordingSettings && (mData->flModifications & IsModified_Record))
+        mRecordingSettings->i_rollback();
 
     if (mVRDEServer && (mData->flModifications & IsModified_VRDEServer))
         mVRDEServer->i_rollback();
@@ -11835,7 +11835,7 @@ void Machine::i_commit()
         i_commitMedia(Global::IsOnline(mData->mMachineState));
 
     mBIOSSettings->i_commit();
-    mRecordSettings->i_commit();
+    mRecordingSettings->i_commit();
     mVRDEServer->i_commit();
     mAudioAdapter->i_commit();
     mUSBDeviceFilters->i_commit();
@@ -12088,7 +12088,7 @@ void Machine::i_copyFrom(Machine *aThat)
     }
 
     mBIOSSettings->i_copyFrom(aThat->mBIOSSettings);
-    mRecordSettings->i_copyFrom(aThat->mRecordSettings);
+    mRecordingSettings->i_copyFrom(aThat->mRecordingSettings);
     mVRDEServer->i_copyFrom(aThat->mVRDEServer);
     mAudioAdapter->i_copyFrom(aThat->mAudioAdapter);
     mUSBDeviceFilters->i_copyFrom(aThat->mUSBDeviceFilters);
@@ -12462,8 +12462,8 @@ HRESULT SessionMachine::init(Machine *aMachine)
 
     unconst(mBIOSSettings).createObject();
     mBIOSSettings->init(this, aMachine->mBIOSSettings);
-    unconst(mRecordSettings).createObject();
-    mRecordSettings->init(this, aMachine->mRecordSettings);
+    unconst(mRecordingSettings).createObject();
+    mRecordingSettings->init(this, aMachine->mRecordingSettings);
     /* create another VRDEServer object that will be mutable */
     unconst(mVRDEServer).createObject();
     mVRDEServer->init(this, aMachine->mVRDEServer);
@@ -14115,7 +14115,7 @@ HRESULT SessionMachine::i_onRecordChange()
     if (!directControl)
         return S_OK;
 
-    return directControl->OnRecordChange();
+    return directControl->OnRecordingChange();
 }
 
 /**
@@ -15050,7 +15050,7 @@ HRESULT Machine::applyDefaults(const com::Utf8Str &aFlags)
     mBIOSSettings->i_applyDefaults(osType);
 
     /* Initialize default record settings. */
-    mRecordSettings->i_applyDefaults();
+    mRecordingSettings->i_applyDefaults();
 
     /* Initialize default BIOS settings here */
     mHWData->mAPIC = osType->i_recommendedIOAPIC();

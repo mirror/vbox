@@ -20,39 +20,39 @@
 #ifndef ____H_RecordSettings
 #define ____H_RecordSettings
 
-#include "RecordSettingsWrap.h"
+#include "RecordingSettingsWrap.h"
 
 namespace settings
 {
-    struct RecordSettings;
-    struct RecordScreenSettings;
+    struct RecordingSettings;
+    struct RecordingScreenSettings;
 }
 
-class RecordScreenSettings;
+class RecordingScreenSettings;
 
-class ATL_NO_VTABLE RecordSettings :
-    public RecordSettingsWrap
+class ATL_NO_VTABLE RecordingSettings :
+    public RecordingSettingsWrap
 {
 public:
 
-    DECLARE_EMPTY_CTOR_DTOR(RecordSettings)
+    DECLARE_EMPTY_CTOR_DTOR(RecordingSettings)
 
     HRESULT FinalConstruct();
     void FinalRelease();
 
     // public initializer/uninitializer for internal purposes only
     HRESULT init(Machine *parent);
-    HRESULT init(Machine *parent, RecordSettings *that);
-    HRESULT initCopy(Machine *parent, RecordSettings *that);
+    HRESULT init(Machine *parent, RecordingSettings *that);
+    HRESULT initCopy(Machine *parent, RecordingSettings *that);
     void uninit();
 
     // public methods only for internal purposes
-    HRESULT i_loadSettings(const settings::RecordSettings &data);
-    HRESULT i_saveSettings(settings::RecordSettings &data);
+    HRESULT i_loadSettings(const settings::RecordingSettings &data);
+    HRESULT i_saveSettings(settings::RecordingSettings &data);
 
     void i_rollback();
     void i_commit();
-    void i_copyFrom(RecordSettings *aThat);
+    void i_copyFrom(RecordingSettings *aThat);
     void i_applyDefaults(void);
 
     int i_getDefaultFileName(Utf8Str &strFile);
@@ -62,23 +62,23 @@ public:
 private:
 
     /** Map of screen settings objects. The key specifies the screen ID. */
-    typedef std::map <uint32_t, ComObjPtr<RecordScreenSettings> > RecordScreenSettingsMap;
+    typedef std::map <uint32_t, ComObjPtr<RecordingScreenSettings> > RecordScreenSettingsMap;
 
     void i_reset(void);
     int i_syncToMachineDisplays(void);
-    int i_createScreenObj(RecordScreenSettingsMap &screenSettingsMap, uint32_t uScreenId, const settings::RecordScreenSettings &data);
+    int i_createScreenObj(RecordScreenSettingsMap &screenSettingsMap, uint32_t uScreenId, const settings::RecordingScreenSettings &data);
     int i_destroyScreenObj(RecordScreenSettingsMap &screenSettingsMap, uint32_t uScreenId);
     int i_destroyAllScreenObj(RecordScreenSettingsMap &screenSettingsMap);
 
 private:
 
-    // wrapped IRecordSettings properties
+    // wrapped IRecordingSettings properties
     HRESULT getEnabled(BOOL *enabled);
     HRESULT setEnabled(BOOL enable);
-    HRESULT getScreens(std::vector<ComPtr<IRecordScreenSettings> > &aRecordScreenSettings);
+    HRESULT getScreens(std::vector<ComPtr<IRecordingScreenSettings> > &aRecordScreenSettings);
 
-    // wrapped IRecordSettings methods
-    HRESULT getScreenSettings(ULONG uScreenId, ComPtr<IRecordScreenSettings> &aRecordScreenSettings);
+    // wrapped IRecordingSettings methods
+    HRESULT getScreenSettings(ULONG uScreenId, ComPtr<IRecordingScreenSettings> &aRecordScreenSettings);
 
 private:
 

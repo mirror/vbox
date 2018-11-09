@@ -593,12 +593,12 @@ typedef enum LOGGROUP
     LOG_GROUP_MAIN_PROGRESSPERCENTAGECHANGEDEVENT,
     /** Main group, IProgressTaskCompletedEvent. */
     LOG_GROUP_MAIN_PROGRESSTASKCOMPLETEDEVENT,
-    /** Main group, IRecordChangedEvent. */
-    LOG_GROUP_MAIN_RECORDCHANGEDEVENT,
-    /** Main group, IRecordSettings. */
-    LOG_GROUP_MAIN_RECORDSETTINGS,
-    /** Main group, IRecordScreenSettings. */
-    LOG_GROUP_MAIN_RECORDSCREENSETTINGS,
+    /** Main group, IRecordingChangedEvent. */
+    LOG_GROUP_MAIN_RECORDINGCHANGEDEVENT,
+    /** Main group, IRecordingSettings. */
+    LOG_GROUP_MAIN_RECORDINGSETTINGS,
+    /** Main group, IRecordingScreenSettings. */
+    LOG_GROUP_MAIN_RECORDINGSCREENSETTINGS,
     /** Main group, IReusableEvent. */
     LOG_GROUP_MAIN_REUSABLEEVENT,
     /** Main group, IRuntimeErrorEvent. */
@@ -1123,9 +1123,9 @@ typedef enum LOGGROUP
     "MAIN_PROGRESSEVENT", \
     "MAIN_PROGRESSPERCENTAGECHANGEDEVENT", \
     "MAIN_PROGRESSTASKCOMPLETEDEVENT", \
-    "MAIN_RECORDCHANGEDEVENT", \
-    "MAIN_RECORDSETTINGS", \
-    "MAIN_RECORDSCREENSETTINGS", \
+    "MAIN_RECORDINGCHANGEDEVENT", \
+    "MAIN_RECORDINGSETTINGS", \
+    "MAIN_RECORDINGSCREENSETTINGS", \
     "MAIN_REUSABLEEVENT", \
     "MAIN_RUNTIMEERROREVENT", \
     "MAIN_SERIALPORT", \

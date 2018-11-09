@@ -144,7 +144,7 @@ public:
     int i_recordingCreate(void);
     void i_recordingDestroy(void);
     int i_recordingEnable(BOOL fEnable, util::AutoWriteLock *pAutoLock);
-    int i_recordingGetSettings(settings::RecordSettings &Settings);
+    int i_recordingGetSettings(settings::RecordingSettings &Settings);
     int i_recordingStart(void);
     int i_recordingStop(void);
     AudioVideoRec *i_recordingGetAudioDrv(void) const { return Recording.mAudioRec; }
@@ -178,7 +178,7 @@ public:
     HRESULT i_onClipboardModeChange(ClipboardMode_T aClipboardMode);
     HRESULT i_onDnDModeChange(DnDMode_T aDnDMode);
     HRESULT i_onVRDEServerChange(BOOL aRestart);
-    HRESULT i_onRecordChange();
+    HRESULT i_onRecordingChange();
     HRESULT i_onUSBControllerChange();
     HRESULT i_onSharedFolderChange(BOOL aGlobal);
     HRESULT i_onUSBDeviceAttach(IUSBDevice *aDevice, IVirtualBoxErrorInfo *aError, ULONG aMaskedIfs,

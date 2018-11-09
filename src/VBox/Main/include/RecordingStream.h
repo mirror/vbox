@@ -110,29 +110,29 @@ public:
 
     RecordingStream(RecordingContext *pCtx);
 
-    RecordingStream(RecordingContext *pCtx, uint32_t uScreen, const settings::RecordScreenSettings &Settings);
+    RecordingStream(RecordingContext *pCtx, uint32_t uScreen, const settings::RecordingScreenSettings &Settings);
 
     virtual ~RecordingStream(void);
 
 public:
 
-    int Init(RecordingContext *pCtx, uint32_t uScreen, const settings::RecordScreenSettings &Settings);
+    int Init(RecordingContext *pCtx, uint32_t uScreen, const settings::RecordingScreenSettings &Settings);
     int Uninit(void);
 
     int Process(RecordingBlockMap &mapBlocksCommon);
     int SendVideoFrame(uint32_t x, uint32_t y, uint32_t uPixelFormat, uint32_t uBPP, uint32_t uBytesPerLine,
                        uint32_t uSrcWidth, uint32_t uSrcHeight, uint8_t *puSrcData, uint64_t uTimeStampMs);
 
-    const settings::RecordScreenSettings &GetConfig(void) const;
+    const settings::RecordingScreenSettings &GetConfig(void) const;
     bool IsLimitReached(uint64_t tsNowMs) const;
     bool IsReady(void) const;
 
 protected:
 
-    int open(const settings::RecordScreenSettings &Settings);
+    int open(const settings::RecordingScreenSettings &Settings);
     int close(void);
 
-    int initInternal(RecordingContext *pCtx, uint32_t uScreen, const settings::RecordScreenSettings &Settings);
+    int initInternal(RecordingContext *pCtx, uint32_t uScreen, const settings::RecordingScreenSettings &Settings);
     int uninitInternal(void);
 
     int initVideo(void);
@@ -204,7 +204,7 @@ protected:
         RECORDINGVIDEOCODEC Codec;
     } Video;
 
-    settings::RecordScreenSettings ScreenSettings;
+    settings::RecordingScreenSettings ScreenSettings;
     /** Common set of recording (data) blocks, needed for
      *  multiplexing to all recording streams. */
     RecordingBlockSet              Blocks;

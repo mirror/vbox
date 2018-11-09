@@ -2378,27 +2378,27 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
         BOOL fCaptureAudio = FALSE;
 # endif
 
-        ComPtr<IRecordSettings> RecordSettings;
-        CHECK_ERROR_RET(machine, COMGETTER(RecordSettings)(RecordSettings.asOutParam()), rc);
+        ComPtr<IRecordingSettings> recordingSettings;
+        CHECK_ERROR_RET(machine, COMGETTER(RecordingSettings)(recordingSettings.asOutParam()), rc);
 
-        SafeIfaceArray <IRecordScreenSettings> saCaptureScreenScreens;
-        CHECK_ERROR_RET(RecordSettings, COMGETTER(Screens)(ComSafeArrayAsOutParam(saCaptureScreenScreens)), rc);
+        SafeIfaceArray <IRecordingScreenSettings> saRecordingScreenScreens;
+        CHECK_ERROR_RET(recordingSettings, COMGETTER(Screens)(ComSafeArrayAsOutParam(saRecordingScreenScreens)), rc);
 
         /* For now all screens have the same configuration; so take screen 0 and work with that. */
         ULONG fFeatures;
-        CHECK_ERROR_RET(saCaptureScreenScreens[0], COMGETTER(Features)(&fFeatures), rc);
+        CHECK_ERROR_RET(saRecordingScreenScreens[0], COMGETTER(Features)(&fFeatures), rc);
         ULONG Width;
-        CHECK_ERROR_RET(saCaptureScreenScreens[0], COMGETTER(VideoWidth)(&Width), rc);
+        CHECK_ERROR_RET(saRecordingScreenScreens[0], COMGETTER(VideoWidth)(&Width), rc);
         ULONG Height;
-        CHECK_ERROR_RET(saCaptureScreenScreens[0], COMGETTER(VideoHeight)(&Height), rc);
+        CHECK_ERROR_RET(saRecordingScreenScreens[0], COMGETTER(VideoHeight)(&Height), rc);
         ULONG Rate;
-        CHECK_ERROR_RET(saCaptureScreenScreens[0], COMGETTER(VideoRate)(&Rate), rc);
+        CHECK_ERROR_RET(saRecordingScreenScreens[0], COMGETTER(VideoRate)(&Rate), rc);
         ULONG Fps;
-        CHECK_ERROR_RET(saCaptureScreenScreens[0], COMGETTER(VideoFPS)(&Fps), rc);
+        CHECK_ERROR_RET(saRecordingScreenScreens[0], COMGETTER(VideoFPS)(&Fps), rc);
         Bstr  bstrFile;
-        CHECK_ERROR_RET(saCaptureScreenScreens[0], COMGETTER(FileName)(bstrFile.asOutParam()), rc);
+        CHECK_ERROR_RET(saRecordingScreenScreens[0], COMGETTER(FileName)(bstrFile.asOutParam()), rc);
         Bstr  bstrOptions;
-        CHECK_ERROR_RET(saCaptureScreenScreens[0], COMGETTER(Options)(bstrOptions.asOutParam()), rc);
+        CHECK_ERROR_RET(saRecordingScreenScreens[0], COMGETTER(Options)(bstrOptions.asOutParam()), rc);
 
         Utf8Str strOptions(bstrOptions);
         size_t pos = 0;
@@ -2422,10 +2422,10 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
         SHOW_BOOL_VALUE_EX("videocapaudio", "Capture audio:", fCaptureAudio, "active", "not active");
 # endif
         szValue[0] = '\0';
-        for (size_t i = 0, off = 0; i < saCaptureScreenScreens.size(); i++)
+        for (size_t i = 0, off = 0; i < saRecordingScreenScreens.size(); i++)
         {
             BOOL fEnabled;
-            CHECK_ERROR_RET(saCaptureScreenScreens[i], COMGETTER(Enabled)(&fEnabled), rc);
+            CHECK_ERROR_RET(saRecordingScreenScreens[i], COMGETTER(Enabled)(&fEnabled), rc);
             if (fEnabled && off < sizeof(szValue) - 3)
                 off += RTStrPrintf(&szValue[off], sizeof(szValue) - off, off ? ",%zu" : "%zu", i);
         }

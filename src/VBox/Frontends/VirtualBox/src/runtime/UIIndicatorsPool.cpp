@@ -42,8 +42,8 @@
 
 /* COM includes: */
 # include "CAudioAdapter.h"
-# include "CRecordSettings.h"
-# include "CRecordScreenSettings.h"
+# include "CRecordingSettings.h"
+# include "CRecordingScreenSettings.h"
 # include "CConsole.h"
 # include "CMachine.h"
 # include "CSystemProperties.h"
@@ -883,7 +883,7 @@ private:
         const bool fMachinePaused = m_pSession->isPaused();
 
         /* Update indicator state early: */
-        CRecordSettings comRecordingSettings = comMachine.GetRecordSettings();
+        CRecordingSettings comRecordingSettings = comMachine.GetRecordingSettings();
         Assert(comRecordingSettings.isOk());
         if (!comRecordingSettings.GetEnabled())
             setState(UIIndicatorStateRecording_Disabled);
@@ -917,7 +917,7 @@ private:
                     strToolTip = QApplication::translate("UIIndicatorsPool", "Video recording file", "Recording tooltip");
 
                 /* For now all screens have the same config: */
-                CRecordScreenSettings comRecordingScreen0Settings = comRecordingSettings.GetScreenSettings(0);
+                CRecordingScreenSettings comRecordingScreen0Settings = comRecordingSettings.GetScreenSettings(0);
                 Assert(comRecordingScreen0Settings.isOk());
 
                 strFullData += s_strTableRow2
@@ -954,13 +954,13 @@ private:
         if (comMachine.isNull())
             return;
 
-        CRecordSettings comRecordingSettings = comMachine.GetRecordSettings();
+        CRecordingSettings comRecordingSettings = comMachine.GetRecordingSettings();
         /* For now all screens have the same config: */
-        CRecordScreenSettings recordingScreen0Settings = comRecordingSettings.GetScreenSettings(0);
-        if (recordingScreen0Settings.IsFeatureEnabled(KRecordFeature_Video))
+        CRecordingScreenSettings recordingScreen0Settings = comRecordingSettings.GetScreenSettings(0);
+        if (recordingScreen0Settings.IsFeatureEnabled(KRecordingFeature_Video))
             m_enmRecordingMode = (UIIndicatorStateRecordingMode)((int)m_enmRecordingMode | (int)UIIndicatorStateRecordingMode_Video);
 
-        if (recordingScreen0Settings.IsFeatureEnabled(KRecordFeature_Audio))
+        if (recordingScreen0Settings.IsFeatureEnabled(KRecordingFeature_Audio))
             m_enmRecordingMode = (UIIndicatorStateRecordingMode)((int)m_enmRecordingMode | (int)UIIndicatorStateRecordingMode_Audio);
     }
 

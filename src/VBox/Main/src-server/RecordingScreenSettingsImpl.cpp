@@ -1,7 +1,7 @@
 /* $Id$ */
 /** @file
  *
- * VirtualBox COM class implementation - Capture settings of one virtual screen.
+ * VirtualBox COM class implementation - Recording settings of one virtual screen.
  */
 
 /*
@@ -16,11 +16,11 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#define LOG_GROUP LOG_GROUP_MAIN_RECORDSCREENSETTINGS
+#define LOG_GROUP LOG_GROUP_MAIN_RECORDINGSCREENSETTINGS
 #include "LoggingNew.h"
 
-#include "RecordScreenSettingsImpl.h"
-#include "RecordSettingsImpl.h"
+#include "RecordingScreenSettingsImpl.h"
+#include "RecordingSettingsImpl.h"
 #include "MachineImpl.h"
 
 #include <iprt/path.h>
@@ -37,31 +37,31 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-struct RecordScreenSettings::Data
+struct RecordingScreenSettings::Data
 {
     Data()
         : pParent(NULL)
     { }
 
-    RecordSettings * const          pParent;
-    ComObjPtr<RecordScreenSettings> pPeer;
-    uint32_t                         uScreenId;
+    RecordingSettings * const          pParent;
+    ComObjPtr<RecordingScreenSettings> pPeer;
+    uint32_t                           uScreenId;
 
     // use the XML settings structure in the members for simplicity
-    Backupable<settings::RecordScreenSettings> bd;
+    Backupable<settings::RecordingScreenSettings> bd;
 };
 
 // constructor / destructor
 /////////////////////////////////////////////////////////////////////////////
 
-DEFINE_EMPTY_CTOR_DTOR(RecordScreenSettings)
+DEFINE_EMPTY_CTOR_DTOR(RecordingScreenSettings)
 
-HRESULT RecordScreenSettings::FinalConstruct()
+HRESULT RecordingScreenSettings::FinalConstruct()
 {
     return BaseFinalConstruct();
 }
 
-void RecordScreenSettings::FinalRelease()
+void RecordingScreenSettings::FinalRelease()
 {
     uninit();
     BaseFinalRelease();
@@ -75,7 +75,7 @@ void RecordScreenSettings::FinalRelease()
  *
  * @returns COM result indicator
  */
-HRESULT RecordScreenSettings::init(RecordSettings *aParent, uint32_t uScreenId, const settings::RecordScreenSettings& data)
+HRESULT RecordingScreenSettings::init(RecordingSettings *aParent, uint32_t uScreenId, const settings::RecordingScreenSettings& data)
 {
     LogFlowThisFuncEnter();
     LogFlowThisFunc(("aParent: %p\n", aParent));
@@ -122,7 +122,7 @@ HRESULT RecordScreenSettings::init(RecordSettings *aParent, uint32_t uScreenId, 
  *  @note This object must be destroyed before the original object
  *  it shares data with is destroyed.
  */
-HRESULT RecordScreenSettings::init(RecordSettings *aParent, RecordScreenSettings *that)
+HRESULT RecordingScreenSettings::init(RecordingSettings *aParent, RecordingScreenSettings *that)
 {
     LogFlowThisFuncEnter();
     LogFlowThisFunc(("aParent: %p, that: %p\n", aParent, that));
@@ -165,7 +165,7 @@ HRESULT RecordScreenSettings::init(RecordSettings *aParent, RecordScreenSettings
  *  (a kind of copy constructor). This object makes a private copy of data
  *  of the original object passed as an argument.
  */
-HRESULT RecordScreenSettings::initCopy(RecordSettings *aParent, RecordScreenSettings *that)
+HRESULT RecordingScreenSettings::initCopy(RecordingSettings *aParent, RecordingScreenSettings *that)
 {
     LogFlowThisFuncEnter();
     LogFlowThisFunc(("aParent: %p, that: %p\n", aParent, that));
@@ -207,7 +207,7 @@ HRESULT RecordScreenSettings::initCopy(RecordSettings *aParent, RecordScreenSett
  *  Uninitializes the instance and sets the ready flag to FALSE.
  *  Called either from FinalRelease() or by the parent when it gets destroyed.
  */
-void RecordScreenSettings::uninit()
+void RecordingScreenSettings::uninit()
 {
     LogFlowThisFuncEnter();
 
@@ -227,14 +227,14 @@ void RecordScreenSettings::uninit()
     LogFlowThisFuncLeave();
 }
 
-HRESULT RecordScreenSettings::isFeatureEnabled(RecordFeature_T aFeature, BOOL *aEnabled)
+HRESULT RecordingScreenSettings::isFeatureEnabled(RecordingFeature_T aFeature, BOOL *aEnabled)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    settings::RecordFeatureMap::const_iterator itFeature = m->bd->featureMap.find(aFeature);
+    settings::RecordingFeatureMap::const_iterator itFeature = m->bd->featureMap.find(aFeature);
 
     *aEnabled = (   itFeature != m->bd->featureMap.end()
                  && itFeature->second == true);
@@ -242,7 +242,7 @@ HRESULT RecordScreenSettings::isFeatureEnabled(RecordFeature_T aFeature, BOOL *a
     return S_OK;
 }
 
-HRESULT RecordScreenSettings::getId(ULONG *id)
+HRESULT RecordingScreenSettings::getId(ULONG *id)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -254,7 +254,7 @@ HRESULT RecordScreenSettings::getId(ULONG *id)
     return S_OK;
 }
 
-HRESULT RecordScreenSettings::getEnabled(BOOL *enabled)
+HRESULT RecordingScreenSettings::getEnabled(BOOL *enabled)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -266,7 +266,7 @@ HRESULT RecordScreenSettings::getEnabled(BOOL *enabled)
     return S_OK;
 }
 
-HRESULT RecordScreenSettings::setEnabled(BOOL enabled)
+HRESULT RecordingScreenSettings::setEnabled(BOOL enabled)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -274,7 +274,7 @@ HRESULT RecordScreenSettings::setEnabled(BOOL enabled)
     LogFlowThisFunc(("Screen %RU32\n", m->uScreenId));
 
     if (!m->pParent->i_canChangeSettings())
-        return setError(E_INVALIDARG, tr("Cannot change enabled state of screen while capturing is enabled"));
+        return setError(E_INVALIDARG, tr("Cannot change enabled state of screen while recording is enabled"));
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -291,7 +291,7 @@ HRESULT RecordScreenSettings::setEnabled(BOOL enabled)
     return S_OK;
 }
 
-HRESULT RecordScreenSettings::getFeatures(ULONG *aFeatures)
+HRESULT RecordingScreenSettings::getFeatures(ULONG *aFeatures)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -300,7 +300,7 @@ HRESULT RecordScreenSettings::getFeatures(ULONG *aFeatures)
 
     *aFeatures = 0;
 
-    settings::RecordFeatureMap::const_iterator itFeature = m->bd->featureMap.begin();
+    settings::RecordingFeatureMap::const_iterator itFeature = m->bd->featureMap.begin();
     while (itFeature != m->bd->featureMap.end())
     {
         if (itFeature->second) /* Is feature enable? */
@@ -312,30 +312,30 @@ HRESULT RecordScreenSettings::getFeatures(ULONG *aFeatures)
     return S_OK;
 }
 
-HRESULT RecordScreenSettings::setFeatures(ULONG aFeatures)
+HRESULT RecordingScreenSettings::setFeatures(ULONG aFeatures)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     if (!m->pParent->i_canChangeSettings())
-        return setError(E_INVALIDARG, tr("Cannot change features while capturing is enabled"));
+        return setError(E_INVALIDARG, tr("Cannot change features while recording is enabled"));
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     m->bd.backup();
     m->bd->featureMap.clear();
 
-    if (aFeatures & RecordFeature_Audio)
-        m->bd->featureMap[RecordFeature_Audio] = true;
-    if (aFeatures & RecordFeature_Video)
-        m->bd->featureMap[RecordFeature_Video] = true;
+    if (aFeatures & RecordingFeature_Audio)
+        m->bd->featureMap[RecordingFeature_Audio] = true;
+    if (aFeatures & RecordingFeature_Video)
+        m->bd->featureMap[RecordingFeature_Video] = true;
 
     alock.release();
 
     return S_OK;
 }
 
-HRESULT RecordScreenSettings::getDestination(RecordDestination_T *aDestination)
+HRESULT RecordingScreenSettings::getDestination(RecordingDestination_T *aDestination)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -347,13 +347,13 @@ HRESULT RecordScreenSettings::getDestination(RecordDestination_T *aDestination)
     return S_OK;
 }
 
-HRESULT RecordScreenSettings::setDestination(RecordDestination_T aDestination)
+HRESULT RecordingScreenSettings::setDestination(RecordingDestination_T aDestination)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     if (!m->pParent->i_canChangeSettings())
-        return setError(E_INVALIDARG, tr("Cannot change destination type while capturing is enabled"));
+        return setError(E_INVALIDARG, tr("Cannot change destination type while recording is enabled"));
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -363,7 +363,7 @@ HRESULT RecordScreenSettings::setDestination(RecordDestination_T aDestination)
     return S_OK;
 }
 
-HRESULT RecordScreenSettings::getFileName(com::Utf8Str &aFileName)
+HRESULT RecordingScreenSettings::getFileName(com::Utf8Str &aFileName)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -375,13 +375,13 @@ HRESULT RecordScreenSettings::getFileName(com::Utf8Str &aFileName)
     return S_OK;
 }
 
-HRESULT RecordScreenSettings::setFileName(const com::Utf8Str &aFileName)
+HRESULT RecordingScreenSettings::setFileName(const com::Utf8Str &aFileName)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     if (!m->pParent->i_canChangeSettings())
-        return setError(E_INVALIDARG, tr("Cannot change file name while capturing is enabled"));
+        return setError(E_INVALIDARG, tr("Cannot change file name while recording is enabled"));
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -396,7 +396,7 @@ HRESULT RecordScreenSettings::setFileName(const com::Utf8Str &aFileName)
     return S_OK;
 }
 
-HRESULT RecordScreenSettings::getMaxTime(ULONG *aMaxTimeS)
+HRESULT RecordingScreenSettings::getMaxTime(ULONG *aMaxTimeS)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -408,13 +408,13 @@ HRESULT RecordScreenSettings::getMaxTime(ULONG *aMaxTimeS)
     return S_OK;
 }
 
-HRESULT RecordScreenSettings::setMaxTime(ULONG aMaxTimeS)
+HRESULT RecordingScreenSettings::setMaxTime(ULONG aMaxTimeS)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     if (!m->pParent->i_canChangeSettings())
-        return setError(E_INVALIDARG, tr("Cannot change maximum time while capturing is enabled"));
+        return setError(E_INVALIDARG, tr("Cannot change maximum time while recording is enabled"));
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -424,7 +424,7 @@ HRESULT RecordScreenSettings::setMaxTime(ULONG aMaxTimeS)
     return S_OK;
 }
 
-HRESULT RecordScreenSettings::getMaxFileSize(ULONG *aMaxFileSizeMB)
+HRESULT RecordingScreenSettings::getMaxFileSize(ULONG *aMaxFileSizeMB)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -436,13 +436,13 @@ HRESULT RecordScreenSettings::getMaxFileSize(ULONG *aMaxFileSizeMB)
     return S_OK;
 }
 
-HRESULT RecordScreenSettings::setMaxFileSize(ULONG aMaxFileSize)
+HRESULT RecordingScreenSettings::setMaxFileSize(ULONG aMaxFileSize)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     if (!m->pParent->i_canChangeSettings())
-        return setError(E_INVALIDARG, tr("Cannot change maximum file size while capturing is enabled"));
+        return setError(E_INVALIDARG, tr("Cannot change maximum file size while recording is enabled"));
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -452,7 +452,7 @@ HRESULT RecordScreenSettings::setMaxFileSize(ULONG aMaxFileSize)
     return S_OK;
 }
 
-HRESULT RecordScreenSettings::getOptions(com::Utf8Str &aOptions)
+HRESULT RecordingScreenSettings::getOptions(com::Utf8Str &aOptions)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -464,13 +464,13 @@ HRESULT RecordScreenSettings::getOptions(com::Utf8Str &aOptions)
     return S_OK;
 }
 
-HRESULT RecordScreenSettings::setOptions(const com::Utf8Str &aOptions)
+HRESULT RecordingScreenSettings::setOptions(const com::Utf8Str &aOptions)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     if (!m->pParent->i_canChangeSettings())
-        return setError(E_INVALIDARG, tr("Cannot change options while capturing is enabled"));
+        return setError(E_INVALIDARG, tr("Cannot change options while recording is enabled"));
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -480,7 +480,7 @@ HRESULT RecordScreenSettings::setOptions(const com::Utf8Str &aOptions)
     return S_OK;
 }
 
-HRESULT RecordScreenSettings::getAudioCodec(RecordAudioCodec_T *aCodec)
+HRESULT RecordingScreenSettings::getAudioCodec(RecordingAudioCodec_T *aCodec)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -492,13 +492,13 @@ HRESULT RecordScreenSettings::getAudioCodec(RecordAudioCodec_T *aCodec)
     return S_OK;
 }
 
-HRESULT RecordScreenSettings::setAudioCodec(RecordAudioCodec_T aCodec)
+HRESULT RecordingScreenSettings::setAudioCodec(RecordingAudioCodec_T aCodec)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     if (!m->pParent->i_canChangeSettings())
-        return setError(E_INVALIDARG, tr("Cannot change audio codec while capturing is enabled"));
+        return setError(E_INVALIDARG, tr("Cannot change audio codec while recording is enabled"));
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -508,7 +508,7 @@ HRESULT RecordScreenSettings::setAudioCodec(RecordAudioCodec_T aCodec)
     return S_OK;
 }
 
-HRESULT RecordScreenSettings::getAudioHz(ULONG *aHz)
+HRESULT RecordingScreenSettings::getAudioHz(ULONG *aHz)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -520,13 +520,13 @@ HRESULT RecordScreenSettings::getAudioHz(ULONG *aHz)
     return S_OK;
 }
 
-HRESULT RecordScreenSettings::setAudioHz(ULONG aHz)
+HRESULT RecordingScreenSettings::setAudioHz(ULONG aHz)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     if (!m->pParent->i_canChangeSettings())
-        return setError(E_INVALIDARG, tr("Cannot change audio Hertz rate while capturing is enabled"));
+        return setError(E_INVALIDARG, tr("Cannot change audio Hertz rate while recording is enabled"));
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -536,7 +536,7 @@ HRESULT RecordScreenSettings::setAudioHz(ULONG aHz)
     return S_OK;
 }
 
-HRESULT RecordScreenSettings::getAudioBits(ULONG *aBits)
+HRESULT RecordingScreenSettings::getAudioBits(ULONG *aBits)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -548,13 +548,13 @@ HRESULT RecordScreenSettings::getAudioBits(ULONG *aBits)
     return S_OK;
 }
 
-HRESULT RecordScreenSettings::setAudioBits(ULONG aBits)
+HRESULT RecordingScreenSettings::setAudioBits(ULONG aBits)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     if (!m->pParent->i_canChangeSettings())
-        return setError(E_INVALIDARG, tr("Cannot change audio bits while capturing is enabled"));
+        return setError(E_INVALIDARG, tr("Cannot change audio bits while recording is enabled"));
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -564,7 +564,7 @@ HRESULT RecordScreenSettings::setAudioBits(ULONG aBits)
     return S_OK;
 }
 
-HRESULT RecordScreenSettings::getAudioChannels(ULONG *aChannels)
+HRESULT RecordingScreenSettings::getAudioChannels(ULONG *aChannels)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -576,13 +576,13 @@ HRESULT RecordScreenSettings::getAudioChannels(ULONG *aChannels)
     return S_OK;
 }
 
-HRESULT RecordScreenSettings::setAudioChannels(ULONG aChannels)
+HRESULT RecordingScreenSettings::setAudioChannels(ULONG aChannels)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     if (!m->pParent->i_canChangeSettings())
-        return setError(E_INVALIDARG, tr("Cannot change audio channels while capturing is enabled"));
+        return setError(E_INVALIDARG, tr("Cannot change audio channels while recording is enabled"));
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -592,7 +592,7 @@ HRESULT RecordScreenSettings::setAudioChannels(ULONG aChannels)
     return S_OK;
 }
 
-HRESULT RecordScreenSettings::getVideoCodec(RecordVideoCodec_T *aCodec)
+HRESULT RecordingScreenSettings::getVideoCodec(RecordingVideoCodec_T *aCodec)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -604,13 +604,13 @@ HRESULT RecordScreenSettings::getVideoCodec(RecordVideoCodec_T *aCodec)
     return S_OK;
 }
 
-HRESULT RecordScreenSettings::setVideoCodec(RecordVideoCodec_T aCodec)
+HRESULT RecordingScreenSettings::setVideoCodec(RecordingVideoCodec_T aCodec)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     if (!m->pParent->i_canChangeSettings())
-        return setError(E_INVALIDARG, tr("Cannot change video codec while capturing is enabled"));
+        return setError(E_INVALIDARG, tr("Cannot change video codec while recording is enabled"));
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -620,7 +620,7 @@ HRESULT RecordScreenSettings::setVideoCodec(RecordVideoCodec_T aCodec)
     return S_OK;
 }
 
-HRESULT RecordScreenSettings::getVideoWidth(ULONG *aVideoWidth)
+HRESULT RecordingScreenSettings::getVideoWidth(ULONG *aVideoWidth)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -632,13 +632,13 @@ HRESULT RecordScreenSettings::getVideoWidth(ULONG *aVideoWidth)
     return S_OK;
 }
 
-HRESULT RecordScreenSettings::setVideoWidth(ULONG aVideoWidth)
+HRESULT RecordingScreenSettings::setVideoWidth(ULONG aVideoWidth)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     if (!m->pParent->i_canChangeSettings())
-        return setError(E_INVALIDARG, tr("Cannot change video width while capturing is enabled"));
+        return setError(E_INVALIDARG, tr("Cannot change video width while recording is enabled"));
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -648,7 +648,7 @@ HRESULT RecordScreenSettings::setVideoWidth(ULONG aVideoWidth)
     return S_OK;
 }
 
-HRESULT RecordScreenSettings::getVideoHeight(ULONG *aVideoHeight)
+HRESULT RecordingScreenSettings::getVideoHeight(ULONG *aVideoHeight)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -660,13 +660,13 @@ HRESULT RecordScreenSettings::getVideoHeight(ULONG *aVideoHeight)
     return S_OK;
 }
 
-HRESULT RecordScreenSettings::setVideoHeight(ULONG aVideoHeight)
+HRESULT RecordingScreenSettings::setVideoHeight(ULONG aVideoHeight)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     if (!m->pParent->i_canChangeSettings())
-        return setError(E_INVALIDARG, tr("Cannot change video height while capturing is enabled"));
+        return setError(E_INVALIDARG, tr("Cannot change video height while recording is enabled"));
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -676,7 +676,7 @@ HRESULT RecordScreenSettings::setVideoHeight(ULONG aVideoHeight)
     return S_OK;
 }
 
-HRESULT RecordScreenSettings::getVideoRate(ULONG *aVideoRate)
+HRESULT RecordingScreenSettings::getVideoRate(ULONG *aVideoRate)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -688,13 +688,13 @@ HRESULT RecordScreenSettings::getVideoRate(ULONG *aVideoRate)
     return S_OK;
 }
 
-HRESULT RecordScreenSettings::setVideoRate(ULONG aVideoRate)
+HRESULT RecordingScreenSettings::setVideoRate(ULONG aVideoRate)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     if (!m->pParent->i_canChangeSettings())
-        return setError(E_INVALIDARG, tr("Cannot change video rate while capturing is enabled"));
+        return setError(E_INVALIDARG, tr("Cannot change video rate while recording is enabled"));
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -704,7 +704,7 @@ HRESULT RecordScreenSettings::setVideoRate(ULONG aVideoRate)
     return S_OK;
 }
 
-HRESULT RecordScreenSettings::getVideoRateControlMode(RecordVideoRateControlMode_T *aMode)
+HRESULT RecordingScreenSettings::getVideoRateControlMode(RecordVideoRateControlMode_T *aMode)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -716,13 +716,13 @@ HRESULT RecordScreenSettings::getVideoRateControlMode(RecordVideoRateControlMode
     return S_OK;
 }
 
-HRESULT RecordScreenSettings::setVideoRateControlMode(RecordVideoRateControlMode_T aMode)
+HRESULT RecordingScreenSettings::setVideoRateControlMode(RecordVideoRateControlMode_T aMode)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     if (!m->pParent->i_canChangeSettings())
-        return setError(E_INVALIDARG, tr("Cannot change video rate control mode while capturing is enabled"));
+        return setError(E_INVALIDARG, tr("Cannot change video rate control mode while recording is enabled"));
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -732,7 +732,7 @@ HRESULT RecordScreenSettings::setVideoRateControlMode(RecordVideoRateControlMode
     return E_NOTIMPL;
 }
 
-HRESULT RecordScreenSettings::getVideoFPS(ULONG *aVideoFPS)
+HRESULT RecordingScreenSettings::getVideoFPS(ULONG *aVideoFPS)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -744,13 +744,13 @@ HRESULT RecordScreenSettings::getVideoFPS(ULONG *aVideoFPS)
     return S_OK;
 }
 
-HRESULT RecordScreenSettings::setVideoFPS(ULONG aVideoFPS)
+HRESULT RecordingScreenSettings::setVideoFPS(ULONG aVideoFPS)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     if (!m->pParent->i_canChangeSettings())
-        return setError(E_INVALIDARG, tr("Cannot change video FPS while capturing is enabled"));
+        return setError(E_INVALIDARG, tr("Cannot change video FPS while recording is enabled"));
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -760,25 +760,25 @@ HRESULT RecordScreenSettings::setVideoFPS(ULONG aVideoFPS)
     return S_OK;
 }
 
-HRESULT RecordScreenSettings::getVideoScalingMethod(RecordVideoScalingMethod_T *aMode)
+HRESULT RecordingScreenSettings::getVideoScalingMethod(RecordingVideoScalingMethod_T *aMode)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    *aMode = RecordVideoScalingMethod_None; /** @todo Implement this. */
+    *aMode = RecordingVideoScalingMethod_None; /** @todo Implement this. */
 
     return S_OK;
 }
 
-HRESULT RecordScreenSettings::setVideoScalingMethod(RecordVideoScalingMethod_T aMode)
+HRESULT RecordingScreenSettings::setVideoScalingMethod(RecordingVideoScalingMethod_T aMode)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     if (!m->pParent->i_canChangeSettings())
-        return setError(E_INVALIDARG, tr("Cannot change video rate scaling method while capturing is enabled"));
+        return setError(E_INVALIDARG, tr("Cannot change video rate scaling method while recording is enabled"));
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -793,7 +793,7 @@ HRESULT RecordScreenSettings::setVideoScalingMethod(RecordVideoScalingMethod_T a
  *
  * @returns IPRT status code.
  */
-int RecordScreenSettings::i_initInternal(void)
+int RecordingScreenSettings::i_initInternal(void)
 {
     Assert(m);
 
@@ -801,7 +801,7 @@ int RecordScreenSettings::i_initInternal(void)
 
     switch (m->bd->enmDest)
     {
-        case RecordDestination_File:
+        case RecordingDestination_File:
         {
             if (m->bd->File.strName.isEmpty())
                 rc = m->pParent->i_getDefaultFileName(m->bd->File.strName);

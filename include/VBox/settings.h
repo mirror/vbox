@@ -481,60 +481,60 @@ struct BIOSSettings
 };
 
 /** List for keeping a recording feature list. */
-typedef std::map<RecordFeature_T, bool> RecordFeatureMap;
+typedef std::map<RecordingFeature_T, bool> RecordingFeatureMap;
 
-struct RecordScreenSettings
+struct RecordingScreenSettings
 {
-    RecordScreenSettings();
+    RecordingScreenSettings();
 
-    virtual ~RecordScreenSettings();
+    virtual ~RecordingScreenSettings();
 
     void applyDefaults(void);
 
     bool areDefaultSettings(void) const;
 
-    bool isFeatureEnabled(RecordFeature_T enmFeature) const;
+    bool isFeatureEnabled(RecordingFeature_T enmFeature) const;
 
-    bool operator==(const RecordScreenSettings &d) const;
+    bool operator==(const RecordingScreenSettings &d) const;
 
-    bool                 fEnabled;       // requires settings version 1.14 (VirtualBox 4.3)
-    RecordDestination_T enmDest;        // new since VirtualBox 6.0.
-    RecordFeatureMap    featureMap;     // new since VirtualBox 6.0.
-    uint32_t             ulMaxTimeS;     // requires settings version 1.14 (VirtualBox 4.3)
-    com::Utf8Str         strOptions;     // new since VirtualBox 5.2.
+    bool                   fEnabled;   // requires settings version 1.14 (VirtualBox 4.3)
+    RecordingDestination_T enmDest;    // new since VirtualBox 6.0.
+    RecordingFeatureMap    featureMap; // new since VirtualBox 6.0.
+    uint32_t               ulMaxTimeS; // requires settings version 1.14 (VirtualBox 4.3)
+    com::Utf8Str           strOptions; // new since VirtualBox 5.2.
 
     struct Audio
     {
         Audio()
-            : enmAudioCodec(RecordAudioCodec_Opus)
+            : enmAudioCodec(RecordingAudioCodec_Opus)
             , uHz(22050)
             , cBits(16)
             , cChannels(2) { }
 
         /** The audio codec type to use. */
-        RecordAudioCodec_T enmAudioCodec; // new since VirtualBox 6.0.
+        RecordingAudioCodec_T enmAudioCodec; // new since VirtualBox 6.0.
         /** Hz rate. */
-        uint16_t            uHz;           // new since VirtualBox 6.0.
+        uint16_t              uHz;           // new since VirtualBox 6.0.
         /** Bits per sample. */
-        uint8_t             cBits;         // new since VirtualBox 6.0.
+        uint8_t               cBits;         // new since VirtualBox 6.0.
         /** Number of audio channels. */
-        uint8_t             cChannels;     // new since VirtualBox 6.0.
+        uint8_t               cChannels;     // new since VirtualBox 6.0.
     } Audio;
 
     struct Video
     {
         Video()
-            : enmCodec(RecordVideoCodec_VP8)
+            : enmCodec(RecordingVideoCodec_VP8)
             , ulWidth(1024)
             , ulHeight(768)
             , ulRate(512)
             , ulFPS(25) { }
 
-        RecordVideoCodec_T  enmCodec;  // new since VirtualBox 6.0.
-        uint32_t             ulWidth;   // requires settings version 1.14 (VirtualBox 4.3)
-        uint32_t             ulHeight;  // requires settings version 1.14 (VirtualBox 4.3)
-        uint32_t             ulRate;    // requires settings version 1.14 (VirtualBox 4.3)
-        uint32_t             ulFPS;     // requires settings version 1.14 (VirtualBox 4.3)
+        RecordingVideoCodec_T enmCodec;  // new since VirtualBox 6.0.
+        uint32_t              ulWidth;   // requires settings version 1.14 (VirtualBox 4.3)
+        uint32_t              ulHeight;  // requires settings version 1.14 (VirtualBox 4.3)
+        uint32_t              ulRate;    // requires settings version 1.14 (VirtualBox 4.3)
+        uint32_t              ulFPS;     // requires settings version 1.14 (VirtualBox 4.3)
     } Video;
 
     struct File
@@ -548,25 +548,25 @@ struct RecordScreenSettings
 };
 
 /** Map for keeping settings per virtual screen. */
-typedef std::map<uint32_t, RecordScreenSettings> RecordScreenMap;
+typedef std::map<uint32_t, RecordingScreenSettings> RecordingScreenMap;
 
 /**
  * NOTE: If you add any fields in here, you must update a) the constructor and b)
  * the operator== which is used by MachineConfigFile::operator==(), or otherwise
  * your settings might never get saved.
  */
-struct RecordSettings
+struct RecordingSettings
 {
-    RecordSettings();
+    RecordingSettings();
 
     void applyDefaults(void);
 
     bool areDefaultSettings(void) const;
 
-    bool operator==(const RecordSettings &d) const;
+    bool operator==(const RecordingSettings &d) const;
 
-    bool            fEnabled;       // requires settings version 1.14 (VirtualBox 4.3)
-    RecordScreenMap mapScreens;
+    bool               fEnabled;       // requires settings version 1.14 (VirtualBox 4.3)
+    RecordingScreenMap mapScreens;
 };
 
 /**
@@ -1038,7 +1038,7 @@ struct Hardware
     VRDESettings        vrdeSettings;
 
     BIOSSettings        biosSettings;
-    RecordSettings      recordSettings;
+    RecordingSettings   recordingSettings;
     USB                 usbSettings;
     NetworkAdaptersList llNetworkAdapters;
     SerialPortsList     llSerialPorts;

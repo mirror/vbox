@@ -40,17 +40,17 @@ public:
 
     RecordingContext(Console *pConsole);
 
-    RecordingContext(Console *pConsole, const settings::RecordSettings &a_Settings);
+    RecordingContext(Console *pConsole, const settings::RecordingSettings &a_Settings);
 
     virtual ~RecordingContext(void);
 
 public:
 
-    const settings::RecordSettings &GetConfig(void) const;
+    const settings::RecordingSettings &GetConfig(void) const;
     RecordingStream *GetStream(unsigned uScreen) const;
     size_t GetStreamCount(void) const;
 
-    int Create(const settings::RecordSettings &a_Settings);
+    int Create(const settings::RecordingSettings &a_Settings);
     int Destroy(void);
 
     int Start(void);
@@ -63,7 +63,7 @@ public:
                        uint8_t *puSrcData, uint64_t uTimeStampMs);
 public:
 
-    bool IsFeatureEnabled(RecordFeature_T enmFeature) const;
+    bool IsFeatureEnabled(RecordingFeature_T enmFeature) const;
     bool IsReady(void) const;
     bool IsReady(uint32_t uScreen, uint64_t uTimeStampMs) const;
     bool IsStarted(void) const;
@@ -71,7 +71,7 @@ public:
 
 protected:
 
-    int createInternal(const settings::RecordSettings &a_Settings);
+    int createInternal(const settings::RecordingSettings &a_Settings);
     int startInternal(void);
     int stopInternal(void);
 
@@ -103,7 +103,7 @@ protected:
     /** Pointer to the console object. */
     Console                  *pConsole;
     /** Used recording configuration. */
-    settings::RecordSettings  Settings;
+    settings::RecordingSettings  Settings;
     /** The current state. */
     RECORDINGSTS              enmState;
     /** Critical section to serialize access. */

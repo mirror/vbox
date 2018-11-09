@@ -1087,7 +1087,7 @@ AudioVideoRec::~AudioVideoRec(void)
  * @returns IPRT status code.
  * @param   Settings        Capturing configuration to apply.
  */
-int AudioVideoRec::applyConfiguration(const settings::RecordSettings &Settings)
+int AudioVideoRec::applyConfiguration(const settings::RecordingSettings &Settings)
 {
     /** @todo Do some validation here. */
     mVideoRecCfg = Settings; /* Note: Does have an own copy operator. */
@@ -1107,11 +1107,11 @@ int AudioVideoRec::configureDriver(PCFGMNODE pLunCfg)
 
     /** @todo For now we're using the configuration of the first screen here audio-wise. */
     Assert(mVideoRecCfg.mapScreens.size() >= 1);
-    const settings::RecordScreenSettings &Screen0Settings = mVideoRecCfg.mapScreens[0];
+    const settings::RecordingScreenSettings &Screen0Settings = mVideoRecCfg.mapScreens[0];
 
     rc = CFGMR3InsertInteger(pLunCfg, "ContainerType", (uint64_t)Screen0Settings.enmDest);
     AssertRCReturn(rc, rc);
-    if (Screen0Settings.enmDest == RecordDestination_File)
+    if (Screen0Settings.enmDest == RecordingDestination_File)
     {
         rc = CFGMR3InsertString(pLunCfg, "ContainerFileName", Utf8Str(Screen0Settings.File.strName).c_str());
         AssertRCReturn(rc, rc);

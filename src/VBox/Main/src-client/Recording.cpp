@@ -93,7 +93,7 @@ RecordingContext::RecordingContext(Console *a_pConsole)
     : pConsole(a_pConsole)
     , enmState(RECORDINGSTS_UNINITIALIZED) { }
 
-RecordingContext::RecordingContext(Console *a_pConsole, const settings::RecordSettings &a_Settings)
+RecordingContext::RecordingContext(Console *a_pConsole, const settings::RecordingSettings &a_Settings)
     : pConsole(a_pConsole)
     , enmState(RECORDINGSTS_UNINITIALIZED)
 {
@@ -176,13 +176,13 @@ int RecordingContext::threadNotify(void)
  * @returns IPRT status code.
  * @param   a_Settings          Capture settings to use for context creation.
  */
-int RecordingContext::createInternal(const settings::RecordSettings &a_Settings)
+int RecordingContext::createInternal(const settings::RecordingSettings &a_Settings)
 {
     int rc = RTCritSectInit(&this->CritSect);
     if (RT_FAILURE(rc))
         return rc;
 
-    settings::RecordScreenMap::const_iterator itScreen = a_Settings.mapScreens.begin();
+    settings::RecordingScreenMap::const_iterator itScreen = a_Settings.mapScreens.begin();
     while (itScreen != a_Settings.mapScreens.end())
     {
         RecordingStream *pStream = NULL;
@@ -317,7 +317,7 @@ int RecordingContext::destroyInternal(void)
     return rc;
 }
 
-const settings::RecordSettings &RecordingContext::GetConfig(void) const
+const settings::RecordingSettings &RecordingContext::GetConfig(void) const
 {
     return this->Settings;
 }
@@ -354,7 +354,7 @@ size_t RecordingContext::GetStreamCount(void) const
     return this->vecStreams.size();
 }
 
-int RecordingContext::Create(const settings::RecordSettings &a_Settings)
+int RecordingContext::Create(const settings::RecordingSettings &a_Settings)
 {
     return createInternal(a_Settings);
 }
@@ -374,7 +374,7 @@ int RecordingContext::Stop(void)
     return stopInternal();
 }
 
-bool RecordingContext::IsFeatureEnabled(RecordFeature_T enmFeature) const
+bool RecordingContext::IsFeatureEnabled(RecordingFeature_T enmFeature) const
 {
     RecordingStreams::const_iterator itStream = this->vecStreams.begin();
     while (itStream != this->vecStreams.end())

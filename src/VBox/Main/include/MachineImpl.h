@@ -31,7 +31,7 @@
 #include "SerialPortImpl.h"
 #include "ParallelPortImpl.h"
 #include "BIOSSettingsImpl.h"
-#include "RecordSettingsImpl.h"
+#include "RecordingSettingsImpl.h"
 #include "StorageControllerImpl.h"          // required for MachineImpl.h to compile on Windows
 #include "USBControllerImpl.h"              // required for MachineImpl.h to compile on Windows
 #include "BandwidthControlImpl.h"
@@ -265,7 +265,7 @@ public:
         BOOL                mPageFusionEnabled;
         GraphicsControllerType_T mGraphicsControllerType;
         ULONG               mVRAMSize;
-        settings::RecordSettings mRecordSettings;
+        settings::RecordingSettings mRecordSettings;
         ULONG               mMonitorCount;
         BOOL                mHWVirtExEnabled;
         BOOL                mHWVirtExNestedPagingEnabled;
@@ -776,7 +776,7 @@ protected:
     const ComObjPtr<AudioAdapter>      mAudioAdapter;
     const ComObjPtr<USBDeviceFilters>  mUSBDeviceFilters;
     const ComObjPtr<BIOSSettings>      mBIOSSettings;
-    const ComObjPtr<RecordSettings>    mRecordSettings;
+    const ComObjPtr<RecordingSettings> mRecordingSettings;
     const ComObjPtr<BandwidthControl>  mBandwidthControl;
 
     typedef std::vector<ComObjPtr<NetworkAdapter> > NetworkAdapterVector;
@@ -824,8 +824,8 @@ protected:
     void i_deleteConfigHandler(DeleteConfigTask &task);
 
     friend class Appliance;
-    friend class RecordSettings;
-    friend class RecordScreenSettings;
+    friend class RecordingSettings;
+    friend class RecordingScreenSettings;
     friend class SessionMachine;
     friend class SnapshotMachine;
     friend class VirtualBox;
@@ -879,7 +879,7 @@ private:
     HRESULT getMonitorCount(ULONG *aMonitorCount);
     HRESULT setMonitorCount(ULONG aMonitorCount);
     HRESULT getBIOSSettings(ComPtr<IBIOSSettings> &aBIOSSettings);
-    HRESULT getRecordSettings(ComPtr<IRecordSettings> &aRecordSettings);
+    HRESULT getRecordingSettings(ComPtr<IRecordingSettings> &aRecordingSettings);
     HRESULT getFirmwareType(FirmwareType_T *aFirmwareType);
     HRESULT setFirmwareType(FirmwareType_T aFirmwareType);
     HRESULT getPointingHIDType(PointingHIDType_T *aPointingHIDType);

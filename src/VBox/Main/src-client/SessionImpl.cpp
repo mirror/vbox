@@ -724,7 +724,7 @@ HRESULT Session::onVRDEServerChange(BOOL aRestart)
 #endif
 }
 
-HRESULT Session::onRecordChange()
+HRESULT Session::onRecordingChange()
 {
     LogFlowThisFunc(("\n"));
 
@@ -734,7 +734,7 @@ HRESULT Session::onRecordChange()
 #ifndef VBOX_COM_INPROC_API_CLIENT
     AssertReturn(mConsole, VBOX_E_INVALID_OBJECT_STATE);
 
-    return mConsole->i_onRecordChange();
+    return mConsole->i_onRecordingChange();
 #else
     return S_OK;
 #endif

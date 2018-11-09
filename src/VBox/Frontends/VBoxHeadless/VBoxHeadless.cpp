@@ -960,12 +960,12 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
 #ifdef VBOX_WITH_RECORDING
         if (fRecordEnabled)
         {
-            ComPtr<IRecordSettings> RecordSettings;
-            CHECK_ERROR_BREAK(machine, COMGETTER(RecordSettings)(RecordSettings.asOutParam()));
-            CHECK_ERROR_BREAK(RecordSettings, COMSETTER(Enabled)(TRUE));
+            ComPtr<IRecordingSettings> recordingSettings;
+            CHECK_ERROR_BREAK(machine, COMGETTER(RecordingSettings)(recordingSettings.asOutParam()));
+            CHECK_ERROR_BREAK(recordingSettings, COMSETTER(Enabled)(TRUE));
 
-            SafeIfaceArray <IRecordScreenSettings> saRecordScreenScreens;
-            CHECK_ERROR_BREAK(RecordSettings, COMGETTER(Screens)(ComSafeArrayAsOutParam(saRecordScreenScreens)));
+            SafeIfaceArray <IRecordingScreenSettings> saRecordScreenScreens;
+            CHECK_ERROR_BREAK(recordingSettings, COMGETTER(Screens)(ComSafeArrayAsOutParam(saRecordScreenScreens)));
 
             /* Note: For now all screens have the same configuration. */
             for (size_t i = 0; i < saRecordScreenScreens.size(); ++i)
@@ -1231,9 +1231,9 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         {
             if (!machine.isNull())
             {
-                ComPtr<IRecordSettings> RecordSettings;
-                CHECK_ERROR_BREAK(machine, COMGETTER(RecordSettings)(RecordSettings.asOutParam()));
-                CHECK_ERROR_BREAK(RecordSettings, COMSETTER(Enabled)(FALSE));
+                ComPtr<IRecordingSettings> recordingSettings;
+                CHECK_ERROR_BREAK(machine, COMGETTER(RecordingSettings)(recordingSettings.asOutParam()));
+                CHECK_ERROR_BREAK(recordingSettings, COMSETTER(Enabled)(FALSE));
             }
         }
 #endif /* VBOX_WITH_RECORDING */

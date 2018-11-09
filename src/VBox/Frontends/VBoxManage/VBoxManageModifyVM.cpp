@@ -2949,16 +2949,16 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                 RT_FALL_THROUGH();
             case MODIFYVM_RECORD_OPTIONS:
             {
-                ComPtr<IRecordSettings> RecordSettings;
-                CHECK_ERROR_BREAK(machine, COMGETTER(RecordSettings)(RecordSettings.asOutParam()));
-                SafeIfaceArray <IRecordScreenSettings> saRecordScreenScreens;
-                CHECK_ERROR_BREAK(RecordSettings, COMGETTER(Screens)(ComSafeArrayAsOutParam(saRecordScreenScreens)));
+                ComPtr<IRecordingSettings> recordingSettings;
+                CHECK_ERROR_BREAK(machine, COMGETTER(RecordingSettings)(recordingSettings.asOutParam()));
+                SafeIfaceArray <IRecordingScreenSettings> saRecordingScreenScreens;
+                CHECK_ERROR_BREAK(recordingSettings, COMGETTER(Screens)(ComSafeArrayAsOutParam(saRecordingScreenScreens)));
 
                 switch (c)
                 {
                     case MODIFYVM_RECORD:
                     {
-                        CHECK_ERROR(RecordSettings, COMSETTER(Enabled)(ValueUnion.f));
+                        CHECK_ERROR(recordingSettings, COMSETTER(Enabled)(ValueUnion.f));
                         break;
                     }
                     case MODIFYVM_RECORD_SCREENS:
@@ -2973,11 +2973,11 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                             break;
                         }
 
-                        if (cMonitors > saRecordScreenScreens.size()) /* Paranoia. */
-                            cMonitors = (ULONG)saRecordScreenScreens.size();
+                        if (cMonitors > saRecordingScreenScreens.size()) /* Paranoia. */
+                            cMonitors = (ULONG)saRecordingScreenScreens.size();
 
                         for (size_t i = 0; i < cMonitors; ++i)
-                            CHECK_ERROR_BREAK(saRecordScreenScreens[i], COMSETTER(Enabled)(screens[i]));
+                            CHECK_ERROR_BREAK(saRecordingScreenScreens[i], COMSETTER(Enabled)(screens[i]));
                         break;
                     }
                     case MODIFYVM_RECORD_FILENAME:
@@ -2997,20 +2997,20 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                             bstr = szVCFileAbs;
                         }
 
-                        for (size_t i = 0; i < saRecordScreenScreens.size(); ++i)
-                            CHECK_ERROR(saRecordScreenScreens[i], COMSETTER(FileName)(bstr.raw()));
+                        for (size_t i = 0; i < saRecordingScreenScreens.size(); ++i)
+                            CHECK_ERROR(saRecordingScreenScreens[i], COMSETTER(FileName)(bstr.raw()));
                         break;
                     }
                     case MODIFYVM_RECORD_VIDEO_WIDTH:
                     {
-                        for (size_t i = 0; i < saRecordScreenScreens.size(); ++i)
-                            CHECK_ERROR(saRecordScreenScreens[i], COMSETTER(VideoWidth)(ValueUnion.u32));
+                        for (size_t i = 0; i < saRecordingScreenScreens.size(); ++i)
+                            CHECK_ERROR(saRecordingScreenScreens[i], COMSETTER(VideoWidth)(ValueUnion.u32));
                         break;
                     }
                     case MODIFYVM_RECORD_VIDEO_HEIGHT:
                     {
-                        for (size_t i = 0; i < saRecordScreenScreens.size(); ++i)
-                            CHECK_ERROR(saRecordScreenScreens[i], COMSETTER(VideoHeight)(ValueUnion.u32));
+                        for (size_t i = 0; i < saRecordingScreenScreens.size(); ++i)
+                            CHECK_ERROR(saRecordingScreenScreens[i], COMSETTER(VideoHeight)(ValueUnion.u32));
                         break;
                     }
                     case MODIFYVM_RECORD_VIDEO_RES:
@@ -3033,42 +3033,42 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                             break;
                         }
 
-                        for (size_t i = 0; i < saRecordScreenScreens.size(); ++i)
+                        for (size_t i = 0; i < saRecordingScreenScreens.size(); ++i)
                         {
-                            CHECK_ERROR(saRecordScreenScreens[i], COMSETTER(VideoWidth)(uWidth));
-                            CHECK_ERROR(saRecordScreenScreens[i], COMSETTER(VideoHeight)(uHeight));
+                            CHECK_ERROR(saRecordingScreenScreens[i], COMSETTER(VideoWidth)(uWidth));
+                            CHECK_ERROR(saRecordingScreenScreens[i], COMSETTER(VideoHeight)(uHeight));
                         }
                         break;
                     }
                     case MODIFYVM_RECORD_VIDEO_RATE:
                     {
-                        for (size_t i = 0; i < saRecordScreenScreens.size(); ++i)
-                            CHECK_ERROR(saRecordScreenScreens[i], COMSETTER(VideoRate)(ValueUnion.u32));
+                        for (size_t i = 0; i < saRecordingScreenScreens.size(); ++i)
+                            CHECK_ERROR(saRecordingScreenScreens[i], COMSETTER(VideoRate)(ValueUnion.u32));
                         break;
                     }
                     case MODIFYVM_RECORD_VIDEO_FPS:
                     {
-                        for (size_t i = 0; i < saRecordScreenScreens.size(); ++i)
-                            CHECK_ERROR(saRecordScreenScreens[i], COMSETTER(VideoFPS)(ValueUnion.u32));
+                        for (size_t i = 0; i < saRecordingScreenScreens.size(); ++i)
+                            CHECK_ERROR(saRecordingScreenScreens[i], COMSETTER(VideoFPS)(ValueUnion.u32));
                         break;
                     }
                     case MODIFYVM_RECORD_MAXTIME:
                     {
-                        for (size_t i = 0; i < saRecordScreenScreens.size(); ++i)
-                            CHECK_ERROR(saRecordScreenScreens[i], COMSETTER(MaxTime)(ValueUnion.u32));
+                        for (size_t i = 0; i < saRecordingScreenScreens.size(); ++i)
+                            CHECK_ERROR(saRecordingScreenScreens[i], COMSETTER(MaxTime)(ValueUnion.u32));
                         break;
                     }
                     case MODIFYVM_RECORD_MAXSIZE:
                     {
-                        for (size_t i = 0; i < saRecordScreenScreens.size(); ++i)
-                            CHECK_ERROR(saRecordScreenScreens[i], COMSETTER(MaxFileSize)(ValueUnion.u32));
+                        for (size_t i = 0; i < saRecordingScreenScreens.size(); ++i)
+                            CHECK_ERROR(saRecordingScreenScreens[i], COMSETTER(MaxFileSize)(ValueUnion.u32));
                         break;
                     }
                     case MODIFYVM_RECORD_OPTIONS:
                     {
                         Bstr bstr(ValueUnion.psz);
-                        for (size_t i = 0; i < saRecordScreenScreens.size(); ++i)
-                            CHECK_ERROR(saRecordScreenScreens[i], COMSETTER(Options)(bstr.raw()));
+                        for (size_t i = 0; i < saRecordingScreenScreens.size(); ++i)
+                            CHECK_ERROR(saRecordingScreenScreens[i], COMSETTER(Options)(bstr.raw()));
                         break;
                     }
                 }
