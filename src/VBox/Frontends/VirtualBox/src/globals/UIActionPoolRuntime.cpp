@@ -3229,20 +3229,51 @@ void UIActionPoolRuntime::sltPrepareMenuViewScreen()
     QMenu *pMenu = qobject_cast<QMenu*>(sender());
     AssertPtrReturnVoid(pMenu);
 
+    /* Do we have to show resize, multiscreen or scale factor actions? */
     const bool fAllowToShowActionResize = isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_Resize);
-    const bool fAllowToShowActionScaleFactor = isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_ScaleFactor);
     const bool fAllowToShowActionMultiscreen = isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_Multiscreen);
+    const bool fAllowToShowActionScaleFactor = isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_ScaleFactor);
 
     /* Clear contents: */
     pMenu->clear();
 
-    /* Resize, scale factor, and multiscreen menu items are inserted into the same sub-menu: */
+    /* Separator: */
+    bool fSeparator = false;
+
+    /* Resize actions: */
     if (fAllowToShowActionResize)
+    {
         updateMenuViewScreen(pMenu);
-    if (fAllowToShowActionScaleFactor)
-        updateMenuViewScaleFactor(pMenu);
-    if (fAllowToShowActionMultiscreen && m_cHostScreens > 1)
+        fSeparator = true;
+    }
+
+    /* Separator: */
+    if (fSeparator)
+    {
+        pMenu->addSeparator();
+        fSeparator = false;
+    }
+
+    /* Multiscreen actions: */
+    if (fAllowToShowActionMultiscreen && (m_cHostScreens > 1 || m_cGuestScreens > 1))
+    {
         updateMenuViewMultiscreen(pMenu);
+        fSeparator = true;
+    }
+
+    /* Separator: */
+    if (fSeparator)
+    {
+        pMenu->addSeparator();
+        fSeparator = false;
+    }
+
+    /* Scale factor actions: */
+    if (fAllowToShowActionScaleFactor)
+    {
+        updateMenuViewScaleFactor(pMenu);
+        fSeparator = true;
+    }
 }
 
 void UIActionPoolRuntime::sltHandleActionTriggerViewScreenToggle()
@@ -3688,12 +3719,12 @@ void UIActionPoolRuntime::updateMenuView()
         fSeparator = false;
     }
 
-    /* Do we have to show resize, scale factor, or multiscreen menu? */
+    /* Do we have to show resize, multiscreen or scale factor actions? */
     const bool fAllowToShowActionResize = isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_Resize);
-    const bool fAllowToShowActionScaleFactor = isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_ScaleFactor);
     const bool fAllowToShowActionMultiscreen = isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_Multiscreen);
+    const bool fAllowToShowActionScaleFactor = isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_ScaleFactor);
 
-    if (fAllowToShowActionResize || fAllowToShowActionScaleFactor || fAllowToShowActionMultiscreen)
+    if (fAllowToShowActionResize || fAllowToShowActionMultiscreen || fAllowToShowActionScaleFactor)
     {
         for (int iGuestScreenIndex = 0; iGuestScreenIndex < m_cGuestScreens; ++iGuestScreenIndex)
         {
