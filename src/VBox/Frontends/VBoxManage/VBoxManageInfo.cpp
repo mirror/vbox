@@ -401,7 +401,7 @@ static HRESULT showSharedFolder(ComPtr<ISharedFolder> &sf, VMINFO_DETAILS detail
     }
     else
     {
-        RTPrintf("Name: '%ls', Host path: '%ls' (%s), %s%s%",
+        RTPrintf("Name: '%ls', Host path: '%ls' (%s), %s%s",
                  name.raw(), hostPath.raw(), pszDesc, writable ? "writable" : "readonly", fAutoMount ? ", auto-mount" : "");
         if (bstrAutoMountPoint.isNotEmpty())
             RTPrintf(", mount-point: '%ls'\n", bstrAutoMountPoint.raw());
