@@ -1959,7 +1959,7 @@
 
   <interface
     name="IVirtualBox" extends="$unknown"
-    uuid="176b85cd-4bc2-453e-9228-f408c5282267"
+    uuid="606da9e2-032b-4c82-3bf0-3675789df7b9"
     wsmap="managed"
     reservedMethods="7" reservedAttributes="12"
     >
@@ -2691,6 +2691,12 @@
       <param name="automount" type="boolean" dir="in">
         <desc>Whether the share gets automatically mounted by the guest
           or not.</desc>
+      </param>
+      <param name="autoMountPoint" type="wstring" dir="in">
+        <desc>Where the guest should automatically mount the folder, if possible.
+          For Windows and OS/2 guests this should be a drive letter, while other
+          guests it should be a absolute directory.
+        </desc>
       </param>
     </method>
 
@@ -5220,7 +5226,7 @@
 
   <interface
     name="IMachine" extends="$unknown"
-    uuid="BD65ADC6-7F47-4F69-B881-96EA06CF9924"
+    uuid="cfc5671a-2309-4893-8744-ba4c07d65d86"
     wsmap="managed"
     wrap-hint-server-addinterfaces="IInternalMachineControl"
     wrap-hint-server="manualaddinterfaces"
@@ -7804,6 +7810,12 @@ and "VAR" for unsetting. -->
         <desc>Whether the share gets automatically mounted by the guest
           or not.</desc>
       </param>
+      <param name="autoMountPoint" type="wstring" dir="in">
+        <desc>Where the guest should automatically mount the folder, if possible.
+          For Windows and OS/2 guests this should be a drive letter, while other
+          guests it should be a absolute directory.
+        </desc>
+      </param>
     </method>
 
     <method name="removeSharedFolder">
@@ -9316,6 +9328,12 @@ and "VAR" for unsetting. -->
       <param name="automount" type="boolean" dir="in">
         <desc>Whether the share gets automatically mounted by the guest
           or not.</desc>
+      </param>
+      <param name="autoMountPoint" type="wstring" dir="in">
+        <desc>Where the guest should automatically mount the folder, if possible.
+          For Windows and OS/2 guests this should be a drive letter, while other
+          guests it should be a absolute directory.
+        </desc>
       </param>
     </method>
 
@@ -20519,7 +20537,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="ISharedFolder" extends="$unknown"
-    uuid="15aabe95-e594-4e18-9222-b5e83a23f1da"
+    uuid="e02c0f1e-15f4-440e-3814-bbf613f8448b"
     wsmap="struct"
     reservedAttributes="4"
     >
@@ -20601,6 +20619,18 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <attribute name="autoMount" type="boolean" readonly="yes">
       <desc>
         Whether the folder gets automatically mounted by the guest or not.
+      </desc>
+    </attribute>
+
+    <attribute name="autoMountPoint" type="wstring" readonly="yes">
+      <desc>
+        Desired mount point in the guest for automatically mounting the folder
+        when <link to="ISharedFolder::autoMount"/> is set.  For Windows and
+        OS/2 guests this should be a drive letter, while other guests it should
+        be a absolute directory.
+
+        When empty the guest will choose a mount point.  The guest may do so
+        too should the specified mount point be in use or otherwise unusable.
       </desc>
     </attribute>
 

@@ -39,6 +39,9 @@
 #include <VBox/types.h>
 #include <iprt/fs.h>
 #include <iprt/assert.h>
+#ifdef IN_RING3
+# include <iprt/mem.h>
+#endif
 
 
 /** @name Some bit flag manipulation macros.
@@ -230,6 +233,128 @@ DECLINLINE(PSHFLSTRING) ShflStringInitBuffer(void *pvBuffer, uint32_t u32Size)
 }
 
 /**
+ * Helper for copying one string into another.
+ *
+ * @returns pDst
+ * @param   pDst        The destination string. Assumed to be the same size as
+ *                      the source.
+ * @param   pSrc        The source string.
+ */
+DECLINLINE(PSHFLSTRING) ShflStringCopy(PSHFLSTRING pDst, PCSHFLSTRING pSrc)
+{
+    pDst->u16Length = pSrc->u16Length;
+    pDst->u16Size   = pSrc->u16Size;
+    memcpy(&pDst->String, &pSrc->String, pSrc->u16Size);
+    return pDst;
+}
+
+#ifdef IN_RING3
+
+/**
+ * Duplicates a string using RTMemAlloc as allocator.
+ *
+ * @returns Copy, NULL if out of memory.
+ * @param   pSrc        The source string.
+ */
+DECLINLINE(PSHFLSTRING) ShflStringDup(PCSHFLSTRING pSrc)
+{
+    PSHFLSTRING pDst = (PSHFLSTRING)RTMemAlloc(SHFLSTRING_HEADER_SIZE + pSrc->u16Size);
+    if (pDst)
+        return ShflStringCopy(pDst, pSrc);
+    return pDst;
+}
+
+/**
+ * Duplicates a UTF-16 string using RTMemAlloc as allocator.
+ *
+ * The returned string will be using UTF-16 encoding too.
+ *
+ * @returns Pointer to copy on success - pass to RTMemFree to free.
+ *          NULL if out of memory.
+ * @param   pwszSrc     The source string.  Encoding is not checked.
+ */
+DECLINLINE(PSHFLSTRING) ShflStringDupUtf16(PCRTUTF16 pwszSrc)
+{
+    size_t cwcSrc = RTUtf16Len(pwszSrc);
+    if (cwcSrc < UINT16_MAX / sizeof(RTUTF16))
+    {
+        PSHFLSTRING pDst = (PSHFLSTRING)RTMemAlloc(SHFLSTRING_HEADER_SIZE + (cwcSrc + 1) * sizeof(RTUTF16));
+        if (pDst)
+        {
+            pDst->u16Length = (uint16_t)(cwcSrc * sizeof(RTUTF16));
+            pDst->u16Size   = (uint16_t)((cwcSrc + 1) * sizeof(RTUTF16));
+            memcpy(&pDst->String, pwszSrc, (cwcSrc + 1) * sizeof(RTUTF16));
+            return pDst;
+        }
+    }
+    AssertFailed();
+    return NULL;
+}
+
+/**
+ * Duplicates a UTF-8 string using RTMemAlloc as allocator.
+ *
+ * The returned string will be using UTF-8 encoding too.
+ *
+ * @returns Pointer to copy on success - pass to RTMemFree to free.
+ *          NULL if out of memory.
+ * @param   pszSrc      The source string.  Encoding is not checked.
+ */
+DECLINLINE(PSHFLSTRING) ShflStringDupUtf8(const char *pszSrc)
+{
+    size_t cchSrc = strlen(pszSrc);
+    if (cchSrc < UINT16_MAX)
+    {
+        PSHFLSTRING pDst = (PSHFLSTRING)RTMemAlloc(SHFLSTRING_HEADER_SIZE + cchSrc + 1);
+        if (pDst)
+        {
+            pDst->u16Length = (uint16_t)cchSrc;
+            pDst->u16Size   = (uint16_t)(cchSrc + 1);
+            memcpy(&pDst->String, pszSrc, cchSrc + 1);
+            return pDst;
+        }
+    }
+    AssertFailed();
+    return NULL;
+}
+
+/**
+ * Creates a UTF-16 duplicate of the UTF-8 string @a pszSrc using RTMemAlloc as
+ * allocator.
+ *
+ * @returns Pointer to copy on success - pass to RTMemFree to free.
+ *          NULL if out of memory or invalid UTF-8 encoding.
+ * @param   pszSrc      The source string.
+ */
+DECLINLINE(PSHFLSTRING) ShflStringDupUtf8AsUtf16(const char *pszSrc)
+{
+    size_t cwcConversion = 0;
+    int rc = RTStrCalcUtf16LenEx(pszSrc, RTSTR_MAX, &cwcConversion);
+    if (   RT_SUCCESS(rc)
+        && cwcConversion < UINT16_MAX / sizeof(RTUTF16))
+    {
+        PSHFLSTRING pDst = (PSHFLSTRING)RTMemAlloc(SHFLSTRING_HEADER_SIZE + (cwcConversion + 1) * sizeof(RTUTF16));
+        if (pDst)
+        {
+            PRTUTF16 pwszDst = pDst->String.ucs2;
+            pDst->u16Size = (uint16_t)((cwcConversion + 1) * sizeof(RTUTF16));
+            rc = RTStrToUtf16Ex(pszSrc, RTSTR_MAX, &pwszDst, cwcConversion + 1, &cwcConversion);
+            AssertRC(rc);
+            if (RT_SUCCESS(rc))
+            {
+                pDst->u16Length = (uint16_t)(cwcConversion * sizeof(RTUTF16));
+                return pDst;
+            }
+            RTMemFree(pDst);
+        }
+    }
+    AssertMsgFailed(("rc=%Rrc cwcConversion=%#x\n", rc, cwcConversion));
+    return NULL;
+}
+
+#endif /* IN_RING3 */
+
+/**
  * Validates a HGCM string output parameter.
  *
  * @returns true if valid, false if not.
@@ -310,6 +435,14 @@ DECLINLINE(bool) ShflStringIsValidOrNullIn(PCSHFLSTRING pString, uint32_t cbBuf,
         return true;
     return false;
 }
+
+/** Macro for passing as string as a HGCM parmeter (pointer)  */
+#define SHFLSTRING_TO_HGMC_PARAM(a_pParam, a_pString) \
+    do { \
+        (a_pParam)->type = VBOX_HGCM_SVC_PARM_PTR; \
+        (a_pParam)->u.pointer.addr = (a_pString); \
+        (a_pParam)->u.pointer.size = ShflStringSizeOfBuffer(a_pString); \
+    } while (0)
 
 /** @} */
 
@@ -1425,7 +1558,7 @@ typedef struct _VBoxSFSymlink
 /** mapping is actually missing on the host */
 #define SHFL_ADD_MAPPING_F_MISSING          (RT_BIT_32(3))
 
-#define SHFL_CPARMS_ADD_MAPPING  (3)
+#define SHFL_CPARMS_ADD_MAPPING  (4)
 
 /**
  * SHFL_FN_REMOVE_MAPPING

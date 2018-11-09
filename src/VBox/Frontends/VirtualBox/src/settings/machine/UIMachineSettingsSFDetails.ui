@@ -73,7 +73,24 @@
      </property>
     </widget>
    </item>
+   <item row="4" column="0" >
+    <widget class="QLabel" name="mLbAutoMountPoint" >
+     <property name="text" >
+      <string>Mount point:</string>
+     </property>
+     <property name="alignment" >
+      <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+     </property>
+    </widget>
+   </item>
    <item row="4" column="1" >
+    <widget class="QLineEdit" name="mLeAutoMountPoint" >
+     <property name="toolTip" >
+      <string>Where to automatically mount the folder in the guest.  A drive letter (e.g. 'G:') for Windows and OS/2 guests, path for the others.  If left empty the guest will pick something fitting.</string>
+     </property>
+    </widget>
+   </item>
+   <item row="5" column="1" >
     <widget class="QCheckBox" name="mCbPermanent" >
      <property name="toolTip" >
       <string>When checked, this shared folder will be permanent.</string>
@@ -83,7 +100,7 @@
      </property>
     </widget>
    </item>
-   <item row="5" column="1" >
+   <item row="6" column="1" >
     <spacer>
      <property name="orientation" >
       <enum>Qt::Vertical</enum>
@@ -96,7 +113,7 @@
      </property>
     </spacer>
    </item>
-   <item row="6" column="0" colspan="2" >
+   <item row="7" column="0" colspan="2" >
     <widget class="QIDialogButtonBox" name="mButtonBox" >
      <property name="standardButtons" >
       <set>QDialogButtonBox::Cancel|QDialogButtonBox::NoButton|QDialogButtonBox::Ok</set>

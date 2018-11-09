@@ -28,8 +28,9 @@
 #include <VBox/vmm/ssm.h>
 #include <VBox/vmm/pdmifs.h>
 
-#define SHFL_SSM_VERSION_FOLDERNAME_UTF16   2
-#define SHFL_SSM_VERSION                    3
+#define SHFL_SAVED_STATE_VERSION_FOLDERNAME_UTF16       2
+#define SHFL_SAVED_STATE_VERSION_PRE_AUTO_MOUNT_POINT   3
+#define SHFL_SAVED_STATE_VERSION                        4
 
 
 /** @page pg_shfl_svc   Shared Folders Host Service
@@ -119,7 +120,7 @@ static DECLCALLBACK(int) svcSaveState(void *, uint32_t u32ClientID, void *pvClie
 
     Log(("SharedFolders host service: saving state, u32ClientID = %u\n", u32ClientID));
 
-    int rc = SSMR3PutU32(pSSM, SHFL_SSM_VERSION);
+    int rc = SSMR3PutU32(pSSM, SHFL_SAVED_STATE_VERSION);
     AssertRCReturn(rc, rc);
 
     rc = SSMR3PutU32(pSSM, SHFL_MAX_MAPPINGS);
@@ -146,26 +147,21 @@ static DECLCALLBACK(int) svcSaveState(void *, uint32_t u32ClientID, void *pvClie
 
         if (pFolderMapping && pFolderMapping->fValid)
         {
-            uint32_t len;
-
-            len = (uint32_t)strlen(pFolderMapping->pszFolderName);
-            rc = SSMR3PutU32(pSSM, len);
-            AssertRCReturn(rc, rc);
-
-            rc = SSMR3PutStrZ(pSSM, pFolderMapping->pszFolderName);
-            AssertRCReturn(rc, rc);
+            uint32_t len = (uint32_t)strlen(pFolderMapping->pszFolderName);
+            SSMR3PutU32(pSSM, len);
+            SSMR3PutStrZ(pSSM, pFolderMapping->pszFolderName);
 
             len = ShflStringSizeOfBuffer(pFolderMapping->pMapName);
-            rc = SSMR3PutU32(pSSM, len);
-            AssertRCReturn(rc, rc);
+            SSMR3PutU32(pSSM, len);
+            SSMR3PutMem(pSSM, pFolderMapping->pMapName, len);
 
-            rc = SSMR3PutMem(pSSM, pFolderMapping->pMapName, len);
-            AssertRCReturn(rc, rc);
+            SSMR3PutBool(pSSM, pFolderMapping->fHostCaseSensitive);
 
-            rc = SSMR3PutBool(pSSM, pFolderMapping->fHostCaseSensitive);
-            AssertRCReturn(rc, rc);
+            SSMR3PutBool(pSSM, pFolderMapping->fGuestCaseSensitive);
 
-            rc = SSMR3PutBool(pSSM, pFolderMapping->fGuestCaseSensitive);
+            len = ShflStringSizeOfBuffer(pFolderMapping->pAutoMountPoint);
+            SSMR3PutU32(pSSM, len);
+            rc = SSMR3PutMem(pSSM, pFolderMapping->pAutoMountPoint, len);
             AssertRCReturn(rc, rc);
         }
     }
@@ -189,8 +185,8 @@ static DECLCALLBACK(int) svcLoadState(void *, uint32_t u32ClientID, void *pvClie
     int rc = SSMR3GetU32(pSSM, &version);
     AssertRCReturn(rc, rc);
 
-    if (   version > SHFL_SSM_VERSION
-        || version < SHFL_SSM_VERSION_FOLDERNAME_UTF16)
+    if (   version > SHFL_SAVED_STATE_VERSION
+        || version < SHFL_SAVED_STATE_VERSION_FOLDERNAME_UTF16)
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
 
     rc = SSMR3GetU32(pSSM, &nrMappings);
@@ -213,7 +209,7 @@ static DECLCALLBACK(int) svcLoadState(void *, uint32_t u32ClientID, void *pvClie
     {
         /* Load the saved mapping description and try to find it in the mappings. */
         MAPPING mapping;
-        memset (&mapping, 0, sizeof (mapping));
+        RT_ZERO(mapping);
 
         /* restore the folder mapping counter. */
         rc = SSMR3GetU32(pSSM, &mapping.cMappings);
@@ -224,23 +220,26 @@ static DECLCALLBACK(int) svcLoadState(void *, uint32_t u32ClientID, void *pvClie
 
         if (mapping.fValid)
         {
-            uint32_t cbFolderName;
-            char *pszFolderName;
-
-            uint32_t cbMapName;
-            PSHFLSTRING pMapName;
+            uint32_t cb;
 
             /* Load the host path name. */
-            rc = SSMR3GetU32(pSSM, &cbFolderName);
+            rc = SSMR3GetU32(pSSM, &cb);
             AssertRCReturn(rc, rc);
 
-            if (version == SHFL_SSM_VERSION_FOLDERNAME_UTF16)
+            char *pszFolderName;
+            if (version == SHFL_SAVED_STATE_VERSION_FOLDERNAME_UTF16)
             {
-                PSHFLSTRING pFolderName = (PSHFLSTRING)RTMemAlloc(cbFolderName);
+                AssertReturn(cb > SHFLSTRING_HEADER_SIZE && cb <= UINT16_MAX + SHFLSTRING_HEADER_SIZE && !(cb & 1),
+                             SSMR3SetLoadError(pSSM, VERR_SSM_DATA_UNIT_FORMAT_CHANGED, RT_SRC_POS, "Bad folder name size: %#x\n", cb));
+                PSHFLSTRING pFolderName = (PSHFLSTRING)RTMemAlloc(cb);
                 AssertReturn(pFolderName != NULL, VERR_NO_MEMORY);
 
-                rc = SSMR3GetMem(pSSM, pFolderName, cbFolderName);
+                rc = SSMR3GetMem(pSSM, pFolderName, cb);
                 AssertRCReturn(rc, rc);
+                AssertReturn(pFolderName->u16Length < cb && pFolderName->u16Size < pFolderName->u16Length,
+                             SSMR3SetLoadError(pSSM, VERR_SSM_DATA_UNIT_FORMAT_CHANGED, RT_SRC_POS,
+                                               "Bad folder name string: %#x/%#x cb=%#x\n",
+                                               pFolderName->u16Size, pFolderName->u16Length, cb));
 
                 rc = RTUtf16ToUtf8(pFolderName->String.ucs2, &pszFolderName);
                 RTMemFree(pFolderName);
@@ -248,32 +247,66 @@ static DECLCALLBACK(int) svcLoadState(void *, uint32_t u32ClientID, void *pvClie
             }
             else
             {
-                pszFolderName = (char*)RTStrAlloc(cbFolderName + 1);
+                pszFolderName = (char *)RTStrAlloc(cb + 1);
                 AssertReturn(pszFolderName, VERR_NO_MEMORY);
 
-                rc = SSMR3GetStrZ(pSSM, pszFolderName, cbFolderName + 1);
+                rc = SSMR3GetStrZ(pSSM, pszFolderName, cb + 1);
                 AssertRCReturn(rc, rc);
                 mapping.pszFolderName = pszFolderName;
             }
 
             /* Load the map name. */
-            rc = SSMR3GetU32(pSSM, &cbMapName);
+            rc = SSMR3GetU32(pSSM, &cb);
             AssertRCReturn(rc, rc);
+            AssertReturn(cb > SHFLSTRING_HEADER_SIZE && cb <= UINT16_MAX + SHFLSTRING_HEADER_SIZE && !(cb & 1),
+                         SSMR3SetLoadError(pSSM, VERR_SSM_DATA_UNIT_FORMAT_CHANGED, RT_SRC_POS, "Bad map name size: %#x\n", cb));
 
-            pMapName = (PSHFLSTRING)RTMemAlloc(cbMapName);
+            PSHFLSTRING pMapName = (PSHFLSTRING)RTMemAlloc(cb);
             AssertReturn(pMapName != NULL, VERR_NO_MEMORY);
 
-            rc = SSMR3GetMem(pSSM, pMapName, cbMapName);
+            rc = SSMR3GetMem(pSSM, pMapName, cb);
             AssertRCReturn(rc, rc);
+            AssertReturn(pMapName->u16Length < cb && pMapName->u16Size < pMapName->u16Length,
+                         SSMR3SetLoadError(pSSM, VERR_SSM_DATA_UNIT_FORMAT_CHANGED, RT_SRC_POS,
+                                           "Bad map name string: %#x/%#x cb=%#x\n",
+                                           pMapName->u16Size, pMapName->u16Length, cb));
 
+            /* Load case sensitivity config. */
             rc = SSMR3GetBool(pSSM, &mapping.fHostCaseSensitive);
             AssertRCReturn(rc, rc);
 
             rc = SSMR3GetBool(pSSM, &mapping.fGuestCaseSensitive);
             AssertRCReturn(rc, rc);
 
+            /* Load the auto mount point. */
+            PSHFLSTRING pAutoMountPoint;
+            if (version > SHFL_SAVED_STATE_VERSION_PRE_AUTO_MOUNT_POINT)
+            {
+                rc = SSMR3GetU32(pSSM, &cb);
+                AssertRCReturn(rc, rc);
+                AssertReturn(cb > SHFLSTRING_HEADER_SIZE && cb <= UINT16_MAX + SHFLSTRING_HEADER_SIZE && !(cb & 1),
+                             SSMR3SetLoadError(pSSM, VERR_SSM_DATA_UNIT_FORMAT_CHANGED, RT_SRC_POS, "Bad auto mount point size: %#x\n", cb));
+
+                pAutoMountPoint = (PSHFLSTRING)RTMemAlloc(cb);
+                AssertReturn(pAutoMountPoint != NULL, VERR_NO_MEMORY);
+
+                rc = SSMR3GetMem(pSSM, pAutoMountPoint, cb);
+                AssertRCReturn(rc, rc);
+                AssertReturn(pAutoMountPoint->u16Length < cb && pAutoMountPoint->u16Size < pAutoMountPoint->u16Length,
+                             SSMR3SetLoadError(pSSM, VERR_SSM_DATA_UNIT_FORMAT_CHANGED, RT_SRC_POS,
+                                               "Bad auto mount point string: %#x/%#x cb=%#x\n",
+                                               pAutoMountPoint->u16Size, pAutoMountPoint->u16Length, cb));
+
+            }
+            else
+            {
+                pAutoMountPoint = ShflStringDupUtf8("");
+                AssertReturn(pAutoMountPoint, VERR_NO_MEMORY);
+            }
+
             mapping.pszFolderName = pszFolderName;
             mapping.pMapName = pMapName;
+            mapping.pAutoMountPoint = pAutoMountPoint;
 
             /* 'i' is the root handle of the saved mapping. */
             rc = vbsfMappingLoaded (&mapping, i);
@@ -283,6 +316,7 @@ static DECLCALLBACK(int) svcLoadState(void *, uint32_t u32ClientID, void *pvClie
                         rc, i, pMapName->String.ucs2, pszFolderName));
             }
 
+            RTMemFree(pAutoMountPoint);
             RTMemFree(pMapName);
             RTStrFree(pszFolderName);
 
@@ -1314,9 +1348,10 @@ static DECLCALLBACK(int) svcHostCall (void *, uint32_t u32Function, uint32_t cPa
         {
             rc = VERR_INVALID_PARAMETER;
         }
-        else if (   paParms[0].type != VBOX_HGCM_SVC_PARM_PTR     /* host folder name */
-                 || paParms[1].type != VBOX_HGCM_SVC_PARM_PTR     /* guest map name */
+        else if (   paParms[0].type != VBOX_HGCM_SVC_PARM_PTR     /* host folder path */
+                 || paParms[1].type != VBOX_HGCM_SVC_PARM_PTR     /* map name */
                  || paParms[2].type != VBOX_HGCM_SVC_PARM_32BIT   /* fFlags */
+                 || paParms[3].type != VBOX_HGCM_SVC_PARM_PTR     /* auto mount point */
                 )
         {
             rc = VERR_INVALID_PARAMETER;
@@ -1324,36 +1359,38 @@ static DECLCALLBACK(int) svcHostCall (void *, uint32_t u32Function, uint32_t cPa
         else
         {
             /* Fetch parameters. */
-            SHFLSTRING *pFolderName = (SHFLSTRING *)paParms[0].u.pointer.addr;
-            SHFLSTRING *pMapName    = (SHFLSTRING *)paParms[1].u.pointer.addr;
-            uint32_t fFlags         = paParms[2].u.uint32;
+            SHFLSTRING *pHostPath       = (SHFLSTRING *)paParms[0].u.pointer.addr;
+            SHFLSTRING *pMapName        = (SHFLSTRING *)paParms[1].u.pointer.addr;
+            uint32_t fFlags             = paParms[2].u.uint32;
+            SHFLSTRING *pAutoMountPoint = (SHFLSTRING *)paParms[3].u.pointer.addr;
 
             /* Verify parameters values. */
-            if (    !ShflStringIsValidIn(pFolderName, paParms[0].u.pointer.size, false /*fUtf8Not16*/)
+            if (    !ShflStringIsValidIn(pHostPath, paParms[0].u.pointer.size, false /*fUtf8Not16*/)
                 ||  !ShflStringIsValidIn(pMapName, paParms[1].u.pointer.size, false /*fUtf8Not16*/)
+                ||  !ShflStringIsValidIn(pAutoMountPoint, paParms[3].u.pointer.size, false /*fUtf8Not16*/)
                )
             {
                 rc = VERR_INVALID_PARAMETER;
             }
             else
             {
-                LogRel(("    Host path '%ls', map name '%ls', %s, automount=%s, create_symlinks=%s, missing=%s\n",
-                        ((SHFLSTRING *)paParms[0].u.pointer.addr)->String.ucs2,
-                        ((SHFLSTRING *)paParms[1].u.pointer.addr)->String.ucs2,
+                LogRel(("    Host path '%ls', map name '%ls', %s, automount=%s, automntpnt=%s, create_symlinks=%s, missing=%s\n",
+                        pHostPath->String.utf16, pMapName->String.utf16,
                         RT_BOOL(fFlags & SHFL_ADD_MAPPING_F_WRITABLE) ? "writable" : "read-only",
                         RT_BOOL(fFlags & SHFL_ADD_MAPPING_F_AUTOMOUNT) ? "true" : "false",
+                        pAutoMountPoint->String.utf16,
                         RT_BOOL(fFlags & SHFL_ADD_MAPPING_F_CREATE_SYMLINKS) ? "true" : "false",
                         RT_BOOL(fFlags & SHFL_ADD_MAPPING_F_MISSING) ? "true" : "false"));
 
-                char *pszFolderName;
-                rc = RTUtf16ToUtf8(pFolderName->String.ucs2, &pszFolderName);
-
+                char *pszHostPath;
+                rc = RTUtf16ToUtf8(pHostPath->String.ucs2, &pszHostPath);
                 if (RT_SUCCESS(rc))
                 {
                     /* Execute the function. */
-                    rc = vbsfMappingsAdd(pszFolderName, pMapName,
+                    rc = vbsfMappingsAdd(pszHostPath, pMapName,
                                          RT_BOOL(fFlags & SHFL_ADD_MAPPING_F_WRITABLE),
                                          RT_BOOL(fFlags & SHFL_ADD_MAPPING_F_AUTOMOUNT),
+                                         pAutoMountPoint,
                                          RT_BOOL(fFlags & SHFL_ADD_MAPPING_F_CREATE_SYMLINKS),
                                          RT_BOOL(fFlags & SHFL_ADD_MAPPING_F_MISSING),
                                          /* fPlaceholder = */ false);
@@ -1362,7 +1399,7 @@ static DECLCALLBACK(int) svcHostCall (void *, uint32_t u32Function, uint32_t cPa
                         /* Update parameters.*/
                         ; /* none */
                     }
-                    RTStrFree(pszFolderName);
+                    RTStrFree(pszHostPath);
                 }
             }
         }

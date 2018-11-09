@@ -2012,12 +2012,14 @@ HRESULT VirtualBox::getGuestOSType(const com::Utf8Str &aId,
 HRESULT VirtualBox::createSharedFolder(const com::Utf8Str &aName,
                                        const com::Utf8Str &aHostPath,
                                        BOOL aWritable,
-                                       BOOL aAutomount)
+                                       BOOL aAutomount,
+                                       const com::Utf8Str &aAutoMountPoint)
 {
     NOREF(aName);
     NOREF(aHostPath);
     NOREF(aWritable);
     NOREF(aAutomount);
+    NOREF(aAutoMountPoint);
 
     return setError(E_NOTIMPL, "Not yet implemented");
 }

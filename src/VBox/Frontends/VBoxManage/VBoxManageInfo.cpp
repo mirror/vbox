@@ -49,6 +49,18 @@ using namespace com;
 // funcs
 ///////////////////////////////////////////////////////////////////////////////
 
+/**
+ * Helper for formatting an indexed name or some such thing.
+ */
+static const char *FmtNm(char psz[80], const char *pszFormat, ...)
+{
+    va_list va;
+    va_start(va, pszFormat);
+    RTStrPrintfV(psz, 80, pszFormat, va);
+    va_end(va);
+    return psz;
+}
+
 HRESULT showSnapshots(ComPtr<ISnapshot> &rootSnapshot,
                       ComPtr<ISnapshot> &currentSnapshot,
                       VMINFO_DETAILS details,
@@ -367,6 +379,39 @@ HRESULT showBandwidthGroups(ComPtr<IBandwidthControl> &bwCtrl,
     return rc;
 }
 
+/** Shows a shared folder.   */
+static HRESULT showSharedFolder(ComPtr<ISharedFolder> &sf, VMINFO_DETAILS details, const char *pszDesc,
+                                const char *pszMrInfix, size_t idxMr, bool fFirst)
+{
+    Bstr name, hostPath, bstrAutoMountPoint;
+    BOOL writable = FALSE, fAutoMount = FALSE;
+    CHECK_ERROR2I_RET(sf, COMGETTER(Name)(name.asOutParam()), hrcCheck);
+    CHECK_ERROR2I_RET(sf, COMGETTER(HostPath)(hostPath.asOutParam()), hrcCheck);
+    CHECK_ERROR2I_RET(sf, COMGETTER(Writable)(&writable), hrcCheck);
+    CHECK_ERROR2I_RET(sf, COMGETTER(AutoMount)(&fAutoMount), hrcCheck);
+    CHECK_ERROR2I_RET(sf, COMGETTER(AutoMountPoint)(bstrAutoMountPoint.asOutParam()), hrcCheck);
+
+    if (fFirst && details != VMINFO_MACHINEREADABLE)
+        RTPrintf("\n\n");
+    if (details == VMINFO_MACHINEREADABLE)
+    {
+        char szNm[80];
+        outputMachineReadableString(FmtNm(szNm, "SharedFolderName%s%zu", pszMrInfix, idxMr), &name);
+        outputMachineReadableString(FmtNm(szNm, "SharedFolderPath%s%zu", pszMrInfix, idxMr), &hostPath);
+    }
+    else
+    {
+        RTPrintf("Name: '%ls', Host path: '%ls' (%s), %s%s%",
+                 name.raw(), hostPath.raw(), pszDesc, writable ? "writable" : "readonly", fAutoMount ? ", auto-mount" : "");
+        if (bstrAutoMountPoint.isNotEmpty())
+            RTPrintf(", mount-point: '%ls'\n", bstrAutoMountPoint.raw());
+        else
+            RTPrintf("\n");
+    }
+    return S_OK;
+}
+
+
 static const char *paravirtProviderToString(ParavirtProvider_T provider, VMINFO_DETAILS details)
 {
     switch (provider)
@@ -406,18 +451,6 @@ static const char *paravirtProviderToString(ParavirtProvider_T provider, VMINFO_
                 return "unknown";
             return "Unknown";
     }
-}
-
-/**
- * Helper for formatting an indexed name or some such thing.
- */
-static const char *FmtNm(char psz[80], const char *pszFormat, ...)
-{
-    va_list va;
-    va_start(va, pszFormat);
-    RTStrPrintfV(psz, 80, pszFormat, va);
-    va_end(va);
-    return psz;
 }
 
 
@@ -2217,10 +2250,7 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
         for (size_t i = 0; i < sfColl.size(); ++i)
         {
             ComPtr<ISharedFolder> sf = sfColl[i];
-            Bstr name, hostPath;
-            sf->COMGETTER(Name)(name.asOutParam());
-            sf->COMGETTER(HostPath)(hostPath.asOutParam());
-            RTPrintf("Name: '%ls', Host path: '%ls' (global mapping)\n", name.raw(), hostPath.raw());
+            showSharedFolder(sf, details, "global mapping", "GlobalMapping", i + 1, numSharedFolders == 0);
             ++numSharedFolders;
         }
     }
@@ -2228,28 +2258,11 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
     /* now VM mappings */
     {
         com::SafeIfaceArray <ISharedFolder> folders;
-
         CHECK_ERROR_RET(machine, COMGETTER(SharedFolders)(ComSafeArrayAsOutParam(folders)), rc);
-
         for (size_t i = 0; i < folders.size(); ++i)
         {
             ComPtr<ISharedFolder> sf = folders[i];
-
-            Bstr name, hostPath;
-            BOOL writable;
-            sf->COMGETTER(Name)(name.asOutParam());
-            sf->COMGETTER(HostPath)(hostPath.asOutParam());
-            sf->COMGETTER(Writable)(&writable);
-            if (!numSharedFolders && details != VMINFO_MACHINEREADABLE)
-                RTPrintf("\n\n");
-            if (details == VMINFO_MACHINEREADABLE)
-            {
-                outputMachineReadableString(FmtNm(szNm, "SharedFolderNameMachineMapping%zu", i + 1), &name);
-                outputMachineReadableString(FmtNm(szNm, "SharedFolderPathMachineMapping%zu", i + 1), &hostPath);
-            }
-            else
-                RTPrintf("Name: '%ls', Host path: '%ls' (machine mapping), %s\n",
-                         name.raw(), hostPath.raw(), writable ? "writable" : "readonly");
+            showSharedFolder(sf, details, "machine mapping", "MachineMapping", i + 1, numSharedFolders == 0);
             ++numSharedFolders;
         }
     }
@@ -2257,25 +2270,11 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
     if (pConsole)
     {
         com::SafeIfaceArray <ISharedFolder> folders;
-
         CHECK_ERROR_RET(pConsole, COMGETTER(SharedFolders)(ComSafeArrayAsOutParam(folders)), rc);
-
         for (size_t i = 0; i < folders.size(); ++i)
         {
             ComPtr<ISharedFolder> sf = folders[i];
-
-            Bstr name, hostPath;
-            sf->COMGETTER(Name)(name.asOutParam());
-            sf->COMGETTER(HostPath)(hostPath.asOutParam());
-            if (!numSharedFolders && details != VMINFO_MACHINEREADABLE)
-                RTPrintf("\n\n");
-            if (details == VMINFO_MACHINEREADABLE)
-            {
-                outputMachineReadableString(FmtNm(szNm, "SharedFolderNameTransientMapping%zu", i + 1), &name);
-                outputMachineReadableString(FmtNm(szNm, "SharedFolderPathTransientMapping%zu", i + 1), &hostPath);
-            }
-            else
-                RTPrintf("Name: '%ls', Host path: '%ls' (transient mapping)\n", name.raw(), hostPath.raw());
+            showSharedFolder(sf, details, "transient mapping", "TransientMapping", i + 1, numSharedFolders == 0);
             ++numSharedFolders;
         }
     }

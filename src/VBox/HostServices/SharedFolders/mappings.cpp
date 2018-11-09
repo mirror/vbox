@@ -86,7 +86,7 @@ int vbsfMappingLoaded(const PMAPPING pLoadedMapping, SHFLROOT root)
     LogRel2(("SharedFolders: mapping a placeholder for '%ls' -> '%s'\n",
               pLoadedMapping->pMapName->String.ucs2, pLoadedMapping->pszFolderName));
     return vbsfMappingsAdd(pLoadedMapping->pszFolderName, pLoadedMapping->pMapName,
-                           pLoadedMapping->fWritable, pLoadedMapping->fAutoMount,
+                           pLoadedMapping->fWritable, pLoadedMapping->fAutoMount, pLoadedMapping->pAutoMountPoint,
                            pLoadedMapping->fSymlinksCreate, /* fMissing = */ true, /* fPlaceholder = */ true);
 }
 
@@ -199,8 +199,8 @@ void testMappingsAdd(RTTEST hTest)
 /*
  * We are always executed from one specific HGCM thread. So thread safe.
  */
-int vbsfMappingsAdd(const char *pszFolderName, PSHFLSTRING pMapName,
-                    bool fWritable, bool fAutoMount, bool fSymlinksCreate, bool fMissing, bool fPlaceholder)
+int vbsfMappingsAdd(const char *pszFolderName, PSHFLSTRING pMapName, bool fWritable,
+                    bool fAutoMount, PSHFLSTRING pAutoMountPoint, bool fSymlinksCreate, bool fMissing, bool fPlaceholder)
 {
     unsigned i;
 
@@ -231,23 +231,18 @@ int vbsfMappingsAdd(const char *pszFolderName, PSHFLSTRING pMapName,
             int rc = vbsfPathAbs(NULL, pszFolderName, szAbsFolderName, sizeof(szAbsFolderName));
             AssertRCReturn(rc, rc);
 
-            FolderMapping[i].pszFolderName = RTStrDup(szAbsFolderName);
-            if (!FolderMapping[i].pszFolderName)
-            {
-                return VERR_NO_MEMORY;
-            }
-
-            FolderMapping[i].pMapName = (PSHFLSTRING)RTMemAlloc(ShflStringSizeOfBuffer(pMapName));
-            if (!FolderMapping[i].pMapName)
+            FolderMapping[i].pszFolderName   = RTStrDup(szAbsFolderName);
+            FolderMapping[i].pMapName        = ShflStringDup(pMapName);
+            FolderMapping[i].pAutoMountPoint = ShflStringDup(pAutoMountPoint);
+            if (   !FolderMapping[i].pszFolderName
+                || !FolderMapping[i].pMapName
+                || !FolderMapping[i].pAutoMountPoint)
             {
                 RTStrFree(FolderMapping[i].pszFolderName);
-                AssertFailed();
+                RTMemFree(FolderMapping[i].pMapName);
+                RTMemFree(FolderMapping[i].pAutoMountPoint);
                 return VERR_NO_MEMORY;
             }
-
-            FolderMapping[i].pMapName->u16Length = pMapName->u16Length;
-            FolderMapping[i].pMapName->u16Size   = pMapName->u16Size;
-            memcpy(FolderMapping[i].pMapName->String.ucs2, pMapName->String.ucs2, pMapName->u16Size);
 
             FolderMapping[i].fValid          = true;
             FolderMapping[i].cMappings       = 0;

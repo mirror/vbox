@@ -1515,8 +1515,10 @@ void Console::i_VRDPInterceptClipboard(uint32_t u32ClientId)
 
 //static
 const char *Console::sSSMConsoleUnit = "ConsoleData";
-//static
-uint32_t Console::sSSMConsoleVer = 0x00010001;
+/** The saved state version.  */
+#define CONSOLE_SAVED_STATE_VERSION                         UINT32_C(0x00010002)
+/** The saved state version, pre shared folder autoMountPoint.  */
+#define CONSOLE_SAVED_STATE_VERSION_PRE_AUTO_MOUNT_POINT    UINT32_C(0x00010001)
 
 inline static const char *networkAdapterTypeToName(NetworkAdapterType_T adapterType)
 {
@@ -1568,7 +1570,7 @@ HRESULT Console::i_loadDataFromSavedState()
     {
         uint32_t version = 0;
         vrc = SSMR3Seek(ssm, sSSMConsoleUnit, 0 /* iInstance */, &version);
-        if (SSM_VERSION_MAJOR(version) == SSM_VERSION_MAJOR(sSSMConsoleVer))
+        if (SSM_VERSION_MAJOR(version) == SSM_VERSION_MAJOR(CONSOLE_SAVED_STATE_VERSION))
         {
             if (RT_SUCCESS(vrc))
                 vrc = i_loadStateFileExecInternal(ssm, version);
@@ -1613,8 +1615,7 @@ DECLCALLBACK(void) Console::i_saveStateFileExec(PSSMHANDLE pSSM, void *pvUser)
 
     AutoReadLock alock(that COMMA_LOCKVAL_SRC_POS);
 
-    int vrc = SSMR3PutU32(pSSM, (uint32_t)that->m_mapSharedFolders.size());
-    AssertRC(vrc);
+    SSMR3PutU32(pSSM, (uint32_t)that->m_mapSharedFolders.size());
 
     for (SharedFolderMap::const_iterator it = that->m_mapSharedFolders.begin();
          it != that->m_mapSharedFolders.end();
@@ -1624,26 +1625,21 @@ DECLCALLBACK(void) Console::i_saveStateFileExec(PSSMHANDLE pSSM, void *pvUser)
         AutoCaller sfCaller(pSF);
         AutoReadLock sfLock(pSF COMMA_LOCKVAL_SRC_POS);
 
-        Utf8Str name = pSF->i_getName();
-        vrc = SSMR3PutU32(pSSM, (uint32_t)name.length() + 1 /* term. 0 */);
-        AssertRC(vrc);
-        vrc = SSMR3PutStrZ(pSSM, name.c_str());
-        AssertRC(vrc);
+        const Utf8Str &name = pSF->i_getName();
+        SSMR3PutU32(pSSM, (uint32_t)name.length() + 1 /* term. 0 */);
+        SSMR3PutStrZ(pSSM, name.c_str());
 
-        Utf8Str hostPath = pSF->i_getHostPath();
-        vrc = SSMR3PutU32(pSSM, (uint32_t)hostPath.length() + 1 /* term. 0 */);
-        AssertRC(vrc);
-        vrc = SSMR3PutStrZ(pSSM, hostPath.c_str());
-        AssertRC(vrc);
+        const Utf8Str &hostPath = pSF->i_getHostPath();
+        SSMR3PutU32(pSSM, (uint32_t)hostPath.length() + 1 /* term. 0 */);
+        SSMR3PutStrZ(pSSM, hostPath.c_str());
 
-        vrc = SSMR3PutBool(pSSM, !!pSF->i_isWritable());
-        AssertRC(vrc);
+        SSMR3PutBool(pSSM, !!pSF->i_isWritable());
+        SSMR3PutBool(pSSM, !!pSF->i_isAutoMounted());
 
-        vrc = SSMR3PutBool(pSSM, !!pSF->i_isAutoMounted());
-        AssertRC(vrc);
+        const Utf8Str &rStrAutoMountPoint = pSF->i_getAutoMountPoint();
+        SSMR3PutU32(pSSM, (uint32_t)rStrAutoMountPoint.length() + 1 /* term. 0 */);
+        SSMR3PutStrZ(pSSM, rStrAutoMountPoint.c_str());
     }
-
-    return;
 }
 
 /**
@@ -1664,7 +1660,7 @@ Console::i_loadStateFileExec(PSSMHANDLE pSSM, void *pvUser, uint32_t uVersion, u
 {
     LogFlowFunc(("\n"));
 
-    if (SSM_VERSION_MAJOR_CHANGED(uVersion, sSSMConsoleVer))
+    if (SSM_VERSION_MAJOR_CHANGED(uVersion, CONSOLE_SAVED_STATE_VERSION))
         return VERR_VERSION_MISMATCH;
     Assert(uPass == SSM_PASS_FINAL); NOREF(uPass);
 
@@ -1705,30 +1701,46 @@ int Console::i_loadStateFileExecInternal(PSSMHANDLE pSSM, uint32_t u32Version)
         bool writable = true;
         bool autoMount = false;
 
-        uint32_t szBuf = 0;
+        uint32_t cbStr = 0;
         char *buf = NULL;
 
-        vrc = SSMR3GetU32(pSSM, &szBuf);
+        vrc = SSMR3GetU32(pSSM, &cbStr);
         AssertRCReturn(vrc, vrc);
-        buf = new char[szBuf];
-        vrc = SSMR3GetStrZ(pSSM, buf, szBuf);
+        buf = new char[cbStr];
+        vrc = SSMR3GetStrZ(pSSM, buf, cbStr);
         AssertRC(vrc);
         strName = buf;
         delete[] buf;
 
-        vrc = SSMR3GetU32(pSSM, &szBuf);
+        vrc = SSMR3GetU32(pSSM, &cbStr);
         AssertRCReturn(vrc, vrc);
-        buf = new char[szBuf];
-        vrc = SSMR3GetStrZ(pSSM, buf, szBuf);
+        buf = new char[cbStr];
+        vrc = SSMR3GetStrZ(pSSM, buf, cbStr);
         AssertRC(vrc);
         strHostPath = buf;
         delete[] buf;
 
-        if (u32Version > 0x00010000)
+        if (u32Version >= CONSOLE_SAVED_STATE_VERSION_PRE_AUTO_MOUNT_POINT)
             SSMR3GetBool(pSSM, &writable);
 
-        if (u32Version > 0x00010000) // ???
+        if (   u32Version >= CONSOLE_SAVED_STATE_VERSION_PRE_AUTO_MOUNT_POINT
+#ifndef VBOX_OSE /* This broke saved state when introduced in r63916 (4.0). */
+            && SSMR3HandleRevision(pSSM) >= 63916
+#endif
+           )
             SSMR3GetBool(pSSM, &autoMount);
+
+        Utf8Str strAutoMountPoint;
+        if (u32Version >= CONSOLE_SAVED_STATE_VERSION)
+        {
+            vrc = SSMR3GetU32(pSSM, &cbStr);
+            AssertRCReturn(vrc, vrc);
+            vrc = strAutoMountPoint.reserveNoThrow(cbStr);
+            AssertRCReturn(vrc, vrc);
+            vrc = SSMR3GetStrZ(pSSM, strAutoMountPoint.mutableRaw(), cbStr);
+            AssertRCReturn(vrc, vrc);
+            strAutoMountPoint.jolt();
+        }
 
         ComObjPtr<SharedFolder> pSharedFolder;
         pSharedFolder.createObject();
@@ -1737,6 +1749,7 @@ int Console::i_loadStateFileExecInternal(PSSMHANDLE pSSM, uint32_t u32Version)
                                          strHostPath,
                                          writable,
                                          autoMount,
+                                         strAutoMountPoint,
                                          false /* fFailOnError */);
         AssertComRCReturn(rc, VERR_INTERNAL_ERROR);
 
@@ -2940,7 +2953,8 @@ HRESULT Console::findUSBDeviceById(const com::Guid &aId, ComPtr<IUSBDevice> &aDe
 #endif  /* !VBOX_WITH_USB */
 }
 
-HRESULT Console::createSharedFolder(const com::Utf8Str &aName, const com::Utf8Str &aHostPath, BOOL aWritable, BOOL aAutomount)
+HRESULT Console::createSharedFolder(const com::Utf8Str &aName, const com::Utf8Str &aHostPath, BOOL aWritable,
+                                    BOOL aAutomount, const com::Utf8Str &aAutoMountPoint)
 {
     LogFlowThisFunc(("Entering for '%s' -> '%s'\n", aName.c_str(), aHostPath.c_str()));
 
@@ -2973,6 +2987,7 @@ HRESULT Console::createSharedFolder(const com::Utf8Str &aName, const com::Utf8St
                              aHostPath,
                              !!aWritable,
                              !!aAutomount,
+                             aAutoMountPoint,
                              true /* fFailOnError */);
     if (FAILED(rc)) return rc;
 
@@ -2994,7 +3009,7 @@ HRESULT Console::createSharedFolder(const com::Utf8Str &aName, const com::Utf8St
         }
 
         /* second, create the given folder */
-        rc = i_createSharedFolder(aName, SharedFolderData(aHostPath, !!aWritable, !!aAutomount));
+        rc = i_createSharedFolder(aName, SharedFolderData(aHostPath, !!aWritable, !!aAutomount, aAutoMountPoint));
         if (FAILED(rc))
             return rc;
     }
@@ -7682,7 +7697,8 @@ HRESULT Console::i_powerUp(IProgress **aProgress, bool aPaused)
                 AutoReadLock sfLock(pSF COMMA_LOCKVAL_SRC_POS);
                 sharedFolders[it->first] = SharedFolderData(pSF->i_getHostPath(),
                                                             pSF->i_isWritable(),
-                                                            pSF->i_isAutoMounted());
+                                                            pSF->i_isAutoMounted(),
+                                                            pSF->i_getAutoMountPoint());
             }
         }
 
@@ -8440,27 +8456,30 @@ HRESULT Console::i_fetchSharedFolders(BOOL aGlobal)
             {
                 ComPtr<ISharedFolder> pSharedFolder = folders[i];
 
-                Bstr bstrName;
-                Bstr bstrHostPath;
+                Bstr bstr;
+                rc = pSharedFolder->COMGETTER(Name)(bstr.asOutParam());
+                if (FAILED(rc)) throw rc;
+                Utf8Str strName(bstr);
+
+                rc = pSharedFolder->COMGETTER(HostPath)(bstr.asOutParam());
+                if (FAILED(rc)) throw rc;
+                Utf8Str strHostPath(bstr);
+
                 BOOL writable;
-                BOOL autoMount;
-
-                rc = pSharedFolder->COMGETTER(Name)(bstrName.asOutParam());
-                if (FAILED(rc)) throw rc;
-                Utf8Str strName(bstrName);
-
-                rc = pSharedFolder->COMGETTER(HostPath)(bstrHostPath.asOutParam());
-                if (FAILED(rc)) throw rc;
-                Utf8Str strHostPath(bstrHostPath);
-
                 rc = pSharedFolder->COMGETTER(Writable)(&writable);
                 if (FAILED(rc)) throw rc;
 
+                BOOL autoMount;
                 rc = pSharedFolder->COMGETTER(AutoMount)(&autoMount);
                 if (FAILED(rc)) throw rc;
 
+                rc = pSharedFolder->COMGETTER(AutoMountPoint)(bstr.asOutParam());
+                if (FAILED(rc)) throw rc;
+                Utf8Str strAutoMountPoint(bstr);
+
                 m_mapMachineSharedFolders.insert(std::make_pair(strName,
-                                                                SharedFolderData(strHostPath, !!writable, !!autoMount)));
+                                                                SharedFolderData(strHostPath, !!writable,
+                                                                                 !!autoMount, strAutoMountPoint)));
 
                 /* send changes to HGCM if the VM is running */
                 if (online)
@@ -8487,7 +8506,7 @@ HRESULT Console::i_fetchSharedFolders(BOOL aGlobal)
 
                             /* create the new machine folder */
                             rc = i_createSharedFolder(strName,
-                                                      SharedFolderData(strHostPath, !!writable, !!autoMount));
+                                                      SharedFolderData(strHostPath, !!writable, !!autoMount, strAutoMountPoint));
                             if (FAILED(rc)) throw rc;
                         }
                     }
@@ -8576,103 +8595,86 @@ bool Console::i_findOtherSharedFolder(const Utf8Str &strName,
  */
 HRESULT Console::i_createSharedFolder(const Utf8Str &strName, const SharedFolderData &aData)
 {
+    Log(("Adding shared folder '%s' -> '%s'\n", strName.c_str(), aData.m_strHostPath.c_str()));
+
+    /*
+     * Sanity checks
+     */
     ComAssertRet(strName.isNotEmpty(), E_FAIL);
     ComAssertRet(aData.m_strHostPath.isNotEmpty(), E_FAIL);
 
-    /* sanity checks */
     AssertReturn(mpUVM, E_FAIL);
     AssertReturn(m_pVMMDev && m_pVMMDev->isShFlActive(), E_FAIL);
 
-    VBOXHGCMSVCPARM parms[SHFL_CPARMS_ADD_MAPPING];
-    SHFLSTRING *pFolderName, *pMapName;
-    size_t cbString;
+    /*
+     * Find out whether we should allow symbolic link creation.
+     */
+    Bstr bstrValue;
+    HRESULT hrc = mMachine->GetExtraData(BstrFmt("VBoxInternal2/SharedFoldersEnableSymlinksCreate/%s", strName.c_str()).raw(),
+                                         bstrValue.asOutParam());
+    bool fSymlinksCreate = hrc == S_OK && bstrValue == "1";
 
-    Bstr value;
-    HRESULT hrc = mMachine->GetExtraData(BstrFmt("VBoxInternal2/SharedFoldersEnableSymlinksCreate/%s",
-                                                 strName.c_str()).raw(),
-                                         value.asOutParam());
-    bool fSymlinksCreate = hrc == S_OK && value == "1";
-
-    Log(("Adding shared folder '%s' -> '%s'\n", strName.c_str(), aData.m_strHostPath.c_str()));
-
-    // check whether the path is valid and exists
-    char hostPathFull[RTPATH_MAX];
-    int vrc = RTPathAbsEx(NULL,
-                          aData.m_strHostPath.c_str(),
-                          hostPathFull,
-                          sizeof(hostPathFull));
-
-    bool fMissing = false;
+    /*
+     * Check whether the path is valid and exists.
+     */
+    char szAbsHostPath[RTPATH_MAX];
+    int vrc = RTPathAbsEx(NULL, aData.m_strHostPath.c_str(), szAbsHostPath, sizeof(szAbsHostPath));
     if (RT_FAILURE(vrc))
         return setErrorBoth(E_INVALIDARG, vrc, tr("Invalid shared folder path: '%s' (%Rrc)"), aData.m_strHostPath.c_str(), vrc);
-    if (!RTPathExists(hostPathFull))
-        fMissing = true;
 
-    /* Check whether the path is full (absolute) */
-    if (RTPathCompare(aData.m_strHostPath.c_str(), hostPathFull) != 0)
+    /* Check whether the path is full (absolute).  ASSUMING a RTPATH_MAX of ~4K
+       this also checks that the length is within bounds of a SHFLSTRING.  */
+    if (RTPathCompare(aData.m_strHostPath.c_str(), szAbsHostPath) != 0)
         return setError(E_INVALIDARG,
                         tr("Shared folder path '%s' is not absolute"),
                         aData.m_strHostPath.c_str());
 
-    // now that we know the path is good, give it to HGCM
+    bool const fMissing = !RTPathExists(szAbsHostPath);
 
-    Bstr bstrName(strName);
-    Bstr bstrHostPath(aData.m_strHostPath);
+    /*
+     * Check the other two string lengths before converting them all to SHFLSTRINGS.
+     */
+    if (strName.length() >= _2K)
+        return setError(E_INVALIDARG, tr("Shared folder name is too long: %zu bytes"), strName.length());
+    if (aData.m_strAutoMountPoint.length() >= RTPATH_MAX)
+        return setError(E_INVALIDARG, tr("Shared folder mountp point too long: %zu bytes"), aData.m_strAutoMountPoint.length());
 
-    cbString = (bstrHostPath.length() + 1) * sizeof(RTUTF16);
-    if (cbString >= UINT16_MAX)
-        return setError(E_INVALIDARG, tr("The name is too long"));
-    pFolderName = (SHFLSTRING*)RTMemAllocZ(SHFLSTRING_HEADER_SIZE + cbString);
-    Assert(pFolderName);
-    memcpy(pFolderName->String.ucs2, bstrHostPath.raw(), cbString);
-
-    pFolderName->u16Size   = (uint16_t)cbString;
-    pFolderName->u16Length = (uint16_t)(cbString - sizeof(RTUTF16));
-
-    parms[0].type = VBOX_HGCM_SVC_PARM_PTR;
-    parms[0].u.pointer.addr = pFolderName;
-    parms[0].u.pointer.size = ShflStringSizeOfBuffer(pFolderName);
-
-    cbString = (bstrName.length() + 1) * sizeof(RTUTF16);
-    if (cbString >= UINT16_MAX)
+    PSHFLSTRING pHostPath       = ShflStringDupUtf8AsUtf16(aData.m_strHostPath.c_str());
+    PSHFLSTRING pName           = ShflStringDupUtf8AsUtf16(strName.c_str());
+    PSHFLSTRING pAutoMountPoint = ShflStringDupUtf8AsUtf16(aData.m_strAutoMountPoint.c_str());
+    if (pHostPath && pName && pAutoMountPoint)
     {
-        RTMemFree(pFolderName);
-        return setError(E_INVALIDARG, tr("The host path is too long"));
+        /*
+         * Make a SHFL_FN_ADD_MAPPING call to tell the service about folder.
+         */
+        VBOXHGCMSVCPARM aParams[SHFL_CPARMS_ADD_MAPPING];
+        SHFLSTRING_TO_HGMC_PARAM(&aParams[0], pHostPath);
+        SHFLSTRING_TO_HGMC_PARAM(&aParams[1], pName);
+        aParams[2].setUInt32(  (aData.m_fWritable  ? SHFL_ADD_MAPPING_F_WRITABLE : 0)
+                             | (aData.m_fAutoMount ? SHFL_ADD_MAPPING_F_AUTOMOUNT : 0)
+                             | (fSymlinksCreate    ? SHFL_ADD_MAPPING_F_CREATE_SYMLINKS : 0)
+                             | (fMissing           ? SHFL_ADD_MAPPING_F_MISSING : 0));
+        SHFLSTRING_TO_HGMC_PARAM(&aParams[3], pAutoMountPoint);
+        AssertCompile(SHFL_CPARMS_ADD_MAPPING == 4);
+
+        vrc = m_pVMMDev->hgcmHostCall("VBoxSharedFolders", SHFL_FN_ADD_MAPPING, SHFL_CPARMS_ADD_MAPPING, aParams);
+        if (RT_FAILURE(vrc))
+            hrc = setErrorBoth(E_FAIL, vrc, tr("Could not create a shared folder '%s' mapped to '%s' (%Rrc)"),
+                               strName.c_str(), aData.m_strHostPath.c_str(), vrc);
+
+        else if (fMissing)
+            hrc = setError(E_INVALIDARG,
+                           tr("Shared folder path '%s' does not exist on the host"),
+                           aData.m_strHostPath.c_str());
+        else
+            hrc = S_OK;
     }
-    pMapName = (SHFLSTRING*)RTMemAllocZ(SHFLSTRING_HEADER_SIZE + cbString);
-    Assert(pMapName);
-    memcpy(pMapName->String.ucs2, bstrName.raw(), cbString);
-
-    pMapName->u16Size   = (uint16_t)cbString;
-    pMapName->u16Length = (uint16_t)(cbString - sizeof(RTUTF16));
-
-    parms[1].type = VBOX_HGCM_SVC_PARM_PTR;
-    parms[1].u.pointer.addr = pMapName;
-    parms[1].u.pointer.size = ShflStringSizeOfBuffer(pMapName);
-
-    parms[2].type = VBOX_HGCM_SVC_PARM_32BIT;
-    parms[2].u.uint32 = (aData.m_fWritable ? SHFL_ADD_MAPPING_F_WRITABLE : 0)
-                      | (aData.m_fAutoMount ? SHFL_ADD_MAPPING_F_AUTOMOUNT : 0)
-                      | (fSymlinksCreate ? SHFL_ADD_MAPPING_F_CREATE_SYMLINKS : 0)
-                      | (fMissing ? SHFL_ADD_MAPPING_F_MISSING : 0)
-                      ;
-
-    vrc = m_pVMMDev->hgcmHostCall("VBoxSharedFolders",
-                                  SHFL_FN_ADD_MAPPING,
-                                  SHFL_CPARMS_ADD_MAPPING, &parms[0]);
-    RTMemFree(pFolderName);
-    RTMemFree(pMapName);
-
-    if (RT_FAILURE(vrc))
-        return setErrorBoth(E_FAIL, vrc, tr("Could not create a shared folder '%s' mapped to '%s' (%Rrc)"),
-                            strName.c_str(), aData.m_strHostPath.c_str(), vrc);
-
-    if (fMissing)
-        return setError(E_INVALIDARG,
-                        tr("Shared folder path '%s' does not exist on the host"),
-                        aData.m_strHostPath.c_str());
-
-    return S_OK;
+    else
+        hrc = E_OUTOFMEMORY;
+    RTMemFree(pAutoMountPoint);
+    RTMemFree(pName);
+    RTMemFree(pHostPath);
+    return hrc;
 }
 
 /**
@@ -10175,7 +10177,8 @@ void Console::i_powerUpThreadTask(VMPowerUpTask *pTask)
                 /*
                  * Register our load/save state file handlers
                  */
-                vrc = SSMR3RegisterExternal(pConsole->mpUVM, sSSMConsoleUnit, 0 /*iInstance*/, sSSMConsoleVer, 0 /* cbGuess */,
+                vrc = SSMR3RegisterExternal(pConsole->mpUVM, sSSMConsoleUnit, 0 /*iInstance*/,
+                                            CONSOLE_SAVED_STATE_VERSION, 0 /* cbGuess */,
                                             NULL, NULL, NULL,
                                             NULL, i_saveStateFileExec, NULL,
                                             NULL, i_loadStateFileExec, NULL,

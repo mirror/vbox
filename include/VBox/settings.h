@@ -750,6 +750,7 @@ struct SharedFolder
                     strHostPath;
     bool            fWritable;
     bool            fAutoMount;
+    com::Utf8Str    strAutoMountPoint;
 };
 
 typedef std::list<SharedFolder> SharedFoldersList;

@@ -5421,7 +5421,8 @@ HRESULT Machine::findSnapshot(const com::Utf8Str &aNameOrId, ComPtr<ISnapshot> &
     return rc;
 }
 
-HRESULT Machine::createSharedFolder(const com::Utf8Str &aName, const com::Utf8Str &aHostPath, BOOL  aWritable, BOOL  aAutomount)
+HRESULT Machine::createSharedFolder(const com::Utf8Str &aName, const com::Utf8Str &aHostPath, BOOL aWritable,
+                                    BOOL aAutomount, const com::Utf8Str &aAutoMountPoint)
 {
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -5441,6 +5442,7 @@ HRESULT Machine::createSharedFolder(const com::Utf8Str &aName, const com::Utf8St
                             aHostPath,
                             !!aWritable,
                             !!aAutomount,
+                            aAutoMountPoint,
                             true /* fFailOnError */);
     if (FAILED(rc)) return rc;
 
@@ -9020,6 +9022,7 @@ HRESULT Machine::i_loadHardware(const Guid *puuidRegistry,
                                     sf.strHostPath,
                                     RT_BOOL(sf.fWritable),
                                     RT_BOOL(sf.fAutoMount),
+                                    sf.strAutoMountPoint,
                                     false /* fFailOnError */);
             if (FAILED(rc)) return rc;
             mHWData->mSharedFolders.push_back(sharedFolder);
@@ -10315,6 +10318,7 @@ HRESULT Machine::i_saveHardware(settings::Hardware &data, settings::Debugging *p
             sf.strHostPath = pSF->i_getHostPath();
             sf.fWritable = !!pSF->i_isWritable();
             sf.fAutoMount = !!pSF->i_isAutoMounted();
+            sf.strAutoMountPoint = pSF->i_getAutoMountPoint();
 
             data.llSharedFolders.push_back(sf);
         }

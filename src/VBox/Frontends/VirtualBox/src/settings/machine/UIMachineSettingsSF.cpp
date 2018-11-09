@@ -41,21 +41,23 @@ struct UIDataSettingsSharedFolder
     /** Constructs data. */
     UIDataSettingsSharedFolder()
         : m_enmType(MachineType)
-        , m_strName(QString())
-        , m_strPath(QString())
-        , m_fAutoMount(false)
+        , m_strName()
+        , m_strPath()
         , m_fWritable(false)
+        , m_fAutoMount(false)
+        , m_strAutoMountPoint()
     {}
 
     /** Returns whether the @a other passed data is equal to this one. */
     bool equal(const UIDataSettingsSharedFolder &other) const
     {
         return true
-               && (m_enmType == other.m_enmType)
-               && (m_strName == other.m_strName)
-               && (m_strPath == other.m_strPath)
-               && (m_fAutoMount == other.m_fAutoMount)
-               && (m_fWritable == other.m_fWritable)
+               && m_enmType == other.m_enmType
+               && m_strName == other.m_strName
+               && m_strPath == other.m_strPath
+               && m_fWritable == other.m_fWritable
+               && m_fAutoMount == other.m_fAutoMount
+               && m_strAutoMountPoint == other.m_strAutoMountPoint
                ;
     }
 
@@ -70,10 +72,13 @@ struct UIDataSettingsSharedFolder
     QString             m_strName;
     /** Holds the shared folder path. */
     QString             m_strPath;
-    /** Holds whether the shared folder should be auto-mounted at startup. */
-    bool                m_fAutoMount;
     /** Holds whether the shared folder should be writeable. */
     bool                m_fWritable;
+    /** Holds whether the shared folder should be auto-mounted at startup. */
+    bool                m_fAutoMount;
+    /** Where in the guest to try auto mount the shared folder (drive for
+     * Windows & OS/2, path for unixy guests). */
+    QString             m_strAutoMountPoint;
 };
 
 
@@ -160,8 +165,9 @@ public:
         else
             m_fields << m_strName
                      << m_strPath
+                     << (m_fWritable ? UIMachineSettingsSF::tr("Full") : UIMachineSettingsSF::tr("Read-only"))
                      << (m_fAutoMount ? UIMachineSettingsSF::tr("Yes") : "")
-                     << (m_fWritable ? UIMachineSettingsSF::tr("Full") : UIMachineSettingsSF::tr("Read-only"));
+                     << m_strAutoMountPoint;
 
         /* Adjust item layout: */
         adjustText();
@@ -179,14 +185,15 @@ protected:
     /** Returns default text. */
     virtual QString defaultText() const /* override */
     {
-        return parentItem() ?
-               tr("%1, %2: %3, %4: %5, %6: %7",
-                  "col.1 text, col.2 name: col.2 text, col.3 name: col.3 text, col.4 name: col.4 text")
+        return parentItem()
+             ? tr("%1, %2: %3, %4: %5, %6: %7, %8: %9",
+                  "col.1 text, col.2 name: col.2 text, col.3 name: col.3 text, col.4 name: col.4 text, col.5 name: col.5 text")
                   .arg(text(0))
                   .arg(parentTree()->headerItem()->text(1)).arg(text(1))
                   .arg(parentTree()->headerItem()->text(2)).arg(text(2))
-                  .arg(parentTree()->headerItem()->text(3)).arg(text(3)) :
-               text(0);
+                  .arg(parentTree()->headerItem()->text(3)).arg(text(3))
+                  .arg(parentTree()->headerItem()->text(4)).arg(text(4))
+             : text(0);
     }
 
 private:
@@ -214,7 +221,7 @@ private:
         {
             iTextWidth = fm.width(strOneString);
             if (   iTextWidth
-                && (iTextWidth + iIndentSize > cWidth))
+                && iTextWidth + iIndentSize > cWidth)
             {
                 iStart = 0;
                 iFinish = strOneString.length();
@@ -330,8 +337,9 @@ void UIMachineSettingsSF::loadToCacheFrom(QVariant &data)
                 oldFolderData.m_enmType = enmFolderType;
                 oldFolderData.m_strName = comFolder.GetName();
                 oldFolderData.m_strPath = comFolder.GetHostPath();
-                oldFolderData.m_fAutoMount = comFolder.GetAutoMount();
                 oldFolderData.m_fWritable = comFolder.GetWritable();
+                oldFolderData.m_fAutoMount = comFolder.GetAutoMount();
+                oldFolderData.m_strAutoMountPoint = comFolder.GetAutoMountPoint();
                 /* Override folder cache key: */
                 strFolderKey = oldFolderData.m_strName;
             }
@@ -473,8 +481,9 @@ void UIMachineSettingsSF::sltAddFolder()
         newFolderData.m_enmType = enmType;
         newFolderData.m_strName = strName;
         newFolderData.m_strPath = strPath;
-        newFolderData.m_fAutoMount = dlgFolderDetails.isAutoMounted();
         newFolderData.m_fWritable = dlgFolderDetails.isWriteable();
+        newFolderData.m_fAutoMount = dlgFolderDetails.isAutoMounted();
+        newFolderData.m_strAutoMountPoint = dlgFolderDetails.autoMountPoint();
 
         /* Add new folder item: */
         addSharedFolderItem(newFolderData, true /* its new? */);
@@ -501,8 +510,9 @@ void UIMachineSettingsSF::sltEditFolder()
     dlgFolderDetails.setPath(pItem->m_strPath);
     dlgFolderDetails.setName(pItem->m_strName);
     dlgFolderDetails.setPermanent(pItem->m_enmType == MachineType);
-    dlgFolderDetails.setAutoMount(pItem->m_fAutoMount);
     dlgFolderDetails.setWriteable(pItem->m_fWritable);
+    dlgFolderDetails.setAutoMount(pItem->m_fAutoMount);
+    dlgFolderDetails.setAutoMountPoint(pItem->m_strAutoMountPoint);
 
     /* Run folder details dialog: */
     if (dlgFolderDetails.exec() == QDialog::Accepted)
@@ -517,8 +527,9 @@ void UIMachineSettingsSF::sltEditFolder()
         pItem->m_enmType = enmType;
         pItem->m_strName = strName;
         pItem->m_strPath = strPath;
-        pItem->m_fAutoMount = dlgFolderDetails.isAutoMounted();
         pItem->m_fWritable = dlgFolderDetails.isWriteable();
+        pItem->m_fAutoMount = dlgFolderDetails.isAutoMounted();
+        pItem->m_strAutoMountPoint = dlgFolderDetails.autoMountPoint();
         pItem->updateFields();
 
         /* Searching for a root of the edited tree-widget item: */
@@ -597,10 +608,11 @@ void UIMachineSettingsSF::sltAdjustTree()
      * and let all other columns stay at their minimum sizes.
      *
      * Columns
-     * 0 = Tree view
-     * 1 = Shared Folder name
-     * 2 = Auto-mount flag
-     * 3 = Writable flag
+     * 0 = Tree view / name
+     * 1 = Path
+     * 2 = Writable flag
+     * 3 = Auto-mount flag
+     * 4 = Auto mount point
      */
     QAbstractItemView *pItemView = mTwFolders;
     QHeaderView *pItemHeader = mTwFolders->header();
@@ -609,16 +621,44 @@ void UIMachineSettingsSF::sltAdjustTree()
     const int mw0 = qMax(pItemView->sizeHintForColumn(0), pItemHeader->sectionSizeHint(0));
     const int mw2 = qMax(pItemView->sizeHintForColumn(2), pItemHeader->sectionSizeHint(2));
     const int mw3 = qMax(pItemView->sizeHintForColumn(3), pItemHeader->sectionSizeHint(3));
+    const int mw4 = qMax(pItemView->sizeHintForColumn(4), pItemHeader->sectionSizeHint(4));
+#if 0 /** @todo Neither approach is perfect.  Short folder names, short paths, plenty of white space, but there is often '...' in column 0. */
 
-    const int w0 = mw0 < iTotal / 4 ? mw0 : iTotal / 4;
-    const int w2 = mw2 < iTotal / 4 ? mw2 : iTotal / 4;
-    const int w3 = mw3 < iTotal / 4 ? mw3 : iTotal / 4;
+    const int w0 = mw0 < iTotal / 5 ? mw0 : iTotal / 5;
+    const int w2 = mw2 < iTotal / 5 ? mw2 : iTotal / 5;
+    const int w3 = mw3 < iTotal / 5 ? mw3 : iTotal / 5;
+    const int w4 = mw4 < iTotal / 5 ? mw4 : iTotal / 5;
 
     /* Giving 1st column all the available space. */
+    const int w1 = iTotal - w0 - w2 - w3 - w4;
+#else
+    const int mw1 = qMax(pItemView->sizeHintForColumn(1), pItemHeader->sectionSizeHint(1));
+    const int iHintTotal = mw0 + mw1 + mw2 + mw3 + mw4;
+    int w0, w1, w2, w3, w4;
+    int cExcess = iTotal - iHintTotal;
+    if (cExcess >= 0)
+    {
+        /* give excess width to column 1 (path) */
+        w0 = mw0;
+        w1 = mw1 + cExcess;
+        w2 = mw2;
+        w3 = mw3;
+        w4 = mw4;
+    }
+    else
+    {
+        w0 = mw0 < iTotal / 5 ? mw0 : iTotal / 5;
+        w2 = mw2 < iTotal / 5 ? mw2 : iTotal / 5;
+        w3 = mw3 < iTotal / 5 ? mw3 : iTotal / 5;
+        w4 = mw4 < iTotal / 5 ? mw4 : iTotal / 5;
+        w1 = iTotal - w0 - w2 - w3 - w4;
+    }
+#endif
     mTwFolders->setColumnWidth(0, w0);
-    mTwFolders->setColumnWidth(1, iTotal - w0 - w2 - w3);
+    mTwFolders->setColumnWidth(1, w1);
     mTwFolders->setColumnWidth(2, w2);
     mTwFolders->setColumnWidth(3, w3);
+    mTwFolders->setColumnWidth(4, w4);
 }
 
 void UIMachineSettingsSF::sltAdjustTreeFields()
@@ -828,8 +868,9 @@ void UIMachineSettingsSF::addSharedFolderItem(const UIDataSettingsSharedFolder &
         pItem->m_enmType = sharedFolderData.m_enmType;
         pItem->m_strName = sharedFolderData.m_strName;
         pItem->m_strPath = sharedFolderData.m_strPath;
-        pItem->m_fAutoMount = sharedFolderData.m_fAutoMount;
         pItem->m_fWritable = sharedFolderData.m_fWritable;
+        pItem->m_fAutoMount = sharedFolderData.m_fAutoMount;
+        pItem->m_strAutoMountPoint = sharedFolderData.m_strAutoMountPoint;
         pItem->updateFields();
 
         /* Select this item if it's new: */
@@ -1018,66 +1059,55 @@ bool UIMachineSettingsSF::removeSharedFolder(const UISettingsCacheSharedFolder &
 
 bool UIMachineSettingsSF::createSharedFolder(const UISettingsCacheSharedFolder &folderCache)
 {
-    /* Prepare result: */
-    bool fSuccess = true;
-    /* Create folder: */
+    /* Get folder data: */
+    const UIDataSettingsSharedFolder &newFolderData = folderCache.data();
+    const UISharedFolderType enmFoldersType = newFolderData.m_enmType;
+    const QString strFolderName = newFolderData.m_strName;
+    const QString strFolderPath = newFolderData.m_strPath;
+    const bool fIsWritable = newFolderData.m_fWritable;
+    const bool fIsAutoMount = newFolderData.m_fAutoMount;
+    const QString strAutoMountPoint = newFolderData.m_strAutoMountPoint;
+
+    /* Get current folders: */
+    CSharedFolderVector folders;
+    bool fSuccess = getSharedFolders(enmFoldersType, folders);
+
+    /* Search for a folder with the same name: */
+    CSharedFolder comFolder;
     if (fSuccess)
+        fSuccess = getSharedFolder(strFolderName, folders, comFolder);
+
+    /* Make sure such folder doesn't exist: */
+    if (fSuccess && comFolder.isNull())
     {
-        /* Get folder data: */
-        const UIDataSettingsSharedFolder &newFolderData = folderCache.data();
-        const UISharedFolderType enmFoldersType = newFolderData.m_enmType;
-        const QString strFolderName = newFolderData.m_strName;
-        const QString strFolderPath = newFolderData.m_strPath;
-        const bool fIsAutoMount = newFolderData.m_fAutoMount;
-        const bool fIsWritable = newFolderData.m_fWritable;
-
-        /* Get current folders: */
-        CSharedFolderVector folders;
-        if (fSuccess)
-            fSuccess = getSharedFolders(enmFoldersType, folders);
-
-        /* Search for a folder with the same name: */
-        CSharedFolder comFolder;
-        if (fSuccess)
-            fSuccess = getSharedFolder(strFolderName, folders, comFolder);
-
-        /* Make sure such folder doesn't exist: */
-        if (fSuccess && comFolder.isNull())
+        /* Create new folder: */
+        switch (enmFoldersType)
         {
-            /* Create new folder: */
-            switch (enmFoldersType)
+            case MachineType:
             {
-                case MachineType:
-                {
-                    /* Create new folder: */
-                    m_machine.CreateSharedFolder(strFolderName, strFolderPath, fIsWritable, fIsAutoMount);
-                    /* Check that machine is OK: */
-                    fSuccess = m_machine.isOk();
-                    if (!fSuccess)
-                    {
-                        /* Show error message: */
-                        notifyOperationProgressError(UIErrorString::formatErrorInfo(m_machine));
-                    }
-                    break;
-                }
-                case ConsoleType:
-                {
-                    /* Create new folder: */
-                    m_console.CreateSharedFolder(strFolderName, strFolderPath, fIsWritable, fIsAutoMount);
-                    /* Check that console is OK: */
-                    fSuccess = m_console.isOk();
-                    if (!fSuccess)
-                    {
-                        /* Show error message: */
-                        notifyOperationProgressError(UIErrorString::formatErrorInfo(m_console));
-                    }
-                    break;
-                }
-                default:
-                    break;
+                /* Create new folder: */
+                m_machine.CreateSharedFolder(strFolderName, strFolderPath, fIsWritable, fIsAutoMount, strAutoMountPoint);
+                /* Show error if the operation failed: */
+                fSuccess = m_machine.isOk();
+                if (!fSuccess)
+                    notifyOperationProgressError(UIErrorString::formatErrorInfo(m_machine));
+                break;
             }
+            case ConsoleType:
+            {
+                /* Create new folder: */
+                m_console.CreateSharedFolder(strFolderName, strFolderPath, fIsWritable, fIsAutoMount, strAutoMountPoint);
+                /* Show error if the operation failed: */
+                fSuccess = m_console.isOk();
+                if (!fSuccess)
+                    notifyOperationProgressError(UIErrorString::formatErrorInfo(m_console));
+                break;
+            }
+            default:
+                break;
         }
     }
+
     /* Return result: */
     return fSuccess;
 }

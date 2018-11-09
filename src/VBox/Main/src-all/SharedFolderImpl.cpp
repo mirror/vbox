@@ -45,6 +45,7 @@ struct SharedFolder::Data
     const Utf8Str   strHostPath;
     bool            fWritable;
     bool            fAutoMount;
+    const Utf8Str   strAutoMountPoint;
     Utf8Str         strLastAccessError;
 };
 
@@ -94,6 +95,7 @@ void SharedFolder::FinalRelease()
  *  @param aHostPath    full path to the shared folder on the host
  *  @param aWritable    writable if true, readonly otherwise
  *  @param aAutoMount   if auto mounted by guest true, false otherwise
+ *  @param aAutoMountPoint Where the guest should try auto mount it.
  *  @param fFailOnError Whether to fail with an error if the shared folder path is bad.
  *
  *  @return          COM result indicator
@@ -103,6 +105,7 @@ HRESULT SharedFolder::init(Machine *aMachine,
                            const Utf8Str &aHostPath,
                            bool aWritable,
                            bool aAutoMount,
+                           const Utf8Str &aAutoMountPoint,
                            bool fFailOnError)
 {
     /* Enclose the state transition NotReady->InInit->Ready */
@@ -111,7 +114,7 @@ HRESULT SharedFolder::init(Machine *aMachine,
 
     unconst(mMachine) = aMachine;
 
-    HRESULT rc = i_protectedInit(aMachine, aName, aHostPath, aWritable, aAutoMount, fFailOnError);
+    HRESULT rc = i_protectedInit(aMachine, aName, aHostPath, aWritable, aAutoMount, aAutoMountPoint, fFailOnError);
 
     /* Confirm a successful initialization when it's the case */
     if (SUCCEEDED(rc))
@@ -145,6 +148,7 @@ HRESULT SharedFolder::initCopy(Machine *aMachine, SharedFolder *aThat)
                                  aThat->m->strHostPath,
                                  aThat->m->fWritable,
                                  aThat->m->fAutoMount,
+                                 aThat->m->strAutoMountPoint,
                                  false /* fFailOnError */ );
 
     /* Confirm a successful initialization when it's the case */
@@ -165,6 +169,7 @@ HRESULT SharedFolder::initCopy(Machine *aMachine, SharedFolder *aThat)
  *  @param aName        logical name of the shared folder
  *  @param aHostPath    full path to the shared folder on the host
  *  @param aWritable    writable if true, readonly otherwise
+ *  @param aAutoMountPoint Where the guest should try auto mount it.
  *  @param fFailOnError Whether to fail with an error if the shared folder path is bad.
  *
  *  @return          COM result indicator
@@ -174,6 +179,7 @@ HRESULT SharedFolder::init(VirtualBox *aVirtualBox,
                            const Utf8Str &aHostPath,
                            bool aWritable,
                            bool aAutoMount,
+                           const Utf8Str &aAutoMountPoint
                            bool fFailOnError)
 {
     /* Enclose the state transition NotReady->InInit->Ready */
@@ -182,7 +188,7 @@ HRESULT SharedFolder::init(VirtualBox *aVirtualBox,
 
     unconst(mVirtualBox) = aVirtualBox;
 
-    HRESULT rc = protectedInit(aVirtualBox, aName, aHostPath, aWritable, aAutoMount);
+    HRESULT rc = protectedInit(aVirtualBox, aName, aHostPath, aWritable, aAutoMount, aAutoMountPoint, fFailOnError);
 
     /* Confirm a successful initialization when it's the case */
     if (SUCCEEDED(rc))
@@ -204,6 +210,7 @@ HRESULT SharedFolder::init(VirtualBox *aVirtualBox,
  *  @param aName        logical name of the shared folder
  *  @param aHostPath    full path to the shared folder on the host
  *  @param aWritable    writable if true, readonly otherwise
+ *  @param aAutoMountPoint Where the guest should try auto mount it.
  *  @param fFailOnError Whether to fail with an error if the shared folder path is bad.
  *
  *  @return          COM result indicator
@@ -213,6 +220,7 @@ HRESULT SharedFolder::init(Console *aConsole,
                            const Utf8Str &aHostPath,
                            bool aWritable,
                            bool aAutoMount,
+                           const Utf8Str &aAutoMountPoint,
                            bool fFailOnError)
 {
     /* Enclose the state transition NotReady->InInit->Ready */
@@ -221,7 +229,7 @@ HRESULT SharedFolder::init(Console *aConsole,
 
     unconst(mConsole) = aConsole;
 
-    HRESULT rc = i_protectedInit(aConsole, aName, aHostPath, aWritable, aAutoMount, fFailOnError);
+    HRESULT rc = i_protectedInit(aConsole, aName, aHostPath, aWritable, aAutoMount, aAutoMountPoint, fFailOnError);
 
     /* Confirm a successful initialization when it's the case */
     if (SUCCEEDED(rc))
@@ -242,6 +250,7 @@ HRESULT SharedFolder::i_protectedInit(VirtualBoxBase *aParent,
                                       const Utf8Str &aHostPath,
                                       bool aWritable,
                                       bool aAutoMount,
+                                      const Utf8Str &aAutoMountPoint,
                                       bool fFailOnError)
 {
     LogFlowThisFunc(("aName={%s}, aHostPath={%s}, aWritable={%d}, aAutoMount={%d}\n",
@@ -259,9 +268,9 @@ HRESULT SharedFolder::i_protectedInit(VirtualBoxBase *aParent,
      * RTDirOpenFiltered() call (see HostServices/SharedFolders) that seems to
      * accept both the slashified paths and not. */
 #if defined (RT_OS_OS2) || defined (RT_OS_WINDOWS)
-    if (hostPathLen > 2 &&
-        RTPATH_IS_SEP (hostPath.c_str()[hostPathLen - 1]) &&
-        RTPATH_IS_VOLSEP (hostPath.c_str()[hostPathLen - 2]))
+    if (   hostPathLen > 2
+        && RTPATH_IS_SEP(hostPath.c_str()[hostPathLen - 1])
+        && RTPATH_IS_VOLSEP(hostPath.c_str()[hostPathLen - 2]))
         ;
 #else
     if (hostPathLen == 1 && RTPATH_IS_SEP(hostPath[0]))
@@ -291,6 +300,7 @@ HRESULT SharedFolder::i_protectedInit(VirtualBoxBase *aParent,
     unconst(m->strHostPath) = hostPath;
     m->fWritable = aWritable;
     m->fAutoMount = aAutoMount;
+    unconst(m->strAutoMountPoint) = aAutoMountPoint;
 
     return S_OK;
 }
@@ -384,6 +394,14 @@ HRESULT SharedFolder::getAutoMount(BOOL *aAutoMount)
     return S_OK;
 }
 
+HRESULT SharedFolder::getAutoMountPoint(com::Utf8Str &aAutoMountPoint)
+{
+    /* strAutoMountPoint is constant during life time, no need to lock. */
+    aAutoMountPoint = m->strAutoMountPoint;
+    return S_OK;
+}
+
+
 HRESULT SharedFolder::getLastAccessError(com::Utf8Str &aLastAccessError)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
@@ -412,6 +430,11 @@ bool SharedFolder::i_isWritable() const
 bool SharedFolder::i_isAutoMounted() const
 {
     return m->fAutoMount;
+}
+
+const Utf8Str &SharedFolder::i_getAutoMountPoint() const
+{
+    return m->strAutoMountPoint;
 }
 
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */

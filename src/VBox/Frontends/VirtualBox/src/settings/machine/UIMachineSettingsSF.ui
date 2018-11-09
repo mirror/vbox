@@ -86,12 +86,17 @@
         </column>
         <column>
          <property name="text">
-          <string>Auto-mount</string>
+          <string>Access</string>
          </property>
         </column>
         <column>
          <property name="text">
-          <string>Access</string>
+          <string>Auto Mount</string>
+         </property>
+        </column>
+        <column>
+         <property name="text">
+          <string>At</string>
          </property>
         </column>
        </widget>

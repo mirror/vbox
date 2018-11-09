@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __UIMachineSettingsSFDetails_h__
-#define __UIMachineSettingsSFDetails_h__
+#ifndef ___UIMachineSettingsSFDetails_h___
+#define ___UIMachineSettingsSFDetails_h___
 
 /* Includes */
 #include "UIMachineSettingsSFDetails.gen.h"
@@ -55,6 +55,9 @@ public:
     void setAutoMount(bool fAutoMount);
     bool isAutoMounted() const;
 
+    void setAutoMountPoint(const QString &strAutoMountPoint);
+    QString autoMountPoint() const;
+
     void setPermanent(bool fPermanent);
     bool isPermanent() const;
 
@@ -74,4 +77,4 @@ private:
     QStringList  m_usedNames;
 };
 
-#endif // __UIMachineSettingsSFDetails_h__
+#endif // !___UIMachineSettingsSFDetails_h___

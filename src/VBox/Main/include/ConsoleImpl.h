@@ -341,7 +341,8 @@ private:
     HRESULT createSharedFolder(const com::Utf8Str &aName,
                                const com::Utf8Str &aHostPath,
                                BOOL aWritable,
-                               BOOL aAutomount);
+                               BOOL aAutomount,
+                               const com::Utf8Str &aAutoMountPoint);
     HRESULT removeSharedFolder(const com::Utf8Str &aName);
     HRESULT teleport(const com::Utf8Str &aHostname,
                      ULONG aTcpport,
@@ -548,22 +549,26 @@ public:
 
         SharedFolderData(const Utf8Str &aHostPath,
                          bool aWritable,
-                         bool aAutoMount)
-           : m_strHostPath(aHostPath),
-             m_fWritable(aWritable),
-             m_fAutoMount(aAutoMount)
+                         bool aAutoMount,
+                         const Utf8Str &aAutoMountPoint)
+            : m_strHostPath(aHostPath)
+            , m_fWritable(aWritable)
+            , m_fAutoMount(aAutoMount)
+            , m_strAutoMountPoint(aAutoMountPoint)
         { }
 
         // copy constructor
         SharedFolderData(const SharedFolderData& aThat)
-           : m_strHostPath(aThat.m_strHostPath),
-             m_fWritable(aThat.m_fWritable),
-             m_fAutoMount(aThat.m_fAutoMount)
+            : m_strHostPath(aThat.m_strHostPath)
+            , m_fWritable(aThat.m_fWritable)
+            , m_fAutoMount(aThat.m_fAutoMount)
+            , m_strAutoMountPoint(aThat.m_strAutoMountPoint)
         { }
 
         Utf8Str m_strHostPath;
         bool m_fWritable;
         bool m_fAutoMount;
+        Utf8Str m_strAutoMountPoint;
     };
 
     /**
@@ -819,7 +824,6 @@ private:
     volatile  bool mcGuestCredentialsProvided;
 
     static const char *sSSMConsoleUnit;
-    static uint32_t sSSMConsoleVer;
 
     HRESULT i_loadDataFromSavedState();
     int i_loadStateFileExecInternal(PSSMHANDLE pSSM, uint32_t u32Version);

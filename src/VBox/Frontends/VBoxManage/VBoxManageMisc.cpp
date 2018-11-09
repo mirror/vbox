@@ -1095,6 +1095,7 @@ RTEXITCODE handleSharedFolder(HandlerArg *a)
         bool fTransient = false;
         bool fWritable = true;
         bool fAutoMount = false;
+        char *pszAutoMountPoint = "";
 
         for (int i = 2; i < a->argc; i++)
         {
@@ -1129,6 +1130,13 @@ RTEXITCODE handleSharedFolder(HandlerArg *a)
             {
                 fAutoMount = true;
             }
+            else if (!strcmp(a->argv[i], "--auto-mount-point"))
+            {
+                if (a->argc <= i + 1 || !*a->argv[i+1])
+                    return errorArgument("Missing argument to '%s'", a->argv[i]);
+                i++;
+                pszAutoMountPoint = a->argv[i];
+            }
             else
                 return errorSyntax(USAGE_SHAREDFOLDER_ADD, "Invalid parameter '%s'", Utf8Str(a->argv[i]).c_str());
         }
@@ -1159,9 +1167,8 @@ RTEXITCODE handleSharedFolder(HandlerArg *a)
                 return RTMsgErrorExit(RTEXITCODE_FAILURE,
                                       "Machine '%s' is not currently running.\n", pszMachineName);
 
-            CHECK_ERROR(console, CreateSharedFolder(Bstr(name).raw(),
-                                                    Bstr(hostpath).raw(),
-                                                    fWritable, fAutoMount));
+            CHECK_ERROR(console, CreateSharedFolder(Bstr(name).raw(), Bstr(hostpath).raw(),
+                                                    fWritable, fAutoMount, Bstr(pszAutoMountPoint).raw()));
             a->session->UnlockMachine();
         }
         else
@@ -1173,9 +1180,8 @@ RTEXITCODE handleSharedFolder(HandlerArg *a)
             ComPtr<IMachine> sessionMachine;
             a->session->COMGETTER(Machine)(sessionMachine.asOutParam());
 
-            CHECK_ERROR(sessionMachine, CreateSharedFolder(Bstr(name).raw(),
-                                                           Bstr(hostpath).raw(),
-                                                           fWritable, fAutoMount));
+            CHECK_ERROR(sessionMachine, CreateSharedFolder(Bstr(name).raw(), Bstr(hostpath).raw(),
+                                                           fWritable, fAutoMount, Bstr(pszAutoMountPoint).raw()));
             if (SUCCEEDED(rc))
                 CHECK_ERROR(sessionMachine, SaveSettings());
 

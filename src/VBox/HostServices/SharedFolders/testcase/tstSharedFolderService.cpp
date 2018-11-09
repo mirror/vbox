@@ -616,6 +616,7 @@ static SHFLROOT initWithWritableMapping(RTTEST hTest,
                                   SHFL_CPARMS_MAP_FOLDER)];
     union TESTSHFLSTRING FolderName;
     union TESTSHFLSTRING Mapping;
+    union TESTSHFLSTRING AutoMountPoint;
     VBOXHGCMCALLHANDLE_TYPEDEF callHandle = { VINF_SUCCESS };
     int rc;
 
@@ -626,11 +627,13 @@ static SHFLROOT initWithWritableMapping(RTTEST hTest,
     RT_BZERO(psvcTable->pvService, psvcTable->cbClient);
     fillTestShflString(&FolderName, pcszFolderName);
     fillTestShflString(&Mapping, pcszMapping);
+    fillTestShflString(&AutoMountPoint, "");
     aParms[0].setPointer(&FolderName,   RT_UOFFSETOF(SHFLSTRING, String)
                                       + FolderName.string.u16Size);
     aParms[1].setPointer(&Mapping,   RT_UOFFSETOF(SHFLSTRING, String)
                                    + Mapping.string.u16Size);
     aParms[2].setUInt32(1);
+    aParms[3].setPointer(&AutoMountPoint, SHFLSTRING_HEADER_SIZE + AutoMountPoint.string.u16Size);
     rc = psvcTable->pfnHostCall(psvcTable->pvService, SHFL_FN_ADD_MAPPING,
                                 SHFL_CPARMS_ADD_MAPPING, aParms);
     AssertReleaseRC(rc);

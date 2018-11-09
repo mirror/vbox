@@ -109,6 +109,16 @@ bool UIMachineSettingsSFDetails::isAutoMounted() const
     return mCbAutoMount->isChecked();
 }
 
+void UIMachineSettingsSFDetails::setAutoMountPoint(const QString &strAutoMountPoint)
+{
+    mLeAutoMountPoint->setText(strAutoMountPoint);
+}
+
+QString UIMachineSettingsSFDetails::autoMountPoint() const
+{
+    return mLeAutoMountPoint->text();
+}
+
 void UIMachineSettingsSFDetails::setPermanent(bool fPermanent)
 {
     mCbPermanent->setChecked(fPermanent);
