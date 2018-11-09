@@ -149,8 +149,8 @@ HRESULT Display::FinalConstruct()
     rc = RTCritSectInit(&mVideoRecLock);
     AssertRC(rc);
 
-    for (unsigned i = 0; i < RT_ELEMENTS(maVideoRecEnabled); i++)
-        maVideoRecEnabled[i] = true;
+    for (unsigned i = 0; i < RT_ELEMENTS(maRecordingEnabled); i++)
+        maRecordingEnabled[i] = true;
 #endif
 
 #ifdef VBOX_WITH_CRHGSMI
@@ -729,7 +729,7 @@ void Display::uninit()
         maFramebuffers[uScreenId].updateImage.cbLine = 0;
         maFramebuffers[uScreenId].pFramebuffer.setNull();
 #ifdef VBOX_WITH_RECORDING
-        maFramebuffers[uScreenId].videoRec.pSourceBitmap.setNull();
+        maFramebuffers[uScreenId].Recording.pSourceBitmap.setNull();
 #endif
     }
 
@@ -1057,7 +1057,7 @@ int Display::i_handleDisplayResize(unsigned uScreenId, uint32_t bpp, void *pvVRA
         i_handleSetVisibleRegion(mcRectVisibleRegion, mpRectVisibleRegion);
 
 #ifdef VBOX_WITH_RECORDING
-    i_videoRecScreenChanged(uScreenId);
+    i_recordingScreenChanged(uScreenId);
 #endif
 
     LogRelFlowFunc(("[%d]: default format %d\n", uScreenId, pFBInfo->fDefaultFormat));
@@ -2406,13 +2406,13 @@ HRESULT Display::takeScreenShotToArray(ULONG aScreenId,
 
 #ifdef VBOX_WITH_RECORDING
 /**
- * Invalidates the capturing configuration.
+ * Invalidates the recording configuration.
  *
  * @returns IPRT status code.
  */
-int Display::i_videoRecInvalidate(void)
+int Display::i_recordingInvalidate(void)
 {
-    CaptureContext *pCtx = mParent->i_videoRecGetContext();
+    CaptureContext *pCtx = mParent->i_recordingGetContext();
     if (!pCtx || !pCtx->IsStarted())
         return VINF_SUCCESS;
 
@@ -2421,25 +2421,25 @@ int Display::i_videoRecInvalidate(void)
      */
     for (unsigned uScreen = 0; uScreen < mcMonitors; uScreen++)
     {
-        CaptureStream *pCaptureStream = pCtx->GetStream(uScreen);
+        CaptureStream *pRecordingStream = pCtx->GetStream(uScreen);
 
-        const bool fStreamEnabled = pCaptureStream->IsReady();
-              bool fChanged       = maVideoRecEnabled[uScreen] != fStreamEnabled;
+        const bool fStreamEnabled = pRecordingStream->IsReady();
+              bool fChanged       = maRecordingEnabled[uScreen] != fStreamEnabled;
 
-        maVideoRecEnabled[uScreen] = fStreamEnabled;
+        maRecordingEnabled[uScreen] = fStreamEnabled;
 
         if (fChanged && uScreen < mcMonitors)
-            i_videoRecScreenChanged(uScreen);
+            i_recordingScreenChanged(uScreen);
     }
 
     return VINF_SUCCESS;
 }
 
-void Display::i_videoRecScreenChanged(unsigned uScreenId)
+void Display::i_recordingScreenChanged(unsigned uScreenId)
 {
-    CaptureContext *pCtx = mParent->i_videoRecGetContext();
+    CaptureContext *pCtx = mParent->i_recordingGetContext();
 
-    if (   RT_LIKELY(!maVideoRecEnabled[uScreenId])
+    if (   RT_LIKELY(!maRecordingEnabled[uScreenId])
         || !pCtx || !pCtx->IsStarted())
     {
         /* Skip recording this screen. */
@@ -2453,7 +2453,7 @@ void Display::i_videoRecScreenChanged(unsigned uScreenId)
     int rc2 = RTCritSectEnter(&mVideoRecLock);
     if (RT_SUCCESS(rc2))
     {
-        maFramebuffers[uScreenId].videoRec.pSourceBitmap = pSourceBitmap;
+        maFramebuffers[uScreenId].Recording.pSourceBitmap = pSourceBitmap;
 
         rc2 = RTCritSectLeave(&mVideoRecLock);
         AssertRC(rc2);
@@ -3388,7 +3388,7 @@ DECLCALLBACK(void) Display::i_displayUpdateCallback(PPDMIDISPLAYCONNECTOR pInter
 
 #ifdef VBOX_WITH_RECORDING
     AssertPtr(pDisplay->mParent);
-    CaptureContext *pCtx = pDisplay->mParent->i_videoRecGetContext();
+    CaptureContext *pCtx = pDisplay->mParent->i_recordingGetContext();
 
     if (   pCtx
         && pCtx->IsStarted()
@@ -3433,12 +3433,12 @@ DECLCALLBACK(void) Display::i_displayUpdateCallback(PPDMIDISPLAYCONNECTOR pInter
             uint64_t tsNowMs = RTTimeProgramMilliTS();
             for (uScreenId = 0; uScreenId < pDisplay->mcMonitors; uScreenId++)
             {
-                if (!pDisplay->maVideoRecEnabled[uScreenId])
+                if (!pDisplay->maRecordingEnabled[uScreenId])
                     continue;
 
                 if (pCtx->IsLimitReached(uScreenId, tsNowMs))
                 {
-                    pDisplay->mParent->i_videoRecStop();
+                    pDisplay->mParent->i_recordingStop();
                     break;
                 }
 
@@ -3449,7 +3449,7 @@ DECLCALLBACK(void) Display::i_displayUpdateCallback(PPDMIDISPLAYCONNECTOR pInter
                     int rc2 = RTCritSectEnter(&pDisplay->mVideoRecLock);
                     if (RT_SUCCESS(rc2))
                     {
-                        pSourceBitmap = pFBInfo->videoRec.pSourceBitmap;
+                        pSourceBitmap = pFBInfo->Recording.pSourceBitmap;
                         RTCritSectLeave(&pDisplay->mVideoRecLock);
                     }
 
@@ -3832,7 +3832,7 @@ int Display::i_crCtlSubmitSyncIfHasDataForScreen(uint32_t u32ScreenID, struct VB
 bool  Display::i_handleCrVRecScreenshotBegin(uint32_t uScreen, uint64_t uTimestampMs)
 {
 # ifdef VBOX_WITH_RECORDING
-    CaptureContext *pCtx = mParent->i_videoRecGetContext();
+    CaptureContext *pCtx = mParent->i_recordingGetContext();
     return (      pCtx
                && pCtx->IsReady(uScreen, uTimestampMs));
 # else
@@ -3854,7 +3854,7 @@ void  Display::i_handleCrVRecScreenshotPerform(uint32_t uScreen,
 {
     Assert(mfCrOglVideoRecState == CRVREC_STATE_SUBMITTED);
 # ifdef VBOX_WITH_RECORDING
-    CaptureContext *pCtx = mParent->i_videoRecGetContext();
+    CaptureContext *pCtx = mParent->i_recordingGetContext();
 
     if (   pCtx
         && pCtx->IsStarted()
@@ -4498,7 +4498,7 @@ DECLCALLBACK(void) Display::i_drvDestruct(PPDMDRVINS pDrvIns)
     {
         AutoWriteLock displayLock(pThis->pDisplay COMMA_LOCKVAL_SRC_POS);
 #ifdef VBOX_WITH_RECORDING
-        pThis->pDisplay->mParent->i_videoRecStop();
+        pThis->pDisplay->mParent->i_recordingStop();
 #endif
 #ifdef VBOX_WITH_CRHGSMI
         pThis->pDisplay->i_destructCrHgsmiData();

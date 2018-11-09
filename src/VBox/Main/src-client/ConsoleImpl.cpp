@@ -586,8 +586,8 @@ HRESULT Console::init(IMachine *aMachine, IInternalMachineControl *aControl, Loc
         AssertReturn(mAudioVRDE, E_FAIL);
 #endif
 #ifdef VBOX_WITH_AUDIO_RECORDING
-        unconst(Capture.mAudioVideoRec) = new AudioVideoRec(this);
-        AssertReturn(Capture.mAudioVideoRec, E_FAIL);
+        unconst(Recording.mAudioRec) = new AudioVideoRec(this);
+        AssertReturn(Recording.mAudioRec, E_FAIL);
 #endif
         FirmwareType_T enmFirmwareType;
         mMachine->COMGETTER(FirmwareType)(&enmFirmwareType);
@@ -734,10 +734,10 @@ void Console::uninit()
 #endif
 
 #ifdef VBOX_WITH_AUDIO_RECORDING
-    if (Capture.mAudioVideoRec)
+    if (Recording.mAudioRec)
     {
-        delete Capture.mAudioVideoRec;
-        unconst(Capture.mAudioVideoRec) = NULL;
+        delete Recording.mAudioRec;
+        unconst(Recording.mAudioRec) = NULL;
     }
 #endif
 
@@ -5600,13 +5600,13 @@ HRESULT Console::i_sendACPIMonitorHotPlugEvent()
 
 #ifdef VBOX_WITH_RECORDING
 /**
- * Enables or disables video (audio) capturing of a VM.
+ * Enables or disables recording of a VM.
  *
- * @returns IPRT status code. Will return VERR_NO_CHANGE if the capturing state has not been changed.
- * @param   fEnable             Whether to enable or disable the capturing.
+ * @returns IPRT status code. Will return VERR_NO_CHANGE if the recording state has not been changed.
+ * @param   fEnable             Whether to enable or disable the recording.
  * @param   pAutoLock           Pointer to auto write lock to use for attaching/detaching required driver(s) at runtime.
  */
-int Console::i_videoRecEnable(BOOL fEnable, util::AutoWriteLock *pAutoLock)
+int Console::i_recordingEnable(BOOL fEnable, util::AutoWriteLock *pAutoLock)
 {
     AssertPtrReturn(pAutoLock, VERR_INVALID_POINTER);
 
@@ -5615,44 +5615,44 @@ int Console::i_videoRecEnable(BOOL fEnable, util::AutoWriteLock *pAutoLock)
     Display *pDisplay = i_getDisplay();
     if (pDisplay)
     {
-        const bool fIsEnabled =    Capture.mpVideoRecCtx
-                                && Capture.mpVideoRecCtx->IsStarted();
+        const bool fIsEnabled =    Recording.mpRecordCtx
+                                && Recording.mpRecordCtx->IsStarted();
 
         if (RT_BOOL(fEnable) != fIsEnabled)
         {
             LogRel(("Recording: %s\n", fEnable ? "Enabling" : "Disabling"));
 
-            pDisplay->i_videoRecInvalidate();
+            pDisplay->i_recordingInvalidate();
 
             if (fEnable)
             {
-                vrc = i_videoRecCreate();
+                vrc = i_recordingCreate();
                 if (RT_SUCCESS(vrc))
                 {
 # ifdef VBOX_WITH_AUDIO_RECORDING
                     /* Attach the video recording audio driver if required. */
-                    if (   Capture.mpVideoRecCtx->IsFeatureEnabled(RecordFeature_Audio)
-                        && Capture.mAudioVideoRec)
+                    if (   Recording.mpRecordCtx->IsFeatureEnabled(RecordFeature_Audio)
+                        && Recording.mAudioRec)
                     {
-                        vrc = Capture.mAudioVideoRec->applyConfiguration(Capture.mpVideoRecCtx->GetConfig());
+                        vrc = Recording.mAudioRec->applyConfiguration(Recording.mpRecordCtx->GetConfig());
                         if (RT_SUCCESS(vrc))
-                            vrc = Capture.mAudioVideoRec->doAttachDriverViaEmt(mpUVM, pAutoLock);
+                            vrc = Recording.mAudioRec->doAttachDriverViaEmt(mpUVM, pAutoLock);
                     }
 # endif
                     if (   RT_SUCCESS(vrc)
-                        && Capture.mpVideoRecCtx->IsReady()) /* Any video recording (audio and/or video) feature enabled? */
+                        && Recording.mpRecordCtx->IsReady()) /* Any video recording (audio and/or video) feature enabled? */
                     {
-                        vrc = i_videoRecStart();
+                        vrc = i_recordingStart();
                     }
                 }
             }
             else
             {
-                i_videoRecStop();
+                i_recordingStop();
 # ifdef VBOX_WITH_AUDIO_RECORDING
-                Capture.mAudioVideoRec->doDetachDriverViaEmt(mpUVM, pAutoLock);
+                Recording.mAudioRec->doDetachDriverViaEmt(mpUVM, pAutoLock);
 # endif
-                i_videoRecDestroy();
+                i_recordingDestroy();
             }
 
             if (RT_FAILURE(vrc))
@@ -5675,7 +5675,7 @@ HRESULT Console::i_onRecordChange()
 
     HRESULT rc = S_OK;
 #ifdef VBOX_WITH_RECORDING
-    /* Don't trigger video capture changes if the VM isn't running. */
+    /* Don't trigger recording changes if the VM isn't running. */
     SafeVMPtrQuiet ptrVM(this);
     if (ptrVM.isOk())
     {
@@ -5687,7 +5687,7 @@ HRESULT Console::i_onRecordChange()
         rc = RecordSettings->COMGETTER(Enabled)(&fEnabled);
         AssertComRCReturnRC(rc);
 
-        int vrc = i_videoRecEnable(fEnabled, &alock);
+        int vrc = i_recordingEnable(fEnabled, &alock);
         if (RT_SUCCESS(vrc))
         {
             alock.release();
@@ -6875,15 +6875,15 @@ HRESULT Console::i_cancelSaveState()
  * @param   cbData              Size (in bytes) of audio data to send.
  * @param   uTimestampMs        Timestamp (in ms) of audio data.
  */
-HRESULT Console::i_videoRecSendAudio(const void *pvData, size_t cbData, uint64_t uTimestampMs)
+HRESULT Console::i_recordingSendAudio(const void *pvData, size_t cbData, uint64_t uTimestampMs)
 {
-    if (!Capture.mpVideoRecCtx)
+    if (!Recording.mpRecordCtx)
         return S_OK;
 
-    if (   Capture.mpVideoRecCtx->IsStarted()
-        && Capture.mpVideoRecCtx->IsFeatureEnabled(RecordFeature_Audio))
+    if (   Recording.mpRecordCtx->IsStarted()
+        && Recording.mpRecordCtx->IsFeatureEnabled(RecordFeature_Audio))
     {
-        return Capture.mpVideoRecCtx->SendAudioFrame(pvData, cbData, uTimestampMs);
+        return Recording.mpRecordCtx->SendAudioFrame(pvData, cbData, uTimestampMs);
     }
 
     return S_OK;
@@ -6891,7 +6891,7 @@ HRESULT Console::i_videoRecSendAudio(const void *pvData, size_t cbData, uint64_t
 #endif /* VBOX_WITH_AUDIO_RECORDING */
 
 #ifdef VBOX_WITH_RECORDING
-int Console::i_videoRecGetSettings(settings::RecordSettings &Settings)
+int Console::i_recordingGetSettings(settings::RecordSettings &Settings)
 {
     Assert(mMachine.isNotNull());
 
@@ -6951,15 +6951,15 @@ int Console::i_videoRecGetSettings(settings::RecordSettings &Settings)
  *
  * @returns IPRT status code.
  */
-int Console::i_videoRecCreate(void)
+int Console::i_recordingCreate(void)
 {
-    AssertReturn(Capture.mpVideoRecCtx == NULL, VERR_WRONG_ORDER);
+    AssertReturn(Recording.mpRecordCtx == NULL, VERR_WRONG_ORDER);
 
     int rc = VINF_SUCCESS;
 
     try
     {
-        Capture.mpVideoRecCtx = new CaptureContext(this);
+        Recording.mpRecordCtx = new CaptureContext(this);
     }
     catch (std::bad_alloc &)
     {
@@ -6971,11 +6971,11 @@ int Console::i_videoRecCreate(void)
     }
 
     settings::RecordSettings Settings;
-    rc = i_videoRecGetSettings(Settings);
+    rc = i_recordingGetSettings(Settings);
     if (RT_SUCCESS(rc))
     {
-        AssertPtr(Capture.mpVideoRecCtx);
-        rc = Capture.mpVideoRecCtx->Create(Settings);
+        AssertPtr(Recording.mpRecordCtx);
+        rc = Recording.mpRecordCtx->Create(Settings);
     }
 
     LogFlowFuncLeaveRC(rc);
@@ -6985,12 +6985,12 @@ int Console::i_videoRecCreate(void)
 /**
  * Destroys the recording context.
  */
-void Console::i_videoRecDestroy(void)
+void Console::i_recordingDestroy(void)
 {
-    if (Capture.mpVideoRecCtx)
+    if (Recording.mpRecordCtx)
     {
-        delete Capture.mpVideoRecCtx;
-        Capture.mpVideoRecCtx = NULL;
+        delete Recording.mpRecordCtx;
+        Recording.mpRecordCtx = NULL;
     }
 
     LogFlowThisFuncLeave();
@@ -7001,20 +7001,20 @@ void Console::i_videoRecDestroy(void)
  *
  * @returns IPRT status code.
  */
-int Console::i_videoRecStart(void)
+int Console::i_recordingStart(void)
 {
-    AssertPtrReturn(Capture.mpVideoRecCtx, VERR_WRONG_ORDER);
+    AssertPtrReturn(Recording.mpRecordCtx, VERR_WRONG_ORDER);
 
-    if (Capture.mpVideoRecCtx->IsStarted())
+    if (Recording.mpRecordCtx->IsStarted())
         return VINF_SUCCESS;
 
     LogRel(("Recording: Starting ...\n"));
 
-    int rc = Capture.mpVideoRecCtx->Start();
+    int rc = Recording.mpRecordCtx->Start();
     if (RT_SUCCESS(rc))
     {
-        for (unsigned uScreen = 0; uScreen < Capture.mpVideoRecCtx->GetStreamCount(); uScreen++)
-            mDisplay->i_videoRecScreenChanged(uScreen);
+        for (unsigned uScreen = 0; uScreen < Recording.mpRecordCtx->GetStreamCount(); uScreen++)
+            mDisplay->i_recordingScreenChanged(uScreen);
     }
 
     if (RT_FAILURE(rc))
@@ -7027,20 +7027,20 @@ int Console::i_videoRecStart(void)
 /**
  * Stops capturing. Does nothing if capturing is not active.
  */
-int Console::i_videoRecStop(void)
+int Console::i_recordingStop(void)
 {
-    if (   !Capture.mpVideoRecCtx
-        || !Capture.mpVideoRecCtx->IsStarted())
+    if (   !Recording.mpRecordCtx
+        || !Recording.mpRecordCtx->IsStarted())
         return VINF_SUCCESS;
 
     LogRel(("Recording: Stopping ...\n"));
 
-    int rc = Capture.mpVideoRecCtx->Stop();
+    int rc = Recording.mpRecordCtx->Stop();
     if (RT_SUCCESS(rc))
     {
-        const size_t cStreams = Capture.mpVideoRecCtx->GetStreamCount();
+        const size_t cStreams = Recording.mpRecordCtx->GetStreamCount();
         for (unsigned uScreen = 0; uScreen < cStreams; ++uScreen)
-            mDisplay->i_videoRecScreenChanged(uScreen);
+            mDisplay->i_recordingScreenChanged(uScreen);
 
         ComPtr<IRecordSettings> pRecordSettings;
         HRESULT hrc = mMachine->COMGETTER(RecordSettings)(pRecordSettings.asOutParam());
@@ -10155,7 +10155,7 @@ void Console::i_powerUpThreadTask(VMPowerUpTask *pTask)
 
         if (fCaptureEnabled)
         {
-            int vrc2 = pConsole->i_videoRecEnable(fCaptureEnabled, &alock);
+            int vrc2 = pConsole->i_recordingEnable(fCaptureEnabled, &alock);
             if (RT_SUCCESS(vrc2))
             {
                 fireRecordChangedEvent(pConsole->mEventSource);

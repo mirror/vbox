@@ -100,7 +100,7 @@ typedef struct _DISPLAYFBINFO
     struct
     {
         ComPtr<IDisplaySourceBitmap> pSourceBitmap;
-    } videoRec;
+    } Recording;
 #endif /* VBOX_WITH_RECORDING */
 } DISPLAYFBINFO;
 
@@ -200,8 +200,8 @@ public:
     void VideoAccelFlushVMMDev(void);
 
 #ifdef VBOX_WITH_RECORDING
-    int  i_videoRecInvalidate(void);
-    void i_videoRecScreenChanged(unsigned uScreenId);
+    int  i_recordingInvalidate(void);
+    void i_recordingScreenChanged(unsigned uScreenId);
 #endif
 
     void i_notifyPowerDown(void);
@@ -471,8 +471,8 @@ private:
 #ifdef VBOX_WITH_RECORDING
     /* Serializes access to video recording source bitmaps. */
     RTCRITSECT           mVideoRecLock;
-    /** Array which defines which screens are being enabled for capturing. */
-    bool                 maVideoRecEnabled[SchemaDefs::MaxGuestMonitors];
+    /** Array which defines which screens are being enabled for recording. */
+    bool                 maRecordingEnabled[SchemaDefs::MaxGuestMonitors];
 #endif
 
 public:

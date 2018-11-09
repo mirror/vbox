@@ -827,7 +827,7 @@ static DECLCALLBACK(int) drvAudioVideoRecStreamPlay(PPDMIHOSTAUDIO pInterface, P
             {
                 case AVRECCONTAINERTYPE_MAIN_CONSOLE:
                 {
-                    HRESULT hr = pSink->Con.Main.pConsole->i_videoRecSendAudio(pStreamAV->pvDstBuf, cbDst, uPTSMs);
+                    HRESULT hr = pSink->Con.Main.pConsole->i_recordingSendAudio(pStreamAV->pvDstBuf, cbDst, uPTSMs);
                     Assert(hr == S_OK);
                     RT_NOREF(hr);
 
@@ -1100,7 +1100,7 @@ int AudioVideoRec::applyConfiguration(const settings::RecordSettings &Settings)
  */
 int AudioVideoRec::configureDriver(PCFGMNODE pLunCfg)
 {
-    int rc = CFGMR3InsertInteger(pLunCfg, "Object",    (uintptr_t)mpConsole->i_videoRecGetAudioDrv());
+    int rc = CFGMR3InsertInteger(pLunCfg, "Object",    (uintptr_t)mpConsole->i_recordingGetAudioDrv());
     AssertRCReturn(rc, rc);
     rc = CFGMR3InsertInteger(pLunCfg, "ObjectConsole", (uintptr_t)mpConsole);
     AssertRCReturn(rc, rc);

@@ -140,16 +140,16 @@ public:
 #ifdef VBOX_WITH_AUDIO_VRDE
     AudioVRDE *i_getAudioVRDE() const { return mAudioVRDE; }
 #endif
-#ifdef VBOX_WITH_AUDIO_RECORDING
-    int i_videoRecCreate(void);
-    void i_videoRecDestroy(void);
-    int i_videoRecEnable(BOOL fEnable, util::AutoWriteLock *pAutoLock);
-    int i_videoRecGetSettings(settings::RecordSettings &Settings);
-    int i_videoRecStart(void);
-    int i_videoRecStop(void);
-    AudioVideoRec *i_videoRecGetAudioDrv(void) const { return Capture.mAudioVideoRec; }
-    CaptureContext *i_videoRecGetContext(void) const { return Capture.mpVideoRecCtx; }
-    HRESULT i_videoRecSendAudio(const void *pvData, size_t cbData, uint64_t uDurationMs);
+#ifdef VBOX_WITH_RECORDING
+    int i_recordingCreate(void);
+    void i_recordingDestroy(void);
+    int i_recordingEnable(BOOL fEnable, util::AutoWriteLock *pAutoLock);
+    int i_recordingGetSettings(settings::RecordSettings &Settings);
+    int i_recordingStart(void);
+    int i_recordingStop(void);
+    AudioVideoRec *i_recordingGetAudioDrv(void) const { return Recording.mAudioRec; }
+    CaptureContext *i_recordingGetContext(void) const { return Recording.mpRecordCtx; }
+    HRESULT i_recordingSendAudio(const void *pvData, size_t cbData, uint64_t uDurationMs);
 #endif
 
     const ComPtr<IMachine> &i_machine() const { return mMachine; }
@@ -1030,19 +1030,19 @@ private:
     ComPtr<IEventListener> mVmListener;
 
 #ifdef VBOX_WITH_RECORDING
-    struct Capture
+    struct Recording
     {
-        Capture()
-            : mpVideoRecCtx(NULL)
-            , mAudioVideoRec(NULL) { }
+        Recording()
+            : mpRecordCtx(NULL)
+            , mAudioRec(NULL) { }
 
-        /** The capturing context. */
-        CaptureContext       *mpVideoRecCtx;
+        /** The recording context. */
+        CaptureContext       *mpRecordCtx;
 # ifdef VBOX_WITH_AUDIO_RECORDING
         /** Pointer to capturing audio backend. */
-        AudioVideoRec * const mAudioVideoRec;
+        AudioVideoRec * const mAudioRec;
 # endif
-    } Capture;
+    } Recording;
 #endif /* VBOX_WITH_RECORDING */
 
     friend class VMTask;
