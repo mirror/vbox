@@ -18,9 +18,6 @@
 #ifndef ___UIScaleFactorEditor_h___
 #define ___UIScaleFactorEditor_h___
 
-/* Qt includes: */
-//# include <QWidget>
-
 /* GUI includes: */
 #include "QIWithRetranslateUI.h"
 #include "UILibraryDefs.h"
@@ -48,10 +45,7 @@ public:
     void           setScaleFactors(const QList<double> &scaleFactors);
     /* Returns either a single global scale factor or a list of scale factor for each monitor. */
     QList<double>  scaleFactors() const;
-
-    void           isGlobalScaleFactor(bool bFlag);
     void           setDefaultScaleFactor(double dDefaultScaleFactor);
-
     /** Defines minimum width @a iHint for internal spin-box. */
     void           setSpinBoxWidthHint(int iHint);
 
@@ -68,12 +62,13 @@ private slots:
 private:
 
     void               prepare();
+    void               setIsGlobalScaleFactor(bool bFlag);
     void               setScaleFactor(int iMonitorIndex, int iScaleFactor);
     /* Blocks slider's signals before settting the value. */
     void               setSliderValue(int iValue);
     /* Blocks slider's signals before settting the value. */
     void               setSpinBoxValue(int iValue);
-    /* Set the spinbox and slider to scale factor of currently selected monitor */
+    /* Set the spinbox and slider to scale factor of currently selected monitor. */
     void               updateValuesAfterMonitorChange();
     QSpinBox          *m_pScaleSpinBox;
     QGridLayout       *m_pMainLayout;
@@ -81,7 +76,7 @@ private:
     QIAdvancedSlider  *m_pScaleSlider;
     QLabel            *m_pMaxScaleLabel;
     QLabel            *m_pMinScaleLabel;
-    /* Stores the per-monitor scale factors. The 0th item is for all monitors (global) */
+    /* Stores the per-monitor scale factors. The 0th item is for all monitors (global). */
     QList<double>      m_scaleFactors;
     double             m_dDefaultScaleFactor;
 };
