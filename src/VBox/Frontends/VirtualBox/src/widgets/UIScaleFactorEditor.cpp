@@ -99,7 +99,7 @@ void UIScaleFactorEditor::setScaleFactors(const QList<double> &scaleFactors)
         return;
     }
 
-    // Insert 0th element as the global scalar value
+    /* Insert 0th element as the global scalar value: */
     m_scaleFactors.append(m_dDefaultScaleFactor);
     m_scaleFactors.append(scaleFactors);
     setIsGlobalScaleFactor(false);

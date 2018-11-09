@@ -18,12 +18,12 @@
 #ifndef ___UIScaleFactorEditor_h___
 #define ___UIScaleFactorEditor_h___
 
-/* GUI includes: */
+/** GUI includes. */
 #include "QIWithRetranslateUI.h"
 #include "UILibraryDefs.h"
 
 
-/* Forward declarations: */
+/** Forward declarations. */
 class QComboBox;
 class QGridLayout;
 class QLabel;
@@ -32,8 +32,8 @@ class QWidget;
 class QIAdvancedSlider;
 
 /** QWidget reimplementation providing GUI with monitor scale factor editing functionality.
- *  It includes a combo box to select a monitor, a slider, and a spinbox to display/modify values.
- *  The first item in the combo box is used to change the scale factor of all monitors.*/
+  *  It includes a combo box to select a monitor, a slider, and a spinbox to display/modify values.
+  *  The first item in the combo box is used to change the scale factor of all monitors. */
 class SHARED_LIBRARY_STUFF UIScaleFactorEditor : public QIWithRetranslateUI<QWidget>
 {
     Q_OBJECT;
@@ -41,9 +41,11 @@ class SHARED_LIBRARY_STUFF UIScaleFactorEditor : public QIWithRetranslateUI<QWid
 public:
 
     UIScaleFactorEditor(QWidget *pParent);
+    /** Configures the internal variables (m_pMonitorComboBox items , m_scaleFactors' size, etc)
+      * wrt. @p iMonitorCount. */
     void           setMonitorCount(int iMonitorCount);
     void           setScaleFactors(const QList<double> &scaleFactors);
-    /* Returns either a single global scale factor or a list of scale factor for each monitor. */
+    /** Returns either a single global scale factor or a list of scale factor for each monitor. */
     QList<double>  scaleFactors() const;
     void           setDefaultScaleFactor(double dDefaultScaleFactor);
     /** Defines minimum width @a iHint for internal spin-box. */
@@ -55,28 +57,36 @@ protected:
 
 private slots:
 
-    void sltScaleSpinBoxValueChanged(int value);
-    void sltScaleSliderValueChanged(int value);
-    void sltMonitorComboIndexChanged(int index);
+    /** @name Internal slots handling respective widget's value update.
+      * @{ */
+        void sltScaleSpinBoxValueChanged(int value);
+        void sltScaleSliderValueChanged(int value);
+        void sltMonitorComboIndexChanged(int index);
+    /** @} */
 
 private:
 
     void               prepare();
     void               setIsGlobalScaleFactor(bool bFlag);
     void               setScaleFactor(int iMonitorIndex, int iScaleFactor);
-    /* Blocks slider's signals before settting the value. */
+    /** Blocks slider's signals before settting the slider value. */
     void               setSliderValue(int iValue);
-    /* Blocks slider's signals before settting the value. */
+    /** Blocks spinbox's signals before settting the value. */
     void               setSpinBoxValue(int iValue);
-    /* Set the spinbox and slider to scale factor of currently selected monitor. */
+    /** Set the spinbox and slider to scale factor of currently selected monitor. */
     void               updateValuesAfterMonitorChange();
-    QSpinBox          *m_pScaleSpinBox;
-    QGridLayout       *m_pMainLayout;
-    QComboBox         *m_pMonitorComboBox;
-    QIAdvancedSlider  *m_pScaleSlider;
-    QLabel            *m_pMaxScaleLabel;
-    QLabel            *m_pMinScaleLabel;
-    /* Stores the per-monitor scale factors. The 0th item is for all monitors (global). */
+
+    /** @name Member widgets.
+      * @{ */
+        QSpinBox          *m_pScaleSpinBox;
+        QGridLayout       *m_pMainLayout;
+        QComboBox         *m_pMonitorComboBox;
+        QIAdvancedSlider  *m_pScaleSlider;
+        QLabel            *m_pMaxScaleLabel;
+        QLabel            *m_pMinScaleLabel;
+    /** @} */
+
+    /** Stores the per-monitor scale factors. The 0th item is for all monitors (global). */
     QList<double>      m_scaleFactors;
     double             m_dDefaultScaleFactor;
 };
