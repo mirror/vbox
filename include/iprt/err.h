@@ -128,6 +128,7 @@ private:
  */
 #if defined(__cplusplus) \
  && !defined(RTERR_STRICT_RC) \
+ && !defined(RTERR_NO_STRICT_RC) \
  && (   defined(DOXYGEN_RUNNING) \
      || defined(DEBUG) \
      || defined(RT_STRICT) )
