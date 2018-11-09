@@ -29,6 +29,7 @@ terms and conditions of either the GPL or the CDDL or both.
 """
 __version__ = "$Revision$"
 
+
 # Standard Python imports.
 import os;
 import sys;
@@ -47,6 +48,7 @@ from testdriver import vbox;
 from testdriver import vboxcon;
 from testdriver import vboxwrappers;
 
+
 def _ControllerTypeToName(eControllerType):
     """ Translate a controller type to a name. """
     if eControllerType == vboxcon.StorageControllerType_PIIX3 or eControllerType == vboxcon.StorageControllerType_PIIX4:
@@ -61,6 +63,7 @@ def _ControllerTypeToName(eControllerType):
         sType = "Storage Controller";
     return sType;
 
+
 def crc32_of_file(filepath):
     fileobj = open(filepath,'rb');
     current = 0;
@@ -73,6 +76,7 @@ def crc32_of_file(filepath):
 
     fileobj.close();
     return current % 2**32;
+
 
 class tdStorageSnapshot(vbox.TestDriver):                                      # pylint: disable=R0902
     """
