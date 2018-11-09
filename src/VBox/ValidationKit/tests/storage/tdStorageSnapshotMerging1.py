@@ -205,7 +205,7 @@ class tdStorageSnapshot(vbox.TestDriver):                                      #
 
             except:
                 reporter.errorXcpt('failed to open hd "%s"' % (sFullName));
-                return False;
+                return None;
 
         try:
             if fImmutable:
