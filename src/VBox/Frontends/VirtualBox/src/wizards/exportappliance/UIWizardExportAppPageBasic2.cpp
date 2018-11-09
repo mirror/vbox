@@ -254,7 +254,7 @@ void UIWizardExportAppPage2::populateAccountProperties()
                         pItemK->setFlags(pItemK->flags() & ~Qt::ItemIsSelectable);
 
                         /* Use non-translated description as tool-tip: */
-                        const QString strToolTip = m_comCloudProfile.GetPropertyDescription(keys.at(i));
+                        const QString strToolTip = m_comCloudProvider.GetPropertyDescription(keys.at(i));
                         /* Show error message if necessary: */
                         if (!m_comCloudProfile.isOk())
                             msgCenter().cannotAcquireCloudProfileParameter(m_comCloudProfile);

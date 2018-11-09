@@ -25319,7 +25319,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="ICloudProfile" extends="$unknown"
-    uuid="011d1e9a-a48b-4d15-91a0-6101b087155c"
+    uuid="5f2ba3a2-f899-4261-877f-08b7bc52c15a"
     wsmap="managed" reservedMethods="4" reservedAttributes="4"
     >
 
@@ -25332,12 +25332,6 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <attribute name="providerId" type="uuid" mod="string" readonly="yes">
       <desc>
         Returns provider identifier tied with this profile.
-      </desc>
-    </attribute>
-
-    <attribute name="supportedPropertyNames" type="wstring" safearray="yes" readonly="yes">
-      <desc>
-        Returns the supported property names.
       </desc>
     </attribute>
 
@@ -25432,19 +25426,6 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </param>
     </method>
 
-    <!--- @todo r=klaus Is this the best placement of this method? To me it's
-         not obvious that it processes the object's state at all, and could be
-         moved up to ICloudProvider unless there's any chance that the
-         description changes with the profile. -->
-    <method name="getPropertyDescription" const="yes">
-      <param name="name" type="wstring" dir="in">
-        <desc>Property name.</desc>
-      </param>
-      <param name="description" type="wstring" dir="return">
-        <desc>Property description.</desc>
-      </param>
-    </method>
-
     <method name="remove">
       <desc>
         Deletes a profile.
@@ -25471,7 +25452,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="ICloudProvider" extends="$unknown"
-    uuid="6e500583-602c-49bc-894d-2f53b8e371e9"
+    uuid="8154fa84-35d7-4a9b-86b4-cb2635b0d9f5"
     wsmap="managed" reservedMethods="4" reservedAttributes="4"
     >
 
@@ -25501,6 +25482,21 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <attribute name="profileNames" type="wstring" safearray="yes" readonly="yes">
       <desc>Returns all profile names for this cloud provider.</desc>
     </attribute>
+
+    <attribute name="supportedPropertyNames" type="wstring" safearray="yes" readonly="yes">
+      <desc>
+        Returns the supported property names.
+      </desc>
+    </attribute>
+
+    <method name="getPropertyDescription" const="yes">
+      <param name="name" type="wstring" dir="in">
+        <desc>Property name.</desc>
+      </param>
+      <param name="description" type="wstring" dir="return">
+        <desc>Property description.</desc>
+      </param>
+    </method>
 
     <method name="createProfile">
       <desc>

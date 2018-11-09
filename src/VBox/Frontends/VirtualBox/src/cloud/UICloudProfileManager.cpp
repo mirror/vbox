@@ -357,7 +357,7 @@ void UICloudProfileManagerWidget::sltAddCloudProfile()
                     if (comCloudProfile.isOk())
                     {
                         /* Acquire supported property names: */
-                        const QVector<QString> supportedNames = comCloudProfile.GetSupportedPropertyNames();
+                        const QVector<QString> supportedNames = comCloudProvider.GetSupportedPropertyNames();
                         /* Show error message if necessary: */
                         if (!comCloudProfile.isOk())
                             msgCenter().cannotAcquireCloudProfileParameter(comCloudProfile, this);
@@ -831,12 +831,12 @@ void UICloudProfileManagerWidget::loadCloudProfile(const CCloudProfile &comProfi
         if (comProfile.isOk())
         {
             /* Acquire descriptions: */
-            for (int i = 0; i < keys.size(); ++i)
-            {
-                descriptions[i] = comProfile.GetPropertyDescription(keys.at(i));
-                if (!comProfile.isOk())
-                    continue;
-            }
+//          for (int i = 0; i < keys.size(); ++i)
+//          {
+//              descriptions[i] = comProfile.GetPropertyDescription(keys.at(i));
+//              if (!comProfile.isOk())
+//                  continue;
+//          }
 
             /* Enumerate all the keys: */
             for (int i = 0; i < keys.size(); ++i)
