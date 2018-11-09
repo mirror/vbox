@@ -363,9 +363,6 @@ typedef struct VDMETAXFER
     uint8_t          abData[1];
 } VDMETAXFER;
 
-/* vector for temporary storing image sizes */
-RTVEC_DECL(VDImgSzVec, uint64_t)
-
 /**
  * The transfer direction for the metadata.
  */
