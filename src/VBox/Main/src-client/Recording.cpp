@@ -171,7 +171,7 @@ int RecordingContext::threadNotify(void)
 }
 
 /**
- * Creates a video recording context.
+ * Creates a recording context.
  *
  * @returns IPRT status code.
  * @param   a_Settings          Capture settings to use for context creation.
@@ -268,7 +268,7 @@ int RecordingContext::stopInternal(void)
 }
 
 /**
- * Destroys a video recording context.
+ * Destroys a recording context.
  */
 int RecordingContext::destroyInternal(void)
 {

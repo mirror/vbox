@@ -22,7 +22,7 @@
 
 #ifdef VBOX_WITH_AUDIO_RECORDING
 /**
- * Frees a previously allocated video recording audio frame.
+ * Frees a previously allocated recording audio frame.
  *
  * @param   pFrame              Audio frame to free. The pointer will be invalid after return.
  */
@@ -42,7 +42,7 @@ void RecordingAudioFrameFree(PRECORDINGAUDIOFRAME pFrame)
 #endif
 
 /**
- * Frees a video recording video frame.
+ * Frees a recording video frame.
  *
  * @returns IPRT status code.
  * @param   pFrame              Pointer to video frame to free. The pointer will be invalid after return.
@@ -61,12 +61,12 @@ void RecordingVideoFrameFree(PRECORDINGVIDEOFRAME pFrame)
 }
 
 /**
- * Frees a video recording (data) block.
+ * Frees a recording (data) block.
  *
  * @returns IPRT status code.
  * @param   pBlock              Video recording (data) block to free. The pointer will be invalid after return.
  */
-void RECORDINGBLOCKFree(PRECORDINGBLOCK pBlock)
+void RecordingFree(PRECORDINGBLOCK pBlock)
 {
     if (!pBlock)
         return;

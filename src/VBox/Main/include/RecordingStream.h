@@ -205,12 +205,12 @@ protected:
     } Video;
 
     settings::RecordScreenSettings ScreenSettings;
-    /** Common set of video recording (data) blocks, needed for
+    /** Common set of recording (data) blocks, needed for
      *  multiplexing to all recording streams. */
     RecordingBlockSet              Blocks;
 };
 
-/** Vector of video recording streams. */
+/** Vector of recording streams. */
 typedef std::vector <RecordingStream *> RecordingStreams;
 
 #endif /* ____H_RECORDING_STREAM */
