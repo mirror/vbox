@@ -35,6 +35,7 @@
 # include "UIMainEventListener.h"
 # include "UIModalWindowManager.h"
 # include "UIProgressDialog.h"
+# include "UIProgressEventHandler.h"
 # include "UISpecialControls.h"
 # include "VBoxGlobal.h"
 # ifdef VBOX_WS_MAC
@@ -47,157 +48,6 @@
 # include "CProgress.h"
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
-
-
-/** Private QObject extension
-  * providing UIExtraDataManager with the CVirtualBox event-source. */
-class UIProgressEventHandler : public QObject
-{
-    Q_OBJECT;
-
-signals:
-
-    /** Notifies about @a iPercent change for progress with @a uProgressId. */
-    void sigProgressPercentageChange(const QUuid &uProgressId, const int iPercent);
-    /** Notifies about task complete for progress with @a uProgressId. */
-    void sigProgressTaskComplete(const QUuid &uProgressId);
-
-public:
-
-    /** Constructs event proxy object on the basis of passed @a pParent. */
-    UIProgressEventHandler(QObject *pParent, const CProgress &comProgress);
-    /** Destructs event proxy object. */
-    virtual ~UIProgressEventHandler() /* override */;
-
-protected:
-
-    /** @name Prepare/Cleanup cascade.
-      * @{ */
-        /** Prepares all. */
-        void prepare();
-        /** Prepares listener. */
-        void prepareListener();
-        /** Prepares connections. */
-        void prepareConnections();
-
-        /** Cleanups connections. */
-        void cleanupConnections();
-        /** Cleanups listener. */
-        void cleanupListener();
-        /** Cleanups all. */
-        void cleanup();
-    /** @} */
-
-private:
-
-    /** Holds the progress wrapper. */
-    CProgress  m_comProgress;
-
-    /** Holds the Qt event listener instance. */
-    ComObjPtr<UIMainEventListenerImpl>  m_pQtListener;
-    /** Holds the COM event listener instance. */
-    CEventListener                      m_comEventListener;
-};
-
-
-/*********************************************************************************************************************************
-*   Class UIProgressEventHandler implementation.                                                                                 *
-*********************************************************************************************************************************/
-
-UIProgressEventHandler::UIProgressEventHandler(QObject *pParent, const CProgress &comProgress)
-    : QObject(pParent)
-    , m_comProgress(comProgress)
-{
-    /* Prepare: */
-    prepare();
-}
-
-UIProgressEventHandler::~UIProgressEventHandler()
-{
-    /* Cleanup: */
-    cleanup();
-}
-
-void UIProgressEventHandler::prepare()
-{
-    /* Prepare: */
-    prepareListener();
-    prepareConnections();
-}
-
-void UIProgressEventHandler::prepareListener()
-{
-    /* Create event listener instance: */
-    m_pQtListener.createObject();
-    m_pQtListener->init(new UIMainEventListener, this);
-    m_comEventListener = CEventListener(m_pQtListener);
-
-    /* Get CProgress event source: */
-    CEventSource comEventSourceProgress = m_comProgress.GetEventSource();
-    AssertWrapperOk(comEventSourceProgress);
-
-    /* Enumerate all the required event-types: */
-    QVector<KVBoxEventType> eventTypes;
-    eventTypes
-        << KVBoxEventType_OnProgressPercentageChanged
-        << KVBoxEventType_OnProgressTaskCompleted;
-
-    /* Register event listener for CProgress event source: */
-    comEventSourceProgress.RegisterListener(m_comEventListener, eventTypes,
-        gEDataManager->eventHandlingType() == EventHandlingType_Active ? TRUE : FALSE);
-    AssertWrapperOk(comEventSourceProgress);
-
-    /* If event listener registered as passive one: */
-    if (gEDataManager->eventHandlingType() == EventHandlingType_Passive)
-    {
-        /* Register event sources in their listeners as well: */
-        m_pQtListener->getWrapped()->registerSource(comEventSourceProgress, m_comEventListener);
-    }
-}
-
-void UIProgressEventHandler::prepareConnections()
-{
-    /* Create direct (sync) connections for signals of main listener: */
-    connect(m_pQtListener->getWrapped(), &UIMainEventListener::sigProgressPercentageChange,
-            this, &UIProgressEventHandler::sigProgressPercentageChange,
-            Qt::DirectConnection);
-    connect(m_pQtListener->getWrapped(), &UIMainEventListener::sigProgressTaskComplete,
-            this, &UIProgressEventHandler::sigProgressTaskComplete,
-            Qt::DirectConnection);
-}
-
-void UIProgressEventHandler::cleanupConnections()
-{
-    /* Nothing for now. */
-}
-
-void UIProgressEventHandler::cleanupListener()
-{
-    /* If event listener registered as passive one: */
-    if (gEDataManager->eventHandlingType() == EventHandlingType_Passive)
-    {
-        /* Unregister everything: */
-        m_pQtListener->getWrapped()->unregisterSources();
-    }
-
-    /* Make sure VBoxSVC is available: */
-    if (!vboxGlobal().isVBoxSVCAvailable())
-        return;
-
-    /* Get CProgress event source: */
-    CEventSource comEventSourceProgress = m_comProgress.GetEventSource();
-    AssertWrapperOk(comEventSourceProgress);
-
-    /* Unregister event listener for CProgress event source: */
-    comEventSourceProgress.UnregisterListener(m_comEventListener);
-}
-
-void UIProgressEventHandler::cleanup()
-{
-    /* Cleanup: */
-    cleanupConnections();
-    cleanupListener();
-}
 
 
 /*********************************************************************************************************************************
@@ -763,7 +613,3 @@ void UIProgress::timerEvent(QTimerEvent *)
                                m_comProgress.GetOperation() + 1, m_comProgress.GetPercent());
     }
 }
-
-
-#include "UIProgressDialog.moc"
-

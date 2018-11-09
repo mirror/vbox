@@ -798,6 +798,7 @@ ifndef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/globals/UIMessageCenter.h \
 	src/globals/UIModalWindowManager.h \
 	src/globals/UIPopupCenter.h \
+	src/globals/UIProgressEventHandler.h \
 	src/globals/UIShortcutPool.h \
 	src/globals/UIThreadPool.h \
 	src/globals/UIVirtualBoxEventHandler.h \
@@ -1088,6 +1089,7 @@ ifdef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/globals/UIMessageCenter.h \
 	src/globals/UIModalWindowManager.h \
 	src/globals/UIPopupCenter.h \
+	src/globals/UIProgressEventHandler.h \
 	src/globals/UIShortcutPool.h \
 	src/globals/UIThreadPool.h \
 	src/globals/UIVirtualBoxEventHandler.h \
@@ -1242,7 +1244,6 @@ ifndef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/widgets/UIHotKeyEditor.cpp \
 	src/widgets/UIMiniToolBar.cpp \
 	src/widgets/UIPortForwardingTable.cpp \
-	src/widgets/UIProgressDialog.cpp \
 	src/widgets/UIStatusBarEditorWindow.cpp
 
  ifdef VBOX_GUI_WITH_NETWORK_MANAGER
@@ -1317,7 +1318,6 @@ ifdef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/widgets/UIFilmContainer.cpp \
 	src/widgets/UIHotKeyEditor.cpp \
 	src/widgets/UIPortForwardingTable.cpp \
-	src/widgets/UIProgressDialog.cpp \
 	src/widgets/UIStatusBarEditorWindow.cpp
 
  ifdef VBOX_GUI_WITH_NETWORK_MANAGER
@@ -1511,6 +1511,7 @@ ifndef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/globals/UIMessageCenter.cpp \
 	src/globals/UIModalWindowManager.cpp \
 	src/globals/UIPopupCenter.cpp \
+	src/globals/UIProgressEventHandler.cpp \
 	src/globals/UIShortcutPool.cpp \
 	src/globals/UIThreadPool.cpp \
 	src/globals/UIVirtualBoxEventHandler.cpp \
@@ -1853,6 +1854,7 @@ ifdef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/globals/UIMessageCenter.cpp \
 	src/globals/UIModalWindowManager.cpp \
 	src/globals/UIPopupCenter.cpp \
+	src/globals/UIProgressEventHandler.cpp \
 	src/globals/UIShortcutPool.cpp \
 	src/globals/UIThreadPool.cpp \
 	src/globals/UIVirtualBoxEventHandler.cpp \
