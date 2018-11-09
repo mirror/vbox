@@ -620,9 +620,9 @@ template<> QString toInternalString(const UIExtraDataMetaDefs::RuntimeMenuViewAc
         case UIExtraDataMetaDefs::RuntimeMenuViewActionType_StatusBar:            strResult = "StatusBar"; break;
         case UIExtraDataMetaDefs::RuntimeMenuViewActionType_StatusBarSettings:    strResult = "StatusBarSettings"; break;
         case UIExtraDataMetaDefs::RuntimeMenuViewActionType_ToggleStatusBar:      strResult = "ToggleStatusBar"; break;
-        case UIExtraDataMetaDefs::RuntimeMenuViewActionType_ScaleFactor:          strResult = "ScaleFactor"; break;
         case UIExtraDataMetaDefs::RuntimeMenuViewActionType_Resize:               strResult = "Resize"; break;
-        case UIExtraDataMetaDefs::RuntimeMenuViewActionType_Multiscreen:          strResult = "Multiscreen"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuViewActionType_Remap:                strResult = "Remap"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuViewActionType_Rescale:              strResult = "Rescale"; break;
         case UIExtraDataMetaDefs::RuntimeMenuViewActionType_All:                  strResult = "All"; break;
         default:
         {
@@ -660,9 +660,9 @@ template<> UIExtraDataMetaDefs::RuntimeMenuViewActionType fromInternalString<UIE
     keys << "StatusBar";            values << UIExtraDataMetaDefs::RuntimeMenuViewActionType_StatusBar;
     keys << "StatusBarSettings";    values << UIExtraDataMetaDefs::RuntimeMenuViewActionType_StatusBarSettings;
     keys << "ToggleStatusBar";      values << UIExtraDataMetaDefs::RuntimeMenuViewActionType_ToggleStatusBar;
-    keys << "ScaleFactor";          values << UIExtraDataMetaDefs::RuntimeMenuViewActionType_ScaleFactor;
     keys << "Resize";               values << UIExtraDataMetaDefs::RuntimeMenuViewActionType_Resize;
-    keys << "Multiscreen";          values << UIExtraDataMetaDefs::RuntimeMenuViewActionType_Multiscreen;
+    keys << "Remap";                values << UIExtraDataMetaDefs::RuntimeMenuViewActionType_Remap;
+    keys << "Rescale";              values << UIExtraDataMetaDefs::RuntimeMenuViewActionType_Rescale;
     keys << "All";                  values << UIExtraDataMetaDefs::RuntimeMenuViewActionType_All;
     /* Invalid type for unknown words: */
     if (!keys.contains(strRuntimeMenuViewActionType, Qt::CaseInsensitive))
