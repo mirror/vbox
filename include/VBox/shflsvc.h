@@ -172,6 +172,7 @@ typedef struct _SHFLSTRING
     union
     {
 #if 1
+        char     ach[1];                /**< UTF-8 but with a type that makes some more sense. */
         uint8_t  utf8[1];
         RTUTF16  utf16[1];
         uint16_t ucs2[1];                                 /**< misnomer, use utf16. */
@@ -538,8 +539,12 @@ typedef enum _SHFLCREATERESULT
     /** New file was created. */
     SHFL_FILE_CREATED,
     /** Existing file was replaced or overwritten. */
-    SHFL_FILE_REPLACED
+    SHFL_FILE_REPLACED,
+    /** Blow the type up to 32-bit. */
+    SHFL_32BIT_HACK = 0x7fffffff
 } SHFLCREATERESULT;
+AssertCompile(SHFL_NO_RESULT == 0);
+AssertCompileSize(SHFLCREATERESULT, 4);
 
 
 /** Open/create flags.
