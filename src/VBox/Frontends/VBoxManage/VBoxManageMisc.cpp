@@ -1095,7 +1095,7 @@ RTEXITCODE handleSharedFolder(HandlerArg *a)
         bool fTransient = false;
         bool fWritable = true;
         bool fAutoMount = false;
-        char *pszAutoMountPoint = "";
+        const char *pszAutoMountPoint = "";
 
         for (int i = 2; i < a->argc; i++)
         {
