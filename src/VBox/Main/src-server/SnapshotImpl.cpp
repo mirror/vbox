@@ -2503,6 +2503,8 @@ HRESULT SessionMachine::i_deleteSnapshot(const com::Guid &aStartId,
         ++ulTotalWeight;            // assume 1 MB for deleting the state file
     }
 
+    bool fDeleteOnline = mData->mMachineState == MachineState_Running || mData->mMachineState == MachineState_Paused;
+
     // count normal hard disks and add their sizes to the weight
     for (MediumAttachmentList::iterator
          it = pSnapMachine->mMediumAttachments->begin();
@@ -2526,6 +2528,9 @@ HRESULT SessionMachine::i_deleteSnapshot(const com::Guid &aStartId,
             {
                 // normal or immutable media need attention
                 ++ulOpCount;
+                // offline merge includes medium resizing
+                if (!fDeleteOnline)
+                    ++ulOpCount;
                 ulTotalWeight += (ULONG)(pHD->i_getSize() / _1M);
             }
             LogFlowThisFunc(("op %d: considering hard disk attachment %s\n", ulOpCount, pHD->i_getName().c_str()));
@@ -2541,9 +2546,6 @@ HRESULT SessionMachine::i_deleteSnapshot(const com::Guid &aStartId,
                     ulTotalWeight,
                     Bstr(tr("Setting up")).raw(),
                     1);
-
-    bool fDeleteOnline = (   (mData->mMachineState == MachineState_Running)
-                          || (mData->mMachineState == MachineState_Paused));
 
     /* create and start the task on a separate thread */
     DeleteSnapshotTask *pTask = new DeleteSnapshotTask(this, pProgress,
@@ -2813,8 +2815,8 @@ void SessionMachine::i_deleteSnapshotHandler(DeleteSnapshotTask &task)
             // base image. Important e.g. for medium formats which do not have
             // a file representation such as iSCSI.
 
-            // not going to merge a big source into a small target
-            if (pSource->i_getLogicalSize() > pTarget->i_getLogicalSize())
+            // not going to merge a big source into a small target on online merge. Otherwise it will be resized
+            if (fNeedsOnlineMerge && pSource->i_getLogicalSize() > pTarget->i_getLogicalSize())
             {
                 rc = setError(E_FAIL,
                               tr("Unable to merge storage '%s', because it is smaller than the source image. If you resize it to have a capacity of at least %lld bytes you can retry"),
@@ -3038,7 +3040,11 @@ void SessionMachine::i_deleteSnapshotHandler(DeleteSnapshotTask &task)
                 ulWeight = (ULONG)(pMedium->i_getSize() / _1M);
             }
 
-            task.m_pProgress->SetNextOperation(BstrFmt(tr("Merging differencing image '%s'"),
+            const char *pszOperationText = it->mfNeedsOnlineMerge ?
+                                             tr("Merging differencing image '%s'")
+                                           : tr("Resizing before merge differencing image '%s'");
+
+            task.m_pProgress->SetNextOperation(BstrFmt(pszOperationText,
                                                pMedium->i_getName().c_str()).raw(),
                                                ulWeight);
 

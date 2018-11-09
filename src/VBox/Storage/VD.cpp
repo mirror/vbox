@@ -35,6 +35,7 @@
 #include <iprt/path.h>
 #include <iprt/sg.h>
 #include <iprt/semaphore.h>
+#include <iprt/vector.h>
 
 #include "VDInternal.h"
 
@@ -361,6 +362,9 @@ typedef struct VDMETAXFER
     /** Data stored - variable size. */
     uint8_t          abData[1];
 } VDMETAXFER;
+
+/* vector for temporary storing image sizes */
+RTVEC_DECL(VDImgSzVec, uint64_t)
 
 /**
  * The transfer direction for the metadata.
@@ -7045,6 +7049,7 @@ VBOXDDU_DECL(int) VDMerge(PVDISK pDisk, unsigned nImageFrom,
              * the images to be merged. */
             uint64_t uOffset = 0;
             uint64_t cbRemaining = cbSize;
+
             do
             {
                 size_t cbThisRead = RT_MIN(VD_MERGE_BUFFER_SIZE, cbRemaining);

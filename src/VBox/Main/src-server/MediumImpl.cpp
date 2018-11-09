@@ -3378,67 +3378,59 @@ HRESULT Medium::resize(LONG64 aLogicalSize,
 {
     HRESULT rc = S_OK;
     ComObjPtr<Progress> pProgress;
-    Medium::Task *pTask = NULL;
+
+    /* Build the medium lock list. */
+    MediumLockList *pMediumLockList(new MediumLockList());
 
     try
     {
-        AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+        const char *pszError = NULL;
 
-        /* Build the medium lock list. */
-        MediumLockList *pMediumLockList(new MediumLockList());
-        alock.release();
         rc = i_createMediumLockList(true /* fFailIfInaccessible */ ,
                                     this /* pToLockWrite */,
                                     false /* fMediumLockWriteAll */,
                                     NULL,
                                     *pMediumLockList);
-        alock.acquire();
         if (FAILED(rc))
         {
-            delete pMediumLockList;
-            throw rc;
+            pszError = tr("Failed to create medium lock list when resize '%s'");
+        }
+        else
+        {
+            rc = pMediumLockList->Lock();
+            if (FAILED(rc))
+                pszError = tr("Failed to lock media when compacting '%s'");
         }
 
-        alock.release();
-        rc = pMediumLockList->Lock();
-        alock.acquire();
+
+        AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
         if (FAILED(rc))
         {
             delete pMediumLockList;
-            throw setError(rc,
-                           tr("Failed to lock media when compacting '%s'"),
-                           i_getLocationFull().c_str());
+            throw setError(rc, pszError, i_getLocationFull().c_str());
         }
 
         pProgress.createObject();
         rc = pProgress->init(m->pVirtualBox,
                              static_cast <IMedium *>(this),
-                             BstrFmt(tr("Compacting medium '%s'"), m->strLocationFull.c_str()).raw(),
+                             BstrFmt(tr("Resizing medium '%s'"), m->strLocationFull.c_str()).raw(),
                              TRUE /* aCancelable */);
         if (FAILED(rc))
         {
             delete pMediumLockList;
             throw rc;
         }
-
-        /* setup task object to carry out the operation asynchronously */
-        pTask = new Medium::ResizeTask(this, aLogicalSize, pProgress, pMediumLockList);
-        rc = pTask->rc();
-        AssertComRC(rc);
-        if (FAILED(rc))
-            throw rc;
     }
     catch (HRESULT aRC) { rc = aRC; }
 
     if (SUCCEEDED(rc))
-    {
-        rc = pTask->createThread();
+        rc = i_resize(aLogicalSize, pMediumLockList, &pProgress, false /* aWait */);
 
-        if (SUCCEEDED(rc))
-            pProgress.queryInterfaceTo(aProgress.asOutParam());
-    }
-    else if (pTask != NULL)
-        delete pTask;
+    if (SUCCEEDED(rc))
+        pProgress.queryInterfaceTo(aProgress.asOutParam());
+    else
+        delete pMediumLockList;
 
     return rc;
 }
@@ -5529,7 +5521,16 @@ HRESULT Medium::i_queryPreferredMergeDirection(const ComObjPtr<Medium> &pOther,
                  * and everything else is too complicated, especially when the
                  * media are used by a running VM.
                  */
-                bool fMergeIntoThis = cbMediumThis > cbMediumOther;
+
+                uint32_t mediumVariants =  MediumVariant_Fixed | MediumVariant_VmdkStreamOptimized;
+                uint32_t mediumCaps = MediumFormatCapabilities_CreateDynamic | MediumFormatCapabilities_File;
+
+                bool fDynamicOther =    pOther->i_getMediumFormat()->i_getCapabilities() & mediumCaps
+                                     && pOther->i_getVariant() & ~mediumVariants;
+                bool fDynamicThis =    i_getMediumFormat()->i_getCapabilities() & mediumCaps
+                                    && i_getVariant() & ~mediumVariants;
+                bool fMergeIntoThis =    (fDynamicThis && !fDynamicOther)
+                                      || (fDynamicThis == fDynamicOther && cbMediumThis > cbMediumOther);
                 fMergeForward = fMergeIntoThis != fThisParent;
             }
         }
@@ -6003,7 +6004,11 @@ HRESULT Medium::i_mergeTo(const ComObjPtr<Medium> &pTarget,
                                      BstrFmt(tr("Merging medium '%s' to '%s'"),
                                              i_getName().c_str(),
                                              tgtName.c_str()).raw(),
-                                     TRUE /* aCancelable */);
+                                     TRUE, /* aCancelable */
+                                     2, /* Number of opearations */
+                                     BstrFmt(tr("Resizing medium '%s' before merge"),
+                                             tgtName.c_str()).raw()
+                                     );
                 if (FAILED(rc))
                     throw rc;
             }
@@ -6050,7 +6055,8 @@ HRESULT Medium::i_mergeTo(const ComObjPtr<Medium> &pTarget,
  *                      to be reparented to the target after merge.
  * @param aMediumLockList Medium locking information.
  *
- * @note Locks the media from the chain for writing.
+ * @note Locks the tree lock for writing. Locks the media from the chain
+ *       for writing.
  */
 void Medium::i_cancelMergeTo(MediumLockList *aChildrenToReparent,
                              MediumLockList *aMediumLockList)
@@ -6095,6 +6101,109 @@ void Medium::i_cancelMergeTo(MediumLockList *aChildrenToReparent,
      * the work */
     if (aChildrenToReparent)
         delete aChildrenToReparent;
+}
+
+/**
+ * Resizes the media.
+ *
+ * If @a aWait is @c true then this method will perform the operation on the
+ * calling thread and will not return to the caller until the operation is
+ * completed. When this method succeeds, the state of the target medium (and all
+ * involved extra media) will be restored. @a aMediumLockList will not be
+ * deleted, whether the operation is successful or not. The caller has to do
+ * this if appropriate.
+ *
+ * If @a aWait is @c false then this method will create a thread to perform the
+ * operation asynchronously and will return immediately. The thread will reset
+ * the state of the target medium (and all involved extra media) and delete
+ * @a aMediumLockList.
+ *
+ * When this method fails (regardless of the @a aWait mode), it is a caller's
+ * responsibility to undo state changes and delete @a aMediumLockList.
+ *
+ * If @a aProgress is not NULL but the object it points to is @c null then a new
+ * progress object will be created and assigned to @a *aProgress on success,
+ * otherwise the existing progress object is used. If Progress is NULL, then no
+ * progress object is created/used at all. Note that @a aProgress cannot be
+ * NULL when @a aWait is @c false (this method will assert in this case).
+ *
+ * @param aLogicalSize  New nominal capacity of the medium in bytes.
+ * @param aMediumLockList Medium locking information.
+ * @param aProgress     Where to find/store a Progress object to track operation
+ *                      completion.
+ * @param aWait         @c true if this method should block instead of creating
+ *                      an asynchronous thread.
+ *
+ * @note Locks the media from the chain for writing.
+ */
+
+HRESULT Medium::i_resize(LONG64 aLogicalSize,
+                         MediumLockList *aMediumLockList,
+                         ComObjPtr<Progress> *aProgress,
+                         bool aWait)
+{
+    AssertReturn(aMediumLockList != NULL, E_FAIL);
+    AssertReturn(aProgress != NULL || aWait == true, E_FAIL);
+
+    AutoCaller autoCaller(this);
+    AssertComRCReturnRC(autoCaller.rc());
+
+    HRESULT rc = S_OK;
+    ComObjPtr<Progress> pProgress;
+    Medium::Task *pTask = NULL;
+
+    try
+    {
+        if (aProgress != NULL)
+        {
+            /* use the existing progress object... */
+            pProgress = *aProgress;
+
+            /* ...but create a new one if it is null */
+            if (pProgress.isNull())
+            {
+                AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+                pProgress.createObject();
+                rc = pProgress->init(m->pVirtualBox,
+                                     static_cast <IMedium *>(this),
+                                     BstrFmt(tr("Resizing medium '%s'"), m->strLocationFull.c_str()).raw(),
+                                     TRUE /* aCancelable */);
+                if (FAILED(rc))
+                    throw rc;
+            }
+        }
+
+        /* setup task object to carry out the operation asynchronously */
+        pTask = new Medium::ResizeTask(this,
+                                       aLogicalSize,
+                                       pProgress,
+                                       aMediumLockList,
+                                       aWait /* fKeepMediumLockList */);
+        rc = pTask->rc();
+        AssertComRC(rc);
+        if (FAILED(rc))
+            throw rc;
+    }
+    catch (HRESULT aRC) { rc = aRC; }
+
+    if (SUCCEEDED(rc))
+    {
+        if (aWait)
+        {
+            rc = pTask->runNow();
+            delete pTask;
+        }
+        else
+            rc = pTask->createThread();
+
+        if (SUCCEEDED(rc) && aProgress != NULL)
+            *aProgress = pProgress;
+    }
+    else if (pTask != NULL)
+        delete pTask;
+
+    return rc;
 }
 
 /**
@@ -8653,6 +8762,90 @@ HRESULT Medium::i_taskMergeHandler(Medium::MergeTask &task)
                                task.mParentForTarget->m->strLocationFull.c_str());
             }
 
+        // Resize target to source size, if possible. Otherwise throw an error.
+        // It's offline resizing. Online resizing will be called in the
+        // SessionMachine::onlineMergeMedium.
+
+        uint64_t sourceSize = 0;
+        Utf8Str sourceName;
+        {
+            AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+            sourceSize = i_getLogicalSize();
+            sourceName = i_getName();
+        }
+        uint64_t targetSize = 0;
+        Utf8Str targetName;
+        {
+            AutoReadLock alock(pTarget COMMA_LOCKVAL_SRC_POS);
+            targetSize = pTarget->i_getLogicalSize();
+            targetName = pTarget->i_getName();
+        }
+
+        //reducing vm disks are not implemented yet
+        if (sourceSize > targetSize)
+        {
+            if (i_isMediumFormatFile())
+            {
+                // Have to make own lock list, because "resize" method resizes only last image
+                // in the lock chain. The lock chain already in the task.mpMediumLockList, so
+                // just make new lock list based on it. In fact the own lock list neither makes
+                // double locking of mediums nor unlocks them during delete, because medium
+                // already locked by task.mpMediumLockList and own list is used just to specify
+                // what "resize" method should resize.
+
+                MediumLockList* pMediumLockListForResize = new MediumLockList();
+
+                for (MediumLockList::Base::iterator it = task.mpMediumLockList->GetBegin();
+                     it != task.mpMediumLockList->GetEnd();
+                     ++it)
+                {
+                    ComObjPtr<Medium> pMedium = it->GetMedium();
+                    pMediumLockListForResize->Append(pMedium, pMedium->m->state == MediumState_LockedWrite);
+                    if (pMedium == pTarget)
+                        break;
+                }
+
+                // just to switch internal state of the lock list to avoid errors during list deletion,
+                // because all meduims in the list already locked by task.mpMediumLockList
+                HRESULT rc = pMediumLockListForResize->Lock(true /* fSkipOverLockedMedia */);
+                if (FAILED(rc))
+                {
+                    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+                    rc = setError(rc,
+                                  tr("Failed to lock the medium '%s' to resize before merge"),
+                                  targetName.c_str());
+                    delete pMediumLockListForResize;
+                    throw rc;
+                }
+
+                ComObjPtr<Progress> pProgress(task.GetProgressObject());
+                rc = pTarget->i_resize(sourceSize, pMediumLockListForResize, &pProgress, true);
+                if (FAILED(rc))
+                {
+                    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+                    rc = setError(rc,
+                                  tr("Failed to set size of '%s' to size of '%s'"),
+                                  targetName.c_str(), sourceName.c_str());
+                    delete pMediumLockListForResize;
+                    throw rc;
+                }
+                delete pMediumLockListForResize;
+            }
+            else
+            {
+                AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+                HRESULT rc = setError(VBOX_E_NOT_SUPPORTED,
+                                      tr("Sizes of '%s' and '%s' are different and medium format does not support resing"),
+                                      sourceName.c_str(), targetName.c_str());
+                throw rc;
+            }
+        }
+
+        task.GetProgressObject()->SetNextOperation(BstrFmt(tr("Merging medium '%s' to '%s'"),
+                                                           i_getName().c_str(),
+                                                           targetName.c_str()).raw(),
+                                                   1);
+
         PVDISK hdd;
         int vrc = VDCreate(m->vdDiskIfaces, i_convertDeviceType(), &hdd);
         ComAssertRCThrow(vrc, E_FAIL);
@@ -9785,7 +9978,12 @@ HRESULT Medium::i_taskResizeHandler(Medium::ResizeTask &task)
                 if (it == mediumListLast)
                     Assert(pMedium->m->state == MediumState_LockedWrite);
                 else
-                    Assert(pMedium->m->state == MediumState_LockedRead);
+                    Assert(pMedium->m->state == MediumState_LockedRead ||
+                           // Allow resize the target image during mergeTo in case
+                           // of direction from parent to child because all intermediate
+                           // images are marked to MediumState_Deleting and will be
+                           // destroyed after successful merge
+                           pMedium->m->state == MediumState_Deleting);
 
                 /* Open all media but last in read-only mode. Do not handle
                  * shareable media, as compaction and sharing are mutually

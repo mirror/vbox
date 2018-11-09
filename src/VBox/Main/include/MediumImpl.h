@@ -202,6 +202,11 @@ public:
     void i_cancelMergeTo(MediumLockList *aChildrenToReparent,
                        MediumLockList *aMediumLockList);
 
+    HRESULT i_resize(LONG64 aLogicalSize,
+                     MediumLockList *aMediumLockList,
+                     ComObjPtr<Progress> *aProgress,
+                     bool aWait);
+
     HRESULT i_fixParentUuidOfChildren(MediumLockList *pChildrenToReparent);
 
     HRESULT i_addRawToFss(const char *aFilename, SecretKeyStore *pKeyStore, RTVFSFSSTREAM hVfsFssDst,
