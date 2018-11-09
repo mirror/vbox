@@ -124,7 +124,7 @@
 #ifdef VBOX_WITH_AUDIO_VRDE
 # include "DrvAudioVRDE.h"
 #endif
-#ifdef VBOX_WITH_AUDIO_VIDEOREC
+#ifdef VBOX_WITH_AUDIO_RECORDING
 # include "DrvAudioRec.h"
 #endif
 #include "NetworkServiceRunner.h"
@@ -2992,7 +2992,7 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
                 uAudioLUN++;
 #endif /* VBOX_WITH_AUDIO_VRDE */
 
-#ifdef VBOX_WITH_AUDIO_VIDEOREC
+#ifdef VBOX_WITH_AUDIO_RECORDING
             /* Insert dummy audio driver to have the LUN configured. */
             CFGMR3InsertNodeF(pInst, &pLunL0, "LUN#%RU8", uAudioLUN);
                 InsertConfigString(pLunL0, "Driver", "AUDIO");
@@ -3000,7 +3000,7 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
             rc = Capture.mAudioVideoRec->InitializeConfig(&DrvCfgVideoRec);
             if (RT_SUCCESS(rc))
                 uAudioLUN++;
-#endif /* VBOX_WITH_AUDIO_VIDEOREC */
+#endif /* VBOX_WITH_AUDIO_RECORDING */
 
             if (fDebugEnabled)
             {

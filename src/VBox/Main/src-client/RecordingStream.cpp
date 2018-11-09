@@ -209,14 +209,14 @@ int CaptureStream::parseOptionsString(const com::Utf8Str &strOptions)
             if (value.compare("false", Utf8Str::CaseInsensitive) == 0)
             {
                 this->ScreenSettings.featureMap[RecordFeature_Video] = false;
-#ifdef VBOX_WITH_AUDIO_VIDEOREC
+#ifdef VBOX_WITH_AUDIO_RECORDING
                 LogRel(("Recording: Only audio will be recorded\n"));
 #endif
             }
         }
         else if (key.compare("ac_enabled", Utf8Str::CaseInsensitive) == 0)
         {
-#ifdef VBOX_WITH_AUDIO_VIDEOREC
+#ifdef VBOX_WITH_AUDIO_RECORDING
             if (value.compare("true", Utf8Str::CaseInsensitive) == 0)
             {
                 this->ScreenSettings.featureMap[RecordFeature_Audio] = true;
@@ -227,7 +227,7 @@ int CaptureStream::parseOptionsString(const com::Utf8Str &strOptions)
         }
         else if (key.compare("ac_profile", Utf8Str::CaseInsensitive) == 0)
         {
-#ifdef VBOX_WITH_AUDIO_VIDEOREC
+#ifdef VBOX_WITH_AUDIO_RECORDING
             if (value.compare("low", Utf8Str::CaseInsensitive) == 0)
             {
                 this->ScreenSettings.Audio.uHz       = 8000;
@@ -363,7 +363,7 @@ int CaptureStream::Process(VideoRecBlockMap &mapBlocksCommon)
         ++itStreamBlocks;
     }
 
-#ifdef VBOX_WITH_AUDIO_VIDEOREC
+#ifdef VBOX_WITH_AUDIO_RECORDING
     AssertPtr(pCtx);
 
     /* As each (enabled) screen has to get the same audio data, look for common (audio) data which needs to be
@@ -704,7 +704,7 @@ int CaptureStream::initInternal(CaptureContext *a_pCtx, uint32_t uScreen, const 
 
             AssertPtr(File.pWEBM);
             rc = File.pWEBM->OpenEx(pszFile, &this->File.hFile,
-#ifdef VBOX_WITH_AUDIO_VIDEOREC
+#ifdef VBOX_WITH_AUDIO_RECORDING
                                       Settings.isFeatureEnabled(RecordFeature_Audio)
                                     ? WebMWriter::AudioCodec_Opus : WebMWriter::AudioCodec_None,
 #else
@@ -733,7 +733,7 @@ int CaptureStream::initInternal(CaptureContext *a_pCtx, uint32_t uScreen, const 
                         Settings.Video.ulFPS, this->uTrackVideo));
             }
 
-#ifdef VBOX_WITH_AUDIO_VIDEOREC
+#ifdef VBOX_WITH_AUDIO_RECORDING
             if (fAudioEnabled)
             {
                 rc = this->File.pWEBM->AddAudioTrack(Settings.Audio.uHz, Settings.Audio.cChannels, Settings.Audio.cBits,
@@ -751,7 +751,7 @@ int CaptureStream::initInternal(CaptureContext *a_pCtx, uint32_t uScreen, const 
 #endif
 
             if (   fVideoEnabled
-#ifdef VBOX_WITH_AUDIO_VIDEOREC
+#ifdef VBOX_WITH_AUDIO_RECORDING
                 || fAudioEnabled
 #endif
                )
@@ -759,7 +759,7 @@ int CaptureStream::initInternal(CaptureContext *a_pCtx, uint32_t uScreen, const 
                 char szWhat[32] = { 0 };
                 if (fVideoEnabled)
                     RTStrCat(szWhat, sizeof(szWhat), "video");
-#ifdef VBOX_WITH_AUDIO_VIDEOREC
+#ifdef VBOX_WITH_AUDIO_RECORDING
                 if (fAudioEnabled)
                 {
                     if (fVideoEnabled)
@@ -1023,7 +1023,7 @@ int CaptureStream::initVideoVPX(void)
 
 int CaptureStream::initAudio(void)
 {
-#ifdef VBOX_WITH_AUDIO_VIDEOREC
+#ifdef VBOX_WITH_AUDIO_RECORDING
     if (this->ScreenSettings.isFeatureEnabled(RecordFeature_Audio))
     {
         /* Sanity. */

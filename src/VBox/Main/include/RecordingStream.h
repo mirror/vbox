@@ -179,7 +179,7 @@ protected:
         WebMWriter         *pWEBM;
     } File;
     bool                fEnabled;
-#ifdef VBOX_WITH_AUDIO_VIDEOREC
+#ifdef VBOX_WITH_AUDIO_RECORDING
     /** Track number of audio stream. */
     uint8_t             uTrackAudio;
 #endif

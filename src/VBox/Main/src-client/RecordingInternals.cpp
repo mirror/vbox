@@ -20,7 +20,7 @@
 #include <iprt/assert.h>
 #include <iprt/mem.h>
 
-#ifdef VBOX_WITH_AUDIO_VIDEOREC
+#ifdef VBOX_WITH_AUDIO_RECORDING
 /**
  * Frees a previously allocated video recording audio frame.
  *
@@ -77,7 +77,7 @@ void VideoRecBlockFree(PVIDEORECBLOCK pBlock)
             VideoRecVideoFrameFree((PVIDEORECVIDEOFRAME)pBlock->pvData);
             break;
 
-#ifdef VBOX_WITH_AUDIO_VIDEOREC
+#ifdef VBOX_WITH_AUDIO_RECORDING
         case VIDEORECBLOCKTYPE_AUDIO:
             VideoRecAudioFrameFree((PVIDEORECAUDIOFRAME)pBlock->pvData);
             break;

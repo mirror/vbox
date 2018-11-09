@@ -86,7 +86,7 @@ typedef struct VIDEORECVIDEOFRAME
     size_t              cbRGBBuf;
 } VIDEORECVIDEOFRAME, *PVIDEORECVIDEOFRAME;
 
-#ifdef VBOX_WITH_AUDIO_VIDEOREC
+#ifdef VBOX_WITH_AUDIO_RECORDING
 /**
  * Structure for keeping a single video recording audio frame.
  */
@@ -108,7 +108,7 @@ typedef enum VIDEORECBLOCKTYPE
     VIDEORECBLOCKTYPE_UNKNOWN = 0,
     /** The block is a video frame. */
     VIDEORECBLOCKTYPE_VIDEO,
-#ifdef VBOX_WITH_AUDIO_VIDEOREC
+#ifdef VBOX_WITH_AUDIO_RECORDING
     /** The block is an audio frame. */
     VIDEORECBLOCKTYPE_AUDIO
 #endif
@@ -135,7 +135,7 @@ typedef struct VIDEORECBLOCK
 typedef std::list<PVIDEORECBLOCK> VideoRecBlockList;
 
 void VideoRecBlockFree(PVIDEORECBLOCK pBlock);
-#ifdef VBOX_WITH_AUDIO_VIDEOREC
+#ifdef VBOX_WITH_AUDIO_RECORDING
 void VideoRecAudioFrameFree(PVIDEORECAUDIOFRAME pFrame);
 #endif
 void VideoRecVideoFrameFree(PVIDEORECVIDEOFRAME pFrame);
