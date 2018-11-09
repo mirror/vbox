@@ -7080,9 +7080,10 @@ VBOXDDU_DECL(int) VDMerge(PVDISK pDisk, unsigned nImageFrom,
                          * Skip reading when offset exceeds image size which can happen when the target is
                          * bigger than the source.
                          */
-                        if (uOffset < pCurrImage->cbImage)
+                        uint64_t cbImage = vdImageGetSize(pCurrImage);
+                        if (uOffset < cbImage)
                         {
-                            cbThisRead = RT_MIN(cbThisRead, pCurrImage->cbImage - uOffset);
+                            cbThisRead = RT_MIN(cbThisRead, cbImage - uOffset);
                             rc = pCurrImage->Backend->pfnRead(pCurrImage->pBackendData,
                                                               uOffset, cbThisRead,
                                                               &IoCtx, &cbThisRead);
@@ -7217,9 +7218,10 @@ VBOXDDU_DECL(int) VDMerge(PVDISK pDisk, unsigned nImageFrom,
                      * Skip reading when offset exceeds image size which can happen when the target is
                      * bigger than the source.
                      */
-                    if (uOffset < pCurrImage->cbImage)
+                    uint64_t cbImage = vdImageGetSize(pCurrImage);
+                    if (uOffset < cbImage)
                     {
-                        cbThisRead = RT_MIN(cbThisRead, pCurrImage->cbImage - uOffset);
+                        cbThisRead = RT_MIN(cbThisRead, cbImage - uOffset);
                         rc = pCurrImage->Backend->pfnRead(pCurrImage->pBackendData,
                                                           uOffset, cbThisRead,
                                                           &IoCtx, &cbThisRead);
