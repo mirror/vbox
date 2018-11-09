@@ -1550,9 +1550,6 @@ bool UIMachineSettingsDisplay::saveRecordingData()
                 CRecordingScreenSettingsVector recordingScreenSettingsVector = recordingSettings.GetScreens();
                 for (int iScreenIndex = 0; fSuccess && iScreenIndex < recordingScreenSettingsVector.size(); ++iScreenIndex)
                 {
-                    if (newDisplayData.m_vecRecordingScreens[iScreenIndex] == oldDisplayData.m_vecRecordingScreens[iScreenIndex])
-                        continue;
-
                     CRecordingScreenSettings recordingScreenSettings = recordingScreenSettingsVector.at(iScreenIndex);
 
                     // We should save all the options *before* 'Recording' activation.
@@ -1625,9 +1622,6 @@ bool UIMachineSettingsDisplay::saveRecordingData()
             CRecordingScreenSettingsVector recordingScreenSettingsVector = recordingSettings.GetScreens();
             for (int iScreenIndex = 0; fSuccess && iScreenIndex < recordingScreenSettingsVector.size(); ++iScreenIndex)
             {
-                if (newDisplayData.m_vecRecordingScreens[iScreenIndex] == oldDisplayData.m_vecRecordingScreens[iScreenIndex])
-                    continue;
-
                 CRecordingScreenSettings recordingScreenSettings = recordingScreenSettingsVector.at(iScreenIndex);
 
                 /* Save recording file path: */
