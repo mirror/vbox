@@ -28,47 +28,91 @@
 # OTHER DEALINGS IN THE SOFTWARE.
 #
 
+ifneq ($(KBUILD_HOST),os2)
+ VBOX_USE_WATCOM_FOR_OS2  = 1
+ KBUILD_TARGET      = os2
+  BUILD_TARGET      = os2
+ KBUILD_TARGET_ARCH = x86
+  BUILD_TARGET_ARCH = x86
+endif
+
 SUB_DEPTH = ../../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
-VBOXSF_USE_WATCOM=1
-TEMPLATE_VBoxGuestR0Watcom = xxx
-TEMPLATE_VBoxGuestR0Watcom_EXTENDS = VBOXGUESTR0
-TEMPLATE_VBoxGuestR0Watcom_TOOL    = OPENWATCOM
-TEMPLATE_VBoxGuestR0Watcom_CTOOL   = OPENWATCOM
-TEMPLATE_VBoxGuestR0Watcom_CXXTOOL = OPENWATCOM
-TEMPLATE_VBoxGuestR0Watcom_LDTOOL  = OPENWATCOM-WL
-TEMPLATE_VBoxGuestR0Watcom_CINCS   = \
-	$(PATH_TOOL_OPENWATCOM)/h \
-	$(PATH_TOOL_OPENWATCOM)/h/os2 \
-       $(PATH_ROOT)/include \
-	/libc/svn/trunk/libc/include # for os2ddk
-TEMPLATE_VBoxGuestR0Watcom_CXXINCS = $(TEMPLATE_VBoxGuestR0Watcom_CINCS)
-TEMPLATE_VBoxGuestR0Watcom_CFLAGS  = -s  -ze -w4 -d2 -hc -nt=TEXT32 -nc=CODE -4
-TEMPLATE_VBoxGuestR0Watcom_CXXFLAGS = $(TEMPLATE_VBoxGuestR0Watcom_CFLAGS)
-
-TEMPLATE_VBoxGuestR0Watcom_LDFLAGS = \
-	form os2 lx physdevice \
-	option NODefaultlibs \
-	debug codeview all \
-	option symfile
-TEMPLATE_VBoxGuestR0Watcom_LIBS = $(NO_SUCH_VARIABLE)
-
-
-#?DLLS += VBoxSF
-SYSMODS += VBoxSF
-ifdef VBOXSF_USE_WATCOM
-VBoxSF_TEMPLATE      = VBoxGuestR0Watcom
-else
-VBoxSF_TEMPLATE      = VBOXGUESTR0
+#
+# Debug segment name hack for NASM and dependency workaround (see valkit/bootsector).
+#
+include $(KBUILD_PATH)/tools/NASM.kmk
+TOOL_VBoxNasmDot = Our version of the NASM tool
+ifndef TOOL_VBoxNasmDot_PATH
+ ifdef TOOL_VBoxNasm_PATH
+  TOOL_VBoxNasmDot_PATH = $(TOOL_VBoxNasm_PATH)
+ else
+  TOOL_VBoxNasmDot_PATH   := $(firstword $(rsort $(wildcard $(KBUILD_DEVTOOLS_HST)/nasm/v*.*)))
+  if "$(TOOL_VBoxNasmDot_PATH)" == "" && "$(KBUILD_DEVTOOLS_HST_ALT)" != ""
+   TOOL_VBoxNasmDot_PATH  := $(firstword $(rsort $(wildcard $(KBUILD_DEVTOOLS_HST_ALT)/nasm/v*.*)))
+  endif
+ endif
 endif
-VBoxSF_SYSSUFF       = .ifs
-VBoxSF_DLLSUFF       = .ifs
+ifneq ($(TOOL_VBoxNasmDot_PATH),)
+ TOOL_VBoxNasmDot_AS     ?= $(TOOL_VBoxNasmDot_PATH)/nasm$(HOSTSUFF_EXE)
+else
+ TOOL_VBoxNasmDot_AS     ?= nasm$(HOSTSUFF_EXE)
+endif
+TOOL_VBoxNasmDot_ASFLAGS ?= $(TOOL_NASM_ASFLAGS)
+TOOL_VBoxNasmDot_COMPILE_AS_OUTPUT = $(outbase).lst
+TOOL_VBoxNasmDot_COMPILE_AS_DEPEND = $(dotseg_1_TARGET)
+TOOL_VBoxNasmDot_COMPILE_AS_DEPORD =
+define TOOL_VBoxNasmDot_COMPILE_AS_CMDS
+ifdef TOOL_VBoxNasmDot_USE_KSUBMIT
+	$(QUIET)kmk_builtin_kSubmit -C $(PATH_OUT_BASE) -- $(TOOL_VBoxNasmDot_AS)\
+		$(flags) $(addsuffix /,$(addprefix -i, $(incs))) $(addprefix -D, $(defs))\
+		-l $(outbase).lst\
+		-o $(obj)\
+               -MD "$(dep)" -MP\
+		$(abspath $(source))
+else
+	$(QUIET)$(REDIRECT) -C $(PATH_OUT_BASE) -- $(TOOL_VBoxNasmDot_AS)\
+		$(flags) $(addsuffix /,$(addprefix -i, $(incs))) $(addprefix -D, $(defs))\
+		-l $(outbase).lst\
+		-o $(obj)\
+               -MD "$(dep)" -MP\
+		$(abspath $(source))
+endif
+	$(QUIET)"$(dotseg_1_TARGET)" "$(obj)"
+endef
+
+#
+# Tool for renaming segments and groups from '$debug_*' to '.debug_*'.
+#
+BLDPROGS += dotseg
+dotseg_TEMPLATE = VBoxBldProg
+dotseg_SOURCES = dotseg.cpp
+
+
+#
+# IFS kBuild template tweak.
+#
+TEMPLATE_VBoxR0DrvIFS = Hack to make sure we link a library. IFS must not be physical devices, but DLLs!
+TEMPLATE_VBoxR0DrvIFS_EXTENDS = VBOXGUESTR0
+ifdef VBOX_USE_WATCOM_FOR_OS2
+TEMPLATE_VBoxR0DrvIFS_LDFLAGS = $(subst physdevice,dll, $(TEMPLATE_VBOXGUESTR0_LDFLAGS))
+endif
+TEMPLATE_VBoxR0DrvIFS_SYSSUFF = .ifs
+TEMPLATE_VBoxR0DrvIFS_DLLSUFF = .ifs
+TEMPLATE_VBoxR0DrvIFS_ASTOOL = VBoxNasmDot
+
+
+#
+# The OS/2 shared folder installable file system driver (IFS).
+#
+SYSMODS += VBoxSF
+VBoxSF_TEMPLATE      = VBoxR0DrvIFS
 VBoxSF_DEFS          = VBOX_WITH_HGCM
 VBoxSF_INCS         := \
 	. \
 	$(PATH_ROOT)/src/VBox/Runtime/include
-ifdef VBOXSF_USE_WATCOM
+ifdef VBOX_USE_WATCOM_FOR_OS2
 VBoxSF_LDFLAGS      := \
 	OPTION MODNAME='VBoxSF' \
 	SEG TYPE CODE PRELOAD DYNAMIC SHARED NONPERMANENT, \
@@ -125,10 +169,10 @@ VBoxSF_LDFLAGS += \
 	EXPORT 'FS_RMDIR' \
 	EXPORT 'FS_SETSWAP' \
 	EXPORT 'FS_SHUTDOWN' \
+	EXPORT 'FS_VERIFYUNCNAME' \
 	EXPORT 'FS_WRITE'
 # 32-bit entry points.
 VBoxSF_LDFLAGS += \
-	EXPORT 'FS32_CHGFILEPTR' \
 	EXPORT 'FS32_CHGFILEPTRL' \
 	EXPORT 'FS32_READ' \
 	EXPORT 'FS32_READFILEATCACHE' \
@@ -147,18 +191,42 @@ VBoxSF_SOURCES       = \
 	VBoxSFFile.cpp \
 	VBoxSFFind.cpp \
 	VBoxSFInit.cpp
-ifndef VBOXSF_USE_WATCOM
+ifndef VBOX_USE_WATCOM_FOR_OS2
  VBoxSF_SOURCES     += \
 	VBoxSF.def
 endif
 VBoxSF_LIBS          = \
 	$(VBOX_LIB_VBGL_R0) \
 	$(VBOX_LIB_IPRT_GUEST_R0)
-ifdef VBOXSF_USE_WATCOM
+ifdef VBOX_USE_WATCOM_FOR_OS2
  VBoxSF_LIBS        += $(PATH_IGCC)/lib/libend.lib
 else
  VBoxSF_LIBS        += end
 endif
+
+
+#
+# Simple utility for attaching a shared folder to a drive letter.
+#
+PROGRAMS += VBoxSFUtil
+VBoxSFUtil_TEMPLATE = DUMMY
+VBoxSFUtil_TOOL     = OPENWATCOM
+VBoxSFUtil_ASTOOL   = NASM
+VBoxSFUtil_ASFLAGS  = -f obj -DASM_FORMAT_OMF
+VBoxSFUtil_INCS     = $(PATH_TOOL_OPENWATCOM)/h/os2
+VBoxSFUtil_LDFLAGS  = -bcl=os2v2
+VBoxSFUtil_SOURCES  = \
+	VBoxSFUtil.cpp \
+	VBoxSFUtilA.asm
+
+#PROGRAMS += VBoxSFUtil16
+#VBoxSFUtil16_TEMPLATE = DUMMY
+#VBoxSFUtil16_TOOL     = OPENWATCOM-16
+#VBoxSFUtil16_ASTOOL   = NASM
+#VBoxSFUtil16_INCS     = $(PATH_TOOL_OPENWATCOM)/h/os2
+#VBoxSFUtil16_LDFLAGS  = -bcl=os2
+#VBoxSFUtil16_SOURCES  = VBoxSFUtil.cpp
+
 
 include $(FILE_KBUILD_SUB_FOOTER)
 

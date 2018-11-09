@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (c) 2007 knut st. osmundsen <bird-src-spam@anduin.net>
+ * Copyright (c) 2007-2018 knut st. osmundsen <bird-src-spam@anduin.net>
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -36,6 +36,7 @@
 #include "VBoxSFInternal.h"
 
 #include <VBox/VBoxGuestLib.h>
+#include <VBox/VBoxGuest.h>
 #include <VBox/log.h>
 #include <iprt/assert.h>
 #include <iprt/initterm.h>
@@ -69,8 +70,15 @@ RT_C_DECLS_END
  */
 DECLASM(void) VBoxSFR0Init(void)
 {
-    Log(("VBoxSFR0Init: g_fpfnDevHlp=%lx u32Version=%RX32 u32Session=%RX32 pfnServiceEP=%p g_u32Info=%u (%#x)\n",
-         g_fpfnDevHlp, g_VBoxGuestIDC.u32Version, g_VBoxGuestIDC.u32Session, g_VBoxGuestIDC.pfnServiceEP, g_u32Info, g_u32Info));
+    RTLogBackdoorPrintf("VBoxSFR0Init: g_fpfnDevHlp=%lx u32Version=%RX32 u32Session=%RX32 pfnServiceEP=%p g_u32Info=%u (%#x)\n",
+                        g_fpfnDevHlp, g_VBoxGuestIDC.u32Version, g_VBoxGuestIDC.u32Session, g_VBoxGuestIDC.pfnServiceEP, g_u32Info, g_u32Info);
+    RTLogBackdoorPrintf("&KernSISData=%p\n",        &KernSISData);
+    RTLogBackdoorPrintf("&KernLISData=%p\n",        &KernLISData);
+    RTLogBackdoorPrintf("KernInterruptLevel=%#x\n", KernInterruptLevel);
+    RTLogBackdoorPrintf("KernTKSSBase=%p\n",        KernTKSSBase);
+
+    KernAllocMutexLock(&g_MtxFolders);
+    RTListInit(&g_FolderHead);
 
     /*
      * Start by initializing IPRT.
@@ -100,14 +108,14 @@ DECLASM(void) VBoxSFR0Init(void)
                 AssertMsg(rc == NO_ERROR, ("locking text32 failed, rc=%d\n"));
 #endif
 
-                Log(("VBoxSFR0Init: completed successfully\n"));
+                RTLogBackdoorPrintf("VBoxSFR0Init: completed successfully\n");
                 return;
             }
         }
 
-        LogRel(("VBoxSF: RTR0Init failed, rc=%Rrc\n", rc));
+        RTLogBackdoorPrintf("VBoxSF: RTR0Init failed, rc=%Rrc\n", rc);
     }
     else
-        LogRel(("VBoxSF: Failed to connect to VBoxGuest.sys.\n"));
+        RTLogBackdoorPrintf("VBoxSF: Failed to connect to VBoxGuest.sys.\n");
 }
 
