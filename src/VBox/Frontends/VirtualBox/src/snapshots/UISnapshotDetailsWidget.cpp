@@ -47,8 +47,8 @@
 
 /* COM includes: */
 # include "CAudioAdapter.h"
-# include "CCaptureSettings.h"
-# include "CCaptureScreenSettings.h"
+# include "CRecordSettings.h"
+# include "CRecordScreenSettings.h"
 # include "CMachine.h"
 # include "CMedium.h"
 # include "CMediumAttachment.h"
@@ -1747,9 +1747,9 @@ QStringList UISnapshotDetailsWidget::recordingReport(CMachine comMachine)
     /* Prepare report: */
     QStringList aReport;
     /* Acquire recording status: */
-    CCaptureSettings comRecordingSettings = comMachine.GetCaptureSettings();
+    CRecordSettings comRecordingSettings = comMachine.GetRecordSettings();
     /* For now all screens have the same config: */
-    CCaptureScreenSettings comRecordingScreen0Settings = comRecordingSettings.GetScreenSettings(0);
+    CRecordScreenSettings comRecordingScreen0Settings = comRecordingSettings.GetScreenSettings(0);
     if (comRecordingScreen0Settings.GetEnabled())
     {
         /* Recording file: */

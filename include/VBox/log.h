@@ -353,12 +353,6 @@ typedef enum LOGGROUP
     LOG_GROUP_MAIN_BANDWIDTHGROUPCHANGEDEVENT,
     /** Main group, IBIOSSettings. */
     LOG_GROUP_MAIN_BIOSSETTINGS,
-    /** Main group, ICaptureChangedEvent. */
-    LOG_GROUP_MAIN_CAPTURECHANGEDEVENT,
-    /** Main group, ICaptureSettings. */
-    LOG_GROUP_MAIN_CAPTURESETTINGS,
-    /** Main group, ICaptureScreenSettings. */
-    LOG_GROUP_MAIN_CAPTURESCREENSETTINGS,
     /** Main group, ICanShowWindowEvent. */
     LOG_GROUP_MAIN_CANSHOWWINDOWEVENT,
     /** Main group, ICertificate. */
@@ -599,6 +593,12 @@ typedef enum LOGGROUP
     LOG_GROUP_MAIN_PROGRESSPERCENTAGECHANGEDEVENT,
     /** Main group, IProgressTaskCompletedEvent. */
     LOG_GROUP_MAIN_PROGRESSTASKCOMPLETEDEVENT,
+    /** Main group, IRecordChangedEvent. */
+    LOG_GROUP_MAIN_RECORDCHANGEDEVENT,
+    /** Main group, IRecordSettings. */
+    LOG_GROUP_MAIN_RECORDSETTINGS,
+    /** Main group, IRecordScreenSettings. */
+    LOG_GROUP_MAIN_RECORDSCREENSETTINGS,
     /** Main group, IReusableEvent. */
     LOG_GROUP_MAIN_REUSABLEEVENT,
     /** Main group, IRuntimeErrorEvent. */
@@ -1003,9 +1003,6 @@ typedef enum LOGGROUP
     "MAIN_BANDWIDTHGROUP", \
     "MAIN_BANDWIDTHGROUPCHANGEDEVENT", \
     "MAIN_BIOSSETTINGS", \
-    "MAIN_CAPTURECHANGEDEVENT", \
-    "MAIN_CAPTURESETTINGS", \
-    "MAIN_CAPTURESCREENSETTINGS", \
     "MAIN_CANSHOWWINDOWEVENT", \
     "MAIN_CERTIFICATE", \
     "MAIN_CLIPBOARDMODECHANGEDEVENT", \
@@ -1126,6 +1123,9 @@ typedef enum LOGGROUP
     "MAIN_PROGRESSEVENT", \
     "MAIN_PROGRESSPERCENTAGECHANGEDEVENT", \
     "MAIN_PROGRESSTASKCOMPLETEDEVENT", \
+    "MAIN_RECORDCHANGEDEVENT", \
+    "MAIN_RECORDSETTINGS", \
+    "MAIN_RECORDSCREENSETTINGS", \
     "MAIN_REUSABLEEVENT", \
     "MAIN_RUNTIMEERROREVENT", \
     "MAIN_SERIALPORT", \

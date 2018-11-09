@@ -17,56 +17,56 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ____H_CAPTURESCREENSETTINGS
-#define ____H_CAPTURESCREENSETTINGS
+#ifndef ____H_RecordScreenSettings
+#define ____H_RecordScreenSettings
 
-#include "CaptureScreenSettingsWrap.h"
+#include "RecordScreenSettingsWrap.h"
 
-class CaptureSettings;
+class RecordSettings;
 
 namespace settings
 {
-    struct CaptureScreenSettings;
+    struct RecordScreenSettings;
 }
 
-class ATL_NO_VTABLE CaptureScreenSettings :
-    public CaptureScreenSettingsWrap
+class ATL_NO_VTABLE RecordScreenSettings :
+    public RecordScreenSettingsWrap
 {
 public:
 
-    DECLARE_EMPTY_CTOR_DTOR(CaptureScreenSettings)
+    DECLARE_EMPTY_CTOR_DTOR(RecordScreenSettings)
 
     HRESULT FinalConstruct();
     void FinalRelease();
 
     // public initializer/uninitializer for internal purposes only
-    HRESULT init(CaptureSettings *aParent, uint32_t uScreenId, const settings::CaptureScreenSettings& data);
-    HRESULT init(CaptureSettings *aParent, CaptureScreenSettings *that);
-    HRESULT initCopy(CaptureSettings *aParent, CaptureScreenSettings *that);
+    HRESULT init(RecordSettings *aParent, uint32_t uScreenId, const settings::RecordScreenSettings& data);
+    HRESULT init(RecordSettings *aParent, RecordScreenSettings *that);
+    HRESULT initCopy(RecordSettings *aParent, RecordScreenSettings *that);
     void uninit();
 
     // public methods only for internal purposes
-    HRESULT i_loadSettings(const settings::CaptureScreenSettings &data);
-    HRESULT i_saveSettings(settings::CaptureScreenSettings &data);
+    HRESULT i_loadSettings(const settings::RecordScreenSettings &data);
+    HRESULT i_saveSettings(settings::RecordScreenSettings &data);
 
     void i_rollback();
     void i_commit();
-    void i_copyFrom(CaptureScreenSettings *aThat);
+    void i_copyFrom(RecordScreenSettings *aThat);
     void i_applyDefaults();
 
 private:
 
-    // wrapped ICaptureScreenSettings methods
-    HRESULT isFeatureEnabled(CaptureFeature_T aFeature, BOOL *aEnabled);
+    // wrapped IRecordScreenSettings methods
+    HRESULT isFeatureEnabled(RecordFeature_T aFeature, BOOL *aEnabled);
 
-    // wrapped ICaptureScreenSettings properties
+    // wrapped IRecordScreenSettings properties
     HRESULT getId(ULONG *id);
     HRESULT getEnabled(BOOL *enabled);
     HRESULT setEnabled(BOOL enabled);
     HRESULT getFeatures(ULONG *aFeatures);
     HRESULT setFeatures(ULONG aFeatures);
-    HRESULT getDestination(CaptureDestination_T *aDestination);
-    HRESULT setDestination(CaptureDestination_T aDestination);
+    HRESULT getDestination(RecordDestination_T *aDestination);
+    HRESULT setDestination(RecordDestination_T aDestination);
 
     HRESULT getFileName(com::Utf8Str &aFileName);
     HRESULT setFileName(const com::Utf8Str &aFileName);
@@ -77,8 +77,8 @@ private:
     HRESULT getOptions(com::Utf8Str &aOptions);
     HRESULT setOptions(const com::Utf8Str &aOptions);
 
-    HRESULT getAudioCodec(CaptureAudioCodec_T *aCodec);
-    HRESULT setAudioCodec(CaptureAudioCodec_T aCodec);
+    HRESULT getAudioCodec(RecordAudioCodec_T *aCodec);
+    HRESULT setAudioCodec(RecordAudioCodec_T aCodec);
     HRESULT getAudioHz(ULONG *aHz);
     HRESULT setAudioHz(ULONG aHz);
     HRESULT getAudioBits(ULONG *aBits);
@@ -86,20 +86,20 @@ private:
     HRESULT getAudioChannels(ULONG *aChannels);
     HRESULT setAudioChannels(ULONG aChannels);
 
-    HRESULT getVideoCodec(CaptureVideoCodec_T *aCodec);
-    HRESULT setVideoCodec(CaptureVideoCodec_T aCodec);
+    HRESULT getVideoCodec(RecordVideoCodec_T *aCodec);
+    HRESULT setVideoCodec(RecordVideoCodec_T aCodec);
     HRESULT getVideoWidth(ULONG *aVideoWidth);
     HRESULT setVideoWidth(ULONG aVideoWidth);
     HRESULT getVideoHeight(ULONG *aVideoHeight);
     HRESULT setVideoHeight(ULONG aVideoHeight);
     HRESULT getVideoRate(ULONG *aVideoRate);
     HRESULT setVideoRate(ULONG aVideoRate);
-    HRESULT getVideoRateControlMode(CaptureVideoRateControlMode_T *aMode);
-    HRESULT setVideoRateControlMode(CaptureVideoRateControlMode_T aMode);
+    HRESULT getVideoRateControlMode(RecordVideoRateControlMode_T *aMode);
+    HRESULT setVideoRateControlMode(RecordVideoRateControlMode_T aMode);
     HRESULT getVideoFPS(ULONG *aVideoFPS);
     HRESULT setVideoFPS(ULONG aVideoFPS);
-    HRESULT getVideoScalingMethod(CaptureVideoScalingMethod_T *aMode);
-    HRESULT setVideoScalingMethod(CaptureVideoScalingMethod_T aMode);
+    HRESULT getVideoScalingMethod(RecordVideoScalingMethod_T *aMode);
+    HRESULT setVideoScalingMethod(RecordVideoScalingMethod_T aMode);
 
 private:
 
@@ -112,5 +112,5 @@ private:
     Data *m;
 };
 
-#endif // ____H_CAPTURESCREENSETTINGS
+#endif // ____H_RecordScreenSettings
 

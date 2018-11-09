@@ -2370,67 +2370,67 @@ bool BIOSSettings::operator==(const BIOSSettings &d) const
             && strLogoImagePath    == d.strLogoImagePath);
 }
 
-CaptureScreenSettings::CaptureScreenSettings(void)
+RecordScreenSettings::RecordScreenSettings(void)
 {
     applyDefaults();
 }
 
-CaptureScreenSettings::~CaptureScreenSettings()
+RecordScreenSettings::~RecordScreenSettings()
 {
 
 }
 
-void CaptureScreenSettings::applyDefaults(void)
+void RecordScreenSettings::applyDefaults(void)
 {
     /*
      * Set sensible defaults.
      */
 
     fEnabled            = false;
-    enmDest             = CaptureDestination_File;
+    enmDest             = RecordDestination_File;
     ulMaxTimeS          = 0;
     strOptions          = "";
     File.ulMaxSizeMB    = 0;
     File.strName        = "";
-    Video.enmCodec      = CaptureVideoCodec_VP8;
+    Video.enmCodec      = RecordVideoCodec_VP8;
     Video.ulWidth       = 1024;
     Video.ulHeight      = 768;
     Video.ulRate        = 512;
     Video.ulFPS         = 25;
-    Audio.enmAudioCodec = CaptureAudioCodec_Opus;
+    Audio.enmAudioCodec = RecordAudioCodec_Opus;
     Audio.cBits         = 16;
     Audio.cChannels     = 2;
     Audio.uHz           = 22050;
 
-    featureMap[CaptureFeature_Video] = true;
-    featureMap[CaptureFeature_Audio] = false;
+    featureMap[RecordFeature_Video] = true;
+    featureMap[RecordFeature_Audio] = false;
 }
 
 /**
  * Check if all settings have default values.
  */
-bool CaptureScreenSettings::areDefaultSettings(void) const
+bool RecordScreenSettings::areDefaultSettings(void) const
 {
     return    fEnabled            == false
-           && enmDest             == CaptureDestination_File
+           && enmDest             == RecordDestination_File
            && ulMaxTimeS          == 0
            && strOptions          == ""
            && File.ulMaxSizeMB    == 0
            && File.strName        == ""
-           && Video.enmCodec      == CaptureVideoCodec_VP8
+           && Video.enmCodec      == RecordVideoCodec_VP8
            && Video.ulWidth       == 1024
            && Video.ulHeight      == 768
            && Video.ulRate        == 512
            && Video.ulFPS         == 25
-           && Audio.enmAudioCodec == CaptureAudioCodec_Opus
+           && Audio.enmAudioCodec == RecordAudioCodec_Opus
            && Audio.cBits         == 16
            && Audio.cChannels     == 2
            && Audio.uHz           == 22050;
 }
 
-bool CaptureScreenSettings::isFeatureEnabled(CaptureFeature_T enmFeature) const
+bool RecordScreenSettings::isFeatureEnabled(RecordFeature_T enmFeature) const
 {
-    CaptureFeatureMap::const_iterator itFeature = featureMap.find(enmFeature);
+    RecordFeatureMap::const_iterator itFeature = featureMap.find(enmFeature);
     if (itFeature != featureMap.end())
         return itFeature->second;
 
@@ -2442,7 +2442,7 @@ bool CaptureScreenSettings::isFeatureEnabled(CaptureFeature_T enmFeature) const
  * which in turn gets called from Machine::saveSettings to figure out whether
  * machine settings have really changed and thus need to be written out to disk.
  */
-bool CaptureScreenSettings::operator==(const CaptureScreenSettings &d) const
+bool RecordScreenSettings::operator==(const RecordScreenSettings &d) const
 {
     return    fEnabled            == d.fEnabled
            && enmDest             == d.enmDest
@@ -2464,7 +2464,7 @@ bool CaptureScreenSettings::operator==(const CaptureScreenSettings &d) const
 /**
  * Constructor. Needs to set sane defaults which stand the test of time.
  */
-CaptureSettings::CaptureSettings()
+RecordSettings::RecordSettings()
 {
     applyDefaults();
 }
@@ -2472,7 +2472,7 @@ CaptureSettings::CaptureSettings()
 /**
  * Applies the default settings.
  */
-void CaptureSettings::applyDefaults(void)
+void RecordSettings::applyDefaults(void)
 {
     fEnabled = false;
 
@@ -2481,7 +2481,7 @@ void CaptureSettings::applyDefaults(void)
     try
     {
         /* Always add screen 0 to the default configuration. */
-        CaptureScreenSettings screenSettings; /* Apply default settings for screen 0. */
+        RecordScreenSettings screenSettings; /* Apply default settings for screen 0. */
         screenSettings.fEnabled = true;       /* Enabled by default. */
         mapScreens[0] = screenSettings;
     }
@@ -2494,14 +2494,14 @@ void CaptureSettings::applyDefaults(void)
 /**
  * Check if all settings have default values.
  */
-bool CaptureSettings::areDefaultSettings() const
+bool RecordSettings::areDefaultSettings() const
 {
     const bool fDefault =    fEnabled          == false
                           && mapScreens.size() == 1;
     if (!fDefault)
         return false;
 
-    CaptureScreenMap::const_iterator itScreen = mapScreens.begin();
+    RecordScreenMap::const_iterator itScreen = mapScreens.begin();
     return    itScreen->first == 0
            && itScreen->second.areDefaultSettings();
 }
@@ -2511,7 +2511,7 @@ bool CaptureSettings::areDefaultSettings() const
  * which in turn gets called from Machine::saveSettings to figure out whether
  * machine settings have really changed and thus need to be written out to disk.
  */
-bool CaptureSettings::operator==(const CaptureSettings &d) const
+bool RecordSettings::operator==(const RecordSettings &d) const
 {
     if (this == &d)
         return true;
@@ -2520,11 +2520,11 @@ bool CaptureSettings::operator==(const CaptureSettings &d) const
         || mapScreens.size() != d.mapScreens.size())
         return false;
 
-    CaptureScreenMap::const_iterator itScreen = mapScreens.begin();
+    RecordScreenMap::const_iterator itScreen = mapScreens.begin();
     uint32_t i = 0;
     while (itScreen != mapScreens.end())
     {
-        CaptureScreenMap::const_iterator itScreenThat = d.mapScreens.find(i);
+        RecordScreenMap::const_iterator itScreenThat = d.mapScreens.find(i);
         if (itScreen->second == itScreenThat->second)
         {
             /* Nothing to do in here (yet). */
@@ -4408,7 +4408,7 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
         }
         else if (pelmHwChild->nameEquals("VideoCapture"))
         {
-            pelmHwChild->getAttributeValue("enabled",   hw.captureSettings.fEnabled);
+            pelmHwChild->getAttributeValue("enabled",   hw.recordSettings.fEnabled);
 
             /* Right now I don't want to bump the settings version, so just convert the enabled
              * screens to the former uint64t_t bit array and vice versa. */
@@ -4417,8 +4417,8 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
 
             /* At the moment we only support one capturing configuration, that is, all screens
              * have the same configuration. So load/save to/from screen 0. */
-            Assert(hw.captureSettings.mapScreens.size()); /* At least screen must be present. */
-            CaptureScreenSettings &screen0Settings = hw.captureSettings.mapScreens[0];
+            Assert(hw.recordSettings.mapScreens.size()); /* At least screen must be present. */
+            RecordScreenSettings &screen0Settings = hw.recordSettings.mapScreens[0];
 
             pelmHwChild->getAttributeValue("maxTime",   screen0Settings.ulMaxTimeS);
             pelmHwChild->getAttributeValue("options",   screen0Settings.strOptions);
@@ -4432,10 +4432,10 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
             for (unsigned i = 0; i < hw.cMonitors; i++) /* Don't add more settings than we have monitors configured. */
             {
                 /* Add screen i to config in any case. */
-                hw.captureSettings.mapScreens[i] = screen0Settings;
+                hw.recordSettings.mapScreens[i] = screen0Settings;
 
                 if (u64VideoCaptureScreens & RT_BIT_64(i)) /* Screen i enabled? */
-                    hw.captureSettings.mapScreens[i].fEnabled = true;
+                    hw.recordSettings.mapScreens[i].fEnabled = true;
             }
         }
         else if (pelmHwChild->nameEquals("RemoteDisplay"))
@@ -5819,18 +5819,18 @@ void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
         }
     }
 
-    if (m->sv >= SettingsVersion_v1_14 && !hw.captureSettings.areDefaultSettings())
+    if (m->sv >= SettingsVersion_v1_14 && !hw.recordSettings.areDefaultSettings())
     {
         xml::ElementNode *pelmVideoCapture = pelmHardware->createChild("VideoCapture");
 
-        if (hw.captureSettings.fEnabled)
-            pelmVideoCapture->setAttribute("enabled", hw.captureSettings.fEnabled);
+        if (hw.recordSettings.fEnabled)
+            pelmVideoCapture->setAttribute("enabled", hw.recordSettings.fEnabled);
 
         /* Right now I don't want to bump the settings version, so just convert the enabled
          * screens to the former uint64t_t bit array and vice versa. */
         uint64_t u64VideoCaptureScreens = 0;
-        CaptureScreenMap::const_iterator itScreen = hw.captureSettings.mapScreens.begin();
-        while (itScreen != hw.captureSettings.mapScreens.end())
+        RecordScreenMap::const_iterator itScreen = hw.recordSettings.mapScreens.begin();
+        while (itScreen != hw.recordSettings.mapScreens.end())
         {
             if (itScreen->second.fEnabled)
                u64VideoCaptureScreens |= RT_BIT_64(itScreen->first);
@@ -5842,9 +5842,9 @@ void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
 
         /* At the moment we only support one capturing configuration, that is, all screens
          * have the same configuration. So load/save to/from screen 0. */
-        Assert(hw.captureSettings.mapScreens.size());
-        const CaptureScreenMap::const_iterator itScreen0Settings = hw.captureSettings.mapScreens.find(0);
-        Assert(itScreen0Settings != hw.captureSettings.mapScreens.end());
+        Assert(hw.recordSettings.mapScreens.size());
+        const RecordScreenMap::const_iterator itScreen0Settings = hw.recordSettings.mapScreens.find(0);
+        Assert(itScreen0Settings != hw.recordSettings.mapScreens.end());
 
         if (itScreen0Settings->second.ulMaxTimeS)
             pelmVideoCapture->setAttribute("maxTime",      itScreen0Settings->second.ulMaxTimeS);
@@ -7441,7 +7441,7 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
             || hardwareMachine.graphicsControllerType != GraphicsControllerType_VBoxVGA
             || hardwareMachine.enmLongMode != Hardware::LongMode_Legacy
             || machineUserData.ovIcon.size() > 0
-            || hardwareMachine.captureSettings.fEnabled)
+            || hardwareMachine.recordSettings.fEnabled)
         {
             m->sv = SettingsVersion_v1_14;
             return;

@@ -76,7 +76,7 @@
 
 /* COM includes: */
 # include "CAudioAdapter.h"
-# include "CCaptureSettings.h"
+# include "CRecordSettings.h"
 # include "CVirtualBoxErrorInfo.h"
 # include "CMachineDebugger.h"
 # include "CSnapshot.h"
@@ -2103,7 +2103,7 @@ void UIMachineLogic::sltToggleRecording(bool fEnabled)
         return;
 
     /* Make sure something had changed: */
-    CCaptureSettings comRecordingSettings = machine().GetCaptureSettings();
+    CRecordSettings comRecordingSettings = machine().GetRecordSettings();
     if (comRecordingSettings.GetEnabled() == static_cast<BOOL>(fEnabled))
         return;
 

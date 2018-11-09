@@ -16,11 +16,11 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#define LOG_GROUP LOG_GROUP_MAIN_CAPTURESCREENSETTINGS
+#define LOG_GROUP LOG_GROUP_MAIN_RECORDSCREENSETTINGS
 #include "LoggingNew.h"
 
-#include "CaptureScreenSettingsImpl.h"
-#include "CaptureSettingsImpl.h"
+#include "RecordScreenSettingsImpl.h"
+#include "RecordSettingsImpl.h"
 #include "MachineImpl.h"
 
 #include <iprt/path.h>
@@ -33,35 +33,35 @@
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-// CaptureScreenSettings private data definition
+// RecordScreenSettings private data definition
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-struct CaptureScreenSettings::Data
+struct RecordScreenSettings::Data
 {
     Data()
         : pParent(NULL)
     { }
 
-    CaptureSettings * const          pParent;
-    ComObjPtr<CaptureScreenSettings> pPeer;
+    RecordSettings * const          pParent;
+    ComObjPtr<RecordScreenSettings> pPeer;
     uint32_t                         uScreenId;
 
     // use the XML settings structure in the members for simplicity
-    Backupable<settings::CaptureScreenSettings> bd;
+    Backupable<settings::RecordScreenSettings> bd;
 };
 
 // constructor / destructor
 /////////////////////////////////////////////////////////////////////////////
 
-DEFINE_EMPTY_CTOR_DTOR(CaptureScreenSettings)
+DEFINE_EMPTY_CTOR_DTOR(RecordScreenSettings)
 
-HRESULT CaptureScreenSettings::FinalConstruct()
+HRESULT RecordScreenSettings::FinalConstruct()
 {
     return BaseFinalConstruct();
 }
 
-void CaptureScreenSettings::FinalRelease()
+void RecordScreenSettings::FinalRelease()
 {
     uninit();
     BaseFinalRelease();
@@ -75,7 +75,7 @@ void CaptureScreenSettings::FinalRelease()
  *
  * @returns COM result indicator
  */
-HRESULT CaptureScreenSettings::init(CaptureSettings *aParent, uint32_t uScreenId, const settings::CaptureScreenSettings& data)
+HRESULT RecordScreenSettings::init(RecordSettings *aParent, uint32_t uScreenId, const settings::RecordScreenSettings& data)
 {
     LogFlowThisFuncEnter();
     LogFlowThisFunc(("aParent: %p\n", aParent));
@@ -122,7 +122,7 @@ HRESULT CaptureScreenSettings::init(CaptureSettings *aParent, uint32_t uScreenId
  *  @note This object must be destroyed before the original object
  *  it shares data with is destroyed.
  */
-HRESULT CaptureScreenSettings::init(CaptureSettings *aParent, CaptureScreenSettings *that)
+HRESULT RecordScreenSettings::init(RecordSettings *aParent, RecordScreenSettings *that)
 {
     LogFlowThisFuncEnter();
     LogFlowThisFunc(("aParent: %p, that: %p\n", aParent, that));
@@ -165,7 +165,7 @@ HRESULT CaptureScreenSettings::init(CaptureSettings *aParent, CaptureScreenSetti
  *  (a kind of copy constructor). This object makes a private copy of data
  *  of the original object passed as an argument.
  */
-HRESULT CaptureScreenSettings::initCopy(CaptureSettings *aParent, CaptureScreenSettings *that)
+HRESULT RecordScreenSettings::initCopy(RecordSettings *aParent, RecordScreenSettings *that)
 {
     LogFlowThisFuncEnter();
     LogFlowThisFunc(("aParent: %p, that: %p\n", aParent, that));
@@ -207,7 +207,7 @@ HRESULT CaptureScreenSettings::initCopy(CaptureSettings *aParent, CaptureScreenS
  *  Uninitializes the instance and sets the ready flag to FALSE.
  *  Called either from FinalRelease() or by the parent when it gets destroyed.
  */
-void CaptureScreenSettings::uninit()
+void RecordScreenSettings::uninit()
 {
     LogFlowThisFuncEnter();
 
@@ -227,14 +227,14 @@ void CaptureScreenSettings::uninit()
     LogFlowThisFuncLeave();
 }
 
-HRESULT CaptureScreenSettings::isFeatureEnabled(CaptureFeature_T aFeature, BOOL *aEnabled)
+HRESULT RecordScreenSettings::isFeatureEnabled(RecordFeature_T aFeature, BOOL *aEnabled)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    settings::CaptureFeatureMap::const_iterator itFeature = m->bd->featureMap.find(aFeature);
+    settings::RecordFeatureMap::const_iterator itFeature = m->bd->featureMap.find(aFeature);
 
     *aEnabled = (   itFeature != m->bd->featureMap.end()
                  && itFeature->second == true);
@@ -242,7 +242,7 @@ HRESULT CaptureScreenSettings::isFeatureEnabled(CaptureFeature_T aFeature, BOOL 
     return S_OK;
 }
 
-HRESULT CaptureScreenSettings::getId(ULONG *id)
+HRESULT RecordScreenSettings::getId(ULONG *id)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -254,7 +254,7 @@ HRESULT CaptureScreenSettings::getId(ULONG *id)
     return S_OK;
 }
 
-HRESULT CaptureScreenSettings::getEnabled(BOOL *enabled)
+HRESULT RecordScreenSettings::getEnabled(BOOL *enabled)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -266,7 +266,7 @@ HRESULT CaptureScreenSettings::getEnabled(BOOL *enabled)
     return S_OK;
 }
 
-HRESULT CaptureScreenSettings::setEnabled(BOOL enabled)
+HRESULT RecordScreenSettings::setEnabled(BOOL enabled)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -291,7 +291,7 @@ HRESULT CaptureScreenSettings::setEnabled(BOOL enabled)
     return S_OK;
 }
 
-HRESULT CaptureScreenSettings::getFeatures(ULONG *aFeatures)
+HRESULT RecordScreenSettings::getFeatures(ULONG *aFeatures)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -300,7 +300,7 @@ HRESULT CaptureScreenSettings::getFeatures(ULONG *aFeatures)
 
     *aFeatures = 0;
 
-    settings::CaptureFeatureMap::const_iterator itFeature = m->bd->featureMap.begin();
+    settings::RecordFeatureMap::const_iterator itFeature = m->bd->featureMap.begin();
     while (itFeature != m->bd->featureMap.end())
     {
         if (itFeature->second) /* Is feature enable? */
@@ -312,7 +312,7 @@ HRESULT CaptureScreenSettings::getFeatures(ULONG *aFeatures)
     return S_OK;
 }
 
-HRESULT CaptureScreenSettings::setFeatures(ULONG aFeatures)
+HRESULT RecordScreenSettings::setFeatures(ULONG aFeatures)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -325,17 +325,17 @@ HRESULT CaptureScreenSettings::setFeatures(ULONG aFeatures)
     m->bd.backup();
     m->bd->featureMap.clear();
 
-    if (aFeatures & CaptureFeature_Audio)
-        m->bd->featureMap[CaptureFeature_Audio] = true;
-    if (aFeatures & CaptureFeature_Video)
-        m->bd->featureMap[CaptureFeature_Video] = true;
+    if (aFeatures & RecordFeature_Audio)
+        m->bd->featureMap[RecordFeature_Audio] = true;
+    if (aFeatures & RecordFeature_Video)
+        m->bd->featureMap[RecordFeature_Video] = true;
 
     alock.release();
 
     return S_OK;
 }
 
-HRESULT CaptureScreenSettings::getDestination(CaptureDestination_T *aDestination)
+HRESULT RecordScreenSettings::getDestination(RecordDestination_T *aDestination)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -347,7 +347,7 @@ HRESULT CaptureScreenSettings::getDestination(CaptureDestination_T *aDestination
     return S_OK;
 }
 
-HRESULT CaptureScreenSettings::setDestination(CaptureDestination_T aDestination)
+HRESULT RecordScreenSettings::setDestination(RecordDestination_T aDestination)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -363,7 +363,7 @@ HRESULT CaptureScreenSettings::setDestination(CaptureDestination_T aDestination)
     return S_OK;
 }
 
-HRESULT CaptureScreenSettings::getFileName(com::Utf8Str &aFileName)
+HRESULT RecordScreenSettings::getFileName(com::Utf8Str &aFileName)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -375,7 +375,7 @@ HRESULT CaptureScreenSettings::getFileName(com::Utf8Str &aFileName)
     return S_OK;
 }
 
-HRESULT CaptureScreenSettings::setFileName(const com::Utf8Str &aFileName)
+HRESULT RecordScreenSettings::setFileName(const com::Utf8Str &aFileName)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -396,7 +396,7 @@ HRESULT CaptureScreenSettings::setFileName(const com::Utf8Str &aFileName)
     return S_OK;
 }
 
-HRESULT CaptureScreenSettings::getMaxTime(ULONG *aMaxTimeS)
+HRESULT RecordScreenSettings::getMaxTime(ULONG *aMaxTimeS)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -408,7 +408,7 @@ HRESULT CaptureScreenSettings::getMaxTime(ULONG *aMaxTimeS)
     return S_OK;
 }
 
-HRESULT CaptureScreenSettings::setMaxTime(ULONG aMaxTimeS)
+HRESULT RecordScreenSettings::setMaxTime(ULONG aMaxTimeS)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -424,7 +424,7 @@ HRESULT CaptureScreenSettings::setMaxTime(ULONG aMaxTimeS)
     return S_OK;
 }
 
-HRESULT CaptureScreenSettings::getMaxFileSize(ULONG *aMaxFileSizeMB)
+HRESULT RecordScreenSettings::getMaxFileSize(ULONG *aMaxFileSizeMB)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -436,7 +436,7 @@ HRESULT CaptureScreenSettings::getMaxFileSize(ULONG *aMaxFileSizeMB)
     return S_OK;
 }
 
-HRESULT CaptureScreenSettings::setMaxFileSize(ULONG aMaxFileSize)
+HRESULT RecordScreenSettings::setMaxFileSize(ULONG aMaxFileSize)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -452,7 +452,7 @@ HRESULT CaptureScreenSettings::setMaxFileSize(ULONG aMaxFileSize)
     return S_OK;
 }
 
-HRESULT CaptureScreenSettings::getOptions(com::Utf8Str &aOptions)
+HRESULT RecordScreenSettings::getOptions(com::Utf8Str &aOptions)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -464,7 +464,7 @@ HRESULT CaptureScreenSettings::getOptions(com::Utf8Str &aOptions)
     return S_OK;
 }
 
-HRESULT CaptureScreenSettings::setOptions(const com::Utf8Str &aOptions)
+HRESULT RecordScreenSettings::setOptions(const com::Utf8Str &aOptions)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -480,7 +480,7 @@ HRESULT CaptureScreenSettings::setOptions(const com::Utf8Str &aOptions)
     return S_OK;
 }
 
-HRESULT CaptureScreenSettings::getAudioCodec(CaptureAudioCodec_T *aCodec)
+HRESULT RecordScreenSettings::getAudioCodec(RecordAudioCodec_T *aCodec)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -492,7 +492,7 @@ HRESULT CaptureScreenSettings::getAudioCodec(CaptureAudioCodec_T *aCodec)
     return S_OK;
 }
 
-HRESULT CaptureScreenSettings::setAudioCodec(CaptureAudioCodec_T aCodec)
+HRESULT RecordScreenSettings::setAudioCodec(RecordAudioCodec_T aCodec)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -508,7 +508,7 @@ HRESULT CaptureScreenSettings::setAudioCodec(CaptureAudioCodec_T aCodec)
     return S_OK;
 }
 
-HRESULT CaptureScreenSettings::getAudioHz(ULONG *aHz)
+HRESULT RecordScreenSettings::getAudioHz(ULONG *aHz)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -520,7 +520,7 @@ HRESULT CaptureScreenSettings::getAudioHz(ULONG *aHz)
     return S_OK;
 }
 
-HRESULT CaptureScreenSettings::setAudioHz(ULONG aHz)
+HRESULT RecordScreenSettings::setAudioHz(ULONG aHz)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -536,7 +536,7 @@ HRESULT CaptureScreenSettings::setAudioHz(ULONG aHz)
     return S_OK;
 }
 
-HRESULT CaptureScreenSettings::getAudioBits(ULONG *aBits)
+HRESULT RecordScreenSettings::getAudioBits(ULONG *aBits)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -548,7 +548,7 @@ HRESULT CaptureScreenSettings::getAudioBits(ULONG *aBits)
     return S_OK;
 }
 
-HRESULT CaptureScreenSettings::setAudioBits(ULONG aBits)
+HRESULT RecordScreenSettings::setAudioBits(ULONG aBits)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -564,7 +564,7 @@ HRESULT CaptureScreenSettings::setAudioBits(ULONG aBits)
     return S_OK;
 }
 
-HRESULT CaptureScreenSettings::getAudioChannels(ULONG *aChannels)
+HRESULT RecordScreenSettings::getAudioChannels(ULONG *aChannels)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -576,7 +576,7 @@ HRESULT CaptureScreenSettings::getAudioChannels(ULONG *aChannels)
     return S_OK;
 }
 
-HRESULT CaptureScreenSettings::setAudioChannels(ULONG aChannels)
+HRESULT RecordScreenSettings::setAudioChannels(ULONG aChannels)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -592,7 +592,7 @@ HRESULT CaptureScreenSettings::setAudioChannels(ULONG aChannels)
     return S_OK;
 }
 
-HRESULT CaptureScreenSettings::getVideoCodec(CaptureVideoCodec_T *aCodec)
+HRESULT RecordScreenSettings::getVideoCodec(RecordVideoCodec_T *aCodec)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -604,7 +604,7 @@ HRESULT CaptureScreenSettings::getVideoCodec(CaptureVideoCodec_T *aCodec)
     return S_OK;
 }
 
-HRESULT CaptureScreenSettings::setVideoCodec(CaptureVideoCodec_T aCodec)
+HRESULT RecordScreenSettings::setVideoCodec(RecordVideoCodec_T aCodec)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -620,7 +620,7 @@ HRESULT CaptureScreenSettings::setVideoCodec(CaptureVideoCodec_T aCodec)
     return S_OK;
 }
 
-HRESULT CaptureScreenSettings::getVideoWidth(ULONG *aVideoWidth)
+HRESULT RecordScreenSettings::getVideoWidth(ULONG *aVideoWidth)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -632,7 +632,7 @@ HRESULT CaptureScreenSettings::getVideoWidth(ULONG *aVideoWidth)
     return S_OK;
 }
 
-HRESULT CaptureScreenSettings::setVideoWidth(ULONG aVideoWidth)
+HRESULT RecordScreenSettings::setVideoWidth(ULONG aVideoWidth)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -648,7 +648,7 @@ HRESULT CaptureScreenSettings::setVideoWidth(ULONG aVideoWidth)
     return S_OK;
 }
 
-HRESULT CaptureScreenSettings::getVideoHeight(ULONG *aVideoHeight)
+HRESULT RecordScreenSettings::getVideoHeight(ULONG *aVideoHeight)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -660,7 +660,7 @@ HRESULT CaptureScreenSettings::getVideoHeight(ULONG *aVideoHeight)
     return S_OK;
 }
 
-HRESULT CaptureScreenSettings::setVideoHeight(ULONG aVideoHeight)
+HRESULT RecordScreenSettings::setVideoHeight(ULONG aVideoHeight)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -676,7 +676,7 @@ HRESULT CaptureScreenSettings::setVideoHeight(ULONG aVideoHeight)
     return S_OK;
 }
 
-HRESULT CaptureScreenSettings::getVideoRate(ULONG *aVideoRate)
+HRESULT RecordScreenSettings::getVideoRate(ULONG *aVideoRate)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -688,7 +688,7 @@ HRESULT CaptureScreenSettings::getVideoRate(ULONG *aVideoRate)
     return S_OK;
 }
 
-HRESULT CaptureScreenSettings::setVideoRate(ULONG aVideoRate)
+HRESULT RecordScreenSettings::setVideoRate(ULONG aVideoRate)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -704,19 +704,19 @@ HRESULT CaptureScreenSettings::setVideoRate(ULONG aVideoRate)
     return S_OK;
 }
 
-HRESULT CaptureScreenSettings::getVideoRateControlMode(CaptureVideoRateControlMode_T *aMode)
+HRESULT RecordScreenSettings::getVideoRateControlMode(RecordVideoRateControlMode_T *aMode)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    *aMode = CaptureVideoRateControlMode_CBR; /** @todo Implement VBR. */
+    *aMode = RecordVideoRateControlMode_CBR; /** @todo Implement VBR. */
 
     return S_OK;
 }
 
-HRESULT CaptureScreenSettings::setVideoRateControlMode(CaptureVideoRateControlMode_T aMode)
+HRESULT RecordScreenSettings::setVideoRateControlMode(RecordVideoRateControlMode_T aMode)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -732,7 +732,7 @@ HRESULT CaptureScreenSettings::setVideoRateControlMode(CaptureVideoRateControlMo
     return E_NOTIMPL;
 }
 
-HRESULT CaptureScreenSettings::getVideoFPS(ULONG *aVideoFPS)
+HRESULT RecordScreenSettings::getVideoFPS(ULONG *aVideoFPS)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -744,7 +744,7 @@ HRESULT CaptureScreenSettings::getVideoFPS(ULONG *aVideoFPS)
     return S_OK;
 }
 
-HRESULT CaptureScreenSettings::setVideoFPS(ULONG aVideoFPS)
+HRESULT RecordScreenSettings::setVideoFPS(ULONG aVideoFPS)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -760,19 +760,19 @@ HRESULT CaptureScreenSettings::setVideoFPS(ULONG aVideoFPS)
     return S_OK;
 }
 
-HRESULT CaptureScreenSettings::getVideoScalingMethod(CaptureVideoScalingMethod_T *aMode)
+HRESULT RecordScreenSettings::getVideoScalingMethod(RecordVideoScalingMethod_T *aMode)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    *aMode = CaptureVideoScalingMethod_None; /** @todo Implement this. */
+    *aMode = RecordVideoScalingMethod_None; /** @todo Implement this. */
 
     return S_OK;
 }
 
-HRESULT CaptureScreenSettings::setVideoScalingMethod(CaptureVideoScalingMethod_T aMode)
+HRESULT RecordScreenSettings::setVideoScalingMethod(RecordVideoScalingMethod_T aMode)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -793,7 +793,7 @@ HRESULT CaptureScreenSettings::setVideoScalingMethod(CaptureVideoScalingMethod_T
  *
  * @returns IPRT status code.
  */
-int CaptureScreenSettings::i_initInternal(void)
+int RecordScreenSettings::i_initInternal(void)
 {
     Assert(m);
 
@@ -801,7 +801,7 @@ int CaptureScreenSettings::i_initInternal(void)
 
     switch (m->bd->enmDest)
     {
-        case CaptureDestination_File:
+        case RecordDestination_File:
         {
             if (m->bd->File.strName.isEmpty())
                 rc = m->pParent->i_getDefaultFileName(m->bd->File.strName);

@@ -1854,7 +1854,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
             RTFileClose(pngFile);
         }
 #ifdef VBOX_WITH_VIDEOREC
-        else if (!strcmp(a->argv[1], "capture"))
+        else if (!strcmp(a->argv[1], "record"))
         {
             if (a->argc < 3)
             {
@@ -1863,11 +1863,11 @@ RTEXITCODE handleControlVM(HandlerArg *a)
                 break;
             }
 
-            ComPtr<ICaptureSettings> captureSettings;
-            CHECK_ERROR_BREAK(machine, COMGETTER(CaptureSettings)(captureSettings.asOutParam()));
+            ComPtr<IRecordSettings> RecordSettings;
+            CHECK_ERROR_BREAK(machine, COMGETTER(RecordSettings)(RecordSettings.asOutParam()));
 
-            SafeIfaceArray <ICaptureScreenSettings> saCaptureScreenScreens;
-            CHECK_ERROR_BREAK(captureSettings, COMGETTER(Screens)(ComSafeArrayAsOutParam(saCaptureScreenScreens)));
+            SafeIfaceArray <IRecordScreenSettings> saRecordScreenScreens;
+            CHECK_ERROR_BREAK(RecordSettings, COMGETTER(Screens)(ComSafeArrayAsOutParam(saRecordScreenScreens)));
 
             /* Note: For now all screens have the same configuration. */
 
@@ -1875,13 +1875,13 @@ RTEXITCODE handleControlVM(HandlerArg *a)
              * Note: Commands starting with "vcp" are the deprecated versions and are
              *       kept to ensure backwards compatibility.
              */
-            if (!strcmp(a->argv[2], "enable"))
+            if (!strcmp(a->argv[2], "on"))
             {
-                CHECK_ERROR_RET(captureSettings, COMSETTER(Enabled)(TRUE), RTEXITCODE_FAILURE);
+                CHECK_ERROR_RET(RecordSettings, COMSETTER(Enabled)(TRUE), RTEXITCODE_FAILURE);
             }
-            else if (!strcmp(a->argv[2], "disable"))
+            else if (!strcmp(a->argv[2], "off"))
             {
-                CHECK_ERROR_RET(captureSettings, COMSETTER(Enabled)(FALSE), RTEXITCODE_FAILURE);
+                CHECK_ERROR_RET(RecordSettings, COMSETTER(Enabled)(FALSE), RTEXITCODE_FAILURE);
             }
             else if (!strcmp(a->argv[2], "screens"))
             {
@@ -1929,8 +1929,8 @@ RTEXITCODE handleControlVM(HandlerArg *a)
                     }
                 }
 
-                for (size_t i = 0; i < saCaptureScreenScreens.size(); ++i)
-                    CHECK_ERROR_BREAK(saCaptureScreenScreens[i], COMSETTER(Enabled)(saScreens[i]));
+                for (size_t i = 0; i < saRecordScreenScreens.size(); ++i)
+                    CHECK_ERROR_BREAK(saRecordScreenScreens[i], COMSETTER(Enabled)(saScreens[i]));
             }
             else if (!strcmp(a->argv[2], "filename"))
             {
@@ -1941,11 +1941,11 @@ RTEXITCODE handleControlVM(HandlerArg *a)
                     break;
                 }
 
-                for (size_t i = 0; i < saCaptureScreenScreens.size(); ++i)
-                    CHECK_ERROR_BREAK(saCaptureScreenScreens[i], COMSETTER(FileName)(Bstr(a->argv[2]).raw()));
+                for (size_t i = 0; i < saRecordScreenScreens.size(); ++i)
+                    CHECK_ERROR_BREAK(saRecordScreenScreens[i], COMSETTER(FileName)(Bstr(a->argv[2]).raw()));
             }
-            else if (   !strcmp(a->argv[2], "res")
-                     || !strcmp(a->argv[2], "resolution"))
+            else if (   !strcmp(a->argv[2], "videores")
+                     || !strcmp(a->argv[2], "videoresolution"))
             {
                 if (a->argc != 5)
                 {
@@ -1971,10 +1971,10 @@ RTEXITCODE handleControlVM(HandlerArg *a)
                     break;
                 }
 
-                for (size_t i = 0; i < saCaptureScreenScreens.size(); ++i)
+                for (size_t i = 0; i < saRecordScreenScreens.size(); ++i)
                 {
-                    CHECK_ERROR_BREAK(saCaptureScreenScreens[i], COMSETTER(VideoWidth)(uVal));
-                    CHECK_ERROR_BREAK(saCaptureScreenScreens[i], COMSETTER(VideoHeight)(uVal));
+                    CHECK_ERROR_BREAK(saRecordScreenScreens[i], COMSETTER(VideoWidth)(uVal));
+                    CHECK_ERROR_BREAK(saRecordScreenScreens[i], COMSETTER(VideoHeight)(uVal));
                 }
             }
             else if (!strcmp(a->argv[2], "videorate"))
@@ -1995,8 +1995,8 @@ RTEXITCODE handleControlVM(HandlerArg *a)
                     break;
                 }
 
-                for (size_t i = 0; i < saCaptureScreenScreens.size(); ++i)
-                    CHECK_ERROR_BREAK(saCaptureScreenScreens[i], COMSETTER(VideoRate)(uVal));
+                for (size_t i = 0; i < saRecordScreenScreens.size(); ++i)
+                    CHECK_ERROR_BREAK(saRecordScreenScreens[i], COMSETTER(VideoRate)(uVal));
             }
             else if (!strcmp(a->argv[2], "videofps"))
             {
@@ -2016,8 +2016,8 @@ RTEXITCODE handleControlVM(HandlerArg *a)
                     break;
                 }
 
-                for (size_t i = 0; i < saCaptureScreenScreens.size(); ++i)
-                    CHECK_ERROR_BREAK(saCaptureScreenScreens[i], COMSETTER(VideoFPS)(uVal));
+                for (size_t i = 0; i < saRecordScreenScreens.size(); ++i)
+                    CHECK_ERROR_BREAK(saRecordScreenScreens[i], COMSETTER(VideoFPS)(uVal));
             }
             else if (!strcmp(a->argv[2], "maxtime"))
             {
@@ -2037,8 +2037,8 @@ RTEXITCODE handleControlVM(HandlerArg *a)
                     break;
                 }
 
-                for (size_t i = 0; i < saCaptureScreenScreens.size(); ++i)
-                    CHECK_ERROR_BREAK(saCaptureScreenScreens[i], COMSETTER(MaxTime)(uVal));
+                for (size_t i = 0; i < saRecordScreenScreens.size(); ++i)
+                    CHECK_ERROR_BREAK(saRecordScreenScreens[i], COMSETTER(MaxTime)(uVal));
             }
             else if (!strcmp(a->argv[2], "maxfilesize"))
             {
@@ -2058,8 +2058,8 @@ RTEXITCODE handleControlVM(HandlerArg *a)
                     break;
                 }
 
-                for (size_t i = 0; i < saCaptureScreenScreens.size(); ++i)
-                    CHECK_ERROR_BREAK(saCaptureScreenScreens[i], COMSETTER(MaxFileSize)(uVal));
+                for (size_t i = 0; i < saRecordScreenScreens.size(); ++i)
+                    CHECK_ERROR_BREAK(saRecordScreenScreens[i], COMSETTER(MaxFileSize)(uVal));
             }
             else if (!strcmp(a->argv[2], "opts"))
             {
@@ -2070,8 +2070,8 @@ RTEXITCODE handleControlVM(HandlerArg *a)
                     break;
                 }
 
-                for (size_t i = 0; i < saCaptureScreenScreens.size(); ++i)
-                    CHECK_ERROR_BREAK(saCaptureScreenScreens[i], COMSETTER(Options)(Bstr(a->argv[3]).raw()));
+                for (size_t i = 0; i < saRecordScreenScreens.size(); ++i)
+                    CHECK_ERROR_BREAK(saRecordScreenScreens[i], COMSETTER(Options)(Bstr(a->argv[3]).raw()));
             }
         }
 #endif /* VBOX_WITH_VIDEOREC */

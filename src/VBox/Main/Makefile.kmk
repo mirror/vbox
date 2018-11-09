@@ -456,8 +456,8 @@ VBoxSVC_SOURCES = \
 	src-server/BandwidthControlImpl.cpp \
 	src-server/BandwidthGroupImpl.cpp \
 	src-server/BIOSSettingsImpl.cpp \
-	src-server/CaptureSettingsImpl.cpp \
-	src-server/CaptureScreenSettingsImpl.cpp \
+	src-server/RecordSettingsImpl.cpp \
+	src-server/RecordScreenSettingsImpl.cpp \
 	src-server/ClientWatcher.cpp \
 	src-server/ClientToken.cpp \
 	src-server/CloudProviderManagerImpl.cpp \

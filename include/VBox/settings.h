@@ -480,39 +480,39 @@ struct BIOSSettings
     com::Utf8Str    strLogoImagePath;
 };
 
-/** List for keeping a capturing feature list. */
-typedef std::map<CaptureFeature_T, bool> CaptureFeatureMap;
+/** List for keeping a recording feature list. */
+typedef std::map<RecordFeature_T, bool> RecordFeatureMap;
 
-struct CaptureScreenSettings
+struct RecordScreenSettings
 {
-    CaptureScreenSettings();
+    RecordScreenSettings();
 
-    virtual ~CaptureScreenSettings();
+    virtual ~RecordScreenSettings();
 
     void applyDefaults(void);
 
     bool areDefaultSettings(void) const;
 
-    bool isFeatureEnabled(CaptureFeature_T enmFeature) const;
+    bool isFeatureEnabled(RecordFeature_T enmFeature) const;
 
-    bool operator==(const CaptureScreenSettings &d) const;
+    bool operator==(const RecordScreenSettings &d) const;
 
     bool                 fEnabled;       // requires settings version 1.14 (VirtualBox 4.3)
-    CaptureDestination_T enmDest;        // new since VirtualBox 6.0.
-    CaptureFeatureMap    featureMap;     // new since VirtualBox 6.0.
+    RecordDestination_T enmDest;        // new since VirtualBox 6.0.
+    RecordFeatureMap    featureMap;     // new since VirtualBox 6.0.
     uint32_t             ulMaxTimeS;     // requires settings version 1.14 (VirtualBox 4.3)
     com::Utf8Str         strOptions;     // new since VirtualBox 5.2.
 
     struct Audio
     {
         Audio()
-            : enmAudioCodec(CaptureAudioCodec_Opus)
+            : enmAudioCodec(RecordAudioCodec_Opus)
             , uHz(22050)
             , cBits(16)
             , cChannels(2) { }
 
         /** The audio codec type to use. */
-        CaptureAudioCodec_T enmAudioCodec; // new since VirtualBox 6.0.
+        RecordAudioCodec_T enmAudioCodec; // new since VirtualBox 6.0.
         /** Hz rate. */
         uint16_t            uHz;           // new since VirtualBox 6.0.
         /** Bits per sample. */
@@ -524,13 +524,13 @@ struct CaptureScreenSettings
     struct Video
     {
         Video()
-            : enmCodec(CaptureVideoCodec_VP8)
+            : enmCodec(RecordVideoCodec_VP8)
             , ulWidth(1024)
             , ulHeight(768)
             , ulRate(512)
             , ulFPS(25) { }
 
-        CaptureVideoCodec_T  enmCodec;  // new since VirtualBox 6.0.
+        RecordVideoCodec_T  enmCodec;  // new since VirtualBox 6.0.
         uint32_t             ulWidth;   // requires settings version 1.14 (VirtualBox 4.3)
         uint32_t             ulHeight;  // requires settings version 1.14 (VirtualBox 4.3)
         uint32_t             ulRate;    // requires settings version 1.14 (VirtualBox 4.3)
@@ -548,25 +548,25 @@ struct CaptureScreenSettings
 };
 
 /** Map for keeping settings per virtual screen. */
-typedef std::map<uint32_t, CaptureScreenSettings> CaptureScreenMap;
+typedef std::map<uint32_t, RecordScreenSettings> RecordScreenMap;
 
 /**
  * NOTE: If you add any fields in here, you must update a) the constructor and b)
  * the operator== which is used by MachineConfigFile::operator==(), or otherwise
  * your settings might never get saved.
  */
-struct CaptureSettings
+struct RecordSettings
 {
-    CaptureSettings();
+    RecordSettings();
 
     void applyDefaults(void);
 
     bool areDefaultSettings(void) const;
 
-    bool operator==(const CaptureSettings &d) const;
+    bool operator==(const RecordSettings &d) const;
 
-    bool             fEnabled;       // requires settings version 1.14 (VirtualBox 4.3)
-    CaptureScreenMap mapScreens;
+    bool            fEnabled;       // requires settings version 1.14 (VirtualBox 4.3)
+    RecordScreenMap mapScreens;
 };
 
 /**
@@ -1038,7 +1038,7 @@ struct Hardware
     VRDESettings        vrdeSettings;
 
     BIOSSettings        biosSettings;
-    CaptureSettings     captureSettings;
+    RecordSettings      recordSettings;
     USB                 usbSettings;
     NetworkAdaptersList llNetworkAdapters;
     SerialPortsList     llSerialPorts;

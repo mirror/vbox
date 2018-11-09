@@ -4689,11 +4689,11 @@
   </interface>
 
   <enum
-    name="CaptureDestination"
-    uuid="E54603A9-6751-4255-93F8-C69E61693391"
+    name="RecordDestination"
+    uuid="F52E217E-CA05-41BA-8851-0FA38B3BA38B"
     >
     <desc>
-      Capturing destination enumeration.
+      Recording destination enumeration.
     </desc>
 
     <const name="None"                  value="0">
@@ -4705,30 +4705,30 @@
   </enum>
 
   <enum
-    name="CaptureFeature"
-    uuid="F606CDDB-91B2-4E41-9DFE-4713D4DBA96F"
+    name="RecordFeature"
+    uuid="52AEC901-4EF5-4E04-8CA3-EF1478BB0930"
     >
     <desc>
-      Capturing features enumeration.
+      Recording features enumeration.
     </desc>
 
     <const name="None"                  value="0">
       <desc>No feature set.</desc>
     </const>
     <const name="Video"                 value="1">
-      <desc>Video capturing.</desc>
+      <desc>Video recording.</desc>
     </const>
     <const name="Audio"                 value="2">
-      <desc>Audio capturing.</desc>
+      <desc>Audio recording.</desc>
     </const>
   </enum>
 
   <enum
-    name="CaptureAudioCodec"
-    uuid="9B80C37F-7984-412C-A755-C18FE5859554"
+    name="RecordAudioCodec"
+    uuid="B72DD288-0D3F-4652-AE66-D6F621D2F275"
     >
     <desc>
-      Capturing audio codec enumeration.
+      Recording audio codec enumeration.
     </desc>
 
     <const name="None"                  value="0">
@@ -4744,11 +4744,11 @@
   </enum>
 
   <enum
-    name="CaptureVideoCodec"
-    uuid="98BBC021-E119-497D-8C66-4336D539A8D6"
+    name="RecordVideoCodec"
+    uuid="823F3AD4-151F-4BDB-AFF9-F7C998E46105"
     >
     <desc>
-      Capturing video codec enumeration.
+      Recording video codec enumeration.
     </desc>
 
     <const name="None"                  value="0">
@@ -4766,11 +4766,11 @@
   </enum>
 
   <enum
-    name="CaptureVideoScalingMethod"
-    uuid="8315399B-4F31-416E-970E-D7480BDA1ACF"
+    name="RecordVideoScalingMethod"
+    uuid="8D656085-BAE6-4F63-86F9-616776EB3773"
     >
     <desc>
-      Capturing video scaling method enumeration.
+      Recording video scaling method enumeration.
     </desc>
 
     <const name="None"                  value="0">
@@ -4791,11 +4791,11 @@
   </enum>
 
   <enum
-    name="CaptureVideoRateControlMode"
-    uuid="5D392E29-04EC-4FD7-989C-82452F54414C"
+    name="RecordVideoRateControlMode"
+    uuid="11F99274-835F-4F2C-86A5-F8DF8999C21A"
     >
     <desc>
-      Capturing video rate control mode enumeration.
+      Recording video rate control mode enumeration.
     </desc>
 
     <const name="CBR" value="0">
@@ -4807,21 +4807,21 @@
   </enum>
 
   <interface
-    name="ICaptureScreenSettings" extends="$unknown"
-    uuid="B19FFA8A-686C-4221-AB29-3C1FA33946CA"
+    name="IRecordScreenSettings" extends="$unknown"
+    uuid="7811A5C6-11DB-4F9A-8FAE-1CE238AB4B73"
     wsmap="managed"
     >
 
     <desc>
-      The ICaptureScreenSettings interface represents capturing settings of a
-      single virtual screen. This is used only in the <link to="ICaptureSettings" />
+      The IRecordScreenSettings interface represents recording settings of a
+      single virtual screen. This is used only in the <link to="IRecordSettings" />
       interface.
     </desc>
 
     <method name="isFeatureEnabled">
-      <desc>Returns whether a particular capturing feature is enabled for this
+      <desc>Returns whether a particular recording feature is enabled for this
         screen or not.</desc>
-      <param name="feature" type="CaptureFeature" dir="in">
+      <param name="feature" type="RecordFeature" dir="in">
         <desc>Feature to check for.</desc>
       </param>
       <param name="enabled" type="boolean" dir="return">
@@ -4837,17 +4837,17 @@
 
     <attribute name="enabled" type="boolean" default="false">
       <desc>
-        This setting determines whether this screen is enabled while capturing.
+        This setting determines whether this screen is enabled while recording.
       </desc>
     </attribute>
 
     <attribute name="features" type="unsigned long">
-      <desc>This setting determines all enabled capturing features for this
+      <desc>This setting determines all enabled recording features for this
         screen.</desc>
     </attribute>
 
-    <attribute name="destination" type="CaptureDestination">
-      <desc>This setting determines the capturing destination for this
+    <attribute name="destination" type="RecordDestination">
+      <desc>This setting determines the recording destination for this
         screen.</desc>
     </attribute>
 
@@ -4855,7 +4855,7 @@
       <desc>
         This setting determines the filename VirtualBox uses to save
         the recorded content. This setting cannot be changed while video
-        capturing is enabled.
+        recording is enabled.
         <note>
           When setting this attribute, the specified path has to be
           absolute (full path). When reading this attribute, a full path is
@@ -4867,28 +4867,28 @@
     <attribute name="maxTime" type="unsigned long" default="0">
       <desc>
         This setting defines the maximum amount of time in milliseconds
-        to capture. Capturing will stop as soon as the defined time
-        interval has elapsed. If this value is zero, capturing will not be
-        limited by time. This setting cannot be changed while capturing is
+        to record. Recording will stop as soon as the defined time
+        interval has elapsed. If this value is zero, recording will not be
+        limited by time. This setting cannot be changed while recording is
         enabled.
       </desc>
     </attribute>
 
     <attribute name="maxFileSize" type="unsigned long" default="0">
       <desc>
-        This setting determines the maximal number of captured file
-        size in MB. Capturing will stop as soon as the file size has
-        reached the defined value. If this value is zero, capturing
+        This setting determines the maximal number of recording file
+        size in MB. Recording will stop as soon as the file size has
+        reached the defined value. If this value is zero, recording
         will not be limited by the file size. This setting cannot be changed
-        while capturing is enabled.
+        while recording is enabled.
       </desc>
     </attribute>
 
     <attribute name="options" type="wstring">
       <desc>
-        This setting contains any additional capturing options
+        This setting contains any additional recording options
         required in comma-separated key=value format. This setting
-        cannot be changed while capturing is enabled.
+        cannot be changed while recording is enabled.
 
         The following keys and their corresponding values are available:
 
@@ -4905,10 +4905,10 @@
       </desc>
     </attribute>
 
-    <attribute name="audioCodec" type="CaptureAudioCodec">
+    <attribute name="audioCodec" type="RecordAudioCodec">
       <desc>
         Determines the audio codec to use for encoding the
-        recorded audio data. This setting cannot be changed while capturing is
+        recorded audio data. This setting cannot be changed while recording is
         enabled.
       </desc>
     </attribute>
@@ -4916,14 +4916,14 @@
     <attribute name="audioHz" type="unsigned long" default="22050">
       <desc>
         Determines the Hertz (Hz) rate of the recorded audio data. This setting
-        cannot be changed while capturing is enabled.
+        cannot be changed while recording is enabled.
       </desc>
     </attribute>
 
     <attribute name="audioBits" type="unsigned long" default="16">
       <desc>
         Determines the bits per sample of the recorded audio data. This setting
-        cannot be changed while capturing is enabled.
+        cannot be changed while recording is enabled.
       </desc>
     </attribute>
 
@@ -4932,28 +4932,28 @@
         Determines the audio channels of the recorded audio data.
         Specifiy 2 for stereo or 1 for mono. More than stereo (2) channels
         are not supported at the moment. This setting cannot be changed while
-        capturing is enabled.
+        recording is enabled.
       </desc>
     </attribute>
 
-    <attribute name="videoCodec" type="CaptureVideoCodec">
+    <attribute name="videoCodec" type="RecordVideoCodec">
       <desc>
         Determines the video codec to use for encoding the recorded video data.
-        This setting cannot be changed while capturing is enabled.
+        This setting cannot be changed while recording is enabled.
       </desc>
     </attribute>
 
     <attribute name="videoWidth" type="unsigned long" default="1024">
       <desc>
         Determines the horizontal resolution of the recorded video data. This
-        setting cannot be changed while capturing is enabled.
+        setting cannot be changed while recording is enabled.
       </desc>
     </attribute>
 
     <attribute name="videoHeight" type="unsigned long" default="768">
       <desc>
         Determines the vertical resolution of the recorded video data. This
-        setting cannot be changed while capturing is enabled.
+        setting cannot be changed while recording is enabled.
       </desc>
     </attribute>
 
@@ -4961,14 +4961,14 @@
       <desc>
         Determines the bitrate in kilobits per second. Increasing this value
         makes the video look better for the cost of an increased file size or
-        transfer rate. This setting cannot be changed while capturing is enabled.
+        transfer rate. This setting cannot be changed while recording is enabled.
       </desc>
     </attribute>
 
-    <attribute name="videoRateControlMode" type="CaptureVideoRateControlMode">
+    <attribute name="videoRateControlMode" type="RecordVideoRateControlMode">
       <desc>
         Determines the rate control mode. This setting cannot be changed
-        while capturing is enabled.
+        while recording is enabled.
       </desc>
     </attribute>
 
@@ -4977,50 +4977,50 @@
         Determines the maximum number of frames per second (FPS). Frames with
         a higher frequency will be skipped. Reducing this value increases the
         number of skipped frames and reduces the file size or transfer rate.
-        This setting cannot be changed while capturing is enabled.
+        This setting cannot be changed while recording is enabled.
       </desc>
     </attribute>
 
-    <attribute name="videoScalingMethod" type="CaptureVideoScalingMethod">
+    <attribute name="videoScalingMethod" type="RecordVideoScalingMethod">
       <desc>
         Determines the video scaling method to use.
-        This setting cannot be changed while capturing is enabled.
+        This setting cannot be changed while recording is enabled.
       </desc>
     </attribute>
 
   </interface>
 
   <interface
-    name="ICaptureSettings" extends="$unknown"
-    uuid="F35B5C06-F6F0-475D-908A-F5FECC820043"
+    name="IRecordSettings" extends="$unknown"
+    uuid="7202BACF-2BFE-46AA-AEF6-69B32FDDE236"
     wsmap="managed"
     >
 
     <desc>
-      The ICaptureSettings interface represents capturing settings of the virtual
-      machine. This is used only in the <link to="IMachine::captureSettings" />
+      The IRecordSettings interface represents recording settings of the virtual
+      machine. This is used only in the <link to="IMachine::recordSettings" />
       attribute.
     </desc>
 
     <method name="getScreenSettings">
-      <desc>Returns the capturing settings for a particular screen.</desc>
+      <desc>Returns the recording settings for a particular screen.</desc>
       <param name="screenId" type="unsigned long" dir="in">
-        <desc>Screen ID to retrieve capturing screen settings for.</desc>
+        <desc>Screen ID to retrieve recording screen settings for.</desc>
       </param>
-      <param name="captureScreenSettings" type="ICaptureScreenSettings" dir="return">
-        <desc>Capturing screen settings for the requested screen.</desc>
+      <param name="recordScreenSettings" type="IRecordScreenSettings" dir="return">
+        <desc>Recording screen settings for the requested screen.</desc>
       </param>
     </method>
 
     <attribute name="enabled" type="boolean" default="false">
       <desc>
-        This setting determines whether VirtualBox uses capturing to record a
+        This setting determines whether VirtualBox uses recording to record a
         VM session.</desc>
     </attribute>
 
-    <attribute name="screens" type="ICaptureScreenSettings" readonly="yes" safearray="yes">
+    <attribute name="screens" type="IRecordScreenSettings" readonly="yes" safearray="yes">
       <desc>
-        This setting returns an array for capturing settings of all configured
+        This setting returns an array for recording settings of all configured
         virtual screens.</desc>
     </attribute>
 
@@ -5220,7 +5220,7 @@
 
   <interface
     name="IMachine" extends="$unknown"
-    uuid="316A9802-03A5-44BE-B2A6-51261A021353"
+    uuid="7210DD84-2301-4C3B-8DB3-72DEBD3B91F9"
     wsmap="managed"
     wrap-hint-server-addinterfaces="IInternalMachineControl"
     wrap-hint-server="manualaddinterfaces"
@@ -5505,8 +5505,8 @@
       <desc>Object containing all BIOS settings.</desc>
     </attribute>
 
-    <attribute name="captureSettings" type="ICaptureSettings" readonly="yes">
-      <desc>Object containing all capturing settings.</desc>
+    <attribute name="recordSettings" type="IRecordSettings" readonly="yes">
+      <desc>Object containing all recording settings.</desc>
     </attribute>
 
     <attribute name="firmwareType" type="FirmwareType">
@@ -20651,7 +20651,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IInternalSessionControl" extends="$unknown"
-    uuid="96BDA9B7-92E6-402F-AA8C-2E77818DAE6E"
+    uuid="5CEB7885-5DD5-48E4-96C1-EEF4F4FD9FAC"
     internal="yes"
     wsmap="suppress"
     >
@@ -20951,9 +20951,9 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </param>
     </method>
 
-    <method name="onCaptureChange">
+    <method name="onRecordChange">
       <desc>
-        Triggered when capture settings have changed.
+        Triggered when recording settings have changed.
       </desc>
     </method>
 
@@ -23135,9 +23135,9 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
           not unnecessarily overflow the event queue.</note>
       </desc>
     </const>
-    <const name="OnCaptureChanged" value="91">
+    <const name="OnRecordChanged" value="91">
       <desc>
-        See <link to="ICaptureChangedEvent">ICapturedChangeEvent</link>.
+        See <link to="IRecordChangedEvent">IRecordChangeEvent</link>.
       </desc>
     </const>
     <const name="OnGuestUserStateChanged" value="92">
@@ -24522,12 +24522,12 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   </interface>
 
   <interface
-    name="ICaptureChangedEvent" extends="IEvent"
-    uuid="C694687C-F432-4435-B457-F2E55B845C81"
-    wsmap="managed" autogen="VBoxEvent" id="OnCaptureChanged"
+    name="IRecordChangedEvent" extends="IEvent"
+    uuid="DA51AA0C-E642-4AA0-9DDD-B07E2911188B"
+    wsmap="managed" autogen="VBoxEvent" id="OnRecordChanged"
     >
     <desc>
-      Notification when capture settings have changed.
+      Notification when recording settings have changed.
     </desc>
     <attribute name="midlDoesNotLikeEmptyInterfaces" readonly="yes" type="boolean"/>
   </interface>

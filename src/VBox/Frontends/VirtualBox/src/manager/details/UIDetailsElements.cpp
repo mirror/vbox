@@ -43,8 +43,8 @@
 # include "CStorageController.h"
 # include "CMediumAttachment.h"
 # include "CAudioAdapter.h"
-# include "CCaptureSettings.h"
-# include "CCaptureScreenSettings.h"
+# include "CRecordSettings.h"
+# include "CRecordScreenSettings.h"
 # include "CNetworkAdapter.h"
 # include "CSerialPort.h"
 # include "CUSBController.h"
@@ -449,11 +449,11 @@ void UIDetailsUpdateTaskDisplay::run()
         }
 
         /* Recording info: */
-        CCaptureSettings comRecordingSettings = machine.GetCaptureSettings();
+        CRecordSettings comRecordingSettings = machine.GetRecordSettings();
         if (comRecordingSettings.GetEnabled())
         {
             /* For now all screens have the same config: */
-            CCaptureScreenSettings comRecordingScreen0Settings = comRecordingSettings.GetScreenSettings(0);
+            CRecordScreenSettings comRecordingScreen0Settings = comRecordingSettings.GetScreenSettings(0);
 
             /** @todo r=andy Refine these texts (wrt audio and/or video). */
             table << UITextTableLine(QApplication::translate("UIDetails", "Recording File", "details (display/recording)"),

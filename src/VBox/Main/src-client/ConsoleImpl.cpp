@@ -5631,7 +5631,7 @@ int Console::i_videoRecEnable(BOOL fEnable, util::AutoWriteLock *pAutoLock)
                 {
 # ifdef VBOX_WITH_AUDIO_VIDEOREC
                     /* Attach the video recording audio driver if required. */
-                    if (   Capture.mpVideoRecCtx->IsFeatureEnabled(CaptureFeature_Audio)
+                    if (   Capture.mpVideoRecCtx->IsFeatureEnabled(RecordFeature_Audio)
                         && Capture.mAudioVideoRec)
                     {
                         vrc = Capture.mAudioVideoRec->applyConfiguration(Capture.mpVideoRecCtx->GetConfig());
@@ -5666,7 +5666,7 @@ int Console::i_videoRecEnable(BOOL fEnable, util::AutoWriteLock *pAutoLock)
 }
 #endif /* VBOX_WITH_VIDEOREC */
 
-HRESULT Console::i_onCaptureChange()
+HRESULT Console::i_onRecordChange()
 {
     AutoCaller autoCaller(this);
     AssertComRCReturnRC(autoCaller.rc());
@@ -5679,19 +5679,19 @@ HRESULT Console::i_onCaptureChange()
     SafeVMPtrQuiet ptrVM(this);
     if (ptrVM.isOk())
     {
-        ComPtr<ICaptureSettings> CaptureSettings;
-        rc = mMachine->COMGETTER(CaptureSettings)(CaptureSettings.asOutParam());
+        ComPtr<IRecordSettings> RecordSettings;
+        rc = mMachine->COMGETTER(RecordSettings)(RecordSettings.asOutParam());
         AssertComRCReturnRC(rc);
 
         BOOL fEnabled;
-        rc = CaptureSettings->COMGETTER(Enabled)(&fEnabled);
+        rc = RecordSettings->COMGETTER(Enabled)(&fEnabled);
         AssertComRCReturnRC(rc);
 
         int vrc = i_videoRecEnable(fEnabled, &alock);
         if (RT_SUCCESS(vrc))
         {
             alock.release();
-            fireCaptureChangedEvent(mEventSource);
+            fireRecordChangedEvent(mEventSource);
         }
 
         ptrVM.release();
@@ -6881,7 +6881,7 @@ HRESULT Console::i_videoRecSendAudio(const void *pvData, size_t cbData, uint64_t
         return S_OK;
 
     if (   Capture.mpVideoRecCtx->IsStarted()
-        && Capture.mpVideoRecCtx->IsFeatureEnabled(CaptureFeature_Audio))
+        && Capture.mpVideoRecCtx->IsFeatureEnabled(RecordFeature_Audio))
     {
         return Capture.mpVideoRecCtx->SendAudioFrame(pvData, cbData, uTimestampMs);
     }
@@ -6891,54 +6891,54 @@ HRESULT Console::i_videoRecSendAudio(const void *pvData, size_t cbData, uint64_t
 #endif /* VBOX_WITH_AUDIO_VIDEOREC */
 
 #ifdef VBOX_WITH_VIDEOREC
-int Console::i_videoRecGetSettings(settings::CaptureSettings &Settings)
+int Console::i_videoRecGetSettings(settings::RecordSettings &Settings)
 {
     Assert(mMachine.isNotNull());
 
     Settings.applyDefaults();
 
-    ComPtr<ICaptureSettings> pCaptureSettings;
-    HRESULT hrc = mMachine->COMGETTER(CaptureSettings)(pCaptureSettings.asOutParam());
+    ComPtr<IRecordSettings> pRecordSettings;
+    HRESULT hrc = mMachine->COMGETTER(RecordSettings)(pRecordSettings.asOutParam());
     AssertComRCReturn(hrc, VERR_INVALID_PARAMETER);
 
     BOOL fTemp;
-    hrc = pCaptureSettings->COMGETTER(Enabled)(&fTemp);
+    hrc = pRecordSettings->COMGETTER(Enabled)(&fTemp);
     AssertComRCReturn(hrc, VERR_INVALID_PARAMETER);
     Settings.fEnabled = RT_BOOL(fTemp);
 
-    SafeIfaceArray<ICaptureScreenSettings> paCaptureScreens;
-    hrc = pCaptureSettings->COMGETTER(Screens)(ComSafeArrayAsOutParam(paCaptureScreens));
+    SafeIfaceArray<IRecordScreenSettings> paCaptureScreens;
+    hrc = pRecordSettings->COMGETTER(Screens)(ComSafeArrayAsOutParam(paCaptureScreens));
     AssertComRCReturn(hrc, VERR_INVALID_PARAMETER);
 
     for (unsigned long i = 0; i < (unsigned long)paCaptureScreens.size(); ++i)
     {
-        settings::CaptureScreenSettings CaptureScreenSettings;
-        ComPtr<ICaptureScreenSettings> pCaptureScreenSettings = paCaptureScreens[i];
+        settings::RecordScreenSettings RecordScreenSettings;
+        ComPtr<IRecordScreenSettings> pRecordScreenSettings = paCaptureScreens[i];
 
-        hrc = pCaptureScreenSettings->COMGETTER(Enabled)(&fTemp);
+        hrc = pRecordScreenSettings->COMGETTER(Enabled)(&fTemp);
         AssertComRCReturn(hrc, VERR_INVALID_PARAMETER);
-        CaptureScreenSettings.fEnabled = RT_BOOL(fTemp);
-        hrc = pCaptureScreenSettings->COMGETTER(MaxTime)((ULONG *)&CaptureScreenSettings.ulMaxTimeS);
+        RecordScreenSettings.fEnabled = RT_BOOL(fTemp);
+        hrc = pRecordScreenSettings->COMGETTER(MaxTime)((ULONG *)&RecordScreenSettings.ulMaxTimeS);
         AssertComRCReturn(hrc, VERR_INVALID_PARAMETER);
-        hrc = pCaptureScreenSettings->COMGETTER(MaxFileSize)((ULONG *)&CaptureScreenSettings.File.ulMaxSizeMB);
+        hrc = pRecordScreenSettings->COMGETTER(MaxFileSize)((ULONG *)&RecordScreenSettings.File.ulMaxSizeMB);
         AssertComRCReturn(hrc, VERR_INVALID_PARAMETER);
         Bstr bstrTemp;
-        hrc = pCaptureScreenSettings->COMGETTER(FileName)(bstrTemp.asOutParam());
+        hrc = pRecordScreenSettings->COMGETTER(FileName)(bstrTemp.asOutParam());
         AssertComRCReturn(hrc, VERR_INVALID_PARAMETER);
-        CaptureScreenSettings.File.strName = bstrTemp;
-        hrc = pCaptureScreenSettings->COMGETTER(Options)(bstrTemp.asOutParam());
+        RecordScreenSettings.File.strName = bstrTemp;
+        hrc = pRecordScreenSettings->COMGETTER(Options)(bstrTemp.asOutParam());
         AssertComRCReturn(hrc, VERR_INVALID_PARAMETER);
-        CaptureScreenSettings.strOptions = bstrTemp;
-        hrc = pCaptureScreenSettings->COMGETTER(VideoWidth)((ULONG *)&CaptureScreenSettings.Video.ulWidth);
+        RecordScreenSettings.strOptions = bstrTemp;
+        hrc = pRecordScreenSettings->COMGETTER(VideoWidth)((ULONG *)&RecordScreenSettings.Video.ulWidth);
         AssertComRCReturn(hrc, VERR_INVALID_PARAMETER);
-        hrc = pCaptureScreenSettings->COMGETTER(VideoHeight)((ULONG *)&CaptureScreenSettings.Video.ulHeight);
+        hrc = pRecordScreenSettings->COMGETTER(VideoHeight)((ULONG *)&RecordScreenSettings.Video.ulHeight);
         AssertComRCReturn(hrc, VERR_INVALID_PARAMETER);
-        hrc = pCaptureScreenSettings->COMGETTER(VideoRate)((ULONG *)&CaptureScreenSettings.Video.ulRate);
+        hrc = pRecordScreenSettings->COMGETTER(VideoRate)((ULONG *)&RecordScreenSettings.Video.ulRate);
         AssertComRCReturn(hrc, VERR_INVALID_PARAMETER);
-        hrc = pCaptureScreenSettings->COMGETTER(VideoFPS)((ULONG *)&CaptureScreenSettings.Video.ulFPS);
+        hrc = pRecordScreenSettings->COMGETTER(VideoFPS)((ULONG *)&RecordScreenSettings.Video.ulFPS);
         AssertComRCReturn(hrc, VERR_INVALID_PARAMETER);
 
-        Settings.mapScreens[i] = CaptureScreenSettings;
+        Settings.mapScreens[i] = RecordScreenSettings;
     }
 
     Assert(Settings.mapScreens.size() == paCaptureScreens.size());
@@ -6970,7 +6970,7 @@ int Console::i_videoRecCreate(void)
         return rc2;
     }
 
-    settings::CaptureSettings Settings;
+    settings::RecordSettings Settings;
     rc = i_videoRecGetSettings(Settings);
     if (RT_SUCCESS(rc))
     {
@@ -7042,10 +7042,10 @@ int Console::i_videoRecStop(void)
         for (unsigned uScreen = 0; uScreen < cStreams; ++uScreen)
             mDisplay->i_videoRecScreenChanged(uScreen);
 
-        ComPtr<ICaptureSettings> pCaptureSettings;
-        HRESULT hrc = mMachine->COMGETTER(CaptureSettings)(pCaptureSettings.asOutParam());
+        ComPtr<IRecordSettings> pRecordSettings;
+        HRESULT hrc = mMachine->COMGETTER(RecordSettings)(pRecordSettings.asOutParam());
         ComAssertComRC(hrc);
-        hrc = pCaptureSettings->COMSETTER(Enabled)(false);
+        hrc = pRecordSettings->COMSETTER(Enabled)(false);
         ComAssertComRC(hrc);
 
         LogRel(("VideoRec: Stopped\n"));
@@ -10145,12 +10145,12 @@ void Console::i_powerUpThreadTask(VMPowerUpTask *pTask)
         pConsole->i_consoleVRDPServer()->EnableConnections();
 
 #ifdef VBOX_WITH_VIDEOREC
-        ComPtr<ICaptureSettings> CaptureSettings;
-        rc = pConsole->mMachine->COMGETTER(CaptureSettings)(CaptureSettings.asOutParam());
+        ComPtr<IRecordSettings> RecordSettings;
+        rc = pConsole->mMachine->COMGETTER(RecordSettings)(RecordSettings.asOutParam());
         AssertComRCReturnVoid(rc);
 
         BOOL fCaptureEnabled;
-        rc = CaptureSettings->COMGETTER(Enabled)(&fCaptureEnabled);
+        rc = RecordSettings->COMGETTER(Enabled)(&fCaptureEnabled);
         AssertComRCReturnVoid(rc);
 
         if (fCaptureEnabled)
@@ -10158,7 +10158,7 @@ void Console::i_powerUpThreadTask(VMPowerUpTask *pTask)
             int vrc2 = pConsole->i_videoRecEnable(fCaptureEnabled, &alock);
             if (RT_SUCCESS(vrc2))
             {
-                fireCaptureChangedEvent(pConsole->mEventSource);
+                fireRecordChangedEvent(pConsole->mEventSource);
             }
             else
                LogRel(("VideoRec: Failed with %Rrc on VM power up\n", vrc2));

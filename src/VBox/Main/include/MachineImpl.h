@@ -31,7 +31,7 @@
 #include "SerialPortImpl.h"
 #include "ParallelPortImpl.h"
 #include "BIOSSettingsImpl.h"
-#include "CaptureSettingsImpl.h"
+#include "RecordSettingsImpl.h"
 #include "StorageControllerImpl.h"          // required for MachineImpl.h to compile on Windows
 #include "USBControllerImpl.h"              // required for MachineImpl.h to compile on Windows
 #include "BandwidthControlImpl.h"
@@ -265,7 +265,7 @@ public:
         BOOL                mPageFusionEnabled;
         GraphicsControllerType_T mGraphicsControllerType;
         ULONG               mVRAMSize;
-        settings::CaptureSettings mCaptureSettings;
+        settings::RecordSettings mRecordSettings;
         ULONG               mMonitorCount;
         BOOL                mHWVirtExEnabled;
         BOOL                mHWVirtExNestedPagingEnabled;
@@ -476,7 +476,7 @@ public:
         IsModified_SharedFolders        = 0x0400,
         IsModified_Snapshots            = 0x0800,
         IsModified_BandwidthControl     = 0x1000,
-        IsModified_Capture              = 0x2000
+        IsModified_Record               = 0x2000
     };
 
     /**
@@ -523,7 +523,7 @@ public:
     virtual HRESULT i_onBandwidthGroupChange(IBandwidthGroup * /* aBandwidthGroup */) { return S_OK; }
     virtual HRESULT i_onStorageDeviceChange(IMediumAttachment * /* mediumAttachment */, BOOL /* remove */,
                                             BOOL /* silent */) { return S_OK; }
-    virtual HRESULT i_onCaptureChange() { return S_OK; }
+    virtual HRESULT i_onRecordChange() { return S_OK; }
 
     HRESULT i_saveRegistryEntry(settings::MachineRegistryEntry &data);
 
@@ -776,7 +776,7 @@ protected:
     const ComObjPtr<AudioAdapter>      mAudioAdapter;
     const ComObjPtr<USBDeviceFilters>  mUSBDeviceFilters;
     const ComObjPtr<BIOSSettings>      mBIOSSettings;
-    const ComObjPtr<CaptureSettings>   mCaptureSettings;
+    const ComObjPtr<RecordSettings>    mRecordSettings;
     const ComObjPtr<BandwidthControl>  mBandwidthControl;
 
     typedef std::vector<ComObjPtr<NetworkAdapter> > NetworkAdapterVector;
@@ -824,8 +824,8 @@ protected:
     void i_deleteConfigHandler(DeleteConfigTask &task);
 
     friend class Appliance;
-    friend class CaptureSettings;
-    friend class CaptureScreenSettings;
+    friend class RecordSettings;
+    friend class RecordScreenSettings;
     friend class SessionMachine;
     friend class SnapshotMachine;
     friend class VirtualBox;
@@ -879,7 +879,7 @@ private:
     HRESULT getMonitorCount(ULONG *aMonitorCount);
     HRESULT setMonitorCount(ULONG aMonitorCount);
     HRESULT getBIOSSettings(ComPtr<IBIOSSettings> &aBIOSSettings);
-    HRESULT getCaptureSettings(ComPtr<ICaptureSettings> &aCaptureSettings);
+    HRESULT getRecordSettings(ComPtr<IRecordSettings> &aRecordSettings);
     HRESULT getFirmwareType(FirmwareType_T *aFirmwareType);
     HRESULT setFirmwareType(FirmwareType_T aFirmwareType);
     HRESULT getPointingHIDType(PointingHIDType_T *aPointingHIDType);
@@ -1325,7 +1325,7 @@ public:
     HRESULT i_onParallelPortChange(IParallelPort *parallelPort);
     HRESULT i_onCPUChange(ULONG aCPU, BOOL aRemove);
     HRESULT i_onVRDEServerChange(BOOL aRestart);
-    HRESULT i_onCaptureChange();
+    HRESULT i_onRecordChange();
     HRESULT i_onUSBControllerChange();
     HRESULT i_onUSBDeviceAttach(IUSBDevice *aDevice,
                                 IVirtualBoxErrorInfo *aError,

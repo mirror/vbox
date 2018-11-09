@@ -357,8 +357,8 @@ HRESULT Machine::init(VirtualBox *aParent,
         /* Apply BIOS defaults. */
         mBIOSSettings->i_applyDefaults(aOsType);
 
-        /* Apply capture defaults. */
-        mCaptureSettings->i_applyDefaults();
+        /* Apply record defaults. */
+        mRecordSettings->i_applyDefaults();
 
         /* Apply network adapters defaults */
         for (ULONG slot = 0; slot < mNetworkAdapters.size(); ++slot)
@@ -1939,10 +1939,10 @@ HRESULT Machine::getBIOSSettings(ComPtr<IBIOSSettings> &aBIOSSettings)
     return S_OK;
 }
 
-HRESULT Machine::getCaptureSettings(ComPtr<ICaptureSettings> &aCaptureSettings)
+HRESULT Machine::getRecordSettings(ComPtr<IRecordSettings> &aRecordSettings)
 {
-    /* mCaptureSettings is constant during life time, no need to lock */
-    aCaptureSettings = mCaptureSettings;
+    /* mRecordSettings is constant during life time, no need to lock */
+    aRecordSettings = mRecordSettings;
 
     return S_OK;
 }
@@ -8258,9 +8258,9 @@ HRESULT Machine::initDataAndChildObjects()
     unconst(mBIOSSettings).createObject();
     mBIOSSettings->init(this);
 
-    /* create associated capture settings object */
-    unconst(mCaptureSettings).createObject();
-    mCaptureSettings->init(this);
+    /* create associated record settings object */
+    unconst(mRecordSettings).createObject();
+    mRecordSettings->init(this);
 
     /* create an associated VRDE object (default is disabled) */
     unconst(mVRDEServer).createObject();
@@ -8377,10 +8377,10 @@ void Machine::uninitDataAndChildObjects()
         unconst(mBIOSSettings).setNull();
     }
 
-    if (mCaptureSettings)
+    if (mRecordSettings)
     {
-        mCaptureSettings->uninit();
-        unconst(mCaptureSettings).setNull();
+        mRecordSettings->uninit();
+        unconst(mRecordSettings).setNull();
     }
 
     /* Deassociate media (only when a real Machine or a SnapshotMachine
@@ -8897,8 +8897,8 @@ HRESULT Machine::i_loadHardware(const Guid *puuidRegistry,
         rc = mBIOSSettings->i_loadSettings(data.biosSettings);
         if (FAILED(rc)) return rc;
 
-        /* Capture settings */
-        rc = mCaptureSettings->i_loadSettings(data.captureSettings);
+        /* Record settings */
+        rc = mRecordSettings->i_loadSettings(data.recordSettings);
         if (FAILED(rc)) return rc;
 
         // Bandwidth control (must come before network adapters)
@@ -10216,8 +10216,8 @@ HRESULT Machine::i_saveHardware(settings::Hardware &data, settings::Debugging *p
         rc = mBIOSSettings->i_saveSettings(data.biosSettings);
         if (FAILED(rc)) throw rc;
 
-        /* Capture settings (required) */
-        rc = mCaptureSettings->i_saveSettings(data.captureSettings);
+        /* Record settings (required) */
+        rc = mRecordSettings->i_saveSettings(data.recordSettings);
         if (FAILED(rc)) throw rc;
 
         /* USB Controller (required) */
@@ -11722,8 +11722,8 @@ void Machine::i_rollback(bool aNotify)
     if (mBIOSSettings)
         mBIOSSettings->i_rollback();
 
-    if (mCaptureSettings && (mData->flModifications & IsModified_Capture))
-        mCaptureSettings->i_rollback();
+    if (mRecordSettings && (mData->flModifications & IsModified_Record))
+        mRecordSettings->i_rollback();
 
     if (mVRDEServer && (mData->flModifications & IsModified_VRDEServer))
         mVRDEServer->i_rollback();
@@ -11835,7 +11835,7 @@ void Machine::i_commit()
         i_commitMedia(Global::IsOnline(mData->mMachineState));
 
     mBIOSSettings->i_commit();
-    mCaptureSettings->i_commit();
+    mRecordSettings->i_commit();
     mVRDEServer->i_commit();
     mAudioAdapter->i_commit();
     mUSBDeviceFilters->i_commit();
@@ -12088,7 +12088,7 @@ void Machine::i_copyFrom(Machine *aThat)
     }
 
     mBIOSSettings->i_copyFrom(aThat->mBIOSSettings);
-    mCaptureSettings->i_copyFrom(aThat->mCaptureSettings);
+    mRecordSettings->i_copyFrom(aThat->mRecordSettings);
     mVRDEServer->i_copyFrom(aThat->mVRDEServer);
     mAudioAdapter->i_copyFrom(aThat->mAudioAdapter);
     mUSBDeviceFilters->i_copyFrom(aThat->mUSBDeviceFilters);
@@ -12462,8 +12462,8 @@ HRESULT SessionMachine::init(Machine *aMachine)
 
     unconst(mBIOSSettings).createObject();
     mBIOSSettings->init(this, aMachine->mBIOSSettings);
-    unconst(mCaptureSettings).createObject();
-    mCaptureSettings->init(this, aMachine->mCaptureSettings);
+    unconst(mRecordSettings).createObject();
+    mRecordSettings->init(this, aMachine->mRecordSettings);
     /* create another VRDEServer object that will be mutable */
     unconst(mVRDEServer).createObject();
     mVRDEServer->init(this, aMachine->mVRDEServer);
@@ -14097,7 +14097,7 @@ HRESULT SessionMachine::i_onVRDEServerChange(BOOL aRestart)
 /**
  * @note Locks this object for reading.
  */
-HRESULT SessionMachine::i_onCaptureChange()
+HRESULT SessionMachine::i_onRecordChange()
 {
     LogFlowThisFunc(("\n"));
 
@@ -14115,7 +14115,7 @@ HRESULT SessionMachine::i_onCaptureChange()
     if (!directControl)
         return S_OK;
 
-    return directControl->OnCaptureChange();
+    return directControl->OnRecordChange();
 }
 
 /**
@@ -15049,8 +15049,8 @@ HRESULT Machine::applyDefaults(const com::Utf8Str &aFlags)
     /* This one covers IOAPICEnabled. */
     mBIOSSettings->i_applyDefaults(osType);
 
-    /* Initialize default capture settings. */
-    mCaptureSettings->i_applyDefaults();
+    /* Initialize default record settings. */
+    mRecordSettings->i_applyDefaults();
 
     /* Initialize default BIOS settings here */
     mHWData->mAPIC = osType->i_recommendedIOAPIC();

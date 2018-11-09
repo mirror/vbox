@@ -42,8 +42,8 @@
 
 /* COM includes: */
 # include "CAudioAdapter.h"
-# include "CCaptureSettings.h"
-# include "CCaptureScreenSettings.h"
+# include "CRecordSettings.h"
+# include "CRecordScreenSettings.h"
 # include "CConsole.h"
 # include "CMachine.h"
 # include "CSystemProperties.h"
@@ -883,7 +883,7 @@ private:
         const bool fMachinePaused = m_pSession->isPaused();
 
         /* Update indicator state early: */
-        CCaptureSettings comRecordingSettings = comMachine.GetCaptureSettings();
+        CRecordSettings comRecordingSettings = comMachine.GetRecordSettings();
         Assert(comRecordingSettings.isOk());
         if (!comRecordingSettings.GetEnabled())
             setState(UIIndicatorStateRecording_Disabled);
@@ -917,7 +917,7 @@ private:
                     strToolTip = QApplication::translate("UIIndicatorsPool", "Video recording file", "Recording tooltip");
 
                 /* For now all screens have the same config: */
-                CCaptureScreenSettings comRecordingScreen0Settings = comRecordingSettings.GetScreenSettings(0);
+                CRecordScreenSettings comRecordingScreen0Settings = comRecordingSettings.GetScreenSettings(0);
                 Assert(comRecordingScreen0Settings.isOk());
 
                 strFullData += s_strTableRow2
@@ -942,7 +942,7 @@ private:
     /** Defines current rotation angle. */
     void setRotationAngle(double dRotationAngle) { m_dRotationAngle = dRotationAngle; update(); }
 
-    /* Parses CaptureScreenSettings::Options and updates m_enmRecordingMode accordingly. */
+    /* Parses RecordScreenSettings::Options and updates m_enmRecordingMode accordingly. */
     void updateRecordingMode()
     {
         m_enmRecordingMode = UIIndicatorStateRecordingMode_None;
@@ -954,13 +954,13 @@ private:
         if (comMachine.isNull())
             return;
 
-        CCaptureSettings comRecordingSettings = comMachine.GetCaptureSettings();
+        CRecordSettings comRecordingSettings = comMachine.GetRecordSettings();
         /* For now all screens have the same config: */
-        CCaptureScreenSettings recordingScreen0Settings = comRecordingSettings.GetScreenSettings(0);
-        if (recordingScreen0Settings.IsFeatureEnabled(KCaptureFeature_Video))
+        CRecordScreenSettings recordingScreen0Settings = comRecordingSettings.GetScreenSettings(0);
+        if (recordingScreen0Settings.IsFeatureEnabled(KRecordFeature_Video))
             m_enmRecordingMode = (UIIndicatorStateRecordingMode)((int)m_enmRecordingMode | (int)UIIndicatorStateRecordingMode_Video);
 
-        if (recordingScreen0Settings.IsFeatureEnabled(KCaptureFeature_Audio))
+        if (recordingScreen0Settings.IsFeatureEnabled(KRecordFeature_Audio))
             m_enmRecordingMode = (UIIndicatorStateRecordingMode)((int)m_enmRecordingMode | (int)UIIndicatorStateRecordingMode_Audio);
     }
 

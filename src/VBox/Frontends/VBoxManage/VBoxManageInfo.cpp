@@ -2378,11 +2378,11 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
         BOOL fCaptureAudio = FALSE;
 # endif
 
-        ComPtr<ICaptureSettings> captureSettings;
-        CHECK_ERROR_RET(machine, COMGETTER(CaptureSettings)(captureSettings.asOutParam()), rc);
+        ComPtr<IRecordSettings> RecordSettings;
+        CHECK_ERROR_RET(machine, COMGETTER(RecordSettings)(RecordSettings.asOutParam()), rc);
 
-        SafeIfaceArray <ICaptureScreenSettings> saCaptureScreenScreens;
-        CHECK_ERROR_RET(captureSettings, COMGETTER(Screens)(ComSafeArrayAsOutParam(saCaptureScreenScreens)), rc);
+        SafeIfaceArray <IRecordScreenSettings> saCaptureScreenScreens;
+        CHECK_ERROR_RET(RecordSettings, COMGETTER(Screens)(ComSafeArrayAsOutParam(saCaptureScreenScreens)), rc);
 
         /* For now all screens have the same configuration; so take screen 0 and work with that. */
         ULONG fFeatures;

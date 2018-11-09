@@ -214,18 +214,18 @@ enum
     MODIFYVM_USBCARDREADER,
 #endif
 #ifdef VBOX_WITH_VIDEOREC
-    MODIFYVM_CAPTURE,
-    MODIFYVM_CAPTURE_FEATURES,
-    MODIFYVM_CAPTURE_SCREENS,
-    MODIFYVM_CAPTURE_FILENAME,
-    MODIFYVM_CAPTURE_WIDTH,
-    MODIFYVM_CAPTURE_HEIGHT,
-    MODIFYVM_CAPTURE_VIDEO_RES,
-    MODIFYVM_CAPTURE_VIDEO_RATE,
-    MODIFYVM_CAPTURE_VIDEO_FPS,
-    MODIFYVM_CAPTURE_MAXTIME,
-    MODIFYVM_CAPTURE_MAXSIZE,
-    MODIFYVM_CAPTURE_OPTIONS,
+    MODIFYVM_RECORD,
+    MODIFYVM_RECORD_FEATURES,
+    MODIFYVM_RECORD_SCREENS,
+    MODIFYVM_RECORD_FILENAME,
+    MODIFYVM_RECORD_VIDEO_WIDTH,
+    MODIFYVM_RECORD_VIDEO_HEIGHT,
+    MODIFYVM_RECORD_VIDEO_RES,
+    MODIFYVM_RECORD_VIDEO_RATE,
+    MODIFYVM_RECORD_VIDEO_FPS,
+    MODIFYVM_RECORD_MAXTIME,
+    MODIFYVM_RECORD_MAXSIZE,
+    MODIFYVM_RECORD_OPTIONS,
 #endif
     MODIFYVM_CHIPSET,
     MODIFYVM_DEFAULTFRONTEND
@@ -394,16 +394,16 @@ static const RTGETOPTDEF g_aModifyVMOptions[] =
     { "--faulttolerancesyncinterval", MODIFYVM_FAULT_TOLERANCE_SYNC_INTERVAL, RTGETOPT_REQ_UINT32 },
     { "--chipset",                  MODIFYVM_CHIPSET,                   RTGETOPT_REQ_STRING },
 #ifdef VBOX_WITH_VIDEOREC
-    { "--capture",                  MODIFYVM_CAPTURE,                    RTGETOPT_REQ_BOOL_ONOFF },
-    { "--capturescreens",           MODIFYVM_CAPTURE_SCREENS,            RTGETOPT_REQ_STRING },
-    { "--capturefile",              MODIFYVM_CAPTURE_FILENAME,           RTGETOPT_REQ_STRING },
-    { "--capturemaxtime",           MODIFYVM_CAPTURE_MAXTIME,            RTGETOPT_REQ_INT32  },
-    { "--capturemaxsize",           MODIFYVM_CAPTURE_MAXSIZE,            RTGETOPT_REQ_INT32  },
-    { "--captureopts",              MODIFYVM_CAPTURE_OPTIONS,            RTGETOPT_REQ_STRING },
-    { "--captureoptions",           MODIFYVM_CAPTURE_OPTIONS,            RTGETOPT_REQ_STRING },
-    { "--capturevideores",          MODIFYVM_CAPTURE_VIDEO_RES,          RTGETOPT_REQ_STRING },
-    { "--capturevideorate",         MODIFYVM_CAPTURE_VIDEO_RATE,         RTGETOPT_REQ_UINT32 },
-    { "--capturevideofps",          MODIFYVM_CAPTURE_VIDEO_FPS,          RTGETOPT_REQ_UINT32 },
+    { "--record",                   MODIFYVM_RECORD,                    RTGETOPT_REQ_BOOL_ONOFF },
+    { "--recordscreens",            MODIFYVM_RECORD_SCREENS,            RTGETOPT_REQ_STRING },
+    { "--recordfile",               MODIFYVM_RECORD_FILENAME,           RTGETOPT_REQ_STRING },
+    { "--recordmaxtime",            MODIFYVM_RECORD_MAXTIME,            RTGETOPT_REQ_INT32  },
+    { "--recordmaxsize",            MODIFYVM_RECORD_MAXSIZE,            RTGETOPT_REQ_INT32  },
+    { "--recordopts",               MODIFYVM_RECORD_OPTIONS,            RTGETOPT_REQ_STRING },
+    { "--recordoptions",            MODIFYVM_RECORD_OPTIONS,            RTGETOPT_REQ_STRING },
+    { "--recordvideores",           MODIFYVM_RECORD_VIDEO_RES,          RTGETOPT_REQ_STRING },
+    { "--recordvideorate",          MODIFYVM_RECORD_VIDEO_RATE,         RTGETOPT_REQ_UINT32 },
+    { "--recordvideofps",           MODIFYVM_RECORD_VIDEO_FPS,          RTGETOPT_REQ_UINT32 },
 #endif
     { "--autostart-enabled",        MODIFYVM_AUTOSTART_ENABLED,         RTGETOPT_REQ_BOOL_ONOFF },
     { "--autostart-delay",          MODIFYVM_AUTOSTART_DELAY,           RTGETOPT_REQ_UINT32 },
@@ -2927,41 +2927,41 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                 break;
             }
 #ifdef VBOX_WITH_VIDEOREC
-            case MODIFYVM_CAPTURE:
+            case MODIFYVM_RECORD:
                 RT_FALL_THROUGH();
-            case MODIFYVM_CAPTURE_SCREENS:
+            case MODIFYVM_RECORD_SCREENS:
                 RT_FALL_THROUGH();
-            case MODIFYVM_CAPTURE_FILENAME:
+            case MODIFYVM_RECORD_FILENAME:
                 RT_FALL_THROUGH();
-            case MODIFYVM_CAPTURE_WIDTH:
+            case MODIFYVM_RECORD_VIDEO_WIDTH:
                 RT_FALL_THROUGH();
-            case MODIFYVM_CAPTURE_HEIGHT:
+            case MODIFYVM_RECORD_VIDEO_HEIGHT:
                 RT_FALL_THROUGH();
-            case MODIFYVM_CAPTURE_VIDEO_RES:
+            case MODIFYVM_RECORD_VIDEO_RES:
                 RT_FALL_THROUGH();
-            case MODIFYVM_CAPTURE_VIDEO_RATE:
+            case MODIFYVM_RECORD_VIDEO_RATE:
                 RT_FALL_THROUGH();
-            case MODIFYVM_CAPTURE_VIDEO_FPS:
+            case MODIFYVM_RECORD_VIDEO_FPS:
                 RT_FALL_THROUGH();
-            case MODIFYVM_CAPTURE_MAXTIME:
+            case MODIFYVM_RECORD_MAXTIME:
                 RT_FALL_THROUGH();
-            case MODIFYVM_CAPTURE_MAXSIZE:
+            case MODIFYVM_RECORD_MAXSIZE:
                 RT_FALL_THROUGH();
-            case MODIFYVM_CAPTURE_OPTIONS:
+            case MODIFYVM_RECORD_OPTIONS:
             {
-                ComPtr<ICaptureSettings> captureSettings;
-                CHECK_ERROR_BREAK(machine, COMGETTER(CaptureSettings)(captureSettings.asOutParam()));
-                SafeIfaceArray <ICaptureScreenSettings> saCaptureScreenScreens;
-                CHECK_ERROR_BREAK(captureSettings, COMGETTER(Screens)(ComSafeArrayAsOutParam(saCaptureScreenScreens)));
+                ComPtr<IRecordSettings> RecordSettings;
+                CHECK_ERROR_BREAK(machine, COMGETTER(RecordSettings)(RecordSettings.asOutParam()));
+                SafeIfaceArray <IRecordScreenSettings> saRecordScreenScreens;
+                CHECK_ERROR_BREAK(RecordSettings, COMGETTER(Screens)(ComSafeArrayAsOutParam(saRecordScreenScreens)));
 
                 switch (c)
                 {
-                    case MODIFYVM_CAPTURE:
+                    case MODIFYVM_RECORD:
                     {
-                        CHECK_ERROR(captureSettings, COMSETTER(Enabled)(ValueUnion.f));
+                        CHECK_ERROR(RecordSettings, COMSETTER(Enabled)(ValueUnion.f));
                         break;
                     }
-                    case MODIFYVM_CAPTURE_SCREENS:
+                    case MODIFYVM_RECORD_SCREENS:
                     {
                         ULONG cMonitors = 64;
                         CHECK_ERROR(sessionMachine, COMGETTER(MonitorCount)(&cMonitors));
@@ -2973,14 +2973,14 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                             break;
                         }
 
-                        if (cMonitors > saCaptureScreenScreens.size()) /* Paranoia. */
-                            cMonitors = (ULONG)saCaptureScreenScreens.size();
+                        if (cMonitors > saRecordScreenScreens.size()) /* Paranoia. */
+                            cMonitors = (ULONG)saRecordScreenScreens.size();
 
                         for (size_t i = 0; i < cMonitors; ++i)
-                            CHECK_ERROR_BREAK(saCaptureScreenScreens[i], COMSETTER(Enabled)(screens[i]));
+                            CHECK_ERROR_BREAK(saRecordScreenScreens[i], COMSETTER(Enabled)(screens[i]));
                         break;
                     }
-                    case MODIFYVM_CAPTURE_FILENAME:
+                    case MODIFYVM_RECORD_FILENAME:
                     {
                         Bstr bstr;
                         /* empty string will fall through, leaving bstr empty */
@@ -2997,23 +2997,23 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                             bstr = szVCFileAbs;
                         }
 
-                        for (size_t i = 0; i < saCaptureScreenScreens.size(); ++i)
-                            CHECK_ERROR(saCaptureScreenScreens[i], COMSETTER(FileName)(bstr.raw()));
+                        for (size_t i = 0; i < saRecordScreenScreens.size(); ++i)
+                            CHECK_ERROR(saRecordScreenScreens[i], COMSETTER(FileName)(bstr.raw()));
                         break;
                     }
-                    case MODIFYVM_CAPTURE_WIDTH:
+                    case MODIFYVM_RECORD_VIDEO_WIDTH:
                     {
-                        for (size_t i = 0; i < saCaptureScreenScreens.size(); ++i)
-                            CHECK_ERROR(saCaptureScreenScreens[i], COMSETTER(VideoWidth)(ValueUnion.u32));
+                        for (size_t i = 0; i < saRecordScreenScreens.size(); ++i)
+                            CHECK_ERROR(saRecordScreenScreens[i], COMSETTER(VideoWidth)(ValueUnion.u32));
                         break;
                     }
-                    case MODIFYVM_CAPTURE_HEIGHT:
+                    case MODIFYVM_RECORD_VIDEO_HEIGHT:
                     {
-                        for (size_t i = 0; i < saCaptureScreenScreens.size(); ++i)
-                            CHECK_ERROR(saCaptureScreenScreens[i], COMSETTER(VideoHeight)(ValueUnion.u32));
+                        for (size_t i = 0; i < saRecordScreenScreens.size(); ++i)
+                            CHECK_ERROR(saRecordScreenScreens[i], COMSETTER(VideoHeight)(ValueUnion.u32));
                         break;
                     }
-                    case MODIFYVM_CAPTURE_VIDEO_RES:
+                    case MODIFYVM_RECORD_VIDEO_RES:
                     {
                         uint32_t uWidth = 0;
                         char *pszNext;
@@ -3033,42 +3033,42 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                             break;
                         }
 
-                        for (size_t i = 0; i < saCaptureScreenScreens.size(); ++i)
+                        for (size_t i = 0; i < saRecordScreenScreens.size(); ++i)
                         {
-                            CHECK_ERROR(saCaptureScreenScreens[i], COMSETTER(VideoWidth)(uWidth));
-                            CHECK_ERROR(saCaptureScreenScreens[i], COMSETTER(VideoHeight)(uHeight));
+                            CHECK_ERROR(saRecordScreenScreens[i], COMSETTER(VideoWidth)(uWidth));
+                            CHECK_ERROR(saRecordScreenScreens[i], COMSETTER(VideoHeight)(uHeight));
                         }
                         break;
                     }
-                    case MODIFYVM_CAPTURE_VIDEO_RATE:
+                    case MODIFYVM_RECORD_VIDEO_RATE:
                     {
-                        for (size_t i = 0; i < saCaptureScreenScreens.size(); ++i)
-                            CHECK_ERROR(saCaptureScreenScreens[i], COMSETTER(VideoRate)(ValueUnion.u32));
+                        for (size_t i = 0; i < saRecordScreenScreens.size(); ++i)
+                            CHECK_ERROR(saRecordScreenScreens[i], COMSETTER(VideoRate)(ValueUnion.u32));
                         break;
                     }
-                    case MODIFYVM_CAPTURE_VIDEO_FPS:
+                    case MODIFYVM_RECORD_VIDEO_FPS:
                     {
-                        for (size_t i = 0; i < saCaptureScreenScreens.size(); ++i)
-                            CHECK_ERROR(saCaptureScreenScreens[i], COMSETTER(VideoFPS)(ValueUnion.u32));
+                        for (size_t i = 0; i < saRecordScreenScreens.size(); ++i)
+                            CHECK_ERROR(saRecordScreenScreens[i], COMSETTER(VideoFPS)(ValueUnion.u32));
                         break;
                     }
-                    case MODIFYVM_CAPTURE_MAXTIME:
+                    case MODIFYVM_RECORD_MAXTIME:
                     {
-                        for (size_t i = 0; i < saCaptureScreenScreens.size(); ++i)
-                            CHECK_ERROR(saCaptureScreenScreens[i], COMSETTER(MaxTime)(ValueUnion.u32));
+                        for (size_t i = 0; i < saRecordScreenScreens.size(); ++i)
+                            CHECK_ERROR(saRecordScreenScreens[i], COMSETTER(MaxTime)(ValueUnion.u32));
                         break;
                     }
-                    case MODIFYVM_CAPTURE_MAXSIZE:
+                    case MODIFYVM_RECORD_MAXSIZE:
                     {
-                        for (size_t i = 0; i < saCaptureScreenScreens.size(); ++i)
-                            CHECK_ERROR(saCaptureScreenScreens[i], COMSETTER(MaxFileSize)(ValueUnion.u32));
+                        for (size_t i = 0; i < saRecordScreenScreens.size(); ++i)
+                            CHECK_ERROR(saRecordScreenScreens[i], COMSETTER(MaxFileSize)(ValueUnion.u32));
                         break;
                     }
-                    case MODIFYVM_CAPTURE_OPTIONS:
+                    case MODIFYVM_RECORD_OPTIONS:
                     {
                         Bstr bstr(ValueUnion.psz);
-                        for (size_t i = 0; i < saCaptureScreenScreens.size(); ++i)
-                            CHECK_ERROR(saCaptureScreenScreens[i], COMSETTER(Options)(bstr.raw()));
+                        for (size_t i = 0; i < saRecordScreenScreens.size(); ++i)
+                            CHECK_ERROR(saRecordScreenScreens[i], COMSETTER(Options)(bstr.raw()));
                         break;
                     }
                 }

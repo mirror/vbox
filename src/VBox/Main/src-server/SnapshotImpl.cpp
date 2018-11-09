@@ -1081,8 +1081,8 @@ HRESULT SnapshotMachine::init(SessionMachine *aSessionMachine,
     rc = mBIOSSettings->initCopy(this, pMachine->mBIOSSettings);
     if (FAILED(rc)) return rc;
 
-    unconst(mCaptureSettings).createObject();
-    rc = mCaptureSettings->initCopy(this, pMachine->mCaptureSettings);
+    unconst(mRecordSettings).createObject();
+    rc = mRecordSettings->initCopy(this, pMachine->mRecordSettings);
     if (FAILED(rc)) return rc;
 
     unconst(mVRDEServer).createObject();
@@ -1207,8 +1207,8 @@ HRESULT SnapshotMachine::initFromSettings(Machine *aMachine,
     unconst(mBIOSSettings).createObject();
     mBIOSSettings->init(this);
 
-    unconst(mCaptureSettings).createObject();
-    mCaptureSettings->init(this);
+    unconst(mRecordSettings).createObject();
+    mRecordSettings->init(this);
 
     unconst(mVRDEServer).createObject();
     mVRDEServer->init(this);

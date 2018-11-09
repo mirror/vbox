@@ -30,8 +30,8 @@
 # include "VBox2DHelpers.h"
 
 /* COM includes: */
-# include "CCaptureSettings.h"
-# include "CCaptureScreenSettings.h"
+# include "CRecordSettings.h"
+# include "CRecordScreenSettings.h"
 # include "CExtPack.h"
 # include "CExtPackManager.h"
 # include "CVRDEServer.h"
@@ -382,12 +382,12 @@ void UIMachineSettingsDisplay::loadToCacheFrom(QVariant &data)
     }
 
     /* Gather old 'Recording' data: */
-    CCaptureSettings recordingSettings = m_machine.GetCaptureSettings();
+    CRecordSettings recordingSettings = m_machine.GetRecordSettings();
     Assert(recordingSettings.isNotNull());
     oldDisplayData.m_fRecordingEnabled = recordingSettings.GetEnabled();
 
     /* For now we're using the same settings for all screens; so get settings from screen 0 and work with that. */
-    CCaptureScreenSettings recordingScreen0Settings = recordingSettings.GetScreenSettings(0);
+    CRecordScreenSettings recordingScreen0Settings = recordingSettings.GetScreenSettings(0);
     if (!recordingScreen0Settings.isNull())
     {
         oldDisplayData.m_strRecordingFolder = QFileInfo(m_machine.GetSettingsFilePath()).absolutePath();
@@ -399,11 +399,11 @@ void UIMachineSettingsDisplay::loadToCacheFrom(QVariant &data)
         oldDisplayData.m_strRecordingVideoOptions = recordingScreen0Settings.GetOptions();
     }
 
-    CCaptureScreenSettingsVector recordingScreenSettingsVector = recordingSettings.GetScreens();
+    CRecordScreenSettingsVector recordingScreenSettingsVector = recordingSettings.GetScreens();
     oldDisplayData.m_vecRecordingScreens.resize(recordingScreenSettingsVector.size());
     for (int iScreenIndex = 0; iScreenIndex < recordingScreenSettingsVector.size(); ++iScreenIndex)
     {
-        CCaptureScreenSettings recordingScreenSettings = recordingScreenSettingsVector.at(iScreenIndex);
+        CRecordScreenSettings recordingScreenSettings = recordingScreenSettingsVector.at(iScreenIndex);
         if (!recordingScreenSettings.isNull())
             oldDisplayData.m_vecRecordingScreens[iScreenIndex] = recordingScreenSettings.GetEnabled();
     }
@@ -1510,7 +1510,7 @@ bool UIMachineSettingsDisplay::saveRecordingData()
         /* Get new display data from the cache: */
         const UIDataSettingsMachineDisplay &newDisplayData = m_pCache->data();
 
-        CCaptureSettings recordingSettings = m_machine.GetCaptureSettings();
+        CRecordSettings recordingSettings = m_machine.GetRecordSettings();
         Assert(recordingSettings.isNotNull());
 
         /** @todo r=andy Make the code below more compact -- too much redundancy here. */
@@ -1532,13 +1532,13 @@ bool UIMachineSettingsDisplay::saveRecordingData()
                 /* Save recording screens: */
                 if (fSuccess)
                 {
-                    CCaptureScreenSettingsVector captureScreenSettingsVector = recordingSettings.GetScreens();
-                    for (int iScreenIndex = 0; fSuccess && iScreenIndex < captureScreenSettingsVector.size(); ++iScreenIndex)
+                    CRecordScreenSettingsVector RecordScreenSettingsVector = recordingSettings.GetScreens();
+                    for (int iScreenIndex = 0; fSuccess && iScreenIndex < RecordScreenSettingsVector.size(); ++iScreenIndex)
                     {
                         if (newDisplayData.m_vecRecordingScreens[iScreenIndex] == oldDisplayData.m_vecRecordingScreens[iScreenIndex])
                             continue;
 
-                        CCaptureScreenSettings recordingScreenSettings = captureScreenSettingsVector.at(iScreenIndex);
+                        CRecordScreenSettings recordingScreenSettings = RecordScreenSettingsVector.at(iScreenIndex);
                         recordingScreenSettings.SetEnabled(newDisplayData.m_vecRecordingScreens[iScreenIndex]);
                         fSuccess = recordingScreenSettings.isOk();
                     }
@@ -1547,13 +1547,13 @@ bool UIMachineSettingsDisplay::saveRecordingData()
             /* If 'Recording' was *disabled*: */
             else
             {
-                CCaptureScreenSettingsVector recordingScreenSettingsVector = recordingSettings.GetScreens();
+                CRecordScreenSettingsVector recordingScreenSettingsVector = recordingSettings.GetScreens();
                 for (int iScreenIndex = 0; fSuccess && iScreenIndex < recordingScreenSettingsVector.size(); ++iScreenIndex)
                 {
                     if (newDisplayData.m_vecRecordingScreens[iScreenIndex] == oldDisplayData.m_vecRecordingScreens[iScreenIndex])
                         continue;
 
-                    CCaptureScreenSettings recordingScreenSettings = recordingScreenSettingsVector.at(iScreenIndex);
+                    CRecordScreenSettings recordingScreenSettings = recordingScreenSettingsVector.at(iScreenIndex);
 
                     // We should save all the options *before* 'Recording' activation.
                     // And finally we should *enable* Recording if necessary.
@@ -1622,13 +1622,13 @@ bool UIMachineSettingsDisplay::saveRecordingData()
         /* Save new 'Recording' data for offline case: */
         else
         {
-            CCaptureScreenSettingsVector recordingScreenSettingsVector = recordingSettings.GetScreens();
+            CRecordScreenSettingsVector recordingScreenSettingsVector = recordingSettings.GetScreens();
             for (int iScreenIndex = 0; fSuccess && iScreenIndex < recordingScreenSettingsVector.size(); ++iScreenIndex)
             {
                 if (newDisplayData.m_vecRecordingScreens[iScreenIndex] == oldDisplayData.m_vecRecordingScreens[iScreenIndex])
                     continue;
 
-                CCaptureScreenSettings recordingScreenSettings = recordingScreenSettingsVector.at(iScreenIndex);
+                CRecordScreenSettings recordingScreenSettings = recordingScreenSettingsVector.at(iScreenIndex);
 
                 /* Save recording file path: */
                 if (fSuccess && newDisplayData.m_strRecordingFilePath != oldDisplayData.m_strRecordingFilePath)

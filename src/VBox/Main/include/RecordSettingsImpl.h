@@ -17,42 +17,42 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ____H_CAPTURESETTINGS
-#define ____H_CAPTURESETTINGS
+#ifndef ____H_RecordSettings
+#define ____H_RecordSettings
 
-#include "CaptureSettingsWrap.h"
+#include "RecordSettingsWrap.h"
 
 namespace settings
 {
-    struct CaptureSettings;
-    struct CaptureScreenSettings;
+    struct RecordSettings;
+    struct RecordScreenSettings;
 }
 
-class CaptureScreenSettings;
+class RecordScreenSettings;
 
-class ATL_NO_VTABLE CaptureSettings :
-    public CaptureSettingsWrap
+class ATL_NO_VTABLE RecordSettings :
+    public RecordSettingsWrap
 {
 public:
 
-    DECLARE_EMPTY_CTOR_DTOR(CaptureSettings)
+    DECLARE_EMPTY_CTOR_DTOR(RecordSettings)
 
     HRESULT FinalConstruct();
     void FinalRelease();
 
     // public initializer/uninitializer for internal purposes only
     HRESULT init(Machine *parent);
-    HRESULT init(Machine *parent, CaptureSettings *that);
-    HRESULT initCopy(Machine *parent, CaptureSettings *that);
+    HRESULT init(Machine *parent, RecordSettings *that);
+    HRESULT initCopy(Machine *parent, RecordSettings *that);
     void uninit();
 
     // public methods only for internal purposes
-    HRESULT i_loadSettings(const settings::CaptureSettings &data);
-    HRESULT i_saveSettings(settings::CaptureSettings &data);
+    HRESULT i_loadSettings(const settings::RecordSettings &data);
+    HRESULT i_saveSettings(settings::RecordSettings &data);
 
     void i_rollback();
     void i_commit();
-    void i_copyFrom(CaptureSettings *aThat);
+    void i_copyFrom(RecordSettings *aThat);
     void i_applyDefaults(void);
 
     int i_getDefaultFileName(Utf8Str &strFile);
@@ -62,28 +62,28 @@ public:
 private:
 
     /** Map of screen settings objects. The key specifies the screen ID. */
-    typedef std::map <uint32_t, ComObjPtr<CaptureScreenSettings> > CaptureScreenSettingsMap;
+    typedef std::map <uint32_t, ComObjPtr<RecordScreenSettings> > RecordScreenSettingsMap;
 
     void i_reset(void);
     int i_syncToMachineDisplays(void);
-    int i_createScreenObj(CaptureScreenSettingsMap &screenSettingsMap, uint32_t uScreenId, const settings::CaptureScreenSettings &data);
-    int i_destroyScreenObj(CaptureScreenSettingsMap &screenSettingsMap, uint32_t uScreenId);
-    int i_destroyAllScreenObj(CaptureScreenSettingsMap &screenSettingsMap);
+    int i_createScreenObj(RecordScreenSettingsMap &screenSettingsMap, uint32_t uScreenId, const settings::RecordScreenSettings &data);
+    int i_destroyScreenObj(RecordScreenSettingsMap &screenSettingsMap, uint32_t uScreenId);
+    int i_destroyAllScreenObj(RecordScreenSettingsMap &screenSettingsMap);
 
 private:
 
-    // wrapped ICaptureSettings properties
+    // wrapped IRecordSettings properties
     HRESULT getEnabled(BOOL *enabled);
     HRESULT setEnabled(BOOL enable);
-    HRESULT getScreens(std::vector<ComPtr<ICaptureScreenSettings> > &aCaptureScreenSettings);
+    HRESULT getScreens(std::vector<ComPtr<IRecordScreenSettings> > &aRecordScreenSettings);
 
-    // wrapped ICaptureSettings methods
-    HRESULT getScreenSettings(ULONG uScreenId, ComPtr<ICaptureScreenSettings> &aCaptureScreenSettings);
+    // wrapped IRecordSettings methods
+    HRESULT getScreenSettings(ULONG uScreenId, ComPtr<IRecordScreenSettings> &aRecordScreenSettings);
 
 private:
 
     struct Data;
     Data *m;
 };
-#endif // ____H_CAPTURESETTINGS
+#endif // ____H_RecordSettings
 

@@ -44,7 +44,7 @@ public:
 
 public:
 
-    int applyConfiguration(const settings::CaptureSettings &Settings);
+    int applyConfiguration(const settings::RecordSettings &Settings);
 
 public:
 
@@ -60,7 +60,7 @@ private:
     /** Pointer to the associated video recording audio driver. */
     struct DRVAUDIOVIDEOREC         *mpDrv;
     /** Capturing configuration used for configuring the driver. */
-    struct settings::CaptureSettings mVideoRecCfg;
+    struct settings::RecordSettings mVideoRecCfg;
 };
 
 #endif /* !____H_DRVAUDIOVIDEOREC */

@@ -93,7 +93,7 @@ CaptureContext::CaptureContext(Console *a_pConsole)
     : pConsole(a_pConsole)
     , enmState(VIDEORECSTS_UNINITIALIZED) { }
 
-CaptureContext::CaptureContext(Console *a_pConsole, const settings::CaptureSettings &a_Settings)
+CaptureContext::CaptureContext(Console *a_pConsole, const settings::RecordSettings &a_Settings)
     : pConsole(a_pConsole)
     , enmState(VIDEORECSTS_UNINITIALIZED)
 {
@@ -176,13 +176,13 @@ int CaptureContext::threadNotify(void)
  * @returns IPRT status code.
  * @param   a_Settings          Capture settings to use for context creation.
  */
-int CaptureContext::createInternal(const settings::CaptureSettings &a_Settings)
+int CaptureContext::createInternal(const settings::RecordSettings &a_Settings)
 {
     int rc = RTCritSectInit(&this->CritSect);
     if (RT_FAILURE(rc))
         return rc;
 
-    settings::CaptureScreenMap::const_iterator itScreen = a_Settings.mapScreens.begin();
+    settings::RecordScreenMap::const_iterator itScreen = a_Settings.mapScreens.begin();
     while (itScreen != a_Settings.mapScreens.end())
     {
         CaptureStream *pStream = NULL;
@@ -317,7 +317,7 @@ int CaptureContext::destroyInternal(void)
     return rc;
 }
 
-const settings::CaptureSettings &CaptureContext::GetConfig(void) const
+const settings::RecordSettings &CaptureContext::GetConfig(void) const
 {
     return this->Settings;
 }
@@ -354,7 +354,7 @@ size_t CaptureContext::GetStreamCount(void) const
     return this->vecStreams.size();
 }
 
-int CaptureContext::Create(const settings::CaptureSettings &a_Settings)
+int CaptureContext::Create(const settings::RecordSettings &a_Settings)
 {
     return createInternal(a_Settings);
 }
@@ -374,7 +374,7 @@ int CaptureContext::Stop(void)
     return stopInternal();
 }
 
-bool CaptureContext::IsFeatureEnabled(CaptureFeature_T enmFeature) const
+bool CaptureContext::IsFeatureEnabled(RecordFeature_T enmFeature) const
 {
     VideoRecStreams::const_iterator itStream = this->vecStreams.begin();
     while (itStream != this->vecStreams.end())

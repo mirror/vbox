@@ -464,12 +464,12 @@ static void show_usage()
              "                                       settings password\n"
              "   -start-paused, --start-paused     Start the VM in paused state\n"
 #ifdef VBOX_WITH_VIDEOREC
-             "   -c, -capture, --capture           Record the VM screen output to a file\n"
-             "   -w, --width                       Frame width when recording\n"
-             "   -h, --height                      Frame height when recording\n"
-             "   -r, --bitrate                     Recording bit rate when recording\n"
+             "   -c, -record, --record             Record the VM screen output to a file\n"
+             "   -w, --videowidth                  Video frame width when recording\n"
+             "   -h, --videoheight                 Video frame height when recording\n"
+             "   -r, --videobitrate                Recording bit rate when recording\n"
              "   -f, --filename                    File name when recording. The codec used\n"
-             "                                       will be chosen based on file extension\n"
+             "                                     will be chosen based on file extension\n"
 #endif
              "\n");
 }
@@ -493,34 +493,34 @@ static void parse_environ(uint32_t *pulFrameWidth, uint32_t *pulFrameHeight,
  *        documented code page issues.
  *
  *        Use RTEnvGetEx instead! */
-    if ((pszEnvTemp = RTEnvGet("VBOX_CAPTUREWIDTH")) != 0)
+    if ((pszEnvTemp = RTEnvGet("VBOX_RECORDWIDTH")) != 0)
     {
         errno = 0;
         unsigned long ulFrameWidth = strtoul(pszEnvTemp, 0, 10);
         if (errno != 0)
-            LogError("VBoxHeadless: ERROR: invalid VBOX_CAPTUREWIDTH environment variable", 0);
+            LogError("VBoxHeadless: ERROR: invalid VBOX_RECORDWIDTH environment variable", 0);
         else
             *pulFrameWidth = ulFrameWidth;
     }
-    if ((pszEnvTemp = RTEnvGet("VBOX_CAPTUREHEIGHT")) != 0)
+    if ((pszEnvTemp = RTEnvGet("VBOX_RECORDHEIGHT")) != 0)
     {
         errno = 0;
         unsigned long ulFrameHeight = strtoul(pszEnvTemp, 0, 10);
         if (errno != 0)
-            LogError("VBoxHeadless: ERROR: invalid VBOX_CAPTUREHEIGHT environment variable", 0);
+            LogError("VBoxHeadless: ERROR: invalid VBOX_RECORDHEIGHT environment variable", 0);
         else
             *pulFrameHeight = ulFrameHeight;
     }
-    if ((pszEnvTemp = RTEnvGet("VBOX_CAPTUREBITRATE")) != 0)
+    if ((pszEnvTemp = RTEnvGet("VBOX_RECORDBITRATE")) != 0)
     {
         errno = 0;
         unsigned long ulBitRate = strtoul(pszEnvTemp, 0, 10);
         if (errno != 0)
-            LogError("VBoxHeadless: ERROR: invalid VBOX_CAPTUREBITRATE environment variable", 0);
+            LogError("VBoxHeadless: ERROR: invalid VBOX_RECORDBITRATE environment variable", 0);
         else
             *pulBitRate = ulBitRate;
     }
-    if ((pszEnvTemp = RTEnvGet("VBOX_CAPTUREFILE")) != 0)
+    if ((pszEnvTemp = RTEnvGet("VBOX_RECORDFILE")) != 0)
         *ppszFileName = pszEnvTemp;
 }
 #endif /* VBOX_WITH_VIDEOREC defined */
@@ -626,12 +626,12 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     unsigned fCSAM  = ~0U;
     unsigned fPaused = 0;
 #ifdef VBOX_WITH_VIDEOREC
-    bool fCaptureEnabled = false;
-    uint32_t ulCaptureVideoWidth = 800;
-    uint32_t ulCaptureVideoHeight = 600;
-    uint32_t ulCaptureVideoRate = 300000;
-    char szCaptureFileName[RTPATH_MAX];
-    const char *pszCaptureFileNameTemplate = "VBox-%d.webm"; /* .webm container by default. */
+    bool fRecordEnabled = false;
+    uint32_t ulRecordVideoWidth = 800;
+    uint32_t ulRecordVideoHeight = 600;
+    uint32_t ulRecordVideoRate = 300000;
+    char szRecordFileName[RTPATH_MAX];
+    const char *pszRecordFileNameTemplate = "VBox-%d.webm"; /* .webm container by default. */
 #endif /* VBOX_WITH_VIDEOREC */
 #ifdef RT_OS_WINDOWS
     ATL::CComModule _Module; /* Required internally by ATL (constructor records instance in global variable). */
@@ -644,7 +644,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
 
 #ifdef VBOX_WITH_VIDEOREC
     /* Parse the environment */
-    parse_environ(&ulCaptureVideoWidth, &ulCaptureVideoHeight, &ulCaptureVideoRate, &pszCaptureFileNameTemplate);
+    parse_environ(&ulRecordVideoWidth, &ulRecordVideoHeight, &ulRecordVideoRate, &pszRecordFileNameTemplate);
 #endif
 
     enum eHeadlessOptions
@@ -696,11 +696,11 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         { "--settingspw", OPT_SETTINGSPW, RTGETOPT_REQ_STRING },
         { "--settingspwfile", OPT_SETTINGSPW_FILE, RTGETOPT_REQ_STRING },
 #ifdef VBOX_WITH_VIDEOREC
-        { "-capture", 'c', 0 },
-        { "--capture", 'c', 0 },
-        { "--width", 'w', RTGETOPT_REQ_UINT32 },
-        { "--height", 'h', RTGETOPT_REQ_UINT32 }, /* great choice of short option! */
-        { "--bitrate", 'r', RTGETOPT_REQ_UINT32 },
+        { "-record", 'c', 0 },
+        { "--record", 'c', 0 },
+        { "--videowidth", 'w', RTGETOPT_REQ_UINT32 },
+        { "--videoheight", 'h', RTGETOPT_REQ_UINT32 }, /* great choice of short option! */
+        { "--videorate", 'r', RTGETOPT_REQ_UINT32 },
         { "--filename", 'f', RTGETOPT_REQ_STRING },
 #endif /* VBOX_WITH_VIDEOREC defined */
         { "-comment", OPT_COMMENT, RTGETOPT_REQ_STRING },
@@ -781,23 +781,23 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
                 break;
 #ifdef VBOX_WITH_VIDEOREC
             case 'c':
-                fCaptureEnabled = true;
+                fRecordEnabled = true;
                 break;
             case 'w':
-                ulCaptureVideoWidth = ValueUnion.u32;
+                ulRecordVideoWidth = ValueUnion.u32;
                 break;
             case 'r':
-                ulCaptureVideoRate = ValueUnion.u32;
+                ulRecordVideoRate = ValueUnion.u32;
                 break;
             case 'f':
-                pszCaptureFileNameTemplate = ValueUnion.psz;
+                pszRecordFileNameTemplate = ValueUnion.psz;
                 break;
 #endif /* VBOX_WITH_VIDEOREC defined */
             case 'h':
 #ifdef VBOX_WITH_VIDEOREC
                 if ((GetState.pDef->fFlags & RTGETOPT_REQ_MASK) != RTGETOPT_REQ_NOTHING)
                 {
-                    ulCaptureVideoHeight = ValueUnion.u32;
+                    ulRecordVideoHeight = ValueUnion.u32;
                     break;
                 }
 #endif
@@ -817,35 +817,35 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     }
 
 #ifdef VBOX_WITH_VIDEOREC
-    if (ulCaptureVideoWidth < 512 || ulCaptureVideoWidth > 2048 || ulCaptureVideoWidth % 2)
+    if (ulRecordVideoWidth < 512 || ulRecordVideoWidth > 2048 || ulRecordVideoWidth % 2)
     {
-        LogError("VBoxHeadless: ERROR: please specify an even frame width between 512 and 2048", 0);
+        LogError("VBoxHeadless: ERROR: please specify an even video frame width between 512 and 2048", 0);
         return 1;
     }
-    if (ulCaptureVideoHeight < 384 || ulCaptureVideoHeight > 1536 || ulCaptureVideoHeight % 2)
+    if (ulRecordVideoHeight < 384 || ulRecordVideoHeight > 1536 || ulRecordVideoHeight % 2)
     {
-        LogError("VBoxHeadless: ERROR: please specify an even frame height between 384 and 1536", 0);
+        LogError("VBoxHeadless: ERROR: please specify an even video frame height between 384 and 1536", 0);
         return 1;
     }
-    if (ulCaptureVideoRate < 300000 || ulCaptureVideoRate > 1000000)
+    if (ulRecordVideoRate < 300000 || ulRecordVideoRate > 1000000)
     {
-        LogError("VBoxHeadless: ERROR: please specify an even bitrate between 300000 and 1000000", 0);
+        LogError("VBoxHeadless: ERROR: please specify an even video bitrate between 300000 and 1000000", 0);
         return 1;
     }
     /* Make sure we only have %d or %u (or none) in the file name specified */
-    char *pcPercent = (char*)strchr(pszCaptureFileNameTemplate, '%');
+    char *pcPercent = (char*)strchr(pszRecordFileNameTemplate, '%');
     if (pcPercent != 0 && *(pcPercent + 1) != 'd' && *(pcPercent + 1) != 'u')
     {
-        LogError("VBoxHeadless: ERROR: Only %%d and %%u are allowed in the capture file name.", -1);
+        LogError("VBoxHeadless: ERROR: Only %%d and %%u are allowed in the recording file name.", -1);
         return 1;
     }
     /* And no more than one % in the name */
     if (pcPercent != 0 && strchr(pcPercent + 1, '%') != 0)
     {
-        LogError("VBoxHeadless: ERROR: Only one format modifier is allowed in the capture file name.", -1);
+        LogError("VBoxHeadless: ERROR: Only one format modifier is allowed in the recording file name.", -1);
         return 1;
     }
-    RTStrPrintf(&szCaptureFileName[0], RTPATH_MAX, pszCaptureFileNameTemplate, RTProcSelf());
+    RTStrPrintf(&szRecordFileName[0], RTPATH_MAX, pszRecordFileNameTemplate, RTProcSelf());
 #endif /* defined VBOX_WITH_VIDEOREC */
 
     if (!pcszNameOrUUID)
@@ -958,23 +958,23 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         CHECK_ERROR_BREAK(console, COMGETTER(Display)(display.asOutParam()));
 
 #ifdef VBOX_WITH_VIDEOREC
-        if (fCaptureEnabled)
+        if (fRecordEnabled)
         {
-            ComPtr<ICaptureSettings> captureSettings;
-            CHECK_ERROR_BREAK(machine, COMGETTER(CaptureSettings)(captureSettings.asOutParam()));
-            CHECK_ERROR_BREAK(captureSettings, COMSETTER(Enabled)(TRUE));
+            ComPtr<IRecordSettings> RecordSettings;
+            CHECK_ERROR_BREAK(machine, COMGETTER(RecordSettings)(RecordSettings.asOutParam()));
+            CHECK_ERROR_BREAK(RecordSettings, COMSETTER(Enabled)(TRUE));
 
-            SafeIfaceArray <ICaptureScreenSettings> saCaptureScreenScreens;
-            CHECK_ERROR_BREAK(captureSettings, COMGETTER(Screens)(ComSafeArrayAsOutParam(saCaptureScreenScreens)));
+            SafeIfaceArray <IRecordScreenSettings> saRecordScreenScreens;
+            CHECK_ERROR_BREAK(RecordSettings, COMGETTER(Screens)(ComSafeArrayAsOutParam(saRecordScreenScreens)));
 
             /* Note: For now all screens have the same configuration. */
-            for (size_t i = 0; i < saCaptureScreenScreens.size(); ++i)
+            for (size_t i = 0; i < saRecordScreenScreens.size(); ++i)
             {
-                CHECK_ERROR_BREAK(saCaptureScreenScreens[i], COMSETTER(Enabled)(TRUE));
-                CHECK_ERROR_BREAK(saCaptureScreenScreens[i], COMSETTER(FileName)(Bstr(szCaptureFileName).raw()));
-                CHECK_ERROR_BREAK(saCaptureScreenScreens[i], COMSETTER(VideoWidth)(ulCaptureVideoWidth));
-                CHECK_ERROR_BREAK(saCaptureScreenScreens[i], COMSETTER(VideoHeight)(ulCaptureVideoHeight));
-                CHECK_ERROR_BREAK(saCaptureScreenScreens[i], COMSETTER(VideoRate)(ulCaptureVideoRate));
+                CHECK_ERROR_BREAK(saRecordScreenScreens[i], COMSETTER(Enabled)(TRUE));
+                CHECK_ERROR_BREAK(saRecordScreenScreens[i], COMSETTER(FileName)(Bstr(szRecordFileName).raw()));
+                CHECK_ERROR_BREAK(saRecordScreenScreens[i], COMSETTER(VideoWidth)(ulRecordVideoWidth));
+                CHECK_ERROR_BREAK(saRecordScreenScreens[i], COMSETTER(VideoHeight)(ulRecordVideoHeight));
+                CHECK_ERROR_BREAK(saRecordScreenScreens[i], COMSETTER(VideoRate)(ulRecordVideoRate));
             }
         }
 #endif /* defined(VBOX_WITH_VIDEOREC) */
@@ -1227,13 +1227,13 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         Log(("VBoxHeadless: event loop has terminated...\n"));
 
 #ifdef VBOX_WITH_VIDEOREC
-        if (fCaptureEnabled)
+        if (fRecordEnabled)
         {
             if (!machine.isNull())
             {
-                ComPtr<ICaptureSettings> captureSettings;
-                CHECK_ERROR_BREAK(machine, COMGETTER(CaptureSettings)(captureSettings.asOutParam()));
-                CHECK_ERROR_BREAK(captureSettings, COMSETTER(Enabled)(FALSE));
+                ComPtr<IRecordSettings> RecordSettings;
+                CHECK_ERROR_BREAK(machine, COMGETTER(RecordSettings)(RecordSettings.asOutParam()));
+                CHECK_ERROR_BREAK(RecordSettings, COMSETTER(Enabled)(FALSE));
             }
         }
 #endif /* VBOX_WITH_VIDEOREC */
