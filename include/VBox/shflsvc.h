@@ -1,5 +1,5 @@
 /** @file
- * Shared Folders: Common header for host service and guest clients.
+ * Shared Folders - Common header for host service and guest clients.
  */
 
 /*
@@ -44,6 +44,19 @@
 #endif
 
 
+
+/** @defgroup grp_vbox_shfl     Shared Folder Interface Definition.
+ *
+ * Structures shared between guest and the service can be relocated and use
+ * offsets to point to variable length parts.
+ *
+ * Shared folders protocol works with handles.  Before doing any action on a
+ * file system object, one have to obtain the object handle via a SHFL_FN_CREATE
+ * request. A handle must be closed with SHFL_FN_CLOSE.
+ *
+ * @{
+ */
+
 /** @name Some bit flag manipulation macros.
  * @{  */
 #ifndef BIT_FLAG
@@ -60,23 +73,9 @@
 /** @} */
 
 
-/**
- * Structures shared between guest and the service
- * can be relocated and use offsets to point to variable
- * length parts.
+/** @name Shared Folders service functions. (guest)
+ * @{
  */
-
-/**
- * Shared folders protocol works with handles.
- * Before doing any action on a file system object,
- * one have to obtain the object handle via a SHFL_FN_CREATE
- * request. A handle must be closed with SHFL_FN_CLOSE.
- */
-
-/** Shared Folders service functions. (guest)
- *  @{
- */
-
 /** Query mappings changes. */
 #define SHFL_FN_QUERY_MAPPINGS      (1)
 /** Query mappings changes. */
@@ -115,13 +114,12 @@
 #define SHFL_FN_SYMLINK             (19)
 /** Ask host to show symlinks (as of VBox 4.0) */
 #define SHFL_FN_SET_SYMLINKS        (20)
-
 /** @} */
 
-/** Shared Folders service functions. (host)
- *  @{
- */
 
+/** Shared Folders service functions. (host)
+ * @{
+ */
 /** Add shared folder mapping. */
 #define SHFL_FN_ADD_MAPPING         (1)
 /** Remove shared folder mapping. */
@@ -132,16 +130,17 @@
 #define SHFL_FN_ALLOW_SYMLINKS_CREATE (4)
 /** @} */
 
+
 /** Root handle for a mapping. Root handles are unique.
- *  @note
- *  Function parameters structures consider
- *  the root handle as 32 bit value. If the typedef
- *  will be changed, then function parameters must be
- *  changed accordingly. All those parameters are marked
- *  with SHFLROOT in comments.
+ *
+ * @note Function parameters structures consider the root handle as 32 bit
+ *       value. If the typedef will be changed, then function parameters must be
+ *       changed accordingly. All those parameters are marked with SHFLROOT in
+ *       comments.
  */
 typedef uint32_t SHFLROOT;
 
+/** NIL shared folder root handle. */
 #define SHFL_ROOT_NIL ((SHFLROOT)~0)
 
 
@@ -155,6 +154,7 @@ typedef uint64_t SHFLHANDLE;
 #define SHFL_MAX_LEN         (256)
 /** Hardcoded maximum number of shared folder mapping available to the guest. */
 #define SHFL_MAX_MAPPINGS    (64)
+
 
 /** @name Shared Folders strings. They can be either UTF-8 or UTF-16.
  * @{
@@ -680,7 +680,7 @@ AssertCompile(SHFL_NO_RESULT == 0);
 AssertCompileSize(SHFLCREATERESULT, 4);
 
 
-/** Open/create flags.
+/** @name Open/create flags.
  *  @{
  */
 
@@ -786,8 +786,8 @@ typedef struct _SHFLCREATEPARMS
 typedef SHFLCREATEPARMS *PSHFLCREATEPARMS;
 
 
-/** Shared Folders mappings.
- *  @{
+/** @name Shared Folders mappings.
+ * @{
  */
 
 /** The mapping has been added since last query. */
@@ -807,8 +807,9 @@ typedef SHFLMAPPING *PSHFLMAPPING;
 
 /** @} */
 
-/** Shared Folder directory information
- *  @{
+
+/** @name Shared Folder directory information
+ * @{
  */
 
 typedef struct _SHFLDIRINFO
@@ -900,28 +901,23 @@ typedef struct _SHFLVOLINFO
 
 /** @} */
 
-/** Function parameter structures.
- *  @{
+
+/** @defgroup grp_vbox_shfl_params  Function parameter structures.
+ * @{
  */
 
-/**
- * SHFL_FN_QUERY_MAPPINGS
+/** @name SHFL_FN_QUERY_MAPPINGS
+ * @{
  */
 /** Validation mask.  Needs to be adjusted
   * whenever a new SHFL_MF_ flag is added. */
 #define SHFL_MF_MASK       (0x00000011)
-/** UC2 enconded strings. */
+/** UTF-16 enconded strings. */
 #define SHFL_MF_UCS2       (0x00000000)
 /** Guest uses UTF8 strings, if not set then the strings are unicode (UCS2). */
 #define SHFL_MF_UTF8       (0x00000001)
 /** Just handle the auto-mounted folders. */
 #define SHFL_MF_AUTOMOUNT  (0x00000010)
-
-/** Type of guest system. For future system dependent features. */
-#define SHFL_MF_SYSTEM_MASK    (0x0000FF00)
-#define SHFL_MF_SYSTEM_NONE    (0x00000000)
-#define SHFL_MF_SYSTEM_WINDOWS (0x00000100)
-#define SHFL_MF_SYSTEM_LINUX   (0x00000200)
 
 /** Parameters structure. */
 typedef struct _VBoxSFQueryMappings
@@ -949,11 +945,11 @@ typedef struct _VBoxSFQueryMappings
 
 /** Number of parameters */
 #define SHFL_CPARMS_QUERY_MAPPINGS (3)
+/** @} */
 
 
-
-/**
- * SHFL_FN_QUERY_MAP_NAME
+/** @name SHFL_FN_QUERY_MAP_NAME
+ * @{
  */
 
 /** Parameters structure. */
@@ -975,9 +971,11 @@ typedef struct _VBoxSFQueryMapName
 
 /** Number of parameters */
 #define SHFL_CPARMS_QUERY_MAP_NAME (2)
+/** @} */
 
-/**
- * SHFL_FN_MAP_FOLDER_OLD
+
+/** @name SHFL_FN_MAP_FOLDER_OLD
+ * @{
  */
 
 /** Parameters structure. */
@@ -1004,9 +1002,11 @@ typedef struct _VBoxSFMapFolder_Old
 
 /** Number of parameters */
 #define SHFL_CPARMS_MAP_FOLDER_OLD (3)
+/** @} */
 
-/**
- * SHFL_FN_MAP_FOLDER
+
+/** @name SHFL_FN_MAP_FOLDER
+ * @{
  */
 
 /** Parameters structure. */
@@ -1038,9 +1038,11 @@ typedef struct _VBoxSFMapFolder
 
 /** Number of parameters */
 #define SHFL_CPARMS_MAP_FOLDER (4)
+/** @} */
 
-/**
- * SHFL_FN_UNMAP_FOLDER
+
+/** @name SHFL_FN_UNMAP_FOLDER
+ * @{
  */
 
 /** Parameters structure. */
@@ -1057,10 +1059,11 @@ typedef struct _VBoxSFUnmapFolder
 
 /** Number of parameters */
 #define SHFL_CPARMS_UNMAP_FOLDER (1)
+/** @} */
 
 
-/**
- * SHFL_FN_CREATE
+/** @name SHFL_FN_CREATE
+ * @{
  */
 
 /** Parameters structure. */
@@ -1087,10 +1090,11 @@ typedef struct _VBoxSFCreate
 
 /** Number of parameters */
 #define SHFL_CPARMS_CREATE (3)
+/** @} */
 
 
-/**
- * SHFL_FN_CLOSE
+/** @name SHFL_FN_CLOSE
+ * @{
  */
 
 /** Parameters structure. */
@@ -1113,10 +1117,11 @@ typedef struct _VBoxSFClose
 
 /** Number of parameters */
 #define SHFL_CPARMS_CLOSE (2)
+/** @} */
 
 
-/**
- * SHFL_FN_READ
+/** @name  SHFL_FN_READ
+ * @{
  */
 
 /** Parameters structure. */
@@ -1153,11 +1158,11 @@ typedef struct _VBoxSFRead
 
 /** Number of parameters */
 #define SHFL_CPARMS_READ (5)
+/** @} */
 
 
-
-/**
- * SHFL_FN_WRITE
+/** @name SHFL_FN_WRITE
+ * @{
  */
 
 /** Parameters structure. */
@@ -1194,14 +1199,13 @@ typedef struct _VBoxSFWrite
 
 /** Number of parameters */
 #define SHFL_CPARMS_WRITE (5)
+/** @} */
 
 
-
-/**
- * SHFL_FN_LOCK
+/** @name SHFL_FN_LOCK
+ * @remarks Lock owner is the HGCM client.
+ * @{
  */
-
-/** Lock owner is the HGCM client. */
 
 /** Lock mode bit mask. */
 #define SHFL_LOCK_MODE_MASK  (0x3)
@@ -1256,11 +1260,11 @@ typedef struct _VBoxSFLock
 
 /** Number of parameters */
 #define SHFL_CPARMS_LOCK (5)
+/** @} */
 
 
-
-/**
- * SHFL_FN_FLUSH
+/** @name SHFL_FN_FLUSH
+ * @{
  */
 
 /** Parameters structure. */
@@ -1282,16 +1286,18 @@ typedef struct _VBoxSFFlush
 
 /** Number of parameters */
 #define SHFL_CPARMS_FLUSH (2)
+/** @} */
 
-/**
- * SHFL_FN_LIST
+
+/** @name SHFL_FN_LIST
+ * @remarks Listing information includes variable length RTDIRENTRY[EX]
+ *          structures.
+ * @{
  */
-
-/** Listing information includes variable length RTDIRENTRY[EX] structures. */
 
 /** @todo might be necessary for future. */
 #define SHFL_LIST_NONE          0
-#define SHFL_LIST_RETURN_ONE        1
+#define SHFL_LIST_RETURN_ONE    1
 
 /** Parameters structure. */
 typedef struct _VBoxSFList
@@ -1344,11 +1350,11 @@ typedef struct _VBoxSFList
 
 /** Number of parameters */
 #define SHFL_CPARMS_LIST (8)
+/** @} */
 
 
-
-/**
- * SHFL_FN_READLINK
+/** @name SHFL_FN_READLINK
+ * @{
  */
 
 /** Parameters structure. */
@@ -1375,11 +1381,11 @@ typedef struct _VBoxSFReadLink
 
 /** Number of parameters */
 #define SHFL_CPARMS_READLINK (3)
+/** @} */
 
 
-
-/**
- * SHFL_FN_INFORMATION
+/** @name SHFL_FN_INFORMATION
+ * @{
  */
 
 /** Mask of Set/Get bit. */
@@ -1436,10 +1442,11 @@ typedef struct _VBoxSFInformation
 
 /** Number of parameters */
 #define SHFL_CPARMS_INFORMATION (5)
+/** @}  */
 
 
-/**
- * SHFL_FN_REMOVE
+/** @name SHFL_FN_REMOVE
+ * @{
  */
 
 #define SHFL_REMOVE_FILE        (0x1)
@@ -1469,10 +1476,11 @@ typedef struct _VBoxSFRemove
 } VBoxSFRemove;
 
 #define SHFL_CPARMS_REMOVE  (3)
+/** @} */
 
 
-/**
- * SHFL_FN_RENAME
+/** @name SHFL_FN_RENAME
+ * @{
  */
 
 #define SHFL_RENAME_FILE                (0x1)
@@ -1507,10 +1515,11 @@ typedef struct _VBoxSFRename
 } VBoxSFRename;
 
 #define SHFL_CPARMS_RENAME  (4)
+/** @} */
 
 
-/**
- * SHFL_FN_SYMLINK
+/** @name SHFL_FN_SYMLINK
+ * @{
  */
 
 /** Parameters structure. */
@@ -1541,12 +1550,13 @@ typedef struct _VBoxSFSymlink
 } VBoxSFSymlink;
 
 #define SHFL_CPARMS_SYMLINK  (4)
+/** @} */
 
 
 
-/**
- * SHFL_FN_ADD_MAPPING
- * Host call, no guest structure is used.
+/** @name SHFL_FN_ADD_MAPPING
+ * @note  Host call, no guest structure is used.
+ * @{
  */
 
 /** mapping is writable */
@@ -1559,22 +1569,28 @@ typedef struct _VBoxSFSymlink
 #define SHFL_ADD_MAPPING_F_MISSING          (RT_BIT_32(3))
 
 #define SHFL_CPARMS_ADD_MAPPING  (4)
+/** @} */
 
-/**
- * SHFL_FN_REMOVE_MAPPING
- * Host call, no guest structure is used.
+
+/** @name SHFL_FN_REMOVE_MAPPING
+ * @note  Host call, no guest structure is used.
+ * @{
  */
 
 #define SHFL_CPARMS_REMOVE_MAPPING (1)
+/** @} */
 
 
-/**
- * SHFL_FN_SET_STATUS_LED
- * Host call, no guest structure is used.
+/** @name SHFL_FN_SET_STATUS_LED
+ * @note  Host call, no guest structure is used.
+ * @{
  */
 
 #define SHFL_CPARMS_SET_STATUS_LED (1)
+/** @} */
 
+
+/** @} */
 /** @} */
 
 #endif
