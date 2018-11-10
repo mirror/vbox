@@ -108,16 +108,19 @@
 #define SHFL_FN_SET_UTF8            (16)
 /** Map folder */
 #define SHFL_FN_MAP_FOLDER          (17)
-/** Read symlink destination (as of VBox 4.0) */
+/** Read symlink destination.
+ * @since VBox 4.0  */
 #define SHFL_FN_READLINK            (18)
-/** Create symlink (as of VBox 4.0) */
+/** Create symlink.
+ * @since VBox 4.0  */
 #define SHFL_FN_SYMLINK             (19)
-/** Ask host to show symlinks (as of VBox 4.0) */
+/** Ask host to show symlinks
+ * @since VBox 4.0  */
 #define SHFL_FN_SET_SYMLINKS        (20)
 /** @} */
 
 
-/** Shared Folders service functions. (host)
+/** @name Shared Folders service functions. (host)
  * @{
  */
 /** Add shared folder mapping. */
@@ -126,7 +129,8 @@
 #define SHFL_FN_REMOVE_MAPPING      (2)
 /** Set the led status light address. */
 #define SHFL_FN_SET_STATUS_LED      (3)
-/** Allow the guest to create symbolic links (as of VBox 4.0) */
+/** Allow the guest to create symbolic links
+ * @since VBox 4.0  */
 #define SHFL_FN_ALLOW_SYMLINKS_CREATE (4)
 /** @} */
 
