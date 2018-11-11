@@ -126,7 +126,11 @@
  *        src/VBox/Debugger/Makefile.kmk. I.e. exactly one tab, the file name /
  *        list item, another space, the slash and then the newline.
  *
- *      - The last element of an broken list should not have a slash-newline,
+ *      - Line continuation slashes shall never ever be aligned vertically (that
+ *        always goes crooked sooner or later), but have exactly one space
+ *        before them.
+ *
+ *      - The last element of an broken list shall not have a slash-newline,
  *        otherwise we risk getting the next variable into the list.
  *
  *      - When if'ed blocks come into play, we will only indent the conditional
