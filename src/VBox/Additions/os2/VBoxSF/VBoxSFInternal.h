@@ -77,9 +77,11 @@ typedef struct VBOXSFFOLDER
     /** OS/2 volume handle. */
     USHORT              hVpb;
 
+    /** The length of the name and tag, including zero terminators and such. */
+    uint16_t            cbNameAndTag;
     /** The length of the folder name. */
     uint8_t             cchName;
-    /** The shared folder name. */
+    /** The shared folder name.  If there is a tag it follows as a second string. */
     char                szName[RT_FLEXIBLE_ARRAY];
 } VBOXSFFOLDER;
 /** Pointer to a shared folder. */

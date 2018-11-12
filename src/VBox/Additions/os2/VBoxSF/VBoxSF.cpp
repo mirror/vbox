@@ -358,14 +358,16 @@ static PVBOXSFFOLDER vboxSfOs2FindAndRetainFolder(const char *pachName, size_t c
  *
  * @returns VBox status code.
  * @param   pName       The name of the folder to map.
+ * @param   pszTag      Folder tag (for the VBoxService automounter).  Optional.
  * @param   ppFolder    Where to return the folder structure on success.
  *
  * @remarks Caller owns g_MtxFolder exclusively!
  */
-static int vboxSfOs2MapFolder(PSHFLSTRING pName, PVBOXSFFOLDER *ppFolder)
+static int vboxSfOs2MapFolder(PSHFLSTRING pName, const char *pszTag, PVBOXSFFOLDER *ppFolder)
 {
     int rc;
-    PVBOXSFFOLDER pNew = (PVBOXSFFOLDER)RTMemAlloc(RT_UOFFSETOF_DYN(VBOXSFFOLDER, szName[pName->u16Length + 1]));
+    size_t const  cbTag = pszTag ? strlen(pszTag) + 1 :  NULL;
+    PVBOXSFFOLDER pNew  = (PVBOXSFFOLDER)RTMemAlloc(RT_UOFFSETOF_DYN(VBOXSFFOLDER, szName[pName->u16Length + 1 + cbTag]));
     if (pNew != NULL)
     {
         pNew->u32Magic      = VBOXSFFOLDER_MAGIC;
@@ -374,9 +376,13 @@ static int vboxSfOs2MapFolder(PSHFLSTRING pName, PVBOXSFFOLDER *ppFolder)
         pNew->cDrives       = 0;
         RT_ZERO(pNew->hHostFolder);
         pNew->hVpb          = 0;
+        pNew->cbNameAndTag  = pName->u16Length + (uint16_t)cbTag;
+        pNew->cchName       = (uint8_t)pName->u16Length;
         pNew->cchName       = (uint8_t)pName->u16Length;
         memcpy(pNew->szName, pName->String.utf8, pName->u16Length);
         pNew->szName[pName->u16Length] = '\0';
+        if (cbTag)
+            memcpy(&pNew->szName[pName->u16Length + 1], pszTag, cbTag);
 
         rc = VbglR0SfMapFolder(&g_SfClient, pName, &pNew->hHostFolder);
         if (RT_SUCCESS(rc))
@@ -551,7 +557,7 @@ DECL_NO_INLINE(static, int) vboxSfOs2AttachUncAndRetain(const char *pachFolderNa
             /*
              * Do the attaching.
              */
-            rc = vboxSfOs2MapFolder(pStrName, ppFolder);
+            rc = vboxSfOs2MapFolder(pStrName, NULL, ppFolder);
             vboxSfOs2StrFree(pStrName);
             if (RT_SUCCESS(rc))
             {
@@ -763,17 +769,29 @@ static APIRET vboxSfOs2Attach(PCSZ pszDev, PVBOXSFVP pVpFsd, PVBOXSFCD pCdFsd, P
         return ERROR_INVALID_PARAMETER;
     }
 
-    /* Make sure it's only ascii and contains not weird stuff. */
-    unsigned off = pStrName->u16Length;
+    /* Make sure it's only ascii and contains not weird stuff.
+       Note! There could be a 2nd tag string, so identify that one. */
+    const char *pszTag = NULL;
+    unsigned    off = pStrName->u16Length;
     while (off-- > 0)
     {
         char const ch = pStrName->String.utf8[off];
         if (ch < 0x20 || ch >= 0x7f || ch == ':' || ch == '\\' || ch == '/')
         {
-            LogRel(("vboxSfOs2Attach: Malformed folder name: %.*Rhxs (off %#x)\n", pStrName->u16Length, pStrName->String.utf8, off));
-            return ERROR_INVALID_PARAMETER;
+            if (ch == '\0' && !pszTag && off + 1 < pStrName->u16Length && off > 0)
+            {
+                pszTag = &pStrName->String.ach[off + 1];
+                pStrName->u16Length = (uint16_t)off;
+            }
+            else
+            {
+                LogRel(("vboxSfOs2Attach: Malformed folder name: %.*Rhxs (off %#x)\n", pStrName->u16Length, pStrName->String.utf8, off));
+                return ERROR_INVALID_PARAMETER;
+            }
         }
     }
+
+    /* Is there a tag following the name? */
 
     if (!pVpFsd)
     {
@@ -793,7 +811,7 @@ static APIRET vboxSfOs2Attach(PCSZ pszDev, PVBOXSFVP pVpFsd, PVBOXSFCD pCdFsd, P
         {
             rc = vboxSfOs2EnsureConnected();
             if (RT_SUCCESS(rc))
-                rc = vboxSfOs2MapFolder(pStrName, &pFolder);
+                rc = vboxSfOs2MapFolder(pStrName, pszTag, &pFolder);
         }
         if (pFolder && RT_SUCCESS(rc))
         {
@@ -918,13 +936,13 @@ static APIRET vboxSfOs2QueryAttachInfo(PCSZ pszDev, PVBOXSFVP pVpFsd, PVBOXSFCD 
         AssertReturn(pFolder->u32Magic == VBOXSFFOLDER_MAGIC, ERROR_SYS_INTERNAL);
 
         /* Try copy out the data. */
-        if (cbParam >= sizeof(USHORT) + pFolder->cchName + 1)
+        if (cbParam >= sizeof(USHORT) + pFolder->cbNameAndTag)
         {
-            *pcbParam = (uint16_t)sizeof(USHORT) + pFolder->cchName + 1;
+            *pcbParam = (uint16_t)sizeof(USHORT) + pFolder->cbNameAndTag;
             cbParam = pFolder->cchName + 1;
             rc = KernCopyOut(pbData, &cbParam, sizeof(cbParam));
             if (rc != NO_ERROR)
-                rc = KernCopyOut(pbData + sizeof(USHORT), pFolder->szName, pFolder->cchName + 1);
+                rc = KernCopyOut(pbData + sizeof(USHORT), pFolder->szName, pFolder->cbNameAndTag);
         }
         else
             rc = ERROR_BUFFER_OVERFLOW;
