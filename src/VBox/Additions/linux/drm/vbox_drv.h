@@ -46,6 +46,9 @@
 #include <linux/string.h>
 
 #if defined(RHEL_MAJOR) && defined(RHEL_MINOR)
+# if RHEL_MAJOR == 7 && RHEL_MINOR >= 6
+#  define RHEL_76
+# endif
 # if RHEL_MAJOR == 7 && RHEL_MINOR >= 5
 #  define RHEL_75
 # endif
