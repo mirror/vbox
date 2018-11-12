@@ -259,7 +259,7 @@ VBGLR3DECL(int) VbglR3SharedFolderQueryFolderInfo(HGCMCLIENTID idClient, uint32_
                                                   char **ppszName, char **ppszMountPoint,
                                                   uint64_t *pfFlags, uint32_t *puRootIdVersion)
 {
-    AssertReturn(!(fQueryFlags & ~(SHFL_MIQF_DRIVE_LETTER | SHFL_MIQF_PATH), VERR_INVALID_FLAGS);
+    AssertReturn(!(fQueryFlags & ~(SHFL_MIQF_DRIVE_LETTER | SHFL_MIQF_PATH)), VERR_INVALID_FLAGS);
 
     /*
      * Allocate string buffers first.
