@@ -199,7 +199,6 @@ int RecordingStream::parseOptionsString(const com::Utf8Str &strOptions)
                 this->Video.Codec.VPX.uEncoderDeadline = VPX_DL_BEST_QUALITY;
             else
             {
-                LogRel(("Recording: Setting encoder deadline to '%s'\n", value.c_str()));
                 this->Video.Codec.VPX.uEncoderDeadline = value.toUInt32();
 #endif
             }
@@ -207,22 +206,13 @@ int RecordingStream::parseOptionsString(const com::Utf8Str &strOptions)
         else if (key.compare("vc_enabled", Utf8Str::CaseInsensitive) == 0)
         {
             if (value.compare("false", Utf8Str::CaseInsensitive) == 0)
-            {
                 this->ScreenSettings.featureMap[RecordingFeature_Video] = false;
-#ifdef VBOX_WITH_AUDIO_RECORDING
-                LogRel(("Recording: Only audio will be recorded\n"));
-#endif
-            }
         }
         else if (key.compare("ac_enabled", Utf8Str::CaseInsensitive) == 0)
         {
 #ifdef VBOX_WITH_AUDIO_RECORDING
             if (value.compare("true", Utf8Str::CaseInsensitive) == 0)
-            {
                 this->ScreenSettings.featureMap[RecordingFeature_Audio] = true;
-            }
-            else
-                LogRel(("Recording: Only video will be recorded\n"));
 #endif
         }
         else if (key.compare("ac_profile", Utf8Str::CaseInsensitive) == 0)
@@ -691,10 +681,18 @@ int RecordingStream::initInternal(RecordingContext *a_pCtx, uint32_t uScreen, co
     const bool fAudioEnabled = Settings.isFeatureEnabled(RecordingFeature_Audio);
 
     if (fVideoEnabled)
+    {
         rc = initVideo();
+        if (RT_FAILURE(rc))
+            return rc;
+    }
 
     if (fAudioEnabled)
+    {
         rc = initAudio();
+        if (RT_FAILURE(rc))
+            return rc;
+    }
 
     switch (this->ScreenSettings.enmDest)
     {
@@ -714,7 +712,7 @@ int RecordingStream::initInternal(RecordingContext *a_pCtx, uint32_t uScreen, co
                                     ? WebMWriter::VideoCodec_VP8 : WebMWriter::VideoCodec_None);
             if (RT_FAILURE(rc))
             {
-                LogRel(("Recording: Failed to create the capture output file '%s' (%Rrc)\n", pszFile, rc));
+                LogRel(("Recording: Failed to create output file '%s' (%Rrc)\n", pszFile, rc));
                 break;
             }
 
@@ -744,8 +742,8 @@ int RecordingStream::initInternal(RecordingContext *a_pCtx, uint32_t uScreen, co
                     break;
                 }
 
-                LogRel(("Recording: Recording audio in %RU16Hz, %RU8 bit, %RU8 %s (track #%RU8)\n",
-                        Settings.Audio.uHz, Settings.Audio.cBits, Settings.Audio.cChannels,
+                LogRel(("Recording: Recording audio of screen #%u in %RU16Hz, %RU8 bit, %RU8 %s (track #%RU8)\n",
+                        this->uScreenID, Settings.Audio.uHz, Settings.Audio.cBits, Settings.Audio.cChannels,
                         Settings.Audio.cChannels ? "channels" : "channel", this->uTrackAudio));
             }
 #endif
@@ -767,7 +765,7 @@ int RecordingStream::initInternal(RecordingContext *a_pCtx, uint32_t uScreen, co
                     RTStrCat(szWhat, sizeof(szWhat), "audio");
                 }
 #endif
-                LogRel(("Recording: Recording %s to '%s'\n", szWhat, pszFile));
+                LogRel(("Recording: Recording %s of screen #%u to '%s'\n", szWhat, this->uScreenID, pszFile));
             }
 
             break;
@@ -955,12 +953,19 @@ int RecordingStream::initVideo(void)
     this->Video.cFailedEncodingFrames = 0;
     this->Video.uDelayMs = RT_MS_1SEC / this->ScreenSettings.Video.ulFPS;
 
+    int rc;
+
 #ifdef VBOX_WITH_LIBVPX
     /* At the moment we only have VPX. */
-    return initVideoVPX();
+    rc = initVideoVPX();
 #else
-    return VINF_SUCCESS;
+    rc = VINF_SUCCESS;
 #endif
+
+    if (RT_FAILURE(rc))
+        LogRel(("Recording: Failed to initialize video encoding (%Rrc)\n", rc));
+
+    return rc;
 }
 
 #ifdef VBOX_WITH_LIBVPX
