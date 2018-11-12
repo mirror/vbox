@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Recording (with optional audio recording) code.
+ * Recording context code.
  *
  * This code employs a separate encoding thread per recording context
  * to keep time spent in EMT as short as possible. Each configured VM display
@@ -174,7 +174,7 @@ int RecordingContext::threadNotify(void)
  * Creates a recording context.
  *
  * @returns IPRT status code.
- * @param   a_Settings          Capture settings to use for context creation.
+ * @param   a_Settings          Recording settings to use for context creation.
  */
 int RecordingContext::createInternal(const settings::RecordingSettings &a_Settings)
 {
@@ -222,6 +222,11 @@ int RecordingContext::createInternal(const settings::RecordingSettings &a_Settin
     return rc;
 }
 
+/**
+ * Starts a recording context by creating its worker thread.
+ *
+ * @returns IPRT status code.
+ */
 int RecordingContext::startInternal(void)
 {
     if (this->enmState == RECORDINGSTS_STARTED)
@@ -246,6 +251,11 @@ int RecordingContext::startInternal(void)
     return rc;
 }
 
+/**
+ * Stops a recording context by telling the worker thread to stop and finalizing its operation.
+ *
+ * @returns IPRT status code.
+ */
 int RecordingContext::stopInternal(void)
 {
     if (this->enmState != RECORDINGSTS_STARTED)
@@ -274,7 +284,7 @@ int RecordingContext::stopInternal(void)
 }
 
 /**
- * Destroys a recording context.
+ * Destroys a recording context, internal version.
  */
 int RecordingContext::destroyInternal(void)
 {
@@ -323,11 +333,22 @@ int RecordingContext::destroyInternal(void)
     return rc;
 }
 
+/**
+ * Returns a recording context's current settings.
+ *
+ * @returns The recording context's current settings.
+ */
 const settings::RecordingSettings &RecordingContext::GetConfig(void) const
 {
     return this->Settings;
 }
 
+/**
+ * Returns the recording stream for a specific screen.
+ *
+ * @returns Recording stream for a specific screen, or NULL if not found.
+ * @param   uScreen             Screen ID to retrieve recording stream for.
+ */
 RecordingStream *RecordingContext::getStreamInternal(unsigned uScreen) const
 {
     RecordingStream *pStream;
@@ -355,31 +376,62 @@ RecordingStream *RecordingContext::GetStream(unsigned uScreen) const
     return getStreamInternal(uScreen);
 }
 
+/**
+ * Returns the number of configured recording streams for a recording context.
+ *
+ * @returns Number of configured recording streams.
+ */
 size_t RecordingContext::GetStreamCount(void) const
 {
     return this->vecStreams.size();
 }
 
+/**
+ * Creates a new recording context.
+ *
+ * @returns IPRT status code.
+ * @param   a_Settings          Recording settings to use for creation.
+ *
+ */
 int RecordingContext::Create(const settings::RecordingSettings &a_Settings)
 {
     return createInternal(a_Settings);
 }
 
+/**
+ * Destroys a recording context.
+ */
 int RecordingContext::Destroy(void)
 {
     return destroyInternal();
 }
 
+/**
+ * Starts a recording context.
+ *
+ * @returns IPRT status code.
+ */
 int RecordingContext::Start(void)
 {
     return startInternal();
 }
 
+/**
+ * Stops a recording context.
+ */
 int RecordingContext::Stop(void)
 {
     return stopInternal();
 }
 
+/**
+ * Returns if a specific recoding feature is enabled for at least one of the attached
+ * recording streams or not.
+ *
+ * @returns \c true if at least one recording stream has this feature enabled, or \c false if
+ *          no recording stream has this feature enabled.
+ * @param   enmFeature          Recording feature to check for.
+ */
 bool RecordingContext::IsFeatureEnabled(RecordingFeature_T enmFeature) const
 {
     RecordingStreams::const_iterator itStream = this->vecStreams.begin();
@@ -553,9 +605,9 @@ int RecordingContext::SendAudioFrame(const void *pvData, size_t cbData, uint64_t
  * @param   uTimeStampMs       Time stamp (in ms).
  */
 int RecordingContext::SendVideoFrame(uint32_t uScreen, uint32_t x, uint32_t y,
-                                   uint32_t uPixelFormat, uint32_t uBPP, uint32_t uBytesPerLine,
-                                   uint32_t uSrcWidth, uint32_t uSrcHeight, uint8_t *puSrcData,
-                                   uint64_t uTimeStampMs)
+                                     uint32_t uPixelFormat, uint32_t uBPP, uint32_t uBytesPerLine,
+                                     uint32_t uSrcWidth, uint32_t uSrcHeight, uint8_t *puSrcData,
+                                     uint64_t uTimeStampMs)
 {
     AssertReturn(uSrcWidth,  VERR_INVALID_PARAMETER);
     AssertReturn(uSrcHeight, VERR_INVALID_PARAMETER);

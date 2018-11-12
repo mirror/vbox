@@ -181,6 +181,13 @@ int RecordingStream::open(const settings::RecordingScreenSettings &Settings)
     return rc;
 }
 
+/**
+ * Parses an options string to configure advanced / hidden / experimental features of a recording stream.
+ * Unknown values will be skipped.
+ *
+ * @returns IPRT status code.
+ * @param   strOptions          Options string to parse.
+ */
 int RecordingStream::parseOptionsString(const com::Utf8Str &strOptions)
 {
     size_t pos = 0;
@@ -244,13 +251,18 @@ int RecordingStream::parseOptionsString(const com::Utf8Str &strOptions)
     return VINF_SUCCESS;
 }
 
+/**
+ * Returns the recording stream's used configuration.
+ *
+ * @returns The recording stream's used configuration.
+ */
 const settings::RecordingScreenSettings &RecordingStream::GetConfig(void) const
 {
     return this->ScreenSettings;
 }
 
 /**
- * Checks if a specified limit for recording has been reached.
+ * Checks if a specified limit for a recording stream has been reached.
  *
  * @returns true if any limit has been reached.
  * @param   tsNowMs             Current time stamp (in ms).
@@ -288,6 +300,11 @@ bool RecordingStream::IsLimitReached(uint64_t tsNowMs) const
     return false;
 }
 
+/**
+ * Returns whether a recording stream is ready (e.g. enabled and active) or not.
+ *
+ * @returns \c true if ready, \c false if not.
+ */
 bool RecordingStream::IsReady(void) const
 {
     return this->fEnabled;
@@ -423,8 +440,22 @@ int RecordingStream::Process(RecordingBlockMap &mapBlocksCommon)
     return rc;
 }
 
+/**
+ * Sends a raw (e.g. not yet encoded) video frame to the recording stream.
+ *
+ * @returns IPRT status code.
+ * @param   x                   Upper left (X) coordinate where the video frame starts.
+ * @param   y                   Upper left (Y) coordinate where the video frame starts.
+ * @param   uPixelFormat        Pixel format of the video frame.
+ * @param   uBPP                Bits per pixel (BPP) of the video frame.
+ * @param   uBytesPerLine       Bytes per line  of the video frame.
+ * @param   uSrcWidth           Width (in pixels) of the video frame.
+ * @param   uSrcHeight          Height (in pixels) of the video frame.
+ * @param   puSrcData           Actual pixel data of the video frame.
+ * @param   uTimeStampMs        Timestamp (in ms) as PTS.
+ */
 int RecordingStream::SendVideoFrame(uint32_t x, uint32_t y, uint32_t uPixelFormat, uint32_t uBPP, uint32_t uBytesPerLine,
-                                  uint32_t uSrcWidth, uint32_t uSrcHeight, uint8_t *puSrcData, uint64_t uTimeStampMs)
+                                    uint32_t uSrcWidth, uint32_t uSrcHeight, uint8_t *puSrcData, uint64_t uTimeStampMs)
 {
     lock();
 
@@ -879,6 +910,11 @@ int RecordingStream::Uninit(void)
     return uninitInternal();
 }
 
+/**
+ * Uninitializes a recording stream, internal version.
+ *
+ * @returns IPRT status code.
+ */
 int RecordingStream::uninitInternal(void)
 {
     if (this->enmState != RECORDINGSTREAMSTATE_INITIALIZED)
@@ -904,7 +940,7 @@ int RecordingStream::uninitInternal(void)
 }
 
 /**
- * Uninitializes video recording for a certain recording stream.
+ * Uninitializes video recording for a recording stream.
  *
  * @returns IPRT status code.
  */
@@ -920,7 +956,7 @@ int RecordingStream::unitVideo(void)
 
 #ifdef VBOX_WITH_LIBVPX
 /**
- * Uninitializes the VPX codec for a certain recording stream.
+ * Uninitializes the VPX codec for a recording stream.
  *
  * @returns IPRT status code.
  */
@@ -938,7 +974,7 @@ int RecordingStream::uninitVideoVPX(void)
 #endif
 
 /**
- * Initializes the video recording for a certain recording stream.
+ * Initializes the video recording for a recording stream.
  *
  * @returns IPRT status code.
  */
@@ -970,7 +1006,7 @@ int RecordingStream::initVideo(void)
 
 #ifdef VBOX_WITH_LIBVPX
 /**
- * Initializes the VPX codec for a certain recording stream.
+ * Initializes the VPX codec for a recording stream.
  *
  * @returns IPRT status code.
  */
@@ -1026,6 +1062,11 @@ int RecordingStream::initVideoVPX(void)
 }
 #endif
 
+/**
+ * Initializes the audio part of a recording stream,
+ *
+ * @returns IPRT status code.
+ */
 int RecordingStream::initAudio(void)
 {
 #ifdef VBOX_WITH_AUDIO_RECORDING
