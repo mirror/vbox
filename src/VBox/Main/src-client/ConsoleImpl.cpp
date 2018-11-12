@@ -7032,9 +7032,6 @@ int Console::i_recordingStart(void)
             mDisplay->i_recordingScreenChanged(uScreen);
     }
 
-    if (RT_FAILURE(rc))
-        LogRel(("Recording: Failed to start video recording (%Rrc)\n", rc));
-
     LogFlowFuncLeaveRC(rc);
     return rc;
 }
@@ -7062,11 +7059,7 @@ int Console::i_recordingStop(void)
         ComAssertComRC(hrc);
         hrc = pRecordSettings->COMSETTER(Enabled)(false);
         ComAssertComRC(hrc);
-
-        LogRel(("Recording: Stopped\n"));
     }
-    else
-        LogRel(("Recording: Failed to stop video recording (%Rrc)\n", rc));
 
     LogFlowFuncLeaveRC(rc);
     return rc;
