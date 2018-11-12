@@ -51,7 +51,7 @@ DWORD g_VBoxDisplayOnly = 0;
 #define VBOXWDDM_MEMTAG 'MDBV'
 PVOID vboxWddmMemAlloc(IN SIZE_T cbSize)
 {
-    POOL_TYPE enmPoolType = (VBoxQueryWinVersion() >= WINVERSION_8) ? NonPagedPoolNx : NonPagedPool;
+    POOL_TYPE enmPoolType = (VBoxQueryWinVersion(NULL) >= WINVERSION_8) ? NonPagedPoolNx : NonPagedPool;
     return ExAllocatePoolWithTag(enmPoolType, cbSize, VBOXWDDM_MEMTAG);
 }
 
@@ -1289,7 +1289,7 @@ NTSTATUS DxgkDdiStartDevice(
 
                     Status = STATUS_SUCCESS;
 
-                    if (VBoxQueryWinVersion() >= WINVERSION_8)
+                    if (VBoxQueryWinVersion(NULL) >= WINVERSION_8)
                     {
                         DXGK_DISPLAY_INFORMATION DisplayInfo;
                         Status = pDevExt->u.primary.DxgkInterface.DxgkCbAcquirePostDisplayOwnership(pDevExt->u.primary.DxgkInterface.DeviceHandle,
@@ -2259,7 +2259,7 @@ NTSTATUS APIENTRY DxgkDdiQueryAdapterInfo(
                 /** @todo this correlates with pCaps->SchedulingCaps.MultiEngineAware */
                 pCaps->GpuEngineTopology.NbAsymetricProcessingNodes = VBOXWDDM_NUM_NODES;
 
-                if (VBoxQueryWinVersion() >= WINVERSION_8)
+                if (VBoxQueryWinVersion(NULL) >= WINVERSION_8)
                     pCaps->WDDMVersion = DXGKDDI_WDDMv1;
             }
             else
@@ -7504,7 +7504,7 @@ static NTSTATUS vboxWddmInitFullGraphicsDriver(IN PDRIVER_OBJECT pDriverObject, 
     DRIVER_INITIALIZATION_DATA DriverInitializationData = {'\0'};
 
     // Fill in the DriverInitializationData structure and call DxgkInitialize()
-    if (VBoxQueryWinVersion() >= WINVERSION_8)
+    if (VBoxQueryWinVersion(NULL) >= WINVERSION_8)
         DriverInitializationData.Version = DXGKDDI_INTERFACE_VERSION_WIN8;
     else
         DriverInitializationData.Version = DXGKDDI_INTERFACE_VERSION_VISTA_SP1;
@@ -7609,7 +7609,7 @@ DriverEntry(
 #endif
 
     LOGREL(("VBox WDDM Driver for Windows %s version %d.%d.%dr%d, %d bit; Built %s %s",
-            VBoxQueryWinVersion() >= WINVERSION_8 ? "8+" : "Vista and 7",
+            VBoxQueryWinVersion(NULL) >= WINVERSION_8 ? "8+" : "Vista and 7",
             VBOX_VERSION_MAJOR, VBOX_VERSION_MINOR, VBOX_VERSION_BUILD, VBOX_SVN_REV,
             (sizeof (void*) << 3), __DATE__, __TIME__));
 
@@ -7708,7 +7708,7 @@ DriverEntry(
             if (!f3DSupported)
             {
                 /* No 3D support by the host. */
-                if (VBoxQueryWinVersion() >= WINVERSION_8)
+                if (VBoxQueryWinVersion(NULL) >= WINVERSION_8)
                 {
                     /* Use display only driver for Win8+. */
                     g_VBoxDisplayOnly = 1;

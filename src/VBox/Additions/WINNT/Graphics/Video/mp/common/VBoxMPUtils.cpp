@@ -39,14 +39,20 @@ int g_bVBoxVDbgBreakFv = 0;
 #pragma alloc_text(PAGE, VBoxQueryPointerPos)
 
 /*Returns the windows version we're running on*/
-vboxWinVersion_t VBoxQueryWinVersion()
+vboxWinVersion_t VBoxQueryWinVersion(uint32_t *pbuild)
 {
-    ULONG major, minor, build;
+    ULONG major, minor;
+    static ULONG build = 0;
     BOOLEAN checkedBuild;
     static vboxWinVersion_t s_WinVersion = WINVERSION_UNKNOWN;
 
     if (s_WinVersion != WINVERSION_UNKNOWN)
+    {
+        if (pbuild)
+            *pbuild = build;
+
         return s_WinVersion;
+    }
 
     checkedBuild = PsGetVersion(&major, &minor, &build, NULL);
     LOG(("running on version %d.%d, build %d(checked=%d)", major, minor, build, (int)checkedBuild));
