@@ -127,6 +127,9 @@ typedef struct VBOXHGCMCMD
     /** Whether the command was cancelled by the guest. */
     bool                fCancelled;
 
+    /** Whether the command was restored from saved state. */
+    bool                fRestored;
+
     /** GC physical address of the guest request. */
     RTGCPHYS            GCPhys;
 
@@ -136,7 +139,8 @@ typedef struct VBOXHGCMCMD
     /** The type of the guest request. */
     VMMDevRequestType   enmRequestType;
 
-    union {
+    union
+    {
         struct
         {
             uint32_t            u32ClientID;
@@ -1062,13 +1066,14 @@ DECLCALLBACK(void) hgcmCompletedWorker(PPDMIHGCMPORT pInterface, int32_t result,
 
     if (result == VINF_HGCM_SAVE_STATE)
     {
-        /* If the completion routine was called because HGCM saves its state,
-         * then currently nothing to be done here. The pCmd stays in the list
-         * and will be saved later when the VMMDev state will be saved.
+        /* If the completion routine was called while the HGCM service saves its state,
+         * then currently nothing to be done here.  The pCmd stays in the list and will
+         * be saved later when the VMMDev state will be saved and re-submitted on load.
          *
-         * It it assumed that VMMDev saves state after the HGCM services,
-         * and, therefore, VBOXHGCMCMD structures are not removed by
-         * vmmdevHGCMSaveState from the list, while HGCM uses them.
+         * It it assumed that VMMDev saves state after the HGCM services (VMMDev driver
+         * attached by constructor before it registers its SSM state), and, therefore,
+         * VBOXHGCMCMD structures are not removed by vmmdevHGCMSaveState from the list,
+         * while HGCM uses them.
          */
         LogFlowFunc(("VINF_HGCM_SAVE_STATE for command %p\n", pCmd));
         return;
@@ -1215,6 +1220,15 @@ DECLCALLBACK(void) hgcmCompleted(PPDMIHGCMPORT pInterface, int32_t result, PVBOX
     int rc = VMR3ReqCallVoidNoWait(PDMDevHlpGetVM(pThis->pDevIns), VMCPUID_ANY,
                                    (PFNRT)hgcmCompletedWorker, 3, pInterface, result, pCmd);
     AssertRC(rc);
+}
+
+/**
+ * @interface_method_impl{PDMIHGCMPORT, pfnIsCmdRestored}
+ */
+DECLCALLBACK(bool) hgcmIsCmdRestored(PPDMIHGCMPORT pInterface, PVBOXHGCMCMD pCmd)
+{
+    RT_NOREF(pInterface);
+    return pCmd && pCmd->fRestored;
 }
 
 /** Save information about pending HGCM requests from pThis->listHGCMCmd.
@@ -1604,7 +1618,7 @@ static int vmmdevHGCMRestoreConnect(PVMMDEV pThis, uint32_t u32SSMVersion, const
         pCmd->fCancelled = pLoadedCmd->fCancelled;
     else
         pCmd->fCancelled = false;
-
+    pCmd->fRestored      = true;
     pCmd->enmRequestType = enmRequestType;
 
     vmmdevHGCMConnectFetch(pReq, pCmd);
@@ -1648,7 +1662,7 @@ static int vmmdevHGCMRestoreDisconnect(PVMMDEV pThis, uint32_t u32SSMVersion, co
         pCmd->fCancelled = pLoadedCmd->fCancelled;
     else
         pCmd->fCancelled = false;
-
+    pCmd->fRestored      = true;
     pCmd->enmRequestType = enmRequestType;
 
     vmmdevHGCMDisconnectFetch(pReq, pCmd);
@@ -1694,7 +1708,7 @@ static int vmmdevHGCMRestoreCall(PVMMDEV pThis, uint32_t u32SSMVersion, const VB
         pCmd->fCancelled = pLoadedCmd->fCancelled;
     else
         pCmd->fCancelled = false;
-
+    pCmd->fRestored      = true;
     pCmd->enmRequestType = enmRequestType;
 
     rc = vmmdevHGCMCallFetchGuestParms(pThis, pCmd, pReq, cbReq, enmRequestType, cbHGCMParmStruct);

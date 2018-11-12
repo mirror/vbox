@@ -2070,14 +2070,21 @@ typedef struct PDMIHGCMPORT
      * @param   pInterface          Pointer to this interface.
      * @param   rc                  The return code (VBox error code).
      * @param   pCmd                A pointer that identifies the completed command.
-     *
-     * @returns VBox status code
      */
     DECLR3CALLBACKMEMBER(void, pfnCompleted,(PPDMIHGCMPORT pInterface, int32_t rc, PVBOXHGCMCMD pCmd));
 
+    /**
+     * Checks if @a pCmd was restored & resubmitted from saved state.
+     *
+     * @returns true if restored, false if not.
+     * @param   pInterface          Pointer to this interface.
+     * @param   pCmd                The command we're checking on.
+     */
+    DECLR3CALLBACKMEMBER(bool, pfnIsCmdRestored,(PPDMIHGCMPORT pInterface, PVBOXHGCMCMD pCmd));
+
 } PDMIHGCMPORT;
 /** PDMIHGCMPORT interface ID. */
-# define PDMIHGCMPORT_IID                       "e00a0cbf-b75a-45c3-87f4-41cddbc5ae0b"
+# define PDMIHGCMPORT_IID                       "10ca89d3-18ef-44d3-535e-ca46532e3caa"
 
 
 /** Pointer to a HGCM service location structure. */

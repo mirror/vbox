@@ -131,6 +131,7 @@ class HGCMService
 
         static DECLCALLBACK(void) svcHlpCallComplete(VBOXHGCMCALLHANDLE callHandle, int32_t rc);
         static DECLCALLBACK(void) svcHlpDisconnectClient(void *pvInstance, uint32_t u32ClientId);
+        static DECLCALLBACK(bool) svcHlpIsCallRestored(VBOXHGCMCALLHANDLE callHandle);
 
     public:
 
@@ -754,6 +755,9 @@ DECLCALLBACK(void) hgcmServiceThread(HGCMTHREADHANDLE ThreadHandle, void *pvUser
     }
 }
 
+/**
+ * @interface_method_impl{VBOXHGCMSVCHELPERS,pfnCallComplete}
+ */
 /* static */ DECLCALLBACK(void) HGCMService::svcHlpCallComplete(VBOXHGCMCALLHANDLE callHandle, int32_t rc)
 {
    HGCMMsgCore *pMsgCore = (HGCMMsgCore *)callHandle;
@@ -772,6 +776,9 @@ DECLCALLBACK(void) hgcmServiceThread(HGCMTHREADHANDLE ThreadHandle, void *pvUser
    }
 }
 
+/**
+ * @interface_method_impl{VBOXHGCMSVCHELPERS,pfnDisconnectClient}
+ */
 /* static */ DECLCALLBACK(void) HGCMService::svcHlpDisconnectClient(void *pvInstance, uint32_t u32ClientId)
 {
      HGCMService *pService = static_cast <HGCMService *> (pvInstance);
@@ -780,6 +787,23 @@ DECLCALLBACK(void) hgcmServiceThread(HGCMTHREADHANDLE ThreadHandle, void *pvUser
      {
          pService->DisconnectClient(u32ClientId, true);
      }
+}
+
+/**
+ * @interface_method_impl{VBOXHGCMSVCHELPERS,pfnIsCallRestored}
+ */
+/* static */ DECLCALLBACK(bool) HGCMService::svcHlpIsCallRestored(VBOXHGCMCALLHANDLE callHandle)
+{
+    HGCMMsgHeader *pMsgHdr = (HGCMMsgHeader *)(callHandle);
+    AssertPtrReturn(pMsgHdr, false);
+
+    PVBOXHGCMCMD pCmd = pMsgHdr->pCmd;
+    AssertPtrReturn(pCmd, false);
+
+    PPDMIHGCMPORT pHgcmPort = pMsgHdr->pHGCMPort;
+    AssertPtrReturn(pHgcmPort, false);
+
+    return pHgcmPort->pfnIsCmdRestored(pHgcmPort, pCmd);
 }
 
 static DECLCALLBACK(void) hgcmMsgCompletionCallback(int32_t result, HGCMMsgCore *pMsgCore)
@@ -835,6 +859,7 @@ int HGCMService::instanceCreate(const char *pszServiceLibrary, const char *pszSe
             m_svcHelpers.pfnCallComplete     = svcHlpCallComplete;
             m_svcHelpers.pvInstance          = this;
             m_svcHelpers.pfnDisconnectClient = svcHlpDisconnectClient;
+            m_svcHelpers.pfnIsCallRestored   = svcHlpIsCallRestored;
 
             /* Execute the load request on the service thread. */
             HGCMMSGHANDLE hMsg;

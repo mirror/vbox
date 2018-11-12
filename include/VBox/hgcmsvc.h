@@ -81,6 +81,15 @@ typedef struct VBOXHGCMSVCHELPERS
 
     /** The service disconnects the client. */
     DECLR3CALLBACKMEMBER(void, pfnDisconnectClient, (void *pvInstance, uint32_t u32ClientID));
+
+    /**
+     * Check if the @a callHandle is for a call restored and re-submitted from saved state.
+     *
+     * @returns true if restored, false if not.
+     * @param   callHandle      The call we're checking up on.
+     */
+    DECLR3CALLBACKMEMBER(bool, pfnIsCallRestored, (VBOXHGCMCALLHANDLE callHandle));
+
 } VBOXHGCMSVCHELPERS;
 
 typedef VBOXHGCMSVCHELPERS *PVBOXHGCMSVCHELPERS;
@@ -391,7 +400,8 @@ typedef struct VBOXHGCMSVCFNTABLE
     /** Service entry point.
      *  Return code is passed to pfnCallComplete callback.
      */
-    DECLR3CALLBACKMEMBER(void, pfnCall, (void *pvService, VBOXHGCMCALLHANDLE callHandle, uint32_t u32ClientID, void *pvClient, uint32_t function, uint32_t cParms, VBOXHGCMSVCPARM paParms[]));
+    DECLR3CALLBACKMEMBER(void, pfnCall, (void *pvService, VBOXHGCMCALLHANDLE callHandle, uint32_t u32ClientID, void *pvClient,
+                                         uint32_t function, uint32_t cParms, VBOXHGCMSVCPARM paParms[]));
 
     /** Host Service entry point meant for privileged features invisible to the guest.
      *  Return code is passed to pfnCallComplete callback.
