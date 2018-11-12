@@ -24,6 +24,9 @@
 #include <VBox/vmm/apic.h>
 #include <VBox/vmm/hm.h>
 #include <VBox/vmm/hm_vmx.h>
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
+# include <VBox/vmm/iem.h>
+#endif
 #include <VBox/vmm/tm.h>
 #include <VBox/vmm/gim.h>
 #include "CPUMInternal.h"
@@ -1270,6 +1273,23 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Ia32TscDeadline(PVMCPU pVCpu, uint32
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32X2ApicN(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
     RT_NOREF_PV(pRange);
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
+    if (   CPUMIsGuestInVmxNonRootMode(&pVCpu->cpum.s.Guest)
+        && CPUMIsGuestVmxProcCtls2Set(pVCpu, &pVCpu->cpum.s.Guest, VMX_PROC_CTLS2_VIRT_X2APIC_MODE))
+    {
+        /** @todo NSTVMX: perhaps IEMExecVmxVirtApicAccessMsr should be moved to
+         *        HMVMXAll.cpp? */
+        VBOXSTRICTRC rcStrict = IEMExecVmxVirtApicAccessMsr(pVCpu, idMsr, puValue, false /* fWrite */);
+        Assert(rcStrict == VINF_SUCCESS || rcStrict == VERR_OUT_OF_RANGE || rcStrict == VINF_VMX_INTERCEPT_NOT_ACTIVE);
+        if (rcStrict != VINF_VMX_INTERCEPT_NOT_ACTIVE)
+        {
+            if (rcStrict == VERR_OUT_OF_RANGE)
+                return VERR_CPUM_RAISE_GP_0;
+            Assert(rcStrict == VINF_SUCCESS);
+            return VINF_SUCCESS;
+        }
+    }
+#endif
     return APICReadMsr(pVCpu, idMsr, puValue);
 }
 
@@ -1278,6 +1298,23 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32X2ApicN(PVMCPU pVCpu, uint32_t i
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Ia32X2ApicN(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
     RT_NOREF_PV(pRange); RT_NOREF_PV(uRawValue);
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
+    if (   CPUMIsGuestInVmxNonRootMode(&pVCpu->cpum.s.Guest)
+        && CPUMIsGuestVmxProcCtls2Set(pVCpu, &pVCpu->cpum.s.Guest, VMX_PROC_CTLS2_VIRT_X2APIC_MODE))
+    {
+        /** @todo NSTVMX: perhaps IEMExecVmxVirtApicAccessMsr should be moved to
+         *        HMVMXAll.cpp? */
+        VBOXSTRICTRC rcStrict = IEMExecVmxVirtApicAccessMsr(pVCpu, idMsr, &uValue, true /* fWrite */);
+        Assert(rcStrict == VINF_SUCCESS || rcStrict == VERR_OUT_OF_RANGE || rcStrict == VINF_VMX_INTERCEPT_NOT_ACTIVE);
+        if (rcStrict != VINF_VMX_INTERCEPT_NOT_ACTIVE)
+        {
+            if (rcStrict == VERR_OUT_OF_RANGE)
+                return VERR_CPUM_RAISE_GP_0;
+            Assert(rcStrict == VINF_SUCCESS);
+            return VINF_SUCCESS;
+        }
+    }
+#endif
     return APICWriteMsr(pVCpu, idMsr, uValue);
 }
 

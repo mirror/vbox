@@ -3975,6 +3975,23 @@ DECLINLINE(uint32_t) iemVmxVirtApicReadRaw32(PVMCPU pVCpu, uint16_t offReg)
 
 
 /**
+ * Reads a 64-bit register from the virtual-APIC page at the given offset.
+ *
+ * @returns The register from the virtual-APIC page.
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   offReg      The offset of the register being read.
+ */
+DECLINLINE(uint64_t) iemVmxVirtApicReadRaw64(PVMCPU pVCpu, uint16_t offReg)
+{
+    Assert(offReg <= VMX_V_VIRT_APIC_SIZE - sizeof(uint32_t));
+    uint8_t  const *pbVirtApic = (const uint8_t *)pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pvVirtApicPage);
+    Assert(pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pvVirtApicPage));
+    uint64_t const uReg = *(const uint64_t *)(pbVirtApic + offReg);
+    return uReg;
+}
+
+
+/**
  * Writes a 32-bit register to the virtual-APIC page at the given offset.
  *
  * @param   pVCpu       The cross context virtual CPU structure.
@@ -3987,6 +4004,22 @@ DECLINLINE(void) iemVmxVirtApicWriteRaw32(PVMCPU pVCpu, uint16_t offReg, uint32_
     uint8_t *pbVirtApic = (uint8_t *)pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pvVirtApicPage);
     Assert(pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pvVirtApicPage));
     *(uint32_t *)(pbVirtApic + offReg) = uReg;
+}
+
+
+/**
+ * Writes a 64-bit register to the virtual-APIC page at the given offset.
+ *
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   offReg      The offset of the register being written.
+ * @param   uReg        The register value to write.
+ */
+DECLINLINE(void) iemVmxVirtApicWriteRaw64(PVMCPU pVCpu, uint16_t offReg, uint64_t uReg)
+{
+    Assert(offReg <= VMX_V_VIRT_APIC_SIZE - sizeof(uint32_t));
+    uint8_t *pbVirtApic = (uint8_t *)pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pvVirtApicPage);
+    Assert(pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pvVirtApicPage));
+    *(uint64_t *)(pbVirtApic + offReg) = uReg;
 }
 
 
@@ -4229,7 +4262,8 @@ IEM_STATIC VBOXSTRICTRC iemVmxVirtApicAccessMem(PVMCPU pVCpu, uint16_t offAccess
     {
         /*
          * Record the currently updated APIC offset, as we need this later for figuring
-         * out what to do as well as the exit qualification when causing an APIC-write VM-exit.
+         * out whether to perform TPR, EOI or self-IPI virtualization as well as well
+         * as for supplying the exit qualification when causing an APIC-write VM-exit.
          */
         pVCpu->cpum.GstCtx.hwvirt.vmx.offVirtApicWrite = offAccess;
 
@@ -4272,6 +4306,123 @@ IEM_STATIC VBOXSTRICTRC iemVmxVirtApicAccessMem(PVMCPU pVCpu, uint16_t offAccess
     }
 
     return VINF_VMX_MODIFIES_BEHAVIOR;
+}
+
+
+/**
+ * Virtualizes an MSR-based APIC read access.
+ *
+ * @returns VBox strict status code.
+ * @retval  VINF_VMX_MODIFIES_BEHAVIOR if the MSR read was virtualized.
+ * @retval  VINF_VMX_INTERCEPT_NOT_ACTIVE if the MSR read access must be
+ *          handled by the x2APIC device.
+ * @retval  VERR_OUT_RANGE if the MSR read was supposed to be virtualized but was
+ *          not within the range of valid MSRs, caller must raise \#GP(0).
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   idMsr       The x2APIC MSR being read.
+ * @param   pu64Value   Where to store the read x2APIC MSR value (only valid when
+ *                      VINF_VMX_MODIFIES_BEHAVIOR is returned).
+ */
+IEM_STATIC VBOXSTRICTRC iemVmxVirtApicAccessMsrRead(PVMCPU pVCpu, uint32_t idMsr, uint64_t *pu64Value)
+{
+    PCVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
+    Assert(pVmcs);
+    Assert(pVmcs->u32ProcCtls & VMX_PROC_CTLS2_VIRT_X2APIC_MODE);
+    Assert(pu64Value);
+
+    if (pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_APIC_REG_VIRT)
+    {
+        /*
+         * Intel has different ideas in the x2APIC spec. vs the VT-x spec. as to
+         * what the end of the valid x2APIC MSR range is. Hence the use of different
+         * macros here.
+         *
+         * See Intel spec. 10.12.1.2 "x2APIC Register Address Space".
+         * See Intel spec. 29.5 "Virtualizing MSR-based APIC Accesses".
+         */
+        if (   idMsr >= VMX_V_VIRT_APIC_MSR_START
+            && idMsr <= VMX_V_VIRT_APIC_MSR_END)
+        {
+            uint16_t const offReg   = (idMsr & 0xff) << 4;
+            uint64_t const u64Value = iemVmxVirtApicReadRaw64(pVCpu, offReg);
+            *pu64Value = u64Value;
+            return VINF_VMX_MODIFIES_BEHAVIOR;
+        }
+        return VERR_OUT_OF_RANGE;
+    }
+
+    if (idMsr == MSR_IA32_X2APIC_TPR)
+    {
+        uint16_t const offReg   = (idMsr & 0xff) << 4;
+        uint64_t const u64Value = iemVmxVirtApicReadRaw64(pVCpu, offReg);
+        *pu64Value = u64Value;
+        return VINF_VMX_MODIFIES_BEHAVIOR;
+    }
+
+    return VINF_VMX_INTERCEPT_NOT_ACTIVE;
+}
+
+
+/**
+ * Virtualizes an MSR-based APIC write access.
+ *
+ * @returns VBox strict status code.
+ * @retval  VINF_VMX_MODIFIES_BEHAVIOR if the MSR write was virtualized.
+ * @retval  VERR_OUT_RANGE if the MSR read was supposed to be virtualized but was
+ *          not within the range of valid MSRs, caller must raise \#GP(0).
+ *
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   idMsr       The x2APIC MSR being written.
+ * @param   u64Value    The value of the x2APIC MSR being written.
+ */
+IEM_STATIC VBOXSTRICTRC iemVmxVirtApicAccessMsrWrite(PVMCPU pVCpu, uint32_t idMsr, uint64_t u64Value)
+{
+    PCVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
+    Assert(pVmcs);
+
+    /*
+     * Check if the access is to be virtualized.
+     * See Intel spec. 29.5 "Virtualizing MSR-based APIC Accesses".
+     */
+    if (   idMsr == MSR_IA32_X2APIC_TPR
+        || (   (pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_VIRT_INT_DELIVERY)
+            && (   idMsr == MSR_IA32_X2APIC_EOI
+                || idMsr == MSR_IA32_X2APIC_SELF_IPI)))
+    {
+        /* Validate the MSR write depending on the register. */
+        switch (idMsr)
+        {
+            case MSR_IA32_X2APIC_TPR:
+            case MSR_IA32_X2APIC_SELF_IPI:
+            {
+                if (u64Value & UINT64_C(0xffffffffffffff00))
+                    return VERR_OUT_OF_RANGE;
+                break;
+            }
+            case MSR_IA32_X2APIC_EOI:
+            {
+                if (u64Value != 0)
+                    return VERR_OUT_OF_RANGE;
+                break;
+            }
+        }
+
+        /* Write the MSR to the virtual-APIC page. */
+        uint16_t const offReg = (idMsr & 0xff) << 4;
+        iemVmxVirtApicWriteRaw64(pVCpu, offReg, u64Value);
+
+        /*
+         * Record the currently updated APIC offset, as we need this later for figuring
+         * out whether to perform TPR, EOI or self-IPI virtualization as well as well
+         * as for supplying the exit qualification when causing an APIC-write VM-exit.
+         */
+        pVCpu->cpum.GstCtx.hwvirt.vmx.offVirtApicWrite = offReg;
+        VMCPU_FF_SET(pVCpu, VMCPU_FF_VMX_UPDATE_VAPIC);
+
+        return VINF_VMX_MODIFIES_BEHAVIOR;
+    }
+
+    return VINF_VMX_INTERCEPT_NOT_ACTIVE;
 }
 
 

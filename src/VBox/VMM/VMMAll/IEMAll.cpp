@@ -988,6 +988,8 @@ IEM_STATIC VBOXSTRICTRC     iemVmxVmexitInitIpi(PVMCPU pVCpu);
 IEM_STATIC VBOXSTRICTRC     iemVmxVmexitIntWindow(PVMCPU pVCpu);
 IEM_STATIC VBOXSTRICTRC     iemVmxVirtApicAccessMem(PVMCPU pVCpu, uint16_t offAccess, size_t cbAccess, void *pvData, uint32_t fAccess);
 IEM_STATIC VBOXSTRICTRC     iemVmxVmexitApicAccess(PVMCPU pVCpu, uint16_t offAccess, uint32_t fAccess);
+IEM_STATIC VBOXSTRICTRC     iemVmxVirtApicAccessMsrRead(PVMCPU pVCpu, uint32_t idMsr, uint64_t *pu64Value);
+IEM_STATIC VBOXSTRICTRC     iemVmxVirtApicAccessMsrWrite(PVMCPU pVCpu, uint32_t idMsr, uint64_t u64Value);
 #endif
 
 #ifdef VBOX_WITH_NESTED_HWVIRT_SVM
@@ -15693,6 +15695,38 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecSvmVmexit(PVMCPU pVCpu, uint64_t uExitCode, ui
 #endif /* VBOX_WITH_NESTED_HWVIRT_SVM */
 
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
+
+/**
+ * Interface for HM and EM to virtualize x2APIC MSR accesses.
+ *
+ * @returns Strict VBox status code.
+ * @retval  VINF_SUCCESS if the MSR access was virtualized.
+ * @retval  VINF_VMX_INTERCEPT_NOT_ACTIVE if the MSR access must be handled by
+ *          the x2APIC device.
+ * @retval  VERR_OUT_RANGE if the caller must raise \#GP(0).
+ * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
+ * @param   idMsr       The MSR being read.
+ * @param   pu64Value   Pointer to the value being written or where to store the
+ *                      value being read.
+ * @param   fWrite      Whether this is an MSR write or read access.
+ * @thread  EMT(pVCpu)
+ */
+VMM_INT_DECL(VBOXSTRICTRC) IEMExecVmxVirtApicAccessMsr(PVMCPU pVCpu, uint32_t idMsr, uint64_t *pu64Value, bool fWrite)
+{
+    IEM_CTX_ASSERT(pVCpu, IEM_CPUMCTX_EXTRN_VMX_VMEXIT_MASK);
+    Assert(pu64Value);
+
+    VBOXSTRICTRC rcStrict;
+    if (!fWrite)
+        rcStrict = iemVmxVirtApicAccessMsrRead(pVCpu, idMsr, pu64Value);
+    else
+        rcStrict = iemVmxVirtApicAccessMsrWrite(pVCpu, idMsr, *pu64Value);
+    if (pVCpu->iem.s.cActiveMappings)
+        iemMemRollback(pVCpu);
+    return iemExecStatusCodeFiddling(pVCpu, rcStrict);
+
+}
+
 
 /**
  * Interface for HM and EM to emulate VM-exit due to expiry of the preemption timer.

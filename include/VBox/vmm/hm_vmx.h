@@ -3187,6 +3187,11 @@ AssertCompile(!(VMX_V_VMCS_REVISION_ID & RT_BIT(31)));
 /** The size of the Virtual-APIC page (in pages). */
 #define VMX_V_VIRT_APIC_PAGES                                   1
 
+/** Virtual X2APIC MSR range start. */
+#define VMX_V_VIRT_APIC_MSR_START                               0x800
+/** Virtual X2APIC MSR range end. */
+#define VMX_V_VIRT_APIC_MSR_END                                 0x8ff
+
 /** The size of the VMREAD/VMWRITE bitmap (in bytes). */
 #define VMX_V_VMREAD_VMWRITE_BITMAP_SIZE                        X86_PAGE_4K_SIZE
 /** The size of the VMREAD/VMWRITE-bitmap (in pages). */
