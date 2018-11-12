@@ -1772,16 +1772,17 @@ snapshot-puel:
 
 snapshot-ose:
 ifndef VBOX_OSE
-	$(QUIET)$(RM) -Rf $(wildcard $(PATH_OUT)/vbox-ose-snap-*) $(PATH_OUT)/VirtualBox-$(VBOX_VERSION_STRING).tar.bz2
+	$(QUIET)$(RM) -Rf $(wildcard $(PATH_OUT)/vbox-ose-snap-*) $(wildcard $(PATH_OUT)/VirtualBox-*.tar.bz2)
 	$(call MSG_L1,Making OSE snapshot at $(PATH_OUT)/vbox-ose-snap-$(VBOX_VERSION_STRING))
 	$(PATH_DEVTOOLS)/bin/ose-snapshot.sh $(PATH_OUT)/vbox-ose-snap-$(VBOX_VERSION_STRING)
-	$(call MSG_L1,Creating OSE tarball $(PATH_OUT)/VirtualBox-$(VBOX_VERSION_STRING).tar.bz2)
+	$(call MSG_L1,Creating OSE tarball $(PATH_OUT)/VirtualBox-$(VBOX_VERSION_STRING)-r$(VBOX_SVN_REV).tar.bz2)
 	$(REDIRECT) -C $(PATH_OUT)/vbox-ose-snap-$(VBOX_VERSION_STRING) -- \
-		$(PATH_DEVTOOLS)/bin/ose-tarball.sh $(PATH_OUT)/VirtualBox-$(VBOX_VERSION_STRING).tar.bz2
+		$(PATH_DEVTOOLS)/bin/ose-tarball.sh $(PATH_OUT)/VirtualBox-$(VBOX_VERSION_STRING)-r$(VBOX_SVN_REV).tar.bz2
 else
-	$(call MSG_L1,Creating OSE tarball $(PATH_OUT)/VirtualBox-$(VBOX_VERSION_STRING).tar.bz2)
+	$(QUIET)$(RM) $(wildcard $(PATH_OUT)/VirtualBox-*.tar.bz2)
+	$(call MSG_L1,Creating OSE tarball $(PATH_OUT)/VirtualBox-$(VBOX_VERSION_STRING)-r$(VBOX_SVN_REV).tar.bz2)
 	$(REDIRECT) -C $(PATH_ROOT) -- \
-		$(PATH_DEVTOOLS)/bin/ose-tarball.sh $(PATH_OUT)/VirtualBox-$(VBOX_VERSION_STRING).tar.bz2
+		$(PATH_DEVTOOLS)/bin/ose-tarball.sh $(PATH_OUT)/VirtualBox-$(VBOX_VERSION_STRING)-r$(VBOX_SVN_REV).tar.bz2
 endif
 
 
