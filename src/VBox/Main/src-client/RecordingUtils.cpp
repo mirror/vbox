@@ -30,7 +30,7 @@
 /**
  * Convert an image to YUV420p format.
  *
- * @return true on success, false on failure.
+ * @return \c true on success, \c false on failure.
  * @param  aDstBuf              The destination image buffer.
  * @param  aDstWidth            Width (in pixel) of destination buffer.
  * @param  aDstHeight           Height (in pixel) of destination buffer.
@@ -39,8 +39,8 @@
  * @param  aSrcHeight           Height (in pixel) of source buffer.
  */
 template <class T>
-inline bool videoRecColorConvWriteYUV420p(uint8_t *aDstBuf, unsigned aDstWidth, unsigned aDstHeight,
-                                          uint8_t *aSrcBuf, unsigned aSrcWidth, unsigned aSrcHeight)
+inline bool recordingUtilsColorConvWriteYUV420p(uint8_t *aDstBuf, unsigned aDstWidth, unsigned aDstHeight,
+                                                uint8_t *aSrcBuf, unsigned aSrcWidth, unsigned aSrcHeight)
 {
     RT_NOREF(aDstWidth, aDstHeight);
 
@@ -102,17 +102,18 @@ inline bool videoRecColorConvWriteYUV420p(uint8_t *aDstBuf, unsigned aDstWidth, 
 }
 
 /**
- * Convert an image to RGB24 format
- * @returns true on success, false on failure
- * @param aWidth    width of image
- * @param aHeight   height of image
- * @param aDestBuf  an allocated memory buffer large enough to hold the
- *                  destination image (i.e. width * height * 12bits)
- * @param aSrcBuf   the source image as an array of bytes
+ * Convert an image to RGB24 format.
+ *
+ * @returns true on success, false on failure.
+ * @param aWidth    Width of image.
+ * @param aHeight   Height of image.
+ * @param aDestBuf  An allocated memory buffer large enough to hold the
+ *                  destination image (i.e. width * height * 12bits).
+ * @param aSrcBuf   The source image as an array of bytes.
  */
 template <class T>
-inline bool videoRecColorConvWriteRGB24(unsigned aWidth, unsigned aHeight,
-                                        uint8_t *aDestBuf, uint8_t *aSrcBuf)
+inline bool RecordingUtilsColorConvWriteRGB24(unsigned aWidth, unsigned aHeight,
+                                              uint8_t *aDestBuf, uint8_t *aSrcBuf)
 {
     enum { PIX_SIZE = 3 };
     bool rc = true;
@@ -146,25 +147,25 @@ inline bool videoRecColorConvWriteRGB24(unsigned aWidth, unsigned aHeight,
  * @param   uSrcWidth           Width (X, in pixels) of source buffer.
  * @param   uSrcHeight          Height (Y, in pixels) of source buffer.
  */
-int recordingRGBToYUV(uint32_t uPixelFormat,
-                     uint8_t *paDst, uint32_t uDstWidth, uint32_t uDstHeight,
-                     uint8_t *paSrc, uint32_t uSrcWidth, uint32_t uSrcHeight)
+int RecordingUtilsRGBToYUV(uint32_t uPixelFormat,
+                           uint8_t *paDst, uint32_t uDstWidth, uint32_t uDstHeight,
+                           uint8_t *paSrc, uint32_t uSrcWidth, uint32_t uSrcHeight)
 {
     switch (uPixelFormat)
     {
         case RECORDINGPIXELFMT_RGB32:
-            if (!videoRecColorConvWriteYUV420p<ColorConvBGRA32Iter>(paDst, uDstWidth, uDstHeight,
-                                                            paSrc, uSrcWidth, uSrcHeight))
+            if (!recordingUtilsColorConvWriteYUV420p<ColorConvBGRA32Iter>(paDst, uDstWidth, uDstHeight,
+                                                                          paSrc, uSrcWidth, uSrcHeight))
                 return VERR_INVALID_PARAMETER;
             break;
         case RECORDINGPIXELFMT_RGB24:
-            if (!videoRecColorConvWriteYUV420p<ColorConvBGR24Iter>(paDst, uDstWidth, uDstHeight,
-                                                           paSrc, uSrcWidth, uSrcHeight))
+            if (!recordingUtilsColorConvWriteYUV420p<ColorConvBGR24Iter>(paDst, uDstWidth, uDstHeight,
+                                                                         paSrc, uSrcWidth, uSrcHeight))
                 return VERR_INVALID_PARAMETER;
             break;
         case RECORDINGPIXELFMT_RGB565:
-            if (!videoRecColorConvWriteYUV420p<ColorConvBGR565Iter>(paDst, uDstWidth, uDstHeight,
-                                                            paSrc, uSrcWidth, uSrcHeight))
+            if (!recordingUtilsColorConvWriteYUV420p<ColorConvBGR565Iter>(paDst, uDstWidth, uDstHeight,
+                                                                          paSrc, uSrcWidth, uSrcHeight))
                 return VERR_INVALID_PARAMETER;
             break;
         default:

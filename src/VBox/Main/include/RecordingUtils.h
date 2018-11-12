@@ -197,9 +197,9 @@ private:
     uint8_t *mBuf;
 };
 
-int recordingRGBToYUV(uint32_t uPixelFormat,
-                      uint8_t *paDst, uint32_t uDstWidth, uint32_t uDstHeight,
-                      uint8_t *paSrc, uint32_t uSrcWidth, uint32_t uSrcHeight);
+int RecordingUtilsRGBToYUV(uint32_t uPixelFormat,
+                           uint8_t *paDst, uint32_t uDstWidth, uint32_t uDstHeight,
+                           uint8_t *paSrc, uint32_t uSrcWidth, uint32_t uSrcHeight);
 
 #endif /* ____H_RECORDING_UTILS */
 
