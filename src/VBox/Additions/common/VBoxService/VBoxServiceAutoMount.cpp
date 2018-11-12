@@ -59,6 +59,9 @@
 #  include <sys/mntent.h>
 #  include <sys/mnttab.h>
 #  include <sys/vfs.h>
+RT_C_DECLS_BEGIN /* Only needed for old code.*/
+#  include "../../linux/sharedfolders/vbsfmount.h"
+RT_C_DECLS_END
 # elif defined(RT_OS_LINUX)
 #  include <mntent.h>
 #  include <paths.h>
@@ -999,8 +1002,8 @@ static int vbsvcAutomounterPopulateTable(PVBSVCAUTOMOUNTERTABLE pMountTable)
             if (strcmp(Entry.mnt_fstype, "vboxsf") == 0)
             {
                 /* Look for the dummy automounter option. */
-                if (   Entry.mnt_opts != NULL
-                    && strstr(Entry.mnt_opts, g_szTag) != NULL)
+                if (   Entry.mnt_mntopts != NULL
+                    && strstr(Entry.mnt_mntopts, g_szTag) != NULL)
                 {
                     rc = vbsvcAutomounterAddEntry(pMountTable, Entry.mnt_special, Entry.mnt_mountp);
                     if (RT_FAILURE(rc))
@@ -1522,16 +1525,17 @@ static int vbsvcAutomounterMountIt(PVBSVCAUTOMOUNTERENTRY pEntry)
     }
 
     rc = mount(pEntry->pszName, pEntry->pszActualMountPoint, MS_OPTIONSTR, "vboxfs",
-               NULL /*dataptr*/, 0 /* datalen */, szOptBuf, cchOpts + 1);
+               NULL /*dataptr*/, 0 /* datalen */, szOpts, cchOpts + 1);
     if (rc == 0)
     {
-        VGSvcVerbose(0, "vbsvcAutomounterMountIt: Shared folder '%s' was mounted to '%s'\n", pszShareName, pszMountPoint);
+        VGSvcVerbose(0, "vbsvcAutomounterMountIt: Successfully mounted '%s' on '%s'\n",
+                     pEntry->pszName, pEntry->pszActualMountPoint);
         return VINF_SUCCESS;
     }
 
     rc = errno;
-    VGSvcError("vbsvcAutomounterMountIt: mount failed for '%s' at '%s': %s (%d)\n",
-               pEntry->pszName, pEntry->pszActualMountPoint, strerror(rc), rc);
+    VGSvcError("vbsvcAutomounterMountIt: mount failed for '%s' on '%s' (szOpts=%s): %s (%d)\n",
+               pEntry->pszName, pEntry->pszActualMountPoint, szOpts, strerror(rc), rc);
     return VERR_OPEN_FAILED;
 
 # else
