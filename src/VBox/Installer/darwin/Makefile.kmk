@@ -74,7 +74,8 @@ darwin-docs_SOURCES = \
 #
 # The packing.
 #
-PACKING += $(VBOX_PATH_DIST)/VirtualBox-$(VBOX_VERSION_MAJOR).$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD)-r$(VBOX_SVN_REV).dmg
+$(VBOX_VERSION_STRING)-r$(VBOX_SVN_REV)
+PACKING += $(VBOX_PATH_DIST)/VirtualBox-$(VBOX_VERSION_STRING)-r$(VBOX_SVN_REV).dmg
 #OTHER_CLEAN = TODO
 
 
@@ -108,7 +109,7 @@ VBOX_ADD_MANUAL_fr_FR := $(filter $(VBOX_PATH_DIST)/VirtualBox.app/Contents/MacO
 #
 # The disk image.
 #
-$(VBOX_PATH_DIST)/VirtualBox-$(VBOX_VERSION_MAJOR).$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD)-r$(VBOX_SVN_REV).dmg: \
+$(VBOX_PATH_DIST)/VirtualBox-$(VBOX_VERSION_STRING)-r$(VBOX_SVN_REV).dmg: \
 		$(VBOX_PATH_PACK_TMP)/DiskImage/VirtualBox.pkg \
 		$(VBOX_BRAND_DARWIN_DISKIMAGE_BG) \
 		$(VBOX_BRAND_DARWIN_DISKIMAGE_DS_STORE) \
@@ -930,4 +931,4 @@ VBoxKEXTs.pkg:        $(VBOX_PATH_PACK_TMP)/Packages/VBoxKEXTs.pkg
 VirtualBoxCLI.pkg:    $(VBOX_PATH_PACK_TMP)/Packages/VirtualBoxCLI.pkg
 VirtualBox.pkg:       $(VBOX_PATH_PACK_TMP)/Packages/VirtualBox.pkg
 VirtualBox.mpkg:      $(VBOX_PATH_PACK_TMP)/DiskImage/VirtualBox.pkg
-VirtualBox.dmg:       $(VBOX_PATH_DIST)/VirtualBox-$(VBOX_VERSION_MAJOR).$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD)-r$(VBOX_SVN_REV).dmg
+VirtualBox.dmg:       $(VBOX_PATH_DIST)/VirtualBox-$(VBOX_VERSION_STRING)-r$(VBOX_SVN_REV).dmg
