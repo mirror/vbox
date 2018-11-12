@@ -74,7 +74,6 @@ darwin-docs_SOURCES = \
 #
 # The packing.
 #
-$(VBOX_VERSION_STRING)-r$(VBOX_SVN_REV)
 PACKING += $(VBOX_PATH_DIST)/VirtualBox-$(VBOX_VERSION_STRING)-r$(VBOX_SVN_REV).dmg
 #OTHER_CLEAN = TODO
 
