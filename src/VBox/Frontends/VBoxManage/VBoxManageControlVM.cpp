@@ -1934,7 +1934,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
             }
             else if (!strcmp(a->argv[2], "filename"))
             {
-                if (a->argc != 3)
+                if (a->argc != 4)
                 {
                     errorSyntax(USAGE_CONTROLVM, "Incorrect number of parameters");
                     rc = E_FAIL;
@@ -1942,7 +1942,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
                 }
 
                 for (size_t i = 0; i < saRecordingScreenScreens.size(); ++i)
-                    CHECK_ERROR_BREAK(saRecordingScreenScreens[i], COMSETTER(FileName)(Bstr(a->argv[2]).raw()));
+                    CHECK_ERROR_BREAK(saRecordingScreenScreens[i], COMSETTER(FileName)(Bstr(a->argv[3]).raw()));
             }
             else if (   !strcmp(a->argv[2], "videores")
                      || !strcmp(a->argv[2], "videoresolution"))
@@ -1954,27 +1954,28 @@ RTEXITCODE handleControlVM(HandlerArg *a)
                     break;
                 }
 
-                uint32_t uVal;
-                int vrc = RTStrToUInt32Ex(a->argv[3], NULL, 0, &uVal);
+                uint32_t uWidth;
+                int vrc = RTStrToUInt32Ex(a->argv[3], NULL, 0, &uWidth);
                 if (RT_FAILURE(vrc))
                 {
-                    errorArgument("Error parsing width '%s'", a->argv[3]);
+                    errorArgument("Error parsing video width '%s'", a->argv[3]);
                     rc = E_FAIL;
                     break;
                 }
 
-                vrc = RTStrToUInt32Ex(a->argv[4], NULL, 0, &uVal);
+                uint32_t uHeight;
+                vrc = RTStrToUInt32Ex(a->argv[4], NULL, 0, &uHeight);
                 if (RT_FAILURE(vrc))
                 {
-                    errorArgument("Error parsing height '%s'", a->argv[4]);
+                    errorArgument("Error parsing video height '%s'", a->argv[4]);
                     rc = E_FAIL;
                     break;
                 }
 
                 for (size_t i = 0; i < saRecordingScreenScreens.size(); ++i)
                 {
-                    CHECK_ERROR_BREAK(saRecordingScreenScreens[i], COMSETTER(VideoWidth)(uVal));
-                    CHECK_ERROR_BREAK(saRecordingScreenScreens[i], COMSETTER(VideoHeight)(uVal));
+                    CHECK_ERROR_BREAK(saRecordingScreenScreens[i], COMSETTER(VideoWidth)(uWidth));
+                    CHECK_ERROR_BREAK(saRecordingScreenScreens[i], COMSETTER(VideoHeight)(uHeight));
                 }
             }
             else if (!strcmp(a->argv[2], "videorate"))
@@ -1986,17 +1987,17 @@ RTEXITCODE handleControlVM(HandlerArg *a)
                     break;
                 }
 
-                uint32_t uVal;
-                int vrc = RTStrToUInt32Ex(a->argv[3], NULL, 0, &uVal);
+                uint32_t uRate;
+                int vrc = RTStrToUInt32Ex(a->argv[3], NULL, 0, &uRate);
                 if (RT_FAILURE(vrc))
                 {
-                    errorArgument("Error parsing rate '%s'", a->argv[3]);
+                    errorArgument("Error parsing video rate '%s'", a->argv[3]);
                     rc = E_FAIL;
                     break;
                 }
 
                 for (size_t i = 0; i < saRecordingScreenScreens.size(); ++i)
-                    CHECK_ERROR_BREAK(saRecordingScreenScreens[i], COMSETTER(VideoRate)(uVal));
+                    CHECK_ERROR_BREAK(saRecordingScreenScreens[i], COMSETTER(VideoRate)(uRate));
             }
             else if (!strcmp(a->argv[2], "videofps"))
             {
@@ -2007,17 +2008,17 @@ RTEXITCODE handleControlVM(HandlerArg *a)
                     break;
                 }
 
-                uint32_t uVal;
-                int vrc = RTStrToUInt32Ex(a->argv[3], NULL, 0, &uVal);
+                uint32_t uFPS;
+                int vrc = RTStrToUInt32Ex(a->argv[3], NULL, 0, &uFPS);
                 if (RT_FAILURE(vrc))
                 {
-                    errorArgument("Error parsing FPS '%s'", a->argv[3]);
+                    errorArgument("Error parsing video FPS '%s'", a->argv[3]);
                     rc = E_FAIL;
                     break;
                 }
 
                 for (size_t i = 0; i < saRecordingScreenScreens.size(); ++i)
-                    CHECK_ERROR_BREAK(saRecordingScreenScreens[i], COMSETTER(VideoFPS)(uVal));
+                    CHECK_ERROR_BREAK(saRecordingScreenScreens[i], COMSETTER(VideoFPS)(uFPS));
             }
             else if (!strcmp(a->argv[2], "maxtime"))
             {
@@ -2028,8 +2029,8 @@ RTEXITCODE handleControlVM(HandlerArg *a)
                     break;
                 }
 
-                uint32_t uVal;
-                int vrc = RTStrToUInt32Ex(a->argv[3], NULL, 0, &uVal);
+                uint32_t uMaxTime;
+                int vrc = RTStrToUInt32Ex(a->argv[3], NULL, 0, &uMaxTime);
                 if (RT_FAILURE(vrc))
                 {
                     errorArgument("Error parsing maximum time '%s'", a->argv[3]);
@@ -2038,7 +2039,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
                 }
 
                 for (size_t i = 0; i < saRecordingScreenScreens.size(); ++i)
-                    CHECK_ERROR_BREAK(saRecordingScreenScreens[i], COMSETTER(MaxTime)(uVal));
+                    CHECK_ERROR_BREAK(saRecordingScreenScreens[i], COMSETTER(MaxTime)(uMaxTime));
             }
             else if (!strcmp(a->argv[2], "maxfilesize"))
             {
@@ -2049,8 +2050,8 @@ RTEXITCODE handleControlVM(HandlerArg *a)
                     break;
                 }
 
-                uint32_t uVal;
-                int vrc = RTStrToUInt32Ex(a->argv[3], NULL, 0, &uVal);
+                uint32_t uMaxFileSize;
+                int vrc = RTStrToUInt32Ex(a->argv[3], NULL, 0, &uMaxFileSize);
                 if (RT_FAILURE(vrc))
                 {
                     errorArgument("Error parsing maximum file size '%s'", a->argv[3]);
@@ -2059,7 +2060,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
                 }
 
                 for (size_t i = 0; i < saRecordingScreenScreens.size(); ++i)
-                    CHECK_ERROR_BREAK(saRecordingScreenScreens[i], COMSETTER(MaxFileSize)(uVal));
+                    CHECK_ERROR_BREAK(saRecordingScreenScreens[i], COMSETTER(MaxFileSize)(uMaxFileSize));
             }
             else if (!strcmp(a->argv[2], "opts"))
             {
