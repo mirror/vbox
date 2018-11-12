@@ -483,6 +483,7 @@ int vbsfMappingsQuery(PSHFLCLIENTDATA pClient, bool fOnlyAutoMounts, PSHFLMAPPIN
      *        Not amused by this. */
     *pcMappings = idx;
 
+    RT_NOREF_PV(pClient);
     LogFlow(("vbsfMappingsQuery: returns VINF_SUCCESS (idx=%u, cMaxMappings=%u)\n", idx, cMaxMappings));
     return VINF_SUCCESS;
 }
