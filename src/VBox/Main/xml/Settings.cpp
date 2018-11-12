@@ -2380,6 +2380,9 @@ RecordingScreenSettings::~RecordingScreenSettings()
 
 }
 
+/**
+ * Applies the default settings.
+ */
 void RecordingScreenSettings::applyDefaults(void)
 {
     /*
@@ -2403,7 +2406,7 @@ void RecordingScreenSettings::applyDefaults(void)
     Audio.uHz           = 22050;
 
     featureMap[RecordingFeature_Video] = true;
-    featureMap[RecordingFeature_Audio] = false;
+    featureMap[RecordingFeature_Audio] = false; /** @todo Audio is not yet enabled by default. */
 }
 
 /**
@@ -2428,6 +2431,12 @@ bool RecordingScreenSettings::areDefaultSettings(void) const
            && Audio.uHz           == 22050;
 }
 
+/**
+ * Returns if a certain recording feature is enabled or not.
+ *
+ * @returns \c true if the feature is enabled, \c false if not.
+ * @param   enmFeature          Feature to check.
+ */
 bool RecordingScreenSettings::isFeatureEnabled(RecordingFeature_T enmFeature) const
 {
     RecordingFeatureMap::const_iterator itFeature = featureMap.find(enmFeature);

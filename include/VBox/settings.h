@@ -497,12 +497,20 @@ struct RecordingScreenSettings
 
     bool operator==(const RecordingScreenSettings &d) const;
 
+    /** Whether to record this screen or not. */
     bool                   fEnabled;   // requires settings version 1.14 (VirtualBox 4.3)
-    RecordingDestination_T enmDest;    // new since VirtualBox 6.0.
-    RecordingFeatureMap    featureMap; // new since VirtualBox 6.0.
+    /** Destination to record to. */
+    RecordingDestination_T enmDest;    /** @todo Implement with next settings version bump. */
+    /** Which features are enable or not. */
+    RecordingFeatureMap    featureMap; /** @todo Implement with next settings version bump. */
+    /** Maximum time (in s) to record. If set to 0, no time limit is set. */
     uint32_t               ulMaxTimeS; // requires settings version 1.14 (VirtualBox 4.3)
+    /** Options string for hidden / advanced / experimental features. */
     com::Utf8Str           strOptions; // new since VirtualBox 5.2.
 
+    /**
+     * Structure holding settings for audio recording.
+     */
     struct Audio
     {
         Audio()
@@ -512,15 +520,18 @@ struct RecordingScreenSettings
             , cChannels(2) { }
 
         /** The audio codec type to use. */
-        RecordingAudioCodec_T enmAudioCodec; // new since VirtualBox 6.0.
+        RecordingAudioCodec_T enmAudioCodec; /** @todo Implement with next settings version bump. */
         /** Hz rate. */
-        uint16_t              uHz;           // new since VirtualBox 6.0.
+        uint16_t              uHz;           /** @todo Implement with next settings version bump. */
         /** Bits per sample. */
-        uint8_t               cBits;         // new since VirtualBox 6.0.
+        uint8_t               cBits;         /** @todo Implement with next settings version bump. */
         /** Number of audio channels. */
-        uint8_t               cChannels;     // new since VirtualBox 6.0.
+        uint8_t               cChannels;     /** @todo Implement with next settings version bump. */
     } Audio;
 
+    /**
+     * Structure holding settings for video recording.
+     */
     struct Video
     {
         Video()
@@ -530,24 +541,36 @@ struct RecordingScreenSettings
             , ulRate(512)
             , ulFPS(25) { }
 
-        RecordingVideoCodec_T enmCodec;  // new since VirtualBox 6.0.
+        /** The codec to use. */
+        RecordingVideoCodec_T enmCodec;  /** @todo Implement with next settings version bump. */
+        /** Target frame width in pixels (X). */
         uint32_t              ulWidth;   // requires settings version 1.14 (VirtualBox 4.3)
+        /** Target frame height in pixels (Y). */
         uint32_t              ulHeight;  // requires settings version 1.14 (VirtualBox 4.3)
+        /** Encoding rate. */
         uint32_t              ulRate;    // requires settings version 1.14 (VirtualBox 4.3)
+        /** Frames per second (FPS). */
         uint32_t              ulFPS;     // requires settings version 1.14 (VirtualBox 4.3)
     } Video;
 
+    /**
+     * Structure holding settings if the destination is a file.
+     */
     struct File
     {
         File()
             : ulMaxSizeMB(0) { }
 
+        /** Maximum size (in MB) the file is allowed to have.
+         *  When reaching the limit, recording will stop. */
         uint32_t     ulMaxSizeMB; // requires settings version 1.14 (VirtualBox 4.3)
+        /** Absolute file name path to use for recording. */
         com::Utf8Str strName;     // requires settings version 1.14 (VirtualBox 4.3)
     } File;
 };
 
-/** Map for keeping settings per virtual screen. */
+/** Map for keeping settings per virtual screen.
+ *  The key specifies the screen ID. */
 typedef std::map<uint32_t, RecordingScreenSettings> RecordingScreenMap;
 
 /**
@@ -565,7 +588,10 @@ struct RecordingSettings
 
     bool operator==(const RecordingSettings &d) const;
 
+    /** Whether recording as a whole is enabled or disabled. */
     bool               fEnabled;       // requires settings version 1.14 (VirtualBox 4.3)
+    /** Map of handled recording screen settings.
+     *  The key specifies the screen ID. */
     RecordingScreenMap mapScreens;
 };
 
