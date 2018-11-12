@@ -4872,7 +4872,7 @@
 
     <attribute name="maxTime" type="unsigned long" default="0">
       <desc>
-        This setting defines the maximum amount of time in milliseconds
+        This setting defines the maximum amount of time in seconds
         to record. Recording will stop as soon as the defined time
         interval has elapsed. If this value is zero, recording will not be
         limited by time. This setting cannot be changed while recording is
