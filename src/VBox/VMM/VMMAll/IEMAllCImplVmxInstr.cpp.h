@@ -6630,7 +6630,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmlaunchVmresume(PVMCPU pVCpu, uint8_t cbInstr, VM
                                  * to lowest as follows:
                                  *
                                  * 1.  Event injection.
-                                 * 2.  TPR below threshold.
+                                 * 2.  TPR below threshold / APIC-write.
                                  * 3.  SMI.
                                  * 4.  INIT.
                                  * 5.  MTF exit.
