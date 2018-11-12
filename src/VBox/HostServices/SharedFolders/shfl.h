@@ -42,6 +42,10 @@
 /** Client both supports and wants to use symlinks. */
 #define SHFL_CF_SYMLINKS         (0x00000008)
 
+/** The call to SHFL_FN_WAIT_FOR_MAPPINGS_CHANGES will return immediately
+ *  because of a SHFL_FN_CANCEL_MAPPINGS_CHANGES_WAITS call. */
+#define SHFL_CF_CANCEL_NEXT_WAIT (0x00000010)
+
 /** @} */
 
 typedef struct _SHFLCLIENTDATA

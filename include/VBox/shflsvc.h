@@ -76,9 +76,12 @@
 /** @name Shared Folders service functions. (guest)
  * @{
  */
-/** Query mappings changes. */
+/** Query mappings changes.
+ * @note Description is currently misleading, it will always return all
+ *       current mappings with SHFL_MS_NEW status.  Only modification is the
+ *       SHFL_MF_AUTOMOUNT flag that causes filtering out non-auto mounts. */
 #define SHFL_FN_QUERY_MAPPINGS      (1)
-/** Query mappings changes. */
+/** Query the name of a map. */
 #define SHFL_FN_QUERY_MAP_NAME      (2)
 /** Open/create object. */
 #define SHFL_FN_CREATE              (3)
@@ -117,6 +120,16 @@
 /** Ask host to show symlinks
  * @since VBox 4.0  */
 #define SHFL_FN_SET_SYMLINKS        (20)
+/** Query information about a map.
+ * @since VBox 6.0  */
+#define SHFL_FN_QUERY_MAP_INFO      (21)
+/** Wait for changes to the mappings.
+ * @since VBox 6.0  */
+#define SHFL_FN_WAIT_FOR_MAPPINGS_CHANGES       (22)
+/** Cancel all waits for changes to the mappings for the calling client.
+ * The wait calls will return VERR_CANCELLED.
+ * @since VBox 6.0  */
+#define SHFL_FN_CANCEL_MAPPINGS_CHANGES_WAITS   (23)
 /** @} */
 
 
@@ -239,17 +252,30 @@ DECLINLINE(PSHFLSTRING) ShflStringInitBuffer(void *pvBuffer, uint32_t u32Size)
 /**
  * Helper for copying one string into another.
  *
- * @returns pDst
- * @param   pDst        The destination string. Assumed to be the same size as
- *                      the source.
+ * @returns IPRT status code.
+ * @retval  VERR_BUFFER_OVERFLOW and pDst->u16Length set to source length.
+ * @param   pDst        The destination string.
  * @param   pSrc        The source string.
+ * @param   cbTerm      The size of the string terminator.
  */
-DECLINLINE(PSHFLSTRING) ShflStringCopy(PSHFLSTRING pDst, PCSHFLSTRING pSrc)
+DECLINLINE(int) ShflStringCopy(PSHFLSTRING pDst, PCSHFLSTRING pSrc, size_t cbTerm)
 {
+    int rc = VINF_SUCCESS;
+    if (pDst->u16Size >= pSrc->u16Length + cbTerm)
+    {
+        memcpy(&pDst->String, &pSrc->String, pSrc->u16Length);
+        switch (cbTerm)
+        {
+            default:
+            case 2: pDst->String.ach[pSrc->u16Length + 1] = '\0'; RT_FALL_THROUGH();
+            case 1: pDst->String.ach[pSrc->u16Length + 0] = '\0'; break;
+            case 0: break;
+        }
+    }
+    else
+        rc = VERR_BUFFER_OVERFLOW;
     pDst->u16Length = pSrc->u16Length;
-    pDst->u16Size   = pSrc->u16Size;
-    memcpy(&pDst->String, &pSrc->String, pSrc->u16Size);
-    return pDst;
+    return rc;
 }
 
 #ifdef IN_RING3
@@ -264,7 +290,11 @@ DECLINLINE(PSHFLSTRING) ShflStringDup(PCSHFLSTRING pSrc)
 {
     PSHFLSTRING pDst = (PSHFLSTRING)RTMemAlloc(SHFLSTRING_HEADER_SIZE + pSrc->u16Size);
     if (pDst)
-        return ShflStringCopy(pDst, pSrc);
+    {
+        pDst->u16Length = pSrc->u16Length;
+        pDst->u16Size   = pSrc->u16Size;
+        memcpy(&pDst->String, &pSrc->String, pSrc->u16Size);
+    }
     return pDst;
 }
 
@@ -354,6 +384,82 @@ DECLINLINE(PSHFLSTRING) ShflStringDupUtf8AsUtf16(const char *pszSrc)
     }
     AssertMsgFailed(("rc=%Rrc cwcConversion=%#x\n", rc, cwcConversion));
     return NULL;
+}
+
+/**
+ * Copies a UTF-8 string to a buffer as UTF-16.
+ *
+ * @returns IPRT status code.
+ * @param   pDst        The destination buffer.
+ * @param   pszSrc      The source string.
+ * @param   cchSrc      The source string length, or RTSTR_MAX.
+ */
+DECLINLINE(int) ShflStringCopyUtf8AsUtf16(PSHFLSTRING pDst, const char *pszSrc, size_t cchSrc)
+{
+    int rc;
+    size_t cwcDst = 0;
+    if (pDst->u16Size >= sizeof(RTUTF16))
+    {
+        PRTUTF16 pwszDst = pDst->String.utf16;
+        rc = RTStrToUtf16Ex(pszSrc, cchSrc, &pwszDst, pDst->u16Size / sizeof(RTUTF16), &cwcDst);
+    }
+    else
+    {
+        RTStrCalcUtf16LenEx(pszSrc, cchSrc, &cwcDst);
+        rc = VERR_BUFFER_OVERFLOW;
+    }
+    pDst->u16Length = (uint16_t)(cwcDst * sizeof(RTUTF16));
+    return rc != VERR_BUFFER_OVERFLOW || cwcDst < UINT16_MAX / sizeof(RTUTF16) ? rc : VERR_TOO_MUCH_DATA;
+}
+
+/**
+ * Copies a UTF-8 string buffer to another buffer as UTF-16
+ *
+ * @returns IPRT status code.
+ * @param   pDst        The destination buffer (UTF-16).
+ * @param   pSrc        The source buffer (UTF-8).
+ */
+DECLINLINE(int) ShflStringCopyUtf8BufAsUtf16(PSHFLSTRING pDst, PCSHFLSTRING pSrc)
+{
+    return ShflStringCopyUtf8AsUtf16(pDst, pSrc->String.ach, pSrc->u16Length);
+}
+
+/**
+ * Copies a UTF-16 string to a buffer as UTF-8
+ *
+ * @returns IPRT status code.
+ * @param   pDst        The destination buffer.
+ * @param   pwszSrc     The source string.
+ * @param   cwcSrc      The source string length, or RTSTR_MAX.
+ */
+DECLINLINE(int) ShflStringCopyUtf16AsUtf8(PSHFLSTRING pDst, PCRTUTF16 pwszSrc, size_t cwcSrc)
+{
+    int rc;
+    size_t cchDst = 0;
+    if (pDst->u16Size > 0)
+    {
+        char *pszDst = pDst->String.ach;
+        rc = RTUtf16ToUtf8Ex(pwszSrc, cwcSrc, &pszDst, pDst->u16Size, &cchDst);
+    }
+    else
+    {
+        RTUtf16CalcUtf8LenEx(pwszSrc, cwcSrc, &cchDst);
+        rc = VERR_BUFFER_OVERFLOW;
+    }
+    pDst->u16Length = (uint16_t)cchDst;
+    return rc != VERR_BUFFER_OVERFLOW || cchDst < UINT16_MAX ? rc : VERR_TOO_MUCH_DATA;
+}
+
+/**
+ * Copies a UTF-16 string buffer to another buffer as UTF-8
+ *
+ * @returns IPRT status code.
+ * @param   pDst        The destination buffer (UTF-8).
+ * @param   pSrc        The source buffer (UTF-16).
+ */
+DECLINLINE(int) ShflStringCopyUtf16BufAsUtf8(PSHFLSTRING pDst, PCSHFLSTRING pSrc)
+{
+    return ShflStringCopyUtf16AsUtf8(pDst, pSrc->String.utf16, pSrc->u16Length / sizeof(RTUTF16));
 }
 
 #endif /* IN_RING3 */
@@ -801,7 +907,8 @@ typedef SHFLCREATEPARMS *PSHFLCREATEPARMS;
 
 typedef struct _SHFLMAPPING
 {
-    /** Mapping status. */
+    /** Mapping status.
+     * @note Currently always set to SHFL_MS_NEW.  */
     uint32_t u32Status;
     /** Root handle. */
     SHFLROOT root;
@@ -1556,6 +1663,76 @@ typedef struct _VBoxSFSymlink
 #define SHFL_CPARMS_SYMLINK  (4)
 /** @} */
 
+
+/** @name SHFL_FN_QUERY_MAP_INFO
+ * @{
+ */
+/** Query flag: Guest prefers drive letters as mount points. */
+#define SHFL_MIQF_DRIVE_LETTER      RT_BIT_64(0)
+/** Query flag: Guest prefers paths as mount points. */
+#define SHFL_MIQF_PATH              RT_BIT_64(1)
+
+/** Set if writable. */
+#define SHFL_MIF_WRITABLE           RT_BIT_64(0)
+/** Indicates that the mapping should be auto-mounted. */
+#define SHFL_MIF_AUTO_MOUNT         RT_BIT_64(1)
+/** Set if host is case insensitive. */
+#define SHFL_MIF_HOST_ICASE         RT_BIT_64(2)
+/** Set if guest is case insensitive. */
+#define SHFL_MIF_GUEST_ICASE        RT_BIT_64(3)
+/** Symbolic link creation is allowed. */
+#define SHFL_MIF_SYMLINK_CREATION   RT_BIT_64(4)
+
+/** Parameters structure. */
+typedef struct VBoxSFQueryMapInfo
+{
+    /** Common header. */
+    VBGLIOCHGCMCALL callInfo;
+    /** 32-bit, in: SHFLROOT - root handle of the mapping to query. */
+    HGCMFunctionParameter root;
+    /** pointer, in/out: SHFLSTRING buffer for the name. */
+    HGCMFunctionParameter name;
+    /** pointer, in/out: SHFLSTRING buffer for the auto mount point. */
+    HGCMFunctionParameter mountPoint;
+    /** 64-bit, in: SHFL_MIQF_XXX; out: SHFL_MIF_XXX. */
+    HGCMFunctionParameter flags;
+    /** 32-bit, out: Root ID version number - root handle reuse guard. */
+    HGCMFunctionParameter rootIdVersion;
+} VBoxSFQueryMapInfo;
+/** Number of parameters */
+#define SHFL_CPARMS_QUERY_MAP_INFO (5)
+/** @} */
+
+
+/** @name SHFL_FN_WAIT_FOR_MAPPINGS_CHANGES
+ *
+ * Returns VINF_SUCCESS on change and VINF_TRY_AGAIN when restored from saved
+ * state.  If the guest makes too many calls (max 64) VERR_OUT_OF_RESOURCES will
+ * be returned.
+ *
+ * @{
+ */
+/** Parameters structure. */
+typedef struct VBoxSFWaitForMappingsChanges
+{
+    /** Common header. */
+    VBGLIOCHGCMCALL callInfo;
+    /** 32-bit, in/out: The mappings configuration version.
+     * On input the client sets it to the last config it knows about, on return
+     * it holds the current version.  */
+    HGCMFunctionParameter version;
+} VBoxSFWaitForMappingsChanges;
+/** Number of parameters */
+#define SHFL_CPARMS_WAIT_FOR_MAPPINGS_CHANGES       (1)
+/** @} */
+
+
+/** @name SHFL_FN_CANCEL_MAPPINGS_CHANGES_WAITS
+ * @{
+ */
+/** Number of parameters */
+#define SHFL_CPARMS_CANCEL_MAPPINGS_CHANGES_WAITS   (0)
+/** @} */
 
 
 /** @name SHFL_FN_ADD_MAPPING

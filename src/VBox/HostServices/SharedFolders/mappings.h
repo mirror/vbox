@@ -37,6 +37,7 @@ typedef struct
                                              Any guest operation on such a folder fails! */
     bool        fPlaceholder;           /**< Mapping does not exist in the VM settings but the guest
                                              still has. fMissing is always true for this mapping. */
+    bool        fLoadedRootId;          /**< Set if vbsfMappingLoaded has found this mapping already. */
 } MAPPING;
 /** Pointer to a MAPPING structure. */
 typedef MAPPING *PMAPPING;
@@ -49,22 +50,27 @@ int vbsfMappingsAdd(const char *pszFolderName, PSHFLSTRING pMapName, bool fWrita
                     bool fAutoMount, PSHFLSTRING pAutoMountPoint, bool fCreateSymlinks, bool fMissing, bool fPlaceholder);
 int vbsfMappingsRemove(PSHFLSTRING pMapName);
 
-int vbsfMappingsQuery(PSHFLCLIENTDATA pClient, PSHFLMAPPING pMappings, uint32_t *pcMappings);
+int vbsfMappingsQuery(PSHFLCLIENTDATA pClient, bool fOnlyAutoMounts, PSHFLMAPPING pMappings, uint32_t *pcMappings);
 int vbsfMappingsQueryName(PSHFLCLIENTDATA pClient, SHFLROOT root, SHFLSTRING *pString);
 int vbsfMappingsQueryWritable(PSHFLCLIENTDATA pClient, SHFLROOT root, bool *fWritable);
 int vbsfMappingsQueryAutoMount(PSHFLCLIENTDATA pClient, SHFLROOT root, bool *fAutoMount);
 int vbsfMappingsQuerySymlinksCreate(PSHFLCLIENTDATA pClient, SHFLROOT root, bool *fSymlinksCreate);
+int vbsfMappingsQueryInfo(PSHFLCLIENTDATA pClient, SHFLROOT root, PSHFLSTRING pNameBuf, PSHFLSTRING pMntPtBuf,
+                          uint64_t *pfFlags, uint32_t *puVersion);
 
 int vbsfMapFolder(PSHFLCLIENTDATA pClient, PSHFLSTRING pszMapName, RTUTF16 delimiter,
                   bool fCaseSensitive, SHFLROOT *pRoot);
 int vbsfUnmapFolder(PSHFLCLIENTDATA pClient, SHFLROOT root);
+
+int vbsfMappingsWaitForChanges(PSHFLCLIENTDATA pClient, VBOXHGCMCALLHANDLE hCall, PVBOXHGCMSVCPARM pParm, bool fRestored);
+int vbsfMappingsCancelChangesWaits(PSHFLCLIENTDATA pClient);
 
 const char* vbsfMappingsQueryHostRoot(SHFLROOT root);
 int vbsfMappingsQueryHostRootEx(SHFLROOT hRoot, const char **ppszRoot, uint32_t *pcbRootLen);
 bool vbsfIsGuestMappingCaseSensitive(SHFLROOT root);
 bool vbsfIsHostMappingCaseSensitive(SHFLROOT root);
 
-int vbsfMappingLoaded(const PMAPPING pLoadedMapping, SHFLROOT root);
+int vbsfMappingLoaded(MAPPING const *pLoadedMapping, SHFLROOT root);
 PMAPPING vbsfMappingGetByRoot(SHFLROOT root);
 
 #endif /* !___MAPPINGS_H */

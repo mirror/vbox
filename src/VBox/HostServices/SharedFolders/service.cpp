@@ -25,6 +25,7 @@
 #include <iprt/alloc.h>
 #include <iprt/string.h>
 #include <iprt/assert.h>
+#include <VBox/AssertGuest.h>
 #include <VBox/vmm/ssm.h>
 #include <VBox/vmm/pdmifs.h>
 
@@ -236,7 +237,7 @@ static DECLCALLBACK(int) svcLoadState(void *, uint32_t u32ClientID, void *pvClie
 
                 rc = SSMR3GetMem(pSSM, pFolderName, cb);
                 AssertRCReturn(rc, rc);
-                AssertReturn(pFolderName->u16Length < cb && pFolderName->u16Size < pFolderName->u16Length,
+                AssertReturn(pFolderName->u16Size < cb && pFolderName->u16Length < pFolderName->u16Size,
                              SSMR3SetLoadError(pSSM, VERR_SSM_DATA_UNIT_FORMAT_CHANGED, RT_SRC_POS,
                                                "Bad folder name string: %#x/%#x cb=%#x\n",
                                                pFolderName->u16Size, pFolderName->u16Length, cb));
@@ -266,7 +267,7 @@ static DECLCALLBACK(int) svcLoadState(void *, uint32_t u32ClientID, void *pvClie
 
             rc = SSMR3GetMem(pSSM, pMapName, cb);
             AssertRCReturn(rc, rc);
-            AssertReturn(pMapName->u16Length < cb && pMapName->u16Size < pMapName->u16Length,
+            AssertReturn(pMapName->u16Size < cb && pMapName->u16Length < pMapName->u16Size,
                          SSMR3SetLoadError(pSSM, VERR_SSM_DATA_UNIT_FORMAT_CHANGED, RT_SRC_POS,
                                            "Bad map name string: %#x/%#x cb=%#x\n",
                                            pMapName->u16Size, pMapName->u16Length, cb));
@@ -292,7 +293,7 @@ static DECLCALLBACK(int) svcLoadState(void *, uint32_t u32ClientID, void *pvClie
 
                 rc = SSMR3GetMem(pSSM, pAutoMountPoint, cb);
                 AssertRCReturn(rc, rc);
-                AssertReturn(pAutoMountPoint->u16Length < cb && pAutoMountPoint->u16Size < pAutoMountPoint->u16Length,
+                AssertReturn(pAutoMountPoint->u16Size < cb && pAutoMountPoint->u16Length < pAutoMountPoint->u16Size,
                              SSMR3SetLoadError(pSSM, VERR_SSM_DATA_UNIT_FORMAT_CHANGED, RT_SRC_POS,
                                                "Bad auto mount point string: %#x/%#x cb=%#x\n",
                                                pAutoMountPoint->u16Size, pAutoMountPoint->u16Length, cb));
@@ -330,7 +331,8 @@ static DECLCALLBACK(int) svcLoadState(void *, uint32_t u32ClientID, void *pvClie
     return VINF_SUCCESS;
 }
 
-static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32_t u32ClientID, void *pvClient, uint32_t u32Function, uint32_t cParms, VBOXHGCMSVCPARM paParms[])
+static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32_t u32ClientID,
+                                   void *pvClient, uint32_t u32Function, uint32_t cParms, VBOXHGCMSVCPARM paParms[])
 {
     RT_NOREF1(u32ClientID);
     int rc = VINF_SUCCESS;
@@ -387,10 +389,13 @@ static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32
                     /* Execute the function. */
                     if (fu32Flags & SHFL_MF_UTF8)
                         pClient->fu32Flags |= SHFL_CF_UTF8;
-                    if (fu32Flags & SHFL_MF_AUTOMOUNT)
-                        pClient->fu32Flags |= SHFL_MF_AUTOMOUNT;
+                    /// @todo r=bird: Someone please explain this amusing code (r63916):
+                    //if (fu32Flags & SHFL_MF_AUTOMOUNT)
+                    //    pClient->fu32Flags |= SHFL_MF_AUTOMOUNT;
+                    //
+                    //rc = vbsfMappingsQuery(pClient, pMappings, &cMappings);
 
-                    rc = vbsfMappingsQuery(pClient, pMappings, &cMappings);
+                    rc = vbsfMappingsQuery(pClient, RT_BOOL(fu32Flags & SHFL_MF_AUTOMOUNT), pMappings, &cMappings);
                     if (RT_SUCCESS(rc))
                     {
                         /* Report that there are more mappings to get if
@@ -1291,6 +1296,58 @@ static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32
         {
             pClient->fu32Flags |= SHFL_CF_SYMLINKS;
             rc = VINF_SUCCESS;
+            break;
+        }
+
+        case SHFL_FN_QUERY_MAP_INFO:
+        {
+            Log(("SharedFolders host service: svnCall: SHFL_FN_QUERY_MAP_INFO\n"));
+
+            /* Validate input: */
+            rc = VERR_INVALID_PARAMETER;
+            ASSERT_GUEST_BREAK(cParms == SHFL_CPARMS_QUERY_MAP_INFO);
+            ASSERT_GUEST_BREAK(paParms[0].type == VBOX_HGCM_SVC_PARM_32BIT); /* root */
+            ASSERT_GUEST_BREAK(paParms[1].type == VBOX_HGCM_SVC_PARM_PTR);   /* name */
+            PSHFLSTRING  pNameBuf  = (PSHFLSTRING)paParms[1].u.pointer.addr;
+            ASSERT_GUEST_BREAK(ShflStringIsValidOut(pNameBuf, paParms[1].u.pointer.size));
+            ASSERT_GUEST_BREAK(paParms[2].type == VBOX_HGCM_SVC_PARM_PTR);   /* mountPoint */
+            PSHFLSTRING  pMntPtBuf = (PSHFLSTRING)paParms[2].u.pointer.addr;
+            ASSERT_GUEST_BREAK(ShflStringIsValidOut(pMntPtBuf, paParms[2].u.pointer.size));
+            ASSERT_GUEST_BREAK(paParms[3].type == VBOX_HGCM_SVC_PARM_64BIT); /* flags */
+            ASSERT_GUEST_BREAK(!(paParms[3].u.uint64 & ~(SHFL_MIQF_DRIVE_LETTER | SHFL_MIQF_PATH))); /* flags */
+            ASSERT_GUEST_BREAK(paParms[4].type == VBOX_HGCM_SVC_PARM_32BIT); /* version */
+
+            /* Execute the function: */
+            rc = vbsfMappingsQueryInfo(pClient, paParms[0].u.uint32, pNameBuf, pMntPtBuf,
+                                       &paParms[3].u.uint64, &paParms[4].u.uint32);
+            break;
+        }
+
+        case SHFL_FN_WAIT_FOR_MAPPINGS_CHANGES:
+        {
+            Log(("SharedFolders host service: svnCall: SHFL_FN_WAIT_FOR_CHANGES\n"));
+
+            /* Validate input: */
+            rc = VERR_INVALID_PARAMETER;
+            ASSERT_GUEST_BREAK(cParms == SHFL_CPARMS_WAIT_FOR_MAPPINGS_CHANGES);
+            ASSERT_GUEST_BREAK(paParms[0].type == VBOX_HGCM_SVC_PARM_32BIT); /* uFolderMappingsVersion */
+
+            /* Execute the function: */
+            rc = vbsfMappingsWaitForChanges(pClient, callHandle, paParms, g_pHelpers->pfnIsCallRestored(callHandle));
+            fAsynchronousProcessing = rc == VINF_HGCM_ASYNC_EXECUTE;
+            break;
+        }
+
+        case SHFL_FN_CANCEL_MAPPINGS_CHANGES_WAITS:
+        {
+            Log(("SharedFolders host service: svnCall: SHFL_FN_CANCEL_WAIT_FOR_CHANGES\n"));
+
+            /* Validate input: */
+            rc = VERR_INVALID_PARAMETER;
+            ASSERT_GUEST_BREAK(cParms == SHFL_CPARMS_CANCEL_MAPPINGS_CHANGES_WAITS);
+
+            /* Execute the function: */
+            rc = vbsfMappingsCancelChangesWaits(pClient);
             break;
         }
 

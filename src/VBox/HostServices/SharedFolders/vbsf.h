@@ -1,3 +1,4 @@
+/* $Id$ */
 /** @file
  * VBox Shared Folders header.
  */
@@ -14,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __VBSF__H
-#define __VBSF__H
+#ifndef ___vbsf_h___
+#define ___vbsf_h___
 
 #include "shfl.h"
 #include <VBox/shflsvc.h>
@@ -40,4 +41,5 @@ int vbsfQueryFileInfo(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Handle,
 int vbsfReadLink(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING *pPath, uint32_t cbPath, uint8_t *pBuffer, uint32_t cbBuffer);
 int vbsfSymlink(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING *pNewPath, SHFLSTRING *pOldPath, SHFLFSOBJINFO *pInfo);
 
-#endif /* __VBSF__H */
+#endif /* !___vbsf_h___ */
+

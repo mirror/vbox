@@ -22,6 +22,7 @@
 #include "vbsfpath.h"
 #include <iprt/alloc.h>
 #include <iprt/assert.h>
+#include <iprt/list.h>
 #include <iprt/path.h>
 #include <iprt/string.h>
 
@@ -29,29 +30,66 @@
 # include "teststubs.h"
 #endif
 
-/* Shared folders order in the saved state and in the FolderMapping can differ.
+extern PVBOXHGCMSVCHELPERS g_pHelpers; /* service.cpp */
+
+
+/* Shared folders order in the saved state and in the g_FolderMapping can differ.
  * So a translation array of root handle is needed.
  */
 
-static MAPPING FolderMapping[SHFL_MAX_MAPPINGS];
-static SHFLROOT aIndexFromRoot[SHFL_MAX_MAPPINGS];
+static MAPPING g_FolderMapping[SHFL_MAX_MAPPINGS];
+static SHFLROOT g_aIndexFromRoot[SHFL_MAX_MAPPINGS];
+/**< Array running parallel to g_aIndexFromRoot and which entries are increased
+ * as an root handle is added or removed.
+ *
+ * This helps the guest figuring out that a mapping may have been reconfigured
+ * or that saved state has been restored.  Entry reuse is very likely given that
+ * vbsfRootHandleAdd() always starts searching at the start for an unused entry.
+ */
+static uint32_t g_auRootHandleVersions[SHFL_MAX_MAPPINGS];
+/** Version number that is increased for every change made.
+ * This is used by the automount guest service to wait for changes.
+ * @note This does not need saving, the guest should be woken up and refresh
+ *       its sate when restored. */
+static uint32_t volatile g_uFolderMappingsVersion = 0;
+
+
+/** For recording async vbsfMappingsWaitForChanges calls. */
+typedef struct SHFLMAPPINGSWAIT
+{
+    RTLISTNODE          ListEntry;  /**< List entry. */
+    PSHFLCLIENTDATA     pClient;    /**< The client that's waiting. */
+    VBOXHGCMCALLHANDLE  hCall;      /**< The call handle to signal completion with. */
+    PVBOXHGCMSVCPARM    pParm;      /**< The 32-bit unsigned parameter to stuff g_uFolderMappingsVersion into. */
+} SHFLMAPPINGSWAIT;
+/** Pointer to async mappings change wait. */
+typedef SHFLMAPPINGSWAIT *PSHFLMAPPINGSWAIT;
+/** List head for clients waiting on mapping changes (SHFLMAPPINGSWAIT). */
+static RTLISTANCHOR g_MappingsChangeWaiters;
+/** Number of clients waiting on mapping changes.
+ * We use this to limit the number of waiting calls the clients can make.  */
+static uint32_t     g_cMappingChangeWaiters = 0;
+static void vbsfMappingsWakeupAllWaiters(void);
+
 
 void vbsfMappingInit(void)
 {
     unsigned root;
 
-    for (root = 0; root < RT_ELEMENTS(aIndexFromRoot); root++)
+    for (root = 0; root < RT_ELEMENTS(g_aIndexFromRoot); root++)
     {
-        aIndexFromRoot[root] = SHFL_ROOT_NIL;
+        g_aIndexFromRoot[root] = SHFL_ROOT_NIL;
     }
+
+    RTListInit(&g_MappingsChangeWaiters);
 }
 
-int vbsfMappingLoaded(const PMAPPING pLoadedMapping, SHFLROOT root)
+int vbsfMappingLoaded(const MAPPING *pLoadedMapping, SHFLROOT root)
 {
     /* Mapping loaded from the saved state with the index. Which means
      * the guest uses the iMapping as root handle for this folder.
-     * Check whether there is the same mapping in FolderMapping and
-     * update the aIndexFromRoot.
+     * Check whether there is the same mapping in g_FolderMapping and
+     * update the g_aIndexFromRoot.
      *
      * Also update the mapping properties, which were lost: cMappings.
      */
@@ -61,22 +99,31 @@ int vbsfMappingLoaded(const PMAPPING pLoadedMapping, SHFLROOT root)
     }
 
     SHFLROOT i;
-    for (i = 0; i < RT_ELEMENTS(FolderMapping); i++)
+    for (i = 0; i < RT_ELEMENTS(g_FolderMapping); i++)
     {
-        MAPPING *pMapping = &FolderMapping[i];
+        MAPPING *pMapping = &g_FolderMapping[i];
 
         /* Equal? */
         if (   pLoadedMapping->fValid == pMapping->fValid
             && ShflStringSizeOfBuffer(pLoadedMapping->pMapName) == ShflStringSizeOfBuffer(pMapping->pMapName)
             && memcmp(pLoadedMapping->pMapName, pMapping->pMapName, ShflStringSizeOfBuffer(pMapping->pMapName)) == 0)
         {
-            /* Actual index is i. */
-            aIndexFromRoot[root] = i;
+            if (!pMapping->fLoadedRootId)
+            {
+                pMapping->fLoadedRootId = true;
+                Log(("vbsfMappingLoaded: root=%u i=%u (was %u) (%ls)\n",
+                     root, i, g_aIndexFromRoot[root], pLoadedMapping->pMapName->String.utf16));
 
-            /* Update the mapping properties. */
-            pMapping->cMappings = pLoadedMapping->cMappings;
+                /* Actual index is i. */
+                /** @todo This will not work with global shared folders, as these can change
+                 *        while state is saved and these blind assignments may hid new ones.  */
+                g_aIndexFromRoot[root] = i;
 
-            return VINF_SUCCESS;
+                /* Update the mapping properties. */
+                pMapping->cMappings = pLoadedMapping->cMappings;
+
+                return VINF_SUCCESS;
+            }
         }
     }
 
@@ -92,14 +139,14 @@ int vbsfMappingLoaded(const PMAPPING pLoadedMapping, SHFLROOT root)
 
 MAPPING *vbsfMappingGetByRoot(SHFLROOT root)
 {
-    if (root < RT_ELEMENTS(aIndexFromRoot))
+    if (root < RT_ELEMENTS(g_aIndexFromRoot))
     {
-        SHFLROOT iMapping = aIndexFromRoot[root];
+        SHFLROOT iMapping = g_aIndexFromRoot[root];
 
         if (   iMapping != SHFL_ROOT_NIL
-            && iMapping < RT_ELEMENTS(FolderMapping))
+            && iMapping < RT_ELEMENTS(g_FolderMapping))
         {
-            return &FolderMapping[iMapping];
+            return &g_FolderMapping[iMapping];
         }
     }
 
@@ -110,9 +157,9 @@ static SHFLROOT vbsfMappingGetRootFromIndex(SHFLROOT iMapping)
 {
     unsigned root;
 
-    for (root = 0; root < RT_ELEMENTS(aIndexFromRoot); root++)
+    for (root = 0; root < RT_ELEMENTS(g_aIndexFromRoot); root++)
     {
-        if (iMapping == aIndexFromRoot[root])
+        if (iMapping == g_aIndexFromRoot[root])
         {
             return root;
         }
@@ -121,15 +168,14 @@ static SHFLROOT vbsfMappingGetRootFromIndex(SHFLROOT iMapping)
     return SHFL_ROOT_NIL;
 }
 
-static MAPPING *vbsfMappingGetByName (PRTUTF16 pwszName, SHFLROOT *pRoot)
+static MAPPING *vbsfMappingGetByName(PRTUTF16 pwszName, SHFLROOT *pRoot)
 {
-    unsigned i;
-
-    for (i=0; i<SHFL_MAX_MAPPINGS; i++)
+    for (unsigned i = 0; i < SHFL_MAX_MAPPINGS; i++)
     {
-        if (FolderMapping[i].fValid == true)
+        if (   g_FolderMapping[i].fValid
+            && !g_FolderMapping[i].fPlaceholder) /* Don't allow mapping placeholders. */
         {
-            if (!RTUtf16LocaleICmp(FolderMapping[i].pMapName->String.ucs2, pwszName))
+            if (!RTUtf16LocaleICmp(g_FolderMapping[i].pMapName->String.ucs2, pwszName))
             {
                 SHFLROOT root = vbsfMappingGetRootFromIndex(i);
 
@@ -139,16 +185,12 @@ static MAPPING *vbsfMappingGetByName (PRTUTF16 pwszName, SHFLROOT *pRoot)
                     {
                         *pRoot = root;
                     }
-                    return &FolderMapping[i];
+                    return &g_FolderMapping[i];
                 }
-                else
-                {
-                    AssertFailed();
-                }
+                AssertFailed();
             }
         }
     }
-
     return NULL;
 }
 
@@ -156,11 +198,12 @@ static void vbsfRootHandleAdd(SHFLROOT iMapping)
 {
     unsigned root;
 
-    for (root = 0; root < RT_ELEMENTS(aIndexFromRoot); root++)
+    for (root = 0; root < RT_ELEMENTS(g_aIndexFromRoot); root++)
     {
-        if (aIndexFromRoot[root] == SHFL_ROOT_NIL)
+        if (g_aIndexFromRoot[root] == SHFL_ROOT_NIL)
         {
-            aIndexFromRoot[root] = iMapping;
+            g_aIndexFromRoot[root] = iMapping;
+            g_auRootHandleVersions[root] += 1;
             return;
         }
     }
@@ -172,12 +215,17 @@ static void vbsfRootHandleRemove(SHFLROOT iMapping)
 {
     unsigned root;
 
-    for (root = 0; root < RT_ELEMENTS(aIndexFromRoot); root++)
+    for (root = 0; root < RT_ELEMENTS(g_aIndexFromRoot); root++)
     {
-        if (aIndexFromRoot[root] == iMapping)
+        if (g_aIndexFromRoot[root] == iMapping)
         {
-            aIndexFromRoot[root] = SHFL_ROOT_NIL;
-            return;
+            g_aIndexFromRoot[root] = SHFL_ROOT_NIL;
+            g_auRootHandleVersions[root] += 1;
+            Log(("vbsfRootHandleRemove: Removed root=%u (iMapping=%u)\n", root, iMapping));
+
+            /* Note! Do not stop here as g_aIndexFromRoot may (at least it could
+                     prior to the introduction of fLoadedRootId) contain
+                     duplicates after restoring save state. */
         }
     }
 
@@ -208,22 +256,28 @@ int vbsfMappingsAdd(const char *pszFolderName, PSHFLSTRING pMapName, bool fWrita
 
     Log(("vbsfMappingsAdd %ls\n", pMapName->String.ucs2));
 
-    /* check for duplicates */
-    for (i=0; i<SHFL_MAX_MAPPINGS; i++)
+    /* Check for duplicates, ignoring placeholders to give the GUI to change stuff at runtime. */
+    /** @todo bird: Not entirely sure about ignoring placeholders, but you cannot
+     *        trigger auto-umounting without ignoring them. */
+    if (!fPlaceholder)
     {
-        if (FolderMapping[i].fValid == true)
+        for (i = 0; i < SHFL_MAX_MAPPINGS; i++)
         {
-            if (!RTUtf16LocaleICmp(FolderMapping[i].pMapName->String.ucs2, pMapName->String.ucs2))
+            if (   g_FolderMapping[i].fValid
+                && !g_FolderMapping[i].fPlaceholder)
             {
-                AssertMsgFailed(("vbsfMappingsAdd: %ls mapping already exists!!\n", pMapName->String.ucs2));
-                return VERR_ALREADY_EXISTS;
+                if (!RTUtf16LocaleICmp(g_FolderMapping[i].pMapName->String.ucs2, pMapName->String.ucs2))
+                {
+                    AssertMsgFailed(("vbsfMappingsAdd: %ls mapping already exists!!\n", pMapName->String.ucs2));
+                    return VERR_ALREADY_EXISTS;
+                }
             }
         }
     }
 
-    for (i=0; i<SHFL_MAX_MAPPINGS; i++)
+    for (i = 0; i < SHFL_MAX_MAPPINGS; i++)
     {
-        if (FolderMapping[i].fValid == false)
+        if (g_FolderMapping[i].fValid == false)
         {
             /* Make sure the folder name is an absolute path, otherwise we're
                likely to get into trouble with buffer sizes in vbsfPathGuestToHost. */
@@ -231,34 +285,36 @@ int vbsfMappingsAdd(const char *pszFolderName, PSHFLSTRING pMapName, bool fWrita
             int rc = vbsfPathAbs(NULL, pszFolderName, szAbsFolderName, sizeof(szAbsFolderName));
             AssertRCReturn(rc, rc);
 
-            FolderMapping[i].pszFolderName   = RTStrDup(szAbsFolderName);
-            FolderMapping[i].pMapName        = ShflStringDup(pMapName);
-            FolderMapping[i].pAutoMountPoint = ShflStringDup(pAutoMountPoint);
-            if (   !FolderMapping[i].pszFolderName
-                || !FolderMapping[i].pMapName
-                || !FolderMapping[i].pAutoMountPoint)
+            g_FolderMapping[i].pszFolderName   = RTStrDup(szAbsFolderName);
+            g_FolderMapping[i].pMapName        = ShflStringDup(pMapName);
+            g_FolderMapping[i].pAutoMountPoint = ShflStringDup(pAutoMountPoint);
+            if (   !g_FolderMapping[i].pszFolderName
+                || !g_FolderMapping[i].pMapName
+                || !g_FolderMapping[i].pAutoMountPoint)
             {
-                RTStrFree(FolderMapping[i].pszFolderName);
-                RTMemFree(FolderMapping[i].pMapName);
-                RTMemFree(FolderMapping[i].pAutoMountPoint);
+                RTStrFree(g_FolderMapping[i].pszFolderName);
+                RTMemFree(g_FolderMapping[i].pMapName);
+                RTMemFree(g_FolderMapping[i].pAutoMountPoint);
                 return VERR_NO_MEMORY;
             }
 
-            FolderMapping[i].fValid          = true;
-            FolderMapping[i].cMappings       = 0;
-            FolderMapping[i].fWritable       = fWritable;
-            FolderMapping[i].fAutoMount      = fAutoMount;
-            FolderMapping[i].fSymlinksCreate = fSymlinksCreate;
-            FolderMapping[i].fMissing        = fMissing;
-            FolderMapping[i].fPlaceholder    = fPlaceholder;
+            g_FolderMapping[i].fValid          = true;
+            g_FolderMapping[i].cMappings       = 0;
+            g_FolderMapping[i].fWritable       = fWritable;
+            g_FolderMapping[i].fAutoMount      = fAutoMount;
+            g_FolderMapping[i].fSymlinksCreate = fSymlinksCreate;
+            g_FolderMapping[i].fMissing        = fMissing;
+            g_FolderMapping[i].fPlaceholder    = fPlaceholder;
+            g_FolderMapping[i].fLoadedRootId   = false;
 
             /* Check if the host file system is case sensitive */
             RTFSPROPERTIES prop;
             prop.fCaseSensitive = false; /* Shut up MSC. */
-            rc = RTFsQueryProperties(FolderMapping[i].pszFolderName, &prop);
+            rc = RTFsQueryProperties(g_FolderMapping[i].pszFolderName, &prop);
             AssertRC(rc);
-            FolderMapping[i].fHostCaseSensitive = RT_SUCCESS(rc) ? prop.fCaseSensitive : false;
+            g_FolderMapping[i].fHostCaseSensitive = RT_SUCCESS(rc) ? prop.fCaseSensitive : false;
             vbsfRootHandleAdd(i);
+            vbsfMappingsWakeupAllWaiters();
             break;
         }
     }
@@ -268,7 +324,8 @@ int vbsfMappingsAdd(const char *pszFolderName, PSHFLSTRING pMapName, bool fWrita
         return VERR_TOO_MUCH_DATA;
     }
 
-    Log(("vbsfMappingsAdd: added mapping %s to %ls\n", pszFolderName, pMapName->String.ucs2));
+    Log(("vbsfMappingsAdd: added mapping %s to %ls (slot %u, root %u)\n",
+         pszFolderName, pMapName->String.ucs2, i, vbsfMappingGetRootFromIndex(i)));
     return VINF_SUCCESS;
 }
 
@@ -284,44 +341,54 @@ void testMappingsRemove(RTTEST hTest)
 #endif
 int vbsfMappingsRemove(PSHFLSTRING pMapName)
 {
-    unsigned i;
-
     Assert(pMapName);
-
     Log(("vbsfMappingsRemove %ls\n", pMapName->String.ucs2));
-    for (i=0; i<SHFL_MAX_MAPPINGS; i++)
+
+    /*
+     * We must iterate thru the whole table as may have 0+ placeholder entries
+     * and 0-1 regular entries with the same name.  Also, it is good to kick
+     * the guest automounter into action wrt to evicting placeholders.
+     */
+    int rc = VERR_FILE_NOT_FOUND;
+    for (unsigned i = 0; i < SHFL_MAX_MAPPINGS; i++)
     {
-        if (FolderMapping[i].fValid == true)
+        if (g_FolderMapping[i].fValid == true)
         {
-            if (!RTUtf16LocaleICmp(FolderMapping[i].pMapName->String.ucs2, pMapName->String.ucs2))
+            if (!RTUtf16LocaleICmp(g_FolderMapping[i].pMapName->String.ucs2, pMapName->String.ucs2))
             {
-                if (FolderMapping[i].cMappings != 0)
+                if (g_FolderMapping[i].cMappings != 0)
                 {
-                    LogRel2(("SharedFolders: removing '%ls' -> '%s', which is still used by the guest\n",
-                             pMapName->String.ucs2, FolderMapping[i].pszFolderName));
-                    FolderMapping[i].fMissing = true;
-                    FolderMapping[i].fPlaceholder = true;
-                    return VINF_PERMISSION_DENIED;
+                    LogRel2(("SharedFolders: removing '%ls' -> '%s'%s, which is still used by the guest\n", pMapName->String.ucs2,
+                             g_FolderMapping[i].pszFolderName, g_FolderMapping[i].fPlaceholder ? " (again)" : ""));
+                    g_FolderMapping[i].fMissing = true;
+                    g_FolderMapping[i].fPlaceholder = true;
+                    vbsfMappingsWakeupAllWaiters();
+                    rc = VINF_PERMISSION_DENIED;
                 }
+                else
+                {
+                    /* pMapName can be the same as g_FolderMapping[i].pMapName when
+                     * called from vbsfUnmapFolder, log it before deallocating the memory. */
+                    Log(("vbsfMappingsRemove: mapping %ls removed\n", pMapName->String.ucs2));
+                    bool fSame = g_FolderMapping[i].pMapName == pMapName;
 
-                /* pMapName can be the same as FolderMapping[i].pMapName,
-                 * log it before deallocating the memory.
-                 */
-                Log(("vbsfMappingsRemove: mapping %ls removed\n", pMapName->String.ucs2));
-
-                RTStrFree(FolderMapping[i].pszFolderName);
-                RTMemFree(FolderMapping[i].pMapName);
-                FolderMapping[i].pszFolderName = NULL;
-                FolderMapping[i].pMapName      = NULL;
-                FolderMapping[i].fValid        = false;
-                vbsfRootHandleRemove(i);
-                return VINF_SUCCESS;
+                    RTStrFree(g_FolderMapping[i].pszFolderName);
+                    RTMemFree(g_FolderMapping[i].pMapName);
+                    g_FolderMapping[i].pszFolderName = NULL;
+                    g_FolderMapping[i].pMapName      = NULL;
+                    g_FolderMapping[i].fValid        = false;
+                    vbsfRootHandleRemove(i);
+                    vbsfMappingsWakeupAllWaiters();
+                    if (rc == VERR_FILE_NOT_FOUND)
+                        rc = VINF_SUCCESS;
+                    if (fSame)
+                        break;
+                }
             }
         }
     }
 
-    AssertMsgFailed(("vbsfMappingsRemove: mapping %ls not found!!!!\n", pMapName->String.ucs2));
-    return VERR_FILE_NOT_FOUND;
+    return rc;
 }
 
 const char* vbsfMappingsQueryHostRoot(SHFLROOT root)
@@ -377,48 +444,47 @@ void testMappingsQuery(RTTEST hTest)
 }
 #endif
 /**
- * Note: If pMappings / *pcMappings is smaller than the actual amount of mappings
- *       that *could* have been returned *pcMappings contains the required buffer size
- *       so that the caller can retry the operation if wanted.
+ * @note If pMappings / *pcMappings is smaller than the actual amount of
+ *       mappings that *could* have been returned *pcMappings contains the
+ *       required buffer size so that the caller can retry the operation if
+ *       wanted.
  */
-int vbsfMappingsQuery(PSHFLCLIENTDATA pClient, PSHFLMAPPING pMappings, uint32_t *pcMappings)
+int vbsfMappingsQuery(PSHFLCLIENTDATA pClient, bool fOnlyAutoMounts, PSHFLMAPPING pMappings, uint32_t *pcMappings)
 {
-    int rc = VINF_SUCCESS;
-
-    uint32_t cMappings = 0; /* Will contain actual valid mappings. */
-    uint32_t idx = 0;       /* Current index in mappings buffer. */
-
     LogFlow(("vbsfMappingsQuery: pClient = %p, pMappings = %p, pcMappings = %p, *pcMappings = %d\n",
              pClient, pMappings, pcMappings, *pcMappings));
 
+    uint32_t const cMaxMappings = *pcMappings;
+    uint32_t       idx          = 0;
     for (uint32_t i = 0; i < SHFL_MAX_MAPPINGS; i++)
     {
         MAPPING *pFolderMapping = vbsfMappingGetByRoot(i);
         if (   pFolderMapping != NULL
-            && pFolderMapping->fValid == true)
+            && pFolderMapping->fValid
+            && (   !fOnlyAutoMounts
+                || (pFolderMapping->fAutoMount && !pFolderMapping->fPlaceholder)) )
         {
-            if (idx < *pcMappings)
+            if (idx < cMaxMappings)
             {
-                /* Skip mappings which are not marked for auto-mounting if
-                 * the SHFL_MF_AUTOMOUNT flag ist set. */
-                if (   (pClient->fu32Flags & SHFL_MF_AUTOMOUNT)
-                    && !pFolderMapping->fAutoMount)
-                    continue;
-
                 pMappings[idx].u32Status = SHFL_MS_NEW;
-                pMappings[idx].root = i;
-                idx++;
+                pMappings[idx].root      = i;
             }
-            cMappings++;
+            idx++;
         }
     }
 
     /* Return actual number of mappings, regardless whether the handed in
      * mapping buffer was big enough. */
-    *pcMappings = cMappings;
+    /** @todo r=bird: This is non-standard interface behaviour.  We return
+     *        VERR_BUFFER_OVERFLOW or at least a VINF_BUFFER_OVERFLOW here.
+     *
+     *        Guess this goes well along with ORing SHFL_MF_AUTOMOUNT into
+     *        pClient->fu32Flags rather than passing it as fOnlyAutoMounts...
+     *        Not amused by this. */
+    *pcMappings = idx;
 
-    LogFlow(("vbsfMappingsQuery: return rc = %Rrc\n", rc));
-    return rc;
+    LogFlow(("vbsfMappingsQuery: returns VINF_SUCCESS (idx=%u, cMaxMappings=%u)\n", idx, cMaxMappings));
+    return VINF_SUCCESS;
 }
 
 #ifdef UNITTEST
@@ -436,44 +502,41 @@ void testMappingsQueryName(RTTEST hTest)
 #endif
 int vbsfMappingsQueryName(PSHFLCLIENTDATA pClient, SHFLROOT root, SHFLSTRING *pString)
 {
-    int rc = VINF_SUCCESS;
+    LogFlow(("vbsfMappingsQuery: pClient = %p, root = %d, *pString = %p\n", pClient, root, pString));
 
-    LogFlow(("vbsfMappingsQuery: pClient = %p, root = %d, *pString = %p\n",
-             pClient, root, pString));
-
+    int rc;
     MAPPING *pFolderMapping = vbsfMappingGetByRoot(root);
-    if (pFolderMapping == NULL)
+    if (pFolderMapping)
     {
-        return VERR_INVALID_PARAMETER;
-    }
-
-    if (BIT_FLAG(pClient->fu32Flags, SHFL_CF_UTF8))
-    {
-        /* Not implemented. */
-        AssertFailed();
-        return VERR_INVALID_PARAMETER;
-    }
-
-    if (pFolderMapping->fValid == true)
-    {
-        if (pString->u16Size < pFolderMapping->pMapName->u16Size)
+        if (pFolderMapping->fValid)
         {
-            Log(("vbsfMappingsQuery: passed string too short (%d < %d bytes)!\n",
-                pString->u16Size,  pFolderMapping->pMapName->u16Size));
-            rc = VERR_INVALID_PARAMETER;
+            if (BIT_FLAG(pClient->fu32Flags, SHFL_CF_UTF8))
+                rc = ShflStringCopyUtf16BufAsUtf8(pString, pFolderMapping->pMapName);
+            else
+            {
+                /* Not using ShlfStringCopy here as behaviour shouldn't change... */
+                if (pString->u16Size < pFolderMapping->pMapName->u16Size)
+                {
+                    Log(("vbsfMappingsQuery: passed string too short (%d < %d bytes)!\n",
+                        pString->u16Size,  pFolderMapping->pMapName->u16Size));
+                    rc = VERR_INVALID_PARAMETER;
+                }
+                else
+                {
+                    pString->u16Length = pFolderMapping->pMapName->u16Length;
+                    memcpy(pString->String.ucs2, pFolderMapping->pMapName->String.ucs2,
+                           pFolderMapping->pMapName->u16Size);
+                    rc = VINF_SUCCESS;
+                }
+            }
         }
         else
-        {
-            pString->u16Length = pFolderMapping->pMapName->u16Length;
-            memcpy(pString->String.ucs2, pFolderMapping->pMapName->String.ucs2,
-                   pFolderMapping->pMapName->u16Size);
-        }
+            rc = VERR_FILE_NOT_FOUND;
     }
     else
-        rc = VERR_FILE_NOT_FOUND;
+        rc = VERR_INVALID_PARAMETER;
 
     LogFlow(("vbsfMappingsQuery:Name return rc = %Rrc\n", rc));
-
     return rc;
 }
 
@@ -539,6 +602,64 @@ int vbsfMappingsQuerySymlinksCreate(PSHFLCLIENTDATA pClient, SHFLROOT root, bool
 
     return rc;
 }
+
+/**
+ * Implements SHFL_FN_QUERY_MAP_INFO.
+ * @since VBox 6.0
+ */
+int vbsfMappingsQueryInfo(PSHFLCLIENTDATA pClient, SHFLROOT root, PSHFLSTRING pNameBuf, PSHFLSTRING pMntPtBuf,
+                          uint64_t *pfFlags, uint32_t *puVersion)
+{
+    LogFlow(("vbsfMappingsQueryInfo: pClient=%p root=%d\n", pClient, root));
+
+    /* Resolve the root handle. */
+    int rc;
+    PMAPPING pFolderMapping = vbsfMappingGetByRoot(root);
+    if (pFolderMapping)
+    {
+        if (pFolderMapping->fValid)
+        {
+            /*
+             * Produce the output.
+             */
+            *puVersion = g_auRootHandleVersions[root];
+
+            *pfFlags = 0;
+            if (pFolderMapping->fWritable)
+                *pfFlags |= SHFL_MIF_WRITABLE;
+            if (pFolderMapping->fAutoMount)
+                *pfFlags |= SHFL_MIF_AUTO_MOUNT;
+            if (pFolderMapping->fHostCaseSensitive)
+                *pfFlags |= SHFL_MIF_HOST_ICASE;
+            if (pFolderMapping->fGuestCaseSensitive)
+                *pfFlags |= SHFL_MIF_GUEST_ICASE;
+            if (pFolderMapping->fSymlinksCreate)
+                *pfFlags |= SHFL_MIF_SYMLINK_CREATION;
+
+            int rc2;
+            if (pClient->fu32Flags & SHFL_CF_UTF8)
+            {
+                rc = ShflStringCopyUtf16BufAsUtf8(pNameBuf, pFolderMapping->pMapName);
+                rc2 = ShflStringCopyUtf16BufAsUtf8(pMntPtBuf, pFolderMapping->pAutoMountPoint);
+            }
+            else
+            {
+                rc = ShflStringCopy(pNameBuf, pFolderMapping->pMapName, sizeof(RTUTF16));
+                rc2 = ShflStringCopy(pMntPtBuf, pFolderMapping->pAutoMountPoint, sizeof(RTUTF16));
+            }
+            if (RT_SUCCESS(rc))
+                rc = rc2;
+        }
+        else
+            rc = VERR_FILE_NOT_FOUND;
+    }
+    else
+        rc = VERR_INVALID_PARAMETER;
+    LogFlow(("vbsfMappingsQueryInfo: returns %Rrc\n", rc));
+    return rc;
+}
+
+
 
 #ifdef UNITTEST
 /** Unit test the SHFL_FN_MAP_FOLDER API.  Located here as a form of API
@@ -661,3 +782,118 @@ int vbsfUnmapFolder(PSHFLCLIENTDATA pClient, SHFLROOT root)
     Log(("vbsfUnmapFolder\n"));
     return rc;
 }
+
+/**
+ * SHFL_FN_WAIT_FOR_MAPPINGS_CHANGES implementation.
+ *
+ * @returns VBox status code.
+ * @retval  VINF_SUCCESS on change.
+ * @retval  VINF_TRY_AGAIN on resume.
+ * @retval  VINF_HGCM_ASYNC_EXECUTE if waiting.
+ * @retval  VERR_CANCELLED if cancelled.
+ * @retval  VERR_OUT_OF_RESOURCES if there are too many pending waits.
+ *
+ * @param   pClient     The calling client.
+ * @param   hCall       The call handle.
+ * @param   pParm       The parameter (32-bit).
+ * @param   fRestored   Set if this is a call restored & resubmitted from saved
+ *                      state.
+ * @since   VBox 6.0
+ */
+int vbsfMappingsWaitForChanges(PSHFLCLIENTDATA pClient, VBOXHGCMCALLHANDLE hCall, PVBOXHGCMSVCPARM pParm, bool fRestored)
+{
+    /*
+     * Return immediately if the fodler mappings have changed since last call
+     * or if we got restored from saved state (adding of global folders, etc).
+     */
+    uint32_t uCurVersion = g_uFolderMappingsVersion;
+    if (   pParm->u.uint32 != uCurVersion
+        || fRestored
+        || (pClient->fu32Flags & SHFL_CF_CANCEL_NEXT_WAIT) )
+    {
+        int rc = VINF_SUCCESS;
+        if (pClient->fu32Flags & SHFL_CF_CANCEL_NEXT_WAIT)
+        {
+            pClient->fu32Flags &= ~SHFL_CF_CANCEL_NEXT_WAIT;
+            rc = VERR_CANCELLED;
+        }
+        else if (fRestored)
+        {
+            rc = VINF_TRY_AGAIN;
+            if (pParm->u.uint32 == uCurVersion)
+                uCurVersion = uCurVersion != UINT32_C(0x55555555) ? UINT32_C(0x55555555) : UINT32_C(0x99999999);
+        }
+        Log(("vbsfMappingsWaitForChanges: Version %#x -> %#x, returning %Rrc immediately.\n", pParm->u.uint32, uCurVersion, rc));
+        pParm->u.uint32 = uCurVersion;
+        return rc;
+    }
+
+    /*
+     * Setup a wait if we can.
+     */
+    if (g_cMappingChangeWaiters < 64)
+    {
+        PSHFLMAPPINGSWAIT pWait = (PSHFLMAPPINGSWAIT)RTMemAlloc(sizeof(*pWait));
+        if (pWait)
+        {
+            pWait->pClient = pClient;
+            pWait->hCall   = hCall;
+            pWait->pParm   = pParm;
+
+            RTListAppend(&g_MappingsChangeWaiters, &pWait->ListEntry);
+            g_cMappingChangeWaiters += 1;
+            return VINF_HGCM_ASYNC_EXECUTE;
+        }
+        return VERR_NO_MEMORY;
+    }
+    LogRelMax(32, ("vbsfMappingsWaitForChanges: Too many threads waiting for changes!\n"));
+    return VERR_OUT_OF_RESOURCES;
+}
+
+/**
+ * SHFL_FN_CANCEL_MAPPINGS_CHANGES_WAITS implementation.
+ *
+ * @returns VINF_SUCCESS
+ * @param   pClient     The calling client to cancel all waits for.
+ * @since   VBox 6.0
+ */
+int vbsfMappingsCancelChangesWaits(PSHFLCLIENTDATA pClient)
+{
+    uint32_t const uCurVersion = g_uFolderMappingsVersion;
+
+    PSHFLMAPPINGSWAIT pCur, pNext;
+    RTListForEachSafe(&g_MappingsChangeWaiters, pCur, pNext, SHFLMAPPINGSWAIT, ListEntry)
+    {
+        if (pCur->pClient == pClient)
+        {
+            RTListNodeRemove(&pCur->ListEntry);
+            pCur->pParm->u.uint32 = uCurVersion;
+            g_pHelpers->pfnCallComplete(pCur->hCall, VERR_CANCELLED);
+            RTMemFree(pCur);
+        }
+    }
+
+    /* Set a flag to make sure the next SHFL_FN_WAIT_FOR_MAPPINGS_CHANGES doesn't block.
+       This should help deal with races between this call and a thread about to do a wait. */
+    pClient->fu32Flags |= SHFL_CF_CANCEL_NEXT_WAIT;
+
+    return VINF_SUCCESS;
+}
+
+/**
+ * Wakes up all clients waiting on
+ */
+static void vbsfMappingsWakeupAllWaiters(void)
+{
+    uint32_t const uCurVersion = ++g_uFolderMappingsVersion;
+
+    PSHFLMAPPINGSWAIT pCur, pNext;
+    RTListForEachSafe(&g_MappingsChangeWaiters, pCur, pNext, SHFLMAPPINGSWAIT, ListEntry)
+    {
+        RTListNodeRemove(&pCur->ListEntry);
+        pCur->pParm->u.uint32 = uCurVersion;
+        g_pHelpers->pfnCallComplete(pCur->hCall, VERR_CANCELLED);
+        RTMemFree(pCur);
+    }
+}
+

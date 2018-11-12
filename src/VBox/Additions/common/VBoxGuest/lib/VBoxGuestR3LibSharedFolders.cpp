@@ -160,7 +160,7 @@ VBGLR3DECL(int) VbglR3SharedFolderGetMappings(HGCMCLIENTID idClient, bool fAutoM
                 ppaMappingsTemp = (PVBGLR3SHAREDFOLDERMAPPING)pvNew;
             }
         }
-    } while (rc == VINF_BUFFER_OVERFLOW);
+    } while (rc == VINF_BUFFER_OVERFLOW); /** @todo r=bird: This won't happen because the weird host code never returns it. */
 
     if (   RT_FAILURE(rc)
         || !*pcMappings)
@@ -210,7 +210,7 @@ VBGLR3DECL(int) VbglR3SharedFolderGetName(HGCMCLIENTID idClient, uint32_t u32Roo
     VBGL_HGCM_HDR_INIT(&Msg.callInfo, idClient, SHFL_FN_QUERY_MAP_NAME, 2);
 
     int         rc;
-    uint32_t    cbString = SHFLSTRING_HEADER_SIZE + SHFL_MAX_LEN;
+    uint32_t    cbString = SHFLSTRING_HEADER_SIZE + SHFL_MAX_LEN * sizeof(RTUTF16);
     PSHFLSTRING pString = (PSHFLSTRING)RTMemAlloc(cbString);
     if (pString)
     {
@@ -232,9 +232,135 @@ VBGLR3DECL(int) VbglR3SharedFolderGetName(HGCMCLIENTID idClient, uint32_t u32Roo
         RTMemFree(pString);
     }
     else
-        rc = VERR_INVALID_PARAMETER;
+        rc = VERR_NO_MEMORY;
     return rc;
 }
+
+
+/**
+ * Queries information about a shared folder.
+ *
+ * @returns VBox status code.
+ *
+ * @param   idClient        The client ID.
+ * @param   idRoot          The root ID of the folder to query information for.
+ * @param   fQueryFlags     SHFL_MIQF_XXX.
+ * @param   ppszName        Where to return the pointer to the name.
+ *                          Free using RTStrFree.  Optional.
+ * @param   ppszMountPoint  Where to return the pointer to the auto mount point.
+ *                          Free using RTStrFree.  Optional.
+ * @param   pfFlags         Where to return the flags (SHFL_MIF_XXX).  Optional.
+ * @param   puRootIdVersion where to return the root ID version.  Optional.
+ *                          This helps detecting root-id reuse.
+ *
+ * @remarks ASSUMES UTF-16 connection to host.
+ */
+VBGLR3DECL(int) VbglR3SharedFolderQueryFolderInfo(HGCMCLIENTID idClient, uint32_t idRoot, uint64_t fQueryFlags,
+                                                  char **ppszName, char **ppszMountPoint,
+                                                  uint64_t *pfFlags, uint32_t *puRootIdVersion)
+{
+    AssertReturn(!(fQueryFlags & ~(SHFL_MIQF_DRIVE_LETTER | SHFL_MIQF_PATH), VERR_INVALID_FLAGS);
+
+    /*
+     * Allocate string buffers first.
+     */
+    int rc;
+    PSHFLSTRING pNameBuf    = (PSHFLSTRING)RTMemAlloc(SHFLSTRING_HEADER_SIZE + (SHFL_MAX_LEN + 1) * sizeof(RTUTF16));
+    PSHFLSTRING pMountPoint = (PSHFLSTRING)RTMemAlloc(SHFLSTRING_HEADER_SIZE + (260          + 1) * sizeof(RTUTF16));
+    if (pNameBuf && pMountPoint)
+    {
+        ShflStringInitBuffer(pNameBuf,    SHFLSTRING_HEADER_SIZE + (SHFL_MAX_LEN + 1) * sizeof(RTUTF16));
+        ShflStringInitBuffer(pMountPoint, SHFLSTRING_HEADER_SIZE + (260          + 1) * sizeof(RTUTF16));
+
+        /*
+         * Make the call.
+         */
+        VBoxSFQueryMapInfo Msg;
+        VBGL_HGCM_HDR_INIT(&Msg.callInfo, idClient, SHFL_FN_QUERY_MAP_INFO, 5);
+        VbglHGCMParmUInt32Set(&Msg.root, idRoot);
+        VbglHGCMParmPtrSet(&Msg.name, pNameBuf, SHFLSTRING_HEADER_SIZE + pNameBuf->u16Size);
+        VbglHGCMParmPtrSet(&Msg.mountPoint, pMountPoint, SHFLSTRING_HEADER_SIZE + pMountPoint->u16Size);
+        VbglHGCMParmUInt64Set(&Msg.flags, fQueryFlags);
+        VbglHGCMParmUInt32Set(&Msg.rootIdVersion, 0);
+
+        rc = VbglR3HGCMCall(&Msg.callInfo, sizeof(Msg));
+        if (RT_SUCCESS(rc))
+        {
+            /*
+             * Copy out the results.
+             */
+            if (puRootIdVersion)
+                *puRootIdVersion = Msg.rootIdVersion.u.value64;
+
+            if (pfFlags)
+                *pfFlags = Msg.flags.u.value64;
+
+            if (ppszName)
+            {
+                *ppszName = NULL;
+                rc = RTUtf16ToUtf8Ex(pNameBuf->String.utf16, pNameBuf->u16Length / sizeof(RTUTF16), ppszName, 0, NULL);
+            }
+
+            if (ppszMountPoint && RT_SUCCESS(rc))
+            {
+                *ppszMountPoint = NULL;
+                rc = RTUtf16ToUtf8Ex(pMountPoint->String.utf16, pMountPoint->u16Length / sizeof(RTUTF16), ppszMountPoint, 0, NULL);
+                if (RT_FAILURE(rc) && ppszName)
+                {
+                    RTStrFree(*ppszName);
+                    *ppszName = NULL;
+                }
+            }
+        }
+    }
+    else
+        rc = VERR_NO_MEMORY;
+    RTMemFree(pMountPoint);
+    RTMemFree(pNameBuf);
+    return rc;
+}
+
+
+/**
+ * Waits for changes to the mappings (add, remove, restore).
+ *
+ * @returns VBox status code.
+ * @retval  VINF_SUCCESS on change
+ * @retval  VINF_TRY_AGAIN on restore.
+ * @retval  VERR_OUT_OF_RESOURCES if there are too many guys waiting.
+ *
+ * @param   idClient        The client ID.
+ * @param   uPrevVersion    The mappings config version number returned the last
+ *                          time around.  Use UINT32_MAX for the first call.
+ * @param   puCurVersion    Where to return the current mappings config version.
+ */
+VBGLR3DECL(int) VbglR3SharedFolderWaitForMappingsChanges(HGCMCLIENTID idClient, uint32_t uPrevVersion, uint32_t *puCurVersion)
+{
+    VBoxSFWaitForMappingsChanges Msg;
+    VBGL_HGCM_HDR_INIT(&Msg.callInfo, idClient, SHFL_FN_WAIT_FOR_MAPPINGS_CHANGES, 1);
+    VbglHGCMParmUInt32Set(&Msg.version, uPrevVersion);
+
+    int rc = VbglR3HGCMCall(&Msg.callInfo, sizeof(Msg));
+
+    *puCurVersion = Msg.version.u.value32;
+    return rc;
+}
+
+
+/**
+ * Cancels all threads currently waiting for changes for this client.
+ *
+ * @returns VBox status code.
+ * @param   idClient        The client ID.
+ */
+VBGLR3DECL(int) VbglR3SharedFolderCancelMappingsChangesWaits(HGCMCLIENTID idClient)
+{
+    VBGLIOCHGCMCALL CallInfo;
+    VBGL_HGCM_HDR_INIT(&CallInfo, idClient, SHFL_FN_CANCEL_MAPPINGS_CHANGES_WAITS, 0);
+
+    return VbglR3HGCMCall(&CallInfo, sizeof(CallInfo));
+}
+
 
 /**
  * Retrieves the prefix for a shared folder mount point.  If no prefix
@@ -257,6 +383,7 @@ VBGLR3DECL(int) VbglR3SharedFolderGetMountPrefix(char **ppszPrefix)
         if (rc == VERR_NOT_FOUND) /* No prefix set? Then set the default. */
         {
 #endif
+/** @todo r=bird: Inconsistent! VbglR3SharedFolderGetMountDir does not return a default. */
             rc = RTStrDupEx(ppszPrefix, "sf_");
 #ifdef VBOX_WITH_GUEST_PROPS
         }
@@ -265,6 +392,7 @@ VBGLR3DECL(int) VbglR3SharedFolderGetMountPrefix(char **ppszPrefix)
 #endif
     return rc;
 }
+
 
 /**
  * Retrieves the mount root directory for auto-mounted shared

@@ -37,36 +37,61 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #include <iprt/assert.h>
+#include <iprt/ctype.h>
 #include <iprt/dir.h>
 #include <iprt/mem.h>
 #include <iprt/path.h>
-#include <iprt/string.h>
 #include <iprt/semaphore.h>
+#include <iprt/sort.h>
+#include <iprt/string.h>
 #include <VBox/VBoxGuestLib.h>
+#include <VBox/shflsvc.h>
 #include "VBoxServiceInternal.h"
 #include "VBoxServiceUtils.h"
 
-#include <errno.h>
-#include <grp.h>
-#include <sys/mount.h>
-#ifdef RT_OS_SOLARIS
-# include <sys/mntent.h>
-# include <sys/mnttab.h>
-# include <sys/vfs.h>
+#ifdef RT_OS_WINDOWS
+#elif defined(RT_OS_OS2)
 #else
-# include <mntent.h>
-# include <paths.h>
-#endif
-#include <unistd.h>
-
+# include <errno.h>
+# include <grp.h>
+# include <sys/mount.h>
+# ifdef RT_OS_SOLARIS
+#  include <sys/mntent.h>
+#  include <sys/mnttab.h>
+#  include <sys/vfs.h>
+# elif defined(RT_OS_LINUX)
+#  include <mntent.h>
+#  include <paths.h>
 RT_C_DECLS_BEGIN
-#include "../../linux/sharedfolders/vbsfmount.h"
+#  include "../../linux/sharedfolders/vbsfmount.h"
 RT_C_DECLS_END
+# else
+#  error "Port me!"
+# endif
+# include <unistd.h>
+#endif
 
-#ifdef RT_OS_SOLARIS
-# define VBOXSERVICE_AUTOMOUNT_DEFAULT_DIR       "/mnt"
-#else
-# define VBOXSERVICE_AUTOMOUNT_DEFAULT_DIR       "/media"
+
+
+/*********************************************************************************************************************************
+*   Defined Constants And Macros                                                                                                 *
+*********************************************************************************************************************************/
+/** @def VBOXSERVICE_AUTOMOUNT_DEFAULT_DIR
+ * Default mount directory (unix only).
+ */
+#ifndef VBOXSERVICE_AUTOMOUNT_DEFAULT_DIR
+# ifdef RT_OS_SOLARIS
+#  define VBOXSERVICE_AUTOMOUNT_DEFAULT_DIR      "/mnt"
+# else
+#  define VBOXSERVICE_AUTOMOUNT_DEFAULT_DIR      "/media"
+# endif
+#endif
+
+/** @def VBOXSERVICE_AUTOMOUNT_DEFAULT_PREFIX
+ * Default mount prefix (unix only).
+ */
+#ifndef VBOXSERVICE_AUTOMOUNT_DEFAULT_PREFIX
+# define VBOXSERVICE_AUTOMOUNT_DEFAULT_PREFIX   "sf_"
 #endif
 
 #ifndef _PATH_MOUNTED
@@ -77,30 +102,91 @@ RT_C_DECLS_END
 # endif
 #endif
 
+/** @def VBOXSERVICE_AUTOMOUNT_MIQF
+ * The drive letter / path mount point flag.  */
+#if defined(RT_OS_WINDOWS) || defined(RT_OS_OS2)
+# define VBOXSERVICE_AUTOMOUNT_MIQF             SHFL_MIQF_DRIVE_LETTER
+#else
+# define VBOXSERVICE_AUTOMOUNT_MIQF             SHFL_MIQF_PATH
+#endif
+
+
+/*********************************************************************************************************************************
+*   Structures and Typedefs                                                                                                      *
+*********************************************************************************************************************************/
+/**
+ * Automounter mount table entry.
+ *
+ * This holds the information returned by SHFL_FN_QUERY_MAP_INFO and
+ * additional mount state info.  We only keep entries for mounted mappings.
+ */
+typedef struct VBSVCAUTOMOUNTERENTRY
+{
+    /** The root ID. */
+    uint32_t     idRoot;
+    /** The root ID version. */
+    uint32_t     uRootIdVersion;
+    /** Map info flags, SHFL_MIF_XXX. */
+    uint64_t     fFlags;
+    /** The shared folder (mapping) name. */
+    char        *pszName;
+    /** The configured mount point, NULL if none. */
+    char        *pszMountPoint;
+    /** The actual mount point, NULL if not mount.  */
+    char        *pszActualMountPoint;
+} VBSVCAUTOMOUNTERENTRY;
+/** Pointer to an automounter entry.   */
+typedef VBSVCAUTOMOUNTERENTRY *PVBSVCAUTOMOUNTERENTRY;
+
+/** Automounter mount table. */
+typedef struct VBSVCAUTOMOUNTERTABLE
+{
+    /** Current number of entries in the array. */
+    uint32_t                cEntries;
+    /** Max number of entries the array can hold w/o growing it. */
+    uint32_t                cAllocated;
+    /** Pointer to an array of entry pointers. */
+    PVBSVCAUTOMOUNTERENTRY   *papEntries;
+} VBSVCAUTOMOUNTERTABLE;
+/** Pointer to an automounter mount table.   */
+typedef  VBSVCAUTOMOUNTERTABLE *PVBSVCAUTOMOUNTERTABLE;
+
 
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
 /** The semaphore we're blocking on. */
-static RTSEMEVENTMULTI  g_AutoMountEvent = NIL_RTSEMEVENTMULTI;
+static RTSEMEVENTMULTI  g_hAutoMountEvent = NIL_RTSEMEVENTMULTI;
 /** The Shared Folders service client ID. */
-static uint32_t         g_SharedFoldersSvcClientID = 0;
+static uint32_t         g_idClientSharedFolders = 0;
+/** Set if we can wait on changes to the mappings. */
+static bool             g_fHostSupportsWaitAndInfoQuery = false;
+
+#ifdef RT_OS_OS2
+/** The attachment tag we use to identify attchments that belongs to us. */
+static char const       g_szTag[] = "VBoxAutomounter";
+#elif defined(RT_OS_SOLARIS)
+/** Dummy mount option that lets us identify mounts that belongs to us. */
+static char const       g_szTag[] = ",VBoxService=auto";
+#endif
+
 
 
 /**
  * @interface_method_impl{VBOXSERVICE,pfnInit}
  */
-static DECLCALLBACK(int) vbsvcAutoMountInit(void)
+static DECLCALLBACK(int) vbsvcAutomounterInit(void)
 {
-    VGSvcVerbose(3, "vbsvcAutoMountInit\n");
+    VGSvcVerbose(3, "vbsvcAutomounterInit\n");
 
-    int rc = RTSemEventMultiCreate(&g_AutoMountEvent);
+    int rc = RTSemEventMultiCreate(&g_hAutoMountEvent);
     AssertRCReturn(rc, rc);
 
-    rc = VbglR3SharedFolderConnect(&g_SharedFoldersSvcClientID);
+    rc = VbglR3SharedFolderConnect(&g_idClientSharedFolders);
     if (RT_SUCCESS(rc))
     {
-        VGSvcVerbose(3, "vbsvcAutoMountInit: Service Client ID: %#x\n", g_SharedFoldersSvcClientID);
+        VGSvcVerbose(3, "vbsvcAutomounterInit: Service Client ID: %#x\n", g_idClientSharedFolders);
+        g_fHostSupportsWaitAndInfoQuery = RT_SUCCESS(VbglR3SharedFolderCancelMappingsChangesWaits(g_idClientSharedFolders));
     }
     else
     {
@@ -108,37 +194,40 @@ static DECLCALLBACK(int) vbsvcAutoMountInit(void)
            causing VBoxService to fail. */
         if (rc == VERR_HGCM_SERVICE_NOT_FOUND) /* Host service is not available. */
         {
-            VGSvcVerbose(0, "vbsvcAutoMountInit: Shared Folders service is not available\n");
+            VGSvcVerbose(0, "vbsvcAutomounterInit: Shared Folders service is not available\n");
             rc = VERR_SERVICE_DISABLED;
         }
         else
             VGSvcError("Control: Failed to connect to the Shared Folders service! Error: %Rrc\n", rc);
-        RTSemEventMultiDestroy(g_AutoMountEvent);
-        g_AutoMountEvent = NIL_RTSEMEVENTMULTI;
+        RTSemEventMultiDestroy(g_hAutoMountEvent);
+        g_hAutoMountEvent = NIL_RTSEMEVENTMULTI;
     }
 
     return rc;
 }
 
 
+#if defined(RT_OS_SOLARIS) || defined(RT_OS_LINUX) /* The old code: */
+
 /**
  * @todo Integrate into RTFsQueryMountpoint()?
  */
-static bool vbsvcAutoMountShareIsMounted(const char *pszShare, char *pszMountPoint, size_t cbMountPoint)
+static bool vbsvcAutoMountShareIsMountedOld(const char *pszShare, char *pszMountPoint, size_t cbMountPoint)
 {
-    AssertPtrReturn(pszShare, VERR_INVALID_PARAMETER);
-    AssertPtrReturn(pszMountPoint, VERR_INVALID_PARAMETER);
-    AssertReturn(cbMountPoint, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pszShare, false);
+    AssertPtrReturn(pszMountPoint, false);
+    AssertReturn(cbMountPoint, false);
 
     bool fMounted = false;
+
+# if defined(RT_OS_SOLARIS)
     /** @todo What to do if we have a relative path in mtab instead
      *       of an absolute one ("temp" vs. "/media/temp")?
      * procfs contains the full path but not the actual share name ...
      * FILE *pFh = setmntent("/proc/mounts", "r+t"); */
-#ifdef RT_OS_SOLARIS
     FILE *pFh = fopen(_PATH_MOUNTED, "r");
     if (!pFh)
-        VGSvcError("vbsvcAutoMountShareIsMounted: Could not open mount tab '%s'!\n", _PATH_MOUNTED);
+        VGSvcError("vbsvcAutoMountShareIsMountedOld: Could not open mount tab '%s'!\n", _PATH_MOUNTED);
     else
     {
         mnttab mntTab;
@@ -153,10 +242,10 @@ static bool vbsvcAutoMountShareIsMounted(const char *pszShare, char *pszMountPoi
         }
         fclose(pFh);
     }
-#else
+# elif defined(RT_OS_LINUX)
     FILE *pFh = setmntent(_PATH_MOUNTED, "r+t"); /** @todo r=bird: why open it for writing? (the '+') */
     if (pFh == NULL)
-        VGSvcError("vbsvcAutoMountShareIsMounted: Could not open mount tab '%s'!\n", _PATH_MOUNTED);
+        VGSvcError("vbsvcAutoMountShareIsMountedOld: Could not open mount tab '%s'!\n", _PATH_MOUNTED);
     else
     {
         mntent *pMntEnt;
@@ -171,9 +260,11 @@ static bool vbsvcAutoMountShareIsMounted(const char *pszShare, char *pszMountPoi
         }
         endmntent(pFh);
     }
-#endif
+# else
+#  error "PORTME!"
+# endif
 
-    VGSvcVerbose(4, "vbsvcAutoMountShareIsMounted: Share '%s' at mount point '%s' = %s\n",
+    VGSvcVerbose(4, "vbsvcAutoMountShareIsMountedOld: Share '%s' at mount point '%s' = %s\n",
                        pszShare, fMounted ? pszMountPoint : "<None>", fMounted ? "Yes" : "No");
     return fMounted;
 }
@@ -185,7 +276,7 @@ static bool vbsvcAutoMountShareIsMounted(const char *pszShare, char *pszMountPoi
  * @returns VBox status code
  * @param   pszMountPoint   The shared folder mount point.
  */
-static int vbsvcAutoMountUnmount(const char *pszMountPoint)
+static int vbsvcAutoMountUnmountOld(const char *pszMountPoint)
 {
     AssertPtrReturn(pszMountPoint, VERR_INVALID_PARAMETER);
 
@@ -216,7 +307,7 @@ static int vbsvcAutoMountUnmount(const char *pszMountPoint)
  * @param   pszShareName    Unused.
  * @param   pOpts           For getting the group ID.
  */
-static int vbsvcAutoMountPrepareMountPoint(const char *pszMountPoint, const char *pszShareName, vbsf_mount_opts *pOpts)
+static int vbsvcAutoMountPrepareMountPointOld(const char *pszMountPoint, const char *pszShareName, vbsf_mount_opts *pOpts)
 {
     AssertPtrReturn(pOpts, VERR_INVALID_PARAMETER);
     AssertPtrReturn(pszMountPoint, VERR_INVALID_PARAMETER);
@@ -234,22 +325,22 @@ static int vbsvcAutoMountPrepareMountPoint(const char *pszMountPoint, const char
             {
                 if (rc == VERR_WRITE_PROTECT)
                 {
-                    VGSvcVerbose(3, "vbsvcAutoMountPrepareMountPoint: Mount directory '%s' already is used/mounted\n",
-                                       pszMountPoint);
+                    VGSvcVerbose(3, "vbsvcAutoMountPrepareMountPointOld: Mount directory '%s' already is used/mounted\n",
+                                 pszMountPoint);
                     rc = VINF_SUCCESS;
                 }
                 else
-                    VGSvcError("vbsvcAutoMountPrepareMountPoint: Could not set mode %RTfmode for mount directory '%s', rc = %Rrc\n",
-                                     fMode, pszMountPoint, rc);
+                    VGSvcError("vbsvcAutoMountPrepareMountPointOld: Could not set mode %RTfmode for mount directory '%s', rc = %Rrc\n",
+                               fMode, pszMountPoint, rc);
             }
         }
         else
-            VGSvcError("vbsvcAutoMountPrepareMountPoint: Could not set permissions for mount directory '%s', rc = %Rrc\n",
-                             pszMountPoint, rc);
+            VGSvcError("vbsvcAutoMountPrepareMountPointOld: Could not set permissions for mount directory '%s', rc = %Rrc\n",
+                       pszMountPoint, rc);
     }
     else
-        VGSvcError("vbsvcAutoMountPrepareMountPoint: Could not create mount directory '%s' with mode %RTfmode, rc = %Rrc\n",
-                         pszMountPoint, fMode, rc);
+        VGSvcError("vbsvcAutoMountPrepareMountPointOld: Could not create mount directory '%s' with mode %RTfmode, rc = %Rrc\n",
+                   pszMountPoint, fMode, rc);
     return rc;
 }
 
@@ -264,46 +355,47 @@ static int vbsvcAutoMountPrepareMountPoint(const char *pszMountPoint, const char
  * @param   pszMountPoint   The mount point.
  * @param   pOpts           The mount options.
  */
-static int vbsvcAutoMountSharedFolder(const char *pszShareName, const char *pszMountPoint, struct vbsf_mount_opts *pOpts)
+static int vbsvcAutoMountSharedFolderOld(const char *pszShareName, const char *pszMountPoint)
 {
-    AssertPtr(pOpts);
-
-    int rc = VINF_SUCCESS;
-    bool fSkip = false;
-
-    /* Already mounted? */
-    char szAlreadyMountedTo[RTPATH_MAX];
-    if (vbsvcAutoMountShareIsMounted(pszShareName, szAlreadyMountedTo, sizeof(szAlreadyMountedTo)))
+    /*
+     * Linux and solaris share the same mount structure.
+     */
+    struct group *grp_vboxsf = getgrnam("vboxsf");
+    if (!grp_vboxsf)
     {
-        fSkip = true;
-        /* Do if it not mounted to our desired mount point */
-        if (RTStrICmp(pszMountPoint, szAlreadyMountedTo))
-        {
-            VGSvcVerbose(3, "vbsvcAutoMountWorker: Shared folder '%s' already mounted to '%s', unmounting ...\n",
-                               pszShareName, szAlreadyMountedTo);
-            rc = vbsvcAutoMountUnmount(szAlreadyMountedTo);
-            if (RT_SUCCESS(rc))
-                fSkip = false;
-            else
-                VGSvcError("vbsvcAutoMountWorker: Failed to unmount '%s', %s (%d)! (rc=%Rrc)\n",
-                                 szAlreadyMountedTo, strerror(errno), errno, rc); /** @todo errno isn't reliable at this point */
-        }
-        if (fSkip)
-            VGSvcVerbose(3, "vbsvcAutoMountWorker: Shared folder '%s' already mounted to '%s', skipping\n",
-                               pszShareName, szAlreadyMountedTo);
+        VGSvcError("vbsvcAutoMountWorker: Group 'vboxsf' does not exist\n");
+        return VINF_SUCCESS;
     }
 
-    if (!fSkip && RT_SUCCESS(rc))
-        rc = vbsvcAutoMountPrepareMountPoint(pszMountPoint, pszShareName, pOpts);
-    if (!fSkip && RT_SUCCESS(rc))
+    struct vbsf_mount_opts Opts =
     {
-#ifdef RT_OS_SOLARIS
-        char szOptBuf[MAX_MNTOPT_STR] = { '\0', };
+        0,                     /* uid */
+        (int)grp_vboxsf->gr_gid, /* gid */
+        0,                     /* ttl */
+        0770,                  /* dmode, owner and group "vboxsf" have full access */
+        0770,                  /* fmode, owner and group "vboxsf" have full access */
+        0,                     /* dmask */
+        0,                     /* fmask */
+        0,                     /* ronly */
+        0,                     /* sloppy */
+        0,                     /* noexec */
+        0,                     /* nodev */
+        0,                     /* nosuid */
+        0,                     /* remount */
+        "\0",                  /* nls_name */
+        NULL,                  /* convertcp */
+    };
+
+    int rc = vbsvcAutoMountPrepareMountPointOld(pszMountPoint, pszShareName, &Opts);
+    if (RT_SUCCESS(rc))
+    {
+# ifdef RT_OS_SOLARIS
         int fFlags = 0;
-        if (pOpts->ronly)
+        if (Opts.ronly)
             fFlags |= MS_RDONLY;
+        char szOptBuf[MAX_MNTOPT_STR] = { '\0', };
         RTStrPrintf(szOptBuf, sizeof(szOptBuf), "uid=%d,gid=%d,dmode=%0o,fmode=%0o,dmask=%0o,fmask=%0o",
-                    pOpts->uid, pOpts->gid, pOpts->dmode, pOpts->fmode, pOpts->dmask, pOpts->fmask);
+                    Opts.uid, Opts.gid, Opts.dmode, Opts.fmode, Opts.dmask, Opts.fmask);
         int r = mount(pszShareName,
                       pszMountPoint,
                       fFlags | MS_OPTIONSTR,
@@ -316,9 +408,9 @@ static int vbsvcAutoMountSharedFolder(const char *pszShareName, const char *pszM
             VGSvcVerbose(0, "vbsvcAutoMountWorker: Shared folder '%s' was mounted to '%s'\n", pszShareName, pszMountPoint);
         else if (errno != EBUSY) /* Share is already mounted? Then skip error msg. */
             VGSvcError("vbsvcAutoMountWorker: Could not mount shared folder '%s' to '%s', error = %s\n",
-                             pszShareName, pszMountPoint, strerror(errno));
+                       pszShareName, pszMountPoint, strerror(errno));
 
-#elif defined(RT_OS_LINUX)
+# else /* RT_OS_LINUX */
         unsigned long fFlags = MS_NODEV;
 
         /*const char *szOptions = { "rw" }; - ??? */
@@ -330,13 +422,13 @@ static int vbsvcAutoMountSharedFolder(const char *pszShareName, const char *pszM
         mntinf.signature[2] = VBSF_MOUNT_SIGNATURE_BYTE_2;
         mntinf.length       = sizeof(mntinf);
 
-        mntinf.uid   = pOpts->uid;
-        mntinf.gid   = pOpts->gid;
-        mntinf.ttl   = pOpts->ttl;
-        mntinf.dmode = pOpts->dmode;
-        mntinf.fmode = pOpts->fmode;
-        mntinf.dmask = pOpts->dmask;
-        mntinf.fmask = pOpts->fmask;
+        mntinf.uid   = Opts.uid;
+        mntinf.gid   = Opts.gid;
+        mntinf.ttl   = Opts.ttl;
+        mntinf.dmode = Opts.dmode;
+        mntinf.fmode = Opts.fmode;
+        mntinf.dmask = Opts.dmask;
+        mntinf.fmask = Opts.fmask;
 
         strcpy(mntinf.name, pszShareName);
         strcpy(mntinf.nls_name, "\0");
@@ -350,7 +442,7 @@ static int vbsvcAutoMountSharedFolder(const char *pszShareName, const char *pszM
         {
             VGSvcVerbose(0, "vbsvcAutoMountWorker: Shared folder '%s' was mounted to '%s'\n", pszShareName, pszMountPoint);
 
-            r = vbsfmount_complete(pszShareName, pszMountPoint, fFlags, pOpts);
+            r = vbsfmount_complete(pszShareName, pszMountPoint, fFlags, &Opts);
             switch (r)
             {
                 case 0: /* Success. */
@@ -359,7 +451,7 @@ static int vbsvcAutoMountSharedFolder(const char *pszShareName, const char *pszM
 
                 case 1:
                     VGSvcError("vbsvcAutoMountWorker: Could not update mount table (failed to create memstream): %s\n",
-                                     strerror(errno));
+                               strerror(errno));
                     break;
 
                 case 2:
@@ -426,9 +518,7 @@ static int vbsvcAutoMountSharedFolder(const char *pszShareName, const char *pszM
                 }
             }
         }
-#else
-# error "PORTME"
-#endif
+# endif
     }
     VGSvcVerbose(3, "vbsvcAutoMountWorker: Mounting returned with rc=%Rrc\n", rc);
     return rc;
@@ -445,8 +535,8 @@ static int vbsvcAutoMountSharedFolder(const char *pszShareName, const char *pszM
  * @param   pszSharePrefix  The share prefix.
  * @param   uClientID       The shared folder service (HGCM) client ID.
  */
-static int vbsvcAutoMountProcessMappings(PCVBGLR3SHAREDFOLDERMAPPING paMappings, uint32_t cMappings,
-                                         const char *pszMountDir, const char *pszSharePrefix, uint32_t uClientID)
+static int vbsvcAutoMountProcessMappingsOld(PCVBGLR3SHAREDFOLDERMAPPING paMappings, uint32_t cMappings,
+                                            const char *pszMountDir, const char *pszSharePrefix, uint32_t uClientID)
 {
     if (cMappings == 0)
         return VINF_SUCCESS;
@@ -489,32 +579,39 @@ static int vbsvcAutoMountProcessMappings(PCVBGLR3SHAREDFOLDERMAPPING paMappings,
                 {
                     VGSvcVerbose(4, "vbsvcAutoMountWorker: Processing mount point '%s'\n", szMountPoint);
 
-                    struct group *grp_vboxsf = getgrnam("vboxsf");
-                    if (grp_vboxsf)
+                    /*
+                     * Already mounted?
+                     */
+                    /** @todo r-bird: this does not take into account that a shared folder could
+                     *        be mounted twice... We're really just interested in whether the
+                     *        folder is mounted on 'szMountPoint', no where else... */
+                    bool fSkip = false;
+                    char szAlreadyMountedOn[RTPATH_MAX];
+                    if (vbsvcAutoMountShareIsMountedOld(pszShareName, szAlreadyMountedOn, sizeof(szAlreadyMountedOn)))
                     {
-                        struct vbsf_mount_opts mount_opts =
+                        /* Do if it not mounted to our desired mount point */
+                        if (RTStrICmp(szMountPoint, szAlreadyMountedOn))
                         {
-                            0,                     /* uid */
-                            (int)grp_vboxsf->gr_gid, /* gid */
-                            0,                     /* ttl */
-                            0770,                  /* dmode, owner and group "vboxsf" have full access */
-                            0770,                  /* fmode, owner and group "vboxsf" have full access */
-                            0,                     /* dmask */
-                            0,                     /* fmask */
-                            0,                     /* ronly */
-                            0,                     /* sloppy */
-                            0,                     /* noexec */
-                            0,                     /* nodev */
-                            0,                     /* nosuid */
-                            0,                     /* remount */
-                            "\0",                  /* nls_name */
-                            NULL,                  /* convertcp */
-                        };
-
-                        rc = vbsvcAutoMountSharedFolder(pszShareName, szMountPoint, &mount_opts);
+                            VGSvcVerbose(3, "vbsvcAutoMountWorker: Shared folder '%s' already mounted on '%s', unmounting ...\n",
+                                         pszShareName, szAlreadyMountedOn);
+                            rc = vbsvcAutoMountUnmountOld(szAlreadyMountedOn);
+                            if (RT_SUCCESS(rc))
+                                fSkip = false;
+                            else
+                                VGSvcError("vbsvcAutoMountWorker: Failed to unmount '%s', %s (%d)! (rc=%Rrc)\n",
+                                           szAlreadyMountedOn, strerror(errno), errno, rc); /** @todo errno isn't reliable at this point */
+                        }
+                        if (fSkip)
+                            VGSvcVerbose(3, "vbsvcAutoMountWorker: Shared folder '%s' already mounted on '%s', skipping\n",
+                                         pszShareName, szAlreadyMountedOn);
                     }
-                    else
-                        VGSvcError("vbsvcAutoMountWorker: Group 'vboxsf' does not exist\n");
+                    if (!fSkip)
+                    {
+                        /*
+                         * Mount it.
+                         */
+                        rc = vbsvcAutoMountSharedFolderOld(pszShareName, szMountPoint);
+                    }
                 }
                 else
                     VGSvcError("vbsvcAutoMountWorker: Unable to join mount point/prefix/shrae, rc = %Rrc\n", rc);
@@ -531,21 +628,26 @@ static int vbsvcAutoMountProcessMappings(PCVBGLR3SHAREDFOLDERMAPPING paMappings,
     return rc;
 }
 
+#endif /* defined(RT_OS_SOLARIS) || defined(RT_OS_LINUX) - the old code*/
+
 
 /**
- * @interface_method_impl{VBOXSERVICE,pfnWorker}
+ * Service worker function for old host.
+ *
+ * This only mount stuff on startup.
+ *
+ * @returns VBox status code.
+ * @param   pfShutdown          Shutdown indicator.
  */
-static DECLCALLBACK(int) vbsvcAutoMountWorker(bool volatile *pfShutdown)
+static int vbsvcAutoMountWorkerOld(bool volatile *pfShutdown)
 {
+#if defined(RT_OS_SOLARIS) || defined(RT_OS_LINUX)
     /*
-     * Tell the control thread that it can continue
-     * spawning services.
+     * We only do a single pass here.
      */
-    RTThreadUserSignal(RTThreadSelf());
-
     uint32_t cMappings;
     PVBGLR3SHAREDFOLDERMAPPING paMappings;
-    int rc = VbglR3SharedFolderGetMappings(g_SharedFoldersSvcClientID, true /* Only process auto-mounted folders */,
+    int rc = VbglR3SharedFolderGetMappings(g_idClientSharedFolders, true /* Only process auto-mounted folders */,
                                            &paMappings, &cMappings);
     if (   RT_SUCCESS(rc)
         && cMappings)
@@ -563,20 +665,19 @@ static DECLCALLBACK(int) vbsvcAutoMountWorker(bool volatile *pfShutdown)
             if (RT_SUCCESS(rc))
             {
                 VGSvcVerbose(3, "vbsvcAutoMountWorker: Shared folder mount prefix set to '%s'\n", pszSharePrefix);
-#ifdef USE_VIRTUAL_SHARES
+# ifdef USE_VIRTUAL_SHARES
                 /* Check for a fixed/virtual auto-mount share. */
-                if (VbglR3SharedFolderExists(g_SharedFoldersSvcClientID, "vbsfAutoMount"))
-                {
+                if (VbglR3SharedFolderExists(g_idClientSharedFolders, "vbsfAutoMount"))
                     VGSvcVerbose(3, "vbsvcAutoMountWorker: Host supports auto-mount root\n");
-                }
                 else
                 {
-#endif
+# endif
                     VGSvcVerbose(3, "vbsvcAutoMountWorker: Got %u shared folder mappings\n", cMappings);
-                    rc = vbsvcAutoMountProcessMappings(paMappings, cMappings, pszMountDir, pszSharePrefix, g_SharedFoldersSvcClientID);
-#ifdef USE_VIRTUAL_SHARES
+                    rc = vbsvcAutoMountProcessMappingsOld(paMappings, cMappings, pszMountDir, pszSharePrefix,
+                                                          g_idClientSharedFolders);
+# ifdef USE_VIRTUAL_SHARES
                 }
-#endif
+# endif
                 RTStrFree(pszSharePrefix);
             } /* Mount share prefix. */
             else
@@ -592,63 +693,1473 @@ static DECLCALLBACK(int) vbsvcAutoMountWorker(bool volatile *pfShutdown)
     else
         VGSvcVerbose(3, "vbsvcAutoMountWorker: No shared folder mappings found\n");
 
-    /*
-     * Because this thread is a one-timer at the moment we don't want to break/change
-     * the semantics of the main thread's start/stop sub-threads handling.
-     *
-     * This thread exits so fast while doing its own startup in VGSvcStartServices()
-     * that this->fShutdown flag is set to true in VGSvcThread() before we have the
-     * chance to check for a service failure in VGSvcStartServices() to indicate
-     * a VBoxService startup error.
-     *
-     * Therefore *no* service threads are allowed to quit themselves and need to wait
-     * for the pfShutdown flag to be set by the main thread.
-     */
-/** @todo r=bird: Shared folders have always been configurable at run time, so
- * this service must be changed to check for changes and execute those changes!
- *
- * The 0.5sec sleep here is just soo crude and must go!
- */
-    for (;;)
-    {
-        /* Do we need to shutdown? */
-        if (*pfShutdown)
-            break;
+#else
+    int rc = VINF_SUCCESS;
+#endif /* defined(RT_OS_SOLARIS) || defined(RT_OS_LINUX) */
 
-        /* Let's sleep for a bit and let others run ... */
-        RTThreadSleep(500);
+
+    /*
+     * Wait on shutdown (this used to be a silly RTThreadSleep(500) loop).
+     */
+    while (!*pfShutdown)
+    {
+        rc = RTSemEventMultiWait(g_hAutoMountEvent, RT_MS_1MIN);
+        if (rc != VERR_TIMEOUT)
+            break;
     }
 
-    VGSvcVerbose(3, "vbsvcAutoMountWorker: Finished with rc=%Rrc\n", rc);
-    return VINF_SUCCESS;
+    VGSvcVerbose(3, "vbsvcAutoMountWorkerOld: Finished with rc=%Rrc\n", rc);
+    return rc;
+}
+
+#if !defined(RT_OS_WINDOWS) && !defined(RT_OS_OS2)
+/**
+ * Assembles the mount directory and prefix into @a pszDst.
+ *
+ * Will fall back on defaults if we have trouble with the configuration from the
+ * host.  This ASSUMES that @a cbDst is rather large and won't cause trouble
+ * with the default.
+ *
+ * @returns IPRT status code.
+ * @param   pszDst          Where to return the prefix.
+ * @param   cbDst           The size of the prefix buffer.
+ */
+static int vbsvcAutomounterQueryMountDirAndPrefix(char *pszDst, size_t cbDst)
+{
+    /*
+     * Query the config first.
+     */
+    /* Mount directory: */
+    const char *pszDir = VBOXSERVICE_AUTOMOUNT_DEFAULT_DIR;
+    char       *pszCfgDir;
+    int rc = VbglR3SharedFolderGetMountDir(&pszCfgDir);
+    if (RT_SUCCESS(rc))
+    {
+        if (*pszCfgDir == '/')
+            pszDir = pszCfgDir;
+    }
+    else
+        pszCfgDir = NULL;
+
+    /* Prefix: */
+    const char *pszPrefix = VBOXSERVICE_AUTOMOUNT_DEFAULT_PREFIX;
+    char *pszCfgPrefix;
+    rc = VbglR3SharedFolderGetMountPrefix(&pszCfgPrefix);
+    if (RT_SUCCESS(rc))
+    {
+        if (   strchr(pszCfgPrefix, '/')  == NULL
+            && strchr(pszCfgPrefix, '\\') == NULL
+            && strcmp(pszCfgPrefix, "..") != 0)
+            pszPrefix = pszCfgPrefix;
+    }
+    else
+        pszCfgPrefix = NULL;
+
+    /*
+     * Try combine the two.
+     */
+    rc = RTPathAbs(pszDir, pszDst, cbDst);
+    if (RT_SUCCESS(rc))
+    {
+        if (*pszPrefix)
+        {
+            rc = RTPathAppend(pszDst, cbDst, pszPrefix);
+            if (RT_FAILURE(rc))
+                VGSvcError("vbsvcAutomounterQueryMountDirAndPrefix: RTPathAppend(%s,,%s) -> %Rrc\n", pszDst, pszPrefix, rc);
+        }
+        else
+        {
+            rc = RTPathEnsureTrailingSeparator(pszDst, cbDst);
+            if (RT_FAILURE(rc))
+                VGSvcError("vbsvcAutomounterQueryMountDirAndPrefix: RTPathEnsureTrailingSeparator(%s) -> %Rrc\n", pszDst, rc);
+        }
+    }
+    else
+        VGSvcError("vbsvcAutomounterQueryMountDirAndPrefix: RTPathAbs(%s) -> %Rrc\n", rc);
+
+
+    /*
+     * Return the default dir + prefix if the above failed.
+     */
+    if (RT_FAILURE(rc))
+    {
+        rc = RTStrCopy(pszDst, cbDst, VBOXSERVICE_AUTOMOUNT_DEFAULT_DIR "/" VBOXSERVICE_AUTOMOUNT_DEFAULT_PREFIX);
+        AssertRC(rc);
+    }
+
+    RTStrFree(pszCfgDir);
+    RTStrFree(pszCfgPrefix);
+    return rc;
+}
+#endif /* !RT_OS_WINDOW && !RT_OS_OS2 */
+
+
+/**
+ * @callback_method_impl{FNRTSORTCMP, For sorting mount table by root ID. }
+ */
+static DECLCALLBACK(int) vbsvcAutomounterCompareEntry(void const *pvElement1, void const *pvElement2, void *pvUser)
+{
+    RT_NOREF_PV(pvUser);
+    PVBSVCAUTOMOUNTERENTRY pEntry1 = (PVBSVCAUTOMOUNTERENTRY)pvElement1;
+    PVBSVCAUTOMOUNTERENTRY pEntry2 = (PVBSVCAUTOMOUNTERENTRY)pvElement2;
+    return pEntry1->idRoot < pEntry2->idRoot ? -1
+         : pEntry1->idRoot > pEntry2->idRoot ? 1 : 0;
 }
 
 
 /**
- * @interface_method_impl{VBOXSERVICE,pfnTerm}
+ * Worker for vbsvcAutomounterPopulateTable for adding discovered entries.
+ *
+ * This is puts dummies in for missing values, depending on
+ * vbsvcAutomounterPopulateTable to query them later.
+ *
+ * @returns VINF_SUCCESS or VERR_NO_MEMORY;
+ * @param   pMountTable     The mount table to add an entry to.
+ * @param   pszName         The shared folder name.
+ * @param   pszMountPoint   The mount point.
  */
-static DECLCALLBACK(void) vbsvcAutoMountTerm(void)
+static int vbsvcAutomounterAddEntry(PVBSVCAUTOMOUNTERTABLE pMountTable, const char *pszName, const char *pszMountPoint)
 {
-    VGSvcVerbose(3, "vbsvcAutoMountTerm\n");
-
-    VbglR3SharedFolderDisconnect(g_SharedFoldersSvcClientID);
-    g_SharedFoldersSvcClientID = 0;
-
-    if (g_AutoMountEvent != NIL_RTSEMEVENTMULTI)
+    VGSvcVerbose(2, "vbsvcAutomounterAddEntry: %s -> %s\n", pszMountPoint, pszName);
+    PVBSVCAUTOMOUNTERENTRY pEntry = (PVBSVCAUTOMOUNTERENTRY)RTMemAlloc(sizeof(*pEntry));
+    pEntry->idRoot              = UINT32_MAX;
+    pEntry->uRootIdVersion      = UINT32_MAX;
+    pEntry->fFlags              = UINT64_MAX;
+    pEntry->pszName             = RTStrDup(pszName);
+    pEntry->pszMountPoint       = NULL;
+    pEntry->pszActualMountPoint = RTStrDup(pszMountPoint);
+    if (pEntry->pszName && pEntry->pszActualMountPoint)
     {
-        RTSemEventMultiDestroy(g_AutoMountEvent);
-        g_AutoMountEvent = NIL_RTSEMEVENTMULTI;
+        if (pMountTable->cEntries + 1 <= pMountTable->cAllocated)
+        {
+            pMountTable->papEntries[pMountTable->cEntries++] = pEntry;
+            return VINF_SUCCESS;
+        }
+
+        void *pvNew = RTMemRealloc(pMountTable->papEntries, (pMountTable->cAllocated + 8) * sizeof(pMountTable->papEntries[0]));
+        if (pvNew)
+        {
+            pMountTable->cAllocated += 8;
+            pMountTable->papEntries = (PVBSVCAUTOMOUNTERENTRY *)pvNew;
+
+            pMountTable->papEntries[pMountTable->cEntries++] = pEntry;
+            return VINF_SUCCESS;
+        }
     }
-    return;
+    RTMemFree(pEntry->pszActualMountPoint);
+    RTMemFree(pEntry->pszName);
+    RTMemFree(pEntry);
+    return VERR_NO_MEMORY;
+}
+
+
+/**
+ * Populates the mount table as best we can with existing automount entries.
+ *
+ * @returns VINF_SUCCESS or VERR_NO_MEMORY;
+ * @param   pMountTable     The mount table (empty).
+ */
+static int vbsvcAutomounterPopulateTable(PVBSVCAUTOMOUNTERTABLE pMountTable)
+{
+    int rc;
+
+#ifdef RT_OS_WINDOWS
+    /*
+     * Loop thru the drive letters and check out each of them using QueryDosDeviceW.
+     */
+    static const char s_szDevicePath[] = "\\Device\\VBoxMiniRdr\\;";
+    for (char chDrive = 'Z'; chDrive >= 'A'; chDrive--)
+    {
+        RTUTF16 const wszMountPoint[4] = { chDrive, ':', '\0', '\0' };
+        RTUTF16       wszTargetPath[RTPATH_MAX];
+        DWORD const   cwcResult = QueryDosDeviceW(wszMountPoint, wszTargetPath, RT_ELEMENTS(wszTargetPath));
+        if (   cwcResult > sizeof(s_szDevicePath)
+            && RTUtf16NICmpAscii(wszTargetPath, RT_STR_TUPLE(s_szDevicePath)) == 0)
+        {
+            PCRTUTF16 pwsz = &wszTargetPath[RT_ELEMENTS(s_szDevicePath) - 1];
+            Assert(pwsz[-1] == ';');
+            if (   (pwsz[0] & ~(RTUTF16)0x20) == chDrive
+                && pwsz[1] == ':'
+                && pwsz[2] == '\\')
+            {
+                /* For now we'll just use the special capitalization of the
+                   "server" name to identify it as our work.  We could check
+                   if the symlink is from \Global?? or \??, but that trick does
+                   work for older OS versions (<= XP) or when running the
+                   service manually for testing/wathever purposes. */
+                /** @todo Modify the windows shared folder driver to allow tagging drives.*/
+                if (RTUtf16NCmpAscii(&pwsz[3], RT_STR_TUPLE("VBoxSvr\\")) == 0)
+                {
+                    pwsz += 3 + 8;
+                    if (*pwsz != '\\' && *pwsz)
+                    {
+                        /* The shared folder name should follow immediately after the server prefix. */
+                        char *pszMountedName = NULL;
+                        rc = RTUtf16ToUtf8(pwsz, &pszMountedName);
+                        if (RT_SUCCESS(rc))
+                        {
+                            char const szMountPoint[4] = { chDrive, ':', '\0', '\0' };
+                            rc = vbsvcAutomounterAddEntry(pMountTable, pszMountedName, szMountPoint);
+                            RTStrFree(pszMountedName);
+                        }
+                        if (RT_FAILURE(rc))
+                            return rc;
+                    }
+                    else
+                        VGSvcVerbose(2, "vbsvcAutomounterPopulateTable: Malformed, not ours: %ls -> %ls\n",
+                                     wszMountPoint, wszTargetPath);
+                }
+                else
+                    VGSvcVerbose(3, "vbsvcAutomounterPopulateTable: Not ours: %ls -> %ls\n", wszMountPoint, wszTargetPath);
+            }
+        }
+    }
+
+#elif defined(RT_OS_OS2)
+    /*
+     * Just loop thru the drive letters and check the attachment of each.
+     */
+    for (char chDrive = 'Z'; chDrive >= 'A'; chDrive--)
+    {
+        char const szMountPoint[4] = { chDrive, ':', '\0', '\0' };
+        union
+        {
+            FSQBUFFER2  FsQueryBuf;
+            char        achPadding[1024];
+        } uBuf;
+        RT_ZERO(uBuf);
+        ULONG  cbBuf = sizeof(uBuf) - 2;
+        APIRET rcOs2 = DosQueryFSAttach(szMountPoint, 0, FSAIL_QUERYNAME, uBuf, &cbBuf);
+        if (rcOs2 == NO_ERROR)
+        {
+            const char *pszFsdName = &uBuf.FsQueryBuf.szName[uBuf.FsQueryBuf.cbName + 1];
+            if (   uBuf.FsQueryBuf.iType == FSAT_REMOTEDRV
+                && RTStrICmpAscii(pszFsdName, "VBOXSF") == 0)
+            {
+                const char *pszMountedName = &pszFsdName[uBuf.FsQueryBuf.cbFSDName + 1];
+                const char *pszTag         = strlen(pszMountedName) + 1; /* (Safe. Always two trailing zero bytes, see above.) */
+                if (strcmp(pszTag, g_szTag) == 0)
+                {
+                    rc = vbsvcAutomounterAddEntry(pMountTable, pszMountedName, szMountPoint);
+                    if (RT_FAILURE(rc))
+                        return rc;
+                }
+            }
+        }
+    }
+
+#elif defined(RT_OS_LINUX)
+    /*
+     * Scan the mount table file for the mount point and then match file system
+     * and device/share.  We identify our mounts by mount path + prefix for now,
+     * but later we may use the same approach as on solaris.
+     */
+    char szMountPrefix[RTPATH_MAX];
+    rc = vbsvcAutomounterQueryMountDirAndPrefix(szMountPrefix, sizeof(szMountPrefix));
+    AssertRCReturn(rc, rc);
+    size_t const cchMountPrefix = strlen(szMountPrefix);
+
+    FILE *pFile = setmntent(_PATH_MOUNTED, "r");
+    if (pFile)
+    {
+        rc = VWRN_NOT_FOUND;
+        struct mntent *pEntry;
+        while ((pEntry = getmntent(pFile)) != NULL)
+            if (strcmp(pEntry->mnt_type, "vboxsf") == 0)
+            {
+                /** @todo add mount option for tagging a mount, make kernel show it by
+                 *        implementing super_operations::show_options. */
+                if (strncmp(pEntry->mnt_dir, szMountPrefix, cchMountPrefix) == 0)
+                {
+                    rc = vbsvcAutomounterAddEntry(pMountTable, pEntry->mnt_fsname, pEntry->mnt_dir);
+                    if (RT_FAILURE(rc))
+                    {
+                        endmntent(pFile);
+                        return rc;
+                    }
+                }
+            }
+        endmntent(pFile);
+    }
+    else
+        VGSvcError("vbsvcAutomounterQueryMountPoint: Could not open mount tab '%s' (errno=%d) or '/proc/mounts' (errno=%d)\n",
+                   _PATH_MOUNTED, errno);
+    return rc;
+
+#elif defined(RT_OS_SOLARIS)
+    /*
+     * Look thru the system mount table and inspect the vboxsf mounts.
+     */
+    FILE *pFile = fopen(_PATH_MOUNTED, "r");
+    if (pFile)
+    {
+        rc = VINF_SUCCESS;
+        struct mnttab Entry;
+        while (getmntent(pFile, &Entry) == 0)
+            if (strcmp(Entry.mnt_fstype, "vboxsf") == 0)
+            {
+                /* Look for the dummy automounter option. */
+                if (   Entry.mnt_opts != NULL
+                    && strstr(Entry.mnt_opts, g_szTag) != NULL)
+                {
+                    rc = vbsvcAutomounterAddEntry(pMountTable, Entry.mnt_special, Entry.mnt_mountp);
+                    if (RT_FAILURE(rc))
+                    {
+                        fclose(pFile);
+                        return rc;
+                    }
+                }
+            }
+        fclose(pFile);
+    }
+    else
+        VGSvcError("vbsvcAutomounterQueryMountPoint: Could not open mount tab '%s' (errno=%d)\n", _PATH_MOUNTED, errno);
+
+#else
+# error "PORTME!"
+#endif
+
+    /*
+     * Try reconcile the detected folders with data from the host.
+     */
+    uint32_t                    cMappings = 0;
+    PVBGLR3SHAREDFOLDERMAPPING  paMappings = NULL;
+    rc = VbglR3SharedFolderGetMappings(g_idClientSharedFolders, true /*fAutoMountOnly*/, &paMappings, &cMappings);
+    if (RT_SUCCESS(rc))
+    {
+        for (uint32_t i = 0; i < cMappings && RT_SUCCESS(rc); i++)
+        {
+            uint32_t const idRootSrc = paMappings[i].u32Root;
+
+            uint32_t uRootIdVer = UINT32_MAX;
+            uint64_t fFlags     = 0;
+            char    *pszName    = NULL;
+            char    *pszMntPt   = NULL;
+            int rc2 = VbglR3SharedFolderQueryFolderInfo(g_idClientSharedFolders, idRootSrc,  VBOXSERVICE_AUTOMOUNT_MIQF,
+                                                        &pszName, &pszMntPt, &fFlags, &uRootIdVer);
+            if (RT_SUCCESS(rc2))
+            {
+                uint32_t iPrevHit = UINT32_MAX;
+                for (uint32_t iTable = 0; iTable < pMountTable->cEntries; iTable++)
+                {
+                    PVBSVCAUTOMOUNTERENTRY pEntry = pMountTable->papEntries[iTable];
+                    if (RTStrICmp(pEntry->pszName, pszName) == 0)
+                    {
+                        VGSvcVerbose(2, "vbsvcAutomounterPopulateTable: Identified %s -> %s: idRoot=%u ver=%u fFlags=%#x AutoMntPt=%s\n",
+                                     pEntry->pszActualMountPoint, pEntry->pszName, idRootSrc, uRootIdVer, fFlags, pszMntPt);
+                        pEntry->fFlags         = fFlags;
+                        pEntry->idRoot         = idRootSrc;
+                        pEntry->uRootIdVersion = uRootIdVer;
+                        RTStrFree(pEntry->pszMountPoint);
+                        pEntry->pszMountPoint = RTStrDup(pszMntPt);
+                        if (!pEntry->pszMountPoint)
+                        {
+                            rc = VERR_NO_MEMORY;
+                            break;
+                        }
+
+                        /* If multiple mappings of the same folder, pick the first or the one
+                           with matching mount point. */
+                        if (iPrevHit == UINT32_MAX)
+                            iPrevHit = iTable;
+                        else if (RTPathCompare(pszMntPt, pEntry->pszActualMountPoint) == 0)
+                        {
+                            if (iPrevHit != UINT32_MAX)
+                                pMountTable->papEntries[iPrevHit]->uRootIdVersion -= 1;
+                            iPrevHit = iTable;
+                        }
+                        else
+                            pEntry->uRootIdVersion -= 1;
+                    }
+                }
+
+                RTStrFree(pszName);
+                RTStrFree(pszMntPt);
+            }
+            else
+                VGSvcError("vbsvcAutomounterPopulateTable: VbglR3SharedFolderQueryFolderInfo(%u) failed: %Rrc\n", idRootSrc, rc2);
+        }
+
+        VbglR3SharedFolderFreeMappings(paMappings);
+
+        /*
+         * Sort the table by root ID.
+         */
+        if (pMountTable->cEntries > 1)
+            RTSortApvShell((void **)pMountTable->papEntries, pMountTable->cEntries, vbsvcAutomounterCompareEntry, NULL);
+
+        for (uint32_t iTable = 0; iTable < pMountTable->cEntries; iTable++)
+        {
+            PVBSVCAUTOMOUNTERENTRY pEntry = pMountTable->papEntries[iTable];
+            if (pMountTable->papEntries[iTable]->idRoot != UINT32_MAX)
+                VGSvcVerbose(1, "vbsvcAutomounterPopulateTable: #%u: %s -> %s idRoot=%u ver=%u fFlags=%#x AutoMntPt=%s\n",
+                             iTable, pEntry->pszActualMountPoint, pEntry->pszName, pEntry->idRoot, pEntry->uRootIdVersion,
+                             pEntry->fFlags, pEntry->pszMountPoint);
+            else
+                VGSvcVerbose(1, "vbsvcAutomounterPopulateTable: #%u: %s -> %s - not identified!\n",
+                             iTable, pEntry->pszActualMountPoint, pEntry->pszName);
+        }
+    }
+    else
+        VGSvcError("vbsvcAutomounterPopulateTable: VbglR3SharedFolderGetMappings failed: %Rrc\n", rc);
+    return rc;
+}
+
+
+/**
+ * Checks whether the shared folder @a pszName is mounted on @a pszMountPoint.
+ *
+ * @returns Exactly one of the following IPRT status codes;
+ * @retval  VINF_SUCCESS if mounted
+ * @retval  VWRN_NOT_FOUND if nothing is mounted at @a pszMountPoint.
+ * @retval  VERR_RESOURCE_BUSY if a different shared folder is mounted there.
+ * @retval  VERR_ACCESS_DENIED if a non-shared folder file system is mounted
+ *          there.
+ *
+ * @param   pszMountPoint   The mount point to check.
+ * @param   pszName         The name of the shared folder (mapping).
+ */
+static int vbsvcAutomounterQueryMountPoint(const char *pszMountPoint, const char *pszName)
+{
+    VGSvcVerbose(4, "vbsvcAutomounterQueryMountPoint: pszMountPoint=%s pszName=%s\n", pszMountPoint, pszName);
+
+#ifdef RT_OS_WINDOWS
+    /*
+     * We could've used RTFsQueryType here but would then have to
+     * calling RTFsQueryLabel for the share name hint, ending up
+     * doing the same work twice.  We could also use QueryDosDeviceW,
+     * but output is less clear...
+     */
+    PRTUTF16 pwszMountPoint = NULL;
+    int rc = RTStrToUtf16(pszMountPoint, &pwszMountPoint);
+    if (RT_SUCCESS(rc))
+    {
+        DWORD   uSerial = 0;
+        DWORD   cchCompMax = 0;
+        DWORD   fFlags = 0;
+        RTUTF16 wszLabel[512];
+        RTUTF16 wszFileSystem[256];
+        RT_ZERO(wszLabel);
+        RT_ZERO(wszFileSystem);
+        if (GetVolumeInformationW(pwszMountPoint, wszLabel, RT_ELEMENTS(wszLabel) - 1, &uSerial, &cchCompMax, &fFlags,
+                                  wszFileSystem, RT_ELEMENTS(wszFileSystem) - 1))
+        {
+            if (RTUtf16ICmpAscii(wszFileSystem, "VBoxSharedFolderFS") == 0)
+            {
+                char *pszLabel = NULL;
+                rc = RTUtf16ToUtf8(wszLabel, &pszLabel);
+                if (RT_SUCCESS(rc))
+                {
+                    const char *pszMountedName = pszLabel;
+                    if (RTStrStartsWith(pszMountedName, "VBOX_"))
+                        pszMountedName += sizeof("VBOX_") - 1;
+                    if (RTStrICmp(pszMountedName, pszName) == 0)
+                    {
+                        VGSvcVerbose(3, "vbsvcAutomounterQueryMountPoint: Found shared folder '%s' at '%s' as expected.\n",
+                                     pszMountPoint, pszName);
+                        rc = VINF_SUCCESS;
+                    }
+                    else
+                    {
+                        VGSvcVerbose(3, "vbsvcAutomounterQueryMountPoint: Found shared folder '%s' at '%s', not '%s'...\n",
+                                     pszMountedName, pszMountPoint, pszName);
+                        rc = VERR_RESOURCE_BUSY;
+                    }
+                    RTStrFree(pszLabel);
+                }
+                else
+                {
+                    VGSvcVerbose(3, "vbsvcAutomounterQueryMountPoint: RTUtf16ToUtf8(%ls,) failed: %Rrc\n", wszLabel, rc);
+                    rc = VERR_RESOURCE_BUSY;
+                }
+            }
+            else
+            {
+                VGSvcVerbose(3, "vbsvcAutomounterQueryMountPoint: Found a '%ls' with label '%ls' mount at '%s', not '%s'...\n",
+                             wszFileSystem, wszLabel, pszMountPoint, pszName);
+                rc = VERR_ACCESS_DENIED;
+            }
+        }
+        else
+        {
+            rc = GetLastError();
+            if (rc != ERROR_PATH_NOT_FOUND || g_cVerbosity >= 4)
+                VGSvcVerbose(3, "vbsvcAutomounterQueryMountPoint: GetVolumeInformationW('%ls',,,,) failed: %u\n", pwszMountPoint, rc);
+            rc = VWRN_NOT_FOUND;
+        }
+        RTUtf16Free(pwszMountPoint);
+    }
+    else
+    {
+        VGSvcError("vbsvcAutomounterQueryMountPoint: RTStrToUtf16(%s,) -> %Rrc\n", pszMountPoint, rc);
+        rc = VWRN_NOT_FOUND;
+    }
+    return rc;
+
+#elif defined(RT_OS_OS2)
+    /*
+     * Query file system attachment info for the given drive letter.
+     */
+    union
+    {
+        FSQBUFFER2  FsQueryBuf;
+        char        achPadding[512];
+    } uBuf;
+    RT_ZERO(uBuf);
+
+    ULONG cbBuf = sizeof(uBuf);
+    APIRET rcOs2 = DosQueryFSAttach((PCSZ)pFsInfo->szMountpoint, 0, FSAIL_QUERYNAME, uBuf, &cbBuf);
+    int rc;
+    if (rcOs2 == NO_ERROR)
+    {
+        const char *pszFsdName = &uBuf.FsQueryBuf.szName[uBuf.FsQueryBuf.cbName + 1];
+        if (   uBuf.FsQueryBuf.iType == FSAT_REMOTEDRV
+            && RTStrICmpAscii(pszFsdName, "VBOXSF") == 0)
+        {
+            const char *pszMountedName = &pszFsdName[uBuf.FsQueryBuf.cbFSDName + 1];
+            if (RTStrICmp(pszMountedName, pszName) == 0)
+            {
+                VGSvcVerbose(3, "vbsvcAutomounterQueryMountPoint: Found shared folder '%s' at '%s' as expected.\n",
+                             pszMountPoint, pszName);
+                rc = VINF_SUCCESS;
+            }
+            else
+            {
+                VGSvcVerbose(3, "vbsvcAutomounterQueryMountPoint: Found shared folder '%s' at '%s', not '%s'...\n",
+                             pszMountedName, pszMountPoint, pszName);
+                rc = VERR_RESOURCE_BUSY;
+            }
+        }
+        else
+        {
+            VGSvcVerbose(3, "vbsvcAutomounterQueryMountPoint: Found a '%s' type %u mount at '%s', not '%s'...\n",
+                         pszFsdName, uBuf.FsQueryBuf.iType, pszMountPoint, pszName);
+            rc = VERR_ACCESS_DENIED;
+        }
+    }
+    else
+    {
+        rc = VWRN_NOT_FOUND;
+        VGSvcVerbose(3, "vbsvcAutomounterQueryMountPoint: DosQueryFSAttach(%s) -> %u\n", pszMountPoint, rcOs2);
+        AssertMsgStmt(rcOs2 != ERROR_BUFFER_OVERFLOW && rcOs2 != ERROR_INVALID_PARAMETER,
+                      ("%s -> %u\n", pszMountPoint, rcOs2), rc = VERR_ACCESS_DENIED);
+    }
+    return rc;
+
+#elif defined(RT_OS_LINUX)
+    /*
+     * Scan one of the mount table file for the mount point and then
+     * match file system and device/share.
+     */
+    FILE *pFile = setmntent(_PATH_MOUNTED, "r");
+    int rc = errno;
+    if (!pFile)
+        pFile = setmntent("/proc/mounts", "r");
+    if (pFile)
+    {
+        rc = VWRN_NOT_FOUND;
+        struct mntent *pEntry;
+        while ((pEntry = getmntent(pFile)) != NULL)
+            if (RTPathCompare(pEntry->mnt_dir, pszMountPoint) == 0)
+            {
+                if (strcmp(pEntry->mnt_type, "vboxsf") == 0)
+                {
+                    if (RTStrICmp(pEntry->mnt_fsname, pszName) == 0)
+                    {
+                        VGSvcVerbose(3, "vbsvcAutomounterQueryMountPoint: Found shared folder '%s' at '%s' as expected.\n",
+                                     pszMountPoint, pszName);
+                        rc = VINF_SUCCESS;
+                    }
+                    else
+                    {
+                        VGSvcVerbose(3, "vbsvcAutomounterQueryMountPoint: Found shared folder '%s' at '%s', not '%s'...\n",
+                                     pEntry->mnt_fsname, pszMountPoint, pszName);
+                        rc = VERR_RESOURCE_BUSY;
+                    }
+                }
+                else
+                {
+                    VGSvcVerbose(3, "vbsvcAutomounterQueryMountPoint: Found a '%s' mount of '%s' at '%s', not '%s'...\n",
+                                 pEntry->mnt_type, pEntry->mnt_fsname, pszMountPoint, pszName);
+                    rc = VERR_ACCESS_DENIED;
+                }
+                /* We continue searching in case of stacked mounts, we want the last one. */
+            }
+        endmntent(pFile);
+    }
+    else
+    {
+        VGSvcError("vbsvcAutomounterQueryMountPoint: Could not open mount tab '%s' (errno=%d) or '/proc/mounts' (errno=%d)\n",
+                   _PATH_MOUNTED, rc, errno);
+        rc = VERR_ACCESS_DENIED;
+    }
+    return rc;
+
+#elif defined(RT_OS_SOLARIS)
+    /*
+     * Similar to linux.
+     */
+    int rc;
+    FILE *pFile = fopen(_PATH_MOUNTED, "r");
+    if (pFile)
+    {
+        rc = VWRN_NOT_FOUND;
+        struct mnttab Entry;
+        while (getmntent(pFile, &Entry) == 0)
+            if (RTPathCompare(Entry.mnt_mountp, pszMountPoint) == 0)
+            {
+                if (strcmp(Entry.mnt_fstype, "vboxsf") == 0)
+                {
+                    if (RTStrICmp(Entry.mnt_special, pszName) == 0)
+                    {
+                        VGSvcVerbose(3, "vbsvcAutomounterQueryMountPoint: Found shared folder '%s' at '%s' as expected.\n",
+                                     pszMountPoint, pszName);
+                        rc = VINF_SUCCESS;
+                    }
+                    else
+                    {
+                        VGSvcVerbose(3, "vbsvcAutomounterQueryMountPoint: Found shared folder '%s' at '%s', not '%s'...\n",
+                                     Entry.mnt_special, pszMountPoint, pszName);
+                        rc = VERR_RESOURCE_BUSY;
+                    }
+                }
+                else
+                {
+                    VGSvcVerbose(3, "vbsvcAutomounterQueryMountPoint: Found a '%s' mount of '%s' at '%s', not '%s'...\n",
+                                 Entry.mnt_fstype, Entry.mnt_special, pszMountPoint, pszName);
+                    rc = VERR_ACCESS_DENIED;
+                }
+                /* We continue searching in case of stacked mounts, we want the last one. */
+            }
+        fclose(pFile);
+    }
+    else
+    {
+        VGSvcError("vbsvcAutomounterQueryMountPoint: Could not open mount tab '%s' (errno=%d)\n", _PATH_MOUNTED, errno);
+        rc = VERR_ACCESS_DENIED;
+    }
+    return rc;
+#else
+# error "PORTME"
+#endif
+}
+
+
+/**
+ * Worker for vbsvcAutomounterMountNewEntry that does the OS mounting.
+ *
+ * @returns IPRT status code.
+ * @param   pEntry      The entry to try mount.
+ */
+static int vbsvcAutomounterMountIt(PVBSVCAUTOMOUNTERENTRY pEntry)
+{
+    VGSvcVerbose(3, "vbsvcAutomounterMountIt: Trying to mount '%s' (idRoot=%#x) on '%s'...\n",
+                 pEntry->pszName, pEntry->idRoot, pEntry->pszActualMountPoint);
+#ifdef RT_OS_WINDOWS
+    /*
+     * Attach the shared folder using WNetAddConnection2W.
+     *
+     * According to google we should get a drive symlink in \\GLOBAL?? when
+     * we are running under the system account.  Otherwise it will a session
+     * local link (\\??).
+     */
+    Assert(RT_C_IS_UPPER(pEntry->pszActualMountPoint[0]) && pEntry->pszActualMountPoint[1] == ':' && pEntry->pszActualMountPoint[2] == '\0');
+    RTUTF16 wszDrive[4] = { pEntry->pszActualMountPoint[0], ':', '\0', '\0' };
+
+    RTUTF16 wszPrefixedName[RTPATH_MAX];
+    int rc = RTUtf16CopyAscii(wszPrefixedName, RT_ELEMENTS(wszPrefixedName), "\\\\VBoxSvr\\");
+    AssertRC(rc);
+
+    PRTUTF16 pwszName = &wszPrefixedName[RTUtf16Len(wszPrefixedName)];
+    rc = RTStrToUtf16Ex(pEntry->pszName, RTSTR_MAX, &pwszName, pwszName - wszPrefixedName, NULL);
+    if (RT_FAILURE(rc))
+    {
+        VGSvcError("vbsvcAutomounterMountIt: RTStrToUtf16Ex failed on '%s': %Rrc\n", pEntry->pszName, rc);
+        return rc;
+    }
+
+    NETRESOURCEW NetRsrc;
+    RT_ZERO(NetRsrc);
+    NetRsrc.dwType          = RESOURCETYPE_DISK;
+    NetRsrc.lpLocalName     = wszDrive;
+    NetRsrc.lpRemoteName    = wszPrefixedName;
+    NetRsrc.lpProvider      = L"VirtualBox Shared Folders"; /* Only try our provider. */
+    NetRsrc.lpComment       = pwszName;
+
+    DWORD dwErr = WNetAddConnection2W(&NetRsrc, NULL /*pwszPassword*/, NULL /*pwszUserName*/, 0 /*dwFlags*/);
+    if (dwErr == NO_ERROR)
+    {
+        VGSvcVerbose(0, "vbsvcAutomounterMountIt: Successfully mounted '%s' on '%s'\n",
+                     pEntry->pszName, pEntry->pszActualMountPoint);
+        return VINF_SUCCESS;
+    }
+    VGSvcError("vbsvcAutomounterMountIt: Failed to attach '%s' to '%s': %u\n",
+               pEntry->pszName, pEntry->pszActualMountPoint, rc);
+    return VERR_OPEN_FAILED;
+
+#elif defined(RT_OS_OS2)
+    /*
+     * It's a rather simple affair on OS/2.
+     *
+     * In order to be able to detect our mounts we add a 2nd string after
+     * the folder name that tags the attachment.  The IFS will remember this
+     * and return it when DosQueryFSAttach is called.
+     *
+     * Note! Kernel currently accepts limited 7-bit ASCII names.  We could
+     *       change that to UTF-8 if we like as that means no extra string
+     *       encoding conversion fun here.
+     */
+    char    szzNameAndTag[256];
+    size_t  cchName = strlen(pEntry->pszName);
+    if (cchName + 1 + sizeof(g_szTag) <= sizeof(szzNameAndTag))
+    {
+        memcpy(szzNameAndTag, pEntry->pszName, cchName);
+        szzNameAndTag[cchName] = '\0';
+        memcpy(&szzNameAndTag[cchName + 1], g_szTag, sizeof(g_szTag));
+
+        APIRET rc = DosFSAttach(pEntry->pszActualMountPoint, "VBOXSF", szzNameAndTag, cchName + 1 + sizeof(g_szzTag), FS_ATTACH);
+        if (rc == NO_ERROR)
+        {
+            VGSvcVerbose(0, "vbsvcAutomounterMountIt: Successfully mounted '%s' on '%s'\n",
+                         pEntry->pszName, pEntry->pszActualMountPoint);
+            return VINF_SUCCESS;
+        }
+        VGSvcError("vbsvcAutomounterMountIt: DosFSAttach failed to attach '%s' to '%s': %u\n",
+                   pEntry->pszName, pEntry->pszActualMountPoint, rc);
+    }
+    else
+        VGSvcError("vbsvcAutomounterMountIt: Share name for attach to '%s' is too long: %u chars - '%s'\n",
+                   pEntry->pszActualMountPoint, cchName, pEntry->pszName;
+    return VERR_OPEN_FAILED;
+
+#else
+    /*
+     * Common work for unix-like systems: Get group, make sure mount directory exist.
+     */
+    int rc = RTDirCreateFullPath(pEntry->pszActualMountPoint,
+                                 RTFS_UNIX_IRWXU | RTFS_UNIX_IXGRP | RTFS_UNIX_IRGRP | RTFS_UNIX_IXOTH | RTFS_UNIX_IROTH);
+    if (RT_FAILURE(rc))
+    {
+        VGSvcError("vbsvcAutomounterMountIt: Failed to create mount path '%s' for share '%s': %Rrc\n",
+                   pEntry->pszActualMountPoint, pEntry->pszName, rc);
+        return rc;
+    }
+
+    gid_t gidMount;
+    struct group *grp_vboxsf = getgrnam("vboxsf");
+    if (grp_vboxsf)
+        gidMount = grp_vboxsf->gr_gid;
+    else
+    {
+        VGSvcError("vbsvcAutomounterMountIt: Group 'vboxsf' does not exist\n");
+        gidMount = 0;
+    }
+
+#  if defined(RT_OS_LINUX)
+    /*
+     * Linux a bit more work...
+     */
+    struct vbsf_mount_info_new MntInfo;
+    RT_ZERO(MntInfo);
+    struct vbsf_mount_opts MntOpts;
+    RT_ZERO(MntOpts);
+    MntInfo.nullchar     = '\0';
+    MntInfo.signature[0] = VBSF_MOUNT_SIGNATURE_BYTE_0;
+    MntInfo.signature[1] = VBSF_MOUNT_SIGNATURE_BYTE_1;
+    MntInfo.signature[2] = VBSF_MOUNT_SIGNATURE_BYTE_2;
+    MntInfo.length       = sizeof(MntInfo);
+    MntInfo.uid          = MntOpts.uid   = 0;
+    MntInfo.gid          = MntOpts.gid   = gidMount;
+    MntInfo.dmode        = MntOpts.dmode = 0770;
+    MntInfo.fmode        = MntOpts.fmode = 0770;
+    MntInfo.dmask        = MntOpts.dmask = 0000;
+    MntInfo.fmask        = MntOpts.fmask = 0000;
+    rc = RTStrCopy(MntInfo.name, sizeof(MntInfo.name), pEntry->pszName);
+    if (RT_FAILURE(rc))
+    {
+        VGSvcError("vbsvcAutomounterMountIt: Share name '%s' is too long for the MntInfo.name field!\n", pEntry->pszName);
+        return rc;
+    }
+
+    errno = 0;
+    unsigned long fFlags = MS_NODEV;
+    rc = mount(pEntry->pszName, pEntry->pszActualMountPoint, "vboxsf", fFlags, &MntInfo);
+    if (rc == 0)
+    {
+        VGSvcVerbose(0, "vbsvcAutomounterMountIt: Successfully mounted '%s' on '%s'\n",
+                     pEntry->pszName, pEntry->pszActualMountPoint);
+
+        errno = 0;
+        rc = vbsfmount_complete(pEntry->pszName, pEntry->pszActualMountPoint, fFlags, &MntOpts);
+        if (rc == 0)
+            return VINF_SUCCESS;
+
+        VGSvcError("vbsvcAutomounterMountIt: vbsfmount_complete failed: %s (%d/%d)\n",
+                   rc == 1 ? "open_memstream" : rc == 2 ? "setmntent" : rc == 3 ? "addmntent" : "unknown", rc, errno);
+    }
+    else if (errno == EINVAL)
+        VGSvcError("vbsvcAutomounterMountIt: Failed to mount '%s' on '%s' because it is probably mounted elsewhere arleady! (%d,%d)\n",
+                   pEntry->pszName, pEntry->pszActualMountPoint, rc, errno);
+    else
+        VGSvcError("vbsvcAutomounterMountIt: Failed to mount '%s' on '%s': %s (%d,%d)\n",
+                   pEntry->pszName, pEntry->pszActualMountPoint, strerror(errno), rc, errno);
+    return VERR_WRITE_ERROR;
+
+#  elif defined(RT_OS_SOLARIS)
+    /*
+     * Solaris is rather simple compared to linux.
+     *
+     * The ',VBoxService=auto' option (g_szTag) is ignored by the kernel but helps
+     * us identify our own mounts on restart.  See vbsvcAutomounterPopulateTable().
+     */
+    char szOpts[MAX_MNTOPT_STR] = { '\0', };
+    ssize_t cchOpts = RTStrPrintf2(szOpts, sizeof(szOpts),
+                                   "uid=0,gid=%d,dmode=0770,fmode=0770,dmask=0000,fmask=0000%s", gidMount, g_szTag);
+    if (cchOpts <= 0)
+    {
+        VGSvcError("vbsvcAutomounterMountIt: szOpts overflow! %zd\n", cchOpts);
+        return VERR_BUFFER_OVERFLOW;
+    }
+
+    rc = mount(pEntry->pszName, pEntry->pszActualMountPoint, MS_OPTIONSTR, "vboxfs",
+               NULL /*dataptr*/, 0 /* datalen */, szOptBuf, cchOpts + 1);
+    if (rc == 0)
+    {
+        VGSvcVerbose(0, "vbsvcAutomounterMountIt: Shared folder '%s' was mounted to '%s'\n", pszShareName, pszMountPoint);
+        return VINF_SUCCESS;
+    }
+
+    rc = errno;
+    VGSvcError("vbsvcAutomounterMountIt: mount failed for '%s' at '%s': %s (%d)\n",
+               pEntry->pszName, pEntry->pszActualMountPoint, strerror(rc), rc);
+    return VERR_OPEN_FAILED;
+
+# else
+#  error "PORTME!"
+# endif
+#endif
+}
+
+
+/**
+ * Attempts to mount the given shared folder, adding it to the mount table on
+ * success.
+ *
+ * @returns iTable + 1 on success, iTable on failure.
+ * @param   pTable          The mount table.
+ * @param   iTable          The mount table index at which to add the mount.
+ * @param   pszName         The name of the shared folder mapping.
+ * @param   pszMntPt        The mount point (hint) specified by the host.
+ * @param   fFlags          The shared folder flags, SHFL_MIF_XXX.
+ * @param   idRoot          The root ID.
+ * @param   uRootIdVersion  The root ID version.
+ * @param   fAutoMntPt      Whether to try automatically assign a mount point if
+ *                          pszMntPt doesn't work out.  This is set in pass \#3.
+ */
+static uint32_t vbsvcAutomounterMountNewEntry(PVBSVCAUTOMOUNTERTABLE pTable, uint32_t iTable,
+                                              const char *pszName, const char *pszMntPt, uint64_t fFlags,
+                                              uint32_t idRoot, uint32_t uRootIdVersion, bool fAutoMntPt)
+{
+    VGSvcVerbose(3, "vbsvcAutomounterMountNewEntry: #%u: '%s' at '%s'%s\n",
+                 iTable, pszName, pszMntPt, fAutoMntPt ? " auto-assign" : "");
+
+    /*
+     * First we need to figure out the actual mount point.
+     */
+    char szActualMountPoint[RTPATH_MAX];
+
+#if defined(RT_OS_OS2) || defined(RT_OS_WINDOWS)
+    /*
+     * Drive letter based:
+     */
+    char chNextLetter = 'Z';
+    if (RT_C_IS_UPPER(pszMntPt[0]) && pszMntPt[1] == ':')
+        szActualMountPoint[0] = RT_C_TO_UPPER(pszMntPt[0]);
+    else if (!fAutoMntPt)
+        return iTable;
+    else
+        szActualMountPoint[0] = chNextLetter--;
+    szActualMountPoint[1] = ':';
+    szActualMountPoint[2] = '\0';
+
+    int rc;
+    for (;;)
+    {
+        rc = vbsvcAutomounterQueryMountPoint(szActualMountPoint, pszName);
+        if (rc == VWRN_NOT_FOUND)
+            break;
+
+        /* next */
+        if (chNextLetter == 'A' || !fAutoMntPt)
+            return iTable;
+        szActualMountPoint[0] = chNextLetter--;
+    }
+
+#else
+    /*
+     * Path based #1: Host specified mount point.
+     */
+    int rc = VERR_ACCESS_DENIED;
+    if (*pszMntPt == '/')
+    {
+        rc = RTPathAbs(pszMntPt, szActualMountPoint, sizeof(szActualMountPoint));
+        if (RT_SUCCESS(rc))
+        {
+            static const char * const s_apszBlacklist[] =
+            { "/", "/dev", "/bin", "/sbin", "/lib", "/etc", "/var", "/tmp", "/usr", "/usr/bin", "/usr/sbin", "/usr/lib" };
+            for (size_t i = 0; i < RT_ELEMENTS(s_apszBlacklist); i++)
+                if (strcmp(szActualMountPoint, s_apszBlacklist[i]) == 0)
+                {
+                    rc = VERR_ACCESS_DENIED;
+                    break;
+                }
+            if (RT_SUCCESS(rc))
+                rc = vbsvcAutomounterQueryMountPoint(szActualMountPoint, pszName);
+        }
+    }
+    if (rc != VWRN_NOT_FOUND)
+    {
+        if (!fAutoMntPt)
+            return iTable;
+
+        /*
+         * Path based #2: Mount dir + prefix + share.
+         */
+        /* Mount base directory: */
+        szActualMountPoint[0] = '\0';
+        char *pszProp;
+        rc = VbglR3SharedFolderGetMountDir(&pszProp);
+        if (RT_SUCCESS(rc))
+        {
+            if (*pszProp == '/')
+                rc = RTPathAbs(pszProp, szActualMountPoint, sizeof(szActualMountPoint));
+            else
+                VGSvcError("vbsvcAutomounterMountNewEntry: Invalid mount directory: '%s'\n", pszProp);
+            RTStrFree(pszProp);
+        }
+        if (RT_FAILURE(rc) || szActualMountPoint[0] != '/')
+            memcpy(szActualMountPoint, VBOXSERVICE_AUTOMOUNT_DEFAULT_DIR, sizeof(VBOXSERVICE_AUTOMOUNT_DEFAULT_DIR));
+
+        /* Add prefix: */
+        rc = VbglR3SharedFolderGetMountPrefix(&pszProp);
+        if (RT_SUCCESS(rc))
+        {
+            if (   strchr(pszProp, '/')  == NULL
+                && strchr(pszProp, '\\') == NULL
+                && strcmp(pszProp, "..") != 0)
+                rc = RTPathAppend(szActualMountPoint, sizeof(szActualMountPoint), pszProp);
+            else
+                VGSvcError("vbsvcAutomounterMountNewEntry: Invalid mount prefix: '%s'\n", pszProp);
+            RTStrFree(pszProp);
+        }
+        else
+            rc = RTPathEnsureTrailingSeparator(szActualMountPoint, sizeof(szActualMountPoint)) != 0
+               ? VINF_SUCCESS : VERR_BUFFER_OVERFLOW;
+        if (RT_SUCCESS(rc))
+        {
+            /* Add sanitized share name: */
+            size_t const offShare = strlen(szActualMountPoint);
+            size_t offDst = offShare;
+            size_t offSrc = 0;
+            for (;;)
+            {
+                char ch = pszName[offSrc++];
+                if (ch == ' ' || ch == '/' || ch == '\\' || ch == ':' || ch == '$')
+                    ch = '_';
+                else if (!ch)
+                    break;
+                else if (ch < 0x20 || ch == 0x7f)
+                    continue;
+                if (offDst < sizeof(szActualMountPoint) - 1)
+                    szActualMountPoint[offDst++] = ch;
+            }
+            szActualMountPoint[offDst] = '\0';
+            if (offDst > offShare)
+            {
+                rc = vbsvcAutomounterQueryMountPoint(szActualMountPoint, pszName);
+                if (rc != VWRN_NOT_FOUND)
+                {
+                    /*
+                     * Path based #3: Mount dir + prefix + share + _ + number.
+                     */
+                    if (offDst + 2 >= sizeof(szActualMountPoint))
+                        return iTable;
+
+                    szActualMountPoint[offDst++] = '_';
+                    for (uint32_t iTry = 1; iTry < 10 && rc != VWRN_NOT_FOUND; iTry++)
+                    {
+                        szActualMountPoint[offDst] = '0' + iTry;
+                        szActualMountPoint[offDst + 1] = '\0';
+                        rc = vbsvcAutomounterQueryMountPoint(szActualMountPoint, pszName);
+                    }
+                    if (rc != VWRN_NOT_FOUND)
+                       return iTable;
+                }
+            }
+            else
+                VGSvcError("vbsvcAutomounterMountNewEntry: Bad share name: %.*Rhxs", strlen(pszName), pszName);
+        }
+        else
+            VGSvcError("vbsvcAutomounterMountNewEntry: Failed to construct basic auto mount point for '%s'", pszName);
+    }
+#endif
+
+    /*
+     * Prepare a table entry and ensure space in the table..
+     */
+    if (pTable->cEntries + 1 > pTable->cAllocated)
+    {
+        void *pvEntries = RTMemRealloc(pTable->papEntries, sizeof(pTable->papEntries[0]) * (pTable->cAllocated + 8));
+        if (!pvEntries)
+        {
+            VGSvcError("vbsvcAutomounterMountNewEntry: Out of memory for growing table (size %u)\n", pTable->cAllocated);
+            return iTable;
+        }
+        pTable->cAllocated += 8;
+        pTable->papEntries = (PVBSVCAUTOMOUNTERENTRY *)pvEntries;
+    }
+
+    PVBSVCAUTOMOUNTERENTRY pEntry = (PVBSVCAUTOMOUNTERENTRY)RTMemAlloc(sizeof(*pEntry));
+    if (pEntry)
+    {
+        pEntry->idRoot              = idRoot;
+        pEntry->uRootIdVersion      = uRootIdVersion;
+        pEntry->fFlags              = fFlags;
+        pEntry->pszName             = RTStrDup(pszName);
+        pEntry->pszMountPoint       = RTStrDup(pszMntPt);
+        pEntry->pszActualMountPoint = RTStrDup(szActualMountPoint);
+        if (pEntry->pszName && pEntry->pszMountPoint && pEntry->pszActualMountPoint)
+        {
+            /*
+             * Now try mount it.
+             */
+            rc = vbsvcAutomounterMountIt(pEntry);
+            if (RT_SUCCESS(rc))
+            {
+                uint32_t cToMove = pTable->cEntries - iTable;
+                if (cToMove > 0)
+                    memmove(&pTable->papEntries[iTable + 1], &pTable->papEntries[iTable], cToMove * sizeof(pTable->papEntries[0]));
+                pTable->papEntries[iTable] = pEntry;
+                pTable->cEntries++;
+                return iTable + 1;
+            }
+        }
+        else
+            VGSvcError("vbsvcAutomounterMountNewEntry: Out of memory for table entry!\n");
+        RTMemFree(pEntry->pszActualMountPoint);
+        RTMemFree(pEntry->pszMountPoint);
+        RTMemFree(pEntry->pszName);
+        RTMemFree(pEntry);
+    }
+    else
+        VGSvcError("vbsvcAutomounterMountNewEntry: Out of memory for table entry!\n");
+    return iTable;
+}
+
+
+
+/**
+ * Does the actual unmounting.
+ *
+ * @returns Exactly one of the following IPRT status codes;
+ * @retval  VINF_SUCCESS if successfully umounted or nothing was mounted there.
+ * @retval  VERR_TRY_AGAIN if the shared folder is busy.
+ * @retval  VERR_RESOURCE_BUSY if a different shared folder is mounted there.
+ * @retval  VERR_ACCESS_DENIED if a non-shared folder file system is mounted
+ *          there.
+ *
+ * @param   pszMountPoint       The mount point.
+ * @param   pszName             The shared folder (mapping) name.
+ */
+static int vbsvcAutomounterUnmount(const char *pszMountPoint, const char *pszName)
+{
+    /*
+     * Retry for 5 seconds in a hope that busy mounts will quiet down.
+     */
+    for (unsigned iTry = 0; ; iTry++)
+    {
+        /*
+         * Check what's mounted there before we start umounting stuff.
+         */
+        int rc = vbsvcAutomounterQueryMountPoint(pszMountPoint, pszName);
+        if (rc == VINF_SUCCESS)
+        { /* pszName is mounted there */ }
+        else if (rc == VWRN_NOT_FOUND) /* nothing mounted there */
+            return VINF_SUCCESS;
+        else
+        {
+            Assert(rc == VERR_RESOURCE_BUSY || rc == VERR_ACCESS_DENIED);
+            return VERR_RESOURCE_BUSY;
+        }
+
+        /*
+         * Do host specific unmounting.
+         */
+#ifdef RT_OS_WINDOWS
+        Assert(RT_C_IS_UPPER(pszMountPoint[0]) && pszMountPoint[1] == ':' && pszMountPoint[2] == '\0');
+        RTUTF16 const wszDrive[4] = { pszMountPoint[0], ':', '\0', '\0' };
+        DWORD dwErr = WNetCancelConnection2W(wszDrive, 0 /*dwFlags*/, FALSE /*fForce*/);
+        if (dwErr == NO_ERROR)
+            return VINF_SUCCESS;
+        VGSvcVerbose(2, "vbsvcAutomounterUnmount: WNetCancelConnection2W returns %u for '%s' ('%s')\n", dwErr, pszMountPoint, pszName);
+        if (dwErr == ERROR_NOT_CONNECTED)
+            return VINF_SUCCESS;
+
+#elif defined(RT_OS_OS2)
+        APIRET rcOs2 = DosFSAttach(pszMountPoint, "VBOXSF", NULL, 0, FS_DETACH);
+        if (rcOs2 == NO_ERROR)
+            return VINF_SUCCESS;
+        VGSvcVerbose(2, "vbsvcAutomounterUnmount: DosFSAttach failed on '%s' ('%s'): %u\n", pszMountPoint, pszName, rcOs2);
+        if (rcOs2 == ERROR_INVALID_FSD_NAME)
+            return VERR_ACCESS_DENIED;
+        if (   rcOs2 == ERROR_INVALID_DRIVE
+            || rcOs2 == ERROR_INVALID_PATH)
+            return VERR_TRY_AGAIN;
+
+#else
+        int rc2 = umount(pszMountPoint);
+        if (rc2 == 0)
+            return VINF_SUCCESS;
+        rc2 = errno;
+        VGSvcVerbose(2, "vbsvcAutomounterUnmount: umount failed on '%s' ('%s'): %d\n", pszMountPoint, pszName, rc2);
+        if (rc2 != EBUSY && rc2 != EAGAIN)
+            return VERR_ACCESS_DENIED;
+#endif
+
+        /*
+         * Check what's mounted there before we start delaying.
+         */
+        RTThreadSleep(8); /* fudge */
+        rc = vbsvcAutomounterQueryMountPoint(pszMountPoint, pszName);
+        if (rc == VINF_SUCCESS)
+        { /* pszName is mounted there */ }
+        else if (rc == VWRN_NOT_FOUND) /* nothing mounted there */
+            return VINF_SUCCESS;
+        else
+        {
+            Assert(rc == VERR_RESOURCE_BUSY || rc == VERR_ACCESS_DENIED);
+            return VERR_RESOURCE_BUSY;
+        }
+
+        if (iTry >= 5)
+            return VERR_TRY_AGAIN;
+        RTThreadSleep(1000);
+    }
+}
+
+
+/**
+ * Unmounts a mount table entry and evicts it from the table if successful.
+ *
+ * @returns The next iTable (same value on success, +1 on failure).
+ * @param   pTable              The mount table.
+ * @param   iTable              The table entry.
+ * @param   pszReason           Why we're here.
+ */
+static uint32_t vbsvcAutomounterUnmountEntry(PVBSVCAUTOMOUNTERTABLE pTable, uint32_t iTable, const char *pszReason)
+{
+    Assert(iTable < pTable->cEntries);
+    PVBSVCAUTOMOUNTERENTRY pEntry = pTable->papEntries[iTable];
+    VGSvcVerbose(3, "vbsvcAutomounterUnmountEntry: #%u: '%s' at '%s' (reason: %s)\n",
+                 iTable, pEntry->pszName, pEntry->pszMountPoint, pszReason);
+
+    /*
+     * Do we need to umount the entry?  Return if unmount fails and we .
+     */
+    if (pEntry->pszActualMountPoint)
+    {
+        int rc = vbsvcAutomounterUnmount(pEntry->pszActualMountPoint, pEntry->pszName);
+        if (rc == VERR_TRY_AGAIN)
+        {
+            VGSvcVerbose(2, "vbsvcAutomounterUnmountEntry: Keeping '%s' -> '%s' (VERR_TRY_AGAIN)\n",
+                         pEntry->pszActualMountPoint, pEntry->pszName);
+            return iTable + 1;
+        }
+    }
+
+    /*
+     * Remove the entry by shifting up the ones after it.
+     */
+    pTable->cEntries -= 1;
+    uint32_t cAfter = pTable->cEntries - iTable;
+    if (cAfter)
+        memmove(&pTable->papEntries[iTable], &pTable->papEntries[iTable + 1], cAfter * sizeof(pTable->papEntries[0]));
+    pTable->papEntries[pTable->cEntries] = NULL;
+
+    RTStrFree(pEntry->pszActualMountPoint);
+    pEntry->pszActualMountPoint = NULL;
+    RTStrFree(pEntry->pszMountPoint);
+    pEntry->pszMountPoint = NULL;
+    RTStrFree(pEntry->pszName);
+    pEntry->pszName = NULL;
+    RTMemFree(pEntry);
+
+    return iTable;
+}
+
+
+/**
+ * @callback_method_impl{FNRTSORTCMP,  For sorting the mappings by ID,}
+ */
+static DECLCALLBACK(int) vbsvcSharedFolderMappingCompare(void const *pvElement1, void const *pvElement2, void *pvUser)
+{
+    RT_NOREF_PV(pvUser);
+    PVBGLR3SHAREDFOLDERMAPPING pMapping1 = (PVBGLR3SHAREDFOLDERMAPPING)pvElement1;
+    PVBGLR3SHAREDFOLDERMAPPING pMapping2 = (PVBGLR3SHAREDFOLDERMAPPING)pvElement2;
+    return pMapping1->u32Root < pMapping2->u32Root ? -1 : pMapping1->u32Root != pMapping2->u32Root ? 1 : 0;
+}
+
+
+/**
+ * Refreshes the mount table.
+ *
+ * @returns true if we've processed the current config, false if we failed to
+ *          query the mappings.
+ * @param   pTable          The mount table to refresh.
+ */
+static bool vbsvcAutomounterRefreshTable(PVBSVCAUTOMOUNTERTABLE pTable)
+{
+    /*
+     * Query the root IDs of all auto-mountable shared folder mappings.
+     */
+    uint32_t                    cMappings = 0;
+    PVBGLR3SHAREDFOLDERMAPPING  paMappings = NULL;
+    int rc = VbglR3SharedFolderGetMappings(g_idClientSharedFolders, true /*fAutoMountOnly*/, &paMappings, &cMappings);
+    if (RT_FAILURE(rc))
+    {
+        VGSvcError("vbsvcAutomounterRefreshTable: VbglR3SharedFolderGetMappings failed: %Rrc\n", rc);
+        return false;
+    }
+
+    /*
+     * Walk the table and the mappings in parallel, so we have to make sure
+     * they are both sorted by root ID.
+     */
+    if (cMappings > 1)
+        RTSortShell(paMappings, cMappings, sizeof(paMappings[0]), vbsvcSharedFolderMappingCompare, NULL);
+
+    /*
+     * Pass #1: Do all the umounting.
+     *
+     * By doing the umount pass separately from the mount pass, we can
+     * better handle changing involving the same mount points (switching
+     * mount points between two shares, new share on same mount point but
+     * with lower root ID, ++).
+     */
+    uint32_t iTable = 0;
+    for (uint32_t iSrc = 0; iSrc < cMappings; iSrc++)
+    {
+        /*
+         * Unmount table entries up to idRootSrc.
+         */
+        uint32_t const idRootSrc = paMappings[iSrc].u32Root;
+        while (   iTable < pTable->cEntries
+               && pTable->papEntries[iTable]->idRoot < idRootSrc)
+            iTable = vbsvcAutomounterUnmountEntry(pTable, iTable, "dropped");
+
+        /*
+         * If the paMappings entry and the mount table entry has the same
+         * root ID, umount if anything has changed or if we cannot query
+         * the mapping data.
+         */
+        if (iTable < pTable->cEntries)
+        {
+            PVBSVCAUTOMOUNTERENTRY pEntry = pTable->papEntries[iTable];
+            if (pEntry->idRoot == idRootSrc)
+            {
+                uint32_t uRootIdVer = UINT32_MAX;
+                uint64_t fFlags     = 0;
+                char    *pszName    = NULL;
+                char    *pszMntPt   = NULL;
+                rc = VbglR3SharedFolderQueryFolderInfo(g_idClientSharedFolders, idRootSrc, VBOXSERVICE_AUTOMOUNT_MIQF,
+                                                       &pszName, &pszMntPt, &fFlags, &uRootIdVer);
+                if (RT_FAILURE(rc))
+                    iTable = vbsvcAutomounterUnmountEntry(pTable, iTable, "VbglR3SharedFolderQueryFolderInfo failed");
+                else if (pEntry->uRootIdVersion != uRootIdVer)
+                    iTable = vbsvcAutomounterUnmountEntry(pTable, iTable, "root ID version changed");
+                else if (RTPathCompare(pEntry->pszMountPoint, pszMntPt) != 0)
+                    iTable = vbsvcAutomounterUnmountEntry(pTable, iTable, "mount point changed");
+                else if (RTStrICmp(pEntry->pszName, pszName) != 0)
+                    iTable = vbsvcAutomounterUnmountEntry(pTable, iTable, "name changed");
+                else
+                {
+                    VGSvcVerbose(3, "vbsvcAutomounterRefreshTable: Unchanged: %s -> %s\n", pEntry->pszMountPoint, pEntry->pszName);
+                    iTable++;
+                }
+                if (RT_SUCCESS(rc))
+                {
+                    RTStrFree(pszName);
+                    RTStrFree(pszMntPt);
+                }
+            }
+        }
+    }
+
+    while (iTable < pTable->cEntries)
+        iTable = vbsvcAutomounterUnmountEntry(pTable, iTable, "dropped (tail)");
+
+    VGSvcVerbose(4, "vbsvcAutomounterRefreshTable: %u entries in mount table after pass #1.\n", pTable->cEntries);
+
+    /*
+     * Pass #2: Try mount new folders that has mount points assigned.
+     * Pass #3: Try mount new folders not mounted in pass #2.
+     */
+    for (uint32_t iPass = 2; iPass <= 3; iPass++)
+    {
+        iTable = 0;
+        for (uint32_t iSrc = 0; iSrc < cMappings; iSrc++)
+        {
+            uint32_t const idRootSrc = paMappings[iSrc].u32Root;
+
+            /*
+             * Skip tabel entries we couldn't umount in pass #1.
+             */
+            while (   iTable < pTable->cEntries
+                   && pTable->papEntries[iTable]->idRoot < idRootSrc)
+            {
+                VGSvcVerbose(4, "vbsvcAutomounterRefreshTable: %u/#%u/%#u: Skipping idRoot=%u %s\n",
+                             iPass, iSrc, iTable, pTable->papEntries[iTable]->idRoot, pTable->papEntries[iTable]->pszName);
+                iTable++;
+            }
+
+            /*
+             * New share?
+             */
+            if (   iTable >= pTable->cEntries
+                || pTable->papEntries[iTable]->idRoot != idRootSrc)
+            {
+                uint32_t uRootIdVer = UINT32_MAX;
+                uint64_t fFlags     = 0;
+                char    *pszName    = NULL;
+                char    *pszMntPt   = NULL;
+                rc = VbglR3SharedFolderQueryFolderInfo(g_idClientSharedFolders, idRootSrc, VBOXSERVICE_AUTOMOUNT_MIQF,
+                                                       &pszName, &pszMntPt, &fFlags, &uRootIdVer);
+                if (RT_SUCCESS(rc))
+                {
+                    VGSvcVerbose(4, "vbsvcAutomounterRefreshTable: %u/#%u/%#u: Mounting idRoot=%u/%u %s\n", iPass, iSrc, iTable,
+                                 idRootSrc, iTable >= pTable->cEntries ? UINT32_MAX : pTable->papEntries[iTable]->idRoot, pszName);
+                    iTable = vbsvcAutomounterMountNewEntry(pTable, iTable, pszName, pszMntPt, fFlags,
+                                                           idRootSrc, uRootIdVer, iPass == 3);
+
+                    RTStrFree(pszName);
+                    RTStrFree(pszMntPt);
+                }
+                else
+                    VGSvcVerbose(1, "vbsvcAutomounterRefreshTable: VbglR3SharedFolderQueryFolderInfo failed: %Rrc\n", rc);
+            }
+            else
+                VGSvcVerbose(4, "vbsvcAutomounterRefreshTable: %u/#%u/%#u: idRootSrc=%u vs idRoot=%u %s\n", iPass, iSrc,
+                             iTable, idRootSrc, pTable->papEntries[iTable]->idRoot, pTable->papEntries[iTable]->pszName);
+        }
+    }
+
+    VbglR3SharedFolderFreeMappings(paMappings);
+    return true;
+}
+
+
+/**
+ * @interface_method_impl{VBOXSERVICE,pfnWorker}
+ */
+static DECLCALLBACK(int) vbsvcAutomounterWorker(bool volatile *pfShutdown)
+{
+    /*
+     * Tell the control thread that it can continue spawning services.
+     */
+    RTThreadUserSignal(RTThreadSelf());
+
+    /* Divert old hosts to original auto-mount code. */
+    if (!g_fHostSupportsWaitAndInfoQuery)
+        return vbsvcAutoMountWorkerOld(pfShutdown);
+
+    /*
+     * Initialize the state in case we're restarted...
+     */
+    VBSVCAUTOMOUNTERTABLE MountTable  = { 0, 0, NULL };
+    int rc = vbsvcAutomounterPopulateTable(&MountTable);
+    if (RT_FAILURE(rc))
+    {
+        VGSvcError("vbsvcAutomounterWorker: vbsvcAutomounterPopulateTable failed (%Rrc), quitting!\n", rc);
+        return rc;
+    }
+
+    /*
+     * Work loop.
+     */
+    uint32_t uConfigVer    = UINT32_MAX;
+    uint32_t uNewVersion   = 0;
+    bool     fForceRefresh = true;
+    while (!*pfShutdown)
+    {
+        /*
+         * Update the mounts.
+         */
+        if (   uConfigVer != uNewVersion
+            || fForceRefresh)
+        {
+            fForceRefresh = !vbsvcAutomounterRefreshTable(&MountTable);
+            uConfigVer    = uNewVersion;
+        }
+
+        /*
+         * Wait for more to do.
+         */
+        if (!*pfShutdown)
+        {
+            uNewVersion = uConfigVer - 1;
+            VGSvcVerbose(2, "vbsvcAutomounterWorker: Waiting with uConfigVer=%u\n", uConfigVer);
+            rc = VbglR3SharedFolderWaitForMappingsChanges(g_idClientSharedFolders, uConfigVer, &uNewVersion);
+            VGSvcVerbose(2, "vbsvcAutomounterWorker: Woke up with uNewVersion=%u and rc=%Rrc\n", uNewVersion, rc);
+
+            /* Delay a little before doing a table refresh so the GUI can finish
+               all its updates.  Delay a little longer on non-shutdown failure to
+               avoid eating too many CPU cycles if something goes wrong here... */
+            if (!*pfShutdown)
+                RTSemEventMultiWait(g_hAutoMountEvent, RT_SUCCESS(rc) ? 256 : 1000);
+        }
+    }
+
+    /*
+     * Destroy the mount table.
+     */
+    while (MountTable.cEntries-- > 0)
+        RTMemFree(MountTable.papEntries[MountTable.cEntries]);
+    MountTable.papEntries = NULL;
+
+    VGSvcVerbose(3, "vbsvcAutomounterWorker: Finished\n");
+    return VINF_SUCCESS;
 }
 
 
 /**
  * @interface_method_impl{VBOXSERVICE,pfnStop}
  */
-static DECLCALLBACK(void) vbsvcAutoMountStop(void)
+static DECLCALLBACK(void) vbsvcAutomounterStop(void)
 {
-    RTSemEventMultiSignal(g_AutoMountEvent);
+    RTSemEventMultiSignal(g_hAutoMountEvent);
+    if (g_fHostSupportsWaitAndInfoQuery)
+        VbglR3SharedFolderCancelMappingsChangesWaits(g_idClientSharedFolders);
+}
+
+
+/**
+ * @interface_method_impl{VBOXSERVICE,pfnTerm}
+ */
+static DECLCALLBACK(void) vbsvcAutomounterTerm(void)
+{
+    VGSvcVerbose(3, "vbsvcAutoMountTerm\n");
+
+    if (g_fHostSupportsWaitAndInfoQuery)
+        VbglR3SharedFolderCancelMappingsChangesWaits(g_idClientSharedFolders);
+
+    VbglR3SharedFolderDisconnect(g_idClientSharedFolders);
+    g_idClientSharedFolders = 0;
+
+    if (g_hAutoMountEvent != NIL_RTSEMEVENTMULTI)
+    {
+        RTSemEventMultiDestroy(g_hAutoMountEvent);
+        g_hAutoMountEvent = NIL_RTSEMEVENTMULTI;
+    }
 }
 
 
@@ -660,7 +2171,7 @@ VBOXSERVICE g_AutoMount =
     /* pszName. */
     "automount",
     /* pszDescription. */
-    "Auto-mount for Shared Folders",
+    "Automounter for Shared Folders",
     /* pszUsage. */
     NULL,
     /* pszOptions. */
@@ -668,8 +2179,9 @@ VBOXSERVICE g_AutoMount =
     /* methods */
     VGSvcDefaultPreInit,
     VGSvcDefaultOption,
-    vbsvcAutoMountInit,
-    vbsvcAutoMountWorker,
-    vbsvcAutoMountStop,
-    vbsvcAutoMountTerm
+    vbsvcAutomounterInit,
+    vbsvcAutomounterWorker,
+    vbsvcAutomounterStop,
+    vbsvcAutomounterTerm
 };
+

@@ -39,21 +39,21 @@ VBOX_WITH_VBOXSERVICE_MANAGEMENT    := 1
 
 if1of ($(KBUILD_TARGET), linux)
  # CPU hotplugging.
- VBOX_WITH_VBOXSERVICE_CPUHOTPLUG   := 1
+VBOX_WITH_VBOXSERVICE_CPUHOTPLUG    := 1
 endif
 
+# Page Sharing (Page Fusion).
 if1of ($(KBUILD_TARGET), win)
- # Page Sharing (Page Fusion).
- VBOX_WITH_VBOXSERVICE_PAGE_SHARING := 1
+VBOX_WITH_VBOXSERVICE_PAGE_SHARING  := 1
 endif
 
 ifdef VBOX_WITH_GUEST_PROPS
- VBOX_WITH_VBOXSERVICE_VMINFO       := 1
+VBOX_WITH_VBOXSERVICE_VMINFO        := 1
 endif
 
+# Guest Control.
 ifdef VBOX_WITH_GUEST_CONTROL
- # Guest Control.
- VBOX_WITH_VBOXSERVICE_CONTROL      := 1
+VBOX_WITH_VBOXSERVICE_CONTROL       := 1
 endif
 
 #
@@ -67,19 +67,19 @@ endif
 
 # Define features to be activate.
 VBoxService_DEFS         += \
-	$(if $(VBOX_WITH_VBOXSERVICE_CONTROL),VBOX_WITH_VBOXSERVICE_CONTROL,)           \
-	$(if $(VBOX_WITH_VBOXSERVICE_CPUHOTPLUG),VBOX_WITH_VBOXSERVICE_CPUHOTPLUG,)     \
-	$(if $(VBOX_WITH_VBOXSERVICE_MANAGEMENT),VBOX_WITH_VBOXSERVICE_MANAGEMENT,)     \
+	$(if $(VBOX_WITH_VBOXSERVICE_CONTROL),VBOX_WITH_VBOXSERVICE_CONTROL,) \
+	$(if $(VBOX_WITH_VBOXSERVICE_CPUHOTPLUG),VBOX_WITH_VBOXSERVICE_CPUHOTPLUG,) \
+	$(if $(VBOX_WITH_VBOXSERVICE_MANAGEMENT),VBOX_WITH_VBOXSERVICE_MANAGEMENT,) \
 	$(if $(VBOX_WITH_VBOXSERVICE_PAGE_SHARING),VBOX_WITH_VBOXSERVICE_PAGE_SHARING,) \
-	$(if $(VBOX_WITH_VBOXSERVICE_TIMESYNC),VBOX_WITH_VBOXSERVICE_TIMESYNC,)         \
-	$(if $(VBOX_WITH_VBOXSERVICE_TOOLBOX),VBOX_WITH_VBOXSERVICE_TOOLBOX,)           \
+	$(if $(VBOX_WITH_VBOXSERVICE_TIMESYNC),VBOX_WITH_VBOXSERVICE_TIMESYNC,) \
+	$(if $(VBOX_WITH_VBOXSERVICE_TOOLBOX),VBOX_WITH_VBOXSERVICE_TOOLBOX,) \
 	$(if $(VBOX_WITH_VBOXSERVICE_VMINFO),VBOX_WITH_VBOXSERVICE_VMINFO,)
 
 # Import global defines.
-VBoxService_DEFS         +=                                       \
-	$(if $(VBOX_WITH_DBUS),VBOX_WITH_DBUS,)                   \
+VBoxService_DEFS         += \
+	$(if $(VBOX_WITH_DBUS),VBOX_WITH_DBUS,) \
 	$(if $(VBOX_WITH_GUEST_CONTROL),VBOX_WITH_GUEST_CONTROL,) \
-	$(if $(VBOX_WITH_GUEST_PROPS),VBOX_WITH_GUEST_PROPS,)     \
+	$(if $(VBOX_WITH_GUEST_PROPS),VBOX_WITH_GUEST_PROPS,) \
 	$(if $(VBOX_WITH_HGCM),VBOX_WITH_HGCM,)
 
 VBoxService_DEFS         += \
@@ -87,65 +87,63 @@ VBoxService_DEFS         += \
 VBoxService_DEFS.win     += _WIN32_WINNT=0x0501
 VBoxService_DEFS.os2      = VBOX_WITH_HGCM VBOX_WITH_VBOXSERVICE_CLIPBOARD
 
-ifdef VBOX_WITH_SHARED_FOLDERS
- # darwin freebsd
- if1of ($(KBUILD_TARGET), linux solaris)
-  VBoxService_DEFS       += VBOX_WITH_SHARED_FOLDERS
- endif
-endif
-
-VBoxService_SOURCES       =  \
-	VBoxService.cpp      \
+VBoxService_SOURCES       = \
+	VBoxService.cpp \
 	VBoxServiceUtils.cpp \
 	VBoxServiceStats.cpp
 
 ifdef VBOX_WITH_VBOXSERVICE_TIMESYNC
- VBoxService_SOURCES     += \
+VBoxService_SOURCES      += \
 	VBoxServiceTimeSync.cpp
 endif
 
 ifdef VBOX_WITH_VBOXSERVICE_TOOLBOX
- VBoxService_SOURCES     += \
+VBoxService_SOURCES      += \
 	VBoxServiceToolBox.cpp
 endif
 
 ifdef VBOX_WITH_VBOXSERVICE_CONTROL
- VBoxService_SOURCES     +=       \
- 	VBoxServiceControl.cpp        \
+VBoxService_SOURCES      += \
+	VBoxServiceControl.cpp  \
 	VBoxServiceControlProcess.cpp \
 	VBoxServiceControlSession.cpp
 endif
 
 ifdef VBOX_WITH_VBOXSERVICE_MANAGEMENT
- VBoxService_SOURCES     += \
- 	VBoxServiceBalloon.cpp
- VBoxService_DEFS        += $(if $(VBOX_WITH_MEMBALLOON),VBOX_WITH_MEMBALLOON,)
+VBoxService_SOURCES      += \
+	VBoxServiceBalloon.cpp
+ ifdef VBOX_WITH_MEMBALLOON
+VBoxService_DEFS         += VBOX_WITH_MEMBALLOON
+ endif
 endif
 
 if1of ($(KBUILD_TARGET), win)
- VBoxService_SOURCES    += \
+VBoxService_SOURCES      += \
  	VBoxServicePageSharing.cpp
 endif
 
 ifdef VBOX_WITH_VBOXSERVICE_VMINFO
- VBoxService_SOURCES.win += \
+VBoxService_SOURCES.win  += \
  	VBoxServiceVMInfo-win.cpp
- VBoxService_SOURCES     +=  \
- 	VBoxServiceVMInfo.cpp    \
- 	VBoxServicePropCache.cpp
+VBoxService_SOURCES      += \
+	VBoxServiceVMInfo.cpp \
+	VBoxServicePropCache.cpp
 endif
 
 ifdef VBOX_WITH_VBOXSERVICE_CPUHOTPLUG
- VBoxService_SOURCES     += \
+VBoxService_SOURCES      += \
 	VBoxServiceCpuHotPlug.cpp
 endif
 
 ifdef VBOX_WITH_SHARED_FOLDERS
- if1of ($(KBUILD_TARGET), linux solaris)
-  VBoxService_SOURCES          += \
+ if1of ($(KBUILD_TARGET), win linux solaris)
+VBoxService_DEFS         += VBOX_WITH_SHARED_FOLDERS
+VBoxService_SOURCES      += \
 	VBoxServiceAutoMount.cpp
-  VBoxService_SOURCES.linux    += \
+VBoxService_SOURCES.linux += \
 	../../linux/sharedfolders/vbsfmount.c
+VBoxService_LIBS.win     += \
+	Mpr.Lib
  endif
 endif
 
@@ -159,7 +157,7 @@ VBoxService_SOURCES.os2   = \
 
 VBoxService_LDFLAGS.darwin = -framework IOKit
 
-VBoxService_LIBS        += \
+VBoxService_LIBS         += \
 	$(VBOX_LIB_IPRT_GUEST_R3) \
 	$(VBOX_LIB_VBGL_R3) \
 	$(VBOX_LIB_IPRT_GUEST_R3)       # (The joy of unix linkers.)
@@ -169,17 +167,17 @@ if1of ($(KBUILD_TARGET), linux)
 endif
 ifdef VBOX_WITH_DBUS
  if1of ($(KBUILD_TARGET), linux solaris) # FreeBSD?
-  VBoxService_LIBS       += \
+VBoxService_LIBS         += \
 	dl
  endif
 endif
 ifdef VBOX_WITH_GUEST_PROPS
- VBoxService_LIBS.win    += \
- 	Secur32.lib \
- 	WtsApi32.lib \
- 	Psapi.lib
- VBoxService_LIBS.solaris += \
- 	nsl \
+VBoxService_LIBS.win     += \
+	Secur32.lib \
+	WtsApi32.lib \
+	Psapi.lib
+VBoxService_LIBS.solaris += \
+	nsl \
 	kstat \
 	contract
 endif

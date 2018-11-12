@@ -478,6 +478,8 @@ static int sf_remount_fs(struct super_block *sb, int *flags, char *data)
 #endif
 }
 
+/** @todo Implement show_options (forever) or maybe set s_options (2.6.25+).
+ *        Necessary for the automounter tagging.  */
 static struct super_operations sf_super_ops = {
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 36)
 	.clear_inode = sf_clear_inode,

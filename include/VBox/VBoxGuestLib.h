@@ -681,9 +681,15 @@ VBGLR3DECL(bool)    VbglR3SharedFolderExists(HGCMCLIENTID idClient, const char *
 VBGLR3DECL(int)     VbglR3SharedFolderGetMappings(HGCMCLIENTID idClient, bool fAutoMountOnly,
                                                   PVBGLR3SHAREDFOLDERMAPPING *ppaMappings, uint32_t *pcMappings);
 VBGLR3DECL(void)    VbglR3SharedFolderFreeMappings(PVBGLR3SHAREDFOLDERMAPPING paMappings);
-VBGLR3DECL(int)     VbglR3SharedFolderGetName(HGCMCLIENTID  idClient,uint32_t u32Root, char **ppszName);
-VBGLR3DECL(int)     VbglR3SharedFolderGetMountPrefix(char **ppszPrefix);
-VBGLR3DECL(int)     VbglR3SharedFolderGetMountDir(char **ppszDir);
+VBGLR3DECL(int)     VbglR3SharedFolderGetName(HGCMCLIENTID  idClient,uint32_t u32Root, char **ppszName); /**< @todo r=bird: GET functions return the value, not a status code!*/
+VBGLR3DECL(int)     VbglR3SharedFolderQueryFolderInfo(HGCMCLIENTID idClient, uint32_t idRoot, uint64_t fQueryFlags,
+                                                      char **ppszName, char **ppszMountPoint,
+                                                      uint64_t *pfFlags, uint32_t *puRootIdVersion);
+VBGLR3DECL(int)     VbglR3SharedFolderWaitForMappingsChanges(HGCMCLIENTID idClient, uint32_t uPrevVersion, uint32_t *puCurVersion);
+VBGLR3DECL(int)     VbglR3SharedFolderCancelMappingsChangesWaits(HGCMCLIENTID idClient);
+
+VBGLR3DECL(int)     VbglR3SharedFolderGetMountPrefix(char **ppszPrefix); /**< @todo r=bird: GET functions return the value, not a status code! */
+VBGLR3DECL(int)     VbglR3SharedFolderGetMountDir(char **ppszDir);       /**< @todo r=bird: GET functions return the value, not a status code! */
 /** @}  */
 # endif /* VBOX_WITH_SHARED_FOLDERS defined */
 
