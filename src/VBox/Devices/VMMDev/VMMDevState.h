@@ -144,8 +144,6 @@ typedef struct VMMDevState
     /** HGCM connector interface */
     R3PTRTYPE(PPDMIHGCMCONNECTOR) pHGCMDrv;
 #endif
-    /** Alignment padding. */
-    RTR3PTR PtrR3Alignment1;
     /** message buffer for backdoor logging. */
     char szMsg[512];
     /** message buffer index. */
