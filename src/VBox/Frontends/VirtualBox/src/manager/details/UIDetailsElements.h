@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2012-2017 Oracle Corporation
+ * Copyright (C) 2012-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -34,8 +34,8 @@ class UIDetailsUpdateTask : public UITask
 
 public:
 
-    /** Constructs update task taking @a machine as data. */
-    UIDetailsUpdateTask(const CMachine &machine);
+    /** Constructs update task taking @a comMachine as data. */
+    UIDetailsUpdateTask(const CMachine &comMachine);
 };
 
 /** UIDetailsElement extension used as a wrapping interface to
@@ -60,7 +60,7 @@ protected:
     virtual void updateAppearance();
 
     /** Creates update task. */
-    virtual UITask* createUpdateTask() = 0;
+    virtual UITask *createUpdateTask() = 0;
 
 private slots:
 
@@ -119,9 +119,9 @@ class UIDetailsUpdateTaskGeneral : public UIDetailsUpdateTask
 
 public:
 
-    /** Constructs update task passing @a machine to the base-class. */
-    UIDetailsUpdateTaskGeneral(const CMachine &machine)
-        : UIDetailsUpdateTask(machine) {}
+    /** Constructs update task passing @a comMachine to the base-class. */
+    UIDetailsUpdateTaskGeneral(const CMachine &comMachine)
+        : UIDetailsUpdateTask(comMachine) {}
 
 private:
 
@@ -144,7 +144,7 @@ public:
 private:
 
     /** Creates update task for this element. */
-    UITask* createUpdateTask() { return new UIDetailsUpdateTaskGeneral(machine()); }
+    UITask *createUpdateTask() { return new UIDetailsUpdateTaskGeneral(machine()); }
 };
 
 
@@ -155,9 +155,9 @@ class UIDetailsUpdateTaskSystem : public UIDetailsUpdateTask
 
 public:
 
-    /** Constructs update task passing @a machine to the base-class. */
-    UIDetailsUpdateTaskSystem(const CMachine &machine)
-        : UIDetailsUpdateTask(machine) {}
+    /** Constructs update task passing @a comMachine to the base-class. */
+    UIDetailsUpdateTaskSystem(const CMachine &comMachine)
+        : UIDetailsUpdateTask(comMachine) {}
 
 private:
 
@@ -180,7 +180,7 @@ public:
 private:
 
     /** Creates update task for this element. */
-    UITask* createUpdateTask() { return new UIDetailsUpdateTaskSystem(machine()); }
+    UITask *createUpdateTask() { return new UIDetailsUpdateTaskSystem(machine()); }
 };
 
 
@@ -191,9 +191,9 @@ class UIDetailsUpdateTaskDisplay : public UIDetailsUpdateTask
 
 public:
 
-    /** Constructs update task passing @a machine to the base-class. */
-    UIDetailsUpdateTaskDisplay(const CMachine &machine)
-        : UIDetailsUpdateTask(machine) {}
+    /** Constructs update task passing @a comMachine to the base-class. */
+    UIDetailsUpdateTaskDisplay(const CMachine &comMachine)
+        : UIDetailsUpdateTask(comMachine) {}
 
 private:
 
@@ -216,7 +216,7 @@ public:
 private:
 
     /** Creates update task for this element. */
-    UITask* createUpdateTask() { return new UIDetailsUpdateTaskDisplay(machine()); }
+    UITask *createUpdateTask() { return new UIDetailsUpdateTaskDisplay(machine()); }
 };
 
 
@@ -227,9 +227,9 @@ class UIDetailsUpdateTaskStorage : public UIDetailsUpdateTask
 
 public:
 
-    /** Constructs update task passing @a machine to the base-class. */
-    UIDetailsUpdateTaskStorage(const CMachine &machine)
-        : UIDetailsUpdateTask(machine) {}
+    /** Constructs update task passing @a comMachine to the base-class. */
+    UIDetailsUpdateTaskStorage(const CMachine &comMachine)
+        : UIDetailsUpdateTask(comMachine) {}
 
 private:
 
@@ -252,7 +252,7 @@ public:
 private:
 
     /** Creates update task for this element. */
-    UITask* createUpdateTask() { return new UIDetailsUpdateTaskStorage(machine()); }
+    UITask *createUpdateTask() { return new UIDetailsUpdateTaskStorage(machine()); }
 };
 
 
@@ -263,9 +263,9 @@ class UIDetailsUpdateTaskAudio : public UIDetailsUpdateTask
 
 public:
 
-    /** Constructs update task passing @a machine to the base-class. */
-    UIDetailsUpdateTaskAudio(const CMachine &machine)
-        : UIDetailsUpdateTask(machine) {}
+    /** Constructs update task passing @a comMachine to the base-class. */
+    UIDetailsUpdateTaskAudio(const CMachine &comMachine)
+        : UIDetailsUpdateTask(comMachine) {}
 
 private:
 
@@ -288,7 +288,7 @@ public:
 private:
 
     /** Creates update task for this element. */
-    UITask* createUpdateTask() { return new UIDetailsUpdateTaskAudio(machine()); }
+    UITask *createUpdateTask() { return new UIDetailsUpdateTaskAudio(machine()); }
 };
 
 
@@ -299,9 +299,9 @@ class UIDetailsUpdateTaskNetwork : public UIDetailsUpdateTask
 
 public:
 
-    /** Constructs update task passing @a machine to the base-class. */
-    UIDetailsUpdateTaskNetwork(const CMachine &machine)
-        : UIDetailsUpdateTask(machine) {}
+    /** Constructs update task passing @a comMachine to the base-class. */
+    UIDetailsUpdateTaskNetwork(const CMachine &comMachine)
+        : UIDetailsUpdateTask(comMachine) {}
 
 private:
 
@@ -327,7 +327,7 @@ public:
 private:
 
     /** Creates update task for this element. */
-    UITask* createUpdateTask() { return new UIDetailsUpdateTaskNetwork(machine()); }
+    UITask *createUpdateTask() { return new UIDetailsUpdateTaskNetwork(machine()); }
 };
 
 
@@ -338,9 +338,9 @@ class UIDetailsUpdateTaskSerial : public UIDetailsUpdateTask
 
 public:
 
-    /** Constructs update task passing @a machine to the base-class. */
-    UIDetailsUpdateTaskSerial(const CMachine &machine)
-        : UIDetailsUpdateTask(machine) {}
+    /** Constructs update task passing @a comMachine to the base-class. */
+    UIDetailsUpdateTaskSerial(const CMachine &comMachine)
+        : UIDetailsUpdateTask(comMachine) {}
 
 private:
 
@@ -363,7 +363,7 @@ public:
 private:
 
     /** Creates update task for this element. */
-    UITask* createUpdateTask() { return new UIDetailsUpdateTaskSerial(machine()); }
+    UITask *createUpdateTask() { return new UIDetailsUpdateTaskSerial(machine()); }
 };
 
 
@@ -374,9 +374,9 @@ class UIDetailsUpdateTaskUSB : public UIDetailsUpdateTask
 
 public:
 
-    /** Constructs update task passing @a machine to the base-class. */
-    UIDetailsUpdateTaskUSB(const CMachine &machine)
-        : UIDetailsUpdateTask(machine) {}
+    /** Constructs update task passing @a comMachine to the base-class. */
+    UIDetailsUpdateTaskUSB(const CMachine &comMachine)
+        : UIDetailsUpdateTask(comMachine) {}
 
 private:
 
@@ -399,7 +399,7 @@ public:
 private:
 
     /** Creates update task for this element. */
-    UITask* createUpdateTask() { return new UIDetailsUpdateTaskUSB(machine()); }
+    UITask *createUpdateTask() { return new UIDetailsUpdateTaskUSB(machine()); }
 };
 
 
@@ -410,9 +410,9 @@ class UIDetailsUpdateTaskSF : public UIDetailsUpdateTask
 
 public:
 
-    /** Constructs update task passing @a machine to the base-class. */
-    UIDetailsUpdateTaskSF(const CMachine &machine)
-        : UIDetailsUpdateTask(machine) {}
+    /** Constructs update task passing @a comMachine to the base-class. */
+    UIDetailsUpdateTaskSF(const CMachine &comMachine)
+        : UIDetailsUpdateTask(comMachine) {}
 
 private:
 
@@ -435,7 +435,7 @@ public:
 private:
 
     /** Creates update task for this element. */
-    UITask* createUpdateTask() { return new UIDetailsUpdateTaskSF(machine()); }
+    UITask *createUpdateTask() { return new UIDetailsUpdateTaskSF(machine()); }
 };
 
 
@@ -446,9 +446,9 @@ class UIDetailsUpdateTaskUI : public UIDetailsUpdateTask
 
 public:
 
-    /** Constructs update task passing @a machine to the base-class. */
-    UIDetailsUpdateTaskUI(const CMachine &machine)
-        : UIDetailsUpdateTask(machine) {}
+    /** Constructs update task passing @a comMachine to the base-class. */
+    UIDetailsUpdateTaskUI(const CMachine &comMachine)
+        : UIDetailsUpdateTask(comMachine) {}
 
 private:
 
@@ -471,7 +471,7 @@ public:
 private:
 
     /** Creates update task for this element. */
-    UITask* createUpdateTask() { return new UIDetailsUpdateTaskUI(machine()); }
+    UITask *createUpdateTask() { return new UIDetailsUpdateTaskUI(machine()); }
 };
 
 
@@ -482,9 +482,9 @@ class UIDetailsUpdateTaskDescription : public UIDetailsUpdateTask
 
 public:
 
-    /** Constructs update task passing @a machine to the base-class. */
-    UIDetailsUpdateTaskDescription(const CMachine &machine)
-        : UIDetailsUpdateTask(machine) {}
+    /** Constructs update task passing @a comMachine to the base-class. */
+    UIDetailsUpdateTaskDescription(const CMachine &comMachine)
+        : UIDetailsUpdateTask(comMachine) {}
 
 private:
 
@@ -507,7 +507,7 @@ public:
 private:
 
     /** Creates update task for this element. */
-    UITask* createUpdateTask() { return new UIDetailsUpdateTaskDescription(machine()); }
+    UITask *createUpdateTask() { return new UIDetailsUpdateTaskDescription(machine()); }
 };
 
 #endif /* !___UIDetailsElements_h___ */

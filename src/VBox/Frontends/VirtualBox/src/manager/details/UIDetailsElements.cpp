@@ -230,33 +230,29 @@ void UIDetailsElementPreview::updateAppearance()
 void UIDetailsUpdateTaskGeneral::run()
 {
     /* Acquire corresponding machine: */
-    CMachine machine = property("machine").value<CMachine>();
-    if (machine.isNull())
+    CMachine comMachine = property("machine").value<CMachine>();
+    if (comMachine.isNull())
         return;
 
     /* Prepare table: */
     UITextTable table;
 
     /* Gather information: */
-    if (machine.GetAccessible())
+    if (comMachine.GetAccessible())
     {
-        /* Machine name: */
-        table << UITextTableLine(QApplication::translate("UIDetails", "Name", "details (general)"), machine.GetName());
+        /* Name: */
+        table << UITextTableLine(QApplication::translate("UIDetails", "Name", "details (general)"), comMachine.GetName());
 
-        /* Operating system type: */
+        /* Operating System: */
         table << UITextTableLine(QApplication::translate("UIDetails", "Operating System", "details (general)"),
-                                 vboxGlobal().vmGuestOSTypeDescription(machine.GetOSTypeId()));
+                                 vboxGlobal().vmGuestOSTypeDescription(comMachine.GetOSTypeId()));
 
-        /* Location of the settings file: */
-        const QString strSettingsFilePath = machine.GetSettingsFilePath();
-        if (!strSettingsFilePath.isEmpty())
-        {
-            table << UITextTableLine(QApplication::translate("UIDetails", "Settings File Location", "details (general)"),
-                                     QDir::toNativeSeparators(QFileInfo(strSettingsFilePath).absolutePath()));
-        }
+        /* Settings File Location: */
+        table << UITextTableLine(QApplication::translate("UIDetails", "Settings File Location", "details (general)"),
+                                 QDir::toNativeSeparators(QFileInfo(comMachine.GetSettingsFilePath()).absolutePath()));
 
-        /* Get groups: */
-        QStringList groups = machine.GetGroups().toList();
+        /* Groups: */
+        QStringList groups = comMachine.GetGroups().toList();
         /* Do not show groups for machine which is in root group only: */
         if (groups.size() == 1)
             groups.removeAll("/");
@@ -285,53 +281,53 @@ void UIDetailsUpdateTaskGeneral::run()
 void UIDetailsUpdateTaskSystem::run()
 {
     /* Acquire corresponding machine: */
-    CMachine machine = property("machine").value<CMachine>();
-    if (machine.isNull())
+    CMachine comMachine = property("machine").value<CMachine>();
+    if (comMachine.isNull())
         return;
 
     /* Prepare table: */
     UITextTable table;
 
     /* Gather information: */
-    if (machine.GetAccessible())
+    if (comMachine.GetAccessible())
     {
         /* Base memory: */
         table << UITextTableLine(QApplication::translate("UIDetails", "Base Memory", "details (system)"),
-                                 QApplication::translate("UIDetails", "%1 MB", "details").arg(machine.GetMemorySize()));
+                                 QApplication::translate("UIDetails", "%1 MB", "details").arg(comMachine.GetMemorySize()));
 
         /* CPU count: */
-        int cCPU = machine.GetCPUCount();
+        const int cCPU = comMachine.GetCPUCount();
         if (cCPU > 1)
             table << UITextTableLine(QApplication::translate("UIDetails", "Processors", "details (system)"),
                                      QString::number(cCPU));
 
         /* CPU execution cap: */
-        int iCPUExecCap = machine.GetCPUExecutionCap();
-        if (iCPUExecCap < 100)
+        const int iCPUExecutionCap = comMachine.GetCPUExecutionCap();
+        if (iCPUExecutionCap < 100)
             table << UITextTableLine(QApplication::translate("UIDetails", "Execution Cap", "details (system)"),
-                                     QApplication::translate("UIDetails", "%1%", "details").arg(iCPUExecCap));
+                                     QApplication::translate("UIDetails", "%1%", "details").arg(iCPUExecutionCap));
 
         /* Boot-order: */
         QStringList bootOrder;
         for (ulong i = 1; i <= vboxGlobal().virtualBox().GetSystemProperties().GetMaxBootPosition(); ++i)
         {
-            KDeviceType device = machine.GetBootOrder(i);
-            if (device == KDeviceType_Null)
+            const KDeviceType enmDeviceType = comMachine.GetBootOrder(i);
+            if (enmDeviceType == KDeviceType_Null)
                 continue;
-            bootOrder << gpConverter->toString(device);
+            bootOrder << gpConverter->toString(enmDeviceType);
         }
         if (bootOrder.isEmpty())
             bootOrder << gpConverter->toString(KDeviceType_Null);
         table << UITextTableLine(QApplication::translate("UIDetails", "Boot Order", "details (system)"), bootOrder.join(", "));
 
         /* Chipset type: */
-        const KChipsetType enmChipsetType = machine.GetChipsetType();
+        const KChipsetType enmChipsetType = comMachine.GetChipsetType();
         if (enmChipsetType == KChipsetType_ICH9)
             table << UITextTableLine(QApplication::translate("UIDetails", "Chipset Type", "details (system)"),
                                      gpConverter->toString(enmChipsetType));
 
         /* Firware type: */
-        switch (machine.GetFirmwareType())
+        switch (comMachine.GetFirmwareType())
         {
             case KFirmwareType_EFI:
             case KFirmwareType_EFI32:
@@ -355,17 +351,19 @@ void UIDetailsUpdateTaskSystem::run()
         if (vboxGlobal().virtualBox().GetHost().GetProcessorFeature(KProcessorFeature_HWVirtEx))
         {
             /* VT-x/AMD-V: */
-            if (machine.GetHWVirtExProperty(KHWVirtExPropertyType_Enabled))
+            if (comMachine.GetHWVirtExProperty(KHWVirtExPropertyType_Enabled))
             {
                 acceleration << QApplication::translate("UIDetails", "VT-x/AMD-V", "details (system)");
                 /* Nested Paging (only when hw virt is enabled): */
-                if (machine.GetHWVirtExProperty(KHWVirtExPropertyType_NestedPaging))
+                if (comMachine.GetHWVirtExProperty(KHWVirtExPropertyType_NestedPaging))
                     acceleration << QApplication::translate("UIDetails", "Nested Paging", "details (system)");
             }
         }
-        if (machine.GetCPUProperty(KCPUPropertyType_PAE))
+        /* PAE/NX: */
+        if (comMachine.GetCPUProperty(KCPUPropertyType_PAE))
             acceleration << QApplication::translate("UIDetails", "PAE/NX", "details (system)");
-        switch (machine.GetEffectiveParavirtProvider())
+        /* Paravirtualization provider: */
+        switch (comMachine.GetEffectiveParavirtProvider())
         {
             case KParavirtProvider_Minimal: acceleration << QApplication::translate("UIDetails", "Minimal Paravirtualization", "details (system)"); break;
             case KParavirtProvider_HyperV:  acceleration << QApplication::translate("UIDetails", "Hyper-V Paravirtualization", "details (system)"); break;
@@ -388,28 +386,28 @@ void UIDetailsUpdateTaskSystem::run()
 void UIDetailsUpdateTaskDisplay::run()
 {
     /* Acquire corresponding machine: */
-    CMachine machine = property("machine").value<CMachine>();
-    if (machine.isNull())
+    CMachine comMachine = property("machine").value<CMachine>();
+    if (comMachine.isNull())
         return;
 
     /* Prepare table: */
     UITextTable table;
 
     /* Gather information: */
-    if (machine.GetAccessible())
+    if (comMachine.GetAccessible())
     {
         /* Video memory: */
         table << UITextTableLine(QApplication::translate("UIDetails", "Video Memory", "details (display)"),
-                                 QApplication::translate("UIDetails", "%1 MB", "details").arg(machine.GetVRAMSize()));
+                                 QApplication::translate("UIDetails", "%1 MB", "details").arg(comMachine.GetVRAMSize()));
 
         /* Screen count: */
-        int cGuestScreens = machine.GetMonitorCount();
+        const int cGuestScreens = comMachine.GetMonitorCount();
         if (cGuestScreens > 1)
             table << UITextTableLine(QApplication::translate("UIDetails", "Screens", "details (display)"),
                                      QString::number(cGuestScreens));
 
-        /* Get scale-factor value: */
-        const QString strScaleFactor = machine.GetExtraData(UIExtraDataDefs::GUI_ScaleFactor);
+        /* Scale-factor: */
+        const QString strScaleFactor = comMachine.GetExtraData(UIExtraDataDefs::GUI_ScaleFactor);
         {
             /* Try to convert loaded data to double: */
             bool fOk = false;
@@ -423,37 +421,38 @@ void UIDetailsUpdateTaskDisplay::run()
                                          QString::number(dValue, 'f', 2));
         }
 
+        /* Acceleration: */
         QStringList acceleration;
 #ifdef VBOX_WITH_VIDEOHWACCEL
         /* 2D acceleration: */
-        if (machine.GetAccelerate2DVideoEnabled())
+        if (comMachine.GetAccelerate2DVideoEnabled())
             acceleration << QApplication::translate("UIDetails", "2D Video", "details (display)");
-#endif /* VBOX_WITH_VIDEOHWACCEL */
+#endif
         /* 3D acceleration: */
-        if (machine.GetAccelerate3DEnabled())
+        if (comMachine.GetAccelerate3DEnabled())
             acceleration << QApplication::translate("UIDetails", "3D", "details (display)");
         if (!acceleration.isEmpty())
             table << UITextTableLine(QApplication::translate("UIDetails", "Acceleration", "details (display)"),
                                      acceleration.join(", "));
 
-        /* VRDE info: */
-        CVRDEServer srv = machine.GetVRDEServer();
-        if (!srv.isNull())
+        /* VRDE: */
+        const CVRDEServer comServer = comMachine.GetVRDEServer();
+        if (!comServer.isNull())
         {
-            if (srv.GetEnabled())
+            if (comServer.GetEnabled())
                 table << UITextTableLine(QApplication::translate("UIDetails", "Remote Desktop Server Port", "details (display/vrde)"),
-                                         srv.GetVRDEProperty("TCP/Ports"));
+                                         comServer.GetVRDEProperty("TCP/Ports"));
             else
                 table << UITextTableLine(QApplication::translate("UIDetails", "Remote Desktop Server", "details (display/vrde)"),
                                          QApplication::translate("UIDetails", "Disabled", "details (display/vrde/VRDE server)"));
         }
 
         /* Recording info: */
-        CRecordingSettings comRecordingSettings = machine.GetRecordingSettings();
+        CRecordingSettings comRecordingSettings = comMachine.GetRecordingSettings();
         if (comRecordingSettings.GetEnabled())
         {
             /* For now all screens have the same config: */
-            CRecordingScreenSettings comRecordingScreen0Settings = comRecordingSettings.GetScreenSettings(0);
+            const CRecordingScreenSettings comRecordingScreen0Settings = comRecordingSettings.GetScreenSettings(0);
 
             /** @todo r=andy Refine these texts (wrt audio and/or video). */
             table << UITextTableLine(QApplication::translate("UIDetails", "Recording File", "details (display/recording)"),
@@ -465,7 +464,6 @@ void UIDetailsUpdateTaskDisplay::run()
         }
         else
         {
-            /** @todo r=andy Refine these texts (wrt audio and/or video). */
             table << UITextTableLine(QApplication::translate("UIDetails", "Recording", "details (display/recording)"),
                                      QApplication::translate("UIDetails", "Disabled", "details (display/recording)"));
         }
@@ -481,73 +479,78 @@ void UIDetailsUpdateTaskDisplay::run()
 void UIDetailsUpdateTaskStorage::run()
 {
     /* Acquire corresponding machine: */
-    CMachine machine = property("machine").value<CMachine>();
-    if (machine.isNull())
+    CMachine comMachine = property("machine").value<CMachine>();
+    if (comMachine.isNull())
         return;
 
     /* Prepare table: */
     UITextTable table;
 
     /* Gather information: */
-    if (machine.GetAccessible())
+    if (comMachine.GetAccessible())
     {
         /* Iterate over all the machine controllers: */
-        bool fSomeInfo = false;
-        foreach (const CStorageController &controller, machine.GetStorageControllers())
+        foreach (const CStorageController &comController, comMachine.GetStorageControllers())
         {
             /* Add controller information: */
-            QString strControllerName = QApplication::translate("UIMachineSettingsStorage", "Controller: %1");
-            table << UITextTableLine(strControllerName.arg(controller.GetName()), QString());
-            fSomeInfo = true;
+            const QString strControllerName = QApplication::translate("UIMachineSettingsStorage", "Controller: %1");
+            table << UITextTableLine(strControllerName.arg(comController.GetName()), QString());
             /* Populate map (its sorted!): */
             QMap<StorageSlot, QString> attachmentsMap;
-            foreach (const CMediumAttachment &attachment, machine.GetMediumAttachmentsOfController(controller.GetName()))
+            foreach (const CMediumAttachment &attachment, comMachine.GetMediumAttachmentsOfController(comController.GetName()))
             {
+                /* Acquire device type first of all: */
+                const KDeviceType enmDeviceType = attachment.GetType();
+
                 /* Prepare current storage slot: */
-                StorageSlot attachmentSlot(controller.GetBus(), attachment.GetPort(), attachment.GetDevice());
-                AssertMsg(controller.isOk(),
+                const StorageSlot attachmentSlot(comController.GetBus(), attachment.GetPort(), attachment.GetDevice());
+                AssertMsg(comController.isOk(),
                           ("Unable to acquire controller data: %s\n",
-                           UIErrorString::formatRC(controller.lastRC()).toUtf8().constData()));
-                if (!controller.isOk())
+                           UIErrorString::formatRC(comController.lastRC()).toUtf8().constData()));
+                if (!comController.isOk())
                     continue;
+
                 /* Prepare attachment information: */
                 QString strAttachmentInfo = vboxGlobal().details(attachment.GetMedium(), false, false);
-                /* That temporary hack makes sure 'Inaccessible' word is always bold: */
+                /* That hack makes sure 'Inaccessible' word is always bold: */
                 { // hack
-                    QString strInaccessibleString(VBoxGlobal::tr("Inaccessible", "medium"));
-                    QString strBoldInaccessibleString(QString("<b>%1</b>").arg(strInaccessibleString));
+                    const QString strInaccessibleString(VBoxGlobal::tr("Inaccessible", "medium"));
+                    const QString strBoldInaccessibleString(QString("<b>%1</b>").arg(strInaccessibleString));
                     strAttachmentInfo.replace(strInaccessibleString, strBoldInaccessibleString);
                 } // hack
+
                 /* Append 'device slot name' with 'device type name' for optical devices only: */
-                KDeviceType deviceType = attachment.GetType();
-                QString strDeviceType = deviceType == KDeviceType_DVD ?
-                            QApplication::translate("UIDetails", "[Optical Drive]", "details (storage)") : QString();
+                QString strDeviceType = enmDeviceType == KDeviceType_DVD
+                                      ? QApplication::translate("UIDetails", "[Optical Drive]", "details (storage)")
+                                      : QString();
                 if (!strDeviceType.isNull())
                     strDeviceType.append(' ');
+
                 /* Insert that attachment information into the map: */
                 if (!strAttachmentInfo.isNull())
                 {
                     /* Configure hovering anchors: */
-                    const QString strAnchorType = deviceType == KDeviceType_DVD || deviceType == KDeviceType_Floppy ? QString("mount") :
-                                                  deviceType == KDeviceType_HardDisk ? QString("attach") : QString();
+                    const QString strAnchorType = enmDeviceType == KDeviceType_DVD || enmDeviceType == KDeviceType_Floppy ? QString("mount") :
+                                                  enmDeviceType == KDeviceType_HardDisk ? QString("attach") : QString();
                     const CMedium medium = attachment.GetMedium();
                     const QString strMediumLocation = medium.isNull() ? QString() : medium.GetLocation();
                     attachmentsMap.insert(attachmentSlot,
                                           QString("<a href=#%1,%2,%3,%4>%5</a>")
                                                   .arg(strAnchorType,
-                                                       controller.GetName(),
+                                                       comController.GetName(),
                                                        gpConverter->toString(attachmentSlot),
                                                        strMediumLocation,
                                                        strDeviceType + strAttachmentInfo));
                 }
             }
+
             /* Iterate over the sorted map: */
-            QList<StorageSlot> storageSlots = attachmentsMap.keys();
-            QList<QString> storageInfo = attachmentsMap.values();
+            const QList<StorageSlot> storageSlots = attachmentsMap.keys();
+            const QList<QString> storageInfo = attachmentsMap.values();
             for (int i = 0; i < storageSlots.size(); ++i)
                 table << UITextTableLine(QString("  ") + gpConverter->toString(storageSlots[i]), storageInfo[i]);
         }
-        if (!fSomeInfo)
+        if (table.isEmpty())
             table << UITextTableLine(QApplication::translate("UIDetails", "Not Attached", "details (storage)"), QString());
     }
     else
@@ -561,37 +564,35 @@ void UIDetailsUpdateTaskStorage::run()
 void UIDetailsUpdateTaskAudio::run()
 {
     /* Acquire corresponding machine: */
-    CMachine machine = property("machine").value<CMachine>();
-    if (machine.isNull())
+    CMachine comMachine = property("machine").value<CMachine>();
+    if (comMachine.isNull())
         return;
 
     /* Prepare table: */
     UITextTable table;
 
     /* Gather information: */
-    if (machine.GetAccessible())
+    if (comMachine.GetAccessible())
     {
-        const CAudioAdapter &audio = machine.GetAudioAdapter();
-        if (audio.GetEnabled())
+        const CAudioAdapter comAudio = comMachine.GetAudioAdapter();
+        if (comAudio.GetEnabled())
         {
             /* Driver: */
             table << UITextTableLine(QApplication::translate("UIDetails", "Host Driver", "details (audio)"),
-                                     gpConverter->toString(audio.GetAudioDriver()));
+                                     gpConverter->toString(comAudio.GetAudioDriver()));
 
             /* Controller: */
             table << UITextTableLine(QApplication::translate("UIDetails", "Controller", "details (audio)"),
-                                     gpConverter->toString(audio.GetAudioController()));
+                                     gpConverter->toString(comAudio.GetAudioController()));
 
 #ifdef VBOX_WITH_AUDIO_INOUT_INFO
-            /* Output: */
+            /* I/O: */
             table << UITextTableLine(QApplication::translate("UIDetails", "Audio Output", "details (audio)"),
-                                     audio.GetEnabledOut() ?
+                                     comAudio.GetEnabledOut() ?
                                      QApplication::translate("UIDetails", "Enabled", "details (audio/output)") :
                                      QApplication::translate("UIDetails", "Disabled", "details (audio/output)"));
-
-            /* Input: */
             table << UITextTableLine(QApplication::translate("UIDetails", "Audio Input", "details (audio)"),
-                                     audio.GetEnabledIn() ?
+                                     comAudio.GetEnabledIn() ?
                                      QApplication::translate("UIDetails", "Enabled", "details (audio/input)") :
                                      QApplication::translate("UIDetails", "Disabled", "details (audio/input)"));
 #endif /* VBOX_WITH_AUDIO_INOUT_INFO */
@@ -612,73 +613,76 @@ void UIDetailsUpdateTaskAudio::run()
 void UIDetailsUpdateTaskNetwork::run()
 {
     /* Acquire corresponding machine: */
-    CMachine machine = property("machine").value<CMachine>();
-    if (machine.isNull())
+    CMachine comMachine = property("machine").value<CMachine>();
+    if (comMachine.isNull())
         return;
 
     /* Prepare table: */
     UITextTable table;
 
     /* Gather information: */
-    if (machine.GetAccessible())
+    if (comMachine.GetAccessible())
     {
         /* Iterate over all the adapters: */
-        bool fSomeInfo = false;
-        ulong uCount = vboxGlobal().virtualBox().GetSystemProperties().GetMaxNetworkAdapters(machine.GetChipsetType());
+        const ulong uCount = vboxGlobal().virtualBox().GetSystemProperties().GetMaxNetworkAdapters(comMachine.GetChipsetType());
         for (ulong uSlot = 0; uSlot < uCount; ++uSlot)
         {
-            const CNetworkAdapter &adapter = machine.GetNetworkAdapter(uSlot);
-            if (adapter.GetEnabled())
+            const CNetworkAdapter comAdapter = comMachine.GetNetworkAdapter(uSlot);
+
+            /* Skip disabled adapters: */
+            if (!comAdapter.GetEnabled())
+                continue;
+
+            /* Gather adapter information: */
+            const KNetworkAttachmentType enmType = comAdapter.GetAttachmentType();
+            const QString strAttachmentTemplate = gpConverter->toString(comAdapter.GetAdapterType()).replace(QRegExp("\\s\\(.+\\)"), " (%1)");
+            QString strAttachmentType;
+            switch (enmType)
             {
-                KNetworkAttachmentType type = adapter.GetAttachmentType();
-                QString strAttachmentType = gpConverter->toString(adapter.GetAdapterType())
-                                            .replace(QRegExp("\\s\\(.+\\)"), " (%1)");
-                switch (type)
+                case KNetworkAttachmentType_Bridged:
                 {
-                    case KNetworkAttachmentType_Bridged:
-                    {
-                        strAttachmentType = strAttachmentType.arg(QApplication::translate("UIDetails", "Bridged Adapter, %1", "details (network)")
-                                                                  .arg(adapter.GetBridgedInterface()));
-                        break;
-                    }
-                    case KNetworkAttachmentType_Internal:
-                    {
-                        strAttachmentType = strAttachmentType.arg(QApplication::translate("UIDetails", "Internal Network, '%1'", "details (network)")
-                                                                  .arg(adapter.GetInternalNetwork()));
-                        break;
-                    }
-                    case KNetworkAttachmentType_HostOnly:
-                    {
-                        strAttachmentType = strAttachmentType.arg(QApplication::translate("UIDetails", "Host-only Adapter, '%1'", "details (network)")
-                                                                  .arg(adapter.GetHostOnlyInterface()));
-                        break;
-                    }
-                    case KNetworkAttachmentType_Generic:
-                    {
-                        QString strGenericDriverProperties(summarizeGenericProperties(adapter));
-                        strAttachmentType = strGenericDriverProperties.isNull() ?
-                                  strAttachmentType.arg(QApplication::translate("UIDetails", "Generic Driver, '%1'", "details (network)").arg(adapter.GetGenericDriver())) :
-                                  strAttachmentType.arg(QApplication::translate("UIDetails", "Generic Driver, '%1' { %2 }", "details (network)")
-                                                        .arg(adapter.GetGenericDriver(), strGenericDriverProperties));
-                        break;
-                    }
-                    case KNetworkAttachmentType_NATNetwork:
-                    {
-                        strAttachmentType = strAttachmentType.arg(QApplication::translate("UIDetails", "NAT Network, '%1'", "details (network)")
-                                                                  .arg(adapter.GetNATNetwork()));
-                        break;
-                    }
-                    default:
-                    {
-                        strAttachmentType = strAttachmentType.arg(gpConverter->toString(type));
-                        break;
-                    }
+                    strAttachmentType = strAttachmentTemplate.arg(QApplication::translate("UIDetails", "Bridged Adapter, %1", "details (network)")
+                                                                  .arg(comAdapter.GetBridgedInterface()));
+                    break;
                 }
-                table << UITextTableLine(QApplication::translate("UIDetails", "Adapter %1", "details (network)").arg(adapter.GetSlot() + 1), strAttachmentType);
-                fSomeInfo = true;
+                case KNetworkAttachmentType_Internal:
+                {
+                    strAttachmentType = strAttachmentTemplate.arg(QApplication::translate("UIDetails", "Internal Network, '%1'", "details (network)")
+                                                                  .arg(comAdapter.GetInternalNetwork()));
+                    break;
+                }
+                case KNetworkAttachmentType_HostOnly:
+                {
+                    strAttachmentType = strAttachmentTemplate.arg(QApplication::translate("UIDetails", "Host-only Adapter, '%1'", "details (network)")
+                                                                  .arg(comAdapter.GetHostOnlyInterface()));
+                    break;
+                }
+                case KNetworkAttachmentType_Generic:
+                {
+                    const QString strGenericDriverProperties(summarizeGenericProperties(comAdapter));
+                    strAttachmentType = strGenericDriverProperties.isNull() ?
+                        strAttachmentTemplate.arg(QApplication::translate("UIDetails", "Generic Driver, '%1'", "details (network)")
+                                                  .arg(comAdapter.GetGenericDriver())) :
+                        strAttachmentTemplate.arg(QApplication::translate("UIDetails", "Generic Driver, '%1' { %2 }", "details (network)")
+                                                  .arg(comAdapter.GetGenericDriver(), strGenericDriverProperties));
+                    break;
+                }
+                case KNetworkAttachmentType_NATNetwork:
+                {
+                    strAttachmentType = strAttachmentTemplate.arg(QApplication::translate("UIDetails", "NAT Network, '%1'", "details (network)")
+                                                                  .arg(comAdapter.GetNATNetwork()));
+                    break;
+                }
+                default:
+                {
+                    strAttachmentType = strAttachmentTemplate.arg(gpConverter->toString(enmType));
+                    break;
+                }
             }
+            if (!strAttachmentType.isNull())
+                table << UITextTableLine(QApplication::translate("UIDetails", "Adapter %1", "details (network)").arg(comAdapter.GetSlot() + 1), strAttachmentType);
         }
-        if (!fSomeInfo)
+        if (table.isEmpty())
             table << UITextTableLine(QApplication::translate("UIDetails", "Disabled", "details (network/adapter)"), QString());
     }
     else
@@ -708,36 +712,62 @@ QString UIDetailsUpdateTaskNetwork::summarizeGenericProperties(const CNetworkAda
 void UIDetailsUpdateTaskSerial::run()
 {
     /* Acquire corresponding machine: */
-    CMachine machine = property("machine").value<CMachine>();
-    if (machine.isNull())
+    CMachine comMachine = property("machine").value<CMachine>();
+    if (comMachine.isNull())
         return;
 
     /* Prepare table: */
     UITextTable table;
 
     /* Gather information: */
-    if (machine.GetAccessible())
+    if (comMachine.GetAccessible())
     {
         /* Iterate over all the ports: */
-        bool fSomeInfo = false;
-        ulong uCount = vboxGlobal().virtualBox().GetSystemProperties().GetSerialPortCount();
+        const ulong uCount = vboxGlobal().virtualBox().GetSystemProperties().GetSerialPortCount();
         for (ulong uSlot = 0; uSlot < uCount; ++uSlot)
         {
-            const CSerialPort &port = machine.GetSerialPort(uSlot);
-            if (port.GetEnabled())
+            const CSerialPort comPort = comMachine.GetSerialPort(uSlot);
+
+            /* Skip disabled adapters: */
+            if (!comPort.GetEnabled())
+                continue;
+
+            /* Gather port information: */
+            const KPortMode enmMode = comPort.GetHostMode();
+            const QString strModeTemplate = vboxGlobal().toCOMPortName(comPort.GetIRQ(), comPort.GetIOBase()) + ", ";
+            QString strModeType;
+            switch (enmMode)
             {
-                KPortMode mode = port.GetHostMode();
-                QString data = vboxGlobal().toCOMPortName(port.GetIRQ(), port.GetIOBase()) + ", ";
-                if (mode == KPortMode_HostPipe || mode == KPortMode_HostDevice ||
-                    mode == KPortMode_RawFile || mode == KPortMode_TCP)
-                    data += QString("%1 (%2)").arg(gpConverter->toString(mode)).arg(QDir::toNativeSeparators(port.GetPath()));
-                else
-                    data += gpConverter->toString(mode);
-                table << UITextTableLine(QApplication::translate("UIDetails", "Port %1", "details (serial)").arg(port.GetSlot() + 1), data);
-                fSomeInfo = true;
+                case KPortMode_HostPipe:
+                {
+                    strModeType = strModeTemplate + QString("%1 (%2)").arg(gpConverter->toString(enmMode)).arg(QDir::toNativeSeparators(comPort.GetPath()));
+                    break;
+                }
+                case KPortMode_HostDevice:
+                {
+                    strModeType = strModeTemplate + QString("%1 (%2)").arg(gpConverter->toString(enmMode)).arg(QDir::toNativeSeparators(comPort.GetPath()));
+                    break;
+                }
+                case KPortMode_RawFile:
+                {
+                    strModeType = strModeTemplate + QString("%1 (%2)").arg(gpConverter->toString(enmMode)).arg(QDir::toNativeSeparators(comPort.GetPath()));
+                    break;
+                }
+                case KPortMode_TCP:
+                {
+                    strModeType = strModeTemplate + QString("%1 (%2)").arg(gpConverter->toString(enmMode)).arg(QDir::toNativeSeparators(comPort.GetPath()));
+                    break;
+                }
+                default:
+                {
+                    strModeType = strModeTemplate + gpConverter->toString(enmMode);
+                    break;
+                }
             }
+            if (!strModeType.isNull())
+                table << UITextTableLine(QApplication::translate("UIDetails", "Port %1", "details (serial)").arg(comPort.GetSlot() + 1), strModeType);
         }
-        if (!fSomeInfo)
+        if (table.isEmpty())
             table << UITextTableLine(QApplication::translate("UIDetails", "Disabled", "details (serial)"), QString());
     }
     else
@@ -751,38 +781,38 @@ void UIDetailsUpdateTaskSerial::run()
 void UIDetailsUpdateTaskUSB::run()
 {
     /* Acquire corresponding machine: */
-    CMachine machine = property("machine").value<CMachine>();
-    if (machine.isNull())
+    CMachine comMachine = property("machine").value<CMachine>();
+    if (comMachine.isNull())
         return;
 
     /* Prepare table: */
     UITextTable table;
 
     /* Gather information: */
-    if (machine.GetAccessible())
+    if (comMachine.GetAccessible())
     {
         /* Iterate over all the USB filters: */
-        const CUSBDeviceFilters &filters = machine.GetUSBDeviceFilters();
-        if (!filters.isNull() && machine.GetUSBProxyAvailable())
+        const CUSBDeviceFilters comFilterObject = comMachine.GetUSBDeviceFilters();
+        if (!comFilterObject.isNull() && comMachine.GetUSBProxyAvailable())
         {
-            const CUSBDeviceFilters flts = machine.GetUSBDeviceFilters();
-            const CUSBControllerVector controllers = machine.GetUSBControllers();
-            if (!flts.isNull() && !controllers.isEmpty())
+            const CUSBControllerVector controllers = comMachine.GetUSBControllers();
+            if (!controllers.isEmpty())
             {
-                /* USB Controllers info: */
-                QStringList controllerList;
-                foreach (const CUSBController &controller, controllers)
-                    controllerList << gpConverter->toString(controller.GetType());
+                /* Controllers: */
+                QStringList controllersReadable;
+                foreach (const CUSBController &comController, controllers)
+                    controllersReadable << gpConverter->toString(comController.GetType());
                 table << UITextTableLine(QApplication::translate("UIDetails", "USB Controller", "details (usb)"),
-                                          controllerList.join(", "));
-                /* USB Device Filters info: */
-                const CUSBDeviceFilterVector &coll = flts.GetDeviceFilters();
+                                         controllersReadable.join(", "));
+
+                /* Device Filters: */
+                const CUSBDeviceFilterVector filters = comFilterObject.GetDeviceFilters();
                 uint uActive = 0;
-                for (int i = 0; i < coll.size(); ++i)
-                    if (coll[i].GetActive())
+                for (int i = 0; i < filters.size(); ++i)
+                    if (filters.at(i).GetActive())
                         ++uActive;
                 table << UITextTableLine(QApplication::translate("UIDetails", "Device Filters", "details (usb)"),
-                                         QApplication::translate("UIDetails", "%1 (%2 active)", "details (usb)").arg(coll.size()).arg(uActive));
+                                         QApplication::translate("UIDetails", "%1 (%2 active)", "details (usb)").arg(filters.size()).arg(uActive));
             }
             else
                 table << UITextTableLine(QApplication::translate("UIDetails", "Disabled", "details (usb)"), QString());
@@ -801,18 +831,18 @@ void UIDetailsUpdateTaskUSB::run()
 void UIDetailsUpdateTaskSF::run()
 {
     /* Acquire corresponding machine: */
-    CMachine machine = property("machine").value<CMachine>();
-    if (machine.isNull())
+    CMachine comMachine = property("machine").value<CMachine>();
+    if (comMachine.isNull())
         return;
 
     /* Prepare table: */
     UITextTable table;
 
     /* Gather information: */
-    if (machine.GetAccessible())
+    if (comMachine.GetAccessible())
     {
-        /* Iterate over all the shared folders: */
-        ulong uCount = machine.GetSharedFolders().size();
+        /* Summary: */
+        const ulong uCount = comMachine.GetSharedFolders().size();
         if (uCount > 0)
             table << UITextTableLine(QApplication::translate("UIDetails", "Shared Folders", "details (shared folders)"), QString::number(uCount));
         else
@@ -829,60 +859,60 @@ void UIDetailsUpdateTaskSF::run()
 void UIDetailsUpdateTaskUI::run()
 {
     /* Acquire corresponding machine: */
-    CMachine machine = property("machine").value<CMachine>();
-    if (machine.isNull())
+    CMachine comMachine = property("machine").value<CMachine>();
+    if (comMachine.isNull())
         return;
 
     /* Prepare table: */
     UITextTable table;
 
     /* Gather information: */
-    if (machine.GetAccessible())
+    if (comMachine.GetAccessible())
     {
 #ifndef VBOX_WS_MAC
-        /* Get menu-bar availability status: */
-        const QString strMenubarEnabled = machine.GetExtraData(UIExtraDataDefs::GUI_MenuBar_Enabled);
+        /* Menu-bar: */
+        const QString strMenubarEnabled = comMachine.GetExtraData(UIExtraDataDefs::GUI_MenuBar_Enabled);
         {
             /* Try to convert loaded data to bool: */
-            const bool fEnabled = !(strMenubarEnabled.compare("false", Qt::CaseInsensitive) == 0 ||
-                                    strMenubarEnabled.compare("no", Qt::CaseInsensitive) == 0 ||
-                                    strMenubarEnabled.compare("off", Qt::CaseInsensitive) == 0 ||
-                                    strMenubarEnabled == "0");
+            const bool fEnabled = !(   strMenubarEnabled.compare("false", Qt::CaseInsensitive) == 0
+                                    || strMenubarEnabled.compare("no", Qt::CaseInsensitive) == 0
+                                    || strMenubarEnabled.compare("off", Qt::CaseInsensitive) == 0
+                                    || strMenubarEnabled == "0");
             /* Append information: */
             table << UITextTableLine(QApplication::translate("UIDetails", "Menu-bar", "details (user interface)"),
-                                     fEnabled ? QApplication::translate("UIDetails", "Enabled", "details (user interface/menu-bar)") :
-                                                QApplication::translate("UIDetails", "Disabled", "details (user interface/menu-bar)"));
+                                     fEnabled ? QApplication::translate("UIDetails", "Enabled", "details (user interface/menu-bar)")
+                                              : QApplication::translate("UIDetails", "Disabled", "details (user interface/menu-bar)"));
         }
 #endif /* !VBOX_WS_MAC */
 
-        /* Get status-bar availability status: */
-        const QString strStatusbarEnabled = machine.GetExtraData(UIExtraDataDefs::GUI_StatusBar_Enabled);
+        /* Status-bar: */
+        const QString strStatusbarEnabled = comMachine.GetExtraData(UIExtraDataDefs::GUI_StatusBar_Enabled);
         {
             /* Try to convert loaded data to bool: */
-            const bool fEnabled = !(strStatusbarEnabled.compare("false", Qt::CaseInsensitive) == 0 ||
-                                    strStatusbarEnabled.compare("no", Qt::CaseInsensitive) == 0 ||
-                                    strStatusbarEnabled.compare("off", Qt::CaseInsensitive) == 0 ||
-                                    strStatusbarEnabled == "0");
+            const bool fEnabled = !(   strStatusbarEnabled.compare("false", Qt::CaseInsensitive) == 0
+                                    || strStatusbarEnabled.compare("no", Qt::CaseInsensitive) == 0
+                                    || strStatusbarEnabled.compare("off", Qt::CaseInsensitive) == 0
+                                    || strStatusbarEnabled == "0");
             /* Append information: */
             table << UITextTableLine(QApplication::translate("UIDetails", "Status-bar", "details (user interface)"),
-                                     fEnabled ? QApplication::translate("UIDetails", "Enabled", "details (user interface/status-bar)") :
-                                                QApplication::translate("UIDetails", "Disabled", "details (user interface/status-bar)"));
+                                     fEnabled ? QApplication::translate("UIDetails", "Enabled", "details (user interface/status-bar)")
+                                              : QApplication::translate("UIDetails", "Disabled", "details (user interface/status-bar)"));
         }
 
 #ifndef VBOX_WS_MAC
-        /* Get mini-toolbar availability status: */
-        const QString strMiniToolbarEnabled = machine.GetExtraData(UIExtraDataDefs::GUI_ShowMiniToolBar);
+        /* Mini-toolbar: */
+        const QString strMiniToolbarEnabled = comMachine.GetExtraData(UIExtraDataDefs::GUI_ShowMiniToolBar);
         {
             /* Try to convert loaded data to bool: */
-            const bool fEnabled = !(strMiniToolbarEnabled.compare("false", Qt::CaseInsensitive) == 0 ||
-                                    strMiniToolbarEnabled.compare("no", Qt::CaseInsensitive) == 0 ||
-                                    strMiniToolbarEnabled.compare("off", Qt::CaseInsensitive) == 0 ||
-                                    strMiniToolbarEnabled == "0");
+            const bool fEnabled = !(   strMiniToolbarEnabled.compare("false", Qt::CaseInsensitive) == 0
+                                    || strMiniToolbarEnabled.compare("no", Qt::CaseInsensitive) == 0
+                                    || strMiniToolbarEnabled.compare("off", Qt::CaseInsensitive) == 0
+                                    || strMiniToolbarEnabled == "0");
             /* Append information: */
             if (fEnabled)
             {
                 /* Get mini-toolbar position: */
-                const QString &strMiniToolbarPosition = machine.GetExtraData(UIExtraDataDefs::GUI_MiniToolBarAlignment);
+                const QString strMiniToolbarPosition = comMachine.GetExtraData(UIExtraDataDefs::GUI_MiniToolBarAlignment);
                 {
                     /* Try to convert loaded data to alignment: */
                     switch (gpConverter->fromInternalString<MiniToolbarAlignment>(strMiniToolbarPosition))
@@ -928,10 +958,10 @@ void UIDetailsUpdateTaskDescription::run()
     /* Gather information: */
     if (machine.GetAccessible())
     {
-        /* Get description: */
-        const QString &strDesc = machine.GetDescription();
-        if (!strDesc.isEmpty())
-            table << UITextTableLine(strDesc, QString());
+        /* Summary: */
+        const QString strDescription = machine.GetDescription();
+        if (!strDescription.isEmpty())
+            table << UITextTableLine(strDescription, QString());
         else
             table << UITextTableLine(QApplication::translate("UIDetails", "None", "details (description)"), QString());
     }
