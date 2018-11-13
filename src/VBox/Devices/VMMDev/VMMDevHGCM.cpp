@@ -1223,7 +1223,7 @@ DECLCALLBACK(void) hgcmCompleted(PPDMIHGCMPORT pInterface, int32_t result, PVBOX
 }
 
 /**
- * @interface_method_impl{PDMIHGCMPORT, pfnIsCmdRestored}
+ * @interface_method_impl{PDMIHGCMPORT,pfnIsCmdRestored}
  */
 DECLCALLBACK(bool) hgcmIsCmdRestored(PPDMIHGCMPORT pInterface, PVBOXHGCMCMD pCmd)
 {
