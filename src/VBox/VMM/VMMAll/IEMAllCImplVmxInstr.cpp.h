@@ -4432,7 +4432,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVirtApicAccessMsrWrite(PVMCPU pVCpu, uint32_t idMs
  * @returns VBox strict status code.
  * @param   pVCpu       The cross context virtual CPU structure.
  */
-IEM_STATIC VBOXSTRICTRC iemVmxVmexitPprVirtualization(PVMCPU pVCpu)
+IEM_STATIC void iemVmxVmexitPprVirtualization(PVMCPU pVCpu)
 {
     PCVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
     Assert(pVmcs);
@@ -4444,7 +4444,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitPprVirtualization(PVMCPU pVCpu)
     uint32_t const uSvi  = pVmcs->u16GuestIntStatus >> 8;
 
     uint32_t uVPpr;
-    if (((uVTpr >> 4) & 0xf) >= (uSvi >> 4) & 0xf)
+    if (((uVTpr >> 4) & 0xf) >= ((uSvi >> 4) & 0xf))
         uVPpr = uVTpr & 0xff;
     else
         uVPpr = uSvi & 0xf0;
@@ -4468,6 +4468,8 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitTprVirtualization(PVMCPU pVCpu, uint8_t cbIn
 
     Assert(pVmcs->u32ProcCtls & VMX_PROC_CTLS_USE_TPR_SHADOW);
     Assert(!(pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_VIRT_INT_DELIVERY));    /* We don't support virtual-interrupt delivery yet. */
+    /** @todo NSTVMX: When virtual-interrupt delivery is present, call PPR virt. and
+     *        evaluate pending virtual interrupts. */
 
     uint32_t const uTprThreshold = pVmcs->u32TprThreshold;
     uint32_t const uVTpr         = iemVmxVirtApicReadRaw32(pVCpu, XAPIC_OFF_TPR);
