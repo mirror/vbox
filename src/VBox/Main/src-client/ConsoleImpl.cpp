@@ -6883,7 +6883,7 @@ HRESULT Console::i_cancelSaveState()
 
 #ifdef VBOX_WITH_AUDIO_RECORDING
 /**
- * Sends audio (frame) data to the display's video capturing routines.
+ * Sends audio (frame) data to the recording routines.
  *
  * @returns HRESULT
  * @param   pvData              Audio data to send.
@@ -7012,7 +7012,7 @@ void Console::i_recordingDestroy(void)
 }
 
 /**
- * Starts capturing. Does nothing if capturing is already active.
+ * Starts recording. Does nothing if recording is already active.
  *
  * @returns IPRT status code.
  */
@@ -7037,7 +7037,7 @@ int Console::i_recordingStart(void)
 }
 
 /**
- * Stops capturing. Does nothing if capturing is not active.
+ * Stops recording. Does nothing if recording is not active.
  */
 int Console::i_recordingStop(void)
 {
