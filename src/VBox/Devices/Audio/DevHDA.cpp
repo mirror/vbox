@@ -1978,9 +1978,10 @@ static int hdaR3RemoveStream(PHDASTATE pThis, PPDMAUDIOSTREAMCFG pCfg)
 
             switch (pCfg->DestSource.Source)
             {
-                case PDMAUDIORECSOURCE_LINE: enmMixerCtl = PDMAUDIOMIXERCTL_LINE_IN; break;
+                case PDMAUDIORECSOURCE_UNKNOWN: break;
+                case PDMAUDIORECSOURCE_LINE:    enmMixerCtl = PDMAUDIOMIXERCTL_LINE_IN; break;
 # ifdef VBOX_WITH_AUDIO_HDA_MIC_IN
-                case PDMAUDIORECSOURCE_MIC:  enmMixerCtl = PDMAUDIOMIXERCTL_MIC_IN;  break;
+                case PDMAUDIORECSOURCE_MIC:     enmMixerCtl = PDMAUDIOMIXERCTL_MIC_IN;  break;
 # endif
                 default:
                     rc = VERR_NOT_SUPPORTED;
@@ -1996,6 +1997,7 @@ static int hdaR3RemoveStream(PHDASTATE pThis, PPDMAUDIOSTREAMCFG pCfg)
 
             switch (pCfg->DestSource.Dest)
             {
+                case PDMAUDIOPLAYBACKDEST_UNKNOWN:    break;
                 case PDMAUDIOPLAYBACKDEST_FRONT:      enmMixerCtl = PDMAUDIOMIXERCTL_FRONT;      break;
 # ifdef VBOX_WITH_AUDIO_HDA_51_SURROUND
                 case PDMAUDIOPLAYBACKDEST_CENTER_LFE: enmMixerCtl = PDMAUDIOMIXERCTL_CENTER_LFE; break;
@@ -2013,8 +2015,11 @@ static int hdaR3RemoveStream(PHDASTATE pThis, PPDMAUDIOSTREAMCFG pCfg)
             break;
     }
 
-    if (RT_SUCCESS(rc))
+    if (   RT_SUCCESS(rc)
+        && enmMixerCtl != PDMAUDIOMIXERCTL_UNKNOWN)
+    {
         rc = hdaCodecRemoveStream(pThis->pCodec, enmMixerCtl);
+    }
 
     LogFlowFuncLeaveRC(rc);
     return rc;
