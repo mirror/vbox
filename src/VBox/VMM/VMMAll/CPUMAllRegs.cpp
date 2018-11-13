@@ -2667,7 +2667,7 @@ VMM_INT_DECL(bool) CPUMCanVmxNstGstTakePhysIntr(PVMCPU pVCpu, PCCPUMCTX pCtx)
     Assert(CPUMIsGuestInVmxNonRootMode(pCtx));
     Assert(pCtx->hwvirt.fGif);  /* Always true on Intel. */
 
-    return (pCtx->eflags.u & X86_EFL_IF);
+    return RT_BOOL(pCtx->eflags.u & X86_EFL_IF);
 #endif
 }
 
@@ -2687,7 +2687,7 @@ VMM_INT_DECL(bool) CPUMCanVmxNstGstTakeVirtIntr(PVMCPU pVCpu, PCCPUMCTX pCtx)
     RT_NOREF2(pVCpu, pCtx);
     AssertReleaseFailedReturn(false);
 #else
-    RT_NOREF(pVCpu);
+    RT_NOREF2(pVCpu, pCtx);
     Assert(CPUMIsGuestInVmxNonRootMode(pCtx));
     Assert(pCtx->hwvirt.fGif);  /* Always true on Intel. */
 
