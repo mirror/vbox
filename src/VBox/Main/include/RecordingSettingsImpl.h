@@ -55,7 +55,7 @@ public:
     void i_copyFrom(RecordingSettings *aThat);
     void i_applyDefaults(void);
 
-    int i_getDefaultFileName(Utf8Str &strFile);
+    int i_getDefaultFileName(Utf8Str &strFile, bool fWithFileExtension);
     bool i_canChangeSettings(void);
     void i_onSettingsChanged(void);
 

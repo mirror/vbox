@@ -370,6 +370,15 @@ HRESULT RecordingScreenSettings::getFileName(com::Utf8Str &aFileName)
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
+    /* Get default file name if an empty string or a single "." is set. */
+    if (   m->bd->File.strName.isEmpty()
+        || m->bd->File.strName.equals("."))
+    {
+        int vrc = m->pParent->i_getDefaultFileName(m->bd->File.strName, true /* fWithFileExtension */);
+        if (RT_FAILURE(vrc))
+            return setError(E_INVALIDARG, tr("Error retrieving default file name"));
+    }
+
     aFileName = m->bd->File.strName;
 
     return S_OK;
@@ -383,20 +392,11 @@ HRESULT RecordingScreenSettings::setFileName(const com::Utf8Str &aFileName)
     if (!m->pParent->i_canChangeSettings())
         return setError(E_INVALIDARG, tr("Cannot change file name while recording is enabled"));
 
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    /* Get default file name if an empty string or a single "." is passed. */
     Utf8Str strFile(aFileName);
-    if (   strFile.isEmpty()
-        || strFile.equals("."))
-    {
-        int vrc = m->pParent->i_getDefaultFileName(strFile);
-        if (RT_FAILURE(vrc))
-            return setError(E_INVALIDARG, tr("Error retrieving default file name"));
-    }
-
     if (!RTPathStartsWithRoot(strFile.c_str()))
         return setError(E_INVALIDARG, tr("Recording file name '%s' is not absolute"), strFile.c_str());
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     m->bd.backup();
     m->bd->File.strName = strFile;
@@ -816,7 +816,7 @@ int RecordingScreenSettings::i_initInternal(void)
         case RecordingDestination_File:
         {
             if (m->bd->File.strName.isEmpty())
-                rc = m->pParent->i_getDefaultFileName(m->bd->File.strName);
+                rc = m->pParent->i_getDefaultFileName(m->bd->File.strName, true /* fWithExtension */);
             break;
         }
 
