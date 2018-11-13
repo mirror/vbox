@@ -1434,6 +1434,8 @@ VMM_INT_DECL(bool)      CPUMGetSvmNstGstVGif(PCCPUMCTX pCtx);
 VMM_INT_DECL(void)      CPUMSvmVmExitRestoreHostState(PVMCPU pVCpu, PCPUMCTX pCtx);
 VMM_INT_DECL(void)      CPUMSvmVmRunSaveHostState(PCPUMCTX pCtx, uint8_t cbInstr);
 VMM_INT_DECL(uint64_t)  CPUMApplyNestedGuestTscOffset(PVMCPU pVCpu, uint64_t uTicks);
+VMM_INT_DECL(bool)      CPUMCanVmxNstGstTakePhysIntr(PVMCPU pVCpu, PCCPUMCTX pCtx);
+VMM_INT_DECL(bool)      CPUMCanVmxNstGstTakeVirtIntr(PVMCPU pVCpu, PCCPUMCTX pCtx);
 /** @} */
 
 /** @name Externalized State Helpers.

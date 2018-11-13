@@ -2648,6 +2648,55 @@ VMMDECL(uint32_t) CPUMGetGuestMxCsrMask(PVM pVM)
 
 
 /**
+ * Checks whether the VMX nested-guest is in a state to receive physical (APIC)
+ * interrupts.
+ *
+ * @returns VBox status code.
+ * @retval  true if it's ready, false otherwise.
+ *
+ * @param   pVCpu   The cross context virtual CPU structure of the calling EMT.
+ * @param   pCtx    The guest-CPU context.
+ */
+VMM_INT_DECL(bool) CPUMCanVmxNstGstTakePhysIntr(PVMCPU pVCpu, PCCPUMCTX pCtx)
+{
+#ifdef IN_RC
+    RT_NOREF2(pVCpu, pCtx);
+    AssertReleaseFailedReturn(false);
+#else
+    RT_NOREF(pVCpu);
+    Assert(CPUMIsGuestInVmxNonRootMode(pCtx));
+    Assert(pCtx->hwvirt.fGif);  /* Always true on Intel. */
+
+    return (pCtx->eflags.u & X86_EFL_IF);
+#endif
+}
+
+/**
+ * Checks whether the VMX nested-guest is in a state to receive virtual interrupts
+ * (those injected with the "virtual-interrupt delivery" feature).
+ *
+ * @returns VBox status code.
+ * @retval  true if it's ready, false otherwise.
+ *
+ * @param   pVCpu   The cross context virtual CPU structure of the calling EMT.
+ * @param   pCtx    The guest-CPU context.
+ */
+VMM_INT_DECL(bool) CPUMCanVmxNstGstTakeVirtIntr(PVMCPU pVCpu, PCCPUMCTX pCtx)
+{
+#ifdef IN_RC
+    RT_NOREF2(pVCpu, pCtx);
+    AssertReleaseFailedReturn(false);
+#else
+    RT_NOREF(pVCpu);
+    Assert(CPUMIsGuestInVmxNonRootMode(pCtx));
+    Assert(pCtx->hwvirt.fGif);  /* Always true on Intel. */
+
+    return false; /** @todo NSTVMX: Currently not implemented. */
+#endif
+}
+
+
+/**
  * Checks whether the SVM nested-guest is in a state to receive physical (APIC)
  * interrupts.
  *
@@ -2656,8 +2705,6 @@ VMMDECL(uint32_t) CPUMGetGuestMxCsrMask(PVM pVM)
  *
  * @param   pVCpu   The cross context virtual CPU structure of the calling EMT.
  * @param   pCtx    The guest-CPU context.
- *
- * @sa      hmR0SvmCanNstGstTakePhysIntr.
  */
 VMM_INT_DECL(bool) CPUMCanSvmNstGstTakePhysIntr(PVMCPU pVCpu, PCCPUMCTX pCtx)
 {

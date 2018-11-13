@@ -1768,8 +1768,7 @@ static int emR3VmxNstGstInjectIntr(PVMCPU pVCpu, bool *pfWakeupPending, bool *pf
     *pfWakeupPending = false;
     *pfInjected      = false;
 
-    /** @todo NSTVMX: Virtual interrupt injection. */
-    if (pVCpu->cpum.GstCtx.eflags.Bits.u1IF)
+    if (CPUMCanVmxNstGstTakePhysIntr(pVCpu, &pVCpu->cpum.GstCtx))
     {
         Assert(!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS));
         if (CPUMIsGuestVmxProcCtlsSet(pVCpu, &pVCpu->cpum.GstCtx, VMX_PROC_CTLS_INT_WINDOW_EXIT))
@@ -1800,6 +1799,8 @@ static int emR3VmxNstGstInjectIntr(PVMCPU pVCpu, bool *pfWakeupPending, bool *pf
             return rc;
         }
     }
+
+    /** @todo NSTVMX: Virtual interrupt injection, virtual-interrupt delivery. */
 
     return VINF_NO_CHANGE;
 }
