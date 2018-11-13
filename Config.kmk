@@ -6824,6 +6824,9 @@ TEMPLATE_NewVBoxGuestR3Exe_LIBS     = \
 	$(VBOX_LIB_VBGL_R3) \
 	$(VBOX_LIB_IPRT_GUEST_R3) \
 	$(TEMPLATE_VBOXGUESTR3EXE_LIBS)
+ifeq ($(KBUILD_TARGET),linux)
+TEMPLATE_NewVBoxGuestR3Exe_LIBS += crypt
+endif
 
 #
 # Template for building normal R3 programs for the guest additions, strict.
