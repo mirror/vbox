@@ -407,7 +407,7 @@ int vbox_bo_create(struct drm_device *dev, int size, int align,
 #else
 			  align >> PAGE_SHIFT, false, acc_size,
 #endif
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 18, 0) || defined(RHEL_72)) && !defined(RHEL_76) 
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 18, 0) || defined(RHEL_72)) && !defined(RHEL_76)
 			  NULL, NULL, vbox_bo_ttm_destroy);
 #else
 			  NULL, vbox_bo_ttm_destroy);
