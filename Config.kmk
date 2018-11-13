@@ -684,18 +684,16 @@ VBOX_WITH_TESTCASES = 1
 VBOX_WITH_VDITOOL =
 # Enable this to build vbox-img even if VBOX_WITH_TESTCASES is disabled
 VBOX_WITH_VBOX_IMG =
-if1of ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH), darwin.x86 darwin.amd64 linux.x86 linux.amd64 solaris.amd64 win.x86 win.amd64)
- # Enables recording support.
- VBOX_WITH_RECORDING = 1
- # Enable VPX (VP8 / VP9 codec), used for video capturing.
- VBOX_WITH_LIBVPX = 1
- # Enables audio support for recording.
- VBOX_WITH_AUDIO_RECORDING = 1
- # Enables libopus (Opus), used for encoding audio into the recorded data.
- VBOX_WITH_LIBOPUS = 1
- # Enable SEE (+ AVX) optimizations for Opus.
- VBOX_WITH_OPUS_SSE = 1
-endif
+# Enables recording support.
+VBOX_WITH_RECORDING = 1
+# Enable VPX (VP8 / VP9 codec), required for video capturing.
+VBOX_WITH_LIBVPX = 1
+# Enables audio support for recording (depends on VBOX_WITH_RECORDING).
+VBOX_WITH_AUDIO_RECORDING = 1
+# Enables libopus (Opus), required for encoding audio into the recorded data.
+VBOX_WITH_LIBOPUS = 1
+# Enable SEE (+ AVX) optimizations for Opus.
+VBOX_WITH_OPUS_SSE = 1
 # Enable shared folders
 VBOX_WITH_SHARED_FOLDERS = 1
 # Enable shared clipboard
