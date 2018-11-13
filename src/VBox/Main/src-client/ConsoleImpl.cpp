@@ -733,13 +733,16 @@ void Console::uninit()
     }
 #endif
 
-#ifdef VBOX_WITH_AUDIO_RECORDING
+#ifdef VBOX_WITH_RECORDING
+    i_recordingDestroy();
+# ifdef VBOX_WITH_AUDIO_RECORDING
     if (Recording.mAudioRec)
     {
         delete Recording.mAudioRec;
         unconst(Recording.mAudioRec) = NULL;
     }
-#endif
+# endif
+#endif /* VBOX_WITH_RECORDING */
 
     // if the VM had a VMMDev with an HGCM thread, then remove that here
     if (m_pVMMDev)
