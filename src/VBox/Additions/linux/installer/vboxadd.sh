@@ -262,41 +262,9 @@ start()
     fi  # INSTALL_NO_MODULE_BUILDS
 
     # Put the X.Org driver in place.  This is harmless if it is not needed.
+    # Also set up the OpenGL library.
     myerr=`"${INSTALL_DIR}/init/vboxadd-x11" setup 2>&1`
     test -z "${myerr}" || log "${myerr}"
-    # Install the guest OpenGL drivers.  For now we don't support
-    # multi-architecture installations
-    rm -f /etc/ld.so.conf.d/00vboxvideo.conf
-    rm -Rf /var/lib/VBoxGuestAdditions/lib
-    if /usr/bin/VBoxClient --check3d 2>/dev/null; then
-        setup_gl=true;
-    else
-        unset setup_gl
-    fi
-    # Disable 3D if Xwayland is found, except on Ubuntu 18.04.
-    if type Xwayland >/dev/null 2>&1; then
-        unset PRETTY_NAME
-        . /etc/os-release 2>/dev/null
-        case "${PRETTY_NAME}" in
-            "Ubuntu 18.04"*) ;;
-            *) unset setup_gl ;;
-        esac
-    fi
-    if test -n "${setup_gl}"; then
-        mkdir -p /var/lib/VBoxGuestAdditions/lib
-        ln -sf "${INSTALL_DIR}/lib/VBoxOGL.so" /var/lib/VBoxGuestAdditions/lib/libGL.so.1
-        # SELinux for the OpenGL libraries, so that gdm can load them during the
-        # acceleration support check.  This prevents an "Oh no, something has gone
-        # wrong!" error when starting EL7 guests.
-        if test -e /etc/selinux/config; then
-            if command -v semanage > /dev/null; then
-                semanage fcontext -a -t lib_t "/var/lib/VBoxGuestAdditions/lib/libGL.so.1"
-            fi
-            chcon -h  -t lib_t "/var/lib/VBoxGuestAdditions/lib/libGL.so.1"
-        fi
-        echo "/var/lib/VBoxGuestAdditions/lib" > /etc/ld.so.conf.d/00vboxvideo.conf
-    fi
-    ldconfig
 
     # Mount all shared folders from /etc/fstab. Normally this is done by some
     # other startup script but this requires the vboxdrv kernel module loaded.

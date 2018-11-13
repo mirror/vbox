@@ -150,6 +150,29 @@ restart()
     return 0
 }
 
+setup_opengl()
+{
+    # Install the guest OpenGL drivers.  For now we don't support
+    # multi-architecture installations
+    rm -f /etc/ld.so.conf.d/00vboxvideo.conf
+    rm -Rf /var/lib/VBoxGuestAdditions/lib
+    if /usr/bin/VBoxClient --check3d 2>/dev/null; then
+        mkdir -p /var/lib/VBoxGuestAdditions/lib
+        ln -sf "${INSTALL_DIR}/lib/VBoxOGL.so" /var/lib/VBoxGuestAdditions/lib/libGL.so.1
+        # SELinux for the OpenGL libraries, so that gdm can load them during the
+        # acceleration support check.  This prevents an "Oh no, something has gone
+        # wrong!" error when starting EL7 guests.
+        if test -e /etc/selinux/config; then
+            if command -v semanage > /dev/null; then
+                semanage fcontext -a -t lib_t "/var/lib/VBoxGuestAdditions/lib/libGL.so.1"
+            fi
+            chcon -h  -t lib_t "/var/lib/VBoxGuestAdditions/lib/libGL.so.1"
+        fi
+        echo "/var/lib/VBoxGuestAdditions/lib" > /etc/ld.so.conf.d/00vboxvideo.conf
+    fi
+    ldconfig
+}
+
 setup()
 {
     if test -r "${CONFIG}"; then
@@ -455,6 +478,9 @@ EOF
     install_x11_startup_app "${lib_dir}/98vboxadd-xclient" "${lib_dir}/vboxclient.desktop" VBoxClient VBoxClient-all ||
         fail "Failed to set up VBoxClient to start automatically."
     ln -s "${lib_dir}/98vboxadd-xclient" /usr/bin/VBoxClient-all 2>/dev/null
+    case "${x_version}" in 4.* | 6.* | 7.* | 1.?.* | 1.1* )
+        setup_opengl
+    esac 
 }
 
 cleanup()
