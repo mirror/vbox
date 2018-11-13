@@ -196,9 +196,7 @@ static MAPPING *vbsfMappingGetByName(PRTUTF16 pwszName, SHFLROOT *pRoot)
 
 static void vbsfRootHandleAdd(SHFLROOT iMapping)
 {
-    unsigned root;
-
-    for (root = 0; root < RT_ELEMENTS(g_aIndexFromRoot); root++)
+    for (unsigned root = 0; root < RT_ELEMENTS(g_aIndexFromRoot); root++)
     {
         if (g_aIndexFromRoot[root] == SHFL_ROOT_NIL)
         {
@@ -213,9 +211,9 @@ static void vbsfRootHandleAdd(SHFLROOT iMapping)
 
 static void vbsfRootHandleRemove(SHFLROOT iMapping)
 {
-    unsigned root;
+    unsigned cFound = 0;
 
-    for (root = 0; root < RT_ELEMENTS(g_aIndexFromRoot); root++)
+    for (unsigned root = 0; root < RT_ELEMENTS(g_aIndexFromRoot); root++)
     {
         if (g_aIndexFromRoot[root] == iMapping)
         {
@@ -226,10 +224,11 @@ static void vbsfRootHandleRemove(SHFLROOT iMapping)
             /* Note! Do not stop here as g_aIndexFromRoot may (at least it could
                      prior to the introduction of fLoadedRootId) contain
                      duplicates after restoring save state. */
+            cFound++;
         }
     }
 
-    AssertFailed();
+    Assert(cFound > 0); RT_NOREF(cFound);
 }
 
 
