@@ -1903,7 +1903,7 @@ static uint32_t vbsvcAutomounterUnmountEntry(PVBSVCAUTOMOUNTERTABLE pTable, uint
 
 
 /**
- * @callback_method_impl{FNRTSORTCMP,  For sorting the mappings by ID,}
+ * @callback_method_impl{FNRTSORTCMP, For sorting the mappings by ID. }
  */
 static DECLCALLBACK(int) vbsvcSharedFolderMappingCompare(void const *pvElement1, void const *pvElement2, void *pvUser)
 {
