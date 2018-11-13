@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2016-2017 Oracle Corporation
+ * Copyright (C) 2016-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -110,6 +110,7 @@ private slots:
     void sltCopyHostToGuest();
     void sltPanelActionToggled(bool fChecked);
     void sltListDirectoriesBeforeChanged();
+    void sltReceieveNewFileOperation(const CProgress &comProgress);
 
 private:
 
@@ -130,8 +131,12 @@ private:
                          CEventSource comEventSource);
 
     void initFileTable();
-    void postSessionCreated();
-    void postSessionClosed();
+    /** @name Perform operations needed after creating/ending a guest control session
+      * @{ */
+        void postSessionCreated();
+        void postSessionClosed();
+    /** @} */
+
     void saveSettings();
     void loadSettings();
     void hidePanel(UIGuestControlFileManagerPanel *panel);
@@ -146,14 +151,12 @@ private:
     template<typename T>
     QStringList               getFsObjInfoStringList(const T &fsObjectInfo) const;
     void                      appendLog(const QString &strLog, FileManagerLogType eLogType);
-    const int                 m_iMaxRecursionDepth;
     CGuest                    m_comGuest;
     CGuestSession             m_comGuestSession;
     QVBoxLayout              *m_pMainLayout;
     QSplitter                *m_pVerticalSplitter;
     UIToolBar                *m_pToolBar;
 
-    //QTableView               *m_pFileOperationsTable;
     UIGuestControlConsole    *m_pConsole;
     UIGuestControlInterface  *m_pControlInterface;
     UIGuestFileTable         *m_pGuestFileTable;

@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2016-2017 Oracle Corporation
+ * Copyright (C) 2016-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -131,7 +131,6 @@ UIFileOperationsList::UIFileOperationsList(QWidget *pParent)
 UIGuestControlFileManager::UIGuestControlFileManager(EmbedTo enmEmbedding, UIActionPool *pActionPool,
                                                      const CGuest &comGuest, QWidget *pParent, bool fShowToolbar /* = true */)
     : QIWithRetranslateUI<QWidget>(pParent)
-    , m_iMaxRecursionDepth(1)
     , m_comGuest(comGuest)
     , m_pMainLayout(0)
     , m_pVerticalSplitter(0)
@@ -248,6 +247,9 @@ void UIGuestControlFileManager::prepareObjects()
         {
             connect(m_pGuestFileTable, &UIGuestFileTable::sigLogOutput,
                     this, &UIGuestControlFileManager::sltReceieveLogOutput);
+            connect(m_pGuestFileTable, &UIGuestFileTable::sigNewFileOperation,
+                    this, &UIGuestControlFileManager::sltReceieveNewFileOperation);
+
             pFileTableContainerLayout->addWidget(m_pGuestFileTable);
         }
     }
@@ -329,9 +331,9 @@ void UIGuestControlFileManager::prepareVerticalToolBar(QHBoxLayout *layout)
     m_pToolBar->addWidget(bottomSpacerWidget);
 
     connect(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_CopyToHost), &QAction::triggered,
-            this, &UIGuestControlFileManager::sltCopyHostToGuest);
+            this, &UIGuestControlFileManager::sltCopyGuestToHost);
     connect(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_CopyToGuest), &QAction::triggered,
-             this, &UIGuestControlFileManager::sltCopyGuestToHost);
+             this, &UIGuestControlFileManager::sltCopyHostToGuest);
 
     layout ->addWidget(m_pToolBar);
 }
@@ -507,6 +509,12 @@ void UIGuestControlFileManager::sltListDirectoriesBeforeChanged()
         m_pGuestFileTable->relist();
     if (m_pHostFileTable)
         m_pHostFileTable->relist();
+}
+
+void UIGuestControlFileManager::sltReceieveNewFileOperation(const CProgress &comProgress)
+{
+    if (m_pOperationsPanel)
+        m_pOperationsPanel->addNewProgress(comProgress);
 }
 
 void UIGuestControlFileManager::initFileTable()

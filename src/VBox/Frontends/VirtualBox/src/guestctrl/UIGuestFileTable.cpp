@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2016-2017 Oracle Corporation
+ * Copyright (C) 2016-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -314,22 +314,34 @@ void UIGuestFileTable::copyHostToGuest(const QStringList &hostSourcePathList)
     QVector<QString> sourcePaths = hostSourcePathList.toVector();
     QVector<QString>  aFilters;
     QVector<QString>  aFlags;
-    CProgress progress = m_comGuestSession.CopyToGuest(sourcePaths, aFilters, aFlags, currentDirectoryPath());
+    QString strDestinationPath = currentDirectoryPath();
+    if (strDestinationPath.isEmpty())
+    {
+        emit sigLogOutput("No destination for copy operation", FileManagerLogType_Error);
+        return;
+    }
+    if (hostSourcePathList.empty())
+    {
+        emit sigLogOutput("No source for copy operation", FileManagerLogType_Error);
+        return;
+    }
+
+    CProgress progress = m_comGuestSession.CopyToGuest(sourcePaths, aFilters, aFlags, strDestinationPath);
     if (!m_comGuestSession.isOk())
     {
         emit sigLogOutput(UIErrorString::formatErrorInfo(m_comGuestSession), FileManagerLogType_Error);
         //msgCenter().cannotRemoveMachine(machine);
         return;
     }
+    //emit sigNewFileOperation(progress);
+    // msgCenter().showModalProgressDialog(progress, "copying", ":/progress_delete_90px.png");
+    // if (!progress.isOk() || progress.GetResultCode() != 0)
+    // {
+    //     emit sigLogOutput(UIErrorString::formatErrorInfo(progress), FileManagerLogType_Error);
+    //     return;
+    // }
 
-    msgCenter().showModalProgressDialog(progress, "copying", ":/progress_delete_90px.png");
-    if (!progress.isOk() || progress.GetResultCode() != 0)
-    {
-        emit sigLogOutput(UIErrorString::formatErrorInfo(progress), FileManagerLogType_Error);
-        return;
-    }
-
-    else
+    // else
         refresh();
 }
 
@@ -338,6 +350,17 @@ void UIGuestFileTable::copyGuestToHost(const QString& hostDestinationPath)
     QVector<QString> sourcePaths = selectedItemPathList().toVector();
     QVector<QString>  aFilters;
     QVector<QString>  aFlags;
+
+    if (hostDestinationPath.isEmpty())
+    {
+        emit sigLogOutput("No destination for copy operation", FileManagerLogType_Error);
+        return;
+    }
+    if (sourcePaths.empty())
+    {
+        emit sigLogOutput("No source for copy operation", FileManagerLogType_Error);
+        return;
+    }
 
     CProgress progress = m_comGuestSession.CopyFromGuest(sourcePaths, aFilters, aFlags, hostDestinationPath);
     if (!m_comGuestSession.isOk())

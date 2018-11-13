@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2010-2017 Oracle Corporation
+ * Copyright (C) 2010-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -23,10 +23,14 @@
 #include "UIGuestControlFileManagerPanel.h"
 
 /* Forward declarations: */
+class CProgress;
 class QTableWidget;
+class UIFileOperationProgressWidget;
 class UIGuestControlFileManager;
 
-/** UIVMLogViewerPanel extension providing GUI to manage logviewer settings. */
+
+/** UIVMLogViewerPanel extension hosting a QTableWidget which in turn has a special QWidget extension
+  * to manage multiple CProgress instances. This is particulary used in monitoring file operations. */
 class UIGuestControlFileManagerOperationsPanel : public UIGuestControlFileManagerPanel
 {
     Q_OBJECT;
@@ -35,13 +39,15 @@ public:
 
     UIGuestControlFileManagerOperationsPanel(UIGuestControlFileManager *pManagerWidget, QWidget *pParent);
     virtual QString panelName() const /* override */;
-
-signals:
+    void addNewProgress(const CProgress &comProgress);
 
 protected:
 
-    virtual void prepareWidgets() /* override */;
-    virtual void prepareConnections() /* override */;
+    /** @name Preparation specific functions.
+      * @{ */
+        virtual void prepareWidgets() /* override */;
+        virtual void prepareConnections() /* override */;
+    /** @} */
 
     /** Handles the translation event. */
     void retranslateUi();
@@ -50,7 +56,12 @@ private slots:
 
 
 private:
-    QTableWidget *m_pTableWidget;
+
+    /** @name Member variables.
+      * @{ */
+        QTableWidget *m_pTableWidget;
+        UIFileOperationProgressWidget *m_pOperationsWidget;
+    /** @} */
 
 };
 
