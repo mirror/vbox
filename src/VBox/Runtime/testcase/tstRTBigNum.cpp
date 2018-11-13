@@ -30,11 +30,14 @@
 *********************************************************************************************************************************/
 #include <iprt/bignum.h>
 #include <iprt/uint128.h>
+#include <iprt/uint64.h>
+#include <iprt/uint32.h>
 
+#include <iprt/string.h>
+#include <iprt/rand.h>
 #include <iprt/test.h>
 #include <iprt/thread.h>
 #include <iprt/time.h>
-#include <iprt/string.h>
 
 #if 1
 # include <openssl/bn.h>
@@ -1616,6 +1619,54 @@ static void testUInt128Division(void)
 }
 
 
+static void testUInt64Division(void)
+{
+    /*
+     * Check the results against native code.
+     */
+    RTTestSub(g_hTest, "RTUInt64DivRem");
+    for (uint32_t i = 0; i < _1M / 2; i++)
+    {
+        uint64_t const uDividend  = RTRandU64Ex(0, UINT64_MAX);
+        uint64_t const uDivisor   = RTRandU64Ex(1, UINT64_MAX);
+        uint64_t const uQuotient  = uDividend / uDivisor;
+        uint64_t const uRemainder = uDividend % uDivisor;
+        RTUINT64U Dividend  = { uDividend  };
+        RTUINT64U Divisor   = { uDivisor   };
+        RTUINT64U Quotient  = { UINT64_MAX };
+        RTUINT64U Remainder = { UINT64_MAX };
+        RTTESTI_CHECK(RTUInt64DivRem(&Quotient, &Remainder, &Dividend, &Divisor) == &Quotient);
+        if (uQuotient != Quotient.u || uRemainder != Remainder.u)
+            RTTestIFailed("%RU64 / %RU64 -> %RU64 rem %RU64, expected %RU64 rem %RU64",
+                          uDividend, uDivisor, Quotient.u, Remainder.u, uQuotient, uRemainder);
+    }
+}
+
+
+static void testUInt32Division(void)
+{
+    /*
+     * Check the results against native code.
+     */
+    RTTestSub(g_hTest, "RTUInt32DivRem");
+    for (uint32_t i = 0; i < _1M / 2; i++)
+    {
+        uint32_t const uDividend  = RTRandU32Ex(0, UINT32_MAX);
+        uint32_t const uDivisor   = RTRandU32Ex(1, UINT32_MAX);
+        uint32_t const uQuotient  = uDividend / uDivisor;
+        uint32_t const uRemainder = uDividend % uDivisor;
+        RTUINT32U Dividend  = { uDividend  };
+        RTUINT32U Divisor   = { uDivisor   };
+        RTUINT32U Quotient  = { UINT32_MAX };
+        RTUINT32U Remainder = { UINT32_MAX };
+        RTTESTI_CHECK(RTUInt32DivRem(&Quotient, &Remainder, &Dividend, &Divisor) == &Quotient);
+        if (uQuotient != Quotient.u || uRemainder != Remainder.u)
+            RTTestIFailed("%u / %u -> %u rem %u, expected %u rem %u",
+                          uDividend, uDivisor, Quotient.u, Remainder.u, uQuotient, uRemainder);
+    }
+}
+
+
 
 int main(int argc, char **argv)
 {
@@ -1674,6 +1725,10 @@ int main(int argc, char **argv)
             testUInt128Division();
             testUInt128Subtraction();
             testUInt128Addition();
+
+            /* Test UInt32 and UInt64 division as it's used by the watcom support code (BIOS, ValKit, OS/2 GAs). */
+            testUInt32Division();
+            testUInt64Division();
 
             /* Test the RTBigInt operations. */
             testCompare();
