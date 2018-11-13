@@ -132,6 +132,11 @@ void UIDetailsModel::sltHandleToggleFinished()
     m_pRoot->rebuildGroup();
 }
 
+void UIDetailsModel::sltHandleExtraDataOptionsChange(DetailsElementType)
+{
+    m_pRoot->rebuildGroup();
+}
+
 void UIDetailsModel::sltToggleElements(DetailsElementType type, bool fToggled)
 {
     /* Make sure it is not started yet: */

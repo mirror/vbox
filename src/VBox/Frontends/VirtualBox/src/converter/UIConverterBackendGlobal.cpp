@@ -52,6 +52,17 @@ template<> bool canConvert<UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType>()
 #ifdef VBOX_WS_MAC
 template<> bool canConvert<UIExtraDataMetaDefs::MenuWindowActionType>() { return true; }
 #endif /* VBOX_WS_MAC */
+template<> bool canConvert<UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral>() { return true; }
+template<> bool canConvert<UIExtraDataMetaDefs::DetailsElementOptionTypeSystem>() { return true; }
+template<> bool canConvert<UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay>() { return true; }
+template<> bool canConvert<UIExtraDataMetaDefs::DetailsElementOptionTypeStorage>() { return true; }
+template<> bool canConvert<UIExtraDataMetaDefs::DetailsElementOptionTypeAudio>() { return true; }
+template<> bool canConvert<UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork>() { return true; }
+template<> bool canConvert<UIExtraDataMetaDefs::DetailsElementOptionTypeSerial>() { return true; }
+template<> bool canConvert<UIExtraDataMetaDefs::DetailsElementOptionTypeUsb>() { return true; }
+template<> bool canConvert<UIExtraDataMetaDefs::DetailsElementOptionTypeSharedFolders>() { return true; }
+template<> bool canConvert<UIExtraDataMetaDefs::DetailsElementOptionTypeUserInterface>() { return true; }
+template<> bool canConvert<UIExtraDataMetaDefs::DetailsElementOptionTypeDescription>() { return true; }
 template<> bool canConvert<UIToolType>() { return true; }
 template<> bool canConvert<UIVisualStateType>() { return true; }
 template<> bool canConvert<DetailsElementType>() { return true; }
@@ -868,6 +879,396 @@ template<> UIExtraDataMetaDefs::MenuWindowActionType fromInternalString<UIExtraD
     return values.at(keys.indexOf(QRegExp(strMenuWindowActionType, Qt::CaseInsensitive)));
 }
 #endif /* VBOX_WS_MAC */
+
+/* QString <= UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral: */
+template<> QString toInternalString(const UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral &enmDetailsElementOptionTypeGeneral)
+{
+    QString strResult;
+    switch (enmDetailsElementOptionTypeGeneral)
+    {
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral_Name:     strResult = "Name"; break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral_OS:       strResult = "OS"; break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral_Location: strResult = "Location"; break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral_Groups:   strResult = "Groups"; break;
+        default:
+        {
+            AssertMsgFailed(("No text for details element option type=%d", enmDetailsElementOptionTypeGeneral));
+            break;
+        }
+    }
+    return strResult;
+}
+
+/* UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral <= QString: */
+template<> UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral fromInternalString<UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral>(const QString &strDetailsElementOptionTypeGeneral)
+{
+    /* Here we have some fancy stuff allowing us
+     * to search through the keys using 'case-insensitive' rule: */
+    QStringList keys;   QList<UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral> values;
+    keys << "Name";     values << UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral_Name;
+    keys << "OS";       values << UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral_OS;
+    keys << "Location"; values << UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral_Location;
+    keys << "Groups";   values << UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral_Groups;
+    /* Invalid type for unknown words: */
+    if (!keys.contains(strDetailsElementOptionTypeGeneral, Qt::CaseInsensitive))
+        return UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral_Invalid;
+    /* Corresponding type for known words: */
+    return values.at(keys.indexOf(QRegExp(strDetailsElementOptionTypeGeneral, Qt::CaseInsensitive)));
+}
+
+/* QString <= UIExtraDataMetaDefs::DetailsElementOptionTypeSystem: */
+template<> QString toInternalString(const UIExtraDataMetaDefs::DetailsElementOptionTypeSystem &enmDetailsElementOptionTypeSystem)
+{
+    QString strResult;
+    switch (enmDetailsElementOptionTypeSystem)
+    {
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeSystem_RAM:             strResult = "RAM"; break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeSystem_CPUCount:        strResult = "CPUCount"; break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeSystem_CPUExecutionCap: strResult = "CPUExecutionCap"; break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeSystem_BootOrder:       strResult = "BootOrder"; break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeSystem_ChipsetType:     strResult = "ChipsetType"; break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeSystem_Firmware:        strResult = "Firmware"; break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeSystem_Acceleration:    strResult = "Acceleration"; break;
+        default:
+        {
+            AssertMsgFailed(("No text for details element option type=%d", enmDetailsElementOptionTypeSystem));
+            break;
+        }
+    }
+    return strResult;
+}
+
+/* UIExtraDataMetaDefs::DetailsElementOptionTypeSystem <= QString: */
+template<> UIExtraDataMetaDefs::DetailsElementOptionTypeSystem fromInternalString<UIExtraDataMetaDefs::DetailsElementOptionTypeSystem>(const QString &strDetailsElementOptionTypeSystem)
+{
+    /* Here we have some fancy stuff allowing us
+     * to search through the keys using 'case-insensitive' rule: */
+    QStringList keys;          QList<UIExtraDataMetaDefs::DetailsElementOptionTypeSystem> values;
+    keys << "RAM";             values << UIExtraDataMetaDefs::DetailsElementOptionTypeSystem_RAM;
+    keys << "CPUCount";        values << UIExtraDataMetaDefs::DetailsElementOptionTypeSystem_CPUCount;
+    keys << "CPUExecutionCap"; values << UIExtraDataMetaDefs::DetailsElementOptionTypeSystem_CPUExecutionCap;
+    keys << "BootOrder";       values << UIExtraDataMetaDefs::DetailsElementOptionTypeSystem_BootOrder;
+    keys << "ChipsetType";     values << UIExtraDataMetaDefs::DetailsElementOptionTypeSystem_ChipsetType;
+    keys << "Firmware";        values << UIExtraDataMetaDefs::DetailsElementOptionTypeSystem_Firmware;
+    keys << "Acceleration";    values << UIExtraDataMetaDefs::DetailsElementOptionTypeSystem_Acceleration;
+    /* Invalid type for unknown words: */
+    if (!keys.contains(strDetailsElementOptionTypeSystem, Qt::CaseInsensitive))
+        return UIExtraDataMetaDefs::DetailsElementOptionTypeSystem_Invalid;
+    /* Corresponding type for known words: */
+    return values.at(keys.indexOf(QRegExp(strDetailsElementOptionTypeSystem, Qt::CaseInsensitive)));
+}
+
+/* QString <= UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay: */
+template<> QString toInternalString(const UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay &enmDetailsElementOptionTypeDisplay)
+{
+    QString strResult;
+    switch (enmDetailsElementOptionTypeDisplay)
+    {
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay_VRAM:         strResult = "VRAM"; break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay_ScreenCount:  strResult = "ScreenCount"; break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay_ScaleFactor:  strResult = "ScaleFactor"; break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay_Acceleration: strResult = "Acceleration"; break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay_VRDE:         strResult = "VRDE"; break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay_Recording:    strResult = "Recording"; break;
+        default:
+        {
+            AssertMsgFailed(("No text for details element option type=%d", enmDetailsElementOptionTypeDisplay));
+            break;
+        }
+    }
+    return strResult;
+}
+
+/* UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay <= QString: */
+template<> UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay fromInternalString<UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay>(const QString &strDetailsElementOptionTypeDisplay)
+{
+    /* Here we have some fancy stuff allowing us
+     * to search through the keys using 'case-insensitive' rule: */
+    QStringList keys;       QList<UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay> values;
+    keys << "VRAM";         values << UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay_VRAM;
+    keys << "ScreenCount";  values << UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay_ScreenCount;
+    keys << "ScaleFactor";  values << UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay_ScaleFactor;
+    keys << "Acceleration"; values << UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay_Acceleration;
+    keys << "VRDE";         values << UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay_VRDE;
+    keys << "Recording";    values << UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay_Recording;
+    /* Invalid type for unknown words: */
+    if (!keys.contains(strDetailsElementOptionTypeDisplay, Qt::CaseInsensitive))
+        return UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay_Invalid;
+    /* Corresponding type for known words: */
+    return values.at(keys.indexOf(QRegExp(strDetailsElementOptionTypeDisplay, Qt::CaseInsensitive)));
+}
+
+/* QString <= UIExtraDataMetaDefs::DetailsElementOptionTypeStorage: */
+template<> QString toInternalString(const UIExtraDataMetaDefs::DetailsElementOptionTypeStorage &enmDetailsElementOptionTypeStorage)
+{
+    QString strResult;
+    switch (enmDetailsElementOptionTypeStorage)
+    {
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeStorage_HardDisks:      strResult = "HardDisks"; break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeStorage_OpticalDevices: strResult = "OpticalDevices"; break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeStorage_FloppyDevices:  strResult = "FloppyDevices"; break;
+        default:
+        {
+            AssertMsgFailed(("No text for details element option type=%d", enmDetailsElementOptionTypeStorage));
+            break;
+        }
+    }
+    return strResult;
+}
+
+/* UIExtraDataMetaDefs::DetailsElementOptionTypeStorage <= QString: */
+template<> UIExtraDataMetaDefs::DetailsElementOptionTypeStorage fromInternalString<UIExtraDataMetaDefs::DetailsElementOptionTypeStorage>(const QString &strDetailsElementOptionTypeStorage)
+{
+    /* Here we have some fancy stuff allowing us
+     * to search through the keys using 'case-insensitive' rule: */
+    QStringList keys;         QList<UIExtraDataMetaDefs::DetailsElementOptionTypeStorage> values;
+    keys << "HardDisks";      values << UIExtraDataMetaDefs::DetailsElementOptionTypeStorage_HardDisks;
+    keys << "OpticalDevices"; values << UIExtraDataMetaDefs::DetailsElementOptionTypeStorage_OpticalDevices;
+    keys << "FloppyDevices";  values << UIExtraDataMetaDefs::DetailsElementOptionTypeStorage_FloppyDevices;
+    /* Invalid type for unknown words: */
+    if (!keys.contains(strDetailsElementOptionTypeStorage, Qt::CaseInsensitive))
+        return UIExtraDataMetaDefs::DetailsElementOptionTypeStorage_Invalid;
+    /* Corresponding type for known words: */
+    return values.at(keys.indexOf(QRegExp(strDetailsElementOptionTypeStorage, Qt::CaseInsensitive)));
+}
+
+/* QString <= UIExtraDataMetaDefs::DetailsElementOptionTypeAudio: */
+template<> QString toInternalString(const UIExtraDataMetaDefs::DetailsElementOptionTypeAudio &enmDetailsElementOptionTypeAudio)
+{
+    QString strResult;
+    switch (enmDetailsElementOptionTypeAudio)
+    {
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeAudio_Driver:     strResult = "Driver"; break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeAudio_Controller: strResult = "Controller"; break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeAudio_IO:         strResult = "IO"; break;
+        default:
+        {
+            AssertMsgFailed(("No text for details element option type=%d", enmDetailsElementOptionTypeAudio));
+            break;
+        }
+    }
+    return strResult;
+}
+
+/* UIExtraDataMetaDefs::DetailsElementOptionTypeAudio <= QString: */
+template<> UIExtraDataMetaDefs::DetailsElementOptionTypeAudio fromInternalString<UIExtraDataMetaDefs::DetailsElementOptionTypeAudio>(const QString &strDetailsElementOptionTypeAudio)
+{
+    /* Here we have some fancy stuff allowing us
+     * to search through the keys using 'case-insensitive' rule: */
+    QStringList keys;     QList<UIExtraDataMetaDefs::DetailsElementOptionTypeAudio> values;
+    keys << "Driver";     values << UIExtraDataMetaDefs::DetailsElementOptionTypeAudio_Driver;
+    keys << "Controller"; values << UIExtraDataMetaDefs::DetailsElementOptionTypeAudio_Controller;
+    keys << "IO";         values << UIExtraDataMetaDefs::DetailsElementOptionTypeAudio_IO;
+    /* Invalid type for unknown words: */
+    if (!keys.contains(strDetailsElementOptionTypeAudio, Qt::CaseInsensitive))
+        return UIExtraDataMetaDefs::DetailsElementOptionTypeAudio_Invalid;
+    /* Corresponding type for known words: */
+    return values.at(keys.indexOf(QRegExp(strDetailsElementOptionTypeAudio, Qt::CaseInsensitive)));
+}
+
+/* QString <= UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork: */
+template<> QString toInternalString(const UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork &enmDetailsElementOptionTypeNetwork)
+{
+    QString strResult;
+    switch (enmDetailsElementOptionTypeNetwork)
+    {
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_NotAttached:     strResult = "NotAttached"; break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_NAT:             strResult = "NAT"; break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_BridgetAdapter:  strResult = "BridgetAdapter"; break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_InternalNetwork: strResult = "InternalNetwork"; break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_HostOnlyAdapter: strResult = "HostOnlyAdapter"; break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_GenericDriver:   strResult = "GenericDriver"; break;
+        default:
+        {
+            AssertMsgFailed(("No text for details element option type=%d", enmDetailsElementOptionTypeNetwork));
+            break;
+        }
+    }
+    return strResult;
+}
+
+/* UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork <= QString: */
+template<> UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork fromInternalString<UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork>(const QString &strDetailsElementOptionTypeNetwork)
+{
+    /* Here we have some fancy stuff allowing us
+     * to search through the keys using 'case-insensitive' rule: */
+    QStringList keys;          QList<UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork> values;
+    keys << "NotAttached";     values << UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_NotAttached;
+    keys << "NAT";             values << UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_NAT;
+    keys << "BridgetAdapter";  values << UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_BridgetAdapter;
+    keys << "InternalNetwork"; values << UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_InternalNetwork;
+    keys << "HostOnlyAdapter"; values << UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_HostOnlyAdapter;
+    keys << "GenericDriver";   values << UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_GenericDriver;
+    /* Invalid type for unknown words: */
+    if (!keys.contains(strDetailsElementOptionTypeNetwork, Qt::CaseInsensitive))
+        return UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_Invalid;
+    /* Corresponding type for known words: */
+    return values.at(keys.indexOf(QRegExp(strDetailsElementOptionTypeNetwork, Qt::CaseInsensitive)));
+}
+
+/* QString <= UIExtraDataMetaDefs::DetailsElementOptionTypeSerial: */
+template<> QString toInternalString(const UIExtraDataMetaDefs::DetailsElementOptionTypeSerial &enmDetailsElementOptionTypeSerial)
+{
+    QString strResult;
+    switch (enmDetailsElementOptionTypeSerial)
+    {
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeSerial_Disconnected: strResult = "Disconnected"; break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeSerial_HostPipe:     strResult = "HostPipe"; break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeSerial_HostDevice:   strResult = "HostDevice"; break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeSerial_RawFile:      strResult = "RawFile"; break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeSerial_TCP:          strResult = "TCP"; break;
+        default:
+        {
+            AssertMsgFailed(("No text for details element option type=%d", enmDetailsElementOptionTypeSerial));
+            break;
+        }
+    }
+    return strResult;
+}
+
+/* UIExtraDataMetaDefs::DetailsElementOptionTypeSerial <= QString: */
+template<> UIExtraDataMetaDefs::DetailsElementOptionTypeSerial fromInternalString<UIExtraDataMetaDefs::DetailsElementOptionTypeSerial>(const QString &strDetailsElementOptionTypeSerial)
+{
+    /* Here we have some fancy stuff allowing us
+     * to search through the keys using 'case-insensitive' rule: */
+    QStringList keys;       QList<UIExtraDataMetaDefs::DetailsElementOptionTypeSerial> values;
+    keys << "Disconnected"; values << UIExtraDataMetaDefs::DetailsElementOptionTypeSerial_Disconnected;
+    keys << "HostPipe";     values << UIExtraDataMetaDefs::DetailsElementOptionTypeSerial_HostPipe;
+    keys << "HostDevice";   values << UIExtraDataMetaDefs::DetailsElementOptionTypeSerial_HostDevice;
+    keys << "RawFile";      values << UIExtraDataMetaDefs::DetailsElementOptionTypeSerial_RawFile;
+    keys << "TCP";          values << UIExtraDataMetaDefs::DetailsElementOptionTypeSerial_TCP;
+    /* Invalid type for unknown words: */
+    if (!keys.contains(strDetailsElementOptionTypeSerial, Qt::CaseInsensitive))
+        return UIExtraDataMetaDefs::DetailsElementOptionTypeSerial_Invalid;
+    /* Corresponding type for known words: */
+    return values.at(keys.indexOf(QRegExp(strDetailsElementOptionTypeSerial, Qt::CaseInsensitive)));
+}
+
+/* QString <= UIExtraDataMetaDefs::DetailsElementOptionTypeUsb: */
+template<> QString toInternalString(const UIExtraDataMetaDefs::DetailsElementOptionTypeUsb &enmDetailsElementOptionTypeUsb)
+{
+    QString strResult;
+    switch (enmDetailsElementOptionTypeUsb)
+    {
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeUsb_Controller:    strResult = "Controller"; break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeUsb_DeviceFilters: strResult = "DeviceFilters"; break;
+        default:
+        {
+            AssertMsgFailed(("No text for details element option type=%d", enmDetailsElementOptionTypeUsb));
+            break;
+        }
+    }
+    return strResult;
+}
+
+/* UIExtraDataMetaDefs::DetailsElementOptionTypeUsb <= QString: */
+template<> UIExtraDataMetaDefs::DetailsElementOptionTypeUsb fromInternalString<UIExtraDataMetaDefs::DetailsElementOptionTypeUsb>(const QString &strDetailsElementOptionTypeUsb)
+{
+    /* Here we have some fancy stuff allowing us
+     * to search through the keys using 'case-insensitive' rule: */
+    QStringList keys;        QList<UIExtraDataMetaDefs::DetailsElementOptionTypeUsb> values;
+    keys << "Controller";    values << UIExtraDataMetaDefs::DetailsElementOptionTypeUsb_Controller;
+    keys << "DeviceFilters"; values << UIExtraDataMetaDefs::DetailsElementOptionTypeUsb_DeviceFilters;
+    /* Invalid type for unknown words: */
+    if (!keys.contains(strDetailsElementOptionTypeUsb, Qt::CaseInsensitive))
+        return UIExtraDataMetaDefs::DetailsElementOptionTypeUsb_Invalid;
+    /* Corresponding type for known words: */
+    return values.at(keys.indexOf(QRegExp(strDetailsElementOptionTypeUsb, Qt::CaseInsensitive)));
+}
+
+/* QString <= UIExtraDataMetaDefs::DetailsElementOptionTypeSharedFolders: */
+template<> QString toInternalString(const UIExtraDataMetaDefs::DetailsElementOptionTypeSharedFolders &enmDetailsElementOptionTypeSharedFolders)
+{
+    QString strResult;
+    switch (enmDetailsElementOptionTypeSharedFolders)
+    {
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeSharedFolders_Summary: strResult = "Summary"; break;
+        default:
+        {
+            AssertMsgFailed(("No text for details element option type=%d", enmDetailsElementOptionTypeSharedFolders));
+            break;
+        }
+    }
+    return strResult;
+}
+
+/* UIExtraDataMetaDefs::DetailsElementOptionTypeSharedFolders <= QString: */
+template<> UIExtraDataMetaDefs::DetailsElementOptionTypeSharedFolders fromInternalString<UIExtraDataMetaDefs::DetailsElementOptionTypeSharedFolders>(const QString &strDetailsElementOptionTypeSharedFolders)
+{
+    /* Here we have some fancy stuff allowing us
+     * to search through the keys using 'case-insensitive' rule: */
+    QStringList keys;  QList<UIExtraDataMetaDefs::DetailsElementOptionTypeSharedFolders> values;
+    keys << "Summary"; values << UIExtraDataMetaDefs::DetailsElementOptionTypeSharedFolders_Summary;
+    /* Invalid type for unknown words: */
+    if (!keys.contains(strDetailsElementOptionTypeSharedFolders, Qt::CaseInsensitive))
+        return UIExtraDataMetaDefs::DetailsElementOptionTypeSharedFolders_Invalid;
+    /* Corresponding type for known words: */
+    return values.at(keys.indexOf(QRegExp(strDetailsElementOptionTypeSharedFolders, Qt::CaseInsensitive)));
+}
+
+/* QString <= UIExtraDataMetaDefs::DetailsElementOptionTypeUserInterface: */
+template<> QString toInternalString(const UIExtraDataMetaDefs::DetailsElementOptionTypeUserInterface &enmDetailsElementOptionTypeUserInterface)
+{
+    QString strResult;
+    switch (enmDetailsElementOptionTypeUserInterface)
+    {
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeUserInterface_MenuBar:     strResult = "MenuBar"; break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeUserInterface_StatusBar:   strResult = "StatusBar"; break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeUserInterface_MiniToolbar: strResult = "MiniToolbar"; break;
+        default:
+        {
+            AssertMsgFailed(("No text for details element option type=%d", enmDetailsElementOptionTypeUserInterface));
+            break;
+        }
+    }
+    return strResult;
+}
+
+/* UIExtraDataMetaDefs::DetailsElementOptionTypeUserInterface <= QString: */
+template<> UIExtraDataMetaDefs::DetailsElementOptionTypeUserInterface fromInternalString<UIExtraDataMetaDefs::DetailsElementOptionTypeUserInterface>(const QString &strDetailsElementOptionTypeUserInterface)
+{
+    /* Here we have some fancy stuff allowing us
+     * to search through the keys using 'case-insensitive' rule: */
+    QStringList keys;      QList<UIExtraDataMetaDefs::DetailsElementOptionTypeUserInterface> values;
+    keys << "MenuBar";     values << UIExtraDataMetaDefs::DetailsElementOptionTypeUserInterface_MenuBar;
+    keys << "StatusBar";   values << UIExtraDataMetaDefs::DetailsElementOptionTypeUserInterface_StatusBar;
+    keys << "MiniToolbar"; values << UIExtraDataMetaDefs::DetailsElementOptionTypeUserInterface_MiniToolbar;
+    /* Invalid type for unknown words: */
+    if (!keys.contains(strDetailsElementOptionTypeUserInterface, Qt::CaseInsensitive))
+        return UIExtraDataMetaDefs::DetailsElementOptionTypeUserInterface_Invalid;
+    /* Corresponding type for known words: */
+    return values.at(keys.indexOf(QRegExp(strDetailsElementOptionTypeUserInterface, Qt::CaseInsensitive)));
+}
+
+/* QString <= UIExtraDataMetaDefs::DetailsElementOptionTypeDescription: */
+template<> QString toInternalString(const UIExtraDataMetaDefs::DetailsElementOptionTypeDescription &enmDetailsElementOptionTypeDescription)
+{
+    QString strResult;
+    switch (enmDetailsElementOptionTypeDescription)
+    {
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeDescription_Summary: strResult = "Summary"; break;
+        default:
+        {
+            AssertMsgFailed(("No text for details element option type=%d", enmDetailsElementOptionTypeDescription));
+            break;
+        }
+    }
+    return strResult;
+}
+
+/* UIExtraDataMetaDefs::DetailsElementOptionTypeDescription <= QString: */
+template<> UIExtraDataMetaDefs::DetailsElementOptionTypeDescription fromInternalString<UIExtraDataMetaDefs::DetailsElementOptionTypeDescription>(const QString &strDetailsElementOptionTypeDescription)
+{
+    /* Here we have some fancy stuff allowing us
+     * to search through the keys using 'case-insensitive' rule: */
+    QStringList keys;  QList<UIExtraDataMetaDefs::DetailsElementOptionTypeDescription> values;
+    keys << "Summary"; values << UIExtraDataMetaDefs::DetailsElementOptionTypeDescription_Summary;
+    /* Invalid type for unknown words: */
+    if (!keys.contains(strDetailsElementOptionTypeDescription, Qt::CaseInsensitive))
+        return UIExtraDataMetaDefs::DetailsElementOptionTypeDescription_Invalid;
+    /* Corresponding type for known words: */
+    return values.at(keys.indexOf(QRegExp(strDetailsElementOptionTypeDescription, Qt::CaseInsensitive)));
+}
 
 /* QString <= UIToolType: */
 template<> QString toInternalString(const UIToolType &enmToolType)

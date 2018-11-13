@@ -93,6 +93,9 @@ public slots:
     void sltHandleToggleStarted();
     void sltHandleToggleFinished();
 
+    /** Handle extra-data options change. */
+    void sltHandleExtraDataOptionsChange(DetailsElementType enmType);
+
 private slots:
 
     /* Handlers: Element-items stuff: */

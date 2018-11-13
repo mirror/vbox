@@ -88,6 +88,17 @@ template<> SHARED_LIBRARY_STUFF bool canConvert<UIExtraDataMetaDefs::RuntimeMenu
 #ifdef VBOX_WS_MAC
 template<> SHARED_LIBRARY_STUFF bool canConvert<UIExtraDataMetaDefs::MenuWindowActionType>();
 #endif /* VBOX_WS_MAC */
+template<> SHARED_LIBRARY_STUFF bool canConvert<UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral>();
+template<> SHARED_LIBRARY_STUFF bool canConvert<UIExtraDataMetaDefs::DetailsElementOptionTypeSystem>();
+template<> SHARED_LIBRARY_STUFF bool canConvert<UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay>();
+template<> SHARED_LIBRARY_STUFF bool canConvert<UIExtraDataMetaDefs::DetailsElementOptionTypeStorage>();
+template<> SHARED_LIBRARY_STUFF bool canConvert<UIExtraDataMetaDefs::DetailsElementOptionTypeAudio>();
+template<> SHARED_LIBRARY_STUFF bool canConvert<UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork>();
+template<> SHARED_LIBRARY_STUFF bool canConvert<UIExtraDataMetaDefs::DetailsElementOptionTypeSerial>();
+template<> SHARED_LIBRARY_STUFF bool canConvert<UIExtraDataMetaDefs::DetailsElementOptionTypeUsb>();
+template<> SHARED_LIBRARY_STUFF bool canConvert<UIExtraDataMetaDefs::DetailsElementOptionTypeSharedFolders>();
+template<> SHARED_LIBRARY_STUFF bool canConvert<UIExtraDataMetaDefs::DetailsElementOptionTypeUserInterface>();
+template<> SHARED_LIBRARY_STUFF bool canConvert<UIExtraDataMetaDefs::DetailsElementOptionTypeDescription>();
 template<> SHARED_LIBRARY_STUFF bool canConvert<UIToolType>();
 template<> SHARED_LIBRARY_STUFF bool canConvert<UIVisualStateType>();
 template<> SHARED_LIBRARY_STUFF bool canConvert<DetailsElementType>();
@@ -163,6 +174,28 @@ template<> SHARED_LIBRARY_STUFF UIExtraDataMetaDefs::RuntimeMenuDebuggerActionTy
 template<> SHARED_LIBRARY_STUFF QString toInternalString(const UIExtraDataMetaDefs::MenuWindowActionType &menuWindowActionType);
 template<> SHARED_LIBRARY_STUFF UIExtraDataMetaDefs::MenuWindowActionType fromInternalString<UIExtraDataMetaDefs::MenuWindowActionType>(const QString &strMenuWindowActionType);
 #endif /* VBOX_WS_MAC */
+template<> SHARED_LIBRARY_STUFF QString toInternalString(const UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral &enmDetailsElementOptionTypeGeneral);
+template<> SHARED_LIBRARY_STUFF UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral fromInternalString<UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral>(const QString &strDetailsElementOptionTypeGeneral);
+template<> SHARED_LIBRARY_STUFF QString toInternalString(const UIExtraDataMetaDefs::DetailsElementOptionTypeSystem &enmDetailsElementOptionTypeSystem);
+template<> SHARED_LIBRARY_STUFF UIExtraDataMetaDefs::DetailsElementOptionTypeSystem fromInternalString<UIExtraDataMetaDefs::DetailsElementOptionTypeSystem>(const QString &strDetailsElementOptionTypeSystem);
+template<> SHARED_LIBRARY_STUFF QString toInternalString(const UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay &enmDetailsElementOptionTypeDisplay);
+template<> SHARED_LIBRARY_STUFF UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay fromInternalString<UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay>(const QString &strDetailsElementOptionTypeDisplay);
+template<> SHARED_LIBRARY_STUFF QString toInternalString(const UIExtraDataMetaDefs::DetailsElementOptionTypeStorage &enmDetailsElementOptionTypeStorage);
+template<> SHARED_LIBRARY_STUFF UIExtraDataMetaDefs::DetailsElementOptionTypeStorage fromInternalString<UIExtraDataMetaDefs::DetailsElementOptionTypeStorage>(const QString &strDetailsElementOptionTypeStorage);
+template<> SHARED_LIBRARY_STUFF QString toInternalString(const UIExtraDataMetaDefs::DetailsElementOptionTypeAudio &enmDetailsElementOptionTypeAudio);
+template<> SHARED_LIBRARY_STUFF UIExtraDataMetaDefs::DetailsElementOptionTypeAudio fromInternalString<UIExtraDataMetaDefs::DetailsElementOptionTypeAudio>(const QString &strDetailsElementOptionTypeAudio);
+template<> SHARED_LIBRARY_STUFF QString toInternalString(const UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork &enmDetailsElementOptionTypeNetwork);
+template<> SHARED_LIBRARY_STUFF UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork fromInternalString<UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork>(const QString &strDetailsElementOptionTypeNetwork);
+template<> SHARED_LIBRARY_STUFF QString toInternalString(const UIExtraDataMetaDefs::DetailsElementOptionTypeSerial &enmDetailsElementOptionTypeSerial);
+template<> SHARED_LIBRARY_STUFF UIExtraDataMetaDefs::DetailsElementOptionTypeSerial fromInternalString<UIExtraDataMetaDefs::DetailsElementOptionTypeSerial>(const QString &strDetailsElementOptionTypeSerial);
+template<> SHARED_LIBRARY_STUFF QString toInternalString(const UIExtraDataMetaDefs::DetailsElementOptionTypeUsb &enmDetailsElementOptionTypeUsb);
+template<> SHARED_LIBRARY_STUFF UIExtraDataMetaDefs::DetailsElementOptionTypeUsb fromInternalString<UIExtraDataMetaDefs::DetailsElementOptionTypeUsb>(const QString &strDetailsElementOptionTypeUsb);
+template<> SHARED_LIBRARY_STUFF QString toInternalString(const UIExtraDataMetaDefs::DetailsElementOptionTypeSharedFolders &enmDetailsElementOptionTypeSharedFolders);
+template<> SHARED_LIBRARY_STUFF UIExtraDataMetaDefs::DetailsElementOptionTypeSharedFolders fromInternalString<UIExtraDataMetaDefs::DetailsElementOptionTypeSharedFolders>(const QString &strDetailsElementOptionTypeSharedFolders);
+template<> SHARED_LIBRARY_STUFF QString toInternalString(const UIExtraDataMetaDefs::DetailsElementOptionTypeUserInterface &enmDetailsElementOptionTypeUserInterface);
+template<> SHARED_LIBRARY_STUFF UIExtraDataMetaDefs::DetailsElementOptionTypeUserInterface fromInternalString<UIExtraDataMetaDefs::DetailsElementOptionTypeUserInterface>(const QString &strDetailsElementOptionTypeUserInterface);
+template<> SHARED_LIBRARY_STUFF QString toInternalString(const UIExtraDataMetaDefs::DetailsElementOptionTypeDescription &enmDetailsElementOptionTypeDescription);
+template<> SHARED_LIBRARY_STUFF UIExtraDataMetaDefs::DetailsElementOptionTypeDescription fromInternalString<UIExtraDataMetaDefs::DetailsElementOptionTypeDescription>(const QString &strDetailsElementOptionTypeDescription);
 template<> SHARED_LIBRARY_STUFF QString toInternalString(const UIToolType &enmToolType);
 template<> SHARED_LIBRARY_STUFF UIToolType fromInternalString<UIToolType>(const QString &strToolType);
 template<> SHARED_LIBRARY_STUFF QString toInternalString(const UIVisualStateType &visualStateType);

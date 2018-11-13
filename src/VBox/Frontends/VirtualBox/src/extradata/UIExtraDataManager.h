@@ -71,6 +71,9 @@ signals:
     /** Notifies about Runtime UI host-key combination change. */
     void sigRuntimeUIHostKeyCombinationChange();
 
+    /** Notifies about VirtualBox Manager / Details pane options change. */
+    void sigDetailsOptionsChange(DetailsElementType enmType);
+
     /** Notifies about menu-bar configuration change. */
     void sigMenuBarConfigurationChange(const QUuid &uMachineID);
     /** Notifies about status-bar configuration change. */
@@ -340,6 +343,9 @@ public:
         PreviewUpdateIntervalType selectorWindowPreviewUpdateInterval();
         /** Defines selector-window details-pane' preview update @a interval. */
         void setSelectorWindowPreviewUpdateInterval(PreviewUpdateIntervalType interval);
+
+        /** Returns VirtualBox Manager / Details pane options for certain @a enmElementType. */
+        QStringList vboxManagerDetailsPaneElementOptions(DetailsElementType enmElementType);
     /** @} */
 
     /** @name Snapshot Manager

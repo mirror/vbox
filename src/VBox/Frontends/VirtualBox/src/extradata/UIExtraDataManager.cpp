@@ -2918,6 +2918,18 @@ void UIExtraDataManager::setSelectorWindowPreviewUpdateInterval(PreviewUpdateInt
     setExtraDataString(GUI_Details_Elements_Preview_UpdateInterval, gpConverter->toInternalString(interval));
 }
 
+QStringList UIExtraDataManager::vboxManagerDetailsPaneElementOptions(DetailsElementType enmElementType)
+{
+    /* Compose full key from GUI_Details_Elements and enmElementType: */
+    QString strElementType = gpConverter->toInternalString(enmElementType);
+    AssertReturn(!strElementType.isEmpty(), QStringList());
+    strElementType[0] = strElementType.at(0).toUpper();
+    const QString strFullKey = QString("%1/%2").arg(GUI_Details_Elements).arg(strElementType);
+
+    /* Returns option list: */
+    return extraDataStringList(strFullKey);
+}
+
 bool UIExtraDataManager::snapshotManagerDetailsExpanded()
 {
     /* 'False' unless feature allowed: */
@@ -4582,6 +4594,15 @@ void UIExtraDataManager::sltExtraDataChange(const QUuid &uMachineID, const QStri
             /* Runtime UI host-key combintation changed? */
             else if (strKey == GUI_Input_HostKeyCombination)
                 emit sigRuntimeUIHostKeyCombinationChange();
+            /* Details options: */
+            else if (strKey.startsWith(QString(GUI_Details_Elements) + '/'))
+            {
+                QString strLeftover = strKey;
+                strLeftover.remove(QString(GUI_Details_Elements) + '/');
+                const DetailsElementType enmType = gpConverter->fromInternalString<DetailsElementType>(strLeftover);
+                if (enmType != DetailsElementType_Invalid)
+                    emit sigDetailsOptionsChange(enmType);
+            }
         }
     }
     /* Machine extra-data 'change' event: */

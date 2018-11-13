@@ -26,6 +26,7 @@
 # include "UIDetails.h"
 # include "UIDetailsModel.h"
 # include "UIDetailsView.h"
+# include "UIExtraDataManager.h"
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
@@ -71,6 +72,10 @@ void UIDetails::prepare()
             }
         }
     }
+
+    /* Extra-data events connections: */
+    connect(gEDataManager, &UIExtraDataManager::sigDetailsOptionsChange,
+            m_pDetailsModel, &UIDetailsModel::sltHandleExtraDataOptionsChange);
 
     /* Setup details-model connections: */
     connect(m_pDetailsModel, &UIDetailsModel::sigRootItemMinimumWidthHintChanged,

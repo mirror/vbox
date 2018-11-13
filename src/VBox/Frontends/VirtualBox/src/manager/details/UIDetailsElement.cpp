@@ -33,6 +33,7 @@
 # include "UIDetailsElement.h"
 # include "UIDetailsSet.h"
 # include "UIDetailsModel.h"
+# include "UIExtraDataManager.h"
 # include "UIGraphicsRotatorButton.h"
 # include "UIGraphicsTextPane.h"
 # include "UIIconPool.h"
@@ -246,6 +247,11 @@ void UIDetailsElement::paint(QPainter *pPainter, const QStyleOptionGraphicsItem 
 QString UIDetailsElement::description() const
 {
     return tr("%1 details", "like 'General details' or 'Storage details'").arg(m_strName);
+}
+
+QStringList UIDetailsElement::extraDataOptions() const
+{
+    return gEDataManager->vboxManagerDetailsPaneElementOptions(elementType());
 }
 
 const CMachine &UIDetailsElement::machine()

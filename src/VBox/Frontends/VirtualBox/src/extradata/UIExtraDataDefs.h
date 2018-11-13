@@ -416,6 +416,8 @@ namespace UIExtraDataDefs
 class SHARED_LIBRARY_STUFF UIExtraDataMetaDefs : public QObject
 {
     Q_OBJECT;
+
+    /* Menu related stuff: */
     Q_ENUMS(MenuType);
     Q_ENUMS(MenuApplicationActionType);
     Q_ENUMS(MenuHelpActionType);
@@ -429,6 +431,19 @@ class SHARED_LIBRARY_STUFF UIExtraDataMetaDefs : public QObject
 #ifdef VBOX_WS_MAC
     Q_ENUMS(MenuWindowActionType);
 #endif
+
+    /* Details pane related stuff: */
+    Q_ENUMS(DetailsElementOptionTypeGeneral);
+    Q_ENUMS(DetailsElementOptionTypeSystem);
+    Q_ENUMS(DetailsElementOptionTypeDisplay);
+    Q_ENUMS(DetailsElementOptionTypeStorage);
+    Q_ENUMS(DetailsElementOptionTypeAudio);
+    Q_ENUMS(DetailsElementOptionTypeNetwork);
+    Q_ENUMS(DetailsElementOptionTypeSerial);
+    Q_ENUMS(DetailsElementOptionTypeUsb);
+    Q_ENUMS(DetailsElementOptionTypeSharedFolders);
+    Q_ENUMS(DetailsElementOptionTypeUserInterface);
+    Q_ENUMS(DetailsElementOptionTypeDescription);
 
 public:
 
@@ -601,6 +616,125 @@ public:
         MenuWindowActionType_All      = 0xFFFF
     };
 #endif /* VBOX_WS_MAC */
+
+
+    /** VirtualBox Manager UI: Details element: "General" option types. */
+    enum DetailsElementOptionTypeGeneral
+    {
+        DetailsElementOptionTypeGeneral_Invalid  = 0,
+        DetailsElementOptionTypeGeneral_Name     = RT_BIT(0),
+        DetailsElementOptionTypeGeneral_OS       = RT_BIT(1),
+        DetailsElementOptionTypeGeneral_Location = RT_BIT(2),
+        DetailsElementOptionTypeGeneral_Groups   = RT_BIT(3),
+        DetailsElementOptionTypeGeneral_Default  = 0xFFFF
+    };
+
+    /** VirtualBox Manager UI: Details element: "System" option types. */
+    enum DetailsElementOptionTypeSystem
+    {
+        DetailsElementOptionTypeSystem_Invalid         = 0,
+        DetailsElementOptionTypeSystem_RAM             = RT_BIT(0),
+        DetailsElementOptionTypeSystem_CPUCount        = RT_BIT(1),
+        DetailsElementOptionTypeSystem_CPUExecutionCap = RT_BIT(2),
+        DetailsElementOptionTypeSystem_BootOrder       = RT_BIT(3),
+        DetailsElementOptionTypeSystem_ChipsetType     = RT_BIT(4),
+        DetailsElementOptionTypeSystem_Firmware        = RT_BIT(5),
+        DetailsElementOptionTypeSystem_Acceleration    = RT_BIT(6),
+        DetailsElementOptionTypeSystem_Default         = 0xFFFF
+    };
+
+    /** VirtualBox Manager UI: Details element: "Display" option types. */
+    enum DetailsElementOptionTypeDisplay
+    {
+        DetailsElementOptionTypeDisplay_Invalid      = 0,
+        DetailsElementOptionTypeDisplay_VRAM         = RT_BIT(0),
+        DetailsElementOptionTypeDisplay_ScreenCount  = RT_BIT(1),
+        DetailsElementOptionTypeDisplay_ScaleFactor  = RT_BIT(2),
+        DetailsElementOptionTypeDisplay_Acceleration = RT_BIT(3),
+        DetailsElementOptionTypeDisplay_VRDE         = RT_BIT(4),
+        DetailsElementOptionTypeDisplay_Recording    = RT_BIT(5),
+        DetailsElementOptionTypeDisplay_Default      = 0xFFFF
+    };
+
+    /** VirtualBox Manager UI: Details element: "Storage" option types. */
+    enum DetailsElementOptionTypeStorage
+    {
+        DetailsElementOptionTypeStorage_Invalid        = 0,
+        DetailsElementOptionTypeStorage_HardDisks      = RT_BIT(0),
+        DetailsElementOptionTypeStorage_OpticalDevices = RT_BIT(1),
+        DetailsElementOptionTypeStorage_FloppyDevices  = RT_BIT(2),
+        DetailsElementOptionTypeStorage_Default        = 0xFFFF
+    };
+
+    /** VirtualBox Manager UI: Details element: "Audio" option types. */
+    enum DetailsElementOptionTypeAudio
+    {
+        DetailsElementOptionTypeAudio_Invalid    = 0,
+        DetailsElementOptionTypeAudio_Driver     = RT_BIT(0),
+        DetailsElementOptionTypeAudio_Controller = RT_BIT(1),
+        DetailsElementOptionTypeAudio_IO         = RT_BIT(2),
+        DetailsElementOptionTypeAudio_Default    = 0xFFFF
+    };
+
+    /** VirtualBox Manager UI: Details element: "Network" option types. */
+    enum DetailsElementOptionTypeNetwork
+    {
+        DetailsElementOptionTypeNetwork_Invalid         = 0,
+        DetailsElementOptionTypeNetwork_NotAttached     = RT_BIT(0),
+        DetailsElementOptionTypeNetwork_NAT             = RT_BIT(1),
+        DetailsElementOptionTypeNetwork_BridgetAdapter  = RT_BIT(2),
+        DetailsElementOptionTypeNetwork_InternalNetwork = RT_BIT(3),
+        DetailsElementOptionTypeNetwork_HostOnlyAdapter = RT_BIT(4),
+        DetailsElementOptionTypeNetwork_GenericDriver   = RT_BIT(5),
+        DetailsElementOptionTypeNetwork_Default         = 0xFFFF
+    };
+
+    /** VirtualBox Manager UI: Details element: "Serial" option types. */
+    enum DetailsElementOptionTypeSerial
+    {
+        DetailsElementOptionTypeSerial_Invalid      = 0,
+        DetailsElementOptionTypeSerial_Disconnected = RT_BIT(0),
+        DetailsElementOptionTypeSerial_HostPipe     = RT_BIT(1),
+        DetailsElementOptionTypeSerial_HostDevice   = RT_BIT(2),
+        DetailsElementOptionTypeSerial_RawFile      = RT_BIT(3),
+        DetailsElementOptionTypeSerial_TCP          = RT_BIT(4),
+        DetailsElementOptionTypeSerial_Default      = 0xFFFF
+    };
+
+    /** VirtualBox Manager UI: Details element: "USB" option types. */
+    enum DetailsElementOptionTypeUsb
+    {
+        DetailsElementOptionTypeUsb_Invalid       = 0,
+        DetailsElementOptionTypeUsb_Controller    = RT_BIT(0),
+        DetailsElementOptionTypeUsb_DeviceFilters = RT_BIT(1),
+        DetailsElementOptionTypeUsb_Default       = 0xFFFF
+    };
+
+    /** VirtualBox Manager UI: Details element: "SharedFolders" option types. */
+    enum DetailsElementOptionTypeSharedFolders
+    {
+        DetailsElementOptionTypeSharedFolders_Invalid = 0,
+        DetailsElementOptionTypeSharedFolders_Summary = RT_BIT(0),
+        DetailsElementOptionTypeSharedFolders_Default = 0xFFFF
+    };
+
+    /** VirtualBox Manager UI: Details element: "UserInterface" option types. */
+    enum DetailsElementOptionTypeUserInterface
+    {
+        DetailsElementOptionTypeUserInterface_Invalid     = 0,
+        DetailsElementOptionTypeUserInterface_MenuBar     = RT_BIT(0),
+        DetailsElementOptionTypeUserInterface_StatusBar   = RT_BIT(1),
+        DetailsElementOptionTypeUserInterface_MiniToolbar = RT_BIT(2),
+        DetailsElementOptionTypeUserInterface_Default     = 0xFFFF
+    };
+
+    /** VirtualBox Manager UI: Details element: "Description" option types. */
+    enum DetailsElementOptionTypeDescription
+    {
+        DetailsElementOptionTypeDescription_Invalid = 0,
+        DetailsElementOptionTypeDescription_Summary = RT_BIT(0),
+        DetailsElementOptionTypeDescription_Default = 0xFFFF
+    };
 };
 
 

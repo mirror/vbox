@@ -120,13 +120,16 @@ class UIDetailsUpdateTaskGeneral : public UIDetailsUpdateTask
 public:
 
     /** Constructs update task passing @a comMachine to the base-class. */
-    UIDetailsUpdateTaskGeneral(const CMachine &comMachine)
-        : UIDetailsUpdateTask(comMachine) {}
+    UIDetailsUpdateTaskGeneral(const CMachine &comMachine, UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral fOptions)
+        : UIDetailsUpdateTask(comMachine), m_fOptions(fOptions) {}
 
 private:
 
     /** Contains update task body. */
     void run();
+
+    /** Holds the options. */
+    UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral m_fOptions;
 };
 
 /** UIDetailsElementInterface extension for the details-element type 'General'. */
@@ -143,8 +146,11 @@ public:
 
 private:
 
+    /** Returns parsed extra-data options. */
+    UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral parsedExtraDataOptions();
+
     /** Creates update task for this element. */
-    UITask *createUpdateTask() { return new UIDetailsUpdateTaskGeneral(machine()); }
+    UITask *createUpdateTask() { return new UIDetailsUpdateTaskGeneral(machine(), parsedExtraDataOptions()); }
 };
 
 
@@ -156,13 +162,16 @@ class UIDetailsUpdateTaskSystem : public UIDetailsUpdateTask
 public:
 
     /** Constructs update task passing @a comMachine to the base-class. */
-    UIDetailsUpdateTaskSystem(const CMachine &comMachine)
-        : UIDetailsUpdateTask(comMachine) {}
+    UIDetailsUpdateTaskSystem(const CMachine &comMachine, UIExtraDataMetaDefs::DetailsElementOptionTypeSystem fOptions)
+        : UIDetailsUpdateTask(comMachine), m_fOptions(fOptions) {}
 
 private:
 
     /** Contains update task body. */
     void run();
+
+    /** Holds the options. */
+    UIExtraDataMetaDefs::DetailsElementOptionTypeSystem m_fOptions;
 };
 
 /** UIDetailsElementInterface extension for the details-element type 'System'. */
@@ -179,8 +188,11 @@ public:
 
 private:
 
+    /** Returns parsed extra-data options. */
+    UIExtraDataMetaDefs::DetailsElementOptionTypeSystem parsedExtraDataOptions();
+
     /** Creates update task for this element. */
-    UITask *createUpdateTask() { return new UIDetailsUpdateTaskSystem(machine()); }
+    UITask *createUpdateTask() { return new UIDetailsUpdateTaskSystem(machine(), parsedExtraDataOptions()); }
 };
 
 
@@ -192,13 +204,16 @@ class UIDetailsUpdateTaskDisplay : public UIDetailsUpdateTask
 public:
 
     /** Constructs update task passing @a comMachine to the base-class. */
-    UIDetailsUpdateTaskDisplay(const CMachine &comMachine)
-        : UIDetailsUpdateTask(comMachine) {}
+    UIDetailsUpdateTaskDisplay(const CMachine &comMachine, UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay fOptions)
+        : UIDetailsUpdateTask(comMachine), m_fOptions(fOptions) {}
 
 private:
 
     /** Contains update task body. */
     void run();
+
+    /** Holds the options. */
+    UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay m_fOptions;
 };
 
 /** UIDetailsElementInterface extension for the details-element type 'Display'. */
@@ -215,8 +230,11 @@ public:
 
 private:
 
+    /** Returns parsed extra-data options. */
+    UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay parsedExtraDataOptions();
+
     /** Creates update task for this element. */
-    UITask *createUpdateTask() { return new UIDetailsUpdateTaskDisplay(machine()); }
+    UITask *createUpdateTask() { return new UIDetailsUpdateTaskDisplay(machine(), parsedExtraDataOptions()); }
 };
 
 
@@ -228,13 +246,16 @@ class UIDetailsUpdateTaskStorage : public UIDetailsUpdateTask
 public:
 
     /** Constructs update task passing @a comMachine to the base-class. */
-    UIDetailsUpdateTaskStorage(const CMachine &comMachine)
-        : UIDetailsUpdateTask(comMachine) {}
+    UIDetailsUpdateTaskStorage(const CMachine &comMachine, UIExtraDataMetaDefs::DetailsElementOptionTypeStorage fOptions)
+        : UIDetailsUpdateTask(comMachine), m_fOptions(fOptions) {}
 
 private:
 
     /** Contains update task body. */
     void run();
+
+    /** Holds the options. */
+    UIExtraDataMetaDefs::DetailsElementOptionTypeStorage m_fOptions;
 };
 
 /** UIDetailsElementInterface extension for the details-element type 'Storage'. */
@@ -251,8 +272,11 @@ public:
 
 private:
 
+    /** Returns parsed extra-data options. */
+    UIExtraDataMetaDefs::DetailsElementOptionTypeStorage parsedExtraDataOptions();
+
     /** Creates update task for this element. */
-    UITask *createUpdateTask() { return new UIDetailsUpdateTaskStorage(machine()); }
+    UITask *createUpdateTask() { return new UIDetailsUpdateTaskStorage(machine(), parsedExtraDataOptions()); }
 };
 
 
@@ -264,13 +288,16 @@ class UIDetailsUpdateTaskAudio : public UIDetailsUpdateTask
 public:
 
     /** Constructs update task passing @a comMachine to the base-class. */
-    UIDetailsUpdateTaskAudio(const CMachine &comMachine)
-        : UIDetailsUpdateTask(comMachine) {}
+    UIDetailsUpdateTaskAudio(const CMachine &comMachine, UIExtraDataMetaDefs::DetailsElementOptionTypeAudio fOptions)
+        : UIDetailsUpdateTask(comMachine), m_fOptions(fOptions) {}
 
 private:
 
     /** Contains update task body. */
     void run();
+
+    /** Holds the options. */
+    UIExtraDataMetaDefs::DetailsElementOptionTypeAudio m_fOptions;
 };
 
 /** UIDetailsElementInterface extension for the details-element type 'Audio'. */
@@ -287,8 +314,11 @@ public:
 
 private:
 
+    /** Returns parsed extra-data options. */
+    UIExtraDataMetaDefs::DetailsElementOptionTypeAudio parsedExtraDataOptions();
+
     /** Creates update task for this element. */
-    UITask *createUpdateTask() { return new UIDetailsUpdateTaskAudio(machine()); }
+    UITask *createUpdateTask() { return new UIDetailsUpdateTaskAudio(machine(), parsedExtraDataOptions()); }
 };
 
 
@@ -300,8 +330,8 @@ class UIDetailsUpdateTaskNetwork : public UIDetailsUpdateTask
 public:
 
     /** Constructs update task passing @a comMachine to the base-class. */
-    UIDetailsUpdateTaskNetwork(const CMachine &comMachine)
-        : UIDetailsUpdateTask(comMachine) {}
+    UIDetailsUpdateTaskNetwork(const CMachine &comMachine, UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork fOptions)
+        : UIDetailsUpdateTask(comMachine), m_fOptions(fOptions) {}
 
 private:
 
@@ -310,6 +340,9 @@ private:
 
     /** Summarizes generic properties. */
     static QString summarizeGenericProperties(const CNetworkAdapter &adapter);
+
+    /** Holds the options. */
+    UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork m_fOptions;
 };
 
 /** UIDetailsElementInterface extension for the details-element type 'Network'. */
@@ -326,8 +359,11 @@ public:
 
 private:
 
+    /** Returns parsed extra-data options. */
+    UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork parsedExtraDataOptions();
+
     /** Creates update task for this element. */
-    UITask *createUpdateTask() { return new UIDetailsUpdateTaskNetwork(machine()); }
+    UITask *createUpdateTask() { return new UIDetailsUpdateTaskNetwork(machine(), parsedExtraDataOptions()); }
 };
 
 
@@ -339,13 +375,16 @@ class UIDetailsUpdateTaskSerial : public UIDetailsUpdateTask
 public:
 
     /** Constructs update task passing @a comMachine to the base-class. */
-    UIDetailsUpdateTaskSerial(const CMachine &comMachine)
-        : UIDetailsUpdateTask(comMachine) {}
+    UIDetailsUpdateTaskSerial(const CMachine &comMachine, UIExtraDataMetaDefs::DetailsElementOptionTypeSerial fOptions)
+        : UIDetailsUpdateTask(comMachine), m_fOptions(fOptions) {}
 
 private:
 
     /** Contains update task body. */
     void run();
+
+    /** Holds the options. */
+    UIExtraDataMetaDefs::DetailsElementOptionTypeSerial m_fOptions;
 };
 
 /** UIDetailsElementInterface extension for the details-element type 'Serial'. */
@@ -362,8 +401,11 @@ public:
 
 private:
 
+    /** Returns parsed extra-data options. */
+    UIExtraDataMetaDefs::DetailsElementOptionTypeSerial parsedExtraDataOptions();
+
     /** Creates update task for this element. */
-    UITask *createUpdateTask() { return new UIDetailsUpdateTaskSerial(machine()); }
+    UITask *createUpdateTask() { return new UIDetailsUpdateTaskSerial(machine(), parsedExtraDataOptions()); }
 };
 
 
@@ -375,13 +417,16 @@ class UIDetailsUpdateTaskUSB : public UIDetailsUpdateTask
 public:
 
     /** Constructs update task passing @a comMachine to the base-class. */
-    UIDetailsUpdateTaskUSB(const CMachine &comMachine)
-        : UIDetailsUpdateTask(comMachine) {}
+    UIDetailsUpdateTaskUSB(const CMachine &comMachine, UIExtraDataMetaDefs::DetailsElementOptionTypeUsb fOptions)
+        : UIDetailsUpdateTask(comMachine), m_fOptions(fOptions) {}
 
 private:
 
     /** Contains update task body. */
     void run();
+
+    /** Holds the options. */
+    UIExtraDataMetaDefs::DetailsElementOptionTypeUsb m_fOptions;
 };
 
 /** UIDetailsElementInterface extension for the details-element type 'USB'. */
@@ -398,8 +443,11 @@ public:
 
 private:
 
+    /** Returns parsed extra-data options. */
+    UIExtraDataMetaDefs::DetailsElementOptionTypeUsb parsedExtraDataOptions();
+
     /** Creates update task for this element. */
-    UITask *createUpdateTask() { return new UIDetailsUpdateTaskUSB(machine()); }
+    UITask *createUpdateTask() { return new UIDetailsUpdateTaskUSB(machine(), parsedExtraDataOptions()); }
 };
 
 
@@ -411,13 +459,16 @@ class UIDetailsUpdateTaskSF : public UIDetailsUpdateTask
 public:
 
     /** Constructs update task passing @a comMachine to the base-class. */
-    UIDetailsUpdateTaskSF(const CMachine &comMachine)
-        : UIDetailsUpdateTask(comMachine) {}
+    UIDetailsUpdateTaskSF(const CMachine &comMachine, UIExtraDataMetaDefs::DetailsElementOptionTypeSharedFolders fOptions)
+        : UIDetailsUpdateTask(comMachine), m_fOptions(fOptions) {}
 
 private:
 
     /** Contains update task body. */
     void run();
+
+    /** Holds the options. */
+    UIExtraDataMetaDefs::DetailsElementOptionTypeSharedFolders m_fOptions;
 };
 
 /** UIDetailsElementInterface extension for the details-element type 'SF'. */
@@ -434,8 +485,11 @@ public:
 
 private:
 
+    /** Returns parsed extra-data options. */
+    UIExtraDataMetaDefs::DetailsElementOptionTypeSharedFolders parsedExtraDataOptions();
+
     /** Creates update task for this element. */
-    UITask *createUpdateTask() { return new UIDetailsUpdateTaskSF(machine()); }
+    UITask *createUpdateTask() { return new UIDetailsUpdateTaskSF(machine(), parsedExtraDataOptions()); }
 };
 
 
@@ -447,13 +501,16 @@ class UIDetailsUpdateTaskUI : public UIDetailsUpdateTask
 public:
 
     /** Constructs update task passing @a comMachine to the base-class. */
-    UIDetailsUpdateTaskUI(const CMachine &comMachine)
-        : UIDetailsUpdateTask(comMachine) {}
+    UIDetailsUpdateTaskUI(const CMachine &comMachine, UIExtraDataMetaDefs::DetailsElementOptionTypeUserInterface fOptions)
+        : UIDetailsUpdateTask(comMachine), m_fOptions(fOptions) {}
 
 private:
 
     /** Contains update task body. */
     void run();
+
+    /** Holds the options. */
+    UIExtraDataMetaDefs::DetailsElementOptionTypeUserInterface m_fOptions;
 };
 
 /** UIDetailsElementInterface extension for the details-element type 'UI'. */
@@ -470,8 +527,11 @@ public:
 
 private:
 
+    /** Returns parsed extra-data options. */
+    UIExtraDataMetaDefs::DetailsElementOptionTypeUserInterface parsedExtraDataOptions();
+
     /** Creates update task for this element. */
-    UITask *createUpdateTask() { return new UIDetailsUpdateTaskUI(machine()); }
+    UITask *createUpdateTask() { return new UIDetailsUpdateTaskUI(machine(), parsedExtraDataOptions()); }
 };
 
 
@@ -483,13 +543,16 @@ class UIDetailsUpdateTaskDescription : public UIDetailsUpdateTask
 public:
 
     /** Constructs update task passing @a comMachine to the base-class. */
-    UIDetailsUpdateTaskDescription(const CMachine &comMachine)
-        : UIDetailsUpdateTask(comMachine) {}
+    UIDetailsUpdateTaskDescription(const CMachine &comMachine, UIExtraDataMetaDefs::DetailsElementOptionTypeDescription fOptions)
+        : UIDetailsUpdateTask(comMachine), m_fOptions(fOptions) {}
 
 private:
 
     /** Contains update task body. */
     void run();
+
+    /** Holds the options. */
+    UIExtraDataMetaDefs::DetailsElementOptionTypeDescription m_fOptions;
 };
 
 /** UIDetailsElementInterface extension for the details-element type 'Description'. */
@@ -506,8 +569,11 @@ public:
 
 private:
 
+    /** Returns parsed extra-data options. */
+    UIExtraDataMetaDefs::DetailsElementOptionTypeDescription parsedExtraDataOptions();
+
     /** Creates update task for this element. */
-    UITask *createUpdateTask() { return new UIDetailsUpdateTaskDescription(machine()); }
+    UITask *createUpdateTask() { return new UIDetailsUpdateTaskDescription(machine(), parsedExtraDataOptions()); }
 };
 
 #endif /* !___UIDetailsElements_h___ */

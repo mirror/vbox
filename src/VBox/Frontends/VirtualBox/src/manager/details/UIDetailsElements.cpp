@@ -241,33 +241,39 @@ void UIDetailsUpdateTaskGeneral::run()
     if (comMachine.GetAccessible())
     {
         /* Name: */
-        table << UITextTableLine(QApplication::translate("UIDetails", "Name", "details (general)"), comMachine.GetName());
+        if (m_fOptions & UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral_Name)
+            table << UITextTableLine(QApplication::translate("UIDetails", "Name", "details (general)"), comMachine.GetName());
 
-        /* Operating System: */
-        table << UITextTableLine(QApplication::translate("UIDetails", "Operating System", "details (general)"),
-                                 vboxGlobal().vmGuestOSTypeDescription(comMachine.GetOSTypeId()));
+        /* Operating system: */
+        if (m_fOptions & UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral_OS)
+            table << UITextTableLine(QApplication::translate("UIDetails", "Operating System", "details (general)"),
+                                     vboxGlobal().vmGuestOSTypeDescription(comMachine.GetOSTypeId()));
 
-        /* Settings File Location: */
-        table << UITextTableLine(QApplication::translate("UIDetails", "Settings File Location", "details (general)"),
-                                 QDir::toNativeSeparators(QFileInfo(comMachine.GetSettingsFilePath()).absolutePath()));
+        /* Settings file location: */
+        if (m_fOptions & UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral_Location)
+            table << UITextTableLine(QApplication::translate("UIDetails", "Settings File Location", "details (general)"),
+                                     QDir::toNativeSeparators(QFileInfo(comMachine.GetSettingsFilePath()).absolutePath()));
 
         /* Groups: */
-        QStringList groups = comMachine.GetGroups().toList();
-        /* Do not show groups for machine which is in root group only: */
-        if (groups.size() == 1)
-            groups.removeAll("/");
-        /* If group list still not empty: */
-        if (!groups.isEmpty())
+        if (m_fOptions & UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral_Groups)
         {
-            /* For every group: */
-            for (int i = 0; i < groups.size(); ++i)
+            QStringList groups = comMachine.GetGroups().toList();
+            /* Do not show groups for machine which is in root group only: */
+            if (groups.size() == 1)
+                groups.removeAll("/");
+            /* If group list still not empty: */
+            if (!groups.isEmpty())
             {
-                /* Trim first '/' symbol: */
-                QString &strGroup = groups[i];
-                if (strGroup.startsWith("/") && strGroup != "/")
-                    strGroup.remove(0, 1);
+                /* For every group: */
+                for (int i = 0; i < groups.size(); ++i)
+                {
+                    /* Trim first '/' symbol: */
+                    QString &strGroup = groups[i];
+                    if (strGroup.startsWith("/") && strGroup != "/")
+                        strGroup.remove(0, 1);
+                }
+                table << UITextTableLine(QApplication::translate("UIDetails", "Groups", "details (general)"), groups.join(", "));
             }
-            table << UITextTableLine(QApplication::translate("UIDetails", "Groups", "details (general)"), groups.join(", "));
         }
     }
     else
@@ -275,6 +281,21 @@ void UIDetailsUpdateTaskGeneral::run()
 
     /* Save the table as property: */
     setProperty("table", QVariant::fromValue(table));
+}
+
+UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral UIDetailsElementGeneral::parsedExtraDataOptions()
+{
+    UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral options = UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral_Invalid;
+    foreach (const QString &strOption, extraDataOptions())
+    {
+        const UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral enmOption =
+            gpConverter->fromInternalString<UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral>(strOption);
+        if (enmOption != UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral_Invalid)
+            options = static_cast<UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral>(options | enmOption);
+    }
+    if (options == UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral_Invalid)
+        options = UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral_Default;
+    return options;
 }
 
 
@@ -292,87 +313,106 @@ void UIDetailsUpdateTaskSystem::run()
     if (comMachine.GetAccessible())
     {
         /* Base memory: */
-        table << UITextTableLine(QApplication::translate("UIDetails", "Base Memory", "details (system)"),
-                                 QApplication::translate("UIDetails", "%1 MB", "details").arg(comMachine.GetMemorySize()));
+        if (m_fOptions & UIExtraDataMetaDefs::DetailsElementOptionTypeSystem_RAM)
+            table << UITextTableLine(QApplication::translate("UIDetails", "Base Memory", "details (system)"),
+                                     QApplication::translate("UIDetails", "%1 MB", "details").arg(comMachine.GetMemorySize()));
 
-        /* CPU count: */
-        const int cCPU = comMachine.GetCPUCount();
-        if (cCPU > 1)
-            table << UITextTableLine(QApplication::translate("UIDetails", "Processors", "details (system)"),
-                                     QString::number(cCPU));
-
-        /* CPU execution cap: */
-        const int iCPUExecutionCap = comMachine.GetCPUExecutionCap();
-        if (iCPUExecutionCap < 100)
-            table << UITextTableLine(QApplication::translate("UIDetails", "Execution Cap", "details (system)"),
-                                     QApplication::translate("UIDetails", "%1%", "details").arg(iCPUExecutionCap));
-
-        /* Boot-order: */
-        QStringList bootOrder;
-        for (ulong i = 1; i <= vboxGlobal().virtualBox().GetSystemProperties().GetMaxBootPosition(); ++i)
+        /* Processors: */
+        if (m_fOptions & UIExtraDataMetaDefs::DetailsElementOptionTypeSystem_CPUCount)
         {
-            const KDeviceType enmDeviceType = comMachine.GetBootOrder(i);
-            if (enmDeviceType == KDeviceType_Null)
-                continue;
-            bootOrder << gpConverter->toString(enmDeviceType);
+            const int cCPU = comMachine.GetCPUCount();
+            if (cCPU > 1)
+                table << UITextTableLine(QApplication::translate("UIDetails", "Processors", "details (system)"),
+                                         QString::number(cCPU));
         }
-        if (bootOrder.isEmpty())
-            bootOrder << gpConverter->toString(KDeviceType_Null);
-        table << UITextTableLine(QApplication::translate("UIDetails", "Boot Order", "details (system)"), bootOrder.join(", "));
+
+        /* Execution cap: */
+        if (m_fOptions & UIExtraDataMetaDefs::DetailsElementOptionTypeSystem_CPUExecutionCap)
+        {
+            const int iCPUExecutionCap = comMachine.GetCPUExecutionCap();
+            if (iCPUExecutionCap < 100)
+                table << UITextTableLine(QApplication::translate("UIDetails", "Execution Cap", "details (system)"),
+                                         QApplication::translate("UIDetails", "%1%", "details").arg(iCPUExecutionCap));
+        }
+
+        /* Boot order: */
+        if (m_fOptions & UIExtraDataMetaDefs::DetailsElementOptionTypeSystem_BootOrder)
+        {
+            QStringList bootOrder;
+            for (ulong i = 1; i <= vboxGlobal().virtualBox().GetSystemProperties().GetMaxBootPosition(); ++i)
+            {
+                const KDeviceType enmDeviceType = comMachine.GetBootOrder(i);
+                if (enmDeviceType == KDeviceType_Null)
+                    continue;
+                bootOrder << gpConverter->toString(enmDeviceType);
+            }
+            if (bootOrder.isEmpty())
+                bootOrder << gpConverter->toString(KDeviceType_Null);
+            table << UITextTableLine(QApplication::translate("UIDetails", "Boot Order", "details (system)"), bootOrder.join(", "));
+        }
 
         /* Chipset type: */
-        const KChipsetType enmChipsetType = comMachine.GetChipsetType();
-        if (enmChipsetType == KChipsetType_ICH9)
-            table << UITextTableLine(QApplication::translate("UIDetails", "Chipset Type", "details (system)"),
-                                     gpConverter->toString(enmChipsetType));
-
-        /* Firware type: */
-        switch (comMachine.GetFirmwareType())
+        if (m_fOptions & UIExtraDataMetaDefs::DetailsElementOptionTypeSystem_ChipsetType)
         {
-            case KFirmwareType_EFI:
-            case KFirmwareType_EFI32:
-            case KFirmwareType_EFI64:
-            case KFirmwareType_EFIDUAL:
+            const KChipsetType enmChipsetType = comMachine.GetChipsetType();
+            if (enmChipsetType == KChipsetType_ICH9)
+                table << UITextTableLine(QApplication::translate("UIDetails", "Chipset Type", "details (system)"),
+                                         gpConverter->toString(enmChipsetType));
+        }
+
+        /* EFI: */
+        if (m_fOptions & UIExtraDataMetaDefs::DetailsElementOptionTypeSystem_Firmware)
+        {
+            switch (comMachine.GetFirmwareType())
             {
-                table << UITextTableLine(QApplication::translate("UIDetails", "EFI", "details (system)"),
-                                         QApplication::translate("UIDetails", "Enabled", "details (system/EFI)"));
-                break;
-            }
-            default:
-            {
-                // For NLS purpose:
-                QApplication::translate("UIDetails", "Disabled", "details (system/EFI)");
-                break;
+                case KFirmwareType_EFI:
+                case KFirmwareType_EFI32:
+                case KFirmwareType_EFI64:
+                case KFirmwareType_EFIDUAL:
+                {
+                    table << UITextTableLine(QApplication::translate("UIDetails", "EFI", "details (system)"),
+                                             QApplication::translate("UIDetails", "Enabled", "details (system/EFI)"));
+                    break;
+                }
+                default:
+                {
+                    // For NLS purpose:
+                    QApplication::translate("UIDetails", "Disabled", "details (system/EFI)");
+                    break;
+                }
             }
         }
 
         /* Acceleration: */
-        QStringList acceleration;
-        if (vboxGlobal().virtualBox().GetHost().GetProcessorFeature(KProcessorFeature_HWVirtEx))
+        if (m_fOptions & UIExtraDataMetaDefs::DetailsElementOptionTypeSystem_Acceleration)
         {
-            /* VT-x/AMD-V: */
-            if (comMachine.GetHWVirtExProperty(KHWVirtExPropertyType_Enabled))
+            QStringList acceleration;
+            if (vboxGlobal().virtualBox().GetHost().GetProcessorFeature(KProcessorFeature_HWVirtEx))
             {
-                acceleration << QApplication::translate("UIDetails", "VT-x/AMD-V", "details (system)");
-                /* Nested Paging (only when hw virt is enabled): */
-                if (comMachine.GetHWVirtExProperty(KHWVirtExPropertyType_NestedPaging))
-                    acceleration << QApplication::translate("UIDetails", "Nested Paging", "details (system)");
+                /* VT-x/AMD-V: */
+                if (comMachine.GetHWVirtExProperty(KHWVirtExPropertyType_Enabled))
+                {
+                    acceleration << QApplication::translate("UIDetails", "VT-x/AMD-V", "details (system)");
+                    /* Nested Paging (only when hw virt is enabled): */
+                    if (comMachine.GetHWVirtExProperty(KHWVirtExPropertyType_NestedPaging))
+                        acceleration << QApplication::translate("UIDetails", "Nested Paging", "details (system)");
+                }
             }
+            /* PAE/NX: */
+            if (comMachine.GetCPUProperty(KCPUPropertyType_PAE))
+                acceleration << QApplication::translate("UIDetails", "PAE/NX", "details (system)");
+            /* Paravirtualization provider: */
+            switch (comMachine.GetEffectiveParavirtProvider())
+            {
+                case KParavirtProvider_Minimal: acceleration << QApplication::translate("UIDetails", "Minimal Paravirtualization", "details (system)"); break;
+                case KParavirtProvider_HyperV:  acceleration << QApplication::translate("UIDetails", "Hyper-V Paravirtualization", "details (system)"); break;
+                case KParavirtProvider_KVM:     acceleration << QApplication::translate("UIDetails", "KVM Paravirtualization", "details (system)"); break;
+                default: break;
+            }
+            if (!acceleration.isEmpty())
+                table << UITextTableLine(QApplication::translate("UIDetails", "Acceleration", "details (system)"),
+                                         acceleration.join(", "));
         }
-        /* PAE/NX: */
-        if (comMachine.GetCPUProperty(KCPUPropertyType_PAE))
-            acceleration << QApplication::translate("UIDetails", "PAE/NX", "details (system)");
-        /* Paravirtualization provider: */
-        switch (comMachine.GetEffectiveParavirtProvider())
-        {
-            case KParavirtProvider_Minimal: acceleration << QApplication::translate("UIDetails", "Minimal Paravirtualization", "details (system)"); break;
-            case KParavirtProvider_HyperV:  acceleration << QApplication::translate("UIDetails", "Hyper-V Paravirtualization", "details (system)"); break;
-            case KParavirtProvider_KVM:     acceleration << QApplication::translate("UIDetails", "KVM Paravirtualization", "details (system)"); break;
-            default: break;
-        }
-        if (!acceleration.isEmpty())
-            table << UITextTableLine(QApplication::translate("UIDetails", "Acceleration", "details (system)"),
-                                     acceleration.join(", "));
     }
     else
         table << UITextTableLine(QApplication::translate("UIDetails", "Information Inaccessible", "details"),
@@ -380,6 +420,21 @@ void UIDetailsUpdateTaskSystem::run()
 
     /* Save the table as property: */
     setProperty("table", QVariant::fromValue(table));
+}
+
+UIExtraDataMetaDefs::DetailsElementOptionTypeSystem UIDetailsElementSystem::parsedExtraDataOptions()
+{
+    UIExtraDataMetaDefs::DetailsElementOptionTypeSystem options = UIExtraDataMetaDefs::DetailsElementOptionTypeSystem_Invalid;
+    foreach (const QString &strOption, extraDataOptions())
+    {
+        const UIExtraDataMetaDefs::DetailsElementOptionTypeSystem enmOption =
+            gpConverter->fromInternalString<UIExtraDataMetaDefs::DetailsElementOptionTypeSystem>(strOption);
+        if (enmOption != UIExtraDataMetaDefs::DetailsElementOptionTypeSystem_Invalid)
+            options = static_cast<UIExtraDataMetaDefs::DetailsElementOptionTypeSystem>(options | enmOption);
+    }
+    if (options == UIExtraDataMetaDefs::DetailsElementOptionTypeSystem_Invalid)
+        options = UIExtraDataMetaDefs::DetailsElementOptionTypeSystem_Default;
+    return options;
 }
 
 
@@ -397,75 +452,91 @@ void UIDetailsUpdateTaskDisplay::run()
     if (comMachine.GetAccessible())
     {
         /* Video memory: */
-        table << UITextTableLine(QApplication::translate("UIDetails", "Video Memory", "details (display)"),
-                                 QApplication::translate("UIDetails", "%1 MB", "details").arg(comMachine.GetVRAMSize()));
+        if (m_fOptions & UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay_VRAM)
+            table << UITextTableLine(QApplication::translate("UIDetails", "Video Memory", "details (display)"),
+                                     QApplication::translate("UIDetails", "%1 MB", "details").arg(comMachine.GetVRAMSize()));
 
-        /* Screen count: */
-        const int cGuestScreens = comMachine.GetMonitorCount();
-        if (cGuestScreens > 1)
-            table << UITextTableLine(QApplication::translate("UIDetails", "Screens", "details (display)"),
-                                     QString::number(cGuestScreens));
+        /* Screens: */
+        if (m_fOptions & UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay_ScreenCount)
+        {
+            const int cGuestScreens = comMachine.GetMonitorCount();
+            if (cGuestScreens > 1)
+                table << UITextTableLine(QApplication::translate("UIDetails", "Screens", "details (display)"),
+                                         QString::number(cGuestScreens));
+        }
 
         /* Scale-factor: */
-        const QString strScaleFactor = comMachine.GetExtraData(UIExtraDataDefs::GUI_ScaleFactor);
+        if (m_fOptions & UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay_ScaleFactor)
         {
-            /* Try to convert loaded data to double: */
-            bool fOk = false;
-            double dValue = strScaleFactor.toDouble(&fOk);
-            /* Invent the default value: */
-            if (!fOk || !dValue)
-                dValue = 1.0;
-            /* Append information: */
-            if (dValue != 1.0)
-                table << UITextTableLine(QApplication::translate("UIDetails", "Scale-factor", "details (display)"),
-                                         QString::number(dValue, 'f', 2));
+            const QString strScaleFactor = comMachine.GetExtraData(UIExtraDataDefs::GUI_ScaleFactor);
+            {
+                /* Try to convert loaded data to double: */
+                bool fOk = false;
+                double dValue = strScaleFactor.toDouble(&fOk);
+                /* Invent the default value: */
+                if (!fOk || !dValue)
+                    dValue = 1.0;
+                /* Append information: */
+                if (dValue != 1.0)
+                    table << UITextTableLine(QApplication::translate("UIDetails", "Scale-factor", "details (display)"),
+                                             QString::number(dValue, 'f', 2));
+            }
         }
 
         /* Acceleration: */
-        QStringList acceleration;
+        if (m_fOptions & UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay_Acceleration)
+        {
+            QStringList acceleration;
 #ifdef VBOX_WITH_VIDEOHWACCEL
-        /* 2D acceleration: */
-        if (comMachine.GetAccelerate2DVideoEnabled())
-            acceleration << QApplication::translate("UIDetails", "2D Video", "details (display)");
+            /* 2D acceleration: */
+            if (comMachine.GetAccelerate2DVideoEnabled())
+                acceleration << QApplication::translate("UIDetails", "2D Video", "details (display)");
 #endif
-        /* 3D acceleration: */
-        if (comMachine.GetAccelerate3DEnabled())
-            acceleration << QApplication::translate("UIDetails", "3D", "details (display)");
-        if (!acceleration.isEmpty())
-            table << UITextTableLine(QApplication::translate("UIDetails", "Acceleration", "details (display)"),
-                                     acceleration.join(", "));
+            /* 3D acceleration: */
+            if (comMachine.GetAccelerate3DEnabled())
+                acceleration << QApplication::translate("UIDetails", "3D", "details (display)");
+            if (!acceleration.isEmpty())
+                table << UITextTableLine(QApplication::translate("UIDetails", "Acceleration", "details (display)"),
+                                         acceleration.join(", "));
+        }
 
-        /* VRDE: */
-        const CVRDEServer comServer = comMachine.GetVRDEServer();
-        if (!comServer.isNull())
+        /* Remote desktop server: */
+        if (m_fOptions & UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay_VRDE)
         {
-            if (comServer.GetEnabled())
-                table << UITextTableLine(QApplication::translate("UIDetails", "Remote Desktop Server Port", "details (display/vrde)"),
-                                         comServer.GetVRDEProperty("TCP/Ports"));
+            const CVRDEServer comServer = comMachine.GetVRDEServer();
+            if (!comServer.isNull())
+            {
+                if (comServer.GetEnabled())
+                    table << UITextTableLine(QApplication::translate("UIDetails", "Remote Desktop Server Port", "details (display/vrde)"),
+                                             comServer.GetVRDEProperty("TCP/Ports"));
+                else
+                    table << UITextTableLine(QApplication::translate("UIDetails", "Remote Desktop Server", "details (display/vrde)"),
+                                             QApplication::translate("UIDetails", "Disabled", "details (display/vrde/VRDE server)"));
+            }
+        }
+
+        /* Recording: */
+        if (m_fOptions & UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay_Recording)
+        {
+            CRecordingSettings comRecordingSettings = comMachine.GetRecordingSettings();
+            if (comRecordingSettings.GetEnabled())
+            {
+                /* For now all screens have the same config: */
+                const CRecordingScreenSettings comRecordingScreen0Settings = comRecordingSettings.GetScreenSettings(0);
+
+                /** @todo r=andy Refine these texts (wrt audio and/or video). */
+                table << UITextTableLine(QApplication::translate("UIDetails", "Recording File", "details (display/recording)"),
+                                         comRecordingScreen0Settings.GetFileName());
+                table << UITextTableLine(QApplication::translate("UIDetails", "Recording Attributes", "details (display/recording)"),
+                                         QApplication::translate("UIDetails", "Frame Size: %1x%2, Frame Rate: %3fps, Bit Rate: %4kbps")
+                                             .arg(comRecordingScreen0Settings.GetVideoWidth()).arg(comRecordingScreen0Settings.GetVideoHeight())
+                                             .arg(comRecordingScreen0Settings.GetVideoFPS()).arg(comRecordingScreen0Settings.GetVideoRate()));
+            }
             else
-                table << UITextTableLine(QApplication::translate("UIDetails", "Remote Desktop Server", "details (display/vrde)"),
-                                         QApplication::translate("UIDetails", "Disabled", "details (display/vrde/VRDE server)"));
-        }
-
-        /* Recording info: */
-        CRecordingSettings comRecordingSettings = comMachine.GetRecordingSettings();
-        if (comRecordingSettings.GetEnabled())
-        {
-            /* For now all screens have the same config: */
-            const CRecordingScreenSettings comRecordingScreen0Settings = comRecordingSettings.GetScreenSettings(0);
-
-            /** @todo r=andy Refine these texts (wrt audio and/or video). */
-            table << UITextTableLine(QApplication::translate("UIDetails", "Recording File", "details (display/recording)"),
-                                     comRecordingScreen0Settings.GetFileName());
-            table << UITextTableLine(QApplication::translate("UIDetails", "Recording Attributes", "details (display/recording)"),
-                                     QApplication::translate("UIDetails", "Frame Size: %1x%2, Frame Rate: %3fps, Bit Rate: %4kbps")
-                                         .arg(comRecordingScreen0Settings.GetVideoWidth()).arg(comRecordingScreen0Settings.GetVideoHeight())
-                                         .arg(comRecordingScreen0Settings.GetVideoFPS()).arg(comRecordingScreen0Settings.GetVideoRate()));
-        }
-        else
-        {
-            table << UITextTableLine(QApplication::translate("UIDetails", "Recording", "details (display/recording)"),
-                                     QApplication::translate("UIDetails", "Disabled", "details (display/recording)"));
+            {
+                table << UITextTableLine(QApplication::translate("UIDetails", "Recording", "details (display/recording)"),
+                                         QApplication::translate("UIDetails", "Disabled", "details (display/recording)"));
+            }
         }
     }
     else
@@ -473,6 +544,21 @@ void UIDetailsUpdateTaskDisplay::run()
 
     /* Save the table as property: */
     setProperty("table", QVariant::fromValue(table));
+}
+
+UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay UIDetailsElementDisplay::parsedExtraDataOptions()
+{
+    UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay options = UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay_Invalid;
+    foreach (const QString &strOption, extraDataOptions())
+    {
+        const UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay enmOption =
+            gpConverter->fromInternalString<UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay>(strOption);
+        if (enmOption != UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay_Invalid)
+            options = static_cast<UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay>(options | enmOption);
+    }
+    if (options == UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay_Invalid)
+        options = UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay_Default;
+    return options;
 }
 
 
@@ -501,6 +587,15 @@ void UIDetailsUpdateTaskStorage::run()
             {
                 /* Acquire device type first of all: */
                 const KDeviceType enmDeviceType = attachment.GetType();
+
+                /* Ignore restricted device types: */
+                if (   (   !(m_fOptions & UIExtraDataMetaDefs::DetailsElementOptionTypeStorage_HardDisks)
+                        && enmDeviceType == KDeviceType_HardDisk)
+                    || (   !(m_fOptions & UIExtraDataMetaDefs::DetailsElementOptionTypeStorage_OpticalDevices)
+                        && enmDeviceType == KDeviceType_DVD)
+                    || (   !(m_fOptions & UIExtraDataMetaDefs::DetailsElementOptionTypeStorage_FloppyDevices)
+                        && enmDeviceType == KDeviceType_Floppy))
+                    continue;
 
                 /* Prepare current storage slot: */
                 const StorageSlot attachmentSlot(comController.GetBus(), attachment.GetPort(), attachment.GetDevice());
@@ -560,6 +655,21 @@ void UIDetailsUpdateTaskStorage::run()
     setProperty("table", QVariant::fromValue(table));
 }
 
+UIExtraDataMetaDefs::DetailsElementOptionTypeStorage UIDetailsElementStorage::parsedExtraDataOptions()
+{
+    UIExtraDataMetaDefs::DetailsElementOptionTypeStorage options = UIExtraDataMetaDefs::DetailsElementOptionTypeStorage_Invalid;
+    foreach (const QString &strOption, extraDataOptions())
+    {
+        const UIExtraDataMetaDefs::DetailsElementOptionTypeStorage enmOption =
+            gpConverter->fromInternalString<UIExtraDataMetaDefs::DetailsElementOptionTypeStorage>(strOption);
+        if (enmOption != UIExtraDataMetaDefs::DetailsElementOptionTypeStorage_Invalid)
+            options = static_cast<UIExtraDataMetaDefs::DetailsElementOptionTypeStorage>(options | enmOption);
+    }
+    if (options == UIExtraDataMetaDefs::DetailsElementOptionTypeStorage_Invalid)
+        options = UIExtraDataMetaDefs::DetailsElementOptionTypeStorage_Default;
+    return options;
+}
+
 
 void UIDetailsUpdateTaskAudio::run()
 {
@@ -577,24 +687,29 @@ void UIDetailsUpdateTaskAudio::run()
         const CAudioAdapter comAudio = comMachine.GetAudioAdapter();
         if (comAudio.GetEnabled())
         {
-            /* Driver: */
-            table << UITextTableLine(QApplication::translate("UIDetails", "Host Driver", "details (audio)"),
-                                     gpConverter->toString(comAudio.GetAudioDriver()));
+            /* Host driver: */
+            if (m_fOptions & UIExtraDataMetaDefs::DetailsElementOptionTypeAudio_Driver)
+                table << UITextTableLine(QApplication::translate("UIDetails", "Host Driver", "details (audio)"),
+                                         gpConverter->toString(comAudio.GetAudioDriver()));
 
             /* Controller: */
-            table << UITextTableLine(QApplication::translate("UIDetails", "Controller", "details (audio)"),
-                                     gpConverter->toString(comAudio.GetAudioController()));
+            if (m_fOptions & UIExtraDataMetaDefs::DetailsElementOptionTypeAudio_Controller)
+                table << UITextTableLine(QApplication::translate("UIDetails", "Controller", "details (audio)"),
+                                         gpConverter->toString(comAudio.GetAudioController()));
 
 #ifdef VBOX_WITH_AUDIO_INOUT_INFO
-            /* I/O: */
-            table << UITextTableLine(QApplication::translate("UIDetails", "Audio Output", "details (audio)"),
-                                     comAudio.GetEnabledOut() ?
-                                     QApplication::translate("UIDetails", "Enabled", "details (audio/output)") :
-                                     QApplication::translate("UIDetails", "Disabled", "details (audio/output)"));
-            table << UITextTableLine(QApplication::translate("UIDetails", "Audio Input", "details (audio)"),
-                                     comAudio.GetEnabledIn() ?
-                                     QApplication::translate("UIDetails", "Enabled", "details (audio/input)") :
-                                     QApplication::translate("UIDetails", "Disabled", "details (audio/input)"));
+            /* Audio I/O: */
+            if (m_fOptions & UIExtraDataMetaDefs::DetailsElementOptionTypeAudio_IO)
+            {
+                table << UITextTableLine(QApplication::translate("UIDetails", "Audio Input", "details (audio)"),
+                                         comAudio.GetEnabledIn() ?
+                                         QApplication::translate("UIDetails", "Enabled", "details (audio/input)") :
+                                         QApplication::translate("UIDetails", "Disabled", "details (audio/input)"));
+                table << UITextTableLine(QApplication::translate("UIDetails", "Audio Output", "details (audio)"),
+                                         comAudio.GetEnabledOut() ?
+                                         QApplication::translate("UIDetails", "Enabled", "details (audio/output)") :
+                                         QApplication::translate("UIDetails", "Disabled", "details (audio/output)"));
+            }
 #endif /* VBOX_WITH_AUDIO_INOUT_INFO */
         }
         else
@@ -607,6 +722,21 @@ void UIDetailsUpdateTaskAudio::run()
 
     /* Save the table as property: */
     setProperty("table", QVariant::fromValue(table));
+}
+
+UIExtraDataMetaDefs::DetailsElementOptionTypeAudio UIDetailsElementAudio::parsedExtraDataOptions()
+{
+    UIExtraDataMetaDefs::DetailsElementOptionTypeAudio options = UIExtraDataMetaDefs::DetailsElementOptionTypeAudio_Invalid;
+    foreach (const QString &strOption, extraDataOptions())
+    {
+        const UIExtraDataMetaDefs::DetailsElementOptionTypeAudio enmOption =
+            gpConverter->fromInternalString<UIExtraDataMetaDefs::DetailsElementOptionTypeAudio>(strOption);
+        if (enmOption != UIExtraDataMetaDefs::DetailsElementOptionTypeAudio_Invalid)
+            options = static_cast<UIExtraDataMetaDefs::DetailsElementOptionTypeAudio>(options | enmOption);
+    }
+    if (options == UIExtraDataMetaDefs::DetailsElementOptionTypeAudio_Invalid)
+        options = UIExtraDataMetaDefs::DetailsElementOptionTypeAudio_Default;
+    return options;
 }
 
 
@@ -641,41 +771,49 @@ void UIDetailsUpdateTaskNetwork::run()
             {
                 case KNetworkAttachmentType_Bridged:
                 {
-                    strAttachmentType = strAttachmentTemplate.arg(QApplication::translate("UIDetails", "Bridged Adapter, %1", "details (network)")
-                                                                  .arg(comAdapter.GetBridgedInterface()));
+                    if (m_fOptions & UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_BridgetAdapter)
+                        strAttachmentType = strAttachmentTemplate.arg(QApplication::translate("UIDetails", "Bridged Adapter, %1", "details (network)")
+                                                                      .arg(comAdapter.GetBridgedInterface()));
                     break;
                 }
                 case KNetworkAttachmentType_Internal:
                 {
-                    strAttachmentType = strAttachmentTemplate.arg(QApplication::translate("UIDetails", "Internal Network, '%1'", "details (network)")
-                                                                  .arg(comAdapter.GetInternalNetwork()));
+                    if (m_fOptions & UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_InternalNetwork)
+                        strAttachmentType = strAttachmentTemplate.arg(QApplication::translate("UIDetails", "Internal Network, '%1'", "details (network)")
+                                                                      .arg(comAdapter.GetInternalNetwork()));
                     break;
                 }
                 case KNetworkAttachmentType_HostOnly:
                 {
-                    strAttachmentType = strAttachmentTemplate.arg(QApplication::translate("UIDetails", "Host-only Adapter, '%1'", "details (network)")
-                                                                  .arg(comAdapter.GetHostOnlyInterface()));
+                    if (m_fOptions & UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_HostOnlyAdapter)
+                        strAttachmentType = strAttachmentTemplate.arg(QApplication::translate("UIDetails", "Host-only Adapter, '%1'", "details (network)")
+                                                                      .arg(comAdapter.GetHostOnlyInterface()));
                     break;
                 }
                 case KNetworkAttachmentType_Generic:
                 {
-                    const QString strGenericDriverProperties(summarizeGenericProperties(comAdapter));
-                    strAttachmentType = strGenericDriverProperties.isNull() ?
-                        strAttachmentTemplate.arg(QApplication::translate("UIDetails", "Generic Driver, '%1'", "details (network)")
-                                                  .arg(comAdapter.GetGenericDriver())) :
-                        strAttachmentTemplate.arg(QApplication::translate("UIDetails", "Generic Driver, '%1' { %2 }", "details (network)")
-                                                  .arg(comAdapter.GetGenericDriver(), strGenericDriverProperties));
+                    if (m_fOptions & UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_GenericDriver)
+                    {
+                        const QString strGenericDriverProperties(summarizeGenericProperties(comAdapter));
+                        strAttachmentType = strGenericDriverProperties.isNull() ?
+                            strAttachmentTemplate.arg(QApplication::translate("UIDetails", "Generic Driver, '%1'", "details (network)")
+                                                      .arg(comAdapter.GetGenericDriver())) :
+                            strAttachmentTemplate.arg(QApplication::translate("UIDetails", "Generic Driver, '%1' { %2 }", "details (network)")
+                                                      .arg(comAdapter.GetGenericDriver(), strGenericDriverProperties));
+                    }
                     break;
                 }
                 case KNetworkAttachmentType_NATNetwork:
                 {
-                    strAttachmentType = strAttachmentTemplate.arg(QApplication::translate("UIDetails", "NAT Network, '%1'", "details (network)")
-                                                                  .arg(comAdapter.GetNATNetwork()));
+                    if (m_fOptions & UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_NAT)
+                        strAttachmentType = strAttachmentTemplate.arg(QApplication::translate("UIDetails", "NAT Network, '%1'", "details (network)")
+                                                                      .arg(comAdapter.GetNATNetwork()));
                     break;
                 }
                 default:
                 {
-                    strAttachmentType = strAttachmentTemplate.arg(gpConverter->toString(enmType));
+                    if (m_fOptions & UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_NotAttached)
+                        strAttachmentType = strAttachmentTemplate.arg(gpConverter->toString(enmType));
                     break;
                 }
             }
@@ -690,6 +828,21 @@ void UIDetailsUpdateTaskNetwork::run()
 
     /* Save the table as property: */
     setProperty("table", QVariant::fromValue(table));
+}
+
+UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork UIDetailsElementNetwork::parsedExtraDataOptions()
+{
+    UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork options = UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_Invalid;
+    foreach (const QString &strOption, extraDataOptions())
+    {
+        const UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork enmOption =
+            gpConverter->fromInternalString<UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork>(strOption);
+        if (enmOption != UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_Invalid)
+            options = static_cast<UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork>(options | enmOption);
+    }
+    if (options == UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_Invalid)
+        options = UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_Default;
+    return options;
 }
 
 /* static */
@@ -740,27 +893,32 @@ void UIDetailsUpdateTaskSerial::run()
             {
                 case KPortMode_HostPipe:
                 {
-                    strModeType = strModeTemplate + QString("%1 (%2)").arg(gpConverter->toString(enmMode)).arg(QDir::toNativeSeparators(comPort.GetPath()));
+                    if (m_fOptions & UIExtraDataMetaDefs::DetailsElementOptionTypeSerial_HostPipe)
+                        strModeType = strModeTemplate + QString("%1 (%2)").arg(gpConverter->toString(enmMode)).arg(QDir::toNativeSeparators(comPort.GetPath()));
                     break;
                 }
                 case KPortMode_HostDevice:
                 {
-                    strModeType = strModeTemplate + QString("%1 (%2)").arg(gpConverter->toString(enmMode)).arg(QDir::toNativeSeparators(comPort.GetPath()));
+                    if (m_fOptions & UIExtraDataMetaDefs::DetailsElementOptionTypeSerial_HostDevice)
+                        strModeType = strModeTemplate + QString("%1 (%2)").arg(gpConverter->toString(enmMode)).arg(QDir::toNativeSeparators(comPort.GetPath()));
                     break;
                 }
                 case KPortMode_RawFile:
                 {
-                    strModeType = strModeTemplate + QString("%1 (%2)").arg(gpConverter->toString(enmMode)).arg(QDir::toNativeSeparators(comPort.GetPath()));
+                    if (m_fOptions & UIExtraDataMetaDefs::DetailsElementOptionTypeSerial_RawFile)
+                        strModeType = strModeTemplate + QString("%1 (%2)").arg(gpConverter->toString(enmMode)).arg(QDir::toNativeSeparators(comPort.GetPath()));
                     break;
                 }
                 case KPortMode_TCP:
                 {
-                    strModeType = strModeTemplate + QString("%1 (%2)").arg(gpConverter->toString(enmMode)).arg(QDir::toNativeSeparators(comPort.GetPath()));
+                    if (m_fOptions & UIExtraDataMetaDefs::DetailsElementOptionTypeSerial_TCP)
+                        strModeType = strModeTemplate + QString("%1 (%2)").arg(gpConverter->toString(enmMode)).arg(QDir::toNativeSeparators(comPort.GetPath()));
                     break;
                 }
                 default:
                 {
-                    strModeType = strModeTemplate + gpConverter->toString(enmMode);
+                    if (m_fOptions & UIExtraDataMetaDefs::DetailsElementOptionTypeSerial_Disconnected)
+                        strModeType = strModeTemplate + gpConverter->toString(enmMode);
                     break;
                 }
             }
@@ -775,6 +933,21 @@ void UIDetailsUpdateTaskSerial::run()
 
     /* Save the table as property: */
     setProperty("table", QVariant::fromValue(table));
+}
+
+UIExtraDataMetaDefs::DetailsElementOptionTypeSerial UIDetailsElementSerial::parsedExtraDataOptions()
+{
+    UIExtraDataMetaDefs::DetailsElementOptionTypeSerial options = UIExtraDataMetaDefs::DetailsElementOptionTypeSerial_Invalid;
+    foreach (const QString &strOption, extraDataOptions())
+    {
+        const UIExtraDataMetaDefs::DetailsElementOptionTypeSerial enmOption =
+            gpConverter->fromInternalString<UIExtraDataMetaDefs::DetailsElementOptionTypeSerial>(strOption);
+        if (enmOption != UIExtraDataMetaDefs::DetailsElementOptionTypeSerial_Invalid)
+            options = static_cast<UIExtraDataMetaDefs::DetailsElementOptionTypeSerial>(options | enmOption);
+    }
+    if (options == UIExtraDataMetaDefs::DetailsElementOptionTypeSerial_Invalid)
+        options = UIExtraDataMetaDefs::DetailsElementOptionTypeSerial_Default;
+    return options;
 }
 
 
@@ -798,21 +971,27 @@ void UIDetailsUpdateTaskUSB::run()
             const CUSBControllerVector controllers = comMachine.GetUSBControllers();
             if (!controllers.isEmpty())
             {
-                /* Controllers: */
-                QStringList controllersReadable;
-                foreach (const CUSBController &comController, controllers)
-                    controllersReadable << gpConverter->toString(comController.GetType());
-                table << UITextTableLine(QApplication::translate("UIDetails", "USB Controller", "details (usb)"),
-                                         controllersReadable.join(", "));
+                /* USB controllers: */
+                if (m_fOptions & UIExtraDataMetaDefs::DetailsElementOptionTypeUsb_Controller)
+                {
+                    QStringList controllersReadable;
+                    foreach (const CUSBController &comController, controllers)
+                        controllersReadable << gpConverter->toString(comController.GetType());
+                    table << UITextTableLine(QApplication::translate("UIDetails", "USB Controller", "details (usb)"),
+                                             controllersReadable.join(", "));
+                }
 
-                /* Device Filters: */
-                const CUSBDeviceFilterVector filters = comFilterObject.GetDeviceFilters();
-                uint uActive = 0;
-                for (int i = 0; i < filters.size(); ++i)
-                    if (filters.at(i).GetActive())
-                        ++uActive;
-                table << UITextTableLine(QApplication::translate("UIDetails", "Device Filters", "details (usb)"),
-                                         QApplication::translate("UIDetails", "%1 (%2 active)", "details (usb)").arg(filters.size()).arg(uActive));
+                /* Device filters: */
+                if (m_fOptions & UIExtraDataMetaDefs::DetailsElementOptionTypeUsb_DeviceFilters)
+                {
+                    const CUSBDeviceFilterVector filters = comFilterObject.GetDeviceFilters();
+                    uint uActive = 0;
+                    for (int i = 0; i < filters.size(); ++i)
+                        if (filters.at(i).GetActive())
+                            ++uActive;
+                    table << UITextTableLine(QApplication::translate("UIDetails", "Device Filters", "details (usb)"),
+                                             QApplication::translate("UIDetails", "%1 (%2 active)", "details (usb)").arg(filters.size()).arg(uActive));
+                }
             }
             else
                 table << UITextTableLine(QApplication::translate("UIDetails", "Disabled", "details (usb)"), QString());
@@ -825,6 +1004,21 @@ void UIDetailsUpdateTaskUSB::run()
 
     /* Save the table as property: */
     setProperty("table", QVariant::fromValue(table));
+}
+
+UIExtraDataMetaDefs::DetailsElementOptionTypeUsb UIDetailsElementUSB::parsedExtraDataOptions()
+{
+    UIExtraDataMetaDefs::DetailsElementOptionTypeUsb options = UIExtraDataMetaDefs::DetailsElementOptionTypeUsb_Invalid;
+    foreach (const QString &strOption, extraDataOptions())
+    {
+        const UIExtraDataMetaDefs::DetailsElementOptionTypeUsb enmOption =
+            gpConverter->fromInternalString<UIExtraDataMetaDefs::DetailsElementOptionTypeUsb>(strOption);
+        if (enmOption != UIExtraDataMetaDefs::DetailsElementOptionTypeUsb_Invalid)
+            options = static_cast<UIExtraDataMetaDefs::DetailsElementOptionTypeUsb>(options | enmOption);
+    }
+    if (options == UIExtraDataMetaDefs::DetailsElementOptionTypeUsb_Invalid)
+        options = UIExtraDataMetaDefs::DetailsElementOptionTypeUsb_Default;
+    return options;
 }
 
 
@@ -842,17 +1036,35 @@ void UIDetailsUpdateTaskSF::run()
     if (comMachine.GetAccessible())
     {
         /* Summary: */
-        const ulong uCount = comMachine.GetSharedFolders().size();
-        if (uCount > 0)
-            table << UITextTableLine(QApplication::translate("UIDetails", "Shared Folders", "details (shared folders)"), QString::number(uCount));
-        else
-            table << UITextTableLine(QApplication::translate("UIDetails", "None", "details (shared folders)"), QString());
+        if (m_fOptions & UIExtraDataMetaDefs::DetailsElementOptionTypeSharedFolders_Summary)
+        {
+            const ulong uCount = comMachine.GetSharedFolders().size();
+            if (uCount > 0)
+                table << UITextTableLine(QApplication::translate("UIDetails", "Shared Folders", "details (shared folders)"), QString::number(uCount));
+            else
+                table << UITextTableLine(QApplication::translate("UIDetails", "None", "details (shared folders)"), QString());
+        }
     }
     else
         table << UITextTableLine(QApplication::translate("UIDetails", "Information Inaccessible", "details"), QString());
 
     /* Save the table as property: */
     setProperty("table", QVariant::fromValue(table));
+}
+
+UIExtraDataMetaDefs::DetailsElementOptionTypeSharedFolders UIDetailsElementSF::parsedExtraDataOptions()
+{
+    UIExtraDataMetaDefs::DetailsElementOptionTypeSharedFolders options = UIExtraDataMetaDefs::DetailsElementOptionTypeSharedFolders_Invalid;
+    foreach (const QString &strOption, extraDataOptions())
+    {
+        const UIExtraDataMetaDefs::DetailsElementOptionTypeSharedFolders enmOption =
+            gpConverter->fromInternalString<UIExtraDataMetaDefs::DetailsElementOptionTypeSharedFolders>(strOption);
+        if (enmOption != UIExtraDataMetaDefs::DetailsElementOptionTypeSharedFolders_Invalid)
+            options = static_cast<UIExtraDataMetaDefs::DetailsElementOptionTypeSharedFolders>(options | enmOption);
+    }
+    if (options == UIExtraDataMetaDefs::DetailsElementOptionTypeSharedFolders_Invalid)
+        options = UIExtraDataMetaDefs::DetailsElementOptionTypeSharedFolders_Default;
+    return options;
 }
 
 
@@ -871,8 +1083,9 @@ void UIDetailsUpdateTaskUI::run()
     {
 #ifndef VBOX_WS_MAC
         /* Menu-bar: */
-        const QString strMenubarEnabled = comMachine.GetExtraData(UIExtraDataDefs::GUI_MenuBar_Enabled);
+        if (m_fOptions & UIExtraDataMetaDefs::DetailsElementOptionTypeUserInterface_MenuBar)
         {
+            const QString strMenubarEnabled = comMachine.GetExtraData(UIExtraDataDefs::GUI_MenuBar_Enabled);
             /* Try to convert loaded data to bool: */
             const bool fEnabled = !(   strMenubarEnabled.compare("false", Qt::CaseInsensitive) == 0
                                     || strMenubarEnabled.compare("no", Qt::CaseInsensitive) == 0
@@ -886,8 +1099,9 @@ void UIDetailsUpdateTaskUI::run()
 #endif /* !VBOX_WS_MAC */
 
         /* Status-bar: */
-        const QString strStatusbarEnabled = comMachine.GetExtraData(UIExtraDataDefs::GUI_StatusBar_Enabled);
+        if (m_fOptions & UIExtraDataMetaDefs::DetailsElementOptionTypeUserInterface_StatusBar)
         {
+            const QString strStatusbarEnabled = comMachine.GetExtraData(UIExtraDataDefs::GUI_StatusBar_Enabled);
             /* Try to convert loaded data to bool: */
             const bool fEnabled = !(   strStatusbarEnabled.compare("false", Qt::CaseInsensitive) == 0
                                     || strStatusbarEnabled.compare("no", Qt::CaseInsensitive) == 0
@@ -901,8 +1115,9 @@ void UIDetailsUpdateTaskUI::run()
 
 #ifndef VBOX_WS_MAC
         /* Mini-toolbar: */
-        const QString strMiniToolbarEnabled = comMachine.GetExtraData(UIExtraDataDefs::GUI_ShowMiniToolBar);
+        if (m_fOptions & UIExtraDataMetaDefs::DetailsElementOptionTypeUserInterface_MiniToolbar)
         {
+            const QString strMiniToolbarEnabled = comMachine.GetExtraData(UIExtraDataDefs::GUI_ShowMiniToolBar);
             /* Try to convert loaded data to bool: */
             const bool fEnabled = !(   strMiniToolbarEnabled.compare("false", Qt::CaseInsensitive) == 0
                                     || strMiniToolbarEnabled.compare("no", Qt::CaseInsensitive) == 0
@@ -944,6 +1159,21 @@ void UIDetailsUpdateTaskUI::run()
     setProperty("table", QVariant::fromValue(table));
 }
 
+UIExtraDataMetaDefs::DetailsElementOptionTypeUserInterface UIDetailsElementUI::parsedExtraDataOptions()
+{
+    UIExtraDataMetaDefs::DetailsElementOptionTypeUserInterface options = UIExtraDataMetaDefs::DetailsElementOptionTypeUserInterface_Invalid;
+    foreach (const QString &strOption, extraDataOptions())
+    {
+        const UIExtraDataMetaDefs::DetailsElementOptionTypeUserInterface enmOption =
+            gpConverter->fromInternalString<UIExtraDataMetaDefs::DetailsElementOptionTypeUserInterface>(strOption);
+        if (enmOption != UIExtraDataMetaDefs::DetailsElementOptionTypeUserInterface_Invalid)
+            options = static_cast<UIExtraDataMetaDefs::DetailsElementOptionTypeUserInterface>(options | enmOption);
+    }
+    if (options == UIExtraDataMetaDefs::DetailsElementOptionTypeUserInterface_Invalid)
+        options = UIExtraDataMetaDefs::DetailsElementOptionTypeUserInterface_Default;
+    return options;
+}
+
 
 void UIDetailsUpdateTaskDescription::run()
 {
@@ -959,15 +1189,33 @@ void UIDetailsUpdateTaskDescription::run()
     if (machine.GetAccessible())
     {
         /* Summary: */
-        const QString strDescription = machine.GetDescription();
-        if (!strDescription.isEmpty())
-            table << UITextTableLine(strDescription, QString());
-        else
-            table << UITextTableLine(QApplication::translate("UIDetails", "None", "details (description)"), QString());
+        if (m_fOptions & UIExtraDataMetaDefs::DetailsElementOptionTypeDescription_Summary)
+        {
+            const QString strDescription = machine.GetDescription();
+            if (!strDescription.isEmpty())
+                table << UITextTableLine(strDescription, QString());
+            else
+                table << UITextTableLine(QApplication::translate("UIDetails", "None", "details (description)"), QString());
+        }
     }
     else
         table << UITextTableLine(QApplication::translate("UIDetails", "Information Inaccessible", "details"), QString());
 
     /* Save the table as property: */
     setProperty("table", QVariant::fromValue(table));
+}
+
+UIExtraDataMetaDefs::DetailsElementOptionTypeDescription UIDetailsElementDescription::parsedExtraDataOptions()
+{
+    UIExtraDataMetaDefs::DetailsElementOptionTypeDescription options = UIExtraDataMetaDefs::DetailsElementOptionTypeDescription_Invalid;
+    foreach (const QString &strOption, extraDataOptions())
+    {
+        const UIExtraDataMetaDefs::DetailsElementOptionTypeDescription enmOption =
+            gpConverter->fromInternalString<UIExtraDataMetaDefs::DetailsElementOptionTypeDescription>(strOption);
+        if (enmOption != UIExtraDataMetaDefs::DetailsElementOptionTypeDescription_Invalid)
+            options = static_cast<UIExtraDataMetaDefs::DetailsElementOptionTypeDescription>(options | enmOption);
+    }
+    if (options == UIExtraDataMetaDefs::DetailsElementOptionTypeDescription_Invalid)
+        options = UIExtraDataMetaDefs::DetailsElementOptionTypeDescription_Default;
+    return options;
 }
