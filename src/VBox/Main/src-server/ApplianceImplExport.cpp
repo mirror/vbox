@@ -2375,7 +2375,7 @@ HRESULT Appliance::i_writeFSOCI(TaskOCI *pTask)
                          Bstr("Exporting VM to OCI...").raw(), // aFirstOperationDescription
                          10); // ULONG ulFirstOperationWeight,
 
-            hrc = cloudClient->ExportVM(m->virtualSystemDescriptions.front(), pTask->pProgress, VBox);
+            hrc = cloudClient->ExportLaunchVM(m->virtualSystemDescriptions.front(), pTask->pProgress, VBox);
         } else {
             /// @todo Fail here with user notification. We do export 1 VM only
         }

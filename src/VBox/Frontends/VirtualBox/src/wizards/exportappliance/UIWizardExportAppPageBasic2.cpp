@@ -309,7 +309,7 @@ void UIWizardExportAppPage2::populateCloudClientParameters()
     else
     {
         /* Read Cloud Client parameters for Export VM operation: */
-        const QString strJSON = comCloudClient.GetExportParameters();
+        const QString strJSON = comCloudClient.GetExportLaunchParameters();
         /* Show error message if necessary: */
         if (!comCloudClient.isOk())
             msgCenter().cannotAcquireCloudClientParameter(comCloudClient);

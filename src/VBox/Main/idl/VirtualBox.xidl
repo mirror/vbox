@@ -25313,22 +25313,22 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   -->
   <interface
     name="ICloudClient" extends="$unknown"
-    uuid="86b831ff-ffe4-49c2-843f-0c8b03817025"
+    uuid="cb244d7b-3757-4fdd-976b-9b8a269da77c"
     wsmap="managed" reservedMethods="4" reservedAttributes="4"
     >
 
-    <method name="getExportParameters" const="yes">
+    <method name="getExportLaunchParameters" const="yes">
       <desc>
-        Returns the parameters required to be shown to user for export a VM to a cloud operation.
+        Returns parameters to be shown to the user for the cloud export and launch operation.
       </desc>
       <param name="jsonString" type="wstring" dir="return">
         <desc>the parameters with values in json format.</desc>
       </param>
     </method>
 
-    <method name="exportVM">
+    <method name="exportLaunchVM">
       <desc>
-        Exports a VM described in description parameter
+        Exports and optionally launch a VM described in description parameter
       </desc>
       <param name="description" type="IVirtualSystemDescription" dir="in">
         <desc>VirtualSystemDescription object which is describing a machine and all required parameters.</desc>
