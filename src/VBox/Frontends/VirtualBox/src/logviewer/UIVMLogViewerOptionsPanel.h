@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___UIVMLogViewerSettingssPanel_h___
-#define ___UIVMLogViewerSettingssPanel_h___
+#ifndef ___UIVMLogViewerOptionsPanel_h___
+#define ___UIVMLogViewerOptionsPanel_h___
 
 /* GUI includes: */
 #include "UIVMLogViewerPanel.h"
@@ -28,8 +28,8 @@ class QLabel;
 class QIToolButton;
 class UIVMLogViewerWidget;
 
-/** UIVMLogViewerPanel extension providing GUI to manage logviewer settings. */
-class UIVMLogViewerSettingsPanel : public UIVMLogViewerPanel
+/** UIVMLogViewerPanel extension providing GUI to manage logviewer options. */
+class UIVMLogViewerOptionsPanel : public UIVMLogViewerPanel
 {
     Q_OBJECT;
 
@@ -43,7 +43,7 @@ signals:
 
 public:
 
-    UIVMLogViewerSettingsPanel(QWidget *pParent, UIVMLogViewerWidget *pViewer);
+    UIVMLogViewerOptionsPanel(QWidget *pParent, UIVMLogViewerWidget *pViewer);
 
     void setShowLineNumbers(bool bShowLineNumbers);
     void setWrapLines(bool bWrapLines);
@@ -78,4 +78,4 @@ private:
 
 };
 
-#endif /* !___UIVMLogViewerSettingsPanel_h___ */
+#endif /* !___UIVMLogViewerOptionsPanel_h___ */

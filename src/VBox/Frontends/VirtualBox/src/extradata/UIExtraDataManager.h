@@ -688,9 +688,9 @@ public:
         void setLogWindowGeometry(const QRect &geometry, bool fMaximized);
     /** @} */
 
-    /** @name Virtual Machine: Log Viewer widget settings
+    /** @name Virtual Machine: Log Viewer widget options
       * @{ */
-        void setLogViweverSettings(const QFont &font, bool wrapLines, bool showLineNumbers);
+        void setLogViweverOptions(const QFont &font, bool wrapLines, bool showLineNumbers);
         /** Returns log-viewer line wrapping flag. */
         bool logViewerWrapLines();
         /** Returns log-viewer show line numbers flag. */

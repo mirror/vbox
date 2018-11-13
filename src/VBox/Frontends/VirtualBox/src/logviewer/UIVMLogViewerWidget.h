@@ -43,7 +43,7 @@ class UIVMLogViewerBookmarksPanel;
 class UIVMLogViewerFilterPanel;
 class UIVMLogViewerPanel;
 class UIVMLogViewerSearchPanel;
-class UIVMLogViewerSettingsPanel;
+class UIVMLogViewerOptionsPanel;
 
 /** QWidget extension providing GUI for VirtualBox LogViewer. It
  *  encapsulates log pages, toolbar, a tab widget and manages
@@ -124,7 +124,7 @@ private slots:
         void sltWrapLines(bool bWrapLine);
         void sltFontSizeChanged(int fontSize);
         void sltChangeFont(QFont font);
-        void sltResetSettingsToDefault();
+        void sltResetOptionsToDefault();
     /** @} */
 
 private:
@@ -139,11 +139,11 @@ private:
         void prepareWidgets();
         /** Prepares toolbar. */
         void prepareToolBar();
-        /** Loads settings.  */
-        void loadSettings();
+        /** Loads options.  */
+        void loadOptions();
 
-        /** Saves settings.  */
-        void saveSettings();
+        /** Saves options.  */
+        void saveOptions();
         /** Cleanups VM Log-Viewer. */
         void cleanup();
     /** @} */
@@ -207,7 +207,7 @@ private:
         UIVMLogViewerSearchPanel    *m_pSearchPanel;
         UIVMLogViewerFilterPanel    *m_pFilterPanel;
         UIVMLogViewerBookmarksPanel *m_pBookmarksPanel;
-        UIVMLogViewerSettingsPanel  *m_pSettingsPanel;
+        UIVMLogViewerOptionsPanel  *m_pOptionsPanel;
         QMap<UIVMLogViewerPanel*, QAction*> m_panelActionMap;
         QList<UIVMLogViewerPanel*>          m_visiblePanelsList;
     /** @} */
@@ -220,7 +220,7 @@ private:
 
     /** @name Toolbar and menu variables. Cache these to restore them after refresh.
      * @{ */
-        /** Showing/hiding line numbers and line wraping settings are set per
+        /** Showing/hiding line numbers and line wraping options are set per
             UIVMLogViewerWidget and applies to all log pages (all tabs) */
         bool  m_bShowLineNumbers;
         bool  m_bWrapLines;
@@ -229,7 +229,7 @@ private:
     friend class UIVMLogViewerBookmarksPanel;
     friend class UIVMLogViewerFilterPanel;
     friend class UIVMLogViewerSearchPanel;
-    friend class UIVMLogViewerSettingsPanel;
+    friend class UIVMLogViewerOptionsPanel;
     friend class UIVMLogViewerPanel;
     friend class UIVMLogViewerDialog;
 };

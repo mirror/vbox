@@ -1331,20 +1331,20 @@ protected:
     }
 };
 
-/** Simple action extension, used as 'Toggle Pane Settings' action class. */
-class UIActionMenuSelectorLogTogglePaneSettings : public UIActionToggle
+/** Simple action extension, used as 'Toggle Pane Options' action class. */
+class UIActionMenuSelectorLogTogglePaneOptions : public UIActionToggle
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionMenuSelectorLogTogglePaneSettings(UIActionPool *pParent)
+    UIActionMenuSelectorLogTogglePaneOptions(UIActionPool *pParent)
         : UIActionToggle(pParent)
     {
         setShortcutContext(Qt::WidgetWithChildrenShortcut);
-        setIcon(UIIconPool::iconSetFull(":/log_viewer_settings_32px.png",          ":/log_viewer_settings_16px.png",
-                                        ":/log_viewer_settings_disabled_32px.png", ":/log_viewer_settings_disabled_16px.png"));
+        setIcon(UIIconPool::iconSetFull(":/log_viewer_options_32px.png",          ":/log_viewer_options_16px.png",
+                                        ":/log_viewer_options_disabled_32px.png", ":/log_viewer_options_disabled_16px.png"));
     }
 
 protected:
@@ -1352,7 +1352,7 @@ protected:
     /** Returns shortcut extra-data ID. */
     virtual QString shortcutExtraDataID() const /* override */
     {
-        return QString("ToggleLogSettings");
+        return QString("ToggleLogOptions");
     }
 
     /** Returns default shortcut. */
@@ -1364,10 +1364,10 @@ protected:
     /** Handles translation event. */
     virtual void retranslateUi() /* override */
     {
-        setName(QApplication::translate("UIActionPool", "&Settings"));
+        setName(QApplication::translate("UIActionPool", "&Options"));
         setShortcutScope(QApplication::translate("UIActionPool", "Log Viewer"));
-        setStatusTip(QApplication::translate("UIActionPool", "Open pane with log viewer settings"));
-        setToolTip(QApplication::translate("UIActionPool", "Open Settings Pane (%1)").arg(shortcut().toString()));
+        setStatusTip(QApplication::translate("UIActionPool", "Open pane with log viewer options"));
+        setToolTip(QApplication::translate("UIActionPool", "Open Options Pane (%1)").arg(shortcut().toString()));
     }
 };
 
@@ -2499,7 +2499,7 @@ void UIActionPool::preparePool()
     m_pool[UIActionIndex_M_Log_T_Find] = new UIActionMenuSelectorLogTogglePaneFind(this);
     m_pool[UIActionIndex_M_Log_T_Filter] = new UIActionMenuSelectorLogTogglePaneFilter(this);
     m_pool[UIActionIndex_M_Log_T_Bookmark] = new UIActionMenuSelectorLogTogglePaneBookmark(this);
-    m_pool[UIActionIndex_M_Log_T_Settings] = new UIActionMenuSelectorLogTogglePaneSettings(this);
+    m_pool[UIActionIndex_M_Log_T_Options] = new UIActionMenuSelectorLogTogglePaneOptions(this);
     m_pool[UIActionIndex_M_Log_S_Refresh] = new UIActionMenuSelectorLogPerformRefresh(this);
     m_pool[UIActionIndex_M_Log_S_Save] = new UIActionMenuSelectorLogPerformSave(this);
 
@@ -2836,8 +2836,8 @@ void UIActionPool::updateMenuLogViewerWrapper(UIMenu *pMenu)
     fSeparator = addAction(pMenu, action(UIActionIndex_M_Log_T_Filter)) || fSeparator;
     /* 'Bookmarks' action: */
     fSeparator = addAction(pMenu, action(UIActionIndex_M_Log_T_Bookmark)) || fSeparator;
-    /* 'Settings' action: */
-    fSeparator = addAction(pMenu, action(UIActionIndex_M_Log_T_Settings)) || fSeparator;
+    /* 'Options' action: */
+    fSeparator = addAction(pMenu, action(UIActionIndex_M_Log_T_Options)) || fSeparator;
 
     /* Separator? */
     if (fSeparator)

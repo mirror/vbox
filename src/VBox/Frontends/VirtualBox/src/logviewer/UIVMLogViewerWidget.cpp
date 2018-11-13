@@ -46,7 +46,7 @@
 # include "UIVMLogViewerBookmarksPanel.h"
 # include "UIVMLogViewerFilterPanel.h"
 # include "UIVMLogViewerSearchPanel.h"
-# include "UIVMLogViewerSettingsPanel.h"
+# include "UIVMLogViewerOptionsPanel.h"
 # include "UIToolBar.h"
 
 /* COM includes: */
@@ -72,7 +72,7 @@ UIVMLogViewerWidget::UIVMLogViewerWidget(EmbedTo enmEmbedding,
     , m_pSearchPanel(0)
     , m_pFilterPanel(0)
     , m_pBookmarksPanel(0)
-    , m_pSettingsPanel(0)
+    , m_pOptionsPanel(0)
     , m_pMainLayout(0)
     , m_pToolBar(0)
     , m_bShowLineNumbers(true)
@@ -193,7 +193,7 @@ void UIVMLogViewerWidget::sltRefresh()
     m_pActionPool->action(UIActionIndex_M_Log_T_Filter)->setEnabled(!noLogsToShow);
     m_pActionPool->action(UIActionIndex_M_Log_S_Save)->setEnabled(!noLogsToShow);
     m_pActionPool->action(UIActionIndex_M_Log_T_Bookmark)->setEnabled(!noLogsToShow);
-    m_pActionPool->action(UIActionIndex_M_Log_T_Settings)->setEnabled(!noLogsToShow);
+    m_pActionPool->action(UIActionIndex_M_Log_T_Options)->setEnabled(!noLogsToShow);
 
     m_pTabWidget->show();
     if (m_pSearchPanel && m_pSearchPanel->isVisible())
@@ -401,17 +401,17 @@ void UIVMLogViewerWidget::sltChangeFont(QFont font)
     }
 }
 
-void UIVMLogViewerWidget::sltResetSettingsToDefault()
+void UIVMLogViewerWidget::sltResetOptionsToDefault()
 {
     sltShowLineNumbers(true);
     sltWrapLines(false);
     sltChangeFont(QFontDatabase::systemFont(QFontDatabase::FixedFont));
 
-    if (m_pSettingsPanel)
+    if (m_pOptionsPanel)
     {
-        m_pSettingsPanel->setShowLineNumbers(true);
-        m_pSettingsPanel->setWrapLines(false);
-        m_pSettingsPanel->setFontSizeInPoints(m_font.pointSize());
+        m_pOptionsPanel->setShowLineNumbers(true);
+        m_pOptionsPanel->setWrapLines(false);
+        m_pOptionsPanel->setFontSizeInPoints(m_font.pointSize());
     }
 }
 
@@ -421,8 +421,8 @@ void UIVMLogViewerWidget::prepare()
     prepareActions();
     /* Prepare widgets: */
     prepareWidgets();
-    /* Load settings: */
-    loadSettings();
+    /* Load options: */
+    loadOptions();
 
     /* Apply language settings: */
     retranslateUi();
@@ -439,7 +439,7 @@ void UIVMLogViewerWidget::prepareActions()
     addAction(m_pActionPool->action(UIActionIndex_M_Log_T_Find));
     addAction(m_pActionPool->action(UIActionIndex_M_Log_T_Filter));
     addAction(m_pActionPool->action(UIActionIndex_M_Log_T_Bookmark));
-    addAction(m_pActionPool->action(UIActionIndex_M_Log_T_Settings));
+    addAction(m_pActionPool->action(UIActionIndex_M_Log_T_Options));
     addAction(m_pActionPool->action(UIActionIndex_M_Log_S_Refresh));
     addAction(m_pActionPool->action(UIActionIndex_M_Log_S_Save));
 
@@ -450,7 +450,7 @@ void UIVMLogViewerWidget::prepareActions()
             this, &UIVMLogViewerWidget::sltPanelActionToggled);
     connect(m_pActionPool->action(UIActionIndex_M_Log_T_Bookmark), &QAction::toggled,
             this, &UIVMLogViewerWidget::sltPanelActionToggled);
-    connect(m_pActionPool->action(UIActionIndex_M_Log_T_Settings), &QAction::toggled,
+    connect(m_pActionPool->action(UIActionIndex_M_Log_T_Options), &QAction::toggled,
             this, &UIVMLogViewerWidget::sltPanelActionToggled);
     connect(m_pActionPool->action(UIActionIndex_M_Log_S_Refresh), &QAction::triggered,
             this, &UIVMLogViewerWidget::sltRefresh);
@@ -532,24 +532,24 @@ void UIVMLogViewerWidget::prepareWidgets()
             m_pMainLayout->addWidget(m_pBookmarksPanel);
         }
 
-        /* Create VM Log-Viewer settings-panel: */
-        m_pSettingsPanel = new UIVMLogViewerSettingsPanel(0, this);
-        if (m_pSettingsPanel)
+        /* Create VM Log-Viewer options-panel: */
+        m_pOptionsPanel = new UIVMLogViewerOptionsPanel(0, this);
+        if (m_pOptionsPanel)
         {
             /* Configure panel: */
-            m_pSettingsPanel->hide();
-            m_pSettingsPanel->setShowLineNumbers(m_bShowLineNumbers);
-            m_pSettingsPanel->setWrapLines(m_bWrapLines);
-            m_pSettingsPanel->setFontSizeInPoints(m_font.pointSize());
-            connect(m_pSettingsPanel, &UIVMLogViewerSettingsPanel::sigShowLineNumbers, this, &UIVMLogViewerWidget::sltShowLineNumbers);
-            connect(m_pSettingsPanel, &UIVMLogViewerSettingsPanel::sigWrapLines, this, &UIVMLogViewerWidget::sltWrapLines);
-            connect(m_pSettingsPanel, &UIVMLogViewerSettingsPanel::sigChangeFontSizeInPoints, this, &UIVMLogViewerWidget::sltFontSizeChanged);
-            connect(m_pSettingsPanel, &UIVMLogViewerSettingsPanel::sigChangeFont, this, &UIVMLogViewerWidget::sltChangeFont);
-            connect(m_pSettingsPanel, &UIVMLogViewerSettingsPanel::sigResetToDefaults, this, &UIVMLogViewerWidget::sltResetSettingsToDefault);
-            m_panelActionMap.insert(m_pSettingsPanel, m_pActionPool->action(UIActionIndex_M_Log_T_Settings));
+            m_pOptionsPanel->hide();
+            m_pOptionsPanel->setShowLineNumbers(m_bShowLineNumbers);
+            m_pOptionsPanel->setWrapLines(m_bWrapLines);
+            m_pOptionsPanel->setFontSizeInPoints(m_font.pointSize());
+            connect(m_pOptionsPanel, &UIVMLogViewerOptionsPanel::sigShowLineNumbers, this, &UIVMLogViewerWidget::sltShowLineNumbers);
+            connect(m_pOptionsPanel, &UIVMLogViewerOptionsPanel::sigWrapLines, this, &UIVMLogViewerWidget::sltWrapLines);
+            connect(m_pOptionsPanel, &UIVMLogViewerOptionsPanel::sigChangeFontSizeInPoints, this, &UIVMLogViewerWidget::sltFontSizeChanged);
+            connect(m_pOptionsPanel, &UIVMLogViewerOptionsPanel::sigChangeFont, this, &UIVMLogViewerWidget::sltChangeFont);
+            connect(m_pOptionsPanel, &UIVMLogViewerOptionsPanel::sigResetToDefaults, this, &UIVMLogViewerWidget::sltResetOptionsToDefault);
+            m_panelActionMap.insert(m_pOptionsPanel, m_pActionPool->action(UIActionIndex_M_Log_T_Options));
 
             /* Add into layout: */
-            m_pMainLayout->addWidget(m_pSettingsPanel);
+            m_pMainLayout->addWidget(m_pOptionsPanel);
         }
     }
 }
@@ -571,7 +571,7 @@ void UIVMLogViewerWidget::prepareToolBar()
         m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_Log_T_Find));
         m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_Log_T_Filter));
         m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_Log_T_Bookmark));
-        m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_Log_T_Settings));
+        m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_Log_T_Options));
         m_pToolBar->addSeparator();
         m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_Log_S_Refresh));
 
@@ -589,7 +589,7 @@ void UIVMLogViewerWidget::prepareToolBar()
     }
 }
 
-void UIVMLogViewerWidget::loadSettings()
+void UIVMLogViewerWidget::loadOptions()
 {
     m_bWrapLines = gEDataManager->logViewerWrapLines();
     m_bShowLineNumbers = gEDataManager->logViewerShowLineNumbers();
@@ -598,15 +598,15 @@ void UIVMLogViewerWidget::loadSettings()
         m_font = loadedFont;
 }
 
-void UIVMLogViewerWidget::saveSettings()
+void UIVMLogViewerWidget::saveOptions()
 {
-    gEDataManager->setLogViweverSettings(m_font, m_bWrapLines, m_bShowLineNumbers);
+    gEDataManager->setLogViweverOptions(m_font, m_bWrapLines, m_bShowLineNumbers);
 }
 
 void UIVMLogViewerWidget::cleanup()
 {
-    /* Save settings: */
-    saveSettings();
+    /* Save options: */
+    saveOptions();
 }
 
 void UIVMLogViewerWidget::retranslateUi()

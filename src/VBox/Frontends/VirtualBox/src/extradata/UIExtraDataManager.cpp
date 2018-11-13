@@ -4493,7 +4493,7 @@ void UIExtraDataManager::setLogWindowGeometry(const QRect &geometry, bool fMaxim
     setExtraDataStringList(GUI_LogWindowGeometry, data);
 }
 
-void UIExtraDataManager::setLogViweverSettings(const QFont &font, bool wrapLines, bool showLineNumbers)
+void UIExtraDataManager::setLogViweverOptions(const QFont &font, bool wrapLines, bool showLineNumbers)
 {
     /* Serialize passed values: */
     QStringList data;
@@ -4512,12 +4512,12 @@ void UIExtraDataManager::setLogViweverSettings(const QFont &font, bool wrapLines
         data << GUI_LogViewerShowLineNumbersDisabled;
 
     /* Re-cache corresponding extra-data: */
-    setExtraDataStringList(GUI_LogViewerSettings, data);
+    setExtraDataStringList(GUI_LogViewerOptions, data);
 }
 
 bool UIExtraDataManager::logViewerWrapLines()
 {
-    const QStringList data = extraDataStringList(GUI_LogViewerSettings);
+    const QStringList data = extraDataStringList(GUI_LogViewerOptions);
     for (int i = 0; i < data.size(); ++i)
     {
         if (data[i] == GUI_LogViewerWrapLinesEnabled)
@@ -4528,7 +4528,7 @@ bool UIExtraDataManager::logViewerWrapLines()
 
 bool UIExtraDataManager::logViewerShowLineNumbers()
 {
-    const QStringList data = extraDataStringList(GUI_LogViewerSettings);
+    const QStringList data = extraDataStringList(GUI_LogViewerOptions);
     for (int i = 0; i < data.size(); ++i)
     {
         if (data[i] == GUI_LogViewerShowLineNumbersDisabled)
@@ -4539,7 +4539,7 @@ bool UIExtraDataManager::logViewerShowLineNumbers()
 
 QFont UIExtraDataManager::logViewerFont()
 {
-    const QStringList data = extraDataStringList(GUI_LogViewerSettings);
+    const QStringList data = extraDataStringList(GUI_LogViewerOptions);
     if (data.size() < 3)
         return QFont();
     QString strFamily = data[0];

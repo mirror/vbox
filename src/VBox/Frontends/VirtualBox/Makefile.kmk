@@ -808,9 +808,9 @@ ifndef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/logviewer/UIVMLogViewerBookmarksPanel.h \
 	src/logviewer/UIVMLogViewerDialog.h \
 	src/logviewer/UIVMLogViewerFilterPanel.h \
+	src/logviewer/UIVMLogViewerOptionsPanel.h \
 	src/logviewer/UIVMLogViewerPanel.h \
 	src/logviewer/UIVMLogViewerSearchPanel.h \
-	src/logviewer/UIVMLogViewerSettingsPanel.h \
 	src/logviewer/UIVMLogViewerTextEdit.h \
 	src/logviewer/UIVMLogViewerWidget.h \
 	src/medium/UIFDCreationDialog.h \
@@ -1099,9 +1099,9 @@ ifdef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/logviewer/UIVMLogViewerBookmarksPanel.h \
 	src/logviewer/UIVMLogViewerDialog.h \
 	src/logviewer/UIVMLogViewerFilterPanel.h \
+	src/logviewer/UIVMLogViewerOptionsPanel.h \
 	src/logviewer/UIVMLogViewerPanel.h \
 	src/logviewer/UIVMLogViewerSearchPanel.h \
-	src/logviewer/UIVMLogViewerSettingsPanel.h \
 	src/logviewer/UIVMLogViewerTextEdit.h \
 	src/logviewer/UIVMLogViewerWidget.h \
 	src/medium/UIFDCreationDialog.h \
@@ -1520,9 +1520,9 @@ ifndef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/logviewer/UIVMLogViewerBookmarksPanel.cpp \
 	src/logviewer/UIVMLogViewerDialog.cpp \
 	src/logviewer/UIVMLogViewerFilterPanel.cpp \
+	src/logviewer/UIVMLogViewerOptionsPanel.cpp \
 	src/logviewer/UIVMLogViewerPanel.cpp \
 	src/logviewer/UIVMLogViewerSearchPanel.cpp \
-	src/logviewer/UIVMLogViewerSettingsPanel.cpp \
 	src/logviewer/UIVMLogViewerTextEdit.cpp \
 	src/logviewer/UIVMLogViewerWidget.cpp \
 	src/medium/UIFDCreationDialog.cpp \
@@ -1863,9 +1863,9 @@ ifdef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/logviewer/UIVMLogViewerBookmarksPanel.cpp \
 	src/logviewer/UIVMLogViewerDialog.cpp \
 	src/logviewer/UIVMLogViewerFilterPanel.cpp \
+	src/logviewer/UIVMLogViewerOptionsPanel.cpp \
 	src/logviewer/UIVMLogViewerPanel.cpp \
 	src/logviewer/UIVMLogViewerSearchPanel.cpp \
-	src/logviewer/UIVMLogViewerSettingsPanel.cpp \
 	src/logviewer/UIVMLogViewerTextEdit.cpp \
 	src/logviewer/UIVMLogViewerWidget.cpp \
 	src/medium/UIFDCreationDialog.cpp \

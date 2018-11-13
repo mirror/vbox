@@ -681,7 +681,7 @@ void UIVirtualBoxManagerWidget::updateToolbar()
                     m_pToolBar->addAction(actionPool()->action(UIActionIndex_M_Log_T_Find));
                     m_pToolBar->addAction(actionPool()->action(UIActionIndex_M_Log_T_Filter));
                     m_pToolBar->addAction(actionPool()->action(UIActionIndex_M_Log_T_Bookmark));
-                    m_pToolBar->addAction(actionPool()->action(UIActionIndex_M_Log_T_Settings));
+                    m_pToolBar->addAction(actionPool()->action(UIActionIndex_M_Log_T_Options));
                     m_pToolBar->addAction(actionPool()->action(UIActionIndex_M_Log_S_Refresh));
                     m_pToolBar->addSeparator();
                     m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Settings));
