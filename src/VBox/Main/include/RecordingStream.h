@@ -173,8 +173,6 @@ protected:
     {
         /** File handle to use for writing. */
         RTFILE              hFile;
-        /** File name being used for this stream. */
-        Utf8Str             strName;
         /** Pointer to WebM writer instance being used. */
         WebMWriter         *pWEBM;
     } File;

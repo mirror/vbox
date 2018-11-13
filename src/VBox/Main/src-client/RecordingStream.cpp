@@ -154,8 +154,8 @@ int RecordingStream::open(const settings::RecordingScreenSettings &Settings)
 
                 if (RT_SUCCESS(rc))
                 {
-                    this->File.hFile   = hFile;
-                    this->File.strName = pszFile;
+                    this->File.hFile = hFile;
+                    this->ScreenSettings.File.strName = pszFile;
                 }
             }
 
@@ -696,6 +696,10 @@ int RecordingStream::Init(RecordingContext *a_pCtx, uint32_t uScreen, const sett
  */
 int RecordingStream::initInternal(RecordingContext *a_pCtx, uint32_t uScreen, const settings::RecordingScreenSettings &Settings)
 {
+    this->pCtx           = a_pCtx;
+    this->uScreenID      = uScreen;
+    this->ScreenSettings = Settings;
+
     int rc = parseOptionsString(Settings.strOptions);
     if (RT_FAILURE(rc))
         return rc;
@@ -729,6 +733,7 @@ int RecordingStream::initInternal(RecordingContext *a_pCtx, uint32_t uScreen, co
     {
         case RecordingDestination_File:
         {
+            Assert(this->ScreenSettings.File.strName.isNotEmpty());
             const char *pszFile = this->ScreenSettings.File.strName.c_str();
 
             AssertPtr(File.pWEBM);
@@ -810,12 +815,9 @@ int RecordingStream::initInternal(RecordingContext *a_pCtx, uint32_t uScreen, co
 
     if (RT_SUCCESS(rc))
     {
-        this->pCtx           = a_pCtx;
-        this->enmState       = RECORDINGSTREAMSTATE_INITIALIZED;
-        this->fEnabled       = true;
-        this->uScreenID      = uScreen;
-        this->tsStartMs      = RTTimeMilliTS();
-        this->ScreenSettings = Settings;
+        this->enmState  = RECORDINGSTREAMSTATE_INITIALIZED;
+        this->fEnabled  = true;
+        this->tsStartMs = RTTimeMilliTS();
     }
     else
     {
