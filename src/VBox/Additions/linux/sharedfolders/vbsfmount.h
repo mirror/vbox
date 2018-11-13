@@ -58,6 +58,7 @@ struct vbsf_mount_info_new {
 	int fmode;		/* mode for regular files if != 0xffffffff */
 	int dmask;		/* umask applied to directories */
 	int fmask;		/* umask applied to regular files */
+	char tag[32];		/**< Mount tag for VBoxService automounter.  @since 6.0 */
 };
 
 struct vbsf_mount_opts {

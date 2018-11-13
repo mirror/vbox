@@ -168,6 +168,9 @@ static bool             g_fHostSupportsWaitAndInfoQuery = false;
 #ifdef RT_OS_OS2
 /** The attachment tag we use to identify attchments that belongs to us. */
 static char const       g_szTag[] = "VBoxAutomounter";
+#elif defined(RT_OS_LINUX)
+/** Tag option value that lets us identify mounts that belongs to us. */
+static char const       g_szTag[] = "VBoxAutomounter";
 #elif defined(RT_OS_SOLARIS)
 /** Dummy mount option that lets us identify mounts that belongs to us. */
 static char const       g_szTag[] = ",VBoxService=auto";
@@ -432,6 +435,7 @@ static int vbsvcAutoMountSharedFolderOld(const char *pszShareName, const char *p
         mntinf.fmode = Opts.fmode;
         mntinf.dmask = Opts.dmask;
         mntinf.fmask = Opts.fmask;
+        mntinf.tag[0] = '\0';
 
         strcpy(mntinf.name, pszShareName);
         strcpy(mntinf.nls_name, "\0");
@@ -957,22 +961,16 @@ static int vbsvcAutomounterPopulateTable(PVBSVCAUTOMOUNTERTABLE pMountTable)
      * and device/share.  We identify our mounts by mount path + prefix for now,
      * but later we may use the same approach as on solaris.
      */
-    char szMountPrefix[RTPATH_MAX];
-    rc = vbsvcAutomounterQueryMountDirAndPrefix(szMountPrefix, sizeof(szMountPrefix));
-    AssertRCReturn(rc, rc);
-    size_t const cchMountPrefix = strlen(szMountPrefix);
-
-    FILE *pFile = setmntent(_PATH_MOUNTED, "r");
+    FILE *pFile = setmntent("/proc/mounts", "r");
+    if (!pFile)
+        pFile = setmntent("/etc/mtab", "r");
     if (pFile)
     {
         rc = VWRN_NOT_FOUND;
         struct mntent *pEntry;
         while ((pEntry = getmntent(pFile)) != NULL)
             if (strcmp(pEntry->mnt_type, "vboxsf") == 0)
-            {
-                /** @todo add mount option for tagging a mount, make kernel show it by
-                 *        implementing super_operations::show_options. */
-                if (strncmp(pEntry->mnt_dir, szMountPrefix, cchMountPrefix) == 0)
+                if (strstr(pEntry->mnt_opts, g_szTag) != NULL)
                 {
                     rc = vbsvcAutomounterAddEntry(pMountTable, pEntry->mnt_fsname, pEntry->mnt_dir);
                     if (RT_FAILURE(rc))
@@ -981,13 +979,11 @@ static int vbsvcAutomounterPopulateTable(PVBSVCAUTOMOUNTERTABLE pMountTable)
                         return rc;
                     }
                 }
-            }
         endmntent(pFile);
     }
     else
         VGSvcError("vbsvcAutomounterQueryMountPoint: Could not open mount tab '%s' (errno=%d) or '/proc/mounts' (errno=%d)\n",
                    _PATH_MOUNTED, errno);
-    return rc;
 
 #elif defined(RT_OS_SOLARIS)
     /*
@@ -1158,7 +1154,7 @@ static int vbsvcAutomounterQueryMountPoint(const char *pszMountPoint, const char
                         pszMountedName += sizeof("VBOX_") - 1;
                     if (RTStrICmp(pszMountedName, pszName) == 0)
                     {
-                        VGSvcVerbose(3, "vbsvcAutomounterQueryMountPoint: Found shared folder '%s' at '%s' as expected.\n",
+                        VGSvcVerbose(3, "vbsvcAutomounterQueryMountPoint: Found shared folder '%s' at '%s'.\n",
                                      pszMountPoint, pszName);
                         rc = VINF_SUCCESS;
                     }
@@ -1222,7 +1218,7 @@ static int vbsvcAutomounterQueryMountPoint(const char *pszMountPoint, const char
             const char *pszMountedName = &pszFsdName[uBuf.FsQueryBuf.cbFSDName + 1];
             if (RTStrICmp(pszMountedName, pszName) == 0)
             {
-                VGSvcVerbose(3, "vbsvcAutomounterQueryMountPoint: Found shared folder '%s' at '%s' as expected.\n",
+                VGSvcVerbose(3, "vbsvcAutomounterQueryMountPoint: Found shared folder '%s' at '%s'.\n",
                              pszMountPoint, pszName);
                 rc = VINF_SUCCESS;
             }
@@ -1254,10 +1250,10 @@ static int vbsvcAutomounterQueryMountPoint(const char *pszMountPoint, const char
      * Scan one of the mount table file for the mount point and then
      * match file system and device/share.
      */
-    FILE *pFile = setmntent(_PATH_MOUNTED, "r");
+    FILE *pFile = setmntent("/proc/mounts", "r");
     int rc = errno;
     if (!pFile)
-        pFile = setmntent("/proc/mounts", "r");
+        pFile = setmntent(_PATH_MOUNTED, "r");
     if (pFile)
     {
         rc = VWRN_NOT_FOUND;
@@ -1269,7 +1265,7 @@ static int vbsvcAutomounterQueryMountPoint(const char *pszMountPoint, const char
                 {
                     if (RTStrICmp(pEntry->mnt_fsname, pszName) == 0)
                     {
-                        VGSvcVerbose(3, "vbsvcAutomounterQueryMountPoint: Found shared folder '%s' at '%s' as expected.\n",
+                        VGSvcVerbose(3, "vbsvcAutomounterQueryMountPoint: Found shared folder '%s' at '%s'.\n",
                                      pszMountPoint, pszName);
                         rc = VINF_SUCCESS;
                     }
@@ -1292,8 +1288,8 @@ static int vbsvcAutomounterQueryMountPoint(const char *pszMountPoint, const char
     }
     else
     {
-        VGSvcError("vbsvcAutomounterQueryMountPoint: Could not open mount tab '%s' (errno=%d) or '/proc/mounts' (errno=%d)\n",
-                   _PATH_MOUNTED, rc, errno);
+        VGSvcError("vbsvcAutomounterQueryMountPoint: Could not open mount tab '/proc/mounts' (errno=%d) or '%s' (errno=%d)\n",
+                   rc, _PATH_MOUNTED, errno);
         rc = VERR_ACCESS_DENIED;
     }
     return rc;
@@ -1315,7 +1311,7 @@ static int vbsvcAutomounterQueryMountPoint(const char *pszMountPoint, const char
                 {
                     if (RTStrICmp(Entry.mnt_special, pszName) == 0)
                     {
-                        VGSvcVerbose(3, "vbsvcAutomounterQueryMountPoint: Found shared folder '%s' at '%s' as expected.\n",
+                        VGSvcVerbose(3, "vbsvcAutomounterQueryMountPoint: Found shared folder '%s' at '%s'.\n",
                                      pszMountPoint, pszName);
                         rc = VINF_SUCCESS;
                     }
@@ -1477,6 +1473,7 @@ static int vbsvcAutomounterMountIt(PVBSVCAUTOMOUNTERENTRY pEntry)
     MntInfo.fmode        = MntOpts.fmode = 0770;
     MntInfo.dmask        = MntOpts.dmask = 0000;
     MntInfo.fmask        = MntOpts.fmask = 0000;
+    memcpy(MntInfo.tag, g_szTag, sizeof(g_szTag)); AssertCompile(sizeof(MntInfo.tag) >= sizeof(g_szTag));
     rc = RTStrCopy(MntInfo.name, sizeof(MntInfo.name), pEntry->pszName);
     if (RT_FAILURE(rc))
     {
@@ -1494,11 +1491,10 @@ static int vbsvcAutomounterMountIt(PVBSVCAUTOMOUNTERENTRY pEntry)
 
         errno = 0;
         rc = vbsfmount_complete(pEntry->pszName, pEntry->pszActualMountPoint, fFlags, &MntOpts);
-        if (rc == 0)
-            return VINF_SUCCESS;
-
-        VGSvcError("vbsvcAutomounterMountIt: vbsfmount_complete failed: %s (%d/%d)\n",
-                   rc == 1 ? "open_memstream" : rc == 2 ? "setmntent" : rc == 3 ? "addmntent" : "unknown", rc, errno);
+        if (rc != 0) /* Ignorable. /etc/mtab is probably a link to /proc/mounts. */
+            VGSvcVerbose(1, "vbsvcAutomounterMountIt: vbsfmount_complete failed: %s (%d/%d)\n",
+                         rc == 1 ? "open_memstream" : rc == 2 ? "setmntent" : rc == 3 ? "addmntent" : "unknown", rc, errno);
+        return VINF_SUCCESS;
     }
     else if (errno == EINVAL)
         VGSvcError("vbsvcAutomounterMountIt: Failed to mount '%s' on '%s' because it is probably mounted elsewhere arleady! (%d,%d)\n",
@@ -1629,39 +1625,10 @@ static uint32_t vbsvcAutomounterMountNewEntry(PVBSVCAUTOMOUNTERTABLE pTable, uin
         /*
          * Path based #2: Mount dir + prefix + share.
          */
-        /* Mount base directory: */
-        szActualMountPoint[0] = '\0';
-        char *pszProp;
-        rc = VbglR3SharedFolderGetMountDir(&pszProp);
+        rc = vbsvcAutomounterQueryMountDirAndPrefix(szActualMountPoint, sizeof(szActualMountPoint));
         if (RT_SUCCESS(rc))
         {
-            if (*pszProp == '/')
-                rc = RTPathAbs(pszProp, szActualMountPoint, sizeof(szActualMountPoint));
-            else
-                VGSvcError("vbsvcAutomounterMountNewEntry: Invalid mount directory: '%s'\n", pszProp);
-            RTStrFree(pszProp);
-        }
-        if (RT_FAILURE(rc) || szActualMountPoint[0] != '/')
-            memcpy(szActualMountPoint, VBOXSERVICE_AUTOMOUNT_DEFAULT_DIR, sizeof(VBOXSERVICE_AUTOMOUNT_DEFAULT_DIR));
-
-        /* Add prefix: */
-        rc = VbglR3SharedFolderGetMountPrefix(&pszProp);
-        if (RT_SUCCESS(rc))
-        {
-            if (   strchr(pszProp, '/')  == NULL
-                && strchr(pszProp, '\\') == NULL
-                && strcmp(pszProp, "..") != 0)
-                rc = RTPathAppend(szActualMountPoint, sizeof(szActualMountPoint), pszProp);
-            else
-                VGSvcError("vbsvcAutomounterMountNewEntry: Invalid mount prefix: '%s'\n", pszProp);
-            RTStrFree(pszProp);
-        }
-        else
-            rc = RTPathEnsureTrailingSeparator(szActualMountPoint, sizeof(szActualMountPoint)) != 0
-               ? VINF_SUCCESS : VERR_BUFFER_OVERFLOW;
-        if (RT_SUCCESS(rc))
-        {
-            /* Add sanitized share name: */
+            /* Append a sanitized share name: */
             size_t const offShare = strlen(szActualMountPoint);
             size_t offDst = offShare;
             size_t offSrc = 0;
@@ -1823,7 +1790,15 @@ static int vbsvcAutomounterUnmount(const char *pszMountPoint, const char *pszNam
 #else
         int rc2 = umount(pszMountPoint);
         if (rc2 == 0)
+        {
+            /* Remove the mount directory if not directly under the root dir. */
+            RTPATHPARSED Parsed = { 0 };
+            RTPathParse(pszMountPoint, &Parsed, sizeof(Parsed), RTPATH_STR_F_STYLE_HOST);
+            if (Parsed.cComps >= 3)
+                RTDirRemove(pszMountPoint);
+
             return VINF_SUCCESS;
+        }
         rc2 = errno;
         VGSvcVerbose(2, "vbsvcAutomounterUnmount: umount failed on '%s' ('%s'): %d\n", pszMountPoint, pszName, rc2);
         if (rc2 != EBUSY && rc2 != EAGAIN)
@@ -1864,8 +1839,8 @@ static uint32_t vbsvcAutomounterUnmountEntry(PVBSVCAUTOMOUNTERTABLE pTable, uint
 {
     Assert(iTable < pTable->cEntries);
     PVBSVCAUTOMOUNTERENTRY pEntry = pTable->papEntries[iTable];
-    VGSvcVerbose(3, "vbsvcAutomounterUnmountEntry: #%u: '%s' at '%s' (reason: %s)\n",
-                 iTable, pEntry->pszName, pEntry->pszMountPoint, pszReason);
+    VGSvcVerbose(2, "vbsvcAutomounterUnmountEntry: #%u: '%s' at '%s' (reason: %s)\n",
+                 iTable, pEntry->pszName, pEntry->pszActualMountPoint, pszReason);
 
     /*
      * Do we need to umount the entry?  Return if unmount fails and we .
@@ -1875,7 +1850,7 @@ static uint32_t vbsvcAutomounterUnmountEntry(PVBSVCAUTOMOUNTERTABLE pTable, uint
         int rc = vbsvcAutomounterUnmount(pEntry->pszActualMountPoint, pEntry->pszName);
         if (rc == VERR_TRY_AGAIN)
         {
-            VGSvcVerbose(2, "vbsvcAutomounterUnmountEntry: Keeping '%s' -> '%s' (VERR_TRY_AGAIN)\n",
+            VGSvcVerbose(1, "vbsvcAutomounterUnmountEntry: Keeping '%s' -> '%s' (VERR_TRY_AGAIN)\n",
                          pEntry->pszActualMountPoint, pEntry->pszName);
             return iTable + 1;
         }

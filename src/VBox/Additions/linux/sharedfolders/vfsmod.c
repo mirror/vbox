@@ -155,7 +155,7 @@ static int sf_glob_alloc(struct vbsf_mount_info_new *info,
 	sf_g->uid = info->uid;
 	sf_g->gid = info->gid;
 
-	if ((unsigned)info->length >= sizeof(struct vbsf_mount_info_new)) {
+	if ((unsigned)info->length >= RT_UOFFSETOF(struct vbsf_mount_info_new, tag)) {
 		/* new fields */
 		sf_g->dmode = info->dmode;
 		sf_g->fmode = info->fmode;
@@ -164,6 +164,14 @@ static int sf_glob_alloc(struct vbsf_mount_info_new *info,
 	} else {
 		sf_g->dmode = ~0;
 		sf_g->fmode = ~0;
+	}
+
+	if ((unsigned)info->length >= sizeof(struct vbsf_mount_info_new)) {
+		AssertCompile(sizeof(sf_g->tag) >= sizeof(info->tag));
+		memcpy(sf_g->tag, info->tag, sizeof(info->tag));
+		sf_g->tag[sizeof(sf_g->tag) - 1] = '\0';
+	} else {
+		sf_g->tag[0] = '\0';
 	}
 
 	*sf_gp = sf_g;
@@ -456,10 +464,22 @@ static int sf_remount_fs(struct super_block *sb, int *flags, char *data)
 			sf_g->uid = info->uid;
 			sf_g->gid = info->gid;
 			sf_g->ttl = info->ttl;
-			sf_g->dmode = info->dmode;
-			sf_g->fmode = info->fmode;
-			sf_g->dmask = info->dmask;
-			sf_g->fmask = info->fmask;
+			if ((unsigned)info->length >= RT_UOFFSETOF(struct vbsf_mount_info_new, tag)) {
+				sf_g->dmode = info->dmode;
+				sf_g->fmode = info->fmode;
+				sf_g->dmask = info->dmask;
+				sf_g->fmask = info->fmask;
+			} else {
+				sf_g->dmode = ~0;
+				sf_g->fmode = ~0;
+			}
+			if ((unsigned)info->length >= sizeof(struct vbsf_mount_info_new)) {
+				AssertCompile(sizeof(sf_g->tag) >= sizeof(info->tag));
+				memcpy(sf_g->tag, info->tag, sizeof(info->tag));
+				sf_g->tag[sizeof(sf_g->tag) - 1] = '\0';
+			} else {
+				sf_g->tag[0] = '\0';
+			}
 		}
 	}
 
@@ -478,6 +498,31 @@ static int sf_remount_fs(struct super_block *sb, int *flags, char *data)
 #endif
 }
 
+/** Show mount options. */
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 3, 0)
+static int sf_show_options(struct seq_file *m, struct vfsmount *mnt)
+#else
+static int sf_show_options(struct seq_file *m, struct dentry *root)
+#endif
+{
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 3, 0)
+	struct super_block *sb = mnt->mnt_sb;
+#else
+	struct super_block *sb = root->d_sb;
+#endif
+	struct sf_glob_info *sf_g = GET_GLOB_INFO(sb);
+	if (sf_g) {
+		seq_printf(m, ",uid=%u,gid=%u,ttl=%u,dmode=0%o,fmode=0%o,dmask=0%o,fmask=0%o",
+			sf_g->uid, sf_g->gid, sf_g->ttl, sf_g->dmode, sf_g->fmode, sf_g->dmask, sf_g->fmask);
+		if (sf_g->tag[0] != '\0') {
+			seq_puts(m, ",tag=");
+			seq_escape(m, sf_g->tag, " \t\n\\");
+		}
+	}
+
+    return 0;
+}
+
 /** @todo Implement show_options (forever) or maybe set s_options (2.6.25+).
  *        Necessary for the automounter tagging.  */
 static struct super_operations sf_super_ops = {
@@ -491,7 +536,8 @@ static struct super_operations sf_super_ops = {
 #endif
 	.put_super = sf_put_super,
 	.statfs = sf_statfs,
-	.remount_fs = sf_remount_fs
+	.remount_fs = sf_remount_fs,
+	.show_options = sf_show_options
 };
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 0)

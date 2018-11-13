@@ -57,6 +57,7 @@ struct sf_glob_info {
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
 	struct backing_dev_info bdi;
 #endif
+	char tag[32];		/**< Mount tag for VBoxService automounter.  @since 6.0 */
 };
 
 /* per-inode information */
