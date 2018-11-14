@@ -51,6 +51,9 @@
 
 #ifdef RT_OS_WINDOWS
 #elif defined(RT_OS_OS2)
+# define INCL_DOSFILEMGR
+# define INCL_ERRORS
+# include <os2emx.h>
 #else
 # include <errno.h>
 # include <grp.h>
@@ -1416,7 +1419,7 @@ static int vbsvcAutomounterMountIt(PVBSVCAUTOMOUNTERENTRY pEntry)
         szzNameAndTag[cchName] = '\0';
         memcpy(&szzNameAndTag[cchName + 1], g_szTag, sizeof(g_szTag));
 
-        APIRET rc = DosFSAttach(pEntry->pszActualMountPoint, "VBOXSF", szzNameAndTag, cchName + 1 + sizeof(g_szzTag), FS_ATTACH);
+        APIRET rc = DosFSAttach(pEntry->pszActualMountPoint, "VBOXSF", szzNameAndTag, cchName + 1 + sizeof(g_szTag), FS_ATTACH);
         if (rc == NO_ERROR)
         {
             VGSvcVerbose(0, "vbsvcAutomounterMountIt: Successfully mounted '%s' on '%s'\n",

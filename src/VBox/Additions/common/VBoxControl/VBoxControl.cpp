@@ -39,6 +39,14 @@
 #ifdef VBOX_WITH_GUEST_PROPS
 # include <VBox/HostServices/GuestPropertySvc.h>
 #endif
+#ifdef VBOX_WITH_SHARED_FOLDERS
+# include <VBox/shflsvc.h>
+# ifdef RT_OS_OS2
+#  define INCL_ERRORS
+#  define INCL_DOSFILEMGR
+#  include <os2emx.h>
+# endif
+#endif
 #ifdef VBOX_WITH_DPC_LATENCY_CHECKER
 # include <VBox/VBoxGuest.h>
 # include "../VBoxGuest/lib/VBoxGuestR3LibInternal.h" /* HACK ALERT! Using vbglR3DoIOCtl directly!! */
@@ -145,9 +153,13 @@ static RTEXITCODE usage(enum VBoxControlUsage eWhich = USAGE_ALL)
     }
 #endif
 #ifdef VBOX_WITH_SHARED_FOLDERS
-    if (eWhich  == GUEST_SHAREDFOLDERS || eWhich == USAGE_ALL)
+    if (eWhich == GUEST_SHAREDFOLDERS || eWhich == USAGE_ALL)
     {
-        doUsage("list [-automount]", g_pszProgName, "sharedfolder");
+        doUsage("list [--automount]", g_pszProgName, "sharedfolder");
+# ifdef RT_OS_OS2
+        doUsage("use <drive> <folder>", g_pszProgName, "sharedfolder");
+        doUsage("unuse <drive>", g_pszProgName, "sharedfolder");
+# endif
     }
 #endif
 
@@ -234,7 +246,7 @@ static RTEXITCODE VBoxControlSyntaxError(const char *pszFormat, ...)
     va_start(va, pszFormat);
     RTMsgErrorV(pszFormat, va);
     va_end(va);
-    return RTEXITCODE_FAILURE;
+    return RTEXITCODE_SYNTAX;
 }
 
 #if defined(RT_OS_WINDOWS) && !defined(VBOX_CONTROL_TEST)
@@ -1590,9 +1602,10 @@ static DECLCALLBACK(RTEXITCODE) handleGuestProperty(int argc, char *argv[])
     usage(GUEST_PROP);
     return RTEXITCODE_FAILURE;
 }
-#endif
 
+#endif
 #ifdef VBOX_WITH_SHARED_FOLDERS
+
 /**
  * Lists the Shared Folders provided by the host.
  */
@@ -1602,8 +1615,7 @@ static RTEXITCODE listSharedFolders(int argc, char **argv)
     bool fOnlyShowAutoMount = false;
     if (argc == 1)
     {
-        if (   !strcmp(argv[0], "-automount")
-            || !strcmp(argv[0], "--automount"))
+        if (!strcmp(argv[0], "--automount"))
             fOnlyShowAutoMount = true;
         else
             fUsageOK = false;
@@ -1613,7 +1625,7 @@ static RTEXITCODE listSharedFolders(int argc, char **argv)
     if (!fUsageOK)
     {
         usage(GUEST_SHAREDFOLDERS);
-        return RTEXITCODE_FAILURE;
+        return RTEXITCODE_SYNTAX;
     }
 
     uint32_t u32ClientId;
@@ -1635,11 +1647,30 @@ static RTEXITCODE listSharedFolders(int argc, char **argv)
             for (uint32_t i = 0; i < cMappings; i++)
             {
                 char *pszName;
-                rc = VbglR3SharedFolderGetName(u32ClientId, paMappings[i].u32Root, &pszName);
+                char *pszMntPt;
+                uint64_t fFlags;
+                uint32_t uRootIdVer;
+                rc = VbglR3SharedFolderQueryFolderInfo(u32ClientId, paMappings[i].u32Root, 0,
+                                                       &pszName, &pszMntPt, &fFlags, &uRootIdVer);
                 if (RT_SUCCESS(rc))
                 {
-                    RTPrintf("%02u - %s\n", i + 1, pszName);
+                    RTPrintf("%02u - %s [idRoot=%u", i + 1, pszName, paMappings[i].u32Root);
+                    if (fFlags & SHFL_MIF_WRITABLE)
+                        RTPrintf(" writable");
+                    else
+                        RTPrintf(" readonly");
+                    if (fFlags & SHFL_MIF_AUTO_MOUNT)
+                        RTPrintf(" auto-mount");
+                    if (fFlags & SHFL_MIF_SYMLINK_CREATION)
+                        RTPrintf(" create-symlink");
+                    if (fFlags & SHFL_MIF_HOST_ICASE)
+                        RTPrintf(" host-icase");
+                    if (fFlags & SHFL_MIF_GUEST_ICASE)
+                        RTPrintf(" guest-icase");
+                    if (*pszMntPt)
+                        RTPrintf(" mnt-pt=%s", pszMntPt);
                     RTStrFree(pszName);
+                    RTStrFree(pszMntPt);
                 }
                 else
                     VBoxControlError("Error while getting the shared folder name for root node = %u, rc = %Rrc\n",
@@ -1655,6 +1686,71 @@ static RTEXITCODE listSharedFolders(int argc, char **argv)
     }
     return RT_SUCCESS(rc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }
+
+# ifdef RT_OS_OS2
+/**
+ * Attaches a shared folder to a drive letter.
+ */
+static RTEXITCODE sharedFolders_use(int argc, char **argv)
+{
+    /*
+     * Takes a drive letter and a share name as arguments.
+     */
+    if (argc != 2)
+        return VBoxControlSyntaxError("sharedfolders use: expected a drive letter and a shared folder name\n");
+
+    const char *pszDrive  = argv[0];
+    if (!RT_C_IS_ALPHA(pszDrive[0]) || pszDrive[1] != ':' || pszDrive[2] != '\0')
+        return VBoxControlSyntaxError("sharedfolders use: not a drive letter: %s\n", pszDrive);
+
+    const char *pszName   = argv[1];
+    size_t cchName = strlen(pszName);
+    if (cchName < 1)
+        return VBoxControlSyntaxError("sharedfolders use: shared folder name cannot be empty!\n");
+    if (cchName > 128)
+        return VBoxControlSyntaxError("sharedfolders use: shared folder name is too long! (%s)\n", pszName);
+
+    /*
+     * Do the attaching.
+     */
+    static const char s_szTag[] = "VBoxControl";
+    char    szzNameAndTag[256];
+    size_t  cchName = strlen(pEntry->pszName);
+    memcpy(szzNameAndTag, pEntry->pszName, cchName);
+    szzNameAndTag[cchName] = '\0';
+    memcpy(&szzNameAndTag[cchName + 1], s_szTag, sizeof(s_szTag));
+
+    APIRET rc = DosFSAttach(pEntry->pszActualMountPoint, "VBOXSF", szzNameAndTag, cchName + 1 + sizeof(s_szTag), FS_ATTACH);
+    if (rc == NO_ERROR)
+        return RTEXITCODE_SUCCESS;
+    return VBoxControlError("DosFSAttach/FS_ATTACH failed to attach '%s' to '%s': %u\n", pszName, pszDrive, rcOs2);
+}
+
+/**
+ * Detaches a shared folder from a drive letter.
+ */
+static RTEXITCODE sharedFolders_unuse(int argc, char **argv)
+{
+    /*
+     * Only takes a drive letter as argument.
+     */
+    if (argc != 1)
+        return VBoxControlSyntaxError("sharedfolders unuse: expected drive letter\n");
+    const char *pszDrive = argv[0];
+    if (!RT_C_IS_ALPHA(pszDrive[0]) || pszDrive[1] != ':' || pszDrive[2] != '\0')
+        return VBoxControlSyntaxError("sharedfolders unuse: not a drive letter: %s\n", pszDrive);
+
+    /*
+     * Do the detaching.
+     */
+    APIRET rcOs2 = DosFSAttach(pszDrive, "VBOXSF", NULL, 0, FS_DETACH);
+    if (rcOs2 == NO_ERROR)
+        return RTEXITCODE_SUCCESS;
+    return VBoxControlError("DosFSAttach/FS_DETACH failed on '%s': %u\n", pszDrive, rcOs2);
+}
+
+# endif /* RT_OS_OS2 */
+
 
 /**
  * Handles Shared Folders control.
@@ -1672,13 +1768,20 @@ static DECLCALLBACK(RTEXITCODE) handleSharedFolder(int argc, char *argv[])
     }
     if (!strcmp(argv[0], "list"))
         return listSharedFolders(argc - 1, argv + 1);
-    /* else */
+# ifdef RT_OS_OS2
+    if (!strcmp(argv[0], "use"))
+        return sharedFolders_use(argc - 1, argv + 1);
+    if (!strcmp(argv[0], "unuse"))
+        return sharedFolders_unuse(argc - 1, argv + 1);
+# endif
+
     usage(GUEST_SHAREDFOLDERS);
     return RTEXITCODE_FAILURE;
 }
-#endif
 
+#endif
 #if !defined(VBOX_CONTROL_TEST)
+
 /**
  * @callback_method_impl{FNVBOXCTRLCMDHANDLER, Command: writecoredump}
  */
@@ -1697,9 +1800,10 @@ static DECLCALLBACK(RTEXITCODE) handleWriteCoreDump(int argc, char *argv[])
         return RTEXITCODE_FAILURE;
     }
 }
-#endif
 
+#endif
 #ifdef VBOX_WITH_DPC_LATENCY_CHECKER
+
 /**
  * @callback_method_impl{FNVBOXCTRLCMDHANDLER, Command: help}
  */
