@@ -73,9 +73,8 @@ static bool vboxSfOs2IsUtf8Name8dot3(const char *pszName, size_t cchName, PRTUTF
         RTStrGetCpEx(&pszCursor, &uCp);
         if (uCp == '.')
         {
-            for (uint32_t cuc = 0; ; cuc++)
+            for (cuc = 0; ; cuc++)
             {
-                RTUNICP uCp;
                 RTStrGetCpEx(&pszCursor, &uCp);
                 if (!uCp)
                     break;
@@ -236,7 +235,7 @@ static APIRET vboxSfOs2ReadDirEntries(PVBOXSFFOLDER pFolder, PVBOXSFFS pFsFsd, P
      * If we're doing EAs, the buffer starts with an EAOP structure.
      */
     EAOP    EaOp;
-    PEAOP   pEaOpUser;
+    PEAOP   pEaOpUser = NULL; /* Shut up gcc */
     switch (uLevel)
     {
         case FI_LVL_EAS_FROM_LIST:

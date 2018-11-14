@@ -879,7 +879,7 @@ static APIRET vboxSfOs2Detach(PCSZ pszDev, PVBOXSFVP pVpFsd, PVBOXSFCD pCdFsd, P
             AssertMsg(cRefs < _32K, ("%#x\n", cRefs));
             if (cRefs)
             {
-                /* If there are no zero drives, unlink it from the list and release
+                /* If there are now zero drives, unlink it from the list and release
                    the list reference.  This should almost always drop end up with us
                    destroying the folder.*/
                 if (cDrives == 0)
@@ -896,6 +896,7 @@ static APIRET vboxSfOs2Detach(PCSZ pszDev, PVBOXSFVP pVpFsd, PVBOXSFCD pCdFsd, P
                 LogRel(("vboxSfOs2Detach: cRefs=0?!?\n"));
                 vboxSfOs2DestroyFolder(pFolder);
             }
+            rc = NO_ERROR;
         }
         else
         {
@@ -1135,7 +1136,7 @@ FS32_FSINFO(ULONG fFlags, USHORT hVpb, PBYTE pbData, ULONG cbData, ULONG uLevel)
             }
             else
             {
-                LogRel(("FS32_FSINFO: VbglR0SfFsInfo/SHFL_INFO_VOLUME failed: %Rrc\n", rc));
+                LogRel(("FS32_FSINFO: VbglR0SfFsInfo/SHFL_INFO_VOLUME failed: %Rrc\n", vrc));
                 rc = ERROR_GEN_FAILURE;
             }
 
@@ -1458,7 +1459,7 @@ FS32_DELETE(PCDFSI pCdFsi, PVBOXSFCD pCdFsd, PCSZ pszFile, LONG offCurDirEnd)
         LogFlow(("FS32_DELETE: VbglR0SfRemove -> %Rrc\n", rc));
         if (RT_SUCCESS(vrc))
             rc = NO_ERROR;
-        else if (rc == VERR_FILE_NOT_FOUND)
+        else if (vrc == VERR_FILE_NOT_FOUND)
             rc = vboxSfOs2ConvertStatusToOs2(vrc, ERROR_ACCESS_DENIED);
 
         vboxSfOs2ReleasePathAndFolder(pStrFolderPath, pFolder);
@@ -1757,7 +1758,7 @@ APIRET vboxSfOs2MakeEmptyEaListEx(PEAOP pEaOp, ULONG uLevel, uint32_t *pcbWritte
                     break;
                 pbSrc++;
                 cbGetEasLeft--;
-                if (cbName + 1 > cbGetEasLeft)
+                if (cbName + 1U > cbGetEasLeft)
                 {
                     cbDstList = pbSrc - 1 - (uint8_t *)pEaOp->fpGEAList;
                     rc = KernCopyOut(poffError, &cbDstList, sizeof(pEaOp->oError));
@@ -2005,7 +2006,7 @@ static APIRET vboxSfOs2QueryPathInfo(PVBOXSFFOLDER pFolder, PSHFLSTRING pStrFold
             }
         }
         else
-            rc = vboxSfOs2ConvertStatusToOs2(rc, ERROR_FILE_NOT_FOUND);
+            rc = vboxSfOs2ConvertStatusToOs2(vrc, ERROR_FILE_NOT_FOUND);
         VbglR0PhysHeapFree(pParams);
     }
     else

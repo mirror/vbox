@@ -37,6 +37,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #define INCL_BASE
+#define OS2EMX_PLAIN_CHAR
 #include <os2.h>
 
 
@@ -78,7 +79,7 @@ int vboxSfOs2UtilUse(int argc, char **argv)
     { /* likely */ }
     else
     {
-        fprintf(stderr, "syntax error: Shared folder name '%s' is too %s!\n", cchFolder >= 1 ? "long" : "short");
+        fprintf(stderr, "syntax error: Shared folder name '%s' is too %s!\n", pszFolder, cchFolder >= 1 ? "long" : "short");
         return 2;
     }
 
@@ -91,7 +92,7 @@ int vboxSfOs2UtilUse(int argc, char **argv)
         printf("done\n");
         return 0;
     }
-    fprintf(stderr, "error: DosFSAttach failed: %u\n", rc);
+    fprintf(stderr, "error: DosFSAttach failed: %lu\n", rc);
     return 1;
 }
 
@@ -122,12 +123,14 @@ int vboxSfOs2UtilQPathInfo(int argc, char **argv)
         memset(&u, 0xaa, sizeof(u));
         rc = DosQueryPathInfo(argv[i], FIL_STANDARD, &u.Lvl1r1, sizeof(u.Lvl1r1));
         printf("%s: FIL_STANDARD/%#x -> %u\n", argv[i], sizeof(u.Lvl1r1), rc);
+#define D(x) (*(uint16_t *)&(x))
+#define T(x) (*(uint16_t *)&(x))
         if (rc == NO_ERROR)
         {
             printf("  Lvl1r1: creation=%u:%u write=%u:%u access=%u:%u\n",
-                   u.Lvl1r1.fdateCreation, u.Lvl1r1.ftimeCreation,  u.Lvl1r1.fdateLastWrite, u.Lvl1r1.ftimeLastWrite,
-                   u.Lvl1r1.fdateLastAccess, u.Lvl1r1.ftimeLastAccess);
-            printf("  Lvl1r1:  attrib=%#x size=%u alloc=%u\n", u.Lvl1r1.attrFile, u.Lvl1r1.cbFile, u.Lvl1r1.cbFileAlloc);
+                   D(u.Lvl1r1.fdateCreation), T(u.Lvl1r1.ftimeCreation),  D(u.Lvl1r1.fdateLastWrite), T(u.Lvl1r1.ftimeLastWrite),
+                   D(u.Lvl1r1.fdateLastAccess), T(u.Lvl1r1.ftimeLastAccess));
+            printf("  Lvl1r1:  attrib=%#x size=%lu alloc=%lu\n", u.Lvl1r1.attrFile, u.Lvl1r1.cbFile, u.Lvl1r1.cbFileAlloc);
 
         }
 
@@ -137,9 +140,9 @@ int vboxSfOs2UtilQPathInfo(int argc, char **argv)
         if (rc == NO_ERROR)
         {
             printf("  Lvl1r3: creation=%u:%u write=%u:%u access=%u:%u\n",
-                   u.Lvl1r3.fdateCreation, u.Lvl1r3.ftimeCreation,  u.Lvl1r3.fdateLastWrite, u.Lvl1r3.ftimeLastWrite,
-                   u.Lvl1r3.fdateLastAccess, u.Lvl1r3.ftimeLastAccess);
-            printf("  Lvl1r3:  attrib=%#x size=%u alloc=%u\n", u.Lvl1r3.attrFile, u.Lvl1r3.cbFile, u.Lvl1r3.cbFileAlloc);
+                   D(u.Lvl1r3.fdateCreation), T(u.Lvl1r3.ftimeCreation), D(u.Lvl1r3.fdateLastWrite), T(u.Lvl1r3.ftimeLastWrite),
+                   D(u.Lvl1r3.fdateLastAccess), T(u.Lvl1r3.ftimeLastAccess));
+            printf("  Lvl1r3:  attrib=%#lx size=%lu alloc=%lu\n", u.Lvl1r3.attrFile, u.Lvl1r3.cbFile, u.Lvl1r3.cbFileAlloc);
 
         }
 
@@ -149,9 +152,9 @@ int vboxSfOs2UtilQPathInfo(int argc, char **argv)
         if (rc == NO_ERROR)
         {
             printf("   Lvl11: creation=%u:%u write=%u:%u access=%u:%u\n",
-                   u.Lvl11.fdateCreation, u.Lvl11.ftimeCreation,  u.Lvl11.fdateLastWrite, u.Lvl11.ftimeLastWrite,
-                   u.Lvl11.fdateLastAccess, u.Lvl11.ftimeLastAccess);
-            printf("   Lvl11:  attrib=%#x size=%llu alloc=%llu\n", u.Lvl11.attrFile, u.Lvl11.cbFile, u.Lvl11.cbFileAlloc);
+                   D(u.Lvl11.fdateCreation), T(u.Lvl11.ftimeCreation), D(u.Lvl11.fdateLastWrite), T(u.Lvl11.ftimeLastWrite),
+                   D(u.Lvl11.fdateLastAccess), T(u.Lvl11.ftimeLastAccess));
+            printf("   Lvl11:  attrib=%#lx size=%llu alloc=%llu\n", u.Lvl11.attrFile, u.Lvl11.cbFile, u.Lvl11.cbFileAlloc);
         }
 
         memset(&u, 0xee, sizeof(u));
@@ -160,9 +163,9 @@ int vboxSfOs2UtilQPathInfo(int argc, char **argv)
         if (rc == NO_ERROR)
         {
             printf("    Lvl2: creation=%u:%u write=%u:%u access=%u:%u\n",
-                   u.Lvl2r2.fdateCreation, u.Lvl2r2.ftimeCreation,  u.Lvl2r2.fdateLastWrite, u.Lvl2r2.ftimeLastWrite,
-                   u.Lvl2r2.fdateLastAccess, u.Lvl2r2.ftimeLastAccess);
-            printf("    Lvl2:  attrib=%#x size=%u alloc=%u cbList=%#x\n",
+                   D(u.Lvl2r2.fdateCreation), T(u.Lvl2r2.ftimeCreation),  D(u.Lvl2r2.fdateLastWrite), T(u.Lvl2r2.ftimeLastWrite),
+                   D(u.Lvl2r2.fdateLastAccess), T(u.Lvl2r2.ftimeLastAccess));
+            printf("    Lvl2:  attrib=%#x size=%lu alloc=%lu cbList=%#lx\n",
                    u.Lvl2r2.attrFile, u.Lvl2r2.cbFile, u.Lvl2r2.cbFileAlloc, u.Lvl2r4.cbList);
         }
 
@@ -172,9 +175,9 @@ int vboxSfOs2UtilQPathInfo(int argc, char **argv)
         if (rc == NO_ERROR)
         {
             printf("    Lvl2: creation=%u:%u write=%u:%u access=%u:%u\n",
-                   u.Lvl2r4.fdateCreation, u.Lvl2r4.ftimeCreation,  u.Lvl2r4.fdateLastWrite, u.Lvl2r4.ftimeLastWrite,
-                   u.Lvl2r4.fdateLastAccess, u.Lvl2r4.ftimeLastAccess);
-            printf("    Lvl2:  attrib=%#x size=%u alloc=%u cbList=%#x\n",
+                   D(u.Lvl2r4.fdateCreation), T(u.Lvl2r4.ftimeCreation),  D(u.Lvl2r4.fdateLastWrite), T(u.Lvl2r4.ftimeLastWrite),
+                   D(u.Lvl2r4.fdateLastAccess), T(u.Lvl2r4.ftimeLastAccess));
+            printf("    Lvl2:  attrib=%#lx size=%lu alloc=%lu cbList=%#lx\n",
                    u.Lvl2r4.attrFile, u.Lvl2r4.cbFile, u.Lvl2r4.cbFileAlloc, u.Lvl2r4.cbList);
         }
 
@@ -184,9 +187,9 @@ int vboxSfOs2UtilQPathInfo(int argc, char **argv)
         if (rc == NO_ERROR)
         {
             printf("   Lvl12: creation=%u:%u write=%u:%u access=%u:%u\n",
-                   u.Lvl12.fdateCreation, u.Lvl12.ftimeCreation,  u.Lvl12.fdateLastWrite, u.Lvl12.ftimeLastWrite,
-                   u.Lvl12.fdateLastAccess, u.Lvl12.ftimeLastAccess);
-            printf("   Lvl12:  attrib=%#x size=%llu alloc=%llu cbList=%#x\n",
+                   D(u.Lvl12.fdateCreation), T(u.Lvl12.ftimeCreation),  D(u.Lvl12.fdateLastWrite), T(u.Lvl12.ftimeLastWrite),
+                   D(u.Lvl12.fdateLastAccess), T(u.Lvl12.ftimeLastAccess));
+            printf("   Lvl12:  attrib=%#lx size=%llu alloc=%llu cbList=%#lx\n",
                    u.Lvl12.attrFile, u.Lvl12.cbFile, u.Lvl12.cbFileAlloc, u.Lvl12.cbList);
         }
 
@@ -236,7 +239,7 @@ int vboxSfOs2UtilQPathInfo(int argc, char **argv)
             ULONG oNext;
             BYTE  cchName;
             char  szName[10];
-        } Gea2List, const Gea2ListOrg = { sizeof(Gea2List), 0, sizeof(".LONGNAME") - 1, ".LONGNAME" };
+        } Gea2List, Gea2ListOrg = { sizeof(Gea2List), 0, sizeof(".LONGNAME") - 1, ".LONGNAME" };
         EAOP2 EaOp;
         EaOp.fpGEA2List = (PGEA2LIST)memcpy(&Gea2List, &Gea2ListOrg, sizeof(Gea2List));
         EaOp.fpFEA2List = &u.FeaList;
@@ -246,7 +249,7 @@ int vboxSfOs2UtilQPathInfo(int argc, char **argv)
         rc = DosQueryPathInfo(argv[i], FIL_QUERYEASFROMLIST, &EaOp, sizeof(EaOp));
         printf("%s: FIL_QUERYEASFROMLIST -> %u\n", argv[i], rc);
         if (rc == NO_ERROR)
-            printf("  Lvl3: FeaList.cbList=%#x oError=%#x\n", u.FeaList.cbList, EaOp.oError);
+            printf("  Lvl3: FeaList.cbList=%#lx oError=%#lx\n", u.FeaList.cbList, EaOp.oError);
 
         EaOp.fpGEA2List = (PGEA2LIST)memcpy(&Gea2List, &Gea2ListOrg, sizeof(Gea2List));
         EaOp.fpFEA2List = &u.FeaList;
@@ -265,7 +268,7 @@ int vboxSfOs2UtilQPathInfo(int argc, char **argv)
         rc = DosQueryPathInfo(argv[i], 4, &EaOp, sizeof(EaOp));
         printf("%s: FIL_QUERYALLEAS/4 -> %u\n", argv[i], rc);
         if (rc == NO_ERROR)
-            printf("  Lvl4: FeaList.cbList=%#x oError=%#x\n", u.FeaList.cbList, EaOp.oError);
+            printf("  Lvl4: FeaList.cbList=%#lx oError=%#lx\n", u.FeaList.cbList, EaOp.oError);
 
         EaOp.fpGEA2List = (PGEA2LIST)memcpy(&Gea2List, &Gea2ListOrg, sizeof(Gea2List));
         EaOp.fpFEA2List = &u.FeaList;
@@ -284,7 +287,7 @@ int vboxSfOs2UtilQPathInfo(int argc, char **argv)
         rc = DosQueryPathInfo(argv[i], 8, &EaOp, sizeof(EaOp));
         printf("%s: FIL_QUERYALLEAS/8 -> %u\n", argv[i], rc);
         if (rc == NO_ERROR)
-            printf("  Lvl8: FeaList.cbList=%#x oError=%#x\n", u.FeaList.cbList, EaOp.oError);
+            printf("  Lvl8: FeaList.cbList=%#lx oError=%#lx\n", u.FeaList.cbList, EaOp.oError);
 
         EaOp.fpGEA2List = (PGEA2LIST)memcpy(&Gea2List, &Gea2ListOrg, sizeof(Gea2List));
         EaOp.fpFEA2List = &u.FeaList;
@@ -419,7 +422,7 @@ int vboxSfOs2UtilFindFile(int argc, char **argv)
             ULONG cMatches = cMaxMatches;
             memset(pbBuf, 0xf6, cbBuf);
             APIRET rc = DosFindFirst(pszArg, &hDir, fAttribs, pbBuf, cbBuf, &cMatches, uLevel);
-            printf("DosFindFirst -> %u hDir=%p cMatches=%#x\n", rc, hDir, cMatches);
+            printf("DosFindFirst -> %lu hDir=%#lx cMatches=%#lx\n", rc, hDir, cMatches);
             if (rc == NO_ERROR)
             {
                 do
@@ -433,7 +436,7 @@ int vboxSfOs2UtilFindFile(int argc, char **argv)
                             case FIL_STANDARD:
                             {
                                 PFILEFINDBUF3 pBuf = (PFILEFINDBUF3)pbTmp;
-                                printf("#%u: nx=%#x sz=%#x at=%#x nm=%#x:%s\n",
+                                printf("#%u: nx=%#lx sz=%#lx at=%#lx nm=%#x:%s\n",
                                        iMatch, pBuf->oNextEntryOffset, pBuf->cbFile, pBuf->attrFile, pBuf->cchName, pBuf->achName);
                                 if (strlen(pBuf->achName) != pBuf->cchName)
                                     printf("Bad name length!\n");
@@ -442,7 +445,7 @@ int vboxSfOs2UtilFindFile(int argc, char **argv)
                             case FIL_STANDARDL:
                             {
                                 PFILEFINDBUF3L pBuf = (PFILEFINDBUF3L)pbTmp;
-                                printf("#%u: nx=%#x sz=%#llx at=%#x nm=%#x:%s\n",
+                                printf("#%u: nx=%#lx sz=%#llx at=%#lx nm=%#x:%s\n",
                                        iMatch, pBuf->oNextEntryOffset, pBuf->cbFile, pBuf->attrFile, pBuf->cchName, pBuf->achName);
                                 if (strlen(pBuf->achName) != pBuf->cchName)
                                     printf("Bad name length!\n");
@@ -451,7 +454,7 @@ int vboxSfOs2UtilFindFile(int argc, char **argv)
                             case FIL_QUERYEASIZE:
                             {
                                 PFILEFINDBUF4 pBuf = (PFILEFINDBUF4)pbTmp;
-                                printf("#%u: nx=%#x sz=%#x at=%#x nm=%#x:%s\n",
+                                printf("#%u: nx=%#lx sz=%#lx at=%#lx nm=%#x:%s\n",
                                        iMatch, pBuf->oNextEntryOffset, pBuf->cbFile, pBuf->attrFile, pBuf->cchName, pBuf->achName);
                                 if (strlen(pBuf->achName) != pBuf->cchName)
                                     printf("Bad name length!\n");
@@ -460,7 +463,7 @@ int vboxSfOs2UtilFindFile(int argc, char **argv)
                             case FIL_QUERYEASIZEL:
                             {
                                 PFILEFINDBUF4L pBuf = (PFILEFINDBUF4L)pbTmp;
-                                printf("#%u: nx=%#x sz=%#llx at=%#x nm=%#x:%s\n",
+                                printf("#%u: nx=%#lx sz=%#llx at=%#lx nm=%#x:%s\n",
                                        iMatch, pBuf->oNextEntryOffset, pBuf->cbFile, pBuf->attrFile, pBuf->cchName, pBuf->achName);
                                 if (strlen(pBuf->achName) != pBuf->cchName)
                                     printf("Bad name length!\n");
@@ -476,11 +479,11 @@ int vboxSfOs2UtilFindFile(int argc, char **argv)
                     memset(pbBuf, 0xf6, cbBuf);
                     cMatches = cMaxMatches;
                     rc = DosFindNext(hDir, pbBuf, cbBuf, &cMatches);
-                    printf("DosFindNext -> %u hDir=%p cMatches=%#x\n", rc, hDir, cMatches);
+                    printf("DosFindNext -> %lu hDir=%#lx cMatches=%#lx\n", rc, hDir, cMatches);
                 } while (rc == NO_ERROR);
 
                 rc = DosFindClose(hDir);
-                printf("DosFindClose -> %u\n", rc);
+                printf("DosFindClose -> %lu\n", rc);
             }
         }
     }
@@ -493,7 +496,7 @@ static int vboxSfOs2UtilMkDir(int argc, char **argv)
     for (int i = 1; i < argc; i++)
     {
         APIRET rc = DosCreateDir(argv[i], NULL);
-        printf("DosCreateDir -> %u for '%s'\n", rc, argv[i]);
+        printf("DosCreateDir -> %lu for '%s'\n", rc, argv[i]);
     }
     return 0;
 }
@@ -516,7 +519,7 @@ int main(int argc, char **argv)
         if (strcmp(pszArg, "mkdir") == 0)
             return vboxSfOs2UtilMkDir(argc - i, argv + i);
 
-        fprintf(stderr,  "Unknown command/option: %u\n", pszArg);
+        fprintf(stderr,  "Unknown command/option: %s\n", pszArg);
         return 2;
     }
     fprintf(stderr,

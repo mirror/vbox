@@ -211,7 +211,7 @@ FS32_OPENCREATE(PCDFSI pCdFsi, PVBOXSFCD pCdFsd, PCSZ pszName, LONG offCurDirEnd
                     break;
             }
         }
-        else if (rc == VERR_ALREADY_EXISTS)
+        else if (vrc == VERR_ALREADY_EXISTS)
             rc = ERROR_ACCESS_DENIED;
         else
             rc = vboxSfOs2ConvertStatusToOs2(vrc, ERROR_PATH_NOT_FOUND);
@@ -747,7 +747,7 @@ FS32_READ(PSFFSI pSfFsi, PVBOXSFSYFI pSfFsd, PVOID pvData, PULONG pcb, ULONG fIo
                 {
                     *pcb = cbActual;
                     pSfFsi->sfi_positionl = offRead + cbActual;
-                    if (pSfFsi->sfi_sizel < offRead + cbActual)
+                    if ((uint64_t)pSfFsi->sfi_sizel < offRead + cbActual)
                         pSfFsi->sfi_sizel = offRead + cbActual;
                     pSfFsi->sfi_tstamp   |= ST_SREAD | ST_PREAD;
                     LogFlow(("FS32_READ: returns; cbActual=%#x sfi_positionl=%RI64 [copy]\n", cbActual, pSfFsi->sfi_positionl));
@@ -773,7 +773,7 @@ FS32_READ(PSFFSI pSfFsi, PVBOXSFSYFI pSfFsd, PVOID pvData, PULONG pcb, ULONG fIo
         AssertStmt(cbActual <= cbRead, cbActual = cbRead);
         *pcb = cbActual;
         pSfFsi->sfi_positionl = offRead + cbActual;
-        if (pSfFsi->sfi_sizel < offRead + cbActual)
+        if ((uint64_t)pSfFsi->sfi_sizel < offRead + cbActual)
             pSfFsi->sfi_sizel = offRead + cbActual;
         pSfFsi->sfi_tstamp   |= ST_SREAD | ST_PREAD;
         LogFlow(("FS32_READ: returns; cbActual=%#x sfi_positionl=%RI64 [direct]\n", cbActual, pSfFsi->sfi_positionl));
@@ -821,7 +821,7 @@ FS32_WRITE(PSFFSI pSfFsi, PVBOXSFSYFI pSfFsd, void const *pvData, PULONG pcb, UL
                     AssertStmt(cbActual <= cbWrite, cbActual = cbWrite);
                     *pcb = cbActual;
                     pSfFsi->sfi_positionl = offWrite + cbActual;
-                    if (pSfFsi->sfi_sizel < offWrite + cbActual)
+                    if ((uint64_t)pSfFsi->sfi_sizel < offWrite + cbActual)
                         pSfFsi->sfi_sizel = offWrite + cbActual;
                     pSfFsi->sfi_tstamp   |= ST_SWRITE | ST_PWRITE;
                     LogFlow(("FS32_READ: returns; cbActual=%#x sfi_positionl=%RI64 [copy]\n", cbActual, pSfFsi->sfi_positionl));
@@ -847,7 +847,7 @@ FS32_WRITE(PSFFSI pSfFsi, PVBOXSFSYFI pSfFsd, void const *pvData, PULONG pcb, UL
         AssertStmt(cbActual <= cbWrite, cbActual = cbWrite);
         *pcb = cbActual;
         pSfFsi->sfi_positionl = offWrite + cbActual;
-        if (pSfFsi->sfi_sizel < offWrite + cbActual)
+        if ((uint64_t)pSfFsi->sfi_sizel < offWrite + cbActual)
             pSfFsi->sfi_sizel = offWrite + cbActual;
         pSfFsi->sfi_tstamp   |= ST_SWRITE | ST_PWRITE;
         LogFlow(("FS32_READ: returns; cbActual=%#x sfi_positionl=%RI64 [direct]\n", cbActual, pSfFsi->sfi_positionl));
