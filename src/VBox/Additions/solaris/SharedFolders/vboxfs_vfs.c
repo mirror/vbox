@@ -502,14 +502,24 @@ sffs_unmount(vfs_t *vfsp, int flag, cred_t *cr)
 	 * forced unmount is not supported by this file system
 	 * and thus, ENOTSUP, is being returned.
 	 */
-	if (flag & MS_FORCE)
+	if (flag & MS_FORCE) {
+		LogFlowFunc(("sffs_unmount(MS_FORCE) returns ENOSUP\n"));
 		return (ENOTSUP);
+	}
+
+	/*
+	 * Mark the file system unmounted.
+	 */
+	vfsp->vfs_flag |= VFS_UNMOUNTED;
 
 	/*
 	 * Make sure nothing is still in use.
 	 */
-	if (sffs_purge(sffs) != 0)
+	if (sffs_purge(sffs) != 0) {
+		vfsp->vfs_flag &= ~VFS_UNMOUNTED;
+		LogFlowFunc(("sffs_unmount() returns EBUSY\n"));
 		return (EBUSY);
+	}
 
 	/*
 	 * Invoke Hypervisor unmount interface before proceeding
