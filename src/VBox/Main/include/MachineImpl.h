@@ -476,7 +476,7 @@ public:
         IsModified_SharedFolders        = 0x0400,
         IsModified_Snapshots            = 0x0800,
         IsModified_BandwidthControl     = 0x1000,
-        IsModified_Record               = 0x2000
+        IsModified_Recording            = 0x2000
     };
 
     /**

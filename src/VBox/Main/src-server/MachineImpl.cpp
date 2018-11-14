@@ -11726,7 +11726,7 @@ void Machine::i_rollback(bool aNotify)
     if (mBIOSSettings)
         mBIOSSettings->i_rollback();
 
-    if (mRecordingSettings && (mData->flModifications & IsModified_Record))
+    if (mRecordingSettings && (mData->flModifications & IsModified_Recording))
         mRecordingSettings->i_rollback();
 
     if (mVRDEServer && (mData->flModifications & IsModified_VRDEServer))

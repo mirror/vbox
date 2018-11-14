@@ -233,7 +233,7 @@ HRESULT RecordingSettings::setEnabled(BOOL enable)
         else
         {
             AutoWriteLock mlock(m->pMachine COMMA_LOCKVAL_SRC_POS);  // mParent is const, needs no locking
-            m->pMachine->i_setModified(Machine::IsModified_Record);
+            m->pMachine->i_setModified(Machine::IsModified_Recording);
 
             /* We need to indicate here that we just took the machine lock, as Machine::i_saveSettings() will
              * call i_commit(), which in turn also wants to lock the machine for writing. */
@@ -609,7 +609,7 @@ void RecordingSettings::i_onSettingsChanged(void)
     LogFlowThisFuncEnter();
 
     AutoWriteLock mlock(m->pMachine COMMA_LOCKVAL_SRC_POS);
-    m->pMachine->i_setModified(Machine::IsModified_Record);
+    m->pMachine->i_setModified(Machine::IsModified_Recording);
     mlock.release();
 
     LogFlowThisFuncLeave();
