@@ -1612,7 +1612,7 @@ static DECLCALLBACK(RTEXITCODE) handleGuestProperty(int argc, char *argv[])
 /**
  * Lists the Shared Folders provided by the host.
  */
-static RTEXITCODE listSharedFolders(int argc, char **argv)
+static RTEXITCODE sharedFolder_list(int argc, char **argv)
 {
     bool fUsageOK = true;
     bool fOnlyShowAutoMount = false;
@@ -1672,6 +1672,43 @@ static RTEXITCODE listSharedFolders(int argc, char **argv)
                         RTPrintf(" guest-icase");
                     if (*pszMntPt)
                         RTPrintf(" mnt-pt=%s", pszMntPt);
+                    RTPrintf("]");
+# ifdef RT_OS_OS2
+                    /* Show drive letters: */
+                    const char *pszOn = " on";
+                    for (char chDrive = 'A'; chDrive <= 'Z'; chDrive++)
+                    {
+                        char szDrive[4] = { chDrive, ':', '\0', '\0' };
+                        union
+                        {
+                            FSQBUFFER2  FsQueryBuf;
+                            char        achPadding[512];
+                        } uBuf;
+                        RT_ZERO(uBuf);
+                        ULONG cbBuf = sizeof(uBuf) - 2;
+                        APIRET rcOs2 = DosQueryFSAttach(szDrive, 0, FSAIL_QUERYNAME, &uBuf.FsQueryBuf, &cbBuf);
+                        if (rcOs2 == NO_ERROR)
+                        {
+                            const char *pszFsdName = (const char *)&uBuf.FsQueryBuf.szName[uBuf.FsQueryBuf.cbName + 1];
+                            if (   uBuf.FsQueryBuf.iType == FSAT_REMOTEDRV
+                                && RTStrICmpAscii(pszFsdName, "VBOXSF") == 0)
+                            {
+                                const char *pszMountedName = (const char *)&pszFsdName[uBuf.FsQueryBuf.cbFSDName + 1];
+                                if (RTStrICmp(pszMountedName, pszName) == 0)
+                                {
+                                    const char *pszTag = pszMountedName + strlen(pszMountedName) + 1; /* safe */
+                                    if (strcmp(pszTag, "VBoxAutomounter") == 0)
+                                        RTPrintf("%s %s*", pszOn, szDrive);
+                                    else
+                                        RTPrintf("%s %s", pszOn, szDrive);
+                                    pszOn = ",";
+                                }
+                            }
+                        }
+                    }
+# endif
+                    RTPrintf("\n");
+
                     RTStrFree(pszName);
                     RTStrFree(pszMntPt);
                 }
@@ -1694,26 +1731,26 @@ static RTEXITCODE listSharedFolders(int argc, char **argv)
 /**
  * Attaches a shared folder to a drive letter.
  */
-static RTEXITCODE sharedFolders_use(int argc, char **argv)
+static RTEXITCODE sharedFolder_use(int argc, char **argv)
 {
     /*
      * Takes a drive letter and a share name as arguments.
      */
     if (argc != 2)
-        return VBoxControlSyntaxError("sharedfolders use: expected a drive letter and a shared folder name\n");
+        return VBoxControlSyntaxError("sharedfolder use: expected a drive letter and a shared folder name\n");
 
     const char *pszDrive  = argv[0];
     if (!RT_C_IS_ALPHA(pszDrive[0]) || pszDrive[1] != ':' || pszDrive[2] != '\0')
-        return VBoxControlSyntaxError("sharedfolders use: not a drive letter: %s\n", pszDrive);
+        return VBoxControlSyntaxError("sharedfolder use: not a drive letter: %s\n", pszDrive);
 
     static const char s_szTag[] = "VBoxControl";
     char        szzNameAndTag[256];
     const char *pszName   = argv[1];
     size_t cchName = strlen(pszName);
     if (cchName < 1)
-        return VBoxControlSyntaxError("sharedfolders use: shared folder name cannot be empty!\n");
+        return VBoxControlSyntaxError("sharedfolder use: shared folder name cannot be empty!\n");
     if (cchName + 1 + sizeof(s_szTag) >= sizeof(szzNameAndTag))
-        return VBoxControlSyntaxError("sharedfolders use: shared folder name is too long! (%s)\n", pszName);
+        return VBoxControlSyntaxError("sharedfolder use: shared folder name is too long! (%s)\n", pszName);
 
     /*
      * Do the attaching.
@@ -1725,22 +1762,24 @@ static RTEXITCODE sharedFolders_use(int argc, char **argv)
     APIRET rcOs2 = DosFSAttach(pszDrive, "VBOXSF", szzNameAndTag, cchName + 1 + sizeof(s_szTag), FS_ATTACH);
     if (rcOs2 == NO_ERROR)
         return RTEXITCODE_SUCCESS;
+    if (rcOs2 == ERROR_INVALID_FSD_NAME)
+        return VBoxControlError("Shared folders IFS not installed?\n");
     return VBoxControlError("DosFSAttach/FS_ATTACH failed to attach '%s' to '%s': %u\n", pszName, pszDrive, rcOs2);
 }
 
 /**
  * Detaches a shared folder from a drive letter.
  */
-static RTEXITCODE sharedFolders_unuse(int argc, char **argv)
+static RTEXITCODE sharedFolder_unuse(int argc, char **argv)
 {
     /*
      * Only takes a drive letter as argument.
      */
     if (argc != 1)
-        return VBoxControlSyntaxError("sharedfolders unuse: expected drive letter\n");
+        return VBoxControlSyntaxError("sharedfolder unuse: expected drive letter\n");
     const char *pszDrive = argv[0];
     if (!RT_C_IS_ALPHA(pszDrive[0]) || pszDrive[1] != ':' || pszDrive[2] != '\0')
-        return VBoxControlSyntaxError("sharedfolders unuse: not a drive letter: %s\n", pszDrive);
+        return VBoxControlSyntaxError("sharedfolder unuse: not a drive letter: %s\n", pszDrive);
 
     /*
      * Do the detaching.
@@ -1769,12 +1808,12 @@ static DECLCALLBACK(RTEXITCODE) handleSharedFolder(int argc, char *argv[])
         return RTEXITCODE_FAILURE;
     }
     if (!strcmp(argv[0], "list"))
-        return listSharedFolders(argc - 1, argv + 1);
+        return sharedFolder_list(argc - 1, argv + 1);
 # ifdef RT_OS_OS2
     if (!strcmp(argv[0], "use"))
-        return sharedFolders_use(argc - 1, argv + 1);
+        return sharedFolder_use(argc - 1, argv + 1);
     if (!strcmp(argv[0], "unuse"))
-        return sharedFolders_unuse(argc - 1, argv + 1);
+        return sharedFolder_unuse(argc - 1, argv + 1);
 # endif
 
     usage(GUEST_SHAREDFOLDERS);
