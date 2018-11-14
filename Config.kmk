@@ -487,7 +487,7 @@ VBOX_WITH_INTERNAL_NETWORKING = 1
 # Enable vmsvga (svga2) graphics device variant, 2D part
 VBOX_WITH_VMSVGA = 1
 # Enable vmsvga (svga2) graphics device variant, 3D part
-if1of ($(KBUILD_TARGET), darwin win)
+if1of ($(KBUILD_TARGET), darwin win linux)
  VBOX_WITH_VMSVGA3D = 1
 endif
 # Enable Host Guest Shared Memory Interface.
