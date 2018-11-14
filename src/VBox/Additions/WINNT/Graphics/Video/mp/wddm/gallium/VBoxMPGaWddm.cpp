@@ -265,7 +265,7 @@ void GaAdapterStop(PVBOXMP_DEVEXT pDevExt)
 
         if (pGaDevExt->hw.pSvga)
         {
-            SvgaAdapterStop(pGaDevExt->hw.pSvga);
+            SvgaAdapterStop(pGaDevExt->hw.pSvga, &pDevExt->u.primary.DxgkInterface);
             pGaDevExt->hw.pSvga = NULL;
         }
 

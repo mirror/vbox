@@ -119,7 +119,8 @@ NTSTATUS SvgaAdapterStart(PVBOXWDDM_EXT_VMSVGA *ppSvga,
                           ULONG cbFIFO,
                           PHYSICAL_ADDRESS physIO,
                           ULONG cbIO);
-void SvgaAdapterStop(PVBOXWDDM_EXT_VMSVGA pSvga);
+void SvgaAdapterStop(PVBOXWDDM_EXT_VMSVGA pSvga,
+                     DXGKRNL_INTERFACE *pDxgkInterface);
 
 NTSTATUS SvgaQueryInfo(PVBOXWDDM_EXT_VMSVGA pSvga,
                        VBOXGAHWINFOSVGA *pSvgaInfo);
