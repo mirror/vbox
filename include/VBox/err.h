@@ -2876,19 +2876,31 @@
 #define VERR_NEM_IPE_9                              (-6899)
 /** @} */
 
-/** @name Audio / Video recording Status Codes
+/** @name Recording Status Codes
  * @{
  */
 /** Codec was not found. */
-#define VERR_AVREC_CODEC_NOT_FOUND                  (-6900)
+#define VERR_RECORDING_CODEC_NOT_FOUND              (-6900)
 /** Codec initialization failed. */
-#define VERR_AVREC_CODEC_INIT_FAILED                (-6902)
+#define VERR_RECORDING_CODEC_INIT_FAILED            (-6902)
 /** Codec is not supported. */
-#define VERR_AVREC_CODEC_NOT_SUPPORTED              (-6903)
+#define VERR_RECORDING_CODEC_NOT_SUPPORTED          (-6903)
 /** Format not supported by the codec. */
-#define VERR_AVREC_FORMAT_NOT_SUPPORTED             (-6904)
+#define VERR_RECORDING_FORMAT_NOT_SUPPORTED         (-6904)
 /** Recording is not possible due to a set restriction. */
-#define VERR_AVREC_RESTRICTED                       (-6905)
+#define VERR_RECORDING_RESTRICTED                   (-6905)
+/** Recording limit (time, size, ...) has been reached. */
+#define VINF_RECORDING_LIMIT_REACHED                (6906)
+/** Recording limit (time, size, ...) has been reached. */
+#define VERR_RECORDING_LIMIT_REACHED                (-6906)
+/** Recording has been throttled due to current settings.
+ *  This e.g. can happen when submitting more video frames than
+ *  the current FPS setting allows. */
+#define VINF_RECORDING_THROTTLED                    (6907)
+/** Recording has been throttled due to current settings.
+ *  This e.g. can happen when submitting more video frames than
+ *  the current FPS setting allows. */
+#define VERR_RECORDING_THROTTLED                    (-6907)
 /** @} */
 /* SED-END */
 

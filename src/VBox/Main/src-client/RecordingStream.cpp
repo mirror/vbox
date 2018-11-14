@@ -1032,7 +1032,7 @@ int RecordingStream::initVideoVPX(void)
     if (rcv != VPX_CODEC_OK)
     {
         LogRel(("Recording: Failed to get default config for VPX encoder: %s\n", vpx_codec_err_to_string(rcv)));
-        return VERR_AVREC_CODEC_INIT_FAILED;
+        return VERR_RECORDING_CODEC_INIT_FAILED;
     }
 
     /* Target bitrate in kilobits per second. */
@@ -1052,7 +1052,7 @@ int RecordingStream::initVideoVPX(void)
     if (rcv != VPX_CODEC_OK)
     {
         LogRel(("Recording: Failed to initialize VPX encoder: %s\n", vpx_codec_err_to_string(rcv)));
-        return VERR_AVREC_CODEC_INIT_FAILED;
+        return VERR_RECORDING_CODEC_INIT_FAILED;
     }
 
     if (!vpx_img_alloc(&pCodec->VPX.RawImage, VPX_IMG_FMT_I420,
