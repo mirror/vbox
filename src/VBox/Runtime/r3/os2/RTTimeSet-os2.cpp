@@ -81,7 +81,7 @@ RTDECL(int) RTTimeSet(PCRTTIMESPEC pTime)
         APIRET rc = DosSetDateTime(&DateTime);
         if (rc == NO_ERROR)
             return VINF_SUCCESS;
-        AssertRC(rc);
+        AssertMsgFailed(("rc=%u\n", rc));
         return RTErrConvertFromOS2(rc);
     }
     return VERR_INVALID_PARAMETER;
