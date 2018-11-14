@@ -53,6 +53,7 @@
 #elif defined(RT_OS_OS2)
 # define INCL_DOSFILEMGR
 # define INCL_ERRORS
+# define OS2EMX_PLAIN_CHAR
 # include <os2emx.h>
 #else
 # include <errno.h>
@@ -939,15 +940,15 @@ static int vbsvcAutomounterPopulateTable(PVBSVCAUTOMOUNTERTABLE pMountTable)
         } uBuf;
         RT_ZERO(uBuf);
         ULONG  cbBuf = sizeof(uBuf) - 2;
-        APIRET rcOs2 = DosQueryFSAttach(szMountPoint, 0, FSAIL_QUERYNAME, uBuf, &cbBuf);
+        APIRET rcOs2 = DosQueryFSAttach(szMountPoint, 0, FSAIL_QUERYNAME, &uBuf.FsQueryBuf, &cbBuf);
         if (rcOs2 == NO_ERROR)
         {
-            const char *pszFsdName = &uBuf.FsQueryBuf.szName[uBuf.FsQueryBuf.cbName + 1];
+            const char *pszFsdName = (const char *)&uBuf.FsQueryBuf.szName[uBuf.FsQueryBuf.cbName + 1];
             if (   uBuf.FsQueryBuf.iType == FSAT_REMOTEDRV
                 && RTStrICmpAscii(pszFsdName, "VBOXSF") == 0)
             {
-                const char *pszMountedName = &pszFsdName[uBuf.FsQueryBuf.cbFSDName + 1];
-                const char *pszTag         = strlen(pszMountedName) + 1; /* (Safe. Always two trailing zero bytes, see above.) */
+                const char *pszMountedName = (const char *)&pszFsdName[uBuf.FsQueryBuf.cbFSDName + 1];
+                const char *pszTag = pszMountedName + strlen(pszMountedName) + 1; /* (Safe. Always two trailing zero bytes, see above.) */
                 if (strcmp(pszTag, g_szTag) == 0)
                 {
                     rc = vbsvcAutomounterAddEntry(pMountTable, pszMountedName, szMountPoint);
@@ -1210,15 +1211,15 @@ static int vbsvcAutomounterQueryMountPoint(const char *pszMountPoint, const char
     RT_ZERO(uBuf);
 
     ULONG cbBuf = sizeof(uBuf);
-    APIRET rcOs2 = DosQueryFSAttach((PCSZ)pFsInfo->szMountpoint, 0, FSAIL_QUERYNAME, uBuf, &cbBuf);
+    APIRET rcOs2 = DosQueryFSAttach(pszMountPoint, 0, FSAIL_QUERYNAME, &uBuf.FsQueryBuf, &cbBuf);
     int rc;
     if (rcOs2 == NO_ERROR)
     {
-        const char *pszFsdName = &uBuf.FsQueryBuf.szName[uBuf.FsQueryBuf.cbName + 1];
+        const char *pszFsdName = (const char *)&uBuf.FsQueryBuf.szName[uBuf.FsQueryBuf.cbName + 1];
         if (   uBuf.FsQueryBuf.iType == FSAT_REMOTEDRV
             && RTStrICmpAscii(pszFsdName, "VBOXSF") == 0)
         {
-            const char *pszMountedName = &pszFsdName[uBuf.FsQueryBuf.cbFSDName + 1];
+            const char *pszMountedName = (const char *)&pszFsdName[uBuf.FsQueryBuf.cbFSDName + 1];
             if (RTStrICmp(pszMountedName, pszName) == 0)
             {
                 VGSvcVerbose(3, "vbsvcAutomounterQueryMountPoint: Found shared folder '%s' at '%s'.\n",
@@ -1431,7 +1432,7 @@ static int vbsvcAutomounterMountIt(PVBSVCAUTOMOUNTERENTRY pEntry)
     }
     else
         VGSvcError("vbsvcAutomounterMountIt: Share name for attach to '%s' is too long: %u chars - '%s'\n",
-                   pEntry->pszActualMountPoint, cchName, pEntry->pszName;
+                   pEntry->pszActualMountPoint, cchName, pEntry->pszName);
     return VERR_OPEN_FAILED;
 
 #else

@@ -136,7 +136,7 @@ VBoxService_SOURCES      += \
 endif
 
 ifdef VBOX_WITH_SHARED_FOLDERS
- if1of ($(KBUILD_TARGET), win linux solaris)
+ if1of ($(KBUILD_TARGET), linux os2 solaris win)
 VBoxService_DEFS         += VBOX_WITH_SHARED_FOLDERS
 VBoxService_SOURCES      += \
 	VBoxServiceAutoMount.cpp

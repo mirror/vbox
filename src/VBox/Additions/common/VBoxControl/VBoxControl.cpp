@@ -22,6 +22,8 @@
 #include <iprt/alloca.h>
 #include <iprt/cpp/autores.h>
 #include <iprt/buildconfig.h>
+#include <iprt/ctype.h>
+#include <iprt/err.h>
 #include <iprt/getopt.h>
 #include <iprt/initterm.h>
 #include <iprt/mem.h>
@@ -42,6 +44,7 @@
 #ifdef VBOX_WITH_SHARED_FOLDERS
 # include <VBox/shflsvc.h>
 # ifdef RT_OS_OS2
+#  define OS2EMX_PLAIN_CHAR
 #  define INCL_ERRORS
 #  define INCL_DOSFILEMGR
 #  include <os2emx.h>
@@ -1703,25 +1706,24 @@ static RTEXITCODE sharedFolders_use(int argc, char **argv)
     if (!RT_C_IS_ALPHA(pszDrive[0]) || pszDrive[1] != ':' || pszDrive[2] != '\0')
         return VBoxControlSyntaxError("sharedfolders use: not a drive letter: %s\n", pszDrive);
 
+    static const char s_szTag[] = "VBoxControl";
+    char        szzNameAndTag[256];
     const char *pszName   = argv[1];
     size_t cchName = strlen(pszName);
     if (cchName < 1)
         return VBoxControlSyntaxError("sharedfolders use: shared folder name cannot be empty!\n");
-    if (cchName > 128)
+    if (cchName + 1 + sizeof(s_szTag) >= sizeof(szzNameAndTag))
         return VBoxControlSyntaxError("sharedfolders use: shared folder name is too long! (%s)\n", pszName);
 
     /*
      * Do the attaching.
      */
-    static const char s_szTag[] = "VBoxControl";
-    char    szzNameAndTag[256];
-    size_t  cchName = strlen(pEntry->pszName);
-    memcpy(szzNameAndTag, pEntry->pszName, cchName);
+    memcpy(szzNameAndTag, pszName, cchName);
     szzNameAndTag[cchName] = '\0';
     memcpy(&szzNameAndTag[cchName + 1], s_szTag, sizeof(s_szTag));
 
-    APIRET rc = DosFSAttach(pEntry->pszActualMountPoint, "VBOXSF", szzNameAndTag, cchName + 1 + sizeof(s_szTag), FS_ATTACH);
-    if (rc == NO_ERROR)
+    APIRET rcOs2 = DosFSAttach(pszDrive, "VBOXSF", szzNameAndTag, cchName + 1 + sizeof(s_szTag), FS_ATTACH);
+    if (rcOs2 == NO_ERROR)
         return RTEXITCODE_SUCCESS;
     return VBoxControlError("DosFSAttach/FS_ATTACH failed to attach '%s' to '%s': %u\n", pszName, pszDrive, rcOs2);
 }
