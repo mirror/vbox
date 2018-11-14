@@ -3236,8 +3236,8 @@ int Display::i_crViewportNotify(ULONG aScreenId, ULONG x, ULONG y, ULONG width, 
     return i_crCtlSubmitSyncIfHasDataForScreen(aScreenId, &pData->Hdr, (uint32_t)cbData);
 }
 #endif
-
 #ifdef VBOX_WITH_CRHGSMI
+
 void Display::i_setupCrHgsmiData(void)
 {
     VMMDev *pVMMDev = mParent->i_getVMMDev();
@@ -3285,6 +3285,7 @@ void Display::i_destructCrHgsmiData(void)
     mhCrOglSvc = NULL;
     RTCritSectRwLeaveExcl(&mCrOglLock);
 }
+
 #endif /* VBOX_WITH_CRHGSMI */
 
 /**
@@ -4475,18 +4476,19 @@ DECLCALLBACK(void *)  Display::i_drvQueryInterface(PPDMIBASE pInterface, const c
 
 
 /**
- * Destruct a display driver instance.
- *
- * @returns VBox status code.
- * @param   pDrvIns     The driver instance data.
+ * @interface_method_impl{PDMDRVREG,pfnPowerOff,
+ *  Tries to ensure no client calls gets to HGCM or the VGA device from here on.}
  */
-DECLCALLBACK(void) Display::i_drvDestruct(PPDMDRVINS pDrvIns)
+DECLCALLBACK(void) Display::i_drvPowerOff(PPDMDRVINS pDrvIns)
 {
-    PDMDRV_CHECK_VERSIONS_RETURN_VOID(pDrvIns);
     PDRVMAINDISPLAY pThis = PDMINS_2_DATA(pDrvIns, PDRVMAINDISPLAY);
     LogRelFlowFunc(("iInstance=%d\n", pDrvIns->iInstance));
 
-    pThis->pUpPort->pfnSetRenderVRAM(pThis->pUpPort, false);
+    /*
+     * Do much of the work that i_drvDestruct does.
+     */
+    if (pThis->pUpPort)
+        pThis->pUpPort->pfnSetRenderVRAM(pThis->pUpPort, false);
 
     pThis->IConnector.pbData     = NULL;
     pThis->IConnector.cbScanline = 0;
@@ -4503,8 +4505,57 @@ DECLCALLBACK(void) Display::i_drvDestruct(PPDMDRVINS pDrvIns)
 #ifdef VBOX_WITH_CRHGSMI
         pThis->pDisplay->i_destructCrHgsmiData();
 #endif
-        pThis->pDisplay->mpDrv = NULL;
+#if defined(VBOX_WITH_VIDEOHWACCEL) || defined(VBOX_WITH_CRHGSMI)
+        pThis->pVBVACallbacks = NULL;
+#endif
     }
+}
+
+
+/**
+ * Destruct a display driver instance.
+ *
+ * @returns VBox status code.
+ * @param   pDrvIns     The driver instance data.
+ */
+DECLCALLBACK(void) Display::i_drvDestruct(PPDMDRVINS pDrvIns)
+{
+    PDMDRV_CHECK_VERSIONS_RETURN_VOID(pDrvIns);
+    PDRVMAINDISPLAY pThis = PDMINS_2_DATA(pDrvIns, PDRVMAINDISPLAY);
+    LogRelFlowFunc(("iInstance=%d\n", pDrvIns->iInstance));
+
+    /*
+     * We repeat much of what i_drvPowerOff does in case it wasn't called.
+     * In addition we sever the connection between us and the display.
+     */
+    if (pThis->pUpPort)
+        pThis->pUpPort->pfnSetRenderVRAM(pThis->pUpPort, false);
+
+    pThis->IConnector.pbData     = NULL;
+    pThis->IConnector.cbScanline = 0;
+    pThis->IConnector.cBits      = 32;
+    pThis->IConnector.cx         = 0;
+    pThis->IConnector.cy         = 0;
+
+    if (pThis->pDisplay)
+    {
+        AutoWriteLock displayLock(pThis->pDisplay COMMA_LOCKVAL_SRC_POS);
+#ifdef VBOX_WITH_RECORDING
+        pThis->pDisplay->mParent->i_recordingStop();
+#endif
+#ifdef VBOX_WITH_CRHGSMI
+        pThis->pDisplay->i_destructCrHgsmiData();
+#endif
+#if defined(VBOX_WITH_VIDEOHWACCEL) || defined(VBOX_WITH_CRHGSMI)
+        pThis->pVBVACallbacks = NULL;
+#endif
+
+        pThis->pDisplay->mpDrv = NULL;
+        pThis->pDisplay = NULL;
+    }
+#if defined(VBOX_WITH_VIDEOHWACCEL) || defined(VBOX_WITH_CRHGSMI)
+    pThis->pVBVACallbacks = NULL;
+#endif
 }
 
 
@@ -4656,7 +4707,7 @@ const PDMDRVREG Display::DrvReg =
     /* pfnDetach */
     NULL,
     /* pfnPowerOff */
-    NULL,
+    Display::i_drvPowerOff,
     /* pfnSoftReset */
     NULL,
     /* u32EndVersion */
