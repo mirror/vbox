@@ -20538,7 +20538,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   <interface
     name="ISharedFolder" extends="$unknown"
     uuid="cc98ec47-9555-42d6-671f-bb0093c052a7"
-    wsmap="struct"
+    wsmap="managed"
     reservedAttributes="4"
     >
     <desc>
