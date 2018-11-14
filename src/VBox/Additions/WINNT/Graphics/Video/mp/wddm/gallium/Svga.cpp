@@ -61,7 +61,6 @@ static NTSTATUS svgaHwInit(VBOXWDDM_EXT_VMSVGA *pSvga)
     }
 
     NTSTATUS Status = SvgaFifoInit(pSvga);
-
     if (NT_SUCCESS(Status))
     {
         /* Enable SVGA device. */
@@ -93,13 +92,14 @@ void SvgaAdapterStop(PVBOXWDDM_EXT_VMSVGA pSvga,
             pSvga->cbGMRBits = 0;
         }
 
-        /* Enable SVGA device. */
+        /* Disable SVGA device. */
         SVGARegWrite(pSvga, SVGA_REG_IRQMASK, 0);
         SVGARegWrite(pSvga, SVGA_REG_ENABLE, SVGA_REG_ENABLE_DISABLE);
 
         NTSTATUS Status = pDxgkInterface->DxgkCbUnmapMemory(pDxgkInterface->DeviceHandle,
                                                             (PVOID)pSvga->pu32FIFO);
         Assert(Status == STATUS_SUCCESS); RT_NOREF(Status);
+
         GaMemFree(pSvga);
     }
 }
