@@ -80,7 +80,8 @@ static mntopt_t sffs_options[] = {
 	{"dmask",	NULL,		NULL,	MO_HASVALUE,	NULL},
 	{"fmask",	NULL,		NULL,	MO_HASVALUE,	NULL},
 	{"stat_ttl",	NULL,		NULL,	MO_HASVALUE,	NULL},
-	{"fsync",	NULL,		NULL,	0,	        NULL}
+	{"fsync",	NULL,		NULL,	0,	        NULL},
+	{"tag", 	NULL,		NULL,	MO_HASVALUE,	NULL}
 };
 
 static mntopts_t sffs_options_table = {

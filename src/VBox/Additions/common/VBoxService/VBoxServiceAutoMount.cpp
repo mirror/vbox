@@ -173,7 +173,7 @@ static char const       g_szTag[] = "VBoxAutomounter";
 static char const       g_szTag[] = "VBoxAutomounter";
 #elif defined(RT_OS_SOLARIS)
 /** Dummy mount option that lets us identify mounts that belongs to us. */
-static char const       g_szTag[] = ",VBoxService=auto";
+static char const       g_szTag[] = "VBoxAutomounter";
 #endif
 
 
@@ -1513,7 +1513,7 @@ static int vbsvcAutomounterMountIt(PVBSVCAUTOMOUNTERENTRY pEntry)
      */
     char szOpts[MAX_MNTOPT_STR] = { '\0', };
     ssize_t cchOpts = RTStrPrintf2(szOpts, sizeof(szOpts),
-                                   "uid=0,gid=%d,dmode=0770,fmode=0770,dmask=0000,fmask=0000%s", gidMount, g_szTag);
+                                   "uid=0,gid=%d,dmode=0770,fmode=0770,dmask=0000,fmask=0000,tag=%s", gidMount, g_szTag);
     if (cchOpts <= 0)
     {
         VGSvcError("vbsvcAutomounterMountIt: szOpts overflow! %zd\n", cchOpts);
