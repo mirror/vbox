@@ -14101,7 +14101,7 @@ HRESULT SessionMachine::i_onVRDEServerChange(BOOL aRestart)
 /**
  * @note Locks this object for reading.
  */
-HRESULT SessionMachine::i_onRecordChange()
+HRESULT SessionMachine::i_onRecordingChange()
 {
     LogFlowThisFunc(("\n"));
 

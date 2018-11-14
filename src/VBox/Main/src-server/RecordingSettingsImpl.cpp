@@ -218,7 +218,7 @@ HRESULT RecordingSettings::setEnabled(BOOL enable)
         m->bd->fEnabled = fEnabled;
 
         alock.release();
-        rc = m->pMachine->i_onRecordChange();
+        rc = m->pMachine->i_onRecordingChange();
         if (FAILED(rc))
         {
             /*
