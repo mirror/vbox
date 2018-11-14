@@ -1,0 +1,73 @@
+# $Id$
+## @file
+# Sub-Makefile for VBoxSVGA hardware driver.
+#
+
+#
+# Copyright (C) 2016-2018 Oracle Corporation
+#
+# This file is part of VirtualBox Open Source Edition (OSE), as
+# available from http://www.virtualbox.org. This file is free software;
+# you can redistribute it and/or modify it under the terms of the GNU
+# General Public License (GPL) as published by the Free Software
+# Foundation, in version 2 as it comes in the "COPYING" file of the
+# VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+# hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+#
+
+SUB_DEPTH = ../../../../../..
+include $(KBUILD_PATH)/subheader.kmk
+
+DLLS += VBoxSVGA
+VBoxSVGA_TEMPLATE    = VBOXMESA3DGUESTR3DLLMinVista
+#  -wd4005: vcc120: '__useHeader' : macro redefinition
+#  -wd4100: unreferenced formal parameter
+#  -wd4200: nonstandard extension used : zero-sized array in struct/union
+#  -wd4211: nonstandard extension used : redefined extern to static
+#  -wd4245: 'return' : conversion from 'int' to 'unsigned int', signed/unsigned mismatch
+#  -wd4255: no function prototype given
+#  -wd4668: 'something' is not defined as a preprocessor macro, replacing with '0' for '#if/#elif'
+VBoxSVGA_CFLAGS     += -wd4005 -wd4100 -wd4200 -wd4211 -wd4245 -wd4255 -wd4668
+
+VBoxSVGA_INCS       += \
+	$(VBOX_PATH_3D)/win/include \
+	$(VBOX_PATH_MESA)/src/gallium/drivers/svga \
+	$(VBOX_PATH_MESA)/src/gallium/drivers/svga/include \
+	$(VBOX_PATH_MESA)/src/gallium/winsys/svga/drm
+
+VBoxSVGA_SOURCES     = \
+	winsys/vmw_screen_ioctl.c \
+	winsys/vmw_screen_wddm.c \
+	winsys/vmw_screen.c \
+	VBoxSVGA.c \
+	VBoxSVGA.rc \
+	VBoxSVGA.def
+
+VBoxSVGA_LIBS        = \
+	$(VBOX_PATH_ADDITIONS_LIB)/VBoxWddmUmHlp$(VBOX_SUFF_LIB) \
+	$(VBOX_PATH_ADDITIONS_LIB)/VBoxMesaGalliumAuxLib$(VBOX_SUFF_LIB) \
+	$(VBOX_PATH_ADDITIONS_LIB)/VBoxMesaUtilLib$(VBOX_SUFF_LIB) \
+	$(VBOX_PATH_ADDITIONS_LIB)/VBoxMesaSVGAWinsysLib$(VBOX_SUFF_LIB) \
+	$(VBOX_PATH_ADDITIONS_LIB)/VBoxMesaSVGALib$(VBOX_SUFF_LIB)
+
+ifdef VBOX_SIGN_ADDITIONS
+ VBoxSVGA_INSTTYPE       = none
+ VBoxSVGA_DEBUG_INSTTYPE = both
+endif
+
+#
+# VBoxSVGA-x86 - x86 version of VBoxSVGA built for amd64 build
+#
+DLLS.win.amd64 += VBoxSVGA-x86
+VBoxSVGA-x86_EXTENDS = VBoxSVGA
+VBoxSVGA-x86_BLD_TRG_ARCH = x86
+VBoxSVGA-x86_LIBS        = \
+	$(VBOX_PATH_ADDITIONS_LIB)/VBoxWddmUmHlp-x86$(VBOX_SUFF_LIB) \
+	$(VBOX_PATH_ADDITIONS_LIB)/VBoxMesaGalliumAuxLib-x86$(VBOX_SUFF_LIB) \
+	$(VBOX_PATH_ADDITIONS_LIB)/VBoxMesaUtilLib-x86$(VBOX_SUFF_LIB) \
+	$(VBOX_PATH_ADDITIONS_LIB)/VBoxMesaSVGAWinsysLib-x86$(VBOX_SUFF_LIB) \
+	$(VBOX_PATH_ADDITIONS_LIB)/VBoxMesaSVGALib-x86$(VBOX_SUFF_LIB)
+VBoxSVGA-x86_DEFS = $(VBoxSVGA_DEFS) VBOX_WOW64
+
+include $(FILE_KBUILD_SUB_FOOTER)
+

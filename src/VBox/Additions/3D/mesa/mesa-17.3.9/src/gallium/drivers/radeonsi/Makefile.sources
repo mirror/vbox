@@ -1,0 +1,37 @@
+GENERATED_SOURCES := \
+	si_driinfo.h
+
+C_SOURCES := \
+	$(GENERATED_SOURCES) \
+	cik_sdma.c \
+	driinfo_radeonsi.h \
+	si_blit.c \
+	si_compute.c \
+	si_compute.h \
+	si_cp_dma.c \
+	si_debug.c \
+	si_descriptors.c \
+	si_dma.c \
+	si_hw_context.c \
+	si_pipe.c \
+	si_pipe.h \
+	si_pm4.c \
+	si_pm4.h \
+	si_perfcounter.c \
+	si_public.h \
+	si_shader.c \
+	si_shader.h \
+	si_shader_internal.h \
+	si_shader_nir.c \
+	si_shader_tgsi_alu.c \
+	si_shader_tgsi_mem.c \
+	si_shader_tgsi_setup.c \
+	si_state.c \
+	si_state_binning.c \
+	si_state_draw.c \
+	si_state_msaa.c \
+	si_state_shaders.c \
+	si_state_streamout.c \
+	si_state_viewport.c \
+	si_state.h \
+	si_uvd.c

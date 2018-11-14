@@ -1,0 +1,98 @@
+# $Id$
+## @file
+# kBuild Configuration file for the Mesa3D.
+#
+
+#
+# Copyright (C) 2016-2018 Oracle Corporation
+#
+# This file is part of VirtualBox Open Source Edition (OSE), as
+# available from http://www.virtualbox.org. This file is free software;
+# you can redistribute it and/or modify it under the terms of the GNU
+# General Public License (GPL) as published by the Free Software
+# Foundation, in version 2 as it comes in the "COPYING" file of the
+# VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+# hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+#
+
+VBOX_MESA3D_CONFIG_KMK_INCLUDED := 1
+
+# Include the top-level configure file.
+ifndef VBOX_ROOT_CONFIG_KMK_INCLUDED
+ include $(PATH_ROOT)/Config.kmk
+endif
+
+VBOX_MESA            := mesa-17.3.9
+VBOX_PATH_3D         := $(PATH_ROOT)/src/VBox/Additions/3D
+VBOX_PATH_MESA       := $(PATH_ROOT)/src/VBox/Additions/3D/mesa/$(VBOX_MESA)
+VBOX_PATH_WDDM       := $(PATH_ROOT)/src/VBox/Additions/WINNT/Graphics/Video
+VBOX_PATH_VMSVGA_INC := $(VBOX_PATH_MESA)/src/gallium/drivers/svga/include
+
+#
+# Base template for Mesa3D code and code which uses Mesa3D libraries.
+#
+TEMPLATE_VBOXMESA3DGUESTR3DLL             = VBox Mesa 3D Guest User Mode DLL
+TEMPLATE_VBOXMESA3DGUESTR3DLL_EXTENDS     = NewerVccVBoxGuestR3Dll
+TEMPLATE_VBOXMESA3DGUESTR3DLL_INST        = $(INST_ADDITIONS_LIB)
+TEMPLATE_VBOXMESA3DGUESTR3DLL_DEFS        = $(TEMPLATE_NewerVccVBoxGuestR3Dll_DEFS) \
+	VBOX_WITH_MESA3D
+TEMPLATE_VBOXMESA3DGUESTR3DLL_SDKS.win    = $(TEMPLATE_NewerVccVBoxGuestR3Dll_SDKS) \
+	$(VBOX_WINDDK_GST_W8)
+
+# VirtualBox specific modifications of the Mesa3D code.
+# All modified places can be found by searching for VBOX
+#
+# Each define represents a group of related modifications.
+# The purpose of the separation is to document why each modification was necessary.
+#
+# Modifications which would be nice to have in upstream Mesa code are marked with '*' here.
+#
+#  VBOX                                Modifications in headers shared with VBox WDDM driver code (see comments).
+#  VBOX_WITH_MESA3D_COMPILE            Tweaks to compile Mesa as part of VBox WDDM.
+#  VBOX_WITH_MESA3D_D3D_FROM_SYSTEMMEM Create D3DPOOL_SYSTEMMEM textures from provided system memory pointer.
+#  VBOX_WITH_MESA3D_D3D_THREADPOOL     (No) threadpool for VBox build.
+#  VBOX_WITH_MESA3D_DBG                Tweaks for easier debugging and better logging.
+#  VBOX_WITH_MESA3D_HACKS              Hacks to make it work (need a proper solutions).
+# *VBOX_WITH_MESA3D_MSC                Tweaks for Microsoft VCC.
+#  VBOX_WITH_MESA3D_NINE_SVGA          Make the D3D state tracker to work together with VMSVGA.
+#  VBOX_WITH_MESA3D_SVGA_GPU_FINISHED  PIPE_QUERY_GPU_FINISHED in VMSVGA driver.
+#  VBOX_WITH_MESA3D_SVGA_HALFZ         D3D Z coord [0.0;1.0] in the Gallium SVGA driver (VGPU9 only).
+#  VBOX_WITH_MESA3D_SVGA_INSTANCING    Instancing for DrawPrimitives in the Gallium SVGA driver
+#                                      (VGPU9 only, VGPU10 has it).
+TEMPLATE_VBOXMESA3DGUESTR3DLL_DEFS      += \
+	VBOX_WITH_MESA3D_COMPILE \
+	VBOX_WITH_MESA3D_D3D_FROM_SYSTEMMEM \
+	VBOX_WITH_MESA3D_D3D_THREADPOOL \
+	VBOX_WITH_MESA3D_DBG \
+	VBOX_WITH_MESA3D_HACKS \
+	VBOX_WITH_MESA3D_MSC \
+	VBOX_WITH_MESA3D_NINE_SVGA \
+	VBOX_WITH_MESA3D_SVGA_GPU_FINISHED \
+	VBOX_WITH_MESA3D_SVGA_HALFZ \
+	VBOX_WITH_MESA3D_SVGA_INSTANCING
+
+TEMPLATE_VBOXMESA3DGUESTR3DLL_DEFS.win   = $(TEMPLATE_NewerVccVBoxGuestR3Dll_DEFS.win) \
+	_USE_MATH_DEFINES \
+	WINAPI=__stdcall \
+	_WIN32
+
+TEMPLATE_VBOXMESA3DGUESTR3DLL_INCS       = $(TEMPLATE_NewerVccVBoxGuestR3Dll_INCS) \
+	$(VBOX_PATH_MESA)/include \
+	$(VBOX_PATH_MESA)/include/c99 \
+	$(VBOX_PATH_MESA)/src \
+	$(VBOX_PATH_MESA)/src/mesa \
+	$(VBOX_PATH_MESA)/src/gallium/auxiliary \
+	$(VBOX_PATH_MESA)/src/gallium/include \
+	$(VBOX_PATH_3D)/win/VBoxWddmUmHlp
+
+#
+# Variant of VBOXMESA3DGUESTR3DLL that requires Windows Vista or later.
+#
+TEMPLATE_VBOXMESA3DGUESTR3DLLMinVista = VBox Mesa 3D Guest User Mode DLL (Windows Vista or newer)
+TEMPLATE_VBOXMESA3DGUESTR3DLLMinVista_EXTENDS  = VBOXMESA3DGUESTR3DLL
+ifeq ($(KBUILD_TARGET),win)
+ TEMPLATE_VBOXMESA3DGUESTR3DLLMinVista_LDFLAGS.win.x86 = $(filter-out -Section:.bss$(COMMA)RW!K,$(TEMPLATE_VBOXMESA3DGUESTR3DLL_LDFLAGS.win.x86))
+ TEMPLATE_VBOXMESA3DGUESTR3DLLMinVista_POST_CMDS.win.x86 = $(subst $(VBOX_PE_SET_VERSION), $(VBOX_PE_SET_VERSION) --vista,$(TEMPLATE_VBOXMESA3DGUESTR3DLL_POST_CMDS.win.x86))
+ TEMPLATE_VBOXMESA3DGUESTR3DLLMinVista_POST_CMDS.win.amd64 = $(if $(eq $(tool_do),LINK_LIBRARY),,$(VBOX_PE_SET_VERSION) --vista $(out)$$(NLTAB)$(TEMPLATE_VBOXMESA3DGUESTR3DLL_POST_CMDS.win.amd64))
+ TEMPLATE_VBOXMESA3DGUESTR3DLLMinVista_LNK_DEPS.win.amd64  = $(if $(eq $(tool_do),LINK_LIBRARY),,$(VBOX_PE_SET_VERSION)) $(TEMPLATE_VBOXMESA3DGUESTR3DLL_LNK_DEPS.win.amd64)
+endif

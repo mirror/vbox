@@ -1,0 +1,43 @@
+# $Id$
+## @file
+# Sub-Makefile for the VirtualBox WDDM user mode driver
+#
+
+#
+# Copyright (C) 2018 Oracle Corporation
+#
+# This file is part of VirtualBox Open Source Edition (OSE), as
+# available from http://www.virtualbox.org. This file is free software;
+# you can redistribute it and/or modify it under the terms of the GNU
+# General Public License (GPL) as published by the Free Software
+# Foundation, in version 2 as it comes in the "COPYING" file of the
+# VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+# hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+#
+
+SUB_DEPTH = ../../../../../..
+include $(KBUILD_PATH)/subheader.kmk
+
+LIBRARIES += VBoxWddmUmHlp
+LIBRARIES.amd64 += VBoxWddmUmHlp-x86
+
+#
+# VBoxWddmUmHlp - logger and other helpers for user mode driver
+#
+VBoxWddmUmHlp_TEMPLATE    = VBOXMESA3DGUESTR3DLLMinVista
+VBoxWddmUmHlp_DEFS        = VBOX_WITH_WDDM
+VBoxWddmUmHlp_INCS        = \
+	$(PATH_ROOT)/src/VBox/Additions/WINNT/Graphics/Video/disp/wddm/shared \
+	$(VBOX_PATH_3D)/win/include \
+	$(VBOX_GRAPHICS_INCS)
+VBoxWddmUmHlp_SOURCES     = \
+	D3DKMT.cpp \
+	VBoxMpLogger.cpp
+
+#
+# 64-bit version for 32-bit build.
+#
+VBoxWddmUmHlp-x86_EXTENDS = VBoxWddmUmHlp
+VBoxWddmUmHlp-x86_BLD_TRG_ARCH = x86
+
+include $(FILE_KBUILD_SUB_FOOTER)

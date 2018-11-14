@@ -1,0 +1,115 @@
+# $Id$
+## @file
+# Sub-Makefile for VBoxGL OpenGL state tracker.
+#
+
+#
+# Copyright (C) 2018 Oracle Corporation
+#
+# This file is part of VirtualBox Open Source Edition (OSE), as
+# available from http://www.virtualbox.org. This file is free software;
+# you can redistribute it and/or modify it under the terms of the GNU
+# General Public License (GPL) as published by the Free Software
+# Foundation, in version 2 as it comes in the "COPYING" file of the
+# VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+# hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+#
+
+SUB_DEPTH = ../../../../../..
+include $(KBUILD_PATH)/subheader.kmk
+
+# Define this to build software OpenGL driver
+#VBOX_WITH_MESA3D_GL_SOFTWARE = 1
+
+DLLS += VBoxGL
+VBoxGL_TEMPLATE    = VBOXMESA3DGUESTR3DLLMinVista
+#  -wd4005: '__useHeader' : redefinition
+VBoxGL_CFLAGS      = -wd4005
+
+VBoxGL_INCS       += \
+	$(VBOX_PATH_3D)/win/include \
+	$(VBOX_PATH_MESA)/include/GL \
+	$(VBOX_PATH_MESA)/src/gallium/state_trackers/wgl \
+	$(VBOX_PATH_MESA)/src/gallium/winsys/sw \
+	$(VBOX_PATH_MESA)/src/gallium/drivers \
+	$(PATH_ROOT)/src/VBox/Additions/WINNT/Graphics/Video \
+	$(PATH_ROOT)/src/VBox/Runtime/common/table \
+	$(VBOX_PATH_VMSVGA_INC) \
+	$(VBOX_GRAPHICS_INCS)
+
+VBoxGL_SOURCES     = \
+	$(VBOX_PATH_MESA)/src/gallium/state_trackers/wgl/opengl32.def \
+	VBoxGL.rc
+
+ifndef VBOX_WITH_MESA3D_GL_SOFTWARE
+VBoxGL_SOURCES     += \
+	GaDrvEnvKMT.cpp \
+	VBoxGL.c
+else
+VBoxGL_SOURCES    += \
+	$(VBOX_PATH_MESA)/src/gallium/targets/libgl-gdi/libgl_gdi.c
+VBoxGL_SOURCES    += \
+	$(VBOX_PATH_MESA)/src/gallium/winsys/sw/gdi/gdi_sw_winsys.c
+VBoxGL_SOURCES    += \
+	$(VBOX_PATH_MESA)/src/gallium/drivers/softpipe/sp_buffer.c \
+	$(VBOX_PATH_MESA)/src/gallium/drivers/softpipe/sp_clear.c \
+	$(VBOX_PATH_MESA)/src/gallium/drivers/softpipe/sp_context.c \
+	$(VBOX_PATH_MESA)/src/gallium/drivers/softpipe/sp_compute.c \
+	$(VBOX_PATH_MESA)/src/gallium/drivers/softpipe/sp_draw_arrays.c \
+	$(VBOX_PATH_MESA)/src/gallium/drivers/softpipe/sp_fence.c \
+	$(VBOX_PATH_MESA)/src/gallium/drivers/softpipe/sp_flush.c \
+	$(VBOX_PATH_MESA)/src/gallium/drivers/softpipe/sp_fs_exec.c \
+	$(VBOX_PATH_MESA)/src/gallium/drivers/softpipe/sp_image.c \
+	$(VBOX_PATH_MESA)/src/gallium/drivers/softpipe/sp_prim_vbuf.c \
+	$(VBOX_PATH_MESA)/src/gallium/drivers/softpipe/sp_quad_blend.c \
+	$(VBOX_PATH_MESA)/src/gallium/drivers/softpipe/sp_quad_depth_test.c \
+	$(VBOX_PATH_MESA)/src/gallium/drivers/softpipe/sp_quad_fs.c \
+	$(VBOX_PATH_MESA)/src/gallium/drivers/softpipe/sp_quad_pipe.c \
+	$(VBOX_PATH_MESA)/src/gallium/drivers/softpipe/sp_quad_stipple.c \
+	$(VBOX_PATH_MESA)/src/gallium/drivers/softpipe/sp_query.c \
+	$(VBOX_PATH_MESA)/src/gallium/drivers/softpipe/sp_screen.c \
+	$(VBOX_PATH_MESA)/src/gallium/drivers/softpipe/sp_setup.c \
+	$(VBOX_PATH_MESA)/src/gallium/drivers/softpipe/sp_state_blend.c \
+	$(VBOX_PATH_MESA)/src/gallium/drivers/softpipe/sp_state_clip.c \
+	$(VBOX_PATH_MESA)/src/gallium/drivers/softpipe/sp_state_derived.c \
+	$(VBOX_PATH_MESA)/src/gallium/drivers/softpipe/sp_state_image.c \
+	$(VBOX_PATH_MESA)/src/gallium/drivers/softpipe/sp_state_rasterizer.c \
+	$(VBOX_PATH_MESA)/src/gallium/drivers/softpipe/sp_state_sampler.c \
+	$(VBOX_PATH_MESA)/src/gallium/drivers/softpipe/sp_state_shader.c \
+	$(VBOX_PATH_MESA)/src/gallium/drivers/softpipe/sp_state_so.c \
+	$(VBOX_PATH_MESA)/src/gallium/drivers/softpipe/sp_state_surface.c \
+	$(VBOX_PATH_MESA)/src/gallium/drivers/softpipe/sp_state_vertex.c \
+	$(VBOX_PATH_MESA)/src/gallium/drivers/softpipe/sp_surface.c \
+	$(VBOX_PATH_MESA)/src/gallium/drivers/softpipe/sp_tex_sample.c \
+	$(VBOX_PATH_MESA)/src/gallium/drivers/softpipe/sp_tex_tile_cache.c \
+	$(VBOX_PATH_MESA)/src/gallium/drivers/softpipe/sp_texture.c \
+	$(VBOX_PATH_MESA)/src/gallium/drivers/softpipe/sp_tile_cache.c
+endif
+
+VBoxGL_LIBS        = \
+	$(VBOX_PATH_ADDITIONS_LIB)/VBoxWddmUmHlp$(VBOX_SUFF_LIB) \
+	$(VBOX_PATH_ADDITIONS_LIB)/VBoxMesaGalliumAuxLib$(VBOX_SUFF_LIB) \
+	$(VBOX_PATH_ADDITIONS_LIB)/VBoxMesaWglLib$(VBOX_SUFF_LIB) \
+	$(VBOX_PATH_ADDITIONS_LIB)/VBoxMesaUtilLib$(VBOX_SUFF_LIB) \
+	$(VBOX_PATH_ADDITIONS_LIB)/VBoxMesaLib$(VBOX_SUFF_LIB)
+
+ifdef VBOX_SIGN_ADDITIONS
+ VBoxGL_INSTTYPE       = none
+ VBoxGL_DEBUG_INSTTYPE = both
+endif
+
+#
+# VBoxGL-x86 - x86 version of VBoxGL built for amd64 build
+#
+DLLS.win.amd64 += VBoxGL-x86
+VBoxGL-x86_EXTENDS = VBoxGL
+VBoxGL-x86_BLD_TRG_ARCH = x86
+VBoxGL-x86_LIBS        = \
+	$(VBOX_PATH_ADDITIONS_LIB)/VBoxWddmUmHlp-x86$(VBOX_SUFF_LIB) \
+	$(VBOX_PATH_ADDITIONS_LIB)/VBoxMesaGalliumAuxLib-x86$(VBOX_SUFF_LIB) \
+	$(VBOX_PATH_ADDITIONS_LIB)/VBoxMesaWglLib-x86$(VBOX_SUFF_LIB) \
+	$(VBOX_PATH_ADDITIONS_LIB)/VBoxMesaUtilLib-x86$(VBOX_SUFF_LIB) \
+	$(VBOX_PATH_ADDITIONS_LIB)/VBoxMesaLib-x86$(VBOX_SUFF_LIB)
+VBoxGL-x86_DEFS = $(VBoxGL_DEFS) VBOX_WOW64
+
+include $(FILE_KBUILD_SUB_FOOTER)
