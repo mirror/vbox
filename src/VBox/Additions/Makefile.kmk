@@ -205,6 +205,7 @@ ifdef VBOX_WITH_ADDITIONS_ISO.os2.x86
  VBOX_PATH_ADDITIONS.os2.x86 = $(PATH_OUT_BASE)/os2.x86/$(KBUILD_TYPE)/bin/additions
  GUESTADDITIONS_FILESPEC.os2.x86 = \
 	OS2/VBoxGuest.sys=$(VBOX_PATH_ADDITIONS.os2.x86)/VBoxGuest.sys \
+	OS2/VBoxSF.ifs=$(VBOX_PATH_ADDITIONS.os2.x86)/VBoxSF.ifs\
 	OS2/VBoxService.exe=$(VBOX_PATH_ADDITIONS.os2.x86)/VBoxService.exe \
 	OS2/VBoxControl.exe=$(VBOX_PATH_ADDITIONS.os2.x86)/VBoxControl.exe \
 	OS2/VBoxReplaceDll.exe=$(VBOX_PATH_ADDITIONS.os2.x86)/VBoxReplaceDll.exe \
