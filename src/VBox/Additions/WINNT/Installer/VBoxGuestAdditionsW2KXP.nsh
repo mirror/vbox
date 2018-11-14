@@ -239,6 +239,11 @@ Function W2K_CopyFiles
     FILE "$%PATH_OUT%\bin\additions\VBoxWddm.inf"
 
     FILE "$%PATH_OUT%\bin\additions\VBoxDispD3D.dll"
+    !if $%VBOX_WITH_MESA3D% == "1"
+      FILE "$%PATH_OUT%\bin\additions\VBoxNine.dll"
+      FILE "$%PATH_OUT%\bin\additions\VBoxSVGA.dll"
+      FILE "$%PATH_OUT%\bin\additions\VBoxGL.dll"
+    !endif
 
     !if $%VBOX_WITH_CROGL% == "1"
       FILE "$%PATH_OUT%\bin\additions\VBoxOGLarrayspu.dll"
@@ -255,6 +260,11 @@ Function W2K_CopyFiles
 
     !if $%BUILD_TARGET_ARCH% == "amd64"
       FILE "$%PATH_OUT%\bin\additions\VBoxDispD3D-x86.dll"
+      !if $%VBOX_WITH_MESA3D% == "1"
+        FILE "$%PATH_OUT%\bin\additions\VBoxNine-x86.dll"
+        FILE "$%PATH_OUT%\bin\additions\VBoxSVGA-x86.dll"
+        FILE "$%PATH_OUT%\bin\additions\VBoxGL-x86.dll"
+      !endif
 
       !if $%VBOX_WITH_CROGL% == "1"
         FILE "$%PATH_OUT%\bin\additions\VBoxOGLarrayspu-x86.dll"
@@ -524,6 +534,11 @@ Function ${un}W2K_UninstallInstDir
   Delete /REBOOTOK "$%PATH_OUT%\bin\additions\VBoxVideoW8.inf"
   ; Obsolete files end
   Delete /REBOOTOK "$%PATH_OUT%\bin\additions\VBoxDispD3D.dll"
+  !if $%VBOX_WITH_MESA3D% == "1"
+    Delete /REBOOTOK "$%PATH_OUT%\bin\additions\VBoxNine.dll"
+    Delete /REBOOTOK "$%PATH_OUT%\bin\additions\VBoxSVGA.dll"
+    Delete /REBOOTOK "$%PATH_OUT%\bin\additions\VBoxGL.dll"
+  !endif
 
     Delete /REBOOTOK "$%PATH_OUT%\bin\additions\VBoxOGLarrayspu.dll"
     Delete /REBOOTOK "$%PATH_OUT%\bin\additions\VBoxOGLcrutil.dll"
@@ -540,6 +555,11 @@ Function ${un}W2K_UninstallInstDir
 
   !if $%BUILD_TARGET_ARCH% == "amd64"
     Delete /REBOOTOK "$%PATH_OUT%\bin\additions\VBoxDispD3D-x86.dll"
+    !if $%VBOX_WITH_MESA3D% == "1"
+      Delete /REBOOTOK "$%PATH_OUT%\bin\additions\VBoxNine-x86.dll"
+      Delete /REBOOTOK "$%PATH_OUT%\bin\additions\VBoxSVGA-x86.dll"
+      Delete /REBOOTOK "$%PATH_OUT%\bin\additions\VBoxGL-x86.dll"
+    !endif
 
       Delete /REBOOTOK "$%PATH_OUT%\bin\additions\VBoxOGLarrayspu-x86.dll"
       Delete /REBOOTOK "$%PATH_OUT%\bin\additions\VBoxOGLcrutil-x86.dll"
@@ -608,6 +628,11 @@ Function ${un}W2K_Uninstall
   ; Obsolete files end
 
   Delete /REBOOTOK "$g_strSystemDir\VBoxDispD3D.dll"
+  !if $%VBOX_WITH_MESA3D% == "1"
+    Delete /REBOOTOK "$g_strSystemDir\VBoxNine.dll"
+    Delete /REBOOTOK "$g_strSystemDir\VBoxSVGA.dll"
+    Delete /REBOOTOK "$g_strSystemDir\VBoxGL.dll"
+  !endif
 !endif ; $%VBOX_WITH_WDDM% == "1"
 
 !if $%VBOX_WITH_CROGL% == "1"

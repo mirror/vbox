@@ -133,6 +133,12 @@ DRIVER_FILES += \
 	$(PATH_STAGE_BIN)/additions/VBoxWddm.sys \
 	$(PATH_STAGE_BIN)/additions/VBoxWddm.inf \
 	$(PATH_STAGE_BIN)/additions/VBoxDispD3D.dll
+ ifdef VBOX_WITH_MESA3D
+DRIVER_FILES += \
+	$(PATH_STAGE_BIN)/additions/VBoxNine.dll \
+	$(PATH_STAGE_BIN)/additions/VBoxSVGA.dll \
+	$(PATH_STAGE_BIN)/additions/VBoxGL.dll
+ endif
  ifdef VBOX_WITH_CROGL
 DRIVER_FILES += \
 	$(PATH_STAGE_BIN)/additions/wined3dwddm.dll \
@@ -145,6 +151,12 @@ DRIVER_FILES += \
  ifeq ($(KBUILD_TARGET_ARCH),amd64)
 DRIVER_FILES += \
 	$(PATH_STAGE_BIN)/additions/VBoxDispD3D-x86.dll
+  ifdef VBOX_WITH_MESA3D
+DRIVER_FILES += \
+	$(PATH_STAGE_BIN)/additions/VBoxNine-x86.dll \
+	$(PATH_STAGE_BIN)/additions/VBoxSVGA-x86.dll \
+	$(PATH_STAGE_BIN)/additions/VBoxGL-x86.dll
+  endif
   ifdef VBOX_WITH_CROGL
 DRIVER_FILES += \
 	$(PATH_STAGE_BIN)/additions/wined3dwddm-x86.dll \
@@ -183,6 +195,7 @@ VB_WIN_ADD_NSIS_ENV := \
 	-E 'VBOX_WITH_GUEST_INSTALL_HELPER=$(if $(VBOX_WITH_GUEST_INSTALL_HELPER),1,0)' \
 	-E 'VBOX_WITH_LICENSE_INSTALL_RTF=$(if $(VBOX_BRAND_LICENSE_RTF),1,0)' \
 	-E 'VBOX_WITH_WDDM=$(if $(VBOX_WITH_WDDM),1,0)' \
+	-E 'VBOX_WITH_MESA3D=$(if $(VBOX_WITH_MESA3D),1,0)' \
 	-E 'VBOX_BRAND_WIN_ADD_INST_DLGBMP=$(subst /,\,$(VBOX_BRAND_WIN_ADD_INST_DLGBMP))' \
 	-E 'VBOX_BRAND_LICENSE_RTF=$(subst /,\,$(VBOX_BRAND_LICENSE_RTF))' \
 	$(foreach lang,$(VBOX_INSTALLER_ADD_LANGUAGES),-E 'VBOX_BRAND_$(lang)_LICENSE_RTF=$(VBOX_BRAND_$(lang)_LICENSE_RTF)') \

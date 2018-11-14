@@ -296,6 +296,9 @@ typedef struct VBOXWDDMDISP_ALLOCATION
     VBOXWDDM_DIRTYREGION DirtyRegion; /* <- dirty region to notify host about */
     VBOXWDDM_SURFACE_DESC SurfDesc;
     PVBOXWDDMDISP_SWAPCHAIN pSwapchain;
+#ifdef VBOX_WITH_MESA3D
+    uint32_t hostID;
+#endif
 } VBOXWDDMDISP_ALLOCATION, *PVBOXWDDMDISP_ALLOCATION;
 
 typedef struct VBOXWDDMDISP_RESOURCE

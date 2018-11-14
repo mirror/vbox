@@ -18,6 +18,10 @@
 #ifndef ___VBoxDispD3DIf_h___
 #define ___VBoxDispD3DIf_h___
 
+#ifdef VBOX_WITH_MESA3D
+#include "gallium/VBoxGallium.h"
+#endif
+
 /* D3D headers */
 #include <iprt/critsect.h>
 #include <iprt/semaphore.h>
@@ -90,6 +94,10 @@ typedef struct VBOXWDDMDISP_D3D
     IDirect3D9Ex *pD3D9If;
     VBOXDISPD3D D3D;
 
+#ifdef VBOX_WITH_MESA3D
+    /* Gallium backend. */
+    IGalliumStack *pGalliumStack;
+#endif
 } VBOXWDDMDISP_D3D;
 
 void VBoxDispD3DGlobalInit(void);

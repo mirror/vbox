@@ -18,6 +18,12 @@
 SUB_DEPTH = ../../../../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
+ifdef VBOX_WITH_MESA3D
+ ifndef VBOX_MESA3D_CONFIG_KMK_INCLUDED
+  include $(PATH_ROOT)/src/VBox/Additions/3D/Config.kmk
+ endif
+endif
+
 #
 # VBoxVideo - Windows Guest Additions XPDM Miniport Video Driver
 #
@@ -160,6 +166,21 @@ ifdef VBOX_WITH_WDDM
 
  VBoxWddm_LIBS.x86         = \
  	$(PATH_SDK_$(VBOX_WINDDK_GST_W8)_LIB)/memcmp.lib
+
+ ifdef VBOX_WITH_MESA3D
+  VBoxWddm_DEFS           += VBOX_WITH_MESA3D
+  VBoxWddm_DEFS           += __STDC_VERSION__=0    # for mesa include/c99_compat.h
+  VBoxWddm_DEFS           += WIN9X_COMPAT_SPINLOCK # to avoid multiple KeInitializeSpinLock on amd64
+  VBoxWddm_INCS           += \
+  	$(VBOX_PATH_3D)/win/include \
+  	$(VBOX_PATH_VMSVGA_INC)
+  VBoxWddm_SOURCES        += \
+  	wddm/gallium/Svga.cpp \
+  	wddm/gallium/SvgaCmd.cpp \
+  	wddm/gallium/SvgaFifo.cpp \
+  	wddm/gallium/SvgaHw.cpp \
+  	wddm/gallium/VBoxMPGaWddm.cpp
+ endif
 
 endif # VBOX_WITH_WDDM
 

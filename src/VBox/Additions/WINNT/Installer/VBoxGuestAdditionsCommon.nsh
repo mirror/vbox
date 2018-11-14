@@ -106,6 +106,11 @@ Function ExtractFiles
   FILE "$%PATH_OUT%\bin\additions\VBoxWddm.sys"
   FILE "$%PATH_OUT%\bin\additions\VBoxWddm.inf"
   FILE "$%PATH_OUT%\bin\additions\VBoxDispD3D.dll"
+  !if $%VBOX_WITH_MESA3D% == "1"
+    FILE "$%PATH_OUT%\bin\additions\VBoxNine.dll"
+    FILE "$%PATH_OUT%\bin\additions\VBoxSVGA.dll"
+    FILE "$%PATH_OUT%\bin\additions\VBoxGL.dll"
+  !endif
 
   !if $%VBOX_WITH_CROGL% == "1"
     FILE "$%PATH_OUT%\bin\additions\VBoxOGLarrayspu.dll"
@@ -122,6 +127,11 @@ Function ExtractFiles
 
   !if $%BUILD_TARGET_ARCH% == "amd64"
     FILE "$%PATH_OUT%\bin\additions\VBoxDispD3D-x86.dll"
+    !if $%VBOX_WITH_MESA3D% == "1"
+      FILE "$%PATH_OUT%\bin\additions\VBoxNine-x86.dll"
+      FILE "$%PATH_OUT%\bin\additions\VBoxSVGA-x86.dll"
+      FILE "$%PATH_OUT%\bin\additions\VBoxGL-x86.dll"
+    !endif
 
     !if $%VBOX_WITH_CROGL% == "1"
       FILE "$%PATH_OUT%\bin\additions\VBoxOGLarrayspu-x86.dll"

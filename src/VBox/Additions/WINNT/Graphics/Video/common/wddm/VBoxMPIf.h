@@ -262,6 +262,10 @@ typedef enum
     VBOXWDDM_CONTEXT_TYPE_CUSTOM_DISPIF_RESIZE,
     /* context created by VBoxTray to handle seamless operations */
     VBOXWDDM_CONTEXT_TYPE_CUSTOM_DISPIF_SEAMLESS
+#ifdef VBOX_WITH_MESA3D
+    /* Gallium driver context. */
+    , VBOXWDDM_CONTEXT_TYPE_GA_3D
+#endif
 } VBOXWDDM_CONTEXT_TYPE;
 
 typedef struct VBOXWDDM_CREATECONTEXT_INFO
@@ -282,6 +286,13 @@ typedef struct VBOXWDDM_CREATECONTEXT_INFO
             /* info to be passed to UMD notification to identify the context */
             uint64_t u64UmInfo;
         } vbox;
+#ifdef VBOX_WITH_MESA3D
+        struct
+        {
+            /* VBOXWDDM_F_GA_CONTEXT_* */
+            uint32_t u32Flags;
+        } vmsvga;
+#endif
     } u;
 } VBOXWDDM_CREATECONTEXT_INFO, *PVBOXWDDM_CREATECONTEXT_INFO;
 
@@ -505,6 +516,144 @@ typedef struct VBOXDISPIFESCAPE_CRHGSMICTLCON_CALL
     VBGLIOCHGCMCALL CallInfo;
 } VBOXDISPIFESCAPE_CRHGSMICTLCON_CALL, *PVBOXDISPIFESCAPE_CRHGSMICTLCON_CALL;
 
+#ifdef VBOX_WITH_MESA3D
+
+#define VBOXWDDM_F_GA_CONTEXT_EXTENDED 0x00000001
+#define VBOXWDDM_F_GA_CONTEXT_VGPU10   0x00000002
+
+#define VBOXESC_GAGETCID            0xA0000002
+#define VBOXESC_GAREGION            0xA0000003
+#define VBOXESC_GAPRESENT           0xA0000004
+#define VBOXESC_GASURFACEDEFINE     0xA0000005
+#define VBOXESC_GASURFACEDESTROY    0xA0000006
+#define VBOXESC_GASHAREDSID         0xA0000008
+#define VBOXESC_GAFENCECREATE       0xA0000020
+#define VBOXESC_GAFENCEQUERY        0xA0000021
+#define VBOXESC_GAFENCEWAIT         0xA0000022
+#define VBOXESC_GAFENCEUNREF        0xA0000023
+
+/* Get Gallium context id (cid) of the WDDM context. */
+typedef struct VBOXDISPIFESCAPE_GAGETCID
+{
+    VBOXDISPIFESCAPE EscapeHdr;
+    uint32_t u32Cid;
+} VBOXDISPIFESCAPE_GAGETCID;
+
+/* Create or delete a Guest Memory Region (GMR). */
+#define GA_REGION_CMD_CREATE  0
+#define GA_REGION_CMD_DESTROY 1
+typedef struct VBOXDISPIFESCAPE_GAREGION
+{
+    VBOXDISPIFESCAPE EscapeHdr;
+    uint32_t u32Command;
+    uint32_t u32GmrId;
+    uint32_t u32NumPages;
+    uint32_t u32Reserved;
+    uint64_t u64UserAddress;
+} VBOXDISPIFESCAPE_GAREGION;
+
+/* Debug helper. Present the specified surface by copying to the guest screen VRAM. */
+typedef struct VBOXDISPIFESCAPE_GAPRESENT
+{
+    VBOXDISPIFESCAPE EscapeHdr;
+    uint32_t u32Sid;
+    uint32_t u32Width;
+    uint32_t u32Height;
+} VBOXDISPIFESCAPE_GAPRESENT;
+
+/* Create a host surface. */
+typedef struct VBOXDISPIFESCAPE_GASURFACEDEFINE
+{
+    VBOXDISPIFESCAPE EscapeHdr;
+    uint32_t u32Sid; /* Returned surface id. */
+    uint32_t cbReq;  /* Size of data after cSizes field. */
+    uint32_t cSizes; /* Number of GASURFSIZE structures. */
+    /* GASURFCREATE */
+    /* GASURFSIZE[cSizes] */
+} VBOXDISPIFESCAPE_GASURFACEDEFINE;
+
+/* Delete a host surface. */
+typedef struct VBOXDISPIFESCAPE_GASURFACEDESTROY
+{
+    VBOXDISPIFESCAPE EscapeHdr;
+    uint32_t u32Sid;
+} VBOXDISPIFESCAPE_GASURFACEDESTROY;
+
+/* Inform the miniport that 'u32Sid' actually maps to 'u32SharedSid'.
+ * If 'u32SharedSid' is ~0, then remove the mapping.
+ */
+typedef struct VBOXDISPIFESCAPE_GASHAREDSID
+{
+    VBOXDISPIFESCAPE EscapeHdr;
+    uint32_t u32Sid;
+    uint32_t u32SharedSid;
+} VBOXDISPIFESCAPE_GASHAREDSID;
+
+/* Create a user mode fence object. */
+typedef struct VBOXDISPIFESCAPE_GAFENCECREATE
+{
+    VBOXDISPIFESCAPE EscapeHdr;
+
+    /* IN: The miniport's handle of the fence.
+     * Assigned by the miniport. Not DXGK fence id!
+     */
+    uint32_t u32FenceHandle;
+} VBOXDISPIFESCAPE_GAFENCECREATE;
+
+/* Query a user mode fence object state. */
+#define GA_FENCE_STATUS_NULL      0 /* Fence not found */
+#define GA_FENCE_STATUS_IDLE      1
+#define GA_FENCE_STATUS_SUBMITTED 2
+#define GA_FENCE_STATUS_SIGNALED  3
+typedef struct VBOXDISPIFESCAPE_GAFENCEQUERY
+{
+    VBOXDISPIFESCAPE EscapeHdr;
+
+    /* IN: The miniport's handle of the fence.
+     * Assigned by the miniport. Not DXGK fence id!
+     */
+    uint32_t u32FenceHandle;
+
+    /* OUT: The miniport's sequence number associated with the command buffer.
+     */
+    uint32_t u32SubmittedSeqNo;
+
+    /* OUT: The miniport's sequence number associated with the last command buffer completed on host.
+     */
+    uint32_t u32ProcessedSeqNo;
+
+    /* OUT: GA_FENCE_STATUS_*. */
+    uint32_t u32FenceStatus;
+} VBOXDISPIFESCAPE_GAFENCEQUERY;
+
+/* Wait on a user mode fence object. */
+typedef struct VBOXDISPIFESCAPE_GAFENCEWAIT
+{
+    VBOXDISPIFESCAPE EscapeHdr;
+
+    /* IN: The miniport's handle of the fence.
+     * Assigned by the miniport. Not DXGK fence id!
+     */
+    uint32_t u32FenceHandle;
+
+    /* IN: Timeout in microseconds.
+     */
+    uint32_t u32TimeoutUS;
+} VBOXDISPIFESCAPE_GAFENCEWAIT;
+
+/* Delete a user mode fence object. */
+typedef struct VBOXDISPIFESCAPE_GAFENCEUNREF
+{
+    VBOXDISPIFESCAPE EscapeHdr;
+
+    /* IN: The miniport's handle of the fence.
+     * Assigned by the miniport. Not DXGK fence id!
+     */
+    uint32_t u32FenceHandle;
+} VBOXDISPIFESCAPE_GAFENCEUNREF;
+
+#include <VBoxGaHWInfo.h>
+#endif /* VBOX_WITH_MESA3D */
 
 /* D3DDDICB_QUERYADAPTERINFO::pPrivateDriverData */
 typedef struct VBOXWDDM_QAI
@@ -522,6 +671,13 @@ typedef struct VBOXWDDM_QAI
             /* VBOXVIDEO_HWTYPE_VBOX */
             uint32_t    u32VBox3DCaps;   /* CR_VBOX_CAP_* */
         } vbox;
+#ifdef VBOX_WITH_MESA3D
+        struct
+        {
+            /* VBOXVIDEO_HWTYPE_VMSVGA */
+            VBOXGAHWINFO HWInfo;
+        } vmsvga;
+#endif
     } u;
 } VBOXWDDM_QAI;
 

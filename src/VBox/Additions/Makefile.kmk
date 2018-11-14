@@ -65,10 +65,10 @@ ifndef VBOX_ONLY_VALIDATIONKIT
   include $(PATH_SUB_CURRENT)/solaris/Makefile.kmk
  endif
  ifeq ($(KBUILD_TARGET),win)
-  include $(PATH_SUB_CURRENT)/WINNT/Makefile.kmk
   ifdef VBOX_WITH_MESA3D
    include $(PATH_SUB_CURRENT)/3D/Makefile.kmk
   endif
+  include $(PATH_SUB_CURRENT)/WINNT/Makefile.kmk
  endif
  ifeq ($(KBUILD_TARGET),darwin)
   include $(PATH_SUB_CURRENT)/darwin/Makefile.kmk

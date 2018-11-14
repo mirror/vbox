@@ -54,9 +54,15 @@ VBoxWddm.sys
 
 [VBoxVideo.Display]
 ;dispd3d VBoxDispD3D.dll,,,0x00004000  ; COPYFLG_IN_USE_TRY_RENAME
+;mesa3d VBoxNine.dll,,,0x00004000     ; COPYFLG_IN_USE_TRY_RENAME
+;mesa3d VBoxSVGA.dll,,,0x00004000     ; COPYFLG_IN_USE_TRY_RENAME
+;mesa3d VBoxGL.dll,,,0x00004000       ; COPYFLG_IN_USE_TRY_RENAME
 
 ;amd64 [VBoxVideo.Display_wow64]
 ;amd64 ;dispd3d VBoxDispD3D-x86.dll,,,0x00004000  ; COPYFLG_IN_USE_TRY_RENAME
+;amd64 ;mesa3d VBoxNine-x86.dll,,,0x00004000     ; COPYFLG_IN_USE_TRY_RENAME
+;amd64 ;mesa3d VBoxSVGA-x86.dll,,,0x00004000     ; COPYFLG_IN_USE_TRY_RENAME
+;amd64 ;mesa3d VBoxGL-x86.dll,,,0x00004000       ; COPYFLG_IN_USE_TRY_RENAME
 
 [VBoxVideo.GL]
 ;gl VBoxOGL.dll,,,0x00004000  ; COPYFLG_IN_USE_TRY_RENAME
@@ -118,7 +124,13 @@ HKR,,TypesSupported,0x00010001,7
 [SourceDisksFiles]
 VBoxWddm.sys = 1
 ;amd64 ;dispd3d VBoxDispD3D-x86.dll = 1
+;amd64 ;mesa3d VBoxNine-x86.dll = 1
+;amd64 ;mesa3d VBoxSVGA-x86.dll = 1
+;amd64 ;mesa3d VBoxGL-x86.dll = 1
 ;dispd3d VBoxDispD3D.dll = 1
+;mesa3d VBoxNine.dll = 1
+;mesa3d VBoxSVGA.dll = 1
+;mesa3d VBoxGL.dll = 1
 ;amd64 ;gl VBoxOGL-x86.dll = 1
 ;gl VBoxOGL.dll = 1
 ;amd64 ;gl VBoxD3D9wddm-x86.dll = 1

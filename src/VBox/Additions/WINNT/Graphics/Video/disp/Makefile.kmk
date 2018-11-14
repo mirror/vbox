@@ -18,6 +18,12 @@
 SUB_DEPTH = ../../../../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
+ifdef VBOX_WITH_MESA3D
+ ifndef VBOX_MESA3D_CONFIG_KMK_INCLUDED
+  include $(PATH_ROOT)/src/VBox/Additions/3D/Config.kmk
+ endif
+endif
+
 #
 # VBoxDisp - Windows Guest Additions XPDM Display Driver
 #
@@ -134,6 +140,33 @@ VBoxDispD3D_LIBS     = \
 	$(VBOX_PATH_ADDITIONS_LIB)/VBoxWddmUmKmt$(VBOX_SUFF_LIB) \
 	$(VBOX_PATH_ADDITIONS_LIB)/VBoxCrHgsmi$(VBOX_SUFF_LIB)
 
+ifdef VBOX_WITH_MESA3D
+VBoxDispD3D_DEFS     += VBOX_WITH_MESA3D
+VBoxDispD3D_INCS     += \
+	$(VBOX_PATH_MESA)/src/gallium/include \
+	$(VBOX_PATH_MESA)/src \
+	$(VBOX_PATH_MESA)/include/c99 \
+	$(VBOX_PATH_MESA)/include \
+	$(VBOX_PATH_3D)/win/include \
+	$(VBOX_PATH_VMSVGA_INC)
+VBoxDispD3D_SOURCES  += \
+	wddm/gallium/GaDrvEnvWddm.cpp \
+	wddm/gallium/GaWddm.cpp \
+	wddm/gallium/GaDdi.cpp \
+	wddm/gallium/Present.cpp \
+	wddm/gallium/VBoxGallium.cpp \
+	wddm/gallium/VBoxGaD3DDevice9Ex.cpp \
+	wddm/gallium/VBoxD3DAdapter9.c
+
+ ifdef VBOX_WITH_MESA3D_D3DTEST
+VBoxDispD3D_DEFS     += VBOX_WITH_MESA3D_D3DTEST
+VBoxDispD3D_SOURCES  += \
+	wddm/gallium/test/d3dhlp.cpp \
+	wddm/gallium/test/d3d9render.cpp \
+	wddm/gallium/GaDrvTest.cpp
+ endif
+endif
+
 #
 # 64-bit systems needs a 32-bit version of VBoxDispD3D.
 #
@@ -164,6 +197,9 @@ VBoxCrHgsmi_INCS        = \
 	$(VBOX_PATH_CROGL_INCLUDE) \
 	$(PATH_ROOT)/src/VBox/Additions/WINNT/Graphics/Video/disp/wddm/shared \
 	$(VBOX_GRAPHICS_INCS)
+ifdef VBOX_WITH_MESA3D
+VBoxCrHgsmi_INCS     += $(VBOX_PATH_3D)/win/include
+endif
 VBoxCrHgsmi_SOURCES     = \
 	wddm/VBoxCrHgsmi.cpp \
 	wddm/VBoxDispDbg.cpp \

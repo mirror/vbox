@@ -87,6 +87,17 @@ ifdef VBOX_WITH_WDDM
    	$(PATH_TARGET)/VBoxWddmCat.dir/VBoxDispD3D-x86.dll
   endif # VBOXWDDM_WITH_DISPD3D
 
+  ifdef VBOX_WITH_MESA3D
+   VBoxWddm-inf_SOURCES += \
+   	$(PATH_TARGET)/VBoxWddmCat.dir/VBoxNine.dll \
+   	$(PATH_TARGET)/VBoxWddmCat.dir/VBoxSVGA.dll \
+   	$(PATH_TARGET)/VBoxWddmCat.dir/VBoxGL.dll
+   VBoxWddm-inf_SOURCES.amd64 += \
+   	$(PATH_TARGET)/VBoxWddmCat.dir/VBoxNine-x86.dll \
+   	$(PATH_TARGET)/VBoxWddmCat.dir/VBoxSVGA-x86.dll \
+   	$(PATH_TARGET)/VBoxWddmCat.dir/VBoxGL-x86.dll
+  endif
+
   ifdef VBOXWDDM_WITH_GL
    VBoxWddm-inf_SOURCES += \
    	$(PATH_TARGET)/VBoxWddmCat.dir/VBoxOGL.dll \
@@ -116,6 +127,7 @@ ifdef VBOX_WITH_WDDM
  	$(PATH_TARGET)/VBoxWddmCat.dir
 
  VBOXWDDM_EDIT_INF_DISPD3D_FN_ARG = $(if $(VBOXWDDM_WITH_DISPD3D),-e 's/^;dispd3d  *//', -e '/^;dispd3d /d')
+ VBOXWDDM_EDIT_INF_MESA3D_FN_ARG = $(if $(VBOX_WITH_MESA3D),-e 's/^;mesa3d  *//', -e '/^;mesa3d /d')
  VBOXWDDM_EDIT_INF_GL_FN_ARG      = $(if $(VBOXWDDM_WITH_GL),-e 's/^;gl  *//', -e '/^;gl /d')
  # Depends on VBOXWDDM_WITH_GL. ";icd" prefix is used for telling which lines are for OpenGL ICD
  VBOXWDDM_EDIT_INF_ICD_FN_ARG     = $(if $(VBOXWDDM_WITH_GL),-e 's/^;icd  *//', -e '/^;icd /d')
@@ -123,7 +135,7 @@ ifdef VBOX_WITH_WDDM
  $(PATH_TARGET)/VBoxWddmCat.dir/VBoxWddm.inf: \
 		$(PATH_SUB_CURRENT)/mp/wddm/VBoxWddm.inf $(MAKEFILE_CURRENT) | $$(dir $$@)
 	$(call MSG_GENERATE,VBoxWddm-inf,$@,$<)
-	$(call VBOX_EDIT_INF_FN,$<,$@ $(VBOXWDDM_EDIT_INF_DISPD3D_FN_ARG) $(VBOXWDDM_EDIT_INF_GL_FN_ARG) $(VBOXWDDM_EDIT_INF_ICD_FN_ARG))
+	$(call VBOX_EDIT_INF_FN,$<,$@ $(VBOXWDDM_EDIT_INF_DISPD3D_FN_ARG) $(VBOXWDDM_EDIT_INF_MESA3D_FN_ARG) $(VBOXWDDM_EDIT_INF_GL_FN_ARG) $(VBOXWDDM_EDIT_INF_ICD_FN_ARG))
 
  $(PATH_TARGET)/VBoxWddmCat.dir/VBoxWddm.sys: $$(VBoxWddm_1_TARGET) | $$(dir $$@)
 	$(INSTALL) -m 644 $< $(@D)
@@ -137,6 +149,24 @@ ifdef VBOX_WITH_WDDM
 	$(INSTALL) -m 644 $< $(@D)
   endif
  endif # VBOXWDDM_WITH_DISPD3D
+
+ ifdef VBOX_WITH_MESA3D
+  $(PATH_TARGET)/VBoxWddmCat.dir/VBoxNine.dll: $$(VBoxNine_1_TARGET) | $$(dir $$@)
+	$(INSTALL) -m 644 $< $(@D)
+  $(PATH_TARGET)/VBoxWddmCat.dir/VBoxSVGA.dll: $$(VBoxSVGA_1_TARGET) | $$(dir $$@)
+	$(INSTALL) -m 644 $< $(@D)
+  $(PATH_TARGET)/VBoxWddmCat.dir/VBoxGL.dll: $$(VBoxGL_1_TARGET) | $$(dir $$@)
+	$(INSTALL) -m 644 $< $(@D)
+
+  ifeq ($(KBUILD_TARGET_ARCH),amd64)
+   $(PATH_TARGET)/VBoxWddmCat.dir/VBoxNine-x86.dll: $$(VBoxNine-x86_1_TARGET) | $$(dir $$@)
+	$(INSTALL) -m 644 $< $(@D)
+   $(PATH_TARGET)/VBoxWddmCat.dir/VBoxSVGA-x86.dll: $$(VBoxSVGA-x86_1_TARGET) | $$(dir $$@)
+	$(INSTALL) -m 644 $< $(@D)
+   $(PATH_TARGET)/VBoxWddmCat.dir/VBoxGL-x86.dll: $$(VBoxGL-x86_1_TARGET) | $$(dir $$@)
+	$(INSTALL) -m 644 $< $(@D)
+  endif
+ endif
 
  ifdef VBOXWDDM_WITH_GL
   $(PATH_TARGET)/VBoxWddmCat.dir/VBoxOGL.dll: $(PATH_OBJ)/VBoxOGL/VBoxOGL.dll | $$(dir $$@)
@@ -201,6 +231,14 @@ ifdef VBOX_WITH_WDDM
 		$(PATH_TARGET)/VBoxWddmCat.dir/VBoxWddm.sys \
 		$(if $(VBOXWDDM_WITH_DISPD3D), $(PATH_TARGET)/VBoxWddmCat.dir/VBoxDispD3D.dll, ) \
 		$(if $(VBOXWDDM_WITH_DISPD3D), $(if-expr "$(KBUILD_TARGET_ARCH)" == "amd64", $(PATH_TARGET)/VBoxWddmCat.dir/VBoxDispD3D-x86.dll, ), ) \
+		$(if $(VBOX_WITH_MESA3D), \
+			$(PATH_TARGET)/VBoxWddmCat.dir/VBoxNine.dll \
+			$(PATH_TARGET)/VBoxWddmCat.dir/VBoxSVGA.dll \
+			$(PATH_TARGET)/VBoxWddmCat.dir/VBoxGL.dll \
+			$(if-expr "$(KBUILD_TARGET_ARCH)" == "amd64", \
+				$(PATH_TARGET)/VBoxWddmCat.dir/VBoxNine-x86.dll \
+				$(PATH_TARGET)/VBoxWddmCat.dir/VBoxSVGA-x86.dll \
+				$(PATH_TARGET)/VBoxWddmCat.dir/VBoxGL-x86.dll, ), ) \
 		$(if $(VBOXWDDM_WITH_GL),  $(PATH_TARGET)/VBoxWddmCat.dir/VBoxOGL.dll \
 					   $(PATH_TARGET)/VBoxWddmCat.dir/VBoxD3D9wddm.dll \
 					   $(PATH_TARGET)/VBoxWddmCat.dir/wined3dwddm.dll \

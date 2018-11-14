@@ -1256,6 +1256,10 @@ static HRESULT vboxDispD3DGlobalDoOpenWine(PVBOXWDDMDISP_D3D pD3D)
     return hr;
 }
 
+#ifdef VBOX_WITH_MESA3D
+HRESULT GaWddmD3DBackendOpen(PVBOXWDDMDISP_D3D pD3D, VBOXWDDM_QAI const *pAdapterInfo);
+#endif
+
 static HRESULT vboxDispD3DGlobalDoOpen(PVBOXWDDMDISP_D3D pD3D, VBOXWDDM_QAI const *pAdapterInfo)
 {
     memset(pD3D, 0, sizeof (*pD3D));
@@ -1263,6 +1267,10 @@ static HRESULT vboxDispD3DGlobalDoOpen(PVBOXWDDMDISP_D3D pD3D, VBOXWDDM_QAI cons
     HRESULT hr;
     if (pAdapterInfo->enmHwType == VBOXVIDEO_HWTYPE_VBOX)
         hr = vboxDispD3DGlobalDoOpenWine(pD3D);
+#ifdef VBOX_WITH_MESA3D
+    else if (pAdapterInfo->enmHwType == VBOXVIDEO_HWTYPE_VMSVGA)
+        hr = GaWddmD3DBackendOpen(pD3D, pAdapterInfo);
+#endif
     else
         hr = E_FAIL;
 

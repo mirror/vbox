@@ -5803,6 +5803,13 @@ static HRESULT APIENTRY vboxWddmDDevDestroyDevice(IN HANDLE hDevice)
         {
             if (pDevice->pAdapter->enmHwType == VBOXVIDEO_HWTYPE_VBOX)
                 pDevice->pAdapter->D3D.D3D.pfnVBoxWineExD3DDev9Term((IDirect3DDevice9Ex *)pDevice->pDevice9If);
+#ifdef VBOX_WITH_MESA3D
+            else if (pDevice->pAdapter->enmHwType == VBOXVIDEO_HWTYPE_VMSVGA)
+            {
+                pDevice->pDevice9If->Release();
+                pDevice->pDevice9If = NULL;
+            }
+#endif
         }
     }
 
@@ -6349,6 +6356,39 @@ static HRESULT APIENTRY vboxWddmDispCreateDevice (IN HANDLE hAdapter, IN D3DDDIA
         pCreateData->pDeviceFuncs->pfnUnlockAsync = NULL; //vboxWddmDDevUnlockAsync;
         pCreateData->pDeviceFuncs->pfnRename = NULL; //vboxWddmDDevRename;
 
+#ifdef VBOX_WITH_MESA3D
+        /** @todo For now just override functions which are already implemented for Gallium backend.
+         * The plan is to have only OpenAdapter as common function between old Chromium and new Gallium code.
+         * Adapter and device callbacks will be reimplemented for Gallium, because this will simplify
+         * the Gallium-only code and keep the old code unchanged.
+         * Currently the common callbacks do things which Gallium does not need: vboxWddmDal*, etc.
+         *
+         * See gallium\GaDdi.h for list of GaDdi* functions which are already implemented.
+         */
+        if (pAdapter->enmHwType == VBOXVIDEO_HWTYPE_VMSVGA)
+        {
+            pDevice->pfnCreateDirect3DDevice = GaD3DIfDeviceCreate;
+            pDevice->pfnCreateSharedPrimary  = GaD3DIfCreateSharedPrimary;
+
+            pCreateData->pDeviceFuncs->pfnDrawPrimitive          = GaDdiDrawPrimitive;
+            pCreateData->pDeviceFuncs->pfnDrawIndexedPrimitive   = GaDdiDrawIndexedPrimitive;
+            pCreateData->pDeviceFuncs->pfnDrawPrimitive2         = GaDdiDrawPrimitive2;
+            pCreateData->pDeviceFuncs->pfnDrawIndexedPrimitive2  = GaDdiDrawIndexedPrimitive2;
+            pCreateData->pDeviceFuncs->pfnBlt                    = GaDdiBlt;
+            pCreateData->pDeviceFuncs->pfnTexBlt                 = GaDdiTexBlt;
+            pCreateData->pDeviceFuncs->pfnVolBlt                 = GaDdiVolBlt;
+            pCreateData->pDeviceFuncs->pfnFlush                  = GaDdiFlush;
+            pCreateData->pDeviceFuncs->pfnPresent                = GaDdiPresent;
+            pCreateData->pDeviceFuncs->pfnLock                   = GaDdiLock;
+            pCreateData->pDeviceFuncs->pfnUnlock                 = GaDdiUnlock;
+            pCreateData->pDeviceFuncs->pfnCreateVertexShaderFunc = GaDdiCreateVertexShaderFunc;
+            pCreateData->pDeviceFuncs->pfnCreatePixelShader      = GaDdiCreatePixelShader;
+            pCreateData->pDeviceFuncs->pfnCreateResource         = GaDdiCreateResource;
+            pCreateData->pDeviceFuncs->pfnDestroyResource        = GaDdiDestroyResource;
+            pCreateData->pDeviceFuncs->pfnOpenResource           = GaDdiOpenResource;
+        }
+#endif
+
         VBOXDISPPROFILE_DDI_INIT_DEV(pDevice);
 #ifdef VBOX_WDDMDISP_WITH_PROFILE
         pDevice->ProfileDdiPresentCb = VBoxDispProfileSet("pfnPresentCb");
@@ -6370,7 +6410,17 @@ static HRESULT APIENTRY vboxWddmDispCreateDevice (IN HANDLE hAdapter, IN D3DDDIA
                 {
                     VBOXDISPCRHGSMI_SCOPE_SET_DEV(pDevice);
 
+#ifdef VBOX_WITH_MESA3D
+                    if (pAdapter->enmHwType == VBOXVIDEO_HWTYPE_VMSVGA)
+                    {
+                        RT_ZERO(pDevice->DefaultContext);
+                        hr = S_OK;
+                    }
+                    else
+                        hr = vboxDispCmCtxCreate(pDevice, &pDevice->DefaultContext);
+#else
                     hr = vboxDispCmCtxCreate(pDevice, &pDevice->DefaultContext);
+#endif
                     Assert(hr == S_OK);
                     if (hr == S_OK)
                     {
@@ -6458,6 +6508,15 @@ static HRESULT APIENTRY vboxWddmDispCreateDevice (IN HANDLE hAdapter, IN D3DDDIA
             pDevice->hHgsmiTransportModule = 0;
         }
     }
+
+#if defined(VBOX_WITH_MESA3D) && defined(VBOX_WITH_MESA3D_D3DTEST)
+    /* Built-in gallium backend test for early development stages.
+     * Use it only with kernel debugger attached to the VM.
+     */
+    extern void GaDrvTest(IGalliumStack *pGalliumStack, PVBOXWDDMDISP_DEVICE pDevice);
+    if (SUCCEEDED(hr))
+       GaDrvTest(pAdapter->D3D.pGalliumStack, pDevice);
+#endif
 
     vboxVDbgPrint(("<== "__FUNCTION__", hAdapter(0x%p)\n", hAdapter));
 
@@ -6573,6 +6632,11 @@ static HRESULT vboxDispAdapterInit(D3DDDIARG_OPENADAPTER const *pOpenData, VBOXW
     pAdapter->enmHwType   = pAdapterInfo->enmHwType;
     if (pAdapter->enmHwType == VBOXVIDEO_HWTYPE_VBOX)
         pAdapter->u32VBox3DCaps = pAdapterInfo->u.vbox.u32VBox3DCaps;
+#ifdef VBOX_WITH_MESA3D
+    /** @todo Remove the hack. u32VBox3DCaps should not be used with Gallium. */
+    else if (pAdapter->enmHwType == VBOXVIDEO_HWTYPE_VMSVGA)
+        pAdapter->u32VBox3DCaps = CR_VBOX_CAP_TEX_PRESENT | CR_VBOX_CAP_CMDVBVA;
+#endif
     pAdapter->AdapterInfo = *pAdapterInfo;
 #ifdef VBOX_WITH_VIDEOHWACCEL
     pAdapter->cHeads      = pAdapterInfo->cInfos;

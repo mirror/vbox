@@ -44,9 +44,14 @@ typedef struct VBOXWDDM_ALLOCATION *PVBOXWDDM_ALLOCATION;
 #include <iprt/avl.h>
 #endif
 
+#ifndef VBOX_WITH_MESA3D
 /* one page size */
 #define VBOXWDDM_C_DMA_BUFFER_SIZE         0x1000
 #define VBOXWDDM_C_DMA_PRIVATEDATA_SIZE    0x4000
+#else
+#define VBOXWDDM_C_DMA_BUFFER_SIZE         0x10000
+#define VBOXWDDM_C_DMA_PRIVATEDATA_SIZE    0x8000
+#endif
 #define VBOXWDDM_C_ALLOC_LIST_SIZE         0xc00
 #define VBOXWDDM_C_PATH_LOCATION_LIST_SIZE 0xc00
 
@@ -278,6 +283,9 @@ typedef struct VBOXWDDM_CONTEXT
 #endif
     VBOXVIDEOCM_CTX CmContext;
     VBOXVIDEOCM_ALLOC_CONTEXT AllocContext;
+#ifdef VBOX_WITH_MESA3D
+    uint32_t u32Cid;               /* SVGA context id of this context. */
+#endif
 } VBOXWDDM_CONTEXT, *PVBOXWDDM_CONTEXT;
 
 typedef struct VBOXWDDM_DMA_PRIVATEDATA_PRESENTHDR
