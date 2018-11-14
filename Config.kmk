@@ -506,6 +506,10 @@ ifdef VBOX_WITH_WDDM
 else ifdef VBOX_WITH_VDMA
   undef VBOX_WITH_VDMA
 endif
+# Gallium based WDDM driver
+if1of ($(KBUILD_TARGET), win)
+ VBOX_WITH_MESA3D = 1
+endif
 # Disable the Intel PXE ROM (uses Etherboot).
 VBOX_WITH_INTEL_PXE =
 # Enable EFI support
