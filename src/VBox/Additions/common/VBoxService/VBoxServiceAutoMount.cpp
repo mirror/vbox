@@ -995,7 +995,7 @@ static int vbsvcAutomounterPopulateTable(PVBSVCAUTOMOUNTERTABLE pMountTable)
         rc = VINF_SUCCESS;
         struct mnttab Entry;
         while (getmntent(pFile, &Entry) == 0)
-            if (strcmp(Entry.mnt_fstype, "vboxsf") == 0)
+            if (strcmp(Entry.mnt_fstype, "vboxfs") == 0)
             {
                 /* Look for the dummy automounter option. */
                 if (   Entry.mnt_mntopts != NULL
@@ -1155,7 +1155,7 @@ static int vbsvcAutomounterQueryMountPoint(const char *pszMountPoint, const char
                     if (RTStrICmp(pszMountedName, pszName) == 0)
                     {
                         VGSvcVerbose(3, "vbsvcAutomounterQueryMountPoint: Found shared folder '%s' at '%s'.\n",
-                                     pszMountPoint, pszName);
+                                     pszName, pszMountPoint);
                         rc = VINF_SUCCESS;
                     }
                     else
@@ -1219,7 +1219,7 @@ static int vbsvcAutomounterQueryMountPoint(const char *pszMountPoint, const char
             if (RTStrICmp(pszMountedName, pszName) == 0)
             {
                 VGSvcVerbose(3, "vbsvcAutomounterQueryMountPoint: Found shared folder '%s' at '%s'.\n",
-                             pszMountPoint, pszName);
+                             pszName, pszMountPoint);
                 rc = VINF_SUCCESS;
             }
             else
@@ -1266,7 +1266,7 @@ static int vbsvcAutomounterQueryMountPoint(const char *pszMountPoint, const char
                     if (RTStrICmp(pEntry->mnt_fsname, pszName) == 0)
                     {
                         VGSvcVerbose(3, "vbsvcAutomounterQueryMountPoint: Found shared folder '%s' at '%s'.\n",
-                                     pszMountPoint, pszName);
+                                     pszName, pszMountPoint);
                         rc = VINF_SUCCESS;
                     }
                     else
@@ -1312,7 +1312,7 @@ static int vbsvcAutomounterQueryMountPoint(const char *pszMountPoint, const char
                     if (RTStrICmp(Entry.mnt_special, pszName) == 0)
                     {
                         VGSvcVerbose(3, "vbsvcAutomounterQueryMountPoint: Found shared folder '%s' at '%s'.\n",
-                                     pszMountPoint, pszName);
+                                     pszName, pszMountPoint);
                         rc = VINF_SUCCESS;
                     }
                     else
@@ -1510,6 +1510,9 @@ static int vbsvcAutomounterMountIt(PVBSVCAUTOMOUNTERENTRY pEntry)
      *
      * The ',VBoxService=auto' option (g_szTag) is ignored by the kernel but helps
      * us identify our own mounts on restart.  See vbsvcAutomounterPopulateTable().
+     *
+     * Note! Must pass MAX_MNTOPT_STR rather than cchOpts to mount, as it may fail
+     *       with EOVERFLOW in vfs_buildoptionstr() during domount() otherwise.
      */
     char szOpts[MAX_MNTOPT_STR] = { '\0', };
     ssize_t cchOpts = RTStrPrintf2(szOpts, sizeof(szOpts),
@@ -1521,7 +1524,7 @@ static int vbsvcAutomounterMountIt(PVBSVCAUTOMOUNTERENTRY pEntry)
     }
 
     rc = mount(pEntry->pszName, pEntry->pszActualMountPoint, MS_OPTIONSTR, "vboxfs",
-               NULL /*dataptr*/, 0 /* datalen */, szOpts, cchOpts + 1);
+               NULL /*dataptr*/, 0 /* datalen */, szOpts, MAX_MNTOPT_STR);
     if (rc == 0)
     {
         VGSvcVerbose(0, "vbsvcAutomounterMountIt: Successfully mounted '%s' on '%s'\n",
