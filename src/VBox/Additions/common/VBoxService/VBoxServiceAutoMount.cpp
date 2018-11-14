@@ -359,7 +359,6 @@ static int vbsvcAutoMountPrepareMountPointOld(const char *pszMountPoint, const c
  *
  * @param   pszShareName    The shared folder name.
  * @param   pszMountPoint   The mount point.
- * @param   pOpts           The mount options.
  */
 static int vbsvcAutoMountSharedFolderOld(const char *pszShareName, const char *pszMountPoint)
 {
@@ -421,6 +420,7 @@ static int vbsvcAutoMountSharedFolderOld(const char *pszShareName, const char *p
 
         /*const char *szOptions = { "rw" }; - ??? */
         struct vbsf_mount_info_new mntinf;
+        RT_ZERO(mntinf);
 
         mntinf.nullchar     = '\0';
         mntinf.signature[0] = VBSF_MOUNT_SIGNATURE_BYTE_0;
