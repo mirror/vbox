@@ -91,8 +91,11 @@ private:
     HRESULT getHostPath(com::Utf8Str &aHostPath);
     HRESULT getAccessible(BOOL *aAccessible);
     HRESULT getWritable(BOOL *aWritable);
+    HRESULT setWritable(BOOL aWritable);
     HRESULT getAutoMount(BOOL *aAutoMount);
+    HRESULT setAutoMount(BOOL aAutoMount);
     HRESULT getAutoMountPoint(com::Utf8Str &aAutoMountPoint);
+    HRESULT setAutoMountPoint(com::Utf8Str const &aAutoMountPoint);
     HRESULT getLastAccessError(com::Utf8Str &aLastAccessError);
 
     VirtualBoxBase * const mParent;

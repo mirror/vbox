@@ -20537,7 +20537,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="ISharedFolder" extends="$unknown"
-    uuid="e02c0f1e-15f4-440e-3814-bbf613f8448b"
+    uuid="cc98ec47-9555-42d6-671f-bb0093c052a7"
     wsmap="struct"
     reservedAttributes="4"
     >
@@ -20603,31 +20603,34 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <desc>
         Whether the folder defined by the host path is currently
         accessible or not.
+
         For example, the folder can be inaccessible if it is placed
         on the network share that is not available by the time
         this property is read.
       </desc>
     </attribute>
 
-    <attribute name="writable" type="boolean" readonly="yes">
+    <attribute name="writable" type="boolean">
       <desc>
         Whether the folder defined by the host path is writable or
         not.
       </desc>
     </attribute>
 
-    <attribute name="autoMount" type="boolean" readonly="yes">
+    <attribute name="autoMount" type="boolean">
       <desc>
         Whether the folder gets automatically mounted by the guest or not.
       </desc>
     </attribute>
 
-    <attribute name="autoMountPoint" type="wstring" readonly="yes">
+    <attribute name="autoMountPoint" type="wstring">
       <desc>
         Desired mount point in the guest for automatically mounting the folder
         when <link to="ISharedFolder::autoMount"/> is set.  For Windows and
         OS/2 guests this should be a drive letter, while other guests it should
-        be a absolute directory.
+        be a absolute directory.  It is possible to combine the two, e.g.
+        "T:/mnt/testrsrc" will be attached to "T:" by windows and OS/2 while
+        the unixy guests will mount it at "/mnt/testrsrc".
 
         When empty the guest will choose a mount point.  The guest may do so
         too should the specified mount point be in use or otherwise unusable.

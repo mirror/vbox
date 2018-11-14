@@ -334,7 +334,6 @@ HRESULT SharedFolder::getName(com::Utf8Str &aName)
 {
     /* mName is constant during life time, no need to lock */
     aName = m->strName;
-
     return S_OK;
 }
 
@@ -342,7 +341,6 @@ HRESULT SharedFolder::getHostPath(com::Utf8Str &aHostPath)
 {
     /* mHostPath is constant during life time, no need to lock */
     aHostPath = m->strHostPath;
-
     return S_OK;
 }
 
@@ -379,35 +377,46 @@ HRESULT SharedFolder::getAccessible(BOOL *aAccessible)
 HRESULT SharedFolder::getWritable(BOOL *aWritable)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    *aWritable = !!m->fWritable;
-
+    *aWritable = m->fWritable;
     return S_OK;
+}
+
+HRESULT SharedFolder::setWritable(BOOL aWritable)
+{
+    RT_NOREF(aWritable);
+    return E_NOTIMPL;
 }
 
 HRESULT SharedFolder::getAutoMount(BOOL *aAutoMount)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    *aAutoMount = !!m->fAutoMount;
-
+    *aAutoMount = m->fAutoMount;
     return S_OK;
+}
+
+HRESULT SharedFolder::setAutoMount(BOOL aAutoMount)
+{
+    RT_NOREF(aAutoMount);
+    return E_NOTIMPL;
 }
 
 HRESULT SharedFolder::getAutoMountPoint(com::Utf8Str &aAutoMountPoint)
 {
-    /* strAutoMountPoint is constant during life time, no need to lock. */
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
     aAutoMountPoint = m->strAutoMountPoint;
     return S_OK;
 }
 
+HRESULT SharedFolder::setAutoMountPoint(com::Utf8Str const &aAutoMountPoint)
+{
+    RT_NOREF(aAutoMountPoint);
+    return E_NOTIMPL;
+}
 
 HRESULT SharedFolder::getLastAccessError(com::Utf8Str &aLastAccessError)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-
     aLastAccessError = m->strLastAccessError;
-
     return S_OK;
 }
 
