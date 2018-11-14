@@ -1697,8 +1697,8 @@ static RTEXITCODE sharedFolder_list(int argc, char **argv)
                                 if (RTStrICmp(pszMountedName, pszName) == 0)
                                 {
                                     const char *pszTag = pszMountedName + strlen(pszMountedName) + 1; /* safe */
-                                    if (strcmp(pszTag, "VBoxAutomounter") == 0)
-                                        RTPrintf("%s %s*", pszOn, szDrive);
+                                    if (*pszTag != '\0')
+                                        RTPrintf("%s %s (%s)", pszOn, szDrive, pszTag);
                                     else
                                         RTPrintf("%s %s", pszOn, szDrive);
                                     pszOn = ",";
