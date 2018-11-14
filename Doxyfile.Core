@@ -753,7 +753,8 @@ PREDEFINED          += \
     RT_GCC_EXTENSION= \
     "CPUM_STRUCT_NM(n)=" \
     "CPUM_UNION_NM(n)=" \
-    "DECL_NO_RETURN(type)=type"
+    "DECL_NO_RETURN(type)=type" \
+    VBOX_WITH_HGCM
 
 EXPAND_AS_DEFINED      = \
     RCPTRTYPE \
