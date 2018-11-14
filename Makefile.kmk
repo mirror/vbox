@@ -769,6 +769,11 @@ VBOX_CORE_DOXYFILE_INPUT_FIRST =\
 	$(PATH_ROOT)/include/VBox/vmm/iem.h \
 	$(PATH_ROOT)/include/VBox/vmm/nem.h \
 	$(PATH_ROOT)/include/VBox/vmm/pdm.h \
+	$(PATH_ROOT)/include/VBox/vmm/pdmifs.h \
+	$(PATH_ROOT)/include/VBox/vmm/pdmaudioifs.h \
+	$(PATH_ROOT)/include/VBox/vmm/pdmnetifs.h \
+	$(PATH_ROOT)/include/VBox/vmm/pdmserialifs.h \
+	$(PATH_ROOT)/include/VBox/vmm/pdmstorageifs.h \
 	$(PATH_ROOT)/include/VBox/vmm/rem.h \
 	$(PATH_ROOT)/include/VBox/vmm/iom.h \
 	$(PATH_ROOT)/include/VBox/vmm/cfgm.h \
