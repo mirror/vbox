@@ -1737,7 +1737,7 @@ static void hmR0VmxCheckAutoLoadStoreMsrs(PVMCPU pVCpu)
         {
             VMXMSREXITREAD  enmRead;
             VMXMSREXITWRITE enmWrite;
-            rc = HMVmxGetMsrPermission(pVCpu->hm.s.vmx.pvMsrBitmap, pGuestMsr->u32Msr, &enmRead, &enmWrite);
+            rc = CPUMVmxGetMsrPermission(pVCpu->hm.s.vmx.pvMsrBitmap, pGuestMsr->u32Msr, &enmRead, &enmWrite);
             AssertMsgReturnVoid(rc == VINF_SUCCESS, ("HMVmxGetMsrPermission! failed. rc=%Rrc\n", rc));
             if (pGuestMsr->u32Msr == MSR_K6_EFER)
             {
@@ -11962,7 +11962,7 @@ HMVMX_EXIT_DECL hmR0VmxExitRdmsr(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
         {
             VMXMSREXITREAD  enmRead;
             VMXMSREXITWRITE enmWrite;
-            int rc2 = HMVmxGetMsrPermission(pVCpu->hm.s.vmx.pvMsrBitmap, idMsr, &enmRead, &enmWrite);
+            int rc2 = CPUMVmxGetMsrPermission(pVCpu->hm.s.vmx.pvMsrBitmap, idMsr, &enmRead, &enmWrite);
             AssertRCReturn(rc2, rc2);
             if (enmRead == VMXMSREXIT_PASSTHRU_READ)
             {
@@ -12107,7 +12107,7 @@ HMVMX_EXIT_DECL hmR0VmxExitWrmsr(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
                     {
                         VMXMSREXITREAD  enmRead;
                         VMXMSREXITWRITE enmWrite;
-                        int rc2 = HMVmxGetMsrPermission(pVCpu->hm.s.vmx.pvMsrBitmap, idMsr, &enmRead, &enmWrite);
+                        int rc2 = CPUMVmxGetMsrPermission(pVCpu->hm.s.vmx.pvMsrBitmap, idMsr, &enmRead, &enmWrite);
                         AssertRCReturn(rc2, rc2);
                         if (enmWrite == VMXMSREXIT_PASSTHRU_WRITE)
                         {

@@ -31,6 +31,8 @@
 #include <VBox/vmm/cpumctx.h>
 #include <VBox/vmm/stam.h>
 #include <VBox/vmm/vmapi.h>
+#include <VBox/vmm/hm_svm.h>
+#include <VBox/vmm/hm_vmx.h>
 
 RT_C_DECLS_BEGIN
 
@@ -2067,6 +2069,22 @@ VMM_INT_DECL(int)       CPUMRawEnter(PVMCPU pVCpu);
 VMM_INT_DECL(int)       CPUMRawLeave(PVMCPU pVCpu, int rc);
 VMMDECL(uint32_t)       CPUMRawGetEFlags(PVMCPU pVCpu);
 VMMDECL(void)           CPUMRawSetEFlags(PVMCPU pVCpu, uint32_t fEfl);
+
+/** @name SVM helpers.
+ * @{ */
+VMM_INT_DECL(int)       CPUMSvmGetMsrpmOffsetAndBit(uint32_t idMsr, uint16_t *pbOffMsrpm, uint8_t *puMsrpmBit);
+VMM_INT_DECL(bool)      CPUMSvmIsIOInterceptActive(void *pvIoBitmap, uint16_t u16Port, SVMIOIOTYPE enmIoType, uint8_t cbReg,
+                                                   uint8_t cAddrSizeBits, uint8_t iEffSeg, bool fRep, bool fStrIo,
+                                                   PSVMIOIOEXITINFO pIoExitInfo);
+/** @} */
+
+/** @name VMX helpers.
+ * @{ */
+VMM_INT_DECL(int)       CPUMVmxGetMsrPermission(void const *pvMsrBitmap, uint32_t idMsr, PVMXMSREXITREAD penmRead,
+                                                PVMXMSREXITWRITE penmWrite);
+VMM_INT_DECL(bool)      CPUMVmxGetIoBitmapPermission(void const *pvIoBitmapA, void const *pvIoBitmapB, uint16_t uPort,
+                                                     uint8_t cbAccess);
+/** @} */
 
 /** @name Changed flags.
  * These flags are used to keep track of which important register that

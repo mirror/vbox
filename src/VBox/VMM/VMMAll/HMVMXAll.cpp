@@ -441,7 +441,7 @@ VMM_INT_DECL(int) HMVmxGetHostMsr(PVM pVM, uint32_t idMsr, uint64_t *puValue)
 
 
 /**
- * Gets the description of a VMX instruction/Vm-exit diagnostic.
+ * Gets the descriptive name of a VMX instruction/VM-exit diagnostic code.
  *
  * @returns The descriptive string.
  * @param   enmDiag    The VMX diagnostic.
@@ -876,114 +876,5 @@ VMM_INT_DECL(int) HMVmxEntryIntInfoInjectTrpmEvent(PVMCPU pVCpu, uint32_t uEntry
     }
 
     return VINF_SUCCESS;
-}
-
-
-/**
- * Gets the permission bits for the specified MSR in the specified MSR bitmap.
- *
- * @returns VBox status code.
- * @param   pvMsrBitmap     Pointer to the MSR bitmap.
- * @param   idMsr           The MSR.
- * @param   penmRead        Where to store the read permissions. Optional, can be
- *                          NULL.
- * @param   penmWrite       Where to store the write permissions. Optional, can be
- *                          NULL.
- */
-VMM_INT_DECL(int) HMVmxGetMsrPermission(void const *pvMsrBitmap, uint32_t idMsr, PVMXMSREXITREAD penmRead,
-                                        PVMXMSREXITWRITE penmWrite)
-{
-    AssertPtrReturn(pvMsrBitmap, VERR_INVALID_PARAMETER);
-
-    int32_t iBit;
-    uint8_t const *pbMsrBitmap = (uint8_t *)pvMsrBitmap;
-
-    /*
-     * MSR Layout:
-     *   Byte index            MSR range            Interpreted as
-     * 0x000 - 0x3ff    0x00000000 - 0x00001fff    Low MSR read bits.
-     * 0x400 - 0x7ff    0xc0000000 - 0xc0001fff    High MSR read bits.
-     * 0x800 - 0xbff    0x00000000 - 0x00001fff    Low MSR write bits.
-     * 0xc00 - 0xfff    0xc0000000 - 0xc0001fff    High MSR write bits.
-     *
-     * A bit corresponding to an MSR within the above range causes a VM-exit
-     * if the bit is 1 on executions of RDMSR/WRMSR.
-     *
-     * If an MSR falls out of the MSR range, it always cause a VM-exit.
-     *
-     * See Intel spec. 24.6.9 "MSR-Bitmap Address".
-     */
-    if (idMsr <= 0x00001fff)
-        iBit = idMsr;
-    else if (   idMsr >= 0xc0000000
-             && idMsr <= 0xc0001fff)
-    {
-        iBit = (idMsr - 0xc0000000);
-        pbMsrBitmap += 0x400;
-    }
-    else
-    {
-        if (penmRead)
-            *penmRead = VMXMSREXIT_INTERCEPT_READ;
-        if (penmWrite)
-            *penmWrite = VMXMSREXIT_INTERCEPT_WRITE;
-        Log(("HMVmxGetMsrPermission: Warning! Out of range MSR %#RX32\n", idMsr));
-        return VINF_SUCCESS;
-    }
-
-    /* Validate the MSR bit position. */
-    Assert(iBit <= 0x1fff);
-
-    /* Get the MSR read permissions. */
-    if (penmRead)
-    {
-        if (ASMBitTest(pbMsrBitmap, iBit))
-            *penmRead = VMXMSREXIT_INTERCEPT_READ;
-        else
-            *penmRead = VMXMSREXIT_PASSTHRU_READ;
-    }
-
-    /* Get the MSR write permissions. */
-    if (penmWrite)
-    {
-        if (ASMBitTest(pbMsrBitmap + 0x800, iBit))
-            *penmWrite = VMXMSREXIT_INTERCEPT_WRITE;
-        else
-            *penmWrite = VMXMSREXIT_PASSTHRU_WRITE;
-    }
-
-    return VINF_SUCCESS;
-}
-
-
-/**
- * Gets the permission bits for the specified I/O port from the given I/O bitmaps.
- *
- * @returns @c true if the I/O port access must cause a VM-exit, @c false otherwise.
- * @param   pvIoBitmapA     Pointer to I/O bitmap A.
- * @param   pvIoBitmapB     Pointer to I/O bitmap B.
- * @param   uPort           The I/O port being accessed.
- * @param   cbAccess        The size of the I/O access in bytes (1, 2 or 4 bytes).
- */
-VMM_INT_DECL(bool) HMVmxGetIoBitmapPermission(void const *pvIoBitmapA, void const *pvIoBitmapB, uint16_t uPort, uint8_t cbAccess)
-{
-    Assert(cbAccess == 1 || cbAccess == 2 || cbAccess == 4);
-
-    /*
-     * If the I/O port access wraps around the 16-bit port I/O space,
-     * we must cause a VM-exit.
-     *
-     * See Intel spec. 25.1.3 "Instructions That Cause VM Exits Conditionally".
-     */
-    /** @todo r=ramshankar: Reading 1, 2, 4 bytes at ports 0xffff, 0xfffe and 0xfffc
-     *        respectively are valid and do not constitute a wrap around from what I
-     *        understand. Verify this later. */
-    uint32_t const uPortLast = uPort + cbAccess;
-    if (uPortLast > 0x10000)
-        return true;
-
-    /* Read the appropriate bit from the corresponding IO bitmap. */
-    void const *pvIoBitmap = uPort < 0x8000 ? pvIoBitmapA : pvIoBitmapB;
-    return ASMBitTest(pvIoBitmap, uPort);
 }
 

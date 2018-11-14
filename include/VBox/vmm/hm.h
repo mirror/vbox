@@ -140,32 +140,25 @@ VMM_INT_DECL(void)              HMHCPagingModeChanged(PVM pVM, PVMCPU pVCpu, PGM
 /** @} */
 
 /** @name All-context VMX helpers.
- * These are VMX functions (based on VMX specs.) that may be used by IEM/REM and
- * not VirtualBox functions that are used for hardware-assisted VMX. Those are
- * declared below under the !IN_RC section.
+ *
+ * These are hardware-assisted VMX functions (used by IEM/REM/CPUM and HM). Helpers
+ * based purely on the Intel VT-x specification (used by IEM/REM and HM) can be
+ * found in CPUM.
  * @{ */
 VMM_INT_DECL(int)               HMVmxGetHostMsrs(PVM pVM, PVMXMSRS pVmxMsrs);
 VMM_INT_DECL(int)               HMVmxGetHostMsr(PVM pVM, uint32_t idMsr, uint64_t *puValue);
 VMM_INT_DECL(bool)              HMVmxCanExecuteGuest(PVMCPU pVCpu, PCCPUMCTX pCtx);
 VMM_INT_DECL(int)               HMVmxEntryIntInfoInjectTrpmEvent(PVMCPU pVCpu, uint32_t uEntryIntInfo, uint32_t uErrCode,
                                                                  uint32_t cbInstr, RTGCUINTPTR GCPtrFaultAddress);
-VMM_INT_DECL(int)               HMVmxGetMsrPermission(void const *pvMsrBitmap, uint32_t idMsr, PVMXMSREXITREAD penmRead,
-                                                      PVMXMSREXITWRITE penmWrite);
-VMM_INT_DECL(bool)              HMVmxGetIoBitmapPermission(void const *pvIoBitmapA, void const *pvIoBitmapB, uint16_t uPort,
-                                                           uint8_t cbAccess);
 /** @} */
 
 /** @name All-context SVM helpers.
  *
- * These are SVM functions (based on AMD specs.) that may be used by IEM/REM and
- * not VirtualBox functions that are used for hardware-assisted SVM. Those are
- * declared below under the !IN_RC section.
+ * These are hardware-assisted SVM functions (used by IEM/REM/CPUM and HM). Helpers
+ * based purely on the AMD SVM specification (used by IEM/REM and HM) can be found
+ * in CPUM.
  * @{ */
 VMM_INT_DECL(TRPMEVENT)         HMSvmEventToTrpmEventType(PCSVMEVENT pSvmEvent);
-VMM_INT_DECL(int)               HMSvmGetMsrpmOffsetAndBit(uint32_t idMsr, uint16_t *pbOffMsrpm, uint8_t *puMsrpmBit);
-VMM_INT_DECL(bool)              HMSvmIsIOInterceptActive(void *pvIoBitmap, uint16_t u16Port, SVMIOIOTYPE enmIoType, uint8_t cbReg,
-                                                         uint8_t cAddrSizeBits, uint8_t iEffSeg, bool fRep, bool fStrIo,
-                                                         PSVMIOIOEXITINFO pIoExitInfo);
 /** @} */
 
 #ifndef IN_RC

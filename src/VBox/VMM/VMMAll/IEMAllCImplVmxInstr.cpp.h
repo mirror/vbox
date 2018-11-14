@@ -2985,7 +2985,7 @@ IEM_STATIC bool iemVmxIsIoInterceptSet(PVMCPU pVCpu, uint16_t u16Port, uint8_t c
         uint8_t const *pbIoBitmapB = (uint8_t const *)pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pvIoBitmap) + VMX_V_IO_BITMAP_A_SIZE;
         Assert(pbIoBitmapA);
         Assert(pbIoBitmapB);
-        return HMVmxGetIoBitmapPermission(pbIoBitmapA, pbIoBitmapB, u16Port, cbAccess);
+        return CPUMVmxGetIoBitmapPermission(pbIoBitmapA, pbIoBitmapB, u16Port, cbAccess);
     }
 
     return false;
@@ -6725,8 +6725,8 @@ IEM_STATIC bool iemVmxIsRdmsrWrmsrInterceptSet(PVMCPU pVCpu, uint32_t uExitReaso
         if (uExitReason == VMX_EXIT_RDMSR)
         {
             VMXMSREXITREAD enmRead;
-            int rc = HMVmxGetMsrPermission(pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pvMsrBitmap), idMsr, &enmRead,
-                                           NULL /* penmWrite */);
+            int rc = CPUMVmxGetMsrPermission(pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pvMsrBitmap), idMsr, &enmRead,
+                                             NULL /* penmWrite */);
             AssertRC(rc);
             if (enmRead == VMXMSREXIT_INTERCEPT_READ)
                 return true;
@@ -6734,8 +6734,8 @@ IEM_STATIC bool iemVmxIsRdmsrWrmsrInterceptSet(PVMCPU pVCpu, uint32_t uExitReaso
         else
         {
             VMXMSREXITWRITE enmWrite;
-            int rc = HMVmxGetMsrPermission(pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pvMsrBitmap), idMsr, NULL /* penmRead */,
-                                           &enmWrite);
+            int rc = CPUMVmxGetMsrPermission(pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pvMsrBitmap), idMsr, NULL /* penmRead */,
+                                             &enmWrite);
             AssertRC(rc);
             if (enmWrite == VMXMSREXIT_INTERCEPT_WRITE)
                 return true;
