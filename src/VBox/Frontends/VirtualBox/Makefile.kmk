@@ -2238,14 +2238,22 @@ $(VBOX_VIRTUALBOX_OUT_DIR)/VirtualBoxBrand.qrc: \
 
 
 #
-# Precompiled header - non-functional atm.
+# Precompiled header
+# 	win.amd64 without:  kmk_time: 3m51.962058s
+# 	win.amd64 with:     kmk_time: 2m23.336252s
 #
 ifdef VBOX_WITH_PRECOMPILED_HEADERS
  if1of ($(KBUILD_TARGET),win)
-  VirtualBox_USES    += vccprecomp
-  VirtualBox_PCH_HDR := $(PATH_SUB_CURRENT)/src/precomp_vcc.h
+  VirtualBox_USES      += vccprecomp
+  VirtualBox_PCH_HDR   := $(PATH_SUB_CURRENT)/src/precomp_vcc.h
 
- else # obsolete experiment
+  VirtualBoxVM_USES    += vccprecomp
+  VirtualBoxVM_PCH_HDR := $(PATH_SUB_CURRENT)/src/precomp_vcc.h
+
+  VBoxGlobal_USES      += vccprecomp
+  VBoxGlobal_PCH_HDR   := $(PATH_SUB_CURRENT)/src/precomp_vcc.h
+
+ else if 0 # Obsolete experiment - non-functional.  Needs to be redone the same way as on windows.
   VirtualBox_DEFS           += VBOX_WITH_PRECOMPILED_HEADERS
   VirtualBox_INCS           <= $(VirtualBoxPch_0_OUTDIR)/src
   VirtualBox_CXXFLAGS      += -Winvalid-pch -fpch-preprocess
