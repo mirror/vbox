@@ -132,9 +132,16 @@ VBoxDrvFindAdapter(IN PVOID HwDeviceExtension, IN PVOID HwContext, IN PWSTR Argu
             return rc;
         }
 
-        /* The first range is the framebuffer. We require that information. */
-        phVRAM = tmpRanges[0].RangeStart;
-        ulApertureSize = tmpRanges[0].RangeLength;
+        /* The first non-IO range is the framebuffer. We require that information. */
+        for (int iRange = 0; iRange < RT_ELEMENTS(tmpRanges); ++iRange)
+        {
+            if (!tmpRanges[iRange].RangeInIoSpace)
+            {
+                phVRAM = tmpRanges[iRange].RangeStart;
+                ulApertureSize = tmpRanges[iRange].RangeLength;
+                break;
+            }
+        }
     }
 
     /* Initialize VBoxGuest library, which is used for requests which go through VMMDev. */
