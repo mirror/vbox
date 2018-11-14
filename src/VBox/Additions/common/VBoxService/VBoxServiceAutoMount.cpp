@@ -1573,10 +1573,11 @@ static uint32_t vbsvcAutomounterMountNewEntry(PVBSVCAUTOMOUNTERTABLE pTable, uin
 
 #if defined(RT_OS_OS2) || defined(RT_OS_WINDOWS)
     /*
-     * Drive letter based:
+     * Drive letter based.  We only care about the first two characters
+     * and ignore the rest (see further down).
      */
     char chNextLetter = 'Z';
-    if (RT_C_IS_UPPER(pszMntPt[0]) && pszMntPt[1] == ':')
+    if (RT_C_IS_ALPHA(pszMntPt[0]) && pszMntPt[1] == ':')
         szActualMountPoint[0] = RT_C_TO_UPPER(pszMntPt[0]);
     else if (!fAutoMntPt)
         return iTable;
@@ -1602,6 +1603,15 @@ static uint32_t vbsvcAutomounterMountNewEntry(PVBSVCAUTOMOUNTERTABLE pTable, uin
     /*
      * Path based #1: Host specified mount point.
      */
+
+    /* Skip DOS drive letter if there is a UNIX mount point path following it: */
+    if (   pszMntPt[0] != '/'
+        && pszMntPt[0] != '\0'
+        && pszMntPt[1] == ':'
+        && pszMntPt[2] == '/')
+        pszMntPt += 2;
+
+    /* Try specified mount point if it starts with a UNIX slash: */
     int rc = VERR_ACCESS_DENIED;
     if (*pszMntPt == '/')
     {
