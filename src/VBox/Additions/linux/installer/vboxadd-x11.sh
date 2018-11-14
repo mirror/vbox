@@ -480,7 +480,7 @@ EOF
     ln -s "${lib_dir}/98vboxadd-xclient" /usr/bin/VBoxClient-all 2>/dev/null
     case "${x_version}" in 4.* | 6.* | 7.* | 1.?.* | 1.1* )
         setup_opengl
-    esac 
+    esac
 }
 
 cleanup()
