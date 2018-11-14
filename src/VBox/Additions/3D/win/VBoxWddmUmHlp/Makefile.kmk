@@ -25,6 +25,7 @@ LIBRARIES.amd64 += VBoxWddmUmHlp-x86
 # VBoxWddmUmHlp - logger and other helpers for user mode driver
 #
 VBoxWddmUmHlp_TEMPLATE    = VBOXMESA3DGUESTR3DLLMinVista
+VBoxWddmUmHlp_INST        = $(INST_ADDITIONS_LIB)
 VBoxWddmUmHlp_DEFS        = VBOX_WITH_WDDM
 VBoxWddmUmHlp_INCS        = \
 	$(PATH_ROOT)/src/VBox/Additions/WINNT/Graphics/Video/disp/wddm/shared \
