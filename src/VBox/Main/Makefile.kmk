@@ -997,7 +997,8 @@ if defined(VBOX_WITH_PRECOMPILED_HEADERS) && "$(KBUILD_TARGET)" == "win" ## @tod
  VBoxClient-x86_PCH_HDR := $(PATH_SUB_CURRENT)/src-client/win/precomp_vcc.h
 endif
  VBoxClient-x86_SDKS = $(filter-out VBOX_OPUS VBOX_VPX,$(VBoxC_SDKS))
- VBoxClient-x86_DEFS = VBOX_COM_INPROC_API_CLIENT $(VBoxC_DEFS)
+ VBoxClient-x86_DEFS = VBOX_COM_INPROC_API_CLIENT \
+	$(filter-out VBOX_WITH_RECORDING VBOX_WITH_LIBVPX VBOX_WITH_AUDIO_RECORDING VBOX_WITH_LIBOPUS,$(VBoxC_DEFS))
  VBoxClient-x86_INCS.win = \
  	$(VBoxClient-x86_0_OUTDIR) \
  	$(VBoxCOM-x86_0_OUTDIR) \
