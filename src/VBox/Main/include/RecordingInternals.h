@@ -18,6 +18,7 @@
 #ifndef ____H_RECORDING_INTERNALS
 #define ____H_RECORDING_INTERNALS
 
+#include <iprt/assert.h>
 #include <iprt/types.h> /* drag in stdint.h before vpx does it. */
 #include <list>
 
@@ -114,11 +115,54 @@ typedef enum RECORDINGBLOCKTYPE
 #endif
 } RECORDINGBLOCKTYPE;
 
+#ifdef VBOX_WITH_AUDIO_RECORDING
+void RecordingAudioFrameFree(PRECORDINGAUDIOFRAME pFrame);
+#endif
+void RecordingVideoFrameFree(PRECORDINGVIDEOFRAME pFrame);
+
 /**
  * Generic structure for keeping a single video recording (data) block.
  */
-typedef struct RECORDINGBLOCK
+struct RecordingBlock
 {
+    RecordingBlock()
+        : enmType(RECORDINGBLOCKTYPE_UNKNOWN)
+        , cRefs(0)
+        , pvData(NULL)
+        , cbData(0) { }
+
+    virtual ~RecordingBlock()
+    {
+        Reset();
+    }
+
+    void Reset(void)
+    {
+        switch (enmType)
+        {
+            case RECORDINGBLOCKTYPE_UNKNOWN:
+                break;
+
+            case RECORDINGBLOCKTYPE_VIDEO:
+                RecordingVideoFrameFree((PRECORDINGVIDEOFRAME)pvData);
+                break;
+
+#ifdef VBOX_WITH_AUDIO_RECORDING
+            case RECORDINGBLOCKTYPE_AUDIO:
+                RecordingAudioFrameFree((PRECORDINGAUDIOFRAME)pvData);
+                break;
+#endif
+            default:
+                AssertFailed();
+                break;
+        }
+
+        enmType = RECORDINGBLOCKTYPE_UNKNOWN;
+        cRefs   = 0;
+        pvData  = NULL;
+        cbData  = 0;
+    }
+
     /** The block's type. */
     RECORDINGBLOCKTYPE enmType;
     /** Number of references held of this block. */
@@ -129,15 +173,9 @@ typedef struct RECORDINGBLOCK
     void              *pvData;
     /** Size (in bytes) of the (opaque) data block. */
     size_t             cbData;
-} RECORDINGBLOCK, *PRECORDINGBLOCK;
+};
 
 /** List for keeping video recording (data) blocks. */
-typedef std::list<PRECORDINGBLOCK> RECORDINGBLOCKList;
-
-void RecordingBlockFree(PRECORDINGBLOCK pBlock);
-#ifdef VBOX_WITH_AUDIO_RECORDING
-void RecordingAudioFrameFree(PRECORDINGAUDIOFRAME pFrame);
-#endif
-void RecordingVideoFrameFree(PRECORDINGVIDEOFRAME pFrame);
+typedef std::list<RecordingBlock *> RecordingBlockList;
 
 #endif /* ____H_RECORDING_INTERNALS */

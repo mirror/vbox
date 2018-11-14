@@ -91,11 +91,13 @@ AssertCompileSize(RECORDINGBMPDIBHDR, 40);
 
 RecordingContext::RecordingContext(Console *a_pConsole)
     : pConsole(a_pConsole)
-    , enmState(RECORDINGSTS_UNINITIALIZED) { }
+    , enmState(RECORDINGSTS_UNINITIALIZED)
+    , cStreamsEnabled(0) { }
 
 RecordingContext::RecordingContext(Console *a_pConsole, const settings::RecordingSettings &a_Settings)
     : pConsole(a_pConsole)
     , enmState(RECORDINGSTS_UNINITIALIZED)
+    , cStreamsEnabled(0)
 {
     int rc = RecordingContext::createInternal(a_Settings);
     if (RT_FAILURE(rc))
@@ -138,7 +140,10 @@ DECLCALLBACK(int) RecordingContext::threadMain(RTTHREAD hThreadSelf, void *pvUse
 
             rc = pStream->Process(pThis->mapBlocksCommon);
             if (RT_FAILURE(rc))
+            {
+                LogRel(("Recording: Processing stream #%RU16 failed (%Rrc)\n", pStream->GetID(), rc));
                 break;
+            }
 
             ++itStream;
         }
@@ -190,6 +195,8 @@ int RecordingContext::createInternal(const settings::RecordingSettings &a_Settin
         {
             pStream = new RecordingStream(this, itScreen->first /* Screen ID */, itScreen->second);
             this->vecStreams.push_back(pStream);
+            if (itScreen->second.fEnabled)
+                this->cStreamsEnabled++;
         }
         catch (std::bad_alloc &)
         {
@@ -532,8 +539,7 @@ int RecordingContext::SendAudioFrame(const void *pvData, size_t cbData, uint64_t
      * The multiplexing is needed to supply all recorded (enabled) screens with the same
      * audio data at the same given point in time.
      */
-    PRECORDINGBLOCK pBlock = (PRECORDINGBLOCK)RTMemAlloc(sizeof(RECORDINGBLOCK));
-    AssertPtrReturn(pBlock, VERR_NO_MEMORY);
+    RecordingBlock *pBlock = new RecordingBlock();
     pBlock->enmType = RECORDINGBLOCKTYPE_AUDIO;
 
     PRECORDINGAUDIOFRAME pFrame = (PRECORDINGAUDIOFRAME)RTMemAlloc(sizeof(RECORDINGAUDIOFRAME));
@@ -547,7 +553,7 @@ int RecordingContext::SendAudioFrame(const void *pvData, size_t cbData, uint64_t
 
     pBlock->pvData       = pFrame;
     pBlock->cbData       = sizeof(RECORDINGAUDIOFRAME) + cbData;
-    pBlock->cRefs        = (uint16_t)this->vecStreams.size(); /* All streams need the same audio data. */
+    pBlock->cRefs        = this->cStreamsEnabled;
     pBlock->uTimeStampMs = uTimeStampMs;
 
     int rc = RTCritSectEnter(&this->CritSect);

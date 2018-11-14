@@ -60,34 +60,3 @@ void RecordingVideoFrameFree(PRECORDINGVIDEOFRAME pFrame)
     RTMemFree(pFrame);
 }
 
-/**
- * Frees a recording (data) block.
- *
- * @returns IPRT status code.
- * @param   pBlock              Recording (data) block to free. The pointer will be invalid after return.
- */
-void RecordingBlockFree(PRECORDINGBLOCK pBlock)
-{
-    if (!pBlock)
-        return;
-
-    switch (pBlock->enmType)
-    {
-        case RECORDINGBLOCKTYPE_VIDEO:
-            RecordingVideoFrameFree((PRECORDINGVIDEOFRAME)pBlock->pvData);
-            break;
-
-#ifdef VBOX_WITH_AUDIO_RECORDING
-        case RECORDINGBLOCKTYPE_AUDIO:
-            RecordingAudioFrameFree((PRECORDINGAUDIOFRAME)pBlock->pvData);
-            break;
-#endif
-        default:
-            AssertFailed();
-            break;
-    }
-
-    RTMemFree(pBlock);
-    pBlock = NULL;
-}
-

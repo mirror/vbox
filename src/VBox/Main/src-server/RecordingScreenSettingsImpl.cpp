@@ -809,7 +809,9 @@ int RecordingScreenSettings::i_initInternal(void)
 {
     Assert(m);
 
-    int rc = VINF_SUCCESS;
+    int rc = i_parseOptionsString(m->bd->strOptions, *m->bd.data());
+    if (RT_FAILURE(rc))
+        return rc;
 
     switch (m->bd->enmDest)
     {
