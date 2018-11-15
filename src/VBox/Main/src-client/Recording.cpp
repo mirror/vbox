@@ -89,11 +89,6 @@ AssertCompileSize(RECORDINGBMPDIBHDR, 40);
 #endif /* VBOX_RECORDING_DUMP */
 
 
-RecordingContext::RecordingContext(Console *a_pConsole)
-    : pConsole(a_pConsole)
-    , enmState(RECORDINGSTS_UNINITIALIZED)
-    , cStreamsEnabled(0) { }
-
 RecordingContext::RecordingContext(Console *a_pConsole, const settings::RecordingSettings &a_Settings)
     : pConsole(a_pConsole)
     , enmState(RECORDINGSTS_UNINITIALIZED)
@@ -372,6 +367,20 @@ RecordingStream *RecordingContext::getStreamInternal(unsigned uScreen) const
     return pStream;
 }
 
+int RecordingContext::lock(void)
+{
+    int rc = RTCritSectEnter(&this->CritSect);
+    AssertRC(rc);
+    return rc;
+}
+
+int RecordingContext::unlock(void)
+{
+    int rc = RTCritSectLeave(&this->CritSect);
+    AssertRC(rc);
+    return rc;
+}
+
 /**
  * Retrieves a specific recording stream of a recording context.
  *
@@ -439,15 +448,22 @@ int RecordingContext::Stop(void)
  *          no recording stream has this feature enabled.
  * @param   enmFeature          Recording feature to check for.
  */
-bool RecordingContext::IsFeatureEnabled(RecordingFeature_T enmFeature) const
+bool RecordingContext::IsFeatureEnabled(RecordingFeature_T enmFeature)
 {
+    lock();
+
     RecordingStreams::const_iterator itStream = this->vecStreams.begin();
     while (itStream != this->vecStreams.end())
     {
         if ((*itStream)->GetConfig().isFeatureEnabled(enmFeature))
+        {
+            unlock();
             return true;
+        }
         ++itStream;
     }
+
+    unlock();
 
     return false;
 }
@@ -469,22 +485,26 @@ bool RecordingContext::IsReady(void) const
  * @param   uScreen             Screen ID.
  * @param   uTimeStampMs        Current time stamp (in ms). Currently not being used.
  */
-bool RecordingContext::IsReady(uint32_t uScreen, uint64_t uTimeStampMs) const
+bool RecordingContext::IsReady(uint32_t uScreen, uint64_t uTimeStampMs)
 {
     RT_NOREF(uTimeStampMs);
 
-    if (this->enmState != RECORDINGSTS_STARTED)
-        return false;
+    lock();
 
     bool fIsReady = false;
 
-    const RecordingStream *pStream = GetStream(uScreen);
-    if (pStream)
-        fIsReady = pStream->IsReady();
+    if (this->enmState != RECORDINGSTS_STARTED)
+    {
+        const RecordingStream *pStream = GetStream(uScreen);
+        if (pStream)
+            fIsReady = pStream->IsReady();
 
-    /* Note: Do not check for other constraints like the video FPS rate here,
-     *       as this check then also would affect other (non-FPS related) stuff
-     *       like audio data. */
+        /* Note: Do not check for other constraints like the video FPS rate here,
+         *       as this check then also would affect other (non-FPS related) stuff
+         *       like audio data. */
+    }
+
+    unlock();
 
     return fIsReady;
 }
@@ -494,9 +514,33 @@ bool RecordingContext::IsReady(uint32_t uScreen, uint64_t uTimeStampMs) const
  *
  * @returns true if active, false if not.
  */
-bool RecordingContext::IsStarted(void) const
+bool RecordingContext::IsStarted(void)
 {
-    return (this->enmState == RECORDINGSTS_STARTED);
+    lock();
+
+    const bool fIsStarted = this->enmState == RECORDINGSTS_STARTED;
+
+    unlock();
+
+    return fIsStarted;
+}
+
+/**
+ * Checks if a specified limit for recording has been reached.
+ *
+ * @returns true if any limit has been reached.
+ */
+bool RecordingContext::IsLimitReached(void)
+{
+    lock();
+
+    LogFlowThisFunc(("cStreamsEnabled=%RU16\n", this->cStreamsEnabled));
+
+    const bool fLimitReached = this->cStreamsEnabled == 0;
+
+    unlock();
+
+    return fLimitReached;
 }
 
 /**
@@ -504,18 +548,41 @@ bool RecordingContext::IsStarted(void) const
  *
  * @returns true if any limit has been reached.
  * @param   uScreen             Screen ID.
- * @param   tsNowMs             Current time stamp (in ms).
+ * @param   uTimeStampMs        Timestamp (in ms) to check for.
  */
-bool RecordingContext::IsLimitReached(uint32_t uScreen, uint64_t tsNowMs) const
+bool RecordingContext::IsLimitReached(uint32_t uScreen, uint64_t uTimeStampMs)
 {
-    const RecordingStream *pStream = GetStream(uScreen);
+    lock();
+
+    bool fLimitReached = false;
+
+    const RecordingStream *pStream = getStreamInternal(uScreen);
     if (   !pStream
-        || pStream->IsLimitReached(tsNowMs))
+        || pStream->IsLimitReached(uTimeStampMs))
     {
-        return true;
+        fLimitReached = true;
     }
 
-    return false;
+    unlock();
+
+    return fLimitReached;
+}
+
+DECLCALLBACK(int) RecordingContext::OnLimitReached(uint32_t uScreen, int rc)
+{
+    RT_NOREF(uScreen);
+    LogFlowThisFunc(("Stream %RU32 has reached its limit (%Rrc)\n", uScreen, rc));
+
+    lock();
+
+    Assert(this->cStreamsEnabled);
+    this->cStreamsEnabled--;
+
+    LogFlowThisFunc(("cStreamsEnabled=%RU16\n", cStreamsEnabled));
+
+    unlock();
+
+    return VINF_SUCCESS;
 }
 
 /**
@@ -628,6 +695,7 @@ int RecordingContext::SendVideoFrame(uint32_t uScreen, uint32_t x, uint32_t y,
         rc = RTCritSectLeave(&this->CritSect);
         AssertRC(rc);
 
+        AssertFailed();
         return VERR_NOT_FOUND;
     }
 
@@ -637,7 +705,7 @@ int RecordingContext::SendVideoFrame(uint32_t uScreen, uint32_t x, uint32_t y,
     AssertRC(rc2);
 
     if (   RT_SUCCESS(rc)
-        && rc != VINF_TRY_AGAIN) /* Only signal the thread if operation was successful. */
+        && rc != VINF_RECORDING_THROTTLED) /* Only signal the thread if operation was successful. */
     {
         threadNotify();
     }

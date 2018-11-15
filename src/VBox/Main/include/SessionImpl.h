@@ -101,7 +101,7 @@ private:
                         BOOL aAdd);
     HRESULT onCPUExecutionCapChange(ULONG aExecutionCap);
     HRESULT onVRDEServerChange(BOOL aRestart);
-    HRESULT onRecordingChange();
+    HRESULT onRecordingChange(BOOL aEnable);
     HRESULT onUSBControllerChange();
     HRESULT onSharedFolderChange(BOOL aGlobal);
     HRESULT onUSBDeviceAttach(const ComPtr<IUSBDevice> &aDevice,

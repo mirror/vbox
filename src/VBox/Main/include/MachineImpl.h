@@ -523,7 +523,7 @@ public:
     virtual HRESULT i_onBandwidthGroupChange(IBandwidthGroup * /* aBandwidthGroup */) { return S_OK; }
     virtual HRESULT i_onStorageDeviceChange(IMediumAttachment * /* mediumAttachment */, BOOL /* remove */,
                                             BOOL /* silent */) { return S_OK; }
-    virtual HRESULT i_onRecordingChange() { return S_OK; }
+    virtual HRESULT i_onRecordingChange(BOOL /* aEnable */) { return S_OK; }
 
     HRESULT i_saveRegistryEntry(settings::MachineRegistryEntry &data);
 
@@ -1326,7 +1326,7 @@ public:
     HRESULT i_onParallelPortChange(IParallelPort *parallelPort);
     HRESULT i_onCPUChange(ULONG aCPU, BOOL aRemove);
     HRESULT i_onVRDEServerChange(BOOL aRestart);
-    HRESULT i_onRecordingChange();
+    HRESULT i_onRecordingChange(BOOL aEnable);
     HRESULT i_onUSBControllerChange();
     HRESULT i_onUSBDeviceAttach(IUSBDevice *aDevice,
                                 IVirtualBoxErrorInfo *aError,

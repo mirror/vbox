@@ -145,8 +145,8 @@ public:
     void i_recordingDestroy(void);
     int i_recordingEnable(BOOL fEnable, util::AutoWriteLock *pAutoLock);
     int i_recordingGetSettings(settings::RecordingSettings &Settings);
-    int i_recordingStart(void);
-    int i_recordingStop(void);
+    int i_recordingStart(util::AutoWriteLock *pAutoLock = NULL);
+    int i_recordingStop(util::AutoWriteLock *pAutoLock = NULL);
     AudioVideoRec *i_recordingGetAudioDrv(void) const { return Recording.mAudioRec; }
     RecordingContext *i_recordingGetContext(void) const { return Recording.mpCtx; }
     HRESULT i_recordingSendAudio(const void *pvData, size_t cbData, uint64_t uDurationMs);
@@ -178,7 +178,7 @@ public:
     HRESULT i_onClipboardModeChange(ClipboardMode_T aClipboardMode);
     HRESULT i_onDnDModeChange(DnDMode_T aDnDMode);
     HRESULT i_onVRDEServerChange(BOOL aRestart);
-    HRESULT i_onRecordingChange();
+    HRESULT i_onRecordingChange(BOOL fEnable);
     HRESULT i_onUSBControllerChange();
     HRESULT i_onSharedFolderChange(BOOL aGlobal);
     HRESULT i_onUSBDeviceAttach(IUSBDevice *aDevice, IVirtualBoxErrorInfo *aError, ULONG aMaskedIfs,
@@ -1041,7 +1041,7 @@ private:
             , mAudioRec(NULL) { }
 
         /** The recording context. */
-        RecordingContext       *mpCtx;
+        RecordingContext     *mpCtx;
 # ifdef VBOX_WITH_AUDIO_RECORDING
         /** Pointer to capturing audio backend. */
         AudioVideoRec * const mAudioRec;

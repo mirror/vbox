@@ -38,8 +38,6 @@ class RecordingContext
 {
 public:
 
-    RecordingContext(Console *pConsole);
-
     RecordingContext(Console *pConsole, const settings::RecordingSettings &a_Settings);
 
     virtual ~RecordingContext(void);
@@ -63,11 +61,14 @@ public:
                        uint8_t *puSrcData, uint64_t uTimeStampMs);
 public:
 
-    bool IsFeatureEnabled(RecordingFeature_T enmFeature) const;
+    bool IsFeatureEnabled(RecordingFeature_T enmFeature);
     bool IsReady(void) const;
-    bool IsReady(uint32_t uScreen, uint64_t uTimeStampMs) const;
-    bool IsStarted(void) const;
-    bool IsLimitReached(uint32_t uScreen, uint64_t tsNowMs) const;
+    bool IsReady(uint32_t uScreen, uint64_t uTimeStampMs);
+    bool IsStarted(void);
+    bool IsLimitReached(void);
+    bool IsLimitReached(uint32_t uScreen, uint64_t uTimeStampMs);
+
+    DECLCALLBACK(int) OnLimitReached(uint32_t uScreen, int rc);
 
 protected:
 
@@ -78,6 +79,9 @@ protected:
     int destroyInternal(void);
 
     RecordingStream *getStreamInternal(unsigned uScreen) const;
+
+    int lock(void);
+    int unlock(void);
 
     static DECLCALLBACK(int) threadMain(RTTHREAD hThreadSelf, void *pvUser);
 
@@ -101,26 +105,26 @@ protected:
     };
 
     /** Pointer to the console object. */
-    Console                  *pConsole;
+    Console                     *pConsole;
     /** Used recording configuration. */
     settings::RecordingSettings  Settings;
     /** The current state. */
-    RECORDINGSTS              enmState;
+    RECORDINGSTS                 enmState;
     /** Critical section to serialize access. */
-    RTCRITSECT                CritSect;
+    RTCRITSECT                   CritSect;
     /** Semaphore to signal the encoding worker thread. */
-    RTSEMEVENT                WaitEvent;
+    RTSEMEVENT                   WaitEvent;
     /** Shutdown indicator. */
-    bool                      fShutdown;
+    bool                         fShutdown;
     /** Worker thread. */
-    RTTHREAD                  Thread;
+    RTTHREAD                     Thread;
     /** Vector of current recording streams.
      *  Per VM screen (display) one recording stream is being used. */
-    RecordingStreams          vecStreams;
+    RecordingStreams             vecStreams;
     /** Number of streams in vecStreams which currently are enabled for recording. */
-    uint16_t                  cStreamsEnabled;
+    uint16_t                     cStreamsEnabled;
     /** Timestamp (in ms) of when recording has been started. */
-    uint64_t                  tsStartMs;
+    uint64_t                     tsStartMs;
     /** Block map of common blocks which need to get multiplexed
      *  to all recording streams. This common block maps should help
      *  reducing the time spent in EMT and avoid doing the (expensive)
@@ -128,7 +132,7 @@ protected:
      *
      *  For now this only affects audio, e.g. all recording streams
      *  need to have the same audio data at a specific point in time. */
-    RecordingBlockMap         mapBlocksCommon;
+    RecordingBlockMap            mapBlocksCommon;
 };
 #endif /* !____H_RECORDING */
 

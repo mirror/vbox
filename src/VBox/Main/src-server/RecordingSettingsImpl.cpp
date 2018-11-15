@@ -45,7 +45,6 @@ struct RecordingSettings::Data
     Machine * const              pMachine;
     ComObjPtr<RecordingSettings> pPeer;
     RecordScreenSettingsMap      mapScreenObj;
-    bool                         fHasMachineLock;
 
     // use the XML settings structure in the members for simplicity
     Backupable<settings::RecordingSettings> bd;
@@ -86,7 +85,6 @@ HRESULT RecordingSettings::init(Machine *aParent)
     unconst(m->pMachine) = aParent;
 
     m->bd.allocate();
-    m->fHasMachineLock = false;
 
     autoInitSpan.setSucceeded();
 
@@ -122,7 +120,6 @@ HRESULT RecordingSettings::init(Machine *aParent, RecordingSettings *that)
 
     m->bd.share(that->m->bd);
     m->mapScreenObj = that->m->mapScreenObj;
-    m->fHasMachineLock = false;
 
     autoInitSpan.setSucceeded();
 
@@ -155,7 +152,6 @@ HRESULT RecordingSettings::initCopy(Machine *aParent, RecordingSettings *that)
 
     m->bd.attachCopy(that->m->bd);
     m->mapScreenObj = that->m->mapScreenObj;
-    m->fHasMachineLock = false;
 
     autoInitSpan.setSucceeded();
 
@@ -218,7 +214,7 @@ HRESULT RecordingSettings::setEnabled(BOOL enable)
         m->bd->fEnabled = fEnabled;
 
         alock.release();
-        rc = m->pMachine->i_onRecordingChange();
+        rc = m->pMachine->i_onRecordingChange(enable);
         if (FAILED(rc))
         {
             /*
@@ -235,15 +231,9 @@ HRESULT RecordingSettings::setEnabled(BOOL enable)
             AutoWriteLock mlock(m->pMachine COMMA_LOCKVAL_SRC_POS);  // mParent is const, needs no locking
             m->pMachine->i_setModified(Machine::IsModified_Recording);
 
-            /* We need to indicate here that we just took the machine lock, as Machine::i_saveSettings() will
-             * call i_commit(), which in turn also wants to lock the machine for writing. */
-            m->fHasMachineLock = true;
-
             /** Save settings if online - @todo why is this required? -- @bugref{6818} */
             if (Global::IsOnline(m->pMachine->i_getMachineState()))
                 rc = m->pMachine->i_saveSettings(NULL);
-
-            m->fHasMachineLock = false;
         }
     }
 

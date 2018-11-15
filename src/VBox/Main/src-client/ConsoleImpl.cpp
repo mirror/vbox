@@ -5640,8 +5640,6 @@ int Console::i_recordingEnable(BOOL fEnable, util::AutoWriteLock *pAutoLock)
         {
             LogRel(("Recording: %s\n", fEnable ? "Enabling" : "Disabling"));
 
-            pDisplay->i_recordingInvalidate();
-
             if (fEnable)
             {
                 vrc = i_recordingCreate();
@@ -5660,15 +5658,21 @@ int Console::i_recordingEnable(BOOL fEnable, util::AutoWriteLock *pAutoLock)
                     if (   RT_SUCCESS(vrc)
                         && Recording.mpCtx->IsReady()) /* Any video recording (audio and/or video) feature enabled? */
                     {
-                        vrc = i_recordingStart();
+                        vrc = pDisplay->i_recordingInvalidate();
+                        if (RT_SUCCESS(vrc))
+                            vrc = i_recordingStart(pAutoLock);
                     }
                 }
+
+                if (RT_FAILURE(vrc))
+                    LogRel(("Recording: Failed to enable with %Rrc\n", vrc));
             }
             else
             {
-                i_recordingStop();
+                i_recordingStop(pAutoLock);
 # ifdef VBOX_WITH_AUDIO_RECORDING
-                Recording.mAudioRec->doDetachDriverViaEmt(mpUVM, pAutoLock);
+                if (Recording.mAudioRec)
+                    Recording.mAudioRec->doDetachDriverViaEmt(mpUVM, pAutoLock);
 # endif
                 i_recordingDestroy();
             }
@@ -5684,7 +5688,10 @@ int Console::i_recordingEnable(BOOL fEnable, util::AutoWriteLock *pAutoLock)
 }
 #endif /* VBOX_WITH_RECORDING */
 
-HRESULT Console::i_onRecordingChange()
+/**
+ * Called by IInternalSessionControl::OnRecordingChange().
+ */
+HRESULT Console::i_onRecordingChange(BOOL fEnabled)
 {
     AutoCaller autoCaller(this);
     AssertComRCReturnRC(autoCaller.rc());
@@ -5697,13 +5704,7 @@ HRESULT Console::i_onRecordingChange()
     SafeVMPtrQuiet ptrVM(this);
     if (ptrVM.isOk())
     {
-        ComPtr<IRecordingSettings> recordingSettings;
-        rc = mMachine->COMGETTER(RecordingSettings)(recordingSettings.asOutParam());
-        AssertComRCReturnRC(rc);
-
-        BOOL fEnabled;
-        rc = recordingSettings->COMGETTER(Enabled)(&fEnabled);
-        AssertComRCReturnRC(rc);
+        LogFlowThisFunc(("fEnabled=%RTbool\n", RT_BOOL(fEnabled)));
 
         int vrc = i_recordingEnable(fEnabled, &alock);
         if (RT_SUCCESS(vrc))
@@ -6973,27 +6974,22 @@ int Console::i_recordingCreate(void)
 {
     AssertReturn(Recording.mpCtx == NULL, VERR_WRONG_ORDER);
 
-    int rc = VINF_SUCCESS;
-
-    try
-    {
-        Recording.mpCtx = new RecordingContext(this);
-    }
-    catch (std::bad_alloc &)
-    {
-        return VERR_NO_MEMORY;
-    }
-    catch (int &rc2)
-    {
-        return rc2;
-    }
-
-    settings::RecordingSettings Settings;
-    rc = i_recordingGetSettings(Settings);
+    settings::RecordingSettings recordingSettings;
+    int rc = i_recordingGetSettings(recordingSettings);
     if (RT_SUCCESS(rc))
     {
-        AssertPtr(Recording.mpCtx);
-        rc = Recording.mpCtx->Create(Settings);
+        try
+        {
+            Recording.mpCtx = new RecordingContext(this /* pConsole */, recordingSettings);
+        }
+        catch (std::bad_alloc &)
+        {
+            return VERR_NO_MEMORY;
+        }
+        catch (int &rc2)
+        {
+            return rc2;
+        }
     }
 
     LogFlowFuncLeaveRC(rc);
@@ -7019,8 +7015,9 @@ void Console::i_recordingDestroy(void)
  *
  * @returns IPRT status code.
  */
-int Console::i_recordingStart(void)
+int Console::i_recordingStart(util::AutoWriteLock *pAutoLock /* = NULL */)
 {
+    RT_NOREF(pAutoLock);
     AssertPtrReturn(Recording.mpCtx, VERR_WRONG_ORDER);
 
     if (Recording.mpCtx->IsStarted())
@@ -7042,7 +7039,7 @@ int Console::i_recordingStart(void)
 /**
  * Stops recording. Does nothing if recording is not active.
  */
-int Console::i_recordingStop(void)
+int Console::i_recordingStop(util::AutoWriteLock *pAutoLock /* = NULL */)
 {
     if (   !Recording.mpCtx
         || !Recording.mpCtx->IsStarted())
@@ -7057,11 +7054,17 @@ int Console::i_recordingStop(void)
         for (unsigned uScreen = 0; uScreen < cStreams; ++uScreen)
             mDisplay->i_recordingScreenChanged(uScreen);
 
+        if (pAutoLock)
+            pAutoLock->release();
+
         ComPtr<IRecordingSettings> pRecordSettings;
         HRESULT hrc = mMachine->COMGETTER(RecordingSettings)(pRecordSettings.asOutParam());
         ComAssertComRC(hrc);
-        hrc = pRecordSettings->COMSETTER(Enabled)(false);
+        hrc = pRecordSettings->COMSETTER(Enabled)(FALSE);
         ComAssertComRC(hrc);
+
+        if (pAutoLock)
+            pAutoLock->acquire();
     }
 
     LogFlowFuncLeaveRC(rc);

@@ -14101,7 +14101,7 @@ HRESULT SessionMachine::i_onVRDEServerChange(BOOL aRestart)
 /**
  * @note Locks this object for reading.
  */
-HRESULT SessionMachine::i_onRecordingChange()
+HRESULT SessionMachine::i_onRecordingChange(BOOL aEnable)
 {
     LogFlowThisFunc(("\n"));
 
@@ -14119,7 +14119,7 @@ HRESULT SessionMachine::i_onRecordingChange()
     if (!directControl)
         return S_OK;
 
-    return directControl->OnRecordingChange();
+    return directControl->OnRecordingChange(aEnable);
 }
 
 /**

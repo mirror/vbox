@@ -3431,17 +3431,19 @@ DECLCALLBACK(void) Display::i_displayUpdateCallback(PPDMIDISPLAYCONNECTOR pInter
             }
 # endif /* VBOX_WITH_HGCM && VBOX_WITH_CROGL */
 
+            /* If the recording context has reached the configured recording
+             * limit, disable recording. */
+            if (pCtx->IsLimitReached())
+            {
+                pDisplay->mParent->i_onRecordingChange(FALSE /* Disable */);
+                break;
+            }
+
             uint64_t tsNowMs = RTTimeProgramMilliTS();
             for (uScreenId = 0; uScreenId < pDisplay->mcMonitors; uScreenId++)
             {
                 if (!pDisplay->maRecordingEnabled[uScreenId])
                     continue;
-
-                if (pCtx->IsLimitReached(uScreenId, tsNowMs))
-                {
-                    pDisplay->mParent->i_recordingStop();
-                    break;
-                }
 
                 DISPLAYFBINFO *pFBInfo = &pDisplay->maFramebuffers[uScreenId];
                 if (!pFBInfo->fDisabled)

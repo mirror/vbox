@@ -262,18 +262,18 @@ const settings::RecordingScreenSettings &RecordingStream::GetConfig(void) const
 }
 
 /**
- * Checks if a specified limit for a recording stream has been reached.
+ * Checks if a specified limit for a recording stream has been reached, internal version.
  *
  * @returns true if any limit has been reached.
- * @param   tsNowMs             Current time stamp (in ms).
+ * @param   uTimeStampMs        Timestamp (in ms) to check for.
  */
-bool RecordingStream::IsLimitReached(uint64_t tsNowMs) const
+bool RecordingStream::isLimitReachedInternal(uint64_t uTimeStampMs) const
 {
-    if (!IsReady())
-        return true;
+    LogFlowThisFunc(("uTimeStampMs=%RU64, ulMaxTimeS=%RU32, tsStartMs=%RU64\n",
+                     uTimeStampMs, this->ScreenSettings.ulMaxTimeS, this->tsStartMs));
 
     if (   this->ScreenSettings.ulMaxTimeS
-        && tsNowMs >= this->tsStartMs + (this->ScreenSettings.ulMaxTimeS * RT_MS_1SEC))
+        && uTimeStampMs >= this->tsStartMs + (this->ScreenSettings.ulMaxTimeS * RT_MS_1SEC))
     {
         LogRel(("Recording: Time limit for stream #%RU16 has been reached (%RU32s)\n",
                 this->uScreenID, this->ScreenSettings.ulMaxTimeS));
@@ -303,6 +303,62 @@ bool RecordingStream::IsLimitReached(uint64_t tsNowMs) const
     }
 
     return false;
+}
+
+/**
+ * Internal iteration main loop.
+ * Does housekeeping and recording context notification.
+ *
+ * @returns IPRT status code.
+ * @param   uTimeStampMs        Current timestamp (in ms).
+ */
+int RecordingStream::iterateInternal(uint64_t uTimeStampMs)
+{
+    if (!this->fEnabled)
+        return VINF_SUCCESS;
+
+    int rc;
+
+    if (isLimitReachedInternal(uTimeStampMs))
+    {
+        rc = VINF_RECORDING_LIMIT_REACHED;
+    }
+    else
+        rc = VINF_SUCCESS;
+
+    AssertPtr(this->pCtx);
+
+    switch (rc)
+    {
+        case VINF_RECORDING_LIMIT_REACHED:
+        {
+            this->fEnabled = false;
+
+            int rc2 = this->pCtx->OnLimitReached(this->uScreenID, VINF_SUCCESS /* rc */);
+            AssertRC(rc2);
+            break;
+        }
+
+        default:
+            break;
+    }
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
+/**
+ * Checks if a specified limit for a recording stream has been reached.
+ *
+ * @returns true if any limit has been reached.
+ * @param   uTimeStampMs        Timestamp (in ms) to check for.
+ */
+bool RecordingStream::IsLimitReached(uint64_t uTimeStampMs) const
+{
+    if (!IsReady())
+        return true;
+
+    return isLimitReachedInternal(uTimeStampMs);
 }
 
 /**
@@ -448,7 +504,9 @@ int RecordingStream::Process(RecordingBlockMap &mapBlocksCommon)
 /**
  * Sends a raw (e.g. not yet encoded) video frame to the recording stream.
  *
- * @returns IPRT status code.
+ * @returns IPRT status code. Will return VINF_RECORDING_LIMIT_REACHED if the stream's recording
+ *          limit has been reached or VINF_RECORDING_THROTTLED if the frame is too early for the current
+ *          FPS setting.
  * @param   x                   Upper left (X) coordinate where the video frame starts.
  * @param   y                   Upper left (Y) coordinate where the video frame starts.
  * @param   uPixelFormat        Pixel format of the video frame.
@@ -464,21 +522,22 @@ int RecordingStream::SendVideoFrame(uint32_t x, uint32_t y, uint32_t uPixelForma
 {
     lock();
 
+    LogFlowFunc(("uTimeStampMs=%RU64\n", uTimeStampMs));
+
     PRECORDINGVIDEOFRAME pFrame = NULL;
 
-    int rc = VINF_SUCCESS;
+    int rc = iterateInternal(uTimeStampMs);
+    if (rc != VINF_SUCCESS) /* Can return VINF_RECORDING_LIMIT_REACHED. */
+    {
+        unlock();
+        return rc;
+    }
 
     do
     {
-        if (!this->fEnabled)
-        {
-            rc = VINF_TRY_AGAIN; /* Not (yet) enabled. */
-            break;
-        }
-
         if (uTimeStampMs < this->Video.uLastTimeStampMs + this->Video.uDelayMs)
         {
-            rc = VINF_TRY_AGAIN; /* Respect maximum frames per second. */
+            rc = VINF_RECORDING_THROTTLED; /* Respect maximum frames per second. */
             break;
         }
 
@@ -709,7 +768,7 @@ int RecordingStream::initInternal(RecordingContext *a_pCtx, uint32_t uScreen, co
     if (RT_FAILURE(rc))
         return rc;
 
-    const settings::RecordingScreenSettings *pSettings = &this->ScreenSettings;
+    settings::RecordingScreenSettings *pSettings = &this->ScreenSettings;
 
     rc = RTCritSectInit(&this->CritSect);
     if (RT_FAILURE(rc))
@@ -822,7 +881,7 @@ int RecordingStream::initInternal(RecordingContext *a_pCtx, uint32_t uScreen, co
     {
         this->enmState  = RECORDINGSTREAMSTATE_INITIALIZED;
         this->fEnabled  = true;
-        this->tsStartMs = RTTimeMilliTS();
+        this->tsStartMs = RTTimeProgramMilliTS();
     }
     else
     {
@@ -845,26 +904,23 @@ int RecordingStream::close(void)
 {
     int rc = VINF_SUCCESS;
 
-    if (this->fEnabled)
+    switch (this->ScreenSettings.enmDest)
     {
-        switch (this->ScreenSettings.enmDest)
+        case RecordingDestination_File:
         {
-            case RecordingDestination_File:
-            {
-                if (this->File.pWEBM)
-                    rc = this->File.pWEBM->Close();
-                break;
-            }
-
-            default:
-                AssertFailed(); /* Should never happen. */
-                break;
+            if (this->File.pWEBM)
+                rc = this->File.pWEBM->Close();
+            break;
         }
 
-        this->Blocks.Clear();
-
-        LogRel(("Recording: Recording screen #%u stopped\n", this->uScreenID));
+        default:
+            AssertFailed(); /* Should never happen. */
+            break;
     }
+
+    this->Blocks.Clear();
+
+    LogRel(("Recording: Recording screen #%u stopped\n", this->uScreenID));
 
     if (RT_FAILURE(rc))
     {

@@ -20684,7 +20684,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IInternalSessionControl" extends="$unknown"
-    uuid="DE773CFC-B679-4225-8EAE-938D294B73D2"
+    uuid="B1C3994E-F8CD-4D02-94D0-1AAF884751ED"
     internal="yes"
     wsmap="suppress"
     >
@@ -20988,6 +20988,9 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <desc>
         Triggered when recording settings have changed.
       </desc>
+      <param name="enable" type="boolean" dir="in">
+        <desc>TODO</desc>
+      </param>
     </method>
 
     <method name="onUSBControllerChange">

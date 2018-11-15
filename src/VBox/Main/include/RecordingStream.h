@@ -125,7 +125,7 @@ public:
 
     const settings::RecordingScreenSettings &GetConfig(void) const;
     uint16_t GetID(void) const { return this->uScreenID; };
-    bool IsLimitReached(uint64_t tsNowMs) const;
+    bool IsLimitReached(uint64_t uTimeStampMs) const;
     bool IsReady(void) const;
 
 protected:
@@ -140,6 +140,9 @@ protected:
     int unitVideo(void);
 
     int initAudio(void);
+
+    bool isLimitReachedInternal(uint64_t uTimeStampMs) const;
+    int iterateInternal(uint64_t uTimeStampMs);
 
 #ifdef VBOX_WITH_LIBVPX
     int initVideoVPX(void);
