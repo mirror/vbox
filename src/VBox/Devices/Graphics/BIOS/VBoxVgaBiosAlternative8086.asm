@@ -257,7 +257,7 @@ vgabios_int10_handler:                       ; 0xc0022 LB 0x56e
     push di                                   ; 57                          ; 0xc00e6 vgarom.asm:106
     mov bx, 0c000h                            ; bb 00 c0                    ; 0xc00e7 vgarom.asm:199
     mov ds, bx                                ; 8e db                       ; 0xc00ea vgarom.asm:200
-    call 0329eh                               ; e8 af 31                    ; 0xc00ec vgarom.asm:201
+    call 032a1h                               ; e8 b2 31                    ; 0xc00ec vgarom.asm:201
     pop di                                    ; 5f                          ; 0xc00ef vgarom.asm:116
     pop si                                    ; 5e                          ; 0xc00f0 vgarom.asm:117
     pop bp                                    ; 5d                          ; 0xc00f1 vgarom.asm:118
@@ -1527,8 +1527,8 @@ vbe_biosfn_return_protected_mode_interface: ; 0xc092b LB 0x17
   ; Padding 0xbe bytes at 0xc0942
   times 190 db 0
 
-section _TEXT progbits vstart=0xa00 align=1 ; size=0x32df class=CODE group=AUTO
-  ; disGetNextSymbol 0xc0a00 LB 0x32df -> off=0x0 cb=000000000000001c uValue=00000000000c0a00 'set_int_vector'
+section _TEXT progbits vstart=0xa00 align=1 ; size=0x342a class=CODE group=AUTO
+  ; disGetNextSymbol 0xc0a00 LB 0x342a -> off=0x0 cb=000000000000001c uValue=00000000000c0a00 'set_int_vector'
 set_int_vector:                              ; 0xc0a00 LB 0x1c
     push bx                                   ; 53                          ; 0xc0a00 vgabios.c:85
     push bp                                   ; 55                          ; 0xc0a01
@@ -1544,7 +1544,7 @@ set_int_vector:                              ; 0xc0a00 LB 0x1c
     pop bp                                    ; 5d                          ; 0xc0a19 vgabios.c:90
     pop bx                                    ; 5b                          ; 0xc0a1a
     retn                                      ; c3                          ; 0xc0a1b
-  ; disGetNextSymbol 0xc0a1c LB 0x32c3 -> off=0x0 cb=000000000000001c uValue=00000000000c0a1c 'init_vga_card'
+  ; disGetNextSymbol 0xc0a1c LB 0x340e -> off=0x0 cb=000000000000001c uValue=00000000000c0a1c 'init_vga_card'
 init_vga_card:                               ; 0xc0a1c LB 0x1c
     push bp                                   ; 55                          ; 0xc0a1c vgabios.c:141
     mov bp, sp                                ; 89 e5                       ; 0xc0a1d
@@ -1562,7 +1562,7 @@ init_vga_card:                               ; 0xc0a1c LB 0x1c
     pop dx                                    ; 5a                          ; 0xc0a35
     pop bp                                    ; 5d                          ; 0xc0a36
     retn                                      ; c3                          ; 0xc0a37
-  ; disGetNextSymbol 0xc0a38 LB 0x32a7 -> off=0x0 cb=0000000000000032 uValue=00000000000c0a38 'init_bios_area'
+  ; disGetNextSymbol 0xc0a38 LB 0x33f2 -> off=0x0 cb=0000000000000032 uValue=00000000000c0a38 'init_bios_area'
 init_bios_area:                              ; 0xc0a38 LB 0x32
     push bx                                   ; 53                          ; 0xc0a38 vgabios.c:162
     push bp                                   ; 55                          ; 0xc0a39
@@ -1581,14 +1581,14 @@ init_bios_area:                              ; 0xc0a38 LB 0x32
     pop bp                                    ; 5d                          ; 0xc0a67 vgabios.c:182
     pop bx                                    ; 5b                          ; 0xc0a68
     retn                                      ; c3                          ; 0xc0a69
-  ; disGetNextSymbol 0xc0a6a LB 0x3275 -> off=0x0 cb=0000000000000022 uValue=00000000000c0a6a 'vgabios_init_func'
+  ; disGetNextSymbol 0xc0a6a LB 0x33c0 -> off=0x0 cb=0000000000000022 uValue=00000000000c0a6a 'vgabios_init_func'
 vgabios_init_func:                           ; 0xc0a6a LB 0x22
     inc bp                                    ; 45                          ; 0xc0a6a vgabios.c:222
     push bp                                   ; 55                          ; 0xc0a6b
     mov bp, sp                                ; 89 e5                       ; 0xc0a6c
     call 00a1ch                               ; e8 ab ff                    ; 0xc0a6e vgabios.c:224
     call 00a38h                               ; e8 c4 ff                    ; 0xc0a71 vgabios.c:225
-    call 0371ah                               ; e8 a3 2c                    ; 0xc0a74 vgabios.c:227
+    call 0376eh                               ; e8 f7 2c                    ; 0xc0a74 vgabios.c:227
     mov dx, strict word 00022h                ; ba 22 00                    ; 0xc0a77 vgabios.c:229
     mov ax, strict word 00010h                ; b8 10 00                    ; 0xc0a7a
     call 00a00h                               ; e8 80 ff                    ; 0xc0a7d
@@ -1600,7 +1600,7 @@ vgabios_init_func:                           ; 0xc0a6a LB 0x22
     pop bp                                    ; 5d                          ; 0xc0a89
     dec bp                                    ; 4d                          ; 0xc0a8a
     retf                                      ; cb                          ; 0xc0a8b
-  ; disGetNextSymbol 0xc0a8c LB 0x3253 -> off=0x0 cb=0000000000000046 uValue=00000000000c0a8c 'vga_get_cursor_pos'
+  ; disGetNextSymbol 0xc0a8c LB 0x339e -> off=0x0 cb=0000000000000046 uValue=00000000000c0a8c 'vga_get_cursor_pos'
 vga_get_cursor_pos:                          ; 0xc0a8c LB 0x46
     push bp                                   ; 55                          ; 0xc0a8c vgabios.c:327
     mov bp, sp                                ; 89 e5                       ; 0xc0a8d
@@ -1636,7 +1636,7 @@ vga_get_cursor_pos:                          ; 0xc0a8c LB 0x46
     pop cx                                    ; 59                          ; 0xc0acf
     pop bp                                    ; 5d                          ; 0xc0ad0
     retn                                      ; c3                          ; 0xc0ad1
-  ; disGetNextSymbol 0xc0ad2 LB 0x320d -> off=0x0 cb=000000000000009f uValue=00000000000c0ad2 'vga_read_char_attr'
+  ; disGetNextSymbol 0xc0ad2 LB 0x3358 -> off=0x0 cb=000000000000009f uValue=00000000000c0ad2 'vga_read_char_attr'
 vga_read_char_attr:                          ; 0xc0ad2 LB 0x9f
     push bp                                   ; 55                          ; 0xc0ad2 vgabios.c:340
     mov bp, sp                                ; 89 e5                       ; 0xc0ad3
@@ -1709,7 +1709,7 @@ vga_read_char_attr:                          ; 0xc0ad2 LB 0x9f
     pop bx                                    ; 5b                          ; 0xc0b6e
     pop bp                                    ; 5d                          ; 0xc0b6f
     retn                                      ; c3                          ; 0xc0b70
-  ; disGetNextSymbol 0xc0b71 LB 0x316e -> off=0x10 cb=000000000000007b uValue=00000000000c0b81 'vga_get_font_info'
+  ; disGetNextSymbol 0xc0b71 LB 0x32b9 -> off=0x10 cb=000000000000007b uValue=00000000000c0b81 'vga_get_font_info'
     db  096h, 00bh, 0d4h, 00bh, 0d9h, 00bh, 0e1h, 00bh, 0e6h, 00bh, 0ebh, 00bh, 0f0h, 00bh, 0f5h, 00bh
 vga_get_font_info:                           ; 0xc0b81 LB 0x7b
     push bp                                   ; 55                          ; 0xc0b81 vgabios.c:373
@@ -1766,7 +1766,7 @@ vga_get_font_info:                           ; 0xc0b81 LB 0x7b
     mov ax, 07b1fh                            ; b8 1f 7b                    ; 0xc0bf5 vgabios.c:401
     jmp short 00bdch                          ; eb e2                       ; 0xc0bf8
     jmp short 00bcbh                          ; eb cf                       ; 0xc0bfa vgabios.c:407
-  ; disGetNextSymbol 0xc0bfc LB 0x30e3 -> off=0x0 cb=0000000000000143 uValue=00000000000c0bfc 'vga_read_pixel'
+  ; disGetNextSymbol 0xc0bfc LB 0x322e -> off=0x0 cb=0000000000000143 uValue=00000000000c0bfc 'vga_read_pixel'
 vga_read_pixel:                              ; 0xc0bfc LB 0x143
     push bp                                   ; 55                          ; 0xc0bfc vgabios.c:420
     mov bp, sp                                ; 89 e5                       ; 0xc0bfd
@@ -1904,7 +1904,7 @@ vga_read_pixel:                              ; 0xc0bfc LB 0x143
     pop si                                    ; 5e                          ; 0xc0d3c
     pop bp                                    ; 5d                          ; 0xc0d3d
     retn                                      ; c3                          ; 0xc0d3e
-  ; disGetNextSymbol 0xc0d3f LB 0x2fa0 -> off=0x0 cb=000000000000009f uValue=00000000000c0d3f 'biosfn_perform_gray_scale_summing'
+  ; disGetNextSymbol 0xc0d3f LB 0x30eb -> off=0x0 cb=000000000000009f uValue=00000000000c0d3f 'biosfn_perform_gray_scale_summing'
 biosfn_perform_gray_scale_summing:           ; 0xc0d3f LB 0x9f
     push bp                                   ; 55                          ; 0xc0d3f vgabios.c:473
     mov bp, sp                                ; 89 e5                       ; 0xc0d40
@@ -1995,7 +1995,7 @@ biosfn_perform_gray_scale_summing:           ; 0xc0d3f LB 0x9f
     pop bx                                    ; 5b                          ; 0xc0ddb
     pop bp                                    ; 5d                          ; 0xc0ddc
     retn                                      ; c3                          ; 0xc0ddd
-  ; disGetNextSymbol 0xc0dde LB 0x2f01 -> off=0x0 cb=00000000000000b3 uValue=00000000000c0dde 'biosfn_set_cursor_shape'
+  ; disGetNextSymbol 0xc0dde LB 0x304c -> off=0x0 cb=00000000000000b3 uValue=00000000000c0dde 'biosfn_set_cursor_shape'
 biosfn_set_cursor_shape:                     ; 0xc0dde LB 0xb3
     push bp                                   ; 55                          ; 0xc0dde vgabios.c:511
     mov bp, sp                                ; 89 e5                       ; 0xc0ddf
@@ -2084,7 +2084,7 @@ biosfn_set_cursor_shape:                     ; 0xc0dde LB 0xb3
     pop bx                                    ; 5b                          ; 0xc0e8e
     pop bp                                    ; 5d                          ; 0xc0e8f
     retn                                      ; c3                          ; 0xc0e90
-  ; disGetNextSymbol 0xc0e91 LB 0x2e4e -> off=0x0 cb=00000000000000a3 uValue=00000000000c0e91 'biosfn_set_cursor_pos'
+  ; disGetNextSymbol 0xc0e91 LB 0x2f99 -> off=0x0 cb=00000000000000a3 uValue=00000000000c0e91 'biosfn_set_cursor_pos'
 biosfn_set_cursor_pos:                       ; 0xc0e91 LB 0xa3
     push bp                                   ; 55                          ; 0xc0e91 vgabios.c:545
     mov bp, sp                                ; 89 e5                       ; 0xc0e92
@@ -2164,7 +2164,7 @@ biosfn_set_cursor_pos:                       ; 0xc0e91 LB 0xa3
     pop bx                                    ; 5b                          ; 0xc0f31
     pop bp                                    ; 5d                          ; 0xc0f32
     retn                                      ; c3                          ; 0xc0f33
-  ; disGetNextSymbol 0xc0f34 LB 0x2dab -> off=0x0 cb=00000000000000e5 uValue=00000000000c0f34 'biosfn_set_active_page'
+  ; disGetNextSymbol 0xc0f34 LB 0x2ef6 -> off=0x0 cb=00000000000000e5 uValue=00000000000c0f34 'biosfn_set_active_page'
 biosfn_set_active_page:                      ; 0xc0f34 LB 0xe5
     push bp                                   ; 55                          ; 0xc0f34 vgabios.c:579
     mov bp, sp                                ; 89 e5                       ; 0xc0f35
@@ -2272,7 +2272,7 @@ biosfn_set_active_page:                      ; 0xc0f34 LB 0xe5
     pop bx                                    ; 5b                          ; 0xc1016
     pop bp                                    ; 5d                          ; 0xc1017
     retn                                      ; c3                          ; 0xc1018
-  ; disGetNextSymbol 0xc1019 LB 0x2cc6 -> off=0x0 cb=00000000000003ea uValue=00000000000c1019 'biosfn_set_video_mode'
+  ; disGetNextSymbol 0xc1019 LB 0x2e11 -> off=0x0 cb=00000000000003ea uValue=00000000000c1019 'biosfn_set_video_mode'
 biosfn_set_video_mode:                       ; 0xc1019 LB 0x3ea
     push bp                                   ; 55                          ; 0xc1019 vgabios.c:649
     mov bp, sp                                ; 89 e5                       ; 0xc101a
@@ -2692,7 +2692,7 @@ biosfn_set_video_mode:                       ; 0xc1019 LB 0x3ea
     pop bx                                    ; 5b                          ; 0xc1400
     pop bp                                    ; 5d                          ; 0xc1401
     retn                                      ; c3                          ; 0xc1402
-  ; disGetNextSymbol 0xc1403 LB 0x28dc -> off=0x0 cb=000000000000008f uValue=00000000000c1403 'vgamem_copy_pl4'
+  ; disGetNextSymbol 0xc1403 LB 0x2a27 -> off=0x0 cb=000000000000008f uValue=00000000000c1403 'vgamem_copy_pl4'
 vgamem_copy_pl4:                             ; 0xc1403 LB 0x8f
     push bp                                   ; 55                          ; 0xc1403 vgabios.c:868
     mov bp, sp                                ; 89 e5                       ; 0xc1404
@@ -2761,7 +2761,7 @@ vgamem_copy_pl4:                             ; 0xc1403 LB 0x8f
     pop si                                    ; 5e                          ; 0xc148d
     pop bp                                    ; 5d                          ; 0xc148e
     retn 00004h                               ; c2 04 00                    ; 0xc148f
-  ; disGetNextSymbol 0xc1492 LB 0x284d -> off=0x0 cb=000000000000007c uValue=00000000000c1492 'vgamem_fill_pl4'
+  ; disGetNextSymbol 0xc1492 LB 0x2998 -> off=0x0 cb=000000000000007c uValue=00000000000c1492 'vgamem_fill_pl4'
 vgamem_fill_pl4:                             ; 0xc1492 LB 0x7c
     push bp                                   ; 55                          ; 0xc1492 vgabios.c:885
     mov bp, sp                                ; 89 e5                       ; 0xc1493
@@ -2822,7 +2822,7 @@ vgamem_fill_pl4:                             ; 0xc1492 LB 0x7c
     pop si                                    ; 5e                          ; 0xc1509
     pop bp                                    ; 5d                          ; 0xc150a
     retn 00004h                               ; c2 04 00                    ; 0xc150b
-  ; disGetNextSymbol 0xc150e LB 0x27d1 -> off=0x0 cb=00000000000000c2 uValue=00000000000c150e 'vgamem_copy_cga'
+  ; disGetNextSymbol 0xc150e LB 0x291c -> off=0x0 cb=00000000000000c2 uValue=00000000000c150e 'vgamem_copy_cga'
 vgamem_copy_cga:                             ; 0xc150e LB 0xc2
     push bp                                   ; 55                          ; 0xc150e vgabios.c:901
     mov bp, sp                                ; 89 e5                       ; 0xc150f
@@ -2915,7 +2915,7 @@ vgamem_copy_cga:                             ; 0xc150e LB 0xc2
     pop si                                    ; 5e                          ; 0xc15cb
     pop bp                                    ; 5d                          ; 0xc15cc
     retn 00004h                               ; c2 04 00                    ; 0xc15cd
-  ; disGetNextSymbol 0xc15d0 LB 0x270f -> off=0x0 cb=00000000000000a8 uValue=00000000000c15d0 'vgamem_fill_cga'
+  ; disGetNextSymbol 0xc15d0 LB 0x285a -> off=0x0 cb=00000000000000a8 uValue=00000000000c15d0 'vgamem_fill_cga'
 vgamem_fill_cga:                             ; 0xc15d0 LB 0xa8
     push bp                                   ; 55                          ; 0xc15d0 vgabios.c:919
     mov bp, sp                                ; 89 e5                       ; 0xc15d1
@@ -2996,7 +2996,7 @@ vgamem_fill_cga:                             ; 0xc15d0 LB 0xa8
     pop si                                    ; 5e                          ; 0xc1673
     pop bp                                    ; 5d                          ; 0xc1674
     retn 00004h                               ; c2 04 00                    ; 0xc1675
-  ; disGetNextSymbol 0xc1678 LB 0x2667 -> off=0x0 cb=0000000000000576 uValue=00000000000c1678 'biosfn_scroll'
+  ; disGetNextSymbol 0xc1678 LB 0x27b2 -> off=0x0 cb=0000000000000576 uValue=00000000000c1678 'biosfn_scroll'
 biosfn_scroll:                               ; 0xc1678 LB 0x576
     push bp                                   ; 55                          ; 0xc1678 vgabios.c:936
     mov bp, sp                                ; 89 e5                       ; 0xc1679
@@ -3571,7 +3571,7 @@ biosfn_scroll:                               ; 0xc1678 LB 0x576
     pop si                                    ; 5e                          ; 0xc1be9
     pop bp                                    ; 5d                          ; 0xc1bea
     retn 00008h                               ; c2 08 00                    ; 0xc1beb
-  ; disGetNextSymbol 0xc1bee LB 0x20f1 -> off=0x0 cb=00000000000000f8 uValue=00000000000c1bee 'write_gfx_char_pl4'
+  ; disGetNextSymbol 0xc1bee LB 0x223c -> off=0x0 cb=00000000000000f8 uValue=00000000000c1bee 'write_gfx_char_pl4'
 write_gfx_char_pl4:                          ; 0xc1bee LB 0xf8
     push bp                                   ; 55                          ; 0xc1bee vgabios.c:1084
     mov bp, sp                                ; 89 e5                       ; 0xc1bef
@@ -3680,7 +3680,7 @@ write_gfx_char_pl4:                          ; 0xc1bee LB 0xf8
     pop si                                    ; 5e                          ; 0xc1ce1
     pop bp                                    ; 5d                          ; 0xc1ce2
     retn 00004h                               ; c2 04 00                    ; 0xc1ce3
-  ; disGetNextSymbol 0xc1ce6 LB 0x1ff9 -> off=0x0 cb=000000000000013a uValue=00000000000c1ce6 'write_gfx_char_cga'
+  ; disGetNextSymbol 0xc1ce6 LB 0x2144 -> off=0x0 cb=000000000000013a uValue=00000000000c1ce6 'write_gfx_char_cga'
 write_gfx_char_cga:                          ; 0xc1ce6 LB 0x13a
     push bp                                   ; 55                          ; 0xc1ce6 vgabios.c:1137
     mov bp, sp                                ; 89 e5                       ; 0xc1ce7
@@ -3817,7 +3817,7 @@ write_gfx_char_cga:                          ; 0xc1ce6 LB 0x13a
     pop si                                    ; 5e                          ; 0xc1e1b
     pop bp                                    ; 5d                          ; 0xc1e1c
     retn 00004h                               ; c2 04 00                    ; 0xc1e1d
-  ; disGetNextSymbol 0xc1e20 LB 0x1ebf -> off=0x0 cb=00000000000000ac uValue=00000000000c1e20 'write_gfx_char_lin'
+  ; disGetNextSymbol 0xc1e20 LB 0x200a -> off=0x0 cb=00000000000000ac uValue=00000000000c1e20 'write_gfx_char_lin'
 write_gfx_char_lin:                          ; 0xc1e20 LB 0xac
     push bp                                   ; 55                          ; 0xc1e20 vgabios.c:1214
     mov bp, sp                                ; 89 e5                       ; 0xc1e21
@@ -3898,7 +3898,7 @@ write_gfx_char_lin:                          ; 0xc1e20 LB 0xac
     pop si                                    ; 5e                          ; 0xc1ec7
     pop bp                                    ; 5d                          ; 0xc1ec8
     retn 00002h                               ; c2 02 00                    ; 0xc1ec9
-  ; disGetNextSymbol 0xc1ecc LB 0x1e13 -> off=0x0 cb=0000000000000192 uValue=00000000000c1ecc 'biosfn_write_char_attr'
+  ; disGetNextSymbol 0xc1ecc LB 0x1f5e -> off=0x0 cb=0000000000000192 uValue=00000000000c1ecc 'biosfn_write_char_attr'
 biosfn_write_char_attr:                      ; 0xc1ecc LB 0x192
     push bp                                   ; 55                          ; 0xc1ecc vgabios.c:1242
     mov bp, sp                                ; 89 e5                       ; 0xc1ecd
@@ -4068,7 +4068,7 @@ biosfn_write_char_attr:                      ; 0xc1ecc LB 0x192
     pop si                                    ; 5e                          ; 0xc205b
     pop bp                                    ; 5d                          ; 0xc205c
     retn                                      ; c3                          ; 0xc205d
-  ; disGetNextSymbol 0xc205e LB 0x1c81 -> off=0x0 cb=0000000000000193 uValue=00000000000c205e 'biosfn_write_char_only'
+  ; disGetNextSymbol 0xc205e LB 0x1dcc -> off=0x0 cb=0000000000000193 uValue=00000000000c205e 'biosfn_write_char_only'
 biosfn_write_char_only:                      ; 0xc205e LB 0x193
     push bp                                   ; 55                          ; 0xc205e vgabios.c:1299
     mov bp, sp                                ; 89 e5                       ; 0xc205f
@@ -4241,7 +4241,7 @@ biosfn_write_char_only:                      ; 0xc205e LB 0x193
     pop si                                    ; 5e                          ; 0xc21ee
     pop bp                                    ; 5d                          ; 0xc21ef
     retn                                      ; c3                          ; 0xc21f0
-  ; disGetNextSymbol 0xc21f1 LB 0x1aee -> off=0x0 cb=000000000000017f uValue=00000000000c21f1 'biosfn_write_pixel'
+  ; disGetNextSymbol 0xc21f1 LB 0x1c39 -> off=0x0 cb=000000000000017f uValue=00000000000c21f1 'biosfn_write_pixel'
 biosfn_write_pixel:                          ; 0xc21f1 LB 0x17f
     push bp                                   ; 55                          ; 0xc21f1 vgabios.c:1358
     mov bp, sp                                ; 89 e5                       ; 0xc21f2
@@ -4401,7 +4401,7 @@ biosfn_write_pixel:                          ; 0xc21f1 LB 0x17f
     mov dx, word [bp-006h]                    ; 8b 56 fa                    ; 0xc2368
     mov ax, 0a000h                            ; b8 00 a0                    ; 0xc236b
     jmp short 0233eh                          ; eb ce                       ; 0xc236e
-  ; disGetNextSymbol 0xc2370 LB 0x196f -> off=0x0 cb=000000000000025f uValue=00000000000c2370 'biosfn_write_teletype'
+  ; disGetNextSymbol 0xc2370 LB 0x1aba -> off=0x0 cb=000000000000025f uValue=00000000000c2370 'biosfn_write_teletype'
 biosfn_write_teletype:                       ; 0xc2370 LB 0x25f
     push bp                                   ; 55                          ; 0xc2370 vgabios.c:1431
     mov bp, sp                                ; 89 e5                       ; 0xc2371
@@ -4656,7 +4656,7 @@ biosfn_write_teletype:                       ; 0xc2370 LB 0x25f
     pop si                                    ; 5e                          ; 0xc25cc
     pop bp                                    ; 5d                          ; 0xc25cd
     retn                                      ; c3                          ; 0xc25ce
-  ; disGetNextSymbol 0xc25cf LB 0x1710 -> off=0x0 cb=000000000000002c uValue=00000000000c25cf 'get_font_access'
+  ; disGetNextSymbol 0xc25cf LB 0x185b -> off=0x0 cb=000000000000002c uValue=00000000000c25cf 'get_font_access'
 get_font_access:                             ; 0xc25cf LB 0x2c
     push bp                                   ; 55                          ; 0xc25cf vgabios.c:1539
     mov bp, sp                                ; 89 e5                       ; 0xc25d0
@@ -4681,7 +4681,7 @@ get_font_access:                             ; 0xc25cf LB 0x2c
     pop dx                                    ; 5a                          ; 0xc25f8
     pop bp                                    ; 5d                          ; 0xc25f9
     retn                                      ; c3                          ; 0xc25fa
-  ; disGetNextSymbol 0xc25fb LB 0x16e4 -> off=0x0 cb=000000000000003f uValue=00000000000c25fb 'release_font_access'
+  ; disGetNextSymbol 0xc25fb LB 0x182f -> off=0x0 cb=000000000000003f uValue=00000000000c25fb 'release_font_access'
 release_font_access:                         ; 0xc25fb LB 0x3f
     push bp                                   ; 55                          ; 0xc25fb vgabios.c:1550
     mov bp, sp                                ; 89 e5                       ; 0xc25fc
@@ -4716,7 +4716,7 @@ release_font_access:                         ; 0xc25fb LB 0x3f
     pop dx                                    ; 5a                          ; 0xc2637
     pop bp                                    ; 5d                          ; 0xc2638
     retn                                      ; c3                          ; 0xc2639
-  ; disGetNextSymbol 0xc263a LB 0x16a5 -> off=0x0 cb=00000000000000c8 uValue=00000000000c263a 'set_scan_lines'
+  ; disGetNextSymbol 0xc263a LB 0x17f0 -> off=0x0 cb=00000000000000c8 uValue=00000000000c263a 'set_scan_lines'
 set_scan_lines:                              ; 0xc263a LB 0xc8
     push bp                                   ; 55                          ; 0xc263a vgabios.c:1561
     mov bp, sp                                ; 89 e5                       ; 0xc263b
@@ -4819,7 +4819,7 @@ set_scan_lines:                              ; 0xc263a LB 0xc8
     pop bx                                    ; 5b                          ; 0xc26ff
     pop bp                                    ; 5d                          ; 0xc2700
     retn                                      ; c3                          ; 0xc2701
-  ; disGetNextSymbol 0xc2702 LB 0x15dd -> off=0x0 cb=0000000000000085 uValue=00000000000c2702 'biosfn_load_text_user_pat'
+  ; disGetNextSymbol 0xc2702 LB 0x1728 -> off=0x0 cb=0000000000000085 uValue=00000000000c2702 'biosfn_load_text_user_pat'
 biosfn_load_text_user_pat:                   ; 0xc2702 LB 0x85
     push bp                                   ; 55                          ; 0xc2702 vgabios.c:1591
     mov bp, sp                                ; 89 e5                       ; 0xc2703
@@ -4881,7 +4881,7 @@ biosfn_load_text_user_pat:                   ; 0xc2702 LB 0x85
     pop si                                    ; 5e                          ; 0xc2782
     pop bp                                    ; 5d                          ; 0xc2783
     retn 00006h                               ; c2 06 00                    ; 0xc2784
-  ; disGetNextSymbol 0xc2787 LB 0x1558 -> off=0x0 cb=0000000000000076 uValue=00000000000c2787 'biosfn_load_text_8_14_pat'
+  ; disGetNextSymbol 0xc2787 LB 0x16a3 -> off=0x0 cb=0000000000000076 uValue=00000000000c2787 'biosfn_load_text_8_14_pat'
 biosfn_load_text_8_14_pat:                   ; 0xc2787 LB 0x76
     push bp                                   ; 55                          ; 0xc2787 vgabios.c:1611
     mov bp, sp                                ; 89 e5                       ; 0xc2788
@@ -4942,7 +4942,7 @@ biosfn_load_text_8_14_pat:                   ; 0xc2787 LB 0x76
     pop bx                                    ; 5b                          ; 0xc27fa
     pop bp                                    ; 5d                          ; 0xc27fb
     retn                                      ; c3                          ; 0xc27fc
-  ; disGetNextSymbol 0xc27fd LB 0x14e2 -> off=0x0 cb=0000000000000074 uValue=00000000000c27fd 'biosfn_load_text_8_8_pat'
+  ; disGetNextSymbol 0xc27fd LB 0x162d -> off=0x0 cb=0000000000000074 uValue=00000000000c27fd 'biosfn_load_text_8_8_pat'
 biosfn_load_text_8_8_pat:                    ; 0xc27fd LB 0x74
     push bp                                   ; 55                          ; 0xc27fd vgabios.c:1630
     mov bp, sp                                ; 89 e5                       ; 0xc27fe
@@ -5002,7 +5002,7 @@ biosfn_load_text_8_8_pat:                    ; 0xc27fd LB 0x74
     pop bx                                    ; 5b                          ; 0xc286e
     pop bp                                    ; 5d                          ; 0xc286f
     retn                                      ; c3                          ; 0xc2870
-  ; disGetNextSymbol 0xc2871 LB 0x146e -> off=0x0 cb=0000000000000074 uValue=00000000000c2871 'biosfn_load_text_8_16_pat'
+  ; disGetNextSymbol 0xc2871 LB 0x15b9 -> off=0x0 cb=0000000000000074 uValue=00000000000c2871 'biosfn_load_text_8_16_pat'
 biosfn_load_text_8_16_pat:                   ; 0xc2871 LB 0x74
     push bp                                   ; 55                          ; 0xc2871 vgabios.c:1650
     mov bp, sp                                ; 89 e5                       ; 0xc2872
@@ -5062,55 +5062,55 @@ biosfn_load_text_8_16_pat:                   ; 0xc2871 LB 0x74
     pop bx                                    ; 5b                          ; 0xc28e2
     pop bp                                    ; 5d                          ; 0xc28e3
     retn                                      ; c3                          ; 0xc28e4
-  ; disGetNextSymbol 0xc28e5 LB 0x13fa -> off=0x0 cb=0000000000000005 uValue=00000000000c28e5 'biosfn_load_gfx_8_8_chars'
+  ; disGetNextSymbol 0xc28e5 LB 0x1545 -> off=0x0 cb=0000000000000005 uValue=00000000000c28e5 'biosfn_load_gfx_8_8_chars'
 biosfn_load_gfx_8_8_chars:                   ; 0xc28e5 LB 0x5
     push bp                                   ; 55                          ; 0xc28e5 vgabios.c:1669
     mov bp, sp                                ; 89 e5                       ; 0xc28e6
     pop bp                                    ; 5d                          ; 0xc28e8 vgabios.c:1674
     retn                                      ; c3                          ; 0xc28e9
-  ; disGetNextSymbol 0xc28ea LB 0x13f5 -> off=0x0 cb=0000000000000007 uValue=00000000000c28ea 'biosfn_load_gfx_user_chars'
+  ; disGetNextSymbol 0xc28ea LB 0x1540 -> off=0x0 cb=0000000000000007 uValue=00000000000c28ea 'biosfn_load_gfx_user_chars'
 biosfn_load_gfx_user_chars:                  ; 0xc28ea LB 0x7
     push bp                                   ; 55                          ; 0xc28ea vgabios.c:1675
     mov bp, sp                                ; 89 e5                       ; 0xc28eb
     pop bp                                    ; 5d                          ; 0xc28ed vgabios.c:1681
     retn 00002h                               ; c2 02 00                    ; 0xc28ee
-  ; disGetNextSymbol 0xc28f1 LB 0x13ee -> off=0x0 cb=0000000000000005 uValue=00000000000c28f1 'biosfn_load_gfx_8_14_chars'
+  ; disGetNextSymbol 0xc28f1 LB 0x1539 -> off=0x0 cb=0000000000000005 uValue=00000000000c28f1 'biosfn_load_gfx_8_14_chars'
 biosfn_load_gfx_8_14_chars:                  ; 0xc28f1 LB 0x5
     push bp                                   ; 55                          ; 0xc28f1 vgabios.c:1682
     mov bp, sp                                ; 89 e5                       ; 0xc28f2
     pop bp                                    ; 5d                          ; 0xc28f4 vgabios.c:1687
     retn                                      ; c3                          ; 0xc28f5
-  ; disGetNextSymbol 0xc28f6 LB 0x13e9 -> off=0x0 cb=0000000000000005 uValue=00000000000c28f6 'biosfn_load_gfx_8_8_dd_chars'
+  ; disGetNextSymbol 0xc28f6 LB 0x1534 -> off=0x0 cb=0000000000000005 uValue=00000000000c28f6 'biosfn_load_gfx_8_8_dd_chars'
 biosfn_load_gfx_8_8_dd_chars:                ; 0xc28f6 LB 0x5
     push bp                                   ; 55                          ; 0xc28f6 vgabios.c:1688
     mov bp, sp                                ; 89 e5                       ; 0xc28f7
     pop bp                                    ; 5d                          ; 0xc28f9 vgabios.c:1693
     retn                                      ; c3                          ; 0xc28fa
-  ; disGetNextSymbol 0xc28fb LB 0x13e4 -> off=0x0 cb=0000000000000005 uValue=00000000000c28fb 'biosfn_load_gfx_8_16_chars'
+  ; disGetNextSymbol 0xc28fb LB 0x152f -> off=0x0 cb=0000000000000005 uValue=00000000000c28fb 'biosfn_load_gfx_8_16_chars'
 biosfn_load_gfx_8_16_chars:                  ; 0xc28fb LB 0x5
     push bp                                   ; 55                          ; 0xc28fb vgabios.c:1694
     mov bp, sp                                ; 89 e5                       ; 0xc28fc
     pop bp                                    ; 5d                          ; 0xc28fe vgabios.c:1699
     retn                                      ; c3                          ; 0xc28ff
-  ; disGetNextSymbol 0xc2900 LB 0x13df -> off=0x0 cb=0000000000000005 uValue=00000000000c2900 'biosfn_alternate_prtsc'
+  ; disGetNextSymbol 0xc2900 LB 0x152a -> off=0x0 cb=0000000000000005 uValue=00000000000c2900 'biosfn_alternate_prtsc'
 biosfn_alternate_prtsc:                      ; 0xc2900 LB 0x5
     push bp                                   ; 55                          ; 0xc2900 vgabios.c:1701
     mov bp, sp                                ; 89 e5                       ; 0xc2901
     pop bp                                    ; 5d                          ; 0xc2903 vgabios.c:1706
     retn                                      ; c3                          ; 0xc2904
-  ; disGetNextSymbol 0xc2905 LB 0x13da -> off=0x0 cb=0000000000000005 uValue=00000000000c2905 'biosfn_switch_video_interface'
+  ; disGetNextSymbol 0xc2905 LB 0x1525 -> off=0x0 cb=0000000000000005 uValue=00000000000c2905 'biosfn_switch_video_interface'
 biosfn_switch_video_interface:               ; 0xc2905 LB 0x5
     push bp                                   ; 55                          ; 0xc2905 vgabios.c:1709
     mov bp, sp                                ; 89 e5                       ; 0xc2906
     pop bp                                    ; 5d                          ; 0xc2908 vgabios.c:1714
     retn                                      ; c3                          ; 0xc2909
-  ; disGetNextSymbol 0xc290a LB 0x13d5 -> off=0x0 cb=0000000000000005 uValue=00000000000c290a 'biosfn_enable_video_refresh_control'
+  ; disGetNextSymbol 0xc290a LB 0x1520 -> off=0x0 cb=0000000000000005 uValue=00000000000c290a 'biosfn_enable_video_refresh_control'
 biosfn_enable_video_refresh_control:         ; 0xc290a LB 0x5
     push bp                                   ; 55                          ; 0xc290a vgabios.c:1715
     mov bp, sp                                ; 89 e5                       ; 0xc290b
     pop bp                                    ; 5d                          ; 0xc290d vgabios.c:1720
     retn                                      ; c3                          ; 0xc290e
-  ; disGetNextSymbol 0xc290f LB 0x13d0 -> off=0x0 cb=0000000000000096 uValue=00000000000c290f 'biosfn_write_string'
+  ; disGetNextSymbol 0xc290f LB 0x151b -> off=0x0 cb=0000000000000096 uValue=00000000000c290f 'biosfn_write_string'
 biosfn_write_string:                         ; 0xc290f LB 0x96
     push bp                                   ; 55                          ; 0xc290f vgabios.c:1723
     mov bp, sp                                ; 89 e5                       ; 0xc2910
@@ -5173,7 +5173,7 @@ biosfn_write_string:                         ; 0xc290f LB 0x96
     pop si                                    ; 5e                          ; 0xc29a0
     pop bp                                    ; 5d                          ; 0xc29a1
     retn 00008h                               ; c2 08 00                    ; 0xc29a2
-  ; disGetNextSymbol 0xc29a5 LB 0x133a -> off=0x0 cb=0000000000000102 uValue=00000000000c29a5 'biosfn_read_state_info'
+  ; disGetNextSymbol 0xc29a5 LB 0x1485 -> off=0x0 cb=0000000000000102 uValue=00000000000c29a5 'biosfn_read_state_info'
 biosfn_read_state_info:                      ; 0xc29a5 LB 0x102
     push bp                                   ; 55                          ; 0xc29a5 vgabios.c:1756
     mov bp, sp                                ; 89 e5                       ; 0xc29a6
@@ -5279,7 +5279,7 @@ biosfn_read_state_info:                      ; 0xc29a5 LB 0x102
     pop cx                                    ; 59                          ; 0xc2aa4
     pop bp                                    ; 5d                          ; 0xc2aa5
     retn                                      ; c3                          ; 0xc2aa6
-  ; disGetNextSymbol 0xc2aa7 LB 0x1238 -> off=0x0 cb=0000000000000023 uValue=00000000000c2aa7 'biosfn_read_video_state_size2'
+  ; disGetNextSymbol 0xc2aa7 LB 0x1383 -> off=0x0 cb=0000000000000023 uValue=00000000000c2aa7 'biosfn_read_video_state_size2'
 biosfn_read_video_state_size2:               ; 0xc2aa7 LB 0x23
     push dx                                   ; 52                          ; 0xc2aa7 vgabios.c:1780
     push bp                                   ; 55                          ; 0xc2aa8
@@ -5298,7 +5298,7 @@ biosfn_read_video_state_size2:               ; 0xc2aa7 LB 0x23
     pop bp                                    ; 5d                          ; 0xc2ac7 vgabios.c:1796
     pop dx                                    ; 5a                          ; 0xc2ac8
     retn                                      ; c3                          ; 0xc2ac9
-  ; disGetNextSymbol 0xc2aca LB 0x1215 -> off=0x0 cb=0000000000000012 uValue=00000000000c2aca 'vga_get_video_state_size'
+  ; disGetNextSymbol 0xc2aca LB 0x1360 -> off=0x0 cb=0000000000000012 uValue=00000000000c2aca 'vga_get_video_state_size'
 vga_get_video_state_size:                    ; 0xc2aca LB 0x12
     push bp                                   ; 55                          ; 0xc2aca vgabios.c:1798
     mov bp, sp                                ; 89 e5                       ; 0xc2acb
@@ -5310,7 +5310,7 @@ vga_get_video_state_size:                    ; 0xc2aca LB 0x12
     pop bx                                    ; 5b                          ; 0xc2ad9
     pop bp                                    ; 5d                          ; 0xc2ada
     retn                                      ; c3                          ; 0xc2adb
-  ; disGetNextSymbol 0xc2adc LB 0x1203 -> off=0x0 cb=0000000000000381 uValue=00000000000c2adc 'biosfn_save_video_state'
+  ; disGetNextSymbol 0xc2adc LB 0x134e -> off=0x0 cb=0000000000000381 uValue=00000000000c2adc 'biosfn_save_video_state'
 biosfn_save_video_state:                     ; 0xc2adc LB 0x381
     push bp                                   ; 55                          ; 0xc2adc vgabios.c:1803
     mov bp, sp                                ; 89 e5                       ; 0xc2add
@@ -5739,7 +5739,7 @@ biosfn_save_video_state:                     ; 0xc2adc LB 0x381
     pop cx                                    ; 59                          ; 0xc2e5a
     pop bp                                    ; 5d                          ; 0xc2e5b
     retn                                      ; c3                          ; 0xc2e5c
-  ; disGetNextSymbol 0xc2e5d LB 0xe82 -> off=0x0 cb=0000000000000336 uValue=00000000000c2e5d 'biosfn_restore_video_state'
+  ; disGetNextSymbol 0xc2e5d LB 0xfcd -> off=0x0 cb=0000000000000336 uValue=00000000000c2e5d 'biosfn_restore_video_state'
 biosfn_restore_video_state:                  ; 0xc2e5d LB 0x336
     push bp                                   ; 55                          ; 0xc2e5d vgabios.c:1887
     mov bp, sp                                ; 89 e5                       ; 0xc2e5e
@@ -6108,7 +6108,7 @@ biosfn_restore_video_state:                  ; 0xc2e5d LB 0x336
     pop cx                                    ; 59                          ; 0xc3190
     pop bp                                    ; 5d                          ; 0xc3191
     retn                                      ; c3                          ; 0xc3192
-  ; disGetNextSymbol 0xc3193 LB 0xb4c -> off=0x0 cb=000000000000002b uValue=00000000000c3193 'find_vga_entry'
+  ; disGetNextSymbol 0xc3193 LB 0xc97 -> off=0x0 cb=000000000000002b uValue=00000000000c3193 'find_vga_entry'
 find_vga_entry:                              ; 0xc3193 LB 0x2b
     push bx                                   ; 53                          ; 0xc3193 vgabios.c:1994
     push cx                                   ; 51                          ; 0xc3194
@@ -6136,7 +6136,7 @@ find_vga_entry:                              ; 0xc3193 LB 0x2b
     pop cx                                    ; 59                          ; 0xc31bb
     pop bx                                    ; 5b                          ; 0xc31bc
     retn                                      ; c3                          ; 0xc31bd
-  ; disGetNextSymbol 0xc31be LB 0xb21 -> off=0x0 cb=000000000000000e uValue=00000000000c31be 'read_byte'
+  ; disGetNextSymbol 0xc31be LB 0xc6c -> off=0x0 cb=000000000000000e uValue=00000000000c31be 'read_byte'
 read_byte:                                   ; 0xc31be LB 0xe
     push bx                                   ; 53                          ; 0xc31be vgabios.c:2011
     push bp                                   ; 55                          ; 0xc31bf
@@ -6147,7 +6147,7 @@ read_byte:                                   ; 0xc31be LB 0xe
     pop bp                                    ; 5d                          ; 0xc31c9 vgabios.c:2014
     pop bx                                    ; 5b                          ; 0xc31ca
     retn                                      ; c3                          ; 0xc31cb
-  ; disGetNextSymbol 0xc31cc LB 0xb13 -> off=0x0 cb=000000000000000e uValue=00000000000c31cc 'write_byte'
+  ; disGetNextSymbol 0xc31cc LB 0xc5e -> off=0x0 cb=000000000000000e uValue=00000000000c31cc 'write_byte'
 write_byte:                                  ; 0xc31cc LB 0xe
     push si                                   ; 56                          ; 0xc31cc vgabios.c:2016
     push bp                                   ; 55                          ; 0xc31cd
@@ -6158,7 +6158,7 @@ write_byte:                                  ; 0xc31cc LB 0xe
     pop bp                                    ; 5d                          ; 0xc31d7 vgabios.c:2019
     pop si                                    ; 5e                          ; 0xc31d8
     retn                                      ; c3                          ; 0xc31d9
-  ; disGetNextSymbol 0xc31da LB 0xb05 -> off=0x0 cb=000000000000000e uValue=00000000000c31da 'read_word'
+  ; disGetNextSymbol 0xc31da LB 0xc50 -> off=0x0 cb=000000000000000e uValue=00000000000c31da 'read_word'
 read_word:                                   ; 0xc31da LB 0xe
     push bx                                   ; 53                          ; 0xc31da vgabios.c:2021
     push bp                                   ; 55                          ; 0xc31db
@@ -6169,7 +6169,7 @@ read_word:                                   ; 0xc31da LB 0xe
     pop bp                                    ; 5d                          ; 0xc31e5 vgabios.c:2024
     pop bx                                    ; 5b                          ; 0xc31e6
     retn                                      ; c3                          ; 0xc31e7
-  ; disGetNextSymbol 0xc31e8 LB 0xaf7 -> off=0x0 cb=000000000000000e uValue=00000000000c31e8 'write_word'
+  ; disGetNextSymbol 0xc31e8 LB 0xc42 -> off=0x0 cb=000000000000000e uValue=00000000000c31e8 'write_word'
 write_word:                                  ; 0xc31e8 LB 0xe
     push si                                   ; 56                          ; 0xc31e8 vgabios.c:2026
     push bp                                   ; 55                          ; 0xc31e9
@@ -6180,7 +6180,7 @@ write_word:                                  ; 0xc31e8 LB 0xe
     pop bp                                    ; 5d                          ; 0xc31f3 vgabios.c:2029
     pop si                                    ; 5e                          ; 0xc31f4
     retn                                      ; c3                          ; 0xc31f5
-  ; disGetNextSymbol 0xc31f6 LB 0xae9 -> off=0x0 cb=0000000000000012 uValue=00000000000c31f6 'read_dword'
+  ; disGetNextSymbol 0xc31f6 LB 0xc34 -> off=0x0 cb=0000000000000012 uValue=00000000000c31f6 'read_dword'
 read_dword:                                  ; 0xc31f6 LB 0x12
     push bx                                   ; 53                          ; 0xc31f6 vgabios.c:2031
     push bp                                   ; 55                          ; 0xc31f7
@@ -6192,7 +6192,7 @@ read_dword:                                  ; 0xc31f6 LB 0x12
     pop bp                                    ; 5d                          ; 0xc3205 vgabios.c:2034
     pop bx                                    ; 5b                          ; 0xc3206
     retn                                      ; c3                          ; 0xc3207
-  ; disGetNextSymbol 0xc3208 LB 0xad7 -> off=0x0 cb=0000000000000012 uValue=00000000000c3208 'write_dword'
+  ; disGetNextSymbol 0xc3208 LB 0xc22 -> off=0x0 cb=0000000000000012 uValue=00000000000c3208 'write_dword'
 write_dword:                                 ; 0xc3208 LB 0x12
     push si                                   ; 56                          ; 0xc3208 vgabios.c:2036
     push bp                                   ; 55                          ; 0xc3209
@@ -6204,1199 +6204,1335 @@ write_dword:                                 ; 0xc3208 LB 0x12
     pop bp                                    ; 5d                          ; 0xc3217 vgabios.c:2039
     pop si                                    ; 5e                          ; 0xc3218
     retn                                      ; c3                          ; 0xc3219
-  ; disGetNextSymbol 0xc321a LB 0xac5 -> off=0x84 cb=0000000000000348 uValue=00000000000c329e 'int10_func'
-    db  04fh, 01ch, 01bh, 013h, 012h, 011h, 010h, 00eh, 00dh, 00ch, 00ah, 009h, 008h, 007h, 006h, 005h
-    db  004h, 003h, 002h, 001h, 000h, 0dfh, 035h, 0ceh, 032h, 00bh, 033h, 019h, 033h, 024h, 033h, 032h
-    db  033h, 042h, 033h, 049h, 033h, 072h, 033h, 076h, 033h, 081h, 033h, 096h, 033h, 0ach, 033h, 0c5h
-    db  033h, 0d7h, 033h, 0ebh, 033h, 0f7h, 033h, 0aah, 034h, 0dfh, 034h, 006h, 035h, 01bh, 035h, 058h
-    db  035h, 030h, 024h, 023h, 022h, 021h, 020h, 014h, 012h, 011h, 010h, 004h, 002h, 001h, 000h, 0dfh
-    db  035h, 014h, 034h, 032h, 034h, 041h, 034h, 050h, 034h, 014h, 034h, 032h, 034h, 041h, 034h, 050h
-    db  034h, 05fh, 034h, 06bh, 034h, 084h, 034h, 089h, 034h, 08eh, 034h, 093h, 034h, 00ah, 009h, 006h
-    db  004h, 002h, 001h, 000h, 0d3h, 035h, 07eh, 035h, 08bh, 035h, 09bh, 035h, 0abh, 035h, 0c0h, 035h
-    db  0d3h, 035h, 0d3h, 035h
-int10_func:                                  ; 0xc329e LB 0x348
-    push bp                                   ; 55                          ; 0xc329e vgabios.c:2115
-    mov bp, sp                                ; 89 e5                       ; 0xc329f
-    push si                                   ; 56                          ; 0xc32a1
-    push di                                   ; 57                          ; 0xc32a2
-    push ax                                   ; 50                          ; 0xc32a3
-    mov si, word [bp+004h]                    ; 8b 76 04                    ; 0xc32a4
-    mov al, byte [bp+013h]                    ; 8a 46 13                    ; 0xc32a7 vgabios.c:2120
-    xor ah, ah                                ; 30 e4                       ; 0xc32aa
-    cmp ax, strict word 0004fh                ; 3d 4f 00                    ; 0xc32ac
-    jnbe short 03316h                         ; 77 65                       ; 0xc32af
-    push CS                                   ; 0e                          ; 0xc32b1
-    pop ES                                    ; 07                          ; 0xc32b2
-    mov cx, strict word 00016h                ; b9 16 00                    ; 0xc32b3
-    mov di, 0321ah                            ; bf 1a 32                    ; 0xc32b6
-    repne scasb                               ; f2 ae                       ; 0xc32b9
-    sal cx, 1                                 ; d1 e1                       ; 0xc32bb
-    mov di, cx                                ; 89 cf                       ; 0xc32bd
-    mov bx, word [cs:di+0322fh]               ; 2e 8b 9d 2f 32              ; 0xc32bf
-    mov ax, word [bp+012h]                    ; 8b 46 12                    ; 0xc32c4
-    xor ah, ah                                ; 30 e4                       ; 0xc32c7
-    mov dl, byte [bp+012h]                    ; 8a 56 12                    ; 0xc32c9
-    jmp bx                                    ; ff e3                       ; 0xc32cc
-    mov al, byte [bp+012h]                    ; 8a 46 12                    ; 0xc32ce vgabios.c:2123
-    xor ah, ah                                ; 30 e4                       ; 0xc32d1
-    call 01019h                               ; e8 43 dd                    ; 0xc32d3
-    mov ax, word [bp+012h]                    ; 8b 46 12                    ; 0xc32d6 vgabios.c:2124
-    and ax, strict word 0007fh                ; 25 7f 00                    ; 0xc32d9
-    cmp ax, strict word 00007h                ; 3d 07 00                    ; 0xc32dc
-    je short 032f6h                           ; 74 15                       ; 0xc32df
-    cmp ax, strict word 00006h                ; 3d 06 00                    ; 0xc32e1
-    je short 032edh                           ; 74 07                       ; 0xc32e4
-    cmp ax, strict word 00005h                ; 3d 05 00                    ; 0xc32e6
-    jbe short 032f6h                          ; 76 0b                       ; 0xc32e9
-    jmp short 032ffh                          ; eb 12                       ; 0xc32eb
-    mov ax, word [bp+012h]                    ; 8b 46 12                    ; 0xc32ed vgabios.c:2126
-    xor al, al                                ; 30 c0                       ; 0xc32f0
-    or AL, strict byte 03fh                   ; 0c 3f                       ; 0xc32f2
-    jmp short 03306h                          ; eb 10                       ; 0xc32f4 vgabios.c:2127
-    mov ax, word [bp+012h]                    ; 8b 46 12                    ; 0xc32f6 vgabios.c:2135
-    xor al, al                                ; 30 c0                       ; 0xc32f9
-    or AL, strict byte 030h                   ; 0c 30                       ; 0xc32fb
-    jmp short 03306h                          ; eb 07                       ; 0xc32fd
-    mov ax, word [bp+012h]                    ; 8b 46 12                    ; 0xc32ff vgabios.c:2138
-    xor al, al                                ; 30 c0                       ; 0xc3302
-    or AL, strict byte 020h                   ; 0c 20                       ; 0xc3304
-    mov word [bp+012h], ax                    ; 89 46 12                    ; 0xc3306
-    jmp short 03316h                          ; eb 0b                       ; 0xc3309 vgabios.c:2140
-    mov al, byte [bp+010h]                    ; 8a 46 10                    ; 0xc330b vgabios.c:2142
-    mov dx, ax                                ; 89 c2                       ; 0xc330e
-    mov al, byte [bp+011h]                    ; 8a 46 11                    ; 0xc3310
-    call 00ddeh                               ; e8 c8 da                    ; 0xc3313
-    jmp near 035dfh                           ; e9 c6 02                    ; 0xc3316 vgabios.c:2143
-    mov dx, word [bp+00eh]                    ; 8b 56 0e                    ; 0xc3319 vgabios.c:2145
-    mov al, byte [bp+00dh]                    ; 8a 46 0d                    ; 0xc331c
-    call 00e91h                               ; e8 6f db                    ; 0xc331f
-    jmp short 03316h                          ; eb f2                       ; 0xc3322 vgabios.c:2146
-    lea bx, [bp+00eh]                         ; 8d 5e 0e                    ; 0xc3324 vgabios.c:2148
-    lea dx, [bp+010h]                         ; 8d 56 10                    ; 0xc3327
-    mov al, byte [bp+00dh]                    ; 8a 46 0d                    ; 0xc332a
-    call 00a8ch                               ; e8 5c d7                    ; 0xc332d
-    jmp short 03316h                          ; eb e4                       ; 0xc3330 vgabios.c:2149
-    xor al, al                                ; 30 c0                       ; 0xc3332 vgabios.c:2155
-    mov word [bp+012h], ax                    ; 89 46 12                    ; 0xc3334
-    mov word [bp+00ch], ax                    ; 89 46 0c                    ; 0xc3337 vgabios.c:2156
-    mov word [bp+010h], ax                    ; 89 46 10                    ; 0xc333a vgabios.c:2157
-    mov word [bp+00eh], ax                    ; 89 46 0e                    ; 0xc333d vgabios.c:2158
-    jmp short 03316h                          ; eb d4                       ; 0xc3340 vgabios.c:2159
-    mov al, dl                                ; 88 d0                       ; 0xc3342 vgabios.c:2161
-    call 00f34h                               ; e8 ed db                    ; 0xc3344
-    jmp short 03316h                          ; eb cd                       ; 0xc3347 vgabios.c:2162
-    mov ax, strict word 00001h                ; b8 01 00                    ; 0xc3349 vgabios.c:2164
+  ; disGetNextSymbol 0xc321a LB 0xc10 -> off=0x87 cb=0000000000000399 uValue=00000000000c32a1 'int10_func'
+    db  056h, 04fh, 01ch, 01bh, 013h, 012h, 011h, 010h, 00eh, 00dh, 00ch, 00ah, 009h, 008h, 007h, 006h
+    db  005h, 004h, 003h, 002h, 001h, 000h, 033h, 036h, 0cch, 032h, 009h, 033h, 016h, 033h, 022h, 033h
+    db  030h, 033h, 040h, 033h, 045h, 033h, 06eh, 033h, 08bh, 033h, 096h, 033h, 0ach, 033h, 0c2h, 033h
+    db  0d3h, 033h, 0ebh, 033h, 0ffh, 033h, 00bh, 034h, 0cfh, 034h, 002h, 035h, 023h, 035h, 038h, 035h
+    db  07ah, 035h, 005h, 036h, 030h, 024h, 023h, 022h, 021h, 020h, 014h, 012h, 011h, 010h, 004h, 002h
+    db  001h, 000h, 033h, 036h, 02ah, 034h, 048h, 034h, 057h, 034h, 066h, 034h, 02ah, 034h, 048h, 034h
+    db  057h, 034h, 066h, 034h, 075h, 034h, 081h, 034h, 09ah, 034h, 0a4h, 034h, 0aeh, 034h, 0b8h, 034h
+    db  00ah, 009h, 006h, 004h, 002h, 001h, 000h, 0f7h, 035h, 0a0h, 035h, 0aeh, 035h, 0bfh, 035h, 0cfh
+    db  035h, 0e4h, 035h, 0f7h, 035h, 0f7h, 035h
+int10_func:                                  ; 0xc32a1 LB 0x399
+    push bp                                   ; 55                          ; 0xc32a1 vgabios.c:2117
+    mov bp, sp                                ; 89 e5                       ; 0xc32a2
+    push si                                   ; 56                          ; 0xc32a4
+    push di                                   ; 57                          ; 0xc32a5
+    push ax                                   ; 50                          ; 0xc32a6
+    mov si, word [bp+004h]                    ; 8b 76 04                    ; 0xc32a7
+    mov al, byte [bp+013h]                    ; 8a 46 13                    ; 0xc32aa vgabios.c:2122
+    xor ah, ah                                ; 30 e4                       ; 0xc32ad
+    cmp ax, strict word 00056h                ; 3d 56 00                    ; 0xc32af
+    jnbe short 0331fh                         ; 77 6b                       ; 0xc32b2
+    push CS                                   ; 0e                          ; 0xc32b4
+    pop ES                                    ; 07                          ; 0xc32b5
+    mov cx, strict word 00017h                ; b9 17 00                    ; 0xc32b6
+    mov di, 0321ah                            ; bf 1a 32                    ; 0xc32b9
+    repne scasb                               ; f2 ae                       ; 0xc32bc
+    sal cx, 1                                 ; d1 e1                       ; 0xc32be
+    mov di, cx                                ; 89 cf                       ; 0xc32c0
+    mov dx, word [cs:di+03230h]               ; 2e 8b 95 30 32              ; 0xc32c2
+    mov al, byte [bp+012h]                    ; 8a 46 12                    ; 0xc32c7
+    jmp dx                                    ; ff e2                       ; 0xc32ca
+    mov al, byte [bp+012h]                    ; 8a 46 12                    ; 0xc32cc vgabios.c:2125
+    xor ah, ah                                ; 30 e4                       ; 0xc32cf
+    call 01019h                               ; e8 45 dd                    ; 0xc32d1
+    mov ax, word [bp+012h]                    ; 8b 46 12                    ; 0xc32d4 vgabios.c:2126
+    and ax, strict word 0007fh                ; 25 7f 00                    ; 0xc32d7
+    cmp ax, strict word 00007h                ; 3d 07 00                    ; 0xc32da
+    je short 032f4h                           ; 74 15                       ; 0xc32dd
+    cmp ax, strict word 00006h                ; 3d 06 00                    ; 0xc32df
+    je short 032ebh                           ; 74 07                       ; 0xc32e2
+    cmp ax, strict word 00005h                ; 3d 05 00                    ; 0xc32e4
+    jbe short 032f4h                          ; 76 0b                       ; 0xc32e7
+    jmp short 032fdh                          ; eb 12                       ; 0xc32e9
+    mov ax, word [bp+012h]                    ; 8b 46 12                    ; 0xc32eb vgabios.c:2128
+    xor al, al                                ; 30 c0                       ; 0xc32ee
+    or AL, strict byte 03fh                   ; 0c 3f                       ; 0xc32f0
+    jmp short 03304h                          ; eb 10                       ; 0xc32f2 vgabios.c:2129
+    mov ax, word [bp+012h]                    ; 8b 46 12                    ; 0xc32f4 vgabios.c:2137
+    xor al, al                                ; 30 c0                       ; 0xc32f7
+    or AL, strict byte 030h                   ; 0c 30                       ; 0xc32f9
+    jmp short 03304h                          ; eb 07                       ; 0xc32fb
+    mov ax, word [bp+012h]                    ; 8b 46 12                    ; 0xc32fd vgabios.c:2140
+    xor al, al                                ; 30 c0                       ; 0xc3300
+    or AL, strict byte 020h                   ; 0c 20                       ; 0xc3302
+    mov word [bp+012h], ax                    ; 89 46 12                    ; 0xc3304
+    jmp short 0331fh                          ; eb 16                       ; 0xc3307 vgabios.c:2142
+    mov al, byte [bp+010h]                    ; 8a 46 10                    ; 0xc3309 vgabios.c:2144
+    mov dx, ax                                ; 89 c2                       ; 0xc330c
+    mov al, byte [bp+011h]                    ; 8a 46 11                    ; 0xc330e
+    call 00ddeh                               ; e8 ca da                    ; 0xc3311
+    jmp short 0331fh                          ; eb 09                       ; 0xc3314 vgabios.c:2145
+    mov dx, word [bp+00eh]                    ; 8b 56 0e                    ; 0xc3316 vgabios.c:2147
+    mov al, byte [bp+00dh]                    ; 8a 46 0d                    ; 0xc3319
+    call 00e91h                               ; e8 72 db                    ; 0xc331c
+    jmp near 03633h                           ; e9 11 03                    ; 0xc331f vgabios.c:2148
+    lea bx, [bp+00eh]                         ; 8d 5e 0e                    ; 0xc3322 vgabios.c:2150
+    lea dx, [bp+010h]                         ; 8d 56 10                    ; 0xc3325
+    mov al, byte [bp+00dh]                    ; 8a 46 0d                    ; 0xc3328
+    call 00a8ch                               ; e8 5e d7                    ; 0xc332b
+    jmp short 0331fh                          ; eb ef                       ; 0xc332e vgabios.c:2151
+    xor al, al                                ; 30 c0                       ; 0xc3330 vgabios.c:2157
+    mov word [bp+012h], ax                    ; 89 46 12                    ; 0xc3332
+    mov word [bp+00ch], ax                    ; 89 46 0c                    ; 0xc3335 vgabios.c:2158
+    mov word [bp+010h], ax                    ; 89 46 10                    ; 0xc3338 vgabios.c:2159
+    mov word [bp+00eh], ax                    ; 89 46 0e                    ; 0xc333b vgabios.c:2160
+    jmp short 0331fh                          ; eb df                       ; 0xc333e vgabios.c:2161
+    call 00f34h                               ; e8 f1 db                    ; 0xc3340 vgabios.c:2163
+    jmp short 0331fh                          ; eb da                       ; 0xc3343 vgabios.c:2164
+    mov ax, strict word 00001h                ; b8 01 00                    ; 0xc3345 vgabios.c:2166
+    push ax                                   ; 50                          ; 0xc3348
+    mov ax, 000ffh                            ; b8 ff 00                    ; 0xc3349
     push ax                                   ; 50                          ; 0xc334c
-    mov ax, 000ffh                            ; b8 ff 00                    ; 0xc334d
-    push ax                                   ; 50                          ; 0xc3350
-    mov al, byte [bp+00eh]                    ; 8a 46 0e                    ; 0xc3351
-    xor ah, ah                                ; 30 e4                       ; 0xc3354
+    mov al, byte [bp+00eh]                    ; 8a 46 0e                    ; 0xc334d
+    xor ah, ah                                ; 30 e4                       ; 0xc3350
+    push ax                                   ; 50                          ; 0xc3352
+    mov al, byte [bp+00fh]                    ; 8a 46 0f                    ; 0xc3353
     push ax                                   ; 50                          ; 0xc3356
-    mov al, byte [bp+00fh]                    ; 8a 46 0f                    ; 0xc3357
-    push ax                                   ; 50                          ; 0xc335a
-    mov al, byte [bp+010h]                    ; 8a 46 10                    ; 0xc335b
-    mov cx, ax                                ; 89 c1                       ; 0xc335e
-    mov al, byte [bp+011h]                    ; 8a 46 11                    ; 0xc3360
-    mov bx, ax                                ; 89 c3                       ; 0xc3363
-    mov al, byte [bp+00dh]                    ; 8a 46 0d                    ; 0xc3365
-    mov dx, ax                                ; 89 c2                       ; 0xc3368
-    mov al, byte [bp+012h]                    ; 8a 46 12                    ; 0xc336a
-    call 01678h                               ; e8 08 e3                    ; 0xc336d
-    jmp short 03316h                          ; eb a4                       ; 0xc3370 vgabios.c:2165
-    xor al, al                                ; 30 c0                       ; 0xc3372 vgabios.c:2167
-    jmp short 0334ch                          ; eb d6                       ; 0xc3374
-    lea dx, [bp+012h]                         ; 8d 56 12                    ; 0xc3376 vgabios.c:2170
-    mov al, byte [bp+00dh]                    ; 8a 46 0d                    ; 0xc3379
-    call 00ad2h                               ; e8 53 d7                    ; 0xc337c
-    jmp short 03316h                          ; eb 95                       ; 0xc337f vgabios.c:2171
-    mov cx, word [bp+010h]                    ; 8b 4e 10                    ; 0xc3381 vgabios.c:2173
-    mov al, byte [bp+00ch]                    ; 8a 46 0c                    ; 0xc3384
+    mov al, byte [bp+010h]                    ; 8a 46 10                    ; 0xc3357
+    mov cx, ax                                ; 89 c1                       ; 0xc335a
+    mov bl, byte [bp+011h]                    ; 8a 5e 11                    ; 0xc335c
+    xor bh, bh                                ; 30 ff                       ; 0xc335f
+    mov al, byte [bp+00dh]                    ; 8a 46 0d                    ; 0xc3361
+    mov dx, ax                                ; 89 c2                       ; 0xc3364
+    mov al, byte [bp+012h]                    ; 8a 46 12                    ; 0xc3366
+    call 01678h                               ; e8 0c e3                    ; 0xc3369
+    jmp short 0331fh                          ; eb b1                       ; 0xc336c vgabios.c:2167
+    xor al, al                                ; 30 c0                       ; 0xc336e vgabios.c:2169
+    push ax                                   ; 50                          ; 0xc3370
+    mov ax, 000ffh                            ; b8 ff 00                    ; 0xc3371
+    push ax                                   ; 50                          ; 0xc3374
+    mov al, byte [bp+00eh]                    ; 8a 46 0e                    ; 0xc3375
+    xor ah, ah                                ; 30 e4                       ; 0xc3378
+    push ax                                   ; 50                          ; 0xc337a
+    mov al, byte [bp+00fh]                    ; 8a 46 0f                    ; 0xc337b
+    push ax                                   ; 50                          ; 0xc337e
+    mov al, byte [bp+010h]                    ; 8a 46 10                    ; 0xc337f
+    mov cx, ax                                ; 89 c1                       ; 0xc3382
+    mov al, byte [bp+011h]                    ; 8a 46 11                    ; 0xc3384
     mov bx, ax                                ; 89 c3                       ; 0xc3387
-    mov al, byte [bp+00dh]                    ; 8a 46 0d                    ; 0xc3389
-    mov dx, ax                                ; 89 c2                       ; 0xc338c
-    mov al, byte [bp+012h]                    ; 8a 46 12                    ; 0xc338e
-    call 01ecch                               ; e8 38 eb                    ; 0xc3391
-    jmp short 03316h                          ; eb 80                       ; 0xc3394 vgabios.c:2174
-    mov cx, word [bp+010h]                    ; 8b 4e 10                    ; 0xc3396 vgabios.c:2176
+    jmp short 03361h                          ; eb d6                       ; 0xc3389
+    lea dx, [bp+012h]                         ; 8d 56 12                    ; 0xc338b vgabios.c:2172
+    mov al, byte [bp+00dh]                    ; 8a 46 0d                    ; 0xc338e
+    call 00ad2h                               ; e8 3e d7                    ; 0xc3391
+    jmp short 0331fh                          ; eb 89                       ; 0xc3394 vgabios.c:2173
+    mov cx, word [bp+010h]                    ; 8b 4e 10                    ; 0xc3396 vgabios.c:2175
     mov al, byte [bp+00ch]                    ; 8a 46 0c                    ; 0xc3399
     mov bx, ax                                ; 89 c3                       ; 0xc339c
     mov al, byte [bp+00dh]                    ; 8a 46 0d                    ; 0xc339e
     mov dx, ax                                ; 89 c2                       ; 0xc33a1
     mov al, byte [bp+012h]                    ; 8a 46 12                    ; 0xc33a3
-    call 0205eh                               ; e8 b5 ec                    ; 0xc33a6
-    jmp near 035dfh                           ; e9 33 02                    ; 0xc33a9 vgabios.c:2177
-    mov cx, word [bp+00eh]                    ; 8b 4e 0e                    ; 0xc33ac vgabios.c:2179
-    mov bx, word [bp+010h]                    ; 8b 5e 10                    ; 0xc33af
-    mov al, dl                                ; 88 d0                       ; 0xc33b2
-    mov dx, ax                                ; 89 c2                       ; 0xc33b4
-    mov al, byte [bp+00dh]                    ; 8a 46 0d                    ; 0xc33b6
-    mov word [bp-006h], ax                    ; 89 46 fa                    ; 0xc33b9
-    mov al, byte [bp-006h]                    ; 8a 46 fa                    ; 0xc33bc
-    call 021f1h                               ; e8 2f ee                    ; 0xc33bf
-    jmp near 035dfh                           ; e9 1a 02                    ; 0xc33c2 vgabios.c:2180
-    lea cx, [bp+012h]                         ; 8d 4e 12                    ; 0xc33c5 vgabios.c:2182
-    mov bx, word [bp+00eh]                    ; 8b 5e 0e                    ; 0xc33c8
-    mov dx, word [bp+010h]                    ; 8b 56 10                    ; 0xc33cb
-    mov al, byte [bp+00dh]                    ; 8a 46 0d                    ; 0xc33ce
-    call 00bfch                               ; e8 28 d8                    ; 0xc33d1
-    jmp near 035dfh                           ; e9 08 02                    ; 0xc33d4 vgabios.c:2183
-    mov cx, strict word 00002h                ; b9 02 00                    ; 0xc33d7 vgabios.c:2191
-    mov al, byte [bp+00ch]                    ; 8a 46 0c                    ; 0xc33da
-    mov bx, ax                                ; 89 c3                       ; 0xc33dd
-    mov dx, 000ffh                            ; ba ff 00                    ; 0xc33df
-    mov al, byte [bp+012h]                    ; 8a 46 12                    ; 0xc33e2
-    call 02370h                               ; e8 88 ef                    ; 0xc33e5
-    jmp near 035dfh                           ; e9 f4 01                    ; 0xc33e8 vgabios.c:2192
-    mov dx, word [bp+010h]                    ; 8b 56 10                    ; 0xc33eb vgabios.c:2195
-    mov ax, word [bp+00ch]                    ; 8b 46 0c                    ; 0xc33ee
-    call 00d3fh                               ; e8 4b d9                    ; 0xc33f1
-    jmp near 035dfh                           ; e9 e8 01                    ; 0xc33f4 vgabios.c:2196
-    cmp ax, strict word 00030h                ; 3d 30 00                    ; 0xc33f7 vgabios.c:2198
-    jnbe short 03468h                         ; 77 6c                       ; 0xc33fa
-    push CS                                   ; 0e                          ; 0xc33fc
-    pop ES                                    ; 07                          ; 0xc33fd
-    mov cx, strict word 0000fh                ; b9 0f 00                    ; 0xc33fe
-    mov di, 0325bh                            ; bf 5b 32                    ; 0xc3401
-    repne scasb                               ; f2 ae                       ; 0xc3404
-    sal cx, 1                                 ; d1 e1                       ; 0xc3406
-    mov di, cx                                ; 89 cf                       ; 0xc3408
-    mov dx, word [cs:di+03269h]               ; 2e 8b 95 69 32              ; 0xc340a
-    mov al, byte [bp+00ch]                    ; 8a 46 0c                    ; 0xc340f
-    jmp dx                                    ; ff e2                       ; 0xc3412
-    mov al, byte [bp+00dh]                    ; 8a 46 0d                    ; 0xc3414 vgabios.c:2202
-    xor ah, ah                                ; 30 e4                       ; 0xc3417
-    push ax                                   ; 50                          ; 0xc3419
-    mov al, byte [bp+00ch]                    ; 8a 46 0c                    ; 0xc341a
-    push ax                                   ; 50                          ; 0xc341d
-    push word [bp+00eh]                       ; ff 76 0e                    ; 0xc341e
-    mov al, byte [bp+012h]                    ; 8a 46 12                    ; 0xc3421
-    mov cx, word [bp+010h]                    ; 8b 4e 10                    ; 0xc3424
-    mov bx, word [bp+008h]                    ; 8b 5e 08                    ; 0xc3427
-    mov dx, word [bp+016h]                    ; 8b 56 16                    ; 0xc342a
-    call 02702h                               ; e8 d2 f2                    ; 0xc342d
-    jmp short 03468h                          ; eb 36                       ; 0xc3430 vgabios.c:2203
-    mov dl, byte [bp+00ch]                    ; 8a 56 0c                    ; 0xc3432 vgabios.c:2206
-    xor dh, dh                                ; 30 f6                       ; 0xc3435
+    call 01ecch                               ; e8 23 eb                    ; 0xc33a6
+    jmp near 03633h                           ; e9 87 02                    ; 0xc33a9 vgabios.c:2176
+    mov cx, word [bp+010h]                    ; 8b 4e 10                    ; 0xc33ac vgabios.c:2178
+    mov al, byte [bp+00ch]                    ; 8a 46 0c                    ; 0xc33af
+    mov bx, ax                                ; 89 c3                       ; 0xc33b2
+    mov al, byte [bp+00dh]                    ; 8a 46 0d                    ; 0xc33b4
+    mov dx, ax                                ; 89 c2                       ; 0xc33b7
+    mov al, byte [bp+012h]                    ; 8a 46 12                    ; 0xc33b9
+    call 0205eh                               ; e8 9f ec                    ; 0xc33bc
+    jmp near 03633h                           ; e9 71 02                    ; 0xc33bf vgabios.c:2179
+    mov cx, word [bp+00eh]                    ; 8b 4e 0e                    ; 0xc33c2 vgabios.c:2181
+    mov bx, word [bp+010h]                    ; 8b 5e 10                    ; 0xc33c5
+    mov dx, ax                                ; 89 c2                       ; 0xc33c8
+    mov al, byte [bp+00dh]                    ; 8a 46 0d                    ; 0xc33ca
+    call 021f1h                               ; e8 21 ee                    ; 0xc33cd
+    jmp near 03633h                           ; e9 60 02                    ; 0xc33d0 vgabios.c:2182
+    lea cx, [bp+012h]                         ; 8d 4e 12                    ; 0xc33d3 vgabios.c:2184
+    mov bx, word [bp+00eh]                    ; 8b 5e 0e                    ; 0xc33d6
+    mov dx, word [bp+010h]                    ; 8b 56 10                    ; 0xc33d9
+    mov al, byte [bp+00dh]                    ; 8a 46 0d                    ; 0xc33dc
+    mov word [bp-006h], ax                    ; 89 46 fa                    ; 0xc33df
+    mov al, byte [bp-006h]                    ; 8a 46 fa                    ; 0xc33e2
+    call 00bfch                               ; e8 14 d8                    ; 0xc33e5
+    jmp near 03633h                           ; e9 48 02                    ; 0xc33e8 vgabios.c:2185
+    mov cx, strict word 00002h                ; b9 02 00                    ; 0xc33eb vgabios.c:2193
+    mov al, byte [bp+00ch]                    ; 8a 46 0c                    ; 0xc33ee
+    mov bx, ax                                ; 89 c3                       ; 0xc33f1
+    mov dx, 000ffh                            ; ba ff 00                    ; 0xc33f3
+    mov al, byte [bp+012h]                    ; 8a 46 12                    ; 0xc33f6
+    call 02370h                               ; e8 74 ef                    ; 0xc33f9
+    jmp near 03633h                           ; e9 34 02                    ; 0xc33fc vgabios.c:2194
+    mov dx, word [bp+010h]                    ; 8b 56 10                    ; 0xc33ff vgabios.c:2197
+    mov ax, word [bp+00ch]                    ; 8b 46 0c                    ; 0xc3402
+    call 00d3fh                               ; e8 37 d9                    ; 0xc3405
+    jmp near 03633h                           ; e9 28 02                    ; 0xc3408 vgabios.c:2198
+    mov ax, word [bp+012h]                    ; 8b 46 12                    ; 0xc340b vgabios.c:2200
+    xor ah, ah                                ; 30 e4                       ; 0xc340e
+    cmp ax, strict word 00030h                ; 3d 30 00                    ; 0xc3410
+    jnbe short 0347eh                         ; 77 69                       ; 0xc3413
+    push CS                                   ; 0e                          ; 0xc3415
+    pop ES                                    ; 07                          ; 0xc3416
+    mov cx, strict word 0000fh                ; b9 0f 00                    ; 0xc3417
+    mov di, 0325eh                            ; bf 5e 32                    ; 0xc341a
+    repne scasb                               ; f2 ae                       ; 0xc341d
+    sal cx, 1                                 ; d1 e1                       ; 0xc341f
+    mov di, cx                                ; 89 cf                       ; 0xc3421
+    mov ax, word [cs:di+0326ch]               ; 2e 8b 85 6c 32              ; 0xc3423
+    jmp ax                                    ; ff e0                       ; 0xc3428
+    mov al, byte [bp+00dh]                    ; 8a 46 0d                    ; 0xc342a vgabios.c:2204
+    xor ah, ah                                ; 30 e4                       ; 0xc342d
+    push ax                                   ; 50                          ; 0xc342f
+    mov al, byte [bp+00ch]                    ; 8a 46 0c                    ; 0xc3430
+    push ax                                   ; 50                          ; 0xc3433
+    push word [bp+00eh]                       ; ff 76 0e                    ; 0xc3434
     mov al, byte [bp+012h]                    ; 8a 46 12                    ; 0xc3437
-    xor ah, ah                                ; 30 e4                       ; 0xc343a
-    call 02787h                               ; e8 48 f3                    ; 0xc343c
-    jmp short 03468h                          ; eb 27                       ; 0xc343f vgabios.c:2207
-    mov al, byte [bp+00ch]                    ; 8a 46 0c                    ; 0xc3441 vgabios.c:2210
-    xor ah, ah                                ; 30 e4                       ; 0xc3444
-    mov dx, ax                                ; 89 c2                       ; 0xc3446
-    mov al, byte [bp+012h]                    ; 8a 46 12                    ; 0xc3448
-    call 027fdh                               ; e8 af f3                    ; 0xc344b
-    jmp short 03468h                          ; eb 18                       ; 0xc344e vgabios.c:2211
-    mov al, byte [bp+00ch]                    ; 8a 46 0c                    ; 0xc3450 vgabios.c:2214
-    xor ah, ah                                ; 30 e4                       ; 0xc3453
-    mov dx, ax                                ; 89 c2                       ; 0xc3455
-    mov al, byte [bp+012h]                    ; 8a 46 12                    ; 0xc3457
-    call 02871h                               ; e8 14 f4                    ; 0xc345a
-    jmp short 03468h                          ; eb 09                       ; 0xc345d vgabios.c:2215
-    mov dx, word [bp+008h]                    ; 8b 56 08                    ; 0xc345f vgabios.c:2217
-    mov ax, word [bp+016h]                    ; 8b 46 16                    ; 0xc3462
-    call 028e5h                               ; e8 7d f4                    ; 0xc3465
-    jmp near 035dfh                           ; e9 74 01                    ; 0xc3468 vgabios.c:2218
-    mov al, byte [bp+00eh]                    ; 8a 46 0e                    ; 0xc346b vgabios.c:2220
-    push ax                                   ; 50                          ; 0xc346e
-    mov al, byte [bp+00ch]                    ; 8a 46 0c                    ; 0xc346f
-    mov bx, word [bp+010h]                    ; 8b 5e 10                    ; 0xc3472
-    mov dx, word [bp+008h]                    ; 8b 56 08                    ; 0xc3475
-    mov si, word [bp+016h]                    ; 8b 76 16                    ; 0xc3478
-    mov cx, ax                                ; 89 c1                       ; 0xc347b
-    mov ax, si                                ; 89 f0                       ; 0xc347d
-    call 028eah                               ; e8 68 f4                    ; 0xc347f
-    jmp short 03468h                          ; eb e4                       ; 0xc3482 vgabios.c:2221
-    call 028f1h                               ; e8 6a f4                    ; 0xc3484 vgabios.c:2223
-    jmp short 03468h                          ; eb df                       ; 0xc3487 vgabios.c:2224
-    call 028f6h                               ; e8 6a f4                    ; 0xc3489 vgabios.c:2226
-    jmp short 03468h                          ; eb da                       ; 0xc348c vgabios.c:2227
-    call 028fbh                               ; e8 6a f4                    ; 0xc348e vgabios.c:2229
-    jmp short 03468h                          ; eb d5                       ; 0xc3491 vgabios.c:2230
-    lea ax, [bp+00eh]                         ; 8d 46 0e                    ; 0xc3493 vgabios.c:2232
-    push ax                                   ; 50                          ; 0xc3496
-    mov al, byte [bp+00dh]                    ; 8a 46 0d                    ; 0xc3497
-    xor ah, ah                                ; 30 e4                       ; 0xc349a
-    lea cx, [bp+010h]                         ; 8d 4e 10                    ; 0xc349c
-    lea bx, [bp+008h]                         ; 8d 5e 08                    ; 0xc349f
-    lea dx, [bp+016h]                         ; 8d 56 16                    ; 0xc34a2
-    call 00b81h                               ; e8 d9 d6                    ; 0xc34a5
-    jmp short 03468h                          ; eb be                       ; 0xc34a8 vgabios.c:2240
-    mov ax, word [bp+00ch]                    ; 8b 46 0c                    ; 0xc34aa vgabios.c:2242
-    xor ah, ah                                ; 30 e4                       ; 0xc34ad
-    cmp ax, strict word 00036h                ; 3d 36 00                    ; 0xc34af
-    je short 034d8h                           ; 74 24                       ; 0xc34b2
-    cmp ax, strict word 00035h                ; 3d 35 00                    ; 0xc34b4
-    je short 034c3h                           ; 74 0a                       ; 0xc34b7
-    cmp ax, strict word 00020h                ; 3d 20 00                    ; 0xc34b9
-    jne short 03503h                          ; 75 45                       ; 0xc34bc
-    call 02900h                               ; e8 3f f4                    ; 0xc34be vgabios.c:2245
-    jmp short 03503h                          ; eb 40                       ; 0xc34c1 vgabios.c:2246
-    mov al, dl                                ; 88 d0                       ; 0xc34c3 vgabios.c:2248
-    mov bx, word [bp+00eh]                    ; 8b 5e 0e                    ; 0xc34c5
-    mov dx, word [bp+016h]                    ; 8b 56 16                    ; 0xc34c8
-    call 02905h                               ; e8 37 f4                    ; 0xc34cb
-    mov ax, word [bp+012h]                    ; 8b 46 12                    ; 0xc34ce vgabios.c:2249
-    xor al, al                                ; 30 c0                       ; 0xc34d1
-    or AL, strict byte 012h                   ; 0c 12                       ; 0xc34d3
-    jmp near 03306h                           ; e9 2e fe                    ; 0xc34d5
-    mov al, dl                                ; 88 d0                       ; 0xc34d8 vgabios.c:2252
-    call 0290ah                               ; e8 2d f4                    ; 0xc34da
-    jmp short 034ceh                          ; eb ef                       ; 0xc34dd
-    push word [bp+008h]                       ; ff 76 08                    ; 0xc34df vgabios.c:2262
-    push word [bp+016h]                       ; ff 76 16                    ; 0xc34e2
-    mov al, byte [bp+00eh]                    ; 8a 46 0e                    ; 0xc34e5
-    push ax                                   ; 50                          ; 0xc34e8
-    mov al, byte [bp+00fh]                    ; 8a 46 0f                    ; 0xc34e9
-    push ax                                   ; 50                          ; 0xc34ec
-    mov al, byte [bp+00ch]                    ; 8a 46 0c                    ; 0xc34ed
-    mov bx, ax                                ; 89 c3                       ; 0xc34f0
-    mov al, byte [bp+00dh]                    ; 8a 46 0d                    ; 0xc34f2
-    xor dh, dh                                ; 30 f6                       ; 0xc34f5
-    mov si, dx                                ; 89 d6                       ; 0xc34f7
-    mov cx, word [bp+010h]                    ; 8b 4e 10                    ; 0xc34f9
-    mov dx, ax                                ; 89 c2                       ; 0xc34fc
-    mov ax, si                                ; 89 f0                       ; 0xc34fe
-    call 0290fh                               ; e8 0c f4                    ; 0xc3500
-    jmp near 035dfh                           ; e9 d9 00                    ; 0xc3503 vgabios.c:2263
-    mov bx, si                                ; 89 f3                       ; 0xc3506 vgabios.c:2265
-    mov dx, word [bp+016h]                    ; 8b 56 16                    ; 0xc3508
-    mov ax, word [bp+00ch]                    ; 8b 46 0c                    ; 0xc350b
-    call 029a5h                               ; e8 94 f4                    ; 0xc350e
-    mov ax, word [bp+012h]                    ; 8b 46 12                    ; 0xc3511 vgabios.c:2266
-    xor al, al                                ; 30 c0                       ; 0xc3514
-    or AL, strict byte 01bh                   ; 0c 1b                       ; 0xc3516
-    jmp near 03306h                           ; e9 eb fd                    ; 0xc3518
-    cmp ax, strict word 00002h                ; 3d 02 00                    ; 0xc351b vgabios.c:2269
-    je short 03542h                           ; 74 22                       ; 0xc351e
-    cmp ax, strict word 00001h                ; 3d 01 00                    ; 0xc3520
-    je short 03534h                           ; 74 0f                       ; 0xc3523
-    test ax, ax                               ; 85 c0                       ; 0xc3525
-    jne short 0354eh                          ; 75 25                       ; 0xc3527
-    lea dx, [bp+00ch]                         ; 8d 56 0c                    ; 0xc3529 vgabios.c:2272
-    mov ax, word [bp+010h]                    ; 8b 46 10                    ; 0xc352c
-    call 02acah                               ; e8 98 f5                    ; 0xc352f
-    jmp short 0354eh                          ; eb 1a                       ; 0xc3532 vgabios.c:2273
-    mov bx, word [bp+00ch]                    ; 8b 5e 0c                    ; 0xc3534 vgabios.c:2275
-    mov dx, word [bp+016h]                    ; 8b 56 16                    ; 0xc3537
-    mov ax, word [bp+010h]                    ; 8b 46 10                    ; 0xc353a
-    call 02adch                               ; e8 9c f5                    ; 0xc353d
-    jmp short 0354eh                          ; eb 0c                       ; 0xc3540 vgabios.c:2276
-    mov bx, word [bp+00ch]                    ; 8b 5e 0c                    ; 0xc3542 vgabios.c:2278
-    mov dx, word [bp+016h]                    ; 8b 56 16                    ; 0xc3545
-    mov ax, word [bp+010h]                    ; 8b 46 10                    ; 0xc3548
-    call 02e5dh                               ; e8 0f f9                    ; 0xc354b
-    mov ax, word [bp+012h]                    ; 8b 46 12                    ; 0xc354e vgabios.c:2285
-    xor al, al                                ; 30 c0                       ; 0xc3551
-    or AL, strict byte 01ch                   ; 0c 1c                       ; 0xc3553
-    jmp near 03306h                           ; e9 ae fd                    ; 0xc3555
-    call 007e8h                               ; e8 8d d2                    ; 0xc3558 vgabios.c:2290
-    test ax, ax                               ; 85 c0                       ; 0xc355b
-    je short 035d1h                           ; 74 72                       ; 0xc355d
-    mov ax, word [bp+012h]                    ; 8b 46 12                    ; 0xc355f vgabios.c:2291
-    xor ah, ah                                ; 30 e4                       ; 0xc3562
-    cmp ax, strict word 0000ah                ; 3d 0a 00                    ; 0xc3564
-    jnbe short 035d3h                         ; 77 6a                       ; 0xc3567
-    push CS                                   ; 0e                          ; 0xc3569
-    pop ES                                    ; 07                          ; 0xc356a
-    mov cx, strict word 00008h                ; b9 08 00                    ; 0xc356b
-    mov di, 03287h                            ; bf 87 32                    ; 0xc356e
-    repne scasb                               ; f2 ae                       ; 0xc3571
-    sal cx, 1                                 ; d1 e1                       ; 0xc3573
-    mov di, cx                                ; 89 cf                       ; 0xc3575
-    mov ax, word [cs:di+0328eh]               ; 2e 8b 85 8e 32              ; 0xc3577
-    jmp ax                                    ; ff e0                       ; 0xc357c
-    mov bx, si                                ; 89 f3                       ; 0xc357e vgabios.c:2294
-    mov dx, word [bp+016h]                    ; 8b 56 16                    ; 0xc3580
-    lea ax, [bp+012h]                         ; 8d 46 12                    ; 0xc3583
-    call 0379bh                               ; e8 12 02                    ; 0xc3586
-    jmp short 035dfh                          ; eb 54                       ; 0xc3589 vgabios.c:2295
-    mov cx, si                                ; 89 f1                       ; 0xc358b vgabios.c:2297
-    mov bx, word [bp+016h]                    ; 8b 5e 16                    ; 0xc358d
-    mov dx, word [bp+010h]                    ; 8b 56 10                    ; 0xc3590
-    lea ax, [bp+012h]                         ; 8d 46 12                    ; 0xc3593
-    call 038cah                               ; e8 31 03                    ; 0xc3596
-    jmp short 035dfh                          ; eb 44                       ; 0xc3599 vgabios.c:2298
-    mov cx, si                                ; 89 f1                       ; 0xc359b vgabios.c:2300
-    mov bx, word [bp+016h]                    ; 8b 5e 16                    ; 0xc359d
-    mov dx, word [bp+00ch]                    ; 8b 56 0c                    ; 0xc35a0
-    lea ax, [bp+012h]                         ; 8d 46 12                    ; 0xc35a3
-    call 03987h                               ; e8 de 03                    ; 0xc35a6
-    jmp short 035dfh                          ; eb 34                       ; 0xc35a9 vgabios.c:2301
-    lea ax, [bp+00ch]                         ; 8d 46 0c                    ; 0xc35ab vgabios.c:2303
-    push ax                                   ; 50                          ; 0xc35ae
-    mov cx, word [bp+016h]                    ; 8b 4e 16                    ; 0xc35af
-    mov bx, word [bp+00eh]                    ; 8b 5e 0e                    ; 0xc35b2
-    mov dx, word [bp+010h]                    ; 8b 56 10                    ; 0xc35b5
-    lea ax, [bp+012h]                         ; 8d 46 12                    ; 0xc35b8
-    call 03b70h                               ; e8 b2 05                    ; 0xc35bb
-    jmp short 035dfh                          ; eb 1f                       ; 0xc35be vgabios.c:2304
-    lea cx, [bp+00eh]                         ; 8d 4e 0e                    ; 0xc35c0 vgabios.c:2306
-    lea bx, [bp+010h]                         ; 8d 5e 10                    ; 0xc35c3
-    lea dx, [bp+00ch]                         ; 8d 56 0c                    ; 0xc35c6
-    lea ax, [bp+012h]                         ; 8d 46 12                    ; 0xc35c9
-    call 03bfdh                               ; e8 2e 06                    ; 0xc35cc
-    jmp short 035dfh                          ; eb 0e                       ; 0xc35cf vgabios.c:2307
-    jmp short 035dah                          ; eb 07                       ; 0xc35d1
-    mov word [bp+012h], 00100h                ; c7 46 12 00 01              ; 0xc35d3 vgabios.c:2329
-    jmp short 035dfh                          ; eb 05                       ; 0xc35d8 vgabios.c:2332
-    mov word [bp+012h], 00100h                ; c7 46 12 00 01              ; 0xc35da vgabios.c:2334
-    lea sp, [bp-004h]                         ; 8d 66 fc                    ; 0xc35df vgabios.c:2344
-    pop di                                    ; 5f                          ; 0xc35e2
-    pop si                                    ; 5e                          ; 0xc35e3
-    pop bp                                    ; 5d                          ; 0xc35e4
-    retn                                      ; c3                          ; 0xc35e5
-  ; disGetNextSymbol 0xc35e6 LB 0x6f9 -> off=0x0 cb=000000000000001f uValue=00000000000c35e6 'dispi_set_xres'
-dispi_set_xres:                              ; 0xc35e6 LB 0x1f
-    push bp                                   ; 55                          ; 0xc35e6 vbe.c:100
-    mov bp, sp                                ; 89 e5                       ; 0xc35e7
-    push bx                                   ; 53                          ; 0xc35e9
-    push dx                                   ; 52                          ; 0xc35ea
-    mov bx, ax                                ; 89 c3                       ; 0xc35eb
-    mov ax, strict word 00001h                ; b8 01 00                    ; 0xc35ed vbe.c:105
-    mov dx, 001ceh                            ; ba ce 01                    ; 0xc35f0
-    call 00590h                               ; e8 9a cf                    ; 0xc35f3
-    mov ax, bx                                ; 89 d8                       ; 0xc35f6 vbe.c:106
-    mov dx, 001cfh                            ; ba cf 01                    ; 0xc35f8
-    call 00590h                               ; e8 92 cf                    ; 0xc35fb
-    lea sp, [bp-004h]                         ; 8d 66 fc                    ; 0xc35fe vbe.c:107
-    pop dx                                    ; 5a                          ; 0xc3601
-    pop bx                                    ; 5b                          ; 0xc3602
-    pop bp                                    ; 5d                          ; 0xc3603
-    retn                                      ; c3                          ; 0xc3604
-  ; disGetNextSymbol 0xc3605 LB 0x6da -> off=0x0 cb=000000000000001f uValue=00000000000c3605 'dispi_set_yres'
-dispi_set_yres:                              ; 0xc3605 LB 0x1f
-    push bp                                   ; 55                          ; 0xc3605 vbe.c:109
-    mov bp, sp                                ; 89 e5                       ; 0xc3606
-    push bx                                   ; 53                          ; 0xc3608
-    push dx                                   ; 52                          ; 0xc3609
-    mov bx, ax                                ; 89 c3                       ; 0xc360a
-    mov ax, strict word 00002h                ; b8 02 00                    ; 0xc360c vbe.c:114
-    mov dx, 001ceh                            ; ba ce 01                    ; 0xc360f
-    call 00590h                               ; e8 7b cf                    ; 0xc3612
-    mov ax, bx                                ; 89 d8                       ; 0xc3615 vbe.c:115
-    mov dx, 001cfh                            ; ba cf 01                    ; 0xc3617
-    call 00590h                               ; e8 73 cf                    ; 0xc361a
-    lea sp, [bp-004h]                         ; 8d 66 fc                    ; 0xc361d vbe.c:116
-    pop dx                                    ; 5a                          ; 0xc3620
-    pop bx                                    ; 5b                          ; 0xc3621
-    pop bp                                    ; 5d                          ; 0xc3622
-    retn                                      ; c3                          ; 0xc3623
-  ; disGetNextSymbol 0xc3624 LB 0x6bb -> off=0x0 cb=0000000000000019 uValue=00000000000c3624 'dispi_get_yres'
-dispi_get_yres:                              ; 0xc3624 LB 0x19
-    push bp                                   ; 55                          ; 0xc3624 vbe.c:118
-    mov bp, sp                                ; 89 e5                       ; 0xc3625
-    push dx                                   ; 52                          ; 0xc3627
-    mov ax, strict word 00002h                ; b8 02 00                    ; 0xc3628 vbe.c:120
-    mov dx, 001ceh                            ; ba ce 01                    ; 0xc362b
-    call 00590h                               ; e8 5f cf                    ; 0xc362e
-    mov dx, 001cfh                            ; ba cf 01                    ; 0xc3631 vbe.c:121
-    call 00597h                               ; e8 60 cf                    ; 0xc3634
-    lea sp, [bp-002h]                         ; 8d 66 fe                    ; 0xc3637 vbe.c:122
-    pop dx                                    ; 5a                          ; 0xc363a
-    pop bp                                    ; 5d                          ; 0xc363b
-    retn                                      ; c3                          ; 0xc363c
-  ; disGetNextSymbol 0xc363d LB 0x6a2 -> off=0x0 cb=000000000000001f uValue=00000000000c363d 'dispi_set_bpp'
-dispi_set_bpp:                               ; 0xc363d LB 0x1f
-    push bp                                   ; 55                          ; 0xc363d vbe.c:124
-    mov bp, sp                                ; 89 e5                       ; 0xc363e
-    push bx                                   ; 53                          ; 0xc3640
-    push dx                                   ; 52                          ; 0xc3641
-    mov bx, ax                                ; 89 c3                       ; 0xc3642
-    mov ax, strict word 00003h                ; b8 03 00                    ; 0xc3644 vbe.c:129
-    mov dx, 001ceh                            ; ba ce 01                    ; 0xc3647
-    call 00590h                               ; e8 43 cf                    ; 0xc364a
-    mov ax, bx                                ; 89 d8                       ; 0xc364d vbe.c:130
-    mov dx, 001cfh                            ; ba cf 01                    ; 0xc364f
-    call 00590h                               ; e8 3b cf                    ; 0xc3652
-    lea sp, [bp-004h]                         ; 8d 66 fc                    ; 0xc3655 vbe.c:131
-    pop dx                                    ; 5a                          ; 0xc3658
-    pop bx                                    ; 5b                          ; 0xc3659
-    pop bp                                    ; 5d                          ; 0xc365a
-    retn                                      ; c3                          ; 0xc365b
-  ; disGetNextSymbol 0xc365c LB 0x683 -> off=0x0 cb=0000000000000019 uValue=00000000000c365c 'dispi_get_bpp'
-dispi_get_bpp:                               ; 0xc365c LB 0x19
-    push bp                                   ; 55                          ; 0xc365c vbe.c:133
-    mov bp, sp                                ; 89 e5                       ; 0xc365d
-    push dx                                   ; 52                          ; 0xc365f
-    mov ax, strict word 00003h                ; b8 03 00                    ; 0xc3660 vbe.c:135
+    mov cx, word [bp+010h]                    ; 8b 4e 10                    ; 0xc343a
+    mov bx, word [bp+008h]                    ; 8b 5e 08                    ; 0xc343d
+    mov dx, word [bp+016h]                    ; 8b 56 16                    ; 0xc3440
+    call 02702h                               ; e8 bc f2                    ; 0xc3443
+    jmp short 0347eh                          ; eb 36                       ; 0xc3446 vgabios.c:2205
+    mov al, byte [bp+00ch]                    ; 8a 46 0c                    ; 0xc3448 vgabios.c:2208
+    xor ah, ah                                ; 30 e4                       ; 0xc344b
+    mov dx, ax                                ; 89 c2                       ; 0xc344d
+    mov al, byte [bp+012h]                    ; 8a 46 12                    ; 0xc344f
+    call 02787h                               ; e8 32 f3                    ; 0xc3452
+    jmp short 0347eh                          ; eb 27                       ; 0xc3455 vgabios.c:2209
+    mov al, byte [bp+00ch]                    ; 8a 46 0c                    ; 0xc3457 vgabios.c:2212
+    xor ah, ah                                ; 30 e4                       ; 0xc345a
+    mov dx, ax                                ; 89 c2                       ; 0xc345c
+    mov al, byte [bp+012h]                    ; 8a 46 12                    ; 0xc345e
+    call 027fdh                               ; e8 99 f3                    ; 0xc3461
+    jmp short 0347eh                          ; eb 18                       ; 0xc3464 vgabios.c:2213
+    mov al, byte [bp+00ch]                    ; 8a 46 0c                    ; 0xc3466 vgabios.c:2216
+    xor ah, ah                                ; 30 e4                       ; 0xc3469
+    mov dx, ax                                ; 89 c2                       ; 0xc346b
+    mov al, byte [bp+012h]                    ; 8a 46 12                    ; 0xc346d
+    call 02871h                               ; e8 fe f3                    ; 0xc3470
+    jmp short 0347eh                          ; eb 09                       ; 0xc3473 vgabios.c:2217
+    mov dx, word [bp+008h]                    ; 8b 56 08                    ; 0xc3475 vgabios.c:2219
+    mov ax, word [bp+016h]                    ; 8b 46 16                    ; 0xc3478
+    call 028e5h                               ; e8 67 f4                    ; 0xc347b
+    jmp near 03633h                           ; e9 b2 01                    ; 0xc347e vgabios.c:2220
+    mov al, byte [bp+00eh]                    ; 8a 46 0e                    ; 0xc3481 vgabios.c:2222
+    xor ah, ah                                ; 30 e4                       ; 0xc3484
+    push ax                                   ; 50                          ; 0xc3486
+    mov cl, byte [bp+00ch]                    ; 8a 4e 0c                    ; 0xc3487
+    xor ch, ch                                ; 30 ed                       ; 0xc348a
+    mov bx, word [bp+010h]                    ; 8b 5e 10                    ; 0xc348c
+    mov dx, word [bp+008h]                    ; 8b 56 08                    ; 0xc348f
+    mov ax, word [bp+016h]                    ; 8b 46 16                    ; 0xc3492
+    call 028eah                               ; e8 52 f4                    ; 0xc3495
+    jmp short 0347eh                          ; eb e4                       ; 0xc3498 vgabios.c:2223
+    mov al, byte [bp+00ch]                    ; 8a 46 0c                    ; 0xc349a vgabios.c:2225
+    xor ah, ah                                ; 30 e4                       ; 0xc349d
+    call 028f1h                               ; e8 4f f4                    ; 0xc349f
+    jmp short 0347eh                          ; eb da                       ; 0xc34a2 vgabios.c:2226
+    mov al, byte [bp+00ch]                    ; 8a 46 0c                    ; 0xc34a4 vgabios.c:2228
+    xor ah, ah                                ; 30 e4                       ; 0xc34a7
+    call 028f6h                               ; e8 4a f4                    ; 0xc34a9
+    jmp short 0347eh                          ; eb d0                       ; 0xc34ac vgabios.c:2229
+    mov al, byte [bp+00ch]                    ; 8a 46 0c                    ; 0xc34ae vgabios.c:2231
+    xor ah, ah                                ; 30 e4                       ; 0xc34b1
+    call 028fbh                               ; e8 45 f4                    ; 0xc34b3
+    jmp short 0347eh                          ; eb c6                       ; 0xc34b6 vgabios.c:2232
+    lea ax, [bp+00eh]                         ; 8d 46 0e                    ; 0xc34b8 vgabios.c:2234
+    push ax                                   ; 50                          ; 0xc34bb
+    lea cx, [bp+010h]                         ; 8d 4e 10                    ; 0xc34bc
+    lea bx, [bp+008h]                         ; 8d 5e 08                    ; 0xc34bf
+    lea dx, [bp+016h]                         ; 8d 56 16                    ; 0xc34c2
+    mov al, byte [bp+00dh]                    ; 8a 46 0d                    ; 0xc34c5
+    xor ah, ah                                ; 30 e4                       ; 0xc34c8
+    call 00b81h                               ; e8 b4 d6                    ; 0xc34ca
+    jmp short 0347eh                          ; eb af                       ; 0xc34cd vgabios.c:2242
+    mov si, word [bp+00ch]                    ; 8b 76 0c                    ; 0xc34cf vgabios.c:2244
+    and si, 000ffh                            ; 81 e6 ff 00                 ; 0xc34d2
+    cmp si, strict byte 00036h                ; 83 fe 36                    ; 0xc34d6
+    je short 034fdh                           ; 74 22                       ; 0xc34d9
+    cmp si, strict byte 00035h                ; 83 fe 35                    ; 0xc34db
+    je short 034eah                           ; 74 0a                       ; 0xc34de
+    cmp si, strict byte 00020h                ; 83 fe 20                    ; 0xc34e0
+    jne short 03520h                          ; 75 3b                       ; 0xc34e3
+    call 02900h                               ; e8 18 f4                    ; 0xc34e5 vgabios.c:2247
+    jmp short 03520h                          ; eb 36                       ; 0xc34e8 vgabios.c:2248
+    mov bx, word [bp+00eh]                    ; 8b 5e 0e                    ; 0xc34ea vgabios.c:2250
+    mov dx, word [bp+016h]                    ; 8b 56 16                    ; 0xc34ed
+    call 02905h                               ; e8 12 f4                    ; 0xc34f0
+    mov ax, word [bp+012h]                    ; 8b 46 12                    ; 0xc34f3 vgabios.c:2251
+    xor al, al                                ; 30 c0                       ; 0xc34f6
+    or AL, strict byte 012h                   ; 0c 12                       ; 0xc34f8
+    jmp near 03304h                           ; e9 07 fe                    ; 0xc34fa
+    call 0290ah                               ; e8 0a f4                    ; 0xc34fd vgabios.c:2254
+    jmp short 034f3h                          ; eb f1                       ; 0xc3500
+    push word [bp+008h]                       ; ff 76 08                    ; 0xc3502 vgabios.c:2264
+    push word [bp+016h]                       ; ff 76 16                    ; 0xc3505
+    mov dl, byte [bp+00eh]                    ; 8a 56 0e                    ; 0xc3508
+    xor dh, dh                                ; 30 f6                       ; 0xc350b
+    push dx                                   ; 52                          ; 0xc350d
+    mov dl, byte [bp+00fh]                    ; 8a 56 0f                    ; 0xc350e
+    push dx                                   ; 52                          ; 0xc3511
+    mov dl, byte [bp+00ch]                    ; 8a 56 0c                    ; 0xc3512
+    mov bx, dx                                ; 89 d3                       ; 0xc3515
+    mov dl, byte [bp+00dh]                    ; 8a 56 0d                    ; 0xc3517
+    mov cx, word [bp+010h]                    ; 8b 4e 10                    ; 0xc351a
+    call 0290fh                               ; e8 ef f3                    ; 0xc351d
+    jmp near 03633h                           ; e9 10 01                    ; 0xc3520 vgabios.c:2265
+    mov bx, si                                ; 89 f3                       ; 0xc3523 vgabios.c:2267
+    mov dx, word [bp+016h]                    ; 8b 56 16                    ; 0xc3525
+    mov ax, word [bp+00ch]                    ; 8b 46 0c                    ; 0xc3528
+    call 029a5h                               ; e8 77 f4                    ; 0xc352b
+    mov ax, word [bp+012h]                    ; 8b 46 12                    ; 0xc352e vgabios.c:2268
+    xor al, al                                ; 30 c0                       ; 0xc3531
+    or AL, strict byte 01bh                   ; 0c 1b                       ; 0xc3533
+    jmp near 03304h                           ; e9 cc fd                    ; 0xc3535
+    mov ax, word [bp+012h]                    ; 8b 46 12                    ; 0xc3538 vgabios.c:2271
+    xor ah, ah                                ; 30 e4                       ; 0xc353b
+    cmp ax, strict word 00002h                ; 3d 02 00                    ; 0xc353d
+    je short 03564h                           ; 74 22                       ; 0xc3540
+    cmp ax, strict word 00001h                ; 3d 01 00                    ; 0xc3542
+    je short 03556h                           ; 74 0f                       ; 0xc3545
+    test ax, ax                               ; 85 c0                       ; 0xc3547
+    jne short 03570h                          ; 75 25                       ; 0xc3549
+    lea dx, [bp+00ch]                         ; 8d 56 0c                    ; 0xc354b vgabios.c:2274
+    mov ax, word [bp+010h]                    ; 8b 46 10                    ; 0xc354e
+    call 02acah                               ; e8 76 f5                    ; 0xc3551
+    jmp short 03570h                          ; eb 1a                       ; 0xc3554 vgabios.c:2275
+    mov bx, word [bp+00ch]                    ; 8b 5e 0c                    ; 0xc3556 vgabios.c:2277
+    mov dx, word [bp+016h]                    ; 8b 56 16                    ; 0xc3559
+    mov ax, word [bp+010h]                    ; 8b 46 10                    ; 0xc355c
+    call 02adch                               ; e8 7a f5                    ; 0xc355f
+    jmp short 03570h                          ; eb 0c                       ; 0xc3562 vgabios.c:2278
+    mov bx, word [bp+00ch]                    ; 8b 5e 0c                    ; 0xc3564 vgabios.c:2280
+    mov dx, word [bp+016h]                    ; 8b 56 16                    ; 0xc3567
+    mov ax, word [bp+010h]                    ; 8b 46 10                    ; 0xc356a
+    call 02e5dh                               ; e8 ed f8                    ; 0xc356d
+    mov ax, word [bp+012h]                    ; 8b 46 12                    ; 0xc3570 vgabios.c:2287
+    xor al, al                                ; 30 c0                       ; 0xc3573
+    or AL, strict byte 01ch                   ; 0c 1c                       ; 0xc3575
+    jmp near 03304h                           ; e9 8a fd                    ; 0xc3577
+    call 007e8h                               ; e8 6b d2                    ; 0xc357a vgabios.c:2292
+    test ax, ax                               ; 85 c0                       ; 0xc357d
+    je short 035f5h                           ; 74 74                       ; 0xc357f
+    mov ax, word [bp+012h]                    ; 8b 46 12                    ; 0xc3581 vgabios.c:2293
+    xor ah, ah                                ; 30 e4                       ; 0xc3584
+    cmp ax, strict word 0000ah                ; 3d 0a 00                    ; 0xc3586
+    jnbe short 035f7h                         ; 77 6c                       ; 0xc3589
+    push CS                                   ; 0e                          ; 0xc358b
+    pop ES                                    ; 07                          ; 0xc358c
+    mov cx, strict word 00008h                ; b9 08 00                    ; 0xc358d
+    mov di, 0328ah                            ; bf 8a 32                    ; 0xc3590
+    repne scasb                               ; f2 ae                       ; 0xc3593
+    sal cx, 1                                 ; d1 e1                       ; 0xc3595
+    mov di, cx                                ; 89 cf                       ; 0xc3597
+    mov ax, word [cs:di+03291h]               ; 2e 8b 85 91 32              ; 0xc3599
+    jmp ax                                    ; ff e0                       ; 0xc359e
+    mov bx, si                                ; 89 f3                       ; 0xc35a0 vgabios.c:2296
+    mov dx, word [bp+016h]                    ; 8b 56 16                    ; 0xc35a2
+    lea ax, [bp+012h]                         ; 8d 46 12                    ; 0xc35a5
+    call 037efh                               ; e8 44 02                    ; 0xc35a8
+    jmp near 03633h                           ; e9 85 00                    ; 0xc35ab vgabios.c:2297
+    mov cx, si                                ; 89 f1                       ; 0xc35ae vgabios.c:2299
+    mov bx, word [bp+016h]                    ; 8b 5e 16                    ; 0xc35b0
+    mov dx, word [bp+010h]                    ; 8b 56 10                    ; 0xc35b3
+    lea ax, [bp+012h]                         ; 8d 46 12                    ; 0xc35b6
+    call 0391eh                               ; e8 62 03                    ; 0xc35b9
+    jmp near 03633h                           ; e9 74 00                    ; 0xc35bc vgabios.c:2300
+    mov cx, si                                ; 89 f1                       ; 0xc35bf vgabios.c:2302
+    mov bx, word [bp+016h]                    ; 8b 5e 16                    ; 0xc35c1
+    mov dx, word [bp+00ch]                    ; 8b 56 0c                    ; 0xc35c4
+    lea ax, [bp+012h]                         ; 8d 46 12                    ; 0xc35c7
+    call 039dbh                               ; e8 0e 04                    ; 0xc35ca
+    jmp short 03633h                          ; eb 64                       ; 0xc35cd vgabios.c:2303
+    lea ax, [bp+00ch]                         ; 8d 46 0c                    ; 0xc35cf vgabios.c:2305
+    push ax                                   ; 50                          ; 0xc35d2
+    mov cx, word [bp+016h]                    ; 8b 4e 16                    ; 0xc35d3
+    mov bx, word [bp+00eh]                    ; 8b 5e 0e                    ; 0xc35d6
+    mov dx, word [bp+010h]                    ; 8b 56 10                    ; 0xc35d9
+    lea ax, [bp+012h]                         ; 8d 46 12                    ; 0xc35dc
+    call 03bc4h                               ; e8 e2 05                    ; 0xc35df
+    jmp short 03633h                          ; eb 4f                       ; 0xc35e2 vgabios.c:2306
+    lea cx, [bp+00eh]                         ; 8d 4e 0e                    ; 0xc35e4 vgabios.c:2308
+    lea bx, [bp+010h]                         ; 8d 5e 10                    ; 0xc35e7
+    lea dx, [bp+00ch]                         ; 8d 56 0c                    ; 0xc35ea
+    lea ax, [bp+012h]                         ; 8d 46 12                    ; 0xc35ed
+    call 03c51h                               ; e8 5e 06                    ; 0xc35f0
+    jmp short 03633h                          ; eb 3e                       ; 0xc35f3 vgabios.c:2309
+    jmp short 035feh                          ; eb 07                       ; 0xc35f5
+    mov word [bp+012h], 00100h                ; c7 46 12 00 01              ; 0xc35f7 vgabios.c:2331
+    jmp short 03633h                          ; eb 35                       ; 0xc35fc vgabios.c:2334
+    mov word [bp+012h], 00100h                ; c7 46 12 00 01              ; 0xc35fe vgabios.c:2336
+    jmp short 03633h                          ; eb 2e                       ; 0xc3603 vgabios.c:2338
+    call 007e8h                               ; e8 e0 d1                    ; 0xc3605 vgabios.c:2340
+    test ax, ax                               ; 85 c0                       ; 0xc3608
+    je short 0362eh                           ; 74 22                       ; 0xc360a
+    mov ax, word [bp+012h]                    ; 8b 46 12                    ; 0xc360c vgabios.c:2341
+    xor ah, ah                                ; 30 e4                       ; 0xc360f
+    cmp ax, strict word 00042h                ; 3d 42 00                    ; 0xc3611
+    jne short 03627h                          ; 75 11                       ; 0xc3614
+    lea cx, [bp+00eh]                         ; 8d 4e 0e                    ; 0xc3616 vgabios.c:2344
+    lea bx, [bp+010h]                         ; 8d 5e 10                    ; 0xc3619
+    lea dx, [bp+00ch]                         ; 8d 56 0c                    ; 0xc361c
+    lea ax, [bp+012h]                         ; 8d 46 12                    ; 0xc361f
+    call 03d33h                               ; e8 0e 07                    ; 0xc3622
+    jmp short 03633h                          ; eb 0c                       ; 0xc3625 vgabios.c:2345
+    mov word [bp+012h], 00100h                ; c7 46 12 00 01              ; 0xc3627 vgabios.c:2347
+    jmp short 03633h                          ; eb 05                       ; 0xc362c vgabios.c:2350
+    mov word [bp+012h], 00100h                ; c7 46 12 00 01              ; 0xc362e vgabios.c:2352
+    lea sp, [bp-004h]                         ; 8d 66 fc                    ; 0xc3633 vgabios.c:2362
+    pop di                                    ; 5f                          ; 0xc3636
+    pop si                                    ; 5e                          ; 0xc3637
+    pop bp                                    ; 5d                          ; 0xc3638
+    retn                                      ; c3                          ; 0xc3639
+  ; disGetNextSymbol 0xc363a LB 0x7f0 -> off=0x0 cb=000000000000001f uValue=00000000000c363a 'dispi_set_xres'
+dispi_set_xres:                              ; 0xc363a LB 0x1f
+    push bp                                   ; 55                          ; 0xc363a vbe.c:100
+    mov bp, sp                                ; 89 e5                       ; 0xc363b
+    push bx                                   ; 53                          ; 0xc363d
+    push dx                                   ; 52                          ; 0xc363e
+    mov bx, ax                                ; 89 c3                       ; 0xc363f
+    mov ax, strict word 00001h                ; b8 01 00                    ; 0xc3641 vbe.c:105
+    mov dx, 001ceh                            ; ba ce 01                    ; 0xc3644
+    call 00590h                               ; e8 46 cf                    ; 0xc3647
+    mov ax, bx                                ; 89 d8                       ; 0xc364a vbe.c:106
+    mov dx, 001cfh                            ; ba cf 01                    ; 0xc364c
+    call 00590h                               ; e8 3e cf                    ; 0xc364f
+    lea sp, [bp-004h]                         ; 8d 66 fc                    ; 0xc3652 vbe.c:107
+    pop dx                                    ; 5a                          ; 0xc3655
+    pop bx                                    ; 5b                          ; 0xc3656
+    pop bp                                    ; 5d                          ; 0xc3657
+    retn                                      ; c3                          ; 0xc3658
+  ; disGetNextSymbol 0xc3659 LB 0x7d1 -> off=0x0 cb=000000000000001f uValue=00000000000c3659 'dispi_set_yres'
+dispi_set_yres:                              ; 0xc3659 LB 0x1f
+    push bp                                   ; 55                          ; 0xc3659 vbe.c:109
+    mov bp, sp                                ; 89 e5                       ; 0xc365a
+    push bx                                   ; 53                          ; 0xc365c
+    push dx                                   ; 52                          ; 0xc365d
+    mov bx, ax                                ; 89 c3                       ; 0xc365e
+    mov ax, strict word 00002h                ; b8 02 00                    ; 0xc3660 vbe.c:114
     mov dx, 001ceh                            ; ba ce 01                    ; 0xc3663
     call 00590h                               ; e8 27 cf                    ; 0xc3666
-    mov dx, 001cfh                            ; ba cf 01                    ; 0xc3669 vbe.c:136
-    call 00597h                               ; e8 28 cf                    ; 0xc366c
-    lea sp, [bp-002h]                         ; 8d 66 fe                    ; 0xc366f vbe.c:137
-    pop dx                                    ; 5a                          ; 0xc3672
-    pop bp                                    ; 5d                          ; 0xc3673
-    retn                                      ; c3                          ; 0xc3674
-  ; disGetNextSymbol 0xc3675 LB 0x66a -> off=0x0 cb=000000000000001f uValue=00000000000c3675 'dispi_set_virt_width'
-dispi_set_virt_width:                        ; 0xc3675 LB 0x1f
-    push bp                                   ; 55                          ; 0xc3675 vbe.c:139
-    mov bp, sp                                ; 89 e5                       ; 0xc3676
-    push bx                                   ; 53                          ; 0xc3678
-    push dx                                   ; 52                          ; 0xc3679
-    mov bx, ax                                ; 89 c3                       ; 0xc367a
-    mov ax, strict word 00006h                ; b8 06 00                    ; 0xc367c vbe.c:144
+    mov ax, bx                                ; 89 d8                       ; 0xc3669 vbe.c:115
+    mov dx, 001cfh                            ; ba cf 01                    ; 0xc366b
+    call 00590h                               ; e8 1f cf                    ; 0xc366e
+    lea sp, [bp-004h]                         ; 8d 66 fc                    ; 0xc3671 vbe.c:116
+    pop dx                                    ; 5a                          ; 0xc3674
+    pop bx                                    ; 5b                          ; 0xc3675
+    pop bp                                    ; 5d                          ; 0xc3676
+    retn                                      ; c3                          ; 0xc3677
+  ; disGetNextSymbol 0xc3678 LB 0x7b2 -> off=0x0 cb=0000000000000019 uValue=00000000000c3678 'dispi_get_yres'
+dispi_get_yres:                              ; 0xc3678 LB 0x19
+    push bp                                   ; 55                          ; 0xc3678 vbe.c:118
+    mov bp, sp                                ; 89 e5                       ; 0xc3679
+    push dx                                   ; 52                          ; 0xc367b
+    mov ax, strict word 00002h                ; b8 02 00                    ; 0xc367c vbe.c:120
     mov dx, 001ceh                            ; ba ce 01                    ; 0xc367f
     call 00590h                               ; e8 0b cf                    ; 0xc3682
-    mov ax, bx                                ; 89 d8                       ; 0xc3685 vbe.c:145
-    mov dx, 001cfh                            ; ba cf 01                    ; 0xc3687
-    call 00590h                               ; e8 03 cf                    ; 0xc368a
-    lea sp, [bp-004h]                         ; 8d 66 fc                    ; 0xc368d vbe.c:146
-    pop dx                                    ; 5a                          ; 0xc3690
-    pop bx                                    ; 5b                          ; 0xc3691
-    pop bp                                    ; 5d                          ; 0xc3692
-    retn                                      ; c3                          ; 0xc3693
-  ; disGetNextSymbol 0xc3694 LB 0x64b -> off=0x0 cb=0000000000000019 uValue=00000000000c3694 'dispi_get_virt_width'
-dispi_get_virt_width:                        ; 0xc3694 LB 0x19
-    push bp                                   ; 55                          ; 0xc3694 vbe.c:148
-    mov bp, sp                                ; 89 e5                       ; 0xc3695
-    push dx                                   ; 52                          ; 0xc3697
-    mov ax, strict word 00006h                ; b8 06 00                    ; 0xc3698 vbe.c:150
+    mov dx, 001cfh                            ; ba cf 01                    ; 0xc3685 vbe.c:121
+    call 00597h                               ; e8 0c cf                    ; 0xc3688
+    lea sp, [bp-002h]                         ; 8d 66 fe                    ; 0xc368b vbe.c:122
+    pop dx                                    ; 5a                          ; 0xc368e
+    pop bp                                    ; 5d                          ; 0xc368f
+    retn                                      ; c3                          ; 0xc3690
+  ; disGetNextSymbol 0xc3691 LB 0x799 -> off=0x0 cb=000000000000001f uValue=00000000000c3691 'dispi_set_bpp'
+dispi_set_bpp:                               ; 0xc3691 LB 0x1f
+    push bp                                   ; 55                          ; 0xc3691 vbe.c:124
+    mov bp, sp                                ; 89 e5                       ; 0xc3692
+    push bx                                   ; 53                          ; 0xc3694
+    push dx                                   ; 52                          ; 0xc3695
+    mov bx, ax                                ; 89 c3                       ; 0xc3696
+    mov ax, strict word 00003h                ; b8 03 00                    ; 0xc3698 vbe.c:129
     mov dx, 001ceh                            ; ba ce 01                    ; 0xc369b
     call 00590h                               ; e8 ef ce                    ; 0xc369e
-    mov dx, 001cfh                            ; ba cf 01                    ; 0xc36a1 vbe.c:151
-    call 00597h                               ; e8 f0 ce                    ; 0xc36a4
-    lea sp, [bp-002h]                         ; 8d 66 fe                    ; 0xc36a7 vbe.c:152
-    pop dx                                    ; 5a                          ; 0xc36aa
-    pop bp                                    ; 5d                          ; 0xc36ab
-    retn                                      ; c3                          ; 0xc36ac
-  ; disGetNextSymbol 0xc36ad LB 0x632 -> off=0x0 cb=0000000000000019 uValue=00000000000c36ad 'dispi_get_virt_height'
-dispi_get_virt_height:                       ; 0xc36ad LB 0x19
-    push bp                                   ; 55                          ; 0xc36ad vbe.c:154
-    mov bp, sp                                ; 89 e5                       ; 0xc36ae
-    push dx                                   ; 52                          ; 0xc36b0
-    mov ax, strict word 00007h                ; b8 07 00                    ; 0xc36b1 vbe.c:156
-    mov dx, 001ceh                            ; ba ce 01                    ; 0xc36b4
-    call 00590h                               ; e8 d6 ce                    ; 0xc36b7
-    mov dx, 001cfh                            ; ba cf 01                    ; 0xc36ba vbe.c:157
-    call 00597h                               ; e8 d7 ce                    ; 0xc36bd
-    lea sp, [bp-002h]                         ; 8d 66 fe                    ; 0xc36c0 vbe.c:158
-    pop dx                                    ; 5a                          ; 0xc36c3
-    pop bp                                    ; 5d                          ; 0xc36c4
-    retn                                      ; c3                          ; 0xc36c5
-  ; disGetNextSymbol 0xc36c6 LB 0x619 -> off=0x0 cb=0000000000000012 uValue=00000000000c36c6 'in_word'
-in_word:                                     ; 0xc36c6 LB 0x12
-    push bp                                   ; 55                          ; 0xc36c6 vbe.c:160
-    mov bp, sp                                ; 89 e5                       ; 0xc36c7
-    push bx                                   ; 53                          ; 0xc36c9
-    mov bx, ax                                ; 89 c3                       ; 0xc36ca
-    mov ax, dx                                ; 89 d0                       ; 0xc36cc
-    mov dx, bx                                ; 89 da                       ; 0xc36ce vbe.c:162
-    out DX, ax                                ; ef                          ; 0xc36d0
-    in ax, DX                                 ; ed                          ; 0xc36d1 vbe.c:163
-    lea sp, [bp-002h]                         ; 8d 66 fe                    ; 0xc36d2 vbe.c:164
-    pop bx                                    ; 5b                          ; 0xc36d5
-    pop bp                                    ; 5d                          ; 0xc36d6
-    retn                                      ; c3                          ; 0xc36d7
-  ; disGetNextSymbol 0xc36d8 LB 0x607 -> off=0x0 cb=0000000000000014 uValue=00000000000c36d8 'in_byte'
-in_byte:                                     ; 0xc36d8 LB 0x14
-    push bp                                   ; 55                          ; 0xc36d8 vbe.c:166
-    mov bp, sp                                ; 89 e5                       ; 0xc36d9
-    push bx                                   ; 53                          ; 0xc36db
-    mov bx, ax                                ; 89 c3                       ; 0xc36dc
-    mov ax, dx                                ; 89 d0                       ; 0xc36de
-    mov dx, bx                                ; 89 da                       ; 0xc36e0 vbe.c:168
-    out DX, ax                                ; ef                          ; 0xc36e2
-    in AL, DX                                 ; ec                          ; 0xc36e3 vbe.c:169
-    db  02ah, 0e4h
-    ; sub ah, ah                                ; 2a e4                     ; 0xc36e4
-    lea sp, [bp-002h]                         ; 8d 66 fe                    ; 0xc36e6 vbe.c:170
-    pop bx                                    ; 5b                          ; 0xc36e9
-    pop bp                                    ; 5d                          ; 0xc36ea
-    retn                                      ; c3                          ; 0xc36eb
-  ; disGetNextSymbol 0xc36ec LB 0x5f3 -> off=0x0 cb=0000000000000014 uValue=00000000000c36ec 'dispi_get_id'
-dispi_get_id:                                ; 0xc36ec LB 0x14
-    push bp                                   ; 55                          ; 0xc36ec vbe.c:173
-    mov bp, sp                                ; 89 e5                       ; 0xc36ed
-    push dx                                   ; 52                          ; 0xc36ef
-    xor ax, ax                                ; 31 c0                       ; 0xc36f0 vbe.c:175
-    mov dx, 001ceh                            ; ba ce 01                    ; 0xc36f2
-    out DX, ax                                ; ef                          ; 0xc36f5
-    mov dx, 001cfh                            ; ba cf 01                    ; 0xc36f6 vbe.c:176
-    in ax, DX                                 ; ed                          ; 0xc36f9
-    lea sp, [bp-002h]                         ; 8d 66 fe                    ; 0xc36fa vbe.c:177
-    pop dx                                    ; 5a                          ; 0xc36fd
-    pop bp                                    ; 5d                          ; 0xc36fe
-    retn                                      ; c3                          ; 0xc36ff
-  ; disGetNextSymbol 0xc3700 LB 0x5df -> off=0x0 cb=000000000000001a uValue=00000000000c3700 'dispi_set_id'
-dispi_set_id:                                ; 0xc3700 LB 0x1a
-    push bp                                   ; 55                          ; 0xc3700 vbe.c:179
-    mov bp, sp                                ; 89 e5                       ; 0xc3701
-    push bx                                   ; 53                          ; 0xc3703
+    mov ax, bx                                ; 89 d8                       ; 0xc36a1 vbe.c:130
+    mov dx, 001cfh                            ; ba cf 01                    ; 0xc36a3
+    call 00590h                               ; e8 e7 ce                    ; 0xc36a6
+    lea sp, [bp-004h]                         ; 8d 66 fc                    ; 0xc36a9 vbe.c:131
+    pop dx                                    ; 5a                          ; 0xc36ac
+    pop bx                                    ; 5b                          ; 0xc36ad
+    pop bp                                    ; 5d                          ; 0xc36ae
+    retn                                      ; c3                          ; 0xc36af
+  ; disGetNextSymbol 0xc36b0 LB 0x77a -> off=0x0 cb=0000000000000019 uValue=00000000000c36b0 'dispi_get_bpp'
+dispi_get_bpp:                               ; 0xc36b0 LB 0x19
+    push bp                                   ; 55                          ; 0xc36b0 vbe.c:133
+    mov bp, sp                                ; 89 e5                       ; 0xc36b1
+    push dx                                   ; 52                          ; 0xc36b3
+    mov ax, strict word 00003h                ; b8 03 00                    ; 0xc36b4 vbe.c:135
+    mov dx, 001ceh                            ; ba ce 01                    ; 0xc36b7
+    call 00590h                               ; e8 d3 ce                    ; 0xc36ba
+    mov dx, 001cfh                            ; ba cf 01                    ; 0xc36bd vbe.c:136
+    call 00597h                               ; e8 d4 ce                    ; 0xc36c0
+    lea sp, [bp-002h]                         ; 8d 66 fe                    ; 0xc36c3 vbe.c:137
+    pop dx                                    ; 5a                          ; 0xc36c6
+    pop bp                                    ; 5d                          ; 0xc36c7
+    retn                                      ; c3                          ; 0xc36c8
+  ; disGetNextSymbol 0xc36c9 LB 0x761 -> off=0x0 cb=000000000000001f uValue=00000000000c36c9 'dispi_set_virt_width'
+dispi_set_virt_width:                        ; 0xc36c9 LB 0x1f
+    push bp                                   ; 55                          ; 0xc36c9 vbe.c:139
+    mov bp, sp                                ; 89 e5                       ; 0xc36ca
+    push bx                                   ; 53                          ; 0xc36cc
+    push dx                                   ; 52                          ; 0xc36cd
+    mov bx, ax                                ; 89 c3                       ; 0xc36ce
+    mov ax, strict word 00006h                ; b8 06 00                    ; 0xc36d0 vbe.c:144
+    mov dx, 001ceh                            ; ba ce 01                    ; 0xc36d3
+    call 00590h                               ; e8 b7 ce                    ; 0xc36d6
+    mov ax, bx                                ; 89 d8                       ; 0xc36d9 vbe.c:145
+    mov dx, 001cfh                            ; ba cf 01                    ; 0xc36db
+    call 00590h                               ; e8 af ce                    ; 0xc36de
+    lea sp, [bp-004h]                         ; 8d 66 fc                    ; 0xc36e1 vbe.c:146
+    pop dx                                    ; 5a                          ; 0xc36e4
+    pop bx                                    ; 5b                          ; 0xc36e5
+    pop bp                                    ; 5d                          ; 0xc36e6
+    retn                                      ; c3                          ; 0xc36e7
+  ; disGetNextSymbol 0xc36e8 LB 0x742 -> off=0x0 cb=0000000000000019 uValue=00000000000c36e8 'dispi_get_virt_width'
+dispi_get_virt_width:                        ; 0xc36e8 LB 0x19
+    push bp                                   ; 55                          ; 0xc36e8 vbe.c:148
+    mov bp, sp                                ; 89 e5                       ; 0xc36e9
+    push dx                                   ; 52                          ; 0xc36eb
+    mov ax, strict word 00006h                ; b8 06 00                    ; 0xc36ec vbe.c:150
+    mov dx, 001ceh                            ; ba ce 01                    ; 0xc36ef
+    call 00590h                               ; e8 9b ce                    ; 0xc36f2
+    mov dx, 001cfh                            ; ba cf 01                    ; 0xc36f5 vbe.c:151
+    call 00597h                               ; e8 9c ce                    ; 0xc36f8
+    lea sp, [bp-002h]                         ; 8d 66 fe                    ; 0xc36fb vbe.c:152
+    pop dx                                    ; 5a                          ; 0xc36fe
+    pop bp                                    ; 5d                          ; 0xc36ff
+    retn                                      ; c3                          ; 0xc3700
+  ; disGetNextSymbol 0xc3701 LB 0x729 -> off=0x0 cb=0000000000000019 uValue=00000000000c3701 'dispi_get_virt_height'
+dispi_get_virt_height:                       ; 0xc3701 LB 0x19
+    push bp                                   ; 55                          ; 0xc3701 vbe.c:154
+    mov bp, sp                                ; 89 e5                       ; 0xc3702
     push dx                                   ; 52                          ; 0xc3704
-    mov bx, ax                                ; 89 c3                       ; 0xc3705
-    xor ax, ax                                ; 31 c0                       ; 0xc3707 vbe.c:181
-    mov dx, 001ceh                            ; ba ce 01                    ; 0xc3709
-    out DX, ax                                ; ef                          ; 0xc370c
-    mov ax, bx                                ; 89 d8                       ; 0xc370d vbe.c:182
-    mov dx, 001cfh                            ; ba cf 01                    ; 0xc370f
-    out DX, ax                                ; ef                          ; 0xc3712
-    lea sp, [bp-004h]                         ; 8d 66 fc                    ; 0xc3713 vbe.c:183
-    pop dx                                    ; 5a                          ; 0xc3716
-    pop bx                                    ; 5b                          ; 0xc3717
+    mov ax, strict word 00007h                ; b8 07 00                    ; 0xc3705 vbe.c:156
+    mov dx, 001ceh                            ; ba ce 01                    ; 0xc3708
+    call 00590h                               ; e8 82 ce                    ; 0xc370b
+    mov dx, 001cfh                            ; ba cf 01                    ; 0xc370e vbe.c:157
+    call 00597h                               ; e8 83 ce                    ; 0xc3711
+    lea sp, [bp-002h]                         ; 8d 66 fe                    ; 0xc3714 vbe.c:158
+    pop dx                                    ; 5a                          ; 0xc3717
     pop bp                                    ; 5d                          ; 0xc3718
     retn                                      ; c3                          ; 0xc3719
-  ; disGetNextSymbol 0xc371a LB 0x5c5 -> off=0x0 cb=000000000000002c uValue=00000000000c371a 'vbe_init'
-vbe_init:                                    ; 0xc371a LB 0x2c
-    push bp                                   ; 55                          ; 0xc371a vbe.c:188
+  ; disGetNextSymbol 0xc371a LB 0x710 -> off=0x0 cb=0000000000000012 uValue=00000000000c371a 'in_word'
+in_word:                                     ; 0xc371a LB 0x12
+    push bp                                   ; 55                          ; 0xc371a vbe.c:160
     mov bp, sp                                ; 89 e5                       ; 0xc371b
     push bx                                   ; 53                          ; 0xc371d
-    push dx                                   ; 52                          ; 0xc371e
-    mov ax, 0b0c0h                            ; b8 c0 b0                    ; 0xc371f vbe.c:190
-    call 03700h                               ; e8 db ff                    ; 0xc3722
-    call 036ech                               ; e8 c4 ff                    ; 0xc3725 vbe.c:191
-    cmp ax, 0b0c0h                            ; 3d c0 b0                    ; 0xc3728
-    jne short 0373fh                          ; 75 12                       ; 0xc372b
-    mov bx, strict word 00001h                ; bb 01 00                    ; 0xc372d vbe.c:193
-    mov dx, 000b9h                            ; ba b9 00                    ; 0xc3730
-    mov ax, strict word 00040h                ; b8 40 00                    ; 0xc3733
-    call 031cch                               ; e8 93 fa                    ; 0xc3736
-    mov ax, 0b0c4h                            ; b8 c4 b0                    ; 0xc3739 vbe.c:194
-    call 03700h                               ; e8 c1 ff                    ; 0xc373c
-    lea sp, [bp-004h]                         ; 8d 66 fc                    ; 0xc373f vbe.c:199
-    pop dx                                    ; 5a                          ; 0xc3742
-    pop bx                                    ; 5b                          ; 0xc3743
-    pop bp                                    ; 5d                          ; 0xc3744
-    retn                                      ; c3                          ; 0xc3745
-  ; disGetNextSymbol 0xc3746 LB 0x599 -> off=0x0 cb=0000000000000055 uValue=00000000000c3746 'mode_info_find_mode'
-mode_info_find_mode:                         ; 0xc3746 LB 0x55
-    push bp                                   ; 55                          ; 0xc3746 vbe.c:202
-    mov bp, sp                                ; 89 e5                       ; 0xc3747
-    push bx                                   ; 53                          ; 0xc3749
-    push cx                                   ; 51                          ; 0xc374a
-    push si                                   ; 56                          ; 0xc374b
-    push di                                   ; 57                          ; 0xc374c
-    mov di, ax                                ; 89 c7                       ; 0xc374d
-    mov si, dx                                ; 89 d6                       ; 0xc374f
-    xor dx, dx                                ; 31 d2                       ; 0xc3751 vbe.c:208
-    mov ax, 003b6h                            ; b8 b6 03                    ; 0xc3753
-    call 036c6h                               ; e8 6d ff                    ; 0xc3756
-    cmp ax, 077cch                            ; 3d cc 77                    ; 0xc3759 vbe.c:209
-    jne short 03790h                          ; 75 32                       ; 0xc375c
-    mov bx, strict word 00004h                ; bb 04 00                    ; 0xc375e vbe.c:213
-    mov dx, bx                                ; 89 da                       ; 0xc3761 vbe.c:218
-    mov ax, 003b6h                            ; b8 b6 03                    ; 0xc3763
-    call 036c6h                               ; e8 5d ff                    ; 0xc3766
-    mov cx, ax                                ; 89 c1                       ; 0xc3769
-    cmp cx, strict byte 0ffffh                ; 83 f9 ff                    ; 0xc376b vbe.c:219
-    je short 03790h                           ; 74 20                       ; 0xc376e
-    lea dx, [bx+002h]                         ; 8d 57 02                    ; 0xc3770 vbe.c:221
-    mov ax, 003b6h                            ; b8 b6 03                    ; 0xc3773
-    call 036c6h                               ; e8 4d ff                    ; 0xc3776
-    lea dx, [bx+044h]                         ; 8d 57 44                    ; 0xc3779
-    cmp cx, di                                ; 39 f9                       ; 0xc377c vbe.c:223
-    jne short 0378ch                          ; 75 0c                       ; 0xc377e
-    test si, si                               ; 85 f6                       ; 0xc3780 vbe.c:225
-    jne short 03788h                          ; 75 04                       ; 0xc3782
-    mov ax, bx                                ; 89 d8                       ; 0xc3784 vbe.c:226
-    jmp short 03792h                          ; eb 0a                       ; 0xc3786
-    test AL, strict byte 080h                 ; a8 80                       ; 0xc3788 vbe.c:227
-    jne short 03784h                          ; 75 f8                       ; 0xc378a
-    mov bx, dx                                ; 89 d3                       ; 0xc378c vbe.c:230
-    jmp short 03763h                          ; eb d3                       ; 0xc378e vbe.c:235
-    xor ax, ax                                ; 31 c0                       ; 0xc3790 vbe.c:238
-    lea sp, [bp-008h]                         ; 8d 66 f8                    ; 0xc3792 vbe.c:239
-    pop di                                    ; 5f                          ; 0xc3795
-    pop si                                    ; 5e                          ; 0xc3796
-    pop cx                                    ; 59                          ; 0xc3797
-    pop bx                                    ; 5b                          ; 0xc3798
-    pop bp                                    ; 5d                          ; 0xc3799
-    retn                                      ; c3                          ; 0xc379a
-  ; disGetNextSymbol 0xc379b LB 0x544 -> off=0x0 cb=000000000000012f uValue=00000000000c379b 'vbe_biosfn_return_controller_information'
-vbe_biosfn_return_controller_information: ; 0xc379b LB 0x12f
-    push bp                                   ; 55                          ; 0xc379b vbe.c:270
-    mov bp, sp                                ; 89 e5                       ; 0xc379c
+    mov bx, ax                                ; 89 c3                       ; 0xc371e
+    mov ax, dx                                ; 89 d0                       ; 0xc3720
+    mov dx, bx                                ; 89 da                       ; 0xc3722 vbe.c:162
+    out DX, ax                                ; ef                          ; 0xc3724
+    in ax, DX                                 ; ed                          ; 0xc3725 vbe.c:163
+    lea sp, [bp-002h]                         ; 8d 66 fe                    ; 0xc3726 vbe.c:164
+    pop bx                                    ; 5b                          ; 0xc3729
+    pop bp                                    ; 5d                          ; 0xc372a
+    retn                                      ; c3                          ; 0xc372b
+  ; disGetNextSymbol 0xc372c LB 0x6fe -> off=0x0 cb=0000000000000014 uValue=00000000000c372c 'in_byte'
+in_byte:                                     ; 0xc372c LB 0x14
+    push bp                                   ; 55                          ; 0xc372c vbe.c:166
+    mov bp, sp                                ; 89 e5                       ; 0xc372d
+    push bx                                   ; 53                          ; 0xc372f
+    mov bx, ax                                ; 89 c3                       ; 0xc3730
+    mov ax, dx                                ; 89 d0                       ; 0xc3732
+    mov dx, bx                                ; 89 da                       ; 0xc3734 vbe.c:168
+    out DX, ax                                ; ef                          ; 0xc3736
+    in AL, DX                                 ; ec                          ; 0xc3737 vbe.c:169
+    db  02ah, 0e4h
+    ; sub ah, ah                                ; 2a e4                     ; 0xc3738
+    lea sp, [bp-002h]                         ; 8d 66 fe                    ; 0xc373a vbe.c:170
+    pop bx                                    ; 5b                          ; 0xc373d
+    pop bp                                    ; 5d                          ; 0xc373e
+    retn                                      ; c3                          ; 0xc373f
+  ; disGetNextSymbol 0xc3740 LB 0x6ea -> off=0x0 cb=0000000000000014 uValue=00000000000c3740 'dispi_get_id'
+dispi_get_id:                                ; 0xc3740 LB 0x14
+    push bp                                   ; 55                          ; 0xc3740 vbe.c:173
+    mov bp, sp                                ; 89 e5                       ; 0xc3741
+    push dx                                   ; 52                          ; 0xc3743
+    xor ax, ax                                ; 31 c0                       ; 0xc3744 vbe.c:175
+    mov dx, 001ceh                            ; ba ce 01                    ; 0xc3746
+    out DX, ax                                ; ef                          ; 0xc3749
+    mov dx, 001cfh                            ; ba cf 01                    ; 0xc374a vbe.c:176
+    in ax, DX                                 ; ed                          ; 0xc374d
+    lea sp, [bp-002h]                         ; 8d 66 fe                    ; 0xc374e vbe.c:177
+    pop dx                                    ; 5a                          ; 0xc3751
+    pop bp                                    ; 5d                          ; 0xc3752
+    retn                                      ; c3                          ; 0xc3753
+  ; disGetNextSymbol 0xc3754 LB 0x6d6 -> off=0x0 cb=000000000000001a uValue=00000000000c3754 'dispi_set_id'
+dispi_set_id:                                ; 0xc3754 LB 0x1a
+    push bp                                   ; 55                          ; 0xc3754 vbe.c:179
+    mov bp, sp                                ; 89 e5                       ; 0xc3755
+    push bx                                   ; 53                          ; 0xc3757
+    push dx                                   ; 52                          ; 0xc3758
+    mov bx, ax                                ; 89 c3                       ; 0xc3759
+    xor ax, ax                                ; 31 c0                       ; 0xc375b vbe.c:181
+    mov dx, 001ceh                            ; ba ce 01                    ; 0xc375d
+    out DX, ax                                ; ef                          ; 0xc3760
+    mov ax, bx                                ; 89 d8                       ; 0xc3761 vbe.c:182
+    mov dx, 001cfh                            ; ba cf 01                    ; 0xc3763
+    out DX, ax                                ; ef                          ; 0xc3766
+    lea sp, [bp-004h]                         ; 8d 66 fc                    ; 0xc3767 vbe.c:183
+    pop dx                                    ; 5a                          ; 0xc376a
+    pop bx                                    ; 5b                          ; 0xc376b
+    pop bp                                    ; 5d                          ; 0xc376c
+    retn                                      ; c3                          ; 0xc376d
+  ; disGetNextSymbol 0xc376e LB 0x6bc -> off=0x0 cb=000000000000002c uValue=00000000000c376e 'vbe_init'
+vbe_init:                                    ; 0xc376e LB 0x2c
+    push bp                                   ; 55                          ; 0xc376e vbe.c:188
+    mov bp, sp                                ; 89 e5                       ; 0xc376f
+    push bx                                   ; 53                          ; 0xc3771
+    push dx                                   ; 52                          ; 0xc3772
+    mov ax, 0b0c0h                            ; b8 c0 b0                    ; 0xc3773 vbe.c:190
+    call 03754h                               ; e8 db ff                    ; 0xc3776
+    call 03740h                               ; e8 c4 ff                    ; 0xc3779 vbe.c:191
+    cmp ax, 0b0c0h                            ; 3d c0 b0                    ; 0xc377c
+    jne short 03793h                          ; 75 12                       ; 0xc377f
+    mov bx, strict word 00001h                ; bb 01 00                    ; 0xc3781 vbe.c:193
+    mov dx, 000b9h                            ; ba b9 00                    ; 0xc3784
+    mov ax, strict word 00040h                ; b8 40 00                    ; 0xc3787
+    call 031cch                               ; e8 3f fa                    ; 0xc378a
+    mov ax, 0b0c4h                            ; b8 c4 b0                    ; 0xc378d vbe.c:194
+    call 03754h                               ; e8 c1 ff                    ; 0xc3790
+    lea sp, [bp-004h]                         ; 8d 66 fc                    ; 0xc3793 vbe.c:199
+    pop dx                                    ; 5a                          ; 0xc3796
+    pop bx                                    ; 5b                          ; 0xc3797
+    pop bp                                    ; 5d                          ; 0xc3798
+    retn                                      ; c3                          ; 0xc3799
+  ; disGetNextSymbol 0xc379a LB 0x690 -> off=0x0 cb=0000000000000055 uValue=00000000000c379a 'mode_info_find_mode'
+mode_info_find_mode:                         ; 0xc379a LB 0x55
+    push bp                                   ; 55                          ; 0xc379a vbe.c:202
+    mov bp, sp                                ; 89 e5                       ; 0xc379b
+    push bx                                   ; 53                          ; 0xc379d
     push cx                                   ; 51                          ; 0xc379e
     push si                                   ; 56                          ; 0xc379f
     push di                                   ; 57                          ; 0xc37a0
-    sub sp, strict byte 0000ah                ; 83 ec 0a                    ; 0xc37a1
-    mov si, ax                                ; 89 c6                       ; 0xc37a4
-    mov di, dx                                ; 89 d7                       ; 0xc37a6
-    mov word [bp-00ah], bx                    ; 89 5e f6                    ; 0xc37a8
-    mov word [bp-00ch], strict word 00022h    ; c7 46 f4 22 00              ; 0xc37ab vbe.c:275
-    call 005dah                               ; e8 27 ce                    ; 0xc37b0 vbe.c:278
-    mov word [bp-010h], ax                    ; 89 46 f0                    ; 0xc37b3
-    mov bx, word [bp-00ah]                    ; 8b 5e f6                    ; 0xc37b6 vbe.c:281
-    mov word [bp-008h], di                    ; 89 7e f8                    ; 0xc37b9
-    xor dx, dx                                ; 31 d2                       ; 0xc37bc vbe.c:284
-    mov ax, 003b6h                            ; b8 b6 03                    ; 0xc37be
-    call 036c6h                               ; e8 02 ff                    ; 0xc37c1
-    cmp ax, 077cch                            ; 3d cc 77                    ; 0xc37c4 vbe.c:285
-    je short 037d3h                           ; 74 0a                       ; 0xc37c7
-    push SS                                   ; 16                          ; 0xc37c9 vbe.c:287
-    pop ES                                    ; 07                          ; 0xc37ca
-    mov word [es:si], 00100h                  ; 26 c7 04 00 01              ; 0xc37cb
-    jmp near 038c2h                           ; e9 ef 00                    ; 0xc37d0 vbe.c:291
-    mov cx, strict word 00004h                ; b9 04 00                    ; 0xc37d3 vbe.c:293
-    mov word [bp-00eh], strict word 00000h    ; c7 46 f2 00 00              ; 0xc37d6 vbe.c:300
-    mov es, [bp-008h]                         ; 8e 46 f8                    ; 0xc37db vbe.c:308
-    cmp word [es:bx+002h], 03245h             ; 26 81 7f 02 45 32           ; 0xc37de
-    jne short 037edh                          ; 75 07                       ; 0xc37e4
-    cmp word [es:bx], 04256h                  ; 26 81 3f 56 42              ; 0xc37e6
-    je short 037fch                           ; 74 0f                       ; 0xc37eb
-    cmp word [es:bx+002h], 04153h             ; 26 81 7f 02 53 41           ; 0xc37ed
-    jne short 03801h                          ; 75 0c                       ; 0xc37f3
-    cmp word [es:bx], 04556h                  ; 26 81 3f 56 45              ; 0xc37f5
-    jne short 03801h                          ; 75 05                       ; 0xc37fa
-    mov word [bp-00eh], strict word 00001h    ; c7 46 f2 01 00              ; 0xc37fc vbe.c:310
-    mov es, [bp-008h]                         ; 8e 46 f8                    ; 0xc3801 vbe.c:318
-    mov word [es:bx], 04556h                  ; 26 c7 07 56 45              ; 0xc3804
-    mov word [es:bx+002h], 04153h             ; 26 c7 47 02 53 41           ; 0xc3809 vbe.c:320
-    mov word [es:bx+004h], 00200h             ; 26 c7 47 04 00 02           ; 0xc380f vbe.c:324
-    mov word [es:bx+006h], 07c6ch             ; 26 c7 47 06 6c 7c           ; 0xc3815 vbe.c:327
-    mov [es:bx+008h], ds                      ; 26 8c 5f 08                 ; 0xc381b
-    mov word [es:bx+00ah], strict word 00001h ; 26 c7 47 0a 01 00           ; 0xc381f vbe.c:330
-    mov word [es:bx+00ch], strict word 00000h ; 26 c7 47 0c 00 00           ; 0xc3825 vbe.c:332
-    mov word [es:bx+010h], di                 ; 26 89 7f 10                 ; 0xc382b vbe.c:336
-    mov ax, word [bp-00ah]                    ; 8b 46 f6                    ; 0xc382f vbe.c:337
-    add ax, strict word 00022h                ; 05 22 00                    ; 0xc3832
-    mov word [es:bx+00eh], ax                 ; 26 89 47 0e                 ; 0xc3835
-    mov dx, strict word 0ffffh                ; ba ff ff                    ; 0xc3839 vbe.c:340
-    mov ax, 003b6h                            ; b8 b6 03                    ; 0xc383c
-    call 036c6h                               ; e8 84 fe                    ; 0xc383f
-    mov es, [bp-008h]                         ; 8e 46 f8                    ; 0xc3842
-    mov word [es:bx+012h], ax                 ; 26 89 47 12                 ; 0xc3845
-    cmp word [bp-00eh], strict byte 00000h    ; 83 7e f2 00                 ; 0xc3849 vbe.c:342
-    je short 03873h                           ; 74 24                       ; 0xc384d
-    mov word [es:bx+014h], strict word 00003h ; 26 c7 47 14 03 00           ; 0xc384f vbe.c:345
-    mov word [es:bx+016h], 07c81h             ; 26 c7 47 16 81 7c           ; 0xc3855 vbe.c:346
-    mov [es:bx+018h], ds                      ; 26 8c 5f 18                 ; 0xc385b
-    mov word [es:bx+01ah], 07c94h             ; 26 c7 47 1a 94 7c           ; 0xc385f vbe.c:347
-    mov [es:bx+01ch], ds                      ; 26 8c 5f 1c                 ; 0xc3865
-    mov word [es:bx+01eh], 07cb5h             ; 26 c7 47 1e b5 7c           ; 0xc3869 vbe.c:348
-    mov [es:bx+020h], ds                      ; 26 8c 5f 20                 ; 0xc386f
-    mov dx, cx                                ; 89 ca                       ; 0xc3873 vbe.c:355
-    add dx, strict byte 0001bh                ; 83 c2 1b                    ; 0xc3875
-    mov ax, 003b6h                            ; b8 b6 03                    ; 0xc3878
-    call 036d8h                               ; e8 5a fe                    ; 0xc387b
-    xor ah, ah                                ; 30 e4                       ; 0xc387e vbe.c:356
-    cmp ax, word [bp-010h]                    ; 3b 46 f0                    ; 0xc3880
-    jnbe short 0389eh                         ; 77 19                       ; 0xc3883
-    mov dx, cx                                ; 89 ca                       ; 0xc3885 vbe.c:358
-    mov ax, 003b6h                            ; b8 b6 03                    ; 0xc3887
-    call 036c6h                               ; e8 39 fe                    ; 0xc388a
-    mov bx, ax                                ; 89 c3                       ; 0xc388d
-    mov dx, word [bp-00ah]                    ; 8b 56 f6                    ; 0xc388f vbe.c:362
-    add dx, word [bp-00ch]                    ; 03 56 f4                    ; 0xc3892
-    mov ax, di                                ; 89 f8                       ; 0xc3895
-    call 031e8h                               ; e8 4e f9                    ; 0xc3897
-    add word [bp-00ch], strict byte 00002h    ; 83 46 f4 02                 ; 0xc389a vbe.c:364
-    add cx, strict byte 00044h                ; 83 c1 44                    ; 0xc389e vbe.c:366
-    mov dx, cx                                ; 89 ca                       ; 0xc38a1 vbe.c:367
-    mov ax, 003b6h                            ; b8 b6 03                    ; 0xc38a3
-    call 036c6h                               ; e8 1d fe                    ; 0xc38a6
-    mov bx, ax                                ; 89 c3                       ; 0xc38a9
-    cmp ax, strict word 0ffffh                ; 3d ff ff                    ; 0xc38ab vbe.c:368
-    jne short 03873h                          ; 75 c3                       ; 0xc38ae
-    mov dx, word [bp-00ah]                    ; 8b 56 f6                    ; 0xc38b0 vbe.c:371
-    add dx, word [bp-00ch]                    ; 03 56 f4                    ; 0xc38b3
-    mov ax, di                                ; 89 f8                       ; 0xc38b6
-    call 031e8h                               ; e8 2d f9                    ; 0xc38b8
-    push SS                                   ; 16                          ; 0xc38bb vbe.c:372
-    pop ES                                    ; 07                          ; 0xc38bc
-    mov word [es:si], strict word 0004fh      ; 26 c7 04 4f 00              ; 0xc38bd
-    lea sp, [bp-006h]                         ; 8d 66 fa                    ; 0xc38c2 vbe.c:373
-    pop di                                    ; 5f                          ; 0xc38c5
-    pop si                                    ; 5e                          ; 0xc38c6
-    pop cx                                    ; 59                          ; 0xc38c7
-    pop bp                                    ; 5d                          ; 0xc38c8
-    retn                                      ; c3                          ; 0xc38c9
-  ; disGetNextSymbol 0xc38ca LB 0x415 -> off=0x0 cb=00000000000000bd uValue=00000000000c38ca 'vbe_biosfn_return_mode_information'
-vbe_biosfn_return_mode_information:          ; 0xc38ca LB 0xbd
-    push bp                                   ; 55                          ; 0xc38ca vbe.c:385
-    mov bp, sp                                ; 89 e5                       ; 0xc38cb
-    push si                                   ; 56                          ; 0xc38cd
-    push di                                   ; 57                          ; 0xc38ce
-    push ax                                   ; 50                          ; 0xc38cf
-    push ax                                   ; 50                          ; 0xc38d0
-    push ax                                   ; 50                          ; 0xc38d1
-    mov ax, dx                                ; 89 d0                       ; 0xc38d2
-    mov si, bx                                ; 89 de                       ; 0xc38d4
-    mov word [bp-006h], cx                    ; 89 4e fa                    ; 0xc38d6
-    test dh, 040h                             ; f6 c6 40                    ; 0xc38d9 vbe.c:396
-    je short 038e3h                           ; 74 05                       ; 0xc38dc
-    mov dx, strict word 00001h                ; ba 01 00                    ; 0xc38de
-    jmp short 038e5h                          ; eb 02                       ; 0xc38e1
-    xor dx, dx                                ; 31 d2                       ; 0xc38e3
-    and ah, 001h                              ; 80 e4 01                    ; 0xc38e5 vbe.c:397
-    call 03746h                               ; e8 5b fe                    ; 0xc38e8 vbe.c:399
-    mov word [bp-008h], ax                    ; 89 46 f8                    ; 0xc38eb
-    test ax, ax                               ; 85 c0                       ; 0xc38ee vbe.c:401
-    je short 03928h                           ; 74 36                       ; 0xc38f0
-    mov cx, 00100h                            ; b9 00 01                    ; 0xc38f2 vbe.c:406
-    xor ax, ax                                ; 31 c0                       ; 0xc38f5
-    mov di, word [bp-006h]                    ; 8b 7e fa                    ; 0xc38f7
-    mov es, si                                ; 8e c6                       ; 0xc38fa
-    cld                                       ; fc                          ; 0xc38fc
-    jcxz 03901h                               ; e3 02                       ; 0xc38fd
-    rep stosb                                 ; f3 aa                       ; 0xc38ff
-    xor cx, cx                                ; 31 c9                       ; 0xc3901 vbe.c:407
-    jmp short 0390ah                          ; eb 05                       ; 0xc3903
-    cmp cx, strict byte 00042h                ; 83 f9 42                    ; 0xc3905
-    jnc short 0392ah                          ; 73 20                       ; 0xc3908
-    mov dx, word [bp-008h]                    ; 8b 56 f8                    ; 0xc390a vbe.c:410
-    inc dx                                    ; 42                          ; 0xc390d
-    inc dx                                    ; 42                          ; 0xc390e
-    add dx, cx                                ; 01 ca                       ; 0xc390f
-    mov ax, 003b6h                            ; b8 b6 03                    ; 0xc3911
-    call 036d8h                               ; e8 c1 fd                    ; 0xc3914
-    mov bl, al                                ; 88 c3                       ; 0xc3917 vbe.c:411
-    xor bh, bh                                ; 30 ff                       ; 0xc3919
-    mov dx, word [bp-006h]                    ; 8b 56 fa                    ; 0xc391b
-    add dx, cx                                ; 01 ca                       ; 0xc391e
-    mov ax, si                                ; 89 f0                       ; 0xc3920
-    call 031cch                               ; e8 a7 f8                    ; 0xc3922
-    inc cx                                    ; 41                          ; 0xc3925 vbe.c:412
-    jmp short 03905h                          ; eb dd                       ; 0xc3926
-    jmp short 03975h                          ; eb 4b                       ; 0xc3928
-    mov dx, word [bp-006h]                    ; 8b 56 fa                    ; 0xc392a vbe.c:413
-    inc dx                                    ; 42                          ; 0xc392d
-    inc dx                                    ; 42                          ; 0xc392e
-    mov ax, si                                ; 89 f0                       ; 0xc392f
-    call 031beh                               ; e8 8a f8                    ; 0xc3931
-    test AL, strict byte 001h                 ; a8 01                       ; 0xc3934 vbe.c:414
-    je short 03954h                           ; 74 1c                       ; 0xc3936
-    mov dx, word [bp-006h]                    ; 8b 56 fa                    ; 0xc3938 vbe.c:415
-    add dx, strict byte 0000ch                ; 83 c2 0c                    ; 0xc393b
-    mov bx, 0064ch                            ; bb 4c 06                    ; 0xc393e
-    mov ax, si                                ; 89 f0                       ; 0xc3941
-    call 031e8h                               ; e8 a2 f8                    ; 0xc3943
-    mov dx, word [bp-006h]                    ; 8b 56 fa                    ; 0xc3946 vbe.c:417
-    add dx, strict byte 0000eh                ; 83 c2 0e                    ; 0xc3949
-    mov bx, 0c000h                            ; bb 00 c0                    ; 0xc394c
-    mov ax, si                                ; 89 f0                       ; 0xc394f
-    call 031e8h                               ; e8 94 f8                    ; 0xc3951
-    mov ax, strict word 0000bh                ; b8 0b 00                    ; 0xc3954 vbe.c:420
-    mov dx, 001ceh                            ; ba ce 01                    ; 0xc3957
-    call 00590h                               ; e8 33 cc                    ; 0xc395a
-    mov dx, 001cfh                            ; ba cf 01                    ; 0xc395d vbe.c:421
-    call 00597h                               ; e8 34 cc                    ; 0xc3960
-    mov dx, word [bp-006h]                    ; 8b 56 fa                    ; 0xc3963
-    add dx, strict byte 0002ah                ; 83 c2 2a                    ; 0xc3966
-    mov bx, ax                                ; 89 c3                       ; 0xc3969
-    mov ax, si                                ; 89 f0                       ; 0xc396b
-    call 031e8h                               ; e8 78 f8                    ; 0xc396d
-    mov ax, strict word 0004fh                ; b8 4f 00                    ; 0xc3970 vbe.c:423
-    jmp short 03978h                          ; eb 03                       ; 0xc3973 vbe.c:424
-    mov ax, 00100h                            ; b8 00 01                    ; 0xc3975 vbe.c:428
-    push SS                                   ; 16                          ; 0xc3978 vbe.c:431
-    pop ES                                    ; 07                          ; 0xc3979
-    mov bx, word [bp-00ah]                    ; 8b 5e f6                    ; 0xc397a
-    mov word [es:bx], ax                      ; 26 89 07                    ; 0xc397d
-    lea sp, [bp-004h]                         ; 8d 66 fc                    ; 0xc3980 vbe.c:432
-    pop di                                    ; 5f                          ; 0xc3983
-    pop si                                    ; 5e                          ; 0xc3984
-    pop bp                                    ; 5d                          ; 0xc3985
-    retn                                      ; c3                          ; 0xc3986
-  ; disGetNextSymbol 0xc3987 LB 0x358 -> off=0x0 cb=00000000000000eb uValue=00000000000c3987 'vbe_biosfn_set_mode'
-vbe_biosfn_set_mode:                         ; 0xc3987 LB 0xeb
-    push bp                                   ; 55                          ; 0xc3987 vbe.c:444
-    mov bp, sp                                ; 89 e5                       ; 0xc3988
-    push si                                   ; 56                          ; 0xc398a
-    push di                                   ; 57                          ; 0xc398b
-    sub sp, strict byte 00006h                ; 83 ec 06                    ; 0xc398c
-    mov si, ax                                ; 89 c6                       ; 0xc398f
-    mov word [bp-00ah], dx                    ; 89 56 f6                    ; 0xc3991
-    test byte [bp-009h], 040h                 ; f6 46 f7 40                 ; 0xc3994 vbe.c:452
-    je short 0399fh                           ; 74 05                       ; 0xc3998
-    mov ax, strict word 00001h                ; b8 01 00                    ; 0xc399a
-    jmp short 039a1h                          ; eb 02                       ; 0xc399d
-    xor ax, ax                                ; 31 c0                       ; 0xc399f
-    mov dx, ax                                ; 89 c2                       ; 0xc39a1
-    test ax, ax                               ; 85 c0                       ; 0xc39a3 vbe.c:453
-    je short 039aah                           ; 74 03                       ; 0xc39a5
-    mov ax, strict word 00040h                ; b8 40 00                    ; 0xc39a7
-    mov byte [bp-006h], al                    ; 88 46 fa                    ; 0xc39aa
-    test byte [bp-009h], 080h                 ; f6 46 f7 80                 ; 0xc39ad vbe.c:454
-    je short 039b8h                           ; 74 05                       ; 0xc39b1
-    mov ax, 00080h                            ; b8 80 00                    ; 0xc39b3
-    jmp short 039bah                          ; eb 02                       ; 0xc39b6
-    xor ax, ax                                ; 31 c0                       ; 0xc39b8
-    mov byte [bp-008h], al                    ; 88 46 f8                    ; 0xc39ba
-    and byte [bp-009h], 001h                  ; 80 66 f7 01                 ; 0xc39bd vbe.c:456
-    cmp word [bp-00ah], 00100h                ; 81 7e f6 00 01              ; 0xc39c1 vbe.c:459
-    jnc short 039dbh                          ; 73 13                       ; 0xc39c6
-    xor ax, ax                                ; 31 c0                       ; 0xc39c8 vbe.c:463
-    call 00600h                               ; e8 33 cc                    ; 0xc39ca
-    mov al, byte [bp-00ah]                    ; 8a 46 f6                    ; 0xc39cd vbe.c:467
-    xor ah, ah                                ; 30 e4                       ; 0xc39d0
-    call 01019h                               ; e8 44 d6                    ; 0xc39d2
-    mov ax, strict word 0004fh                ; b8 4f 00                    ; 0xc39d5 vbe.c:468
-    jmp near 03a68h                           ; e9 8d 00                    ; 0xc39d8 vbe.c:469
-    mov ax, word [bp-00ah]                    ; 8b 46 f6                    ; 0xc39db vbe.c:472
-    call 03746h                               ; e8 65 fd                    ; 0xc39de
-    mov bx, ax                                ; 89 c3                       ; 0xc39e1
-    test ax, ax                               ; 85 c0                       ; 0xc39e3 vbe.c:474
-    jne short 039eah                          ; 75 03                       ; 0xc39e5
-    jmp near 03a65h                           ; e9 7b 00                    ; 0xc39e7
-    lea dx, [bx+014h]                         ; 8d 57 14                    ; 0xc39ea vbe.c:479
-    mov ax, 003b6h                            ; b8 b6 03                    ; 0xc39ed
-    call 036c6h                               ; e8 d3 fc                    ; 0xc39f0
-    mov cx, ax                                ; 89 c1                       ; 0xc39f3
-    lea dx, [bx+016h]                         ; 8d 57 16                    ; 0xc39f5 vbe.c:480
-    mov ax, 003b6h                            ; b8 b6 03                    ; 0xc39f8
-    call 036c6h                               ; e8 c8 fc                    ; 0xc39fb
-    mov di, ax                                ; 89 c7                       ; 0xc39fe
-    lea dx, [bx+01bh]                         ; 8d 57 1b                    ; 0xc3a00 vbe.c:481
-    mov ax, 003b6h                            ; b8 b6 03                    ; 0xc3a03
-    call 036d8h                               ; e8 cf fc                    ; 0xc3a06
-    mov bl, al                                ; 88 c3                       ; 0xc3a09
-    mov dl, al                                ; 88 c2                       ; 0xc3a0b
-    xor ax, ax                                ; 31 c0                       ; 0xc3a0d vbe.c:489
-    call 00600h                               ; e8 ee cb                    ; 0xc3a0f
-    cmp bl, 004h                              ; 80 fb 04                    ; 0xc3a12 vbe.c:491
-    jne short 03a1dh                          ; 75 06                       ; 0xc3a15
-    mov ax, strict word 0006ah                ; b8 6a 00                    ; 0xc3a17 vbe.c:493
-    call 01019h                               ; e8 fc d5                    ; 0xc3a1a
-    mov al, dl                                ; 88 d0                       ; 0xc3a1d vbe.c:496
-    xor ah, ah                                ; 30 e4                       ; 0xc3a1f
-    call 0363dh                               ; e8 19 fc                    ; 0xc3a21
-    mov ax, cx                                ; 89 c8                       ; 0xc3a24 vbe.c:497
-    call 035e6h                               ; e8 bd fb                    ; 0xc3a26
-    mov ax, di                                ; 89 f8                       ; 0xc3a29 vbe.c:498
-    call 03605h                               ; e8 d7 fb                    ; 0xc3a2b
-    xor ax, ax                                ; 31 c0                       ; 0xc3a2e vbe.c:499
-    call 00626h                               ; e8 f3 cb                    ; 0xc3a30
-    mov al, byte [bp-008h]                    ; 8a 46 f8                    ; 0xc3a33 vbe.c:500
-    or AL, strict byte 001h                   ; 0c 01                       ; 0xc3a36
-    xor ah, ah                                ; 30 e4                       ; 0xc3a38
-    mov dl, byte [bp-006h]                    ; 8a 56 fa                    ; 0xc3a3a
-    or al, dl                                 ; 08 d0                       ; 0xc3a3d
-    call 00600h                               ; e8 be cb                    ; 0xc3a3f
-    call 006f8h                               ; e8 b3 cc                    ; 0xc3a42 vbe.c:501
-    mov bx, word [bp-00ah]                    ; 8b 5e f6                    ; 0xc3a45 vbe.c:503
-    mov dx, 000bah                            ; ba ba 00                    ; 0xc3a48
-    mov ax, strict word 00040h                ; b8 40 00                    ; 0xc3a4b
-    call 031e8h                               ; e8 97 f7                    ; 0xc3a4e
-    mov bl, byte [bp-008h]                    ; 8a 5e f8                    ; 0xc3a51 vbe.c:504
-    or bl, 060h                               ; 80 cb 60                    ; 0xc3a54
-    xor bh, bh                                ; 30 ff                       ; 0xc3a57
-    mov dx, 00087h                            ; ba 87 00                    ; 0xc3a59
-    mov ax, strict word 00040h                ; b8 40 00                    ; 0xc3a5c
-    call 031cch                               ; e8 6a f7                    ; 0xc3a5f
-    jmp near 039d5h                           ; e9 70 ff                    ; 0xc3a62
-    mov ax, 00100h                            ; b8 00 01                    ; 0xc3a65 vbe.c:513
-    mov word [ss:si], ax                      ; 36 89 04                    ; 0xc3a68 vbe.c:517
-    lea sp, [bp-004h]                         ; 8d 66 fc                    ; 0xc3a6b vbe.c:518
-    pop di                                    ; 5f                          ; 0xc3a6e
-    pop si                                    ; 5e                          ; 0xc3a6f
-    pop bp                                    ; 5d                          ; 0xc3a70
-    retn                                      ; c3                          ; 0xc3a71
-  ; disGetNextSymbol 0xc3a72 LB 0x26d -> off=0x0 cb=0000000000000008 uValue=00000000000c3a72 'vbe_biosfn_read_video_state_size'
-vbe_biosfn_read_video_state_size:            ; 0xc3a72 LB 0x8
-    push bp                                   ; 55                          ; 0xc3a72 vbe.c:520
-    mov bp, sp                                ; 89 e5                       ; 0xc3a73
-    mov ax, strict word 00012h                ; b8 12 00                    ; 0xc3a75 vbe.c:523
-    pop bp                                    ; 5d                          ; 0xc3a78
-    retn                                      ; c3                          ; 0xc3a79
-  ; disGetNextSymbol 0xc3a7a LB 0x265 -> off=0x0 cb=000000000000005b uValue=00000000000c3a7a 'vbe_biosfn_save_video_state'
-vbe_biosfn_save_video_state:                 ; 0xc3a7a LB 0x5b
-    push bp                                   ; 55                          ; 0xc3a7a vbe.c:525
-    mov bp, sp                                ; 89 e5                       ; 0xc3a7b
-    push bx                                   ; 53                          ; 0xc3a7d
-    push cx                                   ; 51                          ; 0xc3a7e
-    push si                                   ; 56                          ; 0xc3a7f
-    push di                                   ; 57                          ; 0xc3a80
-    push ax                                   ; 50                          ; 0xc3a81
-    mov di, ax                                ; 89 c7                       ; 0xc3a82
-    mov cx, dx                                ; 89 d1                       ; 0xc3a84
-    mov ax, strict word 00004h                ; b8 04 00                    ; 0xc3a86 vbe.c:529
-    mov dx, 001ceh                            ; ba ce 01                    ; 0xc3a89
-    out DX, ax                                ; ef                          ; 0xc3a8c
-    mov dx, 001cfh                            ; ba cf 01                    ; 0xc3a8d vbe.c:530
-    in ax, DX                                 ; ed                          ; 0xc3a90
-    mov word [bp-00ah], ax                    ; 89 46 f6                    ; 0xc3a91
-    mov bx, ax                                ; 89 c3                       ; 0xc3a94 vbe.c:531
-    mov dx, cx                                ; 89 ca                       ; 0xc3a96
-    mov ax, di                                ; 89 f8                       ; 0xc3a98
-    call 031e8h                               ; e8 4b f7                    ; 0xc3a9a
-    inc cx                                    ; 41                          ; 0xc3a9d vbe.c:532
-    inc cx                                    ; 41                          ; 0xc3a9e
-    test byte [bp-00ah], 001h                 ; f6 46 f6 01                 ; 0xc3a9f vbe.c:533
-    je short 03acch                           ; 74 27                       ; 0xc3aa3
-    mov si, strict word 00001h                ; be 01 00                    ; 0xc3aa5 vbe.c:535
-    jmp short 03aafh                          ; eb 05                       ; 0xc3aa8
-    cmp si, strict byte 00009h                ; 83 fe 09                    ; 0xc3aaa
-    jnbe short 03acch                         ; 77 1d                       ; 0xc3aad
-    cmp si, strict byte 00004h                ; 83 fe 04                    ; 0xc3aaf vbe.c:536
-    je short 03ac9h                           ; 74 15                       ; 0xc3ab2
-    mov ax, si                                ; 89 f0                       ; 0xc3ab4 vbe.c:537
-    mov dx, 001ceh                            ; ba ce 01                    ; 0xc3ab6
-    out DX, ax                                ; ef                          ; 0xc3ab9
-    mov dx, 001cfh                            ; ba cf 01                    ; 0xc3aba vbe.c:538
-    in ax, DX                                 ; ed                          ; 0xc3abd
-    mov bx, ax                                ; 89 c3                       ; 0xc3abe
-    mov dx, cx                                ; 89 ca                       ; 0xc3ac0
-    mov ax, di                                ; 89 f8                       ; 0xc3ac2
-    call 031e8h                               ; e8 21 f7                    ; 0xc3ac4
-    inc cx                                    ; 41                          ; 0xc3ac7 vbe.c:539
-    inc cx                                    ; 41                          ; 0xc3ac8
-    inc si                                    ; 46                          ; 0xc3ac9 vbe.c:541
-    jmp short 03aaah                          ; eb de                       ; 0xc3aca
-    lea sp, [bp-008h]                         ; 8d 66 f8                    ; 0xc3acc vbe.c:542
-    pop di                                    ; 5f                          ; 0xc3acf
-    pop si                                    ; 5e                          ; 0xc3ad0
-    pop cx                                    ; 59                          ; 0xc3ad1
-    pop bx                                    ; 5b                          ; 0xc3ad2
-    pop bp                                    ; 5d                          ; 0xc3ad3
-    retn                                      ; c3                          ; 0xc3ad4
-  ; disGetNextSymbol 0xc3ad5 LB 0x20a -> off=0x0 cb=000000000000009b uValue=00000000000c3ad5 'vbe_biosfn_restore_video_state'
-vbe_biosfn_restore_video_state:              ; 0xc3ad5 LB 0x9b
-    push bp                                   ; 55                          ; 0xc3ad5 vbe.c:545
-    mov bp, sp                                ; 89 e5                       ; 0xc3ad6
-    push bx                                   ; 53                          ; 0xc3ad8
-    push cx                                   ; 51                          ; 0xc3ad9
-    push si                                   ; 56                          ; 0xc3ada
-    push ax                                   ; 50                          ; 0xc3adb
-    mov cx, ax                                ; 89 c1                       ; 0xc3adc
-    mov bx, dx                                ; 89 d3                       ; 0xc3ade
-    call 031dah                               ; e8 f7 f6                    ; 0xc3ae0 vbe.c:549
-    mov word [bp-008h], ax                    ; 89 46 f8                    ; 0xc3ae3
-    inc bx                                    ; 43                          ; 0xc3ae6 vbe.c:550
-    inc bx                                    ; 43                          ; 0xc3ae7
-    test byte [bp-008h], 001h                 ; f6 46 f8 01                 ; 0xc3ae8 vbe.c:552
-    jne short 03afeh                          ; 75 10                       ; 0xc3aec
-    mov ax, strict word 00004h                ; b8 04 00                    ; 0xc3aee vbe.c:553
-    mov dx, 001ceh                            ; ba ce 01                    ; 0xc3af1
-    out DX, ax                                ; ef                          ; 0xc3af4
-    mov ax, word [bp-008h]                    ; 8b 46 f8                    ; 0xc3af5 vbe.c:554
-    mov dx, 001cfh                            ; ba cf 01                    ; 0xc3af8
-    out DX, ax                                ; ef                          ; 0xc3afb
-    jmp short 03b68h                          ; eb 6a                       ; 0xc3afc vbe.c:555
-    mov ax, strict word 00001h                ; b8 01 00                    ; 0xc3afe vbe.c:556
-    mov dx, 001ceh                            ; ba ce 01                    ; 0xc3b01
-    out DX, ax                                ; ef                          ; 0xc3b04
-    mov dx, bx                                ; 89 da                       ; 0xc3b05 vbe.c:557
-    mov ax, cx                                ; 89 c8                       ; 0xc3b07
-    call 031dah                               ; e8 ce f6                    ; 0xc3b09
-    mov dx, 001cfh                            ; ba cf 01                    ; 0xc3b0c
-    out DX, ax                                ; ef                          ; 0xc3b0f
-    inc bx                                    ; 43                          ; 0xc3b10 vbe.c:558
-    inc bx                                    ; 43                          ; 0xc3b11
-    mov ax, strict word 00002h                ; b8 02 00                    ; 0xc3b12
-    mov dx, 001ceh                            ; ba ce 01                    ; 0xc3b15
-    out DX, ax                                ; ef                          ; 0xc3b18
-    mov dx, bx                                ; 89 da                       ; 0xc3b19 vbe.c:560
-    mov ax, cx                                ; 89 c8                       ; 0xc3b1b
-    call 031dah                               ; e8 ba f6                    ; 0xc3b1d
-    mov dx, 001cfh                            ; ba cf 01                    ; 0xc3b20
-    out DX, ax                                ; ef                          ; 0xc3b23
-    inc bx                                    ; 43                          ; 0xc3b24 vbe.c:561
-    inc bx                                    ; 43                          ; 0xc3b25
-    mov ax, strict word 00003h                ; b8 03 00                    ; 0xc3b26
-    mov dx, 001ceh                            ; ba ce 01                    ; 0xc3b29
-    out DX, ax                                ; ef                          ; 0xc3b2c
-    mov dx, bx                                ; 89 da                       ; 0xc3b2d vbe.c:563
-    mov ax, cx                                ; 89 c8                       ; 0xc3b2f
-    call 031dah                               ; e8 a6 f6                    ; 0xc3b31
-    mov dx, 001cfh                            ; ba cf 01                    ; 0xc3b34
-    out DX, ax                                ; ef                          ; 0xc3b37
-    inc bx                                    ; 43                          ; 0xc3b38 vbe.c:564
-    inc bx                                    ; 43                          ; 0xc3b39
-    mov ax, strict word 00004h                ; b8 04 00                    ; 0xc3b3a
-    mov dx, 001ceh                            ; ba ce 01                    ; 0xc3b3d
-    out DX, ax                                ; ef                          ; 0xc3b40
-    mov ax, word [bp-008h]                    ; 8b 46 f8                    ; 0xc3b41 vbe.c:566
-    mov dx, 001cfh                            ; ba cf 01                    ; 0xc3b44
-    out DX, ax                                ; ef                          ; 0xc3b47
-    mov si, strict word 00005h                ; be 05 00                    ; 0xc3b48 vbe.c:568
-    jmp short 03b52h                          ; eb 05                       ; 0xc3b4b
-    cmp si, strict byte 00009h                ; 83 fe 09                    ; 0xc3b4d
-    jnbe short 03b68h                         ; 77 16                       ; 0xc3b50
-    mov ax, si                                ; 89 f0                       ; 0xc3b52 vbe.c:569
-    mov dx, 001ceh                            ; ba ce 01                    ; 0xc3b54
-    out DX, ax                                ; ef                          ; 0xc3b57
-    mov dx, bx                                ; 89 da                       ; 0xc3b58 vbe.c:570
-    mov ax, cx                                ; 89 c8                       ; 0xc3b5a
-    call 031dah                               ; e8 7b f6                    ; 0xc3b5c
-    mov dx, 001cfh                            ; ba cf 01                    ; 0xc3b5f
-    out DX, ax                                ; ef                          ; 0xc3b62
-    inc bx                                    ; 43                          ; 0xc3b63 vbe.c:571
-    inc bx                                    ; 43                          ; 0xc3b64
-    inc si                                    ; 46                          ; 0xc3b65 vbe.c:572
-    jmp short 03b4dh                          ; eb e5                       ; 0xc3b66
-    lea sp, [bp-006h]                         ; 8d 66 fa                    ; 0xc3b68 vbe.c:574
-    pop si                                    ; 5e                          ; 0xc3b6b
-    pop cx                                    ; 59                          ; 0xc3b6c
-    pop bx                                    ; 5b                          ; 0xc3b6d
-    pop bp                                    ; 5d                          ; 0xc3b6e
-    retn                                      ; c3                          ; 0xc3b6f
-  ; disGetNextSymbol 0xc3b70 LB 0x16f -> off=0x0 cb=000000000000008d uValue=00000000000c3b70 'vbe_biosfn_save_restore_state'
-vbe_biosfn_save_restore_state:               ; 0xc3b70 LB 0x8d
-    push bp                                   ; 55                          ; 0xc3b70 vbe.c:590
-    mov bp, sp                                ; 89 e5                       ; 0xc3b71
-    push si                                   ; 56                          ; 0xc3b73
-    push di                                   ; 57                          ; 0xc3b74
-    push ax                                   ; 50                          ; 0xc3b75
-    mov si, ax                                ; 89 c6                       ; 0xc3b76
-    mov word [bp-006h], dx                    ; 89 56 fa                    ; 0xc3b78
-    mov ax, bx                                ; 89 d8                       ; 0xc3b7b
-    mov bx, word [bp+004h]                    ; 8b 5e 04                    ; 0xc3b7d
-    mov di, strict word 0004fh                ; bf 4f 00                    ; 0xc3b80 vbe.c:595
-    xor ah, ah                                ; 30 e4                       ; 0xc3b83 vbe.c:596
-    cmp ax, strict word 00002h                ; 3d 02 00                    ; 0xc3b85
-    je short 03bd0h                           ; 74 46                       ; 0xc3b88
-    cmp ax, strict word 00001h                ; 3d 01 00                    ; 0xc3b8a
-    je short 03bb4h                           ; 74 25                       ; 0xc3b8d
-    test ax, ax                               ; 85 c0                       ; 0xc3b8f
-    jne short 03bech                          ; 75 59                       ; 0xc3b91
-    mov ax, word [bp-006h]                    ; 8b 46 fa                    ; 0xc3b93 vbe.c:598
-    call 02aa7h                               ; e8 0e ef                    ; 0xc3b96
-    mov cx, ax                                ; 89 c1                       ; 0xc3b99
-    test byte [bp-006h], 008h                 ; f6 46 fa 08                 ; 0xc3b9b vbe.c:602
-    je short 03ba6h                           ; 74 05                       ; 0xc3b9f
-    call 03a72h                               ; e8 ce fe                    ; 0xc3ba1 vbe.c:603
-    add ax, cx                                ; 01 c8                       ; 0xc3ba4
-    add ax, strict word 0003fh                ; 05 3f 00                    ; 0xc3ba6 vbe.c:604
-    mov CL, strict byte 006h                  ; b1 06                       ; 0xc3ba9
-    shr ax, CL                                ; d3 e8                       ; 0xc3bab
-    push SS                                   ; 16                          ; 0xc3bad
-    pop ES                                    ; 07                          ; 0xc3bae
-    mov word [es:bx], ax                      ; 26 89 07                    ; 0xc3baf
-    jmp short 03befh                          ; eb 3b                       ; 0xc3bb2 vbe.c:605
-    push SS                                   ; 16                          ; 0xc3bb4 vbe.c:607
-    pop ES                                    ; 07                          ; 0xc3bb5
-    mov bx, word [es:bx]                      ; 26 8b 1f                    ; 0xc3bb6
-    mov dx, cx                                ; 89 ca                       ; 0xc3bb9 vbe.c:608
-    mov ax, word [bp-006h]                    ; 8b 46 fa                    ; 0xc3bbb
-    call 02adch                               ; e8 1b ef                    ; 0xc3bbe
-    test byte [bp-006h], 008h                 ; f6 46 fa 08                 ; 0xc3bc1 vbe.c:612
-    je short 03befh                           ; 74 28                       ; 0xc3bc5
-    mov dx, ax                                ; 89 c2                       ; 0xc3bc7 vbe.c:613
-    mov ax, cx                                ; 89 c8                       ; 0xc3bc9
-    call 03a7ah                               ; e8 ac fe                    ; 0xc3bcb
-    jmp short 03befh                          ; eb 1f                       ; 0xc3bce vbe.c:614
-    push SS                                   ; 16                          ; 0xc3bd0 vbe.c:616
-    pop ES                                    ; 07                          ; 0xc3bd1
-    mov bx, word [es:bx]                      ; 26 8b 1f                    ; 0xc3bd2
-    mov dx, cx                                ; 89 ca                       ; 0xc3bd5 vbe.c:617
-    mov ax, word [bp-006h]                    ; 8b 46 fa                    ; 0xc3bd7
-    call 02e5dh                               ; e8 80 f2                    ; 0xc3bda
-    test byte [bp-006h], 008h                 ; f6 46 fa 08                 ; 0xc3bdd vbe.c:621
-    je short 03befh                           ; 74 0c                       ; 0xc3be1
-    mov dx, ax                                ; 89 c2                       ; 0xc3be3 vbe.c:622
-    mov ax, cx                                ; 89 c8                       ; 0xc3be5
-    call 03ad5h                               ; e8 eb fe                    ; 0xc3be7
-    jmp short 03befh                          ; eb 03                       ; 0xc3bea vbe.c:623
-    mov di, 00100h                            ; bf 00 01                    ; 0xc3bec vbe.c:626
-    push SS                                   ; 16                          ; 0xc3bef vbe.c:629
-    pop ES                                    ; 07                          ; 0xc3bf0
-    mov word [es:si], di                      ; 26 89 3c                    ; 0xc3bf1
-    lea sp, [bp-004h]                         ; 8d 66 fc                    ; 0xc3bf4 vbe.c:630
-    pop di                                    ; 5f                          ; 0xc3bf7
-    pop si                                    ; 5e                          ; 0xc3bf8
-    pop bp                                    ; 5d                          ; 0xc3bf9
-    retn 00002h                               ; c2 02 00                    ; 0xc3bfa
-  ; disGetNextSymbol 0xc3bfd LB 0xe2 -> off=0x0 cb=00000000000000e2 uValue=00000000000c3bfd 'vbe_biosfn_get_set_scanline_length'
-vbe_biosfn_get_set_scanline_length:          ; 0xc3bfd LB 0xe2
-    push bp                                   ; 55                          ; 0xc3bfd vbe.c:651
-    mov bp, sp                                ; 89 e5                       ; 0xc3bfe
-    push si                                   ; 56                          ; 0xc3c00
-    push di                                   ; 57                          ; 0xc3c01
-    sub sp, strict byte 0000ah                ; 83 ec 0a                    ; 0xc3c02
-    push ax                                   ; 50                          ; 0xc3c05
-    mov di, dx                                ; 89 d7                       ; 0xc3c06
-    mov word [bp-006h], bx                    ; 89 5e fa                    ; 0xc3c08
-    mov si, cx                                ; 89 ce                       ; 0xc3c0b
-    call 0365ch                               ; e8 4c fa                    ; 0xc3c0d vbe.c:660
-    cmp AL, strict byte 00fh                  ; 3c 0f                       ; 0xc3c10 vbe.c:661
-    jne short 03c19h                          ; 75 05                       ; 0xc3c12
-    mov cx, strict word 00010h                ; b9 10 00                    ; 0xc3c14
-    jmp short 03c1dh                          ; eb 04                       ; 0xc3c17
-    xor ah, ah                                ; 30 e4                       ; 0xc3c19
-    mov cx, ax                                ; 89 c1                       ; 0xc3c1b
-    mov ch, cl                                ; 88 cd                       ; 0xc3c1d
-    call 03694h                               ; e8 72 fa                    ; 0xc3c1f vbe.c:662
-    mov word [bp-00ah], ax                    ; 89 46 f6                    ; 0xc3c22
-    mov word [bp-00ch], strict word 0004fh    ; c7 46 f4 4f 00              ; 0xc3c25 vbe.c:663
-    push SS                                   ; 16                          ; 0xc3c2a vbe.c:664
-    pop ES                                    ; 07                          ; 0xc3c2b
-    mov bx, word [bp-006h]                    ; 8b 5e fa                    ; 0xc3c2c
-    mov bx, word [es:bx]                      ; 26 8b 1f                    ; 0xc3c2f
-    mov al, byte [es:di]                      ; 26 8a 05                    ; 0xc3c32 vbe.c:665
-    cmp AL, strict byte 002h                  ; 3c 02                       ; 0xc3c35 vbe.c:669
-    je short 03c44h                           ; 74 0b                       ; 0xc3c37
-    cmp AL, strict byte 001h                  ; 3c 01                       ; 0xc3c39
-    je short 03c6dh                           ; 74 30                       ; 0xc3c3b
-    test al, al                               ; 84 c0                       ; 0xc3c3d
-    je short 03c68h                           ; 74 27                       ; 0xc3c3f
-    jmp near 03cc8h                           ; e9 84 00                    ; 0xc3c41
-    cmp ch, 004h                              ; 80 fd 04                    ; 0xc3c44 vbe.c:671
-    jne short 03c4fh                          ; 75 06                       ; 0xc3c47
-    mov CL, strict byte 003h                  ; b1 03                       ; 0xc3c49 vbe.c:672
-    sal bx, CL                                ; d3 e3                       ; 0xc3c4b
-    jmp short 03c68h                          ; eb 19                       ; 0xc3c4d vbe.c:673
-    mov al, ch                                ; 88 e8                       ; 0xc3c4f vbe.c:674
-    xor ah, ah                                ; 30 e4                       ; 0xc3c51
-    cwd                                       ; 99                          ; 0xc3c53
-    mov CL, strict byte 003h                  ; b1 03                       ; 0xc3c54
-    sal dx, CL                                ; d3 e2                       ; 0xc3c56
+    mov di, ax                                ; 89 c7                       ; 0xc37a1
+    mov si, dx                                ; 89 d6                       ; 0xc37a3
+    xor dx, dx                                ; 31 d2                       ; 0xc37a5 vbe.c:208
+    mov ax, 003b6h                            ; b8 b6 03                    ; 0xc37a7
+    call 0371ah                               ; e8 6d ff                    ; 0xc37aa
+    cmp ax, 077cch                            ; 3d cc 77                    ; 0xc37ad vbe.c:209
+    jne short 037e4h                          ; 75 32                       ; 0xc37b0
+    mov bx, strict word 00004h                ; bb 04 00                    ; 0xc37b2 vbe.c:213
+    mov dx, bx                                ; 89 da                       ; 0xc37b5 vbe.c:218
+    mov ax, 003b6h                            ; b8 b6 03                    ; 0xc37b7
+    call 0371ah                               ; e8 5d ff                    ; 0xc37ba
+    mov cx, ax                                ; 89 c1                       ; 0xc37bd
+    cmp cx, strict byte 0ffffh                ; 83 f9 ff                    ; 0xc37bf vbe.c:219
+    je short 037e4h                           ; 74 20                       ; 0xc37c2
+    lea dx, [bx+002h]                         ; 8d 57 02                    ; 0xc37c4 vbe.c:221
+    mov ax, 003b6h                            ; b8 b6 03                    ; 0xc37c7
+    call 0371ah                               ; e8 4d ff                    ; 0xc37ca
+    lea dx, [bx+044h]                         ; 8d 57 44                    ; 0xc37cd
+    cmp cx, di                                ; 39 f9                       ; 0xc37d0 vbe.c:223
+    jne short 037e0h                          ; 75 0c                       ; 0xc37d2
+    test si, si                               ; 85 f6                       ; 0xc37d4 vbe.c:225
+    jne short 037dch                          ; 75 04                       ; 0xc37d6
+    mov ax, bx                                ; 89 d8                       ; 0xc37d8 vbe.c:226
+    jmp short 037e6h                          ; eb 0a                       ; 0xc37da
+    test AL, strict byte 080h                 ; a8 80                       ; 0xc37dc vbe.c:227
+    jne short 037d8h                          ; 75 f8                       ; 0xc37de
+    mov bx, dx                                ; 89 d3                       ; 0xc37e0 vbe.c:230
+    jmp short 037b7h                          ; eb d3                       ; 0xc37e2 vbe.c:235
+    xor ax, ax                                ; 31 c0                       ; 0xc37e4 vbe.c:238
+    lea sp, [bp-008h]                         ; 8d 66 f8                    ; 0xc37e6 vbe.c:239
+    pop di                                    ; 5f                          ; 0xc37e9
+    pop si                                    ; 5e                          ; 0xc37ea
+    pop cx                                    ; 59                          ; 0xc37eb
+    pop bx                                    ; 5b                          ; 0xc37ec
+    pop bp                                    ; 5d                          ; 0xc37ed
+    retn                                      ; c3                          ; 0xc37ee
+  ; disGetNextSymbol 0xc37ef LB 0x63b -> off=0x0 cb=000000000000012f uValue=00000000000c37ef 'vbe_biosfn_return_controller_information'
+vbe_biosfn_return_controller_information: ; 0xc37ef LB 0x12f
+    push bp                                   ; 55                          ; 0xc37ef vbe.c:270
+    mov bp, sp                                ; 89 e5                       ; 0xc37f0
+    push cx                                   ; 51                          ; 0xc37f2
+    push si                                   ; 56                          ; 0xc37f3
+    push di                                   ; 57                          ; 0xc37f4
+    sub sp, strict byte 0000ah                ; 83 ec 0a                    ; 0xc37f5
+    mov si, ax                                ; 89 c6                       ; 0xc37f8
+    mov di, dx                                ; 89 d7                       ; 0xc37fa
+    mov word [bp-00ah], bx                    ; 89 5e f6                    ; 0xc37fc
+    mov word [bp-00ch], strict word 00022h    ; c7 46 f4 22 00              ; 0xc37ff vbe.c:275
+    call 005dah                               ; e8 d3 cd                    ; 0xc3804 vbe.c:278
+    mov word [bp-010h], ax                    ; 89 46 f0                    ; 0xc3807
+    mov bx, word [bp-00ah]                    ; 8b 5e f6                    ; 0xc380a vbe.c:281
+    mov word [bp-008h], di                    ; 89 7e f8                    ; 0xc380d
+    xor dx, dx                                ; 31 d2                       ; 0xc3810 vbe.c:284
+    mov ax, 003b6h                            ; b8 b6 03                    ; 0xc3812
+    call 0371ah                               ; e8 02 ff                    ; 0xc3815
+    cmp ax, 077cch                            ; 3d cc 77                    ; 0xc3818 vbe.c:285
+    je short 03827h                           ; 74 0a                       ; 0xc381b
+    push SS                                   ; 16                          ; 0xc381d vbe.c:287
+    pop ES                                    ; 07                          ; 0xc381e
+    mov word [es:si], 00100h                  ; 26 c7 04 00 01              ; 0xc381f
+    jmp near 03916h                           ; e9 ef 00                    ; 0xc3824 vbe.c:291
+    mov cx, strict word 00004h                ; b9 04 00                    ; 0xc3827 vbe.c:293
+    mov word [bp-00eh], strict word 00000h    ; c7 46 f2 00 00              ; 0xc382a vbe.c:300
+    mov es, [bp-008h]                         ; 8e 46 f8                    ; 0xc382f vbe.c:308
+    cmp word [es:bx+002h], 03245h             ; 26 81 7f 02 45 32           ; 0xc3832
+    jne short 03841h                          ; 75 07                       ; 0xc3838
+    cmp word [es:bx], 04256h                  ; 26 81 3f 56 42              ; 0xc383a
+    je short 03850h                           ; 74 0f                       ; 0xc383f
+    cmp word [es:bx+002h], 04153h             ; 26 81 7f 02 53 41           ; 0xc3841
+    jne short 03855h                          ; 75 0c                       ; 0xc3847
+    cmp word [es:bx], 04556h                  ; 26 81 3f 56 45              ; 0xc3849
+    jne short 03855h                          ; 75 05                       ; 0xc384e
+    mov word [bp-00eh], strict word 00001h    ; c7 46 f2 01 00              ; 0xc3850 vbe.c:310
+    mov es, [bp-008h]                         ; 8e 46 f8                    ; 0xc3855 vbe.c:318
+    mov word [es:bx], 04556h                  ; 26 c7 07 56 45              ; 0xc3858
+    mov word [es:bx+002h], 04153h             ; 26 c7 47 02 53 41           ; 0xc385d vbe.c:320
+    mov word [es:bx+004h], 00200h             ; 26 c7 47 04 00 02           ; 0xc3863 vbe.c:324
+    mov word [es:bx+006h], 07c6ch             ; 26 c7 47 06 6c 7c           ; 0xc3869 vbe.c:327
+    mov [es:bx+008h], ds                      ; 26 8c 5f 08                 ; 0xc386f
+    mov word [es:bx+00ah], strict word 00001h ; 26 c7 47 0a 01 00           ; 0xc3873 vbe.c:330
+    mov word [es:bx+00ch], strict word 00000h ; 26 c7 47 0c 00 00           ; 0xc3879 vbe.c:332
+    mov word [es:bx+010h], di                 ; 26 89 7f 10                 ; 0xc387f vbe.c:336
+    mov ax, word [bp-00ah]                    ; 8b 46 f6                    ; 0xc3883 vbe.c:337
+    add ax, strict word 00022h                ; 05 22 00                    ; 0xc3886
+    mov word [es:bx+00eh], ax                 ; 26 89 47 0e                 ; 0xc3889
+    mov dx, strict word 0ffffh                ; ba ff ff                    ; 0xc388d vbe.c:340
+    mov ax, 003b6h                            ; b8 b6 03                    ; 0xc3890
+    call 0371ah                               ; e8 84 fe                    ; 0xc3893
+    mov es, [bp-008h]                         ; 8e 46 f8                    ; 0xc3896
+    mov word [es:bx+012h], ax                 ; 26 89 47 12                 ; 0xc3899
+    cmp word [bp-00eh], strict byte 00000h    ; 83 7e f2 00                 ; 0xc389d vbe.c:342
+    je short 038c7h                           ; 74 24                       ; 0xc38a1
+    mov word [es:bx+014h], strict word 00003h ; 26 c7 47 14 03 00           ; 0xc38a3 vbe.c:345
+    mov word [es:bx+016h], 07c81h             ; 26 c7 47 16 81 7c           ; 0xc38a9 vbe.c:346
+    mov [es:bx+018h], ds                      ; 26 8c 5f 18                 ; 0xc38af
+    mov word [es:bx+01ah], 07c94h             ; 26 c7 47 1a 94 7c           ; 0xc38b3 vbe.c:347
+    mov [es:bx+01ch], ds                      ; 26 8c 5f 1c                 ; 0xc38b9
+    mov word [es:bx+01eh], 07cb5h             ; 26 c7 47 1e b5 7c           ; 0xc38bd vbe.c:348
+    mov [es:bx+020h], ds                      ; 26 8c 5f 20                 ; 0xc38c3
+    mov dx, cx                                ; 89 ca                       ; 0xc38c7 vbe.c:355
+    add dx, strict byte 0001bh                ; 83 c2 1b                    ; 0xc38c9
+    mov ax, 003b6h                            ; b8 b6 03                    ; 0xc38cc
+    call 0372ch                               ; e8 5a fe                    ; 0xc38cf
+    xor ah, ah                                ; 30 e4                       ; 0xc38d2 vbe.c:356
+    cmp ax, word [bp-010h]                    ; 3b 46 f0                    ; 0xc38d4
+    jnbe short 038f2h                         ; 77 19                       ; 0xc38d7
+    mov dx, cx                                ; 89 ca                       ; 0xc38d9 vbe.c:358
+    mov ax, 003b6h                            ; b8 b6 03                    ; 0xc38db
+    call 0371ah                               ; e8 39 fe                    ; 0xc38de
+    mov bx, ax                                ; 89 c3                       ; 0xc38e1
+    mov dx, word [bp-00ah]                    ; 8b 56 f6                    ; 0xc38e3 vbe.c:362
+    add dx, word [bp-00ch]                    ; 03 56 f4                    ; 0xc38e6
+    mov ax, di                                ; 89 f8                       ; 0xc38e9
+    call 031e8h                               ; e8 fa f8                    ; 0xc38eb
+    add word [bp-00ch], strict byte 00002h    ; 83 46 f4 02                 ; 0xc38ee vbe.c:364
+    add cx, strict byte 00044h                ; 83 c1 44                    ; 0xc38f2 vbe.c:366
+    mov dx, cx                                ; 89 ca                       ; 0xc38f5 vbe.c:367
+    mov ax, 003b6h                            ; b8 b6 03                    ; 0xc38f7
+    call 0371ah                               ; e8 1d fe                    ; 0xc38fa
+    mov bx, ax                                ; 89 c3                       ; 0xc38fd
+    cmp ax, strict word 0ffffh                ; 3d ff ff                    ; 0xc38ff vbe.c:368
+    jne short 038c7h                          ; 75 c3                       ; 0xc3902
+    mov dx, word [bp-00ah]                    ; 8b 56 f6                    ; 0xc3904 vbe.c:371
+    add dx, word [bp-00ch]                    ; 03 56 f4                    ; 0xc3907
+    mov ax, di                                ; 89 f8                       ; 0xc390a
+    call 031e8h                               ; e8 d9 f8                    ; 0xc390c
+    push SS                                   ; 16                          ; 0xc390f vbe.c:372
+    pop ES                                    ; 07                          ; 0xc3910
+    mov word [es:si], strict word 0004fh      ; 26 c7 04 4f 00              ; 0xc3911
+    lea sp, [bp-006h]                         ; 8d 66 fa                    ; 0xc3916 vbe.c:373
+    pop di                                    ; 5f                          ; 0xc3919
+    pop si                                    ; 5e                          ; 0xc391a
+    pop cx                                    ; 59                          ; 0xc391b
+    pop bp                                    ; 5d                          ; 0xc391c
+    retn                                      ; c3                          ; 0xc391d
+  ; disGetNextSymbol 0xc391e LB 0x50c -> off=0x0 cb=00000000000000bd uValue=00000000000c391e 'vbe_biosfn_return_mode_information'
+vbe_biosfn_return_mode_information:          ; 0xc391e LB 0xbd
+    push bp                                   ; 55                          ; 0xc391e vbe.c:385
+    mov bp, sp                                ; 89 e5                       ; 0xc391f
+    push si                                   ; 56                          ; 0xc3921
+    push di                                   ; 57                          ; 0xc3922
+    push ax                                   ; 50                          ; 0xc3923
+    push ax                                   ; 50                          ; 0xc3924
+    push ax                                   ; 50                          ; 0xc3925
+    mov ax, dx                                ; 89 d0                       ; 0xc3926
+    mov si, bx                                ; 89 de                       ; 0xc3928
+    mov word [bp-006h], cx                    ; 89 4e fa                    ; 0xc392a
+    test dh, 040h                             ; f6 c6 40                    ; 0xc392d vbe.c:396
+    je short 03937h                           ; 74 05                       ; 0xc3930
+    mov dx, strict word 00001h                ; ba 01 00                    ; 0xc3932
+    jmp short 03939h                          ; eb 02                       ; 0xc3935
+    xor dx, dx                                ; 31 d2                       ; 0xc3937
+    and ah, 001h                              ; 80 e4 01                    ; 0xc3939 vbe.c:397
+    call 0379ah                               ; e8 5b fe                    ; 0xc393c vbe.c:399
+    mov word [bp-008h], ax                    ; 89 46 f8                    ; 0xc393f
+    test ax, ax                               ; 85 c0                       ; 0xc3942 vbe.c:401
+    je short 0397ch                           ; 74 36                       ; 0xc3944
+    mov cx, 00100h                            ; b9 00 01                    ; 0xc3946 vbe.c:406
+    xor ax, ax                                ; 31 c0                       ; 0xc3949
+    mov di, word [bp-006h]                    ; 8b 7e fa                    ; 0xc394b
+    mov es, si                                ; 8e c6                       ; 0xc394e
+    cld                                       ; fc                          ; 0xc3950
+    jcxz 03955h                               ; e3 02                       ; 0xc3951
+    rep stosb                                 ; f3 aa                       ; 0xc3953
+    xor cx, cx                                ; 31 c9                       ; 0xc3955 vbe.c:407
+    jmp short 0395eh                          ; eb 05                       ; 0xc3957
+    cmp cx, strict byte 00042h                ; 83 f9 42                    ; 0xc3959
+    jnc short 0397eh                          ; 73 20                       ; 0xc395c
+    mov dx, word [bp-008h]                    ; 8b 56 f8                    ; 0xc395e vbe.c:410
+    inc dx                                    ; 42                          ; 0xc3961
+    inc dx                                    ; 42                          ; 0xc3962
+    add dx, cx                                ; 01 ca                       ; 0xc3963
+    mov ax, 003b6h                            ; b8 b6 03                    ; 0xc3965
+    call 0372ch                               ; e8 c1 fd                    ; 0xc3968
+    mov bl, al                                ; 88 c3                       ; 0xc396b vbe.c:411
+    xor bh, bh                                ; 30 ff                       ; 0xc396d
+    mov dx, word [bp-006h]                    ; 8b 56 fa                    ; 0xc396f
+    add dx, cx                                ; 01 ca                       ; 0xc3972
+    mov ax, si                                ; 89 f0                       ; 0xc3974
+    call 031cch                               ; e8 53 f8                    ; 0xc3976
+    inc cx                                    ; 41                          ; 0xc3979 vbe.c:412
+    jmp short 03959h                          ; eb dd                       ; 0xc397a
+    jmp short 039c9h                          ; eb 4b                       ; 0xc397c
+    mov dx, word [bp-006h]                    ; 8b 56 fa                    ; 0xc397e vbe.c:413
+    inc dx                                    ; 42                          ; 0xc3981
+    inc dx                                    ; 42                          ; 0xc3982
+    mov ax, si                                ; 89 f0                       ; 0xc3983
+    call 031beh                               ; e8 36 f8                    ; 0xc3985
+    test AL, strict byte 001h                 ; a8 01                       ; 0xc3988 vbe.c:414
+    je short 039a8h                           ; 74 1c                       ; 0xc398a
+    mov dx, word [bp-006h]                    ; 8b 56 fa                    ; 0xc398c vbe.c:415
+    add dx, strict byte 0000ch                ; 83 c2 0c                    ; 0xc398f
+    mov bx, 0064ch                            ; bb 4c 06                    ; 0xc3992
+    mov ax, si                                ; 89 f0                       ; 0xc3995
+    call 031e8h                               ; e8 4e f8                    ; 0xc3997
+    mov dx, word [bp-006h]                    ; 8b 56 fa                    ; 0xc399a vbe.c:417
+    add dx, strict byte 0000eh                ; 83 c2 0e                    ; 0xc399d
+    mov bx, 0c000h                            ; bb 00 c0                    ; 0xc39a0
+    mov ax, si                                ; 89 f0                       ; 0xc39a3
+    call 031e8h                               ; e8 40 f8                    ; 0xc39a5
+    mov ax, strict word 0000bh                ; b8 0b 00                    ; 0xc39a8 vbe.c:420
+    mov dx, 001ceh                            ; ba ce 01                    ; 0xc39ab
+    call 00590h                               ; e8 df cb                    ; 0xc39ae
+    mov dx, 001cfh                            ; ba cf 01                    ; 0xc39b1 vbe.c:421
+    call 00597h                               ; e8 e0 cb                    ; 0xc39b4
+    mov dx, word [bp-006h]                    ; 8b 56 fa                    ; 0xc39b7
+    add dx, strict byte 0002ah                ; 83 c2 2a                    ; 0xc39ba
+    mov bx, ax                                ; 89 c3                       ; 0xc39bd
+    mov ax, si                                ; 89 f0                       ; 0xc39bf
+    call 031e8h                               ; e8 24 f8                    ; 0xc39c1
+    mov ax, strict word 0004fh                ; b8 4f 00                    ; 0xc39c4 vbe.c:423
+    jmp short 039cch                          ; eb 03                       ; 0xc39c7 vbe.c:424
+    mov ax, 00100h                            ; b8 00 01                    ; 0xc39c9 vbe.c:428
+    push SS                                   ; 16                          ; 0xc39cc vbe.c:431
+    pop ES                                    ; 07                          ; 0xc39cd
+    mov bx, word [bp-00ah]                    ; 8b 5e f6                    ; 0xc39ce
+    mov word [es:bx], ax                      ; 26 89 07                    ; 0xc39d1
+    lea sp, [bp-004h]                         ; 8d 66 fc                    ; 0xc39d4 vbe.c:432
+    pop di                                    ; 5f                          ; 0xc39d7
+    pop si                                    ; 5e                          ; 0xc39d8
+    pop bp                                    ; 5d                          ; 0xc39d9
+    retn                                      ; c3                          ; 0xc39da
+  ; disGetNextSymbol 0xc39db LB 0x44f -> off=0x0 cb=00000000000000eb uValue=00000000000c39db 'vbe_biosfn_set_mode'
+vbe_biosfn_set_mode:                         ; 0xc39db LB 0xeb
+    push bp                                   ; 55                          ; 0xc39db vbe.c:444
+    mov bp, sp                                ; 89 e5                       ; 0xc39dc
+    push si                                   ; 56                          ; 0xc39de
+    push di                                   ; 57                          ; 0xc39df
+    sub sp, strict byte 00006h                ; 83 ec 06                    ; 0xc39e0
+    mov si, ax                                ; 89 c6                       ; 0xc39e3
+    mov word [bp-00ah], dx                    ; 89 56 f6                    ; 0xc39e5
+    test byte [bp-009h], 040h                 ; f6 46 f7 40                 ; 0xc39e8 vbe.c:452
+    je short 039f3h                           ; 74 05                       ; 0xc39ec
+    mov ax, strict word 00001h                ; b8 01 00                    ; 0xc39ee
+    jmp short 039f5h                          ; eb 02                       ; 0xc39f1
+    xor ax, ax                                ; 31 c0                       ; 0xc39f3
+    mov dx, ax                                ; 89 c2                       ; 0xc39f5
+    test ax, ax                               ; 85 c0                       ; 0xc39f7 vbe.c:453
+    je short 039feh                           ; 74 03                       ; 0xc39f9
+    mov ax, strict word 00040h                ; b8 40 00                    ; 0xc39fb
+    mov byte [bp-006h], al                    ; 88 46 fa                    ; 0xc39fe
+    test byte [bp-009h], 080h                 ; f6 46 f7 80                 ; 0xc3a01 vbe.c:454
+    je short 03a0ch                           ; 74 05                       ; 0xc3a05
+    mov ax, 00080h                            ; b8 80 00                    ; 0xc3a07
+    jmp short 03a0eh                          ; eb 02                       ; 0xc3a0a
+    xor ax, ax                                ; 31 c0                       ; 0xc3a0c
+    mov byte [bp-008h], al                    ; 88 46 f8                    ; 0xc3a0e
+    and byte [bp-009h], 001h                  ; 80 66 f7 01                 ; 0xc3a11 vbe.c:456
+    cmp word [bp-00ah], 00100h                ; 81 7e f6 00 01              ; 0xc3a15 vbe.c:459
+    jnc short 03a2fh                          ; 73 13                       ; 0xc3a1a
+    xor ax, ax                                ; 31 c0                       ; 0xc3a1c vbe.c:463
+    call 00600h                               ; e8 df cb                    ; 0xc3a1e
+    mov al, byte [bp-00ah]                    ; 8a 46 f6                    ; 0xc3a21 vbe.c:467
+    xor ah, ah                                ; 30 e4                       ; 0xc3a24
+    call 01019h                               ; e8 f0 d5                    ; 0xc3a26
+    mov ax, strict word 0004fh                ; b8 4f 00                    ; 0xc3a29 vbe.c:468
+    jmp near 03abch                           ; e9 8d 00                    ; 0xc3a2c vbe.c:469
+    mov ax, word [bp-00ah]                    ; 8b 46 f6                    ; 0xc3a2f vbe.c:472
+    call 0379ah                               ; e8 65 fd                    ; 0xc3a32
+    mov bx, ax                                ; 89 c3                       ; 0xc3a35
+    test ax, ax                               ; 85 c0                       ; 0xc3a37 vbe.c:474
+    jne short 03a3eh                          ; 75 03                       ; 0xc3a39
+    jmp near 03ab9h                           ; e9 7b 00                    ; 0xc3a3b
+    lea dx, [bx+014h]                         ; 8d 57 14                    ; 0xc3a3e vbe.c:479
+    mov ax, 003b6h                            ; b8 b6 03                    ; 0xc3a41
+    call 0371ah                               ; e8 d3 fc                    ; 0xc3a44
+    mov cx, ax                                ; 89 c1                       ; 0xc3a47
+    lea dx, [bx+016h]                         ; 8d 57 16                    ; 0xc3a49 vbe.c:480
+    mov ax, 003b6h                            ; b8 b6 03                    ; 0xc3a4c
+    call 0371ah                               ; e8 c8 fc                    ; 0xc3a4f
+    mov di, ax                                ; 89 c7                       ; 0xc3a52
+    lea dx, [bx+01bh]                         ; 8d 57 1b                    ; 0xc3a54 vbe.c:481
+    mov ax, 003b6h                            ; b8 b6 03                    ; 0xc3a57
+    call 0372ch                               ; e8 cf fc                    ; 0xc3a5a
+    mov bl, al                                ; 88 c3                       ; 0xc3a5d
+    mov dl, al                                ; 88 c2                       ; 0xc3a5f
+    xor ax, ax                                ; 31 c0                       ; 0xc3a61 vbe.c:489
+    call 00600h                               ; e8 9a cb                    ; 0xc3a63
+    cmp bl, 004h                              ; 80 fb 04                    ; 0xc3a66 vbe.c:491
+    jne short 03a71h                          ; 75 06                       ; 0xc3a69
+    mov ax, strict word 0006ah                ; b8 6a 00                    ; 0xc3a6b vbe.c:493
+    call 01019h                               ; e8 a8 d5                    ; 0xc3a6e
+    mov al, dl                                ; 88 d0                       ; 0xc3a71 vbe.c:496
+    xor ah, ah                                ; 30 e4                       ; 0xc3a73
+    call 03691h                               ; e8 19 fc                    ; 0xc3a75
+    mov ax, cx                                ; 89 c8                       ; 0xc3a78 vbe.c:497
+    call 0363ah                               ; e8 bd fb                    ; 0xc3a7a
+    mov ax, di                                ; 89 f8                       ; 0xc3a7d vbe.c:498
+    call 03659h                               ; e8 d7 fb                    ; 0xc3a7f
+    xor ax, ax                                ; 31 c0                       ; 0xc3a82 vbe.c:499
+    call 00626h                               ; e8 9f cb                    ; 0xc3a84
+    mov al, byte [bp-008h]                    ; 8a 46 f8                    ; 0xc3a87 vbe.c:500
+    or AL, strict byte 001h                   ; 0c 01                       ; 0xc3a8a
+    xor ah, ah                                ; 30 e4                       ; 0xc3a8c
+    mov dl, byte [bp-006h]                    ; 8a 56 fa                    ; 0xc3a8e
+    or al, dl                                 ; 08 d0                       ; 0xc3a91
+    call 00600h                               ; e8 6a cb                    ; 0xc3a93
+    call 006f8h                               ; e8 5f cc                    ; 0xc3a96 vbe.c:501
+    mov bx, word [bp-00ah]                    ; 8b 5e f6                    ; 0xc3a99 vbe.c:503
+    mov dx, 000bah                            ; ba ba 00                    ; 0xc3a9c
+    mov ax, strict word 00040h                ; b8 40 00                    ; 0xc3a9f
+    call 031e8h                               ; e8 43 f7                    ; 0xc3aa2
+    mov bl, byte [bp-008h]                    ; 8a 5e f8                    ; 0xc3aa5 vbe.c:504
+    or bl, 060h                               ; 80 cb 60                    ; 0xc3aa8
+    xor bh, bh                                ; 30 ff                       ; 0xc3aab
+    mov dx, 00087h                            ; ba 87 00                    ; 0xc3aad
+    mov ax, strict word 00040h                ; b8 40 00                    ; 0xc3ab0
+    call 031cch                               ; e8 16 f7                    ; 0xc3ab3
+    jmp near 03a29h                           ; e9 70 ff                    ; 0xc3ab6
+    mov ax, 00100h                            ; b8 00 01                    ; 0xc3ab9 vbe.c:513
+    mov word [ss:si], ax                      ; 36 89 04                    ; 0xc3abc vbe.c:517
+    lea sp, [bp-004h]                         ; 8d 66 fc                    ; 0xc3abf vbe.c:518
+    pop di                                    ; 5f                          ; 0xc3ac2
+    pop si                                    ; 5e                          ; 0xc3ac3
+    pop bp                                    ; 5d                          ; 0xc3ac4
+    retn                                      ; c3                          ; 0xc3ac5
+  ; disGetNextSymbol 0xc3ac6 LB 0x364 -> off=0x0 cb=0000000000000008 uValue=00000000000c3ac6 'vbe_biosfn_read_video_state_size'
+vbe_biosfn_read_video_state_size:            ; 0xc3ac6 LB 0x8
+    push bp                                   ; 55                          ; 0xc3ac6 vbe.c:520
+    mov bp, sp                                ; 89 e5                       ; 0xc3ac7
+    mov ax, strict word 00012h                ; b8 12 00                    ; 0xc3ac9 vbe.c:523
+    pop bp                                    ; 5d                          ; 0xc3acc
+    retn                                      ; c3                          ; 0xc3acd
+  ; disGetNextSymbol 0xc3ace LB 0x35c -> off=0x0 cb=000000000000005b uValue=00000000000c3ace 'vbe_biosfn_save_video_state'
+vbe_biosfn_save_video_state:                 ; 0xc3ace LB 0x5b
+    push bp                                   ; 55                          ; 0xc3ace vbe.c:525
+    mov bp, sp                                ; 89 e5                       ; 0xc3acf
+    push bx                                   ; 53                          ; 0xc3ad1
+    push cx                                   ; 51                          ; 0xc3ad2
+    push si                                   ; 56                          ; 0xc3ad3
+    push di                                   ; 57                          ; 0xc3ad4
+    push ax                                   ; 50                          ; 0xc3ad5
+    mov di, ax                                ; 89 c7                       ; 0xc3ad6
+    mov cx, dx                                ; 89 d1                       ; 0xc3ad8
+    mov ax, strict word 00004h                ; b8 04 00                    ; 0xc3ada vbe.c:529
+    mov dx, 001ceh                            ; ba ce 01                    ; 0xc3add
+    out DX, ax                                ; ef                          ; 0xc3ae0
+    mov dx, 001cfh                            ; ba cf 01                    ; 0xc3ae1 vbe.c:530
+    in ax, DX                                 ; ed                          ; 0xc3ae4
+    mov word [bp-00ah], ax                    ; 89 46 f6                    ; 0xc3ae5
+    mov bx, ax                                ; 89 c3                       ; 0xc3ae8 vbe.c:531
+    mov dx, cx                                ; 89 ca                       ; 0xc3aea
+    mov ax, di                                ; 89 f8                       ; 0xc3aec
+    call 031e8h                               ; e8 f7 f6                    ; 0xc3aee
+    inc cx                                    ; 41                          ; 0xc3af1 vbe.c:532
+    inc cx                                    ; 41                          ; 0xc3af2
+    test byte [bp-00ah], 001h                 ; f6 46 f6 01                 ; 0xc3af3 vbe.c:533
+    je short 03b20h                           ; 74 27                       ; 0xc3af7
+    mov si, strict word 00001h                ; be 01 00                    ; 0xc3af9 vbe.c:535
+    jmp short 03b03h                          ; eb 05                       ; 0xc3afc
+    cmp si, strict byte 00009h                ; 83 fe 09                    ; 0xc3afe
+    jnbe short 03b20h                         ; 77 1d                       ; 0xc3b01
+    cmp si, strict byte 00004h                ; 83 fe 04                    ; 0xc3b03 vbe.c:536
+    je short 03b1dh                           ; 74 15                       ; 0xc3b06
+    mov ax, si                                ; 89 f0                       ; 0xc3b08 vbe.c:537
+    mov dx, 001ceh                            ; ba ce 01                    ; 0xc3b0a
+    out DX, ax                                ; ef                          ; 0xc3b0d
+    mov dx, 001cfh                            ; ba cf 01                    ; 0xc3b0e vbe.c:538
+    in ax, DX                                 ; ed                          ; 0xc3b11
+    mov bx, ax                                ; 89 c3                       ; 0xc3b12
+    mov dx, cx                                ; 89 ca                       ; 0xc3b14
+    mov ax, di                                ; 89 f8                       ; 0xc3b16
+    call 031e8h                               ; e8 cd f6                    ; 0xc3b18
+    inc cx                                    ; 41                          ; 0xc3b1b vbe.c:539
+    inc cx                                    ; 41                          ; 0xc3b1c
+    inc si                                    ; 46                          ; 0xc3b1d vbe.c:541
+    jmp short 03afeh                          ; eb de                       ; 0xc3b1e
+    lea sp, [bp-008h]                         ; 8d 66 f8                    ; 0xc3b20 vbe.c:542
+    pop di                                    ; 5f                          ; 0xc3b23
+    pop si                                    ; 5e                          ; 0xc3b24
+    pop cx                                    ; 59                          ; 0xc3b25
+    pop bx                                    ; 5b                          ; 0xc3b26
+    pop bp                                    ; 5d                          ; 0xc3b27
+    retn                                      ; c3                          ; 0xc3b28
+  ; disGetNextSymbol 0xc3b29 LB 0x301 -> off=0x0 cb=000000000000009b uValue=00000000000c3b29 'vbe_biosfn_restore_video_state'
+vbe_biosfn_restore_video_state:              ; 0xc3b29 LB 0x9b
+    push bp                                   ; 55                          ; 0xc3b29 vbe.c:545
+    mov bp, sp                                ; 89 e5                       ; 0xc3b2a
+    push bx                                   ; 53                          ; 0xc3b2c
+    push cx                                   ; 51                          ; 0xc3b2d
+    push si                                   ; 56                          ; 0xc3b2e
+    push ax                                   ; 50                          ; 0xc3b2f
+    mov cx, ax                                ; 89 c1                       ; 0xc3b30
+    mov bx, dx                                ; 89 d3                       ; 0xc3b32
+    call 031dah                               ; e8 a3 f6                    ; 0xc3b34 vbe.c:549
+    mov word [bp-008h], ax                    ; 89 46 f8                    ; 0xc3b37
+    inc bx                                    ; 43                          ; 0xc3b3a vbe.c:550
+    inc bx                                    ; 43                          ; 0xc3b3b
+    test byte [bp-008h], 001h                 ; f6 46 f8 01                 ; 0xc3b3c vbe.c:552
+    jne short 03b52h                          ; 75 10                       ; 0xc3b40
+    mov ax, strict word 00004h                ; b8 04 00                    ; 0xc3b42 vbe.c:553
+    mov dx, 001ceh                            ; ba ce 01                    ; 0xc3b45
+    out DX, ax                                ; ef                          ; 0xc3b48
+    mov ax, word [bp-008h]                    ; 8b 46 f8                    ; 0xc3b49 vbe.c:554
+    mov dx, 001cfh                            ; ba cf 01                    ; 0xc3b4c
+    out DX, ax                                ; ef                          ; 0xc3b4f
+    jmp short 03bbch                          ; eb 6a                       ; 0xc3b50 vbe.c:555
+    mov ax, strict word 00001h                ; b8 01 00                    ; 0xc3b52 vbe.c:556
+    mov dx, 001ceh                            ; ba ce 01                    ; 0xc3b55
+    out DX, ax                                ; ef                          ; 0xc3b58
+    mov dx, bx                                ; 89 da                       ; 0xc3b59 vbe.c:557
+    mov ax, cx                                ; 89 c8                       ; 0xc3b5b
+    call 031dah                               ; e8 7a f6                    ; 0xc3b5d
+    mov dx, 001cfh                            ; ba cf 01                    ; 0xc3b60
+    out DX, ax                                ; ef                          ; 0xc3b63
+    inc bx                                    ; 43                          ; 0xc3b64 vbe.c:558
+    inc bx                                    ; 43                          ; 0xc3b65
+    mov ax, strict word 00002h                ; b8 02 00                    ; 0xc3b66
+    mov dx, 001ceh                            ; ba ce 01                    ; 0xc3b69
+    out DX, ax                                ; ef                          ; 0xc3b6c
+    mov dx, bx                                ; 89 da                       ; 0xc3b6d vbe.c:560
+    mov ax, cx                                ; 89 c8                       ; 0xc3b6f
+    call 031dah                               ; e8 66 f6                    ; 0xc3b71
+    mov dx, 001cfh                            ; ba cf 01                    ; 0xc3b74
+    out DX, ax                                ; ef                          ; 0xc3b77
+    inc bx                                    ; 43                          ; 0xc3b78 vbe.c:561
+    inc bx                                    ; 43                          ; 0xc3b79
+    mov ax, strict word 00003h                ; b8 03 00                    ; 0xc3b7a
+    mov dx, 001ceh                            ; ba ce 01                    ; 0xc3b7d
+    out DX, ax                                ; ef                          ; 0xc3b80
+    mov dx, bx                                ; 89 da                       ; 0xc3b81 vbe.c:563
+    mov ax, cx                                ; 89 c8                       ; 0xc3b83
+    call 031dah                               ; e8 52 f6                    ; 0xc3b85
+    mov dx, 001cfh                            ; ba cf 01                    ; 0xc3b88
+    out DX, ax                                ; ef                          ; 0xc3b8b
+    inc bx                                    ; 43                          ; 0xc3b8c vbe.c:564
+    inc bx                                    ; 43                          ; 0xc3b8d
+    mov ax, strict word 00004h                ; b8 04 00                    ; 0xc3b8e
+    mov dx, 001ceh                            ; ba ce 01                    ; 0xc3b91
+    out DX, ax                                ; ef                          ; 0xc3b94
+    mov ax, word [bp-008h]                    ; 8b 46 f8                    ; 0xc3b95 vbe.c:566
+    mov dx, 001cfh                            ; ba cf 01                    ; 0xc3b98
+    out DX, ax                                ; ef                          ; 0xc3b9b
+    mov si, strict word 00005h                ; be 05 00                    ; 0xc3b9c vbe.c:568
+    jmp short 03ba6h                          ; eb 05                       ; 0xc3b9f
+    cmp si, strict byte 00009h                ; 83 fe 09                    ; 0xc3ba1
+    jnbe short 03bbch                         ; 77 16                       ; 0xc3ba4
+    mov ax, si                                ; 89 f0                       ; 0xc3ba6 vbe.c:569
+    mov dx, 001ceh                            ; ba ce 01                    ; 0xc3ba8
+    out DX, ax                                ; ef                          ; 0xc3bab
+    mov dx, bx                                ; 89 da                       ; 0xc3bac vbe.c:570
+    mov ax, cx                                ; 89 c8                       ; 0xc3bae
+    call 031dah                               ; e8 27 f6                    ; 0xc3bb0
+    mov dx, 001cfh                            ; ba cf 01                    ; 0xc3bb3
+    out DX, ax                                ; ef                          ; 0xc3bb6
+    inc bx                                    ; 43                          ; 0xc3bb7 vbe.c:571
+    inc bx                                    ; 43                          ; 0xc3bb8
+    inc si                                    ; 46                          ; 0xc3bb9 vbe.c:572
+    jmp short 03ba1h                          ; eb e5                       ; 0xc3bba
+    lea sp, [bp-006h]                         ; 8d 66 fa                    ; 0xc3bbc vbe.c:574
+    pop si                                    ; 5e                          ; 0xc3bbf
+    pop cx                                    ; 59                          ; 0xc3bc0
+    pop bx                                    ; 5b                          ; 0xc3bc1
+    pop bp                                    ; 5d                          ; 0xc3bc2
+    retn                                      ; c3                          ; 0xc3bc3
+  ; disGetNextSymbol 0xc3bc4 LB 0x266 -> off=0x0 cb=000000000000008d uValue=00000000000c3bc4 'vbe_biosfn_save_restore_state'
+vbe_biosfn_save_restore_state:               ; 0xc3bc4 LB 0x8d
+    push bp                                   ; 55                          ; 0xc3bc4 vbe.c:590
+    mov bp, sp                                ; 89 e5                       ; 0xc3bc5
+    push si                                   ; 56                          ; 0xc3bc7
+    push di                                   ; 57                          ; 0xc3bc8
+    push ax                                   ; 50                          ; 0xc3bc9
+    mov si, ax                                ; 89 c6                       ; 0xc3bca
+    mov word [bp-006h], dx                    ; 89 56 fa                    ; 0xc3bcc
+    mov ax, bx                                ; 89 d8                       ; 0xc3bcf
+    mov bx, word [bp+004h]                    ; 8b 5e 04                    ; 0xc3bd1
+    mov di, strict word 0004fh                ; bf 4f 00                    ; 0xc3bd4 vbe.c:595
+    xor ah, ah                                ; 30 e4                       ; 0xc3bd7 vbe.c:596
+    cmp ax, strict word 00002h                ; 3d 02 00                    ; 0xc3bd9
+    je short 03c24h                           ; 74 46                       ; 0xc3bdc
+    cmp ax, strict word 00001h                ; 3d 01 00                    ; 0xc3bde
+    je short 03c08h                           ; 74 25                       ; 0xc3be1
+    test ax, ax                               ; 85 c0                       ; 0xc3be3
+    jne short 03c40h                          ; 75 59                       ; 0xc3be5
+    mov ax, word [bp-006h]                    ; 8b 46 fa                    ; 0xc3be7 vbe.c:598
+    call 02aa7h                               ; e8 ba ee                    ; 0xc3bea
+    mov cx, ax                                ; 89 c1                       ; 0xc3bed
+    test byte [bp-006h], 008h                 ; f6 46 fa 08                 ; 0xc3bef vbe.c:602
+    je short 03bfah                           ; 74 05                       ; 0xc3bf3
+    call 03ac6h                               ; e8 ce fe                    ; 0xc3bf5 vbe.c:603
+    add ax, cx                                ; 01 c8                       ; 0xc3bf8
+    add ax, strict word 0003fh                ; 05 3f 00                    ; 0xc3bfa vbe.c:604
+    mov CL, strict byte 006h                  ; b1 06                       ; 0xc3bfd
+    shr ax, CL                                ; d3 e8                       ; 0xc3bff
+    push SS                                   ; 16                          ; 0xc3c01
+    pop ES                                    ; 07                          ; 0xc3c02
+    mov word [es:bx], ax                      ; 26 89 07                    ; 0xc3c03
+    jmp short 03c43h                          ; eb 3b                       ; 0xc3c06 vbe.c:605
+    push SS                                   ; 16                          ; 0xc3c08 vbe.c:607
+    pop ES                                    ; 07                          ; 0xc3c09
+    mov bx, word [es:bx]                      ; 26 8b 1f                    ; 0xc3c0a
+    mov dx, cx                                ; 89 ca                       ; 0xc3c0d vbe.c:608
+    mov ax, word [bp-006h]                    ; 8b 46 fa                    ; 0xc3c0f
+    call 02adch                               ; e8 c7 ee                    ; 0xc3c12
+    test byte [bp-006h], 008h                 ; f6 46 fa 08                 ; 0xc3c15 vbe.c:612
+    je short 03c43h                           ; 74 28                       ; 0xc3c19
+    mov dx, ax                                ; 89 c2                       ; 0xc3c1b vbe.c:613
+    mov ax, cx                                ; 89 c8                       ; 0xc3c1d
+    call 03aceh                               ; e8 ac fe                    ; 0xc3c1f
+    jmp short 03c43h                          ; eb 1f                       ; 0xc3c22 vbe.c:614
+    push SS                                   ; 16                          ; 0xc3c24 vbe.c:616
+    pop ES                                    ; 07                          ; 0xc3c25
+    mov bx, word [es:bx]                      ; 26 8b 1f                    ; 0xc3c26
+    mov dx, cx                                ; 89 ca                       ; 0xc3c29 vbe.c:617
+    mov ax, word [bp-006h]                    ; 8b 46 fa                    ; 0xc3c2b
+    call 02e5dh                               ; e8 2c f2                    ; 0xc3c2e
+    test byte [bp-006h], 008h                 ; f6 46 fa 08                 ; 0xc3c31 vbe.c:621
+    je short 03c43h                           ; 74 0c                       ; 0xc3c35
+    mov dx, ax                                ; 89 c2                       ; 0xc3c37 vbe.c:622
+    mov ax, cx                                ; 89 c8                       ; 0xc3c39
+    call 03b29h                               ; e8 eb fe                    ; 0xc3c3b
+    jmp short 03c43h                          ; eb 03                       ; 0xc3c3e vbe.c:623
+    mov di, 00100h                            ; bf 00 01                    ; 0xc3c40 vbe.c:626
+    push SS                                   ; 16                          ; 0xc3c43 vbe.c:629
+    pop ES                                    ; 07                          ; 0xc3c44
+    mov word [es:si], di                      ; 26 89 3c                    ; 0xc3c45
+    lea sp, [bp-004h]                         ; 8d 66 fc                    ; 0xc3c48 vbe.c:630
+    pop di                                    ; 5f                          ; 0xc3c4b
+    pop si                                    ; 5e                          ; 0xc3c4c
+    pop bp                                    ; 5d                          ; 0xc3c4d
+    retn 00002h                               ; c2 02 00                    ; 0xc3c4e
+  ; disGetNextSymbol 0xc3c51 LB 0x1d9 -> off=0x0 cb=00000000000000e2 uValue=00000000000c3c51 'vbe_biosfn_get_set_scanline_length'
+vbe_biosfn_get_set_scanline_length:          ; 0xc3c51 LB 0xe2
+    push bp                                   ; 55                          ; 0xc3c51 vbe.c:651
+    mov bp, sp                                ; 89 e5                       ; 0xc3c52
+    push si                                   ; 56                          ; 0xc3c54
+    push di                                   ; 57                          ; 0xc3c55
+    sub sp, strict byte 0000ah                ; 83 ec 0a                    ; 0xc3c56
+    push ax                                   ; 50                          ; 0xc3c59
+    mov di, dx                                ; 89 d7                       ; 0xc3c5a
+    mov word [bp-006h], bx                    ; 89 5e fa                    ; 0xc3c5c
+    mov si, cx                                ; 89 ce                       ; 0xc3c5f
+    call 036b0h                               ; e8 4c fa                    ; 0xc3c61 vbe.c:660
+    cmp AL, strict byte 00fh                  ; 3c 0f                       ; 0xc3c64 vbe.c:661
+    jne short 03c6dh                          ; 75 05                       ; 0xc3c66
+    mov cx, strict word 00010h                ; b9 10 00                    ; 0xc3c68
+    jmp short 03c71h                          ; eb 04                       ; 0xc3c6b
+    xor ah, ah                                ; 30 e4                       ; 0xc3c6d
+    mov cx, ax                                ; 89 c1                       ; 0xc3c6f
+    mov ch, cl                                ; 88 cd                       ; 0xc3c71
+    call 036e8h                               ; e8 72 fa                    ; 0xc3c73 vbe.c:662
+    mov word [bp-00ah], ax                    ; 89 46 f6                    ; 0xc3c76
+    mov word [bp-00ch], strict word 0004fh    ; c7 46 f4 4f 00              ; 0xc3c79 vbe.c:663
+    push SS                                   ; 16                          ; 0xc3c7e vbe.c:664
+    pop ES                                    ; 07                          ; 0xc3c7f
+    mov bx, word [bp-006h]                    ; 8b 5e fa                    ; 0xc3c80
+    mov bx, word [es:bx]                      ; 26 8b 1f                    ; 0xc3c83
+    mov al, byte [es:di]                      ; 26 8a 05                    ; 0xc3c86 vbe.c:665
+    cmp AL, strict byte 002h                  ; 3c 02                       ; 0xc3c89 vbe.c:669
+    je short 03c98h                           ; 74 0b                       ; 0xc3c8b
+    cmp AL, strict byte 001h                  ; 3c 01                       ; 0xc3c8d
+    je short 03cc1h                           ; 74 30                       ; 0xc3c8f
+    test al, al                               ; 84 c0                       ; 0xc3c91
+    je short 03cbch                           ; 74 27                       ; 0xc3c93
+    jmp near 03d1ch                           ; e9 84 00                    ; 0xc3c95
+    cmp ch, 004h                              ; 80 fd 04                    ; 0xc3c98 vbe.c:671
+    jne short 03ca3h                          ; 75 06                       ; 0xc3c9b
+    mov CL, strict byte 003h                  ; b1 03                       ; 0xc3c9d vbe.c:672
+    sal bx, CL                                ; d3 e3                       ; 0xc3c9f
+    jmp short 03cbch                          ; eb 19                       ; 0xc3ca1 vbe.c:673
+    mov al, ch                                ; 88 e8                       ; 0xc3ca3 vbe.c:674
+    xor ah, ah                                ; 30 e4                       ; 0xc3ca5
+    cwd                                       ; 99                          ; 0xc3ca7
+    mov CL, strict byte 003h                  ; b1 03                       ; 0xc3ca8
+    sal dx, CL                                ; d3 e2                       ; 0xc3caa
     db  01bh, 0c2h
-    ; sbb ax, dx                                ; 1b c2                     ; 0xc3c58
-    sar ax, CL                                ; d3 f8                       ; 0xc3c5a
-    mov word [bp-00eh], ax                    ; 89 46 f2                    ; 0xc3c5c
-    mov ax, bx                                ; 89 d8                       ; 0xc3c5f
-    xor dx, dx                                ; 31 d2                       ; 0xc3c61
-    div word [bp-00eh]                        ; f7 76 f2                    ; 0xc3c63
-    mov bx, ax                                ; 89 c3                       ; 0xc3c66
-    mov ax, bx                                ; 89 d8                       ; 0xc3c68 vbe.c:677
-    call 03675h                               ; e8 08 fa                    ; 0xc3c6a
-    call 03694h                               ; e8 24 fa                    ; 0xc3c6d vbe.c:680
-    mov word [bp-008h], ax                    ; 89 46 f8                    ; 0xc3c70
-    push SS                                   ; 16                          ; 0xc3c73 vbe.c:681
-    pop ES                                    ; 07                          ; 0xc3c74
-    mov bx, word [bp-006h]                    ; 8b 5e fa                    ; 0xc3c75
-    mov word [es:bx], ax                      ; 26 89 07                    ; 0xc3c78
-    cmp ch, 004h                              ; 80 fd 04                    ; 0xc3c7b vbe.c:682
-    jne short 03c88h                          ; 75 08                       ; 0xc3c7e
-    mov CL, strict byte 003h                  ; b1 03                       ; 0xc3c80 vbe.c:683
-    mov bx, ax                                ; 89 c3                       ; 0xc3c82
-    shr bx, CL                                ; d3 eb                       ; 0xc3c84
-    jmp short 03c9eh                          ; eb 16                       ; 0xc3c86 vbe.c:684
-    mov al, ch                                ; 88 e8                       ; 0xc3c88 vbe.c:685
-    xor ah, ah                                ; 30 e4                       ; 0xc3c8a
-    cwd                                       ; 99                          ; 0xc3c8c
-    mov CL, strict byte 003h                  ; b1 03                       ; 0xc3c8d
-    sal dx, CL                                ; d3 e2                       ; 0xc3c8f
+    ; sbb ax, dx                                ; 1b c2                     ; 0xc3cac
+    sar ax, CL                                ; d3 f8                       ; 0xc3cae
+    mov word [bp-00eh], ax                    ; 89 46 f2                    ; 0xc3cb0
+    mov ax, bx                                ; 89 d8                       ; 0xc3cb3
+    xor dx, dx                                ; 31 d2                       ; 0xc3cb5
+    div word [bp-00eh]                        ; f7 76 f2                    ; 0xc3cb7
+    mov bx, ax                                ; 89 c3                       ; 0xc3cba
+    mov ax, bx                                ; 89 d8                       ; 0xc3cbc vbe.c:677
+    call 036c9h                               ; e8 08 fa                    ; 0xc3cbe
+    call 036e8h                               ; e8 24 fa                    ; 0xc3cc1 vbe.c:680
+    mov word [bp-008h], ax                    ; 89 46 f8                    ; 0xc3cc4
+    push SS                                   ; 16                          ; 0xc3cc7 vbe.c:681
+    pop ES                                    ; 07                          ; 0xc3cc8
+    mov bx, word [bp-006h]                    ; 8b 5e fa                    ; 0xc3cc9
+    mov word [es:bx], ax                      ; 26 89 07                    ; 0xc3ccc
+    cmp ch, 004h                              ; 80 fd 04                    ; 0xc3ccf vbe.c:682
+    jne short 03cdch                          ; 75 08                       ; 0xc3cd2
+    mov CL, strict byte 003h                  ; b1 03                       ; 0xc3cd4 vbe.c:683
+    mov bx, ax                                ; 89 c3                       ; 0xc3cd6
+    shr bx, CL                                ; d3 eb                       ; 0xc3cd8
+    jmp short 03cf2h                          ; eb 16                       ; 0xc3cda vbe.c:684
+    mov al, ch                                ; 88 e8                       ; 0xc3cdc vbe.c:685
+    xor ah, ah                                ; 30 e4                       ; 0xc3cde
+    cwd                                       ; 99                          ; 0xc3ce0
+    mov CL, strict byte 003h                  ; b1 03                       ; 0xc3ce1
+    sal dx, CL                                ; d3 e2                       ; 0xc3ce3
     db  01bh, 0c2h
-    ; sbb ax, dx                                ; 1b c2                     ; 0xc3c91
-    sar ax, CL                                ; d3 f8                       ; 0xc3c93
-    mov bx, ax                                ; 89 c3                       ; 0xc3c95
-    mov ax, word [bp-008h]                    ; 8b 46 f8                    ; 0xc3c97
-    mul bx                                    ; f7 e3                       ; 0xc3c9a
-    mov bx, ax                                ; 89 c3                       ; 0xc3c9c
-    add bx, strict byte 00003h                ; 83 c3 03                    ; 0xc3c9e vbe.c:686
-    and bl, 0fch                              ; 80 e3 fc                    ; 0xc3ca1
-    push SS                                   ; 16                          ; 0xc3ca4 vbe.c:687
-    pop ES                                    ; 07                          ; 0xc3ca5
-    mov word [es:di], bx                      ; 26 89 1d                    ; 0xc3ca6
-    call 036adh                               ; e8 01 fa                    ; 0xc3ca9 vbe.c:688
-    push SS                                   ; 16                          ; 0xc3cac
-    pop ES                                    ; 07                          ; 0xc3cad
-    mov word [es:si], ax                      ; 26 89 04                    ; 0xc3cae
-    call 03624h                               ; e8 70 f9                    ; 0xc3cb1 vbe.c:689
-    push SS                                   ; 16                          ; 0xc3cb4
-    pop ES                                    ; 07                          ; 0xc3cb5
-    cmp ax, word [es:si]                      ; 26 3b 04                    ; 0xc3cb6
-    jbe short 03ccdh                          ; 76 12                       ; 0xc3cb9
-    mov ax, word [bp-00ah]                    ; 8b 46 f6                    ; 0xc3cbb vbe.c:690
-    call 03675h                               ; e8 b4 f9                    ; 0xc3cbe
-    mov word [bp-00ch], 00200h                ; c7 46 f4 00 02              ; 0xc3cc1 vbe.c:691
-    jmp short 03ccdh                          ; eb 05                       ; 0xc3cc6 vbe.c:693
-    mov word [bp-00ch], 00100h                ; c7 46 f4 00 01              ; 0xc3cc8 vbe.c:696
-    push SS                                   ; 16                          ; 0xc3ccd vbe.c:699
-    pop ES                                    ; 07                          ; 0xc3cce
-    mov ax, word [bp-00ch]                    ; 8b 46 f4                    ; 0xc3ccf
-    mov bx, word [bp-010h]                    ; 8b 5e f0                    ; 0xc3cd2
-    mov word [es:bx], ax                      ; 26 89 07                    ; 0xc3cd5
-    lea sp, [bp-004h]                         ; 8d 66 fc                    ; 0xc3cd8 vbe.c:700
-    pop di                                    ; 5f                          ; 0xc3cdb
-    pop si                                    ; 5e                          ; 0xc3cdc
-    pop bp                                    ; 5d                          ; 0xc3cdd
-    retn                                      ; c3                          ; 0xc3cde
+    ; sbb ax, dx                                ; 1b c2                     ; 0xc3ce5
+    sar ax, CL                                ; d3 f8                       ; 0xc3ce7
+    mov bx, ax                                ; 89 c3                       ; 0xc3ce9
+    mov ax, word [bp-008h]                    ; 8b 46 f8                    ; 0xc3ceb
+    mul bx                                    ; f7 e3                       ; 0xc3cee
+    mov bx, ax                                ; 89 c3                       ; 0xc3cf0
+    add bx, strict byte 00003h                ; 83 c3 03                    ; 0xc3cf2 vbe.c:686
+    and bl, 0fch                              ; 80 e3 fc                    ; 0xc3cf5
+    push SS                                   ; 16                          ; 0xc3cf8 vbe.c:687
+    pop ES                                    ; 07                          ; 0xc3cf9
+    mov word [es:di], bx                      ; 26 89 1d                    ; 0xc3cfa
+    call 03701h                               ; e8 01 fa                    ; 0xc3cfd vbe.c:688
+    push SS                                   ; 16                          ; 0xc3d00
+    pop ES                                    ; 07                          ; 0xc3d01
+    mov word [es:si], ax                      ; 26 89 04                    ; 0xc3d02
+    call 03678h                               ; e8 70 f9                    ; 0xc3d05 vbe.c:689
+    push SS                                   ; 16                          ; 0xc3d08
+    pop ES                                    ; 07                          ; 0xc3d09
+    cmp ax, word [es:si]                      ; 26 3b 04                    ; 0xc3d0a
+    jbe short 03d21h                          ; 76 12                       ; 0xc3d0d
+    mov ax, word [bp-00ah]                    ; 8b 46 f6                    ; 0xc3d0f vbe.c:690
+    call 036c9h                               ; e8 b4 f9                    ; 0xc3d12
+    mov word [bp-00ch], 00200h                ; c7 46 f4 00 02              ; 0xc3d15 vbe.c:691
+    jmp short 03d21h                          ; eb 05                       ; 0xc3d1a vbe.c:693
+    mov word [bp-00ch], 00100h                ; c7 46 f4 00 01              ; 0xc3d1c vbe.c:696
+    push SS                                   ; 16                          ; 0xc3d21 vbe.c:699
+    pop ES                                    ; 07                          ; 0xc3d22
+    mov ax, word [bp-00ch]                    ; 8b 46 f4                    ; 0xc3d23
+    mov bx, word [bp-010h]                    ; 8b 5e f0                    ; 0xc3d26
+    mov word [es:bx], ax                      ; 26 89 07                    ; 0xc3d29
+    lea sp, [bp-004h]                         ; 8d 66 fc                    ; 0xc3d2c vbe.c:700
+    pop di                                    ; 5f                          ; 0xc3d2f
+    pop si                                    ; 5e                          ; 0xc3d30
+    pop bp                                    ; 5d                          ; 0xc3d31
+    retn                                      ; c3                          ; 0xc3d32
+  ; disGetNextSymbol 0xc3d33 LB 0xf7 -> off=0x0 cb=00000000000000f7 uValue=00000000000c3d33 'private_biosfn_custom_mode'
+private_biosfn_custom_mode:                  ; 0xc3d33 LB 0xf7
+    push bp                                   ; 55                          ; 0xc3d33 vbe.c:726
+    mov bp, sp                                ; 89 e5                       ; 0xc3d34
+    push si                                   ; 56                          ; 0xc3d36
+    push di                                   ; 57                          ; 0xc3d37
+    sub sp, strict byte 00006h                ; 83 ec 06                    ; 0xc3d38
+    push ax                                   ; 50                          ; 0xc3d3b
+    mov si, dx                                ; 89 d6                       ; 0xc3d3c
+    mov di, cx                                ; 89 cf                       ; 0xc3d3e
+    mov word [bp-00ah], strict word 0004fh    ; c7 46 f6 4f 00              ; 0xc3d40 vbe.c:739
+    push SS                                   ; 16                          ; 0xc3d45 vbe.c:740
+    pop ES                                    ; 07                          ; 0xc3d46
+    mov al, byte [es:si]                      ; 26 8a 04                    ; 0xc3d47
+    test al, al                               ; 84 c0                       ; 0xc3d4a vbe.c:741
+    jne short 03d6eh                          ; 75 20                       ; 0xc3d4c
+    push SS                                   ; 16                          ; 0xc3d4e vbe.c:743
+    pop ES                                    ; 07                          ; 0xc3d4f
+    mov bx, word [es:bx]                      ; 26 8b 1f                    ; 0xc3d50
+    mov ax, word [es:di]                      ; 26 8b 05                    ; 0xc3d53 vbe.c:744
+    mov word [bp-008h], ax                    ; 89 46 f8                    ; 0xc3d56
+    mov al, byte [es:si+001h]                 ; 26 8a 44 01                 ; 0xc3d59 vbe.c:745
+    and ax, strict word 0007fh                ; 25 7f 00                    ; 0xc3d5d
+    mov ch, al                                ; 88 c5                       ; 0xc3d60
+    cmp AL, strict byte 008h                  ; 3c 08                       ; 0xc3d62 vbe.c:750
+    je short 03d76h                           ; 74 10                       ; 0xc3d64
+    cmp AL, strict byte 010h                  ; 3c 10                       ; 0xc3d66
+    je short 03d76h                           ; 74 0c                       ; 0xc3d68
+    cmp AL, strict byte 020h                  ; 3c 20                       ; 0xc3d6a
+    je short 03d76h                           ; 74 08                       ; 0xc3d6c
+    mov word [bp-00ah], 00100h                ; c7 46 f6 00 01              ; 0xc3d6e vbe.c:751
+    jmp near 03e18h                           ; e9 a2 00                    ; 0xc3d73 vbe.c:752
+    push SS                                   ; 16                          ; 0xc3d76 vbe.c:756
+    pop ES                                    ; 07                          ; 0xc3d77
+    test byte [es:si+001h], 080h              ; 26 f6 44 01 80              ; 0xc3d78
+    je short 03d84h                           ; 74 05                       ; 0xc3d7d
+    mov ax, strict word 00040h                ; b8 40 00                    ; 0xc3d7f
+    jmp short 03d86h                          ; eb 02                       ; 0xc3d82
+    xor ax, ax                                ; 31 c0                       ; 0xc3d84
+    mov byte [bp-006h], al                    ; 88 46 fa                    ; 0xc3d86
+    cmp bx, 00280h                            ; 81 fb 80 02                 ; 0xc3d89 vbe.c:759
+    jnc short 03d94h                          ; 73 05                       ; 0xc3d8d
+    mov bx, 00280h                            ; bb 80 02                    ; 0xc3d8f vbe.c:760
+    jmp short 03d9dh                          ; eb 09                       ; 0xc3d92 vbe.c:761
+    cmp bx, 00a00h                            ; 81 fb 00 0a                 ; 0xc3d94
+    jbe short 03d9dh                          ; 76 03                       ; 0xc3d98
+    mov bx, 00a00h                            ; bb 00 0a                    ; 0xc3d9a vbe.c:762
+    mov ax, word [bp-008h]                    ; 8b 46 f8                    ; 0xc3d9d vbe.c:763
+    cmp ax, 001e0h                            ; 3d e0 01                    ; 0xc3da0
+    jnc short 03dach                          ; 73 07                       ; 0xc3da3
+    mov word [bp-008h], 001e0h                ; c7 46 f8 e0 01              ; 0xc3da5 vbe.c:764
+    jmp short 03db6h                          ; eb 0a                       ; 0xc3daa vbe.c:765
+    cmp ax, 00780h                            ; 3d 80 07                    ; 0xc3dac
+    jbe short 03db6h                          ; 76 05                       ; 0xc3daf
+    mov word [bp-008h], 00780h                ; c7 46 f8 80 07              ; 0xc3db1 vbe.c:766
+    mov dx, strict word 0ffffh                ; ba ff ff                    ; 0xc3db6 vbe.c:772
+    mov ax, 003b6h                            ; b8 b6 03                    ; 0xc3db9
+    call 0371ah                               ; e8 5b f9                    ; 0xc3dbc
+    mov si, ax                                ; 89 c6                       ; 0xc3dbf
+    mov al, ch                                ; 88 e8                       ; 0xc3dc1 vbe.c:775
+    xor ah, ah                                ; 30 e4                       ; 0xc3dc3
+    cwd                                       ; 99                          ; 0xc3dc5
+    mov CL, strict byte 003h                  ; b1 03                       ; 0xc3dc6
+    sal dx, CL                                ; d3 e2                       ; 0xc3dc8
+    db  01bh, 0c2h
+    ; sbb ax, dx                                ; 1b c2                     ; 0xc3dca
+    sar ax, CL                                ; d3 f8                       ; 0xc3dcc
+    mov dx, ax                                ; 89 c2                       ; 0xc3dce
+    mov ax, bx                                ; 89 d8                       ; 0xc3dd0
+    mul dx                                    ; f7 e2                       ; 0xc3dd2
+    add ax, strict word 00003h                ; 05 03 00                    ; 0xc3dd4 vbe.c:776
+    and AL, strict byte 0fch                  ; 24 fc                       ; 0xc3dd7
+    mov dx, word [bp-008h]                    ; 8b 56 f8                    ; 0xc3dd9 vbe.c:778
+    mul dx                                    ; f7 e2                       ; 0xc3ddc
+    cmp dx, si                                ; 39 f2                       ; 0xc3dde vbe.c:780
+    jnbe short 03de8h                         ; 77 06                       ; 0xc3de0
+    jne short 03defh                          ; 75 0b                       ; 0xc3de2
+    test ax, ax                               ; 85 c0                       ; 0xc3de4
+    jbe short 03defh                          ; 76 07                       ; 0xc3de6
+    mov word [bp-00ah], 00200h                ; c7 46 f6 00 02              ; 0xc3de8 vbe.c:782
+    jmp short 03e18h                          ; eb 29                       ; 0xc3ded vbe.c:783
+    xor ax, ax                                ; 31 c0                       ; 0xc3def vbe.c:787
+    call 00600h                               ; e8 0c c8                    ; 0xc3df1
+    mov al, ch                                ; 88 e8                       ; 0xc3df4 vbe.c:788
+    xor ah, ah                                ; 30 e4                       ; 0xc3df6
+    call 03691h                               ; e8 96 f8                    ; 0xc3df8
+    mov ax, bx                                ; 89 d8                       ; 0xc3dfb vbe.c:789
+    call 0363ah                               ; e8 3a f8                    ; 0xc3dfd
+    mov ax, word [bp-008h]                    ; 8b 46 f8                    ; 0xc3e00 vbe.c:790
+    call 03659h                               ; e8 53 f8                    ; 0xc3e03
+    xor ax, ax                                ; 31 c0                       ; 0xc3e06 vbe.c:791
+    call 00626h                               ; e8 1b c8                    ; 0xc3e08
+    mov al, byte [bp-006h]                    ; 8a 46 fa                    ; 0xc3e0b vbe.c:792
+    or AL, strict byte 001h                   ; 0c 01                       ; 0xc3e0e
+    xor ah, ah                                ; 30 e4                       ; 0xc3e10
+    call 00600h                               ; e8 eb c7                    ; 0xc3e12
+    call 006f8h                               ; e8 e0 c8                    ; 0xc3e15 vbe.c:793
+    push SS                                   ; 16                          ; 0xc3e18 vbe.c:801
+    pop ES                                    ; 07                          ; 0xc3e19
+    mov ax, word [bp-00ah]                    ; 8b 46 f6                    ; 0xc3e1a
+    mov bx, word [bp-00ch]                    ; 8b 5e f4                    ; 0xc3e1d
+    mov word [es:bx], ax                      ; 26 89 07                    ; 0xc3e20
+    lea sp, [bp-004h]                         ; 8d 66 fc                    ; 0xc3e23 vbe.c:802
+    pop di                                    ; 5f                          ; 0xc3e26
+    pop si                                    ; 5e                          ; 0xc3e27
+    pop bp                                    ; 5d                          ; 0xc3e28
+    retn                                      ; c3                          ; 0xc3e29
 
-  ; Padding 0x721 bytes at 0xc3cdf
-  times 1825 db 0
+  ; Padding 0x5d6 bytes at 0xc3e2a
+  times 1494 db 0
 
 section VBE32 progbits vstart=0x4400 align=1 ; size=0x115 class=CODE group=AUTO
   ; disGetNextSymbol 0xc4400 LB 0x115 -> off=0x0 cb=0000000000000114 uValue=00000000000c0000 'vesa_pm_start'
@@ -7533,7 +7669,7 @@ vesa_pm_end:                                 ; 0xc4514 LB 0x1
 section _DATA progbits vstart=0x4600 align=1 ; size=0x3732 class=DATA group=DGROUP
   ; disGetNextSymbol 0xc4600 LB 0x3732 -> off=0x0 cb=0000000000000034 uValue=00000000000c0000 '_msg_vga_init'
 _msg_vga_init:                               ; 0xc4600 LB 0x34
-    db  'Oracle VM VirtualBox Version 6.0.0_BETA1 VGA BIOS', 00dh, 00ah, 000h
+    db  'Oracle VM VirtualBox Version 6.0.0_BETA2 VGA BIOS', 00dh, 00ah, 000h
   ; disGetNextSymbol 0xc4634 LB 0x36fe -> off=0x0 cb=0000000000000080 uValue=00000000000c0034 'vga_modes'
 vga_modes:                                   ; 0xc4634 LB 0x80
     db  000h, 000h, 000h, 004h, 000h, 0b8h, 0ffh, 002h, 001h, 000h, 000h, 004h, 000h, 0b8h, 0ffh, 002h
@@ -8452,7 +8588,7 @@ _vbebios_product_name:                       ; 0xc7c94 LB 0x21
     db  'Oracle VM VirtualBox VBE Adapter', 000h
   ; disGetNextSymbol 0xc7cb5 LB 0x7d -> off=0x0 cb=0000000000000029 uValue=00000000000c36b5 '_vbebios_product_revision'
 _vbebios_product_revision:                   ; 0xc7cb5 LB 0x29
-    db  'Oracle VM VirtualBox Version 6.0.0_BETA1', 000h
+    db  'Oracle VM VirtualBox Version 6.0.0_BETA2', 000h
   ; disGetNextSymbol 0xc7cde LB 0x54 -> off=0x0 cb=000000000000002b uValue=00000000000c36de '_vbebios_info_string'
 _vbebios_info_string:                        ; 0xc7cde LB 0x2b
     db  'VirtualBox VBE Display Adapter enabled', 00dh, 00ah, 00dh, 00ah, 000h
@@ -8465,12 +8601,12 @@ section CONST progbits vstart=0x7d32 align=1 ; size=0x0 class=DATA group=DGROUP
 section CONST2 progbits vstart=0x7d32 align=1 ; size=0x0 class=DATA group=DGROUP
 
   ; Padding 0x2ce bytes at 0xc7d32
-    db  001h, 000h, 000h, 000h, 000h, 001h, 000h, 000h, 000h, 000h, 000h, 000h, 045h, 03ah, 05ch, 076h
-    db  062h, 06fh, 078h, 05ch, 073h, 076h, 06eh, 05ch, 074h, 072h, 075h, 06eh, 06bh, 05ch, 06fh, 075h
-    db  074h, 05ch, 077h, 069h, 06eh, 02eh, 061h, 06dh, 064h, 036h, 034h, 05ch, 072h, 065h, 06ch, 065h
-    db  061h, 073h, 065h, 05ch, 06fh, 062h, 06ah, 05ch, 056h, 042h, 06fh, 078h, 056h, 067h, 061h, 042h
-    db  069h, 06fh, 073h, 038h, 030h, 038h, 036h, 05ch, 056h, 042h, 06fh, 078h, 056h, 067h, 061h, 042h
-    db  069h, 06fh, 073h, 038h, 030h, 038h, 036h, 02eh, 073h, 079h, 06dh, 000h, 000h, 000h, 000h, 000h
+    db  001h, 000h, 000h, 000h, 000h, 001h, 000h, 000h, 000h, 000h, 000h, 000h, 02fh, 068h, 06fh, 06dh
+    db  065h, 02fh, 076h, 062h, 06fh, 078h, 02fh, 076h, 062h, 06fh, 078h, 02dh, 048h, 045h, 041h, 044h
+    db  02fh, 06fh, 075h, 074h, 02fh, 06ch, 069h, 06eh, 075h, 078h, 02eh, 061h, 06dh, 064h, 036h, 034h
+    db  02fh, 072h, 065h, 06ch, 065h, 061h, 073h, 065h, 02fh, 06fh, 062h, 06ah, 02fh, 056h, 042h, 06fh
+    db  078h, 056h, 067h, 061h, 042h, 069h, 06fh, 073h, 038h, 030h, 038h, 036h, 02fh, 056h, 042h, 06fh
+    db  078h, 056h, 067h, 061h, 042h, 069h, 06fh, 073h, 038h, 030h, 038h, 036h, 02eh, 073h, 079h, 06dh
     db  000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h
     db  000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h
     db  000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h
@@ -8509,4 +8645,4 @@ section CONST2 progbits vstart=0x7d32 align=1 ; size=0x0 class=DATA group=DGROUP
     db  000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h
     db  000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h
     db  000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h
-    db  000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 060h
+    db  000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 061h
