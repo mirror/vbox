@@ -28,11 +28,13 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
+#define LOG_GROUP RTLOGGROUP_DBG
 #include <iprt/dbg.h>
 #include "internal/iprt.h"
 
 #include <iprt/avl.h>
 #include <iprt/err.h>
+#include <iprt/log.h>
 #include <iprt/mem.h>
 #define RTDBGMODCNT_WITH_MEM_CACHE
 #ifdef RTDBGMODCNT_WITH_MEM_CACHE
@@ -409,6 +411,9 @@ static DECLCALLBACK(uint32_t) rtDbgModContainer_SymbolCount(PRTDBGMODINT pMod)
  */
 static void rtDbgModContainer_SymbolReplace(PRTDBGMODCTN pThis, PAVLRUINTPTRTREE pAddrTree, PRTDBGMODCTNSYMBOL pToRemove)
 {
+    RTLogPrintf("rtDbgModContainer_SymbolReplace: pToRemove=%p ordinal=%u %04x:%08RX64 %s\n",
+         pToRemove, pToRemove->OrdinalCore.Key, pToRemove->iSeg, pToRemove->AddrCore.Key, pToRemove->NameCore.pszString);
+
     /* Unlink it. */
     PRTSTRSPACECORE pRemovedName = RTStrSpaceRemove(&pThis->Names, pToRemove->NameCore.pszString);
     Assert(pRemovedName); RT_NOREF_PV(pRemovedName);
@@ -425,14 +430,19 @@ static void rtDbgModContainer_SymbolReplace(PRTDBGMODCTN pThis, PAVLRUINTPTRTREE
 
     RTMemFree(pToRemove);
 
-    /* Jump the last symbol ordinal to take its place. */
-    PAVLU32NODECORE pLastOrdinal = RTAvlU32Remove(&pThis->SymbolOrdinalTree, pThis->iNextSymbolOrdinal - 1);
-    AssertReturnVoid(pLastOrdinal);
+    /* Jump the last symbol ordinal to take its place, unless pToRemove is the last one. */
+    if (iOrdinal >= pThis->iNextSymbolOrdinal - 1)
+        pThis->iNextSymbolOrdinal -= 1;
+    else
+    {
+        PAVLU32NODECORE pLastOrdinal = RTAvlU32Remove(&pThis->SymbolOrdinalTree, pThis->iNextSymbolOrdinal - 1);
+        AssertReturnVoid(pLastOrdinal);
 
-    pThis->iNextSymbolOrdinal -= 1;
-    pLastOrdinal->Key = iOrdinal;
-    bool fInsert = RTAvlU32Insert(&pThis->SymbolOrdinalTree, pLastOrdinal);
-    Assert(fInsert); RT_NOREF_PV(fInsert);
+        pThis->iNextSymbolOrdinal -= 1;
+        pLastOrdinal->Key = iOrdinal;
+        bool fInsert = RTAvlU32Insert(&pThis->SymbolOrdinalTree, pLastOrdinal);
+        Assert(fInsert); RT_NOREF_PV(fInsert);
+    }
 }
 
 
@@ -493,6 +503,8 @@ static DECLCALLBACK(int) rtDbgModContainer_SymbolAdd(PRTDBGMODINT pMod, const ch
                      */
                     if (piOrdinal)
                         *piOrdinal = pThis->iNextSymbolOrdinal;
+                    RTLogPrintf("rtDbgModContainer_SymbolAdd: ordinal=%u %04x:%08RX64 LB %#RX64 %s\n",
+                           pThis->iNextSymbolOrdinal, iSeg, off, cb, pSymbol->NameCore.pszString);
                     pThis->iNextSymbolOrdinal++;
                     return rc;
                 }
@@ -558,6 +570,8 @@ static DECLCALLBACK(int) rtDbgModContainer_SymbolAdd(PRTDBGMODINT pMod, const ch
                             if (piOrdinal)
                                 *piOrdinal = pThis->iNextSymbolOrdinal;
                             pThis->iNextSymbolOrdinal++;
+                            RTLogPrintf("rtDbgModContainer_SymbolAdd: ordinal=%u %04x:%08RX64 LB %#RX64 %s [replace codepath]\n",
+                                   pThis->iNextSymbolOrdinal, iSeg, off, cb, pSymbol->NameCore.pszString);
                             return rc;
                         }
 
