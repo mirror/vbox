@@ -20,7 +20,6 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #define LOG_GROUP LOG_GROUP_DEFAULT /** @todo log group */
-#define UNUSED(x) (void)(x)
 
 #define FUSE_USE_VERSION 27
 #if defined(RT_OS_DARWIN) || defined(RT_OS_LINUX) || defined(RT_OS_FEEBSD)
@@ -48,6 +47,7 @@
 #include <VirtualBox_XPCOM.h>
 #include <VBox/com/VirtualBox.h>
 #include <VBox/vd.h>
+#include <VBox/vd-ifs.h>
 #include <VBox/log.h>
 #include <VBox/err.h>
 #include <VBox/com/ErrorInfo.h>
@@ -59,9 +59,9 @@
 #include <VBox/com/errorprint.h>
 
 #include <iprt/initterm.h>
-#include <iprt/critsect.h>
 #include <iprt/assert.h>
 #include <iprt/message.h>
+#include <iprt/critsect.h>
 #include <iprt/asm.h>
 #include <iprt/mem.h>
 #include <iprt/string.h>
@@ -69,6 +69,10 @@
 #include <iprt/stream.h>
 #include <iprt/types.h>
 #include <iprt/path.h>
+
+#pragma GCC diagnostic ignored "-Wunused-variable"
+#pragma GCC diagnostic ignored "-Wunused-parameter"
+#pragma GCC diagnostic ignored "-Wunused-function"
 
 using namespace com;
 
@@ -84,33 +88,33 @@ union
 } g_u;
 
 
-/** The VDRead/VDWrite block granularity. */
-#define VBoxRAW_MIN_SIZE               512
-/** Offset mask corresponding to VBoxRAW_MIN_SIZE. */
-#define VBoxRAW_MIN_SIZE_MASK_OFF      (0x1ff)
-/** Block mask corresponding to VBoxRAW_MIN_SIZE. */
-#define VBoxRAW_MIN_SIZE_MASK_BLK      (~UINT64_C(0x1ff))
+#define VD_SECTOR_SIZE                   0x200 /* 0t512 */
+#define VD_SECTOR_MASK                   (VD_SECTOR_SIZE - 1)
+#define VD_SECTOR_OUT_OF_BOUNDS_MASK     (~UINT64_C(VD_SECTOR_MASK))
 
-#define PADMAX                      50
-#define MAX_ID_LEN                  256
-#define CSTR(arg) Utf8Str(arg).c_str()
+#define PADMAX                           50
+#define MAX_ID_LEN                       256
+#define CSTR(arg)                        Utf8Str(arg).c_str()
 
 static struct fuse_operations   g_vboxrawOps;
-PVDISK      g_pVDisk;
-int32_t     g_cReaders;
-int32_t     g_cWriters;
-RTFOFF      g_cbPrimary;
-char        *g_pszBaseImageName;
-char        *g_pszBaseImagePath;
+PVDISK                g_pVDisk;
+int32_t               g_cReaders;
+int32_t               g_cWriters;
+RTFOFF                g_cbPrimary;
+char                 *g_pszBaseImageName;
+char                 *g_pszBaseImagePath;
+PVDINTERFACE          g_pVdIfs;             /** @todo Remove when VD I/O becomes threadsafe */
+VDINTERFACETHREADSYNC g_VDIfThreadSync;     /** @todo Remove when VD I/O becomes threadsafe */
+RTCRITSECT            g_vdioLock;           /** @todo Remove when VD I/O becomes threadsafe */
 
 char *nsIDToString(nsID *guid);
 void printErrorInfo();
 /** XPCOM stuff */
 
 static struct vboxrawOpts {
-     char *pszVm;
-     char *pszImage;
-     char *pszImageUuid;
+     char    *pszVm;
+     char    *pszImage;
+     char    *pszImageUuid;
      uint32_t cHddImageDiffMax;
      uint32_t fList;
      uint32_t fAllowRoot;
@@ -234,6 +238,33 @@ if (pInfo->flags & notsup)
 
 }
 
+/** @todo Remove when VD I/O becomes threadsafe */
+static DECLCALLBACK(int) vboxrawThreadStartRead(void *pvUser)
+{
+    PRTCRITSECT vdioLock = (PRTCRITSECT)pvUser;
+    return RTCritSectEnter(vdioLock);
+}
+
+static DECLCALLBACK(int) vboxrawThreadFinishRead(void *pvUser)
+{
+    PRTCRITSECT vdioLock = (PRTCRITSECT)pvUser;
+    return RTCritSectLeave(vdioLock);
+}
+
+static DECLCALLBACK(int) vboxrawThreadStartWrite(void *pvUser)
+{
+    PRTCRITSECT vdioLock = (PRTCRITSECT)pvUser;
+    return RTCritSectEnter(vdioLock);
+}
+
+static DECLCALLBACK(int) vboxrawThreadFinishWrite(void *pvUser)
+{
+    PRTCRITSECT vdioLock = (PRTCRITSECT)pvUser;
+    return RTCritSectLeave(vdioLock);
+}
+
+/** @todo (end of to do section) */
+
 /** @copydoc fuse_operations::release */
 static int vboxrawOp_release(const char *pszPath, struct fuse_file_info *pInfo)
 {
@@ -259,322 +290,248 @@ static int vboxrawOp_release(const char *pszPath, struct fuse_file_info *pInfo)
     return 0;
 }
 
-static int retryableVDRead(PVDISK pvDisk, uint64_t offset, void *pvBuf, size_t cbRead)
+
+/**
+ * VD read Sanitizer taking care of unaligned accesses.
+ *
+ * @return  VBox status code.
+ * @param   pDisk    VD disk container.
+ * @param   off      Offset to start reading from.
+ * @param   pvBuf    Pointer to the buffer to read into.
+ * @param   cbRead   Amount of bytes to read.
+ */
+static int vdReadSanitizer(PVDISK pDisk, uint64_t off, void *pvBuf, size_t cbRead)
 {
-    int rc = -1;
-    int cRetry = 5;
-    do
+    int rc;
+
+    uint64_t const cbMisalignHead = off & VD_SECTOR_MASK;
+    uint64_t const cbcbMisalignTail  = (off + cbRead) & VD_SECTOR_MASK;
+
+    if (cbMisalignHead + cbcbMisalignTail == 0) /* perfectly aligned request; just read it and done */
+        rc = VDRead(pDisk, off, pvBuf, cbRead);
+    else
     {
-        if (cRetry < 5)
-            Log(("(rc=%d retrying read)\n", rc));
-        rc = VDRead(pvDisk, offset, pvBuf, cbRead);
-    } while (RT_FAILURE(rc) && --cRetry);
-    return rc;
+        uint8_t *pbBuf = (uint8_t *)pvBuf;
+        uint8_t abBuf[VD_SECTOR_SIZE];
+
+        /* If offset not @ sector boundary, read whole sector, then copy unaligned
+         * bytes (requested by user), only up to sector boundary, into user's buffer
+         */
+        if (cbMisalignHead)
+        {
+            rc = VDRead(pDisk, off - cbMisalignHead, abBuf, VD_SECTOR_SIZE);
+            if (RT_SUCCESS(rc))
+            {
+                size_t const cbPart = RT_MIN(VD_SECTOR_SIZE - cbMisalignHead, cbRead);
+                memcpy(pbBuf, &abBuf[cbMisalignHead], cbPart);
+                pbBuf  += cbPart;
+                off    += cbPart; /* Beginning of next sector or EOD */
+                cbRead -= cbPart; /* # left to read */
+            }
+        }
+        else /* user's offset already aligned, did nothing */
+            rc = VINF_SUCCESS;
+
+        /* Read remaining aligned sectors, deferring any tail-skewed bytes */
+        if (RT_SUCCESS(rc) && cbRead >= VD_SECTOR_SIZE)
+        {
+            Assert(!(off % VD_SECTOR_SIZE));
+
+            size_t cbPart = cbRead - cbcbMisalignTail;
+            Assert(!(cbPart % VD_SECTOR_SIZE));
+            rc = VDRead(pDisk, off, pbBuf, cbPart);
+            if (RT_SUCCESS(rc))
+            {
+                pbBuf  += cbPart;
+                off    += cbPart;
+                cbRead -= cbPart;
+            }
+        }
+
+        /* Unaligned buffered read of tail. */
+        if (RT_SUCCESS(rc) && cbRead)
+        {
+            Assert(cbRead == cbcbMisalignTail);
+            Assert(cbRead < VD_SECTOR_SIZE);
+            Assert(!(off % VD_SECTOR_SIZE));
+
+            rc = VDRead(pDisk, off, abBuf, VD_SECTOR_SIZE);
+            if (RT_SUCCESS(rc))
+                memcpy(pbBuf, abBuf, cbRead);
+        }
+    }
+
+    if (RT_FAILURE(rc))
+    {
+        int sysrc = -RTErrConvertToErrno(rc);
+        LogFlowFunc(("error: %s (vbox err: %d)\n", strerror(sysrc), rc));
+        rc = sysrc;
+    }
+    return cbRead;
 }
+
+/**
+ * VD write Sanitizer taking care of unaligned accesses.
+ *
+ * @return  VBox status code.
+ * @param   pDisk    VD disk container.
+ * @param   off      Offset to start writing to.
+ * @param   pvSrc    Pointer to the buffer to read from.
+ * @param   cbWrite  Amount of bytes to write.
+ */
+static int vdWriteSanitizer(PVDISK pDisk, uint64_t off, const void *pvSrc, size_t cbWrite)
+{
+    uint8_t const *pbSrc = (uint8_t const *)pvSrc;
+    uint8_t        abBuf[4096];
+    int rc;
+    int cbRemaining = cbWrite;
+    /*
+     * Take direct route if the request is sector aligned.
+     */
+    uint64_t const cbMisalignHead = off & 511;
+    size_t   const cbcbMisalignTail  = (off + cbWrite) & 511;
+    if (!cbMisalignHead && !cbcbMisalignTail)
+    {
+          rc = VDWrite(pDisk, off, pbSrc, cbWrite);
+          do
+            {
+                size_t cbThisWrite = RT_MIN(cbWrite, sizeof(abBuf));
+                rc = VDWrite(pDisk, off, memcpy(abBuf, pbSrc, cbThisWrite), cbThisWrite);
+                if (RT_SUCCESS(rc))
+                {
+                    pbSrc   += cbThisWrite;
+                    off     += cbThisWrite;
+                    cbRemaining -= cbThisWrite;
+                }
+                else
+                    break;
+            } while (cbRemaining > 0);
+    }
+    else
+    {
+        /*
+         * Unaligned buffered read+write of head.  Aligns the offset.
+         */
+        if (cbMisalignHead)
+        {
+            rc = VDRead(pDisk, off - cbMisalignHead, abBuf, VD_SECTOR_SIZE);
+            if (RT_SUCCESS(rc))
+            {
+                size_t const cbPart = RT_MIN(VD_SECTOR_SIZE - cbMisalignHead, cbWrite);
+                memcpy(&abBuf[cbMisalignHead], pbSrc, cbPart);
+                rc = VDWrite(pDisk, off - cbMisalignHead, abBuf, VD_SECTOR_SIZE);
+                if (RT_SUCCESS(rc))
+                {
+                    pbSrc   += cbPart;
+                    off     += cbPart;
+                    cbRemaining -= cbPart;
+                }
+            }
+        }
+        else
+            rc = VINF_SUCCESS;
+
+        /*
+         * Aligned direct write.
+         */
+        if (RT_SUCCESS(rc) && cbWrite >= VD_SECTOR_SIZE)
+        {
+            Assert(!(off % VD_SECTOR_SIZE));
+            size_t cbPart = cbWrite - cbcbMisalignTail;
+            Assert(!(cbPart % VD_SECTOR_SIZE));
+            rc = VDWrite(pDisk, off, pbSrc, cbPart);
+            if (RT_SUCCESS(rc))
+            {
+                pbSrc   += cbPart;
+                off     += cbPart;
+                cbRemaining -= cbPart;
+            }
+        }
+
+        /*
+         * Unaligned buffered read + write of tail.
+         */
+        if (   RT_SUCCESS(rc) && cbWrite > 0)
+        {
+            Assert(cbWrite == cbcbMisalignTail);
+            Assert(cbWrite < VD_SECTOR_SIZE);
+            Assert(!(off % VD_SECTOR_SIZE));
+            rc = VDRead(pDisk, off, abBuf, VD_SECTOR_SIZE);
+            if (RT_SUCCESS(rc))
+            {
+                memcpy(abBuf, pbSrc, cbWrite);
+                rc = VDWrite(pDisk, off, abBuf, VD_SECTOR_SIZE);
+            }
+        }
+    }
+    if (RT_FAILURE(rc))
+    {
+        int sysrc = -RTErrConvertToErrno(rc);
+        LogFlowFunc(("error: %s (vbox err: %d)\n", strerror(sysrc), rc));
+        return sysrc;
+    }
+    return cbWrite - cbRemaining;
+}
+
 
 /** @copydoc fuse_operations::read */
 static int vboxrawOp_read(const char *pszPath, char *pbBuf, size_t cbBuf,
                            off_t offset, struct fuse_file_info *pInfo)
 {
-
     (void) pszPath;
     (void) pInfo;
 
     LogFlowFunc(("my offset=%#llx size=%#zx path=\"%s\"\n", (uint64_t)offset, cbBuf, pszPath));
 
-    /* paranoia */
+    AssertReturn(offset >= 0, -EINVAL);
     AssertReturn((int)cbBuf >= 0, -EINVAL);
     AssertReturn((unsigned)cbBuf == cbBuf, -EINVAL);
-    AssertReturn(offset >= 0, -EINVAL);
-    AssertReturn((off_t)(offset + cbBuf) >= offset, -EINVAL);
 
-    int rc;
+    int rc = 0;
     if ((off_t)(offset + cbBuf) < offset)
         rc = -EINVAL;
     else if (offset >= g_cbPrimary)
-        rc = 0;
+        return 0;
     else if (!cbBuf)
-        rc = 0;
-    else
-    {
-        /* Adjust for EOF. */
-        if ((off_t)(offset + cbBuf) >= g_cbPrimary)
-            cbBuf = g_cbPrimary - offset;
+        return 0;
 
-        /*
-         * Aligned read?
-         */
-        int rc2;
-        if (    !(offset & VBoxRAW_MIN_SIZE_MASK_OFF)
-            &&  !(cbBuf   & VBoxRAW_MIN_SIZE_MASK_OFF))
-        {
-                rc2 = retryableVDRead(g_pVDisk, offset, pbBuf, cbBuf);
-                if (RT_FAILURE(rc2))
-                {
-                    rc = -RTErrConvertToErrno(rc2);
-                    LogFlowFunc(("error: rc2=%d, rc=%d, %s\n", rc2, rc, strerror(rc)));
-                    return rc;
-                }
-        }
-        else
-        {
-            /*
-             * Unaligned read - lots of extra work.
-             */
-            uint8_t abBlock[VBoxRAW_MIN_SIZE];
-            if (((offset + cbBuf) & VBoxRAW_MIN_SIZE_MASK_BLK) == (offset & VBoxRAW_MIN_SIZE_MASK_BLK))
-            {
-                /* a single partial block. */
-                rc2 = retryableVDRead(g_pVDisk, offset & VBoxRAW_MIN_SIZE_MASK_BLK, abBlock, VBoxRAW_MIN_SIZE);
-                if (RT_SUCCESS(rc2))
-                {
-                    memcpy(pbBuf, &abBlock[offset & VBoxRAW_MIN_SIZE_MASK_OFF], cbBuf);
-                }
-                else
-                {
-                    rc = -RTErrConvertToErrno(rc2);
-                    LogFlowFunc(("error: rc2=%d, rc=%d, %s\n", rc2, rc, strerror(rc)));
-                    return rc;
-                }
-            }
-            else
-            {
-                /* read unaligned head. */
-                rc2 = VINF_SUCCESS;
-                if (offset & VBoxRAW_MIN_SIZE_MASK_OFF)
-                {
-                    rc2 = retryableVDRead(g_pVDisk, offset & VBoxRAW_MIN_SIZE_MASK_BLK, abBlock, VBoxRAW_MIN_SIZE);
-                    if (RT_SUCCESS(rc2))
-                    {
-                        size_t cbCopy = VBoxRAW_MIN_SIZE - (offset & VBoxRAW_MIN_SIZE_MASK_OFF);
-                        memcpy(pbBuf, &abBlock[offset & VBoxRAW_MIN_SIZE_MASK_OFF], cbCopy);
-                        pbBuf   += cbCopy;
-                        offset += cbCopy;
-                        cbBuf   -= cbCopy;
-                    }
-                    else
-                    {
-                        rc = -RTErrConvertToErrno(rc2);
-                        LogFlowFunc(("error: rc2=%d, rc=%d, %s\n", rc2, rc, strerror(rc)));
-                        return rc;
-                    }
-                }
-
-                /* read the middle. */
-                Assert(!(offset & VBoxRAW_MIN_SIZE_MASK_OFF));
-                if (cbBuf >= VBoxRAW_MIN_SIZE && RT_SUCCESS(rc2))
-                {
-                    size_t cbRead = cbBuf & VBoxRAW_MIN_SIZE_MASK_BLK;
-                    rc2 = retryableVDRead(g_pVDisk, offset, pbBuf, cbRead);
-                    if (RT_SUCCESS(rc2))
-                    {
-                        pbBuf   += cbRead;
-                        offset += cbRead;
-                        cbBuf   -= cbRead;
-                    }
-                    else
-                    {
-                        rc = -RTErrConvertToErrno(rc2);
-                        LogFlowFunc(("error: rc2=%d, rc=%d, %s\n", rc2, rc, strerror(rc)));
-                        return rc;
-                    }
-                }
-
-                /* unaligned tail read. */
-                Assert(cbBuf < VBoxRAW_MIN_SIZE);
-                Assert(!(offset & VBoxRAW_MIN_SIZE_MASK_OFF));
-                if (cbBuf && RT_SUCCESS(rc2))
-                {
-                    rc2 = retryableVDRead(g_pVDisk, offset, abBlock, VBoxRAW_MIN_SIZE);
-                    if (RT_SUCCESS(rc2)) {
-                        memcpy(pbBuf, &abBlock[0], cbBuf);
-                    }
-                    else
-                    {
-                        rc = -RTErrConvertToErrno(rc2);
-                        LogFlowFunc(("error: rc2=%d, rc=%d, %s\n", rc2, rc, strerror(rc)));
-                        return rc;
-                    }
-                }
-            }
-        }
-
-        /* convert the return code */
-        if (RT_SUCCESS(rc2))
-            rc = cbBuf;
-        else
-        {
-            rc = -RTErrConvertToErrno(rc2);
-            LogFlowFunc(("Error rc2=%d, rc=%d=%s\n", rc2, rc, strerror(rc)));
-        }
-        return rc;
-    }
+    if (rc >= 0)
+        rc = vdReadSanitizer(g_pVDisk, offset, pbBuf, cbBuf);
+    if (rc < 0)
+        LogFlowFunc(("%s\n", strerror(rc)));
     return rc;
 }
 
-/** @copydoc fuse_operations::write */
+/** @… fuse_operations::write */
 static int vboxrawOp_write(const char *pszPath, const char *pbBuf, size_t cbBuf,
                            off_t offset, struct fuse_file_info *pInfo)
 {
-
     (void) pszPath;
     (void) pInfo;
 
-
-    AssertReturn((int)cbBuf >= 0, -EINVAL);
-    AssertReturn((unsigned)cbBuf == cbBuf, -EINVAL);
-    AssertReturn(offset >= 0, -EINVAL);
-    AssertReturn((off_t)(offset + cbBuf) >= offset, -EINVAL);
-
-
     LogFlowFunc(("offset=%#llx size=%#zx path=\"%s\"\n", (uint64_t)offset, cbBuf, pszPath));
 
-    int rc;
-    if (!g_vboxrawOpts.fRW)
-        rc = -EPERM;
-    else if ((off_t)(offset + cbBuf) < offset)
+    AssertReturn(offset >= 0, -EINVAL);
+    AssertReturn((int)cbBuf >= 0, -EINVAL);
+    AssertReturn((unsigned)cbBuf == cbBuf, -EINVAL);
+
+    int rc = 0;
+    if (!g_vboxrawOpts.fRW) {
+        LogFlowFunc(("WARNING: vboxraw (FUSE FS) --rw option not specified\n"
+                     "              (write operation ignored w/o error!)\n"));
+        return cbBuf;
+    } else if ((off_t)(offset + cbBuf) < offset)
         rc = -EINVAL;
     else if (offset >= g_cbPrimary)
-        rc = 0;
+        return 0;
     else if (!cbBuf)
-        rc = 0;
-    else
-    {
-        /* Adjust for EOF. */
-        if ((off_t)(offset + cbBuf) >= g_cbPrimary)
-            cbBuf = g_cbPrimary - offset;
+        return 0;
 
-        /*
-         * Aligned write?
-         */
-        int rc2;
-        if (    !(offset & VBoxRAW_MIN_SIZE_MASK_OFF)
-            &&  !(cbBuf   & VBoxRAW_MIN_SIZE_MASK_OFF))
-        {
-                rc2 = VDWrite(g_pVDisk, offset, pbBuf, cbBuf);
-                if (RT_FAILURE(rc2))
-                {
-                    rc = -RTErrConvertToErrno(rc2);
-                    LogFlowFunc(("error: rc2=%d, rc=%d, %s\n", rc2, rc, strerror(rc)));
-                    return rc;
-                }
-        }
-        else
-        {
-            /*
-             * Unaligned write - lots of extra work.
-             */
-            uint8_t abBlock[VBoxRAW_MIN_SIZE];
-            if (((offset + cbBuf) & VBoxRAW_MIN_SIZE_MASK_BLK) == (offset & VBoxRAW_MIN_SIZE_MASK_BLK))
-            {
-                /* a single partial block. */
-                rc2 = VDRead(g_pVDisk, offset & VBoxRAW_MIN_SIZE_MASK_BLK, abBlock, VBoxRAW_MIN_SIZE);
-                if (RT_SUCCESS(rc2))
-                {
-                    memcpy(&abBlock[offset & VBoxRAW_MIN_SIZE_MASK_OFF], pbBuf, cbBuf);
-                    /* Update the block */
-                    rc2 = VDWrite(g_pVDisk, offset & VBoxRAW_MIN_SIZE_MASK_BLK, abBlock, VBoxRAW_MIN_SIZE);
-                    if (RT_FAILURE(rc2))
-                    {
-                        rc = -RTErrConvertToErrno(rc2);
-                        LogFlowFunc(("error: rc2=%d, rc=%d, %s\n", rc2, rc, strerror(rc)));
-                        return rc;
-                    }
-                }
-                else
-                {
-                    rc = -RTErrConvertToErrno(rc2);
-                    LogFlowFunc(("error: rc2=%d, rc=%d, %s\n", rc2, rc, strerror(rc)));
-                    return rc;
-                }
-            }
-            else
-            {
-                /* read unaligned head. */
-                rc2 = VINF_SUCCESS;
-                if (offset & VBoxRAW_MIN_SIZE_MASK_OFF)
-                {
-                    rc2 = VDRead(g_pVDisk, offset & VBoxRAW_MIN_SIZE_MASK_BLK, abBlock, VBoxRAW_MIN_SIZE);
-                    if (RT_SUCCESS(rc2))
-                    {
-                        size_t cbCopy = VBoxRAW_MIN_SIZE - (offset & VBoxRAW_MIN_SIZE_MASK_OFF);
-                        memcpy(&abBlock[offset & VBoxRAW_MIN_SIZE_MASK_OFF], pbBuf, cbCopy);
-                        pbBuf   += cbCopy;
-                        offset += cbCopy;
-                        cbBuf   -= cbCopy;
-                        rc2 = VDWrite(g_pVDisk, offset & VBoxRAW_MIN_SIZE_MASK_BLK, abBlock, VBoxRAW_MIN_SIZE);
-                        if (RT_FAILURE(rc2))
-                        {
-                            rc = -RTErrConvertToErrno(rc2);
-                            LogFlowFunc(("error: rc2=%d, rc=%d, %s\n", rc2, rc, strerror(rc)));
-                            return rc;
-                        }
-                    }
-                    else
-                    {
-                        rc = -RTErrConvertToErrno(rc2);
-                        LogFlowFunc(("error: rc2=%d, rc=%d, %s\n", rc2, rc, strerror(rc)));
-                        return rc;
-                    }
-                }
+    if (rc >= 0)
+        rc = vdWriteSanitizer(g_pVDisk, offset, pbBuf, cbBuf);
+    if (rc < 0)
+        LogFlowFunc(("%s\n", strerror(rc)));
 
-                /* write the middle. */
-                Assert(!(offset & VBoxRAW_MIN_SIZE_MASK_OFF));
-                if (cbBuf >= VBoxRAW_MIN_SIZE && RT_SUCCESS(rc2))
-                {
-                    size_t cbWrite = cbBuf & VBoxRAW_MIN_SIZE_MASK_BLK;
-                    rc2 = VDWrite(g_pVDisk, offset, pbBuf, cbWrite);
-                    if (RT_SUCCESS(rc2))
-                    {
-                        pbBuf   += cbWrite;
-                        offset += cbWrite;
-                        cbBuf   -= cbWrite;
-                    }
-                    if (RT_FAILURE(rc2))
-                    {
-                        rc = -RTErrConvertToErrno(rc2);
-                        LogFlowFunc(("error: rc2=%d, rc=%d, %s\n", rc2, rc, strerror(rc)));
-                        return rc;
-                    }
-                }
-
-                /* unaligned tail write. */
-                Assert(cbBuf < VBoxRAW_MIN_SIZE);
-                Assert(!(offset & VBoxRAW_MIN_SIZE_MASK_OFF));
-                if (cbBuf && RT_SUCCESS(rc2))
-                {
-                    rc2 = VDRead(g_pVDisk, offset, abBlock, VBoxRAW_MIN_SIZE);
-                    if (RT_SUCCESS(rc2))
-                    {
-                        memcpy(&abBlock[0], pbBuf, cbBuf);
-                        rc2 = VDWrite(g_pVDisk, offset, abBlock, VBoxRAW_MIN_SIZE);
-                        if (RT_FAILURE(rc2))
-                        {
-                            rc = -RTErrConvertToErrno(rc2);
-                            LogFlowFunc(("error: rc2=%d, rc=%d, %s\n", rc2, rc, strerror(rc)));
-                            return rc;
-                        }
-                    }
-                    else
-                    {
-                        rc = -RTErrConvertToErrno(rc2);
-                        LogFlowFunc(("error: rc2=%d, rc=%d, %s\n", rc2, rc, strerror(rc)));
-                        return rc;
-                    }
-                }
-            }
-        }
-
-        /* convert the return code */
-        if (RT_SUCCESS(rc2))
-            rc = cbBuf;
-        else
-        {
-            rc = -RTErrConvertToErrno(rc2);
-            LogFlowFunc(("Error rc2=%d, rc=%d=%s\n", rc2, rc, strerror(rc)));
-            return rc;
-        }
-    }
     return rc;
 }
 
@@ -993,12 +950,28 @@ main(int argc, char **argv)
                         "failed (during HDD container creation), rc=%Rrc\n", g_pszBaseImagePath, rc);
                 if (g_vboxrawOpts.fVerbose)
                     RTPrintf("vboxraw: Creating container for base image of format %s\n", pszFormat);
+                /** @todo Remove I/O CB's and crit sect. when VDRead()/VDWrite() are made threadsafe */
+                rc = RTCritSectInit(&g_vdioLock);
+                if (RT_SUCCESS(rc))
+                {
+                    g_VDIfThreadSync.pfnStartRead   = vboxrawThreadStartRead;
+                    g_VDIfThreadSync.pfnFinishRead  = vboxrawThreadFinishRead;
+                    g_VDIfThreadSync.pfnStartWrite  = vboxrawThreadStartWrite;
+                    g_VDIfThreadSync.pfnFinishWrite = vboxrawThreadFinishWrite;
+                    rc = VDInterfaceAdd(&g_VDIfThreadSync.Core, "vboxraw_ThreadSync", VDINTERFACETYPE_THREADSYNC,
+                                        &g_vdioLock, sizeof(VDINTERFACETHREADSYNC), &g_pVdIfs);
+                }
+                else
+                    return RTMsgErrorExitFailure("vboxraw: ERROR: Failed to create critsects "
+                                                 "for virtual disk I/O, rc=%Rrc\n", rc);
 
                 g_pVDisk = NULL;
-                rc = VDCreate(NULL /* pVDIIfsDisk */, enmType, &g_pVDisk);
+                rc = VDCreate(g_pVdIfs, enmType, &g_pVDisk);
                 if (NS_FAILED(rc))
                     return RTMsgErrorExitFailure("vboxraw: ERROR: Couldn't create virtual disk container\n");
             }
+            /** @todo (end of to do section) */
+
             if ( g_vboxrawOpts.cHddImageDiffMax != 0 && diffNumber > g_vboxrawOpts.cHddImageDiffMax)
                 break;
 
