@@ -1162,7 +1162,7 @@
         The OS/2 Guest Additions are provided on the same ISO CD-ROM as
         those for the other platforms. Mount the ISO in OS/2 as
         described previously. The OS/2 Guest Additions are located in
-        the directory <computeroutput>\32bit\OS2</computeroutput>.
+        the directory <computeroutput>\OS2</computeroutput>.
       </para>
 
       <para>
