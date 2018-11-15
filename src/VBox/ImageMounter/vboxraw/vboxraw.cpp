@@ -305,9 +305,9 @@ static int vdReadSanitizer(PVDISK pDisk, uint64_t off, void *pvBuf, size_t cbRea
     int rc;
 
     uint64_t const cbMisalignHead = off & VD_SECTOR_MASK;
-    uint64_t const cbcbMisalignTail  = (off + cbRead) & VD_SECTOR_MASK;
+    uint64_t const cbMisalignTail  = (off + cbRead) & VD_SECTOR_MASK;
 
-    if (cbMisalignHead + cbcbMisalignTail == 0) /* perfectly aligned request; just read it and done */
+    if (cbMisalignHead + cbMisalignTail == 0) /* perfectly aligned request; just read it and done */
         rc = VDRead(pDisk, off, pvBuf, cbRead);
     else
     {
@@ -337,7 +337,7 @@ static int vdReadSanitizer(PVDISK pDisk, uint64_t off, void *pvBuf, size_t cbRea
         {
             Assert(!(off % VD_SECTOR_SIZE));
 
-            size_t cbPart = cbRead - cbcbMisalignTail;
+            size_t cbPart = cbRead - cbMisalignTail;
             Assert(!(cbPart % VD_SECTOR_SIZE));
             rc = VDRead(pDisk, off, pbBuf, cbPart);
             if (RT_SUCCESS(rc))
@@ -351,7 +351,7 @@ static int vdReadSanitizer(PVDISK pDisk, uint64_t off, void *pvBuf, size_t cbRea
         /* Unaligned buffered read of tail. */
         if (RT_SUCCESS(rc) && cbRead)
         {
-            Assert(cbRead == cbcbMisalignTail);
+            Assert(cbRead == cbMisalignTail);
             Assert(cbRead < VD_SECTOR_SIZE);
             Assert(!(off % VD_SECTOR_SIZE));
 
@@ -389,8 +389,8 @@ static int vdWriteSanitizer(PVDISK pDisk, uint64_t off, const void *pvSrc, size_
      * Take direct route if the request is sector aligned.
      */
     uint64_t const cbMisalignHead = off & 511;
-    size_t   const cbcbMisalignTail  = (off + cbWrite) & 511;
-    if (!cbMisalignHead && !cbcbMisalignTail)
+    size_t   const cbMisalignTail  = (off + cbWrite) & 511;
+    if (!cbMisalignHead && !cbMisalignTail)
     {
           rc = VDWrite(pDisk, off, pbSrc, cbWrite);
           do
@@ -437,7 +437,7 @@ static int vdWriteSanitizer(PVDISK pDisk, uint64_t off, const void *pvSrc, size_
         if (RT_SUCCESS(rc) && cbWrite >= VD_SECTOR_SIZE)
         {
             Assert(!(off % VD_SECTOR_SIZE));
-            size_t cbPart = cbWrite - cbcbMisalignTail;
+            size_t cbPart = cbWrite - cbMisalignTail;
             Assert(!(cbPart % VD_SECTOR_SIZE));
             rc = VDWrite(pDisk, off, pbSrc, cbPart);
             if (RT_SUCCESS(rc))
@@ -453,7 +453,7 @@ static int vdWriteSanitizer(PVDISK pDisk, uint64_t off, const void *pvSrc, size_
          */
         if (   RT_SUCCESS(rc) && cbWrite > 0)
         {
-            Assert(cbWrite == cbcbMisalignTail);
+            Assert(cbWrite == cbMisalignTail);
             Assert(cbWrite < VD_SECTOR_SIZE);
             Assert(!(off % VD_SECTOR_SIZE));
             rc = VDRead(pDisk, off, abBuf, VD_SECTOR_SIZE);
@@ -502,7 +502,7 @@ static int vboxrawOp_read(const char *pszPath, char *pbBuf, size_t cbBuf,
     return rc;
 }
 
-/** @… fuse_operations::write */
+/** @copydoc fuse_operations::write */
 static int vboxrawOp_write(const char *pszPath, const char *pbBuf, size_t cbBuf,
                            off_t offset, struct fuse_file_info *pInfo)
 {
