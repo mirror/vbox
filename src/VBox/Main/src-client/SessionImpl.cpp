@@ -736,6 +736,7 @@ HRESULT Session::onRecordingChange(BOOL aEnable)
 
     return mConsole->i_onRecordingChange(aEnable);
 #else
+    RT_NOREF(aEnable);
     return S_OK;
 #endif
 }
