@@ -28,6 +28,73 @@ are ordered as follows:
                            So, we use chapter and xpointer="xpointer(/chapter/)" with xi:include. -->
 
   <sect1>
+    <title>Version 6.0.0_BETA2 (2018-xx-xx)</title>
+
+    <para>This is a beta release. The following major new features
+      were added:</para>
+
+    <itemizedlist>
+
+      <listitem>
+        <para>User interface: guest/host file manager</para>
+      </listitem>
+
+    </itemizedlist>
+
+    <para>In addition, the following items were fixed and/or added:</para>
+
+    <itemizedlist>
+
+      <listitem>
+        <para>Oracle Cloud integration fixes and improvements</para>
+      </listitem>
+
+      <listitem>
+        <para>User interface: many improvements</para>
+      </listitem>
+
+      <listitem>
+        <para>Audio/Video recording fixes and improvements</para>
+      </listitem>
+
+      <listitem>
+        <para>Devices: new BusLogic ISA variant</para>
+      </listitem>
+
+      <listitem>
+        <para>Devices: serial port fixes</para>
+      </listitem>
+
+      <listitem>
+        <para>BIOS: fixes</para>
+      </listitem>
+
+      <listitem>
+        <para>API: transparently resize disk images when merging if
+           possible</para>
+      </listitem>
+
+      <listitem>
+        <para>Solaris: installer fixes</para>
+      </listitem>
+
+      <listitem>
+        <para>Windows Guest Addiitons: fix incorrect tablet co-ordinate
+           handling with recent Windows 10 builds</para>
+      </listitem>
+
+      <listitem>
+        <para>Guest Additions: improved shared folder auto-mounting</para>
+      </listitem>
+
+      <listitem>
+        <para>OS/2 Guest Additions: initial shared folder support</para>
+      </listitem>
+
+    </itemizedlist>
+  </sect1>
+
+  <sect1>
     <title>Version 6.0.0_BETA1 (2018-10-22)</title>
 
     <para>This is a beta release. The following major new features
