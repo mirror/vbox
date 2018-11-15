@@ -711,11 +711,11 @@ int RecordingStream::SendVideoFrame(uint32_t x, uint32_t y, uint32_t uPixelForma
 
             try
             {
-                RecordingBlocks *pRECORDINGBLOCKs = new RecordingBlocks();
-                pRECORDINGBLOCKs->List.push_back(pBlock);
+                RecordingBlocks *pRecordingBlocks = new RecordingBlocks();
+                pRecordingBlocks->List.push_back(pBlock);
 
                 Assert(this->Blocks.Map.find(uTimeStampMs) == this->Blocks.Map.end());
-                this->Blocks.Map.insert(std::make_pair(uTimeStampMs, pRECORDINGBLOCKs));
+                this->Blocks.Map.insert(std::make_pair(uTimeStampMs, pRecordingBlocks));
             }
             catch (const std::exception &ex)
             {
