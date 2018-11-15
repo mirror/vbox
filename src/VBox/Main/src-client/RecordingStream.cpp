@@ -429,6 +429,9 @@ int RecordingStream::Process(RecordingBlockMap &mapBlocksCommon)
             delete pBlock;
         }
 
+        Assert(pBlocks->List.empty());
+        delete pBlocks;
+
         Blocks.Map.erase(itStreamBlocks);
         itStreamBlocks = Blocks.Map.begin();
     }
