@@ -3623,8 +3623,8 @@ void UIActionPoolRuntime::updateMenuMachine()
     fSeparator = addAction(pMenu, action(UIActionIndexRT_M_Machine_S_TakeSnapshot)) || fSeparator;
     /* 'Information Dialog' action: */
     fSeparator = addAction(pMenu, action(UIActionIndexRT_M_Machine_S_ShowInformation)) || fSeparator;
-#ifdef VBOX_GUI_WITH_GUEST_CONTROL_UI
     fSeparator = addAction(pMenu, action(UIActionIndexRT_M_Machine_S_ShowGuestControlFileManager)) || fSeparator;
+#ifdef VBOX_GUI_WITH_GUEST_CONTROL_UI
     fSeparator = addAction(pMenu, action(UIActionIndexRT_M_Machine_S_ShowGuestProcessControl)) || fSeparator;
 #endif
     /* Separator: */
