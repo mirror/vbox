@@ -5565,7 +5565,7 @@
     </message>
     <message>
         <source>Auto-mount</source>
-        <translation>Αυτόματη προσάρτηση</translation>
+        <translation type="vanished">Αυτόματη προσάρτηση</translation>
     </message>
     <message>
         <source>Yes</source>
@@ -5598,6 +5598,14 @@
     <message>
         <source>Shared &amp;Folders</source>
         <translation>Κοινόχρηστοι Φάκελοι</translation>
+    </message>
+    <message>
+        <source>Auto Mount</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>At</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -5645,6 +5653,14 @@
     <message>
         <source>When checked, this shared folder will be permanent.</source>
         <translation>Όταν επιλεγεί, ο κοινός φάκελος θα είναι μόνιμος.</translation>
+    </message>
+    <message>
+        <source>Mount point:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Where to automatically mount the folder in the guest.  A drive letter (e.g. &apos;G:&apos;) for Windows and OS/2 guests, path for the others.  If left empty the guest will pick something fitting.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

@@ -6116,7 +6116,7 @@
     </message>
     <message>
         <source>Auto-mount</source>
-        <translation>Auto-Montar</translation>
+        <translation type="vanished">Auto-Montar</translation>
     </message>
     <message>
         <source>Yes</source>
@@ -6125,6 +6125,14 @@
     <message>
         <source>Shared &amp;Folders</source>
         <translation type="unfinished">&amp;Pastas Partilhadas</translation>
+    </message>
+    <message>
+        <source>Auto Mount</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>At</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -6179,6 +6187,14 @@
     </message>
     <message>
         <source>When checked, this shared folder will be permanent.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Mount point:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Where to automatically mount the folder in the guest.  A drive letter (e.g. &apos;G:&apos;) for Windows and OS/2 guests, path for the others.  If left empty the guest will pick something fitting.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

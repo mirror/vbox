@@ -4913,7 +4913,7 @@
     </message>
     <message>
         <source>Auto-mount</source>
-        <translation>自動掛載</translation>
+        <translation type="vanished">自動掛載</translation>
     </message>
     <message>
         <source>Yes</source>
@@ -4946,6 +4946,14 @@
     <message>
         <source>Shared &amp;Folders</source>
         <translation>共用資料夾(&amp;F)</translation>
+    </message>
+    <message>
+        <source>Auto Mount</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>At</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -4993,6 +5001,14 @@
     <message>
         <source>When checked, this shared folder will be permanent.</source>
         <translation>勾選時，這個共用資料夾將永久存在。</translation>
+    </message>
+    <message>
+        <source>Mount point:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Where to automatically mount the folder in the guest.  A drive letter (e.g. &apos;G:&apos;) for Windows and OS/2 guests, path for the others.  If left empty the guest will pick something fitting.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

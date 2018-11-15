@@ -1878,7 +1878,7 @@
 <context>
     <name>UICloudProfileManager</name>
     <message>
-        <location filename="../src/cloud/UICloudProfileManager.cpp" line="+953"/>
+        <location filename="../src/cloud/UICloudProfileManager.cpp" line="+923"/>
         <source>Cloud Profile Manager</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1931,7 +1931,7 @@
 <context>
     <name>UICloudProfileManagerWidget</name>
     <message>
-        <location line="-665"/>
+        <location line="-635"/>
         <source>Add Profile</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1954,66 +1954,66 @@
 <context>
     <name>UIDetails</name>
     <message>
-        <location filename="../src/manager/details/UIDetailsElements.cpp" line="+244"/>
+        <location filename="../src/manager/details/UIDetailsElements.cpp" line="+245"/>
         <source>Name</source>
         <comment>details (general)</comment>
         <translation type="unfinished">Izena</translation>
     </message>
     <message>
-        <location line="+3"/>
+        <location line="+4"/>
         <source>Operating System</source>
         <comment>details (general)</comment>
         <translation type="unfinished">Sistema Eragilea</translation>
     </message>
     <message>
-        <location line="+7"/>
+        <location line="+5"/>
         <source>Settings File Location</source>
         <comment>details (general)</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+20"/>
+        <location line="+21"/>
         <source>Groups</source>
         <comment>details (general)</comment>
         <translation type="unfinished">Taldeak</translation>
     </message>
     <message>
-        <location line="+4"/>
-        <location line="+102"/>
-        <location line="+94"/>
-        <location line="+80"/>
-        <location line="+50"/>
-        <location line="+81"/>
-        <location line="+59"/>
-        <location line="+50"/>
-        <location line="+28"/>
-        <location line="+89"/>
-        <location line="+28"/>
+        <location line="+5"/>
+        <location line="+138"/>
+        <location line="+125"/>
+        <location line="+109"/>
+        <location line="+68"/>
+        <location line="+107"/>
+        <location line="+105"/>
+        <location line="+71"/>
+        <location line="+46"/>
+        <location line="+107"/>
+        <location line="+46"/>
         <source>Information Inaccessible</source>
         <comment>details</comment>
         <translation type="unfinished">Argibideak eskuraezin</translation>
     </message>
     <message>
-        <location line="-640"/>
+        <location line="-885"/>
         <source>Base Memory</source>
         <comment>details (system)</comment>
         <translation type="unfinished">Ohinarri Oroimena</translation>
     </message>
     <message>
         <location line="+1"/>
-        <location line="+103"/>
+        <location line="+139"/>
         <source>%1 MB</source>
         <comment>details</comment>
         <translation type="unfinished">%1 MB</translation>
     </message>
     <message>
-        <location line="-98"/>
+        <location line="-132"/>
         <source>Processors</source>
         <comment>details (system)</comment>
         <translation type="unfinished">Prozesagailuak</translation>
     </message>
     <message>
-        <location line="+6"/>
+        <location line="+9"/>
         <source>Execution Cap</source>
         <comment>details (system)</comment>
         <translation type="unfinished">Exekuzio Muga</translation>
@@ -2025,19 +2025,19 @@
         <translation type="unfinished">%1%</translation>
     </message>
     <message>
-        <location line="+13"/>
+        <location line="+16"/>
         <source>Boot Order</source>
         <comment>details (system)</comment>
         <translation type="unfinished">Abiarazpen Hurrenkera</translation>
     </message>
     <message>
-        <location line="+5"/>
+        <location line="+8"/>
         <source>Chipset Type</source>
         <comment>details (system)</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+11"/>
+        <location line="+14"/>
         <source>EFI</source>
         <comment>details (system)</comment>
         <translation type="unfinished"></translation>
@@ -2055,7 +2055,7 @@
         <translation type="unfinished">Ezgaituta</translation>
     </message>
     <message>
-        <location line="+12"/>
+        <location line="+15"/>
         <source>VT-x/AMD-V</source>
         <comment>details (system)</comment>
         <translation type="unfinished">VT-x/AMD-V</translation>
@@ -2067,13 +2067,13 @@
         <translation type="unfinished">Nested Orrialdeztapena</translation>
     </message>
     <message>
-        <location line="+4"/>
+        <location line="+5"/>
         <source>PAE/NX</source>
         <comment>details (system)</comment>
         <translation type="unfinished">PAE/NX</translation>
     </message>
     <message>
-        <location line="+3"/>
+        <location line="+4"/>
         <source>Minimal Paravirtualization</source>
         <comment>details (system)</comment>
         <translation type="unfinished">Parabirtualizazio Txikiena</translation>
@@ -2097,25 +2097,25 @@
         <translation type="unfinished">Bizkorpena</translation>
     </message>
     <message>
-        <location line="+26"/>
+        <location line="+43"/>
         <source>Video Memory</source>
         <comment>details (display)</comment>
         <translation type="unfinished">Bideo Oroimena</translation>
     </message>
     <message>
-        <location line="+6"/>
+        <location line="+8"/>
         <source>Screens</source>
         <comment>details (display)</comment>
         <translation type="unfinished">Ikusleihoak</translation>
     </message>
     <message>
-        <location line="+14"/>
+        <location line="+17"/>
         <source>Scale-factor</source>
         <comment>details (display)</comment>
         <translation type="unfinished">Eskala-ezaugarria</translation>
     </message>
     <message>
-        <location line="+8"/>
+        <location line="+12"/>
         <source>2D Video</source>
         <comment>details (display)</comment>
         <translation type="unfinished">2D Bideoa</translation>
@@ -2133,7 +2133,7 @@
         <translation type="unfinished">Bizkorpena</translation>
     </message>
     <message>
-        <location line="+8"/>
+        <location line="+11"/>
         <source>Remote Desktop Server Port</source>
         <comment>details (display/vrde)</comment>
         <translation type="unfinished">Hurruneko Mahaigain Zerbitzari Ataka</translation>
@@ -2161,7 +2161,7 @@
         <translation type="obsolete">Bideo Harpen Ezaugarriak</translation>
     </message>
     <message>
-        <location line="+14"/>
+        <location line="+17"/>
         <source>Frame Size: %1x%2, Frame Rate: %3fps, Bit Rate: %4kbps</source>
         <translation type="unfinished">Frame Neurria: %1x%2, Frame Maila: %3fps-ko, Bit Maila: %4kbs-ko</translation>
     </message>
@@ -2188,7 +2188,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+8"/>
+        <location line="+7"/>
         <source>Recording</source>
         <comment>details (display/recording)</comment>
         <translation type="unfinished"></translation>
@@ -2200,31 +2200,31 @@
         <translation type="unfinished">Ezgaituta</translation>
     </message>
     <message>
-        <location line="+54"/>
+        <location line="+81"/>
         <source>[Optical Drive]</source>
         <comment>details (storage)</comment>
         <translation type="unfinished">[Diska Optikoa]</translation>
     </message>
     <message>
-        <location line="+27"/>
+        <location line="+30"/>
         <source>Not Attached</source>
         <comment>details (storage)</comment>
         <translation type="unfinished">Erantsi gabe</translation>
     </message>
     <message>
-        <location line="+27"/>
+        <location line="+43"/>
         <source>Host Driver</source>
         <comment>details (audio)</comment>
         <translation type="unfinished">Hostalari Gidagailua</translation>
     </message>
     <message>
-        <location line="+4"/>
+        <location line="+5"/>
         <source>Controller</source>
         <comment>details (audio)</comment>
         <translation type="unfinished">Kontrolatzailea</translation>
     </message>
     <message>
-        <location line="+5"/>
+        <location line="+11"/>
         <source>Audio Output</source>
         <comment>details (audio)</comment>
         <translation type="unfinished"></translation>
@@ -2242,7 +2242,7 @@
         <translation type="unfinished">Ezgaituta</translation>
     </message>
     <message>
-        <location line="+3"/>
+        <location line="-7"/>
         <source>Audio Input</source>
         <comment>details (audio)</comment>
         <translation type="unfinished"></translation>
@@ -2260,79 +2260,79 @@
         <translation type="unfinished">Ezgaituta</translation>
     </message>
     <message>
-        <location line="+4"/>
+        <location line="+9"/>
         <source>Disabled</source>
         <comment>details (audio)</comment>
         <translation type="unfinished">Ezgaituta</translation>
     </message>
     <message>
-        <location line="+40"/>
+        <location line="+59"/>
         <source>Bridged Adapter, %1</source>
         <comment>details (network)</comment>
         <translation type="unfinished">Zubi egokitzailea, %1</translation>
     </message>
     <message>
-        <location line="+6"/>
+        <location line="+7"/>
         <source>Internal Network, &apos;%1&apos;</source>
         <comment>details (network)</comment>
         <translation type="unfinished">Barneko sarea, &apos;%1&apos;</translation>
     </message>
     <message>
-        <location line="+6"/>
+        <location line="+7"/>
         <source>Host-only Adapter, &apos;%1&apos;</source>
         <comment>details (network)</comment>
         <translation type="unfinished">Hostalaria-bakarrik Egokitzailea, &apos;%1&apos;</translation>
     </message>
     <message>
-        <location line="+8"/>
+        <location line="+10"/>
         <source>Generic Driver, &apos;%1&apos;</source>
         <comment>details (network)</comment>
         <translation type="unfinished">Gidagailu generikoa, &apos;%1&apos;</translation>
     </message>
     <message>
-        <location line="+1"/>
+        <location line="+2"/>
         <source>Generic Driver, &apos;%1&apos; { %2 }</source>
         <comment>details (network)</comment>
         <translation type="unfinished">Gidagailu generikoa, &apos;%1&apos; { %2 }</translation>
     </message>
     <message>
-        <location line="+6"/>
+        <location line="+8"/>
         <source>NAT Network, &apos;%1&apos;</source>
         <comment>details (network)</comment>
         <translation type="unfinished">NAT Sarea, &apos;%1&apos;</translation>
     </message>
     <message>
-        <location line="+10"/>
+        <location line="+12"/>
         <source>Adapter %1</source>
         <comment>details (network)</comment>
         <translation type="unfinished">Egokitzailea %1</translation>
     </message>
     <message>
-        <location line="+5"/>
+        <location line="+3"/>
         <source>Disabled</source>
         <comment>details (network/adapter)</comment>
         <translation type="unfinished">Ezgaituta</translation>
     </message>
     <message>
-        <location line="+54"/>
+        <location line="+102"/>
         <source>Port %1</source>
         <comment>details (serial)</comment>
         <translation type="unfinished">Ataka %1</translation>
     </message>
     <message>
-        <location line="+5"/>
+        <location line="+3"/>
         <source>Disabled</source>
         <comment>details (serial)</comment>
         <translation type="unfinished">Ezgaituta</translation>
     </message>
     <message>
-        <location line="+35"/>
+        <location line="+51"/>
         <source>USB Controller</source>
         <comment>details (usb)</comment>
         <translation type="unfinished">USB Kontrolatzailea</translation>
     </message>
     <message>
-        <location line="+8"/>
+        <location line="+12"/>
         <source>Device Filters</source>
         <comment>details (usb)</comment>
         <translation type="unfinished">Gailu Iragazkiak</translation>
@@ -2344,7 +2344,7 @@
         <translation type="unfinished">%1 (%2 gaituta)</translation>
     </message>
     <message>
-        <location line="+3"/>
+        <location line="+4"/>
         <source>Disabled</source>
         <comment>details (usb)</comment>
         <translation type="unfinished">Ezgaituta</translation>
@@ -2356,7 +2356,7 @@
         <translation type="unfinished">USB Kontrolatzailea Eskuraezina</translation>
     </message>
     <message>
-        <location line="+26"/>
+        <location line="+43"/>
         <source>Shared Folders</source>
         <comment>details (shared folders)</comment>
         <translation type="unfinished">Elkarbanatutako Agiritegiak</translation>
@@ -2368,7 +2368,7 @@
         <translation type="unfinished">Ezer ez</translation>
     </message>
     <message>
-        <location line="+33"/>
+        <location line="+50"/>
         <source>Menu-bar</source>
         <comment>details (user interface)</comment>
         <translation type="unfinished">Menu-barra</translation>
@@ -2386,7 +2386,7 @@
         <translation type="unfinished">Ezgaituta</translation>
     </message>
     <message>
-        <location line="+13"/>
+        <location line="+14"/>
         <source>Status-bar</source>
         <comment>details (user interface)</comment>
         <translation type="unfinished">Egoera-barra</translation>
@@ -2404,7 +2404,7 @@
         <translation type="unfinished">Ezgaituta</translation>
     </message>
     <message>
-        <location line="+23"/>
+        <location line="+24"/>
         <location line="+5"/>
         <source>Mini-toolbar Position</source>
         <comment>details (user interface)</comment>
@@ -2435,7 +2435,7 @@
         <translation type="unfinished">Ezgaituta</translation>
     </message>
     <message>
-        <location line="+30"/>
+        <location line="+47"/>
         <source>None</source>
         <comment>details (description)</comment>
         <translation type="unfinished">Ezer ez</translation>
@@ -2661,7 +2661,7 @@
 <context>
     <name>UIDetailsElement</name>
     <message>
-        <location filename="../src/manager/details/UIDetailsElement.cpp" line="+248"/>
+        <location filename="../src/manager/details/UIDetailsElement.cpp" line="+249"/>
         <source>%1 details</source>
         <comment>like &apos;General details&apos; or &apos;Storage details&apos;</comment>
         <translation type="unfinished"></translation>
@@ -7048,12 +7048,21 @@
         <translation>Helburua</translation>
     </message>
     <message>
-        <location line="+5"/>
-        <source>Auto-mount</source>
-        <translation>Berez-muntatu</translation>
+        <location line="+10"/>
+        <source>Auto Mount</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+5"/>
+        <source>At</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Auto-mount</source>
+        <translation type="vanished">Berez-muntatu</translation>
+    </message>
+    <message>
+        <location line="-10"/>
         <source>Access</source>
         <translation>Sarbidea</translation>
     </message>
@@ -7122,6 +7131,16 @@
     </message>
     <message>
         <location line="+17"/>
+        <source>Mount point:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+10"/>
+        <source>Where to automatically mount the folder in the guest.  A drive letter (e.g. &apos;G:&apos;) for Windows and OS/2 guests, path for the others.  If left empty the guest will pick something fitting.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+7"/>
         <source>When checked, this shared folder will be permanent.</source>
         <translation>Hautatutakoan, elkarbanatutako agiritegi hau iraunkorra izango da.</translation>
     </message>
@@ -7131,7 +7150,7 @@
         <translation>&amp;Egin Iraunkorra</translation>
     </message>
     <message>
-        <location line="-13"/>
+        <location line="-30"/>
         <source>When checked, the guest OS will try to automatically mount the shared folder on startup.</source>
         <translation>Hautatzen bada, gonbidatu SE-a berezgaitasunez saiatuko da agiritegi elkarbanatua muntatzen hasterakoan.</translation>
     </message>
@@ -7775,7 +7794,7 @@
     </message>
     <message>
         <location filename="../src/snapshots/UISnapshotDetailsWidget.cpp" line="+208"/>
-        <location filename="../src/manager/details/UIDetailsElements.cpp" line="-437"/>
+        <location filename="../src/manager/details/UIDetailsElements.cpp" line="-616"/>
         <source>Controller: %1</source>
         <translation>Kontrolatzailea: %1</translation>
     </message>
@@ -13311,7 +13330,7 @@ Home folders can also be individually (per virtual machine)  modified.</source>
         <translation type="vanished">Egiaztatzen...</translation>
     </message>
     <message>
-        <location filename="../src/manager/details/UIDetailsElements.cpp" line="+18"/>
+        <location filename="../src/manager/details/UIDetailsElements.cpp" line="+30"/>
         <source>Inaccessible</source>
         <comment>medium</comment>
         <translation>Eskuraezina</translation>

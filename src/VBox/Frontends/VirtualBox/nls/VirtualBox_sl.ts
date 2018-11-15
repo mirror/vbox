@@ -1648,7 +1648,7 @@
 <context>
     <name>UICloudProfileManager</name>
     <message>
-        <location filename="../src/cloud/UICloudProfileManager.cpp" line="+953"/>
+        <location filename="../src/cloud/UICloudProfileManager.cpp" line="+923"/>
         <source>Cloud Profile Manager</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1701,7 +1701,7 @@
 <context>
     <name>UICloudProfileManagerWidget</name>
     <message>
-        <location line="-665"/>
+        <location line="-635"/>
         <source>Add Profile</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1709,66 +1709,66 @@
 <context>
     <name>UIDetails</name>
     <message>
-        <location filename="../src/manager/details/UIDetailsElements.cpp" line="+244"/>
+        <location filename="../src/manager/details/UIDetailsElements.cpp" line="+245"/>
         <source>Name</source>
         <comment>details (general)</comment>
         <translation type="unfinished">Ime</translation>
     </message>
     <message>
-        <location line="+3"/>
+        <location line="+4"/>
         <source>Operating System</source>
         <comment>details (general)</comment>
         <translation type="unfinished">Operacijski sistem</translation>
     </message>
     <message>
-        <location line="+7"/>
+        <location line="+5"/>
         <source>Settings File Location</source>
         <comment>details (general)</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+20"/>
+        <location line="+21"/>
         <source>Groups</source>
         <comment>details (general)</comment>
         <translation type="unfinished">Skupine</translation>
     </message>
     <message>
-        <location line="+4"/>
-        <location line="+102"/>
-        <location line="+94"/>
-        <location line="+80"/>
-        <location line="+50"/>
-        <location line="+81"/>
-        <location line="+59"/>
-        <location line="+50"/>
-        <location line="+28"/>
-        <location line="+89"/>
-        <location line="+28"/>
+        <location line="+5"/>
+        <location line="+138"/>
+        <location line="+125"/>
+        <location line="+109"/>
+        <location line="+68"/>
+        <location line="+107"/>
+        <location line="+105"/>
+        <location line="+71"/>
+        <location line="+46"/>
+        <location line="+107"/>
+        <location line="+46"/>
         <source>Information Inaccessible</source>
         <comment>details</comment>
         <translation type="unfinished">Podatki niso dostopni</translation>
     </message>
     <message>
-        <location line="-640"/>
+        <location line="-885"/>
         <source>Base Memory</source>
         <comment>details (system)</comment>
         <translation type="unfinished">Osnovni pomnilnik</translation>
     </message>
     <message>
         <location line="+1"/>
-        <location line="+103"/>
+        <location line="+139"/>
         <source>%1 MB</source>
         <comment>details</comment>
         <translation type="unfinished">%1 MB</translation>
     </message>
     <message>
-        <location line="-98"/>
+        <location line="-132"/>
         <source>Processors</source>
         <comment>details (system)</comment>
         <translation type="unfinished">Procesorji</translation>
     </message>
     <message>
-        <location line="+6"/>
+        <location line="+9"/>
         <source>Execution Cap</source>
         <comment>details (system)</comment>
         <translation type="unfinished">Omejitev izvajanja</translation>
@@ -1780,19 +1780,19 @@
         <translation type="unfinished">%1%</translation>
     </message>
     <message>
-        <location line="+13"/>
+        <location line="+16"/>
         <source>Boot Order</source>
         <comment>details (system)</comment>
         <translation type="unfinished">Vrstni red zagona</translation>
     </message>
     <message>
-        <location line="+5"/>
+        <location line="+8"/>
         <source>Chipset Type</source>
         <comment>details (system)</comment>
         <translation type="unfinished">Vrsta veznega nabora</translation>
     </message>
     <message>
-        <location line="+11"/>
+        <location line="+14"/>
         <source>EFI</source>
         <comment>details (system)</comment>
         <translation type="unfinished">EFI</translation>
@@ -1810,7 +1810,7 @@
         <translation type="unfinished">Onemogočeno</translation>
     </message>
     <message>
-        <location line="+12"/>
+        <location line="+15"/>
         <source>VT-x/AMD-V</source>
         <comment>details (system)</comment>
         <translation type="unfinished">VT-x/AMD-V</translation>
@@ -1822,13 +1822,13 @@
         <translation type="unfinished">Ugnezdeno odstranjevanje</translation>
     </message>
     <message>
-        <location line="+4"/>
+        <location line="+5"/>
         <source>PAE/NX</source>
         <comment>details (system)</comment>
         <translation type="unfinished">PAE/NX</translation>
     </message>
     <message>
-        <location line="+3"/>
+        <location line="+4"/>
         <source>Minimal Paravirtualization</source>
         <comment>details (system)</comment>
         <translation type="unfinished">Najmanjša paranavideznost</translation>
@@ -1852,25 +1852,25 @@
         <translation type="unfinished">Pospeševanje</translation>
     </message>
     <message>
-        <location line="+26"/>
+        <location line="+43"/>
         <source>Video Memory</source>
         <comment>details (display)</comment>
         <translation type="unfinished">Grafični pomnilnik</translation>
     </message>
     <message>
-        <location line="+6"/>
+        <location line="+8"/>
         <source>Screens</source>
         <comment>details (display)</comment>
         <translation type="unfinished">Zasloni</translation>
     </message>
     <message>
-        <location line="+14"/>
+        <location line="+17"/>
         <source>Scale-factor</source>
         <comment>details (display)</comment>
         <translation type="unfinished">Faktor umerjanja</translation>
     </message>
     <message>
-        <location line="+8"/>
+        <location line="+12"/>
         <source>2D Video</source>
         <comment>details (display)</comment>
         <translation type="unfinished">Grafika 2D</translation>
@@ -1888,7 +1888,7 @@
         <translation type="unfinished">Pospeševanje</translation>
     </message>
     <message>
-        <location line="+8"/>
+        <location line="+11"/>
         <source>Remote Desktop Server Port</source>
         <comment>details (display/vrde)</comment>
         <translation type="unfinished">Vrata strežnika oddaljenega namizja</translation>
@@ -1916,7 +1916,7 @@
         <translation type="obsolete">Lastnosti zajema videoposnetka</translation>
     </message>
     <message>
-        <location line="+14"/>
+        <location line="+17"/>
         <source>Frame Size: %1x%2, Frame Rate: %3fps, Bit Rate: %4kbps</source>
         <translation type="unfinished">Velikost sličic: %1x%2, hitrost sličic: %3 sl./s, bitna hitrost: %4 kb/s</translation>
     </message>
@@ -1943,7 +1943,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+8"/>
+        <location line="+7"/>
         <source>Recording</source>
         <comment>details (display/recording)</comment>
         <translation type="unfinished"></translation>
@@ -1955,31 +1955,31 @@
         <translation type="unfinished">Onemogočeno</translation>
     </message>
     <message>
-        <location line="+54"/>
+        <location line="+81"/>
         <source>[Optical Drive]</source>
         <comment>details (storage)</comment>
         <translation type="unfinished">[optični pogon]</translation>
     </message>
     <message>
-        <location line="+27"/>
+        <location line="+30"/>
         <source>Not Attached</source>
         <comment>details (storage)</comment>
         <translation type="unfinished">Ni priklopljen</translation>
     </message>
     <message>
-        <location line="+27"/>
+        <location line="+43"/>
         <source>Host Driver</source>
         <comment>details (audio)</comment>
         <translation type="unfinished">Gonilnik gostitelja</translation>
     </message>
     <message>
-        <location line="+4"/>
+        <location line="+5"/>
         <source>Controller</source>
         <comment>details (audio)</comment>
         <translation type="unfinished">Krmilnik</translation>
     </message>
     <message>
-        <location line="+5"/>
+        <location line="+11"/>
         <source>Audio Output</source>
         <comment>details (audio)</comment>
         <translation type="unfinished">Zvočni izhod</translation>
@@ -1997,7 +1997,7 @@
         <translation type="unfinished">Onemogočeno</translation>
     </message>
     <message>
-        <location line="+3"/>
+        <location line="-7"/>
         <source>Audio Input</source>
         <comment>details (audio)</comment>
         <translation type="unfinished">Zvočni vhod</translation>
@@ -2015,79 +2015,79 @@
         <translation type="unfinished">Onemogočeno</translation>
     </message>
     <message>
-        <location line="+4"/>
+        <location line="+9"/>
         <source>Disabled</source>
         <comment>details (audio)</comment>
         <translation type="unfinished">Onemogočeno</translation>
     </message>
     <message>
-        <location line="+40"/>
+        <location line="+59"/>
         <source>Bridged Adapter, %1</source>
         <comment>details (network)</comment>
         <translation type="unfinished">Povezan vmesnik, %1</translation>
     </message>
     <message>
-        <location line="+6"/>
+        <location line="+7"/>
         <source>Internal Network, &apos;%1&apos;</source>
         <comment>details (network)</comment>
         <translation type="unfinished">Notranje omrežje, &apos;%1&apos;</translation>
     </message>
     <message>
-        <location line="+6"/>
+        <location line="+7"/>
         <source>Host-only Adapter, &apos;%1&apos;</source>
         <comment>details (network)</comment>
         <translation type="unfinished">Gostiteljski vmesnik, &apos;%1&apos;</translation>
     </message>
     <message>
-        <location line="+8"/>
+        <location line="+10"/>
         <source>Generic Driver, &apos;%1&apos;</source>
         <comment>details (network)</comment>
         <translation type="unfinished">Splošni gonilnik, &apos;%1&apos;</translation>
     </message>
     <message>
-        <location line="+1"/>
+        <location line="+2"/>
         <source>Generic Driver, &apos;%1&apos; { %2 }</source>
         <comment>details (network)</comment>
         <translation type="unfinished">Splošni gonilnik, &apos;%1&apos; {%2}</translation>
     </message>
     <message>
-        <location line="+6"/>
+        <location line="+8"/>
         <source>NAT Network, &apos;%1&apos;</source>
         <comment>details (network)</comment>
         <translation type="unfinished">Omrežje NAT, &apos;%1&apos;</translation>
     </message>
     <message>
-        <location line="+10"/>
+        <location line="+12"/>
         <source>Adapter %1</source>
         <comment>details (network)</comment>
         <translation type="unfinished">Vmesnik %1</translation>
     </message>
     <message>
-        <location line="+5"/>
+        <location line="+3"/>
         <source>Disabled</source>
         <comment>details (network/adapter)</comment>
         <translation type="unfinished">Onemogočeno</translation>
     </message>
     <message>
-        <location line="+54"/>
+        <location line="+102"/>
         <source>Port %1</source>
         <comment>details (serial)</comment>
         <translation type="unfinished">Vrata %1</translation>
     </message>
     <message>
-        <location line="+5"/>
+        <location line="+3"/>
         <source>Disabled</source>
         <comment>details (serial)</comment>
         <translation type="unfinished">Onemogočeno</translation>
     </message>
     <message>
-        <location line="+35"/>
+        <location line="+51"/>
         <source>USB Controller</source>
         <comment>details (usb)</comment>
         <translation type="unfinished">Krmilnik USB</translation>
     </message>
     <message>
-        <location line="+8"/>
+        <location line="+12"/>
         <source>Device Filters</source>
         <comment>details (usb)</comment>
         <translation type="unfinished">Filtri naprav</translation>
@@ -2099,7 +2099,7 @@
         <translation type="unfinished">%1 (%2 dejavnih)</translation>
     </message>
     <message>
-        <location line="+3"/>
+        <location line="+4"/>
         <source>Disabled</source>
         <comment>details (usb)</comment>
         <translation type="unfinished">Onemogočeno</translation>
@@ -2111,7 +2111,7 @@
         <translation type="unfinished">Krmilnik USB ni dostopen</translation>
     </message>
     <message>
-        <location line="+26"/>
+        <location line="+43"/>
         <source>Shared Folders</source>
         <comment>details (shared folders)</comment>
         <translation type="unfinished">Deljene mape</translation>
@@ -2123,7 +2123,7 @@
         <translation type="unfinished">Brez</translation>
     </message>
     <message>
-        <location line="+33"/>
+        <location line="+50"/>
         <source>Menu-bar</source>
         <comment>details (user interface)</comment>
         <translation type="unfinished">Menijska vrstica</translation>
@@ -2141,7 +2141,7 @@
         <translation type="unfinished">Onemogočeno</translation>
     </message>
     <message>
-        <location line="+13"/>
+        <location line="+14"/>
         <source>Status-bar</source>
         <comment>details (user interface)</comment>
         <translation type="unfinished">Vrstica stanja</translation>
@@ -2159,7 +2159,7 @@
         <translation type="unfinished">Onemogočeno</translation>
     </message>
     <message>
-        <location line="+23"/>
+        <location line="+24"/>
         <location line="+5"/>
         <source>Mini-toolbar Position</source>
         <comment>details (user interface)</comment>
@@ -2190,7 +2190,7 @@
         <translation type="unfinished">Onemogočeno</translation>
     </message>
     <message>
-        <location line="+30"/>
+        <location line="+47"/>
         <source>None</source>
         <comment>details (description)</comment>
         <translation type="unfinished">Brez</translation>
@@ -2199,7 +2199,7 @@
 <context>
     <name>UIDetailsElement</name>
     <message>
-        <location filename="../src/manager/details/UIDetailsElement.cpp" line="+248"/>
+        <location filename="../src/manager/details/UIDetailsElement.cpp" line="+249"/>
         <source>%1 details</source>
         <comment>like &apos;General details&apos; or &apos;Storage details&apos;</comment>
         <translation type="unfinished">Podrobnosti - %1</translation>
@@ -6069,18 +6069,27 @@
         <translation>Pot</translation>
     </message>
     <message>
-        <location line="+10"/>
+        <location line="+5"/>
         <source>Access</source>
         <translation>Dostop</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>Auto Mount</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>At</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;Folders List</source>
         <translation type="vanished">&amp;Seznam map</translation>
     </message>
     <message>
-        <location line="-5"/>
         <source>Auto-mount</source>
-        <translation>Sam. priklopi</translation>
+        <translation type="vanished">Sam. priklopi</translation>
     </message>
     <message>
         <source>Yes</source>
@@ -6147,12 +6156,22 @@
         <translation>&amp;Samo za branje</translation>
     </message>
     <message>
-        <location line="+20"/>
+        <location line="+17"/>
+        <source>Mount point:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+10"/>
+        <source>Where to automatically mount the folder in the guest.  A drive letter (e.g. &apos;G:&apos;) for Windows and OS/2 guests, path for the others.  If left empty the guest will pick something fitting.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+10"/>
         <source>&amp;Make Permanent</source>
         <translation>&amp;Naredi trajno</translation>
     </message>
     <message>
-        <location line="-13"/>
+        <location line="-30"/>
         <source>When checked, the guest OS will try to automatically mount the shared folder on startup.</source>
         <translation>Ko je označeno, bo gostujoči OS ob zagonu poizkusil samodejno priklopiti deljeno mapo.</translation>
     </message>
@@ -6162,7 +6181,7 @@
         <translation>&amp;Samodejno priklopi</translation>
     </message>
     <message>
-        <location line="+7"/>
+        <location line="+24"/>
         <source>When checked, this shared folder will be permanent.</source>
         <translation>Ko je označeno, bo ta deljena mapa trajna.</translation>
     </message>
@@ -6468,7 +6487,7 @@
     </message>
     <message>
         <location filename="../src/snapshots/UISnapshotDetailsWidget.cpp" line="-101"/>
-        <location filename="../src/manager/details/UIDetailsElements.cpp" line="-437"/>
+        <location filename="../src/manager/details/UIDetailsElements.cpp" line="-616"/>
         <source>Controller: %1</source>
         <translation>Krmilnik: %1</translation>
     </message>
@@ -11740,7 +11759,7 @@ Home folders can also be individually (per virtual machine)  modified.</source>
         <translation type="vanished">Preverjanje …</translation>
     </message>
     <message>
-        <location filename="../src/manager/details/UIDetailsElements.cpp" line="+18"/>
+        <location filename="../src/manager/details/UIDetailsElements.cpp" line="+30"/>
         <source>Inaccessible</source>
         <comment>medium</comment>
         <translation>Nedostopen</translation>

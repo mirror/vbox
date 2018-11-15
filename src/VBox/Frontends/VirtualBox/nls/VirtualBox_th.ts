@@ -5107,7 +5107,7 @@
     </message>
     <message>
         <source>Auto-mount</source>
-        <translation>เมาต์อัตโนมัติ</translation>
+        <translation type="vanished">เมาต์อัตโนมัติ</translation>
     </message>
     <message>
         <source>Yes</source>
@@ -5139,6 +5139,14 @@
     </message>
     <message>
         <source>Shared &amp;Folders</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Auto Mount</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>At</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -5187,6 +5195,14 @@
     <message>
         <source>When checked, this shared folder will be permanent.</source>
         <translation>หากเลือกไว้ โฟลเดอร์ใช้ร่วมกันจะคงอยู่ถาวร</translation>
+    </message>
+    <message>
+        <source>Mount point:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Where to automatically mount the folder in the guest.  A drive letter (e.g. &apos;G:&apos;) for Windows and OS/2 guests, path for the others.  If left empty the guest will pick something fitting.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

@@ -2020,15 +2020,15 @@
     </message>
     <message>
         <source>Settings File</source>
-        <translation type="unfinished"></translation>
+        <translation>File delle impostazioni</translation>
     </message>
     <message>
         <source>Base Folder</source>
-        <translation type="unfinished"></translation>
+        <translation>Cartella di base</translation>
     </message>
     <message>
         <source>Primary Group</source>
-        <translation type="unfinished"></translation>
+        <translation>Gruppo primario</translation>
     </message>
 </context>
 <context>
@@ -2043,43 +2043,43 @@
     </message>
     <message>
         <source>&amp;Import hard drives as VDI</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Importa dischi fissi come VDI</translation>
     </message>
     <message>
         <source>When checked a all the hard drives that belong to this appliance will be imported in VDI format</source>
-        <translation type="unfinished"></translation>
+        <translation>Se selezionata, tutti i dischi fissi che appartengono a questa applicazione virtuale saranno importati in formato VDI</translation>
     </message>
     <message>
         <source>MAC Address &amp;Policy:</source>
-        <translation type="unfinished"></translation>
+        <translation>Criterio in&amp;dirizzi MAC:</translation>
     </message>
     <message>
         <source>Include all network adapter MAC addresses</source>
-        <translation type="unfinished"></translation>
+        <translation>Includi tutti gli indirizzi MAC delle schede di rete</translation>
     </message>
     <message>
         <source>Include only NAT network adapter MAC addresses</source>
-        <translation type="unfinished"></translation>
+        <translation>Includi solo gli indirizzi MAC delle schede di rete con NAT</translation>
     </message>
     <message>
         <source>Generate new MAC addresses for all network adapters</source>
-        <translation type="unfinished"></translation>
+        <translation>Genera nuovi indirizzi MAC per tutte le schede di rete</translation>
     </message>
     <message>
         <source>Include all network adapter MAC addresses in exported during cloning.</source>
-        <translation type="unfinished"></translation>
+        <translation>Includi tutti gli indirizzi MAC delle schede di rete delle esportate durante la clonazione.</translation>
     </message>
     <message>
         <source>Include only NAT network adapter MAC addresses during cloning.</source>
-        <translation type="unfinished"></translation>
+        <translation>Includi solo gli indirizzi MAC delle schede di rete con NAT durante la clonazione.</translation>
     </message>
     <message>
         <source>Generate new MAC addresses for all network adapters during cloning.</source>
-        <translation type="unfinished"></translation>
+        <translation>Genera nuovi indirizzi MAC per tutte le schede di rete durante la clonazione.</translation>
     </message>
     <message>
         <source>Additional Options:</source>
-        <translation type="unfinished"></translation>
+        <translation>Opzioni aggiuntive:</translation>
     </message>
 </context>
 <context>
@@ -2212,32 +2212,32 @@
     <name>UIChooserItemGlobal</name>
     <message>
         <source>Tools</source>
-        <translation type="unfinished"></translation>
+        <translation>Strumenti</translation>
     </message>
 </context>
 <context>
     <name>UIChooserItemGroup</name>
     <message>
         <source>Virtual Machine group</source>
-        <translation type="unfinished">Gruppo di macchina virtuali</translation>
+        <translation>Gruppo di macchina virtuali</translation>
     </message>
     <message>
         <source>Enter group</source>
-        <translation type="unfinished">Chiudi il gruppo</translation>
+        <translation>Entra nel gruppo</translation>
     </message>
     <message>
         <source>Exit group</source>
-        <translation type="unfinished">Apri il gruppo</translation>
+        <translation>Esci dal gruppo</translation>
     </message>
     <message>
         <source>&lt;b&gt;%1&lt;/b&gt;</source>
         <comment>Group item tool-tip / Group name</comment>
-        <translation type="unfinished">&lt;b&gt;%1&lt;/b&gt;</translation>
+        <translation>&lt;b&gt;%1&lt;/b&gt;</translation>
     </message>
     <message numerus="yes">
         <source>%n group(s)</source>
         <comment>Group item tool-tip / Group info</comment>
-        <translation type="unfinished">
+        <translation>
             <numerusform>Un gruppo</numerusform>
             <numerusform>%n gruppi</numerusform>
         </translation>
@@ -2245,12 +2245,12 @@
     <message>
         <source>&lt;nobr&gt;%1&lt;/nobr&gt;</source>
         <comment>Group item tool-tip / Group info wrapper</comment>
-        <translation type="unfinished">&lt;nobr&gt;%1&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;%1&lt;/nobr&gt;</translation>
     </message>
     <message numerus="yes">
         <source>%n machine(s)</source>
         <comment>Group item tool-tip / Machine info</comment>
-        <translation type="unfinished">
+        <translation>
             <numerusform>Una macchina</numerusform>
             <numerusform>%n macchine</numerusform>
         </translation>
@@ -2258,7 +2258,7 @@
     <message numerus="yes">
         <source>(%n running)</source>
         <comment>Group item tool-tip / Running machine info</comment>
-        <translation type="unfinished">
+        <translation>
             <numerusform>(una in esecuzione)</numerusform>
             <numerusform>(%n in esecuzione)</numerusform>
         </translation>
@@ -2266,41 +2266,41 @@
     <message>
         <source>&lt;nobr&gt;%1&lt;/nobr&gt;</source>
         <comment>Group item tool-tip / Machine info wrapper</comment>
-        <translation type="unfinished">&lt;nobr&gt;%1&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;%1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;%1 %2&lt;/nobr&gt;</source>
         <comment>Group item tool-tip / Machine info wrapper, including running</comment>
-        <translation type="unfinished">&lt;nobr&gt;%1 %2&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;%1 %2&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>Collapse group</source>
-        <translation type="unfinished">Contrai il gruppo</translation>
+        <translation>Contrai il gruppo</translation>
     </message>
     <message>
         <source>Expand group</source>
-        <translation type="unfinished">Espandi il gruppo</translation>
+        <translation>Espandi il gruppo</translation>
     </message>
 </context>
 <context>
     <name>UIChooserItemMachine</name>
     <message>
         <source>Virtual Machine</source>
-        <translation type="unfinished">Macchina virtuale</translation>
+        <translation>Macchina virtuale</translation>
     </message>
 </context>
 <context>
     <name>UIChooserModel</name>
     <message>
         <source>New group</source>
-        <translation type="unfinished">Nuovo gruppo</translation>
+        <translation>Nuovo gruppo</translation>
     </message>
 </context>
 <context>
     <name>UIChooserView</name>
     <message>
         <source>Contains a tree of Virtual Machines and their groups</source>
-        <translation type="unfinished">Contiene un albero delle macchine virtuali e il rispettivo gruppo</translation>
+        <translation>Contiene un albero delle macchine virtuali e i rispettivi gruppi</translation>
     </message>
 </context>
 <context>
@@ -2439,109 +2439,109 @@
     <name>UICloudProfileDetailsWidget</name>
     <message>
         <source>Name:</source>
-        <translation type="unfinished"></translation>
+        <translation>Nome:</translation>
     </message>
     <message>
         <source>Properties:</source>
-        <translation type="unfinished"></translation>
+        <translation>Proprietà:</translation>
     </message>
     <message>
         <source>Contains cloud profile settings</source>
-        <translation type="unfinished"></translation>
+        <translation>Contiene le impostazioni del profilo cloud</translation>
     </message>
     <message>
         <source>Enter a name for the new profile...</source>
-        <translation type="unfinished"></translation>
+        <translation>Dgita un nome per il nuovo profilo...</translation>
     </message>
     <message>
         <source>Enter a name for this profile...</source>
-        <translation type="unfinished"></translation>
+        <translation>Dgita un nome per questo profilo...</translation>
     </message>
     <message>
         <source>Reset</source>
-        <translation type="unfinished"></translation>
+        <translation>Ripristina</translation>
     </message>
     <message>
         <source>Reset changes in current profile details</source>
-        <translation type="unfinished"></translation>
+        <translation>Ripristina le modifiche nei dettagli del profilo attuale</translation>
     </message>
     <message>
         <source>Reset Changes (%1)</source>
-        <translation type="unfinished">Ripristina modifche (%1)</translation>
+        <translation>Ripristina modifche (%1)</translation>
     </message>
     <message>
         <source>Add</source>
-        <translation type="unfinished">Aggiungi</translation>
+        <translation>Aggiungi</translation>
     </message>
     <message>
         <source>Add a new profile with following name</source>
-        <translation type="unfinished"></translation>
+        <translation>Aggiungi un nuovo profilo con il nome seguente</translation>
     </message>
     <message>
         <source>Add Profile (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>Aggiungi profilo (%1)</translation>
     </message>
     <message>
         <source>Apply</source>
-        <translation type="unfinished">Applica</translation>
+        <translation>Applica</translation>
     </message>
     <message>
         <source>Apply changes in current profile details</source>
-        <translation type="unfinished"></translation>
+        <translation>Applica le modifiche nei dettagli del profilo attuale</translation>
     </message>
     <message>
         <source>Apply Changes (%1)</source>
-        <translation type="unfinished">Applica modifche (%1)</translation>
+        <translation>Applica modifche (%1)</translation>
     </message>
 </context>
 <context>
     <name>UICloudProfileManager</name>
     <message>
         <source>Cloud Profile Manager</source>
-        <translation type="unfinished"></translation>
+        <translation>Gestore profili cloud</translation>
     </message>
     <message>
         <source>Reset</source>
-        <translation type="unfinished"></translation>
+        <translation>Ripristina</translation>
     </message>
     <message>
         <source>Apply</source>
-        <translation type="unfinished">Applica</translation>
+        <translation>Applica</translation>
     </message>
     <message>
         <source>Close</source>
-        <translation type="unfinished">Chiudi</translation>
+        <translation>Chiudi</translation>
     </message>
     <message>
         <source>Reset changes in current cloud profile details</source>
-        <translation type="unfinished"></translation>
+        <translation>Ripristina le modifiche nei dettagli del profilo cloud attuale</translation>
     </message>
     <message>
         <source>Apply changes in current cloud profile details</source>
-        <translation type="unfinished"></translation>
+        <translation>Applica le modifiche nei dettagli del profilo cloud attuale</translation>
     </message>
     <message>
         <source>Close dialog without saving</source>
-        <translation type="unfinished">Chiudi la finestra senza salvare</translation>
+        <translation>Chiudi la finestra senza salvare</translation>
     </message>
     <message>
         <source>Reset Changes (%1)</source>
-        <translation type="unfinished">Ripristina modifche (%1)</translation>
+        <translation>Ripristina modifche (%1)</translation>
     </message>
     <message>
         <source>Apply Changes (%1)</source>
-        <translation type="unfinished">Applica modifche (%1)</translation>
+        <translation>Applica modifche (%1)</translation>
     </message>
     <message>
         <source>Close Window (%1)</source>
-        <translation type="unfinished">Chiudi finestra (%1)</translation>
+        <translation>Chiudi finestra (%1)</translation>
     </message>
 </context>
 <context>
     <name>UICloudProfileManagerWidget</name>
     <message>
         <source>Add Profile</source>
-        <translation type="unfinished"></translation>
+        <translation>Aggiungi profilo</translation>
     </message>
 </context>
 <context>
@@ -2564,157 +2564,157 @@
     <message>
         <source>Name</source>
         <comment>details (general)</comment>
-        <translation type="unfinished">Nome</translation>
+        <translation>Nome</translation>
     </message>
     <message>
         <source>Operating System</source>
         <comment>details (general)</comment>
-        <translation type="unfinished">Sistema operativo</translation>
+        <translation>Sistema operativo</translation>
     </message>
     <message>
         <source>Settings File Location</source>
         <comment>details (general)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Posizione del file delle impostazioni</translation>
     </message>
     <message>
         <source>Groups</source>
         <comment>details (general)</comment>
-        <translation type="unfinished">Gruppi</translation>
+        <translation>Gruppi</translation>
     </message>
     <message>
         <source>Information Inaccessible</source>
         <comment>details</comment>
-        <translation type="unfinished">Informazione non accessibile</translation>
+        <translation>Informazione non accessibile</translation>
     </message>
     <message>
         <source>Base Memory</source>
         <comment>details (system)</comment>
-        <translation type="unfinished">Memoria di base</translation>
+        <translation>Memoria di base</translation>
     </message>
     <message>
         <source>%1 MB</source>
         <comment>details</comment>
-        <translation type="unfinished">%1 MB</translation>
+        <translation>%1 MB</translation>
     </message>
     <message>
         <source>Processors</source>
         <comment>details (system)</comment>
-        <translation type="unfinished">Processori</translation>
+        <translation>Processori</translation>
     </message>
     <message>
         <source>Execution Cap</source>
         <comment>details (system)</comment>
-        <translation type="unfinished">Execution Cap</translation>
+        <translation>Execution Cap</translation>
     </message>
     <message>
         <source>%1%</source>
         <comment>details</comment>
-        <translation type="unfinished">%1%</translation>
+        <translation>%1%</translation>
     </message>
     <message>
         <source>Boot Order</source>
         <comment>details (system)</comment>
-        <translation type="unfinished">Ordine di avvio</translation>
+        <translation>Ordine di avvio</translation>
     </message>
     <message>
         <source>Chipset Type</source>
         <comment>details (system)</comment>
-        <translation type="unfinished">Tipo di chipset</translation>
+        <translation>Tipo di chipset</translation>
     </message>
     <message>
         <source>EFI</source>
         <comment>details (system)</comment>
-        <translation type="unfinished">EFI</translation>
+        <translation>EFI</translation>
     </message>
     <message>
         <source>Enabled</source>
         <comment>details (system/EFI)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Abilitato</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details (system/EFI)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Disabilitato</translation>
     </message>
     <message>
         <source>VT-x/AMD-V</source>
         <comment>details (system)</comment>
-        <translation type="unfinished">VT-x/AMD-V</translation>
+        <translation>VT-x/AMD-V</translation>
     </message>
     <message>
         <source>Nested Paging</source>
         <comment>details (system)</comment>
-        <translation type="unfinished">Paginazione nidificata</translation>
+        <translation>Paginazione nidificata</translation>
     </message>
     <message>
         <source>PAE/NX</source>
         <comment>details (system)</comment>
-        <translation type="unfinished">PAE/NX</translation>
+        <translation>PAE/NX</translation>
     </message>
     <message>
         <source>Minimal Paravirtualization</source>
         <comment>details (system)</comment>
-        <translation type="unfinished">Paravirtualizzazione minimale</translation>
+        <translation>Paravirtualizzazione minimale</translation>
     </message>
     <message>
         <source>Hyper-V Paravirtualization</source>
         <comment>details (system)</comment>
-        <translation type="unfinished">Paravirtualizzazione Hyper-V</translation>
+        <translation>Paravirtualizzazione Hyper-V</translation>
     </message>
     <message>
         <source>KVM Paravirtualization</source>
         <comment>details (system)</comment>
-        <translation type="unfinished">Paravirtualizzazione KVM</translation>
+        <translation>Paravirtualizzazione KVM</translation>
     </message>
     <message>
         <source>Acceleration</source>
         <comment>details (system)</comment>
-        <translation type="unfinished">Accelerazione</translation>
+        <translation>Accelerazione</translation>
     </message>
     <message>
         <source>Video Memory</source>
         <comment>details (display)</comment>
-        <translation type="unfinished">Memoria video</translation>
+        <translation>Memoria video</translation>
     </message>
     <message>
         <source>Screens</source>
         <comment>details (display)</comment>
-        <translation type="unfinished">Schermi</translation>
+        <translation>Schermi</translation>
     </message>
     <message>
         <source>Scale-factor</source>
         <comment>details (display)</comment>
-        <translation type="unfinished">Fattore di scala</translation>
+        <translation>Fattore di scala</translation>
     </message>
     <message>
         <source>2D Video</source>
         <comment>details (display)</comment>
-        <translation type="unfinished">Video 2D</translation>
+        <translation>Video 2D</translation>
     </message>
     <message>
         <source>3D</source>
         <comment>details (display)</comment>
-        <translation type="unfinished">3D</translation>
+        <translation>3D</translation>
     </message>
     <message>
         <source>Acceleration</source>
         <comment>details (display)</comment>
-        <translation type="unfinished">Accelerazione</translation>
+        <translation>Accelerazione</translation>
     </message>
     <message>
         <source>Remote Desktop Server Port</source>
         <comment>details (display/vrde)</comment>
-        <translation type="unfinished">Porta del server di desktop remoto</translation>
+        <translation>Porta del server di desktop remoto</translation>
     </message>
     <message>
         <source>Remote Desktop Server</source>
         <comment>details (display/vrde)</comment>
-        <translation type="unfinished">Server di desktop remoto</translation>
+        <translation>Server di desktop remoto</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details (display/vrde/VRDE server)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Disabilitato</translation>
     </message>
     <message>
         <source>Video Capture File</source>
@@ -2728,7 +2728,7 @@
     </message>
     <message>
         <source>Frame Size: %1x%2, Frame Rate: %3fps, Bit Rate: %4kbps</source>
-        <translation type="unfinished">Risoluzione: %1x%2, Velocità: %3, Bitrate: %4kbps</translation>
+        <translation>Risoluzione: %1x%2, Velocità: %3fps, Bitrate: %4kbps</translation>
     </message>
     <message>
         <source>Video Capture</source>
@@ -2738,222 +2738,222 @@
     <message>
         <source>[Optical Drive]</source>
         <comment>details (storage)</comment>
-        <translation type="unfinished">[Lettori ottici]</translation>
+        <translation>[Lettore ottico]</translation>
     </message>
     <message>
         <source>Not Attached</source>
         <comment>details (storage)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Non collegato</translation>
     </message>
     <message>
         <source>Host Driver</source>
         <comment>details (audio)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Driver host</translation>
     </message>
     <message>
         <source>Controller</source>
         <comment>details (audio)</comment>
-        <translation type="unfinished">Controller</translation>
+        <translation>Controller</translation>
     </message>
     <message>
         <source>Audio Output</source>
         <comment>details (audio)</comment>
-        <translation type="unfinished">Uscita audio</translation>
+        <translation>Uscita audio</translation>
     </message>
     <message>
         <source>Enabled</source>
         <comment>details (audio/output)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Abilitata</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details (audio/output)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Disabilitata</translation>
     </message>
     <message>
         <source>Audio Input</source>
         <comment>details (audio)</comment>
-        <translation type="unfinished">Ingresso audio</translation>
+        <translation>Ingresso audio</translation>
     </message>
     <message>
         <source>Enabled</source>
         <comment>details (audio/input)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Abilitato</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details (audio/input)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Disabilitato</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details (audio)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Disabilitato</translation>
     </message>
     <message>
         <source>Bridged Adapter, %1</source>
         <comment>details (network)</comment>
-        <translation type="unfinished">Scheda con bridge, %1</translation>
+        <translation>Scheda con bridge, %1</translation>
     </message>
     <message>
         <source>Internal Network, &apos;%1&apos;</source>
         <comment>details (network)</comment>
-        <translation type="unfinished">Rete interna, &apos;%1&apos;</translation>
+        <translation>Rete interna, &apos;%1&apos;</translation>
     </message>
     <message>
         <source>Host-only Adapter, &apos;%1&apos;</source>
         <comment>details (network)</comment>
-        <translation type="unfinished">Scheda solo host, &apos;%1&apos;</translation>
+        <translation>Scheda solo host, &apos;%1&apos;</translation>
     </message>
     <message>
         <source>Generic Driver, &apos;%1&apos;</source>
         <comment>details (network)</comment>
-        <translation type="unfinished">Driver generico, &apos;%1&apos;</translation>
+        <translation>Driver generico, &apos;%1&apos;</translation>
     </message>
     <message>
         <source>Generic Driver, &apos;%1&apos; { %2 }</source>
         <comment>details (network)</comment>
-        <translation type="unfinished">Driver generico, &apos;%1&apos; { %2 }</translation>
+        <translation>Driver generico, &apos;%1&apos; { %2 }</translation>
     </message>
     <message>
         <source>NAT Network, &apos;%1&apos;</source>
         <comment>details (network)</comment>
-        <translation type="unfinished">Rete con NAT, &apos;%1&apos;</translation>
+        <translation>Rete con NAT, &apos;%1&apos;</translation>
     </message>
     <message>
         <source>Adapter %1</source>
         <comment>details (network)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Scheda %1</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details (network/adapter)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Disabilitata</translation>
     </message>
     <message>
         <source>Port %1</source>
         <comment>details (serial)</comment>
-        <translation type="unfinished">Porta %1</translation>
+        <translation>Porta %1</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details (serial)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Disabilitata</translation>
     </message>
     <message>
         <source>USB Controller</source>
         <comment>details (usb)</comment>
-        <translation type="unfinished">Controller USB</translation>
+        <translation>Controller USB</translation>
     </message>
     <message>
         <source>Device Filters</source>
         <comment>details (usb)</comment>
-        <translation type="unfinished">Filtri dispositivi</translation>
+        <translation>Filtri dispositivi</translation>
     </message>
     <message>
         <source>%1 (%2 active)</source>
         <comment>details (usb)</comment>
-        <translation type="unfinished">%1 (%2 attivo)</translation>
+        <translation>%1 (%2 attivo)</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details (usb)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Disabilitato</translation>
     </message>
     <message>
         <source>USB Controller Inaccessible</source>
         <comment>details (usb)</comment>
-        <translation type="unfinished">Controllore USB non accessibile</translation>
+        <translation>Controllore USB non accessibile</translation>
     </message>
     <message>
         <source>Shared Folders</source>
         <comment>details (shared folders)</comment>
-        <translation type="unfinished">Cartelle condivise</translation>
+        <translation>Cartelle condivise</translation>
     </message>
     <message>
         <source>None</source>
         <comment>details (shared folders)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Nessuna</translation>
     </message>
     <message>
         <source>Menu-bar</source>
         <comment>details (user interface)</comment>
-        <translation type="unfinished">Barra dei menu</translation>
+        <translation>Barra dei menu</translation>
     </message>
     <message>
         <source>Enabled</source>
         <comment>details (user interface/menu-bar)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Abilitata</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details (user interface/menu-bar)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Disabilitata</translation>
     </message>
     <message>
         <source>Status-bar</source>
         <comment>details (user interface)</comment>
-        <translation type="unfinished">Barra di stato</translation>
+        <translation>Barra di stato</translation>
     </message>
     <message>
         <source>Enabled</source>
         <comment>details (user interface/status-bar)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Abilitata</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details (user interface/status-bar)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Disabilitata</translation>
     </message>
     <message>
         <source>Mini-toolbar Position</source>
         <comment>details (user interface)</comment>
-        <translation type="unfinished">Posizione barra degli strumenti piccola</translation>
+        <translation>Posizione barra degli strumenti piccola</translation>
     </message>
     <message>
         <source>Top</source>
         <comment>details (user interface/mini-toolbar position)</comment>
-        <translation type="unfinished">Alto</translation>
+        <translation>Alto</translation>
     </message>
     <message>
         <source>Bottom</source>
         <comment>details (user interface/mini-toolbar position)</comment>
-        <translation type="unfinished">Basso</translation>
+        <translation>Basso</translation>
     </message>
     <message>
         <source>Mini-toolbar</source>
         <comment>details (user interface)</comment>
-        <translation type="unfinished">Barra degli strumenti piccola</translation>
+        <translation>Barra degli strumenti piccola</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details (user interface/mini-toolbar)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Disabilitata</translation>
     </message>
     <message>
         <source>None</source>
         <comment>details (description)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Nessuna</translation>
     </message>
     <message>
         <source>Recording File</source>
         <comment>details (display/recording)</comment>
-        <translation type="unfinished"></translation>
+        <translation>File di registrazione</translation>
     </message>
     <message>
         <source>Recording Attributes</source>
         <comment>details (display/recording)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Attributi della registrazione</translation>
     </message>
     <message>
         <source>Recording</source>
         <comment>details (display/recording)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Registrazione</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details (display/recording)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Disabilitata</translation>
     </message>
 </context>
 <context>
@@ -3193,7 +3193,7 @@
     <message>
         <source>%1 details</source>
         <comment>like &apos;General details&apos; or &apos;Storage details&apos;</comment>
-        <translation type="unfinished">Dettagli %1</translation>
+        <translation>Dettagli %1</translation>
     </message>
 </context>
 <context>
@@ -3496,14 +3496,14 @@
     <name>UIDetailsSet</name>
     <message>
         <source>Contains the details of virtual machine &apos;%1&apos;</source>
-        <translation type="unfinished">Contiene i dettagli della macchina virtuale &apos;%1&apos;</translation>
+        <translation>Contiene i dettagli della macchina virtuale &apos;%1&apos;</translation>
     </message>
 </context>
 <context>
     <name>UIDetailsView</name>
     <message>
         <source>Contains a list of Virtual Machine details</source>
-        <translation type="unfinished">Contiene un elenco dei dettagli della macchina virtuale</translation>
+        <translation>Contiene un elenco dei dettagli della macchina virtuale</translation>
     </message>
 </context>
 <context>
@@ -3680,7 +3680,7 @@
     <name>UIErrorPane</name>
     <message>
         <source>The selected virtual machine is &lt;i&gt;inaccessible&lt;/i&gt;. Please inspect the error message shown below and press the &lt;b&gt;Refresh&lt;/b&gt; button if you want to repeat the accessibility check:</source>
-        <translation type="unfinished">La macchina virtuale selezionata è &lt;i&gt;inaccessibile&lt;/i&gt;. Controlla il messaggio d&apos;errore sottostante e premi il pulsante &lt;b&gt;Aggiorna&lt;/b&gt; se vuoi ripetere il controllo di accessibilità:</translation>
+        <translation>La macchina virtuale selezionata è &lt;i&gt;inaccessibile&lt;/i&gt;. Controlla il messaggio d&apos;errore sottostante e premi il pulsante &lt;b&gt;Aggiorna&lt;/b&gt; se vuoi ripetere il controllo di accessibilità:</translation>
     </message>
 </context>
 <context>
@@ -4940,27 +4940,27 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Settings File Location</source>
         <comment>details (general)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Posizione del file delle impostazioni</translation>
     </message>
     <message>
         <source>Recording File</source>
         <comment>details (display/recording)</comment>
-        <translation type="unfinished"></translation>
+        <translation>File di registrazione</translation>
     </message>
     <message>
         <source>Recording Attributes</source>
         <comment>details (display/recording)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Attributi della registrazione</translation>
     </message>
     <message>
         <source>Recording</source>
         <comment>details (display/recording)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Registrazione</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details (display/recording)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Disabilitata</translation>
     </message>
 </context>
 <context>
@@ -5406,11 +5406,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Scale Factor:</source>
-        <translation type="unfinished">Fattore di scala:</translation>
+        <translation>Fattore di scala:</translation>
     </message>
     <message>
         <source>Controls the guest screen scale factor.</source>
-        <translation type="unfinished">Controlla il fattore di scala dello schermo del guest.</translation>
+        <translation>Controlla il fattore di scala dello schermo del guest.</translation>
     </message>
 </context>
 <context>
@@ -6415,7 +6415,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;URL:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;URL:</translation>
     </message>
 </context>
 <context>
@@ -8106,31 +8106,31 @@ p, li { white-space: pre-wrap; }
     <name>UIMachinePreview</name>
     <message>
         <source>No preview</source>
-        <translation type="unfinished">Nessuna anteprima</translation>
+        <translation>Nessuna anteprima</translation>
     </message>
     <message>
         <source>Update disabled</source>
-        <translation type="unfinished">Aggiornamento disabilitato</translation>
+        <translation>Aggiornamento disabilitato</translation>
     </message>
     <message>
         <source>Every 0.5 s</source>
-        <translation type="unfinished">Ogni 0.5 s</translation>
+        <translation>Ogni 0.5 sec</translation>
     </message>
     <message>
         <source>Every 1 s</source>
-        <translation type="unfinished">Ogni 1 s</translation>
+        <translation>Ogni 1 sec</translation>
     </message>
     <message>
         <source>Every 2 s</source>
-        <translation type="unfinished">Ogni 2 s</translation>
+        <translation>Ogni 2 sec</translation>
     </message>
     <message>
         <source>Every 5 s</source>
-        <translation type="unfinished">Ogni 5 s</translation>
+        <translation>Ogni 5 sec</translation>
     </message>
     <message>
         <source>Every 10 s</source>
-        <translation type="unfinished">Ogni 10 s</translation>
+        <translation>Ogni 10 sec</translation>
     </message>
 </context>
 <context>
@@ -8567,23 +8567,23 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Capture</source>
-        <translation type="unfinished"></translation>
+        <translation>A&amp;cquisizione</translation>
     </message>
     <message>
         <source>&amp;Enable Capture</source>
-        <translation type="unfinished"></translation>
+        <translation>Abilita acquisizion&amp;e</translation>
     </message>
     <message>
         <source>Capture &amp;Mode:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Modalità di acquisizione:</translation>
     </message>
     <message>
         <source>Stores the capture mode.</source>
-        <translation type="unfinished"></translation>
+        <translation>Memorizza la modalità di acquisizione.</translation>
     </message>
     <message>
         <source>&amp;Audio Quality:</source>
-        <translation type="unfinished"></translation>
+        <translation>Qu&amp;alità audio:</translation>
     </message>
 </context>
 <context>
@@ -9652,7 +9652,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Auto-mount</source>
-        <translation>Montaggio automatico</translation>
+        <translation type="vanished">Montaggio automatico</translation>
     </message>
     <message>
         <source>Yes</source>
@@ -9701,6 +9701,14 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Shared &amp;Folders</source>
         <translation>&amp;Cartelle condivise</translation>
+    </message>
+    <message>
+        <source>Auto Mount</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>At</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -9760,6 +9768,14 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>When checked, this shared folder will be permanent.</source>
         <translation>Se marcata, questa cartella condivisa sarà permanente.</translation>
+    </message>
+    <message>
+        <source>Mount point:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Where to automatically mount the folder in the guest.  A drive letter (e.g. &apos;G:&apos;) for Windows and OS/2 guests, path for the others.  If left empty the guest will pick something fitting.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -11531,7 +11547,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Resizing medium...</source>
-        <translation type="unfinished"></translation>
+        <translation>Ridimensionamento supporto...</translation>
     </message>
 </context>
 <context>
@@ -15655,31 +15671,31 @@ questo passo e collegare hard disk più tardi tramite Impostazioni della MV.&lt;
     <name>UIToolsModel</name>
     <message>
         <source>Welcome</source>
-        <translation type="unfinished"></translation>
+        <translation>Benvenuto</translation>
     </message>
     <message>
         <source>Media</source>
-        <translation type="unfinished"></translation>
+        <translation>Supporti</translation>
     </message>
     <message>
         <source>Network</source>
-        <translation type="unfinished">Rete</translation>
+        <translation>Rete</translation>
     </message>
     <message>
         <source>Cloud</source>
-        <translation type="unfinished"></translation>
+        <translation>Cloud</translation>
     </message>
     <message>
         <source>Details</source>
-        <translation type="unfinished">Dettagli</translation>
+        <translation>Dettagli</translation>
     </message>
     <message>
         <source>Snapshots</source>
-        <translation type="unfinished">Istantanee</translation>
+        <translation>Istantanee</translation>
     </message>
     <message>
         <source>Logs</source>
-        <translation type="unfinished"></translation>
+        <translation>Registri</translation>
     </message>
 </context>
 <context>
@@ -15720,7 +15736,7 @@ questo passo e collegare hard disk più tardi tramite Impostazioni della MV.&lt;
     <name>UIToolsView</name>
     <message>
         <source>Contains a list of VirtualBox tools</source>
-        <translation type="unfinished"></translation>
+        <translation>Contiene un elenco degli strumenti di VirtualBox</translation>
     </message>
 </context>
 <context>
@@ -16209,33 +16225,33 @@ questo passo e collegare hard disk più tardi tramite Impostazioni della MV.&lt;
     <message>
         <source>Manager</source>
         <comment>Note: main window title which is prepended by the product name.</comment>
-        <translation type="unfinished">Gestore</translation>
+        <translation>Gestore</translation>
     </message>
     <message>
         <source>Select a virtual machine file</source>
-        <translation type="unfinished">Seleziona un file di macchina virtuale</translation>
+        <translation>Seleziona un file di macchina virtuale</translation>
     </message>
     <message>
         <source>Virtual machine files (%1)</source>
-        <translation type="unfinished">File di macchina virtuale (%1)</translation>
+        <translation>File di macchina virtuale (%1)</translation>
     </message>
     <message>
         <source>Select a destination folder to move the selected virtual machine</source>
-        <translation type="unfinished"></translation>
+        <translation>Seleziona una cartella di destinazione per spostare la macchina virtuale selezionata</translation>
     </message>
 </context>
 <context>
     <name>UIVirtualBoxManagerWidget</name>
     <message>
         <source>Show Toolbar Text</source>
-        <translation type="unfinished">Mostra testo della barra degli strumenti</translation>
+        <translation>Mostra testo della barra degli strumenti</translation>
     </message>
 </context>
 <context>
     <name>UIWelcomePane</name>
     <message>
         <source>&lt;h3&gt;Welcome to VirtualBox!&lt;/h3&gt;&lt;p&gt;The left part of application window contains global tools and lists all virtual machines and virtual machine groups on your computer. You can import, add and create new VMs using corresponding toolbar buttons. You can popup a tools of currently selected element using corresponding element button.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;%1&lt;/b&gt; key to get instant help, or visit &lt;a href=https://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; for more information and latest news.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;h3&gt;Benvenuti in VirtualBox!&lt;/h3&gt;&lt;p&gt;La parte sinistra di questa finestra contiene gli strumenti globali ed elenca tutte le macchine virtuali e i gruppi di macchine virtuali sul tuo computer. Puoi importare, aggiungere e creare nuove macchine virtuali utilizzando i pulsanti corrispondenti della barra degli strumenti. Puoi richiamare uno strumento dell&apos;elemento selezionato utilizzando il pulsante corrispondente.&lt;/p&gt;&lt;p&gt;Puoi premere il tasto &lt;b&gt;%1&lt;/b&gt; per ottenere aiuto immediatamente, o visitare &lt;a href=https://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; per ulteriori informazioni e per le ultime novità.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -16610,71 +16626,71 @@ questo passo e collegare hard disk più tardi tramite Impostazioni della MV.&lt;
     </message>
     <message>
         <source>&lt;p&gt;Please choose a name and optionally a folder for the new virtual machine. The new machine will be a clone of the machine &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Scegli un nome e opzionalmente una cartella per la nuova macchina virtuale. La nuova macchina sarà un clone della macchina &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Name:</source>
-        <translation type="unfinished"></translation>
+        <translation>Nome:</translation>
     </message>
     <message>
         <source>Path:</source>
-        <translation type="unfinished"></translation>
+        <translation>Percorso:</translation>
     </message>
     <message>
         <source>MAC Address &amp;Policy:</source>
-        <translation type="unfinished"></translation>
+        <translation>Criterio in&amp;dirizzi MAC:</translation>
     </message>
     <message>
         <source>Include all network adapter MAC addresses</source>
-        <translation type="unfinished"></translation>
+        <translation>Includi tutti gli indirizzi MAC delle schede di rete</translation>
     </message>
     <message>
         <source>Include only NAT network adapter MAC addresses</source>
-        <translation type="unfinished"></translation>
+        <translation>Includi solo gli indirizzi MAC delle schede di rete con NAT</translation>
     </message>
     <message>
         <source>Generate new MAC addresses for all network adapters</source>
-        <translation type="unfinished"></translation>
+        <translation>Genera nuovi indirizzi MAC per tutte le schede di rete</translation>
     </message>
     <message>
         <source>Include all network adapter MAC addresses in exported during cloning.</source>
-        <translation type="unfinished"></translation>
+        <translation>Includi tutti gli indirizzi MAC delle schede di rete delle esportate durante la clonazione.</translation>
     </message>
     <message>
         <source>Include only NAT network adapter MAC addresses during cloning.</source>
-        <translation type="unfinished"></translation>
+        <translation>Includi solo gli indirizzi MAC delle schede di rete con NAT durante la clonazione.</translation>
     </message>
     <message>
         <source>Generate new MAC addresses for all network adapters during cloning.</source>
-        <translation type="unfinished"></translation>
+        <translation>Genera nuovi indirizzi MAC per tutte le schede di rete durante la clonazione.</translation>
     </message>
     <message>
         <source>Additional Options:</source>
-        <translation type="unfinished"></translation>
+        <translation>Opzioni aggiuntive:</translation>
     </message>
     <message>
         <source>Don&apos;t change the disk names during cloning.</source>
-        <translation type="unfinished"></translation>
+        <translation>Non cambiare i nomi dei dischi durante la clonazione.</translation>
     </message>
     <message>
         <source>Keep &amp;Disk Names</source>
-        <translation type="unfinished"></translation>
+        <translation>Mantieni i nomi dei &amp;dischi</translation>
     </message>
     <message>
         <source>Don&apos;t change hardware UUIDs during cloning.</source>
-        <translation type="unfinished"></translation>
+        <translation>Non cambiare gli UUID hardware durante la clonazione.</translation>
     </message>
     <message>
         <source>Keep &amp;Hardware UUIDs</source>
-        <translation type="unfinished"></translation>
+        <translation>Mantieni gli UUID &amp;hardware</translation>
     </message>
     <message>
         <source>New machine &amp;name and path</source>
-        <translation type="unfinished"></translation>
+        <translation>Nome e percorso della &amp;nuova macchina</translation>
     </message>
     <message>
         <source>Clone options</source>
-        <translation type="unfinished"></translation>
+        <translation>Opzioni di clonazione</translation>
     </message>
 </context>
 <context>
@@ -16849,15 +16865,15 @@ questo passo e collegare hard disk più tardi tramite Impostazioni della MV.&lt;
     </message>
     <message>
         <source>Open Virtualization Format 0.9</source>
-        <translation>Formato aperto di virtualizzazione 0.9</translation>
+        <translation>Open Virtualization Format 0.9</translation>
     </message>
     <message>
         <source>Open Virtualization Format 1.0</source>
-        <translation>Formato aperto di virtualizzazione 1.0</translation>
+        <translation>Open Virtualization Format 1.0</translation>
     </message>
     <message>
         <source>Open Virtualization Format 2.0</source>
-        <translation>Formato aperto di virtualizzazione 2.0</translation>
+        <translation>Open Virtualization Format 2.0</translation>
     </message>
     <message>
         <source>Oracle Public Cloud Format 1.0</source>
@@ -16873,106 +16889,106 @@ questo passo e collegare hard disk più tardi tramite Impostazioni della MV.&lt;
     </message>
     <message>
         <source>&lt;p&gt;Please choose a format to export the virtual appliance to.&lt;/p&gt;&lt;p&gt;The &lt;b&gt;Open Virtualization Format&lt;/b&gt; supports only &lt;b&gt;ovf&lt;/b&gt; or &lt;b&gt;ova&lt;/b&gt; extensions. If you use the &lt;b&gt;ovf&lt;/b&gt; extension, several files will be written separately. If you use the &lt;b&gt;ova&lt;/b&gt; extension, all the files will be combined into one Open Virtualization Format archive.&lt;/p&gt;&lt;p&gt;The &lt;b&gt;Oracle Cloud Infrastructure&lt;/b&gt; format supports exporting to remote cloud servers only. Main virtual disk of each selected machine will be uploaded to remote server.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Scegli un formato con cui esportare l&apos;applicazione virtuale.&lt;/p&gt;&lt;p&gt;L&apos;&lt;b&gt;Open Virtualization Format&lt;/b&gt; supporta solo le estensioni &lt;b&gt;ovf&lt;/b&gt; o &lt;b&gt;ova&lt;/b&gt;.&lt;br&gt;Se utilizzi l&apos;estensione &lt;b&gt;ovf&lt;/b&gt;, saranno scritti diversi file separatamente.&lt;br&gt;Se utilizzi l&apos;estensione &lt;b&gt;ova&lt;/b&gt;, tutti i file saranno combinati in un archivio in un archivio Open Virtualization Format.&lt;/p&gt;&lt;p&gt;Il formato &lt;b&gt;Oracle Public Cloud&lt;/b&gt; supporta solo l&apos;esportazione ai server remoti in cloud.&lt;br&gt;Il disco virtuale principale di ogni macchina sarà caricato sul server remoto.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Choose a file to export the virtual appliance to...</source>
-        <translation type="unfinished">Scegli un file con il quale esportare l&apos;applicazione virtuale...</translation>
+        <translation>Scegli un file per esportare l&apos;applicazione virtuale...</translation>
     </message>
     <message>
         <source>Export to cloud service provider.</source>
-        <translation type="unfinished"></translation>
+        <translation>Esporta a fornitore di servizio cloud.</translation>
     </message>
     <message>
         <source>MAC Address &amp;Policy:</source>
-        <translation type="unfinished"></translation>
+        <translation>Criterio in&amp;dirizzi MAC:</translation>
     </message>
     <message>
         <source>Include all network adapter MAC addresses</source>
-        <translation type="unfinished"></translation>
+        <translation>Includi tutti gli indirizzi MAC delle schede di rete</translation>
     </message>
     <message>
         <source>Include only NAT network adapter MAC addresses</source>
-        <translation type="unfinished"></translation>
+        <translation>Includi solo gli indirizzi MAC delle schede di rete con NAT</translation>
     </message>
     <message>
         <source>Strip all network adapter MAC addresses</source>
-        <translation type="unfinished"></translation>
+        <translation>Rimuovi tutti gli indirizzi MAC delle schede di rete</translation>
     </message>
     <message>
         <source>Include all network adapter MAC addresses in exported appliance archive.</source>
-        <translation type="unfinished"></translation>
+        <translation>Includi solo gli indirizzi MAC delle schede di rete nell&apos;archivio esportato dell&apos;applicazione virtuale.</translation>
     </message>
     <message>
         <source>Include only NAT network adapter MAC addresses in exported appliance archive.</source>
-        <translation type="unfinished"></translation>
+        <translation>Includi solo gli indirizzi MAC delle schede di rete nell&apos;archivio esportato dell&apos;applicazione virtuale.</translation>
     </message>
     <message>
         <source>Strip all network adapter MAC addresses from exported appliance archive.</source>
-        <translation type="unfinished"></translation>
+        <translation>Rimuovi tutti gli indirizzi MAC delle schede di rete nell&apos;archivio esportato delle applicazioni virtuali.</translation>
     </message>
     <message>
         <source>Additionally:</source>
-        <translation type="unfinished"></translation>
+        <translation>In aggiunta:</translation>
     </message>
     <message>
         <source>&amp;Write Manifest file</source>
-        <translation type="unfinished"></translation>
+        <translation>Scrivi il file &amp;Manifest</translation>
     </message>
     <message>
         <source>Include ISO image files in exported VM archive.</source>
-        <translation type="unfinished"></translation>
+        <translation>Includi i file immagine ISO nell&apos;archivio esportato delle MV.</translation>
     </message>
     <message>
         <source>&amp;Include ISO image files</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;includi i file immagine ISO</translation>
     </message>
     <message>
         <source>&amp;Account:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Account:</translation>
     </message>
     <message>
         <source>&lt;p&gt;Please choose one of cloud service accounts you have registered to export virtual machines to.  Make sure profile settings reflected in the underlying table are valid.  They will be used to establish network connection required to upload your virtual machine files to a remote cloud facility.</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Scegli uno degli account di servizio cloud che hai registrato per esportare le macchine virtuali. Assicurati che le impostazioni di profilo rappresentate nella tabella sottostante siano valide. Saranno utilizzate per stabilire la connessione richiesta per caricare i file della macchina virtuale in una struttura remota di cloud.</translation>
     </message>
     <message>
         <source>&lt;p&gt;Please choose a filename to export the virtual appliance to. Besides that you can specify a certain amount of options which affects the size and content of resulting archive.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Scegli un nome file con cui esportare l&apos;applicazione virtuale. A parte questo, puoi specificare una certa quantità di opzioni che interessa la dimensione e il contenuto dell&apos;archivio risultante.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Virtual system settings</source>
-        <translation type="unfinished"></translation>
+        <translation>Impostazioni del sistema virtuale</translation>
     </message>
     <message>
         <source>Virtual &amp;system settings</source>
-        <translation type="unfinished"></translation>
+        <translation>Impostazioni del &amp;sistema virtuale</translation>
     </message>
     <message>
         <source>Oracle Cloud Infrastructure - Classic</source>
-        <translation type="unfinished"></translation>
+        <translation>Oracle Cloud Infrastructure - Classico</translation>
     </message>
     <message>
         <source>Write in Oracle Cloud Infrastructure - Classic format.</source>
-        <translation type="unfinished"></translation>
+        <translation>Scrivi in Oracle Cloud Infrastructure - Formato classico.</translation>
     </message>
     <message>
         <source>Include all network adapter MAC addresses to exported appliance archive.</source>
-        <translation type="unfinished"></translation>
+        <translation>Includi tutti gli indirizzi MAC delle schede di rete nell&apos;archivio esportato delle applicazioni virtuali.</translation>
     </message>
     <message>
         <source>Include only NAT network adapter MAC addresses to exported appliance archive.</source>
-        <translation type="unfinished"></translation>
+        <translation>Includi solo gli indirizzi MAC delle schede di rete nell&apos;archivio esportato delle applicazioni virtuali.</translation>
     </message>
     <message>
         <source>Include ISO image files into exported VM archive.</source>
-        <translation type="unfinished"></translation>
+        <translation>Includi i file immagine ISO nell&apos;archivio esportato delle MV.</translation>
     </message>
 </context>
 <context>
     <name>UIWizardExportAppPageBasic3</name>
     <message>
         <source>&lt;p&gt;Please choose a filename to export the OVF/OVA to.&lt;/p&gt;&lt;p&gt;If you use an &lt;i&gt;ova&lt;/i&gt; extension, then all the files will be combined into one Open Virtualization Format Archive.&lt;/p&gt;&lt;p&gt;If you use an &lt;i&gt;ovf&lt;/i&gt; extension, several files will be written separately.&lt;/p&gt;&lt;p&gt;Other extensions are not allowed.&lt;/p&gt;</source>
-        <translation type="vanished">&lt;p&gt;Scegli un nome file di destinazione per l&apos;esportazione dell&apos;OVF/OVA.&lt;/p&gt;&lt;p&gt;Se utilizzi l&apos;estensione &lt;i&gt;ova&lt;/i&gt;, tutti i file saranno combinati in un archivio OVF.&lt;/p&gt;&lt;p&gt;Se utilizzi l&apos;estensione &lt;i&gt;ovf&lt;/i&gt;, saranno scritti diversi file separatamente.&lt;/p&gt;&lt;p&gt;Altre estensioni non sono ammesse.&lt;/p&gt;</translation>
+        <translation type="vanished">&lt;p&gt;Scegli un nome file di destinazione per l&apos;esportazione dell&apos;OVF/OVA.&lt;/p&gt;&lt;p&gt;Se utilizzi l&apos;estensione &lt;i&gt;ova&lt;/i&gt;, tutti i file saranno combinati in un archivio Open Virtualization Format.&lt;/p&gt;&lt;p&gt;Se utilizzi l&apos;estensione &lt;i&gt;ovf&lt;/i&gt;, saranno scritti diversi file separatamente.&lt;/p&gt;&lt;p&gt;Altre estensioni non sono ammesse.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Please complete the additional fields like the username, password and the bucket, and provide a filename for the OVF target.</source>
@@ -16988,7 +17004,7 @@ questo passo e collegare hard disk più tardi tramite Impostazioni della MV.&lt;
     </message>
     <message>
         <source>&lt;p&gt;Please choose a filename to export the virtual appliance to.&lt;/p&gt;&lt;p&gt;The &lt;b&gt;Open Virtualization Format&lt;/b&gt; supports only &lt;b&gt;ovf&lt;/b&gt; or &lt;b&gt;ova&lt;/b&gt; extensions. &lt;br&gt;If you use the &lt;b&gt;ovf&lt;/b&gt; extension, several files will be written separately.&lt;br&gt;If you use the &lt;b&gt;ova&lt;/b&gt; extension, all the files will be combined into one Open Virtualization Format archive.&lt;/p&gt;&lt;p&gt;The &lt;b&gt;Oracle Public Cloud Format&lt;/b&gt; supports only the &lt;b&gt;tar.gz&lt;/b&gt; extension.&lt;br&gt;Each virtual disk file will be written separately.&lt;/p&gt;</source>
-        <translation type="vanished">&lt;p&gt;Scegli un nome del file con cui esportare l&apos;applicazione virtuale.&lt;/p&gt;&lt;p&gt;Il formato &lt;b&gt;Open Virtualization&lt;/b&gt; supporta solo le estensioni &lt;b&gt;ovf&lt;/b&gt; o &lt;b&gt;ova&lt;/b&gt;.&lt;br&gt;Se utilizzi l&apos;estensione &lt;b&gt;ovf&lt;/b&gt;, saranno scritti diversi file separatamente.&lt;br&gt;Se utilizzi l&apos;estensione &lt;b&gt;ova&lt;/b&gt;, tutti i file saranno combinati in un archivio in formato Open Virtualization.&lt;/p&gt;&lt;p&gt;Il formato &lt;b&gt;Oracle Public Cloud&lt;/b&gt; supporta solo l&apos;estensione &lt;b&gt;tar.gz&lt;/b&gt;.&lt;br&gt;Ogni file di disco virtuale sarà scritto separatamente.&lt;/p&gt;</translation>
+        <translation type="vanished">&lt;p&gt;Scegli un nome del file con cui esportare l&apos;applicazione virtuale.&lt;/p&gt;&lt;p&gt;L&apos;&lt;b&gt;Open Virtualization Format&lt;/b&gt; supporta solo le estensioni &lt;b&gt;ovf&lt;/b&gt; o &lt;b&gt;ova&lt;/b&gt;.&lt;br&gt;Se utilizzi l&apos;estensione &lt;b&gt;ovf&lt;/b&gt;, saranno scritti diversi file separatamente.&lt;br&gt;Se utilizzi l&apos;estensione &lt;b&gt;ova&lt;/b&gt;, tutti i file saranno combinati in un archivio Open Virtualization Format.&lt;/p&gt;&lt;p&gt;Il formato &lt;b&gt;Oracle Public Cloud&lt;/b&gt; supporta solo l&apos;estensione &lt;b&gt;tar.gz&lt;/b&gt;.&lt;br&gt;Ogni file di disco virtuale sarà scritto separatamente.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -17106,7 +17122,8 @@ questo passo e collegare hard disk più tardi tramite Impostazioni della MV.&lt;
     <message>
         <source>You can modify the base folder which will host all the virtual machines.
 Home folders can also be individually (per virtual machine)  modified.</source>
-        <translation type="unfinished"></translation>
+        <translation>Puoi modificare la cartella di base che ospiterà tutte le macchine virtuali.
+La cartelle Home possono essere modificate singolarmente (per macchina virtuale).</translation>
     </message>
 </context>
 <context>
@@ -17360,7 +17377,7 @@ Home folders can also be individually (per virtual machine)  modified.</source>
     </message>
     <message>
         <source>Please choose a descriptive name and destination folder for the new virtual machine and select the type of operating system you intend to install on it. The name you choose will be used throughout VirtualBox to identify this machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>Scegli un nome descrittivo e la cartella di destinazione per la nuova macchina virtuale e seleziona il tipo di sistema operativo che desideri installare. Il nome che scegli sarà utilizzato da VirtualBox per identificare questa macchina.</translation>
     </message>
 </context>
 <context>

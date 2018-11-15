@@ -7430,7 +7430,7 @@
     </message>
     <message>
         <source>Auto-mount</source>
-        <translation>Automatinis prijungimas</translation>
+        <translation type="vanished">Automatinis prijungimas</translation>
     </message>
     <message>
         <source>Access</source>
@@ -7508,6 +7508,14 @@
         <source>Shared &amp;Folders</source>
         <translation>&amp;Bendrieji aplankai</translation>
     </message>
+    <message>
+        <source>Auto Mount</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>At</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIMachineSettingsSFDetails</name>
@@ -7562,6 +7570,14 @@
     <message>
         <source>When checked, this shared folder will be permanent.</source>
         <translation>Jei pažymėta, šis bendrasis aplankas bus nuolatinis.</translation>
+    </message>
+    <message>
+        <source>Mount point:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Where to automatically mount the folder in the guest.  A drive letter (e.g. &apos;G:&apos;) for Windows and OS/2 guests, path for the others.  If left empty the guest will pick something fitting.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
