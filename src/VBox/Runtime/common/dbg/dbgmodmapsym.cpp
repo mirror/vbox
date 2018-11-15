@@ -563,6 +563,8 @@ static DECLCALLBACK(int) rtDbgModMapSym_TryOpen(PRTDBGMODINT pMod, RTLDRARCH enm
                         RTFileReadAllFree(pvFile, cbFile2);
                     }
                 }
+                else
+                    rc = VERR_DBG_NO_MATCHING_INTERPRETER;
             }
         }
         RTFileClose(hFile);
