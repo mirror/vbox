@@ -61,9 +61,10 @@ are ordered as follows:
     <itemizedlist>
 
       <listitem>
-        <para>User interface: guest/host file manager</para>
+        <para>User interface: a new file manager enabling user to control the guest file system and copy file objects between host and guest.</para>
       </listitem>
 
+	
     </itemizedlist>
 
     <para>In addition, the following items were fixed and/or added:</para>
@@ -141,6 +142,22 @@ are ordered as follows:
       <listitem>
         <para>User interface: major rework of interface style with improved
            ease of access for application and machine set-up</para>
+      </listitem>
+      
+      <listitem>
+        <para>User interface: an improved logviewer widget.</para>
+      </listitem>
+
+      <listitem>
+        <para>User interface: several improvements to import appliance and clone virtual machine wizards including (not limited to) enabling user to select non-default folders per machine.</para>
+      </listitem>
+
+      <listitem>
+        <para>User interface: a new floppy disk creation widget enabling user to create/add a (optionally formatted) floppy disk.</para>
+      </listitem>
+
+      <listitem>
+        <para>User interface: a new media selection widget enabling the user to select one of the already known media or select a disk image file.</para>
       </listitem>
 
     </itemizedlist>
