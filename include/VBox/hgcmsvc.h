@@ -27,10 +27,13 @@
 #define ___VBox_hgcm_h
 
 #include <iprt/assert.h>
+#include <iprt/stdarg.h>
 #include <iprt/string.h>
 #include <VBox/cdefs.h>
 #include <VBox/types.h>
 #include <VBox/err.h>
+#include <VBox/vmm/stam.h>
+#include <VBox/vmm/dbgf.h>
 #ifdef VBOX_TEST_HGCM_PARMS
 # include <iprt/test.h>
 #endif
@@ -90,9 +93,77 @@ typedef struct VBOXHGCMSVCHELPERS
      */
     DECLR3CALLBACKMEMBER(bool, pfnIsCallRestored, (VBOXHGCMCALLHANDLE callHandle));
 
+    /** Access to STAMR3RegisterV. */
+    DECLR3CALLBACKMEMBER(int, pfnStamRegisterV,(void *pvInstance, void *pvSample, STAMTYPE enmType, STAMVISIBILITY enmVisibility,
+                                                STAMUNIT enmUnit, const char *pszDesc, const char *pszName, va_list va)
+                                                RT_IPRT_FORMAT_ATTR(7, 0));
+    /** Access to STAMR3DeregisterV. */
+    DECLR3CALLBACKMEMBER(int, pfnStamDeregisterV,(void *pvInstance, const char *pszPatFmt, va_list va) RT_IPRT_FORMAT_ATTR(2, 0));
+
+    /** Access to DBGFR3InfoRegisterExternal. */
+    DECLR3CALLBACKMEMBER(int, pfnInfoRegister,(void *pvInstance, const char *pszName, const char *pszDesc,
+                                               PFNDBGFHANDLEREXT pfnHandler, void *pvUser));
+    /** Access to DBGFR3InfoDeregisterExternal. */
+    DECLR3CALLBACKMEMBER(int, pfnInfoDeregister,(void *pvInstance, const char *pszName));
+
 } VBOXHGCMSVCHELPERS;
 
 typedef VBOXHGCMSVCHELPERS *PVBOXHGCMSVCHELPERS;
+
+#if defined(IN_RING3) || defined(IN_SLICKEDIT)
+
+/** Wrapper around STAMR3RegisterF. */
+DECLINLINE(int) RT_IPRT_FORMAT_ATTR(7, 8)
+HGCMSvcHlpStamRegister(PVBOXHGCMSVCHELPERS pHlp, void *pvSample, STAMTYPE enmType, STAMVISIBILITY enmVisibility,
+                       STAMUNIT enmUnit, const char *pszDesc, const char *pszName, ...)
+{
+    int rc;
+    va_list va;
+    va_start(va, pszName);
+    rc = pHlp->pfnStamRegisterV(pHlp->pvInstance, pvSample, enmType, enmVisibility, enmUnit, pszDesc, pszName, va);
+    va_end(va);
+    return rc;
+}
+
+/** Wrapper around STAMR3RegisterV. */
+DECLINLINE(int) RT_IPRT_FORMAT_ATTR(7, 0)
+HGCMSvcHlpStamRegisterV(PVBOXHGCMSVCHELPERS pHlp, void *pvSample, STAMTYPE enmType, STAMVISIBILITY enmVisibility,
+                        STAMUNIT enmUnit, const char *pszDesc, const char *pszName, va_list va)
+{
+    return pHlp->pfnStamRegisterV(pHlp->pvInstance, pvSample, enmType, enmVisibility, enmUnit, pszDesc, pszName, va);
+}
+
+/** Wrapper around STAMR3DeregisterF. */
+DECLINLINE(int) RT_IPRT_FORMAT_ATTR(2, 3) HGCMSvcHlpStamDeregister(PVBOXHGCMSVCHELPERS pHlp, const char *pszPatFmt, ...)
+{
+    int rc;
+    va_list va;
+    va_start(va, pszPatFmt);
+    rc = pHlp->pfnStamDeregisterV(pHlp->pvInstance, pszPatFmt, va);
+    va_end(va);
+    return rc;
+}
+
+/** Wrapper around STAMR3DeregisterV. */
+DECLINLINE(int) RT_IPRT_FORMAT_ATTR(2, 0) HGCMSvcHlpStamDeregisterV(PVBOXHGCMSVCHELPERS pHlp, const char *pszPatFmt, va_list va)
+{
+    return pHlp->pfnStamDeregisterV(pHlp->pvInstance, pszPatFmt, va);
+}
+
+/** Wrapper around DBGFR3InfoRegisterExternal. */
+DECLINLINE(int) HGCMSvcHlpInfoRegister(PVBOXHGCMSVCHELPERS pHlp, const char *pszName, const char *pszDesc,
+                                       PFNDBGFHANDLEREXT pfnHandler, void *pvUser)
+{
+    return pHlp->pfnInfoRegister(pHlp->pvInstance, pszName, pszDesc, pfnHandler, pvUser);
+}
+
+/** Wrapper around DBGFR3InfoDeregisterExternal. */
+DECLINLINE(int) HGCMSvcHlpInfoDeregister(PVBOXHGCMSVCHELPERS pHlp, const char *pszName)
+{
+    return pHlp->pfnInfoDeregister(pHlp->pvInstance, pszName);
+}
+
+#endif /* IN_RING3 */
 
 
 #define VBOX_HGCM_SVC_PARM_INVALID (0U)

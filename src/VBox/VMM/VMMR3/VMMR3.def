@@ -360,6 +360,10 @@ EXPORTS
     STAMR3Snapshot
     STAMR3SnapshotFree
     STAMR3GetUnit
+    STAMR3RegisterFU
+    STAMR3RegisterVU
+    STAMR3DeregisterF
+    STAMR3DeregisterV
 
     TMR3TimerSetCritSect
     TMR3TimerLoad

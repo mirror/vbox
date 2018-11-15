@@ -734,7 +734,7 @@ private:
                         PCFGMNODE pLunL0, PCFGMNODE pInst,
                         bool fAttachDetach, bool fIgnoreConnectFailure);
     int i_configSerialPort(PCFGMNODE pInst, PortMode_T ePortMode, const char *pszPath, bool fServer);
-    static DECLCALLBACK(int) i_configGuestProperties(void *pvConsole, PUVM pUVM);
+    static DECLCALLBACK(int) i_configGuestProperties(void *pvConsole);
     static DECLCALLBACK(int) i_configGuestControl(void *pvConsole);
     static DECLCALLBACK(void) i_vmstateChangeCallback(PUVM pUVM, VMSTATE enmState, VMSTATE enmOldState, void *pvUser);
     static DECLCALLBACK(int) i_unplugCpu(Console *pThis, PUVM pUVM, VMCPUID idCpu);

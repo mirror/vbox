@@ -242,9 +242,6 @@ DECLINLINE(int) GuestPropWriteFlags(uint32_t fFlags, char *pszFlags)
  * Currently RDONLYGUEST is supported.  Takes one 32-bit unsigned integer
  * parameter for the flags. */
 #define GUEST_PROP_FN_HOST_SET_GLOBAL_FLAGS 7
-/** Return the pointer to a debug info function enumerating all guest
- * properties. */
-#define GUEST_PROP_FN_HOST_GET_DBGF_INFO    8
 /** @} */
 
 

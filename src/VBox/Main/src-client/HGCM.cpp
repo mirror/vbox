@@ -24,6 +24,7 @@
 #include <VBox/err.h>
 #include <VBox/hgcmsvc.h>
 #include <VBox/vmm/ssm.h>
+#include <VBox/vmm/stam.h>
 #include <VBox/sup.h>
 
 #include <iprt/alloc.h>
@@ -114,13 +115,20 @@ class HGCMService
 
         HGCMSVCEXTHANDLE m_hExtension;
 
+        PUVM m_pUVM;
+
+        /** @name Statistics
+         * @{ */
+        STAMPROFILE m_StatHandleMsg;
+        /** @} */
+
         int loadServiceDLL(void);
         void unloadServiceDLL(void);
 
         /*
          * Main HGCM thread methods.
          */
-        int instanceCreate(const char *pszServiceLibrary, const char *pszServiceName);
+        int instanceCreate(const char *pszServiceLibrary, const char *pszServiceName, PUVM pUVM);
         void instanceDestroy(void);
 
         int saveClientState(uint32_t u32ClientId, PSSMHANDLE pSSM);
@@ -132,13 +140,20 @@ class HGCMService
         static DECLCALLBACK(void) svcHlpCallComplete(VBOXHGCMCALLHANDLE callHandle, int32_t rc);
         static DECLCALLBACK(void) svcHlpDisconnectClient(void *pvInstance, uint32_t u32ClientId);
         static DECLCALLBACK(bool) svcHlpIsCallRestored(VBOXHGCMCALLHANDLE callHandle);
+        static DECLCALLBACK(int)  svcHlpStamRegisterV(void *pvInstance, void *pvSample, STAMTYPE enmType,
+                                                      STAMVISIBILITY enmVisibility, STAMUNIT enmUnit, const char *pszDesc,
+                                                      const char *pszName, va_list va);
+        static DECLCALLBACK(int)  svcHlpStamDeregisterV(void *pvInstance, const char *pszPatFmt, va_list va);
+        static DECLCALLBACK(int)  svcHlpInfoRegister(void *pvInstance, const char *pszName, const char *pszDesc,
+                                                     PFNDBGFHANDLEREXT pfnHandler, void *pvUser);
+        static DECLCALLBACK(int)  svcHlpInfoDeregister(void *pvInstance, const char *pszName);
 
     public:
 
         /*
          * Main HGCM thread methods.
          */
-        static int LoadService(const char *pszServiceLibrary, const char *pszServiceName);
+        static int LoadService(const char *pszServiceLibrary, const char *pszServiceName, PUVM pUVM);
         void UnloadService(void);
 
         static void UnloadAll(void);
@@ -242,7 +257,8 @@ HGCMService::HGCMService()
 #ifdef VBOX_WITH_CRHGSMI
     m_cHandleAcquires (0),
 #endif
-    m_hExtension (NULL)
+    m_hExtension (NULL),
+    m_pUVM       (NULL)
 {
     RT_ZERO(m_fntable);
 }
@@ -379,6 +395,11 @@ void HGCMService::unloadServiceDLL(void)
 
 class HGCMMsgSvcLoad: public HGCMMsgCore
 {
+    public:
+        HGCMMsgSvcLoad() : HGCMMsgCore(), pUVM() {}
+
+        /** The user mode VM handle (for statistics and such). */
+        PUVM pUVM;
 };
 
 class HGCMMsgSvcUnload: public HGCMMsgCore
@@ -523,6 +544,8 @@ DECLCALLBACK(void) hgcmServiceThread(HGCMTHREADHANDLE ThreadHandle, void *pvUser
             AssertMsgFailed(("%Rrc\n", rc));
             break;
         }
+
+        STAM_REL_PROFILE_START(&pSvc->m_StatHandleMsg, a);
 
         /* Cache required information to avoid unnecessary pMsgCore access. */
         uint32_t u32MsgId = pMsgCore->MsgId();
@@ -752,6 +775,7 @@ DECLCALLBACK(void) hgcmServiceThread(HGCMTHREADHANDLE ThreadHandle, void *pvUser
              */
             hgcmMsgComplete (pMsgCore, rc);
         }
+        STAM_REL_PROFILE_STOP(&pSvc->m_StatHandleMsg, a);
     }
 }
 
@@ -806,6 +830,54 @@ DECLCALLBACK(void) hgcmServiceThread(HGCMTHREADHANDLE ThreadHandle, void *pvUser
     return pHgcmPort->pfnIsCmdRestored(pHgcmPort, pCmd);
 }
 
+/**
+ * @interface_method_impl{VBOXHGCMSVCHELPERS,pfnStamRegisterV}
+ */
+/* static */ DECLCALLBACK(int)
+HGCMService::svcHlpStamRegisterV(void *pvInstance, void *pvSample, STAMTYPE enmType, STAMVISIBILITY enmVisibility,
+                                 STAMUNIT enmUnit, const char *pszDesc, const char *pszName, va_list va)
+{
+     HGCMService *pService = static_cast <HGCMService *>(pvInstance);
+     AssertPtrReturn(pService, VERR_INVALID_PARAMETER);
+
+     return STAMR3RegisterVU(pService->m_pUVM, pvSample, enmType, enmVisibility, enmUnit, pszDesc, pszName, va);
+}
+
+/**
+ * @interface_method_impl{VBOXHGCMSVCHELPERS,pfnStamDeregisterV}
+ */
+/* static */ DECLCALLBACK(int) HGCMService::svcHlpStamDeregisterV(void *pvInstance, const char *pszPatFmt, va_list va)
+{
+     HGCMService *pService = static_cast <HGCMService *>(pvInstance);
+     AssertPtrReturn(pService, VERR_INVALID_PARAMETER);
+
+     return STAMR3DeregisterV(pService->m_pUVM, pszPatFmt, va);
+}
+
+/**
+ * @interface_method_impl{VBOXHGCMSVCHELPERS,pfnInfoRegister}
+ */
+/* static */ DECLCALLBACK(int) HGCMService::svcHlpInfoRegister(void *pvInstance, const char *pszName, const char *pszDesc,
+                                                               PFNDBGFHANDLEREXT pfnHandler, void *pvUser)
+{
+     HGCMService *pService = static_cast <HGCMService *>(pvInstance);
+     AssertPtrReturn(pService, VERR_INVALID_PARAMETER);
+
+     return DBGFR3InfoRegisterExternal(pService->m_pUVM, pszName, pszDesc, pfnHandler, pvUser);
+}
+
+/**
+ * @interface_method_impl{VBOXHGCMSVCHELPERS,pfnInfoDeregister}
+ */
+/* static */ DECLCALLBACK(int) HGCMService::svcHlpInfoDeregister(void *pvInstance, const char *pszName)
+{
+     HGCMService *pService = static_cast <HGCMService *>(pvInstance);
+     AssertPtrReturn(pService, VERR_INVALID_PARAMETER);
+
+     return DBGFR3InfoDeregisterExternal(pService->m_pUVM, pszName);
+}
+
+
 static DECLCALLBACK(void) hgcmMsgCompletionCallback(int32_t result, HGCMMsgCore *pMsgCore)
 {
     /* Call the VMMDev port interface to issue IRQ notification. */
@@ -823,10 +895,9 @@ static DECLCALLBACK(void) hgcmMsgCompletionCallback(int32_t result, HGCMMsgCore 
  * The main HGCM methods of the service.
  */
 
-int HGCMService::instanceCreate(const char *pszServiceLibrary, const char *pszServiceName)
+int HGCMService::instanceCreate(const char *pszServiceLibrary, const char *pszServiceName, PUVM pUVM)
 {
     LogFlowFunc(("name %s, lib %s\n", pszServiceName, pszServiceLibrary));
-
     /* The maximum length of the thread name, allowed by the RT is 15. */
     char szThreadName[16];
     if (!strncmp(pszServiceName, RT_STR_TUPLE("VBoxShared")))
@@ -855,11 +926,20 @@ int HGCMService::instanceCreate(const char *pszServiceLibrary, const char *pszSe
         }
         else
         {
+            /* Register statistics: */
+            m_pUVM = pUVM;
+            STAMR3RegisterFU(pUVM, &m_StatHandleMsg, STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,
+                             "Message handling", "/HGCM/%s/Msg", pszServiceName);
+
             /* Initialize service helpers table. */
             m_svcHelpers.pfnCallComplete     = svcHlpCallComplete;
             m_svcHelpers.pvInstance          = this;
             m_svcHelpers.pfnDisconnectClient = svcHlpDisconnectClient;
             m_svcHelpers.pfnIsCallRestored   = svcHlpIsCallRestored;
+            m_svcHelpers.pfnStamRegisterV    = svcHlpStamRegisterV;
+            m_svcHelpers.pfnStamDeregisterV  = svcHlpStamDeregisterV;
+            m_svcHelpers.pfnInfoRegister     = svcHlpInfoRegister;
+            m_svcHelpers.pfnInfoDeregister   = svcHlpInfoDeregister;
 
             /* Execute the load request on the service thread. */
             HGCMMSGHANDLE hMsg;
@@ -867,6 +947,11 @@ int HGCMService::instanceCreate(const char *pszServiceLibrary, const char *pszSe
 
             if (RT_SUCCESS(rc))
             {
+                HGCMMsgSvcLoad *pMsg = (HGCMMsgSvcLoad *)hgcmObjReference(hMsg, HGCMOBJ_MSG);
+                AssertRelease(pMsg);
+                pMsg->pUVM = pUVM;
+                hgcmObjDereference(pMsg);
+
                 rc = hgcmMsgSend(hMsg);
             }
         }
@@ -897,6 +982,10 @@ void HGCMService::instanceDestroy(void)
             hgcmThreadWait(m_thread);
         }
     }
+
+    if (m_pszSvcName)
+        STAMR3DeregisterF(m_pUVM, "/HGCM/%s/*", m_pszSvcName);
+    m_pUVM = NULL;
 
     RTStrFree(m_pszSvcLibrary);
     m_pszSvcLibrary = NULL;
@@ -959,12 +1048,13 @@ int HGCMService::loadClientState(uint32_t u32ClientId, PSSMHANDLE pSSM)
  *
  * @param pszServiceLibrary  The library to be loaded.
  * @param pszServiceName     The name of the service.
+ * @param pUVM               The user mode VM handle (for statistics and such).
  * @return VBox rc.
  * @thread main HGCM
  */
-/* static */ int HGCMService::LoadService(const char *pszServiceLibrary, const char *pszServiceName)
+/* static */ int HGCMService::LoadService(const char *pszServiceLibrary, const char *pszServiceName, PUVM pUVM)
 {
-    LogFlowFunc(("lib %s, name = %s\n", pszServiceLibrary, pszServiceName));
+    LogFlowFunc(("lib %s, name = %s, pUVM = %p\n", pszServiceLibrary, pszServiceName, pUVM));
 
     /* Look at already loaded services to avoid double loading. */
 
@@ -980,7 +1070,7 @@ int HGCMService::loadClientState(uint32_t u32ClientId, PSSMHANDLE pSSM)
     else
     {
         /* Create the new service. */
-        pSvc = new HGCMService();
+        pSvc = new (std::nothrow) HGCMService();
 
         if (!pSvc)
         {
@@ -989,7 +1079,7 @@ int HGCMService::loadClientState(uint32_t u32ClientId, PSSMHANDLE pSSM)
         else
         {
             /* Load the library and call the initialization entry point. */
-            rc = pSvc->instanceCreate(pszServiceLibrary, pszServiceName);
+            rc = pSvc->instanceCreate(pszServiceLibrary, pszServiceName, pUVM);
 
             if (RT_SUCCESS(rc))
             {
@@ -1743,6 +1833,8 @@ class HGCMMsgMainLoad: public HGCMMsgCore
         const char *pszServiceLibrary;
         /* Name to be assigned to the service. */
         const char *pszServiceName;
+        /** The user mode VM handle (for statistics and such). */
+        PUVM pUVM;
 };
 
 class HGCMMsgMainHostCall: public HGCMMsgCore
@@ -1915,10 +2007,10 @@ static DECLCALLBACK(void) hgcmThread(HGCMTHREADHANDLE ThreadHandle, void *pvUser
             {
                 HGCMMsgMainLoad *pMsg = (HGCMMsgMainLoad *)pMsgCore;
 
-                LogFlowFunc(("HGCM_MSG_LOAD pszServiceName = %s, pMsg->pszServiceLibrary = %s\n",
-                             pMsg->pszServiceName, pMsg->pszServiceLibrary));
+                LogFlowFunc(("HGCM_MSG_LOAD pszServiceName = %s, pMsg->pszServiceLibrary = %s, pMsg->pUVM = %p\n",
+                             pMsg->pszServiceName, pMsg->pszServiceLibrary, pMsg->pUVM));
 
-                rc = HGCMService::LoadService(pMsg->pszServiceLibrary, pMsg->pszServiceName);
+                rc = HGCMService::LoadService(pMsg->pszServiceLibrary, pMsg->pszServiceName, pMsg->pUVM);
             } break;
 
             case HGCM_MSG_HOSTCALL:
@@ -2108,10 +2200,12 @@ static HGCMTHREADHANDLE g_hgcmThread = 0;
  *
  * @param pszServiceLibrary  The library to be loaded.
  * @param pszServiceName     The name to be assigned to the service.
+ * @param pUVM               The user mode VM handle (for statistics and such).
  * @return VBox rc.
  */
 int HGCMHostLoad(const char *pszServiceLibrary,
-                 const char *pszServiceName)
+                 const char *pszServiceName,
+                 PUVM pUVM)
 {
     LogFlowFunc(("lib = %s, name = %s\n", pszServiceLibrary, pszServiceName));
 
@@ -2133,6 +2227,7 @@ int HGCMHostLoad(const char *pszServiceLibrary,
 
         pMsg->pszServiceLibrary = pszServiceLibrary;
         pMsg->pszServiceName    = pszServiceName;
+        pMsg->pUVM              = pUVM;
 
         hgcmObjDereference(pMsg);
 
