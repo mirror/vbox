@@ -1875,15 +1875,37 @@ NTSTATUS APIENTRY GaDxgkDdiQueryCurrentFence(const HANDLE hAdapter,
     }
 
     DXGKRNL_INTERFACE *pDxgkInterface = &pDevExt->u.primary.DxgkInterface;
-    BOOLEAN bReturnValue = FALSE;
-    Status = pDxgkInterface->DxgkCbSynchronizeExecution(pDxgkInterface->DeviceHandle,
-                                                        gaQueryCurrentFenceCb, pDevExt, 0, &bReturnValue);
-    Assert(bReturnValue);
+    LARGE_INTEGER DelayInterval;
+    DelayInterval.QuadPart = -10LL * 1000LL * 1000LL;
+    uint32_t u32LastCompletedFenceId = 0;
+
+    /* Wait until the host processes all submitted buffers to allow delays on the host (debug, etc). */
+    for (;;)
+    {
+        BOOLEAN bReturnValue = FALSE;
+        Status = pDxgkInterface->DxgkCbSynchronizeExecution(pDxgkInterface->DeviceHandle,
+                                                            gaQueryCurrentFenceCb, pDevExt, 0, &bReturnValue);
+        Assert(bReturnValue);
+        if (Status != STATUS_SUCCESS)
+        {
+            break;
+        }
+
+        u32LastCompletedFenceId = ASMAtomicReadU32(&pGaDevExt->u32LastCompletedFenceId);
+        uint32_t const u32LastSubmittedFenceId = ASMAtomicReadU32(&pGaDevExt->u32LastSubmittedFenceId);
+        if (u32LastCompletedFenceId == u32LastSubmittedFenceId)
+        {
+            break;
+        }
+
+        GALOG(("hAdapter %p, LastCompletedFenceId %d, LastSubmittedFenceId %d...\n", hAdapter, u32LastCompletedFenceId, u32LastSubmittedFenceId));
+
+        KeDelayExecutionThread(KernelMode, FALSE, &DelayInterval);
+    }
 
     if (Status == STATUS_SUCCESS)
     {
-        /** @todo Wait until the host processes some or all submitted buffers? */
-        pCurrentFence->CurrentFence = ASMAtomicReadU32(&pGaDevExt->u32LastCompletedFenceId);
+        pCurrentFence->CurrentFence = u32LastCompletedFenceId;
     }
 
     GALOG(("hAdapter %p, CurrentFence %d, Status 0x%x\n", hAdapter, pCurrentFence->CurrentFence, Status));
