@@ -462,10 +462,9 @@
       <listitem>
         <para>
           <emphasis role="bold">Guest Additions for OS/2.</emphasis>
-          Shared folders are not yet supported with OS/2 guests. In
-          addition, seamless windows and automatic guest resizing will
-          probably never be implemented due to inherent limitations of
-          the OS/2 graphics system.
+          Seamless windows and automatic guest resizing will probably
+          never be implemented due to inherent limitations of the OS/2
+          graphics system.
         </para>
       </listitem>
 
