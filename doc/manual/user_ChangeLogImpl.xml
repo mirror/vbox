@@ -108,7 +108,14 @@ are ordered as follows:
       </listitem>
 
       <listitem>
-        <para>Improvements in GUI design</para>
+        <para>User interface: greatly improved HiDPI and scaling support,
+           including better using host HiDPI support, HiDPI icons,
+           improved detection and per-machine configuration</para>
+      </listitem>
+
+      <listitem>
+        <para>User interface: major rework of interface style with improved
+           ease of access for application and machine set-up</para>
       </listitem>
 
     </itemizedlist>
@@ -116,6 +123,11 @@ are ordered as follows:
   <para>In addition, the following items were fixed and/or added:</para>
 
     <itemizedlist>
+
+      <listitem>
+        <para>User interface: video and audio recording can now be separately
+           enabled</para>
+      </listitem>
 
       <listitem>
         <para>Audio: implemented support for attaching / detaching VRDE
