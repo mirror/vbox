@@ -41,7 +41,7 @@ public:
 
 signals:
 
-    void sigListDirectoriesFirstChanged();
+    void sigSettingsChanged();
 
 protected:
 
@@ -53,12 +53,16 @@ protected:
 
 private slots:
 
-    void sltListDirectoryCheckBoxToogled(bool fChecked);
+    void sltListDirectoryCheckBoxToogled(bool bChecked);
+    void sltDeleteConfirmationCheckBoxToogled(bool bChecked);
+    void sltHumanReabableSizesCheckBoxToogled(bool bChecked);
 
 private:
 
     QCheckBox                         *m_pListDirectoriesOnTopCheckBox;
     QCheckBox                         *m_pDeleteConfirmationCheckBox;
+    QCheckBox                         *m_pHumanReabableSizesCheckBox;
+
     UIGuestControlFileManagerSettings *m_pFileManagerSettings;
 };
 

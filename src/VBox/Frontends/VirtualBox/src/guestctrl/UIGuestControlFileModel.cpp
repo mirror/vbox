@@ -130,7 +130,7 @@ QVariant UIGuestControlFileModel::data(const QModelIndex &index, int role) const
     if (role == Qt::DisplayRole || role == Qt::EditRole)
     {
         /* dont show anything but the name for up directories: */
-        if (item->isUpDirectory() && index.column() != 0)
+        if (item->isUpDirectory() && index.column() != UIGuestControlFileModelColumn_Name)
             return QVariant();
         /* Format date/time column: */
         if (item->data(index.column()).canConvert(QMetaType::QDateTime))
@@ -139,9 +139,22 @@ QVariant UIGuestControlFileModel::data(const QModelIndex &index, int role) const
             if (dateTime.isValid())
                 return dateTime.toString("dd.MM.yyyy hh:mm:ss");
         }
+        /* Decide whether to show human-readable file object sizes: */
+        if (index.column() == UIGuestControlFileModelColumn_Size)
+        {
+            UIGuestControlFileManagerSettings* pSettings =
+                UIGuestControlFileManagerSettings::instance();
+            if (pSettings && pSettings->bShowHumanReadableSizes)
+            {
+                qulonglong size = item->data(index.column()).toULongLong();
+                return UIGuestControlFileTable::humanReadableSize(size);
+            }
+            else
+                return item->data(index.column());
+        }
         return item->data(index.column());
     }
-
+    /* Show the up directory array: */
     if (role == Qt::DecorationRole && index.column() == 0)
     {
         if (item->isDirectory())
@@ -272,21 +285,4 @@ void UIGuestControlFileModel::beginReset()
 void UIGuestControlFileModel::endReset()
 {
     endResetModel();
-}
-
-bool UIGuestControlFileModel::insertRows(int position, int rows, const QModelIndex &parent)
-{
-    UIFileTableItem *parentItem = static_cast<UIFileTableItem*>(parent.internalPointer());
-
-    if (!parentItem)
-        return false;
-    beginInsertRows(parent, position, position + rows -1);
-
-    QList<QVariant> data;
-    data << "New Item" << 0 << QDateTime::currentDateTime();
-    UIFileTableItem *newItem = new UIFileTableItem(data, parentItem, FileObjectType_Directory);
-    parentItem->appendChild(newItem);
-    endInsertRows();
-
-    return true;
 }

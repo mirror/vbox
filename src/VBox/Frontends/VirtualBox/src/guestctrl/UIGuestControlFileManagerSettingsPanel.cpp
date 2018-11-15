@@ -41,6 +41,7 @@ UIGuestControlFileManagerSettingsPanel::UIGuestControlFileManagerSettingsPanel(U
     : UIGuestControlFileManagerPanel(pManagerWidget, pParent)
     , m_pListDirectoriesOnTopCheckBox(0)
     , m_pDeleteConfirmationCheckBox(0)
+    , m_pHumanReabableSizesCheckBox(0)
     , m_pFileManagerSettings(pFileManagerSettings)
 {
     prepare();
@@ -59,28 +60,56 @@ void UIGuestControlFileManagerSettingsPanel::prepareWidgets()
     m_pListDirectoriesOnTopCheckBox = new QCheckBox;
     if (m_pListDirectoriesOnTopCheckBox)
     {
-        m_pListDirectoriesOnTopCheckBox->setChecked(true);
         mainLayout()->addWidget(m_pListDirectoriesOnTopCheckBox, 0, Qt::AlignLeft);
     }
 
     m_pDeleteConfirmationCheckBox = new QCheckBox;
     if (m_pDeleteConfirmationCheckBox)
     {
-        m_pDeleteConfirmationCheckBox->setChecked(false);
         mainLayout()->addWidget(m_pDeleteConfirmationCheckBox, 0, Qt::AlignLeft);
     }
 
-
+    m_pHumanReabableSizesCheckBox = new QCheckBox;
+    if (m_pHumanReabableSizesCheckBox)
+    {
+        mainLayout()->addWidget(m_pHumanReabableSizesCheckBox, 0, Qt::AlignLeft);
+    }
+    /* Set initial checkbox status wrt. settings: */
+    if (m_pFileManagerSettings)
+    {
+        if (m_pListDirectoriesOnTopCheckBox)
+            m_pListDirectoriesOnTopCheckBox->setChecked(m_pFileManagerSettings->bListDirectoriesOnTop);
+        if (m_pDeleteConfirmationCheckBox)
+            m_pDeleteConfirmationCheckBox->setChecked(m_pFileManagerSettings->bAskDeleteConfirmation);
+        if (m_pHumanReabableSizesCheckBox)
+            m_pHumanReabableSizesCheckBox->setChecked(m_pFileManagerSettings->bShowHumanReadableSizes);
+    }
     retranslateUi();
     mainLayout()->addStretch(2);
 }
 
-void UIGuestControlFileManagerSettingsPanel::sltListDirectoryCheckBoxToogled(bool fChecked)
+void UIGuestControlFileManagerSettingsPanel::sltListDirectoryCheckBoxToogled(bool bChecked)
 {
     if (!m_pFileManagerSettings)
         return;
-    m_pFileManagerSettings->bListDirectoriesOnTop = fChecked;
-    emit sigListDirectoriesFirstChanged();
+    m_pFileManagerSettings->bListDirectoriesOnTop = bChecked;
+    emit sigSettingsChanged();
+}
+
+void UIGuestControlFileManagerSettingsPanel::sltDeleteConfirmationCheckBoxToogled(bool bChecked)
+{
+    if (!m_pFileManagerSettings)
+        return;
+    m_pFileManagerSettings->bAskDeleteConfirmation = bChecked;
+    emit sigSettingsChanged();
+}
+
+void UIGuestControlFileManagerSettingsPanel::sltHumanReabableSizesCheckBoxToogled(bool bChecked)
+{
+    if (!m_pFileManagerSettings)
+        return;
+    m_pFileManagerSettings->bShowHumanReadableSizes = bChecked;
+    emit sigSettingsChanged();
 }
 
 void UIGuestControlFileManagerSettingsPanel::prepareConnections()
@@ -88,15 +117,32 @@ void UIGuestControlFileManagerSettingsPanel::prepareConnections()
     if (m_pListDirectoriesOnTopCheckBox)
         connect(m_pListDirectoriesOnTopCheckBox, &QCheckBox::toggled,
                 this, &UIGuestControlFileManagerSettingsPanel::sltListDirectoryCheckBoxToogled);
+    if (m_pDeleteConfirmationCheckBox)
+        connect(m_pDeleteConfirmationCheckBox, &QCheckBox::toggled,
+                this, &UIGuestControlFileManagerSettingsPanel::sltDeleteConfirmationCheckBoxToogled);
+    if (m_pHumanReabableSizesCheckBox)
+        connect(m_pHumanReabableSizesCheckBox, &QCheckBox::toggled,
+                this, &UIGuestControlFileManagerSettingsPanel::sltHumanReabableSizesCheckBoxToogled);
 }
 
 void UIGuestControlFileManagerSettingsPanel::retranslateUi()
 {
     UIGuestControlFileManagerPanel::retranslateUi();
+    if (m_pListDirectoriesOnTopCheckBox)
+    {
+        m_pListDirectoriesOnTopCheckBox->setText(UIGuestControlFileManager::tr("List directories on top"));
+        m_pListDirectoriesOnTopCheckBox->setToolTip(UIGuestControlFileManager::tr("List directories before files"));
+    }
 
-    m_pListDirectoriesOnTopCheckBox->setText(UIGuestControlFileManager::tr("List directories on top"));
-    m_pListDirectoriesOnTopCheckBox->setToolTip(UIGuestControlFileManager::tr("List directories before files"));
+    if (m_pDeleteConfirmationCheckBox)
+    {
+        m_pDeleteConfirmationCheckBox->setText(UIGuestControlFileManager::tr("Ask before delete"));
+        m_pDeleteConfirmationCheckBox->setToolTip(UIGuestControlFileManager::tr("List directories before files"));
+    }
 
-    m_pDeleteConfirmationCheckBox->setText(UIGuestControlFileManager::tr("Ask before delete"));
-    m_pDeleteConfirmationCheckBox->setToolTip(UIGuestControlFileManager::tr("List directories before files"));
+    if (m_pHumanReabableSizesCheckBox)
+    {
+        m_pHumanReabableSizesCheckBox->setText(UIGuestControlFileManager::tr("Human readable sizes"));
+        m_pHumanReabableSizesCheckBox->setToolTip(UIGuestControlFileManager::tr("List directories before files"));
+    }
 }

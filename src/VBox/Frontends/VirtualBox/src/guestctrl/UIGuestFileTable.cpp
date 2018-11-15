@@ -196,7 +196,7 @@ void UIGuestFileTable::readDirectory(const QString& strPath,
 
         while (fsInfo.isOk())
         {
-            QList<QVariant> data;
+            QVector<QVariant> data;
             QDateTime changeTime = QDateTime::fromMSecsSinceEpoch(fsInfo.GetChangeTime()/1000000);
 
             data << fsInfo.GetName() << static_cast<qulonglong>(fsInfo.GetObjectSize())

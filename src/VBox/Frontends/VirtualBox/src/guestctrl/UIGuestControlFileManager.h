@@ -68,6 +68,7 @@ public:
 
     bool bListDirectoriesOnTop;
     bool bAskDeleteConfirmation;
+    bool bShowHumanReadableSizes;
 
 private:
 

@@ -29,6 +29,16 @@
 class UIFileTableItem;
 class UIGuestControlFileTable;
 
+enum UIGuestControlFileModelColumn
+{
+    UIGuestControlFileModelColumn_Name = 0,
+    UIGuestControlFileModelColumn_Size,
+    UIGuestControlFileModelColumn_ChangeTime,
+    UIGuestControlFileModelColumn_Owner,
+    UIGuestControlFileModelColumn_Permissions,
+    UIGuestControlFileModelColumn_Max
+};
+
 /** A QSortFilterProxyModel extension used in file tables. Modifies some
   * of the base class behavior like lessThan(..) */
 class UIGuestControlFileProxyModel : public QSortFilterProxyModel
@@ -76,7 +86,6 @@ public:
     QModelIndex    rootIndex() const;
     void           beginReset();
     void           endReset();
-    bool           insertRows(int position, int rows, const QModelIndex &parent);
     static const char* strUpDirectoryString;
 
 private:

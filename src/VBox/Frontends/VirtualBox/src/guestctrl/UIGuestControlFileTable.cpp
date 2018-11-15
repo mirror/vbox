@@ -431,7 +431,7 @@ UIDirectoryStatistics::UIDirectoryStatistics()
 *   UIFileTableItem implementation.                                                                                              *
 *********************************************************************************************************************************/
 
-UIFileTableItem::UIFileTableItem(const QList<QVariant> &data,
+UIFileTableItem::UIFileTableItem(const QVector<QVariant> &data,
                                  UIFileTableItem *parent, FileObjectType type)
     : m_itemData(data)
     , m_parentItem(parent)
@@ -755,13 +755,17 @@ void UIGuestControlFileTable::initializeFileTree()
 
     /* Root item: */
     const QString startPath("/");
-    QList<QVariant> headData;
-    headData << "Name" << "Size" << "Change Time" << "Owner" << "Permissions";
+    QVector<QVariant> headData;
+    headData.resize(UIGuestControlFileModelColumn_Max);
+    headData[UIGuestControlFileModelColumn_Name] = "Name";
+    headData[UIGuestControlFileModelColumn_Size] = "Size";
+    headData[UIGuestControlFileModelColumn_ChangeTime] = "Change Time";
+    headData[UIGuestControlFileModelColumn_Owner] = "Owner";
+    headData[UIGuestControlFileModelColumn_Permissions] = "Permissions";
     m_pRootItem = new UIFileTableItem(headData, 0, FileObjectType_Directory);
-    QList<QVariant> startDirData;
-    startDirData << startPath << 4096 << QDateTime() << "" << "";
-    UIFileTableItem* startItem = new UIFileTableItem(startDirData, m_pRootItem, FileObjectType_Directory);
-
+    UIFileTableItem* startItem = new UIFileTableItem(createTreeItemData(startPath, 4096, QDateTime(),
+                                                                        "" /* owner */, "" /* permissions */),
+                                                     m_pRootItem, FileObjectType_Directory);
     startItem->setPath(startPath);
     m_pRootItem->appendChild(startItem);
     startItem->setIsOpened(false);
@@ -784,10 +788,9 @@ void UIGuestControlFileTable::populateStartDirectory(UIFileTableItem *startItem)
     {
         for (int i = 0; i < m_driveLetterList.size(); ++i)
         {
-            QList<QVariant> data;
-
-            data << m_driveLetterList[i] << 4096 << QDateTime() << "";
-            UIFileTableItem* driveItem = new UIFileTableItem(data, startItem, FileObjectType_Directory);
+            UIFileTableItem* driveItem = new UIFileTableItem(createTreeItemData(m_driveLetterList[i], 4096,
+                                                                                QDateTime(), QString(), QString()),
+                                                             startItem, FileObjectType_Directory);
             driveItem->setPath(m_driveLetterList[i]);
             startItem->appendChild(driveItem);
             driveItem->setIsOpened(false);
@@ -807,9 +810,10 @@ void UIGuestControlFileTable::insertItemsToTree(QMap<QString,UIFileTableItem*> &
     {
         if (!map.contains(UIGuestControlFileModel::strUpDirectoryString)  && !isStartDir)
         {
-            QList<QVariant> data;
-            data << UIGuestControlFileModel::strUpDirectoryString << 4096 << "";
-            UIFileTableItem *item = new UIFileTableItem(data, parent, FileObjectType_Directory);
+            QVector<QVariant> data;
+            UIFileTableItem *item = new UIFileTableItem(createTreeItemData(UIGuestControlFileModel::strUpDirectoryString, 4096,
+                                                                           QDateTime(), QString(), QString())
+                                                        , parent, FileObjectType_Directory);
             item->setIsOpened(false);
             map.insert(UIGuestControlFileModel::strUpDirectoryString, item);
         }
@@ -1298,6 +1302,20 @@ void UIGuestControlFileTable::setSelectionDependentActionsEnabled(bool fIsEnable
     }
 }
 
+
+QVector<QVariant> UIGuestControlFileTable::createTreeItemData(const QString &strName, ULONG64 size, const QDateTime &changeTime,
+                                                            const QString &strOwner, const QString &strPermissions)
+{
+    QVector<QVariant> data;
+    data.resize(UIGuestControlFileModelColumn_Max);
+    data[UIGuestControlFileModelColumn_Name]        = strName;
+    data[UIGuestControlFileModelColumn_Size]        = (qulonglong)size;
+    data[UIGuestControlFileModelColumn_ChangeTime]  = changeTime;
+    data[UIGuestControlFileModelColumn_Owner]       = strOwner;
+    data[UIGuestControlFileModelColumn_Permissions] = strPermissions;
+    return data;
+}
+
 QString UIGuestControlFileTable::fileTypeString(FileObjectType type)
 {
     QString strType("Unknown");
@@ -1394,4 +1412,5 @@ void UIGuestControlFileTable::disableSelectionSearch()
     m_pSearchLineEdit->hide();
     m_pSearchLineEdit->blockSignals(false);
 }
+
 #include "UIGuestControlFileTable.moc"

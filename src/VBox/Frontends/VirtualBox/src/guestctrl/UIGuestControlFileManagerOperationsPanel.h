@@ -57,6 +57,13 @@ private slots:
 
 private:
 
+    enum TableColumn
+    {
+        TableColumn_Progress,
+        TableColumn_Info,
+        TableColumn_Max
+    };
+
     /** @name Member variables.
       * @{ */
         QTableWidget *m_pTableWidget;

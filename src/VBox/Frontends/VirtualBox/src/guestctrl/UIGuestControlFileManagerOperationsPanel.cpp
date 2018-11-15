@@ -168,7 +168,10 @@ void UIGuestControlFileManagerOperationsPanel::prepareWidgets()
 
     if (m_pTableWidget)
     {
-        m_pTableWidget->setColumnCount(1);
+        m_pTableWidget->setColumnCount(TableColumn_Max);
+        QStringList headers;
+        headers << "Progress" << "Information";
+        m_pTableWidget->setHorizontalHeaderLabels(headers);
         mainLayout()->addWidget(m_pTableWidget);
     }
 }

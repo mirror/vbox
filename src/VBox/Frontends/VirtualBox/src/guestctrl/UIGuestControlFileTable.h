@@ -167,7 +167,7 @@ public:
     /** @p data contains values to be shown in table view's colums. data[0] is assumed to be
      *  the name of the file object which is the file name including extension or name of the
      *  directory */
-    explicit UIFileTableItem(const QList<QVariant> &data,
+    explicit UIFileTableItem(const QVector<QVariant> &data,
                              UIFileTableItem *parentItem, FileObjectType type);
     ~UIFileTableItem();
 
@@ -219,7 +219,7 @@ private:
     /** Used to find children by name */
     QMap<QString, UIFileTableItem*> m_childMap;
     /** It is required that m_itemData[0] is name (QString) of the file object */
-    QList<QVariant>  m_itemData;
+    QVector<QVariant>  m_itemData;
     UIFileTableItem *m_parentItem;
     bool             m_bIsOpened;
     /** Full absolute path of the item. Without the trailing '/' */
@@ -262,6 +262,24 @@ public:
     static const unsigned    m_iKiloByte;
     static QString humanReadableSize(ULONG64 size);
 
+public slots:
+
+    void sltReceiveDirectoryStatistics(UIDirectoryStatistics statictics);
+    void sltCreateNewDirectory();
+    /* index is passed by the item view and represents the double clicked object's 'proxy' model index */
+    void sltItemDoubleClicked(const QModelIndex &index);
+    void sltItemClicked(const QModelIndex &index);
+    void sltGoUp();
+    void sltGoHome();
+    void sltRefresh();
+    void sltDelete();
+    void sltRename();
+    void sltCopy();
+    void sltCut();
+    void sltPaste();
+    void sltShowProperties();
+    void sltSelectAll();
+    void sltInvertSelection();
 
 protected:
 
@@ -295,6 +313,9 @@ protected:
     bool             eventFilter(QObject *pObject, QEvent *pEvent) /* override */;
     CGuestFsObjInfo  guestFsObjectInfo(const QString& path, CGuestSession &comGuestSession) const;
     void             setSelectionDependentActionsEnabled(bool fIsEnabled);
+    /** Creates a QList out of the parameters wrt. UIGuestControlFileModelColumn enum */
+    QVector<QVariant>  createTreeItemData(const QString &strName, ULONG64 size, const QDateTime &changeTime,
+                                        const QString &strOwner, const QString &strPermissions);
 
     UIFileTableItem         *m_pRootItem;
     QILabel                 *m_pLocationLabel;
@@ -307,25 +328,6 @@ protected:
     QStringList m_driveLetterList;
     /** The set of actions which need some selection to work on. Like cut, copy etc. */
     QSet<QAction*> m_selectionDependentActions;
-
-public slots:
-
-    void sltReceiveDirectoryStatistics(UIDirectoryStatistics statictics);
-    void sltCreateNewDirectory();
-    /* index is passed by the item view and represents the double clicked object's 'proxy' model index */
-    void sltItemDoubleClicked(const QModelIndex &index);
-    void sltItemClicked(const QModelIndex &index);
-    void sltGoUp();
-    void sltGoHome();
-    void sltRefresh();
-    void sltDelete();
-    void sltRename();
-    void sltCopy();
-    void sltCut();
-    void sltPaste();
-    void sltShowProperties();
-    void sltSelectAll();
-    void sltInvertSelection();
 
 private slots:
 
@@ -352,9 +354,8 @@ private:
     QModelIndex     currentRootIndex() const;
     /* Searches the content of m_pSearchLineEdit within the current items' names and selects the item if found. */
     void            performSelectionSearch(const QString &strSearchText);
-    /* Clears the m_pSearchLineEdit and hides it. */
+    /** Clears the m_pSearchLineEdit and hides it. */
     void            disableSelectionSearch();
-
     UIGuestControlFileModel      *m_pModel;
     UIGuestControlFileView       *m_pView;
     UIGuestControlFileProxyModel *m_pProxyModel;

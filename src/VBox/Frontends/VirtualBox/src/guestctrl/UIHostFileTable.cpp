@@ -220,11 +220,10 @@ void UIHostFileTable::readDirectory(const QString& strPath, UIFileTableItem *par
     {
 
         const QFileInfo &fileInfo = entries.at(i);
-        QList<QVariant> data;
-        data << fileInfo.fileName() << fileInfo.size()
-             << fileInfo.lastModified() << fileInfo.owner() <<
-            permissionString(fileInfo.permissions());
-        UIFileTableItem *item = new UIFileTableItem(data, parent, fileType(fileInfo));
+        UIFileTableItem *item = new UIFileTableItem(createTreeItemData(fileInfo.fileName(), fileInfo.size(),
+                                                                       fileInfo.lastModified(), fileInfo.owner(),
+                                                                       permissionString(fileInfo.permissions())),
+                                                    parent, fileType(fileInfo));
         if (!item)
             continue;
         item->setPath(fileInfo.absoluteFilePath());

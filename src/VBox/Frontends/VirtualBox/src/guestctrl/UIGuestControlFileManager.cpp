@@ -112,6 +112,7 @@ void UIGuestControlFileManagerSettings::destroy()
 UIGuestControlFileManagerSettings::UIGuestControlFileManagerSettings()
     : bListDirectoriesOnTop(true)
     , bAskDeleteConfirmation(false)
+    , bShowHumanReadableSizes(true)
 {
 }
 
@@ -254,12 +255,6 @@ void UIGuestControlFileManager::prepareObjects()
         }
     }
 
-    // m_pFileOperationsList = new UIFileOperationsList;
-    // if (m_pFileOperationsList)
-    // {
-    //     m_pTabWidget->addTab(m_pFileOperationsList, "File Operatiions");
-    //     m_pFileOperationsList->header()->hide();
-    // }
     pTopLayout->addLayout(pFileTableContainerLayout);
     m_pSessionPanel = new UIGuestControlFileManagerSessionPanel(this /* manager dialog */, 0 /*parent */);
     if (m_pSessionPanel)
@@ -276,10 +271,12 @@ void UIGuestControlFileManager::prepareObjects()
     {
         m_pSettingsPanel->hide();
         m_panelActionMap.insert(m_pSettingsPanel, m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_T_Settings));
-        connect(m_pSettingsPanel, &UIGuestControlFileManagerSettingsPanel::sigListDirectoriesFirstChanged,
+        connect(m_pSettingsPanel, &UIGuestControlFileManagerSettingsPanel::sigSettingsChanged,
                 this, &UIGuestControlFileManager::sltListDirectoriesBeforeChanged);
         pTopLayout->addWidget(m_pSettingsPanel);
     }
+
+    m_pVerticalSplitter->addWidget(pTopWidget);
 
     m_pOperationsPanel =
         new UIGuestControlFileManagerOperationsPanel(this /* manager dialog */, 0 /*parent */);
@@ -287,10 +284,7 @@ void UIGuestControlFileManager::prepareObjects()
     {
         m_pOperationsPanel->hide();
         m_panelActionMap.insert(m_pOperationsPanel, m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_T_FileOperations));
-        pTopLayout->addWidget(m_pOperationsPanel);
     }
-
-    m_pVerticalSplitter->addWidget(pTopWidget);
 
     m_pLogPanel = new UIGuestControlFileManagerLogPanel(this /* manager dialog */, 0 /*parent */);
     if (m_pLogPanel)
@@ -298,12 +292,16 @@ void UIGuestControlFileManager::prepareObjects()
         m_pLogPanel->hide();
         m_panelActionMap.insert(m_pLogPanel, m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_T_Log));
     }
+
     m_pVerticalSplitter->addWidget(pTopWidget);
+    m_pVerticalSplitter->addWidget(m_pOperationsPanel);
     m_pVerticalSplitter->addWidget(m_pLogPanel);
     m_pVerticalSplitter->setCollapsible(m_pVerticalSplitter->indexOf(pTopWidget), false);
+    m_pVerticalSplitter->setCollapsible(m_pVerticalSplitter->indexOf(m_pOperationsPanel), false);
     m_pVerticalSplitter->setCollapsible(m_pVerticalSplitter->indexOf(m_pLogPanel), false);
     m_pVerticalSplitter->setStretchFactor(0, 3);
     m_pVerticalSplitter->setStretchFactor(1, 1);
+    m_pVerticalSplitter->setStretchFactor(2, 1);
 }
 
 void UIGuestControlFileManager::prepareVerticalToolBar(QHBoxLayout *layout)
