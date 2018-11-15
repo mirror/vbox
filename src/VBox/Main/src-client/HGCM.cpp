@@ -39,6 +39,7 @@
 #include <iprt/thread.h>
 
 #include <VBox/VMMDev.h>
+#include <new>
 
 /**
  * A service gets one thread, which synchronously delivers messages to
