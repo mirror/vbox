@@ -1181,34 +1181,33 @@
     <title>Shared Folders</title>
 
     <para>
-      With the <emphasis>shared folders</emphasis> feature of
-      VirtualBox, you can access files of your host system from within
-      the guest system. This is similar how you would use network shares
-      in Windows networks, except that shared folders do not need
-      require networking, only the Guest Additions. Shared Folders are
-      supported with Windows 2000 or later, Linux, and Solaris guests.
+      With the <emphasis>shared folders</emphasis> feature of VirtualBox, you
+      can access files of your host system from within the guest system. This
+      is similar how you would use network shares in Windows networks, except
+      that shared folders do not require networking, only the Guest Additions.
+      Shared Folders are supported with Windows 2000 or later, Linux, and
+      Solaris guests.  (There are also experimental support for Mac OS X and
+      OS/2 guests shipping with VirtualBox 6.0.)
     </para>
 
     <para>
-      Shared folders must physically reside on the
-      <emphasis>host</emphasis> and are then shared with the guest,
-      which uses a special file system driver in the Guest Addition to
-      talk to the host. For Windows guests, shared folders are
-      implemented as a pseudo-network redirector. For Linux and Solaris
-      guests, the Guest Additions provide a virtual file system.
+      Shared folders physically reside on the <emphasis>host</emphasis> and are
+      then shared with the guest, which uses a special file system driver in
+      the Guest Addition to talk to the host.  For Windows guests, shared
+      folders are implemented as a pseudo-network redirector.  For Linux and
+      Solaris guests, the Guest Additions provide a virtual file system.
     </para>
 
     <para>
       To share a host folder with a virtual machine in VirtualBox, you
-      must specify the path of that folder and choose for it a
-      <emphasis>share nam</emphasis>e that the guest can use to access
-      it. Hence, first create the shared folder on the host. Then,
-      within the guest, you can connect to it.
+      must specify the path of that folder and choose a <emphasis>share name</emphasis>
+      for it.  This happens on the host.   In the guest you then uses the name
+      connect to it and access the files.
     </para>
 
     <para>
       There are several ways in which shared folders can be set up for a
-      particular virtual machine:
+      virtual machine:
     </para>
 
     <itemizedlist>
@@ -1225,7 +1224,7 @@
       <listitem>
         <para>
           If a VM is not currently running, you can configure shared
-          folders in each virtual machine's Settings dialog.
+          folders in the virtual machine's Settings dialog.
         </para>
       </listitem>
 
@@ -1252,29 +1251,27 @@
 
       <listitem>
         <para>
-          VM shares which are only available to the VM for which they
-          have been defined.
+          Permanent shares that are saved with the VM settings.
         </para>
       </listitem>
 
       <listitem>
         <para>
-          Transient VM shares, which can be added and removed at runtime
-          and do not persist after a VM has stopped. For these, add the
-          <computeroutput>--transient</computeroutput> option to the
-          above command line.
+          Transient shares that are added at runtime and disappear when the VM
+          is powered off.  There is a checkbox for this in the GUI and
+          VBoxManage has a <computeroutput>--transient</computeroutput> option
+          for it.
         </para>
       </listitem>
 
     </orderedlist>
 
     <para>
-      Shared folders have read/write access to the files at the host
-      path by default. To restrict the guest to have read-only access,
-      create a read-only shared folder. This can either be achieved
-      using the GUI or by appending the parameter
-      <computeroutput>--readonly</computeroutput> when creating the
-      shared folder with VBoxManage.
+      Shared folders can either be read-write or read-only, meaning the guest
+      is either allowed to both read and write or just read files on the host.
+      There is a checkbox for read-only in the GUI, default being read-write,
+      and similarly a <computeroutput>--readonly</computeroutput> option for
+      VBoxManage.
     </para>
 
     <para>
@@ -1438,6 +1435,23 @@ $</screen>
           </para>
         </listitem>
 
+        <listitem>
+          <para>
+            In an OS/2 guest, use VBoxControl to manage shared folders:
+          </para>
+
+<screen>VBoxControl sharedfolder use D: MyShareName
+VBoxControl sharedfolder unuse D:
+VBoxControl sharedfolder list</screen>
+
+          <para>Like for Windows guests, shared folders can also be accessed via
+            UNC using <computeroutput>\\VBoxSF\</computeroutput>,
+            <computeroutput>\\VBoxSvr\</computeroutput> or
+            <computeroutput>\\VBoxSrv\</computeroutput> as the server name and
+            the shared folder name as share.
+          </para>
+        </listitem>
+
       </itemizedlist>
 
     </sect2>
@@ -1447,89 +1461,59 @@ $</screen>
       <title>Automatic Mounting</title>
 
       <para>
-        Starting with version 4.0, VirtualBox provides the option to
-        mount shared folders automatically If automatic mounting is
-        enabled for a specific shared folder, the Guest Additions will
-        automatically mount that folder as soon as a user logs in to the
-        guest OS. The details depend on the guest OS type, as follows:
-      </para>
+        VirtualBox provides the option to mount shared folders
+        automatically.   When automatic mounting is enabled for a shared
+        folder, the guest additions service will mount it for you.  A
+        preferred drive letter (Windows, OS/2) or mount point directory
+        (Linux, Solaris) can also be specified if desired.</para>
+
+      <para>
+        When no drive letter or mount point is given, or should it be
+        in use already, an alternative location will be found
+
+        the service will search for an alternative
+        location depending on the guest OS:</para>
 
       <itemizedlist>
 
         <listitem>
           <para>
-            <emphasis role="bold">Windows guests.</emphasis> Any
-            auto-mounted shared folder will receive its own drive
-            letter, such as <computeroutput>E:</computeroutput>,
-            depending on the free drive letters remaining in the guest.
-          </para>
-
-          <para>
-            If there are no free drive letters left, auto-mounting will
-            fail. As a result, the number of auto-mounted shared folders
-            is typically limited to 22 or less with Windows guests.
+            <emphasis role="bold">Windows and OS/2 guests:</emphasis>
+            Search for a free drive letter starting at
+            <computeroutput>Z:</computeroutput>.  If all drive letter are
+            assigned, the folder will not be mounted.
           </para>
         </listitem>
 
         <listitem>
           <para>
-            <emphasis role="bold">Linux guests.</emphasis> Auto-mounted
-            shared folders are mounted into the
-            <computeroutput>/media</computeroutput> directory, along
-            with the prefix <computeroutput>sf_</computeroutput>. For
-            example, the shared folder
-            <computeroutput>myfiles</computeroutput> would be mounted to
-            <computeroutput>/media/sf_myfiles</computeroutput> on Linux
-            and <computeroutput>/mnt/sf_myfiles</computeroutput> on
-            Solaris.
+            <emphasis role="bold">Linux and Solaris guests:</emphasis>
+            Folders are mounted under the <computeroutput>/media</computeroutput>
+            directory on Linux and <computeroutput>/mnt</computeroutput> on
+            Solaris.  The folder name is normalized (no spaces, slashes,
+            colons) and prefixed with <computeroutput>sf_</computeroutput>.
+            Say you have a shared folder called <computeroutput>myfiles</computeroutput>
+            it will appear as <computeroutput>/media/sf_myfiles</computeroutput>
+            in a Linux guest and <computeroutput>/mnt/sf_myfiles</computeroutput>
+            in a Solaris one.
           </para>
 
           <para>
-            The guest property
+            The guest properties
+            <computeroutput>/VirtualBox/GuestAdd/SharedFolders/MountDir</computeroutput> and
             <computeroutput>/VirtualBox/GuestAdd/SharedFolders/MountPrefix</computeroutput>
-            determines the prefix that is used. Change that guest
-            property to a value other than
-            <computeroutput>sf</computeroutput> to use another prefix.
-            See <xref
-            linkend="guestadd-guestprops" />.
+            can be used override the automatic mount directory and prefix.
+            See <xref linkend="guestadd-guestprops" />.
           </para>
 
-          <note>
-            <para>
-              Access to auto-mounted shared folders is only granted to
-              the user group <computeroutput>vboxsf</computeroutput>,
-              which is created by the VirtualBox Guest Additions
-              installer. Therefore, guest users have to be member of
-              that group to have read/write access, or to have read-only
-              access if the folder is not mapped writable.
-            </para>
-          </note>
-
-          <para>
-            To change the mount directory to something other than
-            <computeroutput>/media</computeroutput>, you can set the
-            guest property
-            <computeroutput>/VirtualBox/GuestAdd/SharedFolders/MountDir</computeroutput>.
-          </para>
         </listitem>
-
-        <listitem>
-          <para>
-            <emphasis role="bold">Solaris guests</emphasis> behave like
-            Linux guests, except that
-            <computeroutput>/mnt</computeroutput> is used as the default
-            mount directory instead of
-            <computeroutput>/media</computeroutput>.
-          </para>
-        </listitem>
-
       </itemizedlist>
 
       <para>
-        To have any changes to auto-mounted shared folders applied while
-        a VM is running, the guest OS needs to be rebooted. This applies
-        only to auto-mounted shared folders, not the ones which are
-        mounted manually.
+        Access to an automatically mounted shared folder is granted to everyone
+        in a Windows guest, that includes the Guest user.  For Linux and Solaris
+        guests the access is restricted to members of the group
+        <computeroutput>vboxsf</computeroutput> and <computeroutput>root</computeroutput>.
       </para>
 
     </sect2>
