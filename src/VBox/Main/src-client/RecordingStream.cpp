@@ -721,7 +721,7 @@ int RecordingStream::SendVideoFrame(uint32_t x, uint32_t y, uint32_t uPixelForma
             {
                 RT_NOREF(ex);
 
-                RTMemFree(pBlock);
+                delete pBlock;
                 rc = VERR_NO_MEMORY;
             }
         }
