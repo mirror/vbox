@@ -2680,6 +2680,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitLoadHostState(PVMCPU pVCpu, uint32_t uExitRe
      */
     PCVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
     bool const fHostInLongMode = RT_BOOL(pVmcs->u32ExitCtls & VMX_EXIT_CTLS_HOST_ADDR_SPACE_SIZE);
+    bool const fVirtApicAccess = RT_BOOL(pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_VIRT_APIC_ACCESS);
 
     /* We cannot return from a long-mode guest to a host that is not in long mode. */
     if (    CPUMIsGuestInLongMode(pVCpu)
@@ -2705,6 +2706,15 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitLoadHostState(PVMCPU pVCpu, uint32_t uExitRe
 
     /* Clear address range monitoring. */
     EMMonitorWaitClear(pVCpu);
+
+    /* De-register the handler for the APIC-access page. */
+    if (fVirtApicAccess)
+    {
+        RTGCPHYS const GCPhysApicAccess = pVmcs->u64AddrApicAccess.u;
+        int rc = CPUMVmxApicAccessPageDeregister(pVCpu, GCPhysApicAccess);
+        if (RT_FAILURE(rc))
+            return rc;
+    }
 
     /* Perform the VMX transition (PGM updates). */
     VBOXSTRICTRC rcStrict = iemVmxWorldSwitch(pVCpu);
@@ -4235,11 +4245,15 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitApicAccess(PVMCPU pVCpu, uint16_t offAccess,
  * Virtualizes a memory-based APIC-access.
  *
  * @returns VBox strict status code.
+ * @retval VINF_VMX_MODIFIES_BEHAVIOR if the access was virtualized.
+ * @retval VINF_VMX_VMEXIT if the access causes a VM-exit.
+ *
  * @param   pVCpu       The cross context virtual CPU structure.
  * @param   offAccess   The offset of the register being accessed (within the
  *                      APIC-access page).
  * @param   cbAccess    The size of the access in bytes.
- * @param   pvData      Pointer to the data being read or written.
+ * @param   pvData      Pointer to the data being written or where to store the data
+ *                      being read.
  * @param   fAccess     The type of access (must contain IEM_ACCESS_TYPE_READ or
  *                      IEM_ACCESS_TYPE_WRITE or IEM_ACCESS_INSTRUCTION).
  */
@@ -6005,6 +6019,11 @@ IEM_STATIC int iemVmxVmentryCheckExecCtls(PVMCPU pVCpu, const char *pszInstr)
             if (GCPhysVirtApic == GCPhysApicAccess)
                 IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_AddrApicAccessEqVirtApic);
         }
+
+        /* Register the handler for the APIC-access page. */
+        int rc = CPUMVmxApicAccessPageRegister(pVCpu, GCPhysApicAccess);
+        if (RT_FAILURE(rc))
+            IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_AddrApicAccessHandlerReg);
     }
 
     /* Virtualize-x2APIC mode is mutually exclusive with virtualize-APIC accesses. */

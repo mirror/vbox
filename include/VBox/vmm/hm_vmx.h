@@ -3832,6 +3832,7 @@ typedef enum
     /* VMLAUNCH/VMRESUME. */
     kVmxVDiag_Vmentry_AddrApicAccess,
     kVmxVDiag_Vmentry_AddrApicAccessEqVirtApic,
+    kVmxVDiag_Vmentry_AddrApicAccessHandlerReg,
     kVmxVDiag_Vmentry_AddrEntryMsrLoad,
     kVmxVDiag_Vmentry_AddrExitMsrLoad,
     kVmxVDiag_Vmentry_AddrExitMsrStore,

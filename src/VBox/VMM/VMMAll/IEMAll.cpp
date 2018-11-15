@@ -8910,25 +8910,6 @@ iemMemMap(PVMCPU pVCpu, void **ppvMem, size_t cbMem, uint8_t iSegReg, RTGCPTR GC
     iemMemUpdateWrittenCounter(pVCpu, fAccess, cbMem);
     *ppvMem = pvMem;
 
-#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
-    /*
-     * Check if this is an APIC-access and whether it needs to be virtualized.
-     */
-    if (   CPUMIsGuestInVmxNonRootMode(IEM_GET_CTX(pVCpu))
-        && IEM_VMX_IS_PROCCTLS2_SET(pVCpu, VMX_PROC_CTLS2_VIRT_APIC_ACCESS))
-    {
-        RTGCPHYS const GCPhysMemAccessBase  = GCPhysFirst & ~(RTGCPHYS)PAGE_OFFSET_MASK;
-        RTGCPHYS const GCPhysApicAccessBase = CPUMGetGuestVmxApicAccessPageAddr(pVCpu, IEM_GET_CTX(pVCpu))
-                                            & ~(RTGCPHYS)PAGE_OFFSET_MASK;
-        if (GCPhysMemAccessBase == GCPhysApicAccessBase)
-        {
-            Assert(pvMem);
-            uint16_t const offAccess = GCPhysFirst & (RTGCPHYS)PAGE_OFFSET_MASK;
-            return iemVmxVirtApicAccessMem(pVCpu, offAccess, cbMem, pvMem, fAccess);
-        }
-    }
-#endif
-
     return VINF_SUCCESS;
 }
 
@@ -13950,8 +13931,7 @@ DECL_FORCE_INLINE(VBOXSTRICTRC) iemExecStatusCodeFiddling(PVMCPU pVCpu, VBOXSTRI
 /** @todo adjust for VINF_EM_RAW_EMULATE_INSTR. */
             int32_t const rcPassUp = pVCpu->iem.s.rcPassUp;
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
-            if (   (   rcStrict == VINF_VMX_VMEXIT
-                    || rcStrict == VINF_VMX_MODIFIES_BEHAVIOR)
+            if (   rcStrict == VINF_VMX_VMEXIT
                 && rcPassUp == VINF_SUCCESS)
                 rcStrict = VINF_SUCCESS;
             else
@@ -15700,10 +15680,11 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecSvmVmexit(PVMCPU pVCpu, uint64_t uExitCode, ui
  * Interface for HM and EM to virtualize x2APIC MSR accesses.
  *
  * @returns Strict VBox status code.
- * @retval  VINF_SUCCESS if the MSR access was virtualized.
+ * @retval  VINF_VMX_MODIFIES_BEHAVIOR if the MSR access was virtualized.
  * @retval  VINF_VMX_INTERCEPT_NOT_ACTIVE if the MSR access must be handled by
  *          the x2APIC device.
  * @retval  VERR_OUT_RANGE if the caller must raise \#GP(0).
+ *
  * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
  * @param   idMsr       The MSR being read.
  * @param   pu64Value   Pointer to the value being written or where to store the
@@ -15713,7 +15694,7 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecSvmVmexit(PVMCPU pVCpu, uint64_t uExitCode, ui
  */
 VMM_INT_DECL(VBOXSTRICTRC) IEMExecVmxVirtApicAccessMsr(PVMCPU pVCpu, uint32_t idMsr, uint64_t *pu64Value, bool fWrite)
 {
-    IEM_CTX_ASSERT(pVCpu, IEM_CPUMCTX_EXTRN_VMX_VMEXIT_MASK);
+    IEM_CTX_ASSERT(pVCpu, IEM_CPUMCTX_EXTRN_EXEC_DECODED_NO_MEM_MASK);
     Assert(pu64Value);
 
     VBOXSTRICTRC rcStrict;
@@ -15725,6 +15706,38 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecVmxVirtApicAccessMsr(PVMCPU pVCpu, uint32_t id
         iemMemRollback(pVCpu);
     return iemExecStatusCodeFiddling(pVCpu, rcStrict);
 
+}
+
+
+/**
+ * Interface for HM and EM to virtualize memory-mapped APIC accesses.
+ *
+ * @returns Strict VBox status code.
+ * @retval  VINF_VMX_MODIFIES_BEHAVIOR if the memory access was virtualized.
+ *
+ * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
+ * @param   offAccess   The offset of the register being accessed (within the
+ *                      APIC-access page).
+ * @param   cbAccess    The size of the access in bytes.
+ * @param   pvData      Pointer to the data being written or where to store the data
+ *                      being read.
+ * @param   fWrite      Whether this is a write or read access.
+ * @thread  EMT(pVCpu)
+ */
+VMM_INT_DECL(VBOXSTRICTRC) IEMExecVmxVirtApicAccessMem(PVMCPU pVCpu, uint16_t offAccess, size_t cbAccess, void *pvData,
+                                                       bool fWrite)
+{
+    IEM_CTX_ASSERT(pVCpu, IEM_CPUMCTX_EXTRN_VMX_VMEXIT_MASK);
+    Assert(pvData);
+
+    /** @todo NSTVMX: Unfortunately, the caller has no idea about instruction fetch
+     *        accesses, so we only use read/write here. Maybe in the future the PGM
+     *        physical handler will be extended to include this information? */
+    uint32_t const fAccess = fWrite ? IEM_ACCESS_TYPE_WRITE : IEM_ACCESS_TYPE_READ;
+    VBOXSTRICTRC rcStrict = iemVmxVirtApicAccessMem(pVCpu, offAccess, cbAccess, pvData, fAccess);
+    if (pVCpu->iem.s.cActiveMappings)
+        iemMemRollback(pVCpu);
+    return iemExecStatusCodeFiddling(pVCpu, rcStrict);
 }
 
 

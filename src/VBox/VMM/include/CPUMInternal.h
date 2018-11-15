@@ -23,6 +23,7 @@
 # include <VBox/types.h>
 # include <VBox/vmm/stam.h>
 # include <iprt/x86.h>
+# include <VBox/vmm/pgm.h>
 #else
 # pragma D depends_on library x86.d
 # pragma D depends_on library cpumctx.d
@@ -408,7 +409,10 @@ typedef struct CPUM
 
     /** The host MXCSR mask (determined at init). */
     uint32_t                fHostMxCsrMask;
-    uint8_t                 abPadding1[20];
+
+    /** The VMX APIC-access page handler type. */
+    PGMPHYSHANDLERTYPE      hVmxApicAccessPage;
+    uint8_t                 abPadding1[16];
 
     /** Host CPU feature information.
      * Externaly visible via the VM structure, aligned on 64-byte boundrary. */
@@ -526,6 +530,9 @@ RT_C_DECLS_BEGIN
 
 PCPUMCPUIDLEAF      cpumCpuIdGetLeaf(PVM pVM, uint32_t uLeaf);
 PCPUMCPUIDLEAF      cpumCpuIdGetLeafEx(PVM pVM, uint32_t uLeaf, uint32_t uSubLeaf, bool *pfExactSubLeafHit);
+# ifdef VBOX_WITH_NESTED_HWVIRT_VMX
+PGM_ALL_CB2_PROTO(FNPGMPHYSHANDLER) cpumVmxApicAccessPageHandler;
+# endif
 
 # ifdef IN_RING3
 int                 cpumR3DbgInit(PVM pVM);

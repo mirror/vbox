@@ -20,8 +20,12 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #define LOG_GROUP LOG_GROUP_CPUM
-#include <VBox/vmm/cpum.h>
 #include <VBox/log.h>
+#include <VBox/vmm/cpum.h>
+#include "CPUMInternal.h"
+#include <VBox/vmm/iem.h>
+#include <VBox/vmm/pgm.h>
+#include <VBox/vmm/vm.h>
 
 
 /**
@@ -131,5 +135,61 @@ VMM_INT_DECL(bool) CPUMVmxGetIoBitmapPermission(void const *pvIoBitmapA, void co
     /* Read the appropriate bit from the corresponding IO bitmap. */
     void const *pvIoBitmap = uPort < 0x8000 ? pvIoBitmapA : pvIoBitmapB;
     return ASMBitTest(pvIoBitmap, uPort);
+}
+
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
+/**
+ * @callback_method_impl{FNPGMPHYSHANDLER, VMX APIC-access page accesses}
+ *
+ * @remarks The @a pvUser argument is currently unused.
+ */
+PGM_ALL_CB2_DECL(VBOXSTRICTRC) cpumVmxApicAccessPageHandler(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhysFault, void *pvPhys,
+                                                            void *pvBuf, size_t cbBuf, PGMACCESSTYPE enmAccessType,
+                                                            PGMACCESSORIGIN enmOrigin, void *pvUser)
+{
+    RT_NOREF4(pVM, pvPhys, enmOrigin, pvUser);
+
+    uint16_t const offAccess = (GCPhysFault & PAGE_OFFSET_MASK);
+    bool const fWrite = RT_BOOL(enmAccessType == PGMACCESSTYPE_WRITE);
+    VBOXSTRICTRC rcStrict = IEMExecVmxVirtApicAccessMem(pVCpu, offAccess, cbBuf, pvBuf, fWrite);
+    if (rcStrict == VINF_VMX_MODIFIES_BEHAVIOR)
+        rcStrict = VINF_SUCCESS;
+    return rcStrict;
+}
+#endif
+
+
+/**
+ * Registers the PGM physical page handelr for teh VMX APIC-access page.
+ *
+ * @returns VBox status code.
+ * @param   pVCpu               The cross context virtual CPU structure.
+ * @param   GCPhysApicAccess    The guest-physical address of the APIC-access page.
+ */
+VMM_INT_DECL(VBOXSTRICTRC) CPUMVmxApicAccessPageRegister(PVMCPU pVCpu, RTGCPHYS GCPhysApicAccess)
+{
+    PVM pVM = pVCpu->CTX_SUFF(pVM);
+    int rc = PGMHandlerPhysicalRegister(pVM, GCPhysApicAccess, GCPhysApicAccess, pVM->cpum.s.hVmxApicAccessPage,
+                                        NIL_RTR3PTR /* pvUserR3 */, NIL_RTR0PTR /* pvUserR0 */,  NIL_RTRCPTR /* pvUserRC */,
+                                        NULL /* pszDesc */);
+    return rc;
+}
+
+
+/**
+ * Registers the PGM physical page handelr for teh VMX APIC-access page.
+ *
+ * @returns VBox status code.
+ * @param   pVCpu               The cross context virtual CPU structure.
+ * @param   GCPhysApicAccess    The guest-physical address of the APIC-access page.
+ */
+VMM_INT_DECL(VBOXSTRICTRC) CPUMVmxApicAccessPageDeregister(PVMCPU pVCpu, RTGCPHYS GCPhysApicAccess)
+{
+    /** @todo NSTVMX: If there's anything else to do while APIC-access page is
+     *        de-registered, do it here. */
+    PVM pVM = pVCpu->CTX_SUFF(pVM);
+    if (PGMHandlerPhysicalIsRegistered(pVM, GCPhysApicAccess))
+        return PGMHandlerPhysicalDeregister(pVM, GCPhysApicAccess);
+    return VINF_SUCCESS;
 }
 

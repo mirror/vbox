@@ -2084,6 +2084,8 @@ VMM_INT_DECL(int)       CPUMVmxGetMsrPermission(void const *pvMsrBitmap, uint32_
                                                 PVMXMSREXITWRITE penmWrite);
 VMM_INT_DECL(bool)      CPUMVmxGetIoBitmapPermission(void const *pvIoBitmapA, void const *pvIoBitmapB, uint16_t uPort,
                                                      uint8_t cbAccess);
+VMM_INT_DECL(VBOXSTRICTRC) CPUMVmxApicAccessPageRegister(PVMCPU pVCpu, RTGCPHYS GCPhysApicAccess);
+VMM_INT_DECL(VBOXSTRICTRC) CPUMVmxApicAccessPageDeregister(PVMCPU pVCpu, RTGCPHYS GCPhysApicAccess);
 /** @} */
 
 /** @name Changed flags.
