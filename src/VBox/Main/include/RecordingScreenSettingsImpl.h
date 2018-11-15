@@ -94,8 +94,8 @@ private:
     HRESULT setVideoHeight(ULONG aVideoHeight);
     HRESULT getVideoRate(ULONG *aVideoRate);
     HRESULT setVideoRate(ULONG aVideoRate);
-    HRESULT getVideoRateControlMode(RecordVideoRateControlMode_T *aMode);
-    HRESULT setVideoRateControlMode(RecordVideoRateControlMode_T aMode);
+    HRESULT getVideoRateControlMode(RecordingVideoRateControlMode_T *aMode);
+    HRESULT setVideoRateControlMode(RecordingVideoRateControlMode_T aMode);
     HRESULT getVideoFPS(ULONG *aVideoFPS);
     HRESULT setVideoFPS(ULONG aVideoFPS);
     HRESULT getVideoScalingMethod(RecordingVideoScalingMethod_T *aMode);

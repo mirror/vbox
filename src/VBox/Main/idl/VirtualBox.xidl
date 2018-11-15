@@ -4797,8 +4797,8 @@
   </enum>
 
   <enum
-    name="RecordVideoRateControlMode"
-    uuid="11F99274-835F-4F2C-86A5-F8DF8999C21A"
+    name="RecordingVideoRateControlMode"
+    uuid="D4EFB692-9F98-4112-88D3-A16FBE2BF6A8"
     >
     <desc>
       Recording video rate control mode enumeration.
@@ -4814,7 +4814,7 @@
 
   <interface
     name="IRecordingScreenSettings" extends="$unknown"
-    uuid="41E56E39-C36D-440E-867B-FB80C4CE6FAA"
+    uuid="B036627B-9922-4056-8A95-94C60D3BA48A"
     wsmap="managed"
     >
 
@@ -4971,7 +4971,7 @@
       </desc>
     </attribute>
 
-    <attribute name="videoRateControlMode" type="RecordVideoRateControlMode">
+    <attribute name="videoRateControlMode" type="RecordingVideoRateControlMode">
       <desc>
         Determines the rate control mode. This setting cannot be changed
         while recording is enabled.

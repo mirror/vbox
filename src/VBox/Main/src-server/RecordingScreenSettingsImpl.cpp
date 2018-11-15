@@ -716,19 +716,19 @@ HRESULT RecordingScreenSettings::setVideoRate(ULONG aVideoRate)
     return S_OK;
 }
 
-HRESULT RecordingScreenSettings::getVideoRateControlMode(RecordVideoRateControlMode_T *aMode)
+HRESULT RecordingScreenSettings::getVideoRateControlMode(RecordingVideoRateControlMode_T *aMode)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    *aMode = RecordVideoRateControlMode_CBR; /** @todo Implement VBR. */
+    *aMode = RecordingVideoRateControlMode_CBR; /** @todo Implement VBR. */
 
     return S_OK;
 }
 
-HRESULT RecordingScreenSettings::setVideoRateControlMode(RecordVideoRateControlMode_T aMode)
+HRESULT RecordingScreenSettings::setVideoRateControlMode(RecordingVideoRateControlMode_T aMode)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
