@@ -21,6 +21,7 @@
 
 /* Qt includes: */
 # include <QHBoxLayout>
+# include <QHeaderView>
 # include <QLabel>
 # include <QProgressBar>
 # include <QTableWidget>
@@ -115,6 +116,21 @@ void UIFileOperationProgressWidget::prepareWidgets()
     m_pMainLayout = new QHBoxLayout;
     if (!m_pMainLayout)
         return;
+
+    m_pCancelButton = new QIToolButton;
+    if (m_pCancelButton)
+    {
+        m_pCancelButton->setIcon(UIIconPool::iconSet(":/close_16px.png"));
+
+        const QSize sh = m_pCancelButton->sizeHint();
+        m_pCancelButton->setStyleSheet("QToolButton { border: 0px none black; margin: 0px 0px 0px 0px; } QToolButton::menu-indicator {image: none;}");
+        m_pCancelButton->setFixedSize(sh);
+        connect(m_pCancelButton, &QIToolButton::clicked, this, &UIFileOperationProgressWidget::sltCancelProgress);
+        if (!m_comProgress.GetCancelable())
+            m_pCancelButton->setEnabled(false);
+        m_pMainLayout->addWidget(m_pCancelButton, 0, Qt::AlignLeft | Qt::AlignTop);
+    }
+
     m_pProgressBar = new QProgressBar;
     if (m_pProgressBar)
     {
@@ -123,16 +139,6 @@ void UIFileOperationProgressWidget::prepareWidgets()
         m_pProgressBar->setTextVisible(true);
         m_pProgressBar->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
         m_pMainLayout->addWidget(m_pProgressBar);
-    }
-
-    m_pCancelButton = new QIToolButton;
-    if (m_pCancelButton)
-    {
-        m_pCancelButton->setIcon(UIIconPool::iconSet(":/close_16px.png"));
-        m_pMainLayout->addWidget(m_pCancelButton, 0, Qt::AlignRight);
-        connect(m_pCancelButton, &QIToolButton::clicked, this, &UIFileOperationProgressWidget::sltCancelProgress);
-        if (!m_comProgress.GetCancelable())
-            m_pCancelButton->setEnabled(false);
     }
 
     setLayout(m_pMainLayout);
@@ -163,11 +169,16 @@ void UIFileOperationProgressWidget::sltHandleProgressPercentageChange(const QUui
 void UIFileOperationProgressWidget::sltHandleProgressTaskComplete(const QUuid &uProgressId)
 {
     Q_UNUSED(uProgressId);
+    if (m_pCancelButton)
+        m_pCancelButton->setEnabled(false);
 }
 
 void UIFileOperationProgressWidget::sltCancelProgress()
 {
     m_comProgress.Cancel();
+    /* Since we dont have a "progress canceled" event we have to do this here: */
+    if (m_pCancelButton)
+        m_pCancelButton->setEnabled(false);
 }
 
 
@@ -208,9 +219,11 @@ void UIGuestControlFileManagerOperationsPanel::prepareWidgets()
     if (m_pTableWidget)
     {
         m_pTableWidget->setColumnCount(TableColumn_Max);
+        m_pTableWidget->verticalHeader()->hide();
         QStringList headers;
         headers << "Progress" << "Information";
         m_pTableWidget->setHorizontalHeaderLabels(headers);
+        m_pTableWidget->setShowGrid(false);
         mainLayout()->addWidget(m_pTableWidget);
     }
 }
