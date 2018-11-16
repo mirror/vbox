@@ -28,54 +28,41 @@ include $(KBUILD_PATH)/subheader.kmk
 
  ifdef VBOX_WITH_HARDENING
   PROGRAMS += VBoxNetDhcpdHardened
-  DLLS += VBoxNetDhcpd
+  VBoxNetDhcpdHardened_TEMPLATE = VBOXR3HARDENEDEXE
+  VBoxNetDhcpdHardened_NAME     = VBoxNetDhcpd
+  VBoxNetDhcpdHardened_DEFS     = SERVICE_NAME=\"VBoxNetDhcpd\"
+  VBoxNetDhcpdHardened_SOURCES  = VBoxNetDhcpdHardened.cpp
+  VBoxNetDhcpdHardened_SOURCES.win = $(VBoxNetLwipNAT_0_OUTDIR)/VBoxNetDhcpd-icon.rc
+  VBoxNetDhcpdHardened_LDFLAGS.win = /SUBSYSTEM:windows
  else
   PROGRAMS += VBoxNetDhcpd
  endif
 
- VBoxNetDhcpdHardened_TEMPLATE = VBOXR3HARDENEDEXE
- VBoxNetDhcpdHardened_NAME     = VBoxNetDHCP
- VBoxNetDhcpdHardened_DEFS     = SERVICE_NAME=\"VBoxNetDhcpd\"
- VBoxNetDhcpdHardened_SOURCES  = VBoxNetDhcpdHardened.cpp
- VBoxNetDhcpdHardened_SOURCES.win = $(VBoxNetDhcpd_0_OUTDIR)/VBoxNetDhcpd-icon.rc
- VBoxNetDhcpdHardened_LDFLAGS.win = /SUBSYSTEM:windows
-
- if1of ($(KBUILD_TARGET),win linux solaris)
-  VBoxNetDhcpd_TEMPLATE := $(if-expr defined(VBOX_WITH_HARDENING),VBoxR3DllDhcpd,VBoxR3ExeDhcpd)
- else
-  VBoxNetDhcpd_TEMPLATE := $(if-expr defined(VBOX_WITH_HARDENING),VBoxR3Dll,VBOXR3EXE)
- endif
- VBoxNetDhcpd_NAME      = VBoxNetDHCP
+ VBoxNetDhcpd_TEMPLATE := $(if-expr defined(VBOX_WITH_HARDENING),VBOXMAINDLL,VBOXMAINCLIENTEXE)
+ VBoxNetDhcpd_NAME     := VBoxNetDhcpd
  # VBoxNetDhcpd_DEFS      = IPv6
- # VBoxNetDhcpd_DEFS.linux = WITH_VALGRIND
- #VBoxNetDhcpd_DEFS.win  = VBOX_COM_OUTOFPROC_MODULE _WIN32_WINNT=0x501 # Windows XP
+ # VBoxNetLwipNAT_DEFS.linux = WITH_VALGRIND
+ VBoxNetDhcpd_DEFS.win  = VBOX_COM_OUTOFPROC_MODULE _WIN32_WINNT=0x501 # Windows XP
 
  # (current dir is for for lwipopts.h)
  VBoxNetDhcpd_INCS += . $(addprefix ../../Devices/Network/lwip-new/,$(LWIP_INCS))
 
- VBoxNetDhcpd_DEFS    = KBUILD_TYPE=\"$(KBUILD_TYPE)\"
- ifneq ($(KBUILD_TARGET),win)
-  VBoxNetDhcpd_DEFS  += VBOX_WITH_XPCOM
-  VBoxNetDhcpd_INCS  += $(VBOX_XPCOM_INCS)
-  VBoxNetDhcpd_CXXFLAGS += -std=c++11
- endif
- VBoxNetDhcpd_SOURCES = ../../Main/glue/VBoxLogRelCreate.cpp \
-                        ../../Main/glue/GetVBoxUserHomeDirectory.cpp \
-                        ClientId.cpp \
-                        Config.cpp \
-                        DHCPD.cpp \
-                        Db.cpp \
-                        DhcpMessage.cpp \
-                        DhcpOptions.cpp \
-                        IPv4Pool.cpp \
-                        TimeStamp.cpp \
-                        VBoxNetDhcpd.cpp \
-                        $(addprefix ../../Devices/Network/lwip-new/,$(LWIP_SOURCES))
+ VBoxNetDhcpd_SOURCES  =
+ VBoxNetDhcpd_SOURCES += ClientId.cpp
+ VBoxNetDhcpd_SOURCES += Config.cpp
+ VBoxNetDhcpd_SOURCES += DHCPD.cpp
+ VBoxNetDhcpd_SOURCES += Db.cpp
+ VBoxNetDhcpd_SOURCES += DhcpMessage.cpp
+ VBoxNetDhcpd_SOURCES += DhcpOptions.cpp
+ VBoxNetDhcpd_SOURCES += IPv4Pool.cpp
+ VBoxNetDhcpd_SOURCES += TimeStamp.cpp
+ VBoxNetDhcpd_SOURCES += VBoxNetDhcpd.cpp
+ VBoxNetDhcpd_SOURCES += $(addprefix ../../Devices/Network/lwip-new/,$(LWIP_SOURCES))
 
- VBoxNetDhcpd_LIBS = $(LIB_RUNTIME)
+ VBoxNetLwipNAT_LIBS = $(LIB_RUNTIME)
 
- VBoxNetDhcpd_LIBS.solaris += socket nsl
- VBoxNetDhcpd_LDFLAGS.win = /SUBSYSTEM:windows
+ VBoxNetLwipNAT_LIBS.solaris += socket nsl
+ VBoxNetLwipNAT_LDFLAGS.win = /SUBSYSTEM:windows
 
  ifeq ($(KBUILD_TARGET),win)
   # Icon include file.

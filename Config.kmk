@@ -770,8 +770,6 @@ VBOX_WITH_NETSHAPER = 1
 if1of ($(KBUILD_TARGET), freebsd linux)
  VBOX_WITH_VDE = 1
 endif
-# Use new VBoxNetDhcpd instead of old VBoxNetDHCP
-VBOX_WITH_DHCPD = 1
 ## @}
 
 
@@ -5417,40 +5415,6 @@ if defined(VBOX_WITH_MORE_NT4_COMPAT_BINARIES) && "$(KBUILD_TARGET).$(KBUILD_TAR
  TEMPLATE_VBoxR3Tool_LIBS.x86  = \
  	$(PATH_STAGE_LIB)/RuntimeR3VccTricks2$(VBOX_SUFF_LIB) \
  	$(PATH_TOOL_$(TEMPLATE_VBOXR3EXE_TOOL.win.x86)_LIB)/oldnames.lib
-endif
-
-ifeq ($(KBUILD_TARGET), win)
- TEMPLATE_VBoxR3ExeDhcpd                 = VBox Ring 3 Exe, newer tool chain
- TEMPLATE_VBoxR3ExeDhcpd_EXTENDS         = VBOXR3EXE
-
- TEMPLATE_VBoxR3ExeDhcpd_TOOL.win.x86   := $(VBOX_NEWER_VCC_TOOL_STEM)X86
- TEMPLATE_VBoxR3ExeDhcpd_TOOL.win.amd64 := $(VBOX_NEWER_VCC_TOOL_STEM)AMD64
-
- TEMPLATE_VBoxR3ExeDhcpd_CXXFLAGS        = \
-	$(filter-out $(VBOX_VCC_WARN_ALL) $(VBOX_VCC_WERR), $(TEMPLATE_VBOXR3EXE_CXXFLAGS)) \
-	$(VBOX_NEWER_VCC_WARN_ALL) $(VBOX_VCC_WERR)
- TEMPLATE_VBoxR3ExeDhcpd_CFLAGS          = $(TEMPLATE_VBoxR3ExeDhcpd_CXXFLAGS)
-
- TEMPLATE_VBoxR3ExeDhcpd_LIBS.x86        = \
-	$(subst $(PATH_TOOL_$(TEMPLATE_VBOXR3EXE_TOOL.win.x86)_LIB),$(PATH_TOOL_$(TEMPLATE_VBoxR3ExeDhcpd_TOOL.win.x86)_LIB), $(TEMPLATE_VBOXR3EXE_LIBS.x86))
- TEMPLATE_VBoxR3ExeDhcpd_LIBS.amd64      = \
-	$(subst $(PATH_TOOL_$(TEMPLATE_VBOXR3EXE_TOOL.win.amd64)_LIB),$(PATH_TOOL_$(TEMPLATE_VBoxR3ExeDhcpd_TOOL.win.amd64)_LIB), $(TEMPLATE_VBOXR3EXE_LIBS.amd64))
-
- TEMPLATE_VBoxR3DllDhcpd                 = VBox ring-3 SO/DLLs, no warnings, newer tool chain
- TEMPLATE_VBoxR3DllDhcpd_EXTENDS         = VBoxR3ExeDhcpd
-endif
-
-if1of ($(KBUILD_TARGET), linux solaris)
- TEMPLATE_VBoxR3ExeDhcpd                 = VBox Ring 3 Exe, no 'shadow' errors with older g++
- TEMPLATE_VBoxR3ExeDhcpd_EXTENDS         = VBOXR3EXE
-
- TEMPLATE_VBoxR3DllDhcpd                 = VBox ring-3 SO/DLLs, no 'shadow' errors with older g++
- TEMPLATE_VBoxR3DllDhcpd_EXTENDS         = VBoxR3Dll
-
-  if $(VBOX_GCC_VERSION_CXX) < 50000
-   TEMPLATE_VBoxR3ExeDhcpd_CXXFLAGS = $(filter-out -Wshadow,$(TEMPLATE_VBOXR3EXE_CXXFLAGS))
-   TEMPLATE_VBoxR3DllDhcpd_CXXFLAGS = $(filter-out -Wshadow,$(TEMPLATE_VBOXR3_CXXFLAGS)) $(VBOX_GCC_WERR)
-  endif
 endif
 
 #
