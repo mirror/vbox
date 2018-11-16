@@ -86,6 +86,11 @@ DECLCALLBACK(D3DKMTFUNCTIONS const *) D3DKMTFunctions(void);
 
 DECLCALLBACK(void) VBoxWddmUmLog(const char *pszString);
 
+/** @todo Rename to VBoxWddm* */
+NTSTATUS vboxDispKmtOpenAdapter2(D3DKMT_HANDLE *phAdapter, LUID *pLuid);
+NTSTATUS vboxDispKmtOpenAdapter(D3DKMT_HANDLE *phAdapter);
+NTSTATUS vboxDispKmtCloseAdapter(D3DKMT_HANDLE hAdapter);
+
 RT_C_DECLS_END
 
 #endif

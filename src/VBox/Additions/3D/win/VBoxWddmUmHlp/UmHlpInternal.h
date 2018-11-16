@@ -20,8 +20,4 @@
 
 #include "VBoxWddmUmHlp.h"
 
-NTSTATUS vboxDispKmtOpenAdapter2(D3DKMT_HANDLE *phAdapter, LUID *pLuid);
-NTSTATUS vboxDispKmtOpenAdapter(D3DKMT_HANDLE *phAdapter);
-NTSTATUS vboxDispKmtCloseAdapter(D3DKMT_HANDLE hAdapter);
-
 #endif
