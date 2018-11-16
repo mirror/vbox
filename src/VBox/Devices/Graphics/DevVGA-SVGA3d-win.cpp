@@ -1891,7 +1891,7 @@ int vmsvga3dBackCreateTexture(PVMSVGA3DSTATE pState, PVMSVGA3DCONTEXT pContext, 
             }
             else
             {
-                Log(("Format not accepted -> try old method\n"));
+                Log(("Format not accepted (%x) -> try old method\n", hr));
                 /* The format was probably not accepted; fall back to our old mode. */
                 hr = pContext->pDevice->CreateTexture(cWidth,
                                                       cHeight,
@@ -5969,7 +5969,25 @@ int vmsvga3dShaderSetConst(PVGASTATE pThis, uint32_t cid, uint32_t reg, SVGA3dSh
 
     for (uint32_t i = 0; i < cRegisters; i++)
     {
-        Log(("Constant %d: value=%x-%x-%x-%x\n", reg + i, pValues[i*4 + 0], pValues[i*4 + 1], pValues[i*4 + 2], pValues[i*4 + 3]));
+#ifdef LOG_ENABLED
+        switch (ctype)
+        {
+            case SVGA3D_CONST_TYPE_FLOAT:
+            {
+                float *pValuesF = (float *)pValues;
+                Log(("ConstantF %d: value=%d, %d, %d, %d\n", reg + i, (int)(pValuesF[i*4 + 0] * 100.0f), (int)(pValuesF[i*4 + 1] * 100.0f), (int)(pValuesF[i*4 + 2] * 100.0f), (int)(pValuesF[i*4 + 3] * 100.0f)));
+                break;
+            }
+
+            case SVGA3D_CONST_TYPE_INT:
+                Log(("ConstantI %d: value=%d, %d, %d, %d\n", reg + i, pValues[i*4 + 0], pValues[i*4 + 1], pValues[i*4 + 2], pValues[i*4 + 3]));
+                break;
+
+            case SVGA3D_CONST_TYPE_BOOL:
+                Log(("ConstantB %d: value=%d, %d, %d, %d\n", reg + i, pValues[i*4 + 0], pValues[i*4 + 1], pValues[i*4 + 2], pValues[i*4 + 3]));
+                break;
+        }
+#endif
         vmsvga3dSaveShaderConst(pContext, reg + i, type, ctype, pValues[i*4 + 0], pValues[i*4 + 1], pValues[i*4 + 2], pValues[i*4 + 3]);
     }
 
