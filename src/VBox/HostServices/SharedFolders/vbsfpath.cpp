@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Shared Folders - guest/host path convertion and verification.
+ * Shared Folders Service - guest/host path convertion and verification.
  */
 
 /*
@@ -15,6 +15,10 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+/*********************************************************************************************************************************
+*   Header Files                                                                                                                 *
+*********************************************************************************************************************************/
+#define LOG_GROUP LOG_GROUP_SHARED_FOLDERS
 #ifdef UNITTEST
 # include "testcase/tstSharedFolderService.h"
 #endif
@@ -43,7 +47,12 @@
 # include "teststubs.h"
 #endif
 
+
+/*********************************************************************************************************************************
+*   Defined Constants And Macros                                                                                                 *
+*********************************************************************************************************************************/
 #define SHFL_RT_LINK(pClient) ((pClient)->fu32Flags & SHFL_CF_SYMLINKS ? RTPATH_F_ON_LINK : RTPATH_F_FOLLOW_LINK)
+
 
 /**
  * @todo find a better solution for supporting the execute bit for non-windows
@@ -688,3 +697,4 @@ void vbsfFreeHostPath(char *pszHostPath)
 {
     RTMemFree(pszHostPath);
 }
+

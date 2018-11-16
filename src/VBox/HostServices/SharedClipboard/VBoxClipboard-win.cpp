@@ -1,5 +1,6 @@
+/* $Id$ */
 /** @file
- * Shared Clipboard: Win32 host.
+ * Shared Clipboard Service - Win32 host.
  */
 
 /*
@@ -14,6 +15,11 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+
+/*********************************************************************************************************************************
+*   Header Files                                                                                                                 *
+*********************************************************************************************************************************/
+#define LOG_GROUP LOG_GROUP_SHARED_CLIPBOARD
 #include <iprt/win/windows.h>
 
 #include <VBox/HostServices/VBoxClipboardSvc.h>

@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Shared Clipboard: Mac OS X host implementation.
+ * Shared Clipboard Service - Mac OS X host implementation.
  */
 
 /*
@@ -20,12 +20,12 @@
 
 typedef struct OpaquePasteboardRef *PasteboardRef;
 
-int initPasteboard (PasteboardRef *pPasteboardRef);
-void destroyPasteboard (PasteboardRef *pPasteboardRef);
+int initPasteboard(PasteboardRef *pPasteboardRef);
+void destroyPasteboard(PasteboardRef *pPasteboardRef);
 
-int queryNewPasteboardFormats (PasteboardRef pPasteboard, uint32_t *pfFormats, bool *pfChanged);
-int readFromPasteboard (PasteboardRef pPasteboard, uint32_t fFormat, void *pv, uint32_t cb, uint32_t *pcbActual);
-int writeToPasteboard (PasteboardRef pPasteboard, void *pv, uint32_t cb, uint32_t fFormat);
+int queryNewPasteboardFormats(PasteboardRef pPasteboard, uint32_t *pfFormats, bool *pfChanged);
+int readFromPasteboard(PasteboardRef pPasteboard, uint32_t fFormat, void *pv, uint32_t cb, uint32_t *pcbActual);
+int writeToPasteboard(PasteboardRef pPasteboard, void *pv, uint32_t cb, uint32_t fFormat);
 
 #endif
 

@@ -1,6 +1,6 @@
+/* $Id$ */
 /** @file
- *
- * Shared Clipboard
+ * Shared Clipboard Service - Internal Header.
  */
 
 /*
@@ -15,10 +15,9 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __VBOXCLIPBOARD__H
-#define __VBOXCLIPBOARD__H
+#ifndef ___VBOXCLIPBOARD_H
+#define ___VBOXCLIPBOARD_H
 
-#define LOG_GROUP LOG_GROUP_SHARED_CLIPBOARD
 #include <VBox/hgcmsvc.h>
 #include <VBox/log.h>
 
@@ -97,4 +96,5 @@ int vboxClipboardSync (VBOXCLIPBOARDCLIENTDATA *pClient);
 uint32_t TestClipSvcGetMode(void);
 #endif
 
-#endif /* __VBOXCLIPBOARD__H */
+#endif /* !___VBOXCLIPBOARD_H */
+

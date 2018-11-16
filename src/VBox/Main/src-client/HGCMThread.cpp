@@ -21,6 +21,7 @@
 #include "HGCMThread.h"
 
 #include <VBox/err.h>
+#include <VBox/vmm/stam.h>
 #include <iprt/semaphore.h>
 #include <iprt/thread.h>
 #include <iprt/string.h>
@@ -118,6 +119,15 @@ class HGCMThread: public HGCMObject
 
         HGCMTHREADHANDLE m_handle;
 
+        /** @name Statistics
+         * @{ */
+        STAMCOUNTER m_StatPostMsgNoPending;
+        STAMCOUNTER m_StatPostMsgOnePending;
+        STAMCOUNTER m_StatPostMsgTwoPending;
+        STAMCOUNTER m_StatPostMsgThreePending;
+        STAMCOUNTER m_StatPostMsgManyPending;
+        /** @} */
+
         inline int Enter (void);
         inline void Leave (void);
 
@@ -132,7 +142,8 @@ class HGCMThread: public HGCMObject
 
         int WaitForTermination (void);
 
-        int Initialize (HGCMTHREADHANDLE handle, const char *pszThreadName, PFNHGCMTHREAD pfnThread, void *pvUser);
+        int Initialize (HGCMTHREADHANDLE handle, const char *pszThreadName, PFNHGCMTHREAD pfnThread, void *pvUser,
+                        const char *pszStatsSubDir, PUVM pUVM);
 
         int MsgAlloc (HGCMMSGHANDLE *pHandle, uint32_t u32MsgId, PFNHGCMNEWMSGALLOC pfnNewMessage);
         int MsgGet (HGCMMsgCore **ppMsg);
@@ -263,11 +274,10 @@ int HGCMThread::WaitForTermination (void)
     return rc;
 }
 
-int HGCMThread::Initialize (HGCMTHREADHANDLE handle, const char *pszThreadName, PFNHGCMTHREAD pfnThread, void *pvUser)
+int HGCMThread::Initialize (HGCMTHREADHANDLE handle, const char *pszThreadName, PFNHGCMTHREAD pfnThread, void *pvUser,
+                            const char *pszStatsSubDir, PUVM pUVM)
 {
-    int rc = VINF_SUCCESS;
-
-    rc = RTSemEventMultiCreate (&m_eventThread);
+    int rc = RTSemEventMultiCreate (&m_eventThread);
 
     if (RT_SUCCESS(rc))
     {
@@ -293,6 +303,27 @@ int HGCMThread::Initialize (HGCMTHREADHANDLE handle, const char *pszThreadName, 
 
                 if (RT_SUCCESS(rc))
                 {
+                    /* Register statistics while the thread starts. */
+                    if (pUVM)
+                    {
+                        STAMR3RegisterFU(pUVM, &m_StatPostMsgNoPending, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                                         "Times a message was appended to an empty input queue.",
+                                         "/HGCM/%s/PostMsg0Pending", pszStatsSubDir);
+                        STAMR3RegisterFU(pUVM, &m_StatPostMsgOnePending, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                                         "Times a message was appended to input queue with only one pending message.",
+                                         "/HGCM/%s/PostMsg1Pending", pszStatsSubDir);
+                        STAMR3RegisterFU(pUVM, &m_StatPostMsgTwoPending, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                                         "Times a message was appended to input queue with only one pending message.",
+                                         "/HGCM/%s/PostMsg2Pending", pszStatsSubDir);
+                        STAMR3RegisterFU(pUVM, &m_StatPostMsgTwoPending, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                                         "Times a message was appended to input queue with only one pending message.",
+                                         "/HGCM/%s/PostMsg3Pending", pszStatsSubDir);
+                        STAMR3RegisterFU(pUVM, &m_StatPostMsgManyPending, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                                         "Times a message was appended to input queue with only one pending message.",
+                                         "/HGCM/%s/PostMsgManyPending", pszStatsSubDir);
+                    }
+
+
                     /* Wait until the thread is ready. */
                     rc = RTThreadUserWait (thread, 30000);
                     AssertRC(rc);
@@ -313,13 +344,13 @@ int HGCMThread::Initialize (HGCMTHREADHANDLE handle, const char *pszThreadName, 
         else
         {
             Log(("hgcmThreadCreate: FAILURE: Can't create an event semaphore for a sent messages.\n"));
-            m_eventSend = 0;
+            m_eventSend = NIL_RTSEMEVENTMULTI;
         }
     }
     else
     {
         Log(("hgcmThreadCreate: FAILURE: Can't create an event semaphore for a hgcm worker thread.\n"));
-        m_eventThread = 0;
+        m_eventThread = NIL_RTSEMEVENTMULTI;
     }
 
     return rc;
@@ -408,15 +439,25 @@ int HGCMThread::MsgPost (HGCMMsgCore *pMsg, PHGCMMSGCALLBACK pfnCallback, bool f
 
         /* Insert the message to the queue tail. */
         pMsg->m_pNext = NULL;
-        pMsg->m_pPrev = m_pMsgInputQueueTail;
+        HGCMMsgCore * const pPrev = m_pMsgInputQueueTail;
+        pMsg->m_pPrev = pPrev;
 
-        if (m_pMsgInputQueueTail)
+        if (pPrev)
         {
-            m_pMsgInputQueueTail->m_pNext = pMsg;
+            pPrev->m_pNext = pMsg;
+            if (!pPrev->m_pPrev)
+                STAM_REL_COUNTER_INC(&m_StatPostMsgOnePending);
+            else if (!pPrev->m_pPrev)
+                STAM_REL_COUNTER_INC(&m_StatPostMsgTwoPending);
+            else if (!pPrev->m_pPrev->m_pPrev)
+                STAM_REL_COUNTER_INC(&m_StatPostMsgThreePending);
+            else
+                STAM_REL_COUNTER_INC(&m_StatPostMsgManyPending);
         }
         else
         {
             m_pMsgInputQueueHead = pMsg;
+            STAM_REL_COUNTER_INC(&m_StatPostMsgNoPending);
         }
 
         m_pMsgInputQueueTail = pMsg;
@@ -629,7 +670,8 @@ void HGCMThread::MsgComplete (HGCMMsgCore *pMsg, int32_t result)
  * Thread API. Public interface.
  */
 
-int hgcmThreadCreate (HGCMTHREADHANDLE *pHandle, const char *pszThreadName, PFNHGCMTHREAD pfnThread, void *pvUser)
+int hgcmThreadCreate (HGCMTHREADHANDLE *pHandle, const char *pszThreadName, PFNHGCMTHREAD pfnThread, void *pvUser,
+                      const char *pszStatsSubDir, PUVM pUVM)
 {
     int rc = VINF_SUCCESS;
 
@@ -646,7 +688,7 @@ int hgcmThreadCreate (HGCMTHREADHANDLE *pHandle, const char *pszThreadName, PFNH
         handle = hgcmObjGenerateHandle (pThread);
 
         /* Initialize the object. */
-        rc = pThread->Initialize (handle, pszThreadName, pfnThread, pvUser);
+        rc = pThread->Initialize (handle, pszThreadName, pfnThread, pvUser, pszStatsSubDir, pUVM);
     }
     else
     {

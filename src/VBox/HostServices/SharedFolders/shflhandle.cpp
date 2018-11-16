@@ -1,7 +1,6 @@
+/* $Id$ */
 /** @file
- *
- * Shared Folders:
- * Handles helper functions.
+ * Shared Folders Service - Handles helper functions.
  */
 
 /*
@@ -16,16 +15,23 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+
+/*********************************************************************************************************************************
+*   Header Files                                                                                                                 *
+*********************************************************************************************************************************/
+#define LOG_GROUP LOG_GROUP_SHARED_FOLDERS
 #include "shflhandle.h"
 #include <iprt/alloc.h>
 #include <iprt/assert.h>
 #include <iprt/critsect.h>
 
 
-/*
+/*********************************************************************************************************************************
+*   Structures and Typedefs                                                                                                      *
+*********************************************************************************************************************************/
+/**
  * Very basic and primitive handle management. Should be sufficient for our needs.
  * Handle allocation can be rather slow, but at least lookup is fast.
- *
  */
 typedef struct
 {
@@ -34,9 +40,14 @@ typedef struct
     PSHFLCLIENTDATA  pClient;
 } SHFLINTHANDLE, *PSHFLINTHANDLE;
 
+
+/*********************************************************************************************************************************
+*   Global Variables                                                                                                             *
+*********************************************************************************************************************************/
 static SHFLINTHANDLE *g_pHandles = NULL;
 static int32_t        gLastHandleIndex = 0;
 static RTCRITSECT     gLock;
+
 
 int vbsfInitHandleTable()
 {
@@ -212,3 +223,4 @@ void vbsfFreeFileHandle(PSHFLCLIENTDATA pClient, SHFLHANDLE hHandle)
     else
         AssertFailed();
 }
+

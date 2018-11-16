@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Shared Clipboard: Mac OS X host implementation.
+ * Shared Clipboard Service - Mac OS X host implementation.
  */
 
 /*
@@ -17,7 +17,10 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#define LOG_GROUP LOG_GROUP_HGCM
+/*********************************************************************************************************************************
+*   Header Files                                                                                                                 *
+*********************************************************************************************************************************/
+#define LOG_GROUP LOG_GROUP_SHARED_CLIPBOARD
 #include <Carbon/Carbon.h>
 
 #include <iprt/mem.h>
@@ -28,8 +31,13 @@
 #include "VBox/HostServices/VBoxClipboardSvc.h"
 #include "VBox/GuestHost/clipboard-helper.h"
 
+
+/*********************************************************************************************************************************
+*   Defined Constants And Macros                                                                                                 *
+*********************************************************************************************************************************/
 /* For debugging */
 //#define SHOW_CLIPBOARD_CONTENT
+
 
 /**
  * Initialize the global pasteboard and return a reference to it.

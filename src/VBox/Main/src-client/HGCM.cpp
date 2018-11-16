@@ -908,7 +908,7 @@ int HGCMService::instanceCreate(const char *pszServiceLibrary, const char *pszSe
     else
         RTStrCopy(szThreadName, sizeof(szThreadName), pszServiceName);
 
-    int rc = hgcmThreadCreate(&m_thread, szThreadName, hgcmServiceThread, this);
+    int rc = hgcmThreadCreate(&m_thread, szThreadName, hgcmServiceThread, this, pszServiceName, pUVM);
 
     if (RT_SUCCESS(rc))
     {
@@ -2680,7 +2680,7 @@ int HGCMHostInit(void)
          * Start main HGCM thread.
          */
 
-        rc = hgcmThreadCreate(&g_hgcmThread, "MainHGCMthread", hgcmThread, NULL);
+        rc = hgcmThreadCreate(&g_hgcmThread, "MainHGCMthread", hgcmThread, NULL /*pvUser*/, NULL /*pszStatsSubDir*/, NULL /*pUVM*/);
 
         if (RT_FAILURE(rc))
         {

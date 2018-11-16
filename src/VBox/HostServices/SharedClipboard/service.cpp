@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Shared Clipboard: Host service entry points.
+ * Shared Clipboard Service - Host service entry points.
  */
 
 /*
@@ -69,6 +69,10 @@
  * This section may be written in the future :)
  */
 
+/*********************************************************************************************************************************
+*   Header Files                                                                                                                 *
+*********************************************************************************************************************************/
+#define LOG_GROUP LOG_GROUP_SHARED_CLIPBOARD
 #include <VBox/HostServices/VBoxClipboardSvc.h>
 #include <VBox/HostServices/VBoxClipboardExt.h>
 
@@ -79,6 +83,29 @@
 #include <VBox/vmm/ssm.h>
 
 #include "VBoxClipboard.h"
+
+
+/*********************************************************************************************************************************
+*   Global Variables                                                                                                             *
+*********************************************************************************************************************************/
+static PVBOXHGCMSVCHELPERS g_pHelpers;
+
+static RTCRITSECT critsect;
+static uint32_t g_u32Mode;
+
+static PFNHGCMSVCEXT g_pfnExtension;
+static void *g_pvExtension;
+
+static VBOXCLIPBOARDCLIENTDATA *g_pClient;
+
+/* Serialization of data reading and format announcements from the RDP client. */
+static bool g_fReadingData = false;
+static bool g_fDelayedAnnouncement = false;
+static uint32_t g_u32DelayedFormats = 0;
+
+/** Is the clipboard running in headless mode? */
+static bool g_fHeadless = false;
+
 
 static void VBoxHGCMParmUInt32Set (VBOXHGCMSVCPARM *pParm, uint32_t u32)
 {
@@ -118,23 +145,6 @@ static int VBoxHGCMParmPtrGet (VBOXHGCMSVCPARM *pParm, void **ppv, uint32_t *pcb
     return VERR_INVALID_PARAMETER;
 }
 
-static PVBOXHGCMSVCHELPERS g_pHelpers;
-
-static RTCRITSECT critsect;
-static uint32_t g_u32Mode;
-
-static PFNHGCMSVCEXT g_pfnExtension;
-static void *g_pvExtension;
-
-static VBOXCLIPBOARDCLIENTDATA *g_pClient;
-
-/* Serialization of data reading and format announcements from the RDP client. */
-static bool g_fReadingData = false;
-static bool g_fDelayedAnnouncement = false;
-static uint32_t g_u32DelayedFormats = 0;
-
-/** Is the clipboard running in headless mode? */
-static bool g_fHeadless = false;
 
 static uint32_t vboxSvcClipboardMode (void)
 {

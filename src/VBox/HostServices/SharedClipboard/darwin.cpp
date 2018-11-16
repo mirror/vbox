@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Shared Clipboard: Mac OS X host.
+ * Shared Clipboard Service - Mac OS X host.
  */
 
 /*
@@ -15,6 +15,11 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+
+/*********************************************************************************************************************************
+*   Header Files                                                                                                                 *
+*********************************************************************************************************************************/
+#define LOG_GROUP LOG_GROUP_SHARED_CLIPBOARD
 #include <VBox/HostServices/VBoxClipboardSvc.h>
 
 #include <iprt/assert.h>
@@ -24,6 +29,10 @@
 #include "VBoxClipboard.h"
 #include "darwin-pasteboard.h"
 
+
+/*********************************************************************************************************************************
+*   Structures and Typedefs                                                                                                      *
+*********************************************************************************************************************************/
 /** Global clipboard context information */
 struct _VBOXCLIPBOARDCONTEXT
 {
@@ -37,6 +46,10 @@ struct _VBOXCLIPBOARDCONTEXT
     VBOXCLIPBOARDCLIENTDATA *pClient;
 };
 
+
+/*********************************************************************************************************************************
+*   Global Variables                                                                                                             *
+*********************************************************************************************************************************/
 /** Only one client is supported. There seems to be no need for more clients. */
 static VBOXCLIPBOARDCONTEXT g_ctx;
 

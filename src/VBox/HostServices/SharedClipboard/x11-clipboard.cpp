@@ -1,7 +1,6 @@
+/* $Id$ */
 /** @file
- *
- * Shared Clipboard:
- * Linux host.
+ * Shared Clipboard Service - Linux host.
  */
 
 /*
@@ -16,15 +15,17 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+
+/*********************************************************************************************************************************
+*   Header Files                                                                                                                 *
+*********************************************************************************************************************************/
 #define LOG_GROUP LOG_GROUP_SHARED_CLIPBOARD
-
-#include <string.h>
-
 #include <iprt/assert.h>
 #include <iprt/critsect.h>
 #include <iprt/env.h>
 #include <iprt/mem.h>
 #include <iprt/semaphore.h>
+#include <iprt/string.h>
 
 #include <VBox/GuestHost/SharedClipboard.h>
 #include <VBox/HostServices/VBoxClipboardSvc.h>

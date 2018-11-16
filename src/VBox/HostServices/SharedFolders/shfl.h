@@ -20,7 +20,6 @@
 #include <VBox/err.h>
 #include <VBox/hgcmsvc.h>
 
-#define LOG_GROUP LOG_GROUP_SHARED_FOLDERS
 #include <VBox/log.h>
 
 /**

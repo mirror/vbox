@@ -1,5 +1,6 @@
+/* $Id$ */
 /** @file
- * Shared Folders: Mappings support.
+ * Shared Folders Service - Mappings support.
  */
 
 /*
@@ -14,6 +15,11 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+
+/*********************************************************************************************************************************
+*   Header Files                                                                                                                 *
+*********************************************************************************************************************************/
+#define LOG_GROUP LOG_GROUP_SHARED_FOLDERS
 #ifdef UNITTEST
 # include "testcase/tstSharedFolderService.h"
 #endif
@@ -30,6 +36,10 @@
 # include "teststubs.h"
 #endif
 
+
+/*********************************************************************************************************************************
+*   Global Variables                                                                                                             *
+*********************************************************************************************************************************/
 extern PVBOXHGCMSVCHELPERS g_pHelpers; /* service.cpp */
 
 

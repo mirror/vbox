@@ -15,8 +15,11 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+/*********************************************************************************************************************************
+*   Header Files                                                                                                                 *
+*********************************************************************************************************************************/
+#define LOG_GROUP LOG_GROUP_SHARED_FOLDERS
 #include <VBox/shflsvc.h>
-
 
 #include "shfl.h"
 #include "mappings.h"
@@ -29,9 +32,72 @@
 #include <VBox/vmm/ssm.h>
 #include <VBox/vmm/pdmifs.h>
 
+
+/*********************************************************************************************************************************
+*   Defined Constants And Macros                                                                                                 *
+*********************************************************************************************************************************/
 #define SHFL_SAVED_STATE_VERSION_FOLDERNAME_UTF16       2
 #define SHFL_SAVED_STATE_VERSION_PRE_AUTO_MOUNT_POINT   3
 #define SHFL_SAVED_STATE_VERSION                        4
+
+
+/*********************************************************************************************************************************
+*   Global Variables                                                                                                             *
+*********************************************************************************************************************************/
+PVBOXHGCMSVCHELPERS g_pHelpers;
+static PPDMLED      g_pStatusLed = NULL;
+
+/** @name Shared folder statistics.
+ * @{ */
+static STAMPROFILE g_StatQueryMappings;
+static STAMPROFILE g_StatQueryMappingsFail;
+static STAMPROFILE g_StatQueryMapName;
+static STAMPROFILE g_StatCreate;
+static STAMPROFILE g_StatCreateFail;
+static STAMPROFILE g_StatLookup;
+static STAMPROFILE g_StatLookupFail;
+static STAMPROFILE g_StatClose;
+static STAMPROFILE g_StatCloseFail;
+static STAMPROFILE g_StatRead;
+static STAMPROFILE g_StatReadFail;
+static STAMPROFILE g_StatWrite;
+static STAMPROFILE g_StatWriteFail;
+static STAMPROFILE g_StatLock;
+static STAMPROFILE g_StatLockFail;
+static STAMPROFILE g_StatList;
+static STAMPROFILE g_StatListFail;
+static STAMPROFILE g_StatReadLink;
+static STAMPROFILE g_StatReadLinkFail;
+static STAMPROFILE g_StatMapFolderOld;
+static STAMPROFILE g_StatMapFolder;
+static STAMPROFILE g_StatMapFolderFail;
+static STAMPROFILE g_StatUnmapFolder;
+static STAMPROFILE g_StatUnmapFolderFail;
+static STAMPROFILE g_StatInformationFail;
+static STAMPROFILE g_StatInformationSetFile;
+static STAMPROFILE g_StatInformationSetFileFail;
+static STAMPROFILE g_StatInformationSetSize;
+static STAMPROFILE g_StatInformationSetSizeFail;
+static STAMPROFILE g_StatInformationGetFile;
+static STAMPROFILE g_StatInformationGetFileFail;
+static STAMPROFILE g_StatInformationGetVolume;
+static STAMPROFILE g_StatInformationGetVolumeFail;
+static STAMPROFILE g_StatRemove;
+static STAMPROFILE g_StatRemoveFail;
+static STAMPROFILE g_StatRename;
+static STAMPROFILE g_StatRenameFail;
+static STAMPROFILE g_StatFlush;
+static STAMPROFILE g_StatFlushFail;
+static STAMPROFILE g_StatSetUtf8;
+static STAMPROFILE g_StatSymlink;
+static STAMPROFILE g_StatSymlinkFail;
+static STAMPROFILE g_StatSetSymlinks;
+static STAMPROFILE g_StatQueryMapInfo;
+static STAMPROFILE g_StatWaitForMappingsChanges;
+static STAMPROFILE g_StatWaitForMappingsChangesFail;
+static STAMPROFILE g_StatCancelMappingsChangesWait;
+static STAMPROFILE g_StatUnknown;
+/** @} */
 
 
 /** @page pg_shfl_svc   Shared Folders Host Service
@@ -72,8 +138,6 @@
  */
 
 
-PVBOXHGCMSVCHELPERS g_pHelpers;
-static PPDMLED      pStatusLed = NULL;
 
 static DECLCALLBACK(int) svcUnload (void *)
 {
@@ -82,6 +146,8 @@ static DECLCALLBACK(int) svcUnload (void *)
     Log(("svcUnload\n"));
     vbsfFreeHandleTable();
 
+    if (g_pHelpers)
+        HGCMSvcHlpStamDeregister(g_pHelpers, "/HGCM/VBoxSharedFolders/*");
     return rc;
 }
 
@@ -335,8 +401,10 @@ static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32
                                    void *pvClient, uint32_t u32Function, uint32_t cParms, VBOXHGCMSVCPARM paParms[])
 {
     RT_NOREF1(u32ClientID);
-    int rc = VINF_SUCCESS;
-
+#ifndef VBOX_WITHOUT_RELEASE_STATISTICS
+    uint64_t tsStart;
+    STAM_GET_TS(tsStart);
+#endif
     Log(("SharedFolders host service: svcCall: u32ClientID = %u, fn = %u, cParms = %u, pparms = %p\n", u32ClientID, u32Function, cParms, paParms));
 
     SHFLCLIENTDATA *pClient = (SHFLCLIENTDATA *)pvClient;
@@ -351,10 +419,14 @@ static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32
     }
 #endif
 
+    int rc = VINF_SUCCESS;
+    PSTAMPROFILE pStat, pStatFail;
     switch (u32Function)
     {
         case SHFL_FN_QUERY_MAPPINGS:
         {
+            pStat     = &g_StatQueryMappings;
+            pStatFail = &g_StatQueryMappingsFail;
             Log(("SharedFolders host service: svcCall: SHFL_FN_QUERY_MAPPINGS\n"));
 
             /* Verify parameter count and types. */
@@ -414,6 +486,7 @@ static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32
 
         case SHFL_FN_QUERY_MAP_NAME:
         {
+            pStatFail = pStat = &g_StatQueryMapName;
             Log(("SharedFolders host service: svcCall: SHFL_FN_QUERY_MAP_NAME\n"));
 
             /* Verify parameter count and types. */
@@ -455,6 +528,8 @@ static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32
 
         case SHFL_FN_CREATE:
         {
+            pStat     = &g_StatCreate;
+            pStatFail = &g_StatCreateFail;
             Log(("SharedFolders host service: svcCall: SHFL_FN_CREATE\n"));
 
             /* Verify parameter count and types. */
@@ -490,6 +565,12 @@ static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32
                 }
                 else
                 {
+                    if (pParms->CreateFlags & SHFL_CF_LOOKUP)
+                    {
+                        pStat     = &g_StatLookup;
+                        pStatFail = &g_StatLookupFail;
+                    }
+
                     /* Execute the function. */
                     rc = vbsfCreate (pClient, root, pPath, cbPath, pParms);
 
@@ -505,6 +586,8 @@ static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32
 
         case SHFL_FN_CLOSE:
         {
+            pStat     = &g_StatClose;
+            pStatFail = &g_StatCloseFail;
             Log(("SharedFolders host service: svcCall: SHFL_FN_CLOSE\n"));
 
             /* Verify parameter count and types. */
@@ -553,6 +636,8 @@ static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32
 
         /** Read object content. */
         case SHFL_FN_READ:
+            pStat     = &g_StatRead;
+            pStatFail = &g_StatReadFail;
             Log(("SharedFolders host service: svcCall: SHFL_FN_READ\n"));
 
             /* Verify parameter count and types. */
@@ -595,15 +680,15 @@ static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32
                 else
                 {
                     /* Execute the function. */
-                    if (pStatusLed)
+                    if (g_pStatusLed)
                     {
-                        Assert(pStatusLed->u32Magic == PDMLED_MAGIC);
-                        pStatusLed->Asserted.s.fReading = pStatusLed->Actual.s.fReading = 1;
+                        Assert(g_pStatusLed->u32Magic == PDMLED_MAGIC);
+                        g_pStatusLed->Asserted.s.fReading = g_pStatusLed->Actual.s.fReading = 1;
                     }
 
                     rc = vbsfRead (pClient, root, Handle, offset, &count, pBuffer);
-                    if (pStatusLed)
-                        pStatusLed->Actual.s.fReading = 0;
+                    if (g_pStatusLed)
+                        g_pStatusLed->Actual.s.fReading = 0;
 
                     if (RT_SUCCESS(rc))
                     {
@@ -620,6 +705,8 @@ static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32
 
         /** Write new object content. */
         case SHFL_FN_WRITE:
+            pStat     = &g_StatWrite;
+            pStatFail = &g_StatWriteFail;
             Log(("SharedFolders host service: svcCall: SHFL_FN_WRITE\n"));
 
             /* Verify parameter count and types. */
@@ -662,15 +749,15 @@ static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32
                 else
                 {
                     /* Execute the function. */
-                    if (pStatusLed)
+                    if (g_pStatusLed)
                     {
-                        Assert(pStatusLed->u32Magic == PDMLED_MAGIC);
-                        pStatusLed->Asserted.s.fWriting = pStatusLed->Actual.s.fWriting = 1;
+                        Assert(g_pStatusLed->u32Magic == PDMLED_MAGIC);
+                        g_pStatusLed->Asserted.s.fWriting = g_pStatusLed->Actual.s.fWriting = 1;
                     }
 
                     rc = vbsfWrite (pClient, root, Handle, offset, &count, pBuffer);
-                    if (pStatusLed)
-                        pStatusLed->Actual.s.fWriting = 0;
+                    if (g_pStatusLed)
+                        g_pStatusLed->Actual.s.fWriting = 0;
 
                     if (RT_SUCCESS(rc))
                     {
@@ -687,6 +774,8 @@ static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32
 
         /** Lock/unlock a range in the object. */
         case SHFL_FN_LOCK:
+            pStat     = &g_StatLock;
+            pStatFail = &g_StatLockFail;
             Log(("SharedFolders host service: svcCall: SHFL_FN_LOCK\n"));
 
             /* Verify parameter count and types. */
@@ -774,6 +863,8 @@ static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32
         /** List object content. */
         case SHFL_FN_LIST:
         {
+            pStat     = &g_StatList;
+            pStatFail = &g_StatListFail;
             Log(("SharedFolders host service: svcCall: SHFL_FN_LIST\n"));
 
             /* Verify parameter count and types. */
@@ -816,17 +907,17 @@ static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32
                 }
                 else
                 {
-                    if (pStatusLed)
+                    if (g_pStatusLed)
                     {
-                        Assert(pStatusLed->u32Magic == PDMLED_MAGIC);
-                        pStatusLed->Asserted.s.fReading = pStatusLed->Actual.s.fReading = 1;
+                        Assert(g_pStatusLed->u32Magic == PDMLED_MAGIC);
+                        g_pStatusLed->Asserted.s.fReading = g_pStatusLed->Actual.s.fReading = 1;
                     }
 
                     /* Execute the function. */
                     rc = vbsfDirList (pClient, root, Handle, pPath, flags, &length, pBuffer, &resumePoint, &cFiles);
 
-                    if (pStatusLed)
-                        pStatusLed->Actual.s.fReading = 0;
+                    if (g_pStatusLed)
+                        g_pStatusLed->Actual.s.fReading = 0;
 
                     if (rc == VERR_NO_MORE_FILES && cFiles != 0)
                         rc = VINF_SUCCESS; /* Successfully return these files. */
@@ -852,6 +943,8 @@ static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32
         /* Read symlink destination */
         case SHFL_FN_READLINK:
         {
+            pStat     = &g_StatReadLink;
+            pStatFail = &g_StatReadLinkFail;
             Log(("SharedFolders host service: svcCall: SHFL_FN_READLINK\n"));
 
             /* Verify parameter count and types. */
@@ -900,6 +993,7 @@ static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32
         /* Legacy interface */
         case SHFL_FN_MAP_FOLDER_OLD:
         {
+            pStatFail = pStat = &g_StatMapFolderOld;
             Log(("SharedFolders host service: svcCall: SHFL_FN_MAP_FOLDER_OLD\n"));
 
             /* Verify parameter count and types. */
@@ -943,6 +1037,8 @@ static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32
 
         case SHFL_FN_MAP_FOLDER:
         {
+            pStat     = &g_StatMapFolder;
+            pStatFail = &g_StatMapFolderFail;
             Log(("SharedFolders host service: svcCall: SHFL_FN_MAP_FOLDER\n"));
             if (BIT_FLAG(pClient->fu32Flags, SHFL_CF_UTF8))
                 Log(("SharedFolders host service: request to map folder '%s'\n",
@@ -1013,6 +1109,8 @@ static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32
 
         case SHFL_FN_UNMAP_FOLDER:
         {
+            pStat     = &g_StatUnmapFolder;
+            pStatFail = &g_StatUnmapFolderFail;
             Log(("SharedFolders host service: svcCall: SHFL_FN_UNMAP_FOLDER\n"));
             Log(("SharedFolders host service: request to unmap folder handle %u\n",
                  paParms[0].u.uint32));
@@ -1048,6 +1146,7 @@ static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32
         /** Query/set object information. */
         case SHFL_FN_INFORMATION:
         {
+            pStatFail = pStat = &g_StatInformationFail;
             Log(("SharedFolders host service: svcCall: SHFL_FN_INFORMATION\n"));
 
             /* Verify parameter count and types. */
@@ -1083,9 +1182,35 @@ static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32
                 {
                     /* Execute the function. */
                     if (flags & SHFL_INFO_SET)
+                    {
                         rc = vbsfSetFSInfo (pClient, root, Handle, flags, &length, pBuffer);
+
+                        if (flags & SHFL_INFO_FILE)
+                        {
+                            pStat     = &g_StatInformationSetFile;
+                            pStatFail = &g_StatInformationSetFileFail;
+                        }
+                        else if (flags & SHFL_INFO_SIZE)
+                        {
+                            pStat     = &g_StatInformationSetSize;
+                            pStatFail = &g_StatInformationSetSizeFail;
+                        }
+                    }
                     else /* SHFL_INFO_GET */
+                    {
                         rc = vbsfQueryFSInfo (pClient, root, Handle, flags, &length, pBuffer);
+
+                        if (flags & SHFL_INFO_FILE)
+                        {
+                            pStat     = &g_StatInformationGetFile;
+                            pStatFail = &g_StatInformationGetFileFail;
+                        }
+                        else if (flags & SHFL_INFO_VOLUME)
+                        {
+                            pStat     = &g_StatInformationGetVolume;
+                            pStatFail = &g_StatInformationGetVolumeFail;
+                        }
+                    }
 
                     if (RT_SUCCESS(rc))
                     {
@@ -1104,6 +1229,8 @@ static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32
         /** Remove or rename object */
         case SHFL_FN_REMOVE:
         {
+            pStat     = &g_StatRemove;
+            pStatFail = &g_StatRemoveFail;
             Log(("SharedFolders host service: svcCall: SHFL_FN_REMOVE\n"));
 
             /* Verify parameter count and types. */
@@ -1147,6 +1274,8 @@ static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32
 
         case SHFL_FN_RENAME:
         {
+            pStat     = &g_StatRename;
+            pStatFail = &g_StatRenameFail;
             Log(("SharedFolders host service: svcCall: SHFL_FN_RENAME\n"));
 
             /* Verify parameter count and types. */
@@ -1193,6 +1322,8 @@ static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32
 
         case SHFL_FN_FLUSH:
         {
+            pStat     = &g_StatFlush;
+            pStatFail = &g_StatFlushFail;
             Log(("SharedFolders host service: svcCall: SHFL_FN_FLUSH\n"));
 
             /* Verify parameter count and types. */
@@ -1240,6 +1371,8 @@ static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32
 
         case SHFL_FN_SET_UTF8:
         {
+            pStatFail = pStat = &g_StatSetUtf8;
+
             pClient->fu32Flags |= SHFL_CF_UTF8;
             rc = VINF_SUCCESS;
             break;
@@ -1247,7 +1380,10 @@ static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32
 
         case SHFL_FN_SYMLINK:
         {
+            pStat     = &g_StatSymlink;
+            pStatFail = &g_StatSymlinkFail;
             Log(("SharedFolders host service: svnCall: SHFL_FN_SYMLINK\n"));
+
             /* Verify parameter count and types. */
             if (cParms != SHFL_CPARMS_SYMLINK)
             {
@@ -1294,6 +1430,8 @@ static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32
 
         case SHFL_FN_SET_SYMLINKS:
         {
+            pStatFail = pStat = &g_StatSetSymlinks;
+
             pClient->fu32Flags |= SHFL_CF_SYMLINKS;
             rc = VINF_SUCCESS;
             break;
@@ -1301,6 +1439,7 @@ static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32
 
         case SHFL_FN_QUERY_MAP_INFO:
         {
+            pStatFail = pStat = &g_StatQueryMapInfo;
             Log(("SharedFolders host service: svnCall: SHFL_FN_QUERY_MAP_INFO\n"));
 
             /* Validate input: */
@@ -1325,7 +1464,9 @@ static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32
 
         case SHFL_FN_WAIT_FOR_MAPPINGS_CHANGES:
         {
-            Log(("SharedFolders host service: svnCall: SHFL_FN_WAIT_FOR_CHANGES\n"));
+            pStat = &g_StatWaitForMappingsChanges;
+            pStatFail = &g_StatWaitForMappingsChangesFail;
+            Log(("SharedFolders host service: svnCall: SHFL_FN_WAIT_FOR_MAPPINGS_CHANGES\n"));
 
             /* Validate input: */
             rc = VERR_INVALID_PARAMETER;
@@ -1340,6 +1481,7 @@ static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32
 
         case SHFL_FN_CANCEL_MAPPINGS_CHANGES_WAITS:
         {
+            pStatFail = pStat = &g_StatCancelMappingsChangesWait;
             Log(("SharedFolders host service: svnCall: SHFL_FN_CANCEL_WAIT_FOR_CHANGES\n"));
 
             /* Validate input: */
@@ -1353,6 +1495,7 @@ static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32
 
         default:
         {
+            pStatFail = pStat = &g_StatUnknown;
             rc = VERR_NOT_IMPLEMENTED;
             break;
         }
@@ -1368,6 +1511,17 @@ static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32
          */
         g_pHelpers->pfnCallComplete (callHandle, rc);
     }
+
+#ifndef VBOX_WITHOUT_RELEASE_STATISTICS
+    /* Statistics: */
+    uint64_t cTicks;
+    STAM_GET_TS(cTicks);
+    cTicks -= tsStart;
+    if (RT_SUCCESS(rc))
+        STAM_REL_PROFILE_ADD_PERIOD(pStat, cTicks);
+    else
+        STAM_REL_PROFILE_ADD_PERIOD(pStatFail, cTicks);
+#endif
 
     LogFlow(("\n"));        /* Add a new line to differentiate between calls more easily. */
 }
@@ -1537,7 +1691,7 @@ static DECLCALLBACK(int) svcHostCall (void *, uint32_t u32Function, uint32_t cPa
             else
             {
                 /* Execute the function. */
-                pStatusLed = pLed;
+                g_pStatusLed = pLed;
                 rc = VINF_SUCCESS;
             }
         }
@@ -1597,6 +1751,59 @@ extern "C" DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad (VBOXHGCMSVCFNTABLE *pt
         AssertRC(rc);
 
         vbsfMappingInit();
+
+        /* Finally, register statistics if everything went well: */
+        if (RT_SUCCESS(rc))
+        {
+             HGCMSvcHlpStamRegister(g_pHelpers, &g_StatQueryMappings,             STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_CALLS, "SHFL_FN_QUERY_MAPPINGS successes",          "/HGCM/VBoxSharedFolders/FnQueryMappings");
+             HGCMSvcHlpStamRegister(g_pHelpers, &g_StatQueryMappingsFail,         STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_CALLS, "SHFL_FN_QUERY_MAPPINGS failures",           "/HGCM/VBoxSharedFolders/FnQueryMappingsFail");
+             HGCMSvcHlpStamRegister(g_pHelpers, &g_StatQueryMapName,              STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_CALLS, "SHFL_FN_QUERY_MAP_NAME",                    "/HGCM/VBoxSharedFolders/FnQueryMapName");
+             HGCMSvcHlpStamRegister(g_pHelpers, &g_StatCreate,                    STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_CALLS, "SHFL_FN_CREATE/CREATE successes",           "/HGCM/VBoxSharedFolders/FnCreate");
+             HGCMSvcHlpStamRegister(g_pHelpers, &g_StatCreateFail,                STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_CALLS, "SHFL_FN_CREATE/CREATE failures",            "/HGCM/VBoxSharedFolders/FnCreateFail");
+             HGCMSvcHlpStamRegister(g_pHelpers, &g_StatLookup,                    STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_CALLS, "SHFL_FN_CREATE/LOOKUP successes",           "/HGCM/VBoxSharedFolders/FnLookup");
+             HGCMSvcHlpStamRegister(g_pHelpers, &g_StatLookupFail,                STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_CALLS, "SHFL_FN_CREATE/LOOKUP failures",            "/HGCM/VBoxSharedFolders/FnLookupFail");
+             HGCMSvcHlpStamRegister(g_pHelpers, &g_StatClose,                     STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_CALLS, "SHFL_FN_CLOSE successes",                   "/HGCM/VBoxSharedFolders/FnClose");
+             HGCMSvcHlpStamRegister(g_pHelpers, &g_StatCloseFail,                 STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_CALLS, "SHFL_FN_CLOSE failures",                    "/HGCM/VBoxSharedFolders/FnCloseFail");
+             HGCMSvcHlpStamRegister(g_pHelpers, &g_StatRead,                      STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_CALLS, "SHFL_FN_READ successes",                    "/HGCM/VBoxSharedFolders/FnRead");
+             HGCMSvcHlpStamRegister(g_pHelpers, &g_StatReadFail,                  STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_CALLS, "SHFL_FN_READ failures",                     "/HGCM/VBoxSharedFolders/FnReadFail");
+             HGCMSvcHlpStamRegister(g_pHelpers, &g_StatWrite,                     STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_CALLS, "SHFL_FN_WRITE successes",                   "/HGCM/VBoxSharedFolders/FnWrite");
+             HGCMSvcHlpStamRegister(g_pHelpers, &g_StatWriteFail,                 STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_CALLS, "SHFL_FN_WRITE failures",                    "/HGCM/VBoxSharedFolders/FnWriteFail");
+             HGCMSvcHlpStamRegister(g_pHelpers, &g_StatLock,                      STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_CALLS, "SHFL_FN_LOCK successes",                    "/HGCM/VBoxSharedFolders/FnLock");
+             HGCMSvcHlpStamRegister(g_pHelpers, &g_StatLockFail,                  STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_CALLS, "SHFL_FN_LOCK failures",                     "/HGCM/VBoxSharedFolders/FnLockFail");
+             HGCMSvcHlpStamRegister(g_pHelpers, &g_StatList,                      STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_CALLS, "SHFL_FN_LIST successes",                    "/HGCM/VBoxSharedFolders/FnList");
+             HGCMSvcHlpStamRegister(g_pHelpers, &g_StatListFail,                  STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_CALLS, "SHFL_FN_LIST failures",                     "/HGCM/VBoxSharedFolders/FnListFail");
+             HGCMSvcHlpStamRegister(g_pHelpers, &g_StatReadLink,                  STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_CALLS, "SHFL_FN_READLINK successes",                "/HGCM/VBoxSharedFolders/FnReadLink");
+             HGCMSvcHlpStamRegister(g_pHelpers, &g_StatReadLinkFail,              STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_CALLS, "SHFL_FN_READLINK failures",                 "/HGCM/VBoxSharedFolders/FnReadLinkFail");
+             HGCMSvcHlpStamRegister(g_pHelpers, &g_StatMapFolderOld,              STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_CALLS, "SHFL_FN_MAP_FOLDER_OLD",                    "/HGCM/VBoxSharedFolders/FnMapFolderOld");
+             HGCMSvcHlpStamRegister(g_pHelpers, &g_StatMapFolder,                 STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_CALLS, "SHFL_FN_MAP_FOLDER successes",              "/HGCM/VBoxSharedFolders/FnMapFolder");
+             HGCMSvcHlpStamRegister(g_pHelpers, &g_StatMapFolderFail,             STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_CALLS, "SHFL_FN_MAP_FOLDER failures",               "/HGCM/VBoxSharedFolders/FnMapFolderFail");
+             HGCMSvcHlpStamRegister(g_pHelpers, &g_StatUnmapFolder,               STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_CALLS, "SHFL_FN_UNMAP_FOLDER successes",            "/HGCM/VBoxSharedFolders/FnUnmapFolder");
+             HGCMSvcHlpStamRegister(g_pHelpers, &g_StatUnmapFolderFail,           STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_CALLS, "SHFL_FN_UNMAP_FOLDER failures",             "/HGCM/VBoxSharedFolders/FnUnmapFolderFail");
+             HGCMSvcHlpStamRegister(g_pHelpers, &g_StatInformationFail,           STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_CALLS, "SHFL_FN_INFORMATION early failures",        "/HGCM/VBoxSharedFolders/FnInformationFail");
+             HGCMSvcHlpStamRegister(g_pHelpers, &g_StatInformationSetFile,        STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_CALLS, "SHFL_FN_INFORMATION/SET/FILE successes",    "/HGCM/VBoxSharedFolders/FnInformationSetFile");
+             HGCMSvcHlpStamRegister(g_pHelpers, &g_StatInformationSetFileFail,    STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_CALLS, "SHFL_FN_INFORMATION/SET/FILE failures",     "/HGCM/VBoxSharedFolders/FnInformationSetFileFail");
+             HGCMSvcHlpStamRegister(g_pHelpers, &g_StatInformationSetSize,        STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_CALLS, "SHFL_FN_INFORMATION/SET/SIZE successes",    "/HGCM/VBoxSharedFolders/FnInformationSetSize");
+             HGCMSvcHlpStamRegister(g_pHelpers, &g_StatInformationSetSizeFail,    STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_CALLS, "SHFL_FN_INFORMATION/SET/SIZE failures",     "/HGCM/VBoxSharedFolders/FnInformationSetSizeFail");
+             HGCMSvcHlpStamRegister(g_pHelpers, &g_StatInformationGetFile,        STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_CALLS, "SHFL_FN_INFORMATION/GET/FILE successes",    "/HGCM/VBoxSharedFolders/FnInformationGetFile");
+             HGCMSvcHlpStamRegister(g_pHelpers, &g_StatInformationGetFileFail,    STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_CALLS, "SHFL_FN_INFORMATION/GET/FILE failures",     "/HGCM/VBoxSharedFolders/FnInformationGetFileFail");
+             HGCMSvcHlpStamRegister(g_pHelpers, &g_StatInformationGetVolume,      STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_CALLS, "SHFL_FN_INFORMATION/GET/VOLUME successes",  "/HGCM/VBoxSharedFolders/FnInformationGetVolume");
+             HGCMSvcHlpStamRegister(g_pHelpers, &g_StatInformationGetVolumeFail,  STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_CALLS, "SHFL_FN_INFORMATION/GET/VOLUME failures",   "/HGCM/VBoxSharedFolders/FnInformationGetVolumeFail");
+             HGCMSvcHlpStamRegister(g_pHelpers, &g_StatRemove,                    STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_CALLS, "SHFL_FN_REMOVE successes",                  "/HGCM/VBoxSharedFolders/FnRemove");
+             HGCMSvcHlpStamRegister(g_pHelpers, &g_StatRemoveFail,                STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_CALLS, "SHFL_FN_REMOVE failures",                   "/HGCM/VBoxSharedFolders/FnRemoveFail");
+             HGCMSvcHlpStamRegister(g_pHelpers, &g_StatRename,                    STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_CALLS, "SHFL_FN_RENAME successes",                  "/HGCM/VBoxSharedFolders/FnRename");
+             HGCMSvcHlpStamRegister(g_pHelpers, &g_StatRenameFail,                STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_CALLS, "SHFL_FN_RENAME failures",                   "/HGCM/VBoxSharedFolders/FnRenameFail");
+             HGCMSvcHlpStamRegister(g_pHelpers, &g_StatFlush,                     STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_CALLS, "SHFL_FN_FLUSH successes",                   "/HGCM/VBoxSharedFolders/FnFlush");
+             HGCMSvcHlpStamRegister(g_pHelpers, &g_StatFlushFail,                 STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_CALLS, "SHFL_FN_FLUSH failures",                    "/HGCM/VBoxSharedFolders/FnFlushFail");
+             HGCMSvcHlpStamRegister(g_pHelpers, &g_StatSetUtf8,                   STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_CALLS, "SHFL_FN_SET_UTF8",                          "/HGCM/VBoxSharedFolders/FnSetUtf8");
+             HGCMSvcHlpStamRegister(g_pHelpers, &g_StatSymlink,                   STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_CALLS, "SHFL_FN_SYMLINK successes",                 "/HGCM/VBoxSharedFolders/FnSymlink");
+             HGCMSvcHlpStamRegister(g_pHelpers, &g_StatSymlinkFail,               STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_CALLS, "SHFL_FN_SYMLINK failures",                  "/HGCM/VBoxSharedFolders/FnSymlinkFail");
+             HGCMSvcHlpStamRegister(g_pHelpers, &g_StatSetSymlinks,               STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_CALLS, "SHFL_FN_SET_SYMLINKS",                      "/HGCM/VBoxSharedFolders/FnSetSymlink");
+             HGCMSvcHlpStamRegister(g_pHelpers, &g_StatQueryMapInfo,              STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_CALLS, "SHFL_FN_QUERY_MAP_INFO",                    "/HGCM/VBoxSharedFolders/FnQueryMapInfo");
+             HGCMSvcHlpStamRegister(g_pHelpers, &g_StatWaitForMappingsChanges,    STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_CALLS, "SHFL_FN_WAIT_FOR_MAPPINGS_CHANGES successes", "/HGCM/VBoxSharedFolders/FnWaitForMappingsChanges");
+             HGCMSvcHlpStamRegister(g_pHelpers, &g_StatWaitForMappingsChangesFail,STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_CALLS, "SHFL_FN_WAIT_FOR_MAPPINGS_CHANGES failures","/HGCM/VBoxSharedFolders/FnWaitForMappingsChangesFail");
+             HGCMSvcHlpStamRegister(g_pHelpers, &g_StatCancelMappingsChangesWait, STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_CALLS, "SHFL_FN_CANCEL_MAPPINGS_CHANGES_WAITS",     "/HGCM/VBoxSharedFolders/FnCancelMappingsChangesWaits");
+             HGCMSvcHlpStamRegister(g_pHelpers, &g_StatUnknown,                   STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_CALLS, "SHFL_FN_???",                               "/HGCM/VBoxSharedFolders/FnUnknown");
+        }
     }
 
     return rc;

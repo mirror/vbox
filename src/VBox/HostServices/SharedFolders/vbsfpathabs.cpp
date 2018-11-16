@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Shared Folders - guest/host path convertion and verification.
+ * Shared Folders Service - guest/host path convertion and verification.
  */
 
 /*
@@ -15,8 +15,13 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+/*********************************************************************************************************************************
+*   Header Files                                                                                                                 *
+*********************************************************************************************************************************/
+#define LOG_GROUP LOG_GROUP_SHARED_FOLDERS
 #include <iprt/path.h>
 #include <iprt/string.h>
+
 
 #if defined(RT_OS_WINDOWS)
 static void vbsfPathResolveRelative(char *pszPathBegin)

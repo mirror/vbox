@@ -393,9 +393,7 @@ public:
         return VINF_SUCCESS;
     }
 
-#ifdef ASYNC_HOST_NOTIFY
     int initialize();
-#endif
 
 private:
     static DECLCALLBACK(int) reqThreadFn(RTTHREAD ThreadSelf, void *pvUser);
@@ -421,7 +419,6 @@ private:
               VBOXHGCMSVCPARM paParms[]);
     int hostCall(uint32_t eFunction, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
     int uninit();
-    void dbgInfoShow(PCDBGFINFOHLP pHlp);
     static DECLCALLBACK(void) dbgInfo(void *pvUser, PCDBGFINFOHLP pHlp, const char *pszArgs);
 
 #ifdef ASYNC_HOST_NOTIFY
@@ -1438,27 +1435,21 @@ typedef struct ENUMDBGINFO
 
 static DECLCALLBACK(int) dbgInfoCallback(PRTSTRSPACECORE pStr, void *pvUser)
 {
-    Property *pProp = (Property *)pStr;
-    PCDBGFINFOHLP pHlp = ((ENUMDBGINFO*)pvUser)->pHlp;
+    Property     *pProp = (Property *)pStr;
+    PCDBGFINFOHLP pHlp  = ((ENUMDBGINFO *)pvUser)->pHlp;
 
     char szFlags[GUEST_PROP_MAX_FLAGS_LEN];
     int rc = GuestPropWriteFlags(pProp->mFlags, szFlags);
     if (RT_FAILURE(rc))
         RTStrPrintf(szFlags, sizeof(szFlags), "???");
 
-    pHlp->pfnPrintf(pHlp, "%s: '%s', %RU64",
-                    pProp->mName.c_str(), pProp->mValue.c_str(), pProp->mTimestamp);
+    pHlp->pfnPrintf(pHlp, "%s: '%s', %RU64", pProp->mName.c_str(), pProp->mValue.c_str(), pProp->mTimestamp);
     if (strlen(szFlags))
         pHlp->pfnPrintf(pHlp, " (%s)", szFlags);
     pHlp->pfnPrintf(pHlp, "\n");
     return 0;
 }
 
-void Service::dbgInfoShow(PCDBGFINFOHLP pHlp)
-{
-    ENUMDBGINFO EnumData = { pHlp };
-    RTStrSpaceEnumerate(&mhProperties, dbgInfoCallback, &EnumData);
-}
 
 /**
  * Handler for debug info.
@@ -1467,11 +1458,13 @@ void Service::dbgInfoShow(PCDBGFINFOHLP pHlp)
  * @param   pHlp        The info helper functions.
  * @param   pszArgs     Arguments, ignored.
  */
-void Service::dbgInfo(void *pvUser, PCDBGFINFOHLP pHlp, const char *pszArgs)
+DECLCALLBACK(void) Service::dbgInfo(void *pvUser, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
     RT_NOREF1(pszArgs);
     SELF *pSelf = reinterpret_cast<SELF *>(pvUser);
-    pSelf->dbgInfoShow(pHlp);
+
+    ENUMDBGINFO EnumData = { pHlp };
+    RTStrSpaceEnumerate(&pSelf->mhProperties, dbgInfoCallback, &EnumData);
 }
 
 
@@ -1541,13 +1534,6 @@ int Service::hostCall (uint32_t eFunction, uint32_t cParms, VBOXHGCMSVCPARM paPa
                     rc = VERR_INVALID_PARAMETER;
                 break;
 
-            case GUEST_PROP_FN_HOST_GET_DBGF_INFO:
-                if (cParms != 2)
-                    return VERR_INVALID_PARAMETER;
-                paParms[0].u.pointer.addr = (void*)(uintptr_t)dbgInfo;
-                paParms[1].u.pointer.addr = (void*)this;
-                break;
-
             default:
                 rc = VERR_NOT_SUPPORTED;
                 break;
@@ -1563,6 +1549,7 @@ int Service::hostCall (uint32_t eFunction, uint32_t cParms, VBOXHGCMSVCPARM paPa
 }
 
 #ifdef ASYNC_HOST_NOTIFY
+
 /* static */
 DECLCALLBACK(int) Service::threadNotifyHost(RTTHREAD hThreadSelf, void *pvUser)
 {
@@ -1595,8 +1582,11 @@ static DECLCALLBACK(int) wakeupNotifyHost(void)
     return VWRN_STATE_CHANGED;
 }
 
+#endif /* ASYNC_HOST_NOTIFY */
+
 int Service::initialize()
 {
+#ifdef ASYNC_HOST_NOTIFY
     /* The host notification thread and queue. */
     int rc = RTReqQueueCreate(&mhReqQNotifyHost);
     if (RT_SUCCESS(rc))
@@ -1618,10 +1608,18 @@ int Service::initialize()
             mhReqQNotifyHost = NIL_RTREQQUEUE;
         }
     }
+#else  /* !ASYNC_HOST_NOTIFY */
+    int rc = VINF_SUCCESS;
+#endif /* !ASYNC_HOST_NOTIFY */
+
+    /* Finally debug stuff (ignore failures): */
+    if (RT_SUCCESS(rc))
+        HGCMSvcHlpInfoRegister(mpHelpers, "guestprops", "Display the guest properties", Service::dbgInfo, this);
 
     return rc;
 }
 
+#ifdef ASYNC_HOST_NOTIFY
 /**
  * @callback_method_impl{FNRTSTRSPACECALLBACK, Destroys Property.}
  */
@@ -1637,6 +1635,9 @@ static DECLCALLBACK(int) destroyProperty(PRTSTRSPACECORE pStr, void *pvUser)
 
 int Service::uninit()
 {
+    if (mpHelpers)
+        HGCMSvcHlpInfoDeregister(mpHelpers, "guestprops");
+
 #ifdef ASYNC_HOST_NOTIFY
     if (mhReqQNotifyHost != NIL_RTREQQUEUE)
     {
@@ -1655,7 +1656,6 @@ int Service::uninit()
         mhProperties = NULL;
     }
 #endif
-
     return VINF_SUCCESS;
 }
 
@@ -1666,7 +1666,7 @@ using guestProp::Service;
 /**
  * @copydoc VBOXHGCMSVCLOAD
  */
-extern "C" DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad (VBOXHGCMSVCFNTABLE *ptable)
+extern "C" DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad(VBOXHGCMSVCFNTABLE *ptable)
 {
     int rc = VERR_IPE_UNINITIALIZED_STATUS;
 
@@ -1712,18 +1712,15 @@ extern "C" DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad (VBOXHGCMSVCFNTABLE *pt
                 ptable->pfnSaveState          = NULL;  /* The service is stateless, so the normal */
                 ptable->pfnLoadState          = NULL;  /* construction done before restoring suffices */
                 ptable->pfnRegisterExtension  = Service::svcRegisterExtension;
+                ptable->pvService             = pService;
 
                 /* Service specific initialization. */
-                ptable->pvService = pService;
-
-#ifdef ASYNC_HOST_NOTIFY
                 rc = pService->initialize();
                 if (RT_FAILURE(rc))
                 {
                     delete pService;
                     pService = NULL;
                 }
-#endif
             }
             else
                 Assert(!pService);
