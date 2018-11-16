@@ -5908,10 +5908,7 @@ IEM_CIMPL_DEF_4(iemCImpl_load_CrX, uint8_t, iCrReg, uint64_t, uNewCrX, IEMACCESS
                  */
                 uint32_t const uVTpr = (uNewCrX & 0xf) << 4;
                 iemVmxVirtApicWriteRaw32(pVCpu, XAPIC_OFF_TPR, uVTpr);
-                rcStrict = iemVmxVmexitTprVirtualization(pVCpu, cbInstr);
-                if (rcStrict != VINF_VMX_INTERCEPT_NOT_ACTIVE)
-                    return rcStrict;
-                rcStrict = VINF_SUCCESS;
+                iemVmxVirtApicSignalAction(pVCpu, XAPIC_OFF_TPR);
                 break;
             }
 #endif
@@ -6692,18 +6689,6 @@ IEM_CIMPL_DEF_0(iemCImpl_rdmsr)
     {
         if (iemVmxIsRdmsrWrmsrInterceptSet(pVCpu, VMX_EXIT_RDMSR, pVCpu->cpum.GstCtx.ecx))
             IEM_VMX_VMEXIT_INSTR_RET(pVCpu, VMX_EXIT_RDMSR, cbInstr);
-
-        /** @todo NSTVMX: Handle other x2APIC MSRs in VMX non-root mode. Perhaps having a
-         *        dedicated virtual-APIC device might be better... */
-        if (   pVCpu->cpum.GstCtx.ecx == MSR_IA32_X2APIC_TPR
-            && IEM_VMX_IS_PROCCTLS2_SET(pVCpu, VMX_PROC_CTLS2_VIRT_X2APIC_MODE))
-        {
-            uint32_t const uVTpr = iemVmxVirtApicReadRaw32(pVCpu, XAPIC_OFF_TPR);
-            pVCpu->cpum.GstCtx.rax = uVTpr;
-            pVCpu->cpum.GstCtx.rdx = 0;
-            iemRegAddToRipAndClearRF(pVCpu, cbInstr);
-            return VINF_SUCCESS;
-        }
     }
 #endif
 
@@ -6778,6 +6763,8 @@ IEM_CIMPL_DEF_0(iemCImpl_wrmsr)
     uValue.s.Lo = pVCpu->cpum.GstCtx.eax;
     uValue.s.Hi = pVCpu->cpum.GstCtx.edx;
 
+    uint32_t const idMsr = pVCpu->cpum.GstCtx.ecx;
+
     /** @todo make CPUMAllMsrs.cpp import the necessary MSR state. */
     IEM_CTX_IMPORT_RET(pVCpu, CPUMCTX_EXTRN_ALL_MSRS);
 
@@ -6787,61 +6774,20 @@ IEM_CIMPL_DEF_0(iemCImpl_wrmsr)
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
     if (IEM_VMX_IS_NON_ROOT_MODE(pVCpu))
     {
-        if (iemVmxIsRdmsrWrmsrInterceptSet(pVCpu, VMX_EXIT_WRMSR, pVCpu->cpum.GstCtx.ecx))
+        if (iemVmxIsRdmsrWrmsrInterceptSet(pVCpu, VMX_EXIT_WRMSR, idMsr))
             IEM_VMX_VMEXIT_INSTR_RET(pVCpu, VMX_EXIT_WRMSR, cbInstr);
-
-        /* Check x2APIC MSRs first. */
-        if (IEM_VMX_IS_PROCCTLS2_SET(pVCpu, VMX_PROC_CTLS2_VIRT_X2APIC_MODE))
-        {
-            switch (pVCpu->cpum.GstCtx.ecx)
-            {
-                case MSR_IA32_X2APIC_TPR:
-                {
-                    if (   !uValue.s.Hi
-                        && !(uValue.s.Lo & UINT32_C(0xffffff00)))
-                    {
-                        uint32_t const uVTpr = uValue.s.Lo;
-                        iemVmxVirtApicWriteRaw32(pVCpu, XAPIC_OFF_TPR, uVTpr);
-                        VBOXSTRICTRC rcStrict = iemVmxVmexitTprVirtualization(pVCpu, cbInstr);
-                        if (rcStrict != VINF_VMX_INTERCEPT_NOT_ACTIVE)
-                            return rcStrict;
-                        return VINF_SUCCESS;
-                    }
-                    Log(("IEM: Invalid TPR MSR write (%#x,%#x) -> #GP(0)\n", uValue.s.Hi, uValue.s.Lo));
-                    return iemRaiseGeneralProtectionFault0(pVCpu);
-                }
-
-                case MSR_IA32_X2APIC_EOI:
-                case MSR_IA32_X2APIC_SELF_IPI:
-                {
-                    /** @todo NSTVMX: EOI and Self-IPI virtualization. */
-                    break;
-                }
-            }
-        }
-        else if (pVCpu->cpum.GstCtx.ecx == MSR_IA32_BIOS_UPDT_TRIG)
-        {
-            /** @todo NSTVMX: We must not allow any microcode updates in VMX non-root mode.
-             *        Since we don't implement this MSR anyway it's currently not a problem.
-             *        If we do, we should probably move this check to the MSR handler.  */
-        }
-        else if (pVCpu->cpum.GstCtx.ecx == MSR_IA32_RTIT_CTL)
-        {
-            /** @todo NSTVMX: We don't support Intel PT yet. When we do, this MSR must #GP
-             *        when IntelPT is not supported in VMX. */
-        }
     }
 #endif
 
 #ifdef VBOX_WITH_NESTED_HWVIRT_SVM
     if (IEM_SVM_IS_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_MSR_PROT))
     {
-        VBOXSTRICTRC rcStrict = iemSvmHandleMsrIntercept(pVCpu, pVCpu->cpum.GstCtx.ecx, true /* fWrite */);
+        VBOXSTRICTRC rcStrict = iemSvmHandleMsrIntercept(pVCpu, idMsr, true /* fWrite */);
         if (rcStrict == VINF_SVM_VMEXIT)
             return VINF_SUCCESS;
         if (rcStrict != VINF_SVM_INTERCEPT_NOT_ACTIVE)
         {
-            Log(("IEM: SVM intercepted rdmsr(%#x) failed. rc=%Rrc\n", pVCpu->cpum.GstCtx.ecx, VBOXSTRICTRC_VAL(rcStrict)));
+            Log(("IEM: SVM intercepted rdmsr(%#x) failed. rc=%Rrc\n", idMsr, VBOXSTRICTRC_VAL(rcStrict)));
             return rcStrict;
         }
     }
@@ -6850,7 +6796,7 @@ IEM_CIMPL_DEF_0(iemCImpl_wrmsr)
     /*
      * Do the job.
      */
-    VBOXSTRICTRC rcStrict = CPUMSetGuestMsr(pVCpu, pVCpu->cpum.GstCtx.ecx, uValue.u);
+    VBOXSTRICTRC rcStrict = CPUMSetGuestMsr(pVCpu, idMsr, uValue.u);
     if (rcStrict == VINF_SUCCESS)
     {
         iemRegAddToRipAndClearRF(pVCpu, cbInstr);
@@ -6861,7 +6807,7 @@ IEM_CIMPL_DEF_0(iemCImpl_wrmsr)
     /* Deferred to ring-3. */
     if (rcStrict == VINF_CPUM_R3_MSR_WRITE)
     {
-        Log(("IEM: wrmsr(%#x) -> ring-3\n", pVCpu->cpum.GstCtx.ecx));
+        Log(("IEM: wrmsr(%#x) -> ring-3\n", idMsr));
         return rcStrict;
     }
 #endif
@@ -6870,10 +6816,10 @@ IEM_CIMPL_DEF_0(iemCImpl_wrmsr)
     if (pVCpu->iem.s.cLogRelWrMsr < 32)
     {
         pVCpu->iem.s.cLogRelWrMsr++;
-        LogRel(("IEM: wrmsr(%#x,%#x`%08x) -> #GP(0)\n", pVCpu->cpum.GstCtx.ecx, uValue.s.Hi, uValue.s.Lo));
+        LogRel(("IEM: wrmsr(%#x,%#x`%08x) -> #GP(0)\n", idMsr, uValue.s.Hi, uValue.s.Lo));
     }
     else
-        Log((   "IEM: wrmsr(%#x,%#x`%08x) -> #GP(0)\n", pVCpu->cpum.GstCtx.ecx, uValue.s.Hi, uValue.s.Lo));
+        Log((   "IEM: wrmsr(%#x,%#x`%08x) -> #GP(0)\n", idMsr, uValue.s.Hi, uValue.s.Lo));
     AssertMsgReturn(rcStrict == VERR_CPUM_RAISE_GP_0, ("%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)), VERR_IPE_UNEXPECTED_STATUS);
     return iemRaiseGeneralProtectionFault0(pVCpu);
 }

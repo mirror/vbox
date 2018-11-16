@@ -910,6 +910,34 @@ DECLINLINE(uint64_t) iemVmxVmcsGetCr3TargetValue(PCVMXVVMCS pVmcs, uint8_t idxCr
 
 
 /**
+ * Signal that a virtual-APIC action needs to be performed at a later time (post
+ * instruction execution).
+ *
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   offApic     The virtual-APIC page offset that was updated pertaining to
+ *                      the event.
+ */
+DECLINLINE(void) iemVmxVirtApicSignalAction(PVMCPU pVCpu, uint16_t offApic)
+{
+    Assert(offApic < XAPIC_OFF_END + 4);
+
+    /*
+     * Record the currently updated APIC offset, as we need this later for figuring
+     * out whether to perform TPR, EOI or self-IPI virtualization as well as well
+     * as for supplying the exit qualification when causing an APIC-write VM-exit.
+     */
+    pVCpu->cpum.GstCtx.hwvirt.vmx.offVirtApicWrite = offApic;
+
+    /*
+     * Signal that we need to perform a virtual-APIC action (TPR/PPR/EOI/Self-IPI
+     * virtualization or APIC-write emulation).
+     */
+    if (!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_VMX_UPDATE_VAPIC))
+        VMCPU_FF_SET(pVCpu, VMCPU_FF_VMX_UPDATE_VAPIC);
+}
+
+
+/**
  * Masks the nested-guest CR0/CR4 mask subjected to the corresponding guest/host
  * mask and the read-shadow (CR0/CR4 read).
  *
@@ -4313,13 +4341,6 @@ IEM_STATIC VBOXSTRICTRC iemVmxVirtApicAccessMem(PVMCPU pVCpu, uint16_t offAccess
     if (fAccess & IEM_ACCESS_TYPE_WRITE)
     {
         /*
-         * Record the currently updated APIC offset, as we need this later for figuring
-         * out whether to perform TPR, EOI or self-IPI virtualization as well as well
-         * as for supplying the exit qualification when causing an APIC-write VM-exit.
-         */
-        pVCpu->cpum.GstCtx.hwvirt.vmx.offVirtApicWrite = offAccess;
-
-        /*
          * A write access to the APIC-access page that is virtualized (rather than
          * causing a VM-exit) writes data to the virtual-APIC page.
          */
@@ -4327,6 +4348,10 @@ IEM_STATIC VBOXSTRICTRC iemVmxVirtApicAccessMem(PVMCPU pVCpu, uint16_t offAccess
         iemVmxVirtApicWriteRaw32(pVCpu, offAccess, u32Data);
 
         /*
+         * Record the currently updated APIC offset, as we need this later for figuring
+         * out whether to perform TPR, EOI or self-IPI virtualization as well as well
+         * as for supplying the exit qualification when causing an APIC-write VM-exit.
+         *
          * After completion of the current operation, we need to perform TPR virtualization,
          * EOI virtualization or APIC-write VM-exit depending on which register was written.
          *
@@ -4338,7 +4363,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVirtApicAccessMem(PVMCPU pVCpu, uint16_t offAccess
          *
          * See Intel spec. 29.4.3.2 "APIC-Write Emulation".
          */
-        VMCPU_FF_SET(pVCpu, VMCPU_FF_VMX_UPDATE_VAPIC);
+        iemVmxVirtApicSignalAction(pVCpu, offAccess);
     }
     else
     {
@@ -4422,6 +4447,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVirtApicAccessMsrRead(PVMCPU pVCpu, uint32_t idMsr
  * @retval  VINF_VMX_MODIFIES_BEHAVIOR if the MSR write was virtualized.
  * @retval  VERR_OUT_RANGE if the MSR read was supposed to be virtualized but was
  *          not within the range of valid MSRs, caller must raise \#GP(0).
+ * @retval  VINF_VMX_INTERCEPT_NOT_ACTIVE if the MSR must be written normally.
  *
  * @param   pVCpu       The cross context virtual CPU structure.
  * @param   idMsr       The x2APIC MSR being written.
@@ -4468,8 +4494,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVirtApicAccessMsrWrite(PVMCPU pVCpu, uint32_t idMs
          * out whether to perform TPR, EOI or self-IPI virtualization as well as well
          * as for supplying the exit qualification when causing an APIC-write VM-exit.
          */
-        pVCpu->cpum.GstCtx.hwvirt.vmx.offVirtApicWrite = offReg;
-        VMCPU_FF_SET(pVCpu, VMCPU_FF_VMX_UPDATE_VAPIC);
+        iemVmxVirtApicSignalAction(pVCpu, offReg);
 
         return VINF_VMX_MODIFIES_BEHAVIOR;
     }
