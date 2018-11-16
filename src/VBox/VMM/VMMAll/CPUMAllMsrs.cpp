@@ -295,7 +295,12 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Ia32BiosSignId(PVMCPU pVCpu, uint32_
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Ia32BiosUpdateTrigger(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
-    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
+    RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
+
+    /* Microcode updates cannot be loaded in VMX non-root mode. */
+    if (CPUMIsGuestInVmxNonRootMode(&pVCpu->cpum.s.Guest))
+        return VINF_SUCCESS;
+
     /** @todo Fake bios update trigger better.  The value is the address to an
      *        update package, I think.  We should probably GP if it's invalid. */
     return VINF_SUCCESS;
