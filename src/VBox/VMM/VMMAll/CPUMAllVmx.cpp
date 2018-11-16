@@ -149,6 +149,9 @@ PGM_ALL_CB2_DECL(VBOXSTRICTRC) cpumVmxApicAccessPageHandler(PVM pVM, PVMCPU pVCp
 {
     RT_NOREF4(pVM, pvPhys, enmOrigin, pvUser);
 
+    Assert(CPUMIsGuestInVmxNonRootMode(&pVCpu->cpum.s.Guest));
+    Assert(CPUMIsGuestVmxProcCtls2Set(pVCpu, VMX_PROC_CTLS2_VIRT_APIC_ACCESS));
+
 #ifdef VBOX_STRICT
     RTGCPHYS const GCPhysApicBase   = CPUMGetGuestVmxApicAccessPageAddr(pVCpu, &pVCpu->cpum.s.Guest);
     RTGCPHYS const GCPhysAccessBase = GCPhysFault & ~(RTGCPHYS)PAGE_OFFSET_MASK;
@@ -158,9 +161,11 @@ PGM_ALL_CB2_DECL(VBOXSTRICTRC) cpumVmxApicAccessPageHandler(PVM pVM, PVMCPU pVCp
     uint16_t const offAccess = GCPhysFault & PAGE_OFFSET_MASK;
     bool const fWrite = RT_BOOL(enmAccessType == PGMACCESSTYPE_WRITE);
     VBOXSTRICTRC rcStrict = IEMExecVmxVirtApicAccessMem(pVCpu, offAccess, cbBuf, pvBuf, fWrite);
-    if (rcStrict == VINF_VMX_MODIFIES_BEHAVIOR)
-        rcStrict = VINF_SUCCESS;
-    return rcStrict;
+    if (RT_FAILURE(rcStrict))
+        return rcStrict;
+
+    /* Any access on this APIC-access page has been handled, caller should not carry out the access. */
+    return VINF_SUCCESS;
 }
 #endif
 

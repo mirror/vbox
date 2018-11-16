@@ -15685,6 +15685,7 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecVmxVirtApicAccessMsr(PVMCPU pVCpu, uint32_t id
  *
  * @returns Strict VBox status code.
  * @retval  VINF_VMX_MODIFIES_BEHAVIOR if the memory access was virtualized.
+ * @retval  VINF_VMX_VMEXIT if the access causes a VM-exit.
  *
  * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
  * @param   offAccess   The offset of the register being accessed (within the
