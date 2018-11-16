@@ -446,9 +446,6 @@ typedef enum IEMXCPTCLASS
 # define IEM_VMX_VMEXIT_TRIPLE_FAULT_RET(a_pVCpu) \
     do { return iemVmxVmexitTripleFault(a_pVCpu); } while (0)
 
-# define IEM_VMX_VMEXIT_APIC_ACCESS_RET(a_pVCpu, a_offAccess, a_fAccess) \
-    do { return iemVmxVmexitApicAccess((a_pVCpu), (a_offAccess), (a_fAccess)); } while (0)
-
 #else
 # define IEM_VMX_IS_ROOT_MODE(a_pVCpu)                                          (false)
 # define IEM_VMX_IS_NON_ROOT_MODE(a_pVCpu)                                      (false)
@@ -460,7 +457,6 @@ typedef enum IEMXCPTCLASS
 # define IEM_VMX_VMEXIT_TASK_SWITCH_RET(a_pVCpu, a_enmTaskSwitch, a_SelNewTss, a_cbInstr)    do { return VERR_VMX_IPE_1; } while (0)
 # define IEM_VMX_VMEXIT_MWAIT_RET(a_pVCpu, a_fMonitorArmed, a_cbInstr)          do { return VERR_VMX_IPE_1; } while (0)
 # define IEM_VMX_VMEXIT_TRIPLE_FAULT_RET(a_pVCpu)                               do { return VERR_VMX_IPE_1; } while (0)
-# define IEM_VMX_VMEXIT_APIC_ACCESS_RET(a_pVCpu, a_offAccess, a_fAccess)        do { return VERR_VMX_IPE_1; } while (0)
 
 #endif
 
@@ -8603,31 +8599,6 @@ iemMemBounceBufferMapCrossPage(PVMCPU pVCpu, int iMemMap, void **ppvMem, size_t 
     if (rcStrict != VINF_SUCCESS)
         return rcStrict;
     GCPhysSecond &= ~(RTGCPHYS)PAGE_OFFSET_MASK;
-
-#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
-    /*
-     * Check if we need to cause an APIC-access VM-exit.
-     *
-     * The reason we do have to check whether the access is to be virtualized here is that
-     * we already know we're crossing a page-boundary. Any cross-page access (which is at
-     * most 4 bytes) involves accessing offsets prior to XAPIC_OFF_ID or extends well beyond
-     * XAPIC_OFF_END + 4 bytes of the APIC-access page and hence must cause a VM-exit.
-     */
-    if (   CPUMIsGuestInVmxNonRootMode(IEM_GET_CTX(pVCpu))
-        && IEM_VMX_IS_PROCCTLS2_SET(pVCpu, VMX_PROC_CTLS2_VIRT_APIC_ACCESS))
-    {
-        RTGCPHYS const GCPhysMemFirst  = GCPhysFirst  & ~(RTGCPHYS)PAGE_OFFSET_MASK;
-        RTGCPHYS const GCPhysMemSecond = GCPhysSecond & ~(RTGCPHYS)PAGE_OFFSET_MASK;
-        RTGCPHYS const GCPhysApicAccessBase = CPUMGetGuestVmxApicAccessPageAddr(pVCpu, IEM_GET_CTX(pVCpu))
-                                            & ~(RTGCPHYS)PAGE_OFFSET_MASK;
-        if (   GCPhysMemFirst  == GCPhysApicAccessBase
-            || GCPhysMemSecond == GCPhysApicAccessBase)
-        {
-            uint16_t const offAccess = GCPhysFirst & (RTGCPHYS)PAGE_OFFSET_MASK;
-            IEM_VMX_VMEXIT_APIC_ACCESS_RET(pVCpu, offAccess, fAccess);
-        }
-    }
-#endif
 
     PVM pVM = pVCpu->CTX_SUFF(pVM);
 

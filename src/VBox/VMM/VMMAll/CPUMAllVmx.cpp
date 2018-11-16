@@ -149,7 +149,13 @@ PGM_ALL_CB2_DECL(VBOXSTRICTRC) cpumVmxApicAccessPageHandler(PVM pVM, PVMCPU pVCp
 {
     RT_NOREF4(pVM, pvPhys, enmOrigin, pvUser);
 
-    uint16_t const offAccess = (GCPhysFault & PAGE_OFFSET_MASK);
+#ifdef VBOX_STRICT
+    RTGCPHYS const GCPhysApicBase   = CPUMGetGuestVmxApicAccessPageAddr(pVCpu, &pVCpu->cpum.s.Guest);
+    RTGCPHYS const GCPhysAccessBase = GCPhysFault & ~(RTGCPHYS)PAGE_OFFSET_MASK;
+    Assert(GCPhysApicBase == GCPhysAccessBase);
+#endif
+
+    uint16_t const offAccess = GCPhysFault & PAGE_OFFSET_MASK;
     bool const fWrite = RT_BOOL(enmAccessType == PGMACCESSTYPE_WRITE);
     VBOXSTRICTRC rcStrict = IEMExecVmxVirtApicAccessMem(pVCpu, offAccess, cbBuf, pvBuf, fWrite);
     if (rcStrict == VINF_VMX_MODIFIES_BEHAVIOR)
@@ -166,7 +172,7 @@ PGM_ALL_CB2_DECL(VBOXSTRICTRC) cpumVmxApicAccessPageHandler(PVM pVM, PVMCPU pVCp
  * @param   pVCpu               The cross context virtual CPU structure.
  * @param   GCPhysApicAccess    The guest-physical address of the APIC-access page.
  */
-VMM_INT_DECL(VBOXSTRICTRC) CPUMVmxApicAccessPageRegister(PVMCPU pVCpu, RTGCPHYS GCPhysApicAccess)
+VMM_INT_DECL(int) CPUMVmxApicAccessPageRegister(PVMCPU pVCpu, RTGCPHYS GCPhysApicAccess)
 {
     PVM pVM = pVCpu->CTX_SUFF(pVM);
     int rc = PGMHandlerPhysicalRegister(pVM, GCPhysApicAccess, GCPhysApicAccess, pVM->cpum.s.hVmxApicAccessPage,
@@ -183,7 +189,7 @@ VMM_INT_DECL(VBOXSTRICTRC) CPUMVmxApicAccessPageRegister(PVMCPU pVCpu, RTGCPHYS 
  * @param   pVCpu               The cross context virtual CPU structure.
  * @param   GCPhysApicAccess    The guest-physical address of the APIC-access page.
  */
-VMM_INT_DECL(VBOXSTRICTRC) CPUMVmxApicAccessPageDeregister(PVMCPU pVCpu, RTGCPHYS GCPhysApicAccess)
+VMM_INT_DECL(int) CPUMVmxApicAccessPageDeregister(PVMCPU pVCpu, RTGCPHYS GCPhysApicAccess)
 {
     /** @todo NSTVMX: If there's anything else to do while APIC-access page is
      *        de-registered, do it here. */

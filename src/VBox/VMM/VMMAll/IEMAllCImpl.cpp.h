@@ -7267,6 +7267,24 @@ IEM_CIMPL_DEF_1(iemCImpl_monitor, uint8_t, iEffSeg)
     if (rcStrict != VINF_SUCCESS)
         return rcStrict;
 
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
+    if (   IEM_VMX_IS_NON_ROOT_MODE(pVCpu)
+        && IEM_VMX_IS_PROCCTLS2_SET(pVCpu, VMX_PROC_CTLS2_VIRT_APIC_ACCESS))
+    {
+        /*
+         * MONITOR does not access the memory, just monitors the address. However,
+         * if the address falls in the APIC-access page, the address monitored must
+         * instead be the corresponding address in the virtual-APIC page.
+         *
+         * See Intel spec. 29.4.4 "Instruction-Specific Considerations".
+         */
+        rcStrict = iemVmxVirtApicAccessUnused(pVCpu, &GCPhysMem);
+        if (   rcStrict != VINF_VMX_INTERCEPT_NOT_ACTIVE
+            && rcStrict != VINF_VMX_MODIFIES_BEHAVIOR)
+                return rcStrict;
+    }
+#endif
+
     if (IEM_SVM_IS_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_MONITOR))
     {
         Log2(("monitor: Guest intercept -> #VMEXIT\n"));
@@ -7885,7 +7903,7 @@ IEM_CIMPL_DEF_4(iemCImpl_cmpxchg16b_fallback_rendezvous, PRTUINT128U, pu128Dst, 
 /**
  * Implements 'CLFLUSH' and 'CLFLUSHOPT'.
  *
- * This is implemented in C because it triggers a load like behviour without
+ * This is implemented in C because it triggers a load like behaviour without
  * actually reading anything.  Since that's not so common, it's implemented
  * here.
  *
@@ -7904,6 +7922,24 @@ IEM_CIMPL_DEF_2(iemCImpl_clflush_clflushopt, uint8_t, iEffSeg, RTGCPTR, GCPtrEff
         rcStrict = iemMemPageTranslateAndCheckAccess(pVCpu, GCPtrEff, IEM_ACCESS_TYPE_READ | IEM_ACCESS_WHAT_DATA, &GCPhysMem);
         if (rcStrict == VINF_SUCCESS)
         {
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
+            if (   IEM_VMX_IS_NON_ROOT_MODE(pVCpu)
+                && IEM_VMX_IS_PROCCTLS2_SET(pVCpu, VMX_PROC_CTLS2_VIRT_APIC_ACCESS))
+            {
+                /*
+                 * CLFLUSH/CLFLUSHOPT does not access the memory, but flushes the cache-line
+                 * that contains the address. However, if the address falls in the APIC-access
+                 * page, the address flushed must instead be the corresponding address in the
+                 * virtual-APIC page.
+                 *
+                 * See Intel spec. 29.4.4 "Instruction-Specific Considerations".
+                 */
+                rcStrict = iemVmxVirtApicAccessUnused(pVCpu, &GCPhysMem);
+                if (   rcStrict != VINF_VMX_INTERCEPT_NOT_ACTIVE
+                    && rcStrict != VINF_VMX_MODIFIES_BEHAVIOR)
+                        return rcStrict;
+            }
+#endif
             iemRegAddToRipAndClearRF(pVCpu, cbInstr);
             return VINF_SUCCESS;
         }

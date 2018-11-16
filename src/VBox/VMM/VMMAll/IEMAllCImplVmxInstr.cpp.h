@@ -4242,6 +4242,44 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitApicAccess(PVMCPU pVCpu, uint16_t offAccess,
 
 
 /**
+ * Virtualizes a memory-based APIC-access where the address is not used to access
+ * memory.
+ *
+ * This is for instructions like MONITOR, CLFLUSH, CLFLUSHOPT, ENTER which may cause
+ * page-faults but do not use the address to access memory.
+ *
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   pGCPhysAccess   Pointer to the guest-physical address used.
+ */
+IEM_STATIC VBOXSTRICTRC iemVmxVirtApicAccessUnused(PVMCPU pVCpu, PRTGCPHYS pGCPhysAccess)
+{
+    PCVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
+    Assert(pVmcs);
+    Assert(pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_VIRT_APIC_ACCESS);
+    Assert(pGCPhysAccess);
+
+    RTGCPHYS const GCPhysAccess = *pGCPhysAccess & ~(RTGCPHYS)PAGE_OFFSET_MASK;
+    RTGCPHYS const GCPhysApic   = pVmcs->u64AddrApicAccess.u;
+    Assert(!(GCPhysApic & PAGE_OFFSET_MASK));
+
+    if (GCPhysAccess == GCPhysApic)
+    {
+        uint16_t const offAccess = *pGCPhysAccess & PAGE_OFFSET_MASK;
+        uint32_t const fAccess   = IEM_ACCESS_TYPE_READ;
+        uint16_t const cbAccess  = 1;
+        bool const fIntercept = iemVmxVirtApicIsAccessIntercepted(pVCpu, offAccess, cbAccess, fAccess);
+        if (fIntercept)
+            return iemVmxVmexitApicAccess(pVCpu, offAccess, fAccess);
+
+        *pGCPhysAccess = GCPhysApic | offAccess;
+        return VINF_VMX_MODIFIES_BEHAVIOR;
+    }
+
+    return VINF_VMX_INTERCEPT_NOT_ACTIVE;
+}
+
+
+/**
  * Virtualizes a memory-based APIC-access.
  *
  * @returns VBox strict status code.
