@@ -654,7 +654,7 @@ int RecordingContext::SendAudioFrame(const void *pvData, size_t cbData, uint64_t
 
     return rc;
 #else
-    RT_NOREF(pCtx, pvData, cbData, msTimestamp);
+    RT_NOREF(pvData, cbData, msTimestamp);
     return VINF_SUCCESS;
 #endif
 }
