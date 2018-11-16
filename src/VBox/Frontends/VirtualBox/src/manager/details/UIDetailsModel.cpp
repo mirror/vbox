@@ -45,30 +45,13 @@ UIDetailsModel::UIDetailsModel(UIDetails *pParent)
     , m_pRoot(0)
     , m_pAnimationCallback(0)
 {
-    /* Prepare scene: */
-    prepareScene();
-
-    /* Prepare root: */
-    prepareRoot();
-
-    /* Load settings: */
-    loadSettings();
-
-    /* Register meta-type: */
-    qRegisterMetaType<DetailsElementType>();
+    prepare();
 }
 
 UIDetailsModel::~UIDetailsModel()
 {
-    /* Save settings: */
-    saveSettings();
-
-    /* Cleanup root: */
-    cleanupRoot();
-
-    /* Cleanup scene: */
-    cleanupScene();
- }
+    cleanup();
+}
 
 QGraphicsScene* UIDetailsModel::scene() const
 {
@@ -221,10 +204,22 @@ void UIDetailsModel::sltElementTypeToggled()
     m_pRoot->rebuildGroup();
 }
 
+void UIDetailsModel::prepare()
+{
+    /* Register meta-types: */
+    qRegisterMetaType<DetailsElementType>();
+
+    /* Prepare things: */
+    prepareScene();
+    prepareRoot();
+    loadSettings();
+}
+
 void UIDetailsModel::prepareScene()
 {
     m_pScene = new QGraphicsScene(this);
-    m_pScene->installEventFilter(this);
+    if (m_pScene)
+        m_pScene->installEventFilter(this);
 }
 
 void UIDetailsModel::prepareRoot()
@@ -234,13 +229,11 @@ void UIDetailsModel::prepareRoot()
 
 void UIDetailsModel::loadSettings()
 {
-    /* Load settings: */
     m_categories = gEDataManager->selectorWindowDetailsElements();
 }
 
 void UIDetailsModel::saveSettings()
 {
-    /* Save settings: */
     gEDataManager->setSelectorWindowDetailsElements(m_categories);
 }
 
@@ -256,6 +249,14 @@ void UIDetailsModel::cleanupScene()
     m_pScene = 0;
 }
 
+void UIDetailsModel::cleanup()
+{
+    /* Cleanup things: */
+    saveSettings();
+    cleanupRoot();
+    cleanupScene();
+}
+
 bool UIDetailsModel::eventFilter(QObject *pObject, QEvent *pEvent)
 {
     /* Ignore if no scene object: */
@@ -267,7 +268,7 @@ bool UIDetailsModel::eventFilter(QObject *pObject, QEvent *pEvent)
         return QObject::eventFilter(pObject, pEvent);
 
     /* Process context menu event: */
-    return processContextMenuEvent(static_cast<QGraphicsSceneContextMenuEvent*>(pEvent));
+        return processContextMenuEvent(static_cast<QGraphicsSceneContextMenuEvent*>(pEvent));
 }
 
 bool UIDetailsModel::processContextMenuEvent(QGraphicsSceneContextMenuEvent *pEvent)

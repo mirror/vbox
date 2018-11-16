@@ -107,15 +107,26 @@ private slots:
 
 private:
 
-    /* Helpers: Prepare stuff: */
-    void prepareScene();
-    void prepareRoot();
-    void loadSettings();
+    /** @name Prepare/Cleanup cascade.
+      * @{ */
+        /** Prepares all. */
+        void prepare();
+        /** Prepares scene. */
+        void prepareScene();
+        /** Prepares root. */
+        void prepareRoot();
+        /** Loads settings. */
+        void loadSettings();
 
-    /* Helpers: Cleanup stuff: */
-    void saveSettings();
-    void cleanupRoot();
-    void cleanupScene();
+        /** Saves settings. */
+        void saveSettings();
+        /** Cleanups root. */
+        void cleanupRoot();
+        /** Cleanups scene. */
+        void cleanupScene();
+        /** Cleanups all. */
+        void cleanup();
+    /** @} */
 
     /* Handler: Event-filter: */
     bool eventFilter(QObject *pObject, QEvent *pEvent);
