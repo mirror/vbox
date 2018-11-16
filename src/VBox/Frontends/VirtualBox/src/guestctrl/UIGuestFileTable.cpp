@@ -333,15 +333,7 @@ void UIGuestFileTable::copyHostToGuest(const QStringList &hostSourcePathList)
         return;
     }
     emit sigNewFileOperation(progress);
-    // msgCenter().showModalProgressDialog(progress, "copying", ":/progress_delete_90px.png");
-    // if (!progress.isOk() || progress.GetResultCode() != 0)
-    // {
-    //     emit sigLogOutput(UIErrorString::formatErrorInfo(progress), FileManagerLogType_Error);
-    //     return;
-    // }
-
-    // else
-        refresh();
+    refresh();
 }
 
 void UIGuestFileTable::copyGuestToHost(const QString& hostDestinationPath)
@@ -367,15 +359,8 @@ void UIGuestFileTable::copyGuestToHost(const QString& hostDestinationPath)
         emit sigLogOutput(UIErrorString::formatErrorInfo(m_comGuestSession), FileManagerLogType_Error);
         return;
     }
-
-    msgCenter().showModalProgressDialog(progress, "copying", ":/progress_delete_90px.png");
-    if (!progress.isOk() || progress.GetResultCode() != 0)
-    {
-        emit sigLogOutput(UIErrorString::formatErrorInfo(progress), FileManagerLogType_Error);
-        return;
-    }
-    else
-        refresh();
+    emit sigNewFileOperation(progress);
+    refresh();
 }
 
 FileObjectType UIGuestFileTable::fileType(const CFsObjInfo &fsInfo)
