@@ -432,19 +432,6 @@ class SHARED_LIBRARY_STUFF UIExtraDataMetaDefs : public QObject
     Q_ENUMS(MenuWindowActionType);
 #endif
 
-    /* Details pane related stuff: */
-    Q_ENUMS(DetailsElementOptionTypeGeneral);
-    Q_ENUMS(DetailsElementOptionTypeSystem);
-    Q_ENUMS(DetailsElementOptionTypeDisplay);
-    Q_ENUMS(DetailsElementOptionTypeStorage);
-    Q_ENUMS(DetailsElementOptionTypeAudio);
-    Q_ENUMS(DetailsElementOptionTypeNetwork);
-    Q_ENUMS(DetailsElementOptionTypeSerial);
-    Q_ENUMS(DetailsElementOptionTypeUsb);
-    Q_ENUMS(DetailsElementOptionTypeSharedFolders);
-    Q_ENUMS(DetailsElementOptionTypeUserInterface);
-    Q_ENUMS(DetailsElementOptionTypeDescription);
-
 public:
 
     /** Common UI: Menu types. */
@@ -628,6 +615,7 @@ public:
         DetailsElementOptionTypeGeneral_Groups   = RT_BIT(3),
         DetailsElementOptionTypeGeneral_Default  = 0xFFFF
     };
+    Q_ENUM(DetailsElementOptionTypeGeneral);
 
     /** VirtualBox Manager UI: Details element: "System" option types. */
     enum DetailsElementOptionTypeSystem
@@ -642,6 +630,7 @@ public:
         DetailsElementOptionTypeSystem_Acceleration    = RT_BIT(6),
         DetailsElementOptionTypeSystem_Default         = 0xFFFF
     };
+    Q_ENUM(DetailsElementOptionTypeSystem);
 
     /** VirtualBox Manager UI: Details element: "Display" option types. */
     enum DetailsElementOptionTypeDisplay
@@ -655,6 +644,7 @@ public:
         DetailsElementOptionTypeDisplay_Recording    = RT_BIT(5),
         DetailsElementOptionTypeDisplay_Default      = 0xFFFF
     };
+    Q_ENUM(DetailsElementOptionTypeDisplay);
 
     /** VirtualBox Manager UI: Details element: "Storage" option types. */
     enum DetailsElementOptionTypeStorage
@@ -665,6 +655,7 @@ public:
         DetailsElementOptionTypeStorage_FloppyDevices  = RT_BIT(2),
         DetailsElementOptionTypeStorage_Default        = 0xFFFF
     };
+    Q_ENUM(DetailsElementOptionTypeStorage);
 
     /** VirtualBox Manager UI: Details element: "Audio" option types. */
     enum DetailsElementOptionTypeAudio
@@ -675,6 +666,7 @@ public:
         DetailsElementOptionTypeAudio_IO         = RT_BIT(2),
         DetailsElementOptionTypeAudio_Default    = 0xFFFF
     };
+    Q_ENUM(DetailsElementOptionTypeAudio);
 
     /** VirtualBox Manager UI: Details element: "Network" option types. */
     enum DetailsElementOptionTypeNetwork
@@ -688,6 +680,7 @@ public:
         DetailsElementOptionTypeNetwork_GenericDriver   = RT_BIT(5),
         DetailsElementOptionTypeNetwork_Default         = 0xFFFF
     };
+    Q_ENUM(DetailsElementOptionTypeNetwork);
 
     /** VirtualBox Manager UI: Details element: "Serial" option types. */
     enum DetailsElementOptionTypeSerial
@@ -700,6 +693,7 @@ public:
         DetailsElementOptionTypeSerial_TCP          = RT_BIT(4),
         DetailsElementOptionTypeSerial_Default      = 0xFFFF
     };
+    Q_ENUM(DetailsElementOptionTypeSerial);
 
     /** VirtualBox Manager UI: Details element: "USB" option types. */
     enum DetailsElementOptionTypeUsb
@@ -709,6 +703,7 @@ public:
         DetailsElementOptionTypeUsb_DeviceFilters = RT_BIT(1),
         DetailsElementOptionTypeUsb_Default       = 0xFFFF
     };
+    Q_ENUM(DetailsElementOptionTypeUsb);
 
     /** VirtualBox Manager UI: Details element: "SharedFolders" option types. */
     enum DetailsElementOptionTypeSharedFolders
@@ -717,6 +712,7 @@ public:
         DetailsElementOptionTypeSharedFolders_Summary = RT_BIT(0),
         DetailsElementOptionTypeSharedFolders_Default = 0xFFFF
     };
+    Q_ENUM(DetailsElementOptionTypeSharedFolders);
 
     /** VirtualBox Manager UI: Details element: "UserInterface" option types. */
     enum DetailsElementOptionTypeUserInterface
@@ -727,6 +723,7 @@ public:
         DetailsElementOptionTypeUserInterface_MiniToolbar = RT_BIT(2),
         DetailsElementOptionTypeUserInterface_Default     = 0xFFFF
     };
+    Q_ENUM(DetailsElementOptionTypeUserInterface);
 
     /** VirtualBox Manager UI: Details element: "Description" option types. */
     enum DetailsElementOptionTypeDescription
@@ -735,6 +732,7 @@ public:
         DetailsElementOptionTypeDescription_Summary = RT_BIT(0),
         DetailsElementOptionTypeDescription_Default = 0xFFFF
     };
+    Q_ENUM(DetailsElementOptionTypeDescription);
 };
 
 
