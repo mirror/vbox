@@ -3168,10 +3168,10 @@
       <desc>Friendly subject name or similar.</desc>
     </attribute>
     <attribute name="validityPeriodNotBefore" type="wstring" readonly="yes">
-      <desc>Certificate not valid before ISO time stamp.</desc>
+      <desc>Certificate not valid before ISO timestamp.</desc>
     </attribute>
     <attribute name="validityPeriodNotAfter" type="wstring" readonly="yes">
-      <desc>Certificate not valid after ISO time stamp.</desc>
+      <desc>Certificate not valid after ISO timestamp.</desc>
     </attribute>
     <attribute name="publicKeyAlgorithmOID" type="wstring" readonly="yes">
       <desc>The dotted OID of the public key algorithm.</desc>
@@ -4449,7 +4449,7 @@
     <method name="pullGuestProperties">
       <desc>
         Get the list of the guest properties matching a set of patterns along
-        with their values, time stamps and flags and give responsibility for
+        with their values, timestamps and flags and give responsibility for
         managing properties to the console.
       </desc>
       <param name="names" type="wstring" dir="out" safearray="yes">
@@ -4465,7 +4465,7 @@
       </param>
       <param name="timestamps" type="long long" dir="out" safearray="yes">
         <desc>
-          The time stamps of the properties returned. The array entries match
+          The timestamps of the properties returned. The array entries match
           the corresponding entries in the @a name array.
         </desc>
       </param>
@@ -5686,7 +5686,7 @@
 
     <attribute name="lastStateChange" type="long long" readonly="yes">
       <desc>
-        Time stamp of the last execution state change,
+        Timestamp of the last execution state change,
         in milliseconds since 1970-01-01 UTC.
       </desc>
     </attribute>
@@ -8060,7 +8060,7 @@ and "VAR" for unsetting. -->
     <method name="enumerateGuestProperties" const="yes">
       <desc>
         Return a list of the guest properties matching a set of patterns along
-        with their values, time stamps and flags.
+        with their values, timestamps and flags.
       </desc>
       <param name="patterns" type="wstring" dir="in">
         <desc>
@@ -8081,7 +8081,7 @@ and "VAR" for unsetting. -->
       </param>
       <param name="timestamps" type="long long" dir="out" safearray="yes">
         <desc>
-          The time stamps of the properties returned. The array entries match
+          The timestamps of the properties returned. The array entries match
           the corresponding entries in the @a name array.
         </desc>
       </param>
@@ -10957,7 +10957,7 @@ and "VAR" for unsetting. -->
 
     <attribute name="lastUpdated" type="long long" readonly="yes">
       <desc>
-        Time stamp of the last status update,
+        Timestamp of the last status update,
         in milliseconds since 1970-01-01 UTC.
       </desc>
     </attribute>
@@ -14907,7 +14907,7 @@ and "VAR" for unsetting. -->
 
     <attribute name="timeStamp" type="long long" readonly="yes">
       <desc>
-        Time stamp of the snapshot, in milliseconds since 1970-01-01 UTC.
+        Timestamp of the snapshot, in milliseconds since 1970-01-01 UTC.
       </desc>
     </attribute>
 
@@ -21127,7 +21127,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <method name="enumerateGuestProperties" const="yes">
       <desc>
         Return a list of the guest properties matching a set of patterns along
-        with their values, time stamps and flags.
+        with their values, timestamps and flags.
 
         <result name="VBOX_E_INVALID_VM_STATE">
           Machine session is not open.
@@ -21157,7 +21157,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </param>
       <param name="timestamps" type="long long" dir="out" safearray="yes">
         <desc>
-          The time stamps of the properties returned. The array entries match
+          The timestamps of the properties returned. The array entries match
           the corresponding entries in the @a key array.
         </desc>
       </param>

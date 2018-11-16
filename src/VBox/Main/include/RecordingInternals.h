@@ -170,8 +170,8 @@ struct RecordingBlock
     RECORDINGBLOCKTYPE enmType;
     /** Number of references held of this block. */
     uint16_t           cRefs;
-    /** The (absolute) time stamp (in ms, PTS) of this block. */
-    uint64_t           uTimeStampMs;
+    /** The (absolute) timestamp (in ms, PTS) of this block. */
+    uint64_t           msTimestamp;
     /** Opaque data block to the actual block data, depending on the block's type. */
     void              *pvData;
     /** Size (in bytes) of the (opaque) data block. */
@@ -181,4 +181,5 @@ struct RecordingBlock
 /** List for keeping video recording (data) blocks. */
 typedef std::list<RecordingBlock *> RecordingBlockList;
 
-#endif /* ____H_RECORDING_INTERNALS */
+#endif /* !____H_RECORDING_INTERNALS */
+

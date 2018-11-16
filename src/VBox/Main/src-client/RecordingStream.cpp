@@ -265,15 +265,15 @@ const settings::RecordingScreenSettings &RecordingStream::GetConfig(void) const
  * Checks if a specified limit for a recording stream has been reached, internal version.
  *
  * @returns true if any limit has been reached.
- * @param   uTimeStampMs        Timestamp (in ms) to check for.
+ * @param   msTimestamp     Timestamp (in ms) to check for.
  */
-bool RecordingStream::isLimitReachedInternal(uint64_t uTimeStampMs) const
+bool RecordingStream::isLimitReachedInternal(uint64_t msTimestamp) const
 {
-    LogFlowThisFunc(("uTimeStampMs=%RU64, ulMaxTimeS=%RU32, tsStartMs=%RU64\n",
-                     uTimeStampMs, this->ScreenSettings.ulMaxTimeS, this->tsStartMs));
+    LogFlowThisFunc(("msTimestamp=%RU64, ulMaxTimeS=%RU32, tsStartMs=%RU64\n",
+                     msTimestamp, this->ScreenSettings.ulMaxTimeS, this->tsStartMs));
 
     if (   this->ScreenSettings.ulMaxTimeS
-        && uTimeStampMs >= this->tsStartMs + (this->ScreenSettings.ulMaxTimeS * RT_MS_1SEC))
+        && msTimestamp >= this->tsStartMs + (this->ScreenSettings.ulMaxTimeS * RT_MS_1SEC))
     {
         LogRel(("Recording: Time limit for stream #%RU16 has been reached (%RU32s)\n",
                 this->uScreenID, this->ScreenSettings.ulMaxTimeS));
@@ -310,16 +310,16 @@ bool RecordingStream::isLimitReachedInternal(uint64_t uTimeStampMs) const
  * Does housekeeping and recording context notification.
  *
  * @returns IPRT status code.
- * @param   uTimeStampMs        Current timestamp (in ms).
+ * @param   msTimestamp         Current timestamp (in ms).
  */
-int RecordingStream::iterateInternal(uint64_t uTimeStampMs)
+int RecordingStream::iterateInternal(uint64_t msTimestamp)
 {
     if (!this->fEnabled)
         return VINF_SUCCESS;
 
     int rc;
 
-    if (isLimitReachedInternal(uTimeStampMs))
+    if (isLimitReachedInternal(msTimestamp))
     {
         rc = VINF_RECORDING_LIMIT_REACHED;
     }
@@ -351,14 +351,14 @@ int RecordingStream::iterateInternal(uint64_t uTimeStampMs)
  * Checks if a specified limit for a recording stream has been reached.
  *
  * @returns true if any limit has been reached.
- * @param   uTimeStampMs        Timestamp (in ms) to check for.
+ * @param   msTimestamp         Timestamp (in ms) to check for.
  */
-bool RecordingStream::IsLimitReached(uint64_t uTimeStampMs) const
+bool RecordingStream::IsLimitReached(uint64_t msTimestamp) const
 {
     if (!IsReady())
         return true;
 
-    return isLimitReachedInternal(uTimeStampMs);
+    return isLimitReachedInternal(msTimestamp);
 }
 
 /**
@@ -396,8 +396,8 @@ int RecordingStream::Process(RecordingBlockMap &mapBlocksCommon)
     RecordingBlockMap::iterator itStreamBlocks = Blocks.Map.begin();
     while (itStreamBlocks != Blocks.Map.end())
     {
-        const uint64_t         uTimeStampMs = itStreamBlocks->first;
-              RecordingBlocks *pBlocks      = itStreamBlocks->second;
+        uint64_t const   msTimestamp = itStreamBlocks->first;
+        RecordingBlocks *pBlocks     = itStreamBlocks->second;
 
         AssertPtr(pBlocks);
 
@@ -418,7 +418,7 @@ int RecordingStream::Process(RecordingBlockMap &mapBlocksCommon)
                                                  pVideoFrame->pu8RGBBuf, this->ScreenSettings.Video.ulWidth, this->ScreenSettings.Video.ulHeight);
                 if (RT_SUCCESS(rc2))
                 {
-                    rc2 = writeVideoVPX(uTimeStampMs, pVideoFrame);
+                    rc2 = writeVideoVPX(msTimestamp, pVideoFrame);
                     AssertRC(rc2);
                     if (RT_SUCCESS(rc))
                         rc = rc2;
@@ -458,7 +458,7 @@ int RecordingStream::Process(RecordingBlockMap &mapBlocksCommon)
                     Assert(pAudioFrame->cbBuf);
 
                     WebMWriter::BlockData_Opus blockData = { pAudioFrame->pvBuf, pAudioFrame->cbBuf,
-                                                             pBlockCommon->uTimeStampMs };
+                                                             pBlockCommon->msTimestamp };
                     AssertPtr(this->File.pWEBM);
                     int rc2 = this->File.pWEBM->WriteBlock(this->uTrackAudio, &blockData, sizeof(blockData));
                     AssertRC(rc2);
@@ -518,18 +518,18 @@ int RecordingStream::Process(RecordingBlockMap &mapBlocksCommon)
  * @param   uSrcWidth           Width (in pixels) of the video frame.
  * @param   uSrcHeight          Height (in pixels) of the video frame.
  * @param   puSrcData           Actual pixel data of the video frame.
- * @param   uTimeStampMs        Timestamp (in ms) as PTS.
+ * @param   msTimestamp         Timestamp (in ms) as PTS.
  */
 int RecordingStream::SendVideoFrame(uint32_t x, uint32_t y, uint32_t uPixelFormat, uint32_t uBPP, uint32_t uBytesPerLine,
-                                    uint32_t uSrcWidth, uint32_t uSrcHeight, uint8_t *puSrcData, uint64_t uTimeStampMs)
+                                    uint32_t uSrcWidth, uint32_t uSrcHeight, uint8_t *puSrcData, uint64_t msTimestamp)
 {
     lock();
 
-    LogFlowFunc(("uTimeStampMs=%RU64\n", uTimeStampMs));
+    LogFlowFunc(("msTimestamp=%RU64\n", msTimestamp));
 
     PRECORDINGVIDEOFRAME pFrame = NULL;
 
-    int rc = iterateInternal(uTimeStampMs);
+    int rc = iterateInternal(msTimestamp);
     if (rc != VINF_SUCCESS) /* Can return VINF_RECORDING_LIMIT_REACHED. */
     {
         unlock();
@@ -538,13 +538,13 @@ int RecordingStream::SendVideoFrame(uint32_t x, uint32_t y, uint32_t uPixelForma
 
     do
     {
-        if (uTimeStampMs < this->Video.uLastTimeStampMs + this->Video.uDelayMs)
+        if (msTimestamp < this->Video.uLastTimeStampMs + this->Video.uDelayMs)
         {
             rc = VINF_RECORDING_THROTTLED; /* Respect maximum frames per second. */
             break;
         }
 
-        this->Video.uLastTimeStampMs = uTimeStampMs;
+        this->Video.uLastTimeStampMs = msTimestamp;
 
         int xDiff = ((int)this->ScreenSettings.Video.ulWidth - (int)uSrcWidth) / 2;
         uint32_t w = uSrcWidth;
@@ -717,8 +717,8 @@ int RecordingStream::SendVideoFrame(uint32_t x, uint32_t y, uint32_t uPixelForma
                 RecordingBlocks *pRecordingBlocks = new RecordingBlocks();
                 pRecordingBlocks->List.push_back(pBlock);
 
-                Assert(this->Blocks.Map.find(uTimeStampMs) == this->Blocks.Map.end());
-                this->Blocks.Map.insert(std::make_pair(uTimeStampMs, pRecordingBlocks));
+                Assert(this->Blocks.Map.find(msTimestamp) == this->Blocks.Map.end());
+                this->Blocks.Map.insert(std::make_pair(msTimestamp, pRecordingBlocks));
             }
             catch (const std::exception &ex)
             {
@@ -1154,10 +1154,10 @@ int RecordingStream::initAudio(void)
  * Encodes the source image and write the encoded image to the stream's destination.
  *
  * @returns IPRT status code.
- * @param   uTimeStampMs        Absolute timestamp (PTS) of frame (in ms) to encode.
+ * @param   msTimestamp         Absolute timestamp (PTS) of frame (in ms) to encode.
  * @param   pFrame              Frame to encode and submit.
  */
-int RecordingStream::writeVideoVPX(uint64_t uTimeStampMs, PRECORDINGVIDEOFRAME pFrame)
+int RecordingStream::writeVideoVPX(uint64_t msTimestamp, PRECORDINGVIDEOFRAME pFrame)
 {
     AssertPtrReturn(pFrame, VERR_INVALID_POINTER);
 
@@ -1165,11 +1165,11 @@ int RecordingStream::writeVideoVPX(uint64_t uTimeStampMs, PRECORDINGVIDEOFRAME p
 
     PRECORDINGVIDEOCODEC pCodec = &this->Video.Codec;
 
-    /* Presentation Time Stamp (PTS). */
-    vpx_codec_pts_t pts = uTimeStampMs;
+    /* Presentation TimeStamp (PTS). */
+    vpx_codec_pts_t pts = msTimestamp;
     vpx_codec_err_t rcv = vpx_codec_encode(&pCodec->VPX.Ctx,
                                            &pCodec->VPX.RawImage,
-                                           pts                          /* Time stamp */,
+                                           pts                          /* Timestamp */,
                                            this->Video.uDelayMs         /* How long to show this frame */,
                                            0                            /* Flags */,
                                            pCodec->VPX.uEncoderDeadline /* Quality setting */);

@@ -58,15 +58,15 @@ public:
     int SendVideoFrame(uint32_t uScreen,
                        uint32_t x, uint32_t y, uint32_t uPixelFormat, uint32_t uBPP,
                        uint32_t uBytesPerLine, uint32_t uSrcWidth, uint32_t uSrcHeight,
-                       uint8_t *puSrcData, uint64_t uTimeStampMs);
+                       uint8_t *puSrcData, uint64_t msTimestamp);
 public:
 
     bool IsFeatureEnabled(RecordingFeature_T enmFeature);
     bool IsReady(void) const;
-    bool IsReady(uint32_t uScreen, uint64_t uTimeStampMs);
+    bool IsReady(uint32_t uScreen, uint64_t msTimestamp);
     bool IsStarted(void);
     bool IsLimitReached(void);
-    bool IsLimitReached(uint32_t uScreen, uint64_t uTimeStampMs);
+    bool IsLimitReached(uint32_t uScreen, uint64_t msTimestamp);
 
     DECLCALLBACK(int) OnLimitReached(uint32_t uScreen, int rc);
 

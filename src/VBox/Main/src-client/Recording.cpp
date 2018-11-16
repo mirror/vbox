@@ -483,11 +483,11 @@ bool RecordingContext::IsReady(void) const
  *
  * @returns @c true if the specified screen is ready, @c false if not.
  * @param   uScreen             Screen ID.
- * @param   uTimeStampMs        Current time stamp (in ms). Currently not being used.
+ * @param   msTimestamp         Current timestamp (in ms). Currently not being used.
  */
-bool RecordingContext::IsReady(uint32_t uScreen, uint64_t uTimeStampMs)
+bool RecordingContext::IsReady(uint32_t uScreen, uint64_t msTimestamp)
 {
-    RT_NOREF(uTimeStampMs);
+    RT_NOREF(msTimestamp);
 
     lock();
 
@@ -548,9 +548,9 @@ bool RecordingContext::IsLimitReached(void)
  *
  * @returns true if any limit has been reached.
  * @param   uScreen             Screen ID.
- * @param   uTimeStampMs        Timestamp (in ms) to check for.
+ * @param   msTimestamp         Timestamp (in ms) to check for.
  */
-bool RecordingContext::IsLimitReached(uint32_t uScreen, uint64_t uTimeStampMs)
+bool RecordingContext::IsLimitReached(uint32_t uScreen, uint64_t msTimestamp)
 {
     lock();
 
@@ -558,7 +558,7 @@ bool RecordingContext::IsLimitReached(uint32_t uScreen, uint64_t uTimeStampMs)
 
     const RecordingStream *pStream = getStreamInternal(uScreen);
     if (   !pStream
-        || pStream->IsLimitReached(uTimeStampMs))
+        || pStream->IsLimitReached(msTimestamp))
     {
         fLimitReached = true;
     }
@@ -570,7 +570,7 @@ bool RecordingContext::IsLimitReached(uint32_t uScreen, uint64_t uTimeStampMs)
 
 DECLCALLBACK(int) RecordingContext::OnLimitReached(uint32_t uScreen, int rc)
 {
-    RT_NOREF(uScreen);
+    RT_NOREF(uScreen, rc);
     LogFlowThisFunc(("Stream %RU32 has reached its limit (%Rrc)\n", uScreen, rc));
 
     lock();
@@ -593,9 +593,9 @@ DECLCALLBACK(int) RecordingContext::OnLimitReached(uint32_t uScreen, int rc)
  * @returns IPRT status code.
  * @param   pvData              Audio frame data to send.
  * @param   cbData              Size (in bytes) of (encoded) audio frame data.
- * @param   uTimeStampMs        Time stamp (in ms) of audio playback.
+ * @param   msTimestamp         Timestamp (in ms) of audio playback.
  */
-int RecordingContext::SendAudioFrame(const void *pvData, size_t cbData, uint64_t uTimeStampMs)
+int RecordingContext::SendAudioFrame(const void *pvData, size_t cbData, uint64_t msTimestamp)
 {
 #ifdef VBOX_WITH_AUDIO_RECORDING
     AssertPtrReturn(pvData, VERR_INVALID_POINTER);
@@ -618,10 +618,10 @@ int RecordingContext::SendAudioFrame(const void *pvData, size_t cbData, uint64_t
 
     memcpy(pFrame->pvBuf, pvData, cbData);
 
-    pBlock->pvData       = pFrame;
-    pBlock->cbData       = sizeof(RECORDINGAUDIOFRAME) + cbData;
-    pBlock->cRefs        = this->cStreamsEnabled;
-    pBlock->uTimeStampMs = uTimeStampMs;
+    pBlock->pvData      = pFrame;
+    pBlock->cbData      = sizeof(RECORDINGAUDIOFRAME) + cbData;
+    pBlock->cRefs       = this->cStreamsEnabled;
+    pBlock->msTimestamp = msTimestamp;
 
     int rc = RTCritSectEnter(&this->CritSect);
     if (RT_FAILURE(rc))
@@ -629,13 +629,13 @@ int RecordingContext::SendAudioFrame(const void *pvData, size_t cbData, uint64_t
 
     try
     {
-        RecordingBlockMap::iterator itBlocks = this->mapBlocksCommon.find(uTimeStampMs);
+        RecordingBlockMap::iterator itBlocks = this->mapBlocksCommon.find(msTimestamp);
         if (itBlocks == this->mapBlocksCommon.end())
         {
             RecordingBlocks *pRecordingBlocks = new RecordingBlocks();
             pRecordingBlocks->List.push_back(pBlock);
 
-            this->mapBlocksCommon.insert(std::make_pair(uTimeStampMs, pRecordingBlocks));
+            this->mapBlocksCommon.insert(std::make_pair(msTimestamp, pRecordingBlocks));
         }
         else
             itBlocks->second->List.push_back(pBlock);
@@ -654,7 +654,7 @@ int RecordingContext::SendAudioFrame(const void *pvData, size_t cbData, uint64_t
 
     return rc;
 #else
-    RT_NOREF(pCtx, pvData, cbData, uTimeStampMs);
+    RT_NOREF(pCtx, pvData, cbData, msTimestamp);
     return VINF_SUCCESS;
 #endif
 }
@@ -675,12 +675,12 @@ int RecordingContext::SendAudioFrame(const void *pvData, size_t cbData, uint64_t
  * @param   uSrcWidth          Width of the video frame.
  * @param   uSrcHeight         Height of the video frame.
  * @param   puSrcData          Pointer to video frame data.
- * @param   uTimeStampMs       Time stamp (in ms).
+ * @param   msTimestamp        Timestamp (in ms).
  */
 int RecordingContext::SendVideoFrame(uint32_t uScreen, uint32_t x, uint32_t y,
                                      uint32_t uPixelFormat, uint32_t uBPP, uint32_t uBytesPerLine,
                                      uint32_t uSrcWidth, uint32_t uSrcHeight, uint8_t *puSrcData,
-                                     uint64_t uTimeStampMs)
+                                     uint64_t msTimestamp)
 {
     AssertReturn(uSrcWidth,  VERR_INVALID_PARAMETER);
     AssertReturn(uSrcHeight, VERR_INVALID_PARAMETER);
@@ -699,7 +699,7 @@ int RecordingContext::SendVideoFrame(uint32_t uScreen, uint32_t x, uint32_t y,
         return VERR_NOT_FOUND;
     }
 
-    rc = pStream->SendVideoFrame(x, y, uPixelFormat, uBPP, uBytesPerLine, uSrcWidth, uSrcHeight, puSrcData, uTimeStampMs);
+    rc = pStream->SendVideoFrame(x, y, uPixelFormat, uBPP, uBytesPerLine, uSrcWidth, uSrcHeight, puSrcData, msTimestamp);
 
     int rc2 = RTCritSectLeave(&this->CritSect);
     AssertRC(rc2);

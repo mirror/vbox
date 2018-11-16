@@ -121,11 +121,11 @@ public:
 
     int Process(RecordingBlockMap &mapBlocksCommon);
     int SendVideoFrame(uint32_t x, uint32_t y, uint32_t uPixelFormat, uint32_t uBPP, uint32_t uBytesPerLine,
-                       uint32_t uSrcWidth, uint32_t uSrcHeight, uint8_t *puSrcData, uint64_t uTimeStampMs);
+                       uint32_t uSrcWidth, uint32_t uSrcHeight, uint8_t *puSrcData, uint64_t msTimestamp);
 
     const settings::RecordingScreenSettings &GetConfig(void) const;
     uint16_t GetID(void) const { return this->uScreenID; };
-    bool IsLimitReached(uint64_t uTimeStampMs) const;
+    bool IsLimitReached(uint64_t msTimestamp) const;
     bool IsReady(void) const;
 
 protected:
@@ -141,13 +141,13 @@ protected:
 
     int initAudio(void);
 
-    bool isLimitReachedInternal(uint64_t uTimeStampMs) const;
-    int iterateInternal(uint64_t uTimeStampMs);
+    bool isLimitReachedInternal(uint64_t msTimestamp) const;
+    int iterateInternal(uint64_t msTimestamp);
 
 #ifdef VBOX_WITH_LIBVPX
     int initVideoVPX(void);
     int uninitVideoVPX(void);
-    int writeVideoVPX(uint64_t uTimeStampMs, PRECORDINGVIDEOFRAME pFrame);
+    int writeVideoVPX(uint64_t msTimestamp, PRECORDINGVIDEOFRAME pFrame);
 #endif
     void lock(void);
     void unlock(void);
@@ -199,7 +199,7 @@ protected:
         /** Minimal delay (in ms) between two video frames.
          *  This value is based on the configured FPS rate. */
         uint32_t            uDelayMs;
-        /** Time stamp (in ms) of the last video frame we encoded. */
+        /** Timestamp (in ms) of the last video frame we encoded. */
         uint64_t            uLastTimeStampMs;
         /** Number of failed attempts to encode the current video frame in a row. */
         uint16_t            cFailedEncodingFrames;
@@ -215,5 +215,5 @@ protected:
 /** Vector of recording streams. */
 typedef std::vector <RecordingStream *> RecordingStreams;
 
-#endif /* ____H_RECORDING_STREAM */
+#endif /* !____H_RECORDING_STREAM */
 
