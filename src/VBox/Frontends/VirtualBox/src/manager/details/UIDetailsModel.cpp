@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2012-2017 Oracle Corporation
+ * Copyright (C) 2012-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -27,16 +27,20 @@
 # include <QMenu>
 
 /* GUI includes: */
+# include "UIConverter.h"
 # include "UIDetails.h"
 # include "UIDetailsModel.h"
 # include "UIDetailsGroup.h"
 # include "UIDetailsElement.h"
 # include "UIExtraDataManager.h"
 # include "VBoxGlobal.h"
-# include "UIConverter.h"
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
+
+/*********************************************************************************************************************************
+*   Class UIDetailsModel implementation.                                                                                         *
+*********************************************************************************************************************************/
 
 UIDetailsModel::UIDetailsModel(UIDetails *pParent)
     : QObject(pParent)
@@ -53,19 +57,19 @@ UIDetailsModel::~UIDetailsModel()
     cleanup();
 }
 
-QGraphicsScene* UIDetailsModel::scene() const
+QGraphicsScene *UIDetailsModel::scene() const
 {
     return m_pScene;
 }
 
-QGraphicsView* UIDetailsModel::paintDevice() const
+QGraphicsView *UIDetailsModel::paintDevice() const
 {
-    if (!m_pScene || m_pScene->views().isEmpty())
-        return 0;
-    return m_pScene->views().first();
+    if (m_pScene && !m_pScene->views().isEmpty())
+        return m_pScene->views().first();
+    return 0;
 }
 
-QGraphicsItem* UIDetailsModel::itemAt(const QPointF &position) const
+QGraphicsItem *UIDetailsModel::itemAt(const QPointF &position) const
 {
     return scene()->itemAt(position, QTransform());
 }
@@ -96,7 +100,6 @@ void UIDetailsModel::setItems(const QList<UIVirtualMachineItem*> &items)
 
 void UIDetailsModel::sltHandleViewResize()
 {
-    /* Relayout: */
     updateLayout();
 }
 
@@ -124,6 +127,16 @@ void UIDetailsModel::sltHandleExtraDataCategoriesChange()
 void UIDetailsModel::sltHandleExtraDataOptionsChange(DetailsElementType)
 {
     m_pRoot->rebuildGroup();
+}
+
+bool UIDetailsModel::eventFilter(QObject *pObject, QEvent *pEvent)
+{
+    /* Handle allowed context-menu events: */
+    if (pObject == scene() && pEvent->type() == QEvent::GraphicsSceneContextMenu)
+        return processContextMenuEvent(static_cast<QGraphicsSceneContextMenuEvent*>(pEvent));
+
+    /* Call to base-class: */
+    return QObject::eventFilter(pObject, pEvent);
 }
 
 void UIDetailsModel::sltToggleElements(DetailsElementType type, bool fToggled)
@@ -164,7 +177,7 @@ void UIDetailsModel::sltToggleElements(DetailsElementType type, bool fToggled)
     updateLayout();
 }
 
-void UIDetailsModel::sltToggleAnimationFinished(DetailsElementType type, bool fToggled)
+void UIDetailsModel::sltToggleAnimationFinished(DetailsElementType enmType, bool fToggled)
 {
     /* Cleanup animation callback: */
     delete m_pAnimationCallback;
@@ -176,7 +189,7 @@ void UIDetailsModel::sltToggleAnimationFinished(DetailsElementType type, bool fT
         foreach (UIDetailsItem *pElementItem, pSetItem->items())
         {
             UIDetailsElement *pElement = pElementItem->toElement();
-            if (pElement->elementType() == type)
+            if (pElement->elementType() == enmType)
                 pElement->markAnimationFinished();
         }
     }
@@ -184,21 +197,21 @@ void UIDetailsModel::sltToggleAnimationFinished(DetailsElementType type, bool fT
     updateLayout();
 
     /* Update element open/close status: */
-    if (m_categories.contains(type))
-        m_categories[type] = fToggled;
+    if (m_categories.contains(enmType))
+        m_categories[enmType] = fToggled;
 }
 
 void UIDetailsModel::sltElementTypeToggled()
 {
     /* Which item was toggled? */
     QAction *pAction = qobject_cast<QAction*>(sender());
-    DetailsElementType type = pAction->data().value<DetailsElementType>();
+    DetailsElementType enmType = pAction->data().value<DetailsElementType>();
 
     /* Toggle element visibility status: */
-    if (m_categories.contains(type))
-        m_categories.remove(type);
+    if (m_categories.contains(enmType))
+        m_categories.remove(enmType);
     else
-        m_categories[type] = true;
+        m_categories[enmType] = true;
 
     /* Rebuild group: */
     m_pRoot->rebuildGroup();
@@ -257,20 +270,6 @@ void UIDetailsModel::cleanup()
     cleanupScene();
 }
 
-bool UIDetailsModel::eventFilter(QObject *pObject, QEvent *pEvent)
-{
-    /* Ignore if no scene object: */
-    if (pObject != scene())
-        return QObject::eventFilter(pObject, pEvent);
-
-    /* Ignore if no context-menu event: */
-    if (pEvent->type() != QEvent::GraphicsSceneContextMenu)
-        return QObject::eventFilter(pObject, pEvent);
-
-    /* Process context menu event: */
-        return processContextMenuEvent(static_cast<QGraphicsSceneContextMenuEvent*>(pEvent));
-}
-
 bool UIDetailsModel::processContextMenuEvent(QGraphicsSceneContextMenuEvent *pEvent)
 {
     /* Pass preview context menu instead: */
@@ -283,11 +282,11 @@ bool UIDetailsModel::processContextMenuEvent(QGraphicsSceneContextMenuEvent *pEv
     /* Enumerate elements settings: */
     for (int iType = DetailsElementType_General; iType <= DetailsElementType_Description; ++iType)
     {
-        DetailsElementType currentElementType = (DetailsElementType)iType;
-        QAction *pAction = contextMenu.addAction(gpConverter->toString(currentElementType), this, SLOT(sltElementTypeToggled()));
+        const DetailsElementType enmCurrentElementType = (DetailsElementType)iType;
+        QAction *pAction = contextMenu.addAction(gpConverter->toString(enmCurrentElementType), this, SLOT(sltElementTypeToggled()));
         pAction->setCheckable(true);
-        pAction->setChecked(m_categories.contains(currentElementType));
-        pAction->setData(QVariant::fromValue(currentElementType));
+        pAction->setChecked(m_categories.contains(enmCurrentElementType));
+        pAction->setData(QVariant::fromValue(enmCurrentElementType));
     }
     /* Exec context-menu: */
     contextMenu.exec(pEvent->screenPos());
@@ -296,17 +295,23 @@ bool UIDetailsModel::processContextMenuEvent(QGraphicsSceneContextMenuEvent *pEv
     return true;
 }
 
-UIDetailsElementAnimationCallback::UIDetailsElementAnimationCallback(QObject *pParent, DetailsElementType type, bool fToggled)
+
+/*********************************************************************************************************************************
+*   Class UIDetailsElementAnimationCallback implementation.                                                                      *
+*********************************************************************************************************************************/
+
+UIDetailsElementAnimationCallback::UIDetailsElementAnimationCallback(QObject *pParent, DetailsElementType enmType, bool fToggled)
     : QObject(pParent)
-    , m_type(type)
+    , m_enmType(enmType)
     , m_fToggled(fToggled)
 {
 }
 
-void UIDetailsElementAnimationCallback::addNotifier(UIDetailsItem *pItem)
+void UIDetailsElementAnimationCallback::addNotifier(UIDetailsElement *pItem)
 {
     /* Connect notifier: */
-    connect(pItem, SIGNAL(sigToggleElementFinished()), this, SLOT(sltAnimationFinished()));
+    connect(pItem, &UIDetailsElement::sigToggleElementFinished,
+            this, &UIDetailsElementAnimationCallback::sltAnimationFinished);
     /* Remember notifier: */
     m_notifiers << pItem;
 }
@@ -314,13 +319,13 @@ void UIDetailsElementAnimationCallback::addNotifier(UIDetailsItem *pItem)
 void UIDetailsElementAnimationCallback::sltAnimationFinished()
 {
     /* Determine notifier: */
-    UIDetailsItem *pItem = qobject_cast<UIDetailsItem*>(sender());
+    UIDetailsElement *pItem = qobject_cast<UIDetailsElement*>(sender());
     /* Disconnect notifier: */
-    disconnect(pItem, SIGNAL(sigToggleElementFinished()), this, SLOT(sltAnimationFinished()));
+    disconnect(pItem, &UIDetailsElement::sigToggleElementFinished,
+               this, &UIDetailsElementAnimationCallback::sltAnimationFinished);
     /* Remove notifier: */
     m_notifiers.removeAll(pItem);
     /* Check if we finished: */
     if (m_notifiers.isEmpty())
-        emit sigAllAnimationFinished(m_type, m_fToggled);
+        emit sigAllAnimationFinished(m_enmType, m_fToggled);
 }
-
