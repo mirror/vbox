@@ -1202,9 +1202,9 @@ PDMBOTHCBDECL(int) vmsvgaReadPort(PVGASTATE pThis, uint32_t *pu32)
             rc = VINF_IOM_R3_IOPORT_READ;
 #else
             STAM_REL_COUNTER_INC(&pThis->svga.StatRegUnknownRd);
-# ifndef DEBUG_sunlover
-            AssertMsgFailed(("reg=%#x\n", idxReg));
-# endif
+
+            /* Do not assert. The guest might be reading all registers. */
+            LogFunc(("Unknown reg=%#x\n", idxReg));
 #endif
         }
         break;
