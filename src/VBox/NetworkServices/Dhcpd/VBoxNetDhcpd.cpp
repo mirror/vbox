@@ -51,6 +51,11 @@ extern "C"
 #include <vector>
 #include <memory>
 
+#ifdef RT_OS_WINDOWS /* WinMain */
+#undef htonl
+#undef ntohl
+# include <iprt/win/windows.h>
+#endif
 
 struct delete_pbuf
 {
@@ -447,7 +452,7 @@ int VBoxNetDhcpd::ifProcessInput()
                                                      abHdrScratch,
                                                      i, cSegs,
                                                      &cbSegFrame);
-                ifInput(pvSegFrame, cbFrame);
+                ifInput(pvSegFrame, (uint32_t)cbFrame);
             }
         }
     }
@@ -737,10 +742,10 @@ void VBoxNetDhcpd::dhcp4Recv(struct udp_pcb *pcb, struct pbuf *p,
         return;
 
     unique_ptr_pbuf q ( pbuf_alloc(PBUF_RAW, (u16_t)data.size(), PBUF_RAM) );
-    if (q == NULL)
+    if (q == nullptr)
         return;
 
-    error = pbuf_take(q.get(), &data.front(), data.size());
+    error = pbuf_take(q.get(), &data.front(), (u16_t)data.size());
     if (error != ERR_OK)
         return;
 
