@@ -1239,6 +1239,7 @@ DECLCALLBACK(void) hgcmCompletedWorker(PPDMIHGCMPORT pInterface, int32_t result,
  */
 DECLCALLBACK(void) hgcmCompleted(PPDMIHGCMPORT pInterface, int32_t result, PVBOXHGCMCMD pCmd)
 {
+#if 0 /* This seems to be significantly slower.  Half of MsgTotal time seems to be spend here. */
     PVMMDEV pThis = RT_FROM_MEMBER(pInterface, VMMDevState, IHGCMPort);
     STAM_GET_TS(pCmd->tsComplete);
 
@@ -1250,6 +1251,11 @@ DECLCALLBACK(void) hgcmCompleted(PPDMIHGCMPORT pInterface, int32_t result, PVBOX
     int rc = VMR3ReqCallVoidNoWait(PDMDevHlpGetVM(pThis->pDevIns), VMCPUID_ANY,
                                    (PFNRT)hgcmCompletedWorker, 3, pInterface, result, pCmd);
     AssertRC(rc);
+#else
+    STAM_GET_TS(pCmd->tsComplete);
+    VBOXDD_HGCMCALL_COMPLETED_REQ(pCmd, result);
+    hgcmCompletedWorker(pInterface, result, pCmd);
+#endif
 }
 
 /**
