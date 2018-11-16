@@ -64,7 +64,6 @@ are ordered as follows:
         <para>User interface: a new file manager enabling user to control the guest file system and copy file objects between host and guest.</para>
       </listitem>
 
-	
     </itemizedlist>
 
     <para>In addition, the following items were fixed and/or added:</para>
@@ -143,7 +142,7 @@ are ordered as follows:
         <para>User interface: major rework of interface style with improved
            ease of access for application and machine set-up</para>
       </listitem>
-      
+
       <listitem>
         <para>User interface: an improved logviewer widget.</para>
       </listitem>
