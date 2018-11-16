@@ -139,6 +139,11 @@ typedef struct VBOXHGCMCMD
     /** The type of the guest request. */
     VMMDevRequestType   enmRequestType;
 
+    /** Pointer to the locked request, NULL if not locked. */
+    void               *pvReqLocked;
+    /** The PGM lock for GCPhys if pvReqLocked is not NULL. */
+    PGMPAGEMAPLOCK      ReqMapLock;
+
     /** The STAM_GET_TS() value when the request arrived. */
     uint64_t            tsArrival;
     /** The STAM_GET_TS() value when the hgcmCompleted() is called. */
@@ -235,9 +240,10 @@ static PVBOXHGCMCMD vmmdevHGCMCmdAlloc(VBOXHGCMCMDTYPE enmCmdType, RTGCPHYS GCPh
 
 /** Deallocate VBOXHGCMCMD memory.
  *
+ * @param   pThis           The VMMDev instance data.
  * @param   pCmd            Command to deallocate.
  */
-static void vmmdevHGCMCmdFree(PVBOXHGCMCMD pCmd)
+static void vmmdevHGCMCmdFree(PVMMDEV pThis, PVBOXHGCMCMD pCmd)
 {
     if (pCmd)
     {
@@ -258,6 +264,12 @@ static void vmmdevHGCMCmdFree(PVBOXHGCMCMD pCmd)
                     || pGuestParm->enmType == VMMDevHGCMParmType_PageList)
                     RTMemFree(pGuestParm->u.ptr.paPages);
             }
+        }
+
+        if (pCmd->pvReqLocked)
+        {
+            PDMDevHlpPhysReleasePageMappingLock(pThis->pDevIns, &pCmd->ReqMapLock);
+            pCmd->pvReqLocked = NULL;
         }
 
         RTMemFree(pCmd);
@@ -868,7 +880,7 @@ static int vmmdevHGCMCallFetchGuestParms(PVMMDEV pThis, PVBOXHGCMCMD pCmd,
  * @param   tsArrival       The STAM_GET_TS() value when the request arrived.
  */
 int vmmdevHGCMCall(PVMMDEV pThis, const VMMDevHGCMCall *pHGCMCall, uint32_t cbHGCMCall, RTGCPHYS GCPhys,
-                   VMMDevRequestType enmRequestType, uint64_t tsArrival)
+                   VMMDevRequestType enmRequestType, uint64_t tsArrival, PVMMDEVREQLOCK *ppLock)
 {
     LogFunc(("client id = %d, function = %d, cParms = %d, enmRequestType = %d\n",
              pHGCMCall->u32ClientID, pHGCMCall->u32Function, pHGCMCall->cParms, enmRequestType));
@@ -894,6 +906,14 @@ int vmmdevHGCMCall(PVMMDEV pThis, const VMMDevHGCMCall *pHGCMCall, uint32_t cbHG
     if (RT_SUCCESS(rc))
     {
         pCmd->tsArrival = tsArrival;
+        PVMMDEVREQLOCK pLock = *ppLock;
+        if (pLock)
+        {
+            pCmd->ReqMapLock  = pLock->Lock;
+            pCmd->pvReqLocked = pLock->pvReq;
+            *ppLock = NULL;
+        }
+
         rc = vmmdevHGCMCallFetchGuestParms(pThis, pCmd, pHGCMCall, cbHGCMCall, enmRequestType, cbHGCMParmStruct);
         if (RT_SUCCESS(rc))
         {
@@ -911,6 +931,8 @@ int vmmdevHGCMCall(PVMMDEV pThis, const VMMDevHGCMCall *pHGCMCall, uint32_t cbHG
                                               pCmd->u.call.cParms, pCmd->u.call.paHostParms, tsArrival);
                 if (RT_SUCCESS(rc))
                 {
+                    Assert(rc == VINF_HGCM_ASYNC_EXECUTE);
+
                     /*
                      * Done.  Just update statistics and return.
                      */
@@ -929,7 +951,7 @@ int vmmdevHGCMCall(PVMMDEV pThis, const VMMDevHGCMCall *pHGCMCall, uint32_t cbHG
                 vmmdevHGCMRemoveCommand(pThis, pCmd);
             }
         }
-        vmmdevHGCMCmdFree(pCmd);
+        vmmdevHGCMCmdFree(pThis, pCmd);
     }
     return rc;
 }
@@ -1099,32 +1121,103 @@ DECLCALLBACK(void) hgcmCompletedWorker(PPDMIHGCMPORT pInterface, int32_t result,
 
     if (RT_LIKELY(!pCmd->fCancelled))
     {
-/** @todo r=bird: Given that we involve the heap and call PGM three times, we
- *        would most likely be better off locking the buffer memory here.  If
- *        nothing else, it will avoid taking the PGM lock once. */
-
-        VMMDevHGCMRequestHeader *pHeader = (VMMDevHGCMRequestHeader *)RTMemAlloc(pCmd->cbRequest);
-        if (pHeader)
+        if (!pCmd->pvReqLocked)
         {
             /*
-             * Enter and leave the critical section here so we make sure
-             * vmmdevRequestHandler has completed before we read & write
-             * the request. (This isn't 100% optimal, but it solves the
-             * 3.0 blocker.)
+             * Request is not locked:
              */
-            /** @todo It would be faster if this interface would use MMIO2 memory and we
-             *        didn't have to mess around with PDMDevHlpPhysRead/Write. We're
-             *        reading the header 3 times now and writing the request back twice. */
+            VMMDevHGCMRequestHeader *pHeader = (VMMDevHGCMRequestHeader *)RTMemAlloc(pCmd->cbRequest);
+            if (pHeader)
+            {
+                /*
+                 * Read the request from the guest memory for updating.
+                 * The request data is not be used for anything but checking the request type.
+                 */
+                PDMDevHlpPhysRead(pThis->pDevIns, pCmd->GCPhys, pHeader, pCmd->cbRequest);
+                RT_UNTRUSTED_NONVOLATILE_COPY_FENCE();
 
-            PDMCritSectEnter(&pThis->CritSect, VERR_SEM_BUSY);
-            PDMCritSectLeave(&pThis->CritSect);
+                /* Verify the request type. This is the only field which is used from the guest memory. */
+                const VMMDevRequestType enmRequestType = pHeader->header.requestType;
+                if (   enmRequestType == pCmd->enmRequestType
+                    || enmRequestType == VMMDevReq_HGCMCancel)
+                {
+                    RT_UNTRUSTED_VALIDATED_FENCE();
 
-            /*
-             * Read the request from the guest memory for updating.
-             * The request data is not be used for anything but checking the request type.
-             */
-            PDMDevHlpPhysRead(pThis->pDevIns, pCmd->GCPhys, pHeader, pCmd->cbRequest);
-            RT_UNTRUSTED_NONVOLATILE_COPY_FENCE();
+                    /*
+                     * Update parameters and data buffers.
+                     */
+                    switch (enmRequestType)
+                    {
+#ifdef VBOX_WITH_64_BITS_GUESTS
+                        case VMMDevReq_HGCMCall64:
+                        case VMMDevReq_HGCMCall32:
+#else
+                        case VMMDevReq_HGCMCall:
+#endif
+                        {
+                            VMMDevHGCMCall *pHGCMCall = (VMMDevHGCMCall *)pHeader;
+                            rc = vmmdevHGCMCompleteCallRequest(pThis, pCmd, pHGCMCall);
+#ifdef VBOX_WITH_DTRACE
+                            idFunction = pCmd->u.call.u32Function;
+                            idClient   = pCmd->u.call.u32ClientID;
+#endif
+                            break;
+                        }
+
+                        case VMMDevReq_HGCMConnect:
+                        {
+                            /* save the client id in the guest request packet */
+                            VMMDevHGCMConnect *pHGCMConnect = (VMMDevHGCMConnect *)pHeader;
+                            pHGCMConnect->u32ClientID = pCmd->u.connect.u32ClientID;
+                            break;
+                        }
+
+                        default:
+                            /* make compiler happy */
+                            break;
+                    }
+                }
+                else
+                {
+                    /* Guest has changed the command type. */
+                    LogRelMax(50, ("VMMDEV: Invalid HGCM command: pCmd->enmCmdType = 0x%08X, pHeader->header.requestType = 0x%08X\n",
+                                   pCmd->enmCmdType, pHeader->header.requestType));
+
+                    ASSERT_GUEST_FAILED_STMT(rc = VERR_INVALID_PARAMETER);
+                }
+
+                /* Setup return code for the guest. */
+                if (RT_SUCCESS(rc))
+                    pHeader->result = result;
+                else
+                    pHeader->result = rc;
+
+                /* First write back the request. */
+                PDMDevHlpPhysWrite(pThis->pDevIns, pCmd->GCPhys, pHeader, pCmd->cbRequest);
+
+                /* Mark request as processed. */
+                pHeader->fu32Flags |= VBOX_HGCM_REQ_DONE;
+
+                /* Second write the flags to mark the request as processed. */
+                PDMDevHlpPhysWrite(pThis->pDevIns, pCmd->GCPhys + RT_UOFFSETOF(VMMDevHGCMRequestHeader, fu32Flags),
+                                   &pHeader->fu32Flags, sizeof(pHeader->fu32Flags));
+
+                /* Now, when the command was removed from the internal list, notify the guest. */
+                VMMDevNotifyGuest(pThis, VMMDEV_EVENT_HGCM);
+
+                RTMemFree(pHeader);
+            }
+            else
+            {
+                LogRelMax(10, ("VMMDev: Failed to allocate %u bytes for HGCM request completion!!!\n", pCmd->cbRequest));
+            }
+        }
+        /*
+         * Request was locked:
+         */
+        else
+        {
+            VMMDevHGCMRequestHeader volatile *pHeader = (VMMDevHGCMRequestHeader volatile *)pCmd->pvReqLocked;
 
             /* Verify the request type. This is the only field which is used from the guest memory. */
             const VMMDevRequestType enmRequestType = pHeader->header.requestType;
@@ -1182,24 +1275,11 @@ DECLCALLBACK(void) hgcmCompletedWorker(PPDMIHGCMPORT pInterface, int32_t result,
             else
                 pHeader->result = rc;
 
-            /* First write back the request. */
-            PDMDevHlpPhysWrite(pThis->pDevIns, pCmd->GCPhys, pHeader, pCmd->cbRequest);
-
             /* Mark request as processed. */
-            pHeader->fu32Flags |= VBOX_HGCM_REQ_DONE;
-
-            /* Second write the flags to mark the request as processed. */
-            PDMDevHlpPhysWrite(pThis->pDevIns, pCmd->GCPhys + RT_UOFFSETOF(VMMDevHGCMRequestHeader, fu32Flags),
-                               &pHeader->fu32Flags, sizeof(pHeader->fu32Flags));
+            ASMAtomicOrU32(&pHeader->fu32Flags, VBOX_HGCM_REQ_DONE);
 
             /* Now, when the command was removed from the internal list, notify the guest. */
             VMMDevNotifyGuest(pThis, VMMDEV_EVENT_HGCM);
-
-            RTMemFree(pHeader);
-        }
-        else
-        {
-            LogRelMax(10, ("VMMDev: Failed to allocate %u bytes for HGCM request completion!!!\n", pCmd->cbRequest));
         }
     }
     else
@@ -1215,7 +1295,7 @@ DECLCALLBACK(void) hgcmCompletedWorker(PPDMIHGCMPORT pInterface, int32_t result,
 
     /* Deallocate the command memory. */
     VBOXDD_HGCMCALL_COMPLETED_DONE(pCmd, idFunction, idClient, result);
-    vmmdevHGCMCmdFree(pCmd);
+    vmmdevHGCMCmdFree(pThis, pCmd);
 
 #ifndef VBOX_WITHOUT_RELEASE_STATISTICS
     /* Update stats. */
@@ -1772,7 +1852,7 @@ static int vmmdevHGCMRestoreCall(PVMMDEV pThis, uint32_t u32SSMVersion, const VB
     if (RT_SUCCESS(rc))
         *ppRestoredCmd = pCmd;
     else
-        vmmdevHGCMCmdFree(pCmd);
+        vmmdevHGCMCmdFree(pThis, pCmd);
 
     return rc;
 }
@@ -1884,7 +1964,7 @@ int vmmdevHGCMLoadStateDone(PVMMDEV pThis)
          *   * report an error to the guest if resubmit failed.
          */
         VMMDevHGCMRequestHeader *pReqHdr = (VMMDevHGCMRequestHeader *)RTMemAlloc(pCmd->cbRequest);
-        AssertBreakStmt(pReqHdr, vmmdevHGCMCmdFree(pCmd); rcFunc = VERR_NO_MEMORY);
+        AssertBreakStmt(pReqHdr, vmmdevHGCMCmdFree(pThis, pCmd); rcFunc = VERR_NO_MEMORY);
 
         PDMDevHlpPhysRead(pThis->pDevIns, pCmd->GCPhys, pReqHdr, pCmd->cbRequest);
         RT_UNTRUSTED_NONVOLATILE_COPY_FENCE();
@@ -1904,7 +1984,7 @@ int vmmdevHGCMLoadStateDone(PVMMDEV pThis)
                 if (RT_SUCCESS(rcCmd))
                 {
                     Assert(pCmd != pRestoredCmd); /* vmmdevHGCMRestoreCommand must allocate restored command. */
-                    vmmdevHGCMCmdFree(pCmd);
+                    vmmdevHGCMCmdFree(pThis, pCmd);
                     pCmd = pRestoredCmd;
                 }
             }
@@ -1977,7 +2057,7 @@ int vmmdevHGCMLoadStateDone(PVMMDEV pThis)
             VMMDevNotifyGuest(pThis, VMMDEV_EVENT_HGCM);
 
             /* Deallocate the command memory. */
-            vmmdevHGCMCmdFree(pCmd);
+            vmmdevHGCMCmdFree(pThis, pCmd);
         }
 
         RTMemFree(pReqHdr);
@@ -1988,7 +2068,7 @@ int vmmdevHGCMLoadStateDone(PVMMDEV pThis)
         RTListForEachSafe(&listLoadedCommands, pCmd, pNext, VBOXHGCMCMD, node)
         {
             RTListNodeRemove(&pCmd->node);
-            vmmdevHGCMCmdFree(pCmd);
+            vmmdevHGCMCmdFree(pThis, pCmd);
         }
     }
 
@@ -2007,6 +2087,6 @@ void vmmdevHGCMDestroy(PVMMDEV pThis)
     RTListForEachSafe(&pThis->listHGCMCmd, pCmd, pNext, VBOXHGCMCMD, node)
     {
         vmmdevHGCMRemoveCommand(pThis, pCmd);
-        vmmdevHGCMCmdFree(pCmd);
+        vmmdevHGCMCmdFree(pThis, pCmd);
     }
 }

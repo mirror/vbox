@@ -31,6 +31,15 @@
 
 #define VMMDEV_WITH_ALT_TIMESYNC
 
+/** Request locking structure (HGCM optimization). */
+typedef struct VMMDEVREQLOCK
+{
+    void          *pvReq;
+    PGMPAGEMAPLOCK Lock;
+} VMMDEVREQLOCK;
+/** Pointer to a request lock structure. */
+typedef VMMDEVREQLOCK *PVMMDEVREQLOCK;
+
 typedef struct DISPLAYCHANGEREQUEST
 {
     bool fPending;
