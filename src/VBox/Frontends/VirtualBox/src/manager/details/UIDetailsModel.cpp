@@ -230,21 +230,6 @@ void UIDetailsModel::loadSettings()
 {
     /* Load settings: */
     m_categories = gEDataManager->selectorWindowDetailsElements();
-    /* If ccategories are empty: */
-    if (m_categories.isEmpty())
-    {
-        /* Propose the defaults: */
-        m_categories[DetailsElementType_General] = true;
-        m_categories[DetailsElementType_Preview] = true;
-        m_categories[DetailsElementType_System] = true;
-        m_categories[DetailsElementType_Display] = true;
-        m_categories[DetailsElementType_Storage] = true;
-        m_categories[DetailsElementType_Audio] = true;
-        m_categories[DetailsElementType_Network] = true;
-        m_categories[DetailsElementType_USB] = true;
-        m_categories[DetailsElementType_SF] = true;
-        m_categories[DetailsElementType_Description] = true;
-    }
 }
 
 void UIDetailsModel::saveSettings()

@@ -2886,6 +2886,22 @@ QMap<DetailsElementType, bool> UIExtraDataManager::selectorWindowDetailsElements
             elements[enmType] = fOpened;
     }
 
+    /* If settings are empty: */
+    if (elements.isEmpty())
+    {
+        /* Propose the defaults: */
+        elements[DetailsElementType_General] = true;
+        elements[DetailsElementType_Preview] = true;
+        elements[DetailsElementType_System] = true;
+        elements[DetailsElementType_Display] = true;
+        elements[DetailsElementType_Storage] = true;
+        elements[DetailsElementType_Audio] = true;
+        elements[DetailsElementType_Network] = true;
+        elements[DetailsElementType_USB] = true;
+        elements[DetailsElementType_SF] = true;
+        elements[DetailsElementType_Description] = true;
+    }
+
     /* Return elements: */
     return elements;
 }
