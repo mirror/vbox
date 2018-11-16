@@ -132,6 +132,12 @@ void UIDetailsModel::sltHandleToggleFinished()
     m_pRoot->rebuildGroup();
 }
 
+void UIDetailsModel::sltHandleExtraDataCategoriesChange()
+{
+    m_categories = gEDataManager->selectorWindowDetailsElements();
+    m_pRoot->rebuildGroup();
+}
+
 void UIDetailsModel::sltHandleExtraDataOptionsChange(DetailsElementType)
 {
     m_pRoot->rebuildGroup();

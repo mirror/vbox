@@ -93,6 +93,8 @@ public slots:
     void sltHandleToggleStarted();
     void sltHandleToggleFinished();
 
+    /** Handle extra-data categories change. */
+    void sltHandleExtraDataCategoriesChange();
     /** Handle extra-data options change for category of certain @a enmType. */
     void sltHandleExtraDataOptionsChange(DetailsElementType enmType);
 

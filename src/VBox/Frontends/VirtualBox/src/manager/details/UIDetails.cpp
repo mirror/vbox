@@ -74,6 +74,8 @@ void UIDetails::prepare()
     }
 
     /* Extra-data events connections: */
+    connect(gEDataManager, &UIExtraDataManager::sigDetailsCategoriesChange,
+            m_pDetailsModel, &UIDetailsModel::sltHandleExtraDataCategoriesChange);
     connect(gEDataManager, &UIExtraDataManager::sigDetailsOptionsChange,
             m_pDetailsModel, &UIDetailsModel::sltHandleExtraDataOptionsChange);
 

@@ -4610,6 +4610,9 @@ void UIExtraDataManager::sltExtraDataChange(const QUuid &uMachineID, const QStri
             /* Runtime UI host-key combintation changed? */
             else if (strKey == GUI_Input_HostKeyCombination)
                 emit sigRuntimeUIHostKeyCombinationChange();
+            /* Details categories: */
+            else if (strKey == GUI_Details_Elements)
+                emit sigDetailsCategoriesChange();
             /* Details options: */
             else if (strKey.startsWith(QString(GUI_Details_Elements) + '/'))
             {

@@ -71,6 +71,8 @@ signals:
     /** Notifies about Runtime UI host-key combination change. */
     void sigRuntimeUIHostKeyCombinationChange();
 
+    /** Notifies about VirtualBox Manager / Details pane categories change. */
+    void sigDetailsCategoriesChange();
     /** Notifies about VirtualBox Manager / Details pane options change. */
     void sigDetailsOptionsChange(DetailsElementType enmType);
 
