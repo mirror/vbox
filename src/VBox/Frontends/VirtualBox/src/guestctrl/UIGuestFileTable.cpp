@@ -330,10 +330,9 @@ void UIGuestFileTable::copyHostToGuest(const QStringList &hostSourcePathList)
     if (!m_comGuestSession.isOk())
     {
         emit sigLogOutput(UIErrorString::formatErrorInfo(m_comGuestSession), FileManagerLogType_Error);
-        //msgCenter().cannotRemoveMachine(machine);
         return;
     }
-    //emit sigNewFileOperation(progress);
+    emit sigNewFileOperation(progress);
     // msgCenter().showModalProgressDialog(progress, "copying", ":/progress_delete_90px.png");
     // if (!progress.isOk() || progress.GetResultCode() != 0)
     // {

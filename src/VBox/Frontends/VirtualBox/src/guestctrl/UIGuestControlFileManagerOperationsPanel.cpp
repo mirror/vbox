@@ -22,9 +22,12 @@
 /* Qt includes: */
 # include <QHBoxLayout>
 # include <QLabel>
+# include <QProgressBar>
 # include <QTableWidget>
 
 /* GUI includes: */
+# include "QIToolButton.h"
+# include "UIIconPool.h"
 # include "UIGuestControlFileManager.h"
 # include "UIGuestControlFileManagerOperationsPanel.h"
 # include "UIProgressEventHandler.h"
@@ -40,7 +43,7 @@
 *   UIFileOperationProgressWidget definition.                                                                                    *
 *********************************************************************************************************************************/
 
-class UIFileOperationProgressWidget : public QWidget
+class UIFileOperationProgressWidget : public QIWithRetranslateUI<QWidget>
 {
 
     Q_OBJECT;
@@ -50,10 +53,15 @@ public:
     UIFileOperationProgressWidget(const CProgress &comProgress, QWidget *pParent = 0);
     ~UIFileOperationProgressWidget();
 
+protected:
+
+    void retranslateUi() /* override */;
+
 private slots:
 
     void sltHandleProgressPercentageChange(const QUuid &uProgressId, const int iPercent);
     void sltHandleProgressTaskComplete(const QUuid &uProgressId);
+    void sltCancelProgress();
 
 private:
 
@@ -65,7 +73,8 @@ private:
     CProgress               m_comProgress;
     UIProgressEventHandler *m_pEventHandler;
     QHBoxLayout            *m_pMainLayout;
-    QLabel                 *m_pPercentageLabel;
+    QProgressBar           *m_pProgressBar;
+    QIToolButton           *m_pCancelButton;
 };
 
 
@@ -74,11 +83,12 @@ private:
 *********************************************************************************************************************************/
 
 UIFileOperationProgressWidget::UIFileOperationProgressWidget(const CProgress &comProgress, QWidget *pParent /* = 0 */)
-    :QWidget(pParent)
+    : QIWithRetranslateUI<QWidget>(pParent)
     , m_comProgress(comProgress)
     , m_pEventHandler(0)
     , m_pMainLayout(0)
-    , m_pPercentageLabel(0)
+    , m_pProgressBar(0)
+    , m_pCancelButton(0)
 {
     prepare();
 }
@@ -86,6 +96,12 @@ UIFileOperationProgressWidget::UIFileOperationProgressWidget(const CProgress &co
 UIFileOperationProgressWidget::~UIFileOperationProgressWidget()
 {
     cleanupEventHandler();
+}
+
+void UIFileOperationProgressWidget::retranslateUi()
+{
+    if (m_pCancelButton)
+        m_pCancelButton->setToolTip(UIGuestControlFileManager::tr("Close the pane"));
 }
 
 void UIFileOperationProgressWidget::prepare()
@@ -97,12 +113,28 @@ void UIFileOperationProgressWidget::prepare()
 void UIFileOperationProgressWidget::prepareWidgets()
 {
     m_pMainLayout = new QHBoxLayout;
-    if (m_pMainLayout)
+    if (!m_pMainLayout)
+        return;
+    m_pProgressBar = new QProgressBar;
+    if (m_pProgressBar)
     {
-        m_pPercentageLabel = new QLabel;
-        m_pPercentageLabel->setText("0asdsad");
-        m_pMainLayout->addWidget(m_pPercentageLabel);
+        m_pProgressBar->setMinimum(0);
+        m_pProgressBar->setMaximum(100);
+        m_pProgressBar->setTextVisible(true);
+        m_pProgressBar->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+        m_pMainLayout->addWidget(m_pProgressBar);
     }
+
+    m_pCancelButton = new QIToolButton;
+    if (m_pCancelButton)
+    {
+        m_pCancelButton->setIcon(UIIconPool::iconSet(":/close_16px.png"));
+        m_pMainLayout->addWidget(m_pCancelButton, 0, Qt::AlignRight);
+        connect(m_pCancelButton, &QIToolButton::clicked, this, &UIFileOperationProgressWidget::sltCancelProgress);
+        if (!m_comProgress.GetCancelable())
+            m_pCancelButton->setEnabled(false);
+    }
+
     setLayout(m_pMainLayout);
 }
 
@@ -125,6 +157,7 @@ void UIFileOperationProgressWidget::sltHandleProgressPercentageChange(const QUui
 {
     Q_UNUSED(uProgressId);
     Q_UNUSED(iPercent);
+    m_pProgressBar->setValue(iPercent);
 }
 
 void UIFileOperationProgressWidget::sltHandleProgressTaskComplete(const QUuid &uProgressId)
@@ -132,6 +165,10 @@ void UIFileOperationProgressWidget::sltHandleProgressTaskComplete(const QUuid &u
     Q_UNUSED(uProgressId);
 }
 
+void UIFileOperationProgressWidget::sltCancelProgress()
+{
+    m_comProgress.Cancel();
+}
 
 /*********************************************************************************************************************************
 *   UIGuestControlFileManagerOperationsPanel implementation.                                                                     *
@@ -153,6 +190,7 @@ void UIGuestControlFileManagerOperationsPanel::addNewProgress(const CProgress &c
 
     m_pTableWidget->setRowCount(m_pTableWidget->rowCount() + 1);
     m_pTableWidget->setCellWidget(m_pTableWidget->rowCount() - 1, 0, new UIFileOperationProgressWidget(comProgress));
+    m_pTableWidget->resizeColumnsToContents();
 }
 
 QString UIGuestControlFileManagerOperationsPanel::panelName() const

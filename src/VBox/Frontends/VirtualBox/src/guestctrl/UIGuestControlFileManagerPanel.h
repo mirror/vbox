@@ -52,7 +52,7 @@ protected:
     QHBoxLayout*               mainLayout();
 
     /** Handles the translation event. */
-    void retranslateUi();
+    void retranslateUi() /* override */;
 
     /** Handles Qt @a pEvent, used for keyboard processing. */
     bool eventFilter(QObject *pObject, QEvent *pEvent);
