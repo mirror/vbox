@@ -32,8 +32,10 @@
 #include <VBox/cdefs.h>
 #include <VBox/types.h>
 #include <VBox/err.h>
-#include <VBox/vmm/stam.h>
-#include <VBox/vmm/dbgf.h>
+#ifdef IN_RING3
+# include <VBox/vmm/stam.h>
+# include <VBox/vmm/dbgf.h>
+#endif
 #ifdef VBOX_TEST_HGCM_PARMS
 # include <iprt/test.h>
 #endif
