@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __HGCM_h__
-#define __HGCM_h__
+#ifndef ___HGCM_h_
+#define ___HGCM_h_
 
 #include <VBox/cdefs.h>
 #include <VBox/types.h>
@@ -33,31 +33,34 @@ struct _HGCMSVCEXTHANDLEDATA;
 typedef struct _HGCMSVCEXTHANDLEDATA *HGCMSVCEXTHANDLE;
 
 RT_C_DECLS_BEGIN
-int HGCMHostInit (void);
-int HGCMHostShutdown (void);
+int HGCMHostInit(void);
+int HGCMHostShutdown(void);
 
-int HGCMHostReset (void);
+int HGCMHostReset(void);
 
-int HGCMHostLoad (const char *pszServiceLibrary, const char *pszServiceName, PUVM pUVM);
+int HGCMHostLoad(const char *pszServiceLibrary, const char *pszServiceName, PUVM pUVM);
 
-int HGCMHostRegisterServiceExtension (HGCMSVCEXTHANDLE *pHandle, const char *pszServiceName, PFNHGCMSVCEXT pfnExtension, void *pvExtension);
-void HGCMHostUnregisterServiceExtension (HGCMSVCEXTHANDLE handle);
+int HGCMHostRegisterServiceExtension(HGCMSVCEXTHANDLE *pHandle, const char *pszServiceName, PFNHGCMSVCEXT pfnExtension, void *pvExtension);
+void HGCMHostUnregisterServiceExtension(HGCMSVCEXTHANDLE handle);
 
-int HGCMGuestConnect (PPDMIHGCMPORT pHGCMPort, PVBOXHGCMCMD pCmdPtr, const char *pszServiceName, uint32_t *pClientID);
-int HGCMGuestDisconnect (PPDMIHGCMPORT pHGCMPort, PVBOXHGCMCMD pCmdPtr, uint32_t clientID);
-int HGCMGuestCall (PPDMIHGCMPORT pHGCMPort, PVBOXHGCMCMD pCmdPtr, uint32_t clientID, uint32_t function, uint32_t cParms, VBOXHGCMSVCPARM *paParms);
+int HGCMGuestConnect(PPDMIHGCMPORT pHGCMPort, PVBOXHGCMCMD pCmdPtr, const char *pszServiceName, uint32_t *pClientID);
+int HGCMGuestDisconnect(PPDMIHGCMPORT pHGCMPort, PVBOXHGCMCMD pCmdPtr, uint32_t clientID);
+int HGCMGuestCall(PPDMIHGCMPORT pHGCMPort, PVBOXHGCMCMD pCmdPtr, uint32_t clientID, uint32_t function, uint32_t cParms,
+                  VBOXHGCMSVCPARM *paParms, uint64_t tsArrival);
 
-int HGCMHostCall (const char *pszServiceName, uint32_t function, uint32_t cParms, VBOXHGCMSVCPARM aParms[]);
+int HGCMHostCall(const char *pszServiceName, uint32_t function, uint32_t cParms, VBOXHGCMSVCPARM aParms[]);
 
 #ifdef VBOX_WITH_CRHGSMI
-int HGCMHostSvcHandleCreate (const char *pszServiceName, HGCMCVSHANDLE * phSvc);
-int HGCMHostSvcHandleDestroy (HGCMCVSHANDLE hSvc);
-int HGCMHostFastCallAsync (HGCMCVSHANDLE hSvc, uint32_t function, PVBOXHGCMSVCPARM pParm, PHGCMHOSTFASTCALLCB pfnCompletion, void *pvCompletion);
+int HGCMHostSvcHandleCreate(const char *pszServiceName, HGCMCVSHANDLE * phSvc);
+int HGCMHostSvcHandleDestroy(HGCMCVSHANDLE hSvc);
+int HGCMHostFastCallAsync(HGCMCVSHANDLE hSvc, uint32_t function, PVBOXHGCMSVCPARM pParm,
+                          PHGCMHOSTFASTCALLCB pfnCompletion, void *pvCompletion);
 #endif
 
-int HGCMHostSaveState (PSSMHANDLE pSSM);
-int HGCMHostLoadState (PSSMHANDLE pSSM);
+int HGCMHostSaveState(PSSMHANDLE pSSM);
+int HGCMHostLoadState(PSSMHANDLE pSSM);
 
 RT_C_DECLS_END
 
-#endif /* !__HGCM_h__ */
+#endif /* !___HGCM_h_ */
+

@@ -190,7 +190,7 @@ class HGCMService
          */
 
         int GuestCall(PPDMIHGCMPORT pHGCMPort, PVBOXHGCMCMD pCmd, uint32_t u32ClientId,
-                      uint32_t u32Function, uint32_t cParms, VBOXHGCMSVCPARM aParms[]);
+                      uint32_t u32Function, uint32_t cParms, VBOXHGCMSVCPARM aParms[], uint64_t tsArrival);
 };
 
 
@@ -447,6 +447,9 @@ class HGCMMsgCall: public HGCMMsgHeader
         uint32_t cParms;
 
         VBOXHGCMSVCPARM *paParms;
+
+        /** The STAM_GET_TS() value when the request arrived. */
+        uint64_t tsArrival;
 };
 
 class HGCMMsgLoadSaveStateClient: public HGCMMsgCore
@@ -636,7 +639,7 @@ DECLCALLBACK(void) hgcmServiceThread(HGCMTHREADHANDLE ThreadHandle, void *pvUser
                 {
                     pSvc->m_fntable.pfnCall(pSvc->m_fntable.pvService, (VBOXHGCMCALLHANDLE)pMsg, pMsg->u32ClientId,
                                             HGCM_CLIENT_DATA(pSvc, pClient), pMsg->u32Function,
-                                            pMsg->cParms, pMsg->paParms);
+                                            pMsg->cParms, pMsg->paParms, pMsg->tsArrival);
 
                     hgcmObjDereference(pClient);
                 }
@@ -1661,10 +1664,11 @@ void HGCMService::UnregisterExtension(HGCMSVCEXTHANDLE handle)
  * @param u32Function    The function number.
  * @param cParms         Number of parameters.
  * @param paParms        Pointer to array of parameters.
+ * @param tsArrival      The STAM_GET_TS() value when the request arrived.
  * @return VBox rc.
  */
 int HGCMService::GuestCall(PPDMIHGCMPORT pHGCMPort, PVBOXHGCMCMD pCmd, uint32_t u32ClientId, uint32_t u32Function,
-                           uint32_t cParms, VBOXHGCMSVCPARM paParms[])
+                           uint32_t cParms, VBOXHGCMSVCPARM paParms[], uint64_t tsArrival)
 {
     HGCMMSGHANDLE hMsg = 0;
 
@@ -1685,6 +1689,7 @@ int HGCMService::GuestCall(PPDMIHGCMPORT pHGCMPort, PVBOXHGCMCMD pCmd, uint32_t 
         pMsg->u32Function = u32Function;
         pMsg->cParms      = cParms;
         pMsg->paParms     = paParms;
+        pMsg->tsArrival   = tsArrival;
 
         hgcmObjDereference(pMsg);
 
@@ -2461,6 +2466,7 @@ int HGCMHostLoadState(PSSMHANDLE pSSM)
  * @param u32Function    The function number.
  * @param cParms         Number of parameters.
  * @param paParms        Pointer to array of parameters.
+ * @param tsArrival      The STAM_GET_TS() value when the request arrived.
  * @return VBox rc.
  */
 int HGCMGuestCall(PPDMIHGCMPORT pHGCMPort,
@@ -2468,7 +2474,8 @@ int HGCMGuestCall(PPDMIHGCMPORT pHGCMPort,
                   uint32_t u32ClientId,
                   uint32_t u32Function,
                   uint32_t cParms,
-                  VBOXHGCMSVCPARM *paParms)
+                  VBOXHGCMSVCPARM *paParms,
+                  uint64_t tsArrival)
 {
     LogFlowFunc(("pHGCMPort = %p, pCmd = %p, u32ClientId = %d, u32Function = %d, cParms = %d, paParms = %p\n",
                   pHGCMPort, pCmd, u32ClientId, u32Function, cParms, paParms));
@@ -2488,7 +2495,7 @@ int HGCMGuestCall(PPDMIHGCMPORT pHGCMPort,
         AssertRelease(pClient->pService);
 
         /* Forward the message to the service thread. */
-        rc = pClient->pService->GuestCall(pHGCMPort, pCmd, u32ClientId, u32Function, cParms, paParms);
+        rc = pClient->pService->GuestCall(pHGCMPort, pCmd, u32ClientId, u32Function, cParms, paParms, tsArrival);
 
         hgcmObjDereference(pClient);
     }

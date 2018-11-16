@@ -205,9 +205,10 @@ static DECLCALLBACK(void) svcCall(void *pvService,
                                   void *pvClient,
                                   uint32_t u32Function,
                                   uint32_t cParms,
-                                  VBOXHGCMSVCPARM paParms[])
+                                  VBOXHGCMSVCPARM paParms[],
+                                  uint64_t tsArrival)
 {
-    NOREF(pvService);
+    RT_NOREF(pvService, tsArrival);
 
     int rc = VINF_SUCCESS;
 

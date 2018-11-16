@@ -139,6 +139,11 @@ typedef struct VBOXHGCMCMD
     /** The type of the guest request. */
     VMMDevRequestType   enmRequestType;
 
+    /** The STAM_GET_TS() value when the request arrived. */
+    uint64_t            tsArrival;
+    /** The STAM_GET_TS() value when the hgcmCompleted() is called. */
+    uint64_t            tsComplete;
+
     union
     {
         struct
@@ -875,8 +880,10 @@ static int vmmdevHGCMCallFetchGuestParms(PVMMDEV pThis, PVBOXHGCMCMD pCmd,
  * @param   cbHGCMCall      Size of the entire request (including HGCM parameters).
  * @param   GCPhys          The guest physical address of the request.
  * @param   enmRequestType  The request type. Distinguishes 64 and 32 bit calls.
+ * @param   tsArrival       The STAM_GET_TS() value when the request arrived.
  */
-int vmmdevHGCMCall(PVMMDEV pThis, const VMMDevHGCMCall *pHGCMCall, uint32_t cbHGCMCall, RTGCPHYS GCPhys, VMMDevRequestType enmRequestType)
+int vmmdevHGCMCall(PVMMDEV pThis, const VMMDevHGCMCall *pHGCMCall, uint32_t cbHGCMCall, RTGCPHYS GCPhys,
+                   VMMDevRequestType enmRequestType, uint64_t tsArrival)
 {
     LogFunc(("client id = %d, function = %d, cParms = %d, enmRequestType = %d\n",
              pHGCMCall->u32ClientID, pHGCMCall->u32Function, pHGCMCall->cParms, enmRequestType));
@@ -894,7 +901,7 @@ int vmmdevHGCMCall(PVMMDEV pThis, const VMMDevHGCMCall *pHGCMCall, uint32_t cbHG
     uint32_t cbHGCMParmStruct;
     int rc = vmmdevHGCMCallAlloc(pHGCMCall, cbHGCMCall, GCPhys, enmRequestType, &pCmd, &cbHGCMParmStruct);
     if (RT_SUCCESS(rc))
-        /* likely */;
+        pCmd->tsArrival = tsArrival;
     else
         return rc;
 
@@ -910,8 +917,16 @@ int vmmdevHGCMCall(PVMMDEV pThis, const VMMDevHGCMCall *pHGCMCall, uint32_t cbHG
         /* Pass the function call to HGCM connector for actual processing */
         rc = pThis->pHGCMDrv->pfnCall(pThis->pHGCMDrv, pCmd,
                                       pCmd->u.call.u32ClientID, pCmd->u.call.u32Function,
-                                      pCmd->u.call.cParms, pCmd->u.call.paHostParms);
-        if (RT_FAILURE(rc))
+                                      pCmd->u.call.cParms, pCmd->u.call.paHostParms, tsArrival);
+        if (RT_SUCCESS(rc))
+        {
+#ifndef VBOX_WITHOUT_RELEASE_STATISTICS
+            uint64_t tsNow;
+            STAM_GET_TS(tsNow);
+            STAM_REL_PROFILE_ADD_PERIOD(&pThis->StatHgcmCmdArrival, tsNow - tsArrival);
+#endif
+        }
+        else
         {
             LogFunc(("pfnCall rc = %Rrc\n", rc));
             vmmdevHGCMRemoveCommand(pThis, pCmd);
@@ -1196,10 +1211,24 @@ DECLCALLBACK(void) hgcmCompletedWorker(PPDMIHGCMPORT pInterface, int32_t result,
         LogFlowFunc(("Cancelled command %p\n", pCmd));
     }
 
+#ifndef VBOX_WITHOUT_RELEASE_STATISTICS
+    /* Save for final stats. */
+    uint64_t const tsArrival = pCmd->tsArrival;
+    uint64_t const tsComplete = pCmd->tsComplete;
+#endif
+
     /* Deallocate the command memory. */
+    VBOXDD_HGCMCALL_COMPLETED_DONE(pCmd, idFunction, idClient, result);
     vmmdevHGCMCmdFree(pCmd);
 
-    VBOXDD_HGCMCALL_COMPLETED_DONE(pCmd, idFunction, idClient, result);
+#ifndef VBOX_WITHOUT_RELEASE_STATISTICS
+    /* Update stats. */
+    uint64_t tsNow;
+    STAM_GET_TS(tsNow);
+    STAM_REL_PROFILE_ADD_PERIOD(&pThis->StatHgcmCmdCompletion, tsNow - tsComplete);
+    if (tsArrival != 0)
+        STAM_REL_PROFILE_ADD_PERIOD(&pThis->StatHgcmCmdTotal,  tsNow - tsArrival);
+#endif
 }
 
 /** HGCM callback for request completion. Forwards to hgcmCompletedWorker.
@@ -1211,6 +1240,7 @@ DECLCALLBACK(void) hgcmCompletedWorker(PPDMIHGCMPORT pInterface, int32_t result,
 DECLCALLBACK(void) hgcmCompleted(PPDMIHGCMPORT pInterface, int32_t result, PVBOXHGCMCMD pCmd)
 {
     PVMMDEV pThis = RT_FROM_MEMBER(pInterface, VMMDevState, IHGCMPort);
+    STAM_GET_TS(pCmd->tsComplete);
 
     VBOXDD_HGCMCALL_COMPLETED_REQ(pCmd, result);
 
@@ -1908,9 +1938,11 @@ int vmmdevHGCMLoadStateDone(PVMMDEV pThis)
                             vmmdevHGCMAddCommand(pThis, pCmd);
 
                             /* Pass the function call to HGCM connector for actual processing */
+                            uint64_t tsNow;
+                            STAM_GET_TS(tsNow);
                             rcCmd = pThis->pHGCMDrv->pfnCall(pThis->pHGCMDrv, pCmd,
                                                              pCmd->u.call.u32ClientID, pCmd->u.call.u32Function,
-                                                             pCmd->u.call.cParms, pCmd->u.call.paHostParms);
+                                                             pCmd->u.call.cParms, pCmd->u.call.paHostParms, tsNow);
                             if (RT_FAILURE(rcCmd))
                             {
                                 LogFunc(("pfnCall rc = %Rrc\n", rcCmd));

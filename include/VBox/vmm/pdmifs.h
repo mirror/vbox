@@ -2125,17 +2125,18 @@ typedef struct PDMIHGCMCONNECTOR
     /**
      * Process a guest issued command.
      *
-     * @param   pInterface          Pointer to this interface.
-     * @param   pCmd                A pointer that identifies the command.
-     * @param   u32ClientID         The client id returned by the pfnConnect call.
-     * @param   u32Function         Function to be performed by the service.
-     * @param   cParms              Number of parameters in the array pointed to by paParams.
-     * @param   paParms             Pointer to an array of parameters.
+     * @param   pInterface  Pointer to this interface.
+     * @param   pCmd        A pointer that identifies the command.
+     * @param   u32ClientID The client id returned by the pfnConnect call.
+     * @param   u32Function Function to be performed by the service.
+     * @param   cParms      Number of parameters in the array pointed to by paParams.
+     * @param   paParms     Pointer to an array of parameters.
+     * @param   tsArrival   The STAM_GET_TS() value when the request arrived.
      * @return  VBox status code.
      * @thread  The emulation thread.
      */
     DECLR3CALLBACKMEMBER(int, pfnCall,(PPDMIHGCMCONNECTOR pInterface, PVBOXHGCMCMD pCmd, uint32_t u32ClientID, uint32_t u32Function,
-                                       uint32_t cParms, PVBOXHGCMSVCPARM paParms));
+                                       uint32_t cParms, PVBOXHGCMSVCPARM paParms, uint64_t tsArrival));
 
 } PDMIHGCMCONNECTOR;
 /** PDMIHGCMCONNECTOR interface ID. */

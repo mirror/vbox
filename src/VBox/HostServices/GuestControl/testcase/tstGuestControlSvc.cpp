@@ -210,7 +210,7 @@ static int testClient(const VBOXHGCMSVCFNTABLE *pTable)
         aParmsGuest[0].setUInt32(0 /* Msg type */);
         aParmsGuest[1].setUInt32(0 /* Parameters */);
         pTable->pfnCall(pTable->pvService, &callHandle, 1 /* Client ID */, NULL /* pvClient */,
-                        GUEST_MSG_WAIT, 2, &aParmsGuest[0]);
+                        GUEST_MSG_WAIT, 2, &aParmsGuest[0], 0);
         RTTEST_CHECK_RC_RET(g_hTest, callHandle.rc, VINF_SUCCESS, callHandle.rc);
 
         /* Host: Add a dummy command. */

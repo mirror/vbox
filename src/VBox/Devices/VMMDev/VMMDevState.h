@@ -273,10 +273,13 @@ typedef struct VMMDevState
     uint32_t u32HGCMEnabled;
     /** Saved state version of restored commands. */
     uint32_t u32SSMVersion;
-#if HC_ARCH_BITS == 32
+# if HC_ARCH_BITS == 32
     /** Alignment padding. */
     uint32_t u32Alignment7;
-#endif
+# endif
+    STAMPROFILE StatHgcmCmdArrival;
+    STAMPROFILE StatHgcmCmdCompletion;
+    STAMPROFILE StatHgcmCmdTotal;
 #endif /* VBOX_WITH_HGCM */
 
     /** Status LUN: Shared folders LED */

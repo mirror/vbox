@@ -641,7 +641,7 @@ static DECLCALLBACK(int) iface_hgcmDisconnect(PPDMIHGCMCONNECTOR pInterface, PVB
 }
 
 static DECLCALLBACK(int) iface_hgcmCall(PPDMIHGCMCONNECTOR pInterface, PVBOXHGCMCMD pCmd, uint32_t u32ClientID,
-                                        uint32_t u32Function, uint32_t cParms, PVBOXHGCMSVCPARM paParms)
+                                        uint32_t u32Function, uint32_t cParms, PVBOXHGCMSVCPARM paParms, uint64_t tsArrival)
 {
     Log9(("Enter\n"));
 
@@ -650,7 +650,7 @@ static DECLCALLBACK(int) iface_hgcmCall(PPDMIHGCMCONNECTOR pInterface, PVBOXHGCM
     if (!pDrv->pVMMDev || !pDrv->pVMMDev->hgcmIsActive())
         return VERR_INVALID_STATE;
 
-    return HGCMGuestCall(pDrv->pHGCMPort, pCmd, u32ClientID, u32Function, cParms, paParms);
+    return HGCMGuestCall(pDrv->pHGCMPort, pCmd, u32ClientID, u32Function, cParms, paParms, tsArrival);
 }
 
 /**

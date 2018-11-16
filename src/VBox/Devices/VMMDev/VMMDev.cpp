@@ -1773,8 +1773,9 @@ static int vmmdevReqHandler_HGCMDisconnect(PVMMDEV pThis, VMMDevRequestHeader *p
  * @param   pThis           The VMMDev instance data.
  * @param   pReqHdr         The header of the request to handle.
  * @param   GCPhysReqHdr    The guest physical address of the request header.
+ * @param   tsArrival       The STAM_GET_TS() value when the request arrived.
  */
-static int vmmdevReqHandler_HGCMCall(PVMMDEV pThis, VMMDevRequestHeader *pReqHdr, RTGCPHYS GCPhysReqHdr)
+static int vmmdevReqHandler_HGCMCall(PVMMDEV pThis, VMMDevRequestHeader *pReqHdr, RTGCPHYS GCPhysReqHdr, uint64_t tsArrival)
 {
     VMMDevHGCMCall *pReq = (VMMDevHGCMCall *)pReqHdr;
     AssertMsgReturn(pReq->header.header.size >= sizeof(*pReq), ("%u\n", pReq->header.header.size), VERR_INVALID_PARAMETER);
@@ -1784,7 +1785,7 @@ static int vmmdevReqHandler_HGCMCall(PVMMDEV pThis, VMMDevRequestHeader *pReqHdr
         Log2(("VMMDevReq_HGCMCall: sizeof(VMMDevHGCMRequest) = %04X\n", sizeof(VMMDevHGCMCall)));
         Log2(("%.*Rhxd\n", pReq->header.header.size, pReq));
 
-        return vmmdevHGCMCall(pThis, pReq, pReq->header.header.size, GCPhysReqHdr, pReq->header.header.requestType);
+        return vmmdevHGCMCall(pThis, pReq, pReq->header.header.size, GCPhysReqHdr, pReq->header.header.requestType, tsArrival);
     }
 
     Log(("VMMDevReq_HGCMCall: HGCM Connector is NULL!\n"));
@@ -2557,12 +2558,14 @@ static int vmmdevReqHandler_WriteCoreDump(PVMMDEV pThis, VMMDevRequestHeader *pR
  * @param   pReqHdr         The request header (cached in host memory).
  * @param   GCPhysReqHdr    The guest physical address of the request (for
  *                          HGCM).
+ * @param   tsArrival       The STAM_GET_TS() value when the request arrived.
  * @param   pfDelayedUnlock Where to indicate whether the critical section exit
  *                          needs to be delayed till after the request has been
  *                          written back. This is a HGCM kludge, see critsect
  *                          work in hgcmCompletedWorker for more details.
  */
-static int vmmdevReqDispatcher(PVMMDEV pThis, VMMDevRequestHeader *pReqHdr, RTGCPHYS GCPhysReqHdr, bool *pfDelayedUnlock)
+static int vmmdevReqDispatcher(PVMMDEV pThis, VMMDevRequestHeader *pReqHdr, RTGCPHYS GCPhysReqHdr,
+                               uint64_t tsArrival, bool *pfDelayedUnlock)
 {
     int rcRet = VINF_SUCCESS;
     *pfDelayedUnlock = false;
@@ -2690,7 +2693,7 @@ static int vmmdevReqDispatcher(PVMMDEV pThis, VMMDevRequestHeader *pReqHdr, RTGC
 # else
         case VMMDevReq_HGCMCall:
 # endif /* VBOX_WITH_64_BITS_GUESTS */
-            pReqHdr->rc = vmmdevReqHandler_HGCMCall(pThis, pReqHdr, GCPhysReqHdr);
+            pReqHdr->rc = vmmdevReqHandler_HGCMCall(pThis, pReqHdr, GCPhysReqHdr, tsArrival);
             *pfDelayedUnlock = true;
             break;
 
@@ -2834,6 +2837,9 @@ static int vmmdevReqDispatcher(PVMMDEV pThis, VMMDevRequestHeader *pReqHdr, RTGC
  */
 static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
 {
+    uint64_t tsArrival;
+    STAM_GET_TS(tsArrival);
+
     RT_NOREF2(Port, cb);
     PVMMDEV pThis = (VMMDevState*)pvUser;
 
@@ -2899,7 +2905,7 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
                                       cbLeft);
 
                 PDMCritSectEnter(&pThis->CritSect, VERR_IGNORED);
-                rcRet = vmmdevReqDispatcher(pThis, pRequestHeader, u32, &fDelayedUnlock);
+                rcRet = vmmdevReqDispatcher(pThis, pRequestHeader, u32, tsArrival, &fDelayedUnlock);
                 if (!fDelayedUnlock)
                     PDMCritSectLeave(&pThis->CritSect);
             }
@@ -4388,6 +4394,14 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
     pThis->mouseCapabilities |= VMMDEV_MOUSE_HOST_RECHECKS_NEEDS_HOST_CURSOR;
 
     PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatMemBalloonChunks, STAMTYPE_U32, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT, "Memory balloon size", "/Devices/VMMDev/BalloonChunks");
+#ifdef VBOX_WITH_HGCM
+    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatHgcmCmdArrival, STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                           "Profiling HGCM call arrival processing", "/HGCM/MsgArrival");
+    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatHgcmCmdCompletion, STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                           "Profiling HGCM call completion processing", "/HGCM/MsgCompletion");
+    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatHgcmCmdTotal, STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                           "Profiling whole HGCM call.", "/HGCM/MsgTotal");
+#endif
 
     /*
      * Generate a unique session id for this VM; it will be changed for each

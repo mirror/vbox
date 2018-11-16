@@ -64,8 +64,9 @@
  * 4.1->4.2 Because the VBOX_HGCM_SVC_PARM_CALLBACK parameter type was added
  * 4.2->5.1 Removed the VBOX_HGCM_SVC_PARM_CALLBACK parameter type, as
  *          this problem is already solved by service extension callbacks
+ * 5.1->6.1 Because pfnCall got a new parameter. Also new helpers. (VBox 6.0)
  */
-#define VBOX_HGCM_SVC_VERSION_MAJOR (0x0005)
+#define VBOX_HGCM_SVC_VERSION_MAJOR (0x0006)
 #define VBOX_HGCM_SVC_VERSION_MINOR (0x0001)
 #define VBOX_HGCM_SVC_VERSION ((VBOX_HGCM_SVC_VERSION_MAJOR << 16) + VBOX_HGCM_SVC_VERSION_MINOR)
 
@@ -472,7 +473,7 @@ typedef struct VBOXHGCMSVCFNTABLE
      *  Return code is passed to pfnCallComplete callback.
      */
     DECLR3CALLBACKMEMBER(void, pfnCall, (void *pvService, VBOXHGCMCALLHANDLE callHandle, uint32_t u32ClientID, void *pvClient,
-                                         uint32_t function, uint32_t cParms, VBOXHGCMSVCPARM paParms[]));
+                                         uint32_t function, uint32_t cParms, VBOXHGCMSVCPARM paParms[], uint64_t tsArrival));
 
     /** Host Service entry point meant for privileged features invisible to the guest.
      *  Return code is passed to pfnCallComplete callback.

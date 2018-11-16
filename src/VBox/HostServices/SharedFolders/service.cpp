@@ -97,6 +97,7 @@ static STAMPROFILE g_StatWaitForMappingsChanges;
 static STAMPROFILE g_StatWaitForMappingsChangesFail;
 static STAMPROFILE g_StatCancelMappingsChangesWait;
 static STAMPROFILE g_StatUnknown;
+static STAMPROFILE g_StatMsgStage1;
 /** @} */
 
 
@@ -397,13 +398,14 @@ static DECLCALLBACK(int) svcLoadState(void *, uint32_t u32ClientID, void *pvClie
     return VINF_SUCCESS;
 }
 
-static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32_t u32ClientID,
-                                   void *pvClient, uint32_t u32Function, uint32_t cParms, VBOXHGCMSVCPARM paParms[])
+static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32_t u32ClientID, void *pvClient,
+                                   uint32_t u32Function, uint32_t cParms, VBOXHGCMSVCPARM paParms[], uint64_t tsArrival)
 {
-    RT_NOREF1(u32ClientID);
+    RT_NOREF(u32ClientID, tsArrival);
 #ifndef VBOX_WITHOUT_RELEASE_STATISTICS
     uint64_t tsStart;
     STAM_GET_TS(tsStart);
+    STAM_REL_PROFILE_ADD_PERIOD(&g_StatMsgStage1, tsStart - tsArrival);
 #endif
     Log(("SharedFolders host service: svcCall: u32ClientID = %u, fn = %u, cParms = %u, pparms = %p\n", u32ClientID, u32Function, cParms, paParms));
 
@@ -1803,6 +1805,7 @@ extern "C" DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad (VBOXHGCMSVCFNTABLE *pt
              HGCMSvcHlpStamRegister(g_pHelpers, &g_StatWaitForMappingsChangesFail,STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_CALLS, "SHFL_FN_WAIT_FOR_MAPPINGS_CHANGES failures","/HGCM/VBoxSharedFolders/FnWaitForMappingsChangesFail");
              HGCMSvcHlpStamRegister(g_pHelpers, &g_StatCancelMappingsChangesWait, STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_CALLS, "SHFL_FN_CANCEL_MAPPINGS_CHANGES_WAITS",     "/HGCM/VBoxSharedFolders/FnCancelMappingsChangesWaits");
              HGCMSvcHlpStamRegister(g_pHelpers, &g_StatUnknown,                   STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_CALLS, "SHFL_FN_???",                               "/HGCM/VBoxSharedFolders/FnUnknown");
+             HGCMSvcHlpStamRegister(g_pHelpers, &g_StatMsgStage1,                 STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_CALLS, "Time from VMMDev arrival to worker thread.","/HGCM/VBoxSharedFolders/MsgStage1");
         }
     }
 

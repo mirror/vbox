@@ -973,11 +973,13 @@ public:
                                       void *pvClient,
                                       uint32_t u32Function,
                                       uint32_t cParms,
-                                      VBOXHGCMSVCPARM paParms[])
+                                      VBOXHGCMSVCPARM paParms[],
+                                      uint64_t tsArrival)
     {
         AssertLogRelReturnVoid(VALID_PTR(pvService));
         SELF *pSelf = reinterpret_cast<SELF *>(pvService);
         AssertPtrReturnVoid(pSelf);
+        RT_NOREF_PV(tsArrival);
         pSelf->call(callHandle, u32ClientID, pvClient, u32Function, cParms, paParms);
     }
 

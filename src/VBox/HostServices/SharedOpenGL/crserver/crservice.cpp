@@ -413,11 +413,11 @@ static void svcFreeBuffer(CRVBOXSVCBUFFER_t* pBuffer)
     RTMemFree(pBuffer);
 }
 
-static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32_t u32ClientID, void *pvClient, uint32_t u32Function, uint32_t cParms, VBOXHGCMSVCPARM paParms[])
+static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32_t u32ClientID, void *pvClient,
+                                   uint32_t u32Function, uint32_t cParms, VBOXHGCMSVCPARM paParms[], uint64_t tsArrival)
 {
+    RT_NOREF(pvClient, tsArrival);
     int rc = VINF_SUCCESS;
-
-    NOREF(pvClient);
 
     if (g_u32fCrHgcmDisabled)
     {

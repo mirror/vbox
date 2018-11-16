@@ -423,7 +423,7 @@ int doSetProperty(VBOXHGCMSVCFNTABLE *pTable, const char *pcszName,
                                             useSetProp ? 3 : 2, aParms);
     else
         pTable->pfnCall(pTable->pvService, &callHandle, 0, NULL, command,
-                        useSetProp ? 3 : 2, aParms);
+                        useSetProp ? 3 : 2, aParms, 0);
     return callHandle.rc;
 }
 
@@ -508,7 +508,7 @@ static int doDelProp(VBOXHGCMSVCFNTABLE *pTable, const char *pcszName, bool isHo
     if (isHost)
         callHandle.rc = pTable->pfnHostCall(pTable->pvService, command, 1, aParms);
     else
-        pTable->pfnCall(pTable->pvService, &callHandle, 0, NULL, command, 1, aParms);
+        pTable->pfnCall(pTable->pvService, &callHandle, 0, NULL, command, 1, aParms, 0);
     return callHandle.rc;
 }
 
@@ -702,7 +702,7 @@ static void testGetNotification(VBOXHGCMSVCFNTABLE *pTable)
         aParms[0].setPointer((void *)s_szPattern, sizeof(s_szPattern));
         aParms[1].setUInt64(1);
         aParms[2].setPointer(pvBuf, cbBuf);
-        pTable->pfnCall(pTable->pvService, &callHandle, 0, NULL, GUEST_PROP_FN_GET_NOTIFICATION, 4, aParms);
+        pTable->pfnCall(pTable->pvService, &callHandle, 0, NULL, GUEST_PROP_FN_GET_NOTIFICATION, 4, aParms, 0);
 
         if (   callHandle.rc != VERR_BUFFER_OVERFLOW
             || RT_FAILURE(aParms[3].getUInt32(&cbRetNeeded))
@@ -728,7 +728,7 @@ static void testGetNotification(VBOXHGCMSVCFNTABLE *pTable)
         aParms[0].setPointer((void *)s_szPattern, sizeof(s_szPattern));
         aParms[1].setUInt64(u64Timestamp);
         aParms[2].setPointer(pvBuf, cbBuf);
-        pTable->pfnCall(pTable->pvService, &callHandle, 0, NULL, GUEST_PROP_FN_GET_NOTIFICATION, 4, aParms);
+        pTable->pfnCall(pTable->pvService, &callHandle, 0, NULL, GUEST_PROP_FN_GET_NOTIFICATION, 4, aParms, 0);
         if (   RT_FAILURE(callHandle.rc)
             || (i == 0 && callHandle.rc != VWRN_NOT_FOUND)
             || RT_FAILURE(aParms[1].getUInt64(&u64Timestamp))
@@ -769,7 +769,7 @@ static void setupAsyncNotification(VBOXHGCMSVCFNTABLE *pTable)
                                              sizeof(g_AsyncNotification.abBuffer));
     g_AsyncNotification.callHandle.rc = VINF_HGCM_ASYNC_EXECUTE;
     pTable->pfnCall(pTable->pvService, &g_AsyncNotification.callHandle, 0, NULL,
-                    GUEST_PROP_FN_GET_NOTIFICATION, 4, g_AsyncNotification.aParms);
+                    GUEST_PROP_FN_GET_NOTIFICATION, 4, g_AsyncNotification.aParms, 0);
     if (RT_FAILURE(g_AsyncNotification.callHandle.rc))
         RTTestIFailed("GET_NOTIFICATION call failed, rc=%Rrc.", g_AsyncNotification.callHandle.rc);
     else if (g_AsyncNotification.callHandle.rc != VINF_HGCM_ASYNC_EXECUTE)
