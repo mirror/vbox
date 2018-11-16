@@ -92,6 +92,29 @@ public:
     /** Returns the details categories. */
     const QMap<DetailsElementType, bool> &categories() const { return m_categories; }
 
+    /** Returns options for General element. */
+    UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral        optionsGeneral()       const { return m_fOptionsGeneral; }
+    /** Returns options for System element. */
+    UIExtraDataMetaDefs::DetailsElementOptionTypeSystem         optionsSystem()        const { return m_fOptionsSystem; }
+    /** Returns options for Display element. */
+    UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay        optionsDisplay()       const { return m_fOptionsDisplay; }
+    /** Returns options for Storage element. */
+    UIExtraDataMetaDefs::DetailsElementOptionTypeStorage        optionsStorage()       const { return m_fOptionsStorage; }
+    /** Returns options for Audio element. */
+    UIExtraDataMetaDefs::DetailsElementOptionTypeAudio          optionsAudio()         const { return m_fOptionsAudio; }
+    /** Returns options for Network element. */
+    UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork        optionsNetwork()       const { return m_fOptionsNetwork; }
+    /** Returns options for Serial element. */
+    UIExtraDataMetaDefs::DetailsElementOptionTypeSerial         optionsSerial()        const { return m_fOptionsSerial; }
+    /** Returns options for Usb element. */
+    UIExtraDataMetaDefs::DetailsElementOptionTypeUsb            optionsUsb()           const { return m_fOptionsUsb; }
+    /** Returns options for Shared Folders element. */
+    UIExtraDataMetaDefs::DetailsElementOptionTypeSharedFolders  optionsSharedFolders() const { return m_fOptionsSharedFolders; }
+    /** Returns options for User Interface element. */
+    UIExtraDataMetaDefs::DetailsElementOptionTypeUserInterface  optionsUserInterface() const { return m_fOptionsUserInterface; }
+    /** Returns options for Description element. */
+    UIExtraDataMetaDefs::DetailsElementOptionTypeDescription    optionsDescription()   const { return m_fOptionsDescription; }
+
 public slots:
 
     /** Handle details view resize. */
@@ -136,6 +159,11 @@ private:
         void prepareRoot();
         /** Loads settings. */
         void loadSettings();
+        /** Loads details categories. */
+        void loadDetailsCategories();
+        /** Loads details options for certain category @a enmType.
+          * @note enmType equal to DetailsElementType_Invalid means load everything. */
+        void loadDetailsOptions(DetailsElementType enmType = DetailsElementType_Invalid);
 
         /** Saves settings. */
         void saveSettings();
@@ -162,6 +190,29 @@ private:
 
     /** Holds the details categories. */
     QMap<DetailsElementType, bool>  m_categories;
+
+    /** Holds the options for General element. */
+    UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral        m_fOptionsGeneral;
+    /** Holds the options for System element. */
+    UIExtraDataMetaDefs::DetailsElementOptionTypeSystem         m_fOptionsSystem;
+    /** Holds the options for Display element. */
+    UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay        m_fOptionsDisplay;
+    /** Holds the options for Storage element. */
+    UIExtraDataMetaDefs::DetailsElementOptionTypeStorage        m_fOptionsStorage;
+    /** Holds the options for Audio element. */
+    UIExtraDataMetaDefs::DetailsElementOptionTypeAudio          m_fOptionsAudio;
+    /** Holds the options for Network element. */
+    UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork        m_fOptionsNetwork;
+    /** Holds the options for Serial element. */
+    UIExtraDataMetaDefs::DetailsElementOptionTypeSerial         m_fOptionsSerial;
+    /** Holds the options for Usb element. */
+    UIExtraDataMetaDefs::DetailsElementOptionTypeUsb            m_fOptionsUsb;
+    /** Holds the options for Shared Folders element. */
+    UIExtraDataMetaDefs::DetailsElementOptionTypeSharedFolders  m_fOptionsSharedFolders;
+    /** Holds the options for User Interface element. */
+    UIExtraDataMetaDefs::DetailsElementOptionTypeUserInterface  m_fOptionsUserInterface;
+    /** Holds the options for Description element. */
+    UIExtraDataMetaDefs::DetailsElementOptionTypeDescription    m_fOptionsDescription;
 };
 
 

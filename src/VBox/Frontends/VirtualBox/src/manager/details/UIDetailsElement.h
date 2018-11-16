@@ -155,9 +155,6 @@ protected:
         /** Returns the description of the item. */
         virtual QString description() const /* override */;
 
-        /** Returns extra-data options. */
-        QStringList extraDataOptions() const;
-
         /** Returns cached machine reference. */
         const CMachine &machine();
 

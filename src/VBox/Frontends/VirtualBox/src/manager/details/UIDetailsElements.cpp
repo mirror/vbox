@@ -283,19 +283,9 @@ void UIDetailsUpdateTaskGeneral::run()
     setProperty("table", QVariant::fromValue(table));
 }
 
-UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral UIDetailsElementGeneral::parsedExtraDataOptions()
+UITask *UIDetailsElementGeneral::createUpdateTask()
 {
-    UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral options = UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral_Invalid;
-    foreach (const QString &strOption, extraDataOptions())
-    {
-        const UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral enmOption =
-            gpConverter->fromInternalString<UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral>(strOption);
-        if (enmOption != UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral_Invalid)
-            options = static_cast<UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral>(options | enmOption);
-    }
-    if (options == UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral_Invalid)
-        options = UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral_Default;
-    return options;
+    return new UIDetailsUpdateTaskGeneral(machine(), model()->optionsGeneral());
 }
 
 
@@ -422,19 +412,9 @@ void UIDetailsUpdateTaskSystem::run()
     setProperty("table", QVariant::fromValue(table));
 }
 
-UIExtraDataMetaDefs::DetailsElementOptionTypeSystem UIDetailsElementSystem::parsedExtraDataOptions()
+UITask *UIDetailsElementSystem::createUpdateTask()
 {
-    UIExtraDataMetaDefs::DetailsElementOptionTypeSystem options = UIExtraDataMetaDefs::DetailsElementOptionTypeSystem_Invalid;
-    foreach (const QString &strOption, extraDataOptions())
-    {
-        const UIExtraDataMetaDefs::DetailsElementOptionTypeSystem enmOption =
-            gpConverter->fromInternalString<UIExtraDataMetaDefs::DetailsElementOptionTypeSystem>(strOption);
-        if (enmOption != UIExtraDataMetaDefs::DetailsElementOptionTypeSystem_Invalid)
-            options = static_cast<UIExtraDataMetaDefs::DetailsElementOptionTypeSystem>(options | enmOption);
-    }
-    if (options == UIExtraDataMetaDefs::DetailsElementOptionTypeSystem_Invalid)
-        options = UIExtraDataMetaDefs::DetailsElementOptionTypeSystem_Default;
-    return options;
+    return new UIDetailsUpdateTaskSystem(machine(), model()->optionsSystem());
 }
 
 
@@ -546,19 +526,9 @@ void UIDetailsUpdateTaskDisplay::run()
     setProperty("table", QVariant::fromValue(table));
 }
 
-UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay UIDetailsElementDisplay::parsedExtraDataOptions()
+UITask *UIDetailsElementDisplay::createUpdateTask()
 {
-    UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay options = UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay_Invalid;
-    foreach (const QString &strOption, extraDataOptions())
-    {
-        const UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay enmOption =
-            gpConverter->fromInternalString<UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay>(strOption);
-        if (enmOption != UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay_Invalid)
-            options = static_cast<UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay>(options | enmOption);
-    }
-    if (options == UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay_Invalid)
-        options = UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay_Default;
-    return options;
+    return new UIDetailsUpdateTaskDisplay(machine(), model()->optionsDisplay());
 }
 
 
@@ -655,19 +625,9 @@ void UIDetailsUpdateTaskStorage::run()
     setProperty("table", QVariant::fromValue(table));
 }
 
-UIExtraDataMetaDefs::DetailsElementOptionTypeStorage UIDetailsElementStorage::parsedExtraDataOptions()
+UITask *UIDetailsElementStorage::createUpdateTask()
 {
-    UIExtraDataMetaDefs::DetailsElementOptionTypeStorage options = UIExtraDataMetaDefs::DetailsElementOptionTypeStorage_Invalid;
-    foreach (const QString &strOption, extraDataOptions())
-    {
-        const UIExtraDataMetaDefs::DetailsElementOptionTypeStorage enmOption =
-            gpConverter->fromInternalString<UIExtraDataMetaDefs::DetailsElementOptionTypeStorage>(strOption);
-        if (enmOption != UIExtraDataMetaDefs::DetailsElementOptionTypeStorage_Invalid)
-            options = static_cast<UIExtraDataMetaDefs::DetailsElementOptionTypeStorage>(options | enmOption);
-    }
-    if (options == UIExtraDataMetaDefs::DetailsElementOptionTypeStorage_Invalid)
-        options = UIExtraDataMetaDefs::DetailsElementOptionTypeStorage_Default;
-    return options;
+    return new UIDetailsUpdateTaskStorage(machine(), model()->optionsStorage());
 }
 
 
@@ -724,19 +684,9 @@ void UIDetailsUpdateTaskAudio::run()
     setProperty("table", QVariant::fromValue(table));
 }
 
-UIExtraDataMetaDefs::DetailsElementOptionTypeAudio UIDetailsElementAudio::parsedExtraDataOptions()
+UITask *UIDetailsElementAudio::createUpdateTask()
 {
-    UIExtraDataMetaDefs::DetailsElementOptionTypeAudio options = UIExtraDataMetaDefs::DetailsElementOptionTypeAudio_Invalid;
-    foreach (const QString &strOption, extraDataOptions())
-    {
-        const UIExtraDataMetaDefs::DetailsElementOptionTypeAudio enmOption =
-            gpConverter->fromInternalString<UIExtraDataMetaDefs::DetailsElementOptionTypeAudio>(strOption);
-        if (enmOption != UIExtraDataMetaDefs::DetailsElementOptionTypeAudio_Invalid)
-            options = static_cast<UIExtraDataMetaDefs::DetailsElementOptionTypeAudio>(options | enmOption);
-    }
-    if (options == UIExtraDataMetaDefs::DetailsElementOptionTypeAudio_Invalid)
-        options = UIExtraDataMetaDefs::DetailsElementOptionTypeAudio_Default;
-    return options;
+    return new UIDetailsUpdateTaskAudio(machine(), model()->optionsAudio());
 }
 
 
@@ -830,19 +780,9 @@ void UIDetailsUpdateTaskNetwork::run()
     setProperty("table", QVariant::fromValue(table));
 }
 
-UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork UIDetailsElementNetwork::parsedExtraDataOptions()
+UITask *UIDetailsElementNetwork::createUpdateTask()
 {
-    UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork options = UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_Invalid;
-    foreach (const QString &strOption, extraDataOptions())
-    {
-        const UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork enmOption =
-            gpConverter->fromInternalString<UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork>(strOption);
-        if (enmOption != UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_Invalid)
-            options = static_cast<UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork>(options | enmOption);
-    }
-    if (options == UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_Invalid)
-        options = UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_Default;
-    return options;
+    return new UIDetailsUpdateTaskNetwork(machine(), model()->optionsNetwork());
 }
 
 /* static */
@@ -935,19 +875,9 @@ void UIDetailsUpdateTaskSerial::run()
     setProperty("table", QVariant::fromValue(table));
 }
 
-UIExtraDataMetaDefs::DetailsElementOptionTypeSerial UIDetailsElementSerial::parsedExtraDataOptions()
+UITask *UIDetailsElementSerial::createUpdateTask()
 {
-    UIExtraDataMetaDefs::DetailsElementOptionTypeSerial options = UIExtraDataMetaDefs::DetailsElementOptionTypeSerial_Invalid;
-    foreach (const QString &strOption, extraDataOptions())
-    {
-        const UIExtraDataMetaDefs::DetailsElementOptionTypeSerial enmOption =
-            gpConverter->fromInternalString<UIExtraDataMetaDefs::DetailsElementOptionTypeSerial>(strOption);
-        if (enmOption != UIExtraDataMetaDefs::DetailsElementOptionTypeSerial_Invalid)
-            options = static_cast<UIExtraDataMetaDefs::DetailsElementOptionTypeSerial>(options | enmOption);
-    }
-    if (options == UIExtraDataMetaDefs::DetailsElementOptionTypeSerial_Invalid)
-        options = UIExtraDataMetaDefs::DetailsElementOptionTypeSerial_Default;
-    return options;
+    return new UIDetailsUpdateTaskSerial(machine(), model()->optionsSerial());
 }
 
 
@@ -1006,19 +936,9 @@ void UIDetailsUpdateTaskUSB::run()
     setProperty("table", QVariant::fromValue(table));
 }
 
-UIExtraDataMetaDefs::DetailsElementOptionTypeUsb UIDetailsElementUSB::parsedExtraDataOptions()
+UITask *UIDetailsElementUSB::createUpdateTask()
 {
-    UIExtraDataMetaDefs::DetailsElementOptionTypeUsb options = UIExtraDataMetaDefs::DetailsElementOptionTypeUsb_Invalid;
-    foreach (const QString &strOption, extraDataOptions())
-    {
-        const UIExtraDataMetaDefs::DetailsElementOptionTypeUsb enmOption =
-            gpConverter->fromInternalString<UIExtraDataMetaDefs::DetailsElementOptionTypeUsb>(strOption);
-        if (enmOption != UIExtraDataMetaDefs::DetailsElementOptionTypeUsb_Invalid)
-            options = static_cast<UIExtraDataMetaDefs::DetailsElementOptionTypeUsb>(options | enmOption);
-    }
-    if (options == UIExtraDataMetaDefs::DetailsElementOptionTypeUsb_Invalid)
-        options = UIExtraDataMetaDefs::DetailsElementOptionTypeUsb_Default;
-    return options;
+    return new UIDetailsUpdateTaskUSB(machine(), model()->optionsUsb());
 }
 
 
@@ -1052,19 +972,9 @@ void UIDetailsUpdateTaskSF::run()
     setProperty("table", QVariant::fromValue(table));
 }
 
-UIExtraDataMetaDefs::DetailsElementOptionTypeSharedFolders UIDetailsElementSF::parsedExtraDataOptions()
+UITask *UIDetailsElementSF::createUpdateTask()
 {
-    UIExtraDataMetaDefs::DetailsElementOptionTypeSharedFolders options = UIExtraDataMetaDefs::DetailsElementOptionTypeSharedFolders_Invalid;
-    foreach (const QString &strOption, extraDataOptions())
-    {
-        const UIExtraDataMetaDefs::DetailsElementOptionTypeSharedFolders enmOption =
-            gpConverter->fromInternalString<UIExtraDataMetaDefs::DetailsElementOptionTypeSharedFolders>(strOption);
-        if (enmOption != UIExtraDataMetaDefs::DetailsElementOptionTypeSharedFolders_Invalid)
-            options = static_cast<UIExtraDataMetaDefs::DetailsElementOptionTypeSharedFolders>(options | enmOption);
-    }
-    if (options == UIExtraDataMetaDefs::DetailsElementOptionTypeSharedFolders_Invalid)
-        options = UIExtraDataMetaDefs::DetailsElementOptionTypeSharedFolders_Default;
-    return options;
+    return new UIDetailsUpdateTaskSF(machine(), model()->optionsSharedFolders());
 }
 
 
@@ -1159,19 +1069,9 @@ void UIDetailsUpdateTaskUI::run()
     setProperty("table", QVariant::fromValue(table));
 }
 
-UIExtraDataMetaDefs::DetailsElementOptionTypeUserInterface UIDetailsElementUI::parsedExtraDataOptions()
+UITask *UIDetailsElementUI::createUpdateTask()
 {
-    UIExtraDataMetaDefs::DetailsElementOptionTypeUserInterface options = UIExtraDataMetaDefs::DetailsElementOptionTypeUserInterface_Invalid;
-    foreach (const QString &strOption, extraDataOptions())
-    {
-        const UIExtraDataMetaDefs::DetailsElementOptionTypeUserInterface enmOption =
-            gpConverter->fromInternalString<UIExtraDataMetaDefs::DetailsElementOptionTypeUserInterface>(strOption);
-        if (enmOption != UIExtraDataMetaDefs::DetailsElementOptionTypeUserInterface_Invalid)
-            options = static_cast<UIExtraDataMetaDefs::DetailsElementOptionTypeUserInterface>(options | enmOption);
-    }
-    if (options == UIExtraDataMetaDefs::DetailsElementOptionTypeUserInterface_Invalid)
-        options = UIExtraDataMetaDefs::DetailsElementOptionTypeUserInterface_Default;
-    return options;
+    return new UIDetailsUpdateTaskUI(machine(), model()->optionsUserInterface());
 }
 
 
@@ -1205,17 +1105,7 @@ void UIDetailsUpdateTaskDescription::run()
     setProperty("table", QVariant::fromValue(table));
 }
 
-UIExtraDataMetaDefs::DetailsElementOptionTypeDescription UIDetailsElementDescription::parsedExtraDataOptions()
+UITask *UIDetailsElementDescription::createUpdateTask()
 {
-    UIExtraDataMetaDefs::DetailsElementOptionTypeDescription options = UIExtraDataMetaDefs::DetailsElementOptionTypeDescription_Invalid;
-    foreach (const QString &strOption, extraDataOptions())
-    {
-        const UIExtraDataMetaDefs::DetailsElementOptionTypeDescription enmOption =
-            gpConverter->fromInternalString<UIExtraDataMetaDefs::DetailsElementOptionTypeDescription>(strOption);
-        if (enmOption != UIExtraDataMetaDefs::DetailsElementOptionTypeDescription_Invalid)
-            options = static_cast<UIExtraDataMetaDefs::DetailsElementOptionTypeDescription>(options | enmOption);
-    }
-    if (options == UIExtraDataMetaDefs::DetailsElementOptionTypeDescription_Invalid)
-        options = UIExtraDataMetaDefs::DetailsElementOptionTypeDescription_Default;
-    return options;
+    return new UIDetailsUpdateTaskDescription(machine(), model()->optionsDescription());
 }

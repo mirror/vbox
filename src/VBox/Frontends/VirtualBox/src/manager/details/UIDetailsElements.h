@@ -146,11 +146,8 @@ public:
 
 private:
 
-    /** Returns parsed extra-data options. */
-    UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral parsedExtraDataOptions();
-
     /** Creates update task for this element. */
-    UITask *createUpdateTask() { return new UIDetailsUpdateTaskGeneral(machine(), parsedExtraDataOptions()); }
+    virtual UITask *createUpdateTask() /* override */;
 };
 
 
@@ -188,11 +185,8 @@ public:
 
 private:
 
-    /** Returns parsed extra-data options. */
-    UIExtraDataMetaDefs::DetailsElementOptionTypeSystem parsedExtraDataOptions();
-
     /** Creates update task for this element. */
-    UITask *createUpdateTask() { return new UIDetailsUpdateTaskSystem(machine(), parsedExtraDataOptions()); }
+    virtual UITask *createUpdateTask() /* override */;
 };
 
 
@@ -230,11 +224,8 @@ public:
 
 private:
 
-    /** Returns parsed extra-data options. */
-    UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay parsedExtraDataOptions();
-
     /** Creates update task for this element. */
-    UITask *createUpdateTask() { return new UIDetailsUpdateTaskDisplay(machine(), parsedExtraDataOptions()); }
+    virtual UITask *createUpdateTask() /* override */;
 };
 
 
@@ -272,11 +263,8 @@ public:
 
 private:
 
-    /** Returns parsed extra-data options. */
-    UIExtraDataMetaDefs::DetailsElementOptionTypeStorage parsedExtraDataOptions();
-
     /** Creates update task for this element. */
-    UITask *createUpdateTask() { return new UIDetailsUpdateTaskStorage(machine(), parsedExtraDataOptions()); }
+    virtual UITask *createUpdateTask() /* override */;
 };
 
 
@@ -314,11 +302,8 @@ public:
 
 private:
 
-    /** Returns parsed extra-data options. */
-    UIExtraDataMetaDefs::DetailsElementOptionTypeAudio parsedExtraDataOptions();
-
     /** Creates update task for this element. */
-    UITask *createUpdateTask() { return new UIDetailsUpdateTaskAudio(machine(), parsedExtraDataOptions()); }
+    virtual UITask *createUpdateTask() /* override */;
 };
 
 
@@ -359,11 +344,8 @@ public:
 
 private:
 
-    /** Returns parsed extra-data options. */
-    UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork parsedExtraDataOptions();
-
     /** Creates update task for this element. */
-    UITask *createUpdateTask() { return new UIDetailsUpdateTaskNetwork(machine(), parsedExtraDataOptions()); }
+    virtual UITask *createUpdateTask() /* override */;
 };
 
 
@@ -401,11 +383,8 @@ public:
 
 private:
 
-    /** Returns parsed extra-data options. */
-    UIExtraDataMetaDefs::DetailsElementOptionTypeSerial parsedExtraDataOptions();
-
     /** Creates update task for this element. */
-    UITask *createUpdateTask() { return new UIDetailsUpdateTaskSerial(machine(), parsedExtraDataOptions()); }
+    virtual UITask *createUpdateTask() /* override */;
 };
 
 
@@ -443,11 +422,8 @@ public:
 
 private:
 
-    /** Returns parsed extra-data options. */
-    UIExtraDataMetaDefs::DetailsElementOptionTypeUsb parsedExtraDataOptions();
-
     /** Creates update task for this element. */
-    UITask *createUpdateTask() { return new UIDetailsUpdateTaskUSB(machine(), parsedExtraDataOptions()); }
+    virtual UITask *createUpdateTask() /* override */;
 };
 
 
@@ -485,11 +461,8 @@ public:
 
 private:
 
-    /** Returns parsed extra-data options. */
-    UIExtraDataMetaDefs::DetailsElementOptionTypeSharedFolders parsedExtraDataOptions();
-
     /** Creates update task for this element. */
-    UITask *createUpdateTask() { return new UIDetailsUpdateTaskSF(machine(), parsedExtraDataOptions()); }
+    virtual UITask *createUpdateTask() /* override */;
 };
 
 
@@ -527,11 +500,8 @@ public:
 
 private:
 
-    /** Returns parsed extra-data options. */
-    UIExtraDataMetaDefs::DetailsElementOptionTypeUserInterface parsedExtraDataOptions();
-
     /** Creates update task for this element. */
-    UITask *createUpdateTask() { return new UIDetailsUpdateTaskUI(machine(), parsedExtraDataOptions()); }
+    virtual UITask *createUpdateTask() /* override */;
 };
 
 
@@ -569,11 +539,8 @@ public:
 
 private:
 
-    /** Returns parsed extra-data options. */
-    UIExtraDataMetaDefs::DetailsElementOptionTypeDescription parsedExtraDataOptions();
-
     /** Creates update task for this element. */
-    UITask *createUpdateTask() { return new UIDetailsUpdateTaskDescription(machine(), parsedExtraDataOptions()); }
+    virtual UITask *createUpdateTask() /* override */;
 };
 
 #endif /* !___UIDetailsElements_h___ */

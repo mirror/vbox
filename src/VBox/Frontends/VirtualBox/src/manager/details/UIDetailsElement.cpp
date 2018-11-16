@@ -249,11 +249,6 @@ QString UIDetailsElement::description() const
     return tr("%1 details", "like 'General details' or 'Storage details'").arg(m_strName);
 }
 
-QStringList UIDetailsElement::extraDataOptions() const
-{
-    return gEDataManager->vboxManagerDetailsPaneElementOptions(elementType());
-}
-
 const CMachine &UIDetailsElement::machine()
 {
     return m_pSet->machine();

@@ -120,12 +120,13 @@ void UIDetailsModel::sltHandleToggleFinished()
 
 void UIDetailsModel::sltHandleExtraDataCategoriesChange()
 {
-    m_categories = gEDataManager->selectorWindowDetailsElements();
+    loadDetailsCategories();
     m_pRoot->rebuildGroup();
 }
 
-void UIDetailsModel::sltHandleExtraDataOptionsChange(DetailsElementType)
+void UIDetailsModel::sltHandleExtraDataOptionsChange(DetailsElementType enmType)
 {
+    loadDetailsOptions(enmType);
     m_pRoot->rebuildGroup();
 }
 
@@ -242,7 +243,172 @@ void UIDetailsModel::prepareRoot()
 
 void UIDetailsModel::loadSettings()
 {
+    loadDetailsCategories();
+    loadDetailsOptions();
+}
+
+void UIDetailsModel::loadDetailsCategories()
+{
     m_categories = gEDataManager->selectorWindowDetailsElements();
+}
+
+void UIDetailsModel::loadDetailsOptions(DetailsElementType enmType /* = DetailsElementType_Invalid */)
+{
+    /* We will handle DetailsElementType_Invalid as a request to load everything. */
+
+    if (enmType == DetailsElementType_General || enmType == DetailsElementType_Invalid)
+    {
+        m_fOptionsGeneral = UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral_Invalid;
+        foreach (const QString &strOption, gEDataManager->vboxManagerDetailsPaneElementOptions(DetailsElementType_General))
+        {
+            const UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral enmOption =
+                gpConverter->fromInternalString<UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral>(strOption);
+            if (enmOption != UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral_Invalid)
+                m_fOptionsGeneral = static_cast<UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral>(m_fOptionsGeneral | enmOption);
+        }
+        if (m_fOptionsGeneral == UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral_Invalid)
+            m_fOptionsGeneral = UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral_Default;
+    }
+
+    if (enmType == DetailsElementType_System || enmType == DetailsElementType_Invalid)
+    {
+        m_fOptionsSystem = UIExtraDataMetaDefs::DetailsElementOptionTypeSystem_Invalid;
+        foreach (const QString &strOption, gEDataManager->vboxManagerDetailsPaneElementOptions(DetailsElementType_System))
+        {
+            const UIExtraDataMetaDefs::DetailsElementOptionTypeSystem enmOption =
+                gpConverter->fromInternalString<UIExtraDataMetaDefs::DetailsElementOptionTypeSystem>(strOption);
+            if (enmOption != UIExtraDataMetaDefs::DetailsElementOptionTypeSystem_Invalid)
+                m_fOptionsSystem = static_cast<UIExtraDataMetaDefs::DetailsElementOptionTypeSystem>(m_fOptionsSystem | enmOption);
+        }
+        if (m_fOptionsSystem == UIExtraDataMetaDefs::DetailsElementOptionTypeSystem_Invalid)
+            m_fOptionsSystem = UIExtraDataMetaDefs::DetailsElementOptionTypeSystem_Default;
+    }
+
+    if (enmType == DetailsElementType_Display || enmType == DetailsElementType_Invalid)
+    {
+        m_fOptionsDisplay = UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay_Invalid;
+        foreach (const QString &strOption, gEDataManager->vboxManagerDetailsPaneElementOptions(DetailsElementType_Display))
+        {
+            const UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay enmOption =
+                gpConverter->fromInternalString<UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay>(strOption);
+            if (enmOption != UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay_Invalid)
+                m_fOptionsDisplay = static_cast<UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay>(m_fOptionsDisplay | enmOption);
+        }
+        if (m_fOptionsDisplay == UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay_Invalid)
+            m_fOptionsDisplay = UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay_Default;
+    }
+
+    if (enmType == DetailsElementType_Storage || enmType == DetailsElementType_Invalid)
+    {
+        m_fOptionsStorage = UIExtraDataMetaDefs::DetailsElementOptionTypeStorage_Invalid;
+        foreach (const QString &strOption, gEDataManager->vboxManagerDetailsPaneElementOptions(DetailsElementType_Storage))
+        {
+            const UIExtraDataMetaDefs::DetailsElementOptionTypeStorage enmOption =
+                gpConverter->fromInternalString<UIExtraDataMetaDefs::DetailsElementOptionTypeStorage>(strOption);
+            if (enmOption != UIExtraDataMetaDefs::DetailsElementOptionTypeStorage_Invalid)
+                m_fOptionsStorage = static_cast<UIExtraDataMetaDefs::DetailsElementOptionTypeStorage>(m_fOptionsStorage | enmOption);
+        }
+        if (m_fOptionsStorage == UIExtraDataMetaDefs::DetailsElementOptionTypeStorage_Invalid)
+            m_fOptionsStorage = UIExtraDataMetaDefs::DetailsElementOptionTypeStorage_Default;
+    }
+
+    if (enmType == DetailsElementType_Audio || enmType == DetailsElementType_Invalid)
+    {
+        m_fOptionsAudio = UIExtraDataMetaDefs::DetailsElementOptionTypeAudio_Invalid;
+        foreach (const QString &strOption, gEDataManager->vboxManagerDetailsPaneElementOptions(DetailsElementType_Audio))
+        {
+            const UIExtraDataMetaDefs::DetailsElementOptionTypeAudio enmOption =
+                gpConverter->fromInternalString<UIExtraDataMetaDefs::DetailsElementOptionTypeAudio>(strOption);
+            if (enmOption != UIExtraDataMetaDefs::DetailsElementOptionTypeAudio_Invalid)
+                m_fOptionsAudio = static_cast<UIExtraDataMetaDefs::DetailsElementOptionTypeAudio>(m_fOptionsAudio | enmOption);
+        }
+        if (m_fOptionsAudio == UIExtraDataMetaDefs::DetailsElementOptionTypeAudio_Invalid)
+            m_fOptionsAudio = UIExtraDataMetaDefs::DetailsElementOptionTypeAudio_Default;
+    }
+
+    if (enmType == DetailsElementType_Network || enmType == DetailsElementType_Invalid)
+    {
+        m_fOptionsNetwork = UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_Invalid;
+        foreach (const QString &strOption, gEDataManager->vboxManagerDetailsPaneElementOptions(DetailsElementType_Network))
+        {
+            const UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork enmOption =
+                gpConverter->fromInternalString<UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork>(strOption);
+            if (enmOption != UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_Invalid)
+                m_fOptionsNetwork = static_cast<UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork>(m_fOptionsNetwork | enmOption);
+        }
+        if (m_fOptionsNetwork == UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_Invalid)
+            m_fOptionsNetwork = UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_Default;
+    }
+
+    if (enmType == DetailsElementType_Serial || enmType == DetailsElementType_Invalid)
+    {
+        m_fOptionsSerial = UIExtraDataMetaDefs::DetailsElementOptionTypeSerial_Invalid;
+        foreach (const QString &strOption, gEDataManager->vboxManagerDetailsPaneElementOptions(DetailsElementType_Serial))
+        {
+            const UIExtraDataMetaDefs::DetailsElementOptionTypeSerial enmOption =
+                gpConverter->fromInternalString<UIExtraDataMetaDefs::DetailsElementOptionTypeSerial>(strOption);
+            if (enmOption != UIExtraDataMetaDefs::DetailsElementOptionTypeSerial_Invalid)
+                m_fOptionsSerial = static_cast<UIExtraDataMetaDefs::DetailsElementOptionTypeSerial>(m_fOptionsSerial | enmOption);
+        }
+        if (m_fOptionsSerial == UIExtraDataMetaDefs::DetailsElementOptionTypeSerial_Invalid)
+            m_fOptionsSerial = UIExtraDataMetaDefs::DetailsElementOptionTypeSerial_Default;
+    }
+
+    if (enmType == DetailsElementType_USB || enmType == DetailsElementType_Invalid)
+    {
+        m_fOptionsUsb = UIExtraDataMetaDefs::DetailsElementOptionTypeUsb_Invalid;
+        foreach (const QString &strOption, gEDataManager->vboxManagerDetailsPaneElementOptions(DetailsElementType_USB))
+        {
+            const UIExtraDataMetaDefs::DetailsElementOptionTypeUsb enmOption =
+                gpConverter->fromInternalString<UIExtraDataMetaDefs::DetailsElementOptionTypeUsb>(strOption);
+            if (enmOption != UIExtraDataMetaDefs::DetailsElementOptionTypeUsb_Invalid)
+                m_fOptionsUsb = static_cast<UIExtraDataMetaDefs::DetailsElementOptionTypeUsb>(m_fOptionsUsb | enmOption);
+        }
+        if (m_fOptionsUsb == UIExtraDataMetaDefs::DetailsElementOptionTypeUsb_Invalid)
+            m_fOptionsUsb = UIExtraDataMetaDefs::DetailsElementOptionTypeUsb_Default;
+    }
+
+    if (enmType == DetailsElementType_SF || enmType == DetailsElementType_Invalid)
+    {
+        m_fOptionsSharedFolders = UIExtraDataMetaDefs::DetailsElementOptionTypeSharedFolders_Invalid;
+        foreach (const QString &strOption, gEDataManager->vboxManagerDetailsPaneElementOptions(DetailsElementType_SF))
+        {
+            const UIExtraDataMetaDefs::DetailsElementOptionTypeSharedFolders enmOption =
+                gpConverter->fromInternalString<UIExtraDataMetaDefs::DetailsElementOptionTypeSharedFolders>(strOption);
+            if (enmOption != UIExtraDataMetaDefs::DetailsElementOptionTypeSharedFolders_Invalid)
+                m_fOptionsSharedFolders = static_cast<UIExtraDataMetaDefs::DetailsElementOptionTypeSharedFolders>(m_fOptionsSharedFolders | enmOption);
+        }
+        if (m_fOptionsSharedFolders == UIExtraDataMetaDefs::DetailsElementOptionTypeSharedFolders_Invalid)
+            m_fOptionsSharedFolders = UIExtraDataMetaDefs::DetailsElementOptionTypeSharedFolders_Default;
+    }
+
+    if (enmType == DetailsElementType_UI || enmType == DetailsElementType_Invalid)
+    {
+        m_fOptionsUserInterface = UIExtraDataMetaDefs::DetailsElementOptionTypeUserInterface_Invalid;
+        foreach (const QString &strOption, gEDataManager->vboxManagerDetailsPaneElementOptions(DetailsElementType_UI))
+        {
+            const UIExtraDataMetaDefs::DetailsElementOptionTypeUserInterface enmOption =
+                gpConverter->fromInternalString<UIExtraDataMetaDefs::DetailsElementOptionTypeUserInterface>(strOption);
+            if (enmOption != UIExtraDataMetaDefs::DetailsElementOptionTypeUserInterface_Invalid)
+                m_fOptionsUserInterface = static_cast<UIExtraDataMetaDefs::DetailsElementOptionTypeUserInterface>(m_fOptionsUserInterface | enmOption);
+        }
+        if (m_fOptionsUserInterface == UIExtraDataMetaDefs::DetailsElementOptionTypeUserInterface_Invalid)
+            m_fOptionsUserInterface = UIExtraDataMetaDefs::DetailsElementOptionTypeUserInterface_Default;
+    }
+
+    if (enmType == DetailsElementType_Description || enmType == DetailsElementType_Invalid)
+    {
+        m_fOptionsDescription = UIExtraDataMetaDefs::DetailsElementOptionTypeDescription_Invalid;
+        foreach (const QString &strOption, gEDataManager->vboxManagerDetailsPaneElementOptions(DetailsElementType_Description))
+        {
+            const UIExtraDataMetaDefs::DetailsElementOptionTypeDescription enmOption =
+                gpConverter->fromInternalString<UIExtraDataMetaDefs::DetailsElementOptionTypeDescription>(strOption);
+            if (enmOption != UIExtraDataMetaDefs::DetailsElementOptionTypeDescription_Invalid)
+                m_fOptionsDescription = static_cast<UIExtraDataMetaDefs::DetailsElementOptionTypeDescription>(m_fOptionsDescription | enmOption);
+        }
+        if (m_fOptionsDescription == UIExtraDataMetaDefs::DetailsElementOptionTypeDescription_Invalid)
+            m_fOptionsDescription = UIExtraDataMetaDefs::DetailsElementOptionTypeDescription_Default;
+    }
 }
 
 void UIDetailsModel::saveSettings()
