@@ -196,7 +196,7 @@ void UIDetailsGroup::sltBuildStep(const QUuid &uStepId, int iStepNumber)
         m_pBuildStep = new UIPrepareStep(this, pSet, uStepId, iStepNumber + 1);
 
         /* Build set: */
-        pSet->buildSet(m_machineItems[iStepNumber], m_machineItems.size() == 1, model()->settings());
+        pSet->buildSet(m_machineItems[iStepNumber], m_machineItems.size() == 1, model()->categories());
     }
     else
     {

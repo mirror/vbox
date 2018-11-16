@@ -195,8 +195,8 @@ void UIDetailsModel::sltToggleAnimationFinished(DetailsElementType type, bool fT
     updateLayout();
 
     /* Update element open/close status: */
-    if (m_settings.contains(type))
-        m_settings[type] = fToggled;
+    if (m_categories.contains(type))
+        m_categories[type] = fToggled;
 }
 
 void UIDetailsModel::sltElementTypeToggled()
@@ -206,10 +206,10 @@ void UIDetailsModel::sltElementTypeToggled()
     DetailsElementType type = pAction->data().value<DetailsElementType>();
 
     /* Toggle element visibility status: */
-    if (m_settings.contains(type))
-        m_settings.remove(type);
+    if (m_categories.contains(type))
+        m_categories.remove(type);
     else
-        m_settings[type] = true;
+        m_categories[type] = true;
 
     /* Rebuild group: */
     m_pRoot->rebuildGroup();
@@ -229,28 +229,28 @@ void UIDetailsModel::prepareRoot()
 void UIDetailsModel::loadSettings()
 {
     /* Load settings: */
-    m_settings = gEDataManager->selectorWindowDetailsElements();
-    /* If settings are empty: */
-    if (m_settings.isEmpty())
+    m_categories = gEDataManager->selectorWindowDetailsElements();
+    /* If ccategories are empty: */
+    if (m_categories.isEmpty())
     {
         /* Propose the defaults: */
-        m_settings[DetailsElementType_General] = true;
-        m_settings[DetailsElementType_Preview] = true;
-        m_settings[DetailsElementType_System] = true;
-        m_settings[DetailsElementType_Display] = true;
-        m_settings[DetailsElementType_Storage] = true;
-        m_settings[DetailsElementType_Audio] = true;
-        m_settings[DetailsElementType_Network] = true;
-        m_settings[DetailsElementType_USB] = true;
-        m_settings[DetailsElementType_SF] = true;
-        m_settings[DetailsElementType_Description] = true;
+        m_categories[DetailsElementType_General] = true;
+        m_categories[DetailsElementType_Preview] = true;
+        m_categories[DetailsElementType_System] = true;
+        m_categories[DetailsElementType_Display] = true;
+        m_categories[DetailsElementType_Storage] = true;
+        m_categories[DetailsElementType_Audio] = true;
+        m_categories[DetailsElementType_Network] = true;
+        m_categories[DetailsElementType_USB] = true;
+        m_categories[DetailsElementType_SF] = true;
+        m_categories[DetailsElementType_Description] = true;
     }
 }
 
 void UIDetailsModel::saveSettings()
 {
     /* Save settings: */
-    gEDataManager->setSelectorWindowDetailsElements(m_settings);
+    gEDataManager->setSelectorWindowDetailsElements(m_categories);
 }
 
 void UIDetailsModel::cleanupRoot()
@@ -294,7 +294,7 @@ bool UIDetailsModel::processContextMenuEvent(QGraphicsSceneContextMenuEvent *pEv
         DetailsElementType currentElementType = (DetailsElementType)iType;
         QAction *pAction = contextMenu.addAction(gpConverter->toString(currentElementType), this, SLOT(sltElementTypeToggled()));
         pAction->setCheckable(true);
-        pAction->setChecked(m_settings.contains(currentElementType));
+        pAction->setChecked(m_categories.contains(currentElementType));
         pAction->setData(QVariant::fromValue(currentElementType));
     }
     /* Exec context-menu: */
