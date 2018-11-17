@@ -296,7 +296,7 @@ int HGCMThread::Initialize (HGCMTHREADHANDLE handle, const char *pszThreadName, 
                 m_fu32ThreadFlags = HGCMMSG_TF_INITIALIZING;
 
                 RTTHREAD thread;
-                rc = RTThreadCreate (&thread, hgcmWorkerThreadFunc, this, 0, /* default stack size; some service
+                rc = RTThreadCreate (&thread, hgcmWorkerThreadFunc, this, 0, /* default stack size; some services
                                                                                 may need quite a bit */
                                      RTTHREADTYPE_IO, RTTHREADFLAGS_WAITABLE,
                                      pszThreadName);
