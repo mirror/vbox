@@ -32,7 +32,7 @@
 #ifndef _WIN32_WINNT
 # define _WIN32_WINNT 0x0500
 #endif
-#include <iprt/win/windows.h>
+#include <iprt/nt/nt-and-windows.h>
 
 #include <iprt/file.h>
 
@@ -836,8 +836,50 @@ RTR3DECL(int) RTFileQueryInfo(RTFILE hFile, PRTFSOBJINFO pObjInfo, RTFSOBJATTRAD
      * Query file info.
      */
     HANDLE hHandle = (HANDLE)RTFileToNative(hFile);
+#if 1
+    uint64_t auBuf[168 / sizeof(uint64_t)]; /* Missing FILE_ALL_INFORMATION here. */
+    int rc = rtPathNtQueryInfoFromHandle(hFile, auBuf, sizeof(auBuf), pObjInfo, enmAdditionalAttribs, NULL, 0);
+    if (RT_SUCCESS(rc))
+        return rc;
 
-/** @todo use GetFileInformationByHandleEx here as GetFileInformationByHandle wastes time query the volume serial number! */
+    /*
+     * Console I/O handles make trouble here.  On older windows versions they
+     * end up with ERROR_INVALID_HANDLE when handed to the above API, while on
+     * more recent ones they cause different errors to appear.
+     *
+     * Thus, we must ignore the latter and doubly verify invalid handle claims.
+     * We use the undocumented VerifyConsoleIoHandle to do this, falling back on
+     * GetFileType should it not be there.
+     */
+    if (rc == VERR_INVALID_HANDLE)
+    {
+        static PFNVERIFYCONSOLEIOHANDLE s_pfnVerifyConsoleIoHandle = NULL;
+        static bool volatile            s_fInitialized = false;
+        PFNVERIFYCONSOLEIOHANDLE        pfnVerifyConsoleIoHandle;
+        if (s_fInitialized)
+            pfnVerifyConsoleIoHandle = s_pfnVerifyConsoleIoHandle;
+        else
+        {
+            pfnVerifyConsoleIoHandle = (PFNVERIFYCONSOLEIOHANDLE)RTLdrGetSystemSymbol("kernel32.dll", "VerifyConsoleIoHandle");
+            ASMAtomicWriteBool(&s_fInitialized, true);
+        }
+        if (   pfnVerifyConsoleIoHandle
+            ? !pfnVerifyConsoleIoHandle(hHandle)
+            : GetFileType(hHandle) == FILE_TYPE_UNKNOWN && GetLastError() != NO_ERROR)
+            return VERR_INVALID_HANDLE;
+    }
+    /*
+     * On Windows 10 and (hopefully) 8.1 we get ERROR_INVALID_FUNCTION with console I/O
+     * handles.  We must ignore these just like the above invalid handle error.
+     */
+    else if (rc != VERR_INVALID_FUNCTION && rc != VERR_IO_BAD_COMMAND)
+        return rc;
+
+    RT_ZERO(*pObjInfo);
+    pObjInfo->Attr.enmAdditional = enmAdditionalAttribs;
+    pObjInfo->Attr.fMode = rtFsModeFromDos(RTFS_DOS_NT_DEVICE, "", 0, 0);
+    return VINF_SUCCESS;
+#else
 
     BY_HANDLE_FILE_INFORMATION Data;
     if (!GetFileInformationByHandle(hHandle, &Data))
@@ -940,6 +982,7 @@ RTR3DECL(int) RTFileQueryInfo(RTFILE hFile, PRTFSOBJINFO pObjInfo, RTFSOBJATTRAD
     }
 
     return VINF_SUCCESS;
+#endif
 }
 
 
