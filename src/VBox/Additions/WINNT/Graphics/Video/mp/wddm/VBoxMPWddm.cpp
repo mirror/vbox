@@ -5490,9 +5490,12 @@ DxgkDdiSetVidPnSourceAddress(
     }
 
 #ifdef VBOX_WITH_MESA3D
-    GaScreenDefine(pDevExt->pGa, (uint32_t)pSetVidPnSourceAddress->PrimaryAddress.QuadPart,
-                   pSetVidPnSourceAddress->VidPnSourceId,
-                   pSource->AllocData.SurfDesc.width, pSource->AllocData.SurfDesc.height);
+    if (pDevExt->enmHwType == VBOXVIDEO_HWTYPE_VMSVGA)
+    {
+        GaScreenDefine(pDevExt->pGa, (uint32_t)pSetVidPnSourceAddress->PrimaryAddress.QuadPart,
+                       pSetVidPnSourceAddress->VidPnSourceId,
+                       pSource->AllocData.SurfDesc.width, pSource->AllocData.SurfDesc.height);
+    }
 #endif
 
     pSource->u8SyncState &= ~VBOXWDDM_HGSYNC_F_SYNCED_LOCATION;
