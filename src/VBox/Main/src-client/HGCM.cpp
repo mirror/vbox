@@ -89,8 +89,8 @@ class HGCMService
 
         static int sm_cServices;
 
-        HGCMTHREADHANDLE m_thread;
-        friend DECLCALLBACK(void) hgcmServiceThread(HGCMTHREADHANDLE ThreadHandle, void *pvUser);
+        HGCMThread *m_pThread;
+        friend DECLCALLBACK(void) hgcmServiceThread(HGCMThread *pThread, void *pvUser);
 
         uint32_t volatile m_u32RefCnt;
 
@@ -244,7 +244,7 @@ int HGCMService::sm_cServices = 0;
 
 HGCMService::HGCMService()
     :
-    m_thread     (0),
+    m_pThread    (NULL),
     m_u32RefCnt  (0),
     m_pSvcNext   (NULL),
     m_pSvcPrev   (NULL),
@@ -530,7 +530,7 @@ static HGCMMsgCore *hgcmMessageAllocSvc(uint32_t u32MsgId)
 /*
  * The service thread. Loads the service library and calls the service entry points.
  */
-DECLCALLBACK(void) hgcmServiceThread(HGCMTHREADHANDLE ThreadHandle, void *pvUser)
+DECLCALLBACK(void) hgcmServiceThread(HGCMThread *pThread, void *pvUser)
 {
     HGCMService *pSvc = (HGCMService *)pvUser;
     AssertRelease(pSvc != NULL);
@@ -540,7 +540,7 @@ DECLCALLBACK(void) hgcmServiceThread(HGCMTHREADHANDLE ThreadHandle, void *pvUser
     while (!fQuit)
     {
         HGCMMsgCore *pMsgCore;
-        int rc = hgcmMsgGet(ThreadHandle, &pMsgCore);
+        int rc = hgcmMsgGet(pThread, &pMsgCore);
 
         if (RT_FAILURE(rc))
         {
@@ -911,7 +911,7 @@ int HGCMService::instanceCreate(const char *pszServiceLibrary, const char *pszSe
     else
         RTStrCopy(szThreadName, sizeof(szThreadName), pszServiceName);
 
-    int rc = hgcmThreadCreate(&m_thread, szThreadName, hgcmServiceThread, this, pszServiceName, pUVM);
+    int rc = hgcmThreadCreate(&m_pThread, szThreadName, hgcmServiceThread, this, pszServiceName, pUVM);
 
     if (RT_SUCCESS(rc))
     {
@@ -947,7 +947,7 @@ int HGCMService::instanceCreate(const char *pszServiceLibrary, const char *pszSe
 
             /* Execute the load request on the service thread. */
             HGCMMSGHANDLE hMsg;
-            rc = hgcmMsgAlloc(m_thread, &hMsg, SVC_MSG_LOAD, hgcmMessageAllocSvc);
+            rc = hgcmMsgAlloc(m_pThread, &hMsg, SVC_MSG_LOAD, hgcmMessageAllocSvc);
 
             if (RT_SUCCESS(rc))
             {
@@ -975,16 +975,14 @@ void HGCMService::instanceDestroy(void)
     LogFlowFunc(("%s\n", m_pszSvcName));
 
     HGCMMSGHANDLE hMsg;
-    int rc = hgcmMsgAlloc(m_thread, &hMsg, SVC_MSG_UNLOAD, hgcmMessageAllocSvc);
+    int rc = hgcmMsgAlloc(m_pThread, &hMsg, SVC_MSG_UNLOAD, hgcmMessageAllocSvc);
 
     if (RT_SUCCESS(rc))
     {
         rc = hgcmMsgSend(hMsg);
 
         if (RT_SUCCESS(rc))
-        {
-            hgcmThreadWait(m_thread);
-        }
+            hgcmThreadWait(m_pThread);
     }
 
     if (m_pszSvcName)
@@ -1003,7 +1001,7 @@ int HGCMService::saveClientState(uint32_t u32ClientId, PSSMHANDLE pSSM)
     LogFlowFunc(("%s\n", m_pszSvcName));
 
     HGCMMSGHANDLE hMsg;
-    int rc = hgcmMsgAlloc(m_thread, &hMsg, SVC_MSG_SAVESTATE, hgcmMessageAllocSvc);
+    int rc = hgcmMsgAlloc(m_pThread, &hMsg, SVC_MSG_SAVESTATE, hgcmMessageAllocSvc);
 
     if (RT_SUCCESS(rc))
     {
@@ -1027,7 +1025,7 @@ int HGCMService::loadClientState(uint32_t u32ClientId, PSSMHANDLE pSSM)
     LogFlowFunc(("%s\n", m_pszSvcName));
 
     HGCMMSGHANDLE hMsg;
-    int rc = hgcmMsgAlloc(m_thread, &hMsg, SVC_MSG_LOADSTATE, hgcmMessageAllocSvc);
+    int rc = hgcmMsgAlloc(m_pThread, &hMsg, SVC_MSG_LOADSTATE, hgcmMessageAllocSvc);
 
     if (RT_SUCCESS(rc))
     {
@@ -1474,7 +1472,7 @@ int HGCMService::CreateAndConnectClient(uint32_t *pu32ClientIdOut, uint32_t u32C
         /* Call the service. */
         HGCMMSGHANDLE hMsg;
 
-        rc = hgcmMsgAlloc(m_thread, &hMsg, SVC_MSG_CONNECT, hgcmMessageAllocSvc);
+        rc = hgcmMsgAlloc(m_pThread, &hMsg, SVC_MSG_CONNECT, hgcmMessageAllocSvc);
 
         if (RT_SUCCESS(rc))
         {
@@ -1559,7 +1557,7 @@ int HGCMService::DisconnectClient(uint32_t u32ClientId, bool fFromService)
         /* Call the service. */
         HGCMMSGHANDLE hMsg;
 
-        rc = hgcmMsgAlloc(m_thread, &hMsg, SVC_MSG_DISCONNECT, hgcmMessageAllocSvc);
+        rc = hgcmMsgAlloc(m_pThread, &hMsg, SVC_MSG_DISCONNECT, hgcmMessageAllocSvc);
 
         if (RT_SUCCESS(rc))
         {
@@ -1575,7 +1573,7 @@ int HGCMService::DisconnectClient(uint32_t u32ClientId, bool fFromService)
         else
         {
             LogRel(("(%d, %d) [%s] hgcmMsgAlloc(%p, SVC_MSG_DISCONNECT) failed %Rrc\n",
-                    u32ClientId, fFromService, RT_VALID_PTR(m_pszSvcName)? m_pszSvcName: "", m_thread, rc));
+                    u32ClientId, fFromService, RT_VALID_PTR(m_pszSvcName)? m_pszSvcName: "", m_pThread, rc));
         }
     }
 
@@ -1589,9 +1587,7 @@ int HGCMService::DisconnectClient(uint32_t u32ClientId, bool fFromService)
             m_cClients--;
 
             if (m_cClients > i)
-            {
-                memmove (&m_paClientIds[i], &m_paClientIds[i + 1], sizeof(m_paClientIds[0]) * (m_cClients - i));
-            }
+                memmove(&m_paClientIds[i], &m_paClientIds[i + 1], sizeof(m_paClientIds[0]) * (m_cClients - i));
 
             /* Delete the client handle. */
             hgcmObjDeleteHandle(u32ClientId);
@@ -1615,7 +1611,7 @@ int HGCMService::RegisterExtension(HGCMSVCEXTHANDLE handle,
 
     /* Forward the message to the service thread. */
     HGCMMSGHANDLE hMsg = 0;
-    int rc = hgcmMsgAlloc(m_thread, &hMsg, SVC_MSG_REGEXT, hgcmMessageAllocSvc);
+    int rc = hgcmMsgAlloc(m_pThread, &hMsg, SVC_MSG_REGEXT, hgcmMessageAllocSvc);
 
     if (RT_SUCCESS(rc))
     {
@@ -1639,7 +1635,7 @@ void HGCMService::UnregisterExtension(HGCMSVCEXTHANDLE handle)
 {
     /* Forward the message to the service thread. */
     HGCMMSGHANDLE hMsg = 0;
-    int rc = hgcmMsgAlloc(m_thread, &hMsg, SVC_MSG_UNREGEXT, hgcmMessageAllocSvc);
+    int rc = hgcmMsgAlloc(m_pThread, &hMsg, SVC_MSG_UNREGEXT, hgcmMessageAllocSvc);
 
     if (RT_SUCCESS(rc))
     {
@@ -1674,7 +1670,7 @@ int HGCMService::GuestCall(PPDMIHGCMPORT pHGCMPort, PVBOXHGCMCMD pCmd, uint32_t 
 
     LogFlow(("MAIN::HGCMService::Call\n"));
 
-    int rc = hgcmMsgAlloc(m_thread, &hMsg, SVC_MSG_GUESTCALL, hgcmMessageAllocSvc);
+    int rc = hgcmMsgAlloc(m_pThread, &hMsg, SVC_MSG_GUESTCALL, hgcmMessageAllocSvc);
 
     if (RT_SUCCESS(rc))
     {
@@ -1717,7 +1713,7 @@ int HGCMService::HostCall(uint32_t u32Function, uint32_t cParms, VBOXHGCMSVCPARM
                  m_pszSvcName, u32Function, cParms, paParms));
 
     HGCMMSGHANDLE hMsg = 0;
-    int rc = hgcmMsgAlloc(m_thread, &hMsg, SVC_MSG_HOSTCALL, hgcmMessageAllocSvc);
+    int rc = hgcmMsgAlloc(m_pThread, &hMsg, SVC_MSG_HOSTCALL, hgcmMessageAllocSvc);
 
     if (RT_SUCCESS(rc))
     {
@@ -1774,7 +1770,7 @@ int HGCMService::HostFastCallAsync(uint32_t u32Function, VBOXHGCMSVCPARM *pParm,
                  m_pszSvcName, u32Function, pParm));
 
     HGCMMSGHANDLE hMsg = 0;
-    int rc = hgcmMsgAlloc(m_thread, &hMsg, SVC_MSG_HOSTFASTCALLASYNC, hgcmMessageAllocSvc);
+    int rc = hgcmMsgAlloc(m_pThread, &hMsg, SVC_MSG_HOSTFASTCALLASYNC, hgcmMessageAllocSvc);
 
     if (RT_SUCCESS(rc))
     {
@@ -1938,10 +1934,9 @@ static HGCMMsgCore *hgcmMainMessageAlloc (uint32_t u32MsgId)
 
 
 /* The main HGCM thread handler. */
-static DECLCALLBACK(void) hgcmThread(HGCMTHREADHANDLE ThreadHandle, void *pvUser)
+static DECLCALLBACK(void) hgcmThread(HGCMThread *pThread, void *pvUser)
 {
-    LogFlowFunc(("ThreadHandle = %p, pvUser = %p\n",
-                 ThreadHandle, pvUser));
+    LogFlowFunc(("pThread = %p, pvUser = %p\n", pThread, pvUser));
 
     NOREF(pvUser);
 
@@ -1950,7 +1945,7 @@ static DECLCALLBACK(void) hgcmThread(HGCMTHREADHANDLE ThreadHandle, void *pvUser
     while (!fQuit)
     {
         HGCMMsgCore *pMsgCore;
-        int rc = hgcmMsgGet(ThreadHandle, &pMsgCore);
+        int rc = hgcmMsgGet(pThread, &pMsgCore);
 
         if (RT_FAILURE(rc))
         {
@@ -2191,8 +2186,8 @@ static DECLCALLBACK(void) hgcmThread(HGCMTHREADHANDLE ThreadHandle, void *pvUser
  * The HGCM API.
  */
 
-/* The main hgcm thread. */
-static HGCMTHREADHANDLE g_hgcmThread = 0;
+/** The main hgcm thread. */
+static HGCMThread *g_pHgcmThread = 0;
 
 /*
  * Public HGCM functions.
@@ -2223,7 +2218,7 @@ int HGCMHostLoad(const char *pszServiceLibrary,
     /* Forward the request to the main hgcm thread. */
     HGCMMSGHANDLE hMsg = 0;
 
-    int rc = hgcmMsgAlloc(g_hgcmThread, &hMsg, HGCM_MSG_LOAD, hgcmMainMessageAlloc);
+    int rc = hgcmMsgAlloc(g_pHgcmThread, &hMsg, HGCM_MSG_LOAD, hgcmMainMessageAlloc);
 
     if (RT_SUCCESS(rc))
     {
@@ -2267,7 +2262,7 @@ int HGCMHostRegisterServiceExtension(HGCMSVCEXTHANDLE *pHandle,
     /* Forward the request to the main hgcm thread. */
     HGCMMSGHANDLE hMsg = 0;
 
-    int rc = hgcmMsgAlloc(g_hgcmThread, &hMsg, HGCM_MSG_REGEXT, hgcmMainMessageAlloc);
+    int rc = hgcmMsgAlloc(g_pHgcmThread, &hMsg, HGCM_MSG_REGEXT, hgcmMainMessageAlloc);
 
     if (RT_SUCCESS(rc))
     {
@@ -2296,7 +2291,7 @@ void HGCMHostUnregisterServiceExtension(HGCMSVCEXTHANDLE handle)
     /* Forward the request to the main hgcm thread. */
     HGCMMSGHANDLE hMsg = 0;
 
-    int rc = hgcmMsgAlloc(g_hgcmThread, &hMsg, HGCM_MSG_UNREGEXT, hgcmMainMessageAlloc);
+    int rc = hgcmMsgAlloc(g_pHgcmThread, &hMsg, HGCM_MSG_UNREGEXT, hgcmMainMessageAlloc);
 
     if (RT_SUCCESS(rc))
     {
@@ -2339,7 +2334,7 @@ int HGCMGuestConnect(PPDMIHGCMPORT pHGCMPort,
     /* Forward the request to the main hgcm thread. */
     HGCMMSGHANDLE hMsg = 0;
 
-    int rc = hgcmMsgAlloc(g_hgcmThread, &hMsg, HGCM_MSG_CONNECT, hgcmMainMessageAlloc);
+    int rc = hgcmMsgAlloc(g_pHgcmThread, &hMsg, HGCM_MSG_CONNECT, hgcmMainMessageAlloc);
 
     if (RT_SUCCESS(rc))
     {
@@ -2386,7 +2381,7 @@ int HGCMGuestDisconnect(PPDMIHGCMPORT pHGCMPort,
     /* Forward the request to the main hgcm thread. */
     HGCMMSGHANDLE hMsg = 0;
 
-    int rc = hgcmMsgAlloc(g_hgcmThread, &hMsg, HGCM_MSG_DISCONNECT, hgcmMainMessageAlloc);
+    int rc = hgcmMsgAlloc(g_pHgcmThread, &hMsg, HGCM_MSG_DISCONNECT, hgcmMainMessageAlloc);
 
     if (RT_SUCCESS(rc))
     {
@@ -2420,7 +2415,7 @@ static int hgcmHostLoadSaveState(PSSMHANDLE pSSM,
 
     HGCMMSGHANDLE hMsg = 0;
 
-    int rc = hgcmMsgAlloc(g_hgcmThread, &hMsg, u32MsgId, hgcmMainMessageAlloc);
+    int rc = hgcmMsgAlloc(g_pHgcmThread, &hMsg, u32MsgId, hgcmMainMessageAlloc);
 
     if (RT_SUCCESS(rc))
     {
@@ -2533,7 +2528,7 @@ int HGCMHostCall(const char *pszServiceName,
      * So it is slow but host calls are intended mostly for configuration and
      * other non-time-critical functions.
      */
-    int rc = hgcmMsgAlloc(g_hgcmThread, &hMsg, HGCM_MSG_HOSTCALL, hgcmMainMessageAlloc);
+    int rc = hgcmMsgAlloc(g_pHgcmThread, &hMsg, HGCM_MSG_HOSTCALL, hgcmMainMessageAlloc);
 
     if (RT_SUCCESS(rc))
     {
@@ -2577,7 +2572,7 @@ int HGCMHostSvcHandleCreate(const char *pszServiceName, HGCMCVSHANDLE * phSvc)
      * So it is slow but host calls are intended mostly for configuration and
      * other non-time-critical functions.
      */
-    int rc = hgcmMsgAlloc(g_hgcmThread, &hMsg, HGCM_MSG_SVCAQUIRE, hgcmMainMessageAlloc);
+    int rc = hgcmMsgAlloc(g_pHgcmThread, &hMsg, HGCM_MSG_SVCAQUIRE, hgcmMainMessageAlloc);
 
     if (RT_SUCCESS(rc))
     {
@@ -2618,7 +2613,7 @@ int HGCMHostSvcHandleDestroy(HGCMCVSHANDLE hSvc)
      * So it is slow but host calls are intended mostly for configuration and
      * other non-time-critical functions.
      */
-    int rc = hgcmMsgAlloc(g_hgcmThread, &hMsg, HGCM_MSG_SVCRELEASE, hgcmMainMessageAlloc);
+    int rc = hgcmMsgAlloc(g_pHgcmThread, &hMsg, HGCM_MSG_SVCRELEASE, hgcmMainMessageAlloc);
 
     if (RT_SUCCESS(rc))
     {
@@ -2664,7 +2659,7 @@ int HGCMHostReset(void)
 
     HGCMMSGHANDLE hMsg = 0;
 
-    int rc = hgcmMsgAlloc(g_hgcmThread, &hMsg, HGCM_MSG_RESET, hgcmMainMessageAlloc);
+    int rc = hgcmMsgAlloc(g_pHgcmThread, &hMsg, HGCM_MSG_RESET, hgcmMainMessageAlloc);
 
     if (RT_SUCCESS(rc))
     {
@@ -2687,7 +2682,7 @@ int HGCMHostInit(void)
          * Start main HGCM thread.
          */
 
-        rc = hgcmThreadCreate(&g_hgcmThread, "MainHGCMthread", hgcmThread, NULL /*pvUser*/, NULL /*pszStatsSubDir*/, NULL /*pUVM*/);
+        rc = hgcmThreadCreate(&g_pHgcmThread, "MainHGCMthread", hgcmThread, NULL /*pvUser*/, NULL /*pszStatsSubDir*/, NULL /*pUVM*/);
 
         if (RT_FAILURE(rc))
         {
@@ -2714,7 +2709,7 @@ int HGCMHostShutdown(void)
         /* Send the quit message to the main hgcmThread. */
         HGCMMSGHANDLE hMsg = 0;
 
-        rc = hgcmMsgAlloc(g_hgcmThread, &hMsg, HGCM_MSG_QUIT, hgcmMainMessageAlloc);
+        rc = hgcmMsgAlloc(g_pHgcmThread, &hMsg, HGCM_MSG_QUIT, hgcmMainMessageAlloc);
 
         if (RT_SUCCESS(rc))
         {
@@ -2723,8 +2718,8 @@ int HGCMHostShutdown(void)
             if (RT_SUCCESS(rc))
             {
                 /* Wait for the thread termination. */
-                hgcmThreadWait(g_hgcmThread);
-                g_hgcmThread = 0;
+                hgcmThreadWait(g_pHgcmThread);
+                g_pHgcmThread = 0;
 
                 hgcmThreadUninit();
             }
