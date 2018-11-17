@@ -3341,7 +3341,7 @@ typedef struct PDMDEVHLPR3
     /**
      * The the VM CPU ID of the current thread (restricted API).
      *
-     * @returns The VMCPUID of the calling thread, NIL_CPUID if not EMT.
+     * @returns The VMCPUID of the calling thread, NIL_VMCPUID if not EMT.
      * @param   pDevIns             The device instance.
      */
     DECLR3CALLBACKMEMBER(VMCPUID, pfnGetCurrentCpuId,(PPDMDEVINS pDevIns));
@@ -3708,7 +3708,7 @@ typedef struct PDMDEVHLPRC
     /**
      * The the VM CPU ID of the current thread (restricted API).
      *
-     * @returns The VMCPUID of the calling thread, NIL_CPUID if not EMT.
+     * @returns The VMCPUID of the calling thread, NIL_VMCPUID if not EMT.
      * @param   pDevIns             The device instance.
      */
     DECLRCCALLBACKMEMBER(VMCPUID, pfnGetCurrentCpuId,(PPDMDEVINS pDevIns));
@@ -3969,7 +3969,7 @@ typedef struct PDMDEVHLPR0
     /**
      * The the VM CPU ID of the current thread (restricted API).
      *
-     * @returns The VMCPUID of the calling thread, NIL_CPUID if not EMT.
+     * @returns The VMCPUID of the calling thread, NIL_VMCPUID if not EMT.
      * @param   pDevIns             The device instance.
      */
     DECLR0CALLBACKMEMBER(VMCPUID, pfnGetCurrentCpuId,(PPDMDEVINS pDevIns));
