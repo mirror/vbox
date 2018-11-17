@@ -487,7 +487,7 @@ vboxSfOs2QueryFileInfo(PVBOXSFFOLDER pFolder, PSFFSI pSfFsi, PVBOXSFSYFI pSfFsd,
         uint32_t cbObjInfo = sizeof(*pObjInfo);
 
         int vrc = VbglR0SfFsInfo(&g_SfClient, &pFolder->hHostFolder, pSfFsd->hHostFile,
-                                SHFL_INFO_FILE | SHFL_INFO_GET, &cbObjInfo, (PSHFLDIRINFO)pObjInfo);
+                                 SHFL_INFO_FILE | SHFL_INFO_GET, &cbObjInfo, (PSHFLDIRINFO)pObjInfo);
         if (RT_SUCCESS(vrc))
         {
             rc = vboxSfOs2FileStatusFromObjInfo(pbData, cbData, uLevel, pObjInfo);
@@ -508,6 +508,7 @@ vboxSfOs2QueryFileInfo(PVBOXSFFOLDER pFolder, PSFFSI pSfFsi, PVBOXSFSYFI pSfFsd,
             Log(("vboxSfOs2QueryFileInfo: VbglR0SfFsInfo failed: %Rrc\n", vrc));
             rc = vboxSfOs2ConvertStatusToOs2(vrc, ERROR_GEN_FAILURE);
         }
+        VbglR0PhysHeapFree(pObjInfo);
     }
     else
         rc = ERROR_NOT_ENOUGH_MEMORY;
