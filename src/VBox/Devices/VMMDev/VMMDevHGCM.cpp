@@ -2162,13 +2162,16 @@ void vmmdevHGCMDestroy(PVMMDEV pThis)
 {
     LogFlowFunc(("\n"));
 
-    RTCritSectDelete(&pThis->critsectHGCMCmdList);
-
-    PVBOXHGCMCMD pCmd, pNext;
-    RTListForEachSafe(&pThis->listHGCMCmd, pCmd, pNext, VBOXHGCMCMD, node)
+    if (RTCritSectIsInitialized(&pThis->critsectHGCMCmdList))
     {
-        vmmdevHGCMRemoveCommand(pThis, pCmd);
-        vmmdevHGCMCmdFree(pThis, pCmd);
+        PVBOXHGCMCMD pCmd, pNext;
+        RTListForEachSafe(&pThis->listHGCMCmd, pCmd, pNext, VBOXHGCMCMD, node)
+        {
+            vmmdevHGCMRemoveCommand(pThis, pCmd);
+            vmmdevHGCMCmdFree(pThis, pCmd);
+        }
+
+        RTCritSectDelete(&pThis->critsectHGCMCmdList);
     }
 
     AssertCompile((uintptr_t)NIL_RTMEMCACHE == 0);
@@ -2190,6 +2193,8 @@ void vmmdevHGCMDestroy(PVMMDEV pThis)
  */
 int vmmdevHGCMInit(PVMMDEV pThis)
 {
+    LogFlowFunc(("\n"));
+
     RTListInit(&pThis->listHGCMCmd);
 
     int rc = RTCritSectInit(&pThis->critsectHGCMCmdList);
