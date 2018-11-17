@@ -837,6 +837,8 @@ RTR3DECL(int) RTFileQueryInfo(RTFILE hFile, PRTFSOBJINFO pObjInfo, RTFSOBJATTRAD
      */
     HANDLE hHandle = (HANDLE)RTFileToNative(hFile);
 
+/** @todo use GetFileInformationByHandleEx here as GetFileInformationByHandle wastes time query the volume serial number! */
+
     BY_HANDLE_FILE_INFORMATION Data;
     if (!GetFileInformationByHandle(hHandle, &Data))
     {
