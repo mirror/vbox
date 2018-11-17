@@ -26,6 +26,8 @@
 #include <iprt/thread.h>
 #include <iprt/string.h>
 
+#include <new> /* for std:nothrow */
+
 
 /* HGCM uses worker threads, which process messages from other threads.
  * A message consists of the message header and message specific data.
@@ -126,13 +128,13 @@ class HGCMThread : public HGCMReferencedObject
         STAMCOUNTER m_StatPostMsgManyPending;
         /** @} */
 
-        inline int Enter (void);
-        inline void Leave (void);
+        inline int Enter(void);
+        inline void Leave(void);
 
-        HGCMMsgCore *FetchFreeListHead (void);
+        HGCMMsgCore *FetchFreeListHead(void);
 
     protected:
-        virtual ~HGCMThread (void);
+        virtual ~HGCMThread(void);
 
     public:
 
