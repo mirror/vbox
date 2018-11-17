@@ -33,12 +33,15 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #include <string.h>
+#include <stdarg.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
 #define INCL_BASE
+#define INCL_DOSINFOSEG
 #define OS2EMX_PLAIN_CHAR
 #include <os2.h>
+#include <iprt/asm-amd64-x86.h>
 
 
 /*********************************************************************************************************************************
@@ -46,6 +49,83 @@
 *********************************************************************************************************************************/
 extern "C" APIRET __cdecl CallDosQFileMode(const char *pszFilename, PUSHORT pfAttr, ULONG ulReserved);
 
+#ifndef GETGINFOSEG
+typedef struct _GINFOSEG
+{
+    ULONG       time;
+    ULONG       msecs;
+    UCHAR       hour;
+    UCHAR       minutes;
+    UCHAR       seconds;
+    UCHAR       hundredths;
+    USHORT      timezone;
+    USHORT      cusecTimerInterval;
+    UCHAR       day;
+    UCHAR       month;
+    USHORT      year;
+    UCHAR       weekday;
+    UCHAR       uchMajorVersion;
+    UCHAR       uchMinorVersion;
+    UCHAR       chRevisionLetter;
+    UCHAR       sgCurrent;
+    UCHAR       sgMax;
+    UCHAR       cHugeShift;
+    UCHAR       fProtectModeOnly;
+    USHORT      pidForeground;
+    UCHAR       fDynamicSched;
+    UCHAR       csecMaxWait;
+    USHORT      cmsecMinSlice;
+    USHORT      cmsecMaxSlice;
+    USHORT      bootdrive;
+    UCHAR       amecRAS[32];
+    UCHAR       csgWindowableVioMax;
+    UCHAR       csgPMMax;
+    USHORT      SIS_Syslog;
+    USHORT      SIS_MMIOBase;
+    USHORT      SIS_MMIOAddr;
+    UCHAR       SIS_MaxVDMs;
+    UCHAR       SIS_Reserved;
+} GINFOSEG;
+typedef GINFOSEG *PGINFOSEG;
+
+extern "C" void _System DOS16GLOBALINFO(void);
+# define GETGINFOSEG()      ((PGINFOSEG)(void *)(((unsigned)&DOS16GLOBALINFO & 0xfff8) << 13))
+
+#endif
+
+
+/*********************************************************************************************************************************
+*   Global Variables                                                                                                             *
+*********************************************************************************************************************************/
+static GINFOSEG volatile *g_pGInfoSeg;
+static PTIB               g_pTib;
+static PPIB               g_pPib;
+
+
+static int syntaxError(const char *pszFormat, ...)
+{
+    fprintf(stderr, "syntax error: ");
+    va_list va;
+    va_start(va, pszFormat);
+    vfprintf(stderr, pszFormat, va);
+    va_end(va);
+    if (strchr(pszFormat, '\0')[-1] != '\n')
+        fputc('\n', stderr);
+    return 2;
+}
+
+
+static int error(const char *pszFormat, ...)
+{
+    fprintf(stderr, "error: ");
+    va_list va;
+    va_start(va, pszFormat);
+    vfprintf(stderr, pszFormat, va);
+    va_end(va);
+    if (strchr(pszFormat, '\0')[-1] != '\n')
+        fputc('\n', stderr);
+    return 1;
+}
 
 
 int vboxSfOs2UtilUse(int argc, char **argv)
@@ -54,10 +134,7 @@ int vboxSfOs2UtilUse(int argc, char **argv)
      * Continue parsing.
      */
     if (argc != 3)
-    {
-        fprintf(stderr, "syntax error: Expected three arguments to 'use' command\n");
-        return 2;
-    }
+        return syntaxError("Expected three arguments to 'use' command\n");
 
     /* The drive letter. */
     const char *pszDrive = argv[1];
@@ -67,10 +144,7 @@ int vboxSfOs2UtilUse(int argc, char **argv)
         && pszDrive[2] == '\0')
     { /* likely */ }
     else
-    {
-        fprintf(stderr, "syntax error: Invalid drive specification '%s', expected something like 'K:'.\n", pszDrive);
-        return 2;
-    }
+        return syntaxError("Invalid drive specification '%s', expected something like 'K:'.\n", pszDrive);
 
     /* The shared folder. */
     const char *pszFolder = argv[2];
@@ -78,10 +152,7 @@ int vboxSfOs2UtilUse(int argc, char **argv)
     if (cchFolder <= 80 && cchFolder != 0)
     { /* likely */ }
     else
-    {
-        fprintf(stderr, "syntax error: Shared folder name '%s' is too %s!\n", pszFolder, cchFolder >= 1 ? "long" : "short");
-        return 2;
-    }
+        return syntaxError("Shared folder name '%s' is too %s!\n", pszFolder, cchFolder >= 1 ? "long" : "short");
 
     /*
      * Try attach it.
@@ -92,8 +163,7 @@ int vboxSfOs2UtilUse(int argc, char **argv)
         printf("done\n");
         return 0;
     }
-    fprintf(stderr, "error: DosFSAttach failed: %lu\n", rc);
-    return 1;
+    return error("DosFSAttach failed: %lu\n", rc);
 }
 
 
@@ -354,10 +424,7 @@ int vboxSfOs2UtilFindFile(int argc, char **argv)
                 else if (strcmp(pszArg, "help") == 0)
                     pszArg = "h";
                 else
-                {
-                    fprintf(stderr, "syntax error: Unknown option: %s\n", argv[i]);
-                    return 2;
-                }
+                    return syntaxError("Unknown option: %s\n", argv[i]);
             }
             do
             {
@@ -370,10 +437,7 @@ int vboxSfOs2UtilFindFile(int argc, char **argv)
                     else if (i + 1 < argc)
                         pszValue = argv[++i];
                     else
-                    {
-                        fprintf(stderr, "syntax error: -%c takes a value\n", chOpt);
-                        return 2;
-                    }
+                        return syntaxError("-%c takes a value\n", chOpt);
                     pszArg = "";
                 }
                 switch (chOpt)
@@ -397,8 +461,7 @@ int vboxSfOs2UtilFindFile(int argc, char **argv)
                                "           [-l|--level <num>] [-m|--matches <num>] [--] <dir1> [dir2..N]\n");
                         return 0;
                     default:
-                        fprintf(stderr, "syntax error: Unknown option '%c' (%s)\n", chOpt, argv[i - (pszValue != NULL)]);
-                        return 2;
+                        return syntaxError("Unknown option '%c' (%s)\n", chOpt, argv[i - (pszValue != NULL)]);
                 }
 
             } while (pszArg && *pszArg != '\0');
@@ -412,10 +475,7 @@ int vboxSfOs2UtilFindFile(int argc, char **argv)
             {
                 pbBuf = (uint8_t *)malloc(cbBuf);
                 if (!pbBuf)
-                {
-                    fprintf(stderr, "error: out of memory (cbBuf=%#x)\n", cbBuf);
-                    return 1;
-                }
+                    return error("out of memory (cbBuf=%#x)\n", cbBuf);
             }
 
             HDIR  hDir     = HDIR_CREATE;
@@ -502,8 +562,122 @@ static int vboxSfOs2UtilMkDir(int argc, char **argv)
 }
 
 
+static int vboxSfOs2UtilBenchFStat(int argc, char **argv)
+{
+    int      rcRet     = 0;
+    bool     fOptions  = true;
+    unsigned msRuntime = 5*1000;
+    for (int i = 1; i < argc; i++)
+    {
+        /*
+         * Parse arguments.
+         */
+        const char *pszArg = argv[i];
+        if (*pszArg == '-' && fOptions)
+        {
+            if (*++pszArg == '-')
+            {
+                pszArg++;
+                if (*pszArg == '\0')
+                {
+                    fOptions = false;
+                    continue;
+                }
+                if (strcmp(pszArg, "runtime") == 0)
+                    pszArg = "r";
+                else if (strcmp(pszArg, "help") == 0)
+                    pszArg = "h";
+                else
+                    return syntaxError("Unknown option: %s", argv[i]);
+            }
+
+            while (*pszArg != '\0')
+            {
+                char chOpt = *pszArg++;
+                const char *pszValue = NULL;
+                if (chOpt == 'r')
+                {
+                    if (*pszArg != '\0')
+                    {
+                        pszValue = *pszArg == ':' || *pszArg == '=' ? pszArg + 1 : pszArg;
+                        pszArg = "";
+                    }
+                    else if (i + 1 < argc)
+                        pszValue = argv[++i];
+                    else
+                        return syntaxError("Expected value after -%c.", chOpt);
+                }
+                switch (chOpt)
+                {
+                    case 'r':
+                        msRuntime = atoi(pszValue);
+                        break;
+
+                    default:
+                        return syntaxError("Unknown option: -%c", chOpt);
+                }
+            }
+        }
+        /*
+         * Run tests on the file.
+         */
+        else
+        {
+            ULONG ulAction = 0;
+            HFILE hFile = NULLHANDLE;
+            APIRET rc = DosOpen(pszArg, &hFile, &ulAction, 0 /*cbFile*/, FILE_NORMAL,
+                                OPEN_ACTION_FAIL_IF_NEW | OPEN_ACTION_OPEN_IF_EXISTS,
+                                OPEN_SHARE_DENYNONE | OPEN_ACCESS_READONLY | OPEN_FLAGS_FAIL_ON_ERROR, NULL /*pEaBuf*/);
+            if (rc == NO_ERROR)
+            {
+                /* Do a test run. */
+                FILESTATUS3 Info;
+                rc = DosQueryFileInfo(hFile, FIL_STANDARD, &Info, sizeof(Info));
+                if (rc == NO_ERROR)
+                {
+                    printf("Testing '%s'...\n", pszArg);
+
+                    /* Tread water till the microsecond count changes. */
+                    ULONG msStart = g_pGInfoSeg->msecs;
+                    while (g_pGInfoSeg->msecs == msStart)
+                    { /* nothing */ }
+
+                    /* Do the actual testing. */
+                    msStart = g_pGInfoSeg->msecs;
+                    ULONG    cCalls      = 0;
+                    uint64_t cTscElapsed = ASMReadTSC();
+                    do
+                    {
+                        cCalls++;
+                        rc = DosQueryFileInfo(hFile, FIL_STANDARD, &Info, sizeof(Info));
+                    } while (rc == NO_ERROR && g_pGInfoSeg->msecs - msStart < msRuntime );
+                    cTscElapsed = ASMReadTSC() - cTscElapsed;
+
+                    if (rc == NO_ERROR)
+                        printf("%7lu calls in %14lu ms    - %6llu ns per call\n"
+                               "%7lu calls in %14llu ticks - %6llu ticks per call\n",
+                               cCalls, msRuntime, msRuntime * (uint64_t)1000000 / cCalls,
+                               cCalls, cTscElapsed, cTscElapsed / cCalls);
+                    else
+                        rcRet = error("DosQueryFileInfo failed on '%s' after %u calls: %u", pszArg, cCalls, rc);
+                }
+                else
+                    rcRet = error("DosQueryFileInfo failed on '%s': %u", pszArg, rc);
+                DosClose(hFile);
+            }
+            else
+                rcRet = error("DosOpen failed on '%s': %u", pszArg, rc);
+        }
+    }
+    return rcRet;
+}
+
+
 int main(int argc, char **argv)
 {
+    g_pGInfoSeg = GETGINFOSEG();
+    DosGetInfoBlocks(&g_pTib, &g_pPib);
+
     /*
      * Parse input.
      */
@@ -518,6 +692,8 @@ int main(int argc, char **argv)
             return vboxSfOs2UtilFindFile(argc - i, argv + i);
         if (strcmp(pszArg, "mkdir") == 0)
             return vboxSfOs2UtilMkDir(argc - i, argv + i);
+        if (strcmp(pszArg, "benchfstat") == 0)
+            return vboxSfOs2UtilBenchFStat(argc - i, argv + i);
 
         fprintf(stderr,  "Unknown command/option: %s\n", pszArg);
         return 2;

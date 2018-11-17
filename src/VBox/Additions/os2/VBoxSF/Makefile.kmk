@@ -215,7 +215,8 @@ VBoxSFUtil_TOOL     = OPENWATCOM
 VBoxSFUtil_ASTOOL   = NASM
 VBoxSFUtil_ASFLAGS  = -f obj -DASM_FORMAT_OMF
 VBoxSFUtil_INCS     = $(PATH_TOOL_OPENWATCOM)/h/os2
-VBoxSFUtil_LDFLAGS  = -bcl=os2v2
+VBoxSFUtil_LDFLAGS  = -bcl=os2v2 #"IMPORT DosGlobalInfo doscalls.217"
+VBoxSFUtil_DEFS     = $(DEFS) IN_RING3
 else
 VBoxSFUtil_TEMPLATE = VBoxGuestR3Exe
 endif
