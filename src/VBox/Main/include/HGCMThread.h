@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __HGCMThread_h__
-#define __HGCMThread_h__
+#ifndef ___HGCMThread_h
+#define ___HGCMThread_h
 
 #include <VBox/types.h>
 
@@ -27,9 +27,6 @@ class HGCMThread;
 
 /** A handle for HGCM message. */
 typedef uint32_t HGCMMSGHANDLE;
-
-/** A handle for HGCM worker threads. */
-typedef class HGCMThread *HGCMTHREADHANDLE;
 
 /* Forward declaration of message core class. */
 class HGCMMsgCore;
@@ -52,7 +49,7 @@ typedef HGCMMSGCALLBACK *PHGCMMSGCALLBACK;
 
 
 /** HGCM core message. */
-class HGCMMsgCore : public HGCMObject
+class HGCMMsgCore : public HGCMReferencedObject
 {
     private:
         friend class HGCMThread;
@@ -60,11 +57,11 @@ class HGCMMsgCore : public HGCMObject
         /** Version of message header. */
         uint32_t m_u32Version;
 
-        /** Thread the message belongs to, referenced by the message. */
-        HGCMThread *m_pThread;
-
         /** Message number/identifier. */
         uint32_t m_u32Msg;
+
+        /** Thread the message belongs to, referenced by the message. */
+        HGCMThread *m_pThread;
 
         /** Callback function pointer. */
         PHGCMMSGCALLBACK m_pfnCallback;
@@ -81,13 +78,13 @@ class HGCMMsgCore : public HGCMObject
         /** Result code for a Send */
         int32_t m_rcSend;
 
-        void InitializeCore(uint32_t u32MsgId, HGCMThread * pThread);
-
     protected:
+        void InitializeCore(uint32_t u32MsgId, HGCMThread *pThread);
+
         virtual ~HGCMMsgCore();
 
     public:
-        HGCMMsgCore() : HGCMObject(HGCMOBJ_MSG) {};
+        HGCMMsgCore() : HGCMReferencedObject(HGCMOBJ_MSG) {};
 
         uint32_t MsgId(void) { return m_u32Msg; };
 
@@ -98,7 +95,6 @@ class HGCMMsgCore : public HGCMObject
 
         /** Uninitialize message. */
         virtual void Uninitialize(void) {};
-
 };
 
 
@@ -153,31 +149,37 @@ int hgcmThreadWait(HGCMThread *pThread);
 /** Allocate a message to be posted to HGCM worker thread.
  *
  * @param pThread       The HGCM worker thread.
- * @param pHandle       Where to store the returned message handle.
+ * @param ppHandle      Where to store the pointer to the new message.
  * @param u32MsgId      Message identifier.
  * @param pfnNewMessage New message allocation callback.
  *
  * @return VBox error code
  */
-int hgcmMsgAlloc(HGCMThread *pThread, HGCMMSGHANDLE *pHandle, uint32_t u32MsgId, PFNHGCMNEWMSGALLOC pfnNewMessage);
+int hgcmMsgAlloc(HGCMThread *pThread, HGCMMsgCore **ppHandle, uint32_t u32MsgId, PFNHGCMNEWMSGALLOC pfnNewMessage);
 
 /** Post a message to HGCM worker thread.
  *
- * @param hMsg          Message handle.
+ * @param pMsg          The message.  Reference will be consumed!
  * @param pfnCallback   Message completion callback.
  *
  * @return VBox error code
+ * @retval VINF_HGCM_ASYNC_EXECUTE on success.
+ *
+ * @thread any
  */
-int hgcmMsgPost(HGCMMSGHANDLE hMsg, PHGCMMSGCALLBACK pfnCallback);
+int hgcmMsgPost(HGCMMsgCore *pMsg, PHGCMMSGCALLBACK pfnCallback);
 
 /** Send a message to HGCM worker thread.
+ *
  *  The function will return after message is processed by thread.
  *
- * @param hMsg          Message handle.
+ * @param pMsg          The message.  Reference will be consumed!
  *
  * @return VBox error code
+ *
+ * @thread any
  */
-int hgcmMsgSend(HGCMMSGHANDLE hMsg);
+int hgcmMsgSend(HGCMMsgCore *pMsg);
 
 
 /* Wait for and get a message.
@@ -204,4 +206,5 @@ int hgcmMsgGet(HGCMThread *pThread, HGCMMsgCore **ppMsg);
 void hgcmMsgComplete(HGCMMsgCore *pMsg, int32_t result);
 
 
-#endif /* __HGCMThread_h__ */
+#endif /* !___HGCMThread_h */
+

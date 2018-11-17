@@ -245,7 +245,7 @@ HGCMObject *hgcmObjReference (uint32_t handle, HGCMOBJ_TYPE enmObjType)
     return pObject;
 }
 
-void hgcmObjDereference(HGCMReferencedObject *pObject)
+void hgcmObjDereference(HGCMObject *pObject)
 {
     LogFlow(("MAIN::hgcmObjDereference: pObject %p\n", pObject));
 

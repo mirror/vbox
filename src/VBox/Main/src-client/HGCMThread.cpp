@@ -144,7 +144,7 @@ class HGCMThread : public HGCMReferencedObject
 
         int Initialize(const char *pszThreadName, PFNHGCMTHREAD pfnThread, void *pvUser, const char *pszStatsSubDir, PUVM pUVM);
 
-        int MsgAlloc(HGCMMSGHANDLE *pHandle, uint32_t u32MsgId, PFNHGCMNEWMSGALLOC pfnNewMessage);
+        int MsgAlloc(HGCMMsgCore **pMsg, uint32_t u32MsgId, PFNHGCMNEWMSGALLOC pfnNewMessage);
         int MsgGet(HGCMMsgCore **ppMsg);
         int MsgPost(HGCMMsgCore *pMsg, PHGCMMSGCALLBACK pfnCallback, bool bWait);
         void MsgComplete(HGCMMsgCore *pMsg, int32_t result);
@@ -363,7 +363,7 @@ inline void HGCMThread::Leave(void)
 }
 
 
-int HGCMThread::MsgAlloc(HGCMMSGHANDLE *pHandle, uint32_t u32MsgId, PFNHGCMNEWMSGALLOC pfnNewMessage)
+int HGCMThread::MsgAlloc(HGCMMsgCore **ppMsg, uint32_t u32MsgId, PFNHGCMNEWMSGALLOC pfnNewMessage)
 {
     /** @todo  Implement this free list / cache thingy.   */
     HGCMMsgCore *pmsg = NULL;
@@ -374,8 +374,9 @@ int HGCMThread::MsgAlloc(HGCMMSGHANDLE *pHandle, uint32_t u32MsgId, PFNHGCMNEWMS
     {
         /* We have to allocate a new memory block. */
         pmsg = pfnNewMessage(u32MsgId);
-
-        if (pmsg == NULL)
+        if (pmsg != NULL)
+            pmsg->Reference(); /* (it's created with zero references) */
+        else
             return VERR_NO_MEMORY;
     }
 
@@ -387,10 +388,7 @@ int HGCMThread::MsgAlloc(HGCMMSGHANDLE *pHandle, uint32_t u32MsgId, PFNHGCMNEWMS
 
     LogFlow(("MAIN::hgcmMsgAlloc: allocated message %p\n", pmsg));
 
-    /** Get handle of the message. The message will be also referenced
-     *  until the handle is deleted.
-     */
-    *pHandle = hgcmObjGenerateHandle(pmsg);
+    *ppMsg = pmsg;
 
     if (fFromFreeList)
     {
@@ -557,7 +555,7 @@ int HGCMThread::MsgGet(HGCMMsgCore **ppMsg)
     return rc;
 }
 
-void HGCMThread::MsgComplete (HGCMMsgCore *pMsg, int32_t result)
+void HGCMThread::MsgComplete(HGCMMsgCore *pMsg, int32_t result)
 {
     LogFlow(("HGCMThread::MsgComplete: thread = %p, pMsg = %p\n", this, pMsg));
 
@@ -609,7 +607,7 @@ void HGCMThread::MsgComplete (HGCMMsgCore *pMsg, int32_t result)
         pMsg->m_fu32Flags &= ~HGCM_MSG_F_WAIT;
         pMsg->m_fu32Flags |= HGCM_MSG_F_PROCESSED;
 
-        hgcmObjDeleteHandle(pMsg->Handle());
+        pMsg->Dereference();
 
         Leave();
 
@@ -680,52 +678,37 @@ int hgcmThreadWait(HGCMThread *pThread)
     return rc;
 }
 
-int hgcmMsgAlloc(HGCMThread *pThread, HGCMMSGHANDLE *pHandle, uint32_t u32MsgId, PFNHGCMNEWMSGALLOC pfnNewMessage)
+int hgcmMsgAlloc(HGCMThread *pThread, HGCMMsgCore **ppMsg, uint32_t u32MsgId, PFNHGCMNEWMSGALLOC pfnNewMessage)
 {
-    LogFlow(("hgcmMsgAlloc: pThread = %p, pHandle = %p, sizeof (HGCMMsgCore) = %d\n",
-             pThread, pHandle, sizeof (HGCMMsgCore)));
+    LogFlow(("hgcmMsgAlloc: pThread = %p, ppMsg = %p, sizeof (HGCMMsgCore) = %d\n", pThread, ppMsg, sizeof(HGCMMsgCore)));
 
     AssertReturn(pThread, VERR_INVALID_HANDLE);
-    AssertReturn(pHandle, VERR_INVALID_PARAMETER);
+    AssertReturn(ppMsg, VERR_INVALID_PARAMETER);
 
-    int rc = pThread->MsgAlloc(pHandle, u32MsgId, pfnNewMessage);
+    int rc = pThread->MsgAlloc(ppMsg, u32MsgId, pfnNewMessage);
 
-    LogFlow(("MAIN::hgcmMsgAlloc: handle 0x%08X, rc = %Rrc\n", *pHandle, rc));
+    LogFlow(("MAIN::hgcmMsgAlloc: *ppMsg = %p, rc = %Rrc\n", *ppMsg, rc));
     return rc;
 }
 
-static int hgcmMsgPostInternal(HGCMMSGHANDLE hMsg, PHGCMMSGCALLBACK pfnCallback, bool fWait)
+DECLINLINE(int) hgcmMsgPostInternal(HGCMMsgCore *pMsg, PHGCMMSGCALLBACK pfnCallback, bool fWait)
 {
-    LogFlow(("MAIN::hgcmMsgPostInternal: hMsg = 0x%08X, pfnCallback = %p, fWait = %d\n", hMsg, pfnCallback, fWait));
+    LogFlow(("MAIN::hgcmMsgPostInternal: pMsg = %p, pfnCallback = %p, fWait = %d\n", pMsg, pfnCallback, fWait));
+    Assert(pMsg);
 
-    int rc = VINF_SUCCESS;
+    pMsg->Reference(); /* paranoia? */
 
-    HGCMMsgCore *pMsg = (HGCMMsgCore *)hgcmObjReference(hMsg, HGCMOBJ_MSG);
+    int rc = pMsg->Thread()->MsgPost(pMsg, pfnCallback, fWait);
 
-    if (!pMsg)
-    {
-        rc = VERR_INVALID_HANDLE;
-    }
-    else
-    {
-        rc = pMsg->Thread()->MsgPost(pMsg, pfnCallback, fWait);
+    pMsg->Dereference();
 
-        hgcmObjDereference(pMsg);
-    }
-
-    LogFlow(("MAIN::hgcmMsgPostInternal: hMsg 0x%08X, rc = %Rrc\n", hMsg, rc));
+    LogFlow(("MAIN::hgcmMsgPostInternal: pMsg %p, rc = %Rrc\n", pMsg, rc));
     return rc;
 }
 
-
-/** Post message to worker thread with a flag indication if this is a Send or Post.
- *
- * @returns VINF_HGCM_ASYNC_EXECUTE
- * @thread any
- */
-int hgcmMsgPost(HGCMMSGHANDLE hMsg, PHGCMMSGCALLBACK pfnCallback)
+int hgcmMsgPost(HGCMMsgCore *pMsg, PHGCMMSGCALLBACK pfnCallback)
 {
-    int rc = hgcmMsgPostInternal(hMsg, pfnCallback, false);
+    int rc = hgcmMsgPostInternal(pMsg, pfnCallback, false);
 
     if (RT_SUCCESS(rc))
         rc = VINF_HGCM_ASYNC_EXECUTE;
@@ -733,15 +716,10 @@ int hgcmMsgPost(HGCMMSGHANDLE hMsg, PHGCMMSGCALLBACK pfnCallback)
     return rc;
 }
 
-/** Send message to worker thread. Sending thread will block until message is processed.
- *
- * @thread any
- */
-int hgcmMsgSend (HGCMMSGHANDLE hMsg)
+int hgcmMsgSend(HGCMMsgCore *pMsg)
 {
-    return hgcmMsgPostInternal (hMsg, NULL, true);
+    return hgcmMsgPostInternal(pMsg, NULL, true);
 }
-
 
 int hgcmMsgGet(HGCMThread *pThread, HGCMMsgCore **ppMsg)
 {
@@ -760,7 +738,6 @@ int hgcmMsgGet(HGCMThread *pThread, HGCMMsgCore **ppMsg)
     return rc;
 }
 
-
 void hgcmMsgComplete(HGCMMsgCore *pMsg, int32_t u32Result)
 {
     LogFlow(("MAIN::hgcmMsgComplete: pMsg = %p\n", pMsg));
@@ -771,7 +748,6 @@ void hgcmMsgComplete(HGCMMsgCore *pMsg, int32_t u32Result)
 
     LogFlow(("MAIN::hgcmMsgComplete: pMsg = %p, rc = void\n", pMsg));
 }
-
 
 int hgcmThreadInit(void)
 {
