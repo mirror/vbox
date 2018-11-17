@@ -1,4 +1,4 @@
-/* $Id: */
+/* $Id$ */
 /** @file
  * VBoxDev - HGCM - Host-Guest Communication Manager, internal header.
  */

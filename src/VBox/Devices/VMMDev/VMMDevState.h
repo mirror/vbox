@@ -289,7 +289,11 @@ typedef struct VMMDevState
     STAMPROFILE StatHgcmCmdArrival;
     STAMPROFILE StatHgcmCmdCompletion;
     STAMPROFILE StatHgcmCmdTotal;
+    STAMCOUNTER StatHgcmReqBufAllocs;
 #endif /* VBOX_WITH_HGCM */
+
+    /** Per CPU request 4K sized buffers, allocated as needed. */
+    R3PTRTYPE(VMMDevRequestHeader *) apReqBufs[VMM_MAX_CPU_COUNT];
 
     /** Status LUN: Shared folders LED */
     struct

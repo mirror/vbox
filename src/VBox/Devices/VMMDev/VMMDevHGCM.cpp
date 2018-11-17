@@ -94,9 +94,11 @@ typedef struct VBOXHGCMPARMPTR
 
     /** Pointer to array of the GC physical addresses for these pages.
      * It is assumed that the physical address of the locked resident guest page
-     * does not change.
-     */
+     * does not change.  */
     RTGCPHYS *paPages;
+
+    /** For single page requests. */
+    RTGCPHYS  GCPhysSinglePage;
 
 } VBOXHGCMPARMPTR;
 
@@ -262,7 +264,8 @@ static void vmmdevHGCMCmdFree(PVMMDEV pThis, PVBOXHGCMCMD pCmd)
                     || pGuestParm->enmType == VMMDevHGCMParmType_LinAddr_Out
                     || pGuestParm->enmType == VMMDevHGCMParmType_LinAddr
                     || pGuestParm->enmType == VMMDevHGCMParmType_PageList)
-                    RTMemFree(pGuestParm->u.ptr.paPages);
+                    if (pGuestParm->u.ptr.paPages != &pGuestParm->u.ptr.GCPhysSinglePage)
+                        RTMemFree(pGuestParm->u.ptr.paPages);
             }
         }
 
@@ -625,6 +628,7 @@ static int vmmdevHGCMInitHostParameters(PVMMDEV pThis, PVBOXHGCMCMD pCmd)
     return VINF_SUCCESS;
 }
 
+
 /** Allocate and initialize VBOXHGCMCMD structure for a HGCMCall request.
  *
  * @returns VBox status code that the guest should see.
@@ -777,13 +781,17 @@ static int vmmdevHGCMCallFetchGuestParms(PVMMDEV pThis, PVBOXHGCMCMD pCmd,
 
                 if (cbData > 0)
                 {
-                    pGuestParm->u.ptr.paPages = (RTGCPHYS *)RTMemAlloc(cPages * sizeof(RTGCPHYS));
-                    AssertReturn(pGuestParm->u.ptr.paPages, VERR_NO_MEMORY);
+                    if (cPages == 1)
+                        pGuestParm->u.ptr.paPages = &pGuestParm->u.ptr.GCPhysSinglePage;
+                    else
+                    {
+                        pGuestParm->u.ptr.paPages = (RTGCPHYS *)RTMemAlloc(cPages * sizeof(RTGCPHYS));
+                        AssertReturn(pGuestParm->u.ptr.paPages, VERR_NO_MEMORY);
+                    }
 
                     /* Gonvert the guest linear pointers of pages to physical addresses. */
                     GCPtr &= PAGE_BASE_GC_MASK;
-                    uint32_t iPage;
-                    for (iPage = 0; iPage < cPages; ++iPage)
+                    for (uint32_t iPage = 0; iPage < cPages; ++iPage)
                     {
                         /* The guest might specify invalid GCPtr, just skip such addresses.
                          * Also if the guest parameters are fetched when restoring an old saved state,
@@ -850,13 +858,19 @@ static int vmmdevHGCMCallFetchGuestParms(PVMMDEV pThis, PVBOXHGCMCMD pCmd,
                 pGuestParm->u.ptr.offFirstPage  = pPageListInfo->offFirstPage;
                 pGuestParm->u.ptr.cPages        = pPageListInfo->cPages;
                 pGuestParm->u.ptr.fu32Direction = pPageListInfo->flags;
-                pGuestParm->u.ptr.paPages       = (RTGCPHYS *)RTMemAlloc(pPageListInfo->cPages * sizeof(RTGCPHYS));
-                AssertReturn(pGuestParm->u.ptr.paPages, VERR_NO_MEMORY);
+                if (pPageListInfo->cPages == 1)
+                {
+                    pGuestParm->u.ptr.paPages   = &pGuestParm->u.ptr.GCPhysSinglePage;
+                    pGuestParm->u.ptr.GCPhysSinglePage = pPageListInfo->aPages[0];
+                }
+                else
+                {
+                    pGuestParm->u.ptr.paPages   = (RTGCPHYS *)RTMemAlloc(pPageListInfo->cPages * sizeof(RTGCPHYS));
+                    AssertReturn(pGuestParm->u.ptr.paPages, VERR_NO_MEMORY);
 
-                uint32_t iPage;
-                for (iPage = 0; iPage < pGuestParm->u.ptr.cPages; ++iPage)
-                    pGuestParm->u.ptr.paPages[iPage] = pPageListInfo->aPages[iPage];
-
+                    for (uint32_t iPage = 0; iPage < pGuestParm->u.ptr.cPages; ++iPage)
+                        pGuestParm->u.ptr.paPages[iPage] = pPageListInfo->aPages[iPage];
+                }
                 break;
             }
 
@@ -878,6 +892,8 @@ static int vmmdevHGCMCallFetchGuestParms(PVMMDEV pThis, PVBOXHGCMCMD pCmd,
  * @param   GCPhys          The guest physical address of the request.
  * @param   enmRequestType  The request type. Distinguishes 64 and 32 bit calls.
  * @param   tsArrival       The STAM_GET_TS() value when the request arrived.
+ * @param   ppLock          Pointer to the lock info pointer (latter can be
+ *                          NULL).  Set to NULL if HGCM takes lock ownership.
  */
 int vmmdevHGCMCall(PVMMDEV pThis, const VMMDevHGCMCall *pHGCMCall, uint32_t cbHGCMCall, RTGCPHYS GCPhys,
                    VMMDevRequestType enmRequestType, uint64_t tsArrival, PVMMDEVREQLOCK *ppLock)

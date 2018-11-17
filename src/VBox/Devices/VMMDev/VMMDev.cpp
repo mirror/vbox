@@ -1774,6 +1774,8 @@ static int vmmdevReqHandler_HGCMDisconnect(PVMMDEV pThis, VMMDevRequestHeader *p
  * @param   pReqHdr         The header of the request to handle.
  * @param   GCPhysReqHdr    The guest physical address of the request header.
  * @param   tsArrival       The STAM_GET_TS() value when the request arrived.
+ * @param   ppLock          Pointer to the lock info pointer (latter can be
+ *                          NULL).  Set to NULL if HGCM takes lock ownership.
  */
 static int vmmdevReqHandler_HGCMCall(PVMMDEV pThis, VMMDevRequestHeader *pReqHdr, RTGCPHYS GCPhysReqHdr,
                                      uint64_t tsArrival, PVMMDEVREQLOCK *ppLock)
@@ -2557,7 +2559,7 @@ static int vmmdevReqHandler_WriteCoreDump(PVMMDEV pThis, VMMDevRequestHeader *pR
  *
  * @param   pThis           The VMM device instance data.
  * @param   GCPhysReqHdr    The guest physical address of the request.
- * @param   ppLock          Pointer to the request locking info.  NULL if not
+ * @param   pLock           Pointer to the request locking info.  NULL if not
  *                          locked.
  */
 DECLINLINE(void) vmmdevReqHdrSetHgcmAsyncExecute(PVMMDEV pThis, RTGCPHYS GCPhysReqHdr, PVMMDEVREQLOCK pLock)
@@ -2588,6 +2590,8 @@ DECLINLINE(void) vmmdevReqHdrSetHgcmAsyncExecute(PVMMDEV pThis, RTGCPHYS GCPhysR
  *                          HGCM).
  * @param   tsArrival       The STAM_GET_TS() value when the request arrived.
  * @param   pfPostOptimize  HGCM optimizations, VMMDEVREQDISP_POST_F_XXX.
+ * @param   ppLock          Pointer to the lock info pointer (latter can be
+ *                          NULL).  Set to NULL if HGCM takes lock ownership.
  */
 static int vmmdevReqDispatcher(PVMMDEV pThis, VMMDevRequestHeader *pReqHdr, RTGCPHYS GCPhysReqHdr,
                                uint64_t tsArrival, uint32_t *pfPostOptimize, PVMMDEVREQLOCK *ppLock)
@@ -2874,7 +2878,7 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
     STAM_GET_TS(tsArrival);
 
     RT_NOREF2(Port, cb);
-    PVMMDEV pThis = (VMMDevState*)pvUser;
+    PVMMDEV pThis = (VMMDevState *)pvUser;
 
     /*
      * The caller has passed the guest context physical address of the request
@@ -2901,9 +2905,7 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
 
     Log2(("VMMDev request issued: %d\n", requestHeader.requestType));
 
-    int                  rcRet          = VINF_SUCCESS;
-    VMMDevRequestHeader *pRequestHeader = NULL;
-
+    int rcRet = VINF_SUCCESS;
     /* Check that is doesn't exceed the max packet size. */
     if (requestHeader.size <= VMMDEV_MAX_VMMDEVREQ_SIZE)
     {
@@ -2922,22 +2924,41 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
            )
         {
             /*
-             * The request looks fine. Allocate a heap block for it, read the
-             * entire package from guest memory and feed it to the dispatcher.
+             * The request looks fine.  Copy it into a buffer.
+             *
+             * The buffer is only used while on this thread, and this thread is one
+             * of the EMTs, so we keep a 4KB buffer for each EMT around to avoid
+             * wasting time with the heap.  Larger allocations goes to the heap, though.
              */
-            pRequestHeader = (VMMDevRequestHeader *)RTMemAlloc(requestHeader.size);
+            VMCPUID              iCpu = PDMDevHlpGetCurrentCpuId(pThis->pDevIns);
+            VMMDevRequestHeader *pRequestHeaderFree = NULL;
+            VMMDevRequestHeader *pRequestHeader     = NULL;
+            if (   requestHeader.size <= _4K
+                && iCpu < RT_ELEMENTS(pThis->apReqBufs))
+            {
+                pRequestHeader = pThis->apReqBufs[iCpu];
+                if (pRequestHeader)
+                { /* likely */ }
+                else
+                    pThis->apReqBufs[iCpu] = pRequestHeader = (VMMDevRequestHeader *)RTMemPageAlloc(_4K);
+            }
+            else
+            {
+                Assert(iCpu != NIL_VMCPUID);
+                STAM_REL_COUNTER_INC(&pThis->StatHgcmReqBufAllocs);
+                pRequestHeaderFree = pRequestHeader = (VMMDevRequestHeader *)RTMemAlloc(RT_MAX(requestHeader.size, 512));
+            }
             if (pRequestHeader)
             {
                 memcpy(pRequestHeader, &requestHeader, sizeof(VMMDevRequestHeader));
 
+                /* Try lock the request if it's a HGCM call and not crossing a page boundrary.
+                   Saves on PGM interaction. */
                 VMMDEVREQLOCK   Lock   = { NULL, { 0, NULL } };
                 PVMMDEVREQLOCK  pLock  = NULL;
                 size_t          cbLeft = requestHeader.size - sizeof(VMMDevRequestHeader);
                 if (cbLeft)
                 {
-#if 0
-                    RT_NOREF_PV(Lock);
-#else
                     if (   (   requestHeader.requestType == VMMDevReq_HGCMCall32
                             || requestHeader.requestType == VMMDevReq_HGCMCall64)
                         && ((u32 + requestHeader.size) >> X86_PAGE_SHIFT) == (u32 >> X86_PAGE_SHIFT)
@@ -2948,14 +2969,16 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
                         pLock = &Lock;
                     }
                     else
-#endif
                         PDMDevHlpPhysRead(pDevIns,
                                           (RTGCPHYS)u32             + sizeof(VMMDevRequestHeader),
                                           (uint8_t *)pRequestHeader + sizeof(VMMDevRequestHeader),
                                           cbLeft);
                 }
 
-                uint32_t fPostOptimize  = 0;
+                /*
+                 * Feed buffered request thru the dispatcher.
+                 */
+                uint32_t fPostOptimize = 0;
                 PDMCritSectEnter(&pThis->CritSect, VERR_IGNORED);
                 rcRet = vmmdevReqDispatcher(pThis, pRequestHeader, u32, tsArrival, &fPostOptimize, &pLock);
                 PDMCritSectLeave(&pThis->CritSect);
@@ -2971,7 +2994,10 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
                         PDMDevHlpPhysWrite(pDevIns, u32, pRequestHeader, pRequestHeader->size);
                 }
 
-                RTMemFree(pRequestHeader);
+                if (!pRequestHeaderFree)
+                { /* likely */ }
+                else
+                    RTMemFree(pRequestHeaderFree);
                 return rcRet;
             }
 
@@ -4098,6 +4124,11 @@ static DECLCALLBACK(int) vmmdevDestruct(PPDMDEVINS pDevIns)
 #ifdef VBOX_WITH_HGCM
     vmmdevHGCMDestroy(pThis);
     RTCritSectDelete(&pThis->critsectHGCMCmdList);
+    for (uint32_t iCpu = 0; iCpu < RT_ELEMENTS(pThis->apReqBufs); iCpu++)
+    {
+        pThis->apReqBufs[iCpu] = NULL;
+        RTMemPageFree(pThis->apReqBufs[iCpu], _4K);
+    }
 #endif
 
 #ifndef VBOX_WITHOUT_TESTING_FEATURES
@@ -4446,12 +4477,14 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
 
     PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatMemBalloonChunks, STAMTYPE_U32, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT, "Memory balloon size", "/Devices/VMMDev/BalloonChunks");
 #ifdef VBOX_WITH_HGCM
-    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatHgcmCmdArrival, STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
-                           "Profiling HGCM call arrival processing", "/HGCM/MsgArrival");
-    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatHgcmCmdCompletion, STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
-                           "Profiling HGCM call completion processing", "/HGCM/MsgCompletion");
-    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatHgcmCmdTotal, STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
-                           "Profiling whole HGCM call.", "/HGCM/MsgTotal");
+    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatHgcmCmdArrival,    STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL,
+                           "Profiling HGCM call arrival processing",        "/HGCM/MsgArrival");
+    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatHgcmCmdCompletion, STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL,
+                           "Profiling HGCM call completion processing",     "/HGCM/MsgCompletion");
+    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatHgcmCmdTotal,      STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL,
+                           "Profiling whole HGCM call.",                    "/HGCM/MsgTotal");
+    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatHgcmReqBufAllocs,  STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                           "Times a larger request buffer was required.",   "/HGCM/LargeReqBufAllocs");
 #endif
 
     /*
