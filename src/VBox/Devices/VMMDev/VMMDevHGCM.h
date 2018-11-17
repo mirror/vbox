@@ -36,6 +36,7 @@ int vmmdevHGCMLoadState(VMMDevState *pVMMDevState, PSSMHANDLE pSSM, uint32_t u32
 int vmmdevHGCMLoadStateDone(VMMDevState *pVMMDevState);
 
 void vmmdevHGCMDestroy(PVMMDEV pThis);
+int  vmmdevHGCMInit(PVMMDEV pThis);
 RT_C_DECLS_END
 
 #endif /* !___VMMDev_VMMDevHGCM_h */

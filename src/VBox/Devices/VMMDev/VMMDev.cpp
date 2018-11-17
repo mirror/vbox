@@ -2945,7 +2945,7 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
             else
             {
                 Assert(iCpu != NIL_VMCPUID);
-                STAM_REL_COUNTER_INC(&pThis->StatHgcmReqBufAllocs);
+                STAM_REL_COUNTER_INC(&pThis->StatReqBufAllocs);
                 pRequestHeaderFree = pRequestHeader = (VMMDevRequestHeader *)RTMemAlloc(RT_MAX(requestHeader.size, 512));
             }
             if (pRequestHeader)
@@ -4122,14 +4122,20 @@ static DECLCALLBACK(int) vmmdevDestruct(PPDMDEVINS pDevIns)
     }
 
 #ifdef VBOX_WITH_HGCM
+    /*
+     * Everything HGCM.
+     */
     vmmdevHGCMDestroy(pThis);
-    RTCritSectDelete(&pThis->critsectHGCMCmdList);
+#endif
+
+    /*
+     * Free the request buffers.
+     */
     for (uint32_t iCpu = 0; iCpu < RT_ELEMENTS(pThis->apReqBufs); iCpu++)
     {
         pThis->apReqBufs[iCpu] = NULL;
         RTMemPageFree(pThis->apReqBufs[iCpu], _4K);
     }
-#endif
 
 #ifndef VBOX_WITHOUT_TESTING_FEATURES
     /*
@@ -4463,11 +4469,9 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
     AssertRCReturn(rc, rc);
 
 #ifdef VBOX_WITH_HGCM
-    RTListInit(&pThis->listHGCMCmd);
-    rc = RTCritSectInit(&pThis->critsectHGCMCmdList);
+    rc = vmmdevHGCMInit(pThis);
     AssertRCReturn(rc, rc);
-    pThis->u32HGCMEnabled = 0;
-#endif /* VBOX_WITH_HGCM */
+#endif
 
     /*
      * In this version of VirtualBox the GUI checks whether "needs host cursor"
@@ -4475,6 +4479,9 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
      */
     pThis->mouseCapabilities |= VMMDEV_MOUSE_HOST_RECHECKS_NEEDS_HOST_CURSOR;
 
+    /*
+     * Statistics.
+     */
     PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatMemBalloonChunks, STAMTYPE_U32, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT, "Memory balloon size", "/Devices/VMMDev/BalloonChunks");
 #ifdef VBOX_WITH_HGCM
     PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatHgcmCmdArrival,    STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL,
@@ -4483,9 +4490,11 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
                            "Profiling HGCM call completion processing",     "/HGCM/MsgCompletion");
     PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatHgcmCmdTotal,      STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL,
                            "Profiling whole HGCM call.",                    "/HGCM/MsgTotal");
-    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatHgcmReqBufAllocs,  STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
-                           "Times a larger request buffer was required.",   "/HGCM/LargeReqBufAllocs");
+    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatHgcmLargeCmdAllocs,STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                           "Times the allocation cache could not be used.", "/HGCM/LargeCmdAllocs");
 #endif
+    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatReqBufAllocs,      STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                           "Times a larger request buffer was required.",   "/HGCM/LargeReqBufAllocs");
 
     /*
      * Generate a unique session id for this VM; it will be changed for each

@@ -132,6 +132,9 @@ typedef struct VBOXHGCMCMD
     /** Whether the command was restored from saved state. */
     bool                fRestored;
 
+    /** Set if allocated from the memory cache, clear if heap. */
+    bool                fMemCache;
+
     /** GC physical address of the guest request. */
     RTGCPHYS            GCPhys;
 
@@ -156,7 +159,7 @@ typedef struct VBOXHGCMCMD
         struct
         {
             uint32_t            u32ClientID;
-            HGCMServiceLocation loc;
+            HGCMServiceLocation *pLoc;  /**< Allocated after this structure. */
         } connect;
 
         struct
@@ -190,6 +193,22 @@ typedef struct VBOXHGCMCMD
 } VBOXHGCMCMD;
 
 
+/**
+ * Version for the memory cache.
+ */
+typedef struct VBOXHGCMCMDCACHED
+{
+    VBOXHGCMCMD         Core;           /**< 112 */
+    VBOXHGCMGUESTPARM   aGuestParms[6]; /**< 40 * 6 = 240 */
+    VBOXHGCMSVCPARM     aHostParms[6];  /**< 24 * 6 = 144 */
+} VBOXHGCMCMDCACHED;                    /**< 112+240+144 = 496 */
+AssertCompile(sizeof(VBOXHGCMCMD) <= 112);
+AssertCompile(sizeof(VBOXHGCMGUESTPARM) <= 40);
+AssertCompile(sizeof(VBOXHGCMSVCPARM) <= 24);
+AssertCompile(sizeof(VBOXHGCMCMDCACHED) <= 512);
+AssertCompile(sizeof(VBOXHGCMCMDCACHED) > sizeof(VBOXHGCMCMD) + sizeof(HGCMServiceLocation));
+
+
 static int vmmdevHGCMCmdListLock(PVMMDEV pThis)
 {
     int rc = RTCritSectEnter(&pThis->critsectHGCMCmdList);
@@ -211,12 +230,46 @@ static void vmmdevHGCMCmdListUnlock(PVMMDEV pThis)
  * @param   cbRequest       The size of the HGCM request.
  * @param   cParms          Number of HGCM parameters for VBOXHGCMCMDTYPE_CALL command.
  */
-static PVBOXHGCMCMD vmmdevHGCMCmdAlloc(VBOXHGCMCMDTYPE enmCmdType, RTGCPHYS GCPhys, uint32_t cbRequest, uint32_t cParms)
+static PVBOXHGCMCMD vmmdevHGCMCmdAlloc(PVMMDEV pThis, VBOXHGCMCMDTYPE enmCmdType, RTGCPHYS GCPhys, uint32_t cbRequest, uint32_t cParms)
 {
+#if 1
+    /*
+     * Try use the cache.
+     */
+    VBOXHGCMCMDCACHED *pCmdCached;
+    AssertCompile(sizeof(*pCmdCached) >= sizeof(VBOXHGCMCMD) + sizeof(HGCMServiceLocation));
+    if (cParms <= RT_ELEMENTS(pCmdCached->aGuestParms))
+    {
+        int rc = RTMemCacheAllocEx(pThis->hHgcmCmdCache, (void **)&pCmdCached);
+        if (RT_SUCCESS(rc))
+        {
+            RT_ZERO(*pCmdCached);
+            pCmdCached->Core.fMemCache  = true;
+            pCmdCached->Core.GCPhys     = GCPhys;
+            pCmdCached->Core.cbRequest  = cbRequest;
+            pCmdCached->Core.enmCmdType = enmCmdType;
+            if (enmCmdType == VBOXHGCMCMDTYPE_CALL)
+            {
+                pCmdCached->Core.u.call.cParms       = cParms;
+                pCmdCached->Core.u.call.paGuestParms = pCmdCached->aGuestParms;
+                pCmdCached->Core.u.call.paHostParms  = pCmdCached->aHostParms;
+            }
+            else if (enmCmdType == VBOXHGCMCMDTYPE_CONNECT)
+                pCmdCached->Core.u.connect.pLoc = (HGCMServiceLocation *)(&pCmdCached->Core + 1);
+
+            return &pCmdCached->Core;
+        }
+        return NULL;
+    }
+    STAM_REL_COUNTER_INC(&pThis->StatHgcmLargeCmdAllocs);
+
+#else
+    RT_NOREF(pThis);
+#endif
+
     /* Size of required memory buffer. */
-    const uint32_t cbCmd =   sizeof(struct VBOXHGCMCMD)
-                           + cParms * sizeof(VBOXHGCMGUESTPARM)
-                           + cParms * sizeof(VBOXHGCMSVCPARM);
+    const uint32_t cbCmd = sizeof(VBOXHGCMCMD) + cParms * (sizeof(VBOXHGCMGUESTPARM) + sizeof(VBOXHGCMSVCPARM))
+                         + (enmCmdType == VBOXHGCMCMDTYPE_CONNECT ? sizeof(HGCMServiceLocation) : 0);
 
     PVBOXHGCMCMD pCmd = (PVBOXHGCMCMD)RTMemAllocZ(cbCmd);
     if (pCmd)
@@ -236,6 +289,8 @@ static PVBOXHGCMCMD vmmdevHGCMCmdAlloc(VBOXHGCMCMDTYPE enmCmdType, RTGCPHYS GCPh
                                                                + cParms * sizeof(VBOXHGCMGUESTPARM));
             }
         }
+        else if (enmCmdType == VBOXHGCMCMDTYPE_CONNECT)
+            pCmd->u.connect.pLoc = (HGCMServiceLocation *)(pCmd + 1);
     }
     return pCmd;
 }
@@ -275,7 +330,12 @@ static void vmmdevHGCMCmdFree(PVMMDEV pThis, PVBOXHGCMCMD pCmd)
             pCmd->pvReqLocked = NULL;
         }
 
-        RTMemFree(pCmd);
+#if 1
+        if (pCmd->fMemCache)
+            RTMemCacheFree(pThis->hHgcmCmdCache, pCmd);
+        else
+#endif
+            RTMemFree(pCmd);
     }
 }
 
@@ -357,7 +417,7 @@ static void vmmdevHGCMConnectFetch(const VMMDevHGCMConnect *pHGCMConnect, PVBOXH
 {
     pCmd->enmRequestType        = pHGCMConnect->header.header.requestType;
     pCmd->u.connect.u32ClientID = pHGCMConnect->u32ClientID;
-    pCmd->u.connect.loc         = pHGCMConnect->loc;
+    *pCmd->u.connect.pLoc       = pHGCMConnect->loc;
 }
 
 /** Handle VMMDevHGCMConnect request.
@@ -370,17 +430,17 @@ int vmmdevHGCMConnect(PVMMDEV pThis, const VMMDevHGCMConnect *pHGCMConnect, RTGC
 {
     int rc = VINF_SUCCESS;
 
-    PVBOXHGCMCMD pCmd = vmmdevHGCMCmdAlloc(VBOXHGCMCMDTYPE_CONNECT, GCPhys, pHGCMConnect->header.header.size, 0);
+    PVBOXHGCMCMD pCmd = vmmdevHGCMCmdAlloc(pThis, VBOXHGCMCMDTYPE_CONNECT, GCPhys, pHGCMConnect->header.header.size, 0);
     if (pCmd)
     {
         vmmdevHGCMConnectFetch(pHGCMConnect, pCmd);
 
         /* Only allow the guest to use existing services! */
-        ASSERT_GUEST(pCmd->u.connect.loc.type == VMMDevHGCMLoc_LocalHost_Existing);
-        pCmd->u.connect.loc.type = VMMDevHGCMLoc_LocalHost_Existing;
+        ASSERT_GUEST(pHGCMConnect->loc.type == VMMDevHGCMLoc_LocalHost_Existing);
+        pCmd->u.connect.pLoc->type = VMMDevHGCMLoc_LocalHost_Existing;
 
         vmmdevHGCMAddCommand(pThis, pCmd);
-        rc = pThis->pHGCMDrv->pfnConnect(pThis->pHGCMDrv, pCmd, &pCmd->u.connect.loc, &pCmd->u.connect.u32ClientID);
+        rc = pThis->pHGCMDrv->pfnConnect(pThis->pHGCMDrv, pCmd, pCmd->u.connect.pLoc, &pCmd->u.connect.u32ClientID);
         if (RT_FAILURE(rc))
             vmmdevHGCMRemoveCommand(pThis, pCmd);
     }
@@ -413,7 +473,7 @@ int vmmdevHGCMDisconnect(PVMMDEV pThis, const VMMDevHGCMDisconnect *pHGCMDisconn
 {
     int rc = VINF_SUCCESS;
 
-    PVBOXHGCMCMD pCmd = vmmdevHGCMCmdAlloc(VBOXHGCMCMDTYPE_DISCONNECT, GCPhys, pHGCMDisconnect->header.header.size, 0);
+    PVBOXHGCMCMD pCmd = vmmdevHGCMCmdAlloc(pThis, VBOXHGCMCMDTYPE_DISCONNECT, GCPhys, pHGCMDisconnect->header.header.size, 0);
     if (pCmd)
     {
         vmmdevHGCMDisconnectFetch(pHGCMDisconnect, pCmd);
@@ -639,7 +699,7 @@ static int vmmdevHGCMInitHostParameters(PVMMDEV pThis, PVBOXHGCMCMD pCmd)
  * @param   ppCmd           Where to store pointer to allocated command.
  * @param   pcbHGCMParmStruct Where to store size of used HGCM parameter structure.
  */
-static int vmmdevHGCMCallAlloc(const VMMDevHGCMCall *pHGCMCall, uint32_t cbHGCMCall, RTGCPHYS GCPhys,
+static int vmmdevHGCMCallAlloc(PVMMDEV pThis, const VMMDevHGCMCall *pHGCMCall, uint32_t cbHGCMCall, RTGCPHYS GCPhys,
                                VMMDevRequestType enmRequestType, PVBOXHGCMCMD *ppCmd, uint32_t *pcbHGCMParmStruct)
 {
 #ifdef VBOX_WITH_64_BITS_GUESTS
@@ -659,7 +719,7 @@ static int vmmdevHGCMCallAlloc(const VMMDevHGCMCall *pHGCMCall, uint32_t cbHGCMC
                              VERR_INVALID_PARAMETER);
     RT_UNTRUSTED_VALIDATED_FENCE();
 
-    PVBOXHGCMCMD pCmd = vmmdevHGCMCmdAlloc(VBOXHGCMCMDTYPE_CALL, GCPhys, cbHGCMCall, cParms);
+    PVBOXHGCMCMD pCmd = vmmdevHGCMCmdAlloc(pThis, VBOXHGCMCMDTYPE_CALL, GCPhys, cbHGCMCall, cParms);
     if (pCmd == NULL)
         return VERR_NO_MEMORY;
 
@@ -918,7 +978,7 @@ int vmmdevHGCMCall(PVMMDEV pThis, const VMMDevHGCMCall *pHGCMCall, uint32_t cbHG
      */
     PVBOXHGCMCMD pCmd;
     uint32_t cbHGCMParmStruct;
-    int rc = vmmdevHGCMCallAlloc(pHGCMCall, cbHGCMCall, GCPhys, enmRequestType, &pCmd, &cbHGCMParmStruct);
+    int rc = vmmdevHGCMCallAlloc(pThis, pHGCMCall, cbHGCMCall, GCPhys, enmRequestType, &pCmd, &cbHGCMParmStruct);
     if (RT_SUCCESS(rc))
     {
         pCmd->tsArrival = tsArrival;
@@ -1448,7 +1508,7 @@ int vmmdevHGCMSaveState(PVMMDEV pThis, PSSMHANDLE pSSM)
             else if (pCmd->enmCmdType == VBOXHGCMCMDTYPE_CONNECT)
             {
                 SSMR3PutU32(pSSM, pCmd->u.connect.u32ClientID);
-                SSMR3PutMem(pSSM, &pCmd->u.connect.loc, sizeof(pCmd->u.connect.loc));
+                SSMR3PutMem(pSSM, pCmd->u.connect.pLoc, sizeof(*pCmd->u.connect.pLoc));
             }
             else if (pCmd->enmCmdType == VBOXHGCMCMDTYPE_DISCONNECT)
             {
@@ -1523,7 +1583,7 @@ int vmmdevHGCMLoadState(PVMMDEV pThis, PSSMHANDLE pSSM, uint32_t uVersion)
             rc = SSMR3GetU32(pSSM, &cParms);
             AssertRCReturn(rc, rc);
 
-            PVBOXHGCMCMD pCmd = vmmdevHGCMCmdAlloc(enmCmdType, GCPhys, cbRequest, cParms);
+            PVBOXHGCMCMD pCmd = vmmdevHGCMCmdAlloc(pThis, enmCmdType, GCPhys, cbRequest, cParms);
             AssertReturn(pCmd, VERR_NO_MEMORY);
 
             pCmd->fCancelled     = fCancelled;
@@ -1588,7 +1648,7 @@ int vmmdevHGCMLoadState(PVMMDEV pThis, PSSMHANDLE pSSM, uint32_t uVersion)
             else if (enmCmdType == VBOXHGCMCMDTYPE_CONNECT)
             {
                 SSMR3GetU32(pSSM, &pCmd->u.connect.u32ClientID);
-                rc = SSMR3GetMem(pSSM, &pCmd->u.connect.loc, sizeof(pCmd->u.connect.loc));
+                rc = SSMR3GetMem(pSSM, pCmd->u.connect.pLoc, sizeof(*pCmd->u.connect.pLoc));
                 AssertRCReturn(rc, rc);
             }
             else if (enmCmdType == VBOXHGCMCMDTYPE_DISCONNECT)
@@ -1645,7 +1705,7 @@ int vmmdevHGCMLoadState(PVMMDEV pThis, PSSMHANDLE pSSM, uint32_t uVersion)
             rc = SSMR3GetU32(pSSM, &cLinAddrs);
             AssertRCReturn(rc, rc);
 
-            PVBOXHGCMCMD pCmd = vmmdevHGCMCmdAlloc(enmCmdType, GCPhys, cbRequest, cLinAddrs);
+            PVBOXHGCMCMD pCmd = vmmdevHGCMCmdAlloc(pThis, enmCmdType, GCPhys, cbRequest, cLinAddrs);
             AssertReturn(pCmd, VERR_NO_MEMORY);
 
             pCmd->fCancelled = fCancelled;
@@ -1703,7 +1763,7 @@ int vmmdevHGCMLoadState(PVMMDEV pThis, PSSMHANDLE pSSM, uint32_t uVersion)
 
             LogFlowFunc(("Restoring %RGp size %x bytes\n", GCPhys, cbRequest));
 
-            PVBOXHGCMCMD pCmd = vmmdevHGCMCmdAlloc(VBOXHGCMCMDTYPE_LOADSTATE, GCPhys, cbRequest, 0);
+            PVBOXHGCMCMD pCmd = vmmdevHGCMCmdAlloc(pThis, VBOXHGCMCMDTYPE_LOADSTATE, GCPhys, cbRequest, 0);
             AssertReturn(pCmd, VERR_NO_MEMORY);
 
             vmmdevHGCMAddCommand(pThis, pCmd);
@@ -1739,7 +1799,7 @@ static int vmmdevHGCMRestoreConnect(PVMMDEV pThis, uint32_t u32SSMVersion, const
         ASSERT_GUEST_RETURN(pLoadedCmd->enmCmdType == VBOXHGCMCMDTYPE_CONNECT, VERR_MISMATCH);
     }
 
-    PVBOXHGCMCMD pCmd = vmmdevHGCMCmdAlloc(VBOXHGCMCMDTYPE_CONNECT, pLoadedCmd->GCPhys, cbReq, 0);
+    PVBOXHGCMCMD pCmd = vmmdevHGCMCmdAlloc(pThis, VBOXHGCMCMDTYPE_CONNECT, pLoadedCmd->GCPhys, cbReq, 0);
     AssertReturn(pCmd, VERR_NO_MEMORY);
 
     if (u32SSMVersion >= 9)
@@ -1783,7 +1843,7 @@ static int vmmdevHGCMRestoreDisconnect(PVMMDEV pThis, uint32_t u32SSMVersion, co
         ASSERT_GUEST_RETURN(pLoadedCmd->enmCmdType == VBOXHGCMCMDTYPE_DISCONNECT, VERR_MISMATCH);
     }
 
-    PVBOXHGCMCMD pCmd = vmmdevHGCMCmdAlloc(VBOXHGCMCMDTYPE_DISCONNECT, pLoadedCmd->GCPhys, cbReq, 0);
+    PVBOXHGCMCMD pCmd = vmmdevHGCMCmdAlloc(pThis, VBOXHGCMCMDTYPE_DISCONNECT, pLoadedCmd->GCPhys, cbReq, 0);
     AssertReturn(pCmd, VERR_NO_MEMORY);
 
     if (u32SSMVersion >= 9)
@@ -1827,7 +1887,7 @@ static int vmmdevHGCMRestoreCall(PVMMDEV pThis, uint32_t u32SSMVersion, const VB
 
     PVBOXHGCMCMD pCmd;
     uint32_t cbHGCMParmStruct;
-    rc = vmmdevHGCMCallAlloc(pReq, cbReq, pLoadedCmd->GCPhys, enmRequestType, &pCmd, &cbHGCMParmStruct);
+    rc = vmmdevHGCMCallAlloc(pThis, pReq, cbReq, pLoadedCmd->GCPhys, enmRequestType, &pCmd, &cbHGCMParmStruct);
     if (RT_FAILURE(rc))
         return rc;
 
@@ -2013,7 +2073,8 @@ int vmmdevHGCMLoadStateDone(PVMMDEV pThis)
                     case VBOXHGCMCMDTYPE_CONNECT:
                     {
                         vmmdevHGCMAddCommand(pThis, pCmd);
-                        rcCmd = pThis->pHGCMDrv->pfnConnect(pThis->pHGCMDrv, pCmd, &pCmd->u.connect.loc, &pCmd->u.connect.u32ClientID);
+                        rcCmd = pThis->pHGCMDrv->pfnConnect(pThis->pHGCMDrv, pCmd, pCmd->u.connect.pLoc,
+                                                            &pCmd->u.connect.u32ClientID);
                         if (RT_FAILURE(rcCmd))
                             vmmdevHGCMRemoveCommand(pThis, pCmd);
                         break;
@@ -2091,7 +2152,9 @@ int vmmdevHGCMLoadStateDone(PVMMDEV pThis)
     return rcFunc;
 }
 
-/** Deallocate HGCM commands.
+
+/**
+ * Counterpart to vmmdevHGCMInit().
  *
  * @param   pThis           The VMMDev instance data.
  */
@@ -2099,10 +2162,44 @@ void vmmdevHGCMDestroy(PVMMDEV pThis)
 {
     LogFlowFunc(("\n"));
 
+    RTCritSectDelete(&pThis->critsectHGCMCmdList);
+
     PVBOXHGCMCMD pCmd, pNext;
     RTListForEachSafe(&pThis->listHGCMCmd, pCmd, pNext, VBOXHGCMCMD, node)
     {
         vmmdevHGCMRemoveCommand(pThis, pCmd);
         vmmdevHGCMCmdFree(pThis, pCmd);
     }
+
+    AssertCompile((uintptr_t)NIL_RTMEMCACHE == 0);
+    if (pThis->hHgcmCmdCache != NIL_RTMEMCACHE)
+    {
+        RTMemCacheDestroy(pThis->hHgcmCmdCache);
+        pThis->hHgcmCmdCache = NIL_RTMEMCACHE;
+    }
 }
+
+
+/**
+ * Initializes the HGCM specific state.
+ *
+ * Keeps VBOXHGCMCMDCACHED and friends local.
+ *
+ * @returns VBox status code.
+ * @param   pThis           The VMMDev instance data.
+ */
+int vmmdevHGCMInit(PVMMDEV pThis)
+{
+    RTListInit(&pThis->listHGCMCmd);
+
+    int rc = RTCritSectInit(&pThis->critsectHGCMCmdList);
+    AssertLogRelRCReturn(rc, rc);
+
+    rc = RTMemCacheCreate(&pThis->hHgcmCmdCache, sizeof(VBOXHGCMCMDCACHED), 64, _1M, NULL, NULL, NULL, 0);
+    AssertLogRelRCReturn(rc, rc);
+
+    pThis->u32HGCMEnabled = 0;
+
+    return VINF_SUCCESS;
+}
+
