@@ -87,11 +87,13 @@ RT_C_DECLS_BEGIN
 /** Maximum request packet size. */
 #define VMMDEV_MAX_VMMDEVREQ_SIZE           _1M
 /** Maximum number of HGCM parameters.
- * @todo r=bird: This is wrong wrt user land calls. For them it iss 61.
+ * @note This used to be 1024, which is kind of insane.  Was changed to 32,
+ *       given that (guest) user land can only pass 61 anyway.
  *       See comments on VBGLIOCHGCMCALL::cParms. */
-#define VMMDEV_MAX_HGCM_PARMS               1024
-/** Maximum total size of hgcm buffers in one call. */
-#define VMMDEV_MAX_HGCM_DATA_SIZE           UINT32_C(0x7FFFFFFF)
+#define VMMDEV_MAX_HGCM_PARMS               32
+/** Maximum total size of hgcm buffers in one call.
+ * @note Used to be 2G, since reduced to 128MB.  */
+#define VMMDEV_MAX_HGCM_DATA_SIZE           _128M
 
 /**
  * VMMDev request types.
