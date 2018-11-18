@@ -185,7 +185,7 @@ endstruc
 ; Some dhcalls.h stuff.
 %define DevHlp_VirtToLin        05bh
 %define DevHlp_SAVE_MESSAGE     03dh
-%define DevHlp_EIO              031h
+%define DevHlp_EOI              031h
 %define DevHlp_SetIRQ           01bh
 %define DevHlp_PhysToVirt       015h
 
@@ -1061,7 +1061,7 @@ GLOBALNAME vgdrvOS2ISR16_16
     ;
 .our:
     mov     al, [NAME(g_bInterruptLine)]
-    mov     dl, DevHlp_EIO
+    mov     dl, DevHlp_EOI
     call far [NAME(g_fpfnDevHlp)]
 
     pop     ebx

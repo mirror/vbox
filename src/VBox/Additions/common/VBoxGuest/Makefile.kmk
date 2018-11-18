@@ -137,30 +137,39 @@ if1of ($(KBUILD_TARGET), darwin freebsd haiku netbsd os2 solaris win)
  else # OS/2:
   # The library order is crucial, so a bit of trickery is necessary.
   # A library is used to make sure that VBoxGuestA-os2.asm is first in the link. (temporary hack?)
-  VBoxGuest_SOURCES       = \
-  	VBoxGuestA-os2.asm \
-  	VBoxGuest-os2.def
-  #VBoxGuest_LDFLAGS       = -s -t -v
-  VBoxGuest_LIBS          = \
-  	$(TARGET_VBoxGuestLibOs2Hack) \
-  	$(VBOX_LIB_VBGL_R0BASE) \
-  	$(VBOX_LIB_IPRT_GUEST_R0) \
-  	$(VBOX_GCC_LIBGCC) \
-  	end
-  ## When debugging init with kDrvTest:
-  #VBoxGuest_NAME          = VBoxGst
+VBoxGuest_SOURCES        = \
+  	VBoxGuestA-os2.asm
+  ifdef VBOX_USE_WATCOM_FOR_OS2
+VBoxGuest_LIBS           = \
+	$(VBoxGuestLibOs2Hack_1_TARGET) \
+	$(VBOX_LIB_VBGL_R0BASE) \
+	$(VBOX_LIB_IPRT_GUEST_R0) \
+	$(PATH_IGCC)/lib/libend.lib
+  else
+VBoxGuest_SOURCES       += \
+	VBoxGuest-os2.def
+#VBoxGuest_LDFLAGS        = -s -t -v
+VBoxGuest_LIBS           = \
+	$(VBoxGuestLibOs2Hack_1_TARGET) \
+	$(VBOX_LIB_VBGL_R0BASE) \
+	$(VBOX_LIB_IPRT_GUEST_R0) \
+	$(VBOX_GCC_LIBGCC) \
+	end
+  endif
+## When debugging init with kDrvTest:
+#VBoxGuest_NAME          = VBoxGst
 
-  # see
-  LIBRARIES += VBoxGuestLibOs2Hack
-  VBoxGuestLibOs2Hack_TEMPLATE = VBOXGUESTR0LIB
-  VBoxGuestLibOs2Hack_INSTTYPE = none
-  VBoxGuestLibOs2Hack_DEFS = $(VBoxGuest_DEFS)
-  VBoxGuestLibOs2Hack_INCS = \
-  	. \
-  	$(PATH_ROOT)/src/VBox/Runtime/include # for the os2ddk
-  VBoxGuestLibOs2Hack_SOURCES = \
-  	VBoxGuest-os2.cpp \
-  	VBoxGuest.cpp
+# See above.
+LIBRARIES += VBoxGuestLibOs2Hack
+VBoxGuestLibOs2Hack_TEMPLATE = VBOXGUESTR0LIB
+VBoxGuestLibOs2Hack_INSTTYPE = none
+VBoxGuestLibOs2Hack_DEFS = $(VBoxGuest_DEFS)
+VBoxGuestLibOs2Hack_INCS = \
+	. \
+	$(PATH_ROOT)/src/VBox/Runtime/include # for the os2ddk
+VBoxGuestLibOs2Hack_SOURCES = \
+	VBoxGuest-os2.cpp \
+	VBoxGuest.cpp
  endif # OS/2
 
  VBoxGuest.cpp_DEFS     = VBOX_SVN_REV=$(VBOX_SVN_REV)
