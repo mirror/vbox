@@ -1517,6 +1517,27 @@ typedef struct _VBoxSFReadLink
 
 /** @todo different file info structures */
 
+/** SHFL_FN_INFORMATION parameters. */
+typedef struct VBoxSFParmInformation
+{
+    /** value32, in: SHFLROOT
+     * Root handle of the mapping which name is queried.  */
+    HGCMFunctionParameter id32Root;
+    /** value64, in:
+     * SHFLHANDLE of object to be listed.  */
+    HGCMFunctionParameter u64Handle;
+    /** value32, in:
+     * SHFL_INFO_*  */
+    HGCMFunctionParameter f32Flags;
+    /** value32, in/out:
+     * Bytes to be used for information/How many bytes were used.  */
+    HGCMFunctionParameter cb32;
+    /** pointer, in/out:
+     * Information to be set/get (SHFLFSOBJINFO or SHFLSTRING). Do not forget
+     * to set the SHFLFSOBJINFO::Attr::enmAdditional for Get operation as well.  */
+    HGCMFunctionParameter pInfo;
+} VBoxSFParmInformation;
+
 
 /** Parameters structure. */
 typedef struct _VBoxSFInformation
