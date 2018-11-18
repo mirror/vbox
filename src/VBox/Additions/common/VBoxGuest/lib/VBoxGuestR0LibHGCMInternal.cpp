@@ -978,7 +978,7 @@ DECLR0VBGL(int) VbglR0HGCMInternalCall(PVBGLIOCHGCMCALL pCallInfo, uint32_t cbCa
          * Allocate the request buffer and recreate the call request.
          */
         VMMDevHGCMCall *pHGCMCall;
-        uint32_t const  cbHGCMCall = sizeof(VMMDevHGCMCall) + pCallInfo->cParms * sizeof(HGCMFunctionParameter) + cbExtra;
+        uint32_t const  cbHGCMCall = sizeof(VMMDevHGCMCall) + pCallInfo->cParms * sizeof(HGCMFunctionParameter) + (uint32_t)cbExtra;
         rc = VbglR0GRAlloc((VMMDevRequestHeader **)&pHGCMCall, cbHGCMCall, VMMDevReq_HGCMCall);
         if (RT_SUCCESS(rc))
         {
