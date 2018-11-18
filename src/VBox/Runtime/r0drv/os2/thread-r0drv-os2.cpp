@@ -55,7 +55,7 @@ static int32_t volatile g_acPreemptDisabled[256];
 RTDECL(RTNATIVETHREAD) RTThreadNativeSelf(void)
 {
     PLINFOSEG pLIS = (PLINFOSEG)RTR0Os2Virt2Flat(g_fpLIS);
-    AssertReturn(pLIS, NIL_RTNATIVETHREAD);
+    AssertMsgReturn(pLIS, ("g_fpLIS=%04x:%04x - logging too early again?\n", g_fpLIS.sel, g_fpLIS.off), NIL_RTNATIVETHREAD);
     return pLIS->tidCurrent | (pLIS->pidCurrent << 16);
 }
 
