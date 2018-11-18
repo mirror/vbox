@@ -1049,7 +1049,7 @@ int vmmdevHGCMCall(PVMMDEV pThis, const VMMDevHGCMCall *pHGCMCall, uint32_t cbHG
                  */
                 vmmdevHGCMAddCommand(pThis, pCmd);
 
-#if 1
+#if 0 /* DONT ENABLE - for performance hacking. */
                 if (    pCmd->u.call.u32Function == 9
                     &&  pCmd->u.call.cParms      == 5)
                 {
