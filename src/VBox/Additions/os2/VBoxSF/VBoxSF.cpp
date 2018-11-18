@@ -129,7 +129,7 @@ int16_t vboxSfOs2GetLocalTimeDelta(void)
 void vboxSfOs2DateTimeFromTimeSpec(FDATE *pDosDate, FTIME *pDosTime, RTTIMESPEC SrcTimeSpec, int16_t cMinLocalTimeDelta)
 {
     if (cMinLocalTimeDelta != 0)
-        RTTimeSpecAddSeconds(&SrcTimeSpec, cMinLocalTimeDelta * 60);
+        RTTimeSpecAddSeconds(&SrcTimeSpec, -cMinLocalTimeDelta * 60);
 
     RTTIME Time;
     if (   RTTimeSpecGetNano(&SrcTimeSpec) >= RTTIME_OFFSET_DOS_TIME
