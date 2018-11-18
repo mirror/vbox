@@ -463,6 +463,131 @@ vboxSfOs2SetFileInfo(PVBOXSFFOLDER pFolder, PSFFSI pSfFsi, PVBOXSFSYFI pSfFsd, U
     return rc;
 }
 
+#include <VBox/VBoxGuest.h>
+
+
+
+
+DECLVBGL(int) VbglR0SfFastPhysFsInfo(PVBGLSFCLIENT pClient, PVBGLSFMAP pMap, SHFLHANDLE hFile,
+                                     uint32_t flags, uint32_t *pcbBuffer, PSHFLDIRINFO pBuffer)
+{
+    struct FsInfoReq
+    {
+        VBGLIOCIDCHGCMFASTCALL  Hdr;
+        VMMDevHGCMCall          Call;
+        VBoxSFParmInformation   Parms;
+        HGCMPageListInfo        PgLst;
+        RTGCPHYS64              PageTwo;
+    } *pReq;
+    AssertCompileMemberOffset(struct FsInfoReq, Call, 52);
+    AssertCompileMemberOffset(struct FsInfoReq, Parms, 0x60);
+
+    pReq = (struct FsInfoReq *)VbglR0PhysHeapAlloc(sizeof(*pReq));
+    if (!pReq)
+        return VERR_NO_MEMORY;
+
+    VBGLIOCIDCHGCMFASTCALL_INIT(&pReq->Hdr, VbglR0PhysHeapGetPhysAddr(pReq), &pReq->Call, pClient->idClient,
+                                SHFL_FN_INFORMATION, SHFL_CPARMS_INFORMATION, sizeof(*pReq));
+#if 0
+    VBGLREQHDR_INIT_EX(&pReq->Hdr.Hdr, sizeof(*pReq), sizeof(*pReq));
+    pReq->Hdr.GCPhysReq      = VbglR0PhysHeapGetPhysAddr(pReq) + sizeof(pReq->Hdr);
+    pReq->Hdr.fInterruptible = false;
+
+    pReq->Call.header.header.size       = sizeof(*pReq) - sizeof(pReq->Hdr);
+    pReq->Call.header.header.version    = VBGLREQHDR_VERSION;
+    pReq->Call.header.header.requestType= VMMDevReq_HGCMCall32;
+    pReq->Call.header.header.rc         = VERR_INTERNAL_ERROR;
+    pReq->Call.header.header.reserved1  = 0;
+    pReq->Call.header.header.fRequestor = VMMDEV_REQUESTOR_KERNEL        | VMMDEV_REQUESTOR_USR_DRV_OTHER
+                                        | VMMDEV_REQUESTOR_CON_DONT_KNOW | VMMDEV_REQUESTOR_TRUST_NOT_GIVEN;
+    pReq->Call.header.fu32Flags         = 0;
+    pReq->Call.header.result            = VERR_INTERNAL_ERROR;
+    pReq->Call.u32ClientID              = pClient->idClient;
+    pReq->Call.u32Function              = SHFL_FN_INFORMATION;
+    pReq->Call.cParms                   = SHFL_CPARMS_INFORMATION;
+#endif
+    uint32_t const cbBuffer = *pcbBuffer;
+    pReq->Parms.id32Root.type           = VMMDevHGCMParmType_32bit;
+    pReq->Parms.id32Root.u.value32      = pMap->root;
+    pReq->Parms.u64Handle.type          = VMMDevHGCMParmType_64bit;
+    pReq->Parms.u64Handle.u.value64     = hFile;
+    pReq->Parms.f32Flags.type           = VMMDevHGCMParmType_32bit;
+    pReq->Parms.f32Flags.u.value32      = flags;
+    pReq->Parms.cb32.type               = VMMDevHGCMParmType_32bit;
+    pReq->Parms.cb32.u.value32          = cbBuffer;
+    pReq->Parms.pInfo.type              = VMMDevHGCMParmType_PageList;
+    pReq->Parms.pInfo.u.PageList.size   = cbBuffer;
+    pReq->Parms.pInfo.u.PageList.offset = RT_UOFFSETOF(struct FsInfoReq, PgLst) - RT_UOFFSETOF(struct FsInfoReq, Call);
+
+    Assert(cbBuffer < _1K);
+    pReq->PgLst.flags                   = VBOX_HGCM_F_PARM_DIRECTION_FROM_HOST;
+    pReq->PgLst.cPages                  = cbBuffer <= (PAGE_SIZE - ((uintptr_t)pBuffer & PAGE_OFFSET_MASK)) ? 1 : 2;
+    pReq->PgLst.offFirstPage            = (uint16_t)((uintptr_t)pBuffer & PAGE_OFFSET_MASK);
+    pReq->PgLst.aPages[0]               = VbglR0PhysHeapGetPhysAddr(pBuffer) & ~(RTGCPHYS64)PAGE_OFFSET_MASK;
+    if (pReq->PgLst.cPages == 1)
+        pReq->PageTwo                   = NIL_RTGCPHYS64;
+    else
+        pReq->PageTwo                   = pReq->PgLst.aPages[0] + PAGE_SIZE;
+
+    int rc = VbglR0HGCMFastCall(pClient->handle, &pReq->Hdr, sizeof(*pReq));
+    if (RT_SUCCESS(rc))
+    {
+        rc = pReq->Call.header.result;
+        *pcbBuffer = pReq->Parms.cb32.u.value32;
+    }
+    VbglR0PhysHeapFree(pReq);
+    return rc;
+}
+
+
+DECLVBGL(int) VbglR0SfPhysFsInfo(PVBGLSFCLIENT pClient, PVBGLSFMAP pMap, SHFLHANDLE hFile,
+                                 uint32_t flags, uint32_t *pcbBuffer, PSHFLDIRINFO pBuffer)
+{
+    uint32_t const cbBuffer = *pcbBuffer;
+
+    struct
+    {
+        VBoxSFInformation   Core;
+        HGCMPageListInfo    PgLst;
+        RTGCPHYS64          PageTwo;
+    } Req;
+
+    VBGL_HGCM_HDR_INIT_EX(&Req.Core.callInfo, pClient->idClient, SHFL_FN_INFORMATION, SHFL_CPARMS_INFORMATION, sizeof(Req));
+    Req.Core.callInfo.fInterruptible = false;
+
+    Req.Core.root.type                      = VMMDevHGCMParmType_32bit;
+    Req.Core.root.u.value32                 = pMap->root;
+
+    Req.Core.handle.type                    = VMMDevHGCMParmType_64bit;
+    Req.Core.handle.u.value64               = hFile;
+    Req.Core.flags.type                     = VMMDevHGCMParmType_32bit;
+    Req.Core.flags.u.value32                = flags;
+    Req.Core.cb.type                        = VMMDevHGCMParmType_32bit;
+    Req.Core.cb.u.value32                   = cbBuffer;
+    Req.Core.info.type                      = VMMDevHGCMParmType_PageList;
+    Req.Core.info.u.PageList.size           = cbBuffer;
+    Req.Core.info.u.PageList.offset         = sizeof(Req.Core);
+
+    Assert(cbBuffer < _1K);
+    Req.PgLst.flags                         = VBOX_HGCM_F_PARM_DIRECTION_FROM_HOST;
+    Req.PgLst.cPages                        = cbBuffer <= (PAGE_SIZE - ((uintptr_t)pBuffer & PAGE_OFFSET_MASK)) ? 1 : 2;
+    Req.PgLst.offFirstPage                  = (uint16_t)((uintptr_t)pBuffer & PAGE_OFFSET_MASK);
+    Req.PgLst.aPages[0]                     = VbglR0PhysHeapGetPhysAddr(pBuffer) & ~(RTGCPHYS64)PAGE_OFFSET_MASK;
+    if (Req.PgLst.cPages == 1)
+        Req.PageTwo                         = NIL_RTGCPHYS64;
+    else
+        Req.PageTwo                         = Req.PgLst.aPages[0] + PAGE_SIZE;
+
+    int rc = VbglR0HGCMCallRaw(pClient->handle, &Req.Core.callInfo, sizeof(Req));
+    //Log(("VBOXSF: VbglR0SfFsInfo: VbglR0HGCMCall rc = %#x, result = %#x\n", rc, data.callInfo.Hdr.rc));
+    if (RT_SUCCESS(rc))
+    {
+        rc = Req.Core.callInfo.Hdr.rc;
+        *pcbBuffer = Req.Core.cb.u.value32;
+    }
+    return rc;
+}
+
 
 /**
  * Worker for FS32_PATHINFO that handles file stat queries.
@@ -479,6 +604,44 @@ vboxSfOs2SetFileInfo(PVBOXSFFOLDER pFolder, PSFFSI pSfFsi, PVBOXSFSYFI pSfFsd, U
 static APIRET
 vboxSfOs2QueryFileInfo(PVBOXSFFOLDER pFolder, PSFFSI pSfFsi, PVBOXSFSYFI pSfFsd, ULONG uLevel, PBYTE pbData, ULONG cbData)
 {
+    /*
+     * Performance notes:
+     *
+     * This function was used for some performance hacking in an attempt at
+     * squeezing more performance out of the HGCM and shared folders code.
+     *
+     * 0. Skip calling the host and returning zeros:
+     *       906 ns / 3653 ticks
+     *
+     *    This is comparable to JFS (859 ns) and HPFS (1107 ns) and give an
+     *    idea what we're up against compared to a "local" file system.
+     *
+     * 1. Having shortcircuted the host side processing by faking a success when
+     *    VMMDevHGCM.cpp is about to do pThis->pHGCMDrv->pfnCall, then measuring
+     *    various guest side changes in the request and request submission path:
+     *
+     *     - Wasted on virtual address vs page list buffer:
+     *         4095 ns / 16253 ticks
+     *
+     *       Suspect this is due to expensive memory locking on the guest side and
+     *       the host doing extra virtual address conversion.
+     *
+     *     - Wasted repackaging the HGCM request:
+     *         450 ns / 1941 ticks
+     *
+     *     - Embedding the SHFLFSOBJINFO into the buffer may save a little as well:
+     *         286 ns / 1086 ticks
+     *
+     *    Raw data:
+     *        11843ns / 47469 ticks - VbglR0SfFsInfo
+     *         7748ns / 31216 ticks - VbglR0SfPhysFsInfo
+     *         7298ns / 29275 ticks - VbglR0SfFastPhysFsInfo
+     *         7012ns / 28189 ticks - Embedded buffer.
+     *
+     * 2. should've done measurements of the host side optimizations too...
+     *
+     */
+#if 0
     APIRET rc;
     PSHFLFSOBJINFO pObjInfo = (PSHFLFSOBJINFO)VbglR0PhysHeapAlloc(sizeof(*pObjInfo));
     if (pObjInfo)
@@ -486,8 +649,8 @@ vboxSfOs2QueryFileInfo(PVBOXSFFOLDER pFolder, PSFFSI pSfFsi, PVBOXSFSYFI pSfFsd,
         RT_ZERO(*pObjInfo);
         uint32_t cbObjInfo = sizeof(*pObjInfo);
 
-        int vrc = VbglR0SfFsInfo(&g_SfClient, &pFolder->hHostFolder, pSfFsd->hHostFile,
-                                 SHFL_INFO_FILE | SHFL_INFO_GET, &cbObjInfo, (PSHFLDIRINFO)pObjInfo);
+        int vrc = VbglR0SfFastPhysFsInfo(&g_SfClient, &pFolder->hHostFolder, pSfFsd->hHostFile,
+                                         SHFL_INFO_FILE | SHFL_INFO_GET, &cbObjInfo, (PSHFLDIRINFO)pObjInfo);
         if (RT_SUCCESS(vrc))
         {
             rc = vboxSfOs2FileStatusFromObjInfo(pbData, cbData, uLevel, pObjInfo);
@@ -512,6 +675,63 @@ vboxSfOs2QueryFileInfo(PVBOXSFFOLDER pFolder, PSFFSI pSfFsi, PVBOXSFSYFI pSfFsd,
     }
     else
         rc = ERROR_NOT_ENOUGH_MEMORY;
+#else
+    APIRET rc;
+    struct MyEmbReq
+    {
+        VBGLIOCIDCHGCMFASTCALL  Hdr;
+        VMMDevHGCMCall          Call;
+        VBoxSFParmInformation   Parms;
+        SHFLFSOBJINFO           ObjInfo;
+    } *pReq = (struct MyEmbReq *)VbglR0PhysHeapAlloc(sizeof(*pReq));
+    if (pReq)
+    {
+        RT_ZERO(pReq->ObjInfo);
+
+        VBGLIOCIDCHGCMFASTCALL_INIT(&pReq->Hdr, VbglR0PhysHeapGetPhysAddr(pReq), &pReq->Call, g_SfClient.idClient,
+                                    SHFL_FN_INFORMATION, SHFL_CPARMS_INFORMATION, sizeof(*pReq));
+        pReq->Parms.id32Root.type               = VMMDevHGCMParmType_32bit;
+        pReq->Parms.id32Root.u.value32          = pFolder->hHostFolder.root;
+        pReq->Parms.u64Handle.type              = VMMDevHGCMParmType_64bit;
+        pReq->Parms.u64Handle.u.value64         = pSfFsd->hHostFile;
+        pReq->Parms.f32Flags.type               = VMMDevHGCMParmType_32bit;
+        pReq->Parms.f32Flags.u.value32          = SHFL_INFO_FILE | SHFL_INFO_GET;
+        pReq->Parms.cb32.type                   = VMMDevHGCMParmType_32bit;
+        pReq->Parms.cb32.u.value32              = sizeof(pReq->ObjInfo);
+        pReq->Parms.pInfo.type                  = VMMDevHGCMParmType_Embedded;
+        pReq->Parms.pInfo.u.Embedded.cbData     = sizeof(pReq->ObjInfo);
+        pReq->Parms.pInfo.u.Embedded.offData    = RT_UOFFSETOF(struct MyEmbReq, ObjInfo) - sizeof(VBGLIOCIDCHGCMFASTCALL);
+        pReq->Parms.pInfo.u.Embedded.fFlags     = VBOX_HGCM_F_PARM_DIRECTION_FROM_HOST;
+
+        int vrc = VbglR0HGCMFastCall(g_SfClient.handle, &pReq->Hdr, sizeof(*pReq));
+        if (RT_SUCCESS(vrc))
+            vrc = pReq->Call.header.result;
+        if (RT_SUCCESS(vrc))
+        {
+            rc = vboxSfOs2FileStatusFromObjInfo(pbData, cbData, uLevel, &pReq->ObjInfo);
+            if (rc == NO_ERROR)
+            {
+                /* Update the timestamps in the independent file data: */
+                int16_t cMinLocalTimeDelta = vboxSfOs2GetLocalTimeDelta();
+                vboxSfOs2DateTimeFromTimeSpec(&pSfFsi->sfi_cdate, &pSfFsi->sfi_ctime, pReq->ObjInfo.BirthTime,        cMinLocalTimeDelta);
+                vboxSfOs2DateTimeFromTimeSpec(&pSfFsi->sfi_adate, &pSfFsi->sfi_atime, pReq->ObjInfo.AccessTime,       cMinLocalTimeDelta);
+                vboxSfOs2DateTimeFromTimeSpec(&pSfFsi->sfi_mdate, &pSfFsi->sfi_mtime, pReq->ObjInfo.ModificationTime, cMinLocalTimeDelta);
+
+                /* And the size field as we're at it: */
+                pSfFsi->sfi_sizel = pReq->ObjInfo.cbObject;
+            }
+        }
+        else
+        {
+            Log(("vboxSfOs2QueryFileInfo: VbglR0SfFsInfo failed: %Rrc\n", vrc));
+            rc = vboxSfOs2ConvertStatusToOs2(vrc, ERROR_GEN_FAILURE);
+        }
+
+        VbglR0PhysHeapFree(pReq);
+    }
+    else
+        rc = ERROR_NOT_ENOUGH_MEMORY;
+#endif
     return rc;
 }
 
