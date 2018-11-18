@@ -79,7 +79,7 @@ typedef struct D3DKMTFUNCTIONS
 } D3DKMTFUNCTIONS;
 
 DECLCALLBACK(HMODULE) VBoxWddmLoadSystemDll(const char *pszName);
-DECLCALLBACK(HMODULE) VBoxWddmLoadAdresses(const char *pszModName, VBOXWDDMDLLPROC *paProcs);
+DECLCALLBACK(void) VBoxWddmLoadAdresses(HMODULE hmod, VBOXWDDMDLLPROC *paProcs);
 
 DECLCALLBACK(int) D3DKMTLoad(void);
 DECLCALLBACK(D3DKMTFUNCTIONS const *) D3DKMTFunctions(void);

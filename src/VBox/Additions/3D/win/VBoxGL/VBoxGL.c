@@ -60,7 +60,11 @@ static HMODULE gaDrvLoadSVGA(struct GaDrvFunctions *pDrvFuncs)
         { NULL, NULL }
     };
 
-    HMODULE hmod = VBoxWddmLoadAdresses(g_pszSvgaDll, aDrvProcs);
+    HMODULE hmod = VBoxWddmLoadSystemDll(g_pszSvgaDll);
+    if (hmod)
+    {
+        VBoxWddmLoadAdresses(hmod, aDrvProcs);
+    }
     return hmod;
 }
 
@@ -221,7 +225,6 @@ wddm_present(struct pipe_screen *screen,
              struct pipe_resource *res,
              HDC hDC)
 {
-ASMBreakpoint();
     struct stw_context *ctx = stw_current_context();
     struct pipe_context *pipe = ctx->st->pipe;
 
@@ -259,7 +262,6 @@ static struct stw_shared_surface *
 wddm_shared_surface_open(struct pipe_screen *screen,
                          HANDLE hSharedSurface)
 {
-ASMBreakpoint();
     struct stw_shared_surface *surface = NULL;
 
     const WDDMGalliumDriverEnv *pEnv = g_drvfuncs.pfnGaDrvGetWDDMEnv(screen);
@@ -284,7 +286,6 @@ static void
 wddm_shared_surface_close(struct pipe_screen *screen,
                          struct stw_shared_surface *surface)
 {
-ASMBreakpoint();
     const WDDMGalliumDriverEnv *pEnv = g_drvfuncs.pfnGaDrvGetWDDMEnv(screen);
     if (pEnv)
     {
@@ -301,7 +302,6 @@ wddm_compose(struct pipe_screen *screen,
              LPCRECT pRect,
              ULONGLONG PresentHistoryToken)
 {
-ASMBreakpoint();
     struct stw_context *ctx = stw_current_context();
     struct pipe_context *pipe = ctx->st->pipe;
 

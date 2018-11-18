@@ -44,12 +44,8 @@ DECLCALLBACK(HMODULE) VBoxWddmLoadSystemDll(const char *pszName)
     return LoadLibraryA(szPath);
 }
 
-DECLCALLBACK(HMODULE) VBoxWddmLoadAdresses(const char *pszModName, VBOXWDDMDLLPROC *paProcs)
+DECLCALLBACK(void) VBoxWddmLoadAdresses(HMODULE hmod, VBOXWDDMDLLPROC *paProcs)
 {
-    HMODULE hmod = VBoxWddmLoadSystemDll(pszModName);
-    if (!hmod)
-        return NULL;
-
     struct VBOXWDDMDLLPROC *pIter = paProcs;
     while (pIter->pszName)
     {
@@ -57,8 +53,6 @@ DECLCALLBACK(HMODULE) VBoxWddmLoadAdresses(const char *pszModName, VBOXWDDMDLLPR
         *pIter->ppfn = pfn;
         ++pIter;
     }
-
-    return hmod;
 }
 
 /*
@@ -99,7 +93,13 @@ static VBOXWDDMDLLPROC g_D3DKMTLoadTable[] =
  */
 DECLCALLBACK(int) D3DKMTLoad(void)
 {
-    HMODULE hmod = VBoxWddmLoadAdresses("gdi32.dll", g_D3DKMTLoadTable);
+    /* Modules which use D3DKMT must link with gdi32. */
+    HMODULE hmod = GetModuleHandleA("gdi32.dll");
+    Assert(hmod);
+    if (hmod)
+    {
+        VBoxWddmLoadAdresses(hmod, g_D3DKMTLoadTable);
+    }
     return hmod != NULL;
 }
 
