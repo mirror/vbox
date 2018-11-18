@@ -225,6 +225,7 @@ static void vmmdevHGCMCmdListUnlock(PVMMDEV pThis)
 /** Allocate and initialize VBOXHGCMCMD structure for HGCM request.
  *
  * @returns Pointer to the command on success, NULL otherwise.
+ * @param   pThis           The VMMDev instance data.
  * @param   enmCmdType      Type of the command.
  * @param   GCPhys          The guest physical address of the HGCM request.
  * @param   cbRequest       The size of the HGCM request.
@@ -702,6 +703,7 @@ static int vmmdevHGCMInitHostParameters(PVMMDEV pThis, PVBOXHGCMCMD pCmd, uint8_
 /** Allocate and initialize VBOXHGCMCMD structure for a HGCMCall request.
  *
  * @returns VBox status code that the guest should see.
+ * @param   pThis           The VMMDev instance data.
  * @param   pHGCMCall       The HGCMCall request (cached in host memory).
  * @param   cbHGCMCall      Size of the request.
  * @param   GCPhys          Guest physical address of the request.
