@@ -126,8 +126,13 @@ static uint32_t         g_cMsTimeSyncMaxLatency = 250;
 /** @see pg_vgsvc_timesync */
 static uint32_t         g_TimeSyncSetThreshold = 20*60*1000;
 /** Whether the next adjustment should just set the time instead of trying to
- * adjust it. This is used to implement --timesync-set-start.  */
-static bool volatile    g_fTimeSyncSetNext = false;
+ * adjust it. This is used to implement --timesync-set-start.
+ * For purposes of setting the kernel timezone, OS/2 always starts with this. */
+#ifdef RT_OS_OS2
+static bool volatile    g_fTimeSyncSetOnStart = true;
+#else
+static bool volatile    g_fTimeSyncSetOnStart = false;
+#endif
 /** Whether to set the time when the VM was restored. */
 static bool             g_fTimeSyncSetOnRestore = true;
 /** The logging verbosity level.
@@ -208,7 +213,14 @@ static DECLCALLBACK(int) vgsvcTimeSyncPreInit(void)
         {
             rc = VGSvcCheckPropExist(uGuestPropSvcClientID, "/VirtualBox/GuestAdd/VBoxService/--timesync-set-start");
             if (RT_SUCCESS(rc))
-                g_fTimeSyncSetNext = true;
+                g_fTimeSyncSetOnStart = true;
+        }
+        if (   RT_SUCCESS(rc)
+            || rc == VERR_NOT_FOUND)
+        {
+            rc = VGSvcCheckPropExist(uGuestPropSvcClientID, "/VirtualBox/GuestAdd/VBoxService/--timesync-no-set-start");
+            if (RT_SUCCESS(rc))
+                g_fTimeSyncSetOnStart = false;
         }
         if (   RT_SUCCESS(rc)
             || rc == VERR_NOT_FOUND)
@@ -285,7 +297,9 @@ static DECLCALLBACK(int) vgsvcTimeSyncOption(const char **ppszShort, int argc, c
     else if (!strcmp(argv[*pi], "--timesync-set-threshold"))
         rc = VGSvcArgUInt32(argc, argv, "", pi, &g_TimeSyncSetThreshold, 0, 7*24*60*60*1000); /* a week */
     else if (!strcmp(argv[*pi], "--timesync-set-start"))
-        g_fTimeSyncSetNext = true;
+        g_fTimeSyncSetOnStart = true;
+    else if (!strcmp(argv[*pi], "--timesync-no-set-start"))
+        g_fTimeSyncSetOnStart = false;
     else if (!strcmp(argv[*pi], "--timesync-set-on-restore"))
         g_fTimeSyncSetOnRestore = true;
     else if (!strcmp(argv[*pi], "--timesync-no-set-on-restore"))
@@ -629,7 +643,8 @@ DECLCALLBACK(int) vgsvcTimeSyncWorker(bool volatile *pfShutdown)
 
                 bool fSetTimeInThisLoop = false;
                 uint64_t AbsDriftMilli = RTTimeSpecGetMilli(&AbsDrift);
-                if (AbsDriftMilli > MinAdjust)
+                if (   AbsDriftMilli > MinAdjust
+                    || g_fTimeSyncSetOnStart)
                 {
                     /*
                      * Ok, the drift is above the threshold.
@@ -638,7 +653,7 @@ DECLCALLBACK(int) vgsvcTimeSyncWorker(bool volatile *pfShutdown)
                      * too big, fall back on just setting the time.
                      */
                     if (   AbsDriftMilli > TimeSyncSetThreshold
-                        || g_fTimeSyncSetNext
+                        || g_fTimeSyncSetOnStart
                         || !vgsvcTimeSyncAdjust(&Drift))
                     {
                         vgsvcTimeSyncCancelAdjust();
@@ -677,7 +692,7 @@ DECLCALLBACK(int) vgsvcTimeSyncWorker(bool volatile *pfShutdown)
         } while (--cTries > 0);
 
         /* Clear the set-next/set-start flag. */
-        g_fTimeSyncSetNext = false;
+        g_fTimeSyncSetOnStart = false;
 
         /*
          * Block for a while.
@@ -754,7 +769,8 @@ VBOXSERVICE g_TimeSync =
     /* pszUsage. */
     "              [--timesync-interval <ms>] [--timesync-min-adjust <ms>]\n"
     "              [--timesync-latency-factor <x>] [--timesync-max-latency <ms>]\n"
-    "              [--timesync-set-threshold <ms>] [--timesync-set-start]\n"
+    "              [--timesync-set-threshold <ms>]\n"
+    "              [--timesync-set-start|--timesync-no-set-start]\n"
     "              [--timesync-set-on-restore|--timesync-no-set-on-restore]\n"
     "              [--timesync-verbosity <level>]"
     ,
@@ -774,7 +790,13 @@ VBOXSERVICE g_TimeSync =
     "                            The absolute drift threshold, given as milliseconds,\n"
     "                            where to start setting the time instead of trying to\n"
     "                            adjust it. The default is 20 min.\n"
-    "    --timesync-set-start    Set the time when starting the time sync service.\n"
+    "    --timesync-set-start, --timesync-no-set-start    \n"
+    "                            Set the time when starting the time sync service.\n"
+#ifdef RT_OS_OS2
+    "                            Default: --timesync-set-start\n"
+#else
+    "                            Default: --timesync-no-set-start\n"
+#endif
     "    --timesync-set-on-restore, --timesync-no-set-on-restore\n"
     "                            Whether to immediately set the time when the VM is\n"
     "                            restored or not.  Default: --timesync-set-on-restore\n"
