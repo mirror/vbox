@@ -106,14 +106,6 @@ typedef struct _VBGLPHYSHEAPBLOCK VBGLPHYSHEAPBLOCK;
 struct _VBGLPHYSHEAPCHUNK;
 typedef struct _VBGLPHYSHEAPCHUNK VBGLPHYSHEAPCHUNK;
 
-#ifndef VBGL_VBOXGUEST
-struct VBGLHGCMHANDLEDATA
-{
-    uint32_t fAllocated;
-    VBGLIDCHANDLE IdcHandle;
-};
-#endif
-
 enum VbglLibStatus
 {
     VbglStatusNotInitialized = 0,

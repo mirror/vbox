@@ -2728,7 +2728,9 @@ static int vgdrvIoCtl_HGCMCallInner(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION 
     /*
      * Some more validations.
      */
-    if (pInfo->cParms > 4096) /* (Just make sure it doesn't overflow the next check.) */
+    if (RT_LIKELY(pInfo->cParms <= VMMDEV_MAX_HGCM_PARMS)) /* (Just make sure it doesn't overflow the next check.) */
+    { /* likely */}
+    else
     {
         LogRel(("VBOXGUEST_IOCTL_HGCM_CALL: cParm=%RX32 is not sane\n", pInfo->cParms));
         return VERR_INVALID_PARAMETER;
@@ -2741,7 +2743,9 @@ static int vgdrvIoCtl_HGCMCallInner(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION 
     else
 #endif
         cbActual += pInfo->cParms * sizeof(HGCMFunctionParameter);
-    if (cbData < cbActual)
+    if (RT_LIKELY(cbData >= cbActual))
+    { /* likely */}
+    else
     {
         LogRel(("VBOXGUEST_IOCTL_HGCM_CALL: cbData=%#zx (%zu) required size is %#zx (%zu)\n",
                cbData, cbData, cbActual, cbActual));
@@ -2757,7 +2761,9 @@ static int vgdrvIoCtl_HGCMCallInner(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION 
         if (pSession->aHGCMClientIds[i] == u32ClientId)
             break;
     RTSpinlockRelease(pDevExt->SessionSpinlock);
-    if (RT_UNLIKELY(i >= RT_ELEMENTS(pSession->aHGCMClientIds)))
+    if (RT_LIKELY(i < RT_ELEMENTS(pSession->aHGCMClientIds)))
+    { /* likely */}
+    else
     {
         LogRelMax(32, ("VBOXGUEST_IOCTL_HGCM_CALL: Invalid handle. u32Client=%RX32\n", u32ClientId));
         return VERR_INVALID_HANDLE;
@@ -2817,6 +2823,68 @@ static int vgdrvIoCtl_HGCMCallWrapper(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSIO
                                     f32bit, fUserData, 0 /*cbExtra*/, cbData);
 }
 
+
+/**
+ * Handles a fast HGCM call from another driver.
+ *
+ * The driver has provided a fully assembled HGCM call request and all we need
+ * to do is send it to the host and do the wait processing.
+ *
+ * @returns VBox status code of the request submission part.
+ * @param   pDevExt     The device extension.
+ * @param   pCallReq    The call request.
+ */
+static int vgdrvIoCtl_HGCMFastCall(PVBOXGUESTDEVEXT pDevExt, VBGLIOCIDCHGCMFASTCALL volatile *pCallReq)
+{
+    VMMDevHGCMCall volatile *pHgcmCall = (VMMDevHGCMCall volatile *)(pCallReq + 1);
+    int rc;
+
+    /*
+     * Check out the physical address.
+     */
+    Assert((pCallReq->GCPhysReq & PAGE_OFFSET_MASK) == ((uintptr_t)pHgcmCall & PAGE_OFFSET_MASK));
+
+    AssertReturn(!pCallReq->fInterruptible, VERR_NOT_IMPLEMENTED);
+
+    /*
+     * Submit the request.
+     */
+    Log(("vgdrvIoCtl_HGCMFastCall -> host\n"));
+    ASMOutU32(pDevExt->IOPortBase + VMMDEV_PORT_OFF_REQUEST, (uint32_t)pCallReq->GCPhysReq);
+
+    /* Make the compiler aware that the host has changed memory. */
+    ASMCompilerBarrier();
+
+    pCallReq->Hdr.rc = rc = pHgcmCall->header.header.rc;
+    Log(("vgdrvIoCtl_HGCMFastCall -> %Rrc (header rc=%Rrc)\n", rc, pHgcmCall->header.result));
+
+    /*
+     * The host is likely to engage in asynchronous execution of HGCM, unless it fails.
+     */
+    if (rc == VINF_HGCM_ASYNC_EXECUTE)
+    {
+        rc = vgdrvHgcmAsyncWaitCallbackWorker(&pHgcmCall->header, pDevExt, false /* fInterruptible */, RT_INDEFINITE_WAIT);
+        if (pHgcmCall->header.fu32Flags & VBOX_HGCM_REQ_DONE)
+        {
+            Assert(!(pHgcmCall->header.fu32Flags & VBOX_HGCM_REQ_CANCELLED));
+            rc = VINF_SUCCESS;
+        }
+        else
+        {
+            /*
+             * Timeout and interrupt scenarios are messy and requires
+             * cancelation, so implement later.
+             */
+            AssertReleaseMsgFailed(("rc=%Rrc\n", rc));
+        }
+    }
+    else
+        Assert((pHgcmCall->header.fu32Flags & VBOX_HGCM_REQ_DONE) || RT_FAILURE_NP(rc));
+
+    Log(("vgdrvIoCtl_HGCMFastCall: rc=%Rrc result=%Rrc fu32Flags=%#x\n", rc, pHgcmCall->header.result, pHgcmCall->header.fu32Flags));
+    return rc;
+
+}
 
 #endif /* VBOX_WITH_HGCM */
 
@@ -4059,6 +4127,12 @@ int VGDrvCommonIoCtl(uintptr_t iFunction, PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSE
                                          pSession->fUserSession);
         }
 #ifdef VBOX_WITH_HGCM
+        else if (iFunction == VBGL_IOCTL_IDC_HGCM_FAST_CALL) /* (is variable size, but we don't bother encoding it) */
+        {
+            REQ_CHECK_RING0("VBGL_IOCTL_IDC_HGCM_FAST_CALL");
+            REQ_CHECK_EXPR(VBGL_IOCTL_IDC_HGCM_FAST_CALL, cbReq >= sizeof(VBGLIOCIDCHGCMFASTCALL) + sizeof(VMMDevHGCMCall));
+            vgdrvIoCtl_HGCMFastCall(pDevExt, (VBGLIOCIDCHGCMFASTCALL volatile *)pReqHdr);
+        }
         else if (   iFunctionStripped == VBGL_IOCTL_CODE_STRIPPED(VBGL_IOCTL_HGCM_CALL(0))
 # if ARCH_BITS == 64
                  || iFunctionStripped == VBGL_IOCTL_CODE_STRIPPED(VBGL_IOCTL_HGCM_CALL_32(0))

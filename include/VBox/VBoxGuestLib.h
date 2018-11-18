@@ -211,6 +211,7 @@ DECLR0VBGL(int) VbglGR0Verify(const struct VMMDevRequestHeader *pReq, size_t cbR
 
 # ifdef VBOX_WITH_HGCM
 struct VBGLIOCHGCMCALL;
+struct VBGLIOCIDCHGCMFASTCALL;
 
 #  ifdef VBGL_VBOXGUEST
 
@@ -324,7 +325,17 @@ DECLR0VBGL(int) VbglR0HGCMInternalCall32(struct VBGLIOCHGCMCALL *pCallInfo, uint
 
 #  else  /* !VBGL_VBOXGUEST */
 
+#ifndef VBGL_VBOXGUEST
+/** @internal  */
+typedef struct VBGLHGCMHANDLEDATA
+{
+    uint32_t fAllocated;
+    VBGLIDCHANDLE IdcHandle;
+} VBGLHGCMHANDLEDATA;
+#else
 struct VBGLHGCMHANDLEDATA;
+#endif
+
 typedef struct VBGLHGCMHANDLEDATA *VBGLHGCMHANDLE;
 
 /** @name HGCM functions
@@ -381,7 +392,7 @@ DECLR0VBGL(int) VbglR0HGCMDisconnect(VBGLHGCMHANDLE handle, HGCMCLIENTID idClien
  *
  * @return VBox status code.
  */
-DECLR0VBGL(int) VbglR0HGCMCallRaw(VBGLHGCMHANDLE handle, struct VBGLIOCHGCMCALL*pData, uint32_t cbData);
+DECLR0VBGL(int) VbglR0HGCMCallRaw(VBGLHGCMHANDLE handle, struct VBGLIOCHGCMCALL *pData, uint32_t cbData);
 
 /**
  * Call to a service, returning the HGCM status code.
@@ -393,7 +404,7 @@ DECLR0VBGL(int) VbglR0HGCMCallRaw(VBGLHGCMHANDLE handle, struct VBGLIOCHGCMCALL*
  * @return VBox status code.  Either the I/O control status code if that failed,
  *         or the HGCM status code (pData->Hdr.rc).
  */
-DECLR0VBGL(int) VbglR0HGCMCall(VBGLHGCMHANDLE handle, struct VBGLIOCHGCMCALL*pData, uint32_t cbData);
+DECLR0VBGL(int) VbglR0HGCMCall(VBGLHGCMHANDLE handle, struct VBGLIOCHGCMCALL *pData, uint32_t cbData);
 
 /**
  * Call to a service with user-mode data received by the calling driver from the User-Mode process.
@@ -405,7 +416,26 @@ DECLR0VBGL(int) VbglR0HGCMCall(VBGLHGCMHANDLE handle, struct VBGLIOCHGCMCALL*pDa
  *
  * @return VBox status code.
  */
-DECLR0VBGL(int) VbglR0HGCMCallUserDataRaw(VBGLHGCMHANDLE handle, struct VBGLIOCHGCMCALL*pData, uint32_t cbData);
+DECLR0VBGL(int) VbglR0HGCMCallUserDataRaw(VBGLHGCMHANDLE handle, struct VBGLIOCHGCMCALL *pData, uint32_t cbData);
+
+/**
+ * Call to a service, w/o any repacking and buffer locking in VBoxGuest,
+ * returning the only request related status code (not HGCM).
+ *
+ * The driver only submits the request and waits for completion, nothing else.
+ *
+ * @param   hHandle     The connection handle.
+ * @param   pCallReq    The call request.  Will be passed directly to the host.
+ * @param   cbCallReq   The size of the whole call request.
+ *
+ * @return VBox status code.
+ *
+ * @remarks The result of the HGCM call is found in
+ *          @a pCallReq->HgcmCallReq.header.result on a successful return.  The
+ *          @a pCallReq->Hdr.rc and @a pCallReq->HgcmCallReq.header.header.rc
+ *          fields are the same as the return value and can safely be ignored.
+ */
+DECLR0VBGL(int) VbglR0HGCMFastCall(VBGLHGCMHANDLE hHandle, struct VBGLIOCIDCHGCMFASTCALL *pCallReq, uint32_t cbCallReq);
 
 /** @} */
 
