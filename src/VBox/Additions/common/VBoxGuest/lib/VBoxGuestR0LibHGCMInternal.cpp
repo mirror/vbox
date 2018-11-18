@@ -55,6 +55,9 @@
 #define VBGLR0_MAX_HGCM_USER_PARM       (24*_1M)
 /** The max parameter buffer size for a kernel request. */
 #define VBGLR0_MAX_HGCM_KERNEL_PARM     (16*_1M)
+/** The max embedded buffer size. */
+#define VBGLR0_MAX_HGCM_EMBEDDED_BUFFER _64K
+
 #if defined(RT_OS_LINUX) || defined(RT_OS_DARWIN)
 /** Linux needs to use bounce buffers since RTR0MemObjLockUser has unwanted
  * side effects.
@@ -257,6 +260,32 @@ static int vbglR0HGCMInternalPreprocessCall(PCVBGLIOCHGCMCALL pCallInfo, uint32_
                 else
                     Log4(("GstHGCMCall: parm=%u type=pglst: cb=0\n", iParm));
                 break;
+
+            case VMMDevHGCMParmType_Embedded:
+                if (fIsUser) /// @todo relax this.
+                    return VERR_INVALID_PARAMETER;
+                cb = pSrcParm->u.Embedded.cbData;
+                if (cb)
+                {
+                    uint32_t off = pSrcParm->u.Embedded.offData;
+                    AssertMsgReturn(cb <= VBGLR0_MAX_HGCM_EMBEDDED_BUFFER, ("%#x > %#x\n", cb, VBGLR0_MAX_HGCM_EMBEDDED_BUFFER),
+                                    VERR_INVALID_PARAMETER);
+                    AssertMsgReturn(cb <= cbCallInfo - cParms * sizeof(HGCMFunctionParameter),
+                                    ("cb=%#x cParms=%#x cbCallInfo=%3x\n", cb, cParms, cbCallInfo),
+                                    VERR_INVALID_PARAMETER);
+                    AssertMsgReturn(   off >= cParms * sizeof(HGCMFunctionParameter)
+                                    && off <= cbCallInfo - cb,
+                                    ("offData=%#x cParms=%#x cbCallInfo=%#x\n", off, cParms, cbCallInfo),
+                                    VERR_INVALID_PARAMETER);
+                    AssertMsgReturn(VBOX_HGCM_F_PARM_ARE_VALID(pSrcParm->u.Embedded.fFlags),
+                                    ("%#x\n", pSrcParm->u.Embedded.fFlags), VERR_INVALID_PARAMETER);
+
+                    *pcbExtra += RT_ALIGN_32(cb, 8);
+                }
+                else
+                    Log4(("GstHGCMCall: parm=%u type=embed: cb=0\n", iParm));
+                break;
+
 
             case VMMDevHGCMParmType_LinAddr_Locked_In:
             case VMMDevHGCMParmType_LinAddr_Locked_Out:
@@ -542,8 +571,30 @@ static void vbglR0HGCMInternalInitCall(VMMDevHGCMCall *pHGCMCall, PCVBGLIOCHGCMC
                     offExtra += RT_UOFFSETOF_DYN(HGCMPageListInfo, aPages[cPages]);
                 }
                 else
-                    pDstParm->u.PageList.offset = 0;
+                    pDstParm->u.PageList.offset = 0; /** @todo will fail on the host side now */
                 break;
+
+            case VMMDevHGCMParmType_Embedded:
+            {
+                uint32_t const cb = pSrcParm->u.Embedded.cbData;
+                pDstParm->type = VMMDevHGCMParmType_Embedded;
+                pDstParm->u.Embedded.cbData  = cb;
+                pDstParm->u.Embedded.offData = offExtra;
+                if (cb > 0)
+                {
+                    uint8_t *pbDst = (uint8_t *)pHGCMCall + offExtra;
+                    if (pSrcParm->u.Embedded.fFlags & VBOX_HGCM_F_PARM_DIRECTION_TO_HOST)
+                    {
+                        memcpy(pbDst, (uint8_t const *)pCallInfo + pSrcParm->u.Embedded.offData, cb);
+                        if (RT_ALIGN(cb, 8) != cb)
+                            memset(pbDst + cb, 0, RT_ALIGN(cb, 8) - cb);
+                    }
+                    else
+                        RT_BZERO(pbDst, RT_ALIGN(cb, 8));
+                    offExtra += RT_ALIGN(cb, 8);
+                }
+                break;
+            }
 
             case VMMDevHGCMParmType_LinAddr_Locked_In:
             case VMMDevHGCMParmType_LinAddr_Locked_Out:
@@ -761,13 +812,16 @@ static int vbglR0HGCMInternalDoCall(VMMDevHGCMCall *pHGCMCall, PFNVBGLHGCMCALLBA
  *
  * @returns rc, unless RTR0MemUserCopyTo fails.
  * @param   pCallInfo           Call info structure to update.
+ * @param   cbCallInfo          The size of the client request.
  * @param   pHGCMCall           HGCM call request.
+ * @param   cbHGCMCall          The size of the HGCM call request.
  * @param   pParmInfo           Parameter locking/buffering info.
  * @param   fIsUser             Is it a user (true) or kernel request.
  * @param   rc                  The current result code. Passed along to
  *                              preserve informational status codes.
  */
-static int vbglR0HGCMInternalCopyBackResult(PVBGLIOCHGCMCALL pCallInfo, VMMDevHGCMCall const *pHGCMCall,
+static int vbglR0HGCMInternalCopyBackResult(PVBGLIOCHGCMCALL pCallInfo, uint32_t cbCallInfo,
+                                            VMMDevHGCMCall const *pHGCMCall, uint32_t cbHGCMCall,
                                             struct VbglR0ParmInfo *pParmInfo, bool fIsUser, int rc)
 {
     HGCMFunctionParameter const *pSrcParm = VMMDEV_HGCM_CALL_PARMS(pHGCMCall);
@@ -790,6 +844,8 @@ static int vbglR0HGCMInternalCopyBackResult(PVBGLIOCHGCMCALL pCallInfo, VMMDevHG
     /*
      * Copy back parameters.
      */
+    /** @todo This is assuming user data (pDstParm) is buffered.  Not true
+     *        on OS/2, though I'm not sure we care... */
     for (iParm = 0; iParm < cParms; iParm++, pSrcParm++, pDstParm++)
     {
         switch (pDstParm->type)
@@ -802,6 +858,27 @@ static int vbglR0HGCMInternalCopyBackResult(PVBGLIOCHGCMCALL pCallInfo, VMMDevHG
             case VMMDevHGCMParmType_PageList:
                 pDstParm->u.PageList.size = pSrcParm->u.PageList.size;
                 break;
+
+            case VMMDevHGCMParmType_Embedded:
+            {
+                uint32_t cb;
+                pDstParm->u.Embedded.cbData = cb = pSrcParm->u.Embedded.cbData;
+                if (    cb > 0
+                    && (pDstParm->u.Embedded.fFlags & VBOX_HGCM_F_PARM_DIRECTION_FROM_HOST))
+                {
+                    uint32_t const offDst = pDstParm->u.Embedded.offData;
+                    uint32_t const offSrc = pDstParm->u.Embedded.offData;
+                    AssertReturn(offDst < cbCallInfo, VERR_INTERNAL_ERROR_2);
+                    AssertReturn(offDst >= sizeof(*pCallInfo) + cParms * sizeof(*pDstParm), VERR_INTERNAL_ERROR_2);
+                    AssertReturn(cb <= cbCallInfo - offDst , VERR_INTERNAL_ERROR_2);
+                    AssertReturn(offSrc < cbCallInfo, VERR_INTERNAL_ERROR_2);
+                    AssertReturn(offSrc >= sizeof(*pHGCMCall) + cParms * sizeof(*pSrcParm), VERR_INTERNAL_ERROR_2);
+                    AssertReturn(cb <= cbHGCMCall - offSrc, VERR_INTERNAL_ERROR_2);
+
+                    memcpy((uint8_t *)pCallInfo + offDst, (uint8_t const *)pHGCMCall + offSrc, cb);
+                }
+                break;
+            }
 
             case VMMDevHGCMParmType_LinAddr_Locked_In:
             case VMMDevHGCMParmType_LinAddr_In:
@@ -901,9 +978,8 @@ DECLR0VBGL(int) VbglR0HGCMInternalCall(PVBGLIOCHGCMCALL pCallInfo, uint32_t cbCa
          * Allocate the request buffer and recreate the call request.
          */
         VMMDevHGCMCall *pHGCMCall;
-        rc = VbglR0GRAlloc((VMMDevRequestHeader **)&pHGCMCall,
-                           sizeof(VMMDevHGCMCall) + pCallInfo->cParms * sizeof(HGCMFunctionParameter) + cbExtra,
-                           VMMDevReq_HGCMCall);
+        uint32_t const  cbHGCMCall = sizeof(VMMDevHGCMCall) + pCallInfo->cParms * sizeof(HGCMFunctionParameter) + cbExtra;
+        rc = VbglR0GRAlloc((VMMDevRequestHeader **)&pHGCMCall, cbHGCMCall, VMMDevReq_HGCMCall);
         if (RT_SUCCESS(rc))
         {
             bool fLeakIt;
@@ -918,7 +994,7 @@ DECLR0VBGL(int) VbglR0HGCMInternalCall(PVBGLIOCHGCMCALL pCallInfo, uint32_t cbCa
                 /*
                  * Copy back the result (parameters and buffers that changed).
                  */
-                rc = vbglR0HGCMInternalCopyBackResult(pCallInfo, pHGCMCall, &ParmInfo, fIsUser, rc);
+                rc = vbglR0HGCMInternalCopyBackResult(pCallInfo, cbCallInfo, pHGCMCall, cbHGCMCall, &ParmInfo, fIsUser, rc);
             }
             else
             {

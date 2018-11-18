@@ -273,6 +273,7 @@ typedef enum
     VMMDevHGCMParmType_LinAddr_Locked_In  = 8,  /**< Locked In  (read;  host<-guest) */
     VMMDevHGCMParmType_LinAddr_Locked_Out = 9,  /**< Locked Out (write; host->guest) */
     VMMDevHGCMParmType_PageList           = 10, /**< Physical addresses of locked pages for a buffer. */
+    VMMDevHGCMParmType_Embedded           = 11, /**< Small buffer embedded in request. */
     VMMDevHGCMParmType_SizeHack           = 0x7fffffff
 } HGCMFunctionParameterType;
 AssertCompileSize(HGCMFunctionParameterType, 4);
@@ -303,9 +304,15 @@ typedef struct
         } Pointer;
         struct
         {
-            uint32_t size;   /**< Size of the buffer described by the page list. */
-            uint32_t offset; /**< Relative to the request header, valid if size != 0. */
+            uint32_t size;      /**< Size of the buffer described by the page list. */
+            uint32_t offset;    /**< Relative to the request header of a HGCMPageListInfo structure, valid if size != 0. */
         } PageList;
+        struct
+        {
+            uint32_t fFlags : 8;        /**< VBOX_HGCM_F_PARM_*. */
+            uint32_t offData : 24;      /**< Relative to the request header, valid if cb != 0. */
+            uint32_t cbData;            /**< The buffer size. */
+        } Embedded;
     } u;
 #  ifdef __cplusplus
     void SetUInt32(uint32_t u32)
@@ -379,6 +386,12 @@ typedef struct
             uint32_t size;   /**< Size of the buffer described by the page list. */
             uint32_t offset; /**< Relative to the request header, valid if size != 0. */
         } PageList;
+        struct
+        {
+            uint32_t fFlags : 8;        /**< VBOX_HGCM_F_PARM_*. */
+            uint32_t offData : 24;      /**< Relative to the request header, valid if cb != 0. */
+            uint32_t cbData;            /**< The buffer size. */
+        } Embedded;
     } u;
 #  ifdef __cplusplus
     void SetUInt32(uint32_t u32)
@@ -467,6 +480,12 @@ typedef struct
             uint32_t size;   /**< Size of the buffer described by the page list. */
             uint32_t offset; /**< Relative to the request header, valid if size != 0. */
         } PageList;
+        struct
+        {
+            uint32_t fFlags : 8;        /**< VBOX_HGCM_F_PARM_*. */
+            uint32_t offData : 24;      /**< Relative to the request header (must be a valid offset even if cbData is zero). */
+            uint32_t cbData;            /**< The buffer size. */
+        } Embedded;
     } u;
 #  ifdef __cplusplus
     void SetUInt32(uint32_t u32)

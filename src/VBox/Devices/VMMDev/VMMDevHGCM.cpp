@@ -620,8 +620,9 @@ static int vmmdevHGCMGuestBufferWrite(PPDMDEVINSR3 pDevIns, const VBOXHGCMPARMPT
  * @returns VBox status code that the guest should see.
  * @param   pThis           The VMMDev instance data.
  * @param   pCmd            Command structure where host parameters needs initialization.
+ * @param   pbReq           The request buffer.
  */
-static int vmmdevHGCMInitHostParameters(PVMMDEV pThis, PVBOXHGCMCMD pCmd)
+static int vmmdevHGCMInitHostParameters(PVMMDEV pThis, PVBOXHGCMCMD pCmd, uint8_t const *pbReq)
 {
     AssertReturn(pCmd->enmCmdType == VBOXHGCMCMDTYPE_CALL, VERR_INTERNAL_ERROR);
 
@@ -652,6 +653,7 @@ static int vmmdevHGCMInitHostParameters(PVMMDEV pThis, PVBOXHGCMCMD pCmd)
             case VMMDevHGCMParmType_LinAddr_Out:
             case VMMDevHGCMParmType_LinAddr:
             case VMMDevHGCMParmType_PageList:
+            case VMMDevHGCMParmType_Embedded:
             {
                 const uint32_t cbData = pGuestParm->u.ptr.cbData;
 
@@ -667,9 +669,17 @@ static int vmmdevHGCMInitHostParameters(PVMMDEV pThis, PVBOXHGCMCMD pCmd)
 
                     if (pGuestParm->u.ptr.fu32Direction & VBOX_HGCM_F_PARM_DIRECTION_TO_HOST)
                     {
-                        int rc = vmmdevHGCMGuestBufferRead(pThis->pDevIns, pv, cbData, &pGuestParm->u.ptr);
-                        ASSERT_GUEST_RETURN(RT_SUCCESS(rc), rc);
-                        RT_UNTRUSTED_NONVOLATILE_COPY_FENCE();
+                        if (pGuestParm->enmType != VMMDevHGCMParmType_Embedded)
+                        {
+                            int rc = vmmdevHGCMGuestBufferRead(pThis->pDevIns, pv, cbData, &pGuestParm->u.ptr);
+                            ASSERT_GUEST_RETURN(RT_SUCCESS(rc), rc);
+                            RT_UNTRUSTED_NONVOLATILE_COPY_FENCE();
+                        }
+                        else
+                        {
+                            memcpy(pv, &pbReq[pGuestParm->u.ptr.offFirstPage], cbData);
+                            RT_UNTRUSTED_NONVOLATILE_COPY_FENCE();
+                        }
                     }
                 }
                 else
@@ -888,6 +898,7 @@ static int vmmdevHGCMCallFetchGuestParms(PVMMDEV pThis, PVBOXHGCMCMD pCmd,
                 ASSERT_GUEST_RETURN(cbData <= VMMDEV_MAX_HGCM_DATA_SIZE - cbTotalData, VERR_INVALID_PARAMETER);
                 cbTotalData += cbData;
 
+/** @todo respect zero byte page lists...    */
                 /* Check that the page list info is within the request. */
                 ASSERT_GUEST_RETURN(   offPageListInfo >= offExtra
                                     && cbHGCMCall >= sizeof(HGCMPageListInfo)
@@ -931,6 +942,42 @@ static int vmmdevHGCMCallFetchGuestParms(PVMMDEV pThis, PVBOXHGCMCMD pCmd,
                     for (uint32_t iPage = 0; iPage < pGuestParm->u.ptr.cPages; ++iPage)
                         pGuestParm->u.ptr.paPages[iPage] = pPageListInfo->aPages[iPage];
                 }
+                break;
+            }
+
+            case VMMDevHGCMParmType_Embedded:
+            {
+#ifdef VBOX_WITH_64_BITS_GUESTS
+                AssertCompileMembersSameSizeAndOffset(HGCMFunctionParameter64, u.Embedded.cbData, HGCMFunctionParameter32, u.Embedded.cbData);
+                uint32_t const cbData    = ((HGCMFunctionParameter64 *)pu8HGCMParm)->u.Embedded.cbData;
+                uint32_t const offData   = ((HGCMFunctionParameter64 *)pu8HGCMParm)->u.Embedded.offData;
+                uint32_t const fFlags    = ((HGCMFunctionParameter64 *)pu8HGCMParm)->u.Embedded.fFlags;
+#else
+                uint32_t const cbData    = ((HGCMFunctionParameter   *)pu8HGCMParm)->u.Embedded.cbData;
+                uint32_t const offData   = ((HGCMFunctionParameter   *)pu8HGCMParm)->u.Embedded.offData;
+                uint32_t const fFlags    = ((HGCMFunctionParameter   *)pu8HGCMParm)->u.Embedded.fFlags;
+#endif
+                LogFunc(("Embedded guest parameter cb %u, offset %u, flags %#x\n", cbData, offData, fFlags));
+
+                ASSERT_GUEST_RETURN(cbData <= VMMDEV_MAX_HGCM_DATA_SIZE - cbTotalData, VERR_INVALID_PARAMETER);
+                cbTotalData += cbData;
+
+                /* Check flags and buffer range. */
+                ASSERT_GUEST_MSG_RETURN(VBOX_HGCM_F_PARM_ARE_VALID(fFlags), ("%#x\n", fFlags), VERR_INVALID_FLAGS);
+                ASSERT_GUEST_MSG_RETURN(   offData >= offExtra
+                                        && offData <= cbHGCMCall
+                                        && cbData  <= cbHGCMCall - offData,
+                                        ("offData=%#x cbData=%#x cbHGCMCall=%#x offExtra=%#x\n", offData, cbData, cbHGCMCall, offExtra),
+                                        VERR_INVALID_PARAMETER);
+                RT_UNTRUSTED_VALIDATED_FENCE();
+
+                /* We use part of the ptr member. */
+                pGuestParm->u.ptr.fu32Direction     = fFlags;
+                pGuestParm->u.ptr.cbData            = cbData;
+                pGuestParm->u.ptr.offFirstPage      = offData;
+                pGuestParm->u.ptr.GCPhysSinglePage  = pCmd->GCPhys + offData;
+                pGuestParm->u.ptr.cPages            = 1;
+                pGuestParm->u.ptr.paPages           = &pGuestParm->u.ptr.GCPhysSinglePage;
                 break;
             }
 
@@ -994,7 +1041,7 @@ int vmmdevHGCMCall(PVMMDEV pThis, const VMMDevHGCMCall *pHGCMCall, uint32_t cbHG
         if (RT_SUCCESS(rc))
         {
             /* Copy guest data to host parameters, so HGCM services can use the data. */
-            rc = vmmdevHGCMInitHostParameters(pThis, pCmd);
+            rc = vmmdevHGCMInitHostParameters(pThis, pCmd, (uint8_t const *)pHGCMCall);
             if (RT_SUCCESS(rc))
             {
                 /*
@@ -1002,13 +1049,38 @@ int vmmdevHGCMCall(PVMMDEV pThis, const VMMDevHGCMCall *pHGCMCall, uint32_t cbHG
                  */
                 vmmdevHGCMAddCommand(pThis, pCmd);
 
+#if 1
+                if (    pCmd->u.call.u32Function == 9
+                    &&  pCmd->u.call.cParms      == 5)
+                {
+                    vmmdevHGCMRemoveCommand(pThis, pCmd);
+
+                    if (pCmd->pvReqLocked)
+                    {
+                        VMMDevHGCMRequestHeader volatile *pHeader = (VMMDevHGCMRequestHeader volatile *)pCmd->pvReqLocked;
+                        pHeader->header.rc = VINF_SUCCESS;
+                        pHeader->result    = VINF_SUCCESS;
+                        pHeader->fu32Flags |= VBOX_HGCM_REQ_DONE;
+                    }
+                    else
+                    {
+                        VMMDevHGCMRequestHeader *pHeader = (VMMDevHGCMRequestHeader *)pHGCMCall;
+                        pHeader->header.rc = VINF_SUCCESS;
+                        pHeader->result    = VINF_SUCCESS;
+                        pHeader->fu32Flags |= VBOX_HGCM_REQ_DONE;
+                        PDMDevHlpPhysWrite(pThis->pDevIns, GCPhys, pHeader,  sizeof(*pHeader));
+                    }
+                    vmmdevHGCMCmdFree(pThis, pCmd);
+                    return VINF_HGCM_ASYNC_EXECUTE; /* ignored, but avoids assertions. */
+                }
+#endif
+
                 rc = pThis->pHGCMDrv->pfnCall(pThis->pHGCMDrv, pCmd,
                                               pCmd->u.call.u32ClientID, pCmd->u.call.u32Function,
                                               pCmd->u.call.cParms, pCmd->u.call.paHostParms, tsArrival);
-                if (RT_SUCCESS(rc))
-                {
-                    Assert(rc == VINF_HGCM_ASYNC_EXECUTE);
 
+                if (rc == VINF_HGCM_ASYNC_EXECUTE)
+                {
                     /*
                      * Done.  Just update statistics and return.
                      */
@@ -1138,6 +1210,22 @@ static int vmmdevHGCMCompleteCallRequest(PVMMDEV pThis, PVBOXHGCMCMD pCmd, VMMDe
                     const void *pvSrc = pHostParm->u.pointer.addr;
                     uint32_t cbSrc = pHostParm->u.pointer.size;
                     rc = vmmdevHGCMGuestBufferWrite(pThis->pDevIns, pPtr, pvSrc, cbSrc);
+                }
+                break;
+            }
+
+            case VMMDevHGCMParmType_Embedded:
+            {
+                const VBOXHGCMPARMPTR * const pPtr = &pGuestParm->u.ptr;
+                if (   pPtr->cbData > 0
+                    && (pPtr->fu32Direction & VBOX_HGCM_F_PARM_DIRECTION_FROM_HOST))
+                {
+                    const void *pvSrc = pHostParm->u.pointer.addr;
+                    uint32_t    cbSrc = pHostParm->u.pointer.size;
+                    if (pCmd->pvReqLocked)
+                        memcpy((uint8_t *)pCmd->pvReqLocked + pPtr->offFirstPage, pvSrc, cbSrc);
+                    else
+                        rc = PDMDevHlpPhysWrite(pThis->pDevIns, pGuestParm->u.ptr.GCPhysSinglePage, pvSrc, cbSrc);
                 }
                 break;
             }
@@ -1486,7 +1574,8 @@ int vmmdevHGCMSaveState(PVMMDEV pThis, PSSMHANDLE pSSM)
                     else if (   pGuestParm->enmType == VMMDevHGCMParmType_LinAddr_In
                              || pGuestParm->enmType == VMMDevHGCMParmType_LinAddr_Out
                              || pGuestParm->enmType == VMMDevHGCMParmType_LinAddr
-                             || pGuestParm->enmType == VMMDevHGCMParmType_PageList)
+                             || pGuestParm->enmType == VMMDevHGCMParmType_PageList
+                             || pGuestParm->enmType == VMMDevHGCMParmType_Embedded)
                     {
                         const VBOXHGCMPARMPTR * const pPtr = &pGuestParm->u.ptr;
                         SSMR3PutU32     (pSSM, pPtr->cbData);
@@ -1618,7 +1707,8 @@ int vmmdevHGCMLoadState(PVMMDEV pThis, PSSMHANDLE pSSM, uint32_t uVersion)
                     else if (   pGuestParm->enmType == VMMDevHGCMParmType_LinAddr_In
                              || pGuestParm->enmType == VMMDevHGCMParmType_LinAddr_Out
                              || pGuestParm->enmType == VMMDevHGCMParmType_LinAddr
-                             || pGuestParm->enmType == VMMDevHGCMParmType_PageList)
+                             || pGuestParm->enmType == VMMDevHGCMParmType_PageList
+                             || pGuestParm->enmType == VMMDevHGCMParmType_Embedded)
                     {
                         VBOXHGCMPARMPTR * const pPtr = &pGuestParm->u.ptr;
                         SSMR3GetU32     (pSSM, &pPtr->cbData);
@@ -1627,8 +1717,14 @@ int vmmdevHGCMLoadState(PVMMDEV pThis, PSSMHANDLE pSSM, uint32_t uVersion)
                         rc = SSMR3GetU32(pSSM, &pPtr->fu32Direction);
                         if (RT_SUCCESS(rc))
                         {
-                            pPtr->paPages = (RTGCPHYS *)RTMemAlloc(pPtr->cPages * sizeof(RTGCPHYS));
-                            AssertStmt(pPtr->paPages, rc = VERR_NO_MEMORY);
+                            if (pPtr->cPages == 1)
+                                pPtr->paPages = &pPtr->GCPhysSinglePage;
+                            else
+                            {
+                                AssertReturn(pGuestParm->enmType != VMMDevHGCMParmType_Embedded, VERR_INTERNAL_ERROR_3);
+                                pPtr->paPages = (RTGCPHYS *)RTMemAlloc(pPtr->cPages * sizeof(RTGCPHYS));
+                                AssertStmt(pPtr->paPages, rc = VERR_NO_MEMORY);
+                            }
 
                             if (RT_SUCCESS(rc))
                             {
@@ -2091,7 +2187,7 @@ int vmmdevHGCMLoadStateDone(PVMMDEV pThis)
 
                     case VBOXHGCMCMDTYPE_CALL:
                     {
-                        rcCmd = vmmdevHGCMInitHostParameters(pThis, pCmd);
+                        rcCmd = vmmdevHGCMInitHostParameters(pThis, pCmd, (uint8_t const *)pReqHdr);
                         if (RT_SUCCESS(rcCmd))
                         {
                             vmmdevHGCMAddCommand(pThis, pCmd);
