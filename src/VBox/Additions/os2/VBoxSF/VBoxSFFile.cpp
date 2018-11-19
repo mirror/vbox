@@ -158,7 +158,7 @@ FS32_OPENCREATE(PCDFSI pCdFsi, PVBOXSFCD pCdFsd, PCSZ pszName, LONG offCurDirEnd
                 case SHFL_FILE_EXISTS:
                     if (pParams->Handle == SHFL_HANDLE_NIL)
                     {
-                        rc = ERROR_FILE_EXISTS;
+                        rc = ERROR_OPEN_FAILED; //ERROR_FILE_EXISTS;
                         break;
                     }
                     RT_FALL_THRU();
@@ -207,12 +207,14 @@ FS32_OPENCREATE(PCDFSI pCdFsi, PVBOXSFCD pCdFsd, PCSZ pszName, LONG offCurDirEnd
 
                 default:
                 case SHFL_FILE_NOT_FOUND:
-                    rc = ERROR_FILE_NOT_FOUND;
+                    rc = ERROR_OPEN_FAILED;
                     break;
             }
         }
         else if (vrc == VERR_ALREADY_EXISTS)
             rc = ERROR_ACCESS_DENIED;
+        else if (vrc == VERR_FILE_NOT_FOUND)
+            rc = ERROR_OPEN_FAILED;
         else
             rc = vboxSfOs2ConvertStatusToOs2(vrc, ERROR_PATH_NOT_FOUND);
         vboxSfOs2ReleasePathAndFolder(pStrFolderPath, pFolder);
