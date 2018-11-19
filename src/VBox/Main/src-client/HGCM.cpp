@@ -155,9 +155,9 @@ class HGCMService
          * Main HGCM thread methods.
          */
         static int LoadService(const char *pszServiceLibrary, const char *pszServiceName, PUVM pUVM);
-        void UnloadService(void);
+        void UnloadService(bool fUvmIsInvalid);
 
-        static void UnloadAll(void);
+        static void UnloadAll(bool fUvmIsInvalid);
 
         static int ResolveService(HGCMService **ppsvc, const char *pszServiceName);
         void ReferenceService(void);
@@ -864,7 +864,9 @@ HGCMService::svcHlpStamRegisterV(void *pvInstance, void *pvSample, STAMTYPE enmT
      HGCMService *pService = static_cast <HGCMService *>(pvInstance);
      AssertPtrReturn(pService, VERR_INVALID_PARAMETER);
 
-     return STAMR3DeregisterV(pService->m_pUVM, pszPatFmt, va);
+     if (pService->m_pUVM)
+         return STAMR3DeregisterV(pService->m_pUVM, pszPatFmt, va);
+     return VINF_SUCCESS;
 }
 
 /**
@@ -886,8 +888,9 @@ HGCMService::svcHlpStamRegisterV(void *pvInstance, void *pvSample, STAMTYPE enmT
 {
      HGCMService *pService = static_cast <HGCMService *>(pvInstance);
      AssertPtrReturn(pService, VERR_INVALID_PARAMETER);
-
-     return DBGFR3InfoDeregisterExternal(pService->m_pUVM, pszName);
+     if (pService->m_pUVM)
+         return DBGFR3InfoDeregisterExternal(pService->m_pUVM, pszName);
+     return VINF_SUCCESS;
 }
 
 
@@ -993,7 +996,7 @@ void HGCMService::instanceDestroy(void)
             hgcmThreadWait(m_pThread);
     }
 
-    if (m_pszSvcName)
+    if (m_pszSvcName && m_pUVM)
         STAMR3DeregisterF(m_pUVM, "/HGCM/%s/*", m_pszSvcName);
     m_pUVM = NULL;
 
@@ -1120,9 +1123,12 @@ int HGCMService::loadClientState(uint32_t u32ClientId, PSSMHANDLE pSSM)
  *
  * @thread main HGCM
  */
-void HGCMService::UnloadService(void)
+void HGCMService::UnloadService(bool fUvmIsInvalid)
 {
     LogFlowFunc(("name = %s\n", m_pszSvcName));
+
+    if (fUvmIsInvalid)
+        m_pUVM = NULL;
 
     /* Remove the service from the list. */
     if (m_pSvcNext)
@@ -1157,11 +1163,11 @@ void HGCMService::UnloadService(void)
  *
  * @thread main HGCM
  */
-/* static */ void HGCMService::UnloadAll(void)
+/* static */ void HGCMService::UnloadAll(bool fUvmIsInvalid)
 {
     while (sm_pSvcListHead)
     {
-        sm_pSvcListHead->UnloadService();
+        sm_pSvcListHead->UnloadService(fUvmIsInvalid);
     }
 }
 
@@ -1843,18 +1849,21 @@ class HGCMMsgMainReset: public HGCMMsgCore
 
 class HGCMMsgMainQuit: public HGCMMsgCore
 {
+    public:
+        /** Whether UVM has gone invalid already or not. */
+        bool fUvmIsInvalid;
 };
 
 class HGCMMsgMainRegisterExtension: public HGCMMsgCore
 {
     public:
-        /* Returned handle to be used in HGCMMsgMainUnregisterExtension. */
+        /** Returned handle to be used in HGCMMsgMainUnregisterExtension. */
         HGCMSVCEXTHANDLE *pHandle;
-        /* Name of the service. */
+        /** Name of the service. */
         const char *pszServiceName;
-        /* The extension entry point. */
+        /** The extension entry point. */
         PFNHGCMSVCEXT pfnExtension;
-        /* The extension pointer. */
+        /** The extension pointer. */
         void *pvExtension;
 };
 
@@ -2078,9 +2087,10 @@ static DECLCALLBACK(void) hgcmThread(HGCMThread *pThread, void *pvUser)
 
             case HGCM_MSG_QUIT:
             {
+                HGCMMsgMainQuit *pMsg = (HGCMMsgMainQuit *)pMsgCore;
                 LogFlowFunc(("HGCM_MSG_QUIT\n"));
 
-                HGCMService::UnloadAll();
+                HGCMService::UnloadAll(pMsg->fUvmIsInvalid);
 
                 fQuit = true;
             } break;
@@ -2635,7 +2645,7 @@ int HGCMHostInit(void)
     return rc;
 }
 
-int HGCMHostShutdown(void)
+int HGCMHostShutdown(bool fUvmIsInvalid /*= false*/)
 {
     LogFlowFunc(("\n"));
 
@@ -2648,11 +2658,14 @@ int HGCMHostShutdown(void)
     if (RT_SUCCESS(rc))
     {
         /* Send the quit message to the main hgcmThread. */
-        HGCMMsgCore *pMsg;
-        rc = hgcmMsgAlloc(g_pHgcmThread, &pMsg, HGCM_MSG_QUIT, hgcmMainMessageAlloc);
+        HGCMMsgCore *pMsgCore;
+        rc = hgcmMsgAlloc(g_pHgcmThread, &pMsgCore, HGCM_MSG_QUIT, hgcmMainMessageAlloc);
 
         if (RT_SUCCESS(rc))
         {
+            HGCMMsgMainQuit *pMsg = (HGCMMsgMainQuit *)pMsgCore;
+            pMsg->fUvmIsInvalid = fUvmIsInvalid;
+
             rc = hgcmMsgSend(pMsg);
 
             if (RT_SUCCESS(rc))

@@ -10395,6 +10395,12 @@ void Console::i_powerUpThreadTask(VMPowerUpTask *pTask)
             /*
              * If VMR3Create() failed it has released the VM memory.
              */
+            if (pConsole->m_pVMMDev)
+            {
+                alock.release(); /* just to be on the safe side... */
+                pConsole->m_pVMMDev->hgcmShutdown(true /*fUvmIsInvalid*/);
+                alock.acquire();
+            }
             VMR3ReleaseUVM(pConsole->mpUVM);
             pConsole->mpUVM = NULL;
         }

@@ -34,7 +34,7 @@ typedef struct _HGCMSVCEXTHANDLEDATA *HGCMSVCEXTHANDLE;
 
 RT_C_DECLS_BEGIN
 int HGCMHostInit(void);
-int HGCMHostShutdown(void);
+int HGCMHostShutdown(bool fUvmIsInvalid = false);
 
 int HGCMHostReset(void);
 

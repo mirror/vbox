@@ -58,7 +58,7 @@
 typedef struct DRVMAINVMMDEV
 {
     /** Pointer to the VMMDev object. */
-    VMMDev                      *pVMMDev;
+    VMMDev                     *pVMMDev;
     /** Pointer to the driver instance structure. */
     PPDMDRVINS                  pDrvIns;
     /** Pointer to the VMMDev port interface of the driver/device above us. */
@@ -94,12 +94,9 @@ VMMDev::VMMDev(Console *console)
 VMMDev::~VMMDev()
 {
 #ifdef VBOX_WITH_HGCM
-    if (hgcmIsActive())
-    {
-        ASMAtomicWriteBool(&m_fHGCMActive, false);
-        HGCMHostShutdown();
-    }
-#endif /* VBOX_WITH_HGCM */
+    if (ASMAtomicCmpXchgBool(&m_fHGCMActive, false, true))
+        HGCMHostShutdown(true /*fUvmIsInvalid*/);
+#endif
     RTSemEventDestroy(mCredentialsEvent);
     if (mpDrv)
         mpDrv->pVMMDev = NULL;
@@ -706,10 +703,13 @@ int VMMDev::hgcmHostCall(const char *pszServiceName, uint32_t u32Function,
     return HGCMHostCall(pszServiceName, u32Function, cParms, paParms);
 }
 
-void VMMDev::hgcmShutdown(void)
+/**
+ * Used by Console::i_powerDown to shut down the services before the VM is destroyed.
+ */
+void VMMDev::hgcmShutdown(bool fUvmIsInvalid /*= false*/)
 {
-    ASMAtomicWriteBool(&m_fHGCMActive, false);
-    HGCMHostShutdown();
+    if (ASMAtomicCmpXchgBool(&m_fHGCMActive, false, true))
+        HGCMHostShutdown(fUvmIsInvalid);
 }
 
 # ifdef VBOX_WITH_CRHGSMI
@@ -776,11 +776,16 @@ DECLCALLBACK(void) VMMDev::drvDestruct(PPDMDRVINS pDrvIns)
     PDRVMAINVMMDEV pThis = PDMINS_2_DATA(pDrvIns, PDRVMAINVMMDEV);
     LogFlow(("VMMDev::drvDestruct: iInstance=%d\n", pDrvIns->iInstance));
 
-#ifdef VBOX_WITH_HGCM
-    /* HGCM is shut down on the VMMDev destructor. */
-#endif /* VBOX_WITH_HGCM */
     if (pThis->pVMMDev)
+    {
+#ifdef VBOX_WITH_HGCM
+        /* When VM construction goes wrong, we prefer shutting down HGCM here
+           while pUVM is still valid, rather than in ~VMMDev. */
+        if (ASMAtomicCmpXchgBool(&pThis->pVMMDev->m_fHGCMActive, false, true))
+            HGCMHostShutdown();
+#endif
         pThis->pVMMDev->mpDrv = NULL;
+    }
 }
 
 /**

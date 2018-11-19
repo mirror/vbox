@@ -184,5 +184,5 @@ private:
     Data *m;
 };
 
-#endif // ____H_HOSTIMPL
+#endif // !____H_HOSTIMPL
 

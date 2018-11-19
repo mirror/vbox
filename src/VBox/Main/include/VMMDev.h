@@ -63,7 +63,7 @@ public:
     int hgcmHostSvcHandleDestroy (HGCMCVSHANDLE hSvc);
     int hgcmHostFastCallAsync (HGCMCVSHANDLE hSvc, uint32_t function, PVBOXHGCMSVCPARM pParm, PHGCMHOSTFASTCALLCB pfnCompletion, void *pvCompletion);
 #endif
-    void hgcmShutdown (void);
+    void hgcmShutdown(bool fUvmIsInvalid = false);
 
     bool hgcmIsActive (void) { return ASMAtomicReadBool(&m_fHGCMActive); }
 #endif /* VBOX_WITH_HGCM */
