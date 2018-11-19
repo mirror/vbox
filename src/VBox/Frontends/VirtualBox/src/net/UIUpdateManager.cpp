@@ -426,7 +426,6 @@ void UIUpdateStepVirtualBoxExtensionPack::sltStartStep()
     UIVersion vboxVersion(vboxGlobal().vboxVersionStringNormalized());
     /* Get extension pack version: */
     QString strExtPackVersion(extPack.GetVersion());
-    QByteArray abExtPackVersion = strExtPackVersion.toUtf8();
 
     /* If this version being developed: */
     if (vboxVersion.z() % 2 == 1)
@@ -445,10 +444,8 @@ void UIUpdateStepVirtualBoxExtensionPack::sltStartStep()
     /* Get updated VirtualBox version: */
     const QString strVBoxVersion = vboxVersion.toString();
 
-    /* Skip the check if the extension pack is equal to or newer than VBox.
-     * Note! Use RTStrVersionCompare for the comparison here as it takes the
-     *       beta/alpha/preview/whatever tags into consideration when comparing versions. */
-    if (RTStrVersionCompare(abExtPackVersion.constData(), strVBoxVersion.toUtf8().constData()) >= 0)
+    /* Skip the check if the extension pack is equal to or newer than VBox. */
+    if (UIVersion(strExtPackVersion) >= vboxVersion)
     {
         emit sigStepComplete();
         return;
