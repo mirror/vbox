@@ -229,8 +229,6 @@ static void vmmdevLogGuestOsInfo(VBoxGuestInfo *pGuestInfo)
             pGuestInfo->osType & VBOXOSTYPE_x64 ? 64 : 32));
 }
 
-#endif /* IN_RING3 */
-
 
 /**
  * Sets the IRQ (raise it or lower it) for 1.03 additions.
@@ -270,8 +268,6 @@ static void vmmdevSetIRQ_Legacy(PVMMDEV pThis)
         Log(("vmmdevSetIRQ: IRQ is not generated, guest has not yet reported to us.\n"));
 }
 
-
-#ifdef IN_RING3
 
 /**
  * Sets the IRQ if there are events to be delivered.
