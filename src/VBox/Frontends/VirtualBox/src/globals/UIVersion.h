@@ -18,6 +18,9 @@
 #ifndef ___UIVersion_h___
 #define ___UIVersion_h___
 
+/* Qt includes: */
+#include <QString>
+
 /** Represents VirtualBox version wrapper. */
 class UIVersion
 {
@@ -25,20 +28,30 @@ public:
 
     /** Constructs default object. */
     UIVersion()
-        : m_x(-1), m_y(-1), m_z(-1)
+        : m_x(-1)
+        , m_y(-1)
+        , m_z(-1)
     {}
 
-    /** Constructs object based on parsed @a strVersion. */
-    UIVersion(const QString &strVersion)
-        : m_x(-1), m_y(-1), m_z(-1)
+    /** Constructs object based on parsed @a strFullVersionInfo. */
+    UIVersion(const QString &strFullVersionInfo)
+        : m_x(-1)
+        , m_y(-1)
+        , m_z(-1)
     {
-        const QStringList versionStack = strVersion.split('.');
-        if (versionStack.size() > 0)
-            m_x = versionStack[0].toInt();
-        if (versionStack.size() > 1)
-            m_y = versionStack[1].toInt();
-        if (versionStack.size() > 2)
-            m_z = versionStack[2].toInt();
+        const QStringList fullVersionInfo = strFullVersionInfo.split('_');
+        if (fullVersionInfo.size() > 0)
+        {
+            const QStringList versionIndexes = fullVersionInfo.at(0).split('.');
+            if (versionIndexes.size() > 0)
+                m_x = versionIndexes[0].toInt();
+            if (versionIndexes.size() > 1)
+                m_y = versionIndexes[1].toInt();
+            if (versionIndexes.size() > 2)
+                m_z = versionIndexes[2].toInt();
+        }
+        if (fullVersionInfo.size() > 1)
+            m_strPostfix = fullVersionInfo.at(1);
     }
 
     /** Assigns this object with value of @a another. */
@@ -47,6 +60,7 @@ public:
         m_x = another.x();
         m_y = another.y();
         m_z = another.z();
+        m_strPostfix = another.postfix();
         return *this;
     }
 
@@ -54,7 +68,13 @@ public:
     bool isValid() const { return (m_x != -1) && (m_y != -1) && (m_z != -1); }
 
     /** Returns whether this object is equal to @a other. */
-    bool equal(const UIVersion &other) const { return (m_x == other.m_x) && (m_y == other.m_y) && (m_z == other.m_z); }
+    bool equal(const UIVersion &other) const
+    {
+        return    (m_x == other.m_x)
+               && (m_y == other.m_y)
+               && (m_z == other.m_z)
+               && (m_strPostfix == other.m_strPostfix);
+    }
     /** Checks whether this object is equal to @a other. */
     bool operator==(const UIVersion &other) const { return equal(other); }
     /** Checks whether this object is NOT equal to @a other. */
@@ -65,18 +85,24 @@ public:
     {
         return    (m_x <  other.m_x)
                || (m_x == other.m_x && m_y <  other.m_y)
-               || (m_x == other.m_x && m_y == other.m_y && m_z <  other.m_z);
+               || (m_x == other.m_x && m_y == other.m_y && m_z <  other.m_z)
+               || (m_x == other.m_x && m_y == other.m_y && m_z == other.m_z && m_strPostfix <  other.m_strPostfix);
     }
     /** Checks whether this object is more than @a other. */
     bool operator>(const UIVersion &other) const
     {
         return    (m_x >  other.m_x)
                || (m_x == other.m_x && m_y >  other.m_y)
-               || (m_x == other.m_x && m_y == other.m_y && m_z >  other.m_z);
+               || (m_x == other.m_x && m_y == other.m_y && m_z >  other.m_z)
+               || (m_x == other.m_x && m_y == other.m_y && m_z == other.m_z && m_strPostfix >  other.m_strPostfix);
     }
 
     /** Returns object string representation. */
-    QString toString() const { return QString("%1.%2.%3").arg(m_x).arg(m_y).arg(m_z); }
+    QString toString() const
+    {
+        return m_strPostfix.isEmpty() ? QString("%1.%2.%3").arg(m_x).arg(m_y).arg(m_z)
+                                      : QString("%1.%2.%3_%4").arg(m_x).arg(m_y).arg(m_z).arg(m_strPostfix);
+    }
 
     /** Returns the object X value. */
     int x() const { return m_x; }
@@ -84,13 +110,17 @@ public:
     int y() const { return m_y; }
     /** Returns the object Z value. */
     int z() const { return m_z; }
+    /** Returns the object postfix. */
+    QString postfix() const { return m_strPostfix; }
 
-    /** Defines the object X value. */
+    /** Defines the object @a x value. */
     void setX(int x) { m_x = x; }
-    /** Defines the object Y value. */
+    /** Defines the object @a y value. */
     void setY(int y) { m_y = y; }
-    /** Defines the object Z value. */
+    /** Defines the object @a z value. */
     void setZ(int z) { m_z = z; }
+    /** Defines the object @a strPostfix. */
+    void setPostfix(const QString &strPostfix) { m_strPostfix = strPostfix; }
 
     /** Returns effective released version guessed or hardcoded for this one version.
       * This can be even the version itself. */
@@ -117,12 +147,14 @@ public:
 private:
 
     /** Holds the object X value. */
-    int m_x;
+    int  m_x;
     /** Holds the object Y value. */
-    int m_y;
+    int  m_y;
     /** Holds the object Z value. */
-    int m_z;
+    int  m_z;
+
+    /** Holds the object postfix. */
+    QString  m_strPostfix;
 };
 
 #endif /* !___UIVersion_h___ */
-
