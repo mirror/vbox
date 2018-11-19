@@ -732,7 +732,18 @@ static int rtR0MemObjNtMap(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, voi
         /* only one system mapping for now - no time to figure out MDL restrictions right now. */
         if (    pMemNtToMap->Core.uRel.Parent.cMappings
             &&  R0Process == NIL_RTR0PROCESS)
-            return VERR_NOT_SUPPORTED;
+        {
+            if (pMemNtToMap->Core.enmType != RTR0MEMOBJTYPE_PHYS_NC)
+                return VERR_NOT_SUPPORTED;
+            uint32_t iMapping = pMemNtToMap->Core.uRel.Parent.cMappings;
+            while (iMapping-- > 0)
+            {
+                PRTR0MEMOBJNT pMapping = (PRTR0MEMOBJNT)pMemNtToMap->Core.uRel.Parent.papMappings[iMapping];
+                if (   pMapping->Core.enmType != RTR0MEMOBJTYPE_MAPPING
+                    || pMapping->Core.u.Mapping.R0Process == NIL_RTR0PROCESS)
+                    return VERR_NOT_SUPPORTED;
+            }
+        }
 
         __try
         {
@@ -815,14 +826,15 @@ static int rtR0MemObjNtMap(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, voi
 
 
 DECLHIDDEN(int) rtR0MemObjNativeMapKernel(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, void *pvFixed, size_t uAlignment,
-                              unsigned fProt, size_t offSub, size_t cbSub)
+                                          unsigned fProt, size_t offSub, size_t cbSub)
 {
     AssertMsgReturn(!offSub && !cbSub, ("%#x %#x\n", offSub, cbSub), VERR_NOT_SUPPORTED);
     return rtR0MemObjNtMap(ppMem, pMemToMap, pvFixed, uAlignment, fProt, NIL_RTR0PROCESS);
 }
 
 
-DECLHIDDEN(int) rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, RTR3PTR R3PtrFixed, size_t uAlignment, unsigned fProt, RTR0PROCESS R0Process)
+DECLHIDDEN(int) rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, RTR3PTR R3PtrFixed,
+                                        size_t uAlignment, unsigned fProt, RTR0PROCESS R0Process)
 {
     AssertReturn(R0Process == RTR0ProcHandleSelf(), VERR_NOT_SUPPORTED);
     return rtR0MemObjNtMap(ppMem, pMemToMap, (void *)R3PtrFixed, uAlignment, fProt, R0Process);
