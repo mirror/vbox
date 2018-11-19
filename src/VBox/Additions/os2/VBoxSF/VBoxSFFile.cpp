@@ -622,17 +622,17 @@ vboxSfOs2QueryFileInfo(PVBOXSFFOLDER pFolder, PSFFSI pSfFsi, PVBOXSFSYFI pSfFsd,
      *    VMMDevHGCM.cpp is about to do pThis->pHGCMDrv->pfnCall, then measuring
      *    various guest side changes in the request and request submission path:
      *
-     *     - Wasted on virtual address vs page list buffer:
-     *         4095 ns / 16253 ticks
+     *     - Saved by page lists vs virtul address for buffers:
+     *         4095 ns / 16253 ticks / %35.
      *
      *       Suspect this is due to expensive memory locking on the guest side and
      *       the host doing extra virtual address conversion.
      *
-     *     - Wasted repackaging the HGCM request:
-     *         450 ns / 1941 ticks
+     *     - Saved by no repackaging the HGCM requests:
+     *         450 ns / 1941 ticks / 5.8%.
      *
      *     - Embedding the SHFLFSOBJINFO into the buffer may save a little as well:
-     *         286 ns / 1086 ticks
+     *         286 ns / 1086 ticks / 3.9%.
      *
      *    Raw data:
      *        11843 ns / 47469 ticks - VbglR0SfFsInfo.
@@ -651,6 +651,13 @@ vboxSfOs2QueryFileInfo(PVBOXSFFOLDER pFolder, PSFFSI pSfFsi, PVBOXSFSYFI pSfFsd,
      *          32027 ns / 128506 ticks - ring-3 VMMDevReq_AcknowledgeEvents.
      *          27810 ns / 111458 ticks - fast ring-0 ACK.
      *
+     * 3. Use single release & auto resetting event semaphore in HGCMThread.
+     *
+     *    Saves 922 ns / 3406 ticks / 3.4%.
+     *
+     *    Raw data:
+     *          27472 ns / 110237 ticks - RTSEMEVENTMULTI
+     *          26550 ns / 106831 ticks - RTSEMEVENT
      */
 #if 0
     APIRET rc;
