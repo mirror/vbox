@@ -84,10 +84,9 @@ class HGCMThread : public HGCMReferencedObject
         /* The thread runtime handle. */
         RTTHREAD m_hThread;
 
-        /* Event the thread waits for, signalled when a message
-         * to process is posted to the thread.
-         */
-        RTSEMEVENTMULTI m_eventThread;
+        /** Event the thread waits for, signalled when a message to process is posted to
+         * the thread, automatically reset. */
+        RTSEMEVENT m_eventThread;
 
         /* A caller thread waits for completion of a SENT message on this event. */
         RTSEMEVENTMULTI m_eventSend;
@@ -215,7 +214,7 @@ HGCMThread::HGCMThread()
     m_pfnThread(NULL),
     m_pvUser(NULL),
     m_hThread(NIL_RTTHREAD),
-    m_eventThread(NIL_RTSEMEVENTMULTI),
+    m_eventThread(NIL_RTSEMEVENT),
     m_eventSend(NIL_RTSEMEVENTMULTI),
     m_i32MessagesProcessed(0),
     m_fu32ThreadFlags(0),
@@ -246,10 +245,10 @@ HGCMThread::~HGCMThread()
         m_eventSend = NIL_RTSEMEVENTMULTI;
     }
 
-    if (m_eventThread != NIL_RTSEMEVENTMULTI)
+    if (m_eventThread != NIL_RTSEMEVENT)
     {
-        RTSemEventMultiDestroy(m_eventThread);
-        m_eventThread = NIL_RTSEMEVENTMULTI;
+        RTSemEventDestroy(m_eventThread);
+        m_eventThread = NIL_RTSEMEVENT;
     }
 }
 
@@ -267,7 +266,7 @@ int HGCMThread::WaitForTermination(void)
 
 int HGCMThread::Initialize(const char *pszThreadName, PFNHGCMTHREAD pfnThread, void *pvUser, const char *pszStatsSubDir, PUVM pUVM)
 {
-    int rc = RTSemEventMultiCreate(&m_eventThread);
+    int rc = RTSemEventCreate(&m_eventThread);
 
     if (RT_SUCCESS(rc))
     {
@@ -339,7 +338,7 @@ int HGCMThread::Initialize(const char *pszThreadName, PFNHGCMTHREAD pfnThread, v
     else
     {
         Log(("hgcmThreadCreate: FAILURE: Can't create an event semaphore for a hgcm worker thread.\n"));
-        m_eventThread = NIL_RTSEMEVENTMULTI;
+        m_eventThread = NIL_RTSEMEVENT;
     }
 
     return rc;
@@ -442,7 +441,7 @@ int HGCMThread::MsgPost(HGCMMsgCore *pMsg, PHGCMMSGCALLBACK pfnCallback, bool fW
         LogFlow(("HGCMThread::MsgPost: going to inform the thread %p about message, fWait = %d\n", this, fWait));
 
         /* Inform the worker thread that there is a message. */
-        RTSemEventMultiSignal(m_eventThread);
+        RTSemEventSignal(m_eventThread);
 
         LogFlow(("HGCMThread::MsgPost: event signalled\n"));
 
@@ -452,7 +451,7 @@ int HGCMThread::MsgPost(HGCMMsgCore *pMsg, PHGCMMSGCALLBACK pfnCallback, bool fW
             while ((pMsg->m_fu32Flags & HGCM_MSG_F_PROCESSED) == 0)
             {
                 /* Poll infrequently to make sure no completed message has been missed. */
-                RTSemEventMultiWait (m_eventSend, 1000);
+                RTSemEventMultiWait(m_eventSend, 1000);
 
                 LogFlow(("HGCMThread::MsgPost: wait completed flags = %08X\n", pMsg->m_fu32Flags));
 
@@ -547,8 +546,7 @@ int HGCMThread::MsgGet(HGCMMsgCore **ppMsg)
         }
 
         /* Wait for an event. */
-        RTSemEventMultiWait (m_eventThread, RT_INDEFINITE_WAIT);
-        RTSemEventMultiReset (m_eventThread);
+        RTSemEventWait(m_eventThread, RT_INDEFINITE_WAIT);
     }
 
     LogFlow(("HGCMThread::MsgGet: *ppMsg = %p, return rc = %Rrc\n", *ppMsg, rc));
