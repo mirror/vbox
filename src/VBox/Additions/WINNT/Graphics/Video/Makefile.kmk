@@ -91,10 +91,12 @@ ifdef VBOX_WITH_WDDM
    VBoxWddm-inf_SOURCES += \
    	$(PATH_TARGET)/VBoxWddmCat.dir/VBoxNine.dll \
    	$(PATH_TARGET)/VBoxWddmCat.dir/VBoxSVGA.dll \
+   	$(PATH_TARGET)/VBoxWddmCat.dir/VBoxICD.dll \
    	$(PATH_TARGET)/VBoxWddmCat.dir/VBoxGL.dll
    VBoxWddm-inf_SOURCES.amd64 += \
    	$(PATH_TARGET)/VBoxWddmCat.dir/VBoxNine-x86.dll \
    	$(PATH_TARGET)/VBoxWddmCat.dir/VBoxSVGA-x86.dll \
+   	$(PATH_TARGET)/VBoxWddmCat.dir/VBoxICD-x86.dll \
    	$(PATH_TARGET)/VBoxWddmCat.dir/VBoxGL-x86.dll
   endif
 
@@ -155,6 +157,8 @@ ifdef VBOX_WITH_WDDM
 	$(INSTALL) -m 644 $< $(@D)
   $(PATH_TARGET)/VBoxWddmCat.dir/VBoxSVGA.dll: $$(VBoxSVGA_1_TARGET) | $$(dir $$@)
 	$(INSTALL) -m 644 $< $(@D)
+  $(PATH_TARGET)/VBoxWddmCat.dir/VBoxICD.dll: $$(VBoxICD_1_TARGET) | $$(dir $$@)
+	$(INSTALL) -m 644 $< $(@D)
   $(PATH_TARGET)/VBoxWddmCat.dir/VBoxGL.dll: $$(VBoxGL_1_TARGET) | $$(dir $$@)
 	$(INSTALL) -m 644 $< $(@D)
 
@@ -162,6 +166,8 @@ ifdef VBOX_WITH_WDDM
    $(PATH_TARGET)/VBoxWddmCat.dir/VBoxNine-x86.dll: $$(VBoxNine-x86_1_TARGET) | $$(dir $$@)
 	$(INSTALL) -m 644 $< $(@D)
    $(PATH_TARGET)/VBoxWddmCat.dir/VBoxSVGA-x86.dll: $$(VBoxSVGA-x86_1_TARGET) | $$(dir $$@)
+	$(INSTALL) -m 644 $< $(@D)
+   $(PATH_TARGET)/VBoxWddmCat.dir/VBoxICD-x86.dll: $$(VBoxICD-x86_1_TARGET) | $$(dir $$@)
 	$(INSTALL) -m 644 $< $(@D)
    $(PATH_TARGET)/VBoxWddmCat.dir/VBoxGL-x86.dll: $$(VBoxGL-x86_1_TARGET) | $$(dir $$@)
 	$(INSTALL) -m 644 $< $(@D)
@@ -234,10 +240,12 @@ ifdef VBOX_WITH_WDDM
 		$(if $(VBOX_WITH_MESA3D), \
 			$(PATH_TARGET)/VBoxWddmCat.dir/VBoxNine.dll \
 			$(PATH_TARGET)/VBoxWddmCat.dir/VBoxSVGA.dll \
+			$(PATH_TARGET)/VBoxWddmCat.dir/VBoxICD.dll \
 			$(PATH_TARGET)/VBoxWddmCat.dir/VBoxGL.dll \
 			$(if-expr "$(KBUILD_TARGET_ARCH)" == "amd64", \
 				$(PATH_TARGET)/VBoxWddmCat.dir/VBoxNine-x86.dll \
 				$(PATH_TARGET)/VBoxWddmCat.dir/VBoxSVGA-x86.dll \
+				$(PATH_TARGET)/VBoxWddmCat.dir/VBoxICD-x86.dll \
 				$(PATH_TARGET)/VBoxWddmCat.dir/VBoxGL-x86.dll, ), ) \
 		$(if $(VBOXWDDM_WITH_GL),  $(PATH_TARGET)/VBoxWddmCat.dir/VBoxOGL.dll \
 					   $(PATH_TARGET)/VBoxWddmCat.dir/VBoxD3D9wddm.dll \

@@ -242,6 +242,7 @@ Function W2K_CopyFiles
     !if $%VBOX_WITH_MESA3D% == "1"
       FILE "$%PATH_OUT%\bin\additions\VBoxNine.dll"
       FILE "$%PATH_OUT%\bin\additions\VBoxSVGA.dll"
+      FILE "$%PATH_OUT%\bin\additions\VBoxICD.dll"
       FILE "$%PATH_OUT%\bin\additions\VBoxGL.dll"
     !endif
 
@@ -263,6 +264,7 @@ Function W2K_CopyFiles
       !if $%VBOX_WITH_MESA3D% == "1"
         FILE "$%PATH_OUT%\bin\additions\VBoxNine-x86.dll"
         FILE "$%PATH_OUT%\bin\additions\VBoxSVGA-x86.dll"
+        FILE "$%PATH_OUT%\bin\additions\VBoxICD-x86.dll"
         FILE "$%PATH_OUT%\bin\additions\VBoxGL-x86.dll"
       !endif
 
@@ -537,6 +539,7 @@ Function ${un}W2K_UninstallInstDir
   !if $%VBOX_WITH_MESA3D% == "1"
     Delete /REBOOTOK "$%PATH_OUT%\bin\additions\VBoxNine.dll"
     Delete /REBOOTOK "$%PATH_OUT%\bin\additions\VBoxSVGA.dll"
+    Delete /REBOOTOK "$%PATH_OUT%\bin\additions\VBoxICD.dll"
     Delete /REBOOTOK "$%PATH_OUT%\bin\additions\VBoxGL.dll"
   !endif
 
@@ -558,6 +561,7 @@ Function ${un}W2K_UninstallInstDir
     !if $%VBOX_WITH_MESA3D% == "1"
       Delete /REBOOTOK "$%PATH_OUT%\bin\additions\VBoxNine-x86.dll"
       Delete /REBOOTOK "$%PATH_OUT%\bin\additions\VBoxSVGA-x86.dll"
+      Delete /REBOOTOK "$%PATH_OUT%\bin\additions\VBoxICD-x86.dll"
       Delete /REBOOTOK "$%PATH_OUT%\bin\additions\VBoxGL-x86.dll"
     !endif
 
@@ -631,6 +635,7 @@ Function ${un}W2K_Uninstall
   !if $%VBOX_WITH_MESA3D% == "1"
     Delete /REBOOTOK "$g_strSystemDir\VBoxNine.dll"
     Delete /REBOOTOK "$g_strSystemDir\VBoxSVGA.dll"
+    Delete /REBOOTOK "$g_strSystemDir\VBoxICD.dll"
     Delete /REBOOTOK "$g_strSystemDir\VBoxGL.dll"
   !endif
 !endif ; $%VBOX_WITH_WDDM% == "1"

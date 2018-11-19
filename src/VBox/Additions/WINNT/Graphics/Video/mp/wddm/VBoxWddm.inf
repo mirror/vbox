@@ -56,12 +56,14 @@ VBoxWddm.sys
 ;dispd3d VBoxDispD3D.dll,,,0x00004000  ; COPYFLG_IN_USE_TRY_RENAME
 ;mesa3d VBoxNine.dll,,,0x00004000     ; COPYFLG_IN_USE_TRY_RENAME
 ;mesa3d VBoxSVGA.dll,,,0x00004000     ; COPYFLG_IN_USE_TRY_RENAME
+;mesa3d VBoxICD.dll,,,0x00004000      ; COPYFLG_IN_USE_TRY_RENAME
 ;mesa3d VBoxGL.dll,,,0x00004000       ; COPYFLG_IN_USE_TRY_RENAME
 
 ;amd64 [VBoxVideo.Display_wow64]
 ;amd64 ;dispd3d VBoxDispD3D-x86.dll,,,0x00004000  ; COPYFLG_IN_USE_TRY_RENAME
 ;amd64 ;mesa3d VBoxNine-x86.dll,,,0x00004000     ; COPYFLG_IN_USE_TRY_RENAME
 ;amd64 ;mesa3d VBoxSVGA-x86.dll,,,0x00004000     ; COPYFLG_IN_USE_TRY_RENAME
+;amd64 ;mesa3d VBoxICD-x86.dll,,,0x00004000      ; COPYFLG_IN_USE_TRY_RENAME
 ;amd64 ;mesa3d VBoxGL-x86.dll,,,0x00004000       ; COPYFLG_IN_USE_TRY_RENAME
 
 [VBoxVideo.GL]
@@ -90,8 +92,8 @@ VBoxWddm.sys
 ;dispd3d HKR,, InstalledDisplayDrivers, %REG_MULTI_SZ%, VBoxDispD3D
 ;dispd3d HKR,, UserModeDriverName,    %REG_MULTI_SZ%, VBoxDispD3D.dll
 ;amd64 ;dispd3d HKR,, UserModeDriverNameWow,    %REG_MULTI_SZ%, VBoxDispD3D-x86.dll
-;icd        HKR,, OpenGLDriverName,    %REG_MULTI_SZ%, VBoxOGL.dll
-;amd64 ;icd HKR,, OpenGLDriverNameWoW, %REG_MULTI_SZ%, VBoxOGL-x86.dll
+;icd        HKR,, OpenGLDriverName,    %REG_MULTI_SZ%, VBoxICD
+;amd64 ;icd HKR,, OpenGLDriverNameWoW, %REG_MULTI_SZ%, VBoxICD-x86
 ;icd        HKR,, OpenGLFlags,         %REG_DWORD%,    0x00000001
 ;amd64 ;icd HKR,, OpenGLFlagsWoW,      %REG_DWORD%,    0x00000001
 ;icd        HKR,, OpenGLVersion,       %REG_DWORD%,    0x00000001
@@ -126,10 +128,12 @@ VBoxWddm.sys = 1
 ;amd64 ;dispd3d VBoxDispD3D-x86.dll = 1
 ;amd64 ;mesa3d VBoxNine-x86.dll = 1
 ;amd64 ;mesa3d VBoxSVGA-x86.dll = 1
+;amd64 ;mesa3d VBoxICD-x86.dll = 1
 ;amd64 ;mesa3d VBoxGL-x86.dll = 1
 ;dispd3d VBoxDispD3D.dll = 1
 ;mesa3d VBoxNine.dll = 1
 ;mesa3d VBoxSVGA.dll = 1
+;mesa3d VBoxICD.dll = 1
 ;mesa3d VBoxGL.dll = 1
 ;amd64 ;gl VBoxOGL-x86.dll = 1
 ;gl VBoxOGL.dll = 1
