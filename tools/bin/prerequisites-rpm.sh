@@ -89,6 +89,7 @@ PACKAGES_EL6_PLUS="libcurl-devel libstdc++-static libvpx-devel \
     zlib-static glibc-devel.i686 libstdc++.i686 qt5-qttools-devel \
     qt5-qtx11extras-devel"
 PACKAGES_EL7_PLUS="opus-devel"
+PACKAGE_LIBNSL_X86="libnsl.i686"
 DOCS_EL="texlive-latex texlive-latex-bin texlive-ec texlive-pdftex-def \
     texlive-fancybox"
 
@@ -153,4 +154,6 @@ ${ARCH}/${i#*:}.${ARCH}.rpm" -P /tmp
                 ${INSTALL} ${DOCS_EL} | egrep -v  "${egrepignore}"
         esac
     esac
+    test -e /usr/lib/libnsl.so.1 ||
+        ${INSTALL} ${PACKAGE_LIBNSL_X86} | egrep -v  "${egrepignore}" || true
 fi
