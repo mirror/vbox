@@ -48,11 +48,11 @@ Implements \1 method \link \1::\2 \2 \endlink @copydoc \1::\2 "
 
 # Callback method implementation macros.
 ALIASES                += \
-    callback_method_impl{1}="Implements the callback \link \1 \1  \endlink @copydoc \1 "
-ALIASES                += \
     callback_method_impl{2}="\2. \
 \
 Implements the callback \link \1 \1 \endlink "
+ALIASES                += \
+    callback_method_impl{1}="Implements the callback \link \1 \1  \endlink @copydoc \1 "
 
 # The following is for Global Configuration options.
 ALIASES                += \
