@@ -607,7 +607,7 @@ static APIRET
 vboxSfOs2QueryFileInfo(PVBOXSFFOLDER pFolder, PSFFSI pSfFsi, PVBOXSFSYFI pSfFsd, ULONG uLevel, PBYTE pbData, ULONG cbData)
 {
     /*
-     * Performance notes:
+     * Performance notes (@bugref{9172}):
      *
      * This function was used for some performance hacking in an attempt at
      * squeezing more performance out of the HGCM and shared folders code.

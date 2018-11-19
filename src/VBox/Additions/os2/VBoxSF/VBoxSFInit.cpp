@@ -93,6 +93,16 @@ DECLASM(void) VBoxSFR0Init(void)
             rc = VbglR0InitClient();
             if (RT_SUCCESS(rc))
             {
+                /*
+                 * Complain if the embedded buffers feature is missing.
+                 */
+                uint32_t fFeatures = 0;
+                rc = VbglR0QueryHostFeatures(&fFeatures);
+                if (RT_FAILURE(rc))
+                    RTLogBackdoorPrintf("VBoxSFR0Init: Missing VBoxGuest.sys IDC connection!  Check order in Config.kmk!\n");
+                else if (!(fFeatures & VMMDEV_HVF_HGCM_EMBEDDED_BUFFERS))
+                    RTLogBackdoorPrintf("VBoxSFR0Init: Embedded buffers feature is missing.  Upgrade to latest VirtualBox!\n");
+
 #ifndef DONT_LOCK_SEGMENTS
                 /*
                  * Lock the 32-bit segments in memory.
