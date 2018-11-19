@@ -1247,8 +1247,6 @@ int main()
 # endif /* VBOX_WITH_XHCI_IMPL */
 #endif /* VBOX_WITH_USB */
 
-    /* VMMDev/VBoxDev.cpp */
-
     /* Parallel/DevParallel.cpp */
     GEN_CHECK_SIZE(PARALLELPORT);
     GEN_CHECK_OFF(PARALLELPORT, pDevInsR3);
@@ -1634,7 +1632,9 @@ int main()
     GEN_CHECK_OFF(VMMDEV, mouseXAbs);
     GEN_CHECK_OFF(VMMDEV, mouseYAbs);
     GEN_CHECK_OFF(VMMDEV, fHostCursorRequested);
-    GEN_CHECK_OFF(VMMDEV, pDevIns);
+    GEN_CHECK_OFF(VMMDEV, pDevInsR3);
+    GEN_CHECK_OFF(VMMDEV, pDevInsR0);
+    GEN_CHECK_OFF(VMMDEV, pDevInsRC);
     GEN_CHECK_OFF(VMMDEV, IBase);
     GEN_CHECK_OFF(VMMDEV, IPort);
 #ifdef VBOX_WITH_HGCM
@@ -1654,6 +1654,8 @@ int main()
     GEN_CHECK_OFF(VMMDEV, fNewGuestFilterMask);
     GEN_CHECK_OFF(VMMDEV, GCPhysVMMDevRAM);
     GEN_CHECK_OFF(VMMDEV, pVMMDevRAMR3);
+    GEN_CHECK_OFF(VMMDEV, pVMMDevRAMR0);
+    GEN_CHECK_OFF(VMMDEV, pVMMDevRAMRC);
     GEN_CHECK_OFF(VMMDEV, pVMMDevHeapR3);
     GEN_CHECK_OFF(VMMDEV, GCPhysVMMDevHeap);
     GEN_CHECK_OFF(VMMDEV, guestInfo);
