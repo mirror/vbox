@@ -71,6 +71,32 @@ static DECLCALLBACK(void) callComplete(VBOXHGCMCALLHANDLE callHandle, int32_t rc
     callHandle->rc = rc;
 }
 
+static DECLCALLBACK(int) stamRegisterV(void *pvInstance, void *pvSample, STAMTYPE enmType, STAMVISIBILITY enmVisibility,
+                                       STAMUNIT enmUnit, const char *pszDesc, const char *pszName, va_list va)
+{
+    RT_NOREF(pvInstance, pvSample, enmType, enmVisibility, enmUnit, pszDesc, pszName, va);
+    return VINF_SUCCESS;
+}
+
+static DECLCALLBACK(int) stamDeregisterV(void *pvInstance, const char *pszPatFmt, va_list va)
+{
+    RT_NOREF(pvInstance, pszPatFmt, va);
+    return VINF_SUCCESS;
+}
+
+static DECLCALLBACK(int) infoRegister(void *pvInstance, const char *pszName, const char *pszDesc,
+                                      PFNDBGFHANDLEREXT pfnHandler, void *pvUser)
+{
+    RT_NOREF(pvInstance, pszName, pszDesc, pfnHandler, pvUser);
+    return VINF_SUCCESS;
+}
+
+static DECLCALLBACK(int) infoDeregister(void *pvInstance, const char *pszName)
+{
+    RT_NOREF(pvInstance, pszName);
+    return VINF_SUCCESS;
+}
+
 /**
  * Initialise the HGCM service table as much as we need to start the
  * service
@@ -78,10 +104,14 @@ static DECLCALLBACK(void) callComplete(VBOXHGCMCALLHANDLE callHandle, int32_t rc
  */
 void initTable(VBOXHGCMSVCFNTABLE *pTable, VBOXHGCMSVCHELPERS *pHelpers)
 {
-    pTable->cbSize              = sizeof (VBOXHGCMSVCFNTABLE);
-    pTable->u32Version          = VBOX_HGCM_SVC_VERSION;
-    pHelpers->pfnCallComplete   = callComplete;
-    pTable->pHelpers            = pHelpers;
+    pTable->cbSize               = sizeof (VBOXHGCMSVCFNTABLE);
+    pTable->u32Version           = VBOX_HGCM_SVC_VERSION;
+    pHelpers->pfnCallComplete    = callComplete;
+    pHelpers->pfnStamRegisterV   = stamRegisterV;
+    pHelpers->pfnStamDeregisterV = stamDeregisterV;
+    pHelpers->pfnInfoRegister    = infoRegister;
+    pHelpers->pfnInfoDeregister  = infoDeregister;
+    pTable->pHelpers             = pHelpers;
 }
 
 #define LLUIFY(a) ((unsigned long long)(a))
