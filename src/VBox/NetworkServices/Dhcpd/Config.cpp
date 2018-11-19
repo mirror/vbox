@@ -588,19 +588,19 @@ void Config::parseConfig(const xml::ElementNode *root)
 
     /** @todo r=bird: Visual C++ 2010 does not grok this use of 'auto'. */
     // XXX: debug
-    for (optmap_t::iterator it = m_GlobalOptions.begin(); it != m_GlobalOptions.end(); ++it) {
-        std::shared_ptr<DhcpOption> opt(it->second);
+    for (auto it: m_GlobalOptions) {
+        std::shared_ptr<DhcpOption> opt(it.second);
 
         octets_t data;
         opt->encode(data);
 
         bool space = false;
-        for (octets_t::iterator c = data.begin(); c != data.end(); ++c) {
+        for (auto c: data) {
             if (space)
                 std::cout << " ";
             else
                 space = true;
-            std::cout << (int)*c;
+            std::cout << (int)c;
         }
         std::cout << std::endl;
     }
@@ -853,12 +853,11 @@ optmap_t Config::getOptions(const OptParameterRequest &reqOpts,
 
     optmap << new OptSubnetMask(m_IPv4Netmask);
 
-    const OptParameterRequest::value_t& reqValue = reqOpts.value();
-    for (octets_t::const_iterator optreq = reqValue.begin(); optreq != reqValue.end(); ++optreq)
+    for (auto optreq: reqOpts.value())
     {
-        std::cout << ">>> requested option " << (int)*optreq << std::endl;
+        std::cout << ">>> requested option " << (int)optreq << std::endl;
 
-        if (*optreq == OptSubnetMask::optcode)
+        if (optreq == OptSubnetMask::optcode)
         {
             std::cout << "... always supplied" << std::endl;
             continue;
@@ -866,7 +865,7 @@ optmap_t Config::getOptions(const OptParameterRequest &reqOpts,
 
         if (vmopts != NULL)
         {
-            optmap_t::const_iterator it( vmopts->find(*optreq) );
+            optmap_t::const_iterator it( vmopts->find(optreq) );
             if (it != vmopts->end())
             {
                 optmap << it->second;
@@ -875,7 +874,7 @@ optmap_t Config::getOptions(const OptParameterRequest &reqOpts,
             }
         }
 
-        optmap_t::const_iterator it( m_GlobalOptions.find(*optreq) );
+        optmap_t::const_iterator it( m_GlobalOptions.find(optreq) );
         if (it != m_GlobalOptions.end())
         {
             optmap << it->second;
@@ -890,8 +889,8 @@ optmap_t Config::getOptions(const OptParameterRequest &reqOpts,
     /* XXX: testing ... */
     if (vmopts != NULL)
     {
-        for (optmap_t::const_iterator it = vmopts->begin(); it != vmopts->end(); ++it) {
-            std::shared_ptr<DhcpOption> opt(it->second);
+        for (auto it: *vmopts) {
+            std::shared_ptr<DhcpOption> opt(it.second);
             if (optmap.count(opt->optcode()) == 0 && opt->optcode() > 127)
             {
                 optmap << opt;
@@ -900,8 +899,8 @@ optmap_t Config::getOptions(const OptParameterRequest &reqOpts,
         }
     }
 
-    for (optmap_t::const_iterator it = m_GlobalOptions.begin(); it != m_GlobalOptions.end(); ++it) {
-        std::shared_ptr<DhcpOption> opt(it->second);
+    for (auto it: m_GlobalOptions) {
+        std::shared_ptr<DhcpOption> opt(it.second);
         if (optmap.count(opt->optcode()) == 0 && opt->optcode() > 127)
         {
             optmap << opt;

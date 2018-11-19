@@ -24,11 +24,8 @@
 #include "Logging.h"
 
 #include <iprt/asm.h>
-#include <iprt/file.h>
 #include <iprt/net.h>
-#include <iprt/path.h>
 #include <iprt/cpp/utils.h>
-#include <iprt/cpp/xml.h>
 
 #include <VBox/com/array.h>
 #include <VBox/settings.h>
@@ -40,7 +37,6 @@
 const std::string DHCPServerRunner::kDsrKeyGateway = "--gateway";
 const std::string DHCPServerRunner::kDsrKeyLowerIp = "--lower-ip";
 const std::string DHCPServerRunner::kDsrKeyUpperIp = "--upper-ip";
-const std::string DHCPServerRunner::kDsrKeyConfig  = "--config";
 
 
 struct DHCPServer::Data
@@ -48,9 +44,7 @@ struct DHCPServer::Data
     Data()
         : enabled(FALSE)
         , router(false)
-    {
-        tempConfigFileName[0] = '\0';
-    }
+    {}
 
     Utf8Str IPAddress;
     Utf8Str lowerIP;
@@ -62,11 +56,6 @@ struct DHCPServer::Data
 
     settings::DhcpOptionMap GlobalDhcpOptions;
     settings::VmSlot2OptionsMap VmSlot2Options;
-
-    char tempConfigFileName[RTPATH_MAX];
-    com::Utf8Str networkName;
-    com::Utf8Str trunkName;
-    com::Utf8Str trunkType;
 };
 
 
@@ -108,9 +97,6 @@ void DHCPServer::uninit()
     AutoUninitSpan autoUninitSpan(this);
     if (autoUninitSpan.uninitDone())
         return;
-
-    if (m->dhcp.isRunning())
-        stop();
 
     unconst(mVirtualBox) = NULL;
 }
@@ -612,30 +598,6 @@ HRESULT DHCPServer::getEventSource(ComPtr<IEventSource> &aEventSource)
 }
 
 
-DECLINLINE(void) addOptionChild(xml::ElementNode *pParent, uint32_t OptCode, const settings::DhcpOptValue &OptValue)
-{
-    xml::ElementNode *pOption = pParent->createChild("Option");
-    pOption->setAttribute("name", OptCode);
-    pOption->setAttribute("encoding", OptValue.encoding);
-    pOption->setAttribute("value", OptValue.text.c_str());
-}
-
-
-HRESULT DHCPServer::restart()
-{
-    if (!m->dhcp.isRunning())
-        return E_FAIL;
-    /*
-        * Disabled servers will be brought down, but won't be restarted.
-        * (see DHCPServer::start)
-        */
-    HRESULT hrc = stop();
-    if (SUCCEEDED(hrc))
-        hrc = start(m->networkName, m->trunkName, m->trunkType);
-    return hrc;
-}
-
-
 HRESULT DHCPServer::start(const com::Utf8Str &aNetworkName,
                           const com::Utf8Str &aTrunkName,
                           const com::Utf8Str &aTrunkType)
@@ -644,107 +606,6 @@ HRESULT DHCPServer::start(const com::Utf8Str &aNetworkName,
     if (!m->enabled)
         return S_OK;
 
-    /*
-     * @todo: the existing code cannot handle concurrent attempts to start DHCP server.
-     * Note that technically it may receive different parameters from different callers.
-     */
-    m->networkName = aNetworkName;
-    m->trunkName = aTrunkName;
-    m->trunkType = aTrunkType;
-
-    m->dhcp.clearOptions();
-#ifdef VBOX_WITH_DHCPD
-    int rc = RTPathTemp(m->tempConfigFileName, sizeof(m->tempConfigFileName));
-    if (RT_FAILURE(rc))
-        return E_FAIL;
-    rc = RTPathAppend(m->tempConfigFileName, sizeof(m->tempConfigFileName), "dhcp-config-XXXXX.xml");
-    if (RT_FAILURE(rc))
-    {
-        m->tempConfigFileName[0] = '\0';
-        return E_FAIL;
-    }
-    rc = RTFileCreateTemp(m->tempConfigFileName, 0600);
-    if (RT_FAILURE(rc))
-    {
-        m->tempConfigFileName[0] = '\0';
-        return E_FAIL;
-    }
-
-    xml::Document doc;
-    xml::ElementNode *pElmRoot = doc.createRootElement("DHCPServer");
-    pElmRoot->setAttribute("networkName", m->networkName.c_str());
-    if (!m->trunkName.isEmpty())
-        pElmRoot->setAttribute("trunkName", m->trunkName.c_str());
-    pElmRoot->setAttribute("trunkType", m->trunkType.c_str());
-    pElmRoot->setAttribute("IPAddress",  Utf8Str(m->IPAddress).c_str());
-    pElmRoot->setAttribute("networkMask", Utf8Str(m->GlobalDhcpOptions[DhcpOpt_SubnetMask].text).c_str());
-    pElmRoot->setAttribute("lowerIP", Utf8Str(m->lowerIP).c_str());
-    pElmRoot->setAttribute("upperIP", Utf8Str(m->upperIP).c_str());
-
-    /* Process global options */
-    xml::ElementNode *pOptions = pElmRoot->createChild("Options");
-    // settings::DhcpOptionMap::const_iterator itGlobal;
-    for (settings::DhcpOptionMap::const_iterator it = m->GlobalDhcpOptions.begin();
-         it != m->GlobalDhcpOptions.end();
-         ++it)
-        addOptionChild(pOptions, (*it).first, (*it).second);
-
-    /* Process network-adapter-specific options */
-    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-    HRESULT hrc = S_OK;
-    ComPtr<IMachine> machine;
-    ComPtr<INetworkAdapter> nic;
-    settings::VmSlot2OptionsIterator it;
-    for(it = m->VmSlot2Options.begin(); it != m->VmSlot2Options.end(); ++it)
-    {
-        alock.release();
-        hrc = mVirtualBox->FindMachine(Bstr(it->first.VmName).raw(), machine.asOutParam());
-        alock.acquire();
-
-        if (FAILED(hrc))
-            continue;
-
-        alock.release();
-        hrc = machine->GetNetworkAdapter(it->first.Slot, nic.asOutParam());
-        alock.acquire();
-
-        if (FAILED(hrc))
-            continue;
-
-        com::Bstr mac;
-
-        alock.release();
-        hrc = nic->COMGETTER(MACAddress)(mac.asOutParam());
-        alock.acquire();
-
-        if (FAILED(hrc)) /* no MAC address ??? */
-            continue;
-
-        /* Convert MAC address from XXXXXXXXXXXX to XX:XX:XX:XX:XX:XX */
-        Utf8Str strMacWithoutColons(mac);
-        const char *pszSrc = strMacWithoutColons.c_str();
-        RTMAC binaryMac;
-        if (RTStrConvertHexBytes(pszSrc, &binaryMac, sizeof(binaryMac), 0) != VINF_SUCCESS)
-            continue;
-        char szMac[18]; /* "XX:XX:XX:XX:XX:XX" */
-        if (RTStrPrintHexBytes(szMac, sizeof(szMac), &binaryMac, sizeof(binaryMac), RTSTRPRINTHEXBYTES_F_SEP_COLON) != VINF_SUCCESS)
-            continue;
-
-        xml::ElementNode *pMacConfig = pElmRoot->createChild("Config");
-        pMacConfig->setAttribute("MACAddress", szMac);
-
-        com::Utf8Str encodedOption;
-        settings::DhcpOptionMap &map = i_findOptMapByVmNameSlot(it->first.VmName, it->first.Slot);
-        settings::DhcpOptionMap::const_iterator itAdapterOption;
-        for (itAdapterOption = map.begin(); itAdapterOption != map.end(); ++itAdapterOption)
-            addOptionChild(pMacConfig, (*itAdapterOption).first, (*itAdapterOption).second);
-    }
-
-    xml::XmlFileWriter writer(doc);
-    writer.write(m->tempConfigFileName, true);
-
-    m->dhcp.setOption(DHCPServerRunner::kDsrKeyConfig, m->tempConfigFileName);
-#else /* !VBOX_WITH_DHCPD */
     /* Commmon Network Settings */
     m->dhcp.setOption(NetworkServiceRunner::kNsrKeyNetwork, aNetworkName.c_str());
 
@@ -766,7 +627,6 @@ HRESULT DHCPServer::start(const com::Utf8Str &aNetworkName,
     m->dhcp.setOption(NetworkServiceRunner::kNsrIpNetmask, Utf8Str(m->GlobalDhcpOptions[DhcpOpt_SubnetMask].text).c_str());
     m->dhcp.setOption(DHCPServerRunner::kDsrKeyLowerIp, Utf8Str(m->lowerIP).c_str());
     m->dhcp.setOption(DHCPServerRunner::kDsrKeyUpperIp, Utf8Str(m->upperIP).c_str());
-#endif /* !VBOX_WITH_DHCPD */
 
     /* XXX: This parameters Dhcp Server will fetch via API */
     return RT_FAILURE(m->dhcp.start(!m->router /* KillProcOnExit */)) ? E_FAIL : S_OK;
@@ -776,13 +636,6 @@ HRESULT DHCPServer::start(const com::Utf8Str &aNetworkName,
 
 HRESULT DHCPServer::stop (void)
 {
-#ifdef VBOX_WITH_DHCPD
-    if (m->tempConfigFileName[0])
-    {
-        RTFileDelete(m->tempConfigFileName);
-        m->tempConfigFileName[0] = 0;
-    }
-#endif /* VBOX_WITH_DHCPD */
     return RT_FAILURE(m->dhcp.stop()) ? E_FAIL : S_OK;
 }
 

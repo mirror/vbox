@@ -50,12 +50,12 @@ public:
     Binding();
     Binding(const Binding &);
 
-    explicit Binding(RTNETADDRIPV4 addrParam)
-      : m_addr(addrParam), m_state(FREE),
+    explicit Binding(RTNETADDRIPV4 addr)
+      : m_addr(addr), m_state(FREE),
         m_issued(), m_secLease() {}
 
-    Binding(RTNETADDRIPV4 addrParam, const ClientId &idParam)
-      : m_addr(addrParam), m_state(FREE), m_id(idParam),
+    Binding(RTNETADDRIPV4 addr, const ClientId &id)
+      : m_addr(addr), m_state(FREE), m_id(id),
         m_issued(), m_secLease() {}
 
 
@@ -69,9 +69,9 @@ public:
     uint32_t leaseTime() const { return m_secLease; }
     TimeStamp issued() const { return m_issued; }
 
-    Binding &setState(State stateParam)
+    Binding &setState(State state)
     {
-        m_state = stateParam;
+        m_state = state;
         return *this;
     }
 
@@ -84,9 +84,9 @@ public:
         return *this;
     }
 
-    Binding &giveTo(const ClientId &idParam)
+    Binding &giveTo(const ClientId &id)
     {
-        m_id = idParam;
+        m_id = id;
         m_state = FREE;
         return *this;
     }

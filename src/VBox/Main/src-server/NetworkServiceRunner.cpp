@@ -68,12 +68,6 @@ int NetworkServiceRunner::setOption(const std::string& key, const std::string& v
 }
 
 
-void NetworkServiceRunner::clearOptions()
-{
-    m->mOptions.clear();
-}
-
-
 void NetworkServiceRunner::detachFromServer()
 {
     m->mProcess = NIL_RTPROCESS;

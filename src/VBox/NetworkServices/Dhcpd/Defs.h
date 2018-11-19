@@ -26,16 +26,12 @@
 #include <memory>
 #include <vector>
 
-#ifdef _MSC_VER
-# define __func__ __FUNCTION__
-#endif
-
 typedef std::vector<uint8_t> octets_t;
 
 typedef std::map<uint8_t, octets_t> rawopts_t;
 
 class DhcpOption;
-typedef std::map<uint8_t, std::shared_ptr<DhcpOption> > optmap_t;
+typedef std::map<uint8_t, std::shared_ptr<DhcpOption>> optmap_t;
 
 inline bool operator==(const RTMAC &l, const RTMAC &r)
 {
@@ -48,7 +44,7 @@ inline bool operator<(const RTMAC &l, const RTMAC &r)
 }
 
 #if 1
-#define LogDHCP(args) LogRel(args)
+#define LogDHCP LogRel
 #else
 #define LogDHCP(args) RTPrintf args
 #endif
