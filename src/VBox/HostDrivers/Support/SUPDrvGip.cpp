@@ -4770,7 +4770,7 @@ int VBOXCALL supdrvIOCtl_TscRead(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession,
              */
             RTCCUINTREG fEFlags = ASMIntDisableFlags();
             int         iCpuSet = RTMpCpuIdToSetIndex(RTMpCpuId());
-            int         iGipCpu;
+            int         iGipCpu = 0; /* gcc maybe used uninitialized */
             if (RT_LIKELY(   (unsigned)iCpuSet < RT_ELEMENTS(pGip->aiCpuFromCpuSetIdx)
                           && (iGipCpu = pGip->aiCpuFromCpuSetIdx[iCpuSet]) < pGip->cCpus ))
             {
@@ -4822,7 +4822,7 @@ int VBOXCALL supdrvIOCtl_TscRead(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession,
          */
         RTCCUINTREG fEFlags = ASMIntDisableFlags();
         int         iCpuSet = RTMpCpuIdToSetIndex(RTMpCpuId());
-        int         iGipCpu;
+        int         iGipCpu = 0; /* gcc may be used uninitialized */
         if (RT_LIKELY(   (unsigned)iCpuSet < RT_ELEMENTS(pGip->aiCpuFromCpuSetIdx)
                       && (iGipCpu = pGip->aiCpuFromCpuSetIdx[iCpuSet]) < pGip->cCpus ))
             pReq->u.Out.idApic = pGip->aCPUs[iGipCpu].idApic;
