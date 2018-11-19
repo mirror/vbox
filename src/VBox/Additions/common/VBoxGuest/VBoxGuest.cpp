@@ -985,6 +985,7 @@ int VGDrvCommonInitDevExtFundament(PVBOXGUESTDEVEXT pDevExt)
     pDevExt->pVMMDevMemory = NULL;
     pDevExt->hGuestMappings = NIL_RTR0MEMOBJ;
     pDevExt->EventSpinlock = NIL_RTSPINLOCK;
+    pDevExt->fHostFeatures = 0;
     pDevExt->pIrqAckEvents = NULL;
     pDevExt->PhysIrqAckEvents = NIL_RTCCPHYS;
     RTListInit(&pDevExt->WaitList);
@@ -1126,14 +1127,17 @@ int VGDrvCommonInitDevExtResources(PVBOXGUESTDEVEXT pDevExt, uint16_t IOPortBase
      * made by the VMM.
      */
     pDevExt->IOPortBase = IOPortBase;
-    rc = VbglR0InitPrimary(pDevExt->IOPortBase, (VMMDevMemory *)pDevExt->pVMMDevMemory);
+    rc = VbglR0InitPrimary(pDevExt->IOPortBase, (VMMDevMemory *)pDevExt->pVMMDevMemory, &pDevExt->fHostFeatures);
     if (RT_SUCCESS(rc))
     {
-        rc = VbglR0GRAlloc((VMMDevRequestHeader **)&pDevExt->pIrqAckEvents, sizeof(VMMDevEvents), VMMDevReq_AcknowledgeEvents);
+        VMMDevRequestHeader *pAckReq = NULL;
+        rc = VbglR0GRAlloc(&pAckReq, sizeof(VMMDevEvents), VMMDevReq_AcknowledgeEvents);
         if (RT_SUCCESS(rc))
         {
-            pDevExt->PhysIrqAckEvents = VbglR0PhysHeapGetPhysAddr(pDevExt->pIrqAckEvents);
+            pDevExt->PhysIrqAckEvents = VbglR0PhysHeapGetPhysAddr(pAckReq);
             Assert(pDevExt->PhysIrqAckEvents != 0);
+            ASMCompilerBarrier(); /* linux + solaris already have IRQs hooked up at this point, so take care. */
+            pDevExt->pIrqAckEvents = (VMMDevEvents *)pAckReq;
 
             rc = vgdrvReportGuestInfo(enmOSType);
             if (RT_SUCCESS(rc))
@@ -1261,6 +1265,12 @@ void VGDrvCommonDeleteDevExtResources(PVBOXGUESTDEVEXT pDevExt)
     vgdrvCloseMemBalloon(pDevExt, (PVBOXGUESTSESSION)NULL);
 
     /*
+     * No more IRQs.
+     */
+    pDevExt->pIrqAckEvents = NULL; /* Will be freed by VbglR0TerminatePrimary. */
+    ASMAtomicWriteU32(&pDevExt->fHostFeatures, 0);
+
+    /*
      * Cleanup all the other resources.
      */
     vgdrvDeleteWaitList(&pDevExt->WaitList);
@@ -1278,7 +1288,6 @@ void VGDrvCommonDeleteDevExtResources(PVBOXGUESTDEVEXT pDevExt)
 
     pDevExt->pVMMDevMemory = NULL;
     pDevExt->IOPortBase = 0;
-    pDevExt->pIrqAckEvents = NULL; /* Freed by VbglR0TerminatePrimary. */
 }
 
 
@@ -1582,7 +1591,7 @@ void VGDrvCommonProcessOptionsFromHost(PVBOXGUESTDEVEXT pDevExt)
 /**
  * Destroys the VBoxGuest device extension.
  *
- * The native code should call this before the driver is loaded,
+ * The native code should call this before the driver is unloaded,
  * but don't call this on shutdown.
  *
  * @param   pDevExt         The device extension.
@@ -4361,7 +4370,7 @@ bool VGDrvCommonIsOurIRQ(PVBOXGUESTDEVEXT pDevExt)
  */
 bool VGDrvCommonISR(PVBOXGUESTDEVEXT pDevExt)
 {
-    VMMDevEvents volatile  *pReq                  = pDevExt->pIrqAckEvents;
+    VMMDevEvents volatile  *pReq;
     bool                    fMousePositionChanged = false;
     int                     rc                    = 0;
     VMMDevMemory volatile  *pVMMDevMemory;
@@ -4370,7 +4379,11 @@ bool VGDrvCommonISR(PVBOXGUESTDEVEXT pDevExt)
     /*
      * Make sure we've initialized the device extension.
      */
-    if (RT_UNLIKELY(!pReq))
+    if (RT_LIKELY(pDevExt->fHostFeatures & VMMDEV_HVF_FAST_IRQ_ACK))
+        pReq = NULL;
+    else if (RT_LIKELY((pReq = pDevExt->pIrqAckEvents) != NULL))
+    { /* likely */ }
+    else
         return false;
 
     /*
@@ -4382,18 +4395,28 @@ bool VGDrvCommonISR(PVBOXGUESTDEVEXT pDevExt)
     if (fOurIrq)
     {
         /*
-         * Acknowlegde events.
+         * Acknowledge events.
          * We don't use VbglR0GRPerform here as it may take another spinlocks.
          */
-        pReq->header.rc = VERR_INTERNAL_ERROR;
-        pReq->events    = 0;
-        ASMCompilerBarrier();
-        ASMOutU32(pDevExt->IOPortBase + VMMDEV_PORT_OFF_REQUEST, (uint32_t)pDevExt->PhysIrqAckEvents);
-        ASMCompilerBarrier();   /* paranoia */
-        if (RT_SUCCESS(pReq->header.rc))
+        uint32_t fEvents;
+        if (!pReq)
         {
-            uint32_t        fEvents = pReq->events;
-
+            fEvents = ASMInU32(pDevExt->IOPortBase + VMMDEV_PORT_OFF_REQUEST_FAST);
+            ASMCompilerBarrier();   /* paranoia */
+            rc = fEvents != UINT32_MAX ? VINF_SUCCESS : VERR_INTERNAL_ERROR;
+        }
+        else
+        {
+            pReq->header.rc = VERR_INTERNAL_ERROR;
+            pReq->events    = 0;
+            ASMCompilerBarrier();
+            ASMOutU32(pDevExt->IOPortBase + VMMDEV_PORT_OFF_REQUEST, (uint32_t)pDevExt->PhysIrqAckEvents);
+            ASMCompilerBarrier();   /* paranoia */
+            fEvents = pReq->events;
+            rc = pReq->header.rc;
+        }
+        if (RT_SUCCESS(rc))
+        {
             Log3(("VGDrvCommonISR: acknowledge events succeeded %#RX32\n", fEvents));
 
             /*
@@ -4441,8 +4464,7 @@ bool VGDrvCommonISR(PVBOXGUESTDEVEXT pDevExt)
             rc |= vgdrvDispatchEventsLocked(pDevExt, fEvents);
         }
         else /* something is serious wrong... */
-            Log(("VGDrvCommonISR: acknowledge events failed rc=%Rrc (events=%#x)!!\n",
-                 pReq->header.rc, pReq->events));
+            Log(("VGDrvCommonISR: acknowledge events failed rc=%Rrc (events=%#x)!!\n", rc, fEvents));
     }
     else
         Log3(("VGDrvCommonISR: not ours\n"));
@@ -4478,8 +4500,7 @@ bool VGDrvCommonISR(PVBOXGUESTDEVEXT pDevExt)
         VGDrvNativeISRMousePollEvent(pDevExt);
     }
 
-    Assert(rc == 0);
-    NOREF(rc);
+    AssertMsg(rc == 0, ("rc=%#x (%d)\n", rc, rc));
     return fOurIrq;
 }
 

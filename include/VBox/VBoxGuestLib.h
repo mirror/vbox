@@ -106,7 +106,7 @@ typedef uint32_t HGCMCLIENTID;
  *
  * @return VBox status code.
  */
-DECLR0VBGL(int)     VbglR0InitPrimary(RTIOPORT portVMMDev, struct VMMDevMemory *pVMMDevMemory);
+DECLR0VBGL(int)     VbglR0InitPrimary(RTIOPORT portVMMDev, VMMDevMemory *pVMMDevMemory, uint32_t *pfFeatures);
 
 /**
  * The library termination function to be used by the main VBoxGuest driver.

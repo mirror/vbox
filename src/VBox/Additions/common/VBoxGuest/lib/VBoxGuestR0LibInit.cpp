@@ -183,7 +183,7 @@ static void vbglR0TerminateCommon(void)
 
 #ifdef VBGL_VBOXGUEST
 
-DECLVBGL(int) VbglR0InitPrimary(RTIOPORT portVMMDev, VMMDevMemory *pVMMDevMemory)
+DECLR0VBGL(int) VbglR0InitPrimary(RTIOPORT portVMMDev, VMMDevMemory *pVMMDevMemory, uint32_t *pfFeatures)
 {
     int rc;
 
@@ -208,6 +208,7 @@ DECLVBGL(int) VbglR0InitPrimary(RTIOPORT portVMMDev, VMMDevMemory *pVMMDevMemory
         g_vbgldata.status        = VbglStatusReady;
 
         vbglR0QueryHostVersion();
+        *pfFeatures = g_vbgldata.hostVersion.features;
         return VINF_SUCCESS;
     }
 
@@ -215,7 +216,7 @@ DECLVBGL(int) VbglR0InitPrimary(RTIOPORT portVMMDev, VMMDevMemory *pVMMDevMemory
     return rc;
 }
 
-DECLVBGL(void) VbglR0TerminatePrimary(void)
+DECLR0VBGL(void) VbglR0TerminatePrimary(void)
 {
     vbglR0TerminateCommon();
 }
@@ -223,7 +224,7 @@ DECLVBGL(void) VbglR0TerminatePrimary(void)
 
 #else /* !VBGL_VBOXGUEST */
 
-DECLVBGL(int) VbglR0InitClient(void)
+DECLR0VBGL(int) VbglR0InitClient(void)
 {
     int rc;
 
@@ -268,7 +269,7 @@ DECLVBGL(int) VbglR0InitClient(void)
     return rc;
 }
 
-DECLVBGL(void) VbglR0TerminateClient(void)
+DECLR0VBGL(void) VbglR0TerminateClient(void)
 {
 # ifdef VBOX_WITH_HGCM
     VbglR0HGCMTerminate();
