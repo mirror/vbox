@@ -2691,7 +2691,8 @@ VMM_INT_DECL(bool) CPUMCanVmxNstGstTakeVirtIntr(PVMCPU pVCpu, PCCPUMCTX pCtx)
     Assert(CPUMIsGuestInVmxNonRootMode(pCtx));
     Assert(pCtx->hwvirt.fGif);  /* Always true on Intel. */
 
-    return false; /** @todo NSTVMX: Currently not implemented. */
+    /** @todo NSTVMX: Implement virtual-interrupt delivery feature. */
+    return false;
 #endif
 }
 
