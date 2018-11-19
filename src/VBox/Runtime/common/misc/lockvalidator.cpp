@@ -1049,6 +1049,7 @@ RTDECL(int) RTLockValidatorClassCreateExV(PRTLOCKVALCLASS phClass, PCRTLOCKVALSR
                                                                         "may-leak:RTLockValidatorClassCreateExV");
     if (!pThis)
         return VERR_NO_MEMORY;
+    RTMEM_MAY_LEAK(pThis);
 
     /*
      * Initialize the class data.
@@ -1432,6 +1433,7 @@ static int rtLockValidatorClassAddPriorClass(RTLOCKVALCLASSINT *pClass, RTLOCKVA
                         rc = VERR_NO_MEMORY;
                         break;
                     }
+                    RTMEM_MAY_LEAK(pNew);
                     pNew->pNext = NULL;
                     for (uint32_t i = 0; i < RT_ELEMENTS(pNew->aRefs); i++)
                     {
