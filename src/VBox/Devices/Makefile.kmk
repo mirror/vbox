@@ -909,6 +909,7 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
   	Serial/DevOxPcie958.cpp \
   	Serial/UartCore.cpp \
   	Parallel/DevParallel.cpp \
+  	VMMDev/VMMDev.cpp \
   	VMMDev/VMMDevTesting.cpp
 
   VBoxDDRC_DEFS         += $(VBOX_AUDIO_DEFS)
@@ -1082,6 +1083,7 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
   	Serial/DevOxPcie958.cpp \
   	Serial/UartCore.cpp \
  	Parallel/DevParallel.cpp \
+  	VMMDev/VMMDev.cpp \
  	VMMDev/VMMDevTesting.cpp \
  	Network/DrvIntNet.cpp \
  	Network/DrvDedicatedNic.cpp
