@@ -574,31 +574,6 @@ DECLINLINE(void) usbProxyUsbIpExportedDeviceN2H(PUsbIpExportedDevice pDevice)
 }
 
 /**
- * Converts a USB/IP status code to a VBox status code.
- *
- * @returns VUSB status code.
- * @param   i32Status    The USB/IP status code from the reply.
- */
-DECLINLINE(int) usbProxyUsbIpStatusConvertFromStatus(int32_t i32Status)
-{
-    if (RT_LIKELY(   i32Status == USBIP_STATUS_SUCCESS
-                  || i32Status == USBIP_STATUS_SHORT_READ))
-        return VINF_SUCCESS;
-
-    switch (i32Status)
-    {
-        case USBIP_STATUS_PIPE_STALLED:
-            return VINF_SUCCESS;
-        case USBIP_STATUS_URB_UNLINKED:
-            return VERR_TRY_AGAIN;
-        default:
-            LogFlowFunc(("i32Status=%d\n", i32Status));
-            return VERR_INVALID_STATE;
-    }
-    /* not reached */
-}
-
-/**
  * Converts a USB/IP status code to a VUSB status code.
  *
  * @returns VUSB status code.
