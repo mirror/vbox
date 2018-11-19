@@ -128,6 +128,16 @@ DECLR0VBGL(int)     VbglR0InitClient(void);
  */
 DECLR0VBGL(void)    VbglR0TerminateClient(void);
 
+/**
+ * Query the host feature mask.
+ *
+ * @returns VBox status code.
+ * @param   pfHostFeatures      Where to return the host feature mask,
+ *                              VMMDEV_HVF_XXX.
+ * @note    Client only. May fail we're unable to connect VBoxGuest.
+ */
+DECLR0VBGL(int)     VbglR0QueryHostFeatures(uint32_t *pfHostFeatures);
+
 
 /** @name The IDC Client Interface
  * @{

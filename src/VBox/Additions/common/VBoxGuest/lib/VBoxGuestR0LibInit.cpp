@@ -81,7 +81,7 @@ static void vbglR0QueryHostVersion(void)
  * The VbglEnter checks the current library status, tries to retrieve these
  * values and fails if they are unavailable.
  */
-static void vbglR0QueryDriverInfo(void)
+static int vbglR0QueryDriverInfo(void)
 {
 # ifdef VBGLDATA_USE_FAST_MUTEX
     int rc = RTSemFastMutexRequest(g_vbgldata.hMtxIdcSetup);
@@ -128,6 +128,7 @@ static void vbglR0QueryDriverInfo(void)
         RTSemMutexRelease(g_vbgldata.hMtxIdcSetup);
 # endif
     }
+    return rc;
 }
 #endif /* !VBGL_VBOXGUEST */
 
@@ -308,6 +309,22 @@ int VBOXCALL vbglR0QueryIdcHandle(PVBGLIDCHANDLE *ppIdcHandle)
     }
 
     *ppIdcHandle = &g_vbgldata.IdcHandle;
+    return VINF_SUCCESS;
+}
+
+
+DECLR0VBGL(int) VbglR0QueryHostFeatures(uint32_t *pfHostFeatures)
+{
+    if (g_vbgldata.status == VbglStatusReady)
+        *pfHostFeatures = g_vbgldata.hostVersion.features;
+    else
+    {
+        int rc = vbglR0QueryDriverInfo();
+        if (g_vbgldata.status != VbglStatusReady)
+            return rc;
+        *pfHostFeatures = g_vbgldata.hostVersion.features;
+    }
+
     return VINF_SUCCESS;
 }
 
