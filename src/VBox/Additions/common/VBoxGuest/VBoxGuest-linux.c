@@ -613,33 +613,33 @@ static int __init vgdrvLinuxModInit(void)
     if (rc >= 0 && g_pPciDev)
     {
         /*
-         * Register the interrupt service routine for it.
+         * Call the common device extension initializer.
          */
-        rc = vgdrvLinuxInitISR();
-        if (rc >= 0)
-        {
-            /*
-             * Call the common device extension initializer.
-             */
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0) && defined(RT_ARCH_X86)
-            VBOXOSTYPE enmOSType = VBOXOSTYPE_Linux26;
+        VBOXOSTYPE enmOSType = VBOXOSTYPE_Linux26;
 #elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0) && defined(RT_ARCH_AMD64)
-            VBOXOSTYPE enmOSType = VBOXOSTYPE_Linux26_x64;
+        VBOXOSTYPE enmOSType = VBOXOSTYPE_Linux26_x64;
 #elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 0) && defined(RT_ARCH_X86)
-            VBOXOSTYPE enmOSType = VBOXOSTYPE_Linux24;
+        VBOXOSTYPE enmOSType = VBOXOSTYPE_Linux24;
 #elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 0) && defined(RT_ARCH_AMD64)
-            VBOXOSTYPE enmOSType = VBOXOSTYPE_Linux24_x64;
+        VBOXOSTYPE enmOSType = VBOXOSTYPE_Linux24_x64;
 #else
 # warning "huh? which arch + version is this?"
-            VBOXOSTYPE enmOsType = VBOXOSTYPE_Linux;
+        VBOXOSTYPE enmOsType = VBOXOSTYPE_Linux;
 #endif
-            rc = VGDrvCommonInitDevExt(&g_DevExt,
-                                       g_IOPortBase,
-                                       g_pvMMIOBase,
-                                       g_cbMMIO,
-                                       enmOSType,
-                                       VMMDEV_EVENT_MOUSE_POSITION_CHANGED);
-            if (RT_SUCCESS(rc))
+        rc = VGDrvCommonInitDevExt(&g_DevExt,
+                                   g_IOPortBase,
+                                   g_pvMMIOBase,
+                                   g_cbMMIO,
+                                   enmOSType,
+                                   VMMDEV_EVENT_MOUSE_POSITION_CHANGED);
+        if (RT_SUCCESS(rc))
+        {
+            /*
+             * Register the interrupt service routine for it now that g_DevExt can handle IRQs.
+             */
+            rc = vgdrvLinuxInitISR();
+            if (rc >= 0) /** @todo r=bird: status check differs from that inside vgdrvLinuxInitISR. */
             {
 #ifdef VBOXGUEST_WITH_INPUT_DRIVER
                 /*
@@ -686,14 +686,14 @@ static int __init vgdrvLinuxModInit(void)
                     VGDrvCommonCloseSession(&g_DevExt, g_pKernelSession);
                 }
 #endif
-                VGDrvCommonDeleteDevExt(&g_DevExt);
+                vgdrvLinuxTermISR();
             }
-            else
-            {
-                LogRel((DEVICE_NAME ": VGDrvCommonInitDevExt failed with rc=%Rrc\n", rc));
-                rc = RTErrConvertFromErrno(rc);
-            }
-            vgdrvLinuxTermISR();
+            VGDrvCommonDeleteDevExt(&g_DevExt);
+        }
+        else
+        {
+            LogRel((DEVICE_NAME ": VGDrvCommonInitDevExt failed with rc=%Rrc\n", rc));
+            rc = RTErrConvertFromErrno(rc);
         }
     }
     else
@@ -722,8 +722,8 @@ static void __exit vgdrvLinuxModExit(void)
     vgdrvLinuxTermInputDevice();
     VGDrvCommonCloseSession(&g_DevExt, g_pKernelSession);
 #endif
-    VGDrvCommonDeleteDevExt(&g_DevExt);
     vgdrvLinuxTermISR();
+    VGDrvCommonDeleteDevExt(&g_DevExt);
     pci_unregister_driver(&g_PciDriver);
     RTLogDestroy(RTLogRelSetDefaultInstance(NULL));
     RTLogDestroy(RTLogSetDefaultInstance(NULL));

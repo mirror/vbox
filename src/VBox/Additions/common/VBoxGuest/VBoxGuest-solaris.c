@@ -324,28 +324,27 @@ static int vgdrvSolarisAttach(dev_info_t *pDip, ddi_attach_cmd_t enmCmd)
                         if (rc == DDI_SUCCESS)
                         {
                             /*
-                             * Add IRQ of VMMDev.
+                             * Call the common device extension initializer.
                              */
-                            rc = vgdrvSolarisAddIRQ(pDip);
-                            if (rc == DDI_SUCCESS)
+                            rc = VGDrvCommonInitDevExt(&g_DevExt, g_uIOPortBase, g_pMMIOBase, g_cbMMIO,
+#if ARCH_BITS == 64
+                                                       VBOXOSTYPE_Solaris_x64,
+#else
+                                                       VBOXOSTYPE_Solaris,
+#endif
+                                                       VMMDEV_EVENT_MOUSE_POSITION_CHANGED);
+                            if (RT_SUCCESS(rc))
                             {
                                 /*
-                                 * Call the common device extension initializer.
+                                 * Add IRQ of VMMDev.
                                  */
-                                rc = VGDrvCommonInitDevExt(&g_DevExt, g_uIOPortBase, g_pMMIOBase, g_cbMMIO,
-#if ARCH_BITS == 64
-                                                           VBOXOSTYPE_Solaris_x64,
-#else
-                                                           VBOXOSTYPE_Solaris,
-#endif
-                                                           VMMDEV_EVENT_MOUSE_POSITION_CHANGED);
-                                if (RT_SUCCESS(rc))
+                                rc = vgdrvSolarisAddIRQ(pDip);
+                                if (rc == DDI_SUCCESS)
                                 {
                                     /*
                                      * Read host configuration.
                                      */
                                     VGDrvCommonProcessOptionsFromHost(&g_DevExt);
-
 
                                     rc = ddi_create_minor_node(pDip, DEVICE_NAME, S_IFCHR, instance, DDI_PSEUDO, 0 /* fFlags */);
                                     if (rc == DDI_SUCCESS)
@@ -356,15 +355,14 @@ static int vgdrvSolarisAttach(dev_info_t *pDip, ddi_attach_cmd_t enmCmd)
                                     }
 
                                     LogRel((DEVICE_NAME "::Attach: ddi_create_minor_node failed.\n"));
-                                    VGDrvCommonDeleteDevExt(&g_DevExt);
+                                    vgdrvSolarisRemoveIRQ(pDip);
                                 }
                                 else
-                                    LogRel((DEVICE_NAME "::Attach: VGDrvCommonInitDevExt failed.\n"));
-
-                                vgdrvSolarisRemoveIRQ(pDip);
+                                    LogRel((DEVICE_NAME "::Attach: vgdrvSolarisAddIRQ failed.\n"));
+                                VGDrvCommonDeleteDevExt(&g_DevExt);
                             }
                             else
-                                LogRel((DEVICE_NAME "::Attach: vgdrvSolarisAddIRQ failed.\n"));
+                                LogRel((DEVICE_NAME "::Attach: VGDrvCommonInitDevExt failed.\n"));
                             ddi_regs_map_free(&g_PciMMIOHandle);
                         }
                         else
