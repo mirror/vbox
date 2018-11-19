@@ -635,12 +635,21 @@ vboxSfOs2QueryFileInfo(PVBOXSFFOLDER pFolder, PSFFSI pSfFsi, PVBOXSFSYFI pSfFsd,
      *         286 ns / 1086 ticks
      *
      *    Raw data:
-     *        11843ns / 47469 ticks - VbglR0SfFsInfo
-     *         7748ns / 31216 ticks - VbglR0SfPhysFsInfo
-     *         7298ns / 29275 ticks - VbglR0SfFastPhysFsInfo
-     *         7012ns / 28189 ticks - Embedded buffer.
+     *        11843 ns / 47469 ticks - VbglR0SfFsInfo.
+     *         7748 ns / 31216 ticks - VbglR0SfPhysFsInfo.
+     *         7298 ns / 29275 ticks - VbglR0SfFastPhysFsInfo.
+     *         7012 ns / 28189 ticks - Embedded buffer.
      *
-     * 2. should've done measurements of the host side optimizations too...
+     * 2. Interrupt acknowledgement in VBoxGuest goes to ring-3, which is wasteful.
+     *    Played around with handling VMMDevReq_AcknowledgeEvents requests in
+     *    ring-0, but since it just returns a 32-bit mask of pending events it was
+     *    more natural to implement it as a 32-bit IN operation.
+     *
+     *    Saves 4217 ns / 17048 ticks / 13%.
+     *
+     *    Raw data:
+     *          32027 ns / 128506 ticks - ring-3 VMMDevReq_AcknowledgeEvents.
+     *          27810 ns / 111458 ticks - fast ring-0 ACK.
      *
      */
 #if 0
