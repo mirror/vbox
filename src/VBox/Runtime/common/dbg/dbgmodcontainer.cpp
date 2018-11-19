@@ -411,8 +411,8 @@ static DECLCALLBACK(uint32_t) rtDbgModContainer_SymbolCount(PRTDBGMODINT pMod)
  */
 static void rtDbgModContainer_SymbolReplace(PRTDBGMODCTN pThis, PAVLRUINTPTRTREE pAddrTree, PRTDBGMODCTNSYMBOL pToRemove)
 {
-    RTLogPrintf("rtDbgModContainer_SymbolReplace: pToRemove=%p ordinal=%u %04x:%08RX64 %s\n",
-         pToRemove, pToRemove->OrdinalCore.Key, pToRemove->iSeg, pToRemove->AddrCore.Key, pToRemove->NameCore.pszString);
+    Log(("rtDbgModContainer_SymbolReplace: pToRemove=%p ordinal=%u %04x:%08RX64 %s\n",
+         pToRemove, pToRemove->OrdinalCore.Key, pToRemove->iSeg, pToRemove->AddrCore.Key, pToRemove->NameCore.pszString));
 
     /* Unlink it. */
     PRTSTRSPACECORE pRemovedName = RTStrSpaceRemove(&pThis->Names, pToRemove->NameCore.pszString);
@@ -503,8 +503,8 @@ static DECLCALLBACK(int) rtDbgModContainer_SymbolAdd(PRTDBGMODINT pMod, const ch
                      */
                     if (piOrdinal)
                         *piOrdinal = pThis->iNextSymbolOrdinal;
-                    RTLogPrintf("rtDbgModContainer_SymbolAdd: ordinal=%u %04x:%08RX64 LB %#RX64 %s\n",
-                           pThis->iNextSymbolOrdinal, iSeg, off, cb, pSymbol->NameCore.pszString);
+                    Log12(("rtDbgModContainer_SymbolAdd: ordinal=%u %04x:%08RX64 LB %#RX64 %s\n",
+                           pThis->iNextSymbolOrdinal, iSeg, off, cb, pSymbol->NameCore.pszString));
                     pThis->iNextSymbolOrdinal++;
                     return rc;
                 }
@@ -570,8 +570,8 @@ static DECLCALLBACK(int) rtDbgModContainer_SymbolAdd(PRTDBGMODINT pMod, const ch
                             if (piOrdinal)
                                 *piOrdinal = pThis->iNextSymbolOrdinal;
                             pThis->iNextSymbolOrdinal++;
-                            RTLogPrintf("rtDbgModContainer_SymbolAdd: ordinal=%u %04x:%08RX64 LB %#RX64 %s [replace codepath]\n",
-                                   pThis->iNextSymbolOrdinal, iSeg, off, cb, pSymbol->NameCore.pszString);
+                            Log12(("rtDbgModContainer_SymbolAdd: ordinal=%u %04x:%08RX64 LB %#RX64 %s [replace codepath]\n",
+                                   pThis->iNextSymbolOrdinal, iSeg, off, cb, pSymbol->NameCore.pszString));
                             return rc;
                         }
 
