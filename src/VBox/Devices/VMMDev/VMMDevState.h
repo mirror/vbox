@@ -112,7 +112,9 @@ typedef struct VMMDEVFACILITYSTATUSENTRY
 typedef VMMDEVFACILITYSTATUSENTRY *PVMMDEVFACILITYSTATUSENTRY;
 
 
-/** device structure containing all state information */
+/**
+ * State structure for the VMM device.
+ */
 typedef struct VMMDevState
 {
     /** The PCI device structure. */
@@ -198,7 +200,7 @@ typedef struct VMMDevState
     R0PTRTYPE(VMMDevMemory *)   pVMMDevRAMR0;
     /** R0 pointer to VMMDev RAM area - first page only, could be NULL! */
     RCPTRTYPE(VMMDevMemory *)   pVMMDevRAMRC;
-    RTGCPTR                     RCPtrAlignment3b;
+    RTRCPTR                     RCPtrAlignment3b;
 
     /** R3 pointer to VMMDev Heap RAM area. */
     R3PTRTYPE(VMMDevMemory *) pVMMDevHeapR3;
@@ -240,7 +242,9 @@ typedef struct VMMDevState
     /** Pointer to the credentials. */
     R3PTRTYPE(VMMDEVCREDS *) pCredentials;
 
-    bool afAlignment4[HC_ARCH_BITS == 32 ? 3 : 7];
+#if HC_ARCH_BITS == 32
+    uint32_t uAlignment4;
+#endif
 
     /* memory balloon change request */
     uint32_t    cMbMemoryBalloon;
@@ -266,7 +270,9 @@ typedef struct VMMDevState
 #ifdef VMMDEV_WITH_ALT_TIMESYNC
     uint64_t hostTime;
     bool fTimesyncBackdoorLo;
-    bool afAlignment6[3];
+    bool afAlignment6[2];
+#else
+    bool afAlignment6[1+2];
 #endif
     /** Set if GetHostTime should fail.
      * Loaded from the GetHostTimeDisabled configuration value. */
@@ -289,8 +295,6 @@ typedef struct VMMDevState
 
     /** Number of additional cores to keep around. */
     uint32_t cGuestCoreDumps;
-
-    bool afAlignment7[1];
 
 #ifdef VBOX_WITH_HGCM
     /** List of pending HGCM requests (VBOXHGCMCMD). */
@@ -411,6 +415,7 @@ typedef VMMDevState VMMDEV;
 /** Pointer to the VMM device state. */
 typedef VMMDEV *PVMMDEV;
 AssertCompileMemberAlignment(VMMDEV, CritSect, 8);
+AssertCompileMemberAlignment(VMMDEV, StatSlowIrqAck, 8);
 AssertCompileMemberAlignment(VMMDEV, cbGuestRAM, 8);
 AssertCompileMemberAlignment(VMMDEV, enmCpuHotPlugEvent, 4);
 AssertCompileMemberAlignment(VMMDEV, aFacilityStatuses, 8);
