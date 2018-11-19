@@ -15714,6 +15714,39 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecVmxVirtApicAccessMem(PVMCPU pVCpu, uint16_t of
 
 
 /**
+ * Interface for HM and EM to perform a post-instruction virtual-APIC update.
+ *
+ * @returns Strict VBox status code.
+ * @retval  VINF_VMX_VMEXIT if the virtual-APIC update causes a VM-exit.
+ * @retval  VINF_VMX_INTERCEPT_NOT_ACTIVE if no change was made.
+ *
+ * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
+ * @thread  EMT(pVCpu)
+ */
+VMM_INT_DECL(VBOXSTRICTRC) IEMExecVmxVirtApicUpdate(PVMCPU pVCpu)
+{
+    IEM_CTX_ASSERT(pVCpu, IEM_CPUMCTX_EXTRN_VMX_VMEXIT_MASK);
+
+    /*
+     * Record the virtual-APIC offset which was just updated and clear
+     * the virtual-APIC update force-flag and process it now.
+     */
+    uint16_t const offApicWrite = iemVmxVirtApicClearPostAction(pVCpu);
+    VBOXSTRICTRC rcStrict;
+    switch (offApicWrite)
+    {
+        case XAPIC_OFF_TPR:         rcStrict = iemVmxTprVirtualization(pVCpu);      break;
+        case XAPIC_OFF_EOI:         rcStrict = iemVmxEoiVirtualization(pVCpu);      break;
+        case X2APIC_OFF_SELF_IPI:   rcStrict = iemVmxSelfIpiVirtualization(pVCpu);  break;
+        IEM_NOT_REACHED_DEFAULT_CASE_RET();
+    }
+    if (pVCpu->iem.s.cActiveMappings)
+        iemMemRollback(pVCpu);
+    return iemExecStatusCodeFiddling(pVCpu, rcStrict);
+}
+
+
+/**
  * Interface for HM and EM to emulate VM-exit due to expiry of the preemption timer.
  *
  * @returns Strict VBox status code.

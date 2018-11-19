@@ -910,14 +910,14 @@ DECLINLINE(uint64_t) iemVmxVmcsGetCr3TargetValue(PCVMXVVMCS pVmcs, uint8_t idxCr
 
 
 /**
- * Signal that a virtual-APIC action needs to be performed at a later time (post
- * instruction execution).
+ * Signal that a virtual-APIC post instruction-execution action needs to be
+ * performed at a later time (post instruction execution).
  *
  * @param   pVCpu       The cross context virtual CPU structure.
  * @param   offApic     The virtual-APIC page offset that was updated pertaining to
  *                      the event.
  */
-DECLINLINE(void) iemVmxVirtApicSignalAction(PVMCPU pVCpu, uint16_t offApic)
+DECLINLINE(void) iemVmxVirtApicSetPostAction(PVMCPU pVCpu, uint16_t offApic)
 {
     Assert(offApic < XAPIC_OFF_END + 4);
 
@@ -934,6 +934,24 @@ DECLINLINE(void) iemVmxVirtApicSignalAction(PVMCPU pVCpu, uint16_t offApic)
      */
     if (!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_VMX_UPDATE_VAPIC))
         VMCPU_FF_SET(pVCpu, VMCPU_FF_VMX_UPDATE_VAPIC);
+}
+
+
+/**
+ * Clears any virtual-APIC post instruction-execution action.
+ *
+ * @returns The virtual-APIC write offset before clearing it.
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   offApic     The virtual-APIC page offset that was updated pertaining to
+ *                      the event.
+ */
+DECLINLINE(uint16_t) iemVmxVirtApicClearPostAction(PVMCPU pVCpu)
+{
+    uint8_t const offVirtApicWrite = pVCpu->cpum.GstCtx.hwvirt.vmx.offVirtApicWrite;
+    pVCpu->cpum.GstCtx.hwvirt.vmx.offVirtApicWrite = 0;
+    Assert(VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_VMX_UPDATE_VAPIC));
+    VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_VMX_UPDATE_VAPIC);
+    return offVirtApicWrite;
 }
 
 
@@ -2217,6 +2235,7 @@ IEM_STATIC void iemVmxVmexitSaveGuestState(PVMCPU pVCpu, uint32_t uExitReason)
     iemVmxVmexitSaveGuestControlRegsMsrs(pVCpu);
     iemVmxVmexitSaveGuestSegRegs(pVCpu);
 
+#if 0
     /*
      * Save guest RIP, RSP and RFLAGS.
      * See Intel spec. 27.3.3 "Saving RIP, RSP and RFLAGS".
@@ -2235,6 +2254,7 @@ IEM_STATIC void iemVmxVmexitSaveGuestState(PVMCPU pVCpu, uint32_t uExitReason)
         iemRegAddToRipAndClearRF(pVCpu, cbInstr);
         iemVmxVmcsSetExitInstrLen(pVCpu, 0 /* cbInstr */);
     }
+#endif
 
     /* We don't support enclave mode yet. */
     pVmcs->u64GuestRip.u    = pVCpu->cpum.GstCtx.rip;
@@ -4062,15 +4082,57 @@ DECLINLINE(void) iemVmxVirtApicWriteRaw64(PVMCPU pVCpu, uint16_t offReg, uint64_
 
 
 /**
- * Checks if an access of the APIC page must cause an APIC-access VM-exit.
+ * Sets the vector in a virtual-APIC 256-bit sparse register.
+ *
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   offReg      The offset of the 256-bit spare register.
+ * @param   uVector     The vector to set.
+ *
+ * @remarks This is based on our APIC device code.
+ */
+DECLINLINE(void) iemVmxVirtApicSetVector(PVMCPU pVCpu, uint16_t offReg, uint8_t uVector)
+{
+    Assert(offReg == XAPIC_OFF_ISR0 || offReg == XAPIC_OFF_TMR0 || offReg == XAPIC_OFF_IRR0);
+    uint8_t       *pbBitmap     = ((uint8_t *)pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pvVirtApicPage)) + offReg;
+    uint16_t const offVector    = (uVector & UINT32_C(0xe0)) >> 1;
+    uint16_t const idxVectorBit = uVector & UINT32_C(0x1f);
+    ASMAtomicBitSet(pbBitmap + offVector, idxVectorBit);
+}
+
+
+/**
+ * Clears the vector in a virtual-APIC 256-bit sparse register.
+ *
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   offReg      The offset of the 256-bit spare register.
+ * @param   uVector     The vector to clear.
+ *
+ * @remarks This is based on our APIC device code.
+ */
+DECLINLINE(void) iemVmxVirtApicClearVector(PVMCPU pVCpu, uint16_t offReg, uint8_t uVector)
+{
+    Assert(offReg == XAPIC_OFF_ISR0 || offReg == XAPIC_OFF_TMR0 || offReg == XAPIC_OFF_IRR0);
+    uint8_t       *pbBitmap     = ((uint8_t *)pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pvVirtApicPage)) + offReg;
+    uint16_t const offVector    = (uVector & UINT32_C(0xe0)) >> 1;
+    uint16_t const idxVectorBit = uVector & UINT32_C(0x1f);
+    ASMAtomicBitClear(pbBitmap + offVector, idxVectorBit);
+}
+
+
+/**
+ * Checks if a memory access to the APIC-access page must causes an APIC-access
+ * VM-exit.
  *
  * @param   pVCpu       The cross context virtual CPU structure.
  * @param   offAccess   The offset of the register being accessed.
  * @param   cbAccess    The size of the access in bytes.
  * @param   fAccess     The type of access (must be IEM_ACCESS_TYPE_READ or
  *                      IEM_ACCESS_TYPE_WRITE).
+ *
+ * @remarks This must not be used for MSR-based APIC-access page accesses!
+ * @sa      iemVmxVirtApicAccessMsrWrite, iemVmxVirtApicAccessMsrRead.
  */
-IEM_STATIC bool iemVmxVirtApicIsAccessIntercepted(PVMCPU pVCpu, uint16_t offAccess, size_t cbAccess, uint32_t fAccess)
+IEM_STATIC bool iemVmxVirtApicIsMemAccessIntercepted(PVMCPU pVCpu, uint16_t offAccess, size_t cbAccess, uint32_t fAccess)
 {
     PCVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
     Assert(pVmcs);
@@ -4093,7 +4155,7 @@ IEM_STATIC bool iemVmxVirtApicIsAccessIntercepted(PVMCPU pVCpu, uint16_t offAcce
 
     /*
      * If the access is part of an operation where we have already
-     * virtualized a virtual TPR write, we must cause a VM-exit.
+     * virtualized a virtual-APIC write, we must cause a VM-exit.
      */
     if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_VMX_UPDATE_VAPIC))
         return true;
@@ -4228,18 +4290,6 @@ IEM_STATIC bool iemVmxVirtApicIsAccessIntercepted(PVMCPU pVCpu, uint16_t offAcce
 
 
 /**
- * VMX VM-exit handler for APIC-write VM-exits.
- *
- * @param   pVCpu       The cross context virtual CPU structure.
- */
-IEM_STATIC VBOXSTRICTRC iemVmxVmexitApicWrite(PVMCPU pVCpu)
-{
-    iemVmxVmcsSetExitQual(pVCpu, pVCpu->cpum.GstCtx.hwvirt.vmx.offVirtApicWrite);
-    return iemVmxVmexit(pVCpu, VMX_EXIT_APIC_WRITE);
-}
-
-
-/**
  * VMX VM-exit handler for APIC-accesses.
  *
  * @param   pVCpu       The cross context virtual CPU structure.
@@ -4270,6 +4320,30 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitApicAccess(PVMCPU pVCpu, uint16_t offAccess,
 
 
 /**
+ * VMX VM-exit handler for APIC-write VM-exits.
+ *
+ * @param   pVCpu       The cross context virtual CPU structure.
+ */
+IEM_STATIC VBOXSTRICTRC iemVmxVmexitApicWrite(PVMCPU pVCpu)
+{
+    iemVmxVmcsSetExitQual(pVCpu, pVCpu->cpum.GstCtx.hwvirt.vmx.offVirtApicWrite);
+    return iemVmxVmexit(pVCpu, VMX_EXIT_APIC_WRITE);
+}
+
+
+/**
+ * VMX VM-exit handler for virtualized-EOIs.
+ *
+ * @param   pVCpu       The cross context virtual CPU structure.
+ */
+IEM_STATIC VBOXSTRICTRC iemVmxVmexitVirtEoi(PVMCPU pVCpu, uint8_t uVector)
+{
+    iemVmxVmcsSetExitQual(pVCpu, uVector);
+    return iemVmxVmexit(pVCpu, VMX_EXIT_VIRTUALIZED_EOI);
+}
+
+
+/**
  * Virtualizes a memory-based APIC-access where the address is not used to access
  * memory.
  *
@@ -4295,7 +4369,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVirtApicAccessUnused(PVMCPU pVCpu, PRTGCPHYS pGCPh
         uint16_t const offAccess = *pGCPhysAccess & PAGE_OFFSET_MASK;
         uint32_t const fAccess   = IEM_ACCESS_TYPE_READ;
         uint16_t const cbAccess  = 1;
-        bool const fIntercept = iemVmxVirtApicIsAccessIntercepted(pVCpu, offAccess, cbAccess, fAccess);
+        bool const fIntercept = iemVmxVirtApicIsMemAccessIntercepted(pVCpu, offAccess, cbAccess, fAccess);
         if (fIntercept)
             return iemVmxVmexitApicAccess(pVCpu, offAccess, fAccess);
 
@@ -4334,7 +4408,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVirtApicAccessMem(PVMCPU pVCpu, uint16_t offAccess
            || (fAccess & IEM_ACCESS_TYPE_WRITE)
            || (fAccess & IEM_ACCESS_INSTRUCTION));
 
-    bool const fIntercept = iemVmxVirtApicIsAccessIntercepted(pVCpu, offAccess, cbAccess, fAccess);
+    bool const fIntercept = iemVmxVirtApicIsMemAccessIntercepted(pVCpu, offAccess, cbAccess, fAccess);
     if (fIntercept)
         return iemVmxVmexitApicAccess(pVCpu, offAccess, fAccess);
 
@@ -4363,7 +4437,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVirtApicAccessMem(PVMCPU pVCpu, uint16_t offAccess
          *
          * See Intel spec. 29.4.3.2 "APIC-Write Emulation".
          */
-        iemVmxVirtApicSignalAction(pVCpu, offAccess);
+        iemVmxVirtApicSetPostAction(pVCpu, offAccess);
     }
     else
     {
@@ -4494,7 +4568,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVirtApicAccessMsrWrite(PVMCPU pVCpu, uint32_t idMs
          * out whether to perform TPR, EOI or self-IPI virtualization as well as well
          * as for supplying the exit qualification when causing an APIC-write VM-exit.
          */
-        iemVmxVirtApicSignalAction(pVCpu, offReg);
+        iemVmxVirtApicSetPostAction(pVCpu, offReg);
 
         return VINF_VMX_MODIFIES_BEHAVIOR;
     }
@@ -4504,74 +4578,249 @@ IEM_STATIC VBOXSTRICTRC iemVmxVirtApicAccessMsrWrite(PVMCPU pVCpu, uint32_t idMs
 
 
 /**
- * VMX VM-exit handler for PPR virtualization.
+ * Finds the most significant set bit in a virtual-APIC 256-bit sparse register.
+ *
+ * @returns VBox status code.
+ * @retval  VINF_SUCCES when the highest set bit is found.
+ * @retval  VERR_NOT_FOUND when no bit is set.
+ *
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   offReg          The offset of the APIC 256-bit sparse register.
+ * @param   pidxHighestBit  Where to store the highest bit (most significant bit)
+ *                          set in the register. Only valid when VINF_SUCCESS is
+ *                          returned.
+ *
+ * @remarks The format of the 256-bit sparse register here mirrors that found in
+ *          real APIC hardware.
+ */
+static int iemVmxVirtApicGetHighestSetBitInReg(PVMCPU pVCpu, uint16_t offReg, uint8_t *pidxHighestBit)
+{
+    Assert(offReg < XAPIC_OFF_END + 4);
+    Assert(pidxHighestBit);
+
+    /*
+     * There are 8 contiguous fragments (of 16-bytes each) in the sparse register.
+     * However, in each fragment only the first 4 bytes are used.
+     */
+    uint8_t const cFrags = 8;
+    for (int8_t iFrag = cFrags; iFrag >= 0; iFrag--)
+    {
+        uint16_t const offFrag = iFrag * 16;
+        uint32_t const u32Frag = iemVmxVirtApicReadRaw32(pVCpu, offFrag);
+        if (!u32Frag)
+            continue;
+
+        unsigned idxHighestBit = ASMBitLastSetU32(u32Frag);
+        Assert(idxHighestBit > 0);
+        --idxHighestBit;
+        Assert(idxHighestBit <= UINT8_MAX);
+        *pidxHighestBit = idxHighestBit;
+        return VINF_SUCCESS;
+    }
+    return VERR_NOT_FOUND;
+}
+
+
+/**
+ * Evaluates pending virtual interrupts.
+ *
+ * @param   pVCpu       The cross context virtual CPU structure.
+ */
+IEM_STATIC void iemVmxEvalPendingVirtIntrs(PVMCPU pVCpu)
+{
+    PCVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
+    Assert(pVmcs);
+    Assert(pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_VIRT_INT_DELIVERY);
+
+    /** @todo NSTVMX: evaluate pending virtual interrupts. */
+    RT_NOREF(pVCpu);
+}
+
+
+/**
+ * Performs PPR virtualization.
  *
  * @returns VBox strict status code.
  * @param   pVCpu       The cross context virtual CPU structure.
  */
-IEM_STATIC void iemVmxVmexitPprVirtualization(PVMCPU pVCpu)
+IEM_STATIC void iemVmxPprVirtualization(PVMCPU pVCpu)
 {
     PCVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
     Assert(pVmcs);
-
     Assert(pVmcs->u32ProcCtls & VMX_PROC_CTLS_USE_TPR_SHADOW);
     Assert(pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_VIRT_INT_DELIVERY);
 
+    /*
+     * PPR virtualization is caused in response to a VM-entry, TPR-virtualization,
+     * or EOI-virtualization.
+     *
+     * See Intel spec. 29.1.3 "PPR Virtualization".
+     */
     uint32_t const uVTpr = iemVmxVirtApicReadRaw32(pVCpu, XAPIC_OFF_TPR);
-    uint32_t const uSvi  = pVmcs->u16GuestIntStatus >> 8;
+    uint32_t const uSvi  = RT_HI_U8(pVmcs->u16GuestIntStatus);
 
     uint32_t uVPpr;
     if (((uVTpr >> 4) & 0xf) >= ((uSvi >> 4) & 0xf))
         uVPpr = uVTpr & 0xff;
     else
         uVPpr = uSvi & 0xf0;
-
     iemVmxVirtApicWriteRaw32(pVCpu, XAPIC_OFF_PPR, uVPpr);
     Log2(("ppr_virt: uVTpr=%u uSvi=%u -> VM-exit\n", uVTpr, uSvi));
 }
 
 
 /**
- * VMX VM-exit handler for TPR virtualization.
+ * Performs VMX TPR virtualization.
  *
  * @returns VBox strict status code.
  * @param   pVCpu       The cross context virtual CPU structure.
- * @param   cbInstr     The instruction length in bytes.
  */
-IEM_STATIC VBOXSTRICTRC iemVmxVmexitTprVirtualization(PVMCPU pVCpu, uint8_t cbInstr)
+IEM_STATIC VBOXSTRICTRC iemVmxTprVirtualization(PVMCPU pVCpu)
 {
     PCVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
     Assert(pVmcs);
-
     Assert(pVmcs->u32ProcCtls & VMX_PROC_CTLS_USE_TPR_SHADOW);
-    Assert(!(pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_VIRT_INT_DELIVERY));    /* We don't support virtual-interrupt delivery yet. */
-    /** @todo NSTVMX: When virtual-interrupt delivery is present, call PPR virt. and
-     *        evaluate pending virtual interrupts. */
-
-    uint32_t const uTprThreshold = pVmcs->u32TprThreshold;
-    uint32_t const uVTpr         = iemVmxVirtApicReadRaw32(pVCpu, XAPIC_OFF_TPR);
 
     /*
-     * If the VTPR falls below the TPR threshold, we must cause a VM-exit.
+     * We should have already performed the virtual-APIC write to the TPR offset
+     * in the virtual-APIC page. We now perform TPR virtualization.
+     *
      * See Intel spec. 29.1.2 "TPR Virtualization".
      */
-    if (((uVTpr >> 4) & 0xf) < uTprThreshold)
+    if (!(pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_VIRT_INT_DELIVERY))
     {
-        Log2(("tpr_virt: uVTpr=%u uTprThreshold=%u -> VM-exit\n", uVTpr, uTprThreshold));
+        uint32_t const uTprThreshold = pVmcs->u32TprThreshold;
+        uint32_t const uVTpr         = iemVmxVirtApicReadRaw32(pVCpu, XAPIC_OFF_TPR);
 
         /*
-         * This is a trap-like VM-exit. We pass the instruction length along in the VM-exit
-         * instruction length field and let the VM-exit handler update the RIP when appropriate.
-         * It will then clear the VM-exit instruction length field before completing the VM-exit.
-         *
-         * The VM-exit qualification must be cleared.
+         * If the VTPR falls below the TPR threshold, we must cause a VM-exit.
+         * See Intel spec. 29.1.2 "TPR Virtualization".
          */
-        iemVmxVmcsSetExitInstrLen(pVCpu, cbInstr);
-        iemVmxVmcsSetExitQual(pVCpu, 0);
-        return iemVmxVmexit(pVCpu, VMX_EXIT_TPR_BELOW_THRESHOLD);
+        if (((uVTpr >> 4) & 0xf) < uTprThreshold)
+        {
+            Log2(("tpr_virt: uVTpr=%u uTprThreshold=%u -> VM-exit\n", uVTpr, uTprThreshold));
+            iemVmxVmcsSetExitQual(pVCpu, 0);
+            return iemVmxVmexit(pVCpu, VMX_EXIT_TPR_BELOW_THRESHOLD);
+        }
+    }
+    else
+    {
+        iemVmxPprVirtualization(pVCpu);
+        iemVmxEvalPendingVirtIntrs(pVCpu);
     }
 
-    return VINF_VMX_INTERCEPT_NOT_ACTIVE;
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Checks whether an EOI write for the given interrupt vector causes a VM-exit or
+ * not.
+ *
+ * @returns @c true if the EOI write is intercepted, @c false otherwise.
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   uVector     The interrupt that was acknowledged using an EOI.
+ */
+IEM_STATIC bool iemVmxIsEoiInterceptSet(PVMCPU pVCpu, uint8_t uVector)
+{
+    PCVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
+    Assert(pVmcs);
+    Assert(pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_VIRT_INT_DELIVERY);
+
+    if (uVector < 64)
+        return RT_BOOL(pVmcs->u64EoiExitBitmap0.u & RT_BIT_64(uVector));
+    if (uVector < 128)
+        return RT_BOOL(pVmcs->u64EoiExitBitmap1.u & RT_BIT_64(uVector));
+    if (uVector < 192)
+        return RT_BOOL(pVmcs->u64EoiExitBitmap2.u & RT_BIT_64(uVector));
+    return RT_BOOL(pVmcs->u64EoiExitBitmap3.u & RT_BIT_64(uVector));
+}
+
+
+/**
+ * Performs EOI virtualization.
+ *
+ * @returns VBox strict status code.
+ * @param   pVCpu       The cross context virtual CPU structure.
+ */
+IEM_STATIC VBOXSTRICTRC iemVmxEoiVirtualization(PVMCPU pVCpu)
+{
+    PVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
+    Assert(pVmcs);
+    Assert(pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_VIRT_INT_DELIVERY);
+
+    /*
+     * Clear the interrupt guest-interrupt as no longer in-service (ISR)
+     * and get the next guest-interrupt that's in-service (if any).
+     *
+     * See Intel spec. 29.1.4 "EOI Virtualization".
+     */
+    uint8_t const uRvi = RT_LO_U8(pVmcs->u16GuestIntStatus);
+    uint8_t const uSvi = RT_HI_U8(pVmcs->u16GuestIntStatus);
+
+    uint8_t uVector = uSvi;
+    iemVmxVirtApicClearVector(pVCpu, XAPIC_OFF_ISR0, uVector);
+
+    uVector = 0;
+    iemVmxVirtApicGetHighestSetBitInReg(pVCpu, XAPIC_OFF_ISR0, &uVector);
+
+    /* Update guest-interrupt status SVI (leave RVI portion as it is) in the VMCS. */
+    pVmcs->u16GuestIntStatus = RT_MAKE_U16(uRvi, uVector);
+
+    iemVmxPprVirtualization(pVCpu);
+    if (iemVmxIsEoiInterceptSet(pVCpu, uVector))
+        return iemVmxVmexitVirtEoi(pVCpu, uVector);
+    iemVmxEvalPendingVirtIntrs(pVCpu);
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Performs self-IPI virtualization.
+ *
+ * @returns VBox strict status code.
+ * @param   pVCpu       The cross context virtual CPU structure.
+ */
+IEM_STATIC VBOXSTRICTRC iemVmxSelfIpiVirtualization(PVMCPU pVCpu)
+{
+    PVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
+    Assert(pVmcs);
+    Assert(pVmcs->u32ProcCtls & VMX_PROC_CTLS_USE_TPR_SHADOW);
+
+    /*
+     * We should have already performed the virtual-APIC write to the self-IPI offset
+     * in the virtual-APIC page. We now perform self-IPI virtualization.
+     *
+     * See Intel spec. 29.1.5 "Self-IPI Virtualization".
+     */
+    uint8_t const uVector = iemVmxVirtApicReadRaw32(pVCpu, X2APIC_OFF_SELF_IPI);
+
+    iemVmxVirtApicSetVector(pVCpu, XAPIC_OFF_IRR0, uVector);
+    uint8_t const uRvi = RT_LO_U8(pVmcs->u16GuestIntStatus);
+    uint8_t const uSvi = RT_HI_U8(pVmcs->u16GuestIntStatus);
+    if (uVector > uRvi)
+        pVmcs->u16GuestIntStatus = RT_MAKE_U16(uVector, uSvi);
+    iemVmxEvalPendingVirtIntrs(pVCpu);
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Performs VMX APIC-write emulation.
+ *
+ * @returns VBox strict status code.
+ * @param   pVCpu       The cross context virtual CPU structure.
+ */
+IEM_STATIC VBOXSTRICTRC iemVmxApicWriteEmulation(PVMCPU pVCpu)
+{
+    PCVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
+    Assert(pVmcs);
+    Assert(pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_APIC_REG_VIRT);
+
+    /** @todo NSTVMX: APIC-write emulation. */
+    RT_NOREF(pVCpu);
+
+    return VERR_IEM_ASPECT_NOT_IMPLEMENTED;
 }
 
 
