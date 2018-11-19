@@ -150,6 +150,7 @@
 
 
 #ifndef VBOX_DEVICE_STRUCT_TESTCASE
+#ifdef IN_RING3
 
 /* -=-=-=-=- Misc Helpers -=-=-=-=- */
 
@@ -228,6 +229,9 @@ static void vmmdevLogGuestOsInfo(VBoxGuestInfo *pGuestInfo)
             pGuestInfo->osType & VBOXOSTYPE_x64 ? 64 : 32));
 }
 
+#endif /* IN_RING3 */
+
+
 /**
  * Sets the IRQ (raise it or lower it) for 1.03 additions.
  *
@@ -240,13 +244,13 @@ static void vmmdevSetIRQ_Legacy(PVMMDEV pThis)
     if (pThis->fu32AdditionsOk)
     {
         /* Filter unsupported events */
-        uint32_t fEvents = pThis->u32HostEventFlags & pThis->pVMMDevRAMR3->V.V1_03.u32GuestEventMask;
+        uint32_t fEvents = pThis->u32HostEventFlags & pThis->CTX_SUFF(pVMMDevRAM)->V.V1_03.u32GuestEventMask;
 
         Log(("vmmdevSetIRQ: fEvents=%#010x, u32HostEventFlags=%#010x, u32GuestEventMask=%#010x.\n",
-             fEvents, pThis->u32HostEventFlags, pThis->pVMMDevRAMR3->V.V1_03.u32GuestEventMask));
+             fEvents, pThis->u32HostEventFlags, pThis->CTX_SUFF(pVMMDevRAM)->V.V1_03.u32GuestEventMask));
 
         /* Move event flags to VMMDev RAM */
-        pThis->pVMMDevRAMR3->V.V1_03.u32HostEvents = fEvents;
+        pThis->CTX_SUFF(pVMMDevRAM)->V.V1_03.u32HostEvents = fEvents;
 
         uint32_t uIRQLevel = 0;
         if (fEvents)
@@ -259,12 +263,15 @@ static void vmmdevSetIRQ_Legacy(PVMMDEV pThis)
 
         /* Set IRQ level for pin 0 (see NoWait comment in vmmdevMaybeSetIRQ). */
         /** @todo make IRQ pin configurable, at least a symbolic constant */
-        PDMDevHlpPCISetIrqNoWait(pThis->pDevIns, 0, uIRQLevel);
+        PDMDevHlpPCISetIrqNoWait(pThis->CTX_SUFF(pDevIns), 0, uIRQLevel);
         Log(("vmmdevSetIRQ: IRQ set %d\n", uIRQLevel));
     }
     else
         Log(("vmmdevSetIRQ: IRQ is not generated, guest has not yet reported to us.\n"));
 }
+
+
+#ifdef IN_RING3
 
 /**
  * Sets the IRQ if there are events to be delivered.
@@ -286,7 +293,7 @@ static void vmmdevMaybeSetIRQ(PVMMDEV pThis)
          *       which has already happened.
          */
         pThis->pVMMDevRAMR3->V.V1_04.fHaveEvents = true;
-        PDMDevHlpPCISetIrqNoWait(pThis->pDevIns, 0, 1);
+        PDMDevHlpPCISetIrqNoWait(pThis->pDevInsR3, 0, 1);
         Log3(("vmmdevMaybeSetIRQ: IRQ set.\n"));
     }
 }
@@ -355,7 +362,7 @@ void VMMDevNotifyGuest(PVMMDEV pThis, uint32_t fAddEvents)
     /*
      * Only notify the VM when it's running.
      */
-    VMSTATE enmVMState = PDMDevHlpVMState(pThis->pDevIns);
+    VMSTATE enmVMState = PDMDevHlpVMState(pThis->pDevInsR3);
 /** @todo r=bird: Shouldn't there be more states here?  Wouldn't we drop
  *        notifications now when we're in the process of suspending or
  *        similar? */
@@ -442,7 +449,7 @@ static int vmmdevReqHandler_ReportGuestInfo(PVMMDEV pThis, VMMDevRequestHeader *
         return VERR_VERSION_MISMATCH;
 
     /* Clear our IRQ in case it was high for whatever reason. */
-    PDMDevHlpPCISetIrqNoWait(pThis->pDevIns, 0, 0);
+    PDMDevHlpPCISetIrqNoWait(pThis->pDevInsR3, 0, 0);
 
     return VINF_SUCCESS;
 }
@@ -562,14 +569,14 @@ static int vmmDevReqHandler_NtBugCheck(PVMMDEV pThis, VMMDevRequestHeader *pReqH
     if (pReqHdr->size == sizeof(VMMDevReqNtBugCheck))
     {
         VMMDevReqNtBugCheck const *pReq = (VMMDevReqNtBugCheck const *)pReqHdr;
-        DBGFR3ReportBugCheck(PDMDevHlpGetVM(pThis->pDevIns), PDMDevHlpGetVMCPU(pThis->pDevIns), DBGFEVENT_BSOD_VMMDEV,
+        DBGFR3ReportBugCheck(PDMDevHlpGetVM(pThis->pDevInsR3), PDMDevHlpGetVMCPU(pThis->pDevInsR3), DBGFEVENT_BSOD_VMMDEV,
                              pReq->uBugCheck, pReq->auParameters[0], pReq->auParameters[1],
                              pReq->auParameters[2], pReq->auParameters[3]);
     }
     else if (pReqHdr->size == sizeof(VMMDevRequestHeader))
     {
         LogRel(("VMMDev: NT BugCheck w/o data.\n"));
-        DBGFR3ReportBugCheck(PDMDevHlpGetVM(pThis->pDevIns), PDMDevHlpGetVMCPU(pThis->pDevIns), DBGFEVENT_BSOD_VMMDEV,
+        DBGFR3ReportBugCheck(PDMDevHlpGetVM(pThis->pDevInsR3), PDMDevHlpGetVMCPU(pThis->pDevInsR3), DBGFEVENT_BSOD_VMMDEV,
                              0, 0, 0, 0, 0);
     }
     else
@@ -723,7 +730,7 @@ static int vmmdevReqHandler_ReportGuestInfo2(PVMMDEV pThis, VMMDevRequestHeader 
         pThis->pDrv->pfnUpdateGuestInfo2(pThis->pDrv, uFullVersion, pszName, pInfo2->additionsRevision, pInfo2->additionsFeatures);
 
     /* Clear our IRQ in case it was high for whatever reason. */
-    PDMDevHlpPCISetIrqNoWait(pThis->pDevIns, 0, 0);
+    PDMDevHlpPCISetIrqNoWait(pThis->pDevInsR3, 0, 0);
 
     return VINF_SUCCESS;
 }
@@ -1161,7 +1168,7 @@ static int vmmdevReqHandler_GetHostTime(PVMMDEV pThis, VMMDevRequestHeader *pReq
     if (RT_LIKELY(!pThis->fGetHostTimeDisabled))
     {
         RTTIMESPEC now;
-        pReq->time = RTTimeSpecGetMilli(PDMDevHlpTMUtcNow(pThis->pDevIns, &now));
+        pReq->time = RTTimeSpecGetMilli(PDMDevHlpTMUtcNow(pThis->pDevInsR3, &now));
         return VINF_SUCCESS;
     }
     return VERR_NOT_SUPPORTED;
@@ -1180,7 +1187,7 @@ static int vmmdevReqHandler_GetHypervisorInfo(PVMMDEV pThis, VMMDevRequestHeader
     VMMDevReqHypervisorInfo *pReq = (VMMDevReqHypervisorInfo *)pReqHdr;
     AssertMsgReturn(pReq->header.size == sizeof(*pReq), ("%u\n", pReq->header.size), VERR_INVALID_PARAMETER);
 
-    return PGMR3MappingsSize(PDMDevHlpGetVM(pThis->pDevIns), &pReq->hypervisorSize);
+    return PGMR3MappingsSize(PDMDevHlpGetVM(pThis->pDevInsR3), &pReq->hypervisorSize);
 }
 
 
@@ -1197,7 +1204,7 @@ static int vmmdevReqHandler_SetHypervisorInfo(PVMMDEV pThis, VMMDevRequestHeader
     AssertMsgReturn(pReq->header.size == sizeof(*pReq), ("%u\n", pReq->header.size), VERR_INVALID_PARAMETER);
 
     int rc;
-    PVM pVM = PDMDevHlpGetVM(pThis->pDevIns);
+    PVM pVM = PDMDevHlpGetVM(pThis->pDevInsR3);
     if (pReq->hypervisorStart == 0)
         rc = PGMR3MappingsUnfix(pVM);
     else
@@ -1231,7 +1238,7 @@ static int vmmdevReqHandler_RegisterPatchMemory(PVMMDEV pThis, VMMDevRequestHead
     VMMDevReqPatchMemory *pReq = (VMMDevReqPatchMemory *)pReqHdr;
     AssertMsgReturn(pReq->header.size == sizeof(*pReq), ("%u\n", pReq->header.size), VERR_INVALID_PARAMETER);
 
-    return VMMR3RegisterPatchMemory(PDMDevHlpGetVM(pThis->pDevIns), pReq->pPatchMem, pReq->cbPatchMem);
+    return VMMR3RegisterPatchMemory(PDMDevHlpGetVM(pThis->pDevInsR3), pReq->pPatchMem, pReq->cbPatchMem);
 }
 
 
@@ -1247,7 +1254,7 @@ static int vmmdevReqHandler_DeregisterPatchMemory(PVMMDEV pThis, VMMDevRequestHe
     VMMDevReqPatchMemory *pReq = (VMMDevReqPatchMemory *)pReqHdr;
     AssertMsgReturn(pReq->header.size == sizeof(*pReq), ("%u\n", pReq->header.size), VERR_INVALID_PARAMETER);
 
-    return VMMR3DeregisterPatchMemory(PDMDevHlpGetVM(pThis->pDevIns), pReq->pPatchMem, pReq->cbPatchMem);
+    return VMMR3DeregisterPatchMemory(PDMDevHlpGetVM(pThis->pDevInsR3), pReq->pPatchMem, pReq->cbPatchMem);
 }
 
 
@@ -1268,13 +1275,13 @@ static int vmmdevReqHandler_SetPowerStatus(PVMMDEV pThis, VMMDevRequestHeader *p
         case VMMDevPowerState_Pause:
         {
             LogRel(("VMMDev: Guest requests the VM to be suspended (paused)\n"));
-            return PDMDevHlpVMSuspend(pThis->pDevIns);
+            return PDMDevHlpVMSuspend(pThis->pDevInsR3);
         }
 
         case VMMDevPowerState_PowerOff:
         {
             LogRel(("VMMDev: Guest requests the VM to be turned off\n"));
-            return PDMDevHlpVMPowerOff(pThis->pDevIns);
+            return PDMDevHlpVMPowerOff(pThis->pDevInsR3);
         }
 
         case VMMDevPowerState_SaveState:
@@ -1282,7 +1289,7 @@ static int vmmdevReqHandler_SetPowerStatus(PVMMDEV pThis, VMMDevRequestHeader *p
             if (true /*pThis->fAllowGuestToSaveState*/)
             {
                 LogRel(("VMMDev: Guest requests the VM to be saved and powered off\n"));
-                return PDMDevHlpVMSuspendSaveAndPowerOff(pThis->pDevIns);
+                return PDMDevHlpVMSuspendSaveAndPowerOff(pThis->pDevInsR3);
             }
             LogRel(("VMMDev: Guest requests the VM to be saved and powered off, declined\n"));
             return VERR_ACCESS_DENIED;
@@ -1662,6 +1669,8 @@ static int vmmdevReqHandler_GetHeightReduction(PVMMDEV pThis, VMMDevRequestHeade
     return pThis->pDrv->pfnGetHeightReduction(pThis->pDrv, &pReq->heightReduction);
 }
 
+#endif /* IN_RING3 */
+
 
 /**
  * Handles VMMDevReq_AcknowledgeEvents.
@@ -1674,9 +1683,13 @@ static int vmmdevReqHandler_AcknowledgeEvents(PVMMDEV pThis, VMMDevRequestHeader
 {
     VMMDevEvents *pReq = (VMMDevEvents *)pReqHdr;
     AssertMsgReturn(pReq->header.size == sizeof(*pReq), ("%u\n", pReq->header.size), VERR_INVALID_PARAMETER);
+    STAM_REL_COUNTER_INC(&pThis->StatSlowIrqAck);
 
     if (!VMMDEV_INTERFACE_VERSION_IS_1_03(pThis))
     {
+        /*
+         * Note! This code is duplicated in vmmdevFastRequestIrqAck.
+         */
         if (pThis->fNewGuestFilterMask)
         {
             pThis->fNewGuestFilterMask = false;
@@ -1686,14 +1699,17 @@ static int vmmdevReqHandler_AcknowledgeEvents(PVMMDEV pThis, VMMDevRequestHeader
         pReq->events = pThis->u32HostEventFlags & pThis->u32GuestFilterMask;
 
         pThis->u32HostEventFlags &= ~pThis->u32GuestFilterMask;
-        pThis->pVMMDevRAMR3->V.V1_04.fHaveEvents = false;
-        PDMDevHlpPCISetIrqNoWait(pThis->pDevIns, 0, 0);
+        pThis->CTX_SUFF(pVMMDevRAM)->V.V1_04.fHaveEvents = false;
+
+        PDMDevHlpPCISetIrqNoWait(pThis->CTX_SUFF(pDevIns), 0, 0);
     }
     else
         vmmdevSetIRQ_Legacy(pThis);
     return VINF_SUCCESS;
 }
 
+
+#ifdef IN_RING3
 
 /**
  * Handles VMMDevReq_CtlGuestFilterMask.
@@ -2047,7 +2063,7 @@ static int vmmdevReqHandler_ChangeMemBalloon(PVMMDEV pThis, VMMDevRequestHeader 
                     ("%u\n", pReq->header.size), VERR_INVALID_PARAMETER);
 
     Log(("VMMDevReq_ChangeMemBalloon\n"));
-    int rc = PGMR3PhysChangeMemBalloon(PDMDevHlpGetVM(pThis->pDevIns), !!pReq->fInflate, pReq->cPages, pReq->aPhysPage);
+    int rc = PGMR3PhysChangeMemBalloon(PDMDevHlpGetVM(pThis->pDevInsR3), !!pReq->fInflate, pReq->cPages, pReq->aPhysPage);
     if (pReq->fInflate)
         STAM_REL_U32_INC(&pThis->StatMemBalloonChunks);
     else
@@ -2283,7 +2299,7 @@ static int vmmdevReqHandler_GetHostVersion(VMMDevRequestHeader *pReqHdr)
     pReq->minor     = RTBldCfgVersionMinor();
     pReq->build     = RTBldCfgVersionBuild();
     pReq->revision  = RTBldCfgRevision();
-    pReq->features  = VMMDEV_HVF_HGCM_PHYS_PAGE_LIST;
+    pReq->features  = VMMDEV_HVF_HGCM_PHYS_PAGE_LIST | VMMDEV_HVF_HGCM_EMBEDDED_BUFFERS | VMMDEV_HVF_FAST_IRQ_ACK;
     return VINF_SUCCESS;
 }
 
@@ -2405,7 +2421,7 @@ static int vmmdevReqHandler_RegisterSharedModule(PVMMDEV pThis, VMMDevRequestHea
     /*
      * Forward the request to the VMM.
      */
-    return PGMR3SharedModuleRegister(PDMDevHlpGetVM(pThis->pDevIns), pReq->enmGuestOS, pReq->szName, pReq->szVersion,
+    return PGMR3SharedModuleRegister(PDMDevHlpGetVM(pThis->pDevInsR3), pReq->enmGuestOS, pReq->szName, pReq->szVersion,
                                      pReq->GCBaseAddr, pReq->cbModule, pReq->cRegions, pReq->aRegions);
 }
 
@@ -2435,7 +2451,7 @@ static int vmmdevReqHandler_UnregisterSharedModule(PVMMDEV pThis, VMMDevRequestH
     /*
      * Forward the request to the VMM.
      */
-    return PGMR3SharedModuleUnregister(PDMDevHlpGetVM(pThis->pDevIns), pReq->szName, pReq->szVersion,
+    return PGMR3SharedModuleUnregister(PDMDevHlpGetVM(pThis->pDevInsR3), pReq->szName, pReq->szVersion,
                                        pReq->GCBaseAddr, pReq->cbModule);
 }
 
@@ -2451,7 +2467,7 @@ static int vmmdevReqHandler_CheckSharedModules(PVMMDEV pThis, VMMDevRequestHeade
     VMMDevSharedModuleCheckRequest *pReq = (VMMDevSharedModuleCheckRequest *)pReqHdr;
     AssertMsgReturn(pReq->header.size == sizeof(VMMDevSharedModuleCheckRequest),
                     ("%u\n", pReq->header.size), VERR_INVALID_PARAMETER);
-    return PGMR3SharedModuleCheckAll(PDMDevHlpGetVM(pThis->pDevIns));
+    return PGMR3SharedModuleCheckAll(PDMDevHlpGetVM(pThis->pDevInsR3));
 }
 
 /**
@@ -2489,7 +2505,7 @@ static int vmmdevReqHandler_DebugIsPageShared(PVMMDEV pThis, VMMDevRequestHeader
                     ("%u\n", pReq->header.size), VERR_INVALID_PARAMETER);
 
 # ifdef DEBUG
-    return PGMR3SharedModuleGetPageState(PDMDevHlpGetVM(pThis->pDevIns), pReq->GCPtrPage, &pReq->fShared, &pReq->uPageFlags);
+    return PGMR3SharedModuleGetPageState(PDMDevHlpGetVM(pThis->pDevInsR3), pReq->GCPtrPage, &pReq->fShared, &pReq->uPageFlags);
 # else
     RT_NOREF1(pThis);
     return VERR_NOT_IMPLEMENTED;
@@ -2549,7 +2565,7 @@ static int vmmdevReqHandler_WriteCoreDump(PVMMDEV pThis, VMMDevRequestHeader *pR
     /*
      * Write the core file.
      */
-    PUVM pUVM = PDMDevHlpGetUVM(pThis->pDevIns);
+    PUVM pUVM = PDMDevHlpGetUVM(pThis->pDevInsR3);
     return DBGFR3CoreWrite(pUVM, szCorePath, true /*fReplaceFile*/);
 }
 
@@ -2569,7 +2585,7 @@ DECLINLINE(void) vmmdevReqHdrSetHgcmAsyncExecute(PVMMDEV pThis, RTGCPHYS GCPhysR
     else
     {
         int32_t rcReq = VINF_HGCM_ASYNC_EXECUTE;
-        PDMDevHlpPhysWrite(pThis->pDevIns, GCPhysReqHdr + RT_UOFFSETOF(VMMDevRequestHeader, rc), &rcReq, sizeof(rcReq));
+        PDMDevHlpPhysWrite(pThis->pDevInsR3, GCPhysReqHdr + RT_UOFFSETOF(VMMDevRequestHeader, rc), &rcReq, sizeof(rcReq));
     }
 }
 
@@ -2869,8 +2885,8 @@ static int vmmdevReqDispatcher(PVMMDEV pThis, VMMDevRequestHeader *pReqHdr, RTGC
 
 
 /**
- * @callback_method_impl{FNIOMIOPORTOUT, Port I/O Handler for the generic
- *                      request interface.}
+ * @callback_method_impl{FNIOMIOPORTOUT,
+ * Port I/O write andler for the generic request interface.}
  */
 static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
 {
@@ -2930,7 +2946,7 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
              * of the EMTs, so we keep a 4KB buffer for each EMT around to avoid
              * wasting time with the heap.  Larger allocations goes to the heap, though.
              */
-            VMCPUID              iCpu = PDMDevHlpGetCurrentCpuId(pThis->pDevIns);
+            VMCPUID              iCpu = PDMDevHlpGetCurrentCpuId(pDevIns);
             VMMDevRequestHeader *pRequestHeaderFree = NULL;
             VMMDevRequestHeader *pRequestHeader     = NULL;
             if (   requestHeader.size <= _4K
@@ -3025,6 +3041,175 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
     return rcRet;
 }
 
+#endif /* IN_RING3 */
+
+
+/**
+ * @callback_method_impl{FNIOMIOPORTOUT,
+ * Port I/O write handler for requests that can be handled w/o going to ring-3.}
+ */
+PDMBOTHCBDECL(int) vmmdevFastRequestHandler(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
+{
+#ifndef IN_RING3
+# if 0 /* This functionality is offered through reading the port (vmmdevFastRequestIrqAck). Leaving it here for later. */
+    PVMMDEV pThis = (VMMDevState *)pvUser;
+    Assert(PDMINS_2_DATA(pDevIns, PVMMDEV) == pThis);
+    RT_NOREF2(Port, cb);
+
+    /*
+     * We only process a limited set of requests here, reflecting the rest down
+     * to ring-3.  So, try read the whole request into a stack buffer and check
+     * if we can handle it.
+     */
+    union
+    {
+        VMMDevRequestHeader Hdr;
+        VMMDevEvents        Ack;
+    } uReq;
+    RT_ZERO(uReq);
+
+    VBOXSTRICTRC rcStrict;
+    if (pThis->fu32AdditionsOk)
+    {
+        /* Read it into memory. */
+        uint32_t cbToRead = sizeof(uReq); /* (Adjust to stay within a page if we support more than ack requests.) */
+        rcStrict = PDMDevHlpPhysRead(pDevIns, u32, &uReq, cbToRead);
+        if (rcStrict == VINF_SUCCESS)
+        {
+            /*
+             * Validate the request and check that we want to handle it here.
+             */
+            if (   uReq.Hdr.size        >= sizeof(uReq.Hdr)
+                && uReq.Hdr.version     == VMMDEV_REQUEST_HEADER_VERSION
+                && (   uReq.Hdr.requestType == VMMDevReq_AcknowledgeEvents
+                    && uReq.Hdr.size        == sizeof(uReq.Ack)
+                    && cbToRead             == sizeof(uReq.Ack)
+                    && pThis->CTX_SUFF(pVMMDevRAM) != NULL)
+               )
+            {
+                RT_UNTRUSTED_VALIDATED_FENCE();
+
+                /*
+                 * Try grab the critical section.
+                 */
+                int rc2 = PDMCritSectEnter(&pThis->CritSect, VINF_IOM_R3_IOPORT_WRITE);
+                if (rc2 == VINF_SUCCESS)
+                {
+                    /*
+                     * Handle the request and write back the result to the guest.
+                     */
+                    uReq.Hdr.rc = vmmdevReqHandler_AcknowledgeEvents(pThis, &uReq.Hdr);
+
+                    rcStrict = PDMDevHlpPhysWrite(pDevIns, u32, &uReq, uReq.Hdr.size);
+                    PDMCritSectLeave(&pThis->CritSect);
+                    if (rcStrict == VINF_SUCCESS)
+                    { /* likely */ }
+                    else
+                        Log(("vmmdevFastRequestHandler: PDMDevHlpPhysWrite(%#RX32+rc,4) -> %Rrc (%RTbool)\n",
+                             u32, VBOXSTRICTRC_VAL(rcStrict), PGM_PHYS_RW_IS_SUCCESS(rcStrict) ));
+                }
+                else
+                {
+                    Log(("vmmdevFastRequestHandler: PDMCritSectEnter -> %Rrc\n", rc2));
+                    rcStrict = rc2;
+                }
+            }
+            else
+            {
+                Log(("vmmdevFastRequestHandler: size=%#x version=%#x requestType=%d (pVMMDevRAM=%p) -> R3\n",
+                     uReq.Hdr.size, uReq.Hdr.version, uReq.Hdr.requestType, pThis->CTX_SUFF(pVMMDevRAM) ));
+                rcStrict = VINF_IOM_R3_IOPORT_WRITE;
+            }
+        }
+        else
+            Log(("vmmdevFastRequestHandler: PDMDevHlpPhysRead(%#RX32,%#RX32) -> %Rrc\n", u32, cbToRead, VBOXSTRICTRC_VAL(rcStrict)));
+    }
+    else
+    {
+        Log(("vmmdevFastRequestHandler: additions nok-okay\n"));
+        rcStrict = VINF_IOM_R3_IOPORT_WRITE;
+    }
+
+    return VBOXSTRICTRC_VAL(rcStrict);
+# else
+    RT_NOREF(pDevIns, pvUser, Port, u32, cb);
+    return VINF_IOM_R3_IOPORT_WRITE;
+# endif
+
+#else  /* IN_RING3 */
+    return vmmdevRequestHandler(pDevIns, pvUser, Port, u32, cb);
+#endif /* IN_RING3 */
+}
+
+
+/**
+ * @callback_method_impl{FNIOMIOPORTIN,
+ * Port I/O read handler for IRQ acknowledging and getting pending events (same
+ * as VMMDevReq_AcknowledgeEvents, just faster).}
+ */
+PDMBOTHCBDECL(int) vmmdevFastRequestIrqAck(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
+{
+    PVMMDEV pThis = (VMMDevState *)pvUser;
+    Assert(PDMINS_2_DATA(pDevIns, PVMMDEV) == pThis);
+    RT_NOREF(Port);
+
+    /* Only 32-bit accesses. */
+    ASSERT_GUEST_MSG_RETURN(cb == sizeof(uint32_t), ("cb=%d\n", cb), VERR_IOM_IOPORT_UNUSED);
+
+    /* The VMMDev memory mapping might've failed, go to ring-3 in that case. */
+    VBOXSTRICTRC rcStrict;
+#ifndef IN_RING3
+    if (pThis->CTX_SUFF(pVMMDevRAM) != NULL)
+#endif
+    {
+        /* Enter critical section and check that the additions has been properly
+           initialized and that we're not in legacy v1.3 device mode. */
+        rcStrict = PDMCritSectEnter(&pThis->CritSect, VINF_IOM_R3_IOPORT_READ);
+        if (rcStrict == VINF_SUCCESS)
+        {
+            if (   pThis->fu32AdditionsOk
+                && !VMMDEV_INTERFACE_VERSION_IS_1_03(pThis))
+            {
+                /*
+                 * Do the job.
+                 *
+                 * Note! This code is duplicated in vmmdevReqHandler_AcknowledgeEvents.
+                 */
+                STAM_REL_COUNTER_INC(&pThis->CTX_SUFF_Z(StatFastIrqAck));
+
+                if (pThis->fNewGuestFilterMask)
+                {
+                    pThis->fNewGuestFilterMask = false;
+                    pThis->u32GuestFilterMask = pThis->u32NewGuestFilterMask;
+                }
+
+                *pu32 = pThis->u32HostEventFlags & pThis->u32GuestFilterMask;
+
+                pThis->u32HostEventFlags &= ~pThis->u32GuestFilterMask;
+                pThis->CTX_SUFF(pVMMDevRAM)->V.V1_04.fHaveEvents = false;
+
+                PDMDevHlpPCISetIrqNoWait(pDevIns, 0, 0);
+            }
+            else
+            {
+                Log(("vmmdevFastRequestIrqAck: fu32AdditionsOk=%d interfaceVersion=%#x\n", pThis->fu32AdditionsOk,
+                     pThis->guestInfo.interfaceVersion));
+                *pu32 = UINT32_MAX;
+            }
+
+            PDMCritSectLeave(&pThis->CritSect);
+        }
+    }
+#ifndef IN_RING3
+    else
+        rcStrict = VINF_IOM_R3_IOPORT_READ;
+#endif
+    return VBOXSTRICTRC_VAL(rcStrict);
+}
+
+
+
+#ifdef IN_RING3
 
 /* -=-=-=-=-=- PCI Device -=-=-=-=-=- */
 
@@ -3116,7 +3301,24 @@ static DECLCALLBACK(int) vmmdevIOPortRegionMap(PPDMDEVINS pDevIns, PPDMPCIDEV pP
      */
     int rc = PDMDevHlpIOPortRegister(pDevIns, (RTIOPORT)GCPhysAddress + VMMDEV_PORT_OFF_REQUEST, 1,
                                      pThis, vmmdevRequestHandler, NULL, NULL, NULL, "VMMDev Request Handler");
-    AssertRC(rc);
+    AssertLogRelRCReturn(rc, rc);
+
+    /* The fast one: */
+    rc = PDMDevHlpIOPortRegister(pDevIns, (RTIOPORT)GCPhysAddress + VMMDEV_PORT_OFF_REQUEST_FAST, 1,
+                                 pThis, vmmdevFastRequestHandler, vmmdevFastRequestIrqAck, NULL, NULL, "VMMDev Fast R0/RC Requests");
+    AssertLogRelRCReturn(rc, rc);
+    if (pThis->fRZEnabled)
+    {
+        rc = PDMDevHlpIOPortRegisterR0(pDevIns, (RTIOPORT)GCPhysAddress + VMMDEV_PORT_OFF_REQUEST_FAST, 1,
+                                       PDMINS_2_DATA_R0PTR(pDevIns), "vmmdevFastRequestHandler", "vmmdevFastRequestIrqAck",
+                                       NULL, NULL, "VMMDev Fast R0/RC Requests");
+        AssertLogRelRCReturn(rc, rc);
+        rc = PDMDevHlpIOPortRegisterRC(pDevIns, (RTIOPORT)GCPhysAddress + VMMDEV_PORT_OFF_REQUEST_FAST, 1,
+                                       PDMINS_2_DATA_RCPTR(pDevIns), "vmmdevFastRequestHandler", "vmmdevFastRequestIrqAck",
+                                       NULL, NULL, "VMMDev Fast R0/RC Requests");
+        AssertLogRelRCReturn(rc, rc);
+    }
+
     return rc;
 }
 
@@ -4098,8 +4300,15 @@ static DECLCALLBACK(void) vmmdevReset(PPDMDEVINS pDevIns)
  */
 static DECLCALLBACK(void) vmmdevRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
 {
-    NOREF(pDevIns);
-    NOREF(offDelta);
+    if (offDelta)
+    {
+        PVMMDEV pThis = PDMINS_2_DATA(pDevIns, PVMMDEV);
+        LogFlow(("vmmdevRelocate: offDelta=%RGv\n", offDelta));
+
+        if (pThis->pVMMDevRAMRC)
+            pThis->pVMMDevRAMRC += offDelta;
+        pThis->pDevInsRC = PDMDEVINS_2_RCPTR(pDevIns);
+    }
 }
 
 
@@ -4163,7 +4372,9 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
      * Initialize data (most of it anyway).
      */
     /* Save PDM device instance data for future reference. */
-    pThis->pDevIns = pDevIns;
+    pThis->pDevInsR3 = pDevIns;
+    pThis->pDevInsR0 = PDMDEVINS_2_R0PTR(pDevIns);
+    pThis->pDevInsRC = PDMDEVINS_2_RCPTR(pDevIns);
 
     /* PCI vendor, just a free bogus value */
     PCIDevSetVendorId(&pThis->PciDev, 0x80ee);
@@ -4378,6 +4589,9 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
 
     /*
      * Allocate and initialize the MMIO2 memory.
+     *
+     * We map the first page into raw-mode and kernel contexts so we can handle
+     * interrupt acknowledge requests more timely.
      */
     rc = PDMDevHlpMMIO2Register(pDevIns, &pThis->PciDev, 1 /*iRegion*/, VMMDEV_RAM_SIZE, 0 /*fFlags*/,
                                 (void **)&pThis->pVMMDevRAMR3, "VMMDev");
@@ -4385,7 +4599,24 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
         return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
                                    N_("Failed to allocate %u bytes of memory for the VMM device"), VMMDEV_RAM_SIZE);
     vmmdevInitRam(pThis);
+    if (pThis->fRZEnabled)
+    {
+        rc = PDMDevHlpMMIO2MapKernel(pDevIns, &pThis->PciDev, 1 /*iRegion*/, 0 /*off*/, PAGE_SIZE, "VMMDev", &pThis->pVMMDevRAMR0);
+        if (RT_FAILURE(rc))
+            return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
+                                       N_("Failed to map first page of the VMMDev ram into kernel space: %Rrc"), rc);
 
+#ifdef VBOX_WITH_RAW_MODE
+        rc = PDMDevHlpMMHyperMapMMIO2(pDevIns, &pThis->PciDev, 1 /*iRegion*/, 0 /*off*/, PAGE_SIZE, "VMMDev", &pThis->pVMMDevRAMRC);
+        if (RT_FAILURE(rc))
+            return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
+                                       N_("Failed to map first page of the VMMDev ram into raw-mode context: %Rrc"), rc);
+#endif
+    }
+
+    /*
+     * Allocate and initialize the MMIO2 heap.
+     */
     if (pThis->fHeapEnabled)
     {
         rc = PDMDevHlpMMIO2Register(pDevIns, &pThis->PciDev, 2 /*iRegion*/, VMMDEV_HEAP_SIZE, 0 /*fFlags*/,
@@ -4482,7 +4713,16 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
     /*
      * Statistics.
      */
-    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatMemBalloonChunks, STAMTYPE_U32, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT, "Memory balloon size", "/Devices/VMMDev/BalloonChunks");
+    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatMemBalloonChunks, STAMTYPE_U32, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                           "Memory balloon size",                           "/Devices/VMMDev/BalloonChunks");
+    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatFastIrqAckR3,      STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                           "Fast IRQ acknowledgments handled in ring-3.",   "/Devices/VMMDev/FastIrqAckR3");
+    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatFastIrqAckRZ,      STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                           "Fast IRQ acknowledgments handled in ring-0 or raw-mode.", "/Devices/VMMDev/FastIrqAckRZ");
+    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatSlowIrqAck,        STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                           "Slow IRQ acknowledgments (old style).",         "/Devices/VMMDev/SlowIrqAck");
+    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatReqBufAllocs,      STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                           "Times a larger request buffer was required.",   "/Devices/VMMDev/LargeReqBufAllocs");
 #ifdef VBOX_WITH_HGCM
     PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatHgcmCmdArrival,    STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL,
                            "Profiling HGCM call arrival processing",        "/HGCM/MsgArrival");
@@ -4493,8 +4733,6 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
     PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatHgcmLargeCmdAllocs,STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
                            "Times the allocation cache could not be used.", "/HGCM/LargeCmdAllocs");
 #endif
-    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatReqBufAllocs,      STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
-                           "Times a larger request buffer was required.",   "/HGCM/LargeReqBufAllocs");
 
     /*
      * Generate a unique session id for this VM; it will be changed for each
@@ -4559,5 +4797,5 @@ extern "C" const PDMDEVREG g_DeviceVMMDev =
     /* u32VersionEnd */
     PDM_DEVREG_VERSION
 };
+#endif /* IN_RING3 */
 #endif /* !VBOX_DEVICE_STRUCT_TESTCASE */
-

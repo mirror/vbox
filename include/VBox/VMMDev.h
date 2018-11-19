@@ -64,6 +64,9 @@ RT_C_DECLS_BEGIN
 
 /** Port for generic request interface (relative offset). */
 #define VMMDEV_PORT_OFF_REQUEST                             0
+/** Port for requests that can be handled w/o going to ring-3 (relative offset).
+ * This works like VMMDevReq_AcknowledgeEvents when read.  */
+#define VMMDEV_PORT_OFF_REQUEST_FAST                        8
 
 
 /** @defgroup grp_vmmdev_req    VMMDev Generic Request Interface
@@ -528,10 +531,14 @@ typedef struct
 } VMMDevReqHostVersion;
 AssertCompileSize(VMMDevReqHostVersion, 24+16);
 
-/** @name VMMDevReqHostVersion::features
+/** @name VMMDEV_HVF_XXX - VMMDevReqHostVersion::features
  * @{ */
 /** Physical page lists are supported by HGCM. */
-#define VMMDEV_HVF_HGCM_PHYS_PAGE_LIST  RT_BIT(0)
+#define VMMDEV_HVF_HGCM_PHYS_PAGE_LIST      RT_BIT_32(0)
+/** HGCM supports the embedded buffer parameter type. */
+#define VMMDEV_HVF_HGCM_EMBEDDED_BUFFERS    RT_BIT_32(1)
+/** VMMDev supports fast IRQ acknowledgements. */
+#define VMMDEV_HVF_FAST_IRQ_ACK             RT_BIT_32(31)
 /** @} */
 
 

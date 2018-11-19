@@ -327,7 +327,7 @@ static void vmmdevHGCMCmdFree(PVMMDEV pThis, PVBOXHGCMCMD pCmd)
 
         if (pCmd->pvReqLocked)
         {
-            PDMDevHlpPhysReleasePageMappingLock(pThis->pDevIns, &pCmd->ReqMapLock);
+            PDMDevHlpPhysReleasePageMappingLock(pThis->pDevInsR3, &pCmd->ReqMapLock);
             pCmd->pvReqLocked = NULL;
         }
 
@@ -672,7 +672,7 @@ static int vmmdevHGCMInitHostParameters(PVMMDEV pThis, PVBOXHGCMCMD pCmd, uint8_
                     {
                         if (pGuestParm->enmType != VMMDevHGCMParmType_Embedded)
                         {
-                            int rc = vmmdevHGCMGuestBufferRead(pThis->pDevIns, pv, cbData, &pGuestParm->u.ptr);
+                            int rc = vmmdevHGCMGuestBufferRead(pThis->pDevInsR3, pv, cbData, &pGuestParm->u.ptr);
                             ASSERT_GUEST_RETURN(RT_SUCCESS(rc), rc);
                             RT_UNTRUSTED_NONVOLATILE_COPY_FENCE();
                         }
@@ -871,7 +871,7 @@ static int vmmdevHGCMCallFetchGuestParms(PVMMDEV pThis, PVBOXHGCMCMD pCmd,
                          * The command restoration routine will take care of this.
                          */
                         RTGCPHYS GCPhys;
-                        int rc2 = PDMDevHlpPhysGCPtr2GCPhys(pThis->pDevIns, GCPtr, &GCPhys);
+                        int rc2 = PDMDevHlpPhysGCPtr2GCPhys(pThis->pDevInsR3, GCPtr, &GCPhys);
                         if (RT_FAILURE(rc2))
                             GCPhys = NIL_RTGCPHYS;
                         LogFunc(("Page %d: %RGv -> %RGp. %Rrc\n", iPage, GCPtr, GCPhys, rc2));
@@ -1070,7 +1070,7 @@ int vmmdevHGCMCall(PVMMDEV pThis, const VMMDevHGCMCall *pHGCMCall, uint32_t cbHG
                         pHeader->header.rc = VINF_SUCCESS;
                         pHeader->result    = VINF_SUCCESS;
                         pHeader->fu32Flags |= VBOX_HGCM_REQ_DONE;
-                        PDMDevHlpPhysWrite(pThis->pDevIns, GCPhys, pHeader,  sizeof(*pHeader));
+                        PDMDevHlpPhysWrite(pThis->pDevInsR3, GCPhys, pHeader,  sizeof(*pHeader));
                     }
                     vmmdevHGCMCmdFree(pThis, pCmd);
                     return VINF_HGCM_ASYNC_EXECUTE; /* ignored, but avoids assertions. */
@@ -1211,7 +1211,7 @@ static int vmmdevHGCMCompleteCallRequest(PVMMDEV pThis, PVBOXHGCMCMD pCmd, VMMDe
                 {
                     const void *pvSrc = pHostParm->u.pointer.addr;
                     uint32_t cbSrc = pHostParm->u.pointer.size;
-                    rc = vmmdevHGCMGuestBufferWrite(pThis->pDevIns, pPtr, pvSrc, cbSrc);
+                    rc = vmmdevHGCMGuestBufferWrite(pThis->pDevInsR3, pPtr, pvSrc, cbSrc);
                 }
                 break;
             }
@@ -1227,7 +1227,7 @@ static int vmmdevHGCMCompleteCallRequest(PVMMDEV pThis, PVBOXHGCMCMD pCmd, VMMDe
                     if (pCmd->pvReqLocked)
                         memcpy((uint8_t *)pCmd->pvReqLocked + pPtr->offFirstPage, pvSrc, cbSrc);
                     else
-                        rc = PDMDevHlpPhysWrite(pThis->pDevIns, pGuestParm->u.ptr.GCPhysSinglePage, pvSrc, cbSrc);
+                        rc = PDMDevHlpPhysWrite(pThis->pDevInsR3, pGuestParm->u.ptr.GCPhysSinglePage, pvSrc, cbSrc);
                 }
                 break;
             }
@@ -1299,7 +1299,7 @@ DECLCALLBACK(void) hgcmCompletedWorker(PPDMIHGCMPORT pInterface, int32_t result,
                  * Read the request from the guest memory for updating.
                  * The request data is not be used for anything but checking the request type.
                  */
-                PDMDevHlpPhysRead(pThis->pDevIns, pCmd->GCPhys, pHeader, pCmd->cbRequest);
+                PDMDevHlpPhysRead(pThis->pDevInsR3, pCmd->GCPhys, pHeader, pCmd->cbRequest);
                 RT_UNTRUSTED_NONVOLATILE_COPY_FENCE();
 
                 /* Verify the request type. This is the only field which is used from the guest memory. */
@@ -1359,13 +1359,13 @@ DECLCALLBACK(void) hgcmCompletedWorker(PPDMIHGCMPORT pInterface, int32_t result,
                     pHeader->result = rc;
 
                 /* First write back the request. */
-                PDMDevHlpPhysWrite(pThis->pDevIns, pCmd->GCPhys, pHeader, pCmd->cbRequest);
+                PDMDevHlpPhysWrite(pThis->pDevInsR3, pCmd->GCPhys, pHeader, pCmd->cbRequest);
 
                 /* Mark request as processed. */
                 pHeader->fu32Flags |= VBOX_HGCM_REQ_DONE;
 
                 /* Second write the flags to mark the request as processed. */
-                PDMDevHlpPhysWrite(pThis->pDevIns, pCmd->GCPhys + RT_UOFFSETOF(VMMDevHGCMRequestHeader, fu32Flags),
+                PDMDevHlpPhysWrite(pThis->pDevInsR3, pCmd->GCPhys + RT_UOFFSETOF(VMMDevHGCMRequestHeader, fu32Flags),
                                    &pHeader->fu32Flags, sizeof(pHeader->fu32Flags));
 
                 /* Now, when the command was removed from the internal list, notify the guest. */
@@ -1490,7 +1490,7 @@ DECLCALLBACK(void) hgcmCompleted(PPDMIHGCMPORT pInterface, int32_t result, PVBOX
 /** @todo no longer necessary to forward to EMT, but it might be more
  *        efficient...? */
     /* Not safe to execute asynchronously; forward to EMT */
-    int rc = VMR3ReqCallVoidNoWait(PDMDevHlpGetVM(pThis->pDevIns), VMCPUID_ANY,
+    int rc = VMR3ReqCallVoidNoWait(PDMDevHlpGetVM(pThis->pDevInsR3), VMCPUID_ANY,
                                    (PFNRT)hgcmCompletedWorker, 3, pInterface, result, pCmd);
     AssertRC(rc);
 #else
@@ -2140,7 +2140,7 @@ int vmmdevHGCMLoadStateDone(PVMMDEV pThis)
         VMMDevHGCMRequestHeader *pReqHdr = (VMMDevHGCMRequestHeader *)RTMemAlloc(pCmd->cbRequest);
         AssertBreakStmt(pReqHdr, vmmdevHGCMCmdFree(pThis, pCmd); rcFunc = VERR_NO_MEMORY);
 
-        PDMDevHlpPhysRead(pThis->pDevIns, pCmd->GCPhys, pReqHdr, pCmd->cbRequest);
+        PDMDevHlpPhysRead(pThis->pDevInsR3, pCmd->GCPhys, pReqHdr, pCmd->cbRequest);
         RT_UNTRUSTED_NONVOLATILE_COPY_FENCE();
 
         if (pThis->pHGCMDrv)
@@ -2227,7 +2227,7 @@ int vmmdevHGCMLoadStateDone(PVMMDEV pThis)
             pReqHdr->fu32Flags |= VBOX_HGCM_REQ_DONE;
 
             /* Write back only the header. */
-            PDMDevHlpPhysWrite(pThis->pDevIns, pCmd->GCPhys, pReqHdr, sizeof(*pReqHdr));
+            PDMDevHlpPhysWrite(pThis->pDevInsR3, pCmd->GCPhys, pReqHdr, sizeof(*pReqHdr));
 
             VMMDevNotifyGuest(pThis, VMMDEV_EVENT_HGCM);
 

@@ -3876,7 +3876,13 @@ VMMR3_INT_DECL(int) PGMR3PhysMMIO2MapKernel(PVM pVM, PPDMDEVINS pDevIns, uint32_
     /*
      * Pass the request on to the support library/driver.
      */
-    int rc = SUPR3PageMapKernel(pFirstRegMmio->pvR3, off, cb, 0, pR0Ptr);
+#if defined(RT_OS_WINDOWS) || defined(RT_OS_LINUX) || defined(RT_OS_OS2) /** @todo Fully implement RTR0MemObjMapKernelEx everywhere. */
+    AssertLogRelReturn(off == 0, VERR_NOT_SUPPORTED);
+    AssertLogRelReturn(pFirstRegMmio->fFlags & PGMREGMMIORANGE_F_LAST_CHUNK, VERR_NOT_SUPPORTED);
+    int rc = SUPR3PageMapKernel(pFirstRegMmio->pvR3, 0 /*off*/, pFirstRegMmio->RamRange.cb, 0 /*fFlags*/, pR0Ptr);
+#else
+    int rc = SUPR3PageMapKernel(pFirstRegMmio->pvR3, off, cb, 0 /*fFlags*/, pR0Ptr);
+#endif
 
     return rc;
 }

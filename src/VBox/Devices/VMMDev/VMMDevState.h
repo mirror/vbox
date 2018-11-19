@@ -134,11 +134,18 @@ typedef struct VMMDevState
     /** Does the guest currently want the host pointer to be shown? */
     uint32_t fHostCursorRequested;
 
+#if HC_ARCH_BITS == 32
     /** Alignment padding. */
     uint32_t u32Alignment0;
+#endif
 
-    /** Pointer to device instance. */
-    PPDMDEVINSR3 pDevIns;
+    /** Pointer to device instance - RC pointer. */
+    PPDMDEVINSRC pDevInsRC;
+    /** Pointer to device instance - R3 poitner. */
+    PPDMDEVINSR3 pDevInsR3;
+    /** Pointer to device instance - R0 pointer. */
+    PPDMDEVINSR0 pDevInsR0;
+
     /** LUN\#0 + Status: VMMDev port base interface. */
     PDMIBASE IBase;
     /** LUN\#0: VMMDev port interface. */
@@ -162,6 +169,12 @@ typedef struct VMMDevState
     /** Alignment padding. */
     uint32_t u32Alignment2;
 
+    /** Statistics counter for slow IRQ ACK. */
+    STAMCOUNTER StatSlowIrqAck;
+    /** Statistics counter for fast IRQ ACK - R3. */
+    STAMCOUNTER StatFastIrqAckR3;
+    /** Statistics counter for fast IRQ ACK - R0 / RC. */
+    STAMCOUNTER StatFastIrqAckRZ;
     /** IRQ number assigned to the device */
     uint32_t irq;
     /** Current host side event flags */
@@ -178,12 +191,16 @@ typedef struct VMMDevState
     bool afAlignment3[3];
 
     /** GC physical address of VMMDev RAM area */
-    RTGCPHYS32 GCPhysVMMDevRAM;
+    RTGCPHYS32                  GCPhysVMMDevRAM;
     /** R3 pointer to VMMDev RAM area */
-    R3PTRTYPE(VMMDevMemory *) pVMMDevRAMR3;
+    R3PTRTYPE(VMMDevMemory *)   pVMMDevRAMR3;
+    /** R0 pointer to VMMDev RAM area - first page only, could be NULL! */
+    R0PTRTYPE(VMMDevMemory *)   pVMMDevRAMR0;
+    /** R0 pointer to VMMDev RAM area - first page only, could be NULL! */
+    RCPTRTYPE(VMMDevMemory *)   pVMMDevRAMRC;
+    RTGCPTR                     RCPtrAlignment3b;
 
-    /** R3 pointer to VMMDev Heap RAM area
-     */
+    /** R3 pointer to VMMDev Heap RAM area. */
     R3PTRTYPE(VMMDevMemory *) pVMMDevHeapR3;
     /** GC physical address of VMMDev Heap RAM area */
     RTGCPHYS32 GCPhysVMMDevHeap;
