@@ -126,7 +126,11 @@ static struct miscdevice g_CtlDev =
 # endif
 };
 
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 19)
 static const struct ethtool_ops gEthToolOpsVBoxNetAdp =
+# else
+static struct ethtool_ops gEthToolOpsVBoxNetAdp =
+# endif
 {
     .get_drvinfo        = vboxNetAdpEthGetDrvinfo,
     .get_settings       = vboxNetAdpEthGetSettings,
