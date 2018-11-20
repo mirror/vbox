@@ -202,7 +202,7 @@ typedef struct HDASTATE
     /** Current IRQ level. */
     uint8_t                            u8IRQL;
     /** The device timer Hz rate. Defaults to HDA_TIMER_HZ_DEFAULT. */
-    uint16_t                           u16TimerHz;
+    uint16_t                           uTimerHz;
     /** Padding for alignment. */
     uint8_t                            au8Padding3[3];
     HDASTATEDBGINFO                    Dbg;

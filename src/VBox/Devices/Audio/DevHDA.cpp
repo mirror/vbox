@@ -1550,7 +1550,7 @@ static int hdaRegWriteSDSTS(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 
             LogRelMax2(64, ("HDA: Stream #%RU8 interrupt lagging behind (expected %uus, got %uus), trying to catch up ...\n",
                             pStream->u8SD,
-                            (TMTimerGetFreq(pThis->pTimer[pStream->u8SD]) / pThis->u16TimerHz) / 1000,(tsNow - pStream->State.tsTransferLast) / 1000));
+                            (TMTimerGetFreq(pThis->pTimer[pStream->u8SD]) / pThis->uTimerHz) / 1000,(tsNow - pStream->State.tsTransferLast) / 1000));
 
             cTicksToNext = 0;
         }
@@ -2926,7 +2926,7 @@ static DECLCALLBACK(void) hdaR3Timer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *
         if (!fTimerScheduled)
             hdaR3TimerSet(pThis, pStream,
                             TMTimerGet(pThis->pTimer[pStream->u8SD])
-                          + TMTimerGetFreq(pThis->pTimer[pStream->u8SD]) / pStream->pHDAState->u16TimerHz,
+                          + TMTimerGetFreq(pThis->pTimer[pStream->u8SD]) / pStream->pHDAState->uTimerHz,
                           true /* fForce */);
     }
     else
@@ -4932,13 +4932,13 @@ static DECLCALLBACK(int) hdaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
                                 N_("HDA configuration error: failed to read RCEnabled as boolean"));
 
 
-    rc = CFGMR3QueryU16Def(pCfg, "TimerHz", &pThis->u16TimerHz, HDA_TIMER_HZ_DEFAULT /* Default value, if not set. */);
+    rc = CFGMR3QueryU16Def(pCfg, "TimerHz", &pThis->uTimerHz, HDA_TIMER_HZ_DEFAULT /* Default value, if not set. */);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("HDA configuration error: failed to read Hertz (Hz) rate as unsigned integer"));
 
-    if (pThis->u16TimerHz != HDA_TIMER_HZ_DEFAULT)
-        LogRel(("HDA: Using custom device timer rate (%RU16Hz)\n", pThis->u16TimerHz));
+    if (pThis->uTimerHz != HDA_TIMER_HZ_DEFAULT)
+        LogRel(("HDA: Using custom device timer rate (%RU16Hz)\n", pThis->uTimerHz));
 
     rc = CFGMR3QueryBoolDef(pCfg, "PosAdjustEnabled", &pThis->fPosAdjustEnabled, true);
     if (RT_FAILURE(rc))

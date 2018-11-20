@@ -1595,7 +1595,7 @@ static int coreAudioStreamInitQueue(PCOREAUDIOSTREAM pCAStream, PPDMAUDIOSTREAMC
         return rc;
     }
 
-    rc = RTCircBufCreate(&pCAStream->pCircBuf, PDMAUDIOSTREAMCFG_F2B(pCfgReq, 4096)); /** @todo Make this configurable. */
+    rc = RTCircBufCreate(&pCAStream->pCircBuf, PDMAUDIOSTREAMCFG_F2B(pCfgReq, pCfgReq->Backend.cfBufferSize));
     if (RT_FAILURE(rc))
         return rc;
 

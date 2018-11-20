@@ -197,8 +197,8 @@ int hdaR3StreamInit(PHDASTREAM pStream, uint8_t uSD)
     }
 
     /* Set scheduling hint (if available). */
-    if (pThis->u16TimerHz)
-        pCfg->Device.uSchedulingHintMs = 1000 /* ms */ / pThis->u16TimerHz;
+    if (pThis->uTimerHz)
+        pCfg->Device.uSchedulingHintMs = 1000 /* ms */ / pThis->uTimerHz;
 
     /* (Re-)Allocate the stream's internal DMA buffer, based on the PCM  properties we just got above. */
     if (pStream->State.pCircBuf)
@@ -273,9 +273,9 @@ int hdaR3StreamInit(PHDASTREAM pStream, uint8_t uSD)
     if (RT_SUCCESS(rc))
     {
         /* Make sure that the chosen Hz rate dividable by the stream's rate. */
-        if (pStream->State.Cfg.Props.uHz % pThis->u16TimerHz != 0)
+        if (pStream->State.Cfg.Props.uHz % pThis->uTimerHz != 0)
             LogRel(("HDA: Device timer (%RU32) does not fit to stream #RU8 timing (%RU32)\n",
-                    pThis->u16TimerHz, pStream->State.Cfg.Props.uHz));
+                    pThis->uTimerHz, pStream->State.Cfg.Props.uHz));
 
         /* Figure out how many transfer fragments we're going to use for this stream. */
         /** @todo Use a more dynamic fragment size? */
@@ -368,7 +368,7 @@ int hdaR3StreamInit(PHDASTREAM pStream, uint8_t uSD)
 
         /* Calculate the bytes we need to transfer to / from the stream's DMA per iteration.
          * This is bound to the device's Hz rate and thus to the (virtual) timing the device expects. */
-        pStream->State.cbTransferChunk = (pStream->State.Cfg.Props.uHz / pThis->u16TimerHz) * pStream->State.cbFrameSize;
+        pStream->State.cbTransferChunk = (pStream->State.Cfg.Props.uHz / pThis->uTimerHz) * pStream->State.cbFrameSize;
         Assert(pStream->State.cbTransferChunk);
         Assert(pStream->State.cbTransferChunk % pStream->State.cbFrameSize == 0);
 
@@ -381,7 +381,7 @@ int hdaR3StreamInit(PHDASTREAM pStream, uint8_t uSD)
         pStream->State.cbDMALeft                  = 0;
         pStream->State.tsLastUpdateNs             = 0;
 
-        const uint64_t cTicksPerHz = TMTimerGetFreq(pStream->pTimer) / pThis->u16TimerHz;
+        const uint64_t cTicksPerHz = TMTimerGetFreq(pStream->pTimer) / pThis->uTimerHz;
 
         /* Calculate the timer ticks per byte for this stream. */
         pStream->State.cTicksPerByte = cTicksPerHz / pStream->State.cbTransferChunk;
@@ -397,7 +397,7 @@ int hdaR3StreamInit(PHDASTREAM pStream, uint8_t uSD)
 
         LogFunc(("[SD%RU8] Timer %uHz (%RU64 ticks per Hz), cTicksPerByte=%RU64, cbTransferChunk=%RU32, cTransferTicks=%RU64, " \
                  "cbTransferSize=%RU32\n",
-                 pStream->u8SD, pThis->u16TimerHz, cTicksPerHz, pStream->State.cTicksPerByte,
+                 pStream->u8SD, pThis->uTimerHz, cTicksPerHz, pStream->State.cTicksPerByte,
                  pStream->State.cbTransferChunk, pStream->State.cTransferTicks, pStream->State.cbTransferSize));
 
         /* Make sure to also update the stream's DMA counter (based on its current LPIB value). */

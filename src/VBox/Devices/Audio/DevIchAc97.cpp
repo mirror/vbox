@@ -50,7 +50,7 @@
 #define AC97_SSM_VERSION    1
 
 /** Default timer frequency (in Hz). */
-#define AC97_TIMER_HZ       200
+#define AC97_TIMER_HZ_DEFAULT 200
 
 /** Maximum FIFO size (in bytes). */
 #define AC97_FIFO_MAX       256
@@ -471,10 +471,10 @@ typedef struct AC97STATE
     AC97STREAM              StreamOut;
     /** Number of active (running) SDn streams. */
     uint8_t                 cStreamsActive;
-#ifndef VBOX_WITH_AUDIO_AC97_CALLBACKS
     /** Flag indicating whether the timer is active or not. */
     bool                    fTimerActive;
-    uint8_t                 u8Padding1[2];
+    /** The device timer Hz rate. Defaults to AC97_TIMER_HZ_DEFAULT_DEFAULT. */
+    uint16_t                uTimerHz;
     /** The timer for pumping data thru the attached LUN drivers - RCPtr. */
     PTMTIMERRC              pTimerRC;
     /** The timer for pumping data thru the attached LUN drivers - R3Ptr. */
@@ -486,7 +486,6 @@ typedef struct AC97STATE
     /** Timestamp of the last timer callback (ac97Timer).
      * Used to calculate the time actually elapsed between two timer callbacks. */
     uint64_t                uTimerTS;
-#endif
 #ifdef VBOX_WITH_STATISTICS
     STAMPROFILE             StatTimer;
     STAMPROFILE             StatIn;
@@ -635,14 +634,14 @@ static int                ichac97R3StreamTransfer(PAC97STATE pThis, PAC97STREAM 
 static void               ichac97R3StreamUpdate(PAC97STATE pThis, PAC97STREAM pStream, bool fInTimer);
 
 static DECLCALLBACK(void) ichac97R3Reset(PPDMDEVINS pDevIns);
-# ifndef VBOX_WITH_AUDIO_AC97_CALLBACKS
+
 static int                ichac97R3TimerStart(PAC97STATE pThis);
 static int                ichac97R3TimerMaybeStart(PAC97STATE pThis);
 static int                ichac97R3TimerStop(PAC97STATE pThis);
 static int                ichac97R3TimerMaybeStop(PAC97STATE pThis);
 static void               ichac97R3TimerMain(PAC97STATE pThis);
 static DECLCALLBACK(void) ichac97R3Timer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser);
-# endif
+
 static void               ichac97R3DoTransfers(PAC97STATE pThis);
 
 static int                ichac97R3MixerAddDrv(PAC97STATE pThis, PAC97DRIVER pDrv);
@@ -876,13 +875,11 @@ static int ichac97R3StreamEnable(PAC97STATE pThis, PAC97STREAM pStream, bool fEn
     /* Make sure to leave the lock before (eventually) starting the timer. */
     ichac97R3StreamUnlock(pStream);
 
-# ifndef VBOX_WITH_AUDIO_AC97_CALLBACKS
     /* Second, see if we need to start or stop the timer. */
     if (!fEnable)
         ichac97R3TimerMaybeStop(pThis);
     else
         ichac97R3TimerMaybeStart(pThis);
-# endif
 
     LogFunc(("[SD%RU8] cStreamsActive=%RU8, fEnable=%RTbool, rc=%Rrc\n", pStream->u8SD, pThis->cStreamsActive, fEnable, rc));
     return rc;
@@ -1213,12 +1210,6 @@ static DECLCALLBACK(int) ichac97R3StreamAsyncIOThread(RTTHREAD hThreadSelf, void
     AssertPtr(pStream);
 
     PAC97STREAMSTATEAIO pAIO = &pCtx->pStream->State.AIO;
-
-    PRTCIRCBUF pCircBuf = pStream->State.pCircBuf;
-    AssertPtr(pCircBuf);
-
-    PAUDMIXSINK pMixSink = ichac97R3IndexToSink(pThis, pStream->u8SD);
-    AssertPtr(pMixSink);
 
     ASMAtomicXchgBool(&pAIO->fStarted, true);
 
@@ -1925,8 +1916,8 @@ static int ichac97R3StreamOpen(PAC97STATE pThis, PAC97STREAM pStream)
     AssertCompile(sizeof(pCfg->szName) >= 8);
 
     /* Set scheduling hint (if available). */
-    if (pThis->cTimerTicks)
-        pCfg->Device.uSchedulingHintMs = 1000 /* ms */ / (TMTimerGetFreq(pThis->pTimerR3) / pThis->cTimerTicks);
+    if (pThis->uTimerHz)
+        pCfg->Device.uSchedulingHintMs = 1000 /* ms */ / pThis->uTimerHz;
 
     switch (pStream->u8SD)
     {
@@ -2412,8 +2403,6 @@ static void ichac97R3WriteBUP(PAC97STATE pThis, uint32_t cbElapsed)
 }
 # endif /* Unused */
 
-# ifndef VBOX_WITH_AUDIO_AC97_CALLBACKS
-
 /**
  * Starts the internal audio device timer.
  *
@@ -2583,8 +2572,6 @@ static DECLCALLBACK(void) ichac97R3Timer(PPDMDEVINS pDevIns, PTMTIMER pTimer, vo
 
     ichac97R3TimerMain(pThis);
 }
-
-# endif /* !VBOX_WITH_AUDIO_AC97_CALLBACKS */
 
 /**
  * Main routine to perform the actual audio data transfers from the AC'97 streams
@@ -3743,14 +3730,12 @@ static DECLCALLBACK(void) ichac97R3Reset(PPDMDEVINS pDevIns)
     AudioMixerSinkReset(pThis->pSinkMicIn);
     AudioMixerSinkReset(pThis->pSinkOut);
 
-# ifndef VBOX_WITH_AUDIO_AC97_CALLBACKS
     /*
      * Stop the timer, if any.
      */
     ichac97R3TimerStop(pThis);
 
     pThis->cStreamsActive = 0;
-# endif
 }
 
 
@@ -4013,9 +3998,7 @@ static DECLCALLBACK(void) ichac97R3Relocate(PPDMDEVINS pDevIns, RTGCINTPTR offDe
     NOREF(offDelta);
     PAC97STATE pThis = PDMINS_2_DATA(pDevIns, PAC97STATE);
     pThis->pDevInsRC = PDMDEVINS_2_RCPTR(pDevIns);
-# ifndef VBOX_WITH_AUDIO_AC97_CALLBACKS
-    pThis->pTimerRC = TMTimerRCPtr(pThis->pTimerR3);
-# endif
+    pThis->pTimerRC  = TMTimerRCPtr(pThis->pTimerR3);
 }
 
 /**
@@ -4084,16 +4067,13 @@ static DECLCALLBACK(int) ichac97R3Construct(PPDMDEVINS pDevIns, int iInstance, P
         return PDMDEV_SET_ERROR(pDevIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES,
                                 N_("AC'97 configuration error: Querying \"Codec\" as string failed"));
 
-# ifndef VBOX_WITH_AUDIO_AC97_CALLBACKS
-    uint16_t uTimerHz;
-    rc = CFGMR3QueryU16Def(pCfg, "TimerHz", &uTimerHz, AC97_TIMER_HZ /* Default value, if not set. */);
+    rc = CFGMR3QueryU16Def(pCfg, "TimerHz", &pThis->uTimerHz, AC97_TIMER_HZ_DEFAULT /* Default value, if not set. */);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("AC'97 configuration error: failed to read Hertz (Hz) rate as unsigned integer"));
 
-    if (uTimerHz != AC97_TIMER_HZ)
-        LogRel(("AC97: Using custom device timer rate (%RU16Hz)\n", uTimerHz));
-# endif
+    if (pThis->uTimerHz != AC97_TIMER_HZ_DEFAULT)
+        LogRel(("AC97: Using custom device timer rate (%RU16Hz)\n", pThis->uTimerHz));
 
     rc = CFGMR3QueryBoolDef(pCfg, "DebugEnabled", &pThis->Dbg.fEnabled, false);
     if (RT_FAILURE(rc))
@@ -4353,7 +4333,6 @@ static DECLCALLBACK(int) ichac97R3Construct(PPDMDEVINS pDevIns, int iInstance, P
     if (RT_SUCCESS(rc))
         ichac97R3Reset(pDevIns);
 
-# ifndef VBOX_WITH_AUDIO_AC97_CALLBACKS
     if (RT_SUCCESS(rc))
     {
         /* Create the emulation timer.
@@ -4373,41 +4352,10 @@ static DECLCALLBACK(int) ichac97R3Construct(PPDMDEVINS pDevIns, int iInstance, P
         rc = TMR3TimerSetCritSect(pThis->pTimerR3, &pThis->CritSect);
         AssertRCReturn(rc, rc);
 
-        pThis->cTimerTicks = TMTimerGetFreq(pThis->pTimerR3) / uTimerHz;
+        pThis->cTimerTicks = TMTimerGetFreq(pThis->pTimerR3) / pThis->uTimerHz;
         pThis->uTimerTS    = TMTimerGet(pThis->pTimerR3);
-        LogFunc(("Timer ticks=%RU64 (%RU16 Hz)\n", pThis->cTimerTicks, uTimerHz));
+        LogFunc(("Timer ticks=%RU64 (%RU16 Hz)\n", pThis->cTimerTicks, pThis->uTimerHz));
     }
-# else /* !VBOX_WITH_AUDIO_AC97_CALLBACKS */
-    if (RT_SUCCESS(rc))
-    {
-        PAC97DRIVER pDrv;
-        RTListForEach(&pThis->lstDrv, pDrv, AC97DRIVER, Node)
-        {
-            /* Only register primary driver.
-             * The device emulation does the output multiplexing then. */
-            if (!(pDrv->fFlags & PDMAUDIODRVFLAGS_PRIMARY))
-                continue;
-
-            PDMAUDIOCBRECORD AudioCallbacks[2];
-
-            AC97CALLBACKCTX Ctx = { pThis, pDrv };
-
-            AudioCallbacks[0].enmType     = PDMAUDIOCALLBACKTYPE_INPUT;
-            AudioCallbacks[0].pfnCallback = ac97CallbackInput;
-            AudioCallbacks[0].pvCtx       = &Ctx;
-            AudioCallbacks[0].cbCtx       = sizeof(AC97CALLBACKCTX);
-
-            AudioCallbacks[1].enmType     = PDMAUDIOCALLBACKTYPE_OUTPUT;
-            AudioCallbacks[1].pfnCallback = ac97CallbackOutput;
-            AudioCallbacks[1].pvCtx       = &Ctx;
-            AudioCallbacks[1].cbCtx       = sizeof(AC97CALLBACKCTX);
-
-            rc = pDrv->pConnector->pfnRegisterCallbacks(pDrv->pConnector, AudioCallbacks, RT_ELEMENTS(AudioCallbacks));
-            if (RT_FAILURE(rc))
-                break;
-        }
-    }
-# endif /* VBOX_WITH_AUDIO_AC97_CALLBACKS */
 
 # ifdef VBOX_WITH_STATISTICS
     if (RT_SUCCESS(rc))
