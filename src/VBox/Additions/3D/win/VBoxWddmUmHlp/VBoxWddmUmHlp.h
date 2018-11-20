@@ -84,6 +84,7 @@ DECLCALLBACK(void) VBoxWddmLoadAdresses(HMODULE hmod, VBOXWDDMDLLPROC *paProcs);
 DECLCALLBACK(int) D3DKMTLoad(void);
 DECLCALLBACK(D3DKMTFUNCTIONS const *) D3DKMTFunctions(void);
 
+DECLCALLBACK(void) VBoxDispMpLoggerLogF(const char *pszString, ...);
 DECLCALLBACK(void) VBoxWddmUmLog(const char *pszString);
 
 /** @todo Rename to VBoxWddm* */

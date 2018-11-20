@@ -69,8 +69,8 @@ class GaDrvEnvWddm
                                                         GASURFSIZE *paSizes,
                                                         uint32_t cSizes,
                                                         uint32_t *pu32Sid);
-        static DECLCALLBACK(int) gaEnvWddmSurfaceDestroy(void *pvEnv,
-                                                         uint32_t u32Sid);
+        static DECLCALLBACK(void) gaEnvWddmSurfaceDestroy(void *pvEnv,
+                                                          uint32_t u32Sid);
         static DECLCALLBACK(int) gaEnvWddmRender(void *pvEnv,
                                                  uint32_t u32Cid,
                                                  void *pvCommands,

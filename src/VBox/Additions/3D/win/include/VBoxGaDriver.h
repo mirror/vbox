@@ -45,8 +45,8 @@ typedef struct WDDMGalliumDriverEnv
                                               GASURFSIZE *paSizes,
                                               uint32_t cSizes,
                                               uint32_t *pu32Sid);
-    DECLCALLBACKMEMBER(int, pfnSurfaceDestroy)(void *pvEnv,
-                                               uint32_t u32Sid);
+    DECLCALLBACKMEMBER(void, pfnSurfaceDestroy)(void *pvEnv,
+                                                uint32_t u32Sid);
     DECLCALLBACKMEMBER(int, pfnRender)(void *pvEnv,
                                        uint32_t u32Cid,
                                        void *pvCommands,

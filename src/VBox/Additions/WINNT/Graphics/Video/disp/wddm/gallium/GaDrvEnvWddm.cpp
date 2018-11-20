@@ -236,7 +236,7 @@ GaDrvEnvWddm::gaEnvWddmSurfaceDefine(void *pvEnv,
     return 0;
 }
 
-/* static */ DECLCALLBACK(int)
+/* static */ DECLCALLBACK(void)
 GaDrvEnvWddm::gaEnvWddmSurfaceDestroy(void *pvEnv,
                                       uint32_t u32Sid)
 {
@@ -259,7 +259,7 @@ GaDrvEnvWddm::gaEnvWddmSurfaceDestroy(void *pvEnv,
     ddiEscape.hContext              = 0;
 
     hr = pThis->mWddmCallbacks.DeviceCallbacks.pfnEscapeCb(pThis->mWddmCallbacks.hAdapter, &ddiEscape);
-    return SUCCEEDED(hr)? 0: -1;
+    Assert(SUCCEEDED(hr));
 }
 
 static HRESULT

@@ -90,10 +90,10 @@ class GaDrvEnvKmt
         /*
          * KMT specific helpers.
          */
-        int drvEnvKmtRenderCompose(uint32_t u32Cid,
-                                   void *pvCommands,
-                                   uint32_t cbCommands,
-                                   ULONGLONG PresentHistoryToken);
+        bool drvEnvKmtRenderCompose(uint32_t u32Cid,
+                                    void *pvCommands,
+                                    uint32_t cbCommands,
+                                    ULONGLONG PresentHistoryToken);
         D3DKMT_HANDLE drvEnvKmtContextHandle(uint32_t u32Cid);
         D3DKMT_HANDLE drvEnvKmtSurfaceHandle(uint32_t u32Sid);
 
@@ -125,8 +125,8 @@ class GaDrvEnvKmt
                                                     GASURFSIZE *paSizes,
                                                     uint32_t cSizes,
                                                     uint32_t *pu32Sid);
-        static DECLCALLBACK(int) gaEnvSurfaceDestroy(void *pvEnv,
-                                                     uint32_t u32Sid);
+        static DECLCALLBACK(void) gaEnvSurfaceDestroy(void *pvEnv,
+                                                      uint32_t u32Sid);
         static DECLCALLBACK(int) gaEnvRender(void *pvEnv,
                                              uint32_t u32Cid,
                                              void *pvCommands,
@@ -151,8 +151,8 @@ class GaDrvEnvKmt
         /*
          * Internal.
          */
-        int doRender(uint32_t u32Cid, void *pvCommands, uint32_t cbCommands,
-                     GAFENCEQUERY *pFenceQuery, ULONGLONG PresentHistoryToken, bool fPresentRedirected);
+        bool doRender(uint32_t u32Cid, void *pvCommands, uint32_t cbCommands,
+                      GAFENCEQUERY *pFenceQuery, ULONGLONG PresentHistoryToken, bool fPresentRedirected);
 };
 
 typedef struct GAWDDMCONTEXTINFO
@@ -174,24 +174,22 @@ typedef struct GAWDDMSURFACEINFO
 } GAWDDMSURFACEINFO;
 
 
-/// @todo vboxDdi helpers must return NTSTATUS
-static NTSTATUS
+/// @todo vboxDdi helpers must return a boof success indicator
+static bool
 vboxDdiQueryAdapterInfo(GaKmtCallbacks *pKmtCallbacks,
                         D3DKMT_HANDLE hAdapter,
                         VBOXWDDM_QAI *pAdapterInfo,
                         uint32_t cbAdapterInfo)
 {
-    NTSTATUS                  Status;
-    D3DKMT_QUERYADAPTERINFO   kmtQAI;
+    D3DKMT_QUERYADAPTERINFO QAI;
+    memset(&QAI, 0, sizeof(QAI));
+    QAI.hAdapter              = hAdapter;
+    QAI.Type                  = KMTQAITYPE_UMDRIVERPRIVATE;
+    QAI.pPrivateDriverData    = pAdapterInfo;
+    QAI.PrivateDriverDataSize = cbAdapterInfo;
 
-    memset(&kmtQAI, 0, sizeof(kmtQAI));
-    kmtQAI.hAdapter              = hAdapter;
-    kmtQAI.Type                  = KMTQAITYPE_UMDRIVERPRIVATE;
-    kmtQAI.pPrivateDriverData    = pAdapterInfo;
-    kmtQAI.PrivateDriverDataSize = cbAdapterInfo;
-
-    Status = pKmtCallbacks->d3dkmt->pfnD3DKMTQueryAdapterInfo(&kmtQAI);
-    return Status;
+    NTSTATUS Status = pKmtCallbacks->d3dkmt->pfnD3DKMTQueryAdapterInfo(&QAI);
+    return Status == STATUS_SUCCESS;
 }
 
 static void
@@ -200,41 +198,37 @@ vboxDdiDeviceDestroy(GaKmtCallbacks *pKmtCallbacks,
 {
     if (hDevice)
     {
-        D3DKMT_DESTROYDEVICE kmtDestroyDevice;
-        memset(&kmtDestroyDevice, 0, sizeof(kmtDestroyDevice));
-        kmtDestroyDevice.hDevice = hDevice;
-        pKmtCallbacks->d3dkmt->pfnD3DKMTDestroyDevice(&kmtDestroyDevice);
+        D3DKMT_DESTROYDEVICE DestroyDeviceData;
+        memset(&DestroyDeviceData, 0, sizeof(DestroyDeviceData));
+        DestroyDeviceData.hDevice = hDevice;
+        pKmtCallbacks->d3dkmt->pfnD3DKMTDestroyDevice(&DestroyDeviceData);
     }
 }
 
-static NTSTATUS
+static bool
 vboxDdiDeviceCreate(GaKmtCallbacks *pKmtCallbacks,
                     D3DKMT_HANDLE *phDevice)
 {
-    NTSTATUS                  Status;
-    D3DKMT_CREATEDEVICE       kmtCreateDevice;
+    D3DKMT_CREATEDEVICE CreateDeviceData;
+    memset(&CreateDeviceData, 0, sizeof(CreateDeviceData));
+    CreateDeviceData.hAdapter = pKmtCallbacks->hAdapter;
+    // CreateDeviceData.Flags = 0;
 
-    memset(&kmtCreateDevice, 0, sizeof(kmtCreateDevice));
-    kmtCreateDevice.hAdapter = pKmtCallbacks->hAdapter;
-    // kmtCreateDevice.Flags = 0;
-
-    Status = pKmtCallbacks->d3dkmt->pfnD3DKMTCreateDevice(&kmtCreateDevice);
+    NTSTATUS Status = pKmtCallbacks->d3dkmt->pfnD3DKMTCreateDevice(&CreateDeviceData);
     if (Status == STATUS_SUCCESS)
     {
-        *phDevice = kmtCreateDevice.hDevice;
+        *phDevice = CreateDeviceData.hDevice;
+        return true;
     }
-    return Status;
+    return false;
 }
 
-static NTSTATUS
+static bool
 vboxDdiContextGetId(GaKmtCallbacks *pKmtCallbacks,
                     D3DKMT_HANDLE hContext,
                     uint32_t *pu32Cid)
 {
-    NTSTATUS                  Status;
-    D3DKMT_ESCAPE             kmtEscape;
     VBOXDISPIFESCAPE_GAGETCID data;
-
     memset(&data, 0, sizeof(data));
     data.EscapeHdr.escapeCode  = VBOXESC_GAGETCID;
     // data.EscapeHdr.cmdSpecific = 0;
@@ -243,22 +237,23 @@ vboxDdiContextGetId(GaKmtCallbacks *pKmtCallbacks,
     /* If the user-mode display driver sets hContext to a non-NULL value, the driver must
      * have also set hDevice to a non-NULL value...
      */
-    memset(&kmtEscape, 0, sizeof(kmtEscape));
-    kmtEscape.hAdapter              = pKmtCallbacks->hAdapter;
-    kmtEscape.hDevice               = pKmtCallbacks->hDevice;
-    kmtEscape.Type                  = D3DKMT_ESCAPE_DRIVERPRIVATE;
-    // kmtEscape.Flags.HardwareAccess  = 0;
-    kmtEscape.pPrivateDriverData    = &data;
-    kmtEscape.PrivateDriverDataSize = sizeof(data);
-    kmtEscape.hContext              = hContext;
+    D3DKMT_ESCAPE EscapeData;
+    memset(&EscapeData, 0, sizeof(EscapeData));
+    EscapeData.hAdapter              = pKmtCallbacks->hAdapter;
+    EscapeData.hDevice               = pKmtCallbacks->hDevice;
+    EscapeData.Type                  = D3DKMT_ESCAPE_DRIVERPRIVATE;
+    // EscapeData.Flags.HardwareAccess  = 0;
+    EscapeData.pPrivateDriverData    = &data;
+    EscapeData.PrivateDriverDataSize = sizeof(data);
+    EscapeData.hContext              = hContext;
 
-    Status = pKmtCallbacks->d3dkmt->pfnD3DKMTEscape(&kmtEscape);
+    NTSTATUS Status = pKmtCallbacks->d3dkmt->pfnD3DKMTEscape(&EscapeData);
     if (Status == STATUS_SUCCESS)
     {
         *pu32Cid = data.u32Cid;
-        return S_OK;
+        return true;
     }
-    return E_FAIL;
+    return false;
 }
 
 static void
@@ -267,54 +262,52 @@ vboxDdiContextDestroy(GaKmtCallbacks *pKmtCallbacks,
 {
     if (pContextInfo->hContext)
     {
-        D3DKMT_DESTROYCONTEXT kmtDestroyContext;
-        memset(&kmtDestroyContext, 0, sizeof(kmtDestroyContext));
-        kmtDestroyContext.hContext = pContextInfo->hContext;
-        pKmtCallbacks->d3dkmt->pfnD3DKMTDestroyContext(&kmtDestroyContext);
+        D3DKMT_DESTROYCONTEXT DestroyContextData;
+        memset(&DestroyContextData, 0, sizeof(DestroyContextData));
+        DestroyContextData.hContext = pContextInfo->hContext;
+        pKmtCallbacks->d3dkmt->pfnD3DKMTDestroyContext(&DestroyContextData);
     }
 }
 
-static HRESULT
+static bool
 vboxDdiContextCreate(GaKmtCallbacks *pKmtCallbacks,
                      void *pvPrivateData, uint32_t cbPrivateData,
                      GAWDDMCONTEXTINFO *pContextInfo)
 {
-    NTSTATUS                  Status;
-    D3DKMT_CREATECONTEXT      kmtCreateContext;
+    D3DKMT_CREATECONTEXT CreateContextData;
+    memset(&CreateContextData, 0, sizeof(CreateContextData));
+    CreateContextData.hDevice = pKmtCallbacks->hDevice;
+    // CreateContextData.NodeOrdinal = 0;
+    // CreateContextData.EngineAffinity = 0;
+    // CreateContextData.Flags.Value = 0;
+    CreateContextData.pPrivateDriverData = pvPrivateData;
+    CreateContextData.PrivateDriverDataSize = cbPrivateData;
+    CreateContextData.ClientHint = D3DKMT_CLIENTHINT_OPENGL;
 
-    memset(&kmtCreateContext, 0, sizeof(kmtCreateContext));
-    kmtCreateContext.hDevice = pKmtCallbacks->hDevice;
-    // kmtCreateContext.NodeOrdinal = 0;
-    // kmtCreateContext.EngineAffinity = 0;
-    // kmtCreateContext.Flags.Value = 0;
-    kmtCreateContext.pPrivateDriverData = pvPrivateData;
-    kmtCreateContext.PrivateDriverDataSize = cbPrivateData;
-    kmtCreateContext.ClientHint = D3DKMT_CLIENTHINT_OPENGL;
-
-    Status = pKmtCallbacks->d3dkmt->pfnD3DKMTCreateContext(&kmtCreateContext);
+    NTSTATUS Status = pKmtCallbacks->d3dkmt->pfnD3DKMTCreateContext(&CreateContextData);
     if (Status == STATUS_SUCCESS)
     {
         /* Query cid. */
         uint32_t u32Cid = 0;
-        Status = vboxDdiContextGetId(pKmtCallbacks, kmtCreateContext.hContext, &u32Cid);
-        if (Status == STATUS_SUCCESS)
+        bool fSuccess = vboxDdiContextGetId(pKmtCallbacks, CreateContextData.hContext, &u32Cid);
+        if (fSuccess)
         {
             pContextInfo->Core.Key              = u32Cid;
-            pContextInfo->hContext              = kmtCreateContext.hContext;
-            pContextInfo->pCommandBuffer        = kmtCreateContext.pCommandBuffer;
-            pContextInfo->CommandBufferSize     = kmtCreateContext.CommandBufferSize;
-            pContextInfo->pAllocationList       = kmtCreateContext.pAllocationList;
-            pContextInfo->AllocationListSize    = kmtCreateContext.AllocationListSize;
-            pContextInfo->pPatchLocationList    = kmtCreateContext.pPatchLocationList;
-            pContextInfo->PatchLocationListSize = kmtCreateContext.PatchLocationListSize;
+            pContextInfo->hContext              = CreateContextData.hContext;
+            pContextInfo->pCommandBuffer        = CreateContextData.pCommandBuffer;
+            pContextInfo->CommandBufferSize     = CreateContextData.CommandBufferSize;
+            pContextInfo->pAllocationList       = CreateContextData.pAllocationList;
+            pContextInfo->AllocationListSize    = CreateContextData.AllocationListSize;
+            pContextInfo->pPatchLocationList    = CreateContextData.pPatchLocationList;
+            pContextInfo->PatchLocationListSize = CreateContextData.PatchLocationListSize;
+
+            return true;
         }
-        else
-        {
-            vboxDdiContextDestroy(pKmtCallbacks, pContextInfo);
-        }
+
+        vboxDdiContextDestroy(pKmtCallbacks, pContextInfo);
     }
 
-    return (Status == STATUS_SUCCESS) ? S_OK : E_FAIL;
+    return false;
 }
 
 /* static */ DECLCALLBACK(void)
@@ -346,23 +339,21 @@ GaDrvEnvKmt::gaEnvContextCreate(void *pvEnv,
 {
     GaDrvEnvKmt *pThis = (GaDrvEnvKmt *)pvEnv;
 
-    VBOXWDDM_CREATECONTEXT_INFO privateData;
     GAWDDMCONTEXTINFO *pContextInfo;
-    HRESULT hr;
-
     pContextInfo = (GAWDDMCONTEXTINFO *)malloc(sizeof(GAWDDMCONTEXTINFO));
     if (!pContextInfo)
         return (uint32_t)-1;
 
+    VBOXWDDM_CREATECONTEXT_INFO privateData;
     memset(&privateData, 0, sizeof(privateData));
-    privateData.u32IfVersion   = 9;
-    privateData.enmType        = VBOXWDDM_CONTEXT_TYPE_GA_3D;
+    privateData.u32IfVersion       = 9;
+    privateData.enmType            = VBOXWDDM_CONTEXT_TYPE_GA_3D;
     privateData.u.vmsvga.u32Flags  = extended? VBOXWDDM_F_GA_CONTEXT_EXTENDED: 0;
     privateData.u.vmsvga.u32Flags |= vgpu10? VBOXWDDM_F_GA_CONTEXT_VGPU10: 0;
 
-    hr = vboxDdiContextCreate(&pThis->mKmtCallbacks,
-                              &privateData, sizeof(privateData), pContextInfo);
-    if (SUCCEEDED(hr))
+    bool fSuccess = vboxDdiContextCreate(&pThis->mKmtCallbacks,
+                                         &privateData, sizeof(privateData), pContextInfo);
+    if (fSuccess)
     {
         if (RTAvlU32Insert(&pThis->mContextTree, &pContextInfo->Core))
         {
@@ -374,7 +365,6 @@ GaDrvEnvKmt::gaEnvContextCreate(void *pvEnv,
     }
 
     Assert(0);
-
     free(pContextInfo);
     return (uint32_t)-1;
 }
@@ -391,10 +381,12 @@ static D3DDDIFORMAT svgaToD3DDDIFormat(SVGA3dSurfaceFormat format)
         case SVGA3D_LUMINANCE8:     return D3DDDIFMT_L8;
         case SVGA3D_A1R5G5B5:       return D3DDDIFMT_A1R5G5B5;
         case SVGA3D_LUMINANCE8_ALPHA8: return D3DDDIFMT_A8L8;
+        case SVGA3D_R5G6B5:         return D3DDDIFMT_R5G6B5;
         default: break;
     }
 
     Assert(0);
+    VBoxDispMpLoggerLogF("WDDM: EnvKMT: unsupported surface format %d\n", format);
     return D3DDDIFMT_UNKNOWN;
 }
 
@@ -407,7 +399,6 @@ GaDrvEnvKmt::gaEnvSurfaceDefine(void *pvEnv,
 {
     GaDrvEnvKmt *pThis = (GaDrvEnvKmt *)pvEnv;
 
-    NTSTATUS                          Status;
     D3DKMT_ESCAPE                     EscapeData;
     VBOXDISPIFESCAPE_GASURFACEDEFINE *pData;
     uint32_t                          cbAlloc;
@@ -443,7 +434,7 @@ GaDrvEnvKmt::gaEnvSurfaceDefine(void *pvEnv,
     EscapeData.PrivateDriverDataSize = cbAlloc;
     // EscapeData.hContext              = 0;
 
-    Status = pThis->mKmtCallbacks.d3dkmt->pfnD3DKMTEscape(&EscapeData);
+    NTSTATUS Status = pThis->mKmtCallbacks.d3dkmt->pfnD3DKMTEscape(&EscapeData);
     if (Status == STATUS_SUCCESS)
     {
         /* Create a kernel mode allocation for render targets,
@@ -531,31 +522,29 @@ GaDrvEnvKmt::gaEnvSurfaceDefine(void *pvEnv,
     return -1;
 }
 
-/* static */ DECLCALLBACK(int)
+/* static */ DECLCALLBACK(void)
 GaDrvEnvKmt::gaEnvSurfaceDestroy(void *pvEnv,
                                  uint32_t u32Sid)
 {
     GaDrvEnvKmt *pThis = (GaDrvEnvKmt *)pvEnv;
 
-    NTSTATUS                          Status;
-    D3DKMT_ESCAPE                     kmtEscape;
     VBOXDISPIFESCAPE_GASURFACEDESTROY data;
-
     memset(&data, 0, sizeof(data));
     data.EscapeHdr.escapeCode  = VBOXESC_GASURFACEDESTROY;
     // data.EscapeHdr.cmdSpecific = 0;
     data.u32Sid                = u32Sid;
 
-    memset(&kmtEscape, 0, sizeof(kmtEscape));
-    kmtEscape.hAdapter              = pThis->mKmtCallbacks.hAdapter;
-    kmtEscape.hDevice               = pThis->mKmtCallbacks.hDevice;
-    kmtEscape.Type                  = D3DKMT_ESCAPE_DRIVERPRIVATE;
-    kmtEscape.Flags.HardwareAccess  = 1;
-    kmtEscape.pPrivateDriverData    = &data;
-    kmtEscape.PrivateDriverDataSize = sizeof(data);
-    // kmtEscape.hContext              = 0;
+    D3DKMT_ESCAPE EscapeData;
+    memset(&EscapeData, 0, sizeof(EscapeData));
+    EscapeData.hAdapter              = pThis->mKmtCallbacks.hAdapter;
+    EscapeData.hDevice               = pThis->mKmtCallbacks.hDevice;
+    EscapeData.Type                  = D3DKMT_ESCAPE_DRIVERPRIVATE;
+    EscapeData.Flags.HardwareAccess  = 1;
+    EscapeData.pPrivateDriverData    = &data;
+    EscapeData.PrivateDriverDataSize = sizeof(data);
+    // EscapeData.hContext              = 0;
 
-    Status = pThis->mKmtCallbacks.d3dkmt->pfnD3DKMTEscape(&kmtEscape);
+    NTSTATUS Status = pThis->mKmtCallbacks.d3dkmt->pfnD3DKMTEscape(&EscapeData);
     Assert(Status == STATUS_SUCCESS);
 
     /* Try to remove from sid -> hAllocation map. */
@@ -574,8 +563,6 @@ GaDrvEnvKmt::gaEnvSurfaceDestroy(void *pvEnv,
 
         free(pSurfaceInfo);
     }
-
-    return (Status == STATUS_SUCCESS)? 0: -1;
 }
 
 D3DKMT_HANDLE GaDrvEnvKmt::drvEnvKmtSurfaceHandle(uint32_t u32Sid)
@@ -584,15 +571,12 @@ D3DKMT_HANDLE GaDrvEnvKmt::drvEnvKmtSurfaceHandle(uint32_t u32Sid)
     return pSurfaceInfo ? pSurfaceInfo->hAllocation : 0;
 }
 
-static HRESULT
+static bool
 vboxDdiFenceCreate(GaKmtCallbacks *pKmtCallbacks,
                    GAWDDMCONTEXTINFO *pContextInfo,
                    uint32_t *pu32FenceHandle)
 {
-    NTSTATUS                       Status;
-    D3DKMT_ESCAPE                  kmtEscape;
     VBOXDISPIFESCAPE_GAFENCECREATE fenceCreate;
-
     memset(&fenceCreate, 0, sizeof(fenceCreate));
     fenceCreate.EscapeHdr.escapeCode  = VBOXESC_GAFENCECREATE;
     // fenceCreate.EscapeHdr.cmdSpecific = 0;
@@ -600,59 +584,60 @@ vboxDdiFenceCreate(GaKmtCallbacks *pKmtCallbacks,
     /* If the user-mode display driver sets hContext to a non-NULL value, the driver must
      * have also set hDevice to a non-NULL value...
      */
-    memset(&kmtEscape, 0, sizeof(kmtEscape));
-    kmtEscape.hAdapter              = pKmtCallbacks->hAdapter;
-    kmtEscape.hDevice               = pKmtCallbacks->hDevice;
-    kmtEscape.Type                  = D3DKMT_ESCAPE_DRIVERPRIVATE;
-    // kmtEscape.Flags.HardwareAccess  = 0;
-    kmtEscape.pPrivateDriverData    = &fenceCreate;
-    kmtEscape.PrivateDriverDataSize = sizeof(fenceCreate);
-    kmtEscape.hContext              = pContextInfo->hContext;
+    D3DKMT_ESCAPE EscapeData;
+    memset(&EscapeData, 0, sizeof(EscapeData));
+    EscapeData.hAdapter              = pKmtCallbacks->hAdapter;
+    EscapeData.hDevice               = pKmtCallbacks->hDevice;
+    EscapeData.Type                  = D3DKMT_ESCAPE_DRIVERPRIVATE;
+    // EscapeData.Flags.HardwareAccess  = 0;
+    EscapeData.pPrivateDriverData    = &fenceCreate;
+    EscapeData.PrivateDriverDataSize = sizeof(fenceCreate);
+    EscapeData.hContext              = pContextInfo->hContext;
 
-    Status = pKmtCallbacks->d3dkmt->pfnD3DKMTEscape(&kmtEscape);
+    NTSTATUS Status = pKmtCallbacks->d3dkmt->pfnD3DKMTEscape(&EscapeData);
     if (Status == STATUS_SUCCESS)
     {
         *pu32FenceHandle = fenceCreate.u32FenceHandle;
+        return true;
     }
 
-    Assert(Status == STATUS_SUCCESS);
-    return (Status == STATUS_SUCCESS) ? S_OK : E_FAIL;
+    Assert(0);
+    return false;
 }
 
-static HRESULT
+static bool
 vboxDdiFenceQuery(GaKmtCallbacks *pKmtCallbacks,
                   uint32_t u32FenceHandle,
                   GAFENCEQUERY *pFenceQuery)
 {
-    NTSTATUS                      Status;
-    D3DKMT_ESCAPE                 kmtEscape;
     VBOXDISPIFESCAPE_GAFENCEQUERY fenceQuery;
-
     memset(&fenceQuery, 0, sizeof(fenceQuery));
     fenceQuery.EscapeHdr.escapeCode  = VBOXESC_GAFENCEQUERY;
     // fenceQuery.EscapeHdr.cmdSpecific = 0;
     fenceQuery.u32FenceHandle = u32FenceHandle;
 
-    memset(&kmtEscape, 0, sizeof(kmtEscape));
-    kmtEscape.hAdapter              = pKmtCallbacks->hAdapter;
-    kmtEscape.hDevice               = pKmtCallbacks->hDevice;
-    kmtEscape.Type                  = D3DKMT_ESCAPE_DRIVERPRIVATE;
-    // kmtEscape.Flags.HardwareAccess  = 0;
-    kmtEscape.pPrivateDriverData    = &fenceQuery;
-    kmtEscape.PrivateDriverDataSize = sizeof(fenceQuery);
-    kmtEscape.hContext              = 0;
+    D3DKMT_ESCAPE EscapeData;
+    memset(&EscapeData, 0, sizeof(EscapeData));
+    EscapeData.hAdapter              = pKmtCallbacks->hAdapter;
+    EscapeData.hDevice               = pKmtCallbacks->hDevice;
+    EscapeData.Type                  = D3DKMT_ESCAPE_DRIVERPRIVATE;
+    // EscapeData.Flags.HardwareAccess  = 0;
+    EscapeData.pPrivateDriverData    = &fenceQuery;
+    EscapeData.PrivateDriverDataSize = sizeof(fenceQuery);
+    EscapeData.hContext              = 0;
 
-    Status = pKmtCallbacks->d3dkmt->pfnD3DKMTEscape(&kmtEscape);
+    NTSTATUS Status = pKmtCallbacks->d3dkmt->pfnD3DKMTEscape(&EscapeData);
     if (Status == STATUS_SUCCESS)
     {
         pFenceQuery->u32FenceHandle    = fenceQuery.u32FenceHandle;
         pFenceQuery->u32SubmittedSeqNo = fenceQuery.u32SubmittedSeqNo;
         pFenceQuery->u32ProcessedSeqNo = fenceQuery.u32ProcessedSeqNo;
         pFenceQuery->u32FenceStatus    = fenceQuery.u32FenceStatus;
+        return true;
     }
 
-    Assert(Status == STATUS_SUCCESS);
-    return (Status == STATUS_SUCCESS) ? S_OK : E_FAIL;
+    Assert(0);
+    return false;
 }
 
 /* static */ DECLCALLBACK(int)
@@ -668,40 +653,35 @@ GaDrvEnvKmt::gaEnvFenceQuery(void *pvEnv,
         return 0;
     }
 
-    HRESULT hr = vboxDdiFenceQuery(&pThis->mKmtCallbacks, u32FenceHandle, pFenceQuery);
-    if (FAILED(hr))
-        return -1;
-
-    return 0;
+    bool fSuccess = vboxDdiFenceQuery(&pThis->mKmtCallbacks, u32FenceHandle, pFenceQuery);
+    return fSuccess ? 0: -1;
 }
 
-static HRESULT
+static bool
 vboxDdiFenceWait(GaKmtCallbacks *pKmtCallbacks,
                  uint32_t u32FenceHandle,
                  uint32_t u32TimeoutUS)
 {
-    NTSTATUS                     Status;
-    D3DKMT_ESCAPE                kmtEscape;
     VBOXDISPIFESCAPE_GAFENCEWAIT fenceWait;
-
     memset(&fenceWait, 0, sizeof(fenceWait));
     fenceWait.EscapeHdr.escapeCode  = VBOXESC_GAFENCEWAIT;
     // pFenceWait->EscapeHdr.cmdSpecific = 0;
     fenceWait.u32FenceHandle = u32FenceHandle;
     fenceWait.u32TimeoutUS = u32TimeoutUS;
 
-    memset(&kmtEscape, 0, sizeof(kmtEscape));
-    kmtEscape.hAdapter              = pKmtCallbacks->hAdapter;
-    kmtEscape.hDevice               = pKmtCallbacks->hDevice;
-    kmtEscape.Type                  = D3DKMT_ESCAPE_DRIVERPRIVATE;
-    // kmtEscape.Flags.HardwareAccess  = 0;
-    kmtEscape.pPrivateDriverData    = &fenceWait;
-    kmtEscape.PrivateDriverDataSize = sizeof(fenceWait);
-    kmtEscape.hContext              = 0;
+    D3DKMT_ESCAPE EscapeData;
+    memset(&EscapeData, 0, sizeof(EscapeData));
+    EscapeData.hAdapter              = pKmtCallbacks->hAdapter;
+    EscapeData.hDevice               = pKmtCallbacks->hDevice;
+    EscapeData.Type                  = D3DKMT_ESCAPE_DRIVERPRIVATE;
+    // EscapeData.Flags.HardwareAccess  = 0;
+    EscapeData.pPrivateDriverData    = &fenceWait;
+    EscapeData.PrivateDriverDataSize = sizeof(fenceWait);
+    EscapeData.hContext              = 0;
 
-    Status = pKmtCallbacks->d3dkmt->pfnD3DKMTEscape(&kmtEscape);
+    NTSTATUS Status = pKmtCallbacks->d3dkmt->pfnD3DKMTEscape(&EscapeData);
     Assert(Status == STATUS_SUCCESS);
-    return (Status == STATUS_SUCCESS) ? S_OK : E_FAIL;
+    return Status == STATUS_SUCCESS;
 }
 
 /* static */ DECLCALLBACK(int)
@@ -714,35 +694,33 @@ GaDrvEnvKmt::gaEnvFenceWait(void *pvEnv,
     if (!pThis->mKmtCallbacks.hDevice)
         return 0;
 
-    HRESULT hr = vboxDdiFenceWait(&pThis->mKmtCallbacks, u32FenceHandle, u32TimeoutUS);
-    return SUCCEEDED(hr) ? 0 : -1;
+    bool fSuccess = vboxDdiFenceWait(&pThis->mKmtCallbacks, u32FenceHandle, u32TimeoutUS);
+    return fSuccess ? 0 : -1;
 }
 
-static HRESULT
+static bool
 vboxDdiFenceUnref(GaKmtCallbacks *pKmtCallbacks,
                   uint32_t u32FenceHandle)
 {
-    NTSTATUS                     Status;
-    D3DKMT_ESCAPE                kmtEscape;
     VBOXDISPIFESCAPE_GAFENCEUNREF fenceUnref;
-
     memset(&fenceUnref, 0, sizeof(fenceUnref));
     fenceUnref.EscapeHdr.escapeCode  = VBOXESC_GAFENCEUNREF;
     // pFenceUnref->EscapeHdr.cmdSpecific = 0;
     fenceUnref.u32FenceHandle = u32FenceHandle;
 
-    memset(&kmtEscape, 0, sizeof(kmtEscape));
-    kmtEscape.hAdapter              = pKmtCallbacks->hAdapter;
-    kmtEscape.hDevice               = pKmtCallbacks->hDevice;
-    kmtEscape.Type                  = D3DKMT_ESCAPE_DRIVERPRIVATE;
-    // kmtEscape.Flags.HardwareAccess  = 0;
-    kmtEscape.pPrivateDriverData    = &fenceUnref;
-    kmtEscape.PrivateDriverDataSize = sizeof(fenceUnref);
-    kmtEscape.hContext              = 0;
+    D3DKMT_ESCAPE EscapeData;
+    memset(&EscapeData, 0, sizeof(EscapeData));
+    EscapeData.hAdapter              = pKmtCallbacks->hAdapter;
+    EscapeData.hDevice               = pKmtCallbacks->hDevice;
+    EscapeData.Type                  = D3DKMT_ESCAPE_DRIVERPRIVATE;
+    // EscapeData.Flags.HardwareAccess  = 0;
+    EscapeData.pPrivateDriverData    = &fenceUnref;
+    EscapeData.PrivateDriverDataSize = sizeof(fenceUnref);
+    EscapeData.hContext              = 0;
 
-    Status = pKmtCallbacks->d3dkmt->pfnD3DKMTEscape(&kmtEscape);
+    NTSTATUS Status = pKmtCallbacks->d3dkmt->pfnD3DKMTEscape(&EscapeData);
     Assert(Status == STATUS_SUCCESS);
-    return (Status == STATUS_SUCCESS) ? S_OK : E_FAIL;
+    return Status == STATUS_SUCCESS;
 }
 
 /* static */ DECLCALLBACK(void)
@@ -764,11 +742,9 @@ GaDrvEnvKmt::gaEnvFenceUnref(void *pvEnv,
  * @param cbAvail     Available buffer size..
  * @param pu32Length  Size of commands which will fit in cbAvail bytes.
  */
-static HRESULT
+static bool
 vboxCalcCommandLength(const uint8_t *pu8Commands, uint32_t cbCommands, uint32_t cbAvail, uint32_t *pu32Length)
 {
-    HRESULT hr = S_OK;
-
     uint32_t u32Length = 0;
     const uint8_t *pu8Src = pu8Commands;
     const uint8_t *pu8SrcEnd = pu8Commands + cbCommands;
@@ -778,8 +754,7 @@ vboxCalcCommandLength(const uint8_t *pu8Commands, uint32_t cbCommands, uint32_t 
         const uint32_t cbSrcLeft = pu8SrcEnd - pu8Src;
         if (cbSrcLeft < sizeof(uint32_t))
         {
-            hr = E_INVALIDARG;
-            break;
+            return false;
         }
 
         /* Get the command id and command length. */
@@ -790,21 +765,18 @@ vboxCalcCommandLength(const uint8_t *pu8Commands, uint32_t cbCommands, uint32_t 
         {
             if (cbSrcLeft < sizeof(SVGA3dCmdHeader))
             {
-                hr = E_INVALIDARG;
-                break;
+                return false;
             }
 
             const SVGA3dCmdHeader *pHeader = (SVGA3dCmdHeader *)pu8Src;
             cbCmd = sizeof(SVGA3dCmdHeader) + pHeader->size;
             if (cbCmd % sizeof(uint32_t) != 0)
             {
-                hr = E_INVALIDARG;
-                break;
+                return false;
             }
             if (cbSrcLeft < cbCmd)
             {
-                hr = E_INVALIDARG;
-                break;
+                return false;
             }
         }
         else
@@ -812,8 +784,7 @@ vboxCalcCommandLength(const uint8_t *pu8Commands, uint32_t cbCommands, uint32_t 
             /* It is not expected that any of common SVGA commands will be in the command buffer
              * because the SVGA gallium driver does not use them.
              */
-            hr = E_INVALIDARG;
-            break;
+            return false;
         }
 
         if (u32Length + cbCmd > cbAvail)
@@ -821,7 +792,7 @@ vboxCalcCommandLength(const uint8_t *pu8Commands, uint32_t cbCommands, uint32_t 
             if (u32Length == 0)
             {
                /* No commands fit into the buffer. */
-               hr = E_FAIL;
+               return false;
             }
             break;
         }
@@ -831,20 +802,16 @@ vboxCalcCommandLength(const uint8_t *pu8Commands, uint32_t cbCommands, uint32_t 
     }
 
     *pu32Length = u32Length;
-    return hr;
+    return true;
 }
 
-static HRESULT
+static bool
 vboxDdiRender(GaKmtCallbacks *pKmtCallbacks,
               GAWDDMCONTEXTINFO *pContextInfo, uint32_t u32FenceHandle, void *pvCommands, uint32_t cbCommands,
               ULONGLONG PresentHistoryToken, bool fPresentRedirected)
 {
-    HRESULT hr = S_OK;
-    D3DKMT_RENDER kmtRender;
     uint32_t cbLeft;
     const uint8_t *pu8Src;
-
-    // LogRel(("vboxDdiRender: cbCommands = %d, u32FenceHandle = %d\n", cbCommands, u32FenceHandle));
 
     cbLeft = cbCommands;
     pu8Src = (uint8_t *)pvCommands;
@@ -855,8 +822,7 @@ vboxDdiRender(GaKmtCallbacks *pKmtCallbacks,
         const uint32_t cbAvail = pContextInfo->CommandBufferSize;
         if (cbAvail <= sizeof(u32FenceHandle))
         {
-            hr = E_FAIL;
-            break;
+            return false;
         }
 
         /* How many bytes of command data still to copy. */
@@ -877,10 +843,9 @@ vboxDdiRender(GaKmtCallbacks *pKmtCallbacks,
             *(uint32_t *)pContextInfo->pCommandBuffer = 0;
 
             /* Get how much commands data will fit in the buffer. */
-            hr = vboxCalcCommandLength(pu8Src, cbCommandChunk, cbAvail - sizeof(u32FenceHandle), &cbCommandChunk);
-            if (hr != S_OK)
+            if (!vboxCalcCommandLength(pu8Src, cbCommandChunk, cbAvail - sizeof(u32FenceHandle), &cbCommandChunk))
             {
-                break;
+                return false;
             }
 
             cbToCopy = sizeof(u32FenceHandle) + cbCommandChunk;
@@ -896,67 +861,65 @@ vboxDdiRender(GaKmtCallbacks *pKmtCallbacks,
         pu8Src += cbCommandChunk;
         cbLeft -= cbCommandChunk;
 
-        memset(&kmtRender, 0, sizeof(kmtRender));
-        kmtRender.hContext = pContextInfo->hContext;
-        // kmtRender.CommandOffset = 0;
-        kmtRender.CommandLength = cbToCopy;
-        // kmtRender.AllocationCount = 0;
-        // kmtRender.PatchLocationCount = 0;
-        kmtRender.PresentHistoryToken = PresentHistoryToken;
-        kmtRender.Flags.PresentRedirected = fPresentRedirected;
+        D3DKMT_RENDER RenderData;
+        memset(&RenderData, 0, sizeof(RenderData));
+        RenderData.hContext                = pContextInfo->hContext;
+        // RenderData.CommandOffset           = 0;
+        RenderData.CommandLength           = cbToCopy;
+        // RenderData.AllocationCount         = 0;
+        // RenderData.PatchLocationCount      = 0;
+        RenderData.PresentHistoryToken     = PresentHistoryToken;
+        RenderData.Flags.PresentRedirected = fPresentRedirected;
 
-        NTSTATUS Status = pKmtCallbacks->d3dkmt->pfnD3DKMTRender(&kmtRender);
+        NTSTATUS Status = pKmtCallbacks->d3dkmt->pfnD3DKMTRender(&RenderData);
         Assert(Status == STATUS_SUCCESS);
         if (Status != STATUS_SUCCESS)
         {
-            hr = E_FAIL;
-            break;
+            return false;
         }
 
-        pContextInfo->pCommandBuffer = kmtRender.pNewCommandBuffer;
-        pContextInfo->CommandBufferSize = kmtRender.NewCommandBufferSize;
-        pContextInfo->pAllocationList       = kmtRender.pNewAllocationList;
-        pContextInfo->AllocationListSize    = kmtRender.NewAllocationListSize;
-        pContextInfo->pPatchLocationList    = kmtRender.pNewPatchLocationList;
-        pContextInfo->PatchLocationListSize = kmtRender.NewPatchLocationListSize;
+        pContextInfo->pCommandBuffer        = RenderData.pNewCommandBuffer;
+        pContextInfo->CommandBufferSize     = RenderData.NewCommandBufferSize;
+        pContextInfo->pAllocationList       = RenderData.pNewAllocationList;
+        pContextInfo->AllocationListSize    = RenderData.NewAllocationListSize;
+        pContextInfo->pPatchLocationList    = RenderData.pNewPatchLocationList;
+        pContextInfo->PatchLocationListSize = RenderData.NewPatchLocationListSize;
     } while (cbLeft);
 
-    return hr;
+    return true;
 }
 
-/** @todo return bool */
-int GaDrvEnvKmt::doRender(uint32_t u32Cid, void *pvCommands, uint32_t cbCommands,
+bool GaDrvEnvKmt::doRender(uint32_t u32Cid, void *pvCommands, uint32_t cbCommands,
                           GAFENCEQUERY *pFenceQuery, ULONGLONG PresentHistoryToken, bool fPresentRedirected)
 {
-    HRESULT hr = S_OK;
     uint32_t u32FenceHandle;
     GAWDDMCONTEXTINFO *pContextInfo = (GAWDDMCONTEXTINFO *)RTAvlU32Get(&mContextTree, u32Cid);
     if (!pContextInfo)
-        return -1;
+        return false;
 
+    bool fSuccess = true;
     u32FenceHandle = 0;
     if (pFenceQuery)
     {
-        hr = vboxDdiFenceCreate(&mKmtCallbacks, pContextInfo, &u32FenceHandle);
+        fSuccess = vboxDdiFenceCreate(&mKmtCallbacks, pContextInfo, &u32FenceHandle);
     }
 
-    if (SUCCEEDED(hr))
+    if (fSuccess)
     {
-        hr = vboxDdiRender(&mKmtCallbacks, pContextInfo, u32FenceHandle,
-                           pvCommands, cbCommands, PresentHistoryToken, fPresentRedirected);
-        if (SUCCEEDED(hr))
+        fSuccess = vboxDdiRender(&mKmtCallbacks, pContextInfo, u32FenceHandle,
+                                 pvCommands, cbCommands, PresentHistoryToken, fPresentRedirected);
+        if (fSuccess)
         {
             if (pFenceQuery)
             {
-                HRESULT hr2 = vboxDdiFenceQuery(&mKmtCallbacks, u32FenceHandle, pFenceQuery);
-                if (hr2 != S_OK)
+                if (!vboxDdiFenceQuery(&mKmtCallbacks, u32FenceHandle, pFenceQuery))
                 {
                     pFenceQuery->u32FenceStatus = GA_FENCE_STATUS_NULL;
                 }
             }
         }
     }
-    return SUCCEEDED(hr)? 0: 1;
+    return fSuccess;
 }
 
 /* static */ DECLCALLBACK(int)
@@ -967,28 +930,25 @@ GaDrvEnvKmt::gaEnvRender(void *pvEnv,
                          GAFENCEQUERY *pFenceQuery)
 {
     GaDrvEnvKmt *pThis = (GaDrvEnvKmt *)pvEnv;
-    return pThis->doRender(u32Cid, pvCommands, cbCommands, pFenceQuery, 0, false);
+    return pThis->doRender(u32Cid, pvCommands, cbCommands, pFenceQuery, 0, false) ? 1 : 0;
 }
 
-int GaDrvEnvKmt::drvEnvKmtRenderCompose(uint32_t u32Cid,
-                                        void *pvCommands,
-                                        uint32_t cbCommands,
-                                        ULONGLONG PresentHistoryToken)
+bool GaDrvEnvKmt::drvEnvKmtRenderCompose(uint32_t u32Cid,
+                                         void *pvCommands,
+                                         uint32_t cbCommands,
+                                         ULONGLONG PresentHistoryToken)
 {
     return doRender(u32Cid, pvCommands, cbCommands, NULL, PresentHistoryToken, true);
 }
 
 
-static HRESULT
+static bool
 vboxDdiRegionCreate(GaKmtCallbacks *pKmtCallbacks,
                     uint32_t u32RegionSize,
                     uint32_t *pu32GmrId,
                     void **ppvMap)
 {
-    NTSTATUS                  Status;
-    D3DKMT_ESCAPE             kmtEscape;
     VBOXDISPIFESCAPE_GAREGION data;
-
     memset(&data, 0, sizeof(data));
     data.EscapeHdr.escapeCode  = VBOXESC_GAREGION;
     // data.EscapeHdr.cmdSpecific = 0;
@@ -997,23 +957,26 @@ vboxDdiRegionCreate(GaKmtCallbacks *pKmtCallbacks,
     // data.u32GmrId              = 0;
     // data.u64UserAddress        = 0;
 
-    memset(&kmtEscape, 0, sizeof(kmtEscape));
-    kmtEscape.hAdapter              = pKmtCallbacks->hAdapter;
-    kmtEscape.hDevice               = pKmtCallbacks->hDevice;
-    kmtEscape.Type                  = D3DKMT_ESCAPE_DRIVERPRIVATE;
-    // kmtEscape.Flags.HardwareAccess  = 0;
-    kmtEscape.pPrivateDriverData    = &data;
-    kmtEscape.PrivateDriverDataSize = sizeof(data);
-    // kmtEscape.hContext              = 0;
+    D3DKMT_ESCAPE EscapeData;
+    memset(&EscapeData, 0, sizeof(EscapeData));
+    EscapeData.hAdapter              = pKmtCallbacks->hAdapter;
+    EscapeData.hDevice               = pKmtCallbacks->hDevice;
+    EscapeData.Type                  = D3DKMT_ESCAPE_DRIVERPRIVATE;
+    // EscapeData.Flags.HardwareAccess  = 0;
+    EscapeData.pPrivateDriverData    = &data;
+    EscapeData.PrivateDriverDataSize = sizeof(data);
+    // EscapeData.hContext              = 0;
 
-    Status = pKmtCallbacks->d3dkmt->pfnD3DKMTEscape(&kmtEscape);
+    NTSTATUS Status = pKmtCallbacks->d3dkmt->pfnD3DKMTEscape(&EscapeData);
     if (Status == STATUS_SUCCESS)
     {
         *pu32GmrId = data.u32GmrId;
         *ppvMap = (void *)(uintptr_t)data.u64UserAddress;
+        return true;
     }
-    Assert(Status == STATUS_SUCCESS);
-    return (Status == STATUS_SUCCESS) ? S_OK : E_FAIL;
+
+    Assert(0);
+    return false;
 }
 
 /* static */ DECLCALLBACK(int)
@@ -1024,38 +987,29 @@ GaDrvEnvKmt::gaEnvRegionCreate(void *pvEnv,
 {
     GaDrvEnvKmt *pThis = (GaDrvEnvKmt *)pvEnv;
 
-    int ret;
-
     if (pThis->mKmtCallbacks.hDevice)
     {
         /* That is a real device */
-        HRESULT hr = vboxDdiRegionCreate(&pThis->mKmtCallbacks, u32RegionSize, pu32GmrId, ppvMap);
-        ret = SUCCEEDED(hr)? 0: -1;
-    }
-    else
-    {
-        /* That is a fake device, created when WDDM adapter is initialized. */
-        *ppvMap = malloc(u32RegionSize);
-        if (*ppvMap != NULL)
-        {
-            *pu32GmrId = 0;
-            ret = 0;
-        }
-        else
-            ret = -1;
+        bool fSuccess = vboxDdiRegionCreate(&pThis->mKmtCallbacks, u32RegionSize, pu32GmrId, ppvMap);
+        return fSuccess ? 0: -1;
     }
 
-    return ret;
+    /* That is a fake device, created when WDDM adapter is initialized. */
+    *ppvMap = malloc(u32RegionSize);
+    if (*ppvMap)
+    {
+        *pu32GmrId = 0;
+        return 0;
+    }
+
+    return -1;
 }
 
-static HRESULT
+static bool
 vboxDdiRegionDestroy(GaKmtCallbacks *pKmtCallbacks,
                      uint32_t u32GmrId)
 {
-    NTSTATUS                  Status;
-    D3DKMT_ESCAPE             kmtEscape;
     VBOXDISPIFESCAPE_GAREGION data;
-
     memset(&data, 0, sizeof(data));
     data.EscapeHdr.escapeCode  = VBOXESC_GAREGION;
     // data.EscapeHdr.cmdSpecific = 0;
@@ -1064,18 +1018,19 @@ vboxDdiRegionDestroy(GaKmtCallbacks *pKmtCallbacks,
     data.u32GmrId                 = u32GmrId;
     // data.u64UserAddress        = 0;
 
-    memset(&kmtEscape, 0, sizeof(kmtEscape));
-    kmtEscape.hAdapter              = pKmtCallbacks->hAdapter;
-    kmtEscape.hDevice               = pKmtCallbacks->hDevice;
-    kmtEscape.Type                  = D3DKMT_ESCAPE_DRIVERPRIVATE;
-    // kmtEscape.Flags.HardwareAccess  = 0;
-    kmtEscape.pPrivateDriverData    = &data;
-    kmtEscape.PrivateDriverDataSize = sizeof(data);
-    // kmtEscape.hContext              = 0;
+    D3DKMT_ESCAPE EscapeData;
+    memset(&EscapeData, 0, sizeof(EscapeData));
+    EscapeData.hAdapter              = pKmtCallbacks->hAdapter;
+    EscapeData.hDevice               = pKmtCallbacks->hDevice;
+    EscapeData.Type                  = D3DKMT_ESCAPE_DRIVERPRIVATE;
+    // EscapeData.Flags.HardwareAccess  = 0;
+    EscapeData.pPrivateDriverData    = &data;
+    EscapeData.PrivateDriverDataSize = sizeof(data);
+    // EscapeData.hContext              = 0;
 
-    Status = pKmtCallbacks->d3dkmt->pfnD3DKMTEscape(&kmtEscape);
+    NTSTATUS Status = pKmtCallbacks->d3dkmt->pfnD3DKMTEscape(&EscapeData);
     Assert(Status == STATUS_SUCCESS);
-    return (Status == STATUS_SUCCESS) ? S_OK : E_FAIL;
+    return Status == STATUS_SUCCESS;
 }
 
 /* static */ DECLCALLBACK(void)
@@ -1115,19 +1070,16 @@ HRESULT GaDrvEnvKmt::Init(void)
     /* Figure out which adapter to use. */
     NTSTATUS Status = vboxDispKmtOpenAdapter2(&mKmtCallbacks.hAdapter, &mKmtCallbacks.AdapterLuid);
     Assert(Status == STATUS_SUCCESS);
-
     if (Status == STATUS_SUCCESS)
     {
         VBOXWDDM_QAI adapterInfo;
-        Status = vboxDdiQueryAdapterInfo(&mKmtCallbacks, mKmtCallbacks.hAdapter, &adapterInfo, sizeof(adapterInfo));
-        Assert(Status == STATUS_SUCCESS);
-
-        if (Status == STATUS_SUCCESS)
+        bool fSuccess = vboxDdiQueryAdapterInfo(&mKmtCallbacks, mKmtCallbacks.hAdapter, &adapterInfo, sizeof(adapterInfo));
+        Assert(fSuccess);
+        if (fSuccess)
         {
-            Status = vboxDdiDeviceCreate(&mKmtCallbacks, &mKmtCallbacks.hDevice);
-            Assert(Status == STATUS_SUCCESS);
-
-            if (Status == STATUS_SUCCESS)
+            fSuccess = vboxDdiDeviceCreate(&mKmtCallbacks, &mKmtCallbacks.hDevice);
+            Assert(fSuccess);
+            if (fSuccess)
             {
                 mHWInfo = adapterInfo.u.vmsvga.HWInfo;
 
