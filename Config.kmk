@@ -2276,13 +2276,11 @@ ifeq ($(KBUILD_TARGET),darwin)
   endif
  endif
  ifdef VBOX_WITH_NEW_XCODE
-  # For MacOS Mojave (and probably newer) we need a more recent XCode from the system.
-  # So just drop the tool environment and use the system's XCode instead.
-  TOOL_StandardDTrace_DTRACE_ENV_SETUP:=
-  if $(KBUILD_HOST_VERSION_MAJOR) < 18 # (OS X 10.14 Mojave)
-   TOOL_StandardDTrace_DTRACE_ENV_SETUP=$(TOOL_$(VBOX_GCC_TOOL)_ENV_SETUP)
+  if $(KBUILD_HOST_VERSION_MAJOR) >= 18 # HACK ALERT! dtrace doesn't work on Mojave if we specify our Xcode 6.2 environment.
+   override TOOL_StandardDTrace_DTRACE := dtrace "-xcpppath=$(VBOX_PATH_MACOSX_DEVEL_ROOT)/usr/bin/gcc"
+  else
+   override TOOL_StandardDTrace_DTRACE := $(TOOL_$(VBOX_GCC_TOOL)_ENV_SETUP) dtrace "-xcpppath=$(VBOX_PATH_MACOSX_DEVEL_ROOT)/usr/bin/gcc"
   endif
-  override TOOL_StandardDTrace_DTRACE := dtrace $(TOOL_StandardDTrace_DTRACE_ENV_SETUP) "-xcpppath=$(VBOX_PATH_MACOSX_DEVEL_ROOT)/usr/bin/gcc"
   export PATH:=$(VBOX_PATH_MACOSX_SDK)/usr/bin:$(PATH)
  else
   if  $(VBOX_XCODE_VERSION_MAJOR) > 4 || ($(VBOX_XCODE_VERSION_MAJOR) == 4 && $(VBOX_XCODE_VERSION_MINOR) >= 2)
