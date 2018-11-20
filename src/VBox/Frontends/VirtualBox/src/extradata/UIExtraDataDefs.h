@@ -709,7 +709,6 @@ public:
     enum DetailsElementOptionTypeSharedFolders
     {
         DetailsElementOptionTypeSharedFolders_Invalid = 0,
-        DetailsElementOptionTypeSharedFolders_Summary = RT_BIT(0),
         DetailsElementOptionTypeSharedFolders_Default = 0xFFFF
     };
     Q_ENUM(DetailsElementOptionTypeSharedFolders);
@@ -729,7 +728,6 @@ public:
     enum DetailsElementOptionTypeDescription
     {
         DetailsElementOptionTypeDescription_Invalid = 0,
-        DetailsElementOptionTypeDescription_Summary = RT_BIT(0),
         DetailsElementOptionTypeDescription_Default = 0xFFFF
     };
     Q_ENUM(DetailsElementOptionTypeDescription);

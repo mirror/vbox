@@ -956,14 +956,11 @@ void UIDetailsUpdateTaskSF::run()
     if (comMachine.GetAccessible())
     {
         /* Summary: */
-        if (m_fOptions & UIExtraDataMetaDefs::DetailsElementOptionTypeSharedFolders_Summary)
-        {
-            const ulong uCount = comMachine.GetSharedFolders().size();
-            if (uCount > 0)
-                table << UITextTableLine(QApplication::translate("UIDetails", "Shared Folders", "details (shared folders)"), QString::number(uCount));
-            else
-                table << UITextTableLine(QApplication::translate("UIDetails", "None", "details (shared folders)"), QString());
-        }
+        const ulong uCount = comMachine.GetSharedFolders().size();
+        if (uCount > 0)
+            table << UITextTableLine(QApplication::translate("UIDetails", "Shared Folders", "details (shared folders)"), QString::number(uCount));
+        else
+            table << UITextTableLine(QApplication::translate("UIDetails", "None", "details (shared folders)"), QString());
     }
     else
         table << UITextTableLine(QApplication::translate("UIDetails", "Information Inaccessible", "details"), QString());
@@ -1078,25 +1075,22 @@ UITask *UIDetailsElementUI::createUpdateTask()
 void UIDetailsUpdateTaskDescription::run()
 {
     /* Acquire corresponding machine: */
-    CMachine machine = property("machine").value<CMachine>();
-    if (machine.isNull())
+    CMachine comMachine = property("machine").value<CMachine>();
+    if (comMachine.isNull())
         return;
 
     /* Prepare table: */
     UITextTable table;
 
     /* Gather information: */
-    if (machine.GetAccessible())
+    if (comMachine.GetAccessible())
     {
         /* Summary: */
-        if (m_fOptions & UIExtraDataMetaDefs::DetailsElementOptionTypeDescription_Summary)
-        {
-            const QString strDescription = machine.GetDescription();
-            if (!strDescription.isEmpty())
-                table << UITextTableLine(strDescription, QString());
-            else
-                table << UITextTableLine(QApplication::translate("UIDetails", "None", "details (description)"), QString());
-        }
+        const QString strDescription = comMachine.GetDescription();
+        if (!strDescription.isEmpty())
+            table << UITextTableLine(strDescription, QString());
+        else
+            table << UITextTableLine(QApplication::translate("UIDetails", "None", "details (description)"), QString());
     }
     else
         table << UITextTableLine(QApplication::translate("UIDetails", "Information Inaccessible", "details"), QString());

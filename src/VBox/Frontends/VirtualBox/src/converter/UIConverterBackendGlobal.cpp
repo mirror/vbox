@@ -1182,7 +1182,6 @@ template<> QString toInternalString(const UIExtraDataMetaDefs::DetailsElementOpt
     QString strResult;
     switch (enmDetailsElementOptionTypeSharedFolders)
     {
-        case UIExtraDataMetaDefs::DetailsElementOptionTypeSharedFolders_Summary: strResult = "Summary"; break;
         default:
         {
             AssertMsgFailed(("No text for details element option type=%d", enmDetailsElementOptionTypeSharedFolders));
@@ -1198,7 +1197,6 @@ template<> UIExtraDataMetaDefs::DetailsElementOptionTypeSharedFolders fromIntern
     /* Here we have some fancy stuff allowing us
      * to search through the keys using 'case-insensitive' rule: */
     QStringList keys;  QList<UIExtraDataMetaDefs::DetailsElementOptionTypeSharedFolders> values;
-    keys << "Summary"; values << UIExtraDataMetaDefs::DetailsElementOptionTypeSharedFolders_Summary;
     /* Invalid type for unknown words: */
     if (!keys.contains(strDetailsElementOptionTypeSharedFolders, Qt::CaseInsensitive))
         return UIExtraDataMetaDefs::DetailsElementOptionTypeSharedFolders_Invalid;
@@ -1246,7 +1244,6 @@ template<> QString toInternalString(const UIExtraDataMetaDefs::DetailsElementOpt
     QString strResult;
     switch (enmDetailsElementOptionTypeDescription)
     {
-        case UIExtraDataMetaDefs::DetailsElementOptionTypeDescription_Summary: strResult = "Summary"; break;
         default:
         {
             AssertMsgFailed(("No text for details element option type=%d", enmDetailsElementOptionTypeDescription));
@@ -1262,7 +1259,6 @@ template<> UIExtraDataMetaDefs::DetailsElementOptionTypeDescription fromInternal
     /* Here we have some fancy stuff allowing us
      * to search through the keys using 'case-insensitive' rule: */
     QStringList keys;  QList<UIExtraDataMetaDefs::DetailsElementOptionTypeDescription> values;
-    keys << "Summary"; values << UIExtraDataMetaDefs::DetailsElementOptionTypeDescription_Summary;
     /* Invalid type for unknown words: */
     if (!keys.contains(strDetailsElementOptionTypeDescription, Qt::CaseInsensitive))
         return UIExtraDataMetaDefs::DetailsElementOptionTypeDescription_Invalid;
