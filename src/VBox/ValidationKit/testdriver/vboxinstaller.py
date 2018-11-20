@@ -467,7 +467,7 @@ class VBoxInstallerTestDriver(TestDriverBase):
         sHost = utils.getHostOs()
         if   sHost == 'darwin':     fRc = self._uninstallVBoxOnDarwin();
         elif sHost == 'linux':      fRc = self._uninstallVBoxOnLinux();
-        elif sHost == 'solaris':    fRc = self._uninstallVBoxOnSolaris();
+        elif sHost == 'solaris':    fRc = self._uninstallVBoxOnSolaris(True);
         elif sHost == 'win':        fRc = self._uninstallVBoxOnWindows(True);
         else:
             reporter.error('Unsupported host "%s".' % (sHost,));
@@ -702,13 +702,13 @@ class VBoxInstallerTestDriver(TestDriverBase):
             return False;
 
         # Uninstall first (ignore result).
-        self._uninstallVBoxOnSolaris();
+        self._uninstallVBoxOnSolaris(False);
 
         # Install the new one.
         fRc, _ = self._sudoExecuteSync(['pkgadd', '-d', sPkg, '-n', '-a', sRsp, 'SUNWvbox']);
         return fRc;
 
-    def _uninstallVBoxOnSolaris(self):
+    def _uninstallVBoxOnSolaris(self, fRestartSvcConfigD):
         """ Uninstalls VBox on Solaris."""
         reporter.flushall();
         if utils.processCall(['pkginfo', '-q', 'SUNWvbox']) != 0:
@@ -722,9 +722,10 @@ class VBoxInstallerTestDriver(TestDriverBase):
         # look in the main function and shut down the service nicely (backend_fini).
         # The restarter will then start a new instance of it.
         #
-        time.sleep(1); # Give it a chance to flush pkgrm stuff.
-        self._sudoExecuteSync(['pkill', '-HUP', 'svc.configd']);
-        time.sleep(5); # Spare a few cpu cycles it to shutdown and restart.
+        if fRestartSvcConfigD:
+            time.sleep(1); # Give it a chance to flush pkgrm stuff.
+            self._sudoExecuteSync(['pkill', '-HUP', 'svc.configd']);
+            time.sleep(5); # Spare a few cpu cycles it to shutdown and restart.
 
         return fRc;
 
