@@ -261,6 +261,8 @@ public:
     void         relist();
     static const unsigned    m_iKiloByte;
     static QString humanReadableSize(ULONG64 size);
+    /** Deletes the file objects whose stored in the m_pDeleteAfterCopyCache */
+    void continueWithMove(const QUuid &progressId);
 
 public slots:
 
@@ -292,6 +294,7 @@ protected:
                            bool isDirectoryMap, bool isStartDir);
     virtual void     readDirectory(const QString& strPath, UIFileTableItem *parent, bool isStartDir = false) = 0;
     virtual void     deleteByItem(UIFileTableItem *item) = 0;
+    virtual void     deleteByPath(const QStringList &pathList) = 0;
     virtual void     goToHomeDirectory() = 0;
     virtual bool     renameItem(UIFileTableItem *item, QString newBaseName) = 0;
     virtual bool     createDirectory(const QString &path, const QString &directoryName) = 0;
@@ -328,6 +331,9 @@ protected:
     QStringList m_driveLetterList;
     /** The set of actions which need some selection to work on. Like cut, copy etc. */
     QSet<QAction*> m_selectionDependentActions;
+    /** Paths of the source file objects are stored in this map to delete those
+     * after the copy progress completed notification is receieved */
+    QMap<QUuid, QStringList>  m_deleteAfterCopyCache;
 
 private slots:
 

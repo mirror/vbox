@@ -109,9 +109,12 @@ private slots:
     void sltReceieveLogOutput(QString strOutput, FileManagerLogType eLogType);
     void sltCopyGuestToHost();
     void sltCopyHostToGuest();
+    void sltMoveGuestToHost();
+    void sltMoveHostToGuest();
     void sltPanelActionToggled(bool fChecked);
     void sltListDirectoriesBeforeChanged();
     void sltReceieveNewFileOperation(const CProgress &comProgress);
+    void sltFileOperationComplete(QUuid progressId);
 
 private:
 
@@ -148,10 +151,12 @@ private:
         - grab it from the dialog as soon as a panel becomes visible again
         - assigned it to the most recently "unhidden" panel */
     void manageEscapeShortCut();
-
+    void copyMoveToGuest(bool fIsMove);
+    void copyMoveToHost(bool fIsMove);
     template<typename T>
     QStringList               getFsObjInfoStringList(const T &fsObjectInfo) const;
     void                      appendLog(const QString &strLog, FileManagerLogType eLogType);
+
     CGuest                    m_comGuest;
     CGuestSession             m_comGuestSession;
     QVBoxLayout              *m_pMainLayout;

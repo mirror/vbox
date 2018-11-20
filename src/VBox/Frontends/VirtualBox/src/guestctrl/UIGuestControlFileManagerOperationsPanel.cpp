@@ -54,6 +54,10 @@ public:
     UIFileOperationProgressWidget(const CProgress &comProgress, QWidget *pParent = 0);
     ~UIFileOperationProgressWidget();
 
+signals:
+
+    void sigProgressTaskComplete(QUuid progressId);
+
 protected:
 
     void retranslateUi() /* override */;
@@ -120,15 +124,17 @@ void UIFileOperationProgressWidget::prepareWidgets()
     m_pCancelButton = new QIToolButton;
     if (m_pCancelButton)
     {
-        m_pCancelButton->setIcon(UIIconPool::iconSet(":/close_16px.png"));
-
+        //m_pCancelButton->setIcon(UIIconPool::iconSet(":/close_16px.png"));
+        m_pCancelButton->setIcon(QApplication::style()->standardIcon(QStyle::SP_DockWidgetCloseButton));
+        //m_pCancelButton->setStyleSheet("QToolButton { border: 0px none black; margin: 0px 0px 0px 0px; } QToolButton::menu-indicator {image: none;}");
+        m_pCancelButton->setStyleSheet("QToolButton { border: 0px none black; margin: 0px 0px 0px 0px; } ");
         const QSize sh = m_pCancelButton->sizeHint();
-        m_pCancelButton->setStyleSheet("QToolButton { border: 0px none black; margin: 0px 0px 0px 0px; } QToolButton::menu-indicator {image: none;}");
         m_pCancelButton->setFixedSize(sh);
+
         connect(m_pCancelButton, &QIToolButton::clicked, this, &UIFileOperationProgressWidget::sltCancelProgress);
-        if (!m_comProgress.GetCancelable())
+        if (!m_comProgress.isNull() && !m_comProgress.GetCancelable())
             m_pCancelButton->setEnabled(false);
-        m_pMainLayout->addWidget(m_pCancelButton, 0, Qt::AlignLeft | Qt::AlignTop);
+        m_pMainLayout->addWidget(m_pCancelButton);
     }
 
     m_pProgressBar = new QProgressBar;
@@ -146,6 +152,8 @@ void UIFileOperationProgressWidget::prepareWidgets()
 
 void UIFileOperationProgressWidget::prepareEventHandler()
 {
+    if (m_comProgress.isNull())
+        return;
     m_pEventHandler = new UIProgressEventHandler(this, m_comProgress);
     connect(m_pEventHandler, &UIProgressEventHandler::sigProgressPercentageChange,
             this, &UIFileOperationProgressWidget::sltHandleProgressPercentageChange);
@@ -171,6 +179,7 @@ void UIFileOperationProgressWidget::sltHandleProgressTaskComplete(const QUuid &u
     Q_UNUSED(uProgressId);
     if (m_pCancelButton)
         m_pCancelButton->setEnabled(false);
+    emit sigProgressTaskComplete(m_comProgress.GetId());
 }
 
 void UIFileOperationProgressWidget::sltCancelProgress()
@@ -190,7 +199,6 @@ UIGuestControlFileManagerOperationsPanel::UIGuestControlFileManagerOperationsPan
                                                                                    QWidget *pParent)
     : UIGuestControlFileManagerPanel(pManagerWidget, pParent)
     , m_pTableWidget(0)
-    , m_pOperationsWidget(0)
 {
     prepare();
 }
@@ -201,7 +209,11 @@ void UIGuestControlFileManagerOperationsPanel::addNewProgress(const CProgress &c
         return;
 
     m_pTableWidget->setRowCount(m_pTableWidget->rowCount() + 1);
-    m_pTableWidget->setCellWidget(m_pTableWidget->rowCount() - 1, 0, new UIFileOperationProgressWidget(comProgress));
+    UIFileOperationProgressWidget *pOperationsWidget = new UIFileOperationProgressWidget(comProgress);
+    m_pTableWidget->setCellWidget(m_pTableWidget->rowCount() - 1, 0, pOperationsWidget);
+    connect(pOperationsWidget, &UIFileOperationProgressWidget::sigProgressTaskComplete,
+            this, &UIGuestControlFileManagerOperationsPanel::sigFileOperationComplete);
+
     m_pTableWidget->resizeColumnsToContents();
 }
 
@@ -230,6 +242,7 @@ void UIGuestControlFileManagerOperationsPanel::prepareWidgets()
 
 void UIGuestControlFileManagerOperationsPanel::prepareConnections()
 {
+
 }
 
 void UIGuestControlFileManagerOperationsPanel::retranslateUi()

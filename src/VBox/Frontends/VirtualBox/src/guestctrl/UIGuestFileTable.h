@@ -18,6 +18,9 @@
 #ifndef ___UIGuestTable_h___
 #define ___UIGuestTable_h___
 
+/* Qt includes: */
+# include <QUuid>
+
 /* COM includes: */
 #include "COMEnums.h"
 #include "CGuestSession.h"
@@ -38,18 +41,20 @@ public:
 
     UIGuestFileTable(UIActionPool *pActionPool, QWidget *pParent = 0);
     void initGuestFileTable(const CGuestSession &session);
-    void copyGuestToHost(const QString& hostDestinationPath);
-    void copyHostToGuest(const QStringList &hostSourcePathList);
+    void copyGuestToHost(const QString& hostDestinationPath, bool fDeleteAfterSuccessfulCopy = false);
+    void copyHostToGuest(const QStringList &hostSourcePathList, bool fDeleteAfterSuccessfulCopy = false);
 
 signals:
 
     void sigNewFileOperation(const CProgress &comProgress);
+    void sigCacheHostFileObjectsForDeletion(const QUuid &moveProgessId, const QStringList &hostPathList);
 
 protected:
 
     void            retranslateUi() /* override */;
     virtual void    readDirectory(const QString& strPath, UIFileTableItem *parent, bool isStartDir = false) /* override */;
     virtual void    deleteByItem(UIFileTableItem *item) /* override */;
+    virtual void    deleteByPath(const QStringList &pathList) /* override */;
     virtual void    goToHomeDirectory() /* override */;
     virtual bool    renameItem(UIFileTableItem *item, QString newBaseName);
     virtual bool    createDirectory(const QString &path, const QString &directoryName);
@@ -66,8 +71,7 @@ private:
 
     void prepareActionConnections();
 
-    mutable CGuestSession m_comGuestSession;
-
+    mutable CGuestSession     m_comGuestSession;
 };
 
 #endif /* !___UIGuestFileTable_h___ */

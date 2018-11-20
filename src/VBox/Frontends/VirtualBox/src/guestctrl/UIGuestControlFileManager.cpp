@@ -283,6 +283,8 @@ void UIGuestControlFileManager::prepareObjects()
     if (m_pOperationsPanel)
     {
         m_pOperationsPanel->hide();
+        connect(m_pOperationsPanel, &UIGuestControlFileManagerOperationsPanel::sigFileOperationComplete,
+                this, &UIGuestControlFileManager::sltFileOperationComplete);
         m_panelActionMap.insert(m_pOperationsPanel, m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_T_FileOperations));
     }
 
@@ -464,20 +466,22 @@ void UIGuestControlFileManager::sltReceieveLogOutput(QString strOutput, FileMana
 
 void UIGuestControlFileManager::sltCopyGuestToHost()
 {
-    if (!m_pGuestFileTable || !m_pHostFileTable)
-        return;
-    QString hostDestinationPath = m_pHostFileTable->currentDirectoryPath();
-    m_pGuestFileTable->copyGuestToHost(hostDestinationPath);
-    m_pHostFileTable->refresh();
+    copyMoveToHost(false);
 }
 
 void UIGuestControlFileManager::sltCopyHostToGuest()
 {
-    if (!m_pGuestFileTable || !m_pHostFileTable)
-        return;
-    QStringList hostSourcePathList = m_pHostFileTable->selectedItemPathList();
-    m_pGuestFileTable->copyHostToGuest(hostSourcePathList);
-    m_pGuestFileTable->refresh();
+    copyMoveToGuest(false);
+}
+
+void UIGuestControlFileManager::sltMoveGuestToHost()
+{
+    copyMoveToHost(true);
+}
+
+void UIGuestControlFileManager::sltMoveHostToGuest()
+{
+    copyMoveToGuest(true);
 }
 
 void UIGuestControlFileManager::sltPanelActionToggled(bool fChecked)
@@ -513,6 +517,39 @@ void UIGuestControlFileManager::sltReceieveNewFileOperation(const CProgress &com
 {
     if (m_pOperationsPanel)
         m_pOperationsPanel->addNewProgress(comProgress);
+}
+
+void UIGuestControlFileManager::sltFileOperationComplete(QUuid progressId)
+{
+    if (m_pGuestFileTable)
+    {
+        m_pGuestFileTable->refresh();
+        /* The following call deletes file objects whose paths have been cached for later deletion: */
+        m_pGuestFileTable->continueWithMove(progressId);
+    }
+
+    if (m_pHostFileTable)
+    {
+        m_pHostFileTable->refresh();
+    }
+}
+
+void UIGuestControlFileManager::copyMoveToHost(bool fIsMove)
+{
+    if (!m_pGuestFileTable || !m_pHostFileTable)
+        return;
+    QString hostDestinationPath = m_pHostFileTable->currentDirectoryPath();
+    m_pGuestFileTable->copyGuestToHost(hostDestinationPath, fIsMove);
+    m_pHostFileTable->refresh();
+}
+
+void UIGuestControlFileManager::copyMoveToGuest(bool fIsMove)
+{
+    if (!m_pGuestFileTable || !m_pHostFileTable)
+        return;
+    QStringList hostSourcePathList = m_pHostFileTable->selectedItemPathList();
+    m_pGuestFileTable->copyHostToGuest(hostSourcePathList, fIsMove);
+    m_pGuestFileTable->refresh();
 }
 
 void UIGuestControlFileManager::initFileTable()
@@ -682,7 +719,7 @@ void UIGuestControlFileManager::hidePanel(UIGuestControlFileManagerPanel* panel)
         if (iterator.value() && iterator.value()->isChecked())
             iterator.value()->setChecked(false);
     }
-    m_visiblePanelsList.removeOne(panel);
+    m_visiblePanelsList.removeAll(panel);
     manageEscapeShortCut();
 }
 
@@ -696,7 +733,8 @@ void UIGuestControlFileManager::showPanel(UIGuestControlFileManagerPanel* panel)
         if (!iterator.value()->isChecked())
             iterator.value()->setChecked(true);
     }
-    m_visiblePanelsList.push_back(panel);
+    if (!m_visiblePanelsList.contains(panel))
+        m_visiblePanelsList.push_back(panel);
     manageEscapeShortCut();
 }
 

@@ -133,6 +133,11 @@ UIHostFileTable::UIHostFileTable(UIActionPool *pActionPool, QWidget *pParent /* 
     retranslateUi();
 }
 
+void UIHostFileTable::setDeleteAfterCopyCache(const QUuid &progressId, const QStringList &sourceObjectsList)
+{
+    m_deleteAfterCopyCache[progressId] = sourceObjectsList;
+}
+
 void UIHostFileTable::retranslateUi()
 {
     if (m_pLocationLabel)
@@ -256,7 +261,7 @@ void UIHostFileTable::deleteByItem(UIFileTableItem *item)
         return;
     if (!item->isDirectory())
     {
-        QDir itemToDelete;//(item->path());
+        QDir itemToDelete;
         itemToDelete.remove(item->path());
     }
     QDir itemToDelete(item->path());
@@ -270,6 +275,27 @@ void UIHostFileTable::deleteByItem(UIFileTableItem *item)
 
      if (!deleteSuccess)
          emit sigLogOutput(QString(item->path()).append(" could not be deleted"), FileManagerLogType_Error);
+}
+
+void UIHostFileTable::deleteByPath(const QStringList &pathList)
+{
+    foreach (const QString &strPath, pathList)
+    {
+        bool deleteSuccess = true;
+        FileObjectType eType = fileType(QFileInfo(strPath));
+        if (eType == FileObjectType_File || eType == FileObjectType_SymLink)
+        {
+            deleteSuccess = QDir().remove(strPath);
+        }
+        else if (eType == FileObjectType_Directory)
+        {
+            QDir itemToDelete(strPath);
+            itemToDelete.setFilter(QDir::NoDotAndDotDot);
+            deleteSuccess = itemToDelete.removeRecursively();
+        }
+        if (!deleteSuccess)
+            emit sigLogOutput(QString(strPath).append(" could not be deleted"), FileManagerLogType_Error);
+    }
 }
 
 void UIHostFileTable::goToHomeDirectory()

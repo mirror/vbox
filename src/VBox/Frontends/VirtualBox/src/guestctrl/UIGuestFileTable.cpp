@@ -22,6 +22,7 @@
 /* Qt includes: */
 # include <QDateTime>
 # include <QFileInfo>
+# include <QUuid>
 
 /* GUI includes: */
 # include "QILabel.h"
@@ -227,7 +228,6 @@ void UIGuestFileTable::readDirectory(const QString& strPath,
         }
         insertItemsToTree(directories, parent, true, isStartDir);
         insertItemsToTree(files, parent, false, isStartDir);
-        //updateCurrentLocationEdit(strPath);
     }
     directory.Close();
 }
@@ -250,6 +250,25 @@ void UIGuestFileTable::deleteByItem(UIFileTableItem *item)
     {
         emit sigLogOutput(QString(item->path()).append(" could not be deleted"), FileManagerLogType_Error);
         emit sigLogOutput(UIErrorString::formatErrorInfo(m_comGuestSession), FileManagerLogType_Error);
+    }
+}
+
+void UIGuestFileTable::deleteByPath(const QStringList &pathList)
+{
+    foreach (const QString &strPath, pathList)
+    {
+        CGuestFsObjInfo fileInfo = m_comGuestSession.FsObjQueryInfo(strPath, true);
+        FileObjectType eType = fileType(fileInfo);
+        if (eType == FileObjectType_File || eType == FileObjectType_SymLink)
+        {
+              m_comGuestSession.FsObjRemove(strPath);
+        }
+        else if (eType == FileObjectType_Directory)
+        {
+            QVector<KDirectoryRemoveRecFlag> flags(KDirectoryRemoveRecFlag_ContentAndDir);
+            m_comGuestSession.DirectoryRemoveRecursive(strPath, flags);
+        }
+
     }
 }
 
@@ -309,7 +328,7 @@ bool UIGuestFileTable::createDirectory(const QString &path, const QString &direc
     return true;
 }
 
-void UIGuestFileTable::copyHostToGuest(const QStringList &hostSourcePathList)
+void UIGuestFileTable::copyHostToGuest(const QStringList &hostSourcePathList, bool fDeleteAfterSuccessfulCopy /* = false */)
 {
     QVector<QString> sourcePaths = hostSourcePathList.toVector();
     QVector<QString>  aFilters;
@@ -333,10 +352,13 @@ void UIGuestFileTable::copyHostToGuest(const QStringList &hostSourcePathList)
         return;
     }
     emit sigNewFileOperation(progress);
-    refresh();
+    /* Cache the progress id and host source file objects' path in case of move operation. we will delete
+     * these when/if we receieve progress completed notification: */
+    if (fDeleteAfterSuccessfulCopy)
+        emit sigCacheHostFileObjectsForDeletion(progress.GetId(), sourcePaths.toList());
 }
 
-void UIGuestFileTable::copyGuestToHost(const QString& hostDestinationPath)
+void UIGuestFileTable::copyGuestToHost(const QString& hostDestinationPath, bool fDeleteAfterSuccessfulCopy /* = false */)
 {
     QVector<QString> sourcePaths = selectedItemPathList().toVector();
     QVector<QString>  aFilters;
@@ -360,7 +382,10 @@ void UIGuestFileTable::copyGuestToHost(const QString& hostDestinationPath)
         return;
     }
     emit sigNewFileOperation(progress);
-    refresh();
+    /* Cache the progress id and source file objects' path in case of move operation. we will delete
+     * these when/if we receieve progress completed notification: */
+    if (fDeleteAfterSuccessfulCopy)
+        m_deleteAfterCopyCache[progress.GetId()] = sourcePaths.toList();
 }
 
 FileObjectType UIGuestFileTable::fileType(const CFsObjInfo &fsInfo)

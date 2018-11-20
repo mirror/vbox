@@ -1359,6 +1359,12 @@ QString UIGuestControlFileTable::fileTypeString(FileObjectType type)
     return strResult;
 }
 
+void UIGuestControlFileTable::continueWithMove(const QUuid &progressId)
+{
+    QStringList sourcePathList = m_deleteAfterCopyCache.value(progressId);
+    deleteByPath(m_deleteAfterCopyCache.value(progressId, QStringList()));
+}
+
 void UIGuestControlFileTable::sltReceiveDirectoryStatistics(UIDirectoryStatistics statistics)
 {
     if (!m_pPropertiesDialog)

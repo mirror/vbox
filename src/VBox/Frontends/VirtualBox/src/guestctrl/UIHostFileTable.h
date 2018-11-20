@@ -33,6 +33,7 @@ class UIHostFileTable : public UIGuestControlFileTable
 public:
 
     UIHostFileTable(UIActionPool *pActionPool, QWidget *pParent = 0);
+    void setDeleteAfterCopyCache(const QUuid &progressId, const QStringList &sourceObjectsList);
 
 protected:
 
@@ -40,6 +41,7 @@ protected:
     void            retranslateUi() /* override */;
     virtual void    readDirectory(const QString& strPath, UIFileTableItem *parent, bool isStartDir = false) /* override */;
     virtual void    deleteByItem(UIFileTableItem *item) /* override */;
+    virtual void    deleteByPath(const QStringList &pathList) /* override */;
     virtual void    goToHomeDirectory() /* override */;
     virtual bool    renameItem(UIFileTableItem *item, QString newBaseName);
     virtual bool    createDirectory(const QString &path, const QString &directoryName);
