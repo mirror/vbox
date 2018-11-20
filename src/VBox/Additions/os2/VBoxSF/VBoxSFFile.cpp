@@ -613,10 +613,15 @@ vboxSfOs2QueryFileInfo(PVBOXSFFOLDER pFolder, PSFFSI pSfFsi, PVBOXSFSYFI pSfFsd,
      * squeezing more performance out of the HGCM and shared folders code.
      *
      * 0. Skip calling the host and returning zeros:
-     *       906 ns / 3653 ticks
+     *         906 ns / 3653 ticks
      *
      *    This is comparable to JFS (859 ns) and HPFS (1107 ns) and give an
      *    idea what we're up against compared to a "local" file system.
+     *
+     *    Host build of r126639 with strict VBoxGuest.sys and VBoxSF.ifs
+     *    circa r126775, just for establishing some actual base line for (2, 3, +):
+     *         (a) 39095 ns / 156757 ticks - VbglR0SfFsInfo.
+     *         (b) 35074 ns / 140880 ticks - VbglR0SfPhysFsInfo.
      *
      * 1. Having shortcircuted the host side processing by faking a success when
      *    VMMDevHGCM.cpp is about to do pThis->pHGCMDrv->pfnCall, then measuring
@@ -658,8 +663,12 @@ vboxSfOs2QueryFileInfo(PVBOXSFFOLDER pFolder, PSFFSI pSfFsi, PVBOXSFSYFI pSfFsd,
      *    Raw data:
      *          27472 ns / 110237 ticks - RTSEMEVENTMULTI
      *          26550 ns / 106831 ticks - RTSEMEVENT
+     *
+     *    Gain since 0a: 12545 ns / 49926 ticks / 32%
+     *    Gain since 0b:  8524 ns / 34049 ticks / 24%
+     *
      */
-#if 0
+#if 1
     APIRET rc;
     PSHFLFSOBJINFO pObjInfo = (PSHFLFSOBJINFO)VbglR0PhysHeapAlloc(sizeof(*pObjInfo));
     if (pObjInfo)
@@ -667,8 +676,8 @@ vboxSfOs2QueryFileInfo(PVBOXSFFOLDER pFolder, PSFFSI pSfFsi, PVBOXSFSYFI pSfFsd,
         RT_ZERO(*pObjInfo);
         uint32_t cbObjInfo = sizeof(*pObjInfo);
 
-        int vrc = VbglR0SfFastPhysFsInfo(&g_SfClient, &pFolder->hHostFolder, pSfFsd->hHostFile,
-                                         SHFL_INFO_FILE | SHFL_INFO_GET, &cbObjInfo, (PSHFLDIRINFO)pObjInfo);
+        int vrc = VbglR0SfFsInfo(&g_SfClient, &pFolder->hHostFolder, pSfFsd->hHostFile,
+                                 SHFL_INFO_FILE | SHFL_INFO_GET, &cbObjInfo, (PSHFLDIRINFO)pObjInfo);
         if (RT_SUCCESS(vrc))
         {
             rc = vboxSfOs2FileStatusFromObjInfo(pbData, cbData, uLevel, pObjInfo);
@@ -942,6 +951,8 @@ FS32_NEWSIZEL(PSFFSI pSfFsi, PVBOXSFSYFI pSfFsd, LONGLONG cbFile, ULONG fIoFlags
     }
     else
         rc = ERROR_ACCESS_DENIED;
+
+    RT_NOREF(fIoFlags);
     LogFlow(("FS32_NEWSIZEL: returns %u\n", rc));
     return rc;
 }
