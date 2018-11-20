@@ -91,29 +91,63 @@ public:
 
     /** Returns the details categories. */
     const QMap<DetailsElementType, bool> &categories() const { return m_categories; }
+    /** Defines the details @a categories. */
+    void setCategories(const QMap<DetailsElementType, bool> &categories);
 
     /** Returns options for General element. */
-    UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral        optionsGeneral()       const { return m_fOptionsGeneral; }
+    UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral optionsGeneral() const { return m_fOptionsGeneral; }
+    /** Defines @a fOptions for General element. */
+    void setOptionsGeneral(UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral fOptions);
+
     /** Returns options for System element. */
-    UIExtraDataMetaDefs::DetailsElementOptionTypeSystem         optionsSystem()        const { return m_fOptionsSystem; }
+    UIExtraDataMetaDefs::DetailsElementOptionTypeSystem optionsSystem() const { return m_fOptionsSystem; }
+    /** Defines @a fOptions for System element. */
+    void setOptionsSystem(UIExtraDataMetaDefs::DetailsElementOptionTypeSystem fOptions);
+
     /** Returns options for Display element. */
-    UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay        optionsDisplay()       const { return m_fOptionsDisplay; }
+    UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay optionsDisplay() const { return m_fOptionsDisplay; }
+    /** Defines @a fOptions for Display element. */
+    void setOptionsDisplay(UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay fOptions);
+
     /** Returns options for Storage element. */
-    UIExtraDataMetaDefs::DetailsElementOptionTypeStorage        optionsStorage()       const { return m_fOptionsStorage; }
+    UIExtraDataMetaDefs::DetailsElementOptionTypeStorage optionsStorage() const { return m_fOptionsStorage; }
+    /** Defines @a fOptions for Storage element. */
+    void setOptionsStorage(UIExtraDataMetaDefs::DetailsElementOptionTypeStorage fOptions);
+
     /** Returns options for Audio element. */
-    UIExtraDataMetaDefs::DetailsElementOptionTypeAudio          optionsAudio()         const { return m_fOptionsAudio; }
+    UIExtraDataMetaDefs::DetailsElementOptionTypeAudio optionsAudio() const { return m_fOptionsAudio; }
+    /** Defines @a fOptions for Audio element. */
+    void setOptionsAudio(UIExtraDataMetaDefs::DetailsElementOptionTypeAudio fOptions);
+
     /** Returns options for Network element. */
-    UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork        optionsNetwork()       const { return m_fOptionsNetwork; }
+    UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork optionsNetwork() const { return m_fOptionsNetwork; }
+    /** Defines @a fOptions for Network element. */
+    void setOptionsNetwork(UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork fOptions);
+
     /** Returns options for Serial element. */
-    UIExtraDataMetaDefs::DetailsElementOptionTypeSerial         optionsSerial()        const { return m_fOptionsSerial; }
+    UIExtraDataMetaDefs::DetailsElementOptionTypeSerial optionsSerial() const { return m_fOptionsSerial; }
+    /** Defines @a fOptions for Serial element. */
+    void setOptionsSerial(UIExtraDataMetaDefs::DetailsElementOptionTypeSerial fOptions);
+
     /** Returns options for Usb element. */
-    UIExtraDataMetaDefs::DetailsElementOptionTypeUsb            optionsUsb()           const { return m_fOptionsUsb; }
+    UIExtraDataMetaDefs::DetailsElementOptionTypeUsb optionsUsb() const { return m_fOptionsUsb; }
+    /** Defines @a fOptions for Usb element. */
+    void setOptionsUsb(UIExtraDataMetaDefs::DetailsElementOptionTypeUsb fOptions);
+
     /** Returns options for Shared Folders element. */
-    UIExtraDataMetaDefs::DetailsElementOptionTypeSharedFolders  optionsSharedFolders() const { return m_fOptionsSharedFolders; }
+    UIExtraDataMetaDefs::DetailsElementOptionTypeSharedFolders optionsSharedFolders() const { return m_fOptionsSharedFolders; }
+    /** Defines @a fOptions for Shared Folders element. */
+    void setOptionsSharedFolders(UIExtraDataMetaDefs::DetailsElementOptionTypeSharedFolders fOptions);
+
     /** Returns options for User Interface element. */
-    UIExtraDataMetaDefs::DetailsElementOptionTypeUserInterface  optionsUserInterface() const { return m_fOptionsUserInterface; }
+    UIExtraDataMetaDefs::DetailsElementOptionTypeUserInterface optionsUserInterface() const { return m_fOptionsUserInterface; }
+    /** Defines @a fOptions for User Interface element. */
+    void setOptionsUserInterface(UIExtraDataMetaDefs::DetailsElementOptionTypeUserInterface fOptions);
+
     /** Returns options for Description element. */
-    UIExtraDataMetaDefs::DetailsElementOptionTypeDescription    optionsDescription()   const { return m_fOptionsDescription; }
+    UIExtraDataMetaDefs::DetailsElementOptionTypeDescription optionsDescription() const { return m_fOptionsDescription; }
+    /** Defines @a fOptions for Description element. */
+    void setOptionsDescription(UIExtraDataMetaDefs::DetailsElementOptionTypeDescription fOptions);
 
 public slots:
 
@@ -165,6 +199,10 @@ private:
           * @note enmType equal to DetailsElementType_Invalid means load everything. */
         void loadDetailsOptions(DetailsElementType enmType = DetailsElementType_Invalid);
 
+        /** Saves details options. */
+        void saveDetailsOptions();
+        /** Saves details categories. */
+        void saveDetailsCategories();
         /** Saves settings. */
         void saveSettings();
         /** Cleanups root. */

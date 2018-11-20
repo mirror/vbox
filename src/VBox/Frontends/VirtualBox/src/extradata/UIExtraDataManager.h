@@ -348,6 +348,8 @@ public:
 
         /** Returns VirtualBox Manager / Details pane options for certain @a enmElementType. */
         QStringList vboxManagerDetailsPaneElementOptions(DetailsElementType enmElementType);
+        /** Defines VirtualBox Manager / Details pane @a options for certain @a enmElementType. */
+        void setVBoxManagerDetailsPaneElementOptions(DetailsElementType enmElementType, const QStringList &options);
     /** @} */
 
     /** @name Snapshot Manager

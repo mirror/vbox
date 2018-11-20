@@ -2942,8 +2942,20 @@ QStringList UIExtraDataManager::vboxManagerDetailsPaneElementOptions(DetailsElem
     strElementType[0] = strElementType.at(0).toUpper();
     const QString strFullKey = QString("%1/%2").arg(GUI_Details_Elements).arg(strElementType);
 
-    /* Returns option list: */
+    /* Return option list: */
     return extraDataStringList(strFullKey);
+}
+
+void UIExtraDataManager::setVBoxManagerDetailsPaneElementOptions(DetailsElementType enmElementType, const QStringList &options)
+{
+    /* Compose full key from GUI_Details_Elements and enmElementType: */
+    QString strElementType = gpConverter->toInternalString(enmElementType);
+    AssertReturnVoid(!strElementType.isEmpty());
+    strElementType[0] = strElementType.at(0).toUpper();
+    const QString strFullKey = QString("%1/%2").arg(GUI_Details_Elements).arg(strElementType);
+
+    /* Store option list: */
+    setExtraDataStringList(strFullKey, options);
 }
 
 bool UIExtraDataManager::snapshotManagerDetailsExpanded()
