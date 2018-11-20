@@ -5367,8 +5367,8 @@ IEM_CIMPL_DEF_2(iemCImpl_mov_Rd_Cd, uint8_t, iGReg, uint8_t, iCrReg)
                  */
                 if (IEM_VMX_IS_PROCCTLS_SET(pVCpu, VMX_PROC_CTLS_USE_TPR_SHADOW))
                 {
-                    uint32_t const uVTpr = iemVmxVirtApicReadRaw32(pVCpu, XAPIC_OFF_TPR);
-                    crX = (uVTpr >> 4) & 0xf;
+                    uint32_t const uTpr = iemVmxVirtApicReadRaw32(pVCpu, XAPIC_OFF_TPR);
+                    crX = (uTpr >> 4) & 0xf;
                     break;
                 }
             }
@@ -5904,11 +5904,15 @@ IEM_CIMPL_DEF_4(iemCImpl_load_CrX, uint8_t, iCrReg, uint64_t, uNewCrX, IEMACCESS
                  * is copied to bits 7:4 of the VTPR. Bits 0:3 and bits 31:8 of the VTPR are
                  * cleared. Following this the processor performs TPR virtualization.
                  *
-                 * See Intel Spec. 29.3 "Virtualizing CR8-based TPR Accesses"
+                 * However, we should not perform TPR virtualization immediately here but
+                 * after this instruction has completed.
+                 *
+                 * See Intel spec. 29.3 "Virtualizing CR8-based TPR Accesses"
+                 * See Intel spec. 27.1 "Architectural State Before A VM-exit"
                  */
-                uint32_t const uVTpr = (uNewCrX & 0xf) << 4;
-                iemVmxVirtApicWriteRaw32(pVCpu, XAPIC_OFF_TPR, uVTpr);
-                iemVmxVirtApicSetPostAction(pVCpu, XAPIC_OFF_TPR);
+                uint32_t const uTpr = (uNewCrX & 0xf) << 4;
+                iemVmxVirtApicWriteRaw32(pVCpu, XAPIC_OFF_TPR, uTpr);
+                iemVmxVirtApicSetPendingWrite(pVCpu, XAPIC_OFF_TPR);
                 rcStrict = VINF_SUCCESS;
                 break;
             }

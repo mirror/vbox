@@ -910,14 +910,12 @@ DECLINLINE(uint64_t) iemVmxVmcsGetCr3TargetValue(PCVMXVVMCS pVmcs, uint8_t idxCr
 
 
 /**
- * Signal that a virtual-APIC post instruction-execution action needs to be
- * performed at a later time (post instruction execution).
+ * Sets virtual-APIC write emulation as pending.
  *
  * @param   pVCpu       The cross context virtual CPU structure.
- * @param   offApic     The virtual-APIC page offset that was updated pertaining to
- *                      the event.
+ * @param   offApic     The offset in the virtual-APIC page that was written.
  */
-DECLINLINE(void) iemVmxVirtApicSetPostAction(PVMCPU pVCpu, uint16_t offApic)
+DECLINLINE(void) iemVmxVirtApicSetPendingWrite(PVMCPU pVCpu, uint16_t offApic)
 {
     Assert(offApic < XAPIC_OFF_END + 4);
 
@@ -929,28 +927,26 @@ DECLINLINE(void) iemVmxVirtApicSetPostAction(PVMCPU pVCpu, uint16_t offApic)
     pVCpu->cpum.GstCtx.hwvirt.vmx.offVirtApicWrite = offApic;
 
     /*
-     * Signal that we need to perform a virtual-APIC action (TPR/PPR/EOI/Self-IPI
+     * Signal that we need to perform virtual-APIC write emulation (TPR/PPR/EOI/Self-IPI
      * virtualization or APIC-write emulation).
      */
-    if (!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_VMX_UPDATE_VAPIC))
-        VMCPU_FF_SET(pVCpu, VMCPU_FF_VMX_UPDATE_VAPIC);
+    if (!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_VMX_APIC_WRITE))
+        VMCPU_FF_SET(pVCpu, VMCPU_FF_VMX_APIC_WRITE);
 }
 
 
 /**
- * Clears any virtual-APIC post instruction-execution action.
+ * Clears any pending virtual-APIC write emulation.
  *
- * @returns The virtual-APIC write offset before clearing it.
+ * @returns The virtual-APIC offset that was written before clearing it.
  * @param   pVCpu       The cross context virtual CPU structure.
- * @param   offApic     The virtual-APIC page offset that was updated pertaining to
- *                      the event.
  */
-DECLINLINE(uint16_t) iemVmxVirtApicClearPostAction(PVMCPU pVCpu)
+DECLINLINE(uint16_t) iemVmxVirtApicClearPendingWrite(PVMCPU pVCpu)
 {
     uint8_t const offVirtApicWrite = pVCpu->cpum.GstCtx.hwvirt.vmx.offVirtApicWrite;
     pVCpu->cpum.GstCtx.hwvirt.vmx.offVirtApicWrite = 0;
-    Assert(VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_VMX_UPDATE_VAPIC));
-    VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_VMX_UPDATE_VAPIC);
+    Assert(VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_VMX_APIC_WRITE));
+    VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_VMX_APIC_WRITE);
     return offVirtApicWrite;
 }
 
@@ -4163,7 +4159,7 @@ IEM_STATIC bool iemVmxVirtApicIsMemAccessIntercepted(PVMCPU pVCpu, uint16_t offA
      * If the access is part of an operation where we have already
      * virtualized a virtual-APIC write, we must cause a VM-exit.
      */
-    if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_VMX_UPDATE_VAPIC))
+    if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_VMX_APIC_WRITE))
         return true;
 
     /*
@@ -4329,10 +4325,13 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitApicAccess(PVMCPU pVCpu, uint16_t offAccess,
  * VMX VM-exit handler for APIC-write VM-exits.
  *
  * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   offApic     The write to the virtual-APIC page offset that caused this
+ *                      VM-exit.
  */
-IEM_STATIC VBOXSTRICTRC iemVmxVmexitApicWrite(PVMCPU pVCpu)
+IEM_STATIC VBOXSTRICTRC iemVmxVmexitApicWrite(PVMCPU pVCpu, uint16_t offApic)
 {
-    iemVmxVmcsSetExitQual(pVCpu, pVCpu->cpum.GstCtx.hwvirt.vmx.offVirtApicWrite);
+    Assert(offApic < XAPIC_OFF_END + 4);
+    iemVmxVmcsSetExitQual(pVCpu, offApic);
     return iemVmxVmexit(pVCpu, VMX_EXIT_APIC_WRITE);
 }
 
@@ -4443,7 +4442,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVirtApicAccessMem(PVMCPU pVCpu, uint16_t offAccess
          *
          * See Intel spec. 29.4.3.2 "APIC-Write Emulation".
          */
-        iemVmxVirtApicSetPostAction(pVCpu, offAccess);
+        iemVmxVirtApicSetPendingWrite(pVCpu, offAccess);
     }
     else
     {
@@ -4574,7 +4573,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVirtApicAccessMsrWrite(PVMCPU pVCpu, uint32_t idMs
          * out whether to perform TPR, EOI or self-IPI virtualization as well as well
          * as for supplying the exit qualification when causing an APIC-write VM-exit.
          */
-        iemVmxVirtApicSetPostAction(pVCpu, offReg);
+        iemVmxVirtApicSetPendingWrite(pVCpu, offReg);
 
         return VINF_VMX_MODIFIES_BEHAVIOR;
     }
@@ -4662,16 +4661,16 @@ IEM_STATIC void iemVmxPprVirtualization(PVMCPU pVCpu)
      *
      * See Intel spec. 29.1.3 "PPR Virtualization".
      */
-    uint32_t const uVTpr = iemVmxVirtApicReadRaw32(pVCpu, XAPIC_OFF_TPR);
+    uint32_t const uTpr = iemVmxVirtApicReadRaw32(pVCpu, XAPIC_OFF_TPR);
     uint32_t const uSvi  = RT_HI_U8(pVmcs->u16GuestIntStatus);
 
     uint32_t uVPpr;
-    if (((uVTpr >> 4) & 0xf) >= ((uSvi >> 4) & 0xf))
-        uVPpr = uVTpr & 0xff;
+    if (((uTpr >> 4) & 0xf) >= ((uSvi >> 4) & 0xf))
+        uVPpr = uTpr & 0xff;
     else
         uVPpr = uSvi & 0xf0;
     iemVmxVirtApicWriteRaw32(pVCpu, XAPIC_OFF_PPR, uVPpr);
-    Log2(("ppr_virt: uVTpr=%u uSvi=%u -> VM-exit\n", uVTpr, uSvi));
+    Log2(("ppr_virt: uTpr=%u uSvi=%u -> VM-exit\n", uTpr, uSvi));
 }
 
 
@@ -4696,15 +4695,15 @@ IEM_STATIC VBOXSTRICTRC iemVmxTprVirtualization(PVMCPU pVCpu)
     if (!(pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_VIRT_INT_DELIVERY))
     {
         uint32_t const uTprThreshold = pVmcs->u32TprThreshold;
-        uint32_t const uVTpr         = iemVmxVirtApicReadRaw32(pVCpu, XAPIC_OFF_TPR);
+        uint32_t const uTpr          = iemVmxVirtApicReadRaw32(pVCpu, XAPIC_OFF_TPR);
 
         /*
          * If the VTPR falls below the TPR threshold, we must cause a VM-exit.
          * See Intel spec. 29.1.2 "TPR Virtualization".
          */
-        if (((uVTpr >> 4) & 0xf) < uTprThreshold)
+        if (((uTpr >> 4) & 0xf) < uTprThreshold)
         {
-            Log2(("tpr_virt: uVTpr=%u uTprThreshold=%u -> VM-exit\n", uVTpr, uTprThreshold));
+            Log2(("tpr_virt: uTpr=%u uTprThreshold=%u -> VM-exit\n", uTpr, uTprThreshold));
             iemVmxVmcsSetExitQual(pVCpu, 0);
             return iemVmxVmexit(pVCpu, VMX_EXIT_TPR_BELOW_THRESHOLD);
         }
@@ -4823,10 +4822,75 @@ IEM_STATIC VBOXSTRICTRC iemVmxApicWriteEmulation(PVMCPU pVCpu)
     Assert(pVmcs);
     Assert(pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_APIC_REG_VIRT);
 
-    /** @todo NSTVMX: APIC-write emulation. */
-    RT_NOREF(pVCpu);
+    /*
+     * Perform APIC-write emulation based on the virtual-APIC register written.
+     * See Intel spec. 29.4.3.2 "APIC-Write Emulation".
+     */
+    uint16_t const offApicWrite = iemVmxVirtApicClearPendingWrite(pVCpu);
+    VBOXSTRICTRC rcStrict;
+    switch (offApicWrite)
+    {
+        case XAPIC_OFF_TPR:
+        {
+            /* Clear bytes 3:1 of the VTPR and perform TPR virtualization. */
+            uint32_t uTpr = iemVmxVirtApicReadRaw32(pVCpu, XAPIC_OFF_TPR);
+            uTpr         &= UINT32_C(0x000000ff);
+            iemVmxVirtApicWriteRaw32(pVCpu, XAPIC_OFF_TPR, uTpr);
+            rcStrict = iemVmxTprVirtualization(pVCpu);
+            break;
+        }
 
-    return VERR_IEM_ASPECT_NOT_IMPLEMENTED;
+        case XAPIC_OFF_EOI:
+        {
+            if (pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_VIRT_INT_DELIVERY)
+            {
+                /* Clear VEOI and perform EOI virtualization. */
+                iemVmxVirtApicWriteRaw32(pVCpu, XAPIC_OFF_EOI, 0);
+                rcStrict = iemVmxEoiVirtualization(pVCpu);
+            }
+            else
+                rcStrict = iemVmxVmexitApicWrite(pVCpu, offApicWrite);
+            break;
+        }
+
+        case XAPIC_OFF_ICR_LO:
+        {
+            if (pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_VIRT_INT_DELIVERY)
+            {
+                /* If the ICR_LO is valid, write it and perform self-IPI virtualization. */
+                uint32_t const uIcrLo    = iemVmxVirtApicReadRaw32(pVCpu, XAPIC_OFF_TPR);
+                uint32_t const fIcrLoMb0 = UINT32_C(0xfffbb700);
+                uint32_t const fIcrLoMb1 = UINT32_C(0x000000f0);
+                if (   !(uIcrLo & fIcrLoMb0)
+                    &&  (uIcrLo & fIcrLoMb1))
+                    rcStrict = iemVmxSelfIpiVirtualization(pVCpu);
+                else
+                    rcStrict = iemVmxVmexitApicWrite(pVCpu, offApicWrite);
+            }
+            else
+                rcStrict = iemVmxVmexitApicWrite(pVCpu, offApicWrite);
+            break;
+        }
+
+        case XAPIC_OFF_ICR_HI:
+        {
+            /* Clear bytes 2:0 of VICR_HI. No other virtualization or VM-exit must occur. */
+            uint32_t uIcrHi = iemVmxVirtApicReadRaw32(pVCpu, XAPIC_OFF_ICR_HI);
+            uIcrHi          &= UINT32_C(0xff000000);
+            iemVmxVirtApicWriteRaw32(pVCpu, XAPIC_OFF_ICR_HI, uIcrHi);
+            rcStrict = VINF_SUCCESS;
+            break;
+        }
+
+        default:
+        {
+            /* Writes to any other virtual-APIC register causes an APIC-write VM-exit. */
+            rcStrict = iemVmxVmexitApicWrite(pVCpu, offApicWrite);
+            break;
+        }
+    }
+
+    return rcStrict;
 }
 
 

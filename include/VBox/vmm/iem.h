@@ -328,7 +328,7 @@ VMM_INT_DECL(VBOXSTRICTRC)  IEMExecSvmVmexit(PVMCPU pVCpu, uint64_t uExitCode, u
 
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
 VMM_INT_DECL(VBOXSTRICTRC)  IEMExecVmxVirtApicAccessMsr(PVMCPU pVCpu, uint32_t idMsr, uint64_t *pu64Val, bool fWrite);
-VMM_INT_DECL(VBOXSTRICTRC)  IEMExecVmxVirtApicUpdate(PVMCPU pVCpu);
+VMM_INT_DECL(VBOXSTRICTRC)  IEMExecVmxVirtApicWriteEmulation(PVMCPU pVCpu);
 VMM_INT_DECL(VBOXSTRICTRC)  IEMExecVmxVmexitPreemptTimer(PVMCPU pVCpu);
 VMM_INT_DECL(VBOXSTRICTRC)  IEMExecVmxVmexitExtInt(PVMCPU pVCpu, uint8_t uVector, bool fIntPending);
 VMM_INT_DECL(VBOXSTRICTRC)  IEMExecVmxVmexitStartupIpi(PVMCPU pVCpu, uint8_t uVector);

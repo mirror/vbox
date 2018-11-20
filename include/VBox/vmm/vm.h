@@ -551,10 +551,10 @@ typedef struct VMCPU
 #define VMCPU_FF_VMX_MTF                    RT_BIT_64(VMCPU_FF_VMX_MTF_BIT)
 /** The bit number for VMCPU_FF_VMX_MTF. */
 #define VMCPU_FF_VMX_MTF_BIT                33
-/** Virtual-APIC operation pending (VTPR, VEOI or APIC-write).  */
-#define VMCPU_FF_VMX_UPDATE_VAPIC           RT_BIT_64(VMCPU_FF_VMX_UPDATE_VAPIC_BIT)
+/** VMX APIC-write emulation pending.  */
+#define VMCPU_FF_VMX_APIC_WRITE             RT_BIT_64(VMCPU_FF_VMX_APIC_WRITE_BIT)
 /** The bit number for VMCPU_FF_VMX_UPDATE_VTPR. */
-#define VMCPU_FF_VMX_UPDATE_VAPIC_BIT       34
+#define VMCPU_FF_VMX_APIC_WRITE_BIT         34
 
 
 /** Externally VM forced actions. Used to quit the idle/wait loop. */
