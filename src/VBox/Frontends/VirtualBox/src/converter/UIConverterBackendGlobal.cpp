@@ -881,6 +881,25 @@ template<> UIExtraDataMetaDefs::MenuWindowActionType fromInternalString<UIExtraD
 #endif /* VBOX_WS_MAC */
 
 /* QString <= UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral: */
+template<> QString toString(const UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral &enmDetailsElementOptionTypeGeneral)
+{
+    QString strResult;
+    switch (enmDetailsElementOptionTypeGeneral)
+    {
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral_Name:     strResult = QApplication::translate("VBoxGlobal", "Name"); break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral_OS:       strResult = QApplication::translate("VBoxGlobal", "OS"); break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral_Location: strResult = QApplication::translate("VBoxGlobal", "Location"); break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral_Groups:   strResult = QApplication::translate("VBoxGlobal", "Groups"); break;
+        default:
+        {
+            AssertMsgFailed(("No text for details element option type=%d", enmDetailsElementOptionTypeGeneral));
+            break;
+        }
+    }
+    return strResult;
+}
+
+/* QString <= UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral: */
 template<> QString toInternalString(const UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral &enmDetailsElementOptionTypeGeneral)
 {
     QString strResult;
@@ -914,6 +933,28 @@ template<> UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral fromInternalStri
         return UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral_Invalid;
     /* Corresponding type for known words: */
     return values.at(keys.indexOf(QRegExp(strDetailsElementOptionTypeGeneral, Qt::CaseInsensitive)));
+}
+
+/* QString <= UIExtraDataMetaDefs::DetailsElementOptionTypeSystem: */
+template<> QString toString(const UIExtraDataMetaDefs::DetailsElementOptionTypeSystem &enmDetailsElementOptionTypeSystem)
+{
+    QString strResult;
+    switch (enmDetailsElementOptionTypeSystem)
+    {
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeSystem_RAM:             strResult = QApplication::translate("VBoxGlobal", "RAM"); break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeSystem_CPUCount:        strResult = QApplication::translate("VBoxGlobal", "CPU Count"); break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeSystem_CPUExecutionCap: strResult = QApplication::translate("VBoxGlobal", "CPU Execution Cap"); break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeSystem_BootOrder:       strResult = QApplication::translate("VBoxGlobal", "Boot Order"); break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeSystem_ChipsetType:     strResult = QApplication::translate("VBoxGlobal", "Chipset Type"); break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeSystem_Firmware:        strResult = QApplication::translate("VBoxGlobal", "Firmware"); break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeSystem_Acceleration:    strResult = QApplication::translate("VBoxGlobal", "Acceleration"); break;
+        default:
+        {
+            AssertMsgFailed(("No text for details element option type=%d", enmDetailsElementOptionTypeSystem));
+            break;
+        }
+    }
+    return strResult;
 }
 
 /* QString <= UIExtraDataMetaDefs::DetailsElementOptionTypeSystem: */
@@ -959,6 +1000,27 @@ template<> UIExtraDataMetaDefs::DetailsElementOptionTypeSystem fromInternalStrin
 }
 
 /* QString <= UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay: */
+template<> QString toString(const UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay &enmDetailsElementOptionTypeDisplay)
+{
+    QString strResult;
+    switch (enmDetailsElementOptionTypeDisplay)
+    {
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay_VRAM:         strResult = QApplication::translate("VBoxGlobal", "VRAM"); break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay_ScreenCount:  strResult = QApplication::translate("VBoxGlobal", "Screen Count"); break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay_ScaleFactor:  strResult = QApplication::translate("VBoxGlobal", "Scale Factor"); break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay_Acceleration: strResult = QApplication::translate("VBoxGlobal", "Acceleration"); break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay_VRDE:         strResult = QApplication::translate("VBoxGlobal", "VRDE"); break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay_Recording:    strResult = QApplication::translate("VBoxGlobal", "Recording"); break;
+        default:
+        {
+            AssertMsgFailed(("No text for details element option type=%d", enmDetailsElementOptionTypeDisplay));
+            break;
+        }
+    }
+    return strResult;
+}
+
+/* QString <= UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay: */
 template<> QString toInternalString(const UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay &enmDetailsElementOptionTypeDisplay)
 {
     QString strResult;
@@ -999,6 +1061,24 @@ template<> UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay fromInternalStri
 }
 
 /* QString <= UIExtraDataMetaDefs::DetailsElementOptionTypeStorage: */
+template<> QString toString(const UIExtraDataMetaDefs::DetailsElementOptionTypeStorage &enmDetailsElementOptionTypeStorage)
+{
+    QString strResult;
+    switch (enmDetailsElementOptionTypeStorage)
+    {
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeStorage_HardDisks:      strResult = QApplication::translate("VBoxGlobal", "Hard Disks"); break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeStorage_OpticalDevices: strResult = QApplication::translate("VBoxGlobal", "Optical Devices"); break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeStorage_FloppyDevices:  strResult = QApplication::translate("VBoxGlobal", "Floppy Devices"); break;
+        default:
+        {
+            AssertMsgFailed(("No text for details element option type=%d", enmDetailsElementOptionTypeStorage));
+            break;
+        }
+    }
+    return strResult;
+}
+
+/* QString <= UIExtraDataMetaDefs::DetailsElementOptionTypeStorage: */
 template<> QString toInternalString(const UIExtraDataMetaDefs::DetailsElementOptionTypeStorage &enmDetailsElementOptionTypeStorage)
 {
     QString strResult;
@@ -1033,6 +1113,24 @@ template<> UIExtraDataMetaDefs::DetailsElementOptionTypeStorage fromInternalStri
 }
 
 /* QString <= UIExtraDataMetaDefs::DetailsElementOptionTypeAudio: */
+template<> QString toString(const UIExtraDataMetaDefs::DetailsElementOptionTypeAudio &enmDetailsElementOptionTypeAudio)
+{
+    QString strResult;
+    switch (enmDetailsElementOptionTypeAudio)
+    {
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeAudio_Driver:     strResult = QApplication::translate("VBoxGlobal", "Driver"); break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeAudio_Controller: strResult = QApplication::translate("VBoxGlobal", "Controller"); break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeAudio_IO:         strResult = QApplication::translate("VBoxGlobal", "Input/Output"); break;
+        default:
+        {
+            AssertMsgFailed(("No text for details element option type=%d", enmDetailsElementOptionTypeAudio));
+            break;
+        }
+    }
+    return strResult;
+}
+
+/* QString <= UIExtraDataMetaDefs::DetailsElementOptionTypeAudio: */
 template<> QString toInternalString(const UIExtraDataMetaDefs::DetailsElementOptionTypeAudio &enmDetailsElementOptionTypeAudio)
 {
     QString strResult;
@@ -1064,6 +1162,27 @@ template<> UIExtraDataMetaDefs::DetailsElementOptionTypeAudio fromInternalString
         return UIExtraDataMetaDefs::DetailsElementOptionTypeAudio_Invalid;
     /* Corresponding type for known words: */
     return values.at(keys.indexOf(QRegExp(strDetailsElementOptionTypeAudio, Qt::CaseInsensitive)));
+}
+
+/* QString <= UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork: */
+template<> QString toString(const UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork &enmDetailsElementOptionTypeNetwork)
+{
+    QString strResult;
+    switch (enmDetailsElementOptionTypeNetwork)
+    {
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_NotAttached:     strResult = QApplication::translate("VBoxGlobal", "Not Attached"); break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_NAT:             strResult = QApplication::translate("VBoxGlobal", "NAT"); break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_BridgetAdapter:  strResult = QApplication::translate("VBoxGlobal", "Bridget Adapter"); break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_InternalNetwork: strResult = QApplication::translate("VBoxGlobal", "Internal Network"); break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_HostOnlyAdapter: strResult = QApplication::translate("VBoxGlobal", "Host Only Adapter"); break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_GenericDriver:   strResult = QApplication::translate("VBoxGlobal", "Generic Driver"); break;
+        default:
+        {
+            AssertMsgFailed(("No text for details element option type=%d", enmDetailsElementOptionTypeNetwork));
+            break;
+        }
+    }
+    return strResult;
 }
 
 /* QString <= UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork: */
@@ -1107,6 +1226,26 @@ template<> UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork fromInternalStri
 }
 
 /* QString <= UIExtraDataMetaDefs::DetailsElementOptionTypeSerial: */
+template<> QString toString(const UIExtraDataMetaDefs::DetailsElementOptionTypeSerial &enmDetailsElementOptionTypeSerial)
+{
+    QString strResult;
+    switch (enmDetailsElementOptionTypeSerial)
+    {
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeSerial_Disconnected: strResult = QApplication::translate("VBoxGlobal", "Disconnected"); break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeSerial_HostPipe:     strResult = QApplication::translate("VBoxGlobal", "Host Pipe"); break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeSerial_HostDevice:   strResult = QApplication::translate("VBoxGlobal", "Host Device"); break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeSerial_RawFile:      strResult = QApplication::translate("VBoxGlobal", "Raw File"); break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeSerial_TCP:          strResult = QApplication::translate("VBoxGlobal", "TCP"); break;
+        default:
+        {
+            AssertMsgFailed(("No text for details element option type=%d", enmDetailsElementOptionTypeSerial));
+            break;
+        }
+    }
+    return strResult;
+}
+
+/* QString <= UIExtraDataMetaDefs::DetailsElementOptionTypeSerial: */
 template<> QString toInternalString(const UIExtraDataMetaDefs::DetailsElementOptionTypeSerial &enmDetailsElementOptionTypeSerial)
 {
     QString strResult;
@@ -1145,6 +1284,23 @@ template<> UIExtraDataMetaDefs::DetailsElementOptionTypeSerial fromInternalStrin
 }
 
 /* QString <= UIExtraDataMetaDefs::DetailsElementOptionTypeUsb: */
+template<> QString toString(const UIExtraDataMetaDefs::DetailsElementOptionTypeUsb &enmDetailsElementOptionTypeUsb)
+{
+    QString strResult;
+    switch (enmDetailsElementOptionTypeUsb)
+    {
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeUsb_Controller:    strResult = QApplication::translate("VBoxGlobal", "Controller"); break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeUsb_DeviceFilters: strResult = QApplication::translate("VBoxGlobal", "Device Filters"); break;
+        default:
+        {
+            AssertMsgFailed(("No text for details element option type=%d", enmDetailsElementOptionTypeUsb));
+            break;
+        }
+    }
+    return strResult;
+}
+
+/* QString <= UIExtraDataMetaDefs::DetailsElementOptionTypeUsb: */
 template<> QString toInternalString(const UIExtraDataMetaDefs::DetailsElementOptionTypeUsb &enmDetailsElementOptionTypeUsb)
 {
     QString strResult;
@@ -1177,6 +1333,21 @@ template<> UIExtraDataMetaDefs::DetailsElementOptionTypeUsb fromInternalString<U
 }
 
 /* QString <= UIExtraDataMetaDefs::DetailsElementOptionTypeSharedFolders: */
+template<> QString toString(const UIExtraDataMetaDefs::DetailsElementOptionTypeSharedFolders &enmDetailsElementOptionTypeSharedFolders)
+{
+    QString strResult;
+    switch (enmDetailsElementOptionTypeSharedFolders)
+    {
+        default:
+        {
+            AssertMsgFailed(("No text for details element option type=%d", enmDetailsElementOptionTypeSharedFolders));
+            break;
+        }
+    }
+    return strResult;
+}
+
+/* QString <= UIExtraDataMetaDefs::DetailsElementOptionTypeSharedFolders: */
 template<> QString toInternalString(const UIExtraDataMetaDefs::DetailsElementOptionTypeSharedFolders &enmDetailsElementOptionTypeSharedFolders)
 {
     QString strResult;
@@ -1202,6 +1373,24 @@ template<> UIExtraDataMetaDefs::DetailsElementOptionTypeSharedFolders fromIntern
         return UIExtraDataMetaDefs::DetailsElementOptionTypeSharedFolders_Invalid;
     /* Corresponding type for known words: */
     return values.at(keys.indexOf(QRegExp(strDetailsElementOptionTypeSharedFolders, Qt::CaseInsensitive)));
+}
+
+/* QString <= UIExtraDataMetaDefs::DetailsElementOptionTypeUserInterface: */
+template<> QString toString(const UIExtraDataMetaDefs::DetailsElementOptionTypeUserInterface &enmDetailsElementOptionTypeUserInterface)
+{
+    QString strResult;
+    switch (enmDetailsElementOptionTypeUserInterface)
+    {
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeUserInterface_MenuBar:     strResult = QApplication::translate("VBoxGlobal", "Menu Bar"); break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeUserInterface_StatusBar:   strResult = QApplication::translate("VBoxGlobal", "Status Bar"); break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeUserInterface_MiniToolbar: strResult = QApplication::translate("VBoxGlobal", "Mini Toolbar"); break;
+        default:
+        {
+            AssertMsgFailed(("No text for details element option type=%d", enmDetailsElementOptionTypeUserInterface));
+            break;
+        }
+    }
+    return strResult;
 }
 
 /* QString <= UIExtraDataMetaDefs::DetailsElementOptionTypeUserInterface: */
@@ -1236,6 +1425,21 @@ template<> UIExtraDataMetaDefs::DetailsElementOptionTypeUserInterface fromIntern
         return UIExtraDataMetaDefs::DetailsElementOptionTypeUserInterface_Invalid;
     /* Corresponding type for known words: */
     return values.at(keys.indexOf(QRegExp(strDetailsElementOptionTypeUserInterface, Qt::CaseInsensitive)));
+}
+
+/* QString <= UIExtraDataMetaDefs::DetailsElementOptionTypeDescription: */
+template<> QString toString(const UIExtraDataMetaDefs::DetailsElementOptionTypeDescription &enmDetailsElementOptionTypeDescription)
+{
+    QString strResult;
+    switch (enmDetailsElementOptionTypeDescription)
+    {
+        default:
+        {
+            AssertMsgFailed(("No text for details element option type=%d", enmDetailsElementOptionTypeDescription));
+            break;
+        }
+    }
+    return strResult;
 }
 
 /* QString <= UIExtraDataMetaDefs::DetailsElementOptionTypeDescription: */
