@@ -770,8 +770,6 @@ VBOX_WITH_NETSHAPER = 1
 if1of ($(KBUILD_TARGET), freebsd linux)
  VBOX_WITH_VDE = 1
 endif
-# Use new VBoxNetDhcpd instead of old VBoxNetDHCP
-VBOX_WITH_DHCPD = 1
 ## @}
 
 

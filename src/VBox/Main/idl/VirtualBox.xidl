@@ -1790,7 +1790,7 @@
 
   <interface
     name="IDHCPServer" extends="$unknown"
-    uuid="197717d2-a742-4966-a529-d1467e903feb"
+    uuid="00c8f974-92c5-44a1-8f3f-702469fdd04b"
     wsmap="managed"
     reservedMethods="2" reservedAttributes="6"
     >
@@ -1952,15 +1952,6 @@
         Stops DHCP server process.
         <result name="E_FAIL">
           Failed to stop the process.
-        </result>
-      </desc>
-    </method>
-
-    <method name="restart">
-      <desc>
-        Restart running DHCP server process.
-        <result name="E_FAIL">
-          Failed to restart the process.
         </result>
       </desc>
     </method>

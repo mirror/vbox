@@ -35,7 +35,7 @@ optmap_t &operator<<(optmap_t &optmap, DhcpOption *option)
 
 optmap_t &operator<<(optmap_t &optmap, const std::shared_ptr<DhcpOption> &option)
 {
-    if (!option)
+    if (option == NULL)
         return optmap;
 
     if (option->present())

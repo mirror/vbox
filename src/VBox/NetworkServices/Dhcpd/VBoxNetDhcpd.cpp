@@ -447,7 +447,7 @@ int VBoxNetDhcpd::ifProcessInput()
                                                      abHdrScratch,
                                                      i, cSegs,
                                                      &cbSegFrame);
-                ifInput(pvSegFrame, (uint32_t)cbFrame);
+                ifInput(pvSegFrame, cbFrame);
             }
         }
     }
@@ -737,10 +737,10 @@ void VBoxNetDhcpd::dhcp4Recv(struct udp_pcb *pcb, struct pbuf *p,
         return;
 
     unique_ptr_pbuf q ( pbuf_alloc(PBUF_RAW, (u16_t)data.size(), PBUF_RAM) );
-    if (!q)
+    if (q == NULL)
         return;
 
-    error = pbuf_take(q.get(), &data.front(), (u16_t)data.size());
+    error = pbuf_take(q.get(), &data.front(), data.size());
     if (error != ERR_OK)
         return;
 

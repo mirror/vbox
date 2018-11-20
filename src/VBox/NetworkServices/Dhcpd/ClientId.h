@@ -34,8 +34,8 @@ class ClientId
 public:
     ClientId()
       : m_mac(), m_id() {}
-    ClientId(const RTMAC &macParam, const OptClientId &idParam)
-      : m_mac(macParam), m_id(idParam) {}
+    ClientId(const RTMAC &mac, const OptClientId &id)
+      : m_mac(mac), m_id(id) {}
 
     const RTMAC &mac() const { return m_mac; }
     const OptClientId &id() const { return m_id; }

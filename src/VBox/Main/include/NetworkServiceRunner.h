@@ -35,7 +35,6 @@ public:
     virtual ~NetworkServiceRunner();
 
     int setOption(const std::string& key, const std::string& val);
-    void clearOptions();
 
     int  start(bool aKillProcOnStop);
     int  stop();
