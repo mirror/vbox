@@ -322,13 +322,13 @@ void DhcpClientMessage::dump() const
 
 
 DhcpServerMessage::DhcpServerMessage(const DhcpClientMessage &req,
-                                     uint8_t messageType, RTNETADDRIPV4 serverAddr)
+                                     uint8_t messageTypeParam, RTNETADDRIPV4 serverAddr)
   : DhcpMessage(),
     m_optServerId(serverAddr)
 {
     m_dst.u = 0xffffffff;       /* broadcast */
 
-    m_optMessageType = OptMessageType(messageType);
+    m_optMessageType = OptMessageType(messageTypeParam);
 
     /* copy values from the request (cf. RFC2131 Table 3) */
     m_xid = req.xid();

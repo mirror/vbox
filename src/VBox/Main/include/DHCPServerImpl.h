@@ -49,6 +49,7 @@ public:
     static const std::string kDsrKeyGateway;
     static const std::string kDsrKeyLowerIp;
     static const std::string kDsrKeyUpperIp;
+    static const std::string kDsrKeyConfig;
 };
 
 /**
@@ -124,6 +125,7 @@ private:
                   const com::Utf8Str &aTrunkName,
                   const com::Utf8Str &aTrunkType);
     HRESULT stop();
+    HRESULT restart();
 
     struct Data;
     Data *m;

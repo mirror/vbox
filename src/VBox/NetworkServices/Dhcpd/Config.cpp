@@ -588,14 +588,15 @@ void Config::parseConfig(const xml::ElementNode *root)
 
     /** @todo r=bird: Visual C++ 2010 does not grok this use of 'auto'. */
     // XXX: debug
-    for (auto it: m_GlobalOptions) {
-        std::shared_ptr<DhcpOption> opt(it.second);
+    for (optmap_t::const_iterator it = m_GlobalOptions.begin(); it != m_GlobalOptions.end(); ++it) {
+        std::shared_ptr<DhcpOption> opt(it->second);
 
         octets_t data;
         opt->encode(data);
 
         bool space = false;
-        for (auto c: data) {
+        for (octets_t::const_iterator itData = data.begin(); itData != data.end(); ++itData) {
+            uint8_t c = *itData;
             if (space)
                 std::cout << " ";
             else
@@ -853,8 +854,10 @@ optmap_t Config::getOptions(const OptParameterRequest &reqOpts,
 
     optmap << new OptSubnetMask(m_IPv4Netmask);
 
-    for (auto optreq: reqOpts.value())
+    const OptParameterRequest::value_t& reqValue = reqOpts.value();
+    for (octets_t::const_iterator itOptReq = reqValue.begin(); itOptReq != reqValue.end(); ++itOptReq)
     {
+        uint8_t optreq = *itOptReq;
         std::cout << ">>> requested option " << (int)optreq << std::endl;
 
         if (optreq == OptSubnetMask::optcode)
@@ -889,8 +892,8 @@ optmap_t Config::getOptions(const OptParameterRequest &reqOpts,
     /* XXX: testing ... */
     if (vmopts != NULL)
     {
-        for (auto it: *vmopts) {
-            std::shared_ptr<DhcpOption> opt(it.second);
+        for (optmap_t::const_iterator it = vmopts->begin(); it != vmopts->end(); ++it) {
+            std::shared_ptr<DhcpOption> opt(it->second);
             if (optmap.count(opt->optcode()) == 0 && opt->optcode() > 127)
             {
                 optmap << opt;
@@ -899,8 +902,8 @@ optmap_t Config::getOptions(const OptParameterRequest &reqOpts,
         }
     }
 
-    for (auto it: m_GlobalOptions) {
-        std::shared_ptr<DhcpOption> opt(it.second);
+    for (optmap_t::const_iterator it = m_GlobalOptions.begin(); it != m_GlobalOptions.end(); ++it) {
+        std::shared_ptr<DhcpOption> opt(it->second);
         if (optmap.count(opt->optcode()) == 0 && opt->optcode() > 127)
         {
             optmap << opt;
