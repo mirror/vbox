@@ -1133,9 +1133,27 @@ AssertCompileSizeAlignment(SVMNESTEDVMCBCACHE, 8);
         (a_pCtx)->a_reg.Attr.u   = HMSVM_VMCB_2_CPU_SEG_ATTR((a_pVmcbStateSave)->a_REG.u16Attr); \
     } while (0)
 
-/*
+
+/** @defgroup grp_hm_svm_c    SVM C Helpers
+ *
+ * These are functions that strictly only implement SVM functionality that is in
+ * accordance to the SVM spec. and thus fit to use by IEM/REM/HM.
+ *
+ * These are not HM all-context API functions, those are to be placed in hm.h.
+ * @{
+ */
+VMM_INT_DECL(int)       HMSvmGetMsrpmOffsetAndBit(uint32_t idMsr, uint16_t *pbOffMsrpm, uint8_t *puMsrpmBit);
+VMM_INT_DECL(bool)      HMSvmIsIOInterceptActive(void *pvIoBitmap, uint16_t u16Port, SVMIOIOTYPE enmIoType, uint8_t cbReg,
+                                                 uint8_t cAddrSizeBits, uint8_t iEffSeg, bool fRep, bool fStrIo,
+                                                 PSVMIOIOEXITINFO pIoExitInfo);
+/** @} */
+
+
+/** @defgroup grp_hm_svm_hwexec    SVM Hardware-assisted execution Helpers
+ *
  * These functions are only here because the inline functions in cpum.h calls them.
  * Don't add any more functions here unless there is no other option.
+ * @{
  */
 VMM_INT_DECL(bool)     HMHasGuestSvmVmcbCached(PVMCPU pVCpu);
 VMM_INT_DECL(bool)     HMIsGuestSvmCtrlInterceptSet(PVMCPU pVCpu, uint64_t fIntercept);
@@ -1147,6 +1165,8 @@ VMM_INT_DECL(bool)     HMIsGuestSvmXcptInterceptSet(PVMCPU pVCpu, uint8_t uVecto
 VMM_INT_DECL(bool)     HMIsGuestSvmVirtIntrMasking(PVMCPU pVCpu);
 VMM_INT_DECL(bool)     HMIsGuestSvmNestedPagingEnabled(PVMCPU pVCpu);
 VMM_INT_DECL(uint16_t) HMGetGuestSvmPauseFilterCount(PVMCPU pVCpu);
+/** @} */
+
 
 /** @} */
 

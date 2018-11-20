@@ -16046,7 +16046,39 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecDecodedVmxoff(PVMCPU pVCpu, uint8_t cbInstr)
     return iemUninitExecAndFiddleStatusAndMaybeReenter(pVCpu, rcStrict);
 }
 
+
+/**
+ * @callback_method_impl{FNPGMPHYSHANDLER, VMX APIC-access page accesses}
+ *
+ * @remarks The @a pvUser argument is currently unused.
+ */
+PGM_ALL_CB2_DECL(VBOXSTRICTRC) iemVmxApicAccessPageHandler(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhysFault, void *pvPhys,
+                                                           void *pvBuf, size_t cbBuf, PGMACCESSTYPE enmAccessType,
+                                                           PGMACCESSORIGIN enmOrigin, void *pvUser)
+{
+    RT_NOREF4(pVM, pvPhys, enmOrigin, pvUser);
+
+    Assert(CPUMIsGuestInVmxNonRootMode(IEM_GET_CTX(pVCpu)));
+    Assert(CPUMIsGuestVmxProcCtls2Set(pVCpu, IEM_GET_CTX(pVCpu), VMX_PROC_CTLS2_VIRT_APIC_ACCESS));
+
+#ifdef VBOX_STRICT
+    RTGCPHYS const GCPhysApicBase   = CPUMGetGuestVmxApicAccessPageAddr(pVCpu, IEM_GET_CTX(pVCpu));
+    RTGCPHYS const GCPhysAccessBase = GCPhysFault & ~(RTGCPHYS)PAGE_OFFSET_MASK;
+    Assert(GCPhysApicBase == GCPhysAccessBase);
 #endif
+
+    uint16_t const offAccess = GCPhysFault & PAGE_OFFSET_MASK;
+    uint32_t const fAccess   = enmAccessType == PGMACCESSTYPE_WRITE ? IEM_ACCESS_TYPE_WRITE : IEM_ACCESS_TYPE_READ;
+
+    VBOXSTRICTRC rcStrict = iemVmxVirtApicAccessMem(pVCpu, offAccess, cbBuf, pvBuf, fAccess);
+    if (RT_FAILURE(rcStrict))
+        return rcStrict;
+
+    /* Any access on this APIC-access page has been handled, caller should not carry out the access. */
+    return VINF_SUCCESS;
+}
+
+#endif /* VBOX_WITH_NESTED_HWVIRT_VMX */
 
 #ifdef IN_RING3
 

@@ -984,7 +984,7 @@ IEM_STATIC VBOXSTRICTRC iemSvmHandleIOIntercept(PVMCPU pVCpu, uint16_t u16Port, 
 
     SVMIOIOEXITINFO IoExitInfo;
     void *pvIoBitmap = pVCpu->cpum.GstCtx.hwvirt.svm.CTX_SUFF(pvIoBitmap);
-    bool const fIntercept = CPUMSvmIsIOInterceptActive(pvIoBitmap, u16Port, enmIoType, cbReg, cAddrSizeBits, iEffSeg, fRep,
+    bool const fIntercept = HMSvmIsIOInterceptActive(pvIoBitmap, u16Port, enmIoType, cbReg, cAddrSizeBits, iEffSeg, fRep,
                                                        fStrIo, &IoExitInfo);
     if (fIntercept)
     {
@@ -1033,7 +1033,7 @@ IEM_STATIC VBOXSTRICTRC iemSvmHandleMsrIntercept(PVMCPU pVCpu, uint32_t idMsr, b
      */
     uint16_t offMsrpm;
     uint8_t  uMsrpmBit;
-    int rc = CPUMSvmGetMsrpmOffsetAndBit(idMsr, &offMsrpm, &uMsrpmBit);
+    int rc = HMSvmGetMsrpmOffsetAndBit(idMsr, &offMsrpm, &uMsrpmBit);
     if (RT_SUCCESS(rc))
     {
         Assert(uMsrpmBit == 0 || uMsrpmBit == 2 || uMsrpmBit == 4 || uMsrpmBit == 6);

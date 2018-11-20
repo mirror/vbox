@@ -2070,24 +2070,6 @@ VMM_INT_DECL(int)       CPUMRawLeave(PVMCPU pVCpu, int rc);
 VMMDECL(uint32_t)       CPUMRawGetEFlags(PVMCPU pVCpu);
 VMMDECL(void)           CPUMRawSetEFlags(PVMCPU pVCpu, uint32_t fEfl);
 
-/** @name SVM helpers.
- * @{ */
-VMM_INT_DECL(int)       CPUMSvmGetMsrpmOffsetAndBit(uint32_t idMsr, uint16_t *pbOffMsrpm, uint8_t *puMsrpmBit);
-VMM_INT_DECL(bool)      CPUMSvmIsIOInterceptActive(void *pvIoBitmap, uint16_t u16Port, SVMIOIOTYPE enmIoType, uint8_t cbReg,
-                                                   uint8_t cAddrSizeBits, uint8_t iEffSeg, bool fRep, bool fStrIo,
-                                                   PSVMIOIOEXITINFO pIoExitInfo);
-/** @} */
-
-/** @name VMX helpers.
- * @{ */
-VMM_INT_DECL(int)       CPUMVmxGetMsrPermission(void const *pvMsrBitmap, uint32_t idMsr, PVMXMSREXITREAD penmRead,
-                                                PVMXMSREXITWRITE penmWrite);
-VMM_INT_DECL(bool)      CPUMVmxGetIoBitmapPermission(void const *pvIoBitmapA, void const *pvIoBitmapB, uint16_t uPort,
-                                                     uint8_t cbAccess);
-VMM_INT_DECL(int)       CPUMVmxApicAccessPageRegister(PVMCPU pVCpu, RTGCPHYS GCPhysApicAccess);
-VMM_INT_DECL(int)       CPUMVmxApicAccessPageDeregister(PVMCPU pVCpu, RTGCPHYS GCPhysApicAccess);
-/** @} */
-
 /** @name Changed flags.
  * These flags are used to keep track of which important register that
  * have been changed since last they were reset. The only one allowed

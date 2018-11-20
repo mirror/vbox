@@ -170,8 +170,6 @@ VBoxVMM_SOURCES  = \
 	VMMAll/APICAll.cpp \
 	VMMAll/CPUMAllRegs.cpp \
 	VMMAll/CPUMAllMsrs.cpp \
-	VMMAll/CPUMAllSvm.cpp \
-	VMMAll/CPUMAllVmx.cpp \
 	VMMAll/CPUMStack.cpp \
 	VMMAll/DBGFAll.cpp \
 	VMMAll/HMAll.cpp \
@@ -561,8 +559,6 @@ VMMRC_SOURCES   = \
 	VMMAll/APICAll.cpp \
 	VMMAll/CPUMAllRegs.cpp \
 	VMMAll/CPUMAllMsrs.cpp \
-	VMMAll/CPUMAllSvm.cpp \
-	VMMAll/CPUMAllVmx.cpp \
 	VMMAll/DBGFAll.cpp \
 	VMMAll/IEMAll.cpp \
 	VMMAll/IEMAllAImpl.asm \
@@ -714,8 +710,6 @@ VMMR0_SOURCES   = \
 	VMMAll/APICAll.cpp \
 	VMMAll/CPUMAllRegs.cpp \
 	VMMAll/CPUMAllMsrs.cpp \
-	VMMAll/CPUMAllSvm.cpp \
-	VMMAll/CPUMAllVmx.cpp \
 	VMMAll/CPUMStack.cpp \
 	VMMAll/DBGFAll.cpp \
 	VMMAll/EMAll.cpp \

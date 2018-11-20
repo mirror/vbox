@@ -4190,6 +4190,21 @@ DECLINLINE(bool) HMVmxIsTrapLikeVmexit(uint32_t uExitReason)
 /** @} */
 
 
+/** @defgroup grp_hm_vmx_c    VMX Assembly Helpers
+ *
+ * These are functions that strictly only implement VT-x functionality that is in
+ * accordance to the VT-X spec. and thus fit to use by IEM/REM/HM.
+ *
+ * These are not HM all-context API functions, those are to be placed in hm.h.
+ * @{
+ */
+VMM_INT_DECL(int)   HMVmxGetMsrPermission(void const *pvMsrBitmap, uint32_t idMsr, PVMXMSREXITREAD penmRead,
+                                          PVMXMSREXITWRITE penmWrite);
+VMM_INT_DECL(bool)  HMVmxGetIoBitmapPermission(void const *pvIoBitmapA, void const *pvIoBitmapB, uint16_t uPort,
+                                               uint8_t cbAccess);
+/** @} */
+
+
 /** @defgroup grp_hm_vmx_asm    VMX Assembly Helpers
  * @{
  */

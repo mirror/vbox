@@ -2728,7 +2728,6 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitLoadHostState(PVMCPU pVCpu, uint32_t uExitRe
      */
     PCVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
     bool const fHostInLongMode = RT_BOOL(pVmcs->u32ExitCtls & VMX_EXIT_CTLS_HOST_ADDR_SPACE_SIZE);
-    bool const fVirtApicAccess = RT_BOOL(pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_VIRT_APIC_ACCESS);
 
     /* We cannot return from a long-mode guest to a host that is not in long mode. */
     if (    CPUMIsGuestInLongMode(pVCpu)
@@ -2756,12 +2755,19 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitLoadHostState(PVMCPU pVCpu, uint32_t uExitRe
     EMMonitorWaitClear(pVCpu);
 
     /* De-register the handler for the APIC-access page. */
-    if (fVirtApicAccess)
+    if (pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_VIRT_APIC_ACCESS)
     {
+        PVM pVM = pVCpu->CTX_SUFF(pVM);
         RTGCPHYS const GCPhysApicAccess = pVmcs->u64AddrApicAccess.u;
-        int rc = CPUMVmxApicAccessPageDeregister(pVCpu, GCPhysApicAccess);
-        if (RT_FAILURE(rc))
-            return rc;
+        if (PGMHandlerPhysicalIsRegistered(pVM, GCPhysApicAccess))
+        {
+            /** @todo NSTVMX: This is broken! We cannot simply deregister the handler for the
+             *        physical address as other VCPUs executing other nested-VCPUs might have
+             *        it registered! */
+            int rc = PGMHandlerPhysicalDeregister(pVM, GCPhysApicAccess);
+            if (RT_FAILURE(rc))
+                return rc;
+        }
     }
 
     /* Perform the VMX transition (PGM updates). */
@@ -3043,7 +3049,7 @@ IEM_STATIC bool iemVmxIsIoInterceptSet(PVMCPU pVCpu, uint16_t u16Port, uint8_t c
         uint8_t const *pbIoBitmapB = (uint8_t const *)pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pvIoBitmap) + VMX_V_IO_BITMAP_A_SIZE;
         Assert(pbIoBitmapA);
         Assert(pbIoBitmapB);
-        return CPUMVmxGetIoBitmapPermission(pbIoBitmapA, pbIoBitmapB, u16Port, cbAccess);
+        return HMVmxGetIoBitmapPermission(pbIoBitmapA, pbIoBitmapB, u16Port, cbAccess);
     }
 
     return false;
@@ -6333,7 +6339,9 @@ IEM_STATIC int iemVmxVmentryCheckExecCtls(PVMCPU pVCpu, const char *pszInstr)
         }
 
         /* Register the handler for the APIC-access page. */
-        int rc = CPUMVmxApicAccessPageRegister(pVCpu, GCPhysApicAccess);
+        int rc = PGMHandlerPhysicalRegister(pVCpu->CTX_SUFF(pVM), GCPhysApicAccess, GCPhysApicAccess,
+                                            pVCpu->iem.s.hVmxApicAccessPage, NIL_RTR3PTR /* pvUserR3 */,
+                                            NIL_RTR0PTR /* pvUserR0 */,  NIL_RTRCPTR /* pvUserRC */, NULL /* pszDesc */);
         if (RT_FAILURE(rc))
             IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_AddrApicAccessHandlerReg);
     }
@@ -7056,7 +7064,7 @@ IEM_STATIC bool iemVmxIsRdmsrWrmsrInterceptSet(PVMCPU pVCpu, uint32_t uExitReaso
         if (uExitReason == VMX_EXIT_RDMSR)
         {
             VMXMSREXITREAD enmRead;
-            int rc = CPUMVmxGetMsrPermission(pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pvMsrBitmap), idMsr, &enmRead,
+            int rc = HMVmxGetMsrPermission(pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pvMsrBitmap), idMsr, &enmRead,
                                              NULL /* penmWrite */);
             AssertRC(rc);
             if (enmRead == VMXMSREXIT_INTERCEPT_READ)
@@ -7065,7 +7073,7 @@ IEM_STATIC bool iemVmxIsRdmsrWrmsrInterceptSet(PVMCPU pVCpu, uint32_t uExitReaso
         else
         {
             VMXMSREXITWRITE enmWrite;
-            int rc = CPUMVmxGetMsrPermission(pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pvMsrBitmap), idMsr, NULL /* penmRead */,
+            int rc = HMVmxGetMsrPermission(pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pvMsrBitmap), idMsr, NULL /* penmRead */,
                                              &enmWrite);
             AssertRC(rc);
             if (enmWrite == VMXMSREXIT_INTERCEPT_WRITE)

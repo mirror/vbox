@@ -409,10 +409,7 @@ typedef struct CPUM
 
     /** The host MXCSR mask (determined at init). */
     uint32_t                fHostMxCsrMask;
-
-    /** The VMX APIC-access page handler type. */
-    PGMPHYSHANDLERTYPE      hVmxApicAccessPage;
-    uint8_t                 abPadding1[16];
+    uint8_t                 abPadding1[20];
 
     /** Host CPU feature information.
      * Externaly visible via the VM structure, aligned on 64-byte boundrary. */
@@ -422,7 +419,6 @@ typedef struct CPUM
     CPUMFEATURES            GuestFeatures;
     /** Guest CPU info. */
     CPUMINFO                GuestInfo;
-
 
     /** The standard set of CpuId leaves. */
     CPUMCPUID               aGuestCpuIdPatmStd[6];
@@ -530,9 +526,6 @@ RT_C_DECLS_BEGIN
 
 PCPUMCPUIDLEAF      cpumCpuIdGetLeaf(PVM pVM, uint32_t uLeaf);
 PCPUMCPUIDLEAF      cpumCpuIdGetLeafEx(PVM pVM, uint32_t uLeaf, uint32_t uSubLeaf, bool *pfExactSubLeafHit);
-# ifdef VBOX_WITH_NESTED_HWVIRT_VMX
-PGM_ALL_CB2_PROTO(FNPGMPHYSHANDLER) cpumVmxApicAccessPageHandler;
-# endif
 
 # ifdef IN_RING3
 int                 cpumR3DbgInit(PVM pVM);

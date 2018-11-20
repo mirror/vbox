@@ -20,6 +20,7 @@
 
 #include <VBox/vmm/cpum.h>
 #include <VBox/vmm/iem.h>
+#include <VBox/vmm/pgm.h>
 #include <VBox/vmm/stam.h>
 #include <VBox/param.h>
 
@@ -557,6 +558,8 @@ typedef struct IEMCPU
     uint32_t                uCurXcptErr;
     /** The CR2 for the current exception / interrupt. */
     uint64_t                uCurXcptCr2;
+    /** The VMX APIC-access page handler type. */
+    PGMPHYSHANDLERTYPE      hVmxApicAccessPage;
 
     /** @name Statistics
      * @{  */
@@ -581,7 +584,6 @@ typedef struct IEMCPU
     uint32_t                cPendingCommit;
     /** Number of long jumps. */
     uint32_t                cLongJumps;
-    uint32_t                uAlignment6; /**< Alignment padding. */
     /** @} */
 
     /** @name Target CPU information.
@@ -927,6 +929,9 @@ typedef enum IEMACCESSCRX
     IEMACCESSCRX_SMSW
 } IEMACCESSCRX;
 
+# ifdef VBOX_WITH_NESTED_HWVIRT_VMX
+PGM_ALL_CB2_PROTO(FNPGMPHYSHANDLER) iemVmxApicAccessPageHandler;
+# endif
 
 /**
  * Indicates to the verifier that the given flag set is undefined.

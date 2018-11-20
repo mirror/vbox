@@ -168,6 +168,24 @@ VMMR3DECL(int)      IEMR3Init(PVM pVM)
         while (iMemMap-- > 0)
             pVCpu->iem.s.aMemMappings[iMemMap].fAccess = IEM_ACCESS_INVALID;
     }
+
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
+    /*
+     * Register the per-VM VMX APIC-access page handler type.
+     */
+    if (pVM->cpum.ro.GuestFeatures.fVmx)
+    {
+        PVMCPU pVCpu0 = &pVM->aCpus[0];
+        int rc = PGMR3HandlerPhysicalTypeRegister(pVM, PGMPHYSHANDLERKIND_ALL, iemVmxApicAccessPageHandler,
+                                                  NULL /* pszModR0 */,
+                                                  "iemVmxApicAccessPageHandler", NULL /* pszPfHandlerR0 */,
+                                                  NULL /* pszModRC */,
+                                                  NULL /* pszHandlerRC */, NULL /* pszPfHandlerRC */,
+                                                  "VMX APIC-access page", &pVCpu0->iem.s.hVmxApicAccessPage);
+        AssertLogRelRCReturn(rc, rc);
+    }
+#endif
+
     return VINF_SUCCESS;
 }
 
