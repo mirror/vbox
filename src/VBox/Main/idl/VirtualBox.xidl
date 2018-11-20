@@ -12235,7 +12235,7 @@ and "VAR" for unsetting. -->
 
   <interface
     name="IGuestSession" extends="$unknown"
-    uuid="07241827-f602-48c8-8511-4d933f3cf0bb"
+    uuid="47E24147-1DA3-4BEB-BF3C-7B73ADA53192"
     wsmap="managed"
     reservedMethods="8" reservedAttributes="8"
     >
@@ -13181,6 +13181,28 @@ and "VAR" for unsetting. -->
       </desc>
       <param name="path" type="wstring" dir="in">
         <desc>Path to the file system object to remove.  Guest style path.</desc>
+      </param>
+    </method>
+
+    <method name="fsObjRemoveArray">
+      <desc>
+        Removes multiple file system objects (files, directories, symlinks, etc)
+        in the guest. Use with caution.
+
+        <note>This method is not implemented yet and will return E_NOTIMPL.</note>
+
+        <note>This method will remove symbolic links in the final path
+          component, not follow them.</note>
+
+        <result name="E_NOTIMPL">
+          The method has not been implemented yet.
+        </result>
+      </desc>
+      <param name="path" type="wstring" dir="in" safearray="yes">
+        <desc>Array of paths to the file system objects to remove.  Guest style path.</desc>
+      </param>
+      <param name="progress" type="IProgress" dir="return">
+        <desc>Progress object to track the operation to completion.</desc>
       </param>
     </method>
 

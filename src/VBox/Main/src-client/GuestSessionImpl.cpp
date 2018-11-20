@@ -3860,6 +3860,16 @@ HRESULT GuestSession::fsObjRemove(const com::Utf8Str &aPath)
     return hrc;
 }
 
+HRESULT GuestSession::fsObjRemoveArray(const std::vector<com::Utf8Str> &aPaths, ComPtr<IProgress> &aProgress)
+{
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    RT_NOREF(aPaths, aProgress);
+
+    return E_NOTIMPL;
+}
+
 HRESULT GuestSession::fsObjRename(const com::Utf8Str &aSource,
                                   const com::Utf8Str &aDestination,
                                   const std::vector<FsObjRenameFlag_T> &aFlags)

@@ -172,6 +172,8 @@ private:
                            BOOL aFollowSymlinks,
                            ComPtr<IGuestFsObjInfo> &aInfo);
     HRESULT fsObjRemove(const com::Utf8Str &aPath);
+    HRESULT fsObjRemoveArray(const std::vector<com::Utf8Str> &aPaths,
+                             ComPtr<IProgress> &aProgress);
     HRESULT fsObjRename(const com::Utf8Str &aOldPath,
                         const com::Utf8Str &aNewPath,
                         const std::vector<FsObjRenameFlag_T> &aFlags);
