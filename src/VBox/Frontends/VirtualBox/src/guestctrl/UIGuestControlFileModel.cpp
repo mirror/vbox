@@ -62,19 +62,21 @@ bool UIGuestControlFileProxyModel::lessThan(const QModelIndex &left, const QMode
         else if (pRightItem->isUpDirectory())
             return (sortOrder() == Qt::DescendingOrder);
 
-        /* If the sort column is datatime than handle it correctly: */
+        /* If the sort column is QDateTime than handle it correctly: */
         if (sortColumn() == UIGuestControlFileModelColumn_ChangeTime)
         {
             QVariant dataLeft = pLeftItem->data(UIGuestControlFileModelColumn_ChangeTime);
             QVariant dataRight = pRightItem->data(UIGuestControlFileModelColumn_ChangeTime);
-            /* Being a bit paranoid?: */
-            if (dataLeft.canConvert(QMetaType::QDateTime) &&
-                dataRight.canConvert(QMetaType::QDateTime))
-            {
-                QDateTime leftDateTime = dataLeft.toDateTime();
-                QDateTime rightDateTime = dataRight.toDateTime();
-                return (leftDateTime < rightDateTime);
-            }
+            QDateTime leftDateTime = dataLeft.toDateTime();
+            QDateTime rightDateTime = dataRight.toDateTime();
+            return (leftDateTime < rightDateTime);
+        }
+        /* When we show human readble sizes in size column sorting gets confused, so do it here: */
+        else if(sortColumn() == UIGuestControlFileModelColumn_Size)
+        {
+            qulonglong leftSize = pLeftItem->data(UIGuestControlFileModelColumn_Size).toULongLong();
+            qulonglong rightSize = pRightItem->data(UIGuestControlFileModelColumn_Size).toULongLong();
+            return (leftSize < rightSize);
 
         }
     }
