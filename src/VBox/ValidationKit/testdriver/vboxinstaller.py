@@ -715,6 +715,17 @@ class VBoxInstallerTestDriver(TestDriverBase):
             return True;
         sRsp = self._generateAutoResponseOnSolaris();
         fRc, _ = self._sudoExecuteSync(['pkgrm', '-n', '-a', sRsp, 'SUNWvbox']);
+
+        #
+        # Restart the svc.configd as it has a tendency to clog up with time and
+        # become  unresponsive.  It will handle SIGHUP by exiting the sigwait()
+        # look in the main function and shut down the service nicely (backend_fini).
+        # The restarter will then start a new instance of it.
+        #
+        time.sleep(1); # Give it a chance to flush pkgrm stuff.
+        self._sudoExecuteSync(['pkill', '-HUP', 'svc.configd']);
+        time.sleep(5); # Spare a few cpu cycles it to shutdown and restart.
+
         return fRc;
 
     #
