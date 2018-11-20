@@ -293,9 +293,6 @@ void UIDetailsModel::sltElementTypeToggled()
 
 void UIDetailsModel::prepare()
 {
-    /* Register meta-types: */
-    qRegisterMetaType<DetailsElementType>();
-
     /* Prepare things: */
     prepareScene();
     prepareRoot();
