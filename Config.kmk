@@ -467,7 +467,7 @@ endif
 # Enable building debugging backend.
 # Only will be used at runtime when "VBoxInternal2/Audio/Debug/Enabled" (VM / global) is set.
 VBOX_WITH_AUDIO_DEBUG = 1
-ifdef VBOX_WITH_VALIDATIONKIT
+ifdef VBOX_WITH_VALIDATIONKIT ## @todo r=bird: test is too early!
  VBOX_WITH_AUDIO_VALIDATIONKIT = 1
 endif
 # Enables the audio endpoint detection on Windows hosts.
@@ -999,13 +999,14 @@ endif
 # VBOX_QUICK can be used by core developers to speed to the build
 ifdef VBOX_QUICK
  # undefine variables by assigning blank.
+ VBOX_WITH_ADDITIONS=
  VBOX_WITH_VALIDATIONKIT=
  VBOX_WITH_TESTCASES=
- VBOX_WITH_MAIN=
  VBOX_WITH_VBOXSDL=
- VBOX_WITH_QTGUI=
- VBOX_WITH_DEBUGGER_GUI=
+ VBOX_WITH_HEADLESS=
+ VBOX_WITH_VRDP=
  VBOX_WITH_DOCS=
+ VBOX_WITH_WEBSERVICES=
 endif # VBOX_QUICK
 
 ifeq ($(KBUILD_TARGET),darwin)
