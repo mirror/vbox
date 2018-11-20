@@ -19,7 +19,7 @@ SUB_DEPTH = ../../../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
 VBOX_PATH_GL_GEN = $(PATH_OBJ)/VBoxGLgen
-VBOX_GL_ICD_DEF_FILE = $(VBOX_PATH_MESA)/src/gallium/state_trackers/wgl/opengl32.def
+VBOX_GL_ICD_DEF_FILE = $(VBOX_PATH_MESA)/src/gallium/state_trackers/wgl/opengl32.mingw.def
 
 BLDDIRS += $(VBOX_PATH_GL_GEN)/
 
@@ -34,7 +34,7 @@ VBoxICD_INCS       += \
 	$(VBOX_GRAPHICS_INCS)
 
 VBoxICD_SOURCES     = \
-	$(VBOX_GL_ICD_DEF_FILE) \
+	$(VBOX_PATH_MESA)/src/gallium/state_trackers/wgl/opengl32.def \
 	$(VBOX_PATH_GL_GEN)/forwarders.asm \
 	$(VBOX_PATH_GL_GEN)/pfns.c \
 	VBoxICD.c \

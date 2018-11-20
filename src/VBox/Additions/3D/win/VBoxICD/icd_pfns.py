@@ -24,7 +24,11 @@ def GeneratePfns():
     for line in exports_file.readlines():
         line = line.strip()
         if len(line) > 0 and line[0] != ';' and line != 'EXPORTS':
-            names.append(line)
+            # Parse 'glAccum = glAccum@8'
+            words = line.split('=')
+
+            # Function name
+            names.append(words[0].strip())
 
     exports_file.close()
 

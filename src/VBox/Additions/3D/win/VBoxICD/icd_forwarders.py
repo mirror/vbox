@@ -21,10 +21,19 @@ def GenerateForwarders():
         sys.exit()
 
     names = []
+    cbArgs = []
     for line in exports_file.readlines():
         line = line.strip()
         if len(line) > 0 and line[0] != ';' and line != 'EXPORTS':
-            names.append(line)
+            # Parse 'glAccum = glAccum@8'
+            words = line.split('=', 1)
+
+            # Function name
+            names.append(words[0].strip())
+
+            # Size of arguments in bytes
+            words = words[1].split('@')
+            cbArgs.append(words[1].strip())
 
     exports_file.close()
 
@@ -39,7 +48,8 @@ def GenerateForwarders():
 
     asm_file.write('%include "iprt/asmdefs.mac"\n')
     asm_file.write('\n')
-    asm_file.write(';;;; %define ICD_LAZY_LOAD ; Enable this to lazy load the ICD DLL (does not work on Win64)\n')
+    asm_file.write(';;;; Enable ICD_LAZY_LOAD to lazy load the ICD DLL (does not work on Win64)\n')
+    asm_file.write('; %define ICD_LAZY_LOAD 1\n')
     asm_file.write('\n')
     asm_file.write('%ifdef RT_ARCH_AMD64\n')
     asm_file.write('%define PTR_SIZE_PREFIX qword\n')
@@ -54,6 +64,7 @@ def GenerateForwarders():
 
     for index in range(len(names)):
         fn = names[index]
+        cbRet = cbArgs[index]
         asm_file.write('\n')
         asm_file.write('BEGINPROC_EXPORTED %s\n' % fn)
         asm_file.write('    extern NAME(pfn_%s)\n' % fn)
@@ -70,7 +81,11 @@ def GenerateForwarders():
         asm_file.write('    mov   xAX, [xAX]\n')
         asm_file.write('    or    xAX, xAX\n')
         asm_file.write('    jnz   l_jmp_to_%s\n' % fn)
+        asm_file.write('%ifdef RT_ARCH_AMD64\n')
         asm_file.write('    ret\n')
+        asm_file.write('%else ; X86\n')
+        asm_file.write('    ret %s\n' % cbRet)
+        asm_file.write('%endif\n')
         asm_file.write('l_jmp_to_%s:\n' % fn)
         asm_file.write('    jmp   xAX\n')
         asm_file.write('ENDPROC %s\n' % fn)
