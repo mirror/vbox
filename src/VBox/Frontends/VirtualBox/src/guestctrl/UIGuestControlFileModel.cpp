@@ -52,15 +52,31 @@ bool UIGuestControlFileProxyModel::lessThan(const QModelIndex &left, const QMode
         if (settings && settings->bListDirectoriesOnTop)
         {
             if (pLeftItem->isDirectory() && !pRightItem->isDirectory())
-                return true && (sortOrder() == Qt::AscendingOrder);
+                return (sortOrder() == Qt::AscendingOrder);
             if (!pLeftItem->isDirectory() && pRightItem->isDirectory())
-                return false && (sortOrder() == Qt::AscendingOrder);
+                return (sortOrder() == Qt::DescendingOrder);
         }
         /* Up directory item should be always the first item: */
         if (pLeftItem->isUpDirectory())
-            return true && (sortOrder() == Qt::AscendingOrder);
+            return (sortOrder() == Qt::AscendingOrder);
         else if (pRightItem->isUpDirectory())
-            return false && (sortOrder() == Qt::AscendingOrder);
+            return (sortOrder() == Qt::DescendingOrder);
+
+        /* If the sort column is datatime than handle it correctly: */
+        if (sortColumn() == UIGuestControlFileModelColumn_ChangeTime)
+        {
+            QVariant dataLeft = pLeftItem->data(UIGuestControlFileModelColumn_ChangeTime);
+            QVariant dataRight = pRightItem->data(UIGuestControlFileModelColumn_ChangeTime);
+            /* Being a bit paranoid?: */
+            if (dataLeft.canConvert(QMetaType::QDateTime) &&
+                dataRight.canConvert(QMetaType::QDateTime))
+            {
+                QDateTime leftDateTime = dataLeft.toDateTime();
+                QDateTime rightDateTime = dataRight.toDateTime();
+                return (leftDateTime < rightDateTime);
+            }
+
+        }
     }
     return QSortFilterProxyModel::lessThan(left, right);
 }
