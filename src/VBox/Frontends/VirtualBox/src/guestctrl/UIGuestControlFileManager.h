@@ -115,6 +115,7 @@ private slots:
     void sltListDirectoriesBeforeChanged();
     void sltReceieveNewFileOperation(const CProgress &comProgress);
     void sltFileOperationComplete(QUuid progressId);
+    void sltCacheHostFileObjectsForDeletion(const QUuid &moveProgessId, const QStringList &hostPathList);
 
 private:
 

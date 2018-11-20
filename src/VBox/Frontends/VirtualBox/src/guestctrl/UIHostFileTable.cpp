@@ -133,7 +133,7 @@ UIHostFileTable::UIHostFileTable(UIActionPool *pActionPool, QWidget *pParent /* 
     retranslateUi();
 }
 
-void UIHostFileTable::setDeleteAfterCopyCache(const QUuid &progressId, const QStringList &sourceObjectsList)
+void UIHostFileTable::updateDeleteAfterCopyCache(const QUuid &progressId, const QStringList &sourceObjectsList)
 {
     m_deleteAfterCopyCache[progressId] = sourceObjectsList;
 }

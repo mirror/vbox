@@ -250,6 +250,8 @@ void UIGuestControlFileManager::prepareObjects()
                     this, &UIGuestControlFileManager::sltReceieveLogOutput);
             connect(m_pGuestFileTable, &UIGuestFileTable::sigNewFileOperation,
                     this, &UIGuestControlFileManager::sltReceieveNewFileOperation);
+            connect(m_pGuestFileTable, &UIGuestFileTable::sigCacheHostFileObjectsForDeletion,
+                    this, &UIGuestControlFileManager::sltCacheHostFileObjectsForDeletion);
 
             pFileTableContainerLayout->addWidget(m_pGuestFileTable);
         }
@@ -334,6 +336,11 @@ void UIGuestControlFileManager::prepareVerticalToolBar(QHBoxLayout *layout)
             this, &UIGuestControlFileManager::sltCopyGuestToHost);
     connect(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_CopyToGuest), &QAction::triggered,
              this, &UIGuestControlFileManager::sltCopyHostToGuest);
+
+    connect(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_MoveToHost), &QAction::triggered,
+            this, &UIGuestControlFileManager::sltMoveGuestToHost);
+    connect(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_MoveToGuest), &QAction::triggered,
+             this, &UIGuestControlFileManager::sltMoveHostToGuest);
 
     layout ->addWidget(m_pToolBar);
 }
@@ -521,17 +528,22 @@ void UIGuestControlFileManager::sltReceieveNewFileOperation(const CProgress &com
 
 void UIGuestControlFileManager::sltFileOperationComplete(QUuid progressId)
 {
-    if (m_pGuestFileTable)
-    {
-        m_pGuestFileTable->refresh();
-        /* The following call deletes file objects whose paths have been cached for later deletion: */
-        m_pGuestFileTable->continueWithMove(progressId);
-    }
+    if (!m_pGuestFileTable || !m_pHostFileTable)
+        return;
 
+    /* The following call deletes file objects whose paths have been cached for later deletion: */
+    m_pGuestFileTable->continueWithMove(progressId);
+    m_pHostFileTable->continueWithMove(progressId);
+
+    m_pHostFileTable->refresh();
+    m_pGuestFileTable->refresh();
+}
+
+void UIGuestControlFileManager::sltCacheHostFileObjectsForDeletion(const QUuid &moveProgessId,
+                                                                   const QStringList &hostPathList)
+{
     if (m_pHostFileTable)
-    {
-        m_pHostFileTable->refresh();
-    }
+        m_pHostFileTable->updateDeleteAfterCopyCache(moveProgessId, hostPathList);
 }
 
 void UIGuestControlFileManager::copyMoveToHost(bool fIsMove)

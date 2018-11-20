@@ -33,7 +33,7 @@ class UIHostFileTable : public UIGuestControlFileTable
 public:
 
     UIHostFileTable(UIActionPool *pActionPool, QWidget *pParent = 0);
-    void setDeleteAfterCopyCache(const QUuid &progressId, const QStringList &sourceObjectsList);
+    void updateDeleteAfterCopyCache(const QUuid &progressId, const QStringList &sourceObjectsList);
 
 protected:
 

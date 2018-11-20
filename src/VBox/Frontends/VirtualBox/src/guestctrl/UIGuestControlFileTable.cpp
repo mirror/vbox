@@ -1361,7 +1361,6 @@ QString UIGuestControlFileTable::fileTypeString(FileObjectType type)
 
 void UIGuestControlFileTable::continueWithMove(const QUuid &progressId)
 {
-    QStringList sourcePathList = m_deleteAfterCopyCache.value(progressId);
     deleteByPath(m_deleteAfterCopyCache.value(progressId, QStringList()));
 }
 
