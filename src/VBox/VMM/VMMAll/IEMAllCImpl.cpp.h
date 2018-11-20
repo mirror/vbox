@@ -5909,6 +5909,7 @@ IEM_CIMPL_DEF_4(iemCImpl_load_CrX, uint8_t, iCrReg, uint64_t, uNewCrX, IEMACCESS
                 uint32_t const uVTpr = (uNewCrX & 0xf) << 4;
                 iemVmxVirtApicWriteRaw32(pVCpu, XAPIC_OFF_TPR, uVTpr);
                 iemVmxVirtApicSetPostAction(pVCpu, XAPIC_OFF_TPR);
+                rcStrict = VINF_SUCCESS;
                 break;
             }
 #endif
