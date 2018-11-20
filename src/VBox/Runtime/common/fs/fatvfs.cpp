@@ -730,7 +730,7 @@ static uint32_t rtFsFatChain_GetClusterByIndex(PCRTFSFATCHAIN pChain, uint32_t i
              * No, do linear search from the start, skipping the first part.
              */
             pPart = RTListGetFirst(&pChain->ListParts, RTFSFATCHAINPART, ListEntry);
-            while (idxPart-- > 1)
+            while (idxPart-- > 0)
                 pPart = RTListGetNext(&pChain->ListParts, pPart, RTFSFATCHAINPART, ListEntry);
         }
 
@@ -904,6 +904,7 @@ static int rtFsFatClusterMap_Create(PRTFSFATVOL pThis, uint8_t const *pbFirst512
 static int rtFsFatClusterMap_FlushWorker(PRTFSFATVOL pThis, uint32_t const iFirstEntry, uint32_t const iLastEntry)
 {
     PRTFSFATCLUSTERMAPCACHE pFatCache = pThis->pFatCache;
+    Log3(("rtFsFatClusterMap_FlushWorker: %p %#x %#x\n", pThis, iFirstEntry, iLastEntry));
 
     /*
      * Walk the cache entries, accumulating segments to flush.
@@ -1225,6 +1226,9 @@ static int rtFsFatClusterMap_Fat12_ReadClusterChain(PRTFSFATCLUSTERMAPCACHE pFat
             return rc;
 
         /* Next cluster. */
+#ifdef LOG_ENABLED
+        const uint32_t idxPrevCluster = idxCluster;
+#endif
         bool     fOdd   = idxCluster & 1;
         uint32_t offFat = idxCluster * 3 / 2;
         idxCluster = RT_MAKE_U16(pbFat[offFat], pbFat[offFat + 1]);
@@ -1232,6 +1236,7 @@ static int rtFsFatClusterMap_Fat12_ReadClusterChain(PRTFSFATCLUSTERMAPCACHE pFat
             idxCluster >>= 4;
         else
             idxCluster &= 0x0fff;
+        Log4(("Fat/ReadChain12: [%#x] %#x (next: %#x)\n", pChain->cClusters - 1, idxPrevCluster, idxCluster));
     }
 }
 
@@ -1382,11 +1387,13 @@ static int rtFsFatClusterMap_SetCluster12(PRTFSFATCLUSTERMAPCACHE pFatCache, uin
     uint32_t offFat = idxCluster * 3 / 2;
     if (idxCluster & 1)
     {
+        Log3(("Fat/SetCluster12: [%#x]: %#x -> %#x\n", idxCluster, (((pbFat[offFat]) & 0xf0) >> 4) | ((unsigned)pbFat[offFat + 1] << 4), uValue));
         pbFat[offFat]     = ((uint8_t)0x0f & pbFat[offFat]) | ((uint8_t)uValue << 4);
         pbFat[offFat + 1] = (uint8_t)(uValue >> 4);
     }
     else
     {
+        Log3(("Fat/SetCluster12: [%#x]: %#x -> %#x\n", idxCluster, pbFat[offFat] | ((pbFat[offFat + 1] & 0x0f) << 8), uValue));
         pbFat[offFat]     = (uint8_t)uValue;
         pbFat[offFat + 1] = ((uint8_t)0xf0 & pbFat[offFat + 1]) | (uint8_t)(uValue >> 8);
     }
@@ -2298,6 +2305,7 @@ static int rtFsFatObj_SetSize(PRTFSFATOBJ pObj, uint32_t cbFile)
             pObj->fMaybeDirtyDirEnt = true;
         }
     }
+    Log3(("rtFsFatObj_SetSize: Returns %Rrc\n", rc));
     return rc;
 }
 
@@ -2642,7 +2650,10 @@ static int rtFsFatFile_New(PRTFSFATVOL pThis, PRTFSFATDIRSHRD pParentDir, PCFATD
                  */
                 if (   (fOpen & RTFILE_O_TRUNCATE)
                     || (fOpen & RTFILE_O_ACTION_MASK) == RTFILE_O_CREATE_REPLACE)
+                {
+                    Log3(("rtFsFatFile_New: calling rtFsFatObj_SetSize to zap the file size.\n"));
                     rc = rtFsFatObj_SetSize(&pShared->Core, 0);
+                }
                 if (RT_SUCCESS(rc))
                 {
                     LogFlow(("rtFsFatFile_New: cbObject=%#RX32 pShared=%p\n", pShared->Core.cbObject, pShared));
