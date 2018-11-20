@@ -867,7 +867,8 @@ enum DetailsElementType
     DetailsElementType_USB,
     DetailsElementType_SF,
     DetailsElementType_UI,
-    DetailsElementType_Description
+    DetailsElementType_Description,
+    DetailsElementType_Max
 };
 Q_DECLARE_METATYPE(DetailsElementType);
 
