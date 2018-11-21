@@ -16,7 +16,156 @@
  */
 
 
+/*********************************************************************************************************************************
+*   Defined Constants And Macros                                                                                                 *
+*********************************************************************************************************************************/
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
+/**
+ * Gets the ModR/M, SIB and displacement byte(s) from decoded opcodes given their
+ * relative offsets.
+ */
+# ifdef IEM_WITH_CODE_TLB
+#  define IEM_MODRM_GET_U8(a_pVCpu, a_bModRm, a_offModRm)         do { } while (0)
+#  define IEM_SIB_GET_U8(a_pVCpu, a_bSib, a_offSib)               do { } while (0)
+#  define IEM_DISP_GET_U16(a_pVCpu, a_u16Disp, a_offDisp)         do { } while (0)
+#  define IEM_DISP_GET_S8_SX_U16(a_pVCpu, a_u16Disp, a_offDisp)   do { } while (0)
+#  define IEM_DISP_GET_U32(a_pVCpu, a_u32Disp, a_offDisp)         do { } while (0)
+#  define IEM_DISP_GET_S8_SX_U32(a_pVCpu, a_u32Disp, a_offDisp)   do { } while (0)
+#  define IEM_DISP_GET_S32_SX_U64(a_pVCpu, a_u64Disp, a_offDisp)  do { } while (0)
+#  define IEM_DISP_GET_S8_SX_U64(a_pVCpu, a_u64Disp, a_offDisp)   do { } while (0)
+#  error "Implement me: Getting ModR/M, SIB, displacement needs to work even when instruction crosses a page boundary."
+# else  /* !IEM_WITH_CODE_TLB */
+#  define IEM_MODRM_GET_U8(a_pVCpu, a_bModRm, a_offModRm) \
+    do \
+    { \
+        Assert((a_offModRm) < (a_pVCpu)->iem.s.cbOpcode); \
+        (a_bModRm) = (a_pVCpu)->iem.s.abOpcode[(a_offModRm)]; \
+    } while (0)
+
+#  define IEM_SIB_GET_U8(a_pVCpu, a_bSib, a_offSib)      IEM_MODRM_GET_U8(a_pVCpu, a_bSib, a_offSib)
+
+#  define IEM_DISP_GET_U16(a_pVCpu, a_u16Disp, a_offDisp) \
+    do \
+    { \
+        Assert((a_offDisp) + 1 < (a_pVCpu)->iem.s.cbOpcode); \
+        uint8_t const bTmpLo = (a_pVCpu)->iem.s.abOpcode[(a_offDisp)]; \
+        uint8_t const bTmpHi = (a_pVCpu)->iem.s.abOpcode[(a_offDisp) + 1]; \
+        (a_u16Disp) = RT_MAKE_U16(bTmpLo, bTmpHi); \
+    } while (0)
+
+#  define IEM_DISP_GET_S8_SX_U16(a_pVCpu, a_u16Disp, a_offDisp) \
+    do \
+    { \
+        Assert((a_offDisp) < (a_pVCpu)->iem.s.cbOpcode); \
+        (a_u16Disp) = (int8_t)((a_pVCpu)->iem.s.abOpcode[(a_offDisp)]); \
+    } while (0)
+
+#  define IEM_DISP_GET_U32(a_pVCpu, a_u32Disp, a_offDisp) \
+    do \
+    { \
+        Assert((a_offDisp) + 3 < (a_pVCpu)->iem.s.cbOpcode); \
+        uint8_t const bTmp0 = (a_pVCpu)->iem.s.abOpcode[(a_offDisp)]; \
+        uint8_t const bTmp1 = (a_pVCpu)->iem.s.abOpcode[(a_offDisp) + 1]; \
+        uint8_t const bTmp2 = (a_pVCpu)->iem.s.abOpcode[(a_offDisp) + 2]; \
+        uint8_t const bTmp3 = (a_pVCpu)->iem.s.abOpcode[(a_offDisp) + 3]; \
+        (a_u32Disp) = RT_MAKE_U32_FROM_U8(bTmp0, bTmp1, bTmp2, bTmp3); \
+    } while (0)
+
+#  define IEM_DISP_GET_S8_SX_U32(a_pVCpu, a_u32Disp, a_offDisp) \
+    do \
+    { \
+        Assert((a_offDisp) + 1 < (a_pVCpu)->iem.s.cbOpcode); \
+        (a_u32Disp) = (int8_t)((a_pVCpu)->iem.s.abOpcode[(a_offDisp)]); \
+    } while (0)
+
+#  define IEM_DISP_GET_S8_SX_U64(a_pVCpu, a_u64Disp, a_offDisp) \
+    do \
+    { \
+        Assert((a_offDisp) + 1 < (a_pVCpu)->iem.s.cbOpcode); \
+        (a_u64Disp) = (int8_t)((a_pVCpu)->iem.s.abOpcode[(a_offDisp)]); \
+    } while (0)
+
+#  define IEM_DISP_GET_S32_SX_U64(a_pVCpu, a_u64Disp, a_offDisp) \
+    do \
+    { \
+        Assert((a_offDisp) + 3 < (a_pVCpu)->iem.s.cbOpcode); \
+        uint8_t const bTmp0 = (a_pVCpu)->iem.s.abOpcode[(a_offDisp)]; \
+        uint8_t const bTmp1 = (a_pVCpu)->iem.s.abOpcode[(a_offDisp) + 1]; \
+        uint8_t const bTmp2 = (a_pVCpu)->iem.s.abOpcode[(a_offDisp) + 2]; \
+        uint8_t const bTmp3 = (a_pVCpu)->iem.s.abOpcode[(a_offDisp) + 3]; \
+        (a_u64Disp) = (int32_t)RT_MAKE_U32_FROM_U8(bTmp0, bTmp1, bTmp2, bTmp3); \
+    } while (0)
+# endif /* !IEM_WITH_CODE_TLB */
+
+/** Gets the guest-physical address of the shadows VMCS for the given VCPU. */
+#define IEM_VMX_GET_SHADOW_VMCS(a_pVCpu)            ((a_pVCpu)->cpum.GstCtx.hwvirt.vmx.GCPhysShadowVmcs)
+
+/** Whether a shadow VMCS is present for the given VCPU. */
+#define IEM_VMX_HAS_SHADOW_VMCS(a_pVCpu)            RT_BOOL(IEM_VMX_GET_SHADOW_VMCS(a_pVCpu) != NIL_RTGCPHYS)
+
+/** Gets the VMXON region pointer. */
+#define IEM_VMX_GET_VMXON_PTR(a_pVCpu)              ((a_pVCpu)->cpum.GstCtx.hwvirt.vmx.GCPhysVmxon)
+
+/** Gets the guest-physical address of the current VMCS for the given VCPU. */
+#define IEM_VMX_GET_CURRENT_VMCS(a_pVCpu)           ((a_pVCpu)->cpum.GstCtx.hwvirt.vmx.GCPhysVmcs)
+
+/** Whether a current VMCS is present for the given VCPU. */
+#define IEM_VMX_HAS_CURRENT_VMCS(a_pVCpu)           RT_BOOL(IEM_VMX_GET_CURRENT_VMCS(a_pVCpu) != NIL_RTGCPHYS)
+
+/** Assigns the guest-physical address of the current VMCS for the given VCPU. */
+#define IEM_VMX_SET_CURRENT_VMCS(a_pVCpu, a_GCPhysVmcs) \
+    do \
+    { \
+        Assert((a_GCPhysVmcs) != NIL_RTGCPHYS); \
+        (a_pVCpu)->cpum.GstCtx.hwvirt.vmx.GCPhysVmcs = (a_GCPhysVmcs); \
+    } while (0)
+
+/** Clears any current VMCS for the given VCPU. */
+#define IEM_VMX_CLEAR_CURRENT_VMCS(a_pVCpu) \
+    do \
+    { \
+        (a_pVCpu)->cpum.GstCtx.hwvirt.vmx.GCPhysVmcs = NIL_RTGCPHYS; \
+    } while (0)
+
+/** Check for VMX instructions requiring to be in VMX operation.
+ * @note Any changes here, check if IEMOP_HLP_IN_VMX_OPERATION needs updating. */
+#define IEM_VMX_IN_VMX_OPERATION(a_pVCpu, a_szInstr, a_InsDiagPrefix) \
+    do \
+    { \
+        if (IEM_VMX_IS_ROOT_MODE(a_pVCpu)) \
+        { /* likely */ } \
+        else \
+        { \
+            Log((a_szInstr ": Not in VMX operation (root mode) -> #UD\n")); \
+            (a_pVCpu)->cpum.GstCtx.hwvirt.vmx.enmDiag = a_InsDiagPrefix##_VmxRoot; \
+            return iemRaiseUndefinedOpcode(a_pVCpu); \
+        } \
+    } while (0)
+
+/** Marks a VM-entry failure with a diagnostic reason, logs and returns. */
+#define IEM_VMX_VMENTRY_FAILED_RET(a_pVCpu, a_pszInstr, a_pszFailure, a_VmxDiag) \
+    do \
+    { \
+        Log(("%s: VM-entry failed! enmDiag=%u (%s) -> %s\n", (a_pszInstr), (a_VmxDiag), \
+            HMVmxGetDiagDesc(a_VmxDiag), (a_pszFailure))); \
+        (a_pVCpu)->cpum.GstCtx.hwvirt.vmx.enmDiag = (a_VmxDiag); \
+        return VERR_VMX_VMENTRY_FAILED; \
+    } while (0)
+
+/** Marks a VM-exit failure with a diagnostic reason, logs and returns. */
+#define IEM_VMX_VMEXIT_FAILED_RET(a_pVCpu, a_uExitReason, a_pszFailure, a_VmxDiag) \
+    do \
+    { \
+        Log(("VM-exit failed! uExitReason=%u enmDiag=%u (%s) -> %s\n", (a_uExitReason), (a_VmxDiag), \
+            HMVmxGetDiagDesc(a_VmxDiag), (a_pszFailure))); \
+        (a_pVCpu)->cpum.GstCtx.hwvirt.vmx.enmDiag = (a_VmxDiag); \
+        return VERR_VMX_VMEXIT_FAILED; \
+    } while (0)
+
+
+/*********************************************************************************************************************************
+*   Global Variables                                                                                                             *
+*********************************************************************************************************************************/
 /** @todo NSTVMX: The following VM-exit intercepts are pending:
  *  VMX_EXIT_IO_SMI
  *  VMX_EXIT_SMI
@@ -44,7 +193,6 @@
  *  VMX_EXIT_XSAVES
  *  VMX_EXIT_XRSTORS
  */
-
 /**
  * Map of VMCS field encodings to their virtual-VMCS structure offsets.
  *
@@ -298,149 +446,6 @@ uint16_t const g_aoffVmcsMap[16][VMX_V_VMCS_MAX_INDEX + 1] =
         /* 20-25 */ UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX
     }
 };
-
-
-/**
- * Gets the ModR/M, SIB and displacement byte(s) from decoded opcodes given their
- * relative offsets.
- */
-# ifdef IEM_WITH_CODE_TLB
-#  define IEM_MODRM_GET_U8(a_pVCpu, a_bModRm, a_offModRm)         do { } while (0)
-#  define IEM_SIB_GET_U8(a_pVCpu, a_bSib, a_offSib)               do { } while (0)
-#  define IEM_DISP_GET_U16(a_pVCpu, a_u16Disp, a_offDisp)         do { } while (0)
-#  define IEM_DISP_GET_S8_SX_U16(a_pVCpu, a_u16Disp, a_offDisp)   do { } while (0)
-#  define IEM_DISP_GET_U32(a_pVCpu, a_u32Disp, a_offDisp)         do { } while (0)
-#  define IEM_DISP_GET_S8_SX_U32(a_pVCpu, a_u32Disp, a_offDisp)   do { } while (0)
-#  define IEM_DISP_GET_S32_SX_U64(a_pVCpu, a_u64Disp, a_offDisp)  do { } while (0)
-#  define IEM_DISP_GET_S8_SX_U64(a_pVCpu, a_u64Disp, a_offDisp)   do { } while (0)
-#  error "Implement me: Getting ModR/M, SIB, displacement needs to work even when instruction crosses a page boundary."
-# else  /* !IEM_WITH_CODE_TLB */
-#  define IEM_MODRM_GET_U8(a_pVCpu, a_bModRm, a_offModRm) \
-    do \
-    { \
-        Assert((a_offModRm) < (a_pVCpu)->iem.s.cbOpcode); \
-        (a_bModRm) = (a_pVCpu)->iem.s.abOpcode[(a_offModRm)]; \
-    } while (0)
-
-#  define IEM_SIB_GET_U8(a_pVCpu, a_bSib, a_offSib)      IEM_MODRM_GET_U8(a_pVCpu, a_bSib, a_offSib)
-
-#  define IEM_DISP_GET_U16(a_pVCpu, a_u16Disp, a_offDisp) \
-    do \
-    { \
-        Assert((a_offDisp) + 1 < (a_pVCpu)->iem.s.cbOpcode); \
-        uint8_t const bTmpLo = (a_pVCpu)->iem.s.abOpcode[(a_offDisp)]; \
-        uint8_t const bTmpHi = (a_pVCpu)->iem.s.abOpcode[(a_offDisp) + 1]; \
-        (a_u16Disp) = RT_MAKE_U16(bTmpLo, bTmpHi); \
-    } while (0)
-
-#  define IEM_DISP_GET_S8_SX_U16(a_pVCpu, a_u16Disp, a_offDisp) \
-    do \
-    { \
-        Assert((a_offDisp) < (a_pVCpu)->iem.s.cbOpcode); \
-        (a_u16Disp) = (int8_t)((a_pVCpu)->iem.s.abOpcode[(a_offDisp)]); \
-    } while (0)
-
-#  define IEM_DISP_GET_U32(a_pVCpu, a_u32Disp, a_offDisp) \
-    do \
-    { \
-        Assert((a_offDisp) + 3 < (a_pVCpu)->iem.s.cbOpcode); \
-        uint8_t const bTmp0 = (a_pVCpu)->iem.s.abOpcode[(a_offDisp)]; \
-        uint8_t const bTmp1 = (a_pVCpu)->iem.s.abOpcode[(a_offDisp) + 1]; \
-        uint8_t const bTmp2 = (a_pVCpu)->iem.s.abOpcode[(a_offDisp) + 2]; \
-        uint8_t const bTmp3 = (a_pVCpu)->iem.s.abOpcode[(a_offDisp) + 3]; \
-        (a_u32Disp) = RT_MAKE_U32_FROM_U8(bTmp0, bTmp1, bTmp2, bTmp3); \
-    } while (0)
-
-#  define IEM_DISP_GET_S8_SX_U32(a_pVCpu, a_u32Disp, a_offDisp) \
-    do \
-    { \
-        Assert((a_offDisp) + 1 < (a_pVCpu)->iem.s.cbOpcode); \
-        (a_u32Disp) = (int8_t)((a_pVCpu)->iem.s.abOpcode[(a_offDisp)]); \
-    } while (0)
-
-#  define IEM_DISP_GET_S8_SX_U64(a_pVCpu, a_u64Disp, a_offDisp) \
-    do \
-    { \
-        Assert((a_offDisp) + 1 < (a_pVCpu)->iem.s.cbOpcode); \
-        (a_u64Disp) = (int8_t)((a_pVCpu)->iem.s.abOpcode[(a_offDisp)]); \
-    } while (0)
-
-#  define IEM_DISP_GET_S32_SX_U64(a_pVCpu, a_u64Disp, a_offDisp) \
-    do \
-    { \
-        Assert((a_offDisp) + 3 < (a_pVCpu)->iem.s.cbOpcode); \
-        uint8_t const bTmp0 = (a_pVCpu)->iem.s.abOpcode[(a_offDisp)]; \
-        uint8_t const bTmp1 = (a_pVCpu)->iem.s.abOpcode[(a_offDisp) + 1]; \
-        uint8_t const bTmp2 = (a_pVCpu)->iem.s.abOpcode[(a_offDisp) + 2]; \
-        uint8_t const bTmp3 = (a_pVCpu)->iem.s.abOpcode[(a_offDisp) + 3]; \
-        (a_u64Disp) = (int32_t)RT_MAKE_U32_FROM_U8(bTmp0, bTmp1, bTmp2, bTmp3); \
-    } while (0)
-# endif /* !IEM_WITH_CODE_TLB */
-
-/** Gets the guest-physical address of the shadows VMCS for the given VCPU. */
-#define IEM_VMX_GET_SHADOW_VMCS(a_pVCpu)            ((a_pVCpu)->cpum.GstCtx.hwvirt.vmx.GCPhysShadowVmcs)
-
-/** Whether a shadow VMCS is present for the given VCPU. */
-#define IEM_VMX_HAS_SHADOW_VMCS(a_pVCpu)            RT_BOOL(IEM_VMX_GET_SHADOW_VMCS(a_pVCpu) != NIL_RTGCPHYS)
-
-/** Gets the VMXON region pointer. */
-#define IEM_VMX_GET_VMXON_PTR(a_pVCpu)              ((a_pVCpu)->cpum.GstCtx.hwvirt.vmx.GCPhysVmxon)
-
-/** Gets the guest-physical address of the current VMCS for the given VCPU. */
-#define IEM_VMX_GET_CURRENT_VMCS(a_pVCpu)           ((a_pVCpu)->cpum.GstCtx.hwvirt.vmx.GCPhysVmcs)
-
-/** Whether a current VMCS is present for the given VCPU. */
-#define IEM_VMX_HAS_CURRENT_VMCS(a_pVCpu)           RT_BOOL(IEM_VMX_GET_CURRENT_VMCS(a_pVCpu) != NIL_RTGCPHYS)
-
-/** Assigns the guest-physical address of the current VMCS for the given VCPU. */
-#define IEM_VMX_SET_CURRENT_VMCS(a_pVCpu, a_GCPhysVmcs) \
-    do \
-    { \
-        Assert((a_GCPhysVmcs) != NIL_RTGCPHYS); \
-        (a_pVCpu)->cpum.GstCtx.hwvirt.vmx.GCPhysVmcs = (a_GCPhysVmcs); \
-    } while (0)
-
-/** Clears any current VMCS for the given VCPU. */
-#define IEM_VMX_CLEAR_CURRENT_VMCS(a_pVCpu) \
-    do \
-    { \
-        (a_pVCpu)->cpum.GstCtx.hwvirt.vmx.GCPhysVmcs = NIL_RTGCPHYS; \
-    } while (0)
-
-/** Check for VMX instructions requiring to be in VMX operation.
- * @note Any changes here, check if IEMOP_HLP_IN_VMX_OPERATION needs updating. */
-#define IEM_VMX_IN_VMX_OPERATION(a_pVCpu, a_szInstr, a_InsDiagPrefix) \
-    do \
-    { \
-        if (IEM_VMX_IS_ROOT_MODE(a_pVCpu)) \
-        { /* likely */ } \
-        else \
-        { \
-            Log((a_szInstr ": Not in VMX operation (root mode) -> #UD\n")); \
-            (a_pVCpu)->cpum.GstCtx.hwvirt.vmx.enmDiag = a_InsDiagPrefix##_VmxRoot; \
-            return iemRaiseUndefinedOpcode(a_pVCpu); \
-        } \
-    } while (0)
-
-/** Marks a VM-entry failure with a diagnostic reason, logs and returns. */
-#define IEM_VMX_VMENTRY_FAILED_RET(a_pVCpu, a_pszInstr, a_pszFailure, a_VmxDiag) \
-    do \
-    { \
-        Log(("%s: VM-entry failed! enmDiag=%u (%s) -> %s\n", (a_pszInstr), (a_VmxDiag), \
-            HMVmxGetDiagDesc(a_VmxDiag), (a_pszFailure))); \
-        (a_pVCpu)->cpum.GstCtx.hwvirt.vmx.enmDiag = (a_VmxDiag); \
-        return VERR_VMX_VMENTRY_FAILED; \
-    } while (0)
-
-/** Marks a VM-exit failure with a diagnostic reason, logs and returns. */
-#define IEM_VMX_VMEXIT_FAILED_RET(a_pVCpu, a_uExitReason, a_pszFailure, a_VmxDiag) \
-    do \
-    { \
-        Log(("VM-exit failed! uExitReason=%u enmDiag=%u (%s) -> %s\n", (a_uExitReason), (a_VmxDiag), \
-            HMVmxGetDiagDesc(a_VmxDiag), (a_pszFailure))); \
-        (a_pVCpu)->cpum.GstCtx.hwvirt.vmx.enmDiag = (a_VmxDiag); \
-        return VERR_VMX_VMEXIT_FAILED; \
-    } while (0)
 
 
 /**
@@ -906,392 +911,6 @@ DECLINLINE(uint64_t) iemVmxVmcsGetCr3TargetValue(PCVMXVVMCS pVmcs, uint8_t idxCr
     uint64_t const uCr3TargetValue = *(uint64_t *)pbField;
 
     return uCr3TargetValue;
-}
-
-
-/**
- * Masks the nested-guest CR0/CR4 mask subjected to the corresponding guest/host
- * mask and the read-shadow (CR0/CR4 read).
- *
- * @returns The masked CR0/CR4.
- * @param   pVCpu       The cross context virtual CPU structure.
- * @param   iCrReg      The control register (either CR0 or CR4).
- * @param   uGuestCrX   The current guest CR0 or guest CR4.
- */
-IEM_STATIC uint64_t iemVmxMaskCr0CR4(PVMCPU pVCpu, uint8_t iCrReg, uint64_t uGuestCrX)
-{
-    Assert(IEM_VMX_IS_NON_ROOT_MODE(pVCpu));
-    Assert(iCrReg == 0 || iCrReg == 4);
-
-    PCVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
-    Assert(pVmcs);
-
-    /*
-     * For each CR0 or CR4 bit owned by the host, the corresponding bit is loaded from the
-     * CR0 read shadow or CR4 read shadow. For each CR0 or CR4 bit that is not owned by the
-     * host, the corresponding bit from the guest CR0 or guest CR4 is loaded.
-     *
-     * See Intel Spec. 25.3 "Changes To Instruction Behavior In VMX Non-root Operation".
-     */
-    uint64_t fGstHostMask;
-    uint64_t fReadShadow;
-    if (iCrReg == 0)
-    {
-        fGstHostMask = pVmcs->u64Cr0Mask.u;
-        fReadShadow  = pVmcs->u64Cr0ReadShadow.u;
-    }
-    else
-    {
-        fGstHostMask = pVmcs->u64Cr4Mask.u;
-        fReadShadow  = pVmcs->u64Cr4ReadShadow.u;
-    }
-
-    uint64_t const fMaskedCrX = (fReadShadow & fGstHostMask) | (uGuestCrX & ~fGstHostMask);
-    return fMaskedCrX;
-}
-
-
-/**
- * Gets VM-exit instruction information along with any displacement for an
- * instruction VM-exit.
- *
- * @returns The VM-exit instruction information.
- * @param   pVCpu           The cross context virtual CPU structure.
- * @param   uExitReason     The VM-exit reason.
- * @param   uInstrId        The VM-exit instruction identity (VMXINSTRID_XXX).
- * @param   pGCPtrDisp      Where to store the displacement field. Optional, can be
- *                          NULL.
- */
-IEM_STATIC uint32_t iemVmxGetExitInstrInfo(PVMCPU pVCpu, uint32_t uExitReason, VMXINSTRID uInstrId, PRTGCPTR pGCPtrDisp)
-{
-    RTGCPTR          GCPtrDisp;
-    VMXEXITINSTRINFO ExitInstrInfo;
-    ExitInstrInfo.u = 0;
-
-    /*
-     * Get and parse the ModR/M byte from our decoded opcodes.
-     */
-    uint8_t bRm;
-    uint8_t const offModRm = pVCpu->iem.s.offModRm;
-    IEM_MODRM_GET_U8(pVCpu, bRm, offModRm);
-    if ((bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT))
-    {
-        /*
-         * ModR/M indicates register addressing.
-         *
-         * The primary/secondary register operands are reported in the iReg1 or iReg2
-         * fields depending on whether it is a read/write form.
-         */
-        uint8_t idxReg1;
-        uint8_t idxReg2;
-        if (!VMXINSTRID_IS_MODRM_PRIMARY_OP_W(uInstrId))
-        {
-            idxReg1 = ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK) | pVCpu->iem.s.uRexReg;
-            idxReg2 = (bRm & X86_MODRM_RM_MASK) | pVCpu->iem.s.uRexB;
-        }
-        else
-        {
-            idxReg1 = (bRm & X86_MODRM_RM_MASK) | pVCpu->iem.s.uRexB;
-            idxReg2 = ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK) | pVCpu->iem.s.uRexReg;
-        }
-        ExitInstrInfo.All.u2Scaling       = 0;
-        ExitInstrInfo.All.iReg1           = idxReg1;
-        ExitInstrInfo.All.u3AddrSize      = pVCpu->iem.s.enmEffAddrMode;
-        ExitInstrInfo.All.fIsRegOperand   = 1;
-        ExitInstrInfo.All.uOperandSize    = pVCpu->iem.s.enmEffOpSize;
-        ExitInstrInfo.All.iSegReg         = 0;
-        ExitInstrInfo.All.iIdxReg         = 0;
-        ExitInstrInfo.All.fIdxRegInvalid  = 1;
-        ExitInstrInfo.All.iBaseReg        = 0;
-        ExitInstrInfo.All.fBaseRegInvalid = 1;
-        ExitInstrInfo.All.iReg2           = idxReg2;
-
-        /* Displacement not applicable for register addressing. */
-        GCPtrDisp = 0;
-    }
-    else
-    {
-        /*
-         * ModR/M indicates memory addressing.
-         */
-        uint8_t  uScale        = 0;
-        bool     fBaseRegValid = false;
-        bool     fIdxRegValid  = false;
-        uint8_t  iBaseReg      = 0;
-        uint8_t  iIdxReg       = 0;
-        if (pVCpu->iem.s.enmEffAddrMode == IEMMODE_16BIT)
-        {
-            /*
-             * Parse the ModR/M, displacement for 16-bit addressing mode.
-             * See Intel instruction spec. Table 2-1. "16-Bit Addressing Forms with the ModR/M Byte".
-             */
-            uint16_t u16Disp = 0;
-            uint8_t const offDisp = offModRm + sizeof(bRm);
-            if ((bRm & (X86_MODRM_MOD_MASK | X86_MODRM_RM_MASK)) == 6)
-            {
-                /* Displacement without any registers. */
-                IEM_DISP_GET_U16(pVCpu, u16Disp, offDisp);
-            }
-            else
-            {
-                /* Register (index and base). */
-                switch (bRm & X86_MODRM_RM_MASK)
-                {
-                    case 0: fBaseRegValid = true; iBaseReg = X86_GREG_xBX; fIdxRegValid = true; iIdxReg = X86_GREG_xSI; break;
-                    case 1: fBaseRegValid = true; iBaseReg = X86_GREG_xBX; fIdxRegValid = true; iIdxReg = X86_GREG_xDI; break;
-                    case 2: fBaseRegValid = true; iBaseReg = X86_GREG_xBP; fIdxRegValid = true; iIdxReg = X86_GREG_xSI; break;
-                    case 3: fBaseRegValid = true; iBaseReg = X86_GREG_xBP; fIdxRegValid = true; iIdxReg = X86_GREG_xDI; break;
-                    case 4: fIdxRegValid  = true; iIdxReg  = X86_GREG_xSI; break;
-                    case 5: fIdxRegValid  = true; iIdxReg  = X86_GREG_xDI; break;
-                    case 6: fBaseRegValid = true; iBaseReg = X86_GREG_xBP; break;
-                    case 7: fBaseRegValid = true; iBaseReg = X86_GREG_xBX; break;
-                }
-
-                /* Register + displacement. */
-                switch ((bRm >> X86_MODRM_MOD_SHIFT) & X86_MODRM_MOD_SMASK)
-                {
-                    case 0:                                                  break;
-                    case 1: IEM_DISP_GET_S8_SX_U16(pVCpu, u16Disp, offDisp); break;
-                    case 2: IEM_DISP_GET_U16(pVCpu, u16Disp, offDisp);       break;
-                    default:
-                    {
-                        /* Register addressing, handled at the beginning. */
-                        AssertMsgFailed(("ModR/M %#x implies register addressing, memory addressing expected!", bRm));
-                        break;
-                    }
-                }
-            }
-
-            Assert(!uScale);                    /* There's no scaling/SIB byte for 16-bit addressing. */
-            GCPtrDisp = (int16_t)u16Disp;       /* Sign-extend the displacement. */
-        }
-        else if (pVCpu->iem.s.enmEffAddrMode == IEMMODE_32BIT)
-        {
-            /*
-             * Parse the ModR/M, SIB, displacement for 32-bit addressing mode.
-             * See Intel instruction spec. Table 2-2. "32-Bit Addressing Forms with the ModR/M Byte".
-             */
-            uint32_t u32Disp = 0;
-            if ((bRm & (X86_MODRM_MOD_MASK | X86_MODRM_RM_MASK)) == 5)
-            {
-                /* Displacement without any registers. */
-                uint8_t const offDisp = offModRm + sizeof(bRm);
-                IEM_DISP_GET_U32(pVCpu, u32Disp, offDisp);
-            }
-            else
-            {
-                /* Register (and perhaps scale, index and base). */
-                uint8_t offDisp = offModRm + sizeof(bRm);
-                iBaseReg = (bRm & X86_MODRM_RM_MASK);
-                if (iBaseReg == 4)
-                {
-                    /* An SIB byte follows the ModR/M byte, parse it. */
-                    uint8_t bSib;
-                    uint8_t const offSib = offModRm + sizeof(bRm);
-                    IEM_SIB_GET_U8(pVCpu, bSib, offSib);
-
-                    /* A displacement may follow SIB, update its offset. */
-                    offDisp += sizeof(bSib);
-
-                    /* Get the scale. */
-                    uScale = (bSib >> X86_SIB_SCALE_SHIFT) & X86_SIB_SCALE_SMASK;
-
-                    /* Get the index register. */
-                    iIdxReg = (bSib >> X86_SIB_INDEX_SHIFT) & X86_SIB_INDEX_SMASK;
-                    fIdxRegValid = RT_BOOL(iIdxReg != 4);
-
-                    /* Get the base register. */
-                    iBaseReg = bSib & X86_SIB_BASE_MASK;
-                    fBaseRegValid = true;
-                    if (iBaseReg == 5)
-                    {
-                        if ((bRm & X86_MODRM_MOD_MASK) == 0)
-                        {
-                            /* Mod is 0 implies a 32-bit displacement with no base. */
-                            fBaseRegValid = false;
-                            IEM_DISP_GET_U32(pVCpu, u32Disp, offDisp);
-                        }
-                        else
-                        {
-                            /* Mod is not 0 implies an 8-bit/32-bit displacement (handled below) with an EBP base. */
-                            iBaseReg = X86_GREG_xBP;
-                        }
-                    }
-                }
-
-                /* Register + displacement. */
-                switch ((bRm >> X86_MODRM_MOD_SHIFT) & X86_MODRM_MOD_SMASK)
-                {
-                    case 0: /* Handled above */                              break;
-                    case 1: IEM_DISP_GET_S8_SX_U32(pVCpu, u32Disp, offDisp); break;
-                    case 2: IEM_DISP_GET_U32(pVCpu, u32Disp, offDisp);       break;
-                    default:
-                    {
-                        /* Register addressing, handled at the beginning. */
-                        AssertMsgFailed(("ModR/M %#x implies register addressing, memory addressing expected!", bRm));
-                        break;
-                    }
-                }
-            }
-
-            GCPtrDisp = (int32_t)u32Disp;       /* Sign-extend the displacement. */
-        }
-        else
-        {
-            Assert(pVCpu->iem.s.enmEffAddrMode == IEMMODE_64BIT);
-
-            /*
-             * Parse the ModR/M, SIB, displacement for 64-bit addressing mode.
-             * See Intel instruction spec. 2.2 "IA-32e Mode".
-             */
-            uint64_t u64Disp = 0;
-            bool const fRipRelativeAddr = RT_BOOL((bRm & (X86_MODRM_MOD_MASK | X86_MODRM_RM_MASK)) == 5);
-            if (fRipRelativeAddr)
-            {
-                /*
-                 * RIP-relative addressing mode.
-                 *
-                 * The displacement is 32-bit signed implying an offset range of +/-2G.
-                 * See Intel instruction spec. 2.2.1.6 "RIP-Relative Addressing".
-                 */
-                uint8_t const offDisp = offModRm + sizeof(bRm);
-                IEM_DISP_GET_S32_SX_U64(pVCpu, u64Disp, offDisp);
-            }
-            else
-            {
-                uint8_t offDisp = offModRm + sizeof(bRm);
-
-                /*
-                 * Register (and perhaps scale, index and base).
-                 *
-                 * REX.B extends the most-significant bit of the base register. However, REX.B
-                 * is ignored while determining whether an SIB follows the opcode. Hence, we
-                 * shall OR any REX.B bit -after- inspecting for an SIB byte below.
-                 *
-                 * See Intel instruction spec. Table 2-5. "Special Cases of REX Encodings".
-                 */
-                iBaseReg = (bRm & X86_MODRM_RM_MASK);
-                if (iBaseReg == 4)
-                {
-                    /* An SIB byte follows the ModR/M byte, parse it. Displacement (if any) follows SIB. */
-                    uint8_t bSib;
-                    uint8_t const offSib = offModRm + sizeof(bRm);
-                    IEM_SIB_GET_U8(pVCpu, bSib, offSib);
-
-                    /* Displacement may follow SIB, update its offset. */
-                    offDisp += sizeof(bSib);
-
-                    /* Get the scale. */
-                    uScale = (bSib >> X86_SIB_SCALE_SHIFT) & X86_SIB_SCALE_SMASK;
-
-                    /* Get the index. */
-                    iIdxReg = ((bSib >> X86_SIB_INDEX_SHIFT) & X86_SIB_INDEX_SMASK) | pVCpu->iem.s.uRexIndex;
-                    fIdxRegValid = RT_BOOL(iIdxReg != 4);   /* R12 -can- be used as an index register. */
-
-                    /* Get the base. */
-                    iBaseReg = (bSib & X86_SIB_BASE_MASK);
-                    fBaseRegValid = true;
-                    if (iBaseReg == 5)
-                    {
-                        if ((bRm & X86_MODRM_MOD_MASK) == 0)
-                        {
-                            /* Mod is 0 implies a signed 32-bit displacement with no base. */
-                            IEM_DISP_GET_S32_SX_U64(pVCpu, u64Disp, offDisp);
-                        }
-                        else
-                        {
-                            /* Mod is non-zero implies an 8-bit/32-bit displacement (handled below) with RBP or R13 as base. */
-                            iBaseReg = pVCpu->iem.s.uRexB ? X86_GREG_x13 : X86_GREG_xBP;
-                        }
-                    }
-                }
-                iBaseReg |= pVCpu->iem.s.uRexB;
-
-                /* Register + displacement. */
-                switch ((bRm >> X86_MODRM_MOD_SHIFT) & X86_MODRM_MOD_SMASK)
-                {
-                    case 0: /* Handled above */                               break;
-                    case 1: IEM_DISP_GET_S8_SX_U64(pVCpu, u64Disp, offDisp);  break;
-                    case 2: IEM_DISP_GET_S32_SX_U64(pVCpu, u64Disp, offDisp); break;
-                    default:
-                    {
-                        /* Register addressing, handled at the beginning. */
-                        AssertMsgFailed(("ModR/M %#x implies register addressing, memory addressing expected!", bRm));
-                        break;
-                    }
-                }
-            }
-
-            GCPtrDisp = fRipRelativeAddr ? pVCpu->cpum.GstCtx.rip + u64Disp : u64Disp;
-        }
-
-        /*
-         * The primary or secondary register operand is reported in iReg2 depending
-         * on whether the primary operand is in read/write form.
-         */
-        uint8_t idxReg2;
-        if (!VMXINSTRID_IS_MODRM_PRIMARY_OP_W(uInstrId))
-        {
-            idxReg2 = bRm & X86_MODRM_RM_MASK;
-            if (pVCpu->iem.s.enmEffAddrMode == IEMMODE_64BIT)
-                idxReg2 |= pVCpu->iem.s.uRexB;
-        }
-        else
-        {
-            idxReg2 = (bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK;
-            if (pVCpu->iem.s.enmEffAddrMode == IEMMODE_64BIT)
-                 idxReg2 |= pVCpu->iem.s.uRexReg;
-        }
-        ExitInstrInfo.All.u2Scaling      = uScale;
-        ExitInstrInfo.All.iReg1          = 0;   /* Not applicable for memory addressing. */
-        ExitInstrInfo.All.u3AddrSize     = pVCpu->iem.s.enmEffAddrMode;
-        ExitInstrInfo.All.fIsRegOperand  = 0;
-        ExitInstrInfo.All.uOperandSize   = pVCpu->iem.s.enmEffOpSize;
-        ExitInstrInfo.All.iSegReg        = pVCpu->iem.s.iEffSeg;
-        ExitInstrInfo.All.iIdxReg        = iIdxReg;
-        ExitInstrInfo.All.fIdxRegInvalid = !fIdxRegValid;
-        ExitInstrInfo.All.iBaseReg       = iBaseReg;
-        ExitInstrInfo.All.iIdxReg        = !fBaseRegValid;
-        ExitInstrInfo.All.iReg2          = idxReg2;
-    }
-
-    /*
-     * Handle exceptions to the norm for certain instructions.
-     * (e.g. some instructions convey an instruction identity in place of iReg2).
-     */
-    switch (uExitReason)
-    {
-        case VMX_EXIT_GDTR_IDTR_ACCESS:
-        {
-            Assert(VMXINSTRID_IS_VALID(uInstrId));
-            Assert(VMXINSTRID_GET_ID(uInstrId) == (uInstrId & 0x3));
-            ExitInstrInfo.GdtIdt.u2InstrId = VMXINSTRID_GET_ID(uInstrId);
-            ExitInstrInfo.GdtIdt.u2Undef0  = 0;
-            break;
-        }
-
-        case VMX_EXIT_LDTR_TR_ACCESS:
-        {
-            Assert(VMXINSTRID_IS_VALID(uInstrId));
-            Assert(VMXINSTRID_GET_ID(uInstrId) == (uInstrId & 0x3));
-            ExitInstrInfo.LdtTr.u2InstrId = VMXINSTRID_GET_ID(uInstrId);
-            ExitInstrInfo.LdtTr.u2Undef0 = 0;
-            break;
-        }
-
-        case VMX_EXIT_RDRAND:
-        case VMX_EXIT_RDSEED:
-        {
-            Assert(ExitInstrInfo.RdrandRdseed.u2OperandSize != 3);
-            break;
-        }
-    }
-
-    /* Update displacement and return the constructed VM-exit instruction information field. */
-    if (pGCPtrDisp)
-        *pGCPtrDisp = GCPtrDisp;
-
-    return ExitInstrInfo.u;
 }
 
 
@@ -1824,6 +1443,48 @@ IEM_STATIC VMXVDIAG iemVmxGetDiagVmexitPdpteRsvd(unsigned iPdpte)
 
 
 /**
+ * Masks the nested-guest CR0/CR4 mask subjected to the corresponding guest/host
+ * mask and the read-shadow (CR0/CR4 read).
+ *
+ * @returns The masked CR0/CR4.
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   iCrReg      The control register (either CR0 or CR4).
+ * @param   uGuestCrX   The current guest CR0 or guest CR4.
+ */
+IEM_STATIC uint64_t iemVmxMaskCr0CR4(PVMCPU pVCpu, uint8_t iCrReg, uint64_t uGuestCrX)
+{
+    Assert(IEM_VMX_IS_NON_ROOT_MODE(pVCpu));
+    Assert(iCrReg == 0 || iCrReg == 4);
+
+    PCVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
+    Assert(pVmcs);
+
+    /*
+     * For each CR0 or CR4 bit owned by the host, the corresponding bit is loaded from the
+     * CR0 read shadow or CR4 read shadow. For each CR0 or CR4 bit that is not owned by the
+     * host, the corresponding bit from the guest CR0 or guest CR4 is loaded.
+     *
+     * See Intel Spec. 25.3 "Changes To Instruction Behavior In VMX Non-root Operation".
+     */
+    uint64_t fGstHostMask;
+    uint64_t fReadShadow;
+    if (iCrReg == 0)
+    {
+        fGstHostMask = pVmcs->u64Cr0Mask.u;
+        fReadShadow  = pVmcs->u64Cr0ReadShadow.u;
+    }
+    else
+    {
+        fGstHostMask = pVmcs->u64Cr4Mask.u;
+        fReadShadow  = pVmcs->u64Cr4ReadShadow.u;
+    }
+
+    uint64_t const fMaskedCrX = (fReadShadow & fGstHostMask) | (uGuestCrX & ~fGstHostMask);
+    return fMaskedCrX;
+}
+
+
+/**
  * Saves the guest control registers, debug registers and some MSRs are part of
  * VM-exit.
  *
@@ -2188,6 +1849,10 @@ IEM_STATIC void iemVmxVmexitSaveGuestState(PVMCPU pVCpu, uint32_t uExitReason)
     iemVmxVmexitSaveGuestControlRegsMsrs(pVCpu);
     iemVmxVmexitSaveGuestSegRegs(pVCpu);
 
+    /** @todo r=ramshankar: The below hack is no longer necessary because we invoke the
+     *        VM-exit after updating RIP. I'm leaving it in-place temporarily in case
+     *        we need to fix missing exit information or callers still setting
+     *        instruction-length field when it is not necessary. */
 #if 0
     /*
      * Save guest RIP, RSP and RFLAGS.
@@ -2743,6 +2408,350 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitLoadHostState(PVMCPU pVCpu, uint32_t uExitRe
     }
 
     return rcStrict;
+}
+
+
+/**
+ * Gets VM-exit instruction information along with any displacement for an
+ * instruction VM-exit.
+ *
+ * @returns The VM-exit instruction information.
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   uExitReason     The VM-exit reason.
+ * @param   uInstrId        The VM-exit instruction identity (VMXINSTRID_XXX).
+ * @param   pGCPtrDisp      Where to store the displacement field. Optional, can be
+ *                          NULL.
+ */
+IEM_STATIC uint32_t iemVmxGetExitInstrInfo(PVMCPU pVCpu, uint32_t uExitReason, VMXINSTRID uInstrId, PRTGCPTR pGCPtrDisp)
+{
+    RTGCPTR          GCPtrDisp;
+    VMXEXITINSTRINFO ExitInstrInfo;
+    ExitInstrInfo.u = 0;
+
+    /*
+     * Get and parse the ModR/M byte from our decoded opcodes.
+     */
+    uint8_t bRm;
+    uint8_t const offModRm = pVCpu->iem.s.offModRm;
+    IEM_MODRM_GET_U8(pVCpu, bRm, offModRm);
+    if ((bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT))
+    {
+        /*
+         * ModR/M indicates register addressing.
+         *
+         * The primary/secondary register operands are reported in the iReg1 or iReg2
+         * fields depending on whether it is a read/write form.
+         */
+        uint8_t idxReg1;
+        uint8_t idxReg2;
+        if (!VMXINSTRID_IS_MODRM_PRIMARY_OP_W(uInstrId))
+        {
+            idxReg1 = ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK) | pVCpu->iem.s.uRexReg;
+            idxReg2 = (bRm & X86_MODRM_RM_MASK) | pVCpu->iem.s.uRexB;
+        }
+        else
+        {
+            idxReg1 = (bRm & X86_MODRM_RM_MASK) | pVCpu->iem.s.uRexB;
+            idxReg2 = ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK) | pVCpu->iem.s.uRexReg;
+        }
+        ExitInstrInfo.All.u2Scaling       = 0;
+        ExitInstrInfo.All.iReg1           = idxReg1;
+        ExitInstrInfo.All.u3AddrSize      = pVCpu->iem.s.enmEffAddrMode;
+        ExitInstrInfo.All.fIsRegOperand   = 1;
+        ExitInstrInfo.All.uOperandSize    = pVCpu->iem.s.enmEffOpSize;
+        ExitInstrInfo.All.iSegReg         = 0;
+        ExitInstrInfo.All.iIdxReg         = 0;
+        ExitInstrInfo.All.fIdxRegInvalid  = 1;
+        ExitInstrInfo.All.iBaseReg        = 0;
+        ExitInstrInfo.All.fBaseRegInvalid = 1;
+        ExitInstrInfo.All.iReg2           = idxReg2;
+
+        /* Displacement not applicable for register addressing. */
+        GCPtrDisp = 0;
+    }
+    else
+    {
+        /*
+         * ModR/M indicates memory addressing.
+         */
+        uint8_t  uScale        = 0;
+        bool     fBaseRegValid = false;
+        bool     fIdxRegValid  = false;
+        uint8_t  iBaseReg      = 0;
+        uint8_t  iIdxReg       = 0;
+        if (pVCpu->iem.s.enmEffAddrMode == IEMMODE_16BIT)
+        {
+            /*
+             * Parse the ModR/M, displacement for 16-bit addressing mode.
+             * See Intel instruction spec. Table 2-1. "16-Bit Addressing Forms with the ModR/M Byte".
+             */
+            uint16_t u16Disp = 0;
+            uint8_t const offDisp = offModRm + sizeof(bRm);
+            if ((bRm & (X86_MODRM_MOD_MASK | X86_MODRM_RM_MASK)) == 6)
+            {
+                /* Displacement without any registers. */
+                IEM_DISP_GET_U16(pVCpu, u16Disp, offDisp);
+            }
+            else
+            {
+                /* Register (index and base). */
+                switch (bRm & X86_MODRM_RM_MASK)
+                {
+                    case 0: fBaseRegValid = true; iBaseReg = X86_GREG_xBX; fIdxRegValid = true; iIdxReg = X86_GREG_xSI; break;
+                    case 1: fBaseRegValid = true; iBaseReg = X86_GREG_xBX; fIdxRegValid = true; iIdxReg = X86_GREG_xDI; break;
+                    case 2: fBaseRegValid = true; iBaseReg = X86_GREG_xBP; fIdxRegValid = true; iIdxReg = X86_GREG_xSI; break;
+                    case 3: fBaseRegValid = true; iBaseReg = X86_GREG_xBP; fIdxRegValid = true; iIdxReg = X86_GREG_xDI; break;
+                    case 4: fIdxRegValid  = true; iIdxReg  = X86_GREG_xSI; break;
+                    case 5: fIdxRegValid  = true; iIdxReg  = X86_GREG_xDI; break;
+                    case 6: fBaseRegValid = true; iBaseReg = X86_GREG_xBP; break;
+                    case 7: fBaseRegValid = true; iBaseReg = X86_GREG_xBX; break;
+                }
+
+                /* Register + displacement. */
+                switch ((bRm >> X86_MODRM_MOD_SHIFT) & X86_MODRM_MOD_SMASK)
+                {
+                    case 0:                                                  break;
+                    case 1: IEM_DISP_GET_S8_SX_U16(pVCpu, u16Disp, offDisp); break;
+                    case 2: IEM_DISP_GET_U16(pVCpu, u16Disp, offDisp);       break;
+                    default:
+                    {
+                        /* Register addressing, handled at the beginning. */
+                        AssertMsgFailed(("ModR/M %#x implies register addressing, memory addressing expected!", bRm));
+                        break;
+                    }
+                }
+            }
+
+            Assert(!uScale);                    /* There's no scaling/SIB byte for 16-bit addressing. */
+            GCPtrDisp = (int16_t)u16Disp;       /* Sign-extend the displacement. */
+        }
+        else if (pVCpu->iem.s.enmEffAddrMode == IEMMODE_32BIT)
+        {
+            /*
+             * Parse the ModR/M, SIB, displacement for 32-bit addressing mode.
+             * See Intel instruction spec. Table 2-2. "32-Bit Addressing Forms with the ModR/M Byte".
+             */
+            uint32_t u32Disp = 0;
+            if ((bRm & (X86_MODRM_MOD_MASK | X86_MODRM_RM_MASK)) == 5)
+            {
+                /* Displacement without any registers. */
+                uint8_t const offDisp = offModRm + sizeof(bRm);
+                IEM_DISP_GET_U32(pVCpu, u32Disp, offDisp);
+            }
+            else
+            {
+                /* Register (and perhaps scale, index and base). */
+                uint8_t offDisp = offModRm + sizeof(bRm);
+                iBaseReg = (bRm & X86_MODRM_RM_MASK);
+                if (iBaseReg == 4)
+                {
+                    /* An SIB byte follows the ModR/M byte, parse it. */
+                    uint8_t bSib;
+                    uint8_t const offSib = offModRm + sizeof(bRm);
+                    IEM_SIB_GET_U8(pVCpu, bSib, offSib);
+
+                    /* A displacement may follow SIB, update its offset. */
+                    offDisp += sizeof(bSib);
+
+                    /* Get the scale. */
+                    uScale = (bSib >> X86_SIB_SCALE_SHIFT) & X86_SIB_SCALE_SMASK;
+
+                    /* Get the index register. */
+                    iIdxReg = (bSib >> X86_SIB_INDEX_SHIFT) & X86_SIB_INDEX_SMASK;
+                    fIdxRegValid = RT_BOOL(iIdxReg != 4);
+
+                    /* Get the base register. */
+                    iBaseReg = bSib & X86_SIB_BASE_MASK;
+                    fBaseRegValid = true;
+                    if (iBaseReg == 5)
+                    {
+                        if ((bRm & X86_MODRM_MOD_MASK) == 0)
+                        {
+                            /* Mod is 0 implies a 32-bit displacement with no base. */
+                            fBaseRegValid = false;
+                            IEM_DISP_GET_U32(pVCpu, u32Disp, offDisp);
+                        }
+                        else
+                        {
+                            /* Mod is not 0 implies an 8-bit/32-bit displacement (handled below) with an EBP base. */
+                            iBaseReg = X86_GREG_xBP;
+                        }
+                    }
+                }
+
+                /* Register + displacement. */
+                switch ((bRm >> X86_MODRM_MOD_SHIFT) & X86_MODRM_MOD_SMASK)
+                {
+                    case 0: /* Handled above */                              break;
+                    case 1: IEM_DISP_GET_S8_SX_U32(pVCpu, u32Disp, offDisp); break;
+                    case 2: IEM_DISP_GET_U32(pVCpu, u32Disp, offDisp);       break;
+                    default:
+                    {
+                        /* Register addressing, handled at the beginning. */
+                        AssertMsgFailed(("ModR/M %#x implies register addressing, memory addressing expected!", bRm));
+                        break;
+                    }
+                }
+            }
+
+            GCPtrDisp = (int32_t)u32Disp;       /* Sign-extend the displacement. */
+        }
+        else
+        {
+            Assert(pVCpu->iem.s.enmEffAddrMode == IEMMODE_64BIT);
+
+            /*
+             * Parse the ModR/M, SIB, displacement for 64-bit addressing mode.
+             * See Intel instruction spec. 2.2 "IA-32e Mode".
+             */
+            uint64_t u64Disp = 0;
+            bool const fRipRelativeAddr = RT_BOOL((bRm & (X86_MODRM_MOD_MASK | X86_MODRM_RM_MASK)) == 5);
+            if (fRipRelativeAddr)
+            {
+                /*
+                 * RIP-relative addressing mode.
+                 *
+                 * The displacement is 32-bit signed implying an offset range of +/-2G.
+                 * See Intel instruction spec. 2.2.1.6 "RIP-Relative Addressing".
+                 */
+                uint8_t const offDisp = offModRm + sizeof(bRm);
+                IEM_DISP_GET_S32_SX_U64(pVCpu, u64Disp, offDisp);
+            }
+            else
+            {
+                uint8_t offDisp = offModRm + sizeof(bRm);
+
+                /*
+                 * Register (and perhaps scale, index and base).
+                 *
+                 * REX.B extends the most-significant bit of the base register. However, REX.B
+                 * is ignored while determining whether an SIB follows the opcode. Hence, we
+                 * shall OR any REX.B bit -after- inspecting for an SIB byte below.
+                 *
+                 * See Intel instruction spec. Table 2-5. "Special Cases of REX Encodings".
+                 */
+                iBaseReg = (bRm & X86_MODRM_RM_MASK);
+                if (iBaseReg == 4)
+                {
+                    /* An SIB byte follows the ModR/M byte, parse it. Displacement (if any) follows SIB. */
+                    uint8_t bSib;
+                    uint8_t const offSib = offModRm + sizeof(bRm);
+                    IEM_SIB_GET_U8(pVCpu, bSib, offSib);
+
+                    /* Displacement may follow SIB, update its offset. */
+                    offDisp += sizeof(bSib);
+
+                    /* Get the scale. */
+                    uScale = (bSib >> X86_SIB_SCALE_SHIFT) & X86_SIB_SCALE_SMASK;
+
+                    /* Get the index. */
+                    iIdxReg = ((bSib >> X86_SIB_INDEX_SHIFT) & X86_SIB_INDEX_SMASK) | pVCpu->iem.s.uRexIndex;
+                    fIdxRegValid = RT_BOOL(iIdxReg != 4);   /* R12 -can- be used as an index register. */
+
+                    /* Get the base. */
+                    iBaseReg = (bSib & X86_SIB_BASE_MASK);
+                    fBaseRegValid = true;
+                    if (iBaseReg == 5)
+                    {
+                        if ((bRm & X86_MODRM_MOD_MASK) == 0)
+                        {
+                            /* Mod is 0 implies a signed 32-bit displacement with no base. */
+                            IEM_DISP_GET_S32_SX_U64(pVCpu, u64Disp, offDisp);
+                        }
+                        else
+                        {
+                            /* Mod is non-zero implies an 8-bit/32-bit displacement (handled below) with RBP or R13 as base. */
+                            iBaseReg = pVCpu->iem.s.uRexB ? X86_GREG_x13 : X86_GREG_xBP;
+                        }
+                    }
+                }
+                iBaseReg |= pVCpu->iem.s.uRexB;
+
+                /* Register + displacement. */
+                switch ((bRm >> X86_MODRM_MOD_SHIFT) & X86_MODRM_MOD_SMASK)
+                {
+                    case 0: /* Handled above */                               break;
+                    case 1: IEM_DISP_GET_S8_SX_U64(pVCpu, u64Disp, offDisp);  break;
+                    case 2: IEM_DISP_GET_S32_SX_U64(pVCpu, u64Disp, offDisp); break;
+                    default:
+                    {
+                        /* Register addressing, handled at the beginning. */
+                        AssertMsgFailed(("ModR/M %#x implies register addressing, memory addressing expected!", bRm));
+                        break;
+                    }
+                }
+            }
+
+            GCPtrDisp = fRipRelativeAddr ? pVCpu->cpum.GstCtx.rip + u64Disp : u64Disp;
+        }
+
+        /*
+         * The primary or secondary register operand is reported in iReg2 depending
+         * on whether the primary operand is in read/write form.
+         */
+        uint8_t idxReg2;
+        if (!VMXINSTRID_IS_MODRM_PRIMARY_OP_W(uInstrId))
+        {
+            idxReg2 = bRm & X86_MODRM_RM_MASK;
+            if (pVCpu->iem.s.enmEffAddrMode == IEMMODE_64BIT)
+                idxReg2 |= pVCpu->iem.s.uRexB;
+        }
+        else
+        {
+            idxReg2 = (bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK;
+            if (pVCpu->iem.s.enmEffAddrMode == IEMMODE_64BIT)
+                 idxReg2 |= pVCpu->iem.s.uRexReg;
+        }
+        ExitInstrInfo.All.u2Scaling      = uScale;
+        ExitInstrInfo.All.iReg1          = 0;   /* Not applicable for memory addressing. */
+        ExitInstrInfo.All.u3AddrSize     = pVCpu->iem.s.enmEffAddrMode;
+        ExitInstrInfo.All.fIsRegOperand  = 0;
+        ExitInstrInfo.All.uOperandSize   = pVCpu->iem.s.enmEffOpSize;
+        ExitInstrInfo.All.iSegReg        = pVCpu->iem.s.iEffSeg;
+        ExitInstrInfo.All.iIdxReg        = iIdxReg;
+        ExitInstrInfo.All.fIdxRegInvalid = !fIdxRegValid;
+        ExitInstrInfo.All.iBaseReg       = iBaseReg;
+        ExitInstrInfo.All.iIdxReg        = !fBaseRegValid;
+        ExitInstrInfo.All.iReg2          = idxReg2;
+    }
+
+    /*
+     * Handle exceptions to the norm for certain instructions.
+     * (e.g. some instructions convey an instruction identity in place of iReg2).
+     */
+    switch (uExitReason)
+    {
+        case VMX_EXIT_GDTR_IDTR_ACCESS:
+        {
+            Assert(VMXINSTRID_IS_VALID(uInstrId));
+            Assert(VMXINSTRID_GET_ID(uInstrId) == (uInstrId & 0x3));
+            ExitInstrInfo.GdtIdt.u2InstrId = VMXINSTRID_GET_ID(uInstrId);
+            ExitInstrInfo.GdtIdt.u2Undef0  = 0;
+            break;
+        }
+
+        case VMX_EXIT_LDTR_TR_ACCESS:
+        {
+            Assert(VMXINSTRID_IS_VALID(uInstrId));
+            Assert(VMXINSTRID_GET_ID(uInstrId) == (uInstrId & 0x3));
+            ExitInstrInfo.LdtTr.u2InstrId = VMXINSTRID_GET_ID(uInstrId);
+            ExitInstrInfo.LdtTr.u2Undef0 = 0;
+            break;
+        }
+
+        case VMX_EXIT_RDRAND:
+        case VMX_EXIT_RDSEED:
+        {
+            Assert(ExitInstrInfo.RdrandRdseed.u2OperandSize != 3);
+            break;
+        }
+    }
+
+    /* Update displacement and return the constructed VM-exit instruction information field. */
+    if (pGCPtrDisp)
+        *pGCPtrDisp = GCPtrDisp;
+
+    return ExitInstrInfo.u;
 }
 
 
@@ -3998,6 +4007,9 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitApicAccess(PVMCPU pVCpu, uint16_t offAccess,
 IEM_STATIC VBOXSTRICTRC iemVmxVmexitApicWrite(PVMCPU pVCpu, uint16_t offApic)
 {
     Assert(offApic < XAPIC_OFF_END + 4);
+
+    /* Write only bits 11:0 of the APIC offset into the VM-exit qualification field. */
+    offApic &= UINT16_C(0xfff);
     iemVmxVmcsSetExitQual(pVCpu, offApic);
     return iemVmxVmexit(pVCpu, VMX_EXIT_APIC_WRITE);
 }
