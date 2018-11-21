@@ -584,6 +584,19 @@ static void vmmR3InitRegisterStats(PVM pVM)
         STAMR3RegisterF(pVM, &pVM->aCpus[i].vmm.s.CallRing3JmpBufR0.cUsedTotal, STAMTYPE_U64,       STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of stack usages.",   "/VMM/Stack/CPU%u/Uses", i);
     }
 #endif
+    for (VMCPUID i = 0; i < pVM->cCpus; i++)
+    {
+        STAMR3RegisterF(pVM, &pVM->aCpus[i].vmm.s.StatR0HaltBlock,          STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_NS_PER_CALL, "", "/PROF/CPU%u/VM/Halt/R0HaltBlock", i);
+        STAMR3RegisterF(pVM, &pVM->aCpus[i].vmm.s.StatR0HaltBlockOnTime,    STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_NS_PER_CALL, "", "/PROF/CPU%u/VM/Halt/R0HaltBlockOnTime", i);
+        STAMR3RegisterF(pVM, &pVM->aCpus[i].vmm.s.StatR0HaltBlockOverslept, STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_NS_PER_CALL, "", "/PROF/CPU%u/VM/Halt/R0HaltBlockOverslept", i);
+        STAMR3RegisterF(pVM, &pVM->aCpus[i].vmm.s.StatR0HaltBlockInsomnia,  STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_NS_PER_CALL, "", "/PROF/CPU%u/VM/Halt/R0HaltBlockInsomnia", i);
+        STAMR3RegisterF(pVM, &pVM->aCpus[i].vmm.s.StatR0HaltExec,           STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,  "", "/PROF/CPU%u/VM/Halt/R0HaltExec", i);
+        STAMR3RegisterF(pVM, &pVM->aCpus[i].vmm.s.StatR0HaltExecFromSpin,   STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,  "", "/PROF/CPU%u/VM/Halt/R0HaltExec/FromSpin", i);
+        STAMR3RegisterF(pVM, &pVM->aCpus[i].vmm.s.StatR0HaltExecFromBlock,  STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,  "", "/PROF/CPU%u/VM/Halt/R0HaltExec/FromBlock", i);
+        STAMR3RegisterF(pVM, &pVM->aCpus[i].vmm.s.cR0Halts,                 STAMTYPE_U32,     STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,  "", "/PROF/CPU%u/VM/Halt/R0HaltHistoryCounter", i);
+        STAMR3RegisterF(pVM, &pVM->aCpus[i].vmm.s.cR0HaltsSucceeded,        STAMTYPE_U32,     STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,  "", "/PROF/CPU%u/VM/Halt/R0HaltHistorySucceeded", i);
+        STAMR3RegisterF(pVM, &pVM->aCpus[i].vmm.s.cR0HaltsToRing3,          STAMTYPE_U32,     STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,  "", "/PROF/CPU%u/VM/Halt/R0HaltHistoryToRing3", i);
+    }
 }
 
 
@@ -2486,6 +2499,25 @@ VMMR3DECL(int) VMMR3EmtRendezvous(PVM pVM, uint32_t fFlags, PFNVMMEMTRENDEZVOUS 
                           ("%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)),
                           VERR_IPE_UNEXPECTED_INFO_STATUS);
     return VBOXSTRICTRC_VAL(rcStrict);
+}
+
+
+/**
+ * Interface for vmR3SetHaltMethodU.
+ *
+ * @param   pVCpu                   The cross context virtual CPU structure of the
+ *                                  calling EMT.
+ * @param   fMayHaltInRing0         The new state.
+ * @param   cNsSpinBlockThreshold   The spin-vs-blocking threashold.
+ * @thread  EMT(pVCpu)
+ *
+ * @todo    Move the EMT handling to VMM (or EM).  I soooooo regret that VM
+ *          component.
+ */
+VMMR3_INT_DECL(void) VMMR3SetMayHaltInRing0(PVMCPU pVCpu, bool fMayHaltInRing0, uint32_t cNsSpinBlockThreshold)
+{
+    pVCpu->vmm.s.fMayHaltInRing0       = fMayHaltInRing0;
+    pVCpu->vmm.s.cNsSpinBlockThreshold = cNsSpinBlockThreshold;
 }
 
 

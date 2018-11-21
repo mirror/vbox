@@ -59,6 +59,7 @@
 #include <iprt/string.h>
 #include <iprt/thread.h>
 #include <iprt/timer.h>
+#include <iprt/time.h>
 
 #include "dtrace/VBoxVMM.h"
 
@@ -602,6 +603,267 @@ VMMR0_INT_DECL(int) VMMR0TermVM(PGVM pGVM, PVM pVM, VMCPUID idCpu)
      */
     RTLogSetDefaultInstanceThread(NULL, (uintptr_t)pVM->pSession);
     return VINF_SUCCESS;
+}
+
+
+/**
+ * An interrupt or unhalt force flag is set, deal with it.
+ *
+ * @returns VINF_SUCCESS (or VINF_EM_HALT).
+ * @param   pVCpu                   The cross context virtual CPU structure.
+ * @param   uMWait                  Result from EMMonitorWaitIsActive().
+ * @param   enmInterruptibility     Guest CPU interruptbility level.
+ */
+static int vmmR0DoHaltInterrupt(PVMCPU pVCpu, unsigned uMWait, CPUMINTERRUPTIBILITY enmInterruptibility)
+{
+    Assert(!TRPMHasTrap(pVCpu));
+
+    /*
+     * Pending interrupts w/o any SMIs or NMIs?  That the usual case.
+     */
+    if (    VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC)
+        && !VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_INTERRUPT_SMI  | VMCPU_FF_INTERRUPT_NMI))
+    {
+        if (enmInterruptibility <= CPUMINTERRUPTIBILITY_INT_INHIBITED)
+        {
+            uint8_t u8Interrupt = 0;
+            int rc = PDMGetInterrupt(pVCpu, &u8Interrupt);
+            Log(("vmmR0DoHaltInterrupt: CPU%d u8Interrupt=%d (%#x) rc=%Rrc\n", pVCpu->idCpu, u8Interrupt, u8Interrupt, rc));
+            if (RT_SUCCESS(rc))
+            {
+                VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_UNHALT);
+
+                rc = TRPMAssertTrap(pVCpu, u8Interrupt, TRPM_HARDWARE_INT);
+                AssertRCSuccess(rc);
+                STAM_REL_COUNTER_INC(&pVCpu->vmm.s.StatR0HaltExec);
+                return rc;
+            }
+        }
+    }
+    /*
+     * SMI is not implemented yet, at least not here.
+     */
+    else if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INTERRUPT_SMI))
+    {
+        return VINF_EM_HALT;
+    }
+    /*
+     * NMI.
+     */
+    else if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INTERRUPT_NMI))
+    {
+        if (enmInterruptibility < CPUMINTERRUPTIBILITY_NMI_INHIBIT)
+        {
+            /** @todo later. */
+            return VINF_EM_HALT;
+        }
+    }
+
+    if (VMCPU_FF_TEST_AND_CLEAR(pVCpu, VMCPU_FF_UNHALT))
+    {
+        STAM_REL_COUNTER_INC(&pVCpu->vmm.s.StatR0HaltExec);
+        return VINF_SUCCESS;
+    }
+    if (uMWait > 1)
+    {
+        STAM_REL_COUNTER_INC(&pVCpu->vmm.s.StatR0HaltExec);
+        return VINF_SUCCESS;
+    }
+
+    return VINF_EM_HALT;
+}
+
+
+/**
+ * This does one round of vmR3HaltGlobal1Halt().
+ *
+ * The rational here is that we'll reduce latency in interrupt situations if we
+ * don't go to ring-3 immediately on a VINF_EM_HALT (guest executed HLT or
+ * MWAIT), but do one round of blocking here instead and hope the interrupt is
+ * raised in the meanwhile.
+ *
+ * If we go to ring-3 we'll quit the inner HM/NEM loop in EM and end up in the
+ * outer loop, which will then call VMR3WaitHalted() and that in turn will do a
+ * ring-0 call (unless we're too close to a timer event).  When the interrupt
+ * wakes us up, we'll return from ring-0 and EM will by instinct do a
+ * rescheduling (because of raw-mode) before it resumes the HM/NEM loop and gets
+ * back to VMMR0EntryFast().
+ *
+ * @returns VINF_SUCCESS or VINF_EM_HALT.
+ * @param   pGVM        The ring-0 VM structure.
+ * @param   pVM         The cross context VM structure.
+ * @param   pGVCpu      The ring-0 virtual CPU structure.
+ * @param   pVCpu       The cross context virtual CPU structure.
+ *
+ * @todo r=bird: All the blocking/waiting and EMT managment should move out of
+ *       the VM module, probably to VMM.  Then this would be more weird wrt
+ *       parameters and statistics.
+ */
+static int vmmR0DoHalt(PGVM pGVM, PVM pVM, PGVMCPU pGVCpu, PVMCPU pVCpu)
+{
+    Assert(pVCpu == pGVCpu->pVCpu);
+
+    /*
+     * Do spin stat historization.
+     */
+    if (++pVCpu->vmm.s.cR0Halts & 0xff)
+    { /* likely */ }
+    else if (pVCpu->vmm.s.cR0HaltsSucceeded > pVCpu->vmm.s.cR0HaltsToRing3)
+    {
+        pVCpu->vmm.s.cR0HaltsSucceeded = 2;
+        pVCpu->vmm.s.cR0HaltsToRing3   = 0;
+    }
+    else
+    {
+        pVCpu->vmm.s.cR0HaltsSucceeded = 0;
+        pVCpu->vmm.s.cR0HaltsToRing3   = 2;
+    }
+
+    /*
+     * Flags that makes us go to ring-3.
+     */
+    uint32_t const fVmFFs  = VM_FF_TM_VIRTUAL_SYNC            | VM_FF_PDM_QUEUES              | VM_FF_PDM_DMA
+                           | VM_FF_DBGF                       | VM_FF_REQUEST                 | VM_FF_CHECK_VM_STATE
+                           | VM_FF_RESET                      | VM_FF_EMT_RENDEZVOUS          | VM_FF_PGM_NEED_HANDY_PAGES
+                           | VM_FF_PGM_NO_MEMORY              | VM_FF_REM_HANDLER_NOTIFY      | VM_FF_DEBUG_SUSPEND;
+    uint64_t const fCpuFFs = VMCPU_FF_TIMER                   | VMCPU_FF_PDM_CRITSECT         | VMCPU_FF_IEM
+                           | VMCPU_FF_REQUEST                 | VMCPU_FF_DBGF                 | VMCPU_FF_HM_UPDATE_CR3
+                           | VMCPU_FF_HM_UPDATE_PAE_PDPES     | VMCPU_FF_PGM_SYNC_CR3         | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL
+                           | VMCPU_FF_TO_R3                   | VMCPU_FF_IOM                  | VMCPU_FF_INTERRUPT_NESTED_GUEST /*?*/
+                           | VMCPU_FF_VMX_PREEMPT_TIMER /*?*/ | VMCPU_FF_VMX_APIC_WRITE /*?*/ | VMCPU_FF_VMX_MTF /*?*/
+#ifdef VBOX_WITH_RAW_MODE
+                           | VMCPU_FF_TRPM_SYNC_IDT           | VMCPU_FF_SELM_SYNC_TSS        | VMCPU_FF_SELM_SYNC_GDT
+                           | VMCPU_FF_SELM_SYNC_LDT           | VMCPU_FF_CSAM_SCAN_PAGE       | VMCPU_FF_CSAM_PENDING_ACTION
+                           | VMCPU_FF_CPUM
+#endif
+                           ;
+
+    /*
+     * Check preconditions.
+     */
+    unsigned const             uMWait              = EMMonitorWaitIsActive(pVCpu);
+    CPUMINTERRUPTIBILITY const enmInterruptibility = CPUMGetGuestInterruptibility(pVCpu);
+    if (   pVCpu->vmm.s.fMayHaltInRing0
+        && !TRPMHasTrap(pVCpu)
+        && (   enmInterruptibility <= CPUMINTERRUPTIBILITY_INT_INHIBITED
+            || uMWait > 1))
+    {
+        if (   !VM_FF_IS_ANY_SET(pVM, fVmFFs)
+            && !VMCPU_FF_IS_ANY_SET(pVCpu, fCpuFFs))
+        {
+            /*
+             * Interrupts pending already?
+             */
+            if (VMCPU_FF_TEST_AND_CLEAR(pVCpu, VMCPU_FF_UPDATE_APIC))
+                APICUpdatePendingInterrupts(pVCpu);
+
+            if (VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC
+                                         | VMCPU_FF_INTERRUPT_NMI  | VMCPU_FF_INTERRUPT_SMI | VMCPU_FF_UNHALT))
+                return vmmR0DoHaltInterrupt(pVCpu, uMWait, enmInterruptibility);
+            ASMNopPause();
+
+            /*
+             * Check out how long till the next timer event.
+             */
+            uint64_t u64Delta;
+            uint64_t u64GipTime = TMTimerPollGIP(pVM, pVCpu, &u64Delta);
+
+            if (   !VM_FF_IS_ANY_SET(pVM, fVmFFs)
+                && !VMCPU_FF_IS_ANY_SET(pVCpu, fCpuFFs))
+            {
+                if (VMCPU_FF_TEST_AND_CLEAR(pVCpu, VMCPU_FF_UPDATE_APIC))
+                    APICUpdatePendingInterrupts(pVCpu);
+
+                if (VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC
+                                             | VMCPU_FF_INTERRUPT_NMI  | VMCPU_FF_INTERRUPT_SMI | VMCPU_FF_UNHALT))
+                    return vmmR0DoHaltInterrupt(pVCpu, uMWait, enmInterruptibility);
+
+                /*
+                 * Wait if there is enough time to the next timer event.
+                 */
+                if (u64Delta >= pVCpu->vmm.s.cNsSpinBlockThreshold)
+                {
+                    /* If there are few other CPU cores around, we will procrastinate a
+                       little before going to sleep, hoping for some device raising an
+                       interrupt or similar.   Though, the best thing here would be to
+                       dynamically adjust the spin count according to its usfulness or
+                       something... */
+                    if (   pVCpu->vmm.s.cR0HaltsSucceeded > pVCpu->vmm.s.cR0HaltsToRing3
+                        && RTMpGetOnlineCount() >= 4)
+                    {
+                        /** @todo Figure out how we can skip this if it haven't help recently... */
+                        uint32_t cSpinLoops = 42;
+                        while (cSpinLoops-- > 0)
+                        {
+                            ASMNopPause();
+                            if (VMCPU_FF_TEST_AND_CLEAR(pVCpu, VMCPU_FF_UPDATE_APIC))
+                                APICUpdatePendingInterrupts(pVCpu);
+                            ASMNopPause();
+                            if (VM_FF_IS_ANY_SET(pVM, fVmFFs))
+                            {
+                                STAM_REL_COUNTER_INC(&pVCpu->vmm.s.StatR0HaltToR3FromSpin);
+                                return VINF_EM_HALT;
+                            }
+                            ASMNopPause();
+                            if (VMCPU_FF_IS_ANY_SET(pVCpu, fCpuFFs))
+                            {
+                                STAM_REL_COUNTER_INC(&pVCpu->vmm.s.StatR0HaltToR3FromSpin);
+                                return VINF_EM_HALT;
+                            }
+                            ASMNopPause();
+                            if (VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC
+                                                    | VMCPU_FF_INTERRUPT_NMI  | VMCPU_FF_INTERRUPT_SMI | VMCPU_FF_UNHALT))
+                            {
+                                STAM_REL_COUNTER_INC(&pVCpu->vmm.s.StatR0HaltExecFromSpin);
+                                return vmmR0DoHaltInterrupt(pVCpu, uMWait, enmInterruptibility);
+                            }
+                            ASMNopPause();
+                        }
+                    }
+
+                    /* Block.  We have to set the state to VMCPUSTATE_STARTED_HALTED here so ring-3
+                       knows when to notify us (cannot access VMINTUSERPERVMCPU::fWait from here). */
+                    VMCPU_CMPXCHG_STATE(pVCpu, VMCPUSTATE_STARTED_HALTED, VMCPUSTATE_STARTED);
+                    uint64_t const u64StartSchedHalt   = RTTimeNanoTS();
+                    int rc = GVMMR0SchedHalt(pGVM, pVM, pGVCpu, u64GipTime);
+                    uint64_t const u64EndSchedHalt     = RTTimeNanoTS();
+                    uint64_t const cNsElapsedSchedHalt = u64EndSchedHalt - u64StartSchedHalt;
+                    VMCPU_CMPXCHG_STATE(pVCpu, VMCPUSTATE_STARTED, VMCPUSTATE_STARTED_HALTED);
+                    STAM_REL_PROFILE_ADD_PERIOD(&pVCpu->vmm.s.StatR0HaltBlock, cNsElapsedSchedHalt);
+                    if (   rc == VINF_SUCCESS
+                        || rc == VERR_INTERRUPTED)
+
+                    {
+                        /* Keep some stats like ring-3 does. */
+                        int64_t const cNsOverslept = u64EndSchedHalt - u64GipTime;
+                        if (cNsOverslept > 50000)
+                            STAM_REL_PROFILE_ADD_PERIOD(&pVCpu->vmm.s.StatR0HaltBlockOverslept, cNsOverslept);
+                        else if (cNsOverslept < -50000)
+                            STAM_REL_PROFILE_ADD_PERIOD(&pVCpu->vmm.s.StatR0HaltBlockInsomnia,  cNsElapsedSchedHalt);
+                        else
+                            STAM_REL_PROFILE_ADD_PERIOD(&pVCpu->vmm.s.StatR0HaltBlockOnTime,    cNsElapsedSchedHalt);
+
+                        /*
+                         * Recheck whether we can resume execution or have to go to ring-3.
+                         */
+                        if (   !VM_FF_IS_ANY_SET(pVM, fVmFFs)
+                            && !VMCPU_FF_IS_ANY_SET(pVCpu, fCpuFFs))
+                        {
+                            if (VMCPU_FF_TEST_AND_CLEAR(pVCpu, VMCPU_FF_UPDATE_APIC))
+                                APICUpdatePendingInterrupts(pVCpu);
+                            if (VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC
+                                                         | VMCPU_FF_INTERRUPT_NMI  | VMCPU_FF_INTERRUPT_SMI | VMCPU_FF_UNHALT))
+                            {
+                                STAM_REL_COUNTER_INC(&pVCpu->vmm.s.StatR0HaltExecFromBlock);
+                                return vmmR0DoHaltInterrupt(pVCpu, uMWait, enmInterruptibility);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    return VINF_EM_HALT;
 }
 
 
@@ -1183,167 +1445,188 @@ VMMR0DECL(void) VMMR0EntryFast(PGVM pGVM, PVM pVM, VMCPUID idCpu, VMMR0OPERATION
          */
         case VMMR0_DO_HM_RUN:
         {
-            /*
-             * Disable preemption.
-             */
-            Assert(!vmmR0ThreadCtxHookIsEnabled(pVCpu));
-            RTTHREADPREEMPTSTATE PreemptState = RTTHREADPREEMPTSTATE_INITIALIZER;
-            RTThreadPreemptDisable(&PreemptState);
-
-            /*
-             * Get the host CPU identifiers, make sure they are valid and that
-             * we've got a TSC delta for the CPU.
-             */
-            RTCPUID  idHostCpu;
-            uint32_t iHostCpuSet = RTMpCurSetIndexAndId(&idHostCpu);
-            if (RT_LIKELY(   iHostCpuSet < RTCPUSET_MAX_CPUS
-                          && SUPIsTscDeltaAvailableForCpuSetIndex(iHostCpuSet)))
+            for (;;) /* hlt loop */
             {
-                pVCpu->iHostCpuSet = iHostCpuSet;
-                ASMAtomicWriteU32(&pVCpu->idHostCpu, idHostCpu);
+                /*
+                 * Disable preemption.
+                 */
+                Assert(!vmmR0ThreadCtxHookIsEnabled(pVCpu));
+                RTTHREADPREEMPTSTATE PreemptState = RTTHREADPREEMPTSTATE_INITIALIZER;
+                RTThreadPreemptDisable(&PreemptState);
 
                 /*
-                 * Update the periodic preemption timer if it's active.
+                 * Get the host CPU identifiers, make sure they are valid and that
+                 * we've got a TSC delta for the CPU.
                  */
-                if (pVM->vmm.s.fUsePeriodicPreemptionTimers)
-                    GVMMR0SchedUpdatePeriodicPreemptionTimer(pVM, pVCpu->idHostCpu, TMCalcHostTimerFrequency(pVM, pVCpu));
-                VMM_CHECK_SMAP_CHECK2(pVM, RT_NOTHING);
+                RTCPUID  idHostCpu;
+                uint32_t iHostCpuSet = RTMpCurSetIndexAndId(&idHostCpu);
+                if (RT_LIKELY(   iHostCpuSet < RTCPUSET_MAX_CPUS
+                              && SUPIsTscDeltaAvailableForCpuSetIndex(iHostCpuSet)))
+                {
+                    pVCpu->iHostCpuSet = iHostCpuSet;
+                    ASMAtomicWriteU32(&pVCpu->idHostCpu, idHostCpu);
+
+                    /*
+                     * Update the periodic preemption timer if it's active.
+                     */
+                    if (pVM->vmm.s.fUsePeriodicPreemptionTimers)
+                        GVMMR0SchedUpdatePeriodicPreemptionTimer(pVM, pVCpu->idHostCpu, TMCalcHostTimerFrequency(pVM, pVCpu));
+                    VMM_CHECK_SMAP_CHECK2(pVM, RT_NOTHING);
 
 #ifdef VMM_R0_TOUCH_FPU
-                /*
-                 * Make sure we've got the FPU state loaded so and we don't need to clear
-                 * CR0.TS and get out of sync with the host kernel when loading the guest
-                 * FPU state.  @ref sec_cpum_fpu (CPUM.cpp) and @bugref{4053}.
-                 */
-                CPUMR0TouchHostFpu();
+                    /*
+                     * Make sure we've got the FPU state loaded so and we don't need to clear
+                     * CR0.TS and get out of sync with the host kernel when loading the guest
+                     * FPU state.  @ref sec_cpum_fpu (CPUM.cpp) and @bugref{4053}.
+                     */
+                    CPUMR0TouchHostFpu();
 #endif
-                int  rc;
-                bool fPreemptRestored = false;
-                if (!HMR0SuspendPending())
-                {
-                    /*
-                     * Enable the context switching hook.
-                     */
-                    if (pVCpu->vmm.s.hCtxHook != NIL_RTTHREADCTXHOOK)
+                    int  rc;
+                    bool fPreemptRestored = false;
+                    if (!HMR0SuspendPending())
                     {
-                        Assert(!RTThreadCtxHookIsEnabled(pVCpu->vmm.s.hCtxHook));
-                        int rc2 = RTThreadCtxHookEnable(pVCpu->vmm.s.hCtxHook); AssertRC(rc2);
-                    }
-
-                    /*
-                     * Enter HM context.
-                     */
-                    rc = HMR0Enter(pVCpu);
-                    if (RT_SUCCESS(rc))
-                    {
-                        VMCPU_SET_STATE(pVCpu, VMCPUSTATE_STARTED_HM);
-
                         /*
-                         * When preemption hooks are in place, enable preemption now that
-                         * we're in HM context.
+                         * Enable the context switching hook.
                          */
-                        if (vmmR0ThreadCtxHookIsEnabled(pVCpu))
+                        if (pVCpu->vmm.s.hCtxHook != NIL_RTTHREADCTXHOOK)
                         {
-                            fPreemptRestored = true;
-                            RTThreadPreemptRestore(&PreemptState);
+                            Assert(!RTThreadCtxHookIsEnabled(pVCpu->vmm.s.hCtxHook));
+                            int rc2 = RTThreadCtxHookEnable(pVCpu->vmm.s.hCtxHook); AssertRC(rc2);
                         }
 
                         /*
-                         * Setup the longjmp machinery and execute guest code (calls HMR0RunGuestCode).
+                         * Enter HM context.
                          */
-                        VMM_CHECK_SMAP_CHECK2(pVM, RT_NOTHING);
-                        rc = vmmR0CallRing3SetJmp(&pVCpu->vmm.s.CallRing3JmpBufR0, HMR0RunGuestCode, pVM, pVCpu);
-                        VMM_CHECK_SMAP_CHECK2(pVM, RT_NOTHING);
+                        rc = HMR0Enter(pVCpu);
+                        if (RT_SUCCESS(rc))
+                        {
+                            VMCPU_SET_STATE(pVCpu, VMCPUSTATE_STARTED_HM);
+
+                            /*
+                             * When preemption hooks are in place, enable preemption now that
+                             * we're in HM context.
+                             */
+                            if (vmmR0ThreadCtxHookIsEnabled(pVCpu))
+                            {
+                                fPreemptRestored = true;
+                                RTThreadPreemptRestore(&PreemptState);
+                            }
+
+                            /*
+                             * Setup the longjmp machinery and execute guest code (calls HMR0RunGuestCode).
+                             */
+                            VMM_CHECK_SMAP_CHECK2(pVM, RT_NOTHING);
+                            rc = vmmR0CallRing3SetJmp(&pVCpu->vmm.s.CallRing3JmpBufR0, HMR0RunGuestCode, pVM, pVCpu);
+                            VMM_CHECK_SMAP_CHECK2(pVM, RT_NOTHING);
+
+                            /*
+                             * Assert sanity on the way out.  Using manual assertions code here as normal
+                             * assertions are going to panic the host since we're outside the setjmp/longjmp zone.
+                             */
+                            if (RT_UNLIKELY(   VMCPU_GET_STATE(pVCpu) != VMCPUSTATE_STARTED_HM
+                                            && RT_SUCCESS_NP(rc)  && rc !=  VINF_VMM_CALL_HOST ))
+                            {
+                                pVM->vmm.s.szRing0AssertMsg1[0] = '\0';
+                                RTStrPrintf(pVM->vmm.s.szRing0AssertMsg2, sizeof(pVM->vmm.s.szRing0AssertMsg2),
+                                            "Got VMCPU state %d expected %d.\n", VMCPU_GET_STATE(pVCpu), VMCPUSTATE_STARTED_HM);
+                                rc = VERR_VMM_WRONG_HM_VMCPU_STATE;
+                            }
+                            /** @todo Get rid of this. HM shouldn't disable the context hook. */
+                            else if (RT_UNLIKELY(vmmR0ThreadCtxHookIsEnabled(pVCpu)))
+                            {
+                                pVM->vmm.s.szRing0AssertMsg1[0] = '\0';
+                                RTStrPrintf(pVM->vmm.s.szRing0AssertMsg2, sizeof(pVM->vmm.s.szRing0AssertMsg2),
+                                            "Thread-context hooks still enabled! VCPU=%p Id=%u rc=%d.\n", pVCpu, pVCpu->idCpu, rc);
+                                rc = VERR_INVALID_STATE;
+                            }
+
+                            VMCPU_SET_STATE(pVCpu, VMCPUSTATE_STARTED);
+                        }
+                        STAM_COUNTER_INC(&pVM->vmm.s.StatRunRC);
 
                         /*
-                         * Assert sanity on the way out.  Using manual assertions code here as normal
-                         * assertions are going to panic the host since we're outside the setjmp/longjmp zone.
+                         * Invalidate the host CPU identifiers before we disable the context
+                         * hook / restore preemption.
                          */
-                        if (RT_UNLIKELY(   VMCPU_GET_STATE(pVCpu) != VMCPUSTATE_STARTED_HM
-                                        && RT_SUCCESS_NP(rc)  && rc !=  VINF_VMM_CALL_HOST ))
-                        {
-                            pVM->vmm.s.szRing0AssertMsg1[0] = '\0';
-                            RTStrPrintf(pVM->vmm.s.szRing0AssertMsg2, sizeof(pVM->vmm.s.szRing0AssertMsg2),
-                                        "Got VMCPU state %d expected %d.\n", VMCPU_GET_STATE(pVCpu), VMCPUSTATE_STARTED_HM);
-                            rc = VERR_VMM_WRONG_HM_VMCPU_STATE;
-                        }
-                        /** @todo Get rid of this. HM shouldn't disable the context hook. */
-                        else if (RT_UNLIKELY(vmmR0ThreadCtxHookIsEnabled(pVCpu)))
-                        {
-                            pVM->vmm.s.szRing0AssertMsg1[0] = '\0';
-                            RTStrPrintf(pVM->vmm.s.szRing0AssertMsg2, sizeof(pVM->vmm.s.szRing0AssertMsg2),
-                                        "Thread-context hooks still enabled! VCPU=%p Id=%u rc=%d.\n", pVCpu, pVCpu->idCpu, rc);
-                            rc = VERR_INVALID_STATE;
-                        }
-
-                        VMCPU_SET_STATE(pVCpu, VMCPUSTATE_STARTED);
-                    }
-                    STAM_COUNTER_INC(&pVM->vmm.s.StatRunRC);
-
-                    /*
-                     * Invalidate the host CPU identifiers before we disable the context
-                     * hook / restore preemption.
-                     */
-                    pVCpu->iHostCpuSet = UINT32_MAX;
-                    ASMAtomicWriteU32(&pVCpu->idHostCpu, NIL_RTCPUID);
-
-                    /*
-                     * Disable context hooks.  Due to unresolved cleanup issues, we
-                     * cannot leave the hooks enabled when we return to ring-3.
-                     *
-                     * Note! At the moment HM may also have disabled the hook
-                     *       when we get here, but the IPRT API handles that.
-                     */
-                    if (pVCpu->vmm.s.hCtxHook != NIL_RTTHREADCTXHOOK)
-                    {
+                        pVCpu->iHostCpuSet = UINT32_MAX;
                         ASMAtomicWriteU32(&pVCpu->idHostCpu, NIL_RTCPUID);
-                        RTThreadCtxHookDisable(pVCpu->vmm.s.hCtxHook);
+
+                        /*
+                         * Disable context hooks.  Due to unresolved cleanup issues, we
+                         * cannot leave the hooks enabled when we return to ring-3.
+                         *
+                         * Note! At the moment HM may also have disabled the hook
+                         *       when we get here, but the IPRT API handles that.
+                         */
+                        if (pVCpu->vmm.s.hCtxHook != NIL_RTTHREADCTXHOOK)
+                        {
+                            ASMAtomicWriteU32(&pVCpu->idHostCpu, NIL_RTCPUID);
+                            RTThreadCtxHookDisable(pVCpu->vmm.s.hCtxHook);
+                        }
+                    }
+                    /*
+                     * The system is about to go into suspend mode; go back to ring 3.
+                     */
+                    else
+                    {
+                        rc = VINF_EM_RAW_INTERRUPT;
+                        pVCpu->iHostCpuSet = UINT32_MAX;
+                        ASMAtomicWriteU32(&pVCpu->idHostCpu, NIL_RTCPUID);
+                    }
+
+                    /** @todo When HM stops messing with the context hook state, we'll disable
+                     *        preemption again before the RTThreadCtxHookDisable call. */
+                    if (!fPreemptRestored)
+                        RTThreadPreemptRestore(&PreemptState);
+
+                    pVCpu->vmm.s.iLastGZRc = rc;
+
+                    /* Fire dtrace probe and collect statistics. */
+                    VBOXVMM_R0_VMM_RETURN_TO_RING3_HM(pVCpu, CPUMQueryGuestCtxPtr(pVCpu), rc);
+#ifdef VBOX_WITH_STATISTICS
+                    vmmR0RecordRC(pVM, pVCpu, rc);
+#endif
+
+                    /*
+                     * If this is a halt.
+                     */
+                    if (rc != VINF_EM_HALT)
+                    { /* we're not in a hurry for a HLT, so prefer this path */ }
+                    else //if (VMCPU_FF_IS_ANY_SET())
+                    {
+                        pVCpu->vmm.s.iLastGZRc = rc = vmmR0DoHalt(pGVM, pVM, pGVCpu, pVCpu);
+                        if (rc == VINF_SUCCESS)
+                        {
+                            pVCpu->vmm.s.cR0HaltsSucceeded++;
+                            continue;
+                        }
+                        pVCpu->vmm.s.cR0HaltsToRing3++;
                     }
                 }
                 /*
-                 * The system is about to go into suspend mode; go back to ring 3.
+                 * Invalid CPU set index or TSC delta in need of measuring.
                  */
                 else
                 {
-                    rc = VINF_EM_RAW_INTERRUPT;
                     pVCpu->iHostCpuSet = UINT32_MAX;
                     ASMAtomicWriteU32(&pVCpu->idHostCpu, NIL_RTCPUID);
-                }
-
-                /** @todo When HM stops messing with the context hook state, we'll disable
-                 *        preemption again before the RTThreadCtxHookDisable call. */
-                if (!fPreemptRestored)
                     RTThreadPreemptRestore(&PreemptState);
-
-                pVCpu->vmm.s.iLastGZRc = rc;
-
-                /* Fire dtrace probe and collect statistics. */
-                VBOXVMM_R0_VMM_RETURN_TO_RING3_HM(pVCpu, CPUMQueryGuestCtxPtr(pVCpu), rc);
-#ifdef VBOX_WITH_STATISTICS
-                vmmR0RecordRC(pVM, pVCpu, rc);
-#endif
-            }
-            /*
-             * Invalid CPU set index or TSC delta in need of measuring.
-             */
-            else
-            {
-                pVCpu->iHostCpuSet = UINT32_MAX;
-                ASMAtomicWriteU32(&pVCpu->idHostCpu, NIL_RTCPUID);
-                RTThreadPreemptRestore(&PreemptState);
-                if (iHostCpuSet < RTCPUSET_MAX_CPUS)
-                {
-                    int rc = SUPR0TscDeltaMeasureBySetIndex(pVM->pSession, iHostCpuSet, 0 /*fFlags*/,
-                                                            2 /*cMsWaitRetry*/, 5*RT_MS_1SEC /*cMsWaitThread*/,
-                                                            0 /*default cTries*/);
-                    if (RT_SUCCESS(rc) || rc == VERR_CPU_OFFLINE)
-                        pVCpu->vmm.s.iLastGZRc = VINF_EM_RAW_TO_R3;
+                    if (iHostCpuSet < RTCPUSET_MAX_CPUS)
+                    {
+                        int rc = SUPR0TscDeltaMeasureBySetIndex(pVM->pSession, iHostCpuSet, 0 /*fFlags*/,
+                                                                2 /*cMsWaitRetry*/, 5*RT_MS_1SEC /*cMsWaitThread*/,
+                                                                0 /*default cTries*/);
+                        if (RT_SUCCESS(rc) || rc == VERR_CPU_OFFLINE)
+                            pVCpu->vmm.s.iLastGZRc = VINF_EM_RAW_TO_R3;
+                        else
+                            pVCpu->vmm.s.iLastGZRc = rc;
+                    }
                     else
-                        pVCpu->vmm.s.iLastGZRc = rc;
+                        pVCpu->vmm.s.iLastGZRc = VERR_INVALID_CPU_INDEX;
                 }
-                else
-                    pVCpu->vmm.s.iLastGZRc = VERR_INVALID_CPU_INDEX;
-            }
+                break;
+
+            } /* halt loop. */
             break;
         }
 
@@ -1540,7 +1823,7 @@ static int vmmR0EntryExWorker(PGVM pGVM, PVM pVM, VMCPUID idCpu, VMMR0OPERATION 
             if (pReqHdr)
                 return VERR_INVALID_PARAMETER;
             VMM_CHECK_SMAP_CHECK2(pVM, RT_NOTHING);
-            rc = GVMMR0SchedHalt(pGVM, pVM, idCpu, u64Arg);
+            rc = GVMMR0SchedHaltReq(pGVM, pVM, idCpu, u64Arg);
             VMM_CHECK_SMAP_CHECK2(pVM, RT_NOTHING);
             break;
 

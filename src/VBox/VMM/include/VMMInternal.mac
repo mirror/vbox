@@ -120,10 +120,15 @@ struc VMMCPU
 
         .fInRendezvous          resb 1
 %if HC_ARCH_BITS == 32
-        .afPadding              resb 3+4
+        .afPadding              resb 2
 %else
-        .afPadding              resb 7+8
+        .afPadding              resb 6+4
 %endif
+        .fMayHaltInRing0        resb 1
+        .cNsSpinBlockThreshold  resd 1
+        .cR0Halts               resd 1
+        .cR0HaltsSucceeded      resd 1
+        .cR0HaltsToRing3        resd 1
 
         alignb 8
         .TracerCtx              resb SUPDRVTRACERUSRCTX64_size

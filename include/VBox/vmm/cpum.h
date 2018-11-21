@@ -2128,6 +2128,28 @@ VMMDECL(int)            CPUMIsGuestEferMsrWriteValid(PVM pVM, uint64_t uCr0, uin
 VMMDECL(void)           CPUMSetGuestEferMsrNoChecks(PVMCPU pVCpu, uint64_t uOldEfer, uint64_t uValidEfer);
 VMMDECL(bool)           CPUMIsPatMsrValid(uint64_t uValue);
 
+/** Guest CPU interruptibility level, see CPUMGetGuestInterruptibility(). */
+typedef enum CPUMINTERRUPTIBILITY
+{
+    CPUMINTERRUPTIBILITY_INVALID = 0,
+    CPUMINTERRUPTIBILITY_UNRESTRAINED,
+    CPUMINTERRUPTIBILITY_INT_INHIBITED,
+    CPUMINTERRUPTIBILITY_INT_DISABLED,
+    CPUMINTERRUPTIBILITY_NMI_INHIBIT,
+    CPUMINTERRUPTIBILITY_GLOBAL_INHIBIT,
+    CPUMINTERRUPTIBILITY_END,
+    CPUMINTERRUPTIBILITY_32BIT_HACK = 0x7fffffff
+} CPUMINTERRUPTIBILITY;
+
+/**
+ * Calculates the interruptiblity of the guest.
+ *
+ * @returns Interruptibility level.
+ * @param   pVCpu               The cross context virtual CPU structure.
+ */
+VMM_INT_DECL(CPUMINTERRUPTIBILITY) CPUMGetGuestInterruptibility(PVMCPU pVCpu);
+
+
 /** @name Typical scalable bus frequency values.
  * @{ */
 /** Special internal value indicating that we don't know the frequency.

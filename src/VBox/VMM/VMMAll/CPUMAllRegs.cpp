@@ -2648,6 +2648,46 @@ VMMDECL(uint32_t) CPUMGetGuestMxCsrMask(PVM pVM)
 
 
 /**
+ * Calculates the interruptiblity of the guest.
+ *
+ * @returns Interruptibility level.
+ * @param   pVCpu               The cross context virtual CPU structure.
+ */
+VMM_INT_DECL(CPUMINTERRUPTIBILITY) CPUMGetGuestInterruptibility(PVMCPU pVCpu)
+{
+    if (pVCpu->cpum.s.Guest.rflags.Bits.u1IF)
+    {
+        if (pVCpu->cpum.s.Guest.hwvirt.fGif)
+        {
+            if (!VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_BLOCK_NMIS | VMCPU_FF_INHIBIT_INTERRUPTS))
+                return CPUMINTERRUPTIBILITY_UNRESTRAINED;
+
+            /** @todo does blocking NMIs mean interrupts are also inhibited? */
+            if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS))
+            {
+                if (!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_BLOCK_NMIS))
+                    return CPUMINTERRUPTIBILITY_INT_INHIBITED;
+                return CPUMINTERRUPTIBILITY_NMI_INHIBIT;
+            }
+            AssertFailed();
+            return CPUMINTERRUPTIBILITY_NMI_INHIBIT;
+        }
+        return CPUMINTERRUPTIBILITY_GLOBAL_INHIBIT;
+    }
+    else
+    {
+        if (pVCpu->cpum.s.Guest.hwvirt.fGif)
+        {
+            if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_BLOCK_NMIS))
+                return CPUMINTERRUPTIBILITY_NMI_INHIBIT;
+            return CPUMINTERRUPTIBILITY_INT_DISABLED;
+        }
+        return CPUMINTERRUPTIBILITY_GLOBAL_INHIBIT;
+    }
+}
+
+
+/**
  * Checks whether the VMX nested-guest is in a state to receive physical (APIC)
  * interrupts.
  *

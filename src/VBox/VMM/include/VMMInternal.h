@@ -475,8 +475,26 @@ typedef struct VMMCPU
     /** Whether the EMT is executing a rendezvous right now. For detecting
      *  attempts at recursive rendezvous. */
     bool volatile               fInRendezvous;
-    bool                        afPadding[HC_ARCH_BITS == 32 ? 3+4 : 7+8];
+    bool                        afPadding[HC_ARCH_BITS == 32 ? 2 : 6+4];
     /** @} */
+
+    /** Whether we can HLT in VMMR0 rather than having to return to EM.
+     * Updated by vmR3SetHaltMethodU(). */
+    bool                        fMayHaltInRing0;
+    /** The minimum delta for which we can HLT in ring-0 for.
+     * The deadlines we can calculate are  from TM, so, if it's too close
+     * we should just return to ring-3 and run the timer wheel, no point
+     * in spinning in ring-0.
+     * Updated by vmR3SetHaltMethodU(). */
+    uint32_t                    cNsSpinBlockThreshold;
+    /** Number of ring-0 halts (used for depreciating following values). */
+    uint32_t                    cR0Halts;
+    /** Number of ring-0 halts succeeding (VINF_SUCCESS) recently. */
+    uint32_t                    cR0HaltsSucceeded;
+    /** Number of ring-0 halts failing (VINF_EM_HALT) recently. */
+    uint32_t                    cR0HaltsToRing3;
+    /** Padding   */
+    uint32_t                    u32Padding0;
 
     /** @name Raw-mode context tracing data.
      * @{ */
@@ -506,6 +524,15 @@ typedef struct VMMCPU
      *          anything that needs to be accessed from assembly after it. */
     VMMR0JMPBUF                 CallRing3JmpBufR0;
     /** @} */
+
+    STAMPROFILE                 StatR0HaltBlock;
+    STAMPROFILE                 StatR0HaltBlockOnTime;
+    STAMPROFILE                 StatR0HaltBlockOverslept;
+    STAMPROFILE                 StatR0HaltBlockInsomnia;
+    STAMCOUNTER                 StatR0HaltExec;
+    STAMCOUNTER                 StatR0HaltExecFromBlock;
+    STAMCOUNTER                 StatR0HaltExecFromSpin;
+    STAMCOUNTER                 StatR0HaltToR3FromSpin;
 } VMMCPU;
 AssertCompileMemberAlignment(VMMCPU, TracerCtx, 8);
 /** Pointer to VMMCPU. */

@@ -103,6 +103,23 @@ VMMDECL(RTGCUINTPTR) EMGetInhibitInterruptsPC(PVMCPU pVCpu)
 
 
 /**
+ * Checks if interrupt inhibiting is enabled for the current instruction.
+ *
+ * @returns true if interrupts are inhibited, false if not.
+ * @param   pVCpu       The cross context virtual CPU structure.
+ */
+VMMDECL(bool) EMIsInhibitInterruptsActive(PVMCPU pVCpu)
+{
+    if (!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS))
+        return false;
+    if (pVCpu->em.s.GCPtrInhibitInterrupts == CPUMGetGuestRIP(pVCpu))
+        return true;
+    VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS);
+    return false;
+}
+
+
+/**
  * Enables / disable hypercall instructions.
  *
  * This interface is used by GIM to tell the execution monitors whether the
@@ -164,6 +181,24 @@ VMM_INT_DECL(int) EMMonitorWaitPrepare(PVMCPU pVCpu, uint64_t rax, uint64_t rcx,
 VMM_INT_DECL(bool) EMMonitorIsArmed(PVMCPU pVCpu)
 {
     return RT_BOOL(pVCpu->em.s.MWait.fWait & EMMWAIT_FLAG_MONITOR_ACTIVE);
+}
+
+
+/**
+ * Checks if we're in a MWAIT.
+ *
+ * @retval  1 if regular,
+ * @retval  > 1 if MWAIT with EMMWAIT_FLAG_BREAKIRQIF0
+ * @retval  0 if not armed
+ * @param   pVCpu               The cross context virtual CPU structure of the calling EMT.
+ */
+VMM_INT_DECL(unsigned) EMMonitorWaitIsActive(PVMCPU pVCpu)
+{
+    uint32_t fWait = pVCpu->em.s.MWait.fWait;
+    AssertCompile(EMMWAIT_FLAG_ACTIVE == 1);
+    AssertCompile(EMMWAIT_FLAG_BREAKIRQIF0 == 2);
+    AssertCompile((EMMWAIT_FLAG_ACTIVE << 1) == EMMWAIT_FLAG_BREAKIRQIF0);
+    return fWait & (EMMWAIT_FLAG_ACTIVE | ((fWait & EMMWAIT_FLAG_ACTIVE) << 1));
 }
 
 

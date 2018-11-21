@@ -2160,23 +2160,17 @@ static unsigned gvmmR0SchedDoWakeUps(PGVMM pGVMM, uint64_t u64Now)
  * @param   u64ExpireGipTime    The time for the sleep to expire expressed as GIP time.
  * @thread  EMT(idCpu).
  */
-GVMMR0DECL(int) GVMMR0SchedHalt(PGVM pGVM, PVM pVM, VMCPUID idCpu, uint64_t u64ExpireGipTime)
+GVMMR0DECL(int) GVMMR0SchedHalt(PGVM pGVM, PVM pVM, PGVMCPU pCurGVCpu, uint64_t u64ExpireGipTime)
 {
-    LogFlow(("GVMMR0SchedHalt: pGVM=%p pVM=%p idCpu=%#x u64ExpireGipTime=%#RX64\n", pGVM, pVM, idCpu, u64ExpireGipTime));
+    LogFlow(("GVMMR0SchedHalt: pGVM=%p pVM=%p pCurGVCpu=%p(%d) u64ExpireGipTime=%#RX64\n",
+             pGVM, pVM, pCurGVCpu, pCurGVCpu->idCpu, u64ExpireGipTime));
     GVMM_CHECK_SMAP_SETUP();
     GVMM_CHECK_SMAP_CHECK2(pVM, RT_NOTHING);
 
-    /*
-     * Validate the VM structure, state and handle.
-     */
     PGVMM pGVMM;
-    int rc = gvmmR0ByGVMandVMandEMT(pGVM, pVM, idCpu, &pGVMM);
-    if (RT_FAILURE(rc))
-        return rc;
-    pGVM->gvmm.s.StatsSched.cHaltCalls++;
-    GVMM_CHECK_SMAP_CHECK2(pVM, RT_NOTHING);
+    GVMM_GET_VALID_INSTANCE(pGVMM, VERR_GVMM_INSTANCE);
 
-    PGVMCPU pCurGVCpu = &pGVM->aCpus[idCpu];
+    pGVM->gvmm.s.StatsSched.cHaltCalls++;
     Assert(!pCurGVCpu->gvmm.s.u64HaltExpire);
 
     /*
@@ -2187,7 +2181,7 @@ GVMMR0DECL(int) GVMMR0SchedHalt(PGVM pGVM, PVM pVM, VMCPUID idCpu, uint64_t u64E
     bool const fDoEarlyWakeUps = pGVMM->fDoEarlyWakeUps;
     if (fDoEarlyWakeUps)
     {
-        rc = GVMMR0_USED_SHARED_LOCK(pGVMM); AssertRC(rc);
+        int rc2 = GVMMR0_USED_SHARED_LOCK(pGVMM); AssertRC(rc2);
         GVMM_CHECK_SMAP_CHECK2(pVM, RT_NOTHING);
     }
 
@@ -2211,6 +2205,7 @@ GVMMR0DECL(int) GVMMR0SchedHalt(PGVM pGVM, PVM pVM, VMCPUID idCpu, uint64_t u64E
      * Go to sleep if we must...
      * Cap the sleep time to 1 second to be on the safe side.
      */
+    int rc;
     uint64_t cNsInterval = u64ExpireGipTime - u64NowGip;
     if (    u64NowGip < u64ExpireGipTime
         &&  cNsInterval >= (pGVMM->cEMTs > pGVMM->cEMTsMeansCompany
@@ -2258,10 +2253,39 @@ GVMMR0DECL(int) GVMMR0SchedHalt(PGVM pGVM, PVM pVM, VMCPUID idCpu, uint64_t u64E
         GVMM_CHECK_SMAP_CHECK2(pVM, RT_NOTHING);
         RTSemEventMultiReset(pCurGVCpu->gvmm.s.HaltEventMulti);
         GVMM_CHECK_SMAP_CHECK2(pVM, RT_NOTHING);
+        rc = VINF_SUCCESS;
     }
 
     return rc;
 }
+
+
+/**
+ * Halt the EMT thread.
+ *
+ * @returns VINF_SUCCESS normal wakeup (timeout or kicked by other thread).
+ *          VERR_INTERRUPTED if a signal was scheduled for the thread.
+ * @param   pGVM                The global (ring-0) VM structure.
+ * @param   pVM                 The cross context VM structure.
+ * @param   idCpu               The Virtual CPU ID of the calling EMT.
+ * @param   u64ExpireGipTime    The time for the sleep to expire expressed as GIP time.
+ * @thread  EMT(idCpu).
+ */
+GVMMR0DECL(int) GVMMR0SchedHaltReq(PGVM pGVM, PVM pVM, VMCPUID idCpu, uint64_t u64ExpireGipTime)
+{
+    GVMM_CHECK_SMAP_SETUP();
+    GVMM_CHECK_SMAP_CHECK2(pVM, RT_NOTHING);
+    PGVMM pGVMM;
+    int rc = gvmmR0ByGVMandVMandEMT(pGVM, pVM, idCpu, &pGVMM);
+    if (RT_SUCCESS(rc))
+    {
+        GVMM_CHECK_SMAP_CHECK2(pVM, RT_NOTHING);
+        rc = GVMMR0SchedHalt(pGVM, pVM, &pGVM->aCpus[idCpu], u64ExpireGipTime);
+    }
+    GVMM_CHECK_SMAP_CHECK2(pVM, RT_NOTHING);
+    return rc;
+}
+
 
 
 /**

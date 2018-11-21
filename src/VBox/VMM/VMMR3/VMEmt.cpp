@@ -761,11 +761,11 @@ static DECLCALLBACK(int) vmR3HaltGlobal1Halt(PUVMCPU pUVCpu, const uint32_t fMas
             {
                 int64_t const cNsOverslept = u64EndSchedHalt - u64GipTime;
                 if (cNsOverslept > 50000)
-                    STAM_PROFILE_ADD_PERIOD(&pUVCpu->vm.s.StatHaltBlockOverslept, cNsOverslept);
+                    STAM_REL_PROFILE_ADD_PERIOD(&pUVCpu->vm.s.StatHaltBlockOverslept, cNsOverslept);
                 else if (cNsOverslept < -50000)
-                    STAM_PROFILE_ADD_PERIOD(&pUVCpu->vm.s.StatHaltBlockInsomnia,  cNsElapsedSchedHalt);
+                    STAM_REL_PROFILE_ADD_PERIOD(&pUVCpu->vm.s.StatHaltBlockInsomnia,  cNsElapsedSchedHalt);
                 else
-                    STAM_PROFILE_ADD_PERIOD(&pUVCpu->vm.s.StatHaltBlockOnTime,    cNsElapsedSchedHalt);
+                    STAM_REL_PROFILE_ADD_PERIOD(&pUVCpu->vm.s.StatHaltBlockOnTime,    cNsElapsedSchedHalt);
             }
         }
         /*
@@ -838,18 +838,23 @@ static DECLCALLBACK(int) vmR3HaltGlobal1Wait(PUVMCPU pUVCpu)
  */
 static DECLCALLBACK(void) vmR3HaltGlobal1NotifyCpuFF(PUVMCPU pUVCpu, uint32_t fFlags)
 {
-    if (pUVCpu->vm.s.fWait)
+    /*
+     * With ring-0 halting, the fWait flag isn't set, so we have to check the
+     * CPU state to figure out whether to do a wakeup call.
+     */
+    PVMCPU pVCpu = pUVCpu->pVCpu;
+    if (pVCpu)
     {
-        int rc = SUPR3CallVMMR0Ex(pUVCpu->pVM->pVMR0, pUVCpu->idCpu, VMMR0_DO_GVMM_SCHED_WAKE_UP, 0, NULL);
-        AssertRC(rc);
-    }
-    else if (   (fFlags & VMNOTIFYFF_FLAGS_POKE)
-             || !(fFlags & VMNOTIFYFF_FLAGS_DONE_REM))
-    {
-        PVMCPU pVCpu = pUVCpu->pVCpu;
-        if (pVCpu)
+        VMCPUSTATE enmState = VMCPU_GET_STATE(pVCpu);
+        if (enmState == VMCPUSTATE_STARTED_HALTED || pUVCpu->vm.s.fWait)
         {
-            VMCPUSTATE enmState = VMCPU_GET_STATE(pVCpu);
+            int rc = SUPR3CallVMMR0Ex(pUVCpu->pVM->pVMR0, pUVCpu->idCpu, VMMR0_DO_GVMM_SCHED_WAKE_UP, 0, NULL);
+            AssertRC(rc);
+
+        }
+        else if (   (fFlags & VMNOTIFYFF_FLAGS_POKE)
+                 || !(fFlags & VMNOTIFYFF_FLAGS_DONE_REM))
+        {
             if (enmState == VMCPUSTATE_STARTED_EXEC)
             {
                 if (fFlags & VMNOTIFYFF_FLAGS_POKE)
@@ -869,6 +874,12 @@ static DECLCALLBACK(void) vmR3HaltGlobal1NotifyCpuFF(PUVMCPU pUVCpu, uint32_t fF
             }
 #endif
         }
+    }
+    /* This probably makes little sense: */
+    else if (pUVCpu->vm.s.fWait)
+    {
+        int rc = SUPR3CallVMMR0Ex(pUVCpu->pVM->pVMR0, pUVCpu->idCpu, VMMR0_DO_GVMM_SCHED_WAKE_UP, 0, NULL);
+        AssertRC(rc);
     }
 }
 
@@ -1020,26 +1031,28 @@ static DECLCALLBACK(void) vmR3DefaultNotifyCpuFF(PUVMCPU pUVCpu, uint32_t fFlags
  */
 static const struct VMHALTMETHODDESC
 {
-    /** The halt method id. */
-    VMHALTMETHOD enmHaltMethod;
+    /** The halt method ID. */
+    VMHALTMETHOD                enmHaltMethod;
+    /** Set if the method support halting directly in ring-0. */
+    bool                        fMayHaltInRing0;
     /** The init function for loading config and initialize variables. */
-    DECLR3CALLBACKMEMBER(int,  pfnInit,(PUVM pUVM));
+    DECLR3CALLBACKMEMBER(int,   pfnInit,(PUVM pUVM));
     /** The term function. */
-    DECLR3CALLBACKMEMBER(void, pfnTerm,(PUVM pUVM));
+    DECLR3CALLBACKMEMBER(void,  pfnTerm,(PUVM pUVM));
     /** The VMR3WaitHaltedU function. */
-    DECLR3CALLBACKMEMBER(int,  pfnHalt,(PUVMCPU pUVCpu, const uint32_t fMask, uint64_t u64Now));
+    DECLR3CALLBACKMEMBER(int,   pfnHalt,(PUVMCPU pUVCpu, const uint32_t fMask, uint64_t u64Now));
     /** The VMR3WaitU function. */
-    DECLR3CALLBACKMEMBER(int,  pfnWait,(PUVMCPU pUVCpu));
+    DECLR3CALLBACKMEMBER(int,   pfnWait,(PUVMCPU pUVCpu));
     /** The VMR3NotifyCpuFFU function. */
-    DECLR3CALLBACKMEMBER(void, pfnNotifyCpuFF,(PUVMCPU pUVCpu, uint32_t fFlags));
+    DECLR3CALLBACKMEMBER(void,  pfnNotifyCpuFF,(PUVMCPU pUVCpu, uint32_t fFlags));
     /** The VMR3NotifyGlobalFFU function. */
-    DECLR3CALLBACKMEMBER(void, pfnNotifyGlobalFF,(PUVM pUVM, uint32_t fFlags));
+    DECLR3CALLBACKMEMBER(void,  pfnNotifyGlobalFF,(PUVM pUVM, uint32_t fFlags));
 } g_aHaltMethods[] =
 {
-    { VMHALTMETHOD_BOOTSTRAP, NULL,                NULL,   NULL,                vmR3BootstrapWait,   vmR3BootstrapNotifyCpuFF,   NULL },
-    { VMHALTMETHOD_OLD,       NULL,                NULL,   vmR3HaltOldDoHalt,   vmR3DefaultWait,     vmR3DefaultNotifyCpuFF,     NULL },
-    { VMHALTMETHOD_1,         vmR3HaltMethod1Init, NULL,   vmR3HaltMethod1Halt, vmR3DefaultWait,     vmR3DefaultNotifyCpuFF,     NULL },
-    { VMHALTMETHOD_GLOBAL_1,  vmR3HaltGlobal1Init, NULL,   vmR3HaltGlobal1Halt, vmR3HaltGlobal1Wait, vmR3HaltGlobal1NotifyCpuFF, NULL },
+    { VMHALTMETHOD_BOOTSTRAP, false, NULL,                NULL,   NULL,                vmR3BootstrapWait,   vmR3BootstrapNotifyCpuFF,   NULL },
+    { VMHALTMETHOD_OLD,       false, NULL,                NULL,   vmR3HaltOldDoHalt,   vmR3DefaultWait,     vmR3DefaultNotifyCpuFF,     NULL },
+    { VMHALTMETHOD_1,         false, vmR3HaltMethod1Init, NULL,   vmR3HaltMethod1Halt, vmR3DefaultWait,     vmR3DefaultNotifyCpuFF,     NULL },
+    { VMHALTMETHOD_GLOBAL_1,   true, vmR3HaltGlobal1Init, NULL,   vmR3HaltGlobal1Halt, vmR3HaltGlobal1Wait, vmR3HaltGlobal1NotifyCpuFF, NULL },
 };
 
 
@@ -1056,13 +1069,13 @@ static const struct VMHALTMETHODDESC
 VMMR3_INT_DECL(void) VMR3NotifyGlobalFFU(PUVM pUVM, uint32_t fFlags)
 {
     LogFlow(("VMR3NotifyGlobalFFU:\n"));
-    uint32_t iHaldMethod = pUVM->vm.s.iHaltMethod;
+    uint32_t iHaltMethod = pUVM->vm.s.iHaltMethod;
 
-    if (g_aHaltMethods[iHaldMethod].pfnNotifyGlobalFF) /** @todo make mandatory. */
-        g_aHaltMethods[iHaldMethod].pfnNotifyGlobalFF(pUVM, fFlags);
+    if (g_aHaltMethods[iHaltMethod].pfnNotifyGlobalFF) /** @todo make mandatory. */
+        g_aHaltMethods[iHaltMethod].pfnNotifyGlobalFF(pUVM, fFlags);
     else
         for (VMCPUID iCpu = 0; iCpu < pUVM->cCpus; iCpu++)
-            g_aHaltMethods[iHaldMethod].pfnNotifyCpuFF(&pUVM->aCpus[iCpu], fFlags);
+            g_aHaltMethods[iHaltMethod].pfnNotifyCpuFF(&pUVM->aCpus[iCpu], fFlags);
 }
 
 
@@ -1290,6 +1303,10 @@ static DECLCALLBACK(VBOXSTRICTRC) vmR3SetHaltMethodCallback(PVM pVM, PVMCPU pVCp
      */
     pUVM->vm.s.enmHaltMethod = g_aHaltMethods[i].enmHaltMethod;
     ASMAtomicWriteU32(&pUVM->vm.s.iHaltMethod, i);
+
+    VMMR3SetMayHaltInRing0(pVCpu, g_aHaltMethods[i].fMayHaltInRing0,
+                           g_aHaltMethods[i].enmHaltMethod == VMHALTMETHOD_GLOBAL_1
+                           ? pUVM->vm.s.Halt.Global1.cNsSpinBlockThresholdCfg : 0);
 
     return rc;
 }
