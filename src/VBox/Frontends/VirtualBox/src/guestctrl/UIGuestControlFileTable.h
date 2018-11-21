@@ -245,6 +245,7 @@ class UIGuestControlFileTable : public QIWithRetranslateUI<QWidget>
 signals:
 
     void sigLogOutput(QString strLog, FileManagerLogType eLogType);
+    void sigDeleteConfirmationSettingChanged();
 
 public:
 
@@ -362,6 +363,10 @@ private:
     void            performSelectionSearch(const QString &strSearchText);
     /** Clears the m_pSearchLineEdit and hides it. */
     void            disableSelectionSearch();
+    /** Checks if delete confirmation dialog is shown and users choice. Returns true
+     *  if deletion can continue */
+    bool            checkIfDeleteOK();
+
     UIGuestControlFileModel      *m_pModel;
     UIGuestControlFileView       *m_pView;
     UIGuestControlFileProxyModel *m_pProxyModel;

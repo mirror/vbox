@@ -22,6 +22,7 @@
 /* Qt includes: */
 # include <QAction>
 # include <QComboBox>
+# include <QCheckBox>
 # include <QDateTime>
 # include <QDir>
 # include <QHeaderView>
@@ -43,6 +44,7 @@
 # include "UIGuestFileTable.h"
 # include "UIIconPool.h"
 # include "UIGuestControlFileTable.h"
+# include "UIGuestControlFileManager.h"
 # include "UIGuestControlFileModel.h"
 # include "UIToolBar.h"
 
@@ -98,12 +100,14 @@ class UIFileDelegate : public QItemDelegate
     Q_OBJECT;
 
 protected:
-        virtual void drawFocus ( QPainter * /*painter*/, const QStyleOptionViewItem & /*option*/, const QRect & /*rect*/ ) const {}
+
+    virtual void drawFocus ( QPainter * /*painter*/, const QStyleOptionViewItem & /*option*/, const QRect & /*rect*/ ) const {}
+
 };
 
 
 /*********************************************************************************************************************************
-*   UIFileStringInputDialog definition.                                                                                          *
+*   UStringInputDialog definition.                                                                                          *
 *********************************************************************************************************************************/
 
 /** A QIDialog child including a line edit whose text exposed when the dialog is accepted */
@@ -120,6 +124,30 @@ public:
 private:
 
     QILineEdit      *m_pLineEdit;
+
+};
+
+
+/*********************************************************************************************************************************
+*   UIFileDeleteConfirmationDialog definition.                                                                                   *
+*********************************************************************************************************************************/
+
+/** A QIDialog child including a line edit whose text exposed when the dialog is accepted */
+class UIFileDeleteConfirmationDialog : public QIDialog
+{
+
+    Q_OBJECT;
+
+public:
+
+    UIFileDeleteConfirmationDialog(QWidget *pParent = 0, Qt::WindowFlags flags = 0);
+    /** Returns whether m_pAskNextTimeCheckBox is checked or not. */
+    bool askDeleteConfirmationNextTime() const;
+
+private:
+
+    QCheckBox *m_pAskNextTimeCheckBox;
+    QLabel    *m_pQuestionLabel;
 
 };
 
@@ -340,11 +368,8 @@ UIStringInputDialog::UIStringInputDialog(QWidget *pParent /* = 0 */, Qt::WindowF
     QIDialogButtonBox *pButtonBox =
         new QIDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, Qt::Horizontal, this);
     layout->addWidget(pButtonBox);
-        // {
-        //     /* Configure button-box: */
     connect(pButtonBox, &QIDialogButtonBox::accepted, this, &UIStringInputDialog::accept);
     connect(pButtonBox, &QIDialogButtonBox::rejected, this, &UIStringInputDialog::reject);
-
 }
 
 QString UIStringInputDialog::getString() const
@@ -597,6 +622,49 @@ void UIFileTableItem::setIsDriveItem(bool flag)
 bool UIFileTableItem::isDriveItem() const
 {
     return m_isDriveItem;
+}
+
+/*********************************************************************************************************************************
++*   UIFileDeleteConfirmationDialog implementation.                                                                                *
++*********************************************************************************************************************************/
+
+UIFileDeleteConfirmationDialog::UIFileDeleteConfirmationDialog(QWidget *pParent /* = 0 */, Qt::WindowFlags flags /* = 0 */)
+    :QIDialog(pParent, flags)
+    , m_pAskNextTimeCheckBox(0)
+    , m_pQuestionLabel(0)
+{
+    QVBoxLayout *pLayout = new QVBoxLayout(this);
+
+    m_pQuestionLabel = new QLabel;
+    if (m_pQuestionLabel)
+    {
+        pLayout->addWidget(m_pQuestionLabel);
+        m_pQuestionLabel->setText(UIGuestControlFileManager::tr("Delete the selected file(s) and/or folder(s)"));
+    }
+
+    QIDialogButtonBox *pButtonBox =
+        new QIDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, Qt::Horizontal, this);
+    if (pButtonBox)
+    {
+        pLayout->addWidget(pButtonBox, 0, Qt::AlignCenter);
+        connect(pButtonBox, &QIDialogButtonBox::accepted, this, &UIStringInputDialog::accept);
+        connect(pButtonBox, &QIDialogButtonBox::rejected, this, &UIStringInputDialog::reject);
+    }
+
+    QCheckBox *m_pAskNextTimeCheckBox = new QCheckBox;
+
+    if (m_pAskNextTimeCheckBox)
+    {
+        pLayout->addWidget(m_pAskNextTimeCheckBox);
+        m_pAskNextTimeCheckBox->setText(UIGuestControlFileManager::tr("Ask for this confirmation next time"));
+    }
+}
+
+bool UIFileDeleteConfirmationDialog::askDeleteConfirmationNextTime() const
+{
+    if (!m_pAskNextTimeCheckBox)
+        return true;
+    return m_pAskNextTimeCheckBox->isChecked();
 }
 
 
@@ -973,6 +1041,12 @@ void UIGuestControlFileTable::relist()
 
 void UIGuestControlFileTable::sltDelete()
 {
+    if (!checkIfDeleteOK())
+        return;
+
+    if (!m_pView || !m_pModel)
+        return;
+
     if (!m_pView || !m_pModel)
         return;
     QItemSelectionModel *selectionModel =  m_pView->selectionModel();
@@ -1416,6 +1490,35 @@ void UIGuestControlFileTable::disableSelectionSearch()
     m_pSearchLineEdit->clear();
     m_pSearchLineEdit->hide();
     m_pSearchLineEdit->blockSignals(false);
+}
+
+bool UIGuestControlFileTable::checkIfDeleteOK()
+{
+    UIGuestControlFileManagerSettings *pFileManagerSettings = UIGuestControlFileManagerSettings::instance();
+    if (!pFileManagerSettings)
+        return true;
+    if (!pFileManagerSettings->bAskDeleteConfirmation)
+        return true;
+    UIFileDeleteConfirmationDialog *pDialog =
+        new UIFileDeleteConfirmationDialog(this);
+
+
+    bool fContinueWithDelete = (pDialog->execute() == QDialog::Accepted);
+
+    bool bAskNextTime = pDialog->askDeleteConfirmationNextTime();
+
+    /* Update the file manager settings only if it is necessary: */
+    if (pFileManagerSettings->bAskDeleteConfirmation != bAskNextTime)
+    {
+        pFileManagerSettings->bAskDeleteConfirmation = bAskNextTime;
+        /* Notify file manager settings panel so that the check box there is updated: */
+        emit sigDeleteConfirmationSettingChanged();
+    }
+
+    delete pDialog;
+
+    return fContinueWithDelete;
+
 }
 
 #include "UIGuestControlFileTable.moc"
