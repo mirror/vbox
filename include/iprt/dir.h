@@ -528,6 +528,14 @@ RTDECL(bool) RTDirEntryIsStdDotLink(PRTDIRENTRY pDirEntry);
 RTDECL(bool) RTDirEntryExIsStdDotLink(PCRTDIRENTRYEX pDirEntryEx);
 
 /**
+ * Rewind and restart the directory reading.
+ *
+ * @returns IRPT status code.
+ * @param   hDir            The directory handle to rewind.
+ */
+RTDECL(int) RTDirRewind(RTDIR hDir);
+
+/**
  * Renames a file.
  *
  * Identical to RTPathRename except that it will ensure that the source is a directory.

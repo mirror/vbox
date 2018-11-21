@@ -648,6 +648,27 @@ RTDECL(int) RTDirReadEx(RTDIR hDir, PRTDIRENTRYEX pDirEntry, size_t *pcbDirEntry
 }
 
 
+RTDECL(int) RTDirRewind(RTDIR hDir)
+{
+    PRTDIRINTERNAL pDir = hDir;
+
+    /*
+     * Validate and digest input.
+     */
+    if (!rtDirValidHandle(pDir))
+        return VERR_INVALID_PARAMETER;
+
+    /*
+     * Do the rewinding.
+     */
+    /** @todo OS/2 does not rescan the directory as it should. */
+    rewinddir(pDir->pDir);
+    pDir->fDataUnread = false;
+
+    return VINF_SUCCESS;
+}
+
+
 RTDECL(int) RTDirRename(const char *pszSrc, const char *pszDst, unsigned fRename)
 {
     /*

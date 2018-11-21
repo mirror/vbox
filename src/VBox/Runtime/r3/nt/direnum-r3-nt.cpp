@@ -431,7 +431,7 @@ static int rtDirNtFetchMore(PRTDIRINTERNAL pThis)
                                                        pThis->pabBuffer,
                                                        pThis->cbBufferAlloc,
                                                        RTDIR_NT_SINGLE_RECORD /*ReturnSingleEntry */,
-                                                       FALSE /*RestartScan*/,
+                                                       pThis->fRestartScan,
                                                        &pThis->uObjDirCtx,
                                                        (PULONG)&Ios.Information);
         }
@@ -447,7 +447,7 @@ static int rtDirNtFetchMore(PRTDIRINTERNAL pThis)
                                         pThis->enmInfoClass,
                                         RTDIR_NT_SINGLE_RECORD /*ReturnSingleEntry */,
                                         pThis->pNtFilterStr,
-                                        FALSE /*RestartScan */);
+                                        pThis->fRestartScan);
     }
     else
     {
@@ -485,12 +485,12 @@ static int rtDirNtFetchMore(PRTDIRINTERNAL pThis)
                                     pThis->enmInfoClass,
                                     RTDIR_NT_SINGLE_RECORD /*ReturnSingleEntry */,
                                     pThis->pNtFilterStr,
-                                    FALSE /*RestartScan */);
+                                    pThis->fRestartScan);
         if (NT_SUCCESS(rcNt))
         { /* likely */ }
         else
         {
-            bool fRestartScan = false;
+            bool fRestartScan = pThis->fRestartScan;
             for (unsigned iRetry = 0; iRetry < 2; iRetry++)
             {
                 if (   rcNt == STATUS_INVALID_INFO_CLASS
@@ -550,6 +550,7 @@ static int rtDirNtFetchMore(PRTDIRINTERNAL pThis)
             return VERR_NO_MORE_FILES;
         return RTErrConvertFromNtStatus(rcNt);
     }
+    pThis->fRestartScan = false;
     AssertMsg(  Ios.Information
               > (pThis->enmInfoClass == FileMaximumInformation ? sizeof(*pThis->uCurData.pObjDir) : sizeof(*pThis->uCurData.pBoth)),
               ("Ios.Information=%#x\n", Ios.Information));
@@ -905,6 +906,24 @@ RTDECL(int) RTDirReadEx(RTDIR hDir, PRTDIRENTRYEX pDirEntry, size_t *pcbDirEntry
     return rtDirNtAdvanceBuffer(pDir);
 }
 
+
+RTDECL(int) RTDirRewind(RTDIR hDir)
+{
+    /*
+     * Validate and digest input.
+     */
+    PRTDIRINTERNAL pThis = hDir;
+    AssertPtrReturn(pThis, VERR_INVALID_POINTER);
+    AssertReturn(pThis->u32Magic == RTDIR_MAGIC, VERR_INVALID_HANDLE);
+
+    /*
+     * The work is done on the next call to rtDirNtFetchMore.
+     */
+    pThis->fRestartScan = true;
+    pThis->fDataUnread  = false;
+
+    return VINF_SUCCESS;
+}
 
 
 RTR3DECL(int) RTDirQueryInfo(RTDIR hDir, PRTFSOBJINFO pObjInfo, RTFSOBJATTRADD enmAdditionalAttribs)

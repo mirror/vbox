@@ -98,6 +98,8 @@ typedef struct RTDIRINTERNAL
 
 #ifndef RTDIR_AGNOSTIC
 # ifdef RT_OS_WINDOWS
+    /** Set by RTDirRewind. */
+    bool                fRestartScan;
     /** Handle to the opened directory search. */
     HANDLE              hDir;
 #  ifndef RTNT_USE_NATIVE_NT

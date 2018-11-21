@@ -787,6 +787,7 @@
 # define RTDirRemove                                    RT_MANGLER(RTDirRemove)
 # define RTDirRemoveRecursive                           RT_MANGLER(RTDirRemoveRecursive)
 # define RTDirRename                                    RT_MANGLER(RTDirRename)
+# define RTDirRewind                                    RT_MANGLER(RTDirRewind)
 # define RTDirSetTimes                                  RT_MANGLER(RTDirSetTimes)
 # define RTDirRelFileOpen                               RT_MANGLER(RTDirRelFileOpen)
 # define RTDirRelDirOpen                                RT_MANGLER(RTDirRelDirOpen)
