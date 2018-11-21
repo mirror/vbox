@@ -364,6 +364,14 @@ namespace UIExtraDataDefs
         extern const char *GUI_GuestControl_ProcessControlDialogGeometry;
     /** @} */
 
+    /** @name Guest Control file manager options
+      * @{ */
+        extern const char *GUI_GuestControl_FileManagerOptions;
+        extern const char *GUI_GuestControl_FileManagerListDirectoriesFirst;
+        extern const char *GUI_GuestControl_FileManagerShowDeleteConfirmation;
+        extern const char *GUI_GuestControl_FileManagerShowHumanReadableSizes;
+    /** @} */
+
     /** @name Virtual Machine: Close dialog
       * @{ */
         /** Holds default machine close action. */

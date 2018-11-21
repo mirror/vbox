@@ -2033,6 +2033,7 @@ QStringList UIExtraDataManagerWindow::knownExtraDataKeys()
            << GUI_InformationWindowElements
            << GUI_GuestControl_ProcessControlSplitterHints
            << GUI_GuestControl_FileManagerDialogGeometry
+           << GUI_GuestControl_FileManagerOptions
            << GUI_GuestControl_ProcessControlDialogGeometry
            << GUI_DefaultCloseAction << GUI_RestrictedCloseActions
            << GUI_LastCloseAction << GUI_CloseActionHook
@@ -4242,6 +4243,56 @@ void UIExtraDataManager::setGuestControlFileManagerVisiblePanels(const QStringLi
 QStringList UIExtraDataManager::guestControlFileManagerVisiblePanels()
 {
     return extraDataStringList(GUI_GuestControl_FileManagerVisiblePanels);
+}
+
+void UIExtraDataManager::setGuestControlFileManagerOptions(bool fListDirectoriesFirst,
+                                       bool fShowDeleteConfirmation, bool fShowHumanReadableSizes)
+{
+    /* Serialize passed values: */
+    QStringList data;
+
+    if (fListDirectoriesFirst)
+        data << GUI_GuestControl_FileManagerListDirectoriesFirst;
+    if (fShowDeleteConfirmation)
+        data << GUI_GuestControl_FileManagerShowDeleteConfirmation;
+    if (fShowHumanReadableSizes)
+        data << GUI_GuestControl_FileManagerShowHumanReadableSizes;
+
+    /* Re-cache corresponding extra-data: */
+    setExtraDataStringList(GUI_GuestControl_FileManagerOptions, data);
+}
+
+bool UIExtraDataManager::guestControlFileManagerListDirectoriesFirst()
+{
+    const QStringList data = extraDataStringList(GUI_GuestControl_FileManagerOptions);
+    for (int i = 0; i < data.size(); ++i)
+    {
+        if (data[i] == GUI_GuestControl_FileManagerListDirectoriesFirst)
+            return true;
+    }
+    return false;
+}
+
+bool UIExtraDataManager::guestControlFileManagerShowDeleteConfirmation()
+{
+    const QStringList data = extraDataStringList(GUI_GuestControl_FileManagerOptions);
+    for (int i = 0; i < data.size(); ++i)
+    {
+        if (data[i] == GUI_GuestControl_FileManagerShowDeleteConfirmation)
+            return true;
+    }
+    return false;
+}
+
+bool UIExtraDataManager::guestControlFileManagerShowHumanReadableSizes()
+{
+    const QStringList data = extraDataStringList(GUI_GuestControl_FileManagerOptions);
+    for (int i = 0; i < data.size(); ++i)
+    {
+        if (data[i] == GUI_GuestControl_FileManagerShowHumanReadableSizes)
+            return true;
+    }
+    return false;
 }
 
 QRect UIExtraDataManager::guestProcessControlDialogGeometry(QWidget *pWidget, const QRect &defaultGeometry)

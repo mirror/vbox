@@ -203,6 +203,12 @@ const char *UIExtraDataDefs::GUI_GuestControl_FileManagerVisiblePanels = "GUI/Gu
 const char *UIExtraDataDefs::GUI_GuestControl_ProcessControlSplitterHints = "GUI/GuestControl/ProcessControlSplitterHints";
 const char *UIExtraDataDefs::GUI_GuestControl_ProcessControlDialogGeometry = "GUI/GuestControl/ProcessControlDialogGeometry";
 
+/* Guest Control file manager options: */
+const char *UIExtraDataDefs::GUI_GuestControl_FileManagerOptions = "GUI/GuestControl/FileManagerOptions";
+const char *UIExtraDataDefs::GUI_GuestControl_FileManagerListDirectoriesFirst = "ListDirectoriesFirst";
+const char *UIExtraDataDefs::GUI_GuestControl_FileManagerShowDeleteConfirmation = "ShowDeleteConfimation";
+const char *UIExtraDataDefs::GUI_GuestControl_FileManagerShowHumanReadableSizes = "ShowHumanReadableSizes";
+
 /* Virtual Machine: Close dialog: */
 const char *UIExtraDataDefs::GUI_DefaultCloseAction = "GUI/DefaultCloseAction";
 const char *UIExtraDataDefs::GUI_RestrictedCloseActions = "GUI/RestrictedCloseActions";
