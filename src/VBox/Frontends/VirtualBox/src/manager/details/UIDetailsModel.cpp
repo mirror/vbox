@@ -965,8 +965,8 @@ void UIDetailsContextMenu::populateOptions()
                 const UIExtraDataMetaDefs::DetailsElementOptionTypeDescription enmOptionType =
                     static_cast<UIExtraDataMetaDefs::DetailsElementOptionTypeDescription>(metaEnum.keyToValue(metaEnum.key(iKeyIndex)));
                 /* Skip invalid and default types: */
-                if (   enmOptionType == UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral_Invalid
-                    || enmOptionType == UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral_Default)
+                if (   enmOptionType == UIExtraDataMetaDefs::DetailsElementOptionTypeDescription_Invalid
+                    || enmOptionType == UIExtraDataMetaDefs::DetailsElementOptionTypeDescription_Default)
                     continue;
                 /* And create list-widget item of it: */
                 QListWidgetItem *pOptionItem = createOptionItem();
