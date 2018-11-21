@@ -791,7 +791,8 @@ static int vmmR0DoHalt(PGVM pGVM, PVM pVM, PGVMCPU pGVCpu, PVMCPU pVCpu)
                     if (   pVCpu->vmm.s.cR0HaltsSucceeded > pVCpu->vmm.s.cR0HaltsToRing3
                         && RTMpGetOnlineCount() >= 4)
                     {
-                        /** @todo Figure out how we can skip this if it haven't help recently... */
+                        /** @todo Figure out how we can skip this if it hasn't help recently...
+                         *        @bugref{9172#c12} */
                         uint32_t cSpinLoops = 42;
                         while (cSpinLoops-- > 0)
                         {
@@ -1586,13 +1587,13 @@ VMMR0DECL(void) VMMR0EntryFast(PGVM pGVM, PVM pVM, VMCPUID idCpu, VMMR0OPERATION
 #ifdef VBOX_WITH_STATISTICS
                     vmmR0RecordRC(pVM, pVCpu, rc);
 #endif
-
+#if 1
                     /*
                      * If this is a halt.
                      */
                     if (rc != VINF_EM_HALT)
                     { /* we're not in a hurry for a HLT, so prefer this path */ }
-                    else //if (VMCPU_FF_IS_ANY_SET())
+                    else
                     {
                         pVCpu->vmm.s.iLastGZRc = rc = vmmR0DoHalt(pGVM, pVM, pGVCpu, pVCpu);
                         if (rc == VINF_SUCCESS)
@@ -1602,6 +1603,7 @@ VMMR0DECL(void) VMMR0EntryFast(PGVM pGVM, PVM pVM, VMCPUID idCpu, VMMR0OPERATION
                         }
                         pVCpu->vmm.s.cR0HaltsToRing3++;
                     }
+#endif
                 }
                 /*
                  * Invalid CPU set index or TSC delta in need of measuring.
