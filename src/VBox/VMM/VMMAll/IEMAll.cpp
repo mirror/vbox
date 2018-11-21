@@ -16043,24 +16043,31 @@ PGM_ALL_CB2_DECL(VBOXSTRICTRC) iemVmxApicAccessPageHandler(PVM pVM, PVMCPU pVCpu
 {
     RT_NOREF4(pVM, pvPhys, enmOrigin, pvUser);
 
-    Assert(CPUMIsGuestInVmxNonRootMode(IEM_GET_CTX(pVCpu)));
-    Assert(CPUMIsGuestVmxProcCtls2Set(pVCpu, IEM_GET_CTX(pVCpu), VMX_PROC_CTLS2_VIRT_APIC_ACCESS));
-
-#ifdef VBOX_STRICT
-    RTGCPHYS const GCPhysApicBase   = CPUMGetGuestVmxApicAccessPageAddr(pVCpu, IEM_GET_CTX(pVCpu));
     RTGCPHYS const GCPhysAccessBase = GCPhysFault & ~(RTGCPHYS)PAGE_OFFSET_MASK;
-    Assert(GCPhysApicBase == GCPhysAccessBase);
-#endif
+    if (CPUMIsGuestInVmxNonRootMode(IEM_GET_CTX(pVCpu)))
+    {
+        Assert(CPUMIsGuestVmxProcCtls2Set(pVCpu, IEM_GET_CTX(pVCpu), VMX_PROC_CTLS2_VIRT_APIC_ACCESS));
+        Assert(CPUMGetGuestVmxApicAccessPageAddr(pVCpu, IEM_GET_CTX(pVCpu)) == GCPhysAccessBase);
 
-    uint16_t const offAccess = GCPhysFault & PAGE_OFFSET_MASK;
-    uint32_t const fAccess   = enmAccessType == PGMACCESSTYPE_WRITE ? IEM_ACCESS_TYPE_WRITE : IEM_ACCESS_TYPE_READ;
+        /** @todo NSTVMX: How are we to distinguish instruction fetch accesses here?
+         *        Currently they will go through as read accesses. */
+        uint32_t const fAccess   = enmAccessType == PGMACCESSTYPE_WRITE ? IEM_ACCESS_TYPE_WRITE : IEM_ACCESS_TYPE_READ;
+        uint16_t const offAccess = GCPhysFault & PAGE_OFFSET_MASK;
+        VBOXSTRICTRC rcStrict = iemVmxVirtApicAccessMem(pVCpu, offAccess, cbBuf, pvBuf, fAccess);
+        if (RT_FAILURE(rcStrict))
+            return rcStrict;
 
-    VBOXSTRICTRC rcStrict = iemVmxVirtApicAccessMem(pVCpu, offAccess, cbBuf, pvBuf, fAccess);
-    if (RT_FAILURE(rcStrict))
-        return rcStrict;
+        /* Any access on this APIC-access page has been handled, caller should not carry out the access. */
+        return VINF_SUCCESS;
+    }
 
-    /* Any access on this APIC-access page has been handled, caller should not carry out the access. */
-    return VINF_SUCCESS;
+    Log(("iemVmxApicAccessPageHandler: Access outside VMX non-root mode, deregistering page at %#RGp\n", GCPhysAccessBase));
+    int rc = PGMHandlerPhysicalDeregister(pVM, GCPhysAccessBase);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    /* Instruct the caller of this handler to perform the read/write as normal memory. */
+    return VINF_PGM_HANDLER_DO_DEFAULT;
 }
 
 #endif /* VBOX_WITH_NESTED_HWVIRT_VMX */

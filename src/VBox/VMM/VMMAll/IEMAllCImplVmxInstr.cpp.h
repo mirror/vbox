@@ -2181,7 +2181,6 @@ IEM_STATIC void iemVmxVmexitSaveGuestNonRegState(PVMCPU pVCpu, uint32_t uExitRea
              *  90000    40000    0  -> VM-exit.
              *
              * If Delta >= VmcsPreemptTimer * RT_BIT(PreemptTimerShift) cause a VMX-preemption timer VM-exit.
-             *
              * The saved VMX-preemption timer value is calculated as follows:
              * PreemptTimerVal = VmcsPreemptTimer - (Delta / (VmcsPreemptTimer * RT_BIT(PreemptTimerShift)))
              * E.g.:
@@ -2749,22 +2748,6 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitLoadHostState(PVMCPU pVCpu, uint32_t uExitRe
 
     /* Clear address range monitoring. */
     EMMonitorWaitClear(pVCpu);
-
-    /* De-register the handler for the APIC-access page. */
-    if (pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_VIRT_APIC_ACCESS)
-    {
-        PVM pVM = pVCpu->CTX_SUFF(pVM);
-        RTGCPHYS const GCPhysApicAccess = pVmcs->u64AddrApicAccess.u;
-        if (PGMHandlerPhysicalIsRegistered(pVM, GCPhysApicAccess))
-        {
-            /** @todo NSTVMX: This is broken! We cannot simply deregister the handler for the
-             *        physical address as other VCPUs executing other nested-VCPUs might have
-             *        it registered! */
-            int rc = PGMHandlerPhysicalDeregister(pVM, GCPhysApicAccess);
-            if (RT_FAILURE(rc))
-                return rc;
-        }
-    }
 
     /* Perform the VMX transition (PGM updates). */
     VBOXSTRICTRC rcStrict = iemVmxWorldSwitch(pVCpu);
@@ -4637,8 +4620,19 @@ IEM_STATIC void iemVmxEvalPendingVirtIntrs(PVMCPU pVCpu)
     Assert(pVmcs);
     Assert(pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_VIRT_INT_DELIVERY);
 
-    /** @todo NSTVMX: evaluate pending virtual interrupts. */
-    RT_NOREF(pVCpu);
+    if (!(pVmcs->u32ProcCtls & VMX_PROC_CTLS_INT_WINDOW_EXIT))
+    {
+        uint8_t const uRvi = RT_LO_U8(pVmcs->u16GuestIntStatus);
+        uint8_t const uPpr = iemVmxVirtApicReadRaw32(pVCpu, XAPIC_OFF_PPR);
+
+        if ((uRvi >> 4) > (uPpr >> 4))
+        {
+            Log2(("eval_virt_intrs: uRvi=%#x uPpr=%#x - Signaling pending interrupt\n", uRvi, uPpr));
+            VMCPU_FF_SET(pVCpu, VMCPU_FF_INTERRUPT_NESTED_GUEST);
+        }
+        else
+            Log2(("eval_virt_intrs: uRvi=%#x uPpr=%#x - Nothing to do\n", uRvi, uPpr));
+    }
 }
 
 
@@ -4662,15 +4656,16 @@ IEM_STATIC void iemVmxPprVirtualization(PVMCPU pVCpu)
      * See Intel spec. 29.1.3 "PPR Virtualization".
      */
     uint32_t const uTpr = iemVmxVirtApicReadRaw32(pVCpu, XAPIC_OFF_TPR);
-    uint32_t const uSvi  = RT_HI_U8(pVmcs->u16GuestIntStatus);
+    uint32_t const uSvi = RT_HI_U8(pVmcs->u16GuestIntStatus);
 
-    uint32_t uVPpr;
+    uint32_t uPpr;
     if (((uTpr >> 4) & 0xf) >= ((uSvi >> 4) & 0xf))
-        uVPpr = uTpr & 0xff;
+        uPpr = uTpr & 0xff;
     else
-        uVPpr = uSvi & 0xf0;
-    iemVmxVirtApicWriteRaw32(pVCpu, XAPIC_OFF_PPR, uVPpr);
-    Log2(("ppr_virt: uTpr=%u uSvi=%u -> VM-exit\n", uTpr, uSvi));
+        uPpr = uSvi & 0xf0;
+
+    Log2(("ppr_virt: uTpr=%#x uSvi=%#x uPpr=%#x\n", uTpr, uSvi, uPpr));
+    iemVmxVirtApicWriteRaw32(pVCpu, XAPIC_OFF_PPR, uPpr);
 }
 
 
@@ -4762,12 +4757,18 @@ IEM_STATIC VBOXSTRICTRC iemVmxEoiVirtualization(PVMCPU pVCpu)
      */
     uint8_t const uRvi = RT_LO_U8(pVmcs->u16GuestIntStatus);
     uint8_t const uSvi = RT_HI_U8(pVmcs->u16GuestIntStatus);
+    Log2(("eoi_virt: uRvi=%#x uSvi=%#x\n", uRvi, uSvi));
 
     uint8_t uVector = uSvi;
     iemVmxVirtApicClearVector(pVCpu, XAPIC_OFF_ISR0, uVector);
 
     uVector = 0;
     iemVmxVirtApicGetHighestSetBitInReg(pVCpu, XAPIC_OFF_ISR0, &uVector);
+
+    if (uVector)
+        Log2(("eoi_virt: next interrupt %#x\n", uVector));
+    else
+        Log2(("eoi_virt: no interrupt pending in ISR\n"));
 
     /* Update guest-interrupt status SVI (leave RVI portion as it is) in the VMCS. */
     pVmcs->u16GuestIntStatus = RT_MAKE_U16(uRvi, uVector);
@@ -4798,8 +4799,8 @@ IEM_STATIC VBOXSTRICTRC iemVmxSelfIpiVirtualization(PVMCPU pVCpu)
      *
      * See Intel spec. 29.1.5 "Self-IPI Virtualization".
      */
-    uint8_t const uVector = iemVmxVirtApicReadRaw32(pVCpu, X2APIC_OFF_SELF_IPI);
-
+    uint8_t const uVector = iemVmxVirtApicReadRaw32(pVCpu, XAPIC_OFF_ICR_LO);
+    Log2(("self_ipi_virt: uVector=%#x\n", uVector));
     iemVmxVirtApicSetVector(pVCpu, XAPIC_OFF_IRR0, uVector);
     uint8_t const uRvi = RT_LO_U8(pVmcs->u16GuestIntStatus);
     uint8_t const uSvi = RT_HI_U8(pVmcs->u16GuestIntStatus);
@@ -4836,6 +4837,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxApicWriteEmulation(PVMCPU pVCpu)
             uint32_t uTpr = iemVmxVirtApicReadRaw32(pVCpu, XAPIC_OFF_TPR);
             uTpr         &= UINT32_C(0x000000ff);
             iemVmxVirtApicWriteRaw32(pVCpu, XAPIC_OFF_TPR, uTpr);
+            Log2(("iemVmxApicWriteEmulation: TPR write %#x\n", uTpr));
             rcStrict = iemVmxTprVirtualization(pVCpu);
             break;
         }
@@ -4846,6 +4848,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxApicWriteEmulation(PVMCPU pVCpu)
             {
                 /* Clear VEOI and perform EOI virtualization. */
                 iemVmxVirtApicWriteRaw32(pVCpu, XAPIC_OFF_EOI, 0);
+                Log2(("iemVmxApicWriteEmulation: EOI write\n"));
                 rcStrict = iemVmxEoiVirtualization(pVCpu);
             }
             else
@@ -4863,7 +4866,10 @@ IEM_STATIC VBOXSTRICTRC iemVmxApicWriteEmulation(PVMCPU pVCpu)
                 uint32_t const fIcrLoMb1 = UINT32_C(0x000000f0);
                 if (   !(uIcrLo & fIcrLoMb0)
                     &&  (uIcrLo & fIcrLoMb1))
+                {
+                    Log2(("iemVmxApicWriteEmulation: Self-IPI virtualization with vector %#x\n", (uIcrLo & 0xff)));
                     rcStrict = iemVmxSelfIpiVirtualization(pVCpu);
+                }
                 else
                     rcStrict = iemVmxVmexitApicWrite(pVCpu, offApicWrite);
             }
@@ -6402,7 +6408,19 @@ IEM_STATIC int iemVmxVmentryCheckExecCtls(PVMCPU pVCpu, const char *pszInstr)
                 IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_AddrApicAccessEqVirtApic);
         }
 
-        /* Register the handler for the APIC-access page. */
+        /*
+         * Register the handler for the APIC-access page.
+         *
+         * We don't deregister the APIC-access page handler during the VM-exit as a different
+         * nested-VCPU might be using the same guest-physical address for its APIC-access page.
+         *
+         * We leave the page registered until the first access that happens outside VMX non-root
+         * mode. Guest software is allowed to access structures such as the APIC-access page
+         * only when no logical processor with a current VMCS references it in VMX non-root mode,
+         * otherwise it can lead to unpredictable behavior including guest triple-faults.
+         *
+         * See Intel spec. 24.11.4 "Software Access to Related Structures".
+         */
         int rc = PGMHandlerPhysicalRegister(pVCpu->CTX_SUFF(pVM), GCPhysApicAccess, GCPhysApicAccess,
                                             pVCpu->iem.s.hVmxApicAccessPage, NIL_RTR3PTR /* pvUserR3 */,
                                             NIL_RTR0PTR /* pvUserR0 */,  NIL_RTRCPTR /* pvUserRC */, NULL /* pszDesc */);
