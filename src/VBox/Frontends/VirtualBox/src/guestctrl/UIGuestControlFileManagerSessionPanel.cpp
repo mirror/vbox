@@ -161,20 +161,20 @@ void UIGuestSessionCreateWidget::retranslateUi()
 {
     if (m_pUserNameEdit)
     {
-        m_pUserNameEdit->setToolTip(QApplication::translate("UIGuestProcessControlWidget", "User name to authenticate session creation"));
-        m_pUserNameEdit->setPlaceholderText(QApplication::translate("UIGuestProcessControlWidget", "User Name"));
+        m_pUserNameEdit->setToolTip(QApplication::translate("UIGuestControlFileManager", "User name to authenticate session creation"));
+        m_pUserNameEdit->setPlaceholderText(QApplication::translate("UIGuestControlFileManager", "User Name"));
 
     }
     if (m_pPasswordEdit)
     {
-        m_pPasswordEdit->setToolTip(QApplication::translate("UIGuestProcessControlWidget", "Password to authenticate session creation"));
-        m_pPasswordEdit->setPlaceholderText(QApplication::translate("UIGuestProcessControlWidget", "Password"));
+        m_pPasswordEdit->setToolTip(QApplication::translate("UIGuestControlFileManager", "Password to authenticate session creation"));
+        m_pPasswordEdit->setPlaceholderText(QApplication::translate("UIGuestControlFileManager", "Password"));
     }
 
     if (m_pCreateButton)
-        m_pCreateButton->setText(QApplication::translate("UIGuestProcessControlWidget", "Create Session"));
+        m_pCreateButton->setText(QApplication::translate("UIGuestControlFileManager", "Create Session"));
     if (m_pCloseButton)
-        m_pCloseButton->setText(QApplication::translate("UIGuestProcessControlWidget", "Close Session"));
+        m_pCloseButton->setText(QApplication::translate("UIGuestControlFileManager", "Close Session"));
 }
 
 void UIGuestSessionCreateWidget::keyPressEvent(QKeyEvent * pEvent)
