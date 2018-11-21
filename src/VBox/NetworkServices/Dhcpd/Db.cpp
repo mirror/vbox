@@ -499,7 +499,7 @@ Binding *Db::allocateAddress(const ClientId &id, RTNETADDRIPV4 addr)
         {
             idBinding = reuseBinding;
             LogDHCP(("> .... reusing %s binding %R[binding]\n",
-                     reuseBinding->stateName()));
+                     reuseBinding->stateName(), reuseBinding));
         }
     }
 

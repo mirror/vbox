@@ -37,7 +37,7 @@ DhcpClientMessage *DhcpClientMessage::parse(bool broadcasted, const void *buf, s
 {
     if (buflen < RT_OFFSETOF(RTNETBOOTP, bp_vend.Dhcp.dhcp_opts))
     {
-        RTPrintf("%s: %zu bytes datagram is too short\n", __func__, buflen);
+        RTPrintf("%s: %zu bytes datagram is too short\n", __FUNCTION__, buflen);
         return NULL;
     }
 
@@ -45,19 +45,19 @@ DhcpClientMessage *DhcpClientMessage::parse(bool broadcasted, const void *buf, s
 
     if (bp->bp_op != RTNETBOOTP_OP_REQUEST)
     {
-        RTPrintf("%s: bad opcode: %d\n", __func__, bp->bp_op);
+        RTPrintf("%s: bad opcode: %d\n", __FUNCTION__, bp->bp_op);
         return NULL;
     }
 
     if (bp->bp_htype != RTNET_ARP_ETHER)
     {
-        RTPrintf("%s: unsupported htype %d\n", __func__, bp->bp_htype);
+        RTPrintf("%s: unsupported htype %d\n", __FUNCTION__, bp->bp_htype);
         return NULL;
     }
 
     if (bp->bp_hlen != sizeof(RTMAC))
     {
-        RTPrintf("%s: unexpected hlen %d\n", __func__, bp->bp_hlen);
+        RTPrintf("%s: unexpected hlen %d\n", __FUNCTION__, bp->bp_hlen);
         return NULL;
     }
 
@@ -65,19 +65,19 @@ DhcpClientMessage *DhcpClientMessage::parse(bool broadcasted, const void *buf, s
         && (bp->bp_flags & RTNET_DHCP_FLAG_BROADCAST) == 0)
     {
         RTPrintf("%s: multicast chaddr %RTmac without broadcast flag\n",
-                 __func__, &bp->bp_chaddr.Mac);
+                 __FUNCTION__, &bp->bp_chaddr.Mac);
     }
 
     /* we don't want to deal with forwarding */
     if (bp->bp_giaddr.u != 0)
     {
-        RTPrintf("%s: giaddr %RTnaipv4\n", __func__, bp->bp_giaddr.u);
+        RTPrintf("%s: giaddr %RTnaipv4\n", __FUNCTION__, bp->bp_giaddr.u);
         return NULL;
     }
 
     if (bp->bp_hops != 0)
     {
-        RTPrintf("%s: non-zero hops %d\n", __func__, bp->bp_hops);
+        RTPrintf("%s: non-zero hops %d\n", __FUNCTION__, bp->bp_hops);
         return NULL;
     }
 
@@ -322,13 +322,13 @@ void DhcpClientMessage::dump() const
 
 
 DhcpServerMessage::DhcpServerMessage(const DhcpClientMessage &req,
-                                     uint8_t messageType, RTNETADDRIPV4 serverAddr)
+                                     uint8_t messageTypeParam, RTNETADDRIPV4 serverAddr)
   : DhcpMessage(),
     m_optServerId(serverAddr)
 {
     m_dst.u = 0xffffffff;       /* broadcast */
 
-    m_optMessageType = OptMessageType(messageType);
+    m_optMessageType = OptMessageType(messageTypeParam);
 
     /* copy values from the request (cf. RFC2131 Table 3) */
     m_xid = req.xid();

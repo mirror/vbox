@@ -51,7 +51,8 @@ typedef enum enMainOpCodes
 {
     OP_ADD = 1000,
     OP_REMOVE,
-    OP_MODIFY
+    OP_MODIFY,
+    OP_RESTART
 } OPCODE;
 
 typedef std::pair<DhcpOpt_T, std::string> DhcpOptSpec;
@@ -318,6 +319,7 @@ static RTEXITCODE handleOp(HandlerArg *a, OPCODE enmCode, int iStart)
         return errorSyntax(USAGE_DHCPSERVER, "You need to specify either --netname or --ifname to identify the DHCP server");
 
     if(   enmCode != OP_REMOVE
+       && enmCode != OP_RESTART
        && GlobalDhcpOptions.empty()
        && VmSlot2Options.empty())
     {
@@ -373,7 +375,19 @@ static RTEXITCODE handleOp(HandlerArg *a, OPCODE enmCode, int iStart)
         return errorArgument("DHCP server does not exist");
     }
 
-    if(enmCode != OP_REMOVE)
+    if (enmCode == OP_RESTART)
+    {
+        CHECK_ERROR(svr, Restart());
+        if(FAILED(rc))
+            return errorArgument("Failed to restart server");
+    }
+    else if (enmCode == OP_REMOVE)
+    {
+        CHECK_ERROR(a->virtualBox, RemoveDHCPServer(svr));
+        if(FAILED(rc))
+            return errorArgument("Failed to remove server");
+    }
+    else
     {
         if (pIp || pNetmask || pLowerIp || pUpperIp)
         {
@@ -424,12 +438,6 @@ static RTEXITCODE handleOp(HandlerArg *a, OPCODE enmCode, int iStart)
             }
         }
     }
-    else
-    {
-        CHECK_ERROR(a->virtualBox, RemoveDHCPServer(svr));
-        if(FAILED(rc))
-            return errorArgument("Failed to remove server");
-    }
 
     return RTEXITCODE_SUCCESS;
 }
@@ -447,6 +455,8 @@ RTEXITCODE handleDHCPServer(HandlerArg *a)
         rcExit = handleOp(a, OP_ADD, 1);
     else if (strcmp(a->argv[0], "remove") == 0)
         rcExit = handleOp(a, OP_REMOVE, 1);
+    else if (strcmp(a->argv[0], "restart") == 0)
+        rcExit = handleOp(a, OP_RESTART, 1);
     else
         rcExit = errorSyntax(USAGE_DHCPSERVER, "Invalid parameter '%s'", Utf8Str(a->argv[0]).c_str());
 

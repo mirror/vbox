@@ -16,6 +16,17 @@
  */
 
 #include <iprt/cdefs.h>
+
+/*
+ * Need to get host/network order conversion stuff from Windows headers,
+ * so we do not define them in LWIP and then try to re-define them in
+ * Windows headers.
+ */
+#ifdef RT_OS_WINDOWS
+# include <iprt/win/winsock2.h>
+#endif
+
+
 #include <iprt/param.h>
 #include <iprt/err.h>
 
@@ -51,6 +62,9 @@ extern "C"
 #include <vector>
 #include <memory>
 
+#ifdef RT_OS_WINDOWS
+# include <iprt/win/windows.h>
+#endif
 
 struct delete_pbuf
 {
@@ -447,7 +461,7 @@ int VBoxNetDhcpd::ifProcessInput()
                                                      abHdrScratch,
                                                      i, cSegs,
                                                      &cbSegFrame);
-                ifInput(pvSegFrame, cbFrame);
+                ifInput(pvSegFrame, (uint32_t)cbFrame);
             }
         }
     }
@@ -728,7 +742,7 @@ void VBoxNetDhcpd::dhcp4Recv(struct udp_pcb *pcb, struct pbuf *p,
     std::unique_ptr<DhcpServerMessage> autoFreeMsgOut(msgOut);
 
     ip_addr_t dst = { msgOut->dst().u };
-    if (ip_addr_isany(&dst))
+    if (ip_addr_cmp(&dst, &ip_addr_any))
         ip_addr_copy(dst, ip_addr_broadcast);
 
     octets_t data;
@@ -737,10 +751,10 @@ void VBoxNetDhcpd::dhcp4Recv(struct udp_pcb *pcb, struct pbuf *p,
         return;
 
     unique_ptr_pbuf q ( pbuf_alloc(PBUF_RAW, (u16_t)data.size(), PBUF_RAM) );
-    if (q == NULL)
+    if (!q)
         return;
 
-    error = pbuf_take(q.get(), &data.front(), data.size());
+    error = pbuf_take(q.get(), &data.front(), (u16_t)data.size());
     if (error != ERR_OK)
         return;
 
