@@ -38,6 +38,9 @@ public:
     UIGuestControlFileManagerSettingsPanel(UIGuestControlFileManager *pManagerWidget,
                                            QWidget *pParent, UIGuestControlFileManagerSettings *pFileManagerSettings);
     virtual QString panelName() const /* override */;
+    /** Reads the file manager options and updates te widget accordingly. This functions is typically called
+     *  when file manager options have been change by other means and this panel needs to adapt. */
+    void update();
 
 signals:
 
@@ -59,9 +62,9 @@ private slots:
 
 private:
 
-    QCheckBox                         *m_pListDirectoriesOnTopCheckBox;
-    QCheckBox                         *m_pDeleteConfirmationCheckBox;
-    QCheckBox                         *m_pHumanReabableSizesCheckBox;
+    QCheckBox          *m_pListDirectoriesOnTopCheckBox;
+    QCheckBox          *m_pDeleteConfirmationCheckBox;
+    QCheckBox          *m_pHumanReabableSizesCheckBox;
 
     UIGuestControlFileManagerSettings *m_pFileManagerSettings;
 };

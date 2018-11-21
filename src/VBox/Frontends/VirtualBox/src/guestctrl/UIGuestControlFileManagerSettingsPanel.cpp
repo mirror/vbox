@@ -52,6 +52,33 @@ QString UIGuestControlFileManagerSettingsPanel::panelName() const
     return "SettingsPanel";
 }
 
+void UIGuestControlFileManagerSettingsPanel::update()
+{
+    if (!m_pFileManagerSettings)
+        return;
+
+    if (m_pListDirectoriesOnTopCheckBox)
+    {
+        m_pListDirectoriesOnTopCheckBox->blockSignals(true);
+        m_pListDirectoriesOnTopCheckBox->setChecked(m_pFileManagerSettings->bListDirectoriesOnTop);
+        m_pListDirectoriesOnTopCheckBox->blockSignals(false);
+    }
+
+    if (m_pDeleteConfirmationCheckBox)
+    {
+        m_pDeleteConfirmationCheckBox->blockSignals(true);
+        m_pDeleteConfirmationCheckBox->setChecked(m_pFileManagerSettings->bAskDeleteConfirmation);
+        m_pDeleteConfirmationCheckBox->blockSignals(false);
+    }
+
+    if (m_pHumanReabableSizesCheckBox)
+    {
+        m_pHumanReabableSizesCheckBox->blockSignals(true);
+        m_pHumanReabableSizesCheckBox->setChecked(m_pFileManagerSettings->bShowHumanReadableSizes);
+        m_pHumanReabableSizesCheckBox->blockSignals(false);
+    }
+}
+
 void UIGuestControlFileManagerSettingsPanel::prepareWidgets()
 {
     if (!mainLayout())

@@ -116,6 +116,8 @@ private slots:
     void sltReceieveNewFileOperation(const CProgress &comProgress);
     void sltFileOperationComplete(QUuid progressId);
     void sltCacheHostFileObjectsForDeletion(const QUuid &moveProgessId, const QStringList &hostPathList);
+    /** Performs whatever necessary when some signal about option change has been receieved. */
+    void sltHandleOptionsUpdated();
 
 private:
 

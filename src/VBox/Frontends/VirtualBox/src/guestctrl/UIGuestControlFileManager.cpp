@@ -242,6 +242,8 @@ void UIGuestControlFileManager::prepareObjects()
         {
             connect(m_pHostFileTable, &UIHostFileTable::sigLogOutput,
                     this, &UIGuestControlFileManager::sltReceieveLogOutput);
+            connect(m_pHostFileTable, &UIHostFileTable::sigDeleteConfirmationOptionChanged,
+                    this, &UIGuestControlFileManager::sltHandleOptionsUpdated);
             pFileTableContainerLayout->addWidget(m_pHostFileTable);
         }
         prepareVerticalToolBar(pFileTableContainerLayout);
@@ -253,7 +255,8 @@ void UIGuestControlFileManager::prepareObjects()
                     this, &UIGuestControlFileManager::sltReceieveNewFileOperation);
             connect(m_pGuestFileTable, &UIGuestFileTable::sigCacheHostFileObjectsForDeletion,
                     this, &UIGuestControlFileManager::sltCacheHostFileObjectsForDeletion);
-
+            connect(m_pGuestFileTable, &UIGuestFileTable::sigDeleteConfirmationOptionChanged,
+                    this, &UIGuestControlFileManager::sltHandleOptionsUpdated);
             pFileTableContainerLayout->addWidget(m_pGuestFileTable);
         }
     }
@@ -545,6 +548,14 @@ void UIGuestControlFileManager::sltCacheHostFileObjectsForDeletion(const QUuid &
 {
     if (m_pHostFileTable)
         m_pHostFileTable->updateDeleteAfterCopyCache(moveProgessId, hostPathList);
+}
+
+void UIGuestControlFileManager::sltHandleOptionsUpdated()
+{
+    if (m_pSettingsPanel)
+    {
+        m_pSettingsPanel->update();
+    }
 }
 
 void UIGuestControlFileManager::copyMoveToHost(bool fIsMove)

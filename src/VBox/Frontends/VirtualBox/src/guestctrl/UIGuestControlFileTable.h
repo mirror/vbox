@@ -245,7 +245,7 @@ class UIGuestControlFileTable : public QIWithRetranslateUI<QWidget>
 signals:
 
     void sigLogOutput(QString strLog, FileManagerLogType eLogType);
-    void sigDeleteConfirmationSettingChanged();
+    void sigDeleteConfirmationOptionChanged();
 
 public:
 
