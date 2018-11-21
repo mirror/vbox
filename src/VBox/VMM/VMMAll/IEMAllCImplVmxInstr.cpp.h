@@ -910,48 +910,6 @@ DECLINLINE(uint64_t) iemVmxVmcsGetCr3TargetValue(PCVMXVVMCS pVmcs, uint8_t idxCr
 
 
 /**
- * Sets virtual-APIC write emulation as pending.
- *
- * @param   pVCpu       The cross context virtual CPU structure.
- * @param   offApic     The offset in the virtual-APIC page that was written.
- */
-DECLINLINE(void) iemVmxVirtApicSetPendingWrite(PVMCPU pVCpu, uint16_t offApic)
-{
-    Assert(offApic < XAPIC_OFF_END + 4);
-
-    /*
-     * Record the currently updated APIC offset, as we need this later for figuring
-     * out whether to perform TPR, EOI or self-IPI virtualization as well as well
-     * as for supplying the exit qualification when causing an APIC-write VM-exit.
-     */
-    pVCpu->cpum.GstCtx.hwvirt.vmx.offVirtApicWrite = offApic;
-
-    /*
-     * Signal that we need to perform virtual-APIC write emulation (TPR/PPR/EOI/Self-IPI
-     * virtualization or APIC-write emulation).
-     */
-    if (!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_VMX_APIC_WRITE))
-        VMCPU_FF_SET(pVCpu, VMCPU_FF_VMX_APIC_WRITE);
-}
-
-
-/**
- * Clears any pending virtual-APIC write emulation.
- *
- * @returns The virtual-APIC offset that was written before clearing it.
- * @param   pVCpu       The cross context virtual CPU structure.
- */
-DECLINLINE(uint16_t) iemVmxVirtApicClearPendingWrite(PVMCPU pVCpu)
-{
-    uint8_t const offVirtApicWrite = pVCpu->cpum.GstCtx.hwvirt.vmx.offVirtApicWrite;
-    pVCpu->cpum.GstCtx.hwvirt.vmx.offVirtApicWrite = 0;
-    Assert(VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_VMX_APIC_WRITE));
-    VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_VMX_APIC_WRITE);
-    return offVirtApicWrite;
-}
-
-
-/**
  * Masks the nested-guest CR0/CR4 mask subjected to the corresponding guest/host
  * mask and the read-shadow (CR0/CR4 read).
  *
@@ -4001,6 +3959,105 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitTripleFault(PVMCPU pVCpu)
 
 
 /**
+ * VMX VM-exit handler for APIC-accesses.
+ *
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   offAccess   The offset of the register being accessed.
+ * @param   fAccess     The type of access (must contain IEM_ACCESS_TYPE_READ or
+ *                      IEM_ACCESS_TYPE_WRITE or IEM_ACCESS_INSTRUCTION).
+ */
+IEM_STATIC VBOXSTRICTRC iemVmxVmexitApicAccess(PVMCPU pVCpu, uint16_t offAccess, uint32_t fAccess)
+{
+    Assert((fAccess & IEM_ACCESS_TYPE_READ) || (fAccess & IEM_ACCESS_TYPE_WRITE) || (fAccess & IEM_ACCESS_INSTRUCTION));
+
+    VMXAPICACCESS enmAccess;
+    bool const fInEventDelivery = IEMGetCurrentXcpt(pVCpu, NULL, NULL, NULL, NULL);
+    if (fInEventDelivery)
+        enmAccess = VMXAPICACCESS_LINEAR_EVENT_DELIVERY;
+    else if (fAccess & IEM_ACCESS_INSTRUCTION)
+        enmAccess = VMXAPICACCESS_LINEAR_INSTR_FETCH;
+    else if (fAccess & IEM_ACCESS_TYPE_WRITE)
+        enmAccess = VMXAPICACCESS_LINEAR_WRITE;
+    else
+        enmAccess = VMXAPICACCESS_LINEAR_WRITE;
+
+    uint64_t const uExitQual = RT_BF_MAKE(VMX_BF_EXIT_QUAL_APIC_ACCESS_OFFSET, offAccess)
+                             | RT_BF_MAKE(VMX_BF_EXIT_QUAL_APIC_ACCESS_TYPE,   enmAccess);
+    iemVmxVmcsSetExitQual(pVCpu, uExitQual);
+    return iemVmxVmexit(pVCpu, VMX_EXIT_APIC_ACCESS);
+}
+
+
+/**
+ * VMX VM-exit handler for APIC-write VM-exits.
+ *
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   offApic     The write to the virtual-APIC page offset that caused this
+ *                      VM-exit.
+ */
+IEM_STATIC VBOXSTRICTRC iemVmxVmexitApicWrite(PVMCPU pVCpu, uint16_t offApic)
+{
+    Assert(offApic < XAPIC_OFF_END + 4);
+    iemVmxVmcsSetExitQual(pVCpu, offApic);
+    return iemVmxVmexit(pVCpu, VMX_EXIT_APIC_WRITE);
+}
+
+
+/**
+ * VMX VM-exit handler for virtualized-EOIs.
+ *
+ * @param   pVCpu       The cross context virtual CPU structure.
+ */
+IEM_STATIC VBOXSTRICTRC iemVmxVmexitVirtEoi(PVMCPU pVCpu, uint8_t uVector)
+{
+    iemVmxVmcsSetExitQual(pVCpu, uVector);
+    return iemVmxVmexit(pVCpu, VMX_EXIT_VIRTUALIZED_EOI);
+}
+
+
+/**
+ * Sets virtual-APIC write emulation as pending.
+ *
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   offApic     The offset in the virtual-APIC page that was written.
+ */
+DECLINLINE(void) iemVmxVirtApicSetPendingWrite(PVMCPU pVCpu, uint16_t offApic)
+{
+    Assert(offApic < XAPIC_OFF_END + 4);
+
+    /*
+     * Record the currently updated APIC offset, as we need this later for figuring
+     * out whether to perform TPR, EOI or self-IPI virtualization as well as well
+     * as for supplying the exit qualification when causing an APIC-write VM-exit.
+     */
+    pVCpu->cpum.GstCtx.hwvirt.vmx.offVirtApicWrite = offApic;
+
+    /*
+     * Signal that we need to perform virtual-APIC write emulation (TPR/PPR/EOI/Self-IPI
+     * virtualization or APIC-write emulation).
+     */
+    if (!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_VMX_APIC_WRITE))
+        VMCPU_FF_SET(pVCpu, VMCPU_FF_VMX_APIC_WRITE);
+}
+
+
+/**
+ * Clears any pending virtual-APIC write emulation.
+ *
+ * @returns The virtual-APIC offset that was written before clearing it.
+ * @param   pVCpu       The cross context virtual CPU structure.
+ */
+DECLINLINE(uint16_t) iemVmxVirtApicClearPendingWrite(PVMCPU pVCpu)
+{
+    uint8_t const offVirtApicWrite = pVCpu->cpum.GstCtx.hwvirt.vmx.offVirtApicWrite;
+    pVCpu->cpum.GstCtx.hwvirt.vmx.offVirtApicWrite = 0;
+    Assert(VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_VMX_APIC_WRITE));
+    VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_VMX_APIC_WRITE);
+    return offVirtApicWrite;
+}
+
+
+/**
  * Reads a 32-bit register from the virtual-APIC page at the given offset.
  *
  * @returns The register from the virtual-APIC page.
@@ -4271,63 +4328,6 @@ IEM_STATIC bool iemVmxVirtApicIsMemAccessIntercepted(PVMCPU pVCpu, uint16_t offA
 
     /* The APIC-access is virtualized, does not cause a VM-exit. */
     return false;
-}
-
-
-/**
- * VMX VM-exit handler for APIC-accesses.
- *
- * @param   pVCpu       The cross context virtual CPU structure.
- * @param   offAccess   The offset of the register being accessed.
- * @param   fAccess     The type of access (must contain IEM_ACCESS_TYPE_READ or
- *                      IEM_ACCESS_TYPE_WRITE or IEM_ACCESS_INSTRUCTION).
- */
-IEM_STATIC VBOXSTRICTRC iemVmxVmexitApicAccess(PVMCPU pVCpu, uint16_t offAccess, uint32_t fAccess)
-{
-    Assert((fAccess & IEM_ACCESS_TYPE_READ) || (fAccess & IEM_ACCESS_TYPE_WRITE) || (fAccess & IEM_ACCESS_INSTRUCTION));
-
-    VMXAPICACCESS enmAccess;
-    bool const fInEventDelivery = IEMGetCurrentXcpt(pVCpu, NULL, NULL, NULL, NULL);
-    if (fInEventDelivery)
-        enmAccess = VMXAPICACCESS_LINEAR_EVENT_DELIVERY;
-    else if (fAccess & IEM_ACCESS_INSTRUCTION)
-        enmAccess = VMXAPICACCESS_LINEAR_INSTR_FETCH;
-    else if (fAccess & IEM_ACCESS_TYPE_WRITE)
-        enmAccess = VMXAPICACCESS_LINEAR_WRITE;
-    else
-        enmAccess = VMXAPICACCESS_LINEAR_WRITE;
-
-    uint64_t const uExitQual = RT_BF_MAKE(VMX_BF_EXIT_QUAL_APIC_ACCESS_OFFSET, offAccess)
-                             | RT_BF_MAKE(VMX_BF_EXIT_QUAL_APIC_ACCESS_TYPE,   enmAccess);
-    iemVmxVmcsSetExitQual(pVCpu, uExitQual);
-    return iemVmxVmexit(pVCpu, VMX_EXIT_APIC_ACCESS);
-}
-
-
-/**
- * VMX VM-exit handler for APIC-write VM-exits.
- *
- * @param   pVCpu       The cross context virtual CPU structure.
- * @param   offApic     The write to the virtual-APIC page offset that caused this
- *                      VM-exit.
- */
-IEM_STATIC VBOXSTRICTRC iemVmxVmexitApicWrite(PVMCPU pVCpu, uint16_t offApic)
-{
-    Assert(offApic < XAPIC_OFF_END + 4);
-    iemVmxVmcsSetExitQual(pVCpu, offApic);
-    return iemVmxVmexit(pVCpu, VMX_EXIT_APIC_WRITE);
-}
-
-
-/**
- * VMX VM-exit handler for virtualized-EOIs.
- *
- * @param   pVCpu       The cross context virtual CPU structure.
- */
-IEM_STATIC VBOXSTRICTRC iemVmxVmexitVirtEoi(PVMCPU pVCpu, uint8_t uVector)
-{
-    iemVmxVmcsSetExitQual(pVCpu, uVector);
-    return iemVmxVmexit(pVCpu, VMX_EXIT_VIRTUALIZED_EOI);
 }
 
 
