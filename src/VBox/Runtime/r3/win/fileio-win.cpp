@@ -851,7 +851,9 @@ RTR3DECL(int) RTFileQueryInfo(RTFILE hFile, PRTFSOBJINFO pObjInfo, RTFSOBJATTRAD
      * We use the undocumented VerifyConsoleIoHandle to do this, falling back on
      * GetFileType should it not be there.
      */
-    if (rc == VERR_INVALID_HANDLE)
+    if (   rc == VERR_INVALID_HANDLE
+        || rc == VERR_ACCESS_DENIED
+        || rc == VERR_UNEXPECTED_FS_OBJ_TYPE)
     {
         static PFNVERIFYCONSOLEIOHANDLE s_pfnVerifyConsoleIoHandle = NULL;
         static bool volatile            s_fInitialized = false;
@@ -869,8 +871,9 @@ RTR3DECL(int) RTFileQueryInfo(RTFILE hFile, PRTFSOBJINFO pObjInfo, RTFSOBJATTRAD
             return VERR_INVALID_HANDLE;
     }
     /*
-     * On Windows 10 and (hopefully) 8.1 we get ERROR_INVALID_FUNCTION with console I/O
-     * handles.  We must ignore these just like the above invalid handle error.
+     * On Windows 10 and (hopefully) 8.1 we get ERROR_INVALID_FUNCTION with console
+     * I/O handles and null device handles.  We must ignore these just like the
+     * above invalid handle error.
      */
     else if (rc != VERR_INVALID_FUNCTION && rc != VERR_IO_BAD_COMMAND)
         return rc;
