@@ -417,12 +417,13 @@ void UIVMLogViewerWidget::sltResetOptionsToDefault()
 
 void UIVMLogViewerWidget::prepare()
 {
+    /* Load options: */
+    loadOptions();
+
     /* Prepare stuff: */
     prepareActions();
     /* Prepare widgets: */
     prepareWidgets();
-    /* Load options: */
-    loadOptions();
 
     /* Apply language settings: */
     retranslateUi();
