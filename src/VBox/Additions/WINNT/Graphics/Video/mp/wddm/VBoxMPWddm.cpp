@@ -5457,6 +5457,17 @@ DxgkDdiSetVidPnSourceAddress(
 
     NTSTATUS Status = STATUS_SUCCESS;
     PVBOXWDDM_SOURCE pSource = &pDevExt->aSources[pSetVidPnSourceAddress->VidPnSourceId];
+#ifdef VBOX_WITH_MESA3D
+    if (pDevExt->enmHwType == VBOXVIDEO_HWTYPE_VMSVGA)
+    {
+        GaScreenDefine(pDevExt->pGa, (uint32_t)pSetVidPnSourceAddress->PrimaryAddress.QuadPart,
+                       pSetVidPnSourceAddress->VidPnSourceId,
+                       pSource->VScreenPos.x, pSource->VScreenPos.y,
+                       pSource->AllocData.SurfDesc.width, pSource->AllocData.SurfDesc.height);
+        return STATUS_SUCCESS;
+    }
+#endif
+
     PVBOXWDDM_ALLOCATION pAllocation;
     Assert(pSetVidPnSourceAddress->hAllocation);
     Assert(pSetVidPnSourceAddress->hAllocation || pSource->pPrimaryAllocation);
@@ -5488,15 +5499,6 @@ DxgkDdiSetVidPnSourceAddress(
         vboxWddmAddrSetVram(&pSource->AllocData.Addr, pSetVidPnSourceAddress->PrimarySegment,
                                                     pSetVidPnSourceAddress->PrimaryAddress.QuadPart);
     }
-
-#ifdef VBOX_WITH_MESA3D
-    if (pDevExt->enmHwType == VBOXVIDEO_HWTYPE_VMSVGA)
-    {
-        GaScreenDefine(pDevExt->pGa, (uint32_t)pSetVidPnSourceAddress->PrimaryAddress.QuadPart,
-                       pSetVidPnSourceAddress->VidPnSourceId,
-                       pSource->AllocData.SurfDesc.width, pSource->AllocData.SurfDesc.height);
-    }
-#endif
 
     pSource->u8SyncState &= ~VBOXWDDM_HGSYNC_F_SYNCED_LOCATION;
 

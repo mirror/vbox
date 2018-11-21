@@ -212,6 +212,8 @@ NTSTATUS SvgaQueryInfo(PVBOXWDDM_EXT_VMSVGA pSvga,
 NTSTATUS SvgaScreenDefine(PVBOXWDDM_EXT_VMSVGA pSvga,
                           uint32_t u32Offset,
                           uint32_t u32ScreenId,
+                          int32_t xOrigin,
+                          int32_t yOrigin,
                           uint32_t u32Width,
                           uint32_t u32Height)
 {
@@ -224,7 +226,9 @@ NTSTATUS SvgaScreenDefine(PVBOXWDDM_EXT_VMSVGA pSvga,
     void *pvCmd = SvgaFifoReserve(pSvga, cbSubmit);
     if (pvCmd)
     {
-        SvgaCmdDefineScreen(pvCmd, u32ScreenId, u32Width, u32Height, u32Offset);
+        SvgaCmdDefineScreen(pvCmd, u32ScreenId, true,
+                            xOrigin, yOrigin, u32Width, u32Height,
+                            /* fPrimary = */ false, u32Offset, /* fBlank = */ false);
         pvCmd = (uint8_t *)pvCmd + sizeof(uint32_t) + sizeof(SVGAScreenObject);
 
         uint32_t u32BytesPerLine = u32Width * 4;

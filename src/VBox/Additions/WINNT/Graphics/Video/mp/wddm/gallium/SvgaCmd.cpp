@@ -24,24 +24,29 @@
  *   SVGA3dCmd*    Svga3dCmd*
  */
 
-void SvgaCmdDefineScreen(void *pvCmd, uint32_t u32Id, uint32_t u32Width, uint32_t u32Height, uint32_t u32Offset)
+void SvgaCmdDefineScreen(void *pvCmd, uint32_t u32Id, bool fActivate,
+                         int32_t xOrigin, int32_t yOrigin, uint32_t u32Width, uint32_t u32Height,
+                         bool fPrimary, uint32_t u32VRAMOffset, bool fBlank)
 {
     uint32_t *pu32Id = (uint32_t *)pvCmd;
     SVGAFifoCmdDefineScreen *pCommand = (SVGAFifoCmdDefineScreen *)&pu32Id[1];
 
     *pu32Id = SVGA_CMD_DEFINE_SCREEN;
 
-    pCommand->screen.structSize = sizeof(SVGAScreenObject);
-    pCommand->screen.id = u32Id;
-    pCommand->screen.flags = SVGA_SCREEN_MUST_BE_SET | SVGA_SCREEN_IS_PRIMARY;
-    pCommand->screen.size.width = u32Width;
+    pCommand->screen.structSize  = sizeof(SVGAScreenObject);
+    pCommand->screen.id          = u32Id;
+    pCommand->screen.flags       = SVGA_SCREEN_MUST_BE_SET;
+    pCommand->screen.flags      |= fPrimary  ? SVGA_SCREEN_IS_PRIMARY : 0;
+    pCommand->screen.flags      |= !fActivate? SVGA_SCREEN_DEACTIVATE : 0;
+    pCommand->screen.flags      |= fBlank    ? SVGA_SCREEN_BLANKING   : 0;
+    pCommand->screen.size.width  = u32Width;
     pCommand->screen.size.height = u32Height;
-    pCommand->screen.root.x = 0;
-    pCommand->screen.root.y = 0;
-    pCommand->screen.backingStore.ptr.gmrId = SVGA_GMR_FRAMEBUFFER;
-    pCommand->screen.backingStore.ptr.offset = u32Offset;
-    pCommand->screen.backingStore.pitch = u32Width * 4;
-    pCommand->screen.cloneCount = 1;
+    pCommand->screen.root.x      = xOrigin;
+    pCommand->screen.root.y      = yOrigin;
+    pCommand->screen.backingStore.ptr.gmrId  = SVGA_GMR_FRAMEBUFFER;
+    pCommand->screen.backingStore.ptr.offset = u32VRAMOffset;
+    pCommand->screen.backingStore.pitch      = u32Width * 4;
+    pCommand->screen.cloneCount  = 1;
 }
 
 void SvgaCmdDestroyScreen(void *pvCmd, uint32_t u32Id)

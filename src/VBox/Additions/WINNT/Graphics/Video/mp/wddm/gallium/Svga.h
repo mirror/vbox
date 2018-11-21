@@ -128,6 +128,8 @@ NTSTATUS SvgaQueryInfo(PVBOXWDDM_EXT_VMSVGA pSvga,
 NTSTATUS SvgaScreenDefine(PVBOXWDDM_EXT_VMSVGA pSvga,
                           uint32_t u32Offset,
                           uint32_t u32ScreenId,
+                          int32_t xOrigin,
+                          int32_t yOrigin,
                           uint32_t u32Width,
                           uint32_t u32Height);
 

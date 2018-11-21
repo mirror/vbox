@@ -468,10 +468,12 @@ static NTSTATUS gaSurfaceDestroy(PVBOXWDDM_EXT_GA pGaDevExt,
 NTSTATUS GaScreenDefine(PVBOXWDDM_EXT_GA pGaDevExt,
                         uint32_t u32Offset,
                         uint32_t u32ScreenId,
+                        int32_t xOrigin,
+                        int32_t yOrigin,
                         uint32_t u32Width,
                         uint32_t u32Height)
 {
-    return SvgaScreenDefine(pGaDevExt->hw.pSvga, u32Offset, u32ScreenId, u32Width, u32Height);
+    return SvgaScreenDefine(pGaDevExt->hw.pSvga, u32Offset, u32ScreenId, xOrigin, yOrigin, u32Width, u32Height);
 }
 
 static NTSTATUS gaSharedSidInsert(PVBOXWDDM_EXT_GA pGaDevExt,

@@ -30,6 +30,8 @@ NTSTATUS GaQueryInfo(PVBOXWDDM_EXT_GA pGaDevExt,
 NTSTATUS GaScreenDefine(PVBOXWDDM_EXT_GA pGaDevExt,
                         uint32_t u32Offset,
                         uint32_t u32ScreenId,
+                        int32_t xOrigin,
+                        int32_t yOrigin,
                         uint32_t u32Width,
                         uint32_t u32Height);
 
