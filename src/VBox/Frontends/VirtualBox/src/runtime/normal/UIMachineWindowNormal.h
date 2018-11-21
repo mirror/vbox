@@ -77,7 +77,7 @@ private slots:
     /** Handles status-bar context-menu-request. */
     void sltHandleStatusBarContextMenuRequest(const QPoint &position);
     /** Handles status-bar indicator context-menu-request. */
-    void sltHandleIndicatorContextMenuRequest(IndicatorType indicatorType, const QPoint &position);
+    void sltHandleIndicatorContextMenuRequest(IndicatorType enmIndicatorType, const QPoint &indicatorPosition);
 
 #ifdef VBOX_WS_MAC
     /** Handles signal about some @a pAction hovered. */

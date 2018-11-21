@@ -63,6 +63,9 @@ public:
     /** Defines whether indicator-states auto-update is @a fEnabled. */
     void setAutoUpdateIndicatorStates(bool fEnabled);
 
+    /** Returns global screen position corresponding to @a indicatorPosition inside indicator of @a enmIndicatorType. */
+    QPoint mapIndicatorPositionToGlobal(IndicatorType enmIndicatorType, const QPoint &indicatorPosition);
+
 private slots:
 
     /** Handles configuration change. */

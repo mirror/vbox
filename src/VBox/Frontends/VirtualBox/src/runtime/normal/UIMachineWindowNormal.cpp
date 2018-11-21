@@ -204,11 +204,11 @@ void UIMachineWindowNormal::sltHandleStatusBarContextMenuRequest(const QPoint &p
         actionPool()->action(UIActionIndexRT_M_View_M_StatusBar)->menu()->exec(statusBar()->mapToGlobal(position));
 }
 
-void UIMachineWindowNormal::sltHandleIndicatorContextMenuRequest(IndicatorType indicatorType, const QPoint &position)
+void UIMachineWindowNormal::sltHandleIndicatorContextMenuRequest(IndicatorType enmIndicatorType, const QPoint &indicatorPosition)
 {
     /* Determine action depending on indicator-type: */
     UIAction *pAction = 0;
-    switch (indicatorType)
+    switch (enmIndicatorType)
     {
         case IndicatorType_HardDisks:     pAction = actionPool()->action(UIActionIndexRT_M_Devices_M_HardDrives);     break;
         case IndicatorType_OpticalDisks:  pAction = actionPool()->action(UIActionIndexRT_M_Devices_M_OpticalDevices); break;
@@ -225,7 +225,7 @@ void UIMachineWindowNormal::sltHandleIndicatorContextMenuRequest(IndicatorType i
     }
     /* Raise action's context-menu: */
     if (pAction && pAction->isEnabled())
-        pAction->menu()->exec(position);
+        pAction->menu()->exec(m_pIndicatorsPool->mapIndicatorPositionToGlobal(enmIndicatorType, indicatorPosition));
 }
 
 #ifdef VBOX_WS_MAC
