@@ -670,14 +670,15 @@ vboxSfOs2QueryFileInfo(PVBOXSFFOLDER pFolder, PSFFSI pSfFsi, PVBOXSFSYFI pSfFsd,
      * 4. Try handle VINF_EM_HALT from HMR0 in ring-0, avoiding 4 context switches
      *    and a EM reschduling.
      *
-     *    Saves 1765 ns / 7011 ticks / 6.4%.
+     *    Saves 1216 ns / 4734 ticks / 4.8%.
      *
      *    Raw data:
-     *          27376 ns / 109809 ticks - no ring-0 HLT.
-     *          25611 ns / 102798 ticks - ring-0 HLT (42 spins)
+     *          25595 ns / 102768 ticks - no ring-0 HLT.
+     *          24379 ns /  98034 ticks - ring-0 HLT (42 spins)
      *
-     *    Gain since 0a: 13484 ns / 46948 ticks / 34%
-     *    Gain since 0b:  9463 ns / 38082 ticks / 27%
+     *    Gain since 0a: 14716 ns / 58723 ticks / 38%
+     *    Gain since 0b: 10695 ns / 42846 ticks / 30%
+     *
      */
 #if 0
     APIRET rc;
