@@ -18,27 +18,28 @@
 SUB_DEPTH = ../../../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
-LIBRARIES += VBoxWddmUmHlp
+LIBRARIES       += VBoxWddmUmHlp
 LIBRARIES.amd64 += VBoxWddmUmHlp-x86
 
 #
 # VBoxWddmUmHlp - logger and other helpers for user mode driver
 #
-VBoxWddmUmHlp_TEMPLATE    = VBOXMESA3DGUESTR3DLLMinVista
-VBoxWddmUmHlp_INST        = $(INST_ADDITIONS_LIB)
-VBoxWddmUmHlp_DEFS        = VBOX_WITH_WDDM
-VBoxWddmUmHlp_INCS        = \
+VBoxWddmUmHlp_TEMPLATE = VBoxMesa3DGuestR3DllMinVista
+VBoxWddmUmHlp_INST     = $(INST_ADDITIONS_LIB)
+VBoxWddmUmHlp_DEFS     = VBOX_WITH_WDDM
+VBoxWddmUmHlp_INCS     = \
 	$(PATH_ROOT)/src/VBox/Additions/WINNT/Graphics/Video/disp/wddm/shared \
 	$(VBOX_PATH_3D)/win/include \
 	$(VBOX_GRAPHICS_INCS)
-VBoxWddmUmHlp_SOURCES     = \
+VBoxWddmUmHlp_SOURCES  = \
 	D3DKMT.cpp \
 	VBoxMpLogger.cpp
 
 #
 # 64-bit version for 32-bit build.
 #
-VBoxWddmUmHlp-x86_EXTENDS = VBoxWddmUmHlp
+VBoxWddmUmHlp-x86_EXTENDS      = VBoxWddmUmHlp
 VBoxWddmUmHlp-x86_BLD_TRG_ARCH = x86
 
 include $(FILE_KBUILD_SUB_FOOTER)
+

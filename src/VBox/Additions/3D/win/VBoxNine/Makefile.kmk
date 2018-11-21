@@ -18,23 +18,23 @@
 SUB_DEPTH = ../../../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
-DLLS += VBoxNine
-VBoxNine_TEMPLATE    = VBOXMESA3DGUESTR3DLLMinVista
+DLLS       += VBoxNine
+DLLS.amd64 += VBoxNine-x86
+
+VBoxNine_TEMPLATE = VBoxMesa3DGuestR3DllMinVista
 #  -wd4100: unreferenced formal parameter
 #  -wd4200: nonstandard extension used : zero-sized array in struct/union
 #  -wd4245: 'return' : conversion from 'int' to 'unsigned int', signed/unsigned mismatch
 #  -wd4255: no function prototype given
 #  -wd4668: 'something' is not defined as a preprocessor macro, replacing with '0' for '#if/#elif'
-VBoxNine_CFLAGS     += -wd4100 -wd4200 -wd4245 -wd4255 -wd4668
-VBoxNine_INCS       += \
+VBoxNine_CFLAGS   = -wd4100 -wd4200 -wd4245 -wd4255 -wd4668
+VBoxNine_INCS     = \
 	$(VBOX_PATH_MESA)/src/gallium/state_trackers/nine
-
-VBoxNine_SOURCES     = \
+VBoxNine_SOURCES  = \
 	VBoxNine.c \
 	VBoxNine.rc \
 	VBoxNine.def
-
-VBoxNine_LIBS        = \
+VBoxNine_LIBS     = \
 	$(VBOX_PATH_ADDITIONS_LIB)/VBoxWddmUmHlp$(VBOX_SUFF_LIB) \
 	$(VBOX_PATH_ADDITIONS_LIB)/VBoxMesaGalliumAuxLib$(VBOX_SUFF_LIB) \
 	$(VBOX_PATH_ADDITIONS_LIB)/VBoxMesaUtilLib$(VBOX_SUFF_LIB) \
@@ -48,14 +48,14 @@ endif
 #
 # VBoxNine-x86 - x86 version of VBoxNine built for amd64 build
 #
-DLLS.win.amd64 += VBoxNine-x86
-VBoxNine-x86_EXTENDS = VBoxNine
+VBoxNine-x86_EXTENDS      = VBoxNine
 VBoxNine-x86_BLD_TRG_ARCH = x86
-VBoxNine-x86_LIBS        = \
+VBoxNine-x86_LIBS         = \
 	$(VBOX_PATH_ADDITIONS_LIB)/VBoxWddmUmHlp-x86$(VBOX_SUFF_LIB) \
 	$(VBOX_PATH_ADDITIONS_LIB)/VBoxMesaGalliumAuxLib-x86$(VBOX_SUFF_LIB) \
 	$(VBOX_PATH_ADDITIONS_LIB)/VBoxMesaUtilLib-x86$(VBOX_SUFF_LIB) \
 	$(VBOX_PATH_ADDITIONS_LIB)/VBoxMesaNineLib-x86$(VBOX_SUFF_LIB)
-VBoxNine-x86_DEFS = $(VBoxNine_DEFS) VBOX_WOW64
+VBoxNine-x86_DEFS         = $(VBoxNine_DEFS) VBOX_WOW64
 
 include $(FILE_KBUILD_SUB_FOOTER)
+

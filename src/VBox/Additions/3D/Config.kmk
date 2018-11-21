@@ -19,7 +19,7 @@ VBOX_MESA3D_CONFIG_KMK_INCLUDED := 1
 
 # Include the top-level configure file.
 ifndef VBOX_ROOT_CONFIG_KMK_INCLUDED
- include $(PATH_ROOT)/Config.kmk
+include $(PATH_ROOT)/Config.kmk
 endif
 
 VBOX_MESA            := mesa-17.3.9
@@ -31,14 +31,13 @@ VBOX_PATH_VMSVGA_INC := $(VBOX_PATH_MESA)/src/gallium/drivers/svga/include
 #
 # Base template for Mesa3D code and code which uses Mesa3D libraries.
 #
-TEMPLATE_VBOXMESA3DGUESTR3DLL             = VBox Mesa 3D Guest User Mode DLL
-TEMPLATE_VBOXMESA3DGUESTR3DLL_EXTENDS     = NewerVccVBoxGuestR3Dll
-TEMPLATE_VBOXMESA3DGUESTR3DLL_INST        = $(INST_ADDITIONS)
-TEMPLATE_VBOXMESA3DGUESTR3DLL_DEFS        = $(TEMPLATE_NewerVccVBoxGuestR3Dll_DEFS) \
+TEMPLATE_VBoxMesa3DGuestR3Dll          = VBox Mesa 3D Guest User Mode DLL
+TEMPLATE_VBoxMesa3DGuestR3Dll_EXTENDS  = NewerVccVBoxGuestR3Dll
+TEMPLATE_VBoxMesa3DGuestR3Dll_INST     = $(INST_ADDITIONS)
+TEMPLATE_VBoxMesa3DGuestR3Dll_DEFS     = $(TEMPLATE_NewerVccVBoxGuestR3Dll_DEFS) \
 	VBOX_WITH_MESA3D
-TEMPLATE_VBOXMESA3DGUESTR3DLL_SDKS.win    = $(TEMPLATE_NewerVccVBoxGuestR3Dll_SDKS) \
+TEMPLATE_VBoxMesa3DGuestR3Dll_SDKS.win = $(TEMPLATE_NewerVccVBoxGuestR3Dll_SDKS) \
 	$(VBOX_WINDDK_GST_W8)
-
 # VirtualBox specific modifications of the Mesa3D code.
 # All modified places can be found by searching for VBOX
 #
@@ -59,7 +58,7 @@ TEMPLATE_VBOXMESA3DGUESTR3DLL_SDKS.win    = $(TEMPLATE_NewerVccVBoxGuestR3Dll_SD
 #  VBOX_WITH_MESA3D_SVGA_HALFZ         D3D Z coord [0.0;1.0] in the Gallium SVGA driver (VGPU9 only).
 #  VBOX_WITH_MESA3D_SVGA_INSTANCING    Instancing for DrawPrimitives in the Gallium SVGA driver
 #                                      (VGPU9 only, VGPU10 has it).
-TEMPLATE_VBOXMESA3DGUESTR3DLL_DEFS      += \
+TEMPLATE_VBoxMesa3DGuestR3Dll_DEFS    += \
 	VBOX_WITH_MESA3D_COMPILE \
 	VBOX_WITH_MESA3D_D3D_FROM_SYSTEMMEM \
 	VBOX_WITH_MESA3D_D3D_THREADPOOL \
@@ -70,13 +69,11 @@ TEMPLATE_VBOXMESA3DGUESTR3DLL_DEFS      += \
 	VBOX_WITH_MESA3D_SVGA_GPU_FINISHED \
 	VBOX_WITH_MESA3D_SVGA_HALFZ \
 	VBOX_WITH_MESA3D_SVGA_INSTANCING
-
-TEMPLATE_VBOXMESA3DGUESTR3DLL_DEFS.win   = $(TEMPLATE_NewerVccVBoxGuestR3Dll_DEFS.win) \
+TEMPLATE_VBoxMesa3DGuestR3Dll_DEFS.win = $(TEMPLATE_NewerVccVBoxGuestR3Dll_DEFS.win) \
 	_USE_MATH_DEFINES \
 	WINAPI=__stdcall \
 	_WIN32
-
-TEMPLATE_VBOXMESA3DGUESTR3DLL_INCS       = $(TEMPLATE_NewerVccVBoxGuestR3Dll_INCS) \
+TEMPLATE_VBoxMesa3DGuestR3Dll_INCS     = $(TEMPLATE_NewerVccVBoxGuestR3Dll_INCS) \
 	$(VBOX_PATH_MESA)/include \
 	$(VBOX_PATH_MESA)/include/c99 \
 	$(VBOX_PATH_MESA)/src \
@@ -86,13 +83,14 @@ TEMPLATE_VBOXMESA3DGUESTR3DLL_INCS       = $(TEMPLATE_NewerVccVBoxGuestR3Dll_INC
 	$(VBOX_PATH_3D)/win/VBoxWddmUmHlp
 
 #
-# Variant of VBOXMESA3DGUESTR3DLL that requires Windows Vista or later.
+# Variant of VBoxMesa3DGuestR3Dll that requires Windows Vista or later.
 #
-TEMPLATE_VBOXMESA3DGUESTR3DLLMinVista = VBox Mesa 3D Guest User Mode DLL (Windows Vista or newer)
-TEMPLATE_VBOXMESA3DGUESTR3DLLMinVista_EXTENDS  = VBOXMESA3DGUESTR3DLL
+TEMPLATE_VBoxMesa3DGuestR3DllMinVista                     = VBox Mesa 3D Guest User Mode DLL (Windows Vista or newer)
+TEMPLATE_VBoxMesa3DGuestR3DllMinVista_EXTENDS             = VBoxMesa3DGuestR3Dll
 ifeq ($(KBUILD_TARGET),win)
- TEMPLATE_VBOXMESA3DGUESTR3DLLMinVista_LDFLAGS.win.x86 = $(filter-out -Section:.bss$(COMMA)RW!K,$(TEMPLATE_VBOXMESA3DGUESTR3DLL_LDFLAGS.win.x86))
- TEMPLATE_VBOXMESA3DGUESTR3DLLMinVista_POST_CMDS.win.x86 = $(subst $(VBOX_PE_SET_VERSION), $(VBOX_PE_SET_VERSION) --vista,$(TEMPLATE_VBOXMESA3DGUESTR3DLL_POST_CMDS.win.x86))
- TEMPLATE_VBOXMESA3DGUESTR3DLLMinVista_POST_CMDS.win.amd64 = $(if $(eq $(tool_do),LINK_LIBRARY),,$(VBOX_PE_SET_VERSION) --vista $(out)$$(NLTAB)$(TEMPLATE_VBOXMESA3DGUESTR3DLL_POST_CMDS.win.amd64))
- TEMPLATE_VBOXMESA3DGUESTR3DLLMinVista_LNK_DEPS.win.amd64  = $(if $(eq $(tool_do),LINK_LIBRARY),,$(VBOX_PE_SET_VERSION)) $(TEMPLATE_VBOXMESA3DGUESTR3DLL_LNK_DEPS.win.amd64)
+TEMPLATE_VBoxMesa3DGuestR3DllMinVista_LDFLAGS.win.x86     = $(filter-out -Section:.bss$(COMMA)RW!K,$(TEMPLATE_VBoxMesa3DGuestR3Dll_LDFLAGS.win.x86))
+TEMPLATE_VBoxMesa3DGuestR3DllMinVista_POST_CMDS.win.x86   = $(subst $(VBOX_PE_SET_VERSION), $(VBOX_PE_SET_VERSION) --vista,$(TEMPLATE_VBoxMesa3DGuestR3Dll_POST_CMDS.win.x86))
+TEMPLATE_VBoxMesa3DGuestR3DllMinVista_POST_CMDS.win.amd64 = $(if $(eq $(tool_do),LINK_LIBRARY),,$(VBOX_PE_SET_VERSION) --vista $(out)$$(NLTAB)$(TEMPLATE_VBoxMesa3DGuestR3Dll_POST_CMDS.win.amd64))
+TEMPLATE_VBoxMesa3DGuestR3DllMinVista_LNK_DEPS.win.amd64  = $(if $(eq $(tool_do),LINK_LIBRARY),,$(VBOX_PE_SET_VERSION)) $(TEMPLATE_VBoxMesa3DGuestR3Dll_LNK_DEPS.win.amd64)
 endif
+

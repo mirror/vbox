@@ -21,12 +21,13 @@ include $(KBUILD_PATH)/subheader.kmk
 # Define this to build software OpenGL driver
 #VBOX_WITH_MESA3D_GL_SOFTWARE = 1
 
-DLLS += VBoxGL
-VBoxGL_TEMPLATE    = VBOXMESA3DGUESTR3DLLMinVista
-#  -wd4005: '__useHeader' : redefinition
-VBoxGL_CFLAGS      = -wd4005
+DLLS       += VBoxGL
+DLLS.amd64 += VBoxGL-x86
 
-VBoxGL_INCS       += \
+VBoxGL_TEMPLATE = VBoxMesa3DGuestR3DllMinVista
+# -wd4005: '__useHeader' : redefinition
+VBoxGL_CFLAGS   = -wd4005
+VBoxGL_INCS     = \
 	$(VBOX_PATH_3D)/win/include \
 	$(VBOX_PATH_MESA)/include/GL \
 	$(VBOX_PATH_MESA)/src/gallium/state_trackers/wgl \
@@ -36,21 +37,19 @@ VBoxGL_INCS       += \
 	$(PATH_ROOT)/src/VBox/Runtime/common/table \
 	$(VBOX_PATH_VMSVGA_INC) \
 	$(VBOX_GRAPHICS_INCS)
-
-VBoxGL_SOURCES     = \
+VBoxGL_SOURCES  = \
 	$(VBOX_PATH_MESA)/src/gallium/state_trackers/wgl/opengl32.def \
 	VBoxGL.rc
-
 ifndef VBOX_WITH_MESA3D_GL_SOFTWARE
-VBoxGL_SOURCES     += \
+VBoxGL_SOURCES += \
 	GaDrvEnvKMT.cpp \
 	VBoxGL.c
 else
-VBoxGL_SOURCES    += \
+VBoxGL_SOURCES += \
 	$(VBOX_PATH_MESA)/src/gallium/targets/libgl-gdi/libgl_gdi.c
-VBoxGL_SOURCES    += \
+VBoxGL_SOURCES += \
 	$(VBOX_PATH_MESA)/src/gallium/winsys/sw/gdi/gdi_sw_winsys.c
-VBoxGL_SOURCES    += \
+VBoxGL_SOURCES += \
 	$(VBOX_PATH_MESA)/src/gallium/drivers/softpipe/sp_buffer.c \
 	$(VBOX_PATH_MESA)/src/gallium/drivers/softpipe/sp_clear.c \
 	$(VBOX_PATH_MESA)/src/gallium/drivers/softpipe/sp_context.c \
@@ -85,8 +84,7 @@ VBoxGL_SOURCES    += \
 	$(VBOX_PATH_MESA)/src/gallium/drivers/softpipe/sp_texture.c \
 	$(VBOX_PATH_MESA)/src/gallium/drivers/softpipe/sp_tile_cache.c
 endif
-
-VBoxGL_LIBS        = \
+VBoxGL_LIBS     = \
 	$(VBOX_PATH_ADDITIONS_LIB)/VBoxWddmUmHlp$(VBOX_SUFF_LIB) \
 	$(VBOX_PATH_ADDITIONS_LIB)/VBoxMesaGalliumAuxLib$(VBOX_SUFF_LIB) \
 	$(VBOX_PATH_ADDITIONS_LIB)/VBoxMesaWglLib$(VBOX_SUFF_LIB) \
@@ -101,15 +99,15 @@ endif
 #
 # VBoxGL-x86 - x86 version of VBoxGL built for amd64 build
 #
-DLLS.win.amd64 += VBoxGL-x86
-VBoxGL-x86_EXTENDS = VBoxGL
+VBoxGL-x86_EXTENDS      = VBoxGL
 VBoxGL-x86_BLD_TRG_ARCH = x86
-VBoxGL-x86_LIBS        = \
+VBoxGL-x86_LIBS         = \
 	$(VBOX_PATH_ADDITIONS_LIB)/VBoxWddmUmHlp-x86$(VBOX_SUFF_LIB) \
 	$(VBOX_PATH_ADDITIONS_LIB)/VBoxMesaGalliumAuxLib-x86$(VBOX_SUFF_LIB) \
 	$(VBOX_PATH_ADDITIONS_LIB)/VBoxMesaWglLib-x86$(VBOX_SUFF_LIB) \
 	$(VBOX_PATH_ADDITIONS_LIB)/VBoxMesaUtilLib-x86$(VBOX_SUFF_LIB) \
 	$(VBOX_PATH_ADDITIONS_LIB)/VBoxMesaLib-x86$(VBOX_SUFF_LIB)
-VBoxGL-x86_DEFS = $(VBoxGL_DEFS) VBOX_WOW64
+VBoxGL-x86_DEFS         = $(VBoxGL_DEFS) VBOX_WOW64
 
 include $(FILE_KBUILD_SUB_FOOTER)
+

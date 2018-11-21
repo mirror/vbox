@@ -18,49 +18,38 @@
 SUB_DEPTH = ../../../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
-VBOX_PATH_GL_GEN = $(PATH_OBJ)/VBoxGLgen
 VBOX_GL_ICD_DEF_FILE = $(VBOX_PATH_MESA)/src/gallium/state_trackers/wgl/opengl32.mingw.def
 
-BLDDIRS += $(VBOX_PATH_GL_GEN)/
+DLLS       += VBoxICD
+DLLS.amd64 += VBoxICD-x86
 
-DLLS += VBoxICD
-VBoxICD_TEMPLATE    = VBOXMESA3DGUESTR3DLLMinVista
-#  -wd4005: '__useHeader' : redefinition
-VBoxICD_CFLAGS      = -wd4005
-
-VBoxICD_INCS       += \
+VBoxICD_TEMPLATE = VBoxMesa3DGuestR3DllMinVista
+# -wd4005: '__useHeader' : redefinition
+VBoxICD_CFLAGS   = -wd4005
+VBoxICD_INCS     = \
 	$(VBOX_PATH_3D)/win/include \
 	$(PATH_ROOT)/src/VBox/Additions/WINNT/Graphics/Video \
 	$(VBOX_GRAPHICS_INCS)
-
-VBoxICD_SOURCES     = \
+VBoxICD_SOURCES  = \
 	$(VBOX_PATH_MESA)/src/gallium/state_trackers/wgl/opengl32.def \
-	$(VBOX_PATH_GL_GEN)/forwarders.asm \
-	$(VBOX_PATH_GL_GEN)/pfns.c \
+	$(VBoxICD_0_OUTDIR)/forwarders.asm \
+	$(VBoxICD_0_OUTDIR)/pfns.c \
 	VBoxICD.c \
 	VBoxICD.rc
-
-VBoxICD_LIBS        = \
+VBoxICD_CLEAN    = \
+	$(VBoxICD_0_OUTDIR)/forwarders.asm \
+	$(VBoxICD_0_OUTDIR)/pfns.c
+VBoxICD_LIBS     = \
 	$(VBOX_PATH_ADDITIONS_LIB)/VBoxWddmUmHlp$(VBOX_SUFF_LIB)
 
-$(VBOX_PATH_GL_GEN)/forwarders.asm: \
-		$(PATH_SUB_CURRENT)/icd_forwarders.py \
-		$(VBOX_GL_ICD_DEF_FILE) \
-		Makefile.kmk \
-		| $$(dir $$@)
+$$(VBoxICD_0_OUTDIR)/forwarders.asm: \
+		$(PATH_SUB_CURRENT)/icd_forwarders.py $(VBOX_GL_ICD_DEF_FILE) | $$(dir $$@)
 	$(call MSG_GENERATE,python,$@,$(VBOX_GL_ICD_DEF_FILE))
 	$(QUIET)$(VBOX_BLD_PYTHON) $< $(VBOX_GL_ICD_DEF_FILE) $@
-$(VBOX_PATH_GL_GEN)/pfns.c: \
-		$(PATH_SUB_CURRENT)/icd_pfns.py \
-		$(VBOX_GL_ICD_DEF_FILE) \
-		Makefile.kmk \
-		| $$(dir $$@)
+$$(VBoxICD_0_OUTDIR)/pfns.c: \
+		$(PATH_SUB_CURRENT)/icd_pfns.py $(VBOX_GL_ICD_DEF_FILE) | $$(dir $$@)
 	$(call MSG_GENERATE,python,$@,$(VBOX_GL_ICD_DEF_FILE))
 	$(QUIET)$(VBOX_BLD_PYTHON) $< $(VBOX_GL_ICD_DEF_FILE) $@
-
-VBoxICD_CLEAN      = \
-	$(VBOX_PATH_GL_GEN)/forwarders.asm \
-	$(VBOX_PATH_GL_GEN)/pfns.c
 
 ifdef VBOX_SIGN_ADDITIONS
 VBoxICD_INSTTYPE       = none
@@ -70,11 +59,11 @@ endif
 #
 # x86 version built for amd64 build
 #
-DLLS.win.amd64 += VBoxICD-x86
-VBoxICD-x86_EXTENDS = VBoxICD
+VBoxICD-x86_EXTENDS      = VBoxICD
 VBoxICD-x86_BLD_TRG_ARCH = x86
-VBoxICD-x86_LIBS        = \
+VBoxICD-x86_LIBS         = \
 	$(VBOX_PATH_ADDITIONS_LIB)/VBoxWddmUmHlp-x86$(VBOX_SUFF_LIB)
-VBoxICD-x86_DEFS = $(VBoxICD_DEFS) VBOX_WOW64
+VBoxICD-x86_DEFS         = $(VBoxICD_DEFS) VBOX_WOW64
 
 include $(FILE_KBUILD_SUB_FOOTER)
+
