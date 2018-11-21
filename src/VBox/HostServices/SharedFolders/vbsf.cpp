@@ -1177,7 +1177,6 @@ int vbsfDirList(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Handle, SHFLS
         return rc;
 
     Assert(*pIndex == 0);
-    hDir = pHandle->dir.Handle;
 
     cbDirEntry = 4096;
     pDirEntryOrg = pDirEntry  = (PRTDIRENTRYEX)RTMemAlloc(cbDirEntry);
@@ -1194,7 +1193,9 @@ int vbsfDirList(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Handle, SHFLS
     *pIndex = 1; /* not yet complete */
     *pcFiles = 0;
 
-    if (pPath)
+    if (!pPath)
+        hDir = pHandle->dir.Handle;
+    else
     {
         if (pHandle->dir.SearchHandle == 0)
         {
@@ -1219,9 +1220,17 @@ int vbsfDirList(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Handle, SHFLS
             }
             else
                 goto end;
+            flags &= ~SHFL_LIST_RESTART;
         }
         Assert(pHandle->dir.SearchHandle);
         hDir = pHandle->dir.SearchHandle;
+    }
+
+    if (flags & SHFL_LIST_RESTART)
+    {
+        rc = RTDirRewind(hDir);
+        if (RT_FAILURE(rc))
+            goto end;
     }
 
     while (cbBufferOrg)

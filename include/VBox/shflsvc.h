@@ -1409,6 +1409,7 @@ typedef struct _VBoxSFFlush
 /** @todo might be necessary for future. */
 #define SHFL_LIST_NONE          0
 #define SHFL_LIST_RETURN_ONE    1
+#define SHFL_LIST_RESTART       2
 
 /** Parameters structure. */
 typedef struct _VBoxSFList
