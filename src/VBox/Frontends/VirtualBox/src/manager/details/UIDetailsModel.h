@@ -25,6 +25,7 @@
 #include <QSet>
 
 /* GUI includes: */
+#include "QIWithRetranslateUI.h"
 #include "UIExtraDataDefs.h"
 
 /* COM includes: */
@@ -35,12 +36,90 @@ class QGraphicsItem;
 class QGraphicsScene;
 class QGraphicsSceneContextMenuEvent;
 class QGraphicsView;
+class QListWidget;
+class QListWidgetItem;
 class UIVirtualMachineItem;
 class UIDetails;
 class UIDetailsElement;
 class UIDetailsElementAnimationCallback;
 class UIDetailsGroup;
 class UIDetailsItem;
+class UIDetailsModel;
+
+
+/** QWidget subclass used as Details pane context menu. */
+class UIDetailsContextMenu : public QIWithRetranslateUI2<QWidget>
+{
+    Q_OBJECT;
+
+public:
+
+    /** Context menu data fields. */
+    enum DataField
+    {
+        DataField_Type = Qt::UserRole + 1,
+        DataField_Name = Qt::UserRole + 2,
+    };
+
+    /** Constructs context-menu.
+      * @param  pModel  Brings model object reference. */
+    UIDetailsContextMenu(UIDetailsModel *pModel);
+
+    /** Updates category check-states. */
+    void updateCategoryStates();
+    /** Updates option check-states for certain @a enmRequiredCategoryType. */
+    void updateOptionStates(DetailsElementType enmRequiredCategoryType = DetailsElementType_Invalid);
+
+protected:
+
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */;
+
+    /** Handles translation event for categories list. */
+    void retranslateCategories();
+    /** Handles translation event for options list. */
+    void retranslateOptions();
+
+private slots:
+
+    /** Handles signal about category list-widget @a pItem hovered. */
+    void sltCategoryItemEntered(QListWidgetItem *pItem);
+    /** Handles signal about category list-widget @a pItem clicked. */
+    void sltCategoryItemClicked(QListWidgetItem *pItem);
+    /** Handles signal about current category list-widget @a pItem hovered. */
+    void sltCategoryItemChanged(QListWidgetItem *pCurrent, QListWidgetItem *pPrevious);
+
+    /** Handles signal about option list-widget @a pItem hovered. */
+    void sltOptionItemEntered(QListWidgetItem *pItem);
+    /** Handles signal about option list-widget @a pItem clicked. */
+    void sltOptionItemClicked(QListWidgetItem *pItem);
+
+private:
+
+    /** Prepares all. */
+    void prepare();
+
+    /** (Re)populates categories. */
+    void populateCategories();
+    /** (Re)populates options. */
+    void populateOptions();
+
+    /** Adjusts both list widgets. */
+    void adjustListWidgets();
+
+    /** Creates category list item with specified @a icon. */
+    QListWidgetItem *createCategoryItem(const QIcon &icon);
+    /** Creates option list item. */
+    QListWidgetItem *createOptionItem();
+
+    /** Holds the model reference. */
+    UIDetailsModel *m_pModel;
+
+    /** Holds the categories list instance. */
+    QListWidget *m_pListWidgetCategories;
+    /** Holds the options list instance. */
+    QListWidget *m_pListWidgetOptions;
+};
 
 
 /** QObject sub-class used as graphics details model. */
@@ -178,9 +257,6 @@ private slots:
     /** Handles sigal about details element of certain @a enmType toggling finished, making element @a fToggled. */
     void sltToggleAnimationFinished(DetailsElementType type, bool fToggled);
 
-    /** Handles request about toggling visibility. */
-    void sltElementTypeToggled();
-
 private:
 
     /** @name Prepare/Cleanup cascade.
@@ -191,6 +267,8 @@ private:
         void prepareScene();
         /** Prepares root. */
         void prepareRoot();
+        /** Prepares context-menu. */
+        void prepareContextMenu();
         /** Loads settings. */
         void loadSettings();
         /** Loads details categories. */
@@ -205,6 +283,8 @@ private:
         void saveDetailsCategories();
         /** Saves settings. */
         void saveSettings();
+        /** Cleanups context-menu. */
+        void cleanupContextMenu();
         /** Cleanups root. */
         void cleanupRoot();
         /** Cleanups scene. */
@@ -251,6 +331,9 @@ private:
     UIExtraDataMetaDefs::DetailsElementOptionTypeUserInterface  m_fOptionsUserInterface;
     /** Holds the options for Description element. */
     UIExtraDataMetaDefs::DetailsElementOptionTypeDescription    m_fOptionsDescription;
+
+    /** Holds the context-menu instance. */
+    UIDetailsContextMenu *m_pContextMenu;
 };
 
 
