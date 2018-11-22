@@ -130,6 +130,10 @@ public:
     HRESULT     i_getLibraryName(const char *a_pszModuleName, Utf8Str *a_pstrLibrary);
     bool        i_wantsToBeDefaultVrde(void) const;
     HRESULT     i_refresh(bool *pfCanDelete);
+#ifndef VBOX_COM_INPROC
+    bool        i_areThereCloudProviderUninstallVetos();
+    void        i_notifyCloudProviderManager();
+#endif
     /** @}  */
 
 protected:

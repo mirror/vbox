@@ -24,7 +24,6 @@
 #include "AutoCaller.h"
 #include "Logging.h"
 
-using namespace std;
 
 ////////////////////////////////////////////////////////////////////////////////
 //
@@ -52,29 +51,13 @@ void CloudProviderManager::FinalRelease()
     BaseFinalRelease();
 }
 
-HRESULT CloudProviderManager::init(VirtualBox *aParent)
+HRESULT CloudProviderManager::init()
 {
     // Enclose the state transition NotReady->InInit->Ready.
     AutoInitSpan autoInitSpan(this);
     AssertReturn(autoInitSpan.isOk(), E_FAIL);
 
     m_apCloudProviders.clear();
-
-#ifdef VBOX_WITH_EXTPACK
-    // Engage the extension pack manager and get all the implementations of
-    // this class and all implemented cloud providers.
-    ExtPackManager *pExtPackMgr = aParent->i_getExtPackManager();
-    mpExtPackMgr = pExtPackMgr;
-    if (pExtPackMgr)
-    {
-        mcExtPackMgrUpdate = pExtPackMgr->i_getUpdateCounter();
-        // Make sure that the current value doesn't match, forcing a refresh.
-        mcExtPackMgrUpdate--;
-        i_refreshProviders();
-    }
-#else
-    RT_NOREF(aParent);
-#endif
 
     autoInitSpan.setSucceeded();
     return S_OK;
@@ -89,51 +72,100 @@ void CloudProviderManager::uninit()
 }
 
 #ifdef VBOX_WITH_EXTPACK
-void CloudProviderManager::i_refreshProviders()
+bool CloudProviderManager::i_canRemoveExtPack(IExtPack *aExtPack)
 {
-    uint64_t cExtPackMgrUpdate;
-    {
-        AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-        if (mpExtPackMgr.isNull())
-            return;
-        cExtPackMgrUpdate = mpExtPackMgr->i_getUpdateCounter();
-        if (cExtPackMgrUpdate == mcExtPackMgrUpdate)
-            return;
-    }
+    AssertReturn(aExtPack, false);
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-    // Reread the current value to figure out if some other thead did the work
-    // already before this thread got hold of the write lock.
-    cExtPackMgrUpdate = mpExtPackMgr->i_getUpdateCounter();
-    if (cExtPackMgrUpdate == mcExtPackMgrUpdate)
-        return;
-    mcExtPackMgrUpdate = cExtPackMgrUpdate;
 
-    if (!m_mapCloudProviderManagers.empty())
+    // If any cloud provider in this extension pack fails to prepare the
+    // uninstall it and the cloud provider will be kept, so that the user
+    // can retry safely later. All other cloud providers in this extpack
+    // will be done as usual. No attempt is made to bring back the other
+    // cloud providers into working shape.
+
+    bool fRes = true;
+    Bstr bstrName;
+    aExtPack->GetName(bstrName.asOutParam());
+    Utf8Str strName(bstrName);
+    ExtPackNameCloudProviderManagerMap::iterator it = m_mapCloudProviderManagers.find(strName);
+    if (it != m_mapCloudProviderManagers.end())
     {
-        /// @todo The code below will need to be extended to handle extpack
-        // install and uninstall safely (and the latter needs non-trivial
-        // checks if any extpack related cloud activity is pending.
-        return;
+        ComPtr<ICloudProviderManager> pTmp(it->second);
+
+        Assert(m_astrExtPackNames.size() == m_apCloudProviders.size());
+        for (size_t i = 0; i < m_astrExtPackNames.size(); )
+        {
+            if (m_astrExtPackNames[i] != strName)
+            {
+                i++;
+                continue;
+            }
+
+            // pTmpProvider will point to an object with refcount > 0 until
+            // the ComPtr is removed from m_apCloudProviders.
+            HRESULT hrc = S_OK;
+            ULONG uRefCnt = 1;
+            ICloudProvider *pTmpProvider(m_apCloudProviders[i]);
+            if (pTmpProvider)
+            {
+                hrc = pTmpProvider->PrepareUninstall();
+                // Sanity check the refcount, it should be 1 at this point.
+                pTmpProvider->AddRef();
+                uRefCnt = pTmpProvider->Release();
+                Assert(uRefCnt == 1);
+            }
+            if (SUCCEEDED(hrc) && uRefCnt == 1)
+            {
+                m_astrExtPackNames.erase(m_astrExtPackNames.begin() + i);
+                m_apCloudProviders.erase(m_apCloudProviders.begin() + i);
+            }
+            else
+            {
+                LogRel(("CloudProviderManager: provider '%s' blocks extpack uninstall, result=%Rhrc, refcount=%u\n", strName.c_str(), hrc, uRefCnt));
+                fRes = false;
+                i++;
+            }
+        }
+
+        if (fRes)
+            m_mapCloudProviderManagers.erase(it);
     }
 
-    std::vector<ComPtr<IUnknown> > apObjects;
+    return fRes;
+}
+
+void CloudProviderManager::i_addExtPack(IExtPack *aExtPack)
+{
+    AssertReturnVoid(aExtPack);
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    Bstr bstrName;
+    aExtPack->GetName(bstrName.asOutParam());
+    Utf8Str strName(bstrName);
+    ComPtr<IUnknown> pObj;
     std::vector<com::Utf8Str> astrExtPackNames;
     com::Guid idObj(COM_IIDOF(ICloudProviderManager));
-    mpExtPackMgr->i_queryObjects(idObj.toString(), apObjects, &astrExtPackNames);
-    for (unsigned i = 0; i < apObjects.size(); i++)
+    HRESULT hrc = aExtPack->QueryObject(Bstr(idObj.toString()).raw(), pObj.asOutParam());
+    if (FAILED(hrc))
+        return;
+
+    ComPtr<ICloudProviderManager> pTmp(pObj);
+    if (pTmp.isNull())
+        return;
+
+    SafeIfaceArray<ICloudProvider> apProvidersFromCurrExtPack;
+    hrc = pTmp->COMGETTER(Providers)(ComSafeArrayAsOutParam(apProvidersFromCurrExtPack));
+    if (FAILED(hrc))
+        return;
+
+    m_mapCloudProviderManagers[strName] = pTmp;
+    for (unsigned i = 0; i < apProvidersFromCurrExtPack.size(); i++)
     {
-        ComPtr<ICloudProviderManager> pTmp;
-        HRESULT hrc = apObjects[i].queryInterfaceTo(pTmp.asOutParam());
-        if (SUCCEEDED(hrc))
-            m_mapCloudProviderManagers[astrExtPackNames[i]] = pTmp;
-        SafeIfaceArray<ICloudProvider> apProvidersFromCurrExtPack;
-        hrc = pTmp->COMGETTER(Providers)(ComSafeArrayAsOutParam(apProvidersFromCurrExtPack));
-        if (SUCCEEDED(hrc))
-        {
-            for (unsigned j = 0; j < apProvidersFromCurrExtPack.size(); j++)
-                m_apCloudProviders.push_back(apProvidersFromCurrExtPack[i]);
-        }
+        Assert(m_astrExtPackNames.size() == m_apCloudProviders.size());
+        m_astrExtPackNames.push_back(strName);
+        m_apCloudProviders.push_back(apProvidersFromCurrExtPack[i]);
     }
 }
 #endif  /* VBOX_WITH_EXTPACK */

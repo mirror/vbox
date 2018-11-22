@@ -25519,7 +25519,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="ICloudProvider" extends="$unknown"
-    uuid="8154fa84-35d7-4a9b-86b4-cb2635b0d9f5"
+    uuid="caaf8bc1-aab0-4ea0-b825-be53a1453bdd"
     wsmap="managed" reservedMethods="4" reservedAttributes="4"
     >
 
@@ -25603,6 +25603,18 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <method name="getProfileByName">
       <param name="profileName" type="wstring" dir="in"/>
       <param name="profile" type="ICloudProfile" dir="return"/>
+    </method>
+
+    <method name="prepareUninstall" wrap-hint-server="passcaller">
+      <desc>
+        The caller requests the cloud provider to cease operation. Should
+        return an error if this is currently not possible (due to ongoing
+        cloud activity, possibly by a different API client). However, this
+        must not wait for the completion for a larger amount of time (ideally
+        stays below a second of execution time). If this succeeds it should
+        leave the cloud provider in a state which does not allow starting new
+        operations.
+      </desc>
     </method>
 
   </interface>

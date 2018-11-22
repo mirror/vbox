@@ -20,6 +20,7 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #include "ExtPackManagerImpl.h"
+#include "CloudProviderManagerImpl.h"
 #include "ExtPackUtil.h"
 #include "ThreadTask.h"
 
@@ -927,6 +928,7 @@ bool ExtPack::i_callVirtualBoxReadyHook(IVirtualBox *a_pVirtualBox, AutoWriteLoc
             ComPtr<ExtPack> ptrSelfRef = this;
             a_pLock->release();
             m->pReg->pfnVirtualBoxReady(m->pReg, a_pVirtualBox);
+            i_notifyCloudProviderManager();
             a_pLock->acquire();
             return true;
         }
@@ -1084,7 +1086,7 @@ bool ExtPack::i_callVmPowerOffHook(IConsole *a_pConsole, PVM a_pVM, AutoWriteLoc
     }
     return false;
 }
-#endif /* !VBOX_COM_INPROC */
+#endif /* VBOX_COM_INPROC */
 
 /**
  * Check if the extension pack is usable and has an VRDE module.
@@ -1247,6 +1249,50 @@ HRESULT ExtPack::i_refresh(bool *a_pfCanDelete)
 
     return S_OK;
 }
+
+#ifndef VBOX_COM_INPROC
+/**
+ * Checks if there are cloud providers vetoing extension pack uninstall.
+ *
+ * This needs going through the cloud provider singleton in VirtualBox,
+ * the job cannot be done purely by using the code in the extension pack).
+ * It cannot be integrated into i_callUninstallHookAndClose, because it
+ * can only do its job when the extpack lock is not held, whereas the
+ * actual uninstall must be done with the lock held all the time for
+ * consistency reasons.
+ *
+ * This is called when uninstalling or replacing an extension pack.
+ *
+ * @returns true / false
+ */
+bool ExtPack::i_areThereCloudProviderUninstallVetos()
+{
+    Assert(m->pVirtualBox != NULL); /* Only called from VBoxSVC. */
+
+    ComObjPtr<CloudProviderManager> cpm(m->pVirtualBox->i_getCloudProviderManager());
+    AssertReturn(!cpm.isNull(), false);
+
+    return !cpm->i_canRemoveExtPack(static_cast<IExtPack *>(this));
+}
+
+/**
+ * Notifies the Cloud Provider Manager that there is a new extension pack.
+ *
+ * This is called when installing an extension pack.
+ *
+ * @param   a_pExtPack          The extension pack to be added.
+ */
+void ExtPack::i_notifyCloudProviderManager()
+{
+    Assert(m->pVirtualBox != NULL); /* Only called from VBoxSVC. */
+
+    ComObjPtr<CloudProviderManager> cpm(m->pVirtualBox->i_getCloudProviderManager());
+    AssertReturnVoid(!cpm.isNull());
+
+    cpm->i_addExtPack(static_cast<IExtPack *>(this));
+}
+
+#endif /* !VBOX_COM_INPROC */
 
 /**
  * Probes the extension pack, loading the main dll and calling its registration
@@ -2848,12 +2894,19 @@ HRESULT ExtPackManager::i_doInstall(ExtPackFile *a_pExtPackFile, bool a_fReplace
                    which means we have to redo the refresh call afterwards. */
                 autoLock.release();
                 bool fRunningVMs = i_areThereAnyRunningVMs();
+                bool fVetoingCP = pExtPack->i_areThereCloudProviderUninstallVetos();
                 autoLock.acquire();
                 hrc = i_refreshExtPack(pStrName->c_str(), false /*a_fUnusableIsError*/, &pExtPack);
                 if (fRunningVMs)
                 {
-                    LogRel(("Install extension pack '%s' failed because at least one VM is still running.", pStrName->c_str()));
-                    hrc = setError(E_FAIL, tr("Install extension pack '%s' failed because at least one VM is still running"),
+                    LogRel(("Upgrading extension pack '%s' failed because at least one VM is still running.", pStrName->c_str()));
+                    hrc = setError(E_FAIL, tr("Upgrading extension pack '%s' failed because at least one VM is still running"),
+                                   pStrName->c_str());
+                }
+                else if (fVetoingCP)
+                {
+                    LogRel(("Upgrading extension pack '%s' failed because at least one Cloud Provider is still busy.", pStrName->c_str()));
+                    hrc = setError(E_FAIL, tr("Upgrading extension pack '%s' failed because at least one Cloud Provider is still busy"),
                                    pStrName->c_str());
                 }
                 else if (SUCCEEDED(hrc) && pExtPack)
@@ -2955,72 +3008,98 @@ HRESULT ExtPackManager::i_doUninstall(Utf8Str const *a_pstrName, bool a_fForcedR
     HRESULT hrc = autoCaller.rc();
     if (SUCCEEDED(hrc))
     {
-        if (a_fForcedRemoval || !i_areThereAnyRunningVMs())
-        {
-            AutoWriteLock autoLock(this COMMA_LOCKVAL_SRC_POS);
+        AutoWriteLock autoLock(this COMMA_LOCKVAL_SRC_POS);
 
-            /*
-             * Refresh the data we have on the extension pack as it may be made
-             * stale by direct meddling or some other user.
-             */
-            ExtPack *pExtPack;
-            hrc = i_refreshExtPack(a_pstrName->c_str(), false /*a_fUnusableIsError*/, &pExtPack);
-            if (SUCCEEDED(hrc))
+        /*
+         * Refresh the data we have on the extension pack as it
+         * may be made stale by direct meddling or some other user.
+         */
+        ExtPack *pExtPack;
+        hrc = i_refreshExtPack(a_pstrName->c_str(), false /*a_fUnusableIsError*/, &pExtPack);
+        if (SUCCEEDED(hrc) && pExtPack)
+        {
+            /* We must leave the lock when calling i_areThereAnyRunningVMs,
+               which means we have to redo the refresh call afterwards. */
+            autoLock.release();
+            bool fRunningVMs = i_areThereAnyRunningVMs();
+            bool fVetoingCP = pExtPack->i_areThereCloudProviderUninstallVetos();
+            autoLock.acquire();
+            if (a_fForcedRemoval || (!fRunningVMs && !fVetoingCP))
             {
-                if (!pExtPack)
+                hrc = i_refreshExtPack(a_pstrName->c_str(), false /*a_fUnusableIsError*/, &pExtPack);
+                if (SUCCEEDED(hrc))
                 {
-                    LogRel(("ExtPackManager: Extension pack '%s' is not installed, so nothing to uninstall.\n", a_pstrName->c_str()));
-                    hrc = S_OK;             /* nothing to uninstall */
-                }
-                else
-                {
-                    /*
-                     * Call the uninstall hook and unload the main dll.
-                     */
-                    hrc = pExtPack->i_callUninstallHookAndClose(m->pVirtualBox, a_fForcedRemoval);
-                    if (SUCCEEDED(hrc))
+                    if (!pExtPack)
+                    {
+                        LogRel(("ExtPackManager: Extension pack '%s' is not installed, so nothing to uninstall.\n", a_pstrName->c_str()));
+                        hrc = S_OK;             /* nothing to uninstall */
+                    }
+                    else
                     {
                         /*
-                         * Run the set-uid-to-root binary that performs the
-                         * uninstallation.  Then refresh the object.
-                         *
-                         * This refresh is theorically subject to races, but it's of
-                         * the don't-do-that variety.
+                         * Call the uninstall hook and unload the main dll.
                          */
-                        const char *pszForcedOpt = a_fForcedRemoval ? "--forced" : NULL;
-                        hrc = i_runSetUidToRootHelper(a_pstrDisplayInfo,
-                                                      "uninstall",
-                                                      "--base-dir", m->strBaseDir.c_str(),
-                                                      "--name",     a_pstrName->c_str(),
-                                                      pszForcedOpt, /* Last as it may be NULL. */
-                                                      (const char *)NULL);
+                        hrc = pExtPack->i_callUninstallHookAndClose(m->pVirtualBox, a_fForcedRemoval);
                         if (SUCCEEDED(hrc))
                         {
-                            hrc = i_refreshExtPack(a_pstrName->c_str(), false /*a_fUnusableIsError*/, &pExtPack);
+                            /*
+                             * Run the set-uid-to-root binary that performs the
+                             * uninstallation.  Then refresh the object.
+                             *
+                             * This refresh is theorically subject to races, but it's of
+                             * the don't-do-that variety.
+                             */
+                            const char *pszForcedOpt = a_fForcedRemoval ? "--forced" : NULL;
+                            hrc = i_runSetUidToRootHelper(a_pstrDisplayInfo,
+                                                          "uninstall",
+                                                          "--base-dir", m->strBaseDir.c_str(),
+                                                          "--name",     a_pstrName->c_str(),
+                                                          pszForcedOpt, /* Last as it may be NULL. */
+                                                          (const char *)NULL);
                             if (SUCCEEDED(hrc))
                             {
-                                if (!pExtPack)
-                                    LogRel(("ExtPackManager: Successfully uninstalled extension pack '%s'.\n", a_pstrName->c_str()));
-                                else
-                                    hrc = setError(E_FAIL,
-                                                   tr("Uninstall extension pack '%s' failed under mysterious circumstances"),
-                                                   a_pstrName->c_str());
+                                hrc = i_refreshExtPack(a_pstrName->c_str(), false /*a_fUnusableIsError*/, &pExtPack);
+                                if (SUCCEEDED(hrc))
+                                {
+                                    if (!pExtPack)
+                                        LogRel(("ExtPackManager: Successfully uninstalled extension pack '%s'.\n", a_pstrName->c_str()));
+                                    else
+                                        hrc = setError(E_FAIL,
+                                                       tr("Uninstall extension pack '%s' failed under mysterious circumstances"),
+                                                       a_pstrName->c_str());
+                                }
                             }
-                        }
-                        else
-                        {
-                            ErrorInfoKeeper Eik;
-                            i_refreshExtPack(a_pstrName->c_str(), false /*a_fUnusableIsError*/, NULL);
+                            else
+                            {
+                                ErrorInfoKeeper Eik;
+                                i_refreshExtPack(a_pstrName->c_str(), false /*a_fUnusableIsError*/, NULL);
+                            }
                         }
                     }
                 }
             }
-        }
-        else
-        {
-            LogRel(("Uninstall extension pack '%s' failed because at least one VM is still running.", a_pstrName->c_str()));
-            hrc = setError(E_FAIL, tr("Uninstall extension pack '%s' failed because at least one VM is still running"),
-                           a_pstrName->c_str());
+            else
+            {
+                if (fRunningVMs)
+                {
+                    LogRel(("Uninstall extension pack '%s' failed because at least one VM is still running.", a_pstrName->c_str()));
+                    hrc = setError(E_FAIL, tr("Uninstall extension pack '%s' failed because at least one VM is still running"),
+                                   a_pstrName->c_str());
+                }
+                else if (fVetoingCP)
+                {
+                    LogRel(("Uninstall extension pack '%s' failed because at least one Cloud Provider is still busy.", a_pstrName->c_str()));
+                    hrc = setError(E_FAIL, tr("Uninstall extension pack '%s' failed because at least one Cloud Provider is still busy"),
+                                   a_pstrName->c_str());
+                }
+                else
+                {
+                    LogRel(("Uninstall extension pack '%s' failed for an unknown reason.", a_pstrName->c_str()));
+                    hrc = setError(E_FAIL, tr("Uninstall extension pack '%s' failed for an unknown reason"),
+                                   a_pstrName->c_str());
+
+                }
+            }
         }
 
         /*
@@ -3028,7 +3107,10 @@ HRESULT ExtPackManager::i_doUninstall(Utf8Str const *a_pstrName, bool a_fForcedR
          * extension pack (old ones will not be called).
          */
         if (m->enmContext == VBOXEXTPACKCTX_PER_USER_DAEMON)
+        {
+            autoLock.release();
             i_callAllVirtualBoxReadyHooks();
+        }
     }
 
     return hrc;

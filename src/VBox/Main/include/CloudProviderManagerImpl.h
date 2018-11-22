@@ -20,9 +20,6 @@
 #define ____H_CLOUDPROVIDERMANAGERIMPL
 
 #include "CloudProviderManagerWrap.h"
-#ifdef VBOX_WITH_EXTPACK
-class ExtPackManager;
-#endif
 
 
 class ATL_NO_VTABLE CloudProviderManager
@@ -34,12 +31,13 @@ public:
     HRESULT FinalConstruct();
     void FinalRelease();
 
-    HRESULT init(VirtualBox *aParent);
+    HRESULT init();
     void uninit();
 
 #ifdef VBOX_WITH_EXTPACK
     // Safe helpers, take care of caller and lock themselves.
-    void i_refreshProviders();
+    bool i_canRemoveExtPack(IExtPack *aExtPack);
+    void i_addExtPack(IExtPack *aExtPack);
 #endif
 
 private:
@@ -54,12 +52,14 @@ private:
 
 private:
 #ifdef VBOX_WITH_EXTPACK
-    ComObjPtr<ExtPackManager> mpExtPackMgr;
-    uint64_t mcExtPackMgrUpdate;
-    std::map<com::Utf8Str, ComPtr<ICloudProviderManager> > m_mapCloudProviderManagers;
+    typedef std::map<com::Utf8Str, ComPtr<ICloudProviderManager> > ExtPackNameCloudProviderManagerMap;
+    ExtPackNameCloudProviderManagerMap m_mapCloudProviderManagers;
+    typedef std::vector<com::Utf8Str> ExtPackNameVec;
+    ExtPackNameVec m_astrExtPackNames;
 #endif
 
-    std::vector<ComPtr<ICloudProvider> > m_apCloudProviders;
+    typedef std::vector<ComPtr<ICloudProvider> > CloudProviderVec;
+    CloudProviderVec m_apCloudProviders;
 };
 
 #endif // !____H_CLOUDPROVIDERMANAGERIMPL

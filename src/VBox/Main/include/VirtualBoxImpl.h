@@ -39,6 +39,7 @@ class Host;
 class SystemProperties;
 class DHCPServer;
 class PerformanceCollector;
+class CloudProviderManager;
 #ifdef VBOX_WITH_EXTPACK
 class ExtPackManager;
 #endif
@@ -215,20 +216,21 @@ public:
 
     const Guid &i_getGlobalRegistryId() const;
 
-    const ComObjPtr<Host>& i_host() const;
-    SystemProperties* i_getSystemProperties() const;
+    const ComObjPtr<Host> &i_host() const;
+    SystemProperties *i_getSystemProperties() const;
+    CloudProviderManager *i_getCloudProviderManager() const;
 #ifdef VBOX_WITH_EXTPACK
-    ExtPackManager* i_getExtPackManager() const;
+    ExtPackManager *i_getExtPackManager() const;
 #endif
 #ifdef VBOX_WITH_RESOURCE_USAGE_API
-    const ComObjPtr<PerformanceCollector>& i_performanceCollector() const;
+    const ComObjPtr<PerformanceCollector> &i_performanceCollector() const;
 #endif /* VBOX_WITH_RESOURCE_USAGE_API */
 
     void i_getDefaultMachineFolder(Utf8Str &str) const;
     void i_getDefaultHardDiskFormat(Utf8Str &str) const;
 
     /** Returns the VirtualBox home directory */
-    const Utf8Str& i_homeDir() const;
+    const Utf8Str &i_homeDir() const;
     int i_calculateFullPath(const Utf8Str &strPath, Utf8Str &aResult);
     void i_copyPathRelativeToConfig(const Utf8Str &strSource, Utf8Str &strTarget);
     HRESULT i_registerMedium(const ComObjPtr<Medium> &pMedium, ComObjPtr<Medium> *ppMedium,
