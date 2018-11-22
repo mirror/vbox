@@ -741,7 +741,7 @@ vnode_t vboxSfDwnVnAlloc(mount_t pMount, enum vtype enmType, vnode_t pParent, ui
 	VnParms.vnfs_str        = "vboxsf";
 	VnParms.vnfs_dvp        = pParent;
 	VnParms.vnfs_fsnode     = pVnData;
-	VnParms.vnfs_vops       = g_papfnVBoxVFSVnodeDirOpsVector;
+	VnParms.vnfs_vops       = g_papfnVBoxSfDwnVnDirOpsVector;
 	VnParms.vnfs_markroot   = pParent == NULL;
 	VnParms.vnfs_marksystem = 0;
 	VnParms.vnfs_rdev       = 0;
@@ -820,14 +820,14 @@ static struct vnodeopv_entry_desc g_VBoxSfDirOpsDescList[] =
 };
 
 /** ??? */
-int (**g_papfnVBoxVFSVnodeDirOpsVector)(void *);
+int (**g_papfnVBoxSfDwnVnDirOpsVector)(void *);
 
 /**
  * VNode operation descriptors.
  */
 struct vnodeopv_desc g_VBoxSfVnodeOpvDesc =
 {
-    &g_papfnVBoxVFSVnodeDirOpsVector,
+    &g_papfnVBoxSfDwnVnDirOpsVector,
     g_VBoxSfDirOpsDescList
 };
 

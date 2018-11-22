@@ -46,7 +46,7 @@ VBGLSFCLIENT                    g_SfClientDarwin = { UINT32_MAX, NULL };
 /** Number of active mounts.  Used for unload prevention. */
 uint32_t volatile               g_cVBoxSfMounts = 0;
 
-/* VBoxVFS filesystem handle. Needed for FS unregistering. */
+/** VFS table entry for our file system (for vfs_fsremove). */
 static vfstable_t               g_pVBoxSfVfsTableEntry;
 /** For vfs_fsentry. */
 static struct vnodeopv_desc    *g_apVBoxSfVnodeOpDescList[] =
@@ -77,7 +77,7 @@ RT_C_DECLS_BEGIN
 extern kern_return_t _start(struct kmod_info *pKModInfo, void *pvData);
 extern kern_return_t _stop(struct kmod_info *pKModInfo, void *pvData);
 
-KMOD_EXPLICIT_DECL(VBoxVFS, VBOX_VERSION_STRING, _start, _stop)
+KMOD_EXPLICIT_DECL(VBoxSF, VBOX_VERSION_STRING, _start, _stop)
 DECLHIDDEN(kmod_start_func_t *) _realmain      = vboxSfDwnModuleLoad;
 DECLHIDDEN(kmod_stop_func_t *)  _antimain      = vboxSfDwnModuleUnload;
 DECLHIDDEN(int)                 _kext_apple_cc = __APPLE_CC__;
@@ -211,7 +211,7 @@ static kern_return_t vboxSfDwnModuleUnload(struct kmod_info *pKModInfo, void *pv
 
 
     /*
-     * Are we busy?  If so fail.
+     * Are we busy?  If so fail.  Otherwise try deregister the file system.
      */
     if (g_cVBoxSfMounts > 0)
     {
@@ -219,10 +219,19 @@ static kern_return_t vboxSfDwnModuleUnload(struct kmod_info *pKModInfo, void *pv
         return KERN_NO_ACCESS;
     }
 
+    if (g_pVBoxSfVfsTableEntry)
+    {
+        int rc = vfs_fsremove(g_pVBoxSfVfsTableEntry);
+        if (rc != 0)
+        {
+            LogRel(("VBoxSF: vfs_fsremove failed: %d\n", rc));
+            return KERN_NO_ACCESS;
+        }
+    }
+
     /*
      * Disconnect and terminate libraries we're using.
      */
-
     if (g_SfClientDarwin.handle != NULL)
     {
         VbglR0SfDisconnect(&g_SfClientDarwin);

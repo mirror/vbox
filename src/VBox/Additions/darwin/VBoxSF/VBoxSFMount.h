@@ -26,9 +26,9 @@
 /**
  * Mount information that gets passed from userland on mount.
  */
-typedef struct vboxvfs_mount_info
+typedef struct VBOXSFDRWNMOUNTINFO
 {
-    /** Magic value (VBOXVFS_MOUNTINFO_MAGIC).   */
+    /** Magic value (VBOXSFDRWNMOUNTINFO_MAGIC).   */
     uint32_t    u32Magic;
     /** The shared folder name.   */
     char        szFolder[260];

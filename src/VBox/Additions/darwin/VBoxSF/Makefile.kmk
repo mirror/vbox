@@ -58,7 +58,7 @@ $$(VBoxSF.kext_0_OUTDIR)/Info.plist: \
 		$<
 
 #
-# mount.vboxvfs - The Shared Folders mouning tool.
+# mount.vboxsf - The Shared Folders mounting tool.
 #
 PROGRAMS += mount.vboxsf
 mount.vboxsf_TEMPLATE = NewVBoxGuestR3Exe
