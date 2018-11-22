@@ -675,7 +675,8 @@ static int vboxSfDwnVnReadDir(struct vnop_readdir_args *pArgs)
 
 static int vboxSfDwnVnPathConf(struct vnop_pathconf_args *pArgs)
 {
-    PDEBUG("here");
+    Log(("vboxSfDwnVnPathConf:\n"));
+    RT_NOREF(pArgs);
     return 0;
 }
 
@@ -696,7 +697,7 @@ static int vboxSfDwnVnReclaim(struct vnop_reclaim_args *pArgs)
     AssertReturn(pArgs && pArgs->a_vp, EINVAL);
 
     /* Check that it's not a root node that's in use. */
-    PVBOXSFMNT pMntData = (PVBOXSFMNT)vfs_fsprivate(vnode_mount(pArgs->a_vp));
+    PVBOXSFMNTDATA pMntData = (PVBOXSFMNTDATA)vfs_fsprivate(vnode_mount(pArgs->a_vp));
     AssertReturn(!pMntData || pMntData->pVnRoot != pArgs->a_vp, EBUSY);
 
     /* Get the private data and free it. */

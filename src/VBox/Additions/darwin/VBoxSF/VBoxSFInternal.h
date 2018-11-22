@@ -49,17 +49,15 @@
 /*********************************************************************************************************************************
 *   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
-/** @todo misguided, should use Log() and LogRel. sigh... */
-#define PINFO(fmt, args...)     printf(VBOXSF_DARWIN_FS_NAME ": INFO: " fmt "\n", ## args)
-#define PDEBUG(fmt, args...)    printf(VBOXSF_DARWIN_FS_NAME ": %s(): DEBUG: " fmt "\n", __FUNCTION__, ## args)
-#define PERROR(fmt, args...)    printf(VBOXSF_DARWIN_FS_NAME ": ERROR: " fmt "\n", ## args)
 
 
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
 *********************************************************************************************************************************/
-/** Private data assigned to each mounted shared folder. Assigned to mp structure. */
-typedef struct vboxvfs_mount_data
+/**
+ * Private data we associate with a mount.
+ */
+typedef struct VBOXSFMNTDATA
 {
     /** The shared folder mapping */
     VBGLSFMAP           hHostFolder;
@@ -69,18 +67,21 @@ typedef struct vboxvfs_mount_data
     uid_t               uidMounter;
     /** The mount info from the mount() call. */
     VBOXSFDRWNMOUNTINFO MntInfo;
-} vboxvfs_mount_t, VBOXSFMNT;
-typedef VBOXSFMNT *PVBOXSFMNT;
+} VBOXSFMNTDATA;
+/** Pointer to private mount data.  */
+typedef VBOXSFMNTDATA *PVBOXSFMNTDATA;
 
-/** Private data assigned to each vnode object. */
-typedef struct vboxvfs_vnode_data
+/**
+ * Private data we associate with a VNode.
+ */
+typedef struct VBOXSFDWNVNDATA
 {
     SHFLHANDLE      hHandle;                /** VBoxVFS object handle. */
     ///PSHFLSTRING     pPath;                  /** Path within shared folder */
     ///lck_attr_t     *pLockAttr;              /** BSD locking stuff */
     ///lck_rw_t       *pLock;                  /** BSD locking stuff */
-} vboxvfs_vnode_t, VBOXSFDWNVNDATA;
-/** Private vnode data. */
+} VBOXSFDWNVNDATA;
+/** Pointer to private vnode data. */
 typedef VBOXSFDWNVNDATA *PVBOXSFDWNVNDATA;
 
 
@@ -93,6 +94,7 @@ extern uint32_t volatile    g_cVBoxSfMounts;
 extern struct vfsops        g_VBoxSfVfsOps;
 extern struct vnodeopv_desc g_VBoxSfVnodeOpvDesc;
 extern int (**g_papfnVBoxVFSVnodeDirOpsVector)(void *);
+
 
 
 /*********************************************************************************************************************************

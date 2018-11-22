@@ -203,10 +203,12 @@ static kern_return_t vboxSfDwnModuleLoad(struct kmod_info *pKModInfo, void *pvDa
  */
 static kern_return_t vboxSfDwnModuleUnload(struct kmod_info *pKModInfo, void *pvData)
 {
+    RT_NOREF(pKModInfo, pvData);
 #ifdef DEBUG
     printf("vboxSfDwnModuleUnload\n");
     RTLogBackdoorPrintf("vboxSfDwnModuleUnload\n");
 #endif
+
 
     /*
      * Are we busy?  If so fail.

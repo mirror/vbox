@@ -25,7 +25,6 @@ SYSMODS        += VBoxSF
 VBoxSF_TEMPLATE = VBOXGUESTR0
 VBoxSF_INST     = $(INST_ADDITIONS)VBoxSF.kext/Contents/MacOS/
 VBoxSF_DEFS     = VBOX_WITH_HGCM
-VBoxSF_CXXFLAGS = -Wno-unused -Wno-unused-parameter
 VBoxSF_LIBS     = $(VBOX_LIB_VBGL_R0)
 VBoxSF_SOURCES  = \
 	VBoxSF.cpp \
