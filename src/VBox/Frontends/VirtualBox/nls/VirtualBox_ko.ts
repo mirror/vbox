@@ -6,17 +6,17 @@
     <message>
         <source>English</source>
         <comment>Native language name</comment>
-        <translation type="vanished">한국어</translation>
+        <translation>한국어</translation>
     </message>
     <message>
         <source>English</source>
         <comment>Language name, in English</comment>
-        <translation type="vanished">Korean</translation>
+        <translation>Korean</translation>
     </message>
     <message>
         <source>Oracle Corporation</source>
         <comment>Comma-separated list of translators</comment>
-        <translation type="vanished">Shinjo Park</translation>
+        <translation>Shinjo Park</translation>
     </message>
 </context>
 <context>

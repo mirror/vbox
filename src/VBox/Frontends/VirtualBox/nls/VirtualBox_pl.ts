@@ -6,17 +6,17 @@
     <message>
         <source>English</source>
         <comment>Native language name</comment>
-        <translation type="vanished">Polski</translation>
+        <translation>Polski</translation>
     </message>
     <message>
         <source>English</source>
         <comment>Language name, in English</comment>
-        <translation type="vanished">Polish</translation>
+        <translation>Polish</translation>
     </message>
     <message>
         <source>Oracle Corporation</source>
         <comment>Comma-separated list of translators</comment>
-        <translation type="vanished">Dawid Wrobel, Adrian Lubik, Wiktor Wandachowicz, Bartosz</translation>
+        <translation>Dawid Wrobel, Adrian Lubik, Wiktor Wandachowicz, Bartosz</translation>
     </message>
 </context>
 <context>

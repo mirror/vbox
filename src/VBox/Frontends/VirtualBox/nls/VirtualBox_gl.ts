@@ -6,27 +6,27 @@
     <message>
         <source>English</source>
         <comment>Native language name</comment>
-        <translation type="vanished">Galego</translation>
+        <translation>Galego</translation>
     </message>
     <message>
         <source>--</source>
         <comment>Native language country name (empty if this language is for all countries)</comment>
-        <translation type="vanished">España</translation>
+        <translation>España</translation>
     </message>
     <message>
         <source>English</source>
         <comment>Language name, in English</comment>
-        <translation type="vanished">Galician</translation>
+        <translation>Galician</translation>
     </message>
     <message>
         <source>--</source>
         <comment>Language country name, in English (empty if native country name is empty)</comment>
-        <translation type="vanished">Spain</translation>
+        <translation>Spain</translation>
     </message>
     <message>
         <source>Oracle Corporation</source>
         <comment>Comma-separated list of translators</comment>
-        <translation type="vanished">Oficina de Software Libre da USC, Enrique Estévez Fernández, Francisco Diéguez Souto, Mancomun, Antón Méixome.</translation>
+        <translation>Oficina de Software Libre da USC, Enrique Estévez Fernández, Francisco Diéguez Souto, Mancomun, Antón Méixome.</translation>
     </message>
 </context>
 <context>

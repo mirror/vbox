@@ -6,27 +6,27 @@
     <message>
         <source>English</source>
         <comment>Native language name</comment>
-        <translation type="vanished">Lietuvių</translation>
+        <translation>Lietuvių</translation>
     </message>
     <message>
         <source>English</source>
         <comment>Language name, in English</comment>
-        <translation type="vanished">Lithuanian</translation>
+        <translation>Lithuanian</translation>
     </message>
     <message>
         <source>Oracle Corporation</source>
         <comment>Comma-separated list of translators</comment>
-        <translation type="vanished">Mindaugas Baranauskas, Algimantas Margevičius</translation>
+        <translation>Mindaugas Baranauskas, Algimantas Margevičius</translation>
     </message>
     <message>
         <source>--</source>
         <comment>Native language country name (empty if this language is for all countries)</comment>
-        <translation type="vanished">Lietuvių</translation>
+        <translation>Lietuvių</translation>
     </message>
     <message>
         <source>--</source>
         <comment>Language country name, in English (empty if native country name is empty)</comment>
-        <translation type="vanished">Lithuanian</translation>
+        <translation>Lithuanian</translation>
     </message>
 </context>
 <context>

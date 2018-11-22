@@ -6,27 +6,27 @@
     <message>
         <source>English</source>
         <comment>Native language name</comment>
-        <translation type="vanished">正體中文</translation>
+        <translation>正體中文</translation>
     </message>
     <message>
         <source>--</source>
         <comment>Native language country name (empty if this language is for all countries)</comment>
-        <translation type="vanished">--</translation>
+        <translation>--</translation>
     </message>
     <message>
         <source>English</source>
         <comment>Language name, in English</comment>
-        <translation type="vanished">Traditional Chinese</translation>
+        <translation>Traditional Chinese</translation>
     </message>
     <message>
         <source>--</source>
         <comment>Language country name, in English (empty if native country name is empty)</comment>
-        <translation type="vanished">Taiwan</translation>
+        <translation>Taiwan</translation>
     </message>
     <message>
         <source>Oracle Corporation</source>
         <comment>Comma-separated list of translators</comment>
-        <translation type="vanished">alan@stable</translation>
+        <translation>alan@stable</translation>
     </message>
 </context>
 <context>

@@ -6,17 +6,17 @@
     <message>
         <source>English</source>
         <comment>Native language name</comment>
-        <translation type="vanished">Português (Portugal)</translation>
+        <translation>Português (Portugal)</translation>
     </message>
     <message>
         <source>English</source>
         <comment>Language name, in English</comment>
-        <translation type="vanished">Português (Portugal)</translation>
+        <translation>Português (Portugal)</translation>
     </message>
     <message>
         <source>Oracle Corporation</source>
         <comment>Comma-separated list of translators</comment>
-        <translation type="vanished">José Melo &lt;mmodem00@gmail.com&gt;, Marcelo Coelho &lt;marcelocoelho@gmail.com&gt;, Manuela Silva &lt;manuela.silva@sky.com&gt;</translation>
+        <translation>José Melo &lt;mmodem00@gmail.com&gt;, Marcelo Coelho &lt;marcelocoelho@gmail.com&gt;, Manuela Silva &lt;manuela.silva@sky.com&gt;</translation>
     </message>
 </context>
 <context>

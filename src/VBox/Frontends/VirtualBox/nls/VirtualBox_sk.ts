@@ -6,17 +6,17 @@
     <message>
         <source>English</source>
         <comment>Native language name</comment>
-        <translation type="vanished">Slovenčina</translation>
+        <translation>Slovenčina</translation>
     </message>
     <message>
         <source>English</source>
         <comment>Language name, in English</comment>
-        <translation type="vanished">Slovak</translation>
+        <translation>Slovak</translation>
     </message>
     <message>
         <source>Oracle Corporation</source>
         <comment>Comma-separated list of translators</comment>
-        <translation type="vanished">Ivan Masár &lt;helix84@centrum.sk&gt;, Jozef Říha &lt;jose1711@gmail.com&gt;</translation>
+        <translation>Ivan Masár &lt;helix84@centrum.sk&gt;, Jozef Říha &lt;jose1711@gmail.com&gt;</translation>
     </message>
 </context>
 <context>

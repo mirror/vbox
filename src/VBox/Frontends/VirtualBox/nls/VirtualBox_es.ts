@@ -6,17 +6,17 @@
     <message>
         <source>English</source>
         <comment>Native language name</comment>
-        <translation type="vanished">Español</translation>
+        <translation>Español</translation>
     </message>
     <message>
         <source>English</source>
         <comment>Language name, in English</comment>
-        <translation type="vanished">Spanish</translation>
+        <translation>Spanish</translation>
     </message>
     <message>
         <source>Oracle Corporation</source>
         <comment>Comma-separated list of translators</comment>
-        <translation type="vanished">Joaquin Duo, David González</translation>
+        <translation>Joaquin Duo, David González</translation>
     </message>
 </context>
 <context>

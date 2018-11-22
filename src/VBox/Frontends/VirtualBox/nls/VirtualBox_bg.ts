@@ -6,27 +6,27 @@
     <message>
         <source>English</source>
         <comment>Native language name</comment>
-        <translation type="vanished">Български</translation>
+        <translation>Български</translation>
     </message>
     <message>
         <source>--</source>
         <comment>Native language country name (empty if this language is for all countries)</comment>
-        <translation type="vanished">България</translation>
+        <translation>България</translation>
     </message>
     <message>
         <source>English</source>
         <comment>Language name, in English</comment>
-        <translation type="vanished">Bulgarian</translation>
+        <translation>Bulgarian</translation>
     </message>
     <message>
         <source>--</source>
         <comment>Language country name, in English (empty if native country name is empty)</comment>
-        <translation type="vanished">Bulgaria</translation>
+        <translation>Bulgaria</translation>
     </message>
     <message>
         <source>Oracle Corporation</source>
         <comment>Comma-separated list of translators</comment>
-        <translation type="vanished">Stoyan Marinov, Moyat.NET</translation>
+        <translation>Stoyan Marinov, Moyat.NET</translation>
     </message>
 </context>
 <context>

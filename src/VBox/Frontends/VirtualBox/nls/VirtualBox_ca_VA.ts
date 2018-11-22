@@ -6,7 +6,7 @@
     <message>
         <source>English</source>
         <comment>Native language name</comment>
-        <translation type="vanished">Català (valencià)</translation>
+        <translation>Català (valencià)</translation>
     </message>
     <message>
         <source>English</source>
@@ -16,7 +16,7 @@
     <message>
         <source>Oracle Corporation</source>
         <comment>Comma-separated list of translators</comment>
-        <translation type="vanished">Vicent Fornés, Pau Iranzo &lt;pau.iranzo@softcatala.org&gt;</translation>
+        <translation>Vicent Fornés, Pau Iranzo &lt;pau.iranzo@softcatala.org&gt;</translation>
     </message>
 </context>
 <context>

@@ -6,17 +6,17 @@
     <message>
         <source>English</source>
         <comment>Native language name</comment>
-        <translation type="vanished">Русский</translation>
+        <translation>Русский</translation>
     </message>
     <message>
         <source>English</source>
         <comment>Language name, in English</comment>
-        <translation type="vanished">Russian</translation>
+        <translation>Russian</translation>
     </message>
     <message>
         <source>Oracle Corporation</source>
         <comment>Comma-separated list of translators</comment>
-        <translation type="vanished">Oracle Corporation, Igor Gorbounov, Egor Morozov</translation>
+        <translation>Oracle Corporation, Igor Gorbounov, Egor Morozov</translation>
     </message>
 </context>
 <context>

@@ -6,17 +6,17 @@
     <message>
         <source>English</source>
         <comment>Native language name</comment>
-        <translation type="vanished">Deutsch</translation>
+        <translation>Deutsch</translation>
     </message>
     <message>
         <source>English</source>
         <comment>Language name, in English</comment>
-        <translation type="vanished">German</translation>
+        <translation>German</translation>
     </message>
     <message>
         <source>Oracle Corporation</source>
         <comment>Comma-separated list of translators</comment>
-        <translation type="vanished">Oracle Corporation</translation>
+        <translation>Oracle Corporation</translation>
     </message>
 </context>
 <context>

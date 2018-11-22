@@ -6,17 +6,17 @@
     <message>
         <source>English</source>
         <comment>Native language name</comment>
-        <translation type="vanished">עברית</translation>
+        <translation>עברית</translation>
     </message>
     <message>
         <source>English</source>
         <comment>Language name, in English</comment>
-        <translation type="vanished">Hebrew</translation>
+        <translation>Hebrew</translation>
     </message>
     <message>
         <source>Oracle Corporation</source>
         <comment>Comma-separated list of translators</comment>
-        <translation type="vanished">אורגד שנה, אלי זרצקי, אריאל בן ציון, ג׳ינג׳ס, דוד לוי, ירון שפר</translation>
+        <translation>אורגד שנה, אלי זרצקי, אריאל בן ציון, ג׳ינג׳ס, דוד לוי, ירון שפר</translation>
     </message>
 </context>
 <context>

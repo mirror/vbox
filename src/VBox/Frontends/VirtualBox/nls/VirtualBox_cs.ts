@@ -6,17 +6,17 @@
     <message>
         <source>English</source>
         <comment>Native language name</comment>
-        <translation type="vanished">Čeština</translation>
+        <translation>Čeština</translation>
     </message>
     <message>
         <source>English</source>
         <comment>Language name, in English</comment>
-        <translation type="vanished">Czech</translation>
+        <translation>Czech</translation>
     </message>
     <message>
         <source>Oracle Corporation</source>
         <comment>Comma-separated list of translators</comment>
-        <translation type="vanished">Radek Vybiral, Jan Kalab &lt;pitel@nomi.cz&gt;, Jan Lipovsky, Ondrej Karlik</translation>
+        <translation>Radek Vybiral, Jan Kalab &lt;pitel@nomi.cz&gt;, Jan Lipovsky, Ondrej Karlik</translation>
     </message>
 </context>
 <context>

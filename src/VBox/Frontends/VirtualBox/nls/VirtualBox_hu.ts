@@ -6,17 +6,17 @@
     <message>
         <source>English</source>
         <comment>Native language name</comment>
-        <translation type="vanished">Magyar</translation>
+        <translation>Magyar</translation>
     </message>
     <message>
         <source>English</source>
         <comment>Language name, in English</comment>
-        <translation type="vanished">Hungarian</translation>
+        <translation>Hungarian</translation>
     </message>
     <message>
         <source>Oracle Corporation</source>
         <comment>Comma-separated list of translators</comment>
-        <translation type="vanished">George Hron,Tom Evin</translation>
+        <translation>George Hron,Tom Evin</translation>
     </message>
 </context>
 <context>

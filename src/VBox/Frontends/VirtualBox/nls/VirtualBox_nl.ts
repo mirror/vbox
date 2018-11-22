@@ -6,28 +6,28 @@
     <message>
         <source>English</source>
         <comment>Native language name</comment>
-        <translation type="vanished">Nederlands</translation>
+        <translation>Nederlands</translation>
     </message>
     <message>
         <source>--</source>
         <comment>Native language country name (empty if this language is for all countries)</comment>
-        <translation type="vanished">Nederland</translation>
+        <translation>Nederland</translation>
     </message>
     <message>
         <source>English</source>
         <comment>Language name, in English</comment>
-        <translation type="vanished">Dutch</translation>
+        <translation>Dutch</translation>
     </message>
     <message>
         <source>--</source>
         <comment>Language country name, in English (empty if native country name is empty)</comment>
-        <translation type="vanished">The Netherlands</translation>
+        <translation>The Netherlands</translation>
     </message>
     <message>
         <source>Oracle Corporation</source>
         <comment>Comma-separated list of translators</comment>
         <translatorcomment>RL - EG - AdG</translatorcomment>
-        <translation type="vanished">Richard E. van der Luit, Ebel Geertsema, Alexander L. de Goeij</translation>
+        <translation>Richard E. van der Luit, Ebel Geertsema, Alexander L. de Goeij</translation>
     </message>
 </context>
 <context>

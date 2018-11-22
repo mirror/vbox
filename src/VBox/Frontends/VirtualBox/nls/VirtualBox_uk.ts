@@ -6,17 +6,17 @@
     <message>
         <source>English</source>
         <comment>Native language name</comment>
-        <translation type="vanished">Українська</translation>
+        <translation>Українська</translation>
     </message>
     <message>
         <source>English</source>
         <comment>Language name, in English</comment>
-        <translation type="vanished">Ukrainian</translation>
+        <translation>Ukrainian</translation>
     </message>
     <message>
         <source>Oracle Corporation</source>
         <comment>Comma-separated list of translators</comment>
-        <translation type="vanished">Daniel Korostil, Localize.org.ua community</translation>
+        <translation>Daniel Korostil, Localize.org.ua community</translation>
     </message>
 </context>
 <context>

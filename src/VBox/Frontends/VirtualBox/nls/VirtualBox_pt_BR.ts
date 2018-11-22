@@ -6,27 +6,27 @@
     <message>
         <source>English</source>
         <comment>Native language name</comment>
-        <translation type="vanished">Português</translation>
+        <translation>Português</translation>
     </message>
     <message>
         <source>--</source>
         <comment>Native language country name (empty if this language is for all countries)</comment>
-        <translation type="vanished">Brasil</translation>
+        <translation>Brasil</translation>
     </message>
     <message>
         <source>English</source>
         <comment>Language name, in English</comment>
-        <translation type="vanished">Portuguese</translation>
+        <translation>Portuguese</translation>
     </message>
     <message>
         <source>--</source>
         <comment>Language country name, in English (empty if native country name is empty)</comment>
-        <translation type="vanished">Brazil</translation>
+        <translation>Brazil</translation>
     </message>
     <message>
         <source>Oracle Corporation</source>
         <comment>Comma-separated list of translators</comment>
-        <translation type="vanished">Érico Mendonça &lt;erico.mendonca@gmail.com&gt;</translation>
+        <translation>Érico Mendonça &lt;erico.mendonca@gmail.com&gt;</translation>
     </message>
 </context>
 <context>

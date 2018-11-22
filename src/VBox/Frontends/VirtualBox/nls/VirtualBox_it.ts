@@ -6,27 +6,27 @@
     <message>
         <source>English</source>
         <comment>Native language name</comment>
-        <translation type="vanished">Italiano</translation>
+        <translation>Italiano</translation>
     </message>
     <message>
         <source>--</source>
         <comment>Native language country name (empty if this language is for all countries)</comment>
-        <translation type="vanished">Italia</translation>
+        <translation>Italia</translation>
     </message>
     <message>
         <source>English</source>
         <comment>Language name, in English</comment>
-        <translation type="vanished">Italian</translation>
+        <translation>Italian</translation>
     </message>
     <message>
         <source>--</source>
         <comment>Language country name, in English (empty if native country name is empty)</comment>
-        <translation type="vanished">Italy</translation>
+        <translation>Italy</translation>
     </message>
     <message>
         <source>Oracle Corporation</source>
         <comment>Comma-separated list of translators</comment>
-        <translation type="vanished">Vincenzo Reale, Ciro Mattia Gonano</translation>
+        <translation>Vincenzo Reale, Ciro Mattia Gonano</translation>
     </message>
 </context>
 <context>

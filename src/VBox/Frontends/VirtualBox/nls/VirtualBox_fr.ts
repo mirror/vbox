@@ -6,17 +6,17 @@
     <message>
         <source>English</source>
         <comment>Native language name</comment>
-        <translation type="vanished">Français</translation>
+        <translation>Français</translation>
     </message>
     <message>
         <source>English</source>
         <comment>Language name, in English</comment>
-        <translation type="vanished">French</translation>
+        <translation>French</translation>
     </message>
     <message>
         <source>Oracle Corporation</source>
         <comment>Comma-separated list of translators</comment>
-        <translation type="vanished">Martin d&apos;Allens, Erkan Valentin, Jean-Jacques Sarton, Benjamin Masse, Oracle Corporation</translation>
+        <translation>Martin d&apos;Allens, Erkan Valentin, Jean-Jacques Sarton, Benjamin Masse, Oracle Corporation</translation>
     </message>
 </context>
 <context>

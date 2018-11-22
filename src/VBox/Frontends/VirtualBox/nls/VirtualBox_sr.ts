@@ -6,22 +6,22 @@
     <message>
         <source>English</source>
         <comment>Native language name</comment>
-        <translation type="vanished">Српски</translation>
+        <translation>Српски</translation>
     </message>
     <message>
         <source>English</source>
         <comment>Language name, in English</comment>
-        <translation type="vanished">Serbian</translation>
+        <translation>Serbian</translation>
     </message>
     <message>
         <source>--</source>
         <comment>Language country name, in English (empty if native country name is empty)</comment>
-        <translation type="vanished">--</translation>
+        <translation>--</translation>
     </message>
     <message>
         <source>Oracle Corporation</source>
         <comment>Comma-separated list of translators</comment>
-        <translation type="vanished">Оzzii.translate@gmail.com</translation>
+        <translation>Оzzii.translate@gmail.com</translation>
     </message>
 </context>
 <context>

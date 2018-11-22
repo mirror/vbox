@@ -6,17 +6,17 @@
     <message>
         <source>English</source>
         <comment>Native language name</comment>
-        <translation type="vanished">Română</translation>
+        <translation>Română</translation>
     </message>
     <message>
         <source>English</source>
         <comment>Language name, in English</comment>
-        <translation type="vanished">Romanian</translation>
+        <translation>Romanian</translation>
     </message>
     <message>
         <source>Oracle Corporation</source>
         <comment>Comma-separated list of translators</comment>
-        <translation type="vanished">Alex Eftimie</translation>
+        <translation>Alex Eftimie</translation>
     </message>
 </context>
 <context>

@@ -6,17 +6,17 @@
     <message>
         <source>English</source>
         <comment>Native language name</comment>
-        <translation type="vanished">Bahasa Indonesia</translation>
+        <translation>Bahasa Indonesia</translation>
     </message>
     <message>
         <source>English</source>
         <comment>Language name, in English</comment>
-        <translation type="vanished">Indonesian</translation>
+        <translation>Indonesian</translation>
     </message>
     <message>
         <source>Oracle Corporation</source>
         <comment>Comma-separated list of translators</comment>
-        <translation type="vanished">David Yacobus &lt;david_yacobus@yahoo.com&gt;, Andika Triwidada &lt;andika@gmail.com&gt;</translation>
+        <translation>David Yacobus &lt;david_yacobus@yahoo.com&gt;, Andika Triwidada &lt;andika@gmail.com&gt;</translation>
     </message>
 </context>
 <context>

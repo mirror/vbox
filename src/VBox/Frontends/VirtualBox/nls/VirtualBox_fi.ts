@@ -6,27 +6,27 @@
     <message>
         <source>English</source>
         <comment>Native language name</comment>
-        <translation type="vanished">Suomi</translation>
+        <translation>Suomi</translation>
     </message>
     <message>
         <source>--</source>
         <comment>Native language country name (empty if this language is for all countries)</comment>
-        <translation type="vanished">Suomi</translation>
+        <translation>Suomi</translation>
     </message>
     <message>
         <source>English</source>
         <comment>Language name, in English</comment>
-        <translation type="vanished">Finnish</translation>
+        <translation>Finnish</translation>
     </message>
     <message>
         <source>--</source>
         <comment>Language country name, in English (empty if native country name is empty)</comment>
-        <translation type="vanished">Finland</translation>
+        <translation>Finland</translation>
     </message>
     <message>
         <source>Oracle Corporation</source>
         <comment>Comma-separated list of translators</comment>
-        <translation type="vanished">Jarno Kiuttu, Timo Jyrinki, Ilkka Tuohela</translation>
+        <translation>Jarno Kiuttu, Timo Jyrinki, Ilkka Tuohela</translation>
     </message>
 </context>
 <context>

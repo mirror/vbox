@@ -6,17 +6,17 @@
     <message>
         <source>English</source>
         <comment>Native language name</comment>
-        <translation type="vanished">Euskara</translation>
+        <translation>Euskara</translation>
     </message>
     <message>
         <source>English</source>
         <comment>Language name, in English</comment>
-        <translation type="vanished">Basque</translation>
+        <translation>Basque</translation>
     </message>
     <message>
         <source>Oracle Corporation</source>
         <comment>Comma-separated list of translators</comment>
-        <translation type="vanished">Xabier Aramendi</translation>
+        <translation>Xabier Aramendi</translation>
     </message>
 </context>
 <context>
