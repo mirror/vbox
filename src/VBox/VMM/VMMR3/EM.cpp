@@ -1768,31 +1768,37 @@ static int emR3VmxNstGstInjectIntr(PVMCPU pVCpu, bool *pfWakeupPending, bool *pf
     *pfWakeupPending = false;
     *pfInjected      = false;
 
+    /** @todo NSTVMX: Interrupt-window VM-exits currently only trigger when an
+     *        interrupt is pending but in reality it should happen as soon as the
+     *        guest is ready to receive interrupts even if no interrupt is pending.
+     *        Doing it before checking the VMCPU_FF_INTERRUPT_APIC or
+     *        VMCPU_FF_INTERRUPT_PIC here doesn't help as the caller already checks for
+     *        it earlier as part of the high-priority pre-mask anyway. */
     if (CPUMCanVmxNstGstTakePhysIntr(pVCpu, &pVCpu->cpum.GstCtx))
     {
-        Assert(!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS));
-        if (CPUMIsGuestVmxProcCtlsSet(pVCpu, &pVCpu->cpum.GstCtx, VMX_PROC_CTLS_INT_WINDOW_EXIT))
-        {
-            CPUM_IMPORT_EXTRN_RET(pVCpu, IEM_CPUMCTX_EXTRN_VMX_VMEXIT_MASK);
-            VBOXSTRICTRC rcStrict = IEMExecVmxVmexitIntWindow(pVCpu);
-            if (rcStrict != VINF_VMX_INTERCEPT_NOT_ACTIVE)
-            {
-                *pfWakeupPending = true;
-                if (RT_SUCCESS(rcStrict))
-                {
-                    Assert(rcStrict != VINF_PGM_CHANGE_MODE);
-                    if (rcStrict == VINF_VMX_VMEXIT)
-                        return VINF_SUCCESS;
-                    return VBOXSTRICTRC_VAL(rcStrict);
-                }
-                AssertMsgFailed(("Interrupt-window Vm-exit failed! rc=%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
-                return VINF_EM_TRIPLE_FAULT;
-            }
-        }
-
         Assert(pVCpu->em.s.enmState != EMSTATE_WAIT_SIPI);
         if (VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC))
         {
+            Assert(!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS));
+            if (CPUMIsGuestVmxProcCtlsSet(pVCpu, &pVCpu->cpum.GstCtx, VMX_PROC_CTLS_INT_WINDOW_EXIT))
+            {
+                CPUM_IMPORT_EXTRN_RET(pVCpu, IEM_CPUMCTX_EXTRN_VMX_VMEXIT_MASK);
+                VBOXSTRICTRC rcStrict = IEMExecVmxVmexitIntWindow(pVCpu);
+                if (rcStrict != VINF_VMX_INTERCEPT_NOT_ACTIVE)
+                {
+                    *pfWakeupPending = true;
+                    if (RT_SUCCESS(rcStrict))
+                    {
+                        Assert(rcStrict != VINF_PGM_CHANGE_MODE);
+                        if (rcStrict == VINF_VMX_VMEXIT)
+                            return VINF_SUCCESS;
+                        return VBOXSTRICTRC_VAL(rcStrict);
+                    }
+                    AssertMsgFailed(("Interrupt-window Vm-exit failed! rc=%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
+                    return VINF_EM_TRIPLE_FAULT;
+                }
+            }
+
             int rc = emR3GstInjectIntr(pVCpu, pfWakeupPending, pfInjected);
             if (rc == VINF_VMX_VMEXIT)
                 rc = VINF_SUCCESS;
