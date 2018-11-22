@@ -28,6 +28,7 @@
 # include "QILabel.h"
 # include "UIActionPool.h"
 # include "UIErrorString.h"
+# include "UIGuestControlFileManager.h"
 # include "UIGuestFileTable.h"
 # include "UIMessageCenter.h"
 # include "UIToolBar.h"
@@ -166,7 +167,7 @@ void UIGuestFileTable::initGuestFileTable(const CGuestSession &session)
 void UIGuestFileTable::retranslateUi()
 {
     if (m_pLocationLabel)
-        m_pLocationLabel->setText(QApplication::translate("UIGuestControlFileManager", "Guest System"));
+        m_pLocationLabel->setText(UIGuestControlFileManager::tr("Guest System"));
     UIGuestControlFileTable::retranslateUi();
 }
 
@@ -438,25 +439,24 @@ QString UIGuestFileTable::fsObjectPropertyString()
         QString propertyString;
 
         /* Name: */
-        propertyString += "<b>Name:</b> " + UIPathOperations::getObjectName(fileInfo.GetName()) + "\n";
-        propertyString += "<br/>";
+        propertyString += "<b>" + UIGuestControlFileManager::tr("Name") + ":</b> " +
+            UIPathOperations::getObjectName(fileInfo.GetName()) + "\n" + "<br/>";
         /* Size: */
         LONG64 size = fileInfo.GetObjectSize();
-        propertyString += "<b>Size:</b> " + QString::number(size) + QString(" bytes");
+        propertyString += "<b>" + UIGuestControlFileManager::tr("Size") + ":</b> " + QString::number(size) +
+            UIGuestControlFileManager::tr(" bytes");
         if (size >= 1024)
-            propertyString += " (" + humanReadableSize(size) + ")";
-        propertyString += "<br/>";
+            propertyString += " (" + humanReadableSize(size) + ")" + "<br/>";
         /* Type: */
-        propertyString += "<b>Type:</b> " + fileTypeString(fileType(fileInfo));
-        propertyString += "<br/>";
+        propertyString += "<b>" + UIGuestControlFileManager::tr("Type") + ":</b> " + fileTypeString(fileType(fileInfo)) + "<br/>";
         /* Creation Date: */
-        propertyString += "<b>Created:</b> " + QDateTime::fromMSecsSinceEpoch(fileInfo.GetChangeTime()/1000000).toString();
-        propertyString += "<br/>";
+        propertyString += "<b>" + UIGuestControlFileManager::tr("Created") + ":</b> " +
+            QDateTime::fromMSecsSinceEpoch(fileInfo.GetChangeTime()/1000000).toString() + "<br/>";
         /* Last Modification Date: */
-        propertyString += "<b>Modified:</b> " + QDateTime::fromMSecsSinceEpoch(fileInfo.GetModificationTime()/1000000).toString();
-        propertyString += "<br/>";
+        propertyString += "<b>" + UIGuestControlFileManager::tr("Modified") + ":</b> " +
+            QDateTime::fromMSecsSinceEpoch(fileInfo.GetModificationTime()/1000000).toString() + "<br/>";
         /* Owner: */
-        propertyString += "<b>Owner:</b> " + fileInfo.GetUserName();
+        propertyString += "<b>" + UIGuestControlFileManager::tr("Owner") + ":</b> " + fileInfo.GetUserName();
         return propertyString;
     }
 
@@ -482,10 +482,11 @@ QString UIGuestFileTable::fsObjectPropertyString()
         totalSize += fileInfo.GetObjectSize();
     }
     QString propertyString;
-    propertyString += "<b>Selected:</b> " + QString::number(fileCount) + " files ";
-    propertyString += "and " + QString::number(directoryCount) + " directories";
-    propertyString += "<br/>";
-    propertyString += "<b>Size:</b> " + QString::number(totalSize) + QString(" bytes");
+    propertyString += "<b>" + UIGuestControlFileManager::tr("Selected:") + "</b> " + QString::number(fileCount) + " files ";
+    propertyString += UIGuestControlFileManager::tr("and ") + QString::number(directoryCount) + " " +
+        UIGuestControlFileManager::tr("directories") + "<br/>";
+    propertyString += "<b>" + UIGuestControlFileManager::tr("Size:") + "</b> " + QString::number(totalSize) +
+        UIGuestControlFileManager::tr(" bytes");
     if (totalSize >= m_iKiloByte)
         propertyString += " (" + humanReadableSize(totalSize) + ")";
 
@@ -526,7 +527,7 @@ void UIGuestFileTable::showProperties()
     //     }
     // }
 
-    m_pPropertiesDialog->setWindowTitle("Properties");
+    m_pPropertiesDialog->setWindowTitle(UIGuestControlFileManager::tr("Properties"));
     m_pPropertiesDialog->setPropertyText(fsPropertyString);
     m_pPropertiesDialog->execute();
 

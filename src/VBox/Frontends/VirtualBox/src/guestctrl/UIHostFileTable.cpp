@@ -27,6 +27,7 @@
 /* GUI includes: */
 # include "QILabel.h"
 # include "UIActionPool.h"
+# include "UIGuestControlFileManager.h"
 # include "UIGuestControlFileModel.h"
 # include "UIHostFileTable.h"
 # include "UIToolBar.h"
@@ -141,7 +142,7 @@ void UIHostFileTable::updateDeleteAfterCopyCache(const QUuid &progressId, const 
 void UIHostFileTable::retranslateUi()
 {
     if (m_pLocationLabel)
-        m_pLocationLabel->setText(QApplication::translate("UIGuestControlFileManager", "Host System"));
+        m_pLocationLabel->setText(UIGuestControlFileManager::tr("Host System"));
     UIGuestControlFileTable::retranslateUi();
 }
 
@@ -366,26 +367,27 @@ QString UIHostFileTable::fsObjectPropertyString()
             return QString();
         QString propertyString;
         /* Name: */
-        propertyString += "<b>Name:</b> " + fileInfo.fileName() + "\n";
+        propertyString += "<b>" + UIGuestControlFileManager::tr("Name") + ":</b> " + fileInfo.fileName() + "\n";
         if (!fileInfo.suffix().isEmpty())
             propertyString += "." + fileInfo.suffix();
         propertyString += "<br/>";
         /* Size: */
-        propertyString += "<b>Size:</b> " + QString::number(fileInfo.size()) + QString(" bytes");
+        propertyString += "<b>" + UIGuestControlFileManager::tr("Size") + ":</b> " +
+            QString::number(fileInfo.size()) + UIGuestControlFileManager::tr(" bytes");
         if (fileInfo.size() >= m_iKiloByte)
             propertyString += " (" + humanReadableSize(fileInfo.size()) + ")";
         propertyString += "<br/>";
         /* Type: */
-        propertyString += "<b>Type:</b> " + fileTypeString(fileType(fileInfo));
+        propertyString += "<b>" + UIGuestControlFileManager::tr("Type") + ":</b> " + fileTypeString(fileType(fileInfo));
         propertyString += "<br/>";
         /* Creation Date: */
-        propertyString += "<b>Created:</b> " + fileInfo.created().toString();
+        propertyString += "<b>" + UIGuestControlFileManager::tr("Created") + ":</b> " + fileInfo.created().toString();
         propertyString += "<br/>";
         /* Last Modification Date: */
-        propertyString += "<b>Modified:</b> " + fileInfo.lastModified().toString();
+        propertyString += "<b>" + UIGuestControlFileManager::tr("Modified") + ":</b> " + fileInfo.lastModified().toString();
         propertyString += "<br/>";
         /* Owner: */
-        propertyString += "<b>Owner:</b> " + fileInfo.owner();
+        propertyString += "<b>" + UIGuestControlFileManager::tr("Owner") + ":</b> " + fileInfo.owner();
 
         return propertyString;
     }
@@ -406,10 +408,13 @@ QString UIHostFileTable::fsObjectPropertyString()
         totalSize += fileInfo.size();
     }
     QString propertyString;
-    propertyString += "<b>Selected:</b> " + QString::number(fileCount) + " files ";
-    propertyString += "and " + QString::number(directoryCount) + " directories";
+    propertyString += "<b>" + UIGuestControlFileManager::tr("Selected") + ":</b> " + QString::number(fileCount) +
+        " " + UIGuestControlFileManager::tr("files") + " ";
+    propertyString += UIGuestControlFileManager::tr("and") + " " + QString::number(directoryCount) + " " +
+        UIGuestControlFileManager::tr("directories");
     propertyString += "<br/>";
-    propertyString += "<b>Size:</b> " + QString::number(totalSize) + QString(" bytes");
+    propertyString += "<b>" + UIGuestControlFileManager::tr("Size") + ":</b> " + QString::number(totalSize) + " " +
+        UIGuestControlFileManager::tr("bytes");
     if (totalSize >= m_iKiloByte)
         propertyString += " (" + humanReadableSize(totalSize) + ")";
 

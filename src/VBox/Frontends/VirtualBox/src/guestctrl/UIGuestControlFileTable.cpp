@@ -427,20 +427,21 @@ void UIPropertiesDialog::addDirectoryStatistics(UIDirectoryStatistics directoryS
 
     QString detailsString(m_strProperty);
     detailsString += "<br/>";
-    detailsString += "<b>Total Size:</b> " + QString::number(directoryStatistics.m_totalSize) + QString(" bytes");
+    detailsString += "<b>" + UIGuestControlFileManager::tr("Total Size") + "</b> " +
+        QString::number(directoryStatistics.m_totalSize) + UIGuestControlFileManager::tr(" bytes");
     if (directoryStatistics.m_totalSize >= UIGuestControlFileTable::m_iKiloByte)
         detailsString += " (" + UIGuestControlFileTable::humanReadableSize(directoryStatistics.m_totalSize) + ")";
     detailsString += "<br/>";
 
-    detailsString += "<b>File Count:</b> " + QString::number(directoryStatistics.m_uFileCount);
+    detailsString += "<b>" + UIGuestControlFileManager::tr("File Count") + ":</b> " +
+        QString::number(directoryStatistics.m_uFileCount);
 
     m_pInfoEdit->setHtml(detailsString);
-
 }
 
+
 /*********************************************************************************************************************************
-*   UIDirectoryStatistics implementation.
-                                                                                        *
+*   UIDirectoryStatistics implementation.                                                                                        *
 *********************************************************************************************************************************/
 
 UIDirectoryStatistics::UIDirectoryStatistics()
@@ -478,7 +479,6 @@ void UIFileTableItem::appendChild(UIFileTableItem *item)
     if (!item)
         return;
     m_childItems.append(item);
-
     m_childMap.insert(item->name(), item);
 }
 
@@ -661,6 +661,8 @@ UIFileDeleteConfirmationDialog::UIFileDeleteConfirmationDialog(QWidget *pParent 
 
         pLayout->addWidget(m_pAskNextTimeCheckBox);
         m_pAskNextTimeCheckBox->setText(UIGuestControlFileManager::tr("Ask for this confirmation next time"));
+        m_pAskNextTimeCheckBox->setToolTip(UIGuestControlFileManager::tr("Delete confirmation can be "
+                                                                         "disabled/enabled also from the Options panel."));
     }
 }
 
@@ -829,11 +831,6 @@ void UIGuestControlFileTable::initializeFileTree()
     const QString startPath("/");
     QVector<QVariant> headData;
     headData.resize(UIGuestControlFileModelColumn_Max);
-    headData[UIGuestControlFileModelColumn_Name] = "Name";
-    headData[UIGuestControlFileModelColumn_Size] = "Size";
-    headData[UIGuestControlFileModelColumn_ChangeTime] = "Change Time";
-    headData[UIGuestControlFileModelColumn_Owner] = "Owner";
-    headData[UIGuestControlFileModelColumn_Permissions] = "Permissions";
     m_pRootItem = new UIFileTableItem(headData, 0, FileObjectType_Directory);
     UIFileTableItem* startItem = new UIFileTableItem(createTreeItemData(startPath, 4096, QDateTime(),
                                                                         "" /* owner */, "" /* permissions */),
@@ -1252,6 +1249,14 @@ void UIGuestControlFileTable::deleteByIndex(const QModelIndex &itemIndex)
 
 void UIGuestControlFileTable::retranslateUi()
 {
+    if (m_pRootItem)
+    {
+        m_pRootItem->setData(UIGuestControlFileManager::tr("Name"), UIGuestControlFileModelColumn_Name);
+        m_pRootItem->setData(UIGuestControlFileManager::tr("Size"), UIGuestControlFileModelColumn_Size);
+        m_pRootItem->setData(UIGuestControlFileManager::tr("Change Time"), UIGuestControlFileModelColumn_ChangeTime);
+        m_pRootItem->setData(UIGuestControlFileManager::tr("Owner"), UIGuestControlFileModelColumn_Owner);
+        m_pRootItem->setData(UIGuestControlFileManager::tr("Permissions"), UIGuestControlFileModelColumn_Permissions);
+    }
 }
 
 bool UIGuestControlFileTable::eventFilter(QObject *pObject, QEvent *pEvent) /* override */
@@ -1396,20 +1401,20 @@ QVector<QVariant> UIGuestControlFileTable::createTreeItemData(const QString &str
 
 QString UIGuestControlFileTable::fileTypeString(FileObjectType type)
 {
-    QString strType("Unknown");
+    QString strType = UIGuestControlFileManager::tr("Unknown");
     switch(type)
     {
         case FileObjectType_File:
-            strType = "File";
+            strType = UIGuestControlFileManager::tr("File");
             break;
         case FileObjectType_Directory:
-            strType = "Directory";
+            strType = UIGuestControlFileManager::tr("Directory");
             break;
         case FileObjectType_SymLink:
-            strType = "Symbolic Link";
+            strType = UIGuestControlFileManager::tr("Symbolic Link");
             break;
         case FileObjectType_Other:
-            strType = "Other";
+            strType = UIGuestControlFileManager::tr("Other");
             break;
 
         case FileObjectType_Unknown:
