@@ -572,7 +572,9 @@ typedef struct CPUMCTX
                 bool                    fInVmxNonRootMode;
                 /** 0x306 - Whether the injected events are subjected to event intercepts.  */
                 bool                    fInterceptEvents;
-                bool                    afPadding0[1];
+                /** 0x307 - Whether blocking of NMI (or virtual-NMIs) was in effect in VMX non-root
+                 *  mode before execution of IRET. */
+                bool                    fNmiUnblockingIret;
                 /** 0x308 - Cache of the nested-guest current VMCS - R0 ptr. */
                 R0PTRTYPE(PVMXVVMCS)    pVmcsR0;
 #if HC_ARCH_BITS == 32
@@ -755,6 +757,7 @@ AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.uAbortAux,      
 AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.fInVmxRootMode,         0x304);
 AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.fInVmxNonRootMode,      0x305);
 AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.fInterceptEvents,       0x306);
+AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.fNmiUnblockingIret,     0x307);
 AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.pVmcsR0,                0x308);
 AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.pVmcsR3,                0x310);
 AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.pShadowVmcsR0,          0x318);

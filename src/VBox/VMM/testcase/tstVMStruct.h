@@ -153,6 +153,7 @@
     GEN_CHECK_OFF(CPUMCTX, hwvirt.vmx.fInVmxRootMode);
     GEN_CHECK_OFF(CPUMCTX, hwvirt.vmx.fInVmxNonRootMode);
     GEN_CHECK_OFF(CPUMCTX, hwvirt.vmx.fInterceptEvents);
+    GEN_CHECK_OFF(CPUMCTX, hwvirt.vmx.fNmiUnblockingIret);
     GEN_CHECK_OFF(CPUMCTX, hwvirt.vmx.pVmcsR0);
     GEN_CHECK_OFF(CPUMCTX, hwvirt.vmx.pVmcsR3);
     GEN_CHECK_OFF(CPUMCTX, hwvirt.vmx.pShadowVmcsR0);

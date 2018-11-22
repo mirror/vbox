@@ -545,15 +545,12 @@ typedef struct VMCPU
 #define VMCPU_FF_INTERRUPT_NESTED_GUEST_BIT 31
 /** VMX-preemption timer in effect. */
 #define VMCPU_FF_VMX_PREEMPT_TIMER          RT_BIT_64(VMCPU_FF_VMX_PREEMPT_TIMER_BIT)
-/** Bit number for VMCPU_FF_VMX_PREEMPT_TIMER. */
 #define VMCPU_FF_VMX_PREEMPT_TIMER_BIT      32
 /** Pending MTF (Monitor Trap Flag) event.  */
 #define VMCPU_FF_VMX_MTF                    RT_BIT_64(VMCPU_FF_VMX_MTF_BIT)
-/** The bit number for VMCPU_FF_VMX_MTF. */
 #define VMCPU_FF_VMX_MTF_BIT                33
 /** VMX APIC-write emulation pending.  */
 #define VMCPU_FF_VMX_APIC_WRITE             RT_BIT_64(VMCPU_FF_VMX_APIC_WRITE_BIT)
-/** The bit number for VMCPU_FF_VMX_UPDATE_VTPR. */
 #define VMCPU_FF_VMX_APIC_WRITE_BIT         34
 
 

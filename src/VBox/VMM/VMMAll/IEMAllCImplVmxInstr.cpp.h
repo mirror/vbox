@@ -1561,23 +1561,21 @@ IEM_STATIC void iemVmxVmentrySaveForceFlags(PVMCPU pVCpu)
      *   - VMCPU_FF_INHIBIT_INTERRUPTS need not be cached as it only affects
      *     interrupts until the completion of the current VMLAUNCH/VMRESUME
      *     instruction. Interrupt inhibition for any nested-guest instruction
-     *     will be set later while loading the guest-interruptibility state.
+     *     is supplied by the guest-interruptibility state VMCS field and will
+     *     be set up as part of loading the guest state.
      *
      *   - VMCPU_FF_BLOCK_NMIS needs to be cached as VM-exits caused before
-     *     successful VM-entry needs to continue blocking NMIs if it was in effect
-     *     during VM-entry.
+     *     successful VM-entry (due to invalid guest-state) need to continue
+     *     blocking NMIs if it was in effect before VM-entry.
      *
      *   - MTF need not be preserved as it's used only in VMX non-root mode and
-     *     is supplied on VM-entry through the VM-execution controls.
+     *     is supplied through the VM-execution controls.
      *
-     * The remaining FFs (e.g. timers, APIC updates) must stay in place so that
+     * The remaining FFs (e.g. timers, APIC updates) can stay in place so that
      * we will be able to generate interrupts that may cause VM-exits for
      * the nested-guest.
      */
     pVCpu->cpum.GstCtx.hwvirt.fLocalForcedActions = pVCpu->fLocalForcedActions & VMCPU_FF_BLOCK_NMIS;
-
-    if (VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS | VMCPU_FF_BLOCK_NMIS))
-        VMCPU_FF_CLEAR_MASK(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS | VMCPU_FF_BLOCK_NMIS);
 }
 
 
@@ -1753,9 +1751,7 @@ IEM_STATIC void iemVmxVmexitSaveGuestNonRegState(PVMCPU pVCpu, uint32_t uExitRea
 
     /* Interruptibility-state. */
     pVmcs->u32GuestIntrState = 0;
-    if (pVmcs->u32PinCtls & VMX_PIN_CTLS_VIRT_NMI)
-    { /** @todo NSTVMX: Virtual-NMI blocking. */ }
-    else if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_BLOCK_NMIS))
+    if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_BLOCK_NMIS))
         pVmcs->u32GuestIntrState |= VMX_VMCS_GUEST_INT_STATE_BLOCK_NMI;
 
     if (   VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS)
@@ -1772,7 +1768,7 @@ IEM_STATIC void iemVmxVmexitSaveGuestNonRegState(PVMCPU pVCpu, uint32_t uExitRea
     if (    uExitReason != VMX_EXIT_INIT_SIGNAL
         &&  uExitReason != VMX_EXIT_SMI
         &&  uExitReason != VMX_EXIT_ERR_MACHINE_CHECK
-        && !HMVmxIsTrapLikeVmexit(uExitReason))
+        && !HMVmxIsVmexitTrapLike(uExitReason))
     {
         /** @todo NSTVMX: also must exclude VM-exits caused by debug exceptions when
          *        block-by-MovSS is in effect. */
@@ -2366,9 +2362,6 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitLoadHostState(PVMCPU pVCpu, uint32_t uExitRe
     pVCpu->cpum.GstCtx.rsp      = pVmcs->u64HostRsp.u;
     pVCpu->cpum.GstCtx.rflags.u = X86_EFL_1;
 
-    /* Update non-register state. */
-    iemVmxVmexitRestoreForceFlags(pVCpu);
-
     /* Clear address range monitoring. */
     EMMonitorWaitClear(pVCpu);
 
@@ -2793,6 +2786,11 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexit(PVMCPU pVCpu, uint32_t uExitReason)
         { /* likely */ }
         else
             return iemVmxAbort(pVCpu, VMXABORT_SAVE_GUEST_MSRS);
+    }
+    else
+    {
+        /* Restore force-flags that may or may not have been cleared as part of the failed VM-entry. */
+        iemVmxVmexitRestoreForceFlags(pVCpu);
     }
 
     /*
@@ -3754,7 +3752,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitExtInt(PVMCPU pVCpu, uint8_t uVector, bool f
          */
         if (pVmcs->u32ExitCtls & VMX_EXIT_CTLS_ACK_EXT_INT)
         {
-            uint8_t  const fNmiUnblocking = 0;  /** @todo NSTVMX: Implement NMI-unblocking due to IRET. */
+            uint8_t  const fNmiUnblocking = pVCpu->cpum.GstCtx.hwvirt.vmx.fNmiUnblockingIret;
             uint32_t const uExitIntInfo   = RT_BF_MAKE(VMX_BF_EXIT_INT_INFO_VECTOR,           uVector)
                                           | RT_BF_MAKE(VMX_BF_EXIT_INT_INFO_TYPE,             VMX_EXIT_INT_INFO_TYPE_EXT_INT)
                                           | RT_BF_MAKE(VMX_BF_EXIT_INT_INFO_NMI_UNBLOCK_IRET, fNmiUnblocking)
@@ -3922,7 +3920,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitEvent(PVMCPU pVCpu, uint8_t uVector, uint32_
             }
         }
 
-        uint8_t  const fNmiUnblocking = 0;  /** @todo NSTVMX: Implement NMI-unblocking due to IRET. */
+        uint8_t  const fNmiUnblocking = pVCpu->cpum.GstCtx.hwvirt.vmx.fNmiUnblockingIret;
         uint8_t  const fErrCodeValid  = (fFlags & IEM_XCPT_FLAGS_ERR);
         uint8_t  const uIntInfoType   = iemVmxGetEventType(uVector, fFlags);
         uint32_t const uExitIntInfo   = RT_BF_MAKE(VMX_BF_EXIT_INT_INFO_VECTOR,           uVector)
@@ -6786,22 +6784,8 @@ IEM_STATIC void iemVmxVmentryLoadGuestNonRegState(PVMCPU pVCpu)
      */
     PCVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
     uint32_t const uEntryIntInfo = pVmcs->u32EntryIntInfo;
-    if (VMX_ENTRY_INT_INFO_IS_VALID(uEntryIntInfo))
+    if (!HMVmxIsVmentryVectoring(uEntryIntInfo))
     {
-        /** @todo NSTVMX: Pending debug exceptions. */
-        Assert(!(pVmcs->u64GuestPendingDbgXcpt.u));
-
-        if (pVmcs->u32GuestIntrState & VMX_VMCS_GUEST_INT_STATE_BLOCK_NMI)
-        {
-            /** @todo NSTVMX: Virtual-NMIs doesn't affect NMI blocking in the normal sense.
-             *        We probably need a different force flag for virtual-NMI
-             *        pending/blocking. */
-            Assert(!(pVmcs->u32PinCtls & VMX_PIN_CTLS_VIRT_NMI));
-            VMCPU_FF_SET(pVCpu, VMCPU_FF_BLOCK_NMIS);
-        }
-        else
-            Assert(!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_BLOCK_NMIS));
-
         if (pVmcs->u32GuestIntrState & (VMX_VMCS_GUEST_INT_STATE_BLOCK_STI | VMX_VMCS_GUEST_INT_STATE_BLOCK_MOVSS))
             EMSetInhibitInterruptsPC(pVCpu, pVCpu->cpum.GstCtx.rip);
         else
@@ -6809,6 +6793,20 @@ IEM_STATIC void iemVmxVmentryLoadGuestNonRegState(PVMCPU pVCpu)
 
         /* SMI blocking is irrelevant. We don't support SMIs yet. */
     }
+    else
+    {
+        /* When the VM-entry is not vectoring, there is no blocking by STI or Mov-SS. */
+        if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS))
+            VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS);
+    }
+
+    /* NMI blocking. */
+    if (   (pVmcs->u32GuestIntrState & VMX_VMCS_GUEST_INT_STATE_BLOCK_NMI)
+        && !VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_BLOCK_NMIS))
+        VMCPU_FF_SET(pVCpu, VMCPU_FF_BLOCK_NMIS);
+
+    /** @todo NSTVMX: Pending debug exceptions. */
+    Assert(!(pVmcs->u64GuestPendingDbgXcpt.u));
 
     /* Loading PDPTEs will be taken care when we switch modes. We don't support EPT yet. */
     Assert(!(pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_EPT));
@@ -7047,11 +7045,15 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmlaunchVmresume(PVMCPU pVCpu, uint8_t cbInstr, VM
                 rc = iemVmxVmentryCheckHostState(pVCpu, pszInstr);
                 if (RT_SUCCESS(rc))
                 {
-                    /* Save the guest force-flags as VM-exits can occur from this point on. */
-                    iemVmxVmentrySaveForceFlags(pVCpu);
-
                     /* Initialize the VM-exit qualification field as it MBZ for VM-exits where it isn't specified. */
                     iemVmxVmcsSetExitQual(pVCpu, 0);
+
+                    /*
+                     * Blocking of NMIs need to be restored if VM-entry fails due to invalid-guest state.
+                     * So we save the required force flags here (currently only VMCPU_FF_BLOCK_NMI) so we
+                     * can restore it on VM-exit when required.
+                     */
+                    iemVmxVmentrySaveForceFlags(pVCpu);
 
                     rc = iemVmxVmentryCheckGuestState(pVCpu, pszInstr);
                     if (RT_SUCCESS(rc))

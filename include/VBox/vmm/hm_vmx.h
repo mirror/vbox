@@ -4155,12 +4155,12 @@ DECLINLINE(bool) HMVmxIsEntryIntInfoVectorValid(uint8_t uVector, uint8_t uType)
 /**
  * Returns whether or not the VM-exit is trap-like or fault-like.
  *
- * @returns @c true if it's a trap-like VM-exit, @c false otehrwise.
+ * @returns @c true if it's a trap-like VM-exit, @c false otherwise.
  * @param   uExitReason     The VM-exit reason.
  *
  * @remarks Warning! This does not validate the VM-exit reason.
  */
-DECLINLINE(bool) HMVmxIsTrapLikeVmexit(uint32_t uExitReason)
+DECLINLINE(bool) HMVmxIsVmexitTrapLike(uint32_t uExitReason)
 {
     /*
      * Trap-like VM-exits - The instruction causing the VM-exit completes before the
@@ -4183,6 +4183,32 @@ DECLINLINE(bool) HMVmxIsTrapLikeVmexit(uint32_t uExitReason)
         case VMX_EXIT_VIRTUALIZED_EOI:
         case VMX_EXIT_APIC_WRITE:
         case VMX_EXIT_TPR_BELOW_THRESHOLD:
+            return true;
+    }
+    return false;
+}
+
+
+/**
+ * Returns whether the VM-entry is vectoring or not given the VM-entry interruption
+ * information field.
+ *
+ * @returns @c true if the VM-entry is vectoring, @c false otherwise.
+ * @param   uEntryIntInfo   The VM-entry interruption information field.
+ */
+DECLINLINE(bool) HMVmxIsVmentryVectoring(uint32_t uEntryIntInfo)
+{
+    if (!VMX_ENTRY_INT_INFO_IS_VALID(uEntryIntInfo))
+        return false;
+    uint8_t const uIntInfoType = VMX_ENTRY_INT_INFO_TYPE(uEntryIntInfo);
+    switch (uIntInfoType)
+    {
+        case VMX_ENTRY_INT_INFO_TYPE_EXT_INT:
+        case VMX_ENTRY_INT_INFO_TYPE_NMI:
+        case VMX_ENTRY_INT_INFO_TYPE_HW_XCPT:
+        case VMX_ENTRY_INT_INFO_TYPE_SW_INT:
+        case VMX_ENTRY_INT_INFO_TYPE_PRIV_SW_XCPT:
+        case VMX_ENTRY_INT_INFO_TYPE_SW_XCPT:
             return true;
     }
     return false;

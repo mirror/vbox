@@ -3846,7 +3846,20 @@ IEM_CIMPL_DEF_1(iemCImpl_iret, IEMMODE, enmEffOpSize)
      * First, clear NMI blocking, if any, before causing any exceptions.
      * See Intel spec. 6.7.1 "Handling Multiple NMIs".
      */
-    VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_BLOCK_NMIS);
+    bool const fBlockingNmi = VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_BLOCK_NMIS);
+    if (fBlockingNmi)
+        VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_BLOCK_NMIS);
+
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
+    /*
+     * Record whether NMIs (or virtual-NMIs) were unblocked by execution of this
+     * IRET instruction. We need to provide this information as part of some VM-exits.
+     *
+     * See Intel spec. 27.2.2 "Information for VM Exits Due to Vectored Events".
+     */
+    if (IEM_VMX_IS_NON_ROOT_MODE(pVCpu))
+        pVCpu->cpum.GstCtx.hwvirt.vmx.fNmiUnblockingIret = fBlockingNmi;
+#endif
 
     /*
      * The SVM nested-guest intercept for iret takes priority over all exceptions,
