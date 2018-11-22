@@ -27,18 +27,14 @@
 
 
 
-#define VNODEOPFUNC int(*)(void *)
-
-
-static int vboxvfs_dfl_error()
+int vboxvfs_dfl_error(void)
 {
     PDEBUG("vboxvfs_dfl_error is called");
 
     return ENOTSUP;
 }
 
-static int
-vboxvfs_vnode_getattr(struct vnop_getattr_args *args)
+int vboxvfs_vnode_getattr(struct vnop_getattr_args *args)
 {
     vboxvfs_mount_t   *pMount;
     struct vnode_attr *vnode_args;
@@ -251,8 +247,7 @@ vboxvfs_vnode_lookup_dot_handler(struct vnop_lookup_args *args, vnode_t *result_
     return ENOENT;
 }
 
-static int
-vboxvfs_vnode_lookup(struct vnop_lookup_args *args)
+int vboxvfs_vnode_lookup(struct vnop_lookup_args *args)
 {
     int rc;
 
@@ -339,8 +334,7 @@ vboxvfs_vnode_lookup(struct vnop_lookup_args *args)
     return rc;
 }
 
-static int
-vboxvfs_vnode_open(struct vnop_open_args *args)
+int vboxvfs_vnode_open(struct vnop_open_args *args)
 {
     vnode_t           vnode;
     vboxvfs_vnode_t  *pVnodeData;
@@ -404,8 +398,7 @@ vboxvfs_vnode_open(struct vnop_open_args *args)
     return rc;
 }
 
-static int
-vboxvfs_vnode_close(struct vnop_close_args *args)
+int vboxvfs_vnode_close(struct vnop_close_args *args)
 {
     vnode_t          vnode;
     mount_t          mp;
@@ -508,8 +501,7 @@ vboxvfs_vnode_readdir_copy_data(ino_t index, SHFLDIRINFO *Info, struct uio *uio,
     return rc;
 }
 
-static int
-vboxvfs_vnode_readdir(struct vnop_readdir_args *args)
+int vboxvfs_vnode_readdir(struct vnop_readdir_args *args)
 {
     vboxvfs_mount_t *pMount;
     vboxvfs_vnode_t *pVnodeData;
@@ -579,7 +571,7 @@ vboxvfs_vnode_readdir(struct vnop_readdir_args *args)
 
             uint32_t cbReturned = cbInfo;
             //rc = VbglR0SfDirInfo(&g_vboxSFClient, &pMount->pMap, Handle, pMask, SHFL_LIST_RETURN_ONE, 0, &cbReturned, (PSHFLDIRINFO)Info, &cFiles);
-            rc = VbglR0SfDirInfo(&g_vboxSFClient, &pMount->pMap, Handle, 0, SHFL_LIST_RETURN_ONE, 0,
+            rc = VbglR0SfDirInfo(&g_SfClient, &pMount->pMap, Handle, 0, SHFL_LIST_RETURN_ONE, 0,
                                  &cbReturned, (PSHFLDIRINFO)Info, &cFiles);
 
         }
@@ -630,23 +622,21 @@ vboxvfs_vnode_readdir(struct vnop_readdir_args *args)
     return rc;
 }
 
-static int
-vboxvfs_vnode_access(struct vnop_access_args *args)
+
+int vboxvfs_vnode_access(struct vnop_access_args *args)
 {
     PDEBUG("here");
     return 0;
 }
 
 
-static int
-vboxvfs_vnode_readdirattr(struct vnop_readdirattr_args *args)
+int vboxvfs_vnode_readdirattr(struct vnop_readdirattr_args *args)
 {
     PDEBUG("here");
     return 0;
 }
 
-static int
-vboxvfs_vnode_pathconf(struct vnop_pathconf_args *args)
+int vboxvfs_vnode_pathconf(struct vnop_pathconf_args *args)
 {
     PDEBUG("here");
     return 0;
@@ -661,8 +651,7 @@ vboxvfs_vnode_pathconf(struct vnop_pathconf_args *args)
  *
  * @return 0 on success, BSD error code otherwise.
  */
-static int
-vboxvfs_vnode_reclaim(struct vnop_reclaim_args *pArgs)
+int vboxvfs_vnode_reclaim(struct vnop_reclaim_args *pArgs)
 {
     PDEBUG("Releasing vnode resources...");
 
@@ -700,8 +689,13 @@ vboxvfs_vnode_reclaim(struct vnop_reclaim_args *pArgs)
     return 0;
 }
 
-/* Directory vnode operations */
-static struct vnodeopv_entry_desc oVBoxVFSDirOpsDescList[] = {
+
+/**
+ * Vnode operations.
+ */
+static struct vnodeopv_entry_desc g_VBoxSfDirOpsDescList[] =
+{
+#define VNODEOPFUNC int(*)(void *)
     { &vnop_default_desc,     (VNODEOPFUNC)vboxvfs_dfl_error },
     { &vnop_lookup_desc,      (VNODEOPFUNC)vboxvfs_vnode_lookup },
     { &vnop_create_desc,      (VNODEOPFUNC)vboxvfs_dfl_error },
@@ -747,18 +741,18 @@ static struct vnodeopv_entry_desc oVBoxVFSDirOpsDescList[] = {
     { &vnop_strategy_desc,    (VNODEOPFUNC)vboxvfs_dfl_error },
     { &vnop_bwrite_desc,      (VNODEOPFUNC)vboxvfs_dfl_error },
     { NULL,                   (VNODEOPFUNC)NULL              },
+#undef VNODEOPFUNC
 };
 
-int (**g_VBoxVFSVnodeDirOpsVector)(void *);
+/** ??? */
+int (**g_papfnVBoxVFSVnodeDirOpsVector)(void *);
 
-static struct vnodeopv_desc oVBoxVFSVnodeDirOps = {
-    &g_VBoxVFSVnodeDirOpsVector,
-    oVBoxVFSDirOpsDescList
+/**
+ * VNode operation descriptors.
+ */
+struct vnodeopv_desc g_VBoxSfVnodeOpvDesc =
+{
+    &g_papfnVBoxVFSVnodeDirOpsVector,
+    g_VBoxSfDirOpsDescList
 };
 
-struct vnodeopv_desc *g_VBoxVFSVnodeOpvDescList[] = {
-    &oVBoxVFSVnodeDirOps,
-};
-
-int g_cVBoxVFSVnodeOpvDescListSize =
-    sizeof(**g_VBoxVFSVnodeOpvDescList) / sizeof(struct vnodeopv_desc);

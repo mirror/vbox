@@ -76,7 +76,7 @@ vboxvfs_create_vnode_internal(struct mount *mp, enum vtype type, vnode_t pParent
             vnode_params.vnfs_str        = NULL;
             vnode_params.vnfs_dvp        = pParent;
             vnode_params.vnfs_fsnode     = pVnodeData;  /** Private data attached per xnu's vnode object */
-            vnode_params.vnfs_vops       = g_VBoxVFSVnodeDirOpsVector;
+            vnode_params.vnfs_vops       = g_papfnVBoxVFSVnodeDirOpsVector;
 
             vnode_params.vnfs_markroot   = fIsRoot;
             vnode_params.vnfs_marksystem = FALSE;
@@ -386,7 +386,7 @@ vboxvfs_open_internal(vboxvfs_mount_t *pMount, PSHFLSTRING pPath, uint32_t fFlag
     parms.Info.cbObject = 0;
     parms.CreateFlags   = fFlags;
 
-    rc = VbglR0SfCreate(&g_vboxSFClient, &pMount->pMap, pPath, &parms);
+    rc = VbglR0SfCreate(&g_SfClient, &pMount->pMap, pPath, &parms);
     if (RT_SUCCESS(rc))
     {
         *pHandle = parms.Handle;
@@ -411,7 +411,7 @@ int
 vboxvfs_close_internal(vboxvfs_mount_t *pMount, SHFLHANDLE pHandle)
 {
     AssertReturn(pMount, EINVAL);
-    return VbglR0SfClose(&g_vboxSFClient, &pMount->pMap, pHandle);
+    return VbglR0SfClose(&g_SfClient, &pMount->pMap, pHandle);
 }
 
 /**
@@ -441,7 +441,7 @@ vboxvfs_get_info_internal(mount_t mp, PSHFLSTRING pSHFLDPath, PSHFLFSOBJINFO Inf
     parms.Info.cbObject = 0;
     parms.CreateFlags = SHFL_CF_LOOKUP | SHFL_CF_ACT_FAIL_IF_NEW;
 
-    rc = VbglR0SfCreate(&g_vboxSFClient, &pMount->pMap, pSHFLDPath, &parms);
+    rc = VbglR0SfCreate(&g_SfClient, &pMount->pMap, pSHFLDPath, &parms);
     if (rc == 0)
         *Info = parms.Info;
 

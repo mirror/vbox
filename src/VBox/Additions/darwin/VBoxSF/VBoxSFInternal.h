@@ -81,15 +81,10 @@ typedef struct vboxvfs_vnode_data
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
-/** Global refernce to host service connection */
-extern VBGLSFCLIENT g_vboxSFClient;
-
-/* VFS options */
-extern struct vfsops g_oVBoxVFSOpts;
-
-extern int (**g_VBoxVFSVnodeDirOpsVector)(void *);
-extern int g_cVBoxVFSVnodeOpvDescListSize;
-extern struct vnodeopv_desc *g_VBoxVFSVnodeOpvDescList[];
+extern VBGLSFCLIENT         g_SfClient;
+extern struct vfsops        g_VBoxSfVfsOps;
+extern struct vnodeopv_desc g_VBoxSfVnodeOpvDesc;
+extern int (**g_papfnVBoxVFSVnodeDirOpsVector)(void *);
 
 
 /*********************************************************************************************************************************

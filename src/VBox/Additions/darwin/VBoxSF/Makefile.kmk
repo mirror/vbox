@@ -45,18 +45,18 @@ VBoxSF.kext_CLEAN    = $(VBoxSF.kext_0_OUTDIR)/Info.plist
 $$(VBoxSF.kext_0_OUTDIR)/Info.plist: \
 		$(PATH_SUB_CURRENT)/Info.plist \
 		$(VBOX_VERSION_MK) | $$(dir $$@)
-	 $(call MSG_GENERATE,VBoxSF,$@,$<)
-	 $(QUIET)$(RM) -f $@
-	 $(QUIET)$(SED) \
-		 -e 's/@VBOX_VERSION_STRING@/$(VBOX_VERSION_STRING)/g' \
-		 -e 's/@VBOX_VERSION_MAJOR@/$(VBOX_VERSION_MAJOR)/g' \
-		 -e 's/@VBOX_VERSION_MINOR@/$(VBOX_VERSION_MINOR)/g' \
-		 -e 's/@VBOX_VERSION_BUILD@/$(VBOX_VERSION_BUILD)/g' \
-		 -e 's/@VBOX_VENDOR@/$(VBOX_VENDOR)/g' \
-		 -e 's/@VBOX_PRODUCT@/$(VBOX_PRODUCT)/g' \
-		 -e 's/@VBOX_C_YEAR@/$(VBOX_C_YEAR)/g' \
-		 --output $@ \
-		 $<
+	$(call MSG_GENERATE,VBoxSF,$@,$<)
+	$(QUIET)$(RM) -f $@
+	$(QUIET)$(SED) \
+		-e 's/@VBOX_VERSION_STRING@/$(VBOX_VERSION_STRING)/g' \
+		-e 's/@VBOX_VERSION_MAJOR@/$(VBOX_VERSION_MAJOR)/g' \
+		-e 's/@VBOX_VERSION_MINOR@/$(VBOX_VERSION_MINOR)/g' \
+		-e 's/@VBOX_VERSION_BUILD@/$(VBOX_VERSION_BUILD)/g' \
+		-e 's/@VBOX_VENDOR@/$(VBOX_VENDOR)/g' \
+		-e 's/@VBOX_PRODUCT@/$(VBOX_PRODUCT)/g' \
+		-e 's/@VBOX_C_YEAR@/$(VBOX_C_YEAR)/g' \
+		--output $@ \
+		$<
 
 #
 # mount.vboxvfs - The Shared Folders mouning tool.

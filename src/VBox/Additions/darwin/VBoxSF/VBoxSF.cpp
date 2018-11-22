@@ -32,58 +32,82 @@
 *   Structures and Typedefs                                                                                                      *
 *********************************************************************************************************************************/
 /**
- * The service class for dealing with Share Folder filesystem.
+ * The service class for this driver.
+ *
+ * This has one purpose: Use waitForMatchingService() to find VBoxGuest.
  */
-class org_virtualbox_VBoxVFS : public IOService
+class org_virtualbox_VBoxSF : public IOService
 {
-    OSDeclareDefaultStructors(org_virtualbox_VBoxVFS);
+    OSDeclareDefaultStructors(org_virtualbox_VBoxSF);
 
 private:
-    IOService * waitForCoreService(void);
+    IOService *waitForCoreService(void);
 
-    IOService * coreService;
+    IOService *m_pCoreService;
 
 public:
     virtual bool start(IOService *pProvider);
     virtual void stop(IOService *pProvider);
 };
 
-OSDefineMetaClassAndStructors(org_virtualbox_VBoxVFS, IOService);
+OSDefineMetaClassAndStructors(org_virtualbox_VBoxSF, IOService);
 
 
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
-
 /**
  * Declare the module stuff.
  */
 RT_C_DECLS_BEGIN
-static kern_return_t VBoxVFSModuleLoad(struct kmod_info *pKModInfo, void *pvData);
-static kern_return_t VBoxVFSModuleUnLoad(struct kmod_info *pKModInfo, void *pvData);
+static kern_return_t VBoxSfModuleLoad(struct kmod_info *pKModInfo, void *pvData);
+static kern_return_t VBoxSfModuleUnload(struct kmod_info *pKModInfo, void *pvData);
 extern kern_return_t _start(struct kmod_info *pKModInfo, void *pvData);
 extern kern_return_t _stop(struct kmod_info *pKModInfo, void *pvData);
 KMOD_EXPLICIT_DECL(VBoxVFS, VBOX_VERSION_STRING, _start, _stop)
-DECLHIDDEN(kmod_start_func_t *) _realmain      = VBoxVFSModuleLoad;
-DECLHIDDEN(kmod_stop_func_t *)  _antimain      = VBoxVFSModuleUnLoad;
+DECLHIDDEN(kmod_start_func_t *) _realmain      = VBoxSfModuleLoad;
+DECLHIDDEN(kmod_stop_func_t *)  _antimain      = VBoxSfModuleUnload;
 DECLHIDDEN(int)                 _kext_apple_cc = __APPLE_CC__;
 RT_C_DECLS_END
 
-/** The number of IOService class instances. */
-static bool volatile        g_fInstantiated = 0;
-/* Global connection to the host service */
-VBGLSFCLIENT                  g_vboxSFClient;
+/** The org_virtualbox_VBoxSF instance.
+ * Used for preventing multiple instantiations. */
+static org_virtualbox_VBoxSF   *g_pService = NULL;
+
+/** The shared folder service client structure. */
+VBGLSFCLIENT                    g_SfClient;
 /* VBoxVFS filesystem handle. Needed for FS unregistering. */
-static vfstable_t           g_oVBoxVFSHandle;
+static vfstable_t               g_pVBoxSfVfsTableEntry;
+
+/** For vfs_fsentry. */
+static struct vnodeopv_desc    *g_apVBoxSfVnodeOpDescList[] =
+{
+    &g_VBoxSfVnodeOpvDesc,
+};
+
+
+/** VFS registration structure. */
+static struct vfs_fsentry g_VBoxSfFsEntry =
+{
+    .vfe_vfsops     = &g_VBoxSfVfsOps,
+    .vfe_vopcnt     = RT_ELEMENTS(g_apVBoxSfVnodeOpDescList),
+    .vfe_opvdescs   = g_apVBoxSfVnodeOpDescList,
+    .vfe_fstypenum  = -1,
+    .vfe_fsname     = VBOXSF_DARWIN_FS_NAME,
+    .vfe_flags      = VFS_TBLTHREADSAFE     /* Required. */
+                    | VFS_TBLFSNODELOCK     /* Required. */
+                    | VFS_TBLNOTYPENUM      /* No historic file system number. */
+                    | VFS_TBL64BITREADY,    /* Can handle 64-bit processes */
+    /** @todo add VFS_TBLREADDIR_EXTENDED */
+    .vfe_reserv     = { NULL, NULL },
+};
 
 
 /**
  * KEXT Module BSD entry point
  */
-static kern_return_t VBoxVFSModuleLoad(struct kmod_info *pKModInfo, void *pvData)
+static kern_return_t VBoxSfModuleLoad(struct kmod_info *pKModInfo, void *pvData)
 {
-    int rc;
-
     /* Initialize the R0 guest library. */
 #if 0
     rc = VbglR0SfInit();
@@ -101,10 +125,8 @@ static kern_return_t VBoxVFSModuleLoad(struct kmod_info *pKModInfo, void *pvData
 /**
  * KEXT Module BSD exit point
  */
-static kern_return_t VBoxVFSModuleUnLoad(struct kmod_info *pKModInfo, void *pvData)
+static kern_return_t VBoxSfModuleUnload(struct kmod_info *pKModInfo, void *pvData)
 {
-    int rc;
-
 #if 0
    VbglR0SfTerm();
 #endif
@@ -114,138 +136,89 @@ static kern_return_t VBoxVFSModuleUnLoad(struct kmod_info *pKModInfo, void *pvDa
     return KERN_SUCCESS;
 }
 
-
 /**
- * Register VBoxFS filesystem.
- *
- * @returns IPRT status code.
+ * Wait for VBoxGuest.kext to be started
  */
-int VBoxVFSRegisterFilesystem(void)
+IOService *org_virtualbox_VBoxSF::waitForCoreService(void)
 {
-    struct vfs_fsentry oVFsEntry;
-    int rc;
-
-    memset(&oVFsEntry, 0, sizeof(oVFsEntry));
-    /* Attach filesystem operations set */
-    oVFsEntry.vfe_vfsops = &g_oVBoxVFSOpts;
-    /* Attach vnode operations */
-    oVFsEntry.vfe_vopcnt = g_cVBoxVFSVnodeOpvDescListSize;
-    oVFsEntry.vfe_opvdescs = g_VBoxVFSVnodeOpvDescList;
-    /* Set flags */
-    oVFsEntry.vfe_flags =
-#if ARCH_BITS == 64
-            VFS_TBL64BITREADY |
-#endif
-            VFS_TBLTHREADSAFE |
-            VFS_TBLFSNODELOCK |
-            VFS_TBLNOTYPENUM;
-
-    memcpy(oVFsEntry.vfe_fsname, VBOXSF_DARWIN_FS_NAME, MFSNAMELEN);
-
-    rc = vfs_fsadd(&oVFsEntry, &g_oVBoxVFSHandle);
-    if (rc)
+    OSDictionary *pServiceToMatach = serviceMatching("org_virtualbox_VBoxGuest");
+    if (pServiceToMatach)
     {
-        PINFO("Unable to register VBoxVFS filesystem (%d)", rc);
-        return VERR_GENERAL_FAILURE;
+        /* Wait 15 seconds for VBoxGuest to be started */
+        IOService *pService = waitForMatchingService(pServiceToMatach, 15 * RT_NS_1SEC_64);
+        pServiceToMatach->release();
+        return pService;
     }
-
-    PINFO("VBoxVFS filesystem successfully registered");
-    return VINF_SUCCESS;
-}
-
-/**
- * Unregister VBoxFS filesystem.
- *
- * @returns IPRT status code.
- */
-int VBoxVFSUnRegisterFilesystem(void)
-{
-    int rc;
-
-    if (g_oVBoxVFSHandle == 0)
-        return VERR_INVALID_PARAMETER;
-
-    rc = vfs_fsremove(g_oVBoxVFSHandle);
-    if (rc)
-    {
-        PINFO("Unable to unregister VBoxVFS filesystem (%d)", rc);
-        return VERR_GENERAL_FAILURE;
-    }
-
-    g_oVBoxVFSHandle = 0;
-
-    PINFO("VBoxVFS filesystem successfully unregistered");
-    return VINF_SUCCESS;
+    PINFO("unable to create matching dictionary");
+    return NULL;
 }
 
 
 /**
  * Start this service.
  */
-bool org_virtualbox_VBoxVFS::start(IOService *pProvider)
+bool org_virtualbox_VBoxSF::start(IOService *pProvider)
 {
-    int rc;
-
-    if (!IOService::start(pProvider))
-        return false;
-
-    /* Low level initialization should be performed only once */
-    if (!ASMAtomicCmpXchgBool(&g_fInstantiated, true, false))
-    {
-        IOService::stop(pProvider);
-        return false;
-    }
-
-    /* Wait for VBoxGuest to be started */
-    coreService = waitForCoreService();
-    if (coreService)
-    {
-        rc = VbglR0SfInit();
-        if (RT_SUCCESS(rc))
-        {
-            /* Connect to the host service. */
-            rc = VbglR0SfConnect(&g_vboxSFClient);
-            if (RT_SUCCESS(rc))
-            {
-                PINFO("VBox client connected");
-                rc = VbglR0SfSetUtf8(&g_vboxSFClient);
-                if (RT_SUCCESS(rc))
-                {
-                    rc = VBoxVFSRegisterFilesystem();
-                    if (RT_SUCCESS(rc))
-                    {
-                        registerService();
-                        PINFO("Successfully started I/O kit class instance");
-                        return true;
-                    }
-                    PERROR("Unable to register VBoxVFS filesystem");
-                }
-                else
-                {
-                    PERROR("VbglR0SfSetUtf8 failed: rc=%d", rc);
-                }
-                VbglR0SfDisconnect(&g_vboxSFClient);
-            }
-            else
-            {
-                PERROR("Failed to get connection to host: rc=%d", rc);
-            }
-            VbglR0SfTerm();
-        }
-        else
-        {
-            PERROR("Failed to initialize low level library");
-        }
-        coreService->release();
-    }
+    if (g_pService == NULL)
+        g_pService = this;
     else
     {
-        PERROR("VBoxGuest KEXT not started");
+        printf("org_virtualbox_VBoxSF::start: g_pService=%p this=%p -> false\n", g_pService, this);
+        return false;
     }
 
-    ASMAtomicXchgBool(&g_fInstantiated, false);
-    IOService::stop(pProvider);
+    if (IOService::start(pProvider))
+    {
+        /*
+         * Get hold of VBoxGuest.
+         */
+        m_pCoreService = waitForCoreService();
+        if (m_pCoreService)
+        {
+            int rc = VbglR0SfInit();
+            if (RT_SUCCESS(rc))
+            {
+                /*
+                 * Connect to the host service and set UTF-8 as the string encoding to use.
+                 */
+                rc = VbglR0SfConnect(&g_SfClient);
+                if (RT_SUCCESS(rc))
+                {
+                    rc = VbglR0SfSetUtf8(&g_SfClient);
+                    if (RT_SUCCESS(rc))
+                    {
+                        /*
+                         * Register the file system.
+                         */
+                        rc = vfs_fsadd(&g_VBoxSfFsEntry, &g_pVBoxSfVfsTableEntry);
+                        if (rc == 0)
+                        {
+                            registerService();
 
+                            LogRel(("VBoxSF: ready\n"));
+                            return true;
+                        }
+
+                        LogRel(("VBoxSF: vfs_fsadd failed: %d\n", rc));
+                    }
+                    else
+                        LogRel(("VBoxSF: VbglR0SfSetUtf8 failed: %Rrc\n", rc));
+                    VbglR0SfDisconnect(&g_SfClient);
+                }
+                else
+                    LogRel(("VBoxSF: VbglR0SfConnect failed: %Rrc\n", rc));
+                VbglR0SfTerm();
+            }
+            else
+                LogRel(("VBoxSF: VbglR0SfInit failed: %Rrc\n", rc));
+            m_pCoreService->release();
+        }
+        else
+            LogRel(("VBoxSF: Failed to find VBoxGuest!\n"));
+
+        IOService::stop(pProvider);
+    }
+    g_pService = NULL;
     return false;
 }
 
@@ -253,53 +226,34 @@ bool org_virtualbox_VBoxVFS::start(IOService *pProvider)
 /**
  * Stop this service.
  */
-void org_virtualbox_VBoxVFS::stop(IOService *pProvider)
+void org_virtualbox_VBoxSF::stop(IOService *pProvider)
 {
-    int rc;
-
-    AssertReturnVoid(ASMAtomicReadBool(&g_fInstantiated));
-
-    rc = VBoxVFSUnRegisterFilesystem();
-    if (RT_FAILURE(rc))
+    if (m_pCoreService == this)
     {
-        PERROR("VBoxVFS filesystem is busy. Make sure all "
-               "shares are unmounted (%d)", rc);
+        /*
+         * Unregister the filesystem.
+         */
+        if (g_pVBoxSfVfsTableEntry != NULL)
+        {
+            int rc = vfs_fsremove(g_pVBoxSfVfsTableEntry);
+            if (rc == 0)
+            {
+                g_pVBoxSfVfsTableEntry = NULL;
+                PINFO("VBoxVFS filesystem successfully unregistered");
+            }
+            else
+            {
+                PINFO("Unable to unregister the VBoxSF filesystem (%d)", rc);
+                /** @todo how on earth do we deal with this...  Gues we shouldn't be using
+                 *        IOService at all here. sigh.  */
+            }
+        }
+        VbglR0SfDisconnect(&g_SfClient);
+        VbglR0SfTerm();
+        if (m_pCoreService)
+            m_pCoreService->release();
+
     }
-
-    VbglR0SfDisconnect(&g_vboxSFClient);
-    PINFO("VBox client disconnected");
-
-    VbglR0SfTerm();
-    PINFO("Low level uninit done");
-
-    coreService->release();
-    PINFO("VBoxGuest service released");
-
     IOService::stop(pProvider);
-
-    ASMAtomicWriteBool(&g_fInstantiated, false);
-
-    PINFO("Successfully stopped I/O kit class instance");
 }
 
-
-/**
- * Wait for VBoxGuest.kext to be started
- */
-IOService * org_virtualbox_VBoxVFS::waitForCoreService(void)
-{
-    IOService *service;
-
-    OSDictionary *serviceToMatch = serviceMatching("org_virtualbox_VBoxGuest");
-    if (!serviceToMatch)
-    {
-        PINFO("unable to create matching dictionary");
-        return NULL;
-    }
-
-    /* Wait 10 seconds for VBoxGuest to be started */
-    service = waitForMatchingService(serviceToMatch, 10ULL * 1000000000ULL);
-    serviceToMatch->release();
-
-    return service;
-}

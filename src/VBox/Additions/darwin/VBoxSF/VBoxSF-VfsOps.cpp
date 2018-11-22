@@ -274,7 +274,7 @@ vboxvfs_mount(struct mount *mp, vnode_t pDev, user_addr_t pUserData, vfs_context
     pMount = vboxvfs_alloc_internal_data(mp, pUserData);
     if (pMount)
     {
-        rc = VbglR0SfMapFolder(&g_vboxSFClient, pMount->pShareName, &pMount->pMap);
+        rc = VbglR0SfMapFolder(&g_SfClient, pMount->pShareName, &pMount->pMap);
         if (RT_SUCCESS(rc))
         {
             /* Private data should be set before vboxvfs_create_vnode_internal() call
@@ -341,7 +341,7 @@ vboxvfs_unmount(struct mount *mp, int fFlags, vfs_context_t pContext)
             {
                 vfs_setfsprivate(mp, NULL);
 
-                rc = VbglR0SfUnmapFolder(&g_vboxSFClient, &pMount->pMap);
+                rc = VbglR0SfUnmapFolder(&g_SfClient, &pMount->pMap);
                 if (RT_SUCCESS(rc))
                 {
                     vboxvfs_destroy_internal_data(&pMount);
@@ -503,7 +503,7 @@ vboxvfs_getattr(struct mount *mp, struct vfs_attr *pAttr, vfs_context_t pContext
     AssertReturn(pMount, EINVAL);
     AssertReturn(pMount->pShareName, EINVAL);
 
-    rc = VbglR0SfFsInfo(&g_vboxSFClient, &pMount->pMap, 0, SHFL_INFO_GET | SHFL_INFO_VOLUME,
+    rc = VbglR0SfFsInfo(&g_SfClient, &pMount->pMap, 0, SHFL_INFO_GET | SHFL_INFO_VOLUME,
                         &cbBuffer, (PSHFLDIRINFO)&SHFLVolumeInfo);
     AssertReturn(rc == 0, EPROTO);
 
@@ -552,8 +552,11 @@ vboxvfs_getattr(struct mount *mp, struct vfs_attr *pAttr, vfs_context_t pContext
     return 0;
 }
 
-/* VFS options */
-struct vfsops g_oVBoxVFSOpts = {
+/**
+ * VFS operations
+ */
+struct vfsops g_VBoxSfVfsOps =
+{
     /* Standard operations */
     &vboxvfs_mount,
     NULL,               /* Skipped: vfs_start() */
