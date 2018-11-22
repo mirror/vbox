@@ -98,7 +98,7 @@ public:
 
     bool autoInitSpanConstructor(State aExpectedState);
     void autoInitSpanDestructor(State aNewState, HRESULT aFailedRC, com::ErrorInfo *aFailedEI);
-    State autoUninitSpanConstructor();
+    State autoUninitSpanConstructor(bool fTry);
     void autoUninitSpanDestructor();
 
 private:
