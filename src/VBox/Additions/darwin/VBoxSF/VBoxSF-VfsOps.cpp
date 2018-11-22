@@ -19,11 +19,14 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
+#define LOG_GROUP LOG_GROUP_SHARED_FOLDERS
 #include "VBoxSFInternal.h"
 
 #include <iprt/assert.h>
-#include <iprt/mem.h>
 #include <iprt/asm.h>
+#include <iprt/mem.h>
+#include <iprt/string.h>
+#include <VBox/log.h>
 
 
 /* States of VBoxVFS object used in atomic variables
@@ -34,536 +37,592 @@
 #define VBOXVFS_OBJECT_INVALID          (3)
 
 
-/**
- * Mount helper: Get mounting parameters from user space and validate them.
- *
- * @param pUserData     Mounting parameters provided by user space mount tool.
- * @param pKernelData   Buffer to store pUserData in kernel space.
- *
- * @return 0 on success or BSD error code otherwise.
- */
-static int
-vboxvfs_get_mount_info(user_addr_t pUserData, PVBOXSFDRWNMOUNTINFO pKernelData)
-{
-    AssertReturn(pKernelData, EINVAL);
-    AssertReturn(pUserData,   EINVAL);
-
-    /* Get mount parameters from user space */
-    if (copyin(pUserData, pKernelData, sizeof(*pKernelData)) != 0)
-    {
-        PERROR("Unable to copy mount parameters from user space");
-        return EINVAL;
-    }
-
-    /* Validate data magic */
-    if (pKernelData->u32Magic != VBOXSFDRWNMOUNTINFO_MAGIC)
-    {
-        PERROR("Mount parameter magic mismatch");
-        return EINVAL;
-    }
-
-    return 0;
-}
-
 
 /**
- * Mount helper: Provide VFS layer with a VBox share name (stored as mounted device).
+ * vfsops::vfs_getattr implementation.
  *
- * @param mp            Mount data provided by VFS layer.
- * @param szShareName   VBox share name.
- * @param cbShareName   Returning parameter which contains VBox share name string length.
- *
- * @return 0 on success or BSD error code otherwise.
+ * @returns 0 on success or errno.h value on failure.
+ * @param   pMount      The mount data structure.
+ * @param   pFsAttr     Input & output structure.
+ * @param   pContext    Unused kAuth parameter.
  */
-static int
-vboxvfs_set_share_name(struct mount *mp, char *szShareName, size_t *cbShareName)
+static int vboxSfDwnVfsGetAttr(mount_t pMount, struct vfs_attr *pFsAttr, vfs_context_t pContext)
 {
-    struct vfsstatfs *pVfsInfo;
+    PVBOXSFMNT pThis = (PVBOXSFMNT)vfs_fsprivate(pMount);
+    AssertReturn(pThis, EBADMSG);
+    LogFlow(("vboxSfDwnVfsGetAttr: %s\n", pThis->MntInfo.szFolder));
+    RT_NOREF(pContext);
 
-    AssertReturn(mp,          EINVAL);
-    AssertReturn(szShareName, EINVAL);
-    AssertReturn(cbShareName, EINVAL);
-
-    pVfsInfo = vfs_statfs(mp);
-    if (!pVfsInfo)
-    {
-        PERROR("Unable to get VFS data for the mount structure");
-        return EINVAL;
-    }
-
-    return copystr(szShareName, pVfsInfo->f_mntfromname, MAXPATHLEN, cbShareName);
-}
-
-
-/**
- * Mount helper: allocate locking group attribute and locking group itself.
- * Store allocated data into VBoxVFS private data.
- *
- * @param pMount   VBoxVFS global data which will be updated with
- *                          locking group and its attribute in case of success;
- *                          otherwise pMount unchanged.
- *
- * @return 0 on success or BSD error code otherwise.
- *
- */
-static int
-vboxvfs_prepare_locking(vboxvfs_mount_t *pMount)
-{
-    lck_grp_attr_t *pGrpAttr;
-    lck_grp_t      *pGrp;
-
-    AssertReturn(pMount, EINVAL);
-
-    pGrpAttr = lck_grp_attr_alloc_init();
-    if (pGrpAttr)
-    {
-        pGrp = lck_grp_alloc_init("VBoxVFS", pGrpAttr);
-        if (pGrp)
-        {
-            pMount->pLockGroupAttr = pGrpAttr;
-            pMount->pLockGroup      = pGrp;
-
-            return 0;
-        }
-        else
-            PERROR("Unable to allocate locking group");
-
-        lck_grp_attr_free(pGrpAttr);
-    }
-    else
-        PERROR("Unable to allocate locking group attribute");
-
-    return ENOMEM;
-}
-
-
-/**
- * Mount and unmount helper: destroy locking group attribute and locking group itself.
- *
- * @param pMount   VBoxVFS global data for which locking
- *                          group and attribute will be deallocated and set to NULL.
- */
-static void
-vboxvfs_destroy_locking(vboxvfs_mount_t *pMount)
-{
-    AssertReturnVoid(pMount);
-
-    if (pMount->pLockGroup)
-    {
-        lck_grp_free(pMount->pLockGroup);
-        pMount->pLockGroup = NULL;
-    }
-
-    if (pMount->pLockGroupAttr)
-    {
-        lck_grp_attr_free(pMount->pLockGroupAttr);
-        pMount->pLockGroupAttr = NULL;
-    }
-}
-
-/**
- * Mount helper: Allocate and init VBoxVFS global data.
- *
- * @param mp            Mount data provided by VFS layer.
- * @param pUserData     Mounting parameters provided by user space mount tool.
- *
- * @return VBoxVFS global data or NULL.
- */
-static vboxvfs_mount_t *
-vboxvfs_alloc_internal_data(struct mount *mp, user_addr_t pUserData)
-{
-    vboxvfs_mount_t             *pMount;
-    struct vboxvfs_mount_info    mountInfo;
-    struct vfsstatfs            *pVfsInfo;
-    size_t                       cbShareName;
-
+    /*
+     * Get the file system stats from the host.
+     */
     int rc;
-
-    AssertReturn(mp,        NULL);
-    AssertReturn(pUserData, NULL);
-
-    pVfsInfo = vfs_statfs(mp);
-    AssertReturn(pVfsInfo, NULL);
-
-    /* Allocate memory for VBoxVFS internal data */
-    pMount = (vboxvfs_mount_t *)RTMemAllocZ(sizeof(vboxvfs_mount_t));
-    if (pMount)
+    struct MyEmbReq
     {
-        rc = vboxvfs_get_mount_info(pUserData, &mountInfo);
-        if (rc == 0)
+        VBGLIOCIDCHGCMFASTCALL  Hdr;
+        VMMDevHGCMCall          Call;
+        VBoxSFParmInformation   Parms;
+        SHFLVOLINFO             VolInfo;
+    } *pReq = (struct MyEmbReq *)VbglR0PhysHeapAlloc(sizeof(*pReq));
+    if (pReq)
+    {
+        RT_ZERO(pReq->VolInfo);
+
+        VBGLIOCIDCHGCMFASTCALL_INIT(&pReq->Hdr, VbglR0PhysHeapGetPhysAddr(pReq), &pReq->Call, g_SfClientDarwin.idClient,
+                                    SHFL_FN_INFORMATION, SHFL_CPARMS_INFORMATION, sizeof(*pReq));
+        pReq->Parms.id32Root.type               = VMMDevHGCMParmType_32bit;
+        pReq->Parms.id32Root.u.value32          = pThis->hHostFolder.root;
+        pReq->Parms.u64Handle.type              = VMMDevHGCMParmType_64bit;
+        pReq->Parms.u64Handle.u.value64         = 0;
+        pReq->Parms.f32Flags.type               = VMMDevHGCMParmType_32bit;
+        pReq->Parms.f32Flags.u.value32          = SHFL_INFO_VOLUME | SHFL_INFO_GET;
+        pReq->Parms.cb32.type                   = VMMDevHGCMParmType_32bit;
+        pReq->Parms.cb32.u.value32              = sizeof(pReq->VolInfo);
+        pReq->Parms.pInfo.type                  = VMMDevHGCMParmType_Embedded;
+        pReq->Parms.pInfo.u.Embedded.cbData     = sizeof(pReq->VolInfo);
+        pReq->Parms.pInfo.u.Embedded.offData    = RT_UOFFSETOF(struct MyEmbReq, VolInfo) - sizeof(VBGLIOCIDCHGCMFASTCALL);
+        pReq->Parms.pInfo.u.Embedded.fFlags     = VBOX_HGCM_F_PARM_DIRECTION_FROM_HOST;
+
+	int vrc = VbglR0HGCMFastCall(g_SfClientDarwin.handle, &pReq->Hdr, sizeof(*pReq));
+        if (RT_SUCCESS(vrc))
+            vrc = pReq->Call.header.result;
+        if (RT_SUCCESS(vrc))
         {
-            PDEBUG("Mounting shared folder '%s'", mountInfo.szFolder);
+            /*
+             * Fill in stuff.
+             */
+            /* Copy over the results we got from the host. */
+            uint32_t cbUnit = pReq->VolInfo.ulBytesPerSector * pReq->VolInfo.ulBytesPerAllocationUnit;
+            VFSATTR_RETURN(pFsAttr, f_bsize, cbUnit);
+            VFSATTR_RETURN(pFsAttr, f_iosize, _64K); /** @todo what's a good block size...  */
+            VFSATTR_RETURN(pFsAttr, f_blocks, (uint64_t)pReq->VolInfo.ullTotalAllocationBytes / cbUnit);
+            VFSATTR_RETURN(pFsAttr, f_bavail, (uint64_t)pReq->VolInfo.ullAvailableAllocationBytes / cbUnit);
+            VFSATTR_RETURN(pFsAttr, f_bfree,  (uint64_t)pReq->VolInfo.ullAvailableAllocationBytes / cbUnit);
+            VFSATTR_RETURN(pFsAttr, f_bused,
+                           ((uint64_t)pReq->VolInfo.ullTotalAllocationBytes - (uint64_t)pReq->VolInfo.ullAvailableAllocationBytes) / cbUnit);
+            fsid_t const fsid = { { vfs_statfs(pMount)->f_fsid.val[0], vfs_typenum(pMount) } };
+            VFSATTR_RETURN(pFsAttr, f_fsid, fsid);
 
-            /* Prepare for locking. We prepare locking group and attr data here,
-             * but allocate and initialize real lock in vboxvfs_create_vnode_internal().
-             * We use the same pLockGroup and pLockAttr for all vnodes related to this mount point. */
-            rc = vboxvfs_prepare_locking(pMount);
-            if (rc == 0)
+            /* f_owner is handled by caller. */
+            /* f_signature is handled by caller. */
+
+            struct timespec TmpTv = { 1084190406, 0 };
+            VFSATTR_RETURN(pFsAttr, f_create_time, TmpTv);
+
+            /*
+             * Unsupported bits.
+             */
+            /* Dummies for some values we don't support. */
+            VFSATTR_RETURN(pFsAttr, f_objcount, 0);
+            VFSATTR_RETURN(pFsAttr, f_filecount, 0);
+            VFSATTR_RETURN(pFsAttr, f_dircount, 0);
+            VFSATTR_RETURN(pFsAttr, f_maxobjcount, UINT32_MAX);
+            VFSATTR_RETURN(pFsAttr, f_files, UINT32_MAX);
+            VFSATTR_RETURN(pFsAttr, f_ffree, UINT32_MAX);
+            VFSATTR_RETURN(pFsAttr, f_fssubtype, 0);
+            VFSATTR_RETURN(pFsAttr, f_carbon_fsid, 0);
+
+            /* Totally not supported: */
+            VFSATTR_CLEAR_ACTIVE(pFsAttr, f_modify_time);
+            VFSATTR_CLEAR_ACTIVE(pFsAttr, f_access_time);
+            VFSATTR_CLEAR_ACTIVE(pFsAttr, f_backup_time);
+
+            /*
+             * Annoying capability stuff.
+             * The 'valid' bits are only supposed to be set when we know for sure.
+             */
+            if (VFSATTR_IS_ACTIVE(pFsAttr, f_capabilities))
             {
-                rc = vboxvfs_set_share_name(mp, (char *)mountInfo.szFolder, &cbShareName);
-                if (rc == 0)
-                {
-                    pMount->pShareName = vboxvfs_construct_shflstring(mountInfo.szFolder, cbShareName);
-                    if (pMount->pShareName)
-                    {
-                        /* Remember user who mounted this share */
-                        pMount->owner = pVfsInfo->f_owner;
+                vol_capabilities_attr_t *pCaps = &pFsAttr->f_capabilities;
 
-                        /* Mark root vnode as uninitialized */
-                        ASMAtomicWriteU8(&pMount->fRootVnodeState, VBOXVFS_OBJECT_UNINITIALIZED);
+                pCaps->valid[VOL_CAPABILITIES_FORMAT]            = VOL_CAP_FMT_PERSISTENTOBJECTIDS
+                                                                 | VOL_CAP_FMT_SYMBOLICLINKS
+                                                                 | VOL_CAP_FMT_HARDLINKS
+                                                                 | VOL_CAP_FMT_JOURNAL
+                                                                 | VOL_CAP_FMT_JOURNAL_ACTIVE
+                                                                 | VOL_CAP_FMT_NO_ROOT_TIMES
+                                                                 | VOL_CAP_FMT_SPARSE_FILES
+                                                                 | VOL_CAP_FMT_ZERO_RUNS
+                                                                 | VOL_CAP_FMT_CASE_SENSITIVE
+                                                                 | VOL_CAP_FMT_CASE_PRESERVING
+                                                                 | VOL_CAP_FMT_FAST_STATFS
+                                                                 | VOL_CAP_FMT_2TB_FILESIZE
+                                                                 | VOL_CAP_FMT_OPENDENYMODES
+                                                                 | VOL_CAP_FMT_HIDDEN_FILES
+                                                                 | VOL_CAP_FMT_PATH_FROM_ID
+                                                                 | VOL_CAP_FMT_NO_VOLUME_SIZES
+                                                                 | VOL_CAP_FMT_DECMPFS_COMPRESSION
+                                                                 | VOL_CAP_FMT_64BIT_OBJECT_IDS;
+                pCaps->capabilities[VOL_CAPABILITIES_FORMAT]     = VOL_CAP_FMT_2TB_FILESIZE
+                                                                 ///@todo | VOL_CAP_FMT_SYMBOLICLINKS - later
+                                                                 ///@todo | VOL_CAP_FMT_SPARSE_FILES - probably, needs testing.
+                                                                 /*| VOL_CAP_FMT_CASE_SENSITIVE - case-insensitive */
+                                                                 | VOL_CAP_FMT_CASE_PRESERVING
+                                                                 ///@todo | VOL_CAP_FMT_HIDDEN_FILES - if windows host.
+                                                                 ///@todo | VOL_CAP_FMT_OPENDENYMODES - if windows host.
+                                                                 ;
+                pCaps->valid[VOL_CAPABILITIES_INTERFACES]        = VOL_CAP_INT_SEARCHFS
+                                                                 | VOL_CAP_INT_ATTRLIST
+                                                                 | VOL_CAP_INT_NFSEXPORT
+                                                                 | VOL_CAP_INT_READDIRATTR
+                                                                 | VOL_CAP_INT_EXCHANGEDATA
+                                                                 | VOL_CAP_INT_COPYFILE
+                                                                 | VOL_CAP_INT_ALLOCATE
+                                                                 | VOL_CAP_INT_VOL_RENAME
+                                                                 | VOL_CAP_INT_ADVLOCK
+                                                                 | VOL_CAP_INT_FLOCK
+                                                                 | VOL_CAP_INT_EXTENDED_SECURITY
+                                                                 | VOL_CAP_INT_USERACCESS
+                                                                 | VOL_CAP_INT_MANLOCK
+                                                                 | VOL_CAP_INT_NAMEDSTREAMS
+                                                                 | VOL_CAP_INT_EXTENDED_ATTR;
+                pCaps->capabilities[VOL_CAPABILITIES_INTERFACES] = 0
+                                                                 ///@todo | VOL_CAP_INT_SEARCHFS
+                                                                 ///@todo | VOL_CAP_INT_COPYFILE
+                                                                 ///@todo | VOL_CAP_INT_READDIRATTR
+                                                                 ;
 
-                        return pMount;
-                    }
-                }
+                pCaps->valid[VOL_CAPABILITIES_RESERVED1]         = 0;
+                pCaps->capabilities[VOL_CAPABILITIES_RESERVED1]  = 0;
+
+                pCaps->valid[VOL_CAPABILITIES_RESERVED2]         = 0;
+                pCaps->capabilities[VOL_CAPABILITIES_RESERVED2]  = 0;
+
+                VFSATTR_SET_SUPPORTED(pFsAttr, f_capabilities);
             }
 
-            vboxvfs_destroy_locking(pMount);
+
+            /*
+             * Annoying attribute stuff.
+             * The 'valid' bits are only supposed to be set when we know for sure.
+             */
+            if (VFSATTR_IS_ACTIVE(pFsAttr, f_attributes))
+            {
+                vol_attributes_attr_t *pAt = &pFsAttr->f_attributes;
+
+                pAt->validattr.commonattr  = ATTR_CMN_NAME
+                                           | ATTR_CMN_DEVID
+                                           | ATTR_CMN_FSID
+                                           | ATTR_CMN_OBJTYPE
+                                           | ATTR_CMN_OBJTAG
+                                           | ATTR_CMN_OBJID
+                                           | ATTR_CMN_OBJPERMANENTID
+                                           | ATTR_CMN_PAROBJID
+                                           | ATTR_CMN_SCRIPT
+                                           | ATTR_CMN_CRTIME
+                                           | ATTR_CMN_MODTIME
+                                           | ATTR_CMN_CHGTIME
+                                           | ATTR_CMN_ACCTIME
+                                           | ATTR_CMN_BKUPTIME
+                                           | ATTR_CMN_FNDRINFO
+                                           | ATTR_CMN_OWNERID
+                                           | ATTR_CMN_GRPID
+                                           | ATTR_CMN_ACCESSMASK
+                                           | ATTR_CMN_FLAGS
+                                           | ATTR_CMN_USERACCESS
+                                           | ATTR_CMN_EXTENDED_SECURITY
+                                           | ATTR_CMN_UUID
+                                           | ATTR_CMN_GRPUUID
+                                           | ATTR_CMN_FILEID
+                                           | ATTR_CMN_PARENTID
+                                           | ATTR_CMN_FULLPATH
+                                           | ATTR_CMN_ADDEDTIME;
+                pAt->nativeattr.commonattr = ATTR_CMN_NAME
+                                           | ATTR_CMN_DEVID
+                                           | ATTR_CMN_FSID
+                                           | ATTR_CMN_OBJTYPE
+                                           | ATTR_CMN_OBJTAG
+                                           | ATTR_CMN_OBJID
+                                           //| ATTR_CMN_OBJPERMANENTID
+                                           | ATTR_CMN_PAROBJID
+                                           //| ATTR_CMN_SCRIPT
+                                           | ATTR_CMN_CRTIME
+                                           | ATTR_CMN_MODTIME
+                                           | ATTR_CMN_CHGTIME
+                                           | ATTR_CMN_ACCTIME
+                                           //| ATTR_CMN_BKUPTIME
+                                           //| ATTR_CMN_FNDRINFO
+                                           //| ATTR_CMN_OWNERID
+                                           //| ATTR_CMN_GRPID
+                                           | ATTR_CMN_ACCESSMASK
+                                           //| ATTR_CMN_FLAGS
+                                           //| ATTR_CMN_USERACCESS
+                                           //| ATTR_CMN_EXTENDED_SECURITY
+                                           //| ATTR_CMN_UUID
+                                           //| ATTR_CMN_GRPUUID
+                                           | ATTR_CMN_FILEID
+                                           | ATTR_CMN_PARENTID
+                                           | ATTR_CMN_FULLPATH
+                                           //| ATTR_CMN_ADDEDTIME
+                                           ;
+                pAt->validattr.volattr     = ATTR_VOL_FSTYPE
+                                           | ATTR_VOL_SIGNATURE
+                                           | ATTR_VOL_SIZE
+                                           | ATTR_VOL_SPACEFREE
+                                           | ATTR_VOL_SPACEAVAIL
+                                           | ATTR_VOL_MINALLOCATION
+                                           | ATTR_VOL_ALLOCATIONCLUMP
+                                           | ATTR_VOL_IOBLOCKSIZE
+                                           | ATTR_VOL_OBJCOUNT
+                                           | ATTR_VOL_FILECOUNT
+                                           | ATTR_VOL_DIRCOUNT
+                                           | ATTR_VOL_MAXOBJCOUNT
+                                           | ATTR_VOL_MOUNTPOINT
+                                           | ATTR_VOL_NAME
+                                           | ATTR_VOL_MOUNTFLAGS
+                                           | ATTR_VOL_MOUNTEDDEVICE
+                                           | ATTR_VOL_ENCODINGSUSED
+                                           | ATTR_VOL_CAPABILITIES
+                                           | ATTR_VOL_UUID
+                                           | ATTR_VOL_ATTRIBUTES
+                                           | ATTR_VOL_INFO;
+                pAt->nativeattr.volattr     = ATTR_VOL_FSTYPE
+                                            //| ATTR_VOL_SIGNATURE
+                                            | ATTR_VOL_SIZE
+                                            | ATTR_VOL_SPACEFREE
+                                            | ATTR_VOL_SPACEAVAIL
+                                            | ATTR_VOL_MINALLOCATION
+                                            | ATTR_VOL_ALLOCATIONCLUMP
+                                            | ATTR_VOL_IOBLOCKSIZE
+                                            //| ATTR_VOL_OBJCOUNT
+                                            //| ATTR_VOL_FILECOUNT
+                                            //| ATTR_VOL_DIRCOUNT
+                                            //| ATTR_VOL_MAXOBJCOUNT
+                                            //| ATTR_VOL_MOUNTPOINT - ??
+                                            | ATTR_VOL_NAME
+                                            | ATTR_VOL_MOUNTFLAGS
+                                            | ATTR_VOL_MOUNTEDDEVICE
+                                            //| ATTR_VOL_ENCODINGSUSED
+                                            | ATTR_VOL_CAPABILITIES
+                                            //| ATTR_VOL_UUID
+                                            | ATTR_VOL_ATTRIBUTES
+                                            //| ATTR_VOL_INFO
+                                            ;
+                pAt->validattr.dirattr      = ATTR_DIR_LINKCOUNT
+                                            | ATTR_DIR_ENTRYCOUNT
+                                            | ATTR_DIR_MOUNTSTATUS;
+                pAt->nativeattr.dirattr     = 0 //ATTR_DIR_LINKCOUNT
+                                            | ATTR_DIR_ENTRYCOUNT
+                                            | ATTR_DIR_MOUNTSTATUS
+                                            ;
+                pAt->validattr.fileattr     = ATTR_FILE_LINKCOUNT
+                                            | ATTR_FILE_TOTALSIZE
+                                            | ATTR_FILE_ALLOCSIZE
+                                            | ATTR_FILE_IOBLOCKSIZE
+                                            | ATTR_FILE_DEVTYPE
+                                            | ATTR_FILE_FORKCOUNT
+                                            | ATTR_FILE_FORKLIST
+                                            | ATTR_FILE_DATALENGTH
+                                            | ATTR_FILE_DATAALLOCSIZE
+                                            | ATTR_FILE_RSRCLENGTH
+                                            | ATTR_FILE_RSRCALLOCSIZE;
+                pAt->nativeattr.fileattr    = 0
+                                            //|ATTR_FILE_LINKCOUNT
+                                            | ATTR_FILE_TOTALSIZE
+                                            | ATTR_FILE_ALLOCSIZE
+                                            //| ATTR_FILE_IOBLOCKSIZE
+                                            | ATTR_FILE_DEVTYPE
+                                            //| ATTR_FILE_FORKCOUNT
+                                            //| ATTR_FILE_FORKLIST
+                                            | ATTR_FILE_DATALENGTH
+                                            | ATTR_FILE_DATAALLOCSIZE
+                                            | ATTR_FILE_RSRCLENGTH
+                                            | ATTR_FILE_RSRCALLOCSIZE
+                                            ;
+                pAt->validattr.forkattr     = ATTR_FORK_TOTALSIZE
+                                            | ATTR_FORK_ALLOCSIZE;
+                pAt->nativeattr.forkattr    = 0
+                                            //| ATTR_FORK_TOTALSIZE
+                                            //| ATTR_FORK_ALLOCSIZE
+                                            ;
+                VFSATTR_SET_SUPPORTED(pFsAttr, f_attributes);
+            }
+
+            if (VFSATTR_IS_ACTIVE(pFsAttr, f_vol_name))
+            {
+                RTStrCopy(pFsAttr->f_vol_name, MAXPATHLEN, pThis->MntInfo.szFolder);
+                VFSATTR_SET_SUPPORTED(pFsAttr, f_vol_name);
+            }
+
+            rc = 0;
+        }
+        else
+        {
+            Log(("vboxSfOs2QueryFileInfo: VbglR0SfFsInfo failed: %Rrc\n", vrc));
+            rc = RTErrConvertToErrno(vrc);
         }
 
-        RTMemFree(pMount);
+        VbglR0PhysHeapFree(pReq);
     }
-
-    return NULL;
+    else
+        rc = ENOMEM;
+    return rc;
 }
 
 
 /**
- * Mount and unmount helper: Release VBoxVFS internal resources.
- * Deallocates ppMount as well.
+ * vfsops::vfs_root implementation.
  *
- * @param ppMount      Pointer to reference of VBoxVFS internal data.
+ * @returns 0 on success or errno.h value on failure.
+ * @param   pMount      The mount data structure.
+ * @param   ppVnode     Where to return the referenced root node on success.
+ * @param   pContext    Unused kAuth parameter.
  */
-static void
-vboxvfs_destroy_internal_data(vboxvfs_mount_t **ppMount)
+static int vboxSfDwnVfsRoot(mount_t pMount, vnode_t *ppVnode, vfs_context_t pContext)
 {
-    AssertReturnVoid(ppMount);
-    AssertReturnVoid(*ppMount);
-    AssertReturnVoid((*ppMount)->pShareName);
+    PVBOXSFMNT pThis = (PVBOXSFMNT)vfs_fsprivate(pMount);
+    AssertReturn(pThis, EBADMSG);
+    LogFlow(("vboxSfDwnVfsRoot: pThis=%p:{%s}\n", pThis, pThis->MntInfo.szFolder));
 
-    RTMemFree((*ppMount)->pShareName);
-    (*ppMount)->pShareName = NULL;
+    /*
+     * We shouldn't be callable during unmount, should we?
+     */
+    AssertReturn(vfs_isunmount(pMount), EBUSY);
 
-    vboxvfs_destroy_locking(*ppMount);
-    RTMemFree(*ppMount);
-    *ppMount = NULL;
-}
-
-
-/**
- * Mount VBoxVFS.
- *
- * @param mp        Mount data provided by VFS layer.
- * @param pDev      Device structure provided by VFS layer.
- * @param pUserData Mounting parameters provided by user space mount tool.
- * @param pContext  kAuth context needed in order to authentificate mount operation.
- *
- * @return 0 on success or BSD error code otherwise.
- */
-static int
-vboxvfs_mount(struct mount *mp, vnode_t pDev, user_addr_t pUserData, vfs_context_t pContext)
-{
-    NOREF(pDev);
-    NOREF(pContext);
-
-    vboxvfs_mount_t *pMount;
-
-    int rc = ENOMEM;
-
-    PDEBUG("Mounting...");
-
-    pMount = vboxvfs_alloc_internal_data(mp, pUserData);
-    if (pMount)
+    /*
+     * There should always be a root node around.
+     */
+    if (pThis->pVnRoot)
     {
-        rc = VbglR0SfMapFolder(&g_SfClient, pMount->pShareName, &pMount->pMap);
-        if (RT_SUCCESS(rc))
+	int rc = vnode_get(pThis->pVnRoot);
+        if (rc == 0)
         {
-            /* Private data should be set before vboxvfs_create_vnode_internal() call
-             * because we need it in order to create vnode. */
-            vfs_setfsprivate(mp, pMount);
-
-            /* Reset root vnode */
-            pMount->pRootVnode = NULL;
-
-            vfs_setflags(mp, MNT_RDONLY | MNT_SYNCHRONOUS | MNT_NOEXEC | MNT_NOSUID | MNT_NODEV);
-
-            PDEBUG("VirtualBox shared folder successfully mounted");
-
+            *ppVnode = pThis->pVnRoot;
+            LogFlow(("vboxSfDwnVfsRoot: return %p\n", *ppVnode));
             return 0;
         }
-
-        PDEBUG("Unable to map shared folder");
-        vboxvfs_destroy_internal_data(&pMount);
+        Log(("vboxSfDwnVfsRoot: vnode_get failed! %d\n", rc));
+        return rc;
     }
-    else
-        PDEBUG("Unable to allocate internal data");
 
-    return rc;
+    LogRel(("vboxSfDwnVfsRoot: pVnRoot is NULL!\n"));
+    return EILSEQ;
 }
 
 
 /**
- * Unmount VBoxVFS.
+ * vfsops::vfs_umount implementation.
  *
- * @param mp        Mount data provided by VFS layer.
- * @param fFlags    Unmounting flags.
- * @param pContext  kAuth context needed in order to authentificate mount operation.
+ * @returns 0 on success or errno.h value on failure.
+ * @param   pMount      The mount data.
+ * @param   fFlags      Unmount flags.
+ * @param   pContext    kAuth context which we don't care much about.
  *
- * @return 0 on success or BSD error code otherwise.
  */
-static int
-vboxvfs_unmount(struct mount *mp, int fFlags, vfs_context_t pContext)
+static int vboxSfDwnVfsUnmount(mount_t pMount, int fFlags, vfs_context_t pContext)
 {
-    NOREF(pContext);
+    PVBOXSFMNT pThis = (PVBOXSFMNT)vfs_fsprivate(pMount);
+    AssertReturn(pThis, 0);
+    LogFlowFunc(("pThis=%p:{%s} fFlags=%#x\n", pThis, pThis->MntInfo.szFolder, fFlags));
 
-    vboxvfs_mount_t *pMount;
-    int                  rc = EBUSY;
-    int                  fFlush = (fFlags & MNT_FORCE) ? FORCECLOSE : 0;
-
-    PDEBUG("Attempting to %s unmount a shared folder", (fFlags & MNT_FORCE) ? "forcibly" : "normally");
-
-    AssertReturn(mp, EINVAL);
-
-    pMount = (vboxvfs_mount_t *)vfs_fsprivate(mp);
-
-    AssertReturn(pMount,             EINVAL);
-    AssertReturn(pMount->pRootVnode, EINVAL);
-
-    /* Check if we can do unmount at the moment */
-    if (!vnode_isinuse(pMount->pRootVnode, 1))
-    {
-        /* Flush child vnodes first */
-        rc = vflush(mp, pMount->pRootVnode, fFlush);
-        if (rc == 0)
-        {
-            /* Flush root vnode */
-            rc = vflush(mp, NULL, fFlush);
-            if (rc == 0)
-            {
-                vfs_setfsprivate(mp, NULL);
-
-                rc = VbglR0SfUnmapFolder(&g_SfClient, &pMount->pMap);
-                if (RT_SUCCESS(rc))
-                {
-                    vboxvfs_destroy_internal_data(&pMount);
-                    PDEBUG("A shared folder has been successfully unmounted");
-                    return 0;
-                }
-
-                PDEBUG("Unable to unmount shared folder");
-                rc = EPROTO;
-            }
-            else
-                PDEBUG("Unable to flush filesystem before unmount, some data might be lost");
-        }
-        else
-            PDEBUG("Unable to flush child vnodes");
-
-    }
-    else
-        PDEBUG("Root vnode is in use, can't unmount");
-
-    vnode_put(pMount->pRootVnode);
-
-    return rc;
-}
-
-
-/**
- * Get VBoxVFS root vnode.
- *
- * Handle three cases here:
- *  - vnode does not exist yet: create a new one
- *  - currently creating vnode: wait till the end, increment usage count and return existing one
- *  - vnode already created: increment usage count and return existing one
- *  - vnode was failed to create: give a chance to try to re-create it later
- *
- * @param mp        Mount data provided by VFS layer.
- * @param ppVnode   vnode to return.
- * @param pContext  kAuth context needed in order to authentificate mount operation.
- *
- * @return 0 on success or BSD error code otherwise.
- */
-static int
-vboxvfs_root(struct mount *mp, struct vnode **ppVnode, vfs_context_t pContext)
-{
-    NOREF(pContext);
-
-    vboxvfs_mount_t *pMount;
-    int rc = 0;
-    uint32_t vid;
-
-    PDEBUG("Getting root vnode...");
-
-    AssertReturn(mp,      EINVAL);
-    AssertReturn(ppVnode, EINVAL);
-
-    pMount = (vboxvfs_mount_t *)vfs_fsprivate(mp);
-    AssertReturn(pMount, EINVAL);
-
-    /* Check case when vnode does not exist yet */
-    if (ASMAtomicCmpXchgU8(&pMount->fRootVnodeState, VBOXVFS_OBJECT_INITIALIZING, VBOXVFS_OBJECT_UNINITIALIZED))
-    {
-        PDEBUG("Create new root vnode");
-
-        /* Allocate empty SHFLSTRING to indicate path to root vnode within Shared Folder */
-        char        szEmpty[1];
-        SHFLSTRING *pSFVnodePath;
-
-        pSFVnodePath = vboxvfs_construct_shflstring((char *)szEmpty, 0);
-        if (pSFVnodePath)
-        {
-            int rc2;
-            rc2 = vboxvfs_create_vnode_internal(mp, VDIR, NULL, TRUE, pSFVnodePath, &pMount->pRootVnode);
-            if (rc2 != 0)
-            {
-                RTMemFree(pSFVnodePath);
-                rc = ENOTSUP;
-            }
-        }
-        else
-            rc = ENOMEM;
-
-        /* Notify other threads about result */
-        if (rc == 0)
-            ASMAtomicWriteU8(&pMount->fRootVnodeState, VBOXVFS_OBJECT_INITIALIZED);
-        else
-            ASMAtomicWriteU8(&pMount->fRootVnodeState, VBOXVFS_OBJECT_INVALID);
-    }
-    else
-    {
-        /* Check case if we are currently creating vnode. Wait while other thread to finish allocation. */
-        uint8_t fRootVnodeState = VBOXVFS_OBJECT_UNINITIALIZED;
-        while (fRootVnodeState != VBOXVFS_OBJECT_INITIALIZED
-            && fRootVnodeState != VBOXVFS_OBJECT_INVALID)
-        {
-            /** @todo Currently, we are burning CPU cycles while waiting. This is for a short
-             * time but we should relax here! */
-            fRootVnodeState = ASMAtomicReadU8(&pMount->fRootVnodeState);
-
-        }
-
-        /* Check if the other thread initialized root vnode and it is ready to be returned */
-        if (fRootVnodeState == VBOXVFS_OBJECT_INITIALIZED)
-        {
-            /* Take care about iocount */
-            vid = vnode_vid(pMount->pRootVnode);
-            rc = vnode_getwithvid(pMount->pRootVnode, vid);
-        }
-        else
-        {
-            /* Other thread reported initialization failure.
-             * Set vnode state VBOXVFS_OBJECT_UNINITIALIZED in order to try recreate root
-             * vnode in other attempt */
-            ASMAtomicWriteU8(&pMount->fRootVnodeState, VBOXVFS_OBJECT_UNINITIALIZED);
-        }
-
-    }
-
-    /* Only return vnode if we got success */
+    /*
+     * Flush vnodes.
+     */
+    int rc = vflush(pMount, pThis->pVnRoot, fFlags & MNT_FORCE ? FORCECLOSE : 0);
     if (rc == 0)
     {
-        PDEBUG("Root vnode can be returned");
-        *ppVnode = pMount->pRootVnode;
-    }
-    else
-        PDEBUG("Root vnode cannot be returned: 0x%X", rc);
+        /*
+         * Is the file system still busy?
+         *
+         * Until we find a way of killing any active host calls, we cannot properly
+         * respect the MNT_FORCE flag here. So, MNT_FORCE is ignored here.
+         */
+        if (   !pThis->pVnRoot
+            || !vnode_isinuse(pThis->pVnRoot, 1))
+        {
+            /*
+             * Release our root vnode reference and do another flush.
+             */
+            if (pThis->pVnRoot)
+            {
+                vnode_put(pThis->pVnRoot);
+                pThis->pVnRoot = NULL;
+            }
+            vflush(pMount, NULLVP, FORCECLOSE);
 
+            /*
+             * Unmap the shared folder and destroy our mount info structure.
+             */
+            vfs_setfsprivate(pMount, NULL);
+
+            rc = VbglR0SfUnmapFolder(&g_SfClientDarwin, &pThis->hHostFolder);
+            AssertRC(rc);
+
+            RT_ZERO(*pThis);
+            RTMemFree(pThis);
+
+            vfs_clearflags(pMount, MNT_LOCAL); /* ?? */
+            rc = 0;
+
+            g_cVBoxSfMounts--;
+        }
+        else
+        {
+            Log(("VBoxSF: umount failed: file system busy! (%s)\n", pThis->MntInfo.szFolder));
+            rc = EBUSY;
+        }
+    }
     return rc;
 }
 
+
 /**
- * VBoxVFS get VFS layer object attribute callback.
- *
- * @param mp        Mount data provided by VFS layer.
- * @param pAttr     Output buffer to return attributes.
- * @param pContext  kAuth context needed in order to authentificate mount operation.
- *
- * @returns     0 for success, else an error code.
+ * vfsops::vfs_start implementation.
  */
-static int
-vboxvfs_getattr(struct mount *mp, struct vfs_attr *pAttr, vfs_context_t pContext)
+static int vboxSfDwnVfsStart(mount_t pMount, int fFlags, vfs_context_t pContext)
 {
-    NOREF(pContext);
-
-    vboxvfs_mount_t     *pMount;
-    SHFLVOLINFO          SHFLVolumeInfo;
-
-    int      rc;
-    uint32_t cbBuffer = sizeof(SHFLVolumeInfo);
-
-    uint32_t u32bsize;
-    uint64_t u64blocks;
-    uint64_t u64bfree;
-
-    PDEBUG("Getting attribute...\n");
-
-    AssertReturn(mp, EINVAL);
-
-    pMount = (vboxvfs_mount_t *)vfs_fsprivate(mp);
-    AssertReturn(pMount, EINVAL);
-    AssertReturn(pMount->pShareName, EINVAL);
-
-    rc = VbglR0SfFsInfo(&g_SfClient, &pMount->pMap, 0, SHFL_INFO_GET | SHFL_INFO_VOLUME,
-                        &cbBuffer, (PSHFLDIRINFO)&SHFLVolumeInfo);
-    AssertReturn(rc == 0, EPROTO);
-
-    u32bsize  = (uint32_t)SHFLVolumeInfo.ulBytesPerAllocationUnit;
-    AssertReturn(u32bsize > 0, ENOTSUP);
-
-    u64blocks = (uint64_t)SHFLVolumeInfo.ullTotalAllocationBytes / (uint64_t)u32bsize;
-    u64bfree  = (uint64_t)SHFLVolumeInfo.ullAvailableAllocationBytes / (uint64_t)u32bsize;
-
-    VFSATTR_RETURN(pAttr, f_bsize,  u32bsize);
-    VFSATTR_RETURN(pAttr, f_blocks, u64blocks);
-    VFSATTR_RETURN(pAttr, f_bfree,  u64bfree);
-    VFSATTR_RETURN(pAttr, f_bavail, u64bfree);
-    VFSATTR_RETURN(pAttr, f_bused,  u64blocks - u64bfree);
-
-    VFSATTR_RETURN(pAttr, f_owner,  pMount->owner);
-
-    VFSATTR_CLEAR_ACTIVE(pAttr, f_iosize);
-    VFSATTR_CLEAR_ACTIVE(pAttr, f_files);
-    VFSATTR_CLEAR_ACTIVE(pAttr, f_ffree);
-    VFSATTR_CLEAR_ACTIVE(pAttr, f_fssubtype);
-
-    /** @todo take care about f_capabilities and f_attributes, f_fsid */
-    VFSATTR_CLEAR_ACTIVE(pAttr, f_capabilities);
-    VFSATTR_CLEAR_ACTIVE(pAttr, f_attributes);
-    VFSATTR_CLEAR_ACTIVE(pAttr, f_fsid);
-
-    /** @todo take care about f_create_time, f_modify_time, f_access_time, f_backup_time */
-    VFSATTR_CLEAR_ACTIVE(pAttr, f_create_time);
-    VFSATTR_CLEAR_ACTIVE(pAttr, f_modify_time);
-    VFSATTR_CLEAR_ACTIVE(pAttr, f_access_time);
-    VFSATTR_CLEAR_ACTIVE(pAttr, f_backup_time);
-
-    VFSATTR_CLEAR_ACTIVE(pAttr, f_signature);
-    VFSATTR_CLEAR_ACTIVE(pAttr, f_carbon_fsid);
-    VFSATTR_CLEAR_ACTIVE(pAttr, f_uuid);
-
-    if (VFSATTR_IS_ACTIVE(pAttr, f_vol_name))
-    {
-        strlcpy(pAttr->f_vol_name, (char*)pMount->pShareName->String.utf8, MAXPATHLEN);
-        VFSATTR_SET_SUPPORTED(pAttr, f_vol_name);
-    }
-
-    VFSATTR_ALL_SUPPORTED(pAttr);
-
+    RT_NOREF(pMount, fFlags, pContext);
     return 0;
 }
+
+
+/**
+ * vfsops::vfs_mount implementation.
+ *
+ * @returns 0 on success or errno.h value on failure.
+ * @param   pMount      The mount data structure.
+ * @param   pDevVp      The device to mount.  Not used by us.
+ * @param   pUserData   User space address of parameters supplied to mount().
+ *                      We expect a VBOXSFDRWNMOUNTINFO structure.
+ * @param   pContext    kAuth context needed in order to authentificate mount
+ *                      operation.
+ */
+static int vboxSfDwnVfsMount(mount_t pMount, vnode_t pDevVp, user_addr_t pUserData, vfs_context_t pContext)
+{
+    RT_NOREF(pDevVp)
+
+    /*
+     * We don't support mount updating.
+     */
+    if (vfs_isupdate(pMount))
+    {
+        LogRel(("VBoxSF: mount: MNT_UPDATE is not supported.\n"));
+        return ENOTSUP;
+    }
+    if (pUserData == USER_ADDR_NULL)
+    {
+        LogRel(("VBoxSF: mount: pUserData is NULL.\n"));
+        return EINVAL;
+    }
+    struct vfsstatfs *pFsStats = vfs_statfs(pMount);
+    AssertReturn(pFsStats, EINVAL);
+
+    /*
+     * Get the mount information from userland.
+     */
+    PVBOXSFMNT pThis = (PVBOXSFMNT)RTMemAllocZ(sizeof(*pThis));
+    if (!pThis)
+        return ENOMEM;
+    pThis->uidMounter = pFsStats->f_owner;
+
+    int rc = RTR0MemUserCopyFrom(&pThis->MntInfo, (RTR3PTR)pUserData, sizeof(pThis->MntInfo));
+    if (RT_FAILURE(rc))
+    {
+        LogRel(("VBoxSF: mount: Failed to copy in mount user data: %Rrc\n", rc));
+        rc = EFAULT;
+    }
+    else if (pThis->MntInfo.u32Magic != VBOXSFDRWNMOUNTINFO_MAGIC)
+    {
+        LogRel(("VBoxSF: mount: Invalid user data magic (%#x)\n", pThis->MntInfo.u32Magic));
+        rc = EINVAL;
+    }
+    else if (   (rc = RTStrValidateEncodingEx(pThis->MntInfo.szFolder, sizeof(pThis->MntInfo.szFolder),
+                                              RTSTR_VALIDATE_ENCODING_ZERO_TERMINATED)) != VINF_SUCCESS
+             || pThis->MntInfo.szFolder[0] == '\0')
+    {
+        LogRel(("VBoxSF: mount: Invalid or empty share name!\n"));
+        rc = EINVAL;
+    }
+    else
+    {
+        /*
+         * Try map the shared folder.
+         */
+        if (vboxSfDwnConnect())
+        {
+            PSHFLSTRING pName = ShflStringDupUtf8(pThis->MntInfo.szFolder);
+            if (pName)
+            {
+                rc = VbglR0SfMapFolder(&g_SfClientDarwin, pName, &pThis->hHostFolder);
+                RTMemFree(pName);
+                if (RT_SUCCESS(rc))
+                {
+
+                    /*
+                     * Create a root node, that avoid races later.
+                     */
+                    pThis->pVnRoot = vboxSfDwnVnAlloc(pMount, VDIR, NULL /*pParent*/, 0);
+		    if (pThis->pVnRoot)
+                    {
+                        /*
+                         * Fill file system stats with dummy data.
+                         */
+                        pFsStats->f_bsize  = 512;
+                        pFsStats->f_iosize = _64K;
+                        pFsStats->f_blocks = _1M;
+                        pFsStats->f_bavail = _1M / 4 * 3;
+                        pFsStats->f_bused  = _1M / 4;
+                        pFsStats->f_files  = 1024;
+                        pFsStats->f_ffree  = _64K;
+                        vfs_getnewfsid(pMount); /* f_fsid */
+                        /* pFsStats->f_fowner - don't touch */
+                        /* pFsStats->f_fstypename - don't touch */
+                        /* pFsStats->f_mntonname - don't touch */
+                        RTStrCopy(pFsStats->f_mntfromname, sizeof(pFsStats->f_mntfromname), pThis->MntInfo.szFolder);
+                        /* pFsStats->f_fssubtype - don't touch? */
+                        /* pFsStats->f_reserved[0] - don't touch? */
+                        /* pFsStats->f_reserved[1] - don't touch? */
+
+                        /*
+                         * We're good. Set private data and flags.
+                         */
+                        vfs_setfsprivate(pMount, pThis);
+                        vfs_setflags(pMount, MNT_SYNCHRONOUS | MNT_NOSUID | MNT_NODEV);
+                        /** @todo Consider flags like MNT_NOEXEC ? */
+
+                        /// @todo vfs_setauthopaque(pMount)?
+                        /// @todo vfs_clearauthopaqueaccess(pMount)?
+                        /// @todo vfs_clearextendedsecurity(pMount)?
+
+                        LogRel(("VBoxSF: mount: Successfully mounted '%s' (uidMounter=%u).\n",
+                                pThis->MntInfo.szFolder, pThis->uidMounter));
+                        return 0;
+		    }
+
+                    LogRel(("VBoxSF: mount: Failed to allocate root node!\n"));
+                    rc = ENOMEM;
+                }
+                else
+                {
+                    LogRel(("VBoxSF: mount: VbglR0SfMapFolder failed on '%s': %Rrc\n", pThis->MntInfo.szFolder, rc));
+                    rc = ENOENT;
+                }
+            }
+            else
+                rc = ENOMEM;
+        }
+        else
+        {
+            LogRel(("VBoxSF: mount: Not connected to shared folders service!\n"));
+            rc = ENOTCONN;
+        }
+    }
+    RTMemFree(pThis);
+    return rc;
+}
+
 
 /**
  * VFS operations
  */
 struct vfsops g_VBoxSfVfsOps =
 {
-    /* Standard operations */
-    &vboxvfs_mount,
-    NULL,               /* Skipped: vfs_start() */
-    &vboxvfs_unmount,
-    &vboxvfs_root,
+    vboxSfDwnVfsMount,
+    vboxSfDwnVfsStart,
+    vboxSfDwnVfsUnmount,
+    vboxSfDwnVfsRoot,
     NULL,               /* Skipped: vfs_quotactl */
-    &vboxvfs_getattr,
+    vboxSfDwnVfsGetAttr,
     NULL,               /* Skipped: vfs_sync */
     NULL,               /* Skipped: vfs_vget */
     NULL,               /* Skipped: vfs_fhtovp */

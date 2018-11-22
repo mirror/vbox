@@ -38,8 +38,11 @@
 #include <sys/mount.h>
 #include <sys/param.h>
 #include <sys/vnode.h>
+#include <vfs/vfs_support.h>
 #undef PVM
 
+#include <iprt/mem.h>
+#include <VBox/VBoxGuest.h>
 #include <VBox/VBoxGuestLibSharedFolders.h>
 
 
@@ -58,30 +61,35 @@
 /** Private data assigned to each mounted shared folder. Assigned to mp structure. */
 typedef struct vboxvfs_mount_data
 {
-    VBGLSFMAP           pMap;               /** Shared folder mapping */
-    SHFLSTRING         *pShareName;         /** VBoxVFS share name */
-    uint64_t            cFileIdCounter;     /** Counter that used in order to assign unique ID to each vnode within mounted share */
-    vnode_t             pRootVnode;         /** VFS object: vnode that corresponds shared folder root */
-    uint8_t volatile    fRootVnodeState;    /** Sync flag that used in order to safely allocate pRootVnode */
-    uid_t               owner;              /** User ID tha mounted shared folder */
-    lck_grp_t          *pLockGroup;         /** BSD locking stuff */
-    lck_grp_attr_t     *pLockGroupAttr;     /** BSD locking stuff */
-} vboxvfs_mount_t;
+    /** The shared folder mapping */
+    VBGLSFMAP           hHostFolder;
+    /** The root VNode. */
+    vnode_t             pVnRoot;
+    /** User that mounted shared folder (anyone but root?). */
+    uid_t               uidMounter;
+    /** The mount info from the mount() call. */
+    VBOXSFDRWNMOUNTINFO MntInfo;
+} vboxvfs_mount_t, VBOXSFMNT;
+typedef VBOXSFMNT *PVBOXSFMNT;
 
 /** Private data assigned to each vnode object. */
 typedef struct vboxvfs_vnode_data
 {
-    SHFLHANDLE      pHandle;                /** VBoxVFS object handle. */
-    PSHFLSTRING     pPath;                  /** Path within shared folder */
-    lck_attr_t     *pLockAttr;              /** BSD locking stuff */
-    lck_rw_t       *pLock;                  /** BSD locking stuff */
-} vboxvfs_vnode_t;
+    SHFLHANDLE      hHandle;                /** VBoxVFS object handle. */
+    ///PSHFLSTRING     pPath;                  /** Path within shared folder */
+    ///lck_attr_t     *pLockAttr;              /** BSD locking stuff */
+    ///lck_rw_t       *pLock;                  /** BSD locking stuff */
+} vboxvfs_vnode_t, VBOXSFDWNVNDATA;
+/** Private vnode data. */
+typedef VBOXSFDWNVNDATA *PVBOXSFDWNVNDATA;
+
 
 
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
-extern VBGLSFCLIENT         g_SfClient;
+extern VBGLSFCLIENT         g_SfClientDarwin;
+extern uint32_t volatile    g_cVBoxSfMounts;
 extern struct vfsops        g_VBoxSfVfsOps;
 extern struct vnodeopv_desc g_VBoxSfVnodeOpvDesc;
 extern int (**g_papfnVBoxVFSVnodeDirOpsVector)(void *);
@@ -90,6 +98,11 @@ extern int (**g_papfnVBoxVFSVnodeDirOpsVector)(void *);
 /*********************************************************************************************************************************
 *   Functions                                                                                                                    *
 *********************************************************************************************************************************/
+bool    vboxSfDwnConnect(void);
+vnode_t vboxSfDwnVnAlloc(mount_t pMount, enum vtype enmType, vnode_t pParent, uint64_t cbFile);
+
+
+
 
 /**
  * Helper function to create XNU VFS vnode object.
@@ -226,9 +239,6 @@ extern mode_t vboxvfs_h2g_mode_inernal(RTFMODE fHostMode);
 extern uint32_t vboxvfs_g2h_mode_inernal(mode_t fGuestMode);
 
 extern SHFLSTRING *vboxvfs_construct_shflstring(const char *pszName, size_t cchName);
-
-extern int vboxvfs_register_filesystem(void);
-extern int vboxvfs_unregister_filesystem(void);
 
 
 #endif

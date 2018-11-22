@@ -20,22 +20,46 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
+#define LOG_GROUP LOG_GROUP_SHARED_FOLDERS
 #include "VBoxSFInternal.h"
 
 #include <iprt/mem.h>
 #include <iprt/assert.h>
+#include <VBox/log.h>
 
 
-
-int vboxvfs_dfl_error(void)
+/*********************************************************************************************************************************
+*   Structures and Typedefs                                                                                                      *
+*********************************************************************************************************************************/
+struct default_error_args_hack
 {
-    PDEBUG("vboxvfs_dfl_error is called");
+    struct default_error_vdesc_hack
+    {
+        int vdesc_offset;
+        const char *vdesc_name;
+    } const *a_desc;
+};
 
+
+
+/**
+ * Default implementation that returns ENOTSUP.
+ */
+static int vboxSfDwnVnDefaultError(struct default_error_args_hack *pArgs)
+{
+    Log(("vboxSfDwnVnDefaultError: %s\n", RT_VALID_PTR(pArgs) && RT_VALID_PTR(pArgs->a_desc) ? pArgs->a_desc->vdesc_name : "??"));
+    RT_NOREF(pArgs);
     return ENOTSUP;
 }
 
-int vboxvfs_vnode_getattr(struct vnop_getattr_args *args)
+
+static int vboxFsDwnVnGetAttr(struct vnop_getattr_args *pArgs)
 {
+#if 1
+    RT_NOREF(pArgs);
+    return ENOTSUP;
+#else
+
     vboxvfs_mount_t   *pMount;
     struct vnode_attr *vnode_args;
     vboxvfs_vnode_t   *pVnodeData;
@@ -49,10 +73,10 @@ int vboxvfs_vnode_getattr(struct vnop_getattr_args *args)
 
     PDEBUG("Getting vnode attribute...");
 
-    AssertReturn(args, EINVAL);
+    AssertReturn(pArgs, EINVAL);
 
-    vnode                = args->a_vp;                                   AssertReturn(vnode,           EINVAL);
-    vnode_args           = args->a_vap;                                  AssertReturn(vnode_args,      EINVAL);
+    vnode                = pArgs->a_vp;                                   AssertReturn(vnode,           EINVAL);
+    vnode_args           = pArgs->a_vap;                                  AssertReturn(vnode_args,      EINVAL);
     mp                   = vnode_mount(vnode);                           AssertReturn(mp,              EINVAL);
     pMount      = (vboxvfs_mount_t *)vfs_fsprivate(mp);     AssertReturn(pMount, EINVAL);
     pVnodeData           = (vboxvfs_vnode_t *)vnode_fsnode(vnode);  AssertReturn(pVnodeData,      EINVAL);
@@ -124,8 +148,10 @@ int vboxvfs_vnode_getattr(struct vnop_getattr_args *args)
     lck_rw_unlock_shared(pVnodeData->pLock);
 
     return rc;
+#endif
 }
 
+#if 0
 /**
  * Helper function for vboxvfs_vnode_lookup(): create new vnode.
  */
@@ -216,13 +242,13 @@ vboxvfs_vnode_lookup_instantinate_vnode(vnode_t parent_vnode, char *entry_name, 
  * about '.' and '..' directory entries.
  */
 static int
-vboxvfs_vnode_lookup_dot_handler(struct vnop_lookup_args *args, vnode_t *result_vnode)
+vboxvfs_vnode_lookup_dot_handler(struct vnop_lookup_args *pArgs, vnode_t *result_vnode)
 {
     vnode_t vnode = NULL;
 
-    if (args->a_cnp->cn_flags & ISDOTDOT)
+    if (pArgs->a_cnp->cn_flags & ISDOTDOT)
     {
-        vnode = vnode_getparent(args->a_dvp);
+        vnode = vnode_getparent(pArgs->a_dvp);
         if (vnode)
         {
             PDEBUG("return parent directory");
@@ -232,23 +258,28 @@ vboxvfs_vnode_lookup_dot_handler(struct vnop_lookup_args *args, vnode_t *result_
         else
         {
             PDEBUG("return parent directory not found, return current directory");
-            *result_vnode = args->a_dvp;
+            *result_vnode = pArgs->a_dvp;
             return 0;
         }
     }
-    else if ((strncmp(args->a_cnp->cn_nameptr, ".", 1) == 0) &&
-             args->a_cnp->cn_namelen == 1)
+    else if ((strncmp(pArgs->a_cnp->cn_nameptr, ".", 1) == 0) &&
+             pArgs->a_cnp->cn_namelen == 1)
     {
         PDEBUG("return current directory");
-        *result_vnode = args->a_dvp;
+        *result_vnode = pArgs->a_dvp;
         return 0;
     }
 
     return ENOENT;
 }
+#endif
 
-int vboxvfs_vnode_lookup(struct vnop_lookup_args *args)
+static int vboxSfDwnVnLookup(struct vnop_lookup_args *pArgs)
 {
+#if 1
+    RT_NOREF(pArgs);
+    return ENOTSUP;
+#else
     int rc;
 
     vnode_t          vnode;
@@ -256,34 +287,34 @@ int vboxvfs_vnode_lookup(struct vnop_lookup_args *args)
 
     PDEBUG("Looking up for vnode...");
 
-    AssertReturn(args,                      EINVAL);
-    AssertReturn(args->a_dvp,               EINVAL);
-    AssertReturn(vnode_isdir(args->a_dvp),  EINVAL);
-    AssertReturn(args->a_cnp,               EINVAL);
-    AssertReturn(args->a_cnp->cn_nameptr,   EINVAL);
-    AssertReturn(args->a_vpp,               EINVAL);
+    AssertReturn(pArgs,                      EINVAL);
+    AssertReturn(pArgs->a_dvp,               EINVAL);
+    AssertReturn(vnode_isdir(pArgs->a_dvp),  EINVAL);
+    AssertReturn(pArgs->a_cnp,               EINVAL);
+    AssertReturn(pArgs->a_cnp->cn_nameptr,   EINVAL);
+    AssertReturn(pArgs->a_vpp,               EINVAL);
 
-    pVnodeData = (vboxvfs_vnode_t *)vnode_fsnode(args->a_dvp);
+    pVnodeData = (vboxvfs_vnode_t *)vnode_fsnode(pArgs->a_dvp);
     AssertReturn(pVnodeData, EINVAL);
     AssertReturn(pVnodeData->pLock, EINVAL);
 
     /*
-    todo: take care about args->a_cnp->cn_nameiop
+    todo: take care about pArgs->a_cnp->cn_nameiop
     */
 
-    if      (args->a_cnp->cn_nameiop == LOOKUP) PDEBUG("LOOKUP");
-    else if (args->a_cnp->cn_nameiop == CREATE) PDEBUG("CREATE");
-    else if (args->a_cnp->cn_nameiop == RENAME) PDEBUG("RENAME");
-    else if (args->a_cnp->cn_nameiop == DELETE) PDEBUG("DELETE");
-    else PDEBUG("Unknown cn_nameiop: 0x%X", (int)args->a_cnp->cn_nameiop);
+    if      (pArgs->a_cnp->cn_nameiop == LOOKUP) PDEBUG("LOOKUP");
+    else if (pArgs->a_cnp->cn_nameiop == CREATE) PDEBUG("CREATE");
+    else if (pArgs->a_cnp->cn_nameiop == RENAME) PDEBUG("RENAME");
+    else if (pArgs->a_cnp->cn_nameiop == DELETE) PDEBUG("DELETE");
+    else PDEBUG("Unknown cn_nameiop: 0x%X", (int)pArgs->a_cnp->cn_nameiop);
 
     lck_rw_lock_exclusive(pVnodeData->pLock);
 
     /* Take care about '.' and '..' entries */
-    if (vboxvfs_vnode_lookup_dot_handler(args, &vnode) == 0)
+    if (vboxvfs_vnode_lookup_dot_handler(pArgs, &vnode) == 0)
     {
         vnode_get(vnode);
-        *args->a_vpp = vnode;
+        *pArgs->a_vpp = vnode;
 
         lck_rw_unlock_exclusive(pVnodeData->pLock);
 
@@ -291,7 +322,7 @@ int vboxvfs_vnode_lookup(struct vnop_lookup_args *args)
     }
 
     /* Look into VFS cache and attempt to find previously allocated vnode there. */
-    rc = cache_lookup(args->a_dvp, &vnode, args->a_cnp);
+    rc = cache_lookup(pArgs->a_dvp, &vnode, pArgs->a_cnp);
     if (rc == -1) /* Record found */
     {
         PDEBUG("Found record in VFS cache");
@@ -301,7 +332,7 @@ int vboxvfs_vnode_lookup(struct vnop_lookup_args *args)
         {
             /* Prepare & return cached vnode */
             vnode_get(vnode);
-            *args->a_vpp = vnode;
+            *pArgs->a_vpp = vnode;
 
             rc = 0;
         }
@@ -317,11 +348,11 @@ int vboxvfs_vnode_lookup(struct vnop_lookup_args *args)
     {
         PDEBUG("cache_lookup() returned %d, create new VFS vnode", rc);
 
-        rc = vboxvfs_vnode_lookup_instantinate_vnode(args->a_dvp, args->a_cnp->cn_nameptr, &vnode);
+        rc = vboxvfs_vnode_lookup_instantinate_vnode(pArgs->a_dvp, pArgs->a_cnp->cn_nameptr, &vnode);
         if (rc == 0)
         {
-            cache_enter(args->a_dvp, vnode, args->a_cnp);
-            *args->a_vpp = vnode;
+            cache_enter(pArgs->a_dvp, vnode, pArgs->a_cnp);
+            *pArgs->a_vpp = vnode;
         }
         else
         {
@@ -332,10 +363,15 @@ int vboxvfs_vnode_lookup(struct vnop_lookup_args *args)
     lck_rw_unlock_exclusive(pVnodeData->pLock);
 
     return rc;
+#endif
 }
 
-int vboxvfs_vnode_open(struct vnop_open_args *args)
+static int vboxSfDwnVnOpen(struct vnop_open_args *pArgs)
 {
+#if 1
+    RT_NOREF(pArgs);
+    return ENOTSUP;
+#else
     vnode_t           vnode;
     vboxvfs_vnode_t  *pVnodeData;
     uint32_t          fHostFlags;
@@ -346,9 +382,9 @@ int vboxvfs_vnode_open(struct vnop_open_args *args)
 
     PDEBUG("Opening vnode...");
 
-    AssertReturn(args, EINVAL);
+    AssertReturn(pArgs, EINVAL);
 
-    vnode           = args->a_vp;                              AssertReturn(vnode,      EINVAL);
+    vnode           = pArgs->a_vp;                              AssertReturn(vnode,      EINVAL);
     pVnodeData      = (vboxvfs_vnode_t *)vnode_fsnode(vnode);  AssertReturn(pVnodeData, EINVAL);
     mp              = vnode_mount(vnode);                      AssertReturn(mp,         EINVAL);
     pMount = (vboxvfs_mount_t *)vfs_fsprivate(mp);             AssertReturn(pMount,     EINVAL);
@@ -373,7 +409,7 @@ int vboxvfs_vnode_open(struct vnop_open_args *args)
     //    return EINVAL;
     //}
 
-    fHostFlags  = vboxvfs_g2h_mode_inernal(args->a_mode);
+    fHostFlags  = vboxvfs_g2h_mode_inernal(pArgs->a_mode);
     fHostFlags |= (vnode_isdir(vnode) ? SHFL_CF_DIRECTORY : 0);
 
     SHFLHANDLE Handle;
@@ -396,10 +432,16 @@ int vboxvfs_vnode_open(struct vnop_open_args *args)
     lck_rw_unlock_exclusive(pVnodeData->pLock);
 
     return rc;
+#endif
 }
 
-int vboxvfs_vnode_close(struct vnop_close_args *args)
+static int vboxSfDwnVnClose(struct vnop_close_args *pArgs)
 {
+#if 1
+    RT_NOREF(pArgs);
+    return ENOTSUP;
+#else
+
     vnode_t          vnode;
     mount_t          mp;
     vboxvfs_vnode_t *pVnodeData;
@@ -409,9 +451,9 @@ int vboxvfs_vnode_close(struct vnop_close_args *args)
 
     PDEBUG("Closing vnode...");
 
-    AssertReturn(args, EINVAL);
+    AssertReturn(pArgs, EINVAL);
 
-    vnode           = args->a_vp;                              AssertReturn(vnode,      EINVAL);
+    vnode           = pArgs->a_vp;                              AssertReturn(vnode,      EINVAL);
     pVnodeData      = (vboxvfs_vnode_t *)vnode_fsnode(vnode);  AssertReturn(pVnodeData, EINVAL);
     mp              = vnode_mount(vnode);                      AssertReturn(mp,         EINVAL);
     pMount = (vboxvfs_mount_t *)vfs_fsprivate(mp);             AssertReturn(pMount,     EINVAL);
@@ -456,8 +498,10 @@ int vboxvfs_vnode_close(struct vnop_close_args *args)
     lck_rw_unlock_exclusive(pVnodeData->pLock);
 
     return rc;
+#endif
 }
 
+#if 0
 /**
  * Convert SHFLDIRINFO to struct dirent and copy it back to user.
  */
@@ -500,9 +544,14 @@ vboxvfs_vnode_readdir_copy_data(ino_t index, SHFLDIRINFO *Info, struct uio *uio,
 
     return rc;
 }
+#endif
 
-int vboxvfs_vnode_readdir(struct vnop_readdir_args *args)
+static int vboxSfDwnVnReadDir(struct vnop_readdir_args *pArgs)
 {
+#if 1
+    RT_NOREF(pArgs);
+    return ENOTSUP;
+#else
     vboxvfs_mount_t *pMount;
     vboxvfs_vnode_t *pVnodeData;
     SHFLDIRINFO     *Info;
@@ -515,12 +564,12 @@ int vboxvfs_vnode_readdir(struct vnop_readdir_args *args)
 
     PDEBUG("Reading directory...");
 
-    AssertReturn(args,              EINVAL);
-    AssertReturn(args->a_eofflag,   EINVAL);
-    AssertReturn(args->a_numdirent, EINVAL);
+    AssertReturn(pArgs,              EINVAL);
+    AssertReturn(pArgs->a_eofflag,   EINVAL);
+    AssertReturn(pArgs->a_numdirent, EINVAL);
 
-    uio             = args->a_uio;                             AssertReturn(uio,        EINVAL);
-    vnode           = args->a_vp;                              AssertReturn(vnode,      EINVAL); AssertReturn(vnode_isdir(vnode), EINVAL);
+    uio             = pArgs->a_uio;                             AssertReturn(uio,        EINVAL);
+    vnode           = pArgs->a_vp;                              AssertReturn(vnode,      EINVAL); AssertReturn(vnode_isdir(vnode), EINVAL);
     pVnodeData      = (vboxvfs_vnode_t *)vnode_fsnode(vnode);  AssertReturn(pVnodeData, EINVAL);
     mp              = vnode_mount(vnode);                      AssertReturn(mp,         EINVAL);
     pMount = (vboxvfs_mount_t *)vfs_fsprivate(mp);             AssertReturn(pMount,     EINVAL);
@@ -571,7 +620,7 @@ int vboxvfs_vnode_readdir(struct vnop_readdir_args *args)
 
             uint32_t cbReturned = cbInfo;
             //rc = VbglR0SfDirInfo(&g_vboxSFClient, &pMount->pMap, Handle, pMask, SHFL_LIST_RETURN_ONE, 0, &cbReturned, (PSHFLDIRINFO)Info, &cFiles);
-            rc = VbglR0SfDirInfo(&g_SfClient, &pMount->pMap, Handle, 0, SHFL_LIST_RETURN_ONE, 0,
+            rc = VbglR0SfDirInfo(&g_SfClientDarwin, &pMount->pMap, Handle, 0, SHFL_LIST_RETURN_ONE, 0,
                                  &cbReturned, (PSHFLDIRINFO)Info, &cFiles);
 
         }
@@ -597,14 +646,14 @@ int vboxvfs_vnode_readdir(struct vnop_readdir_args *args)
     {
         case VINF_SUCCESS:
         {
-            rc = vboxvfs_vnode_readdir_copy_data((ino_t)(index + 1), Info, uio, args->a_numdirent);
+            rc = vboxvfs_vnode_readdir_copy_data((ino_t)(index + 1), Info, uio, pArgs->a_numdirent);
             break;
         }
 
         case VERR_NO_MORE_FILES:
         {
             PDEBUG("No more entries in directory");
-            *(args->a_eofflag) = 1;
+            *(pArgs->a_eofflag) = 1;
             break;
         }
 
@@ -620,29 +669,20 @@ int vboxvfs_vnode_readdir(struct vnop_readdir_args *args)
     lck_rw_unlock_shared(pVnodeData->pLock);
 
     return rc;
+#endif
 }
 
 
-int vboxvfs_vnode_access(struct vnop_access_args *args)
+static int vboxSfDwnVnPathConf(struct vnop_pathconf_args *pArgs)
 {
     PDEBUG("here");
     return 0;
 }
 
-
-int vboxvfs_vnode_readdirattr(struct vnop_readdirattr_args *args)
-{
-    PDEBUG("here");
-    return 0;
-}
-
-int vboxvfs_vnode_pathconf(struct vnop_pathconf_args *args)
-{
-    PDEBUG("here");
-    return 0;
-}
 
 /**
+ * vnop_reclaim implementation.
+ *
  * VBoxVFS reclaim callback.
  * Called when vnode is going to be deallocated. Should release
  * all the VBoxVFS resources that correspond to current vnode object.
@@ -651,42 +691,71 @@ int vboxvfs_vnode_pathconf(struct vnop_pathconf_args *args)
  *
  * @return 0 on success, BSD error code otherwise.
  */
-int vboxvfs_vnode_reclaim(struct vnop_reclaim_args *pArgs)
+static int vboxSfDwnVnReclaim(struct vnop_reclaim_args *pArgs)
 {
-    PDEBUG("Releasing vnode resources...");
+    AssertReturn(pArgs && pArgs->a_vp, EINVAL);
 
-    AssertReturn(pArgs, EINVAL);
+    /* Check that it's not a root node that's in use. */
+    PVBOXSFMNT pMntData = (PVBOXSFMNT)vfs_fsprivate(vnode_mount(pArgs->a_vp));
+    AssertReturn(!pMntData || pMntData->pVnRoot != pArgs->a_vp, EBUSY);
 
-    vnode_t          pVnode;
-    vboxvfs_vnode_t *pVnodeData;
-    vboxvfs_mount_t *pMount;
-    mount_t          mp;
+    /* Get the private data and free it. */
+    PVBOXSFDWNVNDATA pVnData = (PVBOXSFDWNVNDATA)vnode_fsnode(pArgs->a_vp);
+    AssertPtrReturn(pVnData, 0);
 
-    pVnode = pArgs->a_vp;
-    AssertReturn(pVnode, EINVAL);
+    if (pVnData->hHandle != SHFL_HANDLE_NIL)
+    {
+        /** @todo can this happen? */
+        pVnData->hHandle = SHFL_HANDLE_NIL;
+    }
 
-    mp = vnode_mount(pVnode);
-    AssertReturn(mp, EINVAL);
-
-    pMount = (vboxvfs_mount_t *)vfs_fsprivate(mp);
-    AssertReturn(pMount, EINVAL);
-
-    pVnodeData = (vboxvfs_vnode_t *)vnode_fsnode(pVnode);
-    AssertReturn(pVnodeData, EINVAL);
-    AssertReturn(pVnodeData->pPath, EINVAL);
-    AssertReturn(pVnodeData->pLockAttr, EINVAL);
-    AssertReturn(pVnodeData->pLock, EINVAL);
-
-    RTMemFree(pVnodeData->pPath);
-    pVnodeData->pPath = NULL;
-
-    lck_rw_free(pVnodeData->pLock, pMount->pLockGroup);
-    pVnodeData->pLock = NULL;
-
-    lck_attr_free(pVnodeData->pLockAttr);
-    pVnodeData->pLockAttr = NULL;
-
+    RTMemFree(pVnData);
     return 0;
+}
+
+
+/**
+ * Allocates a vnode.
+ *
+ * @returns Pointer to the new VNode, NULL if out of memory.
+ * @param   pMount          The file system mount structure.
+ * @param   enmType         The vnode type.
+ * @param   pParent         The parent vnode, NULL if root.
+ * @param   cbFile          The file size
+ */
+vnode_t vboxSfDwnVnAlloc(mount_t pMount, enum vtype enmType, vnode_t pParent, uint64_t cbFile)
+{
+    /*
+     * Create our private data.
+     */
+    PVBOXSFDWNVNDATA pVnData = (PVBOXSFDWNVNDATA)RTMemAllocZ(sizeof(*pVnData));
+    if (pVnData)
+    {
+	pVnData->hHandle = SHFL_HANDLE_NIL;
+
+        struct vnode_fsparam VnParms;
+        RT_ZERO(VnParms);
+	VnParms.vnfs_mp         = pMount;
+	VnParms.vnfs_vtype      = enmType;
+	VnParms.vnfs_str        = "vboxsf";
+	VnParms.vnfs_dvp        = pParent;
+	VnParms.vnfs_fsnode     = pVnData;
+	VnParms.vnfs_vops       = g_papfnVBoxVFSVnodeDirOpsVector;
+	VnParms.vnfs_markroot   = pParent == NULL;
+	VnParms.vnfs_marksystem = 0;
+	VnParms.vnfs_rdev       = 0;
+	VnParms.vnfs_filesize   = cbFile;
+	VnParms.vnfs_cnp        = 0;
+        VnParms.vnfs_flags      = VNFS_NOCACHE;
+
+        vnode_t pVnRet;
+        int rc = vnode_create(VNCREATE_FLAVOR, VCREATESIZE, &VnParms, &pVnRet);
+	if (rc == 0)
+            return pVnRet;
+        RTMemFree(pVnData);
+    }
+    printf("vboxSfDwnVnAlloc: out of memory!\n");
+    return NULL;
 }
 
 
@@ -696,50 +765,55 @@ int vboxvfs_vnode_reclaim(struct vnop_reclaim_args *pArgs)
 static struct vnodeopv_entry_desc g_VBoxSfDirOpsDescList[] =
 {
 #define VNODEOPFUNC int(*)(void *)
-    { &vnop_default_desc,     (VNODEOPFUNC)vboxvfs_dfl_error },
-    { &vnop_lookup_desc,      (VNODEOPFUNC)vboxvfs_vnode_lookup },
-    { &vnop_create_desc,      (VNODEOPFUNC)vboxvfs_dfl_error },
-    { &vnop_whiteout_desc,    (VNODEOPFUNC)vboxvfs_dfl_error },
-    { &vnop_mknod_desc,       (VNODEOPFUNC)vboxvfs_dfl_error },
-    { &vnop_open_desc,        (VNODEOPFUNC)vboxvfs_vnode_open },
-    { &vnop_close_desc,       (VNODEOPFUNC)vboxvfs_vnode_close },
-    { &vnop_access_desc,      (VNODEOPFUNC)vboxvfs_vnode_access },
-    { &vnop_getattr_desc,     (VNODEOPFUNC)vboxvfs_vnode_getattr },
-    { &vnop_setattr_desc,     (VNODEOPFUNC)vboxvfs_dfl_error },
-    { &vnop_read_desc,        (VNODEOPFUNC)vboxvfs_dfl_error },
-    { &vnop_write_desc,       (VNODEOPFUNC)vboxvfs_dfl_error },
-    { &vnop_ioctl_desc,       (VNODEOPFUNC)vboxvfs_dfl_error },
-    { &vnop_select_desc,      (VNODEOPFUNC)vboxvfs_dfl_error },
-    { &vnop_exchange_desc,    (VNODEOPFUNC)vboxvfs_dfl_error },
-    { &vnop_revoke_desc,      (VNODEOPFUNC)vboxvfs_dfl_error },
-    { &vnop_mmap_desc,        (VNODEOPFUNC)vboxvfs_dfl_error },
-    { &vnop_mnomap_desc,      (VNODEOPFUNC)vboxvfs_dfl_error },
-    { &vnop_fsync_desc,       (VNODEOPFUNC)vboxvfs_dfl_error },
-    { &vnop_remove_desc,      (VNODEOPFUNC)vboxvfs_dfl_error },
-    { &vnop_link_desc,        (VNODEOPFUNC)vboxvfs_dfl_error },
-    { &vnop_rename_desc,      (VNODEOPFUNC)vboxvfs_dfl_error },
-    { &vnop_mkdir_desc,       (VNODEOPFUNC)vboxvfs_dfl_error },
-    { &vnop_rmdir_desc,       (VNODEOPFUNC)vboxvfs_dfl_error },
-    { &vnop_symlink_desc,     (VNODEOPFUNC)vboxvfs_dfl_error },
-    { &vnop_readdir_desc,     (VNODEOPFUNC)vboxvfs_vnode_readdir },
-    { &vnop_readdirattr_desc, (VNODEOPFUNC)vboxvfs_vnode_readdirattr },
-    { &vnop_readlink_desc,    (VNODEOPFUNC)vboxvfs_dfl_error },
-    { &vnop_inactive_desc,    (VNODEOPFUNC)vboxvfs_dfl_error },
-    { &vnop_reclaim_desc,     (VNODEOPFUNC)vboxvfs_vnode_reclaim },
-    /* { &vnop_print_desc,       (VNODEOPFUNC)vboxvfs_dfl_error }, undefined in ML */
-    { &vnop_pathconf_desc,    (VNODEOPFUNC)vboxvfs_vnode_pathconf },
-    { &vnop_advlock_desc,     (VNODEOPFUNC)vboxvfs_dfl_error },
-    /* { &vnop_truncate_desc,    (VNODEOPFUNC)vboxvfs_dfl_error }, undefined in ML */
-    { &vnop_allocate_desc,    (VNODEOPFUNC)vboxvfs_dfl_error },
-    { &vnop_pagein_desc,      (VNODEOPFUNC)vboxvfs_dfl_error },
-    { &vnop_pageout_desc,     (VNODEOPFUNC)vboxvfs_dfl_error },
-    { &vnop_searchfs_desc,    (VNODEOPFUNC)vboxvfs_dfl_error },
-    { &vnop_copyfile_desc,    (VNODEOPFUNC)vboxvfs_dfl_error },
-    { &vnop_blktooff_desc,    (VNODEOPFUNC)vboxvfs_dfl_error },
-    { &vnop_offtoblk_desc,    (VNODEOPFUNC)vboxvfs_dfl_error },
-    { &vnop_blockmap_desc,    (VNODEOPFUNC)vboxvfs_dfl_error },
-    { &vnop_strategy_desc,    (VNODEOPFUNC)vboxvfs_dfl_error },
-    { &vnop_bwrite_desc,      (VNODEOPFUNC)vboxvfs_dfl_error },
+    { &vnop_default_desc,     (VNODEOPFUNC)vboxSfDwnVnDefaultError },
+    //{ &vnop_access_desc,      (VNODEOPFUNC)vboxSfDwnVnDefaultError }, - probably not needed.
+    //{ &vnop_advlock_desc,     (VNODEOPFUNC)vboxSfDwnVnDefaultError }, - later.
+    //{ &vnop_allocate_desc,    (VNODEOPFUNC)vboxSfDwnVnDefaultError }, - maybe, need shfl function
+    { &vnop_blktooff_desc,    (VNODEOPFUNC)vboxSfDwnVnDefaultError },
+    //{ &vnop_blockmap_desc,    (VNODEOPFUNC)vboxSfDwnVnDefaultError },
+    //{ &vnop_bwrite_desc,      (VNODEOPFUNC)vboxSfDwnVnDefaultError },
+    { &vnop_close_desc,       (VNODEOPFUNC)vboxSfDwnVnClose },
+    //{ &vnop_copyfile_desc,    (VNODEOPFUNC)vboxSfDwnVnDefaultError },
+    { &vnop_create_desc,      (VNODEOPFUNC)vboxSfDwnVnDefaultError },
+    //{ &vnop_exchange_desc,    (VNODEOPFUNC)vboxSfDwnVnDefaultError },
+    { &vnop_fsync_desc,       (VNODEOPFUNC)vboxSfDwnVnDefaultError },
+    { &vnop_getattr_desc,     (VNODEOPFUNC)vboxFsDwnVnGetAttr },
+    //{ &vnop_getnamedstream_desc, (VNODEOPFUNC)vboxSfDwnVnDefaultError },
+    //{ &vnop_getxattr_desc,    (VNODEOPFUNC)vboxSfDwnVnDefaultError },
+    { &vnop_inactive_desc,    (VNODEOPFUNC)vboxSfDwnVnDefaultError },
+    { &vnop_ioctl_desc,       (VNODEOPFUNC)vboxSfDwnVnDefaultError },
+    { &vnop_link_desc,        (VNODEOPFUNC)vboxSfDwnVnDefaultError },
+    //{ &vnop_listxattr_desc,   (VNODEOPFUNC)vboxSfDwnVnDefaultError },
+    { &vnop_lookup_desc,      (VNODEOPFUNC)vboxSfDwnVnLookup },
+    { &vnop_mkdir_desc,       (VNODEOPFUNC)vboxSfDwnVnDefaultError },
+    { &vnop_mknod_desc,       (VNODEOPFUNC)vboxSfDwnVnDefaultError },
+    { &vnop_mmap_desc,        (VNODEOPFUNC)vboxSfDwnVnDefaultError },
+    { &vnop_mnomap_desc,      (VNODEOPFUNC)vboxSfDwnVnDefaultError },
+    { &vnop_offtoblk_desc,    (VNODEOPFUNC)vboxSfDwnVnDefaultError },
+    { &vnop_open_desc,        (VNODEOPFUNC)vboxSfDwnVnOpen },
+    { &vnop_pagein_desc,      (VNODEOPFUNC)vboxSfDwnVnDefaultError },
+    { &vnop_pageout_desc,     (VNODEOPFUNC)vboxSfDwnVnDefaultError },
+    { &vnop_pathconf_desc,    (VNODEOPFUNC)vboxSfDwnVnPathConf },
+    /* { &vnop_print_desc,       (VNODEOPFUNC)vboxSfDwnVnDefaultError }, undefined in ML */
+    { &vnop_read_desc,        (VNODEOPFUNC)vboxSfDwnVnDefaultError },
+    { &vnop_readdir_desc,     (VNODEOPFUNC)vboxSfDwnVnReadDir },
+    //{ &vnop_readdirattr_desc, (VNODEOPFUNC)vboxSfDwnVnDefaultError }, - hfs specific.
+    { &vnop_readlink_desc,    (VNODEOPFUNC)vboxSfDwnVnDefaultError },
+    { &vnop_reclaim_desc,     (VNODEOPFUNC)vboxSfDwnVnReclaim },
+    { &vnop_remove_desc,      (VNODEOPFUNC)vboxSfDwnVnDefaultError },
+    //{ &vnop_removexattr_desc, (VNODEOPFUNC)vboxSfDwnVnDefaultError },
+    { &vnop_rename_desc,      (VNODEOPFUNC)vboxSfDwnVnDefaultError },
+    //{ &vnop_revoke_desc,      (VNODEOPFUNC)vboxSfDwnVnDefaultError }, - not needed
+    { &vnop_rmdir_desc,       (VNODEOPFUNC)vboxSfDwnVnDefaultError },
+    { &vnop_searchfs_desc,    (VNODEOPFUNC)err_searchfs },
+    //{ &vnop_select_desc,      (VNODEOPFUNC)vboxSfDwnVnDefaultError }, - not needed
+    { &vnop_setattr_desc,     (VNODEOPFUNC)vboxSfDwnVnDefaultError },
+    { &vnop_setxattr_desc,    (VNODEOPFUNC)vboxSfDwnVnDefaultError },
+    //{ &vnop_strategy_desc,    (VNODEOPFUNC)vboxSfDwnVnDefaultError }, - not needed
+    { &vnop_symlink_desc,     (VNODEOPFUNC)vboxSfDwnVnDefaultError },
+    /* { &vnop_truncate_desc,    (VNODEOPFUNC)vboxSfDwnVnDefaultError }, undefined in ML */
+    //{ &vnop_whiteout_desc,    (VNODEOPFUNC)vboxSfDwnVnDefaultError }, - not needed/supported
+    { &vnop_write_desc,       (VNODEOPFUNC)vboxSfDwnVnDefaultError },
     { NULL,                   (VNODEOPFUNC)NULL              },
 #undef VNODEOPFUNC
 };
