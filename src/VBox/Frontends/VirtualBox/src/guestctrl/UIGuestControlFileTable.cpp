@@ -147,7 +147,7 @@ public:
 private:
 
     QCheckBox *m_pAskNextTimeCheckBox;
-    QLabel    *m_pQuestionLabel;
+    QILabel   *m_pQuestionLabel;
 
 };
 
@@ -635,7 +635,7 @@ UIFileDeleteConfirmationDialog::UIFileDeleteConfirmationDialog(QWidget *pParent 
 {
     QVBoxLayout *pLayout = new QVBoxLayout(this);
 
-    m_pQuestionLabel = new QLabel;
+    m_pQuestionLabel = new QILabel;
     if (m_pQuestionLabel)
     {
         pLayout->addWidget(m_pQuestionLabel);
@@ -690,6 +690,7 @@ UIGuestControlFileTable::UIGuestControlFileTable(UIActionPool *pActionPool, QWid
     , m_pProxyModel(0)
     , m_pMainLayout(0)
     , m_pLocationComboBox(0)
+    , m_pWarningLabel(0)
 {
     prepareObjects();
 }
@@ -781,6 +782,16 @@ void UIGuestControlFileTable::prepareObjects()
                 this, &UIGuestControlFileTable::sltCreateFileViewContextMenu);
 
     }
+    m_pWarningLabel = new QILabel(this);
+    if (m_pWarningLabel)
+    {
+        m_pMainLayout->addWidget(m_pWarningLabel, 2, 0, 5, 5);
+        m_pWarningLabel->setStyleSheet("font: 24pt;");
+        m_pWarningLabel->setAlignment(Qt::AlignCenter | Qt::AlignVCenter);
+    }
+    m_pWarningLabel->setVisible(!isEnabled());
+    m_pView->setVisible(isEnabled());
+
     m_pSearchLineEdit = new QILineEdit;
     if (m_pSearchLineEdit)
     {
@@ -1257,6 +1268,8 @@ void UIGuestControlFileTable::retranslateUi()
         m_pRootItem->setData(UIGuestControlFileManager::tr("Owner"), UIGuestControlFileModelColumn_Owner);
         m_pRootItem->setData(UIGuestControlFileManager::tr("Permissions"), UIGuestControlFileModelColumn_Permissions);
     }
+    if (m_pWarningLabel)
+        m_pWarningLabel->setText(UIGuestControlFileManager::tr("No Guest Session"));
 }
 
 bool UIGuestControlFileTable::eventFilter(QObject *pObject, QEvent *pEvent) /* override */
@@ -1398,6 +1411,17 @@ QVector<QVariant> UIGuestControlFileTable::createTreeItemData(const QString &str
     data[UIGuestControlFileModelColumn_Permissions] = strPermissions;
     return data;
 }
+
+bool UIGuestControlFileTable::event(QEvent *pEvent)
+{
+    if (pEvent->type() == QEvent::EnabledChange)
+    {
+        m_pWarningLabel->setVisible(!isEnabled());
+        m_pView->setVisible(isEnabled());
+    }
+    return QIWithRetranslateUI<QWidget>::event(pEvent);
+}
+
 
 QString UIGuestControlFileTable::fileTypeString(FileObjectType type)
 {
