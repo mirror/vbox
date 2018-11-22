@@ -102,7 +102,7 @@ bool    vboxSfDwnConnect(void);
 vnode_t vboxSfDwnVnAlloc(mount_t pMount, enum vtype enmType, vnode_t pParent, uint64_t cbFile);
 
 
-
+#if 0 /* old code, rewriting. */
 
 /**
  * Helper function to create XNU VFS vnode object.
@@ -239,7 +239,8 @@ extern mode_t vboxvfs_h2g_mode_inernal(RTFMODE fHostMode);
 extern uint32_t vboxvfs_g2h_mode_inernal(mode_t fGuestMode);
 
 extern SHFLSTRING *vboxvfs_construct_shflstring(const char *pszName, size_t cchName);
-
+#endif
 
 #endif
+
 
