@@ -1279,8 +1279,6 @@ bool ExtPack::i_areThereCloudProviderUninstallVetos()
  * Notifies the Cloud Provider Manager that there is a new extension pack.
  *
  * This is called when installing an extension pack.
- *
- * @param   a_pExtPack          The extension pack to be added.
  */
 void ExtPack::i_notifyCloudProviderManager()
 {
