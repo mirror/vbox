@@ -2156,14 +2156,15 @@ static unsigned gvmmR0SchedDoWakeUps(PGVMM pGVMM, uint64_t u64Now)
  *          VERR_INTERRUPTED if a signal was scheduled for the thread.
  * @param   pGVM                The global (ring-0) VM structure.
  * @param   pVM                 The cross context VM structure.
- * @param   idCpu               The Virtual CPU ID of the calling EMT.
+ * @param   pGVCpu              The global (ring-0) CPU structure of the calling
+ *                              EMT.
  * @param   u64ExpireGipTime    The time for the sleep to expire expressed as GIP time.
- * @thread  EMT(idCpu).
+ * @thread  EMT(pGVCpu).
  */
-GVMMR0DECL(int) GVMMR0SchedHalt(PGVM pGVM, PVM pVM, PGVMCPU pCurGVCpu, uint64_t u64ExpireGipTime)
+GVMMR0DECL(int) GVMMR0SchedHalt(PGVM pGVM, PVM pVM, PGVMCPU pGVCpu, uint64_t u64ExpireGipTime)
 {
-    LogFlow(("GVMMR0SchedHalt: pGVM=%p pVM=%p pCurGVCpu=%p(%d) u64ExpireGipTime=%#RX64\n",
-             pGVM, pVM, pCurGVCpu, pCurGVCpu->idCpu, u64ExpireGipTime));
+    LogFlow(("GVMMR0SchedHalt: pGVM=%p pVM=%p pGVCpu=%p(%d) u64ExpireGipTime=%#RX64\n",
+             pGVM, pVM, pGVCpu, pGVCpu->idCpu, u64ExpireGipTime));
     GVMM_CHECK_SMAP_SETUP();
     GVMM_CHECK_SMAP_CHECK2(pVM, RT_NOTHING);
 
@@ -2171,7 +2172,7 @@ GVMMR0DECL(int) GVMMR0SchedHalt(PGVM pGVM, PVM pVM, PGVMCPU pCurGVCpu, uint64_t 
     GVMM_GET_VALID_INSTANCE(pGVMM, VERR_GVMM_INSTANCE);
 
     pGVM->gvmm.s.StatsSched.cHaltCalls++;
-    Assert(!pCurGVCpu->gvmm.s.u64HaltExpire);
+    Assert(!pGVCpu->gvmm.s.u64HaltExpire);
 
     /*
      * If we're doing early wake-ups, we must take the UsedList lock before we
@@ -2185,7 +2186,7 @@ GVMMR0DECL(int) GVMMR0SchedHalt(PGVM pGVM, PVM pVM, PGVMCPU pCurGVCpu, uint64_t 
         GVMM_CHECK_SMAP_CHECK2(pVM, RT_NOTHING);
     }
 
-    pCurGVCpu->gvmm.s.iCpuEmt = ASMGetApicId();
+    pGVCpu->gvmm.s.iCpuEmt = ASMGetApicId();
 
     /* GIP hack: We might are frequently sleeping for short intervals where the
        difference between GIP and system time matters on systems with high resolution
@@ -2215,7 +2216,7 @@ GVMMR0DECL(int) GVMMR0SchedHalt(PGVM pGVM, PVM pVM, PGVMCPU pCurGVCpu, uint64_t 
         pGVM->gvmm.s.StatsSched.cHaltBlocking++;
         if (cNsInterval > RT_NS_1SEC)
             u64ExpireGipTime = u64NowGip + RT_NS_1SEC;
-        ASMAtomicWriteU64(&pCurGVCpu->gvmm.s.u64HaltExpire, u64ExpireGipTime);
+        ASMAtomicWriteU64(&pGVCpu->gvmm.s.u64HaltExpire, u64ExpireGipTime);
         ASMAtomicIncU32(&pGVMM->cHaltedEMTs);
         if (fDoEarlyWakeUps)
         {
@@ -2225,18 +2226,18 @@ GVMMR0DECL(int) GVMMR0SchedHalt(PGVM pGVM, PVM pVM, PGVMCPU pCurGVCpu, uint64_t 
         }
         GVMM_CHECK_SMAP_CHECK2(pVM, RT_NOTHING);
 
-        rc = RTSemEventMultiWaitEx(pCurGVCpu->gvmm.s.HaltEventMulti,
+        rc = RTSemEventMultiWaitEx(pGVCpu->gvmm.s.HaltEventMulti,
                                    RTSEMWAIT_FLAGS_ABSOLUTE | RTSEMWAIT_FLAGS_NANOSECS | RTSEMWAIT_FLAGS_INTERRUPTIBLE,
                                    u64NowGip > u64NowSys ? u64ExpireGipTime : u64NowSys + cNsInterval);
         GVMM_CHECK_SMAP_CHECK2(pVM, RT_NOTHING);
 
-        ASMAtomicWriteU64(&pCurGVCpu->gvmm.s.u64HaltExpire, 0);
+        ASMAtomicWriteU64(&pGVCpu->gvmm.s.u64HaltExpire, 0);
         ASMAtomicDecU32(&pGVMM->cHaltedEMTs);
 
         /* Reset the semaphore to try prevent a few false wake-ups. */
         if (rc == VINF_SUCCESS)
         {
-            RTSemEventMultiReset(pCurGVCpu->gvmm.s.HaltEventMulti);
+            RTSemEventMultiReset(pGVCpu->gvmm.s.HaltEventMulti);
             GVMM_CHECK_SMAP_CHECK2(pVM, RT_NOTHING);
         }
         else if (rc == VERR_TIMEOUT)
@@ -2251,7 +2252,7 @@ GVMMR0DECL(int) GVMMR0SchedHalt(PGVM pGVM, PVM pVM, PGVMCPU pCurGVCpu, uint64_t 
         if (fDoEarlyWakeUps)
             GVMMR0_USED_SHARED_UNLOCK(pGVMM);
         GVMM_CHECK_SMAP_CHECK2(pVM, RT_NOTHING);
-        RTSemEventMultiReset(pCurGVCpu->gvmm.s.HaltEventMulti);
+        RTSemEventMultiReset(pGVCpu->gvmm.s.HaltEventMulti);
         GVMM_CHECK_SMAP_CHECK2(pVM, RT_NOTHING);
         rc = VINF_SUCCESS;
     }
