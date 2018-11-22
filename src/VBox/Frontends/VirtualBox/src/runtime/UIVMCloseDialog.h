@@ -63,6 +63,9 @@ protected:
     /** Handles any Qt @a pEvent. */
     virtual bool event(QEvent *pEvent) /* override */;
 
+    /** Handles show @a pEvent. */
+    virtual void showEvent(QShowEvent *pEvent) /* override */;
+
     /** Handles translation event. */
     virtual void retranslateUi() /* override */;
 

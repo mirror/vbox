@@ -103,31 +103,33 @@ bool UIVMCloseDialog::eventFilter(QObject *pObject, QEvent *pEvent)
 
 bool UIVMCloseDialog::event(QEvent *pEvent)
 {
-    /* Handle know event types: */
+    /* Pre-process in base-class: */
+    const bool fResult = QIWithRetranslateUI<QIDialog>::event(pEvent);
+
+    /* Post-process know event types: */
     switch (pEvent->type())
     {
-        case QEvent::Show:
         case QEvent::ScreenChangeInternal:
         {
             /* Update pixmaps: */
             updatePixmaps();
-
-            // NOTE:
-            // This thing works after QEvent::Show but isn't
-            // working after QEvent::ScreenChangeInternal,
-            // because it is too early, layout isn't calculated.
-            // We want to "force" it to work, just no idea how.
-            // Resize to minimum size-hint:
-            resize(minimumSizeHint());
-
             break;
         }
         default:
             break;
     }
 
+    /* Return pre-processed result: */
+    return fResult;
+}
+
+void UIVMCloseDialog::showEvent(QShowEvent *pEvent)
+{
+    /* Update pixmaps: */
+    updatePixmaps();
+
     /* Call to base-class: */
-    return QIWithRetranslateUI<QIDialog>::event(pEvent);
+    QIWithRetranslateUI<QIDialog>::showEvent(pEvent);
 }
 
 void UIVMCloseDialog::retranslateUi()
