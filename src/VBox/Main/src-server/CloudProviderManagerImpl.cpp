@@ -86,7 +86,7 @@ bool CloudProviderManager::i_canRemoveExtPack(IExtPack *aExtPack)
 
     bool fRes = true;
     Bstr bstrName;
-    aExtPack->GetName(bstrName.asOutParam());
+    aExtPack->COMGETTER(Name)(bstrName.asOutParam());
     Utf8Str strName(bstrName);
     ExtPackNameCloudProviderManagerMap::iterator it = m_mapCloudProviderManagers.find(strName);
     if (it != m_mapCloudProviderManagers.end())
@@ -142,7 +142,7 @@ void CloudProviderManager::i_addExtPack(IExtPack *aExtPack)
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     Bstr bstrName;
-    aExtPack->GetName(bstrName.asOutParam());
+    aExtPack->COMGETTER(Name)(bstrName.asOutParam());
     Utf8Str strName(bstrName);
     ComPtr<IUnknown> pObj;
     std::vector<com::Utf8Str> astrExtPackNames;
