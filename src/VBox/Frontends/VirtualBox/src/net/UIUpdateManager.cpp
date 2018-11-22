@@ -462,7 +462,7 @@ void UIUpdateStepVirtualBoxExtensionPack::sltStartStep()
     }
 
     /* Ask the user about extension pack downloading: */
-    if (!msgCenter().warAboutOutdatedExtensionPack(GUI_ExtPackName, strExtPackVersion))
+    if (!msgCenter().warnAboutOutdatedExtensionPack(GUI_ExtPackName, strExtPackVersion))
     {
         emit sigStepComplete();
         return;

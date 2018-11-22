@@ -442,7 +442,7 @@ public:
     bool confirmDownloadUserManual(const QString &strURL, qulonglong uSize) const;
     void cannotSaveUserManual(const QString &strURL, const QString &strTarget) const;
     void warnAboutUserManualDownloaded(const QString &strURL, const QString &strTarget) const;
-    bool warAboutOutdatedExtensionPack(const QString &strExtPackName, const QString &strExtPackVersion) const;
+    bool warnAboutOutdatedExtensionPack(const QString &strExtPackName, const QString &strExtPackVersion) const;
     bool confirmDownloadExtensionPack(const QString &strExtPackName, const QString &strURL, qulonglong uSize) const;
     void cannotSaveExtensionPack(const QString &strExtPackName, const QString &strFrom, const QString &strTo) const;
     bool proposeInstallExtentionPack(const QString &strExtPackName, const QString &strFrom, const QString &strTo) const;

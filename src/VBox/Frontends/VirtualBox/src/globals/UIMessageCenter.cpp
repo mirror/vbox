@@ -2409,7 +2409,7 @@ void UIMessageCenter::warnAboutUserManualDownloaded(const QString &strURL, const
              .arg(strURL, strTarget));
 }
 
-bool UIMessageCenter::warAboutOutdatedExtensionPack(const QString &strExtPackName, const QString &strExtPackVersion) const
+bool UIMessageCenter::warnAboutOutdatedExtensionPack(const QString &strExtPackName, const QString &strExtPackVersion) const
 {
     return questionBinary(windowManager().networkManagerOrMainWindowShown(), MessageType_Question,
                           tr("<p>You have an old version (%1) of the <b><nobr>%2</nobr></b> installed.</p>"
