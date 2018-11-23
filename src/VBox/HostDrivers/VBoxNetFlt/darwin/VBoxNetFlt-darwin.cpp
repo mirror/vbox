@@ -1070,6 +1070,8 @@ static int vboxNetFltDarwinAttachToInterface(PVBOXNETFLTINS pThis, bool fRedisco
         return VERR_INTNET_FLT_IF_NOT_FOUND;
     }
 
+    AssertCompileMemberAlignment(VBOXNETFLTINS, u.s.pIfNet, ARCH_BITS / 8);
+    AssertMsg(!((uintptr_t)&pThis->u.s.pIfNet & (ARCH_BITS / 8 - 1)), ("pThis=%p\n", pThis));
     RTSpinlockAcquire(pThis->hSpinlock);
     ASMAtomicUoWritePtr(&pThis->u.s.pIfNet, pIfNet);
     RTSpinlockRelease(pThis->hSpinlock);
