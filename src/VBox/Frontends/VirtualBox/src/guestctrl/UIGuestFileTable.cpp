@@ -594,13 +594,32 @@ void UIGuestFileTable::prepareToolbar()
     setSelectionDependentActionsEnabled(false);
 }
 
-void UIGuestFileTable::createFileViewContextMenu(const QWidget *pWidget, const QPoint &/*point*/)
+void UIGuestFileTable::createFileViewContextMenu(const QWidget *pWidget, const QPoint &point)
 {
     if (!pWidget)
         return;
 
-    // QMenu menu;
-    // menu.exec(mapToGlobal(position));
+    QMenu menu;
+    menu.addAction(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Guest_GoUp));
+
+    menu.addAction(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Guest_GoHome));
+    menu.addAction(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Guest_Refresh));
+    menu.addSeparator();
+    menu.addAction(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Guest_Delete));
+    menu.addAction(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Guest_Rename));
+    menu.addAction(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Guest_CreateNewDirectory));
+    /* Hide cut, copy, and paste for now. We will implement those
+       when we have an API for host file operations: */
+    menu.addSeparator();
+    menu.addAction(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Guest_Copy));
+    menu.addAction(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Guest_Cut));
+    menu.addAction(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Guest_Paste));
+    menu.addSeparator();
+    menu.addAction(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Guest_SelectAll));
+    menu.addAction(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Guest_InvertSelection));
+    menu.addSeparator();
+    menu.addAction(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Guest_ShowProperties));
+    menu.exec(pWidget->mapToGlobal(point));
 }
 
 void UIGuestFileTable::prepareActionConnections()
