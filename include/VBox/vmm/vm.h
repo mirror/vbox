@@ -576,6 +576,7 @@ typedef struct VMCPU
 #define VMCPU_FF_HIGH_PRIORITY_PRE_MASK         (  VMCPU_FF_TIMER        | VMCPU_FF_INTERRUPT_APIC     | VMCPU_FF_INTERRUPT_PIC \
                                                  | VMCPU_FF_UPDATE_APIC  | VMCPU_FF_INHIBIT_INTERRUPTS | VMCPU_FF_DBGF \
                                                  | VMCPU_FF_PGM_SYNC_CR3 | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL \
+                                                 | VMCPU_FF_INTERRUPT_NESTED_GUEST \
                                                  | VM_WHEN_RAW_MODE(  VMCPU_FF_SELM_SYNC_TSS | VMCPU_FF_TRPM_SYNC_IDT \
                                                                     | VMCPU_FF_SELM_SYNC_GDT | VMCPU_FF_SELM_SYNC_LDT, 0 ) )
 
