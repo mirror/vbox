@@ -365,31 +365,27 @@ QString UIHostFileTable::fsObjectPropertyString()
         QFileInfo fileInfo(selectedObjects.at(0));
         if (!fileInfo.exists())
             return QString();
-        QString propertyString;
+        QStringList propertyStringList;
         /* Name: */
-        propertyString += "<b>" + UIGuestControlFileManager::tr("Name") + ":</b> " + fileInfo.fileName() + "\n";
+        propertyStringList << UIGuestControlFileManager::tr("<b>Name:</b> %1").arg(fileInfo.fileName());
         if (!fileInfo.suffix().isEmpty())
-            propertyString += "." + fileInfo.suffix();
-        propertyString += "<br/>";
+            propertyStringList << QString(".%1").arg(fileInfo.suffix());
+        propertyStringList << "<br/>";
         /* Size: */
-        propertyString += "<b>" + UIGuestControlFileManager::tr("Size") + ":</b> " +
-            QString::number(fileInfo.size()) + UIGuestControlFileManager::tr(" bytes");
+        propertyStringList << UIGuestControlFileManager::tr("<b>Size:</b> %1 bytes").arg(QString::number(fileInfo.size()));
         if (fileInfo.size() >= m_iKiloByte)
-            propertyString += " (" + humanReadableSize(fileInfo.size()) + ")";
-        propertyString += "<br/>";
+            propertyStringList << QString(" (%1)").arg(humanReadableSize(fileInfo.size()));
+        propertyStringList << "<br/>";
         /* Type: */
-        propertyString += "<b>" + UIGuestControlFileManager::tr("Type") + ":</b> " + fileTypeString(fileType(fileInfo));
-        propertyString += "<br/>";
+        propertyStringList << UIGuestControlFileManager::tr("<b>Type:</b> %1<br/>").arg(fileTypeString(fileType(fileInfo)));
         /* Creation Date: */
-        propertyString += "<b>" + UIGuestControlFileManager::tr("Created") + ":</b> " + fileInfo.created().toString();
-        propertyString += "<br/>";
+        propertyStringList << UIGuestControlFileManager::tr("<b>Created:</b> %1<br/>").arg(fileInfo.created().toString());
         /* Last Modification Date: */
-        propertyString += "<b>" + UIGuestControlFileManager::tr("Modified") + ":</b> " + fileInfo.lastModified().toString();
-        propertyString += "<br/>";
+        propertyStringList << UIGuestControlFileManager::tr("<b>Modified:</b> %1<br/>").arg(fileInfo.lastModified().toString());
         /* Owner: */
-        propertyString += "<b>" + UIGuestControlFileManager::tr("Owner") + ":</b> " + fileInfo.owner();
+        propertyStringList << UIGuestControlFileManager::tr("<b>Owner:</b> %1").arg(fileInfo.owner());
 
-        return propertyString;
+        return propertyStringList.join(QString());;
     }
 
     int fileCount = 0;
@@ -407,18 +403,14 @@ QString UIHostFileTable::fsObjectPropertyString()
             ++directoryCount;
         totalSize += fileInfo.size();
     }
-    QString propertyString;
-    propertyString += "<b>" + UIGuestControlFileManager::tr("Selected") + ":</b> " + QString::number(fileCount) +
-        " " + UIGuestControlFileManager::tr("files") + " ";
-    propertyString += UIGuestControlFileManager::tr("and") + " " + QString::number(directoryCount) + " " +
-        UIGuestControlFileManager::tr("directories");
-    propertyString += "<br/>";
-    propertyString += "<b>" + UIGuestControlFileManager::tr("Size") + ":</b> " + QString::number(totalSize) + " " +
-        UIGuestControlFileManager::tr("bytes");
+    QStringList propertyStringList;
+    propertyStringList << UIGuestControlFileManager::tr("<b>Selected:</b> %1 files and %2 directories<br/>").
+        arg(QString::number(fileCount)).arg(QString::number(directoryCount));
+    propertyStringList << UIGuestControlFileManager::tr("<b>Size:</b> %1 bytes").arg(QString::number(totalSize));
     if (totalSize >= m_iKiloByte)
-        propertyString += " (" + humanReadableSize(totalSize) + ")";
+        propertyStringList << QString(" (%1)").arg(humanReadableSize(totalSize));
 
-    return propertyString;
+    return propertyStringList.join(QString());
 }
 
 void  UIHostFileTable::showProperties()
