@@ -1025,7 +1025,6 @@ typedef struct VMSVGA3DSTATE
     struct
     {
         GLint                           maxActiveLights;
-        GLint                           maxTextureBufferSize;
         GLint                           maxTextures;
         GLint                           maxClipDistances;
         GLint                           maxColorAttachments;

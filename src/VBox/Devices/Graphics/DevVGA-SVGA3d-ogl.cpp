@@ -852,7 +852,6 @@ int vmsvga3dPowerOn(PVGASTATE pThis)
      * Initialize the capabilities with sensible defaults.
      */
     pState->caps.maxActiveLights               = 1;
-    pState->caps.maxTextureBufferSize          = 65536;
     pState->caps.maxTextures                   = 1;
     pState->caps.maxClipDistances              = 4;
     pState->caps.maxColorAttachments           = 1;
@@ -869,7 +868,6 @@ int vmsvga3dPowerOn(PVGASTATE pThis)
      * Query capabilities
      */
     VMSVGA3D_INIT_CHECKED_BOTH(pState, pContext, pOtherCtx, glGetIntegerv(GL_MAX_LIGHTS, &pState->caps.maxActiveLights));
-    VMSVGA3D_INIT_CHECKED_BOTH(pState, pContext, pOtherCtx, glGetIntegerv(GL_MAX_TEXTURE_BUFFER_SIZE, &pState->caps.maxTextureBufferSize));
     VMSVGA3D_INIT_CHECKED_BOTH(pState, pContext, pOtherCtx, glGetIntegerv(GL_MAX_TEXTURE_UNITS_ARB, &pState->caps.maxTextures));
 #ifdef VBOX_VMSVGA3D_DUAL_OPENGL_PROFILE /* The alternative profile has a higher number here (ati/darwin). */
     VMSVGA3D_SET_CURRENT_CONTEXT(pState, pOtherCtx);
@@ -1033,8 +1031,8 @@ int vmsvga3dPowerOn(PVGASTATE pThis)
 #endif
 
     LogRel(("VMSVGA3d: Capabilities:\n"));
-    LogRel(("VMSVGA3d:   maxActiveLights=%-2d       maxTextures=%-2d           maxTextureBufferSize=%d\n",
-            pState->caps.maxActiveLights, pState->caps.maxTextures, pState->caps.maxTextureBufferSize));
+    LogRel(("VMSVGA3d:   maxActiveLights=%-2d       maxTextures=%-2d\n",
+            pState->caps.maxActiveLights, pState->caps.maxTextures));
     LogRel(("VMSVGA3d:   maxClipDistances=%-2d      maxColorAttachments=%-2d   maxClipDistances=%d\n",
             pState->caps.maxClipDistances, pState->caps.maxColorAttachments, pState->caps.maxClipDistances));
     LogRel(("VMSVGA3d:   maxColorAttachments=%-2d   maxTextureAnisotropy=%-2d  maxRectangleTextureSize=%d\n",
