@@ -34,6 +34,8 @@ NTSTATUS GaScreenDefine(PVBOXWDDM_EXT_GA pGaDevExt,
                         int32_t yOrigin,
                         uint32_t u32Width,
                         uint32_t u32Height);
+NTSTATUS GaScreenDestroy(PVBOXWDDM_EXT_GA pGaDevExt,
+                         uint32_t u32ScreenId);
 
 NTSTATUS GaDeviceCreate(PVBOXWDDM_EXT_GA pGaDevExt,
                         PVBOXWDDM_DEVICE pDevice);

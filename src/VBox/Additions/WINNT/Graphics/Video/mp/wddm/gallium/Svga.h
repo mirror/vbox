@@ -132,6 +132,8 @@ NTSTATUS SvgaScreenDefine(PVBOXWDDM_EXT_VMSVGA pSvga,
                           int32_t yOrigin,
                           uint32_t u32Width,
                           uint32_t u32Height);
+NTSTATUS SvgaScreenDestroy(PVBOXWDDM_EXT_VMSVGA pSvga,
+                           uint32_t u32ScreenId);
 
 NTSTATUS SvgaContextCreate(PVBOXWDDM_EXT_VMSVGA pSvga,
                            uint32_t u32Cid);

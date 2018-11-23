@@ -248,6 +248,27 @@ NTSTATUS SvgaScreenDefine(PVBOXWDDM_EXT_VMSVGA pSvga,
     return Status;
 }
 
+NTSTATUS SvgaScreenDestroy(PVBOXWDDM_EXT_VMSVGA pSvga,
+                           uint32_t u32ScreenId)
+{
+    NTSTATUS Status = STATUS_SUCCESS;
+
+    const uint32_t cbSubmit =   sizeof(uint32_t)
+                              + sizeof(SVGAFifoCmdDestroyScreen);
+    void *pvCmd = SvgaFifoReserve(pSvga, cbSubmit);
+    if (pvCmd)
+    {
+        SvgaCmdDestroyScreen(pvCmd, u32ScreenId);
+    }
+    else
+    {
+        Status = STATUS_INSUFFICIENT_RESOURCES;
+    }
+
+    return Status;
+}
+
+
 NTSTATUS SvgaIdAlloc(PVBOXWDDM_EXT_VMSVGA pSvga,
                      uint32_t *pu32Bits,
                      uint32_t cbBits,
