@@ -1227,7 +1227,7 @@ static uint32_t vmsvga3dGetSurfaceFormatSupport(uint32_t idx3dCaps)
     case SVGA3D_DEVCAP_SURFACEFMT_Z_D16:
     case SVGA3D_DEVCAP_SURFACEFMT_Z_D24S8:
     case SVGA3D_DEVCAP_SURFACEFMT_Z_D24X8:
-    case SVGA3D_DEVCAP_SURFACEFMT_Z_DF16:
+    // case SVGA3D_DEVCAP_SURFACEFMT_Z_DF16:
     case SVGA3D_DEVCAP_SURFACEFMT_Z_DF24:
     case SVGA3D_DEVCAP_SURFACEFMT_Z_D24S8_INT:
         result |= SVGA3DFORMAT_OP_ZSTENCIL
@@ -2108,6 +2108,8 @@ int vmsvga3dBackCreateTexture(PVMSVGA3DSTATE pState, PVMSVGA3DCONTEXT pContext, 
 {
     RT_NOREF(idAssociatedContext);
 
+    LogFunc(("sid=%x\n", pSurface->id));
+
     uint32_t const numMipLevels = pSurface->faces[0].numMipLevels;
 
     /* Fugure out what kind of texture we are creating. */
@@ -2533,6 +2535,8 @@ int vmsvga3dBackSurfaceDMACopyBox(PVGASTATE pThis, PVMSVGA3DSTATE pState, PVMSVG
 
     switch (pSurface->surfaceFlags & VMSVGA3D_SURFACE_HINT_SWITCH_MASK)
     {
+    case SVGA3D_SURFACE_HINT_TEXTURE | SVGA3D_SURFACE_HINT_DEPTHSTENCIL:
+    case SVGA3D_SURFACE_HINT_DEPTHSTENCIL:
     case SVGA3D_SURFACE_CUBEMAP | SVGA3D_SURFACE_HINT_TEXTURE:
     case SVGA3D_SURFACE_CUBEMAP | SVGA3D_SURFACE_HINT_TEXTURE | SVGA3D_SURFACE_HINT_RENDERTARGET:
     case SVGA3D_SURFACE_HINT_TEXTURE | SVGA3D_SURFACE_HINT_RENDERTARGET:
@@ -2666,10 +2670,6 @@ int vmsvga3dBackSurfaceDMACopyBox(PVGASTATE pThis, PVMSVGA3DSTATE pState, PVMSVG
         RTMemFree(pDoubleBuffer);
         break;
     }
-
-    case SVGA3D_SURFACE_HINT_DEPTHSTENCIL:
-        AssertFailed(); /** @todo DMA SVGA3D_SURFACE_HINT_DEPTHSTENCIL */
-        break;
 
     case SVGA3D_SURFACE_HINT_VERTEXBUFFER | SVGA3D_SURFACE_HINT_INDEXBUFFER:
     case SVGA3D_SURFACE_HINT_VERTEXBUFFER:
@@ -4419,6 +4419,26 @@ int vmsvga3dSetRenderTarget(PVGASTATE pThis, uint32_t cid, SVGA3dRenderTargetTyp
     case SVGA3D_RT_DEPTH:
     case SVGA3D_RT_STENCIL:
         AssertReturn(target.mipmap == 0, VERR_INVALID_PARAMETER);
+#if 1
+        /* A texture surface can be used as a render target to fill it and later on used as a texture. */
+        if (pRenderTarget->oglId.texture == OPENGL_INVALID_ID)
+        {
+            LogFunc(("create depth texture to be used as render target; surface id=%x type=%d format=%d -> create texture\n",
+                     target.sid, pRenderTarget->surfaceFlags, pRenderTarget->format));
+            int rc = vmsvga3dBackCreateTexture(pState, pContext, cid, pRenderTarget);
+            AssertRCReturn(rc, rc);
+        }
+
+        AssertReturn(pRenderTarget->oglId.texture != OPENGL_INVALID_ID, VERR_INVALID_PARAMETER);
+        Assert(!pRenderTarget->fDirty);
+
+        pRenderTarget->surfaceFlags |= SVGA3D_SURFACE_HINT_DEPTHSTENCIL;
+
+        pState->ext.glFramebufferTexture2D(GL_FRAMEBUFFER,
+                                           (type == SVGA3D_RT_DEPTH) ? GL_DEPTH_ATTACHMENT : GL_STENCIL_ATTACHMENT,
+                                           GL_TEXTURE_2D, pRenderTarget->oglId.texture, target.mipmap);
+        VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
+#else
         if (pRenderTarget->oglId.texture == OPENGL_INVALID_ID)
         {
             Log(("vmsvga3dSetRenderTarget: create renderbuffer to be used as render target; surface id=%x type=%d format=%d\n", target.sid, pRenderTarget->surfaceFlags, pRenderTarget->internalFormatGL));
@@ -4456,6 +4476,7 @@ int vmsvga3dSetRenderTarget(PVGASTATE pThis, uint32_t cid, SVGA3dRenderTargetTyp
                                               (type == SVGA3D_RT_DEPTH) ? GL_DEPTH_ATTACHMENT : GL_STENCIL_ATTACHMENT,
                                               GL_RENDERBUFFER, pRenderTarget->oglId.renderbuffer);
         VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
+#endif
         break;
 
     case SVGA3D_RT_COLOR0:
