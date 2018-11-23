@@ -1747,7 +1747,22 @@ IEM_STATIC void iemVmxVmexitSaveGuestNonRegState(PVMCPU pVCpu, uint32_t uExitRea
      */
     PVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
 
-    /* Activity-state: VM-exits occur before changing the activity state, nothing further to do */
+    /*
+     * Activity state.
+     * Most VM-exits will occur in the active state. However, if the first instruction
+     * following the VM-entry is a HLT instruction, and the MTF VM-execution control is set,
+     * the VM-exit will be from the HLT activity state.
+     *
+     * See Intel spec. 25.5.2 "Monitor Trap Flag".
+     */
+    /** @todo NSTVMX: Does triple-fault VM-exit reflect a shutdown activity state or
+     *        not? */
+    EMSTATE enmActivityState = EMGetState(pVCpu);
+    switch (enmActivityState)
+    {
+        case EMSTATE_HALTED:    pVmcs->u32GuestActivityState = VMX_VMCS_GUEST_ACTIVITY_HLT;     break;
+        default:                pVmcs->u32GuestActivityState = VMX_VMCS_GUEST_ACTIVITY_ACTIVE;  break;
+    }
 
     /* Interruptibility-state. */
     pVmcs->u32GuestIntrState = 0;
@@ -3001,8 +3016,27 @@ IEM_STATIC bool iemVmxIsIoInterceptSet(PVMCPU pVCpu, uint16_t u16Port, uint8_t c
 
 
 /**
+ * VMX VM-exit handler for VM-exits due to Monitor-Trap Flag (MTF).
+ *
+ * @returns Strict VBox status code.
+ * @param   pVCpu   The cross context virtual CPU structure.
+ */
+IEM_STATIC VBOXSTRICTRC iemVmxVmexitMtf(PVMCPU pVCpu)
+{
+    /*
+     * The MTF VM-exit can occur even when the MTF VM-execution control is
+     * not set (e.g. when VM-entry injects an MTF pending event), so do not
+     * check for it here.
+     */
+    iemVmxVmcsSetExitQual(pVCpu, 0);
+    return iemVmxVmexit(pVCpu, VMX_EXIT_MTF);
+}
+
+
+/**
  * VMX VM-exit handler for VM-exits due to INVLPG.
  *
+ * @returns Strict VBox status code.
  * @param   pVCpu           The cross context virtual CPU structure.
  * @param   GCPtrPage       The guest-linear address of the page being invalidated.
  * @param   cbInstr         The instruction length in bytes.
