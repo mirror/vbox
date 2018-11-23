@@ -300,7 +300,6 @@ typedef struct VBOXNETFLTINS
 typedef struct VBOXNETFLTINS *PVBOXNETFLTINS;
 
 AssertCompileMemberAlignment(VBOXNETFLTINS, NanoTSLastRediscovery, 8);
-AssertCompileMemberAlignment(VBOXNETFLTINS, u, 8);
 #ifdef VBOXNETFLT_OS_SPECFIC
 AssertCompile(RT_SIZEOFMEMB(VBOXNETFLTINS, u.s) <= RT_SIZEOFMEMB(VBOXNETFLTINS, u.abPadding));
 #endif
