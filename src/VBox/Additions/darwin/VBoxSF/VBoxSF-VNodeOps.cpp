@@ -732,26 +732,26 @@ vnode_t vboxSfDwnVnAlloc(mount_t pMount, enum vtype enmType, vnode_t pParent, ui
     PVBOXSFDWNVNDATA pVnData = (PVBOXSFDWNVNDATA)RTMemAllocZ(sizeof(*pVnData));
     if (pVnData)
     {
-	pVnData->hHandle = SHFL_HANDLE_NIL;
+        pVnData->hHandle = SHFL_HANDLE_NIL;
 
         struct vnode_fsparam VnParms;
         RT_ZERO(VnParms);
-	VnParms.vnfs_mp         = pMount;
-	VnParms.vnfs_vtype      = enmType;
-	VnParms.vnfs_str        = "vboxsf";
-	VnParms.vnfs_dvp        = pParent;
-	VnParms.vnfs_fsnode     = pVnData;
-	VnParms.vnfs_vops       = g_papfnVBoxSfDwnVnDirOpsVector;
-	VnParms.vnfs_markroot   = pParent == NULL;
-	VnParms.vnfs_marksystem = 0;
-	VnParms.vnfs_rdev       = 0;
-	VnParms.vnfs_filesize   = cbFile;
-	VnParms.vnfs_cnp        = 0;
+        VnParms.vnfs_mp         = pMount;
+        VnParms.vnfs_vtype      = enmType;
+        VnParms.vnfs_str        = "vboxsf";
+        VnParms.vnfs_dvp        = pParent;
+        VnParms.vnfs_fsnode     = pVnData;
+        VnParms.vnfs_vops       = g_papfnVBoxSfDwnVnDirOpsVector;
+        VnParms.vnfs_markroot   = pParent == NULL;
+        VnParms.vnfs_marksystem = 0;
+        VnParms.vnfs_rdev       = 0;
+        VnParms.vnfs_filesize   = cbFile;
+        VnParms.vnfs_cnp        = 0;
         VnParms.vnfs_flags      = VNFS_NOCACHE;
 
         vnode_t pVnRet;
         int rc = vnode_create(VNCREATE_FLAVOR, VCREATESIZE, &VnParms, &pVnRet);
-	if (rc == 0)
+        if (rc == 0)
             return pVnRet;
         RTMemFree(pVnData);
     }
