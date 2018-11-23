@@ -3842,13 +3842,7 @@ IEM_CIMPL_DEF_1(iemCImpl_iret_64bit, IEMMODE, enmEffOpSize)
  */
 IEM_CIMPL_DEF_1(iemCImpl_iret, IEMMODE, enmEffOpSize)
 {
-    /*
-     * First, clear NMI blocking, if any, before causing any exceptions.
-     * See Intel spec. 6.7.1 "Handling Multiple NMIs".
-     */
     bool const fBlockingNmi = VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_BLOCK_NMIS);
-    if (fBlockingNmi)
-        VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_BLOCK_NMIS);
 
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
     /*
@@ -3862,8 +3856,12 @@ IEM_CIMPL_DEF_1(iemCImpl_iret, IEMMODE, enmEffOpSize)
 #endif
 
     /*
-     * The SVM nested-guest intercept for iret takes priority over all exceptions,
-     * see AMD spec. "15.9 Instruction Intercepts".
+     * The SVM nested-guest intercept for IRET takes priority over all exceptions,
+     * The NMI is still held pending (which I assume means blocking of further NMIs
+     * is in effect).
+     *
+     * See AMD spec. 15.9 "Instruction Intercepts".
+     * See AMD spec. 15.21.9 "NMI Support".
      */
     if (IEM_SVM_IS_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_IRET))
     {
@@ -3871,6 +3869,13 @@ IEM_CIMPL_DEF_1(iemCImpl_iret, IEMMODE, enmEffOpSize)
         IEM_SVM_UPDATE_NRIP(pVCpu);
         IEM_SVM_VMEXIT_RET(pVCpu, SVM_EXIT_IRET, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
     }
+
+    /*
+     * Clear NMI blocking, if any, before causing any further exceptions.
+     * See Intel spec. 6.7.1 "Handling Multiple NMIs".
+     */
+    if (fBlockingNmi)
+        VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_BLOCK_NMIS);
 
     /*
      * Call a mode specific worker.
