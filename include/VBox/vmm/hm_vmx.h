@@ -4200,8 +4200,7 @@ DECLINLINE(bool) HMVmxIsVmentryVectoring(uint32_t uEntryIntInfo)
 {
     if (!VMX_ENTRY_INT_INFO_IS_VALID(uEntryIntInfo))
         return false;
-    uint8_t const uIntInfoType = VMX_ENTRY_INT_INFO_TYPE(uEntryIntInfo);
-    switch (uIntInfoType)
+    switch (VMX_ENTRY_INT_INFO_TYPE(uEntryIntInfo))
     {
         case VMX_ENTRY_INT_INFO_TYPE_EXT_INT:
         case VMX_ENTRY_INT_INFO_TYPE_NMI:
