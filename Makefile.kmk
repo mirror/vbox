@@ -968,7 +968,7 @@ combined-package-packing:
 # The basic rsync invocation for syncing the tree into a VM; the source and
 # target specs are missing.
 #
-# @param    1  	os name.
+# @param    1   os name.
 # @param    2   arch or *.
 #
 VBOX_RSYNC_IN_FN = rsync -a -v --delete --delete-excluded --prune-empty-dirs \
@@ -1050,11 +1050,15 @@ additions-build: \
 	additions-build-solaris.amd64 \
 	additions-build-solaris.x86 \
 	additions-build-os2.x86 \
-	additions-build-linux
+	additions-build-linux \
+	additions-build-darwin.x86 \
+	additions-build-darwin.amd64
 
 additions-build-rsync-into-vms: \
 		additions-build-solaris.rsync-into-vm \
 		additions-build-os2.rsync-into-vm \
+		additions-build-darwin.x86.rsync-into-vm \
+		additions-build-darwin.amd64.rsync-into-vm \
 		additions-build-linux.rsync-into-vm
 	$(call MSG_L1,Rsynced the sources + tools into the VMs.)
 .NOTPARALLEL: additions-build-rsync-into-vms
@@ -1182,6 +1186,7 @@ additions-build-os2.x86:
 # Dummy
 endif
 
+# Linux
 ifeq ($(KBUILD_TARGET),linux)
 additions-build-linux.amd64:
 	+ $(TIME) -- $(KMK) $(VBOX_ADDITIONS_BUILD.amd64) all $(VBOX_ADD_HOST_BUILD_TWEAK)
@@ -1233,6 +1238,100 @@ additions-build-linux.rsync-out-of-vm: additions-build-linux.build-it
 additions-build-linux: additions-build-linux.rsync-out-of-vm
 endif
 
+# Darwin
+ifeq ($(KBUILD_TARGET),darwin)
+additions-build-darwin.amd64:
+	+ $(TIME) -- $(KMK) $(VBOX_ADDITIONS_BUILD.amd64) all $(VBOX_ADD_HOST_BUILD_TWEAK)
+	+ $(TIME) -- $(KMK) $(VBOX_ADDITIONS_BUILD.amd64) packing
+
+additions-build-darwin.x86:
+	+ $(TIME) -- $(KMK) $(VBOX_ADDITIONS_BUILD.x86) all $(VBOX_ADD_HOST_BUILD_TWEAK)
+	+ $(TIME) -- $(KMK) $(VBOX_ADDITIONS_BUILD.x86) packing
+
+additions-build-darwin:   additions-build-darwin.amd64 additions-build-darwin.x86
+.PHONY:       additions-build-darwin.amd64 additions-build-darwin.x86
+else
+additions-build-darwin.amd64.rsync-into-vm:
+	$(TIME) -- $(call VBOX_RSYNC_IN_FN,darwin.amd64,*) \
+		'--exclude=src/libs/xpcom18a4/**' \
+		'--exclude=src/libs/curl*/**' \
+		'--exclude=src/libs/libxml*/**' \
+		'--exclude=src/libs/libvpx*/**' \
+		'--exclude=src/libs/libopus*/**' \
+		'--exclude=src/VBox/Additions/WINNT/**' \
+		'--exclude=src/VBox/Additions/x11/**' \
+		'--exclude=src/VBox/Artwork/x11/**' \
+		'--exclude=src/VBox/Devices/**' \
+		'--exclude=src/VBox/Disassembler/**' \
+		'--exclude=src/VBox/ExtPacks/**' \
+		'--exclude=src/VBox/Frontends/**' \
+		'--exclude=src/VBox/HostDriver/**' \
+		'--exclude=src/VBox/HostService/**' \
+		'--exclude=src/VBox/ImageMounter/**' \
+		'--exclude=src/VBox/Installer/**' \
+		'--exclude=src/VBox/Main/**' \
+		'--exclude=src/VBox/NetworkService/**' \
+		'--exclude=src/VBox/RDP/**' \
+		'--exclude=src/VBox/Storage/**' \
+		'--exclude=src/VBox/ValidationKit/**' \
+		'--exclude=src/VBox/VMM/**' \
+		'--exclude=src/apps/**' \
+		'--exclude=src/recompiler/**' \
+		. $(VBOX_BLD_VM_DARWIN_AMD64_IP):/Users/vbox/tinderbox/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME)
+
+additions-build-darwin.x86.rsync-into-vm:
+	$(TIME) -- $(call VBOX_RSYNC_IN_FN,darwin.x86,*) \
+		'--exclude=src/libs/xpcom18a4/**' \
+		'--exclude=src/libs/curl*/**' \
+		'--exclude=src/libs/libxml*/**' \
+		'--exclude=src/libs/libvpx*/**' \
+		'--exclude=src/libs/libopus*/**' \
+		'--exclude=src/VBox/Additions/WINNT/**' \
+		'--exclude=src/VBox/Additions/x11/**' \
+		'--exclude=src/VBox/Artwork/x11/**' \
+		'--exclude=src/VBox/Devices/**' \
+		'--exclude=src/VBox/Disassembler/**' \
+		'--exclude=src/VBox/ExtPacks/**' \
+		'--exclude=src/VBox/Frontends/**' \
+		'--exclude=src/VBox/HostDriver/**' \
+		'--exclude=src/VBox/HostService/**' \
+		'--exclude=src/VBox/ImageMounter/**' \
+		'--exclude=src/VBox/Installer/**' \
+		'--exclude=src/VBox/Main/**' \
+		'--exclude=src/VBox/NetworkService/**' \
+		'--exclude=src/VBox/RDP/**' \
+		'--exclude=src/VBox/Storage/**' \
+		'--exclude=src/VBox/ValidationKit/**' \
+		'--exclude=src/VBox/VMM/**' \
+		'--exclude=src/apps/**' \
+		'--exclude=src/recompiler/**' \
+		. $(VBOX_BLD_VM_DARWIN_X86_IP):/Users/vbox/tinderbox/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME)
+
+additions-build-darwin.amd64.build-it: additions-build-darwin.amd64.rsync-into-vm
+	$(call VBOX_BLD_VM_MSG_BEGIN,Darwin/amd64 Additions)
+	$(TIME) -- ssh vbox@$(VBOX_BLD_VM_DARWIN_AMD64_IP) 'cd /Users/vbox/tinderbox/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME) && tools/env.sh --no-wine kmk $(VBOX_ADDITIONS_BUILD.amd64) all packing'
+	$(call VBOX_BLD_VM_MSG_END__,Darwin/amd64 Additions)
+
+additions-build-darwin.x86.build-it: additions-build-darwin.x86.rsync-into-vm
+	$(call VBOX_BLD_VM_MSG_BEGIN,Darwin/x86 Additions)
+	$(TIME) -- ssh vbox@$(VBOX_BLD_VM_DARWIN_X86_IP) 'cd /Users/vbox/tinderbox/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME) && tools/env.sh --no-wine kmk $(VBOX_ADDITIONS_BUILD.x86) all packing'
+	$(call VBOX_BLD_VM_MSG_END__,Darwin/x86 Additions)
+
+additions-build-darwin.amd64.rsync-out-of-vm: additions-build-darwin.amd64.build-it
+	$(TIME) -- rsync -a --delete $(VBOX_BLD_VM_DARWIN_AMD64_IP):/mnt/tinderbox/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME)/out/darwin.amd64 out/
+
+additions-build-darwin.x86.rsync-out-of-vm: additions-build-darwin.x86.build-it
+	$(TIME) -- rsync -a --delete $(VBOX_BLD_VM_DARWIN_X86_IP):/mnt/tinderbox/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME)/out/darwin.x86 out/
+
+additions-build-darwin.amd64: additions-build-darwin.amd64.rsync-out-of-vm
+additions-build-darwin.x86: additions-build-darwin.x86.rsync-out-of-vm
+additions-build-darwin: additions-build-darwin.x86.rsync-out-of-vm  additions-build-darwin.amd64.rsync-out-of-vm
+
+.PHONY: additions-build-darwin.amd64.rsync-into-vm additions-build-darwin.amd64.rsync-out-of-vm additions-build-darwin.amd64.build-it \
+	additions-build-darwin.x86.rsync-into-vm additions-build-darwin.x86.rsync-out-of-vm additions-build-darwin.x86.build-it
+endif
+
+
 additions-packing:
 	+ $(KMK) VBOX_ONLY_ADDITIONS=1 \
 		VBOX_WITH_ADDITIONS_ISO.freebsd.amd64= \
@@ -1259,6 +1358,9 @@ additions-packing:
 	additions-build-linux.amd64 \
 	additions-build-linux.x86 \
 	additions-build-linux.x86.combined \
+	additions-build-darwin \
+	additions-build-darwin.x86 \
+	additions-build-darwin.amd64 \
 	additions-packing
 
 
