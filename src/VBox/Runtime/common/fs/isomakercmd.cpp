@@ -1691,21 +1691,6 @@ static bool rtFsIsoMakerCmdIsFilteredOut(PRTFSISOMAKERCMDOPTS pOpts, const char 
 
 
 /**
- * Adds a directory, from a VFS chain or real file system.
- *
- * @returns IPRT status code.
- * @param   pOpts               The ISO maker command instance.
- * @param   pszSrc              The path to the source directory.
- * @param   pParsed             The parsed names.
- */
-static int rtFsIsoMakerCmdAddDir(PRTFSISOMAKERCMDOPTS pOpts, const char *pszSrc, PCRTFSISOMKCMDPARSEDNAMES pParsed)
-{
-    RT_NOREF(pParsed);
-    return rtFsIsoMakerCmdErrorRc(pOpts, VERR_NOT_IMPLEMENTED, "Adding directory '%s' failed: not implemented", pszSrc);
-}
-
-
-/**
  * Worker for rtFsIsoMakerCmdAddVfsDir that does the recursion.
  *
  * @returns IPRT status code.
@@ -1871,30 +1856,19 @@ static int rtFsIsoMakerCmdAddVfsDirRecursive(PRTFSISOMAKERCMDOPTS pOpts, RTVFSDI
 
 
 /**
- * Adds a directory, from the source VFS.
+ * Common directory adding worker.
  *
  * @returns IPRT status code.
  * @param   pOpts               The ISO maker command instance.
+ * @param   hVfsSrcDir          The directory being added.
+ * @param   pszSrc              The source directory name.
  * @param   pParsed             The parsed names.
  * @param   pidxObj             Where to return the configuration index for the
  *                              added file.  Optional.
  */
-static int rtFsIsoMakerCmdAddVfsDir(PRTFSISOMAKERCMDOPTS pOpts, PCRTFSISOMKCMDPARSEDNAMES pParsed, PCRTFSOBJINFO pObjInfo)
+static int rtFsIsoMakerCmdAddVfsDirCommon(PRTFSISOMAKERCMDOPTS pOpts, RTVFSDIR hVfsDirSrc, char *pszSrc,
+                                          PCRTFSISOMKCMDPARSEDNAMES pParsed, PCRTFSOBJINFO pObjInfo)
 {
-    Assert(pParsed->cNames < pParsed->cNamesWithSrc);
-
-    /*
-     * Open the directory.
-     */
-    char    *pszDir = pParsed->aNames[pParsed->cNamesWithSrc - 1].szPath;
-    RTPathChangeToUnixSlashes(pszDir, true /*fForce*/); /* VFS currently only understand unix slashes. */
-    RTVFSDIR hVfsDirSrc;
-    int rc = RTVfsDirOpenDir(pOpts->aSrcStack[pOpts->iSrcStack].hSrcDir, pszDir, 0 /*fFlags*/, &hVfsDirSrc);
-    if (RT_FAILURE(rc))
-        return rtFsIsoMakerCmdErrorRc(pOpts, rc, "Error opening directory '%s' (%s '%s'): %Rrc", pszDir,
-                                      pOpts->aSrcStack[pOpts->iSrcStack].pszSrcVfsOption ? "inside" : "relative to",
-                                      pOpts->aSrcStack[pOpts->iSrcStack].pszSrcVfs, rc);
-
     /*
      * Add the directory if it doesn't exist.
      */
@@ -1911,6 +1885,7 @@ static int rtFsIsoMakerCmdAddVfsDir(PRTFSISOMAKERCMDOPTS pOpts, PCRTFSISOMKCMDPA
                 break;
             }
         }
+    int rc = VINF_SUCCESS;
     if (idxObj == UINT32_MAX)
     {
         rc = RTFsIsoMakerAddUnnamedDir(pOpts->hIsoMaker, pObjInfo, &idxObj);
@@ -1927,14 +1902,68 @@ static int rtFsIsoMakerCmdAddVfsDir(PRTFSISOMAKERCMDOPTS pOpts, PCRTFSISOMKCMDPA
         uint32_t fNamespaces = 0;
         for (uint32_t i = 0; i < pParsed->cNames; i++)
             fNamespaces |= pParsed->aNames[i].fNameSpecifiers & RTFSISOMAKERCMDNAME_MAJOR_MASK;
-        rc = rtFsIsoMakerCmdAddVfsDirRecursive(pOpts, hVfsDirSrc, idxObj, pszDir,
+        rc = rtFsIsoMakerCmdAddVfsDirRecursive(pOpts, hVfsDirSrc, idxObj, pszSrc,
                                                pParsed->aNames[pParsed->cNamesWithSrc - 1].cchPath, fNamespaces, 0 /*cDepth*/);
     }
-    RTVfsDirRelease(hVfsDirSrc);
+
     return rc;
 }
 
 
+/**
+ * Adds a directory, from the source VFS.
+ *
+ * @returns IPRT status code.
+ * @param   pOpts               The ISO maker command instance.
+ * @param   pParsed             The parsed names.
+ * @param   pidxObj             Where to return the configuration index for the
+ *                              added file.  Optional.
+ */
+static int rtFsIsoMakerCmdAddVfsDir(PRTFSISOMAKERCMDOPTS pOpts, PCRTFSISOMKCMDPARSEDNAMES pParsed, PCRTFSOBJINFO pObjInfo)
+{
+    Assert(pParsed->cNames < pParsed->cNamesWithSrc);
+    char    *pszSrc = pParsed->aNames[pParsed->cNamesWithSrc - 1].szPath;
+    RTPathChangeToUnixSlashes(pszSrc, true /*fForce*/); /* VFS currently only understand unix slashes. */
+    RTVFSDIR hVfsDirSrc;
+    int rc = RTVfsDirOpenDir(pOpts->aSrcStack[pOpts->iSrcStack].hSrcDir, pszSrc, 0 /*fFlags*/, &hVfsDirSrc);
+    if (RT_SUCCESS(rc))
+    {
+        rc = rtFsIsoMakerCmdAddVfsDirCommon(pOpts, hVfsDirSrc, pszSrc, pParsed, pObjInfo);
+        RTVfsDirRelease(hVfsDirSrc);
+    }
+    else
+        rc = rtFsIsoMakerCmdErrorRc(pOpts, rc, "Error opening directory '%s' (%s '%s'): %Rrc", pszSrc,
+                                    pOpts->aSrcStack[pOpts->iSrcStack].pszSrcVfsOption ? "inside" : "relative to",
+                                    pOpts->aSrcStack[pOpts->iSrcStack].pszSrcVfs, rc);
+    return rc;
+}
+
+
+/**
+ * Adds a directory, from a VFS chain or real file system.
+ *
+ * @returns IPRT status code.
+ * @param   pOpts               The ISO maker command instance.
+ * @param   pszSrc              The path to the source directory.
+ * @param   pParsed             The parsed names.
+ */
+static int rtFsIsoMakerCmdAddDir(PRTFSISOMAKERCMDOPTS pOpts, PCRTFSISOMKCMDPARSEDNAMES pParsed, PCRTFSOBJINFO pObjInfo)
+{
+    Assert(pParsed->cNames < pParsed->cNamesWithSrc);
+    char           *pszSrc = pParsed->aNames[pParsed->cNamesWithSrc - 1].szPath;
+    RTERRINFOSTATIC ErrInfo;
+    uint32_t        offError;
+    RTVFSDIR        hVfsDirSrc;
+    int rc = RTVfsChainOpenDir(pszSrc, 0 /*fOpen*/, &hVfsDirSrc, &offError, RTErrInfoInitStatic(&ErrInfo));
+    if (RT_SUCCESS(rc))
+    {
+        rc = rtFsIsoMakerCmdAddVfsDirCommon(pOpts, hVfsDirSrc, pszSrc, pParsed, pObjInfo);
+        RTVfsDirRelease(hVfsDirSrc);
+    }
+    else
+        rc = rtFsIsoMakerCmdChainError(pOpts, "RTVfsChainOpenDir", pszSrc, rc, offError, &ErrInfo.Core);
+    return rc;
+}
 
 
 /**
@@ -2060,7 +2089,7 @@ static int rtFsIsoMakerCmdAddSomething(PRTFSISOMAKERCMDOPTS pOpts, const char *p
         {
             if (Parsed.enmSrcType == RTFSISOMKCMDPARSEDNAMES::kSrcType_NormalSrcStack)
                 return rtFsIsoMakerCmdAddVfsDir(pOpts, &Parsed, &ObjInfo);
-            return rtFsIsoMakerCmdAddDir(pOpts, pszSrc, &Parsed);
+            return rtFsIsoMakerCmdAddDir(pOpts, &Parsed, &ObjInfo);
         }
 
         if (RTFS_IS_SYMLINK(ObjInfo.Attr.fMode))
