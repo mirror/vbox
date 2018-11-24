@@ -146,12 +146,12 @@ static int vboxSfDwnVfsGetAttr(mount_t pMount, struct vfs_attr *pFsAttr, vfs_con
                                                                  | VOL_CAP_FMT_DECMPFS_COMPRESSION
                                                                  | VOL_CAP_FMT_64BIT_OBJECT_IDS;
                 pCaps->capabilities[VOL_CAPABILITIES_FORMAT]     = VOL_CAP_FMT_2TB_FILESIZE
-                                                                 ///@todo | VOL_CAP_FMT_SYMBOLICLINKS - later
-                                                                 ///@todo | VOL_CAP_FMT_SPARSE_FILES - probably, needs testing.
+                                                                 /// @todo | VOL_CAP_FMT_SYMBOLICLINKS - later
+                                                                 /// @todo | VOL_CAP_FMT_SPARSE_FILES - probably, needs testing.
                                                                  /*| VOL_CAP_FMT_CASE_SENSITIVE - case-insensitive */
                                                                  | VOL_CAP_FMT_CASE_PRESERVING
-                                                                 ///@todo | VOL_CAP_FMT_HIDDEN_FILES - if windows host.
-                                                                 ///@todo | VOL_CAP_FMT_OPENDENYMODES - if windows host.
+                                                                 /// @todo | VOL_CAP_FMT_HIDDEN_FILES - if windows host.
+                                                                 /// @todo | VOL_CAP_FMT_OPENDENYMODES - if windows host.
                                                                  ;
                 pCaps->valid[VOL_CAPABILITIES_INTERFACES]        = VOL_CAP_INT_SEARCHFS
                                                                  | VOL_CAP_INT_ATTRLIST
@@ -169,9 +169,9 @@ static int vboxSfDwnVfsGetAttr(mount_t pMount, struct vfs_attr *pFsAttr, vfs_con
                                                                  | VOL_CAP_INT_NAMEDSTREAMS
                                                                  | VOL_CAP_INT_EXTENDED_ATTR;
                 pCaps->capabilities[VOL_CAPABILITIES_INTERFACES] = 0
-                                                                 ///@todo | VOL_CAP_INT_SEARCHFS
-                                                                 ///@todo | VOL_CAP_INT_COPYFILE
-                                                                 ///@todo | VOL_CAP_INT_READDIRATTR
+                                                                 /// @todo | VOL_CAP_INT_SEARCHFS
+                                                                 /// @todo | VOL_CAP_INT_COPYFILE
+                                                                 /// @todo | VOL_CAP_INT_READDIRATTR
                                                                  ;
 
                 pCaps->valid[VOL_CAPABILITIES_RESERVED1]         = 0;
@@ -377,7 +377,7 @@ static int vboxSfDwnVfsRoot(mount_t pMount, vnode_t *ppVnode, vfs_context_t pCon
      */
     if (pThis->pVnRoot)
     {
-	int rc = vnode_get(pThis->pVnRoot);
+        int rc = vnode_get(pThis->pVnRoot);
         if (rc == 0)
         {
             *ppVnode = pThis->pVnRoot;
@@ -546,7 +546,7 @@ static int vboxSfDwnVfsMount(mount_t pMount, vnode_t pDevVp, user_addr_t pUserDa
                      * Create a root node, that avoid races later.
                      */
                     pThis->pVnRoot = vboxSfDwnVnAlloc(pMount, VDIR, NULL /*pParent*/, 0);
-		    if (pThis->pVnRoot)
+                    if (pThis->pVnRoot)
                     {
                         /*
                          * Fill file system stats with dummy data.
@@ -581,7 +581,7 @@ static int vboxSfDwnVfsMount(mount_t pMount, vnode_t pDevVp, user_addr_t pUserDa
                         LogRel(("VBoxSF: mount: Successfully mounted '%s' (uidMounter=%u).\n",
                                 pThis->MntInfo.szFolder, pThis->uidMounter));
                         return 0;
-		    }
+                    }
 
                     LogRel(("VBoxSF: mount: Failed to allocate root node!\n"));
                     rc = ENOMEM;
