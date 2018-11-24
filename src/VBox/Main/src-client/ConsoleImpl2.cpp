@@ -3837,7 +3837,8 @@ int Console::i_configGraphicsController(PCFGMNODE pDevices,
             {
                 LONG64 winId = 0;
                 /** @todo deal with multimonitor setup */
-                Assert(cMonitorCount == 1);
+                /** @todo The device should not need "HostWindowId". */
+                // Assert(cMonitorCount == 1);
                 hrc = pFramebuffer->COMGETTER(WinId)(&winId);
                 InsertConfigInteger(pCfg, "HostWindowId", winId);
                 pFramebuffer->Release();
