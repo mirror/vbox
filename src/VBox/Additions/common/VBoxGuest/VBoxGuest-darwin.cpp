@@ -1041,8 +1041,8 @@ bool org_virtualbox_VBoxGuest::setupVmmDevInterrupts(IOService *pProvider)
 
     if (m_pInterruptProvider != pProvider)
     {
-	pProvider->retain();
-	if (m_pInterruptProvider)
+        pProvider->retain();
+        if (m_pInterruptProvider)
             m_pInterruptProvider->release();
         m_pInterruptProvider = pProvider;
     }
