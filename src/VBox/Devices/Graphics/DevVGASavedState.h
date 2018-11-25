@@ -44,27 +44,28 @@
         } \
     } while (0)
 
-#define VGA_SAVEDSTATE_VERSION              20
-#define VGA_SAVEDSTATE_VERSION_VMSVGA       20 /* Multiple updates and fixes for VMSVGA saved state. */
+#define VGA_SAVEDSTATE_VERSION                   21
+#define VGA_SAVEDSTATE_VERSION_VMSVGA_SCREENS    21 /* Screen objects. */
+#define VGA_SAVEDSTATE_VERSION_VMSVGA            20 /* Multiple updates and fixes for VMSVGA saved state. */
 #define VGA_SAVEDSTATE_VERSION_VMSVGA_TEX_STAGES 19
 #define VGA_SAVEDSTATE_VERSION_VMSVGA_GMR_COUNT  18
 #define VGA_SAVEDSTATE_VERSION_VMSVGA_VGA_FB_FIX 17
-#define VGA_SAVEDSTATE_VERSION_MARKERS      16
-#define VGA_SAVEDSTATE_VERSION_MODE_HINTS   15
-#define VGA_SAVEDSTATE_VERSION_FIXED_PENDVHWA 14
-#define VGA_SAVEDSTATE_VERSION_3D           13
-#define VGA_SAVEDSTATE_VERSION_HGSMIMA      12 /* HGSMI memory allocator. */
-#define VGA_SAVEDSTATE_VERSION_VMSVGA_2D    10 /* <- internal build with 2d state only */
-#define VGA_SAVEDSTATE_VERSION_WITH_PENDVHWA 10
-#define VGA_SAVEDSTATE_VERSION_INV_GCMDFIFO 8 /* <- states upto and including this version may contain invalid completed Guest Commands fifo entries */
-#define VGA_SAVEDSTATE_VERSION_INV_VHEIGHT  8 /* <- states upto and including this version may contain invalid vbe_regs[VBE_DISPI_INDEX_VIRT_HEIGHT] value */
-#define VGA_SAVEDSTATE_VERSION_WDDM         7
-#define VGA_SAVEDSTATE_VERSION_PRE_WDDM     6
-#define VGA_SAVEDSTATE_VERSION_HOST_HEAP    5
-#define VGA_SAVEDSTATE_VERSION_WITH_CONFIG  4
-#define VGA_SAVEDSTATE_VERSION_HGSMI        3
-#define VGA_SAVEDSTATE_VERSION_PRE_HGSMI    2
-#define VGA_SAVEDSTATE_VERSION_ANCIENT      1
+#define VGA_SAVEDSTATE_VERSION_MARKERS           16
+#define VGA_SAVEDSTATE_VERSION_MODE_HINTS        15
+#define VGA_SAVEDSTATE_VERSION_FIXED_PENDVHWA    14
+#define VGA_SAVEDSTATE_VERSION_3D                13
+#define VGA_SAVEDSTATE_VERSION_HGSMIMA           12 /* HGSMI memory allocator. */
+#define VGA_SAVEDSTATE_VERSION_VMSVGA_2D         10 /* <- internal build with 2d state only */
+#define VGA_SAVEDSTATE_VERSION_WITH_PENDVHWA     10
+#define VGA_SAVEDSTATE_VERSION_INV_GCMDFIFO       8 /* <- states upto and including this version may contain invalid completed Guest Commands fifo entries */
+#define VGA_SAVEDSTATE_VERSION_INV_VHEIGHT        8 /* <- states upto and including this version may contain invalid vbe_regs[VBE_DISPI_INDEX_VIRT_HEIGHT] value */
+#define VGA_SAVEDSTATE_VERSION_WDDM               7
+#define VGA_SAVEDSTATE_VERSION_PRE_WDDM           6
+#define VGA_SAVEDSTATE_VERSION_HOST_HEAP          5
+#define VGA_SAVEDSTATE_VERSION_WITH_CONFIG        4
+#define VGA_SAVEDSTATE_VERSION_HGSMI              3
+#define VGA_SAVEDSTATE_VERSION_PRE_HGSMI          2
+#define VGA_SAVEDSTATE_VERSION_ANCIENT            1
 
 #endif
 

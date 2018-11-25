@@ -815,8 +815,9 @@ int vmsvga3dSurfaceBlitToScreen(PVGASTATE pThis, uint32_t idDstScreen, SVGASigne
         LogFunc(("clipping rect %d (%d,%d)(%d,%d)\n", i, pRect[i].left, pRect[i].top, pRect[i].right, pRect[i].bottom));
     }
 
-    /** @todo Only screen 0 for now. */
-    AssertReturn(idDstScreen == 0, VERR_INTERNAL_ERROR);
+    VMSVGASCREENOBJECT *pScreen = vmsvgaGetScreenObject(pThis, idDstScreen);
+    AssertReturn(pScreen, VERR_INTERNAL_ERROR);
+
     AssertReturn(src.mipmap == 0 && src.face == 0, VERR_INVALID_PARAMETER);
     /** @todo scaling */
     AssertReturn(destRect.right - destRect.left == srcRect.right - srcRect.left && destRect.bottom - destRect.top == srcRect.bottom - srcRect.top, VERR_INVALID_PARAMETER);
@@ -828,12 +829,9 @@ int vmsvga3dSurfaceBlitToScreen(PVGASTATE pThis, uint32_t idDstScreen, SVGASigne
     box.z    = 0;
     box.d    = 1;
 
-    /** @todo SVGA_GMR_FRAMEBUFFER is not the screen object
-     * and might not point to the start of VRAM as assumed here.
-     */
     dest.ptr.gmrId  = SVGA_GMR_FRAMEBUFFER;
-    dest.ptr.offset = pThis->svga.uScreenOffset;
-    dest.pitch      = pThis->svga.cbScanline;
+    dest.ptr.offset = pScreen->offVRAM;
+    dest.pitch      = pScreen->cbPitch;
 
     if (cRects == 0)
     {
@@ -860,7 +858,7 @@ int vmsvga3dSurfaceBlitToScreen(PVGASTATE pThis, uint32_t idDstScreen, SVGASigne
         AssertRCReturn(rc, rc);
 
         /* Update the guest image, which is at box.src. */
-        vgaR3UpdateDisplay(pThis, box.srcx, box.srcy, box.w, box.h);
+        vmsvgaUpdateScreen(pThis, pScreen, box.srcx, box.srcy, box.w, box.h);
     }
     else
     {
@@ -885,7 +883,7 @@ int vmsvga3dSurfaceBlitToScreen(PVGASTATE pThis, uint32_t idDstScreen, SVGASigne
             AssertRCReturn(rc, rc);
 
             /* Update the guest image, which is at box.src. */
-            vgaR3UpdateDisplay(pThis, box.srcx, box.srcy, box.w, box.h);
+            vmsvgaUpdateScreen(pThis, pScreen, box.srcx, box.srcy, box.w, box.h);
         }
     }
 
@@ -902,6 +900,10 @@ int vmsvga3dCommandPresent(PVGASTATE pThis, uint32_t sid, uint32_t cRects, SVGA3
     int rc = vmsvga3dSurfaceFromSid(pState, sid, &pSurface);
     AssertRCReturn(rc, rc);
 
+    /** @todo Detect screen from coords? Or split rect to screens? */
+    VMSVGASCREENOBJECT *pScreen = vmsvgaGetScreenObject(pThis, 0);
+    AssertReturn(pScreen, VERR_INTERNAL_ERROR);
+
     /* If there are no recangles specified, just grab a screenful. */
     SVGA3dCopyRect DummyRect;
     if (cRects != 0)
@@ -914,8 +916,8 @@ int vmsvga3dCommandPresent(PVGASTATE pThis, uint32_t sid, uint32_t cRects, SVGA3
         AssertMsgFailed(("No rects to present. Who is doing that and what do they actually expect?\n"));
         DummyRect.x = DummyRect.srcx = 0;
         DummyRect.y = DummyRect.srcy = 0;
-        DummyRect.w = pThis->svga.uWidth;
-        DummyRect.h = pThis->svga.uHeight;
+        DummyRect.w = pScreen->cWidth;
+        DummyRect.h = pScreen->cHeight;
         cRects = 1;
         pRect  = &DummyRect;
     }

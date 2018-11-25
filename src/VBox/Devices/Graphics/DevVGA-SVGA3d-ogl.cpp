@@ -2963,16 +2963,26 @@ int vmsvga3dContextDefineOgl(PVGASTATE pThis, uint32_t cid, uint32_t fFlags)
     }
 
 #elif defined(RT_OS_DARWIN)
+    /** @todo No overlay like on Windows. */
+    VMSVGASCREENOBJECT *pScreen = vmsvgaGetScreenObject(pThis, 0);
+    uint32_t const uWidth  = pScreen ? pScreen->cWidth : -1;
+    uint32_t const uHeight = pScreen ? pScreen->cHeight: -1;
+
     pContext->fOtherProfile = RT_BOOL(fFlags & VMSVGA3D_DEF_CTX_F_OTHER_PROFILE);
 
     NativeNSOpenGLContextRef pShareContext = pSharedCtx ? pSharedCtx->cocoaContext : NULL;
     NativeNSViewRef          pHostView    = (NativeNSViewRef)pThis->svga.u64HostWindowId;
     vmsvga3dCocoaCreateViewAndContext(&pContext->cocoaView, &pContext->cocoaContext,
                                       pSharedCtx ? NULL : pHostView, /* Only attach one subview, the one we'll present in. */ /** @todo screen objects and stuff. */
-                                      pThis->svga.uWidth, pThis->svga.uHeight,
+                                      uWidth, uHeight,
                                       pShareContext, pContext->fOtherProfile);
 
 #else
+    /** @todo No overlay like on Windows. */
+    VMSVGASCREENOBJECT *pScreen = vmsvgaGetScreenObject(pThis, 0);
+    uint32_t const uWidth  = pScreen ? pScreen->cWidth : -1;
+    uint32_t const uHeight = pScreen ? pScreen->cHeight: -1;
+
     Window hostWindow = (Window)pThis->svga.u64HostWindowId;
 
     if (pState->display == NULL)
@@ -3009,7 +3019,7 @@ int vmsvga3dContextDefineOgl(PVGASTATE pThis, uint32_t cid, uint32_t fFlags)
     swa.event_mask = StructureNotifyMask | ExposureMask;
     unsigned long flags = CWBorderPixel | CWBackPixel | CWColormap | CWEventMask;
     pContext->window = XCreateWindow(pState->display, hostWindow,//XDefaultRootWindow(pState->display),//hostWindow,
-                                     0, 0, pThis->svga.uWidth, pThis->svga.uHeight,
+                                     0, 0, uWidth, uHeight,
                                      0, vi->depth, InputOutput,
                                      vi->visual, flags, &swa);
     AssertMsgReturn(pContext->window, ("XCreateWindow failed"), VERR_INTERNAL_ERROR);
@@ -3204,13 +3214,23 @@ static void vmsvga3dChangeModeOneContext(PVGASTATE pThis, PVMSVGA3DSTATE pState,
     /* Do nothing. The window is not used for presenting. */
 
 #elif defined(RT_OS_DARWIN)
+    /** @todo No overlay like on Windows. */
+    VMSVGASCREENOBJECT *pScreen = vmsvgaGetScreenObject(pThis, 0);
+    uint32_t const uWidth  = pScreen ? pScreen->cWidth : -1;
+    uint32_t const uHeight = pScreen ? pScreen->cHeight: -1;
+
     RT_NOREF(pState);
-    vmsvga3dCocoaViewSetSize(pContext->cocoaView, pThis->svga.uWidth, pThis->svga.uHeight);
+    vmsvga3dCocoaViewSetSize(pContext->cocoaView, uWidth, uHeight);
 
 #elif defined(RT_OS_LINUX)
+    /** @todo No overlay like on Windows. */
+    VMSVGASCREENOBJECT *pScreen = vmsvgaGetScreenObject(pThis, 0);
+    uint32_t const uWidth  = pScreen ? pScreen->cWidth : -1;
+    uint32_t const uHeight = pScreen ? pScreen->cHeight: -1;
+
     XWindowChanges wc;
-    wc.width = pThis->svga.uWidth;
-    wc.height = pThis->svga.uHeight;
+    wc.width = uWidth;
+    wc.height = uHeight;
     XConfigureWindow(pState->display, pContext->window, CWWidth | CWHeight, &wc);
 #endif
 }

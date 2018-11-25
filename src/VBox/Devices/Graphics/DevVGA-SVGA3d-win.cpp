@@ -3845,8 +3845,8 @@ int vmsvga3dSetRenderTarget(PVGASTATE pThis, uint32_t cid, SVGA3dRenderTargetTyp
                  * into a depth buffer without wishing to update an actual color render target.
                  */
                 IDirect3DSurface9 *pDummyRenderTarget;
-                hr = pContext->pDevice->CreateRenderTarget(pThis->svga.uWidth,
-                                                           pThis->svga.uHeight,
+                hr = pContext->pDevice->CreateRenderTarget(4,
+                                                           4,
                                                            FOURCC_NULL,
                                                            D3DMULTISAMPLE_NONE,
                                                            0,
