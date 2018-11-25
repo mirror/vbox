@@ -1300,7 +1300,7 @@ static int vmsvgaChangeMode(PVGASTATE pThis)
         pScreen->cHeight   = pThis->svga.uHeight;
         pScreen->cBpp      = pThis->svga.uBpp;
 
-        for (int iScreen = 1; iScreen < RT_ELEMENTS(pSVGAState->aScreens); ++iScreen)
+        for (unsigned iScreen = 1; iScreen < RT_ELEMENTS(pSVGAState->aScreens); ++iScreen)
         {
             /* Delete screen. */
             pScreen = &pSVGAState->aScreens[iScreen];
@@ -1322,7 +1322,7 @@ static int vmsvgaChangeMode(PVGASTATE pThis)
         pThis->svga.uBpp    = VMSVGA_VAL_UNINITIALIZED;
     }
 
-    for (int iScreen = 0; iScreen < RT_ELEMENTS(pSVGAState->aScreens); ++iScreen)
+    for (unsigned iScreen = 0; iScreen < RT_ELEMENTS(pSVGAState->aScreens); ++iScreen)
     {
         VMSVGASCREENOBJECT *pScreen = &pSVGAState->aScreens[iScreen];
         if (!pScreen->fModified)
