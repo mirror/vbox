@@ -723,7 +723,7 @@ static int vgsvcGstCtrlSessionHandleProcExec(PVBOXSERVICECTRLSESSION pSession, P
                                          /* Environment */
                                          startupInfo.szEnv,      &startupInfo.cbEnv,            &startupInfo.uNumEnvVars,
                                          /* Credentials; for hosts with VBox < 4.3 (protocol version 1).
-                                          * For protocl v2 and up the credentials are part of the session
+                                          * For protocol v2 and up the credentials are part of the session
                                           * opening call. */
                                          startupInfo.szUser,     sizeof(startupInfo.szUser),
                                          startupInfo.szPassword, sizeof(startupInfo.szPassword),
@@ -1066,15 +1066,14 @@ int VGSvcGstCtrlSessionHandler(PVBOXSERVICECTRLSESSION pSession, uint32_t uMsg, 
     {
         VGSvcVerbose(3, "Unsupported message (uMsg=%RU32, cParms=%RU32) from host, skipping\n", uMsg, pHostCtx->uNumParms);
 
-        /**
+        /*
          * !!! HACK ALERT BEGIN !!!
          * As peeking for the current message by VbglR3GuestCtrlMsgWaitFor() / GUEST_MSG_WAIT only gives us the message type and
          * the number of parameters, but *not* the actual context ID the message is bound to, try to retrieve it here.
          *
          * This is needed in order to reply to the host with the current context ID, without breaking existing clients.
-         * Not doing this isn't fatal, but will make host clients wait longer (timing out) for not implemented messages.
-         ** @todo Get rid of this as soon as we have a protocl bump (v4).
-         */
+         * Not doing this isn't fatal, but will make host clients wait longer (timing out) for not implemented messages. */
+        /** @todo Get rid of this as soon as we have a protocol bump (v4). */
         struct HGCMMsgSkip
         {
             VBGLIOCHGCMCALL hdr;
@@ -1085,7 +1084,7 @@ int VGSvcGstCtrlSessionHandler(PVBOXSERVICECTRLSESSION pSession, uint32_t uMsg, 
         HGCMMsgSkip Msg;
         VBGL_HGCM_HDR_INIT(&Msg.hdr, pHostCtx->uClientID, GUEST_MSG_WAIT, pHostCtx->uNumParms);
 
-        /* Don't want to drag in VbglHGCMParmUInt32Set(). */
+        /* Don't want to drag in VbglHGCMParmUInt32Set(). */ /** @todo r=bird: Why don't we?  It's an inline function, so little dragging.  */
         Msg.context.type      = VMMDevHGCMParmType_32bit;
         Msg.context.u.value64 = 0; /* init unused bits to 0 */
         Msg.context.u.value32 = 0;
@@ -1095,7 +1094,7 @@ int VGSvcGstCtrlSessionHandler(PVBOXSERVICECTRLSESSION pSession, uint32_t uMsg, 
         if (RT_SUCCESS(rc2))
             Msg.context.GetUInt32(&pHostCtx->uContextID);
 
-        /** !!!                !!!
+        /*  !!!                !!!
          *  !!! HACK ALERT END !!!
          *  !!!                !!! */
 
@@ -1316,9 +1315,8 @@ static RTEXITCODE vgsvcGstCtrlSessionSpawnWorker(PVBOXSERVICECTRLSESSION pSessio
     int rc = VbglR3GuestCtrlConnect(&uClientID);
     if (RT_SUCCESS(rc))
     {
-        /* Set session filter. This prevents the guest control
-         * host service to send messages which belong to another
-         * session we don't want to handle. */
+        /* Set session filter. This prevents the guest control host service from
+           sending messages which belong to another session we don't want to handle. */
         uint32_t uFilterAdd = VBOX_GUESTCTRL_FILTER_BY_SESSION(pSession->StartupInfo.uSessionID);
         rc = VbglR3GuestCtrlMsgFilterSet(uClientID,
                                          VBOX_GUESTCTRL_CONTEXTID_MAKE_SESSION(pSession->StartupInfo.uSessionID),
@@ -1337,6 +1335,15 @@ static RTEXITCODE vgsvcGstCtrlSessionSpawnWorker(PVBOXSERVICECTRLSESSION pSessio
         VGSvcVerbose(1, "Using client ID=%RU32\n", uClientID);
     }
     else
+/** @todo r=bird: This should return to caller, shouldn't it it?!?
+ * Because VbglR3GuestCtrlSessionNotify() below is now using an uninitialized
+ * uClientID, right?  If you check VbglR3GuestCtrlConnect, you can clearly see
+ * that it will not be set, except on success.  So, this is a terrible idea!
+ *
+ * Did this happen because of a weird desire to have a single return statement?
+ * Or was it some other confusion wrt program flow/state?  Indentation fright?
+ * Please figure out why and try not to do it again. :-)
+ */
         VGSvcError("Error connecting to guest control service, rc=%Rrc\n", rc);
 
     /* Report started status. */
@@ -1359,10 +1366,9 @@ static RTEXITCODE vgsvcGstCtrlSessionSpawnWorker(PVBOXSERVICECTRLSESSION pSessio
     uint32_t cbScratchBuf = _64K; /** @todo Make buffer size configurable via guest properties/argv! */
     AssertReturn(RT_IS_POWER_OF_TWO(cbScratchBuf), RTEXITCODE_FAILURE);
     uint8_t *pvScratchBuf = NULL;
-
     if (RT_SUCCESS(rc))
     {
-        pvScratchBuf = (uint8_t*)RTMemAlloc(cbScratchBuf);
+        pvScratchBuf = (uint8_t *)RTMemAlloc(cbScratchBuf);
         if (!pvScratchBuf)
             rc = VERR_NO_MEMORY;
     }
@@ -1378,29 +1384,21 @@ static RTEXITCODE vgsvcGstCtrlSessionSpawnWorker(PVBOXSERVICECTRLSESSION pSessio
             uint32_t uMsg = 0;
             uint32_t cParms = 0;
             rc = VbglR3GuestCtrlMsgWaitFor(uClientID, &uMsg, &cParms);
-            if (rc == VERR_TOO_MUCH_DATA)
+            if (   rc == VINF_SUCCESS
+                || rc == VERR_TOO_MUCH_DATA)
             {
-#ifdef DEBUG
-                VGSvcVerbose(4, "Message requires %RU32 parameters, but only 2 supplied -- retrying request (no error!)...\n",
-                             cParms);
-#endif
-                rc = VINF_SUCCESS; /* Try to get "real" message in next block below. */
+                VGSvcVerbose(4, "Msg=%RU32 (%RU32 parms) retrieved (%Rrc)\n", uMsg, cParms, rc);
+
+                /* Set number of parameters for current host context and pass it on to the
+                   session handler.
+                   Note! Only when handling HOST_SESSION_CLOSE is the rc used. */
+                ctxHost.uNumParms = cParms;
+                rc = VGSvcGstCtrlSessionHandler(pSession, uMsg, &ctxHost, pvScratchBuf, cbScratchBuf, &fShutdown);
+                if (fShutdown)
+                    break;
             }
             else if (RT_FAILURE(rc))
                 VGSvcVerbose(3, "Getting host message failed with %Rrc\n", rc); /* VERR_GEN_IO_FAILURE seems to be normal if ran into timeout. */
-            if (RT_SUCCESS(rc))
-            {
-                VGSvcVerbose(4, "Msg=%RU32 (%RU32 parms) retrieved\n", uMsg, cParms);
-
-                /* Set number of parameters for current host context. */
-                ctxHost.uNumParms = cParms;
-
-                /* ... and pass it on to the session handler. */
-                rc = VGSvcGstCtrlSessionHandler(pSession, uMsg, &ctxHost, pvScratchBuf, cbScratchBuf, &fShutdown);
-            }
-
-            if (fShutdown)
-                break;
 
             /* Let others run ... */
             RTThreadYield();
@@ -2208,8 +2206,6 @@ RTEXITCODE VGSvcGstCtrlSessionSpawnInit(int argc, char **argv)
         { "--verbose",         'v',                                   RTGETOPT_REQ_NOTHING }
     };
 
-    int ch;
-    RTGETOPTUNION ValueUnion;
     RTGETOPTSTATE GetState;
     RTGetOptInit(&GetState, argc, argv,
                  s_aOptions, RT_ELEMENTS(s_aOptions),
@@ -2221,6 +2217,8 @@ RTEXITCODE VGSvcGstCtrlSessionSpawnInit(int argc, char **argv)
     g_Session.StartupInfo.uProtocol  = UINT32_MAX;
     g_Session.StartupInfo.uSessionID = UINT32_MAX;
 
+    int ch;
+    RTGETOPTUNION ValueUnion;
     while ((ch = RTGetOpt(&GetState, &ValueUnion)) != 0)
     {
         /* For options that require an argument, ValueUnion has received the value. */
