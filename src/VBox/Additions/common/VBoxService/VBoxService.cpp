@@ -843,6 +843,10 @@ void VGSvcMainWait(void)
      *
      * The annoying EINTR/ERESTART loop is for the benefit of Solaris where
      * sigwait returns when we receive a SIGCHLD.  Kind of makes sense since
+     * the signal has to be delivered...  Anyway, darwin (10.9.5) has a much
+     * worse way of dealing with SIGCHLD, apparently it'll just return any
+     * of the signals we're waiting on when SIGCHLD becomes pending on this
+     * thread. So, we wait for SIGCHLD here and ignores it.
      */
     sigset_t signalMask;
     sigemptyset(&signalMask);
@@ -851,6 +855,7 @@ void VGSvcMainWait(void)
     sigaddset(&signalMask, SIGQUIT);
     sigaddset(&signalMask, SIGABRT);
     sigaddset(&signalMask, SIGTERM);
+    sigaddset(&signalMask, SIGCHLD);
     pthread_sigmask(SIG_BLOCK, &signalMask, NULL);
 
     int iSignal;
@@ -863,6 +868,7 @@ void VGSvcMainWait(void)
 # ifdef ERESTART
            || rc == ERESTART
 # endif
+           || iSignal == SIGCHLD
           );
 
     VGSvcVerbose(3, "VGSvcMainWait: Received signal %d (rc=%d)\n", iSignal, rc);
