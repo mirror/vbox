@@ -154,8 +154,12 @@
 # define VBGL_IOCTL_CODE_FAST(Function)             _IO('F', (Function))
 # define VBGL_IOCTL_CODE_STRIPPED(a_uIOCtl)         ((a_uIOCtl) & ~(_IOC(0,0,0,IOCPARM_MASK)))
 # define VBGL_IOCTL_IS_FAST(a_uIOCtl)               ( IOCGROUP(a_uIOCtl) == 'F' )
-#endif
+# if defined(RT_OS_DARWIN)
+#  define VBOXGUEST_DEVICE_NAME                     "/dev/vboxguest"
+#  define VBOXGUEST_USER_DEVICE_NAME                "/dev/vboxguestu"
+# endif
 
+#endif
 
 /** @todo It would be nice if we could have two defines without paths. */
 
