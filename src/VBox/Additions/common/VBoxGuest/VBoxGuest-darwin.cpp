@@ -45,8 +45,8 @@
 #include <iprt/assert.h>
 #include <iprt/initterm.h>
 #include <iprt/mem.h>
-#include <iprt/process.h>
 #include <iprt/power.h>
+#include <iprt/process.h>
 #include <iprt/semaphore.h>
 #include <iprt/spinlock.h>
 #include <iprt/string.h>
@@ -73,11 +73,18 @@
 /*********************************************************************************************************************************
 *   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
-
 /** The system device node name. */
 #define DEVICE_NAME_SYS     "vboxguest"
 /** The user device node name. */
 #define DEVICE_NAME_USR     "vboxguestu"
+
+
+/** @name For debugging/whatever, now permanent.
+ * @{  */
+#define VBOX_PROC_SELFNAME_LEN              31
+#define VBOX_RETRIEVE_CUR_PROC_NAME(a_Name) char a_Name[VBOX_PROC_SELFNAME_LEN + 1]; \
+                                            proc_selfname(a_Name, VBOX_PROC_SELFNAME_LEN)
+/** @} */
 
 
 /*********************************************************************************************************************************
@@ -121,13 +128,26 @@ private:
     bool isVmmDev(IOPCIDevice *pIOPCIDevice);
 
 protected:
+#ifdef USE_INTERRUPT_SOURCE
     IOWorkLoop                *m_pWorkLoop;
+#else
+    /** Non-NULL if interrupts are registered.  Probably same as getProvider(). */
+    IOService                 *m_pInterruptProvider;
+#endif
 
 public:
+    virtual bool init(OSDictionary *pDictionary = 0);
+    virtual void free(void);
+    virtual IOService *probe(IOService *pProvider, SInt32 *pi32Score);
     virtual bool start(IOService *pProvider);
     virtual void stop(IOService *pProvider);
     virtual bool terminate(IOOptionBits fOptions);
+#ifdef USE_INTERRUPT_SOURCE
     IOWorkLoop * getWorkLoop();
+#else
+    static void  vgdrvDarwinIrqHandler(OSObject *pTarget, void *pvRefCon, IOService *pNub, int iSrc);
+
+#endif
 };
 
 OSDefineMetaClassAndStructors(org_virtualbox_VBoxGuest, IOService);
@@ -145,6 +165,9 @@ class org_virtualbox_VBoxGuestClient : public IOUserClient
     OSDeclareDefaultStructors(org_virtualbox_VBoxGuestClient);
 
 private:
+    /** Guard against the parent class growing and us using outdated headers. */
+    uint8_t m_abSafetyPadding[256];
+
     PVBOXGUESTSESSION           m_pSession;     /**< The session. */
     task_t                      m_Task;         /**< The client task. */
     org_virtualbox_VBoxGuest   *m_pProvider;    /**< The service provider. */
@@ -154,6 +177,12 @@ public:
     virtual bool start(IOService *pProvider);
     static  void sessionClose(RTPROCESS Process);
     virtual IOReturn clientClose(void);
+    virtual IOReturn clientDied(void);
+    virtual bool terminate(IOOptionBits fOptions = 0);
+    virtual bool finalize(IOOptionBits fOptions);
+    virtual void stop(IOService *pProvider);
+
+    RTR0MEMEF_NEW_AND_DELETE_OPERATORS_IOKIT();
 };
 
 OSDefineMetaClassAndStructors(org_virtualbox_VBoxGuestClient, IOUserClient);
@@ -204,25 +233,26 @@ static struct cdevsw    g_DevCW =
 };
 
 /** Major device number. */
-static int                  g_iMajorDeviceNo    = -1;
+static int                  g_iMajorDeviceNo = -1;
 /** Registered devfs device handle. */
-static void                *g_hDevFsDeviceSys   = NULL;
+static void                *g_hDevFsDeviceSys = NULL;
 /** Registered devfs device handle for the user device. */
-static void                *g_hDevFsDeviceUsr   = NULL; /**< @todo 4 later */
+static void                *g_hDevFsDeviceUsr = NULL; /**< @todo 4 later */
 
 /** Spinlock protecting g_apSessionHashTab. */
-static RTSPINLOCK           g_Spinlock          = NIL_RTSPINLOCK;
+static RTSPINLOCK           g_Spinlock = NIL_RTSPINLOCK;
 /** Hash table */
 static PVBOXGUESTSESSION    g_apSessionHashTab[19];
 /** Calculates the index into g_apSessionHashTab.*/
 #define SESSION_HASH(pid)   ((pid) % RT_ELEMENTS(g_apSessionHashTab))
 /** The number of open sessions. */
-static int32_t volatile     g_cSessions         = 0;
-/** The number of IOService class instances. */
-static bool volatile        g_fInstantiated     = 0;
+static int32_t volatile     g_cSessions = 0;
+/** Makes sure there is only one org_virtualbox_VBoxGuest instance. */
+static bool volatile        g_fInstantiated = 0;
 /** The notifier handle for the sleep callback handler. */
-static IONotifier          *g_pSleepNotifier    = NULL;
+static IONotifier          *g_pSleepNotifier = NULL;
 
+#ifdef USE_INTERRUPT_SOURCE
 /* States of atimic variable aimed to protect dynamic object allocation in SMP environment. */
 #define VBOXGUEST_OBJECT_UNINITIALIZED  (0)
 #define VBOXGUEST_OBJECT_INITIALIZING   (1)
@@ -230,6 +260,7 @@ static IONotifier          *g_pSleepNotifier    = NULL;
 #define VBOXGUEST_OBJECT_INVALID        (3)
 /** Atomic variable used to protect work loop allocation when multiple threads attempt to obtain it. */
 static uint8_t volatile     g_fWorkLoopCreated  = VBOXGUEST_OBJECT_UNINITIALIZED;
+#endif
 
 
 /**
@@ -238,6 +269,18 @@ static uint8_t volatile     g_fWorkLoopCreated  = VBOXGUEST_OBJECT_UNINITIALIZED
 static kern_return_t    vgdrvDarwinStart(struct kmod_info *pKModInfo, void *pvData)
 {
     RT_NOREF(pKModInfo, pvData);
+#ifdef DEBUG
+    printf("vgdrvDarwinStart\n");
+#endif
+#if 0
+    gIOKitDebug |= 0x001 //kIOLogAttach
+                |  0x002 //kIOLogProbe
+                |  0x004 //kIOLogStart
+                |  0x008 //kIOLogRegister
+                |  0x010 //kIOLogMatch
+                |  0x020 //kIOLogConfig
+                ;
+#endif
 
     /*
      * Initialize IPRT.
@@ -249,8 +292,27 @@ static kern_return_t    vgdrvDarwinStart(struct kmod_info *pKModInfo, void *pvDa
         return KMOD_RETURN_SUCCESS;
     }
 
+    RTLogBackdoorPrintf("VBoxGuest: RTR0Init failed with rc=%Rrc\n", rc);
     printf("VBoxGuest: RTR0Init failed with rc=%d\n", rc);
     return KMOD_RETURN_FAILURE;
+}
+
+
+/**
+ * Stop the kernel module.
+ */
+static kern_return_t vgdrvDarwinStop(struct kmod_info *pKModInfo, void *pvData)
+{
+    RT_NOREF(pKModInfo, pvData);
+
+    /** @todo we need to check for VBoxSF clients? */
+
+    RTLogBackdoorPrintf("VBoxGuest: calling RTR0TermForced ...\n");
+    RTR0TermForced();
+
+    RTLogBackdoorPrintf("VBoxGuest: vgdrvDarwinStop returns.\n");
+    printf("VBoxGuest: driver unloaded\n");
+    return KMOD_RETURN_SUCCESS;
 }
 
 
@@ -268,17 +330,24 @@ static int vgdrvDarwinCharDevInit(void)
         g_iMajorDeviceNo = cdevsw_add(-1, &g_DevCW);
         if (g_iMajorDeviceNo >= 0)
         {
+            /** @todo limit /dev/vboxguest access. */
             g_hDevFsDeviceSys = devfs_make_node(makedev(g_iMajorDeviceNo, 0), DEVFS_CHAR,
                                                 UID_ROOT, GID_WHEEL, 0666, DEVICE_NAME_SYS);
             if (g_hDevFsDeviceSys != NULL)
             {
                 /*
-                 * Register a sleep/wakeup notification callback.
+                 * And a all-user device.
                  */
-                g_pSleepNotifier = registerPrioritySleepWakeInterest(&vgdrvDarwinSleepHandler, &g_DevExt, NULL);
-                if (g_pSleepNotifier != NULL)
+                g_hDevFsDeviceUsr = devfs_make_node(makedev(g_iMajorDeviceNo, 1), DEVFS_CHAR,
+                                                    UID_ROOT, GID_WHEEL, 0666, DEVICE_NAME_USR);
+                if (g_hDevFsDeviceUsr != NULL)
                 {
-                    return KMOD_RETURN_SUCCESS;
+                    /*
+                     * Register a sleep/wakeup notification callback.
+                     */
+                    g_pSleepNotifier = registerPrioritySleepWakeInterest(&vgdrvDarwinSleepHandler, &g_DevExt, NULL);
+                    if (g_pSleepNotifier != NULL)
+                        return KMOD_RETURN_SUCCESS;
                 }
             }
         }
@@ -289,23 +358,10 @@ static int vgdrvDarwinCharDevInit(void)
 
 
 /**
- * Stop the kernel module.
+ * Unregister VBoxGuest char devices and associated session spinlock.
  */
-static kern_return_t vgdrvDarwinStop(struct kmod_info *pKModInfo, void *pvData)
-{
-    RT_NOREF(pKModInfo, pvData);
-    RTR0TermForced();
-
-    printf("VBoxGuest: driver unloaded\n");
-    return KMOD_RETURN_SUCCESS;
-}
-
-
-/* Unregister VBoxGuest char device */
 static int vgdrvDarwinCharDevRemove(void)
 {
-    int rc = KMOD_RETURN_SUCCESS;
-
     if (g_pSleepNotifier)
     {
         g_pSleepNotifier->remove();
@@ -337,7 +393,7 @@ static int vgdrvDarwinCharDevRemove(void)
         g_Spinlock = NIL_RTSPINLOCK;
     }
 
-    return rc;
+    return KMOD_RETURN_SUCCESS;
 }
 
 
@@ -360,17 +416,23 @@ static int vgdrvDarwinOpen(dev_t Dev, int fFlags, int fDevType, struct proc *pPr
         return EACCES;
 
     /*
+     * The process issuing the request must be the current process.
+     */
+    RTPROCESS Process = RTProcSelf();
+    if ((int)Process != proc_pid(pProcess))
+        return EIO;
+
+    /*
      * Find the session created by org_virtualbox_VBoxGuestClient, fail
      * if no such session, and mark it as opened. We set the uid & gid
      * here too, since that is more straight forward at this point.
      */
-    //const bool          fUnrestricted = minor(Dev) == 0;
+    const bool          fUnrestricted = minor(Dev) == 0;
     int                 rc = VINF_SUCCESS;
     PVBOXGUESTSESSION   pSession = NULL;
     kauth_cred_t        pCred = kauth_cred_proc_ref(pProcess);
     if (pCred)
     {
-        RTPROCESS       Process = RTProcSelf();
         unsigned        iHash = SESSION_HASH(Process);
         RTSpinlockAcquire(g_Spinlock);
 
@@ -382,7 +444,7 @@ static int vgdrvDarwinOpen(dev_t Dev, int fFlags, int fDevType, struct proc *pPr
             if (!pSession->fOpened)
             {
                 pSession->fOpened = true;
-                /*pSession->fUnrestricted = fUnrestricted; - later */
+                pSession->fUserSession = !fUnrestricted;
             }
             else
                 rc = VERR_ALREADY_LOADED;
@@ -430,14 +492,14 @@ static int vgdrvDarwinClose(dev_t Dev, int fFlags, int fDevType, struct proc *pP
  * @returns Darwin for slow IOCtls and VBox status code for the fast ones.
  * @param   Dev         The device number (major+minor).
  * @param   iCmd        The IOCtl command.
- * @param   pData     Pointer to the request data.
+ * @param   pData       Pointer to the request data.
  * @param   fFlags      Flag saying we're a character device (like we didn't know already).
  * @param   pProcess    The process issuing this request.
  */
 static int vgdrvDarwinIOCtl(dev_t Dev, u_long iCmd, caddr_t pData, int fFlags, struct proc *pProcess)
 {
     RT_NOREF(Dev, fFlags);
-    //const bool          fUnrestricted = minor(Dev) == 0;
+    const bool          fUnrestricted = minor(Dev) == 0;
     const RTPROCESS     Process = proc_pid(pProcess);
     const unsigned      iHash = SESSION_HASH(Process);
     PVBOXGUESTSESSION   pSession;
@@ -447,22 +509,31 @@ static int vgdrvDarwinIOCtl(dev_t Dev, u_long iCmd, caddr_t pData, int fFlags, s
      */
     RTSpinlockAcquire(g_Spinlock);
     pSession = g_apSessionHashTab[iHash];
-    while (pSession && pSession->Process != Process && (/*later: pSession->fUnrestricted != fUnrestricted ||*/  !pSession->fOpened))
+    while (pSession && (pSession->Process != Process || pSession->fUserSession == fUnrestricted || !pSession->fOpened))
         pSession = pSession->pNextHash;
+
+    //if (RT_LIKELY(pSession))
+    //    supdrvSessionRetain(pSession);
+
     RTSpinlockRelease(g_Spinlock);
     if (!pSession)
     {
-        Log(("VBoxDrvDarwinIOCtl: WHAT?!? pSession == NULL! This must be a mistake... pid=%d iCmd=%#lx\n", (int)Process, iCmd));
+        Log(("VBoxDrvDarwinIOCtl: WHAT?!? pSession == NULL! This must be a mistake... pid=%d iCmd=%#lx\n",
+             (int)Process, iCmd));
         return EINVAL;
     }
 
     /*
      * Deal with the high-speed IOCtl.
      */
+    int rc;
     if (VBGL_IOCTL_IS_FAST(iCmd))
-        return VGDrvCommonIoCtlFast(iCmd, &g_DevExt, pSession);
+        rc = VGDrvCommonIoCtlFast(iCmd, &g_DevExt, pSession);
+    else
+        rc = vgdrvDarwinIOCtlSlow(pSession, iCmd, pData, pProcess);
 
-    return vgdrvDarwinIOCtlSlow(pSession, iCmd, pData, pProcess);
+    //supdrvSessionRelease(pSession);
+    return rc;
 }
 
 
@@ -678,6 +749,8 @@ bool VGDrvNativeProcessOption(PVBOXGUESTDEVEXT pDevExt, const char *pszName, con
 
 /**
  * Callback for blah blah blah.
+ *
+ * @todo move to IPRT.
  */
 static IOReturn vgdrvDarwinSleepHandler(void *pvTarget, void *pvRefCon, UInt32 uMessageType,
                                         IOService *pProvider, void *pvMsgArg, vm_size_t cbMsgArg)
@@ -726,8 +799,235 @@ static int vgdrvDarwinErr2DarwinErr(int rc)
  *
  * org_virtualbox_VBoxGuest
  *
+ * - IOService diff resync -
+ * - IOService diff resync -
+ * - IOService diff resync -
+ *
  */
 
+
+/**
+ * Initialize the object.
+ */
+bool org_virtualbox_VBoxGuest::init(OSDictionary *pDictionary)
+{
+    LogFlow(("IOService::init([%p], %p)\n", this, pDictionary));
+    if (IOService::init(pDictionary))
+    {
+        /* init members. */
+        return true;
+    }
+    return false;
+}
+
+
+/**
+ * Free the object.
+ */
+void org_virtualbox_VBoxGuest::free(void)
+{
+    RTLogBackdoorPrintf("IOService::free([%p])\n", this); /* might got sideways if we use LogFlow() here. weird. */
+    IOService::free();
+}
+
+
+/**
+ * Check if it's ok to start this service.
+ * It's always ok by us, so it's up to IOService to decide really.
+ */
+IOService *org_virtualbox_VBoxGuest::probe(IOService *pProvider, SInt32 *pi32Score)
+{
+    LogFlow(("IOService::probe([%p])\n", this));
+    IOService *pRet = IOService::probe(pProvider, pi32Score);
+    LogFlow(("IOService::probe([%p]) returns %p *pi32Score=%d\n", this, pRet, pi32Score ? *pi32Score : -1));
+    return pRet;
+}
+
+
+/**
+ * Start this service.
+ */
+bool org_virtualbox_VBoxGuest::start(IOService *pProvider)
+{
+    LogFlow(("IOService::start([%p])\n", this));
+
+    /*
+     * Low level initialization / device initialization should be performed only once.
+     */
+    if (ASMAtomicCmpXchgBool(&g_fInstantiated, true, false))
+    {
+        /*
+         * Make sure it's a PCI device.
+         */
+        m_pIOPCIDevice = OSDynamicCast(IOPCIDevice, pProvider);
+        if (m_pIOPCIDevice)
+        {
+            /*
+             * Call parent.
+             */
+            if (IOService::start(pProvider))
+            {
+                /*
+                 * Is it the VMM device?
+                 */
+                if (isVmmDev(m_pIOPCIDevice))
+                {
+                    /*
+                     * Enable I/O port and memory regions on the device.
+                     */
+                    m_pIOPCIDevice->setMemoryEnable(true);
+                    m_pIOPCIDevice->setIOEnable(true);
+
+                    /*
+                     * Region #0: I/O ports. Mandatory.
+                     */
+                    IOMemoryDescriptor *pMem = m_pIOPCIDevice->getDeviceMemoryWithIndex(0);
+                    if (pMem)
+                    {
+                        IOPhysicalAddress IOPortBasePhys = pMem->getPhysicalAddress();
+                        if ((IOPortBasePhys >> 16) == 0)
+                        {
+                            RTIOPORT IOPortBase = (RTIOPORT)IOPortBasePhys;
+                            void    *pvMMIOBase = NULL;
+                            uint32_t cbMMIO     = 0;
+
+                            /*
+                             * Region #1: Shared Memory.  Technically optional.
+                             */
+                            m_pMap = m_pIOPCIDevice->mapDeviceMemoryWithIndex(1);
+                            if (m_pMap)
+                            {
+                                pvMMIOBase = (void *)m_pMap->getVirtualAddress();
+                                cbMMIO     = m_pMap->getLength();
+                            }
+
+                            /*
+                             * Initialize the device extension.
+                             */
+                            int rc = VGDrvCommonInitDevExt(&g_DevExt, IOPortBase, pvMMIOBase, cbMMIO,
+                                                           ARCH_BITS == 64 ? VBOXOSTYPE_MacOS_x64 : VBOXOSTYPE_MacOS, 0);
+                            if (RT_SUCCESS(rc))
+                            {
+                                /*
+                                 * Register the device nodes and enable interrupts.
+                                 */
+                                rc = vgdrvDarwinCharDevInit();
+                                if (rc == KMOD_RETURN_SUCCESS)
+                                {
+                                    if (setupVmmDevInterrupts(pProvider))
+                                    {
+                                        /*
+                                         * Read host configuration.
+                                         */
+                                        VGDrvCommonProcessOptionsFromHost(&g_DevExt);
+
+                                        /*
+                                         * Just register the service and we're done!
+                                         */
+                                        registerService();
+
+                                        LogRel(("VBoxGuest: IOService started\n"));
+                                        return true;
+                                    }
+
+                                    LogRel(("VBoxGuest: Failed to set up interrupts\n"));
+                                    vgdrvDarwinCharDevRemove();
+                                }
+                                else
+                                    LogRel(("VBoxGuest: Failed to initialize character devices (rc=%#x).\n", rc));
+
+                                VGDrvCommonDeleteDevExt(&g_DevExt);
+                            }
+                            else
+                                LogRel(("VBoxGuest: Failed to initialize common code (rc=%Rrc).\n", rc));
+
+                            if (m_pMap)
+                            {
+                                m_pMap->release();
+                                m_pMap = NULL;
+                            }
+                        }
+                        else
+                            LogRel(("VBoxGuest: Bad I/O port address: %#RX64\n", (uint64_t)IOPortBasePhys));
+                    }
+                    else
+                        LogRel(("VBoxGuest: The device missing is the I/O port range (#0).\n"));
+                }
+                else
+                    LogRel(("VBoxGuest: Not the VMMDev (%#x:%#x).\n",
+                           m_pIOPCIDevice->configRead16(kIOPCIConfigVendorID), m_pIOPCIDevice->configRead16(kIOPCIConfigDeviceID)));
+
+                IOService::stop(pProvider);
+            }
+        }
+        else
+            LogRel(("VBoxGuest: Provider is not an instance of IOPCIDevice.\n"));
+
+        ASMAtomicXchgBool(&g_fInstantiated, false);
+    }
+    return false;
+}
+
+
+/**
+ * Stop this service.
+ */
+void org_virtualbox_VBoxGuest::stop(IOService *pProvider)
+{
+#ifdef LOG_ENABLED
+    RTLogBackdoorPrintf("org_virtualbox_VBoxGuest::stop([%p], %p)\n", this, pProvider); /* Being cautious here, no Log(). */
+#endif
+    AssertReturnVoid(ASMAtomicReadBool(&g_fInstantiated));
+
+    /* Low level termination should be performed only once */
+    if (!disableVmmDevInterrupts())
+        printf("VBoxGuest: unable to unregister interrupt handler\n");
+
+    vgdrvDarwinCharDevRemove();
+    VGDrvCommonDeleteDevExt(&g_DevExt);
+
+    if (m_pMap)
+    {
+        m_pMap->release();
+        m_pMap = NULL;
+    }
+
+    IOService::stop(pProvider);
+
+    ASMAtomicWriteBool(&g_fInstantiated, false);
+
+    printf("VBoxGuest: IOService stopped\n");
+    RTLogBackdoorPrintf("org_virtualbox_VBoxGuest::stop: returning\n"); /* Being cautious here, no Log(). */
+}
+
+
+/**
+ * Termination request.
+ *
+ * @return  true if we're ok with shutting down now, false if we're not.
+ * @param   fOptions        Flags.
+ */
+bool org_virtualbox_VBoxGuest::terminate(IOOptionBits fOptions)
+{
+#ifdef LOG_ENABLED
+    RTLogBackdoorPrintf("org_virtualbox_VBoxGuest::terminate: reference_count=%d g_cSessions=%d (fOptions=%#x)\n",
+                        KMOD_INFO_NAME.reference_count, ASMAtomicUoReadS32(&g_cSessions), fOptions); /* Being cautious here, no Log(). */
+#endif
+
+    bool fRc;
+    if (   KMOD_INFO_NAME.reference_count != 0
+        || ASMAtomicUoReadS32(&g_cSessions))
+        fRc = false;
+    else
+        fRc = IOService::terminate(fOptions);
+
+#ifdef LOG_ENABLED
+    RTLogBackdoorPrintf("org_virtualbox_SupDrv::terminate: returns %d\n", fRc); /* Being cautious here, no Log(). */
+#endif
+    return fRc;
+}
+
+#ifdef USE_INTERRUPT_SOURCE
 
 /**
  * Lazy initialization of the m_pWorkLoop member.
@@ -849,188 +1149,125 @@ bool org_virtualbox_VBoxGuest::disableVmmDevInterrupts(void)
     return true;
 }
 
+#else  /* !USE_INTERRUPT_SOURCE */
 
-bool org_virtualbox_VBoxGuest::isVmmDev(IOPCIDevice *pIOPCIDevice)
+/**
+ * Implementes a IOInterruptHandler, called by provider when an interrupt occurs.
+ */
+/*static*/ void org_virtualbox_VBoxGuest::vgdrvDarwinIrqHandler(OSObject *pTarget, void *pvRefCon, IOService *pNub, int iSrc)
 {
-    UInt16 uVendorId, uDeviceId;
+    RTLogBackdoorPrintf("vgdrvDarwinIrqHandler: %p %p %p %d\n", pTarget, pvRefCon, pNub, iSrc);
+    RT_NOREF(pvRefCon, pNub, iSrc);
 
-    if (!pIOPCIDevice)
-        return false;
-
-    uVendorId = m_pIOPCIDevice->configRead16(kIOPCIConfigVendorID);
-    uDeviceId = m_pIOPCIDevice->configRead16(kIOPCIConfigDeviceID);
-
-    if (uVendorId == VMMDEV_VENDORID && uDeviceId == VMMDEV_DEVICEID)
-        return true;
-
-    return true;
+    bool fTaken = VGDrvCommonISR(&g_DevExt);
+    if (fTaken)
+    {
+        RTLogBackdoorPrintf("VBoxGuest: our interrupt!\n");
+# ifdef VBOXGUEST_USE_DEFERRED_WAKE_UP /* Turns out this isn't needed.  Will ditch it later. */
+        /*
+         * This is essentially what IOFilterInterruptEventSource does, only it
+         * disables after the filter returns true and re-enables again after
+         * the workloop job has called the handler.
+         */
+        org_virtualbox_VBoxGuest *pThis = (org_virtualbox_VBoxGuest *)pTarget;
+	if (pThis)
+        {
+            IOService *pProvider = pThis->m_pInterruptProvider;
+	    if (pProvider)
+            {
+                pProvider->disableInterrupt(0);
+                VGDrvCommonWaitDoWakeUps(&g_DevExt); /* Could we perhaps do theses elsewhere? */
+                pProvider->enableInterrupt(0);
+                return;
+	    }
+	}
+        VGDrvCommonWaitDoWakeUps(&g_DevExt);
+# endif
+    }
 }
 
 
 /**
- * Start this service.
+ * Sets up and enables interrupts on the device.
+ *
+ * Interrupts are handled directly, no messing around with workloops.  The
+ * rational here is is that the main job of our interrupt handler is waking up
+ * other threads currently sitting in HGCM calls, i.e. little more effort than
+ * waking up the workloop thread.
+ *
+ * @returns success indicator.  Failures are fully logged.
  */
-bool org_virtualbox_VBoxGuest::start(IOService *pProvider)
+bool org_virtualbox_VBoxGuest::setupVmmDevInterrupts(IOService *pProvider)
 {
-    /*
-     * Low level initialization / device initialization should be performed only once.
-     */
-    if (!ASMAtomicCmpXchgBool(&g_fInstantiated, true, false))
-        return false;
+    AssertReturn(pProvider, false);
 
-    if (!IOService::start(pProvider))
-        return false;
-
-    m_pIOPCIDevice = OSDynamicCast(IOPCIDevice, pProvider);
-    if (m_pIOPCIDevice)
+    if (m_pInterruptProvider != pProvider)
     {
-        if (isVmmDev(m_pIOPCIDevice))
-        {
-            /* Enable memory response from VMM device */
-            m_pIOPCIDevice->setMemoryEnable(true);
-            m_pIOPCIDevice->setIOEnable(true);
+	pProvider->retain();
+	if (m_pInterruptProvider)
+            m_pInterruptProvider->release();
+        m_pInterruptProvider = pProvider;
+    }
 
-            IOMemoryDescriptor *pMem = m_pIOPCIDevice->getDeviceMemoryWithIndex(0);
-            if (pMem)
-            {
-                IOPhysicalAddress IOPortBasePhys = pMem->getPhysicalAddress();
-                /* Check that returned value is from I/O port range (at least it is 16-bit lenght) */
-                if((IOPortBasePhys >> 16) == 0)
-                {
+    IOReturn rc = pProvider->registerInterrupt(0 /*intIndex*/, this, vgdrvDarwinIrqHandler, this);
+    if (rc == kIOReturnSuccess)
+    {
+        rc = pProvider->enableInterrupt(0 /*intIndex*/);
+        if (rc == kIOReturnSuccess)
+            return true;
 
-                    RTIOPORT IOPortBase = (RTIOPORT)IOPortBasePhys;
-                    void    *pvMMIOBase = NULL;
-                    uint32_t cbMMIO     = 0;
-                    m_pMap = m_pIOPCIDevice->mapDeviceMemoryWithIndex(1);
-                    if (m_pMap)
-                    {
-                        pvMMIOBase = (void *)m_pMap->getVirtualAddress();
-                        cbMMIO     = m_pMap->getLength();
-                    }
-
-                    int rc = VGDrvCommonInitDevExt(&g_DevExt,
-                                                   IOPortBase,
-                                                   pvMMIOBase,
-                                                   cbMMIO,
-#if ARCH_BITS == 64
-                                                   VBOXOSTYPE_MacOS_x64,
-#else
-                                                   VBOXOSTYPE_MacOS,
-#endif
-                                                   0);
-                    if (RT_SUCCESS(rc))
-                    {
-                        rc = vgdrvDarwinCharDevInit();
-                        if (rc == KMOD_RETURN_SUCCESS)
-                        {
-                            if (setupVmmDevInterrupts(pProvider))
-                            {
-                                /*
-                                 * Read host configuration.
-                                 */
-                                VGDrvCommonProcessOptionsFromHost(&g_DevExt);
-
-                                /*
-                                 * Register the service.
-                                 */
-                                registerService();
-                                LogRel(("VBoxGuest: IOService started\n"));
-                                return true;
-                            }
-
-                            LogRel(("VBoxGuest: Failed to set up interrupts\n"));
-                            vgdrvDarwinCharDevRemove();
-                        }
-                        else
-                            LogRel(("VBoxGuest: Failed to initialize character device (rc=%d).\n", rc));
-
-                        VGDrvCommonDeleteDevExt(&g_DevExt);
-                    }
-                    else
-                        LogRel(("VBoxGuest: Failed to initialize common code (rc=%d).\n", rc));
-
-                    if (m_pMap)
-                    {
-                        m_pMap->release();
-                        m_pMap = NULL;
-                    }
-                }
-            }
-            else
-                LogRel(("VBoxGuest: The device missing is the I/O port range (#0).\n"));
-        }
-        else
-            LogRel(("VBoxGuest: Not the VMMDev (%#x:%#x).\n",
-                   m_pIOPCIDevice->configRead16(kIOPCIConfigVendorID), m_pIOPCIDevice->configRead16(kIOPCIConfigDeviceID)));
+        LogRel(("VBoxGuest: Failed to enable interrupt: %#x\n", rc));
+        m_pInterruptProvider->unregisterInterrupt(0 /*intIndex*/);
     }
     else
-        LogRel(("VBoxGuest: Provider is not an instance of IOPCIDevice.\n"));
-
-    ASMAtomicXchgBool(&g_fInstantiated, false);
-    IOService::stop(pProvider);
+        LogRel(("VBoxGuest: Failed to register interrupt: %#x\n", rc));
     return false;
 }
 
 
 /**
- * Stop this service.
+ * Counterpart to setupVmmDevInterrupts().
  */
-void org_virtualbox_VBoxGuest::stop(IOService *pProvider)
+bool org_virtualbox_VBoxGuest::disableVmmDevInterrupts(void)
 {
-    /* Do not use Log*() here (in IOService instance) because its instance
-     * already terminated in BSD's module unload callback! */
-    Log(("org_virtualbox_VBoxGuest::stop([%p], %p)\n", this, pProvider));
-
-    AssertReturnVoid(ASMAtomicReadBool(&g_fInstantiated));
-
-    /* Low level termination should be performed only once */
-    if (!disableVmmDevInterrupts())
-        printf("VBoxGuest: unable to unregister interrupt handler\n");
-
-    vgdrvDarwinCharDevRemove();
-    VGDrvCommonDeleteDevExt(&g_DevExt);
-
-    if (m_pMap)
+    if (m_pInterruptProvider)
     {
-        m_pMap->release();
-        m_pMap = NULL;
+        IOReturn rc = m_pInterruptProvider->disableInterrupt(0 /*intIndex*/);
+        AssertMsg(rc == kIOReturnSuccess, ("%#x\n", rc));
+        rc = m_pInterruptProvider->unregisterInterrupt(0 /*intIndex*/);
+        AssertMsg(rc == kIOReturnSuccess, ("%#x\n", rc));
+        RT_NOREF_PV(rc);
+
+        m_pInterruptProvider->release();
+        m_pInterruptProvider = NULL;
     }
 
-    IOService::stop(pProvider);
-
-    ASMAtomicWriteBool(&g_fInstantiated, false);
-
-    printf("VBoxGuest: IOService stopped\n");
+    return true;
 }
 
+#endif /* !USE_INTERRUPT_SOURCE */
 
 /**
- * Termination request.
+ * Checks if it's the VMM device.
  *
- * @return  true if we're ok with shutting down now, false if we're not.
- * @param   fOptions        Flags.
+ * @returns true if it is, false if it isn't.
+ * @param   pIOPCIDevice    The PCI device we think might be the VMM device.
  */
-bool org_virtualbox_VBoxGuest::terminate(IOOptionBits fOptions)
+bool org_virtualbox_VBoxGuest::isVmmDev(IOPCIDevice *pIOPCIDevice)
 {
-    /* Do not use Log*() here (in IOService instance) because its instance
-     * already terminated in BSD's module unload callback! */
-#ifdef LOG_ENABLED
-    printf("org_virtualbox_VBoxGuest::terminate: reference_count=%d g_cSessions=%d (fOptions=%#x)\n",
-           KMOD_INFO_NAME.reference_count, ASMAtomicUoReadS32(&g_cSessions), fOptions);
-#endif
-
-    bool fRc;
-    if (    KMOD_INFO_NAME.reference_count != 0
-        ||  ASMAtomicUoReadS32(&g_cSessions))
-        fRc = false;
-    else
-        fRc = IOService::terminate(fOptions);
-
-#ifdef LOG_ENABLED
-    printf("org_virtualbox_SupDrv::terminate: returns %d\n", fRc);
-#endif
-    return fRc;
+    if (pIOPCIDevice)
+    {
+        uint16_t idVendor = m_pIOPCIDevice->configRead16(kIOPCIConfigVendorID);
+        if (idVendor == VMMDEV_VENDORID)
+        {
+            uint16_t idDevice = m_pIOPCIDevice->configRead16(kIOPCIConfigDeviceID);
+            if (idDevice == VMMDEV_DEVICEID)
+                return true;
+        }
+    }
+    return false;
 }
+
 
 
 /*
@@ -1054,7 +1291,8 @@ bool org_virtualbox_VBoxGuestClient::initWithTask(task_t OwningTask, void *pvSec
 
     if (u32Type != VBOXGUEST_DARWIN_IOSERVICE_COOKIE)
     {
-        Log(("org_virtualbox_VBoxGuestClient::initWithTask: Bad cookie %#x\n", u32Type));
+        VBOX_RETRIEVE_CUR_PROC_NAME(szProcName);
+        LogRelMax(10, ("org_virtualbox_VBoxGuestClient::initWithTask: Bad cookie %#x (%s)\n", u32Type, szProcName));
         return false;
     }
 
@@ -1100,7 +1338,7 @@ bool org_virtualbox_VBoxGuestClient::start(IOService *pProvider)
             if (RT_SUCCESS(rc))
             {
                 m_pSession->fOpened = false;
-                /* The fUnrestricted field is set on open. */
+                /* The Uid, Gid and fUnrestricted fields are set on open. */
 
                 /*
                  * Insert it into the hash table, checking that there isn't
@@ -1110,11 +1348,8 @@ bool org_virtualbox_VBoxGuestClient::start(IOService *pProvider)
                 RTSpinlockAcquire(g_Spinlock);
 
                 PVBOXGUESTSESSION pCur = g_apSessionHashTab[iHash];
-                if (pCur && pCur->Process != m_pSession->Process)
-                {
-                    do pCur = pCur->pNextHash;
-                    while (pCur && pCur->Process != m_pSession->Process);
-                }
+                while (pCur && pCur->Process != m_pSession->Process)
+                    pCur = pCur->pNextHash;
                 if (!pCur)
                 {
                     m_pSession->pNextHash = g_apSessionHashTab[iHash];
@@ -1134,7 +1369,7 @@ bool org_virtualbox_VBoxGuestClient::start(IOService *pProvider)
                 }
 
                 LogFlow(("org_virtualbox_VBoxGuestClient::start: already got a session for this process (%p)\n", pCur));
-                VGDrvCommonCloseSession(&g_DevExt, m_pSession);
+                VGDrvCommonCloseSession(&g_DevExt, m_pSession);  //supdrvSessionRelease(m_pSession);
             }
 
             m_pSession = NULL;
@@ -1210,7 +1445,7 @@ bool org_virtualbox_VBoxGuestClient::start(IOService *pProvider)
     /*
      * Close the session.
      */
-    VGDrvCommonCloseSession(&g_DevExt, pSession);
+    VGDrvCommonCloseSession(&g_DevExt, pSession); // supdrvSessionRelease(m_pSession);
 }
 
 
@@ -1238,5 +1473,47 @@ IOReturn org_virtualbox_VBoxGuestClient::clientClose(void)
     terminate();
 
     return kIOReturnSuccess;
+}
+
+
+/**
+ * The client exits abnormally / forgets to do cleanups. (logging)
+ */
+IOReturn org_virtualbox_VBoxGuestClient::clientDied(void)
+{
+    LogFlow(("IOService::clientDied([%p]) m_Task=%p R0Process=%p Process=%d\n", this, m_Task, RTR0ProcHandleSelf(), RTProcSelf()));
+
+    /* IOUserClient::clientDied() calls clientClose, so we'll just do the work there. */
+    return IOUserClient::clientDied();
+}
+
+
+/**
+ * Terminate the service (initiate the destruction). (logging)
+ */
+bool org_virtualbox_VBoxGuestClient::terminate(IOOptionBits fOptions)
+{
+    LogFlow(("IOService::terminate([%p], %#x)\n", this, fOptions));
+    return IOUserClient::terminate(fOptions);
+}
+
+
+/**
+ * The final stage of the client service destruction. (logging)
+ */
+bool org_virtualbox_VBoxGuestClient::finalize(IOOptionBits fOptions)
+{
+    LogFlow(("IOService::finalize([%p], %#x)\n", this, fOptions));
+    return IOUserClient::finalize(fOptions);
+}
+
+
+/**
+ * Stop the client service. (logging)
+ */
+void org_virtualbox_VBoxGuestClient::stop(IOService *pProvider)
+{
+    LogFlow(("IOService::stop([%p])\n", this));
+    IOUserClient::stop(pProvider);
 }
 

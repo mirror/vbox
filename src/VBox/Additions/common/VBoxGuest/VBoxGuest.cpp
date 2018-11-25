@@ -4481,7 +4481,7 @@ bool VGDrvCommonISR(PVBOXGUESTDEVEXT pDevExt)
         pDevExt->pfnMouseNotifyCallback(pDevExt->pvMouseNotifyCallbackArg);
 #endif
 
-#if defined(VBOXGUEST_USE_DEFERRED_WAKE_UP) && !defined(RT_OS_DARWIN) && !defined(RT_OS_WINDOWS)
+#if defined(VBOXGUEST_USE_DEFERRED_WAKE_UP) && !defined(RT_OS_WINDOWS)
     /*
      * Do wake-ups.
      * Note. On Windows this isn't possible at this IRQL, so a DPC will take

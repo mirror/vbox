@@ -24,7 +24,8 @@
             <key>IOUserClientClass</key>        <string>org_virtualbox_VBoxGuestClient</string>
             <key>IOKitDebug</key>               <integer>65535</integer>
             <key>IOProviderClass</key>          <string>IOPCIDevice</string>
-            <key>IONameMatch</key>              <string>pci80ee,cafe</string>
+            <key>IOPCIPrimaryMatch</key>        <string>0xcafe80ee</string>
+            <!-- <key>IONameMatch</key>              <string>pci80ee,cafe</string> -->
         </dict>
     </dict>
     <key>OSBundleLibraries</key>

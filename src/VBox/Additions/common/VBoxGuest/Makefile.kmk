@@ -180,10 +180,11 @@ ifeq ($(KBUILD_TARGET), darwin)
  # Files necessary to make a darwin kernel extension bundle.
  INSTALLS += VBoxGuest.kext
  VBoxGuest.kext_INST     = $(INST_ADDITIONS)/VBoxGuest.kext/Contents/
- VBoxGuest.kext_SOURCES  = $(VBoxGuest.kext_0_OUTDIR)/Info.plist
- VBoxGuest.kext_CLEAN    = $(VBoxGuest.kext_0_OUTDIR)/Info.plist
+ VBoxGuest.kext_SOURCES  = $(VBoxGuest.kext_0_OUTDIR)/Contents/Info.plist
+ VBoxGuest.kext_CLEAN    = $(VBoxGuest.kext_0_OUTDIR)/Contents/Info.plist
+ VBoxGuest.kext_BLDDIRS  = $(VBoxGuest.kext_0_OUTDIR)/Contents/
 
-$$(VBoxGuest.kext_0_OUTDIR)/Info.plist: \
+$$(VBoxGuest.kext_0_OUTDIR)/Contents/Info.plist: \
 		$(PATH_SUB_CURRENT)/darwin/Info.plist \
 		$(VBOX_VERSION_MK) | $$(dir $$@)
 	$(call MSG_GENERATE,VBoxGuest,$@,$<)
@@ -198,6 +199,8 @@ $$(VBoxGuest.kext_0_OUTDIR)/Info.plist: \
 		-e 's/@VBOX_C_YEAR@/$(VBOX_C_YEAR)/g' \
 		--output $@ \
 		$<
+
+$(evalcall2 VBOX_TEST_SIGN_KEXT,VBoxGuest)
 endif # darwin
 
 
