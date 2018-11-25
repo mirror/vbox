@@ -1172,16 +1172,13 @@ static DECLCALLBACK(int) vgsvcGstCtrlSessionThread(RTTHREAD hThreadSelf, void *p
     for (;;)
     {
         rcWait = RTProcWaitNoResume(pThread->hProcess, RTPROCWAIT_FLAGS_NOBLOCK, &ProcessStatus);
-        if (RT_UNLIKELY(rcWait == VERR_INTERRUPTED))
-            continue;
-
         if (   rcWait == VINF_SUCCESS
             || rcWait == VERR_PROCESS_NOT_FOUND)
         {
             fProcessAlive = false;
             break;
         }
-        AssertMsgBreak(rcWait == VERR_PROCESS_RUNNING,
+        AssertMsgBreak(rcWait == VERR_PROCESS_RUNNING || rcWait == VERR_INTERRUPTED,
                        ("Got unexpected rc=%Rrc while waiting for session process termination\n", rcWait));
 
         if (ASMAtomicReadBool(&pThread->fShutdown))
