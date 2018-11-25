@@ -198,7 +198,15 @@ RTDECL(int)  RTSemEventMultiSignal(RTSEMEVENTMULTI hEventMultiSem)
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertMsgReturn(pThis->u32Magic == RTSEMEVENTMULTI_MAGIC, ("pThis=%p u32Magic=%#x\n", pThis, pThis->u32Magic), VERR_INVALID_HANDLE);
     RT_ASSERT_PREEMPT_CPUID_VAR();
-    RT_ASSERT_INTS_ON();
+
+    /*
+     * Coming here with interrupts disabled should be okay.  The thread_wakeup_prim KPI is used
+     * by the interrupt handler IOFilterInterruptEventSource::disableInterruptOccurred() via
+     * signalWorkAvailable().  The only problem is if we have to destroy the event structure,
+     * as RTMemFree does not work with interrupts disabled (IOFree/kfree takes zone mutex).
+     */
+    //RT_ASSERT_INTS_ON(); - we may be called from interrupt context, which seems to be perfectly fine.
+
     IPRT_DARWIN_SAVE_EFL_AC();
 
     rtR0SemEventMultiDarwinRetain(pThis);
@@ -225,6 +233,7 @@ RTDECL(int)  RTSemEventMultiSignal(RTSEMEVENTMULTI hEventMultiSem)
     rtR0SemEventMultiDarwinRelease(pThis);
 
     RT_ASSERT_PREEMPT_CPUID();
+    AssertMsg((fSavedEfl & X86_EFL_IF) == (ASMGetFlags() & X86_EFL_IF), ("fSavedEfl=%#x cur=%#x\n",(uint32_t)fSavedEfl, ASMGetFlags()));
     IPRT_DARWIN_RESTORE_EFL_AC();
     return VINF_SUCCESS;
 }

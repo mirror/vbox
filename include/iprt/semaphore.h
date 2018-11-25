@@ -163,6 +163,10 @@ RTDECL(int)  RTSemEventDestroy(RTSEMEVENT hEventSem);
  * @remarks ring-0: This works when preemption is disabled.  However it is
  *          system specific whether it works in interrupt context or with
  *          interrupts disabled.
+ *
+ *          ring-0/Darwin: This works when interrupts are disabled and thereby
+ *          in interrupt context, except it cannot race semaphore destruction as
+ *          the allocator does not work under these circumstances.
  */
 RTDECL(int)  RTSemEventSignal(RTSEMEVENT hEventSem);
 
@@ -324,6 +328,10 @@ RTDECL(int)  RTSemEventMultiDestroy(RTSEMEVENTMULTI hEventMultiSem);
  * @remarks ring-0: This works when preemption is disabled.  However it is
  *          system specific whether it works in interrupt context or with
  *          interrupts disabled.
+ *
+ *          ring-0/Darwin: This works when interrupts are disabled and thereby
+ *          in interrupt context, except it cannot race semaphore destruction as
+ *          the allocator does not work under these circumstances.
  */
 RTDECL(int)  RTSemEventMultiSignal(RTSEMEVENTMULTI hEventMultiSem);
 
