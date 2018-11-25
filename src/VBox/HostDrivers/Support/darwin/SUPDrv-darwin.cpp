@@ -270,7 +270,6 @@ static int             (*g_pfnWrMsr64Carefully)(uint32_t uMsr, uint64_t uValue) 
 static kern_return_t    VBoxDrvDarwinStart(struct kmod_info *pKModInfo, void *pvData)
 {
     RT_NOREF(pKModInfo, pvData);
-    int rc;
 #ifdef DEBUG
     printf("VBoxDrvDarwinStart\n");
 #endif
