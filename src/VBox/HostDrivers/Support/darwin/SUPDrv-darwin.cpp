@@ -77,11 +77,6 @@ RT_C_DECLS_BEGIN
 RT_C_DECLS_END
 #endif
 
-/* Temporary debugging - very temporary... */
-#define VBOX_PROC_SELFNAME_LEN  (20)
-#define VBOX_RETRIEVE_CUR_PROC_NAME(_name)  char _name[VBOX_PROC_SELFNAME_LEN]; \
-                                            proc_selfname(pszProcName, VBOX_PROC_SELFNAME_LEN)
-
 
 /*********************************************************************************************************************************
 *   Defined Constants And Macros                                                                                                 *
@@ -92,6 +87,13 @@ RT_C_DECLS_END
 /** The user device node name. */
 #define DEVICE_NAME_USR     "vboxdrvu"
 
+
+/** @name For debugging/whatever, now permanent.
+ * @{  */
+#define VBOX_PROC_SELFNAME_LEN              31
+#define VBOX_RETRIEVE_CUR_PROC_NAME(a_Name) char a_Name[VBOX_PROC_SELFNAME_LEN + 1]; \
+                                            proc_selfname(a_Name, VBOX_PROC_SELFNAME_LEN)
+/** @} */
 
 
 /*********************************************************************************************************************************
@@ -228,22 +230,22 @@ static struct cdevsw    g_DevCW =
 };
 
 /** Major device number. */
-static int              g_iMajorDeviceNo = -1;
+static int                  g_iMajorDeviceNo = -1;
 /** Registered devfs device handle for the system device. */
-static void            *g_hDevFsDeviceSys = NULL;
+static void                *g_hDevFsDeviceSys = NULL;
 /** Registered devfs device handle for the user device. */
-static void            *g_hDevFsDeviceUsr = NULL;
+static void                *g_hDevFsDeviceUsr = NULL;
 
 /** Spinlock protecting g_apSessionHashTab. */
-static RTSPINLOCK       g_Spinlock = NIL_RTSPINLOCK;
+static RTSPINLOCK           g_Spinlock = NIL_RTSPINLOCK;
 /** Hash table */
-static PSUPDRVSESSION   g_apSessionHashTab[19];
+static PSUPDRVSESSION       g_apSessionHashTab[19];
 /** Calculates the index into g_apSessionHashTab.*/
-#define SESSION_HASH(pid)     ((pid) % RT_ELEMENTS(g_apSessionHashTab))
+#define SESSION_HASH(pid)   ((pid) % RT_ELEMENTS(g_apSessionHashTab))
 /** The number of open sessions. */
-static int32_t volatile g_cSessions = 0;
+static int32_t volatile     g_cSessions = 0;
 /** The notifier handle for the sleep callback handler. */
-static IONotifier      *g_pSleepNotifier = NULL;
+static IONotifier          *g_pSleepNotifier = NULL;
 
 /** Pointer to vmx_suspend(). */
 static PFNRT            g_pfnVmxSuspend = NULL;
@@ -276,7 +278,7 @@ static kern_return_t    VBoxDrvDarwinStart(struct kmod_info *pKModInfo, void *pv
     /*
      * Initialize IPRT.
      */
-    rc = RTR0Init(0);
+    int rc = RTR0Init(0);
     if (RT_SUCCESS(rc))
     {
         /*
@@ -1016,9 +1018,11 @@ bool VBOXCALL   supdrvOSObjCanAccess(PSUPDRVOBJ pObj, PSUPDRVSESSION pSession, c
 /**
  * Callback for blah blah blah.
  */
-IOReturn VBoxDrvDarwinSleepHandler(void * /* pvTarget */, void *pvRefCon, UInt32 uMessageType, IOService * /* pProvider */, void * /* pvMessageArgument */, vm_size_t /* argSize */)
+IOReturn VBoxDrvDarwinSleepHandler(void * /* pvTarget */, void *pvRefCon, UInt32 uMessageType, 
+                                   IOService *pProvider, void *pvMsgArg, vm_size_t cbMsgArg)
 {
-    LogFlow(("VBoxDrv: Got sleep/wake notice. Message type was %X\n", (uint)uMessageType));
+    RT_NOREF(pProvider, pvMsgArg, cbMsgArg);
+    LogFlow(("VBoxDrv: Got sleep/wake notice. Message type was %x\n", uMessageType));
 
     if (uMessageType == kIOMessageSystemWillSleep)
         RTPowerSignalEvent(RTPOWEREVENT_SUSPEND);
@@ -1998,10 +2002,14 @@ SUPR0DECL(uint32_t) SUPR0GetKernelFeatures(void)
 }
 
 
-/*
- *
+/* 
+ * 
  * org_virtualbox_SupDrv
  *
+ * - IOService diff resync -
+ * - IOService diff resync -
+ * - IOService diff resync -
+ * 
  */
 
 
@@ -2010,7 +2018,7 @@ SUPR0DECL(uint32_t) SUPR0GetKernelFeatures(void)
  */
 bool org_virtualbox_SupDrv::init(OSDictionary *pDictionary)
 {
-    LogFlow(("org_virtualbox_SupDrv::init([%p], %p)\n", this, pDictionary));
+    LogFlow(("IOService::init([%p], %p)\n", this, pDictionary));
     if (IOService::init(pDictionary))
     {
         /* init members. */
@@ -2036,7 +2044,7 @@ void org_virtualbox_SupDrv::free(void)
  */
 IOService *org_virtualbox_SupDrv::probe(IOService *pProvider, SInt32 *pi32Score)
 {
-    LogFlow(("org_virtualbox_SupDrv::probe([%p])\n", this));
+    LogFlow(("IOService::probe([%p])\n", this));
     return IOService::probe(pProvider, pi32Score);
 }
 
@@ -2108,11 +2116,10 @@ bool org_virtualbox_SupDrvClient::initWithTask(task_t OwningTask, void *pvSecuri
     if (!OwningTask)
         return false;
 
-    VBOX_RETRIEVE_CUR_PROC_NAME(pszProcName);
-
     if (u32Type != SUP_DARWIN_IOSERVICE_COOKIE)
     {
-        LogRelMax(10,("org_virtualbox_SupDrvClient::initWithTask: Bad cookie %#x (%s)\n", u32Type, pszProcName));
+        VBOX_RETRIEVE_CUR_PROC_NAME(szProcName);
+        LogRelMax(10,("org_virtualbox_SupDrvClient::initWithTask: Bad cookie %#x (%s)\n", u32Type, szProcName));
         return false;
     }
 
@@ -2301,8 +2308,7 @@ IOReturn org_virtualbox_SupDrvClient::clientClose(void)
  */
 IOReturn org_virtualbox_SupDrvClient::clientDied(void)
 {
-    LogFlow(("org_virtualbox_SupDrvClient::clientDied([%p]) m_Task=%p R0Process=%p Process=%d\n",
-             this, m_Task, RTR0ProcHandleSelf(), RTProcSelf()));
+    LogFlow(("IOService::clientDied([%p]) m_Task=%p R0Process=%p Process=%d\n", this, m_Task, RTR0ProcHandleSelf(), RTProcSelf()));
 
     /* IOUserClient::clientDied() calls clientClose, so we'll just do the work there. */
     return IOUserClient::clientDied();
@@ -2314,7 +2320,7 @@ IOReturn org_virtualbox_SupDrvClient::clientDied(void)
  */
 bool org_virtualbox_SupDrvClient::terminate(IOOptionBits fOptions)
 {
-    LogFlow(("org_virtualbox_SupDrvClient::terminate([%p], %#x)\n", this, fOptions));
+    LogFlow(("IOService::terminate([%p], %#x)\n", this, fOptions));
     return IOUserClient::terminate(fOptions);
 }
 
@@ -2324,7 +2330,7 @@ bool org_virtualbox_SupDrvClient::terminate(IOOptionBits fOptions)
  */
 bool org_virtualbox_SupDrvClient::finalize(IOOptionBits fOptions)
 {
-    LogFlow(("org_virtualbox_SupDrvClient::finalize([%p], %#x)\n", this, fOptions));
+    LogFlow(("IOService::finalize([%p], %#x)\n", this, fOptions));
     return IOUserClient::finalize(fOptions);
 }
 
@@ -2334,7 +2340,7 @@ bool org_virtualbox_SupDrvClient::finalize(IOOptionBits fOptions)
  */
 void org_virtualbox_SupDrvClient::stop(IOService *pProvider)
 {
-    LogFlow(("org_virtualbox_SupDrvClient::stop([%p])\n", this));
+    LogFlow(("IOService::stop([%p])\n", this));
     IOUserClient::stop(pProvider);
 }
 
