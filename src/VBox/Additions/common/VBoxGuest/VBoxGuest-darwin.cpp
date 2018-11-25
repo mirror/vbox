@@ -128,12 +128,8 @@ private:
     bool isVmmDev(IOPCIDevice *pIOPCIDevice);
 
 protected:
-#ifdef USE_INTERRUPT_SOURCE
-    IOWorkLoop                *m_pWorkLoop;
-#else
     /** Non-NULL if interrupts are registered.  Probably same as getProvider(). */
     IOService                 *m_pInterruptProvider;
-#endif
 
 public:
     virtual bool init(OSDictionary *pDictionary = 0);
@@ -142,12 +138,7 @@ public:
     virtual bool start(IOService *pProvider);
     virtual void stop(IOService *pProvider);
     virtual bool terminate(IOOptionBits fOptions);
-#ifdef USE_INTERRUPT_SOURCE
-    IOWorkLoop * getWorkLoop();
-#else
     static void  vgdrvDarwinIrqHandler(OSObject *pTarget, void *pvRefCon, IOService *pNub, int iSrc);
-
-#endif
 };
 
 OSDefineMetaClassAndStructors(org_virtualbox_VBoxGuest, IOService);
@@ -251,16 +242,6 @@ static int32_t volatile     g_cSessions = 0;
 static bool volatile        g_fInstantiated = 0;
 /** The notifier handle for the sleep callback handler. */
 static IONotifier          *g_pSleepNotifier = NULL;
-
-#ifdef USE_INTERRUPT_SOURCE
-/* States of atimic variable aimed to protect dynamic object allocation in SMP environment. */
-#define VBOXGUEST_OBJECT_UNINITIALIZED  (0)
-#define VBOXGUEST_OBJECT_INITIALIZING   (1)
-#define VBOXGUEST_OBJECT_INITIALIZED    (2)
-#define VBOXGUEST_OBJECT_INVALID        (3)
-/** Atomic variable used to protect work loop allocation when multiple threads attempt to obtain it. */
-static uint8_t volatile     g_fWorkLoopCreated  = VBOXGUEST_OBJECT_UNINITIALIZED;
-#endif
 
 
 /**
@@ -826,7 +807,7 @@ bool org_virtualbox_VBoxGuest::init(OSDictionary *pDictionary)
  */
 void org_virtualbox_VBoxGuest::free(void)
 {
-    RTLogBackdoorPrintf("IOService::free([%p])\n", this); /* might got sideways if we use LogFlow() here. weird. */
+    RTLogBackdoorPrintf("IOService::free([%p])\n", this); /* might go sideways if we use LogFlow() here. weird. */
     IOService::free();
 }
 
@@ -1027,163 +1008,20 @@ bool org_virtualbox_VBoxGuest::terminate(IOOptionBits fOptions)
     return fRc;
 }
 
-#ifdef USE_INTERRUPT_SOURCE
-
-/**
- * Lazy initialization of the m_pWorkLoop member.
- *
- * @returns m_pWorkLoop.
- */
-IOWorkLoop *org_virtualbox_VBoxGuest::getWorkLoop()
-{
-/** @todo r=bird: This is actually a classic RTOnce scenario, except it's
- *        tied to a org_virtualbox_VBoxGuest instance.  */
-    /*
-     * Handle the case when work loop was not created yet.
-     */
-    if (ASMAtomicCmpXchgU8(&g_fWorkLoopCreated, VBOXGUEST_OBJECT_INITIALIZING, VBOXGUEST_OBJECT_UNINITIALIZED))
-    {
-        m_pWorkLoop = IOWorkLoop::workLoop();
-        if (m_pWorkLoop)
-        {
-            /* Notify the rest of threads about the fact that work
-             * loop was successully allocated and can be safely used */
-            Log(("VBoxGuest: created new work loop\n"));
-            ASMAtomicWriteU8(&g_fWorkLoopCreated, VBOXGUEST_OBJECT_INITIALIZED);
-        }
-        else
-        {
-            /* Notify the rest of threads about the fact that there was
-             * an error during allocation of a work loop */
-            Log(("VBoxGuest: failed to create new work loop!\n"));
-            ASMAtomicWriteU8(&g_fWorkLoopCreated, VBOXGUEST_OBJECT_UNINITIALIZED);
-        }
-    }
-    /*
-     * Handle the case when work loop is already create or
-     * in the process of being.
-     */
-    else
-    {
-        uint8_t fWorkLoopCreated = ASMAtomicReadU8(&g_fWorkLoopCreated);
-        while (fWorkLoopCreated == VBOXGUEST_OBJECT_INITIALIZING)
-        {
-            thread_block(0);
-            fWorkLoopCreated = ASMAtomicReadU8(&g_fWorkLoopCreated);
-        }
-        if (fWorkLoopCreated != VBOXGUEST_OBJECT_INITIALIZED)
-            Log(("VBoxGuest: No work loop!\n"));
-    }
-
-    return m_pWorkLoop;
-}
-
-
-/**
- * Perform pending wake ups in work loop context.
- */
-static void vgdrvDarwinDeferredIrqHandler(OSObject *pOwner, IOInterruptEventSource *pSrc, int cInts)
-{
-    NOREF(pOwner); NOREF(pSrc); NOREF(cInts);
-
-    VGDrvCommonWaitDoWakeUps(&g_DevExt);
-}
-
-
-/**
- * Callback triggered when interrupt occurs.
- */
-static bool vgdrvDarwinDirectIrqHandler(OSObject *pOwner, IOFilterInterruptEventSource *pSrc)
-{
-    RT_NOREF(pOwner);
-    if (!pSrc)
-        return false;
-
-    bool fTaken = VGDrvCommonISR(&g_DevExt);
-    if (!fTaken) /** @todo r=bird: This looks bogus as we might actually be sharing interrupts with someone. */
-        Log(("VGDrvCommonISR error\n"));
-
-    return fTaken;
-}
-
-
-bool org_virtualbox_VBoxGuest::setupVmmDevInterrupts(IOService *pProvider)
-{
-    IOWorkLoop *pWorkLoop = getWorkLoop();
-    if (!pWorkLoop)
-        return false;
-
-    m_pInterruptSrc = IOFilterInterruptEventSource::filterInterruptEventSource(this,
-                                                                               &vgdrvDarwinDeferredIrqHandler,
-                                                                               &vgdrvDarwinDirectIrqHandler,
-                                                                               pProvider);
-    IOReturn rc = pWorkLoop->addEventSource(m_pInterruptSrc);
-    if (rc == kIOReturnSuccess)
-    {
-        m_pInterruptSrc->enable();
-        return true;
-    }
-
-    m_pInterruptSrc->disable();
-    m_pInterruptSrc->release();
-    m_pInterruptSrc = NULL;
-    return false;
-}
-
-
-bool org_virtualbox_VBoxGuest::disableVmmDevInterrupts(void)
-{
-    IOWorkLoop *pWorkLoop = (IOWorkLoop *)getWorkLoop();
-
-    if (!pWorkLoop)
-        return false;
-
-    if (!m_pInterruptSrc)
-        return false;
-
-    m_pInterruptSrc->disable();
-    pWorkLoop->removeEventSource(m_pInterruptSrc);
-    m_pInterruptSrc->release();
-    m_pInterruptSrc = NULL;
-
-    return true;
-}
-
-#else  /* !USE_INTERRUPT_SOURCE */
 
 /**
  * Implementes a IOInterruptHandler, called by provider when an interrupt occurs.
  */
 /*static*/ void org_virtualbox_VBoxGuest::vgdrvDarwinIrqHandler(OSObject *pTarget, void *pvRefCon, IOService *pNub, int iSrc)
 {
+#ifdef LOG_ENABLED
     RTLogBackdoorPrintf("vgdrvDarwinIrqHandler: %p %p %p %d\n", pTarget, pvRefCon, pNub, iSrc);
+#endif
     RT_NOREF(pvRefCon, pNub, iSrc);
 
-    bool fTaken = VGDrvCommonISR(&g_DevExt);
-    if (fTaken)
-    {
-        RTLogBackdoorPrintf("VBoxGuest: our interrupt!\n");
-# ifdef VBOXGUEST_USE_DEFERRED_WAKE_UP /* Turns out this isn't needed.  Will ditch it later. */
-        /*
-         * This is essentially what IOFilterInterruptEventSource does, only it
-         * disables after the filter returns true and re-enables again after
-         * the workloop job has called the handler.
-         */
-        org_virtualbox_VBoxGuest *pThis = (org_virtualbox_VBoxGuest *)pTarget;
-	if (pThis)
-        {
-            IOService *pProvider = pThis->m_pInterruptProvider;
-	    if (pProvider)
-            {
-                pProvider->disableInterrupt(0);
-                VGDrvCommonWaitDoWakeUps(&g_DevExt); /* Could we perhaps do theses elsewhere? */
-                pProvider->enableInterrupt(0);
-                return;
-	    }
-	}
-        VGDrvCommonWaitDoWakeUps(&g_DevExt);
-# endif
-    }
+    VGDrvCommonISR(&g_DevExt);
+    /* There is in fact no way of indicating that this is our interrupt, other
+       than making the device lower it.  So, the return code is ignored. */
 }
 
 
@@ -1245,7 +1083,6 @@ bool org_virtualbox_VBoxGuest::disableVmmDevInterrupts(void)
     return true;
 }
 
-#endif /* !USE_INTERRUPT_SOURCE */
 
 /**
  * Checks if it's the VMM device.
