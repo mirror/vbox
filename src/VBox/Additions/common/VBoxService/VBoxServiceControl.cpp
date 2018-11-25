@@ -247,14 +247,14 @@ static DECLCALLBACK(int) vgsvcGstCtrlWorker(bool volatile *pfShutdown)
     int cRetrievalFailed = 0; /* Number of failed message retrievals in a row. */
     for (;;)
     {
-        VGSvcVerbose(3, "Waiting for host msg ...\n");
+        VGSvcVerbose(3, "GstCtrl: Waiting for host msg ...\n");
         uint32_t uMsg = 0;
         uint32_t cParms = 0;
         rc = VbglR3GuestCtrlMsgWaitFor(g_uControlSvcClientID, &uMsg, &cParms);
         if (rc == VERR_TOO_MUCH_DATA)
         {
 #ifdef DEBUG
-            VGSvcVerbose(4, "Message requires %ld parameters, but only 2 supplied -- retrying request (no error!)...\n",
+            VGSvcVerbose(4, "Message requires %u parameters, but only 2 supplied -- retrying request (no error!)...\n",
                          cParms);
 #endif
             rc = VINF_SUCCESS; /* Try to get "real" message in next block below. */
@@ -262,7 +262,7 @@ static DECLCALLBACK(int) vgsvcGstCtrlWorker(bool volatile *pfShutdown)
         else if (RT_FAILURE(rc))
         {
             /* Note: VERR_GEN_IO_FAILURE seems to be normal if ran into timeout. */
-            VGSvcError("Getting host message failed with %Rrc\n", rc);
+            VGSvcError("GstCtrl: Getting host message failed with %Rrc\n", rc);
 
             /* Check for VM session change. */
             uint64_t idNewSession = g_idControlSession;
@@ -270,7 +270,7 @@ static DECLCALLBACK(int) vgsvcGstCtrlWorker(bool volatile *pfShutdown)
             if (   RT_SUCCESS(rc2)
                 && (idNewSession != g_idControlSession))
             {
-                VGSvcVerbose(1, "The VM session ID changed\n");
+                VGSvcVerbose(1, "GstCtrl: The VM session ID changed\n");
                 g_idControlSession = idNewSession;
 
                 /* Close all opened guest sessions -- all context IDs, sessions etc.
@@ -287,20 +287,19 @@ static DECLCALLBACK(int) vgsvcGstCtrlWorker(bool volatile *pfShutdown)
                     cRetrievalFailed = 0;
                     continue; /* Skip waiting. */
                 }
-                else
-                {
-                    VGSvcError("Unable to re-connect to HGCM service, rc=%Rrc, bailing out\n", rc);
-                    break;
-                }
+                VGSvcError("Unable to re-connect to HGCM service, rc=%Rrc, bailing out\n", rc);
+                break;
             }
 
-            if (++cRetrievalFailed > 16) /** @todo Make this configurable? */
+            if (rc == VERR_INTERRUPTED)
+                RTThreadYield();        /* To be on the safe side... */
+            else if (++cRetrievalFailed <= 16) /** @todo Make this configurable? */
+                RTThreadSleep(1000);    /* Wait a bit before retrying. */
+            else
             {
                 VGSvcError("Too many failed attempts in a row to get next message, bailing out\n");
                 break;
             }
-
-            RTThreadSleep(1000); /* Wait a bit before retrying. */
         }
 
         if (RT_SUCCESS(rc))
