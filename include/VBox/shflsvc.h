@@ -39,7 +39,7 @@
 #include <VBox/types.h>
 #include <iprt/fs.h>
 #include <iprt/assert.h>
-#ifdef IN_RING3
+#if defined(IN_RING3) || (defined(IN_RING0) && defined(RT_OS_DARWIN))
 # include <iprt/mem.h>
 #endif
 
@@ -278,7 +278,8 @@ DECLINLINE(int) ShflStringCopy(PSHFLSTRING pDst, PCSHFLSTRING pSrc, size_t cbTer
     return rc;
 }
 
-#ifdef IN_RING3
+#if defined(IN_RING3) \
+ || (defined(IN_RING0) && defined(RT_OS_DARWIN))
 
 /**
  * Duplicates a string using RTMemAlloc as allocator.
