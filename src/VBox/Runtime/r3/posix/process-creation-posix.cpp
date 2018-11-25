@@ -63,7 +63,12 @@
 
 #ifdef RT_OS_DARWIN
 # include <mach-o/dyld.h>
+# include <security/pam_appl.h>
+# include <stdlib.h>
+# include <dlfcn.h>
+# include <iprt/asm.h>
 #endif
+
 #ifdef RT_OS_SOLARIS
 # include <limits.h>
 # include <sys/ctfs.h>
@@ -87,12 +92,76 @@
 #include <iprt/env.h>
 #include <iprt/err.h>
 #include <iprt/file.h>
+#include <iprt/log.h>
 #include <iprt/path.h>
 #include <iprt/pipe.h>
 #include <iprt/socket.h>
 #include <iprt/string.h>
 #include <iprt/mem.h>
 #include "internal/process.h"
+
+
+/*********************************************************************************************************************************
+*   Structures and Typedefs                                                                                                      *
+*********************************************************************************************************************************/
+#ifdef RT_OS_DARWIN
+/** For passing info between rtCheckCredentials and rtPamConv. */
+typedef struct RTPROCPAMARGS
+{
+    const char *pszUser;
+    const char *pszPassword;
+} RTPROCPAMARGS;
+/** Pointer to rtPamConv argument package. */
+typedef RTPROCPAMARGS *PRTPROCPAMARGS;
+#endif
+
+
+#ifdef RT_OS_DARWIN
+/**
+ * Worker for rtCheckCredentials that feeds password and maybe username to PAM.
+ *
+ * @returns PAM status.
+ * @param   cMessages       Number of messages.
+ * @param   papMessages     Message vector.
+ * @param   ppaResponses    Where to put our responses.
+ * @param   pvAppData       Pointer to RTPROCPAMARGS.
+ */
+static int rtPamConv(int cMessages, const struct pam_message **papMessages, struct pam_response **ppaResponses, void *pvAppData)
+{
+    LogFlow(("rtPamConv: cMessages=%d\n", cMessages));
+    PRTPROCPAMARGS pArgs = (PRTPROCPAMARGS)pvAppData;
+    AssertPtrReturn(pArgs, PAM_CONV_ERR);
+
+    struct pam_response *paResponses = (struct pam_response *)calloc(cMessages, sizeof(paResponses[0]));
+    AssertReturn(paResponses,  PAM_CONV_ERR);
+    for (int i = 0; i < cMessages; i++)
+    {
+        LogFlow(("rtPamConv: #%d: msg_style=%d msg=%s\n", i, papMessages[i]->msg_style, papMessages[i]->msg));
+
+        paResponses[i].resp_retcode = 0;
+        if (papMessages[i]->msg_style == PAM_PROMPT_ECHO_OFF)
+            paResponses[i].resp = strdup(pArgs->pszPassword);
+        else if (papMessages[i]->msg_style == PAM_PROMPT_ECHO_ON)
+            paResponses[i].resp = strdup(pArgs->pszUser);
+        else
+        {
+            paResponses[i].resp = NULL;
+            continue;
+        }
+        if (paResponses[i].resp == NULL)
+        {
+            while (i-- > 0)
+                free(paResponses[i].resp);
+            free(paResponses);
+            LogFlow(("rtPamConv: out of memory\n"));
+            return PAM_CONV_ERR;
+        }
+    }
+
+    *ppaResponses = paResponses;
+    return PAM_SUCCESS;
+}
+#endif /* RT_OS_DARWIN */
 
 
 /**
@@ -106,7 +175,96 @@
  */
 static int rtCheckCredentials(const char *pszUser, const char *pszPasswd, gid_t *pGid, uid_t *pUid)
 {
-#if defined(RT_OS_LINUX)
+#if defined(RT_OS_DARWIN)
+    RTLogPrintf("rtCheckCredentials\n");
+
+    /*
+     * Resolve user to UID and GID.
+     */
+    char            szBuf[_4K];
+    struct passwd   Pw;
+    struct passwd  *pPw;
+    if (getpwnam_r(pszUser, &Pw, szBuf, sizeof(szBuf), &pPw) != 0)
+        return VERR_AUTHENTICATION_FAILURE;
+    if (!pPw)
+        return VERR_AUTHENTICATION_FAILURE;
+
+    *pUid = pPw->pw_uid;
+    *pGid = pPw->pw_gid;
+
+    /*
+     * Use PAM for the authentication.
+     * Note! libpam.2.dylib was introduced with 10.6.x (OpenPAM).
+     */
+    void *hModPam = dlopen("libpam.dylib", RTLD_LAZY | RTLD_GLOBAL);
+    if (hModPam)
+    {
+        int (*pfnPamStart)(const char *, const char *, struct pam_conv *, pam_handle_t **);
+        int (*pfnPamAuthenticate)(pam_handle_t *, int);
+        int (*pfnPamAcctMgmt)(pam_handle_t *, int);
+        int (*pfnPamSetItem)(pam_handle_t *, int, const void *);
+        int (*pfnPamEnd)(pam_handle_t *, int);
+        *(void **)&pfnPamStart        = dlsym(hModPam, "pam_start");
+        *(void **)&pfnPamAuthenticate = dlsym(hModPam, "pam_authenticate");
+        *(void **)&pfnPamAcctMgmt     = dlsym(hModPam, "pam_acct_mgmt");
+        *(void **)&pfnPamSetItem      = dlsym(hModPam, "pam_set_item");
+        *(void **)&pfnPamEnd          = dlsym(hModPam, "pam_end");
+        ASMCompilerBarrier();
+        if (   pfnPamStart
+            && pfnPamAuthenticate
+            && pfnPamAcctMgmt
+            && pfnPamSetItem
+            && pfnPamEnd)
+        {
+#define pam_start           pfnPamStart
+#define pam_authenticate    pfnPamAuthenticate
+#define pam_acct_mgmt       pfnPamAcctMgmt
+#define pam_set_item        pfnPamSetItem
+#define pam_end             pfnPamEnd
+
+            /* Do the PAM stuff.
+               Note! Abusing 'login' here for now... */
+            pam_handle_t   *hPam        = NULL;
+            RTPROCPAMARGS   PamConvArgs = { pszUser, pszPasswd };
+            struct pam_conv PamConversation;
+            RT_ZERO(PamConversation);
+            PamConversation.appdata_ptr = &PamConvArgs;
+            PamConversation.conv        = rtPamConv;
+            int rc = pam_start("login", pszUser, &PamConversation, &hPam);
+            if (rc == PAM_SUCCESS)
+            {
+                rc = pam_set_item(hPam, PAM_RUSER, pszUser);
+                if (rc == PAM_SUCCESS)
+                    rc = pam_authenticate(hPam, 0);
+                if (rc == PAM_SUCCESS)
+                {
+                    rc = pam_acct_mgmt(hPam, 0);
+                    if (   rc == PAM_SUCCESS
+                        || rc == PAM_AUTHINFO_UNAVAIL /*??*/)
+                    {
+                        pam_end(hPam, PAM_SUCCESS);
+                        dlclose(hModPam);
+                        return VINF_SUCCESS;
+                    }
+                    Log(("rtCheckCredentials: pam_acct_mgmt -> %d\n", rc));
+                }
+                else
+                    Log(("rtCheckCredentials: pam_authenticate -> %d\n", rc));
+                pam_end(hPam, rc);
+            }
+            else
+                Log(("rtCheckCredentials: pam_start -> %d\n", rc));
+        }
+        else
+            Log(("rtCheckCredentials: failed to resolve symbols: %p %p %p %p %p\n",
+                 pfnPamStart, pfnPamAuthenticate, pfnPamAcctMgmt, pfnPamSetItem, pfnPamEnd));
+        dlclose(hModPam);
+    }
+    else
+        Log(("rtCheckCredentials: Loading libpam.dylib failed\n"));
+    return VERR_AUTHENTICATION_FAILURE;
+
+#elif defined(RT_OS_LINUX)
     struct passwd *pw;
 
     pw = getpwnam(pszUser);
@@ -171,8 +329,8 @@ static int rtCheckCredentials(const char *pszUser, const char *pszPasswd, gid_t 
 #endif
 }
 
-
 #ifdef RT_OS_SOLARIS
+
 /** @todo the error reporting of the Solaris process contract code could be
  * a lot better, but essentially it is not meant to run into errors after
  * the debugging phase. */
@@ -450,6 +608,7 @@ RTR3DECL(int)   RTProcCreateEx(const char *pszExec, const char * const *papszArg
                                const char *pszPassword, PRTPROCESS phProcess)
 {
     int rc;
+    LogFlow(("RTProcCreateEx: pszExec=%s pszAsUser=%s\n", pszExec, pszAsUser));
 
     /*
      * Input validation
