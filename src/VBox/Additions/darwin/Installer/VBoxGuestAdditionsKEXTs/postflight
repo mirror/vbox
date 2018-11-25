@@ -59,8 +59,13 @@ for item in $items; do
         kextunload -b $kext_item
     fi
 done
-echo "Loading newly installed kernel extensions."
-kextload "/Library/Extensions/VBoxGuest.kext"
+
+echo "Updating kernel cache (should trigger loading of new modules)."
+touch "/System/Library/Extensions/"
+kextcache -update-volume / || true
+
+#echo "Loading newly installed kernel extensions."
+#kextload "/Library/Extensions/VBoxGuest.kext"
 
 load_service "org.virtualbox.additions.vboxservice" "/Library/LaunchDaemons" "root"
 load_service "org.virtualbox.additions.vboxclient" "/Library/LaunchAgents" "${USER}"
