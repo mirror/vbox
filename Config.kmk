@@ -3713,10 +3713,10 @@ ifdef VBOX_SIGNING_MODE
   # @param 1   The kext name.  Assumes there is a SYSMODS target of name $1
   #            as well as an .plist installer by the name of '$1.kext'.
   # @remarks   Currently assumes only binary + Info.plist in the bundle, no
-  #            other files.  Should that be requirement, add them as a list
-  #            in the 2nd parameter.
+  #            other files.  Should there be more, add them as a list in
+  #            a 2nd parameter.
   # @note      This is only for the 'test' signing mode, we skip this in
-  #             'release' signing mode as to not waste time on the build boxes.
+  #            'release' signing mode as to not waste time on the build boxes.
   ifeq ($(VBOX_SIGNING_MODE),test) ## @todo when kBuild is updated to r2742+, this should be enabled for both modes.
    define VBOX_TEST_SIGN_KEXT
   $1_INSTTYPE.darwin = none
