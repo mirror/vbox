@@ -531,6 +531,7 @@ VMSVGASCREENOBJECT *vmsvgaGetScreenObject(PVGASTATE pThis, uint32_t idScreen)
 {
     PVMSVGAR3STATE pSVGAState = pThis->svga.pSvgaR3State;
     if (   idScreen < (uint32_t)RT_ELEMENTS(pSVGAState->aScreens)
+        && pSVGAState
         && pSVGAState->aScreens[idScreen].fDefined)
     {
         return &pSVGAState->aScreens[idScreen];
@@ -3785,7 +3786,7 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
                 VMSVGAFIFO_GET_MORE_CMD_BUFFER_BREAK(pCmd, SVGAFifoCmdDefineScreen, RT_MAX(sizeof(pCmd->screen.structSize), pCmd->screen.structSize));
                 STAM_REL_COUNTER_INC(&pSVGAState->StatR3CmdDefineScreen);
 
-                LogRelFunc(("SVGA_CMD_DEFINE_SCREEN id=%x flags=%x size=(%d,%d) root=(%d,%d) %d:0x%x 0x%x\n",
+                LogFunc(("SVGA_CMD_DEFINE_SCREEN id=%x flags=%x size=(%d,%d) root=(%d,%d) %d:0x%x 0x%x\n",
                          pCmd->screen.id, pCmd->screen.flags, pCmd->screen.size.width, pCmd->screen.size.height, pCmd->screen.root.x, pCmd->screen.root.y,
                          pCmd->screen.backingStore.ptr.gmrId, pCmd->screen.backingStore.ptr.offset, pCmd->screen.backingStore.pitch));
 
