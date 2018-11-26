@@ -29,6 +29,7 @@
 
 /* GUI includes: */
 # include "QIToolButton.h"
+# include "UIErrorString.h"
 # include "UIIconPool.h"
 # include "UIGuestControlFileManager.h"
 # include "UIGuestControlFileManagerOperationsPanel.h"
@@ -59,7 +60,8 @@ public:
 
 signals:
 
-    void sigProgressTaskComplete(QUuid progressId);
+    void sigProgressComplete(QUuid progressId);
+    void sigProgressFail(QString strErrorString, FileManagerLogType eLogType);
 
 protected:
 
@@ -68,7 +70,7 @@ protected:
 private slots:
 
     void sltHandleProgressPercentageChange(const QUuid &uProgressId, const int iPercent);
-    void sltHandleProgressTaskComplete(const QUuid &uProgressId);
+    void sltHandleProgressComplete(const QUuid &uProgressId);
     void sltCancelProgress();
 
 private:
@@ -175,7 +177,7 @@ void UIFileOperationProgressWidget::prepareEventHandler()
     connect(m_pEventHandler, &UIProgressEventHandler::sigProgressPercentageChange,
             this, &UIFileOperationProgressWidget::sltHandleProgressPercentageChange);
     connect(m_pEventHandler, &UIProgressEventHandler::sigProgressTaskComplete,
-            this, &UIFileOperationProgressWidget::sltHandleProgressTaskComplete);
+            this, &UIFileOperationProgressWidget::sltHandleProgressComplete);
 }
 
 void UIFileOperationProgressWidget::cleanupEventHandler()
@@ -191,12 +193,16 @@ void UIFileOperationProgressWidget::sltHandleProgressPercentageChange(const QUui
     m_pProgressBar->setValue(iPercent);
 }
 
-void UIFileOperationProgressWidget::sltHandleProgressTaskComplete(const QUuid &uProgressId)
+void UIFileOperationProgressWidget::sltHandleProgressComplete(const QUuid &uProgressId)
 {
     Q_UNUSED(uProgressId);
     if (m_pCancelButton)
         m_pCancelButton->setEnabled(false);
-    emit sigProgressTaskComplete(m_comProgress.GetId());
+
+    if (!m_comProgress.isOk() || m_comProgress.GetResultCode() != 0)
+        emit sigProgressFail(UIErrorString::formatErrorInfo(m_comProgress), FileManagerLogType_Error);
+    else
+        emit sigProgressComplete(m_comProgress.GetId());
 }
 
 void UIFileOperationProgressWidget::sltCancelProgress()
@@ -228,8 +234,10 @@ void UIGuestControlFileManagerOperationsPanel::addNewProgress(const CProgress &c
     m_pTableWidget->setRowCount(m_pTableWidget->rowCount() + 1);
     UIFileOperationProgressWidget *pOperationsWidget = new UIFileOperationProgressWidget(comProgress);
     m_pTableWidget->setCellWidget(m_pTableWidget->rowCount() - 1, 0, pOperationsWidget);
-    connect(pOperationsWidget, &UIFileOperationProgressWidget::sigProgressTaskComplete,
+    connect(pOperationsWidget, &UIFileOperationProgressWidget::sigProgressComplete,
             this, &UIGuestControlFileManagerOperationsPanel::sigFileOperationComplete);
+    connect(pOperationsWidget, &UIFileOperationProgressWidget::sigProgressFail,
+            this, &UIGuestControlFileManagerOperationsPanel::sigFileOperationFail);
 
     m_pTableWidget->resizeColumnsToContents();
 }

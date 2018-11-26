@@ -331,6 +331,8 @@ bool UIGuestFileTable::createDirectory(const QString &path, const QString &direc
 
 void UIGuestFileTable::copyHostToGuest(const QStringList &hostSourcePathList, bool fDeleteAfterSuccessfulCopy /* = false */)
 {
+    if (!checkGuestSession())
+        return;
     QVector<QString> sourcePaths = hostSourcePathList.toVector();
     QVector<QString>  aFilters;
     QVector<QString>  aFlags;
@@ -347,11 +349,8 @@ void UIGuestFileTable::copyHostToGuest(const QStringList &hostSourcePathList, bo
     }
 
     CProgress progress = m_comGuestSession.CopyToGuest(sourcePaths, aFilters, aFlags, strDestinationPath);
-    if (!m_comGuestSession.isOk())
-    {
-        emit sigLogOutput(UIErrorString::formatErrorInfo(m_comGuestSession), FileManagerLogType_Error);
+    if (!checkGuestSession())
         return;
-    }
     emit sigNewFileOperation(progress);
     /* Cache the progress id and host source file objects' path in case of move operation. we will delete
      * these when/if we receieve progress completed notification: */
@@ -361,6 +360,8 @@ void UIGuestFileTable::copyHostToGuest(const QStringList &hostSourcePathList, bo
 
 void UIGuestFileTable::copyGuestToHost(const QString& hostDestinationPath, bool fDeleteAfterSuccessfulCopy /* = false */)
 {
+    if (!checkGuestSession())
+        return;
     QVector<QString> sourcePaths = selectedItemPathList().toVector();
     QVector<QString>  aFilters;
     QVector<QString>  aFlags;
@@ -377,11 +378,8 @@ void UIGuestFileTable::copyGuestToHost(const QString& hostDestinationPath, bool 
     }
 
     CProgress progress = m_comGuestSession.CopyFromGuest(sourcePaths, aFilters, aFlags, hostDestinationPath);
-    if (!m_comGuestSession.isOk())
-    {
-        emit sigLogOutput(UIErrorString::formatErrorInfo(m_comGuestSession), FileManagerLogType_Error);
+    if (!checkGuestSession())
         return;
-    }
     emit sigNewFileOperation(progress);
     /* Cache the progress id and source file objects' path in case of move operation. we will delete
      * these when/if we receieve progress completed notification: */
@@ -650,4 +648,13 @@ void UIGuestFileTable::prepareActionConnections()
             this, &UIGuestControlFileTable::sltCreateNewDirectory);
 }
 
+bool UIGuestFileTable::checkGuestSession()
+{
+    if (!m_comGuestSession.isOk())
+    {
+        emit sigLogOutput(UIErrorString::formatErrorInfo(m_comGuestSession), FileManagerLogType_Error);
+        return false;
+    }
+    return true;
+}
 #include "UIGuestFileTable.moc"

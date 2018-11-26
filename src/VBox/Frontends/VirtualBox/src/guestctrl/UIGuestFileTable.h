@@ -70,6 +70,7 @@ private:
     FileObjectType  fileType(const CGuestFsObjInfo &fsInfo);
 
     void prepareActionConnections();
+    bool checkGuestSession();
 
     mutable CGuestSession     m_comGuestSession;
 };

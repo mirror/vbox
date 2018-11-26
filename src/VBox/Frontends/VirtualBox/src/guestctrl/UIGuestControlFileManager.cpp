@@ -291,6 +291,8 @@ void UIGuestControlFileManager::prepareObjects()
         m_pOperationsPanel->hide();
         connect(m_pOperationsPanel, &UIGuestControlFileManagerOperationsPanel::sigFileOperationComplete,
                 this, &UIGuestControlFileManager::sltFileOperationComplete);
+        connect(m_pOperationsPanel, &UIGuestControlFileManagerOperationsPanel::sigFileOperationFail,
+                this, &UIGuestControlFileManager::sltReceieveLogOutput);
         m_panelActionMap.insert(m_pOperationsPanel, m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_T_FileOperations));
     }
 

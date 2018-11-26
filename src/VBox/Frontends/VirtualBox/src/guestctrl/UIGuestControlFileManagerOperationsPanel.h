@@ -41,6 +41,7 @@ class UIGuestControlFileManagerOperationsPanel : public UIGuestControlFileManage
 signals:
 
     void sigFileOperationComplete(QUuid progressId);
+    void sigFileOperationFail(QString strErrorString, FileManagerLogType eLogType);
 
 public:
 
