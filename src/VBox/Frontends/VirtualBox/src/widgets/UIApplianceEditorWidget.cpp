@@ -51,8 +51,6 @@
   * Represented as a tree structure with a parent & multiple children. */
 class UIApplianceModelItem : public QITreeViewItem
 {
-    Q_OBJECT;
-
 public:
 
     /** Constructs root item with specified @a iNumber, @a enmType and @a pParent. */

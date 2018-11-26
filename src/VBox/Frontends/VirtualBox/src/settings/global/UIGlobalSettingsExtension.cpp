@@ -115,8 +115,6 @@ struct UIDataSettingsGlobalExtension
 /* Extension package item: */
 class UIExtensionPackageItem : public QITreeWidgetItem
 {
-    Q_OBJECT;
-
 public:
 
     /* Extension package item constructor: */
