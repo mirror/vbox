@@ -1131,15 +1131,15 @@ static DECLCALLBACK(int) vgsvcGstCtrlSessionThread(RTTHREAD hThreadSelf, void *p
 
     uint32_t uSessionID = pThread->StartupInfo.uSessionID;
 
-    uint32_t uClientID;
-    int rc = VbglR3GuestCtrlConnect(&uClientID);
+    uint32_t idClient;
+    int rc = VbglR3GuestCtrlConnect(&idClient);
     if (RT_SUCCESS(rc))
     {
-        VGSvcVerbose(3, "Session ID=%RU32 thread running, client ID=%RU32\n", uSessionID, uClientID);
+        VGSvcVerbose(3, "Session ID=%RU32 thread running, client ID=%RU32\n", uSessionID, idClient);
 
         /* The session thread is not interested in receiving any commands;
          * tell the host service. */
-        rc = VbglR3GuestCtrlMsgFilterSet(uClientID, 0 /* Skip all */, 0 /* Filter mask to add */, 0 /* Filter mask to remove */);
+        rc = VbglR3GuestCtrlMsgFilterSet(idClient, 0 /* Skip all */, 0 /* Filter mask to add */, 0 /* Filter mask to remove */);
         if (RT_FAILURE(rc))
         {
             VGSvcError("Unable to set message filter, rc=%Rrc\n", rc);
@@ -1189,7 +1189,7 @@ static DECLCALLBACK(int) vgsvcGstCtrlSessionThread(RTTHREAD hThreadSelf, void *p
 
                 VBGLR3GUESTCTRLCMDCTX hostCtx =
                 {
-                    /* .idClient  = */  uClientID,
+                    /* .idClient  = */  idClient,
                     /* .idContext = */  VBOX_GUESTCTRL_CONTEXTID_MAKE_SESSION(uSessionID),
                     /* .uProtocol = */  pThread->StartupInfo.uProtocol,
                     /* .cParams   = */  2
@@ -1291,124 +1291,127 @@ static DECLCALLBACK(int) vgsvcGstCtrlSessionThread(RTTHREAD hThreadSelf, void *p
 
     /* Report final status. */
     Assert(uSessionStatus != GUEST_SESSION_NOTIFYTYPE_UNDEFINED);
-    VBGLR3GUESTCTRLCMDCTX ctx = { uClientID, VBOX_GUESTCTRL_CONTEXTID_MAKE_SESSION(uSessionID) };
+    VBGLR3GUESTCTRLCMDCTX ctx = { idClient, VBOX_GUESTCTRL_CONTEXTID_MAKE_SESSION(uSessionID) };
     rc2 = VbglR3GuestCtrlSessionNotify(&ctx, uSessionStatus, uSessionRc);
     if (RT_FAILURE(rc2))
         VGSvcError("Reporting session ID=%RU32 final status failed with rc=%Rrc\n", uSessionID, rc2);
 
-    VbglR3GuestCtrlDisconnect(uClientID);
+    VbglR3GuestCtrlDisconnect(idClient);
 
     VGSvcVerbose(3, "Session ID=%RU32 thread ended with rc=%Rrc\n", uSessionID, rc);
     return rc;
 }
 
 
+/**
+ * Main message handler for the guest control session process.
+ *
+ * @returns exit code.
+ * @param   pSession    Pointer to g_Session.
+ * @thread  main.
+ */
 static RTEXITCODE vgsvcGstCtrlSessionSpawnWorker(PVBOXSERVICECTRLSESSION pSession)
 {
     AssertPtrReturn(pSession, RTEXITCODE_FAILURE);
-
-    bool fSessionFilter = true;
-
     VGSvcVerbose(0, "Hi, this is guest session ID=%RU32\n", pSession->StartupInfo.uSessionID);
 
-    uint32_t uClientID;
-    int rc = VbglR3GuestCtrlConnect(&uClientID);
-    if (RT_SUCCESS(rc))
+    /*
+     * Connect to the host service.
+     */
+    uint32_t idClient;
+    int rc = VbglR3GuestCtrlConnect(&idClient);
+    if (RT_FAILURE(rc))
+        return VGSvcError("Error connecting to guest control service, rc=%Rrc\n", rc);
+
+    /*
+     * Set session filter. This prevents the guest control host service from
+     * sending messages which belong to another session we don't want to handle.
+     *
+     * Note! Earlier versions of this code would issue GUEST_SESSION_NOTIFYTYPE_STARTED
+     *       even if this failed, then shutdown after that.  Since there was no
+     *       comments explain why, I (bird) assume is was an unintentional glitch.
+     *
+     * Note! There was also a fSessionFilter being set on VERR_NOT_SUPPORTED here
+     *       but since it wasn't use, I assume it was just a leftover from some
+     *       earlier workaround for host behaviour/whatever...
+     */
+    uint32_t uFilterAdd = VBOX_GUESTCTRL_FILTER_BY_SESSION(pSession->StartupInfo.uSessionID);
+    rc = VbglR3GuestCtrlMsgFilterSet(idClient,
+                                     VBOX_GUESTCTRL_CONTEXTID_MAKE_SESSION(pSession->StartupInfo.uSessionID),
+                                     uFilterAdd, 0 /* Filter remove */);
+    VGSvcVerbose(3, "Setting message filterAdd=0x%x returned %Rrc\n", uFilterAdd, rc);
+    if (   RT_SUCCESS(rc)
+        || rc == VERR_NOT_SUPPORTED /* No session filter available. Ignore. */ )
     {
-        /* Set session filter. This prevents the guest control host service from
-           sending messages which belong to another session we don't want to handle. */
-        uint32_t uFilterAdd = VBOX_GUESTCTRL_FILTER_BY_SESSION(pSession->StartupInfo.uSessionID);
-        rc = VbglR3GuestCtrlMsgFilterSet(uClientID,
-                                         VBOX_GUESTCTRL_CONTEXTID_MAKE_SESSION(pSession->StartupInfo.uSessionID),
-                                         uFilterAdd, 0 /* Filter remove */);
-        VGSvcVerbose(3, "Setting message filterAdd=0x%x returned %Rrc\n", uFilterAdd, rc);
-
-        if (   RT_FAILURE(rc)
-            && rc == VERR_NOT_SUPPORTED)
-        {
-            /* No session filter available. Skip. */
-            fSessionFilter = false;
-
-            rc = VINF_SUCCESS;
-        }
-
-        VGSvcVerbose(1, "Using client ID=%RU32\n", uClientID);
-    }
-    else
-    {
-        VGSvcError("Error connecting to guest control service, rc=%Rrc\n", rc);
-        return RTEXITCODE_FAILURE;
-    }
-
-    /* Report started status. */
-    VBGLR3GUESTCTRLCMDCTX ctx = { uClientID, VBOX_GUESTCTRL_CONTEXTID_MAKE_SESSION(pSession->StartupInfo.uSessionID) };
-    int rc2 = VbglR3GuestCtrlSessionNotify(&ctx, GUEST_SESSION_NOTIFYTYPE_STARTED, VINF_SUCCESS);
-    if (RT_FAILURE(rc2))
-    {
-        VGSvcError("Reporting session ID=%RU32 started status failed with rc=%Rrc\n", pSession->StartupInfo.uSessionID, rc2);
+        VGSvcVerbose(1, "Using client ID=%RU32\n", idClient);
 
         /*
-         * If session status cannot be posted to the host for
-         * some reason, bail out.
+         * Report started status.
+         * If session status cannot be posted to the host for some reason, bail out.
          */
+        VBGLR3GUESTCTRLCMDCTX ctx = { idClient, VBOX_GUESTCTRL_CONTEXTID_MAKE_SESSION(pSession->StartupInfo.uSessionID) };
+        rc = VbglR3GuestCtrlSessionNotify(&ctx, GUEST_SESSION_NOTIFYTYPE_STARTED, VINF_SUCCESS);
         if (RT_SUCCESS(rc))
-            rc = rc2;
-    }
-
-    /* Allocate a scratch buffer for commands which also send
-     * payload data with them. */
-    uint32_t cbScratchBuf = _64K; /** @todo Make buffer size configurable via guest properties/argv! */
-    AssertReturn(RT_IS_POWER_OF_TWO(cbScratchBuf), RTEXITCODE_FAILURE);
-    uint8_t *pvScratchBuf = NULL;
-    if (RT_SUCCESS(rc))
-    {
-        pvScratchBuf = (uint8_t *)RTMemAlloc(cbScratchBuf);
-        if (!pvScratchBuf)
-            rc = VERR_NO_MEMORY;
-    }
-
-    if (RT_SUCCESS(rc))
-    {
-        bool fShutdown = false;
-
-        VBGLR3GUESTCTRLCMDCTX ctxHost = { uClientID, 0 /* Context ID */, pSession->StartupInfo.uProtocol };
-        for (;;)
         {
-            VGSvcVerbose(3, "Waiting for host msg ...\n");
-            uint32_t uMsg = 0;
-            uint32_t cParms = 0;
-            rc = VbglR3GuestCtrlMsgWaitFor(uClientID, &uMsg, &cParms);
-            if (   rc == VINF_SUCCESS
-                || rc == VERR_TOO_MUCH_DATA)
+            /*
+             * Allocate a scratch buffer for commands which also send payload data with them.
+             */
+            /** @todo Make buffer size configurable via guest properties/argv! */
+            uint32_t cbScratchBuf = _64K;
+            Assert(RT_IS_POWER_OF_TWO(cbScratchBuf)); /** @todo r=bird: No idea why this needs to be the case... */
+            uint8_t *pvScratchBuf = (uint8_t *)RTMemAlloc(cbScratchBuf);
+            if (pvScratchBuf)
             {
-                VGSvcVerbose(4, "Msg=%RU32 (%RU32 parms) retrieved (%Rrc)\n", uMsg, cParms, rc);
+                /*
+                 * Message processing loop.
+                 */
+                VBGLR3GUESTCTRLCMDCTX CtxHost = { idClient, 0 /* Context ID */, pSession->StartupInfo.uProtocol, 0 };
+                for (;;)
+                {
+                    VGSvcVerbose(3, "Waiting for host msg ...\n");
+                    uint32_t uMsg = 0;
+                    uint32_t cParms = 0;
+                    rc = VbglR3GuestCtrlMsgWaitFor(idClient, &uMsg, &cParms);
+                    if (   RT_SUCCESS(rc)
+                        || rc == VERR_TOO_MUCH_DATA)
+                    {
+                        VGSvcVerbose(4, "Msg=%RU32 (%RU32 parms) retrieved (%Rrc)\n", uMsg, cParms, rc);
 
-                /* Set number of parameters for current host context and pass it on to the
-                   session handler.
-                   Note! Only when handling HOST_SESSION_CLOSE is the rc used. */
-                ctxHost.uNumParms = cParms;
-                rc = VGSvcGstCtrlSessionHandler(pSession, uMsg, &ctxHost, pvScratchBuf, cbScratchBuf, &fShutdown);
-                if (fShutdown)
-                    break;
+                        /*
+                         * Set number of parameters for current host context and pass it on to the session handler.
+                         * Note! Only when handling HOST_SESSION_CLOSE is the rc used.
+                         */
+                        CtxHost.uNumParms = cParms;
+                        bool fShutdown = false;
+                        rc = VGSvcGstCtrlSessionHandler(pSession, uMsg, &CtxHost, pvScratchBuf, cbScratchBuf, &fShutdown);
+                        if (fShutdown)
+                            break;
+                    }
+                    else /** @todo Shouldn't we have a plan for handling connection loss and such?  Now, we'll just spin like crazy. */
+                        VGSvcVerbose(3, "Getting host message failed with %Rrc\n", rc); /* VERR_GEN_IO_FAILURE seems to be normal if ran into timeout. */
+
+                    /* Let others run (guests are often single CPU) ... */
+                    RTThreadYield();
+                }
+
+                /*
+                 * Shutdown.
+                 */
+                RTMemFree(pvScratchBuf);
             }
-            else if (RT_FAILURE(rc))
-                VGSvcVerbose(3, "Getting host message failed with %Rrc\n", rc); /* VERR_GEN_IO_FAILURE seems to be normal if ran into timeout. */
+            else
+                rc = VERR_NO_MEMORY;
 
-            /* Let others run ... */
-            RTThreadYield();
+            VGSvcVerbose(0, "Session %RU32 ended\n", pSession->StartupInfo.uSessionID);
         }
+        else
+            VGSvcError("Reporting session ID=%RU32 started status failed with rc=%Rrc\n", pSession->StartupInfo.uSessionID, rc);
     }
+    else
+        VGSvcError("Setting message filterAdd=0x%x failed with rc=%Rrc\n", pSession->StartupInfo.uSessionID, rc);
 
-    VGSvcVerbose(0, "Session %RU32 ended\n", pSession->StartupInfo.uSessionID);
-
-    if (pvScratchBuf)
-        RTMemFree(pvScratchBuf);
-
-    if (uClientID)
-    {
-        VGSvcVerbose(3, "Disconnecting client ID=%RU32 ...\n", uClientID);
-        VbglR3GuestCtrlDisconnect(uClientID);
-    }
+    VGSvcVerbose(3, "Disconnecting client ID=%RU32 ...\n", idClient);
+    VbglR3GuestCtrlDisconnect(idClient);
 
     VGSvcVerbose(3, "Session worker returned with rc=%Rrc\n", rc);
     return RT_SUCCESS(rc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
