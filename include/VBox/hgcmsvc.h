@@ -386,6 +386,7 @@ DECLINLINE(void) HGCMSvcSetPv(struct VBOXHGCMSVCPARM *pParm, void *pv,
                                 uint32_t cb)
 {
     AssertPtr(pParm);
+    pParm->type = VBOX_HGCM_SVC_PARM_PTR;
     pParm->u.pointer.addr = pv;
     pParm->u.pointer.size = cb;
 }
@@ -394,6 +395,7 @@ DECLINLINE(void) HGCMSvcSetPv(struct VBOXHGCMSVCPARM *pParm, void *pv,
 DECLINLINE(void) HGCMSvcSetStr(struct VBOXHGCMSVCPARM *pParm, const char *psz)
 {
     AssertPtr(pParm);
+    pParm->type = VBOX_HGCM_SVC_PARM_PTR;
     pParm->u.pointer.addr = (void *)psz;
     pParm->u.pointer.size = (uint32_t)strlen(psz) + 1;
 }
