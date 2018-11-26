@@ -2067,11 +2067,12 @@ typedef struct PDMIHGCMPORT
     /**
      * Notify the guest on a command completion.
      *
+     * @returns VINF_SUCCESS or VERR_CANCELLED if the guest canceled the call.
      * @param   pInterface          Pointer to this interface.
      * @param   rc                  The return code (VBox error code).
      * @param   pCmd                A pointer that identifies the completed command.
      */
-    DECLR3CALLBACKMEMBER(void, pfnCompleted,(PPDMIHGCMPORT pInterface, int32_t rc, PVBOXHGCMCMD pCmd));
+    DECLR3CALLBACKMEMBER(int, pfnCompleted,(PPDMIHGCMPORT pInterface, int32_t rc, PVBOXHGCMCMD pCmd));
 
     /**
      * Checks if @a pCmd was restored & resubmitted from saved state.
@@ -2084,7 +2085,7 @@ typedef struct PDMIHGCMPORT
 
 } PDMIHGCMPORT;
 /** PDMIHGCMPORT interface ID. */
-# define PDMIHGCMPORT_IID                       "10ca89d3-18ef-44d3-535e-ca46532e3caa"
+# define PDMIHGCMPORT_IID                       "e82b1709-c245-4ccc-1611-0e6d50d93cbc"
 
 
 /** Pointer to a HGCM service location structure. */

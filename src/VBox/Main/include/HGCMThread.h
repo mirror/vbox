@@ -43,8 +43,16 @@ typedef FNHGCMNEWMSGALLOC *PFNHGCMNEWMSGALLOC;
  * @param result    Return code either from the service which actually processed the message
  *                  or from HGCM.
  * @param pMsgCore  Pointer to just processed message.
+ *
+ * @return Restricted set of VBox status codes when guest call message:
+ * @retval VINF_SUCCESS on success
+ * @retval VERR_CANCELLED if the request was cancelled.
+ * @retval VERR_ALREADY_RESET if the VM is resetting.
+ * @retval VERR_NOT_AVAILABLE if HGCM has been disconnected from the VMMDev
+ *         (shouldn't happen).
  */
-typedef DECLCALLBACK(void) HGCMMSGCALLBACK(int32_t result, HGCMMsgCore *pMsgCore);
+typedef DECLCALLBACK(int) HGCMMSGCALLBACK(int32_t result, HGCMMsgCore *pMsgCore);
+/** Pointer to a message completeion callback function. */
 typedef HGCMMSGCALLBACK *PHGCMMSGCALLBACK;
 
 

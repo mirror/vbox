@@ -1245,13 +1245,14 @@ static int vmmdevHGCMCompleteCallRequest(PVMMDEV pThis, PVBOXHGCMCMD pCmd, VMMDe
 
 /** Update HGCM request in the guest memory and mark it as completed.
  *
+ * @returns VINF_SUCCESS or VERR_CANCELLED.
  * @param   pInterface      Pointer to this PDM interface.
  * @param   result          HGCM completion status code (VBox status code).
  * @param   pCmd            Completed command, which contains updated host parameters.
  *
  * @thread EMT
  */
-DECLCALLBACK(void) hgcmCompletedWorker(PPDMIHGCMPORT pInterface, int32_t result, PVBOXHGCMCMD pCmd)
+static int hgcmCompletedWorker(PPDMIHGCMPORT pInterface, int32_t result, PVBOXHGCMCMD pCmd)
 {
     PVMMDEV pThis = RT_FROM_MEMBER(pInterface, VMMDevState, IHGCMPort);
 #ifdef VBOX_WITH_DTRACE
@@ -1271,7 +1272,7 @@ DECLCALLBACK(void) hgcmCompletedWorker(PPDMIHGCMPORT pInterface, int32_t result,
          * while HGCM uses them.
          */
         LogFlowFunc(("VINF_HGCM_SAVE_STATE for command %p\n", pCmd));
-        return;
+        return VINF_SUCCESS;
     }
 
     VBOXDD_HGCMCALL_COMPLETED_EMT(pCmd, result);
@@ -1447,10 +1448,15 @@ DECLCALLBACK(void) hgcmCompletedWorker(PPDMIHGCMPORT pInterface, int32_t result,
             /* Now, when the command was removed from the internal list, notify the guest. */
             VMMDevNotifyGuest(pThis, VMMDEV_EVENT_HGCM);
         }
+
+        /* Set the status to success for now, though we might consider passing
+           along the vmmdevHGCMCompleteCallRequest errors... */
+        rc = VINF_SUCCESS;
     }
     else
     {
         LogFlowFunc(("Cancelled command %p\n", pCmd));
+        rc = VERR_CANCELLED;
     }
 
 #ifndef VBOX_WITHOUT_RELEASE_STATISTICS
@@ -1471,15 +1477,19 @@ DECLCALLBACK(void) hgcmCompletedWorker(PPDMIHGCMPORT pInterface, int32_t result,
     if (tsArrival != 0)
         STAM_REL_PROFILE_ADD_PERIOD(&pThis->StatHgcmCmdTotal,  tsNow - tsArrival);
 #endif
+
+    return rc;
 }
 
-/** HGCM callback for request completion. Forwards to hgcmCompletedWorker.
+/**
+ * HGCM callback for request completion. Forwards to hgcmCompletedWorker.
  *
+ * @returns VINF_SUCCESS or VERR_CANCELLED.
  * @param   pInterface      Pointer to this PDM interface.
  * @param   result          HGCM completion status code (VBox status code).
  * @param   pCmd            Completed command, which contains updated host parameters.
  */
-DECLCALLBACK(void) hgcmCompleted(PPDMIHGCMPORT pInterface, int32_t result, PVBOXHGCMCMD pCmd)
+DECLCALLBACK(int) hgcmCompleted(PPDMIHGCMPORT pInterface, int32_t result, PVBOXHGCMCMD pCmd)
 {
 #if 0 /* This seems to be significantly slower.  Half of MsgTotal time seems to be spend here. */
     PVMMDEV pThis = RT_FROM_MEMBER(pInterface, VMMDevState, IHGCMPort);
@@ -1493,10 +1503,11 @@ DECLCALLBACK(void) hgcmCompleted(PPDMIHGCMPORT pInterface, int32_t result, PVBOX
     int rc = VMR3ReqCallVoidNoWait(PDMDevHlpGetVM(pThis->pDevInsR3), VMCPUID_ANY,
                                    (PFNRT)hgcmCompletedWorker, 3, pInterface, result, pCmd);
     AssertRC(rc);
+    return VINF_SUCCESS; /* cannot tell if canceled or not... */
 #else
     STAM_GET_TS(pCmd->tsComplete);
     VBOXDD_HGCMCALL_COMPLETED_REQ(pCmd, result);
-    hgcmCompletedWorker(pInterface, result, pCmd);
+    return hgcmCompletedWorker(pInterface, result, pCmd);
 #endif
 }
 
