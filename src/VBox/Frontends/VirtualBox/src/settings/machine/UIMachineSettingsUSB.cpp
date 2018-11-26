@@ -255,6 +255,8 @@ private:
 /** Machine settings: USB Filter tree-widget item. */
 class UIUSBFilterItem : public QITreeWidgetItem, public UIDataSettingsMachineUSBFilter
 {
+    Q_OBJECT;
+
 public:
 
     /** Constructs USB filter (root) item.
