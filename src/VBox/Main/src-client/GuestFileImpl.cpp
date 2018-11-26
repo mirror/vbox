@@ -378,8 +378,8 @@ int GuestFile::i_closeFile(int *prcGuest)
     /* Prepare HGCM call. */
     VBOXHGCMSVCPARM paParms[4];
     int i = 0;
-    paParms[i++].setUInt32(pEvent->ContextID());
-    paParms[i++].setUInt32(mObjectID /* Guest file ID */);
+    HGCMSvcSetU32(&paParms[i++], pEvent->ContextID());
+    HGCMSvcSetU32(&paParms[i++], mObjectID /* Guest file ID */);
 
     vrc = sendCommand(HOST_FILE_CLOSE, i, paParms);
     if (RT_SUCCESS(vrc))
@@ -440,8 +440,8 @@ int GuestFile::i_onFileNotify(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOST
     int idx = 1; /* Current parameter index. */
     CALLBACKDATA_FILE_NOTIFY dataCb;
     /* pSvcCb->mpaParms[0] always contains the context ID. */
-    pSvcCbData->mpaParms[idx++].getUInt32(&dataCb.uType);
-    pSvcCbData->mpaParms[idx++].getUInt32(&dataCb.rc);
+    HGCMSvcGetU32(&pSvcCbData->mpaParms[idx++], &dataCb.uType);
+    HGCMSvcGetU32(&pSvcCbData->mpaParms[idx++], &dataCb.rc);
 
     int rcGuest = (int)dataCb.rc; /* uint32_t vs. int. */
 
@@ -475,7 +475,7 @@ int GuestFile::i_onFileNotify(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOST
         {
             if (pSvcCbData->mParms == 4)
             {
-                rc = pSvcCbData->mpaParms[idx++].getUInt32(&dataCb.u.open.uHandle);
+                rc = HGCMSvcGetU32(&pSvcCbData->mpaParms[idx++], &dataCb.u.open.uHandle);
                 if (RT_FAILURE(rc))
                     break;
 
@@ -495,7 +495,8 @@ int GuestFile::i_onFileNotify(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOST
         {
             if (pSvcCbData->mParms == 4)
             {
-                rc = pSvcCbData->mpaParms[idx++].getPointer(&dataCb.u.read.pvData, &dataCb.u.read.cbData);
+                rc = HGCMSvcGetPv(&pSvcCbData->mpaParms[idx++], &dataCb.u.read.pvData,
+                                  &dataCb.u.read.cbData);
                 if (RT_FAILURE(rc))
                     break;
 
@@ -522,7 +523,7 @@ int GuestFile::i_onFileNotify(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOST
         {
             if (pSvcCbData->mParms == 4)
             {
-                rc = pSvcCbData->mpaParms[idx++].getUInt32(&dataCb.u.write.cbWritten);
+                rc = HGCMSvcGetU32(&pSvcCbData->mpaParms[idx++], &dataCb.u.write.cbWritten);
                 if (RT_FAILURE(rc))
                     break;
 
@@ -544,7 +545,7 @@ int GuestFile::i_onFileNotify(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOST
         {
             if (pSvcCbData->mParms == 4)
             {
-                rc = pSvcCbData->mpaParms[idx++].getUInt64(&dataCb.u.seek.uOffActual);
+                rc = HGCMSvcGetU64(&pSvcCbData->mpaParms[idx++], &dataCb.u.seek.uOffActual);
                 if (RT_FAILURE(rc))
                     break;
 
@@ -565,7 +566,7 @@ int GuestFile::i_onFileNotify(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOST
         {
             if (pSvcCbData->mParms == 4)
             {
-                rc = pSvcCbData->mpaParms[idx++].getUInt64(&dataCb.u.tell.uOffActual);
+                rc = HGCMSvcGetU64(&pSvcCbData->mpaParms[idx++], &dataCb.u.tell.uOffActual);
                 if (RT_FAILURE(rc))
                     break;
 
@@ -712,14 +713,14 @@ int GuestFile::i_openFile(uint32_t uTimeoutMS, int *prcGuest)
     /* Prepare HGCM call. */
     VBOXHGCMSVCPARM paParms[8];
     int i = 0;
-    paParms[i++].setUInt32(pEvent->ContextID());
-    paParms[i++].setPointer((void*)mData.mOpenInfo.mFileName.c_str(),
-                            (ULONG)mData.mOpenInfo.mFileName.length() + 1);
-    paParms[i++].setString(pszAccessMode);
-    paParms[i++].setString(pszOpenAction);
-    paParms[i++].setString(pszSharingMode);
-    paParms[i++].setUInt32(mData.mOpenInfo.mCreationMode);
-    paParms[i++].setUInt64(mData.mOpenInfo.muOffset);
+    HGCMSvcSetU32(&paParms[i++], pEvent->ContextID());
+    HGCMSvcSetPv(&paParms[i++], (void*)mData.mOpenInfo.mFileName.c_str(),
+                 (ULONG)mData.mOpenInfo.mFileName.length() + 1);
+    HGCMSvcSetStr(&paParms[i++], pszAccessMode);
+    HGCMSvcSetStr(&paParms[i++], pszOpenAction);
+    HGCMSvcSetStr(&paParms[i++], pszSharingMode);
+    HGCMSvcSetU32(&paParms[i++], mData.mOpenInfo.mCreationMode);
+    HGCMSvcSetU64(&paParms[i++], mData.mOpenInfo.muOffset);
     /** @todo Next protocol version: add flags, replace strings, remove initial offset. */
 
     alock.release(); /* Drop write lock before sending. */
@@ -773,9 +774,9 @@ int GuestFile::i_readData(uint32_t uSize, uint32_t uTimeoutMS,
     /* Prepare HGCM call. */
     VBOXHGCMSVCPARM paParms[4];
     int i = 0;
-    paParms[i++].setUInt32(pEvent->ContextID());
-    paParms[i++].setUInt32(mObjectID /* File handle */);
-    paParms[i++].setUInt32(uSize /* Size (in bytes) to read */);
+    HGCMSvcSetU32(&paParms[i++], pEvent->ContextID());
+    HGCMSvcSetU32(&paParms[i++], mObjectID /* File handle */);
+    HGCMSvcSetU32(&paParms[i++], uSize /* Size (in bytes) to read */);
 
     alock.release(); /* Drop write lock before sending. */
 
@@ -832,10 +833,10 @@ int GuestFile::i_readDataAt(uint64_t uOffset, uint32_t uSize, uint32_t uTimeoutM
     /* Prepare HGCM call. */
     VBOXHGCMSVCPARM paParms[4];
     int i = 0;
-    paParms[i++].setUInt32(pEvent->ContextID());
-    paParms[i++].setUInt32(mObjectID /* File handle */);
-    paParms[i++].setUInt64(uOffset /* Offset (in bytes) to start reading */);
-    paParms[i++].setUInt32(uSize /* Size (in bytes) to read */);
+    HGCMSvcSetU32(&paParms[i++], pEvent->ContextID());
+    HGCMSvcSetU32(&paParms[i++], mObjectID /* File handle */);
+    HGCMSvcSetU64(&paParms[i++], uOffset /* Offset (in bytes) to start reading */);
+    HGCMSvcSetU32(&paParms[i++], uSize /* Size (in bytes) to read */);
 
     alock.release(); /* Drop write lock before sending. */
 
@@ -893,11 +894,11 @@ int GuestFile::i_seekAt(int64_t iOffset, GUEST_FILE_SEEKTYPE eSeekType,
     /* Prepare HGCM call. */
     VBOXHGCMSVCPARM paParms[4];
     int i = 0;
-    paParms[i++].setUInt32(pEvent->ContextID());
-    paParms[i++].setUInt32(mObjectID /* File handle */);
-    paParms[i++].setUInt32(eSeekType /* Seek method */);
+    HGCMSvcSetU32(&paParms[i++], pEvent->ContextID());
+    HGCMSvcSetU32(&paParms[i++], mObjectID /* File handle */);
+    HGCMSvcSetU32(&paParms[i++], eSeekType /* Seek method */);
     /** @todo uint64_t vs. int64_t! */
-    paParms[i++].setUInt64((uint64_t)iOffset /* Offset (in bytes) to start reading */);
+    HGCMSvcSetU64(&paParms[i++], (uint64_t)iOffset /* Offset (in bytes) to start reading */);
 
     alock.release(); /* Drop write lock before sending. */
 
@@ -1158,10 +1159,10 @@ int GuestFile::i_writeData(uint32_t uTimeoutMS, void *pvData, uint32_t cbData,
     /* Prepare HGCM call. */
     VBOXHGCMSVCPARM paParms[8];
     int i = 0;
-    paParms[i++].setUInt32(pEvent->ContextID());
-    paParms[i++].setUInt32(mObjectID /* File handle */);
-    paParms[i++].setUInt32(cbData /* Size (in bytes) to write */);
-    paParms[i++].setPointer(pvData, cbData);
+    HGCMSvcSetU32(&paParms[i++], pEvent->ContextID());
+    HGCMSvcSetU32(&paParms[i++], mObjectID /* File handle */);
+    HGCMSvcSetU32(&paParms[i++], cbData /* Size (in bytes) to write */);
+    HGCMSvcSetPv(&paParms[i++], pvData, cbData);
 
     alock.release(); /* Drop write lock before sending. */
 
@@ -1221,11 +1222,11 @@ int GuestFile::i_writeDataAt(uint64_t uOffset, uint32_t uTimeoutMS,
     /* Prepare HGCM call. */
     VBOXHGCMSVCPARM paParms[8];
     int i = 0;
-    paParms[i++].setUInt32(pEvent->ContextID());
-    paParms[i++].setUInt32(mObjectID /* File handle */);
-    paParms[i++].setUInt64(uOffset /* Offset where to starting writing */);
-    paParms[i++].setUInt32(cbData /* Size (in bytes) to write */);
-    paParms[i++].setPointer(pvData, cbData);
+    HGCMSvcSetU32(&paParms[i++], pEvent->ContextID());
+    HGCMSvcSetU32(&paParms[i++], mObjectID /* File handle */);
+    HGCMSvcSetU64(&paParms[i++], uOffset /* Offset where to starting writing */);
+    HGCMSvcSetU32(&paParms[i++], cbData /* Size (in bytes) to write */);
+    HGCMSvcSetPv(&paParms[i++], pvData, cbData);
 
     alock.release(); /* Drop write lock before sending. */
 

@@ -179,8 +179,8 @@ int GuestDirectory::i_callbackDispatcher(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGU
             int idx = 1; /* Current parameter index. */
             CALLBACKDATA_DIR_NOTIFY dataCb;
             /* pSvcCb->mpaParms[0] always contains the context ID. */
-            pSvcCb->mpaParms[idx++].getUInt32(&dataCb.uType);
-            pSvcCb->mpaParms[idx++].getUInt32(&dataCb.rc);
+            HGCMSvcGetU32(&pSvcCb->mpaParms[idx++], &dataCb.uType);
+            HGCMSvcGetU32(&pSvcCb->mpaParms[idx++], &dataCb.rc);
 
             LogFlowFunc(("uType=%RU32, vrcGguest=%Rrc\n", dataCb.uType, (int)dataCb.rc));
 

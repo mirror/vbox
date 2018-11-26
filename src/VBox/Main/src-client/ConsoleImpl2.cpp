@@ -3067,8 +3067,7 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
 
                     /* Setup the service. */
                     VBOXHGCMSVCPARM parm;
-                    parm.type = VBOX_HGCM_SVC_PARM_32BIT;
-                    parm.setUInt32(!i_useHostClipboard());
+                    HGCMSvcSetU32(&parm, !i_useHostClipboard());
                     pVMMDev->hgcmHostCall("VBoxSharedClipboard",
                                           VBOX_SHARED_CLIPBOARD_HOST_FN_SET_HEADLESS, 1, &parm);
                 }
@@ -6071,9 +6070,9 @@ static void configSetProperty(VMMDev * const pVMMDev,
  */
 int configSetGlobalPropertyFlags(VMMDev * const pVMMDev, uint32_t fFlags)
 {
-    VBOXHGCMSVCPARM paParm;
-    paParm.setUInt32(fFlags);
-    int rc = pVMMDev->hgcmHostCall("VBoxGuestPropSvc", GUEST_PROP_FN_HOST_SET_GLOBAL_FLAGS, 1, &paParm);
+    VBOXHGCMSVCPARM parm;
+    HGCMSvcSetU32(&parm, fFlags);
+    int rc = pVMMDev->hgcmHostCall("VBoxGuestPropSvc", GUEST_PROP_FN_HOST_SET_GLOBAL_FLAGS, 1, &parm);
     if (RT_FAILURE(rc))
     {
         char szFlags[GUEST_PROP_MAX_FLAGS_LEN];

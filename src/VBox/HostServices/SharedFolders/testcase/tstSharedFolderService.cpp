@@ -658,20 +658,20 @@ static SHFLROOT initWithWritableMapping(RTTEST hTest,
     fillTestShflString(&FolderName, pcszFolderName);
     fillTestShflString(&Mapping, pcszMapping);
     fillTestShflString(&AutoMountPoint, "");
-    aParms[0].setPointer(&FolderName,   RT_UOFFSETOF(SHFLSTRING, String)
+    HGCMSvcSetPv(&aParms[0], &FolderName,   RT_UOFFSETOF(SHFLSTRING, String)
                                       + FolderName.string.u16Size);
-    aParms[1].setPointer(&Mapping,   RT_UOFFSETOF(SHFLSTRING, String)
+    HGCMSvcSetPv(&aParms[1], &Mapping,   RT_UOFFSETOF(SHFLSTRING, String)
                                    + Mapping.string.u16Size);
-    aParms[2].setUInt32(1);
-    aParms[3].setPointer(&AutoMountPoint, SHFLSTRING_HEADER_SIZE + AutoMountPoint.string.u16Size);
+    HGCMSvcSetU32(&aParms[2], 1);
+    HGCMSvcSetPv(&aParms[3], &AutoMountPoint, SHFLSTRING_HEADER_SIZE + AutoMountPoint.string.u16Size);
     rc = psvcTable->pfnHostCall(psvcTable->pvService, SHFL_FN_ADD_MAPPING,
                                 SHFL_CPARMS_ADD_MAPPING, aParms);
     AssertReleaseRC(rc);
-    aParms[0].setPointer(&Mapping,   RT_UOFFSETOF(SHFLSTRING, String)
+    HGCMSvcSetPv(&aParms[0], &Mapping,   RT_UOFFSETOF(SHFLSTRING, String)
                                    + Mapping.string.u16Size);
-    aParms[1].setUInt32(0);  /* root */
-    aParms[2].setUInt32('/');  /* delimiter */
-    aParms[3].setUInt32(fCaseSensitive);
+    HGCMSvcSetU32(&aParms[1], 0);  /* root */
+    HGCMSvcSetU32(&aParms[2], '/');  /* delimiter */
+    HGCMSvcSetU32(&aParms[3], fCaseSensitive);
     psvcTable->pfnCall(psvcTable->pvService, &callHandle, 0,
                        psvcTable->pvService, SHFL_FN_MAP_FOLDER,
                        SHFL_CPARMS_MAP_FOLDER, aParms, 0);
@@ -691,13 +691,13 @@ static void unmapAndRemoveMapping(RTTEST hTest, VBOXHGCMSVCFNTABLE *psvcTable,
     union TESTSHFLSTRING FolderName;
     int rc;
 
-    aParms[0].setUInt32(root);
+    HGCMSvcSetU32(&aParms[0], root);
     psvcTable->pfnCall(psvcTable->pvService, &callHandle, 0,
                        psvcTable->pvService, SHFL_FN_UNMAP_FOLDER,
                        SHFL_CPARMS_UNMAP_FOLDER, aParms, 0);
     AssertReleaseRC(callHandle.rc);
     fillTestShflString(&FolderName, pcszFolderName);
-    aParms[0].setPointer(&FolderName,   RT_UOFFSETOF(SHFLSTRING, String)
+    HGCMSvcSetPv(&aParms[0], &FolderName,   RT_UOFFSETOF(SHFLSTRING, String)
                                       + FolderName.string.u16Size);
     rc = psvcTable->pfnHostCall(psvcTable->pvService, SHFL_FN_REMOVE_MAPPING,
                                 SHFL_CPARMS_REMOVE_MAPPING, aParms);
@@ -716,10 +716,10 @@ static int createFile(VBOXHGCMSVCFNTABLE *psvcTable, SHFLROOT Root,
     fillTestShflString(&Path, pcszFilename);
     RT_ZERO(CreateParms);
     CreateParms.CreateFlags = fCreateFlags;
-    aParms[0].setUInt32(Root);
-    aParms[1].setPointer(&Path,   RT_UOFFSETOF(SHFLSTRING, String)
+    HGCMSvcSetU32(&aParms[0], Root);
+    HGCMSvcSetPv(&aParms[1], &Path,   RT_UOFFSETOF(SHFLSTRING, String)
                                 + Path.string.u16Size);
-    aParms[2].setPointer(&CreateParms, sizeof(CreateParms));
+    HGCMSvcSetPv(&aParms[2], &CreateParms, sizeof(CreateParms));
     psvcTable->pfnCall(psvcTable->pvService, &callHandle, 0,
                        psvcTable->pvService, SHFL_FN_CREATE,
                        RT_ELEMENTS(aParms), aParms, 0);
@@ -739,11 +739,11 @@ static int readFile(VBOXHGCMSVCFNTABLE *psvcTable, SHFLROOT Root,
     VBOXHGCMSVCPARM aParms[SHFL_CPARMS_READ];
     VBOXHGCMCALLHANDLE_TYPEDEF callHandle = { VINF_SUCCESS };
 
-    aParms[0].setUInt32(Root);
-    aParms[1].setUInt64((uint64_t) hFile);
-    aParms[2].setUInt64(offSeek);
-    aParms[3].setUInt32(cbRead);
-    aParms[4].setPointer(pvBuf, cbBuf);
+    HGCMSvcSetU32(&aParms[0], Root);
+    HGCMSvcSetU64(&aParms[1], (uint64_t) hFile);
+    HGCMSvcSetU64(&aParms[2], offSeek);
+    HGCMSvcSetU32(&aParms[3], cbRead);
+    HGCMSvcSetPv(&aParms[4], pvBuf, cbBuf);
     psvcTable->pfnCall(psvcTable->pvService, &callHandle, 0,
                        psvcTable->pvService, SHFL_FN_READ,
                        RT_ELEMENTS(aParms), aParms, 0);
@@ -759,11 +759,11 @@ static int writeFile(VBOXHGCMSVCFNTABLE *psvcTable, SHFLROOT Root,
     VBOXHGCMSVCPARM aParms[SHFL_CPARMS_WRITE];
     VBOXHGCMCALLHANDLE_TYPEDEF callHandle = { VINF_SUCCESS };
 
-    aParms[0].setUInt32(Root);
-    aParms[1].setUInt64((uint64_t) hFile);
-    aParms[2].setUInt64(offSeek);
-    aParms[3].setUInt32(cbWrite);
-    aParms[4].setPointer((void *)pvBuf, cbBuf);
+    HGCMSvcSetU32(&aParms[0], Root);
+    HGCMSvcSetU64(&aParms[1], (uint64_t) hFile);
+    HGCMSvcSetU64(&aParms[2], offSeek);
+    HGCMSvcSetU32(&aParms[3], cbWrite);
+    HGCMSvcSetPv(&aParms[4], (void *)pvBuf, cbBuf);
     psvcTable->pfnCall(psvcTable->pvService, &callHandle, 0,
                        psvcTable->pvService, SHFL_FN_WRITE,
                        RT_ELEMENTS(aParms), aParms, 0);
@@ -778,8 +778,8 @@ static int flushFile(VBOXHGCMSVCFNTABLE *psvcTable, SHFLROOT root,
     VBOXHGCMSVCPARM aParms[SHFL_CPARMS_FLUSH];
     VBOXHGCMCALLHANDLE_TYPEDEF callHandle = { VINF_SUCCESS };
 
-    aParms[0].setUInt32(root);
-    aParms[1].setUInt64(handle);
+    HGCMSvcSetU32(&aParms[0], root);
+    HGCMSvcSetU64(&aParms[1], handle);
     psvcTable->pfnCall(psvcTable->pvService, &callHandle, 0,
                        psvcTable->pvService, SHFL_FN_FLUSH,
                        SHFL_CPARMS_FLUSH, aParms, 0);
@@ -795,21 +795,21 @@ static int listDir(VBOXHGCMSVCFNTABLE *psvcTable, SHFLROOT root,
     union TESTSHFLSTRING Path;
     VBOXHGCMCALLHANDLE_TYPEDEF callHandle = { VINF_SUCCESS };
 
-    aParms[0].setUInt32(root);
-    aParms[1].setUInt64(handle);
-    aParms[2].setUInt32(fFlags);
-    aParms[3].setUInt32(cbBuf);
+    HGCMSvcSetU32(&aParms[0], root);
+    HGCMSvcSetU64(&aParms[1], handle);
+    HGCMSvcSetU32(&aParms[2], fFlags);
+    HGCMSvcSetU32(&aParms[3], cbBuf);
     if (pcszPath)
     {
         fillTestShflString(&Path, pcszPath);
-        aParms[4].setPointer(&Path,   RT_UOFFSETOF(SHFLSTRING, String)
+        HGCMSvcSetPv(&aParms[4], &Path,   RT_UOFFSETOF(SHFLSTRING, String)
                                     + Path.string.u16Size);
     }
     else
-        aParms[4].setPointer(NULL, 0);
-    aParms[5].setPointer(pvBuf, cbBuf);
-    aParms[6].setUInt32(resumePoint);
-    aParms[7].setUInt32(0);
+        HGCMSvcSetPv(&aParms[4], NULL, 0);
+    HGCMSvcSetPv(&aParms[5], pvBuf, cbBuf);
+    HGCMSvcSetU32(&aParms[6], resumePoint);
+    HGCMSvcSetU32(&aParms[7], 0);
     psvcTable->pfnCall(psvcTable->pvService, &callHandle, 0,
                        psvcTable->pvService, SHFL_FN_LIST,
                        RT_ELEMENTS(aParms), aParms, 0);
@@ -825,11 +825,11 @@ static int sfInformation(VBOXHGCMSVCFNTABLE *psvcTable, SHFLROOT root,
     VBOXHGCMSVCPARM aParms[SHFL_CPARMS_INFORMATION];
     VBOXHGCMCALLHANDLE_TYPEDEF callHandle = { VINF_SUCCESS };
 
-    aParms[0].setUInt32(root);
-    aParms[1].setUInt64(handle);
-    aParms[2].setUInt32(fFlags);
-    aParms[3].setUInt32(cb);
-    aParms[4].setPointer(pInfo, cb);
+    HGCMSvcSetU32(&aParms[0], root);
+    HGCMSvcSetU64(&aParms[1], handle);
+    HGCMSvcSetU32(&aParms[2], fFlags);
+    HGCMSvcSetU32(&aParms[3], cb);
+    HGCMSvcSetPv(&aParms[4], pInfo, cb);
     psvcTable->pfnCall(psvcTable->pvService, &callHandle, 0,
                        psvcTable->pvService, SHFL_FN_INFORMATION,
                        RT_ELEMENTS(aParms), aParms, 0);
@@ -843,11 +843,11 @@ static int lockFile(VBOXHGCMSVCFNTABLE *psvcTable, SHFLROOT root,
     VBOXHGCMSVCPARM aParms[SHFL_CPARMS_LOCK];
     VBOXHGCMCALLHANDLE_TYPEDEF callHandle = { VINF_SUCCESS };
 
-    aParms[0].setUInt32(root);
-    aParms[1].setUInt64(handle);
-    aParms[2].setUInt64(offLock);
-    aParms[3].setUInt64(cbLock);
-    aParms[4].setUInt32(fFlags);
+    HGCMSvcSetU32(&aParms[0], root);
+    HGCMSvcSetU64(&aParms[1], handle);
+    HGCMSvcSetU64(&aParms[2], offLock);
+    HGCMSvcSetU64(&aParms[3], cbLock);
+    HGCMSvcSetU32(&aParms[4], fFlags);
     psvcTable->pfnCall(psvcTable->pvService, &callHandle, 0,
                        psvcTable->pvService, SHFL_FN_LOCK,
                        RT_ELEMENTS(aParms), aParms, 0);

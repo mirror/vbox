@@ -8648,10 +8648,11 @@ HRESULT Console::i_createSharedFolder(const Utf8Str &strName, const SharedFolder
         VBOXHGCMSVCPARM aParams[SHFL_CPARMS_ADD_MAPPING];
         SHFLSTRING_TO_HGMC_PARAM(&aParams[0], pHostPath);
         SHFLSTRING_TO_HGMC_PARAM(&aParams[1], pName);
-        aParams[2].setUInt32(  (aData.m_fWritable  ? SHFL_ADD_MAPPING_F_WRITABLE : 0)
-                             | (aData.m_fAutoMount ? SHFL_ADD_MAPPING_F_AUTOMOUNT : 0)
-                             | (fSymlinksCreate    ? SHFL_ADD_MAPPING_F_CREATE_SYMLINKS : 0)
-                             | (fMissing           ? SHFL_ADD_MAPPING_F_MISSING : 0));
+        HGCMSvcSetU32(&aParams[2],
+                        (aData.m_fWritable  ? SHFL_ADD_MAPPING_F_WRITABLE : 0)
+                      | (aData.m_fAutoMount ? SHFL_ADD_MAPPING_F_AUTOMOUNT : 0)
+                      | (fSymlinksCreate    ? SHFL_ADD_MAPPING_F_CREATE_SYMLINKS : 0)
+                      | (fMissing           ? SHFL_ADD_MAPPING_F_MISSING : 0));
         SHFLSTRING_TO_HGMC_PARAM(&aParams[3], pAutoMountPoint);
         AssertCompile(SHFL_CPARMS_ADD_MAPPING == 4);
 

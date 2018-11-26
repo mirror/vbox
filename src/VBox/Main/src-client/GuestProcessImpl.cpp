@@ -609,13 +609,13 @@ int GuestProcess::i_onProcessInputStatus(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGU
 
     CALLBACKDATA_PROC_INPUT dataCb;
     /* pSvcCb->mpaParms[0] always contains the context ID. */
-    int vrc = pSvcCbData->mpaParms[1].getUInt32(&dataCb.uPID);
+    int vrc = HGCMSvcGetU32(&pSvcCbData->mpaParms[1], &dataCb.uPID);
     AssertRCReturn(vrc, vrc);
-    vrc = pSvcCbData->mpaParms[2].getUInt32(&dataCb.uStatus);
+    vrc = HGCMSvcGetU32(&pSvcCbData->mpaParms[2], &dataCb.uStatus);
     AssertRCReturn(vrc, vrc);
-    vrc = pSvcCbData->mpaParms[3].getUInt32(&dataCb.uFlags);
+    vrc = HGCMSvcGetU32(&pSvcCbData->mpaParms[3], &dataCb.uFlags);
     AssertRCReturn(vrc, vrc);
-    vrc = pSvcCbData->mpaParms[4].getUInt32(&dataCb.uProcessed);
+    vrc = HGCMSvcGetU32(&pSvcCbData->mpaParms[4], &dataCb.uProcessed);
     AssertRCReturn(vrc, vrc);
 
     LogFlowThisFunc(("uPID=%RU32, uStatus=%RU32, uFlags=%RI32, cbProcessed=%RU32\n",
@@ -683,13 +683,13 @@ int GuestProcess::i_onProcessStatusChange(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXG
 
     CALLBACKDATA_PROC_STATUS dataCb;
     /* pSvcCb->mpaParms[0] always contains the context ID. */
-    int vrc = pSvcCbData->mpaParms[1].getUInt32(&dataCb.uPID);
+    int vrc = HGCMSvcGetU32(&pSvcCbData->mpaParms[1], &dataCb.uPID);
     AssertRCReturn(vrc, vrc);
-    vrc = pSvcCbData->mpaParms[2].getUInt32(&dataCb.uStatus);
+    vrc = HGCMSvcGetU32(&pSvcCbData->mpaParms[2], &dataCb.uStatus);
     AssertRCReturn(vrc, vrc);
-    vrc = pSvcCbData->mpaParms[3].getUInt32(&dataCb.uFlags);
+    vrc = HGCMSvcGetU32(&pSvcCbData->mpaParms[3], &dataCb.uFlags);
     AssertRCReturn(vrc, vrc);
-    vrc = pSvcCbData->mpaParms[4].getPointer(&dataCb.pvData, &dataCb.cbData);
+    vrc = HGCMSvcGetPv(&pSvcCbData->mpaParms[4], &dataCb.pvData, &dataCb.cbData);
     AssertRCReturn(vrc, vrc);
 
     LogFlowThisFunc(("uPID=%RU32, uStatus=%RU32, uFlags=%RU32\n",
@@ -793,13 +793,13 @@ int GuestProcess::i_onProcessOutput(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCT
 
     CALLBACKDATA_PROC_OUTPUT dataCb;
     /* pSvcCb->mpaParms[0] always contains the context ID. */
-    int vrc = pSvcCbData->mpaParms[1].getUInt32(&dataCb.uPID);
+    int vrc = HGCMSvcGetU32(&pSvcCbData->mpaParms[1], &dataCb.uPID);
     AssertRCReturn(vrc, vrc);
-    vrc = pSvcCbData->mpaParms[2].getUInt32(&dataCb.uHandle);
+    vrc = HGCMSvcGetU32(&pSvcCbData->mpaParms[2], &dataCb.uHandle);
     AssertRCReturn(vrc, vrc);
-    vrc = pSvcCbData->mpaParms[3].getUInt32(&dataCb.uFlags);
+    vrc = HGCMSvcGetU32(&pSvcCbData->mpaParms[3], &dataCb.uFlags);
     AssertRCReturn(vrc, vrc);
-    vrc = pSvcCbData->mpaParms[4].getPointer(&dataCb.pvData, &dataCb.cbData);
+    vrc = HGCMSvcGetPv(&pSvcCbData->mpaParms[4], &dataCb.pvData, &dataCb.cbData);
     AssertRCReturn(vrc, vrc);
 
     LogFlowThisFunc(("uPID=%RU32, uHandle=%RU32, uFlags=%RI32, pvData=%p, cbData=%RU32\n",
@@ -908,10 +908,10 @@ int GuestProcess::i_readData(uint32_t uHandle, uint32_t uSize, uint32_t uTimeout
     {
         VBOXHGCMSVCPARM paParms[8];
         int i = 0;
-        paParms[i++].setUInt32(pEvent->ContextID());
-        paParms[i++].setUInt32(mData.mPID);
-        paParms[i++].setUInt32(uHandle);
-        paParms[i++].setUInt32(0 /* Flags, none set yet. */);
+        HGCMSvcSetU32(&paParms[i++], pEvent->ContextID());
+        HGCMSvcSetU32(&paParms[i++], mData.mPID);
+        HGCMSvcSetU32(&paParms[i++], uHandle);
+        HGCMSvcSetU32(&paParms[i++], 0 /* Flags, none set yet. */);
 
         alock.release(); /* Drop the write lock before sending. */
 
@@ -1093,21 +1093,21 @@ int GuestProcess::i_startProcessInner(uint32_t cMsTimeout, AutoWriteLock &rLock,
         /* Prepare HGCM call. */
         VBOXHGCMSVCPARM paParms[16];
         int i = 0;
-        paParms[i++].setUInt32(pEvent->ContextID());
-        paParms[i++].setCppString(mData.mProcess.mExecutable);
-        paParms[i++].setUInt32(mData.mProcess.mFlags);
-        paParms[i++].setUInt32((uint32_t)mData.mProcess.mArguments.size());
-        paParms[i++].setPointer(pszArgs, (uint32_t)cbArgs);
-        paParms[i++].setUInt32(mData.mProcess.mEnvironmentChanges.count());
-        paParms[i++].setUInt32((uint32_t)cbEnvBlock);
-        paParms[i++].setPointer(pszzEnvBlock, (uint32_t)cbEnvBlock);
+        HGCMSvcSetU32(&paParms[i++], pEvent->ContextID());
+        HGCMSvcSetRTCStr(&paParms[i++], mData.mProcess.mExecutable);
+        HGCMSvcSetU32(&paParms[i++], mData.mProcess.mFlags);
+        HGCMSvcSetU32(&paParms[i++], (uint32_t)mData.mProcess.mArguments.size());
+        HGCMSvcSetPv(&paParms[i++], pszArgs, (uint32_t)cbArgs);
+        HGCMSvcSetU32(&paParms[i++], mData.mProcess.mEnvironmentChanges.count());
+        HGCMSvcSetU32(&paParms[i++], (uint32_t)cbEnvBlock);
+        HGCMSvcSetPv(&paParms[i++], pszzEnvBlock, (uint32_t)cbEnvBlock);
         if (uProtocol < 2)
         {
             /* In protocol v1 (VBox < 4.3) the credentials were part of the execution
              * call. In newer protocols these credentials are part of the opened guest
              * session, so not needed anymore here. */
-            paParms[i++].setCppString(sessionCreds.mUser);
-            paParms[i++].setCppString(sessionCreds.mPassword);
+            HGCMSvcSetRTCStr(&paParms[i++], sessionCreds.mUser);
+            HGCMSvcSetRTCStr(&paParms[i++], sessionCreds.mPassword);
         }
         /*
          * If the WaitForProcessStartOnly flag is set, we only want to define and wait for a timeout
@@ -1116,17 +1116,17 @@ int GuestProcess::i_startProcessInner(uint32_t cMsTimeout, AutoWriteLock &rLock,
          * but let the started process perform lengthly operations then.
          */
         if (mData.mProcess.mFlags & ProcessCreateFlag_WaitForProcessStartOnly)
-            paParms[i++].setUInt32(UINT32_MAX /* Infinite timeout */);
+            HGCMSvcSetU32(&paParms[i++], UINT32_MAX /* Infinite timeout */);
         else
-            paParms[i++].setUInt32(mData.mProcess.mTimeoutMS);
+            HGCMSvcSetU32(&paParms[i++], mData.mProcess.mTimeoutMS);
         if (uProtocol >= 2)
         {
-            paParms[i++].setUInt32(mData.mProcess.mPriority);
+            HGCMSvcSetU32(&paParms[i++], mData.mProcess.mPriority);
             /* CPU affinity: We only support one CPU affinity block at the moment,
              * so that makes up to 64 CPUs total. This can be more in the future. */
-            paParms[i++].setUInt32(1);
+            HGCMSvcSetU32(&paParms[i++], 1);
             /* The actual CPU affinity blocks. */
-            paParms[i++].setPointer((void *)&mData.mProcess.mAffinity, sizeof(mData.mProcess.mAffinity));
+            HGCMSvcSetPv(&paParms[i++], (void *)&mData.mProcess.mAffinity, sizeof(mData.mProcess.mAffinity));
         }
 
         rLock.release(); /* Drop the write lock before sending. */
@@ -1245,8 +1245,8 @@ int GuestProcess::i_terminateProcess(uint32_t uTimeoutMS, int *prcGuest)
 
             VBOXHGCMSVCPARM paParms[4];
             int i = 0;
-            paParms[i++].setUInt32(pEvent->ContextID());
-            paParms[i++].setUInt32(mData.mPID);
+            HGCMSvcSetU32(&paParms[i++], pEvent->ContextID());
+            HGCMSvcSetU32(&paParms[i++], mData.mPID);
 
             alock.release(); /* Drop the write lock before sending. */
 
@@ -1723,11 +1723,11 @@ int GuestProcess::i_writeData(uint32_t uHandle, uint32_t uFlags,
 
     VBOXHGCMSVCPARM paParms[5];
     int i = 0;
-    paParms[i++].setUInt32(pEvent->ContextID());
-    paParms[i++].setUInt32(mData.mPID);
-    paParms[i++].setUInt32(uFlags);
-    paParms[i++].setPointer(pvData, (uint32_t)cbData);
-    paParms[i++].setUInt32((uint32_t)cbData);
+    HGCMSvcSetU32(&paParms[i++], pEvent->ContextID());
+    HGCMSvcSetU32(&paParms[i++], mData.mPID);
+    HGCMSvcSetU32(&paParms[i++], uFlags);
+    HGCMSvcSetPv(&paParms[i++], pvData, (uint32_t)cbData);
+    HGCMSvcSetU32(&paParms[i++], (uint32_t)cbData);
 
     alock.release(); /* Drop the write lock before sending. */
 

@@ -224,10 +224,10 @@ static void testSetPropsHost(VBOXHGCMSVCFNTABLE *ptable)
     RTTESTI_CHECK_RETV(RT_VALID_PTR(ptable->pfnHostCall));
 
     VBOXHGCMSVCPARM aParms[4];
-    aParms[0].setPointer((void *)g_apcszNameBlock, 0);
-    aParms[1].setPointer((void *)g_apcszValueBlock, 0);
-    aParms[2].setPointer((void *)g_au64TimestampBlock, 0);
-    aParms[3].setPointer((void *)g_apcszFlagsBlock, 0);
+    HGCMSvcSetPv(&aParms[0], (void *)g_apcszNameBlock, 0);
+    HGCMSvcSetPv(&aParms[1], (void *)g_apcszValueBlock, 0);
+    HGCMSvcSetPv(&aParms[2], (void *)g_au64TimestampBlock, 0);
+    HGCMSvcSetPv(&aParms[3], (void *)g_apcszFlagsBlock, 0);
     RTTESTI_CHECK_RC(ptable->pfnHostCall(ptable->pvService, GUEST_PROP_FN_HOST_SET_PROPS, 4, &aParms[0]), VINF_SUCCESS);
 }
 
@@ -336,14 +336,14 @@ static void testEnumPropsHost(VBOXHGCMSVCFNTABLE *ptable)
         RTTESTI_CHECK_RETV(g_aEnumStrings[i].cbBuffer < sizeof(abBuffer));
 
         /* Check that we get buffer overflow with a too small buffer. */
-        aParms[0].setPointer((void *)g_aEnumStrings[i].pszPatterns, g_aEnumStrings[i].cchPatterns);
-        aParms[1].setPointer((void *)abBuffer, g_aEnumStrings[i].cbBuffer - 1);
+        HGCMSvcSetPv(&aParms[0], (void *)g_aEnumStrings[i].pszPatterns, g_aEnumStrings[i].cchPatterns);
+        HGCMSvcSetPv(&aParms[1], (void *)abBuffer, g_aEnumStrings[i].cbBuffer - 1);
         memset(abBuffer, 0x55, sizeof(abBuffer));
         int rc2 = ptable->pfnHostCall(ptable->pvService, GUEST_PROP_FN_HOST_ENUM_PROPS, 3, aParms);
         if (rc2 == VERR_BUFFER_OVERFLOW)
         {
             uint32_t cbNeeded;
-            RTTESTI_CHECK_RC(rc2 = aParms[2].getUInt32(&cbNeeded), VINF_SUCCESS);
+            RTTESTI_CHECK_RC(rc2 = HGCMSvcGetU32(&aParms[2], &cbNeeded), VINF_SUCCESS);
             if (RT_SUCCESS(rc2))
                 RTTESTI_CHECK_MSG(cbNeeded == g_aEnumStrings[i].cbBuffer,
                                   ("expected %u, got %u, pattern %d\n", g_aEnumStrings[i].cbBuffer, cbNeeded, i));
@@ -352,8 +352,8 @@ static void testEnumPropsHost(VBOXHGCMSVCFNTABLE *ptable)
             RTTestIFailed("ENUM_PROPS_HOST returned %Rrc instead of VERR_BUFFER_OVERFLOW on too small buffer, pattern number %d.", rc2, i);
 
         /* Make a successfull call. */
-        aParms[0].setPointer((void *)g_aEnumStrings[i].pszPatterns, g_aEnumStrings[i].cchPatterns);
-        aParms[1].setPointer((void *)abBuffer, g_aEnumStrings[i].cbBuffer);
+        HGCMSvcSetPv(&aParms[0], (void *)g_aEnumStrings[i].pszPatterns, g_aEnumStrings[i].cchPatterns);
+        HGCMSvcSetPv(&aParms[1], (void *)abBuffer, g_aEnumStrings[i].cbBuffer);
         memset(abBuffer, 0x55, sizeof(abBuffer));
         rc2 = ptable->pfnHostCall(ptable->pvService, GUEST_PROP_FN_HOST_ENUM_PROPS, 3, aParms);
         if (rc2 == VINF_SUCCESS)
@@ -415,9 +415,9 @@ int doSetProperty(VBOXHGCMSVCFNTABLE *pTable, const char *pcszName,
     RTStrPrintf(szName, sizeof(szName), "%s", pcszName);
     RTStrPrintf(szValue, sizeof(szValue), "%s", pcszValue);
     RTStrPrintf(szFlags, sizeof(szFlags), "%s", pcszFlags);
-    aParms[0].setString(szName);
-    aParms[1].setString(szValue);
-    aParms[2].setString(szFlags);
+    HGCMSvcSetStr(&aParms[0], szName);
+    HGCMSvcSetStr(&aParms[1], szValue);
+    HGCMSvcSetStr(&aParms[2], szFlags);
     if (isHost)
         callHandle.rc = pTable->pfnHostCall(pTable->pvService, command,
                                             useSetProp ? 3 : 2, aParms);
@@ -504,7 +504,7 @@ static int doDelProp(VBOXHGCMSVCFNTABLE *pTable, const char *pcszName, bool isHo
     if (isHost)
         command = GUEST_PROP_FN_HOST_DEL_PROP;
     VBOXHGCMSVCPARM aParms[1];
-    aParms[0].setString(pcszName);
+    HGCMSvcSetStr(&aParms[0], pcszName);
     if (isHost)
         callHandle.rc = pTable->pfnHostCall(pTable->pvService, command, 1, aParms);
     else
@@ -605,9 +605,9 @@ static void testGetProp(VBOXHGCMSVCFNTABLE *pTable)
         char szBuffer[GUEST_PROP_MAX_VALUE_LEN + GUEST_PROP_MAX_FLAGS_LEN];
         RTTESTI_CHECK_RETV(s_aGetProperties[i].cchValue < sizeof(szBuffer));
 
-        aParms[0].setString(s_aGetProperties[i].pcszName);
+        HGCMSvcSetStr(&aParms[0], s_aGetProperties[i].pcszName);
         memset(szBuffer, 0x55, sizeof(szBuffer));
-        aParms[1].setPointer(szBuffer, sizeof(szBuffer));
+        HGCMSvcSetPv(&aParms[1], szBuffer, sizeof(szBuffer));
         int rc2 = pTable->pfnHostCall(pTable->pvService, GUEST_PROP_FN_HOST_GET_PROP, 4, aParms);
 
         if (s_aGetProperties[i].exists && RT_FAILURE(rc2))
@@ -629,7 +629,7 @@ static void testGetProp(VBOXHGCMSVCFNTABLE *pTable)
             AssertRC(rc2);
 
             uint32_t u32ValueLen = UINT32_MAX;
-            RTTESTI_CHECK_RC(rc2 = aParms[3].getUInt32(&u32ValueLen), VINF_SUCCESS);
+            RTTESTI_CHECK_RC(rc2 = HGCMSvcGetU32(&aParms[3], &u32ValueLen), VINF_SUCCESS);
             if (RT_SUCCESS(rc2))
             {
                 RTTESTI_CHECK_MSG(u32ValueLen <= sizeof(szBuffer), ("u32ValueLen=%d", u32ValueLen));
@@ -642,7 +642,7 @@ static void testGetProp(VBOXHGCMSVCFNTABLE *pTable)
             if (s_aGetProperties[i].hasTimestamp)
             {
                 uint64_t u64Timestamp = UINT64_MAX;
-                RTTESTI_CHECK_RC(rc2 = aParms[2].getUInt64(&u64Timestamp), VINF_SUCCESS);
+                RTTESTI_CHECK_RC(rc2 = HGCMSvcGetU64(&aParms[2], &u64Timestamp), VINF_SUCCESS);
                 if (u64Timestamp != s_aGetProperties[i].u64Timestamp)
                     RTTestIFailed("Bad timestamp %llu for property '%s', expected %llu.",
                                   u64Timestamp, s_aGetProperties[i].pcszName,
@@ -699,13 +699,13 @@ static void testGetNotification(VBOXHGCMSVCFNTABLE *pTable)
         RTTESTI_CHECK_BREAK(pvBuf);
         memset(pvBuf, 0x55, cbBuf);
 
-        aParms[0].setPointer((void *)s_szPattern, sizeof(s_szPattern));
-        aParms[1].setUInt64(1);
-        aParms[2].setPointer(pvBuf, cbBuf);
+        HGCMSvcSetPv(&aParms[0], (void *)s_szPattern, sizeof(s_szPattern));
+        HGCMSvcSetU64(&aParms[1], 1);
+        HGCMSvcSetPv(&aParms[2], pvBuf, cbBuf);
         pTable->pfnCall(pTable->pvService, &callHandle, 0, NULL, GUEST_PROP_FN_GET_NOTIFICATION, 4, aParms, 0);
 
         if (   callHandle.rc != VERR_BUFFER_OVERFLOW
-            || RT_FAILURE(aParms[3].getUInt32(&cbRetNeeded))
+            || RT_FAILURE(HGCMSvcGetU32(&aParms[3], &cbRetNeeded))
             || cbRetNeeded != g_aGetNotifications[0].cbBuffer
            )
         {
@@ -725,14 +725,14 @@ static void testGetNotification(VBOXHGCMSVCFNTABLE *pTable)
         RTTESTI_CHECK_BREAK(pvBuf);
         memset(pvBuf, 0x55, cbBuf);
 
-        aParms[0].setPointer((void *)s_szPattern, sizeof(s_szPattern));
-        aParms[1].setUInt64(u64Timestamp);
-        aParms[2].setPointer(pvBuf, cbBuf);
+        HGCMSvcSetPv(&aParms[0], (void *)s_szPattern, sizeof(s_szPattern));
+        HGCMSvcSetU64(&aParms[1], u64Timestamp);
+        HGCMSvcSetPv(&aParms[2], pvBuf, cbBuf);
         pTable->pfnCall(pTable->pvService, &callHandle, 0, NULL, GUEST_PROP_FN_GET_NOTIFICATION, 4, aParms, 0);
         if (   RT_FAILURE(callHandle.rc)
             || (i == 0 && callHandle.rc != VWRN_NOT_FOUND)
-            || RT_FAILURE(aParms[1].getUInt64(&u64Timestamp))
-            || RT_FAILURE(aParms[3].getUInt32(&cbRetNeeded))
+            || RT_FAILURE(HGCMSvcGetU64(&aParms[1], &u64Timestamp))
+            || RT_FAILURE(HGCMSvcGetU32(&aParms[3], &cbRetNeeded))
             || cbRetNeeded != g_aGetNotifications[i].cbBuffer
             || memcmp(pvBuf, g_aGetNotifications[i].pchBuffer, cbRetNeeded) != 0
            )
@@ -763,9 +763,9 @@ static void setupAsyncNotification(VBOXHGCMSVCFNTABLE *pTable)
     RTTestISub("Async GET_NOTIFICATION without notifications");
     static char s_szPattern[] = "";
 
-    g_AsyncNotification.aParms[0].setPointer((void *)s_szPattern, sizeof(s_szPattern));
-    g_AsyncNotification.aParms[1].setUInt64(0);
-    g_AsyncNotification.aParms[2].setPointer((void *)g_AsyncNotification.abBuffer,
+    HGCMSvcSetPv(&g_AsyncNotification.aParms[0], (void *)s_szPattern, sizeof(s_szPattern));
+    HGCMSvcSetU64(&g_AsyncNotification.aParms[1], 0);
+    HGCMSvcSetPv(&g_AsyncNotification.aParms[2], (void *)g_AsyncNotification.abBuffer,
                                              sizeof(g_AsyncNotification.abBuffer));
     g_AsyncNotification.callHandle.rc = VINF_HGCM_ASYNC_EXECUTE;
     pTable->pfnCall(pTable->pvService, &g_AsyncNotification.callHandle, 0, NULL,
@@ -785,8 +785,8 @@ static void testAsyncNotification(VBOXHGCMSVCFNTABLE *pTable)
     uint64_t u64Timestamp;
     uint32_t u32Size;
     if (   g_AsyncNotification.callHandle.rc != VINF_SUCCESS
-        || RT_FAILURE(g_AsyncNotification.aParms[1].getUInt64(&u64Timestamp))
-        || RT_FAILURE(g_AsyncNotification.aParms[3].getUInt32(&u32Size))
+        || RT_FAILURE(HGCMSvcGetU64(&g_AsyncNotification.aParms[1], &u64Timestamp))
+        || RT_FAILURE(HGCMSvcGetU32(&g_AsyncNotification.aParms[3], &u32Size))
         || u32Size != g_aGetNotifications[0].cbBuffer
         || memcmp(g_AsyncNotification.abBuffer, g_aGetNotifications[0].pchBuffer, u32Size) != 0
        )
@@ -833,7 +833,7 @@ static void test2(void)
 static int doSetGlobalFlags(VBOXHGCMSVCFNTABLE *pTable, uint32_t fFlags)
 {
     VBOXHGCMSVCPARM paParm;
-    paParm.setUInt32(fFlags);
+    HGCMSvcSetU32(&paParm, fFlags);
     int rc = pTable->pfnHostCall(pTable->pvService, GUEST_PROP_FN_HOST_SET_GLOBAL_FLAGS, 1, &paParm);
     if (RT_FAILURE(rc))
     {
@@ -1017,8 +1017,8 @@ static void test4(void)
             RTTESTI_CHECK_RC_BREAK(RTTestGuardedAlloc(g_hTest, cbBuf, 1, iVariation == 0, &pvBuf), VINF_SUCCESS);
 
             VBOXHGCMSVCPARM aParms[4];
-            aParms[0].setString(s_szProp);
-            aParms[1].setPointer(pvBuf, cbBuf);
+            HGCMSvcSetStr(&aParms[0], s_szProp);
+            HGCMSvcSetPv(&aParms[1], pvBuf, cbBuf);
             svcTable.pfnHostCall(svcTable.pvService, GUEST_PROP_FN_HOST_GET_PROP, RT_ELEMENTS(aParms), aParms);
 
             RTTestGuardedFree(g_hTest, pvBuf);
@@ -1053,8 +1053,8 @@ static void test5(void)
             RTTESTI_CHECK_RC_BREAK(RTTestGuardedAlloc(g_hTest, cbBuf, 1, iVariation == 0, &pvBuf), VINF_SUCCESS);
 
             VBOXHGCMSVCPARM aParms[3];
-            aParms[0].setString("*");
-            aParms[1].setPointer(pvBuf, cbBuf);
+            HGCMSvcSetStr(&aParms[0], "*");
+            HGCMSvcSetPv(&aParms[1], pvBuf, cbBuf);
             svcTable.pfnHostCall(svcTable.pvService, GUEST_PROP_FN_HOST_ENUM_PROPS, RT_ELEMENTS(aParms), aParms);
 
             RTTestGuardedFree(g_hTest, pvBuf);
@@ -1122,8 +1122,8 @@ static void test6(void)
         {
             VBOXHGCMSVCPARM aParms[4];
             char            szBuffer[256];
-            aParms[0].setPointer(szProp, (uint32_t)cchProp + 1);
-            aParms[1].setPointer(szBuffer, sizeof(szBuffer));
+            HGCMSvcSetPv(&aParms[0], szProp, (uint32_t)cchProp + 1);
+            HGCMSvcSetPv(&aParms[1], szBuffer, sizeof(szBuffer));
             RTTESTI_CHECK_RC_BREAK(svcTable.pfnHostCall(svcTable.pvService, GUEST_PROP_FN_HOST_GET_PROP, 4, aParms), VINF_SUCCESS);
         }
         cNsElapsed = RTTimeNanoTS() - cNsElapsed;

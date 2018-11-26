@@ -105,7 +105,7 @@ DECLCALLBACK(int) Guest::i_notifyCtrlDispatcher(void    *pvExtension,
     if (pSvcCb->mParms) /* At least context ID must be present. */
     {
         uint32_t uContextID;
-        int rc = pSvcCb->mpaParms[0].getUInt32(&uContextID);
+        int rc = HGCMSvcGetU32(&pSvcCb->mpaParms[0], &uContextID);
         AssertMsgRCReturn(rc, ("Unable to extract callback context ID, pvData=%p\n", pSvcCb),
                           VINF_SUCCESS /* Never return any errors back to the guest here */);
 
@@ -165,10 +165,10 @@ int Guest::i_dispatchToSession(PVBOXGUESTCTRLHOSTCBCTX pCtxCb, PVBOXGUESTCTRLHOS
         {
             CALLBACKDATA_PROC_STATUS dataCb;
             /* pSvcCb->mpaParms[0] always contains the context ID. */
-            pSvcCb->mpaParms[1].getUInt32(&dataCb.uPID);
-            pSvcCb->mpaParms[2].getUInt32(&dataCb.uStatus);
-            pSvcCb->mpaParms[3].getUInt32(&dataCb.uFlags);
-            pSvcCb->mpaParms[4].getPointer(&dataCb.pvData, &dataCb.cbData);
+            HGCMSvcGetU32(&pSvcCb->mpaParms[1], &dataCb.uPID);
+            HGCMSvcGetU32(&pSvcCb->mpaParms[2], &dataCb.uStatus);
+            HGCMSvcGetU32(&pSvcCb->mpaParms[3], &dataCb.uFlags);
+            HGCMSvcGetPv(&pSvcCb->mpaParms[4], &dataCb.pvData, &dataCb.cbData);
 
             if (   (         dataCb.uStatus == PROC_STS_ERROR)
                    /** @todo Note: Due to legacy reasons we cannot change uFlags to

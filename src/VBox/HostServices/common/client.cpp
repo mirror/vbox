@@ -221,8 +221,8 @@ int Client::SetDeferredMsgInfo(uint32_t uMsg, uint32_t cParms)
 
         AssertPtrReturn(m_Deferred.paParms, VERR_BUFFER_OVERFLOW);
 
-        m_Deferred.paParms[0].setUInt32(uMsg);
-        m_Deferred.paParms[1].setUInt32(cParms);
+        HGCMSvcSetU32(&m_Deferred.paParms[0], uMsg);
+        HGCMSvcSetU32(&m_Deferred.paParms[1], cParms);
 
         return VINF_SUCCESS;
     }

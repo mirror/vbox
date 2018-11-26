@@ -886,7 +886,7 @@ public:
                 return VERR_NO_MEMORY;
         }
 
-        pParm->setPointer(pvTmp, cbBuf);
+        HGCMSvcSetPv(pParm, pvTmp, cbBuf);
         return VINF_SUCCESS;
     }
 
@@ -900,7 +900,7 @@ public:
         if (!pszTemp)
             return VERR_NO_MEMORY;
 
-        pParm->setString(pszTemp);
+        HGCMSvcSetStr(pParm, pszTemp);
         return VINF_SUCCESS;
     }
 
@@ -910,7 +910,7 @@ public:
         if (!pParm)
             return VERR_NO_MEMORY;
 
-        pParm->setUInt32(u32Val);
+        HGCMSvcSetU32(pParm, u32Val);
         return VINF_SUCCESS;
     }
 
@@ -920,7 +920,7 @@ public:
         if (!pParm)
             return VERR_NO_MEMORY;
 
-        pParm->setUInt64(u64Val);
+        HGCMSvcSetU64(pParm, u64Val);
         return VINF_SUCCESS;
     }
 

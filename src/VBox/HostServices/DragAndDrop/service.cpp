@@ -456,7 +456,7 @@ void DragAndDropService::guestCall(VBOXHGCMCALLHANDLE callHandle, uint32_t u32Cl
                         if (RT_FAILURE(rc))
                         {
                             uint32_t fFlags = 0;
-                            int rc2 = paParms[2].getUInt32(&fFlags);
+                            int rc2 = HGCMSvcGetU32(&paParms[2], &fFlags);
                             if (   RT_SUCCESS(rc2)
                                 && fFlags) /* Blocking flag set? */
                             {
@@ -483,13 +483,13 @@ void DragAndDropService::guestCall(VBOXHGCMCALLHANDLE callHandle, uint32_t u32Cl
                     RT_ZERO(data);
                     data.hdr.uMagic = CB_MAGIC_DND_CONNECT;
                     if (cParms >= 3)
-                        rc = paParms[0].getUInt32(&data.hdr.uContextID);
+                        rc = HGCMSvcGetU32(&paParms[0], &data.hdr.uContextID);
                     else /* Older protocols don't have a context ID. */
                         rc = VINF_SUCCESS;
                     if (RT_SUCCESS(rc))
-                        rc = paParms[idxProto].getUInt32(&data.uProtocol);
+                        rc = HGCMSvcGetU32(&paParms[idxProto], &data.uProtocol);
                     if (RT_SUCCESS(rc))
-                        rc = paParms[idxProto + 1].getUInt32(&data.uFlags);
+                        rc = HGCMSvcGetU32(&paParms[idxProto + 1], &data.uFlags);
                     if (RT_SUCCESS(rc))
                         pClient->SetProtocolVer(data.uProtocol);
                     if (RT_SUCCESS(rc))
@@ -514,9 +514,9 @@ void DragAndDropService::guestCall(VBOXHGCMCALLHANDLE callHandle, uint32_t u32Cl
                     {
                         if (cParms == 2)
                         {
-                            rc = paParms[0].getUInt32(&data.hdr.uContextID);
+                            rc = HGCMSvcGetU32(&paParms[0], &data.hdr.uContextID);
                             if (RT_SUCCESS(rc))
-                                rc = paParms[1].getUInt32(&data.uAction); /* Get drop action. */
+                                rc = HGCMSvcGetU32(&paParms[1], &data.uAction); /* Get drop action. */
                         }
                         break;
                     }
@@ -525,7 +525,7 @@ void DragAndDropService::guestCall(VBOXHGCMCALLHANDLE callHandle, uint32_t u32Cl
                     default:
                     {
                         if (cParms == 1)
-                            rc = paParms[0].getUInt32(&data.uAction); /* Get drop action. */
+                            rc = HGCMSvcGetU32(&paParms[0], &data.uAction); /* Get drop action. */
                         break;
                     }
                 }
@@ -547,11 +547,11 @@ void DragAndDropService::guestCall(VBOXHGCMCALLHANDLE callHandle, uint32_t u32Cl
                     {
                         if (cParms == 3)
                         {
-                            rc = paParms[0].getUInt32(&data.hdr.uContextID);
+                            rc = HGCMSvcGetU32(&paParms[0], &data.hdr.uContextID);
                             if (RT_SUCCESS(rc))
-                                rc = paParms[1].getPointer((void **)&data.pszFormat, &data.cbFormat);
+                                rc = HGCMSvcGetPv(&paParms[1], (void **)&data.pszFormat, &data.cbFormat);
                             if (RT_SUCCESS(rc))
-                                rc = paParms[2].getUInt32(&data.cbFormat);
+                                rc = HGCMSvcGetU32(&paParms[2], &data.cbFormat);
                         }
                         break;
                     }
@@ -560,7 +560,7 @@ void DragAndDropService::guestCall(VBOXHGCMCALLHANDLE callHandle, uint32_t u32Cl
                     default:
                     {
                         if (cParms == 1)
-                            rc = paParms[0].getPointer((void**)&data.pszFormat, &data.cbFormat);
+                            rc = HGCMSvcGetPv(&paParms[0], (void**)&data.pszFormat, &data.cbFormat);
                         break;
                     }
                 }
@@ -582,13 +582,13 @@ void DragAndDropService::guestCall(VBOXHGCMCALLHANDLE callHandle, uint32_t u32Cl
                     {
                         if (cParms == 4)
                         {
-                            rc = paParms[0].getUInt32(&data.uStatus);
+                            rc = HGCMSvcGetU32(&paParms[0], &data.uStatus);
                             if (RT_SUCCESS(rc))
-                                rc = paParms[1].getUInt32(&data.uStatus);
+                                rc = HGCMSvcGetU32(&paParms[1], &data.uStatus);
                             if (RT_SUCCESS(rc))
-                                rc = paParms[2].getUInt32(&data.uPercentage);
+                                rc = HGCMSvcGetU32(&paParms[2], &data.uPercentage);
                             if (RT_SUCCESS(rc))
-                                rc = paParms[3].getUInt32(&data.rc);
+                                rc = HGCMSvcGetU32(&paParms[3], &data.rc);
                         }
                         break;
                     }
@@ -598,11 +598,11 @@ void DragAndDropService::guestCall(VBOXHGCMCALLHANDLE callHandle, uint32_t u32Cl
                     {
                         if (cParms == 3)
                         {
-                            rc = paParms[0].getUInt32(&data.uStatus);
+                            rc = HGCMSvcGetU32(&paParms[0], &data.uStatus);
                             if (RT_SUCCESS(rc))
-                                rc = paParms[1].getUInt32(&data.uPercentage);
+                                rc = HGCMSvcGetU32(&paParms[1], &data.uPercentage);
                             if (RT_SUCCESS(rc))
-                                rc = paParms[2].getUInt32(&data.rc);
+                                rc = HGCMSvcGetU32(&paParms[2], &data.rc);
                         }
                         break;
                     }
@@ -626,15 +626,15 @@ void DragAndDropService::guestCall(VBOXHGCMCALLHANDLE callHandle, uint32_t u32Cl
                     {
                         if (cParms == 5)
                         {
-                            rc = paParms[0].getUInt32(&data.hdr.uContextID);
+                            rc = HGCMSvcGetU32(&paParms[0], &data.hdr.uContextID);
                             if (RT_SUCCESS(rc))
-                                rc = paParms[1].getUInt32(&data.uDefAction);
+                                rc = HGCMSvcGetU32(&paParms[1], &data.uDefAction);
                             if (RT_SUCCESS(rc))
-                                rc = paParms[2].getUInt32(&data.uAllActions);
+                                rc = HGCMSvcGetU32(&paParms[2], &data.uAllActions);
                             if (RT_SUCCESS(rc))
-                                rc = paParms[3].getPointer((void**)&data.pszFormat, &data.cbFormat);
+                                rc = HGCMSvcGetPv(&paParms[3], (void**)&data.pszFormat, &data.cbFormat);
                             if (RT_SUCCESS(rc))
-                                rc = paParms[4].getUInt32(&data.cbFormat);
+                                rc = HGCMSvcGetU32(&paParms[4], &data.cbFormat);
                         }
                         break;
                     }
@@ -644,11 +644,11 @@ void DragAndDropService::guestCall(VBOXHGCMCALLHANDLE callHandle, uint32_t u32Cl
                     {
                         if (cParms == 3)
                         {
-                            rc = paParms[0].getUInt32(&data.uDefAction);
+                            rc = HGCMSvcGetU32(&paParms[0], &data.uDefAction);
                             if (RT_SUCCESS(rc))
-                                rc = paParms[1].getUInt32(&data.uAllActions);
+                                rc = HGCMSvcGetU32(&paParms[1], &data.uAllActions);
                             if (RT_SUCCESS(rc))
-                                rc = paParms[2].getPointer((void**)&data.pszFormat, &data.cbFormat);
+                                rc = HGCMSvcGetPv(&paParms[2], (void**)&data.pszFormat, &data.cbFormat);
                         }
                         break;
                     }
@@ -666,29 +666,29 @@ void DragAndDropService::guestCall(VBOXHGCMCALLHANDLE callHandle, uint32_t u32Cl
                     VBOXDNDCBSNDDATAHDRDATA data;
                     RT_ZERO(data);
                     data.hdr.uMagic = CB_MAGIC_DND_GH_SND_DATA_HDR;
-                    rc = paParms[0].getUInt32(&data.hdr.uContextID);
+                    rc = HGCMSvcGetU32(&paParms[0], &data.hdr.uContextID);
                     if (RT_SUCCESS(rc))
-                        rc = paParms[1].getUInt32(&data.data.uFlags);
+                        rc = HGCMSvcGetU32(&paParms[1], &data.data.uFlags);
                     if (RT_SUCCESS(rc))
-                        rc = paParms[2].getUInt32(&data.data.uScreenId);
+                        rc = HGCMSvcGetU32(&paParms[2], &data.data.uScreenId);
                     if (RT_SUCCESS(rc))
-                        rc = paParms[3].getUInt64(&data.data.cbTotal);
+                        rc = HGCMSvcGetU64(&paParms[3], &data.data.cbTotal);
                     if (RT_SUCCESS(rc))
-                        rc = paParms[4].getUInt32(&data.data.cbMeta);
+                        rc = HGCMSvcGetU32(&paParms[4], &data.data.cbMeta);
                     if (RT_SUCCESS(rc))
-                        rc = paParms[5].getPointer(&data.data.pvMetaFmt, &data.data.cbMetaFmt);
+                        rc = HGCMSvcGetPv(&paParms[5], &data.data.pvMetaFmt, &data.data.cbMetaFmt);
                     if (RT_SUCCESS(rc))
-                        rc = paParms[6].getUInt32(&data.data.cbMetaFmt);
+                        rc = HGCMSvcGetU32(&paParms[6], &data.data.cbMetaFmt);
                     if (RT_SUCCESS(rc))
-                        rc = paParms[7].getUInt64(&data.data.cObjects);
+                        rc = HGCMSvcGetU64(&paParms[7], &data.data.cObjects);
                     if (RT_SUCCESS(rc))
-                        rc = paParms[8].getUInt32(&data.data.enmCompression);
+                        rc = HGCMSvcGetU32(&paParms[8], &data.data.enmCompression);
                     if (RT_SUCCESS(rc))
-                        rc = paParms[9].getUInt32((uint32_t *)&data.data.enmChecksumType);
+                        rc = HGCMSvcGetU32(&paParms[9], (uint32_t *)&data.data.enmChecksumType);
                     if (RT_SUCCESS(rc))
-                        rc = paParms[10].getPointer(&data.data.pvChecksum, &data.data.cbChecksum);
+                        rc = HGCMSvcGetPv(&paParms[10], &data.data.pvChecksum, &data.data.cbChecksum);
                     if (RT_SUCCESS(rc))
-                        rc = paParms[11].getUInt32(&data.data.cbChecksum);
+                        rc = HGCMSvcGetU32(&paParms[11], &data.data.cbChecksum);
 
                     LogFlowFunc(("fFlags=0x%x, cbTotalSize=%RU64, cObj=%RU64\n",
                                  data.data.uFlags, data.data.cbTotal, data.data.cObjects));
@@ -708,15 +708,15 @@ void DragAndDropService::guestCall(VBOXHGCMCALLHANDLE callHandle, uint32_t u32Cl
                             VBOXDNDCBSNDDATADATA data;
                             RT_ZERO(data);
                             data.hdr.uMagic = CB_MAGIC_DND_GH_SND_DATA;
-                            rc = paParms[0].getUInt32(&data.hdr.uContextID);
+                            rc = HGCMSvcGetU32(&paParms[0], &data.hdr.uContextID);
                             if (RT_SUCCESS(rc))
-                                rc = paParms[1].getPointer((void**)&data.data.u.v3.pvData, &data.data.u.v3.cbData);
+                                rc = HGCMSvcGetPv(&paParms[1], (void**)&data.data.u.v3.pvData, &data.data.u.v3.cbData);
                             if (RT_SUCCESS(rc))
-                                rc = paParms[2].getUInt32(&data.data.u.v3.cbData);
+                                rc = HGCMSvcGetU32(&paParms[2], &data.data.u.v3.cbData);
                             if (RT_SUCCESS(rc))
-                                rc = paParms[3].getPointer((void**)&data.data.u.v3.pvChecksum, &data.data.u.v3.cbChecksum);
+                                rc = HGCMSvcGetPv(&paParms[3], (void**)&data.data.u.v3.pvChecksum, &data.data.u.v3.cbChecksum);
                             if (RT_SUCCESS(rc))
-                                rc = paParms[4].getUInt32(&data.data.u.v3.cbChecksum);
+                                rc = HGCMSvcGetU32(&paParms[4], &data.data.u.v3.cbChecksum);
                             DO_HOST_CALLBACK();
                         }
                         break;
@@ -730,9 +730,9 @@ void DragAndDropService::guestCall(VBOXHGCMCALLHANDLE callHandle, uint32_t u32Cl
                             VBOXDNDCBSNDDATADATA data;
                             RT_ZERO(data);
                             data.hdr.uMagic = CB_MAGIC_DND_GH_SND_DATA;
-                            rc = paParms[0].getPointer((void**)&data.data.u.v1.pvData, &data.data.u.v1.cbData);
+                            rc = HGCMSvcGetPv(&paParms[0], (void**)&data.data.u.v1.pvData, &data.data.u.v1.cbData);
                             if (RT_SUCCESS(rc))
-                                rc = paParms[1].getUInt32(&data.data.u.v1.cbTotalSize);
+                                rc = HGCMSvcGetU32(&paParms[1], &data.data.u.v1.cbTotalSize);
                             DO_HOST_CALLBACK();
                         }
                         break;
@@ -754,13 +754,13 @@ void DragAndDropService::guestCall(VBOXHGCMCALLHANDLE callHandle, uint32_t u32Cl
                     {
                         if (cParms == 4)
                         {
-                            rc = paParms[0].getUInt32(&data.hdr.uContextID);
+                            rc = HGCMSvcGetU32(&paParms[0], &data.hdr.uContextID);
                             if (RT_SUCCESS(rc))
-                                rc = paParms[1].getPointer((void**)&data.pszPath, &data.cbPath);
+                                rc = HGCMSvcGetPv(&paParms[1], (void**)&data.pszPath, &data.cbPath);
                             if (RT_SUCCESS(rc))
-                                rc = paParms[2].getUInt32(&data.cbPath);
+                                rc = HGCMSvcGetU32(&paParms[2], &data.cbPath);
                             if (RT_SUCCESS(rc))
-                                rc = paParms[3].getUInt32(&data.fMode);
+                                rc = HGCMSvcGetU32(&paParms[3], &data.fMode);
                         }
                         break;
                     }
@@ -770,11 +770,11 @@ void DragAndDropService::guestCall(VBOXHGCMCALLHANDLE callHandle, uint32_t u32Cl
                     {
                         if (cParms == 3)
                         {
-                            rc = paParms[0].getPointer((void**)&data.pszPath, &data.cbPath);
+                            rc = HGCMSvcGetPv(&paParms[0], (void**)&data.pszPath, &data.cbPath);
                             if (RT_SUCCESS(rc))
-                                rc = paParms[1].getUInt32(&data.cbPath);
+                                rc = HGCMSvcGetU32(&paParms[1], &data.cbPath);
                             if (RT_SUCCESS(rc))
-                                rc = paParms[2].getUInt32(&data.fMode);
+                                rc = HGCMSvcGetU32(&paParms[2], &data.fMode);
                         }
                         break;
                     }
@@ -793,17 +793,17 @@ void DragAndDropService::guestCall(VBOXHGCMCALLHANDLE callHandle, uint32_t u32Cl
                     RT_ZERO(data);
                     data.hdr.uMagic = CB_MAGIC_DND_GH_SND_FILE_HDR;
 
-                    rc = paParms[0].getUInt32(&data.hdr.uContextID);
+                    rc = HGCMSvcGetU32(&paParms[0], &data.hdr.uContextID);
                     if (RT_SUCCESS(rc))
-                        rc = paParms[1].getPointer((void**)&data.pszFilePath, &data.cbFilePath);
+                        rc = HGCMSvcGetPv(&paParms[1], (void**)&data.pszFilePath, &data.cbFilePath);
                     if (RT_SUCCESS(rc))
-                        rc = paParms[2].getUInt32(&data.cbFilePath);
+                        rc = HGCMSvcGetU32(&paParms[2], &data.cbFilePath);
                     if (RT_SUCCESS(rc))
-                        rc = paParms[3].getUInt32(&data.fFlags);
+                        rc = HGCMSvcGetU32(&paParms[3], &data.fFlags);
                     if (RT_SUCCESS(rc))
-                        rc = paParms[4].getUInt32(&data.fMode);
+                        rc = HGCMSvcGetU32(&paParms[4], &data.fMode);
                     if (RT_SUCCESS(rc))
-                        rc = paParms[5].getUInt64(&data.cbSize);
+                        rc = HGCMSvcGetU64(&paParms[5], &data.cbSize);
 
                     LogFlowFunc(("pszPath=%s, cbPath=%RU32, fMode=0x%x, cbSize=%RU64\n",
                                  data.pszFilePath, data.cbFilePath, data.fMode, data.cbSize));
@@ -826,15 +826,15 @@ void DragAndDropService::guestCall(VBOXHGCMCALLHANDLE callHandle, uint32_t u32Cl
                             RT_ZERO(data);
                             data.hdr.uMagic = CB_MAGIC_DND_GH_SND_FILE_DATA;
 
-                            rc = paParms[0].getUInt32(&data.hdr.uContextID);
+                            rc = HGCMSvcGetU32(&paParms[0], &data.hdr.uContextID);
                             if (RT_SUCCESS(rc))
-                                rc = paParms[1].getPointer((void**)&data.pvData, &data.cbData);
+                                rc = HGCMSvcGetPv(&paParms[1], (void**)&data.pvData, &data.cbData);
                             if (RT_SUCCESS(rc))
-                                rc = paParms[2].getUInt32(&data.cbData);
+                                rc = HGCMSvcGetU32(&paParms[2], &data.cbData);
                             if (RT_SUCCESS(rc))
-                                rc = paParms[3].getPointer((void**)&data.u.v3.pvChecksum, &data.u.v3.cbChecksum);
+                                rc = HGCMSvcGetPv(&paParms[3], (void**)&data.u.v3.pvChecksum, &data.u.v3.cbChecksum);
                             if (RT_SUCCESS(rc))
-                                rc = paParms[4].getUInt32(&data.u.v3.cbChecksum);
+                                rc = HGCMSvcGetU32(&paParms[4], &data.u.v3.cbChecksum);
 
                             LogFlowFunc(("pvData=0x%p, cbData=%RU32\n", data.pvData, data.cbData));
                             DO_HOST_CALLBACK();
@@ -849,11 +849,11 @@ void DragAndDropService::guestCall(VBOXHGCMCALLHANDLE callHandle, uint32_t u32Cl
                             VBOXDNDCBSNDFILEDATADATA data;
                             RT_ZERO(data);
                             data.hdr.uMagic = CB_MAGIC_DND_GH_SND_FILE_DATA;
-                            rc = paParms[0].getUInt32(&data.hdr.uContextID);
+                            rc = HGCMSvcGetU32(&paParms[0], &data.hdr.uContextID);
                             if (RT_SUCCESS(rc))
-                                rc = paParms[1].getPointer((void**)&data.pvData, &data.cbData);
+                                rc = HGCMSvcGetPv(&paParms[1], (void**)&data.pvData, &data.cbData);
                             if (RT_SUCCESS(rc))
-                                rc = paParms[2].getUInt32(&data.cbData);
+                                rc = HGCMSvcGetU32(&paParms[2], &data.cbData);
 
                             LogFlowFunc(("cbData=%RU32, pvData=0x%p\n", data.cbData, data.pvData));
                             DO_HOST_CALLBACK();
@@ -869,15 +869,15 @@ void DragAndDropService::guestCall(VBOXHGCMCALLHANDLE callHandle, uint32_t u32Cl
                             RT_ZERO(data);
                             data.hdr.uMagic = CB_MAGIC_DND_GH_SND_FILE_DATA;
                             uint32_t cTmp;
-                            rc = paParms[0].getPointer((void**)&data.u.v1.pszFilePath, &cTmp);
+                            rc = HGCMSvcGetPv(&paParms[0], (void**)&data.u.v1.pszFilePath, &cTmp);
                             if (RT_SUCCESS(rc))
-                                rc = paParms[1].getUInt32(&data.u.v1.cbFilePath);
+                                rc = HGCMSvcGetU32(&paParms[1], &data.u.v1.cbFilePath);
                             if (RT_SUCCESS(rc))
-                                rc = paParms[2].getPointer((void**)&data.pvData, &cTmp);
+                                rc = HGCMSvcGetPv(&paParms[2], (void**)&data.pvData, &cTmp);
                             if (RT_SUCCESS(rc))
-                                rc = paParms[3].getUInt32(&data.cbData);
+                                rc = HGCMSvcGetU32(&paParms[3], &data.cbData);
                             if (RT_SUCCESS(rc))
-                                rc = paParms[4].getUInt32(&data.u.v1.fMode);
+                                rc = HGCMSvcGetU32(&paParms[4], &data.u.v1.fMode);
 
                             LogFlowFunc(("pszFilePath=%s, cbData=%RU32, pvData=0x%p, fMode=0x%x\n",
                                          data.u.v1.pszFilePath, data.cbData, data.pvData, data.u.v1.fMode));
@@ -902,11 +902,11 @@ void DragAndDropService::guestCall(VBOXHGCMCALLHANDLE callHandle, uint32_t u32Cl
                     {
                         if (cParms == 2)
                         {
-                            rc = paParms[0].getUInt32(&data.hdr.uContextID);
+                            rc = HGCMSvcGetU32(&paParms[0], &data.hdr.uContextID);
                             if (RT_SUCCESS(rc))
                             {
                                 uint32_t rcOp;
-                                rc = paParms[1].getUInt32(&rcOp);
+                                rc = HGCMSvcGetU32(&paParms[1], &rcOp);
                                 if (RT_SUCCESS(rc))
                                     data.rc = rcOp;
                             }
@@ -920,7 +920,7 @@ void DragAndDropService::guestCall(VBOXHGCMCALLHANDLE callHandle, uint32_t u32Cl
                         if (cParms == 1)
                         {
                             uint32_t rcOp;
-                            rc = paParms[0].getUInt32(&rcOp);
+                            rc = HGCMSvcGetU32(&paParms[0], &rcOp);
                             if (RT_SUCCESS(rc))
                                 data.rc = (int32_t)rcOp;
                         }
@@ -952,7 +952,7 @@ void DragAndDropService::guestCall(VBOXHGCMCALLHANDLE callHandle, uint32_t u32Cl
                     {
                         /* Protocol v3+ at least requires the context ID. */
                         if (cParms == 1)
-                            rc = paParms[0].getUInt32(&data.hdr.uContextID);
+                            rc = HGCMSvcGetU32(&paParms[0], &data.hdr.uContextID);
 
                         break;
                     }

@@ -223,7 +223,7 @@ typedef struct HostCommand
              * Assume that the context ID *always* is the first parameter,
              * assign the context ID to the command.
              */
-            rc = mpParms[0].getUInt32(&mContextID);
+            rc = HGCMSvcGetU32(&mpParms[0], &mContextID);
 
             /* Set timestamp so that clients can distinguish between already
              * processed commands and new ones. */
@@ -417,8 +417,8 @@ typedef struct HostCommand
 
         if (pConnection->mNumParms >= 2)
         {
-            pConnection->mParms[0].setUInt32(mMsgType);   /* Message ID */
-            pConnection->mParms[1].setUInt32(mParmCount); /* Required parameters for message */
+            HGCMSvcSetU32(&pConnection->mParms[0], mMsgType);   /* Message ID */
+            HGCMSvcSetU32(&pConnection->mParms[1], mParmCount); /* Required parameters for message */
         }
         else
             LogFlowThisFunc(("Warning: Client has not (yet) submitted enough parameters (%RU32, must be at least 2) to at least peak for the next message\n",
@@ -776,8 +776,8 @@ typedef struct ClientState
         if (   mIsPending
             && mPendingCon.mNumParms >= 2)
         {
-            mPendingCon.mParms[0].setUInt32(HOST_CANCEL_PENDING_WAITS); /* Message ID. */
-            mPendingCon.mParms[1].setUInt32(0);                         /* Required parameters for message. */
+            HGCMSvcSetU32(&mPendingCon.mParms[0], HOST_CANCEL_PENDING_WAITS); /* Message ID. */
+            HGCMSvcSetU32(&mPendingCon.mParms[1], 0);                         /* Required parameters for message. */
 
             AssertPtr(mSvcHelpers);
             mSvcHelpers->pfnCallComplete(mPendingCon.mHandle, rcPending);
@@ -1108,7 +1108,7 @@ int Service::clientDisconnect(uint32_t u32ClientID, void *pvClient)
 
             uint32_t cParms = 0;
             VBOXHGCMSVCPARM arParms[2];
-            arParms[cParms++].setUInt32(pCurCmd->mContextID);
+            HGCMSvcSetU32(&arParms[cParms++], pCurCmd->mContextID);
 
             int rc2 = hostCallback(GUEST_DISCONNECTED, cParms, arParms);
             if (RT_FAILURE(rc2))
@@ -1206,15 +1206,15 @@ int Service::clientMsgFilterSet(uint32_t u32ClientID, VBOXHGCMCALLHANDLE callHan
         return VERR_INVALID_PARAMETER;
 
     uint32_t uValue;
-    int rc = paParms[0].getUInt32(&uValue);
+    int rc = HGCMSvcGetU32(&paParms[0], &uValue);
     if (RT_SUCCESS(rc))
     {
         uint32_t uMaskAdd;
-        rc = paParms[1].getUInt32(&uMaskAdd);
+        rc = HGCMSvcGetU32(&paParms[1], &uMaskAdd);
         if (RT_SUCCESS(rc))
         {
             uint32_t uMaskRemove;
-            rc = paParms[2].getUInt32(&uMaskRemove);
+            rc = HGCMSvcGetU32(&paParms[2], &uMaskRemove);
             /** @todo paParm[3] (flags) not used yet. */
             if (RT_SUCCESS(rc))
             {
@@ -1583,9 +1583,9 @@ int Service::sessionClose(uint32_t u32ClientID, VBOXHGCMCALLHANDLE callHandle, u
         return VERR_INVALID_PARAMETER;
 
     uint32_t uContextID, uFlags;
-    int rc = paParms[0].getUInt32(&uContextID);
+    int rc = HGCMSvcGetU32(&paParms[0], &uContextID);
     if (RT_SUCCESS(rc))
-        rc = paParms[1].getUInt32(&uFlags);
+        rc = HGCMSvcGetU32(&paParms[1], &uFlags);
 
     uint32_t uSessionID = VBOX_GUESTCTRL_CONTEXTID_GET_SESSION(uContextID);
 

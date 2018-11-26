@@ -527,10 +527,10 @@ int Service::setPropertyBlock(uint32_t cParms, VBOXHGCMSVCPARM paParms[])
      * Get and validate the parameters
      */
     if (   cParms != 4
-        || RT_FAILURE(paParms[0].getPointer((void **)&papszNames, &cbDummy))
-        || RT_FAILURE(paParms[1].getPointer((void **)&papszValues, &cbDummy))
-        || RT_FAILURE(paParms[2].getPointer((void **)&pau64Timestamps, &cbDummy))
-        || RT_FAILURE(paParms[3].getPointer((void **)&papszFlags, &cbDummy))
+        || RT_FAILURE(HGCMSvcGetPv(&paParms[0], (void **)&papszNames, &cbDummy))
+        || RT_FAILURE(HGCMSvcGetPv(&paParms[1], (void **)&papszValues, &cbDummy))
+        || RT_FAILURE(HGCMSvcGetPv(&paParms[2], (void **)&pau64Timestamps, &cbDummy))
+        || RT_FAILURE(HGCMSvcGetPv(&paParms[3], (void **)&papszFlags, &cbDummy))
         )
         rc = VERR_INVALID_PARAMETER;
     /** @todo validate the array sizes... */
@@ -623,8 +623,8 @@ int Service::getProperty(uint32_t cParms, VBOXHGCMSVCPARM paParms[])
      */
     LogFlowThisFunc(("\n"));
     if (   cParms != 4  /* Hardcoded value as the next lines depend on it. */
-        || RT_FAILURE(paParms[0].getString(&pcszName, &cbName))  /* name */
-        || RT_FAILURE(paParms[1].getBuffer((void **)&pchBuf, &cbBuf))  /* buffer */
+        || RT_FAILURE(HGCMSvcGetCStr(&paParms[0], &pcszName, &cbName))  /* name */
+        || RT_FAILURE(HGCMSvcGetBuf(&paParms[1], (void **)&pchBuf, &cbBuf))  /* buffer */
        )
         rc = VERR_INVALID_PARAMETER;
     else
@@ -651,14 +651,14 @@ int Service::getProperty(uint32_t cParms, VBOXHGCMSVCPARM paParms[])
             size_t const cbFlags  = strlen(szFlags) + 1;
             size_t const cbValue  = pProp->mValue.size() + 1;
             size_t const cbNeeded = cbValue + cbFlags;
-            paParms[3].setUInt32((uint32_t)cbNeeded);
+            HGCMSvcSetU32(&paParms[3], (uint32_t)cbNeeded);
             if (cbBuf >= cbNeeded)
             {
                 /* Write the value, flags and timestamp */
                 memcpy(pchBuf, pProp->mValue.c_str(), cbValue);
                 memcpy(pchBuf + cbValue, szFlags, cbFlags);
 
-                paParms[2].setUInt64(pProp->mTimestamp);
+                HGCMSvcSetU64(&paParms[2], pProp->mTimestamp);
 
                 /*
                  * Done!  Do exit logging and return.
@@ -707,10 +707,10 @@ int Service::setProperty(uint32_t cParms, VBOXHGCMSVCPARM paParms[], bool isGues
      */
     if (   RT_SUCCESS(rc)
         && (   (cParms < 2) || (cParms > 3)  /* Hardcoded value as the next lines depend on it. */
-            || RT_FAILURE(paParms[0].getString(&pcszName, &cchName))  /* name */
-            || RT_FAILURE(paParms[1].getString(&pcszValue, &cchValue))  /* value */
+            || RT_FAILURE(HGCMSvcGetCStr(&paParms[0], &pcszName, &cchName))  /* name */
+            || RT_FAILURE(HGCMSvcGetCStr(&paParms[1], &pcszValue, &cchValue))  /* value */
             || (   (3 == cParms)
-                && RT_FAILURE(paParms[2].getString(&pcszFlags, &cchFlags)) /* flags */
+                && RT_FAILURE(HGCMSvcGetCStr(&paParms[2], &pcszFlags, &cchFlags)) /* flags */
                )
            )
        )
@@ -824,7 +824,7 @@ int Service::delProperty(uint32_t cParms, VBOXHGCMSVCPARM paParms[], bool isGues
      * Check the user-supplied parameters.
      */
     if (   (cParms == 1)  /* Hardcoded value as the next lines depend on it. */
-        && RT_SUCCESS(paParms[0].getString(&pcszName, &cbName))  /* name */
+        && RT_SUCCESS(HGCMSvcGetCStr(&paParms[0], &pcszName, &cbName))  /* name */
        )
         rc = validateName(pcszName, cbName);
     else
@@ -953,8 +953,8 @@ int Service::enumProps(uint32_t cParms, VBOXHGCMSVCPARM paParms[])
     uint32_t cbBuf = 0;
     LogFlowThisFunc(("\n"));
     if (   (cParms != 3)  /* Hardcoded value as the next lines depend on it. */
-        || RT_FAILURE(paParms[0].getString(&pchPatterns, &cbPatterns))  /* patterns */
-        || RT_FAILURE(paParms[1].getBuffer((void **)&pchBuf, &cbBuf))  /* return buffer */
+        || RT_FAILURE(HGCMSvcGetCStr(&paParms[0], &pchPatterns, &cbPatterns))  /* patterns */
+        || RT_FAILURE(HGCMSvcGetBuf(&paParms[1], (void **)&pchBuf, &cbBuf))  /* return buffer */
        )
         rc = VERR_INVALID_PARAMETER;
     if (RT_SUCCESS(rc) && cbPatterns > GUEST_PROP_MAX_PATTERN_LEN)
@@ -988,7 +988,7 @@ int Service::enumProps(uint32_t cParms, VBOXHGCMSVCPARM paParms[])
         AssertRCSuccess(rc);
         if (RT_SUCCESS(rc))
         {
-            paParms[2].setUInt32((uint32_t)(EnumData.cbNeeded + 4));
+            HGCMSvcSetU32(&paParms[2], (uint32_t)(EnumData.cbNeeded + 4));
             if (EnumData.cbLeft >= 4)
             {
                 /* The final terminators. */
@@ -1047,7 +1047,7 @@ int Service::getNotificationWriteOut(uint32_t cParms, VBOXHGCMSVCPARM paParms[],
     char *pchBuf;
     uint32_t cbBuf;
 
-    int rc = paParms[2].getBuffer((void **)&pchBuf, &cbBuf);
+    int rc = HGCMSvcGetBuf(&paParms[2], (void **)&pchBuf, &cbBuf);
     if (RT_SUCCESS(rc))
     {
         char szFlags[GUEST_PROP_MAX_FLAGS_LEN];
@@ -1065,8 +1065,8 @@ int Service::getNotificationWriteOut(uint32_t cParms, VBOXHGCMSVCPARM paParms[],
             /* Write out the data. */
             if (RT_SUCCESS(rc))
             {
-                paParms[1].setUInt64(u64Timestamp);
-                paParms[3].setUInt32((uint32_t)buffer.size());
+                HGCMSvcSetU64(&paParms[1], u64Timestamp);
+                HGCMSvcSetU32(&paParms[3], (uint32_t)buffer.size());
                 if (buffer.size() <= cbBuf)
                     buffer.copy(pchBuf, cbBuf);
                 else
@@ -1104,9 +1104,9 @@ int Service::getNotification(uint32_t u32ClientId, VBOXHGCMCALLHANDLE callHandle
      */
     LogFlowThisFunc(("\n"));
     if (   cParms != 4  /* Hardcoded value as the next lines depend on it. */
-        || RT_FAILURE(paParms[0].getString(&pszPatterns, &cchPatterns))  /* patterns */
-        || RT_FAILURE(paParms[1].getUInt64(&u64Timestamp))  /* timestamp */
-        || RT_FAILURE(paParms[2].getBuffer((void **)&pchBuf, &cbBuf))  /* return buffer */
+        || RT_FAILURE(HGCMSvcGetStr(&paParms[0], &pszPatterns, &cchPatterns))  /* patterns */
+        || RT_FAILURE(HGCMSvcGetU64(&paParms[1], &u64Timestamp))  /* timestamp */
+        || RT_FAILURE(HGCMSvcGetBuf(&paParms[2], (void **)&pchBuf, &cbBuf))  /* return buffer */
        )
         rc = VERR_INVALID_PARAMETER;
     else
@@ -1134,7 +1134,7 @@ int Service::getNotification(uint32_t u32ClientId, VBOXHGCMCALLHANDLE callHandle
                 {
                     const char *pszPatternsExisting;
                     uint32_t cchPatternsExisting;
-                    int rc3 = it->mParms[0].getString(&pszPatternsExisting, &cchPatternsExisting);
+                    int rc3 = HGCMSvcGetCStr(&it->mParms[0], &pszPatternsExisting, &cchPatternsExisting);
 
                     if (   RT_SUCCESS(rc3)
                         && u32ClientId == it->u32ClientId
@@ -1212,7 +1212,7 @@ int Service::doNotifications(const char *pszProperty, uint64_t u64Timestamp)
         {
             const char *pszPatterns;
             uint32_t cchPatterns;
-            it->mParms[0].getString(&pszPatterns, &cchPatterns);
+            HGCMSvcGetCStr(&it->mParms[0], &pszPatterns, &cchPatterns);
             if (prop.Matches(pszPatterns))
             {
                 GuestCall curCall = *it;
@@ -1528,7 +1528,7 @@ int Service::hostCall (uint32_t eFunction, uint32_t cParms, VBOXHGCMSVCPARM paPa
                 if (cParms == 1)
                 {
                     uint32_t fFlags;
-                    rc = paParms[0].getUInt32(&fFlags);
+                    rc = HGCMSvcGetU32(&paParms[0], &fFlags);
                     if (RT_SUCCESS(rc))
                         mfGlobalFlags = fFlags;
                 }

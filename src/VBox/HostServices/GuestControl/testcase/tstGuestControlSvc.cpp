@@ -151,7 +151,7 @@ static int testHost(const VBOXHGCMSVCFNTABLE *pTable)
     RTTestSub(g_hTest, "Testing host commands ...");
 
     VBOXHGCMSVCPARM aParms[1];
-    aParms[0].setUInt32(1000 /* Context ID */);
+    HGCMSvcSetU32(&aParms[0], 1000 /* Context ID */);
 
     CMDHOST aCmdHostAll[] =
     {
@@ -207,17 +207,17 @@ static int testClient(const VBOXHGCMSVCFNTABLE *pTable)
 
         /* No commands from host yet. */
         VBOXHGCMSVCPARM aParmsGuest[8];
-        aParmsGuest[0].setUInt32(0 /* Msg type */);
-        aParmsGuest[1].setUInt32(0 /* Parameters */);
+        HGCMSvcSetU32(&aParmsGuest[0], 0 /* Msg type */);
+        HGCMSvcSetU32(&aParmsGuest[1], 0 /* Parameters */);
         pTable->pfnCall(pTable->pvService, &callHandle, 1 /* Client ID */, NULL /* pvClient */,
                         GUEST_MSG_WAIT, 2, &aParmsGuest[0], 0);
         RTTEST_CHECK_RC_RET(g_hTest, callHandle.rc, VINF_SUCCESS, callHandle.rc);
 
         /* Host: Add a dummy command. */
         VBOXHGCMSVCPARM aParmsHost[8];
-        aParmsHost[0].setUInt32(1000 /* Context ID */);
-        aParmsHost[1].setString("foo.bar");
-        aParmsHost[2].setString("baz");
+        HGCMSvcSetU32(&aParmsHost[0], 1000 /* Context ID */);
+        HGCMSvcSetStr(&aParmsHost[1], "foo.bar");
+        HGCMSvcSetStr(&aParmsHost[2], "baz");
 
         rc = pTable->pfnHostCall(pTable->pvService, HOST_EXEC_CMD, 3, &aParmsHost[0]);
         RTTEST_CHECK_RC_RET(g_hTest, rc, VINF_SUCCESS, rc);

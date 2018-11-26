@@ -712,8 +712,8 @@ int GuestSession::i_closeSession(uint32_t uFlags, uint32_t uTimeoutMS, int *prcG
 
     VBOXHGCMSVCPARM paParms[4];
     int i = 0;
-    paParms[i++].setUInt32(pEvent->ContextID());
-    paParms[i++].setUInt32(uFlags);
+    HGCMSvcSetU32(&paParms[i++], pEvent->ContextID());
+    HGCMSvcSetU32(&paParms[i++], uFlags);
 
     alock.release(); /* Drop the write lock before waiting. */
 
@@ -1065,10 +1065,10 @@ int GuestSession::i_directoryRemove(const Utf8Str &strPath, uint32_t uFlags, int
     /* Prepare HGCM call. */
     VBOXHGCMSVCPARM paParms[8];
     int i = 0;
-    paParms[i++].setUInt32(pEvent->ContextID());
-    paParms[i++].setPointer((void*)strPath.c_str(),
+    HGCMSvcSetU32(&paParms[i++], pEvent->ContextID());
+    HGCMSvcSetPv(&paParms[i++], (void*)strPath.c_str(),
                             (ULONG)strPath.length() + 1);
-    paParms[i++].setUInt32(uFlags);
+    HGCMSvcSetU32(&paParms[i++], uFlags);
 
     alock.release(); /* Drop write lock before sending. */
 
@@ -1781,9 +1781,9 @@ int GuestSession::i_onSessionStatusChange(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXG
 
     CALLBACKDATA_SESSION_NOTIFY dataCb;
     /* pSvcCb->mpaParms[0] always contains the context ID. */
-    int vrc = pSvcCbData->mpaParms[1].getUInt32(&dataCb.uType);
+    int vrc = HGCMSvcGetU32(&pSvcCbData->mpaParms[1], &dataCb.uType);
     AssertRCReturn(vrc, vrc);
-    vrc = pSvcCbData->mpaParms[2].getUInt32(&dataCb.uResult);
+    vrc = HGCMSvcGetU32(&pSvcCbData->mpaParms[2], &dataCb.uResult);
     AssertRCReturn(vrc, vrc);
 
     LogFlowThisFunc(("ID=%RU32, uType=%RU32, rcGuest=%Rrc\n",
@@ -1933,15 +1933,15 @@ int GuestSession::i_startSession(int *prcGuest)
     VBOXHGCMSVCPARM paParms[8];
 
     int i = 0;
-    paParms[i++].setUInt32(pEvent->ContextID());
-    paParms[i++].setUInt32(mData.mProtocolVersion);
-    paParms[i++].setPointer((void*)mData.mCredentials.mUser.c_str(),
+    HGCMSvcSetU32(&paParms[i++], pEvent->ContextID());
+    HGCMSvcSetU32(&paParms[i++], mData.mProtocolVersion);
+    HGCMSvcSetPv(&paParms[i++], (void*)mData.mCredentials.mUser.c_str(),
                             (ULONG)mData.mCredentials.mUser.length() + 1);
-    paParms[i++].setPointer((void*)mData.mCredentials.mPassword.c_str(),
+    HGCMSvcSetPv(&paParms[i++], (void*)mData.mCredentials.mPassword.c_str(),
                             (ULONG)mData.mCredentials.mPassword.length() + 1);
-    paParms[i++].setPointer((void*)mData.mCredentials.mDomain.c_str(),
+    HGCMSvcSetPv(&paParms[i++], (void*)mData.mCredentials.mDomain.c_str(),
                             (ULONG)mData.mCredentials.mDomain.length() + 1);
-    paParms[i++].setUInt32(mData.mSession.mOpenFlags);
+    HGCMSvcSetU32(&paParms[i++], mData.mSession.mOpenFlags);
 
     alock.release(); /* Drop write lock before sending. */
 
@@ -2143,12 +2143,12 @@ int GuestSession::i_pathRename(const Utf8Str &strSource, const Utf8Str &strDest,
     /* Prepare HGCM call. */
     VBOXHGCMSVCPARM paParms[8];
     int i = 0;
-    paParms[i++].setUInt32(pEvent->ContextID());
-    paParms[i++].setPointer((void*)strSource.c_str(),
+    HGCMSvcSetU32(&paParms[i++], pEvent->ContextID());
+    HGCMSvcSetPv(&paParms[i++], (void*)strSource.c_str(),
                             (ULONG)strSource.length() + 1);
-    paParms[i++].setPointer((void*)strDest.c_str(),
+    HGCMSvcSetPv(&paParms[i++], (void*)strDest.c_str(),
                             (ULONG)strDest.length() + 1);
-    paParms[i++].setUInt32(uFlags);
+    HGCMSvcSetU32(&paParms[i++], uFlags);
 
     alock.release(); /* Drop write lock before sending. */
 
@@ -2189,7 +2189,7 @@ int GuestSession::i_pathUserDocuments(Utf8Str &strPath, int *prcGuest)
     /* Prepare HGCM call. */
     VBOXHGCMSVCPARM paParms[2];
     int i = 0;
-    paParms[i++].setUInt32(pEvent->ContextID());
+    HGCMSvcSetU32(&paParms[i++], pEvent->ContextID());
 
     alock.release(); /* Drop write lock before sending. */
 
@@ -2239,7 +2239,7 @@ int GuestSession::i_pathUserHome(Utf8Str &strPath, int *prcGuest)
     /* Prepare HGCM call. */
     VBOXHGCMSVCPARM paParms[2];
     int i = 0;
-    paParms[i++].setUInt32(pEvent->ContextID());
+    HGCMSvcSetU32(&paParms[i++], pEvent->ContextID());
 
     alock.release(); /* Drop write lock before sending. */
 
