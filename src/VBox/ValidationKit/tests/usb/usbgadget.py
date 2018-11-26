@@ -981,9 +981,10 @@ class TransportTcp(TransportBase):
                     if oXcpt[0] == errno.EINPROGRESS:
                         return True;
                 except: pass;
-                # Windows?
                 try:
                     if oXcpt[0] == errno.EWOULDBLOCK:
+                        return True;
+                    if utils.getHostOs == 'win' and oXcpt[0] == errno.WSAEWOULDBLOCK: # pylint: disable=E1101
                         return True;
                 except: pass;
         except:
