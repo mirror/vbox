@@ -2125,6 +2125,9 @@ VirtualBox_QT_TRANSLATIONS := $(TRANSLATIONS) \
 VirtualBox_LRCFLAGS = -silent
 # Where to install the translations (a separate install target, VirtualBox-nls-inst is created).
 VirtualBox_QT_TRANSLATIONS_INST = $(INST_BIN)nls/
+# All files which contain translatable strings.
+VirtualBox_VBOX_ALL_NLS_SOURCES = $(VirtualBox_SOURCES) \
+	$(if $(VBOX_GUI_WITH_SHARED_LIBRARY),$(VirtualBoxVM_SOURCES) $(VBoxGlobal_SOURCES))
 
 
 ## @todo how to detect what tool is used?
@@ -2609,7 +2612,7 @@ updatenls:: makeallnls nls/VirtualBox_en.ts
 
 makeallnls:: \
 		$(foreach header,$(VBOX_GUI_INC_DIRS),$(wildcard $(header)/*.h)) \
-		$(filter-out %.qrc,$(VirtualBox_SOURCES) $(VirtualBox_VBOX_EXTRA_NLS_SOURCES))
+		$(filter-out %.qrc,$(VirtualBox_VBOX_ALL_NLS_SOURCES) $(VirtualBox_VBOX_EXTRA_NLS_SOURCES))
 	$(call MSG_L1,lupdate all languages (nls/*.ts))
 	$(QUIET)$(TOOL_QT5_LUPDATE) \
 		$^ \
@@ -2621,7 +2624,7 @@ makeallnls:: \
 # contain the plural forms only.
 nls/VirtualBox_en.ts: \
 		$(foreach header,$(VBOX_GUI_INC_DIRS),$(wildcard $(header)/*.h)) \
-		$(filter-out %.qrc,$(VirtualBox_SOURCES) $(VirtualBox_VBOX_EXTRA_NLS_SOURCES))
+		$(filter-out %.qrc,$(VirtualBox_VBOX_ALL_NLS_SOURCES) $(VirtualBox_VBOX_EXTRA_NLS_SOURCES))
 	$(call MSG_L1,lupdate $@)
 	$(QUIET)$(TOOL_QT5_LUPDATE) \
 		$^ \
