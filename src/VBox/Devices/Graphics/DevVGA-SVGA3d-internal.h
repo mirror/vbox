@@ -1020,6 +1020,7 @@ typedef struct VMSVGA3DSTATE
         PFNGLDRAWELEMENTSINSTANCEDPROC                  glDrawElementsInstanced;
         PFNGLCOMPRESSEDTEXIMAGE2DPROC                   glCompressedTexImage2D;
         PFNGLCOMPRESSEDTEXIMAGE3DPROC                   glCompressedTexImage3D;
+        PFNGLCOMPRESSEDTEXSUBIMAGE2DPROC                glCompressedTexSubImage2D;
     } ext;
 
     struct

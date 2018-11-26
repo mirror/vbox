@@ -666,6 +666,7 @@ static int vmsvga3dLoadGLFunctions(PVMSVGA3DSTATE pState)
     GLGETPROC_(PFNGLTEXIMAGE3DPROC                       , glTexImage3D, "");
     GLGETPROC_(PFNGLCOMPRESSEDTEXIMAGE2DPROC             , glCompressedTexImage2D, "");
     GLGETPROC_(PFNGLCOMPRESSEDTEXIMAGE3DPROC             , glCompressedTexImage3D, "");
+    GLGETPROC_(PFNGLCOMPRESSEDTEXSUBIMAGE2DPROC          , glCompressedTexSubImage2D, "");
     GLGETPROC_(PFNGLPOINTPARAMETERFPROC                  , glPointParameterf, "");
     GLGETPROC_(PFNGLBLENDEQUATIONSEPARATEPROC            , glBlendEquationSeparate, "");
     GLGETPROC_(PFNGLBLENDFUNCSEPARATEPROC                , glBlendFuncSeparate, "");
@@ -1225,7 +1226,7 @@ static uint32_t vmsvga3dGetSurfaceFormatSupport(uint32_t idx3dCaps)
     case SVGA3D_DEVCAP_SURFACEFMT_Z_D16:
     case SVGA3D_DEVCAP_SURFACEFMT_Z_D24S8:
     case SVGA3D_DEVCAP_SURFACEFMT_Z_D24X8:
-    // case SVGA3D_DEVCAP_SURFACEFMT_Z_DF16:
+    case SVGA3D_DEVCAP_SURFACEFMT_Z_DF16:
     case SVGA3D_DEVCAP_SURFACEFMT_Z_DF24:
     case SVGA3D_DEVCAP_SURFACEFMT_Z_D24S8_INT:
         result |= SVGA3DFORMAT_OP_ZSTENCIL
@@ -1571,6 +1572,11 @@ int vmsvga3dQueryCaps(PVGASTATE pThis, uint32_t idx3dCaps, uint32_t *pu32Val)
  */
 void vmsvga3dSurfaceFormat2OGL(PVMSVGA3DSURFACE pSurface, SVGA3dSurfaceFormat format)
 {
+#if 0
+#define AssertTestFmt(f) AssertMsgFailed(("Test me - " #f "\n"))
+#else
+#define AssertTestFmt(f) do {} while(0)
+#endif
     switch (format)
     {
     case SVGA3D_X8R8G8B8:               /* D3DFMT_X8R8G8B8 - WINED3DFMT_B8G8R8X8_UNORM */
@@ -1587,25 +1593,25 @@ void vmsvga3dSurfaceFormat2OGL(PVMSVGA3DSURFACE pSurface, SVGA3dSurfaceFormat fo
         pSurface->internalFormatGL = GL_RGB5;
         pSurface->formatGL = GL_RGB;
         pSurface->typeGL = GL_UNSIGNED_SHORT_5_6_5;
-        AssertMsgFailed(("Test me - SVGA3D_R5G6B5\n"));
+        AssertTestFmt(SVGA3D_R5G6B5);
         break;
     case SVGA3D_X1R5G5B5:               /* D3DFMT_X1R5G5B5 - WINED3DFMT_B5G5R5X1_UNORM */
         pSurface->internalFormatGL = GL_RGB5;
         pSurface->formatGL = GL_BGRA;
         pSurface->typeGL = GL_UNSIGNED_SHORT_1_5_5_5_REV;
-        AssertMsgFailed(("Test me - SVGA3D_X1R5G5B5\n"));
+        AssertTestFmt(SVGA3D_X1R5G5B5);
         break;
     case SVGA3D_A1R5G5B5:               /* D3DFMT_A1R5G5B5 - WINED3DFMT_B5G5R5A1_UNORM */
         pSurface->internalFormatGL = GL_RGB5_A1;
         pSurface->formatGL = GL_BGRA;
         pSurface->typeGL = GL_UNSIGNED_SHORT_1_5_5_5_REV;
-        AssertMsgFailed(("Test me - SVGA3D_A1R5G5B5\n"));
+        AssertTestFmt(SVGA3D_A1R5G5B5);
         break;
     case SVGA3D_A4R4G4B4:               /* D3DFMT_A4R4G4B4 - WINED3DFMT_B4G4R4A4_UNORM */
         pSurface->internalFormatGL = GL_RGBA4;
         pSurface->formatGL = GL_BGRA;
         pSurface->typeGL = GL_UNSIGNED_SHORT_4_4_4_4_REV;
-        AssertMsgFailed(("Test me - SVGA3D_A4R4G4B4\n"));
+        AssertTestFmt(SVGA3D_A4R4G4B4);
         break;
 
     case SVGA3D_R8G8B8A8_UNORM:
@@ -1623,31 +1629,32 @@ void vmsvga3dSurfaceFormat2OGL(PVMSVGA3DSURFACE pSurface, SVGA3dSurfaceFormat fo
         pSurface->internalFormatGL = GL_DEPTH_COMPONENT16; /** @todo Wine suggests GL_DEPTH_COMPONENT24. */
         pSurface->formatGL = GL_DEPTH_COMPONENT;
         pSurface->typeGL = GL_UNSIGNED_SHORT;
-        //AssertMsgFailed(("Test me - SVGA3D_Z_D16\n"));
+        AssertTestFmt(SVGA3D_Z_D16);
         break;
     case SVGA3D_Z_D24S8:                /* D3DFMT_D24S8 - WINED3DFMT_D24_UNORM_S8_UINT */
         pSurface->internalFormatGL = GL_DEPTH24_STENCIL8;
         pSurface->formatGL = GL_DEPTH_STENCIL;
-        pSurface->typeGL = GL_UNSIGNED_INT;
+        pSurface->typeGL = GL_UNSIGNED_INT_24_8;
         break;
     case SVGA3D_Z_D15S1:                /* D3DFMT_D15S1 - WINED3DFMT_S1_UINT_D15_UNORM */
         pSurface->internalFormatGL = GL_DEPTH_COMPONENT16;  /** @todo ??? */
         pSurface->formatGL = GL_DEPTH_STENCIL;
         pSurface->typeGL = GL_UNSIGNED_SHORT;
         /** @todo Wine sources hints at no hw support for this, so test this one! */
-        AssertMsgFailed(("Test me - SVGA3D_Z_D15S1\n"));
+        AssertTestFmt(SVGA3D_Z_D15S1);
         break;
     case SVGA3D_Z_D24X8:                /* D3DFMT_D24X8 - WINED3DFMT_X8D24_UNORM */
         pSurface->internalFormatGL = GL_DEPTH_COMPONENT24;
         pSurface->formatGL = GL_DEPTH_COMPONENT;
         pSurface->typeGL = GL_UNSIGNED_INT;
+        AssertTestFmt(SVGA3D_Z_D24X8);
         break;
 
     /* Advanced D3D9 depth formats. */
     case SVGA3D_Z_DF16:                 /* D3DFMT_DF16? - not supported */
         pSurface->internalFormatGL = GL_DEPTH_COMPONENT16;
         pSurface->formatGL = GL_DEPTH_COMPONENT;
-        pSurface->typeGL = GL_FLOAT;
+        pSurface->typeGL = GL_HALF_FLOAT;
         break;
 
     case SVGA3D_Z_DF24:                 /* D3DFMT_DF24? - not supported */
@@ -1656,10 +1663,10 @@ void vmsvga3dSurfaceFormat2OGL(PVMSVGA3DSURFACE pSurface, SVGA3dSurfaceFormat fo
         pSurface->typeGL = GL_FLOAT;        /* ??? */
         break;
 
-    case SVGA3D_Z_D24S8_INT:            /* D3DFMT_??? - not supported */
+    case SVGA3D_Z_D24S8_INT:            /* D3DFMT_D24S8 */
         pSurface->internalFormatGL = GL_DEPTH24_STENCIL8;
         pSurface->formatGL = GL_DEPTH_STENCIL;
-        pSurface->typeGL = GL_INT;        /* ??? */
+        pSurface->typeGL = GL_UNSIGNED_INT_24_8;
         break;
 
     case SVGA3D_DXT1:                   /* D3DFMT_DXT1 - WINED3DFMT_DXT1 */
@@ -1749,7 +1756,7 @@ void vmsvga3dSurfaceFormat2OGL(PVMSVGA3DSURFACE pSurface, SVGA3dSurfaceFormat fo
         pSurface->typeGL = GL_FLOAT;
 #else
         pSurface->typeGL = GL_HALF_FLOAT;
-        AssertMsgFailed(("Test me - SVGA3D_ARGB_S10E5\n"));
+        AssertTestFmt(SVGA3D_ARGB_S10E5);
 #endif
         break;
 
@@ -1767,7 +1774,7 @@ void vmsvga3dSurfaceFormat2OGL(PVMSVGA3DSURFACE pSurface, SVGA3dSurfaceFormat fo
         pSurface->formatGL = GL_BGRA;
 #endif
         pSurface->typeGL = GL_UNSIGNED_INT;
-        AssertMsgFailed(("Test me - SVGA3D_A2R10G10B10\n"));
+        AssertTestFmt(SVGA3D_A2R10G10B10);
         break;
 
 
@@ -1779,7 +1786,7 @@ void vmsvga3dSurfaceFormat2OGL(PVMSVGA3DSURFACE pSurface, SVGA3dSurfaceFormat fo
         pSurface->typeGL = GL_FLOAT;
 #else
         pSurface->typeGL = GL_HALF_FLOAT;
-        AssertMsgFailed(("Test me - SVGA3D_R_S10E5\n"));
+        AssertTestFmt(SVGA3D_R_S10E5);
 #endif
         break;
     case SVGA3D_R_S23E8:                /* D3DFMT_R32F - WINED3DFMT_R32_FLOAT */
@@ -1794,7 +1801,7 @@ void vmsvga3dSurfaceFormat2OGL(PVMSVGA3DSURFACE pSurface, SVGA3dSurfaceFormat fo
         pSurface->typeGL = GL_FLOAT;
 #else
         pSurface->typeGL = GL_HALF_FLOAT;
-        AssertMsgFailed(("Test me - SVGA3D_RG_S10E5\n"));
+        AssertTestFmt(SVGA3D_RG_S10E5);
 #endif
         break;
     case SVGA3D_RG_S23E8:               /* D3DFMT_G32R32F - WINED3DFMT_R32G32_FLOAT */
@@ -1828,7 +1835,7 @@ void vmsvga3dSurfaceFormat2OGL(PVMSVGA3DSURFACE pSurface, SVGA3dSurfaceFormat fo
         pSurface->typeGL = GL_UNSIGNED_INT;
 #else
         pSurface->typeGL = GL_UNSIGNED_SHORT;
-        AssertMsgFailed(("test me - SVGA3D_G16R16\n"));
+        AssertTestFmt(SVGA3D_G16R16);
 #endif
         break;
 
@@ -1839,7 +1846,7 @@ void vmsvga3dSurfaceFormat2OGL(PVMSVGA3DSURFACE pSurface, SVGA3dSurfaceFormat fo
         pSurface->typeGL = GL_UNSIGNED_INT;     /* ??? */
 #else
         pSurface->typeGL = GL_UNSIGNED_SHORT;
-        AssertMsgFailed(("Test me - SVGA3D_A16B16G16R16\n"));
+        AssertTestFmt(SVGA3D_A16B16G16R16);
 #endif
         break;
 
@@ -1847,13 +1854,13 @@ void vmsvga3dSurfaceFormat2OGL(PVMSVGA3DSURFACE pSurface, SVGA3dSurfaceFormat fo
         pSurface->internalFormatGL = GL_RGB8;
         pSurface->formatGL = GL_BGRA;
         pSurface->typeGL = GL_UNSIGNED_INT_8_8_8_8_REV;
-        AssertMsgFailed(("test me - SVGA3D_R8G8B8A8_SNORM\n"));
+        AssertTestFmt(SVGA3D_R8G8B8A8_SNORM);
         break;
     case SVGA3D_R16G16_UNORM:
         pSurface->internalFormatGL = GL_RG16;
         pSurface->formatGL = GL_RG;
         pSurface->typeGL = GL_UNSIGNED_SHORT;
-        AssertMsgFailed(("test me - SVGA3D_R16G16_UNORM\n"));
+        AssertTestFmt(SVGA3D_R16G16_UNORM);
         break;
 
 #if 0
@@ -1880,6 +1887,7 @@ void vmsvga3dSurfaceFormat2OGL(PVMSVGA3DSURFACE pSurface, SVGA3dSurfaceFormat fo
         AssertMsgFailed(("Unsupported format %d\n", format));
         break;
     }
+#undef AssertTestFmt
 }
 
 
@@ -2643,15 +2651,32 @@ int vmsvga3dBackSurfaceDMACopyBox(PVGASTATE pThis, PVMSVGA3DSTATE pState, PVMSVG
             VMSVGAPACKPARAMS SavedParams;
             vmsvga3dOglSetUnpackParams(pState, pContext, pSurface, &SavedParams); /** @todo do we need to set ROW_LENGTH to w here? */
 
-            glTexSubImage2D(texImageTarget,
-                            uHostMipmap,
-                            u32HostBlockX,
-                            u32HostBlockY,
-                            cBlocksX,
-                            cBlocksY,
-                            pSurface->formatGL,
-                            pSurface->typeGL,
-                            pDoubleBuffer);
+            if (   pSurface->internalFormatGL == GL_COMPRESSED_RGBA_S3TC_DXT1_EXT
+                || pSurface->internalFormatGL == GL_COMPRESSED_RGBA_S3TC_DXT3_EXT
+                || pSurface->internalFormatGL == GL_COMPRESSED_RGBA_S3TC_DXT5_EXT)
+            {
+                pState->ext.glCompressedTexSubImage2D(texImageTarget,
+                                                      uHostMipmap,
+                                                      pBox->x,
+                                                      pBox->y,
+                                                      pBox->w,
+                                                      pBox->h,
+                                                      pSurface->internalFormatGL,
+                                                      cbSurfacePitch * cBlocksY,
+                                                      pDoubleBuffer);
+            }
+            else
+            {
+                glTexSubImage2D(texImageTarget,
+                                uHostMipmap,
+                                u32HostBlockX,
+                                u32HostBlockY,
+                                cBlocksX,
+                                cBlocksY,
+                                pSurface->formatGL,
+                                pSurface->typeGL,
+                                pDoubleBuffer);
+            }
             VMSVGA3D_CHECK_LAST_ERROR_WARN(pState, pContext);
 
             /* Restore old values. */
@@ -4820,7 +4845,7 @@ int vmsvga3dSetTextureState(PVGASTATE pThis, uint32_t cid, uint32_t cTextureStat
             Log(("SVGA3D_TS_BIND_TEXTURE: stage %d, texture sid=%x replacing sid=%x\n",
                  currentStage, sid, pContext->aSidActiveTextures[currentStage]));
 
-            /* Only is texture actually changed. */ /// @todo needs testing.
+            /* Only if texture actually changed. */ /// @todo needs testing.
             if (pContext->aSidActiveTextures[currentStage] != sid)
             {
                 if (pCurrentTextureSurface)
@@ -4829,9 +4854,12 @@ int vmsvga3dSetTextureState(PVGASTATE pThis, uint32_t cid, uint32_t cTextureStat
                     glBindTexture(pCurrentTextureSurface->targetGL, 0);
                     VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
 
-                    /* Necessary for the fixed pipeline. */
-                    glDisable(pCurrentTextureSurface->targetGL);
-                    VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
+                    if (currentStage < 8)
+                    {
+                        /* Necessary for the fixed pipeline. */
+                        glDisable(pCurrentTextureSurface->targetGL);
+                        VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
+                    }
 
                     pCurrentTextureSurface = NULL;
                 }
@@ -4861,9 +4889,12 @@ int vmsvga3dSetTextureState(PVGASTATE pThis, uint32_t cid, uint32_t cTextureStat
                     glBindTexture(pSurface->targetGL, pSurface->oglId.texture);
                     VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
 
-                    /* Necessary for the fixed pipeline. */
-                    glEnable(pSurface->targetGL);
-                    VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
+                    if (currentStage < 8)
+                    {
+                        /* Necessary for the fixed pipeline. */
+                        glEnable(pSurface->targetGL);
+                        VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
+                    }
 
                     /* Remember the currently active texture. */
                     pCurrentTextureSurface = pSurface;

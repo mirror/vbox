@@ -313,11 +313,11 @@ uint32_t vmsvga3dSurfaceFormatSize(SVGA3dSurfaceFormat format,
         return 2;
 
     case SVGA3D_DXT1:
-    case SVGA3D_DXT2:
         *pcxBlock = 4;
         *pcyBlock = 4;
         return 8;
 
+    case SVGA3D_DXT2:
     case SVGA3D_DXT3:
     case SVGA3D_DXT4:
     case SVGA3D_DXT5:
