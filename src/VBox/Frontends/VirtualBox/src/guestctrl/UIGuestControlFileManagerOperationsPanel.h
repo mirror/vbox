@@ -57,10 +57,13 @@ protected:
     /** @} */
 
     /** Handles the translation event. */
-    void retranslateUi();
+    virtual void retranslateUi() /* override */;
+    virtual void contextMenuEvent(QContextMenuEvent *pEvent) /* override */;
 
 private slots:
 
+    void sltCleanFinished();
+    void sltCleanAll();
 
 private:
 

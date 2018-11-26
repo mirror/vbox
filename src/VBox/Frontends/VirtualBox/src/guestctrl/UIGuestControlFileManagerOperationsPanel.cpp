@@ -23,6 +23,7 @@
 # include <QHBoxLayout>
 # include <QHeaderView>
 # include <QLabel>
+# include <QMenu>
 # include <QProgressBar>
 # include <QTableWidget>
 
@@ -53,6 +54,8 @@ public:
 
     UIFileOperationProgressWidget(const CProgress &comProgress, QWidget *pParent = 0);
     ~UIFileOperationProgressWidget();
+    bool isCompleted() const;
+    bool isCanceled() const;
 
 signals:
 
@@ -101,6 +104,20 @@ UIFileOperationProgressWidget::UIFileOperationProgressWidget(const CProgress &co
 UIFileOperationProgressWidget::~UIFileOperationProgressWidget()
 {
     cleanupEventHandler();
+}
+
+bool UIFileOperationProgressWidget::isCompleted() const
+{
+    if (m_comProgress.isNull())
+        return true;
+    return m_comProgress.GetCompleted();
+}
+
+bool UIFileOperationProgressWidget::isCanceled() const
+{
+    if (m_comProgress.isNull())
+        return true;
+    return m_comProgress.GetCanceled();
 }
 
 void UIFileOperationProgressWidget::retranslateUi()
@@ -230,6 +247,7 @@ void UIGuestControlFileManagerOperationsPanel::prepareWidgets()
 
     if (m_pTableWidget)
     {
+        m_pTableWidget->setSelectionBehavior(QAbstractItemView::SelectRows);
         m_pTableWidget->setColumnCount(TableColumn_Max);
         m_pTableWidget->verticalHeader()->hide();
         QStringList headers;
@@ -248,7 +266,48 @@ void UIGuestControlFileManagerOperationsPanel::prepareConnections()
 void UIGuestControlFileManagerOperationsPanel::retranslateUi()
 {
     UIGuestControlFileManagerPanel::retranslateUi();
+}
 
+void UIGuestControlFileManagerOperationsPanel::contextMenuEvent(QContextMenuEvent *pEvent)
+{
+    QMenu *menu = new QMenu(this);
+
+    QAction *pCleanFinished = menu->addAction(UIGuestControlFileManager::tr("Clean Finished"));
+    QAction *pCleanAll = menu->addAction(UIGuestControlFileManager::tr("Clean All"));
+
+    connect(pCleanFinished, &QAction::triggered,
+            this, &UIGuestControlFileManagerOperationsPanel::sltCleanFinished);
+    connect(pCleanAll, &QAction::triggered,
+            this, &UIGuestControlFileManagerOperationsPanel::sltCleanAll);
+
+    menu->exec(pEvent->globalPos());
+    delete menu;
+}
+
+void UIGuestControlFileManagerOperationsPanel::sltCleanFinished()
+{
+    QList<int> listOfRowsToRemove;
+    for (int i = 0; i < m_pTableWidget->rowCount(); ++i)
+    {
+        UIFileOperationProgressWidget* pProgressWidget =
+            qobject_cast<UIFileOperationProgressWidget*>(m_pTableWidget->cellWidget(i, TableColumn_Progress));
+        if (pProgressWidget)
+        {
+            if (pProgressWidget->isCanceled() || pProgressWidget->isCompleted())
+                listOfRowsToRemove << i;
+        }
+    }
+    foreach (int row, listOfRowsToRemove)
+    {
+        /* This will delete the progress widget as well: */
+        m_pTableWidget->removeRow(row);
+    }
+}
+
+void UIGuestControlFileManagerOperationsPanel::sltCleanAll()
+{
+    m_pTableWidget->clearContents();
+    m_pTableWidget->setRowCount(0);
 }
 
 #include "UIGuestControlFileManagerOperationsPanel.moc"
