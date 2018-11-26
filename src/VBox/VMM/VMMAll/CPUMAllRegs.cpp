@@ -2648,6 +2648,30 @@ VMMDECL(uint32_t) CPUMGetGuestMxCsrMask(PVM pVM)
 
 
 /**
+ * Gets whether the guest or nested-guest's are ready to receive physical
+ * interrupts.
+ *
+ * This function assumes there is no global
+ *
+ * @returns @c true if interrupts can be injected into the guest (or nested-guest),
+ *          @c false otherwise.
+ * @param   pVCpu       The cross context virtual CPU structure.
+ */
+DECLINLINE(bool) CPUMIsGuestPhysIntrsEnabled(PVMCPU pVCpu)
+{
+    Assert(pVCpu->cpum.s.Guest.hwvirt.fGif);
+    if (   !CPUMIsGuestInVmxNonRootMode(&pVCpu->cpum.s.Guest)
+        && !CPUMIsGuestInSvmNestedHwVirtMode(&pVCpu->cpum.s.Guest))
+        return RT_BOOL(pVCpu->cpum.s.Guest.rflags.Bits.u1IF);
+
+    if (CPUMIsGuestInVmxNonRootMode(&pVCpu->cpum.s.Guest))
+        return CPUMCanVmxNstGstTakePhysIntr(pVCpu, &pVCpu->cpum.s.Guest);
+
+    return CPUMCanSvmNstGstTakePhysIntr(pVCpu, &pVCpu->cpum.s.Guest);
+}
+
+
+/**
  * Calculates the interruptiblity of the guest.
  *
  * @returns Interruptibility level.
@@ -2655,6 +2679,34 @@ VMMDECL(uint32_t) CPUMGetGuestMxCsrMask(PVM pVM)
  */
 VMM_INT_DECL(CPUMINTERRUPTIBILITY) CPUMGetGuestInterruptibility(PVMCPU pVCpu)
 {
+#if 1
+    if (pVCpu->cpum.s.Guest.hwvirt.fGif)
+    {
+        /** @todo r=ramshankar: What about virtual-interrupt delivery to nested-guests? */
+        if (CPUMIsGuestPhysIntrsEnabled(pVCpu))
+        {
+            if (!VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_BLOCK_NMIS | VMCPU_FF_INHIBIT_INTERRUPTS))
+                return CPUMINTERRUPTIBILITY_UNRESTRAINED;
+
+            /** @todo does blocking NMIs mean interrupts are also inhibited? */
+            if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS))
+            {
+                if (!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_BLOCK_NMIS))
+                    return CPUMINTERRUPTIBILITY_INT_INHIBITED;
+                return CPUMINTERRUPTIBILITY_NMI_INHIBIT;
+            }
+            AssertFailed();
+            return CPUMINTERRUPTIBILITY_NMI_INHIBIT;
+        }
+        else
+        {
+            if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_BLOCK_NMIS))
+                return CPUMINTERRUPTIBILITY_NMI_INHIBIT;
+            return CPUMINTERRUPTIBILITY_INT_DISABLED;
+        }
+    }
+    return CPUMINTERRUPTIBILITY_GLOBAL_INHIBIT;
+#else
     if (pVCpu->cpum.s.Guest.rflags.Bits.u1IF)
     {
         if (pVCpu->cpum.s.Guest.hwvirt.fGif)
@@ -2684,6 +2736,7 @@ VMM_INT_DECL(CPUMINTERRUPTIBILITY) CPUMGetGuestInterruptibility(PVMCPU pVCpu)
         }
         return CPUMINTERRUPTIBILITY_GLOBAL_INHIBIT;
     }
+#endif
 }
 
 
