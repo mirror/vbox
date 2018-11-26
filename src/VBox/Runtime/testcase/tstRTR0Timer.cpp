@@ -821,13 +821,13 @@ DECLEXPORT(int) TSTRTR0TimerSrvReqHandler(PSUPDRVSESSION pSession, uint32_t uOpe
                     ASMAtomicWriteU32(&paStates[iCpu].cTicks, 0);
                 }
 
-                /* run it for 1 second. */
+                /* run it for 5 seconds. */
                 RTCPUSET OnlineSet;
                 uint64_t uStartNsTS = RTTimeSystemNanoTS();
                 RTR0TESTR0_CHECK_RC_BREAK(RTTimerStart(pTimer, 0), VINF_SUCCESS);
                 RTMpGetOnlineSet(&OnlineSet);
 
-                for (uint32_t i = 0; i < 5000 && RTTimeSystemNanoTS() - uStartNsTS <= UINT32_C(1000000000); i++)
+                for (uint32_t i = 0; i < 5000 && RTTimeSystemNanoTS() - uStartNsTS <= UINT64_C(5000000000); i++)
                     RTThreadSleep(2);
 
                 RTR0TESTR0_CHECK_RC_BREAK(RTTimerStop(pTimer), VINF_SUCCESS);
@@ -853,8 +853,9 @@ DECLEXPORT(int) TSTRTR0TimerSrvReqHandler(PSUPDRVSESSION pSession, uint32_t uOpe
 
                 /* Check tick counts. ASSUMES no cpu on- or offlining.
                    This only catches really bad stuff. */
-                uint32_t cMinTicks = cAvgTicks - cAvgTicks / 10;
-                uint32_t cMaxTicks = cAvgTicks + cAvgTicks / 10 + 1;
+                uint32_t cMargin = TSTRTR0TIMER_IS_HIRES(uOperation) ? 10 : 5; /* Allow a wider deviation for the non hires timers. */
+                uint32_t cMinTicks = cAvgTicks - cAvgTicks / cMargin;
+                uint32_t cMaxTicks = cAvgTicks + cAvgTicks / cMargin + 1;
                 for (uint32_t iCpu = 0; iCpu < RTCPUSET_MAX_CPUS; iCpu++)
                     if (paStates[iCpu].cTicks)
                     {
