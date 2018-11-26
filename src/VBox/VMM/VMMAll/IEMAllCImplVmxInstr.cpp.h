@@ -7129,17 +7129,18 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmlaunchVmresume(PVMCPU pVCpu, uint8_t cbInstr, VM
                                  * to lowest as follows:
                                  *
                                  * 1.  Event injection.
-                                 * 2.  TPR below threshold / APIC-write.
-                                 * 3.  SMI.
-                                 * 4.  INIT.
-                                 * 5.  MTF exit.
-                                 * 6.  Pending debug exceptions.
-                                 * 7.  Debug-trap exceptions.
-                                 * 8.  VMX-preemption timer.
-                                 * 9.  NMI-window exit.
-                                 * 10. NMI injection.
-                                 * 11. Interrupt-window exit.
-                                 * 12. Interrupt injection.
+                                 * 2.  Trap on task-switch.
+                                 * 3.  TPR below threshold / APIC-write.
+                                 * 4.  SMI, INIT.
+                                 * 6.  MTF exit.
+                                 * 7.  Debug-trap exceptions, pending debug exceptions.
+                                 * 10. VMX-preemption timer.
+                                 * 11. NMI-window exit.
+                                 * 12. NMI injection.
+                                 * 13. Interrupt-window exit.
+                                 * 14. Virtual-interrupt injection.
+                                 * 15. Interrupt injection.
+                                 * 16. Process next instruction (fetch, decode, execute).
                                  */
 
                                 /* Setup the VMX-preemption timer. */
