@@ -163,9 +163,20 @@ void CloudProviderManager::i_addExtPack(IExtPack *aExtPack)
     m_mapCloudProviderManagers[strName] = pTmp;
     for (unsigned i = 0; i < apProvidersFromCurrExtPack.size(); i++)
     {
-        Assert(m_astrExtPackNames.size() == m_apCloudProviders.size());
-        m_astrExtPackNames.push_back(strName);
-        m_apCloudProviders.push_back(apProvidersFromCurrExtPack[i]);
+        // Sanity check each cloud provider by forcing a QueryInterface call,
+        // making sure that it implements the right interface.
+        ComPtr<ICloudProvider> pTmpCP1(apProvidersFromCurrExtPack[i]);
+        if (!pTmpCP1.isNull())
+        {
+            ComPtr<ICloudProvider> pTmpCP2;
+            pTmpCP1.queryInterfaceTo(pTmpCP2.asOutParam());
+            if (!pTmpCP2.isNull())
+            {
+                Assert(m_astrExtPackNames.size() == m_apCloudProviders.size());
+                m_astrExtPackNames.push_back(strName);
+                m_apCloudProviders.push_back(apProvidersFromCurrExtPack[i]);
+            }
+        }
     }
 }
 #endif  /* VBOX_WITH_EXTPACK */
