@@ -138,7 +138,7 @@ class HGCMService
         HGCMService();
         ~HGCMService() {};
 
-        static DECLCALLBACK(void) svcHlpCallComplete(VBOXHGCMCALLHANDLE callHandle, int32_t rc);
+        static DECLCALLBACK(int)  svcHlpCallComplete(VBOXHGCMCALLHANDLE callHandle, int32_t rc);
         static DECLCALLBACK(void) svcHlpDisconnectClient(void *pvInstance, uint32_t u32ClientId);
         static DECLCALLBACK(bool) svcHlpIsCallRestored(VBOXHGCMCALLHANDLE callHandle);
         static DECLCALLBACK(int)  svcHlpStamRegisterV(void *pvInstance, void *pvSample, STAMTYPE enmType,
@@ -795,22 +795,16 @@ DECLCALLBACK(void) hgcmServiceThread(HGCMThread *pThread, void *pvUser)
 /**
  * @interface_method_impl{VBOXHGCMSVCHELPERS,pfnCallComplete}
  */
-/* static */ DECLCALLBACK(void) HGCMService::svcHlpCallComplete(VBOXHGCMCALLHANDLE callHandle, int32_t rc)
+/* static */ DECLCALLBACK(int) HGCMService::svcHlpCallComplete(VBOXHGCMCALLHANDLE callHandle, int32_t rc)
 {
    HGCMMsgCore *pMsgCore = (HGCMMsgCore *)callHandle;
 
-   if (pMsgCore->MsgId () == SVC_MSG_GUESTCALL)
-   {
-       /* Only call the completion for these messages. The helper
-        * is called by the service, and the service does not get
-        * any other messages.
-        */
-       hgcmMsgComplete(pMsgCore, rc);
-   }
-   else
-   {
-       AssertFailed();
-   }
+   /* Only call the completion for these messages. The helper
+    * is called by the service, and the service does not get
+    * any other messages.
+    */
+   AssertMsgReturn(pMsgCore->MsgId() == SVC_MSG_GUESTCALL, ("%d\n", pMsgCore->MsgId()), VERR_WRONG_TYPE);
+   return hgcmMsgComplete(pMsgCore, rc);
 }
 
 /**

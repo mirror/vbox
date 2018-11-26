@@ -146,7 +146,7 @@ class HGCMThread : public HGCMReferencedObject
         int MsgAlloc(HGCMMsgCore **pMsg, uint32_t u32MsgId, PFNHGCMNEWMSGALLOC pfnNewMessage);
         int MsgGet(HGCMMsgCore **ppMsg);
         int MsgPost(HGCMMsgCore *pMsg, PHGCMMSGCALLBACK pfnCallback, bool bWait);
-        void MsgComplete(HGCMMsgCore *pMsg, int32_t result);
+        int MsgComplete(HGCMMsgCore *pMsg, int32_t result);
 };
 
 
@@ -553,20 +553,21 @@ int HGCMThread::MsgGet(HGCMMsgCore **ppMsg)
     return rc;
 }
 
-void HGCMThread::MsgComplete(HGCMMsgCore *pMsg, int32_t result)
+int HGCMThread::MsgComplete(HGCMMsgCore *pMsg, int32_t result)
 {
     LogFlow(("HGCMThread::MsgComplete: thread = %p, pMsg = %p\n", this, pMsg));
 
     AssertRelease(pMsg->m_pThread == this);
     AssertReleaseMsg((pMsg->m_fu32Flags & HGCM_MSG_F_IN_PROCESS) != 0, ("%p %x\n", pMsg, pMsg->m_fu32Flags));
 
+    int rcRet = VINF_SUCCESS;
     if (pMsg->m_pfnCallback)
     {
         /** @todo call callback with error code in MsgPost in case of errors */
 
-        pMsg->m_pfnCallback(result, pMsg);
+        rcRet = pMsg->m_pfnCallback(result, pMsg);
 
-        LogFlow(("HGCMThread::MsgComplete: callback executed. pMsg = %p, thread = %p\n", pMsg, this));
+        LogFlow(("HGCMThread::MsgComplete: callback executed. pMsg = %p, thread = %p, rcRet = %Rrc\n", pMsg, this, rcRet));
     }
 
     /* Message processing has been completed. */
@@ -615,6 +616,8 @@ void HGCMThread::MsgComplete(HGCMMsgCore *pMsg, int32_t result)
             RTSemEventMultiSignal(m_eventSend);
         }
     }
+
+    return rcRet;
 }
 
 /*
@@ -736,15 +739,18 @@ int hgcmMsgGet(HGCMThread *pThread, HGCMMsgCore **ppMsg)
     return rc;
 }
 
-void hgcmMsgComplete(HGCMMsgCore *pMsg, int32_t u32Result)
+int hgcmMsgComplete(HGCMMsgCore *pMsg, int32_t u32Result)
 {
     LogFlow(("MAIN::hgcmMsgComplete: pMsg = %p\n", pMsg));
 
+    int rc;
     if (pMsg)
-        pMsg->Thread()->MsgComplete(pMsg, u32Result);
+        rc = pMsg->Thread()->MsgComplete(pMsg, u32Result);
+    else
+        rc = VINF_SUCCESS;
 
-
-    LogFlow(("MAIN::hgcmMsgComplete: pMsg = %p, rc = void\n", pMsg));
+    LogFlow(("MAIN::hgcmMsgComplete: pMsg = %p, rc = %Rrc\n", pMsg, rc));
+    return rc;
 }
 
 int hgcmThreadInit(void)

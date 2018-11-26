@@ -67,9 +67,10 @@
  * 4.2->5.1 Removed the VBOX_HGCM_SVC_PARM_CALLBACK parameter type, as
  *          this problem is already solved by service extension callbacks
  * 5.1->6.1 Because pfnCall got a new parameter. Also new helpers. (VBox 6.0)
+ * 6.1->6.2 Because pfnCallComplete starts returning a status code (VBox 6.0).
  */
 #define VBOX_HGCM_SVC_VERSION_MAJOR (0x0006)
-#define VBOX_HGCM_SVC_VERSION_MINOR (0x0001)
+#define VBOX_HGCM_SVC_VERSION_MINOR (0x0002)
 #define VBOX_HGCM_SVC_VERSION ((VBOX_HGCM_SVC_VERSION_MAJOR << 16) + VBOX_HGCM_SVC_VERSION_MINOR)
 
 
@@ -81,7 +82,7 @@ typedef struct VBOXHGCMCALLHANDLE_TYPEDEF *VBOXHGCMCALLHANDLE;
 typedef struct VBOXHGCMSVCHELPERS
 {
     /** The service has processed the Call request. */
-    DECLR3CALLBACKMEMBER(void, pfnCallComplete, (VBOXHGCMCALLHANDLE callHandle, int32_t rc));
+    DECLR3CALLBACKMEMBER(int, pfnCallComplete, (VBOXHGCMCALLHANDLE callHandle, int32_t rc));
 
     void *pvInstance;
 
