@@ -136,7 +136,10 @@ typedef struct HostCommand
     }
 
     /**
-     * Allocates the command with an HGCM request. Needs to be free'd using Free().
+     * Allocates the command with an HGCM request - or put more accurately, it
+     * duplicates the given HGCM reguest (it does not allocate a HostCommand).
+     *
+     * Needs to be freed using Free().
      *
      * @return  IPRT status code.
      * @param   uMsg                    Message type.
@@ -167,7 +170,7 @@ typedef struct HostCommand
         mParmCount = cParms;
         if (mParmCount)
         {
-            mpParms = (VBOXHGCMSVCPARM*)RTMemAllocZ(sizeof(VBOXHGCMSVCPARM) * mParmCount);
+            mpParms = (VBOXHGCMSVCPARM *)RTMemAllocZ(sizeof(VBOXHGCMSVCPARM) * mParmCount);
             if (NULL == mpParms)
                 rc = VERR_NO_MEMORY;
         }
@@ -192,15 +195,12 @@ typedef struct HostCommand
                         if (mpParms[i].u.pointer.size > 0)
                         {
                             mpParms[i].u.pointer.addr = RTMemAlloc(mpParms[i].u.pointer.size);
-                            if (NULL == mpParms[i].u.pointer.addr)
-                            {
-                                rc = VERR_NO_MEMORY;
-                                break;
-                            }
-                            else
+                            if (mpParms[i].u.pointer.addr != NULL)
                                 memcpy(mpParms[i].u.pointer.addr,
                                        paParms[i].u.pointer.addr,
                                        mpParms[i].u.pointer.size);
+                            else
+                                rc = VERR_NO_MEMORY;
                         }
                         else
                         {
@@ -235,9 +235,7 @@ typedef struct HostCommand
     }
 
     /**
-     * Frees the buffered HGCM request.
-     *
-     * @return  IPRT status code.
+     * Frees the buffered HGCM request (not the HostCommand structure itself).
      */
     void Free(void)
     {
@@ -273,7 +271,8 @@ typedef struct HostCommand
     }
 
     /**
-     * Copies data from the buffered HGCM request to the current HGCM request.
+     * Worker for Assign() that opies data from the buffered HGCM request to the
+     * current HGCM request.
      *
      * @return  IPRT status code.
      * @param   paDstParms              Array of parameters of HGCM request to fill the data into.
@@ -298,8 +297,7 @@ typedef struct HostCommand
             {
                 if (paDstParms[i].type != mpParms[i].type)
                 {
-                    LogFlowFunc(("Parameter %RU32 type mismatch (got %RU32, expected %RU32)\n",
-                                 i, paDstParms[i].type, mpParms[i].type));
+                    LogFunc(("Parameter %RU32 type mismatch (got %RU32, expected %RU32)\n", i, paDstParms[i].type, mpParms[i].type));
                     rc = VERR_INVALID_PARAMETER;
                 }
                 else
@@ -333,24 +331,17 @@ typedef struct HostCommand
 
                             if (!paDstParms[i].u.pointer.addr)
                                 rc = VERR_INVALID_PARAMETER;
-
-                            if (   RT_SUCCESS(rc)
-                                && paDstParms[i].u.pointer.size < mpParms[i].u.pointer.size)
+                            else if (paDstParms[i].u.pointer.size < mpParms[i].u.pointer.size)
                                 rc = VERR_BUFFER_OVERFLOW;
-
-                            if (RT_SUCCESS(rc))
-                            {
+                            else
                                 memcpy(paDstParms[i].u.pointer.addr,
                                        mpParms[i].u.pointer.addr,
                                        mpParms[i].u.pointer.size);
-                            }
-
                             break;
                         }
 
                         default:
-                            LogFlowFunc(("Parameter %RU32 of type %RU32 is not supported yet\n",
-                                         i, mpParms[i].type));
+                            LogFunc(("Parameter %RU32 of type %RU32 is not supported yet\n", i, mpParms[i].type));
                             rc = VERR_NOT_SUPPORTED;
                             break;
                     }
@@ -358,8 +349,7 @@ typedef struct HostCommand
 
                 if (RT_FAILURE(rc))
                 {
-                    LogFlowFunc(("Parameter %RU32 invalid (%Rrc), refusing\n",
-                                 i, rc));
+                    LogFunc(("Parameter %RU32 invalid (%Rrc), refusing\n", i, rc));
                     break;
                 }
             }
@@ -384,10 +374,10 @@ typedef struct HostCommand
             LogFlowThisFunc(("[Cmd %RU32] Requires %RU32 parms, only got %RU32 from client\n",
                              mMsgType, mParmCount, pConnection->mNumParms));
             /*
-            * So this call apparently failed because the guest wanted to peek
-            * how much parameters it has to supply in order to successfully retrieve
-            * this command. Let's tell him so!
-            */
+             * So this call apparently failed because the guest wanted to peek
+             * how much parameters it has to supply in order to successfully retrieve
+             * this command. Let's tell him so!
+             */
             rc = VERR_TOO_MUCH_DATA;
         }
         else
@@ -445,7 +435,7 @@ typedef struct HostCommand
     uint32_t mParmCount;
     /** Array of HGCM parameters. */
     PVBOXHGCMSVCPARM mpParms;
-    /** Incoming timestamp (us). */
+    /** Incoming timestamp (nanoseconds). */
     uint64_t mTimestamp;
 } HostCommand;
 typedef std::list< HostCommand *> HostCmdList;
@@ -470,8 +460,7 @@ typedef std::map< uint32_t, ClientContext >::iterator ClientContextMapIter;
 typedef std::map< uint32_t, ClientContext >::const_iterator ClientContextMapIterConst;
 
 /**
- * Structure for holding a connected guest client
- * state.
+ * Structure for holding a connected guest client state.
  */
 typedef struct ClientState
 {
@@ -511,7 +500,7 @@ typedef struct ClientState
 
     HostCmdListIter Dequeue(HostCmdListIter &curItem)
     {
-        HostCommand *pHostCmd = (*curItem);
+        HostCommand *pHostCmd = *curItem;
         AssertPtr(pHostCmd);
 
         if (pHostCmd->Release() == 0)
@@ -571,19 +560,19 @@ typedef struct ClientState
 #endif
 
         /* Only process newer commands. */
+        /** @todo r=bird: This seems extremely bogus given that I cannot see
+         *        ClientState::mHostCmdTS being set anywhere at all. */
         if (pHostCmd->mTimestamp <= mHostCmdTS)
             return false;
 
         /*
-         * If a sesseion filter is set, only obey those commands we're interested in
+         * If a session filter is set, only obey those commands we're interested in
          * by applying our context ID filter mask and compare the result with the
          * original context ID.
          */
         bool fWant;
         if (mFlags & CLIENTSTATE_FLAG_CONTEXTFILTER)
-        {
             fWant = (pHostCmd->mContextID & mFilterMask) == mFilterValue;
-        }
         else /* Client is interested in all commands. */
             fWant = true;
 
@@ -639,23 +628,21 @@ typedef struct ClientState
         return VERR_SIGNAL_PENDING;
     }
 
-    int Run(const ClientConnection *pConnection,
-                  HostCommand      *pHostCmd)
+    int Run(ClientConnection const *pConnection,
+            HostCommand            *pHostCmd)
     {
         AssertPtrReturn(pConnection, VERR_INVALID_POINTER);
         AssertPtrReturn(pHostCmd, VERR_INVALID_POINTER);
 
-        int rc = VINF_SUCCESS;
-
         LogFlowFunc(("[Client %RU32] pConnection=%p, mHostCmdRc=%Rrc, mHostCmdTries=%RU32, mPeekCount=%RU32\n",
                       mID, pConnection, mHostCmdRc, mHostCmdTries, mPeekCount));
 
-        mHostCmdRc = SendReply(pConnection, pHostCmd);
+        int rc = mHostCmdRc = SendReply(pConnection, pHostCmd);
 
         LogFlowThisFunc(("[Client %RU32] Processing command %RU32 ended with rc=%Rrc\n", mID, pHostCmd->mMsgType, mHostCmdRc));
 
         bool fRemove = false;
-        if (RT_FAILURE(mHostCmdRc))
+        if (RT_FAILURE(rc))
         {
             mHostCmdTries++;
 
@@ -667,13 +654,13 @@ typedef struct ClientState
              *       every peek there will be the actual command retrieval from the client side.
              *       To not get the actual command if the client actually only wants to peek for
              *       the next command, there needs to be two rounds per try, e.g. 3 rounds = 6 tries.
-             *
-             ** @todo Fix the mess stated above. GUEST_MSG_WAIT should be become GUEST_MSG_PEEK, *only*
+             */
+            /** @todo Fix the mess stated above. GUEST_MSG_WAIT should be become GUEST_MSG_PEEK, *only*
              *        (and every time) returning the next upcoming host command (if any, blocking). Then
              *        it's up to the client what to do next, either peeking again or getting the actual
              *        host command via an own GUEST_ type message.
              */
-            if (mHostCmdRc == VERR_TOO_MUCH_DATA)
+            if (rc == VERR_TOO_MUCH_DATA)
             {
                 if (mHostCmdTries == 6)
                     fRemove = true;
@@ -687,10 +674,7 @@ typedef struct ClientState
             fRemove = true; /* Everything went fine, remove it. */
 
         LogFlowThisFunc(("[Client %RU32] Tried command %RU32 for %RU32 times, (last result=%Rrc, fRemove=%RTbool)\n",
-                         mID, pHostCmd->mMsgType, mHostCmdTries, mHostCmdRc, fRemove));
-
-        if (RT_SUCCESS(rc)) /** @todo r=bird: confusing statement+state, rc hasn't been touched since the top and is always VINF_SUCCESS. */
-            rc = mHostCmdRc;
+                         mID, pHostCmd->mMsgType, mHostCmdTries, rc, fRemove));
 
         if (fRemove)
         {
@@ -728,7 +712,7 @@ typedef struct ClientState
 
             HostCmdListIter curCmd = mHostCmdList.begin();
             Assert(curCmd != mHostCmdList.end());
-            HostCommand *pHostCmd = (*curCmd);
+            HostCommand *pHostCmd = *curCmd;
             AssertPtrReturn(pHostCmd, VERR_INVALID_POINTER);
 
             rc = Run(pConnection, pHostCmd);
@@ -864,7 +848,8 @@ typedef struct ClientState
      * This is used as a heuristic to remove a message that the client appears not
      * to be able to successfully retrieve.  */
     uint32_t mHostCmdTries;
-    /** Timestamp (us) of last host command processed. */
+    /** Timestamp (nanoseconds) of last host command processed.
+     * @todo r=bird: Where is this set?  */
     uint64_t mHostCmdTS;
     /** Flag indicating whether a client call (GUEST_MSG_WAIT) currently is pending.
      *
@@ -1060,9 +1045,10 @@ int Service::clientConnect(uint32_t u32ClientID, void *pvClient)
 }
 
 /**
- * Handles a client which disconnected. This functiond does some
- * internal cleanup as well as sends notifications to the host so
- * that the host can do the same (if required).
+ * Handles a client which disconnected.
+ *
+ * This functiond does some internal cleanup as well as sends notifications to
+ * the host so that the host can do the same (if required).
  *
  * @return  IPRT status code.
  * @param   u32ClientID             The client's ID of which disconnected.
@@ -1100,6 +1086,8 @@ int Service::clientDisconnect(uint32_t u32ClientID, void *pvClient)
          * host commands need to be notified, because Main is waiting a notification
          * via a (multi stage) progress object.
          */
+        /** @todo r=bird: We have RTListForEachSafe for this purpose...  Would save a
+         *        few lines and bother here. */
         HostCommand *pCurCmd = RTListGetFirst(&mHostCmdList, HostCommand, Node);
         while (pCurCmd)
         {
@@ -1151,7 +1139,7 @@ int Service::clientMsgGet(uint32_t u32ClientID, VBOXHGCMCALLHANDLE callHandle,
                           uint32_t cParms, VBOXHGCMSVCPARM paParms[])
 {
     /*
-     * Lookup client in our list so that we can assign the context ID of
+     * Lookup client in our map so that we can assign the context ID of
      * a command to that client.
      */
     ClientStateMapIter itClientState = mClientStateMap.find(u32ClientID);
@@ -1412,12 +1400,16 @@ int Service::hostProcessCommand(uint32_t eFunction, uint32_t cParms, VBOXHGCMSVC
         LogFlowFunc(("%RU32 clients have been woken up\n", uClientsWokenUp));
 #endif
     }
+    /** @todo r=bird: If pHostCmd->Allocate fails, you leak stuff.  It's not
+     *        likely, since it'll only fail if the host gives us an incorrect
+     *        parameter list (first param isn't uint32_t) or we're out of memory.
+     *        In the latter case, of course, you're not exactly helping...  */
 
     return rc;
 }
 
 /**
- * @interface_method_impl{VBOXHGCMSVCFNTABLE,pfnCall}
+ * Worker for svcCall() that helps implement VBOXHGCMSVCFNTABLE::pfnCall.
  *
  * @note    All functions which do not involve an unreasonable delay will be
  *          handled synchronously.  If needed, we will add a request handler
