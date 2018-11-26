@@ -628,6 +628,7 @@ typedef struct ClientState
         return VERR_SIGNAL_PENDING;
     }
 
+    /** Used by Wakeup() and RunCurrent(). */
     int Run(ClientConnection const *pConnection,
             HostCommand            *pHostCmd)
     {
@@ -660,7 +661,8 @@ typedef struct ClientState
              *        it's up to the client what to do next, either peeking again or getting the actual
              *        host command via an own GUEST_ type message.
              */
-            if (rc == VERR_TOO_MUCH_DATA)
+            if (   rc == VERR_TOO_MUCH_DATA
+                || rc == VERR_CANCELLED)
             {
                 if (mHostCmdTries == 6)
                     fRemove = true;
@@ -721,6 +723,7 @@ typedef struct ClientState
         return rc;
     }
 
+    /** Used by for Service::hostProcessCommand(). */
     int Wakeup(void)
     {
         int rc = VINF_NO_CHANGE;
@@ -778,11 +781,15 @@ typedef struct ClientState
         return rc;
     }
 
+    /** Internal worker for Run(). */
     int SendReply(ClientConnection const *pConnection,
                   HostCommand            *pHostCmd)
     {
         AssertPtrReturn(pConnection, VERR_INVALID_POINTER);
         AssertPtrReturn(pHostCmd, VERR_INVALID_POINTER);
+
+        /* In case of VERR_CANCELLED. */
+        uint32_t const cSavedPeeks = mPeekCount;
 
         int rc;
         /* If the client is in pending mode, always send back
@@ -823,7 +830,14 @@ typedef struct ClientState
         /* In any case the client did something, so complete
          * the pending call with the result we just got. */
         AssertPtr(mSvcHelpers);
-        mSvcHelpers->pfnCallComplete(pConnection->mHandle, rc);
+        int rc2 = mSvcHelpers->pfnCallComplete(pConnection->mHandle, rc);
+
+        /* Rollback in case the guest cancelled the call. */
+        if (rc2 == VERR_CANCELLED && RT_SUCCESS(rc))
+        {
+            mPeekCount = cSavedPeeks;
+            rc = VERR_CANCELLED;
+        }
 
         LogFlowThisFunc(("[Client %RU32] Command %RU32 ended with %Rrc (mPeekCount=%RU32, pConnection=%p)\n",
                          mID, pHostCmd->mMsgType, rc, mPeekCount, pConnection));
@@ -1391,6 +1405,7 @@ int Service::hostProcessCommand(uint32_t eFunction, uint32_t cParms, VBOXHGCMSVC
 #ifdef DEBUG
                 uClientsWokenUp++;
 #endif
+                /** @todo r=bird: Do we need to queue commands on more than one client? */
             }
 
             ++itClientState;
