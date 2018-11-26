@@ -1549,6 +1549,80 @@ int vmsvga3dSurfaceCopy(PVGASTATE pThis, SVGA3dSurfaceImageId dest, SVGA3dSurfac
             Assert(!clipBox.srcz && !clipBox.z);
 
             hr = pContextDst->pDevice->StretchRect(pSrc, &RectSrc, pDest, &RectDest, D3DTEXF_NONE);
+            if (hr != D3D_OK)
+            {
+                /* This can happen for compressed texture formats. */
+                LogFunc(("StretchRect failed with %x. Try a slow path.\n", hr));
+                if (   pSurfaceSrc->bounce.pTexture
+                    && (pSurfaceSrc->fUsageD3D & D3DUSAGE_RENDERTARGET))
+                {
+                    /* Copy the texture mipmap level to the bounce texture. */
+
+                    /* Source is the texture, destination is the corresponding bounce texture. */
+                    IDirect3DSurface9 *pBounceSurf;
+                    rc = vmsvga3dGetD3DSurface(pState, pContextDst, pSurfaceSrc, src.face, src.mipmap, true, &pBounceSurf);
+                    AssertRC(rc);
+                    if (RT_SUCCESS(rc))
+                    {
+                        Assert(pSrc != pBounceSurf);
+
+                        hr = pContextDst->pDevice->GetRenderTargetData(pSrc, pBounceSurf);
+                        Assert(hr == D3D_OK);
+                        if (SUCCEEDED(hr))
+                        {
+                            POINT pointDest;
+                            pointDest.x = clipBox.x;
+                            pointDest.y = clipBox.y;
+
+                            hr = pContextDst->pDevice->UpdateSurface(pBounceSurf, &RectSrc, pDest, &pointDest);
+                            Assert(hr == D3D_OK);
+                        }
+
+                        D3D_RELEASE(pBounceSurf);
+                    }
+                }
+                else if (   (pSurfaceSrc->fUsageD3D & D3DUSAGE_RENDERTARGET) == 0
+                         && (pSurfaceDest->fUsageD3D & D3DUSAGE_RENDERTARGET) == 0)
+                {
+                    /* Can lock both. */
+                    vmsvga3dSurfaceFlush(pThis, pSurfaceSrc);
+                    vmsvga3dSurfaceFlush(pThis, pSurfaceDest);
+
+                    D3DLOCKED_RECT LockedSrcRect;
+                    hr = pSrc->LockRect(&LockedSrcRect, &RectSrc, D3DLOCK_READONLY);
+                    Assert(hr == D3D_OK);
+                    if (SUCCEEDED(hr))
+                    {
+                        D3DLOCKED_RECT LockedDestRect;
+                        hr = pDest->LockRect(&LockedDestRect, &RectDest, 0);
+                        Assert(hr == D3D_OK);
+                        if (SUCCEEDED(hr))
+                        {
+                            uint32_t cBlocksX = (clipBox.w + pSurfaceSrc->cxBlock - 1) / pSurfaceSrc->cxBlock;
+                            uint32_t cBlocksY = (clipBox.h + pSurfaceSrc->cyBlock - 1) / pSurfaceSrc->cyBlock;
+
+                            uint32_t cbToCopy = cBlocksX * pSurfaceSrc->cbBlock;
+                            cbToCopy = RT_MIN(cbToCopy, (uint32_t)RT_ABS(LockedDestRect.Pitch));
+                            cbToCopy = RT_MIN(cbToCopy, (uint32_t)RT_ABS(LockedSrcRect.Pitch));
+
+                            uint8_t *pu8Dst = (uint8_t *)LockedDestRect.pBits;
+                            const uint8_t *pu8Src = (uint8_t *)LockedSrcRect.pBits;
+                            for (uint32_t j = 0; j < cBlocksY; ++j)
+                            {
+                                memcpy(pu8Dst, pu8Src, cbToCopy);
+                                pu8Dst += LockedDestRect.Pitch;
+                                pu8Src  += LockedSrcRect.Pitch;
+                            }
+
+                            hr = pDest->UnlockRect();
+                            Assert(hr == D3D_OK);
+                        }
+
+                        hr = pSrc->UnlockRect();
+                        Assert(hr == D3D_OK);
+                    }
+                }
+            }
             AssertMsgReturnStmt(hr == D3D_OK,
                                 ("StretchRect failed with %x\n", hr),
                                 D3D_RELEASE(pDest); D3D_RELEASE(pSrc),
@@ -1738,6 +1812,8 @@ int vmsvga3dBackCreateTexture(PVMSVGA3DSTATE pState, PVMSVGA3DCONTEXT pContext, 
     RT_NOREF(pState);
     HRESULT hr;
 
+    LogFunc(("sid=%x\n", pSurface->id));
+
     Assert(pSurface->hSharedObject == NULL);
     Assert(pSurface->u.pTexture == NULL);
     Assert(pSurface->bounce.pTexture == NULL);
@@ -1796,7 +1872,9 @@ int vmsvga3dBackCreateTexture(PVMSVGA3DSTATE pState, PVMSVGA3DCONTEXT pContext, 
         pSurface->enmD3DResType = VMSVGA3D_D3DRESTYPE_CUBE_TEXTURE;
     }
     else if (   pSurface->formatD3D == D3DFMT_D24S8
-             || pSurface->formatD3D == D3DFMT_D24X8)
+             || pSurface->formatD3D == D3DFMT_D24X8
+             || pSurface->formatD3D == D3DFMT_D32
+             || pSurface->formatD3D == D3DFMT_D16)
     {
         Assert(pSurface->cFaces == 1);
         Assert(pSurface->faces[0].numMipLevels == 1);
@@ -3898,7 +3976,9 @@ int vmsvga3dSetRenderTarget(PVGASTATE pThis, uint32_t cid, SVGA3dRenderTargetTyp
             if (    pState->fSupportedSurfaceINTZ
                 &&  pRenderTarget->multiSampleTypeD3D == D3DMULTISAMPLE_NONE
                 &&  (   pRenderTarget->formatD3D == D3DFMT_D24S8
-                     || pRenderTarget->formatD3D == D3DFMT_D24X8))
+                     || pRenderTarget->formatD3D == D3DFMT_D24X8
+                     || pRenderTarget->formatD3D == D3DFMT_D32
+                     || pRenderTarget->formatD3D == D3DFMT_D16))
             {
                 LogFunc(("Creating stencil surface as texture!\n"));
                 int rc = vmsvga3dBackCreateTexture(pState, pContext, cid, pRenderTarget);
