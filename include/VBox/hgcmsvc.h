@@ -194,10 +194,10 @@ typedef struct VBOXHGCMSVCPARM
 /** Extract an uint32_t value from an HGCM parameter structure. */
 static inline int HGCMSvcGetU32(struct VBOXHGCMSVCPARM *pParm, uint32_t *pu32)
 {
+    int rc = VINF_SUCCESS;
     AssertPtrReturn(pParm, VERR_INVALID_POINTER);
     AssertPtrReturn(pParm, VERR_INVALID_POINTER);
     AssertPtrReturn(pu32, VERR_INVALID_POINTER);
-    int rc = VINF_SUCCESS;
     if (pParm->type != VBOX_HGCM_SVC_PARM_32BIT)
         rc = VERR_INVALID_PARAMETER;
     if (RT_SUCCESS(rc))
@@ -208,10 +208,10 @@ static inline int HGCMSvcGetU32(struct VBOXHGCMSVCPARM *pParm, uint32_t *pu32)
 /** Extract an uint64_t value from an HGCM parameter structure. */
 static inline int HGCMSvcGetU64(struct VBOXHGCMSVCPARM *pParm, uint64_t *pu64)
 {
+    int rc = VINF_SUCCESS;
     AssertPtrReturn(pParm, VERR_INVALID_POINTER);
     AssertPtrReturn(pParm, VERR_INVALID_POINTER);
     AssertPtrReturn(pu64, VERR_INVALID_POINTER);
-    int rc = VINF_SUCCESS;
     if (pParm->type != VBOX_HGCM_SVC_PARM_64BIT)
         rc = VERR_INVALID_PARAMETER;
     if (RT_SUCCESS(rc))
