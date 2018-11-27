@@ -28,7 +28,8 @@ class QLabel;
 class QIToolButton;
 class UIGuestControlFileManagerSettings;
 
-/** UIVMLogViewerPanel extension providing GUI to manage logviewer settings. */
+/** UIGuestControlFileManagerPanel extension to change file manager options. It directly
+ *  modifies the options through the passed UIGuestControlFileManagerOptions instance. */
 class UIGuestControlFileManagerSettingsPanel : public UIGuestControlFileManagerPanel
 {
     Q_OBJECT;
@@ -62,10 +63,9 @@ private slots:
 
 private:
 
-    QCheckBox          *m_pListDirectoriesOnTopCheckBox;
-    QCheckBox          *m_pDeleteConfirmationCheckBox;
-    QCheckBox          *m_pHumanReabableSizesCheckBox;
-
+    QCheckBox  *m_pListDirectoriesOnTopCheckBox;
+    QCheckBox  *m_pDeleteConfirmationCheckBox;
+    QCheckBox  *m_pHumanReabableSizesCheckBox;
     UIGuestControlFileManagerSettings *m_pFileManagerSettings;
 };
 

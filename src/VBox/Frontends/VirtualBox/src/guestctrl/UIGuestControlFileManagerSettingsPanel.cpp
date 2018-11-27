@@ -164,12 +164,14 @@ void UIGuestControlFileManagerSettingsPanel::retranslateUi()
     if (m_pDeleteConfirmationCheckBox)
     {
         m_pDeleteConfirmationCheckBox->setText(UIGuestControlFileManager::tr("Ask before delete"));
-        m_pDeleteConfirmationCheckBox->setToolTip(UIGuestControlFileManager::tr("List directories before files"));
+        m_pDeleteConfirmationCheckBox->setToolTip(UIGuestControlFileManager::tr("Show a confirmation dialog "
+                                                                                "before deleting files and directories"));
     }
 
     if (m_pHumanReabableSizesCheckBox)
     {
         m_pHumanReabableSizesCheckBox->setText(UIGuestControlFileManager::tr("Human readable sizes"));
-        m_pHumanReabableSizesCheckBox->setToolTip(UIGuestControlFileManager::tr("List directories before files"));
+        m_pHumanReabableSizesCheckBox->setToolTip(UIGuestControlFileManager::tr("Show file/directory sizes in human "
+                                                                                "readable format rather than in bytes"));
     }
 }

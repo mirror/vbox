@@ -70,9 +70,8 @@ UIFileManagerLogViewer::UIFileManagerLogViewer(QWidget *pParent /* = 0 */)
 void UIFileManagerLogViewer::contextMenuEvent(QContextMenuEvent *event)
 {
     QMenu *menu = createStandardContextMenu();
-    void sltClear();
 
-    QAction *pClearAction = menu->addAction(tr("Clear"));
+    QAction *pClearAction = menu->addAction(UIGuestControlFileManager::tr("Clear"));
     connect(pClearAction, &QAction::triggered, this, &UIFileManagerLogViewer::sltClear);
     menu->exec(event->globalPos());
     delete menu;

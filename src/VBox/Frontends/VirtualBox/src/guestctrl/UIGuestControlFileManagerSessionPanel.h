@@ -26,7 +26,7 @@ class QTextEdit;
 class UIGuestControlFileManager;
 class UIGuestSessionCreateWidget;
 
-/** UIVMLogViewerPanel extension providing GUI to manage logviewer settings. */
+/** UIGuestControlFileManagerPanel extension providing GUI for creating/stopping a guest session. */
 class UIGuestControlFileManagerSessionPanel : public UIGuestControlFileManagerPanel
 {
     Q_OBJECT;
@@ -34,8 +34,11 @@ class UIGuestControlFileManagerSessionPanel : public UIGuestControlFileManagerPa
 public:
 
     UIGuestControlFileManagerSessionPanel(UIGuestControlFileManager *pManagerWidget, QWidget *pParent);
-    void switchSessionCloseMode();
-    void switchSessionCreateMode();
+    /** @name Enable/disable member widget wrt. guest session status.
+      * @{ */
+        void switchSessionCloseMode();
+        void switchSessionCreateMode();
+    /** @} */
     virtual QString panelName() const /* override */;
 
 signals:
@@ -47,12 +50,7 @@ protected:
 
     virtual void prepareWidgets() /* override */;
     virtual void prepareConnections() /* override */;
-
-    /** Handles the translation event. */
     void retranslateUi();
-
-private slots:
-
 
 private:
 

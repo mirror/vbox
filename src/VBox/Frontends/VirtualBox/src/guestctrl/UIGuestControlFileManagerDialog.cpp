@@ -74,7 +74,7 @@ UIGuestControlFileManagerDialog::UIGuestControlFileManagerDialog(QWidget *pCente
 void UIGuestControlFileManagerDialog::retranslateUi()
 {
     /* Translate window title: */
-    setWindowTitle(tr("%1 - Guest Control").arg(m_strMachineName));
+    setWindowTitle(UIGuestControlFileManager::tr("%1 - Guest Control").arg(m_strMachineName));
     /* Translate buttons: */
     button(ButtonType_Close)->setText(UIGuestControlFileManager::tr("Close"));
 }

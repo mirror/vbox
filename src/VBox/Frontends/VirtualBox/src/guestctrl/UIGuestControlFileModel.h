@@ -40,7 +40,7 @@ enum UIGuestControlFileModelColumn
 };
 
 /** A QSortFilterProxyModel extension used in file tables. Modifies some
-  * of the base class behavior like lessThan(..) */
+ *  of the base class behavior like lessThan(..) */
 class UIGuestControlFileProxyModel : public QSortFilterProxyModel
 {
 
@@ -56,10 +56,10 @@ protected:
 };
 
 /** UIGuestControlFileModel serves as the model for a file structure.
-  * it supports a tree level hierarchy which can be displayed with
-  * QTableView and/or QTreeView. Note the file structure data is not
-  * kept by the model but rather by the containing widget which also servers
-  * as the interface to functionality this model provides.*/
+ *  it supports a tree level hierarchy which can be displayed with
+ *  QTableView and/or QTreeView. Note the file structure data is not
+ *  kept by the model but rather by the containing widget which also servers
+ *  as the interface to functionality that this model provides.*/
 class UIGuestControlFileModel : public QAbstractItemModel
 {
 
@@ -75,7 +75,7 @@ public:
 
     Qt::ItemFlags  flags(const QModelIndex &index) const /* override */;
     QVariant       headerData(int section, Qt::Orientation orientation,
-    int role = Qt::DisplayRole) const /* override */;
+                              int role = Qt::DisplayRole) const /* override */;
     QModelIndex    index(int row, int column,
                       const QModelIndex &parent = QModelIndex()) const /* override */;
     QModelIndex    index(UIFileTableItem* item);

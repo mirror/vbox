@@ -143,9 +143,7 @@ void UIFileOperationProgressWidget::prepareWidgets()
     m_pCancelButton = new QIToolButton;
     if (m_pCancelButton)
     {
-        //m_pCancelButton->setIcon(UIIconPool::iconSet(":/close_16px.png"));
         m_pCancelButton->setIcon(QApplication::style()->standardIcon(QStyle::SP_DockWidgetCloseButton));
-        //m_pCancelButton->setStyleSheet("QToolButton { border: 0px none black; margin: 0px 0px 0px 0px; } QToolButton::menu-indicator {image: none;}");
         m_pCancelButton->setStyleSheet("QToolButton { border: 0px none black; margin: 0px 0px 0px 0px; } ");
         const QSize sh = m_pCancelButton->sizeHint();
         m_pCancelButton->setFixedSize(sh);
