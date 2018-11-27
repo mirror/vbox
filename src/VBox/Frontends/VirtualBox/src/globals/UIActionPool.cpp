@@ -1680,20 +1680,20 @@ protected:
     }
 };
 
-/** Toggle action extension, used to toggle 'File Manager Settings' panel in guest control file manager. */
-class UIActionMenuGuestControlFileManagerSettings : public UIActionToggle
+/** Toggle action extension, used to toggle 'File Manager Options' panel in guest control file manager. */
+class UIActionMenuGuestControlFileManagerOptions : public UIActionToggle
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionMenuGuestControlFileManagerSettings(UIActionPool *pParent)
+    UIActionMenuGuestControlFileManagerOptions(UIActionPool *pParent)
         : UIActionToggle(pParent)
     {
         setShortcutContext(Qt::WidgetWithChildrenShortcut);
-        setIcon(UIIconPool::iconSetFull(":/file_manager_settings_32px.png",          ":/file_manager_settings_16px.png",
-                                        ":/file_manager_settings_disabled_32px.png", ":/file_manager_settings_disabled_16px.png"));
+        setIcon(UIIconPool::iconSetFull(":/file_manager_options_32px.png",          ":/file_manager_options_16px.png",
+                                        ":/file_manager_options_disabled_32px.png", ":/file_manager_options_disabled_16px.png"));
     }
 
 protected:
@@ -1701,7 +1701,7 @@ protected:
     /** Returns shortcut extra-data ID. */
     virtual QString shortcutExtraDataID() const /* override */
     {
-        return QString("ToggleFileManagerSettingsPanel");
+        return QString("ToggleFileManagerOptionsPanel");
     }
 
     /** Returns default shortcut. */
@@ -1713,10 +1713,10 @@ protected:
     /** Handles translation event. */
     virtual void retranslateUi() /* override */
     {
-        setName(QApplication::translate("UIActionPool", "Settings"));
+        setName(QApplication::translate("UIActionPool", "Options"));
         setShortcutScope(QApplication::translate("UIActionPool", "File Manager"));
-        setStatusTip(QApplication::translate("UIActionPool", "Open panel with file manager settings"));
-        setToolTip(QApplication::translate("UIActionPool", "Open Panel With File Manager Settings"));
+        setStatusTip(QApplication::translate("UIActionPool", "Open panel with file manager options"));
+        setToolTip(QApplication::translate("UIActionPool", "Open Panel With File Manager Options"));
     }
 };
 
@@ -2512,7 +2512,7 @@ void UIActionPool::preparePool()
     m_pool[UIActionIndex_M_GuestControlFileManager_S_MoveToGuest] = new  UIActionMenuGuestControlFileManagerMoveToGuest(this);
     m_pool[UIActionIndex_M_GuestControlFileManager_S_MoveToHost] = new  UIActionMenuGuestControlFileManagerMoveToHost(this);
 
-    m_pool[UIActionIndex_M_GuestControlFileManager_T_Settings] = new UIActionMenuGuestControlFileManagerSettings(this);
+    m_pool[UIActionIndex_M_GuestControlFileManager_T_Options] = new UIActionMenuGuestControlFileManagerOptions(this);
     m_pool[UIActionIndex_M_GuestControlFileManager_T_Log] = new UIActionMenuGuestControlFileManagerLog(this);
     m_pool[UIActionIndex_M_GuestControlFileManager_T_FileOperations] = new UIActionMenuGuestControlFileManagerFileOperations(this);
     m_pool[UIActionIndex_M_GuestControlFileManager_T_Session] = new UIActionMenuGuestControlFileManagerSession(this);
@@ -2860,7 +2860,7 @@ void UIActionPool::updateMenuGuestControlFileManager()
 
 void UIActionPool::updateMenuGuestControlFileManagerWrapper(UIMenu *pMenu)
 {
-    addAction(pMenu, action(UIActionIndex_M_GuestControlFileManager_T_Settings));
+    addAction(pMenu, action(UIActionIndex_M_GuestControlFileManager_T_Options));
     addAction(pMenu, action(UIActionIndex_M_GuestControlFileManager_T_Log));
     addAction(pMenu, action(UIActionIndex_M_GuestControlFileManager_T_FileOperations));
     addAction(pMenu, action(UIActionIndex_M_GuestControlFileManager_T_Session));

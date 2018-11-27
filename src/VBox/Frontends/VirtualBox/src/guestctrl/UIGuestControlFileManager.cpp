@@ -42,7 +42,7 @@
 # include "UIGuestControlConsole.h"
 # include "UIGuestControlFileManager.h"
 # include "UIGuestControlFileManagerSessionPanel.h"
-# include "UIGuestControlFileManagerSettingsPanel.h"
+# include "UIGuestControlFileManagerOptionsPanel.h"
 # include "UIGuestControlFileManagerLogPanel.h"
 # include "UIGuestControlFileManagerOperationsPanel.h"
 # include "UIGuestFileTable.h"
@@ -79,37 +79,37 @@ private:
 
 
 /*********************************************************************************************************************************
-*   UIGuestControlFileManagerSettings implementation.                                                                            *
+*   UIGuestControlFileManagerOptions implementation.                                                                            *
 *********************************************************************************************************************************/
 
-UIGuestControlFileManagerSettings *UIGuestControlFileManagerSettings::m_pInstance = 0;
+UIGuestControlFileManagerOptions *UIGuestControlFileManagerOptions::m_pInstance = 0;
 
-UIGuestControlFileManagerSettings* UIGuestControlFileManagerSettings::instance()
+UIGuestControlFileManagerOptions* UIGuestControlFileManagerOptions::instance()
 {
     if (!m_pInstance)
-    m_pInstance = new UIGuestControlFileManagerSettings;
+    m_pInstance = new UIGuestControlFileManagerOptions;
     return m_pInstance;
 }
 
-void UIGuestControlFileManagerSettings::create()
+void UIGuestControlFileManagerOptions::create()
 {
     if (m_pInstance)
         return;
-    m_pInstance = new UIGuestControlFileManagerSettings;
+    m_pInstance = new UIGuestControlFileManagerOptions;
 }
 
-void UIGuestControlFileManagerSettings::destroy()
+void UIGuestControlFileManagerOptions::destroy()
 {
     delete m_pInstance;
     m_pInstance = 0;
 }
 
- UIGuestControlFileManagerSettings::~UIGuestControlFileManagerSettings()
+ UIGuestControlFileManagerOptions::~UIGuestControlFileManagerOptions()
 {
 
 }
 
-UIGuestControlFileManagerSettings::UIGuestControlFileManagerSettings()
+UIGuestControlFileManagerOptions::UIGuestControlFileManagerOptions()
     : bListDirectoriesOnTop(true)
     , bAskDeleteConfirmation(false)
     , bShowHumanReadableSizes(true)
@@ -141,7 +141,7 @@ UIGuestControlFileManager::UIGuestControlFileManager(EmbedTo enmEmbedding, UIAct
     , m_enmEmbedding(enmEmbedding)
     , m_pActionPool(pActionPool)
     , m_fShowToolbar(fShowToolbar)
-    , m_pSettingsPanel(0)
+    , m_pOptionsPanel(0)
     , m_pLogPanel(0)
     , m_pSessionPanel(0)
     , m_pOperationsPanel(0)
@@ -151,8 +151,8 @@ UIGuestControlFileManager::UIGuestControlFileManager(EmbedTo enmEmbedding, UIAct
     prepareObjects();
     prepareConnections();
     retranslateUi();
-    loadSettings();
-    UIGuestControlFileManagerSettings::create();
+    restorePanelVisibility();
+    UIGuestControlFileManagerOptions::create();
 }
 
 UIGuestControlFileManager::~UIGuestControlFileManager()
@@ -161,8 +161,8 @@ UIGuestControlFileManager::~UIGuestControlFileManager()
         cleanupListener(m_pQtGuestListener, m_comGuestListener, m_comGuest.GetEventSource());
     if (m_comGuestSession.isOk() && m_pQtSessionListener && m_comSessionListener.isOk())
         cleanupListener(m_pQtSessionListener, m_comSessionListener, m_comGuestSession.GetEventSource());
-    saveSettings();
-    UIGuestControlFileManagerSettings::destroy();
+    saveOptions();
+    UIGuestControlFileManagerOptions::destroy();
 }
 
 QMenu *UIGuestControlFileManager::menu() const
@@ -270,16 +270,16 @@ void UIGuestControlFileManager::prepareObjects()
         pTopLayout->addWidget(m_pSessionPanel);
     }
 
-    m_pSettingsPanel =
-        new UIGuestControlFileManagerSettingsPanel(this /* manager dialog */,
-                                                   0 /*parent */, UIGuestControlFileManagerSettings::instance());
-    if (m_pSettingsPanel)
+    m_pOptionsPanel =
+        new UIGuestControlFileManagerOptionsPanel(this /* manager dialog */,
+                                                   0 /*parent */, UIGuestControlFileManagerOptions::instance());
+    if (m_pOptionsPanel)
     {
-        m_pSettingsPanel->hide();
-        m_panelActionMap.insert(m_pSettingsPanel, m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_T_Settings));
-        connect(m_pSettingsPanel, &UIGuestControlFileManagerSettingsPanel::sigSettingsChanged,
+        m_pOptionsPanel->hide();
+        m_panelActionMap.insert(m_pOptionsPanel, m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_T_Options));
+        connect(m_pOptionsPanel, &UIGuestControlFileManagerOptionsPanel::sigOptionsChanged,
                 this, &UIGuestControlFileManager::sltListDirectoriesBeforeChanged);
-        pTopLayout->addWidget(m_pSettingsPanel);
+        pTopLayout->addWidget(m_pOptionsPanel);
     }
 
     m_pVerticalSplitter->addWidget(pTopWidget);
@@ -379,11 +379,11 @@ void UIGuestControlFileManager::prepareToolBar()
         m_pToolBar->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
 
         m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_T_Session));
-        m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_T_Settings));
+        m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_T_Options));
         m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_T_Log));
         m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_T_FileOperations));
 
-        connect(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_T_Settings), &QAction::toggled,
+        connect(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_T_Options), &QAction::toggled,
                 this, &UIGuestControlFileManager::sltPanelActionToggled);
         connect(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_T_Log), &QAction::toggled,
                 this, &UIGuestControlFileManager::sltPanelActionToggled);
@@ -554,9 +554,9 @@ void UIGuestControlFileManager::sltCacheHostFileObjectsForDeletion(const QUuid &
 
 void UIGuestControlFileManager::sltHandleOptionsUpdated()
 {
-    if (m_pSettingsPanel)
+    if (m_pOptionsPanel)
     {
-        m_pSettingsPanel->update();
+        m_pOptionsPanel->update();
     }
 }
 
@@ -703,31 +703,28 @@ QStringList UIGuestControlFileManager::getFsObjInfoStringList(const T &fsObjectI
     QStringList objectInfo;
     if (!fsObjectInfo.isOk())
         return objectInfo;
-
     objectInfo << fsObjectInfo.GetName();
-
     return objectInfo;
 }
 
-void UIGuestControlFileManager::saveSettings()
+void UIGuestControlFileManager::saveOptions()
 {
     /* Save a list of currently visible panels: */
     QStringList strNameList;
     foreach(UIGuestControlFileManagerPanel* pPanel, m_visiblePanelsList)
         strNameList.append(pPanel->panelName());
     gEDataManager->setGuestControlFileManagerVisiblePanels(strNameList);
-
     /* Save the options: */
-    UIGuestControlFileManagerSettings *pSettings = UIGuestControlFileManagerSettings::instance();
-    if (pSettings)
+    UIGuestControlFileManagerOptions *pOptions = UIGuestControlFileManagerOptions::instance();
+    if (pOptions)
     {
-        gEDataManager->setGuestControlFileManagerOptions(pSettings->bListDirectoriesOnTop,
-                                                         pSettings->bAskDeleteConfirmation,
-                                                         pSettings->bShowHumanReadableSizes);
+        gEDataManager->setGuestControlFileManagerOptions(pOptions->bListDirectoriesOnTop,
+                                                         pOptions->bAskDeleteConfirmation,
+                                                         pOptions->bShowHumanReadableSizes);
     }
 }
 
-void UIGuestControlFileManager::loadSettings()
+void UIGuestControlFileManager::restorePanelVisibility()
 {
     /* Load the visible panel list and show them: */
     QStringList strNameList = gEDataManager->guestControlFileManagerVisiblePanels();
@@ -747,12 +744,12 @@ void UIGuestControlFileManager::loadSettings()
 void UIGuestControlFileManager::loadOptions()
 {
     /* Load options: */
-    UIGuestControlFileManagerSettings *pSettings = UIGuestControlFileManagerSettings::instance();
-    if (pSettings)
+    UIGuestControlFileManagerOptions *pOptions = UIGuestControlFileManagerOptions::instance();
+    if (pOptions)
     {
-        pSettings->bListDirectoriesOnTop = gEDataManager->guestControlFileManagerListDirectoriesFirst();
-        pSettings->bAskDeleteConfirmation = gEDataManager->guestControlFileManagerShowDeleteConfirmation();
-        pSettings->bShowHumanReadableSizes = gEDataManager->guestControlFileManagerShowHumanReadableSizes();
+        pOptions->bListDirectoriesOnTop = gEDataManager->guestControlFileManagerListDirectoriesFirst();
+        pOptions->bAskDeleteConfirmation = gEDataManager->guestControlFileManagerShowDeleteConfirmation();
+        pOptions->bShowHumanReadableSizes = gEDataManager->guestControlFileManagerShowHumanReadableSizes();
     }
 }
 

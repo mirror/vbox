@@ -44,12 +44,12 @@ bool UIGuestControlFileProxyModel::lessThan(const QModelIndex &left, const QMode
     UIFileTableItem *pLeftItem = static_cast<UIFileTableItem*>(left.internalPointer());
     UIFileTableItem *pRightItem = static_cast<UIFileTableItem*>(right.internalPointer());
 
-    UIGuestControlFileManagerSettings *settings = UIGuestControlFileManagerSettings::instance();
+    UIGuestControlFileManagerOptions *pOptions = UIGuestControlFileManagerOptions::instance();
 
     if (pLeftItem && pRightItem)
     {
-        /* List the directories before the files if settings say so: */
-        if (settings && settings->bListDirectoriesOnTop)
+        /* List the directories before the files if options say so: */
+        if (pOptions && pOptions->bListDirectoriesOnTop)
         {
             if (pLeftItem->isDirectory() && !pRightItem->isDirectory())
                 return (sortOrder() == Qt::AscendingOrder);
@@ -160,9 +160,9 @@ QVariant UIGuestControlFileModel::data(const QModelIndex &index, int role) const
         /* Decide whether to show human-readable file object sizes: */
         if (index.column() == UIGuestControlFileModelColumn_Size)
         {
-            UIGuestControlFileManagerSettings* pSettings =
-                UIGuestControlFileManagerSettings::instance();
-            if (pSettings && pSettings->bShowHumanReadableSizes)
+            UIGuestControlFileManagerOptions* pOptions =
+                UIGuestControlFileManagerOptions::instance();
+            if (pOptions && pOptions->bShowHumanReadableSizes)
             {
                 qulonglong size = item->data(index.column()).toULongLong();
                 return UIGuestControlFileTable::humanReadableSize(size);

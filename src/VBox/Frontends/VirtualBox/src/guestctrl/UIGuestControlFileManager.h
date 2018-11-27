@@ -50,19 +50,19 @@ class UIGuestControlFileManagerPanel;
 class UIGuestControlFileManagerLogPanel;
 class UIGuestControlFileManagerOperationsPanel;
 class UIGuestControlFileManagerSessionPanel;
-class UIGuestControlFileManagerSettingsPanel;
+class UIGuestControlFileManagerOptionsPanel;
 class UIGuestFileTable;
 class UIHostFileTable;
 class UIGuestSessionCreateWidget;
 class UIToolBar;
 
-/** A Utility class to manage file  manager settings. */
-class UIGuestControlFileManagerSettings
+/** A Utility class to manage file  manager options. */
+class UIGuestControlFileManagerOptions
 {
 
 public:
 
-    static UIGuestControlFileManagerSettings* instance();
+    static UIGuestControlFileManagerOptions* instance();
     static void create();
     static void destroy();
 
@@ -72,10 +72,10 @@ public:
 
 private:
 
-    UIGuestControlFileManagerSettings();
-    ~UIGuestControlFileManagerSettings();
+    UIGuestControlFileManagerOptions();
+    ~UIGuestControlFileManagerOptions();
 
-    static UIGuestControlFileManagerSettings *m_pInstance;
+    static UIGuestControlFileManagerOptions *m_pInstance;
 };
 
 /** A QWidget extension. it includes a QWidget extension for initiating a guest session
@@ -145,9 +145,9 @@ private:
     /** @} */
 
     /** Saves list of panels and file manager options to the extra data. */
-    void saveSettings();
-    /** Loads settings from exra data except the file manager options. */
-    void loadSettings();
+    void saveOptions();
+    /** Show the panels that have been visible the last time file manager is closed. */
+    void restorePanelVisibility();
     /** Loads file manager options. This should be done before widget creation
      *  since some widgets are initilized with these options */
     void loadOptions();
@@ -185,11 +185,11 @@ private:
     const bool     m_fShowToolbar;
     QMap<UIGuestControlFileManagerPanel*, QAction*> m_panelActionMap;
     QList<UIGuestControlFileManagerPanel*>          m_visiblePanelsList;
-    UIGuestControlFileManagerSettingsPanel         *m_pSettingsPanel;
+    UIGuestControlFileManagerOptionsPanel          *m_pOptionsPanel;
     UIGuestControlFileManagerLogPanel              *m_pLogPanel;
     UIGuestControlFileManagerSessionPanel          *m_pSessionPanel;
     UIGuestControlFileManagerOperationsPanel       *m_pOperationsPanel;
-    friend class UIGuestControlFileManagerSettingsPanel;
+    friend class UIGuestControlFileManagerOptionsPanel;
     friend class UIGuestControlFileManagerPanel;
     friend class UIGuestControlFileManagerDialog;
 };

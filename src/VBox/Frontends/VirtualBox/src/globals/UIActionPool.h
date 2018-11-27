@@ -105,7 +105,7 @@ enum UIActionIndex
     UIActionIndex_M_GuestControlFileManager_S_CopyToHost,
     UIActionIndex_M_GuestControlFileManager_S_MoveToGuest,
     UIActionIndex_M_GuestControlFileManager_S_MoveToHost,
-    UIActionIndex_M_GuestControlFileManager_T_Settings,
+    UIActionIndex_M_GuestControlFileManager_T_Options,
     UIActionIndex_M_GuestControlFileManager_T_Log,
     UIActionIndex_M_GuestControlFileManager_T_FileOperations,
     UIActionIndex_M_GuestControlFileManager_T_Session,

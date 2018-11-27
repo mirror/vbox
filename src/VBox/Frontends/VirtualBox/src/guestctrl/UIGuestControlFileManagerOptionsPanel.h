@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___UIGuestControlFileManagerSettingsPanel_h___
-#define ___UIGuestControlFileManagerSettingsPanel_h___
+#ifndef ___UIGuestControlFileManagerOptionsPanel_h___
+#define ___UIGuestControlFileManagerOptionsPanel_h___
 
 /* GUI includes: */
 #include "UIGuestControlFileManagerPanel.h"
@@ -26,18 +26,18 @@ class QCheckBox;
 class QSpinBox;
 class QLabel;
 class QIToolButton;
-class UIGuestControlFileManagerSettings;
+class UIGuestControlFileManagerOptions;
 
 /** UIGuestControlFileManagerPanel extension to change file manager options. It directly
  *  modifies the options through the passed UIGuestControlFileManagerOptions instance. */
-class UIGuestControlFileManagerSettingsPanel : public UIGuestControlFileManagerPanel
+class UIGuestControlFileManagerOptionsPanel : public UIGuestControlFileManagerPanel
 {
     Q_OBJECT;
 
 public:
 
-    UIGuestControlFileManagerSettingsPanel(UIGuestControlFileManager *pManagerWidget,
-                                           QWidget *pParent, UIGuestControlFileManagerSettings *pFileManagerSettings);
+    UIGuestControlFileManagerOptionsPanel(UIGuestControlFileManager *pManagerWidget,
+                                           QWidget *pParent, UIGuestControlFileManagerOptions *pFileManagerOptions);
     virtual QString panelName() const /* override */;
     /** Reads the file manager options and updates the widget accordingly. This functions is typically called
      *  when file manager options have been changed by other means and this panel needs to adapt. */
@@ -45,7 +45,7 @@ public:
 
 signals:
 
-    void sigSettingsChanged();
+    void sigOptionsChanged();
 
 protected:
 
@@ -66,7 +66,7 @@ private:
     QCheckBox  *m_pListDirectoriesOnTopCheckBox;
     QCheckBox  *m_pDeleteConfirmationCheckBox;
     QCheckBox  *m_pHumanReabableSizesCheckBox;
-    UIGuestControlFileManagerSettings *m_pFileManagerSettings;
+    UIGuestControlFileManagerOptions *m_pFileManagerOptions;
 };
 
-#endif /* !___UIGuestControlFileManagerSettingsPanel_h___ */
+#endif /* !___UIGuestControlFileManagerOptionsPanel_h___ */

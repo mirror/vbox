@@ -221,6 +221,10 @@
         <file alias="file_manager_operations_32px_x2.png">images/x2/file_manager_operations_32px_x2.png</file>
         <file alias="file_manager_operations_disabled_16px_x2.png">images/x2/file_manager_operations_disabled_16px_x2.png</file>
         <file alias="file_manager_operations_disabled_32px_x2.png">images/x2/file_manager_operations_disabled_32px_x2.png</file>
+        <file alias="file_manager_options_16px_x2.png">images/x2/file_manager_options_16px_x2.png</file>
+        <file alias="file_manager_options_32px_x2.png">images/x2/file_manager_options_32px_x2.png</file>
+        <file alias="file_manager_options_disabled_16px_x2.png">images/x2/file_manager_options_disabled_16px_x2.png</file>
+        <file alias="file_manager_options_disabled_32px_x2.png">images/x2/file_manager_options_disabled_32px_x2.png</file>
         <file alias="file_manager_paste_16px_x2.png">images/x2/file_manager_paste_16px_x2.png</file>
         <file alias="file_manager_paste_24px_x2.png">images/x2/file_manager_paste_24px_x2.png</file>
         <file alias="file_manager_paste_disabled_16px_x2.png">images/x2/file_manager_paste_disabled_16px_x2.png</file>
@@ -245,10 +249,6 @@
         <file alias="file_manager_session_32px_x2.png">images/x2/file_manager_session_32px_x2.png</file>
         <file alias="file_manager_session_disabled_16px_x2.png">images/x2/file_manager_session_disabled_16px_x2.png</file>
         <file alias="file_manager_session_disabled_32px_x2.png">images/x2/file_manager_session_disabled_32px_x2.png</file>
-        <file alias="file_manager_settings_16px_x2.png">images/x2/file_manager_settings_16px_x2.png</file>
-        <file alias="file_manager_settings_32px_x2.png">images/x2/file_manager_settings_32px_x2.png</file>
-        <file alias="file_manager_settings_disabled_16px_x2.png">images/x2/file_manager_settings_disabled_16px_x2.png</file>
-        <file alias="file_manager_settings_disabled_32px_x2.png">images/x2/file_manager_settings_disabled_32px_x2.png</file>
         <file alias="floppy_16px_x2.png">images/x2/floppy_16px_x2.png</file>
         <file alias="floppy_add_16px_x2.png">images/x2/floppy_add_16px_x2.png</file>
         <file alias="floppy_add_disabled_16px_x2.png">images/x2/floppy_add_disabled_16px_x2.png</file>
@@ -360,6 +360,8 @@
         <file alias="log_viewer_goto_next_bookmark_16px_x2.png">images/x2/log_viewer_goto_next_bookmark_16px_x2.png</file>
         <file alias="log_viewer_goto_previous_bookmark_16px_x2.png">images/x2/log_viewer_goto_previous_bookmark_16px_x2.png</file>
         <file alias="log_viewer_goto_selected_bookmark_16px_x2.png">images/x2/log_viewer_goto_selected_bookmark_16px_x2.png</file>
+        <file alias="log_viewer_options_32px_x2.png">images/x2/log_viewer_options_32px_x2.png</file>
+        <file alias="log_viewer_options_disabled_32px_x2.png">images/x2/log_viewer_options_disabled_32px_x2.png</file>
         <file alias="log_viewer_refresh_32px_x2.png">images/x2/log_viewer_refresh_32px_x2.png</file>
         <file alias="log_viewer_refresh_disabled_32px_x2.png">images/x2/log_viewer_refresh_disabled_32px_x2.png</file>
         <file alias="log_viewer_reset_font_16px_x2.png">images/x2/log_viewer_reset_font_16px_x2.png</file>
@@ -367,8 +369,6 @@
         <file alias="log_viewer_save_disabled_32px_x2.png">images/x2/log_viewer_save_disabled_32px_x2.png</file>
         <file alias="log_viewer_search_backward_16px_x2.png">images/x2/log_viewer_search_backward_16px_x2.png</file>
         <file alias="log_viewer_search_forward_16px_x2.png">images/x2/log_viewer_search_forward_16px_x2.png</file>
-        <file alias="log_viewer_options_32px_x2.png">images/x2/log_viewer_options_32px_x2.png</file>
-        <file alias="log_viewer_options_disabled_32px_x2.png">images/x2/log_viewer_options_disabled_32px_x2.png</file>
         <file alias="machine_16px_x2.png">images/x2/machine_16px_x2.png</file>
         <file alias="machine_24px_x2.png">images/x2/machine_24px_x2.png</file>
         <file alias="machine_32px_x2.png">images/x2/machine_32px_x2.png</file>

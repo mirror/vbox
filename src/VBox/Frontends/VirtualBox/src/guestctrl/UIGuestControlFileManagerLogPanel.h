@@ -26,7 +26,7 @@
 class QTextEdit;
 class UIGuestControlFileManager;
 
-/** UIVMLogViewerPanel extension providing GUI to manage logviewer settings. */
+/** UIGuestControlFileManagerPanel extension to display file manager logs. */
 class UIGuestControlFileManagerLogPanel : public UIGuestControlFileManagerPanel
 {
     Q_OBJECT;
