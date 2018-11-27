@@ -114,12 +114,12 @@ private:
     struct ImportStack;
     class TaskOVF;
     class TaskOPC;
-    class TaskOCI;
+    class TaskCloud;
 
     struct Data;            // opaque, defined in ApplianceImpl.cpp
     Data *m;
 
-    enum SetUpProgressMode { ImportFile, ImportS3, WriteFile, WriteS3, ExportOCI };
+    enum SetUpProgressMode { ImportFile, ImportS3, WriteFile, WriteS3, ExportCloud };
 
     /** @name General stuff
      * @{
@@ -138,7 +138,7 @@ private:
 
     static void i_importOrExportThreadTask(TaskOVF *pTask);
     static void i_exportOPCThreadTask(TaskOPC *pTask);
-    static void i_exportOCIThreadTask(TaskOCI *pTask);
+    static void i_exportCloudThreadTask(TaskCloud *pTask);
 
     HRESULT i_initBackendNames();
 
@@ -217,13 +217,13 @@ private:
      */
     HRESULT i_writeImpl(ovf::OVFVersion_T aFormat, const LocationInfo &aLocInfo, ComObjPtr<Progress> &aProgress);
     HRESULT i_writeOPCImpl(ovf::OVFVersion_T aFormat, const LocationInfo &aLocInfo, ComObjPtr<Progress> &aProgress);
-    HRESULT i_writeOCIImpl(const LocationInfo &aLocInfo, ComObjPtr<Progress> &aProgress);
+    HRESULT i_writeCloudImpl(const LocationInfo &aLocInfo, ComObjPtr<Progress> &aProgress);
 
     HRESULT i_writeFS(TaskOVF *pTask);
     HRESULT i_writeFSOVF(TaskOVF *pTask, AutoWriteLockBase& writeLock);
     HRESULT i_writeFSOVA(TaskOVF *pTask, AutoWriteLockBase& writeLock);
     HRESULT i_writeFSOPC(TaskOPC *pTask);
-    HRESULT i_writeFSOCI(TaskOCI *pTask);
+    HRESULT i_writeFSCloud(TaskCloud *pTask);
     HRESULT i_writeFSImpl(TaskOVF *pTask, AutoWriteLockBase &writeLock, RTVFSFSSTREAM hVfsFssDst);
     HRESULT i_writeBufferToFile(RTVFSFSSTREAM hVfsFssDst, const char *pszFilename, const void *pvContent, size_t cbContent);
 

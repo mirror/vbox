@@ -230,7 +230,7 @@ struct Appliance::Data
     /** Number of passwords provided. */
     uint32_t                  m_cPwProvided;
 
-    struct OciExportData_T {
+    struct CloudExportData_T {
         Utf8Str strDisplayMachineName;
         Utf8Str strProfileFilePath;
         Utf8Str strProfileName;
@@ -244,7 +244,7 @@ struct Appliance::Data
         Utf8Str strBootImageName;
     };
 
-    OciExportData_T m_OciExportData;
+    CloudExportData_T m_CloudExportData;
 };
 
 struct Appliance::XMLStack
@@ -345,7 +345,7 @@ public:
 };
 
 
-class Appliance::TaskOCI : public ThreadTask
+class Appliance::TaskCloud : public ThreadTask
 {
 public:
     enum TaskType
@@ -353,21 +353,21 @@ public:
         Export
     };
 
-    TaskOCI(Appliance *aThat,
+    TaskCloud(Appliance *aThat,
             TaskType aType,
             LocationInfo aLocInfo,
             ComObjPtr<Progress> &aProgress)
-      : ThreadTask("TaskOCI"),
+      : ThreadTask("TaskCloud"),
         pAppliance(aThat),
         taskType(aType),
         locInfo(aLocInfo),
         pProgress(aProgress),
         rc(S_OK)
     {
-        m_strTaskName = "OCIExpt";
+        m_strTaskName = "CloudExpt";
     }
 
-    ~TaskOCI()
+    ~TaskCloud()
     {
     }
 
@@ -382,7 +382,7 @@ public:
 
     void handler()
     {
-        Appliance::i_exportOCIThreadTask(this);
+        Appliance::i_exportCloudThreadTask(this);
     }
 };
 

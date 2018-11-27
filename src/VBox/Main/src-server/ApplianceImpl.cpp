@@ -1034,8 +1034,8 @@ HRESULT Appliance::i_setUpProgress(ComObjPtr<Progress> &pProgress,
             ulTotalOperationsWeight += ulOVFCreationWeight;
             break;
         }
-        case ExportOCI:
-            cOperations = 1 + 7;
+        case ExportCloud:
+            cOperations = 1 + 9;//7
             ulTotalOperationsWeight = 100*cOperations;
             m->ulWeightForXmlOperation = 100;
             break;
@@ -1267,11 +1267,11 @@ DECLCALLBACK(int) Appliance::TaskOPC::updateProgress(unsigned uPercent, void *pv
 }
 
 /**
- * Worker for TaskOCI::handler.
+ * Worker for TaskCloud::handler.
  * @thread  pTask       The task.
  */
 /* static */
-void Appliance::i_exportOCIThreadTask(TaskOCI *pTask)
+void Appliance::i_exportCloudThreadTask(TaskCloud *pTask)
 {
     LogFlowFuncEnter();
     AssertReturnVoid(pTask);
@@ -1281,8 +1281,8 @@ void Appliance::i_exportOCIThreadTask(TaskOCI *pTask)
 
     switch (pTask->taskType)
     {
-        case TaskOCI::Export:
-            pTask->rc = pAppliance->i_writeFSOCI(pTask);
+        case TaskCloud::Export:
+            pTask->rc = pAppliance->i_writeFSCloud(pTask);
             break;
 
         default:
@@ -1298,9 +1298,9 @@ void Appliance::i_exportOCIThreadTask(TaskOCI *pTask)
 }
 
 /* static */
-DECLCALLBACK(int) Appliance::TaskOCI::updateProgress(unsigned uPercent, void *pvUser)
+DECLCALLBACK(int) Appliance::TaskCloud::updateProgress(unsigned uPercent, void *pvUser)
 {
-    Appliance::TaskOCI* pTask = *(Appliance::TaskOCI**)pvUser;
+    Appliance::TaskCloud* pTask = *(Appliance::TaskCloud**)pvUser;
 
     if (    pTask
          && !pTask->pProgress.isNull())
@@ -1334,7 +1334,7 @@ void i_parseURI(Utf8Str strUri, LocationInfo &locInfo)
     }
     else if (strUri.startsWith("OCI://", Utf8Str::CaseInsensitive)) /* OCI service (storage or compute) */
     {
-        locInfo.storageType = VFSType_OCI;
+        locInfo.storageType = VFSType_Cloud;
         strUri = strUri.substr(sizeof("OCI://") - 1);
     }
     else if (strUri.startsWith("webdav://", Utf8Str::CaseInsensitive)) /* webdav service */
