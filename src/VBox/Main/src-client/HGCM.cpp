@@ -148,6 +148,7 @@ class HGCMService
         static DECLCALLBACK(int)  svcHlpInfoRegister(void *pvInstance, const char *pszName, const char *pszDesc,
                                                      PFNDBGFHANDLEREXT pfnHandler, void *pvUser);
         static DECLCALLBACK(int)  svcHlpInfoDeregister(void *pvInstance, const char *pszName);
+        static DECLCALLBACK(uint32_t) svcHlpGetRequestor(VBOXHGCMCALLHANDLE hCall);
 
     public:
 
@@ -888,6 +889,24 @@ HGCMService::svcHlpStamRegisterV(void *pvInstance, void *pvSample, STAMTYPE enmT
 }
 
 
+/**
+ * @interface_method_impl{VBOXHGCMSVCHELPERS,pfnGetRequestor}
+ */
+/* static */ DECLCALLBACK(uint32_t) HGCMService::svcHlpGetRequestor(VBOXHGCMCALLHANDLE hCall)
+{
+    HGCMMsgHeader *pMsgHdr = (HGCMMsgHeader *)(hCall);
+    AssertPtrReturn(pMsgHdr, 0);
+
+    PVBOXHGCMCMD pCmd = pMsgHdr->pCmd;
+    AssertPtrReturn(pCmd, 0);
+
+    PPDMIHGCMPORT pHgcmPort = pMsgHdr->pHGCMPort;
+    AssertPtrReturn(pHgcmPort, 0);
+
+    return pHgcmPort->pfnGetRequestor(pHgcmPort, pCmd);
+}
+
+
 static DECLCALLBACK(int) hgcmMsgCompletionCallback(int32_t result, HGCMMsgCore *pMsgCore)
 {
     /* Call the VMMDev port interface to issue IRQ notification. */
@@ -954,6 +973,7 @@ int HGCMService::instanceCreate(const char *pszServiceLibrary, const char *pszSe
             m_svcHelpers.pfnStamDeregisterV  = svcHlpStamDeregisterV;
             m_svcHelpers.pfnInfoRegister     = svcHlpInfoRegister;
             m_svcHelpers.pfnInfoDeregister   = svcHlpInfoDeregister;
+            m_svcHelpers.pfnGetRequestor     = svcHlpGetRequestor;
 
             /* Execute the load request on the service thread. */
             HGCMMsgCore *pCoreMsg;

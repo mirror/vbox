@@ -4419,6 +4419,7 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
     /* HGCM port */
     pThis->IHGCMPort.pfnCompleted           = hgcmCompleted;
     pThis->IHGCMPort.pfnIsCmdRestored       = hgcmIsCmdRestored;
+    pThis->IHGCMPort.pfnGetRequestor        = hgcmGetRequestor;
 #endif
 
     pThis->pCredentials = (VMMDEVCREDS *)RTMemAllocZ(sizeof(*pThis->pCredentials));

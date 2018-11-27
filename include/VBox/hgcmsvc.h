@@ -68,9 +68,10 @@
  *          this problem is already solved by service extension callbacks
  * 5.1->6.1 Because pfnCall got a new parameter. Also new helpers. (VBox 6.0)
  * 6.1->6.2 Because pfnCallComplete starts returning a status code (VBox 6.0).
+ * 6.2->6.3 Because pfnGetRequestor was added (VBox 6.0).
  */
 #define VBOX_HGCM_SVC_VERSION_MAJOR (0x0006)
-#define VBOX_HGCM_SVC_VERSION_MINOR (0x0002)
+#define VBOX_HGCM_SVC_VERSION_MINOR (0x0003)
 #define VBOX_HGCM_SVC_VERSION ((VBOX_HGCM_SVC_VERSION_MAJOR << 16) + VBOX_HGCM_SVC_VERSION_MINOR)
 
 
@@ -109,6 +110,14 @@ typedef struct VBOXHGCMSVCHELPERS
                                                PFNDBGFHANDLEREXT pfnHandler, void *pvUser));
     /** Access to DBGFR3InfoDeregisterExternal. */
     DECLR3CALLBACKMEMBER(int, pfnInfoDeregister,(void *pvInstance, const char *pszName));
+
+    /**
+     * Retrieves the VMMDevRequestHeader::fRequestor value.
+     *
+     * @returns The field value, 0 if invalid call.
+     * @param   hCall       The call we're checking up on.
+     */
+    DECLR3CALLBACKMEMBER(uint32_t, pfnGetRequestor, (VBOXHGCMCALLHANDLE hCall));
 
 } VBOXHGCMSVCHELPERS;
 

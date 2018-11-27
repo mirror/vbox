@@ -2083,9 +2083,18 @@ typedef struct PDMIHGCMPORT
      */
     DECLR3CALLBACKMEMBER(bool, pfnIsCmdRestored,(PPDMIHGCMPORT pInterface, PVBOXHGCMCMD pCmd));
 
+    /**
+     * Gets the VMMDevRequestHeader::fRequestor value for @a pCmd.
+     *
+     * @returns The fRequestor value, 0 if invalid parameters.
+     * @param   pInterface          Pointer to this interface.
+     * @param   pCmd                The command we're in checking on.
+     */
+    DECLR3CALLBACKMEMBER(uint32_t, pfnGetRequestor,(PPDMIHGCMPORT pInterface, PVBOXHGCMCMD pCmd));
+
 } PDMIHGCMPORT;
 /** PDMIHGCMPORT interface ID. */
-# define PDMIHGCMPORT_IID                       "e82b1709-c245-4ccc-1611-0e6d50d93cbc"
+# define PDMIHGCMPORT_IID                       "0864e1c5-659b-40c8-2c97-994e2983038e"
 
 
 /** Pointer to a HGCM service location structure. */
