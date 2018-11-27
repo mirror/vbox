@@ -611,9 +611,8 @@ VBoxGuestNetBSDWsmIOCtl(void *cookie, u_long cmd, void *data, int flag, struct l
  * File open handler
  *
  */
-static int VBoxGuestNetBSDOpen(dev_t device, int flags, int fmt, struct lwp *process)
+static int VBoxGuestNetBSDOpen(dev_t device, int flags, int fmt, struct lwp *pLwp)
 {
-    int rc;
     vboxguest_softc *sc;
     struct vboxguest_fdata *fdata;
     file_t *fp;
@@ -634,32 +633,46 @@ static int VBoxGuestNetBSDOpen(dev_t device, int flags, int fmt, struct lwp *pro
     }
 
     fdata = kmem_alloc(sizeof(*fdata), KM_SLEEP);
-    if (fdata == NULL)
+    if (fdata != NULL)
     {
-        return (ENOMEM);
-    }
+        fdata->sc = sc;
 
-    fdata->sc = sc;
+        error = fd_allocfile(&fp, &fd);
+        if (error == 0)
+        {
+            /*
+             * Create a new session.
+             */
+            int rc;
+            struct kauth_cred *pCred = pLwp->l_cred;
+            uint32_t fRequestor = VMMDEV_REQUESTOR_USERMODE | VMMDEV_REQUESTOR_TRUST_NOT_GIVEN;
+            if (pCred && kauth_cred_geteuid(pCred) == 0)
+                fRequestor |= VMMDEV_REQUESTOR_USR_ROOT;
+            else
+                fRequestor |= VMMDEV_REQUESTOR_USR_USER;
 
-    if ((error = fd_allocfile(&fp, &fd)) != 0)
-    {
+            if (pCred && kauth_cred_ismember_gid(pCred, 0))
+                fRequestor |= VMMDEV_REQUESTOR_GRP_WHEEL;
+            fRequestor |= VMMDEV_REQUESTOR_NO_USER_DEVICE; /** @todo implement /dev/vboxuser
+            if (!fUnrestricted)
+                fRequestor |= VMMDEV_REQUESTOR_USER_DEVICE; */
+            fRequestor |= VMMDEV_REQUESTOR_CON_DONT_KNOW; /** @todo can we find out if pLwp is on the console? */
+            rc = VGDrvCommonCreateUserSession(&g_DevExt, fRequestor, &fdata->session);
+            if (RT_SUCCESS(rc))
+            {
+                ASMAtomicIncU32(&cUsers);
+                return fd_clone(fp, fd, flags, &vboxguest_fileops, fdata);
+            }
+
+            aprint_error_dev(sc->sc_dev, "VBox session creation failed\n");
+            closef(fp); /* ??? */
+            error = RTErrConvertToErrno(rc);
+        }
         kmem_free(fdata, sizeof(*fdata));
-        return error;
     }
-
-    /*
-     * Create a new session.
-     */
-    rc = VGDrvCommonCreateUserSession(&g_DevExt, VMMDEV_REQUESTOR_USERMODE, &fdata->session);
-    if (! RT_SUCCESS(rc))
-    {
-        aprint_error_dev(sc->sc_dev, "VBox session creation failed\n");
-        closef(fp); /* ??? */
-        kmem_free(fdata, sizeof(*fdata));
-        return RTErrConvertToErrno(rc);
-    }
-    ASMAtomicIncU32(&cUsers);
-    return fd_clone(fp, fd, flags, &vboxguest_fileops, fdata);
+    else
+        error = NOMEM;
+    return error;
 
 }
 
