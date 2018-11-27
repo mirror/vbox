@@ -333,11 +333,24 @@ public:
 
     /**
      * @interface_method_impl{VBOXHGCMSVCFNTABLE,pfnConnect}
+     * Stub implementation of pfnConnect.
+     */
+    static DECLCALLBACK(int) svcConnect(void * /* pvService */,
+                                        uint32_t /* u32ClientID */,
+                                        void * /* pvClient */,
+                                        uint32_t /*fRequestor*/,
+                                        bool /*fRestoring*/)
+    {
+        return VINF_SUCCESS;
+    }
+
+    /**
+     * @interface_method_impl{VBOXHGCMSVCFNTABLE,pfnConnect}
      * Stub implementation of pfnConnect and pfnDisconnect.
      */
-    static DECLCALLBACK(int) svcConnectDisconnect(void * /* pvService */,
-                                                  uint32_t /* u32ClientID */,
-                                                  void * /* pvClient */)
+    static DECLCALLBACK(int) svcDisconnect(void * /* pvService */,
+                                           uint32_t /* u32ClientID */,
+                                           void * /* pvClient */)
     {
         return VINF_SUCCESS;
     }
@@ -1707,8 +1720,8 @@ extern "C" DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad(VBOXHGCMSVCFNTABLE *pta
                 ptable->cbClient = 0;
 
                 ptable->pfnUnload             = Service::svcUnload;
-                ptable->pfnConnect            = Service::svcConnectDisconnect;
-                ptable->pfnDisconnect         = Service::svcConnectDisconnect;
+                ptable->pfnConnect            = Service::svcConnect;
+                ptable->pfnDisconnect         = Service::svcDisconnect;
                 ptable->pfnCall               = Service::svcCall;
                 ptable->pfnHostCall           = Service::svcHostCall;
                 ptable->pfnSaveState          = NULL;  /* The service is stateless, so the normal */

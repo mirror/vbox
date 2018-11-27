@@ -115,7 +115,7 @@ static int testHostCmd(const VBOXHGCMSVCFNTABLE *pTable, const PCMDHOST pCmd, ui
 
             if (pCmd[i].fNeedsClient)
             {
-                int client_rc = pTable->pfnConnect(pTable->pvService, 1000 /* Client ID */, NULL /* pvClient */);
+                int client_rc = pTable->pfnConnect(pTable->pvService, 1000 /* Client ID */, NULL /* pvClient */, 0, false);
                 if (RT_FAILURE(client_rc))
                     rc = client_rc;
             }
@@ -201,7 +201,7 @@ static int testClient(const VBOXHGCMSVCFNTABLE *pTable)
 {
     RTTestSub(g_hTest, "Testing client commands ...");
 
-    int rc = pTable->pfnConnect(pTable->pvService, 1 /* Client ID */, NULL /* pvClient */);
+    int rc = pTable->pfnConnect(pTable->pvService, 1 /* Client ID */, NULL /* pvClient */, 0, false);
     if (RT_SUCCESS(rc))
     {
         VBOXHGCMCALLHANDLE_TYPEDEF callHandle = { VINF_SUCCESS };

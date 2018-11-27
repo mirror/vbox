@@ -288,8 +288,11 @@ protected:
      */
     static DECLCALLBACK(int) svcConnect(void *pvService,
                                         uint32_t u32ClientID,
-                                        void *pvClient)
+                                        void *pvClient,
+                                        uint32_t fRequestor,
+                                        bool fRestoring)
     {
+        RT_NOREF(fRequestor, fRestoring);
         AssertLogRelReturn(VALID_PTR(pvService), VERR_INVALID_PARAMETER);
         LogFlowFunc(("pvService=%p, u32ClientID=%u, pvClient=%p\n", pvService, u32ClientID, pvClient));
         SELF *pSelf = reinterpret_cast<SELF *>(pvService);

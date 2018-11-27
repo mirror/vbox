@@ -169,7 +169,7 @@ class HGCMService
         static int SaveState(PSSMHANDLE pSSM);
         static int LoadState(PSSMHANDLE pSSM);
 
-        int CreateAndConnectClient(uint32_t *pu32ClientIdOut, uint32_t u32ClientIdIn);
+        int CreateAndConnectClient(uint32_t *pu32ClientIdOut, uint32_t u32ClientIdIn, uint32_t fRequestor, bool fRestoring);
         int DisconnectClient(uint32_t u32ClientId, bool fFromService);
 
         int HostCall(uint32_t u32Function, uint32_t cParms, VBOXHGCMSVCPARM *paParms);
@@ -411,8 +411,12 @@ class HGCMMsgSvcUnload: public HGCMMsgCore
 class HGCMMsgSvcConnect: public HGCMMsgCore
 {
     public:
-        /* client identifier */
+        /** client identifier */
         uint32_t u32ClientId;
+        /** Requestor flags. */
+        uint32_t fRequestor;
+        /** Set if restoring. */
+        bool fRestoring;
 };
 
 class HGCMMsgSvcDisconnect: public HGCMMsgCore
@@ -433,7 +437,6 @@ class HGCMMsgHeader: public HGCMMsgCore
         /* Port to be informed on message completion. */
         PPDMIHGCMPORT pHGCMPort;
 };
-
 
 class HGCMMsgCall: public HGCMMsgHeader
 {
@@ -605,7 +608,8 @@ DECLCALLBACK(void) hgcmServiceThread(HGCMThread *pThread, void *pvUser)
                 if (pClient)
                 {
                     rc = pSvc->m_fntable.pfnConnect(pSvc->m_fntable.pvService, pMsg->u32ClientId,
-                                                    HGCM_CLIENT_DATA(pSvc, pClient));
+                                                    HGCM_CLIENT_DATA(pSvc, pClient),
+                                                    pMsg->fRequestor, pMsg->fRestoring);
 
                     hgcmObjDereference(pClient);
                 }
@@ -1422,6 +1426,7 @@ void HGCMService::ReleaseService(void)
             /* Get the client id. */
             uint32_t u32ClientId;
             rc = SSMR3GetU32(pSSM, &u32ClientId);
+            uint32_t fRequestor = VMMDEV_REQUESTOR_LEGACY; /** @todo save/restore fRequestor. */
             if (RT_FAILURE(rc))
             {
                 pSvc->ReleaseService();
@@ -1430,7 +1435,7 @@ void HGCMService::ReleaseService(void)
             }
 
             /* Connect the client. */
-            rc = pSvc->CreateAndConnectClient(NULL, u32ClientId);
+            rc = pSvc->CreateAndConnectClient(NULL, u32ClientId, fRequestor, true /*fRestoring*/);
             if (RT_FAILURE(rc))
             {
                 pSvc->ReleaseService();
@@ -1459,11 +1464,14 @@ void HGCMService::ReleaseService(void)
  * @param pu32ClientIdOut If not NULL, then the method must generate a new handle for the client.
  *                        If NULL, use the given 'u32ClientIdIn' handle.
  * @param u32ClientIdIn   The handle for the client, when 'pu32ClientIdOut' is NULL.
- * @return VBox rc.
+ * @param fRequestor      The requestor flags, VMMDEV_REQUESTOR_LEGACY if not available.
+ * @param fRestoring      Set if we're restoring a saved state.
+ * @return VBox status code.
  */
-int HGCMService::CreateAndConnectClient(uint32_t *pu32ClientIdOut, uint32_t u32ClientIdIn)
+int HGCMService::CreateAndConnectClient(uint32_t *pu32ClientIdOut, uint32_t u32ClientIdIn, uint32_t fRequestor, bool fRestoring)
 {
-    LogFlowFunc(("pu32ClientIdOut = %p, u32ClientIdIn = %d\n", pu32ClientIdOut, u32ClientIdIn));
+    LogFlowFunc(("pu32ClientIdOut = %p, u32ClientIdIn = %d, fRequestor = %#x, fRestoring = %d\n",
+                 pu32ClientIdOut, u32ClientIdIn, fRequestor, fRestoring));
 
     /* Allocate a client information structure. */
     HGCMClient *pClient = new HGCMClient();
@@ -1979,7 +1987,10 @@ static DECLCALLBACK(void) hgcmThread(HGCMThread *pThread, void *pvUser)
                 if (RT_SUCCESS(rc))
                 {
                     /* Call the service instance method. */
-                    rc = pService->CreateAndConnectClient(pMsg->pu32ClientId, 0);
+                    rc = pService->CreateAndConnectClient(pMsg->pu32ClientId,
+                                                          0,
+                                                          pMsg->pHGCMPort->pfnGetRequestor(pMsg->pHGCMPort, pMsg->pCmd),
+                                                          pMsg->pHGCMPort->pfnIsCmdRestored(pMsg->pHGCMPort, pMsg->pCmd));
 
                     /* Release the service after resolve. */
                     pService->ReleaseService();

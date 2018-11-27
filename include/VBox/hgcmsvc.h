@@ -69,9 +69,10 @@
  * 5.1->6.1 Because pfnCall got a new parameter. Also new helpers. (VBox 6.0)
  * 6.1->6.2 Because pfnCallComplete starts returning a status code (VBox 6.0).
  * 6.2->6.3 Because pfnGetRequestor was added (VBox 6.0).
+ * 6.3->6.4 Bacause pfnConnect got an additional parameter (VBox 6.0).
  */
 #define VBOX_HGCM_SVC_VERSION_MAJOR (0x0006)
-#define VBOX_HGCM_SVC_VERSION_MINOR (0x0003)
+#define VBOX_HGCM_SVC_VERSION_MINOR (0x0004)
 #define VBOX_HGCM_SVC_VERSION ((VBOX_HGCM_SVC_VERSION_MAJOR << 16) + VBOX_HGCM_SVC_VERSION_MINOR)
 
 
@@ -454,7 +455,6 @@ typedef FNHGCMSVCEXT *PFNHGCMSVCEXT;
  */
 
 /* The structure is used in separately compiled binaries so an explicit packing is required. */
-#pragma pack(1) /** @todo r=bird: The pragma pack(1) is not at all required!! */
 typedef struct VBOXHGCMSVCFNTABLE
 {
     /** @name Filled by HGCM
@@ -483,7 +483,7 @@ typedef struct VBOXHGCMSVCFNTABLE
     DECLR3CALLBACKMEMBER(int, pfnUnload, (void *pvService));
 
     /** Inform the service about a client connection. */
-    DECLR3CALLBACKMEMBER(int, pfnConnect, (void *pvService, uint32_t u32ClientID, void *pvClient));
+    DECLR3CALLBACKMEMBER(int, pfnConnect, (void *pvService, uint32_t u32ClientID, void *pvClient, uint32_t fRequestor, bool fRestoring));
 
     /** Inform the service that the client wants to disconnect. */
     DECLR3CALLBACKMEMBER(int, pfnDisconnect, (void *pvService, uint32_t u32ClientID, void *pvClient));
@@ -513,7 +513,6 @@ typedef struct VBOXHGCMSVCFNTABLE
 
     /** @} */
 } VBOXHGCMSVCFNTABLE;
-#pragma pack()
 
 
 /** Service initialization entry point. */

@@ -153,9 +153,9 @@ static DECLCALLBACK(int) svcUnload (void *)
     return rc;
 }
 
-static DECLCALLBACK(int) svcConnect (void *, uint32_t u32ClientID, void *pvClient)
+static DECLCALLBACK(int) svcConnect (void *, uint32_t u32ClientID, void *pvClient, uint32_t fRequestor, bool fRestoring)
 {
-    RT_NOREF2(u32ClientID, pvClient);
+    RT_NOREF(u32ClientID, pvClient, fRequestor, fRestoring);
     int rc = VINF_SUCCESS;
 
     Log(("SharedFolders host service: connected, u32ClientID = %u\n", u32ClientID));

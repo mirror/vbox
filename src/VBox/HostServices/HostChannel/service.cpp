@@ -180,19 +180,17 @@ static DECLCALLBACK(int) svcDisconnect(void *pvService, uint32_t u32ClientID, vo
     return VINF_SUCCESS;
 }
 
-static DECLCALLBACK(int) svcConnect(void *pvService, uint32_t u32ClientID, void *pvClient)
+static DECLCALLBACK(int) svcConnect(void *pvService, uint32_t u32ClientID, void *pvClient, uint32_t fRequestor, bool fRestoring)
 {
-    RT_NOREF1(pvService);
+    RT_NOREF(pvService, fRequestor, fRestoring);
     VBOXHOSTCHCLIENT *pClient = (VBOXHOSTCHCLIENT *)pvClient;
-
-    int rc = VINF_SUCCESS;
 
     /* Register the client. */
     memset(pClient, 0, sizeof(VBOXHOSTCHCLIENT));
 
     pClient->u32ClientID = u32ClientID;
 
-    rc = vboxHostChannelClientConnect(pClient);
+    int rc = vboxHostChannelClientConnect(pClient);
 
     LogRel2(("svcConnect: rc = %Rrc\n", rc));
 
