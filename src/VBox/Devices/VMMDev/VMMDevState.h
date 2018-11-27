@@ -136,10 +136,10 @@ typedef struct VMMDevState
     /** Does the guest currently want the host pointer to be shown? */
     uint32_t fHostCursorRequested;
 
-#if HC_ARCH_BITS == 32
-    /** Alignment padding. */
-    uint32_t u32Alignment0;
-#endif
+//#if HC_ARCH_BITS == 32
+//    /** Alignment padding. */
+//    uint32_t u32Alignment0;
+//#endif
 
     /** Pointer to device instance - RC pointer. */
     PPDMDEVINSRC pDevInsRC;
