@@ -339,7 +339,8 @@ IEM_STATIC VBOXSTRICTRC iemSvmVmexit(PVMCPU pVCpu, uint64_t uExitCode, uint64_t 
 
 # if defined(VBOX_WITH_NESTED_HWVIRT_ONLY_IN_IEM) && defined(IN_RING3)
     /* CLGI/STGI may not have been intercepted and thus not executed in IEM. */
-    if (HMSvmIsVGifActive(pVCpu->CTX_SUFF(pVM)))
+    if (   HMIsEnabled(pVM)
+        && HMSvmIsVGifActive(pVCpu->CTX_SUFF(pVM)))
         return EMR3SetExecutionPolicy(pVCpu->CTX_SUFF(pVM)->pUVM, EMEXECPOLICY_IEM_ALL, false);
 # endif
     return rcStrict;
@@ -839,7 +840,8 @@ IEM_STATIC VBOXSTRICTRC iemSvmVmrun(PVMCPU pVCpu, uint8_t cbInstr, RTGCPHYS GCPh
 
 # if defined(VBOX_WITH_NESTED_HWVIRT_ONLY_IN_IEM) && defined(IN_RING3)
         /* If CLGI/STGI isn't intercepted we force IEM-only nested-guest execution here. */
-        if (HMSvmIsVGifActive(pVM))
+        if (   HMIsEnabled(pVM)
+            && HMSvmIsVGifActive(pVM))
             return EMR3SetExecutionPolicy(pVCpu->CTX_SUFF(pVM)->pUVM, EMEXECPOLICY_IEM_ALL, true);
 # endif
 

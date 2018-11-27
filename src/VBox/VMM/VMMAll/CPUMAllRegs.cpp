@@ -2843,6 +2843,7 @@ VMM_INT_DECL(bool) CPUMCanSvmNstGstTakeVirtIntr(PVMCPU pVCpu, PCCPUMCTX pCtx)
 
     PCSVMVMCBCTRL pVmcbCtrl    = &pCtx->hwvirt.svm.CTX_SUFF(pVmcb)->ctrl;
     PCSVMINTCTRL  pVmcbIntCtrl = &pVmcbCtrl->IntCtrl;
+    Assert(!pVmcbIntCtrl->n.u1VGifEnable);      /* We don't support passing virtual-GIF feature to the guest yet. */
     if (   !pVmcbIntCtrl->n.u1IgnoreTPR
         &&  pVmcbIntCtrl->n.u4VIntrPrio <= pVmcbIntCtrl->n.u8VTPR)
         return false;
@@ -2872,27 +2873,6 @@ VMM_INT_DECL(uint8_t) CPUMGetSvmNstGstInterrupt(PCCPUMCTX pCtx)
 #else
     PCSVMVMCBCTRL pVmcbCtrl = &pCtx->hwvirt.svm.CTX_SUFF(pVmcb)->ctrl;
     return pVmcbCtrl->IntCtrl.n.u8VIntrVector;
-#endif
-}
-
-
-/**
- * Gets the SVM nested-guest virtual GIF.
- *
- * @returns The nested-guest virtual GIF.
- * @param   pCtx            The guest-CPU context.
- */
-VMM_INT_DECL(bool) CPUMGetSvmNstGstVGif(PCCPUMCTX pCtx)
-{
-#ifdef IN_RC
-    RT_NOREF(pCtx);
-    AssertReleaseFailedReturn(false);
-#else
-    PCSVMVMCBCTRL pVmcbCtrl    = &pCtx->hwvirt.svm.CTX_SUFF(pVmcb)->ctrl;
-    PCSVMINTCTRL  pVmcbIntCtrl = &pVmcbCtrl->IntCtrl;
-    if (pVmcbIntCtrl->n.u1VGifEnable)
-        return pVmcbIntCtrl->n.u1VGif;
-    return true;
 #endif
 }
 

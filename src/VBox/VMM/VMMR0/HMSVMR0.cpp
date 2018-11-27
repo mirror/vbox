@@ -2443,7 +2443,8 @@ static int hmR0SvmExportGuestState(PVMCPU pVCpu)
 #ifdef VBOX_WITH_NESTED_HWVIRT_SVM
     if (pVmcb->ctrl.IntCtrl.n.u1VGifEnable)
     {
-        Assert(pVCpu->CTX_SUFF(pVM)->hm.s.svm.u32Features & X86_CPUID_SVM_FEATURE_EDX_VGIF);
+        Assert(pVCpu->CTX_SUFF(pVM)->hm.s.svm.u32Features & X86_CPUID_SVM_FEATURE_EDX_VGIF);    /* Hardware supports it. */
+        Assert(HMSvmIsVGifActive(pVCpu->CTX_SUFF(pVM)));                                        /* VM has configured it. */
         pVmcb->ctrl.IntCtrl.n.u1VGif = pCtx->hwvirt.fGif;
     }
 #endif
@@ -2793,11 +2794,10 @@ static void hmR0SvmImportGuestState(PVMCPU pVCpu, uint64_t fWhat)
 #ifdef VBOX_WITH_NESTED_HWVIRT_SVM
         if (fWhat & CPUMCTX_EXTRN_HWVIRT)
         {
-            if (   !CPUMIsGuestInSvmNestedHwVirtMode(pCtx)
-                && pVmcbCtrl->IntCtrl.n.u1VGifEnable)
+            if (pVmcbCtrl->IntCtrl.n.u1VGifEnable)
             {
-                /* We don't yet support passing VGIF feature to the guest. */
-                Assert(pVCpu->CTX_SUFF(pVM)->hm.s.svm.fVGif);
+                Assert(!CPUMIsGuestInSvmNestedHwVirtMode(pCtx));    /* We don't yet support passing VGIF feature to the guest. */
+                Assert(HMSvmIsVGifActive(pVCpu->CTX_SUFF(pVM)));    /* VM has configured it. */
                 pCtx->hwvirt.fGif = pVmcbCtrl->IntCtrl.n.u1VGif;
             }
         }
@@ -3728,16 +3728,15 @@ static VBOXSTRICTRC hmR0SvmEvaluatePendingEventNested(PVMCPU pVCpu)
                               | CPUMCTX_EXTRN_HM_SVM_HWVIRT_VIRQ);
 
     Assert(!pVCpu->hm.s.Event.fPending);
-    Assert(pCtx->hwvirt.fGif);
     PSVMVMCB pVmcb = hmR0SvmGetCurrentVmcb(pVCpu);
     Assert(pVmcb);
 
-    bool const fVirtualGif = CPUMGetSvmNstGstVGif(pCtx);
+    bool const fGif        = pCtx->hwvirt.fGif;
     bool const fIntShadow  = hmR0SvmIsIntrShadowActive(pVCpu);
     bool const fBlockNmi   = VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_BLOCK_NMIS);
 
-    Log4Func(("fVirtualGif=%RTbool fBlockNmi=%RTbool fIntShadow=%RTbool fIntPending=%RTbool fNmiPending=%RTbool\n",
-              fVirtualGif, fBlockNmi, fIntShadow, VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC),
+    Log4Func(("fGif=%RTbool fBlockNmi=%RTbool fIntShadow=%RTbool fIntPending=%RTbool fNmiPending=%RTbool\n",
+              fGif, fBlockNmi, fIntShadow, VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC),
               VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INTERRUPT_NMI)));
 
     /** @todo SMI. SMIs take priority over NMIs. */
@@ -3750,7 +3749,7 @@ static VBOXSTRICTRC hmR0SvmEvaluatePendingEventNested(PVMCPU pVCpu)
     if (    VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INTERRUPT_NMI)
         && !fBlockNmi)
     {
-        if (    fVirtualGif
+        if (    fGif
             && !fIntShadow)
         {
             if (CPUMIsGuestSvmCtrlInterceptSet(pVCpu, pCtx, SVM_CTRL_INTERCEPT_NMI))
@@ -3769,7 +3768,7 @@ static VBOXSTRICTRC hmR0SvmEvaluatePendingEventNested(PVMCPU pVCpu)
             hmR0SvmSetPendingEvent(pVCpu, &Event, 0 /* GCPtrFaultAddress */);
             VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INTERRUPT_NMI);
         }
-        else if (!fVirtualGif)
+        else if (!fGif)
             hmR0SvmSetCtrlIntercept(pVmcb, SVM_CTRL_INTERCEPT_STGI);
         else
             hmR0SvmSetIntWindowExiting(pVCpu, pVmcb);
@@ -3790,7 +3789,7 @@ static VBOXSTRICTRC hmR0SvmEvaluatePendingEventNested(PVMCPU pVCpu)
     else if (   VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC)
              && !pVCpu->hm.s.fSingleInstruction)
     {
-        if (    fVirtualGif
+        if (    fGif
             && !fIntShadow
             &&  CPUMCanSvmNstGstTakePhysIntr(pVCpu, pCtx))
         {
@@ -3824,7 +3823,7 @@ static VBOXSTRICTRC hmR0SvmEvaluatePendingEventNested(PVMCPU pVCpu)
             else
                 STAM_COUNTER_INC(&pVCpu->hm.s.StatSwitchGuestIrq);
         }
-        else if (!fVirtualGif)
+        else if (!fGif)
             hmR0SvmSetCtrlIntercept(pVmcb, SVM_CTRL_INTERCEPT_STGI);
         else
             hmR0SvmSetIntWindowExiting(pVCpu, pVmcb);

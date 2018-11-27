@@ -1824,13 +1824,12 @@ static int emR3SvmNstGstInjectIntr(PVMCPU pVCpu, bool *pfWakeupPending, bool *pf
     *pfWakeupPending = false;
     *pfInjected      = false;
 
-    PVM pVM  = pVCpu->CTX_SUFF(pVM);
-    Assert(pVCpu->cpum.GstCtx.hwvirt.fGif);
-    bool fVirtualGif = CPUMGetSvmNstGstVGif(&pVCpu->cpum.GstCtx);
+    PVM  pVM  = pVCpu->CTX_SUFF(pVM);
+    bool fGif = pVCpu->cpum.GstCtx.hwvirt.fGif;
 #ifdef VBOX_WITH_RAW_MODE
-    fVirtualGif     &= !PATMIsPatchGCAddr(pVM, pVCpu->cpum.GstCtx.eip);
+    fGif &= !PATMIsPatchGCAddr(pVM, pVCpu->cpum.GstCtx.eip);
 #endif
-    if (fVirtualGif)
+    if (fGif)
     {
         if (CPUMCanSvmNstGstTakePhysIntr(pVCpu, &pVCpu->cpum.GstCtx))
         {
