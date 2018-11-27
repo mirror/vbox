@@ -414,6 +414,13 @@ static int vgdrvDarwinOpen(dev_t Dev, int fFlags, int fDevType, struct proc *pPr
     kauth_cred_t        pCred = kauth_cred_proc_ref(pProcess);
     if (pCred)
     {
+#if MAC_OS_X_VERSION_MIN_REQUIRED >= 1070
+        RTUID           Uid = kauth_cred_getruid(pCred);
+        RTGID           Gid = kauth_cred_getrgid(pCred);
+#else
+        RTUID           Uid = pCred->cr_ruid;
+        RTGID           Gid = pCred->cr_rgid;
+#endif
         unsigned        iHash = SESSION_HASH(Process);
         RTSpinlockAcquire(g_Spinlock);
 
@@ -426,6 +433,16 @@ static int vgdrvDarwinOpen(dev_t Dev, int fFlags, int fDevType, struct proc *pPr
             {
                 pSession->fOpened = true;
                 pSession->fUserSession = !fUnrestricted;
+                pSession->fRequestor = VMMDEV_REQUESTOR_USERMODE | VMMDEV_REQUESTOR_TRUST_NOT_GIVEN;
+                if (Uid == 0)
+                    pSession->fRequestor |= VMMDEV_REQUESTOR_USR_ROOT;
+                else
+                    pSession->fRequestor |= VMMDEV_REQUESTOR_USR_USER;
+                if (Gid == 0)
+                    pSession->fRequestor |= VMMDEV_REQUESTOR_GRP_WHEEL;
+                if (!fUnrestricted)
+                    pSession->fRequestor |= VMMDEV_REQUESTOR_USER_DEVICE;
+                fRequestor |= VMMDEV_REQUESTOR_CON_DONT_KNOW; /** @todo see if we can figure out console relationship of pProc. */
             }
             else
                 rc = VERR_ALREADY_LOADED;
@@ -1170,6 +1187,7 @@ bool org_virtualbox_VBoxGuestClient::start(IOService *pProvider)
 
             /*
              * Create a new session.
+             * Note! We complete the requestor stuff in the open method.
              */
             int rc = VGDrvCommonCreateUserSession(&g_DevExt, VMMDEV_REQUESTOR_USERMODE, &m_pSession);
             if (RT_SUCCESS(rc))
