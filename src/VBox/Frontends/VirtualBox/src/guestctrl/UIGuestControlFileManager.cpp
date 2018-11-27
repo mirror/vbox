@@ -79,7 +79,7 @@ private:
 
 
 /*********************************************************************************************************************************
-*   UIGuestControlFileManagerOptions implementation.                                                                            *
+*   UIGuestControlFileManagerOptions implementation.                                                                             *
 *********************************************************************************************************************************/
 
 UIGuestControlFileManagerOptions *UIGuestControlFileManagerOptions::m_pInstance = 0;

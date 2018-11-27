@@ -101,6 +101,7 @@ UIFileOperationProgressWidget::UIFileOperationProgressWidget(const CProgress &co
     , m_pCancelButton(0)
 {
     prepare();
+    setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Maximum);
 }
 
 UIFileOperationProgressWidget::~UIFileOperationProgressWidget()
@@ -139,14 +140,14 @@ void UIFileOperationProgressWidget::prepareWidgets()
     m_pMainLayout = new QHBoxLayout;
     if (!m_pMainLayout)
         return;
+    m_pMainLayout->setSpacing(0);
 
     m_pCancelButton = new QIToolButton;
     if (m_pCancelButton)
     {
         m_pCancelButton->setIcon(QApplication::style()->standardIcon(QStyle::SP_DockWidgetCloseButton));
         m_pCancelButton->setStyleSheet("QToolButton { border: 0px none black; margin: 0px 0px 0px 0px; } ");
-        const QSize sh = m_pCancelButton->sizeHint();
-        m_pCancelButton->setFixedSize(sh);
+
 
         connect(m_pCancelButton, &QIToolButton::clicked, this, &UIFileOperationProgressWidget::sltCancelProgress);
         if (!m_comProgress.isNull() && !m_comProgress.GetCancelable())
@@ -160,10 +161,9 @@ void UIFileOperationProgressWidget::prepareWidgets()
         m_pProgressBar->setMinimum(0);
         m_pProgressBar->setMaximum(100);
         m_pProgressBar->setTextVisible(true);
-        m_pProgressBar->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+        m_pProgressBar->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Maximum);
         m_pMainLayout->addWidget(m_pProgressBar);
     }
-
     setLayout(m_pMainLayout);
 }
 
@@ -229,15 +229,20 @@ void UIGuestControlFileManagerOperationsPanel::addNewProgress(const CProgress &c
     if (!m_pTableWidget)
         return;
 
-    m_pTableWidget->setRowCount(m_pTableWidget->rowCount() + 1);
+    /** Insert the row to the top of the table since inserting to the bottom causes a strange stacking
+     *  effect of the widgets: */
+    m_pTableWidget->insertRow(0);
     UIFileOperationProgressWidget *pOperationsWidget = new UIFileOperationProgressWidget(comProgress);
-    m_pTableWidget->setCellWidget(m_pTableWidget->rowCount() - 1, 0, pOperationsWidget);
+    m_pTableWidget->setCellWidget(0, 0, pOperationsWidget);
     connect(pOperationsWidget, &UIFileOperationProgressWidget::sigProgressComplete,
             this, &UIGuestControlFileManagerOperationsPanel::sigFileOperationComplete);
     connect(pOperationsWidget, &UIFileOperationProgressWidget::sigProgressFail,
             this, &UIGuestControlFileManagerOperationsPanel::sigFileOperationFail);
-
-    m_pTableWidget->resizeColumnsToContents();
+    /* Trying to make the the rows look a bit less shitty */
+    //m_pTableWidget->resizeRowsToContents();
+    //m_pTableWidget->horizontalHeader()->setStretchLastSection(true);
+    m_pTableWidget->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+    //m_pTableWidget->scrollToBottom();
 }
 
 QString UIGuestControlFileManagerOperationsPanel::panelName() const
@@ -256,9 +261,7 @@ void UIGuestControlFileManagerOperationsPanel::prepareWidgets()
         m_pTableWidget->setSelectionBehavior(QAbstractItemView::SelectRows);
         m_pTableWidget->setColumnCount(TableColumn_Max);
         m_pTableWidget->verticalHeader()->hide();
-        QStringList headers;
-        headers << "Progress" << "Information";
-        m_pTableWidget->setHorizontalHeaderLabels(headers);
+        m_pTableWidget->horizontalHeader()->hide();
         m_pTableWidget->setShowGrid(false);
         mainLayout()->addWidget(m_pTableWidget);
     }
