@@ -235,7 +235,7 @@ static void vmmdevHGCMCmdListUnlock(PVMMDEV pThis)
  * @param   GCPhys          The guest physical address of the HGCM request.
  * @param   cbRequest       The size of the HGCM request.
  * @param   cParms          Number of HGCM parameters for VBOXHGCMCMDTYPE_CALL command.
- * @param   fRequstor       The VMMDevRequestHeader::fRequestor value.
+ * @param   fRequestor      The VMMDevRequestHeader::fRequestor value.
  */
 static PVBOXHGCMCMD vmmdevHGCMCmdAlloc(PVMMDEV pThis, VBOXHGCMCMDTYPE enmCmdType, RTGCPHYS GCPhys,
                                        uint32_t cbRequest, uint32_t cParms, uint32_t fRequestor)
