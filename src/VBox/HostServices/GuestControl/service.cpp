@@ -765,11 +765,11 @@ typedef struct ClientState
                     HGCMSvcSetU32(&mPendingCon.mParms[0], pHostCmd->mMsgType);
                     HGCMSvcSetU32(&mPendingCon.mParms[1], pHostCmd->mParmCount);
                     for (uint32_t i = pHostCmd->mParmCount; i >= 2; i--)
-                        switch (pHostCmd->mpParms[i].type)
+                        switch (pHostCmd->mpParms[i - 2].type)
                         {
                             case VBOX_HGCM_SVC_PARM_32BIT: mPendingCon.mParms[i].u.uint32 = ~(uint32_t)sizeof(uint32_t); break;
                             case VBOX_HGCM_SVC_PARM_64BIT: mPendingCon.mParms[i].u.uint32 = ~(uint32_t)sizeof(uint64_t); break;
-                            case VBOX_HGCM_SVC_PARM_PTR:   mPendingCon.mParms[i].u.uint32 = pHostCmd->mpParms[i].u.pointer.size; break;
+                            case VBOX_HGCM_SVC_PARM_PTR:   mPendingCon.mParms[i].u.uint32 = pHostCmd->mpParms[i - 2].u.pointer.size; break;
                         }
 
                     rc = mSvcHelpers->pfnCallComplete(mPendingCon.mHandle, VINF_SUCCESS);
@@ -1272,11 +1272,11 @@ int Service::clientMsgPeek(uint32_t idClient, VBOXHGCMCALLHANDLE hCall, uint32_t
         paParms[0].u.uint32 = pFirstCmd->mMsgType;
         paParms[1].u.uint32 = pFirstCmd->mParmCount;
         for (uint32_t i = pFirstCmd->mParmCount; i >= 2; i--)
-            switch (pFirstCmd->mpParms[i].type)
+            switch (pFirstCmd->mpParms[i - 2].type)
             {
                 case VBOX_HGCM_SVC_PARM_32BIT: paParms[i].u.uint32 = ~(uint32_t)sizeof(uint32_t); break;
                 case VBOX_HGCM_SVC_PARM_64BIT: paParms[i].u.uint32 = ~(uint32_t)sizeof(uint64_t); break;
-                case VBOX_HGCM_SVC_PARM_PTR:   paParms[i].u.uint32 = pFirstCmd->mpParms[i].u.pointer.size; break;
+                case VBOX_HGCM_SVC_PARM_PTR:   paParms[i].u.uint32 = pFirstCmd->mpParms[i - 2].u.pointer.size; break;
             }
 
         LogFlowFunc(("[Client %RU32] GUEST_MSG_PEEK_XXXX -> VINF_SUCCESS (idMsg=%u, cParms=%u)\n",
@@ -1329,13 +1329,12 @@ int Service::clientMsgGet(uint32_t idClient, VBOXHGCMCALLHANDLE hCall, uint32_t 
     /*
      * Validate the request.
      *
-     * Note! The 2nd parameter is basically ignored as it's only purpose is
-     *       compatibility with GUEST_MSG_WAIT
+     * The weird first parameter logic is due to GUEST_MSG_WAIT compatibility
+     * (don't want to rewrite all the message structures).
      */
-    ASSERT_GUEST_MSG_RETURN(cParms >= 2, ("cParms=%u!\n", cParms), VERR_INVALID_PARAMETER);
-    ASSERT_GUEST_MSG_RETURN(paParms[0].type == VBOX_HGCM_SVC_PARM_32BIT, ("type=%u\n", paParms[0].type), VERR_WRONG_TYPE);
-    uint32_t const idMsgExpected  = paParms[0].u.uint32;
-    ASSERT_GUEST_MSG_RETURN(paParms[1].type == VBOX_HGCM_SVC_PARM_32BIT, ("type=%u\n", paParms[0].type), VERR_WRONG_TYPE);
+    uint32_t const idMsgExpected = cParms > 0 && paParms[0].type == VBOX_HGCM_SVC_PARM_32BIT ? paParms[0].u.uint32
+                                 : cParms > 0 && paParms[0].type == VBOX_HGCM_SVC_PARM_64BIT ? paParms[0].u.uint64
+                                 : UINT32_MAX;
 
     ClientStateMapIter itClientState = mClientStateMap.find(idClient);
     ASSERT_GUEST_MSG_RETURN(itClientState != mClientStateMap.end(), ("idClient=%RU32\n", idClient), VERR_INVALID_HANDLE);
@@ -1350,10 +1349,7 @@ int Service::clientMsgGet(uint32_t idClient, VBOXHGCMCALLHANDLE hCall, uint32_t 
     {
         HostCommand *pFirstCmd = *itFirstCmd;
 
-        /* The 'peek' parameters. */
-        paParms[0].u.uint32 = pFirstCmd->mMsgType;
-        paParms[1].u.uint32 = pFirstCmd->mParmCount;
-        ASSERT_GUEST_MSG_RETURN(pFirstCmd->mMsgType == idMsgExpected,
+        ASSERT_GUEST_MSG_RETURN(pFirstCmd->mMsgType == idMsgExpected || idMsgExpected == UINT32_MAX,
                                 ("idMsg=%u cParms=%u, caller expected %u and %u\n",
                                  pFirstCmd->mMsgType, pFirstCmd->mParmCount, idMsgExpected, cParms),
                                 VERR_MISMATCH);
@@ -1363,7 +1359,7 @@ int Service::clientMsgGet(uint32_t idClient, VBOXHGCMCALLHANDLE hCall, uint32_t 
                                 VERR_OUT_OF_RANGE);
 
         /* Check the parameter types. */
-        for (uint32_t i = 2; i < cParms; i++)
+        for (uint32_t i = 0; i < cParms; i++)
             ASSERT_GUEST_MSG_RETURN(pFirstCmd->mpParms[i].type == paParms[i].type,
                                     ("param #%u: type %u, caller expected %u\n", i, pFirstCmd->mpParms[i].type, paParms[i].type),
                                     VERR_WRONG_TYPE);
@@ -1375,7 +1371,7 @@ int Service::clientMsgGet(uint32_t idClient, VBOXHGCMCALLHANDLE hCall, uint32_t 
          * communicate all the required buffer sizes.
          */
         int rc = VINF_SUCCESS;
-        for (uint32_t i = 2; i < cParms; i++)
+        for (uint32_t i = 0; i < cParms; i++)
             switch (pFirstCmd->mpParms[i].type)
             {
                 case VBOX_HGCM_SVC_PARM_32BIT:

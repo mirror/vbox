@@ -303,11 +303,11 @@ enum eGuestFn
     GUEST_MSG_PEEK_WAIT,
     /** Gets the next message, returning immediately.
      *
-     * First argument is the message ID returned by the peek and which the caller
-     * expects to retrieve (holds actual message ID when VERR_MISMATCH is returned).
-     * Second argument is the parameter count (output only) and exist for
-     * compatibility with GUEST_MSG_WAIT.  Any subsequent parameters are specific to
-     * the message being retrieved.
+     * All parameters are specific to the message being retrieved, however if the
+     * first one is an integer value it shall be an input parameter holding the
+     * ID of the message being retrieved.  While it would be nice to add a separate
+     * parameter for this purpose, this is difficult without breaking GUEST_MSG_WAIT
+     * compatibility.
      *
      * @retval  VINF_SUCCESS if message retrieved and removed from the pending queue.
      * @retval  VERR_TRY_AGAIN if no message pending.
