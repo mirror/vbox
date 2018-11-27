@@ -1237,7 +1237,7 @@ int Service::clientMsgOldGet(uint32_t u32ClientID, VBOXHGCMCALLHANDLE callHandle
  * @retval  VERR_RESOURCE_BUSY if another read already made a waiting call.
  * @retval  VINF_HGCM_ASYNC_EXECUTE if message wait is pending.
  *
- * @param   idClientID  The client's ID.
+ * @param   idClient    The client's ID.
  * @param   hCall       The client's call handle.
  * @param   cParms      Number of parameters.
  * @param   paParms     Array of parameters.
@@ -1319,7 +1319,7 @@ int Service::clientMsgPeek(uint32_t idClient, VBOXHGCMCALLHANDLE hCall, uint32_t
  * @retval  VERR_INVALID_HANDLE if invalid client ID.
  * @retval  VINF_HGCM_ASYNC_EXECUTE if message wait is pending.
  *
- * @param   idClientID  The client's ID.
+ * @param   idClient    The client's ID.
  * @param   hCall       The client's call handle.
  * @param   cParms      Number of parameters.
  * @param   paParms     Array of parameters.
@@ -1442,7 +1442,7 @@ int Service::clientMsgGet(uint32_t idClient, VBOXHGCMCALLHANDLE hCall, uint32_t 
  * @retval  VERR_INVALID_HANDLE if invalid client ID.
  * @retval  VINF_HGCM_ASYNC_EXECUTE if message wait is pending.
  *
- * @param   idClientID  The client's ID.
+ * @param   idClient    The client's ID.
  * @param   cParms      Number of parameters.
  */
 int Service::clientMsgCancel(uint32_t idClient, uint32_t cParms)
