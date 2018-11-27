@@ -442,7 +442,7 @@ static int vgdrvDarwinOpen(dev_t Dev, int fFlags, int fDevType, struct proc *pPr
                     pSession->fRequestor |= VMMDEV_REQUESTOR_GRP_WHEEL;
                 if (!fUnrestricted)
                     pSession->fRequestor |= VMMDEV_REQUESTOR_USER_DEVICE;
-                fRequestor |= VMMDEV_REQUESTOR_CON_DONT_KNOW; /** @todo see if we can figure out console relationship of pProc. */
+                pSession->fRequestor |= VMMDEV_REQUESTOR_CON_DONT_KNOW; /** @todo see if we can figure out console relationship of pProc. */
             }
             else
                 rc = VERR_ALREADY_LOADED;
