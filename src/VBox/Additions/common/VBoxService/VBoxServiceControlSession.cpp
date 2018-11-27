@@ -1066,6 +1066,9 @@ int VGSvcGstCtrlSessionHandler(PVBOXSERVICECTRLSESSION pSession, uint32_t uMsg, 
     {
         VGSvcVerbose(3, "Unsupported message (uMsg=%RU32, cParms=%RU32) from host, skipping\n", uMsg, pHostCtx->uNumParms);
 
+        /** @todo r=bird: Why on earth couldn't you make GUEST_MSG_SKIP do this hacky stuff?!?
+         * You don't even know if you're replying to a message ment for you (see masking race further down).  */
+
         /*
          * !!! HACK ALERT BEGIN !!!
          * As peeking for the current message by VbglR3GuestCtrlMsgWaitFor() / GUEST_MSG_WAIT only gives us the message type and
@@ -1083,23 +1086,20 @@ int VGSvcGstCtrlSessionHandler(PVBOXSERVICECTRLSESSION pSession, uint32_t uMsg, 
 
         HGCMMsgSkip Msg;
         VBGL_HGCM_HDR_INIT(&Msg.hdr, pHostCtx->uClientID, GUEST_MSG_WAIT, pHostCtx->uNumParms);
-
-        /* Don't want to drag in VbglHGCMParmUInt32Set(). */ /** @todo r=bird: Why don't we?  It's an inline function, so little dragging.  */
-        Msg.context.type      = VMMDevHGCMParmType_32bit;
-        Msg.context.u.value64 = 0; /* init unused bits to 0 */
-        Msg.context.u.value32 = 0;
+        Msg.context.SetUInt32(0);
 
         /* Retrieve the context ID of the message which is not supported and put it in pHostCtx. */
         int rc2 = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
         if (RT_SUCCESS(rc2))
             Msg.context.GetUInt32(&pHostCtx->uContextID);
 
+        /* Now fake a reply to the message. */
+        rc2 = VbglR3GuestCtrlMsgReply(pHostCtx, VERR_NOT_SUPPORTED);
+        AssertRC(rc2);
+
         /*  !!!                !!!
          *  !!! HACK ALERT END !!!
          *  !!!                !!! */
-
-        rc2 = VbglR3GuestCtrlMsgReply(pHostCtx, VERR_NOT_SUPPORTED);
-        AssertRC(rc2);
 
         /* Tell the host service to skip the message. */
         VbglR3GuestCtrlMsgSkip(pHostCtx->uClientID);
@@ -1332,9 +1332,16 @@ static RTEXITCODE vgsvcGstCtrlSessionSpawnWorker(PVBOXSERVICECTRLSESSION pSessio
      *       comments explain why, I (bird) assume is was an unintentional glitch.
      *
      * Note! There was also a fSessionFilter being set on VERR_NOT_SUPPORTED here
-     *       but since it wasn't use, I assume it was just a leftover from some
+     *       but since it wasn't used, I assume it was just a leftover from some
      *       earlier workaround for host behaviour/whatever...
      */
+/** @todo r=bird: Unless the host is filtering out everything by default, there
+ * is a ugly race here between the client masking unwanted messages and the host
+ * pushing more messages to the clients.  We could in theory end up with someone
+ * elses' messages as the first ones.  Too late to require a VbglR3GuestCtrlMsgFilterSet
+ * call by all clients, which is what would've made sense...  I guess
+ * VbglR3GuestCtrlSessionNotify can't be used as a green-light for sending messages
+ * either. */
     uint32_t uFilterAdd = VBOX_GUESTCTRL_FILTER_BY_SESSION(pSession->StartupInfo.uSessionID);
     rc = VbglR3GuestCtrlMsgFilterSet(idClient,
                                      VBOX_GUESTCTRL_CONTEXTID_MAKE_SESSION(pSession->StartupInfo.uSessionID),
@@ -1371,7 +1378,7 @@ static RTEXITCODE vgsvcGstCtrlSessionSpawnWorker(PVBOXSERVICECTRLSESSION pSessio
                     VGSvcVerbose(3, "Waiting for host msg ...\n");
                     uint32_t uMsg = 0;
                     uint32_t cParms = 0;
-                    rc = VbglR3GuestCtrlMsgWaitFor(idClient, &uMsg, &cParms);
+                    rc = VbglR3GuestCtrlMsgPeekWait(idClient, &uMsg, &cParms);
                     if (   RT_SUCCESS(rc)
                         || rc == VERR_TOO_MUCH_DATA)
                     {

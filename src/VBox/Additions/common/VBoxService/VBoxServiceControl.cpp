@@ -250,7 +250,7 @@ static DECLCALLBACK(int) vgsvcGstCtrlWorker(bool volatile *pfShutdown)
         VGSvcVerbose(3, "GstCtrl: Waiting for host msg ...\n");
         uint32_t uMsg = 0;
         uint32_t cParms = 0;
-        rc = VbglR3GuestCtrlMsgWaitFor(g_uControlSvcClientID, &uMsg, &cParms);
+        rc = VbglR3GuestCtrlMsgPeekWait(g_uControlSvcClientID, &uMsg, &cParms);
         if (rc == VERR_TOO_MUCH_DATA)
         {
 #ifdef DEBUG

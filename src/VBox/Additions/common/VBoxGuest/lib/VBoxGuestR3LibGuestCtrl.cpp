@@ -45,6 +45,13 @@
 using namespace guestControl;
 
 
+/*********************************************************************************************************************************
+*   Global Variables                                                                                                             *
+*********************************************************************************************************************************/
+/** Set if GUEST_MSG_PEEK_WAIT and friends are supported. */
+static int g_fVbglR3GuestCtrlHavePeekGetCancel = -1;
+
+
 /**
  * Connects to the guest control service.
  *
@@ -80,7 +87,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlDisconnect(uint32_t idClient)
  * @param   pcParameters    Where to store the number  of parameters which will
  *                          be received in a second call to the host.
  */
-VBGLR3DECL(int) VbglR3GuestCtrlMsgWaitFor(uint32_t uClientId, uint32_t *pidMsg, uint32_t *pcParameters)
+static int vbglR3GuestCtrlMsgWaitFor(uint32_t uClientId, uint32_t *pidMsg, uint32_t *pcParameters)
 {
     AssertPtrReturn(pidMsg, VERR_INVALID_POINTER);
     AssertPtrReturn(pcParameters, VERR_INVALID_POINTER);
@@ -148,6 +155,191 @@ VBGLR3DECL(int) VbglR3GuestCtrlMsgWaitFor(uint32_t uClientId, uint32_t *pidMsg, 
 
 
 /**
+ * Determins the value of g_fVbglR3GuestCtrlHavePeekGetCancel.
+ *
+ * @returns true if supported, false if not.
+ * @param   idClient         The client ID to use for the testing.
+ */
+DECL_NO_INLINE(static, bool) vbglR3GuestCtrlDetectPeekGetCancelSupport(uint32_t idClient)
+{
+    /*
+     * Seems we get VINF_SUCCESS back from the host if we try unsupported
+     * guest control functions, so we need to supply some random message
+     * parameters and check that they change.
+     */
+    uint32_t const idDummyMsg      = UINT32_C(0x8350bdca);
+    uint32_t const cDummyParmeters = UINT32_C(0x7439604f);
+    uint32_t const cbDummyMask     = UINT32_C(0xc0ffe000);
+    Assert(cDummyParmeters > VMMDEV_MAX_HGCM_PARMS);
+
+    int rc;
+    struct
+    {
+        VBGLIOCHGCMCALL         Hdr;
+        HGCMFunctionParameter   idMsg;
+        HGCMFunctionParameter   cParams;
+        HGCMFunctionParameter   acbParams[14];
+    } PeekCall;
+    Assert(RT_ELEMENTS(PeekCall.acbParams) + 2 < VMMDEV_MAX_HGCM_PARMS);
+
+    do
+    {
+        memset(&PeekCall, 0xf6, sizeof(PeekCall));
+        VBGL_HGCM_HDR_INIT(&PeekCall.Hdr, idClient, GUEST_MSG_PEEK_NOWAIT, 16);
+        VbglHGCMParmUInt32Set(&PeekCall.idMsg, idDummyMsg);
+        VbglHGCMParmUInt32Set(&PeekCall.cParams, cDummyParmeters);
+        for (uint32_t i = 0; i < RT_ELEMENTS(PeekCall.acbParams); i++)
+            VbglHGCMParmUInt32Set(&PeekCall.acbParams[i], i | cbDummyMask);
+
+        rc = VbglR3HGCMCall(&PeekCall.Hdr, sizeof(PeekCall));
+    } while (rc == VERR_INTERRUPTED);
+
+    LogRel2(("vbglR3GuestCtrlDetectPeekGetCancelSupport: rc=%Rrc %#x %#x %#x %#x %#x %#x %#x %#x %#x %#x %#x %#x %#x %#x %#x %#x\n",
+             rc, PeekCall.idMsg.u.value32,     PeekCall.cParams.u.value32,
+             PeekCall.acbParams[ 0].u.value32, PeekCall.acbParams[ 1].u.value32,
+             PeekCall.acbParams[ 2].u.value32, PeekCall.acbParams[ 3].u.value32,
+             PeekCall.acbParams[ 4].u.value32, PeekCall.acbParams[ 5].u.value32,
+             PeekCall.acbParams[ 6].u.value32, PeekCall.acbParams[ 7].u.value32,
+             PeekCall.acbParams[ 8].u.value32, PeekCall.acbParams[ 9].u.value32,
+             PeekCall.acbParams[10].u.value32, PeekCall.acbParams[11].u.value32,
+             PeekCall.acbParams[12].u.value32, PeekCall.acbParams[13].u.value32));
+
+#if 0 /* enable after testing. */
+    /*
+     * VERR_TRY_AGAIN is likely and easy.
+     */
+    if (   rc == VERR_TRY_AGAIN
+        && PeekCall.idMsg.u.value32 == 0
+        && PeekCall.cParams.u.value32 == 0
+        && PeekCall.acbParams[0].u.value32 == 0
+        && PeekCall.acbParams[1].u.value32 == 0
+        && PeekCall.acbParams[2].u.value32 == 0
+        && PeekCall.acbParams[3].u.value32 == 0)
+    {
+        g_fVbglR3GuestCtrlHavePeekGetCancel = 1;
+        LogRel(("vbglR3GuestCtrlDetectPeekGetCancelSupport: Supported (#1)\n"));
+        return true;
+    }
+
+    /*
+     * VINF_SUCCESS is annoying but with 16 parameters we've got plenty to check.
+     */
+    if (   rc == VINF_SUCCESS
+        && PeekCall.idMsg.u.value32 != idDummyMsg
+        && PeekCall.idMsg.u.value32 != 0
+        && PeekCall.cParams.u.value32 <= VMMDEV_MAX_HGCM_PARMS)
+    {
+        for (uint32_t i = 0; i < RT_ELEMENTS(PeekCall.acbParams); i++)
+            if (PeekCall.acbParams[i].u.value32 != (i | cbDummyMask))
+            {
+                g_fVbglR3GuestCtrlHavePeekGetCancel = 0;
+                LogRel(("vbglR3GuestCtrlDetectPeekGetCancelSupport: Not supported (#1)\n"));
+                return false;
+            }
+        g_fVbglR3GuestCtrlHavePeekGetCancel = 1;
+        LogRel(("vbglR3GuestCtrlDetectPeekGetCancelSupport: Supported (#2)\n"));
+        return true;
+    }
+#endif
+
+    /*
+     * If we get an invalid handle status, we can't really tell.
+     */
+    if (rc != VERR_INVALID_HANDLE)
+    {
+        LogRel(("vbglR3GuestCtrlDetectPeekGetCancelSupport: Not supported (#3)\n"));
+        g_fVbglR3GuestCtrlHavePeekGetCancel = 0;
+    }
+    else
+        LogRel(("vbglR3GuestCtrlDetectPeekGetCancelSupport: Jury is still out (#4)\n"));
+    return false;
+}
+
+
+/**
+ * Reads g_fVbglR3GuestCtrlHavePeekGetCancel and resolved -1.
+ *
+ * @returns true if supported, false if not.
+ * @param   idClient         The client ID to use for the testing.
+ */
+DECLINLINE(bool) vbglR3GuestCtrlSupportsPeekGetCancel(uint32_t idClient)
+{
+    int fState = g_fVbglR3GuestCtrlHavePeekGetCancel;
+    if (RT_LIKELY(fState != -1))
+        return fState != 0;
+    return vbglR3GuestCtrlDetectPeekGetCancelSupport(idClient);
+}
+
+
+/**
+ * Figures which getter function to use to retrieve the message.
+ */
+DECLINLINE(uint32_t) vbglR3GuestCtrlGetMsgFunctionNo(uint32_t idClient)
+{
+    return vbglR3GuestCtrlSupportsPeekGetCancel(idClient) ? GUEST_MSG_GET : GUEST_MSG_WAIT;
+}
+
+
+/**
+ * Peeks at the next host message, waiting for one to turn up.
+ *
+ * @returns VBox status code.
+ * @retval  VERR_INTERRUPTED if interrupted.  Does the necessary cleanup, so
+ *          caller just have to repeat this call.
+ *
+ * @param   idClient        The client ID returned by VbglR3GuestCtrlConnect().
+ * @param   pidMsg          Where to store the message id.
+ * @param   pcParameters    Where to store the number  of parameters which will
+ *                          be received in a second call to the host.
+ */
+VBGLR3DECL(int) VbglR3GuestCtrlMsgPeekWait(uint32_t idClient, uint32_t *pidMsg, uint32_t *pcParameters)
+{
+    AssertPtrReturn(pidMsg, VERR_INVALID_POINTER);
+    AssertPtrReturn(pcParameters, VERR_INVALID_POINTER);
+
+    int rc;
+    if (vbglR3GuestCtrlSupportsPeekGetCancel(idClient))
+    {
+        HGCMMsgCmdWaitFor Msg;
+        VBGL_HGCM_HDR_INIT(&Msg.hdr, idClient, GUEST_MSG_PEEK_WAIT, 2);
+        VbglHGCMParmUInt32Set(&Msg.msg, 0);
+        VbglHGCMParmUInt32Set(&Msg.num_parms, 0);
+        rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
+        if (RT_SUCCESS(rc))
+        {
+            AssertMsgReturn(   Msg.msg.type       == VMMDevHGCMParmType_32bit
+                            && Msg.num_parms.type == VMMDevHGCMParmType_32bit,
+                            ("msg.type=%d num_parms.type=%d\n", Msg.msg.type, Msg.num_parms.type),
+                            VERR_INTERNAL_ERROR_3);
+
+            *pidMsg       = Msg.msg.u.value32;
+            *pcParameters = Msg.num_parms.u.value32;
+            return rc;
+        }
+
+        /*
+         * If interrupted we must cancel the call so it doesn't prevent us from making another one.
+         */
+        if (rc == VERR_INTERRUPTED)
+        {
+            VBGL_HGCM_HDR_INIT(&Msg.hdr, idClient, GUEST_MSG_CANCEL, 0);
+            int rc2 = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg.hdr));
+            AssertRC(rc2);
+        }
+
+        *pidMsg       = UINT32_MAX - 1;
+        *pcParameters = UINT32_MAX - 2;
+        return rc;
+    }
+
+    /*
+     * Fallback if host < v6.0.
+     */
+    return vbglR3GuestCtrlMsgWaitFor(idClient, pidMsg, pcParameters);
+}
+
+
+/**
  * Asks the host guest control service to set a command filter to this
  * client so that it only will receive certain commands in the future.
  * The filter(s) are a bitmask for the context IDs, served from the host.
@@ -158,8 +350,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlMsgWaitFor(uint32_t uClientId, uint32_t *pidMsg, 
  * @param   uMaskAdd        Filter mask to add.
  * @param   uMaskRemove     Filter mask to remove.
  */
-VBGLR3DECL(int) VbglR3GuestCtrlMsgFilterSet(uint32_t uClientId, uint32_t uValue,
-                                            uint32_t uMaskAdd, uint32_t uMaskRemove)
+VBGLR3DECL(int) VbglR3GuestCtrlMsgFilterSet(uint32_t uClientId, uint32_t uValue, uint32_t uMaskAdd, uint32_t uMaskRemove)
 {
     HGCMMsgCmdFilterSet Msg;
 
@@ -286,10 +477,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlSessionNotify(PVBGLR3GUESTCTRLCMDCTX pCtx, uint32
 
 
 /**
- * Retrieves the request to create a new guest session.
- *
- * @return  IPRT status code.
- ** @todo Docs!
+ * Retrieves a HOST_SESSION_CREATE message.
  */
 VBGLR3DECL(int) VbglR3GuestCtrlSessionGetOpen(PVBGLR3GUESTCTRLCMDCTX pCtx,
                                               uint32_t *puProtocol,
@@ -307,35 +495,35 @@ VBGLR3DECL(int) VbglR3GuestCtrlSessionGetOpen(PVBGLR3GUESTCTRLCMDCTX pCtx,
     AssertPtrReturn(pszDomain, VERR_INVALID_POINTER);
     AssertPtrReturn(pfFlags, VERR_INVALID_POINTER);
 
-    HGCMMsgSessionOpen Msg;
-    VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, GUEST_MSG_WAIT, pCtx->uNumParms);
-    VbglHGCMParmUInt32Set(&Msg.context, 0);
-    VbglHGCMParmUInt32Set(&Msg.protocol, 0);
-    VbglHGCMParmPtrSet(&Msg.username, pszUser, cbUser);
-    VbglHGCMParmPtrSet(&Msg.password, pszPassword, cbPassword);
-    VbglHGCMParmPtrSet(&Msg.domain, pszDomain, cbDomain);
-    VbglHGCMParmUInt32Set(&Msg.flags, 0);
-
-    int rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
-    if (RT_SUCCESS(rc))
+    int rc;
+    do
     {
-        Msg.context.GetUInt32(&pCtx->uContextID);
-        Msg.protocol.GetUInt32(puProtocol);
-        Msg.flags.GetUInt32(pfFlags);
+        HGCMMsgSessionOpen Msg;
+        VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, vbglR3GuestCtrlGetMsgFunctionNo(pCtx->uClientID), pCtx->uNumParms);
+        VbglHGCMParmUInt32Set(&Msg.context, HOST_SESSION_CREATE);
+        VbglHGCMParmUInt32Set(&Msg.protocol, 0);
+        VbglHGCMParmPtrSet(&Msg.username, pszUser, cbUser);
+        VbglHGCMParmPtrSet(&Msg.password, pszPassword, cbPassword);
+        VbglHGCMParmPtrSet(&Msg.domain, pszDomain, cbDomain);
+        VbglHGCMParmUInt32Set(&Msg.flags, 0);
 
-        if (pidSession)
-            *pidSession = VBOX_GUESTCTRL_CONTEXTID_GET_SESSION(pCtx->uContextID);
-    }
+        rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
+        if (RT_SUCCESS(rc))
+        {
+            Msg.context.GetUInt32(&pCtx->uContextID);
+            Msg.protocol.GetUInt32(puProtocol);
+            Msg.flags.GetUInt32(pfFlags);
 
+            if (pidSession)
+                *pidSession = VBOX_GUESTCTRL_CONTEXTID_GET_SESSION(pCtx->uContextID);
+        }
+    } while (rc == VERR_INTERRUPTED && g_fVbglR3GuestCtrlHavePeekGetCancel);
     return rc;
 }
 
 
 /**
- * Retrieves the request to terminate an existing guest session.
- *
- * @return  IPRT status code.
- ** @todo Docs!
+ * Retrieves a HOST_SESSION_CLOSE message.
  */
 VBGLR3DECL(int) VbglR3GuestCtrlSessionGetClose(PVBGLR3GUESTCTRLCMDCTX pCtx, uint32_t *pfFlags, uint32_t *pidSession)
 {
@@ -344,25 +532,31 @@ VBGLR3DECL(int) VbglR3GuestCtrlSessionGetClose(PVBGLR3GUESTCTRLCMDCTX pCtx, uint
 
     AssertPtrReturn(pfFlags, VERR_INVALID_POINTER);
 
-    HGCMMsgSessionClose Msg;
-    VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, GUEST_MSG_WAIT, pCtx->uNumParms);
-    VbglHGCMParmUInt32Set(&Msg.context, 0);
-    VbglHGCMParmUInt32Set(&Msg.flags, 0);
-
-    int rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
-    if (RT_SUCCESS(rc))
+    int rc;
+    do
     {
-        Msg.context.GetUInt32(&pCtx->uContextID);
-        Msg.flags.GetUInt32(pfFlags);
+        HGCMMsgSessionClose Msg;
+        VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, vbglR3GuestCtrlGetMsgFunctionNo(pCtx->uClientID), pCtx->uNumParms);
+        VbglHGCMParmUInt32Set(&Msg.context, HOST_SESSION_CLOSE);
+        VbglHGCMParmUInt32Set(&Msg.flags, 0);
 
-        if (pidSession)
-            *pidSession = VBOX_GUESTCTRL_CONTEXTID_GET_SESSION(pCtx->uContextID);
-    }
+        rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
+        if (RT_SUCCESS(rc))
+        {
+            Msg.context.GetUInt32(&pCtx->uContextID);
+            Msg.flags.GetUInt32(pfFlags);
 
+            if (pidSession)
+                *pidSession = VBOX_GUESTCTRL_CONTEXTID_GET_SESSION(pCtx->uContextID);
+        }
+    } while (rc == VERR_INTERRUPTED && g_fVbglR3GuestCtrlHavePeekGetCancel);
     return rc;
 }
 
 
+/**
+ * Retrieves a HOST_SESSION_CLOSE message.
+ */
 VBGLR3DECL(int) VbglR3GuestCtrlPathGetRename(PVBGLR3GUESTCTRLCMDCTX     pCtx,
                                              char     *pszSource,       uint32_t cbSource,
                                              char     *pszDest,         uint32_t cbDest,
@@ -377,65 +571,77 @@ VBGLR3DECL(int) VbglR3GuestCtrlPathGetRename(PVBGLR3GUESTCTRLCMDCTX     pCtx,
     AssertReturn(cbDest, VERR_INVALID_PARAMETER);
     AssertPtrReturn(pfFlags, VERR_INVALID_POINTER);
 
-    HGCMMsgPathRename Msg;
-    VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, GUEST_MSG_WAIT, pCtx->uNumParms);
-    VbglHGCMParmUInt32Set(&Msg.context, 0);
-    VbglHGCMParmPtrSet(&Msg.source, pszSource, cbSource);
-    VbglHGCMParmPtrSet(&Msg.dest, pszDest, cbDest);
-    VbglHGCMParmUInt32Set(&Msg.flags, 0);
-
-    int rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
-    if (RT_SUCCESS(rc))
+    int rc;
+    do
     {
-        Msg.context.GetUInt32(&pCtx->uContextID);
-        Msg.flags.GetUInt32(pfFlags);
-    }
-    return rc;
-}
+        HGCMMsgPathRename Msg;
+        VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, vbglR3GuestCtrlGetMsgFunctionNo(pCtx->uClientID), pCtx->uNumParms);
+        VbglHGCMParmUInt32Set(&Msg.context, HOST_PATH_RENAME);
+        VbglHGCMParmPtrSet(&Msg.source, pszSource, cbSource);
+        VbglHGCMParmPtrSet(&Msg.dest, pszDest, cbDest);
+        VbglHGCMParmUInt32Set(&Msg.flags, 0);
 
-
-VBGLR3DECL(int) VbglR3GuestCtrlPathGetUserDocuments(PVBGLR3GUESTCTRLCMDCTX pCtx)
-{
-    AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
-    AssertReturn(pCtx->uNumParms == 1, VERR_INVALID_PARAMETER);
-
-    HGCMMsgPathUserDocuments Msg;
-    VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, GUEST_MSG_WAIT, pCtx->uNumParms);
-    VbglHGCMParmUInt32Set(&Msg.context, 0);
-
-    int rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
-    if (RT_SUCCESS(rc))
-        Msg.context.GetUInt32(&pCtx->uContextID);
-
-    return rc;
-}
-
-
-VBGLR3DECL(int) VbglR3GuestCtrlPathGetUserHome(PVBGLR3GUESTCTRLCMDCTX pCtx)
-{
-    AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
-    AssertReturn(pCtx->uNumParms == 1, VERR_INVALID_PARAMETER);
-
-    HGCMMsgPathUserHome Msg;
-    VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, GUEST_MSG_WAIT, pCtx->uNumParms);
-    VbglHGCMParmUInt32Set(&Msg.context, 0);
-
-    int rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
-    if (RT_SUCCESS(rc))
-        Msg.context.GetUInt32(&pCtx->uContextID);
-
+        rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
+        if (RT_SUCCESS(rc))
+        {
+            Msg.context.GetUInt32(&pCtx->uContextID);
+            Msg.flags.GetUInt32(pfFlags);
+        }
+    } while (rc == VERR_INTERRUPTED && g_fVbglR3GuestCtrlHavePeekGetCancel);
     return rc;
 }
 
 
 /**
- * Allocates and gets host data, based on the message id.
+ * Retrieves a HOST_PATH_USER_DOCUMENTS message.
+ */
+VBGLR3DECL(int) VbglR3GuestCtrlPathGetUserDocuments(PVBGLR3GUESTCTRLCMDCTX pCtx)
+{
+    AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
+    AssertReturn(pCtx->uNumParms == 1, VERR_INVALID_PARAMETER);
+
+    int rc;
+    do
+    {
+        HGCMMsgPathUserDocuments Msg;
+        VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, vbglR3GuestCtrlGetMsgFunctionNo(pCtx->uClientID), pCtx->uNumParms);
+        VbglHGCMParmUInt32Set(&Msg.context, HOST_PATH_USER_DOCUMENTS);
+
+        rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
+        if (RT_SUCCESS(rc))
+            Msg.context.GetUInt32(&pCtx->uContextID);
+    } while (rc == VERR_INTERRUPTED && g_fVbglR3GuestCtrlHavePeekGetCancel);
+    return rc;
+}
+
+
+/**
+ * Retrieves a HOST_PATH_USER_HOME message.
+ */
+VBGLR3DECL(int) VbglR3GuestCtrlPathGetUserHome(PVBGLR3GUESTCTRLCMDCTX pCtx)
+{
+    AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
+    AssertReturn(pCtx->uNumParms == 1, VERR_INVALID_PARAMETER);
+
+    int rc;
+    do
+    {
+        HGCMMsgPathUserHome Msg;
+        VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, vbglR3GuestCtrlGetMsgFunctionNo(pCtx->uClientID), pCtx->uNumParms);
+        VbglHGCMParmUInt32Set(&Msg.context, HOST_PATH_USER_HOME);
+
+        rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
+        if (RT_SUCCESS(rc))
+            Msg.context.GetUInt32(&pCtx->uContextID);
+    } while (rc == VERR_INTERRUPTED && g_fVbglR3GuestCtrlHavePeekGetCancel);
+    return rc;
+}
+
+
+/**
+ * Retrieves a HOST_EXEC_CMD message.
  *
- * This will block until data becomes available.
- *
- * @returns VBox status code.
- ** @todo Docs!
- ** @todo Move the parameters in an own struct!
+ * @todo Move the parameters in an own struct!
  */
 VBGLR3DECL(int) VbglR3GuestCtrlProcGetStart(PVBGLR3GUESTCTRLCMDCTX    pCtx,
                                             char     *pszCmd,         uint32_t  cbCmd,
@@ -459,57 +665,59 @@ VBGLR3DECL(int) VbglR3GuestCtrlProcGetStart(PVBGLR3GUESTCTRLCMDCTX    pCtx,
     AssertPtrReturn(pcEnvVars, VERR_INVALID_POINTER);
     AssertPtrReturn(puTimeoutMS, VERR_INVALID_POINTER);
 
-    HGCMMsgProcExec Msg;
-    VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, GUEST_MSG_WAIT, pCtx->uNumParms);
-    VbglHGCMParmUInt32Set(&Msg.context, 0);
-    VbglHGCMParmPtrSet(&Msg.cmd, pszCmd, cbCmd);
-    VbglHGCMParmUInt32Set(&Msg.flags, 0);
-    VbglHGCMParmUInt32Set(&Msg.num_args, 0);
-    VbglHGCMParmPtrSet(&Msg.args, pszArgs, cbArgs);
-    VbglHGCMParmUInt32Set(&Msg.num_env, 0);
-    VbglHGCMParmUInt32Set(&Msg.cb_env, 0);
-    VbglHGCMParmPtrSet(&Msg.env, pszEnv, *pcbEnv);
-    if (pCtx->uProtocol < 2)
+    int rc;
+    do
     {
-        AssertPtrReturn(pszUser, VERR_INVALID_POINTER);
-        AssertReturn(cbUser, VERR_INVALID_PARAMETER);
-        AssertPtrReturn(pszPassword, VERR_INVALID_POINTER);
-        AssertReturn(pszPassword, VERR_INVALID_PARAMETER);
-
-        VbglHGCMParmPtrSet(&Msg.u.v1.username, pszUser, cbUser);
-        VbglHGCMParmPtrSet(&Msg.u.v1.password, pszPassword, cbPassword);
-        VbglHGCMParmUInt32Set(&Msg.u.v1.timeout, 0);
-    }
-    else
-    {
-        AssertPtrReturn(puAffinity, VERR_INVALID_POINTER);
-        AssertReturn(cbAffinity, VERR_INVALID_PARAMETER);
-
-        VbglHGCMParmUInt32Set(&Msg.u.v2.timeout, 0);
-        VbglHGCMParmUInt32Set(&Msg.u.v2.priority, 0);
-        VbglHGCMParmUInt32Set(&Msg.u.v2.num_affinity, 0);
-        VbglHGCMParmPtrSet(&Msg.u.v2.affinity, puAffinity, cbAffinity);
-    }
-
-    int rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
-    if (RT_SUCCESS(rc))
-    {
-        Msg.context.GetUInt32(&pCtx->uContextID);
-        Msg.flags.GetUInt32(pfFlags);
-        Msg.num_args.GetUInt32(pcArgs);
-        Msg.num_env.GetUInt32(pcEnvVars);
-        Msg.cb_env.GetUInt32(pcbEnv);
+        HGCMMsgProcExec Msg;
+        VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, vbglR3GuestCtrlGetMsgFunctionNo(pCtx->uClientID), pCtx->uNumParms);
+        VbglHGCMParmUInt32Set(&Msg.context, HOST_EXEC_CMD);
+        VbglHGCMParmPtrSet(&Msg.cmd, pszCmd, cbCmd);
+        VbglHGCMParmUInt32Set(&Msg.flags, 0);
+        VbglHGCMParmUInt32Set(&Msg.num_args, 0);
+        VbglHGCMParmPtrSet(&Msg.args, pszArgs, cbArgs);
+        VbglHGCMParmUInt32Set(&Msg.num_env, 0);
+        VbglHGCMParmUInt32Set(&Msg.cb_env, 0);
+        VbglHGCMParmPtrSet(&Msg.env, pszEnv, *pcbEnv);
         if (pCtx->uProtocol < 2)
         {
-            Msg.u.v1.timeout.GetUInt32(puTimeoutMS);
+            AssertPtrReturn(pszUser, VERR_INVALID_POINTER);
+            AssertReturn(cbUser, VERR_INVALID_PARAMETER);
+            AssertPtrReturn(pszPassword, VERR_INVALID_POINTER);
+            AssertReturn(pszPassword, VERR_INVALID_PARAMETER);
+
+            VbglHGCMParmPtrSet(&Msg.u.v1.username, pszUser, cbUser);
+            VbglHGCMParmPtrSet(&Msg.u.v1.password, pszPassword, cbPassword);
+            VbglHGCMParmUInt32Set(&Msg.u.v1.timeout, 0);
         }
         else
         {
-            Msg.u.v2.timeout.GetUInt32(puTimeoutMS);
-            Msg.u.v2.priority.GetUInt32(puPriority);
-            Msg.u.v2.num_affinity.GetUInt32(pcAffinity);
+            AssertPtrReturn(puAffinity, VERR_INVALID_POINTER);
+            AssertReturn(cbAffinity, VERR_INVALID_PARAMETER);
+
+            VbglHGCMParmUInt32Set(&Msg.u.v2.timeout, 0);
+            VbglHGCMParmUInt32Set(&Msg.u.v2.priority, 0);
+            VbglHGCMParmUInt32Set(&Msg.u.v2.num_affinity, 0);
+            VbglHGCMParmPtrSet(&Msg.u.v2.affinity, puAffinity, cbAffinity);
         }
-    }
+
+        rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
+        if (RT_SUCCESS(rc))
+        {
+            Msg.context.GetUInt32(&pCtx->uContextID);
+            Msg.flags.GetUInt32(pfFlags);
+            Msg.num_args.GetUInt32(pcArgs);
+            Msg.num_env.GetUInt32(pcEnvVars);
+            Msg.cb_env.GetUInt32(pcbEnv);
+            if (pCtx->uProtocol < 2)
+                Msg.u.v1.timeout.GetUInt32(puTimeoutMS);
+            else
+            {
+                Msg.u.v2.timeout.GetUInt32(puTimeoutMS);
+                Msg.u.v2.priority.GetUInt32(puPriority);
+                Msg.u.v2.num_affinity.GetUInt32(pcAffinity);
+            }
+        }
+    } while (rc == VERR_INTERRUPTED && g_fVbglR3GuestCtrlHavePeekGetCancel);
     return rc;
 }
 
@@ -532,33 +740,34 @@ VBGLR3DECL(int) VbglR3GuestCtrlProcGetOutput(PVBGLR3GUESTCTRLCMDCTX pCtx,
     AssertPtrReturn(puHandle, VERR_INVALID_POINTER);
     AssertPtrReturn(pfFlags, VERR_INVALID_POINTER);
 
-    HGCMMsgProcOutput Msg;
-    VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, GUEST_MSG_WAIT, pCtx->uNumParms);
-    VbglHGCMParmUInt32Set(&Msg.context, 0);
-    VbglHGCMParmUInt32Set(&Msg.pid, 0);
-    VbglHGCMParmUInt32Set(&Msg.handle, 0);
-    VbglHGCMParmUInt32Set(&Msg.flags, 0);
-
-    int rc = VbglR3HGCMCall(&Msg.hdr, RT_UOFFSETOF(HGCMMsgProcOutput, data));
-    if (RT_SUCCESS(rc))
+    int rc;
+    do
     {
-        Msg.context.GetUInt32(&pCtx->uContextID);
-        Msg.pid.GetUInt32(puPID);
-        Msg.handle.GetUInt32(puHandle);
-        Msg.flags.GetUInt32(pfFlags);
-    }
+        HGCMMsgProcOutput Msg;
+        VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, vbglR3GuestCtrlGetMsgFunctionNo(pCtx->uClientID), pCtx->uNumParms);
+        VbglHGCMParmUInt32Set(&Msg.context, 0);
+        VbglHGCMParmUInt32Set(&Msg.pid, 0);
+        VbglHGCMParmUInt32Set(&Msg.handle, 0);
+        VbglHGCMParmUInt32Set(&Msg.flags, 0);
+
+        rc = VbglR3HGCMCall(&Msg.hdr, RT_UOFFSETOF(HGCMMsgProcOutput, data));
+        if (RT_SUCCESS(rc))
+        {
+            Msg.context.GetUInt32(&pCtx->uContextID);
+            Msg.pid.GetUInt32(puPID);
+            Msg.handle.GetUInt32(puHandle);
+            Msg.flags.GetUInt32(pfFlags);
+        }
+    } while (rc == VERR_INTERRUPTED && g_fVbglR3GuestCtrlHavePeekGetCancel);
     return rc;
 }
 
 
 /**
- * Retrieves the input data from host which then gets sent to the
- * started process.
+ * Retrieves the input data from host which then gets sent to the started
+ * process (HOST_EXEC_SET_INPUT).
  *
  * This will block until data becomes available.
- *
- * @returns VBox status code.
- ** @todo Docs!
  */
 VBGLR3DECL(int) VbglR3GuestCtrlProcGetInput(PVBGLR3GUESTCTRLCMDCTX  pCtx,
                                             uint32_t  *puPID,       uint32_t *pfFlags,
@@ -573,26 +782,33 @@ VBGLR3DECL(int) VbglR3GuestCtrlProcGetInput(PVBGLR3GUESTCTRLCMDCTX  pCtx,
     AssertPtrReturn(pvData, VERR_INVALID_POINTER);
     AssertPtrReturn(pcbSize, VERR_INVALID_POINTER);
 
-    HGCMMsgProcInput Msg;
-    VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, GUEST_MSG_WAIT, pCtx->uNumParms);
-    VbglHGCMParmUInt32Set(&Msg.context, 0);
-    VbglHGCMParmUInt32Set(&Msg.pid, 0);
-    VbglHGCMParmUInt32Set(&Msg.flags, 0);
-    VbglHGCMParmPtrSet(&Msg.data, pvData, cbData);
-    VbglHGCMParmUInt32Set(&Msg.size, 0);
-
-    int rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
-    if (RT_SUCCESS(rc))
+    int rc;
+    do
     {
-        Msg.context.GetUInt32(&pCtx->uContextID);
-        Msg.pid.GetUInt32(puPID);
-        Msg.flags.GetUInt32(pfFlags);
-        Msg.size.GetUInt32(pcbSize);
-    }
+        HGCMMsgProcInput Msg;
+        VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, vbglR3GuestCtrlGetMsgFunctionNo(pCtx->uClientID), pCtx->uNumParms);
+        VbglHGCMParmUInt32Set(&Msg.context, HOST_EXEC_SET_INPUT);
+        VbglHGCMParmUInt32Set(&Msg.pid, 0);
+        VbglHGCMParmUInt32Set(&Msg.flags, 0);
+        VbglHGCMParmPtrSet(&Msg.data, pvData, cbData);
+        VbglHGCMParmUInt32Set(&Msg.size, 0);
+
+        rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
+        if (RT_SUCCESS(rc))
+        {
+            Msg.context.GetUInt32(&pCtx->uContextID);
+            Msg.pid.GetUInt32(puPID);
+            Msg.flags.GetUInt32(pfFlags);
+            Msg.size.GetUInt32(pcbSize);
+        }
+    } while (rc == VERR_INTERRUPTED && g_fVbglR3GuestCtrlHavePeekGetCancel);
     return rc;
 }
 
 
+/**
+ * Retrieves a HOST_DIR_REMOVE message.
+ */
 VBGLR3DECL(int) VbglR3GuestCtrlDirGetRemove(PVBGLR3GUESTCTRLCMDCTX     pCtx,
                                             char     *pszPath,         uint32_t cbPath,
                                             uint32_t *pfFlags)
@@ -604,22 +820,29 @@ VBGLR3DECL(int) VbglR3GuestCtrlDirGetRemove(PVBGLR3GUESTCTRLCMDCTX     pCtx,
     AssertReturn(cbPath, VERR_INVALID_PARAMETER);
     AssertPtrReturn(pfFlags, VERR_INVALID_POINTER);
 
-    HGCMMsgDirRemove Msg;
-    VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, GUEST_MSG_WAIT, pCtx->uNumParms);
-    VbglHGCMParmUInt32Set(&Msg.context, 0);
-    VbglHGCMParmPtrSet(&Msg.path, pszPath, cbPath);
-    VbglHGCMParmUInt32Set(&Msg.flags, 0);
-
-    int rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
-    if (RT_SUCCESS(rc))
+    int rc;
+    do
     {
-        Msg.context.GetUInt32(&pCtx->uContextID);
-        Msg.flags.GetUInt32(pfFlags);
-    }
+        HGCMMsgDirRemove Msg;
+        VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, vbglR3GuestCtrlGetMsgFunctionNo(pCtx->uClientID), pCtx->uNumParms);
+        VbglHGCMParmUInt32Set(&Msg.context, HOST_DIR_REMOVE);
+        VbglHGCMParmPtrSet(&Msg.path, pszPath, cbPath);
+        VbglHGCMParmUInt32Set(&Msg.flags, 0);
+
+        rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
+        if (RT_SUCCESS(rc))
+        {
+            Msg.context.GetUInt32(&pCtx->uContextID);
+            Msg.flags.GetUInt32(pfFlags);
+        }
+    } while (rc == VERR_INTERRUPTED && g_fVbglR3GuestCtrlHavePeekGetCancel);
     return rc;
 }
 
 
+/**
+ * Retrieves a HOST_FILE_OPEN message.
+ */
 VBGLR3DECL(int) VbglR3GuestCtrlFileGetOpen(PVBGLR3GUESTCTRLCMDCTX      pCtx,
                                            char     *pszFileName,      uint32_t cbFileName,
                                            char     *pszAccess,        uint32_t cbAccess,
@@ -642,27 +865,34 @@ VBGLR3DECL(int) VbglR3GuestCtrlFileGetOpen(PVBGLR3GUESTCTRLCMDCTX      pCtx,
     AssertPtrReturn(puCreationMode, VERR_INVALID_POINTER);
     AssertPtrReturn(poffAt, VERR_INVALID_POINTER);
 
-    HGCMMsgFileOpen Msg;
-    VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, GUEST_MSG_WAIT, pCtx->uNumParms);
-    VbglHGCMParmUInt32Set(&Msg.context, 0);
-    VbglHGCMParmPtrSet(&Msg.filename, pszFileName, cbFileName);
-    VbglHGCMParmPtrSet(&Msg.openmode, pszAccess, cbAccess);
-    VbglHGCMParmPtrSet(&Msg.disposition, pszDisposition, cbDisposition);
-    VbglHGCMParmPtrSet(&Msg.sharing, pszSharing, cbSharing);
-    VbglHGCMParmUInt32Set(&Msg.creationmode, 0);
-    VbglHGCMParmUInt64Set(&Msg.offset, 0);
-
-    int rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
-    if (RT_SUCCESS(rc))
+    int rc;
+    do
     {
-        Msg.context.GetUInt32(&pCtx->uContextID);
-        Msg.creationmode.GetUInt32(puCreationMode);
-        Msg.offset.GetUInt64(poffAt);
-    }
+        HGCMMsgFileOpen Msg;
+        VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, vbglR3GuestCtrlGetMsgFunctionNo(pCtx->uClientID), pCtx->uNumParms);
+        VbglHGCMParmUInt32Set(&Msg.context, HOST_FILE_OPEN);
+        VbglHGCMParmPtrSet(&Msg.filename, pszFileName, cbFileName);
+        VbglHGCMParmPtrSet(&Msg.openmode, pszAccess, cbAccess);
+        VbglHGCMParmPtrSet(&Msg.disposition, pszDisposition, cbDisposition);
+        VbglHGCMParmPtrSet(&Msg.sharing, pszSharing, cbSharing);
+        VbglHGCMParmUInt32Set(&Msg.creationmode, 0);
+        VbglHGCMParmUInt64Set(&Msg.offset, 0);
+
+        rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
+        if (RT_SUCCESS(rc))
+        {
+            Msg.context.GetUInt32(&pCtx->uContextID);
+            Msg.creationmode.GetUInt32(puCreationMode);
+            Msg.offset.GetUInt64(poffAt);
+        }
+    } while (rc == VERR_INTERRUPTED && g_fVbglR3GuestCtrlHavePeekGetCancel);
     return rc;
 }
 
 
+/**
+ * Retrieves a HOST_FILE_CLOSE message.
+ */
 VBGLR3DECL(int) VbglR3GuestCtrlFileGetClose(PVBGLR3GUESTCTRLCMDCTX pCtx, uint32_t *puHandle)
 {
     AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
@@ -670,23 +900,29 @@ VBGLR3DECL(int) VbglR3GuestCtrlFileGetClose(PVBGLR3GUESTCTRLCMDCTX pCtx, uint32_
     AssertReturn(pCtx->uNumParms == 2, VERR_INVALID_PARAMETER);
     AssertPtrReturn(puHandle, VERR_INVALID_POINTER);
 
-    HGCMMsgFileClose Msg;
-    VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, GUEST_MSG_WAIT, pCtx->uNumParms);
-    VbglHGCMParmUInt32Set(&Msg.context, 0);
-    VbglHGCMParmUInt32Set(&Msg.handle, 0);
-
-    int rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
-    if (RT_SUCCESS(rc))
+    int rc;
+    do
     {
-        Msg.context.GetUInt32(&pCtx->uContextID);
-        Msg.handle.GetUInt32(puHandle);
-    }
+        HGCMMsgFileClose Msg;
+        VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, vbglR3GuestCtrlGetMsgFunctionNo(pCtx->uClientID), pCtx->uNumParms);
+        VbglHGCMParmUInt32Set(&Msg.context, HOST_FILE_CLOSE);
+        VbglHGCMParmUInt32Set(&Msg.handle, 0);
+
+        rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
+        if (RT_SUCCESS(rc))
+        {
+            Msg.context.GetUInt32(&pCtx->uContextID);
+            Msg.handle.GetUInt32(puHandle);
+        }
+    } while (rc == VERR_INTERRUPTED && g_fVbglR3GuestCtrlHavePeekGetCancel);
     return rc;
 }
 
 
-VBGLR3DECL(int) VbglR3GuestCtrlFileGetRead(PVBGLR3GUESTCTRLCMDCTX pCtx,
-                                           uint32_t *puHandle, uint32_t *puToRead)
+/**
+ * Retrieves a HOST_FILE_READ message.
+ */
+VBGLR3DECL(int) VbglR3GuestCtrlFileGetRead(PVBGLR3GUESTCTRLCMDCTX pCtx, uint32_t *puHandle, uint32_t *puToRead)
 {
     AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
 
@@ -694,23 +930,30 @@ VBGLR3DECL(int) VbglR3GuestCtrlFileGetRead(PVBGLR3GUESTCTRLCMDCTX pCtx,
     AssertPtrReturn(puHandle, VERR_INVALID_POINTER);
     AssertPtrReturn(puToRead, VERR_INVALID_POINTER);
 
-    HGCMMsgFileRead Msg;
-    VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, GUEST_MSG_WAIT, pCtx->uNumParms);
-    VbglHGCMParmUInt32Set(&Msg.context, 0);
-    VbglHGCMParmUInt32Set(&Msg.handle, 0);
-    VbglHGCMParmUInt32Set(&Msg.size, 0);
-
-    int rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
-    if (RT_SUCCESS(rc))
+    int rc;
+    do
     {
-        Msg.context.GetUInt32(&pCtx->uContextID);
-        Msg.handle.GetUInt32(puHandle);
-        Msg.size.GetUInt32(puToRead);
-    }
+        HGCMMsgFileRead Msg;
+        VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, vbglR3GuestCtrlGetMsgFunctionNo(pCtx->uClientID), pCtx->uNumParms);
+        VbglHGCMParmUInt32Set(&Msg.context, HOST_FILE_READ);
+        VbglHGCMParmUInt32Set(&Msg.handle, 0);
+        VbglHGCMParmUInt32Set(&Msg.size, 0);
+
+        rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
+        if (RT_SUCCESS(rc))
+        {
+            Msg.context.GetUInt32(&pCtx->uContextID);
+            Msg.handle.GetUInt32(puHandle);
+            Msg.size.GetUInt32(puToRead);
+        }
+    } while (rc == VERR_INTERRUPTED && g_fVbglR3GuestCtrlHavePeekGetCancel);
     return rc;
 }
 
 
+/**
+ * Retrieves a HOST_FILE_READ_AT message.
+ */
 VBGLR3DECL(int) VbglR3GuestCtrlFileGetReadAt(PVBGLR3GUESTCTRLCMDCTX pCtx,
                                              uint32_t *puHandle, uint32_t *puToRead, uint64_t *poffAt)
 {
@@ -720,25 +963,32 @@ VBGLR3DECL(int) VbglR3GuestCtrlFileGetReadAt(PVBGLR3GUESTCTRLCMDCTX pCtx,
     AssertPtrReturn(puHandle, VERR_INVALID_POINTER);
     AssertPtrReturn(puToRead, VERR_INVALID_POINTER);
 
-    HGCMMsgFileReadAt Msg;
-    VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, GUEST_MSG_WAIT, pCtx->uNumParms);
-    VbglHGCMParmUInt32Set(&Msg.context, 0);
-    VbglHGCMParmUInt32Set(&Msg.handle, 0);
-    VbglHGCMParmUInt32Set(&Msg.offset, 0);
-    VbglHGCMParmUInt32Set(&Msg.size, 0);
-
-    int rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
-    if (RT_SUCCESS(rc))
+    int rc;
+    do
     {
-        Msg.context.GetUInt32(&pCtx->uContextID);
-        Msg.handle.GetUInt32(puHandle);
-        Msg.offset.GetUInt64(poffAt);
-        Msg.size.GetUInt32(puToRead);
-    }
+        HGCMMsgFileReadAt Msg;
+        VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, vbglR3GuestCtrlGetMsgFunctionNo(pCtx->uClientID), pCtx->uNumParms);
+        VbglHGCMParmUInt32Set(&Msg.context, HOST_FILE_READ_AT);
+        VbglHGCMParmUInt32Set(&Msg.handle, 0);
+        VbglHGCMParmUInt32Set(&Msg.offset, 0);
+        VbglHGCMParmUInt32Set(&Msg.size, 0);
+
+        rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
+        if (RT_SUCCESS(rc))
+        {
+            Msg.context.GetUInt32(&pCtx->uContextID);
+            Msg.handle.GetUInt32(puHandle);
+            Msg.offset.GetUInt64(poffAt);
+            Msg.size.GetUInt32(puToRead);
+        }
+    } while (rc == VERR_INTERRUPTED && g_fVbglR3GuestCtrlHavePeekGetCancel);
     return rc;
 }
 
 
+/**
+ * Retrieves a HOST_FILE_WRITE message.
+ */
 VBGLR3DECL(int) VbglR3GuestCtrlFileGetWrite(PVBGLR3GUESTCTRLCMDCTX pCtx, uint32_t *puHandle,
                                             void *pvData, uint32_t cbData, uint32_t *pcbSize)
 {
@@ -750,24 +1000,31 @@ VBGLR3DECL(int) VbglR3GuestCtrlFileGetWrite(PVBGLR3GUESTCTRLCMDCTX pCtx, uint32_
     AssertReturn(cbData, VERR_INVALID_PARAMETER);
     AssertPtrReturn(pcbSize, VERR_INVALID_POINTER);
 
-    HGCMMsgFileWrite Msg;
-    VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, GUEST_MSG_WAIT, pCtx->uNumParms);
-    VbglHGCMParmUInt32Set(&Msg.context, 0);
-    VbglHGCMParmUInt32Set(&Msg.handle, 0);
-    VbglHGCMParmPtrSet(&Msg.data, pvData, cbData);
-    VbglHGCMParmUInt32Set(&Msg.size, 0);
-
-    int rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
-    if (RT_SUCCESS(rc))
+    int rc;
+    do
     {
-        Msg.context.GetUInt32(&pCtx->uContextID);
-        Msg.handle.GetUInt32(puHandle);
-        Msg.size.GetUInt32(pcbSize);
-    }
+        HGCMMsgFileWrite Msg;
+        VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, vbglR3GuestCtrlGetMsgFunctionNo(pCtx->uClientID), pCtx->uNumParms);
+        VbglHGCMParmUInt32Set(&Msg.context, HOST_FILE_WRITE);
+        VbglHGCMParmUInt32Set(&Msg.handle, 0);
+        VbglHGCMParmPtrSet(&Msg.data, pvData, cbData);
+        VbglHGCMParmUInt32Set(&Msg.size, 0);
+
+        rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
+        if (RT_SUCCESS(rc))
+        {
+            Msg.context.GetUInt32(&pCtx->uContextID);
+            Msg.handle.GetUInt32(puHandle);
+            Msg.size.GetUInt32(pcbSize);
+        }
+    } while (rc == VERR_INTERRUPTED && g_fVbglR3GuestCtrlHavePeekGetCancel);
     return rc;
 }
 
 
+/**
+ * Retrieves a HOST_FILE_WRITE_AT message.
+ */
 VBGLR3DECL(int) VbglR3GuestCtrlFileGetWriteAt(PVBGLR3GUESTCTRLCMDCTX pCtx, uint32_t *puHandle,
                                               void *pvData, uint32_t cbData, uint32_t *pcbSize, uint64_t *poffAt)
 {
@@ -779,26 +1036,33 @@ VBGLR3DECL(int) VbglR3GuestCtrlFileGetWriteAt(PVBGLR3GUESTCTRLCMDCTX pCtx, uint3
     AssertReturn(cbData, VERR_INVALID_PARAMETER);
     AssertPtrReturn(pcbSize, VERR_INVALID_POINTER);
 
-    HGCMMsgFileWriteAt Msg;
-    VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, GUEST_MSG_WAIT, pCtx->uNumParms);
-    VbglHGCMParmUInt32Set(&Msg.context, 0);
-    VbglHGCMParmUInt32Set(&Msg.handle, 0);
-    VbglHGCMParmPtrSet(&Msg.data, pvData, cbData);
-    VbglHGCMParmUInt32Set(&Msg.size, 0);
-    VbglHGCMParmUInt32Set(&Msg.offset, 0);
-
-    int rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
-    if (RT_SUCCESS(rc))
+    int rc;
+    do
     {
-        Msg.context.GetUInt32(&pCtx->uContextID);
-        Msg.handle.GetUInt32(puHandle);
-        Msg.size.GetUInt32(pcbSize);
-        Msg.offset.GetUInt64(poffAt);
-    }
+        HGCMMsgFileWriteAt Msg;
+        VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, vbglR3GuestCtrlGetMsgFunctionNo(pCtx->uClientID), pCtx->uNumParms);
+        VbglHGCMParmUInt32Set(&Msg.context, HOST_FILE_WRITE_AT);
+        VbglHGCMParmUInt32Set(&Msg.handle, 0);
+        VbglHGCMParmPtrSet(&Msg.data, pvData, cbData);
+        VbglHGCMParmUInt32Set(&Msg.size, 0);
+        VbglHGCMParmUInt32Set(&Msg.offset, 0);
+
+        rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
+        if (RT_SUCCESS(rc))
+        {
+            Msg.context.GetUInt32(&pCtx->uContextID);
+            Msg.handle.GetUInt32(puHandle);
+            Msg.size.GetUInt32(pcbSize);
+            Msg.offset.GetUInt64(poffAt);
+        }
+    } while (rc == VERR_INTERRUPTED && g_fVbglR3GuestCtrlHavePeekGetCancel);
     return rc;
 }
 
 
+/**
+ * Retrieves a HOST_FILE_SEEK message.
+ */
 VBGLR3DECL(int) VbglR3GuestCtrlFileGetSeek(PVBGLR3GUESTCTRLCMDCTX pCtx,
                                            uint32_t *puHandle, uint32_t *puSeekMethod, uint64_t *poffAt)
 {
@@ -809,25 +1073,32 @@ VBGLR3DECL(int) VbglR3GuestCtrlFileGetSeek(PVBGLR3GUESTCTRLCMDCTX pCtx,
     AssertPtrReturn(puSeekMethod, VERR_INVALID_POINTER);
     AssertPtrReturn(poffAt, VERR_INVALID_POINTER);
 
-    HGCMMsgFileSeek Msg;
-    VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, GUEST_MSG_WAIT, pCtx->uNumParms);
-    VbglHGCMParmUInt32Set(&Msg.context, 0);
-    VbglHGCMParmUInt32Set(&Msg.handle, 0);
-    VbglHGCMParmUInt32Set(&Msg.method, 0);
-    VbglHGCMParmUInt64Set(&Msg.offset, 0);
-
-    int rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
-    if (RT_SUCCESS(rc))
+    int rc;
+    do
     {
-        Msg.context.GetUInt32(&pCtx->uContextID);
-        Msg.handle.GetUInt32(puHandle);
-        Msg.method.GetUInt32(puSeekMethod);
-        Msg.offset.GetUInt64(poffAt);
-    }
+        HGCMMsgFileSeek Msg;
+        VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, vbglR3GuestCtrlGetMsgFunctionNo(pCtx->uClientID), pCtx->uNumParms);
+        VbglHGCMParmUInt32Set(&Msg.context, HOST_FILE_SEEK);
+        VbglHGCMParmUInt32Set(&Msg.handle, 0);
+        VbglHGCMParmUInt32Set(&Msg.method, 0);
+        VbglHGCMParmUInt64Set(&Msg.offset, 0);
+
+        rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
+        if (RT_SUCCESS(rc))
+        {
+            Msg.context.GetUInt32(&pCtx->uContextID);
+            Msg.handle.GetUInt32(puHandle);
+            Msg.method.GetUInt32(puSeekMethod);
+            Msg.offset.GetUInt64(poffAt);
+        }
+    } while (rc == VERR_INTERRUPTED && g_fVbglR3GuestCtrlHavePeekGetCancel);
     return rc;
 }
 
 
+/**
+ * Retrieves a HOST_FILE_TELL message.
+ */
 VBGLR3DECL(int) VbglR3GuestCtrlFileGetTell(PVBGLR3GUESTCTRLCMDCTX pCtx, uint32_t *puHandle)
 {
     AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
@@ -835,21 +1106,28 @@ VBGLR3DECL(int) VbglR3GuestCtrlFileGetTell(PVBGLR3GUESTCTRLCMDCTX pCtx, uint32_t
     AssertReturn(pCtx->uNumParms == 2, VERR_INVALID_PARAMETER);
     AssertPtrReturn(puHandle, VERR_INVALID_POINTER);
 
-    HGCMMsgFileTell Msg;
-    VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, GUEST_MSG_WAIT, pCtx->uNumParms);
-    VbglHGCMParmUInt32Set(&Msg.context, 0);
-    VbglHGCMParmUInt32Set(&Msg.handle, 0);
-
-    int rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
-    if (RT_SUCCESS(rc))
+    int rc;
+    do
     {
-        Msg.context.GetUInt32(&pCtx->uContextID);
-        Msg.handle.GetUInt32(puHandle);
-    }
+        HGCMMsgFileTell Msg;
+        VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, vbglR3GuestCtrlGetMsgFunctionNo(pCtx->uClientID), pCtx->uNumParms);
+        VbglHGCMParmUInt32Set(&Msg.context, HOST_FILE_TELL);
+        VbglHGCMParmUInt32Set(&Msg.handle, 0);
+
+        rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
+        if (RT_SUCCESS(rc))
+        {
+            Msg.context.GetUInt32(&pCtx->uContextID);
+            Msg.handle.GetUInt32(puHandle);
+        }
+    } while (rc == VERR_INTERRUPTED && g_fVbglR3GuestCtrlHavePeekGetCancel);
     return rc;
 }
 
 
+/**
+ * Retrieves a HOST_EXEC_TERMINATE message.
+ */
 VBGLR3DECL(int) VbglR3GuestCtrlProcGetTerminate(PVBGLR3GUESTCTRLCMDCTX pCtx, uint32_t *puPID)
 {
     AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
@@ -857,21 +1135,28 @@ VBGLR3DECL(int) VbglR3GuestCtrlProcGetTerminate(PVBGLR3GUESTCTRLCMDCTX pCtx, uin
     AssertReturn(pCtx->uNumParms == 2, VERR_INVALID_PARAMETER);
     AssertPtrReturn(puPID, VERR_INVALID_POINTER);
 
-    HGCMMsgProcTerminate Msg;
-    VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, GUEST_MSG_WAIT, pCtx->uNumParms);
-    VbglHGCMParmUInt32Set(&Msg.context, 0);
-    VbglHGCMParmUInt32Set(&Msg.pid, 0);
-
-    int rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
-    if (RT_SUCCESS(rc))
+    int rc;
+    do
     {
-        Msg.context.GetUInt32(&pCtx->uContextID);
-        Msg.pid.GetUInt32(puPID);
-    }
+        HGCMMsgProcTerminate Msg;
+        VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, vbglR3GuestCtrlGetMsgFunctionNo(pCtx->uClientID), pCtx->uNumParms);
+        VbglHGCMParmUInt32Set(&Msg.context, HOST_EXEC_TERMINATE);
+        VbglHGCMParmUInt32Set(&Msg.pid, 0);
+
+        rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
+        if (RT_SUCCESS(rc))
+        {
+            Msg.context.GetUInt32(&pCtx->uContextID);
+            Msg.pid.GetUInt32(puPID);
+        }
+    } while (rc == VERR_INTERRUPTED && g_fVbglR3GuestCtrlHavePeekGetCancel);
     return rc;
 }
 
 
+/**
+ * Retrieves a HOST_EXEC_WAIT_FOR message.
+ */
 VBGLR3DECL(int) VbglR3GuestCtrlProcGetWaitFor(PVBGLR3GUESTCTRLCMDCTX pCtx,
                                               uint32_t *puPID, uint32_t *puWaitFlags, uint32_t *puTimeoutMS)
 {
@@ -880,21 +1165,25 @@ VBGLR3DECL(int) VbglR3GuestCtrlProcGetWaitFor(PVBGLR3GUESTCTRLCMDCTX pCtx,
     AssertReturn(pCtx->uNumParms == 5, VERR_INVALID_PARAMETER);
     AssertPtrReturn(puPID, VERR_INVALID_POINTER);
 
-    HGCMMsgProcWaitFor Msg;
-    VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, GUEST_MSG_WAIT, pCtx->uNumParms);
-    VbglHGCMParmUInt32Set(&Msg.context, 0);
-    VbglHGCMParmUInt32Set(&Msg.pid, 0);
-    VbglHGCMParmUInt32Set(&Msg.flags, 0);
-    VbglHGCMParmUInt32Set(&Msg.timeout, 0);
-
-    int rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
-    if (RT_SUCCESS(rc))
+    int rc;
+    do
     {
-        Msg.context.GetUInt32(&pCtx->uContextID);
-        Msg.pid.GetUInt32(puPID);
-        Msg.flags.GetUInt32(puWaitFlags);
-        Msg.timeout.GetUInt32(puTimeoutMS);
-    }
+        HGCMMsgProcWaitFor Msg;
+        VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, vbglR3GuestCtrlGetMsgFunctionNo(pCtx->uClientID), pCtx->uNumParms);
+        VbglHGCMParmUInt32Set(&Msg.context, HOST_EXEC_WAIT_FOR);
+        VbglHGCMParmUInt32Set(&Msg.pid, 0);
+        VbglHGCMParmUInt32Set(&Msg.flags, 0);
+        VbglHGCMParmUInt32Set(&Msg.timeout, 0);
+
+        rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
+        if (RT_SUCCESS(rc))
+        {
+            Msg.context.GetUInt32(&pCtx->uContextID);
+            Msg.pid.GetUInt32(puPID);
+            Msg.flags.GetUInt32(puWaitFlags);
+            Msg.timeout.GetUInt32(puTimeoutMS);
+        }
+    } while (rc == VERR_INTERRUPTED && g_fVbglR3GuestCtrlHavePeekGetCancel);
     return rc;
 }
 
