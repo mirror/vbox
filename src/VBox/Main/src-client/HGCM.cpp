@@ -1512,6 +1512,8 @@ int HGCMService::CreateAndConnectClient(uint32_t *pu32ClientIdOut, uint32_t u32C
             HGCMMsgSvcConnect *pMsg = (HGCMMsgSvcConnect *)pCoreMsg;
 
             pMsg->u32ClientId = handle;
+            pMsg->fRequestor = fRequestor;
+            pMsg->fRestoring = fRestoring;
 
             rc = hgcmMsgSend(pMsg);
 
