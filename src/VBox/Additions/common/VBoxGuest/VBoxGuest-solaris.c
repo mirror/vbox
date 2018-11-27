@@ -539,6 +539,7 @@ static int vgdrvSolarisOpen(dev_t *pDev, int fFlags, int fType, cred_t *pCred)
         /** @todo is there any way of detecting that the process belongs to someone on the physical console?
          * secpolicy_console() [== PRIV_SYS_DEVICES] doesn't look quite right, or does it? */
         fRequestor |= VMMDEV_REQUESTOR_CON_DONT_KNOW;
+        fRequestor |= VMMDEV_REQUESTOR_NO_USER_DEVICE; /** @todo implement vboxuser device node. */
 
         rc = VGDrvCommonCreateUserSession(&g_DevExt, fRequestor, &pSession);
     }
