@@ -331,6 +331,11 @@ AssertCompileSize(VMMDevRequestHeader, 24);
 /** Legacy value for when VBOXGSTINFO2_F_REQUESTOR_INFO is clear.
  * @internal Host only. */
 #define VMMDEV_REQUESTOR_LEGACY                     UINT32_MAX
+/** Lowest conceivable trust level, for error situations of getters.
+ * @internal Host only. */
+#define VMMDEV_REQUESTOR_LOWEST                     (  VMMDEV_REQUESTOR_TRUST_UNTRUSTED | VMMDEV_REQUESTOR_USER_DEVICE \
+                                                     | VMMDEV_REQUESTOR_CON_NO | VMMDEV_REQUESTOR_USERMODE \
+                                                     | VMMDEV_REQUESTOR_USR_GUEST)
 /** Used on the host to check whether a requestor value is present or not. */
 #define VMMDEV_REQUESTOR_IS_PRESENT(a_fRequestor)   ((a_fRequestor) != VMMDEV_REQUESTOR_LEGACY)
 /** @} */

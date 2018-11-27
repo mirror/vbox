@@ -2086,7 +2086,8 @@ typedef struct PDMIHGCMPORT
     /**
      * Gets the VMMDevRequestHeader::fRequestor value for @a pCmd.
      *
-     * @returns The fRequestor value, 0 if invalid parameters.
+     * @returns The fRequestor value, VMMDEV_REQUESTOR_LEGACY if guest does not
+     *          support it, VMMDEV_REQUESTOR_LOWEST if invalid parameters.
      * @param   pInterface          Pointer to this interface.
      * @param   pCmd                The command we're in checking on.
      */

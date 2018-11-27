@@ -895,13 +895,13 @@ HGCMService::svcHlpStamRegisterV(void *pvInstance, void *pvSample, STAMTYPE enmT
 /* static */ DECLCALLBACK(uint32_t) HGCMService::svcHlpGetRequestor(VBOXHGCMCALLHANDLE hCall)
 {
     HGCMMsgHeader *pMsgHdr = (HGCMMsgHeader *)(hCall);
-    AssertPtrReturn(pMsgHdr, 0);
+    AssertPtrReturn(pMsgHdr, VMMDEV_REQUESTOR_LOWEST);
 
     PVBOXHGCMCMD pCmd = pMsgHdr->pCmd;
-    AssertPtrReturn(pCmd, 0);
+    AssertPtrReturn(pCmd, VMMDEV_REQUESTOR_LOWEST);
 
     PPDMIHGCMPORT pHgcmPort = pMsgHdr->pHGCMPort;
-    AssertPtrReturn(pHgcmPort, 0);
+    AssertPtrReturn(pHgcmPort, VMMDEV_REQUESTOR_LOWEST);
 
     return pHgcmPort->pfnGetRequestor(pHgcmPort, pCmd);
 }

@@ -114,7 +114,8 @@ typedef struct VBOXHGCMSVCHELPERS
     /**
      * Retrieves the VMMDevRequestHeader::fRequestor value.
      *
-     * @returns The field value, 0 if invalid call.
+     * @returns The field value, VMMDEV_REQUESTOR_LEGACY if not supported by the
+     *          guest, VMMDEV_REQUESTOR_LOWEST if invalid call.
      * @param   hCall       The call we're checking up on.
      */
     DECLR3CALLBACKMEMBER(uint32_t, pfnGetRequestor, (VBOXHGCMCALLHANDLE hCall));
