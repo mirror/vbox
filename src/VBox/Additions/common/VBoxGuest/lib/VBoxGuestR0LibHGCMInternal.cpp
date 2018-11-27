@@ -861,21 +861,30 @@ static int vbglR0HGCMInternalCopyBackResult(PVBGLIOCHGCMCALL pCallInfo, uint32_t
 
             case VMMDevHGCMParmType_Embedded:
             {
-                uint32_t cb;
-                pDstParm->u.Embedded.cbData = cb = pSrcParm->u.Embedded.cbData;
-                if (    cb > 0
+                uint32_t const cbDst = pDstParm->u.Embedded.cbData;
+                uint32_t       cbSrc;
+                pDstParm->u.Embedded.cbData = cbSrc = pSrcParm->u.Embedded.cbData;
+                if (    cbSrc > 0
                     && (pDstParm->u.Embedded.fFlags & VBOX_HGCM_F_PARM_DIRECTION_FROM_HOST))
                 {
                     uint32_t const offDst = pDstParm->u.Embedded.offData;
-                    uint32_t const offSrc = pDstParm->u.Embedded.offData;
+                    uint32_t const offSrc = pSrcParm->u.Embedded.offData;
+
                     AssertReturn(offDst < cbCallInfo, VERR_INTERNAL_ERROR_2);
                     AssertReturn(offDst >= sizeof(*pCallInfo) + cParms * sizeof(*pDstParm), VERR_INTERNAL_ERROR_2);
-                    AssertReturn(cb <= cbCallInfo - offDst , VERR_INTERNAL_ERROR_2);
+                    AssertReturn(cbDst  <= cbCallInfo - offDst , VERR_INTERNAL_ERROR_2);
+
                     AssertReturn(offSrc < cbCallInfo, VERR_INTERNAL_ERROR_2);
                     AssertReturn(offSrc >= sizeof(*pHGCMCall) + cParms * sizeof(*pSrcParm), VERR_INTERNAL_ERROR_2);
-                    AssertReturn(cb <= cbHGCMCall - offSrc, VERR_INTERNAL_ERROR_2);
-
-                    memcpy((uint8_t *)pCallInfo + offDst, (uint8_t const *)pHGCMCall + offSrc, cb);
+                    if (cbSrc <= cbHGCMCall - offSrc)
+                    { /* likely */ }
+                    else
+                    {
+                        /* Special case: Buffer overflow w/ correct size given. */
+                        AssertReturn(RT_FAILURE_NP(rc), VERR_INTERNAL_ERROR_2);
+                        cbSrc = cbHGCMCall - offSrc;
+                    }
+                    memcpy((uint8_t *)pCallInfo + offDst, (uint8_t const *)pHGCMCall + offSrc, RT_MIN(cbSrc, cbDst));
                 }
                 break;
             }
