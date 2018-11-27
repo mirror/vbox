@@ -285,6 +285,16 @@ public slots:
     void sltInvertSelection();
 
 protected:
+    /** This enum is used when performing a gueest-to-guest or host-to-host
+     *  file operations. Paths of source file objects are kept in a single buffer
+     *  and a flag to determine if it is a cut or copy operation is needed */
+    enum FileOperationType
+    {
+        FileOperationType_Copy,
+        FileOperationType_Cut,
+        FileOperationType_None,
+        FileOperationType_Max
+    };
 
     void retranslateUi();
     void updateCurrentLocationEdit(const QString& strLocation);
@@ -307,6 +317,15 @@ protected:
     virtual void     prepareToolbar() = 0;
     virtual void     createFileViewContextMenu(const QWidget *pWidget, const QPoint &point) = 0;
     virtual bool     event(QEvent *pEvent) /* override */;
+    /** @name Copy/Cut guest-to-guest (host-to-host) stuff.
+     * @{ */
+        /** Disable/enable paste action depending on the m_eFileOperationType. */
+        virtual void  setPasteActionEnabled(bool fEnabled) = 0;
+        virtual void  pasteCutCopiedObjects() = 0;
+        /** stores the type of the pending guest-to-guest (host-to-host) file operation. */
+        FileOperationType m_eFileOperationType;
+    /** @} */
+
     QString          fileTypeString(FileObjectType type);
     /* @p item index is item location in model not in 'proxy' model */
     void             goIntoDirectory(const QModelIndex &itemIndex);
@@ -330,12 +349,16 @@ protected:
 
     /** Stores the drive letters the file system has (for windows system). For non-windows
      *  systems this is empty and for windows system it should at least contain C:/ */
-    QStringList m_driveLetterList;
+    QStringList              m_driveLetterList;
     /** The set of actions which need some selection to work on. Like cut, copy etc. */
-    QSet<QAction*> m_selectionDependentActions;
+    QSet<QAction*>           m_selectionDependentActions;
     /** Paths of the source file objects are stored in this map to delete those
      * after the copy progress completed notification is receieved */
-    QMap<QUuid, QStringList>  m_deleteAfterCopyCache;
+    QMap<QUuid, QStringList> m_deleteAfterCopyCache;
+    /** The absolue path list of the file objects which user has chosen to cut/copy. this
+     *  list will be cleaned after a paste operation or overwritten by a subsequent cut/copy.
+     *  Currently only used by the guest side. */
+    QStringList              m_copyCutBuffer;
 
 private slots:
 
@@ -359,6 +382,7 @@ private:
     /** The start directory requires a special attention since on file systems with drive letters
      *  drive letter are direct children of the start directory. On other systems start directory is '/' */
     void            populateStartDirectory(UIFileTableItem *startItem);
+    /** Root index of the m_pModel */
     QModelIndex     currentRootIndex() const;
     /* Searches the content of m_pSearchLineEdit within the current items' names and selects the item if found. */
     void            performSelectionSearch(const QString &strSearchText);
@@ -374,9 +398,6 @@ private:
 
     QGridLayout     *m_pMainLayout;
     QComboBox       *m_pLocationComboBox;
-    /** The absolue path list of the file objects which user has chosen to cut/copy. this
-     *  list will be cleaned after a paste operation or overwritten by a subsequent cut/copy */
-    QStringList      m_copyCutBuffer;
     QILineEdit      *m_pSearchLineEdit;
     QILabel         *m_pWarningLabel;
     friend class     UIGuestControlFileModel;

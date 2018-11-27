@@ -680,6 +680,7 @@ bool UIFileDeleteConfirmationDialog::askDeleteConfirmationNextTime() const
 const unsigned UIGuestControlFileTable::m_iKiloByte = 1000;
 UIGuestControlFileTable::UIGuestControlFileTable(UIActionPool *pActionPool, QWidget *pParent /* = 0 */)
     :QIWithRetranslateUI<QWidget>(pParent)
+    , m_eFileOperationType(FileOperationType_None)
     , m_pRootItem(0)
     , m_pLocationLabel(0)
     , m_pPropertiesDialog(0)
@@ -1128,28 +1129,24 @@ void UIGuestControlFileTable::sltCreateNewDirectory()
 
 void UIGuestControlFileTable::sltCopy()
 {
-
     m_copyCutBuffer = selectedItemPathList();
-    // if (!m_copyCutBuffer.isEmpty())
-    //     m_pPaste->setEnabled(true);
-    // else
-    //     m_pPaste->setEnabled(false);
+    m_eFileOperationType = FileOperationType_Copy;
+    setPasteActionEnabled(true);
 }
 
 void UIGuestControlFileTable::sltCut()
 {
     m_copyCutBuffer = selectedItemPathList();
-    // if (!m_copyCutBuffer.isEmpty())
-    //     m_pPaste->setEnabled(true);
-    // else
-    //     m_pPaste->setEnabled(false);
+    m_eFileOperationType = FileOperationType_Cut;
+    setPasteActionEnabled(true);
 }
 
 void UIGuestControlFileTable::sltPaste()
 {
-    // paste them
     m_copyCutBuffer.clear();
-    //m_pPaste->setEnabled(false);
+
+    m_eFileOperationType = FileOperationType_None;
+    setPasteActionEnabled(false);
 }
 
 void UIGuestControlFileTable::sltShowProperties()

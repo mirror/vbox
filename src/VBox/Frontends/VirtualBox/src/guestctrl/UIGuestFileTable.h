@@ -63,6 +63,12 @@ protected:
     virtual void    determineDriveLetters() /* override */;
     virtual void    prepareToolbar() /* override */;
     virtual void    createFileViewContextMenu(const QWidget *pWidget, const QPoint &point) /* override */;
+    /** @name Copy/Cut guest-to-guest stuff.
+     * @{ */
+        /** Disable/enable paste action depending on the m_eFileOperationType. */
+        virtual void  setPasteActionEnabled(bool fEnabled) /* override */;
+        virtual void  pasteCutCopiedObjects() /* override */;
+    /** @} */
 
 private:
 

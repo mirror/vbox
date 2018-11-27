@@ -590,6 +590,7 @@ void UIGuestFileTable::prepareToolbar()
         m_selectionDependentActions.insert(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Guest_ShowProperties));
     }
     setSelectionDependentActionsEnabled(false);
+    setPasteActionEnabled(false);
 }
 
 void UIGuestFileTable::createFileViewContextMenu(const QWidget *pWidget, const QPoint &point)
@@ -606,8 +607,6 @@ void UIGuestFileTable::createFileViewContextMenu(const QWidget *pWidget, const Q
     menu.addAction(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Guest_Delete));
     menu.addAction(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Guest_Rename));
     menu.addAction(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Guest_CreateNewDirectory));
-    /* Hide cut, copy, and paste for now. We will implement those
-       when we have an API for host file operations: */
     menu.addSeparator();
     menu.addAction(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Guest_Copy));
     menu.addAction(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Guest_Cut));
@@ -619,6 +618,25 @@ void UIGuestFileTable::createFileViewContextMenu(const QWidget *pWidget, const Q
     menu.addAction(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Guest_ShowProperties));
     menu.exec(pWidget->mapToGlobal(point));
 }
+
+void UIGuestFileTable::setPasteActionEnabled(bool fEnabled)
+{
+    m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Guest_Paste)->setEnabled(fEnabled);
+}
+
+void UIGuestFileTable::pasteCutCopiedObjects()
+{
+    /** Wait until we have a API function that would take multiple source objects
+     *  and return a single IProgress instance: */
+    // QVector<KFileCopyFlag> fileCopyFlags;
+    // QVector<KDirectoryCopyFlag> directoryCopyFlags;
+
+    // foreach (const QString &strPath, m_copyCutBuffer)
+    // {
+
+    // }
+}
+
 
 void UIGuestFileTable::prepareActionConnections()
 {
