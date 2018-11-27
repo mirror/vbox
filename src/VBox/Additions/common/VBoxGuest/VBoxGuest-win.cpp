@@ -2498,7 +2498,8 @@ static uint32_t vgdrvNtCalcRequestorFlags(void)
     uint32_t fRequestor = VMMDEV_REQUESTOR_USERMODE
                         | VMMDEV_REQUESTOR_USR_NOT_GIVEN
                         | VMMDEV_REQUESTOR_CON_DONT_KNOW
-                        | VMMDEV_REQUESTOR_TRUST_NOT_GIVEN;
+                        | VMMDEV_REQUESTOR_TRUST_NOT_GIVEN
+                        | VMMDEV_REQUESTOR_NO_USER_DEVICE;
     HANDLE   hToken = NULL;
     NTSTATUS rcNt = ZwOpenProcessToken(NtCurrentProcess(), TOKEN_QUERY, &hToken);
     if (NT_SUCCESS(rcNt))
