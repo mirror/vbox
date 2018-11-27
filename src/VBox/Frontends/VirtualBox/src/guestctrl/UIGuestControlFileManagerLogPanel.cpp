@@ -65,6 +65,7 @@ UIFileManagerLogViewer::UIFileManagerLogViewer(QWidget *pParent /* = 0 */)
     :QTextEdit(pParent)
 {
     setUndoRedoEnabled(false);
+    setReadOnly(true);
 }
 
 void UIFileManagerLogViewer::contextMenuEvent(QContextMenuEvent *event)
