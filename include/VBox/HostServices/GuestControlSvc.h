@@ -220,9 +220,14 @@ enum eGuestFn
      *       reasons it was decided that it should always return VERR_TOO_MUCH_DATA
      *       when used in the first capacity.
      *
-     * @todo r=bird: Next time this interface gets a major adjustment, please split
-     *       this function up into two calls and, for heavens sake, make them return
-     *       VINF_SUCCESS on success.
+     * @note Has a problem if the guest kernel module cancels the HGCM call, as the
+     *       guest cannot resume waiting till the host issues a message for it and
+     *       the cancelled call returns.  The new message may potentially end up in
+     *       /dev/null depending and hang the message conversation between the guest
+     *       and the host (SIGCHLD).
+     *
+     * @deprecated Replaced by GUEST_MSG_PEEK_WAIT, GUEST_MSG_GET and
+     *             GUEST_MSG_CANCEL.
      */
     GUEST_MSG_WAIT = 1,
     /**
@@ -262,6 +267,74 @@ enum eGuestFn
      * a long task.
      */
     GUEST_MSG_PROGRESS_UPDATE = 12,
+
+    /** Peeks at the next message, returning immediately.
+     *
+     * Returns two 32-bit parameters, first is the message ID and the second the
+     * parameter count.  May optionally return additional 32-bit parameters with the
+     * sizes of respective message parameters.  To distinguish buffer sizes from
+     * integer parameters, the latter gets their sizes inverted (uint32_t is ~4U,
+     * uint64_t is ~8U).
+     *
+     * @retval  VINF_SUCCESS if a message was pending and is being returned.
+     * @retval  VERR_TRY_AGAIN if no message pending.
+     * @retval  VERR_INVALID_HANDLE if invalid client ID.
+     * @retval  VERR_INVALID_PARAMETER if incorrect parameter count or types.
+     * @since   6.0
+     */
+    GUEST_MSG_PEEK_NOWAIT,
+    /** Peeks at the next message, waiting for one to arrive.
+     *
+     * Returns two 32-bit parameters, first is the message ID and the second the
+     * parameter count.  May optionally return additional 32-bit parameters with the
+     * sizes of respective message parameters.  To distinguish buffer sizes from
+     * integer parameters, the latter gets their sizes inverted (uint32_t is ~4U,
+     * uint64_t is ~8U).
+     *
+     * @retval  VINF_SUCCESS if info about an pending message is being returned.
+     * @retval  VINF_TRY_AGAIN and message set to HOST_CANCEL_PENDING_WAITS if
+     *          cancelled by GUEST_MSG_CANCEL or GUEST_CANCEL_PENDING_WAITS.
+     * @retval  VERR_RESOURCE_BUSY if another thread already made a waiting call.
+     * @retval  VERR_INVALID_HANDLE if invalid client ID.
+     * @retval  VERR_INVALID_PARAMETER if incorrect parameter count or types.
+     * @note    This replaces GUEST_MSG_WAIT.
+     * @since   6.0
+     */
+    GUEST_MSG_PEEK_WAIT,
+    /** Gets the next message, returning immediately.
+     *
+     * First argument is the message ID returned by the peek and which the caller
+     * expects to retrieve (holds actual message ID when VERR_MISMATCH is returned).
+     * Second argument is the parameter count (output only) and exist for
+     * compatibility with GUEST_MSG_WAIT.  Any subsequent parameters are specific to
+     * the message being retrieved.
+     *
+     * @retval  VINF_SUCCESS if message retrieved and removed from the pending queue.
+     * @retval  VERR_TRY_AGAIN if no message pending.
+     * @retval  VERR_MISMATCH if the incoming message ID does not match the pending.
+     * @retval  VERR_OUT_OF_RANGE if the wrong parameter count.
+     * @retval  VERR_WRONG_TYPE if a parameter has the wrong type.
+     * @retval  VERR_BUFFER_OVERFLOW if a parmeter buffer is too small.  The buffer
+     *          size was updated to reflect the required size.
+     * @retval  VERR_INVALID_HANDLE if invalid client ID.
+     * @note    This replaces GUEST_MSG_WAIT.
+     * @since   6.0
+     */
+    GUEST_MSG_GET,
+    /** Cancels pending calls for this client session.
+     *
+     * This should be used if a GUEST_MSG_PEEK_WAIT or GUEST_MSG_WAIT call gets
+     * interrupted on the client end, so as to prevent being rebuffed with
+     * VERR_RESOURCE_BUSY when restarting the call.
+     *
+     * @retval  VINF_SUCCESS if cancelled any calls.
+     * @retval  VWRN_NOT_FOUND if no callers.
+     * @retval  VERR_INVALID_PARAMETER if any parameters specified (expects zero).
+     * @retval  VERR_INVALID_HANDLE if invalid client ID.
+     * @since   6.0
+     */
+    GUEST_MSG_CANCEL,
+
     /**
      * Guest reports back a guest session status.
      */
@@ -270,6 +343,7 @@ enum eGuestFn
      * Guest wants to close a specific guest session.
      */
     GUEST_SESSION_CLOSE = 21,
+
     /**
      * Guests sends output from an executed process.
      */
