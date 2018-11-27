@@ -590,7 +590,7 @@ static int vmmdevHGCMGuestBufferWrite(PPDMDEVINSR3 pDevIns, const VBOXHGCMPARMPT
 
     uint8_t *pu8Src = (uint8_t *)pvSrc;
     uint32_t offPage = pPtr->offFirstPage;
-    uint32_t cbRemaining = cbSrc;
+    uint32_t cbRemaining = RT_MIN(cbSrc, pPtr->cbData);
 
     uint32_t iPage;
     for (iPage = 0; iPage < pPtr->cPages && cbRemaining > 0; ++iPage)
@@ -1205,6 +1205,7 @@ static int vmmdevHGCMCompleteCallRequest(PVMMDEV pThis, PVBOXHGCMCMD pCmd, VMMDe
             case VMMDevHGCMParmType_LinAddr:
             case VMMDevHGCMParmType_PageList:
             {
+/** @todo Update the return buffer size.  */
                 const VBOXHGCMPARMPTR * const pPtr = &pGuestParm->u.ptr;
                 if (   pPtr->cbData > 0
                     && pPtr->fu32Direction & VBOX_HGCM_F_PARM_DIRECTION_FROM_HOST)
@@ -1218,16 +1219,18 @@ static int vmmdevHGCMCompleteCallRequest(PVMMDEV pThis, PVBOXHGCMCMD pCmd, VMMDe
 
             case VMMDevHGCMParmType_Embedded:
             {
+/** @todo Update the return buffer size!  */
                 const VBOXHGCMPARMPTR * const pPtr = &pGuestParm->u.ptr;
                 if (   pPtr->cbData > 0
                     && (pPtr->fu32Direction & VBOX_HGCM_F_PARM_DIRECTION_FROM_HOST))
                 {
-                    const void *pvSrc = pHostParm->u.pointer.addr;
-                    uint32_t    cbSrc = pHostParm->u.pointer.size;
+                    const void *pvSrc    = pHostParm->u.pointer.addr;
+                    uint32_t    cbSrc    = pHostParm->u.pointer.size;
+                    uint32_t    cbToCopy = RT_MIN(cbSrc, pPtr->cbData);
                     if (pCmd->pvReqLocked)
-                        memcpy((uint8_t *)pCmd->pvReqLocked + pPtr->offFirstPage, pvSrc, cbSrc);
+                        memcpy((uint8_t *)pCmd->pvReqLocked + pPtr->offFirstPage, pvSrc, cbToCopy);
                     else
-                        rc = PDMDevHlpPhysWrite(pThis->pDevInsR3, pGuestParm->u.ptr.GCPhysSinglePage, pvSrc, cbSrc);
+                        rc = PDMDevHlpPhysWrite(pThis->pDevInsR3, pGuestParm->u.ptr.GCPhysSinglePage, pvSrc, cbToCopy);
                 }
                 break;
             }
