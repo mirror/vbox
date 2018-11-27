@@ -3344,35 +3344,18 @@ static void atapiR3ParseCmdVirtualATAPI(ATADevState *s)
                 cSectors = scsiBE2H_U32(pbPacket + 6);
             iATAPILBA = scsiBE2H_U32(pbPacket + 2);
 
-            /* Check that the sector size is valid. */
-            VDREGIONDATAFORM enmDataForm = VDREGIONDATAFORM_INVALID;
-            int rc = s->pDrvMedia->pfnQueryRegionPropertiesForLba(s->pDrvMedia, iATAPILBA,
-                                                                  NULL, NULL, NULL, &enmDataForm);
-            AssertRC(rc);
-            if (   enmDataForm != VDREGIONDATAFORM_MODE1_2048
-                && enmDataForm != VDREGIONDATAFORM_MODE1_2352
-                && enmDataForm != VDREGIONDATAFORM_MODE2_2336
-                && enmDataForm != VDREGIONDATAFORM_MODE2_2352
-                && enmDataForm != VDREGIONDATAFORM_RAW)
-            {
-                uint8_t abATAPISense[ATAPI_SENSE_SIZE];
-                RT_ZERO(abATAPISense);
-
-                abATAPISense[0] = 0x70 | (1 << 7);
-                abATAPISense[2] = (SCSI_SENSE_ILLEGAL_REQUEST & 0x0f) | SCSI_SENSE_FLAG_ILI;
-                scsiH2BE_U32(&abATAPISense[3], iATAPILBA);
-                abATAPISense[7] = 10;
-                abATAPISense[12] = SCSI_ASC_ILLEGAL_MODE_FOR_THIS_TRACK;
-                atapiR3CmdError(s, &abATAPISense[0], sizeof(abATAPISense));
-                break;
-            }
-
             if (cSectors == 0)
             {
                 atapiR3CmdOK(s);
                 break;
             }
-            if ((uint64_t)iATAPILBA + cSectors > s->cTotalSectors)
+
+            /* Check that the sector size is valid. */
+            VDREGIONDATAFORM enmDataForm = VDREGIONDATAFORM_INVALID;
+            int rc = s->pDrvMedia->pfnQueryRegionPropertiesForLba(s->pDrvMedia, iATAPILBA,
+                                                                  NULL, NULL, NULL, &enmDataForm);
+            if (RT_UNLIKELY(   rc == VERR_NOT_FOUND
+                            || ((uint64_t)iATAPILBA + cSectors > s->cTotalSectors)))
             {
                 /* Rate limited logging, one log line per second. For
                  * guests that insist on reading from places outside the
@@ -3385,6 +3368,23 @@ static void atapiR3ParseCmdVirtualATAPI(ATADevState *s)
                     uLastLogTS = RTTimeMilliTS();
                 }
                 atapiR3CmdErrorSimple(s, SCSI_SENSE_ILLEGAL_REQUEST, SCSI_ASC_LOGICAL_BLOCK_OOR);
+                break;
+            }
+            else if (   enmDataForm != VDREGIONDATAFORM_MODE1_2048
+                     && enmDataForm != VDREGIONDATAFORM_MODE1_2352
+                     && enmDataForm != VDREGIONDATAFORM_MODE2_2336
+                     && enmDataForm != VDREGIONDATAFORM_MODE2_2352
+                     && enmDataForm != VDREGIONDATAFORM_RAW)
+            {
+                uint8_t abATAPISense[ATAPI_SENSE_SIZE];
+                RT_ZERO(abATAPISense);
+
+                abATAPISense[0] = 0x70 | (1 << 7);
+                abATAPISense[2] = (SCSI_SENSE_ILLEGAL_REQUEST & 0x0f) | SCSI_SENSE_FLAG_ILI;
+                scsiH2BE_U32(&abATAPISense[3], iATAPILBA);
+                abATAPISense[7] = 10;
+                abATAPISense[12] = SCSI_ASC_ILLEGAL_MODE_FOR_THIS_TRACK;
+                atapiR3CmdError(s, &abATAPISense[0], sizeof(abATAPISense));
                 break;
             }
             atapiR3ReadSectors(s, iATAPILBA, cSectors, 2048);
