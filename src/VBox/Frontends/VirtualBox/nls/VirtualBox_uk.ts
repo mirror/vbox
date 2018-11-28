@@ -18,6 +18,16 @@
         <comment>Comma-separated list of translators</comment>
         <translation>Daniel Korostil, Localize.org.ua community</translation>
     </message>
+    <message>
+        <source>--</source>
+        <comment>Native language country name (empty if this language is for all countries)</comment>
+        <translation type="unfinished">--</translation>
+    </message>
+    <message>
+        <source>--</source>
+        <comment>Language country name, in English (empty if native country name is empty)</comment>
+        <translation type="unfinished">--</translation>
+    </message>
 </context>
 <context>
     <name>AttachmentsModel</name>
@@ -113,7 +123,11 @@
     <name>QIArrowButtonPress</name>
     <message>
         <source>&amp;Back</source>
-        <translation type="obsolete">&amp;Назад</translation>
+        <translation type="unfinished">&amp;Назад</translation>
+    </message>
+    <message>
+        <source>&amp;Next</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -128,11 +142,11 @@
     </message>
     <message>
         <source>&amp;Details</source>
-        <translation type="obsolete">&amp;Подробиці</translation>
+        <translation type="unfinished">&amp;Подробиці</translation>
     </message>
     <message>
         <source>&amp;Details (%1 of %2)</source>
-        <translation type="obsolete">&amp;Подробиці (%1 з %2)</translation>
+        <translation type="unfinished">&amp;Подробиці (%1 з %2)</translation>
     </message>
 </context>
 <context>
@@ -165,10 +179,17 @@
     </message>
 </context>
 <context>
+    <name>QIInputDialog</name>
+    <message>
+        <source>Name:</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>QILabel</name>
     <message>
         <source>&amp;Copy</source>
-        <translation type="vanished">&amp;Копіювати</translation>
+        <translation>&amp;Копіювати</translation>
     </message>
 </context>
 <context>
@@ -182,19 +203,19 @@
     <name>QIMessageBox</name>
     <message>
         <source>OK</source>
-        <translation type="vanished">Гаразд</translation>
+        <translation>Гаразд</translation>
     </message>
     <message>
         <source>Yes</source>
-        <translation type="vanished">Так</translation>
+        <translation>Так</translation>
     </message>
     <message>
         <source>No</source>
-        <translation type="vanished">Ні</translation>
+        <translation>Ні</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation type="vanished">Скасувати</translation>
+        <translation>Скасувати</translation>
     </message>
     <message>
         <source>Ignore</source>
@@ -210,11 +231,11 @@
     </message>
     <message>
         <source>Copy all errors to the clipboard</source>
-        <translation type="vanished">Скопіювати всі помилки до буфера</translation>
+        <translation>Скопіювати всі помилки до буфера</translation>
     </message>
     <message>
         <source>Copy</source>
-        <translation type="vanished">Скопіювати</translation>
+        <translation>Скопіювати</translation>
     </message>
 </context>
 <context>
@@ -274,10 +295,18 @@
     </message>
 </context>
 <context>
+    <name>SFTreeViewItem</name>
+    <message>
+        <source>%1, %2: %3, %4: %5, %6: %7, %8: %9</source>
+        <comment>col.1 text, col.2 name: col.2 text, col.3 name: col.3 text, col.4 name: col.4 text, col.5 name: col.5 text</comment>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>UIActionPool</name>
     <message>
         <source>&amp;Machine</source>
-        <translation type="vanished">&amp;Машина</translation>
+        <translation>&amp;Машина</translation>
     </message>
     <message>
         <source>&amp;Fullscreen Mode</source>
@@ -289,7 +318,7 @@
     </message>
     <message>
         <source>Seam&amp;less Mode</source>
-        <translation type="vanished">&amp;Цілокроєний режим</translation>
+        <translation>&amp;Цілокроєний режим</translation>
     </message>
     <message>
         <source>Switch to seamless desktop integration mode</source>
@@ -297,7 +326,7 @@
     </message>
     <message>
         <source>Auto-resize &amp;Guest Display</source>
-        <translation type="vanished">Автоматичний розмір &amp;гостьового екрану</translation>
+        <translation>Автоматичний розмір &amp;гостьового екрану</translation>
     </message>
     <message>
         <source>Automatically resize the guest display when the window is resized (requires Guest Additions)</source>
@@ -305,11 +334,11 @@
     </message>
     <message>
         <source>&amp;Adjust Window Size</source>
-        <translation type="vanished">В&amp;ирівняти розмір вікна</translation>
+        <translation>В&amp;ирівняти розмір вікна</translation>
     </message>
     <message>
         <source>Adjust window size and position to best fit the guest display</source>
-        <translation type="vanished">Вирівняти розмір і положення вікна під розмір гостьового екрану</translation>
+        <translation>Вирівняти розмір і положення вікна під розмір гостьового екрану</translation>
     </message>
     <message>
         <source>Disable &amp;Mouse Integration</source>
@@ -349,7 +378,7 @@
     </message>
     <message>
         <source>Take a snapshot of the virtual machine</source>
-        <translation type="vanished">Зробити зріз віртуальної машини</translation>
+        <translation>Зробити зріз віртуальної машини</translation>
     </message>
     <message>
         <source>Session I&amp;nformation Dialog</source>
@@ -361,23 +390,23 @@
     </message>
     <message>
         <source>&amp;Pause</source>
-        <translation type="vanished">Па&amp;уза</translation>
+        <translation>Па&amp;уза</translation>
     </message>
     <message>
         <source>Suspend the execution of the virtual machine</source>
-        <translation type="vanished">Призупинити виконання віртуальної машини</translation>
+        <translation>Призупинити виконання віртуальної машини</translation>
     </message>
     <message>
         <source>&amp;Reset</source>
-        <translation type="vanished">П&amp;ерезавантажити</translation>
+        <translation>П&amp;ерезавантажити</translation>
     </message>
     <message>
         <source>Reset the virtual machine</source>
-        <translation type="vanished">Перезавантажити віртуальну машину</translation>
+        <translation>Перезавантажити віртуальну машину</translation>
     </message>
     <message>
         <source>ACPI Sh&amp;utdown</source>
-        <translation type="vanished">Вим&amp;кнення ACPI</translation>
+        <translation>Вим&amp;кнення ACPI</translation>
     </message>
     <message>
         <source>ACPI S&amp;hutdown</source>
@@ -389,19 +418,19 @@
     </message>
     <message>
         <source>&amp;Close...</source>
-        <translation type="vanished">&amp;Закрити...</translation>
+        <translation>&amp;Закрити...</translation>
     </message>
     <message>
         <source>Close the virtual machine</source>
-        <translation type="vanished">Закрити віртуальну машину</translation>
+        <translation>Закрити віртуальну машину</translation>
     </message>
     <message>
         <source>&amp;View</source>
-        <translation type="vanished">П&amp;ерегляд</translation>
+        <translation>П&amp;ерегляд</translation>
     </message>
     <message>
         <source>&amp;Devices</source>
-        <translation type="vanished">Пристр&amp;ої</translation>
+        <translation>Пристр&amp;ої</translation>
     </message>
     <message>
         <source>&amp;CD/DVD Devices</source>
@@ -437,7 +466,7 @@
     </message>
     <message>
         <source>&amp;Insert Guest Additions CD image...</source>
-        <translation type="vanished">Вс&amp;тановити гостьові доповнення...</translation>
+        <translation>Вс&amp;тановити гостьові доповнення...</translation>
     </message>
     <message>
         <source>Insert the Guest Additions disk file into the virtual drive</source>
@@ -445,17 +474,17 @@
     </message>
     <message>
         <source>De&amp;bug</source>
-        <translation type="vanished">&amp;Зневадження</translation>
+        <translation>&amp;Зневадження</translation>
     </message>
     <message>
         <source>&amp;Statistics...</source>
         <comment>debug action</comment>
-        <translation type="vanished">&amp;Статистика...</translation>
+        <translation>&amp;Статистика...</translation>
     </message>
     <message>
         <source>&amp;Command Line...</source>
         <comment>debug action</comment>
-        <translation type="vanished">&amp;Командний рядок...</translation>
+        <translation>&amp;Командний рядок...</translation>
     </message>
     <message>
         <source>&amp;Logging...</source>
@@ -464,19 +493,19 @@
     </message>
     <message>
         <source>&amp;Help</source>
-        <translation type="vanished">&amp;Довідка</translation>
+        <translation>&amp;Довідка</translation>
     </message>
     <message>
         <source>Dock Icon</source>
-        <translation type="vanished">Піктограма панелі</translation>
+        <translation>Піктограма панелі</translation>
     </message>
     <message>
         <source>Show Monitor Preview</source>
-        <translation type="vanished">Показувати попередній перегляд монітору</translation>
+        <translation>Показувати попередній перегляд монітору</translation>
     </message>
     <message>
         <source>Show Application Icon</source>
-        <translation type="vanished">Показувати піктограму програми</translation>
+        <translation>Показувати піктограму програми</translation>
     </message>
     <message>
         <source>Enter &amp;Fullscreen Mode</source>
@@ -550,7 +579,7 @@
     </message>
     <message>
         <source>Switch between normal and seamless desktop integration mode</source>
-        <translation type="vanished">Перемкнутись між звичайним і ціловикроєним режимом стільничної інтеграції</translation>
+        <translation>Перемкнутись між звичайним і ціловикроєним режимом стільничної інтеграції</translation>
     </message>
     <message>
         <source>Switch to &amp;Scaled Mode</source>
@@ -558,7 +587,7 @@
     </message>
     <message>
         <source>Switch between normal and scaled mode</source>
-        <translation type="vanished">Перемкнутись між звичайним і масштабним режимом</translation>
+        <translation>Перемкнутись між звичайним і масштабним режимом</translation>
     </message>
     <message>
         <source>Session I&amp;nformation</source>
@@ -570,7 +599,7 @@
     </message>
     <message>
         <source>&amp;Settings...</source>
-        <translation type="vanished">&amp;Налаштування…</translation>
+        <translation>&amp;Налаштування…</translation>
     </message>
     <message>
         <source>Manage the virtual machine settings</source>
@@ -578,41 +607,41 @@
     </message>
     <message>
         <source>Session I&amp;nformation...</source>
-        <translation type="vanished">&amp;Інформація про сеанс…</translation>
+        <translation>&amp;Інформація про сеанс…</translation>
     </message>
     <message>
         <source>&amp;File</source>
         <comment>Mac OS X version</comment>
-        <translation type="vanished">&amp;Файл</translation>
+        <translation>&amp;Файл</translation>
     </message>
     <message>
         <source>&amp;File</source>
         <comment>Non Mac OS X version</comment>
-        <translation type="vanished">&amp;Файл</translation>
+        <translation>&amp;Файл</translation>
     </message>
     <message>
         <source>&amp;Virtual Media Manager...</source>
-        <translation type="vanished">&amp;Керування віртуальними носіями...</translation>
+        <translation>&amp;Керування віртуальними носіями...</translation>
     </message>
     <message>
         <source>Display the Virtual Media Manager window</source>
-        <translation type="vanished">Показати вікно керування віртуального носія</translation>
+        <translation>Показати вікно керування віртуального носія</translation>
     </message>
     <message>
         <source>&amp;Import Appliance...</source>
-        <translation type="vanished">&amp;Імпортувати образ віртуальної машини…</translation>
+        <translation>&amp;Імпортувати образ віртуальної машини…</translation>
     </message>
     <message>
         <source>Import an appliance into VirtualBox</source>
-        <translation type="vanished">Імпортувати образ віртуальної машини у VirtualBox</translation>
+        <translation>Імпортувати образ віртуальної машини у VirtualBox</translation>
     </message>
     <message>
         <source>&amp;Export Appliance...</source>
-        <translation type="vanished">&amp;Експортувати образ віртуальної машини…</translation>
+        <translation>&amp;Експортувати образ віртуальної машини…</translation>
     </message>
     <message>
         <source>Export one or more VirtualBox virtual machines as an appliance</source>
-        <translation type="vanished">Експортувати образ віртуальної машини з VirtualBox</translation>
+        <translation>Експортувати образ віртуальної машини з VirtualBox</translation>
     </message>
     <message>
         <source>&amp;Preferences...</source>
@@ -625,15 +654,15 @@
     </message>
     <message>
         <source>E&amp;xit</source>
-        <translation type="vanished">Ви&amp;йти</translation>
+        <translation>Ви&amp;йти</translation>
     </message>
     <message>
         <source>Close application</source>
-        <translation type="vanished">Закрити програму</translation>
+        <translation>Закрити програму</translation>
     </message>
     <message>
         <source>&amp;New...</source>
-        <translation type="vanished">&amp;Створити…</translation>
+        <translation>&amp;Створити…</translation>
     </message>
     <message>
         <source>Create a new virtual machine</source>
@@ -641,7 +670,7 @@
     </message>
     <message>
         <source>&amp;Add...</source>
-        <translation type="vanished">&amp;Додати...</translation>
+        <translation>&amp;Додати...</translation>
     </message>
     <message>
         <source>Add an existing virtual machine</source>
@@ -649,7 +678,7 @@
     </message>
     <message>
         <source>Cl&amp;one...</source>
-        <translation type="vanished">К&amp;лонувати…</translation>
+        <translation>К&amp;лонувати…</translation>
     </message>
     <message>
         <source>Clone the selected virtual machine</source>
@@ -665,7 +694,7 @@
     </message>
     <message>
         <source>S&amp;tart</source>
-        <translation type="vanished">З&amp;апуcтити</translation>
+        <translation>З&amp;апуcтити</translation>
     </message>
     <message>
         <source>Start the selected virtual machine</source>
@@ -673,7 +702,7 @@
     </message>
     <message>
         <source>S&amp;how</source>
-        <translation type="vanished">По&amp;казати</translation>
+        <translation>По&amp;казати</translation>
     </message>
     <message>
         <source>Switch to the window of the selected virtual machine</source>
@@ -681,7 +710,7 @@
     </message>
     <message>
         <source>Discard</source>
-        <translation type="vanished">Відкинути</translation>
+        <translation>Відкинути</translation>
     </message>
     <message>
         <source>D&amp;iscard Saved State</source>
@@ -693,7 +722,7 @@
     </message>
     <message>
         <source>Re&amp;fresh</source>
-        <translation type="vanished">&amp;Оновити</translation>
+        <translation>&amp;Оновити</translation>
     </message>
     <message>
         <source>Refresh the accessibility state of the selected virtual machine</source>
@@ -701,7 +730,7 @@
     </message>
     <message>
         <source>Show &amp;Log...</source>
-        <translation type="vanished">Показати &amp;журнал...</translation>
+        <translation>Показати &amp;журнал...</translation>
     </message>
     <message>
         <source>Show the log files of the selected virtual machine</source>
@@ -749,11 +778,11 @@
     </message>
     <message>
         <source>Take Sn&amp;apshot...</source>
-        <translation type="vanished">Зробити з&amp;різ…</translation>
+        <translation>Зробити з&amp;різ…</translation>
     </message>
     <message>
         <source>Take Screensh&amp;ot...</source>
-        <translation type="vanished">Зробити з&amp;німок…</translation>
+        <translation>Зробити з&amp;німок…</translation>
     </message>
     <message>
         <source>Take a screenshot of the virtual machine</source>
@@ -773,43 +802,43 @@
     </message>
     <message>
         <source>&amp;Close</source>
-        <translation type="vanished">&amp;Закрити</translation>
+        <translation>&amp;Закрити</translation>
     </message>
     <message>
         <source>Po&amp;wer Off</source>
-        <translation type="vanished">&amp;Вимкнути</translation>
+        <translation>&amp;Вимкнути</translation>
     </message>
     <message>
         <source>Power off the virtual machine</source>
-        <translation type="vanished">Вимкнути віртуальну машину</translation>
+        <translation>Вимкнути віртуальну машину</translation>
     </message>
     <message>
         <source>&amp;Contents...</source>
-        <translation type="vanished">&amp;Зміст...</translation>
+        <translation>&amp;Зміст...</translation>
     </message>
     <message>
         <source>Show help contents</source>
-        <translation type="vanished">Показати зміст довідки</translation>
+        <translation>Показати зміст довідки</translation>
     </message>
     <message>
         <source>&amp;VirtualBox Web Site...</source>
-        <translation type="vanished">&amp;Сайт VirtualBox...</translation>
+        <translation>&amp;Сайт VirtualBox...</translation>
     </message>
     <message>
         <source>Open the browser and go to the VirtualBox product web site</source>
-        <translation type="vanished">Відкрити переглядач і перейти до сайту продукції VirtualBox</translation>
+        <translation>Відкрити переглядач і перейти до сайту продукції VirtualBox</translation>
     </message>
     <message>
         <source>&amp;Reset All Warnings</source>
-        <translation type="vanished">&amp;Скинути всі попередження</translation>
+        <translation>&amp;Скинути всі попередження</translation>
     </message>
     <message>
         <source>Go back to showing all suppressed warnings and messages</source>
-        <translation type="vanished">Знову показувати всі приховані попередження та повідомлення</translation>
+        <translation>Знову показувати всі приховані попередження та повідомлення</translation>
     </message>
     <message>
         <source>&amp;Network Operations Manager...</source>
-        <translation type="vanished">Керування &amp;мережевими операціями…</translation>
+        <translation>Керування &amp;мережевими операціями…</translation>
     </message>
     <message>
         <source>Show Network Operations Manager</source>
@@ -817,15 +846,15 @@
     </message>
     <message>
         <source>C&amp;heck for Updates...</source>
-        <translation type="vanished">&amp;Перевірити на оновлення...</translation>
+        <translation>&amp;Перевірити на оновлення...</translation>
     </message>
     <message>
         <source>Check for a new VirtualBox version</source>
-        <translation type="vanished">Перевірити наявність нової версії VirtualBox</translation>
+        <translation>Перевірити наявність нової версії VirtualBox</translation>
     </message>
     <message>
         <source>&amp;About VirtualBox...</source>
-        <translation type="vanished">&amp;Про VirtualBox...</translation>
+        <translation>&amp;Про VirtualBox...</translation>
     </message>
     <message>
         <source>Show a window with product information</source>
@@ -833,23 +862,23 @@
     </message>
     <message>
         <source>Shared &amp;Clipboard</source>
-        <translation type="vanished">Спільний &amp;буфер</translation>
+        <translation>Спільний &amp;буфер</translation>
     </message>
     <message>
         <source>&amp;Group</source>
-        <translation type="vanished">&amp;Група</translation>
+        <translation>&amp;Група</translation>
     </message>
     <message>
         <source>&amp;New Machine...</source>
-        <translation type="vanished">&amp;Створити машину…</translation>
+        <translation>&amp;Створити машину…</translation>
     </message>
     <message>
         <source>&amp;Add Machine...</source>
-        <translation type="vanished">&amp;Додати машину…</translation>
+        <translation>&amp;Додати машину…</translation>
     </message>
     <message>
         <source>Rena&amp;me Group...</source>
-        <translation type="vanished">Пере&amp;йменувати групу…</translation>
+        <translation>Пере&amp;йменувати групу…</translation>
     </message>
     <message>
         <source>Rename the selected virtual machine group</source>
@@ -873,7 +902,7 @@
     </message>
     <message>
         <source>Gro&amp;up</source>
-        <translation type="vanished">&amp;Згрупувати</translation>
+        <translation>&amp;Згрупувати</translation>
     </message>
     <message>
         <source>Add a new group based on the items selected</source>
@@ -881,7 +910,7 @@
     </message>
     <message>
         <source>&amp;Remove...</source>
-        <translation type="vanished">&amp;Вилучити…</translation>
+        <translation>&amp;Вилучити…</translation>
     </message>
     <message>
         <source>Remove the selected virtual machines</source>
@@ -913,7 +942,7 @@
     </message>
     <message>
         <source>Re&amp;fresh...</source>
-        <translation type="obsolete">&amp;Оновити…</translation>
+        <translation type="unfinished">&amp;Оновити…</translation>
     </message>
     <message>
         <source>Show the VirtualBox Machine Definition file in Finder</source>
@@ -953,15 +982,15 @@
     </message>
     <message>
         <source>&amp;Network Settings...</source>
-        <translation type="vanished">Параметри &amp;мережі...</translation>
+        <translation>Параметри &amp;мережі...</translation>
     </message>
     <message>
         <source>&amp;Shared Folders Settings...</source>
-        <translation type="vanished">Параметри &amp;загальних тек...</translation>
+        <translation>Параметри &amp;загальних тек...</translation>
     </message>
     <message>
         <source>R&amp;emote Display</source>
-        <translation type="vanished">В&amp;іддалений доступ</translation>
+        <translation>В&amp;іддалений доступ</translation>
     </message>
     <message>
         <source>&amp;Video Capture</source>
@@ -973,7 +1002,7 @@
     </message>
     <message>
         <source>Popup Menu</source>
-        <translation type="vanished">Зринаюче меню</translation>
+        <translation>Зринаюче меню</translation>
     </message>
     <message>
         <source>&amp;Insert Guest Additions CD image...</source>
@@ -987,7 +1016,7 @@
     </message>
     <message>
         <source>&amp;Webcams</source>
-        <translation type="vanished">&amp;Веб-камери</translation>
+        <translation>&amp;Веб-камери</translation>
     </message>
     <message>
         <source>Network</source>
@@ -995,84 +1024,84 @@
     </message>
     <message>
         <source>&amp;VirtualBox</source>
-        <translation type="obsolete">&amp;VirtualBox</translation>
+        <translation type="unfinished">&amp;VirtualBox</translation>
     </message>
     <message>
         <source>&amp;File</source>
-        <translation type="vanished">&amp;Файл</translation>
+        <translation>&amp;Файл</translation>
     </message>
     <message>
         <source>&amp;Window</source>
-        <translation type="vanished">&amp;Вікно</translation>
+        <translation>&amp;Вікно</translation>
     </message>
     <message>
         <source>&amp;Minimize</source>
-        <translation type="vanished">&amp;Згорнути</translation>
+        <translation>&amp;Згорнути</translation>
     </message>
     <message>
         <source>Minimize active window</source>
-        <translation type="vanished">Мінімізувати активне вікно</translation>
+        <translation>Мінімізувати активне вікно</translation>
     </message>
     <message>
         <source>Display the Network Operations Manager window</source>
-        <translation type="vanished">Відкрити менеджер мережевих операцій</translation>
+        <translation>Відкрити менеджер мережевих операцій</translation>
     </message>
     <message>
         <source>Display a window with product information</source>
-        <translation type="vanished">Відкрити діалогове вікно з інформацією про програму</translation>
+        <translation>Відкрити діалогове вікно з інформацією про програму</translation>
     </message>
     <message>
         <source>&amp;Preferences...</source>
         <comment>global preferences window</comment>
-        <translation type="vanished">&amp;Налаштування...</translation>
+        <translation>&amp;Налаштування...</translation>
     </message>
     <message>
         <source>Display the global preferences window</source>
-        <translation type="vanished">Відкрити вікно глобальних налаштувань</translation>
+        <translation>Відкрити вікно глобальних налаштувань</translation>
     </message>
     <message>
         <source>Display the virtual machine settings window</source>
-        <translation type="vanished">Відкрити вікно налаштувань віртуальної машини</translation>
+        <translation>Відкрити вікно налаштувань віртуальної машини</translation>
     </message>
     <message>
         <source>Display the virtual machine session information window</source>
-        <translation type="vanished">Відкрити вікно з інформацією про сеанс віртуальної машини</translation>
+        <translation>Відкрити вікно з інформацією про сеанс віртуальної машини</translation>
     </message>
     <message>
         <source>&amp;Save State</source>
-        <translation type="vanished">&amp;Зберегти стан</translation>
+        <translation>&amp;Зберегти стан</translation>
     </message>
     <message>
         <source>Save the state of the virtual machine</source>
-        <translation type="vanished">Зберегти стан віртуальної машини</translation>
+        <translation>Зберегти стан віртуальної машини</translation>
     </message>
     <message>
         <source>Send the ACPI Shutdown signal to the virtual machine</source>
-        <translation type="vanished">Надіслати віртуальній машині ACPI-сигнал вимкнення</translation>
+        <translation>Надіслати віртуальній машині ACPI-сигнал вимкнення</translation>
     </message>
     <message>
         <source>&amp;Full-screen Mode</source>
-        <translation type="vanished">&amp;Повноекранний режим</translation>
+        <translation>&amp;Повноекранний режим</translation>
     </message>
     <message>
         <source>Switch between normal and full-screen mode</source>
-        <translation type="vanished">Перемкнутись між звичайним і повноекранним режимами</translation>
+        <translation>Перемкнутись між звичайним і повноекранним режимами</translation>
     </message>
     <message>
         <source>S&amp;caled Mode</source>
-        <translation type="vanished">&amp;Режим масштабування</translation>
+        <translation>&amp;Режим масштабування</translation>
     </message>
     <message>
         <source>&amp;Minimize Window</source>
-        <translation type="vanished">&amp;Згорнути вікно</translation>
+        <translation>&amp;Згорнути вікно</translation>
     </message>
     <message>
         <source>Automatically resize the guest display when the window is resized</source>
-        <translation type="vanished">Автоматично змінювати розмір екрану гостьової ОС при зміні розмірів вікна</translation>
+        <translation>Автоматично змінювати розмір екрану гостьової ОС при зміні розмірів вікна</translation>
     </message>
     <message>
         <source>Take guest display screenshot</source>
-        <translation type="vanished">Зробити зняток гостьової ОС</translation>
+        <translation>Зробити зняток гостьової ОС</translation>
     </message>
     <message>
         <source>Display virtual machine settings window to configure video capture</source>
@@ -1084,47 +1113,47 @@
     </message>
     <message>
         <source>Allow remote desktop (RDP) connections to this machine</source>
-        <translation type="vanished">Дозволити віддалений доступ (RDP) до цієї машини</translation>
+        <translation>Дозволити віддалений доступ (RDP) до цієї машини</translation>
     </message>
     <message>
         <source>&amp;Menu Bar</source>
-        <translation type="vanished">Панель &amp;меню</translation>
+        <translation>Панель &amp;меню</translation>
     </message>
     <message>
         <source>&amp;Menu Bar Settings...</source>
-        <translation type="vanished">Параметри &amp;панелі меню...</translation>
+        <translation>Параметри &amp;панелі меню...</translation>
     </message>
     <message>
         <source>Display window to configure menu-bar</source>
-        <translation type="vanished">Показати вікно налаштування Панелі меню</translation>
+        <translation>Показати вікно налаштування Панелі меню</translation>
     </message>
     <message>
         <source>Show Menu &amp;Bar</source>
-        <translation type="vanished">Показувати панель &amp;меню</translation>
+        <translation>Показувати панель &amp;меню</translation>
     </message>
     <message>
         <source>Enable menu-bar</source>
-        <translation type="vanished">Увімкнути панель меню</translation>
+        <translation>Увімкнути панель меню</translation>
     </message>
     <message>
         <source>&amp;Status Bar</source>
-        <translation type="vanished">Панель &amp;стану</translation>
+        <translation>Панель &amp;стану</translation>
     </message>
     <message>
         <source>&amp;Status Bar Settings...</source>
-        <translation type="vanished">Налаштування Панелі стану…</translation>
+        <translation>Налаштування Панелі стану…</translation>
     </message>
     <message>
         <source>Display window to configure status-bar</source>
-        <translation type="vanished">Показати вікно налаштування Панелі стану</translation>
+        <translation>Показати вікно налаштування Панелі стану</translation>
     </message>
     <message>
         <source>Show Status &amp;Bar</source>
-        <translation type="vanished">Показати рядок стану</translation>
+        <translation>Показати рядок стану</translation>
     </message>
     <message>
         <source>Enable status-bar</source>
-        <translation type="vanished">Увімкнути Панель стану</translation>
+        <translation>Увімкнути Панель стану</translation>
     </message>
     <message>
         <source>S&amp;cale Factor</source>
@@ -1132,106 +1161,106 @@
     </message>
     <message>
         <source>&amp;Input</source>
-        <translation type="vanished">&amp;Введення</translation>
+        <translation>&amp;Введення</translation>
     </message>
     <message>
         <source>&amp;Keyboard</source>
-        <translation type="vanished">&amp;Клавіатура</translation>
+        <translation>&amp;Клавіатура</translation>
     </message>
     <message>
         <source>&amp;Keyboard Settings...</source>
-        <translation type="vanished">&amp;Параметри клавіатури...</translation>
+        <translation>&amp;Параметри клавіатури...</translation>
     </message>
     <message>
         <source>Display global preferences window to configure keyboard shortcuts</source>
-        <translation type="vanished">Відкрити вікно глобальних налаштувань, щоб налаштувати поєднання клавіш</translation>
+        <translation>Відкрити вікно глобальних налаштувань, щоб налаштувати поєднання клавіш</translation>
     </message>
     <message>
         <source>&amp;Insert %1</source>
         <comment>that means send the %1 key sequence to the virtual machine</comment>
-        <translation type="vanished">&amp;Вставити %1</translation>
+        <translation>&amp;Вставити %1</translation>
     </message>
     <message>
         <source>Send the %1 sequence to the virtual machine</source>
-        <translation type="vanished">Надіслати поєднання клавіш %1 у віртуальну машину</translation>
+        <translation>Надіслати поєднання клавіш %1 у віртуальну машину</translation>
     </message>
     <message>
         <source>&amp;Mouse</source>
-        <translation type="vanished">&amp;Миша</translation>
+        <translation>&amp;Миша</translation>
     </message>
     <message>
         <source>&amp;Mouse Integration</source>
-        <translation type="vanished">&amp;Інтеграція миші</translation>
+        <translation>&amp;Інтеграція миші</translation>
     </message>
     <message>
         <source>Enable host mouse pointer integration</source>
-        <translation type="vanished">Увімкнути інтеграцію вказівника миші</translation>
+        <translation>Увімкнути інтеграцію вказівника миші</translation>
     </message>
     <message>
         <source>&amp;Hard Disks</source>
-        <translation type="vanished">&amp;Жорсткі диски</translation>
+        <translation>&amp;Жорсткі диски</translation>
     </message>
     <message>
         <source>&amp;Hard Disk Settings...</source>
-        <translation type="vanished">&amp;Налаштування жорсткого диска...</translation>
+        <translation>&amp;Налаштування жорсткого диска...</translation>
     </message>
     <message>
         <source>Display virtual machine settings window to configure hard disks</source>
-        <translation type="vanished">Відкрити вікно налаштувань віртуальної машини, щоб налаштувати жорсткі диски</translation>
+        <translation>Відкрити вікно налаштувань віртуальної машини, щоб налаштувати жорсткі диски</translation>
     </message>
     <message>
         <source>&amp;Optical Drives</source>
-        <translation type="vanished">&amp;Оптичні диски</translation>
+        <translation>&amp;Оптичні диски</translation>
     </message>
     <message>
         <source>&amp;Floppy Drives</source>
-        <translation type="vanished">&amp;Гнучкі диски</translation>
+        <translation>&amp;Гнучкі диски</translation>
     </message>
     <message>
         <source>&amp;Network</source>
-        <translation type="vanished">&amp;Мережа</translation>
+        <translation>&amp;Мережа</translation>
     </message>
     <message>
         <source>Display virtual machine settings window to configure network adapters</source>
-        <translation type="vanished">Відкрити вікно налаштувань віртуальної машини, щоб налаштувати мережеві адаптери</translation>
+        <translation>Відкрити вікно налаштувань віртуальної машини, щоб налаштувати мережеві адаптери</translation>
     </message>
     <message>
         <source>&amp;USB</source>
-        <translation type="obsolete">&amp;USB</translation>
+        <translation type="unfinished">&amp;USB</translation>
     </message>
     <message>
         <source>&amp;USB Settings...</source>
-        <translation type="vanished">&amp;USB налаштування...</translation>
+        <translation>&amp;USB налаштування...</translation>
     </message>
     <message>
         <source>Display virtual machine settings window to configure USB devices</source>
-        <translation type="vanished">Відкрити вікно налаштувань віртуальної машини, щоб налаштувати USB-пристрої</translation>
+        <translation>Відкрити вікно налаштувань віртуальної машини, щоб налаштувати USB-пристрої</translation>
     </message>
     <message>
         <source>&amp;Drag and Drop</source>
-        <translation type="vanished">&amp;Перетягування</translation>
+        <translation>&amp;Перетягування</translation>
     </message>
     <message>
         <source>&amp;Shared Folders</source>
-        <translation type="vanished">Спільна теки</translation>
+        <translation>Спільна теки</translation>
     </message>
     <message>
         <source>Display virtual machine settings window to configure shared folders</source>
-        <translation type="vanished">Показати вікно налаштувань віртуальної машини для налаштування спільних тек</translation>
+        <translation>Показати вікно налаштувань віртуальної машини для налаштування спільних тек</translation>
     </message>
     <message>
         <source>Insert the Guest Additions disk file into the virtual optical drive</source>
-        <translation type="vanished">Вставити файл диска гостьових доповнень у віртуальний оптичний дисковод</translation>
+        <translation>Вставити файл диска гостьових доповнень у віртуальний оптичний дисковод</translation>
     </message>
     <message>
         <source>&amp;Logging</source>
         <comment>debug action</comment>
-        <translation type="vanished">&amp;Журналювання</translation>
+        <translation>&amp;Журналювання</translation>
     </message>
     <message>
         <source>Show &amp;Log...</source>
         <comment>debug action</comment>
-        <translation type="vanished">Показати &amp;журнал...</translation>
+        <translation>Показати &amp;журнал...</translation>
     </message>
     <message>
         <source>%1%</source>
@@ -1241,204 +1270,995 @@
     <message>
         <source>Enable</source>
         <comment>Virtual Screen</comment>
-        <translation type="vanished">Ввімкнути</translation>
+        <translation>Ввімкнути</translation>
     </message>
     <message>
         <source>Resize to %1x%2</source>
         <comment>Virtual Screen</comment>
-        <translation type="vanished">Змінити розмір на %1x%2</translation>
+        <translation>Змінити розмір на %1x%2</translation>
     </message>
     <message>
         <source>Preview Monitor %1</source>
-        <translation type="vanished">Перегляд монітору %1 </translation>
+        <translation>Перегляд монітору %1 </translation>
     </message>
     <message>
         <source>&amp;Connect Network Adapter</source>
-        <translation type="vanished">&amp;Під’єднати мережевий адаптер</translation>
+        <translation>&amp;Під’єднати мережевий адаптер</translation>
     </message>
     <message>
         <source>Connect Network Adapter &amp;%1</source>
-        <translation type="vanished">Під’єднати мережевий адаптер &amp;%1</translation>
+        <translation>Під’єднати мережевий адаптер &amp;%1</translation>
     </message>
     <message>
         <source>No USB Devices Connected</source>
-        <translation type="vanished">Не під&apos;єднано жодного пристрою USB</translation>
+        <translation>Не під&apos;єднано жодного пристрою USB</translation>
     </message>
     <message>
         <source>No supported devices connected to the host PC</source>
-        <translation type="vanished">Нема підтримки пристроїв, які під&apos;єднанні до головного комп&apos;ютера</translation>
+        <translation>Нема підтримки пристроїв, які під&apos;єднанні до головного комп&apos;ютера</translation>
     </message>
     <message>
         <source>No Webcams Connected</source>
-        <translation type="vanished">Немає підключених веб-камер</translation>
+        <translation>Немає підключених веб-камер</translation>
     </message>
     <message>
         <source>No supported webcams connected to the host PC</source>
-        <translation type="vanished">Немає підтримуваних камер, під’єднаних до хосту</translation>
+        <translation>Немає підтримуваних камер, під’єднаних до хосту</translation>
     </message>
     <message>
         <source>E&amp;xtra Data Manager...</source>
-        <translation type="vanished">Менеджер внутрішніх &amp;даних...</translation>
+        <translation>Менеджер внутрішніх &amp;даних...</translation>
     </message>
     <message>
         <source>Display the Extra Data Manager window</source>
-        <translation type="vanished">Відкрити менеджер внутрішніх даних</translation>
+        <translation>Відкрити менеджер внутрішніх даних</translation>
     </message>
     <message>
         <source>Create new virtual machine</source>
-        <translation type="vanished">Створити нову віртуальну машину</translation>
+        <translation>Створити нову віртуальну машину</translation>
     </message>
     <message>
         <source>Add existing virtual machine</source>
-        <translation type="vanished">Додати наявну віртуальну машину</translation>
+        <translation>Додати наявну віртуальну машину</translation>
     </message>
     <message>
         <source>Rename selected virtual machine group</source>
-        <translation type="vanished">Перейменувати вибрану групу віртуальних машин</translation>
+        <translation>Перейменувати вибрану групу віртуальних машин</translation>
     </message>
     <message>
         <source>&amp;Ungroup</source>
-        <translation type="vanished">&amp;Розгрупувати</translation>
+        <translation>&amp;Розгрупувати</translation>
     </message>
     <message>
         <source>Ungroup items of selected virtual machine group</source>
-        <translation type="vanished">Розгрупувати вибрану групу віртуальних машин</translation>
+        <translation>Розгрупувати вибрану групу віртуальних машин</translation>
     </message>
     <message>
         <source>&amp;Sort</source>
-        <translation type="vanished">&amp;Сортувати</translation>
+        <translation>&amp;Сортувати</translation>
     </message>
     <message>
         <source>Sort items of selected virtual machine group alphabetically</source>
-        <translation type="vanished">Впорядкувати елементи вибраної групи віртуальних машин за абеткою</translation>
+        <translation>Впорядкувати елементи вибраної групи віртуальних машин за абеткою</translation>
     </message>
     <message>
         <source>Add new group based on selected virtual machines</source>
-        <translation type="vanished">Згрупувати вибрані віртуальні машини</translation>
+        <translation>Згрупувати вибрані віртуальні машини</translation>
     </message>
     <message>
         <source>Clone selected virtual machine</source>
-        <translation type="vanished">Клонувати вибрану віртуальну машину</translation>
+        <translation>Клонувати вибрану віртуальну машину</translation>
     </message>
     <message>
         <source>Remove selected virtual machines</source>
-        <translation type="vanished">Видалити вибрані віртуальні машини</translation>
+        <translation>Видалити вибрані віртуальні машини</translation>
     </message>
     <message>
         <source>Start selected virtual machines</source>
-        <translation type="vanished">Запустити вибрані віртуальні машини</translation>
+        <translation>Запустити вибрані віртуальні машини</translation>
     </message>
     <message>
         <source>Switch to the windows of selected virtual machines</source>
-        <translation type="vanished">Перемкнутись на вікна вибраних віртуальних машин</translation>
+        <translation>Перемкнутись на вікна вибраних віртуальних машин</translation>
     </message>
     <message>
         <source>&amp;Normal Start</source>
-        <translation type="vanished">&amp;Звичайний запуск</translation>
+        <translation>&amp;Звичайний запуск</translation>
     </message>
     <message>
         <source>&amp;Headless Start</source>
-        <translation type="vanished">Запуск у &amp;тлі</translation>
+        <translation>Запуск у &amp;тлі</translation>
     </message>
     <message>
         <source>Start selected virtual machines in the background</source>
-        <translation type="vanished">Запустити вибрані віртуальні машини у тлі</translation>
+        <translation>Запустити вибрані віртуальні машини у тлі</translation>
     </message>
     <message>
         <source>&amp;Detachable Start</source>
-        <translation type="vanished">Запуск у тлі з &amp;інтерфейсом</translation>
+        <translation>Запуск у тлі з &amp;інтерфейсом</translation>
     </message>
     <message>
         <source>Start selected virtual machines with option of continuing in background</source>
-        <translation type="vanished">Запустити вибрані віртуальні машини у тлі з графічним інтерфейсом</translation>
+        <translation>Запустити вибрані віртуальні машини у тлі з графічним інтерфейсом</translation>
     </message>
     <message>
         <source>Suspend execution of selected virtual machines</source>
-        <translation type="vanished">Призупинити вибрані віртуальні машини</translation>
+        <translation>Призупинити вибрані віртуальні машини</translation>
     </message>
     <message>
         <source>Reset selected virtual machines</source>
-        <translation type="vanished">Перезапустити вибрані віртуальні машини</translation>
+        <translation>Перезапустити вибрані віртуальні машини</translation>
     </message>
     <message>
         <source>D&amp;iscard Saved State...</source>
-        <translation type="vanished">С&amp;кинути збережений стан...</translation>
+        <translation>С&amp;кинути збережений стан...</translation>
     </message>
     <message>
         <source>Discard saved state of selected virtual machines</source>
-        <translation type="vanished">Скинути збережений стан вибраних віртуальних машин</translation>
+        <translation>Скинути збережений стан вибраних віртуальних машин</translation>
     </message>
     <message>
         <source>Show log files of selected virtual machines</source>
-        <translation type="vanished">Показати файли журналів вибраних віртуальних машин</translation>
+        <translation>Показати файли журналів вибраних віртуальних машин</translation>
     </message>
     <message>
         <source>Refresh accessibility state of selected virtual machines</source>
-        <translation type="vanished">Оновити стан доступності вибраних віртуальних машин</translation>
+        <translation>Оновити стан доступності вибраних віртуальних машин</translation>
     </message>
     <message>
         <source>S&amp;how in Finder</source>
-        <translation type="vanished">&amp;Показати у Finder</translation>
+        <translation>&amp;Показати у Finder</translation>
     </message>
     <message>
         <source>Show the VirtualBox Machine Definition files in Finder</source>
-        <translation type="vanished">Показати файли віртуальних машин VirtualBox у Finder</translation>
+        <translation>Показати файли віртуальних машин VirtualBox у Finder</translation>
     </message>
     <message>
         <source>S&amp;how in Explorer</source>
-        <translation type="vanished">&amp;Показати у Провіднику</translation>
+        <translation>&amp;Показати у Провіднику</translation>
     </message>
     <message>
         <source>Show the VirtualBox Machine Definition files in Explorer</source>
-        <translation type="vanished">Показати файли віртуальних машин VirtualBox у Провіднику</translation>
+        <translation>Показати файли віртуальних машин VirtualBox у Провіднику</translation>
     </message>
     <message>
         <source>S&amp;how in File Manager</source>
-        <translation type="vanished">&amp;Показати у файловому менеджері</translation>
+        <translation>&amp;Показати у файловому менеджері</translation>
     </message>
     <message>
         <source>Show the VirtualBox Machine Definition files in the File Manager</source>
-        <translation type="vanished">Показати файли віртуальних машин VirtualBox у файловому менеджері</translation>
+        <translation>Показати файли віртуальних машин VirtualBox у файловому менеджері</translation>
     </message>
     <message>
         <source>Cr&amp;eate Alias on Desktop</source>
-        <translation type="vanished">С&amp;творити псевдонім на стільниці</translation>
+        <translation>С&amp;творити псевдонім на стільниці</translation>
     </message>
     <message>
         <source>Create alias files to the VirtualBox Machine Definition files on your desktop</source>
-        <translation type="vanished">Створити псевдоніми віртуальних машин VirtualBox на Вашій стільниці</translation>
+        <translation>Створити псевдоніми віртуальних машин VirtualBox на Вашій стільниці</translation>
     </message>
     <message>
         <source>Cr&amp;eate Shortcut on Desktop</source>
-        <translation type="vanished">С&amp;творити ярлик на стільниці</translation>
+        <translation>С&amp;творити ярлик на стільниці</translation>
     </message>
     <message>
         <source>Create shortcut files to the VirtualBox Machine Definition files on your desktop</source>
-        <translation type="vanished">Створити ярлики віртуальних машин VirtualBox на Вашій стільниці</translation>
+        <translation>Створити ярлики віртуальних машин VirtualBox на Вашій стільниці</translation>
     </message>
     <message>
         <source>Sort group of first selected virtual machine alphabetically</source>
-        <translation type="vanished">Впорядкувати групу першої вибраної віртуальної машини за абеткою</translation>
+        <translation>Впорядкувати групу першої вибраної віртуальної машини за абеткою</translation>
     </message>
     <message>
         <source>Save state of selected virtual machines</source>
-        <translation type="vanished">Зберегти стан вибраних віртуальних машин</translation>
+        <translation>Зберегти стан вибраних віртуальних машин</translation>
     </message>
     <message>
         <source>Send ACPI Shutdown signal to selected virtual machines</source>
-        <translation type="vanished">Надіслати вибраним віртуальним машинам ACPI-сигнал вимкнення</translation>
+        <translation>Надіслати вибраним віртуальним машинам ACPI-сигнал вимкнення</translation>
     </message>
     <message>
         <source>Power off selected virtual machines</source>
-        <translation type="vanished">Вимкнути вибрані віртуальні машини</translation>
+        <translation>Вимкнути вибрані віртуальні машини</translation>
     </message>
     <message>
         <source>&amp;Details</source>
-        <translation type="obsolete">&amp;Подробиці</translation>
+        <translation type="unfinished">&amp;Подробиці</translation>
     </message>
     <message>
         <source>&amp;Snapshots</source>
-        <translation type="obsolete">&amp;Зрізи</translation>
+        <translation type="unfinished">&amp;Зрізи</translation>
+    </message>
+    <message>
+        <source>&amp;VirtualBox Bug Tracker...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open the browser and go to the VirtualBox product bug tracker</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;VirtualBox Forums...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open the browser and go to the VirtualBox product forums</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Oracle Web Site...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open the browser and go to the Oracle web site</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Log</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open the log menu</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Find</source>
+        <translation type="unfinished">З&amp;найти</translation>
+    </message>
+    <message>
+        <source>Log Viewer</source>
+        <translation type="unfinished">Переглядач журналу</translation>
+    </message>
+    <message>
+        <source>Open pane with searching options</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open Find Pane (%1)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Filter</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open pane with filtering options</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open Filter Pane (%1)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Bookmark</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open pane with bookmarking options</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open Bookmark Pane (%1)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Options</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open pane with log viewer options</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open Options Pane (%1)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Refresh</source>
+        <translation type="unfinished">&amp;Оновити</translation>
+    </message>
+    <message>
+        <source>Refresh selected virtual machine log</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Refresh Virtual Machine Log (%1)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Save...</source>
+        <translation type="unfinished">&amp;Зберегти...</translation>
+    </message>
+    <message>
+        <source>Save selected virtual machine log</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Save Virtual Machine Log (%1)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>File Manager</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open the guest control file manager</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Host</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open the guest control file manager submenu</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Guest</source>
+        <translation type="unfinished">Гість</translation>
+    </message>
+    <message>
+        <source>Copy to guest</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Guest Control File Manager</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Copy the Selected Object(s) from Host to Guest</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Copy the selected object(s) from host to guest</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Copy to host</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Copy the Selected Object(s) from Guest to Host</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Copy the selected object(s) from guest to host</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Move to guest</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Move the Selected Object(s) from Host to Guest</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Move the selected object(s) from host to guest</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Move to host</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Move the Selected Object(s) from Guest to Host</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Move the selected object(s) from guest to host</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Settings</source>
+        <translation type="unfinished">Налаштування</translation>
+    </message>
+    <message>
+        <source>Open panel with file manager settings</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open Panel With File Manager Settings</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Log</source>
+        <translation type="unfinished">Журнал</translation>
+    </message>
+    <message>
+        <source>Open panel with to view file manager log</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open Panel With to View File Manager Log</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>File Operations</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open panel with to view file manager file operations</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open Panel With to View File Manager File Operations</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Session</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open file manager account</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open File Manager Session</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>GoUp</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Go one level up to parent folder</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Go One Level Up to Parent Folder</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Go Home</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Go to home folder</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Go to Home Folder</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Delete</source>
+        <translation type="unfinished">Вилучити</translation>
+    </message>
+    <message>
+        <source>Delete selected file object(s)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Delete Selected File Object(s)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Refresh</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Rename</source>
+        <translation type="unfinished">Перейменувати</translation>
+    </message>
+    <message>
+        <source>Create New Directory</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Copy</source>
+        <translation type="unfinished">Скопіювати</translation>
+    </message>
+    <message>
+        <source>Copy selected file object(s)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Copy Selected File Object(s)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cut</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cut selected file object(s)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cut Selected File Object(s)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Paste</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Paste copied/cut file object(s)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Paste Copied/Cut File Object(s)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Select All</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Select all files objects</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Select All Files Objects</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Invert Selection</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Invert the current selection</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Invert the Current Selection</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show Properties</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show the properties of currently selected file object(s)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show the Properties of Currently Selected File Object(s)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Host Network Manager...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Display the Host Network Manager window</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Cloud Profile Manager...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Display the Cloud Profile Manager window</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Import</source>
+        <translation type="unfinished">Імпортувати</translation>
+    </message>
+    <message>
+        <source>Export</source>
+        <translation type="unfinished">Експортувати</translation>
+    </message>
+    <message>
+        <source>&amp;Move...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Move selected virtual machine</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Detach GUI</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Detach the GUI from headless VM</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Machine Tools Menu</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open the machine tools menu</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open the machine details pane</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open the machine snapshots pane</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Logs</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open the machine logs pane</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Global Tools Menu</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open the global tools menu</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Virtual Media Manager</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open the Virtual Media Manager</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Host Network Manager</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open the Host Network Manager</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Cloud Profile Manager</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open the Cloud Profile Manager</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Snapshot</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open the snapshot menu</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Take...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Snapshot Pane</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Take a snapshot of the current virtual machine state</source>
+        <translation type="unfinished">Зробити зріз поточного стану віртуальної машини</translation>
+    </message>
+    <message>
+        <source>Take Snapshot (%1)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Delete...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Delete selected snapshot of the virtual machine</source>
+        <translation type="unfinished">Видалити вибраний зріз віртуальної машини</translation>
+    </message>
+    <message>
+        <source>Delete Snapshot (%1)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Restore...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Restore selected snapshot of the virtual machine</source>
+        <translation type="unfinished">Відновити вибраний зріз віртуальної машини</translation>
+    </message>
+    <message>
+        <source>Restore Snapshot (%1)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Properties</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open pane with the selected snapshot properties</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open Snapshot Properties (%1)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Clone...</source>
+        <translation type="unfinished">К&amp;лонувати…</translation>
+    </message>
+    <message>
+        <source>Clone Virtual Machine (%1)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Medium</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open the medium menu</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Media Manager</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add a disk image file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add a Disk Image File (%1)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Copy...</source>
+        <translation type="unfinished">&amp;Скопіювати…</translation>
+    </message>
+    <message>
+        <source>Copy selected disk image file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Copy Disk Image File (%1)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Move selected disk image file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Move Disk Image File (%1)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove selected disk image file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove Disk Image File (%1)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Re&amp;lease...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Release selected disk image file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Release Disk Image File (%1)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open pane with selected disk image file properties</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open Disk Image File Properties (%1)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Refresh the list of disk image files</source>
+        <translation type="unfinished">Оновити список носіїв</translation>
+    </message>
+    <message>
+        <source>Refresh Disk Image Files (%1)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open the network menu</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Create...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Network Manager</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Create new host-only network</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Create Host-only Network (%1)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove selected host-only network</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove Host-only Network (%1)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open pane with selected host-only network properties</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open Host-only Network Properties (%1)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Refresh the list of host-only networks</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Refresh Host-only Networks (%1)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Cloud</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open the cloud menu</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Add Profile...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cloud Profile Manager</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add new cloud profile</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add Cloud Profile (%1)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Import Profiles...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Import the list of cloud profiles from external files</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Import Cloud Profiles (%1)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove</source>
+        <translation type="unfinished">Вилучити</translation>
+    </message>
+    <message>
+        <source>&amp;Remove Profile...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove selected cloud profile</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove Cloud Profile (%1)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Properties</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Profile &amp;Properties</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open pane with selected cloud profile properties</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open Cloud Profile Properties (%1)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Help</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Show Help...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show cloud profile help</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show Cloud Profile Help (%1)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>File Manager...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Display the virtual machine guest control file manager window</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Guest Process Control...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Display the virtual machine guest process control window</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Recording</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Recording Settings...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Display virtual machine settings window to configure video/audio recording</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enable guest video/audio recording</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Audio</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Audio Output</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enable audio output</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Audio Input</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enable audio input</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disable Dock Icon Overlay</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Scale to %1%</source>
+        <comment>scale-factor</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Scale to %1% (unscaled output)</source>
+        <comment>scale-factor</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Scale to %1% (autoscaled output)</source>
+        <comment>scale-factor</comment>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -1446,17 +2266,17 @@
     <message>
         <source>ID</source>
         <comment>password table field</comment>
-        <translation type="vanished">ID</translation>
+        <translation>ID</translation>
     </message>
     <message>
         <source>Password</source>
         <comment>password table field</comment>
-        <translation type="vanished">Пароль</translation>
+        <translation>Пароль</translation>
     </message>
     <message numerus="yes">
         <source>&lt;nobr&gt;Used by the following %n hard disk(s):&lt;/nobr&gt;&lt;br&gt;%1</source>
         <comment>This text is never used with n == 0. Feel free to drop the %n where possible, we only included it because of problems with Qt Linguist (but the user can see how many hard drives are in the tool-tip and doesn&apos;t need to be told).</comment>
-        <translation type="vanished">
+        <translation>
             <numerusform>&lt;nobr&gt;Використовується %n жорстким диском:&lt;/nobr&gt;&lt;br&gt;%1</numerusform>
             <numerusform>&lt;nobr&gt;Використовується %n жорсткими дисками:&lt;/nobr&gt;&lt;br&gt;%1</numerusform>
             <numerusform>&lt;nobr&gt;Використовується %n жорсткими дисками:&lt;/nobr&gt;&lt;br&gt;%1</numerusform>
@@ -1464,12 +2284,12 @@
     </message>
     <message>
         <source>%1 - Disk Encryption</source>
-        <translation type="vanished">%1 — шифрування дисків</translation>
+        <translation>%1 — шифрування дисків</translation>
     </message>
     <message numerus="yes">
         <source>This virtual machine is password protected. Please enter the %n encryption password(s) below.</source>
         <comment>This text is never used with n == 0. Feel free to drop the %n where possible, we only included it because of problems with Qt Linguist (but the user can see how many passwords are in the list and doesn&apos;t need to be told).</comment>
-        <translation type="vanished">
+        <translation>
             <numerusform>Цю віртуальну машину захищено паролем. Будь ласка, введіть %n пароль.</numerusform>
             <numerusform>Цю віртуальну машину захищено паролем. Будь ласка, введіть %n пароля.</numerusform>
             <numerusform>Цю віртуальну машину захищено паролем. Будь ласка, введіть %n паролів.</numerusform>
@@ -3079,11 +3899,11 @@
     <name>UIDnDHandler</name>
     <message>
         <source>Dropping data ...</source>
-        <translation type="vanished">Викидання даних …</translation>
+        <translation>Викидання даних …</translation>
     </message>
     <message>
         <source>Retrieving data ...</source>
-        <translation type="vanished">Отримання даних...</translation>
+        <translation>Отримання даних...</translation>
     </message>
 </context>
 <context>
@@ -3105,11 +3925,15 @@
     </message>
     <message>
         <source>Looking for %1...</source>
-        <translation type="vanished">Пошук %1…</translation>
+        <translation>Пошук %1…</translation>
     </message>
     <message>
         <source>Downloading %1...</source>
-        <translation type="vanished">Звантаження %1…</translation>
+        <translation>Звантаження %1…</translation>
+    </message>
+    <message>
+        <source>Verifying %1...</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -3132,33 +3956,33 @@
     </message>
     <message>
         <source>Select folder to save Guest Additions image to</source>
-        <translation type="vanished">Вибрати теку, щоб зберегти образ гостьових доповнень</translation>
+        <translation>Вибрати теку, щоб зберегти образ гостьових доповнень</translation>
     </message>
     <message>
         <source>VirtualBox Guest Additions</source>
-        <translation type="vanished">Гостьові доповнення VirtualBox</translation>
+        <translation>Гостьові доповнення VirtualBox</translation>
     </message>
 </context>
 <context>
     <name>UIDownloaderExtensionPack</name>
     <message>
         <source>Select folder to save %1 to</source>
-        <translation type="vanished">Вибрати теку для збереженя в неї %1</translation>
+        <translation>Вибрати теку для збереженя в неї %1</translation>
     </message>
     <message>
         <source>VirtualBox Extension Pack</source>
-        <translation type="vanished">Пакунок розширень VirtualBox</translation>
+        <translation>Пакунок розширень VirtualBox</translation>
     </message>
 </context>
 <context>
     <name>UIDownloaderUserManual</name>
     <message>
         <source>Select folder to save User Manual to</source>
-        <translation type="vanished">Виберіть теку для збереження посібника користувача</translation>
+        <translation>Виберіть теку для збереження посібника користувача</translation>
     </message>
     <message>
         <source>VirtualBox User Manual</source>
-        <translation type="vanished">Посібник користувача VirtualBox</translation>
+        <translation>Посібник користувача VirtualBox</translation>
     </message>
 </context>
 <context>
@@ -3180,27 +4004,27 @@
     <message>
         <source>Result&amp;nbsp;Code: </source>
         <comment>error info</comment>
-        <translation type="obsolete">Підсумковий&amp;nbsp;код: </translation>
+        <translation type="unfinished">Підсумковий&amp;nbsp;код: </translation>
     </message>
     <message>
         <source>Component: </source>
         <comment>error info</comment>
-        <translation type="obsolete">Компонент: </translation>
+        <translation type="unfinished">Компонент: </translation>
     </message>
     <message>
         <source>Interface: </source>
         <comment>error info</comment>
-        <translation type="obsolete">Інтерфейс: </translation>
+        <translation type="unfinished">Інтерфейс: </translation>
     </message>
     <message>
         <source>Callee: </source>
         <comment>error info</comment>
-        <translation type="obsolete">Викликано: </translation>
+        <translation type="unfinished">Викликано: </translation>
     </message>
     <message>
         <source>Callee&amp;nbsp;RC: </source>
         <comment>error info</comment>
-        <translation type="obsolete">Викликаний&amp;nbsp;RC: </translation>
+        <translation type="unfinished">Викликаний&amp;nbsp;RC: </translation>
     </message>
 </context>
 <context>
@@ -3543,54 +4367,78 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
+    <name>UIExtensionPackageItem</name>
+    <message>
+        <source>%1, %2: %3, %4</source>
+        <comment>col.2 text, col.3 name: col.3 text, col.1 name</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1, %2: %3</source>
+        <comment>col.2 text, col.3 name: col.3 text</comment>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIFileManagerLogViewer</name>
+    <message>
+        <source>Clear</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>UIFilePathSelector</name>
     <message>
         <source>&amp;Copy</source>
-        <translation type="obsolete">&amp;Копіювати</translation>
+        <translation type="unfinished">&amp;Копіювати</translation>
     </message>
     <message>
         <source>Other...</source>
-        <translation type="obsolete">Інші...</translation>
+        <translation type="unfinished">Інші...</translation>
     </message>
     <message>
         <source>Displays a window to select a different folder.</source>
-        <translation type="obsolete">Відображає вікно для вибору іншої папки.</translation>
+        <translation type="unfinished">Відображає вікно для вибору іншої папки.</translation>
     </message>
     <message>
         <source>Resets the folder path to the default value.</source>
-        <translation type="obsolete">Перезавантажує шлях до теки до типових значень.</translation>
+        <translation type="unfinished">Перезавантажує шлях до теки до типових значень.</translation>
     </message>
     <message>
         <source>Displays a window to select a different file.</source>
-        <translation type="obsolete">Відображає вікно для вибору іншого файлу.</translation>
+        <translation type="unfinished">Відображає вікно для вибору іншого файлу.</translation>
     </message>
     <message>
         <source>Resets the file path to the default value.</source>
-        <translation type="obsolete">Перезавантажує шлях до файла до типових значень.</translation>
+        <translation type="unfinished">Перезавантажує шлях до файла до типових значень.</translation>
     </message>
     <message>
         <source>&lt;reset to default&gt;</source>
-        <translation type="obsolete">&lt;перезавантажити до типових&gt;</translation>
+        <translation type="unfinished">&lt;перезавантажити до типових&gt;</translation>
     </message>
     <message>
         <source>The actual default path value will be displayed after accepting the changes and opening this window again.</source>
-        <translation type="obsolete">Значення для фактичного шляху будуть показані після прийняття змін і відкриття діалогу знову.</translation>
+        <translation type="unfinished">Значення для фактичного шляху будуть показані після прийняття змін і відкриття діалогу знову.</translation>
     </message>
     <message>
         <source>&lt;not selected&gt;</source>
-        <translation type="obsolete">&lt;нема вибраних&gt;</translation>
+        <translation type="unfinished">&lt;нема вибраних&gt;</translation>
     </message>
     <message>
         <source>Please use the &lt;b&gt;Other...&lt;/b&gt; item from the drop-down list to select a path.</source>
-        <translation type="obsolete">Будь ласка, виберіть &lt;b&gt;Інші...&lt;/b&gt; зі спадного списку, щоб вибрати шлях.</translation>
+        <translation type="unfinished">Будь ласка, виберіть &lt;b&gt;Інші...&lt;/b&gt; зі спадного списку, щоб вибрати шлях.</translation>
     </message>
     <message>
         <source>Holds the folder path.</source>
-        <translation type="obsolete">Визначає шлях до теки.</translation>
+        <translation type="unfinished">Визначає шлях до теки.</translation>
     </message>
     <message>
         <source>Holds the file path.</source>
-        <translation type="obsolete">Визначає шлях до файла.</translation>
+        <translation type="unfinished">Визначає шлях до файла.</translation>
+    </message>
+    <message>
+        <source>Reset</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -4355,29 +5203,29 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Automatic</source>
         <comment>Maximum Guest Screen Size</comment>
-        <translation type="vanished">Автоматично</translation>
+        <translation>Автоматично</translation>
     </message>
     <message>
         <source>Suggest a reasonable maximum screen size to the guest. The guest will only see this suggestion when guest additions are installed.</source>
-        <translation type="vanished">Радить поміркований максимальний розмір для гостьового екрана. Це можна побачити лише, коли встановлено гостьові доповнення.</translation>
+        <translation>Радить поміркований максимальний розмір для гостьового екрана. Це можна побачити лише, коли встановлено гостьові доповнення.</translation>
     </message>
     <message>
         <source>None</source>
         <comment>Maximum Guest Screen Size</comment>
-        <translation type="vanished">Немає</translation>
+        <translation>Немає</translation>
     </message>
     <message>
         <source>Do not attempt to limit the size of the guest screen.</source>
-        <translation type="vanished">Не намагатись обмежити розмір гостьового екрана.</translation>
+        <translation>Не намагатись обмежити розмір гостьового екрана.</translation>
     </message>
     <message>
         <source>Hint</source>
         <comment>Maximum Guest Screen Size</comment>
-        <translation type="vanished">Натяк</translation>
+        <translation>Натяк</translation>
     </message>
     <message>
         <source>Suggest a maximum screen size to the guest. The guest will only see this suggestion when guest additions are installed.</source>
-        <translation type="vanished">Радить максимальний розмір для гостьового екрана. Це можна побачити лише, коли встановлено гостьові доповнення.</translation>
+        <translation>Радить максимальний розмір для гостьового екрана. Це можна побачити лише, коли встановлено гостьові доповнення.</translation>
     </message>
     <message>
         <source>Specifies the maximum width which we would like the guest to use.</source>
@@ -4444,15 +5292,15 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Select an extension package file</source>
-        <translation type="vanished">Виберіть файл пакунка розширення</translation>
+        <translation>Виберіть файл пакунка розширення</translation>
     </message>
     <message>
         <source>Extension package files (%1)</source>
-        <translation type="vanished">Файл пакунка розширення (%1)</translation>
+        <translation>Файл пакунка розширення (%1)</translation>
     </message>
     <message>
         <source>Extensions</source>
-        <translation type="vanished">Розширення</translation>
+        <translation>Розширення</translation>
     </message>
     <message>
         <source>&amp;Extension Packages</source>
@@ -4460,19 +5308,19 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Add Package</source>
-        <translation type="vanished">Додати пакунок</translation>
+        <translation>Додати пакунок</translation>
     </message>
     <message>
         <source>Remove Package</source>
-        <translation type="vanished">Вилучити пакунок</translation>
+        <translation>Вилучити пакунок</translation>
     </message>
     <message>
         <source>Adds new package.</source>
-        <translation type="vanished">Додає новий пакунок.</translation>
+        <translation>Додає новий пакунок.</translation>
     </message>
     <message>
         <source>Removes selected package.</source>
-        <translation type="vanished">Вилучає вибраний пакунок.</translation>
+        <translation>Вилучає вибраний пакунок.</translation>
     </message>
 </context>
 <context>
@@ -4578,27 +5426,27 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Host Key Combination</source>
-        <translation type="vanished">Комбінація клавіш хосту</translation>
+        <translation>Комбінація клавіш хосту</translation>
     </message>
     <message>
         <source>Some items have the same shortcuts assigned.</source>
-        <translation type="vanished">Деяким діям призначено однакові поєднання клавіш.</translation>
+        <translation>Деяким діям призначено однакові поєднання клавіш.</translation>
     </message>
     <message>
         <source>&amp;VirtualBox Manager</source>
-        <translation type="vanished">&amp;VirtualBox менеджер</translation>
+        <translation>&amp;VirtualBox менеджер</translation>
     </message>
     <message>
         <source>Virtual &amp;Machine</source>
-        <translation type="vanished">Віртуальна &amp;машина</translation>
+        <translation>Віртуальна &amp;машина</translation>
     </message>
     <message>
         <source>Lists all available shortcuts which can be configured.</source>
-        <translation type="vanished">Список всіх доступних для налаштування поєднань клавіш.</translation>
+        <translation>Список всіх доступних для налаштування поєднань клавіш.</translation>
     </message>
     <message>
         <source>Holds a sequence to filter the shortcut list.</source>
-        <translation type="vanished">Дозволяє фільтрувати список поєднань клавіш.</translation>
+        <translation>Дозволяє фільтрувати список поєднань клавіш.</translation>
     </message>
 </context>
 <context>
@@ -4606,26 +5454,26 @@ p, li { white-space: pre-wrap; }
     <message>
         <source> (built-in)</source>
         <comment>Language</comment>
-        <translation type="vanished">(вбудована)</translation>
+        <translation>(вбудована)</translation>
     </message>
     <message>
         <source>&lt;unavailable&gt;</source>
         <comment>Language</comment>
-        <translation type="vanished">&lt;недоступна&gt;</translation>
+        <translation>&lt;недоступна&gt;</translation>
     </message>
     <message>
         <source>&lt;unknown&gt;</source>
         <comment>Author(s)</comment>
-        <translation type="vanished">&lt;невідомо&gt;</translation>
+        <translation>&lt;невідомо&gt;</translation>
     </message>
     <message>
         <source>Default</source>
         <comment>Language</comment>
-        <translation type="vanished">Типова</translation>
+        <translation>Типова</translation>
     </message>
     <message>
         <source>Language:</source>
-        <translation type="vanished">Мова:</translation>
+        <translation>Мова:</translation>
     </message>
     <message>
         <source>&amp;Interface Language:</source>
@@ -4653,7 +5501,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Author(s):</source>
-        <translation type="vanished">Автор(и):</translation>
+        <translation>Автор(и):</translation>
     </message>
     <message>
         <source>&amp;Interface Languages</source>
@@ -4802,7 +5650,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Name</source>
-        <translation type="vanished">Назва</translation>
+        <translation>Назва</translation>
     </message>
     <message>
         <source>New Host-Only Interface</source>
@@ -4826,67 +5674,67 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>No new name specified for the NAT network previously called &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="vanished">Не зазначено нової назви NAT-мережі, що раніше називалась &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <translation>Не зазначено нової назви NAT-мережі, що раніше називалась &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>No CIDR specified for the NAT network &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="vanished">Не зазначено CIDR для NAT-мережі &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <translation>Не зазначено CIDR для NAT-мережі &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>No CIDR specified for the NAT network previously called &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="vanished">Не зазначено CIDR для NAT-мережі, що раніше називалась &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <translation>Не зазначено CIDR для NAT-мережі, що раніше називалась &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Invalid CIDR specified (&lt;i&gt;%1&lt;/i&gt;) for the NAT network &lt;b&gt;%2&lt;/b&gt;.</source>
-        <translation type="vanished">Зазначено неправильний CIDR (&lt;i&gt;%1&lt;/i&gt;) для NAT-мережі &lt;b&gt;%2&lt;/b&gt;.</translation>
+        <translation>Зазначено неправильний CIDR (&lt;i&gt;%1&lt;/i&gt;) для NAT-мережі &lt;b&gt;%2&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Invalid CIDR specified (&lt;i&gt;%1&lt;/i&gt;) for the NAT network previously called &lt;b&gt;%2&lt;/b&gt;.</source>
-        <translation type="vanished">Зазначено неправильний CIDR (&lt;i&gt;%1&lt;/i&gt;) для NAT-мережі, що раніше називалась &lt;b&gt;%2&lt;/b&gt;.</translation>
+        <translation>Зазначено неправильний CIDR (&lt;i&gt;%1&lt;/i&gt;) для NAT-мережі, що раніше називалась &lt;b&gt;%2&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Network Name</source>
-        <translation type="vanished">Назва мережі</translation>
+        <translation>Назва мережі</translation>
     </message>
     <message>
         <source>[empty]</source>
-        <translation type="vanished">[порожньо]</translation>
+        <translation>[порожньо]</translation>
     </message>
     <message>
         <source>%1 (renamed from %2)</source>
-        <translation type="vanished">%1 (перейменований з %2)</translation>
+        <translation>%1 (перейменований з %2)</translation>
     </message>
     <message>
         <source>Old Network Name</source>
-        <translation type="vanished">Стара Назва мережі</translation>
+        <translation>Стара Назва мережі</translation>
     </message>
     <message>
         <source>New Network Name</source>
-        <translation type="vanished">Нова Назва мережі</translation>
+        <translation>Нова Назва мережі</translation>
     </message>
     <message>
         <source>Network CIDR</source>
-        <translation type="vanished">Мережа CIDR</translation>
+        <translation>Мережа CIDR</translation>
     </message>
     <message>
         <source>Supports DHCP</source>
-        <translation type="vanished">Підтримка DHCP</translation>
+        <translation>Підтримка DHCP</translation>
     </message>
     <message>
         <source>yes</source>
-        <translation type="vanished">так</translation>
+        <translation>так</translation>
     </message>
     <message>
         <source>no</source>
-        <translation type="vanished">ні</translation>
+        <translation>ні</translation>
     </message>
     <message>
         <source>Supports IPv6</source>
-        <translation type="vanished">Підтримка IPv6</translation>
+        <translation>Підтримка IPv6</translation>
     </message>
     <message>
         <source>Default IPv6 route</source>
-        <translation type="vanished">Маршрут IPv6 за замочуванням</translation>
+        <translation>Маршрут IPv6 за замочуванням</translation>
     </message>
     <message>
         <source>Host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid IPv4 address.</source>
@@ -4918,36 +5766,36 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>The name &lt;b&gt;%1&lt;/b&gt; is being used for several NAT networks.</source>
-        <translation type="vanished">Ім’я &lt;b&gt;%1&lt;/b&gt; використовується кількома NAT-мережами.</translation>
+        <translation>Ім’я &lt;b&gt;%1&lt;/b&gt; використовується кількома NAT-мережами.</translation>
     </message>
     <message>
         <source>Active</source>
         <comment>NAT network</comment>
-        <translation type="vanished">Активні</translation>
+        <translation>Активні</translation>
     </message>
     <message>
         <source>Add NAT Network</source>
-        <translation type="vanished">Додати мережу NAT</translation>
+        <translation>Додати мережу NAT</translation>
     </message>
     <message>
         <source>Remove NAT Network</source>
-        <translation type="vanished">Видалити NAT мережу</translation>
+        <translation>Видалити NAT мережу</translation>
     </message>
     <message>
         <source>Edit NAT Network</source>
-        <translation type="vanished">Редагувати NAT мережу</translation>
+        <translation>Редагувати NAT мережу</translation>
     </message>
     <message>
         <source>Adds new NAT network.</source>
-        <translation type="vanished">Додає нові NAT мережі.</translation>
+        <translation>Додає нові NAT мережі.</translation>
     </message>
     <message>
         <source>Removes selected NAT network.</source>
-        <translation type="vanished">Вилучає вибрану NAT-мережу.</translation>
+        <translation>Вилучає вибрану NAT-мережу.</translation>
     </message>
     <message>
         <source>Edits selected NAT network.</source>
-        <translation type="vanished">Змінює вибрану NAT-мережу.</translation>
+        <translation>Змінює вибрану NAT-мережу.</translation>
     </message>
     <message>
         <source>Add Host-only Network</source>
@@ -5247,15 +6095,15 @@ p, li { white-space: pre-wrap; }
     <name>UIGlobalSettingsPortForwardingDlg</name>
     <message>
         <source>Port Forwarding Rules</source>
-        <translation type="vanished">Правила переадресування порту</translation>
+        <translation>Правила переадресування порту</translation>
     </message>
     <message>
         <source>IPv4</source>
-        <translation type="obsolete">IPv4</translation>
+        <translation type="unfinished">IPv4</translation>
     </message>
     <message>
         <source>IPv6</source>
-        <translation type="obsolete">IPv6</translation>
+        <translation type="unfinished">IPv6</translation>
     </message>
 </context>
 <context>
@@ -5352,6 +6200,22 @@ p, li { white-space: pre-wrap; }
         <source>&amp;URL:</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>No proxy URL is currently specified.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Invalid proxy URL is currently specified.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>You have provided a proxy password. Please be aware that the password will be saved in plain text. You may wish to configure a system-wide proxy instead and not store application-specific settings.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Holds the proxy URL. The format is: &lt;table cellspacing=0 style=&apos;white-space:pre&apos;&gt;&lt;tr&gt;&lt;td&gt;[{type}://][{userid}[:{password}]@]{server}[:{port}]&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;http://username:password@proxy.host.com:port&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIGlobalSettingsUpdate</name>
@@ -5417,17 +6281,213 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
+    <name>UIGuestControlFileManager</name>
+    <message>
+        <source>Close</source>
+        <translation type="unfinished">Закрити</translation>
+    </message>
+    <message>
+        <source>Close the pane</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>User name to authenticate session creation</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>User Name</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Password to authenticate session creation</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Password</source>
+        <translation type="unfinished">Пароль</translation>
+    </message>
+    <message>
+        <source>Create Session</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Close Session</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Clean Finished</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Clean All</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>List directories on top</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>List directories before files</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Ask before delete</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Human readable sizes</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Total Size</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source> bytes</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>File Count</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Delete the selected file(s) and/or folder(s)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Ask for this confirmation next time</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Delete confirmation can be disabled/enabled also from the Options panel.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Name</source>
+        <translation type="unfinished">Назва</translation>
+    </message>
+    <message>
+        <source>Size</source>
+        <translation type="unfinished">Розмір</translation>
+    </message>
+    <message>
+        <source>Change Time</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Owner</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Permissions</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No Guest Session</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unknown</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>File</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Directory</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Symbolic Link</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Other</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Guest System</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;Size:&lt;/b&gt; %1 bytes</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;Type:&lt;/b&gt; %1&lt;br/&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;Created:&lt;/b&gt; %1&lt;br/&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;Modified:&lt;/b&gt; %1&lt;br/&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;Owner:&lt;/b&gt; %1&lt;br/&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;Selected:&lt;/b&gt; %1 files and %2 directories&lt;br/&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;Size (non-recursive):&lt;/b&gt; %1 bytes</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Properties</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Host System</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;Name:&lt;/b&gt; %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;Owner:&lt;/b&gt; %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIGuestControlFileManagerDialog</name>
+    <message>
+        <source>%1 - Guest Control</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIGuestProcessControlDialog</name>
+    <message>
+        <source>%1 - Guest Control</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIGuestProcessControlWidget</name>
+    <message>
+        <source>Close</source>
+        <translation type="unfinished">Закрити</translation>
+    </message>
+</context>
+<context>
     <name>UIHelpButton</name>
     <message>
         <source>&amp;Help</source>
-        <translation type="vanished">&amp;Довідка</translation>
+        <translation>&amp;Довідка</translation>
     </message>
 </context>
 <context>
     <name>UIHostComboEditor</name>
     <message>
         <source>&lt;key_%1&gt;</source>
-        <translation type="vanished">&lt;клавіша_%1&gt;</translation>
+        <translation>&lt;клавіша_%1&gt;</translation>
     </message>
     <message>
         <source>Left </source>
@@ -5439,59 +6499,67 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Left Shift</source>
-        <translation type="vanished">Лівий Shift</translation>
+        <translation>Лівий Shift</translation>
     </message>
     <message>
         <source>Right Shift</source>
-        <translation type="vanished">Правий Shift</translation>
+        <translation>Правий Shift</translation>
     </message>
     <message>
         <source>Left Ctrl</source>
-        <translation type="vanished">Лівий Ctrl</translation>
+        <translation>Лівий Ctrl</translation>
     </message>
     <message>
         <source>Right Ctrl</source>
-        <translation type="vanished">Правий Ctrl</translation>
+        <translation>Правий Ctrl</translation>
     </message>
     <message>
         <source>Left Alt</source>
-        <translation type="vanished">Лівий Alt</translation>
+        <translation>Лівий Alt</translation>
     </message>
     <message>
         <source>Right Alt</source>
-        <translation type="vanished">Правий Alt</translation>
+        <translation>Правий Alt</translation>
     </message>
     <message>
         <source>Left WinKey</source>
-        <translation type="vanished">Лівий WinKey</translation>
+        <translation>Лівий WinKey</translation>
     </message>
     <message>
         <source>Right WinKey</source>
-        <translation type="vanished">Правий WinKey</translation>
+        <translation>Правий WinKey</translation>
     </message>
     <message>
         <source>Menu key</source>
-        <translation type="vanished">Клавіша Menu</translation>
+        <translation>Клавіша Menu</translation>
     </message>
     <message>
         <source>Alt Gr</source>
-        <translation type="obsolete">Alt Gr</translation>
+        <translation type="unfinished">Alt Gr</translation>
     </message>
     <message>
         <source>Caps Lock</source>
-        <translation type="obsolete">Caps Lock</translation>
+        <translation type="unfinished">Caps Lock</translation>
     </message>
     <message>
         <source>Scroll Lock</source>
-        <translation type="obsolete">Scroll Lock</translation>
+        <translation type="unfinished">Scroll Lock</translation>
     </message>
     <message>
         <source>Host+</source>
-        <translation type="vanished">Хост+</translation>
+        <translation>Хост+</translation>
     </message>
     <message>
         <source>None</source>
-        <translation type="vanished">Відсутній</translation>
+        <translation>Відсутній</translation>
+    </message>
+    <message>
+        <source>Left %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Right %1</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -6004,22 +7072,27 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Reset shortcut to default</source>
-        <translation type="vanished">Скинути поєднання клавіш до типових</translation>
+        <translation>Скинути поєднання клавіш до типових</translation>
     </message>
     <message>
         <source>Unset shortcut</source>
-        <translation type="vanished">Очистити поєднання клавіш</translation>
+        <translation>Очистити поєднання клавіш</translation>
     </message>
 </context>
 <context>
     <name>UIHotKeyTableModel</name>
     <message>
         <source>Name</source>
-        <translation type="vanished">Назва</translation>
+        <translation>Назва</translation>
     </message>
     <message>
         <source>Shortcut</source>
-        <translation type="vanished">Поєднання клавіш</translation>
+        <translation>Поєднання клавіш</translation>
+    </message>
+    <message>
+        <source>%1: %2</source>
+        <comment>scope: description</comment>
+        <translation type="unfinished">%1: %2</translation>
     </message>
 </context>
 <context>
@@ -6303,12 +7376,122 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Disconnected</source>
         <comment>cable (Network tooltip)</comment>
-        <translation type="obsolete">Від&apos;єднаний</translation>
+        <translation type="unfinished">Від&apos;єднаний</translation>
     </message>
     <message>
         <source>Screens</source>
         <comment>Display tooltip</comment>
-        <translation type="obsolete">Екрани</translation>
+        <translation type="unfinished">Екрани</translation>
+    </message>
+    <message>
+        <source>Adapter %1 (%2)</source>
+        <comment>Network tooltip</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>IP</source>
+        <comment>Network tooltip</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cable</source>
+        <comment>Network tooltip</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Connected</source>
+        <comment>cable (Network tooltip)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No USB devices attached</source>
+        <comment>USB tooltip</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No shared folders</source>
+        <comment>Shared folders tooltip</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Video memory</source>
+        <comment>Display tooltip</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>3D acceleration</source>
+        <comment>Display tooltip</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Recording disabled</source>
+        <comment>Recording tooltip</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Video/audio recording file</source>
+        <comment>Recording tooltip</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Audio recording file</source>
+        <comment>Recording tooltip</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Video recording file</source>
+        <comment>Recording tooltip</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Indicates whether the host mouse pointer is captured by the guest OS:%1</source>
+        <comment>Mouse tooltip</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>pointer is not captured</source>
+        <comment>Mouse tooltip</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>pointer is captured</source>
+        <comment>Mouse tooltip</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>mouse integration (MI) is On</source>
+        <comment>Mouse tooltip</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>MI is Off, pointer is captured</source>
+        <comment>Mouse tooltip</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>MI is Off, pointer is not captured</source>
+        <comment>Mouse tooltip</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Note that the mouse integration feature requires Guest Additions to be installed in the guest OS.</source>
+        <comment>Mouse tooltip</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Indicates whether the host keyboard is captured by the guest OS:%1</source>
+        <comment>Keyboard tooltip</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>keyboard is not captured</source>
+        <comment>Keyboard tooltip</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>keyboard is captured</source>
+        <comment>Keyboard tooltip</comment>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -6320,7 +7503,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Controller</source>
         <comment>details report (audio)</comment>
-        <translation type="obsolete">Контролер</translation>
+        <translation type="unfinished">Контролер</translation>
+    </message>
+    <message>
+        <source>Host Driver</source>
+        <comment>details report (audio)</comment>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -6333,22 +7521,57 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Video Memory</source>
         <comment>details report</comment>
-        <translation type="obsolete">Відеопам&apos;ять</translation>
+        <translation type="unfinished">Відеопам&apos;ять</translation>
     </message>
     <message>
         <source>Screens</source>
         <comment>details report</comment>
-        <translation type="obsolete">Екрани</translation>
+        <translation type="unfinished">Екрани</translation>
     </message>
     <message>
         <source>3D Acceleration</source>
         <comment>details report</comment>
-        <translation type="obsolete">3D прискорення</translation>
+        <translation type="unfinished">3D прискорення</translation>
     </message>
     <message>
         <source>2D Video Acceleration</source>
         <comment>details report</comment>
-        <translation type="obsolete">Відеоприскорення 2D</translation>
+        <translation type="unfinished">Відеоприскорення 2D</translation>
+    </message>
+    <message>
+        <source>Enabled</source>
+        <comment>details report (3D Acceleration)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>details report (3D Acceleration)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enabled</source>
+        <comment>details report (2D Video Acceleration)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>details report (2D Video Acceleration)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remote Desktop Server Port</source>
+        <comment>details report (VRDE Server)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remote Desktop Server</source>
+        <comment>details report (VRDE Server)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>details report (VRDE Server)</comment>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -6356,7 +7579,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Name</source>
         <comment>details report</comment>
-        <translation type="obsolete">Назва</translation>
+        <translation type="unfinished">Назва</translation>
+    </message>
+    <message>
+        <source>OS Type</source>
+        <comment>details report</comment>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -6368,33 +7596,43 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Bridged adapter, %1</source>
         <comment>details report (network)</comment>
-        <translation type="obsolete">Проміжний адаптер, %1</translation>
+        <translation type="unfinished">Проміжний адаптер, %1</translation>
     </message>
     <message>
         <source>Generic, &apos;%1&apos;</source>
         <comment>details report (network)</comment>
-        <translation type="obsolete">Загальна, &apos;%1&apos;</translation>
+        <translation type="unfinished">Загальна, &apos;%1&apos;</translation>
     </message>
     <message>
         <source>NAT network, &apos;%1&apos;</source>
         <comment>details report (network)</comment>
-        <translation type="obsolete">Мережа NAT, „%1“</translation>
+        <translation type="unfinished">Мережа NAT, „%1“</translation>
     </message>
     <message>
         <source>Adapter %1</source>
         <comment>details report (network)</comment>
-        <translation type="obsolete">Адаптер %1</translation>
+        <translation type="unfinished">Адаптер %1</translation>
+    </message>
+    <message>
+        <source>Internal network, &apos;%1&apos;</source>
+        <comment>details report (network)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Host-only adapter, &apos;%1&apos;</source>
+        <comment>details report (network)</comment>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>UIInformationDataNetworkStatistics</name>
     <message>
         <source>Data Transmitted</source>
-        <translation type="obsolete">Дані передано</translation>
+        <translation type="unfinished">Дані передано</translation>
     </message>
     <message>
         <source>Data Received</source>
-        <translation type="obsolete">Дані отримано</translation>
+        <translation type="unfinished">Дані отримано</translation>
     </message>
     <message>
         <source>Network Statistics</source>
@@ -6425,33 +7663,33 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Not Detected</source>
         <comment>guest additions</comment>
-        <translation type="obsolete">Не виявлено</translation>
+        <translation type="unfinished">Не виявлено</translation>
     </message>
     <message>
         <source>Not Detected</source>
         <comment>guest os type</comment>
-        <translation type="obsolete">Не виявлено</translation>
+        <translation type="unfinished">Не виявлено</translation>
     </message>
     <message>
         <source>Not Available</source>
         <comment>details report (VRDE server port)</comment>
-        <translation type="obsolete">Недоступний</translation>
+        <translation type="unfinished">Недоступний</translation>
     </message>
     <message>
         <source>Screen Resolution</source>
-        <translation type="obsolete">Розширення екрана</translation>
+        <translation type="unfinished">Розширення екрана</translation>
     </message>
     <message>
         <source>VM Uptime</source>
-        <translation type="obsolete">Час роботи ВМ</translation>
+        <translation type="unfinished">Час роботи ВМ</translation>
     </message>
     <message>
         <source>Clipboard Mode</source>
-        <translation type="obsolete">Режим буфера</translation>
+        <translation type="unfinished">Режим буфера</translation>
     </message>
     <message>
         <source>Drag and Drop Mode</source>
-        <translation type="obsolete">Режим перетягування</translation>
+        <translation type="unfinished">Режим перетягування</translation>
     </message>
     <message>
         <source>VT-x/AMD-V</source>
@@ -6461,21 +7699,36 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Nested Paging</source>
         <comment>details report</comment>
-        <translation type="obsolete">Вкладене заміщення сторінок</translation>
+        <translation type="unfinished">Вкладене заміщення сторінок</translation>
     </message>
     <message>
         <source>Unrestricted Execution</source>
         <comment>details report</comment>
-        <translation type="obsolete">Необмежене виконання</translation>
+        <translation type="unfinished">Необмежене виконання</translation>
     </message>
     <message>
         <source>Paravirtualization Interface</source>
         <comment>details report</comment>
-        <translation type="obsolete">Інтерфейс паравіртуалізації</translation>
+        <translation type="unfinished">Інтерфейс паравіртуалізації</translation>
     </message>
     <message>
         <source>Guest Additions</source>
-        <translation type="obsolete">Гостьові доповнення</translation>
+        <translation type="unfinished">Гостьові доповнення</translation>
+    </message>
+    <message>
+        <source>VM Execution Engine</source>
+        <comment>details report</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Guest OS Type</source>
+        <comment>details report</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remote Desktop Server Port</source>
+        <comment>details report (VRDE Server)</comment>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -6487,7 +7740,15 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Port %1</source>
         <comment>details report (serial ports)</comment>
-        <translation type="obsolete">Порт %1</translation>
+        <translation type="unfinished">Порт %1</translation>
+    </message>
+</context>
+<context>
+    <name>UIInformationDataSharedFolders</name>
+    <message>
+        <source>Shared Folders</source>
+        <comment>details report (shared folders)</comment>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -6498,31 +7759,35 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>(Optical Drive)</source>
-        <translation type="obsolete">(Оптичний привід)</translation>
+        <translation type="unfinished">(Оптичний привід)</translation>
     </message>
 </context>
 <context>
     <name>UIInformationDataStorageStatistics</name>
     <message>
         <source>DMA Transfers</source>
-        <translation type="obsolete">Передавання DMA</translation>
+        <translation type="unfinished">Передавання DMA</translation>
     </message>
     <message>
         <source>PIO Transfers</source>
-        <translation type="obsolete">Передавання PIO</translation>
+        <translation type="unfinished">Передавання PIO</translation>
     </message>
     <message>
         <source>Data Read</source>
-        <translation type="obsolete">Дані зчитано</translation>
+        <translation type="unfinished">Дані зчитано</translation>
     </message>
     <message>
         <source>Data Written</source>
-        <translation type="obsolete">Дані записано</translation>
+        <translation type="unfinished">Дані записано</translation>
     </message>
     <message>
         <source>Storage Statistics</source>
         <comment>details report</comment>
         <translation type="obsolete">Статистика пам&apos;яті</translation>
+    </message>
+    <message>
+        <source>Requests</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -6535,52 +7800,102 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Base Memory</source>
         <comment>details report</comment>
-        <translation type="obsolete">Основна пам&apos;ять</translation>
+        <translation type="unfinished">Основна пам&apos;ять</translation>
     </message>
     <message>
         <source>Processor(s)</source>
         <comment>details report</comment>
-        <translation type="obsolete">Процесор(и)</translation>
+        <translation type="unfinished">Процесор(и)</translation>
     </message>
     <message>
         <source>Execution Cap</source>
         <comment>details report</comment>
-        <translation type="obsolete">Виконавча шапка</translation>
+        <translation type="unfinished">Виконавча шапка</translation>
     </message>
     <message>
         <source>Boot Order</source>
         <comment>details report</comment>
-        <translation type="obsolete">Порядок завантаження</translation>
+        <translation type="unfinished">Порядок завантаження</translation>
     </message>
     <message>
         <source>ACPI</source>
         <comment>details report</comment>
-        <translation type="obsolete">ACPI</translation>
+        <translation type="unfinished">ACPI</translation>
     </message>
     <message>
         <source>I/O APIC</source>
         <comment>details report</comment>
-        <translation type="obsolete">APIC В/В</translation>
+        <translation type="unfinished">APIC В/В</translation>
     </message>
     <message>
         <source>PAE/NX</source>
         <comment>details report</comment>
-        <translation type="obsolete">PAE/NX</translation>
+        <translation type="unfinished">PAE/NX</translation>
     </message>
     <message>
         <source>VT-x/AMD-V</source>
         <comment>details report</comment>
-        <translation type="obsolete">VT-x/AMD-V</translation>
+        <translation type="unfinished">VT-x/AMD-V</translation>
     </message>
     <message>
         <source>Nested Paging</source>
         <comment>details report</comment>
-        <translation type="obsolete">Вкладене заміщення сторінок</translation>
+        <translation type="unfinished">Вкладене заміщення сторінок</translation>
     </message>
     <message>
         <source>Paravirtualization Interface</source>
         <comment>details report</comment>
-        <translation type="obsolete">Інтерфейс паравіртуалізації</translation>
+        <translation type="unfinished">Інтерфейс паравіртуалізації</translation>
+    </message>
+    <message>
+        <source>Enabled</source>
+        <comment>details report (ACPI)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>details report (ACPI)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enabled</source>
+        <comment>details report (I/O APIC)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>details report (I/O APIC)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enabled</source>
+        <comment>details report (PAE/NX)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>details report (PAE/NX)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enabled</source>
+        <comment>details report (VT-x/AMD-V)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>details report (VT-x/AMD-V)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enabled</source>
+        <comment>details report (Nested Paging)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>details report (Nested Paging)</comment>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -6593,12 +7908,17 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Device Filters</source>
         <comment>details report (USB)</comment>
-        <translation type="obsolete">Фільтр пристроїв</translation>
+        <translation type="unfinished">Фільтр пристроїв</translation>
     </message>
     <message>
         <source>%1 (%2 active)</source>
         <comment>details report (USB)</comment>
-        <translation type="obsolete">%1 (%2 активно)</translation>
+        <translation type="unfinished">%1 (%2 активно)</translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>details report (USB)</comment>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -6606,7 +7926,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>%1</source>
         <comment>col.2 text</comment>
-        <translation type="obsolete">%1</translation>
+        <translation type="unfinished">%1</translation>
+    </message>
+    <message>
+        <source>%1, %2</source>
+        <comment>col.2 text, col.1 name</comment>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -6676,7 +8001,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Select a filename for the screenshot ...</source>
-        <translation type="vanished">Вибрати назву для файла змінку…</translation>
+        <translation>Вибрати назву для файла змінку…</translation>
     </message>
 </context>
 <context>
@@ -6785,7 +8110,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>MB</source>
-        <translation type="vanished">МБ</translation>
+        <translation>МБ</translation>
     </message>
     <message>
         <source>Extended Features:</source>
@@ -6921,58 +8246,58 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>The virtual machine is set up to use hardware graphics acceleration. However the host system does not currently provide this, so you will not be able to start the machine.</source>
-        <translation type="vanished">Віртуальна машина налаштована на використання апаратного графічного прискорення. Проте ці засоби нині недоступні, тому неможливо запустити машину.</translation>
+        <translation>Віртуальна машина налаштована на використання апаратного графічного прискорення. Проте ці засоби нині недоступні, тому неможливо запустити машину.</translation>
     </message>
     <message>
         <source>The virtual machine is currently assigned less than &lt;b&gt;%1&lt;/b&gt; of video memory which is the minimum amount required for High Definition Video to be played efficiently.</source>
-        <translation type="vanished">Для віртуальної машини виділено менше &lt;b&gt;%1&lt;/b&gt; відео-пам’яті, що є найменшим значенням, потрібним для коректного відтворення високоякісного (HD) відео.</translation>
+        <translation>Для віртуальної машини виділено менше &lt;b&gt;%1&lt;/b&gt; відео-пам’яті, що є найменшим значенням, потрібним для коректного відтворення високоякісного (HD) відео.</translation>
     </message>
     <message>
         <source>The virtual machine is set up to use Video Stream Acceleration. As this feature only works with Windows guest systems it will be disabled.</source>
-        <translation type="vanished">Віртуальна машина налаштована для використання прискорення відео-потоку. Оскільки ця функція працює лише з гостьовими системами Windows, її буде вимкнено.</translation>
+        <translation>Віртуальна машина налаштована для використання прискорення відео-потоку. Оскільки ця функція працює лише з гостьовими системами Windows, її буде вимкнено.</translation>
     </message>
     <message>
         <source>The VRDE server port value is not currently specified.</source>
-        <translation type="vanished">Не зазначено порт серверу віддаленого доступу.</translation>
+        <translation>Не зазначено порт серверу віддаленого доступу.</translation>
     </message>
     <message>
         <source>The VRDE authentication timeout value is not currently specified.</source>
-        <translation type="vanished">Не зазначено максимальний час очікування автентифікації до серверу віддаленого доступу.</translation>
+        <translation>Не зазначено максимальний час очікування автентифікації до серверу віддаленого доступу.</translation>
     </message>
     <message>
         <source>User Defined</source>
-        <translation type="vanished">Визначений користувачем</translation>
+        <translation>Визначений користувачем</translation>
     </message>
     <message>
         <source>%1 fps</source>
-        <translation type="vanished">%1 кадр/с</translation>
+        <translation>%1 кадр/с</translation>
     </message>
     <message>
         <source>fps</source>
-        <translation type="vanished">кадр/с</translation>
+        <translation>кадр/с</translation>
     </message>
     <message>
         <source>low</source>
         <comment>quality</comment>
-        <translation type="vanished">низька</translation>
+        <translation>низька</translation>
     </message>
     <message>
         <source>medium</source>
         <comment>quality</comment>
-        <translation type="vanished">середня</translation>
+        <translation>середня</translation>
     </message>
     <message>
         <source>high</source>
         <comment>quality</comment>
-        <translation type="vanished">висока</translation>
+        <translation>висока</translation>
     </message>
     <message>
         <source>kbps</source>
-        <translation type="vanished">кбіт/с</translation>
+        <translation>кбіт/с</translation>
     </message>
     <message>
         <source>Screen %1</source>
-        <translation type="vanished">Екран %1</translation>
+        <translation>Екран %1</translation>
     </message>
     <message>
         <source>&amp;Screen</source>
@@ -7052,19 +8377,19 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>The virtual machine is currently assigned less than &lt;b&gt;%1&lt;/b&gt; of video memory which is the minimum amount required to switch to full-screen or seamless mode.</source>
-        <translation type="obsolete">The virtual machine is currently assigned less than &lt;b&gt;%1&lt;/b&gt; of video memory which is the minimum amount required to switch to full-screen or seamless mode.</translation>
+        <translation type="unfinished">The virtual machine is currently assigned less than &lt;b&gt;%1&lt;/b&gt; of video memory which is the minimum amount required to switch to full-screen or seamless mode.</translation>
     </message>
     <message>
         <source>The virtual machine is set up to use hardware graphics acceleration and the operating system hint is set to Windows Vista or later. For best performance you should set the machine&apos;s video memory to at least &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="vanished">Віртуальна машина налаштована на використання графічного апаратного прискорення, а операційна система — Windows Vista або новіше. Для найкращої продуктивності варто виділити під відеопам’ять щонайменше &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <translation>Віртуальна машина налаштована на використання графічного апаратного прискорення, а операційна система — Windows Vista або новіше. Для найкращої продуктивності варто виділити під відеопам’ять щонайменше &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Remote Display is currently enabled for this virtual machine. However, this requires the &lt;i&gt;%1&lt;/i&gt; to be installed. Please install the Extension Pack from the VirtualBox download site as otherwise your VM will be started with Remote Display disabled.</source>
-        <translation type="vanished">Для цієї віртуальної машини зараз увімкнено віддалений робочий стіл. Проте, це вимагає встановлення &lt;i&gt;%1&lt;/i&gt;. Будь ласка, встановіть пакунок розширень із сайту завантажень VirtualBox, інакше ВМ буде запущено із вимкненим віддаленим робочим столом.</translation>
+        <translation>Для цієї віртуальної машини зараз увімкнено віддалений робочий стіл. Проте, це вимагає встановлення &lt;i&gt;%1&lt;/i&gt;. Будь ласка, встановіть пакунок розширень із сайту завантажень VirtualBox, інакше ВМ буде запущено із вимкненим віддаленим робочим столом.</translation>
     </message>
     <message>
         <source>%1 MB</source>
-        <translation type="vanished">%1 МБ</translation>
+        <translation>%1 МБ</translation>
     </message>
     <message>
         <source>%1%</source>
@@ -7072,11 +8397,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;i&gt;About %1MB per 5 minute video&lt;/i&gt;</source>
-        <translation type="vanished">&lt;i&gt;Приблизно %1МБ на 5 хвилин відео&lt;/i&gt;</translation>
+        <translation>&lt;i&gt;Приблизно %1МБ на 5 хвилин відео&lt;/i&gt;</translation>
     </message>
     <message>
         <source>When checked, enables video recording for screen %1.</source>
-        <translation type="vanished">Якщо позначено, то вмикається запис відео для екрану %1.</translation>
+        <translation>Якщо позначено, то вмикається запис відео для екрану %1.</translation>
     </message>
     <message>
         <source>&amp;Capture</source>
@@ -7327,11 +8652,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>No name specified for the virtual machine.</source>
-        <translation type="vanished">Не зазначено назву віртуальної машини.</translation>
+        <translation>Не зазначено назву віртуальної машини.</translation>
     </message>
     <message>
         <source>The virtual machine operating system hint is set to a 64-bit type. 64-bit guest systems require hardware virtualization, so this will be enabled automatically if you confirm the changes.</source>
-        <translation type="obsolete">The virtual machine operating system hint is set to a 64-bit type. 64-bit guest systems require hardware virtualization, so this will be enabled automatically if you confirm the changes.</translation>
+        <translation type="unfinished">The virtual machine operating system hint is set to a 64-bit type. 64-bit guest systems require hardware virtualization, so this will be enabled automatically if you confirm the changes.</translation>
     </message>
     <message>
         <source>Basi&amp;c</source>
@@ -7403,12 +8728,12 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Holds the path where snapshots of this virtual machine will be stored. Be aware that snapshots can take quite a lot of storage space.</source>
-        <translation type="vanished">Визначає шлях до теки збереження зрізів цієї віртуальної машини. Майте на увазі, що зрізи можуть займати чимало місця на жорсткому диску.</translation>
+        <translation>Визначає шлях до теки збереження зрізів цієї віртуальної машини. Майте на увазі, що зрізи можуть займати чимало місця на жорсткому диску.</translation>
     </message>
     <message>
         <source>Leave Unchanged</source>
         <comment>cipher type</comment>
-        <translation type="vanished">Залишити без змін</translation>
+        <translation>Залишити без змін</translation>
     </message>
     <message>
         <source>Disk Enc&amp;ryption</source>
@@ -7432,6 +8757,22 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Confirms the disk encryption password.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>You are trying to enable disk encryption for this virtual machine. However, this requires the &lt;i&gt;%1&lt;/i&gt; to be installed. Please install the Extension Pack from the VirtualBox download site.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disk encryption cipher type not specified.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disk encryption password empty.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disk encryption passwords do not match.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -7583,7 +8924,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Not selected</source>
         <comment>network adapter name</comment>
-        <translation type="vanished">Не вибрано</translation>
+        <translation>Не вибрано</translation>
     </message>
     <message>
         <source>Adapter &amp;Type:</source>
@@ -7651,19 +8992,19 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Selects the network adapter on the host system that traffic to and from this network card will go through.</source>
-        <translation type="vanished">Вибирає мережевий адаптер на головній системі, через мережеву плату якої буде проходити весь трафік.</translation>
+        <translation>Вибирає мережевий адаптер на головній системі, через мережеву плату якої буде проходити весь трафік.</translation>
     </message>
     <message>
         <source>Holds the name of the internal network that this network card will be connected to. You can create a new internal network by choosing a name which is not used by any other network cards in this virtual machine or others.</source>
-        <translation type="vanished">Введіть назву внутрішньої мережі, до котрої буде під&apos;єднано мережеву плату. Можете створити нову віртуальну мережу, вибравши назву, яка не використовується будь-якою іншою мережевою платою у цій віртуальній машині або інших.</translation>
+        <translation>Введіть назву внутрішньої мережі, до котрої буде під&apos;єднано мережеву плату. Можете створити нову віртуальну мережу, вибравши назву, яка не використовується будь-якою іншою мережевою платою у цій віртуальній машині або інших.</translation>
     </message>
     <message>
         <source>Selects the virtual network adapter on the host system that traffic to and from this network card will go through. You can create and remove adapters using the global network settings in the virtual machine manager window.</source>
-        <translation type="vanished">Вибирає віртуальний мережевий адаптер на головній системі, через мережеву плату якої буде проходити весь трафік. Можете створити і вилучити адаптери, використовуючи загальні налаштування у менеджері вікон віртуальної машини.</translation>
+        <translation>Вибирає віртуальний мережевий адаптер на головній системі, через мережеву плату якої буде проходити весь трафік. Можете створити і вилучити адаптери, використовуючи загальні налаштування у менеджері вікон віртуальної машини.</translation>
     </message>
     <message>
         <source>Selects the driver to be used with this network card.</source>
-        <translation type="vanished">Вибирає драйвер для цієї мережевої плати.</translation>
+        <translation>Вибирає драйвер для цієї мережевої плати.</translation>
     </message>
     <message>
         <source>the MAC address must be 12 hexadecimal digits long.</source>
@@ -7675,35 +9016,35 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>No bridged network adapter is currently selected.</source>
-        <translation type="vanished">Не вибрано адаптер мережевого мосту.</translation>
+        <translation>Не вибрано адаптер мережевого мосту.</translation>
     </message>
     <message>
         <source>No internal network name is currently specified.</source>
-        <translation type="vanished">Не зазначено назви внутрішньої мережі.</translation>
+        <translation>Не зазначено назви внутрішньої мережі.</translation>
     </message>
     <message>
         <source>No host-only network adapter is currently selected.</source>
-        <translation type="vanished">Не вибрано адаптер мережі хосту.</translation>
+        <translation>Не вибрано адаптер мережі хосту.</translation>
     </message>
     <message>
         <source>No generic driver is currently selected.</source>
-        <translation type="vanished">Не вибрано універсальний драйвер.</translation>
+        <translation>Не вибрано універсальний драйвер.</translation>
     </message>
     <message>
         <source>The MAC address must be 12 hexadecimal digits long.</source>
-        <translation type="vanished">MAC-адреса повинна бути 12-ма шістнадцятковими цифрами.</translation>
+        <translation>MAC-адреса повинна бути 12-ма шістнадцятковими цифрами.</translation>
     </message>
     <message>
         <source>The second digit in the MAC address may not be odd as only unicast addresses are allowed.</source>
-        <translation type="vanished">Друга цифра MAC-адреси не може бути непарною, оскільки дозволяються лише одноадресна конфігурація.</translation>
+        <translation>Друга цифра MAC-адреси не може бути непарною, оскільки дозволяються лише одноадресна конфігурація.</translation>
     </message>
     <message>
         <source>No NAT network name is currently specified.</source>
-        <translation type="vanished">На зазначено назву NAT мережі.</translation>
+        <translation>На зазначено назву NAT мережі.</translation>
     </message>
     <message>
         <source>Holds the name of the NAT network that this network card will be connected to. You can create and remove networks using the global network settings in the virtual machine manager window.</source>
-        <translation type="vanished">Визначає назву NAT мережі, до якої буде під’єднано цю мережеву карту. Ви можете створити або вилучити мережі використовуючи глобальні налаштування мережі у вікні керування віртуальною машиною.</translation>
+        <translation>Визначає назву NAT мережі, до якої буде під’єднано цю мережеву карту. Ви можете створити або вилучити мережі використовуючи глобальні налаштування мережі у вікні керування віртуальною машиною.</translation>
     </message>
     <message>
         <source>Selects how this virtual adapter is attached to the real network of the Host OS.</source>
@@ -7859,7 +9200,7 @@ p, li { white-space: pre-wrap; }
     <name>UIMachineSettingsPortForwardingDlg</name>
     <message>
         <source>Port Forwarding Rules</source>
-        <translation type="vanished">Правила переадресування порту</translation>
+        <translation>Правила переадресування порту</translation>
     </message>
     <message>
         <source>This table contains a list of port forwarding rules.</source>
@@ -7914,19 +9255,19 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source> Machine Folders</source>
-        <translation type="vanished"> Теки машини</translation>
+        <translation> Теки машини</translation>
     </message>
     <message>
         <source> Transient Folders</source>
-        <translation type="vanished"> Тимчасові теки</translation>
+        <translation> Тимчасові теки</translation>
     </message>
     <message>
         <source>Full</source>
-        <translation type="vanished">Повний</translation>
+        <translation>Повний</translation>
     </message>
     <message>
         <source>Read-only</source>
-        <translation type="vanished">Тільки для читання</translation>
+        <translation>Тільки для читання</translation>
     </message>
     <message>
         <source>Lists all shared folders accessible to this machine. Use &apos;net use x: \\vboxsvr\share&apos; to access a shared folder named &lt;i&gt;share&lt;/i&gt; from a DOS-like OS, or &apos;mount -t vboxsf share mount_point&apos; to access it from a Linux OS. This feature requires Guest Additions.</source>
@@ -7970,31 +9311,31 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Yes</source>
-        <translation type="vanished">Так</translation>
+        <translation>Так</translation>
     </message>
     <message>
         <source>Add Shared Folder</source>
-        <translation type="vanished">Додати спільну папку</translation>
+        <translation>Додати спільну папку</translation>
     </message>
     <message>
         <source>Edit Shared Folder</source>
-        <translation type="vanished">Редагувати спільну папку</translation>
+        <translation>Редагувати спільну папку</translation>
     </message>
     <message>
         <source>Remove Shared Folder</source>
-        <translation type="vanished">Видалити спільну папку</translation>
+        <translation>Видалити спільну папку</translation>
     </message>
     <message>
         <source>Adds new shared folder.</source>
-        <translation type="vanished">Додає нові спільні папки.</translation>
+        <translation>Додає нові спільні папки.</translation>
     </message>
     <message>
         <source>Edits selected shared folder.</source>
-        <translation type="vanished">Редагування вибраних спільних папок.</translation>
+        <translation>Редагування вибраних спільних папок.</translation>
     </message>
     <message>
         <source>Removes selected shared folder.</source>
-        <translation type="vanished">Видаляє вибрані спільні папки.</translation>
+        <translation>Видаляє вибрані спільні папки.</translation>
     </message>
     <message>
         <source>Shared &amp;Folders</source>
@@ -8013,11 +9354,11 @@ p, li { white-space: pre-wrap; }
     <name>UIMachineSettingsSFDetails</name>
     <message>
         <source>Add Share</source>
-        <translation type="vanished">Створити спільну теку</translation>
+        <translation>Створити спільну теку</translation>
     </message>
     <message>
         <source>Edit Share</source>
-        <translation type="vanished">Редагувати спільну теку</translation>
+        <translation>Редагувати спільну теку</translation>
     </message>
     <message>
         <source>Dialog</source>
@@ -8077,7 +9418,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Port %1</source>
         <comment>serial ports</comment>
-        <translation type="vanished">Порт %1</translation>
+        <translation>Порт %1</translation>
     </message>
     <message>
         <source>When checked, enables the given serial port of the virtual machine.</source>
@@ -8169,23 +9510,23 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>No IRQ is currently specified.</source>
-        <translation type="vanished">Наразі не вказано IRQ.</translation>
+        <translation>Наразі не вказано IRQ.</translation>
     </message>
     <message>
         <source>No I/O port is currently specified.</source>
-        <translation type="vanished">Наразі не вказано порт вводу/виводу.</translation>
+        <translation>Наразі не вказано порт вводу/виводу.</translation>
     </message>
     <message>
         <source>Two or more ports have the same settings.</source>
-        <translation type="vanished">Два або більше портів мають однакові параметри.</translation>
+        <translation>Два або більше портів мають однакові параметри.</translation>
     </message>
     <message>
         <source>No port path is currently specified.</source>
-        <translation type="vanished">Не зазначено шлях до порту.</translation>
+        <translation>Не зазначено шлях до порту.</translation>
     </message>
     <message>
         <source>There are currently duplicate port paths specified.</source>
-        <translation type="vanished">Щонайменше два порти мають однакові шляхи.</translation>
+        <translation>Щонайменше два порти мають однакові шляхи.</translation>
     </message>
 </context>
 <context>
@@ -8279,7 +9620,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Bus:&amp;nbsp;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Type:&amp;nbsp;&amp;nbsp;%3&lt;/nobr&gt;</source>
-        <translation type="vanished">&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Шина:&amp;nbsp;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Тип:&amp;nbsp;&amp;nbsp;%3&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Шина:&amp;nbsp;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Тип:&amp;nbsp;&amp;nbsp;%3&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Expand/Collapse&amp;nbsp;Item&lt;/nobr&gt;</source>
@@ -8299,7 +9640,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>No hard disk is selected for &lt;i&gt;%1&lt;/i&gt;.</source>
-        <translation type="vanished">Не вибрано жорсткий диск для &lt;i&gt;%1&lt;/i&gt;.</translation>
+        <translation>Не вибрано жорсткий диск для &lt;i&gt;%1&lt;/i&gt;.</translation>
     </message>
     <message>
         <source>&lt;i&gt;%1&lt;/i&gt; uses a medium that is already attached to &lt;i&gt;%2&lt;/i&gt;.</source>
@@ -8307,35 +9648,35 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Add Controller</source>
-        <translation type="vanished">Додати контролер</translation>
+        <translation>Додати контролер</translation>
     </message>
     <message>
         <source>Add IDE Controller</source>
-        <translation type="vanished">Додати контролер IDE</translation>
+        <translation>Додати контролер IDE</translation>
     </message>
     <message>
         <source>Add SATA Controller</source>
-        <translation type="vanished">Додати контролер SATA</translation>
+        <translation>Додати контролер SATA</translation>
     </message>
     <message>
         <source>Add SCSI Controller</source>
-        <translation type="vanished">Додати контролер SCSI</translation>
+        <translation>Додати контролер SCSI</translation>
     </message>
     <message>
         <source>Add Floppy Controller</source>
-        <translation type="vanished">Додати контролер дискет</translation>
+        <translation>Додати контролер дискет</translation>
     </message>
     <message>
         <source>Remove Controller</source>
-        <translation type="vanished">Вилучити контролер</translation>
+        <translation>Вилучити контролер</translation>
     </message>
     <message>
         <source>Add Attachment</source>
-        <translation type="vanished">Додати долучення</translation>
+        <translation>Додати долучення</translation>
     </message>
     <message>
         <source>Add Hard Disk</source>
-        <translation type="vanished">Додати жорсткий диск</translation>
+        <translation>Додати жорсткий диск</translation>
     </message>
     <message>
         <source>Add CD/DVD Device</source>
@@ -8347,7 +9688,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Remove Attachment</source>
-        <translation type="vanished">Вилучити долучення</translation>
+        <translation>Вилучити долучення</translation>
     </message>
     <message>
         <source>Adds a new controller to the end of the Storage Tree.</source>
@@ -8383,7 +9724,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Hard &amp;Disk:</source>
-        <translation type="vanished">&amp;жорсткий диск:</translation>
+        <translation>&amp;жорсткий диск:</translation>
     </message>
     <message>
         <source>&amp;CD/DVD Device:</source>
@@ -8495,7 +9836,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Add SAS Controller</source>
-        <translation type="vanished">Додати контролер SAS</translation>
+        <translation>Додати контролер SAS</translation>
     </message>
     <message>
         <source>SAS Controller</source>
@@ -8515,7 +9856,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Host Drive</source>
-        <translation type="vanished">Головний пристрій</translation>
+        <translation>Головний пристрій</translation>
     </message>
     <message>
         <source>Image</source>
@@ -8523,7 +9864,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Choose or create a virtual hard disk file. The virtual machine will see the data in the file as the contents of the virtual hard disk.</source>
-        <translation type="vanished">Вибрати або створити віртуальний файл жорсткого диска. Віртуальна машина покаже дані в файлі як вміст віртуального жорсткого диска.</translation>
+        <translation>Вибрати або створити віртуальний файл жорсткого диска. Віртуальна машина покаже дані в файлі як вміст віртуального жорсткого диска.</translation>
     </message>
     <message>
         <source>Set up the virtual hard disk</source>
@@ -8543,11 +9884,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Floppy &amp;Drive:</source>
-        <translation type="vanished">&amp;Дискети:</translation>
+        <translation>&amp;Дискети:</translation>
     </message>
     <message>
         <source>Choose a virtual floppy disk or a physical drive to use with the virtual drive. The virtual machine will see a disk inserted into the drive with the data in the file or on the disk in the physical drive as its contents.</source>
-        <translation type="vanished">Виберіть віртуальну дискету або фізичний носій, щоб використовувати віртуальним носієм. Віртуальна машина розпізнає диск замість носія з даними у файлі або на диску у фізичного носія як його вміст.</translation>
+        <translation>Виберіть віртуальну дискету або фізичний носій, щоб використовувати віртуальним носієм. Віртуальна машина розпізнає диск замість носія з даними у файлі або на диску у фізичного носія як його вміст.</translation>
     </message>
     <message>
         <source>Set up the virtual floppy drive</source>
@@ -8567,7 +9908,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Remove disk from virtual drive</source>
-        <translation type="vanished">Вилучити диск з віртуального носія</translation>
+        <translation>Вилучити диск з віртуального носія</translation>
     </message>
     <message>
         <source>Choose a virtual floppy disk file...</source>
@@ -8608,12 +9949,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>at most one supported</source>
         <comment>controller</comment>
-        <translation type="vanished">щонайбільше один підтримується</translation>
+        <translation>щонайбільше один підтримується</translation>
     </message>
     <message>
         <source>up to %1 supported</source>
         <comment>controllers</comment>
-        <translation type="vanished">до %1 підтримується</translation>
+        <translation>до %1 підтримується</translation>
     </message>
     <message>
         <source>you are currently using more storage controllers than a %1 chipset supports. Please change the chipset type on the System settings page or reduce the number of the following storage controllers on the Storage settings page: %2.</source>
@@ -8633,23 +9974,23 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>No name is currently specified for the controller at position &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="vanished">Не зазначено назву контролера на позиції &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <translation>Не зазначено назву контролера на позиції &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>The controller at position &lt;b&gt;%1&lt;/b&gt; has the same name as the controller at position &lt;b&gt;%2&lt;/b&gt;.</source>
-        <translation type="vanished">Контролер на позиції &lt;b&gt;%1&lt;/b&gt; має таку ж назву, як контролер на позиції &lt;b&gt;%2&lt;/b&gt;.</translation>
+        <translation>Контролер на позиції &lt;b&gt;%1&lt;/b&gt; має таку ж назву, як контролер на позиції &lt;b&gt;%2&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>&lt;i&gt;%1&lt;/i&gt; is using a disk that is already attached to &lt;i&gt;%2&lt;/i&gt;.</source>
-        <translation type="vanished">&lt;i&gt;%1&lt;/i&gt; використовує диск, який вже під’єднано до &lt;i&gt;%2&lt;/i&gt;.</translation>
+        <translation>&lt;i&gt;%1&lt;/i&gt; використовує диск, який вже під’єднано до &lt;i&gt;%2&lt;/i&gt;.</translation>
     </message>
     <message>
         <source>The machine currently has more storage controllers assigned than a %1 chipset supports. Please change the chipset type on the System settings page or reduce the number of the following storage controllers on the Storage settings page: %2</source>
-        <translation type="vanished">Нині машина має більше контролерів носіїв інформації, ніж підтримується комплексом мікросхем %1. Будь ласка, змініть тип комплексу мікросхем на сторінці налаштувань „Система“ або зменшіть кількість наступних контролерів носіїв інформації на сторінці налаштувань „Пам’ять“: %2</translation>
+        <translation>Нині машина має більше контролерів носіїв інформації, ніж підтримується комплексом мікросхем %1. Будь ласка, змініть тип комплексу мікросхем на сторінці налаштувань „Система“ або зменшіть кількість наступних контролерів носіїв інформації на сторінці налаштувань „Пам’ять“: %2</translation>
     </message>
     <message>
         <source>Lists all storage controllers for this machine and the virtual images and host drives attached to them.</source>
-        <translation type="vanished">Містить список всіх контролерів носіїв інформації для цієї машини, а також віртуальних образів та приводів хосту, під’єднаних до них.</translation>
+        <translation>Містить список всіх контролерів носіїв інформації для цієї машини, а також віртуальних образів та приводів хосту, під’єднаних до них.</translation>
     </message>
     <message>
         <source>Holds the name of the storage controller currently selected in the Storage Tree.</source>
@@ -8682,87 +10023,101 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Choose disk image...</source>
         <comment>This is used for hard disks, optical media and floppies</comment>
-        <translation type="vanished">Вибрати образ диску...</translation>
+        <translation>Вибрати образ диску...</translation>
     </message>
     <message>
         <source>Image</source>
         <comment>storage image</comment>
-        <translation type="vanished">Образ</translation>
+        <translation>Образ</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Expands/Collapses&amp;nbsp;item.&lt;/nobr&gt;</source>
-        <translation type="obsolete">&lt;nobr&gt;Expands/Collapses&amp;nbsp;item.&lt;/nobr&gt;</translation>
+        <translation type="unfinished">&lt;nobr&gt;Expands/Collapses&amp;nbsp;item.&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Adds&amp;nbsp;hard&amp;nbsp;disk.&lt;/nobr&gt;</source>
-        <translation type="vanished">&lt;nobr&gt;Додає&amp;nbsp;жорсткий&amp;nbsp;диск.&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;Додає&amp;nbsp;жорсткий&amp;nbsp;диск.&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Adds&amp;nbsp;optical&amp;nbsp;drive.&lt;/nobr&gt;</source>
-        <translation type="vanished">&lt;nobr&gt;Додає&amp;nbsp;оптичний&amp;nbsp;привід.&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;Додає&amp;nbsp;оптичний&amp;nbsp;привід.&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Adds&amp;nbsp;floppy&amp;nbsp;drive.&lt;/nobr&gt;</source>
-        <translation type="vanished">&lt;nobr&gt;Додає&amp;nbsp;гнучкий&amp;nbsp;привід.&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;Додає&amp;nbsp;гнучкий&amp;nbsp;привід.&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>Add USB Controller</source>
-        <translation type="vanished">Додати контролер USB</translation>
+        <translation>Додати контролер USB</translation>
     </message>
     <message>
         <source>Add Optical Drive</source>
-        <translation type="vanished">Додати оптичний привід</translation>
+        <translation>Додати оптичний привід</translation>
     </message>
     <message>
         <source>Add Floppy Drive</source>
-        <translation type="vanished">Додати дисковод гнучких дисків</translation>
+        <translation>Додати дисковод гнучких дисків</translation>
     </message>
     <message>
         <source>Adds new storage controller.</source>
-        <translation type="vanished">Додає новий контролер накопичувача.</translation>
+        <translation>Додає новий контролер накопичувача.</translation>
     </message>
     <message>
         <source>Removes selected storage controller.</source>
-        <translation type="vanished">Видаляє обраний контролер накопичувача.</translation>
+        <translation>Видаляє обраний контролер накопичувача.</translation>
     </message>
     <message>
         <source>Adds new storage attachment.</source>
-        <translation type="vanished">Додає нове вкладення накопичувача.</translation>
+        <translation>Додає нове вкладення накопичувача.</translation>
     </message>
     <message>
         <source>Removes selected storage attachment.</source>
-        <translation type="vanished">Видаляє обране вкладення накопичувача.</translation>
+        <translation>Видаляє обране вкладення накопичувача.</translation>
     </message>
     <message>
         <source>Optical &amp;Drive:</source>
-        <translation type="vanished">Оптичний привід:</translation>
+        <translation>Оптичний привід:</translation>
     </message>
     <message>
         <source>Choose a virtual optical disk or a physical drive to use with the virtual drive. The virtual machine will see a disk inserted into the drive with the data in the file or on the disk in the physical drive as its contents.</source>
-        <translation type="vanished">Виберіть віртуальну дискету або фізичний носій, щоб використовувати віртуальним носієм. Віртуальна машина розпізнає диск замість носія з даними у файлі або на диску у фізичного носія як його вміст.</translation>
+        <translation>Виберіть віртуальну дискету або фізичний носій, щоб використовувати віртуальним носієм. Віртуальна машина розпізнає диск замість носія з даними у файлі або на диску у фізичного носія як його вміст.</translation>
     </message>
     <message>
         <source>Create New Hard Disk...</source>
-        <translation type="vanished">Створити новий жорсткий диск...</translation>
+        <translation>Створити новий жорсткий диск...</translation>
     </message>
     <message>
         <source>Choose Virtual Hard Disk File...</source>
-        <translation type="vanished">Виберіть файл віртуального жорсткого диска...</translation>
+        <translation>Виберіть файл віртуального жорсткого диска...</translation>
     </message>
     <message>
         <source>Choose Virtual Optical Disk File...</source>
-        <translation type="vanished">Виберіть файл віртуального оптичного диска...</translation>
+        <translation>Виберіть файл віртуального оптичного диска...</translation>
     </message>
     <message>
         <source>Remove Disk from Virtual Drive</source>
-        <translation type="vanished">Вилучити диск з віртуального носія</translation>
+        <translation>Вилучити диск з віртуального носія</translation>
     </message>
     <message>
         <source>Choose Virtual Floppy Disk File...</source>
-        <translation type="vanished">Вибрати віртуальний файл дискети...</translation>
+        <translation>Вибрати віртуальний файл дискети...</translation>
     </message>
     <message>
         <source>&amp;Storage Devices</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Create a new floppy disk...</source>
+        <comment>This is used to create a new floppy disk</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Create ad hoc VISO...</source>
+        <comment>This is used for optical media</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add NVMe Controller</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -8820,7 +10175,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>MB</source>
-        <translation type="vanished">МБ</translation>
+        <translation>МБ</translation>
     </message>
     <message>
         <source>&amp;Boot Order:</source>
@@ -8995,23 +10350,23 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>More than &lt;b&gt;%1%&lt;/b&gt; of the host computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) is assigned to the virtual machine. Not enough memory is left for the host operating system. Please select a smaller amount.</source>
-        <translation type="obsolete">More than &lt;b&gt;%1%&lt;/b&gt; of the host computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) is assigned to the virtual machine. Not enough memory is left for the host operating system. Please select a smaller amount.</translation>
+        <translation type="unfinished">More than &lt;b&gt;%1%&lt;/b&gt; of the host computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) is assigned to the virtual machine. Not enough memory is left for the host operating system. Please select a smaller amount.</translation>
     </message>
     <message>
         <source>More than &lt;b&gt;%1%&lt;/b&gt; of the host computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) is assigned to the virtual machine. There might not be enough memory left for the host operating system. Please consider selecting a smaller amount.</source>
-        <translation type="obsolete">More than &lt;b&gt;%1%&lt;/b&gt; of the host computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) is assigned to the virtual machine. There might not be enough memory left for the host operating system. Please consider selecting a smaller amount.</translation>
+        <translation type="unfinished">More than &lt;b&gt;%1%&lt;/b&gt; of the host computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) is assigned to the virtual machine. There might not be enough memory left for the host operating system. Please consider selecting a smaller amount.</translation>
     </message>
     <message>
         <source>For performance reasons, the number of virtual CPUs attached to the virtual machine may not be more than twice the number of physical CPUs on the host (&lt;b&gt;%1&lt;/b&gt;). Please reduce the number of virtual CPUs.</source>
-        <translation type="obsolete">For performance reasons, the number of virtual CPUs attached to the virtual machine may not be more than twice the number of physical CPUs on the host (&lt;b&gt;%1&lt;/b&gt;). Please reduce the number of virtual CPUs.</translation>
+        <translation type="unfinished">For performance reasons, the number of virtual CPUs attached to the virtual machine may not be more than twice the number of physical CPUs on the host (&lt;b&gt;%1&lt;/b&gt;). Please reduce the number of virtual CPUs.</translation>
     </message>
     <message>
         <source>More virtual CPUs are assigned to the virtual machine than the number of physical CPUs on the host system (&lt;b&gt;%1&lt;/b&gt;). This is likely to degrade the performance of your virtual machine. Please consider reducing the number of virtual CPUs.</source>
-        <translation type="obsolete">More virtual CPUs are assigned to the virtual machine than the number of physical CPUs on the host system (&lt;b&gt;%1&lt;/b&gt;). This is likely to degrade the performance of your virtual machine. Please consider reducing the number of virtual CPUs.</translation>
+        <translation type="unfinished">More virtual CPUs are assigned to the virtual machine than the number of physical CPUs on the host system (&lt;b&gt;%1&lt;/b&gt;). This is likely to degrade the performance of your virtual machine. Please consider reducing the number of virtual CPUs.</translation>
     </message>
     <message>
         <source>The processor execution cap is set to a low value. This may make the machine feel slow to respond.</source>
-        <translation type="obsolete">The processor execution cap is set to a low value. This may make the machine feel slow to respond.</translation>
+        <translation type="unfinished">The processor execution cap is set to a low value. This may make the machine feel slow to respond.</translation>
     </message>
     <message>
         <source>When checked, the RTC device will report the time in UTC, otherwise in local (host) time. Unix usually expects the hardware clock to be set to UTC.</source>
@@ -9047,21 +10402,49 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>%1 MB</source>
-        <translation type="vanished">%1 МБ</translation>
+        <translation>%1 МБ</translation>
     </message>
     <message>
         <source>%1 CPU</source>
         <comment>%1 is 1 for now</comment>
-        <translation type="vanished">%1ЦП</translation>
+        <translation>%1ЦП</translation>
     </message>
     <message>
         <source>%1 CPUs</source>
         <comment>%1 is host cpu count * 2 for now</comment>
-        <translation type="vanished">%1 ЦП</translation>
+        <translation>%1 ЦП</translation>
     </message>
     <message>
         <source>%1%</source>
-        <translation type="obsolete">%1%</translation>
+        <translation type="unfinished">%1%</translation>
+    </message>
+    <message>
+        <source>The I/O APIC feature is not currently enabled in the Motherboard section of the System page. This is needed to support a chipset of type ICH9. It will be enabled automatically if you confirm your changes.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The USB controller emulation is not currently enabled on the USB page. This is needed to support an emulated USB pointing device. It will be enabled automatically if you confirm your changes.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The I/O APIC feature is not currently enabled in the Motherboard section of the System page. This is needed to support more than one virtual processor. It will be enabled automatically if you confirm your changes.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The hardware virtualization is not currently enabled in the Acceleration section of the System page. This is needed to support more than one virtual processor. It will be enabled automatically if you confirm your changes.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Please consider lowering the number of CPUs assigned to the virtual machine rather than setting the processor execution cap.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Lowering the processor execution cap may result in a decline in performance.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The hardware virtualization is enabled in the Acceleration section of the System page although it is not supported by the host system. It should be disabled in order to start the virtual system.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -9117,7 +10500,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>New Filter %1</source>
         <comment>usb</comment>
-        <translation type="vanished">Новий фільтр %1</translation>
+        <translation>Новий фільтр %1</translation>
     </message>
     <message>
         <source>When checked, enables the virtual USB controller of this machine.</source>
@@ -9150,42 +10533,42 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>&lt;nobr&gt;Vendor ID: %1&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation type="vanished">&lt;nobr&gt;Ід. постачальника: %1&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;Ід. постачальника: %1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Product ID: %2&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation type="vanished">&lt;nobr&gt;Ід. продукту: %2&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;Ід. продукту: %2&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Revision: %3&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation type="vanished">&lt;nobr&gt;Перегляд: %3&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;Перегляд: %3&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Product: %4&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation type="vanished">&lt;nobr&gt;Продукт: %4&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;Продукт: %4&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Manufacturer: %5&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation type="vanished">&lt;nobr&gt;Виробник: %5&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;Виробник: %5&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Serial No.: %1&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation type="vanished">&lt;nobr&gt;Серійний №: %1&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;Серійний №: %1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Port: %1&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation type="vanished">&lt;nobr&gt;Порт: %1&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;Порт: %1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;State: %1&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation type="vanished">&lt;nobr&gt;Стан: %1&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;Стан: %1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>USB 2.0 is currently enabled for this virtual machine. However this requires the &lt;b&gt;%1&lt;/b&gt; to be installed. Please install the Extension Pack from the VirtualBox download site. After this you will be able to re-enable USB 2.0. It will be disabled in the meantime unless you cancel the current settings changes.</source>
@@ -9221,55 +10604,55 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>USB 2.0/3.0 is currently enabled for this virtual machine. However, this requires the &lt;i&gt;%1&lt;/i&gt; to be installed. Please install the Extension Pack from the VirtualBox download site or disable USB 2.0/3.0 to be able to start the machine.</source>
-        <translation type="obsolete">USB 2.0/3.0 is currently enabled for this virtual machine. However, this requires the &lt;i&gt;%1&lt;/i&gt; to be installed. Please install the Extension Pack from the VirtualBox download site or disable USB 2.0/3.0 to be able to start the machine.</translation>
+        <translation type="unfinished">USB 2.0/3.0 is currently enabled for this virtual machine. However, this requires the &lt;i&gt;%1&lt;/i&gt; to be installed. Please install the Extension Pack from the VirtualBox download site or disable USB 2.0/3.0 to be able to start the machine.</translation>
     </message>
     <message>
         <source>Add Empty Filter</source>
-        <translation type="vanished">Додати порожній фільтр</translation>
+        <translation>Додати порожній фільтр</translation>
     </message>
     <message>
         <source>Add Filter From Device</source>
-        <translation type="vanished">Додати фільтр із пристрою</translation>
+        <translation>Додати фільтр із пристрою</translation>
     </message>
     <message>
         <source>Edit Filter</source>
-        <translation type="vanished">Редагувати фільтр</translation>
+        <translation>Редагувати фільтр</translation>
     </message>
     <message>
         <source>Remove Filter</source>
-        <translation type="vanished">Видалити фільтр</translation>
+        <translation>Видалити фільтр</translation>
     </message>
     <message>
         <source>Move Filter Up</source>
-        <translation type="vanished">Перемістити фільтр вгору</translation>
+        <translation>Перемістити фільтр вгору</translation>
     </message>
     <message>
         <source>Move Filter Down</source>
-        <translation type="vanished">Перемістити фільтр вниз</translation>
+        <translation>Перемістити фільтр вниз</translation>
     </message>
     <message>
         <source>Adds new USB filter with all fields initially set to empty strings. Note that such a filter will match any attached USB device.</source>
-        <translation type="obsolete">Adds new USB filter with all fields initially set to empty strings. Note that such a filter will match any attached USB device.</translation>
+        <translation type="unfinished">Adds new USB filter with all fields initially set to empty strings. Note that such a filter will match any attached USB device.</translation>
     </message>
     <message>
         <source>Adds new USB filter with all fields set to the values of the selected USB device attached to the host PC.</source>
-        <translation type="vanished">Додає новий USB-фільтр з усіма полями установленими на значення вибраного пристрою USB, підключеного до хост-ПК.</translation>
+        <translation>Додає новий USB-фільтр з усіма полями установленими на значення вибраного пристрою USB, підключеного до хост-ПК.</translation>
     </message>
     <message>
         <source>Edits selected USB filter.</source>
-        <translation type="vanished">Редагує вибраний USB фільтр.</translation>
+        <translation>Редагує вибраний USB фільтр.</translation>
     </message>
     <message>
         <source>Removes selected USB filter.</source>
-        <translation type="vanished">Видаляє вибраний USB фільтр.</translation>
+        <translation>Видаляє вибраний USB фільтр.</translation>
     </message>
     <message>
         <source>Moves selected USB filter up.</source>
-        <translation type="vanished">Переміщує вибраний USB фільтр вгору.</translation>
+        <translation>Переміщує вибраний USB фільтр вгору.</translation>
     </message>
     <message>
         <source>Moves selected USB filter down.</source>
-        <translation type="vanished">Переміщує вибраний USB фільтр вниз.</translation>
+        <translation>Переміщує вибраний USB фільтр вниз.</translation>
     </message>
 </context>
 <context>
@@ -9277,17 +10660,17 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Any</source>
         <comment>remote</comment>
-        <translation type="vanished">Будь-який</translation>
+        <translation>Будь-який</translation>
     </message>
     <message>
         <source>Yes</source>
         <comment>remote</comment>
-        <translation type="vanished">Так</translation>
+        <translation>Так</translation>
     </message>
     <message>
         <source>No</source>
         <comment>remote</comment>
-        <translation type="vanished">Ні</translation>
+        <translation>Ні</translation>
     </message>
     <message>
         <source>&amp;Name:</source>
@@ -9410,14 +10793,14 @@ p, li { white-space: pre-wrap; }
     <name>UIMachineWindow</name>
     <message>
         <source> EXPERIMENTAL build %1r%2 - %3</source>
-        <translation type="vanished"> ЕКСПЕРИМЕНТАЛЬНА збірка %1r%2 - %3</translation>
+        <translation> ЕКСПЕРИМЕНТАЛЬНА збірка %1r%2 - %3</translation>
     </message>
 </context>
 <context>
     <name>UIMachineWindowNormal</name>
     <message>
         <source>Shows the currently assigned Host key.&lt;br&gt;This key, when pressed alone, toggles the keyboard and mouse capture state. It can also be used in combination with other keys to quickly perform actions from the main menu.</source>
-        <translation type="vanished">Показує призначену головну клавішу.&lt;br&gt;Ця клавіша, якщо її натиснути окремо, перемикає стан захоплення клавіатури і миші. Її можна також використовувати в сполученні з іншими клавішами для швидкого виконання дії з головного меню.</translation>
+        <translation>Показує призначену головну клавішу.&lt;br&gt;Ця клавіша, якщо її натиснути окремо, перемикає стан захоплення клавіатури і миші. Її можна також використовувати в сполученні з іншими клавішами для швидкого виконання дії з головного меню.</translation>
     </message>
 </context>
 <context>
@@ -9547,7 +10930,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Removing medium...</source>
-        <translation type="vanished">Вилучення носія...</translation>
+        <translation>Вилучення носія...</translation>
     </message>
     <message>
         <source>&amp;Hard disks</source>
@@ -9555,32 +10938,32 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Format:</source>
-        <translation type="obsolete">Формат:</translation>
+        <translation type="unfinished">Формат:</translation>
     </message>
     <message>
         <source>Storage details:</source>
-        <translation type="obsolete">Подробиці про память:</translation>
+        <translation type="unfinished">Подробиці про память:</translation>
     </message>
     <message>
         <source>Encrypted with key:</source>
-        <translation type="obsolete">Зашифровано ключем:</translation>
+        <translation type="unfinished">Зашифровано ключем:</translation>
     </message>
     <message>
         <source>UUID:</source>
-        <translation type="obsolete">UUID:</translation>
+        <translation type="unfinished">UUID:</translation>
     </message>
     <message>
         <source>&lt;i&gt;Not&amp;nbsp;Attached&lt;/i&gt;</source>
-        <translation type="obsolete">&lt;i&gt;Не&amp;nbsp;під&apos;єднаний&lt;/i&gt;</translation>
+        <translation type="unfinished">&lt;i&gt;Не&amp;nbsp;під&apos;єднаний&lt;/i&gt;</translation>
     </message>
     <message>
         <source>&lt;i&gt;Not&amp;nbsp;Encrypted&lt;/i&gt;</source>
-        <translation type="obsolete">&lt;i&gt;Не&amp;nbsp;зашифровано&lt;/i&gt;</translation>
+        <translation type="unfinished">&lt;i&gt;Не&amp;nbsp;зашифровано&lt;/i&gt;</translation>
     </message>
     <message>
         <source>--</source>
         <comment>no info</comment>
-        <translation type="obsolete">--</translation>
+        <translation type="unfinished">--</translation>
     </message>
     <message>
         <source>&amp;Copy...</source>
@@ -9592,11 +10975,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Re&amp;fresh</source>
-        <translation type="obsolete">&amp;Оновити</translation>
+        <translation type="unfinished">&amp;Оновити</translation>
     </message>
     <message>
         <source>Refresh the list of disk image files</source>
-        <translation type="obsolete">Оновити список носіїв</translation>
+        <translation type="unfinished">Оновити список носіїв</translation>
     </message>
     <message>
         <source>Name</source>
@@ -9674,12 +11057,81 @@ p, li { white-space: pre-wrap; }
         <source>Resizing medium...</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Create a Floppy Disk</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>File Path:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Size:</source>
+        <translation type="unfinished">Розмір:</translation>
+    </message>
+    <message>
+        <source>Format disk as FAT12</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>1.44M</source>
+        <translation type="unfinished">Просторове {1.44M?}</translation>
+    </message>
+    <message>
+        <source>1.2M</source>
+        <translation type="unfinished">Просторове {1.2M?}</translation>
+    </message>
+    <message>
+        <source>720K</source>
+        <translation type="unfinished">Просторове {720K?}</translation>
+    </message>
+    <message>
+        <source>360K</source>
+        <translation type="unfinished">Просторове {360K?}</translation>
+    </message>
+    <message>
+        <source>%1, %2: %3, %4: %5</source>
+        <comment>col.1 text, col.2 name: col.2 text, col.3 name: col.3 text</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Attached to:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Add</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add Disk Image File</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add disk image file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Create</source>
+        <translation type="unfinished">&amp;Створити</translation>
+    </message>
+    <message>
+        <source>Create an Empty Disk Image</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Refresh Disk Image Files (%1)</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIMediumSizeEditor</name>
     <message>
         <source>&lt;nobr&gt;%1 (%2 B)&lt;/nobr&gt;</source>
-        <translation type="obsolete">&lt;nobr&gt;%1 (%2 Б)&lt;/nobr&gt;</translation>
+        <translation type="unfinished">&lt;nobr&gt;%1 (%2 Б)&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>Holds the size of this medium.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -9701,7 +11153,7 @@ p, li { white-space: pre-wrap; }
     <name>UIMenuBarEditorWidget</name>
     <message>
         <source>Virtual Screen Resize</source>
-        <translation type="vanished">Зміна розміру віртуального екрану</translation>
+        <translation>Зміна розміру віртуального екрану</translation>
     </message>
     <message>
         <source>Virtual Screen Mapping</source>
@@ -9709,15 +11161,31 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Switch</source>
-        <translation type="vanished">Перемкнути</translation>
+        <translation>Перемкнути</translation>
     </message>
     <message>
         <source>Close</source>
-        <translation type="vanished">Закрити</translation>
+        <translation>Закрити</translation>
     </message>
     <message>
         <source>Enable Menu Bar</source>
-        <translation type="vanished">Активувати Панель меню</translation>
+        <translation>Активувати Панель меню</translation>
+    </message>
+    <message>
+        <source>Toggle menu %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Popup menu %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Virtual Screen Remap</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Virtual Screen Rescale</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -9725,40 +11193,40 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>VirtualBox - Information</source>
         <comment>msg box title</comment>
-        <translation type="vanished">VirtualBox — Інформація</translation>
+        <translation>VirtualBox — Інформація</translation>
     </message>
     <message>
         <source>VirtualBox - Question</source>
         <comment>msg box title</comment>
-        <translation type="vanished">VirtualBox — Питання</translation>
+        <translation>VirtualBox — Питання</translation>
     </message>
     <message>
         <source>VirtualBox - Warning</source>
         <comment>msg box title</comment>
-        <translation type="vanished">VirtualBox — Попередження</translation>
+        <translation>VirtualBox — Попередження</translation>
     </message>
     <message>
         <source>VirtualBox - Error</source>
         <comment>msg box title</comment>
-        <translation type="vanished">VirtualBox — Помилка</translation>
+        <translation>VirtualBox — Помилка</translation>
     </message>
     <message>
         <source>VirtualBox - Critical Error</source>
         <comment>msg box title</comment>
-        <translation type="vanished">VirtualBox — Критична помилка</translation>
+        <translation>VirtualBox — Критична помилка</translation>
     </message>
     <message>
         <source>Do not show this message again</source>
         <comment>msg box flag</comment>
-        <translation type="vanished">Не показувати це повідомлення знову</translation>
+        <translation>Не показувати це повідомлення знову</translation>
     </message>
     <message>
         <source>Failed to open &lt;tt&gt;%1&lt;/tt&gt;. Make sure your desktop environment can properly handle URLs of this type.</source>
-        <translation type="vanished">Не вдалось відкрити &lt;tt&gt;%1&lt;/tt&gt;. Переконайтесь, що середовище вашої стільниці може правильно оперувати з посиланнями цього типу.</translation>
+        <translation>Не вдалось відкрити &lt;tt&gt;%1&lt;/tt&gt;. Переконайтесь, що середовище вашої стільниці може правильно оперувати з посиланнями цього типу.</translation>
     </message>
     <message>
         <source>&lt;p&gt;Failed to initialize COM or to find the VirtualBox COM server. Most likely, the VirtualBox server is not running or failed to start.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
-        <translation type="vanished">&lt;p&gt;Не вдалося запустити COM або знайти сервер COM програми VirtualBox. Швидше за все, сервер VirtualBox не запускається або він не може запуститись.&lt;/p&gt;&lt;p&gt;Програма зараз завершить роботу.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Не вдалося запустити COM або знайти сервер COM програми VirtualBox. Швидше за все, сервер VirtualBox не запускається або він не може запуститись.&lt;/p&gt;&lt;p&gt;Програма зараз завершить роботу.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Failed to create the VirtualBox COM object.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
@@ -9766,15 +11234,15 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Failed to set global VirtualBox properties.</source>
-        <translation type="vanished">Не вдалось задати загальні налаштування VirtualBox.</translation>
+        <translation>Не вдалось задати загальні налаштування VirtualBox.</translation>
     </message>
     <message>
         <source>Failed to access the USB subsystem.</source>
-        <translation type="vanished">Не вдалось отримати доступ до підсистеми USB.</translation>
+        <translation>Не вдалось отримати доступ до підсистеми USB.</translation>
     </message>
     <message>
         <source>Failed to create a new virtual machine.</source>
-        <translation type="vanished">Не вдалось створити нову віртуальну машину.</translation>
+        <translation>Не вдалось створити нову віртуальну машину.</translation>
     </message>
     <message>
         <source>Failed to create a new virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
@@ -9786,35 +11254,35 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Failed to start the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="vanished">Не вдалось запустити віртуальну машину &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <translation>Не вдалось запустити віртуальну машину &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to pause the execution of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="vanished">Не вдалось затримати роботу віртуальної машини &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <translation>Не вдалось затримати роботу віртуальної машини &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to resume the execution of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="vanished">Не вдалось відновити роботу віртуальної машини &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <translation>Не вдалось відновити роботу віртуальної машини &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to save the state of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="vanished">Не вдалось зберегти стан віртуальної машини &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <translation>Не вдалось зберегти стан віртуальної машини &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to create a snapshot of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="vanished">Не вдалось створити зріз віртуальної машини &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <translation>Не вдалось створити зріз віртуальної машини &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to stop the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="vanished">Не вдалось зупинити віртуальну машину &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <translation>Не вдалось зупинити віртуальну машину &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to remove the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="vanished">Не вдалось вилучити віртуальну машину &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <translation>Не вдалось вилучити віртуальну машину &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to discard the saved state of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="vanished">Не вдалось відкинути збережений стан віртуальної машини &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <translation>Не вдалось відкинути збережений стан віртуальної машини &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to discard the snapshot &lt;b&gt;%1&lt;/b&gt; of the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
@@ -9830,7 +11298,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>There is no virtual machine named &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="vanished">Нема віртуальної машини з назвою &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <translation>Нема віртуальної машини з назвою &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to permanently delete the virtual machine &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;This operation cannot be undone.&lt;/p&gt;</source>
@@ -9846,11 +11314,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Failed to create a new session.</source>
-        <translation type="vanished">Не вдалося створити новий сеанс.</translation>
+        <translation>Не вдалося створити новий сеанс.</translation>
     </message>
     <message>
         <source>Failed to open a session for the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="vanished">Не вдалось відкрити сеанс для віртуальної машини &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <translation>Не вдалось відкрити сеанс для віртуальної машини &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to create the host network interface &lt;b&gt;%1&lt;/b&gt;.</source>
@@ -9858,15 +11326,15 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Failed to remove the host network interface &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="vanished">Не вдалось вилучити головний мережевий інтерфейс &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <translation>Не вдалось вилучити головний мережевий інтерфейс &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to attach the USB device &lt;b&gt;%1&lt;/b&gt; to the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
-        <translation type="vanished">Не вдалось під&apos;єднати пристрій USB &lt;b&gt;%1&lt;/b&gt; до віртуальної машини &lt;b&gt;%2&lt;/b&gt;.</translation>
+        <translation>Не вдалось під&apos;єднати пристрій USB &lt;b&gt;%1&lt;/b&gt; до віртуальної машини &lt;b&gt;%2&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to detach the USB device &lt;b&gt;%1&lt;/b&gt; from the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
-        <translation type="vanished">Не вдалось від&apos;єднати пристрій USB &lt;b&gt;%1&lt;/b&gt; від віртуальної машини &lt;b&gt;%2&lt;/b&gt;.</translation>
+        <translation>Не вдалось від&apos;єднати пристрій USB &lt;b&gt;%1&lt;/b&gt; від віртуальної машини &lt;b&gt;%2&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to create the shared folder &lt;b&gt;%1&lt;/b&gt; (pointing to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) for the virtual machine &lt;b&gt;%3&lt;/b&gt;.</source>
@@ -9878,11 +11346,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;The Virtual Machine reports that the guest OS does not support &lt;b&gt;mouse pointer integration&lt;/b&gt; in the current video mode. You need to capture the mouse (by clicking over the VM display or pressing the host key) in order to use the mouse inside the guest OS.&lt;/p&gt;</source>
-        <translation type="vanished">&lt;p&gt;Віртуальна машина повідомляє, що гостьова операційна система не підтримує &lt;b&gt;інтеграцію курсора миші&lt;/b&gt; в поточному відеорежимі. Вам потрібно захопити мишку (клацнувши на екран віртуальної машини або натиснувши головну клавішу), щоб використовувати мишку всередині гостьової операційної системи.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Віртуальна машина повідомляє, що гостьова операційна система не підтримує &lt;b&gt;інтеграцію курсора миші&lt;/b&gt; в поточному відеорежимі. Вам потрібно захопити мишку (клацнувши на екран віртуальної машини або натиснувши головну клавішу), щоб використовувати мишку всередині гостьової операційної системи.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The Virtual Machine is currently in the &lt;b&gt;Paused&lt;/b&gt; state and not able to see any keyboard or mouse input. If you want to continue to work inside the VM, you need to resume it by selecting the corresponding action from the menu bar.&lt;/p&gt;</source>
-        <translation type="vanished">&lt;p&gt;Віртуальну машину зараз &lt;b&gt;Зупинено&lt;/b&gt; і таким чином недоступний доступ до будь-якого вводу клавіатурою та мишкою. Якщо ви бажаєте продовжити роботу всередині віртуальної машини, вам потрібно відновити її вибравши відповідну дію в меню.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Віртуальну машину зараз &lt;b&gt;Зупинено&lt;/b&gt; і таким чином недоступний доступ до будь-якого вводу клавіатурою та мишкою. Якщо ви бажаєте продовжити роботу всередині віртуальної машини, вам потрібно відновити її вибравши відповідну дію в меню.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Cannot run VirtualBox in &lt;i&gt;VM Selector&lt;/i&gt; mode due to local restrictions.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
@@ -9891,39 +11359,39 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>&lt;nobr&gt;Fatal Error&lt;/nobr&gt;</source>
         <comment>runtime error info</comment>
-        <translation type="vanished">&lt;nobr&gt;Невиправна помилка&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;Невиправна помилка&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Non-Fatal Error&lt;/nobr&gt;</source>
         <comment>runtime error info</comment>
-        <translation type="vanished">&lt;nobr&gt;Виправна помилка&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;Виправна помилка&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Warning&lt;/nobr&gt;</source>
         <comment>runtime error info</comment>
-        <translation type="vanished">&lt;nobr&gt;Попередження&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;Попередження&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Error ID: &lt;/nobr&gt;</source>
         <comment>runtime error info</comment>
-        <translation type="vanished">&lt;nobr&gt;Ід. помилки: &lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;Ід. помилки: &lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>Severity: </source>
         <comment>runtime error info</comment>
-        <translation type="vanished">Важливість: </translation>
+        <translation>Важливість: </translation>
     </message>
     <message>
         <source>&lt;p&gt;A fatal error has occurred during virtual machine execution! The virtual machine will be powered off. Please copy the following error message using the clipboard to help diagnose the problem:&lt;/p&gt;</source>
-        <translation type="vanished">&lt;p&gt;Протягом роботи віртуальної машини трапилась невиправна помилка! Віртуальну машину буде вимкнено. Пропонується використати копіювання в кишеню для подальшого вивчення помилки:&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Протягом роботи віртуальної машини трапилась невиправна помилка! Віртуальну машину буде вимкнено. Пропонується використати копіювання в кишеню для подальшого вивчення помилки:&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;An error has occurred during virtual machine execution! The error details are shown below. You may try to correct the error and resume the virtual machine execution.&lt;/p&gt;</source>
-        <translation type="vanished">&lt;p&gt;Протягом роботи віртуальної машини трапилась невиправна помилка! Подробиці про помилку показано нижче. Ви можете спробувати виправити описану помилку і відновити роботу віртуальної машини.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Протягом роботи віртуальної машини трапилась невиправна помилка! Подробиці про помилку показано нижче. Ви можете спробувати виправити описану помилку і відновити роботу віртуальної машини.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The virtual machine execution may run into an error condition as described below. We suggest that you take an appropriate action to avert the error.&lt;/p&gt;</source>
-        <translation type="vanished">&lt;p&gt;Робота віртуальної машини може запускатися з помилкою, яка описана нижче. Ви можете проігнорувати це повідомлення, але пропонується здійснити відповідну дію, щоб переконатися, що описана помилка не трапиться.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Робота віртуальної машини може запускатися з помилкою, яка описана нижче. Ви можете проігнорувати це повідомлення, але пропонується здійснити відповідну дію, щоб переконатися, що описана помилка не трапиться.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Result&amp;nbsp;Code: </source>
@@ -10008,11 +11476,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Failed to open the license file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;. Check file permissions.</source>
-        <translation type="vanished">Не вдалось відкрити файл ліцензії &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;. Перевірте права дозволу на файл. </translation>
+        <translation>Не вдалось відкрити файл ліцензії &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;. Перевірте права дозволу на файл. </translation>
     </message>
     <message>
         <source>Failed to send the ACPI Power Button press event to the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="vanished">Не вдалось відправити сигнал ACPI вимкнення живлення віртуальної машини &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <translation>Не вдалось відправити сигнал ACPI вимкнення живлення віртуальної машини &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>&lt;p&gt;Congratulations! You have been successfully registered as a user of VirtualBox.&lt;/p&gt;&lt;p&gt;Thank you for finding time to fill out the registration form!&lt;/p&gt;</source>
@@ -10036,7 +11504,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Failed to save the settings of the virtual machine &lt;b&gt;%1&lt;/b&gt; to &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.</source>
-        <translation type="vanished">Не вдалось зберегти налаштування віртуальної машини &lt;b&gt;%1&lt;/b&gt; в &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.</translation>
+        <translation>Не вдалось зберегти налаштування віртуальної машини &lt;b&gt;%1&lt;/b&gt; в &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to load the settings of the virtual machine &lt;b&gt;%1&lt;/b&gt; from &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.</source>
@@ -10055,7 +11523,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Discard</source>
         <comment>saved state</comment>
-        <translation type="vanished">Відкинути</translation>
+        <translation>Відкинути</translation>
     </message>
     <message>
         <source>&lt;p&gt;There are hard disks attached to SATA ports of this virtual machine. If you disable the SATA controller, all these hard disks will be automatically detached.&lt;/p&gt;&lt;p&gt;Are you sure that you want to disable the SATA controller?&lt;/p&gt;</source>
@@ -10074,22 +11542,22 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Insert</source>
         <comment>additions</comment>
-        <translation type="vanished">Змонтувати</translation>
+        <translation>Змонтувати</translation>
     </message>
     <message>
         <source>&lt;p&gt;The host key is currently defined as &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</source>
         <comment>additional message box paragraph</comment>
-        <translation type="vanished">&lt;p&gt;Зараз головними клавішами є: &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Зараз головними клавішами є: &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Capture</source>
         <comment>do input capture</comment>
-        <translation type="vanished">Захопити</translation>
+        <translation>Захопити</translation>
     </message>
     <message>
         <source>Check</source>
         <comment>inaccessible media message box</comment>
-        <translation type="vanished">Перевірити</translation>
+        <translation>Перевірити</translation>
     </message>
     <message>
         <source>&amp;Backup</source>
@@ -10113,17 +11581,17 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Reset</source>
         <comment>machine</comment>
-        <translation type="vanished">Перезавантажити</translation>
+        <translation>Перезавантажити</translation>
     </message>
     <message>
         <source>Continue</source>
         <comment>no hard disk attached</comment>
-        <translation type="vanished">Продовжити</translation>
+        <translation>Продовжити</translation>
     </message>
     <message>
         <source>Go Back</source>
         <comment>no hard disk attached</comment>
-        <translation type="vanished">Назад</translation>
+        <translation>Назад</translation>
     </message>
     <message>
         <source>Failed to copy file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; to &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; (%3).</source>
@@ -10141,7 +11609,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;Could not enter seamless mode due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;</source>
-        <translation type="vanished">&lt;p&gt;Не вдалось ввійти в ціловикроєний режим через недостатній обсяг гостьової відеопам&apos;яті.&lt;/p&gt;&lt;p&gt;Вам необхідно вказати мінімум &lt;b&gt;%1&lt;/b&gt; відеопам&apos;яті.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Не вдалось ввійти в ціловикроєний режим через недостатній обсяг гостьової відеопам&apos;яті.&lt;/p&gt;&lt;p&gt;Вам необхідно вказати мінімум &lt;b&gt;%1&lt;/b&gt; відеопам&apos;яті.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Could not switch the guest display to fullscreen mode due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Ignore&lt;/b&gt; to switch to fullscreen mode anyway or press &lt;b&gt;Cancel&lt;/b&gt; to cancel the operation.&lt;/p&gt;</source>
@@ -10149,19 +11617,19 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>You are already running the most recent version of VirtualBox.</source>
-        <translation type="vanished">У вас уже встановлена остання версія VirtualBox. Будь ласка, спробуйте перевірити версію пізніше.</translation>
+        <translation>У вас уже встановлена остання версія VirtualBox. Будь ласка, спробуйте перевірити версію пізніше.</translation>
     </message>
     <message>
         <source>&lt;p&gt;You have &lt;b&gt;clicked the mouse&lt;/b&gt; inside the Virtual Machine display or pressed the &lt;b&gt;host key&lt;/b&gt;. This will cause the Virtual Machine to &lt;b&gt;capture&lt;/b&gt; the host mouse pointer (only if the mouse pointer integration is not currently supported by the guest OS) and the keyboard, which will make them unavailable to other applications running on your host machine.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window, next to the&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;icon. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
-        <translation type="vanished">&lt;p&gt;Ви &lt;b&gt;клацнули мишкою&lt;/b&gt; всередині екрана віртуальної машини або натиснули &lt;b&gt;головну клавішу&lt;/b&gt;. Віртуальна машина &lt;b&gt;захопить&lt;/b&gt; головний вказівник миші (Тільки якщо інтеграція вказівника миші зараз не підтримується гостьовою операційною системою) і клавіатуру, яка буде недоступною для інших програм, які запущені на вашій головній машині.&lt;/p&gt;&lt;p&gt;Ви можете натиснути &lt;b&gt;головну клавішу&lt;/b&gt; в будь-який момент, щоб &lt;b&gt;відпустити&lt;/b&gt; клавіатуру і мишку (якщо вони захоплені) та повернути назад. Поточна головна клавіша показується на панелі стану у вікні віртуальної машини, біля the&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;icon. Ця піктограма, знаходиться біля піктограми миші, показуючи поточний стан клавіатури і миші.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Ви &lt;b&gt;клацнули мишкою&lt;/b&gt; всередині екрана віртуальної машини або натиснули &lt;b&gt;головну клавішу&lt;/b&gt;. Віртуальна машина &lt;b&gt;захопить&lt;/b&gt; головний вказівник миші (Тільки якщо інтеграція вказівника миші зараз не підтримується гостьовою операційною системою) і клавіатуру, яка буде недоступною для інших програм, які запущені на вашій головній машині.&lt;/p&gt;&lt;p&gt;Ви можете натиснути &lt;b&gt;головну клавішу&lt;/b&gt; в будь-який момент, щоб &lt;b&gt;відпустити&lt;/b&gt; клавіатуру і мишку (якщо вони захоплені) та повернути назад. Поточна головна клавіша показується на панелі стану у вікні віртуальної машини, біля the&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;icon. Ця піктограма, знаходиться біля піктограми миші, показуючи поточний стан клавіатури і миші.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;You have the &lt;b&gt;Auto capture keyboard&lt;/b&gt; option turned on. This will cause the Virtual Machine to automatically &lt;b&gt;capture&lt;/b&gt; the keyboard every time the VM window is activated and make it unavailable to other applications running on your host machine: when the keyboard is captured, all keystrokes (including system ones like Alt-Tab) will be directed to the VM.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window, next to the&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;icon. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
-        <translation type="vanished">&lt;p&gt;Ви увімкнули &lt;b&gt;Автозахоплення клавіатури&lt;/b&gt;. Віртуальна машина автоматично &lt;b&gt;захоплюватиме&lt;/b&gt; клавіатуру кожного разу, коли вікно віртуальної машини активне та робить його недоступним для інших програм, які запущено на вашій головній машині: коли клавіатура захоплена, будь-які натиснення клавіш (у тому ж числі такі системні, як Alt-Tab) будуть виконуватись всередині віртуальної машини.&lt;/p&gt;&lt;p&gt;&lt;p&gt;Ви можете натиснути &lt;b&gt;головну клавішу&lt;/b&gt; в будь-який момент, щоб &lt;b&gt;відпустити&lt;/b&gt; клавіатуру і мишку (якщо вони захоплені) та повернути назад. Поточна головна клавіша показується на панелі стану у вікні віртуальної машини, біля the&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;icon. Ця піктограма, знаходиться біля піктограми миші, показуючи поточний стан клавіатури і миші.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Ви увімкнули &lt;b&gt;Автозахоплення клавіатури&lt;/b&gt;. Віртуальна машина автоматично &lt;b&gt;захоплюватиме&lt;/b&gt; клавіатуру кожного разу, коли вікно віртуальної машини активне та робить його недоступним для інших програм, які запущено на вашій головній машині: коли клавіатура захоплена, будь-які натиснення клавіш (у тому ж числі такі системні, як Alt-Tab) будуть виконуватись всередині віртуальної машини.&lt;/p&gt;&lt;p&gt;&lt;p&gt;Ви можете натиснути &lt;b&gt;головну клавішу&lt;/b&gt; в будь-який момент, щоб &lt;b&gt;відпустити&lt;/b&gt; клавіатуру і мишку (якщо вони захоплені) та повернути назад. Поточна головна клавіша показується на панелі стану у вікні віртуальної машини, біля the&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;icon. Ця піктограма, знаходиться біля піктограми миші, показуючи поточний стан клавіатури і миші.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The Virtual Machine reports that the guest OS supports &lt;b&gt;mouse pointer integration&lt;/b&gt;. This means that you do not need to &lt;i&gt;capture&lt;/i&gt; the mouse pointer to be able to use it in your guest OS -- all mouse actions you perform when the mouse pointer is over the Virtual Machine&apos;s display are directly sent to the guest OS. If the mouse is currently captured, it will be automatically uncaptured.&lt;/p&gt;&lt;p&gt;The mouse icon on the status bar will look like&amp;nbsp;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;to inform you that mouse pointer integration is supported by the guest OS and is currently turned on.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note&lt;/b&gt;: Some applications may behave incorrectly in mouse pointer integration mode. You can always disable it for the current session (and enable it again) by selecting the corresponding action from the menu bar.&lt;/p&gt;</source>
-        <translation type="vanished">&lt;p&gt;Віртуальна машина повідомляє, що гостьова операційна система підтримує &lt;b&gt;інтеграцію вказівника миші&lt;/b&gt;. Тобто вам не потрібно &lt;i&gt;захоплювати&lt;/i&gt; вказівник миші, щоб використовувати його в гостьовій операційній системі — усі дії миші, які ви виконуєте, коли вказівник на екрані віртуальної машини, виконуються в гостьовій операційній системі. Якщо мишка вже захоплена, то вона автоматично відпуститься.&lt;/p&gt;&lt;p&gt;Піктограма миші на панелі стану буде вигляди як&amp;nbsp;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;, щоб повідомити, що ваша інтеграція вказівника миші підтримується гостьовою операційною системою і зараз увімкнута.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note&lt;/b&gt;: Деякі програми можуть поводитись неправильно в режимі інтеграції вказівника миші. Ви завжди можете вимкнути його на поточний сеанс (і ввімкнути знову) вибравши відповідну дію в панелі меню.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Віртуальна машина повідомляє, що гостьова операційна система підтримує &lt;b&gt;інтеграцію вказівника миші&lt;/b&gt;. Тобто вам не потрібно &lt;i&gt;захоплювати&lt;/i&gt; вказівник миші, щоб використовувати його в гостьовій операційній системі — усі дії миші, які ви виконуєте, коли вказівник на екрані віртуальної машини, виконуються в гостьовій операційній системі. Якщо мишка вже захоплена, то вона автоматично відпуститься.&lt;/p&gt;&lt;p&gt;Піктограма миші на панелі стану буде вигляди як&amp;nbsp;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;, щоб повідомити, що ваша інтеграція вказівника миші підтримується гостьовою операційною системою і зараз увімкнута.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note&lt;/b&gt;: Деякі програми можуть поводитись неправильно в режимі інтеграції вказівника миші. Ви завжди можете вимкнути його на поточний сеанс (і ввімкнути знову) вибравши відповідну дію в панелі меню.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;fullscreen&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;. Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in fullscreen mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
@@ -10221,7 +11689,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;A new version of VirtualBox has been released! Version &lt;b&gt;%1&lt;/b&gt; is available at &lt;a href=&quot;https://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;You can download this version using the link:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</source>
-        <translation type="vanished">&lt;p&gt;Випущено нову версію VirtualBox! Версія &lt;b&gt;%1&lt;/b&gt; доступна на &lt;a href=&quot;https://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;Ви можете звантажити цю версію прямим посиланням:&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Випущено нову версію VirtualBox! Версія &lt;b&gt;%1&lt;/b&gt; доступна на &lt;a href=&quot;https://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;Ви можете звантажити цю версію прямим посиланням:&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to release the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;This will detach it from the following virtual machine(s): &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;</source>
@@ -10230,7 +11698,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Release</source>
         <comment>detach medium</comment>
-        <translation type="vanished">Відпустити</translation>
+        <translation>Відпустити</translation>
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to remove the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; from the list of known disk image files?&lt;/p&gt;</source>
@@ -10251,11 +11719,11 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Remove</source>
         <comment>medium</comment>
-        <translation type="vanished">Вилучити</translation>
+        <translation>Вилучити</translation>
     </message>
     <message>
         <source>&lt;p&gt;The hard disk storage unit at location &lt;b&gt;%1&lt;/b&gt; already exists. You cannot create a new virtual hard disk that uses this location because it can be already used by another virtual hard disk.&lt;/p&gt;&lt;p&gt;Please specify a different location.&lt;/p&gt;</source>
-        <translation type="vanished">&lt;p&gt;Блок пам&apos;яті жорсткого диска в &lt;b&gt;%1&lt;/b&gt; вже існує. Ви не можете створити новий віртуальний жорсткий диск, що використовує це місце, оскільки він вже використовується іншим віртуальним жорстким диском.&lt;/p&gt;&lt;p&gt;Будь ласка, вкажіть інше місце.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Блок пам&apos;яті жорсткого диска в &lt;b&gt;%1&lt;/b&gt; вже існує. Ви не можете створити новий віртуальний жорсткий диск, що використовує це місце, оскільки він вже використовується іншим віртуальним жорстким диском.&lt;/p&gt;&lt;p&gt;Будь ласка, вкажіть інше місце.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Do you want to delete the storage unit of the hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Delete&lt;/b&gt; then the specified storage unit will be permanently deleted. This operation &lt;b&gt;cannot be undone&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Keep&lt;/b&gt; then the hard disk will be only removed from the list of known hard disks, but the storage unit will be left untouched which makes it possible to add this hard disk to the list later again.&lt;/p&gt;</source>
@@ -10264,16 +11732,16 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Delete</source>
         <comment>hard disk storage</comment>
-        <translation type="vanished">Вилучити</translation>
+        <translation>Вилучити</translation>
     </message>
     <message>
         <source>Keep</source>
         <comment>hard disk storage</comment>
-        <translation type="vanished">Затримати</translation>
+        <translation>Затримати</translation>
     </message>
     <message>
         <source>Failed to delete the storage unit of the hard disk &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="vanished">Не вдається вилучити блок пам&apos;яті жорсткого диска &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <translation>Не вдається вилучити блок пам&apos;яті жорсткого диска &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>&lt;p&gt;There are no unused hard disks available for the newly created attachment.&lt;/p&gt;&lt;p&gt;Press the &lt;b&gt;Create&lt;/b&gt; button to start the &lt;i&gt;New Virtual Disk&lt;/i&gt; wizard and create a new hard disk, or press the &lt;b&gt;Select&lt;/b&gt; if you wish to open the &lt;i&gt;Virtual Media Manager&lt;/i&gt;.&lt;/p&gt;</source>
@@ -10281,7 +11749,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Failed to create the hard disk storage &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;</source>
-        <translation type="vanished">Не вдалося створити сховище на жорсткому диску &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;</translation>
+        <translation>Не вдалося створити сховище на жорсткому диску &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>Failed to attach the hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; to slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
@@ -10309,7 +11777,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Failed to access the disk image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation type="vanished">Не вдається отримати стан доступності носія &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</translation>
+        <translation>Не вдається отримати стан доступності носія &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</translation>
     </message>
     <message>
         <source>&lt;p&gt;Failed to connect to the VirtualBox online registration service due to the following error:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</source>
@@ -10352,7 +11820,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;A critical error has occurred while running the virtual machine and the machine execution has been stopped.&lt;/p&gt;&lt;p&gt;For help, please see the Community section on &lt;a href=https://www.virtualbox.org&gt;https://www.virtualbox.org&lt;/a&gt; or your support contract. Please provide the contents of the log file &lt;tt&gt;VBox.log&lt;/tt&gt; and the image file &lt;tt&gt;VBox.png&lt;/tt&gt;, which you can find in the &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; directory, as well as a description of what you were doing when this error happened. Note that you can also access the above files by selecting &lt;b&gt;Show Log&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; if you want to power off the machine or press &lt;b&gt;Ignore&lt;/b&gt; if you want to leave it as is for debugging. Please note that debugging requires special knowledge and tools, so it is recommended to press &lt;b&gt;OK&lt;/b&gt; now.&lt;/p&gt;</source>
-        <translation type="vanished">&lt;p&gt;Трапилась критична помилка під час роботи віртуальної машини і її виконання припинено.&lt;/p&gt;&lt;p&gt;Зверніться до спільноти за допомогою на сайті &lt;a href=https://www.virtualbox.org&gt;https://www.virtualbox.org&lt;/a&gt; або до вашої групи підтримки. Будь ласка, додайте свій журнал помилок &lt;tt&gt;VBox.log&lt;/tt&gt; та зображення &lt;tt&gt;VBox.png&lt;/tt&gt;, які ви можете знайти в теці &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;, і також опис того, що ви робили, коли це трапилось. Майте на увазі, ви також можете отримати файл використавши &lt;b&gt;Показати журнал&lt;/b&gt; в меню &lt;b&gt;Машина&lt;/b&gt; головного вікна VirtualBox.&lt;/p&gt;&lt;p&gt;Натисніть  &lt;b&gt;Гаразд&lt;/b&gt;, якщо ви бажаєте вимкнути живлення машини, або натисніть &lt;b&gt;Ігнорувати&lt;/b&gt;, якщо ви бажаєте покинути це для зневадження. Будь ласка, майте на увазі, зневадження потребує спеціальних знань та інструментів, тому рекомендується зараз натиснути &lt;b&gt;Гаразд&lt;/b&gt;.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Трапилась критична помилка під час роботи віртуальної машини і її виконання припинено.&lt;/p&gt;&lt;p&gt;Зверніться до спільноти за допомогою на сайті &lt;a href=https://www.virtualbox.org&gt;https://www.virtualbox.org&lt;/a&gt; або до вашої групи підтримки. Будь ласка, додайте свій журнал помилок &lt;tt&gt;VBox.log&lt;/tt&gt; та зображення &lt;tt&gt;VBox.png&lt;/tt&gt;, які ви можете знайти в теці &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;, і також опис того, що ви робили, коли це трапилось. Майте на увазі, ви також можете отримати файл використавши &lt;b&gt;Показати журнал&lt;/b&gt; в меню &lt;b&gt;Машина&lt;/b&gt; головного вікна VirtualBox.&lt;/p&gt;&lt;p&gt;Натисніть  &lt;b&gt;Гаразд&lt;/b&gt;, якщо ви бажаєте вимкнути живлення машини, або натисніть &lt;b&gt;Ігнорувати&lt;/b&gt;, якщо ви бажаєте покинути це для зневадження. Будь ласка, майте на увазі, зневадження потребує спеціальних знань та інструментів, тому рекомендується зараз натиснути &lt;b&gt;Гаразд&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>hard disk</source>
@@ -10371,11 +11839,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>A file named &lt;b&gt;%1&lt;/b&gt; already exists. Are you sure you want to replace it?&lt;br /&gt;&lt;br /&gt;Replacing it will overwrite its contents.</source>
-        <translation type="vanished">Файл з назвою &lt;b&gt;%1&lt;/b&gt; вже існує. Ви впевнені, що бажаєте його замінити?&lt;br /&gt;&lt;br /&gt;При заміні буде перезаписано його вміст.</translation>
+        <translation>Файл з назвою &lt;b&gt;%1&lt;/b&gt; вже існує. Ви впевнені, що бажаєте його замінити?&lt;br /&gt;&lt;br /&gt;При заміні буде перезаписано його вміст.</translation>
     </message>
     <message>
         <source>The following files already exist:&lt;br /&gt;&lt;br /&gt;%1&lt;br /&gt;&lt;br /&gt;Are you sure you want to replace them? Replacing them will overwrite their contents.</source>
-        <translation type="vanished">Такі файли вже існують:&lt;br /&gt;&lt;br /&gt;%1&lt;br /&gt;&lt;br /&gt;Ви впевнені, що бажаєте замінити їх? При їх заміні буде перезаписано їх вміст.</translation>
+        <translation>Такі файли вже існують:&lt;br /&gt;&lt;br /&gt;%1&lt;br /&gt;&lt;br /&gt;Ви впевнені, що бажаєте замінити їх? При їх заміні буде перезаписано їх вміст.</translation>
     </message>
     <message>
         <source>Failed to remove the file &lt;b&gt;%1&lt;/b&gt;.&lt;br /&gt;&lt;br /&gt;Please try to remove the file yourself and try again.</source>
@@ -10383,7 +11851,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>You are running a prerelease version of VirtualBox. This version is not suitable for production use.</source>
-        <translation type="vanished">Ви запускаєте невипущену версію VirtualBox. Ця версія не підходить для повсякденного використання.</translation>
+        <translation>Ви запускаєте невипущену версію VirtualBox. Ця версія не підходить для повсякденного використання.</translation>
     </message>
     <message>
         <source>Could not access USB on the host system, because neither the USB file system (usbfs) nor the DBus and hal services are currently available. If you wish to use host USB devices inside guest systems, you must correct this and restart VirtualBox.</source>
@@ -10391,23 +11859,23 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>You are trying to shut down the guest with the ACPI power button. This is currently not possible because the guest does not support software shutdown.</source>
-        <translation type="vanished">Ви намагаєтесь вимкнути гостьову систему з живлення. Це неможливо, оскільки гостьова операційна система не використовує підсистему ACPI.</translation>
+        <translation>Ви намагаєтесь вимкнути гостьову систему з живлення. Це неможливо, оскільки гостьова операційна система не використовує підсистему ACPI.</translation>
     </message>
     <message>
         <source>&lt;p&gt;VT-x/AMD-V hardware acceleration has been enabled, but is not operational. Your 64-bit guest will fail to detect a 64-bit CPU and will not be able to boot.&lt;/p&gt;&lt;p&gt;Please ensure that you have enabled VT-x/AMD-V properly in the BIOS of your host computer.&lt;/p&gt;</source>
-        <translation type="vanished">&lt;p&gt;Увімкнуто апаратне прискорення VT-x/AMD-V, але воно нечинне. Вашій 64-бітній гостьовій операційній системі не вдасться виявити 64-бітний процесор і він не завантажиться.&lt;/p&gt;&lt;p&gt;Будь ласка, переконайтесь, що VT-x/AMD-V в BIOS ввімкнуто належним чином у вашій головній операційній системі.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Увімкнуто апаратне прискорення VT-x/AMD-V, але воно нечинне. Вашій 64-бітній гостьовій операційній системі не вдасться виявити 64-бітний процесор і він не завантажиться.&lt;/p&gt;&lt;p&gt;Будь ласка, переконайтесь, що VT-x/AMD-V в BIOS ввімкнуто належним чином у вашій головній операційній системі.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Close VM</source>
-        <translation type="vanished">Закрити віртуальну машину</translation>
+        <translation>Закрити віртуальну машину</translation>
     </message>
     <message>
         <source>Continue</source>
-        <translation type="vanished">Продовжити</translation>
+        <translation>Продовжити</translation>
     </message>
     <message>
         <source>&lt;p&gt;VT-x/AMD-V hardware acceleration has been enabled, but is not operational. Certain guests (e.g. OS/2 and QNX) require this feature.&lt;/p&gt;&lt;p&gt;Please ensure that you have enabled VT-x/AMD-V properly in the BIOS of your host computer.&lt;/p&gt;</source>
-        <translation type="vanished">&lt;p&gt;Увімкнуто апаратне прискорення VT-x/AMD-V, але воно нечинне. Певна гостьова операційна система (наприклад,. OS/2 і QNX) потребує цю властивість.&lt;/p&gt;&lt;p&gt;Будь ласка, переконайтесь, що VT-x/AMD-V в BIOS ввімкнуто належним чином у вашій головній операційній системі.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Увімкнуто апаратне прискорення VT-x/AMD-V, але воно нечинне. Певна гостьова операційна система (наприклад,. OS/2 і QNX) потребує цю властивість.&lt;/p&gt;&lt;p&gt;Будь ласка, переконайтесь, що VT-x/AMD-V в BIOS ввімкнуто належним чином у вашій головній операційній системі.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you wish to delete the selected snapshot and saved state?&lt;/p&gt;</source>
@@ -10419,7 +11887,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Cancel</source>
-        <translation type="vanished">Скасувати</translation>
+        <translation>Скасувати</translation>
     </message>
     <message>
         <source>&lt;p&gt;There are hard disks attached to ports of the additional controller. If you disable the additional controller, all these hard disks will be automatically detached.&lt;/p&gt;&lt;p&gt;Are you sure you want to disable the additional controller?&lt;/p&gt;</source>
@@ -10436,7 +11904,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;Deleting this host-only network will remove the host-only interface this network is based on. Do you want to remove the (host-only network) interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; this interface may be in use by one or more virtual network adapters belonging to one of your VMs. After it is removed, these adapters will no longer be usable until you correct their settings by either choosing a different interface name or a different adapter attachment type.&lt;/p&gt;</source>
-        <translation type="vanished">&lt;p&gt;Вилучення цієї лише головної мережі спричинить вилучення лише головного інтерфейсу цієї мережі, який базується на ній. Ви бажаєте вилучити (лише головної мережі) інтерфейс &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Майте на увазі:&lt;/b&gt; цей інтерфейс можливо використовувати одним або більше адаптерами віртуальної мережі, яка належить до ваших віртуальних мереж. Після цього він вилучиться, ті адаптери більше не використовуватимуться, допоки ви не зміните їхні налаштування, вибравши іншу назву інтерфейсу або інший тип під&apos;єнання адаптера.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Вилучення цієї лише головної мережі спричинить вилучення лише головного інтерфейсу цієї мережі, який базується на ній. Ви бажаєте вилучити (лише головної мережі) інтерфейс &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Майте на увазі:&lt;/b&gt; цей інтерфейс можливо використовувати одним або більше адаптерами віртуальної мережі, яка належить до ваших віртуальних мереж. Після цього він вилучиться, ті адаптери більше не використовуватимуться, допоки ви не зміните їхні налаштування, вибравши іншу назву інтерфейсу або інший тип під&apos;єнання адаптера.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Failed to create the host-only network interface.</source>
@@ -10460,19 +11928,19 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Failed to open/interpret appliance &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="vanished">Не вдається відкрити/розпізнати образ віртуальної машини &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <translation>Не вдається відкрити/розпізнати образ віртуальної машини &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to import appliance &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="vanished">Не вдається імпортувати образ віртуальної машини &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <translation>Не вдається імпортувати образ віртуальної машини &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to check files.</source>
-        <translation type="vanished">Не вдається перевірити файли.</translation>
+        <translation>Не вдається перевірити файли.</translation>
     </message>
     <message>
         <source>Failed to remove file.</source>
-        <translation type="vanished">Не вдається вилучити файл.</translation>
+        <translation>Не вдається вилучити файл.</translation>
     </message>
     <message>
         <source>Failed to create appliance.</source>
@@ -10480,7 +11948,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Failed to prepare the export of the appliance &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="vanished">Не вдається підготувати образ віртуальної машини &lt;b&gt;%1&lt;/b&gt; до експорту.</translation>
+        <translation>Не вдається підготувати образ віртуальної машини &lt;b&gt;%1&lt;/b&gt; до експорту.</translation>
     </message>
     <message>
         <source>Failed to create an appliance.</source>
@@ -10488,15 +11956,15 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Failed to export appliance &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="vanished">Не вдається експортувати образ віртуальної машини &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <translation>Не вдається експортувати образ віртуальної машини &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>You seem to have the USBFS filesystem mounted at /sys/bus/usb/drivers. We strongly recommend that you change this, as it is a severe mis-configuration of your system which could cause USB devices to fail in unexpected ways.</source>
-        <translation type="vanished">Схоже, що ваша файлова система USBFS змонтована в /sys/bus/usb/drivers. Ми настійно рекомендуємо змінити, оскільки це може спричини нестабільну роботу пристроїв USB.</translation>
+        <translation>Схоже, що ваша файлова система USBFS змонтована в /sys/bus/usb/drivers. Ми настійно рекомендуємо змінити, оскільки це може спричини нестабільну роботу пристроїв USB.</translation>
     </message>
     <message>
         <source>You are running an EXPERIMENTAL build of VirtualBox. This version is not suitable for production use.</source>
-        <translation type="vanished">Ви запустили експериментальну збірку VirtualBox. Ця версія не придатна для повсякденного використання.</translation>
+        <translation>Ви запустили експериментальну збірку VirtualBox. Ця версія не придатна для повсякденного використання.</translation>
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to restore snapshot &lt;b&gt;%1&lt;/b&gt;? This will cause you to lose your current machine state, which cannot be recovered.&lt;/p&gt;</source>
@@ -10504,7 +11972,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Restore</source>
-        <translation type="vanished">Відновити</translation>
+        <translation>Відновити</translation>
     </message>
     <message>
         <source>&lt;p&gt;By deleting a snapshot, the state information stored in the snapshot will be thrown away, and disk data spread over several image files that VirtualBox has created together with the snapshot will be merged into one file. This can be a lengthy process, and the information in the snapshot cannot be recovered.&lt;/p&gt;&lt;/p&gt;Are you sure you want to delete the selected snapshot &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;</source>
@@ -10512,15 +11980,15 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Delete</source>
-        <translation type="vanished">Вилучити</translation>
+        <translation>Вилучити</translation>
     </message>
     <message>
         <source>Failed to restore the snapshot &lt;b&gt;%1&lt;/b&gt; of the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
-        <translation type="vanished">Не вдалось відновити зріз &lt;b&gt;%1&lt;/b&gt; віртуальної машини &lt;b&gt;%2&lt;/b&gt;.</translation>
+        <translation>Не вдалось відновити зріз &lt;b&gt;%1&lt;/b&gt; віртуальної машини &lt;b&gt;%2&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to delete the snapshot &lt;b&gt;%1&lt;/b&gt; of the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
-        <translation type="vanished">Не вдалось вилучити зріз &lt;b&gt;%1&lt;/b&gt; віртуальної машини &lt;b&gt;%2&lt;/b&gt;.</translation>
+        <translation>Не вдалось вилучити зріз &lt;b&gt;%1&lt;/b&gt; віртуальної машини &lt;b&gt;%2&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>&lt;p&gt;There are no unused media available for the newly created attachment.&lt;/p&gt;&lt;p&gt;Press the &lt;b&gt;Create&lt;/b&gt; button to start the &lt;i&gt;New Virtual Disk&lt;/i&gt; wizard and create a new medium, or press the &lt;b&gt;Select&lt;/b&gt; if you wish to open the &lt;i&gt;Virtual Media Manager&lt;/i&gt;.&lt;/p&gt;</source>
@@ -10566,7 +12034,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Force Unmount</source>
-        <translation type="vanished">Примусово демонтувати</translation>
+        <translation>Примусово демонтувати</translation>
     </message>
     <message>
         <source>Failed to eject the disk from the virtual drive. The drive may be locked by the guest operating system. Please check this and try again.</source>
@@ -10627,11 +12095,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;VT-x/AMD-V hardware acceleration is not available on your system. Your 64-bit guest will fail to detect a 64-bit CPU and will not be able to boot.</source>
-        <translation type="vanished">&lt;p&gt;Ваша система не підтримує апаратного прискорення VT-x/AMD-V. Вашій 64-ох бітній гостьовій системі не вдасться виявити такий процесор і вона не зможе запуститись.</translation>
+        <translation>&lt;p&gt;Ваша система не підтримує апаратного прискорення VT-x/AMD-V. Вашій 64-ох бітній гостьовій системі не вдасться виявити такий процесор і вона не зможе запуститись.</translation>
     </message>
     <message>
         <source>&lt;p&gt;VT-x/AMD-V hardware acceleration is not available on your system. Certain guests (e.g. OS/2 and QNX) require this feature and will fail to boot without it.&lt;/p&gt;</source>
-        <translation type="vanished">&lt;p&gt;Ваша система не підтримує апаратного прискорення VT-x/AMD-V. Деякі гостьові системи (наприклад, OS/2 та QNX) вимагають ці властивості і не завантажаться без них.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Ваша система не підтримує апаратного прискорення VT-x/AMD-V. Деякі гостьові системи (наприклад, OS/2 та QNX) вимагають ці властивості і не завантажаться без них.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Deleting the snapshot will cause the state information saved in it to be lost, and disk data spread over several image files that VirtualBox has created together with the snapshot will be merged into one file. This can be a lengthy process, and the information in the snapshot cannot be recovered.&lt;/p&gt;&lt;/p&gt;Are you sure you want to delete the selected snapshot &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;</source>
@@ -10643,11 +12111,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;Could not change the guest screen to this host screen due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;</source>
-        <translation type="vanished">&lt;p&gt;Неможливо перемкнути гостьовий екран на головний через брак відеопам&apos;яті.&lt;/p&gt;&lt;p&gt;Вам слід налаштувати віртуальну машину так, щоб ви мали щонайменше &lt;b&gt;%1&lt;/b&gt; відеопам&apos;яті.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Неможливо перемкнути гостьовий екран на головний через брак відеопам&apos;яті.&lt;/p&gt;&lt;p&gt;Вам слід налаштувати віртуальну машину так, щоб ви мали щонайменше &lt;b&gt;%1&lt;/b&gt; відеопам&apos;яті.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Could not change the guest screen to this host screen due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Ignore&lt;/b&gt; to switch the screen anyway or press &lt;b&gt;Cancel&lt;/b&gt; to cancel the operation.&lt;/p&gt;</source>
-        <translation type="vanished">&lt;p&gt;Неможливо перемкнути гостьовий екран на головний через брак відеопам’яті.&lt;/p&gt;&lt;p&gt;Вам слід налаштувати віртуальну машину так, щоб Ви мали щонайменше &lt;b&gt;%1&lt;/b&gt; відеопам’яті.&lt;/p&gt;&lt;p&gt;Натисніть &lt;b&gt;Ігнорувати&lt;/b&gt;, щоб попри все перемкнути екран, або &lt;b&gt;Скасувати&lt;/b&gt;, щоб скасувати цю операцію.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Неможливо перемкнути гостьовий екран на головний через брак відеопам’яті.&lt;/p&gt;&lt;p&gt;Вам слід налаштувати віртуальну машину так, щоб Ви мали щонайменше &lt;b&gt;%1&lt;/b&gt; відеопам’яті.&lt;/p&gt;&lt;p&gt;Натисніть &lt;b&gt;Ігнорувати&lt;/b&gt;, щоб попри все перемкнути екран, або &lt;b&gt;Скасувати&lt;/b&gt;, щоб скасувати цю операцію.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Can not switch the guest display to fullscreen mode. You have more virtual screens configured than physical screens are attached to your host.&lt;/p&gt;&lt;p&gt;Please either lower the virtual screens in your VM configuration or attach additional screens to your host.&lt;/p&gt;</source>
@@ -10664,7 +12132,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>&amp;Remove</source>
         <comment>medium</comment>
-        <translation type="vanished">&amp;Вилучити</translation>
+        <translation>&amp;Вилучити</translation>
     </message>
     <message>
         <source>&lt;p&gt;Could not find the VirtualBox User Manual &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to download this file from the Internet?&lt;/p&gt;</source>
@@ -10688,11 +12156,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Failed to open virtual machine located in %1.</source>
-        <translation type="vanished">Не вдалось відкрити віртуальну машину, яка знаходиться в %1.</translation>
+        <translation>Не вдалось відкрити віртуальну машину, яка знаходиться в %1.</translation>
     </message>
     <message>
         <source>Failed to add virtual machine &lt;b&gt;%1&lt;/b&gt; located in &lt;i&gt;%2&lt;/i&gt; because its already present.</source>
-        <translation type="vanished">Не вдалось додати віртуальну машину &lt;b&gt;%1&lt;/b&gt;, яка знаходиться в &lt;i&gt;%2&lt;/i&gt;, оскільки така вже наявна.</translation>
+        <translation>Не вдалось додати віртуальну машину &lt;b&gt;%1&lt;/b&gt;, яка знаходиться в &lt;i&gt;%2&lt;/i&gt;, оскільки така вже наявна.</translation>
     </message>
     <message>
         <source>&lt;p&gt;You are about to remove the virtual machine &lt;b&gt;%1&lt;/b&gt; from the machine list.&lt;/p&gt;&lt;p&gt;Would you like to delete the files containing the virtual machine from your hard disk as well?&lt;/p&gt;</source>
@@ -10704,11 +12172,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Delete all files</source>
-        <translation type="vanished">Вилучити всі файли</translation>
+        <translation>Вилучити всі файли</translation>
     </message>
     <message>
         <source>Remove only</source>
-        <translation type="vanished">Вилучити лише</translation>
+        <translation>Вилучити лише</translation>
     </message>
     <message>
         <source>You are about to remove the inaccessible virtual machine &lt;b&gt;%1&lt;/b&gt; from the machine list. Do you wish to proceed?</source>
@@ -10716,11 +12184,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Remove</source>
-        <translation type="vanished">Вилучити</translation>
+        <translation>Вилучити</translation>
     </message>
     <message>
         <source>&lt;p&gt;You are about to add a virtual hard disk to controller &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Would you like to create a new, empty file to hold the disk contents or select an existing one?&lt;/p&gt;</source>
-        <translation type="vanished">&lt;p&gt;Ви збираєтесь додати віртуальний жорсткий диск до контролера &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Бажаєте створити новий порожній файл, щоб тримати там його дані, чи вибрати наявний?&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Ви збираєтесь додати віртуальний жорсткий диск до контролера &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Бажаєте створити новий порожній файл, щоб тримати там його дані, чи вибрати наявний?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Create &amp;new disk</source>
@@ -10748,11 +12216,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;You are about to add a new floppy drive to controller &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Would you like to choose a virtual floppy disk to put in the drive or to leave it empty for now?&lt;/p&gt;</source>
-        <translation type="vanished">&lt;p&gt;Ви збираєтесь додати новий носій дискет до контролера &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Бажаєте вибрати віртуальну дискету, щоб застосувати у носії, або поки що залишити його порожнім?&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Ви збираєтесь додати новий носій дискет до контролера &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Бажаєте вибрати віртуальну дискету, щоб застосувати у носії, або поки що залишити його порожнім?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Failed to detach the hard disk (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) from the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation type="vanished">Не вдалось від&apos;єднати жорсткий диск (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) із гнізда &lt;i&gt;%2&lt;/i&gt; машини &lt;b&gt;%3&lt;/b&gt;.</translation>
+        <translation>Не вдалось від&apos;єднати жорсткий диск (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) із гнізда &lt;i&gt;%2&lt;/i&gt; машини &lt;b&gt;%3&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to detach the CD/DVD device (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) from the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
@@ -10776,15 +12244,15 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Failed to update Guest Additions. The Guest Additions disk image file will be inserted for user installation.</source>
-        <translation type="vanished">Не вдалось оновити гостьові доповнення. Установчий образ гостьових доповнень буде змонтовано, щоб забезпечити ручне встановлення.</translation>
+        <translation>Не вдалось оновити гостьові доповнення. Установчий образ гостьових доповнень буде змонтовано, щоб забезпечити ручне встановлення.</translation>
     </message>
     <message>
         <source>Failed to install the Extension Pack &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="vanished">Не вдалось установити пакунок розширення &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <translation>Не вдалось установити пакунок розширення &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to uninstall the Extension Pack &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="vanished">Не вдалось вилучити пакунок розширення &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <translation>Не вдалось вилучити пакунок розширення &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>You are about to remove the Extension Pack &lt;b&gt;%1&lt;/b&gt;. Are you sure you want to do that?</source>
@@ -10792,15 +12260,15 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Remove</source>
-        <translation type="vanished">&amp;Вилучити</translation>
+        <translation>&amp;Вилучити</translation>
     </message>
     <message>
         <source>The current port forwarding rules are not valid. None of the host or guest port values may be set to zero.</source>
-        <translation type="vanished">Теперішні правила переадресування портів неправильні. Жодне значення гостьового чи головного порту не може бути нульовим.</translation>
+        <translation>Теперішні правила переадресування портів неправильні. Жодне значення гостьового чи головного порту не може бути нульовим.</translation>
     </message>
     <message>
         <source>&lt;p&gt;There are unsaved changes in the port forwarding configuration.&lt;/p&gt;&lt;p&gt;If you proceed your changes will be discarded.&lt;/p&gt;</source>
-        <translation type="vanished">&lt;p&gt;У налаштуваннях порту переадресування незбережені зміни.&lt;/p&gt;&lt;p&gt;Якщо ви продовжите, зміни буде відкинуто.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;У налаштуваннях порту переадресування незбережені зміни.&lt;/p&gt;&lt;p&gt;Якщо ви продовжите, зміни буде відкинуто.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Sorry, some generic error happens.</source>
@@ -10808,7 +12276,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Failed to attach the hard disk (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) to the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation type="vanished">Не вдалось під&apos;єднати жорсткий диск (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) до гнізда &lt;i&gt;%2&lt;/i&gt; машини &lt;b&gt;%3&lt;/b&gt;.</translation>
+        <translation>Не вдалось під&apos;єднати жорсткий диск (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) до гнізда &lt;i&gt;%2&lt;/i&gt; машини &lt;b&gt;%3&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to attach the CD/DVD device (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) to the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
@@ -10824,11 +12292,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;Note that the storage unit of this medium will not be deleted and that it will be possible to use it later again.&lt;/p&gt;</source>
-        <translation type="vanished">&lt;p&gt;Зауважте, одиниці пам&apos;яті цього носія не буде вилучено і це буде можливо згодом знову.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Зауважте, одиниці пам&apos;яті цього носія не буде вилучено і це буде можливо згодом знову.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The VirtualBox Guest Additions do not appear to be available on this virtual machine, and shared folders cannot be used without them. To use shared folders inside the virtual machine, please install the Guest Additions if they are not installed, or re-install them if they are not working correctly, by selecting &lt;b&gt;Insert Guest Additions CD image&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu. If they are installed but the machine is not yet fully started then shared folders will be available once it is.&lt;/p&gt;</source>
-        <translation type="vanished">&lt;p&gt;Гостьові доповнення VirtualBox не стали доступними для цієї віртуальної машини, а спільні теки неможливо використовувати без них. Щоб використовувати спільні теки всередині віртуальної машини, будь ласка, встановіть гостьові доповнення, якщо їх не встановлено, або перевстановіть їх, якщо вони працюють некоректно, вибравши &lt;b&gt;Встановити гостьові доповнення&lt;/b&gt; з меню &lt;b&gt;Пристрої&lt;/b&gt;. Якщо вони встановлені, однак машина не запущено повністю, то спільні теки будуть доступні після запуску.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Гостьові доповнення VirtualBox не стали доступними для цієї віртуальної машини, а спільні теки неможливо використовувати без них. Щоб використовувати спільні теки всередині віртуальної машини, будь ласка, встановіть гостьові доповнення, якщо їх не встановлено, або перевстановіть їх, якщо вони працюють некоректно, вибравши &lt;b&gt;Встановити гостьові доповнення&lt;/b&gt; з меню &lt;b&gt;Пристрої&lt;/b&gt;. Якщо вони встановлені, однак машина не запущено повністю, то спільні теки будуть доступні після запуску.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;fullscreen&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in fullscreen mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
@@ -10836,11 +12304,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;Seamless&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in seamless mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation type="vanished">&lt;p&gt;Вікно віртуальної машини буде перемкнуто на &lt;b&gt;ціловикроєний&lt;/b&gt; режим. Можете повернутись до віконного режим у будь-який момент через натиснення &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Зауважте, &lt;i&gt;головну&lt;/i&gt; клавішу визначено як &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Зауважте, що панель головного меню сховано в ціловикроєному режимі. Ви можете дістатись до неї через натиснення &lt;b&gt;головна клавіша+Home&lt;/b&gt;.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Вікно віртуальної машини буде перемкнуто на &lt;b&gt;ціловикроєний&lt;/b&gt; режим. Можете повернутись до віконного режим у будь-який момент через натиснення &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Зауважте, &lt;i&gt;головну&lt;/i&gt; клавішу визначено як &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Зауважте, що панель головного меню сховано в ціловикроєному режимі. Ви можете дістатись до неї через натиснення &lt;b&gt;головна клавіша+Home&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;Scale&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in scaled mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation type="vanished">&lt;p&gt;Вікно віртуальної машини буде перемкнуто на &lt;b&gt;масштабний&lt;/b&gt; режим. Можете повернутись до віконного режим у будь-який момент через натиснення &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Зауважте, &lt;i&gt;головну&lt;/i&gt; клавішу визначено як &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Зауважте, що панель головного меню сховано в масштабному режимі. Ви можете дістатись до неї через натиснення &lt;b&gt;головна клавіша+Home&lt;/b&gt;.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Вікно віртуальної машини буде перемкнуто на &lt;b&gt;масштабний&lt;/b&gt; режим. Можете повернутись до віконного режим у будь-який момент через натиснення &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Зауважте, &lt;i&gt;головну&lt;/i&gt; клавішу визначено як &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Зауважте, що панель головного меню сховано в масштабному режимі. Ви можете дістатись до неї через натиснення &lt;b&gt;головна клавіша+Home&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Switch</source>
@@ -10849,11 +12317,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;Cannot create the machine folder &lt;b&gt;%1&lt;/b&gt; in the parent folder &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Please check that the parent really exists and that you have permissions to create the machine folder.&lt;/p&gt;</source>
-        <translation type="vanished">&lt;p&gt;Неможливо створити машинну теку &lt;b&gt;%1&lt;/b&gt; у батьківській теці &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Будь ласка, перевірте, чи батьківська тека справді існує і чи маєте ви право на створення машинних тек.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Неможливо створити машинну теку &lt;b&gt;%1&lt;/b&gt; у батьківській теці &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Будь ласка, перевірте, чи батьківська тека справді існує і чи маєте ви право на створення машинних тек.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Failed to open the Extension Pack &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="vanished">Не вдалось відкрити пакунок розширень &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <translation>Не вдалось відкрити пакунок розширень &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>&lt;p&gt;You are about to install a VirtualBox extension pack. Extension packs complement the functionality of VirtualBox and can contain system level software that could be potentially harmful to your system. Please review the description below and only proceed if you have obtained the extension pack from a trusted source.&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Name:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Description:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</source>
@@ -10865,7 +12333,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Extension packs complement the functionality of VirtualBox and can contain system level software that could be potentially harmful to your system. Please review the description below and only proceed if you have obtained the extension pack from a trusted source.</source>
-        <translation type="vanished">Пакунки розширень доповнюють функціональність VirtualBox і можуть містити програми системного рівня, які можуть бути потенційно шкідливими для вашої системи. Будь ласка, перегляньте опис нижче і продовжуйте лише в тому разі, коли одержуватимете пакунок розширень з довірених джерел.</translation>
+        <translation>Пакунки розширень доповнюють функціональність VirtualBox і можуть містити програми системного рівня, які можуть бути потенційно шкідливими для вашої системи. Будь ласка, перегляньте опис нижче і продовжуйте лише в тому разі, коли одержуватимете пакунок розширень з довірених джерел.</translation>
     </message>
     <message>
         <source>&lt;p&gt;An older version of the extension pack is already installed, would you like to upgrade? &lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Name:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;New Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Current Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Description:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%5&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</source>
@@ -10873,7 +12341,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Upgrade</source>
-        <translation type="vanished">&amp;Оновити</translation>
+        <translation>&amp;Оновити</translation>
     </message>
     <message>
         <source>&lt;p&gt;An newer version of the extension pack is already installed, would you like to downgrade? &lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Name:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;New Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Current Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Description:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%5&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</source>
@@ -10881,7 +12349,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Downgrade</source>
-        <translation type="vanished">&amp;Понизити</translation>
+        <translation>&amp;Понизити</translation>
     </message>
     <message>
         <source>&lt;p&gt;The extension pack is already installed with the same version, would you like reinstall it? &lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Name:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Description:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</source>
@@ -10889,15 +12357,15 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Reinstall</source>
-        <translation type="vanished">Пере&amp;встановити</translation>
+        <translation>Пере&amp;встановити</translation>
     </message>
     <message>
         <source>&lt;p&gt;You are about to remove the VirtualBox extension pack &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Are you sure you want to proceed?&lt;/p&gt;</source>
-        <translation type="vanished">&lt;p&gt;Ви збираєтесь вилучити пакунок розширень VirtualBox &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Продовжити?&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Ви збираєтесь вилучити пакунок розширень VirtualBox &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Продовжити?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>The extension pack &lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;nobr&gt;&lt;br&gt; was installed successfully.</source>
-        <translation type="vanished">Пакунок розширень &lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;nobr&gt;&lt;br&gt; успішно встановлено.</translation>
+        <translation>Пакунок розширень &lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;nobr&gt;&lt;br&gt; успішно встановлено.</translation>
     </message>
     <message>
         <source>&lt;p&gt;USB 2.0 is currently enabled for this virtual machine. However this requires the &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; to be installed.&lt;/p&gt;&lt;p&gt;Please install the Extension Pack from the VirtualBox download site. After this you will be able to re-enable USB 2.0. It will be disabled in the meantime unless you cancel the current settings changes.&lt;/p&gt;</source>
@@ -10905,27 +12373,27 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Failed to register the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="vanished">Не вдалось зареєструвати віртуальну машину &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <translation>Не вдалось зареєструвати віртуальну машину &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>&lt;p&gt;The machine settings were changed while you were editing them. You currently have unsaved setting changes.&lt;/p&gt;&lt;p&gt;Would you like to reload the changed settings or to keep your own changes?&lt;/p&gt;</source>
-        <translation type="vanished">&lt;p&gt;Налаштування машини змінено протягом їхнього редагування. Тепер зміни у налаштуванні не збережено.&lt;/p&gt;&lt;p&gt;Перезавантажити змінені налаштування чи зберегти власні зміни?&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Налаштування машини змінено протягом їхнього редагування. Тепер зміни у налаштуванні не збережено.&lt;/p&gt;&lt;p&gt;Перезавантажити змінені налаштування чи зберегти власні зміни?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Reload settings</source>
-        <translation type="vanished">Перезавантажити налаштування</translation>
+        <translation>Перезавантажити налаштування</translation>
     </message>
     <message>
         <source>Keep changes</source>
-        <translation type="vanished">Зберегти зміни</translation>
+        <translation>Зберегти зміни</translation>
     </message>
     <message>
         <source>The virtual machine that you are changing has been started. Only certain settings can be changed while a machine is running. All other changes will be lost if you close this window now.</source>
-        <translation type="vanished">Віртуальну машину, що ви змінюєте, запущено. Лише певні налаштування можна змінити протягом роботи машини. Усі зміни буде втрачено, якщо закрити вікно зараз.</translation>
+        <translation>Віртуальну машину, що ви змінюєте, запущено. Лише певні налаштування можна змінити протягом роботи машини. Усі зміни буде втрачено, якщо закрити вікно зараз.</translation>
     </message>
     <message>
         <source>Failed to clone the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="vanished">Не вдалось клонувати віртуальну машину &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <translation>Не вдалось клонувати віртуальну машину &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>&lt;p&gt;You are about to restore snapshot &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;You can create a snapshot of the current state of the virtual machine first by checking the box below; if you do not do this the current state will be permanently lost. Do you wish to proceed?&lt;/p&gt;</source>
@@ -10933,7 +12401,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Create a snapshot of the current machine state</source>
-        <translation type="vanished">Створити зріз поточного стану машини</translation>
+        <translation>Створити зріз поточного стану машини</translation>
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to restore snapshot &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;</source>
@@ -10941,7 +12409,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;Error changing disk image mode from &lt;b&gt;%1&lt;/b&gt; to &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation type="vanished">&lt;p&gt;Помилка зміни типу носія з &lt;b&gt;%1&lt;/b&gt; на &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Помилка зміни типу носія з &lt;b&gt;%1&lt;/b&gt; на &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;USB 2.0 is currently enabled for this virtual machine. However, this requires the &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; to be installed.&lt;/p&gt;&lt;p&gt;Please install the Extension Pack from the VirtualBox download site. After this you will be able to re-enable USB 2.0. It will be disabled in the meantime unless you cancel the current settings changes.&lt;/p&gt;</source>
@@ -10949,27 +12417,27 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Could not load the Host USB Proxy Service (VERR_FILE_NOT_FOUND). The service might not be installed on the host computer</source>
-        <translation type="vanished">Неможливо завантажити головний проксі сервер USB (VERR_FILE_NOT_FOUND). Службу, можливо, не встановили на головному комп&apos;ютері</translation>
+        <translation>Неможливо завантажити головний проксі сервер USB (VERR_FILE_NOT_FOUND). Службу, можливо, не встановили на головному комп&apos;ютері</translation>
     </message>
     <message>
         <source>VirtualBox is not currently allowed to access USB devices.  You can change this by adding your user to the &apos;vboxusers&apos; group.  Please see the user manual for a more detailed explanation</source>
-        <translation type="vanished">VirtualBox зараз не дозволяє доступитись до пристроїв USB. Ви моежете змінити це, додавши користувача до групи «vboxusers». Будь ласка, ознайомтесь з користувацьким підручником для докладнішого пояснення</translation>
+        <translation>VirtualBox зараз не дозволяє доступитись до пристроїв USB. Ви моежете змінити це, додавши користувача до групи «vboxusers». Будь ласка, ознайомтесь з користувацьким підручником для докладнішого пояснення</translation>
     </message>
     <message>
         <source>VirtualBox is not currently allowed to access USB devices.  You can change this by allowing your user to access the &apos;usbfs&apos; folder and files.  Please see the user manual for a more detailed explanation</source>
-        <translation type="vanished">VirtualBox зараз не дозволяє доступитись до пристроїв USB. Ви моежете змінити це, надавши користувачеві доступ до теки і файлів «usbfs». Будь ласка, ознайомтесь з користувацьким підручником для докладнішого пояснення</translation>
+        <translation>VirtualBox зараз не дозволяє доступитись до пристроїв USB. Ви моежете змінити це, надавши користувачеві доступ до теки і файлів «usbfs». Будь ласка, ознайомтесь з користувацьким підручником для докладнішого пояснення</translation>
     </message>
     <message>
         <source>The USB Proxy Service has not yet been ported to this host</source>
-        <translation type="vanished">Службу проксі USB ще не портовано на цей вузол</translation>
+        <translation>Службу проксі USB ще не портовано на цей вузол</translation>
     </message>
     <message>
         <source>Could not load the Host USB Proxy service</source>
-        <translation type="vanished">Неможливо завантажити службу головного USB Proxy</translation>
+        <translation>Неможливо завантажити службу головного USB Proxy</translation>
     </message>
     <message>
         <source>Can&apos;t find snapshot named &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="vanished">Неможливо знайти зріз з назвою &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <translation>Неможливо знайти зріз з назвою &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>&lt;p&gt;Failed to save the downloaded file as &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</source>
@@ -10977,7 +12445,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;You have an old version (%1) of the &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; installed.&lt;/p&gt;&lt;p&gt;Do you wish to download latest one from the Internet?&lt;/p&gt;</source>
-        <translation type="vanished">&lt;p&gt;Стару версію (%1) &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; встановлено.&lt;/p&gt;&lt;p&gt;Звантажити найновішу через інтернет?&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Стару версію (%1) &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; встановлено.&lt;/p&gt;&lt;p&gt;Звантажити найновішу через інтернет?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Download</source>
@@ -10986,20 +12454,20 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to download the &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; from &lt;nobr&gt;&lt;a href=&quot;%2&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (size %3 bytes)?&lt;/p&gt;</source>
-        <translation type="vanished">&lt;p&gt;Звантажити &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; з &lt;nobr&gt;&lt;a href=&quot;%2&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (розміром %3 байтів)?&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Звантажити &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; з &lt;nobr&gt;&lt;a href=&quot;%2&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (розміром %3 байтів)?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%2&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to install this extension pack?&lt;/p&gt;</source>
-        <translation type="vanished">&lt;p&gt;&lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; успішно звантажено з &lt;nobr&gt;&lt;a href=&quot;%2&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; і збережено локально як &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Установити пакунок розширення?&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;&lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; успішно звантажено з &lt;nobr&gt;&lt;a href=&quot;%2&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; і збережено локально як &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Установити пакунок розширення?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Install</source>
         <comment>extension pack</comment>
-        <translation type="vanished">Установити</translation>
+        <translation>Установити</translation>
     </message>
     <message>
         <source>&lt;p&gt;The &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%2&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; but can&apos;t be saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Please choose another location for that file.&lt;/p&gt;</source>
-        <translation type="vanished">&lt;p&gt;&lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; успішно звантажено з &lt;nobr&gt;&lt;a href=&quot;%2&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt;, однак неможливо зберегти локально як &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Будь ласка, виберіть іншу адресу для файла.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;&lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; успішно звантажено з &lt;nobr&gt;&lt;a href=&quot;%2&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt;, однак неможливо зберегти локально як &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Будь ласка, виберіть іншу адресу для файла.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Failed to download the &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; from &lt;nobr&gt;&lt;a href=&quot;%2&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</source>
@@ -11015,19 +12483,19 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;You are about to remove following inaccessible virtual machines from the machine list:&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;&lt;p&gt;Do you wish to proceed?&lt;/p&gt;</source>
-        <translation type="vanished">&lt;p&gt;Ви намагаєтесь вилучити такі недоступні віртуальні машини зі списку машин:&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;&lt;p&gt;Продовжити?&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Ви намагаєтесь вилучити такі недоступні віртуальні машини зі списку машин:&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;&lt;p&gt;Продовжити?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;You are about to remove following virtual machines from the machine list:&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;&lt;p&gt;Would you like to delete the files containing the virtual machine from your hard disk as well? Doing this will also remove the files containing the machine&apos;s virtual hard disks if they are not in use by another machine.&lt;/p&gt;</source>
-        <translation type="vanished">&lt;p&gt;Ви намагаєтесь вилучити такі недоступні віртуальні машини зі списку машин:&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;&lt;p&gt;Також вилучити файли, що містять віртуальну машину, з жорсткого диска? Це теж вилучить файли, що містять жорсткі диски віртуальних машин, якщо вони не використовуються іншими машинами.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Ви намагаєтесь вилучити такі недоступні віртуальні машини зі списку машин:&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;&lt;p&gt;Також вилучити файли, що містять віртуальну машину, з жорсткого диска? Це теж вилучить файли, що містять жорсткі диски віртуальних машин, якщо вони не використовуються іншими машинами.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;You are about to remove following virtual machines from the machine list:&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;&lt;p&gt;Would you like to delete the files containing the virtual machine from your hard disk as well?&lt;/p&gt;</source>
-        <translation type="vanished">&lt;p&gt;Ви намагаєтесь вилучити такі недоступні віртуальні машини зі списку машин:&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;&lt;p&gt;Також вилучити файли, що містять віртуальну машину, з жорсткого диска?&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Ви намагаєтесь вилучити такі недоступні віртуальні машини зі списку машин:&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;&lt;p&gt;Також вилучити файли, що містять віртуальну машину, з жорсткого диска?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;You have version %1 of the &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; installed.&lt;/p&gt;&lt;p&gt;You should download and install version %3 of this extension pack from Oracle!&lt;/p&gt;</source>
-        <translation type="vanished">&lt;p&gt;Встановлено версію %1 &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Слід звантажити і встановити версію %3 пакунка розширень від Oracle!&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Встановлено версію %1 &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Слід звантажити і встановити версію %3 пакунка розширень від Oracle!&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Ok</source>
@@ -11036,7 +12504,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Do you wish to cancel all current network operations?</source>
-        <translation type="vanished">Скасувати всі поточні мережеві операції?</translation>
+        <translation>Скасувати всі поточні мережеві операції?</translation>
     </message>
     <message>
         <source>Do you wish to cancel all current network operations or leave them running in the background?</source>
@@ -11057,7 +12525,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>ACPI Shutdown</source>
         <comment>machine</comment>
-        <translation type="vanished">Вимкнення ACPI</translation>
+        <translation>Вимкнення ACPI</translation>
     </message>
     <message>
         <source>&lt;p&gt;Do you really want to power off the virtual machine?&lt;/p&gt;&lt;p&gt;This will cause any unsaved data in applications running inside it to be lost.&lt;/p&gt;</source>
@@ -11066,7 +12534,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Power Off</source>
         <comment>machine</comment>
-        <translation type="vanished">Вимкнути</translation>
+        <translation>Вимкнути</translation>
     </message>
     <message>
         <source>Failed to drop data.</source>
@@ -11074,7 +12542,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;Failed to initialize COM because the VirtualBox global configuration directory &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; is not accessible. Please check the permissions of this directory and of its parent directory.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
-        <translation type="vanished">&lt;p&gt;Не вдалось запустити COM, бо загальний каталог налаштувань VirtualBox &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; не є доступним. Перевірте, права на цей каталог і на її батьківський каталог.&lt;/p&gt;&lt;p&gt;Програму наразі буде завершено.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Не вдалось запустити COM, бо загальний каталог налаштувань VirtualBox &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; не є доступним. Перевірте, права на цей каталог і на її батьківський каталог.&lt;/p&gt;&lt;p&gt;Програму наразі буде завершено.&lt;/p&gt;</translation>
     </message>
     <message numerus="yes">
         <source>&lt;p&gt;The %n following virtual machine(s) are currently in a saved state: &lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;If you continue the runtime state of the exported machine(s) will be discarded. The other machine(s) will not be changed.&lt;/p&gt;</source>
@@ -11087,35 +12555,35 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;You are about to restore snapshot &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.&lt;/p&gt;&lt;p&gt;You can create a snapshot of the current state of the virtual machine first by checking the box below; if you do not do this the current state will be permanently lost. Do you wish to proceed?&lt;/p&gt;</source>
-        <translation type="vanished">&lt;p&gt;Ви збираєтесь відновити зріз &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.&lt;/p&gt;&lt;p&gt;Перед цим Ви можете створити зріз поточного стану віртуальної машини, поставивши прапорець нижче; якщо Ви цього не зробите, то поточний стан буде безповоротно втрачено. Чи хочете Ви продовжити?&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Ви збираєтесь відновити зріз &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.&lt;/p&gt;&lt;p&gt;Перед цим Ви можете створити зріз поточного стану віртуальної машини, поставивши прапорець нижче; якщо Ви цього не зробите, то поточний стан буде безповоротно втрачено. Чи хочете Ви продовжити?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to restore snapshot &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;</source>
-        <translation type="vanished">&lt;p&gt;Відновити зріз &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Відновити зріз &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;You are trying to move machine &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; to group &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; which already have sub-group &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.&lt;/p&gt;&lt;p&gt;Please resolve this name-conflict and try again.&lt;/p&gt;</source>
-        <translation type="vanished">&lt;p&gt;Ви намагаєтесь перенести машину &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; в групу &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;, котра вже має підгрупу &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.&lt;/p&gt;&lt;p&gt;Усуньте ці негаразди з назвою та спробуйте ще раз.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Ви намагаєтесь перенести машину &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; в групу &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;, котра вже має підгрупу &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.&lt;/p&gt;&lt;p&gt;Усуньте ці негаразди з назвою та спробуйте ще раз.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;You are trying to move group &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; to group &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; which already have another item with the same name.&lt;/p&gt;&lt;p&gt;Would you like to automatically rename it?&lt;/p&gt;</source>
-        <translation type="vanished">&lt;p&gt;Ви намагаєтесь перенести групу &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; в групу &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;, котра вже має інший елемент з такою ж назвою.&lt;/p&gt;&lt;p&gt;Автоматично перейменувати її?&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Ви намагаєтесь перенести групу &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; в групу &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;, котра вже має інший елемент з такою ж назвою.&lt;/p&gt;&lt;p&gt;Автоматично перейменувати її?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Rename</source>
-        <translation type="vanished">Перейменувати</translation>
+        <translation>Перейменувати</translation>
     </message>
     <message>
         <source>&lt;p&gt;You are about to remove following virtual machine items from the machine list:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;Do you wish to proceed?&lt;/p&gt;</source>
-        <translation type="vanished">&lt;p&gt;Ви вилучаєте такі пункти віртуальної машини зі списку машин:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;Продовжити?&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Ви вилучаєте такі пункти віртуальної машини зі списку машин:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;Продовжити?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to discard the saved state of the following virtual machines?&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;This operation is equivalent to resetting or powering off the machine without doing a proper shutdown of the guest OS.&lt;/p&gt;</source>
-        <translation type="vanished">&lt;p&gt;Відкинути збережений стан цих віртуальних машин?&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;Ця операція тотожна до переналаштування або вимкнення машини без усіляких правильних вимкнень гостьової системи.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Відкинути збережений стан цих віртуальних машин?&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;Ця операція тотожна до переналаштування або вимкнення машини без усіляких правильних вимкнень гостьової системи.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Failed to set groups of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="vanished">Не вдалось установити групу віртуальної машини&lt;b&gt;%1&lt;/b&gt;.</translation>
+        <translation>Не вдалось установити групу віртуальної машини&lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>&lt;p&gt;Could not find the VirtualBox Guest Additions disk image file file.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to download this disk image file from the Internet?&lt;/p&gt;</source>
@@ -11123,31 +12591,31 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;Do you really want to reset the following virtual machines?&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;This will cause any unsaved data in applications running inside it to be lost.&lt;/p&gt;</source>
-        <translation type="vanished">&lt;p&gt;Перезапустити ці віртуальні машини?&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;Це спричинить втрату всіх незбережених даних усередині машини.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Перезапустити ці віртуальні машини?&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;Це спричинить втрату всіх незбережених даних усередині машини.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Do you really want to send an ACPI shutdown signal to the following virtual machines?&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</source>
-        <translation type="vanished">&lt;p&gt;Надіслати сигнал вимкнення ACPI таким віртуальним машинам?&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Надіслати сигнал вимкнення ACPI таким віртуальним машинам?&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Do you really want to power off the following virtual machines?&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;This will cause any unsaved data in applications running inside it to be lost.&lt;/p&gt;</source>
-        <translation type="vanished">&lt;p&gt;Вимкнути такі віртуальні машини?&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;Це спричинить втрату всіх незбережених даних усередині машини.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Вимкнути такі віртуальні машини?&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;Це спричинить втрату всіх незбережених даних усередині машини.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Cannot remove the machine folder &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Please check that this folder really exists and that you have permissions to remove it.&lt;/p&gt;</source>
-        <translation type="vanished">&lt;p&gt;Неможливо вилучити теку машини &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Перевірте, чи ця тека справді існує і чи ви маєте право на її вилучення.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Неможливо вилучити теку машини &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Перевірте, чи ця тека справді існує і чи ви маєте право на її вилучення.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Cannot create the machine folder &lt;b&gt;%1&lt;/b&gt; in the parent folder &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;This folder already exists and possibly belongs to another machine.&lt;/p&gt;</source>
-        <translation type="vanished">&lt;p&gt;Неможливо створити теку машини &lt;b&gt;%1&lt;/b&gt; в батьківській теці &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Ця тека вже існує і ймовірно належить іншій машині.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Неможливо створити теку машини &lt;b&gt;%1&lt;/b&gt; в батьківській теці &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Ця тека вже існує і ймовірно належить іншій машині.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Could not start the machine &lt;b&gt;%1&lt;/b&gt; because the following physical network interfaces were not found:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/p&gt;&lt;p&gt;You can either change the machine&apos;s network settings or stop the machine.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Could not start the machine &lt;b&gt;%1&lt;/b&gt; because the following physical network interfaces were not found:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/p&gt;&lt;p&gt;You can either change the machine&apos;s network settings or stop the machine.&lt;/p&gt;</translation>
+        <translation type="unfinished">&lt;p&gt;Could not start the machine &lt;b&gt;%1&lt;/b&gt; because the following physical network interfaces were not found:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/p&gt;&lt;p&gt;You can either change the machine&apos;s network settings or stop the machine.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Change Network Settings</source>
-        <translation type="vanished">Змінити настройки мережі</translation>
+        <translation>Змінити настройки мережі</translation>
     </message>
     <message>
         <source>Close Virtual Machine</source>
@@ -11155,23 +12623,23 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;Cannot start the VirtualBox Manager due to local restrictions.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Cannot start the VirtualBox Manager due to local restrictions.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</translation>
+        <translation type="unfinished">&lt;p&gt;Cannot start the VirtualBox Manager due to local restrictions.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Could not find a language file for the language &lt;b&gt;%1&lt;/b&gt; in the directory &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The language will be temporarily reset to the system default language. Please go to the &lt;b&gt;Preferences&lt;/b&gt; window which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the VirtualBox Manager window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
-        <translation type="vanished">&lt;p&gt;Неможливо знайти мовний файл для мови &lt;b&gt;%1&lt;/b&gt; у каталозі &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Тимчасово буде використовуватись типова системна мова. Будь ласка, перейдіть до вікна &lt;b&gt;Налаштування&lt;/b&gt;, яке Ви можете відкрити з меню &lt;b&gt;Файл&lt;/b&gt; вікна менеджера VirtualBox, та виберіть одну з доступних мов на сторінці &lt;b&gt;Мова&lt;/b&gt;.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Неможливо знайти мовний файл для мови &lt;b&gt;%1&lt;/b&gt; у каталозі &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Тимчасово буде використовуватись типова системна мова. Будь ласка, перейдіть до вікна &lt;b&gt;Налаштування&lt;/b&gt;, яке Ви можете відкрити з меню &lt;b&gt;Файл&lt;/b&gt; вікна менеджера VirtualBox, та виберіть одну з доступних мов на сторінці &lt;b&gt;Мова&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Could not load the language file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;The language will be temporarily reset to English (built-in). Please go to the &lt;b&gt;Preferences&lt;/b&gt; window which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the VirtualBox Manager window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
-        <translation type="vanished">&lt;p&gt;Не вдалося завантажити мовний файл &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;Мова буде тимчасово скинута на англійську (вбудовану). Будь ласка, перейдіть до вікна &lt;b&gt;Налаштування&lt;/b&gt;, яке можна відкрити з меню &lt;b&gt;Файл&lt;/b&gt; вікна диспетчера VirtualBox і вибрати одну з існуючих мов на сторінці &lt;b&gt;Мова&lt;/b&gt;.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Не вдалося завантажити мовний файл &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;Мова буде тимчасово скинута на англійську (вбудовану). Будь ласка, перейдіть до вікна &lt;b&gt;Налаштування&lt;/b&gt;, яке можна відкрити з меню &lt;b&gt;Файл&lt;/b&gt; вікна диспетчера VirtualBox і вибрати одну з існуючих мов на сторінці &lt;b&gt;Мова&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>There is no virtual machine with the identifier &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="vanished">Немає віртуальної машини з ідентифікатором &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <translation>Немає віртуальної машини з ідентифікатором &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Ignore</source>
-        <translation type="vanished">Ігнорувати</translation>
+        <translation>Ігнорувати</translation>
     </message>
     <message>
         <source>Failed to create NAT network.</source>
@@ -11195,64 +12663,64 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Create &amp;new disk</source>
-        <translation type="vanished">Створити &amp;новий диск</translation>
+        <translation>Створити &amp;новий диск</translation>
     </message>
     <message>
         <source>&amp;Choose existing disk</source>
-        <translation type="vanished">&amp;Вибрати наявний диск</translation>
+        <translation>&amp;Вибрати наявний диск</translation>
     </message>
     <message>
         <source>Leave &amp;empty</source>
-        <translation type="vanished">&amp;Залишити порожнім</translation>
+        <translation>&amp;Залишити порожнім</translation>
     </message>
     <message>
         <source>&amp;Choose disk</source>
-        <translation type="vanished">&amp;Вибрати диск</translation>
+        <translation>&amp;Вибрати диск</translation>
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to remove the virtual hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the list of known disk image files?&lt;/p&gt;</source>
-        <translation type="vanished">&lt;p&gt;Ви впевнені, що хочете вилучити віртуальний жорсткий диск &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; зі списку списку відомих файлів образів дисків?&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Ви впевнені, що хочете вилучити віртуальний жорсткий диск &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; зі списку списку відомих файлів образів дисків?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;As this hard disk is inaccessible its image file can not be deleted.&lt;/p&gt;</source>
-        <translation type="vanished">&lt;p&gt;Неможливо видалити файл образу, так як цей жорсткий диск недоступний.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Неможливо видалити файл образу, так як цей жорсткий диск недоступний.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to remove the virtual optical disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the list of known disk image files?&lt;/p&gt;</source>
-        <translation type="vanished">&lt;p&gt;Ви впевнені, що хочете вилучити віртуальний оптичний диск &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; зі списку списку відомих файлів образів дисків?&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Ви впевнені, що хочете вилучити віртуальний оптичний диск &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; зі списку списку відомих файлів образів дисків?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to remove the virtual floppy disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the list of known disk image files?&lt;/p&gt;</source>
-        <translation type="vanished">&lt;p&gt;Ви впевнені, що хочете вилучити віртуальний гнучкий диск &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; зі списку списку відомих файлів образів дисків?&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Ви впевнені, що хочете вилучити віртуальний гнучкий диск &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; зі списку списку відомих файлів образів дисків?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Unable to insert the virtual optical disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; into the machine &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation type="vanished">&lt;p&gt;Неможливо вставити віртуальний оптичний диск &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; у машину &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Неможливо вставити віртуальний оптичний диск &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; у машину &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Would you like to try to force insertion of this disk?&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Would you like to try to force insertion of this disk?&lt;/p&gt;</translation>
+        <translation type="unfinished">&lt;p&gt;Would you like to try to force insertion of this disk?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Unable to eject the virtual optical disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the machine &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation type="vanished">&lt;p&gt;Неможливо видобути віртуальний оптичний диск &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; з машини &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Неможливо видобути віртуальний оптичний диск &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; з машини &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Would you like to try to force ejection of this disk?&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Would you like to try to force ejection of this disk?&lt;/p&gt;</translation>
+        <translation type="unfinished">&lt;p&gt;Would you like to try to force ejection of this disk?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Unable to insert the virtual floppy disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; into the machine &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation type="vanished">&lt;p&gt;Неможливо вставити віртуальний гнучкий диск &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; у машину &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Неможливо вставити віртуальний гнучкий диск &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; у машину &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Unable to eject the virtual floppy disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the machine &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation type="vanished">&lt;p&gt;Неможливо видобути віртуальний гнучкий диск &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; з машини &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Неможливо видобути віртуальний гнучкий диск &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; з машини &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message numerus="yes">
         <source>&lt;p&gt;The %n following virtual machine(s) are currently in a saved state: &lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;If you continue the runtime state of the exported machine(s) will be discarded. The other machine(s) will not be changed.&lt;/p&gt;</source>
         <comment>This text is never used with n == 0. Feel free to drop the %n where possible, we only included it because of problems with Qt Linguist (but the user can see how many machines are in the list and doesn&apos;t need to be told).</comment>
-        <translation type="vanished">
+        <translation>
             <numerusform>&lt;p&gt;%n віртуальна машина наразі в збереженому стані: &lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;Якщо ви продовжите, роботу експортованої машини буде відкинуто. Іншу машину не буде змінено.&lt;/p&gt;</numerusform>
             <numerusform>&lt;p&gt;%n віртуальні машини наразі в збереженому стані: &lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;Якщо ви продовжите, роботу експортованих машин буде відкинуто. Інші машини не буде змінено.&lt;/p&gt;</numerusform>
             <numerusform>&lt;p&gt;%n віртуальних машин наразі в збереженому стані: &lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;Якщо ви продовжите, роботу експортованих машин буде відкинуто. Інші машини не буде змінено.&lt;/p&gt;</numerusform>
@@ -11260,15 +12728,15 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Switch</source>
-        <translation type="vanished">Перемкнути</translation>
+        <translation>Перемкнути</translation>
     </message>
     <message>
         <source>Failed to enable the remote desktop server for the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="vanished">Неможливо увімкнути сервер віддаленого доступу для віртуальної машини &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <translation>Неможливо увімкнути сервер віддаленого доступу для віртуальної машини &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to disable the remote desktop server for the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="vanished">Неможливо вимкнути сервер віддаленого доступу для віртуальної машини &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <translation>Неможливо вимкнути сервер віддаленого доступу для віртуальної машини &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to enable video capturing for the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
@@ -11280,51 +12748,51 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;Could not find the &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; disk image file.&lt;/p&gt;&lt;p&gt;Do you wish to download this disk image file from the Internet?&lt;/p&gt;</source>
-        <translation type="vanished">&lt;p&gt;Неможливо знайти файл образу &lt;b&gt;гостьових доповнень VirtualBox&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Завантажити цей файл з Інтернету?&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Неможливо знайти файл образу &lt;b&gt;гостьових доповнень VirtualBox&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Завантажити цей файл з Інтернету?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Download</source>
-        <translation type="vanished">Звантажити</translation>
+        <translation>Звантажити</translation>
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to download the &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; disk image file from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt; (size %2 bytes)?&lt;/p&gt;</source>
-        <translation type="vanished">&lt;p&gt;Ви дійсно хочете завантажити файл образу &lt;b&gt;гостьових доповнень VirtualBox&lt;/b&gt; з &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt; (розміром %2 байт)?&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Ви дійсно хочете завантажити файл образу &lt;b&gt;гостьових доповнень VirtualBox&lt;/b&gt; з &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt; (розміром %2 байт)?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; disk image file has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt; but can&apos;t be saved locally as &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Please choose another location for that file.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;The &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; disk image file has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt; but can&apos;t be saved locally as &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Please choose another location for that file.&lt;/p&gt;</translation>
+        <translation type="unfinished">&lt;p&gt;The &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; disk image file has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt; but can&apos;t be saved locally as &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Please choose another location for that file.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Could not find the &lt;b&gt;VirtualBox User Manual&lt;/b&gt; &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to download this file from the Internet?&lt;/p&gt;</source>
-        <translation type="vanished">&lt;p&gt;Неможливо знайти &lt;b&gt;керівництво користувача VirtualBox&lt;/b&gt; &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Чи хочете Ви завантажити цей файл з Інтернету?&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Неможливо знайти &lt;b&gt;керівництво користувача VirtualBox&lt;/b&gt; &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Чи хочете Ви завантажити цей файл з Інтернету?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to download the &lt;b&gt;VirtualBox User Manual&lt;/b&gt; from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt; (size %2 bytes)?&lt;/p&gt;</source>
-        <translation type="vanished">&lt;p&gt;Ви дійсно хочете завантажити &lt;b&gt;керівництво користувача VirtualBox&lt;/b&gt; з &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt; (розміром %2 байт)?&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Ви дійсно хочете завантажити &lt;b&gt;керівництво користувача VirtualBox&lt;/b&gt; з &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt; (розміром %2 байт)?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The VirtualBox User Manual has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt; but can&apos;t be saved locally as &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Please choose another location for that file.&lt;/p&gt;</source>
-        <translation type="vanished">&lt;p&gt;Посібник користувача VirtualBox успішно звантажено з &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt;, але неможливо зберегти як &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Please choose another location for that file.&lt;/p&gt; {1&quot;?} {1&lt;?} {2&lt;?}</translation>
+        <translation>&lt;p&gt;Посібник користувача VirtualBox успішно звантажено з &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt;, але неможливо зберегти як &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Please choose another location for that file.&lt;/p&gt; {1&quot;?} {1&lt;?} {2&lt;?}</translation>
     </message>
     <message>
         <source>&lt;p&gt;The VirtualBox User Manual has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</source>
-        <translation type="vanished">&lt;p&gt;Посібник користувача VirtualBox успішно звантажено з &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; та збережено локально як &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt; {1&quot;?} {1&lt;?} {2&lt;?}</translation>
+        <translation>&lt;p&gt;Посібник користувача VirtualBox успішно звантажено з &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; та збережено локально як &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt; {1&quot;?} {1&lt;?} {2&lt;?}</translation>
     </message>
     <message>
         <source>Close</source>
-        <translation type="vanished">Закрити</translation>
+        <translation>Закрити</translation>
     </message>
     <message>
         <source>Ok</source>
-        <translation type="vanished">Гаразд</translation>
+        <translation>Гаразд</translation>
     </message>
     <message>
         <source>Do not show this message again</source>
-        <translation type="vanished">Не показувати це повідомлення знову</translation>
+        <translation>Не показувати це повідомлення знову</translation>
     </message>
     <message>
         <source>&lt;p&gt;Do you want to remove the NAT network &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;If this network is in use by one or more virtual machine network adapters these adapters will no longer be usable until you correct their settings by either choosing a different network name or a different adapter attachment type.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Do you want to remove the NAT network &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;If this network is in use by one or more virtual machine network adapters these adapters will no longer be usable until you correct their settings by either choosing a different network name or a different adapter attachment type.&lt;/p&gt;</translation>
+        <translation type="unfinished">&lt;p&gt;Do you want to remove the NAT network &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;If this network is in use by one or more virtual machine network adapters these adapters will no longer be usable until you correct their settings by either choosing a different network name or a different adapter attachment type.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The VirtualBox Guest Additions do not appear to be available on this virtual machine, and shared folders cannot be used without them. To use shared folders inside the virtual machine, please install the Guest Additions if they are not installed, or re-install them if they are not working correctly, by selecting &lt;b&gt;Insert Guest Additions CD image&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu. If they are installed but the machine is not yet fully started then shared folders will be available once it is.&lt;/p&gt;</source>
@@ -11338,119 +12806,119 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Failed to attach the webcam &lt;b&gt;%1&lt;/b&gt; to the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
-        <translation type="vanished">Не вдалось під’єднати веб-камеру &lt;b&gt;%1&lt;/b&gt; до віртуальної машини &lt;b&gt;%2&lt;/b&gt;.</translation>
+        <translation>Не вдалось під’єднати веб-камеру &lt;b&gt;%1&lt;/b&gt; до віртуальної машини &lt;b&gt;%2&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to detach the webcam &lt;b&gt;%1&lt;/b&gt; from the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
-        <translation type="vanished">Не вдалось від’єднати веб-камеру &lt;b&gt;%1&lt;/b&gt; від віртуальної машини &lt;b&gt;%2&lt;/b&gt;.</translation>
+        <translation>Не вдалось від’єднати веб-камеру &lt;b&gt;%1&lt;/b&gt; від віртуальної машини &lt;b&gt;%2&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>&lt;p&gt;The virtual screen is currently set to a &lt;b&gt;%1&amp;nbsp;bit&lt;/b&gt; color mode. For better performance please change this to &lt;b&gt;%2&amp;nbsp;bit&lt;/b&gt;. This can usually be done from the &lt;b&gt;Display&lt;/b&gt; section of the guest operating system&apos;s Control Panel or System Settings.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;The virtual screen is currently set to a &lt;b&gt;%1&amp;nbsp;bit&lt;/b&gt; color mode. For better performance please change this to &lt;b&gt;%2&amp;nbsp;bit&lt;/b&gt;. This can usually be done from the &lt;b&gt;Display&lt;/b&gt; section of the guest operating system&apos;s Control Panel or System Settings.&lt;/p&gt;</translation>
+        <translation type="unfinished">&lt;p&gt;The virtual screen is currently set to a &lt;b&gt;%1&amp;nbsp;bit&lt;/b&gt; color mode. For better performance please change this to &lt;b&gt;%2&amp;nbsp;bit&lt;/b&gt;. This can usually be done from the &lt;b&gt;Display&lt;/b&gt; section of the guest operating system&apos;s Control Panel or System Settings.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Failed to create the VirtualBoxClient COM object.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
-        <translation type="vanished">&lt;p&gt;Не вдалось створити COM-об’єкт VirtualBoxClient.&lt;/p&gt;&lt;p&gt;Роботу програми буде завершено.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Не вдалось створити COM-об’єкт VirtualBoxClient.&lt;/p&gt;&lt;p&gt;Роботу програми буде завершено.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Failed to set the global VirtualBox extra data for key &lt;i&gt;%1&lt;/i&gt; to value &lt;i&gt;{%2}&lt;/i&gt;.</source>
-        <translation type="obsolete">Failed to set the global VirtualBox extra data for key &lt;i&gt;%1&lt;/i&gt; to value &lt;i&gt;{%2}&lt;/i&gt;.</translation>
+        <translation type="unfinished">Failed to set the global VirtualBox extra data for key &lt;i&gt;%1&lt;/i&gt; to value &lt;i&gt;{%2}&lt;/i&gt;.</translation>
     </message>
     <message>
         <source>Failed to set the extra data for key &lt;i&gt;%1&lt;/i&gt; of machine &lt;i&gt;%2&lt;/i&gt; to value &lt;i&gt;{%3}&lt;/i&gt;.</source>
-        <translation type="obsolete">Failed to set the extra data for key &lt;i&gt;%1&lt;/i&gt; of machine &lt;i&gt;%2&lt;/i&gt; to value &lt;i&gt;{%3}&lt;/i&gt;.</translation>
+        <translation type="unfinished">Failed to set the extra data for key &lt;i&gt;%1&lt;/i&gt; of machine &lt;i&gt;%2&lt;/i&gt; to value &lt;i&gt;{%3}&lt;/i&gt;.</translation>
     </message>
     <message>
         <source>&lt;p&gt;One or more disk image files are not currently accessible. As a result, you will not be able to operate virtual machines that use these files until they become accessible later.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Check&lt;/b&gt; to open the Virtual Media Manager window and see which files are inaccessible, or press &lt;b&gt;Ignore&lt;/b&gt; to ignore this message.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;One or more disk image files are not currently accessible. As a result, you will not be able to operate virtual machines that use these files until they become accessible later.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Check&lt;/b&gt; to open the Virtual Media Manager window and see which files are inaccessible, or press &lt;b&gt;Ignore&lt;/b&gt; to ignore this message.&lt;/p&gt;</translation>
+        <translation type="unfinished">&lt;p&gt;One or more disk image files are not currently accessible. As a result, you will not be able to operate virtual machines that use these files until they become accessible later.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Check&lt;/b&gt; to open the Virtual Media Manager window and see which files are inaccessible, or press &lt;b&gt;Ignore&lt;/b&gt; to ignore this message.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Deleting the snapshot will cause the state information saved in it to be lost, and storage data spread over several image files that VirtualBox has created together with the snapshot will be merged into one file. This can be a lengthy process, and the information in the snapshot cannot be recovered.&lt;/p&gt;&lt;/p&gt;Are you sure you want to delete the selected snapshot &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Deleting the snapshot will cause the state information saved in it to be lost, and storage data spread over several image files that VirtualBox has created together with the snapshot will be merged into one file. This can be a lengthy process, and the information in the snapshot cannot be recovered.&lt;/p&gt;&lt;/p&gt;Are you sure you want to delete the selected snapshot &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;</translation>
+        <translation type="unfinished">&lt;p&gt;Deleting the snapshot will cause the state information saved in it to be lost, and storage data spread over several image files that VirtualBox has created together with the snapshot will be merged into one file. This can be a lengthy process, and the information in the snapshot cannot be recovered.&lt;/p&gt;&lt;/p&gt;Are you sure you want to delete the selected snapshot &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Deleting the snapshot %1 will temporarily need more storage space. In the worst case the size of image %2 will grow by %3, however on this filesystem there is only %4 free.&lt;/p&gt;&lt;p&gt;Running out of storage space during the merge operation can result in corruption of the image and the VM configuration, i.e. loss of the VM and its data.&lt;/p&gt;&lt;p&gt;You may continue with deleting the snapshot at your own risk.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Deleting the snapshot %1 will temporarily need more storage space. In the worst case the size of image %2 will grow by %3, however on this filesystem there is only %4 free.&lt;/p&gt;&lt;p&gt;Running out of storage space during the merge operation can result in corruption of the image and the VM configuration, i.e. loss of the VM and its data.&lt;/p&gt;&lt;p&gt;You may continue with deleting the snapshot at your own risk.&lt;/p&gt;</translation>
+        <translation type="unfinished">&lt;p&gt;Deleting the snapshot %1 will temporarily need more storage space. In the worst case the size of image %2 will grow by %3, however on this filesystem there is only %4 free.&lt;/p&gt;&lt;p&gt;Running out of storage space during the merge operation can result in corruption of the image and the VM configuration, i.e. loss of the VM and its data.&lt;/p&gt;&lt;p&gt;You may continue with deleting the snapshot at your own risk.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Failed to save the settings.</source>
-        <translation type="vanished">Не вдалося зберегти налаштування.</translation>
+        <translation>Не вдалося зберегти налаштування.</translation>
     </message>
     <message>
         <source>&lt;p&gt;You are about to add a new optical drive to controller &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Would you like to choose a virtual optical disk to put in the drive or to leave it empty for now?&lt;/p&gt;</source>
-        <translation type="vanished">&lt;p&gt;Ви збираєтесь додати новий оптичній привід до контролера &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Бажаєте вибрати віртуальний оптичний диск, щоб застосувати у носії, або поки що залишити його порожнім?&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Ви збираєтесь додати новий оптичній привід до контролера &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Бажаєте вибрати віртуальний оптичний диск, щоб застосувати у носії, або поки що залишити його порожнім?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to delete the optical drive?&lt;/p&gt;&lt;p&gt;You will not be able to insert any optical disks or ISO images or install the Guest Additions without it!&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Are you sure you want to delete the optical drive?&lt;/p&gt;&lt;p&gt;You will not be able to insert any optical disks or ISO images or install the Guest Additions without it!&lt;/p&gt;</translation>
+        <translation type="unfinished">&lt;p&gt;Are you sure you want to delete the optical drive?&lt;/p&gt;&lt;p&gt;You will not be able to insert any optical disks or ISO images or install the Guest Additions without it!&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Failed to attach the optical drive (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) to the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation type="vanished">Не вдалось під’єднати оптичний диск (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) до гнізда &lt;i&gt;%2&lt;/i&gt; машини &lt;b&gt;%3&lt;/b&gt;.</translation>
+        <translation>Не вдалось під’єднати оптичний диск (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) до гнізда &lt;i&gt;%2&lt;/i&gt; машини &lt;b&gt;%3&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to attach the floppy drive (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) to the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation type="vanished">Не вдалось під’єднати гнучкий диск (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) до гнізда &lt;i&gt;%2&lt;/i&gt; машини &lt;b&gt;%3&lt;/b&gt;.</translation>
+        <translation>Не вдалось під’єднати гнучкий диск (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) до гнізда &lt;i&gt;%2&lt;/i&gt; машини &lt;b&gt;%3&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>The current port forwarding rules are not valid. Rule names should be unique.</source>
-        <translation type="obsolete">The current port forwarding rules are not valid. Rule names should be unique.</translation>
+        <translation type="unfinished">The current port forwarding rules are not valid. Rule names should be unique.</translation>
     </message>
     <message>
         <source>The current port forwarding rules are not valid. Few rules have same host ports and conflicting IP addresses.</source>
-        <translation type="obsolete">The current port forwarding rules are not valid. Few rules have same host ports and conflicting IP addresses.</translation>
+        <translation type="unfinished">The current port forwarding rules are not valid. Few rules have same host ports and conflicting IP addresses.</translation>
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to release the disk image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;This will detach it from the following virtual machine(s): &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Are you sure you want to release the disk image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;This will detach it from the following virtual machine(s): &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</translation>
+        <translation type="unfinished">&lt;p&gt;Are you sure you want to release the disk image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;This will detach it from the following virtual machine(s): &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Do you want to delete the storage unit of the virtual hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Delete&lt;/b&gt; then the specified storage unit will be permanently deleted. This operation &lt;b&gt;cannot be undone&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Keep&lt;/b&gt; then the hard disk will be only removed from the list of known hard disks, but the storage unit will be left untouched which makes it possible to add this hard disk to the list later again.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Do you want to delete the storage unit of the virtual hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Delete&lt;/b&gt; then the specified storage unit will be permanently deleted. This operation &lt;b&gt;cannot be undone&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Keep&lt;/b&gt; then the hard disk will be only removed from the list of known hard disks, but the storage unit will be left untouched which makes it possible to add this hard disk to the list later again.&lt;/p&gt;</translation>
+        <translation type="unfinished">&lt;p&gt;Do you want to delete the storage unit of the virtual hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Delete&lt;/b&gt; then the specified storage unit will be permanently deleted. This operation &lt;b&gt;cannot be undone&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Keep&lt;/b&gt; then the hard disk will be only removed from the list of known hard disks, but the storage unit will be left untouched which makes it possible to add this hard disk to the list later again.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Failed to detach the optical drive (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) from the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation type="vanished">Не вдалось від’єднати оптичний диск (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) із гнізда &lt;i&gt;%2&lt;/i&gt; машини &lt;b&gt;%3&lt;/b&gt;.</translation>
+        <translation>Не вдалось від’єднати оптичний диск (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) із гнізда &lt;i&gt;%2&lt;/i&gt; машини &lt;b&gt;%3&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to detach the floppy drive (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) from the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation type="vanished">Не вдалось від’єднати гнучкий диск (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) із гнізда &lt;i&gt;%2&lt;/i&gt; машини &lt;b&gt;%3&lt;/b&gt;.</translation>
+        <translation>Не вдалось від’єднати гнучкий диск (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) із гнізда &lt;i&gt;%2&lt;/i&gt; машини &lt;b&gt;%3&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to open the disk image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation type="vanished">Не вдається відкрити файл образу диску &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</translation>
+        <translation>Не вдається відкрити файл образу диску &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</translation>
     </message>
     <message>
         <source>Failed to close the disk image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation type="vanished">Не вдається закрити файл образу диску &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</translation>
+        <translation>Не вдається закрити файл образу диску &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</translation>
     </message>
     <message>
         <source>You are about to create a new virtual machine without a hard disk. You will not be able to install an operating system on the machine until you add one. In the mean time you will only be able to start the machine using a virtual optical disk or from the network.</source>
-        <translation type="vanished">Ви збираєтесь створити нову віртуальну машину без жорсткого диску. Ви не зможете встановити операційну систему, доки Ви не додасте щонайменше один жорсткий диск. Проте, Ви можете запустити машину, використовуючи віртуальний оптичний диск або з мережі.</translation>
+        <translation>Ви збираєтесь створити нову віртуальну машину без жорсткого диску. Ви не зможете встановити операційну систему, доки Ви не додасте щонайменше один жорсткий диск. Проте, Ви можете запустити машину, використовуючи віртуальний оптичний диск або з мережі.</translation>
     </message>
     <message>
         <source>Bad password or authentication failure.</source>
-        <translation type="vanished">Невірний пароль або помилка автентифікації.</translation>
+        <translation>Невірний пароль або помилка автентифікації.</translation>
     </message>
     <message>
         <source>&lt;p&gt;A critical error has occurred while running the virtual machine and the machine execution should be stopped.&lt;/p&gt;&lt;p&gt;For help, please see the Community section on &lt;a href=https://www.virtualbox.org&gt;https://www.virtualbox.org&lt;/a&gt; or your support contract. Please provide the contents of the log file &lt;tt&gt;VBox.log&lt;/tt&gt;, which you can find in the virtual machine log directory, as well as a description of what you were doing when this error happened. Note that you can also access the above file by selecting &lt;b&gt;Show Log&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; to power off the machine.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;A critical error has occurred while running the virtual machine and the machine execution should be stopped.&lt;/p&gt;&lt;p&gt;For help, please see the Community section on &lt;a href=https://www.virtualbox.org&gt;https://www.virtualbox.org&lt;/a&gt; or your support contract. Please provide the contents of the log file &lt;tt&gt;VBox.log&lt;/tt&gt;, which you can find in the virtual machine log directory, as well as a description of what you were doing when this error happened. Note that you can also access the above file by selecting &lt;b&gt;Show Log&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; to power off the machine.&lt;/p&gt;</translation>
+        <translation type="unfinished">&lt;p&gt;A critical error has occurred while running the virtual machine and the machine execution should be stopped.&lt;/p&gt;&lt;p&gt;For help, please see the Community section on &lt;a href=https://www.virtualbox.org&gt;https://www.virtualbox.org&lt;/a&gt; or your support contract. Please provide the contents of the log file &lt;tt&gt;VBox.log&lt;/tt&gt;, which you can find in the virtual machine log directory, as well as a description of what you were doing when this error happened. Note that you can also access the above file by selecting &lt;b&gt;Show Log&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; to power off the machine.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;full-screen&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in full-screen mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation type="vanished">&lt;p&gt;Вікно віртуальної машини буде перемкнуто на &lt;b&gt;повноекранний&lt;/b&gt; режим. Можете повернутись до віконного режим у будь-який момент через натиснення &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Зауважте, &lt;i&gt;головну&lt;/i&gt; клавішу визначено як &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Зауважте, що панель головного меню сховано в повноекранному режимі. Ви можете дістатись до неї через натиснення &lt;b&gt;головна клавіша+Home&lt;/b&gt;.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Вікно віртуальної машини буде перемкнуто на &lt;b&gt;повноекранний&lt;/b&gt; режим. Можете повернутись до віконного режим у будь-який момент через натиснення &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Зауважте, &lt;i&gt;головну&lt;/i&gt; клавішу визначено як &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Зауважте, що панель головного меню сховано в повноекранному режимі. Ви можете дістатись до неї через натиснення &lt;b&gt;головна клавіша+Home&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Could not switch the guest display to full-screen mode due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Ignore&lt;/b&gt; to switch to full-screen mode anyway or press &lt;b&gt;Cancel&lt;/b&gt; to cancel the operation.&lt;/p&gt;</source>
-        <translation type="vanished">&lt;p&gt;Неможливо перемкнути гостьовий екран у повноекранний режим через брак відеопам’яті.&lt;/p&gt;&lt;p&gt;Вам слід налаштувати віртуальну машину так, щоб Ви мали щонайменше &lt;b&gt;%1&lt;/b&gt; відеопам’яті.&lt;/p&gt;&lt;p&gt;Натисніть &lt;b&gt;Ігнорувати&lt;/b&gt;, щоб попри все перемкнутись у повноекранний режим, або &lt;b&gt;Скасувати&lt;/b&gt;, щоб скасувати цю операцію.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Неможливо перемкнути гостьовий екран у повноекранний режим через брак відеопам’яті.&lt;/p&gt;&lt;p&gt;Вам слід налаштувати віртуальну машину так, щоб Ви мали щонайменше &lt;b&gt;%1&lt;/b&gt; відеопам’яті.&lt;/p&gt;&lt;p&gt;Натисніть &lt;b&gt;Ігнорувати&lt;/b&gt;, щоб попри все перемкнутись у повноекранний режим, або &lt;b&gt;Скасувати&lt;/b&gt;, щоб скасувати цю операцію.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Failed to connect the network adapter cable of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="vanished">Не вдалось під’єднати мережевий кабель до адаптера віртуальної машини &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <translation>Не вдалось під’єднати мережевий кабель до адаптера віртуальної машини &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to disconnect the network adapter cable of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="vanished">Не вдалось від’єднати мережевий кабель від адаптера віртуальної машини &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <translation>Не вдалось від’єднати мережевий кабель від адаптера віртуальної машини &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>&lt;p&gt;Could not insert the &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; disk image file into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no optical drives. Please add a drive using the storage page of the virtual machine settings window.&lt;/p&gt;</source>
@@ -11458,52 +12926,261 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;The &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; disk image file has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to register this disk image file and insert it into the virtual optical drive?&lt;/p&gt;</source>
-        <translation type="vanished">&lt;p&gt;Файл образу &lt;b&gt;гостьових доповнень VirtualBox&lt;/b&gt; вдало завантажено з &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt; і збережено локально як &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Чи хочете Ви його зареєструвати та вставити у віртуальний оптичний привід?&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Файл образу &lt;b&gt;гостьових доповнень VirtualBox&lt;/b&gt; вдало завантажено з &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt; і збережено локально як &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Чи хочете Ви його зареєструвати та вставити у віртуальний оптичний привід?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Drag and drop operation from host to guest failed.</source>
-        <translation type="vanished">Помилка перетягування з головної до гостьової ОС.</translation>
+        <translation>Помилка перетягування з головної до гостьової ОС.</translation>
     </message>
     <message>
         <source>Unable to cancel host to guest drag and drop operation.</source>
-        <translation type="vanished">Неможливо скасувати операцію перетягування з головної до гостьової ОС.</translation>
+        <translation>Неможливо скасувати операцію перетягування з головної до гостьової ОС.</translation>
     </message>
     <message>
         <source>Drag and drop operation from guest to host failed.</source>
-        <translation type="vanished">Помилка перетягування з гостьової до головної ОС.</translation>
+        <translation>Помилка перетягування з гостьової до головної ОС.</translation>
     </message>
     <message>
         <source>Encryption password for &lt;nobr&gt;ID = &apos;%1&apos;&lt;/nobr&gt; is invalid.</source>
-        <translation type="vanished">Пароль шифрування дисків з &lt;nobr&gt;ідентифікатором = „%1“&lt;/nobr&gt; зазначено направильно.</translation>
+        <translation>Пароль шифрування дисків з &lt;nobr&gt;ідентифікатором = „%1“&lt;/nobr&gt; зазначено направильно.</translation>
     </message>
     <message>
         <source>The current port forwarding rules are not valid. All of the host or guest address values should be correct or empty.</source>
-        <translation type="vanished">Поточні правила переспрямування портів недійсні. Всі адреси головної або гостьової ОС повинні бути правильним або порожніми.</translation>
+        <translation>Поточні правила переспрямування портів недійсні. Всі адреси головної або гостьової ОС повинні бути правильним або порожніми.</translation>
     </message>
     <message>
         <source>The current port forwarding rules are not valid. None of the guest address values may be empty.</source>
-        <translation type="vanished">Поточні правила переспрямування портів недійсні. Жодна з адрес гостьової ОС не може бути порожньою.</translation>
+        <translation>Поточні правила переспрямування портів недійсні. Жодна з адрес гостьової ОС не може бути порожньою.</translation>
     </message>
     <message>
         <source>Delete</source>
         <comment>extension pack</comment>
-        <translation type="obsolete">Вилучити</translation>
+        <translation type="unfinished">Вилучити</translation>
     </message>
     <message>
         <source>&lt;p&gt;You are about to install a VirtualBox extension pack. Extension packs complement the functionality of VirtualBox and can contain system level software that could be potentially harmful to your system. Please review the description below and only proceed if you have obtained the extension pack from a trusted source.&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=5&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Name:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Description:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Ви збираєтесь установити пакунок розширень до VirtualBox. Пакунки розширень доповнюють функціональність VirtualBox і містять програми системного рівня, які можуть бути потенційно шкідливими для вашої системи. Будь ласка, перегляньте опис нижче і продовжуйте лише в тому разі, коли одержуватимете пакунок розширень з довірених джерел.&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=5&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Name:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Версія:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Опис:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</translation>
+        <translation type="unfinished">&lt;p&gt;Ви збираєтесь установити пакунок розширень до VirtualBox. Пакунки розширень доповнюють функціональність VirtualBox і містять програми системного рівня, які можуть бути потенційно шкідливими для вашої системи. Будь ласка, перегляньте опис нижче і продовжуйте лише в тому разі, коли одержуватимете пакунок розширень з довірених джерел.&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=5&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Name:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Версія:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Опис:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;An older version of the extension pack is already installed, would you like to upgrade? &lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=5&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Name:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;New Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Current Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Description:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%5&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Старішу версію пакунка розширень уже встановлено, оновити? &lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=5&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Name:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Нова версія:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Поточна версія:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Опис:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%5&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</translation>
+        <translation type="unfinished">&lt;p&gt;Старішу версію пакунка розширень уже встановлено, оновити? &lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=5&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Name:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Нова версія:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Поточна версія:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Опис:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%5&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;An newer version of the extension pack is already installed, would you like to downgrade? &lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=5&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Name:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;New Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Current Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Description:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%5&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Новішу версію пакунка розширень уже встановленого, понизити? &lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=5&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Name:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Нова версія:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Поточна версія:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Опис:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%5&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</translation>
+        <translation type="unfinished">&lt;p&gt;Новішу версію пакунка розширень уже встановленого, понизити? &lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=5&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Name:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Нова версія:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Поточна версія:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Опис:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%5&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The extension pack is already installed with the same version, would you like reinstall it? &lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=5&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Name:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Description:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Пакунок розширень уже встановлено з тією ж версією, перевстановити? &lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=5&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Name:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Версія:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Опис:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</translation>
+        <translation type="unfinished">&lt;p&gt;Пакунок розширень уже встановлено з тією ж версією, перевстановити? &lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=5&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Name:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Версія:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Опис:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Unknown option &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;%1&lt;/b&gt; is an option for the VirtualBox VM runner (VirtualBoxVM) application, not the VirtualBox Manager.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You must specify a machine to start, using the command line.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
+        <comment>There will be a usage text passed as argument.</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;tr&gt;&lt;td&gt;Usage: VirtualBoxVM --startvm &amp;lt;name|UUID&amp;gt;&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Starts the VirtualBox virtual machine with the given name or unique identifier (UUID).&lt;/td&gt;&lt;/tr&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to acquire the VirtualBox COM object.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The reason for this error are most likely wrong permissions of the IPC daemon socket due to an installation problem. Please check the permissions of &lt;font color=blue&gt;&apos;/tmp&apos;&lt;/font&gt; and &lt;font color=blue&gt;&apos;/tmp/.vbox-*-ipc/&apos;&lt;/font&gt;&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You are about to start all of the following virtual machines:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;This could take some time and consume a lot of host system resources. Do you wish to proceed?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to move the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to change the snapshot &lt;b&gt;%1&lt;/b&gt; of the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Can&apos;t find snapshot with ID=&lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Can&apos;t acquire snapshot attributes.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to move the storage unit of the disk image &lt;b&gt;%1&lt;/b&gt; to &lt;b&gt;%2&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Error changing the description of the disk image &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The changes you requested require this disk to be released from the machines it is attached to.&lt;/p&gt;&lt;p&gt;Are you sure you want to release the disk image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;This will detach it from the following virtual machine(s): &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to resize the storage unit of the hard disk &lt;b&gt;%1&lt;/b&gt; from &lt;b&gt;%2&lt;/b&gt; to &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to acquire host network interfaces.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unable to find the host network interface &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to create a host network interface.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to acquire host network interface parameter.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to save host network interface parameter.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to create a DHCP server for the network interface &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to remove the DHCP server for the network interface &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to acquire DHCP server parameter.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to save DHCP server parameter.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to acquire cloud provider manager.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to acquire cloud provider manager parameter.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to find cloud provider with following uuid: &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to acquire cloud provider parameter.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to find cloud profile with following name: &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to create cloud profile.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to save cloud profiles.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to import cloud profiles.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to acquire cloud profile parameter.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to assign cloud profile parameter.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to create cloud client.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to acquire cloud client parameter.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Do you want to remove the cloud profile &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Do you want to import cloud profiles from external files?&lt;/p&gt;&lt;p&gt;VirtualBox cloud profiles will be overwritten and their data will be lost.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Import</source>
+        <translation type="unfinished">Імпортувати</translation>
+    </message>
+    <message>
+        <source>Failed to create the hard disk storage &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt; FAT file systems have 4GB file size limit.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to create the virtual disk image storage &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; disk image file has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;, &lt;/nobr&gt;but the SHA-256 checksum verification failed.&lt;/p&gt;&lt;p&gt;Please do the download, installation and verification manually.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%2&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;, &lt;/nobr&gt;but the SHA-256 checksum verification failed.&lt;/p&gt;&lt;p&gt;Please do the download, installation and verification manually.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Do you want to delete the downloaded file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Do you want to delete following list of files &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to enable recording for the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to disable recording for the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to enable the audio adapter output for the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to disable the audio adapter output for the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to enable the audio adapter input for the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to disable the audio adapter input for the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Could not insert the &lt;b&gt;%1&lt;/b&gt; disk image file into the virtual machine &lt;b&gt;%2&lt;/b&gt;, as the machine has no optical drives. Please add a drive using the storage page of the virtual machine settings window.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -11566,30 +13243,30 @@ p, li { white-space: pre-wrap; }
     <name>UIMiniToolBar</name>
     <message>
         <source>Always show the toolbar</source>
-        <translation type="vanished">Завжди показувати панель інструментів</translation>
+        <translation>Завжди показувати панель інструментів</translation>
     </message>
     <message>
         <source>Minimize Window</source>
-        <translation type="vanished">Згорнути вікно</translation>
+        <translation>Згорнути вікно</translation>
     </message>
     <message>
         <source>Exit Full Screen or Seamless Mode</source>
-        <translation type="vanished">Вийти з повноекранного або ціловикроєного режиму</translation>
+        <translation>Вийти з повноекранного або ціловикроєного режиму</translation>
     </message>
     <message>
         <source>Close VM</source>
-        <translation type="vanished">Закрити віртуальну машину</translation>
+        <translation>Закрити віртуальну машину</translation>
     </message>
 </context>
 <context>
     <name>UIMultiScreenLayout</name>
     <message>
         <source>Virtual Screen %1</source>
-        <translation type="vanished">Віртуальний екран %1</translation>
+        <translation>Віртуальний екран %1</translation>
     </message>
     <message>
         <source>Use Host Screen %1</source>
-        <translation type="vanished">Використовувати головний екран %1</translation>
+        <translation>Використовувати головний екран %1</translation>
     </message>
 </context>
 <context>
@@ -11604,23 +13281,31 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Type:</source>
-        <translation type="vanished">&amp;Тип:</translation>
+        <translation>&amp;Тип:</translation>
     </message>
     <message>
         <source>Selects the operating system family that you plan to install into this virtual machine.</source>
-        <translation type="vanished">Показує сімейство операційних систем, котру ви плануєте встановити на цю віртуальну машину.</translation>
+        <translation>Показує сімейство операційних систем, котру ви плануєте встановити на цю віртуальну машину.</translation>
     </message>
     <message>
         <source>&amp;Version:</source>
-        <translation type="vanished">&amp;Версія:</translation>
+        <translation>&amp;Версія:</translation>
     </message>
     <message>
         <source>Selects the operating system type that you plan to install into this virtual machine (called a guest operating system).</source>
-        <translation type="vanished">Показує тип операційної системи, котру ви плануєте встановити на цю віртуальну машину, тобто гостьова операційна система.</translation>
+        <translation>Показує тип операційної системи, котру ви плануєте встановити на цю віртуальну машину, тобто гостьова операційна система.</translation>
     </message>
     <message>
         <source>N&amp;ame:</source>
         <translation type="vanished">Ім&apos;я:</translation>
+    </message>
+    <message>
+        <source>Name:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Machine Folder:</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -11662,19 +13347,19 @@ p, li { white-space: pre-wrap; }
     <name>UINetworkManagerDialog</name>
     <message>
         <source>Network Operations Manager</source>
-        <translation type="vanished">Керування мережевими операціями</translation>
+        <translation>Керування мережевими операціями</translation>
     </message>
     <message>
         <source>There are no active network operations.</source>
-        <translation type="vanished">Немає запущених мережевих операцій.</translation>
+        <translation>Немає запущених мережевих операцій.</translation>
     </message>
     <message>
         <source>&amp;Cancel All</source>
-        <translation type="vanished">&amp;Скасувати все</translation>
+        <translation>&amp;Скасувати все</translation>
     </message>
     <message>
         <source>Cancel all active network operations</source>
-        <translation type="vanished">Скасувати усі запущені операції мережі</translation>
+        <translation>Скасувати усі запущені операції мережі</translation>
     </message>
     <message>
         <source>Error: %1.</source>
@@ -11682,106 +13367,106 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Network Operation</source>
-        <translation type="vanished">Мережеві операції</translation>
+        <translation>Мережеві операції</translation>
     </message>
     <message>
         <source>Restart network operation</source>
-        <translation type="vanished">Перезапустити мережеві операції</translation>
+        <translation>Перезапустити мережеві операції</translation>
     </message>
     <message>
         <source>Cancel network operation</source>
-        <translation type="vanished">Скасувати операції мережі</translation>
+        <translation>Скасувати операції мережі</translation>
     </message>
     <message>
         <source>The network operation failed with the following error: %1.</source>
-        <translation type="vanished">Мережева операція не виконана через помилку: %1.</translation>
+        <translation>Мережева операція не виконана через помилку: %1.</translation>
     </message>
 </context>
 <context>
     <name>UINetworkManagerIndicator</name>
     <message>
         <source>Current network operations:</source>
-        <translation type="vanished">Поточні мережеві операції:</translation>
+        <translation>Поточні мережеві операції:</translation>
     </message>
     <message>
         <source>failed</source>
         <comment>network operation</comment>
-        <translation type="vanished">помилка</translation>
+        <translation>помилка</translation>
     </message>
     <message>
         <source>(%1 of %2)</source>
-        <translation type="vanished">(%1 з %2)</translation>
+        <translation>(%1 з %2)</translation>
     </message>
     <message>
         <source>Double-click for more information.</source>
-        <translation type="vanished">Подвійний клац для подробиць.</translation>
+        <translation>Подвійний клац для подробиць.</translation>
     </message>
 </context>
 <context>
     <name>UINetworkReplyPrivate</name>
     <message>
         <source>Host not found</source>
-        <translation type="vanished">Хост не знайдено</translation>
+        <translation>Хост не знайдено</translation>
     </message>
     <message>
         <source>Content access denied</source>
-        <translation type="vanished">Доступу до вмісту заборонено</translation>
+        <translation>Доступу до вмісту заборонено</translation>
     </message>
     <message>
         <source>Protocol failure</source>
-        <translation type="vanished">Помилка в протоколі</translation>
+        <translation>Помилка в протоколі</translation>
     </message>
     <message>
         <source>Wrong SSL certificate format</source>
-        <translation type="vanished">Неправильний формат сертифіката SSL</translation>
+        <translation>Неправильний формат сертифіката SSL</translation>
     </message>
     <message>
         <source>SSL authentication failed</source>
-        <translation type="vanished">Помилка автентифікації SSL</translation>
+        <translation>Помилка автентифікації SSL</translation>
     </message>
     <message>
         <source>Unknown reason</source>
-        <translation type="vanished">Невідому причину</translation>
+        <translation>Невідому причину</translation>
     </message>
     <message>
         <source>%1: %2</source>
         <comment>Context description: Error description</comment>
-        <translation type="obsolete">%1: %2</translation>
+        <translation type="unfinished">%1: %2</translation>
     </message>
     <message>
         <source>Unable to initialize HTTP library</source>
-        <translation type="vanished">Не вдалося ініціалізувати бібліотеку HTTP</translation>
+        <translation>Не вдалося ініціалізувати бібліотеку HTTP</translation>
     </message>
     <message>
         <source>Connection refused</source>
-        <translation type="vanished">З&apos;єднання відхилено</translation>
+        <translation>З&apos;єднання відхилено</translation>
     </message>
     <message>
         <source>Content moved</source>
-        <translation type="vanished">Вміст переміщено</translation>
+        <translation>Вміст переміщено</translation>
     </message>
     <message>
         <source>Proxy not found</source>
-        <translation type="vanished">Не знайдено проксі</translation>
+        <translation>Не знайдено проксі</translation>
     </message>
     <message>
         <source>Url not found on the server</source>
-        <translation type="vanished">URL не знайдено на сервері</translation>
+        <translation>URL не знайдено на сервері</translation>
     </message>
 </context>
 <context>
     <name>UINetworkReplyPrivateThread</name>
     <message>
         <source>During proxy configuration</source>
-        <translation type="vanished">Під час настроювання проксі</translation>
+        <translation>Під час настроювання проксі</translation>
     </message>
     <message>
         <source>During certificate downloading</source>
-        <translation type="vanished">Під час завантаження сертифіката</translation>
+        <translation>Під час завантаження сертифіката</translation>
     </message>
     <message>
         <source>During network request</source>
-        <translation type="vanished">Під час мережевого запиту</translation>
+        <translation>Під час мережевого запиту</translation>
     </message>
 </context>
 <context>
@@ -12476,7 +14161,18 @@ p, li { white-space: pre-wrap; }
     <name>UIPopupCenter</name>
     <message>
         <source>Click for full details</source>
-        <translation type="vanished">Натисніть для отримання повної інформації</translation>
+        <translation>Натисніть для отримання повної інформації</translation>
+    </message>
+</context>
+<context>
+    <name>UIPopupPane</name>
+    <message>
+        <source>&lt;p&gt;&lt;b&gt;Details:&lt;/b&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;&lt;b&gt;Details:&lt;/b&gt; (%1 of %2)</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -12510,55 +14206,55 @@ p, li { white-space: pre-wrap; }
     <name>UIPortForwardingTable</name>
     <message>
         <source>Name</source>
-        <translation type="vanished">Назва</translation>
+        <translation>Назва</translation>
     </message>
     <message>
         <source>Protocol</source>
-        <translation type="vanished">Протокол</translation>
+        <translation>Протокол</translation>
     </message>
     <message>
         <source>Host IP</source>
-        <translation type="vanished">Головний IP</translation>
+        <translation>Головний IP</translation>
     </message>
     <message>
         <source>Host Port</source>
-        <translation type="vanished">Головний порт</translation>
+        <translation>Головний порт</translation>
     </message>
     <message>
         <source>Guest IP</source>
-        <translation type="vanished">Гостьовий IP</translation>
+        <translation>Гостьовий IP</translation>
     </message>
     <message>
         <source>Guest Port</source>
-        <translation type="vanished">Гостьовий порт</translation>
+        <translation>Гостьовий порт</translation>
     </message>
     <message>
         <source>Contains a list of port forwarding rules.</source>
-        <translation type="vanished">Містить список правил перенаправлення портів.</translation>
+        <translation>Містить список правил перенаправлення портів.</translation>
     </message>
     <message>
         <source>Add New Rule</source>
-        <translation type="vanished">Додати нове правило</translation>
+        <translation>Додати нове правило</translation>
     </message>
     <message>
         <source>Copy Selected Rule</source>
-        <translation type="vanished">Скопіювати виділене правило</translation>
+        <translation>Скопіювати виділене правило</translation>
     </message>
     <message>
         <source>Remove Selected Rule</source>
-        <translation type="vanished">Видалити виділене правило</translation>
+        <translation>Видалити виділене правило</translation>
     </message>
     <message>
         <source>Adds new port forwarding rule.</source>
-        <translation type="vanished">Додає нове правило перенаправлення порту.</translation>
+        <translation>Додає нове правило перенаправлення порту.</translation>
     </message>
     <message>
         <source>Copies selected port forwarding rule.</source>
-        <translation type="vanished">Копіює вибране правило перенаправлення порту.</translation>
+        <translation>Копіює вибране правило перенаправлення порту.</translation>
     </message>
     <message>
         <source>Removes selected port forwarding rule.</source>
-        <translation type="vanished">Видаляє вибране правило перенаправлення порту.</translation>
+        <translation>Видаляє вибране правило перенаправлення порту.</translation>
     </message>
 </context>
 <context>
@@ -12621,29 +14317,52 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>A few seconds remaining</source>
-        <translation type="vanished">залишилось кілька секунд</translation>
+        <translation>залишилось кілька секунд</translation>
     </message>
     <message>
         <source>Canceling...</source>
-        <translation type="vanished">Скасування...</translation>
+        <translation>Скасування...</translation>
     </message>
     <message>
         <source>&amp;Cancel</source>
-        <translation type="vanished">&amp;Скасувати</translation>
+        <translation>&amp;Скасувати</translation>
     </message>
     <message>
         <source>Cancel the current operation</source>
-        <translation type="vanished">Скасувати поточну операцію</translation>
+        <translation>Скасувати поточну операцію</translation>
     </message>
     <message>
         <source>%1, %2 remaining</source>
         <comment>You may wish to translate this more like &quot;Time remaining: %1, %2&quot;</comment>
-        <translation type="vanished">Залишилось: %1, %2</translation>
+        <translation>Залишилось: %1, %2</translation>
     </message>
     <message>
         <source>%1 remaining</source>
         <comment>You may wish to translate this more like &quot;Time remaining: %1&quot;</comment>
-        <translation type="vanished">Залишилось: %1</translation>
+        <translation>Залишилось: %1</translation>
+    </message>
+</context>
+<context>
+    <name>UIScaleFactorEditor</name>
+    <message>
+        <source>Max</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Min</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>All Monitors</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Monitor(%1)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Controls the guest screen scale factor</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -12697,7 +14416,15 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Updating Guest Additions</source>
-        <translation type="vanished">Оноволення гостьових доповнень</translation>
+        <translation>Оноволення гостьових доповнень</translation>
+    </message>
+</context>
+<context>
+    <name>UISessionStateStatusBarIndicator</name>
+    <message>
+        <source>%1 status-bar indicator</source>
+        <comment>like &apos;hard-disk status-bar indicator&apos;</comment>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -12712,7 +14439,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Invalid settings detected</source>
-        <translation type="vanished">Виявлено неправильні налаштування</translation>
+        <translation>Виявлено неправильні налаштування</translation>
     </message>
     <message>
         <source>Non-optimal settings detected</source>
@@ -12724,30 +14451,30 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;b&gt;%1&lt;/b&gt; page:</source>
-        <translation type="vanished">Сторінка &lt;b&gt;%1&lt;/b&gt;:</translation>
+        <translation>Сторінка &lt;b&gt;%1&lt;/b&gt;:</translation>
     </message>
     <message>
         <source>&lt;b&gt;%1: %2&lt;/b&gt; page:</source>
-        <translation type="vanished">Сторінка &lt;b&gt;%1: %2&lt;/b&gt;:</translation>
+        <translation>Сторінка &lt;b&gt;%1: %2&lt;/b&gt;:</translation>
     </message>
 </context>
 <context>
     <name>UISettingsDialogGlobal</name>
     <message>
         <source>General</source>
-        <translation type="vanished">Загальне</translation>
+        <translation>Загальне</translation>
     </message>
     <message>
         <source>Input</source>
-        <translation type="vanished">Ввід</translation>
+        <translation>Ввід</translation>
     </message>
     <message>
         <source>Update</source>
-        <translation type="vanished">Оновлення</translation>
+        <translation>Оновлення</translation>
     </message>
     <message>
         <source>Language</source>
-        <translation type="vanished">Мова</translation>
+        <translation>Мова</translation>
     </message>
     <message>
         <source>USB</source>
@@ -12755,62 +14482,66 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Network</source>
-        <translation type="vanished">Мережа</translation>
+        <translation>Мережа</translation>
     </message>
     <message>
         <source>Extensions</source>
-        <translation type="vanished">Розширення</translation>
+        <translation>Розширення</translation>
     </message>
     <message>
         <source>VirtualBox - %1</source>
-        <translation type="vanished">VirtualBox — %1</translation>
+        <translation>VirtualBox — %1</translation>
     </message>
     <message>
         <source>Proxy</source>
-        <translation type="vanished">Проксі</translation>
+        <translation>Проксі</translation>
     </message>
     <message>
         <source>Display</source>
-        <translation type="vanished">Екран</translation>
+        <translation>Екран</translation>
     </message>
     <message>
         <source>Preferences</source>
-        <translation type="vanished">Налаштування</translation>
+        <translation>Налаштування</translation>
+    </message>
+    <message>
+        <source>Allows to navigate through Global Property categories</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>UISettingsDialogMachine</name>
     <message>
         <source>General</source>
-        <translation type="vanished">Загальне</translation>
+        <translation>Загальне</translation>
     </message>
     <message>
         <source>System</source>
-        <translation type="vanished">Система</translation>
+        <translation>Система</translation>
     </message>
     <message>
         <source>Display</source>
-        <translation type="vanished">Екран</translation>
+        <translation>Екран</translation>
     </message>
     <message>
         <source>Storage</source>
-        <translation type="vanished">Пам&apos;ять</translation>
+        <translation>Пам&apos;ять</translation>
     </message>
     <message>
         <source>Audio</source>
-        <translation type="vanished">Аудіо</translation>
+        <translation>Аудіо</translation>
     </message>
     <message>
         <source>Network</source>
-        <translation type="vanished">Мережа</translation>
+        <translation>Мережа</translation>
     </message>
     <message>
         <source>Ports</source>
-        <translation type="vanished">Порти</translation>
+        <translation>Порти</translation>
     </message>
     <message>
         <source>Serial Ports</source>
-        <translation type="vanished">Послідовні порти</translation>
+        <translation>Послідовні порти</translation>
     </message>
     <message>
         <source>Parallel Ports</source>
@@ -12818,15 +14549,15 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>USB</source>
-        <translation type="obsolete">USB</translation>
+        <translation type="unfinished">USB</translation>
     </message>
     <message>
         <source>Shared Folders</source>
-        <translation type="vanished">Спільні теки</translation>
+        <translation>Спільні теки</translation>
     </message>
     <message>
         <source>%1 - %2</source>
-        <translation type="vanished">%1 — %2</translation>
+        <translation>%1 — %2</translation>
     </message>
     <message>
         <source>you have selected a 64-bit guest OS type for this VM. As such guests require hardware virtualization (VT-x/AMD-V), this feature will be enabled automatically.</source>
@@ -12854,22 +14585,26 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>User Interface</source>
-        <translation type="vanished">Інтерфейс користувача</translation>
+        <translation>Інтерфейс користувача</translation>
     </message>
     <message>
         <source>Settings</source>
-        <translation type="vanished">Налаштування</translation>
+        <translation>Налаштування</translation>
+    </message>
+    <message>
+        <source>Allows to navigate through VM Settings categories</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>UISettingsSerializerProgress</name>
     <message>
         <source>Loading Settings...</source>
-        <translation type="vanished">Завантаження налаштувань...</translation>
+        <translation>Завантаження налаштувань...</translation>
     </message>
     <message>
         <source>Saving Settings...</source>
-        <translation type="vanished">Збереження налаштувань...</translation>
+        <translation>Збереження налаштувань...</translation>
     </message>
 </context>
 <context>
@@ -13053,34 +14788,34 @@ p, li { white-space: pre-wrap; }
     <name>UIStatusBarEditorWidget</name>
     <message>
         <source>&lt;nobr&gt;&lt;b&gt;Click&lt;/b&gt; to toggle indicator presence.&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Drag&amp;Drop&lt;/b&gt; to change indicator position.&lt;/nobr&gt;</source>
-        <translation type="vanished">&lt;nobr&gt;&lt;b&gt;Притиск мишею&lt;/b&gt;, для показу/приховання індикатору.&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Перетягніть мишею&lt;/b&gt;, щоб змінити його розташування.&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;&lt;b&gt;Притиск мишею&lt;/b&gt;, для показу/приховання індикатору.&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Перетягніть мишею&lt;/b&gt;, щоб змінити його розташування.&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>Close</source>
-        <translation type="vanished">Закрити</translation>
+        <translation>Закрити</translation>
     </message>
     <message>
         <source>Enable Status Bar</source>
-        <translation type="vanished">Увімкнути Панель стану</translation>
+        <translation>Увімкнути Панель стану</translation>
     </message>
 </context>
 <context>
     <name>UITakeSnapshotDialog</name>
     <message>
         <source>Take Snapshot of Virtual Machine</source>
-        <translation type="obsolete">Зробити зріз віртуальної машини</translation>
+        <translation type="unfinished">Зробити зріз віртуальної машини</translation>
     </message>
     <message>
         <source>Snapshot &amp;Name</source>
-        <translation type="obsolete">&amp;Назва зрізу</translation>
+        <translation type="unfinished">&amp;Назва зрізу</translation>
     </message>
     <message>
         <source>Snapshot &amp;Description</source>
-        <translation type="obsolete">&amp;Опис зрізу</translation>
+        <translation type="unfinished">&amp;Опис зрізу</translation>
     </message>
     <message numerus="yes">
         <source>Warning: You are taking a snapshot of a running machine which has %n immutable image(s) attached to it. As long as you are working from this snapshot the immutable image(s) will not be reset to avoid loss of data.</source>
-        <translation type="obsolete">
+        <translation type="unfinished">
             <numerusform>Обережно: ви робите зріз із запущеної машини, яка має %n сталий образ, приєднаний до нього. Поки ви працюватимете з цього зрізу, сталий образ не буде скинуто, щоб уникнути втрат даних. </numerusform>
             <numerusform>Обережно: ви робите зріз із запущеної машини, яка має %n сталих образу, приєднаний до нього. Поки ви працюватимете з цього зрізу, сталі образи не буде скинуто, щоб уникнути втрат даних. </numerusform>
             <numerusform>Обережно: ви робите зріз із запущеної машини, яка має %n сталих образів, приєднаний до нього. Поки ви працюватимете з цього зрізу, сталі образи не буде скинуто, щоб уникнути втрат даних. </numerusform>
@@ -13088,7 +14823,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Snapshot %1</source>
-        <translation type="obsolete">Зріз %1</translation>
+        <translation type="unfinished">Зріз %1</translation>
     </message>
 </context>
 <context>
@@ -13157,54 +14892,59 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>%1</source>
         <comment>col.1 text</comment>
-        <translation type="obsolete">%1</translation>
+        <translation type="unfinished">%1</translation>
+    </message>
+    <message>
+        <source>%1, Active</source>
+        <comment>col.1 text, col.1 state</comment>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>UIUpdateManager</name>
     <message>
         <source>1 day</source>
-        <translation type="vanished">1 день</translation>
+        <translation>1 день</translation>
     </message>
     <message>
         <source>2 days</source>
-        <translation type="vanished">2 дні</translation>
+        <translation>2 дні</translation>
     </message>
     <message>
         <source>3 days</source>
-        <translation type="vanished">3 дні</translation>
+        <translation>3 дні</translation>
     </message>
     <message>
         <source>4 days</source>
-        <translation type="vanished">4 дні</translation>
+        <translation>4 дні</translation>
     </message>
     <message>
         <source>5 days</source>
-        <translation type="vanished">5 днів</translation>
+        <translation>5 днів</translation>
     </message>
     <message>
         <source>6 days</source>
-        <translation type="vanished">6 днів</translation>
+        <translation>6 днів</translation>
     </message>
     <message>
         <source>1 week</source>
-        <translation type="vanished">1 тиждень</translation>
+        <translation>1 тиждень</translation>
     </message>
     <message>
         <source>2 weeks</source>
-        <translation type="vanished">2 тижні</translation>
+        <translation>2 тижні</translation>
     </message>
     <message>
         <source>3 weeks</source>
-        <translation type="vanished">3 тижні</translation>
+        <translation>3 тижні</translation>
     </message>
     <message>
         <source>1 month</source>
-        <translation type="vanished">1 місяць</translation>
+        <translation>1 місяць</translation>
     </message>
     <message>
         <source>Never</source>
-        <translation type="vanished">Ніколи</translation>
+        <translation>Ніколи</translation>
     </message>
     <message>
         <source>Chec&amp;k</source>
@@ -13251,62 +14991,62 @@ p, li { white-space: pre-wrap; }
     <name>UIUpdateStepVirtualBox</name>
     <message>
         <source>Checking for a new VirtualBox version...</source>
-        <translation type="vanished">Перевіряння на нову версію VirtualBox…</translation>
+        <translation>Перевіряння на нову версію VirtualBox…</translation>
     </message>
 </context>
 <context>
     <name>UIVMCloseDialog</name>
     <message>
         <source>Close Virtual Machine</source>
-        <translation type="vanished">Закрити віртуальну машину</translation>
+        <translation>Закрити віртуальну машину</translation>
     </message>
     <message>
         <source>You want to:</source>
-        <translation type="vanished">Ви бажаєте:</translation>
+        <translation>Ви бажаєте:</translation>
     </message>
     <message>
         <source>&lt;p&gt;Saves the current execution state of the virtual machine to the physical hard disk of the host PC.&lt;/p&gt;&lt;p&gt;Next time this machine is started, it will be restored from the saved state and continue execution from the same place you saved it at, which will let you continue your work immediately.&lt;/p&gt;&lt;p&gt;Note that saving the machine state may take a long time, depending on the guest operating system type and the amount of memory you assigned to the virtual machine.&lt;/p&gt;</source>
-        <translation type="vanished">&lt;p&gt;Зберігає поточне виконання стану віртуальної машини на фізичний жорсткий диск головного комп&apos;ютера.&lt;/p&gt;&lt;p&gt;Наступного разу ця машина буде запущена з етапу, на якому вона була збережена, що дозволяє швидко продовжити вашу роботу.&lt;/p&gt;&lt;p&gt;Майте на увазі, що зберігання стану машини може зайняти багато часу, в залежності від типу гостьової операційної системи і кількості оперативної пам&apos;яті, яка була задана для цієї машини.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Зберігає поточне виконання стану віртуальної машини на фізичний жорсткий диск головного комп&apos;ютера.&lt;/p&gt;&lt;p&gt;Наступного разу ця машина буде запущена з етапу, на якому вона була збережена, що дозволяє швидко продовжити вашу роботу.&lt;/p&gt;&lt;p&gt;Майте на увазі, що зберігання стану машини може зайняти багато часу, в залежності від типу гостьової операційної системи і кількості оперативної пам&apos;яті, яка була задана для цієї машини.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Save the machine state</source>
-        <translation type="vanished">&amp;Зберегти стан машини</translation>
+        <translation>&amp;Зберегти стан машини</translation>
     </message>
     <message>
         <source>&lt;p&gt;Sends the ACPI Power Button press event to the virtual machine.&lt;/p&gt;&lt;p&gt;Normally, the guest operating system running inside the virtual machine will detect this event and perform a clean shutdown procedure. This is a recommended way to turn off the virtual machine because all applications running inside it will get a chance to save their data and state.&lt;/p&gt;&lt;p&gt;If the machine doesn&apos;t respond to this action then the guest operating system may be misconfigured or doesn&apos;t understand ACPI Power Button events at all. In this case you should select the &lt;b&gt;Power off the machine&lt;/b&gt; action to stop virtual machine execution.&lt;/p&gt;</source>
-        <translation type="vanished">&lt;p&gt;Відсилає сигнал ACPI натиснення кнопки живлення у віртуальній машині.&lt;/p&gt;&lt;p&gt;Зазвичай, гостьова операційна система, яка виконується всередині віртуальної машини, визначить цей сигнал і виконає процес нормального завершення роботи. Цей варіант є рекомендованим шляхом вимкнення віртуальної машини, бо всі запущені програми всередині гостьової операційної системи зможуть зберегти свої дані та стан.&lt;/p&gt;&lt;p&gt;Якщо машина ніяк не реагує на ці дії, тоді гостьова операційна система може бути неправильно налаштована, або вона взагалі не розпізнає сигнал ACPI живлення. У такому випадку, ви повинні вибрати дію &lt;b&gt;Вимкнути машину&lt;/b&gt; для зупинення виконання віртуальної машини.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Відсилає сигнал ACPI натиснення кнопки живлення у віртуальній машині.&lt;/p&gt;&lt;p&gt;Зазвичай, гостьова операційна система, яка виконується всередині віртуальної машини, визначить цей сигнал і виконає процес нормального завершення роботи. Цей варіант є рекомендованим шляхом вимкнення віртуальної машини, бо всі запущені програми всередині гостьової операційної системи зможуть зберегти свої дані та стан.&lt;/p&gt;&lt;p&gt;Якщо машина ніяк не реагує на ці дії, тоді гостьова операційна система може бути неправильно налаштована, або вона взагалі не розпізнає сигнал ACPI живлення. У такому випадку, ви повинні вибрати дію &lt;b&gt;Вимкнути машину&lt;/b&gt; для зупинення виконання віртуальної машини.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>S&amp;end the shutdown signal</source>
-        <translation type="vanished">&amp;Надіслати сигнал завершення</translation>
+        <translation>&amp;Надіслати сигнал завершення</translation>
     </message>
     <message>
         <source>&lt;p&gt;Turns off the virtual machine.&lt;/p&gt;&lt;p&gt;Note that this action will stop machine execution immediately so that the guest operating system running inside it will not be able to perform a clean shutdown procedure which may result in &lt;i&gt;data loss&lt;/i&gt; inside the virtual machine. Selecting this action is recommended only if the virtual machine does not respond to the &lt;b&gt;Send the shutdown signal&lt;/b&gt; action.&lt;/p&gt;</source>
-        <translation type="vanished">&lt;p&gt;Вимкнення віртуальної машини.&lt;/p&gt;&lt;p&gt;Майте на увазі, що ця дія негайно зупинить виконання машини. В такому випадку, гостьова операційна система, яка виконується всередині неї, не матиме можливості виконати процес завершення роботи нормально, що може закінчитись &lt;i&gt;втратою даних&lt;/i&gt; всередині віртуальної машини. Вибирати цю дію рекомендується тільки, якщо віртуальна машина не реагує на &lt;b&gt;Відіслати сигнал вимкнення&lt;/b&gt;.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Вимкнення віртуальної машини.&lt;/p&gt;&lt;p&gt;Майте на увазі, що ця дія негайно зупинить виконання машини. В такому випадку, гостьова операційна система, яка виконується всередині неї, не матиме можливості виконати процес завершення роботи нормально, що може закінчитись &lt;i&gt;втратою даних&lt;/i&gt; всередині віртуальної машини. Вибирати цю дію рекомендується тільки, якщо віртуальна машина не реагує на &lt;b&gt;Відіслати сигнал вимкнення&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Power off the machine</source>
-        <translation type="vanished">&amp;Вимкнути машину</translation>
+        <translation>&amp;Вимкнути машину</translation>
     </message>
     <message>
         <source>Restore the machine state stored in the current snapshot</source>
-        <translation type="vanished">Відновити стан машини до збереженої на поточному зрізі</translation>
+        <translation>Відновити стан машини до збереженої на поточному зрізі</translation>
     </message>
     <message>
         <source>&lt;p&gt;When checked, the machine will be returned to the state stored in the current snapshot after it is turned off. This is useful if you are sure that you want to discard the results of your last sessions and start again at that snapshot.&lt;/p&gt;</source>
-        <translation type="vanished">&lt;p&gt;Якщо це позначено, стан машини буде відновлено до того, який збережено в поточному зрізі, відразу після її вимкнення. Це може бути корисним, якщо ви впевнені, що бажаєте відкинути результати останнього сеансу і вернутись до поточного зрізу.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Якщо це позначено, стан машини буде відновлено до того, який збережено в поточному зрізі, відразу після її вимкнення. Це може бути корисним, якщо ви впевнені, що бажаєте відкинути результати останнього сеансу і вернутись до поточного зрізу.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Restore current snapshot &apos;%1&apos;</source>
-        <translation type="vanished">&amp;Відновити поточний зріз &apos;%1&apos;</translation>
+        <translation>&amp;Відновити поточний зріз &apos;%1&apos;</translation>
     </message>
     <message>
         <source>&amp;Continue running in the background</source>
-        <translation type="vanished">&amp;Продовжити роботу у тлі</translation>
+        <translation>&amp;Продовжити роботу у тлі</translation>
     </message>
     <message>
         <source>&lt;p&gt;Close the virtual machine windows but keep the virtual machine running.&lt;/p&gt;&lt;p&gt;You can use the VirtualBox Manager to return to running the virtual machine in a window.&lt;/p&gt;</source>
-        <translation type="vanished">&lt;p&gt;Закрити вікна віртуальної машини, проте продовжити її роботу.&lt;/p&gt;&lt;p&gt;Для повернення роботи віртуальної машини у вікні, Ви можете використати VirtualBox менеджер.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Закрити вікна віртуальної машини, проте продовжити її роботу.&lt;/p&gt;&lt;p&gt;Для повернення роботи віртуальної машини у вікні, Ви можете використати VirtualBox менеджер.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -13422,15 +15162,31 @@ p, li { white-space: pre-wrap; }
     <name>UIVMInformationDialog</name>
     <message>
         <source>%1 - Session Information</source>
-        <translation type="obsolete">%1 — Інформація про сеанс</translation>
+        <translation type="unfinished">%1 — Інформація про сеанс</translation>
     </message>
     <message>
         <source>Configuration &amp;Details</source>
-        <translation type="obsolete">Деталі конфігурації</translation>
+        <translation type="unfinished">Деталі конфігурації</translation>
     </message>
     <message>
         <source>&amp;Runtime Information</source>
-        <translation type="obsolete">&amp;Інформація про сесію</translation>
+        <translation type="unfinished">&amp;Інформація про сесію</translation>
+    </message>
+    <message>
+        <source>Close Session</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Terminate Process</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Expand All</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Collapse All</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -13554,6 +15310,164 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
+    <name>UIVMLogViewerDialog</name>
+    <message>
+        <source>%1 - Log Viewer</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIVMLogViewerWidget</name>
+    <message>
+        <source>Delete the current bookmark</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Delete all bookmarks</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Goto the next bookmark</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Goto the previous bookmark</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Goto selected bookmark</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Log Viewer</source>
+        <translation type="unfinished">Переглядач журналу</translation>
+    </message>
+    <message>
+        <source>Close</source>
+        <translation type="unfinished">Закрити</translation>
+    </message>
+    <message>
+        <source>Select or enter a term which will be used in filtering the log text</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add the filter term to the set of filter terms</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Showing %1/%2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The filter terms list, select one to remove or click the button on the right side to remove them all</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The type of boolean operator for filter operation</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show Line Numbers</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When checked, show line numbers</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Wrap Lines</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When checked, wrap lines</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Font Size</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Log viewer font size</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open a font dialog to select font face for the logviewer</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Reset options to application defaults</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Close the pane</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enter a search string here</source>
+        <translation type="unfinished">Введіть пошуковий рядок сюди</translation>
+    </message>
+    <message>
+        <source>Search for the next occurrence of the string (F3)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Search for the previous occurrence of the string (Shift+F3)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>C&amp;ase Sensitive</source>
+        <translation type="unfinished">&amp;Чутливий до змін</translation>
+    </message>
+    <message>
+        <source>When checked, perform case sensitive search</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Ma&amp;tch Whole Word</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When checked, search matches only complete words</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Highlight All</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When checked, all occurence of the search text are highlighted</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>String not found</source>
+        <translation type="unfinished">Рядок не знайдено</translation>
+    </message>
+    <message>
+        <source>%1 Matches Found</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Filtered</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Bookmark</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Save VirtualBox Log As</source>
+        <translation type="unfinished">Зберегти журнал VirtualBox як</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;&lt;b&gt;No machine&lt;/b&gt; is currently selected or the selected machine is not valid. Please select a Virtual Machine to see its logs</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;No log files found. Press the &lt;b&gt;Refresh&lt;/b&gt; button to rescan the log folder &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.&lt;/p&gt;</source>
+        <translation type="unfinished">&lt;p&gt;Файли журналу не знайдені. Натисніть клавішу &lt;b&gt;Оновити&lt;/b&gt; для повторного перегляду теки журналу &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.&lt;/p&gt;</translation>
+    </message>
+</context>
+<context>
     <name>UIVMPreviewWindow</name>
     <message>
         <source>Update Disabled</source>
@@ -13630,19 +15544,19 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Expert Mode</source>
-        <translation type="vanished">&amp;Режим експерта</translation>
+        <translation>&amp;Режим експерта</translation>
     </message>
     <message>
         <source>Switch to &lt;nobr&gt;&lt;b&gt;Expert Mode&lt;/b&gt;&lt;/nobr&gt;, a one-page dialog for experienced users.</source>
-        <translation type="vanished">Перемкнутись у &lt;nobr&gt;&lt;b&gt;режим експерта&lt;/b&gt;&lt;/nobr&gt; — односторінковий діалог для досвідчених користувачів.</translation>
+        <translation>Перемкнутись у &lt;nobr&gt;&lt;b&gt;режим експерта&lt;/b&gt;&lt;/nobr&gt; — односторінковий діалог для досвідчених користувачів.</translation>
     </message>
     <message>
         <source>&amp;Guided Mode</source>
-        <translation type="vanished">&amp;Інтерактивний режим</translation>
+        <translation>&amp;Інтерактивний режим</translation>
     </message>
     <message>
         <source>Switch to &lt;nobr&gt;&lt;b&gt;Guided Mode&lt;/b&gt;&lt;/nobr&gt;, a step-by-step dialog with detailed explanations.</source>
-        <translation type="vanished">Перемкнутись у &lt;nobr&gt;&lt;b&gt;інтерактивний режим&lt;/b&gt;&lt;/nobr&gt; — покроковий діалог із докладними поясненнями.</translation>
+        <translation>Перемкнутись у &lt;nobr&gt;&lt;b&gt;інтерактивний режим&lt;/b&gt;&lt;/nobr&gt; — покроковий діалог із докладними поясненнями.</translation>
     </message>
 </context>
 <context>
@@ -14338,23 +16252,23 @@ p, li { white-space: pre-wrap; }
     <name>UIWizardFirstRun</name>
     <message>
         <source>Select start-up disk</source>
-        <translation type="vanished">Виберіть завантажувальний диск</translation>
+        <translation>Виберіть завантажувальний диск</translation>
     </message>
     <message>
         <source>Start</source>
-        <translation type="vanished">Запустити</translation>
+        <translation>Запустити</translation>
     </message>
     <message>
         <source>&lt;p&gt;Please select a virtual optical disk file or a physical optical drive containing a disk to start your new virtual machine from.&lt;/p&gt;&lt;p&gt;The disk should be suitable for starting a computer from and should contain the operating system you wish to install on the virtual machine if you want to do that now. The disk will be ejected from the virtual drive automatically next time you switch the virtual machine off, but you can also do this yourself if needed using the Devices menu.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Please select a virtual optical disk file or a physical optical drive containing a disk to start your new virtual machine from.&lt;/p&gt;&lt;p&gt;The disk should be suitable for starting a computer from and should contain the operating system you wish to install on the virtual machine if you want to do that now. The disk will be ejected from the virtual drive automatically next time you switch the virtual machine off, but you can also do this yourself if needed using the Devices menu.&lt;/p&gt;</translation>
+        <translation type="unfinished">&lt;p&gt;Please select a virtual optical disk file or a physical optical drive containing a disk to start your new virtual machine from.&lt;/p&gt;&lt;p&gt;The disk should be suitable for starting a computer from and should contain the operating system you wish to install on the virtual machine if you want to do that now. The disk will be ejected from the virtual drive automatically next time you switch the virtual machine off, but you can also do this yourself if needed using the Devices menu.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Please select a virtual optical disk file or a physical optical drive containing a disk to start your new virtual machine from.&lt;/p&gt;&lt;p&gt;The disk should be suitable for starting a computer from. As this virtual machine has no hard drive you will not be able to install an operating system on it at the moment.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Please select a virtual optical disk file or a physical optical drive containing a disk to start your new virtual machine from.&lt;/p&gt;&lt;p&gt;The disk should be suitable for starting a computer from. As this virtual machine has no hard drive you will not be able to install an operating system on it at the moment.&lt;/p&gt;</translation>
+        <translation type="unfinished">&lt;p&gt;Please select a virtual optical disk file or a physical optical drive containing a disk to start your new virtual machine from.&lt;/p&gt;&lt;p&gt;The disk should be suitable for starting a computer from. As this virtual machine has no hard drive you will not be able to install an operating system on it at the moment.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Choose a virtual optical disk file...</source>
-        <translation type="vanished">Вибрати файл віртуального оптичного диска...</translation>
+        <translation>Вибрати файл віртуального оптичного диска...</translation>
     </message>
 </context>
 <context>
@@ -14445,7 +16359,7 @@ Home folders can also be individually (per virtual machine)  modified.</source>
     <name>UIWizardNewVD</name>
     <message>
         <source>Create</source>
-        <translation type="vanished">Створити</translation>
+        <translation>Створити</translation>
     </message>
     <message>
         <source>Hard drive file type</source>
@@ -14453,15 +16367,15 @@ Home folders can also be individually (per virtual machine)  modified.</source>
     </message>
     <message>
         <source>&amp;Dynamically allocated</source>
-        <translation type="vanished">&amp;Динамічно визначено</translation>
+        <translation>&amp;Динамічно визначено</translation>
     </message>
     <message>
         <source>&amp;Fixed size</source>
-        <translation type="vanished">&amp;Фіксований розмір</translation>
+        <translation>&amp;Фіксований розмір</translation>
     </message>
     <message>
         <source>&amp;Split into files of less than 2GB</source>
-        <translation type="vanished">&amp;Розділяти між файлами меншими за 2 ГБ</translation>
+        <translation>&amp;Розділяти між файлами меншими за 2 ГБ</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;%1 (%2 B)&lt;/nobr&gt;</source>
@@ -14469,7 +16383,7 @@ Home folders can also be individually (per virtual machine)  modified.</source>
     </message>
     <message>
         <source>File location and size</source>
-        <translation type="vanished">Розташування та розмір файла</translation>
+        <translation>Розташування та розмір файла</translation>
     </message>
     <message>
         <source>Please type the name of the new virtual hard drive file into the box below or click on the folder icon to select a different folder to create the file in.</source>
@@ -14481,11 +16395,11 @@ Home folders can also be individually (per virtual machine)  modified.</source>
     </message>
     <message>
         <source>File &amp;location</source>
-        <translation type="vanished">&amp;Розташування файла</translation>
+        <translation>&amp;Розташування файла</translation>
     </message>
     <message>
         <source>File &amp;size</source>
-        <translation type="vanished">Розмір &amp;файла</translation>
+        <translation>Розмір &amp;файла</translation>
     </message>
     <message>
         <source>Hard drive file &amp;type</source>
@@ -14493,51 +16407,51 @@ Home folders can also be individually (per virtual machine)  modified.</source>
     </message>
     <message>
         <source>Create Virtual Hard Disk</source>
-        <translation type="vanished">Створити віртуальний жорсткий диск</translation>
+        <translation>Створити віртуальний жорсткий диск</translation>
     </message>
     <message>
         <source>Hard disk file type</source>
-        <translation type="vanished">Тип жорсткого диску</translation>
+        <translation>Тип жорсткого диску</translation>
     </message>
     <message>
         <source>Please choose the type of file that you would like to use for the new virtual hard disk. If you do not need to use it with other virtualization software you can leave this setting unchanged.</source>
-        <translation type="vanished">Будь ласка, виберіть тип файла, який Ви хочете використовувати для нового віртуального жорсткого диска. Якщо у Вас немає потреби використовувати його з іншим програмним забезпеченням віртуалізації, Ви можете залишити ці налаштування без змін.</translation>
+        <translation>Будь ласка, виберіть тип файла, який Ви хочете використовувати для нового віртуального жорсткого диска. Якщо у Вас немає потреби використовувати його з іншим програмним забезпеченням віртуалізації, Ви можете залишити ці налаштування без змін.</translation>
     </message>
     <message>
         <source>Storage on physical hard disk</source>
-        <translation type="vanished">Зберігання на фізичному жорсткому диску</translation>
+        <translation>Зберігання на фізичному жорсткому диску</translation>
     </message>
     <message>
         <source>Please choose whether the new virtual hard disk file should grow as it is used (dynamically allocated) or if it should be created at its maximum size (fixed size).</source>
-        <translation type="vanished">Будь ласка, зазначте, чи повинен файл нового віртуального жорсткого диску збільшуватись при його використанні (динамічне визначення), чи він повинен бути створений зі своїм максимальним розміром (фіксований розмір).</translation>
+        <translation>Будь ласка, зазначте, чи повинен файл нового віртуального жорсткого диску збільшуватись при його використанні (динамічне визначення), чи він повинен бути створений зі своїм максимальним розміром (фіксований розмір).</translation>
     </message>
     <message>
         <source>&lt;p&gt;A &lt;b&gt;dynamically allocated&lt;/b&gt; hard disk file will only use space on your physical hard disk as it fills up (up to a maximum &lt;b&gt;fixed size&lt;/b&gt;), although it will not shrink again automatically when space on it is freed.&lt;/p&gt;</source>
-        <translation type="vanished">&lt;p&gt;Файл &lt;b&gt;динамічного&lt;/b&gt; жорсткого диску буде займати місце на Вашому фізичному жорсткому диску лише при його заповненні (до максимального &lt;b&gt;фіксованого розміру&lt;/b&gt;), проте не зможе автоматично зменшитись, при звільненні місця на ньому.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Файл &lt;b&gt;динамічного&lt;/b&gt; жорсткого диску буде займати місце на Вашому фізичному жорсткому диску лише при його заповненні (до максимального &lt;b&gt;фіксованого розміру&lt;/b&gt;), проте не зможе автоматично зменшитись, при звільненні місця на ньому.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;A &lt;b&gt;fixed size&lt;/b&gt; hard disk file may take longer to create on some systems but is often faster to use.&lt;/p&gt;</source>
-        <translation type="vanished">&lt;p&gt;Файл &lt;b&gt;фіксованого&lt;/b&gt; жорсткого диску може потребувати більше часу для створення на певних системах, проте, зазвичай, він швидше у використанні.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Файл &lt;b&gt;фіксованого&lt;/b&gt; жорсткого диску може потребувати більше часу для створення на певних системах, проте, зазвичай, він швидше у використанні.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;You can also choose to &lt;b&gt;split&lt;/b&gt; the hard disk file into several files of up to two gigabytes each. This is mainly useful if you wish to store the virtual machine on removable USB devices or old systems, some of which cannot handle very large files.</source>
-        <translation type="obsolete">&lt;p&gt;You can also choose to &lt;b&gt;split&lt;/b&gt; the hard disk file into several files of up to two gigabytes each. This is mainly useful if you wish to store the virtual machine on removable USB devices or old systems, some of which cannot handle very large files.</translation>
+        <translation type="unfinished">&lt;p&gt;You can also choose to &lt;b&gt;split&lt;/b&gt; the hard disk file into several files of up to two gigabytes each. This is mainly useful if you wish to store the virtual machine on removable USB devices or old systems, some of which cannot handle very large files.</translation>
     </message>
     <message>
         <source>Please type the name of the new virtual hard disk file into the box below or click on the folder icon to select a different folder to create the file in.</source>
-        <translation type="vanished">Будь ласка, зазначте назву файла нового віртуального жорсткого диску в полі нижче або натисніть на піктограмі теки, щоб вибрати іншу теку для створення файла.</translation>
+        <translation>Будь ласка, зазначте назву файла нового віртуального жорсткого диску в полі нижче або натисніть на піктограмі теки, щоб вибрати іншу теку для створення файла.</translation>
     </message>
     <message>
         <source>Choose a location for new virtual hard disk file...</source>
-        <translation type="vanished">Вибрати місце розташування файла нового віртуального жорсткого диску...</translation>
+        <translation>Вибрати місце розташування файла нового віртуального жорсткого диску...</translation>
     </message>
     <message>
         <source>Select the size of the virtual hard disk in megabytes. This size is the limit on the amount of file data that a virtual machine will be able to store on the hard disk.</source>
-        <translation type="vanished">Виберіть розмір віртуального жорсткого диску в мегабайтах. Ця величина обмежує розмір файлових даних, які віртуальна машина зможе зберігати на жорсткому диску.</translation>
+        <translation>Виберіть розмір віртуального жорсткого диску в мегабайтах. Ця величина обмежує розмір файлових даних, які віртуальна машина зможе зберігати на жорсткому диску.</translation>
     </message>
     <message>
         <source>Hard disk file &amp;type</source>
-        <translation type="vanished">&amp;Тип жорсткого диску</translation>
+        <translation>&amp;Тип жорсткого диску</translation>
     </message>
 </context>
 <context>
@@ -14623,15 +16537,15 @@ Home folders can also be individually (per virtual machine)  modified.</source>
     <name>VBoxAboutDlg</name>
     <message>
         <source>VirtualBox - About</source>
-        <translation type="vanished">VirtualBox — про програму</translation>
+        <translation>VirtualBox — про програму</translation>
     </message>
     <message>
         <source>VirtualBox Graphical User Interface</source>
-        <translation type="vanished">Графічний інтерфейс користувача VirtualBox</translation>
+        <translation>Графічний інтерфейс користувача VirtualBox</translation>
     </message>
     <message>
         <source>Version %1</source>
-        <translation type="vanished">Версія %1</translation>
+        <translation>Версія %1</translation>
     </message>
 </context>
 <context>
@@ -15372,22 +17286,22 @@ Home folders can also be individually (per virtual machine)  modified.</source>
     <message>
         <source>Unknown device %1:%2</source>
         <comment>USB device details</comment>
-        <translation type="vanished">Невідомий пристрій %1:%2</translation>
+        <translation>Невідомий пристрій %1:%2</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Vendor ID: %1&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Product ID: %2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Revision: %3&lt;/nobr&gt;</source>
         <comment>USB device tooltip</comment>
-        <translation type="vanished">&lt;nobr&gt;Ід. постачальника: %1&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Ід. продукту: %2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Перегляд: %3&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;Ід. постачальника: %1&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Ід. продукту: %2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Перегляд: %3&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;Serial No. %1&lt;/nobr&gt;</source>
         <comment>USB device tooltip</comment>
-        <translation type="vanished">&lt;br&gt;&lt;nobr&gt;Серійний № %1&lt;/nobr&gt;</translation>
+        <translation>&lt;br&gt;&lt;nobr&gt;Серійний № %1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;State: %1&lt;/nobr&gt;</source>
         <comment>USB device tooltip</comment>
-        <translation type="vanished">&lt;br&gt;&lt;nobr&gt;Стан: %1&lt;/nobr&gt;</translation>
+        <translation>&lt;br&gt;&lt;nobr&gt;Стан: %1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>Name</source>
@@ -15522,7 +17436,7 @@ Home folders can also be individually (per virtual machine)  modified.</source>
     <message>
         <source>Adapter %1</source>
         <comment>details report (network)</comment>
-        <translation type="vanished">Адаптер %1</translation>
+        <translation>Адаптер %1</translation>
     </message>
     <message>
         <source>Disabled</source>
@@ -15576,47 +17490,47 @@ Home folders can also be individually (per virtual machine)  modified.</source>
     <message>
         <source>Powered Off</source>
         <comment>MachineState</comment>
-        <translation type="vanished">Вимкнено</translation>
+        <translation>Вимкнено</translation>
     </message>
     <message>
         <source>Saved</source>
         <comment>MachineState</comment>
-        <translation type="vanished">Збережено</translation>
+        <translation>Збережено</translation>
     </message>
     <message>
         <source>Aborted</source>
         <comment>MachineState</comment>
-        <translation type="vanished">Припинено</translation>
+        <translation>Припинено</translation>
     </message>
     <message>
         <source>Running</source>
         <comment>MachineState</comment>
-        <translation type="vanished">Запущено</translation>
+        <translation>Запущено</translation>
     </message>
     <message>
         <source>Paused</source>
         <comment>MachineState</comment>
-        <translation type="vanished">Зупинено</translation>
+        <translation>Зупинено</translation>
     </message>
     <message>
         <source>Starting</source>
         <comment>MachineState</comment>
-        <translation type="vanished">Запускається</translation>
+        <translation>Запускається</translation>
     </message>
     <message>
         <source>Stopping</source>
         <comment>MachineState</comment>
-        <translation type="vanished">Вимикається</translation>
+        <translation>Вимикається</translation>
     </message>
     <message>
         <source>Saving</source>
         <comment>MachineState</comment>
-        <translation type="vanished">Зберігається</translation>
+        <translation>Зберігається</translation>
     </message>
     <message>
         <source>Restoring</source>
         <comment>MachineState</comment>
-        <translation type="vanished">Відновлюється</translation>
+        <translation>Відновлюється</translation>
     </message>
     <message>
         <source>Discarding</source>
@@ -15636,7 +17550,7 @@ Home folders can also be individually (per virtual machine)  modified.</source>
     <message>
         <source>Spawning</source>
         <comment>SessionState</comment>
-        <translation type="vanished">Продовжується</translation>
+        <translation>Продовжується</translation>
     </message>
     <message>
         <source>Closing</source>
@@ -15646,12 +17560,12 @@ Home folders can also be individually (per virtual machine)  modified.</source>
     <message>
         <source>None</source>
         <comment>DeviceType</comment>
-        <translation type="vanished">Немає жодної</translation>
+        <translation>Немає жодної</translation>
     </message>
     <message>
         <source>Floppy</source>
         <comment>DeviceType</comment>
-        <translation type="vanished">Дискета</translation>
+        <translation>Дискета</translation>
     </message>
     <message>
         <source>CD/DVD</source>
@@ -15661,12 +17575,12 @@ Home folders can also be individually (per virtual machine)  modified.</source>
     <message>
         <source>Hard Disk</source>
         <comment>DeviceType</comment>
-        <translation type="vanished">Жорсткий диск</translation>
+        <translation>Жорсткий диск</translation>
     </message>
     <message>
         <source>Network</source>
         <comment>DeviceType</comment>
-        <translation type="vanished">Мережа</translation>
+        <translation>Мережа</translation>
     </message>
     <message>
         <source>Normal</source>
@@ -15711,42 +17625,42 @@ Home folders can also be individually (per virtual machine)  modified.</source>
     <message>
         <source>Null Audio Driver</source>
         <comment>AudioDriverType</comment>
-        <translation type="vanished">Фіктивний аудіодрайвер</translation>
+        <translation>Фіктивний аудіодрайвер</translation>
     </message>
     <message>
         <source>Windows Multimedia</source>
         <comment>AudioDriverType</comment>
-        <translation type="obsolete">Windows Multimedia</translation>
+        <translation type="unfinished">Windows Multimedia</translation>
     </message>
     <message>
         <source>OSS Audio Driver</source>
         <comment>AudioDriverType</comment>
-        <translation type="vanished">Аудіодрайвер OSS</translation>
+        <translation>Аудіодрайвер OSS</translation>
     </message>
     <message>
         <source>ALSA Audio Driver</source>
         <comment>AudioDriverType</comment>
-        <translation type="vanished">Аудіодрайвер ALSA</translation>
+        <translation>Аудіодрайвер ALSA</translation>
     </message>
     <message>
         <source>Windows DirectSound</source>
         <comment>AudioDriverType</comment>
-        <translation type="obsolete">Windows DirectSound</translation>
+        <translation type="unfinished">Windows DirectSound</translation>
     </message>
     <message>
         <source>CoreAudio</source>
         <comment>AudioDriverType</comment>
-        <translation type="obsolete">CoreAudio</translation>
+        <translation type="unfinished">CoreAudio</translation>
     </message>
     <message>
         <source>Not attached</source>
         <comment>NetworkAttachmentType</comment>
-        <translation type="vanished">Не під&apos;єднаний</translation>
+        <translation>Не під&apos;єднаний</translation>
     </message>
     <message>
         <source>NAT</source>
         <comment>NetworkAttachmentType</comment>
-        <translation type="obsolete">NAT</translation>
+        <translation type="unfinished">NAT</translation>
     </message>
     <message>
         <source>Host Interface</source>
@@ -15756,57 +17670,57 @@ Home folders can also be individually (per virtual machine)  modified.</source>
     <message>
         <source>Internal Network</source>
         <comment>NetworkAttachmentType</comment>
-        <translation type="vanished">Внутрішня мережа</translation>
+        <translation>Внутрішня мережа</translation>
     </message>
     <message>
         <source>Not supported</source>
         <comment>USBDeviceState</comment>
-        <translation type="vanished">Не підтримується</translation>
+        <translation>Не підтримується</translation>
     </message>
     <message>
         <source>Unavailable</source>
         <comment>USBDeviceState</comment>
-        <translation type="vanished">Недоступний</translation>
+        <translation>Недоступний</translation>
     </message>
     <message>
         <source>Busy</source>
         <comment>USBDeviceState</comment>
-        <translation type="vanished">Зайнятий</translation>
+        <translation>Зайнятий</translation>
     </message>
     <message>
         <source>Available</source>
         <comment>USBDeviceState</comment>
-        <translation type="vanished">Доступний</translation>
+        <translation>Доступний</translation>
     </message>
     <message>
         <source>Held</source>
         <comment>USBDeviceState</comment>
-        <translation type="vanished">Утримується</translation>
+        <translation>Утримується</translation>
     </message>
     <message>
         <source>Captured</source>
         <comment>USBDeviceState</comment>
-        <translation type="vanished">Захоплено</translation>
+        <translation>Захоплено</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>ClipboardType</comment>
-        <translation type="vanished">Вимкнений</translation>
+        <translation>Вимкнений</translation>
     </message>
     <message>
         <source>Host To Guest</source>
         <comment>ClipboardType</comment>
-        <translation type="vanished">З головної в гостьову</translation>
+        <translation>З головної в гостьову</translation>
     </message>
     <message>
         <source>Guest To Host</source>
         <comment>ClipboardType</comment>
-        <translation type="vanished">З гостьової в головну</translation>
+        <translation>З гостьової в головну</translation>
     </message>
     <message>
         <source>Bidirectional</source>
         <comment>ClipboardType</comment>
-        <translation type="vanished">Двонапрямний</translation>
+        <translation>Двонапрямний</translation>
     </message>
     <message>
         <source>Select a directory</source>
@@ -15864,22 +17778,22 @@ Home folders can also be individually (per virtual machine)  modified.</source>
     <message>
         <source>Disconnected</source>
         <comment>PortMode</comment>
-        <translation type="vanished">Від&apos;єднаний</translation>
+        <translation>Від&apos;єднаний</translation>
     </message>
     <message>
         <source>Host Pipe</source>
         <comment>PortMode</comment>
-        <translation type="vanished">Головний канал</translation>
+        <translation>Головний канал</translation>
     </message>
     <message>
         <source>Host Device</source>
         <comment>PortMode</comment>
-        <translation type="vanished">Головний пристрій</translation>
+        <translation>Головний пристрій</translation>
     </message>
     <message>
         <source>User-defined</source>
         <comment>serial port</comment>
-        <translation type="vanished">Встановлений користувачем</translation>
+        <translation>Встановлений користувачем</translation>
     </message>
     <message>
         <source>VT-x/AMD-V</source>
@@ -15939,22 +17853,22 @@ Home folders can also be individually (per virtual machine)  modified.</source>
     <message>
         <source>USB</source>
         <comment>DeviceType</comment>
-        <translation type="obsolete">USB</translation>
+        <translation type="unfinished">USB</translation>
     </message>
     <message>
         <source>Shared Folder</source>
         <comment>DeviceType</comment>
-        <translation type="vanished">Спільна тека</translation>
+        <translation>Спільна тека</translation>
     </message>
     <message>
         <source>IDE</source>
         <comment>StorageBus</comment>
-        <translation type="obsolete">IDE</translation>
+        <translation type="unfinished">IDE</translation>
     </message>
     <message>
         <source>SATA</source>
         <comment>StorageBus</comment>
-        <translation type="obsolete">SATA</translation>
+        <translation type="unfinished">SATA</translation>
     </message>
     <message>
         <source>Primary</source>
@@ -15984,37 +17898,37 @@ Home folders can also be individually (per virtual machine)  modified.</source>
     <message>
         <source>Solaris Audio</source>
         <comment>AudioDriverType</comment>
-        <translation type="obsolete">Solaris Audio</translation>
+        <translation type="unfinished">Solaris Audio</translation>
     </message>
     <message>
         <source>PulseAudio</source>
         <comment>AudioDriverType</comment>
-        <translation type="obsolete">PulseAudio</translation>
+        <translation type="unfinished">PulseAudio</translation>
     </message>
     <message>
         <source>ICH AC97</source>
         <comment>AudioControllerType</comment>
-        <translation type="obsolete">ICH AC97</translation>
+        <translation type="unfinished">ICH AC97</translation>
     </message>
     <message>
         <source>SoundBlaster 16</source>
         <comment>AudioControllerType</comment>
-        <translation type="obsolete">SoundBlaster 16</translation>
+        <translation type="unfinished">SoundBlaster 16</translation>
     </message>
     <message>
         <source>PCnet-PCI II (Am79C970A)</source>
         <comment>NetworkAdapterType</comment>
-        <translation type="obsolete">PCnet-PCI II (Am79C970A)</translation>
+        <translation type="unfinished">PCnet-PCI II (Am79C970A)</translation>
     </message>
     <message>
         <source>PCnet-FAST III (Am79C973)</source>
         <comment>NetworkAdapterType</comment>
-        <translation type="obsolete">PCnet-FAST III (Am79C973)</translation>
+        <translation type="unfinished">PCnet-FAST III (Am79C973)</translation>
     </message>
     <message>
         <source>Intel PRO/1000 MT Desktop (82540EM)</source>
         <comment>NetworkAdapterType</comment>
-        <translation type="obsolete">Intel PRO/1000 MT Desktop (82540EM)</translation>
+        <translation type="unfinished">Intel PRO/1000 MT Desktop (82540EM)</translation>
     </message>
     <message>
         <source>PIIX3</source>
@@ -16029,47 +17943,47 @@ Home folders can also be individually (per virtual machine)  modified.</source>
     <message>
         <source>Intel PRO/1000 T Server (82543GC)</source>
         <comment>NetworkAdapterType</comment>
-        <translation type="obsolete">Intel PRO/1000 T Server (82543GC)</translation>
+        <translation type="unfinished">Intel PRO/1000 T Server (82543GC)</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Vendor ID: %1&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation type="vanished">&lt;nobr&gt;Ід. постачальника: %1&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;Ід. постачальника: %1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Product ID: %2&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation type="vanished">&lt;nobr&gt;Ід. продукту: %2&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;Ід. продукту: %2&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Revision: %3&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation type="vanished">&lt;nobr&gt;Перегляд: %3&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;Перегляд: %3&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Product: %4&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation type="vanished">&lt;nobr&gt;Продукт: %4&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;Продукт: %4&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Manufacturer: %5&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation type="vanished">&lt;nobr&gt;Виробник: %5&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;Виробник: %5&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Serial No.: %1&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation type="vanished">&lt;nobr&gt;Серійний №: %1&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;Серійний №: %1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Port: %1&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation type="vanished">&lt;nobr&gt;Порт: %1&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;Порт: %1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;State: %1&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation type="vanished">&lt;nobr&gt;Стан: %1&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;Стан: %1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>host interface, %1</source>
@@ -16119,7 +18033,7 @@ Home folders can also be individually (per virtual machine)  modified.</source>
     <message>
         <source>Checking...</source>
         <comment>medium</comment>
-        <translation type="vanished">Перевірка...</translation>
+        <translation>Перевірка...</translation>
     </message>
     <message>
         <source>Inaccessible</source>
@@ -16142,17 +18056,17 @@ Home folders can also be individually (per virtual machine)  modified.</source>
     <message>
         <source>Enabled</source>
         <comment>details report (3D Acceleration)</comment>
-        <translation type="vanished">Увімкнено</translation>
+        <translation>Увімкнено</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details report (3D Acceleration)</comment>
-        <translation type="vanished">Вимкнений</translation>
+        <translation>Вимкнений</translation>
     </message>
     <message>
         <source>Setting Up</source>
         <comment>MachineState</comment>
-        <translation type="vanished">Налаштування</translation>
+        <translation>Налаштування</translation>
     </message>
     <message>
         <source>Differencing</source>
@@ -16172,7 +18086,7 @@ Home folders can also be individually (per virtual machine)  modified.</source>
     <message>
         <source>&lt;nobr&gt;%1 MB&lt;/nobr&gt;</source>
         <comment>details report</comment>
-        <translation type="vanished">&lt;nobr&gt;%1 МБ&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;%1 МБ&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>Processor(s)</source>
@@ -16232,57 +18146,57 @@ Home folders can also be individually (per virtual machine)  modified.</source>
     <message>
         <source>SCSI</source>
         <comment>StorageBus</comment>
-        <translation type="obsolete">SCSI</translation>
+        <translation type="unfinished">SCSI</translation>
     </message>
     <message>
         <source>Raw File</source>
         <comment>PortMode</comment>
-        <translation type="vanished">Необроблений файл</translation>
+        <translation>Необроблений файл</translation>
     </message>
     <message>
         <source>Intel PRO/1000 MT Server (82545EM)</source>
         <comment>NetworkAdapterType</comment>
-        <translation type="vanished">Сервер Intel PRO/1000 MT (82545EM)</translation>
+        <translation>Сервер Intel PRO/1000 MT (82545EM)</translation>
     </message>
     <message>
         <source>Bridged Adapter</source>
         <comment>NetworkAttachmentType</comment>
-        <translation type="vanished">Проміжний адаптер</translation>
+        <translation>Проміжний адаптер</translation>
     </message>
     <message>
         <source>Host-only Adapter</source>
         <comment>NetworkAttachmentType</comment>
-        <translation type="vanished">Лише головний адаптер</translation>
+        <translation>Лише головний адаптер</translation>
     </message>
     <message>
         <source>PIIX3</source>
         <comment>StorageControllerType</comment>
-        <translation type="obsolete">PIIX3</translation>
+        <translation type="unfinished">PIIX3</translation>
     </message>
     <message>
         <source>PIIX4</source>
         <comment>StorageControllerType</comment>
-        <translation type="obsolete">PIIX4</translation>
+        <translation type="unfinished">PIIX4</translation>
     </message>
     <message>
         <source>ICH6</source>
         <comment>StorageControllerType</comment>
-        <translation type="obsolete">ICH6</translation>
+        <translation type="unfinished">ICH6</translation>
     </message>
     <message>
         <source>AHCI</source>
         <comment>StorageControllerType</comment>
-        <translation type="obsolete">AHCI</translation>
+        <translation type="unfinished">AHCI</translation>
     </message>
     <message>
         <source>Lsilogic</source>
         <comment>StorageControllerType</comment>
-        <translation type="obsolete">Lsilogic</translation>
+        <translation type="unfinished">Lsilogic</translation>
     </message>
     <message>
         <source>BusLogic</source>
         <comment>StorageControllerType</comment>
-        <translation type="obsolete">BusLogic</translation>
+        <translation type="unfinished">BusLogic</translation>
     </message>
     <message>
         <source>Enabled</source>
@@ -16312,42 +18226,42 @@ Home folders can also be individually (per virtual machine)  modified.</source>
     <message>
         <source>Teleported</source>
         <comment>MachineState</comment>
-        <translation type="vanished">Телепортовано</translation>
+        <translation>Телепортовано</translation>
     </message>
     <message>
         <source>Guru Meditation</source>
         <comment>MachineState</comment>
-        <translation type="vanished">Гуру медитує</translation>
+        <translation>Гуру медитує</translation>
     </message>
     <message>
         <source>Teleporting</source>
         <comment>MachineState</comment>
-        <translation type="vanished">Телепортація</translation>
+        <translation>Телепортація</translation>
     </message>
     <message>
         <source>Taking Live Snapshot</source>
         <comment>MachineState</comment>
-        <translation type="vanished">Робиться зріз вживу</translation>
+        <translation>Робиться зріз вживу</translation>
     </message>
     <message>
         <source>Teleporting Paused VM</source>
         <comment>MachineState</comment>
-        <translation type="vanished">Телепортацію призупинено</translation>
+        <translation>Телепортацію призупинено</translation>
     </message>
     <message>
         <source>Restoring Snapshot</source>
         <comment>MachineState</comment>
-        <translation type="vanished">Відновлення зрізу</translation>
+        <translation>Відновлення зрізу</translation>
     </message>
     <message>
         <source>Deleting Snapshot</source>
         <comment>MachineState</comment>
-        <translation type="vanished">Вилучення зрізу</translation>
+        <translation>Вилучення зрізу</translation>
     </message>
     <message>
         <source>Floppy</source>
         <comment>StorageBus</comment>
-        <translation type="vanished">Дискета</translation>
+        <translation>Дискета</translation>
     </message>
     <message>
         <source>Device %1</source>
@@ -16392,66 +18306,66 @@ Home folders can also be individually (per virtual machine)  modified.</source>
     <message>
         <source>Paravirtualized Network (virtio-net)</source>
         <comment>NetworkAdapterType</comment>
-        <translation type="vanished">Паравіртуалізована мережа (virtio-net)</translation>
+        <translation>Паравіртуалізована мережа (virtio-net)</translation>
     </message>
     <message>
         <source>I82078</source>
         <comment>StorageControllerType</comment>
-        <translation type="obsolete">I82078</translation>
+        <translation type="unfinished">I82078</translation>
     </message>
     <message>
         <source>Empty</source>
         <comment>medium</comment>
-        <translation type="vanished">Порожній</translation>
+        <translation>Порожній</translation>
     </message>
     <message>
         <source>Host Drive &apos;%1&apos;</source>
         <comment>medium</comment>
-        <translation type="vanished">Головний пристрій &apos;%1&apos;</translation>
+        <translation>Головний пристрій &apos;%1&apos;</translation>
     </message>
     <message>
         <source>Host Drive %1 (%2)</source>
         <comment>medium</comment>
-        <translation type="vanished">Головний пристрій %1 (%2)</translation>
+        <translation>Головний пристрій %1 (%2)</translation>
     </message>
     <message>
         <source>&lt;p style=white-space:pre&gt;Type (Format):  %1 (%2)&lt;/p&gt;</source>
         <comment>medium</comment>
-        <translation type="vanished">&lt;p style=white-space:pre&gt;Тип (формат):  %1 (%2)&lt;/p&gt;</translation>
+        <translation>&lt;p style=white-space:pre&gt;Тип (формат):  %1 (%2)&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Attached to:  %1&lt;/p&gt;</source>
         <comment>image</comment>
-        <translation type="vanished">&lt;p&gt;Під&apos;єднано до:  %1&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Під&apos;єднано до:  %1&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;i&gt;Not Attached&lt;/i&gt;</source>
         <comment>image</comment>
-        <translation type="vanished">&lt;i&gt;Не під&apos;єднано&lt;/i&gt;</translation>
+        <translation>&lt;i&gt;Не під&apos;єднано&lt;/i&gt;</translation>
     </message>
     <message>
         <source>&lt;i&gt;Checking accessibility...&lt;/i&gt;</source>
         <comment>medium</comment>
-        <translation type="vanished">&lt;i&gt;Перевірка доступності...&lt;/i&gt;</translation>
+        <translation>&lt;i&gt;Перевірка доступності...&lt;/i&gt;</translation>
     </message>
     <message>
         <source>Failed to check accessibility of disk image files.</source>
         <comment>medium</comment>
-        <translation type="vanished">Не вдалось перевірити доступність носія.</translation>
+        <translation>Не вдалось перевірити доступність носія.</translation>
     </message>
     <message>
         <source>&lt;b&gt;No disk image file selected&lt;/b&gt;</source>
         <comment>medium</comment>
-        <translation type="vanished">&lt;b&gt;Не вибрано носія&lt;/b&gt;</translation>
+        <translation>&lt;b&gt;Не вибрано носія&lt;/b&gt;</translation>
     </message>
     <message>
         <source>You can also change this while the machine is running.</source>
-        <translation type="vanished">Ви також можете це змінювати протягом роботи машини.</translation>
+        <translation>Ви також можете це змінювати протягом роботи машини.</translation>
     </message>
     <message>
         <source>&lt;b&gt;No disk image files available&lt;/b&gt;</source>
         <comment>medium</comment>
-        <translation type="vanished">&lt;b&gt;Немає доступного носія&lt;/b&gt;</translation>
+        <translation>&lt;b&gt;Немає доступного носія&lt;/b&gt;</translation>
     </message>
     <message>
         <source>You can create disk image files using the virtual media manager.</source>
@@ -16460,7 +18374,7 @@ Home folders can also be individually (per virtual machine)  modified.</source>
     <message>
         <source>Attaching this hard disk will be performed indirectly using a newly created differencing hard disk.</source>
         <comment>medium</comment>
-        <translation type="vanished">Під&apos;єднання цього жорсткого диска буде здійснюватись непрямим чином, використовуючи новостворений різницевий жорсткий диск.</translation>
+        <translation>Під&apos;єднання цього жорсткого диска буде здійснюватись непрямим чином, використовуючи новостворений різницевий жорсткий диск.</translation>
     </message>
     <message>
         <source>Some of the files in this hard disk chain are inaccessible. Please use the Virtual Media Manager in &lt;b&gt;Show Differencing Hard Disks&lt;/b&gt; mode to inspect these files.</source>
@@ -16470,11 +18384,11 @@ Home folders can also be individually (per virtual machine)  modified.</source>
     <message>
         <source>This base hard disk is indirectly attached using the following differencing hard disk:</source>
         <comment>medium</comment>
-        <translation type="vanished">Цей базовий жорсткий диск не напряму під&apos;єднано, використовуючи такий різницевий жорсткий диск:</translation>
+        <translation>Цей базовий жорсткий диск не напряму під&apos;єднано, використовуючи такий різницевий жорсткий диск:</translation>
     </message>
     <message numerus="yes">
         <source>%n year(s)</source>
-        <translation type="vanished">
+        <translation>
             <numerusform>%n рік</numerusform>
             <numerusform>%n роки</numerusform>
             <numerusform>%n років</numerusform>
@@ -16482,7 +18396,7 @@ Home folders can also be individually (per virtual machine)  modified.</source>
     </message>
     <message numerus="yes">
         <source>%n month(s)</source>
-        <translation type="vanished">
+        <translation>
             <numerusform>%n місяць</numerusform>
             <numerusform>%n місяці</numerusform>
             <numerusform>%n місяців</numerusform>
@@ -16490,7 +18404,7 @@ Home folders can also be individually (per virtual machine)  modified.</source>
     </message>
     <message numerus="yes">
         <source>%n day(s)</source>
-        <translation type="vanished">
+        <translation>
             <numerusform>%n день</numerusform>
             <numerusform>%n дні</numerusform>
             <numerusform>%n днів</numerusform>
@@ -16498,7 +18412,7 @@ Home folders can also be individually (per virtual machine)  modified.</source>
     </message>
     <message numerus="yes">
         <source>%n hour(s)</source>
-        <translation type="vanished">
+        <translation>
             <numerusform>%n година</numerusform>
             <numerusform>%n години</numerusform>
             <numerusform>%n годин</numerusform>
@@ -16506,7 +18420,7 @@ Home folders can also be individually (per virtual machine)  modified.</source>
     </message>
     <message numerus="yes">
         <source>%n minute(s)</source>
-        <translation type="vanished">
+        <translation>
             <numerusform>%n хвилина</numerusform>
             <numerusform>%n хвилини</numerusform>
             <numerusform>%n хвилин</numerusform>
@@ -16514,7 +18428,7 @@ Home folders can also be individually (per virtual machine)  modified.</source>
     </message>
     <message numerus="yes">
         <source>%n second(s)</source>
-        <translation type="vanished">
+        <translation>
             <numerusform>%n секунда</numerusform>
             <numerusform>%n секунди</numerusform>
             <numerusform>%n секунд</numerusform>
@@ -16537,7 +18451,7 @@ Home folders can also be individually (per virtual machine)  modified.</source>
     <message>
         <source>SAS</source>
         <comment>StorageBus</comment>
-        <translation type="obsolete">SAS</translation>
+        <translation type="unfinished">SAS</translation>
     </message>
     <message>
         <source>VDE Adapter</source>
@@ -16547,7 +18461,7 @@ Home folders can also be individually (per virtual machine)  modified.</source>
     <message>
         <source>LsiLogic SAS</source>
         <comment>StorageControllerType</comment>
-        <translation type="obsolete">LsiLogic SAS</translation>
+        <translation type="unfinished">LsiLogic SAS</translation>
     </message>
     <message>
         <source>^(?:(?:(\d+)(?:\s?(B|KB|MB|GB|TB|PB))?)|(?:(\d*)%1(\d{1,2})(?:\s?(KB|MB|GB|TB|PB))))$</source>
@@ -16557,12 +18471,12 @@ Home folders can also be individually (per virtual machine)  modified.</source>
     <message>
         <source>B</source>
         <comment>size suffix Bytes</comment>
-        <translation type="vanished">Б</translation>
+        <translation>Б</translation>
     </message>
     <message>
         <source>KB</source>
         <comment>size suffix KBytes=1024 Bytes</comment>
-        <translation type="vanished">КБ</translation>
+        <translation>КБ</translation>
     </message>
     <message>
         <source>MB</source>
@@ -16572,17 +18486,17 @@ Home folders can also be individually (per virtual machine)  modified.</source>
     <message>
         <source>GB</source>
         <comment>size suffix GBytes=1024 MBytes</comment>
-        <translation type="vanished">ГБ</translation>
+        <translation>ГБ</translation>
     </message>
     <message>
         <source>TB</source>
         <comment>size suffix TBytes=1024 GBytes</comment>
-        <translation type="vanished">ТБ</translation>
+        <translation>ТБ</translation>
     </message>
     <message>
         <source>PB</source>
         <comment>size suffix PBytes=1024 TBytes</comment>
-        <translation type="vanished">ПБ</translation>
+        <translation>ПБ</translation>
     </message>
     <message>
         <source>Enabled</source>
@@ -16596,7 +18510,7 @@ Home folders can also be individually (per virtual machine)  modified.</source>
     </message>
     <message>
         <source>Nested Paging</source>
-        <translation type="vanished">Вкладене заміщення сторінок</translation>
+        <translation>Вкладене заміщення сторінок</translation>
     </message>
     <message>
         <source>Shareable</source>
@@ -16606,7 +18520,7 @@ Home folders can also be individually (per virtual machine)  modified.</source>
     <message>
         <source>Unknown device</source>
         <comment>USB device details</comment>
-        <translation type="vanished">Невідомий пристрій</translation>
+        <translation>Невідомий пристрій</translation>
     </message>
     <message>
         <source>SAS Port %1</source>
@@ -16658,47 +18572,47 @@ Home folders can also be individually (per virtual machine)  modified.</source>
     </message>
     <message>
         <source>All files (*)</source>
-        <translation type="vanished">Усі файли (*)</translation>
+        <translation>Усі файли (*)</translation>
     </message>
     <message>
         <source>Fault Tolerant Syncing</source>
         <comment>MachineState</comment>
-        <translation type="vanished">Безвідмовна синхронізація</translation>
+        <translation>Безвідмовна синхронізація</translation>
     </message>
     <message>
         <source>Unlocked</source>
         <comment>SessionState</comment>
-        <translation type="vanished">Розблоковано</translation>
+        <translation>Розблоковано</translation>
     </message>
     <message>
         <source>Locked</source>
         <comment>SessionState</comment>
-        <translation type="vanished">Заблоковано</translation>
+        <translation>Заблоковано</translation>
     </message>
     <message>
         <source>Unlocking</source>
         <comment>SessionState</comment>
-        <translation type="vanished">Розблокування</translation>
+        <translation>Розблокування</translation>
     </message>
     <message>
         <source>Null</source>
         <comment>AuthType</comment>
-        <translation type="vanished">Нема інформації</translation>
+        <translation>Нема інформації</translation>
     </message>
     <message>
         <source>External</source>
         <comment>AuthType</comment>
-        <translation type="vanished">Зовнішня</translation>
+        <translation>Зовнішня</translation>
     </message>
     <message>
         <source>Guest</source>
         <comment>AuthType</comment>
-        <translation type="vanished">Гість</translation>
+        <translation>Гість</translation>
     </message>
     <message>
         <source>Intel HD Audio</source>
         <comment>AudioControllerType</comment>
-        <translation type="obsolete">Intel HD Audio</translation>
+        <translation type="unfinished">Intel HD Audio</translation>
     </message>
     <message>
         <source>UDP</source>
@@ -16713,12 +18627,12 @@ Home folders can also be individually (per virtual machine)  modified.</source>
     <message>
         <source>PIIX3</source>
         <comment>ChipsetType</comment>
-        <translation type="obsolete">PIIX3</translation>
+        <translation type="unfinished">PIIX3</translation>
     </message>
     <message>
         <source>ICH9</source>
         <comment>ChipsetType</comment>
-        <translation type="obsolete">ICH9</translation>
+        <translation type="unfinished">ICH9</translation>
     </message>
     <message>
         <source>and</source>
@@ -16758,7 +18672,7 @@ Home folders can also be individually (per virtual machine)  modified.</source>
     <message>
         <source>Execution Cap</source>
         <comment>details report</comment>
-        <translation type="vanished">Виконавча шапка</translation>
+        <translation>Виконавча шапка</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;%1%&lt;/nobr&gt;</source>
@@ -16773,7 +18687,7 @@ Home folders can also be individually (per virtual machine)  modified.</source>
     <message>
         <source>Generic Driver</source>
         <comment>NetworkAttachmentType</comment>
-        <translation type="vanished">Загальний драйвер</translation>
+        <translation>Загальний драйвер</translation>
     </message>
     <message>
         <source>Deny</source>
@@ -16792,222 +18706,222 @@ Home folders can also be individually (per virtual machine)  modified.</source>
     </message>
     <message>
         <source>Adapter %1</source>
-        <translation type="vanished">Адаптер %1</translation>
+        <translation>Адаптер %1</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>DragAndDropType</comment>
-        <translation type="vanished">Вимкнений</translation>
+        <translation>Вимкнений</translation>
     </message>
     <message>
         <source>Host To Guest</source>
         <comment>DragAndDropType</comment>
-        <translation type="vanished">З головної в гостьову</translation>
+        <translation>З головної в гостьову</translation>
     </message>
     <message>
         <source>Guest To Host</source>
         <comment>DragAndDropType</comment>
-        <translation type="vanished">З гостьової в головну</translation>
+        <translation>З гостьової в головну</translation>
     </message>
     <message>
         <source>Bidirectional</source>
         <comment>DragAndDropType</comment>
-        <translation type="vanished">Двонапрямний</translation>
+        <translation>Двонапрямний</translation>
     </message>
     <message>
         <source>Normal</source>
         <comment>MediumType</comment>
-        <translation type="vanished">Звичайний</translation>
+        <translation>Звичайний</translation>
     </message>
     <message>
         <source>Immutable</source>
         <comment>MediumType</comment>
-        <translation type="vanished">Сталий</translation>
+        <translation>Сталий</translation>
     </message>
     <message>
         <source>Writethrough</source>
         <comment>MediumType</comment>
-        <translation type="vanished">Наскрізний</translation>
+        <translation>Наскрізний</translation>
     </message>
     <message>
         <source>Shareable</source>
         <comment>MediumType</comment>
-        <translation type="vanished">Спільний</translation>
+        <translation>Спільний</translation>
     </message>
     <message>
         <source>Readonly</source>
         <comment>MediumType</comment>
-        <translation type="vanished">Лише для читання</translation>
+        <translation>Лише для читання</translation>
     </message>
     <message>
         <source>Multi-attach</source>
         <comment>MediumType</comment>
-        <translation type="vanished">Кілька під&apos;єднань</translation>
+        <translation>Кілька під&apos;єднань</translation>
     </message>
     <message>
         <source>Dynamically allocated storage</source>
         <comment>MediumVariant</comment>
-        <translation type="vanished">Динамічно змінна пам&apos;ять</translation>
+        <translation>Динамічно змінна пам&apos;ять</translation>
     </message>
     <message>
         <source>Dynamically allocated differencing storage</source>
         <comment>MediumVariant</comment>
-        <translation type="vanished">Динамічне різницеве сховище</translation>
+        <translation>Динамічне різницеве сховище</translation>
     </message>
     <message>
         <source>Fixed size storage</source>
         <comment>MediumVariant</comment>
-        <translation type="vanished">Пам&apos;ять сталого розміру</translation>
+        <translation>Пам&apos;ять сталого розміру</translation>
     </message>
     <message>
         <source>Dynamically allocated storage split into files of less than 2GB</source>
         <comment>MediumVariant</comment>
-        <translation type="vanished">Динамічно змінна пам&apos;ять розділяється між файлами меншими за 2 ГБ</translation>
+        <translation>Динамічно змінна пам&apos;ять розділяється між файлами меншими за 2 ГБ</translation>
     </message>
     <message>
         <source>Dynamically allocated differencing storage split into files of less than 2GB</source>
         <comment>MediumVariant</comment>
-        <translation type="vanished">Динамічне різницеве сховище, поділений на файли менше 2 ГБ</translation>
+        <translation>Динамічне різницеве сховище, поділений на файли менше 2 ГБ</translation>
     </message>
     <message>
         <source>Fixed size storage split into files of less than 2GB</source>
         <comment>MediumVariant</comment>
-        <translation type="vanished">Пам&apos;ять сталого розміру розділяється між файлами меншими за 2 ГБ</translation>
+        <translation>Пам&apos;ять сталого розміру розділяється між файлами меншими за 2 ГБ</translation>
     </message>
     <message>
         <source>Dynamically allocated compressed storage</source>
         <comment>MediumVariant</comment>
-        <translation type="vanished">Динамічне стиснуте сховище</translation>
+        <translation>Динамічне стиснуте сховище</translation>
     </message>
     <message>
         <source>Dynamically allocated differencing compressed storage</source>
         <comment>MediumVariant</comment>
-        <translation type="vanished">Динамічне стиснуте різницеве сховище</translation>
+        <translation>Динамічне стиснуте різницеве сховище</translation>
     </message>
     <message>
         <source>Fixed size ESX storage</source>
         <comment>MediumVariant</comment>
-        <translation type="vanished">Фіксований розмір ESX сховища</translation>
+        <translation>Фіксований розмір ESX сховища</translation>
     </message>
     <message>
         <source>Fixed size storage on raw disk</source>
         <comment>MediumVariant</comment>
-        <translation type="vanished">Фіксований розмір сховища на RAW диску</translation>
+        <translation>Фіксований розмір сховища на RAW диску</translation>
     </message>
     <message>
         <source>Deny</source>
         <comment>NetworkAdapterPromiscModePolicy</comment>
-        <translation type="vanished">Відкинути</translation>
+        <translation>Відкинути</translation>
     </message>
     <message>
         <source>Allow VMs</source>
         <comment>NetworkAdapterPromiscModePolicy</comment>
-        <translation type="vanished">Дозволи віртуальним машинам</translation>
+        <translation>Дозволи віртуальним машинам</translation>
     </message>
     <message>
         <source>Allow All</source>
         <comment>NetworkAdapterPromiscModePolicy</comment>
-        <translation type="vanished">Дозволити всім</translation>
+        <translation>Дозволити всім</translation>
     </message>
     <message>
         <source>Ignore</source>
         <comment>USBDeviceFilterAction</comment>
-        <translation type="vanished">Ігнорувати</translation>
+        <translation>Ігнорувати</translation>
     </message>
     <message>
         <source>Hold</source>
         <comment>USBDeviceFilterAction</comment>
-        <translation type="vanished">Захопити</translation>
+        <translation>Захопити</translation>
     </message>
     <message>
         <source>UDP</source>
         <comment>NATProtocol</comment>
-        <translation type="obsolete">UDP</translation>
+        <translation type="unfinished">UDP</translation>
     </message>
     <message>
         <source>TCP</source>
         <comment>NATProtocol</comment>
-        <translation type="obsolete">TCP</translation>
+        <translation type="unfinished">TCP</translation>
     </message>
     <message>
         <source>IDE Primary Master</source>
         <comment>StorageSlot</comment>
-        <translation type="vanished">Головний господар IDE</translation>
+        <translation>Головний господар IDE</translation>
     </message>
     <message>
         <source>IDE Primary Slave</source>
         <comment>StorageSlot</comment>
-        <translation type="vanished">Головний слуга IDE</translation>
+        <translation>Головний слуга IDE</translation>
     </message>
     <message>
         <source>IDE Secondary Master</source>
         <comment>StorageSlot</comment>
-        <translation type="vanished">Вторинний господар IDE</translation>
+        <translation>Вторинний господар IDE</translation>
     </message>
     <message>
         <source>IDE Secondary Slave</source>
         <comment>StorageSlot</comment>
-        <translation type="vanished">Вторинний слуга IDE</translation>
+        <translation>Вторинний слуга IDE</translation>
     </message>
     <message>
         <source>SATA Port %1</source>
         <comment>StorageSlot</comment>
-        <translation type="vanished">Порт SATA %1</translation>
+        <translation>Порт SATA %1</translation>
     </message>
     <message>
         <source>SCSI Port %1</source>
         <comment>StorageSlot</comment>
-        <translation type="vanished">Порт SCSI %1</translation>
+        <translation>Порт SCSI %1</translation>
     </message>
     <message>
         <source>SAS Port %1</source>
         <comment>StorageSlot</comment>
-        <translation type="vanished">Порт SAS %1</translation>
+        <translation>Порт SAS %1</translation>
     </message>
     <message>
         <source>Floppy Device %1</source>
         <comment>StorageSlot</comment>
-        <translation type="vanished">Пристрій дискет %1</translation>
+        <translation>Пристрій дискет %1</translation>
     </message>
     <message>
         <source>General</source>
         <comment>DetailsElementType</comment>
-        <translation type="vanished">Загальне</translation>
+        <translation>Загальне</translation>
     </message>
     <message>
         <source>Preview</source>
         <comment>DetailsElementType</comment>
-        <translation type="vanished">Перегляд</translation>
+        <translation>Перегляд</translation>
     </message>
     <message>
         <source>System</source>
         <comment>DetailsElementType</comment>
-        <translation type="vanished">Система</translation>
+        <translation>Система</translation>
     </message>
     <message>
         <source>Display</source>
         <comment>DetailsElementType</comment>
-        <translation type="vanished">Екран</translation>
+        <translation>Екран</translation>
     </message>
     <message>
         <source>Storage</source>
         <comment>DetailsElementType</comment>
-        <translation type="vanished">Пам&apos;ять</translation>
+        <translation>Пам&apos;ять</translation>
     </message>
     <message>
         <source>Audio</source>
         <comment>DetailsElementType</comment>
-        <translation type="vanished">Аудіо</translation>
+        <translation>Аудіо</translation>
     </message>
     <message>
         <source>Network</source>
         <comment>DetailsElementType</comment>
-        <translation type="vanished">Мережа</translation>
+        <translation>Мережа</translation>
     </message>
     <message>
         <source>Serial ports</source>
         <comment>DetailsElementType</comment>
-        <translation type="vanished">Серійні порти</translation>
+        <translation>Серійні порти</translation>
     </message>
     <message>
         <source>Parallel ports</source>
@@ -17017,17 +18931,17 @@ Home folders can also be individually (per virtual machine)  modified.</source>
     <message>
         <source>USB</source>
         <comment>DetailsElementType</comment>
-        <translation type="obsolete">USB</translation>
+        <translation type="unfinished">USB</translation>
     </message>
     <message>
         <source>Shared folders</source>
         <comment>DetailsElementType</comment>
-        <translation type="vanished">Спільні теки</translation>
+        <translation>Спільні теки</translation>
     </message>
     <message>
         <source>Description</source>
         <comment>DetailsElementType</comment>
-        <translation type="vanished">Опис</translation>
+        <translation>Опис</translation>
     </message>
     <message>
         <source>Please choose a virtual hard drive file</source>
@@ -17039,19 +18953,19 @@ Home folders can also be individually (per virtual machine)  modified.</source>
     </message>
     <message>
         <source>Please choose a virtual optical disk file</source>
-        <translation type="vanished">Виберіть файл віртуального оптичного диска</translation>
+        <translation>Виберіть файл віртуального оптичного диска</translation>
     </message>
     <message>
         <source>All virtual optical disk files (%1)</source>
-        <translation type="vanished">Усі файли віртуального оптичного диска (%1)</translation>
+        <translation>Усі файли віртуального оптичного диска (%1)</translation>
     </message>
     <message>
         <source>Please choose a virtual floppy disk file</source>
-        <translation type="vanished">Виберіть файл віртуальної дискети</translation>
+        <translation>Виберіть файл віртуальної дискети</translation>
     </message>
     <message>
         <source>All virtual floppy disk files (%1)</source>
-        <translation type="vanished">Усі файли віртуальної дискети (%1)</translation>
+        <translation>Усі файли віртуальної дискети (%1)</translation>
     </message>
     <message>
         <source>VDI (VirtualBox Disk Image)</source>
@@ -17089,36 +19003,36 @@ Home folders can also be individually (per virtual machine)  modified.</source>
     <message>
         <source>PS/2 Mouse</source>
         <comment>PointingHIDType</comment>
-        <translation type="vanished">PS/2 миша</translation>
+        <translation>PS/2 миша</translation>
     </message>
     <message>
         <source>USB Mouse</source>
         <comment>PointingHIDType</comment>
-        <translation type="vanished">USB миша</translation>
+        <translation>USB миша</translation>
     </message>
     <message>
         <source>PS/2 and USB Mouse</source>
         <comment>PointingHIDType</comment>
-        <translation type="vanished">PS/2 та USB миші</translation>
+        <translation>PS/2 та USB миші</translation>
     </message>
     <message>
         <source>Unrestricted Execution</source>
-        <translation type="vanished">Необмежене виконання</translation>
+        <translation>Необмежене виконання</translation>
     </message>
     <message>
         <source>USB Tablet</source>
         <comment>PointingHIDType</comment>
-        <translation type="vanished">USB планшет</translation>
+        <translation>USB планшет</translation>
     </message>
     <message>
         <source>USB Multi-Touch Tablet</source>
         <comment>PointingHIDType</comment>
-        <translation type="vanished">USB сенсорний планшет</translation>
+        <translation>USB сенсорний планшет</translation>
     </message>
     <message>
         <source>NAT Network</source>
         <comment>NetworkAttachmentType</comment>
-        <translation type="vanished">Мережа NAT</translation>
+        <translation>Мережа NAT</translation>
     </message>
     <message>
         <source>NAT network, &apos;%1&apos;</source>
@@ -17127,132 +19041,132 @@ Home folders can also be individually (per virtual machine)  modified.</source>
     </message>
     <message>
         <source>You can create or add disk image files in the virtual machine settings.</source>
-        <translation type="vanished">Ви можете створити або додати файли образів дисків у налаштуваннях віртуальної машини.</translation>
+        <translation>Ви можете створити або додати файли образів дисків у налаштуваннях віртуальної машини.</translation>
     </message>
     <message>
         <source>USB</source>
         <comment>StorageControllerType</comment>
-        <translation type="obsolete">USB</translation>
+        <translation type="unfinished">USB</translation>
     </message>
     <message>
         <source>off</source>
         <comment>guest monitor status</comment>
-        <translation type="vanished">(вимкнено)</translation>
+        <translation>(вимкнено)</translation>
     </message>
     <message>
         <source>Active</source>
         <comment>details report (VT-x/AMD-V)</comment>
-        <translation type="vanished">Активні</translation>
+        <translation>Активні</translation>
     </message>
     <message>
         <source>Inactive</source>
         <comment>details report (VT-x/AMD-V)</comment>
-        <translation type="vanished">Неактивно</translation>
+        <translation>Неактивно</translation>
     </message>
     <message>
         <source>Active</source>
         <comment>details report (Nested Paging)</comment>
-        <translation type="vanished">Активні</translation>
+        <translation>Активні</translation>
     </message>
     <message>
         <source>Inactive</source>
         <comment>details report (Nested Paging)</comment>
-        <translation type="vanished">Неактивно</translation>
+        <translation>Неактивно</translation>
     </message>
     <message>
         <source>Active</source>
         <comment>details report (Unrestricted Execution)</comment>
-        <translation type="vanished">Активні</translation>
+        <translation>Активні</translation>
     </message>
     <message>
         <source>Inactive</source>
         <comment>details report (Unrestricted Execution)</comment>
-        <translation type="vanished">Неактивно</translation>
+        <translation>Неактивно</translation>
     </message>
     <message>
         <source>Paravirtualization Interface</source>
         <comment>details report</comment>
-        <translation type="vanished">Інтерфейс паравіртуалізації</translation>
+        <translation>Інтерфейс паравіртуалізації</translation>
     </message>
     <message>
         <source>Taking Snapshot</source>
         <comment>MachineState</comment>
-        <translation type="vanished">Створення зрізу</translation>
+        <translation>Створення зрізу</translation>
     </message>
     <message>
         <source>Taking Online Snapshot</source>
         <comment>MachineState</comment>
-        <translation type="vanished">Створення робочого зрізу</translation>
+        <translation>Створення робочого зрізу</translation>
     </message>
     <message>
         <source>None</source>
         <comment>ParavirtProvider</comment>
-        <translation type="vanished">Немає жодної</translation>
+        <translation>Немає жодної</translation>
     </message>
     <message>
         <source>Default</source>
         <comment>ParavirtProvider</comment>
-        <translation type="vanished">Типова</translation>
+        <translation>Типова</translation>
     </message>
     <message>
         <source>Legacy</source>
         <comment>ParavirtProvider</comment>
-        <translation type="vanished">Сумісний</translation>
+        <translation>Сумісний</translation>
     </message>
     <message>
         <source>Minimal</source>
         <comment>ParavirtProvider</comment>
-        <translation type="vanished">Мінімальний</translation>
+        <translation>Мінімальний</translation>
     </message>
     <message>
         <source>Hyper-V</source>
         <comment>ParavirtProvider</comment>
-        <translation type="obsolete">Hyper-V</translation>
+        <translation type="unfinished">Hyper-V</translation>
     </message>
     <message>
         <source>KVM</source>
         <comment>ParavirtProvider</comment>
-        <translation type="obsolete">KVM</translation>
+        <translation type="unfinished">KVM</translation>
     </message>
     <message>
         <source>Optical</source>
         <comment>DeviceType</comment>
-        <translation type="vanished">Оптичний диск</translation>
+        <translation>Оптичний диск</translation>
     </message>
     <message>
         <source>New dynamically allocated storage</source>
         <comment>MediumVariant</comment>
-        <translation type="vanished">Нове динамічне сховище</translation>
+        <translation>Нове динамічне сховище</translation>
     </message>
     <message>
         <source>TCP</source>
         <comment>PortMode</comment>
-        <translation type="obsolete">TCP</translation>
+        <translation type="unfinished">TCP</translation>
     </message>
     <message>
         <source>OHCI</source>
         <comment>USBControllerType</comment>
-        <translation type="obsolete">OHCI</translation>
+        <translation type="unfinished">OHCI</translation>
     </message>
     <message>
         <source>EHCI</source>
         <comment>USBControllerType</comment>
-        <translation type="obsolete">EHCI</translation>
+        <translation type="unfinished">EHCI</translation>
     </message>
     <message>
         <source>xHCI</source>
         <comment>USBControllerType</comment>
-        <translation type="obsolete">xHCI</translation>
+        <translation type="unfinished">xHCI</translation>
     </message>
     <message>
         <source>USB Port %1</source>
         <comment>StorageSlot</comment>
-        <translation type="vanished">USB порт %1</translation>
+        <translation>USB порт %1</translation>
     </message>
     <message>
         <source>User interface</source>
         <comment>DetailsElementType</comment>
-        <translation type="vanished">Інтерфейс користувача</translation>
+        <translation>Інтерфейс користувача</translation>
     </message>
     <message>
         <source>(Optical Drive)</source>
@@ -17260,65 +19174,65 @@ Home folders can also be individually (per virtual machine)  modified.</source>
     </message>
     <message>
         <source>Please choose a virtual hard disk file</source>
-        <translation type="vanished">Виберіть файл віртуального жорсткого диска</translation>
+        <translation>Виберіть файл віртуального жорсткого диска</translation>
     </message>
     <message>
         <source>All virtual hard disk files (%1)</source>
-        <translation type="vanished">Всі файли віртуальних жорстких дисків (%1)</translation>
+        <translation>Всі файли віртуальних жорстких дисків (%1)</translation>
     </message>
     <message>
         <source>Encrypted</source>
         <comment>medium</comment>
-        <translation type="vanished">Зашифровано</translation>
+        <translation>Зашифровано</translation>
     </message>
     <message>
         <source>Some of the files in this hard disk chain are inaccessible. Please use the Virtual Medium Manager to inspect these files.</source>
         <comment>medium</comment>
-        <translation type="vanished">Деякі файли з цього ланцюжка жорстких дисків недоступні. Будь ласка, використайте менеджер віртуальних носіїв для перевірки цих файлів.</translation>
+        <translation>Деякі файли з цього ланцюжка жорстких дисків недоступні. Будь ласка, використайте менеджер віртуальних носіїв для перевірки цих файлів.</translation>
     </message>
     <message>
         <source>Please choose a location for new virtual hard disk file</source>
-        <translation type="vanished">Виберіть розташування файла нового віртуального жорсткого диска</translation>
+        <translation>Виберіть розташування файла нового віртуального жорсткого диска</translation>
     </message>
     <message>
         <source>USB</source>
         <comment>StorageBus</comment>
-        <translation type="obsolete">USB</translation>
+        <translation type="unfinished">USB</translation>
     </message>
     <message>
         <source>Preview</source>
         <comment>InformationElementType</comment>
-        <translation type="obsolete">Перегляд</translation>
+        <translation type="unfinished">Перегляд</translation>
     </message>
     <message>
         <source>System</source>
         <comment>InformationElementType</comment>
-        <translation type="obsolete">Система</translation>
+        <translation type="unfinished">Система</translation>
     </message>
     <message>
         <source>Display</source>
         <comment>InformationElementType</comment>
-        <translation type="obsolete">Екран</translation>
+        <translation type="unfinished">Екран</translation>
     </message>
     <message>
         <source>Storage</source>
         <comment>InformationElementType</comment>
-        <translation type="obsolete">Пам&apos;ять</translation>
+        <translation type="unfinished">Пам&apos;ять</translation>
     </message>
     <message>
         <source>Audio</source>
         <comment>InformationElementType</comment>
-        <translation type="obsolete">Аудіо</translation>
+        <translation type="unfinished">Аудіо</translation>
     </message>
     <message>
         <source>Network</source>
         <comment>InformationElementType</comment>
-        <translation type="obsolete">Мережа</translation>
+        <translation type="unfinished">Мережа</translation>
     </message>
     <message>
         <source>Serial ports</source>
         <comment>InformationElementType</comment>
-        <translation type="obsolete">Серійні порти</translation>
+        <translation type="unfinished">Серійні порти</translation>
     </message>
     <message>
         <source>Parallel ports</source>
@@ -17328,42 +19242,42 @@ Home folders can also be individually (per virtual machine)  modified.</source>
     <message>
         <source>USB</source>
         <comment>InformationElementType</comment>
-        <translation type="obsolete">USB</translation>
+        <translation type="unfinished">USB</translation>
     </message>
     <message>
         <source>Shared folders</source>
         <comment>InformationElementType</comment>
-        <translation type="obsolete">Спільні теки</translation>
+        <translation type="unfinished">Спільні теки</translation>
     </message>
     <message>
         <source>User interface</source>
         <comment>InformationElementType</comment>
-        <translation type="obsolete">Інтерфейс користувача</translation>
+        <translation type="unfinished">Інтерфейс користувача</translation>
     </message>
     <message>
         <source>Description</source>
         <comment>InformationElementType</comment>
-        <translation type="obsolete">Опис</translation>
+        <translation type="unfinished">Опис</translation>
     </message>
     <message>
         <source>Hard Disks</source>
         <comment>IndicatorType</comment>
-        <translation type="obsolete">Жорсткі диски</translation>
+        <translation type="unfinished">Жорсткі диски</translation>
     </message>
     <message>
         <source>Network</source>
         <comment>IndicatorType</comment>
-        <translation type="obsolete">Мережа</translation>
+        <translation type="unfinished">Мережа</translation>
     </message>
     <message>
         <source>USB</source>
         <comment>IndicatorType</comment>
-        <translation type="obsolete">USB</translation>
+        <translation type="unfinished">USB</translation>
     </message>
     <message>
         <source>Display</source>
         <comment>IndicatorType</comment>
-        <translation type="obsolete">Екран</translation>
+        <translation type="unfinished">Екран</translation>
     </message>
     <message>
         <source>Video Capture</source>
@@ -17373,12 +19287,279 @@ Home folders can also be individually (per virtual machine)  modified.</source>
     <message>
         <source>Differencing</source>
         <comment>MediumType</comment>
-        <translation type="obsolete">Різницевий</translation>
+        <translation type="unfinished">Різницевий</translation>
     </message>
     <message>
         <source>Audio</source>
         <comment>IndicatorType</comment>
-        <translation type="obsolete">Аудіо</translation>
+        <translation type="unfinished">Аудіо</translation>
+    </message>
+    <message>
+        <source>not set</source>
+        <comment>details report (execution engine)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Execution engine</source>
+        <comment>details report</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Processors</source>
+        <comment>details report</comment>
+        <translation type="unfinished">Процесори</translation>
+    </message>
+    <message>
+        <source>PCIe</source>
+        <comment>StorageBus</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>NVMe</source>
+        <comment>StorageControllerType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>NVMe Port %1</source>
+        <comment>StorageSlot</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Name</source>
+        <translation type="unfinished">Назва</translation>
+    </message>
+    <message>
+        <source>OS</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Location</source>
+        <translation type="unfinished">Адреса</translation>
+    </message>
+    <message>
+        <source>Groups</source>
+        <translation type="unfinished">Групи</translation>
+    </message>
+    <message>
+        <source>RAM</source>
+        <translation type="unfinished">Оперативна пам&apos;ять</translation>
+    </message>
+    <message>
+        <source>CPU Count</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>CPU Execution Cap</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Boot Order</source>
+        <translation type="unfinished">Порядок завантаження</translation>
+    </message>
+    <message>
+        <source>Chipset Type</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Firmware</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Acceleration</source>
+        <translation type="unfinished">Прискорення</translation>
+    </message>
+    <message>
+        <source>VRAM</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Screen Count</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Scale Factor</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>VRDE</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Recording</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Hard Disks</source>
+        <translation type="unfinished">Жорсткі диски</translation>
+    </message>
+    <message>
+        <source>Optical Devices</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Floppy Devices</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Driver</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Controller</source>
+        <translation type="unfinished">Контролер</translation>
+    </message>
+    <message>
+        <source>Input/Output</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Not Attached</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>NAT</source>
+        <translation type="unfinished">NAT</translation>
+    </message>
+    <message>
+        <source>Bridget Adapter</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Internal Network</source>
+        <translation type="unfinished">Внутрішня мережа</translation>
+    </message>
+    <message>
+        <source>Host Only Adapter</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Generic Driver</source>
+        <translation type="unfinished">Загальний драйвер</translation>
+    </message>
+    <message>
+        <source>Disconnected</source>
+        <translation type="unfinished">Від&apos;єднаний</translation>
+    </message>
+    <message>
+        <source>Host Pipe</source>
+        <translation type="unfinished">Головний канал</translation>
+    </message>
+    <message>
+        <source>Host Device</source>
+        <translation type="unfinished">Головний пристрій</translation>
+    </message>
+    <message>
+        <source>Raw File</source>
+        <translation type="unfinished">Необроблений файл</translation>
+    </message>
+    <message>
+        <source>TCP</source>
+        <translation type="unfinished">TCP</translation>
+    </message>
+    <message>
+        <source>Device Filters</source>
+        <translation type="unfinished">Фільтр пристроїв</translation>
+    </message>
+    <message>
+        <source>Menu Bar</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Status Bar</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Mini Toolbar</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Optical Disks</source>
+        <comment>IndicatorType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Floppy Disks</source>
+        <comment>IndicatorType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Shared Folders</source>
+        <comment>IndicatorType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Recording</source>
+        <comment>IndicatorType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Features</source>
+        <comment>IndicatorType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Mouse</source>
+        <comment>IndicatorType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Keyboard</source>
+        <comment>IndicatorType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>General</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Runtime attributes</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Storage statistics</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Network statistics</source>
+        <comment>InformationElementType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>VDI (VirtualBox Disk Image)</source>
+        <comment>UIMediumFormat</comment>
+        <translation type="unfinished">VDI (образ диска VirtualBox)</translation>
+    </message>
+    <message>
+        <source>VMDK (Virtual Machine Disk)</source>
+        <comment>UIMediumFormat</comment>
+        <translation type="unfinished">VMDK (диск віртуальної машини)</translation>
+    </message>
+    <message>
+        <source>VHD (Virtual Hard Disk)</source>
+        <comment>UIMediumFormat</comment>
+        <translation type="unfinished">VHD (віртуальний жорсткий диск)</translation>
+    </message>
+    <message>
+        <source>HDD (Parallels Hard Disk)</source>
+        <comment>UIMediumFormat</comment>
+        <translation type="unfinished">HDD (паралельний жорсткий диск)</translation>
+    </message>
+    <message>
+        <source>QED (QEMU enhanced disk)</source>
+        <comment>UIMediumFormat</comment>
+        <translation type="unfinished">QED (розширений диск QEMU)</translation>
+    </message>
+    <message>
+        <source>QCOW (QEMU Copy-On-Write)</source>
+        <comment>UIMediumFormat</comment>
+        <translation type="unfinished">QCOW (копія на запис QEMU)</translation>
+    </message>
+    <message>
+        <source>Please select files to be on the VISO</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -17411,15 +19592,15 @@ Home folders can also be individually (per virtual machine)  modified.</source>
     <name>VBoxLicenseViewer</name>
     <message>
         <source>VirtualBox License</source>
-        <translation type="vanished">Ліцензія VirtualBox</translation>
+        <translation>Ліцензія VirtualBox</translation>
     </message>
     <message>
         <source>I &amp;Agree</source>
-        <translation type="vanished">Я &amp;згідний</translation>
+        <translation>Я &amp;згідний</translation>
     </message>
     <message>
         <source>I &amp;Disagree</source>
-        <translation type="vanished">Я &amp;не погоджуюсь</translation>
+        <translation>Я &amp;не погоджуюсь</translation>
     </message>
 </context>
 <context>
@@ -18516,12 +20697,12 @@ Home folders can also be individually (per virtual machine)  modified.</source>
     <message>
         <source>&lt;no devices available&gt;</source>
         <comment>USB devices</comment>
-        <translation type="vanished">&lt;нема доступних пристроїв&gt;</translation>
+        <translation>&lt;нема доступних пристроїв&gt;</translation>
     </message>
     <message>
         <source>No supported devices connected to the host PC</source>
         <comment>USB device tooltip</comment>
-        <translation type="vanished">Нема підтримки пристроїв, які під&apos;єднанні до головного комп&apos;ютера</translation>
+        <translation>Нема підтримки пристроїв, які під&apos;єднанні до головного комп&apos;ютера</translation>
     </message>
 </context>
 <context>
