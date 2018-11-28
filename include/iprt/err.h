@@ -1087,7 +1087,7 @@ RT_C_DECLS_END
 /** Invalid client ID. */
 #define VERR_INVALID_CLIENT_ID              (-22417)
 /** Invalid session ID. */
-#define VERR_INVALID_SESSION_ID             (-22417)
+#define VERR_INVALID_SESSION_ID             (-22418)
 /** @} */
 
 
