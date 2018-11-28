@@ -1107,11 +1107,11 @@ int GstCtrlService::clientDisconnect(uint32_t idClient, void *pvClient)
             if (pHostCmd->SaneRelease() == 0)
             {
                 VBOXHGCMSVCPARM Parm;
-                HGCMSvcSetU32(&Parm, pHostCmd->m_idContext);
+                HGCMSvcSetU32(&Parm, idContext);
                 int rc2 = hostCallback(GUEST_DISCONNECTED, 1, &Parm);
                 LogFlowFunc(("Cancelled host command %u (%s) with idContext=%#x -> %Rrc\n",
                              idFunction, GstCtrlHostFnName((eHostFn)idFunction), idContext, rc2));
-                RT_NOREF(rc2);
+                RT_NOREF(rc2, idFunction);
             }
         }
     }
@@ -1983,6 +1983,7 @@ int GstCtrlService::hostProcessCommand(uint32_t idFunction, uint32_t cParms, VBO
                     {
                         int rc2 = rClientState.Wakeup();
                         LogFlowFunc(("Woke up client ID=%RU32 -> rc=%Rrc\n", rClientState.mID, rc2));
+                        RT_NOREF(rc2);
                     }
                     break;
                 }
