@@ -108,6 +108,19 @@ typedef struct VBoxGuestCtrlHostCallback
 
 } VBOXGUESTCTRLHOSTCALLBACK, *PVBOXGUESTCTRLHOSTCALLBACK;
 
+
+/** @name Host message destiation flags.
+ *
+ * This is ORed into the context ID parameter Main after extending it to 64-bit.
+ *
+ * @internal Host internal.
+ * @{ */
+#define VBOX_GUESTCTRL_DST_ROOT_SVC     RT_BIT_64(63)
+#define VBOX_GUESTCTRL_DST_SESSION      RT_BIT_64(62)
+#define VBOX_GUESTCTRL_DST_BOTH         ( VBOX_GUESTCTRL_DST_ROOT_SVC | VBOX_GUESTCTRL_DST_SESSION )
+/** @} */
+
+
 /**
  * The service functions which are callable by host.
  */
@@ -203,14 +216,48 @@ enum eHostFn
     HOST_PATH_USER_HOME = 332
 };
 
+
+/**
+ * Translates a guest control host function function enum to at string.
+ * @returns Enum string name.
+ * @param   enmFunction     The function name to translate.
+ */
+DECLINLINE(const char *) GstCtrlHostFnName(enum eHostFn enmFunction)
+{
+    switch (enmFunction)
+    {
+        RT_CASE_RET_STR(HOST_CANCEL_PENDING_WAITS);
+        RT_CASE_RET_STR(HOST_SESSION_CREATE);
+        RT_CASE_RET_STR(HOST_SESSION_CLOSE);
+        RT_CASE_RET_STR(HOST_EXEC_CMD);
+        RT_CASE_RET_STR(HOST_EXEC_SET_INPUT);
+        RT_CASE_RET_STR(HOST_EXEC_GET_OUTPUT);
+        RT_CASE_RET_STR(HOST_EXEC_TERMINATE);
+        RT_CASE_RET_STR(HOST_EXEC_WAIT_FOR);
+        RT_CASE_RET_STR(HOST_FILE_OPEN);
+        RT_CASE_RET_STR(HOST_FILE_CLOSE);
+        RT_CASE_RET_STR(HOST_FILE_READ);
+        RT_CASE_RET_STR(HOST_FILE_READ_AT);
+        RT_CASE_RET_STR(HOST_FILE_WRITE);
+        RT_CASE_RET_STR(HOST_FILE_WRITE_AT);
+        RT_CASE_RET_STR(HOST_FILE_SEEK);
+        RT_CASE_RET_STR(HOST_FILE_TELL);
+        RT_CASE_RET_STR(HOST_DIR_REMOVE);
+        RT_CASE_RET_STR(HOST_PATH_RENAME);
+        RT_CASE_RET_STR(HOST_PATH_USER_DOCUMENTS);
+        RT_CASE_RET_STR(HOST_PATH_USER_HOME);
+    }
+    return "Unknown";
+}
+
+
 /**
  * The service functions which are called by guest. The numbers may not change,
  * so we hardcode them.
  */
 enum eGuestFn
 {
-    /**
-     * Guest waits for a new message the host wants to process on the guest side.
+    /** Guest waits for a new message the host wants to process on the guest side.
      * This is a blocking call and can be deferred.
      *
      * @note This command is rather odd.  The above description isn't really
@@ -230,44 +277,37 @@ enum eGuestFn
      *             GUEST_MSG_CANCEL.
      */
     GUEST_MSG_WAIT = 1,
-    /**
-     * Guest asks the host to cancel all pending waits the guest itself waits on.
-     * This becomes necessary when the guest wants to quit but still waits for
-     * commands from the host.
+    /** Cancels pending calls for this client session.
+     *
+     * This should be used if a GUEST_MSG_PEEK_WAIT or GUEST_MSG_WAIT call gets
+     * interrupted on the client end, so as to prevent being rebuffed with
+     * VERR_RESOURCE_BUSY when restarting the call.
+     *
+     * @retval  VINF_SUCCESS if cancelled any calls.
+     * @retval  VWRN_NOT_FOUND if no callers.
+     * @retval  VERR_INVALID_CLIENT_ID
+     * @retval  VERR_WRONG_PARAMETER_COUNT
+     * @since   6.0
      */
-    GUEST_CANCEL_PENDING_WAITS = 2,
-    /**
-     * Guest disconnected (terminated normally or due to a crash HGCM
+    GUEST_MSG_CANCEL = 2,
+    /** Guest disconnected (terminated normally or due to a crash HGCM
      * detected when calling service::clientDisconnect().
+     *
+     * @note This is a host side notification message that has no business in this
+     *       enum.  The guest cannot use this function number, host will reject it.
      */
     GUEST_DISCONNECTED = 3,
-    /**
-     * Sets a message filter to only get messages which have a certain
+    /** Sets a message filter to only get messages which have a certain
      * context ID scheme (that is, a specific session, object etc).
      * Since VBox 4.3+.
+     * @deprecated  Replaced by GUEST_SESSION_ACCEPT.
      */
     GUEST_MSG_FILTER_SET = 4,
-    /**
-     * Unsets (and resets) a previously set message filter.
+    /** Unsets (and resets) a previously set message filter.
+     * @retval  VERR_NOT_IMPLEMENTED since 6.0.
+     * @deprecated  Never needed or used,
      */
     GUEST_MSG_FILTER_UNSET = 5,
-    /**
-     * Skips the current assigned message returned by GUEST_MSG_WAIT.
-     * Needed for telling the host service to not keep stale
-     * host commands in the queue.
-     */
-    GUEST_MSG_SKIP = 10,
-    /**
-     * General reply to a host message. Only contains basic data
-     * along with a simple payload.
-     */
-    GUEST_MSG_REPLY = 11,
-    /**
-     * General message for updating a pending progress for
-     * a long task.
-     */
-    GUEST_MSG_PROGRESS_UPDATE = 12,
-
     /** Peeks at the next message, returning immediately.
      *
      * Returns two 32-bit parameters, first is the message ID and the second the
@@ -278,11 +318,12 @@ enum eGuestFn
      *
      * @retval  VINF_SUCCESS if a message was pending and is being returned.
      * @retval  VERR_TRY_AGAIN if no message pending.
-     * @retval  VERR_INVALID_HANDLE if invalid client ID.
-     * @retval  VERR_INVALID_PARAMETER if incorrect parameter count or types.
+     * @retval  VERR_INVALID_CLIENT_ID
+     * @retval  VERR_WRONG_PARAMETER_COUNT
+     * @retval  VERR_WRONG_PARAMETER_TYPE
      * @since   6.0
      */
-    GUEST_MSG_PEEK_NOWAIT,
+    GUEST_MSG_PEEK_NOWAIT = 6,
     /** Peeks at the next message, waiting for one to arrive.
      *
      * Returns two 32-bit parameters, first is the message ID and the second the
@@ -293,14 +334,15 @@ enum eGuestFn
      *
      * @retval  VINF_SUCCESS if info about an pending message is being returned.
      * @retval  VINF_TRY_AGAIN and message set to HOST_CANCEL_PENDING_WAITS if
-     *          cancelled by GUEST_MSG_CANCEL or GUEST_CANCEL_PENDING_WAITS.
+     *          cancelled by GUEST_MSG_CANCEL.
      * @retval  VERR_RESOURCE_BUSY if another thread already made a waiting call.
-     * @retval  VERR_INVALID_HANDLE if invalid client ID.
-     * @retval  VERR_INVALID_PARAMETER if incorrect parameter count or types.
+     * @retval  VERR_INVALID_CLIENT_ID
+     * @retval  VERR_WRONG_PARAMETER_COUNT
+     * @retval  VERR_WRONG_PARAMETER_TYPE
      * @note    This replaces GUEST_MSG_WAIT.
      * @since   6.0
      */
-    GUEST_MSG_PEEK_WAIT,
+    GUEST_MSG_PEEK_WAIT = 7,
     /** Gets the next message, returning immediately.
      *
      * All parameters are specific to the message being retrieved, however if the
@@ -312,48 +354,138 @@ enum eGuestFn
      * @retval  VINF_SUCCESS if message retrieved and removed from the pending queue.
      * @retval  VERR_TRY_AGAIN if no message pending.
      * @retval  VERR_MISMATCH if the incoming message ID does not match the pending.
-     * @retval  VERR_OUT_OF_RANGE if the wrong parameter count.
-     * @retval  VERR_WRONG_TYPE if a parameter has the wrong type.
      * @retval  VERR_BUFFER_OVERFLOW if a parmeter buffer is too small.  The buffer
      *          size was updated to reflect the required size.
-     * @retval  VERR_INVALID_HANDLE if invalid client ID.
+     * @retval  VERR_INVALID_CLIENT_ID
+     * @retval  VERR_WRONG_PARAMETER_COUNT
+     * @retval  VERR_WRONG_PARAMETER_TYPE
      * @note    This replaces GUEST_MSG_WAIT.
      * @since   6.0
      */
-    GUEST_MSG_GET,
-    /** Cancels pending calls for this client session.
+    GUEST_MSG_GET = 8,
+    /** Skip message.
      *
-     * This should be used if a GUEST_MSG_PEEK_WAIT or GUEST_MSG_WAIT call gets
-     * interrupted on the client end, so as to prevent being rebuffed with
-     * VERR_RESOURCE_BUSY when restarting the call.
+     * This skips the current message, replying to the sender with
+     * VERR_NOT_SUPPORTED if appropriate.  No parameters.
      *
-     * @retval  VINF_SUCCESS if cancelled any calls.
-     * @retval  VWRN_NOT_FOUND if no callers.
-     * @retval  VERR_INVALID_PARAMETER if any parameters specified (expects zero).
-     * @retval  VERR_INVALID_HANDLE if invalid client ID.
+     * @retval  VINF_SUCCESS on success.
+     * @retval  VERR_NOT_FOUND if no message pending.
+     * @retval  VERR_INVALID_CLIENT_ID
+     * @retval  VERR_WRONG_PARAMETER_COUNT
      * @since   6.0
      */
-    GUEST_MSG_CANCEL,
-
+    GUEST_MSG_SKIP = 9,
+    /**
+     * Skips the current assigned message returned by GUEST_MSG_WAIT.
+     * Needed for telling the host service to not keep stale
+     * host commands in the queue.
+     * @deprecated  Replaced by GUEST_MSG_SKIP.
+     */
+    GUEST_MSG_SKIP_OLD = 10,
+    /** General reply to a host message.
+     * Only contains basic data along with a simple payload.
+     * @todo proper docs.
+     */
+    GUEST_MSG_REPLY = 11,
+    /** General message for updating a pending progress for a long task.
+     * @todo proper docs.
+     */
+    GUEST_MSG_PROGRESS_UPDATE = 12,
+    /** Sets the caller as the master.
+     *
+     * Called by the root VBoxService to explicitly tell the host that's the master
+     * service.  Required to use main VBoxGuest device node.  No parameters.
+     *
+     * @retval  VINF_SUCCESS on success.
+     * @retval  VERR_ACCESS_DENIED if not using main VBoxGuest device not
+     * @retval  VERR_RESOURCE_BUSY if there is already a master.
+     * @retval  VERR_VERSION_MISMATCH if VBoxGuest didn't supply requestor info.
+     * @retval  VERR_INVALID_CLIENT_ID
+     * @retval  VERR_WRONG_PARAMETER_COUNT
+     * @since   6.0
+     */
+    GUEST_MAKE_ME_MASTER = 13,
+    /** Prepares the starting of a session.
+     *
+     * VBoxService makes this call before spawning a session process (must be
+     * master). The first parameter is the session ID and the second is a one time
+     * key for identifying the right session process.  First parameter is a 32-bit
+     * session ID with a value between 1 and 0xfff0.  The second parameter is a byte
+     * buffer containing a key that GUEST_SESSION_ACCEPT checks against, minimum
+     * length is 64 bytes, maximum 16384 bytes.
+     *
+     * @retval  VINF_SUCCESS on success.
+     * @retval  VERR_OUT_OF_RESOURCES if too many pending sessions hanging around.
+     * @retval  VERR_OUT_OF_RANGE if the session ID outside the allowed range.
+     * @retval  VERR_BUFFER_OVERFLOW if key too large.
+     * @retval  VERR_BUFFER_UNDERFLOW if key too small.
+     * @retval  VERR_ACCESS_DENIED if not master or in legacy mode.
+     * @retval  VERR_DUPLICATE if the session ID has been prepared already.
+     * @retval  VERR_INVALID_CLIENT_ID
+     * @retval  VERR_WRONG_PARAMETER_COUNT
+     * @retval  VERR_WRONG_PARAMETER_TYPE
+     * @since   6.0
+     */
+    GUEST_SESSION_PREPARE = 14,
+    /** Cancels a prepared session.
+     *
+     * VBoxService makes this call to clean up after spawning a session process
+     * failed.  One parameter, 32-bit session ID.  If UINT32_MAX is passed, all
+     * prepared sessions are cancelled.
+     *
+     * @retval  VINF_SUCCESS on success.
+     * @retval  VWRN_NOT_FOUND if no session with the specified ID.
+     * @retval  VERR_ACCESS_DENIED if not master or in legacy mode.
+     * @retval  VERR_INVALID_CLIENT_ID
+     * @retval  VERR_WRONG_PARAMETER_COUNT
+     * @retval  VERR_WRONG_PARAMETER_TYPE
+     * @since   6.0
+     */
+    GUEST_SESSION_CANCEL_PREPARED = 15,
+    /** Accepts a prepared session.
+     *
+     * The session processes makes this call to accept a prepared session.  The
+     * session ID is then uniquely associated with the HGCM client ID of the caller.
+     * The parameters must be identical to the matching GUEST_SESSION_PREPARE call.
+     *
+     * @retval  VINF_SUCCESS on success.
+     * @retval  VERR_NOT_FOUND if the specified session ID wasn't found.
+     * @retval  VERR_OUT_OF_RANGE if the session ID outside the allowed range.
+     * @retval  VERR_BUFFER_OVERFLOW if key too large.
+     * @retval  VERR_BUFFER_UNDERFLOW if key too small.
+     * @retval  VERR_ACCESS_DENIED if we're in legacy mode or is master.
+     * @retval  VERR_RESOURCE_BUSY if the client is already associated with a session.
+     * @retval  VERR_MISMATCH if the key didn't match.
+     * @retval  VERR_INVALID_CLIENT_ID
+     * @retval  VERR_WRONG_PARAMETER_COUNT
+     * @retval  VERR_WRONG_PARAMETER_TYPE
+     * @since   6.0
+     */
+    GUEST_SESSION_ACCEPT = 16,
     /**
      * Guest reports back a guest session status.
+     * @todo proper docs.
      */
     GUEST_SESSION_NOTIFY = 20,
     /**
      * Guest wants to close a specific guest session.
+     * @todo proper docs.
      */
     GUEST_SESSION_CLOSE = 21,
 
     /**
      * Guests sends output from an executed process.
+     * @todo proper docs.
      */
     GUEST_EXEC_OUTPUT = 100,
     /**
      * Guest sends a status update of an executed process to the host.
+     * @todo proper docs.
      */
     GUEST_EXEC_STATUS = 101,
     /**
      * Guests sends an input status notification to the host.
+     * @todo proper docs.
      */
     GUEST_EXEC_INPUT_STATUS = 102,
     /**
@@ -361,17 +493,58 @@ enum eGuestFn
      * a stdout, stderr or a stdin event. The actual event only tells
      * how many data is available / can be sent without actually
      * transmitting the data.
+     * @todo proper docs.
      */
     GUEST_EXEC_IO_NOTIFY = 210,
     /**
      * Guest notifies the host about some directory event.
+     * @todo proper docs.
      */
     GUEST_DIR_NOTIFY = 230,
     /**
      * Guest notifies the host about some file event.
+     * @todo proper docs.
      */
     GUEST_FILE_NOTIFY = 240
 };
+
+/**
+ * Translates a guest control host function function enum to at string.
+ * @returns Enum string name.
+ * @param   enmFunction     The function name to translate.
+ */
+DECLINLINE(const char *) GstCtrlGuestFnName(enum eGuestFn enmFunction)
+{
+    switch (enmFunction)
+    {
+        RT_CASE_RET_STR(GUEST_MSG_WAIT);
+        RT_CASE_RET_STR(GUEST_MSG_CANCEL);
+        RT_CASE_RET_STR(GUEST_DISCONNECTED);
+        RT_CASE_RET_STR(GUEST_MSG_FILTER_SET);
+        RT_CASE_RET_STR(GUEST_MSG_FILTER_UNSET);
+        RT_CASE_RET_STR(GUEST_MSG_PEEK_NOWAIT);
+        RT_CASE_RET_STR(GUEST_MSG_PEEK_WAIT);
+        RT_CASE_RET_STR(GUEST_MSG_GET);
+        RT_CASE_RET_STR(GUEST_MSG_SKIP_OLD);
+        RT_CASE_RET_STR(GUEST_MSG_REPLY);
+        RT_CASE_RET_STR(GUEST_MSG_PROGRESS_UPDATE);
+        RT_CASE_RET_STR(GUEST_MSG_SKIP);
+        RT_CASE_RET_STR(GUEST_MAKE_ME_MASTER);
+        RT_CASE_RET_STR(GUEST_SESSION_PREPARE);
+        RT_CASE_RET_STR(GUEST_SESSION_CANCEL_PREPARED);
+        RT_CASE_RET_STR(GUEST_SESSION_ACCEPT);
+        RT_CASE_RET_STR(GUEST_SESSION_NOTIFY);
+        RT_CASE_RET_STR(GUEST_SESSION_CLOSE);
+        RT_CASE_RET_STR(GUEST_EXEC_OUTPUT);
+        RT_CASE_RET_STR(GUEST_EXEC_STATUS);
+        RT_CASE_RET_STR(GUEST_EXEC_INPUT_STATUS);
+        RT_CASE_RET_STR(GUEST_EXEC_IO_NOTIFY);
+        RT_CASE_RET_STR(GUEST_DIR_NOTIFY);
+        RT_CASE_RET_STR(GUEST_FILE_NOTIFY);
+    }
+    return "Unknown";
+}
+
 
 /**
  * Guest session notification types.

@@ -314,7 +314,8 @@ public:
     int                     i_processCreateEx(GuestProcessStartupInfo &procInfo, ComObjPtr<GuestProcess> &pProgress);
     inline bool             i_processExists(uint32_t uProcessID, ComObjPtr<GuestProcess> *pProcess);
     inline int              i_processGetByPID(ULONG uPID, ComObjPtr<GuestProcess> *pProcess);
-    int                     i_sendCommand(uint32_t uFunction, uint32_t uParms, PVBOXHGCMSVCPARM paParms);
+    int                     i_sendCommand(uint32_t uFunction, uint32_t uParms, PVBOXHGCMSVCPARM paParms,
+                                          uint64_t fDst = VBOX_GUESTCTRL_DST_SESSION);
     static HRESULT          i_setErrorExternal(VirtualBoxBase *pInterface, int guestRc);
     int                     i_setSessionStatus(GuestSessionStatus_T sessionStatus, int sessionRc);
     int                     i_signalWaiters(GuestSessionWaitResult_T enmWaitResult, int rc /*= VINF_SUCCESS */);

@@ -717,7 +717,7 @@ int GuestSession::i_closeSession(uint32_t uFlags, uint32_t uTimeoutMS, int *prcG
 
     alock.release(); /* Drop the write lock before waiting. */
 
-    vrc = i_sendCommand(HOST_SESSION_CLOSE, i, paParms);
+    vrc = i_sendCommand(HOST_SESSION_CLOSE, i, paParms, VBOX_GUESTCTRL_DST_BOTH);
     if (RT_SUCCESS(vrc))
         vrc = i_waitForStatusChange(pEvent, GuestSessionWaitForFlag_Terminate, uTimeoutMS,
                                     NULL /* Session status */, prcGuest);
@@ -1945,7 +1945,7 @@ int GuestSession::i_startSession(int *prcGuest)
 
     alock.release(); /* Drop write lock before sending. */
 
-    vrc = i_sendCommand(HOST_SESSION_CREATE, i, paParms);
+    vrc = i_sendCommand(HOST_SESSION_CREATE, i, paParms, VBOX_GUESTCTRL_DST_ROOT_SVC);
     if (RT_SUCCESS(vrc))
     {
         vrc = i_waitForStatusChange(pEvent, GuestSessionWaitForFlag_Start,
@@ -2453,8 +2453,8 @@ inline int GuestSession::i_processGetByPID(ULONG uPID, ComObjPtr<GuestProcess> *
     return VERR_NOT_FOUND;
 }
 
-int GuestSession::i_sendCommand(uint32_t uFunction,
-                                uint32_t uParms, PVBOXHGCMSVCPARM paParms)
+int GuestSession::i_sendCommand(uint32_t uFunction, uint32_t uParms, PVBOXHGCMSVCPARM paParms,
+                                uint64_t fDst /*= VBOX_GUESTCTRL_DST_SESSION*/)
 {
     LogFlowThisFuncEnter();
 
@@ -2466,7 +2466,16 @@ int GuestSession::i_sendCommand(uint32_t uFunction,
     VMMDev *pVMMDev = pConsole->i_getVMMDev();
     AssertPtr(pVMMDev);
 
-    LogFlowThisFunc(("uFunction=%RU32, uParms=%RU32\n", uFunction, uParms));
+    LogFlowThisFunc(("uFunction=%RU32 (%s), uParms=%RU32\n", uFunction, GstCtrlHostFnName((guestControl::eHostFn)uFunction), uParms));
+
+    /* HACK ALERT! We extend the first parameter to 64-bit and use the
+                   two topmost bits for call destination information. */
+    Assert(fDst == VBOX_GUESTCTRL_DST_SESSION || fDst == VBOX_GUESTCTRL_DST_ROOT_SVC || fDst == VBOX_GUESTCTRL_DST_BOTH);
+    Assert(paParms[0].type == VBOX_HGCM_SVC_PARM_32BIT);
+    paParms[0].type = VBOX_HGCM_SVC_PARM_64BIT;
+    paParms[0].u.uint64 = (uint64_t)paParms[0].u.uint32 | fDst;
+
+    /* Make the call. */
     int vrc = pVMMDev->hgcmHostCall(HGCMSERVICE_NAME, uFunction, uParms, paParms);
     if (RT_FAILURE(vrc))
     {

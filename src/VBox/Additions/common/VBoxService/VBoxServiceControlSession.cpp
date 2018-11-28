@@ -1066,9 +1066,6 @@ int VGSvcGstCtrlSessionHandler(PVBOXSERVICECTRLSESSION pSession, uint32_t uMsg, 
     {
         VGSvcVerbose(3, "Unsupported message (uMsg=%RU32, cParms=%RU32) from host, skipping\n", uMsg, pHostCtx->uNumParms);
 
-        /** @todo r=bird: Why on earth couldn't you make GUEST_MSG_SKIP do this hacky stuff?!?
-         * You don't even know if you're replying to a message ment for you (see masking race further down).  */
-
         /*
          * !!! HACK ALERT BEGIN !!!
          * As peeking for the current message by VbglR3GuestCtrlMsgWaitFor() / GUEST_MSG_WAIT only gives us the message type and
@@ -1102,7 +1099,7 @@ int VGSvcGstCtrlSessionHandler(PVBOXSERVICECTRLSESSION pSession, uint32_t uMsg, 
          *  !!!                !!! */
 
         /* Tell the host service to skip the message. */
-        VbglR3GuestCtrlMsgSkip(pHostCtx->uClientID);
+        VbglR3GuestCtrlMsgSkipOld(pHostCtx->uClientID);
 
         rc = VINF_SUCCESS;
     }

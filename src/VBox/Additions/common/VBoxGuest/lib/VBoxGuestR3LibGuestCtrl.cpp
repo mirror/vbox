@@ -365,23 +365,6 @@ VBGLR3DECL(int) VbglR3GuestCtrlMsgFilterSet(uint32_t uClientId, uint32_t uValue,
 }
 
 
-/**
- * Disables a previously set message filter.
- *
- * @return  IPRT status code.
- * @param   uClientId       The client ID returned by VbglR3GuestCtrlConnect().
- */
-VBGLR3DECL(int) VbglR3GuestCtrlMsgFilterUnset(uint32_t uClientId)
-{
-    /* Tell the host we want to unset the filter. */
-    HGCMMsgCmdFilterUnset Msg;
-    VBGL_HGCM_HDR_INIT(&Msg.hdr, uClientId, GUEST_MSG_FILTER_UNSET, 1);
-    VbglHGCMParmUInt32Set(&Msg.flags, 0 /* Flags, unused */);
-
-    return VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
-}
-
-
 VBGLR3DECL(int) VbglR3GuestCtrlMsgReply(PVBGLR3GUESTCTRLCMDCTX pCtx,
                                         int rc)
 {
@@ -415,12 +398,12 @@ VBGLR3DECL(int) VbglR3GuestCtrlMsgReplyEx(PVBGLR3GUESTCTRLCMDCTX pCtx,
  * @return  IPRT status code.
  * @param   uClientId       The client ID returned by VbglR3GuestCtrlConnect().
  */
-VBGLR3DECL(int) VbglR3GuestCtrlMsgSkip(uint32_t uClientId)
+VBGLR3DECL(int) VbglR3GuestCtrlMsgSkipOld(uint32_t uClientId)
 {
     HGCMMsgCmdSkip Msg;
 
     /* Tell the host we want to skip the current assigned command. */
-    VBGL_HGCM_HDR_INIT(&Msg.hdr, uClientId, GUEST_MSG_SKIP, 1);
+    VBGL_HGCM_HDR_INIT(&Msg.hdr, uClientId, GUEST_MSG_SKIP_OLD, 1);
     VbglHGCMParmUInt32Set(&Msg.flags, 0 /* Flags, unused */);
     return VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
 }
@@ -435,7 +418,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlMsgSkip(uint32_t uClientId)
 VBGLR3DECL(int) VbglR3GuestCtrlCancelPendingWaits(uint32_t uClientId)
 {
     HGCMMsgCancelPendingWaits Msg;
-    VBGL_HGCM_HDR_INIT(&Msg.hdr, uClientId, GUEST_CANCEL_PENDING_WAITS, 0);
+    VBGL_HGCM_HDR_INIT(&Msg.hdr, uClientId, GUEST_MSG_CANCEL, 0);
     return VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
 }
 

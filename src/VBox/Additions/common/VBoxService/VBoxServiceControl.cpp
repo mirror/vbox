@@ -360,7 +360,7 @@ static DECLCALLBACK(int) vgsvcGstCtrlWorker(bool volatile *pfShutdown)
                          * up to the guest session fork of VBoxService, so just
                          * skip all not wanted messages here.
                          */
-                        rc = VbglR3GuestCtrlMsgSkip(g_uControlSvcClientID);
+                        rc = VbglR3GuestCtrlMsgSkipOld(g_uControlSvcClientID);
                         VGSvcVerbose(3, "Skipping uMsg=%RU32, cParms=%RU32, rc=%Rrc\n", uMsg, cParms, rc);
                     }
                     break;
