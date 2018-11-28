@@ -324,9 +324,10 @@ AssertCompileSize(VMMDevRequestHeader, 24);
  * The higher the value, the more the guest trusts the process. */
 #define VMMDEV_REQUESTOR_TRUST_MASK                 UINT32_C(0x00007000)
 
-/** Requestor is using the less trusted user device node (/dev/vboxuser).
- * @note Currently only Linux sets this.  */
+/** Requestor is using the less trusted user device node (/dev/vboxuser). */
 #define VMMDEV_REQUESTOR_USER_DEVICE                UINT32_C(0x00008000)
+/** There is no user device node (/dev/vboxuser). */
+#define VMMDEV_REQUESTOR_NO_USER_DEVICE             UINT32_C(0x00010000)
 
 /** Legacy value for when VBOXGSTINFO2_F_REQUESTOR_INFO is clear.
  * @internal Host only. */
