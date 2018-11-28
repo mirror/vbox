@@ -27,12 +27,16 @@
 
 /* Forward declarations: */
 class CProgress;
-class QTableWidget;
+class QScrollArea;
+class QSpacerItem;
+class QVBoxLayout;
+
+class UIFileOperationModel;
 class UIFileOperationProgressWidget;
 class UIGuestControlFileManager;
 
 
-/** UIVMLogViewerPanel extension hosting a QTableWidget which in turn has a special QWidget extension
+/** UIVMLogViewerPanel extension hosting a QListWidget which in turn has a special QWidget extension
   * to manage multiple CProgress instances. This is particulary used in monitoring file operations. */
 class UIGuestControlFileManagerOperationsPanel : public UIGuestControlFileManagerPanel
 {
@@ -68,17 +72,15 @@ private slots:
 
 private:
 
-    enum TableColumn
-    {
-        TableColumn_Progress,
-        TableColumn_Info,
-        TableColumn_Max
-    };
-
     /** @name Member variables.
       * @{ */
-        QTableWidget *m_pTableWidget;
+        QScrollArea *m_pScrollArea;
+        QWidget     *m_pContainerWidget;
+        QVBoxLayout *m_pContainerLayout;
+        QSpacerItem *m_pContainerSpaceItem;
     /** @} */
+
+
 
 };
 
