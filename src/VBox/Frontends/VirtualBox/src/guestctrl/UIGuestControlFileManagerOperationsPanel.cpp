@@ -139,22 +139,6 @@ void UIFileOperationProgressWidget::retranslateUi()
         m_pCancelButton->setToolTip(UIGuestControlFileManager::tr("Close the pane"));
 }
 
-// void UIFileOperationProgressWidget::focusInEvent(QFocusEvent *pEvent)
-// {
-//     Q_UNUSED(pEvent);
-//     //setFrameStyle(QFrame::Panel);
-//     setLineWidth(3);
-//     printf("booo\n");
-//     repaint();
-// }
-
-// void UIFileOperationProgressWidget::focusOutEvent(QFocusEvent *pEvent)
-// {
-//     Q_UNUSED(pEvent);
-//     //setFrameStyle(QFrame::NoFrame);
-//     setLineWidth(0);
-// }
-
 void UIFileOperationProgressWidget::prepare()
 {
     prepareWidgets();
