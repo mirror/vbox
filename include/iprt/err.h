@@ -1080,6 +1080,14 @@ RT_C_DECLS_END
 #define VERR_PROC_IQ_PRIV_NOT_HELD          (-22413)
 /** The system has too many CPUs. */
 #define VERR_MP_TOO_MANY_CPUS               (-22414)
+/** Wrong parameter count. */
+#define VERR_WRONG_PARAMETER_COUNT          (-22415)
+/** Wrong parameter type. */
+#define VERR_WRONG_PARAMETER_TYPE           (-22416)
+/** Invalid client ID. */
+#define VERR_INVALID_CLIENT_ID              (-22417)
+/** Invalid session ID. */
+#define VERR_INVALID_SESSION_ID             (-22417)
 /** @} */
 
 
