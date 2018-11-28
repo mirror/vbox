@@ -204,7 +204,7 @@ typedef struct VBOXHGCMSVCPARM
 } VBOXHGCMSVCPARM;
 
 /** Extract an uint32_t value from an HGCM parameter structure. */
-DECLINLINE(int) HGCMSvcGetU32(struct VBOXHGCMSVCPARM *pParm, uint32_t *pu32)
+DECLINLINE(int) HGCMSvcGetU32(VBOXHGCMSVCPARM *pParm, uint32_t *pu32)
 {
     int rc = VINF_SUCCESS;
     AssertPtrReturn(pParm, VERR_INVALID_POINTER);
@@ -218,7 +218,7 @@ DECLINLINE(int) HGCMSvcGetU32(struct VBOXHGCMSVCPARM *pParm, uint32_t *pu32)
 }
 
 /** Extract an uint64_t value from an HGCM parameter structure. */
-DECLINLINE(int) HGCMSvcGetU64(struct VBOXHGCMSVCPARM *pParm, uint64_t *pu64)
+DECLINLINE(int) HGCMSvcGetU64(VBOXHGCMSVCPARM *pParm, uint64_t *pu64)
 {
     int rc = VINF_SUCCESS;
     AssertPtrReturn(pParm, VERR_INVALID_POINTER);
@@ -232,8 +232,7 @@ DECLINLINE(int) HGCMSvcGetU64(struct VBOXHGCMSVCPARM *pParm, uint64_t *pu64)
 }
 
 /** Extract an pointer value from an HGCM parameter structure. */
-DECLINLINE(int) HGCMSvcGetPv(struct VBOXHGCMSVCPARM *pParm, void **ppv,
-                               uint32_t *pcb)
+DECLINLINE(int) HGCMSvcGetPv(VBOXHGCMSVCPARM *pParm, void **ppv, uint32_t *pcb)
 {
     AssertPtrReturn(pParm, VERR_INVALID_POINTER);
     AssertPtrReturn(ppv, VERR_INVALID_POINTER);
@@ -249,8 +248,7 @@ DECLINLINE(int) HGCMSvcGetPv(struct VBOXHGCMSVCPARM *pParm, void **ppv,
 }
 
 /** Extract a constant pointer value from an HGCM parameter structure. */
-DECLINLINE(int) HGCMSvcGetPcv(struct VBOXHGCMSVCPARM *pParm, const void **ppv,
-                                uint32_t *pcb)
+DECLINLINE(int) HGCMSvcGetPcv(VBOXHGCMSVCPARM *pParm, const void **ppv, uint32_t *pcb)
 {
     AssertPtrReturn(pParm, VERR_INVALID_POINTER);
     AssertPtrReturn(ppv, VERR_INVALID_POINTER);
@@ -267,8 +265,7 @@ DECLINLINE(int) HGCMSvcGetPcv(struct VBOXHGCMSVCPARM *pParm, const void **ppv,
 
 /** Extract a valid pointer to a non-empty buffer from an HGCM parameter
  * structure. */
-DECLINLINE(int) HGCMSvcGetBuf(struct VBOXHGCMSVCPARM *pParm, void **ppv,
-                                uint32_t *pcb)
+DECLINLINE(int) HGCMSvcGetBuf(VBOXHGCMSVCPARM *pParm, void **ppv, uint32_t *pcb)
 {
     AssertPtrReturn(pParm, VERR_INVALID_POINTER);
     AssertPtrReturn(ppv, VERR_INVALID_POINTER);
@@ -287,8 +284,7 @@ DECLINLINE(int) HGCMSvcGetBuf(struct VBOXHGCMSVCPARM *pParm, void **ppv,
 
 /** Extract a valid pointer to a non-empty constant buffer from an HGCM
  * parameter structure. */
-DECLINLINE(int) HGCMSvcGetCBuf(struct VBOXHGCMSVCPARM *pParm,
-                                 const void **ppv, uint32_t *pcb)
+DECLINLINE(int) HGCMSvcGetCBuf(VBOXHGCMSVCPARM *pParm, const void **ppv, uint32_t *pcb)
 {
     AssertPtrReturn(pParm, VERR_INVALID_POINTER);
     AssertPtrReturn(ppv, VERR_INVALID_POINTER);
@@ -306,8 +302,7 @@ DECLINLINE(int) HGCMSvcGetCBuf(struct VBOXHGCMSVCPARM *pParm,
 }
 
 /** Extract a string value from an HGCM parameter structure. */
-DECLINLINE(int) HGCMSvcGetStr(struct VBOXHGCMSVCPARM *pParm, char **ppch,
-                                uint32_t *pcb)
+DECLINLINE(int) HGCMSvcGetStr(VBOXHGCMSVCPARM *pParm, char **ppch, uint32_t *pcb)
 {
     AssertPtrReturn(pParm, VERR_INVALID_POINTER);
     AssertPtrReturn(ppch, VERR_INVALID_POINTER);
@@ -330,8 +325,7 @@ DECLINLINE(int) HGCMSvcGetStr(struct VBOXHGCMSVCPARM *pParm, char **ppch,
 }
 
 /** Extract a constant string value from an HGCM parameter structure. */
-DECLINLINE(int) HGCMSvcGetCStr(struct VBOXHGCMSVCPARM *pParm,
-                                 const char **ppch, uint32_t *pcb)
+DECLINLINE(int) HGCMSvcGetCStr(VBOXHGCMSVCPARM *pParm, const char **ppch, uint32_t *pcb)
 {
     AssertPtrReturn(pParm, VERR_INVALID_POINTER);
     AssertPtrReturn(ppch, VERR_INVALID_POINTER);
@@ -354,8 +348,7 @@ DECLINLINE(int) HGCMSvcGetCStr(struct VBOXHGCMSVCPARM *pParm,
 }
 
 /** Extract a constant string value from an HGCM parameter structure. */
-DECLINLINE(int) HGCMSvcGetPsz(struct VBOXHGCMSVCPARM *pParm, const char **ppch,
-                                uint32_t *pcb)
+DECLINLINE(int) HGCMSvcGetPsz(VBOXHGCMSVCPARM *pParm, const char **ppch, uint32_t *pcb)
 {
     AssertPtrReturn(pParm, VERR_INVALID_POINTER);
     AssertPtrReturn(ppch, VERR_INVALID_POINTER);
@@ -378,7 +371,7 @@ DECLINLINE(int) HGCMSvcGetPsz(struct VBOXHGCMSVCPARM *pParm, const char **ppch,
 }
 
 /** Set a uint32_t value to an HGCM parameter structure */
-DECLINLINE(void) HGCMSvcSetU32(struct VBOXHGCMSVCPARM *pParm, uint32_t u32)
+DECLINLINE(void) HGCMSvcSetU32(VBOXHGCMSVCPARM *pParm, uint32_t u32)
 {
     AssertPtr(pParm);
     pParm->type = VBOX_HGCM_SVC_PARM_32BIT;
@@ -386,7 +379,7 @@ DECLINLINE(void) HGCMSvcSetU32(struct VBOXHGCMSVCPARM *pParm, uint32_t u32)
 }
 
 /** Set a uint64_t value to an HGCM parameter structure */
-DECLINLINE(void) HGCMSvcSetU64(struct VBOXHGCMSVCPARM *pParm, uint64_t u64)
+DECLINLINE(void) HGCMSvcSetU64(VBOXHGCMSVCPARM *pParm, uint64_t u64)
 {
     AssertPtr(pParm);
     pParm->type = VBOX_HGCM_SVC_PARM_64BIT;
@@ -394,8 +387,7 @@ DECLINLINE(void) HGCMSvcSetU64(struct VBOXHGCMSVCPARM *pParm, uint64_t u64)
 }
 
 /** Set a pointer value to an HGCM parameter structure */
-DECLINLINE(void) HGCMSvcSetPv(struct VBOXHGCMSVCPARM *pParm, void *pv,
-                                uint32_t cb)
+DECLINLINE(void) HGCMSvcSetPv(VBOXHGCMSVCPARM *pParm, void *pv, uint32_t cb)
 {
     AssertPtr(pParm);
     pParm->type = VBOX_HGCM_SVC_PARM_PTR;
@@ -404,7 +396,7 @@ DECLINLINE(void) HGCMSvcSetPv(struct VBOXHGCMSVCPARM *pParm, void *pv,
 }
 
 /** Set a pointer value to an HGCM parameter structure */
-DECLINLINE(void) HGCMSvcSetStr(struct VBOXHGCMSVCPARM *pParm, const char *psz)
+DECLINLINE(void) HGCMSvcSetStr(VBOXHGCMSVCPARM *pParm, const char *psz)
 {
     AssertPtr(pParm);
     pParm->type = VBOX_HGCM_SVC_PARM_PTR;
@@ -415,8 +407,7 @@ DECLINLINE(void) HGCMSvcSetStr(struct VBOXHGCMSVCPARM *pParm, const char *psz)
 #ifdef __cplusplus
 # ifdef ___iprt_cpp_ministring_h
 /** Set a const string value to an HGCM parameter structure */
-DECLINLINE(void) HGCMSvcSetRTCStr(struct VBOXHGCMSVCPARM *pParm,
-                                    const RTCString &rString)
+DECLINLINE(void) HGCMSvcSetRTCStr(VBOXHGCMSVCPARM *pParm, const RTCString &rString)
 {
     AssertPtr(pParm);
     pParm->type = VBOX_HGCM_SVC_PARM_PTR;
