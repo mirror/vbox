@@ -28,6 +28,7 @@
 
 #include <iprt/initterm.h>
 #include <iprt/message.h>
+#include <iprt/err.h>
 
 
 static void usage(int exitcode)
