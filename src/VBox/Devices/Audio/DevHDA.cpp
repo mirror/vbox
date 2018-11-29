@@ -23,6 +23,9 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
+#ifdef DEBUG_bird
+# define RT_NO_STRICT /* I'm tried of this crap asserting on save and restore of Maverics guests.  */
+#endif
 #define LOG_GROUP LOG_GROUP_DEV_HDA
 #include <VBox/log.h>
 
@@ -3545,7 +3548,7 @@ static DECLCALLBACK(int) hdaR3PciIoRegionMap(PPDMDEVINS pDevIns, PPDMPCIDEV pPci
 static int hdaR3SaveStream(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, PHDASTREAM pStream)
 {
     RT_NOREF(pDevIns);
-#ifdef VBOX_STRICT
+#if defined(VBOX_STRICT) || defined(LOG_ENABLED)
     PHDASTATE pThis = PDMINS_2_DATA(pDevIns, PHDASTATE);
 #endif
 
@@ -3559,7 +3562,7 @@ static int hdaR3SaveStream(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, PHDASTREAM pStre
     rc = SSMR3PutStructEx(pSSM, &pStream->State, sizeof(HDASTREAMSTATE), 0 /*fFlags*/, g_aSSMStreamStateFields7, NULL);
     AssertRCReturn(rc, rc);
 
-#ifdef VBOX_STRICT /* Sanity checks. */
+#ifdef VBOX_STRICT
     uint64_t u64BaseDMA = RT_MAKE_U64(HDA_STREAM_REG(pThis, BDPL, pStream->u8SD),
                                       HDA_STREAM_REG(pThis, BDPU, pStream->u8SD));
     uint16_t u16LVI     = HDA_STREAM_REG(pThis, LVI, pStream->u8SD);

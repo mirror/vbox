@@ -176,13 +176,6 @@ typedef struct HDASTATE
 #endif
     /** Last updated wall clock (WALCLK) counter. */
     uint64_t                           u64WalClk;
-#ifdef VBOX_STRICT
-    /** Wall clock (WALCLK) stale count.
-     *  This indicates the number of set wall clock
-     *  values which did not actually move the counter forward (stale). */
-    uint8_t                            u8WalClkStaleCnt;
-    uint8_t                            au8Padding2[7];
-#endif
     /** Response Interrupt Count (RINTCNT). */
     uint16_t                           u16RespIntCnt;
     /** Position adjustment (in audio frames).
@@ -198,7 +191,15 @@ typedef struct HDASTATE
     uint16_t                           cPosAdjustFrames;
     /** Whether the position adjustment is enabled or not. */
     bool                               fPosAdjustEnabled;
+#ifdef VBOX_STRICT
+    /** Wall clock (WALCLK) stale count.
+     *  This indicates the number of set wall clock
+     *  values which did not actually move the counter forward (stale). */
+    uint8_t                            u8WalClkStaleCnt;
+    uint8_t                            Padding1[2];
+#else
     uint8_t                            Padding1[3];
+#endif
     /** Current IRQ level. */
     uint8_t                            u8IRQL;
     /** The device timer Hz rate. Defaults to HDA_TIMER_HZ_DEFAULT. */
