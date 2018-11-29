@@ -777,6 +777,88 @@ static HRESULT listSystemProperties(const ComPtr<IVirtualBox> &pVirtualBox)
 
 
 /**
+ * Helper function for querying and displaying DHCP option for an adapter.
+ *
+ * @returns See produceList.
+ * @param   pSrv                Smart pointer to IDHCPServer.
+ * @param   vmSlot              String identifying the adapter, like '[vmname]:slot'
+ */
+static HRESULT listVmSlotDhcpOptions(const ComPtr<IDHCPServer> pSrv, const Utf8Str& vmSlot)
+{
+    RTCList<RTCString> lstParts = vmSlot.split(":");
+    if (lstParts.size() < 2)
+        return E_INVALIDARG;
+    if (lstParts[0].length() < 2 || !lstParts[0].startsWith("[") || !lstParts[0].endsWith("]"))
+        return E_INVALIDARG;
+    Bstr vmName(lstParts[0].substr(1, lstParts[0].length()-2));
+    ULONG uSlot = lstParts[1].toUInt32();
+    com::SafeArray<BSTR> options;
+    CHECK_ERROR2I_RET(pSrv, GetVmSlotOptions(vmName.raw(), uSlot, ComSafeArrayAsOutParam(options)), hrcCheck);
+    if (options.size())
+        RTPrintf("Options for slot #%d of '%ls':\n", uSlot, vmName.raw());
+    for (size_t i = 0; i < options.size(); ++i)
+    {
+        RTPrintf("   %ls\n", options[i]);
+    }
+    return S_OK;
+}
+
+
+/**
+ * List DHCP servers.
+ *
+ * @returns See produceList.
+ * @param   pVirtualBox         Reference to the IVirtualBox smart pointer.
+ */
+static HRESULT listDhcpServers(const ComPtr<IVirtualBox> &pVirtualBox)
+{
+    HRESULT rc = S_OK;
+    com::SafeIfaceArray<IDHCPServer> svrs;
+    CHECK_ERROR_RET(pVirtualBox, COMGETTER(DHCPServers)(ComSafeArrayAsOutParam(svrs)), rc);
+    for (size_t i = 0; i < svrs.size(); ++i)
+    {
+        ComPtr<IDHCPServer> svr = svrs[i];
+        Bstr netName;
+        svr->COMGETTER(NetworkName)(netName.asOutParam());
+        RTPrintf("NetworkName:    %ls\n", netName.raw());
+        Bstr ip;
+        svr->COMGETTER(IPAddress)(ip.asOutParam());
+        RTPrintf("IP:             %ls\n", ip.raw());
+        Bstr netmask;
+        svr->COMGETTER(NetworkMask)(netmask.asOutParam());
+        RTPrintf("NetworkMask:    %ls\n", netmask.raw());
+        Bstr lowerIp;
+        svr->COMGETTER(LowerIP)(lowerIp.asOutParam());
+        RTPrintf("lowerIPAddress: %ls\n", lowerIp.raw());
+        Bstr upperIp;
+        svr->COMGETTER(UpperIP)(upperIp.asOutParam());
+        RTPrintf("upperIPAddress: %ls\n", upperIp.raw());
+        BOOL fEnabled;
+        svr->COMGETTER(Enabled)(&fEnabled);
+        RTPrintf("Enabled:        %s\n", fEnabled ? "Yes" : "No");
+        com::SafeArray<BSTR> globalOptions;
+        CHECK_ERROR_BREAK(svr, COMGETTER(GlobalOptions)(ComSafeArrayAsOutParam(globalOptions)));
+        if (globalOptions.size())
+        {
+            RTPrintf("Global options:\n");
+            for (size_t j = 0; j < globalOptions.size(); ++j)
+                RTPrintf("   %ls\n", globalOptions[j]);
+        }
+        com::SafeArray<BSTR> vmConfigs;
+        CHECK_ERROR_BREAK(svr, COMGETTER(VmConfigs)(ComSafeArrayAsOutParam(vmConfigs)));
+        for (size_t j = 0; j < vmConfigs.size(); ++j)
+        {
+            rc = listVmSlotDhcpOptions(svr, vmConfigs[j]);
+            if (FAILED(rc))
+                break;
+        }
+        RTPrintf("\n");
+    }
+
+    return rc;
+}
+
+/**
  * List extension packs.
  *
  * @returns See produceList.
@@ -1301,34 +1383,8 @@ static HRESULT produceList(enum enmListType enmCommand, bool fOptLong, bool fOpt
             break;
 
         case kListDhcpServers:
-        {
-            com::SafeIfaceArray<IDHCPServer> svrs;
-            CHECK_ERROR(pVirtualBox, COMGETTER(DHCPServers)(ComSafeArrayAsOutParam(svrs)));
-            for (size_t i = 0; i < svrs.size(); ++i)
-            {
-                ComPtr<IDHCPServer> svr = svrs[i];
-                Bstr netName;
-                svr->COMGETTER(NetworkName)(netName.asOutParam());
-                RTPrintf("NetworkName:    %ls\n", netName.raw());
-                Bstr ip;
-                svr->COMGETTER(IPAddress)(ip.asOutParam());
-                RTPrintf("IP:             %ls\n", ip.raw());
-                Bstr netmask;
-                svr->COMGETTER(NetworkMask)(netmask.asOutParam());
-                RTPrintf("NetworkMask:    %ls\n", netmask.raw());
-                Bstr lowerIp;
-                svr->COMGETTER(LowerIP)(lowerIp.asOutParam());
-                RTPrintf("lowerIPAddress: %ls\n", lowerIp.raw());
-                Bstr upperIp;
-                svr->COMGETTER(UpperIP)(upperIp.asOutParam());
-                RTPrintf("upperIPAddress: %ls\n", upperIp.raw());
-                BOOL fEnabled;
-                svr->COMGETTER(Enabled)(&fEnabled);
-                RTPrintf("Enabled:        %s\n", fEnabled ? "Yes" : "No");
-                RTPrintf("\n");
-            }
+            rc = listDhcpServers(pVirtualBox);
             break;
-        }
 
         case kListExtPacks:
             rc = listExtensionPacks(pVirtualBox);

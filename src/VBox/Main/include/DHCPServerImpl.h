@@ -115,10 +115,15 @@ private:
     // Wrapped IDHCPServer Methods
     HRESULT addGlobalOption(DhcpOpt_T aOption,
                             const com::Utf8Str &aValue);
+    HRESULT removeGlobalOption(DhcpOpt_T aOption);
+    HRESULT removeGlobalOptions();
     HRESULT addVmSlotOption(const com::Utf8Str &aVmName,
                             LONG aSlot,
                             DhcpOpt_T aOption,
                             const com::Utf8Str &aValue);
+    HRESULT removeVmSlotOption(const com::Utf8Str &aVmName,
+                               LONG aSlot,
+                               DhcpOpt_T aOption);
     HRESULT removeVmSlotOptions(const com::Utf8Str &aVmName,
                                 LONG aSlot);
     HRESULT start(const com::Utf8Str &aNetworkName,

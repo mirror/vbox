@@ -1790,7 +1790,7 @@
 
   <interface
     name="IDHCPServer" extends="$unknown"
-    uuid="197717d2-a742-4966-a529-d1467e903feb"
+    uuid="ea2d467f-b6c2-4b9a-8eb5-6e2f275dd72e"
     wsmap="managed"
     reservedMethods="2" reservedAttributes="6"
     >
@@ -1843,6 +1843,25 @@
       <param name="value" type="wstring" dir="in" />
     </method>
 
+    <method name="removeGlobalOption">
+      <desc>
+        removes the specified option
+        <result name="E_INVALIDARG">
+          invalid option id supplied
+        </result>
+      </desc>
+      <param name="option" type="DhcpOpt" dir="in"/>
+    </method>
+
+    <method name="removeGlobalOptions">
+      <desc>
+        removes all global options
+        <result name="E_FAIL">
+          failed to remove global options
+        </result>
+      </desc>
+    </method>
+
     <!-- string in format: "option_id:value" -->
     <attribute name="globalOptions" type="wstring" safearray="yes" readonly="yes"/>
 
@@ -1876,7 +1895,25 @@
       <param name="value" type="wstring" dir="in" />
     </method>
 
+    <method name="removeVmSlotOption">
+      <desc>
+        removes the specified option
+        <result name="E_INVALIDARG">
+          invalid VM, slot, or option id supplied
+        </result>
+      </desc>
+      <param name="vmname" type="wstring" dir="in"/>
+      <param name="slot" type="long" dir="in"/>
+      <param name="option" type="DhcpOpt" dir="in"/>
+    </method>
+
     <method name="removeVmSlotOptions">
+      <desc>
+        removes all option for the specified adapter
+        <result name="E_INVALIDARG">
+          invalid VM or slot supplied
+        </result>
+      </desc>
       <param name="vmname" type="wstring" dir="in"/>
       <param name="slot" type="long" dir="in"/>
     </method>

@@ -1209,7 +1209,10 @@ void printUsage(USAGECATEGORY fCategory, uint32_t fSubCategory, PRTSTREAM pStrm)
                      "                            --netmask <network_mask>\n"
                      "                            --lowerip <lower_ip>\n"
                      "                            --upperip <upper_ip>]\n"
-                     "                            [--enable | --disable]\n\n"
+                     "                            [--enable | --disable]\n"
+                     "                            [--options [--vm <name> --slot <number>]\n"
+                     "                             --id <number> [--value <string> | --remove]]\n"
+                     "                             (multiple options allowed after --options)\n\n"
                            "%s dhcpserver %s      remove --netname <network_name> |\n"
 #if defined(VBOX_WITH_NETFLT)
                      "                                   --ifname <hostonly_if_name>\n"

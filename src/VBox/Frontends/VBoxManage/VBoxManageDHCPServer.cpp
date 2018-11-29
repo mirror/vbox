@@ -59,6 +59,9 @@ typedef std::pair<DhcpOpt_T, std::string> DhcpOptSpec;
 typedef std::vector<DhcpOptSpec> DhcpOpts;
 typedef DhcpOpts::iterator DhcpOptIterator;
 
+typedef std::vector<DhcpOpt_T> DhcpOptIds;
+typedef DhcpOptIds::iterator DhcpOptIdIterator;
+
 struct VmNameSlotKey
 {
     const std::string VmName;
@@ -81,6 +84,9 @@ struct VmNameSlotKey
 typedef std::map<VmNameSlotKey, DhcpOpts> VmSlot2OptionsM;
 typedef VmSlot2OptionsM::iterator VmSlot2OptionsIterator;
 typedef VmSlot2OptionsM::value_type VmSlot2OptionsPair;
+
+typedef std::map<VmNameSlotKey, DhcpOptIds> VmSlot2OptionIdsM;
+typedef VmSlot2OptionIdsM::iterator VmSlot2OptionIdsIterator;
 
 typedef std::vector<VmNameSlotKey> VmConfigs;
 
@@ -111,7 +117,8 @@ static const RTGETOPTDEF g_aDHCPIPOptions[] =
     { "--vm",               'n', RTGETOPT_REQ_STRING}, /* only with -o */
     { "--slot",             's', RTGETOPT_REQ_UINT8}, /* only with -o and -n */
     { "--id",               'i', RTGETOPT_REQ_UINT8}, /* only with -o */
-    { "--value",            'p', RTGETOPT_REQ_STRING} /* only with -i */
+    { "--value",            'p', RTGETOPT_REQ_STRING}, /* only with -i */
+    { "--remove",           'r', RTGETOPT_REQ_NOTHING} /* only with -i */
 };
 
 static RTEXITCODE handleOp(HandlerArg *a, OPCODE enmCode, int iStart)
@@ -137,9 +144,11 @@ static RTEXITCODE handleOp(HandlerArg *a, OPCODE enmCode, int iStart)
 
     int enable = -1;
 
-    DhcpOpts        GlobalDhcpOptions;
-    VmSlot2OptionsM VmSlot2Options;
-    VmConfigs       VmConfigs2Delete;
+    DhcpOpts          GlobalDhcpOptions;
+    DhcpOptIds        GlobalDhcpOptions2Delete;
+    VmSlot2OptionsM   VmSlot2Options;
+    VmSlot2OptionIdsM VmSlot2Options2Delete;
+    VmConfigs         VmConfigs2Delete;
 
     int c;
     RTGETOPTUNION ValueUnion;
@@ -298,6 +307,26 @@ static RTEXITCODE handleOp(HandlerArg *a, OPCODE enmCode, int iStart)
                 }
                 break; // --end of value
 
+            case 'r': /* --remove */
+                {
+                    if (!fOptionsRead)
+                        return errorSyntax(USAGE_DHCPSERVER,
+                                           "-o wasn't found");
+
+                    if (u8OptId == (uint8_t)~0)
+                        return errorSyntax(USAGE_DHCPSERVER,
+                                           "--id wasn't found");
+                    if (   fVmOptionRead
+                        && u8Slot == (uint8_t)~0)
+                        return errorSyntax(USAGE_DHCPSERVER,
+                                           "--slot wasn't found");
+
+                    DhcpOptIds &optIds = fVmOptionRead ? VmSlot2Options2Delete[VmNameSlotKey(pszVmName, u8Slot)]
+                                                       : GlobalDhcpOptions2Delete;
+                    optIds.push_back((DhcpOpt_T)u8OptId);
+                }
+                break; /* --end of remove */
+
             default:
                 if (c > 0)
                 {
@@ -321,7 +350,9 @@ static RTEXITCODE handleOp(HandlerArg *a, OPCODE enmCode, int iStart)
     if(   enmCode != OP_REMOVE
        && enmCode != OP_RESTART
        && GlobalDhcpOptions.empty()
-       && VmSlot2Options.empty())
+       && VmSlot2Options.empty()
+       && GlobalDhcpOptions2Delete.empty()
+       && VmSlot2Options2Delete.empty())
     {
         if(enable < 0 || pIp || pNetmask || pLowerIp || pUpperIp)
         {
@@ -403,6 +434,30 @@ static RTEXITCODE handleOp(HandlerArg *a, OPCODE enmCode, int iStart)
         if(enable >= 0)
         {
             CHECK_ERROR(svr, COMSETTER(Enabled) ((BOOL)enable));
+        }
+
+        /* remove specified options */
+        DhcpOptIdIterator itOptId;
+        for (itOptId = GlobalDhcpOptions2Delete.begin();
+             itOptId != GlobalDhcpOptions2Delete.end();
+             ++itOptId)
+        {
+            CHECK_ERROR(svr, RemoveGlobalOption(*itOptId));
+        }
+        VmSlot2OptionIdsIterator itIdVector;
+        for (itIdVector = VmSlot2Options2Delete.begin();
+             itIdVector != VmSlot2Options2Delete.end();
+             ++itIdVector)
+        {
+            for(itOptId = itIdVector->second.begin();
+                itOptId != itIdVector->second.end();
+                ++itOptId)
+            {
+                CHECK_ERROR(svr,
+                            RemoveVmSlotOption(Bstr(itIdVector->first.VmName.c_str()).raw(),
+                                               itIdVector->first.u8Slot,
+                                               *itOptId));
+            }
         }
 
         /* option processing */

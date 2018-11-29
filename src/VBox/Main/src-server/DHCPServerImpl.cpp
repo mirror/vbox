@@ -477,6 +477,33 @@ HRESULT DHCPServer::addGlobalOption(DhcpOpt_T aOption, const com::Utf8Str &aValu
 }
 
 
+HRESULT DHCPServer::removeGlobalOption(DhcpOpt_T aOption)
+{
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    settings::DhcpOptionMap::size_type cErased = m->GlobalDhcpOptions.erase(aOption);
+    if (!cErased)
+        return E_INVALIDARG;
+
+    alock.release();
+
+    AutoWriteLock vboxLock(mVirtualBox COMMA_LOCKVAL_SRC_POS);
+    return mVirtualBox->i_saveSettings();
+}
+
+
+HRESULT DHCPServer::removeGlobalOptions()
+{
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+    m->GlobalDhcpOptions.clear();
+
+    alock.release();
+
+    AutoWriteLock vboxLock(mVirtualBox COMMA_LOCKVAL_SRC_POS);
+    return mVirtualBox->i_saveSettings();
+}
+
+
 HRESULT DHCPServer::getGlobalOptions(std::vector<com::Utf8Str> &aValues)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
@@ -519,6 +546,21 @@ HRESULT DHCPServer::addVmSlotOption(const com::Utf8Str &aVmName,
     settings::DhcpOptionMap &map = m->VmSlot2Options[settings::VmNameSlotKey(aVmName, aSlot)];
     int rc = addOption(map, aOption, aValue);
     if (!RT_SUCCESS(rc))
+        return E_INVALIDARG;
+
+    alock.release();
+
+    AutoWriteLock vboxLock(mVirtualBox COMMA_LOCKVAL_SRC_POS);
+    return mVirtualBox->i_saveSettings();
+}
+
+
+HRESULT DHCPServer::removeVmSlotOption(const com::Utf8Str &aVmName, LONG aSlot, DhcpOpt_T aOption)
+{
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+    settings::DhcpOptionMap &map = i_findOptMapByVmNameSlot(aVmName, aSlot);
+    settings::DhcpOptionMap::size_type cErased = map.erase(aOption);
+    if (!cErased)
         return E_INVALIDARG;
 
     alock.release();
