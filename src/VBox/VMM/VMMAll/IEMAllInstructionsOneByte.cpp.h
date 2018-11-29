@@ -10548,7 +10548,7 @@ FNIEMOP_DEF(iemOp_in_AL_DX)
 
 
 /** Opcode 0xed */
-FNIEMOP_DEF(iemOp_eAX_DX)
+FNIEMOP_DEF(iemOp_in_eAX_DX)
 {
     IEMOP_MNEMONIC(in_eAX_DX, "in  eAX,DX");
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
@@ -11806,7 +11806,7 @@ const PFNIEMOP g_apfnOneByteMap[256] =
     /* 0xe0 */  iemOp_loopne_Jb,        iemOp_loope_Jb,         iemOp_loop_Jb,          iemOp_jecxz_Jb,
     /* 0xe4 */  iemOp_in_AL_Ib,         iemOp_in_eAX_Ib,        iemOp_out_Ib_AL,        iemOp_out_Ib_eAX,
     /* 0xe8 */  iemOp_call_Jv,          iemOp_jmp_Jv,           iemOp_jmp_Ap,           iemOp_jmp_Jb,
-    /* 0xec */  iemOp_in_AL_DX,         iemOp_eAX_DX,           iemOp_out_DX_AL,        iemOp_out_DX_eAX,
+    /* 0xec */  iemOp_in_AL_DX,         iemOp_in_eAX_DX,        iemOp_out_DX_AL,        iemOp_out_DX_eAX,
     /* 0xf0 */  iemOp_lock,             iemOp_int1,             iemOp_repne,            iemOp_repe,
     /* 0xf4 */  iemOp_hlt,              iemOp_cmc,              iemOp_Grp3_Eb,          iemOp_Grp3_Ev,
     /* 0xf8 */  iemOp_clc,              iemOp_stc,              iemOp_cli,              iemOp_sti,
