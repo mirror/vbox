@@ -1459,98 +1459,95 @@ int GstCtrlService::clientMsgSkip(uint32_t idClient, VBOXHGCMCALLHANDLE hCall, u
                 /*
                  * Remove the command from the queue.
                  */
-                HostCommand *pFirstCmd = *rClientState.mHostCmdList.begin();
-                if (pFirstCmd )
+                Assert(*rClientState.mHostCmdList.begin() == pFirstCmd);
+                rClientState.mHostCmdList.pop_front();
+
+                /*
+                 * Compose a reply to the host service.
+                 */
+                VBOXHGCMSVCPARM aReplyParams[5];
+                HGCMSvcSetU32(&aReplyParams[0], pFirstCmd->m_idContext);
+                switch (pFirstCmd->mMsgType)
                 {
-                    rClientState.mHostCmdList.pop_front();
+                    case HOST_EXEC_CMD:
+                        HGCMSvcSetU32(&aReplyParams[1], 0);              /* pid */
+                        HGCMSvcSetU32(&aReplyParams[2], PROC_STS_ERROR); /* status */
+                        HGCMSvcSetU32(&aReplyParams[3], rcSkip);         /* flags / whatever */
+                        HGCMSvcSetPv(&aReplyParams[4], NULL, 0);         /* data buffer */
+                        GstCtrlService::hostCallback(GUEST_EXEC_STATUS, 5, aReplyParams);
+                        break;
 
-                    /*
-                     * Compose a reply to the host service.
-                     */
-                    VBOXHGCMSVCPARM aReplyParams[5];
-                    HGCMSvcSetU32(&aReplyParams[0], pFirstCmd->m_idContext);
-                    switch (pFirstCmd->mMsgType)
-                    {
-                        case HOST_EXEC_CMD:
-                            HGCMSvcSetU32(&aReplyParams[1], 0);              /* pid */
-                            HGCMSvcSetU32(&aReplyParams[2], PROC_STS_ERROR); /* status */
-                            HGCMSvcSetU32(&aReplyParams[3], rcSkip);         /* flags / whatever */
-                            HGCMSvcSetPv(&aReplyParams[4], NULL, 0);         /* data buffer */
-                            GstCtrlService::hostCallback(GUEST_EXEC_STATUS, 5, aReplyParams);
-                            break;
+                    case HOST_SESSION_CREATE:
+                        HGCMSvcSetU32(&aReplyParams[1], GUEST_SESSION_NOTIFYTYPE_ERROR);    /* type */
+                        HGCMSvcSetU32(&aReplyParams[2], rcSkip);                            /* result */
+                        GstCtrlService::hostCallback(GUEST_SESSION_NOTIFY, 3, aReplyParams);
+                        break;
 
-                        case HOST_SESSION_CREATE:
-                            HGCMSvcSetU32(&aReplyParams[1], GUEST_SESSION_NOTIFYTYPE_ERROR);    /* type */
-                            HGCMSvcSetU32(&aReplyParams[2], rcSkip);                            /* result */
-                            GstCtrlService::hostCallback(GUEST_SESSION_NOTIFY, 3, aReplyParams);
-                            break;
+                    case HOST_EXEC_SET_INPUT:
+                        HGCMSvcSetU32(&aReplyParams[1], pFirstCmd->mParmCount >= 2 ? pFirstCmd->mpParms[1].u.uint32 : 0);
+                        HGCMSvcSetU32(&aReplyParams[2], INPUT_STS_ERROR);   /* status */
+                        HGCMSvcSetU32(&aReplyParams[3], rcSkip);            /* flags / whatever */
+                        HGCMSvcSetU32(&aReplyParams[4], 0);                 /* bytes consumed */
+                        GstCtrlService::hostCallback(GUEST_EXEC_INPUT_STATUS, 5, aReplyParams);
+                        break;
 
-                        case HOST_EXEC_SET_INPUT:
-                            HGCMSvcSetU32(&aReplyParams[1], pFirstCmd->mParmCount >= 2 ? pFirstCmd->mpParms[1].u.uint32 : 0);
-                            HGCMSvcSetU32(&aReplyParams[2], INPUT_STS_ERROR);   /* status */
-                            HGCMSvcSetU32(&aReplyParams[3], rcSkip);            /* flags / whatever */
-                            HGCMSvcSetU32(&aReplyParams[4], 0);                 /* bytes consumed */
-                            GstCtrlService::hostCallback(GUEST_EXEC_INPUT_STATUS, 5, aReplyParams);
-                            break;
+                    case HOST_FILE_OPEN:
+                        HGCMSvcSetU32(&aReplyParams[1], GUEST_FILE_NOTIFYTYPE_OPEN); /* type*/
+                        HGCMSvcSetU32(&aReplyParams[2], rcSkip);                     /* rc */
+                        HGCMSvcSetU32(&aReplyParams[3], VBOX_GUESTCTRL_CONTEXTID_GET_OBJECT(pFirstCmd->m_idContext)); /* handle */
+                        GstCtrlService::hostCallback(GUEST_FILE_NOTIFY, 4, aReplyParams);
+                        break;
+                    case HOST_FILE_CLOSE:
+                        HGCMSvcSetU32(&aReplyParams[1], GUEST_FILE_NOTIFYTYPE_ERROR); /* type*/
+                        HGCMSvcSetU32(&aReplyParams[2], rcSkip);                      /* rc */
+                        GstCtrlService::hostCallback(GUEST_FILE_NOTIFY, 3, aReplyParams);
+                        break;
+                    case HOST_FILE_READ:
+                    case HOST_FILE_READ_AT:
+                        HGCMSvcSetU32(&aReplyParams[1], GUEST_FILE_NOTIFYTYPE_READ);  /* type */
+                        HGCMSvcSetU32(&aReplyParams[2], rcSkip);                      /* rc */
+                        HGCMSvcSetPv(&aReplyParams[3], NULL, 0);                      /* data buffer */
+                        GstCtrlService::hostCallback(GUEST_FILE_NOTIFY, 4, aReplyParams);
+                        break;
+                    case HOST_FILE_WRITE:
+                    case HOST_FILE_WRITE_AT:
+                        HGCMSvcSetU32(&aReplyParams[1], GUEST_FILE_NOTIFYTYPE_WRITE); /* type */
+                        HGCMSvcSetU32(&aReplyParams[2], rcSkip);                      /* rc */
+                        HGCMSvcSetU32(&aReplyParams[3], 0);                           /* bytes written */
+                        GstCtrlService::hostCallback(GUEST_FILE_NOTIFY, 4, aReplyParams);
+                        break;
+                    case HOST_FILE_SEEK:
+                        HGCMSvcSetU32(&aReplyParams[1], GUEST_FILE_NOTIFYTYPE_SEEK);  /* type */
+                        HGCMSvcSetU32(&aReplyParams[2], rcSkip);                      /* rc */
+                        HGCMSvcSetU64(&aReplyParams[3], 0);                           /* actual */
+                        GstCtrlService::hostCallback(GUEST_FILE_NOTIFY, 4, aReplyParams);
+                        break;
+                    case HOST_FILE_TELL:
+                        HGCMSvcSetU32(&aReplyParams[1], GUEST_FILE_NOTIFYTYPE_TELL);  /* type */
+                        HGCMSvcSetU32(&aReplyParams[2], rcSkip);                      /* rc */
+                        HGCMSvcSetU64(&aReplyParams[3], 0);                           /* actual */
+                        GstCtrlService::hostCallback(GUEST_FILE_NOTIFY, 4, aReplyParams);
+                        break;
 
-                        case HOST_FILE_OPEN:
-                            HGCMSvcSetU32(&aReplyParams[1], GUEST_FILE_NOTIFYTYPE_OPEN); /* type*/
-                            HGCMSvcSetU32(&aReplyParams[2], rcSkip);                     /* rc */
-                            HGCMSvcSetU32(&aReplyParams[3], VBOX_GUESTCTRL_CONTEXTID_GET_OBJECT(pFirstCmd->m_idContext)); /* handle */
-                            GstCtrlService::hostCallback(GUEST_FILE_NOTIFY, 4, aReplyParams);
-                            break;
-                        case HOST_FILE_CLOSE:
-                            HGCMSvcSetU32(&aReplyParams[1], GUEST_FILE_NOTIFYTYPE_ERROR); /* type*/
-                            HGCMSvcSetU32(&aReplyParams[2], rcSkip);                      /* rc */
-                            GstCtrlService::hostCallback(GUEST_FILE_NOTIFY, 3, aReplyParams);
-                            break;
-                        case HOST_FILE_READ:
-                        case HOST_FILE_READ_AT:
-                            HGCMSvcSetU32(&aReplyParams[1], GUEST_FILE_NOTIFYTYPE_READ);  /* type */
-                            HGCMSvcSetU32(&aReplyParams[2], rcSkip);                      /* rc */
-                            HGCMSvcSetPv(&aReplyParams[3], NULL, 0);                      /* data buffer */
-                            GstCtrlService::hostCallback(GUEST_FILE_NOTIFY, 4, aReplyParams);
-                            break;
-                        case HOST_FILE_WRITE:
-                        case HOST_FILE_WRITE_AT:
-                            HGCMSvcSetU32(&aReplyParams[1], GUEST_FILE_NOTIFYTYPE_WRITE); /* type */
-                            HGCMSvcSetU32(&aReplyParams[2], rcSkip);                      /* rc */
-                            HGCMSvcSetU32(&aReplyParams[3], 0);                           /* bytes written */
-                            GstCtrlService::hostCallback(GUEST_FILE_NOTIFY, 4, aReplyParams);
-                            break;
-                        case HOST_FILE_SEEK:
-                            HGCMSvcSetU32(&aReplyParams[1], GUEST_FILE_NOTIFYTYPE_SEEK);  /* type */
-                            HGCMSvcSetU32(&aReplyParams[2], rcSkip);                      /* rc */
-                            HGCMSvcSetU64(&aReplyParams[3], 0);                           /* actual */
-                            GstCtrlService::hostCallback(GUEST_FILE_NOTIFY, 4, aReplyParams);
-                            break;
-                        case HOST_FILE_TELL:
-                            HGCMSvcSetU32(&aReplyParams[1], GUEST_FILE_NOTIFYTYPE_TELL);  /* type */
-                            HGCMSvcSetU32(&aReplyParams[2], rcSkip);                      /* rc */
-                            HGCMSvcSetU64(&aReplyParams[3], 0);                           /* actual */
-                            GstCtrlService::hostCallback(GUEST_FILE_NOTIFY, 4, aReplyParams);
-                            break;
-
-                        case HOST_EXEC_GET_OUTPUT: /** @todo This can't be right/work. */
-                        case HOST_EXEC_TERMINATE:  /** @todo This can't be right/work. */
-                        case HOST_EXEC_WAIT_FOR:   /** @todo This can't be right/work. */
-                        case HOST_PATH_USER_DOCUMENTS:
-                        case HOST_PATH_USER_HOME:
-                        case HOST_PATH_RENAME:
-                        case HOST_DIR_REMOVE:
-                        default:
-                            HGCMSvcSetU32(&aReplyParams[1], pFirstCmd->mMsgType);
-                            HGCMSvcSetU32(&aReplyParams[2], (uint32_t)rcSkip);
-                            HGCMSvcSetPv(&aReplyParams[3], NULL, 0);
-                            GstCtrlService::hostCallback(GUEST_MSG_REPLY, 4, aReplyParams);
-                            break;
-                    }
-
-                    /*
-                     * Free the command.
-                     */
-                    pFirstCmd->SaneRelease();
+                    case HOST_EXEC_GET_OUTPUT: /** @todo This can't be right/work. */
+                    case HOST_EXEC_TERMINATE:  /** @todo This can't be right/work. */
+                    case HOST_EXEC_WAIT_FOR:   /** @todo This can't be right/work. */
+                    case HOST_PATH_USER_DOCUMENTS:
+                    case HOST_PATH_USER_HOME:
+                    case HOST_PATH_RENAME:
+                    case HOST_DIR_REMOVE:
+                    default:
+                        HGCMSvcSetU32(&aReplyParams[1], pFirstCmd->mMsgType);
+                        HGCMSvcSetU32(&aReplyParams[2], (uint32_t)rcSkip);
+                        HGCMSvcSetPv(&aReplyParams[3], NULL, 0);
+                        GstCtrlService::hostCallback(GUEST_MSG_REPLY, 4, aReplyParams);
+                        break;
                 }
+
+                /*
+                 * Free the command.
+                 */
+                pFirstCmd->SaneRelease();
             }
             else
                 LogFunc(("pfnCallComplete -> %Rrc\n", rc));
