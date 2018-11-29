@@ -286,6 +286,7 @@ static PVBOXHGCMCMD vmmdevHGCMCmdAlloc(PVMMDEV pThis, VBOXHGCMCMDTYPE enmCmdType
         pCmd->enmCmdType = enmCmdType;
         pCmd->GCPhys     = GCPhys;
         pCmd->cbRequest  = cbRequest;
+        pCmd->fRequestor = fRequestor;
 
         if (enmCmdType == VBOXHGCMCMDTYPE_CALL)
         {
