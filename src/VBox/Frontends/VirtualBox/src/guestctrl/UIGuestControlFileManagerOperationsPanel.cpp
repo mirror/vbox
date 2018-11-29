@@ -108,10 +108,7 @@ UIFileOperationProgressWidget::UIFileOperationProgressWidget(const CProgress &co
 {
     prepare();
     setFocusPolicy(Qt::ClickFocus);
-    setFrameStyle(QFrame::Panel);
-    setLineWidth(0);
     setStyleSheet("QFrame:focus {  border-width: 1px; border-style: dashed; border-color: black; }");
-
 }
 
 UIFileOperationProgressWidget::~UIFileOperationProgressWidget()
@@ -156,9 +153,6 @@ void UIFileOperationProgressWidget::prepareWidgets()
     if (m_pCancelButton)
     {
         m_pCancelButton->setIcon(QApplication::style()->standardIcon(QStyle::SP_DockWidgetCloseButton));
-        m_pCancelButton->setStyleSheet("QToolButton { border: 0px none black; margin: 0px 0px 0px 0px; } ");
-
-
         connect(m_pCancelButton, &QIToolButton::clicked, this, &UIFileOperationProgressWidget::sltCancelProgress);
         if (!m_comProgress.isNull() && !m_comProgress.GetCancelable())
             m_pCancelButton->setEnabled(false);
@@ -171,7 +165,6 @@ void UIFileOperationProgressWidget::prepareWidgets()
         m_pProgressBar->setMinimum(0);
         m_pProgressBar->setMaximum(100);
         m_pProgressBar->setTextVisible(true);
-        //   m_pProgressBar->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Maximum);
         m_pMainLayout->addWidget(m_pProgressBar);
     }
     m_pStatusLabel = new QILabel;
@@ -180,6 +173,8 @@ void UIFileOperationProgressWidget::prepareWidgets()
         m_pMainLayout->addWidget(m_pStatusLabel);
         m_pStatusLabel->setText(UIGuestControlFileManager::tr("Idle"));
     }
+    m_pMainLayout->addStretch();
+
     setLayout(m_pMainLayout);
 }
 
