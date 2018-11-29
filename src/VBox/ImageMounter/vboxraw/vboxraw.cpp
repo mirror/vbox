@@ -20,11 +20,6 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 
-/*** PKK TEMPORARY FOR DEBUGGING DON'T PUT INTO PRODUCTION CODE */
-#include <stdio.h>
-/*** END OF ADMONITION */
-
-
 #define LOG_GROUP LOG_GROUP_DEFAULT /** @todo log group */
 
 #define FUSE_USE_VERSION 27
@@ -82,13 +77,6 @@
 #include "vboxraw.h"
 #include "SelfSizingTable.h"
 
-/*
- * PKK: REMOVE AFTER DEBUGGING
- */
-#pragma GCC diagnostic ignored "-Wunused-variable"
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-#pragma GCC diagnostic ignored "-Wunused-function"
-
 using namespace com;
 
 enum {
@@ -107,8 +95,6 @@ const uint64_t MB = KB * KB;
 const uint64_t GB = MB * KB;
 const uint64_t TB = GB * KB;
 const uint64_t PB = TB * KB;
-
-
 
 enum { PARTITION_TABLE_MBR = 1, PARTITION_TABLE_GPT = 2 };
 
@@ -135,9 +121,7 @@ enum { PARTITION_TABLE_MBR = 1, PARTITION_TABLE_GPT = 2 };
                                     || ((uint8_t)parType) == 0x85) /* Linux Extended     */
 
 #define SAFENULL(strPtr)   (strPtr ? strPtr : "")
-
 #define CSTR(arg)     Utf8Str(arg).c_str()          /* Converts XPCOM string type to C string type */
-
 
 static struct fuse_operations g_vboxrawOps;         /** FUSE structure that defines allowed ops for this FS */
 
@@ -164,19 +148,18 @@ typedef struct
 {
     int            idxPartition;            /** partition number */
     char           *pszName;
-    off_t          offPartition;        /** partition offset from start of disk, in bytes */
-    uint64_t       cbPartition;           /** partition size in bytes */
+    off_t          offPartition;            /** partition offset from start of disk, in bytes */
+    uint64_t       cbPartition;             /** partition size in bytes */
     uint8_t        fBootable;               /** partition bootable */
     union
     {
         uint8_t    legacy;                  /** partition type MBR/EBR */
         uint128_t  gptGuidTypeSpecifier;    /** partition type GPT */
     } partitionType;                        /** uint8_t for MBR/EBR (legacy) and GUID for GPT */
-
     union
     {
-        MBRPARTITIONENTRY mbrEntry;          /** MBR (also EBR partition entry) */
-        GPTPARTITIONENTRY gptEntry;          /** GPT partition entry */
+        MBRPARTITIONENTRY mbrEntry;         /** MBR (also EBR partition entry) */
+        GPTPARTITIONENTRY gptEntry;         /** GPT partition entry */
     } partitionEntry;
 } PARTITIONINFO;
 
@@ -267,10 +250,10 @@ briefUsage()
     RTPrintf("the byte stream of the disk image as interpreted by VirtualBox.\n");
     RTPrintf("It is the vhdd file that the user or a utility will subsequently mount on\n");
     RTPrintf("the host OS to gain access to the virtual disk contents.\n\n");
-    RTPrintf("If any of the partition, size or offset related options are used the\n");
-    RTPrintf("The constraining start offset (in bytes) and size (in bytes) will be\n");
+    RTPrintf("If any of the partition, size or offset related options are used, the\n");
+    RTPrintf("constraining start offset (in bytes) and size (in bytes) will be\n");
     RTPrintf("appended in brackets to the symbolic link basename to indicate\n");
-    RTPrintf("what part of the image is exposed by the FUSE filesystem implementation.\n\n");
+    RTPrintf("which part of the image is exposed by the FUSE filesystem implementation.\n\n");
 }
 
 static int
@@ -955,7 +938,7 @@ parsePartitionTable(void)
     /*
      * Parse the four physical partition entires in the MBR (any one, and only one, can be an EBR)
      */
-    int ebridxPartitionInMbr = 0;
+    int idxEbrPartitionInMbr = 0;
     for (int idxPartition = 1;
              idxPartition <= MBR_PARTITIONS_MAX;
              idxPartition++)
@@ -969,18 +952,18 @@ parsePartitionTable(void)
 
         if (PARTTYPE_IS_EXT(pMbrPartitionEntry->type))
         {
-            if (ebridxPartitionInMbr)
+            if (idxEbrPartitionInMbr)
                  return RTMsgErrorExitFailure("Multiple EBRs found found in MBR\n");
-            ebridxPartitionInMbr = idxPartition;
+            idxEbrPartitionInMbr = idxPartition;
         }
 
         PARTITIONINFO *ppi = &g_aParsedPartitionInfo[idxPartition];
 
         ppi->idxPartition = idxPartition;
         ppi->offPartition = (off_t) pMbrPartitionEntry->partitionLba * BLOCKSIZE;
-        ppi->cbPartition = (off_t) pMbrPartitionEntry->partitionBlkCnt * BLOCKSIZE;
-        ppi->fBootable = pMbrPartitionEntry->bootIndicator == 0x80;
-        (ppi->partitionType).legacy = pMbrPartitionEntry->type;
+        ppi->cbPartition  = (off_t) pMbrPartitionEntry->partitionBlkCnt * BLOCKSIZE;
+        ppi->fBootable    = pMbrPartitionEntry->bootIndicator == 0x80;
+        ppi->partitionType.legacy = pMbrPartitionEntry->type;
 
         g_lastPartNbr = idxPartition;
 
@@ -1044,16 +1027,13 @@ parsePartitionTable(void)
             GPTPARTITIONENTRY *pEntry = (GPTPARTITIONENTRY *)pEntryRaw;
             PARTITIONINFO *ppi = &g_aParsedPartitionInfo[g_lastPartNbr];
             memcpy(&(ppi->partitionEntry).gptEntry, pEntry, sizeof(GPTPARTITIONENTRY));
-            uint64_t firstLba = pEntry->firstLba;
-            uint64_t lastLba  = pEntry->lastLba;
-            if (!firstLba)
+            if (!pEntry->firstLba)
                 break;
-            ppi->offPartition = firstLba * BLOCKSIZE;
-            ppi->cbPartition = (lastLba - firstLba) * BLOCKSIZE;
+            ppi->offPartition = pEntry->firstLba * BLOCKSIZE;
+            ppi->cbPartition = (pEntry->lastLba - pEntry->firstLba) * BLOCKSIZE;
             ppi->fBootable = pEntry->attrFlags & (1 << GPT_LEGACY_BIOS_BOOTABLE);
             ppi->partitionType.gptGuidTypeSpecifier = pEntry->partitionTypeGuid;
             size_t cwName = sizeof (pEntry->partitionName) / 2;
-            char *pszTmp = NULL, **pPszTmp = &pszTmp;
             RTUtf16LittleToUtf8Ex((PRTUTF16)pEntry->partitionName, RTSTR_MAX, &ppi->pszName, cwName, NULL);
             ppi->idxPartition = g_lastPartNbr++;
             pEntryRaw += cbEntry;
@@ -1064,10 +1044,10 @@ parsePartitionTable(void)
     /*
      * Starting with EBR located in MBR, walk EBR chain to parse the logical partition entries
      */
-    if (ebridxPartitionInMbr)
+    if (idxEbrPartitionInMbr)
     {
         uint32_t firstEbrLba
-            = g_aParsedPartitionInfo[ebridxPartitionInMbr].partitionEntry.mbrEntry.partitionLba;
+            = g_aParsedPartitionInfo[idxEbrPartitionInMbr].partitionEntry.mbrEntry.partitionLba;
         off_t    firstEbrOffset   = (off_t)firstEbrLba * BLOCKSIZE;
         off_t    chainedEbrOffset = 0;
 
@@ -1098,8 +1078,8 @@ parsePartitionTable(void)
 
             PARTITIONINFO *ppi = &g_aParsedPartitionInfo[idxPartition];
             ppi->idxPartition         = idxPartition;
-            ppi->offPartition    = currentEbrOffset + (off_t)pEbrPartitionEntry->partitionLba * BLOCKSIZE;
-            ppi->cbPartition        = (off_t)pEbrPartitionEntry->partitionBlkCnt * BLOCKSIZE;
+            ppi->offPartition         = currentEbrOffset + (off_t)pEbrPartitionEntry->partitionLba * BLOCKSIZE;
+            ppi->cbPartition          = (off_t)pEbrPartitionEntry->partitionBlkCnt * BLOCKSIZE;
             ppi->fBootable            = pEbrPartitionEntry->bootIndicator == 0x80;
             ppi->partitionType.legacy = pEbrPartitionEntry->type;
 
