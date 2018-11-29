@@ -374,7 +374,6 @@ static int ExtractFile(const char *pszResourceName,
  *
  * @param   pPackage            Pointer to a VBOXSTUBPKG struct that contains the resource.
  * @param   pszTempFile         The full file path + name to extract the resource to.
- *
  */
 static int Extract(const PVBOXSTUBPKG  pPackage,
                    const char         *pszTempFile)
@@ -387,21 +386,20 @@ static int Extract(const PVBOXSTUBPKG  pPackage,
  * Detects whether we're running on a 32- or 64-bit platform and returns the result.
  *
  * @returns TRUE if we're running on a 64-bit OS, FALSE if not.
- *
  */
 static BOOL IsWow64(void)
 {
-    BOOL bIsWow64 = TRUE;
+    BOOL fIsWow64 = TRUE;
     fnIsWow64Process = (LPFN_ISWOW64PROCESS)GetProcAddress(GetModuleHandle(TEXT("kernel32")), "IsWow64Process");
     if (NULL != fnIsWow64Process)
     {
-        if (!fnIsWow64Process(GetCurrentProcess(), &bIsWow64))
+        if (!fnIsWow64Process(GetCurrentProcess(), &fIsWow64))
         {
             /* Error in retrieving process type - assume that we're running on 32bit. */
             return FALSE;
         }
     }
-    return bIsWow64;
+    return fIsWow64;
 }
 
 
@@ -411,7 +409,6 @@ static BOOL IsWow64(void)
  * @returns @c true if we need to handle the specified package, @c false if not.
  *
  * @param   pPackage            Pointer to a VBOXSTUBPKG struct that contains the resource.
- *
  */
 static bool PackageIsNeeded(PVBOXSTUBPKG pPackage)
 {
@@ -1084,6 +1081,17 @@ int WINAPI WinMain(HINSTANCE  hInstance,
 #endif
         RTPrintf("Additional MSI parameters: %s\n",
                  szMSIArgs[0] ? szMSIArgs : "<None>");
+    }
+
+    /*
+     * 32-bit is not officially supported any more.
+     */
+    if (   !fExtractOnly
+        && !g_fSilent
+        && !IsWow64())
+    {
+        rcExit = ShowError("32-bit Windows hosts are not supported by this VirtualBox release.");
+        vrc = VERR_NOT_SUPPORTED;
     }
 
     if (RT_SUCCESS(vrc))
