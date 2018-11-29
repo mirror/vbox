@@ -698,7 +698,9 @@ typedef struct HMCPU
 
     /** Whether \#UD needs to be intercepted (required by certain GIM providers). */
     bool                        fGIMTrapXcptUD;
-    uint8_t                     u8Alignment0[4];
+    /** Whether \#GP needs to be intercept for mesa driver workaround. */
+    bool                        fTrapXcptGpForLovelyMesaDrv;
+    uint8_t                     u8Alignment0[3];
 
     /** World switch exit counter. */
     uint32_t volatile           cWorldSwitchExits;

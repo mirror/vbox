@@ -1663,11 +1663,12 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
         {
             case GraphicsControllerType_Null:
                 break;
-            case GraphicsControllerType_VBoxVGA:
 #ifdef VBOX_WITH_VMSVGA
             case GraphicsControllerType_VMSVGA:
+                InsertConfigInteger(pHM, "LovelyMesaDrvWorkaround", 1); /* hits someone else logging backdoor. */
             case GraphicsControllerType_VBoxSVGA:
 #endif
+            case GraphicsControllerType_VBoxVGA:
                 rc = i_configGraphicsController(pDevices, enmGraphicsController, pBusMgr, pMachine, biosSettings,
                                                 RT_BOOL(fHMEnabled));
                 if (FAILED(rc))
