@@ -152,7 +152,7 @@ enum eHostFn
     /**
      * Gets the current status of a running process, e.g.
      * new data on stdout/stderr, process terminated etc.
-     ** Note: Legacy (VBox < 4.3) command.
+     * @note Legacy (VBox < 4.3) command.
      */
     HOST_EXEC_GET_OUTPUT = 102,
     /**
@@ -370,11 +370,16 @@ enum eGuestFn
     GUEST_MSG_GET = 8,
     /** Skip message.
      *
-     * This skips the current message, replying to the sender with
-     * VERR_NOT_SUPPORTED if appropriate.  No parameters.
+     * This skips the current message, replying to the main backend as best it can.
+     * Takes between zero and two parameters.  The first parameter is the 32-bit
+     * VBox status code to pass onto Main when skipping the command, defaults to
+     * VERR_NOT_SUPPORTED.  The second parameter is the 32-bit message ID of the
+     * command to skip, by default whatever is first in the queue is removed.  This
+     * is also the case if UINT32_MAX is specified.
      *
      * @retval  VINF_SUCCESS on success.
      * @retval  VERR_NOT_FOUND if no message pending.
+     * @retval  VERR_MISMATCH if the specified message ID didn't match.
      * @retval  VERR_INVALID_CLIENT_ID
      * @retval  VERR_WRONG_PARAMETER_COUNT
      * @since   6.0
@@ -614,8 +619,9 @@ enum GUEST_FILE_NOTIFYTYPE
 };
 
 /**
- * Guest file seeking types. Has to
- * match FileSeekType in Main.
+ * Guest file seeking types. Has to match FileSeekType in Main.
+ *
+ * @note This is not compatible with RTFileSeek, which is an unncessary pain.
  */
 enum GUEST_FILE_SEEKTYPE
 {

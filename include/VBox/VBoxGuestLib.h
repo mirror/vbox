@@ -751,11 +751,9 @@ typedef struct VBGLR3GUESTCTRLCMDCTX
      *        a second communication channel, e.g. via TCP/IP.
      *        Use a union for the HGCM stuff then. */
 
-    /** IN: HGCM client ID to use for
-     *      communication. */
+    /** IN: HGCM client ID to use for communication. */
     uint32_t uClientID;
-    /** IN/OUT: Context ID to retrieve
-     *          or to use. */
+    /** IN/OUT: Context ID to retrieve or to use. */
     uint32_t uContextID;
     /** IN: Protocol version to use. */
     uint32_t uProtocol;
@@ -772,7 +770,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlMsgFilterSet(uint32_t uClientId, uint32_t uValue,
 VBGLR3DECL(int) VbglR3GuestCtrlMsgReply(PVBGLR3GUESTCTRLCMDCTX pCtx, int rc);
 VBGLR3DECL(int) VbglR3GuestCtrlMsgReplyEx(PVBGLR3GUESTCTRLCMDCTX pCtx, int rc, uint32_t uType,
                                           void *pvPayload, uint32_t cbPayload);
-VBGLR3DECL(int) VbglR3GuestCtrlMsgSkip(uint32_t idClient);
+VBGLR3DECL(int) VbglR3GuestCtrlMsgSkip(uint32_t idClient, int rcSkip, uint32_t idMsg);
 VBGLR3DECL(int) VbglR3GuestCtrlMsgSkipOld(uint32_t uClientId);
 VBGLR3DECL(int) VbglR3GuestCtrlMsgPeekWait(uint32_t idClient, uint32_t *pidMsg, uint32_t *pcParameters);
 VBGLR3DECL(int) VbglR3GuestCtrlCancelPendingWaits(HGCMCLIENTID idClient);

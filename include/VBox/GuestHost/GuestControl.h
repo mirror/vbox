@@ -1,6 +1,8 @@
 /* $Id$ */
 /** @file
  * Guest Control - Common Guest and Host Code.
+ *
+ * @todo r=bird: Just merge this with GuestControlSvc.h!
  */
 
 /*
@@ -123,7 +125,7 @@ enum eProcessStatus
 /** Don't allow symbolic links as part of the path. */
 #define PATHRENAME_FLAG_NO_SYMLINKS         RT_BIT(1)
 /** Mask of valid flags. */
-#define PATHRENAME_FLAG_VALID_MASK          UINT32_C(0x00000002)
+#define PATHRENAME_FLAG_VALID_MASK          UINT32_C(0x00000003)
 /** @} */
 
 /** @name Defines for guest process array lengths.

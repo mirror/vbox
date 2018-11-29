@@ -61,6 +61,7 @@
 *********************************************************************************************************************************/
 #define LOG_GROUP LOG_GROUP_GUEST_CONTROL
 #include <VBox/HostServices/GuestControlSvc.h>
+#include <VBox/GuestHost/GuestControl.h> /** @todo r=bird: Why two headers??? */
 
 #include <VBox/log.h>
 #include <VBox/AssertGuest.h>
@@ -914,7 +915,7 @@ private:
     int clientMsgPeek(uint32_t idClient, VBOXHGCMCALLHANDLE hCall, uint32_t cParms, VBOXHGCMSVCPARM paParms[], bool fWait);
     int clientMsgGet(uint32_t idClient, VBOXHGCMCALLHANDLE hCall, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
     int clientMsgCancel(uint32_t idClient, uint32_t cParms);
-    int clientMsgSkip(uint32_t idClient, VBOXHGCMCALLHANDLE hCall, uint32_t cParms);
+    int clientMsgSkip(uint32_t idClient, VBOXHGCMCALLHANDLE hCall, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
     int clientSessionPrepare(uint32_t idClient, VBOXHGCMCALLHANDLE hCall, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
     int clientSessionCancelPrepared(uint32_t idClient, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
     int clientSessionAccept(uint32_t idClient, VBOXHGCMCALLHANDLE hCall, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
@@ -973,7 +974,7 @@ GstCtrlService::svcConnect(void *pvService, uint32_t idClient, void *pvClient, u
     {
         pThis->mClientStateMap[idClient] = ClientState(pThis->mpHelpers, idClient);
     }
-    catch (std::bad_alloc)
+    catch (std::bad_alloc &)
     {
         return VERR_NO_MEMORY;
     }
@@ -1416,13 +1417,28 @@ int GstCtrlService::clientMsgCancel(uint32_t idClient, uint32_t cParms)
  * @param   idClient    The client's ID.
  * @param   hCall       The call handle for completing it.
  * @param   cParms      Number of parameters.
+ * @param   paParms     The parameters.
  */
-int GstCtrlService::clientMsgSkip(uint32_t idClient, VBOXHGCMCALLHANDLE hCall, uint32_t cParms)
+int GstCtrlService::clientMsgSkip(uint32_t idClient, VBOXHGCMCALLHANDLE hCall, uint32_t cParms, VBOXHGCMSVCPARM paParms[])
 {
     /*
      * Validate the call.
      */
-    ASSERT_GUEST_RETURN(cParms == 0, VERR_WRONG_PARAMETER_COUNT);
+    ASSERT_GUEST_RETURN(cParms <= 2, VERR_WRONG_PARAMETER_COUNT);
+
+    int32_t rcSkip = VERR_NOT_SUPPORTED;
+    if (cParms >= 1)
+    {
+        ASSERT_GUEST_RETURN(paParms[0].type == VBOX_HGCM_SVC_PARM_32BIT, VERR_WRONG_PARAMETER_TYPE);
+        rcSkip = (int32_t)paParms[0].u.uint32;
+    }
+
+    uint32_t idMsg = UINT32_MAX;
+    if (cParms >= 2)
+    {
+        ASSERT_GUEST_RETURN(paParms[1].type == VBOX_HGCM_SVC_PARM_32BIT, VERR_WRONG_PARAMETER_TYPE);
+        idMsg = paParms[1].u.uint32;
+    }
 
     ClientStateMapIter ItClientState = mClientStateMap.find(idClient);
     ASSERT_GUEST_MSG_RETURN(ItClientState != mClientStateMap.end(), ("idClient=%RU32\n", idClient), VERR_INVALID_CLIENT_ID);
@@ -1433,33 +1449,115 @@ int GstCtrlService::clientMsgSkip(uint32_t idClient, VBOXHGCMCALLHANDLE hCall, u
      */
     if (!rClientState.mHostCmdList.empty())
     {
-        int rc = mpHelpers->pfnCallComplete(hCall, VINF_SUCCESS);
-        if (RT_SUCCESS(rc))
+        HostCommand *pFirstCmd = *rClientState.mHostCmdList.begin();
+        if (   pFirstCmd->mMsgType == idMsg
+            || idMsg == UINT32_MAX)
         {
-            /*
-             * Remove the command from the queue.
-             */
-            HostCommand *pFirstCmd = *rClientState.mHostCmdList.begin();
-            rClientState.mHostCmdList.pop_front();
+            int rc = mpHelpers->pfnCallComplete(hCall, VINF_SUCCESS);
+            if (RT_SUCCESS(rc))
+            {
+                /*
+                 * Remove the command from the queue.
+                 */
+                HostCommand *pFirstCmd = *rClientState.mHostCmdList.begin();
+                if (pFirstCmd )
+                {
+                    rClientState.mHostCmdList.pop_front();
 
-            /*
-             * Compose a reply to the host service.
-             */
-            VBOXHGCMSVCPARM aReplyParams[4];
-            HGCMSvcSetU32(&aReplyParams[0], pFirstCmd->m_idContext);
-            HGCMSvcSetU32(&aReplyParams[1], pFirstCmd->mMsgType);
-            HGCMSvcSetU32(&aReplyParams[2], (uint32_t)VERR_NOT_SUPPORTED);
-            HGCMSvcSetPv(&aReplyParams[3], NULL, 0);
-            GstCtrlService::hostCallback(GUEST_MSG_REPLY,  RT_ELEMENTS(aReplyParams), aReplyParams);
+                    /*
+                     * Compose a reply to the host service.
+                     */
+                    VBOXHGCMSVCPARM aReplyParams[5];
+                    HGCMSvcSetU32(&aReplyParams[0], pFirstCmd->m_idContext);
+                    switch (pFirstCmd->mMsgType)
+                    {
+                        case HOST_EXEC_CMD:
+                            HGCMSvcSetU32(&aReplyParams[1], 0);              /* pid */
+                            HGCMSvcSetU32(&aReplyParams[2], PROC_STS_ERROR); /* status */
+                            HGCMSvcSetU32(&aReplyParams[3], rcSkip);         /* flags / whatever */
+                            HGCMSvcSetPv(&aReplyParams[4], NULL, 0);         /* data buffer */
+                            GstCtrlService::hostCallback(GUEST_EXEC_STATUS, 5, aReplyParams);
+                            break;
 
-            /*
-             * Free the command.
-             */
-            pFirstCmd->SaneRelease();
+                        case HOST_SESSION_CREATE:
+                            HGCMSvcSetU32(&aReplyParams[1], GUEST_SESSION_NOTIFYTYPE_ERROR);    /* type */
+                            HGCMSvcSetU32(&aReplyParams[2], rcSkip);                            /* result */
+                            GstCtrlService::hostCallback(GUEST_SESSION_NOTIFY, 3, aReplyParams);
+                            break;
+
+                        case HOST_EXEC_SET_INPUT:
+                            HGCMSvcSetU32(&aReplyParams[1], pFirstCmd->mParmCount >= 2 ? pFirstCmd->mpParms[1].u.uint32 : 0);
+                            HGCMSvcSetU32(&aReplyParams[2], INPUT_STS_ERROR);   /* status */
+                            HGCMSvcSetU32(&aReplyParams[3], rcSkip);            /* flags / whatever */
+                            HGCMSvcSetU32(&aReplyParams[4], 0);                 /* bytes consumed */
+                            GstCtrlService::hostCallback(GUEST_EXEC_INPUT_STATUS, 5, aReplyParams);
+                            break;
+
+                        case HOST_FILE_OPEN:
+                            HGCMSvcSetU32(&aReplyParams[1], GUEST_FILE_NOTIFYTYPE_OPEN); /* type*/
+                            HGCMSvcSetU32(&aReplyParams[2], rcSkip);                     /* rc */
+                            HGCMSvcSetU32(&aReplyParams[3], VBOX_GUESTCTRL_CONTEXTID_GET_OBJECT(pFirstCmd->m_idContext)); /* handle */
+                            GstCtrlService::hostCallback(GUEST_FILE_NOTIFY, 4, aReplyParams);
+                            break;
+                        case HOST_FILE_CLOSE:
+                            HGCMSvcSetU32(&aReplyParams[1], GUEST_FILE_NOTIFYTYPE_ERROR); /* type*/
+                            HGCMSvcSetU32(&aReplyParams[2], rcSkip);                      /* rc */
+                            GstCtrlService::hostCallback(GUEST_FILE_NOTIFY, 3, aReplyParams);
+                            break;
+                        case HOST_FILE_READ:
+                        case HOST_FILE_READ_AT:
+                            HGCMSvcSetU32(&aReplyParams[1], GUEST_FILE_NOTIFYTYPE_READ);  /* type */
+                            HGCMSvcSetU32(&aReplyParams[2], rcSkip);                      /* rc */
+                            HGCMSvcSetPv(&aReplyParams[3], NULL, 0);                      /* data buffer */
+                            GstCtrlService::hostCallback(GUEST_FILE_NOTIFY, 4, aReplyParams);
+                            break;
+                        case HOST_FILE_WRITE:
+                        case HOST_FILE_WRITE_AT:
+                            HGCMSvcSetU32(&aReplyParams[1], GUEST_FILE_NOTIFYTYPE_WRITE); /* type */
+                            HGCMSvcSetU32(&aReplyParams[2], rcSkip);                      /* rc */
+                            HGCMSvcSetU32(&aReplyParams[3], 0);                           /* bytes written */
+                            GstCtrlService::hostCallback(GUEST_FILE_NOTIFY, 4, aReplyParams);
+                            break;
+                        case HOST_FILE_SEEK:
+                            HGCMSvcSetU32(&aReplyParams[1], GUEST_FILE_NOTIFYTYPE_SEEK);  /* type */
+                            HGCMSvcSetU32(&aReplyParams[2], rcSkip);                      /* rc */
+                            HGCMSvcSetU64(&aReplyParams[3], 0);                           /* actual */
+                            GstCtrlService::hostCallback(GUEST_FILE_NOTIFY, 4, aReplyParams);
+                            break;
+                        case HOST_FILE_TELL:
+                            HGCMSvcSetU32(&aReplyParams[1], GUEST_FILE_NOTIFYTYPE_TELL);  /* type */
+                            HGCMSvcSetU32(&aReplyParams[2], rcSkip);                      /* rc */
+                            HGCMSvcSetU64(&aReplyParams[3], 0);                           /* actual */
+                            GstCtrlService::hostCallback(GUEST_FILE_NOTIFY, 4, aReplyParams);
+                            break;
+
+                        case HOST_EXEC_GET_OUTPUT: /** @todo This can't be right/work. */
+                        case HOST_EXEC_TERMINATE:  /** @todo This can't be right/work. */
+                        case HOST_EXEC_WAIT_FOR:   /** @todo This can't be right/work. */
+                        case HOST_PATH_USER_DOCUMENTS:
+                        case HOST_PATH_USER_HOME:
+                        case HOST_PATH_RENAME:
+                        case HOST_DIR_REMOVE:
+                        default:
+                            HGCMSvcSetU32(&aReplyParams[1], pFirstCmd->mMsgType);
+                            HGCMSvcSetU32(&aReplyParams[2], (uint32_t)rcSkip);
+                            HGCMSvcSetPv(&aReplyParams[3], NULL, 0);
+                            GstCtrlService::hostCallback(GUEST_MSG_REPLY, 4, aReplyParams);
+                            break;
+                    }
+
+                    /*
+                     * Free the command.
+                     */
+                    pFirstCmd->SaneRelease();
+                }
+            }
+            else
+                LogFunc(("pfnCallComplete -> %Rrc\n", rc));
+            return VINF_HGCM_ASYNC_EXECUTE; /* The caller must not complete it. */
         }
-        else
-            LogFunc(("pfnCallComplete -> %Rrc\n", rc));
-        return VINF_HGCM_ASYNC_EXECUTE; /* The caller must not complete it. */
+        LogFunc(("Warning: GUEST_MSG_SKIP mismatch! Found %u, caller expected %u!\n", pFirstCmd->mMsgType, idMsg));
+        return VERR_MISMATCH;
     }
     return VERR_NOT_FOUND;
 }
@@ -2017,7 +2115,7 @@ GstCtrlService::svcCall(void *pvService, VBOXHGCMCALLHANDLE hCall, uint32_t idCl
             break;
         case GUEST_MSG_SKIP:
             LogFlowFunc(("[Client %RU32] GUEST_MSG_SKIP\n", idClient));
-            rc = pThis->clientMsgSkip(idClient, hCall, cParms);
+            rc = pThis->clientMsgSkip(idClient, hCall, cParms, paParms);
             break;
         case GUEST_SESSION_PREPARE:
             LogFlowFunc(("[Client %RU32] GUEST_SESSION_PREPARE\n", idClient));

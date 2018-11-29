@@ -305,7 +305,7 @@ static DECLCALLBACK(int) vgsvcGstCtrlWorker(bool volatile *pfShutdown)
                 default:
                     if (VbglR3GuestCtrlSupportsOptimizations(g_idControlSvcClient))
                     {
-                        rc = VbglR3GuestCtrlMsgSkip(g_idControlSvcClient);
+                        rc = VbglR3GuestCtrlMsgSkip(g_idControlSvcClient, VERR_NOT_SUPPORTED, idMsg);
                         VGSvcVerbose(1, "Skipped unexpected message idMsg=%RU32 (%s), cParms=%RU32 (rc=%Rrc)\n",
                                      idMsg, GstCtrlHostFnName((eHostFn)idMsg), cParms, rc);
                     }
@@ -420,17 +420,10 @@ static int vgsvcGstCtrlHandleSessionOpen(PVBGLR3GUESTCTRLCMDCTX pHostCtx)
                 VGSvcError("Reporting session error status on open failed with rc=%Rrc\n", rc2);
         }
     }
-    /*
-     * If we cannot retrieve the message, make sure to skip the command.
-     *
-     * Note! If we totally failed to get any valid context ID, the host will
-     *       not see the notification and be stuck till it times out.
-     */
     else
     {
-        VGSvcError("Error fetching guest session parameters: %Rrc\n", rc);
-        VbglR3GuestCtrlSessionNotify(pHostCtx, GUEST_SESSION_NOTIFYTYPE_ERROR, rc);
-        VbglR3GuestCtrlMsgSkip(pHostCtx->uClientID);
+        VGSvcError("Error fetching parameters for opening guest session: %Rrc\n", rc);
+        VbglR3GuestCtrlMsgSkip(pHostCtx->uClientID, rc, UINT32_MAX);
     }
     VGSvcVerbose(3, "Opening a new guest session returned rc=%Rrc\n", rc);
     return rc;
@@ -441,9 +434,9 @@ static int vgsvcGstCtrlHandleSessionClose(PVBGLR3GUESTCTRLCMDCTX pHostCtx)
 {
     AssertPtrReturn(pHostCtx, VERR_INVALID_POINTER);
 
-    uint32_t uSessionID;
+    uint32_t idSession;
     uint32_t fFlags;
-    int rc = VbglR3GuestCtrlSessionGetClose(pHostCtx, &fFlags, &uSessionID);
+    int rc = VbglR3GuestCtrlSessionGetClose(pHostCtx, &fFlags, &idSession);
     if (RT_SUCCESS(rc))
     {
         rc = VERR_NOT_FOUND;
@@ -451,13 +444,14 @@ static int vgsvcGstCtrlHandleSessionClose(PVBGLR3GUESTCTRLCMDCTX pHostCtx)
         PVBOXSERVICECTRLSESSIONTHREAD pThread;
         RTListForEach(&g_lstControlSessionThreads, pThread, VBOXSERVICECTRLSESSIONTHREAD, Node)
         {
-            if (pThread->StartupInfo.uSessionID == uSessionID)
+            if (pThread->StartupInfo.uSessionID == idSession)
             {
                 rc = VGSvcGstCtrlSessionThreadDestroy(pThread, fFlags);
                 break;
             }
         }
-#if 0
+
+#if 0 /** @todo A bit of a mess here as this message goes to both to this process (master) and the session process. */
         if (RT_FAILURE(rc))
         {
             /* Report back on failure. On success this will be done
@@ -472,10 +466,13 @@ static int vgsvcGstCtrlHandleSessionClose(PVBGLR3GUESTCTRLCMDCTX pHostCtx)
             }
         }
 #endif
-        VGSvcVerbose(2, "Closing guest session %RU32 returned rc=%Rrc\n", uSessionID, rc);
+        VGSvcVerbose(2, "Closing guest session %RU32 returned rc=%Rrc\n", idSession, rc);
     }
     else
-        VGSvcError("Closing guest session %RU32 failed with rc=%Rrc\n", uSessionID, rc);
+    {
+        VGSvcError("Error fetching parameters for closing guest session: %Rrc\n", rc);
+        VbglR3GuestCtrlMsgSkip(pHostCtx->uClientID, rc, UINT32_MAX);
+    }
     return rc;
 }
 

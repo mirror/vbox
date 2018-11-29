@@ -426,14 +426,23 @@ VBGLR3DECL(int) VbglR3GuestCtrlMsgReplyEx(PVBGLR3GUESTCTRLCMDCTX pCtx,
  *
  * @return  IPRT status code.
  * @param   idClient        The client ID returned by VbglR3GuestCtrlConnect().
+ * @param   rcSkip          The status code to pass back to Main when skipping.
+ * @param   idMsg           The message ID to skip, pass UINT32_MAX to pass any.
  */
-VBGLR3DECL(int) VbglR3GuestCtrlMsgSkip(uint32_t idClient)
+VBGLR3DECL(int) VbglR3GuestCtrlMsgSkip(uint32_t idClient, int rcSkip, uint32_t idMsg)
 {
     if (vbglR3GuestCtrlSupportsPeekGetCancel(idClient))
     {
-        VBGLIOCHGCMCALL Hdr;
-        VBGL_HGCM_HDR_INIT(&Hdr, idClient, GUEST_MSG_SKIP, 0);
-        return VbglR3HGCMCall(&Hdr, sizeof(Hdr));
+        struct
+        {
+            VBGLIOCHGCMCALL         Hdr;
+            HGCMFunctionParameter   rcSkip;
+            HGCMFunctionParameter   idMsg;
+        } Msg;
+        VBGL_HGCM_HDR_INIT(&Msg.Hdr, idClient, GUEST_MSG_SKIP, 2);
+        VbglHGCMParmUInt32Set(&Msg.rcSkip, (uint32_t)rcSkip);
+        VbglHGCMParmUInt32Set(&Msg.idMsg, idMsg);
+        return VbglR3HGCMCall(&Msg.Hdr, sizeof(Msg));
     }
 
     /* This is generally better than nothing... */
@@ -623,9 +632,6 @@ VBGLR3DECL(int) VbglR3GuestCtrlSessionGetOpen(PVBGLR3GUESTCTRLCMDCTX pCtx,
             if (pidSession)
                 *pidSession = VBOX_GUESTCTRL_CONTEXTID_GET_SESSION(pCtx->uContextID);
         }
-        /* Try get the context ID so we can inform the host about this message retrival failure. */
-        else if (Msg.context.u.value32 != HOST_SESSION_CREATE)
-            Msg.context.GetUInt32(&pCtx->uContextID);
 
     } while (rc == VERR_INTERRUPTED && g_fVbglR3GuestCtrlHavePeekGetCancel);
     return rc;
@@ -665,7 +671,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlSessionGetClose(PVBGLR3GUESTCTRLCMDCTX pCtx, uint
 
 
 /**
- * Retrieves a HOST_SESSION_CLOSE message.
+ * Retrieves a HOST_PATH_RENAME message.
  */
 VBGLR3DECL(int) VbglR3GuestCtrlPathGetRename(PVBGLR3GUESTCTRLCMDCTX     pCtx,
                                              char     *pszSource,       uint32_t cbSource,
@@ -697,6 +703,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlPathGetRename(PVBGLR3GUESTCTRLCMDCTX     pCtx,
             Msg.context.GetUInt32(&pCtx->uContextID);
             Msg.flags.GetUInt32(pfFlags);
         }
+
     } while (rc == VERR_INTERRUPTED && g_fVbglR3GuestCtrlHavePeekGetCancel);
     return rc;
 }
@@ -912,7 +919,11 @@ VBGLR3DECL(int) VbglR3GuestCtrlProcGetInput(PVBGLR3GUESTCTRLCMDCTX  pCtx,
             Msg.size.GetUInt32(pcbSize);
         }
     } while (rc == VERR_INTERRUPTED && g_fVbglR3GuestCtrlHavePeekGetCancel);
-    return rc;
+
+    if (   rc != VERR_TOO_MUCH_DATA
+        || g_fVbglR3GuestCtrlHavePeekGetCancel)
+        return rc;
+    return VERR_BUFFER_OVERFLOW;
 }
 
 
@@ -1128,7 +1139,11 @@ VBGLR3DECL(int) VbglR3GuestCtrlFileGetWrite(PVBGLR3GUESTCTRLCMDCTX pCtx, uint32_
             Msg.size.GetUInt32(pcbSize);
         }
     } while (rc == VERR_INTERRUPTED && g_fVbglR3GuestCtrlHavePeekGetCancel);
-    return rc;
+
+    if (   rc != VERR_TOO_MUCH_DATA
+        || g_fVbglR3GuestCtrlHavePeekGetCancel)
+        return rc;
+    return VERR_BUFFER_OVERFLOW;
 }
 
 
@@ -1166,7 +1181,11 @@ VBGLR3DECL(int) VbglR3GuestCtrlFileGetWriteAt(PVBGLR3GUESTCTRLCMDCTX pCtx, uint3
             Msg.offset.GetUInt64(poffAt);
         }
     } while (rc == VERR_INTERRUPTED && g_fVbglR3GuestCtrlHavePeekGetCancel);
-    return rc;
+
+    if (   rc != VERR_TOO_MUCH_DATA
+        || g_fVbglR3GuestCtrlHavePeekGetCancel)
+        return rc;
+    return VERR_BUFFER_OVERFLOW;
 }
 
 
