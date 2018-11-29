@@ -7590,6 +7590,7 @@ static uint32_t hmR0VmxEvaluatePendingEvent(PVMCPU pVCpu)
  * Sets a pending-debug exception to be delivered to the guest if the guest is
  * single-stepping in the VMCS.
  *
+ * @returns VBox status code.
  * @param   pVCpu           The cross context virtual CPU structure.
  */
 DECLINLINE(int) hmR0VmxSetPendingDebugXcptVmcs(PVMCPU pVCpu)
