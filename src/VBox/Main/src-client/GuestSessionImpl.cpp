@@ -1229,76 +1229,77 @@ int GuestSession::i_dispatchToObject(PVBOXGUESTCTRLHOSTCBCTX pCtxCb, PVBOXGUESTC
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    const uint32_t uObjectID = VBOX_GUESTCTRL_CONTEXTID_GET_OBJECT(pCtxCb->uContextID);
-
+    /*
+     * Find the object.
+     */
     int rc = VERR_NOT_FOUND;
-
-    SessionObjects::const_iterator itObjs = mData.mObjects.find(uObjectID);
-
-    if (itObjs == mData.mObjects.end())
-        return rc;
-
-    /* Set protocol version so that pSvcCb can be interpreted right. */
-    pCtxCb->uProtocol = mData.mProtocolVersion;
-
-    switch (itObjs->second.enmType)
+    const uint32_t idObject = VBOX_GUESTCTRL_CONTEXTID_GET_OBJECT(pCtxCb->uContextID);
+    SessionObjects::const_iterator itObjs = mData.mObjects.find(idObject);
+    if (itObjs != mData.mObjects.end())
     {
-        case SESSIONOBJECTTYPE_ANONYMOUS:
-            rc = VERR_NOT_SUPPORTED;
-            break;
+        /* Set protocol version so that pSvcCb can be interpreted right. */
+        pCtxCb->uProtocol = mData.mProtocolVersion;
 
-        case SESSIONOBJECTTYPE_SESSION:
+        switch (itObjs->second.enmType)
         {
-            alock.release();
+            case SESSIONOBJECTTYPE_ANONYMOUS:
+                rc = VERR_NOT_SUPPORTED;
+                break;
 
-            rc = i_dispatchToThis(pCtxCb, pSvcCb);
-            break;
-        }
-        case SESSIONOBJECTTYPE_DIRECTORY:
-        {
-            SessionDirectories::const_iterator itDir = mData.mDirectories.find(uObjectID);
-            if (itDir != mData.mDirectories.end())
+            case SESSIONOBJECTTYPE_SESSION:
             {
-                ComObjPtr<GuestDirectory> pDirectory(itDir->second);
-                Assert(!pDirectory.isNull());
-
                 alock.release();
 
-                rc = pDirectory->i_callbackDispatcher(pCtxCb, pSvcCb);
+                rc = i_dispatchToThis(pCtxCb, pSvcCb);
+                break;
             }
-            break;
-        }
-        case SESSIONOBJECTTYPE_FILE:
-        {
-            SessionFiles::const_iterator itFile = mData.mFiles.find(uObjectID);
-            if (itFile != mData.mFiles.end())
+            case SESSIONOBJECTTYPE_DIRECTORY:
             {
-                ComObjPtr<GuestFile> pFile(itFile->second);
-                Assert(!pFile.isNull());
+                SessionDirectories::const_iterator itDir = mData.mDirectories.find(idObject);
+                if (itDir != mData.mDirectories.end())
+                {
+                    ComObjPtr<GuestDirectory> pDirectory(itDir->second);
+                    Assert(!pDirectory.isNull());
 
-                alock.release();
+                    alock.release();
 
-                rc = pFile->i_callbackDispatcher(pCtxCb, pSvcCb);
+                    rc = pDirectory->i_callbackDispatcher(pCtxCb, pSvcCb);
+                }
+                break;
             }
-            break;
-        }
-        case SESSIONOBJECTTYPE_PROCESS:
-        {
-            SessionProcesses::const_iterator itProc = mData.mProcesses.find(uObjectID);
-            if (itProc != mData.mProcesses.end())
+            case SESSIONOBJECTTYPE_FILE:
             {
-                ComObjPtr<GuestProcess> pProcess(itProc->second);
-                Assert(!pProcess.isNull());
+                SessionFiles::const_iterator itFile = mData.mFiles.find(idObject);
+                if (itFile != mData.mFiles.end())
+                {
+                    ComObjPtr<GuestFile> pFile(itFile->second);
+                    Assert(!pFile.isNull());
 
-                alock.release();
+                    alock.release();
 
-                rc = pProcess->i_callbackDispatcher(pCtxCb, pSvcCb);
+                    rc = pFile->i_callbackDispatcher(pCtxCb, pSvcCb);
+                }
+                break;
             }
-            break;
+            case SESSIONOBJECTTYPE_PROCESS:
+            {
+                SessionProcesses::const_iterator itProc = mData.mProcesses.find(idObject);
+                if (itProc != mData.mProcesses.end())
+                {
+                    ComObjPtr<GuestProcess> pProcess(itProc->second);
+                    Assert(!pProcess.isNull());
+
+                    alock.release();
+
+                    rc = pProcess->i_callbackDispatcher(pCtxCb, pSvcCb);
+                }
+                break;
+            }
+            default:
+                AssertMsgFailed(("%d\n", itObjs->second.enmType));
+                rc = VERR_INTERNAL_ERROR_4;
+                break;
         }
-        default:
-            AssertFailed();
-            break;
     }
 
     LogFlowFuncLeaveRC(rc);

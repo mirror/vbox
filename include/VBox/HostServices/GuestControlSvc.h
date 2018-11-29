@@ -252,8 +252,13 @@ DECLINLINE(const char *) GstCtrlHostFnName(enum eHostFn enmFunction)
 
 
 /**
- * The service functions which are called by guest. The numbers may not change,
- * so we hardcode them.
+ * The service functions which are called by guest.
+ *
+ * @note The function numbers cannot be changed.  Please use the first non-zero
+ *       number that's not in use when adding new functions.
+ *
+ * @note Remember to update service.cpp when adding new functions/events for
+ *       Main, as it validates all incoming commands before passing them on.
  */
 enum eGuestFn
 {

@@ -2069,12 +2069,20 @@ GstCtrlService::svcCall(void *pvService, VBOXHGCMCALLHANDLE hCall, uint32_t idCl
             break;
 
         /*
-         * For all other regular commands we call our hostCallback
-         * function. If the current command does not support notifications,
-         * notifyHost will return VERR_NOT_SUPPORTED.
+         * Stuff the goes to various main objects:
          */
-        default:
+        case GUEST_DISCONNECTED:
+        case GUEST_MSG_REPLY:
+        case GUEST_MSG_PROGRESS_UPDATE:
+        case GUEST_SESSION_NOTIFY:
+        case GUEST_EXEC_OUTPUT:
+        case GUEST_EXEC_STATUS:
+        case GUEST_EXEC_INPUT_STATUS:
+        case GUEST_EXEC_IO_NOTIFY:
+        case GUEST_DIR_NOTIFY:
+        case GUEST_FILE_NOTIFY:
             rc = pThis->hostCallback(idFunction, cParms, paParms);
+            Assert(rc != VINF_HGCM_ASYNC_EXECUTE);
             break;
 
         /*
@@ -2100,6 +2108,17 @@ GstCtrlService::svcCall(void *pvService, VBOXHGCMCALLHANDLE hCall, uint32_t idCl
         case GUEST_MSG_FILTER_UNSET:
             LogFlowFunc(("[Client %RU32] GUEST_MSG_FILTER_UNSET\n", idClient));
             rc = VERR_NOT_IMPLEMENTED;
+            break;
+
+        /*
+         * Anything else shall return fail with invalid function.
+         *
+         * Note! We used to return VINF_SUCCESS for these.  See bugref:9313
+         *       and Guest::i_notifyCtrlDispatcher().
+         */
+        default:
+            ASSERT_GUEST_MSG_FAILED(("idFunction=%d (%#x)\n", idFunction, idFunction));
+            rc = VERR_INVALID_FUNCTION;
             break;
     }
 

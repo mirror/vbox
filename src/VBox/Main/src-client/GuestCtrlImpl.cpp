@@ -44,6 +44,7 @@
 #include <iprt/list.h>
 #include <iprt/path.h>
 #include <VBox/vmm/pgm.h>
+#include <VBox/AssertGuest.h>
 
 #include <memory>
 
@@ -66,10 +67,24 @@
  *
  * @todo
  *
+ * @todo    r=bird: This code mostly returned VINF_SUCCESS with the comment
+ *          "Never return any errors back to the guest here." attached to the
+ *          return locations.  However, there is no explaination for this attitude
+ *          thowards error handling.   Further, it creates a slight problem since
+ *          the service would route all function calls it didn't recognize here,
+ *          thereby making any undefined functions confusingly return VINF_SUCCESS.
+ *
+ *          In my humble opinion, if the guest gives us incorrect input it should
+ *          expect and deal with error statuses.  If there is unimplemented
+ *          features I expect there to have been sufficient forethought by the
+ *          coder that these return sensible status codes.
+ *
+ *          It would be much appreciated if the esteemed card house builder could
+ *          please step in and explain this confusing state of affairs.
  */
 /* static */
 DECLCALLBACK(int) Guest::i_notifyCtrlDispatcher(void    *pvExtension,
-                                                uint32_t u32Function,
+                                                uint32_t idFunction,
                                                 void    *pvData,
                                                 uint32_t cbData)
 {
@@ -79,11 +94,19 @@ DECLCALLBACK(int) Guest::i_notifyCtrlDispatcher(void    *pvExtension,
      * No locking, as this is purely a notification which does not make any
      * changes to the object state.
      */
-    Log2Func(("pvExtension=%p, u32Function=%RU32, pvParms=%p, cbParms=%RU32\n",
-              pvExtension, u32Function, pvData, cbData));
+    Log2Func(("pvExtension=%p, idFunction=%RU32, pvParms=%p, cbParms=%RU32\n", pvExtension, idFunction, pvData, cbData));
 
     ComObjPtr<Guest> pGuest = reinterpret_cast<Guest *>(pvExtension);
-    Assert(!pGuest.isNull());
+    AssertReturn(pGuest.isNotNull(), VERR_WRONG_ORDER);
+
+    /*
+     * The data packet should ever be a problem, but check to be sure.
+     */
+    AssertMsgReturn(cbData == sizeof(VBOXGUESTCTRLHOSTCALLBACK),
+                    ("Guest control host callback data has wrong size (expected %zu, got %zu) - buggy host service!\n",
+                     sizeof(VBOXGUESTCTRLHOSTCALLBACK), cbData), VERR_INVALID_PARAMETER);
+    PVBOXGUESTCTRLHOSTCALLBACK pSvcCb = (PVBOXGUESTCTRLHOSTCALLBACK)pvData;
+    AssertPtrReturn(pSvcCb, VERR_INVALID_POINTER);
 
     /*
      * For guest control 2.0 using the legacy commands we need to do the following here:
@@ -91,36 +114,21 @@ DECLCALLBACK(int) Guest::i_notifyCtrlDispatcher(void    *pvExtension,
      * - Get the context ID of the callback
      * - Extract the session ID out of the context ID
      * - Dispatch the whole stuff to the appropriate session (if still exists)
+     *
+     * At least context ID parameter must always be present.
      */
-    if (cbData != sizeof(VBOXGUESTCTRLHOSTCALLBACK))
-    {
-        AssertMsgFailed(("Guest control host callback data has wrong size (expected %zu, got %zu)\n",
-                         sizeof(VBOXGUESTCTRLHOSTCALLBACK), cbData));
-        return VINF_SUCCESS; /* Never return any errors back to the guest here. */
-    }
+    ASSERT_GUEST_RETURN(pSvcCb->mParms > 0, VERR_WRONG_PARAMETER_COUNT);
+    ASSERT_GUEST_MSG_RETURN(pSvcCb->mpaParms[0].type == VBOX_HGCM_SVC_PARM_32BIT,
+                            ("type=%d\n", pSvcCb->mpaParms[0].type), VERR_WRONG_PARAMETER_TYPE);
+    uint32_t const idContext = pSvcCb->mpaParms[0].u.uint32;
 
-    const PVBOXGUESTCTRLHOSTCALLBACK pSvcCb = (PVBOXGUESTCTRLHOSTCALLBACK)pvData;
-    AssertPtr(pSvcCb);
+    VBOXGUESTCTRLHOSTCBCTX CtxCb = { idFunction, idContext };
+    int rc = pGuest->i_dispatchToSession(&CtxCb, pSvcCb);
 
-    if (pSvcCb->mParms) /* At least context ID must be present. */
-    {
-        uint32_t uContextID;
-        int rc = HGCMSvcGetU32(&pSvcCb->mpaParms[0], &uContextID);
-        AssertMsgRCReturn(rc, ("Unable to extract callback context ID, pvData=%p\n", pSvcCb),
-                          VINF_SUCCESS /* Never return any errors back to the guest here */);
-
-        VBOXGUESTCTRLHOSTCBCTX ctxCb = { u32Function, uContextID };
-        rc = pGuest->i_dispatchToSession(&ctxCb, pSvcCb);
-
-        Log2Func(("CID=%RU32, uSession=%RU32, uObject=%RU32, uCount=%RU32, rc=%Rrc\n",
-                  uContextID,
-                  VBOX_GUESTCTRL_CONTEXTID_GET_SESSION(uContextID),
-                  VBOX_GUESTCTRL_CONTEXTID_GET_OBJECT(uContextID),
-                  VBOX_GUESTCTRL_CONTEXTID_GET_COUNT(uContextID), rc));
-    }
-
-    /* Never return any errors back to the guest here. */
-    return VINF_SUCCESS;
+    Log2Func(("CID=%#x, idSession=%RU32, uObject=%RU32, uCount=%RU32, rc=%Rrc\n",
+              idContext, VBOX_GUESTCTRL_CONTEXTID_GET_SESSION(idContext), VBOX_GUESTCTRL_CONTEXTID_GET_OBJECT(idContext),
+              VBOX_GUESTCTRL_CONTEXTID_GET_COUNT(idContext), rc));
+    return rc;
 }
 
 // private methods
@@ -214,10 +222,10 @@ int Guest::i_dispatchToSession(PVBOXGUESTCTRLHOSTCBCTX pCtxCb, PVBOXGUESTCTRLHOS
             }
         }
         else
-            rc = VERR_NOT_FOUND;
+            rc = VERR_INVALID_FUNCTION;
     }
     else
-        rc = VERR_NOT_FOUND;
+        rc = VERR_INVALID_SESSION_ID;
 
     LogFlowFuncLeaveRC(rc);
     return rc;
