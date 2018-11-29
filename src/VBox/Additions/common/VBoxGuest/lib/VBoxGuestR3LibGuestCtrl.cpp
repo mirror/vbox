@@ -82,18 +82,18 @@ VBGLR3DECL(int) VbglR3GuestCtrlDisconnect(uint32_t idClient)
  * This will block until a message becomes available.
  *
  * @returns VBox status code.
- * @param   uClientId       The client ID returned by VbglR3GuestCtrlConnect().
+ * @param   idClient        The client ID returned by VbglR3GuestCtrlConnect().
  * @param   pidMsg          Where to store the message id.
  * @param   pcParameters    Where to store the number  of parameters which will
  *                          be received in a second call to the host.
  */
-static int vbglR3GuestCtrlMsgWaitFor(uint32_t uClientId, uint32_t *pidMsg, uint32_t *pcParameters)
+static int vbglR3GuestCtrlMsgWaitFor(uint32_t idClient, uint32_t *pidMsg, uint32_t *pcParameters)
 {
     AssertPtrReturn(pidMsg, VERR_INVALID_POINTER);
     AssertPtrReturn(pcParameters, VERR_INVALID_POINTER);
 
     HGCMMsgCmdWaitFor Msg;
-    VBGL_HGCM_HDR_INIT(&Msg.hdr, uClientId,
+    VBGL_HGCM_HDR_INIT(&Msg.hdr, idClient,
                        GUEST_MSG_WAIT,      /* Tell the host we want our next command. */
                        2);                  /* Just peek for the next message! */
     VbglHGCMParmUInt32Set(&Msg.msg, 0);
@@ -274,6 +274,40 @@ DECLINLINE(uint32_t) vbglR3GuestCtrlGetMsgFunctionNo(uint32_t idClient)
 
 
 /**
+ * Checks if the host supports the optimizes message and session functions.
+ *
+ * @returns true / false.
+ * @param   idClient    The client ID returned by VbglR3GuestCtrlConnect().
+ *                      We may need to use this for checking.
+ * @since   6.0
+ */
+VBGLR3DECL(bool) VbglR3GuestCtrlSupportsOptimizations(uint32_t idClient)
+{
+    return vbglR3GuestCtrlSupportsPeekGetCancel(idClient);
+}
+
+
+/**
+ * Make us the guest control master client.
+ *
+ * @returns VBox status code.
+ * @param   idClient    The client ID returned by VbglR3GuestCtrlConnect().
+ */
+VBGLR3DECL(int) VbglR3GuestCtrlMakeMeMaster(uint32_t idClient)
+{
+    int rc;
+    do
+    {
+        VBGLIOCHGCMCALL Hdr;
+        VBGL_HGCM_HDR_INIT(&Hdr, idClient, GUEST_MAKE_ME_MASTER, 0);
+        rc = VbglR3HGCMCall(&Hdr, sizeof(Hdr));
+    } while (rc == VERR_INTERRUPTED);
+    return rc;
+}
+
+
+
+/**
  * Peeks at the next host message, waiting for one to turn up.
  *
  * @returns VBox status code.
@@ -298,6 +332,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlMsgPeekWait(uint32_t idClient, uint32_t *pidMsg, 
         VbglHGCMParmUInt32Set(&Msg.msg, 0);
         VbglHGCMParmUInt32Set(&Msg.num_parms, 0);
         rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
+        LogRel(("VbglR3GuestCtrlMsgPeekWait -> %Rrc\n", rc));
         if (RT_SUCCESS(rc))
         {
             AssertMsgReturn(   Msg.msg.type       == VMMDevHGCMParmType_32bit
@@ -341,17 +376,17 @@ VBGLR3DECL(int) VbglR3GuestCtrlMsgPeekWait(uint32_t idClient, uint32_t *pidMsg, 
  * The filter(s) are a bitmask for the context IDs, served from the host.
  *
  * @return  IPRT status code.
- * @param   uClientId       The client ID returned by VbglR3GuestCtrlConnect().
+ * @param   idClient        The client ID returned by VbglR3GuestCtrlConnect().
  * @param   uValue          The value to filter messages for.
  * @param   uMaskAdd        Filter mask to add.
  * @param   uMaskRemove     Filter mask to remove.
  */
-VBGLR3DECL(int) VbglR3GuestCtrlMsgFilterSet(uint32_t uClientId, uint32_t uValue, uint32_t uMaskAdd, uint32_t uMaskRemove)
+VBGLR3DECL(int) VbglR3GuestCtrlMsgFilterSet(uint32_t idClient, uint32_t uValue, uint32_t uMaskAdd, uint32_t uMaskRemove)
 {
     HGCMMsgCmdFilterSet Msg;
 
     /* Tell the host we want to set a filter. */
-    VBGL_HGCM_HDR_INIT(&Msg.hdr, uClientId, GUEST_MSG_FILTER_SET, 4);
+    VBGL_HGCM_HDR_INIT(&Msg.hdr, idClient, GUEST_MSG_FILTER_SET, 4);
     VbglHGCMParmUInt32Set(&Msg.value, uValue);
     VbglHGCMParmUInt32Set(&Msg.mask_add, uMaskAdd);
     VbglHGCMParmUInt32Set(&Msg.mask_remove, uMaskRemove);
@@ -386,20 +421,39 @@ VBGLR3DECL(int) VbglR3GuestCtrlMsgReplyEx(PVBGLR3GUESTCTRLCMDCTX pCtx,
     return VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
 }
 
+/**
+ * Tell the host to skip the current message replying VERR_NOT_SUPPORTED
+ *
+ * @return  IPRT status code.
+ * @param   idClient        The client ID returned by VbglR3GuestCtrlConnect().
+ */
+VBGLR3DECL(int) VbglR3GuestCtrlMsgSkip(uint32_t idClient)
+{
+    if (vbglR3GuestCtrlSupportsPeekGetCancel(idClient))
+    {
+        VBGLIOCHGCMCALL Hdr;
+        VBGL_HGCM_HDR_INIT(&Hdr, idClient, GUEST_MSG_SKIP, 0);
+        return VbglR3HGCMCall(&Hdr, sizeof(Hdr));
+    }
+
+    /* This is generally better than nothing... */
+    return VbglR3GuestCtrlMsgSkipOld(idClient);
+}
+
 
 /**
  * Tells the host service to skip the current message returned by
  * VbglR3GuestCtrlMsgWaitFor().
  *
  * @return  IPRT status code.
- * @param   uClientId       The client ID returned by VbglR3GuestCtrlConnect().
+ * @param   idClient        The client ID returned by VbglR3GuestCtrlConnect().
  */
-VBGLR3DECL(int) VbglR3GuestCtrlMsgSkipOld(uint32_t uClientId)
+VBGLR3DECL(int) VbglR3GuestCtrlMsgSkipOld(uint32_t idClient)
 {
     HGCMMsgCmdSkip Msg;
 
     /* Tell the host we want to skip the current assigned command. */
-    VBGL_HGCM_HDR_INIT(&Msg.hdr, uClientId, GUEST_MSG_SKIP_OLD, 1);
+    VBGL_HGCM_HDR_INIT(&Msg.hdr, idClient, GUEST_MSG_SKIP_OLD, 1);
     VbglHGCMParmUInt32Set(&Msg.flags, 0 /* Flags, unused */);
     return VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
 }
@@ -409,13 +463,86 @@ VBGLR3DECL(int) VbglR3GuestCtrlMsgSkipOld(uint32_t uClientId)
  * Asks the host to cancel (release) all pending waits which were deferred.
  *
  * @returns VBox status code.
- * @param   uClientId     The client ID returned by VbglR3GuestCtrlConnect().
+ * @param   idClient        The client ID returned by VbglR3GuestCtrlConnect().
  */
-VBGLR3DECL(int) VbglR3GuestCtrlCancelPendingWaits(uint32_t uClientId)
+VBGLR3DECL(int) VbglR3GuestCtrlCancelPendingWaits(uint32_t idClient)
 {
     HGCMMsgCancelPendingWaits Msg;
-    VBGL_HGCM_HDR_INIT(&Msg.hdr, uClientId, GUEST_MSG_CANCEL, 0);
+    VBGL_HGCM_HDR_INIT(&Msg.hdr, idClient, GUEST_MSG_CANCEL, 0);
     return VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
+}
+
+
+/**
+ * Prepares a session.
+ * @since   6.0
+ * @sa      GUEST_SESSION_PREPARE
+ */
+VBGLR3DECL(int) VbglR3GuestCtrlSessionPrepare(uint32_t idClient, uint32_t idSession, void const *pvKey, uint32_t cbKey)
+{
+    int rc;
+    do
+    {
+        struct
+        {
+            VBGLIOCHGCMCALL         Hdr;
+            HGCMFunctionParameter   idSession;
+            HGCMFunctionParameter   pKey;
+        } Msg;
+        VBGL_HGCM_HDR_INIT(&Msg.Hdr, idClient, GUEST_SESSION_PREPARE, 2);
+        VbglHGCMParmUInt32Set(&Msg.idSession, idSession);
+        VbglHGCMParmPtrSet(&Msg.pKey, (void *)pvKey, cbKey);
+        rc = VbglR3HGCMCall(&Msg.Hdr, sizeof(Msg));
+    } while (rc == VERR_INTERRUPTED);
+    return rc;
+}
+
+
+/**
+ * Accepts a session.
+ * @since   6.0
+ * @sa      GUEST_SESSION_ACCEPT
+ */
+VBGLR3DECL(int) VbglR3GuestCtrlSessionAccept(uint32_t idClient, uint32_t idSession, void const *pvKey, uint32_t cbKey)
+{
+    int rc;
+    do
+    {
+        struct
+        {
+            VBGLIOCHGCMCALL         Hdr;
+            HGCMFunctionParameter   idSession;
+            HGCMFunctionParameter   pKey;
+        } Msg;
+        VBGL_HGCM_HDR_INIT(&Msg.Hdr, idClient, GUEST_SESSION_ACCEPT, 2);
+        VbglHGCMParmUInt32Set(&Msg.idSession, idSession);
+        VbglHGCMParmPtrSet(&Msg.pKey, (void *)pvKey, cbKey);
+        rc = VbglR3HGCMCall(&Msg.Hdr, sizeof(Msg));
+    } while (rc == VERR_INTERRUPTED);
+    return rc;
+}
+
+
+/**
+ * Cancels a prepared session.
+ * @since   6.0
+ * @sa      GUEST_SESSION_CANCEL_PREPARED
+ */
+VBGLR3DECL(int) VbglR3GuestCtrlSessionCancelPrepared(uint32_t idClient, uint32_t idSession)
+{
+    int rc;
+    do
+    {
+        struct
+        {
+            VBGLIOCHGCMCALL         Hdr;
+            HGCMFunctionParameter   idSession;
+        } Msg;
+        VBGL_HGCM_HDR_INIT(&Msg.Hdr, idClient, GUEST_SESSION_CANCEL_PREPARED, 1);
+        VbglHGCMParmUInt32Set(&Msg.idSession, idSession);
+        rc = VbglR3HGCMCall(&Msg.Hdr, sizeof(Msg));
+    } while (rc == VERR_INTERRUPTED);
+    return rc;
 }
 
 
@@ -441,7 +568,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlSessionClose(PVBGLR3GUESTCTRLCMDCTX pCtx, uint32_
 }
 
 
-VBGLR3DECL(int) VbglR3GuestCtrlSessionNotify(PVBGLR3GUESTCTRLCMDCTX pCtx, uint32_t uType, uint32_t uResult)
+VBGLR3DECL(int) VbglR3GuestCtrlSessionNotify(PVBGLR3GUESTCTRLCMDCTX pCtx, uint32_t uType, int32_t iResult)
 {
     AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
 
@@ -449,7 +576,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlSessionNotify(PVBGLR3GUESTCTRLCMDCTX pCtx, uint32
     VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, GUEST_SESSION_NOTIFY, 3);
     VbglHGCMParmUInt32Set(&Msg.context, pCtx->uContextID);
     VbglHGCMParmUInt32Set(&Msg.type, uType);
-    VbglHGCMParmUInt32Set(&Msg.result, uResult);
+    VbglHGCMParmUInt32Set(&Msg.result, (uint32_t)iResult);
 
     return VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
 }
@@ -496,6 +623,10 @@ VBGLR3DECL(int) VbglR3GuestCtrlSessionGetOpen(PVBGLR3GUESTCTRLCMDCTX pCtx,
             if (pidSession)
                 *pidSession = VBOX_GUESTCTRL_CONTEXTID_GET_SESSION(pCtx->uContextID);
         }
+        /* Try get the context ID so we can inform the host about this message retrival failure. */
+        else if (Msg.context.u.value32 != HOST_SESSION_CREATE)
+            Msg.context.GetUInt32(&pCtx->uContextID);
+
     } while (rc == VERR_INTERRUPTED && g_fVbglR3GuestCtrlHavePeekGetCancel);
     return rc;
 }
@@ -724,7 +855,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlProcGetOutput(PVBGLR3GUESTCTRLCMDCTX pCtx,
     {
         HGCMMsgProcOutput Msg;
         VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, vbglR3GuestCtrlGetMsgFunctionNo(pCtx->uClientID), pCtx->uNumParms);
-        VbglHGCMParmUInt32Set(&Msg.context, 0);
+        VbglHGCMParmUInt32Set(&Msg.context, HOST_EXEC_GET_OUTPUT);
         VbglHGCMParmUInt32Set(&Msg.pid, 0);
         VbglHGCMParmUInt32Set(&Msg.handle, 0);
         VbglHGCMParmUInt32Set(&Msg.flags, 0);

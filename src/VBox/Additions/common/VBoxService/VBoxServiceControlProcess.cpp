@@ -1459,14 +1459,13 @@ static int vgsvcGstCtrlProcessProcessWorker(PVBOXSERVICECTRLPROCESS pProcess)
     VGSvcVerbose(3, "Guest process '%s' got client ID=%u, flags=0x%x\n",
                  pProcess->StartupInfo.szCmd, pProcess->uClientID, pProcess->StartupInfo.uFlags);
 
-    /* The process thread is not interested in receiving any commands;
-     * tell the host service. */
-    rc = VbglR3GuestCtrlMsgFilterSet(pProcess->uClientID, 0 /* Skip all */,
-                                     0 /* Filter mask to add */, 0 /* Filter mask to remove */);
-    if (RT_FAILURE(rc))
+    /* Legacy setting: */
+    if (!VbglR3GuestCtrlSupportsOptimizations(pProcess->uClientID))
     {
-        VGSvcError("Unable to set message filter, rc=%Rrc\n", rc);
-        /* Non-critical. */
+        rc = VbglR3GuestCtrlMsgFilterSet(pProcess->uClientID, 0 /* Skip all */,
+                                         0 /* Filter mask to add */, 0 /* Filter mask to remove */);
+        if (RT_FAILURE(rc))
+            VGSvcError("Unable to set message filter, rc=%Rrc\n", rc); /* Non-critical. */
     }
 
     rc = VGSvcGstCtrlSessionProcessAdd(pProcess->pSession, pProcess);

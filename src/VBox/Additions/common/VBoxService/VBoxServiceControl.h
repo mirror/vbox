@@ -98,12 +98,11 @@ typedef struct VBOXSERVICECTRLSESSIONTHREAD
     /** @todo Use a map later? */
     RTLISTNODE                      Node;
     /** The sessions's startup info. */
-    VBOXSERVICECTRLSESSIONSTARTUPINFO
-                                    StartupInfo;
-    /** The worker thread. */
-    RTTHREAD                        Thread;
+    VBOXSERVICECTRLSESSIONSTARTUPINFO StartupInfo;
     /** Critical section for thread-safe use. */
     RTCRITSECT                      CritSect;
+    /** The worker thread. */
+    RTTHREAD                        Thread;
     /** Process handle for forked child. */
     RTPROCESS                       hProcess;
     /** Shutdown indicator; will be set when the thread
@@ -132,6 +131,10 @@ typedef struct VBOXSERVICECTRLSESSIONTHREAD
     /** The other end of hNotificationPipeW. */
     RTPIPE                          hNotificationPipeR;
 #endif
+    /** Pipe for handing the secret key to the session process. */
+    RTPIPE                          hKeyPipe;
+    /** Secret key. */
+    uint8_t                         abKey[_4K];
 } VBOXSERVICECTRLSESSIONTHREAD;
 /** Pointer to thread data. */
 typedef VBOXSERVICECTRLSESSIONTHREAD *PVBOXSERVICECTRLSESSIONTHREAD;
@@ -288,6 +291,8 @@ RT_C_DECLS_BEGIN
 
 extern RTLISTANCHOR             g_lstControlSessionThreads;
 extern VBOXSERVICECTRLSESSION   g_Session;
+extern uint32_t                 g_idControlSvcClient;
+extern bool                     g_fControlSupportsOptimizations;
 
 
 /** @name Guest session thread handling.

@@ -766,16 +766,22 @@ typedef struct VBGLR3GUESTCTRLCMDCTX
 /* General message handling on the guest. */
 VBGLR3DECL(int) VbglR3GuestCtrlConnect(uint32_t *pidClient);
 VBGLR3DECL(int) VbglR3GuestCtrlDisconnect(uint32_t idClient);
+VBGLR3DECL(bool) VbglR3GuestCtrlSupportsOptimizations(uint32_t idClient);
+VBGLR3DECL(int) VbglR3GuestCtrlMakeMeMaster(uint32_t idClient);
 VBGLR3DECL(int) VbglR3GuestCtrlMsgFilterSet(uint32_t uClientId, uint32_t uValue, uint32_t uMaskAdd, uint32_t uMaskRemove);
 VBGLR3DECL(int) VbglR3GuestCtrlMsgReply(PVBGLR3GUESTCTRLCMDCTX pCtx, int rc);
 VBGLR3DECL(int) VbglR3GuestCtrlMsgReplyEx(PVBGLR3GUESTCTRLCMDCTX pCtx, int rc, uint32_t uType,
                                           void *pvPayload, uint32_t cbPayload);
+VBGLR3DECL(int) VbglR3GuestCtrlMsgSkip(uint32_t idClient);
 VBGLR3DECL(int) VbglR3GuestCtrlMsgSkipOld(uint32_t uClientId);
 VBGLR3DECL(int) VbglR3GuestCtrlMsgPeekWait(uint32_t idClient, uint32_t *pidMsg, uint32_t *pcParameters);
 VBGLR3DECL(int) VbglR3GuestCtrlCancelPendingWaits(HGCMCLIENTID idClient);
 /* Guest session handling. */
+VBGLR3DECL(int) VbglR3GuestCtrlSessionPrepare(uint32_t idClient, uint32_t idSession, void const *pvKey, uint32_t cbKey);
+VBGLR3DECL(int) VbglR3GuestCtrlSessionAccept(uint32_t idClient, uint32_t idSession, void const *pvKey, uint32_t cbKey);
+VBGLR3DECL(int) VbglR3GuestCtrlSessionCancelPrepared(uint32_t idClient, uint32_t idSession);
 VBGLR3DECL(int) VbglR3GuestCtrlSessionClose(PVBGLR3GUESTCTRLCMDCTX pCtx, uint32_t fFlags);
-VBGLR3DECL(int) VbglR3GuestCtrlSessionNotify(PVBGLR3GUESTCTRLCMDCTX pCtx, uint32_t uType, uint32_t uResult);
+VBGLR3DECL(int) VbglR3GuestCtrlSessionNotify(PVBGLR3GUESTCTRLCMDCTX pCtx, uint32_t uType, int32_t iResult);
 VBGLR3DECL(int) VbglR3GuestCtrlSessionGetOpen(PVBGLR3GUESTCTRLCMDCTX pCtx, uint32_t *puProtocol, char *pszUser, uint32_t cbUser,
                                               char *pszPassword, uint32_t  cbPassword, char *pszDomain, uint32_t cbDomain,
                                               uint32_t *pfFlags, uint32_t *pidSession);
