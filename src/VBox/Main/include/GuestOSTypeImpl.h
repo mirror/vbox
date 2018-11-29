@@ -58,6 +58,7 @@ private:
     HRESULT getRecommendedIOAPIC(BOOL *aRecommendedIOAPIC);
     HRESULT getRecommendedVirtEx(BOOL *aRecommendedVirtEx);
     HRESULT getRecommendedRAM(ULONG *RAMSize);
+    HRESULT getRecommendedGraphicsController(GraphicsControllerType_T *aRecommendedGraphicsController);
     HRESULT getRecommendedVRAM(ULONG *aVRAMSize);
     HRESULT getRecommended2DVideoAcceleration(BOOL *aRecommended2DVideoAcceleration);
     HRESULT getRecommended3DAcceleration(BOOL *aRecommended3DAcceleration);
@@ -90,6 +91,7 @@ private:
     const VBOXOSTYPE mOSType;
     const uint32_t mOSHint;
     const uint32_t mRAMSize;
+    const GraphicsControllerType_T mGraphicsControllerType;
     const uint32_t mVRAMSize;
     const uint64_t mHDDSize;
     const uint32_t mMonitorCount;

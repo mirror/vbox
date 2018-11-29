@@ -27,7 +27,9 @@
 GuestOSType::GuestOSType()
     : mOSType(VBOXOSTYPE_Unknown)
     , mOSHint(VBOXOSHINT_NONE)
-    , mRAMSize(0), mVRAMSize(0)
+    , mRAMSize(0)
+    , mGraphicsControllerType(GraphicsControllerType_Null)
+    , mVRAMSize(0)
     , mHDDSize(0), mMonitorCount(0)
     , mNetworkAdapterType(NetworkAdapterType_Am79C973)
     , mNumSerialEnabled(0)
@@ -90,6 +92,7 @@ HRESULT GuestOSType::init(const Global::OSType &ostype)
     unconst(mOSType)                    = ostype.osType;
     unconst(mOSHint)                    = ostype.osHint;
     unconst(mRAMSize)                   = ostype.recommendedRAM;
+    unconst(mGraphicsControllerType)    = ostype.graphicsControllerType;
     unconst(mVRAMSize)                  = ostype.recommendedVRAM;
     unconst(mHDDSize)                   = ostype.recommendedHDD;
     unconst(mNetworkAdapterType)        = ostype.networkAdapterType;
@@ -187,6 +190,15 @@ HRESULT GuestOSType::getRecommendedRAM(ULONG *aRAMSize)
 {
     /* mRAMSize is constant during life time, no need to lock */
     *aRAMSize = mRAMSize;
+
+    return S_OK;
+}
+
+
+HRESULT GuestOSType::getRecommendedGraphicsController(GraphicsControllerType_T *aRecommendedGraphicsController)
+{
+    /* mGraphicsController is constant during life time, no need to lock */
+    *aRecommendedGraphicsController = mGraphicsControllerType;
 
     return S_OK;
 }
