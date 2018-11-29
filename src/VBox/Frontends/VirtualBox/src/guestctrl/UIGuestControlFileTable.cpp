@@ -1423,10 +1423,10 @@ bool UIGuestControlFileTable::event(QEvent *pEvent)
     {
         m_pWarningLabel->setVisible(!isEnabled());
         m_pView->setVisible(isEnabled());
+        retranslateUi();
     }
     return QIWithRetranslateUI<QWidget>::event(pEvent);
 }
-
 
 QString UIGuestControlFileTable::fileTypeString(FileObjectType type)
 {
