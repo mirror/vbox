@@ -194,7 +194,7 @@ DECL_NO_INLINE(static, bool) vbglR3GuestCtrlDetectPeekGetCancelSupport(uint32_t 
         rc = VbglR3HGCMCall(&PeekCall.Hdr, sizeof(PeekCall));
     } while (rc == VERR_INTERRUPTED);
 
-    LogRel2(("vbglR3GuestCtrlDetectPeekGetCancelSupport: rc=%Rrc %#x %#x %#x %#x %#x %#x %#x %#x %#x %#x %#x %#x %#x %#x %#x %#x\n",
+    LogRel(("vbglR3GuestCtrlDetectPeekGetCancelSupport: rc=%Rrc %#x %#x %#x %#x %#x %#x %#x %#x %#x %#x %#x %#x %#x %#x %#x %#x\n",
              rc, PeekCall.idMsg.u.value32,     PeekCall.cParams.u.value32,
              PeekCall.acbParams[ 0].u.value32, PeekCall.acbParams[ 1].u.value32,
              PeekCall.acbParams[ 2].u.value32, PeekCall.acbParams[ 3].u.value32,
@@ -204,7 +204,6 @@ DECL_NO_INLINE(static, bool) vbglR3GuestCtrlDetectPeekGetCancelSupport(uint32_t 
              PeekCall.acbParams[10].u.value32, PeekCall.acbParams[11].u.value32,
              PeekCall.acbParams[12].u.value32, PeekCall.acbParams[13].u.value32));
 
-#if 0 /* enable after testing. */
     /*
      * VERR_TRY_AGAIN is likely and easy.
      */
@@ -240,18 +239,12 @@ DECL_NO_INLINE(static, bool) vbglR3GuestCtrlDetectPeekGetCancelSupport(uint32_t 
         LogRel(("vbglR3GuestCtrlDetectPeekGetCancelSupport: Supported (#2)\n"));
         return true;
     }
-#endif
 
     /*
-     * If we get an invalid handle status, we can't really tell.
+     * Okay, pretty sure it's not supported then.
      */
-    if (rc != VERR_INVALID_HANDLE)
-    {
-        LogRel(("vbglR3GuestCtrlDetectPeekGetCancelSupport: Not supported (#3)\n"));
-        g_fVbglR3GuestCtrlHavePeekGetCancel = 0;
-    }
-    else
-        LogRel(("vbglR3GuestCtrlDetectPeekGetCancelSupport: Jury is still out (#4)\n"));
+    LogRel(("vbglR3GuestCtrlDetectPeekGetCancelSupport: Not supported (#3)\n"));
+    g_fVbglR3GuestCtrlHavePeekGetCancel = 0;
     return false;
 }
 
@@ -335,7 +328,10 @@ VBGLR3DECL(int) VbglR3GuestCtrlMsgPeekWait(uint32_t idClient, uint32_t *pidMsg, 
     /*
      * Fallback if host < v6.0.
      */
-    return vbglR3GuestCtrlMsgWaitFor(idClient, pidMsg, pcParameters);
+    rc = vbglR3GuestCtrlMsgWaitFor(idClient, pidMsg, pcParameters);
+    if (rc == VERR_TOO_MUCH_DATA)
+        rc = VINF_SUCCESS;
+    return rc;
 }
 
 

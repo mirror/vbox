@@ -76,7 +76,7 @@ static RTSEMEVENTMULTI      g_hControlEvent = NIL_RTSEMEVENTMULTI;
 /** The VM session ID. Changes whenever the VM is restored or reset. */
 static uint64_t             g_idControlSession;
 /** The guest control service client ID. */
-static uint32_t             g_uControlSvcClientID = 0;
+static uint32_t             g_idControlSvcClient = 0;
 #if 0 /** @todo process limit */
 /** How many started guest processes are kept into memory for supplying
  *  information to the host. Default is 256 processes. If 0 is specified,
@@ -193,10 +193,10 @@ static DECLCALLBACK(int) vgsvcGstCtrlInit(void)
     /* The status code is ignored as this information is not available with VBox < 3.2.10. */
 
     if (RT_SUCCESS(rc))
-        rc = VbglR3GuestCtrlConnect(&g_uControlSvcClientID);
+        rc = VbglR3GuestCtrlConnect(&g_idControlSvcClient);
     if (RT_SUCCESS(rc))
     {
-        VGSvcVerbose(3, "Guest control service client ID=%RU32\n", g_uControlSvcClientID);
+        VGSvcVerbose(3, "Guest control service client ID=%RU32\n", g_idControlSvcClient);
 
         /* Init session thread list. */
         RTListInit(&g_lstControlSessionThreads);
@@ -229,9 +229,7 @@ static DECLCALLBACK(int) vgsvcGstCtrlWorker(bool volatile *pfShutdown)
      * spawning services.
      */
     RTThreadUserSignal(RTThreadSelf());
-    Assert(g_uControlSvcClientID > 0);
-
-    int rc = VINF_SUCCESS;
+    Assert(g_idControlSvcClient > 0);
 
     /* Allocate a scratch buffer for commands which also send
      * payload data with them. */
@@ -240,92 +238,46 @@ static DECLCALLBACK(int) vgsvcGstCtrlWorker(bool volatile *pfShutdown)
     uint8_t *pvScratchBuf = (uint8_t*)RTMemAlloc(cbScratchBuf);
     AssertReturn(pvScratchBuf, VERR_NO_MEMORY);
 
-    VBGLR3GUESTCTRLCMDCTX ctxHost = { g_uControlSvcClientID };
+    VBGLR3GUESTCTRLCMDCTX ctxHost = { g_idControlSvcClient };
     /* Set default protocol version to 1. */
     ctxHost.uProtocol = 1;
 
-    int cRetrievalFailed = 0; /* Number of failed message retrievals in a row. */
-    for (;;)
+    int rc = VINF_SUCCESS;      /* (shut up compiler warnings) */
+    int cRetrievalFailed = 0;   /* Number of failed message retrievals in a row. */
+    while (!*pfShutdown)
     {
         VGSvcVerbose(3, "GstCtrl: Waiting for host msg ...\n");
-        uint32_t uMsg = 0;
+        uint32_t idMsg  = 0;
         uint32_t cParms = 0;
-        rc = VbglR3GuestCtrlMsgPeekWait(g_uControlSvcClientID, &uMsg, &cParms);
-        if (rc == VERR_TOO_MUCH_DATA)
-        {
-#ifdef DEBUG
-            VGSvcVerbose(4, "Message requires %u parameters, but only 2 supplied -- retrying request (no error!)...\n",
-                         cParms);
-#endif
-            rc = VINF_SUCCESS; /* Try to get "real" message in next block below. */
-        }
-        else if (RT_FAILURE(rc))
-        {
-            /* Note: VERR_GEN_IO_FAILURE seems to be normal if ran into timeout. */
-            VGSvcError("GstCtrl: Getting host message failed with %Rrc\n", rc);
-
-            /* Check for VM session change. */
-            uint64_t idNewSession = g_idControlSession;
-            int rc2 = VbglR3GetSessionId(&idNewSession);
-            if (   RT_SUCCESS(rc2)
-                && (idNewSession != g_idControlSession))
-            {
-                VGSvcVerbose(1, "GstCtrl: The VM session ID changed\n");
-                g_idControlSession = idNewSession;
-
-                /* Close all opened guest sessions -- all context IDs, sessions etc.
-                 * are now invalid. */
-                rc2 = VGSvcGstCtrlSessionClose(&g_Session);
-                AssertRC(rc2);
-
-                /* Do a reconnect. */
-                VGSvcVerbose(1, "Reconnecting to HGCM service ...\n");
-                rc2 = VbglR3GuestCtrlConnect(&g_uControlSvcClientID);
-                if (RT_SUCCESS(rc2))
-                {
-                    VGSvcVerbose(3, "Guest control service client ID=%RU32\n", g_uControlSvcClientID);
-                    cRetrievalFailed = 0;
-                    continue; /* Skip waiting. */
-                }
-                VGSvcError("Unable to re-connect to HGCM service, rc=%Rrc, bailing out\n", rc);
-                break;
-            }
-
-            if (rc == VERR_INTERRUPTED)
-                RTThreadYield();        /* To be on the safe side... */
-            else if (++cRetrievalFailed <= 16) /** @todo Make this configurable? */
-                RTThreadSleep(1000);    /* Wait a bit before retrying. */
-            else
-            {
-                VGSvcError("Too many failed attempts in a row to get next message, bailing out\n");
-                break;
-            }
-        }
-
+        rc = VbglR3GuestCtrlMsgPeekWait(g_idControlSvcClient, &idMsg, &cParms);
         if (RT_SUCCESS(rc))
         {
-            VGSvcVerbose(4, "Msg=%RU32 (%RU32 parms) retrieved\n", uMsg, cParms);
             cRetrievalFailed = 0; /* Reset failed retrieval count. */
+            VGSvcVerbose(4, "idMsg=%RU32 (%s) (%RU32 parms) retrieved\n", idMsg, GstCtrlHostFnName((eHostFn)idMsg), cParms);
 
-            /* Set number of parameters for current host context. */
-            ctxHost.uNumParms = cParms;
-
-            /* Check for VM session change. */
+            /*
+             * Close all open guest sessions if the VM was restored (all context IDs,
+             * sessions, etc. are now invalid).
+             *
+             * Note! This will suck performance wise if we get a lot of messages thru here.
+             *       What about the service returning a HOST_MSG_RESTORED message?
+             */
             uint64_t idNewSession = g_idControlSession;
             int rc2 = VbglR3GetSessionId(&idNewSession);
             if (   RT_SUCCESS(rc2)
-                && (idNewSession != g_idControlSession))
+                && idNewSession != g_idControlSession)
             {
-                VGSvcVerbose(1, "The VM session ID changed\n");
+                VGSvcVerbose(1, "The VM session ID changed (i.e. restored).\n");
                 g_idControlSession = idNewSession;
-
-                /* Close all opened guest sessions -- all context IDs, sessions etc.
-                 * are now invalid. */
                 rc2 = VGSvcGstCtrlSessionClose(&g_Session);
                 AssertRC(rc2);
             }
 
-            switch (uMsg)
+            /*
+             * Handle the host message.
+             */
+            ctxHost.uNumParms = cParms;
+            switch (idMsg)
             {
                 case HOST_CANCEL_PENDING_WAITS:
                     VGSvcVerbose(1, "We were asked to quit ...\n");
@@ -352,7 +304,7 @@ static DECLCALLBACK(int) vgsvcGstCtrlWorker(bool volatile *pfShutdown)
                      * execution call.
                      */
                     if (ctxHost.uProtocol == 1)
-                        rc = VGSvcGstCtrlSessionHandler(&g_Session, uMsg, &ctxHost, pvScratchBuf, cbScratchBuf, pfShutdown);
+                        rc = VGSvcGstCtrlSessionHandler(&g_Session, idMsg, &ctxHost, pvScratchBuf, cbScratchBuf, pfShutdown);
                     else
                     {
                         /*
@@ -360,23 +312,63 @@ static DECLCALLBACK(int) vgsvcGstCtrlWorker(bool volatile *pfShutdown)
                          * up to the guest session fork of VBoxService, so just
                          * skip all not wanted messages here.
                          */
-                        rc = VbglR3GuestCtrlMsgSkipOld(g_uControlSvcClientID);
-                        VGSvcVerbose(3, "Skipping uMsg=%RU32, cParms=%RU32, rc=%Rrc\n", uMsg, cParms, rc);
+                        rc = VbglR3GuestCtrlMsgSkipOld(g_idControlSvcClient);
+                        VGSvcVerbose(3, "Skipping idMsg=%RU32, cParms=%RU32, rc=%Rrc\n", idMsg, cParms, rc);
                     }
                     break;
                 }
             }
-        }
 
-        /* Do we need to shutdown? */
-        if (   *pfShutdown
-            || (RT_SUCCESS(rc) && uMsg == HOST_CANCEL_PENDING_WAITS))
+            /* Do we need to shutdown? */
+            if (idMsg == HOST_CANCEL_PENDING_WAITS)
+                break;
+
+            /* Let's sleep for a bit and let others run ... */
+            RTThreadYield();
+        }
+        else
         {
-            break;
-        }
+            /* Note: VERR_GEN_IO_FAILURE seems to be normal if ran into timeout. */
+            /** @todo r=bird: Above comment makes no sense.  How can you get a timeout in a blocking HGCM call? */
+            VGSvcError("GstCtrl: Getting host message failed with %Rrc\n", rc);
 
-        /* Let's sleep for a bit and let others run ... */
-        RTThreadYield();
+            /* Check for VM session change. */
+            uint64_t idNewSession = g_idControlSession;
+            int rc2 = VbglR3GetSessionId(&idNewSession);
+            if (   RT_SUCCESS(rc2)
+                && (idNewSession != g_idControlSession))
+            {
+                VGSvcVerbose(1, "GstCtrl: The VM session ID changed\n");
+                g_idControlSession = idNewSession;
+
+                /* Close all opened guest sessions -- all context IDs, sessions etc.
+                 * are now invalid. */
+                rc2 = VGSvcGstCtrlSessionClose(&g_Session);
+                AssertRC(rc2);
+
+                /* Do a reconnect. */
+                VGSvcVerbose(1, "Reconnecting to HGCM service ...\n");
+                rc2 = VbglR3GuestCtrlConnect(&g_idControlSvcClient);
+                if (RT_SUCCESS(rc2))
+                {
+                    VGSvcVerbose(3, "Guest control service client ID=%RU32\n", g_idControlSvcClient);
+                    cRetrievalFailed = 0;
+                    continue; /* Skip waiting. */
+                }
+                VGSvcError("Unable to re-connect to HGCM service, rc=%Rrc, bailing out\n", rc);
+                break;
+            }
+
+            if (rc == VERR_INTERRUPTED)
+                RTThreadYield();        /* To be on the safe side... */
+            else if (++cRetrievalFailed <= 16) /** @todo Make this configurable? */
+                RTThreadSleep(1000);    /* Wait a bit before retrying. */
+            else
+            {
+                VGSvcError("Too many failed attempts in a row to get next message, bailing out\n");
+                break;
+            }
+        }
     }
 
     VGSvcVerbose(0, "Guest control service stopped\n");
@@ -485,12 +477,12 @@ static DECLCALLBACK(void) vgsvcGstCtrlStop(void)
      * Ask the host service to cancel all pending requests for the main
      * control thread so that we can shutdown properly here.
      */
-    if (g_uControlSvcClientID)
+    if (g_idControlSvcClient)
     {
         VGSvcVerbose(3, "Cancelling pending waits (client ID=%u) ...\n",
-                           g_uControlSvcClientID);
+                           g_idControlSvcClient);
 
-        int rc = VbglR3GuestCtrlCancelPendingWaits(g_uControlSvcClientID);
+        int rc = VbglR3GuestCtrlCancelPendingWaits(g_idControlSvcClient);
         if (RT_FAILURE(rc))
             VGSvcError("Cancelling pending waits failed; rc=%Rrc\n", rc);
     }
@@ -525,9 +517,9 @@ static DECLCALLBACK(void) vgsvcGstCtrlTerm(void)
 
     vgsvcGstCtrlShutdown();
 
-    VGSvcVerbose(3, "Disconnecting client ID=%u ...\n", g_uControlSvcClientID);
-    VbglR3GuestCtrlDisconnect(g_uControlSvcClientID);
-    g_uControlSvcClientID = 0;
+    VGSvcVerbose(3, "Disconnecting client ID=%u ...\n", g_idControlSvcClient);
+    VbglR3GuestCtrlDisconnect(g_idControlSvcClient);
+    g_idControlSvcClient = 0;
 
     if (g_hControlEvent != NIL_RTSEMEVENTMULTI)
     {
