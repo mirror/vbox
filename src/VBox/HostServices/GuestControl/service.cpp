@@ -538,7 +538,8 @@ typedef struct ClientState
                 {
                     HGCMSvcSetU32(&mPendingCon.mParms[0], pHostCmd->mMsgType);
                     HGCMSvcSetU32(&mPendingCon.mParms[1], pHostCmd->mParmCount);
-                    for (uint32_t i = pHostCmd->mParmCount; i >= 2; i--)
+                    uint32_t i = RT_MIN(mPendingCon.mNumParms, pHostCmd->mParmCount + 2);
+                    while (i-- > 2)
                         switch (pHostCmd->mpParms[i - 2].type)
                         {
                             case VBOX_HGCM_SVC_PARM_32BIT: mPendingCon.mParms[i].u.uint32 = ~(uint32_t)sizeof(uint32_t); break;
@@ -547,7 +548,11 @@ typedef struct ClientState
                         }
 
                     rc = mSvcHelpers->pfnCallComplete(mPendingCon.mHandle, VINF_SUCCESS);
-                    mIsPending = (guestControl::eGuestFn)0;
+
+                    mPendingCon.mHandle   = NULL;
+                    mPendingCon.mParms    = NULL;
+                    mPendingCon.mNumParms = 0;
+                    mIsPending            = (guestControl::eGuestFn)0;
                 }
                 else if (mIsPending == GUEST_MSG_WAIT)
                     rc = OldRun(&mPendingCon, pHostCmd);
@@ -606,8 +611,12 @@ typedef struct ClientState
         }
 
         mSvcHelpers->pfnCallComplete(mPendingCon.mHandle, rcComplete);
-        mIsPending       = (guestControl::eGuestFn)0;
-        m_fPendingCancel = false;
+
+        mPendingCon.mHandle   = NULL;
+        mPendingCon.mParms    = NULL;
+        mPendingCon.mNumParms = 0;
+        mIsPending            = (guestControl::eGuestFn)0;
+        m_fPendingCancel      = false;
         return VINF_SUCCESS;
     }
 
@@ -719,51 +728,6 @@ typedef struct ClientState
     }
 
     /**
-     * Set to indicate that a client call (GUEST_MSG_WAIT) is pending.
-     *
-     * @note Only used by GUEST_MSG_WAIT scenarios.
-     */
-    int OldSetPending(const ClientConnection *pConnection)
-    {
-        AssertPtrReturn(pConnection, VERR_INVALID_POINTER);
-
-        if (mIsPending != 0)
-        {
-            LogFlowFunc(("[Client %RU32] Already is in pending mode\n", mID));
-
-            /*
-             * Signal that we don't and can't return yet.
-             */
-            return VINF_HGCM_ASYNC_EXECUTE;
-        }
-
-        if (mHostCmdList.empty())
-        {
-            AssertMsg(mIsPending == 0, ("Client ID=%RU32 already is pending but tried to receive a new host command\n", mID));
-
-            mPendingCon.mHandle   = pConnection->mHandle;
-            mPendingCon.mNumParms = pConnection->mNumParms;
-            mPendingCon.mParms    = pConnection->mParms;
-
-            mIsPending = GUEST_MSG_WAIT;
-
-            LogFlowFunc(("[Client %RU32] Is now in pending mode\n", mID));
-
-            /*
-             * Signal that we don't and can't return yet.
-             */
-            return VINF_HGCM_ASYNC_EXECUTE;
-        }
-
-        /*
-         * Signal that there already is a connection pending.
-         * Shouldn't happen in daily usage.
-         */
-        AssertMsgFailed(("Client already has a connection pending\n"));
-        return VERR_SIGNAL_PENDING;
-    }
-
-    /**
      * @note Only used by GUEST_MSG_WAIT scenarios.
      */
     int OldRunCurrent(const ClientConnection *pConnection)
@@ -797,9 +761,6 @@ typedef struct ClientState
         /*
          * Return first host command.
          */
-        AssertMsgReturn(mIsPending == 0,
-                        ("Client ID=%RU32 still is in pending mode; can't use another connection\n", mID), VERR_INVALID_PARAMETER);
-
         HostCmdListIter curCmd = mHostCmdList.begin();
         Assert(curCmd != mHostCmdList.end());
         HostCommand *pHostCmd = *curCmd;
@@ -1256,7 +1217,8 @@ int GstCtrlService::clientMsgPeek(uint32_t idClient, VBOXHGCMCALLHANDLE hCall, u
         HostCommand *pFirstCmd = *itFirstCmd;
         paParms[0].u.uint32 = pFirstCmd->mMsgType;
         paParms[1].u.uint32 = pFirstCmd->mParmCount;
-        for (uint32_t i = pFirstCmd->mParmCount; i >= 2; i--)
+        uint32_t i = RT_MIN(cParms, pFirstCmd->mParmCount + 2);
+        while (i-- > 2)
             switch (pFirstCmd->mpParms[i - 2].type)
             {
                 case VBOX_HGCM_SVC_PARM_32BIT: paParms[i].u.uint32 = ~(uint32_t)sizeof(uint32_t); break;
