@@ -1546,7 +1546,6 @@ static void vmsvga3dInfoContextWorkerOne(PCDBGFINFOHLP pHlp, PVMSVGA3DCONTEXT pC
 
 #else
     pHlp->pfnPrintf(pHlp, "window:                  %p\n", pContext->window);
-    pHlp->pfnPrintf(pHlp, "fMapped:                 %RTbool\n", pContext->fMapped);
     if (pContext->window)
         vmsvga3dInfoHostWindow(pHlp, (uintptr_t)pContext->window);
     pHlp->pfnPrintf(pHlp, "glxContext:              %p\n", pContext->glxContext);

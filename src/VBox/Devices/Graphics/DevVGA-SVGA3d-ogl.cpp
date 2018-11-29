@@ -3003,13 +3003,6 @@ int vmsvga3dContextDefineOgl(PVGASTATE pThis, uint32_t cid, uint32_t fFlags)
                                       pShareContext, pContext->fOtherProfile);
 
 #else
-    /** @todo No overlay like on Windows. */
-    VMSVGASCREENOBJECT *pScreen = vmsvgaGetScreenObject(pThis, 0);
-    uint32_t const uWidth  = pScreen ? pScreen->cWidth : -1;
-    uint32_t const uHeight = pScreen ? pScreen->cHeight: -1;
-
-    Window hostWindow = (Window)pThis->svga.u64HostWindowId;
-
     if (pState->display == NULL)
     {
         /* get an X display and make sure we have glX 1.3 */
@@ -3026,6 +3019,8 @@ int vmsvga3dContextDefineOgl(PVGASTATE pThis, uint32_t cid, uint32_t fFlags)
             return rc;
         }
     }
+
+    /* Create a small 4x4 window required for GL context. */
     int attrib[] =
     {
         GLX_RGBA,
@@ -3041,20 +3036,19 @@ int vmsvga3dContextDefineOgl(PVGASTATE pThis, uint32_t cid, uint32_t fFlags)
     swa.colormap = XCreateColormap(pState->display, XDefaultRootWindow(pState->display), vi->visual, AllocNone);
     swa.border_pixel = 0;
     swa.background_pixel = 0;
-    swa.event_mask = StructureNotifyMask | ExposureMask;
+    swa.event_mask = StructureNotifyMask;
     unsigned long flags = CWBorderPixel | CWBackPixel | CWColormap | CWEventMask;
-    pContext->window = XCreateWindow(pState->display, hostWindow,//XDefaultRootWindow(pState->display),//hostWindow,
-                                     0, 0, uWidth, uHeight,
+    pContext->window = XCreateWindow(pState->display, XDefaultRootWindow(pState->display),
+                                     0, 0, 4, 4,
                                      0, vi->depth, InputOutput,
                                      vi->visual, flags, &swa);
-    AssertMsgReturn(pContext->window, ("XCreateWindow failed"), VERR_INTERNAL_ERROR);
-    //uint32_t cardinal_alpha = (uint32_t) (0.5 * (uint32_t)-1); - unused
+    AssertLogRelMsgReturn(pContext->window, ("XCreateWindow failed"), VERR_INTERNAL_ERROR);
 
-    /* the window is hidden by default and only mapped when CommandPresent is executed on it */
+    /* The window is hidden by default and never mapped, because we only render offscreen and never present to it. */
 
     GLXContext shareContext = pSharedCtx ? pSharedCtx->glxContext : NULL;
     pContext->glxContext = glXCreateContext(pState->display, vi, shareContext, GL_TRUE);
-    AssertMsgReturn(pContext->glxContext, ("glXCreateContext failed"), VERR_INTERNAL_ERROR);
+    AssertLogRelMsgReturn(pContext->glxContext, ("glXCreateContext failed"), VERR_INTERNAL_ERROR);
 #endif
 
     VMSVGA3D_SET_CURRENT_CONTEXT(pState, pContext);
@@ -4772,7 +4766,7 @@ int vmsvga3dSetTextureState(PVGASTATE pThis, uint32_t cid, uint32_t cTextureStat
 
         /* Record the texture state for vm state saving. */
         if (    pTextureState[i].stage < RT_ELEMENTS(pContext->state.aTextureStates)
-            &&  pTextureState[i].name < RT_ELEMENTS(pContext->state.aTextureStates[0]))
+            &&  (unsigned)pTextureState[i].name < RT_ELEMENTS(pContext->state.aTextureStates[0]))
         {
             pContext->state.aTextureStates[pTextureState[i].stage][pTextureState[i].name] = pTextureState[i];
         }

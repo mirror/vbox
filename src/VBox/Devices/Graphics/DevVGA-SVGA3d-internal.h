@@ -781,8 +781,6 @@ typedef struct VMSVGA3DCONTEXT
     GLXContext              glxContext;
     /** Device context window handle */
     Window                  window;
-    /** flag whether the window is mapped (=visible) */
-    bool                    fMapped;
 #endif
 
 #ifdef VMSVGA3D_OPENGL
@@ -873,7 +871,6 @@ static SSMFIELD const g_aVMSVGA3DCONTEXTFields[] =
 # else
     SSMFIELD_ENTRY_IGNORE(          VMSVGA3DCONTEXT, glxContext),
     SSMFIELD_ENTRY_IGNORE(          VMSVGA3DCONTEXT, window),
-    SSMFIELD_ENTRY_IGNORE(          VMSVGA3DCONTEXT, fMapped),
 # endif
 
 #ifdef VMSVGA3D_OPENGL
