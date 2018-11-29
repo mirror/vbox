@@ -141,6 +141,7 @@ template<> SHARED_LIBRARY_STUFF bool canConvert<KUSBDeviceFilterAction>();
 template<> SHARED_LIBRARY_STUFF bool canConvert<KAudioDriverType>();
 template<> SHARED_LIBRARY_STUFF bool canConvert<KAudioControllerType>();
 template<> SHARED_LIBRARY_STUFF bool canConvert<KAuthType>();
+template<> SHARED_LIBRARY_STUFF bool canConvert<KGraphicsControllerType>();
 template<> SHARED_LIBRARY_STUFF bool canConvert<KStorageBus>();
 template<> SHARED_LIBRARY_STUFF bool canConvert<KStorageControllerType>();
 template<> SHARED_LIBRARY_STUFF bool canConvert<KChipsetType>();
@@ -286,6 +287,8 @@ template<> SHARED_LIBRARY_STUFF QString toString(const KAudioControllerType &typ
 template<> SHARED_LIBRARY_STUFF KAudioControllerType fromString<KAudioControllerType>(const QString &strType);
 template<> SHARED_LIBRARY_STUFF QString toString(const KAuthType &type);
 template<> SHARED_LIBRARY_STUFF KAuthType fromString<KAuthType>(const QString &strType);
+template<> SHARED_LIBRARY_STUFF QString toString(const KGraphicsControllerType &type);
+template<> SHARED_LIBRARY_STUFF KGraphicsControllerType fromString<KGraphicsControllerType>(const QString &strType);
 template<> SHARED_LIBRARY_STUFF QString toString(const KStorageBus &bus);
 template<> SHARED_LIBRARY_STUFF QString toString(const KStorageControllerType &type);
 template<> SHARED_LIBRARY_STUFF KStorageControllerType fromString<KStorageControllerType>(const QString &strType);
@@ -296,4 +299,3 @@ template<> SHARED_LIBRARY_STUFF KNATProtocol fromInternalString<KNATProtocol>(co
 
 
 #endif /* !___UIConverterBackend_h___ */
-

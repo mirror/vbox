@@ -52,6 +52,7 @@ struct UIDataSettingsMachineDisplay
 #ifdef VBOX_WITH_VIDEOHWACCEL
         , m_f2dAccelerationEnabled(false)
 #endif /* VBOX_WITH_VIDEOHWACCEL */
+        , m_graphicsControllerType(KGraphicsControllerType_Null)
         , m_fRemoteDisplayServerSupported(false)
         , m_fRemoteDisplayServerEnabled(false)
         , m_strRemoteDisplayPort(QString())
@@ -79,6 +80,7 @@ struct UIDataSettingsMachineDisplay
 #ifdef VBOX_WITH_VIDEOHWACCEL
                && (m_f2dAccelerationEnabled == other.m_f2dAccelerationEnabled)
 #endif /* VBOX_WITH_VIDEOHWACCEL */
+               && (m_graphicsControllerType == other.m_graphicsControllerType)
                && (m_fRemoteDisplayServerSupported == other.m_fRemoteDisplayServerSupported)
                && (m_fRemoteDisplayServerEnabled == other.m_fRemoteDisplayServerEnabled)
                && (m_strRemoteDisplayPort == other.m_strRemoteDisplayPort)
@@ -251,7 +253,8 @@ struct UIDataSettingsMachineDisplay
     /** Holds whether the 2D video acceleration is enabled. */
     bool    m_f2dAccelerationEnabled;
 #endif /* VBOX_WITH_VIDEOHWACCEL */
-
+    /** Holds the graphics controller type of the virtual machine. */
+    KGraphicsControllerType m_graphicsControllerType;
     /** Holds whether the remote display server is supported. */
     bool       m_fRemoteDisplayServerSupported;
     /** Holds whether the remote display server is enabled. */
@@ -367,7 +370,7 @@ void UIMachineSettingsDisplay::loadToCacheFrom(QVariant &data)
 #ifdef VBOX_WITH_VIDEOHWACCEL
     oldDisplayData.m_f2dAccelerationEnabled = m_machine.GetAccelerate2DVideoEnabled();
 #endif
-
+    oldDisplayData.m_graphicsControllerType = m_machine.GetGraphicsControllerType();
     /* Check whether remote display server is valid: */
     const CVRDEServer &vrdeServer = m_machine.GetVRDEServer();
     oldDisplayData.m_fRemoteDisplayServerSupported = !vrdeServer.isNull();
@@ -431,6 +434,7 @@ void UIMachineSettingsDisplay::getFromCache()
 #ifdef VBOX_WITH_VIDEOHWACCEL
     m_pCheckbox2DVideo->setChecked(oldDisplayData.m_f2dAccelerationEnabled);
 #endif
+    m_pComboGraphicsControllerType->setCurrentIndex((int)oldDisplayData.m_graphicsControllerType);
     // Should be the last one for this tab:
     m_pEditorVideoMemorySize->setValue(oldDisplayData.m_iCurrentVRAM);
 
@@ -489,7 +493,7 @@ void UIMachineSettingsDisplay::putToCache()
 #ifdef VBOX_WITH_VIDEOHWACCEL
     newDisplayData.m_f2dAccelerationEnabled = m_pCheckbox2DVideo->isChecked();
 #endif
-
+    newDisplayData.m_graphicsControllerType = (KGraphicsControllerType) m_pComboGraphicsControllerType->currentIndex();
     /* If remote display server is supported: */
     newDisplayData.m_fRemoteDisplayServerSupported = m_pCache->base().m_fRemoteDisplayServerSupported;
     if (newDisplayData.m_fRemoteDisplayServerSupported)
@@ -679,10 +683,11 @@ void UIMachineSettingsDisplay::setOrderAfter(QWidget *pWidget)
     setTabOrder(m_pSliderVideoScreenCount, m_pEditorVideoScreenCount);
 #ifdef VBOX_WITH_VIDEOHWACCEL
     setTabOrder(m_pCheckbox3D, m_pCheckbox2DVideo);
-    setTabOrder(m_pCheckbox2DVideo, m_pCheckboxRemoteDisplay);
+    setTabOrder(m_pCheckbox2DVideo, m_pComboGraphicsControllerType);
 #else /* VBOX_WITH_VIDEOHWACCEL */
-    setTabOrder(m_pCheckbox3D, m_pCheckboxRemoteDisplay);
+    setTabOrder(m_pCheckbox3D, m_pComboGraphicsControllerType);
 #endif /* !VBOX_WITH_VIDEOHWACCEL */
+    setTabOrder(m_pComboGraphicsControllerType, m_pCheckboxRemoteDisplay);
 
     /* Remote Display tab-order: */
     setTabOrder(m_pCheckboxRemoteDisplay, m_pEditorRemoteDisplayPort);
@@ -759,6 +764,7 @@ void UIMachineSettingsDisplay::polishPage()
 #else /* !VBOX_WITH_VIDEOHWACCEL */
     m_pCheckbox2DVideo->hide();
 #endif /* !VBOX_WITH_VIDEOHWACCEL */
+    m_pComboGraphicsControllerType->setEnabled(isMachineOffline());
 
     /* Polish 'Remote Display' availability: */
     m_pTabWidget->setTabEnabled(1, oldDisplayData.m_fRemoteDisplayServerSupported);
@@ -1043,6 +1049,13 @@ void UIMachineSettingsDisplay::prepareTabRemoteDisplay()
             m_pComboRemoteDisplayAuthMethod->insertItem(0, ""); /* KAuthType_Null */
             m_pComboRemoteDisplayAuthMethod->insertItem(1, ""); /* KAuthType_External */
             m_pComboRemoteDisplayAuthMethod->insertItem(2, ""); /* KAuthType_Guest */
+        }
+        AssertPtrReturnVoid(m_pComboGraphicsControllerType);
+        {
+            m_pComboGraphicsControllerType->insertItem((int)KGraphicsControllerType_Null, gpConverter->toString(KGraphicsControllerType_Null));
+            m_pComboGraphicsControllerType->insertItem((int)KGraphicsControllerType_VBoxVGA, gpConverter->toString(KGraphicsControllerType_VBoxVGA));
+            m_pComboGraphicsControllerType->insertItem((int)KGraphicsControllerType_VMSVGA, gpConverter->toString(KGraphicsControllerType_VMSVGA));
+            m_pComboGraphicsControllerType->insertItem((int)KGraphicsControllerType_VBoxSVGA, gpConverter->toString(KGraphicsControllerType_VBoxSVGA));
         }
     }
 }
@@ -1412,6 +1425,12 @@ bool UIMachineSettingsDisplay::saveScreenData()
             fSuccess = m_machine.isOk();
         }
 #endif
+        /* Save the Graphics Controller Type: */
+        if (fSuccess && isMachineOffline() && newDisplayData.m_graphicsControllerType != oldDisplayData.m_graphicsControllerType)
+        {
+            m_machine.SetGraphicsControllerType(newDisplayData.m_graphicsControllerType);
+            fSuccess = m_machine.isOk();
+        }
 
         /* Get machine ID for further activities: */
         QUuid uMachineId;
