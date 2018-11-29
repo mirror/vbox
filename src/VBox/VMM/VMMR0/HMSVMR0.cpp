@@ -400,6 +400,7 @@ static FNSVMEXITHANDLER hmR0SvmExitXcptMF;
 static FNSVMEXITHANDLER hmR0SvmExitXcptDB;
 static FNSVMEXITHANDLER hmR0SvmExitXcptAC;
 static FNSVMEXITHANDLER hmR0SvmExitXcptBP;
+static FNSVMEXITHANDLER hmR0SvmExitXcptGP;
 #if defined(HMSVM_ALWAYS_TRAP_ALL_XCPTS) || defined(VBOX_WITH_NESTED_HWVIRT_SVM)
 static FNSVMEXITHANDLER hmR0SvmExitXcptGeneric;
 #endif
@@ -982,6 +983,10 @@ VMMR0DECL(int) SVMR0SetupVM(PVM pVM)
     if (pVCpu->hm.s.fGIMTrapXcptUD)
         pVmcbCtrl->u32InterceptXcpt |= RT_BIT(X86_XCPT_UD);
 
+    /* The mesa 3d driver hack needs #GP. */
+    if (pVCpu->hm.s.fTrapXcptGpForLovelyMesaDrv)
+        pVmcbCtrl->u32InterceptXcpt |= RT_BIT(X86_XCPT_GP);
+
     /* Set up unconditional intercepts and conditions. */
     pVmcbCtrl->u64InterceptCtrl = HMSVM_MANDATORY_GUEST_CTRL_INTERCEPTS
                                 | SVM_CTRL_INTERCEPT_VMMCALL;
@@ -1426,6 +1431,7 @@ DECLINLINE(void) hmR0SvmClearXcptIntercept(PVMCPU pVCpu, PSVMVMCB pVmcb, uint8_t
 {
     Assert(uXcpt != X86_XCPT_DB);
     Assert(uXcpt != X86_XCPT_AC);
+    Assert(uXcpt != X86_XCPT_GP);
 #ifndef HMSVM_ALWAYS_TRAP_ALL_XCPTS
     if (pVmcb->ctrl.u32InterceptXcpt & RT_BIT(uXcpt))
     {
@@ -2231,18 +2237,23 @@ static void hmR0SvmMergeVmcbCtrlsNested(PVMCPU pVCpu)
     /*
      * Merge the guest's exception intercepts into the nested-guest VMCB.
      *
-     * - \#UD: Exclude these as the outer guest's GIM hypercalls are not applicable
+     * - #UD: Exclude these as the outer guest's GIM hypercalls are not applicable
      * while executing the nested-guest.
      *
-     * - \#BP: Exclude breakpoints set by the VM debugger for the outer guest. This can
+     * - #BP: Exclude breakpoints set by the VM debugger for the outer guest. This can
      * be tweaked later depending on how we wish to implement breakpoints.
+     *
+     * - #GP: Exclude these as it's the inner VMMs problem to get vmsvga 3d drivers
+     *        loaded into their guests, not ours.
      *
      * Warning!! This ASSUMES we only intercept \#UD for hypercall purposes and \#BP
      * for VM debugger breakpoints, see hmR0SvmExportGuestXcptIntercepts().
      */
 #ifndef HMSVM_ALWAYS_TRAP_ALL_XCPTS
-    pVmcbNstGstCtrl->u32InterceptXcpt  |= (pVmcb->ctrl.u32InterceptXcpt & ~(  RT_BIT(X86_XCPT_UD)
-                                                                            | RT_BIT(X86_XCPT_BP)));
+    pVmcbNstGstCtrl->u32InterceptXcpt  |= pVmcb->ctrl.u32InterceptXcpt
+                                        & ~(  RT_BIT(X86_XCPT_UD)
+                                            | RT_BIT(X86_XCPT_BP)
+                                            | (pVCpu->hm.s.fTrapXcptGpForLovelyMesaDrv ? RT_BIT(X86_XCPT_GP) : 0));
 #else
     pVmcbNstGstCtrl->u32InterceptXcpt  |= pVmcb->ctrl.u32InterceptXcpt;
 #endif
@@ -5689,6 +5700,7 @@ static int hmR0SvmHandleExit(PVMCPU pVCpu, PSVMTRANSIENT pSvmTransient)
         case SVM_EXIT_XCPT_DB:      VMEXIT_CALL_RET(0, hmR0SvmExitXcptDB(pVCpu, pSvmTransient));
         case SVM_EXIT_XCPT_AC:      VMEXIT_CALL_RET(0, hmR0SvmExitXcptAC(pVCpu, pSvmTransient));
         case SVM_EXIT_XCPT_BP:      VMEXIT_CALL_RET(0, hmR0SvmExitXcptBP(pVCpu, pSvmTransient));
+        case SVM_EXIT_XCPT_GP:      VMEXIT_CALL_RET(0, hmR0SvmExitXcptGP(pVCpu, pSvmTransient));
         case SVM_EXIT_XSETBV:       VMEXIT_CALL_RET(0, hmR0SvmExitXsetbv(pVCpu, pSvmTransient));
         case SVM_EXIT_FERR_FREEZE:  VMEXIT_CALL_RET(0, hmR0SvmExitFerrFreeze(pVCpu, pSvmTransient));
 
@@ -5757,7 +5769,7 @@ static int hmR0SvmHandleExit(PVMCPU pVCpu, PSVMTRANSIENT pSvmTransient)
                 case SVM_EXIT_XCPT_TS:
                 case SVM_EXIT_XCPT_NP:
                 case SVM_EXIT_XCPT_SS:
-                case SVM_EXIT_XCPT_GP:
+                /*   SVM_EXIT_XCPT_GP: */       /* Handled above. */
                 /*   SVM_EXIT_XCPT_PF: */
                 case SVM_EXIT_XCPT_15:          /* Reserved. */
                 /*   SVM_EXIT_XCPT_MF: */       /* Handled above. */
@@ -7794,6 +7806,110 @@ HMSVM_EXIT_DECL hmR0SvmExitXcptBP(PVMCPU pVCpu, PSVMTRANSIENT pSvmTransient)
 
     Assert(rc == VINF_SUCCESS || rc == VINF_EM_RAW_GUEST_TRAP || rc == VINF_EM_DBG_BREAKPOINT);
     return rc;
+}
+
+
+/**
+ * Hacks its way around the lovely mesa driver's backdoor accesses.
+ *
+ * @sa hmR0VmxHandleMesaDrvGp
+ */
+static int hmR0SvmHandleMesaDrvGp(PVMCPU pVCpu, PSVMTRANSIENT pSvmTransient, PCPUMCTX pCtx, PCSVMVMCB pVmcb)
+{
+    Log(("hmR0SvmHandleMesaDrvGp: at %04x:%08RX64 rcx=%RX64 rbx=%RX64\n",
+         pVmcb->guest.CS.u16Sel, pVmcb->guest.u64RIP, pCtx->rcx, pCtx->rbx));
+    RT_NOREF(pCtx, pSvmTransient, pVmcb);
+
+    /* For now we'll just skip the instruction. */
+    hmR0SvmAdvanceRip(pVCpu, 1);
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Checks if the \#GP'ing instruction is the mesa driver doing it's lovely
+ * backdoor logging w/o checking what it is running inside.
+ *
+ * This recognizes an "IN EAX,DX" instruction executed in flat ring-3, with the
+ * backdoor port and magic numbers loaded in registers.
+ *
+ * @returns true if it is, false if it isn't.
+ * @sa      hmR0VmxIsMesaDrvGp
+ */
+DECLINLINE(bool) hmR0SvmIsMesaDrvGp(PVMCPU pVCpu, PSVMTRANSIENT pSvmTransient, PCPUMCTX pCtx, PCSVMVMCB pVmcb)
+{
+    /* Check magic and port. */
+    Assert(!(pCtx->fExtrn & (CPUMCTX_EXTRN_RDX | CPUMCTX_EXTRN_RCX)));
+    /*Log(("hmR0SvmIsMesaDrvGp: rax=%RX64 rdx=%RX64\n", pCtx->fExtrn & CPUMCTX_EXTRN_RAX ? pCtx->rax : pVmcb->guest.u64RAX, pCtx->rdx));*/
+    if (pCtx->dx != UINT32_C(0x5658))
+        return false;
+    if ((pCtx->fExtrn & CPUMCTX_EXTRN_RAX ? pCtx->rax : pVmcb->guest.u64RAX) != UINT32_C(0x564d5868))
+        return false;
+
+    /* Check that it is #GP(0). */
+    if (pSvmTransient->u64ExitCode != 0)
+        return false;
+
+    /* Flat ring-3 CS. */
+    /*Log(("hmR0SvmIsMesaDrvGp: u8CPL=%d base=%Rx64\n", pVmcb->guest.u8CPL, pCtx->fExtrn & CPUMCTX_EXTRN_CS ? pVmcb->guest.CS.u64Base : pCtx->cs.Sel));*/
+    if (pVmcb->guest.u8CPL != 3)
+        return false;
+    if ((pCtx->fExtrn & CPUMCTX_EXTRN_CS ? pVmcb->guest.CS.u64Base : pCtx->cs.Sel) != 0)
+        return false;
+
+    /* 0xed:  IN eAX,dx */
+    uint64_t const uRip = pCtx->fExtrn & CPUMCTX_EXTRN_RIP ? pCtx->rip : pVmcb->guest.u64RIP;
+    uint8_t abInstr[1];
+    if (   hmR0SvmSupportsNextRipSave(pVCpu)
+        && pVmcb->ctrl.u64NextRIP - uRip != sizeof(abInstr))
+        return false;
+    if (pVmcb->ctrl.cbInstrFetched >= 1)
+    {
+        /*Log(("hmR0SvmIsMesaDrvGp: %#x\n", pVmcb->ctrl.abInstr));*/
+        if (pVmcb->ctrl.abInstr[0] != 0xed)
+            return false;
+    }
+    else
+    {
+        int rc = PGMPhysSimpleReadGCPtr(pVCpu, abInstr, uRip, sizeof(abInstr));
+        /*Log(("hmR0SvmIsMesaDrvGp: PGMPhysSimpleReadGCPtr -> %Rrc %#x\n", rc, abInstr[0]));*/
+        if (RT_FAILURE(rc))
+            return false;
+        if (abInstr[0] != 0xed)
+            return false;
+    }
+
+    return true;
+}
+
+
+/**
+ * \#VMEXIT handler for general protection faults (SVM_EXIT_XCPT_BP).
+ * Conditional \#VMEXIT.
+ */
+HMSVM_EXIT_DECL hmR0SvmExitXcptGP(PVMCPU pVCpu, PSVMTRANSIENT pSvmTransient)
+{
+    HMSVM_VALIDATE_EXIT_HANDLER_PARAMS(pVCpu, pSvmTransient);
+    HMSVM_CHECK_EXIT_DUE_TO_EVENT_DELIVERY(pVCpu, pSvmTransient);
+
+    PCSVMVMCB pVmcb = hmR0SvmGetCurrentVmcb(pVCpu);
+    Assert(pSvmTransient->u64ExitCode == pVmcb->ctrl.u64ExitCode);
+
+    PCPUMCTX pCtx = &pVCpu->cpum.GstCtx;
+    if (   !pVCpu->hm.s.fTrapXcptGpForLovelyMesaDrv
+        || hmR0SvmIsMesaDrvGp(pVCpu, pSvmTransient, pCtx, pVmcb))
+    {
+        SVMEVENT Event;
+        Event.u                  = 0;
+        Event.n.u1Valid          = 1;
+        Event.n.u3Type           = SVM_EVENT_EXCEPTION;
+        Event.n.u8Vector         = X86_XCPT_GP;
+        Event.n.u1ErrorCodeValid = 1;
+        Event.n.u32ErrorCode     = (uint32_t)pSvmTransient->u64ExitCode;
+        hmR0SvmSetPendingEvent(pVCpu, &Event, 0 /* GCPtrFaultAddress */);
+        return VINF_SUCCESS;
+    }
+    return hmR0SvmHandleMesaDrvGp(pVCpu, pSvmTransient, pCtx, pVmcb);
 }
 
 
