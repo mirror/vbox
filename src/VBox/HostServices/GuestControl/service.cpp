@@ -1100,6 +1100,7 @@ GstCtrlService::svcDisconnect(void *pvService, uint32_t idClient, void *pvClient
         GstCtrlPreparedSession *pCur, *pNext;
         RTListForEachSafe(&pThis->m_PreparedSessions, pCur, pNext, GstCtrlPreparedSession, ListEntry)
         {
+            RTListNodeRemove(&pCur->ListEntry);
             RTMemFree(pCur);
         }
         pThis->m_cPreparedSessions = 0;
@@ -1205,6 +1206,7 @@ int GstCtrlService::clientMakeMeMaster(uint32_t idClient, VBOXHGCMCALLHANDLE hCa
         m_idMasterClient = idClient;
         m_fLegacyMode    = false;
         rClientState.m_fIsMaster = true;
+        Log(("[Client %RU32] is master.\n", idClient));
     }
     else
         LogFunc(("pfnCallComplete -> %Rrc\n", rc));
@@ -1469,7 +1471,7 @@ int GstCtrlService::clientMsgSkip(uint32_t idClient, VBOXHGCMCALLHANDLE hCall, u
      */
     if (!rClientState.mHostCmdList.empty())
     {
-        int rc = mpHelpers->pfnCallComplete(hCall, VERR_NOT_FOUND);
+        int rc = mpHelpers->pfnCallComplete(hCall, VINF_SUCCESS);
         if (RT_SUCCESS(rc))
         {
             /*
@@ -1566,7 +1568,7 @@ int GstCtrlService::clientSessionPrepare(uint32_t idClient, VBOXHGCMCALLHANDLE h
     /*
      * Try complete the command.
      */
-    int rc = mpHelpers->pfnCallComplete(hCall, VERR_NOT_FOUND);
+    int rc = mpHelpers->pfnCallComplete(hCall, VINF_SUCCESS);
     if (RT_SUCCESS(rc))
         LogFlow(("Prepared %u with a %#x byte key (%u pending).\n", idSession, cbKey, m_cPreparedSessions));
     else
@@ -1617,6 +1619,7 @@ int GstCtrlService::clientSessionCancelPrepared(uint32_t idClient, uint32_t cPar
         GstCtrlPreparedSession *pCur, *pNext;
         RTListForEachSafe(&m_PreparedSessions, pCur, pNext, GstCtrlPreparedSession, ListEntry)
         {
+            RTListNodeRemove(&pCur->ListEntry);
             RTMemFree(pCur);
             rc = VINF_SUCCESS;
         }
@@ -1629,6 +1632,7 @@ int GstCtrlService::clientSessionCancelPrepared(uint32_t idClient, uint32_t cPar
         {
             if (pCur->idSession == idSession)
             {
+                RTListNodeRemove(&pCur->ListEntry);
                 RTMemFree(pCur);
                 m_cPreparedSessions -= 1;
                 rc = VINF_SUCCESS;
@@ -1695,13 +1699,15 @@ int GstCtrlService::clientSessionAccept(uint32_t idClient, VBOXHGCMCALLHANDLE hC
                 /*
                  * We've got a match. Try complete the request and
                  */
-                int rc = mpHelpers->pfnCallComplete(hCall, VERR_NOT_FOUND);
+                int rc = mpHelpers->pfnCallComplete(hCall, VINF_SUCCESS);
                 if (RT_SUCCESS(rc))
                 {
                     rClientState.m_idSession = idSession;
 
+                    RTListNodeRemove(&pCur->ListEntry);
                     RTMemFree(pCur);
                     m_cPreparedSessions -= 1;
+                    Log(("[Client %RU32] accepted session id %u.\n", idClient, idSession));
                 }
                 else
                     LogFunc(("pfnCallComplete -> %Rrc\n", rc));
@@ -2017,7 +2023,7 @@ GstCtrlService::svcCall(void *pvService, VBOXHGCMCALLHANDLE hCall, uint32_t idCl
                         uint32_t idFunction, uint32_t cParms, VBOXHGCMSVCPARM paParms[], uint64_t tsArrival)
 {
     LogFlowFunc(("[Client %RU32] idFunction=%RU32 (%s), cParms=%RU32, paParms=0x%p\n",
-                 idClient, idFunction, GstCtrlHostFnName((eHostFn)idFunction), cParms, paParms));
+                 idClient, idFunction, GstCtrlGuestFnName((eGuestFn)idFunction), cParms, paParms));
     RT_NOREF(tsArrival, pvClient);
 
     AssertLogRelReturnVoid(VALID_PTR(pvService));
