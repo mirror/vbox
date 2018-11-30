@@ -36,15 +36,13 @@ are ordered as follows:
     <itemizedlist>
 
       <listitem>
-        <para>Dummy entry</para>
+        <para>OCI integration: exporting a VM is now possible from the command line
+           interface (VBoxManage)</para>
       </listitem>
 
       <listitem>
-        <para>OCI integration: exporting a VM is possible from command line interface (VBoxManage)</para>
-      </listitem>
-
-      <listitem>
-        <para>OCI integration: all virtualized shapes are supported, f.e. VM.Standard2.*</para>
+        <para>OCI integration: all virtualized shapes are supported, e.g.
+           VM.Standard2.*</para>
       </listitem>
 
 
@@ -57,6 +55,18 @@ are ordered as follows:
       <listitem>
         <para>Serial: allow changing the serial port attachment while the
           VM is running (bug #6115)</para>
+      </listitem>
+
+      <listitem>
+        <para>Linux hosts: support Linux 4.20 (thank you Larry Finger)</para>
+      </listitem>
+
+      <listitem>
+        <para>Linux guests: support Linux 4.20 (thank you Larry Finger)</para>
+      </listitem>
+
+      <listitem>
+        <para>Linux guests: support VMSVGA in the Linux and X11 Additions</para>
       </listitem>
 
     </itemizedlist>
