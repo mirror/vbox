@@ -92,6 +92,8 @@
 #define VERR_RAW_MODE_NOT_SUPPORTED         (-1023)
 /** Essential fields in the shared VM structure doesn't match the global one. */
 #define VERR_INCONSISTENT_VM_HANDLE         (-1024)
+/** The VM has been restored. */
+#define VERR_VM_RESTORED                    (-1025)
 /** @} */
 
 

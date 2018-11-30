@@ -679,11 +679,12 @@ static DECLCALLBACK(int) iface_hgcmLoad(PPDMDRVINS pDrvIns, PSSMHANDLE pSSM, uin
     RT_NOREF(pDrvIns);
     LogFlowFunc(("Enter\n"));
 
-    if (uVersion != HGCM_SSM_VERSION)
+    if (   uVersion != HGCM_SAVED_STATE_VERSION
+        && uVersion != HGCM_SAVED_STATE_VERSION_V2)
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
     Assert(uPass == SSM_PASS_FINAL); NOREF(uPass);
 
-    return HGCMHostLoadState(pSSM);
+    return HGCMHostLoadState(pSSM, uVersion);
 }
 
 int VMMDev::hgcmLoadService(const char *pszServiceLibrary, const char *pszServiceName)
@@ -691,8 +692,16 @@ int VMMDev::hgcmLoadService(const char *pszServiceLibrary, const char *pszServic
     if (!hgcmIsActive())
         return VERR_INVALID_STATE;
 
+    /** @todo Construct all the services in the VMMDev::drvConstruct()!! */
+    Assert(   (mpDrv && mpDrv->pHGCMPort)
+           || !strcmp(pszServiceLibrary, "VBoxHostChannel")
+           || !strcmp(pszServiceLibrary, "VBoxSharedClipboard")
+           || !strcmp(pszServiceLibrary, "VBoxDragAndDropSvc")
+           || !strcmp(pszServiceLibrary, "VBoxGuestPropSvc")
+           || !strcmp(pszServiceLibrary, "VBoxSharedCrOpenGL")
+           );
     Console::SafeVMPtrQuiet ptrVM(mParent);
-    return HGCMHostLoad(pszServiceLibrary, pszServiceName, ptrVM.rawUVM());
+    return HGCMHostLoad(pszServiceLibrary, pszServiceName, ptrVM.rawUVM(), mpDrv ? mpDrv->pHGCMPort : NULL);
 }
 
 int VMMDev::hgcmHostCall(const char *pszServiceName, uint32_t u32Function,
@@ -863,8 +872,10 @@ DECLCALLBACK(int) VMMDev::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle,
     pThis->pVMMDev->mpDrv = pThis;
 
 #ifdef VBOX_WITH_HGCM
-    rc = pThis->pVMMDev->hgcmLoadService(VBOXSHAREDFOLDERS_DLL,
-                                         "VBoxSharedFolders");
+    /*
+     * Load & configure the shared folders service.
+     */
+    rc = pThis->pVMMDev->hgcmLoadService(VBOXSHAREDFOLDERS_DLL, "VBoxSharedFolders");
     pThis->pVMMDev->fSharedFolderActive = RT_SUCCESS(rc);
     if (RT_SUCCESS(rc))
     {
@@ -891,7 +902,32 @@ DECLCALLBACK(int) VMMDev::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle,
     else
         LogRel(("Failed to load Shared Folders service %Rrc\n", rc));
 
-    rc = PDMDrvHlpSSMRegisterEx(pDrvIns, HGCM_SSM_VERSION, 4096 /* bad guess */,
+
+    /*
+     * Load and configure guest control service.
+     */
+# ifdef VBOX_WITH_GUEST_CONTROL
+    rc = pThis->pVMMDev->hgcmLoadService("VBoxGuestControlSvc", "VBoxGuestControlSvc");
+    if (RT_SUCCESS(rc))
+    {
+        HGCMSVCEXTHANDLE hDummy;
+        rc = HGCMHostRegisterServiceExtension(&hDummy, "VBoxGuestControlSvc",
+                                              &Guest::i_notifyCtrlDispatcher,
+                                              pThis->pVMMDev->mParent->i_getGuest());
+        if (RT_SUCCESS(rc))
+            LogRel(("Guest Control service loaded\n"));
+        else
+            LogRel(("Warning: Cannot register VBoxGuestControlSvc extension! rc=%Rrc\n", rc));
+    }
+    else
+        LogRel(("Warning!: Failed to load the Guest Control Service! %Rrc\n", rc));
+# endif /* VBOX_WITH_GUEST_CONTROL */
+
+
+    /*
+     * The HGCM saved state.
+     */
+    rc = PDMDrvHlpSSMRegisterEx(pDrvIns, HGCM_SAVED_STATE_VERSION, 4096 /* bad guess */,
                                 NULL, NULL, NULL,
                                 NULL, iface_hgcmSave, NULL,
                                 NULL, iface_hgcmLoad, NULL);

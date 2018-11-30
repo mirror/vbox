@@ -1578,7 +1578,7 @@ static RTEXITCODE vgsvcGstCtrlSessionSpawnWorker(PVBOXSERVICECTRLSESSION pSessio
                 {
                     VGSvcVerbose(3, "Waiting for host msg ...\n");
                     uint32_t uMsg = 0;
-                    rc = VbglR3GuestCtrlMsgPeekWait(idClient, &uMsg, &CtxHost.uNumParms);
+                    rc = VbglR3GuestCtrlMsgPeekWait(idClient, &uMsg, &CtxHost.uNumParms, NULL);
                     if (RT_SUCCESS(rc))
                     {
                         VGSvcVerbose(4, "Msg=%RU32 (%RU32 parms) retrieved (%Rrc)\n", uMsg, CtxHost.uNumParms, rc);

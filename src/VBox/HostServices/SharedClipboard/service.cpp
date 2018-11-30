@@ -856,9 +856,10 @@ typedef struct CLIPSAVEDSTATEDATA
 
 } CLIPSAVEDSTATEDATA;
 
-static DECLCALLBACK(int) svcLoadState(void *, uint32_t u32ClientID, void *pvClient, PSSMHANDLE pSSM)
+static DECLCALLBACK(int) svcLoadState(void *, uint32_t u32ClientID, void *pvClient, PSSMHANDLE pSSM, uint32_t uVersion)
 {
 #ifndef UNIT_TEST
+    RT_NOREF(uVersion);
     LogRel2 (("svcLoadState: u32ClientID = %d\n", u32ClientID));
 
     VBOXCLIPBOARDCLIENTDATA *pClient = (VBOXCLIPBOARDCLIENTDATA *)pvClient;
@@ -930,7 +931,7 @@ static DECLCALLBACK(int) svcLoadState(void *, uint32_t u32ClientID, void *pvClie
     vboxClipboardSync (pClient);
 
 #else  /* UNIT_TEST*/
-    RT_NOREF3(u32ClientID, pvClient, pSSM);
+    RT_NOREF(u32ClientID, pvClient, pSSM, uVersion);
 #endif /* UNIT_TEST */
     return VINF_SUCCESS;
 }

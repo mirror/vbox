@@ -241,10 +241,10 @@ static DECLCALLBACK(int) svcSaveState(void *, uint32_t u32ClientID, void *pvClie
     return VINF_SUCCESS;
 }
 
-static DECLCALLBACK(int) svcLoadState(void *, uint32_t u32ClientID, void *pvClient, PSSMHANDLE pSSM)
+static DECLCALLBACK(int) svcLoadState(void *, uint32_t u32ClientID, void *pvClient, PSSMHANDLE pSSM, uint32_t uVersion)
 {
 #ifndef UNITTEST  /* Read this as not yet tested */
-    RT_NOREF1(u32ClientID);
+    RT_NOREF(u32ClientID, uVersion);
     uint32_t        nrMappings;
     SHFLCLIENTDATA *pClient = (SHFLCLIENTDATA *)pvClient;
     uint32_t        len, version;
@@ -394,7 +394,7 @@ static DECLCALLBACK(int) svcLoadState(void *, uint32_t u32ClientID, void *pvClie
     }
     Log(("SharedFolders host service: successfully loaded state\n"));
 #else
-    RT_NOREF3(u32ClientID, pvClient, pSSM);
+    RT_NOREF(u32ClientID, pvClient, pSSM, uVersion);
 #endif
     return VINF_SUCCESS;
 }

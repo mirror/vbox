@@ -25,9 +25,6 @@
 #include <VBox/VMMDev.h>
 #include <VBox/hgcmsvc.h>
 
-/* HGCM saved state version */
-#define HGCM_SSM_VERSION    2
-
 /* Handle of a HGCM service extension. */
 struct _HGCMSVCEXTHANDLEDATA;
 typedef struct _HGCMSVCEXTHANDLEDATA *HGCMSVCEXTHANDLE;
@@ -38,7 +35,7 @@ int HGCMHostShutdown(bool fUvmIsInvalid = false);
 
 int HGCMHostReset(void);
 
-int HGCMHostLoad(const char *pszServiceLibrary, const char *pszServiceName, PUVM pUVM);
+int HGCMHostLoad(const char *pszServiceLibrary, const char *pszServiceName, PUVM pUVM, PPDMIHGCMPORT pHgcmPort);
 
 int HGCMHostRegisterServiceExtension(HGCMSVCEXTHANDLE *pHandle, const char *pszServiceName, PFNHGCMSVCEXT pfnExtension, void *pvExtension);
 void HGCMHostUnregisterServiceExtension(HGCMSVCEXTHANDLE handle);
@@ -58,7 +55,7 @@ int HGCMHostFastCallAsync(HGCMCVSHANDLE hSvc, uint32_t function, PVBOXHGCMSVCPAR
 #endif
 
 int HGCMHostSaveState(PSSMHANDLE pSSM);
-int HGCMHostLoadState(PSSMHANDLE pSSM);
+int HGCMHostLoadState(PSSMHANDLE pSSM, uint32_t uVersion);
 
 RT_C_DECLS_END
 

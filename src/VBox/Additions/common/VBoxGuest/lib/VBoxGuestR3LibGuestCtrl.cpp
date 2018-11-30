@@ -306,20 +306,24 @@ VBGLR3DECL(int) VbglR3GuestCtrlMakeMeMaster(uint32_t idClient)
 }
 
 
-
 /**
  * Peeks at the next host message, waiting for one to turn up.
  *
  * @returns VBox status code.
  * @retval  VERR_INTERRUPTED if interrupted.  Does the necessary cleanup, so
  *          caller just have to repeat this call.
+ * @retval  VERR_VM_RESTORED if the VM has been restored (idRestoreCheck).
  *
  * @param   idClient        The client ID returned by VbglR3GuestCtrlConnect().
  * @param   pidMsg          Where to store the message id.
  * @param   pcParameters    Where to store the number  of parameters which will
  *                          be received in a second call to the host.
+ * @param   pidRestoreCheck Pointer to the VbglR3GetSessionId() variable to use
+ *                          for the VM restore check.  Optional.
+ *
+ * @note    Restore check is only performed optimally with a 6.0 host.
  */
-VBGLR3DECL(int) VbglR3GuestCtrlMsgPeekWait(uint32_t idClient, uint32_t *pidMsg, uint32_t *pcParameters)
+VBGLR3DECL(int) VbglR3GuestCtrlMsgPeekWait(uint32_t idClient, uint32_t *pidMsg, uint32_t *pcParameters, uint64_t *pidRestoreCheck)
 {
     AssertPtrReturn(pidMsg, VERR_INVALID_POINTER);
     AssertPtrReturn(pcParameters, VERR_INVALID_POINTER);
@@ -327,21 +331,26 @@ VBGLR3DECL(int) VbglR3GuestCtrlMsgPeekWait(uint32_t idClient, uint32_t *pidMsg, 
     int rc;
     if (vbglR3GuestCtrlSupportsPeekGetCancel(idClient))
     {
-        HGCMMsgCmdWaitFor Msg;
-        VBGL_HGCM_HDR_INIT(&Msg.hdr, idClient, GUEST_MSG_PEEK_WAIT, 2);
-        VbglHGCMParmUInt32Set(&Msg.msg, 0);
-        VbglHGCMParmUInt32Set(&Msg.num_parms, 0);
-        rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
+        struct
+        {
+            VBGLIOCHGCMCALL Hdr;
+            HGCMFunctionParameter idMsg;       /* Doubles as restore check on input. */
+            HGCMFunctionParameter cParameters;
+        } Msg;
+        VBGL_HGCM_HDR_INIT(&Msg.Hdr, idClient, GUEST_MSG_PEEK_WAIT, 2);
+        VbglHGCMParmUInt64Set(&Msg.idMsg, pidRestoreCheck ? *pidRestoreCheck : 0);
+        VbglHGCMParmUInt32Set(&Msg.cParameters, 0);
+        rc = VbglR3HGCMCall(&Msg.Hdr, sizeof(Msg));
         LogRel(("VbglR3GuestCtrlMsgPeekWait -> %Rrc\n", rc));
         if (RT_SUCCESS(rc))
         {
-            AssertMsgReturn(   Msg.msg.type       == VMMDevHGCMParmType_32bit
-                            && Msg.num_parms.type == VMMDevHGCMParmType_32bit,
-                            ("msg.type=%d num_parms.type=%d\n", Msg.msg.type, Msg.num_parms.type),
+            AssertMsgReturn(   Msg.idMsg.type       == VMMDevHGCMParmType_64bit
+                            && Msg.cParameters.type == VMMDevHGCMParmType_32bit,
+                            ("msg.type=%d num_parms.type=%d\n", Msg.idMsg.type, Msg.cParameters.type),
                             VERR_INTERNAL_ERROR_3);
 
-            *pidMsg       = Msg.msg.u.value32;
-            *pcParameters = Msg.num_parms.u.value32;
+            *pidMsg       = (uint32_t)Msg.idMsg.u.value64;
+            *pcParameters = Msg.cParameters.u.value32;
             return rc;
         }
 
@@ -350,10 +359,16 @@ VBGLR3DECL(int) VbglR3GuestCtrlMsgPeekWait(uint32_t idClient, uint32_t *pidMsg, 
          */
         if (rc == VERR_INTERRUPTED)
         {
-            VBGL_HGCM_HDR_INIT(&Msg.hdr, idClient, GUEST_MSG_CANCEL, 0);
-            int rc2 = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg.hdr));
+            VBGL_HGCM_HDR_INIT(&Msg.Hdr, idClient, GUEST_MSG_CANCEL, 0);
+            int rc2 = VbglR3HGCMCall(&Msg.Hdr, sizeof(Msg.Hdr));
             AssertRC(rc2);
         }
+
+        /*
+         * If restored, update pidRestoreCheck.
+         */
+        if (rc == VERR_VM_RESTORED && pidRestoreCheck)
+            *pidRestoreCheck = Msg.idMsg.u.value64;
 
         *pidMsg       = UINT32_MAX - 1;
         *pcParameters = UINT32_MAX - 2;
@@ -362,7 +377,22 @@ VBGLR3DECL(int) VbglR3GuestCtrlMsgPeekWait(uint32_t idClient, uint32_t *pidMsg, 
 
     /*
      * Fallback if host < v6.0.
+     *
+     * Note! The restore check isn't perfect. Would require checking afterwards
+     *       and stash the result if we were restored during the call.  Too much
+     *       hazzle for a downgrade scenario.
      */
+    if (pidRestoreCheck)
+    {
+        uint64_t idRestoreCur = *pidRestoreCheck;
+        rc = VbglR3GetSessionId(&idRestoreCur);
+        if (RT_SUCCESS(rc) && idRestoreCur != *pidRestoreCheck)
+        {
+            *pidRestoreCheck = idRestoreCur;
+            return VERR_VM_RESTORED;
+        }
+    }
+
     rc = vbglR3GuestCtrlMsgWaitFor(idClient, pidMsg, pcParameters);
     if (rc == VERR_TOO_MUCH_DATA)
         rc = VINF_SUCCESS;

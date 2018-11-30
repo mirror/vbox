@@ -1547,6 +1547,15 @@ DECLCALLBACK(uint32_t) hgcmGetRequestor(PPDMIHGCMPORT pInterface, PVBOXHGCMCMD p
    return VMMDEV_REQUESTOR_LEGACY;
 }
 
+/**
+ * @interface_method_impl{PDMIHGCMPORT,pfnGetVMMDevSessionId}
+ */
+DECLCALLBACK(uint64_t) hgcmGetVMMDevSessionId(PPDMIHGCMPORT pInterface)
+{
+    PVMMDEV pThis = RT_FROM_MEMBER(pInterface, VMMDevState, IHGCMPort);
+    return pThis->idSession;
+}
+
 /** Save information about pending HGCM requests from pThis->listHGCMCmd.
  *
  * @returns VBox status code that the guest should see.

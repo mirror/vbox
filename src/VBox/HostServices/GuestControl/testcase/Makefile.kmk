@@ -34,7 +34,7 @@ if defined(VBOX_WITH_TESTCASES) && !defined(VBOX_ONLY_ADDITIONS) && !defined(VBO
  tstGuestControlSvc_SOURCES  = \
 	../service.cpp \
 	tstGuestControlSvc.cpp
- tstGuestControlSvc_LIBS     = $(LIB_RUNTIME)
+ tstGuestControlSvc_LIBS     = $(LIB_RUNTIME) $(LIB_VMM)
 
 $$(tstGuestControlSvc_0_OUTDIR)/tstGuestControlSvc.run: $$(tstGuestControlSvc_1_STAGE_TARGET)
 	export VBOX_LOG_DEST=nofile; $(tstGuestControlSvc_1_STAGE_TARGET) quiet

@@ -70,6 +70,8 @@
  * 6.1->6.2 Because pfnCallComplete starts returning a status code (VBox 6.0).
  * 6.2->6.3 Because pfnGetRequestor was added (VBox 6.0).
  * 6.3->6.4 Bacause pfnConnect got an additional parameter (VBox 6.0).
+ * 6.4->6.5 Bacause pfnGetVMMDevSessionId was added pfnLoadState got the version
+ *          parameter (VBox 6.0).
  */
 #define VBOX_HGCM_SVC_VERSION_MAJOR (0x0006)
 #define VBOX_HGCM_SVC_VERSION_MINOR (0x0004)
@@ -120,6 +122,13 @@ typedef struct VBOXHGCMSVCHELPERS
      * @param   hCall       The call we're checking up on.
      */
     DECLR3CALLBACKMEMBER(uint32_t, pfnGetRequestor, (VBOXHGCMCALLHANDLE hCall));
+
+    /**
+     * Retrieves VMMDevState::idSession.
+     *
+     * @returns current VMMDev session ID value.
+     */
+    DECLR3CALLBACKMEMBER(uint64_t, pfnGetVMMDevSessionId, (void *pvInstance));
 
 } VBOXHGCMSVCHELPERS;
 
@@ -494,7 +503,8 @@ typedef struct VBOXHGCMSVCFNTABLE
     DECLR3CALLBACKMEMBER(int, pfnSaveState, (void *pvService, uint32_t u32ClientID, void *pvClient, PSSMHANDLE pSSM));
 
     /** Inform the service about a VM load operation. */
-    DECLR3CALLBACKMEMBER(int, pfnLoadState, (void *pvService, uint32_t u32ClientID, void *pvClient, PSSMHANDLE pSSM));
+    DECLR3CALLBACKMEMBER(int, pfnLoadState, (void *pvService, uint32_t u32ClientID, void *pvClient, PSSMHANDLE pSSM,
+                                             uint32_t uVersion));
 
     /** Register a service extension callback. */
     DECLR3CALLBACKMEMBER(int, pfnRegisterExtension, (void *pvService, PFNHGCMSVCEXT pfnExtension, void *pvExtension));
@@ -506,9 +516,20 @@ typedef struct VBOXHGCMSVCFNTABLE
 } VBOXHGCMSVCFNTABLE;
 
 
+/** @name HGCM saved state
+ * @note Need to be here so we can add saved to service which doesn't have it.
+ * @{ */
+/** HGCM saved state version. */
+#define HGCM_SAVED_STATE_VERSION        3
+/** HGCM saved state version w/o client state indicators. */
+#define HGCM_SAVED_STATE_VERSION_V2     2
+/** @} */
+
+
 /** Service initialization entry point. */
 typedef DECLCALLBACK(int) VBOXHGCMSVCLOAD(VBOXHGCMSVCFNTABLE *ptable);
 typedef VBOXHGCMSVCLOAD *PFNVBOXHGCMSVCLOAD;
 #define VBOX_HGCM_SVCLOAD_NAME "VBoxHGCMSvcLoad"
+
 
 #endif

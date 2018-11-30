@@ -321,8 +321,14 @@ enum eGuestFn
      * integer parameters, the latter gets their sizes inverted (uint32_t is ~4U,
      * uint64_t is ~8U).
      *
+     * Does also support the VM restore checking as in GUEST_MSG_PEEK_WAIT (64-bit
+     * param \# 0), see documentation there.
+     *
      * @retval  VINF_SUCCESS if a message was pending and is being returned.
      * @retval  VERR_TRY_AGAIN if no message pending.
+     * @retval  VERR_VM_RESTORED if first parameter is a non-zero 64-bit value that
+     *          does not match VbglR3GetSessionId() any more.  The new value is
+     *          returned.
      * @retval  VERR_INVALID_CLIENT_ID
      * @retval  VERR_WRONG_PARAMETER_COUNT
      * @retval  VERR_WRONG_PARAMETER_TYPE
@@ -337,10 +343,19 @@ enum eGuestFn
      * integer parameters, the latter gets their sizes inverted (uint32_t is ~4U,
      * uint64_t is ~8U).
      *
+     * To facilitate VM restore checking, the first parameter can be a 64-bit
+     * integer holding the VbglR3GetSessionId() value the guest knowns.  The
+     * function will then check this before going to sleep and return
+     * VERR_VM_RESTORED if it doesn't match, same thing happens when the VM is
+     * restored.
+     *
      * @retval  VINF_SUCCESS if info about an pending message is being returned.
      * @retval  VINF_TRY_AGAIN and message set to HOST_CANCEL_PENDING_WAITS if
      *          cancelled by GUEST_MSG_CANCEL.
      * @retval  VERR_RESOURCE_BUSY if another thread already made a waiting call.
+     * @retval  VERR_VM_RESTORED if first parameter is a non-zero 64-bit value that
+     *          does not match VbglR3GetSessionId() any more.  The new value is
+     *          returned.
      * @retval  VERR_INVALID_CLIENT_ID
      * @retval  VERR_WRONG_PARAMETER_COUNT
      * @retval  VERR_WRONG_PARAMETER_TYPE

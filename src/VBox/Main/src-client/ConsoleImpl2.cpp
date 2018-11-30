@@ -35,10 +35,8 @@
 
 #include "ConsoleImpl.h"
 #include "DisplayImpl.h"
-#ifdef VBOX_WITH_GUEST_CONTROL
-# include "GuestImpl.h"
-#endif
 #ifdef VBOX_WITH_DRAG_AND_DROP
+# include "GuestImpl.h"
 # include "GuestDnDPrivate.h"
 #endif
 #include "VMMDev.h"
@@ -3195,13 +3193,6 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
         rc = i_configGuestProperties(this);
 #endif
 
-#ifdef VBOX_WITH_GUEST_CONTROL
-        /*
-         * Guest control service.
-         */
-        rc = i_configGuestControl(this);
-#endif
-
         /*
          * ACPI
          */
@@ -6234,38 +6225,3 @@ int configSetGlobalPropertyFlags(VMMDev * const pVMMDev, uint32_t fFlags)
 #endif /* !VBOX_WITH_GUEST_PROPS */
 }
 
-/**
- * Set up the Guest Control service.
- */
-/* static */ int Console::i_configGuestControl(void *pvConsole)
-{
-#ifdef VBOX_WITH_GUEST_CONTROL
-    AssertReturn(pvConsole, VERR_INVALID_POINTER);
-    ComObjPtr<Console> pConsole = static_cast<Console *>(pvConsole);
-
-    /* Load the service */
-    int rc = pConsole->m_pVMMDev->hgcmLoadService("VBoxGuestControlSvc", "VBoxGuestControlSvc");
-
-    if (RT_FAILURE(rc))
-    {
-        LogRel(("VBoxGuestControlSvc is not available. rc = %Rrc\n", rc));
-        /* That is not a fatal failure. */
-        rc = VINF_SUCCESS;
-    }
-    else
-    {
-        HGCMSVCEXTHANDLE hDummy;
-        rc = HGCMHostRegisterServiceExtension(&hDummy, "VBoxGuestControlSvc",
-                                              &Guest::i_notifyCtrlDispatcher,
-                                              pConsole->i_getGuest());
-        if (RT_FAILURE(rc))
-            Log(("Cannot register VBoxGuestControlSvc extension!\n"));
-        else
-            LogRel(("Guest Control service loaded\n"));
-    }
-
-    return rc;
-#else /* !VBOX_WITH_GUEST_CONTROL */
-    return VERR_NOT_SUPPORTED;
-#endif /* !VBOX_WITH_GUEST_CONTROL */
-}

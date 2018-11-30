@@ -66,6 +66,7 @@
 #include <VBox/log.h>
 #include <VBox/AssertGuest.h>
 #include <VBox/VMMDev.h>
+#include <VBox/vmm/ssm.h>
 #include <iprt/assert.h>
 #include <iprt/cpp/autores.h>
 #include <iprt/cpp/utils.h>
@@ -138,6 +139,7 @@ typedef struct HostCommand
         RTListInit(&m_ListEntry);
     }
 
+
     /**
      * Retains a reference to the command.
      */
@@ -148,6 +150,7 @@ typedef struct HostCommand
         Assert(cRefs < 4);
         return cRefs;
     }
+
 
     /**
      * Releases the host command, properly deleting it if no further references.
@@ -178,6 +181,7 @@ typedef struct HostCommand
         }
         return cRefs;
     }
+
 
     /**
      * Initializes the command.
@@ -268,6 +272,37 @@ typedef struct HostCommand
         return VINF_SUCCESS;
     }
 
+
+    /**
+     * Sets the GUEST_MSG_PEEK_WAIT GUEST_MSG_PEEK_NOWAIT return parameters.
+     *
+     * @param   paDstParms  The peek parameter vector.
+     * @param   cDstParms   The number of peek parameters (at least two).
+     * @remarks ASSUMES the parameters has been cleared by clientMsgPeek.
+     */
+    inline void setPeekReturn(PVBOXHGCMSVCPARM paDstParms, uint32_t cDstParms)
+    {
+        Assert(cDstParms >= 2);
+        if (paDstParms[0].type == VBOX_HGCM_SVC_PARM_32BIT)
+            paDstParms[0].u.uint32 = mMsgType;
+        else
+            paDstParms[0].u.uint64 = mMsgType;
+        paDstParms[1].u.uint32 = mParmCount;
+
+        uint32_t i = RT_MIN(cDstParms, mParmCount + 2);
+        while (i-- > 2)
+            switch (mpParms[i - 2].type)
+            {
+                case VBOX_HGCM_SVC_PARM_32BIT: paDstParms[i].u.uint32 = ~(uint32_t)sizeof(uint32_t); break;
+                case VBOX_HGCM_SVC_PARM_64BIT: paDstParms[i].u.uint32 = ~(uint32_t)sizeof(uint64_t); break;
+                case VBOX_HGCM_SVC_PARM_PTR:   paDstParms[i].u.uint32 = mpParms[i - 2].u.pointer.size; break;
+            }
+    }
+
+
+    /** @name Support for old-style (GUEST_MSG_WAIT) operation.
+     * @{
+     */
 
     /**
      * Worker for Assign() that opies data from the buffered HGCM request to the
@@ -420,6 +455,8 @@ typedef struct HostCommand
          */
         return VERR_TOO_MUCH_DATA;
     }
+
+    /** @} */
 } HostCommand;
 typedef std::list< HostCommand *> HostCmdList;
 typedef std::list< HostCommand *>::iterator HostCmdListIter;
@@ -526,28 +563,18 @@ typedef struct ClientState
 
             rc = VINF_SUCCESS;
 
-            HostCmdListIter curCmd = mHostCmdList.begin();
-            if (curCmd != mHostCmdList.end())
+            HostCmdListIter ItFirstCmd = mHostCmdList.begin();
+            if (ItFirstCmd != mHostCmdList.end())
             {
-                HostCommand *pHostCmd = (*curCmd);
-                AssertPtrReturn(pHostCmd, VERR_INVALID_POINTER);
+                HostCommand *pFirstCmd = (*ItFirstCmd);
+                AssertPtrReturn(pFirstCmd, VERR_INVALID_POINTER);
 
                 LogFlowThisFunc(("[Client %RU32] Current host command is %RU32 (CID=%RU32, cParms=%RU32, m_cRefs=%RU32)\n",
-                                 mID, pHostCmd->mMsgType, pHostCmd->m_idContext, pHostCmd->mParmCount, pHostCmd->m_cRefs));
+                                 mID, pFirstCmd->mMsgType, pFirstCmd->m_idContext, pFirstCmd->mParmCount, pFirstCmd->m_cRefs));
 
                 if (mIsPending == GUEST_MSG_PEEK_WAIT)
                 {
-                    HGCMSvcSetU32(&mPendingCon.mParms[0], pHostCmd->mMsgType);
-                    HGCMSvcSetU32(&mPendingCon.mParms[1], pHostCmd->mParmCount);
-                    uint32_t i = RT_MIN(mPendingCon.mNumParms, pHostCmd->mParmCount + 2);
-                    while (i-- > 2)
-                        switch (pHostCmd->mpParms[i - 2].type)
-                        {
-                            case VBOX_HGCM_SVC_PARM_32BIT: mPendingCon.mParms[i].u.uint32 = ~(uint32_t)sizeof(uint32_t); break;
-                            case VBOX_HGCM_SVC_PARM_64BIT: mPendingCon.mParms[i].u.uint32 = ~(uint32_t)sizeof(uint64_t); break;
-                            case VBOX_HGCM_SVC_PARM_PTR:   mPendingCon.mParms[i].u.uint32 = pHostCmd->mpParms[i - 2].u.pointer.size; break;
-                        }
-
+                    pFirstCmd->setPeekReturn(mPendingCon.mParms, mPendingCon.mNumParms);
                     rc = mSvcHelpers->pfnCallComplete(mPendingCon.mHandle, VINF_SUCCESS);
 
                     mPendingCon.mHandle   = NULL;
@@ -556,7 +583,7 @@ typedef struct ClientState
                     mIsPending            = (guestControl::eGuestFn)0;
                 }
                 else if (mIsPending == GUEST_MSG_WAIT)
-                    rc = OldRun(&mPendingCon, pHostCmd);
+                    rc = OldRun(&mPendingCon, pFirstCmd);
                 else
                     AssertMsgFailed(("mIsPending=%d\n", mIsPending));
             }
@@ -653,9 +680,9 @@ typedef struct ClientState
     void OldDitchFirstHostCmd()
     {
         Assert(!mHostCmdList.empty());
-        HostCommand *pHostCmd = *mHostCmdList.begin();
-        AssertPtr(pHostCmd);
-        pHostCmd->SaneRelease();
+        HostCommand *pFirstCmd = *mHostCmdList.begin();
+        AssertPtr(pFirstCmd);
+        pFirstCmd->SaneRelease();
         mHostCmdList.pop_front();
 
         /* Reset state else. */
@@ -878,7 +905,7 @@ private:
     /** List containing all buffered host commands. */
     RTLISTANCHOR mHostCmdList;
     /** Map containing all connected clients, key is HGCM client ID. */
-    ClientStateMap  mClientStateMap;
+    ClientStateMap  mClientStateMap; /**< @todo Use VBOXHGCMSVCFNTABLE::cbClient for this! */
     /** The master HGCM client ID, UINT32_MAX if none. */
     uint32_t        m_idMasterClient;
     /** Set if we're in legacy mode (pre 6.0). */
@@ -908,6 +935,8 @@ public:
     static DECLCALLBACK(void) svcCall(void *pvService, VBOXHGCMCALLHANDLE callHandle, uint32_t u32ClientID, void *pvClient,
                                       uint32_t u32Function, uint32_t cParms, VBOXHGCMSVCPARM paParms[], uint64_t tsArrival);
     static DECLCALLBACK(int)  svcHostCall(void *pvService, uint32_t u32Function, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
+    static DECLCALLBACK(int)  svcSaveState(void *pvService, uint32_t idClient, void *pvClient, PSSMHANDLE pSSM);
+    static DECLCALLBACK(int)  svcLoadState(void *pvService, uint32_t idClient, void *pvClient, PSSMHANDLE pSSM, uint32_t uVersion);
     static DECLCALLBACK(int)  svcRegisterExtension(void *pvService, PFNHGCMSVCEXT pfnExtension, void *pvExtension);
 
 private:
@@ -1198,7 +1227,16 @@ int GstCtrlService::clientMsgPeek(uint32_t idClient, VBOXHGCMCALLHANDLE hCall, u
      * Validate the request.
      */
     ASSERT_GUEST_MSG_RETURN(cParms >= 2, ("cParms=%u!\n", cParms), VERR_WRONG_PARAMETER_COUNT);
-    for (uint32_t i = 0; i < cParms; i++)
+
+    uint64_t idRestoreCheck = 0;
+    uint32_t i              = 0;
+    if (paParms[i].type == VBOX_HGCM_SVC_PARM_64BIT)
+    {
+        idRestoreCheck = paParms[0].u.uint64;
+        paParms[0].u.uint64 = 0;
+        i++;
+    }
+    for (; i < cParms; i++)
     {
         ASSERT_GUEST_MSG_RETURN(paParms[i].type == VBOX_HGCM_SVC_PARM_32BIT, ("#%u type=%u\n", i, paParms[i].type),
                                 VERR_WRONG_PARAMETER_TYPE);
@@ -1210,23 +1248,29 @@ int GstCtrlService::clientMsgPeek(uint32_t idClient, VBOXHGCMCALLHANDLE hCall, u
     ClientState &rClientState = ItClientState->second;
 
     /*
+     * Check restore session ID.
+     */
+    if (idRestoreCheck != 0)
+    {
+        uint64_t idRestore = mpHelpers->pfnGetVMMDevSessionId(mpHelpers);
+        if (idRestoreCheck != idRestore)
+        {
+            paParms[0].u.uint32 = idRestore;
+            LogFlowFunc(("[Client %RU32] GUEST_MSG_PEEK_XXXX -> VERR_VM_RESTORED (%#RX64 -> %#RX64)\n",
+                         idClient, idRestoreCheck, idRestore));
+            return VERR_VM_RESTORED;
+        }
+        Assert(!mpHelpers->pfnIsCallRestored(hCall));
+    }
+
+    /*
      * Return information about the first command if one is pending in the list.
      */
     HostCmdListIter itFirstCmd = rClientState.mHostCmdList.begin();
     if (itFirstCmd != rClientState.mHostCmdList.end())
     {
         HostCommand *pFirstCmd = *itFirstCmd;
-        paParms[0].u.uint32 = pFirstCmd->mMsgType;
-        paParms[1].u.uint32 = pFirstCmd->mParmCount;
-        uint32_t i = RT_MIN(cParms, pFirstCmd->mParmCount + 2);
-        while (i-- > 2)
-            switch (pFirstCmd->mpParms[i - 2].type)
-            {
-                case VBOX_HGCM_SVC_PARM_32BIT: paParms[i].u.uint32 = ~(uint32_t)sizeof(uint32_t); break;
-                case VBOX_HGCM_SVC_PARM_64BIT: paParms[i].u.uint32 = ~(uint32_t)sizeof(uint64_t); break;
-                case VBOX_HGCM_SVC_PARM_PTR:   paParms[i].u.uint32 = pFirstCmd->mpParms[i - 2].u.pointer.size; break;
-            }
-
+        pFirstCmd->setPeekReturn(paParms, cParms);
         LogFlowFunc(("[Client %RU32] GUEST_MSG_PEEK_XXXX -> VINF_SUCCESS (idMsg=%u (%s), cParms=%u)\n",
                      idClient, pFirstCmd->mMsgType, GstCtrlHostFnName((eHostFn)pFirstCmd->mMsgType), pFirstCmd->mParmCount));
         return VINF_SUCCESS;
@@ -2196,16 +2240,87 @@ GstCtrlService::svcCall(void *pvService, VBOXHGCMCALLHANDLE hCall, uint32_t idCl
 
 
 /**
+ * @interface_method_impl{VBOXHGCMSVCFNTABLE,pfnSaveState}
+ */
+/*static*/ DECLCALLBACK(int)
+GstCtrlService::svcSaveState(void *pvService, uint32_t idClient, void *pvClient, PSSMHANDLE pSSM)
+{
+    RT_NOREF(pvClient);
+    AssertLogRelReturn(VALID_PTR(pvService), VERR_INVALID_PARAMETER);
+    SELF *pThis = reinterpret_cast<SELF *>(pvService);
+    AssertPtrReturn(pThis, VERR_INVALID_POINTER);
+
+    SSMR3PutU32(pSSM, 1);
+    SSMR3PutBool(pSSM, idClient == pThis->m_idMasterClient);
+    return SSMR3PutBool(pSSM, pThis->m_fLegacyMode);
+}
+
+
+/**
+ * @interface_method_impl{VBOXHGCMSVCFNTABLE,pfnLoadState}
+ */
+/*static*/ DECLCALLBACK(int)
+GstCtrlService::svcLoadState(void *pvService, uint32_t idClient, void *pvClient, PSSMHANDLE pSSM, uint32_t uVersion)
+{
+    RT_NOREF(pvClient);
+    AssertLogRelReturn(VALID_PTR(pvService), VERR_INVALID_PARAMETER);
+    SELF *pThis = reinterpret_cast<SELF *>(pvService);
+    AssertPtrReturn(pThis, VERR_INVALID_POINTER);
+
+    if (uVersion >= HGCM_SAVED_STATE_VERSION)
+    {
+        uint32_t uSubVersion;
+        int rc = SSMR3GetU32(pSSM, &uSubVersion);
+        AssertRCReturn(rc, rc);
+        if (uSubVersion != 1)
+            return SSMR3SetLoadError(pSSM, VERR_SSM_DATA_UNIT_FORMAT_CHANGED, RT_SRC_POS,
+                                     "sub version %u, expected 1\n", uSubVersion);
+        bool fLegacyMode;
+        rc = SSMR3GetBool(pSSM, &fLegacyMode);
+        AssertRCReturn(rc, rc);
+        pThis->m_fLegacyMode = fLegacyMode;
+
+        bool fIsMaster;
+        rc = SSMR3GetBool(pSSM, &fIsMaster);
+        AssertRCReturn(rc, rc);
+        if (fIsMaster)
+            pThis->m_idMasterClient = idClient;
+        ClientStateMapIter It = pThis->mClientStateMap.find(idClient);
+        if (It != pThis->mClientStateMap.end())
+            It->second.m_fIsMaster = fIsMaster;
+        else
+            AssertFailed();
+    }
+    else
+    {
+        /*
+         * For old saved states we have to guess at who should be the master.
+         * Given how HGCMService::CreateAndConnectClient and associates manage
+         * and saves the client, the first client connecting will be restored
+         * first.  The only time this might go wrong if the there are zombie
+         * VBoxService session processes in the restored guest, and I don't
+         * we need to care too much about that scenario.
+         *
+         * Given how HGCM first re-connects the clients before this function
+         * gets called, there isn't anything we need to do here it turns out. :-)
+         */
+    }
+    return VINF_SUCCESS;
+}
+
+
+/**
  * @interface_method_impl{VBOXHGCMSVCFNTABLE,pfnRegisterExtension,
  *  Installs a host callback for notifications of property changes.}
  */
 /*static*/ DECLCALLBACK(int) GstCtrlService::svcRegisterExtension(void *pvService, PFNHGCMSVCEXT pfnExtension, void *pvExtension)
 {
     AssertLogRelReturn(VALID_PTR(pvService), VERR_INVALID_PARAMETER);
-    SELF *pSelf = reinterpret_cast<SELF *>(pvService);
-    AssertPtrReturn(pSelf, VERR_INVALID_POINTER);
-    pSelf->mpfnHostCallback = pfnExtension;
-    pSelf->mpvHostData = pvExtension;
+    SELF *pThis = reinterpret_cast<SELF *>(pvService);
+    AssertPtrReturn(pThis, VERR_INVALID_POINTER);
+
+    pThis->mpfnHostCallback = pfnExtension;
+    pThis->mpvHostData = pvExtension;
     return VINF_SUCCESS;
 }
 
@@ -2255,17 +2370,17 @@ extern "C" DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad(VBOXHGCMSVCFNTABLE *pTa
                  * We don't need an additional client data area on the host,
                  * because we're a class which can have members for that :-).
                  */
-                pTable->cbClient = 0;
+                pTable->cbClient = 0;  /** @todo this is where ClientState should live, isn't it? */
 
                 /* Register functions. */
-                pTable->pfnUnload             = GstCtrlService::svcUnload;
-                pTable->pfnConnect            = GstCtrlService::svcConnect;
-                pTable->pfnDisconnect         = GstCtrlService::svcDisconnect;
-                pTable->pfnCall               = GstCtrlService::svcCall;
-                pTable->pfnHostCall           = GstCtrlService::svcHostCall;
-                pTable->pfnSaveState          = NULL;  /* The GstCtrlService is stateless, so the normal */
-                pTable->pfnLoadState          = NULL;  /* construction done before restoring suffices */
-                pTable->pfnRegisterExtension  = GstCtrlService::svcRegisterExtension;
+                pTable->pfnUnload               = GstCtrlService::svcUnload;
+                pTable->pfnConnect              = GstCtrlService::svcConnect;
+                pTable->pfnDisconnect           = GstCtrlService::svcDisconnect;
+                pTable->pfnCall                 = GstCtrlService::svcCall;
+                pTable->pfnHostCall             = GstCtrlService::svcHostCall;
+                pTable->pfnSaveState            = GstCtrlService::svcSaveState;
+                pTable->pfnLoadState            = GstCtrlService::svcLoadState;
+                pTable->pfnRegisterExtension    = GstCtrlService::svcRegisterExtension;
 
                 /* Service specific initialization. */
                 pTable->pvService = pService;

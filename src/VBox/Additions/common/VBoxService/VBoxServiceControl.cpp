@@ -250,43 +250,23 @@ static DECLCALLBACK(int) vgsvcGstCtrlWorker(bool volatile *pfShutdown)
     uint8_t *pvScratchBuf = (uint8_t*)RTMemAlloc(cbScratchBuf);
     AssertReturn(pvScratchBuf, VERR_NO_MEMORY);
 
-    VBGLR3GUESTCTRLCMDCTX ctxHost = { g_idControlSvcClient, 0 /*idContext*/, 2 /*uProtocol*/, 0  /*cParms*/ };
-
     int rc = VINF_SUCCESS;      /* (shut up compiler warnings) */
     int cRetrievalFailed = 0;   /* Number of failed message retrievals in a row. */
     while (!*pfShutdown)
     {
         VGSvcVerbose(3, "GstCtrl: Waiting for host msg ...\n");
-        uint32_t idMsg  = 0;
-        uint32_t cParms = 0;
-        rc = VbglR3GuestCtrlMsgPeekWait(g_idControlSvcClient, &idMsg, &cParms);
+        VBGLR3GUESTCTRLCMDCTX ctxHost = { g_idControlSvcClient, 0 /*idContext*/, 2 /*uProtocol*/, 0  /*cParms*/ };
+        uint32_t              idMsg   = 0;
+        rc = VbglR3GuestCtrlMsgPeekWait(g_idControlSvcClient, &idMsg, &ctxHost.uNumParms, &g_idControlSession);
         if (RT_SUCCESS(rc))
         {
             cRetrievalFailed = 0; /* Reset failed retrieval count. */
-            VGSvcVerbose(4, "idMsg=%RU32 (%s) (%RU32 parms) retrieved\n", idMsg, GstCtrlHostFnName((eHostFn)idMsg), cParms);
-
-            /*
-             * Close all open guest sessions if the VM was restored (all context IDs,
-             * sessions, etc. are now invalid).
-             *
-             * Note! This will suck performance wise if we get a lot of messages thru here.
-             *       What about the service returning a HOST_MSG_RESTORED message?
-             */
-            uint64_t idNewSession = g_idControlSession;
-            int rc2 = VbglR3GetSessionId(&idNewSession);
-            if (   RT_SUCCESS(rc2)
-                && idNewSession != g_idControlSession)
-            {
-                VGSvcVerbose(1, "The VM session ID changed (i.e. restored).\n");
-                g_idControlSession = idNewSession;
-                rc2 = VGSvcGstCtrlSessionClose(&g_Session);
-                AssertRC(rc2);
-            }
+            VGSvcVerbose(4, "idMsg=%RU32 (%s) (%RU32 parms) retrieved\n",
+                         idMsg, GstCtrlHostFnName((eHostFn)idMsg), ctxHost.uNumParms);
 
             /*
              * Handle the host message.
              */
-            ctxHost.uNumParms = cParms;
             switch (idMsg)
             {
                 case HOST_CANCEL_PENDING_WAITS:
@@ -307,12 +287,12 @@ static DECLCALLBACK(int) vgsvcGstCtrlWorker(bool volatile *pfShutdown)
                     {
                         rc = VbglR3GuestCtrlMsgSkip(g_idControlSvcClient, VERR_NOT_SUPPORTED, idMsg);
                         VGSvcVerbose(1, "Skipped unexpected message idMsg=%RU32 (%s), cParms=%RU32 (rc=%Rrc)\n",
-                                     idMsg, GstCtrlHostFnName((eHostFn)idMsg), cParms, rc);
+                                     idMsg, GstCtrlHostFnName((eHostFn)idMsg), ctxHost.uNumParms, rc);
                     }
                     else
                     {
                         rc = VbglR3GuestCtrlMsgSkipOld(g_idControlSvcClient);
-                        VGSvcVerbose(3, "Skipped idMsg=%RU32, cParms=%RU32, rc=%Rrc\n", idMsg, cParms, rc);
+                        VGSvcVerbose(3, "Skipped idMsg=%RU32, cParms=%RU32, rc=%Rrc\n", idMsg, ctxHost.uNumParms, rc);
                     }
                     break;
             }
@@ -324,6 +304,16 @@ static DECLCALLBACK(int) vgsvcGstCtrlWorker(bool volatile *pfShutdown)
             /* Let's sleep for a bit and let others run ... */
             RTThreadYield();
         }
+        /*
+         * Handle restore notification from host.  All the context IDs (sessions,
+         * files, proceses, etc) are invalidated by a VM restore and must be closed.
+         */
+        else if (rc == VERR_VM_RESTORED)
+        {
+            VGSvcVerbose(1, "The VM session ID changed (i.e. restored).\n");
+            int rc2 = VGSvcGstCtrlSessionClose(&g_Session);
+            AssertRC(rc2);
+        }
         else
         {
             /* Note: VERR_GEN_IO_FAILURE seems to be normal if ran into timeout. */
@@ -331,6 +321,7 @@ static DECLCALLBACK(int) vgsvcGstCtrlWorker(bool volatile *pfShutdown)
             VGSvcError("GstCtrl: Getting host message failed with %Rrc\n", rc);
 
             /* Check for VM session change. */
+            /** @todo  We don't need to check the host here.  */
             uint64_t idNewSession = g_idControlSession;
             int rc2 = VbglR3GetSessionId(&idNewSession);
             if (   RT_SUCCESS(rc2)

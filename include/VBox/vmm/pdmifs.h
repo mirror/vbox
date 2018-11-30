@@ -2093,9 +2093,17 @@ typedef struct PDMIHGCMPORT
      */
     DECLR3CALLBACKMEMBER(uint32_t, pfnGetRequestor,(PPDMIHGCMPORT pInterface, PVBOXHGCMCMD pCmd));
 
+    /**
+     * Gets the VMMDevState::idSession value.
+     *
+     * @returns VMMDevState::idSession.
+     * @param   pInterface          Pointer to this interface.
+     */
+    DECLR3CALLBACKMEMBER(uint64_t, pfnGetVMMDevSessionId,(PPDMIHGCMPORT pInterface));
+
 } PDMIHGCMPORT;
 /** PDMIHGCMPORT interface ID. */
-# define PDMIHGCMPORT_IID                       "0864e1c5-659b-40c8-2c97-994e2983038e"
+# define PDMIHGCMPORT_IID                       "c9180235-8102-4642-0aa7-f0422124d9b5"
 
 
 /** Pointer to a HGCM service location structure. */
