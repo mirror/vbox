@@ -1846,7 +1846,7 @@ static RTEXITCODE gctlHandleCopy(PGCTLCMDCTX pCtx, int argc, char **argv, bool f
         RT_NOREF(strFilter);
         if (strFilter.isNotEmpty())
             rcExit = RTMsgErrorExitFailure("Skipping '%s/%s' because wildcard expansion isn't implemented yet\n",
-                                           strSrc.c_str(),  strFilter.c_src());
+                                           strSrc.c_str(),  strFilter.c_str());
         else if (fHostToGuest)
         {
             /*
