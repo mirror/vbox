@@ -2629,7 +2629,7 @@ static int hmR0VmxSetupMiscCtls(PVMCPU pVCpu)
 #if 0
     /* Setup debug controls */
     rc  = VMXWriteVmcs64(VMX_VMCS64_GUEST_DEBUGCTL_FULL, 0);
-    rc |= VMXWriteVmcs32(VMX_VMCS_GUEST_PENDING_DEBUG_EXCEPTIONS, 0);
+    rc |= VMXWriteVmcs32(VMX_VMCS_GUEST_PENDING_DEBUG_XCPTS, 0);
     AssertRCReturn(rc, rc);
 #endif
 
@@ -5435,7 +5435,7 @@ static int hmR0VmxInitVmcsReadCache(PVMCPU pVCpu)
     VMXLOCAL_INIT_READ_CACHE_FIELD(pCache, VMX_VMCS_GUEST_RIP);
 #if 0
     /* Unused natural width guest-state fields. */
-    VMXLOCAL_INIT_READ_CACHE_FIELD(pCache, VMX_VMCS_GUEST_PENDING_DEBUG_EXCEPTIONS);
+    VMXLOCAL_INIT_READ_CACHE_FIELD(pCache, VMX_VMCS_GUEST_PENDING_DEBUG_XCPTS);
     VMXLOCAL_INIT_READ_CACHE_FIELD(pCache, VMX_VMCS_GUEST_CR3); /* Handled in Nested Paging case */
 #endif
     VMXLOCAL_INIT_READ_CACHE_FIELD(pCache, VMX_VMCS_GUEST_SYSENTER_ESP);
