@@ -92,6 +92,11 @@ public:
     ~UIGuestControlFileManager();
     QMenu *menu() const;
 
+#ifdef VBOX_WS_MAC
+    /** Returns the toolbar. */
+    UIToolBar *toolbar() const { return m_pToolBar; }
+#endif
+
 signals:
 
     void sigSetCloseButtonShortCut(QKeySequence);
@@ -170,6 +175,7 @@ private:
     QVBoxLayout              *m_pMainLayout;
     QSplitter                *m_pVerticalSplitter;
     UIToolBar                *m_pToolBar;
+    UIToolBar                *m_pVerticalToolBar;
 
     UIGuestControlConsole    *m_pConsole;
     UIGuestControlInterface  *m_pControlInterface;

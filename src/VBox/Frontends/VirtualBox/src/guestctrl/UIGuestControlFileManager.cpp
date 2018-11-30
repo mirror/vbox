@@ -136,6 +136,7 @@ UIGuestControlFileManager::UIGuestControlFileManager(EmbedTo enmEmbedding, UIAct
     , m_pMainLayout(0)
     , m_pVerticalSplitter(0)
     , m_pToolBar(0)
+    , m_pVerticalToolBar(0)
     , m_pGuestFileTable(0)
     , m_pHostFileTable(0)
     , m_enmEmbedding(enmEmbedding)
@@ -316,12 +317,12 @@ void UIGuestControlFileManager::prepareObjects()
 
 void UIGuestControlFileManager::prepareVerticalToolBar(QHBoxLayout *layout)
 {
-    m_pToolBar = new UIToolBar;
-    if (!m_pToolBar)
+    m_pVerticalToolBar = new UIToolBar;
+    if (!m_pVerticalToolBar)
         return;
 
-    m_pToolBar->setOrientation(Qt::Vertical);
-    m_pToolBar->setEnabled(false);
+    m_pVerticalToolBar->setOrientation(Qt::Vertical);
+    m_pVerticalToolBar->setEnabled(false);
 
     /* Add to dummy QWidget to toolbar to center the action icons vertically: */
     QWidget *topSpacerWidget = new QWidget(this);
@@ -331,12 +332,12 @@ void UIGuestControlFileManager::prepareVerticalToolBar(QHBoxLayout *layout)
     bottomSpacerWidget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
     bottomSpacerWidget->setVisible(true);
 
-    m_pToolBar->addWidget(topSpacerWidget);
-    m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_CopyToHost));
-    m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_CopyToGuest));
-    m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_MoveToHost));
-    m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_MoveToGuest));
-    m_pToolBar->addWidget(bottomSpacerWidget);
+    m_pVerticalToolBar->addWidget(topSpacerWidget);
+    m_pVerticalToolBar->addAction(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_CopyToHost));
+    m_pVerticalToolBar->addAction(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_CopyToGuest));
+    m_pVerticalToolBar->addAction(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_MoveToHost));
+    m_pVerticalToolBar->addAction(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_MoveToGuest));
+    m_pVerticalToolBar->addWidget(bottomSpacerWidget);
 
     connect(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_CopyToHost), &QAction::triggered,
             this, &UIGuestControlFileManager::sltCopyGuestToHost);
@@ -348,7 +349,7 @@ void UIGuestControlFileManager::prepareVerticalToolBar(QHBoxLayout *layout)
     connect(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_MoveToGuest), &QAction::triggered,
              this, &UIGuestControlFileManager::sltMoveHostToGuest);
 
-    layout ->addWidget(m_pToolBar);
+    layout ->addWidget(m_pVerticalToolBar);
 }
 
 void UIGuestControlFileManager::prepareConnections()
@@ -593,8 +594,8 @@ void UIGuestControlFileManager::postSessionCreated()
         m_pSessionPanel->switchSessionCloseMode();
     if (m_pGuestFileTable)
         m_pGuestFileTable->setEnabled(true);
-    if (m_pToolBar)
-        m_pToolBar->setEnabled(true);
+    if (m_pVerticalToolBar)
+        m_pVerticalToolBar->setEnabled(true);
 }
 
 void UIGuestControlFileManager::postSessionClosed()
@@ -603,8 +604,8 @@ void UIGuestControlFileManager::postSessionClosed()
         m_pSessionPanel->switchSessionCreateMode();
     if (m_pGuestFileTable)
         m_pGuestFileTable->setEnabled(false);
-    if (m_pToolBar)
-        m_pToolBar->setEnabled(false);
+    if (m_pVerticalToolBar)
+        m_pVerticalToolBar->setEnabled(false);
 
 }
 
