@@ -45,6 +45,14 @@ are ordered as follows:
            VM.Standard2.*</para>
       </listitem>
 
+      <listitem>
+        <para>Devices/graphics: enable support for VMSVGA graphics device emulation
+           by default</para>
+      </listitem>
+
+      <listitem>
+        <para>Windows guests: support VMSVGA in the Windows Additions</para>
+      </listitem>
 
     </itemizedlist>
 
