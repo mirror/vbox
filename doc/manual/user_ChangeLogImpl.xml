@@ -51,6 +51,10 @@ are ordered as follows:
       </listitem>
 
       <listitem>
+        <para>VBoxManage: support for DHCP options</para>
+      </listitem>
+
+      <listitem>
         <para>Windows guests: support VMSVGA in the Windows Additions</para>
       </listitem>
 
