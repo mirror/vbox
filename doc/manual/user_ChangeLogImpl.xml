@@ -39,6 +39,15 @@ are ordered as follows:
         <para>Dummy entry</para>
       </listitem>
 
+      <listitem>
+        <para>OCI integration: exporting a VM is possible from command line interface (VBoxManage)</para>
+      </listitem>
+
+      <listitem>
+        <para>OCI integration: all virtualized shapes are supported, f.e. VM.Standard2.*</para>
+      </listitem>
+
+
     </itemizedlist>
 
     <para>In addition, the following items were fixed and/or added:</para>
