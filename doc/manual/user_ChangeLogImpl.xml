@@ -55,7 +55,8 @@ are ordered as follows:
     <itemizedlist>
 
       <listitem>
-        <para>Dummy entry</para>
+        <para>Serial: allow changing the serial port attachment while the
+          VM is running (bug #6115)</para>
       </listitem>
 
     </itemizedlist>
@@ -113,7 +114,7 @@ are ordered as follows:
       </listitem>
 
       <listitem>
-        <para>Windows Guest Addiitons: fix incorrect tablet co-ordinate
+        <para>Windows Guest Additions: fix incorrect tablet co-ordinate
            handling with recent Windows 10 builds</para>
       </listitem>
 
