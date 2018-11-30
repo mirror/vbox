@@ -7814,11 +7814,12 @@ HMSVM_EXIT_DECL hmR0SvmExitXcptBP(PVMCPU pVCpu, PSVMTRANSIENT pSvmTransient)
  *
  * @sa hmR0VmxHandleMesaDrvGp
  */
-static int hmR0SvmHandleMesaDrvGp(PVMCPU pVCpu, PSVMTRANSIENT pSvmTransient, PCPUMCTX pCtx, PCSVMVMCB pVmcb)
+static int hmR0SvmHandleMesaDrvGp(PVMCPU pVCpu, PCPUMCTX pCtx, PCSVMVMCB pVmcb)
 {
+    HMSVM_CPUMCTX_IMPORT_STATE(pVCpu, CPUMCTX_EXTRN_CS  | CPUMCTX_EXTRN_RIP | CPUMCTX_EXTRN_RFLAGS | CPUMCTX_EXTRN_GPRS_MASK);
     Log(("hmR0SvmHandleMesaDrvGp: at %04x:%08RX64 rcx=%RX64 rbx=%RX64\n",
          pVmcb->guest.CS.u16Sel, pVmcb->guest.u64RIP, pCtx->rcx, pCtx->rbx));
-    RT_NOREF(pCtx, pSvmTransient, pVmcb);
+    RT_NOREF(pCtx, pVmcb);
 
     /* For now we'll just skip the instruction. */
     hmR0SvmAdvanceRip(pVCpu, 1);
@@ -7840,10 +7841,10 @@ DECLINLINE(bool) hmR0SvmIsMesaDrvGp(PVMCPU pVCpu, PCPUMCTX pCtx, PCSVMVMCB pVmcb
 {
     /* Check magic and port. */
     Assert(!(pCtx->fExtrn & (CPUMCTX_EXTRN_RDX | CPUMCTX_EXTRN_RCX)));
-    /*Log(("hmR0SvmIsMesaDrvGp: rax=%RX64 rdx=%RX64\n", pCtx->fExtrn & CPUMCTX_EXTRN_RAX ? pCtx->rax : pVmcb->guest.u64RAX, pCtx->rdx));*/
+    /*Log8(("hmR0SvmIsMesaDrvGp: rax=%RX64 rdx=%RX64\n", pCtx->fExtrn & CPUMCTX_EXTRN_RAX ? pVmcb->guest.u64RAX : pCtx->rax, pCtx->rdx));*/
     if (pCtx->dx != UINT32_C(0x5658))
         return false;
-    if ((pCtx->fExtrn & CPUMCTX_EXTRN_RAX ? pCtx->rax : pVmcb->guest.u64RAX) != UINT32_C(0x564d5868))
+    if ((pCtx->fExtrn & CPUMCTX_EXTRN_RAX ? pVmcb->guest.u64RAX : pCtx->rax) != UINT32_C(0x564d5868))
         return false;
 
     /* Check that it is #GP(0). */
@@ -7851,34 +7852,31 @@ DECLINLINE(bool) hmR0SvmIsMesaDrvGp(PVMCPU pVCpu, PCPUMCTX pCtx, PCSVMVMCB pVmcb
         return false;
 
     /* Flat ring-3 CS. */
-    /*Log(("hmR0SvmIsMesaDrvGp: u8CPL=%d base=%Rx64\n", pVmcb->guest.u8CPL, pCtx->fExtrn & CPUMCTX_EXTRN_CS ? pVmcb->guest.CS.u64Base : pCtx->cs.Sel));*/
+    /*Log8(("hmR0SvmIsMesaDrvGp: u8CPL=%d base=%RX64\n", pVmcb->guest.u8CPL, pCtx->fExtrn & CPUMCTX_EXTRN_CS ? pVmcb->guest.CS.u64Base : pCtx->cs.u64Base));*/
     if (pVmcb->guest.u8CPL != 3)
         return false;
-    if ((pCtx->fExtrn & CPUMCTX_EXTRN_CS ? pVmcb->guest.CS.u64Base : pCtx->cs.Sel) != 0)
+    if ((pCtx->fExtrn & CPUMCTX_EXTRN_CS ? pVmcb->guest.CS.u64Base : pCtx->cs.u64Base) != 0)
         return false;
 
     /* 0xed:  IN eAX,dx */
-    uint64_t const uRip = pCtx->fExtrn & CPUMCTX_EXTRN_RIP ? pCtx->rip : pVmcb->guest.u64RIP;
-    uint8_t abInstr[1];
-    if (   hmR0SvmSupportsNextRipSave(pVCpu)
-        && pVmcb->ctrl.u64NextRIP - uRip != sizeof(abInstr))
-        return false;
-    if (pVmcb->ctrl.cbInstrFetched >= 1)
+    if (pVmcb->ctrl.cbInstrFetched < 1) /* unlikely, it turns out. */
     {
-        /*Log(("hmR0SvmIsMesaDrvGp: %#x\n", pVmcb->ctrl.abInstr));*/
-        if (pVmcb->ctrl.abInstr[0] != 0xed)
-            return false;
-    }
-    else
-    {
-        int rc = PGMPhysSimpleReadGCPtr(pVCpu, abInstr, uRip, sizeof(abInstr));
-        /*Log(("hmR0SvmIsMesaDrvGp: PGMPhysSimpleReadGCPtr -> %Rrc %#x\n", rc, abInstr[0]));*/
+        HMSVM_CPUMCTX_IMPORT_STATE(pVCpu, CPUMCTX_EXTRN_CS  | CPUMCTX_EXTRN_RIP | CPUMCTX_EXTRN_GPRS_MASK
+                                        | CPUMCTX_EXTRN_CR0 | CPUMCTX_EXTRN_CR3 | CPUMCTX_EXTRN_CR4 | CPUMCTX_EXTRN_EFER);
+        uint8_t abInstr[1];
+        int rc = PGMPhysSimpleReadGCPtr(pVCpu, abInstr, pCtx->rip, sizeof(abInstr));
+        /*Log8(("hmR0SvmIsMesaDrvGp: PGMPhysSimpleReadGCPtr -> %Rrc %#x\n", rc, abInstr[0])); */
         if (RT_FAILURE(rc))
             return false;
         if (abInstr[0] != 0xed)
             return false;
     }
-
+    else
+    {
+        /*Log8(("hmR0SvmIsMesaDrvGp: %#x\n", pVmcb->ctrl.abInstr));*/
+        if (pVmcb->ctrl.abInstr[0] != 0xed)
+            return false;
+    }
     return true;
 }
 
@@ -7909,7 +7907,7 @@ HMSVM_EXIT_DECL hmR0SvmExitXcptGP(PVMCPU pVCpu, PSVMTRANSIENT pSvmTransient)
         hmR0SvmSetPendingEvent(pVCpu, &Event, 0 /* GCPtrFaultAddress */);
         return VINF_SUCCESS;
     }
-    return hmR0SvmHandleMesaDrvGp(pVCpu, pSvmTransient, pCtx, pVmcb);
+    return hmR0SvmHandleMesaDrvGp(pVCpu, pCtx, pVmcb);
 }
 
 
