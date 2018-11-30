@@ -218,6 +218,12 @@ class SOURCEFILEENTRY
         {
             AssertPtrReturn(pszPath, VERR_INVALID_POINTER);
 
+/** @todo r=bird: Do ONE RTPathQueryInfo call here, and only do it when the source is on the HOST.
+ * You're currently doing this for guest files too...
+ *
+ * You realize that a filter is a filter when you define it to be, not when the
+ * file doesn't exist.  It something the command defines, nothing else. So, it
+ * makes not sense. */
             if (   !RTFileExists(pszPath)
                 && !RTDirExists(pszPath))
             {
@@ -1776,9 +1782,8 @@ static RTEXITCODE gctlHandleCopy(PGCTLCMDCTX pCtx, int argc, char **argv, bool f
                 break;
 
             case VINF_GETOPT_NOT_OPTION:
-                /* Last argument and no destination specified with
-                 * --target-directory yet? Then use the current
-                 * (= last) argument as destination. */
+                /* Last argument and no destination specified with --target-directory yet?
+                   Then use the current (= last) argument as destination. */
                 if (   GetState.argc == GetState.iNext
                     && pszDst == NULL)
                     pszDst = ValueUnion.psz;
@@ -1786,6 +1791,10 @@ static RTEXITCODE gctlHandleCopy(PGCTLCMDCTX pCtx, int argc, char **argv, bool f
                 {
                     try
                     {   /* Save the source directory. */
+/** @todo r=bird: Why the fudge do you do two 'ing stat() calls on the HOST when copy files from the GUEST?
+ * Guess it is just some stuff that happened while you were working on SOURCEFILEENTRY, but it doesn't make
+ * it more sensible.
+ */
                         vecSources.push_back(SOURCEFILEENTRY(ValueUnion.psz));
                     }
                     catch (std::bad_alloc &)
