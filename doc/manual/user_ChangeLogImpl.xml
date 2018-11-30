@@ -28,7 +28,32 @@ are ordered as follows:
                            So, we use chapter and xpointer="xpointer(/chapter/)" with xi:include. -->
 
   <sect1>
-    <title>Version 6.0.0_BETA3 (2018-11-30)</title>
+    <title>Version 6.0.0 release candidate 1 (2018-xx-xx)</title>
+
+    <para>This is a major update. The following major new features
+      were added:</para>
+
+    <itemizedlist>
+
+      <listitem>
+        <para>Dummy entry</para>
+      </listitem>
+
+    </itemizedlist>
+
+    <para>In addition, the following items were fixed and/or added:</para>
+
+    <itemizedlist>
+
+      <listitem>
+        <para>Dummy entry</para>
+      </listitem>
+
+    </itemizedlist>
+  </sect1>
+
+  <sect1>
+    <title>Version 6.0.0 BETA 3 (2018-11-30)</title>
 
     <para>This is a beta release. The following major new features
       were added:</para>
@@ -85,7 +110,7 @@ are ordered as follows:
   </sect1>
 
   <sect1>
-    <title>Version 6.0.0_BETA2 (2018-11-15)</title>
+    <title>Version 6.0.0 BETA 2 (2018-11-15)</title>
 
     <para>This is a beta release. The following major new features
       were added:</para>
@@ -152,7 +177,7 @@ are ordered as follows:
   </sect1>
 
   <sect1>
-    <title>Version 6.0.0_BETA1 (2018-10-22)</title>
+    <title>Version 6.0.0 BETA 1 (2018-10-22)</title>
 
     <para>This is a beta release. The following major new features
       were added:</para>
