@@ -2181,7 +2181,9 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
                         TRPMAssertTrap(pVCpu, uNstGstVector, TRPM_HARDWARE_INT);
                         Log(("EM: Asserting nested-guest virt. hardware intr: %#x\n", uNstGstVector));
                         rc2 = VINF_EM_RESCHEDULE;
+#ifdef VBOX_STRICT
                         rcIrq = rc2;
+#endif
                     }
                     UPDATE_RC();
                 }
