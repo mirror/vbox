@@ -2456,7 +2456,7 @@ static int hmR0SvmExportGuestState(PVMCPU pVCpu)
     {
         Assert(pVCpu->CTX_SUFF(pVM)->hm.s.svm.u32Features & X86_CPUID_SVM_FEATURE_EDX_VGIF);    /* Hardware supports it. */
         Assert(HMSvmIsVGifActive(pVCpu->CTX_SUFF(pVM)));                                        /* VM has configured it. */
-        pVmcb->ctrl.IntCtrl.n.u1VGif = pCtx->hwvirt.fGif;
+        pVmcb->ctrl.IntCtrl.n.u1VGif = CPUMGetGuestGif(pCtx);
     }
 #endif
 
@@ -2809,7 +2809,7 @@ static void hmR0SvmImportGuestState(PVMCPU pVCpu, uint64_t fWhat)
             {
                 Assert(!CPUMIsGuestInSvmNestedHwVirtMode(pCtx));    /* We don't yet support passing VGIF feature to the guest. */
                 Assert(HMSvmIsVGifActive(pVCpu->CTX_SUFF(pVM)));    /* VM has configured it. */
-                pCtx->hwvirt.fGif = pVmcbCtrl->IntCtrl.n.u1VGif;
+                CPUMSetGuestGif(pCtx, pVmcbCtrl->IntCtrl.n.u1VGif);
             }
         }
 
@@ -3742,7 +3742,7 @@ static VBOXSTRICTRC hmR0SvmEvaluatePendingEventNested(PVMCPU pVCpu)
     PSVMVMCB pVmcb = hmR0SvmGetCurrentVmcb(pVCpu);
     Assert(pVmcb);
 
-    bool const fGif        = pCtx->hwvirt.fGif;
+    bool const fGif        = CPUMGetGuestGif(pCtx);
     bool const fIntShadow  = hmR0SvmIsIntrShadowActive(pVCpu);
     bool const fBlockNmi   = VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_BLOCK_NMIS);
 
@@ -3802,7 +3802,7 @@ static VBOXSTRICTRC hmR0SvmEvaluatePendingEventNested(PVMCPU pVCpu)
     {
         if (    fGif
             && !fIntShadow
-            &&  CPUMCanSvmNstGstTakePhysIntr(pVCpu, pCtx))
+            &&  CPUMIsGuestSvmPhysIntrEnabled(pVCpu, pCtx))
         {
             if (CPUMIsGuestSvmCtrlInterceptSet(pVCpu, pCtx, SVM_CTRL_INTERCEPT_INTR))
             {
@@ -3862,11 +3862,7 @@ static void hmR0SvmEvaluatePendingEvent(PVMCPU pVCpu)
     PSVMVMCB pVmcb = hmR0SvmGetCurrentVmcb(pVCpu);
     Assert(pVmcb);
 
-#ifdef VBOX_WITH_NESTED_HWVIRT_SVM
-    bool const fGif       = pCtx->hwvirt.fGif;
-#else
-    bool const fGif       = true;
-#endif
+    bool const fGif       = CPUMGetGuestGif(pCtx);
     bool const fIntShadow = hmR0SvmIsIntrShadowActive(pVCpu);
     bool const fBlockInt  = !(pCtx->eflags.u32 & X86_EFL_IF);
     bool const fBlockNmi  = VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_BLOCK_NMIS);
@@ -3973,7 +3969,7 @@ static void hmR0SvmInjectPendingEvent(PVMCPU pVCpu, PSVMVMCB pVmcb)
          * virtual interrupt at this point. Hence the partial verification below.
          */
         if (CPUMIsGuestInSvmNestedHwVirtMode(pCtx))
-            fAllowInt = CPUMCanSvmNstGstTakePhysIntr(pVCpu, pCtx) || CPUMCanSvmNstGstTakeVirtIntr(pVCpu, pCtx);
+            fAllowInt = CPUMIsGuestSvmPhysIntrEnabled(pVCpu, pCtx) || CPUMIsGuestSvmVirtIntrEnabled(pVCpu, pCtx);
         else
             fAllowInt = RT_BOOL(pCtx->eflags.u32 & X86_EFL_IF);
     }

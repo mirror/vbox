@@ -2648,26 +2648,52 @@ VMMDECL(uint32_t) CPUMGetGuestMxCsrMask(PVM pVM)
 
 
 /**
- * Gets whether the guest or nested-guest's are ready to receive physical
- * interrupts.
+ * Returns whether the guest has physical interrupts enabled.
  *
- * This function assumes there is no global
- *
- * @returns @c true if interrupts can be injected into the guest (or nested-guest),
- *          @c false otherwise.
+ * @returns @c true if interrupts are enabled, @c false otherwise.
  * @param   pVCpu       The cross context virtual CPU structure.
+ *
+ * @remarks Warning! This function does -not- take into account the global-interrupt
+ *          flag (GIF).
  */
-DECLINLINE(bool) CPUMIsGuestPhysIntrsEnabled(PVMCPU pVCpu)
+VMM_INT_DECL(bool) CPUMIsGuestPhysIntrEnabled(PVMCPU pVCpu)
 {
-    Assert(pVCpu->cpum.s.Guest.hwvirt.fGif);
-    if (   !CPUMIsGuestInVmxNonRootMode(&pVCpu->cpum.s.Guest)
-        && !CPUMIsGuestInSvmNestedHwVirtMode(&pVCpu->cpum.s.Guest))
-        return RT_BOOL(pVCpu->cpum.s.Guest.rflags.Bits.u1IF);
+    if (!CPUMIsGuestInNestedHwvirtMode(&pVCpu->cpum.s.Guest))
+    {
+#ifdef VBOX_WITH_RAW_MODE_NOT_R0
+        uint32_t const fEFlags = !pVCpu->cpum.s.fRawEntered ? pVCpu->cpum.s.Guest.eflags.u : CPUMRawGetEFlags(pVCpu);
+#else
+        uint32_t const fEFlags = pVCpu->cpum.s.Guest.eflags.u;
+#endif
+        return RT_BOOL(fEFlags & X86_EFL_IF);
+    }
 
     if (CPUMIsGuestInVmxNonRootMode(&pVCpu->cpum.s.Guest))
-        return CPUMCanVmxNstGstTakePhysIntr(pVCpu, &pVCpu->cpum.s.Guest);
+        return CPUMIsGuestVmxPhysIntrEnabled(pVCpu, &pVCpu->cpum.s.Guest);
 
-    return CPUMCanSvmNstGstTakePhysIntr(pVCpu, &pVCpu->cpum.s.Guest);
+    Assert(CPUMIsGuestInSvmNestedHwVirtMode(&pVCpu->cpum.s.Guest));
+    return CPUMIsGuestSvmPhysIntrEnabled(pVCpu, &pVCpu->cpum.s.Guest);
+}
+
+
+/**
+ * Returns whether the nested-guest has virtual interrupts enabled.
+ *
+ * @returns @c true if interrupts are enabled, @c false otherwise.
+ * @param   pVCpu       The cross context virtual CPU structure.
+ *
+ * @remarks Warning! This function does -not- take into account the global-interrupt
+ *          flag (GIF).
+ */
+VMM_INT_DECL(bool) CPUMIsGuestVirtIntrEnabled(PVMCPU pVCpu)
+{
+    Assert(CPUMIsGuestInNestedHwvirtMode(&pVCpu->cpum.s.Guest));
+
+    if (CPUMIsGuestInVmxNonRootMode(&pVCpu->cpum.s.Guest))
+        return CPUMIsGuestVmxVirtIntrEnabled(pVCpu, &pVCpu->cpum.s.Guest);
+
+    Assert(CPUMIsGuestInSvmNestedHwVirtMode(&pVCpu->cpum.s.Guest));
+    return CPUMIsGuestSvmVirtIntrEnabled(pVCpu, &pVCpu->cpum.s.Guest);
 }
 
 
@@ -2680,30 +2706,40 @@ DECLINLINE(bool) CPUMIsGuestPhysIntrsEnabled(PVMCPU pVCpu)
 VMM_INT_DECL(CPUMINTERRUPTIBILITY) CPUMGetGuestInterruptibility(PVMCPU pVCpu)
 {
 #if 1
-    if (pVCpu->cpum.s.Guest.hwvirt.fGif)
+    /* Global-interrupt flag blocks pretty much everything we care about here. */
+    if (CPUMGetGuestGif(&pVCpu->cpum.s.Guest))
     {
-        /** @todo r=ramshankar: What about virtual-interrupt delivery to nested-guests? */
-        if (CPUMIsGuestPhysIntrsEnabled(pVCpu))
+        /*
+         * Physical interrupts are primarily blocked using EFLAGS. However, we cannot access
+         * it directly here. If and how EFLAGS are used depends on the context (nested-guest
+         * or raw-mode). Hence we use the function below which handles the details.
+         */
+        if (    CPUMIsGuestPhysIntrEnabled(pVCpu)
+            && !VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_BLOCK_NMIS | VMCPU_FF_INHIBIT_INTERRUPTS))
         {
-            if (!VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_BLOCK_NMIS | VMCPU_FF_INHIBIT_INTERRUPTS))
+            if (   !CPUMIsGuestInNestedHwvirtMode(&pVCpu->cpum.s.Guest)
+                ||  CPUMIsGuestVirtIntrEnabled(pVCpu))
                 return CPUMINTERRUPTIBILITY_UNRESTRAINED;
 
-            /** @todo does blocking NMIs mean interrupts are also inhibited? */
-            if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS))
-            {
-                if (!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_BLOCK_NMIS))
-                    return CPUMINTERRUPTIBILITY_INT_INHIBITED;
-                return CPUMINTERRUPTIBILITY_NMI_INHIBIT;
-            }
-            AssertFailed();
+            /* Physical interrupts are enabled, but nested-guest virtual interrupts are disabled. */
+            return CPUMINTERRUPTIBILITY_VIRT_INT_DISABLED;
+        }
+
+        /*
+         * Blocking the delivery of NMIs during an interrupt shadow is CPU implementation
+         * specific. Therefore, in practice, we can't deliver an NMI in an interrupt shadow.
+         * However, there is some uncertainity regarding the converse, i.e. whether
+         * NMI-blocking until IRET blocks delivery of physical interrupts.
+         *
+         * See Intel spec. 25.4.1 "Event Blocking".
+         */
+        if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_BLOCK_NMIS))
             return CPUMINTERRUPTIBILITY_NMI_INHIBIT;
-        }
-        else
-        {
-            if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_BLOCK_NMIS))
-                return CPUMINTERRUPTIBILITY_NMI_INHIBIT;
-            return CPUMINTERRUPTIBILITY_INT_DISABLED;
-        }
+
+        if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS))
+            return CPUMINTERRUPTIBILITY_INT_INHIBITED;
+
+        return CPUMINTERRUPTIBILITY_INT_DISABLED;
     }
     return CPUMINTERRUPTIBILITY_GLOBAL_INHIBIT;
 #else
@@ -2750,7 +2786,7 @@ VMM_INT_DECL(CPUMINTERRUPTIBILITY) CPUMGetGuestInterruptibility(PVMCPU pVCpu)
  * @param   pVCpu   The cross context virtual CPU structure of the calling EMT.
  * @param   pCtx    The guest-CPU context.
  */
-VMM_INT_DECL(bool) CPUMCanVmxNstGstTakePhysIntr(PVMCPU pVCpu, PCCPUMCTX pCtx)
+VMM_INT_DECL(bool) CPUMIsGuestVmxPhysIntrEnabled(PVMCPU pVCpu, PCCPUMCTX pCtx)
 {
 #ifdef IN_RC
     RT_NOREF2(pVCpu, pCtx);
@@ -2758,15 +2794,15 @@ VMM_INT_DECL(bool) CPUMCanVmxNstGstTakePhysIntr(PVMCPU pVCpu, PCCPUMCTX pCtx)
 #else
     RT_NOREF(pVCpu);
     Assert(CPUMIsGuestInVmxNonRootMode(pCtx));
-    Assert(pCtx->hwvirt.fGif);  /* Always true on Intel. */
 
     return RT_BOOL(pCtx->eflags.u & X86_EFL_IF);
 #endif
 }
 
+
 /**
  * Checks whether the VMX nested-guest is in a state to receive virtual interrupts
- * (those injected with the "virtual-interrupt delivery" feature).
+ * (those injected with the "virtual interrupt delivery" feature).
  *
  * @returns VBox status code.
  * @retval  true if it's ready, false otherwise.
@@ -2774,7 +2810,7 @@ VMM_INT_DECL(bool) CPUMCanVmxNstGstTakePhysIntr(PVMCPU pVCpu, PCCPUMCTX pCtx)
  * @param   pVCpu   The cross context virtual CPU structure of the calling EMT.
  * @param   pCtx    The guest-CPU context.
  */
-VMM_INT_DECL(bool) CPUMCanVmxNstGstTakeVirtIntr(PVMCPU pVCpu, PCCPUMCTX pCtx)
+VMM_INT_DECL(bool) CPUMIsGuestVmxVirtIntrEnabled(PVMCPU pVCpu, PCCPUMCTX pCtx)
 {
 #ifdef IN_RC
     RT_NOREF2(pVCpu, pCtx);
@@ -2782,7 +2818,6 @@ VMM_INT_DECL(bool) CPUMCanVmxNstGstTakeVirtIntr(PVMCPU pVCpu, PCCPUMCTX pCtx)
 #else
     RT_NOREF2(pVCpu, pCtx);
     Assert(CPUMIsGuestInVmxNonRootMode(pCtx));
-    Assert(pCtx->hwvirt.fGif);  /* Always true on Intel. */
 
     if (   (pCtx->eflags.u & X86_EFL_IF)
         && !CPUMIsGuestVmxProcCtlsSet(pVCpu, pCtx, VMX_PROC_CTLS_INT_WINDOW_EXIT))
@@ -2793,16 +2828,15 @@ VMM_INT_DECL(bool) CPUMCanVmxNstGstTakeVirtIntr(PVMCPU pVCpu, PCCPUMCTX pCtx)
 
 
 /**
- * Checks whether the SVM nested-guest is in a state to receive physical (APIC)
- * interrupts.
+ * Checks whether the SVM nested-guest has physical interrupts enabled.
  *
- * @returns VBox status code.
- * @retval  true if it's ready, false otherwise.
- *
+ * @returns true if interrupts are enabled, false otherwise.
  * @param   pVCpu   The cross context virtual CPU structure of the calling EMT.
  * @param   pCtx    The guest-CPU context.
+ *
+ * @remarks This does -not- take into account the global-interrupt flag.
  */
-VMM_INT_DECL(bool) CPUMCanSvmNstGstTakePhysIntr(PVMCPU pVCpu, PCCPUMCTX pCtx)
+VMM_INT_DECL(bool) CPUMIsGuestSvmPhysIntrEnabled(PVMCPU pVCpu, PCCPUMCTX pCtx)
 {
     /** @todo Optimization: Avoid this function call and use a pointer to the
      *        relevant eflags instead (setup during VMRUN instruction emulation). */
@@ -2811,7 +2845,6 @@ VMM_INT_DECL(bool) CPUMCanSvmNstGstTakePhysIntr(PVMCPU pVCpu, PCCPUMCTX pCtx)
     AssertReleaseFailedReturn(false);
 #else
     Assert(CPUMIsGuestInSvmNestedHwVirtMode(pCtx));
-    Assert(pCtx->hwvirt.fGif);
 
     X86EFLAGS fEFlags;
     if (CPUMIsGuestSvmVirtIntrMasking(pVCpu, pCtx))
@@ -2834,14 +2867,13 @@ VMM_INT_DECL(bool) CPUMCanSvmNstGstTakePhysIntr(PVMCPU pVCpu, PCCPUMCTX pCtx)
  * @param   pVCpu   The cross context virtual CPU structure of the calling EMT.
  * @param   pCtx    The guest-CPU context.
  */
-VMM_INT_DECL(bool) CPUMCanSvmNstGstTakeVirtIntr(PVMCPU pVCpu, PCCPUMCTX pCtx)
+VMM_INT_DECL(bool) CPUMIsGuestSvmVirtIntrEnabled(PVMCPU pVCpu, PCCPUMCTX pCtx)
 {
 #ifdef IN_RC
     RT_NOREF2(pVCpu, pCtx);
     AssertReleaseFailedReturn(false);
 #else
     Assert(CPUMIsGuestInSvmNestedHwVirtMode(pCtx));
-    Assert(pCtx->hwvirt.fGif);
 
     PCSVMVMCBCTRL pVmcbCtrl    = &pCtx->hwvirt.svm.CTX_SUFF(pVmcb)->ctrl;
     PCSVMINTCTRL  pVmcbIntCtrl = &pVmcbCtrl->IntCtrl;
@@ -2862,12 +2894,12 @@ VMM_INT_DECL(bool) CPUMCanSvmNstGstTakeVirtIntr(PVMCPU pVCpu, PCCPUMCTX pCtx)
 
 
 /**
- * Gets the pending SVM nested-guest interrupt.
+ * Gets the pending SVM nested-guest interruptvector.
  *
  * @returns The nested-guest interrupt to inject.
  * @param   pCtx            The guest-CPU context.
  */
-VMM_INT_DECL(uint8_t) CPUMGetSvmNstGstInterrupt(PCCPUMCTX pCtx)
+VMM_INT_DECL(uint8_t) CPUMGetGuestSvmVirtIntrVector(PCCPUMCTX pCtx)
 {
 #ifdef IN_RC
     RT_NOREF(pCtx);

@@ -1488,20 +1488,23 @@ VMMR3DECL(bool) TRPMR3IsGateHandler(PVM pVM, RTRCPTR GCPtr)
 #endif /* VBOX_WITH_RAW_MODE */
 
 /**
- * Inject event (such as external irq or trap)
+ * Inject event (such as external irq or trap).
  *
  * @returns VBox status code.
  * @param   pVM         The cross context VM structure.
  * @param   pVCpu       The cross context virtual CPU structure.
  * @param   enmEvent    Trpm event type
+ * @param   pfInjected  Where to store whether the event was injected or not.
  */
-VMMR3DECL(int) TRPMR3InjectEvent(PVM pVM, PVMCPU pVCpu, TRPMEVENT enmEvent)
+VMMR3DECL(int) TRPMR3InjectEvent(PVM pVM, PVMCPU pVCpu, TRPMEVENT enmEvent, bool *pfInjected)
 {
 #ifdef VBOX_WITH_RAW_MODE
     PCPUMCTX pCtx = CPUMQueryGuestCtxPtr(pVCpu);
     Assert(!PATMIsPatchGCAddr(pVM, pCtx->eip));
 #endif
     Assert(!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS));
+    Assert(pfInjected);
+    *pfInjected = false;
 
     /* Currently only useful for external hardware interrupts. */
     Assert(enmEvent == TRPM_HARDWARE_INT);
@@ -1601,6 +1604,7 @@ VMMR3DECL(int) TRPMR3InjectEvent(PVM pVM, PVMCPU pVCpu, TRPMEVENT enmEvent)
             }
         }
 #endif
+        *pfInjected = true;
         if (!VM_IS_NEM_ENABLED(pVM))
         {
             rc = TRPMAssertTrap(pVCpu, u8Interrupt, TRPM_HARDWARE_INT);

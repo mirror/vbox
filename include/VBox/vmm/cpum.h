@@ -1429,14 +1429,16 @@ VMM_INT_DECL(bool)  CPUMIsGuestInRawMode(PVMCPU pVCpu);
 
 /** @name Nested Hardware-Virtualization Helpers.
  * @{  */
-VMM_INT_DECL(bool)      CPUMCanSvmNstGstTakePhysIntr(PVMCPU pVCpu, PCCPUMCTX pCtx);
-VMM_INT_DECL(bool)      CPUMCanSvmNstGstTakeVirtIntr(PVMCPU pVCpu, PCCPUMCTX pCtx);
-VMM_INT_DECL(uint8_t)   CPUMGetSvmNstGstInterrupt(PCCPUMCTX pCtx);
+VMM_INT_DECL(bool)      CPUMIsGuestPhysIntrEnabled(PVMCPU pVCpu);
+VMM_INT_DECL(bool)      CPUMIsGuestVirtIntrEnabled(PVMCPU pVCpu);
+VMM_INT_DECL(bool)      CPUMIsGuestSvmPhysIntrEnabled(PVMCPU pVCpu, PCCPUMCTX pCtx);
+VMM_INT_DECL(bool)      CPUMIsGuestSvmVirtIntrEnabled(PVMCPU pVCpu, PCCPUMCTX pCtx);
+VMM_INT_DECL(uint8_t)   CPUMGetGuestSvmVirtIntrVector(PCCPUMCTX pCtx);
 VMM_INT_DECL(void)      CPUMSvmVmExitRestoreHostState(PVMCPU pVCpu, PCPUMCTX pCtx);
 VMM_INT_DECL(void)      CPUMSvmVmRunSaveHostState(PCPUMCTX pCtx, uint8_t cbInstr);
 VMM_INT_DECL(uint64_t)  CPUMApplyNestedGuestTscOffset(PVMCPU pVCpu, uint64_t uTicks);
-VMM_INT_DECL(bool)      CPUMCanVmxNstGstTakePhysIntr(PVMCPU pVCpu, PCCPUMCTX pCtx);
-VMM_INT_DECL(bool)      CPUMCanVmxNstGstTakeVirtIntr(PVMCPU pVCpu, PCCPUMCTX pCtx);
+VMM_INT_DECL(bool)      CPUMIsGuestVmxPhysIntrEnabled(PVMCPU pVCpu, PCCPUMCTX pCtx);
+VMM_INT_DECL(bool)      CPUMIsGuestVmxVirtIntrEnabled(PVMCPU pVCpu, PCCPUMCTX pCtx);
 /** @} */
 
 /** @name Externalized State Helpers.
@@ -1627,10 +1629,32 @@ DECLINLINE(bool) CPUMIsGuestVmxEnabled(PCCPUMCTX pCtx)
 }
 
 /**
+ * Returns the guest's global-interrupt (GIF) flag.
+ *
+ * @returns true when global-interrupts are enabled, otherwise false.
+ * @param   pCtx    Current CPU context.
+ */
+DECLINLINE(bool) CPUMGetGuestGif(PCCPUMCTX pCtx)
+{
+    return pCtx->hwvirt.fGif;
+}
+
+/**
+ * Sets the guest's global-interrupt flag (GIF).
+ *
+ * @param   pCtx    Current CPU context.
+ * @param   fGif    The value to set.
+ */
+DECLINLINE(void) CPUMSetGuestGif(PCPUMCTX pCtx, bool fGif)
+{
+    pCtx->hwvirt.fGif = fGif;
+}
+
+/**
  * Checks if we are executing inside an SVM nested hardware-virtualized guest.
  *
  * @returns @c true if in SVM nested-guest mode, @c false otherwise.
- * @param   pCtx        Pointer to the context.
+ * @param   pCtx    Current CPU context.
  */
 DECLINLINE(bool) CPUMIsGuestInSvmNestedHwVirtMode(PCCPUMCTX pCtx)
 {
@@ -1666,6 +1690,18 @@ DECLINLINE(bool) CPUMIsGuestInVmxNonRootMode(PCCPUMCTX pCtx)
     NOREF(pCtx);
     return false;
 #endif
+}
+
+/**
+ * Checks if we are executing inside an SVM or VMX nested hardware-virtualized
+ * guest.
+ *
+ * @returns @c true if in nested-guest mode, @c false otherwise.
+ * @param   pCtx    Current CPU context.
+ */
+DECLINLINE(bool) CPUMIsGuestInNestedHwvirtMode(PCCPUMCTX pCtx)
+{
+    return CPUMIsGuestInVmxNonRootMode(pCtx) || CPUMIsGuestInSvmNestedHwVirtMode(pCtx);
 }
 
 /**
@@ -2132,8 +2168,9 @@ typedef enum CPUMINTERRUPTIBILITY
 {
     CPUMINTERRUPTIBILITY_INVALID = 0,
     CPUMINTERRUPTIBILITY_UNRESTRAINED,
-    CPUMINTERRUPTIBILITY_INT_INHIBITED,
+    CPUMINTERRUPTIBILITY_VIRT_INT_DISABLED,
     CPUMINTERRUPTIBILITY_INT_DISABLED,
+    CPUMINTERRUPTIBILITY_INT_INHIBITED,
     CPUMINTERRUPTIBILITY_NMI_INHIBIT,
     CPUMINTERRUPTIBILITY_GLOBAL_INHIBIT,
     CPUMINTERRUPTIBILITY_END,

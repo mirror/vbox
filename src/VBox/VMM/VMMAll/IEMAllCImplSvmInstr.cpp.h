@@ -138,9 +138,9 @@ IEM_STATIC VBOXSTRICTRC iemSvmVmexit(PVMCPU pVCpu, uint64_t uExitCode, uint64_t 
                  pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, uExitCode, uExitInfo1, uExitInfo2));
 
         /*
-         * Disable the global interrupt flag to prevent interrupts during the 'atomic' world switch.
+         * Disable the global-interrupt flag to prevent interrupts during the 'atomic' world switch.
          */
-        pVCpu->cpum.GstCtx.hwvirt.fGif = false;
+        CPUMSetGuestGif(&pVCpu->cpum.GstCtx, false);
 
         /*
          * Map the nested-guest VMCB from its location in guest memory.
@@ -756,9 +756,9 @@ IEM_STATIC VBOXSTRICTRC iemSvmVmrun(PVMCPU pVCpu, uint8_t cbInstr, RTGCPHYS GCPh
         }
 
         /*
-         * Clear global interrupt flags to allow interrupts in the guest.
+         * Set the global-interrupt flag to allow interrupts in the guest.
          */
-        pVCpu->cpum.GstCtx.hwvirt.fGif = true;
+        CPUMSetGuestGif(&pVCpu->cpum.GstCtx, true);
 
         /*
          * Event injection.
@@ -1241,7 +1241,7 @@ IEM_CIMPL_DEF_0(iemCImpl_clgi)
         IEM_SVM_VMEXIT_RET(pVCpu, SVM_EXIT_CLGI, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
     }
 
-    pVCpu->cpum.GstCtx.hwvirt.fGif = false;
+    CPUMSetGuestGif(&pVCpu->cpum.GstCtx, false);
     iemRegAddToRipAndClearRF(pVCpu, cbInstr);
 
 #  if defined(VBOX_WITH_NESTED_HWVIRT_ONLY_IN_IEM) && defined(IN_RING3)
@@ -1270,7 +1270,7 @@ IEM_CIMPL_DEF_0(iemCImpl_stgi)
         IEM_SVM_VMEXIT_RET(pVCpu, SVM_EXIT_STGI, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
     }
 
-    pVCpu->cpum.GstCtx.hwvirt.fGif = true;
+    CPUMSetGuestGif(&pVCpu->cpum.GstCtx, true);
     iemRegAddToRipAndClearRF(pVCpu, cbInstr);
 
 #  if defined(VBOX_WITH_NESTED_HWVIRT_ONLY_IN_IEM) && defined(IN_RING3)

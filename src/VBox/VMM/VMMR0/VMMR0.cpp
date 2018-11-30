@@ -617,6 +617,8 @@ VMMR0_INT_DECL(int) VMMR0TermVM(PGVM pGVM, PVM pVM, VMCPUID idCpu)
 static int vmmR0DoHaltInterrupt(PVMCPU pVCpu, unsigned uMWait, CPUMINTERRUPTIBILITY enmInterruptibility)
 {
     Assert(!TRPMHasTrap(pVCpu));
+    Assert(   enmInterruptibility > CPUMINTERRUPTIBILITY_INVALID
+           && enmInterruptibility < CPUMINTERRUPTIBILITY_END);
 
     /*
      * Pending interrupts w/o any SMIs or NMIs?  That the usual case.
@@ -624,7 +626,7 @@ static int vmmR0DoHaltInterrupt(PVMCPU pVCpu, unsigned uMWait, CPUMINTERRUPTIBIL
     if (    VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC)
         && !VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_INTERRUPT_SMI  | VMCPU_FF_INTERRUPT_NMI))
     {
-        if (enmInterruptibility <= CPUMINTERRUPTIBILITY_INT_INHIBITED)
+        if (enmInterruptibility <= CPUMINTERRUPTIBILITY_UNRESTRAINED)
         {
             uint8_t u8Interrupt = 0;
             int rc = PDMGetInterrupt(pVCpu, &u8Interrupt);
@@ -655,6 +657,19 @@ static int vmmR0DoHaltInterrupt(PVMCPU pVCpu, unsigned uMWait, CPUMINTERRUPTIBIL
         if (enmInterruptibility < CPUMINTERRUPTIBILITY_NMI_INHIBIT)
         {
             /** @todo later. */
+            return VINF_EM_HALT;
+        }
+    }
+    /*
+     * Nested-guest virtual interrupt.
+     */
+    else if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INTERRUPT_NESTED_GUEST))
+    {
+        if (enmInterruptibility < CPUMINTERRUPTIBILITY_VIRT_INT_DISABLED)
+        {
+            /** @todo NSTVMX: NSTSVM: Remember, we might have to check and perform VM-exits
+             *        here before injecting the virtual interrupt. See emR3ForcedActions
+             *        for details. */
             return VINF_EM_HALT;
         }
     }
@@ -729,8 +744,7 @@ static int vmmR0DoHalt(PGVM pGVM, PVM pVM, PGVMCPU pGVCpu, PVMCPU pVCpu)
     uint64_t const fCpuFFs = VMCPU_FF_TIMER                   | VMCPU_FF_PDM_CRITSECT         | VMCPU_FF_IEM
                            | VMCPU_FF_REQUEST                 | VMCPU_FF_DBGF                 | VMCPU_FF_HM_UPDATE_CR3
                            | VMCPU_FF_HM_UPDATE_PAE_PDPES     | VMCPU_FF_PGM_SYNC_CR3         | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL
-                           | VMCPU_FF_TO_R3                   | VMCPU_FF_IOM                  | VMCPU_FF_INTERRUPT_NESTED_GUEST /*?*/
-                           | VMCPU_FF_VMX_PREEMPT_TIMER /*?*/ | VMCPU_FF_VMX_APIC_WRITE /*?*/ | VMCPU_FF_VMX_MTF /*?*/
+                           | VMCPU_FF_TO_R3                   | VMCPU_FF_IOM
 #ifdef VBOX_WITH_RAW_MODE
                            | VMCPU_FF_TRPM_SYNC_IDT           | VMCPU_FF_SELM_SYNC_TSS        | VMCPU_FF_SELM_SYNC_GDT
                            | VMCPU_FF_SELM_SYNC_LDT           | VMCPU_FF_CSAM_SCAN_PAGE       | VMCPU_FF_CSAM_PENDING_ACTION
@@ -745,7 +759,7 @@ static int vmmR0DoHalt(PGVM pGVM, PVM pVM, PGVMCPU pGVCpu, PVMCPU pVCpu)
     CPUMINTERRUPTIBILITY const enmInterruptibility = CPUMGetGuestInterruptibility(pVCpu);
     if (   pVCpu->vmm.s.fMayHaltInRing0
         && !TRPMHasTrap(pVCpu)
-        && (   enmInterruptibility <= CPUMINTERRUPTIBILITY_INT_INHIBITED
+        && (   enmInterruptibility == CPUMINTERRUPTIBILITY_UNRESTRAINED
             || uMWait > 1))
     {
         if (   !VM_FF_IS_ANY_SET(pVM, fVmFFs)
@@ -757,8 +771,13 @@ static int vmmR0DoHalt(PGVM pGVM, PVM pVM, PGVMCPU pGVCpu, PVMCPU pVCpu)
             if (VMCPU_FF_TEST_AND_CLEAR(pVCpu, VMCPU_FF_UPDATE_APIC))
                 APICUpdatePendingInterrupts(pVCpu);
 
-            if (VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC
-                                         | VMCPU_FF_INTERRUPT_NMI  | VMCPU_FF_INTERRUPT_SMI | VMCPU_FF_UNHALT))
+            /*
+             * Flags that wake up from the halted state.
+             */
+            uint64_t const fIntMask = VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC | VMCPU_FF_INTERRUPT_NESTED_GUEST
+                                    | VMCPU_FF_INTERRUPT_NMI  | VMCPU_FF_INTERRUPT_SMI | VMCPU_FF_UNHALT;
+
+            if (VMCPU_FF_IS_ANY_SET(pVCpu, fIntMask))
                 return vmmR0DoHaltInterrupt(pVCpu, uMWait, enmInterruptibility);
             ASMNopPause();
 
@@ -774,8 +793,7 @@ static int vmmR0DoHalt(PGVM pGVM, PVM pVM, PGVMCPU pGVCpu, PVMCPU pVCpu)
                 if (VMCPU_FF_TEST_AND_CLEAR(pVCpu, VMCPU_FF_UPDATE_APIC))
                     APICUpdatePendingInterrupts(pVCpu);
 
-                if (VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC
-                                             | VMCPU_FF_INTERRUPT_NMI  | VMCPU_FF_INTERRUPT_SMI | VMCPU_FF_UNHALT))
+                if (VMCPU_FF_IS_ANY_SET(pVCpu, fIntMask))
                     return vmmR0DoHaltInterrupt(pVCpu, uMWait, enmInterruptibility);
 
                 /*
@@ -812,8 +830,7 @@ static int vmmR0DoHalt(PGVM pGVM, PVM pVM, PGVMCPU pGVCpu, PVMCPU pVCpu)
                                 return VINF_EM_HALT;
                             }
                             ASMNopPause();
-                            if (VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC
-                                                    | VMCPU_FF_INTERRUPT_NMI  | VMCPU_FF_INTERRUPT_SMI | VMCPU_FF_UNHALT))
+                            if (VMCPU_FF_IS_ANY_SET(pVCpu, fIntMask))
                             {
                                 STAM_REL_COUNTER_INC(&pVCpu->vmm.s.StatR0HaltExecFromSpin);
                                 return vmmR0DoHaltInterrupt(pVCpu, uMWait, enmInterruptibility);
@@ -852,8 +869,7 @@ static int vmmR0DoHalt(PGVM pGVM, PVM pVM, PGVMCPU pGVCpu, PVMCPU pVCpu)
                         {
                             if (VMCPU_FF_TEST_AND_CLEAR(pVCpu, VMCPU_FF_UPDATE_APIC))
                                 APICUpdatePendingInterrupts(pVCpu);
-                            if (VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC
-                                                         | VMCPU_FF_INTERRUPT_NMI  | VMCPU_FF_INTERRUPT_SMI | VMCPU_FF_UNHALT))
+                            if (VMCPU_FF_IS_ANY_SET(pVCpu, fIntMask))
                             {
                                 STAM_REL_COUNTER_INC(&pVCpu->vmm.s.StatR0HaltExecFromBlock);
                                 return vmmR0DoHaltInterrupt(pVCpu, uMWait, enmInterruptibility);

@@ -365,7 +365,7 @@ typedef struct VMCPU
  *
  *
  * Available VMCPU bits:
- *      11, 14, 15, 35 to 63
+ *      14, 15, 34 to 63
  *
  * @todo If we run low on VMCPU, we may consider merging the SELM bits
  *
@@ -472,6 +472,9 @@ typedef struct VMCPU
 #define VMCPU_FF_DBGF_BIT                   10
 /** This action forces the VM to service any pending updates to CR3 (used only
  *  by HM). */
+/** Hardware virtualized nested-guest interrupt pending. */
+#define VMCPU_FF_INTERRUPT_NESTED_GUEST     RT_BIT_64(VMCPU_FF_INTERRUPT_NESTED_GUEST_BIT)
+#define VMCPU_FF_INTERRUPT_NESTED_GUEST_BIT 11
 #define VMCPU_FF_HM_UPDATE_CR3              RT_BIT_64(VMCPU_FF_HM_UPDATE_CR3_BIT)
 #define VMCPU_FF_HM_UPDATE_CR3_BIT          12
 /** This action forces the VM to service any pending updates to PAE PDPEs (used
@@ -540,18 +543,15 @@ typedef struct VMCPU
 /** The bit number for VMCPU_FF_CPUM. */
 # define VMCPU_FF_CPUM_BIT                  30
 #endif /* VBOX_WITH_RAW_MODE */
-/** Hardware virtualized nested-guest interrupt pending. */
-#define VMCPU_FF_INTERRUPT_NESTED_GUEST     RT_BIT_64(VMCPU_FF_INTERRUPT_NESTED_GUEST_BIT)
-#define VMCPU_FF_INTERRUPT_NESTED_GUEST_BIT 31
 /** VMX-preemption timer in effect. */
 #define VMCPU_FF_VMX_PREEMPT_TIMER          RT_BIT_64(VMCPU_FF_VMX_PREEMPT_TIMER_BIT)
-#define VMCPU_FF_VMX_PREEMPT_TIMER_BIT      32
+#define VMCPU_FF_VMX_PREEMPT_TIMER_BIT      31
 /** Pending MTF (Monitor Trap Flag) event.  */
 #define VMCPU_FF_VMX_MTF                    RT_BIT_64(VMCPU_FF_VMX_MTF_BIT)
-#define VMCPU_FF_VMX_MTF_BIT                33
+#define VMCPU_FF_VMX_MTF_BIT                32
 /** VMX APIC-write emulation pending.  */
 #define VMCPU_FF_VMX_APIC_WRITE             RT_BIT_64(VMCPU_FF_VMX_APIC_WRITE_BIT)
-#define VMCPU_FF_VMX_APIC_WRITE_BIT         34
+#define VMCPU_FF_VMX_APIC_WRITE_BIT         33
 
 
 /** Externally VM forced actions. Used to quit the idle/wait loop. */
