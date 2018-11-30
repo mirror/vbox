@@ -140,6 +140,7 @@ void UIFileOperationProgressWidget::prepare()
 {
     prepareWidgets();
     prepareEventHandler();
+    retranslateUi();
 }
 
 void UIFileOperationProgressWidget::prepareWidgets()
