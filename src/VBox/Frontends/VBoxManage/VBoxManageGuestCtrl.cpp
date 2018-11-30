@@ -185,51 +185,6 @@ typedef struct GCTLCMDCTX
 
 } GCTLCMDCTX, *PGCTLCMDCTX;
 
-/**
- * An entry for a source element, including an optional DOS-like wildcard (*,?).
- */
-class SourceFileEntry
-{
-public:
-    SourceFileEntry(const char *pszSource, const char *pszFilter)
-        : mSource(pszSource)
-        , mFilter(pszFilter)
-    {}
-
-    SourceFileEntry(const char *pszSource)
-    {
-/** @todo Using host parsing rules for guest filenames might be undesirable... */
-
-        /* Look for filter and split off the filter part if present. */
-        const char *pszFilename = RTPathFilename(pszSource);
-        if (   !pszFilename
-            || !strpbrk(pszFilename, "*?"))
-            mSource.assign(pszSource);
-        else
-        {
-            mFilter = pszFilename;
-            size_t cch = pszFilename - pszSource;
-            if (cch > 0 && pszFilename[-1] != ':')
-                cch--;
-            mSource.assign(pszSource, cch);
-        }
-    }
-
-    const Utf8Str &GetSource() const
-    {
-        return mSource;
-    }
-
-    const Utf8Str &GetFilter() const
-    {
-        return mFilter;
-    }
-
-protected:
-    Utf8Str mSource;
-    Utf8Str mFilter;
-};
-typedef std::vector<SourceFileEntry> SourceVec;
 
 /**
  * An entry for an element which needs to be copied/created to/on the guest.
@@ -1735,15 +1690,15 @@ static RTEXITCODE gctlHandleCopy(PGCTLCMDCTX pCtx, int argc, char **argv, bool f
     RTGETOPTSTATE GetState;
     RTGetOptInit(&GetState, argc, argv, s_aOptions, RT_ELEMENTS(s_aOptions), 1, RTGETOPTINIT_FLAGS_OPTS_FIRST);
 
+    bool fDstMustBeDir = false;
     const char *pszDst = NULL;
     bool fFollow = false;
     bool fRecursive = false;
     uint32_t uUsage = fHostToGuest ? USAGE_GSTCTRL_COPYTO : USAGE_GSTCTRL_COPYFROM;
 
-    SourceVec vecSources;
-
     int vrc = VINF_SUCCESS;
-    while ((ch = RTGetOpt(&GetState, &ValueUnion)) != 0)
+    while (  (ch = RTGetOpt(&GetState, &ValueUnion)) != 0
+           && ch != VINF_GETOPT_NOT_OPTION)
     {
         /* For options that require an argument, ValueUnion has received the value. */
         switch (ch)
@@ -1760,25 +1715,7 @@ static RTEXITCODE gctlHandleCopy(PGCTLCMDCTX pCtx, int argc, char **argv, bool f
 
             case GETOPTDEF_COPY_TARGETDIR:
                 pszDst = ValueUnion.psz;
-                break;
-
-            case VINF_GETOPT_NOT_OPTION:
-                /* Last argument and no destination specified with --target-directory yet?
-                   Then use the current (= last) argument as destination. */
-                if (   GetState.argc == GetState.iNext
-                    && pszDst == NULL)
-                    pszDst = ValueUnion.psz;
-                else
-                {
-                    try
-                    {
-                        vecSources.push_back(SourceFileEntry(ValueUnion.psz));
-                    }
-                    catch (std::bad_alloc &)
-                    {
-                        return RTMsgErrorExit(RTEXITCODE_FAILURE, "Out of memory");
-                    }
-                }
+                fDstMustBeDir = true;
                 break;
 
             default:
@@ -1786,8 +1723,16 @@ static RTEXITCODE gctlHandleCopy(PGCTLCMDCTX pCtx, int argc, char **argv, bool f
         }
     }
 
-    if (!vecSources.size())
+    char **papszSources = RTGetOptNonOptionArrayPtr(&GetState);
+    size_t cSources = &argv[argc] - papszSources;
+
+    if (!cSources)
         return errorSyntaxEx(USAGE_GUESTCONTROL, uUsage, "No sources specified!");
+
+    /* Unless a --target-directory is given, the last argument is the destination, so
+       bump it from the source list. */
+    if (pszDst == NULL && cSources >= 2)
+        pszDst = papszSources[--cSources];
 
     if (pszDst == NULL)
         return errorSyntaxEx(USAGE_GUESTCONTROL, uUsage, "No destination specified!");
@@ -1819,7 +1764,6 @@ static RTEXITCODE gctlHandleCopy(PGCTLCMDCTX pCtx, int argc, char **argv, bool f
 
     HRESULT           rc = S_OK;
     ComPtr<IProgress> pProgress;
-
 /** @todo r=bird: This codes does nothing to handle the case where there are
  * multiple sources.  You need to do serveral thing before thats handled
  * correctly.  For starters the progress object handling needs to be moved
@@ -1834,26 +1778,31 @@ static RTEXITCODE gctlHandleCopy(PGCTLCMDCTX pCtx, int argc, char **argv, bool f
  *
  * The handling of the wildcard filtering expressions in sources was also just
  * skipped.   I've corrected this, but you still need to make up your mind wrt
- * wildcards or not.
+ * wildcards or not. 
+ * 
+ * Update: I've kicked out the whole SourceFileEntry/vecSources stuff as we can
+ *         use argv directly without any unnecessary copying.  You just have to
+ *         look for the wildcards inside this loop instead.
  */
-    if (vecSources.size() != 1)
+    NOREF(fDstMustBeDir);
+    if (cSources != 1)
         return RTMsgErrorExitFailure("Only one source file or directory at the moment.");
-    for (size_t s = 0; s < vecSources.size(); s++)
+    for (size_t iSrc = 0; iSrc < cSources; iSrc++)
     {
-        Utf8Str const &strSrc    = vecSources[s].GetSource();
-        Utf8Str const &strFilter = vecSources[s].GetFilter();
+        const char *pszSource = papszSources[iSrc];
 
-        RT_NOREF(strFilter);
-        if (strFilter.isNotEmpty())
-            rcExit = RTMsgErrorExitFailure("Skipping '%s/%s' because wildcard expansion isn't implemented yet\n",
-                                           strSrc.c_str(),  strFilter.c_str());
+        /* Check if the source contains any wilecards in the last component, if so we
+           don't know how to deal with it yet and refuse. */
+        const char *pszSrcFinalComp = RTPathFilename(pszSource);
+        if (pszSrcFinalComp && strpbrk(pszSrcFinalComp, "*?"))
+            rcExit = RTMsgErrorExitFailure("Skipping '%s' because wildcard expansion isn't implemented yet\n", pszSource);
         else if (fHostToGuest)
         {
             /*
              * Source is host, destiation guest.
              */
             char szAbsSrc[RTPATH_MAX];
-            vrc = RTPathAbs(strSrc.c_str(), szAbsSrc, sizeof(szAbsSrc));
+            vrc = RTPathAbs(pszSource, szAbsSrc, sizeof(szAbsSrc));
             if (RT_SUCCESS(vrc))
             {
                 RTFSOBJINFO ObjInfo;
@@ -1886,7 +1835,7 @@ static RTEXITCODE gctlHandleCopy(PGCTLCMDCTX pCtx, int argc, char **argv, bool f
                     rcExit = RTMsgErrorExitFailure("RTPathQueryInfo failed on '%s': %Rrc", szAbsSrc, vrc);
             }
             else
-                rcExit = RTMsgErrorExitFailure("RTPathAbs failed on '%s': %Rrc", strSrc.c_str());
+                rcExit = RTMsgErrorExitFailure("RTPathAbs failed on '%s': %Rrc", pszSource);
         }
         else
         {
@@ -1895,7 +1844,7 @@ static RTEXITCODE gctlHandleCopy(PGCTLCMDCTX pCtx, int argc, char **argv, bool f
              */
             /* We need to query the source type on the guest first in order to know which copy flavor we need. */
             ComPtr<IGuestFsObjInfo> pFsObjInfo;
-            rc = pCtx->pGuestSession->FsObjQueryInfo(Bstr(strSrc).raw(), TRUE  /* fFollowSymlinks */, pFsObjInfo.asOutParam());
+            rc = pCtx->pGuestSession->FsObjQueryInfo(Bstr(pszSource).raw(), TRUE  /* fFollowSymlinks */, pFsObjInfo.asOutParam());
             if (SUCCEEDED(rc))
             {
                 FsObjType_T enmObjType;
@@ -1906,30 +1855,30 @@ static RTEXITCODE gctlHandleCopy(PGCTLCMDCTX pCtx, int argc, char **argv, bool f
                     if (enmObjType == FsObjType_Directory)
                     {
                         if (pCtx->cVerbose)
-                            RTPrintf("Directory '%s' -> '%s'\n", strSrc.c_str(), pszDst);
+                            RTPrintf("Directory '%s' -> '%s'\n", pszSource, pszDst);
 
                         SafeArray<DirectoryCopyFlag_T> aCopyFlags;
                         aCopyFlags.push_back(DirectoryCopyFlag_CopyIntoExisting);
-                        rc = pCtx->pGuestSession->DirectoryCopyFromGuest(Bstr(strSrc).raw(), Bstr(pszDst).raw(),
+                        rc = pCtx->pGuestSession->DirectoryCopyFromGuest(Bstr(pszSource).raw(), Bstr(pszDst).raw(),
                                                                          ComSafeArrayAsInParam(aCopyFlags), pProgress.asOutParam());
                     }
                     else if (enmObjType == FsObjType_File)
                     {
                         if (pCtx->cVerbose)
-                            RTPrintf("File '%s' -> '%s'\n", strSrc.c_str(), pszDst);
+                            RTPrintf("File '%s' -> '%s'\n", pszSource, pszDst);
 
                         SafeArray<FileCopyFlag_T> aCopyFlags;
-                        rc = pCtx->pGuestSession->FileCopyFromGuest(Bstr(strSrc).raw(), Bstr(pszDst).raw(),
+                        rc = pCtx->pGuestSession->FileCopyFromGuest(Bstr(pszSource).raw(), Bstr(pszDst).raw(),
                                                                     ComSafeArrayAsInParam(aCopyFlags), pProgress.asOutParam());
                     }
                     else
-                        rcExit = RTMsgErrorExitFailure("Not a file or directory: %s\n", strSrc.c_str());
+                        rcExit = RTMsgErrorExitFailure("Not a file or directory: %s\n", pszSource);
                 }
                 else
                     rcExit = RTEXITCODE_FAILURE;
             }
             else
-                rcExit = RTMsgErrorExitFailure("FsObjQueryInfo failed on '%s': %Rrc", strSrc.c_str());
+                rcExit = RTMsgErrorExitFailure("FsObjQueryInfo failed on '%s': %Rhrc", pszSource, rc);
         }
     }
 
