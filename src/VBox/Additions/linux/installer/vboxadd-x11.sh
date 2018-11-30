@@ -481,6 +481,8 @@ EOF
     case "${x_version}" in 4.* | 6.* | 7.* | 1.?.* | 1.1* )
         setup_opengl
     esac
+    # Try enabling VMSVGA drm device resizing.
+    VBoxClient --vmsvga
 }
 
 cleanup()
