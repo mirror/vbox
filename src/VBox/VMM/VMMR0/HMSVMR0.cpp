@@ -7836,7 +7836,7 @@ static int hmR0SvmHandleMesaDrvGp(PVMCPU pVCpu, PSVMTRANSIENT pSvmTransient, PCP
  * @returns true if it is, false if it isn't.
  * @sa      hmR0VmxIsMesaDrvGp
  */
-DECLINLINE(bool) hmR0SvmIsMesaDrvGp(PVMCPU pVCpu, PSVMTRANSIENT pSvmTransient, PCPUMCTX pCtx, PCSVMVMCB pVmcb)
+DECLINLINE(bool) hmR0SvmIsMesaDrvGp(PVMCPU pVCpu, PCPUMCTX pCtx, PCSVMVMCB pVmcb)
 {
     /* Check magic and port. */
     Assert(!(pCtx->fExtrn & (CPUMCTX_EXTRN_RDX | CPUMCTX_EXTRN_RCX)));
@@ -7847,7 +7847,7 @@ DECLINLINE(bool) hmR0SvmIsMesaDrvGp(PVMCPU pVCpu, PSVMTRANSIENT pSvmTransient, P
         return false;
 
     /* Check that it is #GP(0). */
-    if (pSvmTransient->u64ExitCode != 0)
+    if (pVmcb->ctrl.u64ExitInfo1 != 0)
         return false;
 
     /* Flat ring-3 CS. */
@@ -7897,7 +7897,7 @@ HMSVM_EXIT_DECL hmR0SvmExitXcptGP(PVMCPU pVCpu, PSVMTRANSIENT pSvmTransient)
 
     PCPUMCTX pCtx = &pVCpu->cpum.GstCtx;
     if (   !pVCpu->hm.s.fTrapXcptGpForLovelyMesaDrv
-        || hmR0SvmIsMesaDrvGp(pVCpu, pSvmTransient, pCtx, pVmcb))
+        || !hmR0SvmIsMesaDrvGp(pVCpu, pCtx, pVmcb))
     {
         SVMEVENT Event;
         Event.u                  = 0;
@@ -7905,7 +7905,7 @@ HMSVM_EXIT_DECL hmR0SvmExitXcptGP(PVMCPU pVCpu, PSVMTRANSIENT pSvmTransient)
         Event.n.u3Type           = SVM_EVENT_EXCEPTION;
         Event.n.u8Vector         = X86_XCPT_GP;
         Event.n.u1ErrorCodeValid = 1;
-        Event.n.u32ErrorCode     = (uint32_t)pSvmTransient->u64ExitCode;
+        Event.n.u32ErrorCode     = (uint32_t)pVmcb->ctrl.u64ExitInfo1;
         hmR0SvmSetPendingEvent(pVCpu, &Event, 0 /* GCPtrFaultAddress */);
         return VINF_SUCCESS;
     }
