@@ -45,6 +45,8 @@
 #include <iprt/file.h>
 #include <iprt/string.h>
 
+#include <sys/utsname.h>
+
 /** Maximum number of supported screens.  DRM and X11 both limit this to 32. */
 /** @todo if this ever changes, dynamically allocate resizeable arrays in the
  *  context structure. */
@@ -53,6 +55,17 @@
 /* VMWare X.Org driver control parts definitions. */
 
 #include <X11/Xlibint.h>
+
+static bool checkRecentLinuxKernel(void)
+{
+    struct utsname name;
+
+    if (uname(&name))
+        VBClFatalError(("Failed to get kernel name.\n"));
+    if (strcmp(name.sysname, "Linux"))
+        return false;
+    return (RTStrVersionCompare(name.release, "4.6") >= 0);
+}
 
 struct X11CONTEXT
 {
@@ -230,6 +243,8 @@ static int run(struct VBCLSERVICE **ppInterface, bool fDaemonised)
     struct X11VMWRECT aRects[VMW_MAX_HEADS];
     unsigned cHeads;
 
+    if (checkRecentLinuxKernel())
+        return VINF_SUCCESS;
     x11Connect(&x11Context);
     if (x11Context.pDisplay == NULL)
         return VINF_SUCCESS;
