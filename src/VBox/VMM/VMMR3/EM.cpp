@@ -2131,7 +2131,7 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
                     && CPUMIsGuestInVmxNonRootMode(&pVCpu->cpum.GstCtx)
                     && CPUMIsGuestVmxVirtIntrEnabled(pVCpu, &pVCpu->cpum.GstCtx))
                 {
-                    /** @todo NSTVMX: virtual interrupt delivery. */
+                    /** @todo NSTVMX: virtual-interrupt delivery. */
                     rc2 = VINF_NO_CHANGE;
                 }
                 /* In SVM, physical interrupts take priority over virtual interrupts. */

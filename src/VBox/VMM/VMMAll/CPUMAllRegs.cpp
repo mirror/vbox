@@ -2802,7 +2802,7 @@ VMM_INT_DECL(bool) CPUMIsGuestVmxPhysIntrEnabled(PVMCPU pVCpu, PCCPUMCTX pCtx)
 
 /**
  * Checks whether the VMX nested-guest is in a state to receive virtual interrupts
- * (those injected with the "virtual interrupt delivery" feature).
+ * (those injected with the "virtual-interrupt delivery" feature).
  *
  * @returns VBox status code.
  * @retval  true if it's ready, false otherwise.
