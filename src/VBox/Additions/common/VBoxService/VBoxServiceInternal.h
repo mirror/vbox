@@ -181,11 +181,11 @@ extern VBOXSERVICE  g_AutoMount;
 extern RTCRITSECT   g_csLog; /* For guest process stdout dumping. */
 #endif
 
-extern RTEXITCODE               VGSvcSyntax(const char *pszFormat, ...);
-extern RTEXITCODE               VGSvcError(const char *pszFormat, ...);
-extern void                     VGSvcVerbose(unsigned iLevel, const char *pszFormat, ...);
+extern RTEXITCODE               VGSvcSyntax(const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR(1, 2);
+extern RTEXITCODE               VGSvcError(const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR(1, 2);
+extern void                     VGSvcVerbose(unsigned iLevel, const char *pszFormat, ...)  RT_IPRT_FORMAT_ATTR(2, 3);
 extern int                      VGSvcLogCreate(const char *pszLogFile);
-extern void                     VGSvcLogV(const char *pszFormat, va_list va);
+extern void                     VGSvcLogV(const char *pszFormat, va_list va) RT_IPRT_FORMAT_ATTR(1, 0);
 extern void                     VGSvcLogDestroy(void);
 extern int                      VGSvcArgUInt32(int argc, char **argv, const char *psz, int *pi, uint32_t *pu32,
                                                uint32_t u32Min, uint32_t u32Max);

@@ -250,8 +250,6 @@ typedef struct VBOXSERVICECTRLPROCESS
     bool volatile                   fStopped;
     /** Whether the guest process thread was started or not. */
     bool                            fStarted;
-    /** Client ID. */
-    uint32_t                        uClientID;
     /** Context ID. */
     uint32_t                        uContextID;
     /** Critical section for thread-safe use. */

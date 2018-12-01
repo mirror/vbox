@@ -515,7 +515,7 @@ static int vgsvcGstCtrlProcessProcLoop(PVBOXSERVICECTRLPROCESS pProcess)
     VGSvcVerbose(2, "[PID %RU32]: Process '%s' started, CID=%u, User=%s, cMsTimeout=%RU32\n",
                        pProcess->uPID, pProcess->StartupInfo.szCmd, pProcess->uContextID,
                        pProcess->StartupInfo.szUser, pProcess->StartupInfo.uTimeLimitMS);
-    VBGLR3GUESTCTRLCMDCTX ctxStart = { pProcess->uClientID, pProcess->uContextID };
+    VBGLR3GUESTCTRLCMDCTX ctxStart = { g_idControlSvcClient, pProcess->uContextID };
     rc = VbglR3GuestCtrlProcCbStatus(&ctxStart,
                                      pProcess->uPID, PROC_STS_STARTED, 0 /* u32Flags */,
                                      NULL /* pvData */, 0 /* cbData */);
@@ -693,7 +693,7 @@ static int vgsvcGstCtrlProcessProcLoop(PVBOXSERVICECTRLPROCESS pProcess)
             cMsPollCur = cMilliesLeft;
     }
 
-    VGSvcVerbose(3, "[PID %RU32]: Loop ended: rc=%Rrc, fShutdown=%RTbool, fProcessAlive=%RTbool, fProcessTimedOut=%RTbool, MsProcessKilled=%RU64\n",
+    VGSvcVerbose(3, "[PID %RU32]: Loop ended: rc=%Rrc, fShutdown=%RTbool, fProcessAlive=%RTbool, fProcessTimedOut=%RTbool, MsProcessKilled=%RU64 (%RX64)\n",
                  pProcess->uPID, rc, pProcess->fShutdown, fProcessAlive, fProcessTimedOut, MsProcessKilled, MsProcessKilled);
     VGSvcVerbose(3, "[PID %RU32]: *phStdOutR=%s, *phStdErrR=%s\n",
                  pProcess->uPID,
@@ -831,10 +831,10 @@ static int vgsvcGstCtrlProcessProcLoop(PVBOXSERVICECTRLPROCESS pProcess)
         }
         else
             VGSvcVerbose(1, "[PID %RU32]: Handling process status %u not implemented\n", pProcess->uPID, ProcessStatus.enmReason);
+        VBGLR3GUESTCTRLCMDCTX ctxEnd = { g_idControlSvcClient, pProcess->uContextID };
         VGSvcVerbose(2, "[PID %RU32]: Ended, ClientID=%u, CID=%u, Status=%u, Flags=0x%x\n",
-                     pProcess->uPID, pProcess->uClientID, pProcess->uContextID, uStatus, fFlags);
+                     pProcess->uPID, ctxEnd.uClientID, pProcess->uContextID, uStatus, fFlags);
 
-        VBGLR3GUESTCTRLCMDCTX ctxEnd = { pProcess->uClientID, pProcess->uContextID };
         rc2 = VbglR3GuestCtrlProcCbStatus(&ctxEnd, pProcess->uPID, uStatus, fFlags, NULL /* pvData */, 0 /* cbData */);
         if (   RT_FAILURE(rc2)
             && rc2 == VERR_NOT_FOUND)
@@ -1447,28 +1447,9 @@ static int vgsvcGstCtrlProcessProcessWorker(PVBOXSERVICECTRLPROCESS pProcess)
     AssertPtrReturn(pProcess, VERR_INVALID_POINTER);
     VGSvcVerbose(3, "Thread of process pThread=0x%p = '%s' started\n", pProcess, pProcess->StartupInfo.szCmd);
 
-    int rc = VbglR3GuestCtrlConnect(&pProcess->uClientID);
-    if (RT_FAILURE(rc))
-    {
-        VGSvcError("Process thread '%s' (%p) failed to connect to the guest control service, rc=%Rrc\n",
-                   pProcess->StartupInfo.szCmd, pProcess, rc);
-        RTThreadUserSignal(RTThreadSelf());
-        return rc;
-    }
+    VGSvcVerbose(3, "Guest process '%s', flags=0x%x\n", pProcess->StartupInfo.szCmd, pProcess->StartupInfo.uFlags);
 
-    VGSvcVerbose(3, "Guest process '%s' got client ID=%u, flags=0x%x\n",
-                 pProcess->StartupInfo.szCmd, pProcess->uClientID, pProcess->StartupInfo.uFlags);
-
-    /* Legacy setting: */
-    if (!VbglR3GuestCtrlSupportsOptimizations(pProcess->uClientID))
-    {
-        rc = VbglR3GuestCtrlMsgFilterSet(pProcess->uClientID, 0 /* Skip all */,
-                                         0 /* Filter mask to add */, 0 /* Filter mask to remove */);
-        if (RT_FAILURE(rc))
-            VGSvcError("Unable to set message filter, rc=%Rrc\n", rc); /* Non-critical. */
-    }
-
-    rc = VGSvcGstCtrlSessionProcessAdd(pProcess->pSession, pProcess);
+    int rc = VGSvcGstCtrlSessionProcessAdd(pProcess->pSession, pProcess);
     if (RT_FAILURE(rc))
     {
         VGSvcError("Errorwhile adding guest process '%s' (%p) to session process list, rc=%Rrc\n",
@@ -1582,10 +1563,10 @@ static int vgsvcGstCtrlProcessProcessWorker(PVBOXSERVICECTRLPROCESS pProcess)
                             if (RT_SUCCESS(rc))
                             {
                                 uint32_t uFlags = RTPOLL_EVT_ERROR;
-    #if 0
+#if 0
                                 /* Add reading event to pollset to get some more information. */
                                 uFlags |= RTPOLL_EVT_READ;
-    #endif
+#endif
                                 /* Stdin. */
                                 if (RT_SUCCESS(rc))
                                     rc = RTPollSetAddPipe(pProcess->hPollSet,
@@ -1697,25 +1678,16 @@ static int vgsvcGstCtrlProcessProcessWorker(PVBOXSERVICECTRLPROCESS pProcess)
         }
     }
 
-    if (pProcess->uClientID)
+    if (RT_FAILURE(rc))
     {
-        if (RT_FAILURE(rc))
-        {
-            VBGLR3GUESTCTRLCMDCTX ctx = { pProcess->uClientID, pProcess->uContextID };
-            int rc2 = VbglR3GuestCtrlProcCbStatus(&ctx,
-                                                  pProcess->uPID, PROC_STS_ERROR, rc,
-                                                  NULL /* pvData */, 0 /* cbData */);
-            if (   RT_FAILURE(rc2)
-                && rc2 != VERR_NOT_FOUND)
-                VGSvcError("[PID %RU32]: Could not report process failure error; rc=%Rrc (process error %Rrc)\n",
-                           pProcess->uPID, rc2, rc);
-        }
-
-        /* Disconnect this client from the guest control service. This also cancels all
-         * outstanding host requests. */
-        VGSvcVerbose(3, "[PID %RU32]: Disconnecting (client ID=%u) ...\n", pProcess->uPID, pProcess->uClientID);
-        VbglR3GuestCtrlDisconnect(pProcess->uClientID);
-        pProcess->uClientID = 0;
+        VBGLR3GUESTCTRLCMDCTX ctx = { g_idControlSvcClient, pProcess->uContextID };
+        int rc2 = VbglR3GuestCtrlProcCbStatus(&ctx,
+                                              pProcess->uPID, PROC_STS_ERROR, rc,
+                                              NULL /* pvData */, 0 /* cbData */);
+        if (   RT_FAILURE(rc2)
+            && rc2 != VERR_NOT_FOUND)
+            VGSvcError("[PID %RU32]: Could not report process failure error; rc=%Rrc (process error %Rrc)\n",
+                       pProcess->uPID, rc2, rc);
     }
 
     /* Free argument + environment variable lists. */
@@ -1807,7 +1779,7 @@ int VGSvcGstCtrlProcessStart(const PVBOXSERVICECTRLSESSION pSession,
     if (RT_SUCCESS(rc))
     {
         static uint32_t s_uCtrlExecThread = 0;
-        if (s_uCtrlExecThread++ == UINT32_MAX)
+        if (s_uCtrlExecThread++ == UINT32_MAX) /** @todo r=bird: ????????????? */
             s_uCtrlExecThread = 0; /* Wrap around to not let IPRT freak out. */
         rc = RTThreadCreateF(&pProcess->Thread, vgsvcGstCtrlProcessThread,
                              pProcess /*pvUser*/, 0 /*cbStack*/,

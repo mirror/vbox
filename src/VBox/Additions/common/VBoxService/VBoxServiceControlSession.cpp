@@ -255,7 +255,7 @@ static int vgsvcGstCtrlSessionHandleFileOpen(PVBOXSERVICECTRLSESSION pSession, P
             }
             else
             {
-                VGSvcError("[File %s] empty filename!\n");
+                VGSvcError("[File %s] empty filename!\n", szFile);
                 rc = VERR_INVALID_NAME;
             }
 
@@ -1498,9 +1498,9 @@ static int vgsvcGstCtrlSessionReadKeyAndAccept(uint32_t idClient, uint32_t idSes
                 {
                     rc = VbglR3GuestCtrlSessionAccept(idClient, idSession, abSecretKey, sizeof(abSecretKey));
                     if (RT_SUCCESS(rc))
-                        VGSvcVerbose(3, "Session %u accepted\n");
+                        VGSvcVerbose(3, "Session %u accepted (client ID %u)\n", idClient, idSession);
                     else
-                        VGSvcError("Failed to accept session: %Rrc\n", rc);
+                        VGSvcError("Failed to accept session %u (client ID %u): %Rrc\n", idClient, idSession, rc);
                 }
                 else
                 {
@@ -1508,7 +1508,7 @@ static int vgsvcGstCtrlSessionReadKeyAndAccept(uint32_t idClient, uint32_t idSes
                     rc = VbglR3GuestCtrlMsgFilterSet(idClient, VBOX_GUESTCTRL_CONTEXTID_MAKE_SESSION(idSession),
                                                      VBOX_GUESTCTRL_FILTER_BY_SESSION(idSession), 0);
                     if (RT_SUCCESS(rc))
-                        VGSvcVerbose(3, "Session %u filtering successfully enabled\n");
+                        VGSvcVerbose(3, "Session %u filtering successfully enabled\n", idSession);
                     else
                         VGSvcError("Failed to set session filter: %Rrc\n", rc);
                 }
@@ -1548,6 +1548,7 @@ static RTEXITCODE vgsvcGstCtrlSessionSpawnWorker(PVBOXSERVICECTRLSESSION pSessio
     if (RT_FAILURE(rc))
         return VGSvcError("Error connecting to guest control service, rc=%Rrc\n", rc);
     g_fControlSupportsOptimizations = VbglR3GuestCtrlSupportsOptimizations(idClient);
+    g_idControlSvcClient            = idClient;
 
     rc = vgsvcGstCtrlSessionReadKeyAndAccept(idClient, pSession->StartupInfo.uSessionID);
     if (RT_SUCCESS(rc))
@@ -1617,6 +1618,7 @@ static RTEXITCODE vgsvcGstCtrlSessionSpawnWorker(PVBOXSERVICECTRLSESSION pSessio
 
     VGSvcVerbose(3, "Disconnecting client ID=%RU32 ...\n", idClient);
     VbglR3GuestCtrlDisconnect(idClient);
+    g_idControlSvcClient = 0;
 
     VGSvcVerbose(3, "Session worker returned with rc=%Rrc\n", rc);
     return RT_SUCCESS(rc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
