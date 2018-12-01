@@ -7630,7 +7630,6 @@ static VBOXSTRICTRC hmR0VmxInjectPendingEvent(PVMCPU pVCpu, uint32_t fIntrState,
     Assert(!fBlockSti || pVCpu->cpum.GstCtx.eflags.Bits.u1IF);     /* Cannot set block-by-STI when interrupts are disabled. */
     Assert(!TRPMHasTrap(pVCpu));
 
-    PCCPUMCTX pCtx = &pVCpu->cpum.GstCtx;
     VBOXSTRICTRC rcStrict = VINF_SUCCESS;
     if (pVCpu->hm.s.Event.fPending)
     {
@@ -7645,7 +7644,7 @@ static VBOXSTRICTRC hmR0VmxInjectPendingEvent(PVMCPU pVCpu, uint32_t fIntrState,
 #ifdef VBOX_STRICT
         if (uIntType == VMX_ENTRY_INT_INFO_TYPE_EXT_INT)
         {
-            bool const fBlockInt = !(pCtx->eflags.u32 & X86_EFL_IF);
+            bool const fBlockInt = !(pVCpu->cpum.GstCtx.eflags.u32 & X86_EFL_IF);
             Assert(!fBlockInt);
             Assert(!fBlockSti);
             Assert(!fBlockMovSS);
