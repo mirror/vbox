@@ -1085,7 +1085,7 @@ GstCtrlService::svcDisconnect(void *pvService, uint32_t idClient, void *pvClient
     AssertMsgReturn(ItClientState != pThis->mClientStateMap.end(),
                     ("Client ID=%RU32 not found in client list when it should be there\n", idClient),
                     VINF_SUCCESS);
-    ClientState *pClient = ItClientState->second;
+    ClientState *pClient = &ItClientState->second;
 #endif
 
     /*
@@ -2016,8 +2016,8 @@ GstCtrlService::svcCall(void *pvService, VBOXHGCMCALLHANDLE hCall, uint32_t idCl
 #else
     ClientStateMapIter ItClientState = pThis->mClientStateMap.find(idClient);
     AssertReturnVoidStmt(ItClientState != pThis->mClientStateMap.end(),
-                         pThis->mpHelpers->pfnCallComplete(hCall, VERR_INVALID_CLIENT_ID))
-    ClientState *pClient = ItClientState->second;
+                         pThis->mpHelpers->pfnCallComplete(hCall, VERR_INVALID_CLIENT_ID));
+    ClientState *pClient = &ItClientState->second;
     RT_NOREF(pvClient);
 #endif
 
