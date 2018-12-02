@@ -317,7 +317,7 @@ int hdaR3DMARead(PHDASTATE pThis, PHDASTREAM pStream, void *pvBuf, uint32_t cbBu
     pStream->Dbg.cbSilenceReadMin  = _1M;
 # endif
 
-    RTGCPHYS addrChunk = pBDLE->Desc.u64BufAdr + pBDLE->State.u32BufOff;
+    RTGCPHYS addrChunk = pBDLE->Desc.u64BufAddr + pBDLE->State.u32BufOff;
 
     while (cbLeft)
     {
@@ -395,7 +395,7 @@ int hdaR3DMAWrite(PHDASTATE pThis, PHDASTREAM pStream, const void *pvBuf, uint32
     uint32_t cbWrittenTotal = 0;
     uint32_t cbLeft = RT_MIN(cbBuf, pBDLE->Desc.u32BufSize - pBDLE->State.u32BufOff);
 
-    RTGCPHYS addrChunk = pBDLE->Desc.u64BufAdr + pBDLE->State.u32BufOff;
+    RTGCPHYS addrChunk = pBDLE->Desc.u64BufAddr + pBDLE->State.u32BufOff;
 
     while (cbLeft)
     {
@@ -575,7 +575,7 @@ void hdaR3BDLEDumpAll(PHDASTATE pThis, uint64_t u64BDLBase, uint16_t cBDLE)
         PDMDevHlpPhysRead(pThis->CTX_SUFF(pDevIns), u64BDLBase + i * sizeof(HDABDLEDESC), &bd, sizeof(bd));
 
         LogFunc(("\t#%03d BDLE(adr:0x%llx, size:%RU32, ioc:%RTbool)\n",
-                 i, bd.u64BufAdr, bd.u32BufSize, bd.fFlags & HDA_BDLE_FLAG_IOC));
+                 i, bd.u64BufAddr, bd.u32BufSize, bd.fFlags & HDA_BDLE_FLAG_IOC));
 
         cbBDLE += bd.u32BufSize;
     }

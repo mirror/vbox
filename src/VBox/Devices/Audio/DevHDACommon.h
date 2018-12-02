@@ -549,7 +549,7 @@ typedef struct HDABDLESTATE
 typedef struct HDABDLEDESC
 {
     /** Starting address of the actual buffer. Must be 128-bit aligned. */
-    uint64_t     u64BufAdr;
+    uint64_t     u64BufAddr;
     /** Size of the actual buffer (in bytes). */
     uint32_t     u32BufSize;
     /** Bit 0: Interrupt on completion; the controller will generate

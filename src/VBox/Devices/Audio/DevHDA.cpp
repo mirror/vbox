@@ -480,7 +480,7 @@ const HDAREGALIAS g_aHdaRegAliases[] =
 /** HDABDLEDESC field descriptors for the v7 saved state. */
 static SSMFIELD const g_aSSMBDLEDescFields7[] =
 {
-    SSMFIELD_ENTRY(HDABDLEDESC, u64BufAdr),
+    SSMFIELD_ENTRY(HDABDLEDESC, u64BufAddr),
     SSMFIELD_ENTRY(HDABDLEDESC, u32BufSize),
     SSMFIELD_ENTRY(HDABDLEDESC, fFlags),
     SSMFIELD_ENTRY_TERM()
@@ -3596,12 +3596,12 @@ static int hdaR3SaveStream(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, PHDASTREAM pStre
         AssertRC(rc);
 
         Assert(curBDLE.Desc.u32BufSize == pBDLE->Desc.u32BufSize);
-        Assert(curBDLE.Desc.u64BufAdr  == pBDLE->Desc.u64BufAdr);
+        Assert(curBDLE.Desc.u64BufAddr  == pBDLE->Desc.u64BufAddr);
         Assert(curBDLE.Desc.fFlags     == pBDLE->Desc.fFlags);
     }
     else
     {
-        Assert(pBDLE->Desc.u64BufAdr  == 0);
+        Assert(pBDLE->Desc.u64BufAddr  == 0);
         Assert(pBDLE->Desc.u32BufSize == 0);
     }
 #endif
@@ -3856,7 +3856,7 @@ static int hdaR3LoadExecLegacy(PHDASTATE pThis, PSSMHANDLE pSSM, uint32_t uVersi
     {                                                                       \
         rc = SSMR3Skip(pSSM, sizeof(uint32_t));        /* Begin marker */   \
         AssertRCReturn(rc, rc);                                             \
-        rc = SSMR3GetU64(pSSM, &x.Desc.u64BufAdr);     /* u64BdleCviAddr */ \
+        rc = SSMR3GetU64(pSSM, &x.Desc.u64BufAddr);     /* u64BdleCviAddr */ \
         AssertRCReturn(rc, rc);                                             \
         rc = SSMR3Skip(pSSM, sizeof(uint32_t));        /* u32BdleMaxCvi */  \
         AssertRCReturn(rc, rc);                                             \
@@ -4016,7 +4016,7 @@ static int hdaR3LoadExecLegacy(PHDASTATE pThis, PSSMHANDLE pSSM, uint32_t uVersi
                     rc = SSMR3GetU32(pSSM, &uMarker);      /* Begin marker. */
                     AssertRC(rc);
                     Assert(uMarker == UINT32_C(0x19200102) /* SSMR3STRUCT_BEGIN */);
-                    rc = SSMR3GetU64(pSSM, &pStream->State.BDLE.Desc.u64BufAdr);
+                    rc = SSMR3GetU64(pSSM, &pStream->State.BDLE.Desc.u64BufAddr);
                     AssertRC(rc);
                     rc = SSMR3GetU32(pSSM, &pStream->State.BDLE.Desc.u32BufSize);
                     AssertRC(rc);
@@ -4269,7 +4269,7 @@ static DECLCALLBACK(size_t) hdaR3StrFmtBDLE(PFNRTSTROUTPUT pfnOutput, void *pvAr
     return RTStrFormat(pfnOutput,  pvArgOutput, NULL, 0,
                        "BDLE(idx:%RU32, off:%RU32, fifow:%RU32, IOC:%RTbool, DMA[%RU32 bytes @ 0x%x])",
                        pBDLE->State.u32BDLIndex, pBDLE->State.u32BufOff, pBDLE->State.cbBelowFIFOW,
-                       pBDLE->Desc.fFlags & HDA_BDLE_FLAG_IOC, pBDLE->Desc.u32BufSize, pBDLE->Desc.u64BufAdr);
+                       pBDLE->Desc.fFlags & HDA_BDLE_FLAG_IOC, pBDLE->Desc.u32BufSize, pBDLE->Desc.u64BufAddr);
 }
 
 /**
@@ -4422,7 +4422,7 @@ static void hdaR3DbgPrintBDLE(PHDASTATE pThis, PCDBGFINFOHLP pHlp, int iIdx)
         PDMDevHlpPhysRead(pThis->CTX_SUFF(pDevIns), u64BaseDMA + i * sizeof(HDABDLEDESC), &bd, sizeof(bd));
 
         pHlp->pfnPrintf(pHlp, "\t\t%s #%03d BDLE(adr:0x%llx, size:%RU32, ioc:%RTbool)\n",
-                        pBDLE->State.u32BDLIndex == i ? "*" : " ", i, bd.u64BufAdr, bd.u32BufSize, bd.fFlags & HDA_BDLE_FLAG_IOC);
+                        pBDLE->State.u32BDLIndex == i ? "*" : " ", i, bd.u64BufAddr, bd.u32BufSize, bd.fFlags & HDA_BDLE_FLAG_IOC);
 
         cbBDLE += bd.u32BufSize;
     }

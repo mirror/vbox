@@ -1553,7 +1553,7 @@ bool hdaR3StreamRegisterDMAHandlers(PHDASTREAM pStream)
             pRange = &arrRanges[cRanges - 1];
 
             /* Is the current range a direct neighbor of the current BLDE? */
-            if ((pRange->uAddr + pRange->uSize) == BDLE.Desc.u64BufAdr)
+            if ((pRange->uAddr + pRange->uSize) == BDLE.Desc.u64BufAddr)
             {
                 /* Expand the current range by the current BDLE's size. */
                 pRange->uSize += BDLE.Desc.u32BufSize;
@@ -1571,7 +1571,7 @@ bool hdaR3StreamRegisterDMAHandlers(PHDASTREAM pStream)
         {
             pRange = &arrRanges[cRanges];
 
-            pRange->uAddr = BDLE.Desc.u64BufAdr;
+            pRange->uAddr = BDLE.Desc.u64BufAddr;
             pRange->uSize = BDLE.Desc.u32BufSize;
 
             LogFunc(("Adding range %zu - 0x%x (%RU32)\n", cRanges, pRange->uAddr, pRange->uSize));
