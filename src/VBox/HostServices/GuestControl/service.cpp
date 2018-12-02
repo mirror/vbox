@@ -59,7 +59,6 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
-#define USE_PVCLIENT
 #define LOG_GROUP LOG_GROUP_GUEST_CONTROL
 #include <VBox/HostServices/GuestControlSvc.h>
 #include <VBox/GuestHost/GuestControl.h> /** @todo r=bird: Why two headers??? */
@@ -89,10 +88,9 @@ using namespace guestControl;
 
 
 /**
- * Structure for maintaining a pending (that is, a deferred and not yet completed)
- * client command.
+ * Structure for maintaining a request.
  */
-typedef struct ClientConnection
+typedef struct ClientRequest
 {
     /** The call handle */
     VBOXHGCMCALLHANDLE mHandle;
@@ -100,10 +98,11 @@ typedef struct ClientConnection
     uint32_t mNumParms;
     /** The call parameters */
     VBOXHGCMSVCPARM *mParms;
-    /** The standard constructor. */
-    ClientConnection(void)
-        : mHandle(0), mNumParms(0), mParms(NULL) {}
-} ClientConnection;
+    /** The default constructor. */
+    ClientRequest(void)
+        : mHandle(0), mNumParms(0), mParms(NULL)
+    {}
+} ClientRequest;
 
 /**
  * Structure for holding a buffered host command which has
@@ -394,7 +393,7 @@ typedef struct HostCommand
         return rc;
     }
 
-    int Assign(const ClientConnection *pConnection)
+    int Assign(const ClientRequest *pConnection)
     {
         AssertPtrReturn(pConnection, VERR_INVALID_POINTER);
 
@@ -434,7 +433,7 @@ typedef struct HostCommand
         return rc;
     }
 
-    int Peek(const ClientConnection *pConnection)
+    int Peek(const ClientRequest *pConnection)
     {
         AssertPtrReturn(pConnection, VERR_INVALID_POINTER);
 
@@ -460,8 +459,6 @@ typedef struct HostCommand
     /** @} */
 } HostCommand;
 typedef std::list< HostCommand *> HostCmdList;
-typedef std::list< HostCommand *>::iterator HostCmdListIter;
-typedef std::list< HostCommand *>::const_iterator HostCmdListIterConst;
 
 /**
  * Per-client structure used for book keeping/state tracking a
@@ -477,38 +474,36 @@ typedef struct ClientContext
     ClientContext(HostCommand *pHostCmd) : mpHostCmd(pHostCmd) {}
 } ClientContext;
 typedef std::map< uint32_t, ClientContext > ClientContextMap;
-typedef std::map< uint32_t, ClientContext >::iterator ClientContextMapIter;
-typedef std::map< uint32_t, ClientContext >::const_iterator ClientContextMapIterConst;
 
 /**
  * Structure for holding a connected guest client state.
  */
 typedef struct ClientState
 {
-    PVBOXHGCMSVCHELPERS mSvcHelpers;
-    /** The client's ID. */
-    uint32_t mID;
+    PVBOXHGCMSVCHELPERS     m_pSvcHelpers;
+    /** The HGCM client ID. */
+    uint32_t                m_idClient;
     /** Host command list to process. */
     HostCmdList mHostCmdList;
     /** Pending client call (GUEST_MSG_PEEK_WAIT or GUEST_MSG_WAIT), zero if none pending.
      *
      * This means the client waits for a new host command to reply and won't return
      * from the waiting call until a new host command is available. */
-    guestControl::eGuestFn mIsPending;
+    guestControl::eGuestFn  m_enmIsPending;
     /** The client's pending connection. */
-    ClientConnection    mPendingCon;
+    ClientRequest           m_PendingReq;
     /** Set if we've got a pending wait cancel. */
-    bool                m_fPendingCancel;
+    bool                    m_fPendingCancel;
     /** Set if master. */
-    bool                m_fIsMaster;
+    bool                    m_fIsMaster;
     /** The session ID for this client, UINT32_MAX if not set or master. */
-    uint32_t            m_idSession;
+    uint32_t                m_idSession;
 
 
     ClientState(void)
-        : mSvcHelpers(NULL)
-        , mID(0)
-        , mIsPending((guestControl::eGuestFn)0)
+        : m_pSvcHelpers(NULL)
+        , m_idClient(0)
+        , m_enmIsPending((guestControl::eGuestFn)0)
         , m_fPendingCancel(false)
         , m_fIsMaster(false)
         , m_idSession(UINT32_MAX)
@@ -518,9 +513,9 @@ typedef struct ClientState
     { }
 
     ClientState(PVBOXHGCMSVCHELPERS pSvcHelpers, uint32_t idClient)
-        : mSvcHelpers(pSvcHelpers)
-        , mID(idClient)
-        , mIsPending((guestControl::eGuestFn)0)
+        : m_pSvcHelpers(pSvcHelpers)
+        , m_idClient(idClient)
+        , m_enmIsPending((guestControl::eGuestFn)0)
         , m_fPendingCancel(false)
         , m_fIsMaster(false)
         , m_idSession(UINT32_MAX)
@@ -558,38 +553,38 @@ typedef struct ClientState
     {
         int rc = VINF_NO_CHANGE;
 
-        if (mIsPending != 0)
+        if (m_enmIsPending != 0)
         {
-            LogFlowFunc(("[Client %RU32] Waking up ...\n", mID));
+            LogFlowFunc(("[Client %RU32] Waking up ...\n", m_idClient));
 
             rc = VINF_SUCCESS;
 
-            HostCmdListIter ItFirstCmd = mHostCmdList.begin();
+            HostCmdList::iterator ItFirstCmd = mHostCmdList.begin();
             if (ItFirstCmd != mHostCmdList.end())
             {
                 HostCommand *pFirstCmd = (*ItFirstCmd);
                 AssertPtrReturn(pFirstCmd, VERR_INVALID_POINTER);
 
                 LogFlowThisFunc(("[Client %RU32] Current host command is %RU32 (CID=%RU32, cParms=%RU32, m_cRefs=%RU32)\n",
-                                 mID, pFirstCmd->mMsgType, pFirstCmd->m_idContext, pFirstCmd->mParmCount, pFirstCmd->m_cRefs));
+                                 m_idClient, pFirstCmd->mMsgType, pFirstCmd->m_idContext, pFirstCmd->mParmCount, pFirstCmd->m_cRefs));
 
-                if (mIsPending == GUEST_MSG_PEEK_WAIT)
+                if (m_enmIsPending == GUEST_MSG_PEEK_WAIT)
                 {
-                    pFirstCmd->setPeekReturn(mPendingCon.mParms, mPendingCon.mNumParms);
-                    rc = mSvcHelpers->pfnCallComplete(mPendingCon.mHandle, VINF_SUCCESS);
+                    pFirstCmd->setPeekReturn(m_PendingReq.mParms, m_PendingReq.mNumParms);
+                    rc = m_pSvcHelpers->pfnCallComplete(m_PendingReq.mHandle, VINF_SUCCESS);
 
-                    mPendingCon.mHandle   = NULL;
-                    mPendingCon.mParms    = NULL;
-                    mPendingCon.mNumParms = 0;
-                    mIsPending            = (guestControl::eGuestFn)0;
+                    m_PendingReq.mHandle   = NULL;
+                    m_PendingReq.mParms    = NULL;
+                    m_PendingReq.mNumParms = 0;
+                    m_enmIsPending            = (guestControl::eGuestFn)0;
                 }
-                else if (mIsPending == GUEST_MSG_WAIT)
-                    rc = OldRun(&mPendingCon, pFirstCmd);
+                else if (m_enmIsPending == GUEST_MSG_WAIT)
+                    rc = OldRun(&m_PendingReq, pFirstCmd);
                 else
-                    AssertMsgFailed(("mIsPending=%d\n", mIsPending));
+                    AssertMsgFailed(("m_enmIsPending=%d\n", m_enmIsPending));
             }
             else
-                AssertMsgFailed(("Waking up client ID=%RU32 with no host command in queue is a bad idea\n", mID));
+                AssertMsgFailed(("Waking up client ID=%RU32 with no host command in queue is a bad idea\n", m_idClient));
 
             return rc;
         }
@@ -605,15 +600,15 @@ typedef struct ClientState
     int CancelWaiting()
     {
         LogFlowFunc(("[Client %RU32] Cancelling waiting thread, isPending=%d, pendingNumParms=%RU32, m_idSession=%x\n",
-                     mID, mIsPending, mPendingCon.mNumParms, m_idSession));
+                     m_idClient, m_enmIsPending, m_PendingReq.mNumParms, m_idSession));
 
         /*
          * The PEEK call is simple: At least two parameters, all set to zero before sleeping.
          */
         int rcComplete;
-        if (mIsPending == GUEST_MSG_PEEK_WAIT)
+        if (m_enmIsPending == GUEST_MSG_PEEK_WAIT)
         {
-            HGCMSvcSetU32(&mPendingCon.mParms[0], HOST_CANCEL_PENDING_WAITS);
+            HGCMSvcSetU32(&m_PendingReq.mParms[0], HOST_CANCEL_PENDING_WAITS);
             rcComplete = VINF_TRY_AGAIN;
         }
         /*
@@ -621,14 +616,14 @@ typedef struct ClientState
          * to wake up someone who is peeking and have two parameters.  If there
          * aren't two parameters, fail the call.
          */
-        else if (mIsPending != 0)
+        else if (m_enmIsPending != 0)
         {
-            Assert(mIsPending == GUEST_MSG_WAIT);
-            if (mPendingCon.mNumParms > 0)
-                HGCMSvcSetU32(&mPendingCon.mParms[0], HOST_CANCEL_PENDING_WAITS);
-            if (mPendingCon.mNumParms > 1)
-                HGCMSvcSetU32(&mPendingCon.mParms[1], 0);
-            rcComplete = mPendingCon.mNumParms == 2 ? VINF_SUCCESS : VERR_TRY_AGAIN;
+            Assert(m_enmIsPending == GUEST_MSG_WAIT);
+            if (m_PendingReq.mNumParms > 0)
+                HGCMSvcSetU32(&m_PendingReq.mParms[0], HOST_CANCEL_PENDING_WAITS);
+            if (m_PendingReq.mNumParms > 1)
+                HGCMSvcSetU32(&m_PendingReq.mParms[1], 0);
+            rcComplete = m_PendingReq.mNumParms == 2 ? VINF_SUCCESS : VERR_TRY_AGAIN;
         }
         /*
          * If nobody is waiting, flag the next wait call as cancelled.
@@ -639,12 +634,12 @@ typedef struct ClientState
             return VINF_SUCCESS;
         }
 
-        mSvcHelpers->pfnCallComplete(mPendingCon.mHandle, rcComplete);
+        m_pSvcHelpers->pfnCallComplete(m_PendingReq.mHandle, rcComplete);
 
-        mPendingCon.mHandle   = NULL;
-        mPendingCon.mParms    = NULL;
-        mPendingCon.mNumParms = 0;
-        mIsPending            = (guestControl::eGuestFn)0;
+        m_PendingReq.mHandle   = NULL;
+        m_PendingReq.mParms    = NULL;
+        m_PendingReq.mNumParms = 0;
+        m_enmIsPending            = (guestControl::eGuestFn)0;
         m_fPendingCancel      = false;
         return VINF_SUCCESS;
     }
@@ -697,18 +692,18 @@ typedef struct ClientState
      *
      * @note Only used by GUEST_MSG_WAIT scenarios.
      */
-    int OldRun(ClientConnection const *pConnection, HostCommand *pHostCmd)
+    int OldRun(ClientRequest const *pConnection, HostCommand *pHostCmd)
     {
         AssertPtrReturn(pConnection, VERR_INVALID_POINTER);
         AssertPtrReturn(pHostCmd, VERR_INVALID_POINTER);
         Assert(*mHostCmdList.begin() == pHostCmd);
 
         LogFlowFunc(("[Client %RU32] pConnection=%p, mHostCmdRc=%Rrc, mHostCmdTries=%RU32, mPeekCount=%RU32\n",
-                      mID, pConnection, mHostCmdRc, mHostCmdTries, mPeekCount));
+                      m_idClient, pConnection, mHostCmdRc, mHostCmdTries, mPeekCount));
 
         int rc = mHostCmdRc = OldSendReply(pConnection, pHostCmd);
 
-        LogFlowThisFunc(("[Client %RU32] Processing command %RU32 ended with rc=%Rrc\n", mID, pHostCmd->mMsgType, mHostCmdRc));
+        LogFlowThisFunc(("[Client %RU32] Processing command %RU32 ended with rc=%Rrc\n", m_idClient, pHostCmd->mMsgType, mHostCmdRc));
 
         bool fRemove = false;
         if (RT_FAILURE(rc))
@@ -744,7 +739,7 @@ typedef struct ClientState
             fRemove = true; /* Everything went fine, remove it. */
 
         LogFlowThisFunc(("[Client %RU32] Tried command %RU32 for %RU32 times, (last result=%Rrc, fRemove=%RTbool)\n",
-                         mID, pHostCmd->mMsgType, mHostCmdTries, rc, fRemove));
+                         m_idClient, pHostCmd->mMsgType, mHostCmdTries, rc, fRemove));
 
         if (fRemove)
         {
@@ -752,14 +747,14 @@ typedef struct ClientState
             OldDitchFirstHostCmd();
         }
 
-        LogFlowFunc(("[Client %RU32] Returned with rc=%Rrc\n", mID, rc));
+        LogFlowFunc(("[Client %RU32] Returned with rc=%Rrc\n", m_idClient, rc));
         return rc;
     }
 
     /**
      * @note Only used by GUEST_MSG_WAIT scenarios.
      */
-    int OldRunCurrent(const ClientConnection *pConnection)
+    int OldRunCurrent(const ClientRequest *pConnection)
     {
         AssertPtrReturn(pConnection, VERR_INVALID_POINTER);
 
@@ -771,10 +766,10 @@ typedef struct ClientState
             if (!m_fPendingCancel)
             {
                 /* Go to sleep. */
-                ASSERT_GUEST_RETURN(mIsPending == 0, VERR_WRONG_ORDER);
-                mPendingCon = *pConnection;
-                mIsPending  = GUEST_MSG_WAIT;
-                LogFlowFunc(("[Client %RU32] Is now in pending mode\n", mID));
+                ASSERT_GUEST_RETURN(m_enmIsPending == 0, VERR_WRONG_ORDER);
+                m_PendingReq = *pConnection;
+                m_enmIsPending  = GUEST_MSG_WAIT;
+                LogFlowFunc(("[Client %RU32] Is now in pending mode\n", m_idClient));
                 return VINF_HGCM_ASYNC_EXECUTE;
             }
 
@@ -790,7 +785,7 @@ typedef struct ClientState
         /*
          * Return first host command.
          */
-        HostCmdListIter curCmd = mHostCmdList.begin();
+        HostCmdList::iterator curCmd = mHostCmdList.begin();
         Assert(curCmd != mHostCmdList.end());
         HostCommand *pHostCmd = *curCmd;
         AssertPtrReturn(pHostCmd, VERR_INVALID_POINTER);
@@ -802,7 +797,7 @@ typedef struct ClientState
      * Internal worker for OldRun().
      * @note Only used for GUEST_MSG_WAIT.
      */
-    int OldSendReply(ClientConnection const *pConnection,
+    int OldSendReply(ClientRequest const *pConnection,
                      HostCommand            *pHostCmd)
     {
         AssertPtrReturn(pConnection, VERR_INVALID_POINTER);
@@ -814,9 +809,9 @@ typedef struct ClientState
         int rc;
         /* If the client is in pending mode, always send back
          * the peek result first. */
-        if (mIsPending)
+        if (m_enmIsPending)
         {
-            Assert(mIsPending == GUEST_MSG_WAIT);
+            Assert(m_enmIsPending == GUEST_MSG_WAIT);
             rc = pHostCmd->Peek(pConnection);
             mPeekCount++;
         }
@@ -846,12 +841,12 @@ typedef struct ClientState
         }
 
         /* Reset pending status. */
-        mIsPending = (guestControl::eGuestFn)0;
+        m_enmIsPending = (guestControl::eGuestFn)0;
 
         /* In any case the client did something, so complete
          * the pending call with the result we just got. */
-        AssertPtr(mSvcHelpers);
-        int rc2 = mSvcHelpers->pfnCallComplete(pConnection->mHandle, rc);
+        AssertPtr(m_pSvcHelpers);
+        int rc2 = m_pSvcHelpers->pfnCallComplete(pConnection->mHandle, rc);
 
         /* Rollback in case the guest cancelled the call. */
         if (rc2 == VERR_CANCELLED && RT_SUCCESS(rc))
@@ -861,21 +856,15 @@ typedef struct ClientState
         }
 
         LogFlowThisFunc(("[Client %RU32] Command %RU32 ended with %Rrc (mPeekCount=%RU32, pConnection=%p)\n",
-                         mID, pHostCmd->mMsgType, rc, mPeekCount, pConnection));
+                         m_idClient, pHostCmd->mMsgType, rc, mPeekCount, pConnection));
         return rc;
     }
 
     /** @} */
 } ClientState;
-#ifdef USE_PVCLIENT
 typedef std::map< uint32_t, ClientState *> ClientStateMap;
 typedef std::map< uint32_t, ClientState *>::iterator ClientStateMapIter;
 typedef std::map< uint32_t, ClientState *>::const_iterator ClientStateMapIterConst;
-#else
-typedef std::map< uint32_t, ClientState > ClientStateMap;
-typedef std::map< uint32_t, ClientState >::iterator ClientStateMapIter;
-typedef std::map< uint32_t, ClientState >::const_iterator ClientStateMapIterConst;
-#endif
 
 /**
  * Prepared session (GUEST_SESSION_PREPARE).
@@ -1008,7 +997,6 @@ GstCtrlService::svcConnect(void *pvService, uint32_t idClient, void *pvClient, u
      * Create client state.
      */
     ClientState *pClient;
-#ifdef USE_PVCLIENT
     try
     {
         pClient = new (pvClient) ClientState(pThis->mpHelpers, idClient);
@@ -1026,17 +1014,6 @@ GstCtrlService::svcConnect(void *pvService, uint32_t idClient, void *pvClient, u
         pClient->~ClientState();
         return VERR_NO_MEMORY;
     }
-#else
-    try
-    {
-        pThis->mClientStateMap[idClient] = ClientState(pThis->mpHelpers, idClient);
-        pClient = &pThis->mClientStateMap[idClient];
-    }
-    catch (std::bad_alloc &)
-    {
-        return VERR_NO_MEMORY;
-    }
-#endif
 
     /*
      * For legacy compatibility reasons we have to pick a master client at some
@@ -1072,21 +1049,9 @@ GstCtrlService::svcDisconnect(void *pvService, uint32_t idClient, void *pvClient
 {
     SELF *pThis = reinterpret_cast<SELF *>(pvService);
     AssertPtrReturn(pThis, VERR_INVALID_POINTER);
-#ifdef USE_PVCLIENT
     ClientState *pClient = reinterpret_cast<ClientState *>(pvClient);
     AssertPtrReturn(pClient, VERR_INVALID_POINTER);
-#else
-    RT_NOREF(pvClient);
-#endif
     LogFlowFunc(("[Client %RU32] Disconnected (%zu clients total)\n", idClient, pThis->mClientStateMap.size()));
-
-#ifndef USE_PVCLIENT
-    ClientStateMapIter ItClientState = pThis->mClientStateMap.find(idClient);
-    AssertMsgReturn(ItClientState != pThis->mClientStateMap.end(),
-                    ("Client ID=%RU32 not found in client list when it should be there\n", idClient),
-                    VINF_SUCCESS);
-    ClientState *pClient = &ItClientState->second;
-#endif
 
     /*
      * Cancel all pending host commands, replying with GUEST_DISCONNECTED if final recipient.
@@ -1112,12 +1077,8 @@ GstCtrlService::svcDisconnect(void *pvService, uint32_t idClient, void *pvClient
     /*
      * Delete the client state.
      */
-#ifdef USE_PVCLIENT
     pThis->mClientStateMap.erase(idClient);
     pClient->~ClientState();
-#else
-    pThis->mClientStateMap.erase(ItClientState);
-#endif
     pClient = NULL;
 
     /*
@@ -1164,7 +1125,7 @@ int GstCtrlService::clientMsgOldGet(ClientState *pClient, VBOXHGCMCALLHANDLE hCa
     ASSERT_GUEST(pClient->m_idSession != UINT32_MAX || pClient->m_fIsMaster);
 
     /* Use the current (inbound) connection. */
-    ClientConnection thisCon;
+    ClientRequest thisCon;
     thisCon.mHandle   = hCall;
     thisCon.mNumParms = cParms;
     thisCon.mParms    = paParms;
@@ -1204,16 +1165,16 @@ int GstCtrlService::clientMakeMeMaster(ClientState *pClient, VBOXHGCMCALLHANDLE 
     /*
      * Do the work.
      */
-    ASSERT_GUEST_MSG_RETURN(m_idMasterClient == pClient->mID || m_idMasterClient == UINT32_MAX,
-                            ("Already have master session %RU32, refusing %RU32.\n", m_idMasterClient, pClient->mID),
+    ASSERT_GUEST_MSG_RETURN(m_idMasterClient == pClient->m_idClient || m_idMasterClient == UINT32_MAX,
+                            ("Already have master session %RU32, refusing %RU32.\n", m_idMasterClient, pClient->m_idClient),
                             VERR_RESOURCE_BUSY);
     int rc = mpHelpers->pfnCallComplete(hCall, VINF_SUCCESS);
     if (RT_SUCCESS(rc))
     {
-        m_idMasterClient = pClient->mID;
+        m_idMasterClient = pClient->m_idClient;
         m_fLegacyMode    = false;
         pClient->m_fIsMaster = true;
-        Log(("[Client %RU32] is master.\n", pClient->mID));
+        Log(("[Client %RU32] is master.\n", pClient->m_idClient));
     }
     else
         LogFunc(("pfnCallComplete -> %Rrc\n", rc));
@@ -1269,7 +1230,7 @@ int GstCtrlService::clientMsgPeek(ClientState *pClient, VBOXHGCMCALLHANDLE hCall
         {
             paParms[0].u.uint32 = idRestore;
             LogFlowFunc(("[Client %RU32] GUEST_MSG_PEEK_XXXX -> VERR_VM_RESTORED (%#RX64 -> %#RX64)\n",
-                         pClient->mID, idRestoreCheck, idRestore));
+                         pClient->m_idClient, idRestoreCheck, idRestore));
             return VERR_VM_RESTORED;
         }
         Assert(!mpHelpers->pfnIsCallRestored(hCall));
@@ -1278,13 +1239,13 @@ int GstCtrlService::clientMsgPeek(ClientState *pClient, VBOXHGCMCALLHANDLE hCall
     /*
      * Return information about the first command if one is pending in the list.
      */
-    HostCmdListIter itFirstCmd = pClient->mHostCmdList.begin();
+    HostCmdList::iterator itFirstCmd = pClient->mHostCmdList.begin();
     if (itFirstCmd != pClient->mHostCmdList.end())
     {
         HostCommand *pFirstCmd = *itFirstCmd;
         pFirstCmd->setPeekReturn(paParms, cParms);
         LogFlowFunc(("[Client %RU32] GUEST_MSG_PEEK_XXXX -> VINF_SUCCESS (idMsg=%u (%s), cParms=%u)\n",
-                     pClient->mID, pFirstCmd->mMsgType, GstCtrlHostFnName((eHostFn)pFirstCmd->mMsgType), pFirstCmd->mParmCount));
+                     pClient->m_idClient, pFirstCmd->mMsgType, GstCtrlHostFnName((eHostFn)pFirstCmd->mMsgType), pFirstCmd->mParmCount));
         return VINF_SUCCESS;
     }
 
@@ -1293,19 +1254,20 @@ int GstCtrlService::clientMsgPeek(ClientState *pClient, VBOXHGCMCALLHANDLE hCall
      */
     if (!fWait)
     {
-        LogFlowFunc(("[Client %RU32] GUEST_MSG_PEEK_NOWAIT -> VERR_TRY_AGAIN\n", pClient->mID));
+        LogFlowFunc(("[Client %RU32] GUEST_MSG_PEEK_NOWAIT -> VERR_TRY_AGAIN\n", pClient->m_idClient));
         return VERR_TRY_AGAIN;
     }
 
     /*
      * Wait for the host to queue a message for this client.
      */
-    ASSERT_GUEST_MSG_RETURN(pClient->mIsPending == 0, ("Already pending! (idClient=%RU32)\n", pClient->mID), VERR_RESOURCE_BUSY);
-    pClient->mPendingCon.mHandle    = hCall;
-    pClient->mPendingCon.mNumParms  = cParms;
-    pClient->mPendingCon.mParms     = paParms;
-    pClient->mIsPending             = GUEST_MSG_PEEK_WAIT;
-    LogFlowFunc(("[Client %RU32] Is now in pending mode\n", pClient->mID));
+    ASSERT_GUEST_MSG_RETURN(pClient->m_enmIsPending == 0, ("Already pending! (idClient=%RU32)\n", pClient->m_idClient), 
+                            VERR_RESOURCE_BUSY);
+    pClient->m_PendingReq.mHandle    = hCall;
+    pClient->m_PendingReq.mNumParms  = cParms;
+    pClient->m_PendingReq.mParms     = paParms;
+    pClient->m_enmIsPending             = GUEST_MSG_PEEK_WAIT;
+    LogFlowFunc(("[Client %RU32] Is now in pending mode...\n", pClient->m_idClient));
     return VINF_HGCM_ASYNC_EXECUTE;
 }
 
@@ -1342,7 +1304,7 @@ int GstCtrlService::clientMsgGet(ClientState *pClient, VBOXHGCMCALLHANDLE hCall,
     /*
      * Return information aobut the first command if one is pending in the list.
      */
-    HostCmdListIter itFirstCmd = pClient->mHostCmdList.begin();
+    HostCmdList::iterator itFirstCmd = pClient->mHostCmdList.begin();
     if (itFirstCmd != pClient->mHostCmdList.end())
     {
         HostCommand *pFirstCmd = *itFirstCmd;
@@ -1423,7 +1385,7 @@ int GstCtrlService::clientMsgGet(ClientState *pClient, VBOXHGCMCALLHANDLE hCall,
 
     paParms[0].u.uint32 = 0;
     paParms[1].u.uint32 = 0;
-    LogFlowFunc(("[Client %RU32] GUEST_MSG_GET -> VERR_TRY_AGAIN\n", pClient->mID));
+    LogFlowFunc(("[Client %RU32] GUEST_MSG_GET -> VERR_TRY_AGAIN\n", pClient->m_idClient));
     return VERR_TRY_AGAIN;
 }
 
@@ -1448,7 +1410,7 @@ int GstCtrlService::clientMsgCancel(ClientState *pClient, uint32_t cParms)
     /*
      * Execute.
      */
-    if (pClient->mIsPending != 0)
+    if (pClient->m_enmIsPending != 0)
     {
         pClient->CancelWaiting();
         return VINF_SUCCESS;
@@ -1642,7 +1604,7 @@ int GstCtrlService::clientSessionPrepare(ClientState *pClient, VBOXHGCMCALLHANDL
 
     ASSERT_GUEST_RETURN(pClient->m_fIsMaster, VERR_ACCESS_DENIED);
     ASSERT_GUEST_RETURN(!m_fLegacyMode, VERR_ACCESS_DENIED);
-    Assert(m_idMasterClient == pClient->mID);
+    Assert(m_idMasterClient == pClient->m_idClient);
 
     /* Now that we know it's the master, we can check for session ID duplicates. */
     GstCtrlPreparedSession *pCur;
@@ -1705,7 +1667,7 @@ int GstCtrlService::clientSessionCancelPrepared(ClientState *pClient, uint32_t c
 
     ASSERT_GUEST_RETURN(pClient->m_fIsMaster, VERR_ACCESS_DENIED);
     ASSERT_GUEST_RETURN(!m_fLegacyMode, VERR_ACCESS_DENIED);
-    Assert(m_idMasterClient == pClient->mID);
+    Assert(m_idMasterClient == pClient->m_idClient);
 
     /*
      * Do the work.
@@ -1776,7 +1738,7 @@ int GstCtrlService::clientSessionAccept(ClientState *pClient, VBOXHGCMCALLHANDLE
 
     ASSERT_GUEST_RETURN(!pClient->m_fIsMaster, VERR_ACCESS_DENIED);
     ASSERT_GUEST_RETURN(!m_fLegacyMode, VERR_ACCESS_DENIED);
-    Assert(m_idMasterClient != pClient->mID);
+    Assert(m_idMasterClient != pClient->m_idClient);
     ASSERT_GUEST_RETURN(pClient->m_idSession == UINT32_MAX, VERR_RESOURCE_BUSY);
 
     /*
@@ -1801,18 +1763,18 @@ int GstCtrlService::clientSessionAccept(ClientState *pClient, VBOXHGCMCALLHANDLE
                     RTListNodeRemove(&pCur->ListEntry);
                     RTMemFree(pCur);
                     m_cPreparedSessions -= 1;
-                    Log(("[Client %RU32] accepted session id %u.\n", pClient->mID, idSession));
+                    Log(("[Client %RU32] accepted session id %u.\n", pClient->m_idClient, idSession));
                 }
                 else
                     LogFunc(("pfnCallComplete -> %Rrc\n", rc));
                 return VINF_HGCM_ASYNC_EXECUTE; /* The caller must not complete it. */
             }
-            LogFunc(("Key mismatch for %u!\n", pClient->mID));
+            LogFunc(("Key mismatch for %u!\n", pClient->m_idClient));
             return VERR_MISMATCH;
         }
     }
 
-    LogFunc(("No client prepared for %u!\n", pClient->mID));
+    LogFunc(("No client prepared for %u!\n", pClient->m_idClient));
     return VERR_NOT_FOUND;
 }
 
@@ -1848,7 +1810,7 @@ int GstCtrlService::clientSessionCloseOther(ClientState *pClient, uint32_t cParm
     HGCMSvcSetU32(&aParms[1], fFlags);
     int rc = hostProcessCommand(HOST_SESSION_CLOSE, RT_ELEMENTS(aParms), aParms);
 
-    LogFlowFunc(("Closing guest context ID=%RU32 (from client ID=%RU32) returned with rc=%Rrc\n", idContext, pClient->mID, rc));
+    LogFlowFunc(("Closing guest context ID=%RU32 (from client ID=%RU32) returned with rc=%Rrc\n", idContext, pClient->m_idClient, rc));
     return rc;
 }
 
@@ -1903,17 +1865,10 @@ int GstCtrlService::clientMsgOldFilterSet(ClientState *pClient, uint32_t cParms,
         ASSERT_GUEST_LOGREL_MSG_RETURN(idSession > 0, ("idSession=%u (%#x)\n", idSession, uValue), VERR_OUT_OF_RANGE);
 
         for (ClientStateMapIter It = mClientStateMap.begin(); It != mClientStateMap.end(); ++It)
-#ifdef USE_PVCLIENT
             ASSERT_GUEST_LOGREL_MSG_RETURN(It->second->m_idSession != idSession,
                                            ("idSession=%u uValue=%#x idClient=%u; conflicting with client %u\n",
-                                            idSession, uValue, pClient->mID, It->second->mID),
+                                            idSession, uValue, pClient->m_idClient, It->second->m_idClient),
                                            VERR_DUPLICATE);
-#else
-            ASSERT_GUEST_LOGREL_MSG_RETURN(It->second.m_idSession != idSession,
-                                           ("idSession=%u uValue=%#x idClient=%u; conflicting with client %u\n",
-                                            idSession, uValue, pClient->mID, It->second.mID),
-                                           VERR_DUPLICATE);
-#endif
         /* Commit it. */
         pClient->m_idSession = idSession;
     }
@@ -1945,7 +1900,7 @@ int GstCtrlService::clientMsgOldSkip(ClientState *pClient, uint32_t cParms)
     if (!pClient->mHostCmdList.empty())
         pClient->OldDitchFirstHostCmd();
 
-    LogFlowFunc(("[Client %RU32] Skipped current message - leagcy function\n", pClient->mID));
+    LogFlowFunc(("[Client %RU32] Skipped current message - leagcy function\n", pClient->m_idClient));
     return VINF_SUCCESS;
 }
 
@@ -1979,7 +1934,7 @@ int GstCtrlService::clientToMain(ClientState *pClient, uint32_t idFunction, uint
                                 && (   idFunction == GUEST_EXEC_STATUS
                                     || idFunction == GUEST_SESSION_NOTIFY)),
                             ("idSession=%u (CID=%#x) m_idSession=%u idClient=%u idFunction=%u (%s)\n", idSession, idContext,
-                             pClient->m_idSession, pClient->mID, idFunction, GstCtrlGuestFnName((eGuestFn)idFunction)),
+                             pClient->m_idSession, pClient->m_idClient, idFunction, GstCtrlGuestFnName((eGuestFn)idFunction)),
                             VERR_ACCESS_DENIED);
 
     /*
@@ -2010,17 +1965,9 @@ GstCtrlService::svcCall(void *pvService, VBOXHGCMCALLHANDLE hCall, uint32_t idCl
      */
     SELF *pThis = reinterpret_cast<SELF *>(pvService);
     AssertReturnVoidStmt(pThis, pThis->mpHelpers->pfnCallComplete(hCall, VERR_INTERNAL_ERROR_5));
-#ifdef USE_PVCLIENT
     ClientState *pClient = reinterpret_cast<ClientState *>(pvClient);
     AssertReturnVoidStmt(pClient, pThis->mpHelpers->pfnCallComplete(hCall, VERR_INVALID_CLIENT_ID));
-    Assert(pClient->mID == idClient);
-#else
-    ClientStateMapIter ItClientState = pThis->mClientStateMap.find(idClient);
-    AssertReturnVoidStmt(ItClientState != pThis->mClientStateMap.end(),
-                         pThis->mpHelpers->pfnCallComplete(hCall, VERR_INVALID_CLIENT_ID));
-    ClientState *pClient = &ItClientState->second;
-    RT_NOREF(pvClient);
-#endif
+    Assert(pClient->m_idClient == idClient);
 
     /*
      * Do the dispatching.
@@ -2087,8 +2034,7 @@ GstCtrlService::svcCall(void *pvService, VBOXHGCMCALLHANDLE hCall, uint32_t idCl
             break;
 
         /*
-         * The remaining commands are here for compatibility with older
-         * guest additions:
+         * The remaining commands are here for compatibility with older guest additions:
          */
         case GUEST_MSG_WAIT:
             LogFlowFunc(("[Client %RU32] GUEST_MSG_WAIT\n", idClient));
@@ -2112,8 +2058,7 @@ GstCtrlService::svcCall(void *pvService, VBOXHGCMCALLHANDLE hCall, uint32_t idCl
             break;
 
         /*
-         * Anything else shall return fail with invalid function.
-         *
+         * Anything else shall return invalid function.
          * Note! We used to return VINF_SUCCESS for these.  See bugref:9313
          *       and Guest::i_notifyCtrlDispatcher().
          */
@@ -2220,18 +2165,14 @@ int GstCtrlService::hostProcessCommand(uint32_t idFunction, uint32_t cParms, VBO
             uint32_t const idSession = VBOX_GUESTCTRL_CONTEXTID_GET_SESSION(pHostCmd->m_idContext);
             for (ClientStateMapIter It = mClientStateMap.begin(); It != mClientStateMap.end(); ++It)
             {
-#ifdef USE_PVCLIENT
                 ClientState *pClient = It->second;
-#else
-                ClientState *pClient = &It->second;
-#endif
                 if (pClient->m_idSession == idSession)
                 {
                     rc = pClient->EnqueueCommand(pHostCmd);
                     if (RT_SUCCESS(rc))
                     {
                         int rc2 = pClient->Wakeup();
-                        LogFlowFunc(("Woke up client ID=%RU32 -> rc=%Rrc\n", pClient->mID, rc2));
+                        LogFlowFunc(("Woke up client ID=%RU32 -> rc=%Rrc\n", pClient->m_idClient, rc2));
                         RT_NOREF(rc2);
                     }
                     break;
@@ -2246,16 +2187,12 @@ int GstCtrlService::hostProcessCommand(uint32_t idFunction, uint32_t cParms, VBO
             ClientStateMapIter It = mClientStateMap.find(m_idMasterClient);
             if (It != mClientStateMap.end())
             {
-#ifdef USE_PVCLIENT
                 ClientState *pClient = It->second;
-#else
-                ClientState *pClient = &It->second;
-#endif
                 int rc2 = pClient->EnqueueCommand(pHostCmd);
                 if (RT_SUCCESS(rc2))
                 {
                     rc2 = pClient->Wakeup();
-                    LogFlowFunc(("Woke up client ID=%RU32 (master) -> rc=%Rrc\n", pClient->mID, rc2));
+                    LogFlowFunc(("Woke up client ID=%RU32 (master) -> rc=%Rrc\n", pClient->m_idClient, rc2));
                 }
                 else
                     rc = rc2;
@@ -2339,11 +2276,7 @@ GstCtrlService::svcLoadState(void *pvService, uint32_t idClient, void *pvClient,
             pThis->m_idMasterClient = idClient;
         ClientStateMapIter It = pThis->mClientStateMap.find(idClient);
         if (It != pThis->mClientStateMap.end())
-#ifdef USE_PVCLIENT
             It->second->m_fIsMaster = fIsMaster;
-#else
-            It->second.m_fIsMaster = fIsMaster;
-#endif
         else
             AssertFailed();
     }
