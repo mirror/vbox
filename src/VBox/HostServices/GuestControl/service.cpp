@@ -864,7 +864,9 @@ private:
     /** User data pointer to be supplied to the host callback function. */
     void *mpvHostData;
     /** Map containing all connected clients, key is HGCM client ID. */
-    ClientStateMap  mClientStateMap; /**< @todo Use VBOXHGCMSVCFNTABLE::cbClient for this! */
+    ClientStateMap  m_ClientStateMap;
+    /** Session ID -> client state. */
+    ClientStateMap  m_SessionIdMap;
     /** The current master client, NULL if none. */
     ClientState    *m_pMasterClient;
     /** The master HGCM client ID, UINT32_MAX if none. */
@@ -955,7 +957,7 @@ GstCtrlService::svcConnect(void *pvService, uint32_t idClient, void *pvClient, u
     SELF *pThis = reinterpret_cast<SELF *>(pvService);
     AssertPtrReturn(pThis, VERR_INVALID_POINTER);
 
-    AssertMsg(pThis->mClientStateMap.find(idClient) == pThis->mClientStateMap.end(),
+    AssertMsg(pThis->m_ClientStateMap.find(idClient) == pThis->m_ClientStateMap.end(),
               ("Client with ID=%RU32 already connected when it should not\n", idClient));
 
     /*
@@ -972,7 +974,7 @@ GstCtrlService::svcConnect(void *pvService, uint32_t idClient, void *pvClient, u
     //}
     try
     {
-        pThis->mClientStateMap[idClient] = pClient;
+        pThis->m_ClientStateMap[idClient] = pClient;
     }
     catch (std::bad_alloc &)
     {
@@ -1017,7 +1019,7 @@ GstCtrlService::svcDisconnect(void *pvService, uint32_t idClient, void *pvClient
     AssertPtrReturn(pThis, VERR_INVALID_POINTER);
     ClientState *pClient = reinterpret_cast<ClientState *>(pvClient);
     AssertPtrReturn(pClient, VERR_INVALID_POINTER);
-    LogFlowFunc(("[Client %RU32] Disconnected (%zu clients total)\n", idClient, pThis->mClientStateMap.size()));
+    LogFlowFunc(("[Client %RU32] Disconnected (%zu clients total)\n", idClient, pThis->m_ClientStateMap.size()));
 
     /*
      * Cancel all pending host commands, replying with GUEST_DISCONNECTED if final recipient.
@@ -1040,7 +1042,9 @@ GstCtrlService::svcDisconnect(void *pvService, uint32_t idClient, void *pvClient
     /*
      * Delete the client state.
      */
-    pThis->mClientStateMap.erase(idClient);
+    pThis->m_ClientStateMap.erase(idClient);
+    if (pClient->m_idSession != UINT32_MAX)
+        pThis->m_SessionIdMap.erase(pClient->m_idSession);
     pClient->~ClientState();
     pClient = NULL;
 
@@ -1063,7 +1067,7 @@ GstCtrlService::svcDisconnect(void *pvService, uint32_t idClient, void *pvClient
     else
         Assert(pClient != pThis->m_pMasterClient);
 
-    if (pThis->mClientStateMap.empty())
+    if (pThis->m_ClientStateMap.empty())
         pThis->m_fLegacyMode = true;
 
     return VINF_SUCCESS;
@@ -1717,8 +1721,19 @@ int GstCtrlService::clientSessionAccept(ClientState *pClient, VBOXHGCMCALLHANDLE
                 && memcmp(pCur->abKey, pvKey, cbKey) == 0)
             {
                 /*
-                 * We've got a match. Try complete the request and
+                 * We've got a match.
+                 * Try insert it into the sessio ID map and complete the request.
                  */
+                try
+                {
+                    m_SessionIdMap[idSession] = pClient;
+                }
+                catch (std::bad_alloc &)
+                {
+                    LogFunc(("Out of memory!\n"));
+                    return VERR_NO_MEMORY;
+                }
+
                 int rc = mpHelpers->pfnCallComplete(hCall, VINF_SUCCESS);
                 if (RT_SUCCESS(rc))
                 {
@@ -1730,7 +1745,10 @@ int GstCtrlService::clientSessionAccept(ClientState *pClient, VBOXHGCMCALLHANDLE
                     Log(("[Client %RU32] accepted session id %u.\n", pClient->m_idClient, idSession));
                 }
                 else
+                {
                     LogFunc(("pfnCallComplete -> %Rrc\n", rc));
+                    m_SessionIdMap.erase(idSession);
+                }
                 return VINF_HGCM_ASYNC_EXECUTE; /* The caller must not complete it. */
             }
             LogFunc(("Key mismatch for %u!\n", pClient->m_idClient));
@@ -1828,12 +1846,22 @@ int GstCtrlService::clientMsgOldFilterSet(ClientState *pClient, uint32_t cParms,
         uint32_t idSession = VBOX_GUESTCTRL_CONTEXTID_GET_SESSION(uValue);
         ASSERT_GUEST_LOGREL_MSG_RETURN(idSession > 0, ("idSession=%u (%#x)\n", idSession, uValue), VERR_OUT_OF_RANGE);
 
-        for (ClientStateMap::iterator It = mClientStateMap.begin(); It != mClientStateMap.end(); ++It)
-            ASSERT_GUEST_LOGREL_MSG_RETURN(It->second->m_idSession != idSession,
-                                           ("idSession=%u uValue=%#x idClient=%u; conflicting with client %u\n",
-                                            idSession, uValue, pClient->m_idClient, It->second->m_idClient),
-                                           VERR_DUPLICATE);
+        ClientStateMap::iterator ItConflict = m_SessionIdMap.find(idSession);
+        ASSERT_GUEST_LOGREL_MSG_RETURN(ItConflict == m_SessionIdMap.end(),
+                                       ("idSession=%u uValue=%#x idClient=%u; conflicting with client %u\n",
+                                        idSession, uValue, pClient->m_idClient, ItConflict->second->m_idClient),
+                                       VERR_DUPLICATE);
+
         /* Commit it. */
+        try
+        {
+            m_SessionIdMap[idSession] = pClient;
+        }
+        catch (std::bad_alloc &)
+        {
+            LogFunc(("Out of memory\n"));
+            return VERR_NO_MEMORY;
+        }
         pClient->m_idSession = idSession;
     }
     return VINF_SUCCESS;
@@ -2100,7 +2128,7 @@ int GstCtrlService::hostProcessCommand(uint32_t idFunction, uint32_t cParms, VBO
      * waiting for a response from the guest side in case VBoxService on
      * the guest is not running/system is messed up somehow.
      */
-    if (mClientStateMap.empty())
+    if (m_ClientStateMap.empty())
     {
         LogFlow(("GstCtrlService::hostProcessCommand: VERR_NOT_FOUND!\n"));
         return VERR_NOT_FOUND;
@@ -2131,34 +2159,37 @@ int GstCtrlService::hostProcessCommand(uint32_t idFunction, uint32_t cParms, VBO
         if (RT_SUCCESS(rc))
         {
             LogFlowFunc(("Handling host command m_idContextAndDst=%#RX64, idFunction=%RU32, cParms=%RU32, paParms=%p, cClients=%zu\n",
-                         pHostCmd->m_idContextAndDst, idFunction, cParms, paParms, mClientStateMap.size()));
+                         pHostCmd->m_idContextAndDst, idFunction, cParms, paParms, m_ClientStateMap.size()));
 
             /*
              * Find the message destination and post it to the client.  If the
              * session ID doesn't match any particular client it goes to the master.
              */
-            AssertMsg(!mClientStateMap.empty(), ("Client state map is empty when it should not be!\n"));
+            AssertMsg(!m_ClientStateMap.empty(), ("Client state map is empty when it should not be!\n"));
 
             /* Dispatch to the session. */
             if (fDestinations & VBOX_GUESTCTRL_DST_SESSION)
             {
-                rc = VWRN_NOT_FOUND;
                 uint32_t const idSession = VBOX_GUESTCTRL_CONTEXTID_GET_SESSION(pHostCmd->m_idContext);
-                for (ClientStateMap::iterator It = mClientStateMap.begin(); It != mClientStateMap.end(); ++It)
+                ClientStateMap::iterator It = m_SessionIdMap.find(idSession);
+                if (It != m_SessionIdMap.end())
                 {
                     ClientState *pClient = It->second;
-                    if (pClient->m_idSession == idSession)
-                    {
-                        RTListAppend(&pClient->m_HostCmdList, &pHostCmd->m_ListEntry);
-                        pHostCmd  = pHostCmd2;
-                        pHostCmd2 = NULL;
+                    Assert(pClient->m_idSession == idSession);
+                    RTListAppend(&pClient->m_HostCmdList, &pHostCmd->m_ListEntry);
+                    pHostCmd  = pHostCmd2;
+                    pHostCmd2 = NULL;
 
-                        int rc2 = pClient->Wakeup();
-                        LogFlowFunc(("Woke up client ID=%RU32 -> rc=%Rrc\n", pClient->m_idClient, rc2));
-                        RT_NOREF(rc2);
-                        rc = VINF_SUCCESS;
-                        break;
-                    }
+                    int rc2 = pClient->Wakeup();
+                    LogFlowFunc(("Woke up client ID=%RU32 -> rc=%Rrc\n", pClient->m_idClient, rc2));
+                    RT_NOREF(rc2);
+                    rc = VINF_SUCCESS;
+                }
+                else
+                {
+                    LogFunc(("No client with session ID %u was found! (idFunction=%d %s)\n",
+                             idSession, idFunction, GstCtrlHostFnName((eHostFn)idFunction)));
+                    rc = !(fDestinations & VBOX_GUESTCTRL_DST_ROOT_SVC) ? VERR_NOT_FOUND : VWRN_NOT_FOUND;
                 }
             }
 
