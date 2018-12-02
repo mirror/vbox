@@ -858,6 +858,8 @@ private:
     void *mpvHostData;
     /** Map containing all connected clients, key is HGCM client ID. */
     ClientStateMap  mClientStateMap; /**< @todo Use VBOXHGCMSVCFNTABLE::cbClient for this! */
+    /** The current master client, NULL if none. */
+    ClientState    *m_pMasterClient;
     /** The master HGCM client ID, UINT32_MAX if none. */
     uint32_t        m_idMasterClient;
     /** Set if we're in legacy mode (pre 6.0). */
@@ -872,6 +874,7 @@ public:
         : mpHelpers(pHelpers)
         , mpfnHostCallback(NULL)
         , mpvHostData(NULL)
+        , m_pMasterClient(NULL)
         , m_idMasterClient(UINT32_MAX)
         , m_fLegacyMode(true)
         , m_cPreparedSessions(0)
@@ -952,14 +955,14 @@ GstCtrlService::svcConnect(void *pvService, uint32_t idClient, void *pvClient, u
      * Create client state.
      */
     ClientState *pClient;
-    try
+    //try - can't currently throw anything.
     {
         pClient = new (pvClient) ClientState(pThis->mpHelpers, idClient);
     }
-    catch (std::bad_alloc &)
-    {
-        return VERR_NO_MEMORY;
-    }
+    //catch (std::bad_alloc &)
+    //{
+    //    return VERR_NO_MEMORY;
+    //}
     try
     {
         pThis->mClientStateMap[idClient] = pClient;
@@ -975,7 +978,7 @@ GstCtrlService::svcConnect(void *pvService, uint32_t idClient, void *pvClient, u
      * point, so if the /dev/vboxguest requirements checks out we pick the first
      * one through the door.
      */
-/** @todo make picking the master more dynamic/flexible. */
+/** @todo make picking the master more dynamic/flexible? */
     if (   pThis->m_fLegacyMode
         && pThis->m_idMasterClient == UINT32_MAX)
     {
@@ -983,6 +986,7 @@ GstCtrlService::svcConnect(void *pvService, uint32_t idClient, void *pvClient, u
             || !(fRequestor & VMMDEV_REQUESTOR_USER_DEVICE))
         {
             LogFunc(("Picking %u as master for now.\n", idClient));
+            pThis->m_pMasterClient  = pClient;
             pThis->m_idMasterClient = idClient;
             pClient->m_fIsMaster = true;
         }
@@ -1038,7 +1042,9 @@ GstCtrlService::svcDisconnect(void *pvService, uint32_t idClient, void *pvClient
      */
     if (idClient == pThis->m_idMasterClient)
     {
+        pThis->m_pMasterClient  = NULL;
         pThis->m_idMasterClient = UINT32_MAX;
+
         GstCtrlPreparedSession *pCur, *pNext;
         RTListForEachSafe(&pThis->m_PreparedSessions, pCur, pNext, GstCtrlPreparedSession, ListEntry)
         {
@@ -1047,6 +1053,8 @@ GstCtrlService::svcDisconnect(void *pvService, uint32_t idClient, void *pvClient
         }
         pThis->m_cPreparedSessions = 0;
     }
+    else
+        Assert(pClient != pThis->m_pMasterClient);
 
     if (pThis->mClientStateMap.empty())
         pThis->m_fLegacyMode = true;
@@ -1118,6 +1126,7 @@ int GstCtrlService::clientMakeMeMaster(ClientState *pClient, VBOXHGCMCALLHANDLE 
     int rc = mpHelpers->pfnCallComplete(hCall, VINF_SUCCESS);
     if (RT_SUCCESS(rc))
     {
+        m_pMasterClient  = pClient;
         m_idMasterClient = pClient->m_idClient;
         m_fLegacyMode    = false;
         pClient->m_fIsMaster = true;
@@ -1550,6 +1559,7 @@ int GstCtrlService::clientSessionPrepare(ClientState *pClient, VBOXHGCMCALLHANDL
     ASSERT_GUEST_RETURN(pClient->m_fIsMaster, VERR_ACCESS_DENIED);
     ASSERT_GUEST_RETURN(!m_fLegacyMode, VERR_ACCESS_DENIED);
     Assert(m_idMasterClient == pClient->m_idClient);
+    Assert(m_pMasterClient == pClient);
 
     /* Now that we know it's the master, we can check for session ID duplicates. */
     GstCtrlPreparedSession *pCur;
@@ -1613,6 +1623,7 @@ int GstCtrlService::clientSessionCancelPrepared(ClientState *pClient, uint32_t c
     ASSERT_GUEST_RETURN(pClient->m_fIsMaster, VERR_ACCESS_DENIED);
     ASSERT_GUEST_RETURN(!m_fLegacyMode, VERR_ACCESS_DENIED);
     Assert(m_idMasterClient == pClient->m_idClient);
+    Assert(m_pMasterClient == pClient);
 
     /*
      * Do the work.
@@ -1684,6 +1695,7 @@ int GstCtrlService::clientSessionAccept(ClientState *pClient, VBOXHGCMCALLHANDLE
     ASSERT_GUEST_RETURN(!pClient->m_fIsMaster, VERR_ACCESS_DENIED);
     ASSERT_GUEST_RETURN(!m_fLegacyMode, VERR_ACCESS_DENIED);
     Assert(m_idMasterClient != pClient->m_idClient);
+    Assert(m_pMasterClient != pClient);
     ASSERT_GUEST_RETURN(pClient->m_idSession == UINT32_MAX, VERR_RESOURCE_BUSY);
 
     /*
@@ -2148,15 +2160,14 @@ int GstCtrlService::hostProcessCommand(uint32_t idFunction, uint32_t cParms, VBO
                 && RT_SUCCESS(rc))
             {
                 Assert(pHostCmd);
-                ClientStateMapIter It = mClientStateMap.find(m_idMasterClient);
-                if (It != mClientStateMap.end())
+                if (m_pMasterClient)
                 {
-                    ClientState *pClient = It->second;
-                    RTListAppend(&pClient->m_HostCmdList, &pHostCmd->m_ListEntry);
+                    RTListAppend(&m_pMasterClient->m_HostCmdList, &pHostCmd->m_ListEntry);
                     pHostCmd = NULL;
 
-                    int rc2 = pClient->Wakeup();
-                    LogFlowFunc(("Woke up client ID=%RU32 (master) -> rc=%Rrc\n", pClient->m_idClient, rc2));
+                    int rc2 = m_pMasterClient->Wakeup();
+                    LogFlowFunc(("Woke up client ID=%RU32 (master) -> rc=%Rrc\n", m_pMasterClient->m_idClient, rc2));
+                    NOREF(rc2);
                 }
                 else
                     rc = VERR_NOT_FOUND;
@@ -2205,6 +2216,11 @@ GstCtrlService::svcSaveState(void *pvService, uint32_t idClient, void *pvClient,
     SELF *pThis = reinterpret_cast<SELF *>(pvService);
     AssertPtrReturn(pThis, VERR_INVALID_POINTER);
 
+    /* Note! We don't need to save the idSession here because it's only used
+             for sessions and the sessions are not persistent across a state
+             save/restore.  The Main objects aren't there.  Clients shuts down.
+             Only the root service survives, so remember who that is and its mode. */
+
     SSMR3PutU32(pSSM, 1);
     SSMR3PutBool(pSSM, pThis->m_fLegacyMode);
     return SSMR3PutBool(pSSM, idClient == pThis->m_idMasterClient);
@@ -2217,9 +2233,11 @@ GstCtrlService::svcSaveState(void *pvService, uint32_t idClient, void *pvClient,
 /*static*/ DECLCALLBACK(int)
 GstCtrlService::svcLoadState(void *pvService, uint32_t idClient, void *pvClient, PSSMHANDLE pSSM, uint32_t uVersion)
 {
-    RT_NOREF(pvClient);
     SELF *pThis = reinterpret_cast<SELF *>(pvService);
     AssertPtrReturn(pThis, VERR_INVALID_POINTER);
+    ClientState *pClient = reinterpret_cast<ClientState *>(pvClient);
+    AssertReturn(pClient, VERR_INVALID_CLIENT_ID);
+    Assert(pClient->m_idClient == idClient);
 
     if (uVersion >= HGCM_SAVED_STATE_VERSION)
     {
@@ -2237,13 +2255,13 @@ GstCtrlService::svcLoadState(void *pvService, uint32_t idClient, void *pvClient,
         bool fIsMaster;
         rc = SSMR3GetBool(pSSM, &fIsMaster);
         AssertRCReturn(rc, rc);
+
+        pClient->m_fIsMaster = fIsMaster;
         if (fIsMaster)
+        {
+            pThis->m_pMasterClient  = pClient;
             pThis->m_idMasterClient = idClient;
-        ClientStateMapIter It = pThis->mClientStateMap.find(idClient);
-        if (It != pThis->mClientStateMap.end())
-            It->second->m_fIsMaster = fIsMaster;
-        else
-            AssertFailed();
+        }
     }
     else
     {
