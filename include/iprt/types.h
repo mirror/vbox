@@ -2527,6 +2527,13 @@ typedef RTKRNLMODINFO                       RT_FAR *PRTKRNLMODINFO;
 /** A NIL kernel module information record handle. */
 #define NIL_RTKRNLMODINFO                          ((RTKRNLMODINFO)~(uintptr_t)0);
 
+/** Shared memory object handle. */
+typedef struct RTSHMEMINT                   RT_FAR *RTSHMEM;
+/** Pointer to a shared memory object handle. */
+typedef RTSHMEM                             RT_FAR *PRTSHMEM;
+/** A NIL shared memory object handle. */
+#define NIL_RTSHMEM                                ((RTSHMEM)~(uintptr_t)0)
+
 /**
  * Handle type.
  *

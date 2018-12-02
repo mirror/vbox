@@ -3394,6 +3394,13 @@ RT_C_DECLS_END
 #define VERR_CR_CIPHER_INVALID_INITIALIZATION_VECTOR_LENGTH     (-25808)
 /** @} */
 
+
+/** @name RTShMem status codes
+ * @{ */
+/** Maximum number of mappings reached. */
+#define VERR_SHMEM_MAXIMUM_MAPPINGS_REACHED                     (-26000)
+/** @} */
+
 /* SED-END */
 
 /** @} */

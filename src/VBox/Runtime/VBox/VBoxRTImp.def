@@ -1661,6 +1661,13 @@ EXPORTS
     RTSha512Init
     RTSha512ToString
     RTSha512Update
+    RTShMemClose
+    RTShMemMapRegion
+    RTShMemOpen
+    RTShMemQuerySize
+    RTShMemRefCount
+    RTShMemSetSize
+    RTShMemUnmapRegion
     RTSocketClose
     RTSocketFromNative
     RTSocketGetLocalAddress
