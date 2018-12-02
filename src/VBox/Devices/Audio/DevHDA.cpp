@@ -3630,19 +3630,20 @@ static int hdaR3SaveStream(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, PHDASTREAM pStre
          *
          * So get the current read offset and serialize the buffer data manually based on that.
          */
-        size_t cbCircBufOffRead = RTCircBufOffsetRead(pStream->State.pCircBuf);
-
+        size_t const offBuf = RTCircBufOffsetRead(pStream->State.pCircBuf);
         void  *pvBuf;
         size_t cbBuf;
         RTCircBufAcquireReadBlock(pStream->State.pCircBuf, cbCircBufUsed, &pvBuf, &cbBuf);
+#if 0 /** @todo r=bird: The disabled code crashes on me. The #else case contains something that seems
+       * to make more sense to me.  I'm not say this is correct code.  Please review, fix, and remove. */
 
         if (cbBuf)
         {
             size_t cbToRead = cbCircBufUsed;
             size_t cbEnd    = 0;
 
-            if (cbCircBufUsed > cbCircBufOffRead)
-                cbEnd = cbCircBufUsed - cbCircBufOffRead;
+            if (cbCircBufUsed > offBuf)
+                cbEnd = cbCircBufUsed - offBuf;
 
             if (cbEnd) /* Save end of buffer first. */
             {
@@ -3659,6 +3660,12 @@ static int hdaR3SaveStream(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, PHDASTREAM pStre
                 AssertRCReturn(rc, rc);
             }
         }
+#else
+        Assert(cbBuf);
+        rc = SSMR3PutMem(pSSM, pvBuf, cbBuf);
+        if (cbBuf < cbCircBufUsed)
+            rc = SSMR3PutMem(pSSM, (uint8_t *)pvBuf - offBuf, cbCircBufUsed - cbBuf);
+#endif
 
         RTCircBufReleaseReadBlock(pStream->State.pCircBuf, 0 /* Don't advance read pointer -- see comment above */);
     }
