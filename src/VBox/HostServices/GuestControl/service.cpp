@@ -80,8 +80,6 @@
 
 #include <map>
 #include <new>      /* for std::nothrow*/
-#include <string>
-#include <list>
 
 
 using namespace guestControl;
@@ -434,7 +432,6 @@ typedef struct HostCommand
 
     /** @} */
 } HostCommand;
-typedef std::list< HostCommand *> HostCmdList;
 
 /**
  * Per-client structure used for book keeping/state tracking a
@@ -1014,19 +1011,19 @@ GstCtrlService::svcDisconnect(void *pvService, uint32_t idClient, void *pvClient
     /*
      * Cancel all pending host commands, replying with GUEST_DISCONNECTED if final recipient.
      */
-    HostCommand *pCur, *pNext;
-    RTListForEachSafeCpp(&pClient->m_HostCmdList, pCur, pNext, HostCommand, m_ListEntry)
+    HostCommand *pCurCmd, *pNextCmd;
+    RTListForEachSafeCpp(&pClient->m_HostCmdList, pCurCmd, pNextCmd, HostCommand, m_ListEntry)
     {
-        RTListNodeRemove(&pCur->m_ListEntry);
+        RTListNodeRemove(&pCurCmd->m_ListEntry);
 
         VBOXHGCMSVCPARM Parm;
-        HGCMSvcSetU32(&Parm, pCur->m_idContext);
+        HGCMSvcSetU32(&Parm, pCurCmd->m_idContext);
         int rc2 = pThis->hostCallback(GUEST_DISCONNECTED, 1, &Parm);
         LogFlowFunc(("Cancelled host command %u (%s) with idContext=%#x -> %Rrc\n",
-                     pCur->mMsgType, GstCtrlHostFnName((eHostFn)pCur->mMsgType), pCur->m_idContext, rc2));
+                     pCurCmd->mMsgType, GstCtrlHostFnName((eHostFn)pCurCmd->mMsgType), pCurCmd->m_idContext, rc2));
         RT_NOREF(rc2);
 
-        pCur->Delete();
+        pCurCmd->Delete();
     }
 
     /*
