@@ -159,8 +159,8 @@ int Guest::i_dispatchToSession(PVBOXGUESTCTRLHOSTCBCTX pCtxCb, PVBOXGUESTCTRLHOS
 
         alock.release();
 
-        bool fDispatch = true;
 #ifdef DEBUG
+        bool fDispatch = true;
         /*
          * Pre-check: If we got a status message with an error and VERR_TOO_MUCH_DATA
          *            it means that that guest could not handle the entire message
@@ -187,8 +187,8 @@ int Guest::i_dispatchToSession(PVBOXGUESTCTRLHOSTCBCTX pCtxCb, PVBOXGUESTCTRLHOS
                 fDispatch = false;
             }
         }
-#endif
         if (fDispatch)
+#endif
         {
             switch (pCtxCb->uFunction)
             {

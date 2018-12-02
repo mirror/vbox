@@ -45,6 +45,7 @@
 #include <iprt/env.h>
 #include <iprt/file.h> /* For CopyTo/From. */
 #include <iprt/path.h>
+#include <iprt/rand.h>
 
 #include <VBox/com/array.h>
 #include <VBox/com/listeners.h>
@@ -340,7 +341,6 @@ void GuestSession::uninit(void)
     i_objectUnregister(mData.mObjectID);
 
     mData.mObjects.clear();
-    mData.mObjectsFree.clear();
 
     mData.mEnvironmentChanges.reset();
 
@@ -1016,22 +1016,22 @@ int GuestSession::i_directoryUnregister(GuestDirectory *pDirectory)
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    const uint32_t uObjectID = pDirectory->getObjectID();
+    const uint32_t idObject = pDirectory->getObjectID();
 
-    LogFlowFunc(("Removing directory (objectID=%RU32) ...\n", uObjectID));
+    LogFlowFunc(("Removing directory (objectID=%RU32) ...\n", idObject));
 
-    int rc = i_objectUnregister(uObjectID);
+    int rc = i_objectUnregister(idObject);
     if (RT_FAILURE(rc))
         return rc;
 
-    SessionDirectories::iterator itDirs = mData.mDirectories.find(uObjectID);
+    SessionDirectories::iterator itDirs = mData.mDirectories.find(idObject);
     AssertReturn(itDirs != mData.mDirectories.end(), VERR_NOT_FOUND);
 
     /* Make sure to consume the pointer before the one of the iterator gets released. */
     ComObjPtr<GuestDirectory> pDirConsumed = pDirectory;
 
     LogFlowFunc(("Removing directory ID=%RU32 (session %RU32, now total %zu directories)\n",
-                 uObjectID, mData.mSession.mID, mData.mDirectories.size()));
+                 idObject, mData.mSession.mID, mData.mDirectories.size()));
 
     rc = pDirConsumed->i_onRemove();
     AssertRCReturn(rc, rc);
@@ -1161,8 +1161,8 @@ int GuestSession::i_directoryOpen(const GuestDirectoryOpenInfo &openInfo,
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     /* Register a new object ID. */
-    uint32_t uObjectID;
-    int rc = i_objectRegister(SESSIONOBJECTTYPE_DIRECTORY, &uObjectID);
+    uint32_t idObject;
+    int rc = i_objectRegister(SESSIONOBJECTTYPE_DIRECTORY, &idObject);
     if (RT_FAILURE(rc))
         return rc;
 
@@ -1174,7 +1174,7 @@ int GuestSession::i_directoryOpen(const GuestDirectoryOpenInfo &openInfo,
     Console *pConsole = mParent->i_getConsole();
     AssertPtr(pConsole);
 
-    int vrc = pDirectory->init(pConsole, this /* Parent */, uObjectID, openInfo);
+    int vrc = pDirectory->init(pConsole, this /* Parent */, idObject, openInfo);
     if (RT_FAILURE(vrc))
         return vrc;
 
@@ -1188,7 +1188,7 @@ int GuestSession::i_directoryOpen(const GuestDirectoryOpenInfo &openInfo,
     try
     {
         /* Add the created directory to our map. */
-        mData.mDirectories[uObjectID] = pDirectory;
+        mData.mDirectories[idObject] = pDirectory;
 
         LogFlowFunc(("Added new guest directory \"%s\" (Session: %RU32) (now total %zu directories)\n",
                      openInfo.mPath.c_str(), mData.mSession.mID, mData.mDirectories.size()));
@@ -1415,15 +1415,15 @@ int GuestSession::i_fileUnregister(GuestFile *pFile)
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    const uint32_t uObjectID = pFile->getObjectID();
+    const uint32_t idObject = pFile->getObjectID();
 
-    LogFlowFunc(("Removing file (objectID=%RU32) ...\n", uObjectID));
+    LogFlowFunc(("Removing file (objectID=%RU32) ...\n", idObject));
 
-    int rc = i_objectUnregister(uObjectID);
+    int rc = i_objectUnregister(idObject);
     if (RT_FAILURE(rc))
         return rc;
 
-    SessionFiles::iterator itFiles = mData.mFiles.find(uObjectID);
+    SessionFiles::iterator itFiles = mData.mFiles.find(idObject);
     AssertReturn(itFiles != mData.mFiles.end(), VERR_NOT_FOUND);
 
     /* Make sure to consume the pointer before the one of the iterator gets released. */
@@ -1519,8 +1519,8 @@ int GuestSession::i_fileOpen(const GuestFileOpenInfo &openInfo, ComObjPtr<GuestF
     }
 
     /* Register a new object ID. */
-    uint32_t uObjectID;
-    int rc = i_objectRegister(SESSIONOBJECTTYPE_FILE, &uObjectID);
+    uint32_t idObject;
+    int rc = i_objectRegister(SESSIONOBJECTTYPE_FILE, &idObject);
     if (RT_FAILURE(rc))
         return rc;
 
@@ -1532,7 +1532,7 @@ int GuestSession::i_fileOpen(const GuestFileOpenInfo &openInfo, ComObjPtr<GuestF
     Console *pConsole = mParent->i_getConsole();
     AssertPtr(pConsole);
 
-    rc = pFile->init(pConsole, this /* GuestSession */, uObjectID, openInfo);
+    rc = pFile->init(pConsole, this /* GuestSession */, idObject, openInfo);
     if (RT_FAILURE(rc))
         return rc;
 
@@ -1546,7 +1546,7 @@ int GuestSession::i_fileOpen(const GuestFileOpenInfo &openInfo, ComObjPtr<GuestF
     try
     {
         /* Add the created file to our vector. */
-        mData.mFiles[uObjectID] = pFile;
+        mData.mFiles[idObject] = pFile;
 
         LogFlowFunc(("Added new guest file \"%s\" (Session: %RU32) (now total %zu files)\n",
                      openInfo.mFileName.c_str(), mData.mSession.mID, mData.mFiles.size()));
@@ -2034,97 +2034,79 @@ void GuestSession::i_startSessionThreadTask(GuestSessionTaskInternalOpen *pTask)
 }
 
 /**
- * Registers an object to a session.
+ * Registers an object with the session, i.e. allocates an object ID.
  *
- * @return VBox status code.
- * @param  enmType              Session object type to register.
- * @param  puObjectID           Returns registered object ID on success. Optional.
+ * @return  VBox status code.
+ * @retval  VERR_GSTCTL_MAX_OBJECTS_REACHED if the maximum of concurrent objects
+ *          is reached.
+ * @param   enmType     Session object type to register.
+ * @param   pidObject   Where to return the object ID on success.
  */
-int GuestSession::i_objectRegister(SESSIONOBJECTTYPE enmType, uint32_t *puObjectID)
+int GuestSession::i_objectRegister(SESSIONOBJECTTYPE enmType, uint32_t *pidObject)
 {
-    return i_objectRegisterEx(enmType, 0 /* fFlags */, puObjectID);
-}
-
-/**
- * Registers an object to a session, extended version.
- *
- * @return VBox status code. VERR_GSTCTL_MAX_OBJECTS_REACHED if the maximum of concurrent objects is reached.
- * @param  enmType              Session object type to register.
- * @param  fFlags               Registration flags. Not used yet and must be 0.
- * @param  puObjectID           Returns registered object ID on success. Optional.
- */
-int GuestSession::i_objectRegisterEx(SESSIONOBJECTTYPE enmType, uint32_t fFlags, uint32_t *puObjectID)
-{
-    RT_NOREF(fFlags);
-    AssertReturn(fFlags == 0, VERR_INVALID_PARAMETER);
-
+    /*
+     * Pick a random bit as starting point.  If it's in use, search forward
+     * for a free one, wrapping around.  We've reserved both the zero'th and
+     * max-1 IDs (see Data constructor).
+     */
+    uint32_t idObject = RTRandU32Ex(1, VBOX_GUESTCTRL_MAX_OBJECTS - 2);
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    int rc = VINF_SUCCESS;
-
-    uint32_t uObjectID = 0; /* Shut up MSVC. */
-
-    if (mData.mObjects.size() < VBOX_GUESTCTRL_MAX_OBJECTS - 1 /* Minus 1 for the session itself */)
+    if (!ASMBitTestAndSet(&mData.bmObjectIds[0], idObject))
+    { /* likely */ }
+    else if (mData.mObjects.size() < VBOX_GUESTCTRL_MAX_OBJECTS - 2 /* First and last are not used */)
     {
-        SessionObjects::reverse_iterator itRend = mData.mObjects.rbegin();
-        if (itRend != mData.mObjects.rend())
-            uObjectID = itRend->first + 1; /* Last key plus 1. */
-        else
-            uObjectID = 0;
+        /* Forward search. */
+        int iHit = ASMBitNextClear(&mData.bmObjectIds[0], VBOX_GUESTCTRL_MAX_OBJECTS, idObject);
+        if (iHit < 0)
+            iHit = ASMBitFirstClear(&mData.bmObjectIds[0], VBOX_GUESTCTRL_MAX_OBJECTS);
+        AssertLogRelMsgReturn(iHit >= 0, ("object count: %#zu\n", mData.mObjects.size()), VERR_GSTCTL_MAX_OBJECTS_REACHED);
+        idObject = iHit;
+        AssertLogRelMsgReturn(!ASMBitTestAndSet(&mData.bmObjectIds[0], idObject), ("idObject=%#x\n", idObject), VERR_INTERNAL_ERROR_2);
     }
     else
     {
-        /* Utilize our "free list" to get the next free object ID in the map. */
-        if (mData.mObjectsFree.size())
-        {
-            /* Always re-use the oldest object ID to avoid trouble. */
-            uObjectID = mData.mObjectsFree.front();
-            mData.mObjectsFree.pop_front();
-        }
-        else
-            rc = VERR_GSTCTL_MAX_OBJECTS_REACHED;
+        LogFunc(("enmType=%RU32 -> VERR_GSTCTL_MAX_OBJECTS_REACHED!! (%zu objects)\n", enmType, mData.mObjects.size()));
+        return VERR_GSTCTL_MAX_OBJECTS_REACHED;
     }
 
-    Log2Func(("enmType=%RU32, fFlags=%RU32 -> uObjectID=%RU32 (%zu objects, %zu on free list), rc=%Rrc\n",
-              enmType, fFlags, uObjectID, mData.mObjects.size(), mData.mObjectsFree.size(), rc));
+    Log2Func(("enmType=%RU32 -> idObject=%RU32 (%zu objects)\n", enmType, idObject, mData.mObjects.size()));
 
-    if (RT_SUCCESS(rc))
+    try
     {
-        mData.mObjects[uObjectID].enmType     = enmType;
-        mData.mObjects[uObjectID].tsCreatedMs = RTTimeMilliTS();
-
-        if (puObjectID)
-            *puObjectID = uObjectID;
+        mData.mObjects[idObject].enmType = enmType;
+        mData.mObjects[idObject].msBirth = RTTimeMilliTS();
+    }
+    catch (std::bad_alloc &)
+    {
+        ASMBitClear(&mData.bmObjectIds[0], idObject);
+        return VERR_NO_MEMORY;
     }
 
-    return rc;
+    alock.release();
+
+    *pidObject = idObject;
+    return VINF_SUCCESS;
 }
 
 /**
- * Unregisters a formerly registered object from a session.
+ * Unregisters an object from a session.
  *
- * @return VBox status code. VERR_NOT_FOUND if object to unregister was not found.
- * @param  uObjectID            Object ID to unregister.
+ * @retval  VINF_SUCCESS on success.
+ * @retval  VERR_NOT_FOUND if the object ID was not found.
+ * @param   idObject        Object ID to unregister.
  */
-int GuestSession::i_objectUnregister(uint32_t uObjectID)
+int GuestSession::i_objectUnregister(uint32_t idObject)
 {
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    SessionObjects::const_iterator itObj = mData.mObjects.find(uObjectID);
-    if (itObj != mData.mObjects.end())
-    {
-        Log2Func(("uObjectID=%RU32 (now %zu objects in free list)\n", uObjectID, mData.mObjectsFree.size()));
+    int rc = VINF_SUCCESS;
+    AssertMsgStmt(ASMBitTestAndClear(&mData.bmObjectIds, idObject), ("idObject=%#x\n", idObject), rc = VERR_NOT_FOUND);
 
-        /* Note: Do not remove object from object list (mData.mObjects) here, as we continue operating
-         *       on the free list (mData.mObjectsFree) if we reached the object list's maximum. */
+    SessionObjects::const_iterator ItObj = mData.mObjects.find(idObject);
+    AssertMsgReturn(ItObj != mData.mObjects.end(), ("idObject=%#x\n", idObject), VERR_NOT_FOUND);
+    mData.mObjects.erase(ItObj);
 
-        mData.mObjectsFree.push_back(uObjectID);
-        Assert(mData.mObjectsFree.size() <= VBOX_GUESTCTRL_MAX_OBJECTS);
-        return VINF_SUCCESS;
-    }
-
-    AssertFailed();
-    return VERR_NOT_FOUND;
+    return rc;
 }
 
 int GuestSession::i_pathRename(const Utf8Str &strSource, const Utf8Str &strDest, uint32_t uFlags, int *prcGuest)
@@ -2282,15 +2264,15 @@ int GuestSession::i_processUnregister(GuestProcess *pProcess)
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    const uint32_t uObjectID = pProcess->getObjectID();
+    const uint32_t idObject = pProcess->getObjectID();
 
-    LogFlowFunc(("Removing process (objectID=%RU32) ...\n", uObjectID));
+    LogFlowFunc(("Removing process (objectID=%RU32) ...\n", idObject));
 
-    int rc = i_objectUnregister(uObjectID);
+    int rc = i_objectUnregister(idObject);
     if (RT_FAILURE(rc))
         return rc;
 
-    SessionProcesses::iterator itProcs = mData.mProcesses.find(uObjectID);
+    SessionProcesses::iterator itProcs = mData.mProcesses.find(idObject);
     AssertReturn(itProcs != mData.mProcesses.end(), VERR_NOT_FOUND);
 
     /* Make sure to consume the pointer before the one of the iterator gets released. */
@@ -2301,7 +2283,7 @@ int GuestSession::i_processUnregister(GuestProcess *pProcess)
     ComAssertComRC(hr);
 
     LogFlowFunc(("Removing process ID=%RU32 (session %RU32, guest PID %RU32, now total %zu processes)\n",
-                 uObjectID, mData.mSession.mID, uPID, mData.mProcesses.size()));
+                 idObject, mData.mSession.mID, uPID, mData.mProcesses.size()));
 
     rc = pProcess->i_onRemove();
     AssertRCReturn(rc, rc);
@@ -2379,8 +2361,8 @@ int GuestSession::i_processCreateEx(GuestProcessStartupInfo &procInfo, ComObjPtr
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     /* Register a new object ID. */
-    uint32_t uObjectID;
-    int rc = i_objectRegister(SESSIONOBJECTTYPE_PROCESS, &uObjectID);
+    uint32_t idObject;
+    int rc = i_objectRegister(SESSIONOBJECTTYPE_PROCESS, &idObject);
     if (RT_FAILURE(rc))
         return rc;
 
@@ -2389,7 +2371,7 @@ int GuestSession::i_processCreateEx(GuestProcessStartupInfo &procInfo, ComObjPtr
     if (FAILED(hr))
         return VERR_COM_UNEXPECTED;
 
-    rc = pProcess->init(mParent->i_getConsole() /* Console */, this /* Session */, uObjectID,
+    rc = pProcess->init(mParent->i_getConsole() /* Console */, this /* Session */, idObject,
                         procInfo, mData.mpBaseEnvironment);
     if (RT_FAILURE(rc))
         return rc;
@@ -2397,10 +2379,10 @@ int GuestSession::i_processCreateEx(GuestProcessStartupInfo &procInfo, ComObjPtr
     /* Add the created process to our map. */
     try
     {
-        mData.mProcesses[uObjectID] = pProcess;
+        mData.mProcesses[idObject] = pProcess;
 
         LogFlowFunc(("Added new process (Session: %RU32) with process ID=%RU32 (now total %zu processes)\n",
-                     mData.mSession.mID, uObjectID, mData.mProcesses.size()));
+                     mData.mSession.mID, idObject, mData.mProcesses.size()));
 
         alock.release(); /* Release lock before firing off event. */
 

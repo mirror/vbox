@@ -28,6 +28,8 @@
 #include "GuestFsObjInfoImpl.h"
 #include "GuestSessionImplTasks.h"
 
+#include <iprt/asm.h> /** @todo r=bird: Needed for ASMBitSet() in GuestSession::Data constructor.  Removed when
+                       *        that is moved into the class implementation file as it should be. */
 #include <deque>
 
 class GuestSessionTaskInternalOpen; /* Needed for i_startSessionThreadTask(). */
@@ -35,9 +37,9 @@ class GuestSessionTaskInternalOpen; /* Needed for i_startSessionThreadTask(). */
 /**
  * Guest session implementation.
  */
-class ATL_NO_VTABLE GuestSession :
-    public GuestSessionWrap,
-    public GuestBase
+class ATL_NO_VTABLE GuestSession
+    : public GuestSessionWrap
+    , public GuestBase
 {
 public:
     /** @name COM and internal init/term/mapping cruft.
@@ -244,8 +246,9 @@ private:
 
     struct SessionObject
     {
-        /** Creation timestamp (in ms). */
-        uint64_t          tsCreatedMs;
+        /** Creation timestamp (in ms).
+         * @note not used by anyone at the moment.  */
+        uint64_t          msBirth;
         /** The object type. */
         SESSIONOBJECTTYPE enmType;
     };
@@ -304,8 +307,7 @@ public:
     static void             i_startSessionThreadTask(GuestSessionTaskInternalOpen *pTask);
     Guest                  *i_getParent(void) { return mParent; }
     uint32_t                i_getProtocolVersion(void) { return mData.mProtocolVersion; }
-    int                     i_objectRegister(SESSIONOBJECTTYPE enmType, uint32_t *puObjectID);
-    int                     i_objectRegisterEx(SESSIONOBJECTTYPE enmType, uint32_t fFlags, uint32_t *puObjectID);
+    int                     i_objectRegister(SESSIONOBJECTTYPE enmType, uint32_t *pidObject);
     int                     i_objectUnregister(uint32_t uObjectID);
     int                     i_pathRename(const Utf8Str &strSource, const Utf8Str &strDest, uint32_t uFlags, int *pGuestRc);
     int                     i_pathUserDocuments(Utf8Str &strPath, int *prcGuest);
@@ -340,6 +342,12 @@ private:
      */
     const ComObjPtr<EventSource>    mEventSource;
 
+    /** @todo r=bird: One of the core points of the DATA sub-structures in Main is
+     * hinding implementation details and stuff that requires including iprt/asm.h.
+     * The way it's used here totally defeats that purpose.  You need to make it
+     * a pointer to a anynmous Data struct and define that structure in
+     * GuestSessionImpl.cpp and allocate it in the Init() function.
+     */
     struct Data
     {
         /** The session credentials. */
@@ -366,9 +374,6 @@ private:
         SessionProcesses            mProcesses;
         /** Map of registered session objects (files, directories, ...). */
         SessionObjects              mObjects;
-        /** Queue of object IDs which are not used anymore (free list).
-         *  Acts as a "free list" for the mObjects map. */
-        SessionObjectsFree          mObjectsFree;
         /** Guest control protocol version to be used.
          *  Guest Additions < VBox 4.3 have version 1,
          *  any newer version will have version 2. */
@@ -378,10 +383,16 @@ private:
         /** The last returned session status
          *  returned from the guest side. */
         int                         mRC;
+        /** Object ID allocation bitmap; clear bits are free, set bits are busy. */
+        uint64_t                    bmObjectIds[VBOX_GUESTCTRL_MAX_OBJECTS / sizeof(uint64_t) / 8];
 
         Data(void)
             : mpBaseEnvironment(NULL)
-        { }
+        {
+            RT_ZERO(bmObjectIds);
+            ASMBitSet(&bmObjectIds, VBOX_GUESTCTRL_MAX_OBJECTS - 1);    /* Reserved for the session itself? */
+            ASMBitSet(&bmObjectIds, 0);                                 /* Let's reserve this too. */
+        }
         Data(const Data &rThat)
             : mCredentials(rThat.mCredentials)
             , mSession(rThat.mSession)
@@ -392,11 +403,12 @@ private:
             , mFiles(rThat.mFiles)
             , mProcesses(rThat.mProcesses)
             , mObjects(rThat.mObjects)
-            , mObjectsFree(rThat.mObjectsFree)
             , mProtocolVersion(rThat.mProtocolVersion)
             , mTimeout(rThat.mTimeout)
             , mRC(rThat.mRC)
-        { }
+        {
+            memcpy(&bmObjectIds, &rThat.bmObjectIds, sizeof(bmObjectIds));
+        }
         ~Data(void)
         {
             if (mpBaseEnvironment)

@@ -1077,7 +1077,7 @@ public:
     bool                             HasGuestError(void) const { return mRc == VERR_GSTCTL_GUEST_ERROR; }
     int                              GetGuestError(void) const { return mGuestRc; }
     int                              SignalExternal(IEvent *pEvent);
-    const GuestEventTypes            Types(void) { return mEventTypes; }
+    const GuestEventTypes           &Types(void) { return mEventTypes; }
     size_t                           TypeCount(void) { return mEventTypes.size(); }
 
 protected:
@@ -1139,7 +1139,7 @@ protected:
     /** Pointer to the console object. Needed
      *  for HGCM (VMMDev) communication. */
     Console                 *mConsole;
-    /** The next upcoming context ID for this object. */
+    /**  The next context ID counter component for this object. */
     uint32_t                 mNextContextID;
     /** Local listener for handling the waiting events
      *  internally. */
