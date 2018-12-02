@@ -414,7 +414,7 @@ RTDECL(int) RTThreadPoke(RTTHREAD hThread)
         rtThreadRelease(pThread);
         if (NT_SUCCESS(rcNt))
             return VINF_SUCCESS;
-        return RTErrConvertFromErrno(rcNt);
+        return RTErrConvertFromNtStatus(rcNt);
     }
     return VERR_NOT_IMPLEMENTED;
 }
