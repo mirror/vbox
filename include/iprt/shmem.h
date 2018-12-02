@@ -30,7 +30,11 @@
 
 RT_C_DECLS_BEGIN
 
-/** Open flags for RTShMemOpen().
+/** @defgroup grp_rt_shmem RTShMem - Shared memory.
+ * @ingroup grp_rt
+ */
+
+/** @name Open flags for RTShMemOpen().
  * @{
  */
 /** Creates a new shared memory object or opens an already existing one. */
@@ -106,7 +110,7 @@ RTDECL(int) RTShMemSetSize(RTSHMEM hShMem, size_t cbMem);
  */
 RTDECL(int) RTShMemQuerySize(RTSHMEM hShMem, size_t *pcbMem);
 
-/** Region mapping flags for RTShMemMapRegion().
+/** @name Region mapping flags for RTShMemMapRegion().
  * @{
  */
 /** Read access. */
@@ -146,6 +150,7 @@ RTDECL(int) RTShMemMapRegion(RTSHMEM hShMem, size_t offRegion, size_t cbRegion, 
  */
 RTDECL(int) RTShMemUnmapRegion(RTSHMEM hShMem, void *pv);
 
+/** @} */
 RT_C_DECLS_END
 
 #endif

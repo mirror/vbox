@@ -46,10 +46,11 @@
 #include <unistd.h>
 #include <limits.h>
 
-/** Workaround on systems which do not provide this. */
+/* Workaround on systems which do not provide this. */
 #ifndef NAME_MAX
 # define NAME_MAX 255
 #endif
+
 
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
@@ -63,7 +64,7 @@ typedef struct RTSHMEMMAPPINGDESC
     /** Number of references held to this mapping, 0 if the descriptor is free. */
     volatile uint32_t   cMappings;
     /** Pointer to the region mapping. */
-    void                *pvMapping;
+    void               *pvMapping;
     /** Start offset */
     size_t              offRegion;
     /** Size of the region. */
@@ -84,10 +85,10 @@ typedef struct RTSHMEMINT
 {
     /** Magic value (RTSHMEM_MAGIC). */
     uint32_t            u32Magic;
-    /** Pointer to the shared memory object name. */
-    char                *pszName;
     /** File descriptor for the underlying shared memory object. */
     int                 iFdShm;
+    /** Pointer to the shared memory object name. */
+    char               *pszName;
     /** Flag whether this instance created the named shared memory object. */
     bool                fCreate;
     /** Overall number of mappings active for this shared memory object. */
@@ -102,10 +103,6 @@ typedef struct RTSHMEMINT
 /** Pointer to the internal shared memory object state. */
 typedef RTSHMEMINT *PRTSHMEMINT;
 
-
-/*********************************************************************************************************************************
-*   Internal Functions                                                                                                           *
-*********************************************************************************************************************************/
 
 
 /**

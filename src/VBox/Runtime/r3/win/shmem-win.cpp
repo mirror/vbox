@@ -61,6 +61,7 @@
 # define FILE_MAP_EXECUTE 0x20
 #endif
 
+
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
 *********************************************************************************************************************************/
@@ -73,7 +74,7 @@ typedef struct RTSHMEMMAPPINGDESC
     /** Number of references held to this mapping, 0 if the descriptor is free. */
     volatile uint32_t   cMappings;
     /** Pointer to the region mapping. */
-    void                *pvMapping;
+    void               *pvMapping;
     /** Start offset */
     size_t              offRegion;
     /** Size of the region. */
@@ -94,10 +95,10 @@ typedef struct RTSHMEMINT
 {
     /** Magic value (RTSHMEM_MAGIC). */
     uint32_t            u32Magic;
-    /** Handle to the underlying mapping object. */
-    HANDLE              hShmObj;
     /** Flag whether this instance created the named shared memory object. */
     bool                fCreate;
+    /** Handle to the underlying mapping object. */
+    HANDLE              hShmObj;
     /** Size of the mapping object in bytes. */
     size_t              cbMax;
     /** Overall number of mappings active for this shared memory object. */
@@ -113,9 +114,6 @@ typedef struct RTSHMEMINT
 typedef RTSHMEMINT *PRTSHMEMINT;
 
 
-/*********************************************************************************************************************************
-*   Internal Functions                                                                                                           *
-*********************************************************************************************************************************/
 
 
 /**
