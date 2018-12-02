@@ -71,7 +71,7 @@ RTDECL(int) RTShMemOpen(PRTSHMEM phShMem, const char *pszName, uint32_t fFlags, 
  * Closes the given shared memory object.
  *
  * @returns IPRT status code.
- * @reval   VERR_INVALID_STATE if there is still a mapping active for the given shared memory object.
+ * @retval  VERR_INVALID_STATE if there is still a mapping active for the given shared memory object.
  * @param   hShMem          The shared memory object handle.
  *
  * @note The shared memory object will be deleted if the creator closes it.
