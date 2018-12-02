@@ -256,9 +256,6 @@ private:
     /** Map containing all objects bound to a guest session.
      *  The key specifies the (global) context ID. */
     typedef std::map <uint32_t, SessionObject> SessionObjects;
-    /** Queue containing context IDs which are no longer in use.
-     *  Useful for quickly retrieving a new, unused context ID. */
-    typedef std::deque <uint32_t>              SessionObjectsFree;
 
 public:
     /** @name Public internal methods.

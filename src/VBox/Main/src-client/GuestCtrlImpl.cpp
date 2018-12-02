@@ -168,6 +168,7 @@ int Guest::i_dispatchToSession(PVBOXGUESTCTRLHOSTCBCTX pCtxCb, PVBOXGUESTCTRLHOS
          *            this further because we don't have a valid context ID.
          */
         bool fDispatch = true;
+        rc = VERR_INVALID_FUNCTION;
         if (   pCtxCb->uFunction == GUEST_EXEC_STATUS
             && pSvcCb->mParms    >= 5)
         {
@@ -184,7 +185,6 @@ int Guest::i_dispatchToSession(PVBOXGUESTCTRLHOSTCBCTX pCtxCb, PVBOXGUESTCTRLHOS
                 LogFlowFunc(("Requested command with too much data, skipping dispatching ...\n"));
                 Assert(dataCb.uPID == 0);
                 fDispatch = false;
-                rc = VINF_SUCCESS;
             }
         }
         if (fDispatch)
@@ -219,8 +219,6 @@ int Guest::i_dispatchToSession(PVBOXGUESTCTRLHOSTCBCTX pCtxCb, PVBOXGUESTCTRLHOS
                     break;
             }
         }
-        else
-            rc = VERR_INVALID_FUNCTION;
     }
     else
         rc = VERR_INVALID_SESSION_ID;
