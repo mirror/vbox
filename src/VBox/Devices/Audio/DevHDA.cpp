@@ -3635,7 +3635,7 @@ static int hdaR3SaveStream(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, PHDASTREAM pStre
         size_t cbBuf;
         RTCircBufAcquireReadBlock(pStream->State.pCircBuf, cbCircBufUsed, &pvBuf, &cbBuf);
 #if 0 /** @todo r=bird: The disabled code crashes on me. The #else case contains something that seems
-       * to make more sense to me.  I'm not say this is correct code.  Please review, fix, and remove. */
+       * to make more sense to me.  I'm not saying this is necessarily correct, so please review, fix, and remove. */
 
         if (cbBuf)
         {
@@ -3660,13 +3660,13 @@ static int hdaR3SaveStream(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, PHDASTREAM pStre
                 AssertRCReturn(rc, rc);
             }
         }
+
 #else
         Assert(cbBuf);
         rc = SSMR3PutMem(pSSM, pvBuf, cbBuf);
         if (cbBuf < cbCircBufUsed)
             rc = SSMR3PutMem(pSSM, (uint8_t *)pvBuf - offBuf, cbCircBufUsed - cbBuf);
 #endif
-
         RTCircBufReleaseReadBlock(pStream->State.pCircBuf, 0 /* Don't advance read pointer -- see comment above */);
     }
 
