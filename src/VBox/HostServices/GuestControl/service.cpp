@@ -1184,7 +1184,7 @@ int GstCtrlService::clientMsgPeek(ClientState *pClient, VBOXHGCMCALLHANDLE hCall
         uint64_t idRestore = mpHelpers->pfnGetVMMDevSessionId(mpHelpers);
         if (idRestoreCheck != idRestore)
         {
-            paParms[0].u.uint32 = idRestore;
+            paParms[0].u.uint64 = idRestore;
             LogFlowFunc(("[Client %RU32] GUEST_MSG_PEEK_XXXX -> VERR_VM_RESTORED (%#RX64 -> %#RX64)\n",
                          pClient->m_idClient, idRestoreCheck, idRestore));
             return VERR_VM_RESTORED;

@@ -359,16 +359,23 @@ void VMMDevNotifyGuest(PVMMDEV pThis, uint32_t fAddEvents)
      * Only notify the VM when it's running.
      */
     VMSTATE enmVMState = PDMDevHlpVMState(pThis->pDevInsR3);
-/** @todo r=bird: Shouldn't there be more states here?  Wouldn't we drop
- *        notifications now when we're in the process of suspending or
- *        similar? */
     if (   enmVMState == VMSTATE_RUNNING
-        || enmVMState == VMSTATE_RUNNING_LS)
+        || enmVMState == VMSTATE_RUNNING_LS
+        || enmVMState == VMSTATE_LOADING
+        || enmVMState == VMSTATE_RESUMING
+        || enmVMState == VMSTATE_SUSPENDING
+        || enmVMState == VMSTATE_SUSPENDING_LS
+        || enmVMState == VMSTATE_SUSPENDING_EXT_LS
+        || enmVMState == VMSTATE_DEBUGGING
+        || enmVMState == VMSTATE_DEBUGGING_LS
+       )
     {
         PDMCritSectEnter(&pThis->CritSect, VERR_IGNORED);
         vmmdevNotifyGuestWorker(pThis, fAddEvents);
         PDMCritSectLeave(&pThis->CritSect);
     }
+    else
+        LogRel(("VMMDevNotifyGuest: fAddEvents=%#x ignored because enmVMState=%d\n", fAddEvents, enmVMState));
 }
 
 /**
