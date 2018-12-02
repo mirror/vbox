@@ -291,12 +291,15 @@ RTDECL(int) RTShMemMapRegion(RTSHMEM hShMem, size_t offRegion, size_t cbRegion, 
         {
             if (!pThis->aMappingDescs[i].cMappings)
             {
+                pMappingDesc = &pThis->aMappingDescs[i];
+
                 /* Try to grab this one. */
                 if (ASMAtomicIncU32(&pMappingDesc->cMappings) == 1)
                     break;
 
                 /* Somebody raced us, drop reference and continue. */
                 ASMAtomicDecU32(&pMappingDesc->cMappings);
+                pMappingDesc = NULL;
             }
         }
 
