@@ -2066,6 +2066,15 @@ NTSYSAPI NTSTATUS NTAPI NtResumeProcess(HANDLE);
 NTSYSAPI NTSTATUS NTAPI NtSetInformationProcess(HANDLE, PROCESSINFOCLASS, PVOID, ULONG);
 NTSYSAPI NTSTATUS NTAPI NtTerminateProcess(HANDLE, LONG);
 
+/** Returned by NtQUerySection with SectionBasicInformation. */
+typedef struct _SECTION_BASIC_INFORMATION
+{
+    PVOID            BaseAddress;
+    ULONG            AllocationAttributes;
+    LARGE_INTEGER    MaximumSize;
+} SECTION_BASIC_INFORMATION;
+typedef SECTION_BASIC_INFORMATION *PSECTION_BASIC_INFORMATION;
+
 /** Retured by ProcessImageInformation as well as NtQuerySection. */
 typedef struct _SECTION_IMAGE_INFORMATION
 {

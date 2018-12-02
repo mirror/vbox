@@ -68,6 +68,7 @@ EXPORTS
     NtQueryInformationToken               ;;= _NtQueryInformationToken@20
     NtQueryKey                            ;;= _NtQueryKey@20
     NtQueryObject                         ;;= _NtQueryObject@20
+    NtQuerySection                        ;;= _NtQuerySection@20
     NtQuerySecurityObject                 ;;= _NtQuerySecurityObject@20
     NtQuerySymbolicLinkObject             ;;= _NtQuerySymbolicLinkObject@12
     NtQuerySystemInformation              ;;= _NtQuerySystemInformation@16
