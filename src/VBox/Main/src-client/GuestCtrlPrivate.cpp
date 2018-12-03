@@ -38,6 +38,7 @@
 #include <iprt/fs.h>
 #include <iprt/rand.h>
 #include <iprt/time.h>
+#include <VBox/AssertGuest.h>
 
 
 /**
@@ -91,68 +92,77 @@ int GuestFsObjData::FromLs(const GuestProcessStreamBlock &strmBlk, bool fLong)
 {
     LogFlowFunc(("\n"));
 
-    int rc = VINF_SUCCESS;
-
-    try
-    {
 #ifdef DEBUG
-        strmBlk.DumpToLog();
+    strmBlk.DumpToLog();
 #endif
         /* Object name. */
-        mName = strmBlk.GetString("name");
-        if (mName.isEmpty()) throw VERR_NOT_FOUND;
-        /* Type. */
-        Utf8Str strType(strmBlk.GetString("ftype"));
-        if (strType.equalsIgnoreCase("-"))
-            mType = FsObjType_File;
-        else if (strType.equalsIgnoreCase("d"))
-            mType = FsObjType_Directory;
-        /** @todo Add more types! */
-        else
-            mType = FsObjType_Unknown;
-        if (fLong)
+    mName = strmBlk.GetString("name");
+    ASSERT_GUEST_RETURN(mName.isNotEmpty(), VERR_NOT_FOUND);
+
+    /* Type. */
+    mType = FsObjType_Unknown;
+    const char *pszType = strmBlk.GetString("ftype");
+    if (pszType)
+        switch (*pszType)
         {
-            /* Dates. */
-            mAccessTime       = GuestFsObjData::UnixEpochNsFromKey(strmBlk, "st_atime");
-            mBirthTime        = GuestFsObjData::UnixEpochNsFromKey(strmBlk, "st_birthtime");
-            mChangeTime       = GuestFsObjData::UnixEpochNsFromKey(strmBlk, "st_ctime");
-            mModificationTime = GuestFsObjData::UnixEpochNsFromKey(strmBlk, "st_mtime");
+            case '-':   mType = FsObjType_File; break;
+            case 'd':   mType = FsObjType_Directory; break;
+            case 'l':   mType = FsObjType_Symlink; break;
+            case 'c':   mType = FsObjType_DevChar; break;
+            case 'b':   mType = FsObjType_DevBlock; break;
+            case 'f':   mType = FsObjType_Fifo; break;
+            case 's':   mType = FsObjType_Socket; break;
+            case 'w':   mType = FsObjType_WhiteOut; break;
+            default: AssertMsgFailed(("%s\n", pszType));
         }
-        /* Object size. */
-        rc = strmBlk.GetInt64Ex("st_size", &mObjectSize);
-        if (RT_FAILURE(rc)) throw rc;
-        /** @todo Add complete ls info! */
-    }
-    catch (int rc2)
+
+    /* Dates. */
+    if (fLong)
     {
-        rc = rc2;
+        mAccessTime       = GuestFsObjData::UnixEpochNsFromKey(strmBlk, "st_atime");
+        mBirthTime        = GuestFsObjData::UnixEpochNsFromKey(strmBlk, "st_birthtime");
+        mChangeTime       = GuestFsObjData::UnixEpochNsFromKey(strmBlk, "st_ctime");
+        mModificationTime = GuestFsObjData::UnixEpochNsFromKey(strmBlk, "st_mtime");
     }
 
-    LogFlowFuncLeaveRC(rc);
-    return rc;
+    /* Object size. */
+    int rc = strmBlk.GetInt64Ex("st_size", &mObjectSize);
+    ASSERT_GUEST_RC_RETURN(rc, rc);
+
+    /* Owner. */
+    mUID = strmBlk.GetUInt32("uid");
+    mGID = strmBlk.GetUInt32("gid");
+
+    /** @todo Add complete stat info!
+     * int64_t              mAllocatedSize;
+     * uint32_t             mDeviceNumber;
+     * Utf8Str              mFileAttrs;
+     * uint32_t             mGenerationID;
+     * Utf8Str              mGroupName;
+     * uint32_t             mNumHardLinks;
+     * uint32_t             mNodeIDDevice;
+     * uint32_t             mUserFlags;
+     * Utf8Str              mUserName;
+     * Utf8Str              mACL;
+     */
+
+    LogFlowFuncLeave();
+    return VINF_SUCCESS;
 }
 
 int GuestFsObjData::FromMkTemp(const GuestProcessStreamBlock &strmBlk)
 {
     LogFlowFunc(("\n"));
 
-    int rc;
-
-    try
-    {
 #ifdef DEBUG
-        strmBlk.DumpToLog();
+    strmBlk.DumpToLog();
 #endif
-        /* Object name. */
-        mName = strmBlk.GetString("name");
-        if (mName.isEmpty()) throw VERR_NOT_FOUND;
-        /* Assign the stream block's rc. */
-        rc = strmBlk.GetRc();
-    }
-    catch (int rc2)
-    {
-        rc = rc2;
-    }
+    /* Object name. */
+    mName = strmBlk.GetString("name");
+    ASSERT_GUEST_RETURN(mName.isNotEmpty(), VERR_NOT_FOUND);
+
+    /* Assign the stream block's rc. */
+    int rc = strmBlk.GetRc();
 
     LogFlowFuncLeaveRC(rc);
     return rc;
@@ -162,44 +172,61 @@ int GuestFsObjData::FromStat(const GuestProcessStreamBlock &strmBlk)
 {
     LogFlowFunc(("\n"));
 
-    int rc = VINF_SUCCESS;
-
-    try
-    {
 #ifdef DEBUG
-        strmBlk.DumpToLog();
+    strmBlk.DumpToLog();
 #endif
-        /* Node ID, optional because we don't include this
-         * in older VBoxService (< 4.2) versions. */
-        mNodeID = strmBlk.GetInt64("node_id");
-        /* Object name. */
-        mName = strmBlk.GetString("name");
-        if (mName.isEmpty()) throw VERR_NOT_FOUND;
-        /* Type. */
-        Utf8Str strType(strmBlk.GetString("ftype"));
-        if (strType.equalsIgnoreCase("-"))
-            mType = FsObjType_File;
-        else if (strType.equalsIgnoreCase("d"))
-            mType = FsObjType_Directory;
-        else /** @todo Add more types! */
-            mType = FsObjType_Unknown;
-        /* Dates. */
-        mAccessTime       = GuestFsObjData::UnixEpochNsFromKey(strmBlk, "st_atime");
-        mBirthTime        = GuestFsObjData::UnixEpochNsFromKey(strmBlk, "st_birthtime");
-        mChangeTime       = GuestFsObjData::UnixEpochNsFromKey(strmBlk, "st_ctime");
-        mModificationTime = GuestFsObjData::UnixEpochNsFromKey(strmBlk, "st_mtime");
-        /* Object size. */
-        rc = strmBlk.GetInt64Ex("st_size", &mObjectSize);
-        if (RT_FAILURE(rc)) throw rc;
-        /** @todo Add complete stat info! */
-    }
-    catch (int rc2)
-    {
-        rc = rc2;
-    }
+    /* Node ID, optional because we don't include this in older VBoxService (< 4.2) versions. */
+    mNodeID = strmBlk.GetInt64("node_id");
 
-    LogFlowFuncLeaveRC(rc);
-    return rc;
+    /* Object name. */
+    mName = strmBlk.GetString("name");
+    ASSERT_GUEST_RETURN(mName.isNotEmpty(), VERR_NOT_FOUND);
+
+    /* Type. */
+    const char *pszType = strmBlk.GetString("ftype");
+    if (pszType)
+        switch (*pszType)
+        {
+            case '-':   mType = FsObjType_File; break;
+            case 'd':   mType = FsObjType_Directory; break;
+            case 'l':   mType = FsObjType_Symlink; break;
+            case 'c':   mType = FsObjType_DevChar; break;
+            case 'b':   mType = FsObjType_DevBlock; break;
+            case 'f':   mType = FsObjType_Fifo; break;
+            case 's':   mType = FsObjType_Socket; break;
+            case 'w':   mType = FsObjType_WhiteOut; break;
+            default: AssertMsgFailed(("%s\n", pszType));
+        }
+
+    /* Dates. */
+    mAccessTime       = GuestFsObjData::UnixEpochNsFromKey(strmBlk, "st_atime");
+    mBirthTime        = GuestFsObjData::UnixEpochNsFromKey(strmBlk, "st_birthtime");
+    mChangeTime       = GuestFsObjData::UnixEpochNsFromKey(strmBlk, "st_ctime");
+    mModificationTime = GuestFsObjData::UnixEpochNsFromKey(strmBlk, "st_mtime");
+
+    /* Object size. */
+    int rc = strmBlk.GetInt64Ex("st_size", &mObjectSize);
+    ASSERT_GUEST_RC_RETURN(rc, rc);
+
+    /* Owner. */
+    mUID = strmBlk.GetUInt32("uid");
+    mGID = strmBlk.GetUInt32("gid");
+
+    /** @todo Add complete stat info!
+     * int64_t              mAllocatedSize;
+     * uint32_t             mDeviceNumber;
+     * Utf8Str              mFileAttrs;
+     * uint32_t             mGenerationID;
+     * Utf8Str              mGroupName;
+     * uint32_t             mNumHardLinks;
+     * uint32_t             mNodeIDDevice;
+     * uint32_t             mUserFlags;
+     * Utf8Str              mUserName;
+     * Utf8Str              mACL;
+     */
+
+    LogFlowFuncLeave();
+    return VINF_SUCCESS;
 }
 
 /**
