@@ -70,29 +70,18 @@ typedef enum VBOXSERVICETOOLBOXCATOPT
 /** Flags for "vbox_ls". */
 typedef enum VBOXSERVICETOOLBOXLSFLAG
 {
-    VBOXSERVICETOOLBOXLSFLAG_NONE =             0x0,
-    VBOXSERVICETOOLBOXLSFLAG_RECURSIVE =        0x1,
-    VBOXSERVICETOOLBOXLSFLAG_SYMLINKS =         0x2
+    VBOXSERVICETOOLBOXLSFLAG_NONE,
+    VBOXSERVICETOOLBOXLSFLAG_RECURSIVE,
+    VBOXSERVICETOOLBOXLSFLAG_SYMLINKS
 } VBOXSERVICETOOLBOXLSFLAG;
 
 /** Flags for fs object output. */
 typedef enum VBOXSERVICETOOLBOXOUTPUTFLAG
 {
-    VBOXSERVICETOOLBOXOUTPUTFLAG_NONE =         0x0,
-    VBOXSERVICETOOLBOXOUTPUTFLAG_LONG =         0x1,
-    VBOXSERVICETOOLBOXOUTPUTFLAG_PARSEABLE =    0x2
+    VBOXSERVICETOOLBOXOUTPUTFLAG_NONE,
+    VBOXSERVICETOOLBOXOUTPUTFLAG_LONG,
+    VBOXSERVICETOOLBOXOUTPUTFLAG_PARSEABLE
 } VBOXSERVICETOOLBOXOUTPUTFLAG;
-
-
-/*********************************************************************************************************************************
-*   Prototypes                                                                                                                   *
-*********************************************************************************************************************************/
-static RTEXITCODE vgsvcToolboxCat(int argc, char **argv);
-static RTEXITCODE vgsvcToolboxLs(int argc, char **argv);
-static RTEXITCODE vgsvcToolboxRm(int argc, char **argv);
-static RTEXITCODE vgsvcToolboxMkTemp(int argc, char **argv);
-static RTEXITCODE vgsvcToolboxMkDir(int argc, char **argv);
-static RTEXITCODE vgsvcToolboxStat(int argc, char **argv);
 
 
 /*********************************************************************************************************************************
@@ -140,6 +129,42 @@ typedef struct VBOXSERVICETOOLBOXDIRENTRY
     RTDIRENTRYEX dirEntry;
 } VBOXSERVICETOOLBOXDIRENTRY, *PVBOXSERVICETOOLBOXDIRENTRY;
 
+/** ID cache entry. */
+typedef struct VGSVCTOOLBOXUIDENTRY
+{
+    /** The identifier name. */
+    uint32_t    id;
+    /** Set if UID, clear if GID. */
+    bool        fIsUid;
+    /** The name. */
+    char        szName[128 - 4 - 1];
+} VGSVCTOOLBOXUIDENTRY;
+typedef VGSVCTOOLBOXUIDENTRY *PVGSVCTOOLBOXUIDENTRY;
+
+
+/** ID cache. */
+typedef struct VGSVCTOOLBOXIDCACHE
+{
+    /** Number of valid cache entries. */
+    uint32_t                cEntries;
+    /** The next entry to replace. */
+    uint32_t                iNextReplace;
+    /** The cache entries. */
+    VGSVCTOOLBOXUIDENTRY    aEntries[16];
+} VGSVCTOOLBOXIDCACHE;
+typedef VGSVCTOOLBOXIDCACHE *PVGSVCTOOLBOXIDCACHE;
+
+
+/*********************************************************************************************************************************
+*   Internal Functions                                                                                                           *
+*********************************************************************************************************************************/
+static RTEXITCODE vgsvcToolboxCat(int argc, char **argv);
+static RTEXITCODE vgsvcToolboxLs(int argc, char **argv);
+static RTEXITCODE vgsvcToolboxRm(int argc, char **argv);
+static RTEXITCODE vgsvcToolboxMkTemp(int argc, char **argv);
+static RTEXITCODE vgsvcToolboxMkDir(int argc, char **argv);
+static RTEXITCODE vgsvcToolboxStat(int argc, char **argv);
+
 
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
@@ -154,6 +179,8 @@ static VBOXSERVICETOOLBOXTOOL const g_aTools[] =
     { VBOXSERVICE_TOOL_MKDIR,  vgsvcToolboxMkDir , NULL },
     { VBOXSERVICE_TOOL_STAT,   vgsvcToolboxStat  , NULL }
 };
+
+
 
 
 /**
@@ -182,18 +209,16 @@ static void vgsvcToolboxShowUsage(void)
              "  -V                         print version number and exit\n"
              "\n"
              "Commands:\n\n"
-             "  cat    [<general options>] <file>...\n"
-             "  ls     [<general options>] [--dereference|-L] [-l] [-R]\n"
-             "                             [--verbose|-v] [<file>...]\n"
-             "  rm     [<general options>] [-r|-R] <file>...\n"
-             "  mktemp [<general options>] [--directory|-d] [--mode|-m <mode>]\n"
-             "                             [--secure|-s] [--tmpdir|-t <path>]\n"
-             "                             <template>\n"
-             "  mkdir  [<general options>] [--mode|-m <mode>] [--parents|-p]\n"
-             "                             [--verbose|-v] <directory>...\n"
-             "  stat   [<general options>] [--file-system|-f]\n"
-             "                             [--dereference|-L] [--terse|-t]\n"
-             "                             [--verbose|-v] <file>...\n"
+             "  vbox_cat    [<general options>] <file>...\n"
+             "  vbox_ls     [<general options>] [--dereference|-L] [-l] [-R]\n"
+             "      [--verbose|-v] [<file>...]\n"
+             "  vbox_rm     [<general options>] [-r|-R] <file>...\n"
+             "  vbox_mktemp [<general options>] [--directory|-d] [--mode|-m <mode>]\n"
+             "      [--secure|-s] [--tmpdir|-t <path>] <template>\n"
+             "  vbox_mkdir  [<general options>] [--mode|-m <mode>] [--parents|-p]\n"
+             "      [--verbose|-v] <directory>...\n"
+             "  vbox_stat   [<general options>] [--file-system|-f]\n"
+             "      [--dereference|-L] [--terse|-t] [--verbose|-v] <file>...\n"
              "\n");
 }
 
@@ -557,21 +582,121 @@ static RTEXITCODE vgsvcToolboxCat(int argc, char **argv)
     return RTEXITCODE_SUCCESS;
 }
 
+
+/**
+ * Resolves the UID to a name as best as we can.
+ *
+ * @returns Read-only name string.  Only valid till the next cache call.
+ * @param   pIdCache        The ID cache.
+ * @param   uid             The UID to resolve.
+ * @param   pszEntry        The filename of the UID.
+ * @param   pszRelativeTo   What @a pszEntry is relative to, NULL if absolute.
+ */
+static const char *vgsvcToolboxIdCacheGetUidName(PVGSVCTOOLBOXIDCACHE pIdCache, RTUID uid,
+                                                 const char *pszEntry, const char *pszRelativeTo)
+{
+    /* Check cached entries. */
+    for (uint32_t i = 0; i < pIdCache->cEntries; i++)
+        if (   pIdCache->aEntries[i].id == uid
+            && pIdCache->aEntries[i].fIsUid)
+            return pIdCache->aEntries[i].szName;
+
+    /* Miss. */
+    RTFSOBJINFO ObjInfo;
+    int rc;
+    if (!pszRelativeTo)
+        rc = RTPathQueryInfoEx(pszEntry, &ObjInfo, RTFSOBJATTRADD_UNIX_OWNER, RTPATH_F_ON_LINK);
+    else
+    {
+        char szPath[RTPATH_MAX];
+        rc = RTPathJoin(szPath, sizeof(szPath), pszRelativeTo, pszEntry);
+        if (RT_SUCCESS(rc))
+            rc = RTPathQueryInfoEx(szPath, &ObjInfo, RTFSOBJATTRADD_UNIX_OWNER, RTPATH_F_ON_LINK);
+    }
+
+    if (   RT_SUCCESS(rc)
+        && ObjInfo.Attr.u.UnixOwner.uid == uid)
+    {
+        uint32_t i = pIdCache->cEntries;
+        if (i < RT_ELEMENTS(pIdCache->aEntries))
+            pIdCache->cEntries = i + 1;
+        else
+            i = pIdCache->iNextReplace++ % RT_ELEMENTS(pIdCache->aEntries);
+        pIdCache->aEntries[i].id     = uid;
+        pIdCache->aEntries[i].fIsUid = true;
+        RTStrCopy(pIdCache->aEntries[i].szName, sizeof(pIdCache->aEntries[i].szName), ObjInfo.Attr.u.UnixOwner.szName);
+        return pIdCache->aEntries[i].szName;
+    }
+    return "";
+}
+
+
+/**
+ * Resolves the GID to a name as best as we can.
+ *
+ * @returns Read-only name string.  Only valid till the next cache call.
+ * @param   pIdCache        The ID cache.
+ * @param   gid             The GID to resolve.
+ * @param   pszEntry        The filename of the GID.
+ * @param   pszRelativeTo   What @a pszEntry is relative to, NULL if absolute.
+ */
+static const char *vgsvcToolboxIdCacheGetGidName(PVGSVCTOOLBOXIDCACHE pIdCache, RTGID gid,
+                                                 const char *pszEntry, const char *pszRelativeTo)
+{
+    /* Check cached entries. */
+    for (uint32_t i = 0; i < pIdCache->cEntries; i++)
+        if (   pIdCache->aEntries[i].id == gid
+            && !pIdCache->aEntries[i].fIsUid)
+            return pIdCache->aEntries[i].szName;
+
+    /* Miss. */
+    RTFSOBJINFO ObjInfo;
+    int rc;
+    if (!pszRelativeTo)
+        rc = RTPathQueryInfoEx(pszEntry, &ObjInfo, RTFSOBJATTRADD_UNIX_GROUP, RTPATH_F_ON_LINK);
+    else
+    {
+        char szPath[RTPATH_MAX];
+        rc = RTPathJoin(szPath, sizeof(szPath), pszRelativeTo, pszEntry);
+        if (RT_SUCCESS(rc))
+            rc = RTPathQueryInfoEx(szPath, &ObjInfo, RTFSOBJATTRADD_UNIX_GROUP, RTPATH_F_ON_LINK);
+    }
+
+    if (   RT_SUCCESS(rc)
+        && ObjInfo.Attr.u.UnixGroup.gid == gid)
+    {
+        uint32_t i = pIdCache->cEntries;
+        if (i < RT_ELEMENTS(pIdCache->aEntries))
+            pIdCache->cEntries = i + 1;
+        else
+            i = pIdCache->iNextReplace++ % RT_ELEMENTS(pIdCache->aEntries);
+        pIdCache->aEntries[i].id     = gid;
+        pIdCache->aEntries[i].fIsUid = false;
+        RTStrCopy(pIdCache->aEntries[i].szName, sizeof(pIdCache->aEntries[i].szName), ObjInfo.Attr.u.UnixGroup.szName);
+        return pIdCache->aEntries[i].szName;
+    }
+    return "";
+}
+
+
 /**
  * Prints information (based on given flags) of a file system object (file/directory/...)
  * to stdout.
  *
  * @return  IPRT status code.
  * @param   pszName         Object name.
- * @param   cbName          Size of object name.
+ * @param   cchName         Length of pszName.
  * @param   fOutputFlags    Output / handling flags of type
  *                          VBOXSERVICETOOLBOXOUTPUTFLAG.
+ * @param   pszRelativeTo   What pszName is relative to.
+ * @param   pIdCache        The ID cache.
  * @param   pObjInfo        Pointer to object information.
  */
-static int vgsvcToolboxPrintFsInfo(const char *pszName, size_t cbName, uint32_t fOutputFlags, PRTFSOBJINFO pObjInfo)
+static int vgsvcToolboxPrintFsInfo(const char *pszName, size_t cchName, uint32_t fOutputFlags, const char *pszRelativeTo,
+                                   PVGSVCTOOLBOXIDCACHE pIdCache, PRTFSOBJINFO pObjInfo)
 {
     AssertPtrReturn(pszName, VERR_INVALID_POINTER);
-    AssertReturn(cbName, VERR_INVALID_PARAMETER);
+    AssertReturn(cchName, VERR_INVALID_PARAMETER);
     AssertPtrReturn(pObjInfo, VERR_INVALID_POINTER);
 
     RTFMODE fMode = pObjInfo->Attr.fMode;
@@ -590,29 +715,32 @@ static int vgsvcToolboxPrintFsInfo(const char *pszName, size_t cbName, uint32_t 
     }
     /** @todo sticy bits++ */
 
+/** @todo r=bird: turns out the host doesn't use or need cname_len, so perhaps we could drop it? */
     if (!(fOutputFlags & VBOXSERVICETOOLBOXOUTPUTFLAG_LONG))
     {
         if (fOutputFlags & VBOXSERVICETOOLBOXOUTPUTFLAG_PARSEABLE)
         {
-            /** @todo Skip node_id if not present/available! */
-            RTPrintf("ftype=%c%cnode_id=%RU64%cname_len=%zu%cname=%s%c",
+            RTPrintf("ftype=%c%cnode_id=%RU64%inode_dev=%RU32%ccname_len=%zu%cname=%s%c",
                      chFileType, 0, (uint64_t)pObjInfo->Attr.u.Unix.INodeId, 0,
-                     cbName, 0, pszName, 0);
+                     (uint32_t)pObjInfo->Attr.u.Unix.INodeIdDevice, 0, cchName, 0, pszName, 0);
+            RTPrintf("%c%c", 0, 0);
         }
         else
-            RTPrintf("%c %#18llx %3zu %s\n",
-                     chFileType, (uint64_t)pObjInfo->Attr.u.Unix.INodeId, cbName, pszName);
-
-        if (fOutputFlags & VBOXSERVICETOOLBOXOUTPUTFLAG_PARSEABLE) /* End of data block. */
-            RTPrintf("%c%c", 0, 0);
+            RTPrintf("%c %#18llx %3zu %s\n", chFileType, (uint64_t)pObjInfo->Attr.u.Unix.INodeId, cchName, pszName);
     }
     else
     {
+        char szTimeBirth[RTTIME_STR_LEN];
+        char szTimeChange[RTTIME_STR_LEN];
+        char szTimeModification[RTTIME_STR_LEN];
+        char szTimeAccess[RTTIME_STR_LEN];
+
         if (fOutputFlags & VBOXSERVICETOOLBOXOUTPUTFLAG_PARSEABLE)
         {
             RTPrintf("ftype=%c%c", chFileType, 0);
-            /** @todo Skip node_id if not present/available! */
-            RTPrintf("cnode_id=%RU64%c", (uint64_t)pObjInfo->Attr.u.Unix.INodeId, 0);
+            if (pObjInfo->Attr.u.Unix.INodeId || pObjInfo->Attr.u.Unix.INodeIdDevice)
+                RTPrintf("node_id=%RU64%cinode_dev=%RU32%c", (uint64_t)pObjInfo->Attr.u.Unix.INodeId, 0,
+                         (uint32_t)pObjInfo->Attr.u.Unix.INodeIdDevice, 0);
             RTPrintf("owner_mask=%c%c%c%c",
                      fMode & RTFS_UNIX_IRUSR ? 'r' : '-',
                      fMode & RTFS_UNIX_IWUSR ? 'w' : '-',
@@ -625,6 +753,7 @@ static int vgsvcToolboxPrintFsInfo(const char *pszName, size_t cbName, uint32_t 
                      fMode & RTFS_UNIX_IROTH ? 'r' : '-',
                      fMode & RTFS_UNIX_IWOTH ? 'w' : '-',
                      fMode & RTFS_UNIX_IXOTH ? 'x' : '-', 0);
+            /** @todo sticky bits. */
             RTPrintf("dos_mask=%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c",
                      fMode & RTFS_DOS_READONLY          ? 'R' : '-',
                      fMode & RTFS_DOS_HIDDEN            ? 'H' : '-',
@@ -640,32 +769,30 @@ static int vgsvcToolboxPrintFsInfo(const char *pszName, size_t cbName, uint32_t 
                      fMode & RTFS_DOS_NT_OFFLINE        ? 'O' : '-',
                      fMode & RTFS_DOS_NT_NOT_CONTENT_INDEXED ? 'I' : '-',
                      fMode & RTFS_DOS_NT_ENCRYPTED      ? 'E' : '-', 0);
-
-            char szTimeBirth[256];
-            RTTimeSpecToString(&pObjInfo->BirthTime, szTimeBirth, sizeof(szTimeBirth));
-            char szTimeChange[256];
-            RTTimeSpecToString(&pObjInfo->ChangeTime, szTimeChange, sizeof(szTimeChange));
-            char szTimeModification[256];
-            RTTimeSpecToString(&pObjInfo->ModificationTime, szTimeModification, sizeof(szTimeModification));
-            char szTimeAccess[256];
-            RTTimeSpecToString(&pObjInfo->AccessTime, szTimeAccess, sizeof(szTimeAccess));
-
-            RTPrintf("hlinks=%RU32%cuid=%RU32%cgid=%RU32%cst_size=%RI64%calloc=%RI64%c"
-                     "st_birthtime=%s%cst_ctime=%s%cst_mtime=%s%cst_atime=%s%c",
+            RTPrintf("hlinks=%RU32%cst_size=%RI64%calloc=%RI64%c",
                      pObjInfo->Attr.u.Unix.cHardlinks, 0,
-                     pObjInfo->Attr.u.Unix.uid, 0,
-                     pObjInfo->Attr.u.Unix.gid, 0,
                      pObjInfo->cbObject, 0,
-                     pObjInfo->cbAllocated, 0,
-                     szTimeBirth, 0,
-                     szTimeChange, 0,
-                     szTimeModification, 0,
-                     szTimeAccess, 0);
-            RTPrintf("cname_len=%zu%cname=%s%c",
-                     cbName, 0, pszName, 0);
-
-            /* End of data block. */
-            RTPrintf("%c%c", 0, 0);
+                     pObjInfo->cbAllocated, 0);
+            RTPrintf("st_birthtime=%s%cst_ctime=%s%cst_mtime=%s%cst_atime=%s%c",
+                     RTTimeSpecToString(&pObjInfo->BirthTime,        szTimeBirth,        sizeof(szTimeBirth)),        0,
+                     RTTimeSpecToString(&pObjInfo->ChangeTime,       szTimeChange,       sizeof(szTimeChange)),       0,
+                     RTTimeSpecToString(&pObjInfo->ModificationTime, szTimeModification, sizeof(szTimeModification)), 0,
+                     RTTimeSpecToString(&pObjInfo->AccessTime,       szTimeAccess,       sizeof(szTimeAccess)),       0);
+            if (pObjInfo->Attr.u.Unix.uid != NIL_RTUID)
+                RTPrintf("uid=%RU32%cusername=%s%c", pObjInfo->Attr.u.Unix.uid, 0,
+                         vgsvcToolboxIdCacheGetUidName(pIdCache, pObjInfo->Attr.u.Unix.uid, pszName, pszRelativeTo), 0);
+            if (pObjInfo->Attr.u.Unix.gid != NIL_RTGID)
+                RTPrintf("gid=%RU32%cgroupname=%s%c", pObjInfo->Attr.u.Unix.gid, 0,
+                         vgsvcToolboxIdCacheGetGidName(pIdCache, pObjInfo->Attr.u.Unix.gid, pszName, pszRelativeTo), 0);
+            if (   (RTFS_IS_DEV_BLOCK(pObjInfo->Attr.fMode) || RTFS_IS_DEV_CHAR(pObjInfo->Attr.fMode))
+                && pObjInfo->Attr.u.Unix.Device)
+                RTPrintf("st_rdev=%RU32%c", pObjInfo->Attr.u.Unix.Device, 0);
+            if (pObjInfo->Attr.u.Unix.GenerationId)
+                RTPrintf("st_gen=%RU32%c", pObjInfo->Attr.u.Unix.GenerationId, 0);
+            if (pObjInfo->Attr.u.Unix.fFlags)
+                RTPrintf("st_flags=%RU32%c", pObjInfo->Attr.u.Unix.fFlags, 0);
+            RTPrintf("cname_len=%zu%cname=%s%c", cchName, 0, pszName, 0);
+            RTPrintf("%c%c", 0, 0); /* End of data block. */
         }
         else
         {
@@ -697,17 +824,18 @@ static int vgsvcToolboxPrintFsInfo(const char *pszName, size_t cbName, uint32_t 
                      fMode & RTFS_DOS_NT_OFFLINE        ? 'O' : '-',
                      fMode & RTFS_DOS_NT_NOT_CONTENT_INDEXED ? 'I' : '-',
                      fMode & RTFS_DOS_NT_ENCRYPTED      ? 'E' : '-');
-            RTPrintf(" %d %4d %4d %10lld %10lld %#llx %#llx %#llx %#llx",
+            RTPrintf(" %d %4d %4d %10lld %10lld",
                      pObjInfo->Attr.u.Unix.cHardlinks,
                      pObjInfo->Attr.u.Unix.uid,
                      pObjInfo->Attr.u.Unix.gid,
                      pObjInfo->cbObject,
-                     pObjInfo->cbAllocated,
-                     RTTimeSpecGetNano(&pObjInfo->BirthTime), /** @todo really ns? */
-                     RTTimeSpecGetNano(&pObjInfo->ChangeTime), /** @todo really ns? */
-                     RTTimeSpecGetNano(&pObjInfo->ModificationTime), /** @todo really ns? */
-                     RTTimeSpecGetNano(&pObjInfo->AccessTime)); /** @todo really ns? */
-            RTPrintf(" %2zu %s\n", cbName, pszName);
+                     pObjInfo->cbAllocated);
+            RTPrintf(" %s %s %s %s",
+                     RTTimeSpecToString(&pObjInfo->BirthTime,        szTimeBirth,        sizeof(szTimeBirth)),
+                     RTTimeSpecToString(&pObjInfo->ChangeTime,       szTimeChange,       sizeof(szTimeChange)),
+                     RTTimeSpecToString(&pObjInfo->ModificationTime, szTimeModification, sizeof(szTimeModification)),
+                     RTTimeSpecToString(&pObjInfo->AccessTime,       szTimeAccess,       sizeof(szTimeAccess)) );
+            RTPrintf(" %2zu %s\n", cchName, pszName);
         }
     }
 
@@ -724,7 +852,7 @@ static int vgsvcToolboxPrintFsInfo(const char *pszName, size_t cbName, uint32_t 
  * @param   fFlags                  Flags of type VBOXSERVICETOOLBOXLSFLAG.
  * @param   fOutputFlags            Flags of type  VBOXSERVICETOOLBOXOUTPUTFLAG.
  */
-static int vgsvcToolboxLsHandleDir(const char *pszDir, uint32_t fFlags, uint32_t fOutputFlags)
+static int vgsvcToolboxLsHandleDir(const char *pszDir, uint32_t fFlags, uint32_t fOutputFlags, PVGSVCTOOLBOXIDCACHE pIdCache)
 {
     AssertPtrReturn(pszDir, VERR_INVALID_PARAMETER);
 
@@ -758,7 +886,10 @@ static int vgsvcToolboxLsHandleDir(const char *pszDir, uint32_t fFlags, uint32_t
      * and process them afterwards: First loop is displaying the current
      * directory's content and second loop is diving deeper into
      * sub directories (if wanted). */
-    for (;RT_SUCCESS(rc);)
+/** @todo r=bird: Which races are these exactly???  Please, do considering that directory with half a
+ * million files in it, because this isn't going to fly well there (especially not in the recursive case)...
+ * So, this needs to be rewritten unless there is an actual race you're avoiding by doing this! */
+    do
     {
         RTDIRENTRYEX DirEntry;
         rc = RTDirReadEx(hDir, &DirEntry, NULL, RTFSOBJATTRADD_UNIX, RTPATH_F_ON_LINK);
@@ -773,7 +904,8 @@ static int vgsvcToolboxLsHandleDir(const char *pszDir, uint32_t fFlags, uint32_t
             else
                 rc = VERR_NO_MEMORY;
         }
-    }
+        /** @todo r=bird: missing DirEntry overflow handling. */
+    } while (RT_SUCCESS(rc));
 
     if (rc == VERR_NO_MORE_FILES)
         rc = VINF_SUCCESS;
@@ -792,8 +924,8 @@ static int vgsvcToolboxLsHandleDir(const char *pszDir, uint32_t fFlags, uint32_t
         PVBOXSERVICETOOLBOXDIRENTRY pNodeIt;
         RTListForEach(&dirList, pNodeIt, VBOXSERVICETOOLBOXDIRENTRY, Node)
         {
-            rc = vgsvcToolboxPrintFsInfo(pNodeIt->dirEntry.szName, pNodeIt->dirEntry.cbName,
-                                         fOutputFlags, &pNodeIt->dirEntry.Info);
+            rc = vgsvcToolboxPrintFsInfo(pNodeIt->dirEntry.szName, pNodeIt->dirEntry.cbName, fOutputFlags,
+                                         szPathAbs, pIdCache, &pNodeIt->dirEntry.Info);
             if (RT_FAILURE(rc))
                 break;
         }
@@ -815,17 +947,20 @@ static int vgsvcToolboxLsHandleDir(const char *pszDir, uint32_t fFlags, uint32_t
                     case RTFS_TYPE_DIRECTORY:
                     {
                         const char *pszName = pNodeIt->dirEntry.szName;
-                        if (   !RTStrICmp(pszName, ".")
-                            || !RTStrICmp(pszName, ".."))
+                        if (   !RTStrICmp(pszName, ".")  /** @todo r=bird: Please do explain what the upper/lower casing of  '.' is! I'm really curious. */  
+                            || !RTStrICmp(pszName, "..")) /** @todo r=bird: There is a RTDir API for checking these. Use it! */
                         {
                             /* Skip dot directories. */
                             continue;
                         }
 
-                        char szPath[RTPATH_MAX];
+                        char szPath[RTPATH_MAX]; /** @todo r=bird: This is going to kill your stack pretty quickly if deep
+                                                  * directory nesting.  There is another buffer further up the function too.
+                                                  * You need to share the path buffer between recursions!  There should be
+                                                  * several examples of how to efficiently traverse a tree. */
                         rc = RTPathJoin(szPath, sizeof(szPath), pszDir, pNodeIt->dirEntry.szName);
                         if (RT_SUCCESS(rc))
-                            rc = vgsvcToolboxLsHandleDir(szPath, fFlags, fOutputFlags);
+                            rc = vgsvcToolboxLsHandleDir(szPath, fFlags, fOutputFlags, pIdCache);
                         break;
                     }
 
@@ -892,7 +1027,7 @@ static RTEXITCODE vgsvcToolboxLs(int argc, char **argv)
     uint32_t fOutputFlags = VBOXSERVICETOOLBOXOUTPUTFLAG_NONE;
 
     while (   (ch = RTGetOpt(&GetState, &ValueUnion))
-           && RT_SUCCESS(rc))
+           && RT_SUCCESS(rc) /** @todo r=bird: WTF is this doing here? rc isn't set in the loop!! And there is an AssertRCReturn after the previous place it was set. */)
     {
         /* For options that require an argument, ValueUnion has received the value. */
         switch (ch)
@@ -941,7 +1076,7 @@ static RTEXITCODE vgsvcToolboxLs(int argc, char **argv)
             break;
     }
 
-    if (RT_SUCCESS(rc))
+    if (RT_SUCCESS(rc)) /** @todo r=bird: WTF?!? The state handling here is certifiably insane. Crap like this drives me CRAZY!! */
     {
         /* Print magic/version. */
         if (fOutputFlags & VBOXSERVICETOOLBOXOUTPUTFLAG_PARSEABLE)
@@ -952,14 +1087,17 @@ static RTEXITCODE vgsvcToolboxLs(int argc, char **argv)
             vgsvcToolboxPrintStrmHeader("vbt_ls", 1 /* Stream version */);
         }
 
+        VGSVCTOOLBOXIDCACHE IdCache;
+        RT_ZERO(IdCache);
+
         ch = RTGetOpt(&GetState, &ValueUnion);
         do
         {
-            char *pszEntry = NULL;
+            char *pszEntry = NULL; /** @todo r=bird: Bad name choice. pszEntry sounds like RTDIRENTRY::szName, i.e. no path. */
 
             if (ch == 0) /* Use current directory if no element specified. */
             {
-                char szDirCur[RTPATH_MAX + 1];
+                char szDirCur[RTPATH_MAX + 1];  /** @todo r=bird: Just put this outside the if(ch==0) and make pszEntry point to it.  There is no need to duplicate any strings here! */
                 rc = RTPathGetCurrent(szDirCur, sizeof(szDirCur));
                 if (RT_FAILURE(rc))
                     RTMsgError("Getting current directory failed, rc=%Rrc\n", rc);
@@ -975,6 +1113,9 @@ static RTEXITCODE vgsvcToolboxLs(int argc, char **argv)
                     RTMsgError("Allocating directory '%s' failed\n", ValueUnion.psz);
             }
 
+            /** @todo r=bird: RTFileExists == RTPathQueryInfo, so just do
+             *        RTPathQueryInfoEx here!  Also, you _need_ to figure out whether or
+             *        not to follow "commandline" links! */
             if (RTFileExists(pszEntry))
             {
                 RTFSOBJINFO objInfo;
@@ -990,22 +1131,20 @@ static RTEXITCODE vgsvcToolboxLs(int argc, char **argv)
                 }
                 else
                 {
-                    rc2 = vgsvcToolboxPrintFsInfo(pszEntry, strlen(pszEntry) /* cbName */,
-                                                  fOutputFlags, &objInfo);
+                    rc2 = vgsvcToolboxPrintFsInfo(pszEntry, strlen(pszEntry), fOutputFlags, NULL, &IdCache, &objInfo);
                     if (RT_FAILURE(rc2))
                         rc = rc2;
                 }
             }
             else
             {
-                int rc2 = vgsvcToolboxLsHandleDir(pszEntry, fFlags, fOutputFlags);
+                int rc2 = vgsvcToolboxLsHandleDir(pszEntry, fFlags, fOutputFlags, &IdCache);
                 if (RT_FAILURE(rc2))
                     rc = rc2;
             }
 
             RTStrFree(pszEntry);
-        }
-        while ((ch = RTGetOpt(&GetState, &ValueUnion)));
+        } while ((ch = RTGetOpt(&GetState, &ValueUnion)) != 0);
 
         if (fOutputFlags & VBOXSERVICETOOLBOXOUTPUTFLAG_PARSEABLE) /* Output termination. */
             vgsvcToolboxPrintStrmTermination();
@@ -1455,6 +1594,9 @@ static RTEXITCODE vgsvcToolboxStat(int argc, char **argv)
             vgsvcToolboxPrintStrmHeader("vbt_stat", 1 /* Stream version */);
         }
 
+        VGSVCTOOLBOXIDCACHE IdCache;
+        RT_ZERO(IdCache);
+
         while ((ch = RTGetOpt(&GetState, &ValueUnion)))
         {
             RTFSOBJINFO objInfo;
@@ -1465,13 +1607,8 @@ static RTEXITCODE vgsvcToolboxStat(int argc, char **argv)
                     RTMsgError("Cannot stat for '%s': %Rrc\n", ValueUnion.psz, rc2);
             }
             else
-            {
-                rc2 = vgsvcToolboxPrintFsInfo(ValueUnion.psz,
-                                              strlen(ValueUnion.psz) /* cbName */,
-                                              fOutputFlags,
-                                              &objInfo);
-            }
-
+                rc2 = vgsvcToolboxPrintFsInfo(ValueUnion.psz, strlen(ValueUnion.psz), fOutputFlags, NULL, &IdCache, &objInfo);
+            /** @todo r=bird: You're checking rc not rc2 here...   */
             if (RT_SUCCESS(rc))
                 rc = rc2;
             /* Do not break here -- process every element in the list
