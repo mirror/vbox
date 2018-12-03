@@ -2594,7 +2594,7 @@ static DECLCALLBACK(RTEXITCODE) gctlHandleStat(PGCTLCMDCTX pCtx, int argc, char 
                 do *pszAttribs++ = '\0';
                 while (*pszAttribs == ' ');
             else
-                pszAttribs = "";
+                pszAttribs = strchr(pszMode, '\0');
             if (uDeviceNo != 0)
                 RTPrintf("  Mode: %-16s Attrib: %-17s Dev ID: %#RX32\n", pszMode, pszAttribs, uDeviceNo);
             else
