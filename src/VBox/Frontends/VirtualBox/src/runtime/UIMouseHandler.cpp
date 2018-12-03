@@ -1237,6 +1237,13 @@ void UIMouseHandler::updateMouseCursorClipping()
         m_mouseCursorClippingRect = viewportRectangle;
 
         /* Prepare clipping area: */
+        // WORKAROUND:
+        // Underlying ClipCursor call requires physical coordinates, not logical upscaled Qt stuff.
+        // But we will have to map to relative origin (to make logical=>physical conversion) first.
+        const double dDpr = gpDesktop->devicePixelRatio(m_windows.value(m_iMouseCaptureViewIndex));
+        const QRect screenGeometry = gpDesktop->screenGeometry(m_windows.value(m_iMouseCaptureViewIndex));
+        viewportRectangle.moveTo((viewportRectangle.topLeft() - screenGeometry.topLeft()) * dDpr + screenGeometry.topLeft());
+        viewportRectangle.setSize(viewportRectangle.size() * dDpr);
         RECT rect = { viewportRectangle.left() + 1, viewportRectangle.top() + 1, viewportRectangle.right(), viewportRectangle.bottom() };
         ::ClipCursor(&rect);
     }
