@@ -270,7 +270,10 @@ include $(PATH_ROOT)/src/VBox/Additions/linux/drm/files_vboxvideo_drv
 VBOX_LNX_ADD_INST_FILES_VBOXVIDEO=$(patsubst =>%,$(PATH_STAGE_BIN)/additions/src/vboxvideo/%,$(filter =>%,$(subst =>, =>,$(subst $(DQUOTE),,$(FILES_VBOXVIDEO_DRM_NOBIN)))))
 
 # special rule for the kernel modules
-$(VBOX_LNX_ADD_INST_KMOD_DIR_BASE): $(PATH_STAGE_BIN)/additions/src/ | $(dir $@)
+$(VBOX_LNX_ADD_INST_KMOD_DIR_BASE): \
+		$(PATH_STAGE_BIN)/additions/src/ \
+		$(PATH_ROOT)/Version.kmk \
+		| $(dir $@)
 	$(call MSG_INST_SYM,$<,$@)
 	$(QUIET)$(RM) -Rf $@
 	$(QUIET)$(MKDIR) $@
