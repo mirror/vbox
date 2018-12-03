@@ -850,9 +850,10 @@ static int vgsvcToolboxPrintFsInfo(const char *pszName, size_t cchName, uint32_t
  * a specified directory.
  *
  * @return  IPRT status code.
- * @param   pszDir                  Directory (path) to ouptut.
- * @param   fFlags                  Flags of type VBOXSERVICETOOLBOXLSFLAG.
- * @param   fOutputFlags            Flags of type  VBOXSERVICETOOLBOXOUTPUTFLAG.
+ * @param   pszDir          Directory (path) to ouptut.
+ * @param   fFlags          Flags of type VBOXSERVICETOOLBOXLSFLAG.
+ * @param   fOutputFlags    Flags of type VBOXSERVICETOOLBOXOUTPUTFLAG.
+ * @param   pIdCache        The ID cache.
  */
 static int vgsvcToolboxLsHandleDir(const char *pszDir, uint32_t fFlags, uint32_t fOutputFlags, PVGSVCTOOLBOXIDCACHE pIdCache)
 {
