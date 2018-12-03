@@ -1825,7 +1825,9 @@ IEM_STATIC void iemVmxVmexitSaveGuestNonRegState(PVMCPU pVCpu, uint32_t uExitRea
     }
     /* Nothing to do for SMI/enclave. We don't support enclaves or SMM yet. */
 
-    /* Pending debug exceptions. */
+    /*
+     * Pending debug exceptions.
+     */
     if (    uExitReason != VMX_EXIT_INIT_SIGNAL
         &&  uExitReason != VMX_EXIT_SMI
         &&  uExitReason != VMX_EXIT_ERR_MACHINE_CHECK
@@ -1834,6 +1836,22 @@ IEM_STATIC void iemVmxVmexitSaveGuestNonRegState(PVMCPU pVCpu, uint32_t uExitRea
         /** @todo NSTVMX: also must exclude VM-exits caused by debug exceptions when
          *        block-by-MovSS is in effect. */
         pVmcs->u64GuestPendingDbgXcpt.u = 0;
+    }
+    else
+    {
+        /*
+         * Pending debug exception field is identical to DR6 except the RTM bit (16) which needs to be flipped.
+         * The "enabled breakpoint" bit (12) is not present in DR6, so we need to update it here.
+         *
+         * See Intel spec. 24.4.2 "Guest Non-Register State".
+         */
+        uint64_t       fPendingDbgMask = pVCpu->cpum.GstCtx.dr[6];
+        uint64_t const fBpHitMask = VMX_VMCS_GUEST_PENDING_DEBUG_XCPT_BP0 | VMX_VMCS_GUEST_PENDING_DEBUG_XCPT_BP1
+                                  | VMX_VMCS_GUEST_PENDING_DEBUG_XCPT_BP2 | VMX_VMCS_GUEST_PENDING_DEBUG_XCPT_BP3;
+        if (fPendingDbgMask & fBpHitMask)
+            fPendingDbgMask |= VMX_VMCS_GUEST_PENDING_DEBUG_XCPT_EN_BP;
+        fPendingDbgMask ^= VMX_VMCS_GUEST_PENDING_DEBUG_RTM;
+        pVmcs->u64GuestPendingDbgXcpt.u = fPendingDbgMask;
     }
 
     /*

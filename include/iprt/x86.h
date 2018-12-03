@@ -935,7 +935,7 @@ typedef const X86CPUIDFEATEDX *PCX86CPUIDFEATEDX;
 /** Bit 16 - RTM - Cleared if debug exception inside RTM (@sa X86_DR7_RTM). */
 #define X86_DR6_RTM                         RT_BIT_32(16)
 /** Value of DR6 after powerup/reset. */
-#define X86_DR6_INIT_VAL                    UINT64_C(0xFFFF0FF0)
+#define X86_DR6_INIT_VAL                    UINT64_C(0xffff0ff0)
 /** Bits which must be 1s in DR6. */
 #define X86_DR6_RA1_MASK                    UINT64_C(0xffff0ff0)
 /** Bits which must be 1s in DR6, when RTM is supported. */
