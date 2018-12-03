@@ -220,8 +220,8 @@ ifdef VBOX_GSOAP_INSTALLED
   vboxsoap_CXXFLAGS.win += -wd4702 # soapc-4.cpp(16) : warning C4702: unreachable code
   ifn1of ($(KBUILD_TARGET), win)
    vboxsoap_CXXFLAGS += -Wno-shadow -Wno-parentheses $(VBOX_GCC_Wno-literal-suffix) $(VBOX_GCC_Wno-stringop-overflow) $(VBOX_GCC_Wno-stringop-truncation)
-   ifn1of ($(KBUILD_TYPE), debug) # Save time+memory by using -O1 instead of -O2.
-    vboxsoap_CXXFLAGS += -O1
+   ifn1of ($(KBUILD_TYPE), debug) # Save time+memory by using -O0 instead of -O2.
+    vboxsoap_CXXFLAGS += -O0
    endif
   endif
   vboxsoap_INCS := \
@@ -347,7 +347,7 @@ ifdef VBOX_GSOAP_INSTALLED
  ifn1of ($(KBUILD_TARGET), win)
   vboxwebsrv_CXXFLAGS += -Wno-shadow $(VBOX_GCC_Wno-literal-suffix)
   ifn1of ($(KBUILD_TYPE), debug) # Save time+memory by using -O1 instead of -O2.
-   vboxwebsrv_CXXFLAGS += -O1
+   vboxwebsrv_CXXFLAGS += -O0
   endif
  endif
  vboxwebsrv_LIBS += \
