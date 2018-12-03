@@ -341,7 +341,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlMsgPeekWait(uint32_t idClient, uint32_t *pidMsg, 
         VbglHGCMParmUInt64Set(&Msg.idMsg, pidRestoreCheck ? *pidRestoreCheck : 0);
         VbglHGCMParmUInt32Set(&Msg.cParameters, 0);
         rc = VbglR3HGCMCall(&Msg.Hdr, sizeof(Msg));
-        LogRel(("VbglR3GuestCtrlMsgPeekWait -> %Rrc\n", rc));
+        LogRel2(("VbglR3GuestCtrlMsgPeekWait -> %Rrc\n", rc));
         if (RT_SUCCESS(rc))
         {
             AssertMsgReturn(   Msg.idMsg.type       == VMMDevHGCMParmType_64bit
@@ -444,8 +444,8 @@ VBGLR3DECL(int) VbglR3GuestCtrlMsgReplyEx(PVBGLR3GUESTCTRLCMDCTX pCtx,
     HGCMMsgCmdReply Msg;
     VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, GUEST_MSG_REPLY, 4);
     VbglHGCMParmUInt32Set(&Msg.context, pCtx->uContextID);
-    VbglHGCMParmUInt32Set(&Msg.rc, (uint32_t)rc); /* int vs. uint32_t */
     VbglHGCMParmUInt32Set(&Msg.type, uType);
+    VbglHGCMParmUInt32Set(&Msg.rc, (uint32_t)rc); /* int vs. uint32_t */
     VbglHGCMParmPtrSet(&Msg.payload, pvPayload, cbPayload);
 
     return VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
