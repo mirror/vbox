@@ -12285,7 +12285,7 @@ and "VAR" for unsetting. -->
 
   <interface
     name="IGuestSession" extends="$unknown"
-    uuid="12f1f483-a075-4e2d-a1bd-0ed4580b3489"
+    uuid="3E14C189-4A75-437E-B0BB-7E7C90D0DF2A"
     wsmap="managed"
     reservedMethods="8" reservedAttributes="12"
     >
@@ -13302,6 +13302,54 @@ and "VAR" for unsetting. -->
       </param>
       <param name="flags" type="FsObjMoveFlag" dir="in" safearray="yes">
         <desc>Zero or more <link to="FsObjMoveFlag"/> values.</desc>
+      </param>
+      <param name="progress" type="IProgress" dir="return">
+        <desc>Progress object to track the operation to completion.</desc>
+      </param>
+    </method>
+
+    <method name="fsObjMoveArray">
+      <desc>
+        Moves file system objects (files, directories, symlinks, etc) from one
+        guest location to another.
+
+        <result name="E_NOTIMPL">
+          Not yet implemented.
+        </result>
+      </desc>
+      <param name="source" type="wstring" dir="in" safearray="yes">
+        <desc>Array of paths to the file system objects to move.  Guest style path.</desc>
+      </param>
+      <param name="destination" type="wstring" dir="in">
+        <desc>Where to move the file system objects to (directory).  Guest path
+          style.</desc>
+      </param>
+      <param name="flags" type="FsObjMoveFlag" dir="in" safearray="yes">
+        <desc>Zero or more <link to="FsObjMoveFlag"/> values.</desc>
+      </param>
+      <param name="progress" type="IProgress" dir="return">
+        <desc>Progress object to track the operation to completion.</desc>
+      </param>
+    </method>
+
+    <method name="fsObjCopyArray">
+      <desc>
+        Copies file system objects (files, directories, symlinks, etc) from one
+        guest location to another.
+
+        <result name="E_NOTIMPL">
+          Not yet implemented.
+        </result>
+      </desc>
+      <param name="source" type="wstring" dir="in" safearray="yes">
+        <desc>Array of paths to the file system objects to copy.  Guest style path.</desc>
+      </param>
+      <param name="destination" type="wstring" dir="in">
+        <desc>Where to copy the file system objects to (directory).  Guest path
+          style.</desc>
+      </param>
+      <param name="flags" type="FileCopyFlag" dir="in" safearray="yes">
+        <desc>Zero or more <link to="FileCopyFlag"/> values.</desc>
       </param>
       <param name="progress" type="IProgress" dir="return">
         <desc>Progress object to track the operation to completion.</desc>

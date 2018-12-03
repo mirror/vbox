@@ -3929,6 +3929,24 @@ HRESULT GuestSession::fsObjMove(const com::Utf8Str &aSource, const com::Utf8Str 
     ReturnComNotImplemented();
 }
 
+HRESULT GuestSession::fsObjMoveArray(const std::vector<com::Utf8Str> &aSource,
+                                     const com::Utf8Str &aDestination,
+                                     const std::vector<FsObjMoveFlag_T> &aFlags,
+                                     ComPtr<IProgress> &aProgress)
+{
+    RT_NOREF(aSource, aDestination, aFlags, aProgress);
+    ReturnComNotImplemented();
+}
+
+HRESULT GuestSession::fsObjCopyArray(const std::vector<com::Utf8Str> &aSource,
+                                     const com::Utf8Str &aDestination,
+                                     const std::vector<FileCopyFlag_T> &aFlags,
+                                     ComPtr<IProgress> &aProgress)
+{
+    RT_NOREF(aSource, aDestination, aFlags, aProgress);
+    ReturnComNotImplemented();
+}
+
 HRESULT GuestSession::fsObjSetACL(const com::Utf8Str &aPath, BOOL aFollowSymlinks, const com::Utf8Str &aAcl, ULONG aMode)
 {
     RT_NOREF(aPath, aFollowSymlinks, aAcl, aMode);
