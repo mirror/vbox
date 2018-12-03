@@ -202,7 +202,7 @@ TEMPLATE_VBOXWEBR3EXE = Webservices without -fvisibility
 TEMPLATE_VBOXWEBR3EXE_EXTENDS = VBOXR3EXE
 TEMPLATE_VBOXWEBR3EXE_DEFS.win += WIN32_LEAN_AND_MEAN $(TEMPLATE_VBOXR3EXE_DEFS.win) # Makes the redefinition warnings go away.
 TEMPLATE_VBOXWEBR3EXE_CXXFLAGS = $(filter-out $(VBOX_GCC_fvisibility-hidden) $(VBOX_GCC_fvisibility-inlines-hidden),\
-				 $(TEMPLATE_VBOXR3EXE_CXXFLAGS))
+				 $(TEMPLATE_VBOXR3EXE_CXXFLAGS)) -O1
 
 ifdef VBOX_GSOAP_INSTALLED
  ifndef VBOX_ONLY_SDK
@@ -344,6 +344,7 @@ ifdef VBOX_GSOAP_INSTALLED
  ifn1of ($(KBUILD_TARGET), win)
   vboxwebsrv_CXXFLAGS += -Wno-shadow $(VBOX_GCC_Wno-literal-suffix)
  endif
+ vboxwebsrv_CXXFLAGS += -O1
  vboxwebsrv_LIBS += \
 	$(PATH_STAGE_LIB)/vboxsoap$(VBOX_SUFF_LIB) \
 	$(VBOX_GSOAP_CXX_LIBS) \
