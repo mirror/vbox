@@ -1224,48 +1224,12 @@ int VGSvcGstCtrlSessionHandler(PVBOXSERVICECTRLSESSION pSession, uint32_t uMsg, 
     else
     {
         /* We must skip and notify host here as best we can... */
-        VGSvcVerbose(3, "Unsupported message (uMsg=%RU32, cParms=%RU32) from host, skipping\n", uMsg, pHostCtx->uNumParms);
+        VGSvcVerbose(1, "Unsupported message (uMsg=%RU32, cParms=%RU32) from host, skipping\n", uMsg, pHostCtx->uNumParms);
         if (VbglR3GuestCtrlSupportsOptimizations(pHostCtx->uClientID))
             VbglR3GuestCtrlMsgSkip(pHostCtx->uClientID, VERR_NOT_SUPPORTED, uMsg);
         else
-        {
-            /*
-             * !!! HACK ALERT BEGIN !!!
-             * As peeking for the current message by VbglR3GuestCtrlMsgWaitFor() / GUEST_MSG_WAIT only gives us the message type and
-             * the number of parameters, but *not* the actual context ID the message is bound to, try to retrieve it here.
-             *
-             * This is needed in order to reply to the host with the current context ID, without breaking existing clients.
-             * Not doing this isn't fatal, but will make host clients wait longer (timing out) for not implemented messages. */
-            /** @todo Get rid of this as soon as we have a protocol bump (v4). */
-            struct HGCMMsgSkip
-            {
-                VBGLIOCHGCMCALL hdr;
-                /** UInt32: Context ID. */
-                HGCMFunctionParameter context;
-            };
-
-            HGCMMsgSkip Msg;
-            VBGL_HGCM_HDR_INIT(&Msg.hdr, pHostCtx->uClientID, GUEST_MSG_WAIT, pHostCtx->uNumParms);
-            Msg.context.SetUInt32(0);
-
-            /* Retrieve the context ID of the message which is not supported and put it in pHostCtx. */
-            int rc2 = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
-            if (RT_SUCCESS(rc2))
-                Msg.context.GetUInt32(&pHostCtx->uContextID);
-
-            /* Now fake a reply to the message. */
-            rc2 = VbglR3GuestCtrlMsgReply(pHostCtx, VERR_NOT_SUPPORTED);
-            AssertRC(rc2);
-
-            /*  !!!                !!!
-             *  !!! HACK ALERT END !!!
-             *  !!!                !!! */
-
-            /* Tell the host service to skip the message. */
             VbglR3GuestCtrlMsgSkipOld(pHostCtx->uClientID);
-
-            rc = VINF_SUCCESS;
-        }
+        rc = VINF_SUCCESS;
     }
 
     if (RT_FAILURE(rc))
