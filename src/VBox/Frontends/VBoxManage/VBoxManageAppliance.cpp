@@ -916,7 +916,7 @@ RTEXITCODE handleImportAppliance(HandlerArg *arg)
                         case VirtualSystemDescriptionType_CloudOCIBucket:
                         case VirtualSystemDescriptionType_CloudOCIVCN:
                         case VirtualSystemDescriptionType_CloudOCIPublicIP:
-                        case VirtualSystemDescriptionType_CloudOCIProfilePath:
+                        case VirtualSystemDescriptionType_CloudOCIProfileName:
                         case VirtualSystemDescriptionType_CloudOCISubnet:
                         case VirtualSystemDescriptionType_CloudOCIKeepObject:
                         case VirtualSystemDescriptionType_CloudOCILaunchInstance:
@@ -1027,7 +1027,23 @@ static const RTGETOPTDEF g_aExportOptions[] =
     { "--eula",                 'e', RTGETOPT_REQ_STRING },
     { "--eulafile",             'E', RTGETOPT_REQ_STRING },
     { "--options",              'O', RTGETOPT_REQ_STRING },
+    { "--cloud",                'C', RTGETOPT_REQ_UINT32 },
+    { "--cloudshape",           'S', RTGETOPT_REQ_STRING },
+    { "--clouddomain",          'D', RTGETOPT_REQ_STRING },
+    { "--clouddisksize",        'R', RTGETOPT_REQ_STRING },
+    { "--cloudbucket",          'B', RTGETOPT_REQ_STRING },
+    { "--cloudocivcn",          'Q', RTGETOPT_REQ_STRING },
+    { "--cloudpublicip",        'A', RTGETOPT_REQ_STRING },
+    { "--cloudprofile",         'F', RTGETOPT_REQ_STRING },
+    { "--cloudocisubnet",       'T', RTGETOPT_REQ_STRING },
+    { "--cloudkeepobject",      'K', RTGETOPT_REQ_STRING },
+    { "--cloudlaunchinstance",  'L', RTGETOPT_REQ_STRING },
 };
+
+enum
+{
+    NOT_SET, LOCAL, CLOUD
+} exportType;
 
 RTEXITCODE handleExportAppliance(HandlerArg *a)
 {
@@ -1036,6 +1052,8 @@ RTEXITCODE handleExportAppliance(HandlerArg *a)
     Utf8Str strOutputFile;
     Utf8Str strOvfFormat("ovf-1.0"); // the default export version
     bool fManifest = false; // the default
+    bool fCloud = false; // the default
+    exportType = NOT_SET;
     bool fExportISOImages = false; // the default
     com::SafeArray<ExportOptions_T> options;
     std::list< ComPtr<IMachine> > llMachines;
@@ -1090,59 +1108,67 @@ RTEXITCODE handleExportAppliance(HandlerArg *a)
                     break;
 
                 case 's':   // --vsys
+                    if (fCloud == false && exportType == NOT_SET)
+                        exportType = LOCAL;
+
+                    if (exportType != LOCAL)
+                        return errorSyntax(USAGE_EXPORTAPPLIANCE,
+                                           "Option \"%s\" can't be used together with \"--cloud\" argument.",
+                                           GetState.pDef->pszLong);
+
                     ulCurVsys = ValueUnion.u32;
                     break;
 
                 case 'V':   // --vmname
-                    if (ulCurVsys == (uint32_t)-1)
+                    if (exportType == NOT_SET || ulCurVsys == (uint32_t)-1)
                         return errorSyntax(USAGE_EXPORTAPPLIANCE, "Option \"%s\" requires preceding --vsys argument.", GetState.pDef->pszLong);
                     mapArgsMapsPerVsys[ulCurVsys]["vmname"] = ValueUnion.psz;
                     break;
 
                 case 'p':   // --product
-                    if (ulCurVsys == (uint32_t)-1)
+                    if (exportType != LOCAL)
                         return errorSyntax(USAGE_EXPORTAPPLIANCE, "Option \"%s\" requires preceding --vsys argument.", GetState.pDef->pszLong);
                     mapArgsMapsPerVsys[ulCurVsys]["product"] = ValueUnion.psz;
                     break;
 
                 case 'P':   // --producturl
-                    if (ulCurVsys == (uint32_t)-1)
+                    if (exportType != LOCAL)
                         return errorSyntax(USAGE_EXPORTAPPLIANCE, "Option \"%s\" requires preceding --vsys argument.", GetState.pDef->pszLong);
                     mapArgsMapsPerVsys[ulCurVsys]["producturl"] = ValueUnion.psz;
                     break;
 
                 case 'n':   // --vendor
-                    if (ulCurVsys == (uint32_t)-1)
+                    if (exportType != LOCAL)
                         return errorSyntax(USAGE_EXPORTAPPLIANCE, "Option \"%s\" requires preceding --vsys argument.", GetState.pDef->pszLong);
                     mapArgsMapsPerVsys[ulCurVsys]["vendor"] = ValueUnion.psz;
                     break;
 
                 case 'N':   // --vendorurl
-                    if (ulCurVsys == (uint32_t)-1)
+                    if (exportType != LOCAL)
                         return errorSyntax(USAGE_EXPORTAPPLIANCE, "Option \"%s\" requires preceding --vsys argument.", GetState.pDef->pszLong);
                     mapArgsMapsPerVsys[ulCurVsys]["vendorurl"] = ValueUnion.psz;
                     break;
 
                 case 'v':   // --version
-                    if (ulCurVsys == (uint32_t)-1)
+                    if (exportType != LOCAL)
                         return errorSyntax(USAGE_EXPORTAPPLIANCE, "Option \"%s\" requires preceding --vsys argument.", GetState.pDef->pszLong);
                     mapArgsMapsPerVsys[ulCurVsys]["version"] = ValueUnion.psz;
                     break;
 
                 case 'd':   // --description
-                    if (ulCurVsys == (uint32_t)-1)
+                    if (exportType != LOCAL)
                         return errorSyntax(USAGE_EXPORTAPPLIANCE, "Option \"%s\" requires preceding --vsys argument.", GetState.pDef->pszLong);
                     mapArgsMapsPerVsys[ulCurVsys]["description"] = ValueUnion.psz;
                     break;
 
                 case 'e':   // --eula
-                    if (ulCurVsys == (uint32_t)-1)
+                    if (exportType != LOCAL)
                         return errorSyntax(USAGE_EXPORTAPPLIANCE, "Option \"%s\" requires preceding --vsys argument.", GetState.pDef->pszLong);
                     mapArgsMapsPerVsys[ulCurVsys]["eula"] = ValueUnion.psz;
                     break;
 
                 case 'E':   // --eulafile
-                    if (ulCurVsys == (uint32_t)-1)
+                    if (exportType != LOCAL)
                         return errorSyntax(USAGE_EXPORTAPPLIANCE, "Option \"%s\" requires preceding --vsys argument.", GetState.pDef->pszLong);
                     mapArgsMapsPerVsys[ulCurVsys]["eulafile"] = ValueUnion.psz;
                     break;
@@ -1150,6 +1176,93 @@ RTEXITCODE handleExportAppliance(HandlerArg *a)
                 case 'O':   // --options
                     if (RT_FAILURE(parseExportOptions(ValueUnion.psz, &options)))
                         return errorArgument("Invalid export options '%s'\n", ValueUnion.psz);
+                    break;
+
+                    /*--cloud and --vsys are orthogonal, only one must be presented*/
+                case 'C':   // --cloud
+                    if (fCloud == false && exportType == NOT_SET)
+                    {
+                        fCloud = true;
+                        exportType = CLOUD;
+                    }
+
+                    if (exportType != CLOUD)
+                        return errorSyntax(USAGE_EXPORTAPPLIANCE,
+                                           "Option \"%s\" can't be used together with \"--vsys\" argument.",
+                                           GetState.pDef->pszLong);
+
+                    ulCurVsys = ValueUnion.u32;
+                    break;
+
+                    /* Cloud export settings */
+                case 'S':   // --cloudshape
+                    if (exportType != CLOUD)
+                        return errorSyntax(USAGE_EXPORTAPPLIANCE, "Option \"%s\" requires preceding --cloud argument.",
+                                           GetState.pDef->pszLong);
+                    mapArgsMapsPerVsys[ulCurVsys]["cloudshape"] = ValueUnion.psz;
+                    break;
+
+                case 'D':   // --clouddomain
+                    if (exportType != CLOUD)
+                        return errorSyntax(USAGE_EXPORTAPPLIANCE, "Option \"%s\" requires preceding --cloud argument.",
+                                           GetState.pDef->pszLong);
+                    mapArgsMapsPerVsys[ulCurVsys]["clouddomain"] = ValueUnion.psz;
+                    break;
+
+                case 'R':   // --clouddisksize
+                    if (exportType != CLOUD)
+                        return errorSyntax(USAGE_EXPORTAPPLIANCE, "Option \"%s\" requires preceding --cloud argument.",
+                                           GetState.pDef->pszLong);
+                    mapArgsMapsPerVsys[ulCurVsys]["clouddisksize"] = ValueUnion.psz;
+                    break;
+
+                case 'B':   // --cloudbucket
+                    if (exportType != CLOUD)
+                        return errorSyntax(USAGE_EXPORTAPPLIANCE, "Option \"%s\" requires preceding --cloud argument.",
+                                           GetState.pDef->pszLong);
+                    mapArgsMapsPerVsys[ulCurVsys]["cloudbucket"] = ValueUnion.psz;
+                    break;
+
+                case 'Q':   // --cloudocivcn
+                    if (exportType != CLOUD)
+                        return errorSyntax(USAGE_EXPORTAPPLIANCE, "Option \"%s\" requires preceding --cloud argument.",
+                                           GetState.pDef->pszLong);
+                    mapArgsMapsPerVsys[ulCurVsys]["cloudocivcn"] = ValueUnion.psz;
+                    break;
+
+                case 'A':   // --cloudpublicip
+                    if (exportType != CLOUD)
+                        return errorSyntax(USAGE_EXPORTAPPLIANCE, "Option \"%s\" requires preceding --cloud argument.",
+                                           GetState.pDef->pszLong);
+                    mapArgsMapsPerVsys[ulCurVsys]["cloudpublicip"] = ValueUnion.psz;
+                    break;
+
+                case 'F':   // --cloudprofile
+                    if (exportType != CLOUD)
+                        return errorSyntax(USAGE_EXPORTAPPLIANCE, "Option \"%s\" requires preceding --cloud argument.",
+                                           GetState.pDef->pszLong);
+                    mapArgsMapsPerVsys[ulCurVsys]["cloudprofile"] = ValueUnion.psz;
+                    break;
+
+                case 'T':   // --cloudocisubnet
+                    if (exportType != CLOUD)
+                        return errorSyntax(USAGE_EXPORTAPPLIANCE, "Option \"%s\" requires preceding --cloud argument.",
+                                           GetState.pDef->pszLong);
+                    mapArgsMapsPerVsys[ulCurVsys]["cloudocisubnet"] = ValueUnion.psz;
+                    break;
+
+                case 'K':   // --cloudkeepobject
+                    if (exportType != CLOUD)
+                        return errorSyntax(USAGE_EXPORTAPPLIANCE, "Option \"%s\" requires preceding --cloud argument.",
+                                           GetState.pDef->pszLong);
+                    mapArgsMapsPerVsys[ulCurVsys]["cloudkeepobject"] = ValueUnion.psz;
+                    break;
+
+                case 'L':   // --cloudlaunchinstance
+                    if (exportType != CLOUD)
+                        return errorSyntax(USAGE_EXPORTAPPLIANCE, "Option \"%s\" requires preceding --cloud argument.",
+                                           GetState.pDef->pszLong);
+                    mapArgsMapsPerVsys[ulCurVsys]["cloudlaunchinstance"] = ValueUnion.psz;
                     break;
 
                 case VINF_GETOPT_NOT_OPTION:
@@ -1212,7 +1325,8 @@ RTEXITCODE handleExportAppliance(HandlerArg *a)
         char *pszAbsFilePath = 0;
         if (strOutputFile.startsWith("S3://", RTCString::CaseInsensitive) ||
             strOutputFile.startsWith("SunCloud://", RTCString::CaseInsensitive) ||
-            strOutputFile.startsWith("webdav://", RTCString::CaseInsensitive))
+            strOutputFile.startsWith("webdav://", RTCString::CaseInsensitive) ||
+            strOutputFile.startsWith("OCI://", RTCString::CaseInsensitive))
             pszAbsFilePath = RTStrDup(strOutputFile.c_str());
         else
             pszAbsFilePath = RTPathAbsDup(strOutputFile.c_str());
@@ -1226,6 +1340,7 @@ RTEXITCODE handleExportAppliance(HandlerArg *a)
             ComPtr<IMachine> pMachine = *itM;
             ComPtr<IVirtualSystemDescription> pVSD;
             CHECK_ERROR_BREAK(pMachine, ExportTo(pAppliance, Bstr(pszAbsFilePath).raw(), pVSD.asOutParam()));
+
             // Add additional info to the virtual system description if the user wants so
             ArgsMap *pmapArgs = NULL;
             ArgsMapsMap::iterator itm = mapArgsMapsPerVsys.find(i);
@@ -1239,9 +1354,13 @@ RTEXITCODE handleExportAppliance(HandlerArg *a)
                      ++itD)
                 {
                     if (itD->first == "vmname")
+                    {
+                        //remove default value if user has specified new name (default value is set in the ExportTo())
+                        pVSD->RemoveDescriptionByType(VirtualSystemDescriptionType_Name);
                         pVSD->AddDescription(VirtualSystemDescriptionType_Name,
                                              Bstr(itD->second).raw(),
                                              Bstr(itD->second).raw());
+                    }
                     else if (itD->first == "product")
                         pVSD->AddDescription(VirtualSystemDescriptionType_Product,
                                              Bstr(itD->second).raw(),
@@ -1291,6 +1410,47 @@ RTEXITCODE handleExportAppliance(HandlerArg *a)
                             return RTEXITCODE_FAILURE;
                         }
                     }
+                    /* add cloud export settings */
+                    else if (itD->first == "cloudshape")
+                        pVSD->AddDescription(VirtualSystemDescriptionType_CloudOCIInstanceShape,
+                                             Bstr(itD->second).raw(),
+                                             Bstr(itD->second).raw());
+                    else if (itD->first == "clouddomain")
+                        pVSD->AddDescription(VirtualSystemDescriptionType_CloudOCIDomain,
+                                             Bstr(itD->second).raw(),
+                                             Bstr(itD->second).raw());
+                    else if (itD->first == "clouddisksize")
+                        pVSD->AddDescription(VirtualSystemDescriptionType_CloudOCIBootDiskSize,
+                                             Bstr(itD->second).raw(),
+                                             Bstr(itD->second).raw());
+                    else if (itD->first == "cloudbucket")
+                        pVSD->AddDescription(VirtualSystemDescriptionType_CloudOCIBucket,
+                                             Bstr(itD->second).raw(),
+                                             Bstr(itD->second).raw());
+                    else if (itD->first == "cloudocivcn")
+                        pVSD->AddDescription(VirtualSystemDescriptionType_CloudOCIVCN,
+                                             Bstr(itD->second).raw(),
+                                             Bstr(itD->second).raw());
+                    else if (itD->first == "cloudpublicip")
+                        pVSD->AddDescription(VirtualSystemDescriptionType_CloudOCIPublicIP,
+                                             Bstr(itD->second).raw(),
+                                             Bstr(itD->second).raw());
+                    else if (itD->first == "cloudprofile")
+                        pVSD->AddDescription(VirtualSystemDescriptionType_CloudOCIProfileName,
+                                             Bstr(itD->second).raw(),
+                                             Bstr(itD->second).raw());
+                    else if (itD->first == "cloudocisubnet")
+                        pVSD->AddDescription(VirtualSystemDescriptionType_CloudOCISubnet,
+                                             Bstr(itD->second).raw(),
+                                             Bstr(itD->second).raw());
+                    else if (itD->first == "cloudkeepobject")
+                        pVSD->AddDescription(VirtualSystemDescriptionType_CloudOCIKeepObject,
+                                             Bstr(itD->second).raw(),
+                                             Bstr(itD->second).raw());
+                    else if (itD->first == "cloudlaunchinstance")
+                        pVSD->AddDescription(VirtualSystemDescriptionType_CloudOCILaunchInstance,
+                                             Bstr(itD->second).raw(),
+                                             Bstr(itD->second).raw());
                 }
             }
         }

@@ -319,6 +319,7 @@ private:
     HRESULT addDescription(VirtualSystemDescriptionType_T aType,
                            const com::Utf8Str &aVBoxValue,
                            const com::Utf8Str &aExtraConfigValue);
+    HRESULT removeDescriptionByType(VirtualSystemDescriptionType_T aType);
     void i_removeByType(VirtualSystemDescriptionType_T aType);
 
     struct Data;

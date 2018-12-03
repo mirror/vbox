@@ -1335,6 +1335,7 @@ void i_parseURI(Utf8Str strUri, LocationInfo &locInfo)
     else if (strUri.startsWith("OCI://", Utf8Str::CaseInsensitive)) /* OCI service (storage or compute) */
     {
         locInfo.storageType = VFSType_Cloud;
+        locInfo.strProvider = "OCI";
         strUri = strUri.substr(sizeof("OCI://") - 1);
     }
     else if (strUri.startsWith("webdav://", Utf8Str::CaseInsensitive)) /* webdav service */
@@ -1625,6 +1626,20 @@ std::list<VirtualSystemDescriptionEntry*> VirtualSystemDescription::i_findByType
     }
 
     return vsd;
+}
+
+HRESULT VirtualSystemDescription::removeDescriptionByType(VirtualSystemDescriptionType_T aType)
+{
+    std::vector<VirtualSystemDescriptionEntry>::iterator it = m->maDescriptions.begin();
+    while (it != m->maDescriptions.end())
+    {
+        if (it->type == aType)
+            it = m->maDescriptions.erase(it);
+        else
+            ++it;
+    }
+
+    return S_OK;
 }
 
 /* Private method; delete all records from the list

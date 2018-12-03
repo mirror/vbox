@@ -53,6 +53,7 @@ struct LocationInfo
     LocationInfo()
       : storageType(VFSType_File) {}
     VFSType_T storageType; /* Which type of storage should be handled */
+    Utf8Str strProvider;   /* cloud provider name in case of export/import to Cloud */
     Utf8Str strPath;       /* File path for the import/export */
     Utf8Str strHostname;   /* Hostname on remote storage locations (could be empty) */
     Utf8Str strUsername;   /* Username on remote storage locations (could be empty) */
@@ -229,22 +230,6 @@ struct Appliance::Data
     SecretKeyStore            *m_pSecretKeyStore;
     /** Number of passwords provided. */
     uint32_t                  m_cPwProvided;
-
-    struct CloudExportData_T {
-        Utf8Str strDisplayMachineName;
-        Utf8Str strProfileFilePath;
-        Utf8Str strProfileName;
-        Utf8Str strInstanceShapeId;
-        Utf8Str strDomainName;
-        Utf8Str strBootDiskSize;
-        Utf8Str strBucketId;
-        Utf8Str strSubnet;
-        bool    fPublicIP;
-        Utf8Str strUserId;
-        Utf8Str strBootImageName;
-    };
-
-    CloudExportData_T m_CloudExportData;
 };
 
 struct Appliance::XMLStack

@@ -3645,7 +3645,7 @@
     <const name="CloudOCIBucket" value="30" />
     <const name="CloudOCIVCN" value="31" />
     <const name="CloudOCIPublicIP" value="32" />
-    <const name="CloudOCIProfilePath" value="33" />
+    <const name="CloudOCIProfileName" value="33" />
     <const name="CloudOCISubnet" value="34" />
     <const name="CloudOCIKeepObject" value="35" />
     <const name="CloudOCILaunchInstance" value="36" />
@@ -3849,6 +3849,14 @@
         <desc></desc>
       </param>
 
+    </method>
+
+    <method name="removeDescriptionByType">
+      <desc>Delete all records which are equal to the passed type from the list</desc>
+
+      <param name="type" type="VirtualSystemDescriptionType" dir="in">
+        <desc></desc>
+      </param>
     </method>
 
     <method name="getValuesByType">
