@@ -114,13 +114,10 @@ private slots:
     void sltReceieveLogOutput(QString strOutput, FileManagerLogType eLogType);
     void sltCopyGuestToHost();
     void sltCopyHostToGuest();
-    void sltMoveGuestToHost();
-    void sltMoveHostToGuest();
     void sltPanelActionToggled(bool fChecked);
     void sltListDirectoriesBeforeChanged();
     void sltReceieveNewFileOperation(const CProgress &comProgress);
     void sltFileOperationComplete(QUuid progressId);
-    void sltCacheHostFileObjectsForDeletion(const QUuid &moveProgessId, const QStringList &hostPathList);
     /** Performs whatever necessary when some signal about option change has been receieved. */
     void sltHandleOptionsUpdated();
 
@@ -167,8 +164,8 @@ private:
         - grab it from the dialog as soon as a panel becomes visible again
         - assigned it to the most recently "unhidden" panel */
     void manageEscapeShortCut();
-    void copyMoveToGuest(bool fIsMove);
-    void copyMoveToHost(bool fIsMove);
+    void copyToGuest();
+    void copyToHost();
     template<typename T>
     QStringList               getFsObjInfoStringList(const T &fsObjectInfo) const;
     void                      appendLog(const QString &strLog, FileManagerLogType eLogType);

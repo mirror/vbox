@@ -262,8 +262,6 @@ public:
     void         relist();
     static const unsigned    m_iKiloByte;
     static QString humanReadableSize(ULONG64 size);
-    /** Deletes the file objects whose stored in the m_pDeleteAfterCopyCache */
-    void continueWithMove(const QUuid &progressId);
 
 public slots:
 
@@ -352,9 +350,6 @@ protected:
     QStringList              m_driveLetterList;
     /** The set of actions which need some selection to work on. Like cut, copy etc. */
     QSet<QAction*>           m_selectionDependentActions;
-    /** Paths of the source file objects are stored in this map to delete those
-     * after the copy progress completed notification is receieved */
-    QMap<QUuid, QStringList> m_deleteAfterCopyCache;
     /** The absolue path list of the file objects which user has chosen to cut/copy. this
      *  list will be cleaned after a paste operation or overwritten by a subsequent cut/copy.
      *  Currently only used by the guest side. */

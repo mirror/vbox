@@ -254,8 +254,6 @@ void UIGuestControlFileManager::prepareObjects()
                     this, &UIGuestControlFileManager::sltReceieveLogOutput);
             connect(m_pGuestFileTable, &UIGuestFileTable::sigNewFileOperation,
                     this, &UIGuestControlFileManager::sltReceieveNewFileOperation);
-            connect(m_pGuestFileTable, &UIGuestFileTable::sigCacheHostFileObjectsForDeletion,
-                    this, &UIGuestControlFileManager::sltCacheHostFileObjectsForDeletion);
             connect(m_pGuestFileTable, &UIGuestFileTable::sigDeleteConfirmationOptionChanged,
                     this, &UIGuestControlFileManager::sltHandleOptionsUpdated);
             pFileTableContainerLayout->addWidget(m_pGuestFileTable);
@@ -335,8 +333,6 @@ void UIGuestControlFileManager::prepareVerticalToolBar(QHBoxLayout *layout)
     m_pVerticalToolBar->addWidget(topSpacerWidget);
     m_pVerticalToolBar->addAction(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_CopyToHost));
     m_pVerticalToolBar->addAction(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_CopyToGuest));
-    m_pVerticalToolBar->addAction(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_MoveToHost));
-    m_pVerticalToolBar->addAction(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_MoveToGuest));
     m_pVerticalToolBar->addWidget(bottomSpacerWidget);
 
     connect(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_CopyToHost), &QAction::triggered,
@@ -344,10 +340,6 @@ void UIGuestControlFileManager::prepareVerticalToolBar(QHBoxLayout *layout)
     connect(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_CopyToGuest), &QAction::triggered,
              this, &UIGuestControlFileManager::sltCopyHostToGuest);
 
-    connect(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_MoveToHost), &QAction::triggered,
-            this, &UIGuestControlFileManager::sltMoveGuestToHost);
-    connect(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_MoveToGuest), &QAction::triggered,
-             this, &UIGuestControlFileManager::sltMoveHostToGuest);
     layout ->addWidget(m_pVerticalToolBar);
 }
 
@@ -494,22 +486,12 @@ void UIGuestControlFileManager::sltReceieveLogOutput(QString strOutput, FileMana
 
 void UIGuestControlFileManager::sltCopyGuestToHost()
 {
-    copyMoveToHost(false);
+    copyToHost();
 }
 
 void UIGuestControlFileManager::sltCopyHostToGuest()
 {
-    copyMoveToGuest(false);
-}
-
-void UIGuestControlFileManager::sltMoveGuestToHost()
-{
-    copyMoveToHost(true);
-}
-
-void UIGuestControlFileManager::sltMoveHostToGuest()
-{
-    copyMoveToGuest(true);
+    copyToGuest();
 }
 
 void UIGuestControlFileManager::sltPanelActionToggled(bool fChecked)
@@ -549,22 +531,12 @@ void UIGuestControlFileManager::sltReceieveNewFileOperation(const CProgress &com
 
 void UIGuestControlFileManager::sltFileOperationComplete(QUuid progressId)
 {
+    Q_UNUSED(progressId);
     if (!m_pGuestFileTable || !m_pHostFileTable)
         return;
 
-    /* The following call deletes file objects whose paths have been cached for later deletion: */
-    m_pGuestFileTable->continueWithMove(progressId);
-    m_pHostFileTable->continueWithMove(progressId);
-
     m_pHostFileTable->refresh();
     m_pGuestFileTable->refresh();
-}
-
-void UIGuestControlFileManager::sltCacheHostFileObjectsForDeletion(const QUuid &moveProgessId,
-                                                                   const QStringList &hostPathList)
-{
-    if (m_pHostFileTable)
-        m_pHostFileTable->updateDeleteAfterCopyCache(moveProgessId, hostPathList);
 }
 
 void UIGuestControlFileManager::sltHandleOptionsUpdated()
@@ -575,21 +547,21 @@ void UIGuestControlFileManager::sltHandleOptionsUpdated()
     }
 }
 
-void UIGuestControlFileManager::copyMoveToHost(bool fIsMove)
+void UIGuestControlFileManager::copyToHost()
 {
     if (!m_pGuestFileTable || !m_pHostFileTable)
         return;
     QString hostDestinationPath = m_pHostFileTable->currentDirectoryPath();
-    m_pGuestFileTable->copyGuestToHost(hostDestinationPath, fIsMove);
+    m_pGuestFileTable->copyGuestToHost(hostDestinationPath);
     m_pHostFileTable->refresh();
 }
 
-void UIGuestControlFileManager::copyMoveToGuest(bool fIsMove)
+void UIGuestControlFileManager::copyToGuest()
 {
     if (!m_pGuestFileTable || !m_pHostFileTable)
         return;
     QStringList hostSourcePathList = m_pHostFileTable->selectedItemPathList();
-    m_pGuestFileTable->copyHostToGuest(hostSourcePathList, fIsMove);
+    m_pGuestFileTable->copyHostToGuest(hostSourcePathList);
     m_pGuestFileTable->refresh();
 }
 
@@ -833,7 +805,7 @@ void UIGuestControlFileManager::sltTestCopy()
     QStringList sources;
     sources << "/home/serkan/misos/xenialpup-7.5-uefi.iso";
     if ( m_pGuestFileTable)
-        m_pGuestFileTable->copyHostToGuest(sources, false, "/home/vbox/test");
+        m_pGuestFileTable->copyHostToGuest(sources, "/home/vbox/test");
 }
 
 #include "UIGuestControlFileManager.moc"

@@ -205,14 +205,6 @@
         <file alias="file_manager_log_32px.png">images/file_manager_log_32px.png</file>
         <file alias="file_manager_log_disabled_16px.png">images/file_manager_log_disabled_16px.png</file>
         <file alias="file_manager_log_disabled_32px.png">images/file_manager_log_disabled_32px.png</file>
-        <file alias="file_manager_move_to_guest_16px.png">images/file_manager_move_to_guest_16px.png</file>
-        <file alias="file_manager_move_to_guest_24px.png">images/file_manager_move_to_guest_24px.png</file>
-        <file alias="file_manager_move_to_guest_disabled_16px.png">images/file_manager_move_to_guest_disabled_16px.png</file>
-        <file alias="file_manager_move_to_guest_disabled_24px.png">images/file_manager_move_to_guest_disabled_24px.png</file>
-        <file alias="file_manager_move_to_host_16px.png">images/file_manager_move_to_host_16px.png</file>
-        <file alias="file_manager_move_to_host_24px.png">images/file_manager_move_to_host_24px.png</file>
-        <file alias="file_manager_move_to_host_disabled_16px.png">images/file_manager_move_to_host_disabled_16px.png</file>
-        <file alias="file_manager_move_to_host_disabled_24px.png">images/file_manager_move_to_host_disabled_24px.png</file>
         <file alias="file_manager_new_directory_16px.png">images/file_manager_new_directory_16px.png</file>
         <file alias="file_manager_new_directory_24px.png">images/file_manager_new_directory_24px.png</file>
         <file alias="file_manager_new_directory_disabled_16px.png">images/file_manager_new_directory_disabled_16px.png</file>
@@ -383,5 +375,9 @@
         <file alias="machine_details_manager_disabled_24px.png">images/machine_details_manager_disabled_24px.png</file>
         <file alias="machine_warning_16px.png">images/machine_warning_16px.png</file>
         <file alias="media_manager_16px.png">images/media_manager_16px.png</file>
+        <file alias="media_manager_24px.png">images/media_manager_24px.png</file>
+        <file alias="media_manager_32px.png">images/media_manager_32px.png</file>
+        <file alias="media_manager_disabled_16px.png">images/media_manager_disabled_16px.png</file>
+        <file alias="media_manager_disabled_24px.png">images/media_manager_disabled_24px.png</file>
     </qresource>
 </RCC>

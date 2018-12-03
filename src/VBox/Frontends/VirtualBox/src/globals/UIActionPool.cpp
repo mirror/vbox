@@ -1606,80 +1606,6 @@ protected:
     }
 };
 
-/** Simple action extension, used as 'Move to Guest' in guest control file manager action class. */
-class UIActionMenuGuestControlFileManagerMoveToGuest : public UIActionSimple
-{
-    Q_OBJECT;
-
-public:
-
-    /** Constructs action passing @a pParent to the base-class. */
-    UIActionMenuGuestControlFileManagerMoveToGuest(UIActionPool *pParent)
-        : UIActionSimple(pParent,
-                         ":/file_manager_move_to_guest_24px.png", ":/file_manager_move_to_guest_16px.png",
-                         ":/file_manager_move_to_guest_disabled_24px.png", ":/file_manager_move_to_guest_disabled_16px.png"){}
-
-protected:
-
-    /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
-    {
-        return QString("FileManagerMoveToGuest");
-    }
-
-    /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
-    {
-        return QKeySequence();
-    }
-
-    /** Handles translation event. */
-    virtual void retranslateUi() /* override */
-    {
-        setName(QApplication::translate("UIActionPool", "Move to guest"));
-        setShortcutScope(QApplication::translate("UIActionPool", "Guest Control File Manager"));
-        setToolTip(QApplication::translate("UIActionPool", "Move the Selected Object(s) from Host to Guest"));
-        setStatusTip(QApplication::translate("UIActionPool", "Move the selected object(s) from host to guest"));
-    }
-};
-
-/** Simple action extension, used as 'Move to Host' in guest control file manager action class. */
-class UIActionMenuGuestControlFileManagerMoveToHost : public UIActionSimple
-{
-    Q_OBJECT;
-
-public:
-
-    /** Constructs action passing @a pParent to the base-class. */
-    UIActionMenuGuestControlFileManagerMoveToHost(UIActionPool *pParent)
-        : UIActionSimple(pParent,
-                         ":/file_manager_move_to_host_24px.png", ":/file_manager_move_to_host_16px.png",
-                         ":/file_manager_move_to_host_disabled_24px.png", ":/file_manager_move_to_host_disabled_16px.png"){}
-
-protected:
-
-    /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
-    {
-        return QString("FileManagerMoveToHost");
-    }
-
-    /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
-    {
-        return QKeySequence();
-    }
-
-    /** Handles translation event. */
-    virtual void retranslateUi() /* override */
-    {
-        setName(QApplication::translate("UIActionPool", "Move to host"));
-        setShortcutScope(QApplication::translate("UIActionPool", "Guest Control File Manager"));
-        setToolTip(QApplication::translate("UIActionPool", "Move the Selected Object(s) from Guest to Host"));
-        setStatusTip(QApplication::translate("UIActionPool", "Move the selected object(s) from guest to host"));
-    }
-};
-
 /** Toggle action extension, used to toggle 'File Manager Options' panel in guest control file manager. */
 class UIActionMenuGuestControlFileManagerOptions : public UIActionToggle
 {
@@ -2509,8 +2435,6 @@ void UIActionPool::preparePool()
     m_pool[UIActionIndex_M_GuestControlFileManager_M_GuestSubmenu] = new UIActionMenuGuestControlFileManagerGuestSubmenu(this);
     m_pool[UIActionIndex_M_GuestControlFileManager_S_CopyToGuest] = new  UIActionMenuGuestControlFileManagerCopyToGuest(this);
     m_pool[UIActionIndex_M_GuestControlFileManager_S_CopyToHost] = new  UIActionMenuGuestControlFileManagerCopyToHost(this);
-    m_pool[UIActionIndex_M_GuestControlFileManager_S_MoveToGuest] = new  UIActionMenuGuestControlFileManagerMoveToGuest(this);
-    m_pool[UIActionIndex_M_GuestControlFileManager_S_MoveToHost] = new  UIActionMenuGuestControlFileManagerMoveToHost(this);
 
     m_pool[UIActionIndex_M_GuestControlFileManager_T_Options] = new UIActionMenuGuestControlFileManagerOptions(this);
     m_pool[UIActionIndex_M_GuestControlFileManager_T_Log] = new UIActionMenuGuestControlFileManagerLog(this);

@@ -205,14 +205,6 @@
         <file alias="file_manager_log_32px_x2.png">images/x2/file_manager_log_32px_x2.png</file>
         <file alias="file_manager_log_disabled_16px_x2.png">images/x2/file_manager_log_disabled_16px_x2.png</file>
         <file alias="file_manager_log_disabled_32px_x2.png">images/x2/file_manager_log_disabled_32px_x2.png</file>
-        <file alias="file_manager_move_to_guest_16px_x2.png">images/x2/file_manager_move_to_guest_16px_x2.png</file>
-        <file alias="file_manager_move_to_guest_24px_x2.png">images/x2/file_manager_move_to_guest_24px_x2.png</file>
-        <file alias="file_manager_move_to_guest_disabled_16px_x2.png">images/x2/file_manager_move_to_guest_disabled_16px_x2.png</file>
-        <file alias="file_manager_move_to_guest_disabled_24px_x2.png">images/x2/file_manager_move_to_guest_disabled_24px_x2.png</file>
-        <file alias="file_manager_move_to_host_16px_x2.png">images/x2/file_manager_move_to_host_16px_x2.png</file>
-        <file alias="file_manager_move_to_host_24px_x2.png">images/x2/file_manager_move_to_host_24px_x2.png</file>
-        <file alias="file_manager_move_to_host_disabled_16px_x2.png">images/x2/file_manager_move_to_host_disabled_16px_x2.png</file>
-        <file alias="file_manager_move_to_host_disabled_24px_x2.png">images/x2/file_manager_move_to_host_disabled_24px_x2.png</file>
         <file alias="file_manager_new_directory_16px_x2.png">images/x2/file_manager_new_directory_16px_x2.png</file>
         <file alias="file_manager_new_directory_24px_x2.png">images/x2/file_manager_new_directory_24px_x2.png</file>
         <file alias="file_manager_new_directory_disabled_16px_x2.png">images/x2/file_manager_new_directory_disabled_16px_x2.png</file>
@@ -377,5 +369,9 @@
         <file alias="machine_details_manager_24px_x2.png">images/x2/machine_details_manager_24px_x2.png</file>
         <file alias="machine_details_manager_disabled_16px_x2.png">images/x2/machine_details_manager_disabled_16px_x2.png</file>
         <file alias="machine_details_manager_disabled_24px_x2.png">images/x2/machine_details_manager_disabled_24px_x2.png</file>
+        <file alias="machine_warning_16px_x2.png">images/x2/machine_warning_16px_x2.png</file>
+        <file alias="media_manager_16px_x2.png">images/x2/media_manager_16px_x2.png</file>
+        <file alias="media_manager_24px_x2.png">images/x2/media_manager_24px_x2.png</file>
+        <file alias="media_manager_32px_x2.png">images/x2/media_manager_32px_x2.png</file>
     </qresource>
 </RCC>
