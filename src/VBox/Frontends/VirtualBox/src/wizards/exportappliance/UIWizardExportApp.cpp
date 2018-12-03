@@ -151,7 +151,8 @@ QString UIWizardExportApp::uri(bool fWithFile) const
 {
     /* For Cloud formats: */
     if (field("isFormatCloudOne").toBool())
-        return QString("%1://%2").arg(field("providerShortName").toString(), field("profileName").toString());
+//      return QString("%1://%2").arg(field("providerShortName").toString(), field("profileName").toString());
+        return QString("%1://%2").arg(field("providerShortName").toString(), field("path").toString());
     else
     {
         /* Prepare storage path: */

@@ -407,6 +407,14 @@ AbstractVSDParameterList UIWizardExportAppPage2::parseJsonDocument(const QJsonDo
                 parameter.get = QVariant::fromValue(get);
                 parameter.kind = ParameterKind_Array;
             }
+            else
+            if (strFieldName == "name")
+            {
+                AbstractVSDParameterString get;
+                get.value = parseJsonFieldString(strFieldName, field);
+                parameter.get = QVariant::fromValue(get);
+                parameter.kind = ParameterKind_String;
+            }
         }
 
         /* Append parameter: */

@@ -651,13 +651,6 @@ HRESULT Appliance::write(const com::Utf8Str &aFormat,
     /* Parse all necessary info out of the URI */
     i_parseURI(aPath, m->locInfo);
 
-    /** @todo r=klaus all of this code should be made fully generic, applicable
-     * to any cloud provider. This implies changing the method names accordingly
-     * and (more importantly) moving all the cloud specific checking code to the
-     * actual ICloudClient implementation in the corresponding extpack. It will
-     * move the check to the async task, but that's a bearable cost, not getting
-     * the error straight from the API call but a tiny bit later through the
-     * Progress object. */
     if (m->locInfo.storageType == VFSType_Cloud)//(isCloudDestination(aPath))
     {
         rc = S_OK;
@@ -798,37 +791,29 @@ HRESULT Appliance::write(const com::Utf8Str &aFormat,
 HRESULT Appliance::i_writeImpl(ovf::OVFVersion_T aFormat, const LocationInfo &aLocInfo, ComObjPtr<Progress> &aProgress)
 {
     HRESULT rc;
+
+    rc = i_setUpProgress(aProgress,
+                         BstrFmt(tr("Export appliance '%s'"), aLocInfo.strPath.c_str()),
+                         (aLocInfo.storageType == VFSType_File) ? WriteFile : WriteS3);
+    if (FAILED(rc))
+        return rc;
+
+    /* Initialize our worker task */
+    TaskOVF* task = NULL;
     try
     {
-        rc = i_setUpProgress(aProgress,
-                             BstrFmt(tr("Export appliance '%s'"), aLocInfo.strPath.c_str()),
-                             (aLocInfo.storageType == VFSType_File) ? WriteFile : WriteS3);
-        if (FAILED(rc))
-            return rc;
-
-        /* Initialize our worker task */
-        TaskOVF* task = NULL;
-        try
-        {
-            task = new TaskOVF(this, TaskOVF::Write, aLocInfo, aProgress);
-        }
-        catch(...)
-        {
-            throw rc = setError(VBOX_E_OBJECT_NOT_FOUND,
-                                tr("Could not create TaskOVF object for for writing out the OVF to disk"));
-        }
-
-        /* The OVF version to write */
-        task->enFormat = aFormat;
-
-        rc = task->createThread();
-        if (FAILED(rc)) throw rc;
-
+        task = new TaskOVF(this, TaskOVF::Write, aLocInfo, aProgress);
     }
-    catch (HRESULT aRC)
+    catch(...)
     {
-        rc = aRC;
+        return setError(VBOX_E_OBJECT_NOT_FOUND,
+                        tr("Could not create TaskOVF object for for writing out the OVF to disk"));
     }
+
+    /* The OVF version to write */
+    task->enFormat = aFormat;
+
+    rc = task->createThread();
 
     return rc;
 }
@@ -837,147 +822,92 @@ HRESULT Appliance::i_writeImpl(ovf::OVFVersion_T aFormat, const LocationInfo &aL
 HRESULT Appliance::i_writeCloudImpl(const LocationInfo &aLocInfo, ComObjPtr<Progress> &aProgress)
 {
     HRESULT rc;
-    try
+
+    for (list<ComObjPtr<VirtualSystemDescription> >::const_iterator
+         it = m->virtualSystemDescriptions.begin();
+         it != m->virtualSystemDescriptions.end();
+         ++it)
     {
-        /** @todo r=klaus all of this code should be made fully generic,
-         * doing only what is common for all cloud providers, i.e. pretty
-         * much nothing. The logic and data types need to be moved to the
-         * extension pack, anything else will not work. */
+        ComObjPtr<VirtualSystemDescription> vsdescThis = *it;
+        std::list<VirtualSystemDescriptionEntry*> skipped = vsdescThis->i_findByType(VirtualSystemDescriptionType_CDROM);
+        std::list<VirtualSystemDescriptionEntry*>::const_iterator itSkipped = skipped.begin();
+        while (itSkipped != skipped.end())
+        {
+            (*itSkipped)->skipIt = true;
+            ++itSkipped;
+        }
 
         //remove all disks from the VirtualSystemDescription exept one
-        for (list<ComObjPtr<VirtualSystemDescription> >::const_iterator
-             it = m->virtualSystemDescriptions.begin();
-             it != m->virtualSystemDescriptions.end();
-             ++it)
+        skipped = vsdescThis->i_findByType(VirtualSystemDescriptionType_HardDiskImage);
+        itSkipped = skipped.begin();
+
+        Utf8Str strBootLocation;
+        while (itSkipped != skipped.end())
         {
-            ComObjPtr<VirtualSystemDescription> vsdescThis = *it;
-            std::list<VirtualSystemDescriptionEntry*> skipped = vsdescThis->i_findByType(VirtualSystemDescriptionType_CDROM);
-            std::list<VirtualSystemDescriptionEntry*>::const_iterator itSkipped = skipped.begin();
-            while (itSkipped != skipped.end())
-            {
+            if (strBootLocation.isEmpty())
+                strBootLocation = (*itSkipped)->strVBoxCurrent;
+            else
                 (*itSkipped)->skipIt = true;
-                ++itSkipped;
-            }
-
-            skipped = vsdescThis->i_findByType(VirtualSystemDescriptionType_HardDiskImage);
-            itSkipped = skipped.begin();
-
-            Utf8Str strBootLocation;
-            while (itSkipped != skipped.end())
-            {
-                if (strBootLocation.isEmpty())
-                    strBootLocation = (*itSkipped)->strVBoxCurrent;
-                else
-                    (*itSkipped)->skipIt = true;
-                ++itSkipped;
-            }
-
-            //just in case
-            if (vsdescThis->i_findByType(VirtualSystemDescriptionType_HardDiskImage).empty())
-            {
-                throw rc = setError(VBOX_E_OBJECT_NOT_FOUND,
-                                    tr("There are no images to export to Cloud after preparation steps"));
-            }
-
-            /*
-             * Fills out the OCI settings
-            */
-            std::list<VirtualSystemDescriptionEntry*> machineName =
-                vsdescThis->i_findByType(VirtualSystemDescriptionType_Name);
-            if (machineName.empty())
-                throw setError(VBOX_E_FILE_ERROR, tr("Cloud: VM name wasn't found"));
-            m->m_CloudExportData.strDisplayMachineName = machineName.front()->strVBoxCurrent;
-            LogRel(("Exported machine name: %s\n", m->m_CloudExportData.strDisplayMachineName.c_str()));
-
-            m->m_CloudExportData.strBootImageName = strBootLocation;
-            LogRel(("Exported image: %s\n", m->m_CloudExportData.strBootImageName.c_str()));
-
-            if (aLocInfo.strPath.isEmpty())
-                throw rc = setError(VBOX_E_OBJECT_NOT_FOUND,
-                                    tr("Cloud: Cloud user profile wasn't found"));
-
-            m->m_CloudExportData.strProfileName = aLocInfo.strPath;
-            LogRel(("profile name: %s\n", m->m_CloudExportData.strProfileName.c_str()));
-
-            Utf8Str strInstanceShapeId;
-            std::list<VirtualSystemDescriptionEntry*> shapeId =
-                vsdescThis->i_findByType(VirtualSystemDescriptionType_CloudOCIInstanceShape);
-            if (shapeId.empty())
-                throw rc = setError(VBOX_E_OBJECT_NOT_FOUND,
-                                    tr("Cloud: Shape of instance wasn't found"));
-
-            m->m_CloudExportData.strInstanceShapeId = shapeId.front()->strVBoxCurrent;
-            LogRel(("Shape: %s\n", m->m_CloudExportData.strInstanceShapeId.c_str()));
-
-            std::list<VirtualSystemDescriptionEntry*> domainName =
-                vsdescThis->i_findByType(VirtualSystemDescriptionType_CloudOCIDomain);
-            if (domainName.empty())
-                throw rc = setError(VBOX_E_OBJECT_NOT_FOUND,
-                                    tr("Cloud: Available domain wasn't found"));
-
-            m->m_CloudExportData.strDomainName = domainName.front()->strVBoxCurrent;
-            LogRel(("Available domain name: %s\n", m->m_CloudExportData.strDomainName.c_str()));
-
-            std::list<VirtualSystemDescriptionEntry*> bootDiskSize =
-                vsdescThis->i_findByType(VirtualSystemDescriptionType_CloudOCIBootDiskSize);
-            if (bootDiskSize.empty())
-                throw rc = setError(VBOX_E_OBJECT_NOT_FOUND,
-                                    tr("Cloud: Boot disk size wasn't found"));
-
-            m->m_CloudExportData.strBootDiskSize = bootDiskSize.front()->strVBoxCurrent;
-            LogRel(("Boot disk size: %s\n", m->m_CloudExportData.strBootDiskSize.c_str()));
-
-            std::list<VirtualSystemDescriptionEntry*> bucketId =
-                vsdescThis->i_findByType(VirtualSystemDescriptionType_CloudOCIBucket);
-            if (bucketId.empty())
-                throw rc = setError(VBOX_E_OBJECT_NOT_FOUND,
-                                    tr("Cloud: Bucket wasn't found"));
-
-            m->m_CloudExportData.strBucketId = bucketId.front()->strVBoxCurrent;
-            LogRel(("bucket name: %s\n", m->m_CloudExportData.strBucketId.c_str()));
-
-            std::list<VirtualSystemDescriptionEntry*> subnet =
-                vsdescThis->i_findByType(VirtualSystemDescriptionType_CloudOCISubnet);
-            if (subnet.empty())
-                throw rc = setError(VBOX_E_OBJECT_NOT_FOUND,
-                                    tr("Cloud: Subnet wasn't found"));
-
-            m->m_CloudExportData.strSubnet = subnet.front()->strVBoxCurrent;
-            LogRel(("Subnet name: %s\n", m->m_CloudExportData.strSubnet.c_str()));
-
-            std::list<VirtualSystemDescriptionEntry*> publicIP =
-                vsdescThis->i_findByType(VirtualSystemDescriptionType_CloudOCIPublicIP);
-            if (publicIP.empty())
-                throw rc = setError(VBOX_E_OBJECT_NOT_FOUND,
-                                    tr("Cloud: Public IP setting wasn't found"));
-
-            m->m_CloudExportData.fPublicIP = (publicIP.front()->strVBoxCurrent == "true") ? true : false;
-            LogRel(("public IP: %s\n", m->m_CloudExportData.fPublicIP ? "yes" : "no"));
+            ++itSkipped;
         }
 
-        // we need to do that as otherwise Task won't be created successfully
-        aProgress.createObject();
-
-        // Initialize our worker task
-        TaskCloud* task = NULL;
-        try
+        //just in case
+        if (vsdescThis->i_findByType(VirtualSystemDescriptionType_HardDiskImage).empty())
         {
-            task = new Appliance::TaskCloud(this, TaskCloud::Export, aLocInfo, aProgress);
-        }
-        catch(...)
-        {
-            throw rc = setError(VBOX_E_OBJECT_NOT_FOUND,
-                                tr("Could not create TaskCloud object for exporting to Cloud"));
+            return setError(VBOX_E_OBJECT_NOT_FOUND,
+                                tr("There are no images to export to Cloud after preparation steps"));
         }
 
-        rc = task->createThread();
-        if (FAILED(rc)) throw rc;
+        /*
+         * Fills out the OCI settings
+        */
+        std::list<VirtualSystemDescriptionEntry*> profileName =
+            vsdescThis->i_findByType(VirtualSystemDescriptionType_CloudOCIProfileName);
+        if (profileName.size() > 1)
+            return setError(VBOX_E_OBJECT_NOT_FOUND,
+                                tr("Cloud: More than one profile name was found."));
+        else if (profileName.empty())
+            return setError(VBOX_E_OBJECT_NOT_FOUND,
+                                tr("Cloud: Profile name wasn't specified."));
+
+        if (profileName.front()->strVBoxCurrent.isEmpty())
+            return setError(VBOX_E_OBJECT_NOT_FOUND,
+                                tr("Cloud: Cloud user profile name is empty"));
+
+        LogRel(("profile name: %s\n", profileName.front()->strVBoxCurrent.c_str()));
 
     }
-    catch (HRESULT aRC)
+
+    // we need to do that as otherwise Task won't be created successfully
+    aProgress.createObject();
+    if (aLocInfo.strProvider.equals("OCI"))
     {
-        rc = aRC;
+        aProgress->init(mVirtualBox, static_cast<IAppliance*>(this),
+                     Bstr("Exporting VM to Cloud...").raw(),
+                     TRUE /* aCancelable */,
+                     5, // ULONG cOperations,
+                     1000, // ULONG ulTotalOperationsWeight,
+                     Bstr("Exporting VM to Cloud...").raw(), // aFirstOperationDescription
+                     10); // ULONG ulFirstOperationWeight
     }
+    else
+        return setErrorVrc(VBOX_E_NOT_SUPPORTED,
+                           tr("Only \"OCI\" cloud provider is supported for now. \"%s\" isn't supported."),
+                           aLocInfo.strProvider);
+    // Initialize our worker task
+    TaskCloud* task = NULL;
+    try
+    {
+        task = new Appliance::TaskCloud(this, TaskCloud::Export, aLocInfo, aProgress);
+
+    }
+    catch(...)
+    {
+        return setError(VBOX_E_OBJECT_NOT_FOUND,
+                        tr("Could not create TaskCloud object for exporting to Cloud"));
+    }
+
+    rc = task->createThread();
 
     return rc;
 }
@@ -986,34 +916,26 @@ HRESULT Appliance::i_writeOPCImpl(ovf::OVFVersion_T aFormat, const LocationInfo 
 {
     HRESULT rc;
     RT_NOREF(aFormat);
+
+    rc = i_setUpProgress(aProgress,
+                         BstrFmt(tr("Export appliance '%s'"), aLocInfo.strPath.c_str()),
+                         (aLocInfo.storageType == VFSType_File) ? WriteFile : WriteS3);
+    if (FAILED(rc))
+        return rc;
+
+    /* Initialize our worker task */
+    TaskOPC* task = NULL;
     try
     {
-        rc = i_setUpProgress(aProgress,
-                             BstrFmt(tr("Export appliance '%s'"), aLocInfo.strPath.c_str()),
-                             (aLocInfo.storageType == VFSType_File) ? WriteFile : WriteS3);
-        if (FAILED(rc))
-            return rc;
-
-        /* Initialize our worker task */
-        TaskOPC* task = NULL;
-        try
-        {
-            task = new Appliance::TaskOPC(this, TaskOPC::Export, aLocInfo, aProgress);
-        }
-        catch(...)
-        {
-            throw rc = setError(VBOX_E_OBJECT_NOT_FOUND,
-                                tr("Could not create TaskOPC object for for writing out the OPC to disk"));
-        }
-
-        rc = task->createThread();
-        if (FAILED(rc)) throw rc;
-
+        task = new Appliance::TaskOPC(this, TaskOPC::Export, aLocInfo, aProgress);
     }
-    catch (HRESULT aRC)
+    catch(...)
     {
-        rc = aRC;
+        return setError(VBOX_E_OBJECT_NOT_FOUND,
+                        tr("Could not create TaskOPC object for for writing out the OPC to disk"));
     }
+
+    rc = task->createThread();
 
     return rc;
 }
@@ -2325,34 +2247,56 @@ HRESULT Appliance::i_writeFSCloud(TaskCloud *pTask)
     HRESULT hrc = S_OK;
     ComPtr<ICloudProviderManager> cpm;
     hrc = mVirtualBox->COMGETTER(CloudProviderManager)(cpm.asOutParam());
-    Utf8Str strProviderName("OCI");
+    if (FAILED(hrc))
+        return setErrorVrc(VERR_COM_OBJECT_NOT_FOUND, tr("Cloud: Cloud provider manager object wasn't found"));
+
+    Utf8Str strProviderName = pTask->locInfo.strProvider;
     ComPtr<ICloudProvider> cloudProvider;
-    hrc = cpm->GetProviderByShortName(Bstr(strProviderName.c_str()).raw(), cloudProvider.asOutParam());
     ComPtr<ICloudProfile> cloudProfile;
-    hrc = cloudProvider->GetProfileByName(Bstr(m->m_CloudExportData.strProfileName.c_str()).raw(), cloudProfile.asOutParam());
+    hrc = cpm->GetProviderByShortName(Bstr(strProviderName.c_str()).raw(), cloudProvider.asOutParam());
+
+    if (FAILED(hrc))
+        return setErrorVrc(VERR_COM_OBJECT_NOT_FOUND, tr("Cloud: Cloud provider object wasn't found"));
+
+    ComPtr<IVirtualSystemDescription> vsd = m->virtualSystemDescriptions.front();
+
+    com::SafeArray<VirtualSystemDescriptionType_T> retTypes;
+    com::SafeArray<BSTR> aRefs;
+    com::SafeArray<BSTR> aOvfValues;
+    com::SafeArray<BSTR> aVBoxValues;
+    com::SafeArray<BSTR> aExtraConfigValues;
+
+    hrc = vsd->GetDescriptionByType(VirtualSystemDescriptionType_CloudOCIProfileName,
+                             ComSafeArrayAsOutParam(retTypes),
+                             ComSafeArrayAsOutParam(aRefs),
+                             ComSafeArrayAsOutParam(aOvfValues),
+                             ComSafeArrayAsOutParam(aVBoxValues),
+                             ComSafeArrayAsOutParam(aExtraConfigValues));
+    if (FAILED(hrc))
+        return hrc;
+
+    Utf8Str profileName(aVBoxValues[0]);
+    if (profileName.isEmpty())
+        return setErrorVrc(VBOX_E_OBJECT_NOT_FOUND, tr("Cloud: Cloud user profile name wasn't found"));
+
+    hrc = cloudProvider->GetProfileByName(aVBoxValues[0], cloudProfile.asOutParam());
+    if (FAILED(hrc))
+        return setErrorVrc(VERR_COM_OBJECT_NOT_FOUND, tr("Cloud: Cloud profile object wasn't found"));
+
     ComObjPtr<ICloudClient> cloudClient;
     hrc = cloudProfile->CreateCloudClient(cloudClient.asOutParam());
+    if (FAILED(hrc))
+        return setErrorVrc(VERR_COM_OBJECT_NOT_FOUND, tr("Cloud: Cloud client object wasn't found"));
 
-    if (SUCCEEDED(hrc))
+    LogRel(("Appliance::i_writeFSCloud(): calling CloudClient::ExportLaunchVM\n"));
+
+    if (m->virtualSystemDescriptions.size() == 1)
     {
-        LogRel(("Appliance::i_writeFSCloud(): calling CloudClient::ExportLaunchVM\n"));
-
-        if (m->virtualSystemDescriptions.size() == 1) {
-            ComPtr<IVirtualBox> VBox(mVirtualBox);
-
-            pTask->pProgress->init(mVirtualBox, static_cast<IAppliance*>(this),
-                         Bstr("Exporting VM to Cloud...").raw(),
-                         TRUE /* aCancelable */,
-                         5, // ULONG cOperations,
-                         1000, // ULONG ulTotalOperationsWeight,
-                         Bstr("Exporting VM to Cloud...").raw(), // aFirstOperationDescription
-                         10); // ULONG ulFirstOperationWeight,
-
-            hrc = cloudClient->ExportLaunchVM(m->virtualSystemDescriptions.front(), pTask->pProgress, VBox);
-        } else {
-            /// @todo Fail here with user notification. We do export 1 VM only
-        }
+        ComPtr<IVirtualBox> VBox(mVirtualBox);
+        hrc = cloudClient->ExportLaunchVM(m->virtualSystemDescriptions.front(), pTask->pProgress, VBox);
     }
+    else
+        hrc = setErrorVrc(VERR_MISMATCH, tr("Export to Cloud isn't supported for more than one VM instance."));
 
     LogFlowFuncLeave();
     return hrc;
