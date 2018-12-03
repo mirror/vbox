@@ -2110,6 +2110,31 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
                 Log(("Leaving VMCPU_FF_INHIBIT_INTERRUPTS set at %RGv\n", (RTGCPTR)CPUMGetGuestRIP(pVCpu)));
         }
 
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
+        /*
+         * VMX Nested-guest monitor-trap flag (MTF) VM-exit.
+         * Takes priority over "Traps on the previous instruction".
+         * See Intel spec. 6.9 "Priority Among Simultaneous Exceptions And Interrupts".
+         */
+        if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_VMX_MTF))
+        {
+            rc2 = VBOXSTRICTRC_VAL(IEMExecVmxVmexitMtf(pVCpu));
+            Assert(rc2 != VINF_VMX_INTERCEPT_NOT_ACTIVE);
+            UPDATE_RC();
+        }
+
+        /*
+         * VMX Nested-guest preemption timer VM-exit.
+         * Takes priority over non-maskable interrupts (NMIs).
+         */
+        if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_VMX_PREEMPT_TIMER))
+        {
+            rc2 = VBOXSTRICTRC_VAL(IEMExecVmxVmexitPreemptTimer(pVCpu));
+            if (rc2 != VINF_VMX_INTERCEPT_NOT_ACTIVE)
+                UPDATE_RC();
+        }
+#endif
+
         /*
          * Interrupts.
          */
@@ -2189,17 +2214,6 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
                 }
             }
         }
-
-        /*
-         * VMX Nested-guest monitor-trap flag (MTF) VM-exit.
-         */
-#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
-        if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_VMX_MTF))
-        {
-            rc2 = VBOXSTRICTRC_VAL(IEMExecVmxVmexitMtf(pVCpu));
-            UPDATE_RC();
-        }
-#endif
 
         /*
          * Allocate handy pages.
