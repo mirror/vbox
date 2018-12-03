@@ -133,12 +133,15 @@ typedef struct HostCommand
     uint32_t mParmCount;
     /** Array of HGCM parameters. */
     PVBOXHGCMSVCPARM mpParms;
+    /** Set if we detected the message skipping hack from r121400. */
+    bool m_f60BetaHackInPlay;
 
     HostCommand()
         : m_idContextAndDst(0)
         , mMsgType(UINT32_MAX)
         , mParmCount(0)
         , mpParms(NULL)
+        , m_f60BetaHackInPlay(false)
     {
         RTListInit(&m_ListEntry);
     }
@@ -471,6 +474,8 @@ typedef struct ClientState
     uint32_t                m_idSession;
     /** Set if master. */
     bool                    m_fIsMaster;
+    /** Set if restored (needed for shutting legacy mode assert on non-masters). */
+    bool                    m_fRestored;
 
     /** Set if we've got a pending wait cancel. */
     bool                    m_fPendingCancel;
@@ -488,6 +493,7 @@ typedef struct ClientState
         , m_idClient(0)
         , m_idSession(UINT32_MAX)
         , m_fIsMaster(false)
+        , m_fRestored(false)
         , m_fPendingCancel(false)
         , m_enmIsPending((guestControl::eGuestFn)0)
         , mHostCmdRc(VINF_SUCCESS)
@@ -502,6 +508,7 @@ typedef struct ClientState
         , m_idClient(idClient)
         , m_idSession(UINT32_MAX)
         , m_fIsMaster(false)
+        , m_fRestored(false)
         , m_fPendingCancel(false)
         , m_enmIsPending((guestControl::eGuestFn)0)
         , mHostCmdRc(VINF_SUCCESS)
@@ -651,6 +658,7 @@ typedef struct ClientState
         HostCommand *pFirstCmd = RTListGetFirstCpp(&m_HostCmdList, HostCommand, m_ListEntry);
         Assert(pFirstCmd);
         RTListNodeRemove(&pFirstCmd->m_ListEntry);
+        pFirstCmd->Delete();
 
         /* Reset state else. */
         mHostCmdRc    = VINF_SUCCESS;
@@ -895,7 +903,7 @@ public:
     static DECLCALLBACK(int)  svcConnect(void *pvService, uint32_t idClient, void *pvClient,
                                          uint32_t fRequestor, bool fRestoring);
     static DECLCALLBACK(int)  svcDisconnect(void *pvService, uint32_t idClient, void *pvClient);
-    static DECLCALLBACK(void) svcCall(void *pvService, VBOXHGCMCALLHANDLE callHandle, uint32_t idClient, void *pvClient,
+    static DECLCALLBACK(void) svcCall(void *pvService, VBOXHGCMCALLHANDLE hCall, uint32_t idClient, void *pvClient,
                                       uint32_t u32Function, uint32_t cParms, VBOXHGCMSVCPARM paParms[], uint64_t tsArrival);
     static DECLCALLBACK(int)  svcHostCall(void *pvService, uint32_t u32Function, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
     static DECLCALLBACK(int)  svcSaveState(void *pvService, uint32_t idClient, void *pvClient, PSSMHANDLE pSSM);
@@ -914,9 +922,9 @@ private:
     int clientSessionCloseOther(ClientState *pClient, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
     int clientToMain(ClientState *pClient, uint32_t idFunction, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
 
-    int clientMsgOldGet(ClientState *pClient, VBOXHGCMCALLHANDLE callHandle, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
+    int clientMsgOldGet(ClientState *pClient, VBOXHGCMCALLHANDLE hCall, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
     int clientMsgOldFilterSet(ClientState *pClient, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
-    int clientMsgOldSkip(ClientState *pClient, uint32_t cParms);
+    int clientMsgOldSkip(ClientState *pClient, VBOXHGCMCALLHANDLE hCall, uint32_t cParms);
 
     int hostCallback(uint32_t idFunction, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
     int hostProcessCommand(uint32_t idFunction, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
@@ -1087,7 +1095,7 @@ GstCtrlService::svcDisconnect(void *pvService, uint32_t idClient, void *pvClient
  */
 int GstCtrlService::clientMsgOldGet(ClientState *pClient, VBOXHGCMCALLHANDLE hCall, uint32_t cParms, VBOXHGCMSVCPARM paParms[])
 {
-    ASSERT_GUEST(pClient->m_idSession != UINT32_MAX || pClient->m_fIsMaster);
+    ASSERT_GUEST(pClient->m_idSession != UINT32_MAX || pClient->m_fIsMaster || pClient->m_fRestored);
 
     /* Use the current (inbound) connection. */
     ClientRequest thisCon;
@@ -1780,7 +1788,7 @@ int GstCtrlService::clientSessionCloseOther(ClientState *pClient, uint32_t cParm
     ASSERT_GUEST_RETURN(paParms[1].type == VBOX_HGCM_SVC_PARM_32BIT, VERR_WRONG_PARAMETER_TYPE);
     uint32_t const fFlags = paParms[1].u.uint32;
 
-    ASSERT_GUEST_RETURN(pClient->m_fIsMaster, VERR_ACCESS_DENIED);
+    ASSERT_GUEST_RETURN(pClient->m_fIsMaster || (m_fLegacyMode && pClient->m_idSession == UINT32_MAX), VERR_ACCESS_DENIED);
 
     /*
      * Forward the command to the destiation.
@@ -1876,9 +1884,10 @@ int GstCtrlService::clientMsgOldFilterSet(ClientState *pClient, uint32_t cParms,
  *
  * @return  VBox status code.
  * @param   pClient     The client state.
+ * @param   hCall       The call handle for completing it.
  * @param   cParms      Number of parameters.
  */
-int GstCtrlService::clientMsgOldSkip(ClientState *pClient, uint32_t cParms)
+int GstCtrlService::clientMsgOldSkip(ClientState *pClient, VBOXHGCMCALLHANDLE hCall, uint32_t cParms)
 {
     /*
      * Validate input and access.
@@ -1887,11 +1896,43 @@ int GstCtrlService::clientMsgOldSkip(ClientState *pClient, uint32_t cParms)
 
     /*
      * Execute the request.
+     *
+     * Note! As it turns out the old and new skip should be mostly the same.  The
+     *       pre-6.0 GAs (up to BETA3) has a hack which tries to issue a
+     *       VERR_NOT_SUPPORTED reply to unknown host requests, however the 5.2.x
+     *       and earlier GAs doesn't.  We need old skip behavior only for the 6.0
+     *       beta GAs, nothing else.
+     *       So, we have to track whether they issued a MSG_REPLY or not.  Wonderful.
      */
-    if (!RTListIsEmpty(&pClient->m_HostCmdList))
-        pClient->OldDitchFirstHostCmd();
+    HostCommand *pFirstCmd = RTListGetFirstCpp(&pClient->m_HostCmdList, HostCommand, m_ListEntry);
+    if (pFirstCmd)
+    {
+        uint32_t const idMsg             = pFirstCmd->mMsgType;
+        bool const     f60BetaHackInPlay = pFirstCmd->m_f60BetaHackInPlay;
+        int            rc;
+        if (!f60BetaHackInPlay)
+            rc = clientMsgSkip(pClient, hCall, 0, NULL);
+        else
+        {
+            RTListNodeRemove(&pFirstCmd->m_ListEntry);
+            pFirstCmd->Delete();
+            rc = VINF_SUCCESS;
+        }
 
-    LogFlowFunc(("[Client %RU32] Skipped current message - leagcy function\n", pClient->m_idClient));
+        /* Reset legacy message wait/get state: */
+        if (RT_SUCCESS(rc))
+        {
+            pClient->mHostCmdRc    = VINF_SUCCESS;
+            pClient->mHostCmdTries = 0;
+            pClient->mPeekCount    = 0;
+        }
+
+        LogFlowFunc(("[Client %RU32] Legacy message skipping: Skipped %u (%s)%s!\n",
+                     pClient->m_idClient, idMsg, GstCtrlHostFnName((eHostFn)idMsg), f60BetaHackInPlay ? " hack style" : ""));
+        NOREF(idMsg);
+        return rc;
+    }
+    LogFlowFunc(("[Client %RU32] Legacy message skipping: No messages pending!\n", pClient->m_idClient));
     return VINF_SUCCESS;
 }
 
@@ -2011,6 +2052,13 @@ GstCtrlService::svcCall(void *pvService, VBOXHGCMCALLHANDLE hCall, uint32_t idCl
          * Stuff the goes to various main objects:
          */
         case GUEST_MSG_REPLY:
+            if (cParms >= 3 && paParms[2].u.uint32 == (uint32_t)VERR_NOT_SUPPORTED)
+            {
+                HostCommand *pFirstCmd = RTListGetFirstCpp(&pClient->m_HostCmdList, HostCommand, m_ListEntry);
+                if (pFirstCmd && pFirstCmd->m_idContext == paParms[0].u.uint32)
+                    pFirstCmd->m_f60BetaHackInPlay = true;
+            }
+            RT_FALL_THROUGH();
         case GUEST_MSG_PROGRESS_UPDATE:
         case GUEST_SESSION_NOTIFY:
         case GUEST_EXEC_OUTPUT:
@@ -2035,7 +2083,7 @@ GstCtrlService::svcCall(void *pvService, VBOXHGCMCALLHANDLE hCall, uint32_t idCl
 
         case GUEST_MSG_SKIP_OLD:
             LogFlowFunc(("[Client %RU32] GUEST_MSG_SKIP_OLD\n", idClient));
-            rc = pThis->clientMsgOldSkip(pClient, cParms);
+            rc = pThis->clientMsgOldSkip(pClient, hCall, cParms);
             break;
 
         case GUEST_MSG_FILTER_SET:
@@ -2314,6 +2362,7 @@ GstCtrlService::svcLoadState(void *pvService, uint32_t idClient, void *pvClient,
          * gets called, there isn't anything we need to do here it turns out. :-)
          */
     }
+    pClient->m_fRestored = true;
     return VINF_SUCCESS;
 }
 
