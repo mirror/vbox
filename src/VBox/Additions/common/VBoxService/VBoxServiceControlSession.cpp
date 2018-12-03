@@ -2042,7 +2042,7 @@ static int vgsvcVGSvcGstCtrlSessionThreadCreateProcess(const PVBOXSERVICECTRLSES
     {
         VGSvcVerbose(4, "Spawning parameters:\n");
         for (idxArg = 0; apszArgs[idxArg]; idxArg++)
-            VGSvcVerbose(4, "\t%s\n", apszArgs[idxArg]);
+            VGSvcVerbose(4, "    %s\n", apszArgs[idxArg]);
     }
 
     /*
