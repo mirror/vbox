@@ -795,7 +795,7 @@ static HRESULT listVmSlotDhcpOptions(const ComPtr<IDHCPServer> pSrv, const Utf8S
     com::SafeArray<BSTR> options;
     CHECK_ERROR2I_RET(pSrv, GetVmSlotOptions(vmName.raw(), uSlot, ComSafeArrayAsOutParam(options)), hrcCheck);
     if (options.size())
-        RTPrintf("Options for slot #%d of '%ls':\n", uSlot, vmName.raw());
+        RTPrintf("Options for NIC %d of '%ls':\n", uSlot + 1, vmName.raw());
     for (size_t i = 0; i < options.size(); ++i)
         RTPrintf("   %ls\n", options[i]);
 

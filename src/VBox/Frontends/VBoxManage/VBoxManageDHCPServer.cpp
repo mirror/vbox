@@ -115,7 +115,7 @@ static const RTGETOPTDEF g_aDHCPIPOptions[] =
     { "-disable",           'd', RTGETOPT_REQ_NOTHING },     // deprecated
     { "--options",          'o', RTGETOPT_REQ_NOTHING },
     { "--vm",               'n', RTGETOPT_REQ_STRING}, /* only with -o */
-    { "--slot",             's', RTGETOPT_REQ_UINT8}, /* only with -o and -n */
+    { "--nic",              'c', RTGETOPT_REQ_UINT8}, /* only with -o and -n */
     { "--id",               'i', RTGETOPT_REQ_UINT8}, /* only with -o */
     { "--value",            'p', RTGETOPT_REQ_STRING}, /* only with -i */
     { "--remove",           'r', RTGETOPT_REQ_NOTHING} /* only with -i */
@@ -239,7 +239,7 @@ static RTEXITCODE handleOp(HandlerArg *a, OPCODE enmCode, int iStart)
             case 'o': // --options
                 {
         // {"--vm",                'n', RTGETOPT_REQ_STRING}, /* only with -o */
-        // {"--slot",              's', RTGETOPT_REQ_UINT8}, /* only with -o and -n*/
+        // {"--nic",               'c', RTGETOPT_REQ_UINT8}, /* only with -o and -n*/
         // {"--id",                'i', RTGETOPT_REQ_UINT8}, /* only with -o */
         // {"--value",             'p', RTGETOPT_REQ_STRING} /* only with -i */
                     if (fOptionsRead)
@@ -265,15 +265,20 @@ static RTEXITCODE handleOp(HandlerArg *a, OPCODE enmCode, int iStart)
                 }
                 break; /* end of --vm-name */
 
-            case 's': // --slot
+            case 'c': // --nic
                 {
                     if (!fVmOptionRead)
                         return errorSyntax(USAGE_DHCPSERVER,
                                            "vm name wasn't specified");
 
                     u8Slot = ValueUnion.u8;
+
+                    if (u8Slot < 1)
+                        return errorSyntax(USAGE_DHCPSERVER,
+                                           "invalid NIC number: %u", u8Slot);
+                    --u8Slot;
                 }
-                break; /* end of --slot */
+                break; /* end of --nic */
 
             case 'i': // --id
                 {
@@ -297,7 +302,7 @@ static RTEXITCODE handleOp(HandlerArg *a, OPCODE enmCode, int iStart)
                     if (   fVmOptionRead
                         && u8Slot == (uint8_t)~0)
                         return errorSyntax(USAGE_DHCPSERVER,
-                                           "--slot wasn't found");
+                                           "--nic wasn't found");
 
                     DhcpOpts &opts = fVmOptionRead ? VmSlot2Options[VmNameSlotKey(pszVmName, u8Slot)]
                                                     : GlobalDhcpOptions;
@@ -319,7 +324,7 @@ static RTEXITCODE handleOp(HandlerArg *a, OPCODE enmCode, int iStart)
                     if (   fVmOptionRead
                         && u8Slot == (uint8_t)~0)
                         return errorSyntax(USAGE_DHCPSERVER,
-                                           "--slot wasn't found");
+                                           "--nic wasn't found");
 
                     DhcpOptIds &optIds = fVmOptionRead ? VmSlot2Options2Delete[VmNameSlotKey(pszVmName, u8Slot)]
                                                        : GlobalDhcpOptions2Delete;

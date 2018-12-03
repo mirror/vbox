@@ -1210,7 +1210,7 @@ void printUsage(USAGECATEGORY fCategory, uint32_t fSubCategory, PRTSTREAM pStrm)
                      "                            --lowerip <lower_ip>\n"
                      "                            --upperip <upper_ip>]\n"
                      "                            [--enable | --disable]\n"
-                     "                            [--options [--vm <name> --slot <number>]\n"
+                     "                            [--options [--vm <name> --nic <1-N>]\n"
                      "                             --id <number> [--value <string> | --remove]]\n"
                      "                             (multiple options allowed after --options)\n\n"
                            "%s dhcpserver %s      remove --netname <network_name> |\n"
