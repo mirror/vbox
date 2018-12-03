@@ -2110,6 +2110,8 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
                 Log(("Leaving VMCPU_FF_INHIBIT_INTERRUPTS set at %RGv\n", (RTGCPTR)CPUMGetGuestRIP(pVCpu)));
         }
 
+        /* SMIs take priority over if we ever support them will have to be injected here. */
+
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
         /*
          * VMX Nested-guest monitor-trap flag (MTF) VM-exit.
@@ -2132,6 +2134,33 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
             rc2 = VBOXSTRICTRC_VAL(IEMExecVmxVmexitPreemptTimer(pVCpu));
             if (rc2 != VINF_VMX_INTERCEPT_NOT_ACTIVE)
                 UPDATE_RC();
+        }
+#endif
+
+        /** @todo Enable when I get time to test this specific code path later. */
+#if 0
+        /*
+         * NMIs.
+         * NMIs take priority over external interrupts.
+         */
+        bool fWakeupPending = false;
+        if (    VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INTERRUPT_NMI)
+            && !VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_BLOCK_NMIS)
+            && !VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS))
+        {
+            rc2 = TRPMAssertTrap(pVCpu, X86_XCPT_NMI, TRPM_TRAP);
+            if (rc2 == VINF_SUCCESS)
+            {
+                fWakeupPending = true;
+                if (pVM->em.s.fIemExecutesAll)
+                    rc2 = VINF_EM_RESCHEDULE;
+                else
+                {
+                    rc2 = HMR3IsActive(pVCpu)    ? VINF_EM_RESCHEDULE_HM
+                        : VM_IS_NEM_ENABLED(pVM) ? VINF_EM_RESCHEDULE
+                        :                          VINF_EM_RESCHEDULE_REM;
+                }
+            }
         }
 #endif
 
