@@ -854,7 +854,6 @@ int GuestBase::registerWaitEvent(uint32_t uSessionID, uint32_t uObjectID, GuestW
 int GuestBase::registerWaitEventEx(uint32_t uSessionID, uint32_t uObjectID, const GuestEventTypes &lstEvents,
                                    GuestWaitEvent **ppEvent)
 {
-    AssertReturn(!lstEvents.empty(), VERR_INVALID_PARAMETER);
     AssertPtrReturn(ppEvent, VERR_INVALID_POINTER);
 
     uint32_t idContext;
