@@ -124,6 +124,9 @@ private slots:
     /** Performs whatever necessary when some signal about option change has been receieved. */
     void sltHandleOptionsUpdated();
 
+    void sltTestCopy();
+    void sltTestSession();
+
 private:
 
     void prepareObjects();
@@ -169,7 +172,6 @@ private:
     template<typename T>
     QStringList               getFsObjInfoStringList(const T &fsObjectInfo) const;
     void                      appendLog(const QString &strLog, FileManagerLogType eLogType);
-
     CGuest                    m_comGuest;
     CGuestSession             m_comGuestSession;
     QVBoxLayout              *m_pMainLayout;

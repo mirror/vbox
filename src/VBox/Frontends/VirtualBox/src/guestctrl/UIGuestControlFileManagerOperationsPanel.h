@@ -67,17 +67,23 @@ protected:
 
 private slots:
 
-    void sltCleanFinished();
-    void sltCleanAll();
+    void sltRemoveFinished();
+    void sltRemoveAll();
+    void sltRemoveSelected();
+
+    void sltHandleWidgetFocusIn(QWidget *pWidget);
+    void sltHandleWidgetFocusOut(QWidget *pWidget);
 
 private:
 
     /** @name Member variables.
       * @{ */
-        QScrollArea *m_pScrollArea;
-        QWidget     *m_pContainerWidget;
-        QVBoxLayout *m_pContainerLayout;
-        QSpacerItem *m_pContainerSpaceItem;
+        QScrollArea    *m_pScrollArea;
+        QWidget        *m_pContainerWidget;
+        QVBoxLayout    *m_pContainerLayout;
+        QSpacerItem    *m_pContainerSpaceItem;
+        QWidget        *m_pWidgetInFocus;
+        QSet<QWidget*>  m_widgetSet;
     /** @} */
 
 

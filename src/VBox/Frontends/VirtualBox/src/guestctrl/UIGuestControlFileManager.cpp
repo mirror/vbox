@@ -348,7 +348,6 @@ void UIGuestControlFileManager::prepareVerticalToolBar(QHBoxLayout *layout)
             this, &UIGuestControlFileManager::sltMoveGuestToHost);
     connect(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_MoveToGuest), &QAction::triggered,
              this, &UIGuestControlFileManager::sltMoveHostToGuest);
-
     layout ->addWidget(m_pVerticalToolBar);
 }
 
@@ -392,6 +391,21 @@ void UIGuestControlFileManager::prepareToolBar()
                 this, &UIGuestControlFileManager::sltPanelActionToggled);
         connect(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_T_FileOperations), &QAction::toggled,
                 this, &UIGuestControlFileManager::sltPanelActionToggled);
+
+#ifdef TEST_COPY
+
+        m_pToolBar->addSeparator();
+        QAction *pSession = new QAction("session", this);
+        QAction *pCopy = new QAction("Copy", this);
+        m_pToolBar->addAction(pSession);
+        m_pToolBar->addAction(pCopy);
+
+        connect(pSession, &QAction::triggered,
+                this, &UIGuestControlFileManager::sltTestSession);
+        connect(pCopy, &QAction::triggered,
+                this, &UIGuestControlFileManager::sltTestCopy);
+
+#endif
 
 #ifdef VBOX_WS_MAC
         /* Check whether we are embedded into a stack: */
@@ -807,6 +821,19 @@ void UIGuestControlFileManager::appendLog(const QString &strLog, FileManagerLogT
     if (!m_pLogPanel)
         return;
     m_pLogPanel->appendLog(strLog, eLogType);
+}
+
+void UIGuestControlFileManager::sltTestSession()
+{
+    createSession("vbox", "password");
+}
+
+void UIGuestControlFileManager::sltTestCopy()
+{
+    QStringList sources;
+    sources << "/home/serkan/misos/xenialpup-7.5-uefi.iso";
+    if ( m_pGuestFileTable)
+        m_pGuestFileTable->copyHostToGuest(sources, false, "/home/vbox/test");
 }
 
 #include "UIGuestControlFileManager.moc"

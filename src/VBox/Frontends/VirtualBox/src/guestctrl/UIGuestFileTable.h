@@ -42,7 +42,8 @@ public:
     UIGuestFileTable(UIActionPool *pActionPool, QWidget *pParent = 0);
     void initGuestFileTable(const CGuestSession &session);
     void copyGuestToHost(const QString& hostDestinationPath, bool fDeleteAfterSuccessfulCopy = false);
-    void copyHostToGuest(const QStringList &hostSourcePathList, bool fDeleteAfterSuccessfulCopy = false);
+    void copyHostToGuest(const QStringList &hostSourcePathList, bool fDeleteAfterSuccessfulCopy = false,
+                         const QString &strDestination = QString());
 
 signals:
 

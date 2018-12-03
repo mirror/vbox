@@ -21,6 +21,7 @@
 
 /* Qt includes: */
 # include <QHBoxLayout>
+# include <QGridLayout>
 # include <QLabel>
 # include <QMenu>
 # include <QProgressBar>
@@ -64,12 +65,14 @@ signals:
 
     void sigProgressComplete(QUuid progressId);
     void sigProgressFail(QString strErrorString, FileManagerLogType eLogType);
+    void sigFocusIn(QWidget *pWidget);
+    void sigFocusOut(QWidget *pWidget);
 
 protected:
 
     virtual void retranslateUi() /* override */;
-    // virtual void focusInEvent(QFocusEvent *pEvent) /* override */;
-    // virtual void focusOutEvent(QFocusEvent *pEvent) /* override */;
+    virtual void focusInEvent(QFocusEvent *pEvent) /* override */;
+    virtual void focusOutEvent(QFocusEvent *pEvent) /* override */;
 
 private slots:
 
@@ -78,18 +81,31 @@ private slots:
     void sltCancelProgress();
 
 private:
+    enum OperationStatus
+    {
+        OperationStatus_NotStarted,
+        OperationStatus_Working,
+        OperationStatus_Paused,
+        OperationStatus_Canceled,
+        OperationStatus_Succeded,
+        OperationStatus_Failed,
+        OperationStatus_Invalid,
+        OperationStatus_Max
 
+    };
     void prepare();
     void prepareWidgets();
     void prepareEventHandler();
     void cleanupEventHandler();
 
+    OperationStatus         m_eStatus;
     CProgress               m_comProgress;
     UIProgressEventHandler *m_pEventHandler;
-    QHBoxLayout            *m_pMainLayout;
+    QGridLayout            *m_pMainLayout;
     QProgressBar           *m_pProgressBar;
     QIToolButton           *m_pCancelButton;
     QILabel                *m_pStatusLabel;
+    QILabel                *m_pPercentageLabel;
 };
 
 
@@ -99,12 +115,14 @@ private:
 
 UIFileOperationProgressWidget::UIFileOperationProgressWidget(const CProgress &comProgress, QWidget *pParent /* = 0 */)
     : QIWithRetranslateUI<QFrame>(pParent)
+    , m_eStatus(OperationStatus_NotStarted)
     , m_comProgress(comProgress)
     , m_pEventHandler(0)
     , m_pMainLayout(0)
     , m_pProgressBar(0)
     , m_pCancelButton(0)
     , m_pStatusLabel(0)
+    , m_pPercentageLabel(0)
 {
     prepare();
     setFocusPolicy(Qt::ClickFocus);
@@ -133,7 +151,46 @@ bool UIFileOperationProgressWidget::isCanceled() const
 void UIFileOperationProgressWidget::retranslateUi()
 {
     if (m_pCancelButton)
-        m_pCancelButton->setToolTip(UIGuestControlFileManager::tr("Close the pane"));
+        m_pCancelButton->setToolTip(UIGuestControlFileManager::tr("Cancel"));
+
+    switch (m_eStatus)
+    {
+        case OperationStatus_NotStarted:
+            m_pStatusLabel->setText(UIGuestControlFileManager::tr("Not yet started"));
+            break;
+        case OperationStatus_Working:
+            m_pStatusLabel->setText(UIGuestControlFileManager::tr("Working"));
+            break;
+        case OperationStatus_Paused:
+            m_pStatusLabel->setText(UIGuestControlFileManager::tr("Paused"));
+            break;
+        case OperationStatus_Canceled:
+            m_pStatusLabel->setText(UIGuestControlFileManager::tr("Canceled"));
+            break;
+        case OperationStatus_Succeded:
+            m_pStatusLabel->setText(UIGuestControlFileManager::tr("Succeded"));
+            break;
+        case OperationStatus_Failed:
+            m_pStatusLabel->setText(UIGuestControlFileManager::tr("Failed"));
+            break;
+        case OperationStatus_Invalid:
+        case OperationStatus_Max:
+        default:
+            m_pStatusLabel->setText(UIGuestControlFileManager::tr("Invalid"));
+            break;
+    }
+}
+
+void UIFileOperationProgressWidget::focusInEvent(QFocusEvent *pEvent)
+{
+    QFrame::focusInEvent(pEvent);
+    emit sigFocusIn(this);
+}
+
+void UIFileOperationProgressWidget::focusOutEvent(QFocusEvent *pEvent)
+{
+    QFrame::focusOutEvent(pEvent);
+    emit sigFocusOut(this);
 }
 
 void UIFileOperationProgressWidget::prepare()
@@ -145,7 +202,7 @@ void UIFileOperationProgressWidget::prepare()
 
 void UIFileOperationProgressWidget::prepareWidgets()
 {
-    m_pMainLayout = new QHBoxLayout;
+    m_pMainLayout = new QGridLayout;
     if (!m_pMainLayout)
         return;
     //m_pMainLayout->setSpacing(0);
@@ -157,7 +214,7 @@ void UIFileOperationProgressWidget::prepareWidgets()
         connect(m_pCancelButton, &QIToolButton::clicked, this, &UIFileOperationProgressWidget::sltCancelProgress);
         if (!m_comProgress.isNull() && !m_comProgress.GetCancelable())
             m_pCancelButton->setEnabled(false);
-        m_pMainLayout->addWidget(m_pCancelButton);
+        m_pMainLayout->addWidget(m_pCancelButton, 0, 0, 1, 1);
     }
 
     m_pProgressBar = new QProgressBar;
@@ -165,18 +222,26 @@ void UIFileOperationProgressWidget::prepareWidgets()
     {
         m_pProgressBar->setMinimum(0);
         m_pProgressBar->setMaximum(100);
-        m_pProgressBar->setTextVisible(true);
-        m_pMainLayout->addWidget(m_pProgressBar);
+        /* Hide the QProgressBar's text since in MacOS it never shows: */
+        m_pProgressBar->setTextVisible(false);
+        m_pMainLayout->addWidget(m_pProgressBar, 0, 1, 1, 2);
     }
     m_pStatusLabel = new QILabel;
     if (m_pStatusLabel)
     {
-        m_pMainLayout->addWidget(m_pStatusLabel);
-        m_pStatusLabel->setText(UIGuestControlFileManager::tr("Idle"));
+        m_pStatusLabel->setContextMenuPolicy(Qt::NoContextMenu);
+        m_pMainLayout->addWidget(m_pStatusLabel, 0, 3, 1, 1);
     }
-    m_pMainLayout->addStretch();
+
+    m_pPercentageLabel = new QILabel;
+    if (m_pPercentageLabel)
+    {
+        m_pPercentageLabel->setContextMenuPolicy(Qt::NoContextMenu);
+        m_pMainLayout->addWidget(m_pPercentageLabel, 1, 1, 1, 4);
+    }
 
     setLayout(m_pMainLayout);
+    retranslateUi();
 }
 
 void UIFileOperationProgressWidget::prepareEventHandler()
@@ -188,7 +253,8 @@ void UIFileOperationProgressWidget::prepareEventHandler()
             this, &UIFileOperationProgressWidget::sltHandleProgressPercentageChange);
     connect(m_pEventHandler, &UIProgressEventHandler::sigProgressTaskComplete,
             this, &UIFileOperationProgressWidget::sltHandleProgressComplete);
-    m_pStatusLabel->setText(UIGuestControlFileManager::tr("Working"));
+    m_eStatus = OperationStatus_Working;
+    retranslateUi();
 }
 
 void UIFileOperationProgressWidget::cleanupEventHandler()
@@ -202,7 +268,8 @@ void UIFileOperationProgressWidget::sltHandleProgressPercentageChange(const QUui
     Q_UNUSED(uProgressId);
     Q_UNUSED(iPercent);
     m_pProgressBar->setValue(iPercent);
-
+    if (m_pPercentageLabel)
+        m_pPercentageLabel->setText(QString("%1%").arg(QString::number(iPercent)));
 }
 
 void UIFileOperationProgressWidget::sltHandleProgressComplete(const QUuid &uProgressId)
@@ -214,15 +281,16 @@ void UIFileOperationProgressWidget::sltHandleProgressComplete(const QUuid &uProg
     if (!m_comProgress.isOk() || m_comProgress.GetResultCode() != 0)
     {
         emit sigProgressFail(UIErrorString::formatErrorInfo(m_comProgress), FileManagerLogType_Error);
-        if (m_pStatusLabel)
-            m_pStatusLabel->setText(UIGuestControlFileManager::tr("Failed"));
+        m_eStatus = OperationStatus_Failed;
     }
     else
     {
         emit sigProgressComplete(m_comProgress.GetId());
-        if (m_pStatusLabel)
-            m_pStatusLabel->setText(UIGuestControlFileManager::tr("Succeeded"));
+        m_eStatus = OperationStatus_Succeded;
     }
+    if (m_pProgressBar)
+        m_pProgressBar->setEnabled(false);
+    retranslateUi();
 }
 
 void UIFileOperationProgressWidget::sltCancelProgress()
@@ -231,10 +299,10 @@ void UIFileOperationProgressWidget::sltCancelProgress()
     /* Since we dont have a "progress canceled" event we have to do this here: */
     if (m_pCancelButton)
         m_pCancelButton->setEnabled(false);
-    if (m_pStatusLabel)
-        m_pStatusLabel->setText(UIGuestControlFileManager::tr("Canceled"));
     if (m_pProgressBar)
         m_pProgressBar->setEnabled(false);
+    m_eStatus = OperationStatus_Canceled;
+    retranslateUi();
 }
 
 
@@ -249,6 +317,7 @@ UIGuestControlFileManagerOperationsPanel::UIGuestControlFileManagerOperationsPan
     , m_pContainerWidget(0)
     , m_pContainerLayout(0)
     , m_pContainerSpaceItem(0)
+    , m_pWidgetInFocus(0)
 {
     prepare();
 }
@@ -261,12 +330,18 @@ void UIGuestControlFileManagerOperationsPanel::addNewProgress(const CProgress &c
     UIFileOperationProgressWidget *pOperationsWidget = new UIFileOperationProgressWidget(comProgress);
     if (!pOperationsWidget)
         return;
+    m_widgetSet.insert(pOperationsWidget);
     m_pContainerLayout->insertWidget(m_pContainerLayout->count() - 1, pOperationsWidget);
 
     connect(pOperationsWidget, &UIFileOperationProgressWidget::sigProgressComplete,
             this, &UIGuestControlFileManagerOperationsPanel::sigFileOperationComplete);
     connect(pOperationsWidget, &UIFileOperationProgressWidget::sigProgressFail,
             this, &UIGuestControlFileManagerOperationsPanel::sigFileOperationFail);
+
+    connect(pOperationsWidget, &UIFileOperationProgressWidget::sigFocusIn,
+            this, &UIGuestControlFileManagerOperationsPanel::sltHandleWidgetFocusIn);
+    connect(pOperationsWidget, &UIFileOperationProgressWidget::sigFocusOut,
+            this, &UIGuestControlFileManagerOperationsPanel::sltHandleWidgetFocusOut);
 }
 
 QString UIGuestControlFileManagerOperationsPanel::panelName() const
@@ -310,44 +385,73 @@ void UIGuestControlFileManagerOperationsPanel::contextMenuEvent(QContextMenuEven
 {
     QMenu *menu = new QMenu(this);
 
-    QAction *pCleanFinished = menu->addAction(UIGuestControlFileManager::tr("Clean Finished"));
-    QAction *pCleanAll = menu->addAction(UIGuestControlFileManager::tr("Clean All"));
+    if (m_pWidgetInFocus)
+    {
+        QAction *pRemoveSelected = menu->addAction(UIGuestControlFileManager::tr("Remove Selected"));
+        connect(pRemoveSelected, &QAction::triggered,
+                this, &UIGuestControlFileManagerOperationsPanel::sltRemoveSelected);
+    }
 
-    connect(pCleanFinished, &QAction::triggered,
-            this, &UIGuestControlFileManagerOperationsPanel::sltCleanFinished);
-    connect(pCleanAll, &QAction::triggered,
-            this, &UIGuestControlFileManagerOperationsPanel::sltCleanAll);
+    QAction *pRemoveFinished = menu->addAction(UIGuestControlFileManager::tr("Remove Finished"));
+    QAction *pRemoveAll = menu->addAction(UIGuestControlFileManager::tr("Remove All"));
+
+    connect(pRemoveFinished, &QAction::triggered,
+            this, &UIGuestControlFileManagerOperationsPanel::sltRemoveFinished);
+    connect(pRemoveAll, &QAction::triggered,
+            this, &UIGuestControlFileManagerOperationsPanel::sltRemoveAll);
 
     menu->exec(pEvent->globalPos());
     delete menu;
 }
 
-void UIGuestControlFileManagerOperationsPanel::sltCleanFinished()
+void UIGuestControlFileManagerOperationsPanel::sltRemoveFinished()
 {
-    // QList<int> listOfRowsToRemove;
-    // for (int i = 0; i < m_pListView->count(); ++i)
-    // {
-    //     UIFileOperationProgressWidget* pProgressWidget =
-    //         qobject_cast<UIFileOperationProgressWidget*>(m_pListView->itemWidget(m_pListView->item(i)));
-    //     if (pProgressWidget)
-    //     {
-    //         if (pProgressWidget->isCanceled() || pProgressWidget->isCompleted())
-    //             listOfRowsToRemove << i;
-    //     }
-    // }
-    // foreach (int row, listOfRowsToRemove)
-    // {
-    //     /* This will delete the progress widget as well: */
-    //     QListWidgetItem *pItem = m_pListView->takeItem(row);
-    //     delete m_pListView->itemWidget(pItem);
-    //     delete pItem;
-    // }
+    QList<UIFileOperationProgressWidget*> widgetsToRemove;
+    foreach (QWidget *pWidget, m_widgetSet)
+    {
+        UIFileOperationProgressWidget *pProgressWidget = qobject_cast<UIFileOperationProgressWidget*>(pWidget);
+        if (pProgressWidget && pProgressWidget->isCompleted())
+        {
+            delete pProgressWidget;
+            widgetsToRemove << pProgressWidget;
+        }
+    }
+    foreach (UIFileOperationProgressWidget *pWidget, widgetsToRemove)
+        m_widgetSet.remove(pWidget);
 }
 
-void UIGuestControlFileManagerOperationsPanel::sltCleanAll()
+void UIGuestControlFileManagerOperationsPanel::sltRemoveAll()
 {
-    //m_pListView->clear();
-    //m_pListView->setRowCount(0);
+    foreach (QWidget *pWidget, m_widgetSet)
+    {
+        if (pWidget)
+        {
+            delete pWidget;
+        }
+    }
+    m_widgetSet.clear();
+}
+
+void UIGuestControlFileManagerOperationsPanel::sltRemoveSelected()
+{
+    if (!m_pWidgetInFocus)
+        return;
+    delete m_pWidgetInFocus;
+    m_widgetSet.remove(m_pWidgetInFocus);
+}
+
+void UIGuestControlFileManagerOperationsPanel::sltHandleWidgetFocusIn(QWidget *pWidget)
+{
+    if (!pWidget)
+        return;
+    m_pWidgetInFocus = pWidget;
+}
+
+void UIGuestControlFileManagerOperationsPanel::sltHandleWidgetFocusOut(QWidget *pWidget)
+{
+    if (!pWidget)
+        return;
+    m_pWidgetInFocus = 0;
 }
 
 #include "UIGuestControlFileManagerOperationsPanel.moc"

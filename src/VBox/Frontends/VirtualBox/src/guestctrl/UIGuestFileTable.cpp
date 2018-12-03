@@ -329,14 +329,18 @@ bool UIGuestFileTable::createDirectory(const QString &path, const QString &direc
     return true;
 }
 
-void UIGuestFileTable::copyHostToGuest(const QStringList &hostSourcePathList, bool fDeleteAfterSuccessfulCopy /* = false */)
+void UIGuestFileTable::copyHostToGuest(const QStringList &hostSourcePathList, bool fDeleteAfterSuccessfulCopy /* = false */,
+                                        const QString &strDestination /* = QString() */)
 {
     if (!checkGuestSession())
         return;
     QVector<QString> sourcePaths = hostSourcePathList.toVector();
     QVector<QString>  aFilters;
     QVector<QString>  aFlags;
-    QString strDestinationPath = currentDirectoryPath();
+    QString strDestinationPath = strDestination;
+    if (strDestinationPath.isEmpty())
+        strDestinationPath = currentDirectoryPath();
+
     if (strDestinationPath.isEmpty())
     {
         emit sigLogOutput("No destination for copy operation", FileManagerLogType_Error);
