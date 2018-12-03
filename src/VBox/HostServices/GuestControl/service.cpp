@@ -1046,7 +1046,6 @@ GstCtrlService::svcDisconnect(void *pvService, uint32_t idClient, void *pvClient
     if (pClient->m_idSession != UINT32_MAX)
         pThis->m_SessionIdMap.erase(pClient->m_idSession);
     pClient->~ClientState();
-    pClient = NULL;
 
     /*
      * If it's the master disconnecting, we need to reset related globals.
