@@ -1337,11 +1337,6 @@ void UIChooserModel::prepareContextMenu()
 
 #ifdef VBOX_WS_MAC
         m_pContextMenuGlobal->addAction(actionPool()->action(UIActionIndex_M_Application_S_About));
-# ifdef VBOX_GUI_WITH_NETWORK_MANAGER
-        if (gEDataManager->applicationUpdateEnabled())
-            m_pContextMenuGlobal->addAction(actionPool()->action(UIActionIndex_M_Application_S_CheckForUpdates));
-        m_pContextMenuGlobal->addAction(actionPool()->action(UIActionIndex_M_Application_S_NetworkAccessManager));
-# endif
         m_pContextMenuGlobal->addSeparator();
         m_pContextMenuGlobal->addAction(actionPool()->action(UIActionIndex_M_Application_S_Preferences));
         m_pContextMenuGlobal->addSeparator();
