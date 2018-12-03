@@ -991,11 +991,12 @@ void UIGuestControlFileTable::goIntoDirectory(const QModelIndex &itemIndex)
         return;
     }
 
-    if (!item->isDirectory())
-        return;
-    if (!item->isOpened())
-       readDirectory(item->path(),item);
-    changeLocation(index);
+    if (item->isDirectory() || (item->isSymLink() && item->isTargetADirectory()))
+    {
+        if (!item->isOpened())
+            readDirectory(item->path(),item);
+        changeLocation(index);
+    }
 }
 
 void UIGuestControlFileTable::goIntoDirectory(const QStringList &pathTrail)
