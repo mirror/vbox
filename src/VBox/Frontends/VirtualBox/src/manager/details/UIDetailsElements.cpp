@@ -506,7 +506,7 @@ void UIDetailsUpdateTaskDisplay::run()
 
                 /** @todo r=andy Refine these texts (wrt audio and/or video). */
                 table << UITextTableLine(QApplication::translate("UIDetails", "Recording File", "details (display/recording)"),
-                                         comRecordingScreen0Settings.GetFileName());
+                                         comRecordingScreen0Settings.GetFilename());
                 table << UITextTableLine(QApplication::translate("UIDetails", "Recording Attributes", "details (display/recording)"),
                                          QApplication::translate("UIDetails", "Frame Size: %1x%2, Frame Rate: %3fps, Bit Rate: %4kbps")
                                              .arg(comRecordingScreen0Settings.GetVideoWidth()).arg(comRecordingScreen0Settings.GetVideoHeight())

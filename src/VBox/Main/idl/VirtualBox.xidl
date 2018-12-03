@@ -4869,7 +4869,7 @@
 
   <interface
     name="IRecordingScreenSettings" extends="$unknown"
-    uuid="B036627B-9922-4056-8A95-94C60D3BA48A"
+    uuid="678fbd9a-93af-42a7-7f13-79ad6ef1a18d"
     wsmap="managed"
     >
 
@@ -4912,7 +4912,7 @@
         screen.</desc>
     </attribute>
 
-    <attribute name="fileName" type="wstring">
+    <attribute name="filename" type="wstring">
       <desc>
         This setting determines the filename VirtualBox uses to save
         the recorded content. This setting cannot be changed while video
@@ -13946,7 +13946,7 @@ and "VAR" for unsetting. -->
 
   <interface
     name="IFile" extends="$unknown"
-    uuid="5395b543-0ee9-4d6a-9ecd-580e3a1d0dbb"
+    uuid="59a235ac-2f1a-4d6c-81fc-e3fa843f49ae"
     wsmap="managed"
     reservedMethods="4" reservedAttributes="8"
     >
@@ -13991,7 +13991,7 @@ and "VAR" for unsetting. -->
 
     <!-- The following attributes just remembers the fileOpen parameters for you.
          Nice for introspection and probably doesn't cost us much. -->
-    <attribute name="fileName" type="wstring" readonly="yes">
+    <attribute name="filename" type="wstring" readonly="yes">
       <desc>Full path of the actual file name of this file.
         <!-- r=bird: The 'actual' file name is too tough, we cannot guarentee
                      that on unix guests.  Seeing how IGuestDirectory did things,
@@ -14204,7 +14204,7 @@ and "VAR" for unsetting. -->
 
   <interface
     name="IFsObjInfo" extends="$unknown"
-    uuid="ae34e3d5-f884-4141-8d62-618300658805"
+    uuid="081fc833-c6fa-430e-6020-6a505d086387"
     wsmap="managed"
     reservedAttributes="8"
     >
@@ -14212,75 +14212,19 @@ and "VAR" for unsetting. -->
       Abstract parent interface for VirtualBox file system object information.
       This can be information about a file or a directory, for example.
     </desc>
-
-    <attribute name="accessTime" type="long long" readonly="yes">
-      <desc>
-        Time of last access (st_atime).
-      </desc>
-    </attribute>
-    <attribute name="allocatedSize" type="long long" readonly="yes">
-      <desc>
-        Disk allocation size (st_blocks * DEV_BSIZE).
-      </desc>
-    </attribute>
-    <attribute name="birthTime" type="long long" readonly="yes">
-      <desc>
-        Time of file birth (st_birthtime).
-      </desc>
-    </attribute>
-        <attribute name="changeTime" type="long long" readonly="yes">
-      <desc>
-        Time of last status change (st_ctime).
-      </desc>
-    </attribute>
-    <attribute name="deviceNumber" type="unsigned long" readonly="yes">
-      <desc>
-        The device number of a character or block device type object (st_rdev).
-      </desc>
-    </attribute>
-    <attribute name="fileAttributes" type="wstring" readonly="yes">
-      <desc>
-        File attributes. Not implemented yet.
-      </desc>
-    </attribute>
-    <attribute name="generationId" type="unsigned long" readonly="yes">
-      <desc>
-        The current generation number (st_gen).
-      </desc>
-    </attribute>
-    <attribute name="GID" type="unsigned long" readonly="yes">
-      <desc>
-        The group the filesystem object is assigned (st_gid).
-      </desc>
-    </attribute>
-    <attribute name="groupName" type="wstring" readonly="yes">
-      <desc>
-        The group name.
-      </desc>
-    </attribute>
-    <attribute name="hardLinks" type="unsigned long" readonly="yes">
-      <desc>
-        Number of hard links to this filesystem object (st_nlink).
-      </desc>
-    </attribute>
-    <attribute name="modificationTime" type="long long" readonly="yes">
-      <desc>
-        Time of last data modification (st_mtime).
-      </desc>
-    </attribute>
     <attribute name="name" type="wstring" readonly="yes">
       <desc>
         The object's name.
       </desc>
     </attribute>
-    <attribute name="nodeId" type="long long" readonly="yes">
+    <attribute name="type" type="FsObjType" readonly="yes">
       <desc>
-        The unique identifier (within the filesystem) of this filesystem object (st_ino).
+        The object type. See <link to="FsObjType" /> for more.
       </desc>
     </attribute>
-    <attribute name="nodeIdDevice" type="unsigned long" readonly="yes">
+    <attribute name="fileAttributes" type="wstring" readonly="yes">
       <desc>
-        The device number of the device which this filesystem object resides on (st_dev).
+        File attributes. Not implemented yet.
       </desc>
     </attribute>
     <attribute name="objectSize" type="long long" readonly="yes">
@@ -14290,19 +14234,36 @@ and "VAR" for unsetting. -->
         symbolic link. For other objects this fields needs to be specified.
       </desc>
     </attribute>
-    <attribute name="type" type="FsObjType" readonly="yes">
+    <attribute name="allocatedSize" type="long long" readonly="yes">
       <desc>
-        The object type. See <link to="FsObjType" /> for more.
+        Disk allocation size (st_blocks * DEV_BSIZE).
       </desc>
     </attribute>
-    <attribute name="UID" type="unsigned long" readonly="yes">
+    <!-- Time attributes: -->
+    <attribute name="accessTime" type="long long" readonly="yes">
       <desc>
-        The user owning the filesystem object (st_uid).
+        Time of last access (st_atime).
       </desc>
     </attribute>
-    <attribute name="userFlags" type="unsigned long" readonly="yes">
+    <attribute name="birthTime" type="long long" readonly="yes">
       <desc>
-        User flags (st_flags).
+        Time of file birth (st_birthtime).
+      </desc>
+    </attribute>
+    <attribute name="changeTime" type="long long" readonly="yes">
+      <desc>
+        Time of last status change (st_ctime).
+      </desc>
+    </attribute>
+    <attribute name="modificationTime" type="long long" readonly="yes">
+      <desc>
+        Time of last data modification (st_mtime).
+      </desc>
+    </attribute>
+    <!-- Ownership attributes: -->
+    <attribute name="UID" type="long" readonly="yes">
+      <desc>
+        The user owning the filesystem object (st_uid).  This is -1 if not available.
       </desc>
     </attribute>
     <attribute name="userName" type="wstring" readonly="yes">
@@ -14310,7 +14271,48 @@ and "VAR" for unsetting. -->
         The user name.
       </desc>
     </attribute>
-
+    <attribute name="GID" type="long" readonly="yes">
+      <desc>
+        The group the filesystem object is assigned (st_gid).  This is -1 if not available.
+      </desc>
+    </attribute>
+    <attribute name="groupName" type="wstring" readonly="yes">
+      <desc>
+        The group name.
+      </desc>
+    </attribute>
+    <!-- More esoteric attributes: -->
+    <attribute name="nodeId" type="long long" readonly="yes">
+      <desc>
+        The unique identifier (within the filesystem) of this filesystem object (st_ino).
+        This is zero if not availalbe.
+      </desc>
+    </attribute>
+    <attribute name="nodeIdDevice" type="unsigned long" readonly="yes">
+      <desc>
+        The device number of the device which this filesystem object resides on (st_dev).
+      </desc>
+    </attribute>
+    <attribute name="hardLinks" type="unsigned long" readonly="yes">
+      <desc>
+        Number of hard links to this filesystem object (st_nlink).
+      </desc>
+    </attribute>
+    <attribute name="deviceNumber" type="unsigned long" readonly="yes">
+      <desc>
+        The device number of a character or block device type object (st_rdev).
+      </desc>
+    </attribute>
+    <attribute name="generationId" type="unsigned long" readonly="yes">
+      <desc>
+        The current generation number (st_gen).
+      </desc>
+    </attribute>
+    <attribute name="userFlags" type="unsigned long" readonly="yes">
+      <desc>
+        User flags (st_flags).
+      </desc>
+    </attribute>
   </interface>
 
   <interface

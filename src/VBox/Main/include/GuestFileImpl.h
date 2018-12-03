@@ -80,7 +80,7 @@ private:
     HRESULT getInitialSize(LONG64 *aInitialSize);
     HRESULT getOffset(LONG64 *aOffset);
     HRESULT getStatus(FileStatus_T *aStatus);
-    HRESULT getFileName(com::Utf8Str &aFileName);
+    HRESULT getFilename(com::Utf8Str &aFilename);
     HRESULT getAccessMode(FileAccessMode_T *aAccessMode);
     HRESULT getOpenAction(FileOpenAction_T *aOpenAction);
     /** @}  */

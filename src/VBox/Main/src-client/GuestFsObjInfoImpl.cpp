@@ -141,7 +141,7 @@ HRESULT GuestFsObjInfo::getGenerationId(ULONG *aGenerationId)
     return S_OK;
 }
 
-HRESULT GuestFsObjInfo::getGID(ULONG *aGID)
+HRESULT GuestFsObjInfo::getGID(LONG *aGID)
 {
     *aGID = mData.mGID;
 
@@ -204,7 +204,7 @@ HRESULT GuestFsObjInfo::getType(FsObjType_T *aType)
     return S_OK;
 }
 
-HRESULT GuestFsObjInfo::getUID(ULONG *aUID)
+HRESULT GuestFsObjInfo::getUID(LONG *aUID)
 {
     *aUID = mData.mUID;
 

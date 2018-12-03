@@ -1753,7 +1753,7 @@ QStringList UISnapshotDetailsWidget::recordingReport(CMachine comMachine)
     if (comRecordingScreen0Settings.GetEnabled())
     {
         /* Recording file: */
-        aReport << comRecordingScreen0Settings.GetFileName();
+        aReport << comRecordingScreen0Settings.GetFilename();
         /* Recording attributes: */
         aReport << QApplication::translate("UIGDetails", "Frame Size: %1x%2, Frame Rate: %3fps, Bit Rate: %4kbps")
                                            .arg(comRecordingScreen0Settings.GetVideoWidth())

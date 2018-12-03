@@ -481,10 +481,10 @@ static void show_usage()
  * @param pulFrameWidth may be updated with a desired frame width
  * @param pulFrameHeight may be updated with a desired frame height
  * @param pulBitRate may be updated with a desired bit rate
- * @param ppszFileName may be updated with a desired file name
+ * @param ppszFilename may be updated with a desired file name
  */
 static void parse_environ(uint32_t *pulFrameWidth, uint32_t *pulFrameHeight,
-                          uint32_t *pulBitRate, const char **ppszFileName)
+                          uint32_t *pulBitRate, const char **ppszFilename)
 {
     const char *pszEnvTemp;
 /** @todo r=bird: This isn't up to scratch. The life time of an RTEnvGet
@@ -521,7 +521,7 @@ static void parse_environ(uint32_t *pulFrameWidth, uint32_t *pulFrameHeight,
             *pulBitRate = ulBitRate;
     }
     if ((pszEnvTemp = RTEnvGet("VBOX_RECORDFILE")) != 0)
-        *ppszFileName = pszEnvTemp;
+        *ppszFilename = pszEnvTemp;
 }
 #endif /* VBOX_WITH_RECORDING defined */
 
@@ -630,8 +630,8 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     uint32_t ulRecordVideoWidth = 800;
     uint32_t ulRecordVideoHeight = 600;
     uint32_t ulRecordVideoRate = 300000;
-    char szRecordFileName[RTPATH_MAX];
-    const char *pszRecordFileNameTemplate = "VBox-%d.webm"; /* .webm container by default. */
+    char szRecordFilename[RTPATH_MAX];
+    const char *pszRecordFilenameTemplate = "VBox-%d.webm"; /* .webm container by default. */
 #endif /* VBOX_WITH_RECORDING */
 #ifdef RT_OS_WINDOWS
     ATL::CComModule _Module; /* Required internally by ATL (constructor records instance in global variable). */
@@ -644,7 +644,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
 
 #ifdef VBOX_WITH_RECORDING
     /* Parse the environment */
-    parse_environ(&ulRecordVideoWidth, &ulRecordVideoHeight, &ulRecordVideoRate, &pszRecordFileNameTemplate);
+    parse_environ(&ulRecordVideoWidth, &ulRecordVideoHeight, &ulRecordVideoRate, &pszRecordFilenameTemplate);
 #endif
 
     enum eHeadlessOptions
@@ -790,7 +790,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
                 ulRecordVideoRate = ValueUnion.u32;
                 break;
             case 'f':
-                pszRecordFileNameTemplate = ValueUnion.psz;
+                pszRecordFilenameTemplate = ValueUnion.psz;
                 break;
 #endif /* VBOX_WITH_RECORDING defined */
             case 'h':
@@ -833,7 +833,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         return 1;
     }
     /* Make sure we only have %d or %u (or none) in the file name specified */
-    char *pcPercent = (char*)strchr(pszRecordFileNameTemplate, '%');
+    char *pcPercent = (char*)strchr(pszRecordFilenameTemplate, '%');
     if (pcPercent != 0 && *(pcPercent + 1) != 'd' && *(pcPercent + 1) != 'u')
     {
         LogError("VBoxHeadless: ERROR: Only %%d and %%u are allowed in the recording file name.", -1);
@@ -845,7 +845,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         LogError("VBoxHeadless: ERROR: Only one format modifier is allowed in the recording file name.", -1);
         return 1;
     }
-    RTStrPrintf(&szRecordFileName[0], RTPATH_MAX, pszRecordFileNameTemplate, RTProcSelf());
+    RTStrPrintf(&szRecordFilename[0], RTPATH_MAX, pszRecordFilenameTemplate, RTProcSelf());
 #endif /* defined VBOX_WITH_RECORDING */
 
     if (!pcszNameOrUUID)
@@ -971,7 +971,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
             for (size_t i = 0; i < saRecordScreenScreens.size(); ++i)
             {
                 CHECK_ERROR_BREAK(saRecordScreenScreens[i], COMSETTER(Enabled)(TRUE));
-                CHECK_ERROR_BREAK(saRecordScreenScreens[i], COMSETTER(FileName)(Bstr(szRecordFileName).raw()));
+                CHECK_ERROR_BREAK(saRecordScreenScreens[i], COMSETTER(Filename)(Bstr(szRecordFilename).raw()));
                 CHECK_ERROR_BREAK(saRecordScreenScreens[i], COMSETTER(VideoWidth)(ulRecordVideoWidth));
                 CHECK_ERROR_BREAK(saRecordScreenScreens[i], COMSETTER(VideoHeight)(ulRecordVideoHeight));
                 CHECK_ERROR_BREAK(saRecordScreenScreens[i], COMSETTER(VideoRate)(ulRecordVideoRate));

@@ -1942,7 +1942,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
                 }
 
                 for (size_t i = 0; i < saRecordingScreenScreens.size(); ++i)
-                    CHECK_ERROR_BREAK(saRecordingScreenScreens[i], COMSETTER(FileName)(Bstr(a->argv[3]).raw()));
+                    CHECK_ERROR_BREAK(saRecordingScreenScreens[i], COMSETTER(Filename)(Bstr(a->argv[3]).raw()));
             }
             else if (   !strcmp(a->argv[2], "videores")
                      || !strcmp(a->argv[2], "videoresolution"))

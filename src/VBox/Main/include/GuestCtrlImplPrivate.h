@@ -610,7 +610,7 @@ struct GuestDirectoryOpenInfo
 struct GuestFileOpenInfo
 {
     /** The filename. */
-    Utf8Str                 mFileName;
+    Utf8Str                 mFilename;
     /** The file access mode. */
     FileAccessMode_T        mAccessMode;
     /** The file open action.  */
@@ -635,8 +635,8 @@ struct GuestFsObjData
     /** @name Helper functions to extract the data from a certin VBoxService tool's guest stream block.
      * @{ */
     int FromLs(const GuestProcessStreamBlock &strmBlk, bool fLong);
-    int FromMkTemp(const GuestProcessStreamBlock &strmBlk);
     int FromStat(const GuestProcessStreamBlock &strmBlk);
+    int FromMkTemp(const GuestProcessStreamBlock &strmBlk);
     /** @}  */
 
     /** @name Static helper functions to work with time from stream block keys.
@@ -650,26 +650,26 @@ struct GuestFsObjData
     RTFMODE GetFileMode(void) const;
     /** @}  */
 
-    int64_t              mAccessTime;
+    Utf8Str              mName;
+    FsObjType_T          mType;
+    Utf8Str              mFileAttrs;
+    int64_t              mObjectSize;
     int64_t              mAllocatedSize;
+    int64_t              mAccessTime;
     int64_t              mBirthTime;
     int64_t              mChangeTime;
-    uint32_t             mDeviceNumber;
-    Utf8Str              mFileAttrs;
-    uint32_t             mGenerationID;
-    uint32_t             mGID;
-    Utf8Str              mGroupName;
-    uint32_t             mNumHardLinks;
     int64_t              mModificationTime;
-    Utf8Str              mName;
+    Utf8Str              mUserName;
+    int32_t              mUID;
+    int32_t              mGID;
+    Utf8Str              mGroupName;
+    Utf8Str              mACL;
     int64_t              mNodeID;
     uint32_t             mNodeIDDevice;
-    int64_t              mObjectSize;
-    FsObjType_T          mType;
-    uint32_t             mUID;
+    uint32_t             mNumHardLinks;
+    uint32_t             mDeviceNumber;
+    uint32_t             mGenerationID;
     uint32_t             mUserFlags;
-    Utf8Str              mUserName;
-    Utf8Str              mACL;
 };
 
 
@@ -780,23 +780,18 @@ public:
     void DumpToLog(void) const;
 #endif
 
-    int GetInt64Ex(const char *pszKey, int64_t *piVal) const;
+    const char *GetString(const char *pszKey) const;
+    size_t      GetCount(void) const;
+    int         GetRc(void) const;
+    int         GetInt64Ex(const char *pszKey, int64_t *piVal) const;
+    int64_t     GetInt64(const char *pszKey) const;
+    int         GetUInt32Ex(const char *pszKey, uint32_t *puVal) const;
+    uint32_t    GetUInt32(const char *pszKey, uint32_t uDefault = 0) const;
+    int32_t     GetInt32(const char *pszKey, int32_t iDefault = 0) const;
 
-    int64_t GetInt64(const char *pszKey) const;
+    bool        IsEmpty(void) { return mPairs.empty(); }
 
-    size_t GetCount(void) const;
-
-    int GetRc(void) const;
-
-    const char* GetString(const char *pszKey) const;
-
-    int GetUInt32Ex(const char *pszKey, uint32_t *puVal) const;
-
-    uint32_t GetUInt32(const char *pszKey) const;
-
-    bool IsEmpty(void) { return mPairs.empty(); }
-
-    int SetValue(const char *pszKey, const char *pszValue);
+    int         SetValue(const char *pszKey, const char *pszValue);
 
 protected:
 

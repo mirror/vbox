@@ -363,7 +363,7 @@ HRESULT RecordingScreenSettings::setDestination(RecordingDestination_T aDestinat
     return S_OK;
 }
 
-HRESULT RecordingScreenSettings::getFileName(com::Utf8Str &aFileName)
+HRESULT RecordingScreenSettings::getFilename(com::Utf8Str &aFilename)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -374,17 +374,17 @@ HRESULT RecordingScreenSettings::getFileName(com::Utf8Str &aFileName)
     if (   m->bd->File.strName.isEmpty()
         || m->bd->File.strName.equals("."))
     {
-        int vrc = m->pParent->i_getDefaultFileName(m->bd->File.strName, true /* fWithFileExtension */);
+        int vrc = m->pParent->i_getDefaultFilename(m->bd->File.strName, true /* fWithFileExtension */);
         if (RT_FAILURE(vrc))
             return setError(E_INVALIDARG, tr("Error retrieving default file name"));
     }
 
-    aFileName = m->bd->File.strName;
+    aFilename = m->bd->File.strName;
 
     return S_OK;
 }
 
-HRESULT RecordingScreenSettings::setFileName(const com::Utf8Str &aFileName)
+HRESULT RecordingScreenSettings::setFilename(const com::Utf8Str &aFilename)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -392,7 +392,7 @@ HRESULT RecordingScreenSettings::setFileName(const com::Utf8Str &aFileName)
     if (!m->pParent->i_canChangeSettings())
         return setError(E_INVALIDARG, tr("Cannot change file name while recording is enabled"));
 
-    Utf8Str strFile(aFileName);
+    Utf8Str strFile(aFilename);
     if (!RTPathStartsWithRoot(strFile.c_str()))
         return setError(E_INVALIDARG, tr("Recording file name '%s' is not absolute"), strFile.c_str());
 
@@ -818,7 +818,7 @@ int RecordingScreenSettings::i_initInternal(void)
         case RecordingDestination_File:
         {
             if (m->bd->File.strName.isEmpty())
-                rc = m->pParent->i_getDefaultFileName(m->bd->File.strName, true /* fWithExtension */);
+                rc = m->pParent->i_getDefaultFilename(m->bd->File.strName, true /* fWithExtension */);
             break;
         }
 

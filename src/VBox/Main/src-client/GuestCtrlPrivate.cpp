@@ -84,6 +84,9 @@ int64_t GuestFsObjData::UnixEpochNsFromKey(const GuestProcessStreamBlock &strmBl
 /**
  * Initializes this object data with a stream block from VBOXSERVICE_TOOL_LS.
  *
+ * This is also used by FromStat since the output should be identical given that
+ * they use the same output function on the guest side when fLong is true.
+ *
  * @return VBox status code.
  * @param  strmBlk              Stream block to use for initialization.
  * @param  fLong                Whether the stream block contains long (detailed) information or not.
@@ -91,19 +94,25 @@ int64_t GuestFsObjData::UnixEpochNsFromKey(const GuestProcessStreamBlock &strmBl
 int GuestFsObjData::FromLs(const GuestProcessStreamBlock &strmBlk, bool fLong)
 {
     LogFlowFunc(("\n"));
-
 #ifdef DEBUG
     strmBlk.DumpToLog();
 #endif
-        /* Object name. */
+
+    /* Object name. */
     mName = strmBlk.GetString("name");
     ASSERT_GUEST_RETURN(mName.isNotEmpty(), VERR_NOT_FOUND);
 
-    /* Type. */
+    /* Type & attributes. */
+    bool fHaveAttribs = false;
+    char szAttribs[32];
+    memset(szAttribs, '?', sizeof(szAttribs) - 1);
     mType = FsObjType_Unknown;
-    const char *pszType = strmBlk.GetString("ftype");
-    if (pszType)
-        switch (*pszType)
+    const char *psz = strmBlk.GetString("ftype");
+    if (psz)
+    {
+        fHaveAttribs = true;
+        szAttribs[0] = *psz;
+        switch (*psz)
         {
             case '-':   mType = FsObjType_File; break;
             case 'd':   mType = FsObjType_Directory; break;
@@ -113,41 +122,122 @@ int GuestFsObjData::FromLs(const GuestProcessStreamBlock &strmBlk, bool fLong)
             case 'f':   mType = FsObjType_Fifo; break;
             case 's':   mType = FsObjType_Socket; break;
             case 'w':   mType = FsObjType_WhiteOut; break;
-            default: AssertMsgFailed(("%s\n", pszType));
+            default:
+                AssertMsgFailed(("%s\n", psz));
+                szAttribs[0] = '?';
+                fHaveAttribs = false;
+                break;
         }
-
-    /* Dates. */
-    if (fLong)
-    {
-        mAccessTime       = GuestFsObjData::UnixEpochNsFromKey(strmBlk, "st_atime");
-        mBirthTime        = GuestFsObjData::UnixEpochNsFromKey(strmBlk, "st_birthtime");
-        mChangeTime       = GuestFsObjData::UnixEpochNsFromKey(strmBlk, "st_ctime");
-        mModificationTime = GuestFsObjData::UnixEpochNsFromKey(strmBlk, "st_mtime");
     }
+    psz = strmBlk.GetString("owner_mask");
+    if (   psz
+        && (psz[0] == '-' || psz[0] == 'r')
+        && (psz[1] == '-' || psz[1] == 'w')
+        && (psz[2] == '-' || psz[2] == 'x'))
+    {
+        szAttribs[1] = psz[0];
+        szAttribs[2] = psz[1];
+        szAttribs[3] = psz[2];
+        fHaveAttribs = true;
+    }
+    psz = strmBlk.GetString("group_mask");
+    if (   psz
+        && (psz[0] == '-' || psz[0] == 'r')
+        && (psz[1] == '-' || psz[1] == 'w')
+        && (psz[2] == '-' || psz[2] == 'x'))
+    {
+        szAttribs[4] = psz[0];
+        szAttribs[5] = psz[1];
+        szAttribs[6] = psz[2];
+        fHaveAttribs = true;
+    }
+    psz = strmBlk.GetString("other_mask");
+    if (   psz
+        && (psz[0] == '-' || psz[0] == 'r')
+        && (psz[1] == '-' || psz[1] == 'w')
+        && (psz[2] == '-' || psz[2] == 'x'))
+    {
+        szAttribs[7] = psz[0];
+        szAttribs[8] = psz[1];
+        szAttribs[9] = psz[2];
+        fHaveAttribs = true;
+    }
+    szAttribs[10] = ' '; /* Reserve three chars for sticky bits. */
+    szAttribs[11] = ' ';
+    szAttribs[12] = ' ';
+    szAttribs[13] = ' '; /* Separator. */
+    psz = strmBlk.GetString("dos_mask");
+    if (   psz
+        && (psz[ 0] == '-' || psz[ 0] == 'R')
+        && (psz[ 1] == '-' || psz[ 1] == 'H')
+        && (psz[ 2] == '-' || psz[ 2] == 'S')
+        && (psz[ 3] == '-' || psz[ 3] == 'D')
+        && (psz[ 4] == '-' || psz[ 4] == 'A')
+        && (psz[ 5] == '-' || psz[ 5] == 'd')
+        && (psz[ 6] == '-' || psz[ 6] == 'N')
+        && (psz[ 7] == '-' || psz[ 7] == 'T')
+        && (psz[ 8] == '-' || psz[ 8] == 'P')
+        && (psz[ 9] == '-' || psz[ 9] == 'J')
+        && (psz[10] == '-' || psz[10] == 'C')
+        && (psz[11] == '-' || psz[11] == 'O')
+        && (psz[12] == '-' || psz[12] == 'I')
+        && (psz[13] == '-' || psz[13] == 'E'))
+    {
+        memcpy(&szAttribs[14], psz, 14);
+        fHaveAttribs = true;
+    }
+    szAttribs[28] = '\0';
+    if (fHaveAttribs)
+        mFileAttrs = szAttribs;
 
     /* Object size. */
     int rc = strmBlk.GetInt64Ex("st_size", &mObjectSize);
     ASSERT_GUEST_RC_RETURN(rc, rc);
+    strmBlk.GetInt64Ex("alloc", &mAllocatedSize);
 
-    /* Owner. */
-    mUID = strmBlk.GetUInt32("uid");
-    mGID = strmBlk.GetUInt32("gid");
+    /* INode number and device. */
+    psz = strmBlk.GetString("node_id");
+    if (!psz)
+        psz = strmBlk.GetString("cnode_id"); /* copy & past error fixed in 6.0 RC1 */
+    if (psz)
+        mNodeID = RTStrToInt64(psz);
+    mNodeIDDevice = strmBlk.GetUInt32("inode_dev"); /* (Produced by GAs prior to 6.0 RC1.) */
 
-    /** @todo Add complete stat info!
-     * int64_t              mAllocatedSize;
-     * uint32_t             mDeviceNumber;
-     * Utf8Str              mFileAttrs;
-     * uint32_t             mGenerationID;
-     * Utf8Str              mGroupName;
-     * uint32_t             mNumHardLinks;
-     * uint32_t             mNodeIDDevice;
-     * uint32_t             mUserFlags;
-     * Utf8Str              mUserName;
-     * Utf8Str              mACL;
-     */
+    if (fLong)
+    {
+        /* Dates. */
+        mAccessTime       = GuestFsObjData::UnixEpochNsFromKey(strmBlk, "st_atime");
+        mBirthTime        = GuestFsObjData::UnixEpochNsFromKey(strmBlk, "st_birthtime");
+        mChangeTime       = GuestFsObjData::UnixEpochNsFromKey(strmBlk, "st_ctime");
+        mModificationTime = GuestFsObjData::UnixEpochNsFromKey(strmBlk, "st_mtime");
+
+        /* Owner & group. */
+        mUID = strmBlk.GetInt32("uid");
+        psz = strmBlk.GetString("username");
+        if (psz)
+            mUserName = psz;
+        mGID = strmBlk.GetInt32("gid");
+        psz = strmBlk.GetString("groupname");
+        if (psz)
+            mGroupName = psz;
+
+        /* Misc attributes: */
+        mNumHardLinks = strmBlk.GetUInt32("hlinks", 1);
+        mDeviceNumber = strmBlk.GetUInt32("st_rdev");
+        mGenerationID = strmBlk.GetUInt32("st_gen");
+        mUserFlags    = strmBlk.GetUInt32("st_flags");
+
+        /** @todo ACL */
+    }
 
     LogFlowFuncLeave();
     return VINF_SUCCESS;
+}
+
+int GuestFsObjData::FromStat(const GuestProcessStreamBlock &strmBlk)
+{
+    /* Should be identical output. */
+    return GuestFsObjData::FromLs(strmBlk, true /*fLong*/);
 }
 
 int GuestFsObjData::FromMkTemp(const GuestProcessStreamBlock &strmBlk)
@@ -168,66 +258,7 @@ int GuestFsObjData::FromMkTemp(const GuestProcessStreamBlock &strmBlk)
     return rc;
 }
 
-int GuestFsObjData::FromStat(const GuestProcessStreamBlock &strmBlk)
-{
-    LogFlowFunc(("\n"));
 
-#ifdef DEBUG
-    strmBlk.DumpToLog();
-#endif
-    /* Node ID, optional because we don't include this in older VBoxService (< 4.2) versions. */
-    mNodeID = strmBlk.GetInt64("node_id");
-
-    /* Object name. */
-    mName = strmBlk.GetString("name");
-    ASSERT_GUEST_RETURN(mName.isNotEmpty(), VERR_NOT_FOUND);
-
-    /* Type. */
-    const char *pszType = strmBlk.GetString("ftype");
-    if (pszType)
-        switch (*pszType)
-        {
-            case '-':   mType = FsObjType_File; break;
-            case 'd':   mType = FsObjType_Directory; break;
-            case 'l':   mType = FsObjType_Symlink; break;
-            case 'c':   mType = FsObjType_DevChar; break;
-            case 'b':   mType = FsObjType_DevBlock; break;
-            case 'f':   mType = FsObjType_Fifo; break;
-            case 's':   mType = FsObjType_Socket; break;
-            case 'w':   mType = FsObjType_WhiteOut; break;
-            default: AssertMsgFailed(("%s\n", pszType));
-        }
-
-    /* Dates. */
-    mAccessTime       = GuestFsObjData::UnixEpochNsFromKey(strmBlk, "st_atime");
-    mBirthTime        = GuestFsObjData::UnixEpochNsFromKey(strmBlk, "st_birthtime");
-    mChangeTime       = GuestFsObjData::UnixEpochNsFromKey(strmBlk, "st_ctime");
-    mModificationTime = GuestFsObjData::UnixEpochNsFromKey(strmBlk, "st_mtime");
-
-    /* Object size. */
-    int rc = strmBlk.GetInt64Ex("st_size", &mObjectSize);
-    ASSERT_GUEST_RC_RETURN(rc, rc);
-
-    /* Owner. */
-    mUID = strmBlk.GetUInt32("uid");
-    mGID = strmBlk.GetUInt32("gid");
-
-    /** @todo Add complete stat info!
-     * int64_t              mAllocatedSize;
-     * uint32_t             mDeviceNumber;
-     * Utf8Str              mFileAttrs;
-     * uint32_t             mGenerationID;
-     * Utf8Str              mGroupName;
-     * uint32_t             mNumHardLinks;
-     * uint32_t             mNodeIDDevice;
-     * uint32_t             mUserFlags;
-     * Utf8Str              mUserName;
-     * Utf8Str              mACL;
-     */
-
-    LogFlowFuncLeave();
-    return VINF_SUCCESS;
-}
 
 /**
  * Returns the IPRT-compatible file mode.
@@ -381,13 +412,13 @@ int GuestProcessStreamBlock::GetRc(void) const
  * @return  uint32_t            Pointer to string to return, NULL if not found / on failure.
  * @param   pszKey              Name of key to get the value for.
  */
-const char* GuestProcessStreamBlock::GetString(const char *pszKey) const
+const char *GuestProcessStreamBlock::GetString(const char *pszKey) const
 {
     AssertPtrReturn(pszKey, NULL);
 
     try
     {
-        GuestCtrlStreamPairMapIterConst itPairs = mPairs.find(Utf8Str(pszKey));
+        GuestCtrlStreamPairMapIterConst itPairs = mPairs.find(Utf8Str(pszKey)); /** @todo r=bird: this string conversion is excellent performance wise... */
         if (itPairs != mPairs.end())
             return itPairs->second.mValue.c_str();
     }
@@ -402,13 +433,11 @@ const char* GuestProcessStreamBlock::GetString(const char *pszKey) const
  * Returns a 32-bit unsigned integer of a specified key.
  *
  * @return  IPRT status code. VERR_NOT_FOUND if key was not found.
- * @param  pszKey               Name of key to get the value for.
- * @param  puVal                Pointer to value to return.
+ * @param   pszKey              Name of key to get the value for.
+ * @param   puVal               Pointer to value to return.
  */
 int GuestProcessStreamBlock::GetUInt32Ex(const char *pszKey, uint32_t *puVal) const
 {
-    AssertPtrReturn(pszKey, VERR_INVALID_POINTER);
-    AssertPtrReturn(puVal, VERR_INVALID_POINTER);
     const char *pszValue = GetString(pszKey);
     if (pszValue)
     {
@@ -419,17 +448,39 @@ int GuestProcessStreamBlock::GetUInt32Ex(const char *pszKey, uint32_t *puVal) co
 }
 
 /**
+ * Returns a 32-bit signed integer of a specified key.
+ *
+ * @returns 32-bit signed value
+ * @param   pszKey              Name of key to get the value for.
+ * @param   iDefault            The default to return on error if not found.
+ */
+int32_t GuestProcessStreamBlock::GetInt32(const char *pszKey, int32_t iDefault) const
+{
+    const char *pszValue = GetString(pszKey);
+    if (pszValue)
+    {
+        int32_t iRet;
+        int rc = RTStrToInt32Full(pszValue, 0, &iRet);
+        if (RT_SUCCESS(rc))
+            return iRet;
+        ASSERT_GUEST_MSG_FAILED(("%s=%s\n", pszKey, pszValue));
+    }
+    return iDefault;
+}
+
+/**
  * Returns a 32-bit unsigned integer of a specified key.
  *
  * @return  uint32_t            Value to return, 0 if not found / on failure.
  * @param   pszKey              Name of key to get the value for.
+ * @param   uDefault            The default value to return.
  */
-uint32_t GuestProcessStreamBlock::GetUInt32(const char *pszKey) const
+uint32_t GuestProcessStreamBlock::GetUInt32(const char *pszKey, uint32_t uDefault /*= 0*/) const
 {
     uint32_t uVal;
     if (RT_SUCCESS(GetUInt32Ex(pszKey, &uVal)))
         return uVal;
-    return 0;
+    return uDefault;
 }
 
 /**

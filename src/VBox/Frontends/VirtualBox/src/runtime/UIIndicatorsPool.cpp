@@ -922,7 +922,7 @@ private:
 
                 strFullData += s_strTableRow2
                     .arg(strToolTip)
-                    .arg(comRecordingScreen0Settings.GetFileName());
+                    .arg(comRecordingScreen0Settings.GetFilename());
                 break;
             }
             default:

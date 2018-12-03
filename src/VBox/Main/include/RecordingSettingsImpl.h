@@ -1,8 +1,6 @@
 /* $Id$ */
-
 /** @file
- *
- * VirtualBox COM class implementation - Machine capture settings.
+ * VirtualBox COM class implementation - Machine recording screen settings.
  */
 
 /*
@@ -30,8 +28,8 @@ namespace settings
 
 class RecordingScreenSettings;
 
-class ATL_NO_VTABLE RecordingSettings :
-    public RecordingSettingsWrap
+class ATL_NO_VTABLE RecordingSettings
+    : public RecordingSettingsWrap
 {
 public:
 
@@ -55,7 +53,7 @@ public:
     void i_copyFrom(RecordingSettings *aThat);
     void i_applyDefaults(void);
 
-    int i_getDefaultFileName(Utf8Str &strFile, bool fWithFileExtension);
+    int i_getDefaultFilename(Utf8Str &strFile, bool fWithFileExtension);
     bool i_canChangeSettings(void);
     void i_onSettingsChanged(void);
 
@@ -85,5 +83,6 @@ private:
     struct Data;
     Data *m;
 };
-#endif // ____H_RecordSettings
+
+#endif // !____H_RecordSettings
 

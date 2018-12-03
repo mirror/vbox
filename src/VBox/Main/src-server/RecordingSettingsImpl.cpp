@@ -555,7 +555,7 @@ void RecordingSettings::i_applyDefaults(void)
 /**
  * Returns the full path to the default video capture file.
  */
-int RecordingSettings::i_getDefaultFileName(Utf8Str &strFile, bool fWithFileExtension)
+int RecordingSettings::i_getDefaultFilename(Utf8Str &strFile, bool fWithFileExtension)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 

@@ -394,7 +394,7 @@ void UIMachineSettingsDisplay::loadToCacheFrom(QVariant &data)
     if (!recordingScreen0Settings.isNull())
     {
         oldDisplayData.m_strRecordingFolder = QFileInfo(m_machine.GetSettingsFilePath()).absolutePath();
-        oldDisplayData.m_strRecordingFilePath = recordingScreen0Settings.GetFileName();
+        oldDisplayData.m_strRecordingFilePath = recordingScreen0Settings.GetFilename();
         oldDisplayData.m_iRecordingVideoFrameWidth = recordingScreen0Settings.GetVideoWidth();
         oldDisplayData.m_iRecordingVideoFrameHeight = recordingScreen0Settings.GetVideoHeight();
         oldDisplayData.m_iRecordingVideoFrameRate = recordingScreen0Settings.GetVideoFPS();
@@ -1583,7 +1583,7 @@ bool UIMachineSettingsDisplay::saveRecordingData()
                     /* Save recording file path: */
                     if (fSuccess && newDisplayData.m_strRecordingFilePath != oldDisplayData.m_strRecordingFilePath)
                     {
-                        recordingScreenSettings.SetFileName(newDisplayData.m_strRecordingFilePath);
+                        recordingScreenSettings.SetFilename(newDisplayData.m_strRecordingFilePath);
                         Assert(recordingScreenSettings.isOk());
                         fSuccess = recordingScreenSettings.isOk();
                     }
@@ -1653,7 +1653,7 @@ bool UIMachineSettingsDisplay::saveRecordingData()
                 /* Save recording file path: */
                 if (fSuccess && newDisplayData.m_strRecordingFilePath != oldDisplayData.m_strRecordingFilePath)
                 {
-                    recordingScreenSettings.SetFileName(newDisplayData.m_strRecordingFilePath);
+                    recordingScreenSettings.SetFilename(newDisplayData.m_strRecordingFilePath);
                     Assert(recordingScreenSettings.isOk());
                     fSuccess = recordingScreenSettings.isOk();
                 }

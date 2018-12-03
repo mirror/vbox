@@ -2395,7 +2395,7 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
         ULONG Fps;
         CHECK_ERROR_RET(saRecordingScreenScreens[0], COMGETTER(VideoFPS)(&Fps), rc);
         Bstr  bstrFile;
-        CHECK_ERROR_RET(saRecordingScreenScreens[0], COMGETTER(FileName)(bstrFile.asOutParam()), rc);
+        CHECK_ERROR_RET(saRecordingScreenScreens[0], COMGETTER(Filename)(bstrFile.asOutParam()), rc);
         Bstr  bstrOptions;
         CHECK_ERROR_RET(saRecordingScreenScreens[0], COMGETTER(Options)(bstrOptions.asOutParam()), rc);
 

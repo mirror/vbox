@@ -1485,7 +1485,7 @@ int GuestSession::i_fileOpenEx(const com::Utf8Str &aPath, FileAccessMode_T aAcce
     GuestFileOpenInfo openInfo;
     RT_ZERO(openInfo);
 
-    openInfo.mFileName     = aPath;
+    openInfo.mFilename     = aPath;
     openInfo.mCreationMode = aCreationMode;
     openInfo.mAccessMode   = aAccessMode;
     openInfo.mOpenAction   = aOpenAction;
@@ -1505,7 +1505,7 @@ int GuestSession::i_fileOpenEx(const com::Utf8Str &aPath, FileAccessMode_T aAcce
 int GuestSession::i_fileOpen(const GuestFileOpenInfo &openInfo, ComObjPtr<GuestFile> &pFile, int *prcGuest)
 {
     LogFlowThisFunc(("strFile=%s, enmAccessMode=0x%x, enmOpenAction=0x%x, uCreationMode=%RU32, mfOpenEx=%RU32\n",
-                     openInfo.mFileName.c_str(), openInfo.mAccessMode, openInfo.mOpenAction, openInfo.mCreationMode,
+                     openInfo.mFilename.c_str(), openInfo.mAccessMode, openInfo.mOpenAction, openInfo.mCreationMode,
                      openInfo.mfOpenEx));
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
@@ -1549,7 +1549,7 @@ int GuestSession::i_fileOpen(const GuestFileOpenInfo &openInfo, ComObjPtr<GuestF
         mData.mFiles[idObject] = pFile;
 
         LogFlowFunc(("Added new guest file \"%s\" (Session: %RU32) (now total %zu files)\n",
-                     openInfo.mFileName.c_str(), mData.mSession.mID, mData.mFiles.size()));
+                     openInfo.mFilename.c_str(), mData.mSession.mID, mData.mFiles.size()));
 
         alock.release(); /* Release lock before firing off event. */
 
@@ -3617,7 +3617,7 @@ HRESULT GuestSession::fileOpenEx(const com::Utf8Str &aPath, FileAccessMode_T aAc
     LogFlowThisFuncEnter();
 
     GuestFileOpenInfo openInfo;
-    openInfo.mFileName = aPath;
+    openInfo.mFilename = aPath;
     openInfo.mCreationMode = aCreationMode;
 
     /* Validate aAccessMode. */

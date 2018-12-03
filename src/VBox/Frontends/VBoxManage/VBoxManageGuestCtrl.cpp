@@ -191,8 +191,8 @@ typedef struct GCTLCMDCTX
  */
 typedef struct DESTFILEENTRY
 {
-    DESTFILEENTRY(Utf8Str strFileName) : mFileName(strFileName) {}
-    Utf8Str mFileName;
+    DESTFILEENTRY(Utf8Str strFilename) : mFilename(strFilename) {}
+    Utf8Str mFilename;
 } DESTFILEENTRY, *PDESTFILEENTRY;
 /*
  * Map for holding destination entries, whereas the key is the destination
@@ -566,6 +566,29 @@ const char *gctlFileStatusToText(FileStatus_T enmStatus)
             return "error";
         default:
             break;
+    }
+    return "unknown";
+}
+
+/**
+ * Translates a file system objec type to a string.
+ */
+const char *gctlFsObjTypeToName(FsObjType_T enmType)
+{
+    switch (enmType)
+    {
+        case FsObjType_Unknown:     return "unknown";
+        case FsObjType_Fifo:        return "fifo";
+        case FsObjType_DevChar:     return "char-device";
+        case FsObjType_Directory:   return "directory";
+        case FsObjType_DevBlock:    return "block-device";
+        case FsObjType_File:        return "file";
+        case FsObjType_Symlink:     return "symlink";
+        case FsObjType_Socket:      return "socket";
+        case FsObjType_WhiteOut:    return "white-out";
+#ifdef VBOX_WITH_XPCOM_CPP_ENUM_HACK
+        case FsObjType_32BitHack: break;
+#endif
     }
     return "unknown";
 }
@@ -2518,36 +2541,75 @@ static DECLCALLBACK(RTEXITCODE) gctlHandleStat(PGCTLCMDCTX pCtx, int argc, char 
                                                           pFsObjInfo.asOutParam());
         if (FAILED(hrc))
         {
-            /* If there's at least one element which does not exist on the guest,
-             * drop out with exitcode 1. */
+            /** @todo r=bird: There might be other reasons why we end up here than
+             * non-existing "element" (object or file, please, nobody calls it elements). */
             if (pCtx->cVerbose)
-                RTPrintf("Cannot stat for element \"%s\": No such element\n", ValueUnion.psz);
+                RTPrintf("Failed to stat '%s': No such file\n", ValueUnion.psz);
             rcExit = RTEXITCODE_FAILURE;
         }
         else
         {
-            FsObjType_T objType;
-            pFsObjInfo->COMGETTER(Type)(&objType); /** @todo What about error checking? */
-            switch (objType)
-            {
-                case FsObjType_File:
-                    RTPrintf("Element \"%s\" found: Is a file\n", ValueUnion.psz);
-                    break;
+            RTPrintf("  File: '%s'\n", ValueUnion.psz); /** @todo escape this name. */
 
-                case FsObjType_Directory:
-                    RTPrintf("Element \"%s\" found: Is a directory\n", ValueUnion.psz);
-                    break;
+            FsObjType_T enmType = FsObjType_Unknown;
+            CHECK_ERROR2I(pFsObjInfo, COMGETTER(Type)(&enmType));
+            LONG64      cbObject = 0;
+            CHECK_ERROR2I(pFsObjInfo, COMGETTER(ObjectSize)(&cbObject));
+            LONG64      cbAllocated = 0;
+            CHECK_ERROR2I(pFsObjInfo, COMGETTER(AllocatedSize)(&cbAllocated));
+            LONG        uid = 0;
+            CHECK_ERROR2I(pFsObjInfo, COMGETTER(UID)(&uid));
+            LONG        gid = 0;
+            CHECK_ERROR2I(pFsObjInfo, COMGETTER(GID)(&gid));
+            Bstr        bstrUsername;
+            CHECK_ERROR2I(pFsObjInfo, COMGETTER(UserName)(bstrUsername.asOutParam()));
+            Bstr        bstrGroupName;
+            CHECK_ERROR2I(pFsObjInfo, COMGETTER(GroupName)(bstrGroupName.asOutParam()));
+            Bstr        bstrAttribs;
+            CHECK_ERROR2I(pFsObjInfo, COMGETTER(FileAttributes)(bstrAttribs.asOutParam()));
+            LONG64      idNode = 0;
+            CHECK_ERROR2I(pFsObjInfo, COMGETTER(NodeId)(&idNode));
+            ULONG       uDevNode = 0;
+            CHECK_ERROR2I(pFsObjInfo, COMGETTER(NodeIdDevice)(&uDevNode));
+            ULONG       uDeviceNo = 0;
+            CHECK_ERROR2I(pFsObjInfo, COMGETTER(DeviceNumber)(&uDeviceNo));
+            ULONG       cHardLinks = 1;
+            CHECK_ERROR2I(pFsObjInfo, COMGETTER(HardLinks)(&cHardLinks));
+            LONG64      nsBirthTime = 0;
+            CHECK_ERROR2I(pFsObjInfo, COMGETTER(BirthTime)(&nsBirthTime));
+            LONG64      nsChangeTime = 0;
+            CHECK_ERROR2I(pFsObjInfo, COMGETTER(ChangeTime)(&nsChangeTime));
+            LONG64      nsModificationTime = 0;
+            CHECK_ERROR2I(pFsObjInfo, COMGETTER(ModificationTime)(&nsModificationTime));
+            LONG64      nsAccessTime = 0;
+            CHECK_ERROR2I(pFsObjInfo, COMGETTER(AccessTime)(&nsAccessTime));
 
-                case FsObjType_Symlink:
-                    RTPrintf("Element \"%s\" found: Is a symlink\n", ValueUnion.psz);
-                    break;
+            RTPrintf("  Size: %-17RU64 Alloc: %-19RU64 Type: %s\n", cbObject, cbAllocated, gctlFsObjTypeToName(enmType));
+            RTPrintf("Device: %#-17RX32 INode: %-18RU64 Links: %u\n", uDevNode, idNode, cHardLinks);
 
-                default:
-                    RTPrintf("Element \"%s\" found, type unknown (%ld)\n", ValueUnion.psz, objType);
-                    break;
-            }
+            Utf8Str strAttrib(bstrAttribs);
+            char *pszMode    = strAttrib.mutableRaw();
+            char *pszAttribs = strchr(pszMode, ' ');
+            if (pszAttribs)
+                do *pszAttribs++ = '\0';
+                while (*pszAttribs == ' ');
+            else
+                pszAttribs = "";
+            if (uDeviceNo != 0)
+                RTPrintf("  Mode: %-16s Attrib: %-17s Dev ID: %#RX32\n", pszMode, pszAttribs, uDeviceNo);
+            else
+                RTPrintf("  Mode: %-16s Attrib: %s\n", pszMode, pszAttribs);
 
-            /** @todo Show more information about this element. */
+            RTPrintf(" Owner: %4d/%-12ls Group: %4d/%ls\n", uid, bstrUsername.raw(),  gid, bstrGroupName.raw());
+
+            RTTIMESPEC  TimeSpec;
+            char        szTmp[RTTIME_STR_LEN];
+            RTPrintf(" Birth: %s\n", RTTimeSpecToString(RTTimeSpecSetNano(&TimeSpec, nsBirthTime), szTmp, sizeof(szTmp)));
+            RTPrintf("Change: %s\n", RTTimeSpecToString(RTTimeSpecSetNano(&TimeSpec, nsChangeTime), szTmp, sizeof(szTmp)));
+            RTPrintf("Modify: %s\n", RTTimeSpecToString(RTTimeSpecSetNano(&TimeSpec, nsModificationTime), szTmp, sizeof(szTmp)));
+            RTPrintf("Access: %s\n", RTTimeSpecToString(RTTimeSpecSetNano(&TimeSpec, nsAccessTime), szTmp, sizeof(szTmp)));
+
+            /* Skiping: Generation ID - only the ISO9660 VFS sets this.  FreeBSD user flags. */
         }
 
         /* Next file. */
@@ -2821,7 +2883,7 @@ static DECLCALLBACK(RTEXITCODE) gctlHandleList(PGCTLCMDCTX pCtx, int argc, char 
                                     ULONG idFile;
                                     CHECK_ERROR_BREAK(pCurFile, COMGETTER(Id)(&idFile));
                                     Bstr strName;
-                                    CHECK_ERROR_BREAK(pCurFile, COMGETTER(FileName)(strName.asOutParam()));
+                                    CHECK_ERROR_BREAK(pCurFile, COMGETTER(Filename)(strName.asOutParam()));
                                     FileStatus_T fileStatus;
                                     CHECK_ERROR_BREAK(pCurFile, COMGETTER(Status)(&fileStatus));
 

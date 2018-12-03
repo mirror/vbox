@@ -2999,7 +2999,7 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                         }
 
                         for (size_t i = 0; i < saRecordingScreenScreens.size(); ++i)
-                            CHECK_ERROR(saRecordingScreenScreens[i], COMSETTER(FileName)(bstr.raw()));
+                            CHECK_ERROR(saRecordingScreenScreens[i], COMSETTER(Filename)(bstr.raw()));
                         break;
                     }
                     case MODIFYVM_RECORDING_VIDEO_WIDTH:

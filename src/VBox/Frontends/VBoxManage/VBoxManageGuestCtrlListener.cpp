@@ -95,7 +95,7 @@ STDMETHODIMP GuestFileEventListener::HandleEvent(VBoxEventType_T aType, IEvent *
                 FileStatus_T fileSts;
                 CHECK_ERROR_BREAK(pEvent, COMGETTER(Status)(&fileSts));
                 Bstr strPath;
-                CHECK_ERROR_BREAK(pProcess, COMGETTER(FileName)(strPath.asOutParam()));
+                CHECK_ERROR_BREAK(pProcess, COMGETTER(Filename)(strPath.asOutParam()));
                 ULONG uID;
                 CHECK_ERROR_BREAK(pProcess, COMGETTER(Id)(&uID));
 
@@ -247,7 +247,7 @@ STDMETHODIMP GuestSessionEventListener::HandleEvent(VBoxEventType_T aType, IEven
                 BOOL fRegistered;
                 CHECK_ERROR_BREAK(pEvent, COMGETTER(Registered)(&fRegistered));
                 Bstr strPath;
-                CHECK_ERROR_BREAK(pFile, COMGETTER(FileName)(strPath.asOutParam()));
+                CHECK_ERROR_BREAK(pFile, COMGETTER(Filename)(strPath.asOutParam()));
 
                 RTPrintf("File \"%s\" %s\n",
                          Utf8Str(strPath).c_str(),

@@ -388,7 +388,7 @@ int GuestSessionTask::fileCopyFromGuest(const Utf8Str &strSource, const Utf8Str 
 
     GuestFileOpenInfo srcOpenInfo;
     RT_ZERO(srcOpenInfo);
-    srcOpenInfo.mFileName     = strSource;
+    srcOpenInfo.mFilename     = strSource;
     srcOpenInfo.mOpenAction   = FileOpenAction_OpenExisting;
     srcOpenInfo.mAccessMode   = FileAccessMode_ReadOnly;
     srcOpenInfo.mSharingMode  = FileSharingMode_All; /** @todo Use _Read when implemented. */
@@ -787,7 +787,7 @@ int GuestSessionTask::fileCopyToGuest(const Utf8Str &strSource, const Utf8Str &s
 
     GuestFileOpenInfo dstOpenInfo;
     RT_ZERO(dstOpenInfo);
-    dstOpenInfo.mFileName        = strDestFinal;
+    dstOpenInfo.mFilename        = strDestFinal;
     if (fFileCopyFlags & FileCopyFlag_NoReplace)
         dstOpenInfo.mOpenAction  = FileOpenAction_CreateNew;
     else
@@ -1935,7 +1935,7 @@ int GuestSessionTaskUpdateAdditions::copyFileToGuest(GuestSession *pSession, RTV
 
             GuestFileOpenInfo dstOpenInfo;
             RT_ZERO(dstOpenInfo);
-            dstOpenInfo.mFileName    = strFileDest;
+            dstOpenInfo.mFilename    = strFileDest;
             dstOpenInfo.mOpenAction  = FileOpenAction_CreateOrReplace;
             dstOpenInfo.mAccessMode  = FileAccessMode_WriteOnly;
             dstOpenInfo.mSharingMode = FileSharingMode_All; /** @todo Use _Read when implemented. */

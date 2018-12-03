@@ -68,8 +68,8 @@ private:
     HRESULT getDestination(RecordingDestination_T *aDestination);
     HRESULT setDestination(RecordingDestination_T aDestination);
 
-    HRESULT getFileName(com::Utf8Str &aFileName);
-    HRESULT setFileName(const com::Utf8Str &aFileName);
+    HRESULT getFilename(com::Utf8Str &aFilename);
+    HRESULT setFilename(const com::Utf8Str &aFilename);
     HRESULT getMaxTime(ULONG *aMaxTimeS);
     HRESULT setMaxTime(ULONG aMaxTimeS);
     HRESULT getMaxFileSize(ULONG *aMaxFileSizeMB);

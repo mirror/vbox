@@ -141,7 +141,7 @@ int GuestFile::init(Console *pConsole, GuestSession *pSession,
                     ULONG aObjectID, const GuestFileOpenInfo &openInfo)
 {
     LogFlowThisFunc(("pConsole=%p, pSession=%p, aObjectID=%RU32, strPath=%s\n",
-                     pConsole, pSession, aObjectID, openInfo.mFileName.c_str()));
+                     pConsole, pSession, aObjectID, openInfo.mFilename.c_str()));
 
     AssertPtrReturn(pConsole, VERR_INVALID_POINTER);
     AssertPtrReturn(pSession, VERR_INVALID_POINTER);
@@ -263,11 +263,11 @@ HRESULT GuestFile::getEventSource(ComPtr<IEventSource> &aEventSource)
     return S_OK;
 }
 
-HRESULT GuestFile::getFileName(com::Utf8Str &aFileName)
+HRESULT GuestFile::getFilename(com::Utf8Str &aFilename)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    aFileName = mData.mOpenInfo.mFileName;
+    aFilename = mData.mOpenInfo.mFilename;
 
     return S_OK;
 }
@@ -332,7 +332,7 @@ int GuestFile::i_callbackDispatcher(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCT
     AssertPtrReturn(pSvcCb, VERR_INVALID_POINTER);
 
     LogFlowThisFunc(("strName=%s, uContextID=%RU32, uFunction=%RU32, pSvcCb=%p\n",
-                     mData.mOpenInfo.mFileName.c_str(), pCbCtx->uContextID, pCbCtx->uFunction, pSvcCb));
+                     mData.mOpenInfo.mFilename.c_str(), pCbCtx->uContextID, pCbCtx->uFunction, pSvcCb));
 
     int vrc;
     switch (pCbCtx->uFunction)
@@ -359,7 +359,7 @@ int GuestFile::i_callbackDispatcher(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCT
 
 int GuestFile::i_closeFile(int *prcGuest)
 {
-    LogFlowThisFunc(("strFile=%s\n", mData.mOpenInfo.mFileName.c_str()));
+    LogFlowThisFunc(("strFile=%s\n", mData.mOpenInfo.mFilename.c_str()));
 
     int vrc;
 
@@ -644,14 +644,14 @@ int GuestFile::i_onRemove(void)
 
 int GuestFile::i_openFile(uint32_t uTimeoutMS, int *prcGuest)
 {
-    AssertReturn(mData.mOpenInfo.mFileName.isNotEmpty(), VERR_INVALID_PARAMETER);
+    AssertReturn(mData.mOpenInfo.mFilename.isNotEmpty(), VERR_INVALID_PARAMETER);
 
     LogFlowThisFuncEnter();
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     LogFlowThisFunc(("strFile=%s, enmAccessMode=0x%x, enmOpenAction=0x%x, uCreationMode=%RU32, mfOpenEx=%RU32\n",
-                     mData.mOpenInfo.mFileName.c_str(), mData.mOpenInfo.mAccessMode, mData.mOpenInfo.mOpenAction,
+                     mData.mOpenInfo.mFilename.c_str(), mData.mOpenInfo.mAccessMode, mData.mOpenInfo.mOpenAction,
                      mData.mOpenInfo.mCreationMode, mData.mOpenInfo.mfOpenEx));
 
     /* Validate and translate open action. */
@@ -718,8 +718,8 @@ int GuestFile::i_openFile(uint32_t uTimeoutMS, int *prcGuest)
     VBOXHGCMSVCPARM paParms[8];
     int i = 0;
     HGCMSvcSetU32(&paParms[i++], pEvent->ContextID());
-    HGCMSvcSetPv(&paParms[i++], (void*)mData.mOpenInfo.mFileName.c_str(),
-                 (ULONG)mData.mOpenInfo.mFileName.length() + 1);
+    HGCMSvcSetPv(&paParms[i++], (void*)mData.mOpenInfo.mFilename.c_str(),
+                 (ULONG)mData.mOpenInfo.mFilename.length() + 1);
     HGCMSvcSetStr(&paParms[i++], pszAccessMode);
     HGCMSvcSetStr(&paParms[i++], pszOpenAction);
     HGCMSvcSetStr(&paParms[i++], pszSharingMode);
@@ -742,7 +742,7 @@ int GuestFile::i_openFile(uint32_t uTimeoutMS, int *prcGuest)
 int GuestFile::i_queryInfo(GuestFsObjData &objData, int *prcGuest)
 {
     AssertPtr(mSession);
-    return mSession->i_fsQueryInfo(mData.mOpenInfo.mFileName, FALSE /* fFollowSymlinks */, objData, prcGuest);
+    return mSession->i_fsQueryInfo(mData.mOpenInfo.mFilename, FALSE /* fFollowSymlinks */, objData, prcGuest);
 }
 
 int GuestFile::i_readData(uint32_t uSize, uint32_t uTimeoutMS,
@@ -1379,7 +1379,7 @@ HRESULT GuestFile::read(ULONG aToRead, ULONG aTimeoutMS, std::vector<BYTE> &aDat
         aData.resize(0);
 
         hr = setErrorBoth(VBOX_E_IPRT_ERROR, vrc, tr("Reading from file \"%s\" failed: %Rrc"),
-                          mData.mOpenInfo.mFileName.c_str(), vrc);
+                          mData.mOpenInfo.mFilename.c_str(), vrc);
     }
 
     LogFlowFuncLeaveRC(vrc);
@@ -1413,7 +1413,7 @@ HRESULT GuestFile::readAt(LONG64 aOffset, ULONG aToRead, ULONG aTimeoutMS, std::
         aData.resize(0);
 
         hr = setErrorBoth(VBOX_E_IPRT_ERROR, vrc, tr("Reading from file \"%s\" (at offset %RU64) failed: %Rrc"),
-                          mData.mOpenInfo.mFileName.c_str(), aOffset, vrc);
+                          mData.mOpenInfo.mFilename.c_str(), aOffset, vrc);
     }
 
     LogFlowFuncLeaveRC(vrc);
@@ -1455,7 +1455,7 @@ HRESULT GuestFile::seek(LONG64 aOffset, FileSeekOrigin_T aWhence, LONG64 *aNewOf
         *aNewOffset = RT_MIN(uNewOffset, (uint64_t)INT64_MAX);
     else
         hr = setErrorBoth(VBOX_E_IPRT_ERROR, vrc, tr("Seeking file \"%s\" (to offset %RI64) failed: %Rrc"),
-                          mData.mOpenInfo.mFileName.c_str(), aOffset, vrc);
+                          mData.mOpenInfo.mFilename.c_str(), aOffset, vrc);
 
     LogFlowFuncLeaveRC(vrc);
     return hr;
@@ -1487,7 +1487,7 @@ HRESULT GuestFile::write(const std::vector<BYTE> &aData, ULONG aTimeoutMS, ULONG
     int vrc = i_writeData(aTimeoutMS, pvData, cbData, (uint32_t*)aWritten);
     if (RT_FAILURE(vrc))
         hr = setErrorBoth(VBOX_E_IPRT_ERROR, vrc, tr("Writing %zubytes to file \"%s\" failed: %Rrc"),
-                          aData.size(), mData.mOpenInfo.mFileName.c_str(), vrc);
+                          aData.size(), mData.mOpenInfo.mFilename.c_str(), vrc);
 
     LogFlowFuncLeaveRC(vrc);
     return hr;
@@ -1507,7 +1507,7 @@ HRESULT GuestFile::writeAt(LONG64 aOffset, const std::vector<BYTE> &aData, ULONG
     int vrc = i_writeData(aTimeoutMS, pvData, cbData, (uint32_t*)aWritten);
     if (RT_FAILURE(vrc))
         hr = setErrorBoth(VBOX_E_IPRT_ERROR, vrc, tr("Writing %zubytes to file \"%s\" (at offset %RU64) failed: %Rrc"),
-                          aData.size(), mData.mOpenInfo.mFileName.c_str(), aOffset, vrc);
+                          aData.size(), mData.mOpenInfo.mFilename.c_str(), aOffset, vrc);
 
     LogFlowFuncLeaveRC(vrc);
     return hr;

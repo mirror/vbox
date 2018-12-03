@@ -6942,7 +6942,7 @@ int Console::i_recordingGetSettings(settings::RecordingSettings &Settings)
         hrc = pRecordScreenSettings->COMGETTER(MaxFileSize)((ULONG *)&RecordScreenSettings.File.ulMaxSizeMB);
         AssertComRCReturn(hrc, VERR_INVALID_PARAMETER);
         Bstr bstrTemp;
-        hrc = pRecordScreenSettings->COMGETTER(FileName)(bstrTemp.asOutParam());
+        hrc = pRecordScreenSettings->COMGETTER(Filename)(bstrTemp.asOutParam());
         AssertComRCReturn(hrc, VERR_INVALID_PARAMETER);
         RecordScreenSettings.File.strName = bstrTemp;
         hrc = pRecordScreenSettings->COMGETTER(Options)(bstrTemp.asOutParam());
