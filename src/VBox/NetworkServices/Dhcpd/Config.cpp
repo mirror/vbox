@@ -636,6 +636,25 @@ void Config::parseServer(const xml::ElementNode *server)
 
     setNetwork(strNetworkName.c_str());
 
+    RTCString strTrunk;
+    if (!server->getAttributeValue("trunkName", &strTrunk))
+        throw ConfigFileError("DHCPServer/@trunkName missing");
+    m_strTrunk = strTrunk.c_str();
+
+    RTCString strTrunkType;
+    if (!server->getAttributeValue("trunkType", &strTrunkType))
+        throw ConfigFileError("DHCPServer/@trunkType missing");
+    if (strTrunkType == "none")
+        m_enmTrunkType = kIntNetTrunkType_None;
+    else if (strTrunkType == "whatever")
+        m_enmTrunkType = kIntNetTrunkType_WhateverNone;
+    else if (strTrunkType == "netflt")
+        m_enmTrunkType = kIntNetTrunkType_NetFlt;
+    else if (strTrunkType == "netadp")
+        m_enmTrunkType = kIntNetTrunkType_NetAdp;
+    else
+        throw ConfigFileError(RTCStringFmt("Invalid DHCPServer/@trunkType value: %s", strTrunkType.c_str()));
+
     getIPv4AddrAttribute(server, "IPAddress", &m_IPv4Address);
     getIPv4AddrAttribute(server, "networkMask", &m_IPv4Netmask);
     getIPv4AddrAttribute(server, "lowerIP", &m_IPv4PoolFirst);
