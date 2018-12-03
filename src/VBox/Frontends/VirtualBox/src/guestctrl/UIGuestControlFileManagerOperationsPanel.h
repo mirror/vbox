@@ -73,6 +73,7 @@ private slots:
 
     void sltHandleWidgetFocusIn(QWidget *pWidget);
     void sltHandleWidgetFocusOut(QWidget *pWidget);
+    void sltScrollToBottom(int iMin, int iMax);
 
 private:
 

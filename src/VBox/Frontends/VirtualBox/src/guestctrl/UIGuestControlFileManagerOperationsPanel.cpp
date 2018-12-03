@@ -26,6 +26,7 @@
 # include <QMenu>
 # include <QProgressBar>
 # include <QScrollArea>
+# include <QScrollBar>
 # include <QStyle>
 
 
@@ -207,16 +208,6 @@ void UIFileOperationProgressWidget::prepareWidgets()
         return;
     //m_pMainLayout->setSpacing(0);
 
-    m_pCancelButton = new QIToolButton;
-    if (m_pCancelButton)
-    {
-        m_pCancelButton->setIcon(QApplication::style()->standardIcon(QStyle::SP_DockWidgetCloseButton));
-        connect(m_pCancelButton, &QIToolButton::clicked, this, &UIFileOperationProgressWidget::sltCancelProgress);
-        if (!m_comProgress.isNull() && !m_comProgress.GetCancelable())
-            m_pCancelButton->setEnabled(false);
-        m_pMainLayout->addWidget(m_pCancelButton, 0, 0, 1, 1);
-    }
-
     m_pProgressBar = new QProgressBar;
     if (m_pProgressBar)
     {
@@ -224,20 +215,31 @@ void UIFileOperationProgressWidget::prepareWidgets()
         m_pProgressBar->setMaximum(100);
         /* Hide the QProgressBar's text since in MacOS it never shows: */
         m_pProgressBar->setTextVisible(false);
-        m_pMainLayout->addWidget(m_pProgressBar, 0, 1, 1, 2);
+        m_pMainLayout->addWidget(m_pProgressBar, 0, 0, 1, 1);
     }
+
+    m_pCancelButton = new QIToolButton;
+    if (m_pCancelButton)
+    {
+        m_pCancelButton->setIcon(QApplication::style()->standardIcon(QStyle::SP_DockWidgetCloseButton));
+        connect(m_pCancelButton, &QIToolButton::clicked, this, &UIFileOperationProgressWidget::sltCancelProgress);
+        if (!m_comProgress.isNull() && !m_comProgress.GetCancelable())
+            m_pCancelButton->setEnabled(false);
+        m_pMainLayout->addWidget(m_pCancelButton, 0, 1, 1, 1);
+    }
+
     m_pStatusLabel = new QILabel;
     if (m_pStatusLabel)
     {
         m_pStatusLabel->setContextMenuPolicy(Qt::NoContextMenu);
-        m_pMainLayout->addWidget(m_pStatusLabel, 0, 3, 1, 1);
+        m_pMainLayout->addWidget(m_pStatusLabel, 0, 2, 1, 1);
     }
 
     m_pPercentageLabel = new QILabel;
     if (m_pPercentageLabel)
     {
         m_pPercentageLabel->setContextMenuPolicy(Qt::NoContextMenu);
-        m_pMainLayout->addWidget(m_pPercentageLabel, 1, 1, 1, 4);
+        m_pMainLayout->addWidget(m_pPercentageLabel, 1, 0, 1, 4);
     }
 
     setLayout(m_pMainLayout);
@@ -361,6 +363,10 @@ void UIGuestControlFileManagerOperationsPanel::prepareWidgets()
     if (!m_pScrollArea || !m_pContainerWidget || !m_pContainerLayout)
         return;
 
+    QScrollBar *pVerticalScrollBar = m_pScrollArea->verticalScrollBar();
+    if (pVerticalScrollBar)
+        QObject::connect(pVerticalScrollBar, &QScrollBar::rangeChanged, this, &UIGuestControlFileManagerOperationsPanel::sltScrollToBottom);
+
     m_pScrollArea->setBackgroundRole(QPalette::Window);
     m_pScrollArea->setWidgetResizable(true);
 
@@ -452,6 +458,13 @@ void UIGuestControlFileManagerOperationsPanel::sltHandleWidgetFocusOut(QWidget *
     if (!pWidget)
         return;
     m_pWidgetInFocus = 0;
+}
+
+void UIGuestControlFileManagerOperationsPanel::sltScrollToBottom(int iMin, int iMax)
+{
+    Q_UNUSED(iMin);
+    if (m_pScrollArea)
+    m_pScrollArea->verticalScrollBar()->setValue(iMax);
 }
 
 #include "UIGuestControlFileManagerOperationsPanel.moc"
