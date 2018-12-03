@@ -949,7 +949,7 @@ static int vgsvcToolboxLsHandleDir(const char *pszDir, uint32_t fFlags, uint32_t
                     case RTFS_TYPE_DIRECTORY:
                     {
                         const char *pszName = pNodeIt->dirEntry.szName;
-                        if (   !RTStrICmp(pszName, ".")  /** @todo r=bird: Please do explain what the upper/lower casing of  '.' is! I'm really curious. */  
+                        if (   !RTStrICmp(pszName, ".")  /** @todo r=bird: Please do explain what the upper/lower casing of  '.' is! I'm really curious. */
                             || !RTStrICmp(pszName, "..")) /** @todo r=bird: There is a RTDir API for checking these. Use it! */
                         {
                             /* Skip dot directories. */
