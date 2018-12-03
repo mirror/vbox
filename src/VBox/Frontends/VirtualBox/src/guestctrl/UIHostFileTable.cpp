@@ -227,7 +227,7 @@ void UIHostFileTable::readDirectory(const QString& strPath, UIFileTableItem *par
         item->setPath(fileInfo.absoluteFilePath());
         /* if the item is a symlink set the target path and
            check the target if it is a directory: */
-        if (fileInfo.isSymLink())
+        if (fileInfo.isSymLink()) /** @todo No symlinks here on windows, while fsObjectPropertyString() does see them.  RTDirReadEx works wrt symlinks, btw. */
         {
             item->setTargetPath(fileInfo.symLinkTarget());
             item->setIsTargetADirectory(QFileInfo(fileInfo.symLinkTarget()).isDir());
@@ -359,10 +359,7 @@ QString UIHostFileTable::fsObjectPropertyString()
             return QString();
         QStringList propertyStringList;
         /* Name: */
-        propertyStringList << UIGuestControlFileManager::tr("<b>Name:</b> %1").arg(fileInfo.fileName());
-        if (!fileInfo.suffix().isEmpty())
-            propertyStringList << QString(".%1").arg(fileInfo.suffix());
-        propertyStringList << "<br/>";
+        propertyStringList << UIGuestControlFileManager::tr("<b>Name:</b> %1<br/>").arg(fileInfo.fileName());
         /* Size: */
         propertyStringList << UIGuestControlFileManager::tr("<b>Size:</b> %1 bytes").arg(QString::number(fileInfo.size()));
         if (fileInfo.size() >= m_iKiloByte)
