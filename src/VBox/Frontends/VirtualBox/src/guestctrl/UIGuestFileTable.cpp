@@ -429,28 +429,81 @@ QString UIGuestFileTable::fsObjectPropertyString()
             return QString();
         }
 
-
         QStringList propertyStringList;
 
         /* Name: */
         propertyStringList << QString("<b>Name:</b> %1<br/>").arg(UIPathOperations::getObjectName(fileInfo.GetName()));
+
         /* Size: */
         LONG64 size = fileInfo.GetObjectSize();
         propertyStringList << UIGuestControlFileManager::tr("<b>Size:</b> %1 bytes").arg(QString::number(size));
         if (size >= 1024)
-            propertyStringList << QString(" (%1)").arg(humanReadableSize(size));
+            propertyStringList << QString(" (%1)<br/>").arg(humanReadableSize(size));
         else
             propertyStringList << QString("<br/>");
+
+        /* Allocated size: */
+        size = fileInfo.GetAllocatedSize();
+        propertyStringList << UIGuestControlFileManager::tr("<b>Allocated:</b> %1 bytes").arg(QString::number(size));
+        if (size >= 1024)
+            propertyStringList << QString(" (%1)<br/>").arg(humanReadableSize(size));
+        else
+            propertyStringList << QString("<br/>");
+
         /* Type: */
-        propertyStringList <<  UIGuestControlFileManager::tr("<b>Type:</b> %1<br/>").arg(fileTypeString(fileType(fileInfo)));
-        /* Creation Date: */
-        propertyStringList << UIGuestControlFileManager::tr("<b>Created:</b> %1<br/>").
-            arg(QDateTime::fromMSecsSinceEpoch(fileInfo.GetChangeTime()/1000000).toString());
-        /* Last Modification Date: */
-        propertyStringList << UIGuestControlFileManager::tr("<b>Modified:</b> %1<br/>").
-            arg(QDateTime::fromMSecsSinceEpoch(fileInfo.GetModificationTime()/1000000).toString());
+        QString str;
+        switch (fileInfo.GetType())
+        {
+            case KFsObjType_Directory:  str = tr("directory"); break;
+            case KFsObjType_File:       str = tr("file"); break;
+            case KFsObjType_Symlink:    str = tr("symbolic link"); break;
+            case KFsObjType_DevChar:    str = tr("character device"); break;
+            case KFsObjType_DevBlock:   str = tr("block device"); break;
+            case KFsObjType_Fifo:       str = tr("fifo"); break;
+            case KFsObjType_Socket:     str = tr("socket"); break;
+            case KFsObjType_WhiteOut:   str = tr("whiteout"); break;
+            case KFsObjType_Unknown:    str = tr("unknown"); break;
+            default:                    str = tr("illegal-value"); break;
+        }
+        propertyStringList <<  UIGuestControlFileManager::tr("<b>Type:</b> %1<br/>").arg(str);
+
+        /* INode number, device, link count: */
+        propertyStringList << UIGuestControlFileManager::tr("<b>INode:</b> %1<br/>").arg(fileInfo.GetNodeId());
+        propertyStringList << UIGuestControlFileManager::tr("<b>Device:</b> %1<br/>").arg(fileInfo.GetNodeIdDevice());  /** @todo hex */
+        propertyStringList << UIGuestControlFileManager::tr("<b>Hardlinks:</b> %1<br/>").arg(fileInfo.GetHardLinks());
+
+        /* Attributes: */
+        str = fileInfo.GetFileAttributes();
+        if (!str.isEmpty())
+        {
+            int offSpace = str.indexOf(" ");
+            if (offSpace < 0)
+                offSpace = str.length();
+            propertyStringList << UIGuestControlFileManager::tr("<b>Mode:</b> %1<br/>").arg(str.left(offSpace));
+            propertyStringList << UIGuestControlFileManager::tr("<b>Attributes:</b> %1<br/>").arg(str.right(offSpace).trimmed());
+        }
+
+        /* Character/block device ID: */
+        ULONG uDeviceNo = fileInfo.GetDeviceNumber();
+        if (uDeviceNo != 0)
+            propertyStringList << UIGuestControlFileManager::tr("<b>Device ID:</b> %1<br/>").arg(uDeviceNo); /** @todo hex */
+
         /* Owner: */
-        propertyStringList << UIGuestControlFileManager::tr("<b>Owner:</b> %1<br/>").arg(fileInfo.GetUserName());
+        propertyStringList << UIGuestControlFileManager::tr("<b>Owner:</b> %1 (%1)<br/>").
+            arg(fileInfo.GetUserName()).arg(fileInfo.GetUID());
+        propertyStringList << UIGuestControlFileManager::tr("<b>Group:</b> %1<br/>").
+            arg(fileInfo.GetGroupName()).arg(fileInfo.GetGID());
+
+        /* Timestamps: */
+        propertyStringList << UIGuestControlFileManager::tr("<b>Birth:</b> %1<br/>").
+            arg(QDateTime::fromMSecsSinceEpoch(fileInfo.GetBirthTime() / RT_NS_1MS).toString());
+        propertyStringList << UIGuestControlFileManager::tr("<b>Change:</b> %1<br/>").
+            arg(QDateTime::fromMSecsSinceEpoch(fileInfo.GetChangeTime() / RT_NS_1MS).toString());
+        propertyStringList << UIGuestControlFileManager::tr("<b>Modified:</b> %1<br/>").
+            arg(QDateTime::fromMSecsSinceEpoch(fileInfo.GetModificationTime() / RT_NS_1MS).toString());
+        propertyStringList << UIGuestControlFileManager::tr("<b>Access:</b> %1<br/>").
+            arg(QDateTime::fromMSecsSinceEpoch(fileInfo.GetAccessTime() / RT_NS_1MS).toString());
+
         /* Join the list elements into a single string seperated by empty string: */
         return propertyStringList.join(QString());
     }

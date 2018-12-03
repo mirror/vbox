@@ -39,6 +39,7 @@
 # include "QILabel.h"
 # include "QILineEdit.h"
 # include "QIMessageBox.h"
+# include "VBoxGlobal.h"
 # include "UIActionPool.h"
 # include "UIErrorString.h"
 # include "UIGuestFileTable.h"
@@ -677,7 +678,7 @@ bool UIFileDeleteConfirmationDialog::askDeleteConfirmationNextTime() const
 /*********************************************************************************************************************************
 *   UIGuestControlFileTable implementation.                                                                                      *
 *********************************************************************************************************************************/
-const unsigned UIGuestControlFileTable::m_iKiloByte = 1000;
+const unsigned UIGuestControlFileTable::m_iKiloByte = 1024; /**< Our kilo bytes are a power of two! (bird) */
 UIGuestControlFileTable::UIGuestControlFileTable(UIActionPool *pActionPool, QWidget *pParent /* = 0 */)
     :QIWithRetranslateUI<QWidget>(pParent)
     , m_eFileOperationType(FileOperationType_None)
@@ -1437,7 +1438,7 @@ bool UIGuestControlFileTable::event(QEvent *pEvent)
 QString UIGuestControlFileTable::fileTypeString(FileObjectType type)
 {
     QString strType = UIGuestControlFileManager::tr("Unknown");
-    switch(type)
+    switch (type)
     {
         case FileObjectType_File:
             strType = UIGuestControlFileManager::tr("File");
@@ -1461,20 +1462,7 @@ QString UIGuestControlFileTable::fileTypeString(FileObjectType type)
 
 /* static */ QString UIGuestControlFileTable::humanReadableSize(ULONG64 size)
 {
-    int i = 0;
-    double dSize = size;
-    const char* units[] = {" B", " kB", " MB", " GB", " TB", " PB", " EB", " ZB", " YB"};
-    while (size > m_iKiloByte) {
-        size /= m_iKiloByte;
-        dSize /= (double) m_iKiloByte;
-        i++;
-    }
-    if (i > 8)
-        return QString();
-
-    QString strResult(QString::number(dSize, 'f', 2));
-    strResult += units[i];
-    return strResult;
+    return vboxGlobal().formatSize(size);
 }
 
 void UIGuestControlFileTable::sltReceiveDirectoryStatistics(UIDirectoryStatistics statistics)
