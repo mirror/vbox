@@ -952,31 +952,27 @@ bool UIMouseHandler::mouseEvent(int iEventType, ulong uScreenId,
                               iWheelVertical, iWheelHorizontal, iMouseButtonsState);
 
 #ifdef VBOX_WS_WIN
-        /* Bringing mouse to the opposite side to simulate the endless moving: */
-
-        /* Get visible-viewport-rectangle in global coordinates: */
+        /* Compose viewport-rectangle in local coordinates: */
         QRect viewportRectangle = m_mouseCursorClippingRect;
-        /* Get top-left point of full-viewport-rectangle in global coordinates: */
         QPoint viewportRectangleGlobalPos = m_views[uScreenId]->mapToGlobal(m_viewports[uScreenId]->pos());
-        /* Shift visible-viewport-rectangle to local position because relative position is in local coordinates: */
         viewportRectangle.translate(-viewportRectangleGlobalPos);
 
-        /* Get boundaries: */
-        int ix1 = viewportRectangle.left() + 1;
-        int iy1 = viewportRectangle.top() + 1;
-        int ix2 = viewportRectangle.right() - 1;
-        int iy2 = viewportRectangle.bottom() - 1;
+        /* Compose boundaries: */
+        const int iX1 = viewportRectangle.left() + 1;
+        const int iY1 = viewportRectangle.top() + 1;
+        const int iX2 = viewportRectangle.right() - 1;
+        const int iY2 = viewportRectangle.bottom() - 1;
 
         /* Simulate infinite movement: */
         QPoint p = relativePos;
-        if (relativePos.x() == ix1)
-            p.setX(ix2 - 1);
-        else if (relativePos.x() == ix2)
-            p.setX(ix1 + 1);
-        if (relativePos.y() == iy1)
-            p.setY(iy2 - 1);
-        else if (relativePos.y() == iy2)
-            p.setY(iy1 + 1);
+        if (relativePos.x() == iX1)
+            p.setX(iX2 - 1);
+        else if (relativePos.x() == iX2)
+            p.setX(iX1 + 1);
+        if (relativePos.y() == iY1)
+            p.setY(iY2 - 1);
+        else if (relativePos.y() == iY2)
+            p.setY(iY1 + 1);
         if (p != relativePos)
         {
             m_lastMousePos = m_viewports[uScreenId]->mapToGlobal(p);
@@ -1214,35 +1210,34 @@ void UIMouseHandler::updateMouseCursorClipping()
 
     if (uisession()->isMouseCaptured())
     {
-        /* Get full-viewport-rectangle in local coordinates: */
-        QRect viewportRectangle = m_viewports[m_iMouseCaptureViewIndex]->visibleRegion().boundingRect();
-        /* Get top-left point of full-viewport-rectangle in global coordinates: */
-        QPoint viewportRectangleGlobalPos = m_views[m_iMouseCaptureViewIndex]->mapToGlobal(m_viewports[m_iMouseCaptureViewIndex]->pos());
         /* Get full-viewport-rectangle in global coordinates: */
+        QRect viewportRectangle = m_viewports[m_iMouseCaptureViewIndex]->visibleRegion().boundingRect();
+        const QPoint viewportRectangleGlobalPos = m_views[m_iMouseCaptureViewIndex]->mapToGlobal(m_viewports[m_iMouseCaptureViewIndex]->pos());
         viewportRectangle.translate(viewportRectangleGlobalPos);
+
         /* Trim full-viewport-rectangle by available geometry: */
         viewportRectangle = viewportRectangle.intersected(gpDesktop->availableGeometry(machineLogic()->machineWindows()[m_iMouseCaptureViewIndex]));
+
         /* Trim partial-viewport-rectangle by top-most windows: */
-        QRegion viewportRegion(viewportRectangle);
-        QRegion topMostRegion(NativeWindowSubsystem::areaCoveredByTopMostWindows());
-        viewportRegion -= topMostRegion;
+        QRegion viewportRegion = QRegion(viewportRectangle) - NativeWindowSubsystem::areaCoveredByTopMostWindows();
         /* Check if partial-viewport-region consists of 1 rectangle: */
         if (viewportRegion.rectCount() > 1)
         {
             /* Choose the largest rectangle: */
-            QVector<QRect> rects = viewportRegion.rects();
             QRect largestRect;
-            for (int i = 0; i < rects.size(); ++i)
-                largestRect = largestRect.width() * largestRect.height() < rects[i].width() * rects[i].height() ? rects[i] : largestRect;
+            foreach (const QRect &rect, viewportRegion.rects())
+                largestRect = largestRect.width() * largestRect.height() < rect.width() * rect.height() ? rect : largestRect;
             /* Assign the partial-viewport-region to the largest rect: */
             viewportRegion = largestRect;
         }
         /* Assign the partial-viewport-rectangle to the partial-viewport-region: */
         viewportRectangle = viewportRegion.boundingRect();
+
         /* Assign the visible-viewport-rectangle to the partial-viewport-rectangle: */
         m_mouseCursorClippingRect = viewportRectangle;
+
         /* Prepare clipping area: */
-        RECT rect = { m_mouseCursorClippingRect.left() + 1, m_mouseCursorClippingRect.top() + 1, m_mouseCursorClippingRect.right(), m_mouseCursorClippingRect.bottom() };
+        RECT rect = { viewportRectangle.left() + 1, viewportRectangle.top() + 1, viewportRectangle.right(), viewportRectangle.bottom() };
         ::ClipCursor(&rect);
     }
     else
