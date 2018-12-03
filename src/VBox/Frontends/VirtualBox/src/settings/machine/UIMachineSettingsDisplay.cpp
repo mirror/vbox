@@ -242,31 +242,31 @@ struct UIDataSettingsMachineDisplay
     }
 
     /** Holds the video RAM amount. */
-    int     m_iCurrentVRAM;
+    int                      m_iCurrentVRAM;
     /** Holds the guest screen count. */
-    int     m_cGuestScreenCount;
+    int                      m_cGuestScreenCount;
     /** Holds the guest screen scale-factor. */
-    QList<double> m_scaleFactors;
+    QList<double>            m_scaleFactors;
     /** Holds whether the 3D acceleration is enabled. */
-    bool    m_f3dAccelerationEnabled;
+    bool                     m_f3dAccelerationEnabled;
 #ifdef VBOX_WITH_VIDEOHWACCEL
     /** Holds whether the 2D video acceleration is enabled. */
-    bool    m_f2dAccelerationEnabled;
+    bool                     m_f2dAccelerationEnabled;
 #endif /* VBOX_WITH_VIDEOHWACCEL */
-    /** Holds the graphics controller type of the virtual machine. */
-    KGraphicsControllerType m_graphicsControllerType;
+    /** Holds the graphics controller type. */
+    KGraphicsControllerType  m_graphicsControllerType;
     /** Holds whether the remote display server is supported. */
-    bool       m_fRemoteDisplayServerSupported;
+    bool                     m_fRemoteDisplayServerSupported;
     /** Holds whether the remote display server is enabled. */
-    bool       m_fRemoteDisplayServerEnabled;
+    bool                     m_fRemoteDisplayServerEnabled;
     /** Holds the remote display server port. */
-    QString    m_strRemoteDisplayPort;
+    QString                  m_strRemoteDisplayPort;
     /** Holds the remote display server auth type. */
-    KAuthType  m_remoteDisplayAuthType;
+    KAuthType                m_remoteDisplayAuthType;
     /** Holds the remote display server timeout. */
-    ulong      m_uRemoteDisplayTimeout;
+    ulong                    m_uRemoteDisplayTimeout;
     /** Holds whether the remote display server allows multiple connections. */
-    bool       m_fRemoteDisplayMultiConnAllowed;
+    bool                     m_fRemoteDisplayMultiConnAllowed;
 
     /** Holds whether recording is enabled. */
     bool m_fRecordingEnabled;
@@ -434,7 +434,7 @@ void UIMachineSettingsDisplay::getFromCache()
 #ifdef VBOX_WITH_VIDEOHWACCEL
     m_pCheckbox2DVideo->setChecked(oldDisplayData.m_f2dAccelerationEnabled);
 #endif
-    m_pComboGraphicsControllerType->setCurrentIndex((int)oldDisplayData.m_graphicsControllerType);
+    m_pComboGraphicsControllerType->setCurrentIndex(m_pComboGraphicsControllerType->findText(gpConverter->toString(oldDisplayData.m_graphicsControllerType)));
     // Should be the last one for this tab:
     m_pEditorVideoMemorySize->setValue(oldDisplayData.m_iCurrentVRAM);
 
@@ -493,7 +493,7 @@ void UIMachineSettingsDisplay::putToCache()
 #ifdef VBOX_WITH_VIDEOHWACCEL
     newDisplayData.m_f2dAccelerationEnabled = m_pCheckbox2DVideo->isChecked();
 #endif
-    newDisplayData.m_graphicsControllerType = (KGraphicsControllerType) m_pComboGraphicsControllerType->currentIndex();
+    newDisplayData.m_graphicsControllerType = gpConverter->fromString<KGraphicsControllerType>(m_pComboGraphicsControllerType->currentText());
     /* If remote display server is supported: */
     newDisplayData.m_fRemoteDisplayServerSupported = m_pCache->base().m_fRemoteDisplayServerSupported;
     if (newDisplayData.m_fRemoteDisplayServerSupported)
@@ -719,6 +719,10 @@ void UIMachineSettingsDisplay::retranslateUi()
     m_pLabelVideoMemorySizeMax->setText(tr("%1 MB").arg(m_iMaxVRAMVisible));
     m_pLabelVideoScreenCountMin->setText(QString::number(1));
     m_pLabelVideoScreenCountMax->setText(QString::number(qMin(sys.GetMaxGuestMonitors(), (ULONG)8)));
+    m_pComboGraphicsControllerType->setItemText(0, gpConverter->toString(KGraphicsControllerType_Null));
+    m_pComboGraphicsControllerType->setItemText(1, gpConverter->toString(KGraphicsControllerType_VBoxVGA));
+    m_pComboGraphicsControllerType->setItemText(2, gpConverter->toString(KGraphicsControllerType_VMSVGA));
+    m_pComboGraphicsControllerType->setItemText(3, gpConverter->toString(KGraphicsControllerType_VBoxSVGA));
 
     /* Remote Display stuff: */
     m_pComboRemoteDisplayAuthMethod->setItemText(0, gpConverter->toString(KAuthType_Null));
@@ -1020,6 +1024,16 @@ void UIMachineSettingsDisplay::prepareTabScreen()
             /* Configure editor: */
             m_pScaleFactorEditor->setSpinBoxWidthHint(m_pEditorVideoMemorySize->minimumWidth());
         }
+
+        /* Graphics controller combo-box created in the .ui file. */
+        AssertPtrReturnVoid(m_pComboGraphicsControllerType);
+        {
+            /* Configure combo-box: */
+            m_pComboGraphicsControllerType->insertItem(0, ""); /* KGraphicsControllerType_Null */
+            m_pComboGraphicsControllerType->insertItem(1, ""); /* KGraphicsControllerType_VBoxVGA */
+            m_pComboGraphicsControllerType->insertItem(2, ""); /* KGraphicsControllerType_VMSVGA */
+            m_pComboGraphicsControllerType->insertItem(3, ""); /* KGraphicsControllerType_VBoxSVGA */
+        }
     }
 }
 
@@ -1049,13 +1063,6 @@ void UIMachineSettingsDisplay::prepareTabRemoteDisplay()
             m_pComboRemoteDisplayAuthMethod->insertItem(0, ""); /* KAuthType_Null */
             m_pComboRemoteDisplayAuthMethod->insertItem(1, ""); /* KAuthType_External */
             m_pComboRemoteDisplayAuthMethod->insertItem(2, ""); /* KAuthType_Guest */
-        }
-        AssertPtrReturnVoid(m_pComboGraphicsControllerType);
-        {
-            m_pComboGraphicsControllerType->insertItem((int)KGraphicsControllerType_Null, gpConverter->toString(KGraphicsControllerType_Null));
-            m_pComboGraphicsControllerType->insertItem((int)KGraphicsControllerType_VBoxVGA, gpConverter->toString(KGraphicsControllerType_VBoxVGA));
-            m_pComboGraphicsControllerType->insertItem((int)KGraphicsControllerType_VMSVGA, gpConverter->toString(KGraphicsControllerType_VMSVGA));
-            m_pComboGraphicsControllerType->insertItem((int)KGraphicsControllerType_VBoxSVGA, gpConverter->toString(KGraphicsControllerType_VBoxSVGA));
         }
     }
 }

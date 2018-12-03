@@ -42,6 +42,7 @@ template<> bool canConvert<KDeviceType>() { return true; }
 template<> bool canConvert<KClipboardMode>() { return true; }
 template<> bool canConvert<KDnDMode>() { return true; }
 template<> bool canConvert<KPointingHIDType>() { return true; }
+template<> bool canConvert<KGraphicsControllerType>() { return true; }
 template<> bool canConvert<KMediumType>() { return true; }
 template<> bool canConvert<KMediumVariant>() { return true; }
 template<> bool canConvert<KNetworkAttachmentType>() { return true; }
@@ -54,7 +55,6 @@ template<> bool canConvert<KUSBDeviceFilterAction>() { return true; }
 template<> bool canConvert<KAudioDriverType>() { return true; }
 template<> bool canConvert<KAudioControllerType>() { return true; }
 template<> bool canConvert<KAuthType>() { return true; }
-template<> bool canConvert<KGraphicsControllerType>() { return true; }
 template<> bool canConvert<KStorageBus>() { return true; }
 template<> bool canConvert<KStorageControllerType>() { return true; }
 template<> bool canConvert<KChipsetType>() { return true; }
@@ -260,6 +260,35 @@ template<> QString toString(const KPointingHIDType &type)
         default: AssertMsgFailed(("No text for %d", type)); break;
     }
     return QString();
+}
+
+/* QString <= KGraphicsControllerType: */
+template<> QString toString(const KGraphicsControllerType &type)
+{
+    switch (type)
+    {
+        case KGraphicsControllerType_Null:     return QApplication::translate("VBoxGlobal", "Null",     "GraphicsControllerType");
+        case KGraphicsControllerType_VBoxVGA:  return QApplication::translate("VBoxGlobal", "VBoxVGA",  "GraphicsControllerType");
+        case KGraphicsControllerType_VMSVGA:   return QApplication::translate("VBoxGlobal", "VMSVGA",   "GraphicsControllerType");
+        case KGraphicsControllerType_VBoxSVGA: return QApplication::translate("VBoxGlobal", "VBoxSVGA", "GraphicsControllerType");
+        default: AssertMsgFailed(("No text for %d", type)); break;
+    }
+    return QString();
+}
+
+/* KGraphicsControllerType <= QString: */
+template<> KGraphicsControllerType fromString<KGraphicsControllerType>(const QString &strType)
+{
+    QHash<QString, KGraphicsControllerType> list;
+    list.insert(QApplication::translate("VBoxGlobal", "Null",     "GraphicsControllerType"), KGraphicsControllerType_Null);
+    list.insert(QApplication::translate("VBoxGlobal", "VBoxVGA",  "GraphicsControllerType"), KGraphicsControllerType_VBoxVGA);
+    list.insert(QApplication::translate("VBoxGlobal", "VMSVGA",   "GraphicsControllerType"), KGraphicsControllerType_VMSVGA);
+    list.insert(QApplication::translate("VBoxGlobal", "VBoxSVGA", "GraphicsControllerType"), KGraphicsControllerType_VBoxSVGA);
+    if (!list.contains(strType))
+    {
+        AssertMsgFailed(("No value for '%s'", strType.toUtf8().constData()));
+    }
+    return list.value(strType, KGraphicsControllerType_Null);
 }
 
 /* QString <= KMediumType: */
@@ -540,35 +569,6 @@ template<> KAuthType fromString<KAuthType>(const QString &strType)
         AssertMsgFailed(("No value for '%s'", strType.toUtf8().constData()));
     }
     return list.value(strType, KAuthType_Null);
-}
-
-/* QString <= KGraphicsControllerType: */
-template<> QString toString(const KGraphicsControllerType &type)
-{
-    switch (type)
-    {
-        case KGraphicsControllerType_Null:     return QApplication::translate("VBoxGlobal", "Null",     "GraphicsControllerType");
-        case KGraphicsControllerType_VBoxVGA:  return QApplication::translate("VBoxGlobal", "VBoxVGA",  "GraphicsControllerType");
-        case KGraphicsControllerType_VMSVGA:   return QApplication::translate("VBoxGlobal", "VMSVGA",   "GraphicsControllerType");
-        case KGraphicsControllerType_VBoxSVGA: return QApplication::translate("VBoxGlobal", "VBoxSVGA", "GraphicsControllerType");
-        default: AssertMsgFailed(("No text for %d", type)); break;
-    }
-    return QString();
-}
-
-/* KGraphicsControllerType <= QString: */
-template<> KGraphicsControllerType fromString<KGraphicsControllerType>(const QString &strType)
-{
-    QHash<QString, KGraphicsControllerType> list;
-    list.insert(QApplication::translate("VBoxGlobal", "Null",     "GraphicsControllerType"), KGraphicsControllerType_Null);
-    list.insert(QApplication::translate("VBoxGlobal", "VBoxVGA",  "GraphicsControllerType"), KGraphicsControllerType_VBoxVGA);
-    list.insert(QApplication::translate("VBoxGlobal", "VMSVGA",  "GraphicsControllerType"), KGraphicsControllerType_VMSVGA);
-    list.insert(QApplication::translate("VBoxGlobal", "VBoxSVGA", "GraphicsControllerType"), KGraphicsControllerType_VBoxSVGA);
-    if (!list.contains(strType))
-    {
-        AssertMsgFailed(("No value for '%s'", strType.toUtf8().constData()));
-    }
-    return list.value(strType, KGraphicsControllerType_Null);
 }
 
 /* QString <= KStorageBus: */
