@@ -1632,6 +1632,52 @@ IEM_STATIC int iemVmxWorldSwitch(PVMCPU pVCpu)
 
 
 /**
+ * Calculates the current VMX-preemption timer value.
+ *
+ * @param   pVCpu       The cross context virtual CPU structure.
+ */
+IEM_STATIC uint32_t iemVmxCalcPreemptTimer(PVMCPU pVCpu)
+{
+    PCVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
+    Assert(pVmcs);
+
+    /*
+     * Assume the following:
+     * PreemptTimerShift = 5
+     * VmcsPreemptTimer  = 2 (i.e. need to decrement by 1 every 2 * RT_BIT(5) = 20000 TSC ticks)
+     * VmentryTick       = 50000 (TSC at time of VM-entry)
+     *
+     * CurTick   Delta    PreemptTimerVal
+     * ----------------------------------
+     *  60000    10000    2
+     *  80000    30000    1
+     *  90000    40000    0  -> VM-exit.
+     *
+     * If Delta >= VmcsPreemptTimer * RT_BIT(PreemptTimerShift) cause a VMX-preemption timer VM-exit.
+     * The saved VMX-preemption timer value is calculated as follows:
+     * PreemptTimerVal = VmcsPreemptTimer - (Delta / (VmcsPreemptTimer * RT_BIT(PreemptTimerShift)))
+     * E.g.:
+     *  Delta  = 10000
+     *    Tmp    = 10000 / (2 * 10000) = 0.5
+     *    NewPt  = 2 - 0.5 = 2
+     *  Delta  = 30000
+     *    Tmp    = 30000 / (2 * 10000) = 1.5
+     *    NewPt  = 2 - 1.5 = 1
+     *  Delta  = 40000
+     *    Tmp    = 40000 / 20000 = 2
+     *    NewPt  = 2 - 2 = 0
+     */
+    uint64_t const uCurTick        = TMCpuTickGetNoCheck(pVCpu);
+    uint64_t const uVmentryTick    = pVCpu->cpum.GstCtx.hwvirt.vmx.uVmentryTick;
+    uint64_t const uDelta          = uCurTick - uVmentryTick;
+    uint32_t const uVmcsPreemptVal = pVmcs->u32PreemptTimer;
+    uint32_t const uPreemptTimer   = uVmcsPreemptVal
+                                   - ASMDivU64ByU32RetU32(uDelta, uVmcsPreemptVal * RT_BIT(VMX_V_PREEMPT_TIMER_SHIFT));
+    return uPreemptTimer;
+}
+
+
+/**
  * Saves guest segment registers, GDTR, IDTR, LDTR, TR as part of VM-exit.
  *
  * @param   pVCpu       The cross context virtual CPU structure.
@@ -1790,50 +1836,15 @@ IEM_STATIC void iemVmxVmexitSaveGuestNonRegState(PVMCPU pVCpu, uint32_t uExitRea
         pVmcs->u64GuestPendingDbgXcpt.u = 0;
     }
 
-    /* Save VMX-preemption timer value. */
-    if (pVmcs->u32ExitCtls & VMX_EXIT_CTLS_SAVE_PREEMPT_TIMER)
-    {
-        uint32_t uPreemptTimer;
-        if (uExitReason == VMX_EXIT_PREEMPT_TIMER)
-            uPreemptTimer = 0;
-        else
-        {
-            /*
-             * Assume the following:
-             * PreemptTimerShift = 5
-             * VmcsPreemptTimer  = 2 (i.e. need to decrement by 1 every 2 * RT_BIT(5) = 20000 TSC ticks)
-             * VmentryTick       = 50000 (TSC at time of VM-entry)
-             *
-             * CurTick   Delta    PreemptTimerVal
-             * ----------------------------------
-             *  60000    10000    2
-             *  80000    30000    1
-             *  90000    40000    0  -> VM-exit.
-             *
-             * If Delta >= VmcsPreemptTimer * RT_BIT(PreemptTimerShift) cause a VMX-preemption timer VM-exit.
-             * The saved VMX-preemption timer value is calculated as follows:
-             * PreemptTimerVal = VmcsPreemptTimer - (Delta / (VmcsPreemptTimer * RT_BIT(PreemptTimerShift)))
-             * E.g.:
-             *  Delta  = 10000
-             *    Tmp    = 10000 / (2 * 10000) = 0.5
-             *    NewPt  = 2 - 0.5 = 2
-             *  Delta  = 30000
-             *    Tmp    = 30000 / (2 * 10000) = 1.5
-             *    NewPt  = 2 - 1.5 = 1
-             *  Delta  = 40000
-             *    Tmp    = 40000 / 20000 = 2
-             *    NewPt  = 2 - 2 = 0
-             */
-            uint64_t const uCurTick        = TMCpuTickGetNoCheck(pVCpu);
-            uint64_t const uVmentryTick    = pVCpu->cpum.GstCtx.hwvirt.vmx.uVmentryTick;
-            uint64_t const uDelta          = uCurTick - uVmentryTick;
-            uint32_t const uVmcsPreemptVal = pVmcs->u32PreemptTimer;
-            uPreemptTimer = uVmcsPreemptVal - ASMDivU64ByU32RetU32(uDelta, uVmcsPreemptVal * RT_BIT(VMX_V_PREEMPT_TIMER_SHIFT));
-        }
-
-        pVmcs->u32PreemptTimer = uPreemptTimer;
-    }
-
+    /*
+     * Save the VMX-preemption timer value back into the VMCS if the feature is enabled.
+     *
+     * For VMX-preemption timer VM-exits, we should have already written back 0 if the
+     * feature is supported back into the VMCS, and thus there is nothing further to do here.
+     */
+    if (   uExitReason != VMX_EXIT_PREEMPT_TIMER
+        && (pVmcs->u32ExitCtls & VMX_EXIT_CTLS_SAVE_PREEMPT_TIMER))
+        pVmcs->u32PreemptTimer = iemVmxCalcPreemptTimer(pVCpu);
 
     /* PDPTEs. */
     /* We don't support EPT yet. */
@@ -3725,13 +3736,30 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitTaskSwitch(PVMCPU pVCpu, IEMTASKSWITCH enmTa
  */
 IEM_STATIC VBOXSTRICTRC iemVmxVmexitPreemptTimer(PVMCPU pVCpu)
 {
-    PCVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
+    PVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
     Assert(pVmcs);
-    Assert(pVmcs->u32PinCtls & VMX_PIN_CTLS_PREEMPT_TIMER);
-    NOREF(pVmcs);
 
-    iemVmxVmcsSetExitQual(pVCpu, 0);
-    return iemVmxVmexit(pVCpu, VMX_EXIT_PREEMPT_TIMER);
+    /* Check if the guest has enabled VMX-preemption timers in the first place. */
+    if (pVmcs->u32PinCtls & VMX_PIN_CTLS_PREEMPT_TIMER)
+    {
+        /*
+         * Calculate the current VMX-preemption timer value.
+         * Only if the value has reached zero, we cause the VM-exit.
+         */
+        uint32_t uPreemptTimer = iemVmxCalcPreemptTimer(pVCpu);
+        if (!uPreemptTimer)
+        {
+            /* Save the VMX-preemption timer value (of 0) back in to the VMCS if the CPU supports this feature. */
+            if (pVmcs->u32ExitCtls & VMX_EXIT_CTLS_SAVE_PREEMPT_TIMER)
+                pVmcs->u32PreemptTimer = 0;
+
+            /* Cause the VMX-preemption timer VM-exit. The VM-exit qualification MBZ. */
+            iemVmxVmcsSetExitQual(pVCpu, 0);
+            return iemVmxVmexit(pVCpu, VMX_EXIT_PREEMPT_TIMER);
+        }
+    }
+
+    return VINF_VMX_INTERCEPT_NOT_ACTIVE;
 }
 
 
