@@ -4207,19 +4207,22 @@ DECLINLINE(bool) HMVmxIsVmentryVectoring(uint32_t uEntryIntInfo, uint8_t *pEntry
      */
     if (!VMX_ENTRY_INT_INFO_IS_VALID(uEntryIntInfo))
         return false;
-    uint8_t const uType = VMX_ENTRY_INT_INFO_TYPE(uEntryIntInfo);
-    switch (uType)
+
     {
-        case VMX_ENTRY_INT_INFO_TYPE_EXT_INT:
-        case VMX_ENTRY_INT_INFO_TYPE_NMI:
-        case VMX_ENTRY_INT_INFO_TYPE_HW_XCPT:
-        case VMX_ENTRY_INT_INFO_TYPE_SW_INT:
-        case VMX_ENTRY_INT_INFO_TYPE_PRIV_SW_XCPT:
-        case VMX_ENTRY_INT_INFO_TYPE_SW_XCPT:
+        uint8_t const uType = VMX_ENTRY_INT_INFO_TYPE(uEntryIntInfo);
+        switch (uType)
         {
-            if (pEntryIntInfoType)
-                *pEntryIntInfoType = uType;
-            return true;
+            case VMX_ENTRY_INT_INFO_TYPE_EXT_INT:
+            case VMX_ENTRY_INT_INFO_TYPE_NMI:
+            case VMX_ENTRY_INT_INFO_TYPE_HW_XCPT:
+            case VMX_ENTRY_INT_INFO_TYPE_SW_INT:
+            case VMX_ENTRY_INT_INFO_TYPE_PRIV_SW_XCPT:
+            case VMX_ENTRY_INT_INFO_TYPE_SW_XCPT:
+            {
+                if (pEntryIntInfoType)
+                    *pEntryIntInfoType = uType;
+                return true;
+            }
         }
     }
     return false;
