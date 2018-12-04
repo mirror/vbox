@@ -965,13 +965,13 @@ bool UIMouseHandler::mouseEvent(int iEventType, ulong uScreenId,
 
         /* Simulate infinite movement: */
         QPoint p = relativePos;
-        if (relativePos.x() == iX1)
+        if (relativePos.x() <= iX1)
             p.setX(iX2 - 1);
-        else if (relativePos.x() == iX2)
+        else if (relativePos.x() >= iX2)
             p.setX(iX1 + 1);
-        if (relativePos.y() == iY1)
+        if (relativePos.y() <= iY1)
             p.setY(iY2 - 1);
-        else if (relativePos.y() == iY2)
+        else if (relativePos.y() >= iY2)
             p.setY(iY1 + 1);
         if (p != relativePos)
         {
