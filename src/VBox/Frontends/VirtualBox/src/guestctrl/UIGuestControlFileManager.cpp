@@ -61,7 +61,6 @@
 # include "CGuestSessionStateChangedEvent.h"
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
-#define TEST_COPY
 
 /*********************************************************************************************************************************
 *   UIFileOperationsList definition.                                                                                   *
@@ -162,6 +161,10 @@ UIGuestControlFileManager::~UIGuestControlFileManager()
         cleanupListener(m_pQtGuestListener, m_comGuestListener, m_comGuest.GetEventSource());
     if (m_comGuestSession.isOk() && m_pQtSessionListener && m_comSessionListener.isOk())
         cleanupListener(m_pQtSessionListener, m_comSessionListener, m_comGuestSession.GetEventSource());
+
+    if (m_comGuestSession.isOk())
+        m_comGuestSession.Close();
+
     saveOptions();
     UIGuestControlFileManagerOptions::destroy();
 }
@@ -592,9 +595,7 @@ void UIGuestControlFileManager::postSessionClosed()
         m_pGuestFileTable->setEnabled(false);
     if (m_pVerticalToolBar)
         m_pVerticalToolBar->setEnabled(false);
-
 }
-
 
 bool UIGuestControlFileManager::createSession(const QString& strUserName, const QString& strPassword,
                                               const QString& strDomain /* not used currently */)
