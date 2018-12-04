@@ -138,6 +138,12 @@ protected:
     QPoint m_capturedMousePos;
     int m_iLastMouseWheelDelta;
     int m_iMouseCaptureViewIndex;
+
+#ifdef VBOX_WS_WIN
+    /** Holds whether cursor position was just
+      * reseted to simulate infinite mouse moving. */
+    bool m_fCursorPositionReseted;
+#endif
 };
 
 #endif // !___UIMouseHandler_h___

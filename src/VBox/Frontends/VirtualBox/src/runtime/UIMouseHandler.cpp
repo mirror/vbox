@@ -526,6 +526,9 @@ UIMouseHandler::UIMouseHandler(UIMachineLogic *pMachineLogic)
     , m_pMachineLogic(pMachineLogic)
     , m_iLastMouseWheelDelta(0)
     , m_iMouseCaptureViewIndex(-1)
+#ifdef VBOX_WS_WIN
+    , m_fCursorPositionReseted(false)
+#endif
 {
     /* Machine state-change updater: */
     connect(uisession(), SIGNAL(sigMachineStateChange()), this, SLOT(sltMachineStateChanged()));
@@ -947,6 +950,23 @@ bool UIMouseHandler::mouseEvent(int iEventType, ulong uScreenId,
         /* Send pending WM_PAINT events: */
         ::UpdateWindow((HWND)m_viewports[uScreenId]->winId());
 #endif
+
+#ifdef VBOX_WS_WIN
+        // WORKAROUND:
+        // There are situations at least on Windows host that we are receiving
+        // previously posted (but not yet handled) mouse event right after we
+        // have manually teleported mouse cursor to simulate infinite movement,
+        // this makes cursor blink for a large amount of space, so we should
+        // ignore such blinks .. well, at least once.
+        const QPoint shiftingSpace = globalPos - m_lastMousePos;
+        if (m_fCursorPositionReseted && shiftingSpace.manhattanLength() >= 10)
+        {
+            m_fCursorPositionReseted = false;
+            return true;
+        }
+#endif
+
+        /* Pass event to the guest: */
         mouse().PutMouseEvent(globalPos.x() - m_lastMousePos.x(),
                               globalPos.y() - m_lastMousePos.y(),
                               iWheelVertical, iWheelHorizontal, iMouseButtonsState);
@@ -985,9 +1005,13 @@ bool UIMouseHandler::mouseEvent(int iEventType, ulong uScreenId,
             QPoint requiredMousePos = (m_viewports[uScreenId]->mapToGlobal(p) - screenGeometry.topLeft()) * dDprCurrent + screenGeometry.topLeft();
             QCursor::setPos(requiredMousePos / dDprPrimary);
             m_lastMousePos = requiredMousePos / dDprCurrent;
+            m_fCursorPositionReseted = true;
         }
         else
+        {
             m_lastMousePos = globalPos;
+            m_fCursorPositionReseted = false;
+        }
 #else /* VBOX_WS_WIN */
         int iWe = gpDesktop->overallDesktopWidth() - 1;
         int iHe = gpDesktop->overallDesktopHeight() - 1;
