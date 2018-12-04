@@ -215,7 +215,7 @@ void UIFileOperationProgressWidget::prepareWidgets()
         m_pProgressBar->setMaximum(100);
         /* Hide the QProgressBar's text since in MacOS it never shows: */
         m_pProgressBar->setTextVisible(false);
-        m_pMainLayout->addWidget(m_pProgressBar, 0, 0, 1, 1);
+        m_pMainLayout->addWidget(m_pProgressBar, 0, 0, 1, 2);
     }
 
     m_pCancelButton = new QIToolButton;
@@ -225,14 +225,14 @@ void UIFileOperationProgressWidget::prepareWidgets()
         connect(m_pCancelButton, &QIToolButton::clicked, this, &UIFileOperationProgressWidget::sltCancelProgress);
         if (!m_comProgress.isNull() && !m_comProgress.GetCancelable())
             m_pCancelButton->setEnabled(false);
-        m_pMainLayout->addWidget(m_pCancelButton, 0, 1, 1, 1);
+        m_pMainLayout->addWidget(m_pCancelButton, 0, 2, 1, 1);
     }
 
     m_pStatusLabel = new QILabel;
     if (m_pStatusLabel)
     {
         m_pStatusLabel->setContextMenuPolicy(Qt::NoContextMenu);
-        m_pMainLayout->addWidget(m_pStatusLabel, 0, 2, 1, 1);
+        m_pMainLayout->addWidget(m_pStatusLabel, 0, 3, 1, 1);
     }
 
     m_pPercentageLabel = new QILabel;
