@@ -61,7 +61,7 @@
 # include "CGuestSessionStateChangedEvent.h"
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
-
+#define TEST_COPY
 
 /*********************************************************************************************************************************
 *   UIFileOperationsList definition.                                                                                   *

@@ -292,6 +292,7 @@ void UIFileOperationProgressWidget::sltHandleProgressComplete(const QUuid &uProg
     }
     if (m_pProgressBar)
         m_pProgressBar->setEnabled(false);
+    cleanupEventHandler();
     retranslateUi();
 }
 
@@ -304,6 +305,7 @@ void UIFileOperationProgressWidget::sltCancelProgress()
     if (m_pProgressBar)
         m_pProgressBar->setEnabled(false);
     m_eStatus = OperationStatus_Canceled;
+    cleanupEventHandler();
     retranslateUi();
 }
 
