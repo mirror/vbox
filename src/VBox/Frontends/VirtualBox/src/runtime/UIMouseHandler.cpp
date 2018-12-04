@@ -975,8 +975,16 @@ bool UIMouseHandler::mouseEvent(int iEventType, ulong uScreenId,
             p.setY(iY1 + 1);
         if (p != relativePos)
         {
-            m_lastMousePos = m_viewports[uScreenId]->mapToGlobal(p);
-            QCursor::setPos(m_lastMousePos);
+            // WORKAROUND:
+            // Underlying QCursor::setPos call requires coordinates, rescaled according to primary screen.
+            // For that we have to map logical coordinates to relative origin (to make logical=>physical conversion).
+            // Besides that we have to make sure m_lastMousePos still uses logical coordinates afterwards.
+            const double dDprPrimary = gpDesktop->devicePixelRatio(gpDesktop->primaryScreen());
+            const double dDprCurrent = gpDesktop->devicePixelRatio(m_windows.value(m_iMouseCaptureViewIndex));
+            const QRect screenGeometry = gpDesktop->screenGeometry(m_windows.value(m_iMouseCaptureViewIndex));
+            QPoint requiredMousePos = (m_viewports[uScreenId]->mapToGlobal(p) - screenGeometry.topLeft()) * dDprCurrent + screenGeometry.topLeft();
+            QCursor::setPos(requiredMousePos / dDprPrimary);
+            m_lastMousePos = requiredMousePos / dDprCurrent;
         }
         else
             m_lastMousePos = globalPos;
