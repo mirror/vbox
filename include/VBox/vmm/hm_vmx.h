@@ -4194,13 +4194,21 @@ DECLINLINE(bool) HMVmxIsVmexitTrapLike(uint32_t uExitReason)
  * information field.
  *
  * @returns @c true if the VM-entry is vectoring, @c false otherwise.
- * @param   uEntryIntInfo   The VM-entry interruption information field.
+ * @param   uEntryIntInfo       The VM-entry interruption information field.
+ * @param   pEntryIntInfoType   The VM-entry interruption information type field.
+ *                              Optional, can be NULL. Only updated when this
+ *                              function returns @c true.
  */
-DECLINLINE(bool) HMVmxIsVmentryVectoring(uint32_t uEntryIntInfo)
+DECLINLINE(bool) HMVmxIsVmentryVectoring(uint32_t uEntryIntInfo, uint8_t *pEntryIntInfoType)
 {
+    /*
+     * The definition of what is a vectoring VM-entry is taken
+     * from Intel spec. 26.6 "Special Features of VM Entry".
+     */
     if (!VMX_ENTRY_INT_INFO_IS_VALID(uEntryIntInfo))
         return false;
-    switch (VMX_ENTRY_INT_INFO_TYPE(uEntryIntInfo))
+    uint8_t const uType = VMX_ENTRY_INT_INFO_TYPE(uEntryIntInfo);
+    switch (uType)
     {
         case VMX_ENTRY_INT_INFO_TYPE_EXT_INT:
         case VMX_ENTRY_INT_INFO_TYPE_NMI:
@@ -4208,7 +4216,11 @@ DECLINLINE(bool) HMVmxIsVmentryVectoring(uint32_t uEntryIntInfo)
         case VMX_ENTRY_INT_INFO_TYPE_SW_INT:
         case VMX_ENTRY_INT_INFO_TYPE_PRIV_SW_XCPT:
         case VMX_ENTRY_INT_INFO_TYPE_SW_XCPT:
+        {
+            if (pEntryIntInfoType)
+                *pEntryIntInfoType = uType;
             return true;
+        }
     }
     return false;
 }

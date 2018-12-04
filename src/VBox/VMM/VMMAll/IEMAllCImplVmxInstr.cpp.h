@@ -6863,8 +6863,8 @@ IEM_STATIC void iemVmxVmentryLoadGuestNonRegState(PVMCPU pVCpu)
      * See Intel spec. 26.6 "Special Features of VM Entry"
      */
     PCVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
-    uint32_t const uEntryIntInfo = pVmcs->u32EntryIntInfo;
-    if (!HMVmxIsVmentryVectoring(uEntryIntInfo))
+    bool const fEntryVectoring = HMVmxIsVmentryVectoring(pVmcs->u32EntryIntInfo, NULL /* puEntryIntInfoType */);
+    if (!fEntryVectoring)
     {
         if (pVmcs->u32GuestIntrState & (VMX_VMCS_GUEST_INT_STATE_BLOCK_STI | VMX_VMCS_GUEST_INT_STATE_BLOCK_MOVSS))
             EMSetInhibitInterruptsPC(pVCpu, pVCpu->cpum.GstCtx.rip);
@@ -6884,9 +6884,6 @@ IEM_STATIC void iemVmxVmentryLoadGuestNonRegState(PVMCPU pVCpu)
     if (   (pVmcs->u32GuestIntrState & VMX_VMCS_GUEST_INT_STATE_BLOCK_NMI)
         && !VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_BLOCK_NMIS))
         VMCPU_FF_SET(pVCpu, VMCPU_FF_BLOCK_NMIS);
-
-    /** @todo NSTVMX: Pending debug exceptions. */
-    Assert(!(pVmcs->u64GuestPendingDbgXcpt.u));
 
     /* Loading PDPTEs will be taken care when we switch modes. We don't support EPT yet. */
     Assert(!(pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_EPT));
@@ -6930,6 +6927,80 @@ IEM_STATIC int iemVmxVmentryLoadGuestState(PVMCPU pVCpu, const char *pszInstr)
 
     NOREF(pszInstr);
     return VINF_SUCCESS;
+}
+
+
+/**
+ * Returns whether there are is a pending debug exception on VM-entry.
+ *
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   pszInstr    The VMX instruction name (for logging purposes).
+ */
+IEM_STATIC bool iemVmxVmentryIsPendingDebugXcpt(PVMCPU pVCpu, const char *pszInstr)
+{
+    /*
+     * Pending debug exceptions.
+     * See Intel spec. 26.6.3 "Delivery of Pending Debug Exceptions after VM Entry".
+     */
+    PCVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
+    Assert(pVmcs);
+
+    bool fPendingDbgXcpt = RT_BOOL(pVmcs->u64GuestPendingDbgXcpt.u & (  VMX_VMCS_GUEST_PENDING_DEBUG_XCPT_BS
+                                                                      | VMX_VMCS_GUEST_PENDING_DEBUG_XCPT_EN_BP));
+    if (fPendingDbgXcpt)
+    {
+        uint8_t uEntryIntInfoType;
+        bool const fEntryVectoring = HMVmxIsVmentryVectoring(pVmcs->u32EntryIntInfo, &uEntryIntInfoType);
+        if (fEntryVectoring)
+        {
+            switch (uEntryIntInfoType)
+            {
+                case VMX_ENTRY_INT_INFO_TYPE_EXT_INT:
+                case VMX_ENTRY_INT_INFO_TYPE_NMI:
+                case VMX_ENTRY_INT_INFO_TYPE_HW_XCPT:
+                case VMX_ENTRY_INT_INFO_TYPE_PRIV_SW_XCPT:
+                    fPendingDbgXcpt = false;
+                    break;
+
+                case VMX_ENTRY_INT_INFO_TYPE_SW_XCPT:
+                {
+                    /*
+                     * Whether the pending debug exception for software exceptions other than
+                     * #BP and #OF is delivered after injecting the exception or is discard
+                     * is CPU implementation specific. We will discard them (easier).
+                     */
+                    uint8_t const uVector = VMX_ENTRY_INT_INFO_VECTOR(pVmcs->u32EntryIntInfo);
+                    if (   uVector != X86_XCPT_BP
+                        && uVector != X86_XCPT_OF)
+                        fPendingDbgXcpt = false;
+                    RT_FALL_THRU();
+                }
+                case VMX_ENTRY_INT_INFO_TYPE_SW_INT:
+                {
+                    if (!(pVmcs->u32GuestIntrState & VMX_VMCS_GUEST_INT_STATE_BLOCK_MOVSS))
+                        fPendingDbgXcpt = false;
+                    break;
+                }
+            }
+        }
+        else
+        {
+            /*
+             * When the VM-entry is not vectoring but there is blocking-by-MovSS, whether the
+             * pending debug exception is held pending or is discarded is CPU implementation
+             * specific. We will discard them (easier).
+             */
+            if (pVmcs->u32GuestIntrState & VMX_VMCS_GUEST_INT_STATE_BLOCK_MOVSS)
+                fPendingDbgXcpt = false;
+
+            /* There's no pending debug exception in the shutdown or wait-for-SIPI state. */
+            if (pVmcs->u32GuestActivityState & (VMX_VMCS_GUEST_ACTIVITY_SHUTDOWN | VMX_VMCS_GUEST_ACTIVITY_SIPI_WAIT))
+                fPendingDbgXcpt = false;
+        }
+    }
+
+    NOREF(pszInstr);
+    return fPendingDbgXcpt;
 }
 
 
@@ -6990,9 +7061,26 @@ IEM_STATIC int iemVmxVmentryInjectEvent(PVMCPU pVCpu, const char *pszInstr)
             return VINF_SUCCESS;
         }
 
-        int rc = HMVmxEntryIntInfoInjectTrpmEvent(pVCpu, uEntryIntInfo, pVmcs->u32EntryXcptErrCode, pVmcs->u32EntryInstrLen,
-                                                  pVCpu->cpum.GstCtx.cr2);
-        AssertRCReturn(rc, rc);
+        return HMVmxEntryIntInfoInjectTrpmEvent(pVCpu, uEntryIntInfo, pVmcs->u32EntryXcptErrCode, pVmcs->u32EntryInstrLen,
+                                                pVCpu->cpum.GstCtx.cr2);
+    }
+
+    /*
+     * Inject any pending guest debug exception.
+     * Unlike injecting events, this #DB injection on VM-entry is subject to #DB VMX intercept.
+     * See Intel spec. 26.6.3 "Delivery of Pending Debug Exceptions after VM Entry".
+     */
+    bool const fPendingDbgXcpt = iemVmxVmentryIsPendingDebugXcpt(pVCpu, pszInstr);
+    if (fPendingDbgXcpt)
+    {
+        pVCpu->cpum.GstCtx.hwvirt.vmx.fInterceptEvents = true;
+
+        uint32_t const uEntryIntInfo = RT_BF_MAKE(VMX_BF_ENTRY_INT_INFO_VECTOR, X86_XCPT_DB)
+                                     | RT_BF_MAKE(VMX_BF_ENTRY_INT_INFO_TYPE, VMX_ENTRY_INT_INFO_TYPE_HW_XCPT)
+                                     | RT_BF_MAKE(VMX_BF_ENTRY_INT_INFO_VALID, 1);
+
+        return HMVmxEntryIntInfoInjectTrpmEvent(pVCpu, uEntryIntInfo, 0 /* uErrCode */, pVmcs->u32EntryInstrLen,
+                                                  0 /* GCPtrFaultAddress */);
     }
 
     NOREF(pszInstr);
@@ -7178,15 +7266,15 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmlaunchVmresume(PVMCPU pVCpu, uint8_t cbInstr, VM
                                  * 2.  Trap on task-switch.
                                  * 3.  TPR below threshold / APIC-write.
                                  * 4.  SMI, INIT.
-                                 * 6.  MTF exit.
-                                 * 7.  Debug-trap exceptions, pending debug exceptions.
-                                 * 10. VMX-preemption timer.
-                                 * 11. NMI-window exit.
-                                 * 12. NMI injection.
-                                 * 13. Interrupt-window exit.
-                                 * 14. Virtual-interrupt injection.
-                                 * 15. Interrupt injection.
-                                 * 16. Process next instruction (fetch, decode, execute).
+                                 * 5.  MTF exit.
+                                 * 6.  Debug-trap exceptions, pending debug exceptions.
+                                 * 7.  VMX-preemption timer.
+                                 * 9.  NMI-window exit.
+                                 * 10. NMI injection.
+                                 * 11. Interrupt-window exit.
+                                 * 12. Virtual-interrupt injection.
+                                 * 13. Interrupt injection.
+                                 * 14. Process next instruction (fetch, decode, execute).
                                  */
 
                                 /* Setup the VMX-preemption timer. */
