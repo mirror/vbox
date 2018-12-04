@@ -1502,9 +1502,7 @@ static RTEXITCODE waitGuestProperty(int argc, char **argv)
      * Connect to the service
      */
     uint32_t u32ClientId = 0;
-    int rc = VINF_SUCCESS;
-
-    rc = VbglR3GuestPropConnect(&u32ClientId);
+    int rc = VbglR3GuestPropConnect(&u32ClientId);
     if (RT_FAILURE(rc))
         VBoxControlError("Failed to connect to the guest property service, error %Rrc\n", rc);
 
@@ -1549,10 +1547,8 @@ static RTEXITCODE waitGuestProperty(int argc, char **argv)
             VBoxControlError("Temporarily unable to get a notification\n");
         else if (rc == VERR_INTERRUPTED)
             VBoxControlError("The request timed out or was interrupted\n");
-#ifndef RT_OS_WINDOWS  /* Windows guests do not do this right */
         else if (RT_FAILURE(rc) && rc != VERR_NOT_FOUND)
             VBoxControlError("Failed to get a notification, error %Rrc\n", rc);
-#endif
     }
 
     /*
