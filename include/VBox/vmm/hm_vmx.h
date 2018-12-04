@@ -4208,6 +4208,7 @@ DECLINLINE(bool) HMVmxIsVmentryVectoring(uint32_t uEntryIntInfo, uint8_t *pEntry
     if (!VMX_ENTRY_INT_INFO_IS_VALID(uEntryIntInfo))
         return false;
 
+    /* Scope and keep variable defines on top to satisy archaic c89 nonsense. */
     {
         uint8_t const uType = VMX_ENTRY_INT_INFO_TYPE(uEntryIntInfo);
         switch (uType)
