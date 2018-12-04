@@ -83,6 +83,7 @@ RTDECL(int)  RTErrConvertFromNtStatus(long lNativeCode)
         case STATUS_NOT_A_DIRECTORY:        return VERR_NOT_A_DIRECTORY;
         case STATUS_DIRECTORY_NOT_EMPTY:    return VERR_DIR_NOT_EMPTY;
         case STATUS_SHARING_VIOLATION:      return VERR_SHARING_VIOLATION;
+        case STATUS_NO_MEDIA_IN_DEVICE:     return VERR_DRIVE_IS_EMPTY;
 
         case STATUS_UNEXPECTED_NETWORK_ERROR:
                                             return VERR_NET_IO_ERROR;

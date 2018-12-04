@@ -1232,6 +1232,8 @@ RT_C_DECLS_END
 #define VERR_IS_A_BLOCK_DEVICE              (-163)
 /** Is a character device. */
 #define VERR_IS_A_CHAR_DEVICE               (-164)
+/** No media in drive. */
+#define VERR_DRIVE_IS_EMPTY                 (-165)
 /** @} */
 
 
