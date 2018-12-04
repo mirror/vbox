@@ -114,8 +114,8 @@ static const RTGETOPTDEF g_aDHCPIPOptions[] =
     { "--disable",          'd', RTGETOPT_REQ_NOTHING },
     { "-disable",           'd', RTGETOPT_REQ_NOTHING },     // deprecated
     { "--options",          'o', RTGETOPT_REQ_NOTHING },
-    { "--vm",               'n', RTGETOPT_REQ_STRING}, /* only with -o */
-    { "--nic",              'c', RTGETOPT_REQ_UINT8}, /* only with -o and -n */
+    { "--vm",               'M', RTGETOPT_REQ_STRING}, /* only with -o */
+    { "--nic",              'n', RTGETOPT_REQ_UINT8}, /* only with -o and -M */
     { "--id",               'i', RTGETOPT_REQ_UINT8}, /* only with -o */
     { "--value",            'p', RTGETOPT_REQ_STRING}, /* only with -i */
     { "--remove",           'r', RTGETOPT_REQ_NOTHING} /* only with -i */
@@ -253,7 +253,7 @@ static RTEXITCODE handleOp(HandlerArg *a, OPCODE enmCode, int iStart)
                 } /* end of --options  */
                 break;
 
-            case 'n': // --vm-name
+            case 'M': // --vm
                 {
                     if (fVmOptionRead)
                         return errorSyntax(USAGE_DHCPSERVER,
@@ -263,9 +263,9 @@ static RTEXITCODE handleOp(HandlerArg *a, OPCODE enmCode, int iStart)
                     u8Slot = (uint8_t)~0; /* clear slor */
                     pszVmName = RTStrDup(ValueUnion.psz);
                 }
-                break; /* end of --vm-name */
+                break; /* end of --vm */
 
-            case 'c': // --nic
+            case 'n': // --nic
                 {
                     if (!fVmOptionRead)
                         return errorSyntax(USAGE_DHCPSERVER,
