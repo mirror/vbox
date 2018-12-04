@@ -199,12 +199,14 @@ void UIGuestFileTable::readDirectory(const QString& strPath,
         while (fsInfo.isOk())
         {
             QVector<QVariant> data;
-            QDateTime changeTime = QDateTime::fromMSecsSinceEpoch(fsInfo.GetChangeTime()/1000000);
+            QDateTime changeTime = QDateTime::fromMSecsSinceEpoch(fsInfo.GetChangeTime()/RT_NS_1MS);
 
             data << fsInfo.GetName() << static_cast<qulonglong>(fsInfo.GetObjectSize())
-                 << changeTime << fsInfo.GetUserName();
+                 << changeTime << fsInfo.GetUserName() << permissionString(fsInfo);
+
             FileObjectType fsObjectType = fileType(fsInfo);
             UIFileTableItem *item = new UIFileTableItem(data, parent, fsObjectType);
+
             if (!item)
                 continue;
             item->setPath(UIPathOperations::mergePaths(strPath, fsInfo.GetName()));
@@ -218,11 +220,16 @@ void UIGuestFileTable::readDirectory(const QString& strPath,
                 files.insert(fsInfo.GetName(), item);
                 item->setIsOpened(false);
             }
-            /** @todo Seems like our API is not able to detect symlinks: */
             else if(fsObjectType == FileObjectType_SymLink)
             {
                 files.insert(fsInfo.GetName(), item);
                 item->setIsOpened(false);
+                /* @todo. We will need to wait a fully implemented SymlinkRead function
+                 * to be able to handle sym links properly: */
+                // QString path = UIPathOperations::mergePaths(strPath, fsInfo.GetName());
+                // QVector<KSymlinkReadFlag> aFlags;
+                // printf("%s %s %s\n", qPrintable(fsInfo.GetName()), qPrintable(path),
+                //        qPrintable(m_comGuestSession.SymlinkRead(path, aFlags)));
             }
 
             fsInfo = directory.Read();
@@ -437,7 +444,7 @@ QString UIGuestFileTable::fsObjectPropertyString()
         /* Size: */
         LONG64 size = fileInfo.GetObjectSize();
         propertyStringList << UIGuestControlFileManager::tr("<b>Size:</b> %1 bytes").arg(QString::number(size));
-        if (size >= 1024)
+        if (size >= UIGuestControlFileTable::m_iKiloByte)
             propertyStringList << QString(" (%1)<br/>").arg(humanReadableSize(size));
         else
             propertyStringList << QString("<br/>");
@@ -445,7 +452,7 @@ QString UIGuestFileTable::fsObjectPropertyString()
         /* Allocated size: */
         size = fileInfo.GetAllocatedSize();
         propertyStringList << UIGuestControlFileManager::tr("<b>Allocated:</b> %1 bytes").arg(QString::number(size));
-        if (size >= 1024)
+        if (size >= UIGuestControlFileTable::m_iKiloByte)
             propertyStringList << QString(" (%1)<br/>").arg(humanReadableSize(size));
         else
             propertyStringList << QString("<br/>");
@@ -730,4 +737,19 @@ bool UIGuestFileTable::checkGuestSession()
     }
     return true;
 }
+
+QString UIGuestFileTable::permissionString(const CFsObjInfo &fsInfo)
+{
+    /* Attributes: */
+    QString strAttributes = fsInfo.GetFileAttributes();
+
+    if (strAttributes.isEmpty())
+        return strAttributes;
+
+    int offSpace = strAttributes.indexOf(' ');
+    if (offSpace < 0)
+        offSpace = strAttributes.length();
+    return strAttributes.left(offSpace);
+}
+
 #include "UIGuestFileTable.moc"
