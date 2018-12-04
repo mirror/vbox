@@ -87,11 +87,7 @@ RT_C_DECLS_END
  * Default mount directory (unix only).
  */
 #ifndef VBOXSERVICE_AUTOMOUNT_DEFAULT_DIR
-# ifdef RT_OS_SOLARIS
-#  define VBOXSERVICE_AUTOMOUNT_DEFAULT_DIR      "/mnt"
-# else
-#  define VBOXSERVICE_AUTOMOUNT_DEFAULT_DIR      "/media"
-# endif
+# define VBOXSERVICE_AUTOMOUNT_DEFAULT_DIR      "/media"
 #endif
 
 /** @def VBOXSERVICE_AUTOMOUNT_DEFAULT_PREFIX

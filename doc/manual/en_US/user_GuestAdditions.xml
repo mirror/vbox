@@ -1489,13 +1489,10 @@ VBoxControl sharedfolder list</screen>
           <para>
             <emphasis role="bold">Linux and Solaris guests:</emphasis>
             Folders are mounted under the <computeroutput>/media</computeroutput>
-            directory on Linux and <computeroutput>/mnt</computeroutput> on
-            Solaris.  The folder name is normalized (no spaces, slashes,
+            directory.  The folder name is normalized (no spaces, slashes,
             colons) and prefixed with <computeroutput>sf_</computeroutput>.
             Say you have a shared folder called <computeroutput>myfiles</computeroutput>
-            it will appear as <computeroutput>/media/sf_myfiles</computeroutput>
-            in a Linux guest and <computeroutput>/mnt/sf_myfiles</computeroutput>
-            in a Solaris one.
+            it will appear as <computeroutput>/media/sf_myfiles</computeroutput> in the guest.
           </para>
 
           <para>
