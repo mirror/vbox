@@ -1370,8 +1370,9 @@ static int vbsvcAutomounterMountIt(PVBSVCAUTOMOUNTERENTRY pEntry)
     int rc = RTUtf16CopyAscii(wszPrefixedName, RT_ELEMENTS(wszPrefixedName), "\\\\VBoxSvr\\");
     AssertRC(rc);
 
-    PRTUTF16 pwszName = &wszPrefixedName[RTUtf16Len(wszPrefixedName)];
-    rc = RTStrToUtf16Ex(pEntry->pszName, RTSTR_MAX, &pwszName, pwszName - wszPrefixedName, NULL);
+    size_t const offName = RTUtf16Len(wszPrefixedName);
+    PRTUTF16 pwszName = &wszPrefixedName[offName];
+    rc = RTStrToUtf16Ex(pEntry->pszName, RTSTR_MAX, &pwszName, sizeof(wszPrefixedName) - offName, NULL);
     if (RT_FAILURE(rc))
     {
         VGSvcError("vbsvcAutomounterMountIt: RTStrToUtf16Ex failed on '%s': %Rrc\n", pEntry->pszName, rc);
