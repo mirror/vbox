@@ -108,7 +108,7 @@ RTCRestOutputBase &RTCRestStringMapBase::serializeAsJson(RTCRestOutputBase &a_rD
             a_rDst.valueSeparatorAndName(pCur->strKey.c_str(), pCur->strKey.length());
             pCur->pValue->serializeAsJson(a_rDst);
         }
-        a_rDst.endArray(uOldState);
+        a_rDst.endObject(uOldState);
     }
     else
         a_rDst.nullValue();
