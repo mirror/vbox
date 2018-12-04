@@ -294,6 +294,12 @@ int UIDesktopWidgetWatchdog::screenCount() const
     return QApplication::desktop()->screenCount();
 }
 
+int UIDesktopWidgetWatchdog::primaryScreen() const
+{
+    /* Redirect call to desktop-widget: */
+    return QApplication::desktop()->primaryScreen();
+}
+
 int UIDesktopWidgetWatchdog::screenNumber(const QWidget *pWidget) const
 {
     /* Redirect call to desktop-widget: */
