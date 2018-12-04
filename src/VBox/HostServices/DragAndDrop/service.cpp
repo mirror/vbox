@@ -341,9 +341,7 @@ void DragAndDropService::guestCall(VBOXHGCMCALLHANDLE callHandle, uint32_t u32Cl
             break;
         }
         case GUEST_DND_HG_ACK_OP:
-            /* Fall through is intentional. */
         case GUEST_DND_HG_REQ_DATA:
-            /* Fall through is intentional. */
         case GUEST_DND_HG_EVT_PROGRESS:
         {
             if (   modeGet() == VBOX_DRAG_AND_DROP_MODE_BIDIRECTIONAL

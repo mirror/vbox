@@ -1,3 +1,4 @@
+/* $Id$ */
 /** @file
  * Base class for a host-guest service.
  */
