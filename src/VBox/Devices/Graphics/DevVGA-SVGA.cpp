@@ -1217,8 +1217,10 @@ PDMBOTHCBDECL(int) vmsvgaReadPort(PVGASTATE pThis, uint32_t *pu32)
 
     case SVGA_REG_NUM_DISPLAYS:        /* (Deprecated) */
         STAM_REL_COUNTER_INC(&pThis->svga.StatRegNumDisplaysRd);
-        /** @todo keep 1? */
-        *pu32 = 1;  /* Must return something sensible here otherwise the Linux driver will take a legacy code path without 3d support. */
+        /* We must return something sensible here otherwise the Linux driver
+         * will take a legacy code path without 3d support.  This number also
+         * limits how many screens Linux guests will allow. */
+        *pu32 = 32;
         break;
 
     default:
