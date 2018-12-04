@@ -58,17 +58,26 @@ public:
 #ifdef VBOX_WITH_HGCM
     int hgcmLoadService (const char *pszServiceLibrary, const char *pszServiceName);
     int hgcmHostCall (const char *pszServiceName, uint32_t u32Function, uint32_t cParms, PVBOXHGCMSVCPARM paParms);
-#ifdef VBOX_WITH_CRHGSMI
+# ifdef VBOX_WITH_CRHGSMI
     int hgcmHostSvcHandleCreate (const char *pszServiceName, HGCMCVSHANDLE * phSvc);
     int hgcmHostSvcHandleDestroy (HGCMCVSHANDLE hSvc);
     int hgcmHostFastCallAsync (HGCMCVSHANDLE hSvc, uint32_t function, PVBOXHGCMSVCPARM pParm, PHGCMHOSTFASTCALLCB pfnCompletion, void *pvCompletion);
-#endif
+# endif
     void hgcmShutdown(bool fUvmIsInvalid = false);
 
     bool hgcmIsActive (void) { return ASMAtomicReadBool(&m_fHGCMActive); }
 #endif /* VBOX_WITH_HGCM */
 
 private:
+#ifdef VBOX_WITH_HGCM
+# ifdef VBOX_WITH_GUEST_PROPS
+    void i_guestPropSetMultiple(void *names, void *values, void *timestamps, void *flags);
+    void i_guestPropSet(const char *pszName, const char *pszValue, const char *pszFlags);
+    int  i_guestPropSetGlobalPropertyFlags(uint32_t fFlags);
+    int  i_guestPropLoadAndConfigure();
+# endif
+#endif
+
     static DECLCALLBACK(void *) drvQueryInterface(PPDMIBASE pInterface, const char *pszIID);
     static DECLCALLBACK(int)    drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint32_t fFlags);
     static DECLCALLBACK(void)   drvDestruct(PPDMDRVINS pDrvIns);

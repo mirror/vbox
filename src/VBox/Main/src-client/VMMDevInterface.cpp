@@ -28,12 +28,16 @@
 #include <VBox/VMMDev.h>
 #include <VBox/shflsvc.h>
 #include <iprt/asm.h>
+#include <iprt/buildconfig.h>
 
 #ifdef VBOX_WITH_HGCM
 # include "HGCM.h"
 # include "HGCMObjects.h"
 # if defined(RT_OS_DARWIN) && defined(VBOX_WITH_CROGL)
 #  include <VBox/HostServices/VBoxCrOpenGLSvc.h>
+# endif
+# ifdef VBOX_WITH_GUEST_PROPS
+#  include <VBox/version.h>
 # endif
 #endif
 
@@ -78,8 +82,8 @@ typedef struct DRVMAINVMMDEV
 // constructor / destructor
 //
 VMMDev::VMMDev(Console *console)
-    : mpDrv(NULL),
-      mParent(console)
+    : mpDrv(NULL)
+    , mParent(console)
 {
     int rc = RTSemEventCreate(&mCredentialsEvent);
     AssertRC(rc);
@@ -797,6 +801,198 @@ DECLCALLBACK(void) VMMDev::drvDestruct(PPDMDRVINS pDrvIns)
     }
 }
 
+#ifdef VBOX_WITH_GUEST_PROPS
+
+/**
+ * Set an array of guest properties
+ */
+void VMMDev::i_guestPropSetMultiple(void *names, void *values, void *timestamps, void *flags)
+{
+    VBOXHGCMSVCPARM parms[4];
+
+    parms[0].type = VBOX_HGCM_SVC_PARM_PTR;
+    parms[0].u.pointer.addr = names;
+    parms[0].u.pointer.size = 0;  /* We don't actually care. */
+    parms[1].type = VBOX_HGCM_SVC_PARM_PTR;
+    parms[1].u.pointer.addr = values;
+    parms[1].u.pointer.size = 0;  /* We don't actually care. */
+    parms[2].type = VBOX_HGCM_SVC_PARM_PTR;
+    parms[2].u.pointer.addr = timestamps;
+    parms[2].u.pointer.size = 0;  /* We don't actually care. */
+    parms[3].type = VBOX_HGCM_SVC_PARM_PTR;
+    parms[3].u.pointer.addr = flags;
+    parms[3].u.pointer.size = 0;  /* We don't actually care. */
+
+    hgcmHostCall("VBoxGuestPropSvc", GUEST_PROP_FN_HOST_SET_PROPS, 4, &parms[0]);
+}
+
+/**
+ * Set a single guest property
+ */
+void VMMDev::i_guestPropSet(const char *pszName, const char *pszValue, const char *pszFlags)
+{
+    VBOXHGCMSVCPARM parms[4];
+
+    AssertPtrReturnVoid(pszName);
+    AssertPtrReturnVoid(pszValue);
+    AssertPtrReturnVoid(pszFlags);
+    parms[0].type = VBOX_HGCM_SVC_PARM_PTR;
+    parms[0].u.pointer.addr = (void *)pszName;
+    parms[0].u.pointer.size = (uint32_t)strlen(pszName) + 1;
+    parms[1].type = VBOX_HGCM_SVC_PARM_PTR;
+    parms[1].u.pointer.addr = (void *)pszValue;
+    parms[1].u.pointer.size = (uint32_t)strlen(pszValue) + 1;
+    parms[2].type = VBOX_HGCM_SVC_PARM_PTR;
+    parms[2].u.pointer.addr = (void *)pszFlags;
+    parms[2].u.pointer.size = (uint32_t)strlen(pszFlags) + 1;
+    hgcmHostCall("VBoxGuestPropSvc", GUEST_PROP_FN_HOST_SET_PROP, 3, &parms[0]);
+}
+
+/**
+ * Set the global flags value by calling the service
+ * @returns the status returned by the call to the service
+ *
+ * @param   pTable  the service instance handle
+ * @param   eFlags  the flags to set
+ */
+int VMMDev::i_guestPropSetGlobalPropertyFlags(uint32_t fFlags)
+{
+    VBOXHGCMSVCPARM parm;
+    HGCMSvcSetU32(&parm, fFlags);
+    int rc = hgcmHostCall("VBoxGuestPropSvc", GUEST_PROP_FN_HOST_SET_GLOBAL_FLAGS, 1, &parm);
+    if (RT_FAILURE(rc))
+    {
+        char szFlags[GUEST_PROP_MAX_FLAGS_LEN];
+        if (RT_FAILURE(GuestPropWriteFlags(fFlags, szFlags)))
+            Log(("Failed to set the global flags.\n"));
+        else
+            Log(("Failed to set the global flags \"%s\".\n", szFlags));
+    }
+    return rc;
+}
+
+
+/**
+ * Set up the Guest Property service, populate it with properties read from
+ * the machine XML and set a couple of initial properties.
+ */
+int VMMDev::i_guestPropLoadAndConfigure()
+{
+    Assert(mpDrv);
+    ComObjPtr<Console> ptrConsole = this->mParent;
+    AssertReturn(ptrConsole.isNotNull(), VERR_INVALID_POINTER);
+
+    /* Load the service */
+    int rc = hgcmLoadService("VBoxGuestPropSvc", "VBoxGuestPropSvc");
+    if (RT_FAILURE(rc))
+    {
+        LogRel(("VBoxGuestPropSvc is not available. rc = %Rrc\n", rc));
+        return VINF_SUCCESS; /* That is not a fatal failure. */
+    }
+    /*
+     * Initialize built-in properties that can be changed and saved.
+     *
+     * These are typically transient properties that the guest cannot
+     * change.
+     */
+
+    /* Sysprep execution by VBoxService. */
+    i_guestPropSet("/VirtualBox/HostGuest/SysprepExec", "", "TRANSIENT, RDONLYGUEST");
+    i_guestPropSet("/VirtualBox/HostGuest/SysprepArgs", "", "TRANSIENT, RDONLYGUEST");
+
+    /*
+     * Pull over the properties from the server.
+     */
+    SafeArray<BSTR>     namesOut;
+    SafeArray<BSTR>     valuesOut;
+    SafeArray<LONG64>   timestampsOut;
+    SafeArray<BSTR>     flagsOut;
+    HRESULT hrc = ptrConsole->i_pullGuestProperties(ComSafeArrayAsOutParam(namesOut),
+                                                    ComSafeArrayAsOutParam(valuesOut),
+                                                    ComSafeArrayAsOutParam(timestampsOut),
+                                                    ComSafeArrayAsOutParam(flagsOut));
+    AssertLogRelMsgReturn(SUCCEEDED(hrc), ("hrc=%Rhrc\n", hrc), VERR_MAIN_CONFIG_CONSTRUCTOR_COM_ERROR);
+    size_t const cProps = namesOut.size();
+    size_t const cAlloc = cProps + 1;
+    AssertLogRelReturn(valuesOut.size()     == cProps, VERR_INTERNAL_ERROR_2);
+    AssertLogRelReturn(timestampsOut.size() == cProps, VERR_INTERNAL_ERROR_3);
+    AssertLogRelReturn(flagsOut.size()      == cProps, VERR_INTERNAL_ERROR_4);
+
+    char    szEmpty[] = "";
+    char  **papszNames      = (char  **)RTMemTmpAllocZ(sizeof(char *) * cAlloc);
+    char  **papszValues     = (char  **)RTMemTmpAllocZ(sizeof(char *) * cAlloc);
+    LONG64 *pai64Timestamps = (LONG64 *)RTMemTmpAllocZ(sizeof(LONG64) * cAlloc);
+    char  **papszFlags      = (char  **)RTMemTmpAllocZ(sizeof(char *) * cAlloc);
+    if (papszNames && papszValues && pai64Timestamps && papszFlags)
+    {
+        for (unsigned i = 0; RT_SUCCESS(rc) && i < cProps; ++i)
+        {
+            AssertPtrBreakStmt(namesOut[i], rc = VERR_INVALID_PARAMETER);
+            rc = RTUtf16ToUtf8(namesOut[i], &papszNames[i]);
+            if (RT_FAILURE(rc))
+                break;
+            if (valuesOut[i])
+                rc = RTUtf16ToUtf8(valuesOut[i], &papszValues[i]);
+            else
+                papszValues[i] = szEmpty;
+            if (RT_FAILURE(rc))
+                break;
+            pai64Timestamps[i] = timestampsOut[i];
+            if (flagsOut[i])
+                rc = RTUtf16ToUtf8(flagsOut[i], &papszFlags[i]);
+            else
+                papszFlags[i] = szEmpty;
+        }
+        if (RT_SUCCESS(rc))
+            i_guestPropSetMultiple((void *)papszNames, (void *)papszValues, (void *)pai64Timestamps, (void *)papszFlags);
+        for (unsigned i = 0; i < cProps; ++i)
+        {
+            RTStrFree(papszNames[i]);
+            if (valuesOut[i])
+                RTStrFree(papszValues[i]);
+            if (flagsOut[i])
+                RTStrFree(papszFlags[i]);
+        }
+    }
+    else
+        rc = VERR_NO_MEMORY;
+    RTMemTmpFree(papszNames);
+    RTMemTmpFree(papszValues);
+    RTMemTmpFree(pai64Timestamps);
+    RTMemTmpFree(papszFlags);
+    AssertRCReturn(rc, rc);
+
+    /*
+     * These properties have to be set before pulling over the properties
+     * from the machine XML, to ensure that properties saved in the XML
+     * will override them.
+     */
+    /* Set the raw VBox version string as a guest property. Used for host/guest
+     * version comparison. */
+    i_guestPropSet("/VirtualBox/HostInfo/VBoxVer", VBOX_VERSION_STRING_RAW, "TRANSIENT, RDONLYGUEST");
+    /* Set the full VBox version string as a guest property. Can contain vendor-specific
+     * information/branding and/or pre-release tags. */
+    i_guestPropSet("/VirtualBox/HostInfo/VBoxVerExt", VBOX_VERSION_STRING, "TRANSIENT, RDONLYGUEST");
+    /* Set the VBox SVN revision as a guest property */
+    i_guestPropSet("/VirtualBox/HostInfo/VBoxRev", RTBldCfgRevisionStr(), "TRANSIENT, RDONLYGUEST");
+
+    /*
+     * Register the host notification callback
+     */
+    HGCMSVCEXTHANDLE hDummy;
+    HGCMHostRegisterServiceExtension(&hDummy, "VBoxGuestPropSvc", Console::i_doGuestPropNotification, ptrConsole.m_p);
+
+# ifdef VBOX_WITH_GUEST_PROPS_RDONLY_GUEST
+    rc = i_guestPropSetGlobalPropertyFlags(GUEST_PROP_F_RDONLYGUEST);
+    AssertRCReturn(rc, rc);
+# endif
+
+    Log(("Set VBoxGuestPropSvc property store\n"));
+    return VINF_SUCCESS;
+}
+
+#endif /* VBOX_WITH_GUEST_PROPS */
+
 /**
  * @interface_method_impl{PDMDRVREG,pfnConstruct}
  */
@@ -904,7 +1100,7 @@ DECLCALLBACK(int) VMMDev::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle,
 
 
     /*
-     * Load and configure guest control service.
+     * Load and configure the guest control service.
      */
 # ifdef VBOX_WITH_GUEST_CONTROL
     rc = pThis->pVMMDev->hgcmLoadService("VBoxGuestControlSvc", "VBoxGuestControlSvc");
@@ -922,6 +1118,15 @@ DECLCALLBACK(int) VMMDev::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle,
     else
         LogRel(("Warning!: Failed to load the Guest Control Service! %Rrc\n", rc));
 # endif /* VBOX_WITH_GUEST_CONTROL */
+
+
+    /*
+     * Load and configure the guest properties service.
+     */
+# ifdef VBOX_WITH_GUEST_PROPS
+    rc = pThis->pVMMDev->i_guestPropLoadAndConfigure();
+    AssertLogRelRCReturn(rc, rc);
+# endif
 
 
     /*

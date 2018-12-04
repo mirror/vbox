@@ -290,9 +290,9 @@ public:
      * Sets the disk encryption keys.
      *
      * @returns COM status code.
-     * @þaram   strCfg    The config for the disks.
+     * @param   strCfg    The config for the disks.
      *
-     * @note: One line in the config string contains all required data for one disk.
+     * @note  One line in the config string contains all required data for one disk.
      *        The format for one disk is some sort of comma separated value using
      *        key=value pairs.
      *        There are two keys defined at the moment:
@@ -301,6 +301,14 @@ public:
      *            - dek: The data encryption key in base64 encoding
      */
     HRESULT i_setDiskEncryptionKeys(const Utf8Str &strCfg);
+
+
+#ifdef VBOX_WITH_GUEST_PROPS
+    // VMMDev needs:
+    HRESULT                     i_pullGuestProperties(ComSafeArrayOut(BSTR, names), ComSafeArrayOut(BSTR, values),
+                                                      ComSafeArrayOut(LONG64, timestamps), ComSafeArrayOut(BSTR, flags));
+    static DECLCALLBACK(int)    i_doGuestPropNotification(void *pvExtension, uint32_t, void *pvParms, uint32_t cbParms);
+#endif
 
 private:
 
@@ -738,7 +746,6 @@ private:
                         PCFGMNODE pLunL0, PCFGMNODE pInst,
                         bool fAttachDetach, bool fIgnoreConnectFailure);
     int i_configSerialPort(PCFGMNODE pInst, PortMode_T ePortMode, const char *pszPath, bool fServer);
-    static DECLCALLBACK(int) i_configGuestProperties(void *pvConsole);
     static DECLCALLBACK(void) i_vmstateChangeCallback(PUVM pUVM, VMSTATE enmState, VMSTATE enmOldState, void *pvUser);
     static DECLCALLBACK(int) i_unplugCpu(Console *pThis, PUVM pUVM, VMCPUID idCpu);
     static DECLCALLBACK(int) i_plugCpu(Console *pThis, PUVM pUVM, VMCPUID idCpu);
@@ -835,7 +842,6 @@ private:
     static DECLCALLBACK(int)    i_loadStateFileExec(PSSMHANDLE pSSM, void *pvUser, uint32_t uVersion, uint32_t uPass);
 
 #ifdef VBOX_WITH_GUEST_PROPS
-    static DECLCALLBACK(int)    i_doGuestPropNotification(void *pvExtension, uint32_t, void *pvParms, uint32_t cbParms);
     HRESULT                     i_doEnumerateGuestProperties(const Utf8Str &aPatterns,
                                                              std::vector<Utf8Str> &aNames,
                                                              std::vector<Utf8Str> &aValues,

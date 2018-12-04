@@ -836,6 +836,17 @@ void Console::uninit()
 #ifdef VBOX_WITH_GUEST_PROPS
 
 /**
+ * Wrapper for VMMDev::i_guestPropertiesHandleVMReset
+ */
+HRESULT Console::i_pullGuestProperties(ComSafeArrayOut(BSTR, names), ComSafeArrayOut(BSTR, values),
+                                       ComSafeArrayOut(LONG64, timestamps), ComSafeArrayOut(BSTR, flags))
+{
+    AssertReturn(mControl.isNotNull(), VERR_INVALID_POINTER);
+    return mControl->PullGuestProperties(ComSafeArrayOutArg(names), ComSafeArrayOutArg(values),
+                                         ComSafeArrayOutArg(timestamps), ComSafeArrayOutArg(flags));
+}
+
+/**
  * Handles guest properties on a VM reset.
  *
  * We must delete properties that are flagged TRANSRESET.
