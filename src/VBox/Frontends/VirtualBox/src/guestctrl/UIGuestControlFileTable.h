@@ -51,6 +51,7 @@ class UIGuestControlFileProxyModel;
 class UIGuestControlFileView;
 class UIToolBar;
 
+/** @todo r=bird: Why don't you just use KFsObjType? */
 enum FileObjectType
 {
     FileObjectType_File = 0,

@@ -422,7 +422,7 @@ QString UIGuestFileTable::fsObjectPropertyString()
         if (selectedObjects.at(0).isNull())
             return QString();
 
-        CGuestFsObjInfo fileInfo = m_comGuestSession.FsObjQueryInfo(selectedObjects.at(0), true);
+        CGuestFsObjInfo fileInfo = m_comGuestSession.FsObjQueryInfo(selectedObjects.at(0), false /*aFollowSymlinks*/);
         if (!m_comGuestSession.isOk())
         {
             emit sigLogOutput(UIErrorString::formatErrorInfo(m_comGuestSession), FileManagerLogType_Error);
@@ -452,7 +452,8 @@ QString UIGuestFileTable::fsObjectPropertyString()
 
         /* Type: */
         QString str;
-        switch (fileInfo.GetType())
+        KFsObjType const enmType = fileInfo.GetType();
+        switch (enmType)
         {
             case KFsObjType_Directory:  str = tr("directory"); break;
             case KFsObjType_File:       str = tr("file"); break;
@@ -476,22 +477,22 @@ QString UIGuestFileTable::fsObjectPropertyString()
         str = fileInfo.GetFileAttributes();
         if (!str.isEmpty())
         {
-            int offSpace = str.indexOf(" ");
+            int offSpace = str.indexOf(' ');
             if (offSpace < 0)
                 offSpace = str.length();
             propertyStringList << UIGuestControlFileManager::tr("<b>Mode:</b> %1<br/>").arg(str.left(offSpace));
-            propertyStringList << UIGuestControlFileManager::tr("<b>Attributes:</b> %1<br/>").arg(str.right(offSpace).trimmed());
+            propertyStringList << UIGuestControlFileManager::tr("<b>Attributes:</b> %1<br/>").arg(str.mid(offSpace + 1).trimmed());
         }
 
         /* Character/block device ID: */
         ULONG uDeviceNo = fileInfo.GetDeviceNumber();
-        if (uDeviceNo != 0)
+        if (uDeviceNo != 0 || enmType == KFsObjType_DevChar || enmType == KFsObjType_DevBlock)
             propertyStringList << UIGuestControlFileManager::tr("<b>Device ID:</b> %1<br/>").arg(uDeviceNo); /** @todo hex */
 
         /* Owner: */
-        propertyStringList << UIGuestControlFileManager::tr("<b>Owner:</b> %1 (%1)<br/>").
+        propertyStringList << UIGuestControlFileManager::tr("<b>Owner:</b> %1 (%2)<br/>").
             arg(fileInfo.GetUserName()).arg(fileInfo.GetUID());
-        propertyStringList << UIGuestControlFileManager::tr("<b>Group:</b> %1<br/>").
+        propertyStringList << UIGuestControlFileManager::tr("<b>Group:</b> %1 (%2)<br/>").
             arg(fileInfo.GetGroupName()).arg(fileInfo.GetGID());
 
         /* Timestamps: */
