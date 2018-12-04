@@ -713,6 +713,15 @@ void UIGuestControlFileManager::saveOptions()
 
 void UIGuestControlFileManager::restorePanelVisibility()
 {
+    /** Make sure the actions are set to not-checked. this prevents an unlikely
+     *  bug when the extrakey for the visible panels are manually modified: */
+    foreach(QAction* pAction, m_panelActionMap.values())
+    {
+        pAction->blockSignals(true);
+        pAction->setChecked(false);
+        pAction->blockSignals(false);
+    }
+
     /* Load the visible panel list and show them: */
     QStringList strNameList = gEDataManager->guestControlFileManagerVisiblePanels();
     foreach(const QString strName, strNameList)
