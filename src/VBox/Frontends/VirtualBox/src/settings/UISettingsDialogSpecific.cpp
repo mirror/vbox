@@ -467,13 +467,23 @@ void UISettingsDialogMachine::saveOwnData()
         /* System page fixes: */
         if (pSystemPage)
         {
-            /* Nested Paging: */
-            if (pSystemPage->isNestedPagingEnabled())
+            /* Nested Paging || Nested HW Virt Ex: */
+            if (   pSystemPage->isNestedPagingEnabled()
+                || pSystemPage->isNestedHWVirtExEnabled())
             {
                 /* Enable HW Virt Ex if supported: */
                 if (   pSystemPage->isHWVirtExSupported()
                     && !pSystemPage->isHWVirtExEnabled())
                     m_machine.SetHWVirtExProperty(KHWVirtExPropertyType_Enabled, true);
+            }
+
+            /* Nested HW Virt Ex: */
+            if (pSystemPage->isNestedHWVirtExEnabled())
+            {
+                /* Enable Nested Paging if supported: */
+                if (   pSystemPage->isHWVirtExSupported()
+                    && !pSystemPage->isNestedPagingEnabled())
+                    m_machine.SetHWVirtExProperty(KHWVirtExPropertyType_NestedPaging, true);
             }
         }
 

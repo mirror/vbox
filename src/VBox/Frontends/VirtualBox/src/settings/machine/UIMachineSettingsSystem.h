@@ -49,6 +49,11 @@ public:
     /** Returns whether the Nested Paging is enabled. */
     bool isNestedPagingEnabled() const;
 
+    /** Returns whether the Nested HW Virt Ex is supported. */
+    bool isNestedHWVirtExSupported() const;
+    /** Returns whether the Nested HW Virt Ex is enabled. */
+    bool isNestedHWVirtExEnabled() const;
+
     /** Returns whether the HID is enabled. */
     bool isHIDEnabled() const;
 

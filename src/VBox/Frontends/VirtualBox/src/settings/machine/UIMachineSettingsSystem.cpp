@@ -71,6 +71,7 @@ struct UIDataSettingsMachineSystem
     UIDataSettingsMachineSystem()
         /* Support flags: */
         : m_fSupportedPAE(false)
+        , m_fSupportedNestedHwVirtEx(false)
         , m_fSupportedHwVirtEx(false)
         , m_fSupportedNestedPaging(false)
         /* Motherboard data: */
@@ -85,6 +86,7 @@ struct UIDataSettingsMachineSystem
         , m_cCPUCount(-1)
         , m_iCPUExecCap(-1)
         , m_fEnabledPAE(false)
+        , m_fEnabledNestedHwVirtEx(false)
         /* Acceleration data: */
         , m_paravirtProvider(KParavirtProvider_None)
         , m_fEnabledHwVirtEx(false)
@@ -97,6 +99,7 @@ struct UIDataSettingsMachineSystem
         return true
                /* Support flags: */
                && (m_fSupportedPAE == other.m_fSupportedPAE)
+               && (m_fSupportedNestedHwVirtEx == other.m_fSupportedNestedHwVirtEx)
                && (m_fSupportedHwVirtEx == other.m_fSupportedHwVirtEx)
                && (m_fSupportedNestedPaging == other.m_fSupportedNestedPaging)
                /* Motherboard data: */
@@ -111,6 +114,7 @@ struct UIDataSettingsMachineSystem
                && (m_cCPUCount == other.m_cCPUCount)
                && (m_iCPUExecCap == other.m_iCPUExecCap)
                && (m_fEnabledPAE == other.m_fEnabledPAE)
+               && (m_fEnabledNestedHwVirtEx == other.m_fEnabledNestedHwVirtEx)
                /* Acceleration data: */
                && (m_paravirtProvider == other.m_paravirtProvider)
                && (m_fEnabledHwVirtEx == other.m_fEnabledHwVirtEx)
@@ -125,6 +129,8 @@ struct UIDataSettingsMachineSystem
 
     /** Holds whether the PAE is supported. */
     bool  m_fSupportedPAE;
+    /** Holds whether the Nested HW Virt Ex is supported. */
+    bool  m_fSupportedNestedHwVirtEx;
     /** Holds whether the HW Virt Ex is supported. */
     bool  m_fSupportedHwVirtEx;
     /** Holds whether the Nested Paging is supported. */
@@ -151,6 +157,8 @@ struct UIDataSettingsMachineSystem
     int   m_iCPUExecCap;
     /** Holds whether the PAE is enabled. */
     bool  m_fEnabledPAE;
+    /** Holds whether the Nested HW Virt Ex is enabled. */
+    bool  m_fEnabledNestedHwVirtEx;
 
     /** Holds the paravirtualization provider. */
     KParavirtProvider  m_paravirtProvider;
@@ -199,6 +207,17 @@ bool UIMachineSettingsSystem::isNestedPagingEnabled() const
     return m_pCheckBoxNestedPaging->isChecked();
 }
 
+bool UIMachineSettingsSystem::isNestedHWVirtExSupported() const
+{
+    AssertPtrReturn(m_pCache, false);
+    return m_pCache->base().m_fSupportedNestedHwVirtEx;
+}
+
+bool UIMachineSettingsSystem::isNestedHWVirtExEnabled() const
+{
+    return m_pCheckBoxNestedVirtualization->isChecked();
+}
+
 bool UIMachineSettingsSystem::isHIDEnabled() const
 {
     return (KPointingHIDType)m_pComboPointingHIDType->itemData(m_pComboPointingHIDType->currentIndex()).toInt() != KPointingHIDType_PS2Mouse;
@@ -240,6 +259,7 @@ void UIMachineSettingsSystem::loadToCacheFrom(QVariant &data)
 
     /* Gather support flags: */
     oldSystemData.m_fSupportedPAE = vboxGlobal().host().GetProcessorFeature(KProcessorFeature_PAE);
+    oldSystemData.m_fSupportedNestedHwVirtEx = vboxGlobal().host().GetProcessorFeature(KProcessorFeature_NestedHWVirt);
     oldSystemData.m_fSupportedHwVirtEx = vboxGlobal().host().GetProcessorFeature(KProcessorFeature_HWVirtEx);
     oldSystemData.m_fSupportedNestedPaging = vboxGlobal().host().GetProcessorFeature(KProcessorFeature_NestedPaging);
 
@@ -281,6 +301,7 @@ void UIMachineSettingsSystem::loadToCacheFrom(QVariant &data)
     oldSystemData.m_cCPUCount = oldSystemData.m_fSupportedHwVirtEx ? m_machine.GetCPUCount() : 1;
     oldSystemData.m_iCPUExecCap = m_machine.GetCPUExecutionCap();
     oldSystemData.m_fEnabledPAE = m_machine.GetCPUProperty(KCPUPropertyType_PAE);
+    oldSystemData.m_fEnabledNestedHwVirtEx = m_machine.GetCPUProperty(KCPUPropertyType_HWVirt);
 
     /* Gather old 'Acceleration' data: */
     oldSystemData.m_paravirtProvider = m_machine.GetParavirtProvider();
@@ -329,6 +350,7 @@ void UIMachineSettingsSystem::getFromCache()
     m_pSliderCPUCount->setValue(oldSystemData.m_cCPUCount);
     m_pSliderCPUExecCap->setValue(oldSystemData.m_iCPUExecCap);
     m_pCheckBoxPAE->setChecked(oldSystemData.m_fEnabledPAE);
+    m_pCheckBoxNestedVirtualization->setChecked(oldSystemData.m_fEnabledNestedHwVirtEx);
 
     /* Load old 'Acceleration' data from the cache: */
     const int iParavirtProviderPosition = m_pComboParavirtProvider->findData(oldSystemData.m_paravirtProvider);
@@ -350,6 +372,7 @@ void UIMachineSettingsSystem::putToCache()
 
     /* Gather support flags: */
     newSystemData.m_fSupportedPAE = m_pCache->base().m_fSupportedPAE;
+    newSystemData.m_fSupportedNestedHwVirtEx = isNestedHWVirtExSupported();
     newSystemData.m_fSupportedHwVirtEx = isHWVirtExSupported();
     newSystemData.m_fSupportedNestedPaging = isNestedPagingSupported();
 
@@ -376,6 +399,7 @@ void UIMachineSettingsSystem::putToCache()
     newSystemData.m_cCPUCount = m_pSliderCPUCount->value();
     newSystemData.m_iCPUExecCap = m_pSliderCPUExecCap->value();
     newSystemData.m_fEnabledPAE = m_pCheckBoxPAE->isChecked();
+    newSystemData.m_fEnabledNestedHwVirtEx = isNestedHWVirtExEnabled();
 
     /* Gather 'Acceleration' data: */
     newSystemData.m_paravirtProvider = (KParavirtProvider)m_pComboParavirtProvider->itemData(m_pComboParavirtProvider->currentIndex()).toInt();
@@ -518,6 +542,28 @@ bool UIMachineSettingsSystem::validate(QList<UIValidationMessage> &messages)
             }
         }
 
+        /* Nested HW Virt Ex: */
+        if (isNestedHWVirtExEnabled())
+        {
+            /* HW Virt Ex test: */
+            if (isHWVirtExSupported() && !isHWVirtExEnabled())
+            {
+                message.second << tr(
+                    "The hardware virtualization is not currently enabled in the Acceleration section of the System page. "
+                    "This is needed to support nested hardware virtualization. "
+                    "It will be enabled automatically if you confirm your changes.");
+            }
+
+            /* Nested Paging test: */
+            if (isHWVirtExSupported() && isNestedPagingSupported() && !isNestedPagingEnabled())
+            {
+                message.second << tr(
+                    "The nested paging is not currently enabled in the Acceleration section of the System page. "
+                    "This is needed to support nested hardware virtualization. "
+                    "It will be enabled automatically if you confirm your changes.");
+            }
+        }
+
         /* Serialize message: */
         if (!message.second.isEmpty())
             messages << message;
@@ -586,7 +632,8 @@ void UIMachineSettingsSystem::setOrderAfter(QWidget *pWidget)
 
     /* Configure navigation for 'acceleration' tab: */
     setTabOrder(m_pComboParavirtProvider, m_pCheckBoxPAE);
-    setTabOrder(m_pCheckBoxPAE, m_pCheckBoxVirtualization);
+    setTabOrder(m_pCheckBoxPAE, m_pCheckBoxNestedVirtualization);
+    setTabOrder(m_pCheckBoxNestedVirtualization, m_pCheckBoxVirtualization);
     setTabOrder(m_pCheckBoxVirtualization, m_pCheckBoxNestedPaging);
 }
 
@@ -654,6 +701,8 @@ void UIMachineSettingsSystem::polishPage()
     m_pEditorCPUExecCap->setEnabled(isMachineInValidMode());
     m_pLabelCPUExtended->setEnabled(isMachineOffline());
     m_pCheckBoxPAE->setEnabled(isMachineOffline() && systemData.m_fSupportedPAE);
+    m_pCheckBoxNestedVirtualization->setEnabled(   (systemData.m_fSupportedNestedHwVirtEx && isMachineOffline())
+                                                || (systemData.m_fEnabledNestedHwVirtEx && isMachineOffline()));
 
     /* Polish 'Acceleration' availability: */
     m_pCheckBoxVirtualization->setEnabled(   (systemData.m_fSupportedHwVirtEx && isMachineOffline())
@@ -1024,10 +1073,14 @@ void UIMachineSettingsSystem::prepareConnections()
     connect(m_pEditorCPUCount, SIGNAL(valueChanged(int)), this, SLOT(sltHandleCPUCountEditorChange()));
     connect(m_pSliderCPUExecCap, SIGNAL(valueChanged(int)), this, SLOT(sltHandleCPUExecCapSliderChange()));
     connect(m_pEditorCPUExecCap, SIGNAL(valueChanged(int)), this, SLOT(sltHandleCPUExecCapEditorChange()));
+    connect(m_pCheckBoxNestedVirtualization, &QCheckBox::stateChanged,
+            this, &UIMachineSettingsSystem::revalidate);
 
     /* Configure 'Acceleration' connections: */
     connect(m_pCheckBoxVirtualization, &QCheckBox::stateChanged,
             this, &UIMachineSettingsSystem::sltHandleHwVirtExToggle);
+    connect(m_pCheckBoxNestedPaging, &QCheckBox::stateChanged,
+            this, &UIMachineSettingsSystem::revalidate);
 }
 
 void UIMachineSettingsSystem::cleanup()
@@ -1258,6 +1311,12 @@ bool UIMachineSettingsSystem::saveProcessorData()
         if (fSuccess && isMachineOffline() && newSystemData.m_fEnabledPAE != oldSystemData.m_fEnabledPAE)
         {
             m_machine.SetCPUProperty(KCPUPropertyType_PAE, newSystemData.m_fEnabledPAE);
+            fSuccess = m_machine.isOk();
+        }
+        /* Save whether Nested HW Virt Ex is enabled: */
+        if (fSuccess && isMachineOffline() && newSystemData.m_fEnabledNestedHwVirtEx != oldSystemData.m_fEnabledNestedHwVirtEx)
+        {
+            m_machine.SetCPUProperty(KCPUPropertyType_HWVirt, newSystemData.m_fEnabledNestedHwVirtEx);
             fSuccess = m_machine.isOk();
         }
         /* Save CPU execution cap: */
