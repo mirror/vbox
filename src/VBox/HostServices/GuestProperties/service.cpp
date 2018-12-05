@@ -1189,12 +1189,12 @@ int Service::getNotification(uint32_t u32ClientId, VBOXHGCMCALLHANDLE callHandle
                             mpHelpers->pfnCallComplete(it->mHandle, VERR_INTERRUPTED);
                             it = mGuestWaiters.erase(it);
                         }
-                        //else if (mpHelpers->pfnIsCallCancelled(it->mHandle))
-                        //{
-                        //    /* Cleanup cancelled request. */
-                        //    mpHelpers->pfnCallComplete(it->mHandle, VERR_INTERRUPTED);
-                        //    it = mGuestWaiters.erase(it);
-                        //}
+                        else if (mpHelpers->pfnIsCallCancelled(it->mHandle))
+                        {
+                            /* Cleanup cancelled request. */
+                            mpHelpers->pfnCallComplete(it->mHandle, VERR_INTERRUPTED);
+                            it = mGuestWaiters.erase(it);
+                        }
                         else
                         {
                             /** @todo check if cancelled. */
@@ -1206,7 +1206,7 @@ int Service::getNotification(uint32_t u32ClientId, VBOXHGCMCALLHANDLE callHandle
                         ++it;
                 }
 
-                //if (cPendingWaits < 16)
+                if (cPendingWaits < GUEST_PROP_MAX_GUEST_CONCURRENT_WAITS)
                 {
                     try
                     {
@@ -1219,11 +1219,11 @@ int Service::getNotification(uint32_t u32ClientId, VBOXHGCMCALLHANDLE callHandle
                         rc = VERR_NO_MEMORY;
                     }
                 }
-                //else
-                //{
-                //    LogFunc(("Too many pending waits already!\n"));
-                //    rc = VERR_OUT_OF_RESOURCES;
-                //}
+                else
+                {
+                    LogFunc(("Too many pending waits already!\n"));
+                    rc = VERR_OUT_OF_RESOURCES;
+                }
             }
             /*
              * Otherwise reply at once with the enqueued notification we found.

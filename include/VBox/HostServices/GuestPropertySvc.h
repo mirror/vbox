@@ -34,16 +34,18 @@
 #include <iprt/string.h>
 
 
-/** Maximum length for property names */
+/** Maximum length for property names. */
 #define GUEST_PROP_MAX_NAME_LEN             64
-/** Maximum length for property values */
+/** Maximum length for property values. */
 #define GUEST_PROP_MAX_VALUE_LEN            128
-/** Maximum number of properties per guest */
+/** Maximum number of properties per guest. */
 #define GUEST_PROP_MAX_PROPS                256
-/** Maximum size for enumeration patterns */
+/** Maximum size for enumeration patterns. */
 #define GUEST_PROP_MAX_PATTERN_LEN          1024
-/** Maximum number of changes we remember for guest notifications */
+/** Maximum number of changes we remember for guest notifications. */
 #define GUEST_PROP_MAX_GUEST_NOTIFICATIONS  256
+/** Maximum number of current pending waits per client. */
+#define GUEST_PROP_MAX_GUEST_CONCURRENT_WAITS 16
 
 
 /** @name GUEST_PROP_F_XXX - The guest property flag values which are currently accepted.
