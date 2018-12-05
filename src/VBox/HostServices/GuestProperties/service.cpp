@@ -429,7 +429,7 @@ private:
     int enumProps(uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
     int getNotification(uint32_t u32ClientId, VBOXHGCMCALLHANDLE callHandle, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
     int getOldNotificationInternal(const char *pszPattern, uint64_t nsTimestamp, Property *pProp);
-    int getNotificationWriteOut(uint32_t cParms, VBOXHGCMSVCPARM paParms[], Property prop);
+    int getNotificationWriteOut(uint32_t cParms, VBOXHGCMSVCPARM paParms[], Property const &prop);
     int doNotifications(const char *pszProperty, uint64_t nsTimestamp);
     int notifyHost(const char *pszName, const char *pszValue, uint64_t nsTimestamp, const char *pszFlags);
 
@@ -1078,7 +1078,7 @@ int Service::getOldNotificationInternal(const char *pszPatterns, uint64_t nsTime
 
 
 /** Helper query used by getNotification */
-int Service::getNotificationWriteOut(uint32_t cParms, VBOXHGCMSVCPARM paParms[], Property prop)
+int Service::getNotificationWriteOut(uint32_t cParms, VBOXHGCMSVCPARM paParms[], Property const &rProp)
 {
     AssertReturn(cParms == 4, VERR_INVALID_PARAMETER); /* Basic sanity checking. */
 
@@ -1089,21 +1089,21 @@ int Service::getNotificationWriteOut(uint32_t cParms, VBOXHGCMSVCPARM paParms[],
     if (RT_SUCCESS(rc))
     {
         char szFlags[GUEST_PROP_MAX_FLAGS_LEN];
-        rc = GuestPropWriteFlags(prop.mFlags, szFlags);
+        rc = GuestPropWriteFlags(rProp.mFlags, szFlags);
         if (RT_SUCCESS(rc))
         {
-            HGCMSvcSetU64(&paParms[1], prop.mTimestamp);
+            HGCMSvcSetU64(&paParms[1], rProp.mTimestamp);
 
             size_t const cbFlags  = strlen(szFlags) + 1;
-            size_t const cbName   = prop.mName.length() + 1;
-            size_t const cbValue  = prop.mValue.length() + 1;
+            size_t const cbName   = rProp.mName.length() + 1;
+            size_t const cbValue  = rProp.mValue.length() + 1;
             size_t const cbNeeded = cbName + cbValue + cbFlags;
             HGCMSvcSetU32(&paParms[3], (uint32_t)cbNeeded);
             if (cbNeeded <= cbBuf)
             {
-                memcpy(pchBuf, prop.mName.c_str(), cbName);
+                memcpy(pchBuf, rProp.mName.c_str(), cbName);
                 pchBuf += cbName;
-                memcpy(pchBuf, prop.mValue.c_str(), cbValue);
+                memcpy(pchBuf, rProp.mValue.c_str(), cbValue);
                 pchBuf += cbValue;
                 memcpy(pchBuf, szFlags, cbFlags);
             }
