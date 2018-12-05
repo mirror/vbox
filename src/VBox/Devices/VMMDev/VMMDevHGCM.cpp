@@ -1811,7 +1811,24 @@ int vmmdevHGCMLoadState(PVMMDEV pThis, PSSMHANDLE pSSM, uint32_t uVersion)
             rc = SSMR3GetU32(pSSM, &u32);
             AssertRCReturn(rc, rc);
 
-            vmmdevHGCMAddCommand(pThis, pCmd);
+            /*
+             * Do not restore cancelled calls.  Why do we save them to start with?
+             *
+             * The guest memory no longer contains a valid request!  So, it is not
+             * possible to restore it.  The memory is often reused for a new request
+             * by now and we will end up trying to complete that more than once if
+             * we restore a cancelled call.  In some cases VERR_HGCM_INVALID_CLIENT_ID
+             * is returned, though it might just be silent memory corruption.
+             */
+            /* See current version above. */
+            if (!fCancelled)
+                vmmdevHGCMAddCommand(pThis, pCmd);
+            else
+            {
+                Log(("vmmdevHGCMLoadState: Skipping cancelled request: enmCmdType=%d GCPhys=%#RX32 LB %#x\n",
+                     enmCmdType, GCPhys, cbRequest));
+                vmmdevHGCMCmdFree(pThis, pCmd);
+            }
         }
 
         /* A reserved field, will allow to extend saved data for VMMDevHGCM. */
@@ -1887,7 +1904,15 @@ int vmmdevHGCMLoadState(PVMMDEV pThis, PSSMHANDLE pSSM, uint32_t uVersion)
             rc = SSMR3GetU32(pSSM, &u32);
             AssertRCReturn(rc, rc);
 
-            vmmdevHGCMAddCommand(pThis, pCmd);
+            /* See current version above. */
+            if (!fCancelled)
+                vmmdevHGCMAddCommand(pThis, pCmd);
+            else
+            {
+                Log(("vmmdevHGCMLoadState: Skipping cancelled request: enmCmdType=%d GCPhys=%#RX32 LB %#x\n",
+                     enmCmdType, GCPhys, cbRequest));
+                vmmdevHGCMCmdFree(pThis, pCmd);
+            }
         }
 
         /* A reserved field, will allow to extend saved data for VMMDevHGCM. */
@@ -1947,10 +1972,8 @@ static int vmmdevHGCMRestoreConnect(PVMMDEV pThis, uint32_t u32SSMVersion, const
                                            pReq->header.header.fRequestor);
     AssertReturn(pCmd, VERR_NO_MEMORY);
 
-    if (u32SSMVersion >= 9)
-        pCmd->fCancelled = pLoadedCmd->fCancelled;
-    else
-        pCmd->fCancelled = false;
+    Assert(pLoadedCmd->fCancelled == false);
+    pCmd->fCancelled = false;
     pCmd->fRestored      = true;
     pCmd->enmRequestType = enmRequestType;
 
@@ -1990,10 +2013,8 @@ static int vmmdevHGCMRestoreDisconnect(PVMMDEV pThis, uint32_t u32SSMVersion, co
                                            pReq->header.header.fRequestor);
     AssertReturn(pCmd, VERR_NO_MEMORY);
 
-    if (u32SSMVersion >= 9)
-        pCmd->fCancelled = pLoadedCmd->fCancelled;
-    else
-        pCmd->fCancelled = false;
+    Assert(pLoadedCmd->fCancelled == false);
+    pCmd->fCancelled = false;
     pCmd->fRestored      = true;
     pCmd->enmRequestType = enmRequestType;
 
@@ -2027,6 +2048,7 @@ static int vmmdevHGCMRestoreCall(PVMMDEV pThis, uint32_t u32SSMVersion, const VB
     if (u32SSMVersion >= 9)
     {
         ASSERT_GUEST_RETURN(pLoadedCmd->enmCmdType == VBOXHGCMCMDTYPE_CALL, VERR_MISMATCH);
+        Assert(pLoadedCmd->fCancelled == false);
     }
 
     PVBOXHGCMCMD pCmd;
@@ -2036,10 +2058,7 @@ static int vmmdevHGCMRestoreCall(PVMMDEV pThis, uint32_t u32SSMVersion, const VB
         return rc;
 
     /* pLoadedCmd is fake, it does not contain actual call parameters. Only pagelists for LinAddr. */
-    if (u32SSMVersion >= 9)
-        pCmd->fCancelled = pLoadedCmd->fCancelled;
-    else
-        pCmd->fCancelled = false;
+    pCmd->fCancelled = false;
     pCmd->fRestored      = true;
     pCmd->enmRequestType = enmRequestType;
 
