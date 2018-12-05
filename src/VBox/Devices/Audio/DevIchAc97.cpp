@@ -127,7 +127,7 @@
 /** @name Baseline Audio Register Set (BARS).
  * @{ */
 #define AC97_BARS_VOL_MASK              0x1f   /**< Volume mask for the Baseline Audio Register Set (5.7.2). */
-#define AC97_BARS_VOL_STEPS             31     /**< Volume steps for the Baseline Audio Register Set (5.7.2). */
+#define AC97_BARS_GAIN_MASK             0x0f   /**< Gain mask for the Baseline Audio Register Set. */
 #define AC97_BARS_VOL_MUTE_SHIFT        15     /**< Mute bit shift for the Baseline Audio Register Set (5.7.2). */
 /** @} */
 
@@ -2104,13 +2104,17 @@ static int ichac97R3MixerSetVolume(PAC97STATE pThis, int index, PDMAUDIOMIXERCTL
      *  set to 1 by the Codec logic. On readback, all lower 5 bits will read ones whenever
      *  these bits are set to 1."
      *
-     * Linux ALSA depends on this behavior.
+     * Linux ALSA depends on this behavior to detect that only 5 bits are used for volume
+     * control and the optional 6th bit is not used. Note that this logic only applies to the
+     * master volume controls.
      */
-    /// @todo Does this apply to anything other than the master volume control?
-    if (uVal & RT_BIT(5))  /* D5 bit set? */
-        uVal |= RT_BIT(4) | RT_BIT(3) | RT_BIT(2) | RT_BIT(1) | RT_BIT(0);
-    if (uVal & RT_BIT(13)) /* D13 bit set? */
-        uVal |= RT_BIT(12) | RT_BIT(11) | RT_BIT(10) | RT_BIT(9) | RT_BIT(8);
+    if ((index == AC97_Master_Volume_Mute) || (index == AC97_Headphone_Volume_Mute) || (index == AC97_Master_Volume_Mono_Mute))
+    {
+        if (uVal & RT_BIT(5))  /* D5 bit set? */
+            uVal |= RT_BIT(4) | RT_BIT(3) | RT_BIT(2) | RT_BIT(1) | RT_BIT(0);
+        if (uVal & RT_BIT(13)) /* D13 bit set? */
+            uVal |= RT_BIT(12) | RT_BIT(11) | RT_BIT(10) | RT_BIT(9) | RT_BIT(8);
+    }
 
     const bool    fCtlMuted    = (uVal >> AC97_BARS_VOL_MUTE_SHIFT) & 1;
           uint8_t uCtlAttLeft  = (uVal >> 8) & AC97_BARS_VOL_MASK;
@@ -2161,6 +2165,81 @@ static int ichac97R3MixerSetVolume(PAC97STATE pThis, int index, PDMAUDIOMIXERCTL
                 break;
 
             case PDMAUDIOMIXERCTL_MIC_IN:
+            case PDMAUDIOMIXERCTL_LINE_IN:
+                /* These are recognized but do nothing. */
+                break;
+
+            default:
+                AssertFailed();
+                rc = VERR_NOT_SUPPORTED;
+                break;
+        }
+
+        if (pSink)
+            rc = AudioMixerSinkSetVolume(pSink, &Vol);
+    }
+
+    ichac97MixerSet(pThis, index, uVal);
+
+    if (RT_FAILURE(rc))
+        LogFlowFunc(("Failed with %Rrc\n", rc));
+
+    return rc;
+}
+
+/**
+ * Sets the gain of a specific AC'97 recording control.
+ *
+ * NB: gain support is currently not implemented in PDM audio.
+ *
+ * @returns IPRT status code.
+ * @param   pThis               AC'97 state.
+ * @param   index               AC'97 mixer index to set volume for.
+ * @param   enmMixerCtl         Corresponding audio mixer sink.
+ * @param   uVal                Volume value to set.
+ */
+static int ichac97R3MixerSetGain(PAC97STATE pThis, int index, PDMAUDIOMIXERCTL enmMixerCtl, uint32_t uVal)
+{
+    /*
+     * For AC'97 recording controls, each additional step means +1.5dB gain with
+     * zero being 0dB gain and 15 being +22.5dB gain.
+     */
+    const bool    fCtlMuted     = (uVal >> AC97_BARS_VOL_MUTE_SHIFT) & 1;
+          uint8_t uCtlGainLeft  = (uVal >> 8) & AC97_BARS_GAIN_MASK;
+          uint8_t uCtlGainRight = uVal & AC97_BARS_GAIN_MASK;
+
+    Assert(uCtlGainLeft  <= 255 / AC97_DB_FACTOR);
+    Assert(uCtlGainRight <= 255 / AC97_DB_FACTOR);
+
+    LogFunc(("index=0x%x, uVal=%RU32, enmMixerCtl=%RU32\n", index, uVal, enmMixerCtl));
+    LogFunc(("uCtlGainLeft=%RU8, uCtlGainRight=%RU8 ", uCtlGainLeft, uCtlGainRight));
+
+    uint8_t lVol = PDMAUDIO_VOLUME_MAX + uCtlGainLeft  * AC97_DB_FACTOR;
+    uint8_t rVol = PDMAUDIO_VOLUME_MAX + uCtlGainRight * AC97_DB_FACTOR;
+
+    /* We do not currently support gain. Since AC'97 does not support attenuation
+     * for the recording input, the best we can do is set the maximum volume.
+     */
+# ifndef VBOX_WITH_AC97_GAIN_SUPPORT
+    /* NB: Currently there is no gain support, only attenuation. Since AC'97 does not
+     * support attenuation for the recording inputs, the best we can do is set the
+     * maximum volume.
+     */
+    lVol = rVol = PDMAUDIO_VOLUME_MAX;
+# endif
+
+    Log(("-> fMuted=%RTbool, lVol=%RU8, rVol=%RU8\n", fCtlMuted, lVol, rVol));
+
+    int rc = VINF_SUCCESS;
+
+    if (pThis->pMixer) /* Device can be in reset state, so no mixer available. */
+    {
+        PDMAUDIOVOLUME Vol   = { fCtlMuted, lVol, rVol };
+        PAUDMIXSINK    pSink = NULL;
+
+        switch (enmMixerCtl)
+        {
+            case PDMAUDIOMIXERCTL_MIC_IN:
                 pSink = pThis->pSinkMicIn;
                 break;
 
@@ -2174,8 +2253,16 @@ static int ichac97R3MixerSetVolume(PAC97STATE pThis, int index, PDMAUDIOMIXERCTL
                 break;
         }
 
-        if (pSink)
+        if (pSink) {
             rc = AudioMixerSinkSetVolume(pSink, &Vol);
+            /* There is only one AC'97 recording gain control. If line in
+             * is changed, also update the microphone. If the optional dedicated
+             * microphone is changed, only change that.
+             * NB: The codecs we support do not have the dedicated microphone control.
+             */
+            if ((pSink == pThis->pSinkLineIn) && pThis->pSinkMicIn)
+                rc = AudioMixerSinkSetVolume(pSink, &Vol);
+        }
     }
 
     ichac97MixerSet(pThis, index, uVal);
@@ -2357,7 +2444,11 @@ static int ichac97R3MixerReset(PAC97STATE pThis)
     /* The default value for stereo registers is 8808h, which corresponds to 0 dB gain with mute on.*/
     ichac97R3MixerSetVolume(pThis, AC97_PCM_Out_Volume_Mute, PDMAUDIOMIXERCTL_FRONT,         0x8808);
     ichac97R3MixerSetVolume(pThis, AC97_Line_In_Volume_Mute, PDMAUDIOMIXERCTL_LINE_IN,       0x8808);
-    ichac97R3MixerSetVolume(pThis, AC97_Mic_Volume_Mute,     PDMAUDIOMIXERCTL_MIC_IN,        0x8808);
+    ichac97R3MixerSetVolume(pThis, AC97_Mic_Volume_Mute,     PDMAUDIOMIXERCTL_MIC_IN,        0x8008);
+
+    /* The default for record controls is 0 dB gain with mute on. */
+    ichac97R3MixerSetGain(pThis, AC97_Record_Gain_Mute,      PDMAUDIOMIXERCTL_LINE_IN,       0x8000);
+    ichac97R3MixerSetGain(pThis, AC97_Record_Gain_Mic_Mute,  PDMAUDIOMIXERCTL_MIC_IN,        0x8000);
 
     return VINF_SUCCESS;
 }
@@ -3333,7 +3424,7 @@ PDMBOTHCBDECL(int) ichac97IOPortNAMWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOP
 #ifdef IN_RING3
                     /* Newer Ubuntu guests rely on that when controlling gain and muting
                      * the recording (capturing) levels. */
-                    ichac97R3MixerSetVolume(pThis, uPortIdx, PDMAUDIOMIXERCTL_LINE_IN, u32Val);
+                    ichac97R3MixerSetGain(pThis, uPortIdx, PDMAUDIOMIXERCTL_LINE_IN, u32Val);
 #else
                     rc = VINF_IOM_R3_IOPORT_WRITE;
 #endif
@@ -3341,7 +3432,7 @@ PDMBOTHCBDECL(int) ichac97IOPortNAMWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOP
                 case AC97_Record_Gain_Mic_Mute:
 #ifdef IN_RING3
                     /* Ditto; see note above. */
-                    ichac97R3MixerSetVolume(pThis, uPortIdx, PDMAUDIOMIXERCTL_MIC_IN,  u32Val);
+                    ichac97R3MixerSetGain(pThis, uPortIdx, PDMAUDIOMIXERCTL_MIC_IN,  u32Val);
 #else
                     rc = VINF_IOM_R3_IOPORT_WRITE;
 #endif
@@ -3623,12 +3714,12 @@ static DECLCALLBACK(int) ichac97R3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, 
     AssertRCReturn(rc2, rc2);
 
     ichac97R3MixerRecordSelect(pThis, ichac97MixerGet(pThis, AC97_Record_Select));
-# define V_(a, b) ichac97R3MixerSetVolume(pThis, a, b, ichac97MixerGet(pThis, a))
-    V_(AC97_Master_Volume_Mute,  PDMAUDIOMIXERCTL_VOLUME_MASTER);
-    V_(AC97_PCM_Out_Volume_Mute, PDMAUDIOMIXERCTL_FRONT);
-    V_(AC97_Line_In_Volume_Mute, PDMAUDIOMIXERCTL_LINE_IN);
-    V_(AC97_Mic_Volume_Mute,     PDMAUDIOMIXERCTL_MIC_IN);
-# undef V_
+    ichac97R3MixerSetVolume(pThis, AC97_Master_Volume_Mute, PDMAUDIOMIXERCTL_VOLUME_MASTER, ichac97MixerGet(pThis, AC97_Master_Volume_Mute));
+    ichac97R3MixerSetVolume(pThis, AC97_PCM_Out_Volume_Mute, PDMAUDIOMIXERCTL_FRONT, ichac97MixerGet(pThis, AC97_PCM_Out_Volume_Mute));
+    ichac97R3MixerSetVolume(pThis, AC97_Line_In_Volume_Mute, PDMAUDIOMIXERCTL_LINE_IN, ichac97MixerGet(pThis, AC97_Line_In_Volume_Mute));
+    ichac97R3MixerSetVolume(pThis, AC97_Mic_Volume_Mute, PDMAUDIOMIXERCTL_MIC_IN, ichac97MixerGet(pThis, AC97_Mic_Volume_Mute));
+    ichac97R3MixerSetGain(pThis, AC97_Record_Gain_Mic_Mute, PDMAUDIOMIXERCTL_MIC_IN, ichac97MixerGet(pThis, AC97_Record_Gain_Mic_Mute));
+    ichac97R3MixerSetGain(pThis, AC97_Record_Gain_Mute, PDMAUDIOMIXERCTL_LINE_IN, ichac97MixerGet(pThis, AC97_Record_Gain_Mute));
     if (pThis->uCodecModel == AC97_CODEC_AD1980)
         if (ichac97MixerGet(pThis, AC97_AD_Misc) & AC97_AD_MISC_HPSEL)
             ichac97R3MixerSetVolume(pThis, AC97_Headphone_Volume_Mute, PDMAUDIOMIXERCTL_VOLUME_MASTER,
