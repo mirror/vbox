@@ -162,7 +162,7 @@ private:
         several things in the following order:
         - when there are no more panels visible assign it to the parent dialog
         - grab it from the dialog as soon as a panel becomes visible again
-        - assigned it to the most recently "unhidden" panel */
+        - assign it to the most recently "unhidden" panel */
     void manageEscapeShortCut();
     void copyToGuest();
     void copyToHost();
