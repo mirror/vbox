@@ -212,7 +212,7 @@ private:
      * @param   nsTimestamp   the timestamp of the last notification
      * @param   pProp         where to return the property found.  If none is
      *                        found this will be set to nil.
-     * @throws  can throw std::bad_alloc
+     * @throws  nothing
      * @thread  HGCM
      */
     int getOldNotification(const char *pszPatterns, uint64_t nsTimestamp, Property *pProp)
@@ -405,7 +405,7 @@ public:
         return VINF_SUCCESS;
     }
 
-    void setHostVersionProps();
+    int setHostVersionProps();
     void incrementCounterProp(const char *pszName);
     static DECLCALLBACK(void) svcNotify(void *pvService, HGCMNOTIFYEVENT enmEvent);
 
@@ -580,18 +580,21 @@ int Service::setPropertyBlock(uint32_t cParms, VBOXHGCMSVCPARM paParms[])
                 if (pProp)
                 {
                     /* Update existing property. */
-                    pProp->mValue     = papszValues[i];
+                    rc = pProp->mValue.assignNoThrow(papszValues[i]);
+                    AssertRCBreak(rc);
                     pProp->mTimestamp = paNsTimestamps[i];
                     pProp->mFlags     = fFlags;
                 }
                 else
                 {
                     /* Create a new property */
-                    pProp = new Property(papszNames[i], papszValues[i], paNsTimestamps[i], fFlags);
-                    if (!pProp)
+                    try
                     {
-                        rc = VERR_NO_MEMORY;
-                        break;
+                        pProp = new Property(papszNames[i], papszValues[i], paNsTimestamps[i], fFlags);
+                    }
+                    catch (std::bad_alloc &)
+                    {
+                        return VERR_NO_MEMORY;
                     }
                     if (RTStrSpaceInsert(&mhProperties, &pProp->mStrCore))
                         mcProperties++;
@@ -792,9 +795,12 @@ int Service::setPropertyInternal(const char *pcszName, const char *pcszValue, ui
          */
         if (pProp)
         {
-            pProp->mValue = pcszValue;
-            pProp->mTimestamp = nsTimestamp;
-            pProp->mFlags = fFlags;
+            rc = pProp->mValue.assignNoThrow(pcszValue);
+            if (RT_SUCCESS(rc))
+            {
+                pProp->mTimestamp = nsTimestamp;
+                pProp->mFlags = fFlags;
+            }
         }
         else if (mcProperties < GUEST_PROP_MAX_PROPS)
         {
@@ -1042,7 +1048,7 @@ int Service::enumProps(uint32_t cParms, VBOXHGCMSVCPARM paParms[])
 
 
 /** Helper query used by getOldNotification
- * @throws  can throw std::bad_alloc
+ * @throws  nothing
  */
 int Service::getOldNotificationInternal(const char *pszPatterns, uint64_t nsTimestamp, Property *pProp)
 {
@@ -1063,7 +1069,14 @@ int Service::getOldNotificationInternal(const char *pszPatterns, uint64_t nsTime
     for (; base != mGuestNotifications.end(); ++base)
         if (base->Matches(pszPatterns))
         {
-            *pProp = *base;
+            try
+            {
+                *pProp = *base;
+            }
+            catch (std::bad_alloc &)
+            {
+                rc = VERR_NO_MEMORY;
+            }
             return rc;
         }
     *pProp = Property();
@@ -1118,7 +1131,7 @@ int Service::getNotificationWriteOut(uint32_t cParms, VBOXHGCMSVCPARM paParms[],
  * @param   cParms      the number of HGCM parameters supplied
  * @param   paParms     the array of HGCM parameters
  * @thread  HGCM
- * @throws  can throw std::bad_alloc
+ * @throws  nothing
  */
 int Service::getNotification(uint32_t u32ClientId, VBOXHGCMCALLHANDLE callHandle,
                              uint32_t cParms, VBOXHGCMSVCPARM paParms[])
@@ -1160,28 +1173,57 @@ int Service::getNotification(uint32_t u32ClientId, VBOXHGCMCALLHANDLE callHandle
                  * Complete the old request with an error in this case.
                  * Protection against clients, which cancel and resubmits requests.
                  */
+                uint32_t cPendingWaits = 0;
                 CallList::iterator it = mGuestWaiters.begin();
                 while (it != mGuestWaiters.end())
                 {
-                    const char *pszPatternsExisting;
-                    uint32_t cchPatternsExisting;
-                    int rc3 = HGCMSvcGetCStr(&it->mParms[0], &pszPatternsExisting, &cchPatternsExisting);
-
-                    if (   RT_SUCCESS(rc3)
-                        && u32ClientId == it->u32ClientId
-                        && RTStrCmp(pszPatterns, pszPatternsExisting) == 0)
+                    if (u32ClientId == it->u32ClientId)
                     {
-                        /* Complete the old request. */
-                        mpHelpers->pfnCallComplete(it->mHandle, VERR_INTERRUPTED);
-                        it = mGuestWaiters.erase(it);
+                        const char *pszPatternsExisting;
+                        uint32_t    cchPatternsExisting;
+                        int rc3 = HGCMSvcGetCStr(&it->mParms[0], &pszPatternsExisting, &cchPatternsExisting);
+                        if (   RT_SUCCESS(rc3)
+                            && RTStrCmp(pszPatterns, pszPatternsExisting) == 0)
+                        {
+                            /* Complete the old request. */
+                            mpHelpers->pfnCallComplete(it->mHandle, VERR_INTERRUPTED);
+                            it = mGuestWaiters.erase(it);
+                        }
+                        //else if (mpHelpers->pfnIsCallCancelled(it->mHandle))
+                        //{
+                        //    /* Cleanup cancelled request. */
+                        //    mpHelpers->pfnCallComplete(it->mHandle, VERR_INTERRUPTED);
+                        //    it = mGuestWaiters.erase(it);
+                        //}
+                        else
+                        {
+                            /** @todo check if cancelled. */
+                            cPendingWaits++;
+                            ++it;
+                        }
                     }
                     else
                         ++it;
                 }
 
-                mGuestWaiters.push_back(GuestCall(u32ClientId, callHandle, GUEST_PROP_FN_GET_NOTIFICATION,
-                                                  cParms, paParms, rc));
-                rc = VINF_HGCM_ASYNC_EXECUTE;
+                //if (cPendingWaits < 16)
+                {
+                    try
+                    {
+                        mGuestWaiters.push_back(GuestCall(u32ClientId, callHandle, GUEST_PROP_FN_GET_NOTIFICATION,
+                                                          cParms, paParms, rc));
+                        rc = VINF_HGCM_ASYNC_EXECUTE;
+                    }
+                    catch (std::bad_alloc &)
+                    {
+                        rc = VERR_NO_MEMORY;
+                    }
+                }
+                //else
+                //{
+                //    LogFunc(("Too many pending waits already!\n"));
+                //    rc = VERR_OUT_OF_RESOURCES;
+                //}
             }
             /*
              * Otherwise reply at once with the enqueued notification we found.
@@ -1203,9 +1245,10 @@ int Service::getNotification(uint32_t u32ClientId, VBOXHGCMCALLHANDLE callHandle
 /**
  * Notify the service owner and the guest that a property has been
  * added/deleted/changed
- * @param pszProperty  the name of the property which has changed
- * @param nsTimestamp  the time at which the change took place
  *
+ * @param   pszProperty The name of the property which has changed.
+ * @param   nsTimestamp The time at which the change took place.
+ * @throws  nothing.
  * @thread  HGCM service
  */
 int Service::doNotifications(const char *pszProperty, uint64_t nsTimestamp)
@@ -1218,51 +1261,56 @@ int Service::doNotifications(const char *pszProperty, uint64_t nsTimestamp)
         ++nsTimestamp;
 
     /*
+     * Don't keep too many changes around.
+     */
+    if (mGuestNotifications.size() >= GUEST_PROP_MAX_GUEST_NOTIFICATIONS)
+        mGuestNotifications.pop_front();
+
+    /*
      * Try to find the property.  Create a change event if we find it and a
      * delete event if we do not.
      */
     Property prop;
-    prop.mName = pszProperty;
+    int rc = prop.mName.assignNoThrow(pszProperty);
+    AssertRCReturn(rc, rc);
     prop.mTimestamp = nsTimestamp;
     /* prop is currently a delete event for pszProperty */
     Property const * const pProp = getPropertyInternal(pszProperty);
     if (pProp)
     {
         /* Make prop into a change event. */
-        prop.mValue = pProp->mValue;
+        rc = prop.mValue.assignNoThrow(pProp->mValue);
+        AssertRCReturn(rc, rc);
         prop.mFlags = pProp->mFlags;
     }
 
     /* Release guest waiters if applicable and add the event
      * to the queue for guest notifications */
-    int rc = VINF_SUCCESS;
-    try
+    CallList::iterator it = mGuestWaiters.begin();
+    if (it != mGuestWaiters.end())
     {
-        CallList::iterator it = mGuestWaiters.begin();
+        const char *pszPatterns;
+        uint32_t    cchPatterns;
+        HGCMSvcGetCStr(&it->mParms[0], &pszPatterns, &cchPatterns);
+
         while (it != mGuestWaiters.end())
         {
-            const char *pszPatterns;
-            uint32_t cchPatterns;
-            HGCMSvcGetCStr(&it->mParms[0], &pszPatterns, &cchPatterns);
             if (prop.Matches(pszPatterns))
             {
-                GuestCall curCall = *it;
-                int rc2 = getNotificationWriteOut(curCall.mParmsCnt, curCall.mParms, prop);
+                int rc2 = getNotificationWriteOut(it->mParmsCnt, it->mParms, prop);
                 if (RT_SUCCESS(rc2))
-                    rc2 = curCall.mRc;
-                mpHelpers->pfnCallComplete(curCall.mHandle, rc2);
+                    rc2 = it->mRc;
+                mpHelpers->pfnCallComplete(it->mHandle, rc2);
                 it = mGuestWaiters.erase(it);
             }
             else
                 ++it;
         }
+    }
 
+    try
+    {
         mGuestNotifications.push_back(prop);
-
-        /** @todo r=andy This list does not have a purpose but for tracking
-          *              the timestamps ... */
-        if (mGuestNotifications.size() > GUEST_PROP_MAX_GUEST_NOTIFICATIONS)
-            mGuestNotifications.pop_front();
     }
     catch (std::bad_alloc &)
     {
@@ -1380,63 +1428,54 @@ void Service::call (VBOXHGCMCALLHANDLE callHandle, uint32_t u32ClientID,
                     void * /* pvClient */, uint32_t eFunction, uint32_t cParms,
                     VBOXHGCMSVCPARM paParms[])
 {
-    int rc = VINF_SUCCESS;
+    int rc;
     LogFlowFunc(("u32ClientID = %d, fn = %d, cParms = %d, pparms = %p\n",
                  u32ClientID, eFunction, cParms, paParms));
 
-    try
+    switch (eFunction)
     {
-        switch (eFunction)
-        {
-            /* The guest wishes to read a property */
-            case GUEST_PROP_FN_GET_PROP:
-                LogFlowFunc(("GET_PROP\n"));
-                rc = getProperty(cParms, paParms);
-                break;
+        /* The guest wishes to read a property */
+        case GUEST_PROP_FN_GET_PROP:
+            LogFlowFunc(("GET_PROP\n"));
+            rc = getProperty(cParms, paParms);
+            break;
 
-            /* The guest wishes to set a property */
-            case GUEST_PROP_FN_SET_PROP:
-                LogFlowFunc(("SET_PROP\n"));
-                rc = setProperty(cParms, paParms, true);
-                break;
+        /* The guest wishes to set a property */
+        case GUEST_PROP_FN_SET_PROP:
+            LogFlowFunc(("SET_PROP\n"));
+            rc = setProperty(cParms, paParms, true);
+            break;
 
-            /* The guest wishes to set a property value */
-            case GUEST_PROP_FN_SET_PROP_VALUE:
-                LogFlowFunc(("SET_PROP_VALUE\n"));
-                rc = setProperty(cParms, paParms, true);
-                break;
+        /* The guest wishes to set a property value */
+        case GUEST_PROP_FN_SET_PROP_VALUE:
+            LogFlowFunc(("SET_PROP_VALUE\n"));
+            rc = setProperty(cParms, paParms, true);
+            break;
 
-            /* The guest wishes to remove a configuration value */
-            case GUEST_PROP_FN_DEL_PROP:
-                LogFlowFunc(("DEL_PROP\n"));
-                rc = delProperty(cParms, paParms, true);
-                break;
+        /* The guest wishes to remove a configuration value */
+        case GUEST_PROP_FN_DEL_PROP:
+            LogFlowFunc(("DEL_PROP\n"));
+            rc = delProperty(cParms, paParms, true);
+            break;
 
-            /* The guest wishes to enumerate all properties */
-            case GUEST_PROP_FN_ENUM_PROPS:
-                LogFlowFunc(("ENUM_PROPS\n"));
-                rc = enumProps(cParms, paParms);
-                break;
+        /* The guest wishes to enumerate all properties */
+        case GUEST_PROP_FN_ENUM_PROPS:
+            LogFlowFunc(("ENUM_PROPS\n"));
+            rc = enumProps(cParms, paParms);
+            break;
 
-            /* The guest wishes to get the next property notification */
-            case GUEST_PROP_FN_GET_NOTIFICATION:
-                LogFlowFunc(("GET_NOTIFICATION\n"));
-                rc = getNotification(u32ClientID, callHandle, cParms, paParms);
-                break;
+        /* The guest wishes to get the next property notification */
+        case GUEST_PROP_FN_GET_NOTIFICATION:
+            LogFlowFunc(("GET_NOTIFICATION\n"));
+            rc = getNotification(u32ClientID, callHandle, cParms, paParms);
+            break;
 
-            default:
-                rc = VERR_NOT_IMPLEMENTED;
-        }
-    }
-    catch (std::bad_alloc &)
-    {
-        rc = VERR_NO_MEMORY;
+        default:
+            rc = VERR_NOT_IMPLEMENTED;
     }
     LogFlowFunc(("rc = %Rrc\n", rc));
     if (rc != VINF_HGCM_ASYNC_EXECUTE)
-    {
-        mpHelpers->pfnCallComplete (callHandle, rc);
-    }
+        mpHelpers->pfnCallComplete(callHandle, rc);
 }
 
 /**
@@ -1489,73 +1528,64 @@ DECLCALLBACK(void) Service::dbgInfo(void *pvUser, PCDBGFINFOHLP pHlp, const char
  */
 int Service::hostCall (uint32_t eFunction, uint32_t cParms, VBOXHGCMSVCPARM paParms[])
 {
-    int rc = VINF_SUCCESS;
+    int rc;
+    LogFlowFunc(("fn = %d, cParms = %d, pparms = %p\n", eFunction, cParms, paParms));
 
-    LogFlowFunc(("fn = %d, cParms = %d, pparms = %p\n",
-                 eFunction, cParms, paParms));
-
-    try
+    switch (eFunction)
     {
-        switch (eFunction)
-        {
-            /* The host wishes to set a block of properties */
-            case GUEST_PROP_FN_HOST_SET_PROPS:
-                LogFlowFunc(("SET_PROPS_HOST\n"));
-                rc = setPropertyBlock(cParms, paParms);
-                break;
+        /* The host wishes to set a block of properties */
+        case GUEST_PROP_FN_HOST_SET_PROPS:
+            LogFlowFunc(("SET_PROPS_HOST\n"));
+            rc = setPropertyBlock(cParms, paParms);
+            break;
 
-            /* The host wishes to read a configuration value */
-            case GUEST_PROP_FN_HOST_GET_PROP:
-                LogFlowFunc(("GET_PROP_HOST\n"));
-                rc = getProperty(cParms, paParms);
-                break;
+        /* The host wishes to read a configuration value */
+        case GUEST_PROP_FN_HOST_GET_PROP:
+            LogFlowFunc(("GET_PROP_HOST\n"));
+            rc = getProperty(cParms, paParms);
+            break;
 
-            /* The host wishes to set a configuration value */
-            case GUEST_PROP_FN_HOST_SET_PROP:
-                LogFlowFunc(("SET_PROP_HOST\n"));
-                rc = setProperty(cParms, paParms, false);
-                break;
+        /* The host wishes to set a configuration value */
+        case GUEST_PROP_FN_HOST_SET_PROP:
+            LogFlowFunc(("SET_PROP_HOST\n"));
+            rc = setProperty(cParms, paParms, false);
+            break;
 
-            /* The host wishes to set a configuration value */
-            case GUEST_PROP_FN_HOST_SET_PROP_VALUE:
-                LogFlowFunc(("SET_PROP_VALUE_HOST\n"));
-                rc = setProperty(cParms, paParms, false);
-                break;
+        /* The host wishes to set a configuration value */
+        case GUEST_PROP_FN_HOST_SET_PROP_VALUE:
+            LogFlowFunc(("SET_PROP_VALUE_HOST\n"));
+            rc = setProperty(cParms, paParms, false);
+            break;
 
-            /* The host wishes to remove a configuration value */
-            case GUEST_PROP_FN_HOST_DEL_PROP:
-                LogFlowFunc(("DEL_PROP_HOST\n"));
-                rc = delProperty(cParms, paParms, false);
-                break;
+        /* The host wishes to remove a configuration value */
+        case GUEST_PROP_FN_HOST_DEL_PROP:
+            LogFlowFunc(("DEL_PROP_HOST\n"));
+            rc = delProperty(cParms, paParms, false);
+            break;
 
-            /* The host wishes to enumerate all properties */
-            case GUEST_PROP_FN_HOST_ENUM_PROPS:
-                LogFlowFunc(("ENUM_PROPS\n"));
-                rc = enumProps(cParms, paParms);
-                break;
+        /* The host wishes to enumerate all properties */
+        case GUEST_PROP_FN_HOST_ENUM_PROPS:
+            LogFlowFunc(("ENUM_PROPS\n"));
+            rc = enumProps(cParms, paParms);
+            break;
 
-            /* The host wishes to set global flags for the service */
-            case GUEST_PROP_FN_HOST_SET_GLOBAL_FLAGS:
-                LogFlowFunc(("SET_GLOBAL_FLAGS_HOST\n"));
-                if (cParms == 1)
-                {
-                    uint32_t fFlags;
-                    rc = HGCMSvcGetU32(&paParms[0], &fFlags);
-                    if (RT_SUCCESS(rc))
-                        mfGlobalFlags = fFlags;
-                }
-                else
-                    rc = VERR_INVALID_PARAMETER;
-                break;
+        /* The host wishes to set global flags for the service */
+        case GUEST_PROP_FN_HOST_SET_GLOBAL_FLAGS:
+            LogFlowFunc(("SET_GLOBAL_FLAGS_HOST\n"));
+            if (cParms == 1)
+            {
+                uint32_t fFlags;
+                rc = HGCMSvcGetU32(&paParms[0], &fFlags);
+                if (RT_SUCCESS(rc))
+                    mfGlobalFlags = fFlags;
+            }
+            else
+                rc = VERR_INVALID_PARAMETER;
+            break;
 
-            default:
-                rc = VERR_NOT_SUPPORTED;
-                break;
-        }
-    }
-    catch (std::bad_alloc &)
-    {
-        rc = VERR_NO_MEMORY;
+        default:
+            rc = VERR_NOT_SUPPORTED;
+            break;
     }
 
     LogFlowFunc(("rc = %Rrc\n", rc));
@@ -1622,23 +1652,27 @@ void Service::incrementCounterProp(const char *pszName)
 /**
  * Sets the VBoxVer, VBoxVerExt and VBoxRev properties.
  */
-void Service::setHostVersionProps()
+int Service::setHostVersionProps()
 {
     uint64_t nsTimestamp = getCurrentTimestamp();
 
     /* Set the raw VBox version string as a guest property. Used for host/guest
      * version comparison. */
-    setPropertyInternal("/VirtualBox/HostInfo/VBoxVer", VBOX_VERSION_STRING_RAW,
-                        GUEST_PROP_F_TRANSIENT | GUEST_PROP_F_RDONLYGUEST, nsTimestamp);
+    int rc = setPropertyInternal("/VirtualBox/HostInfo/VBoxVer", VBOX_VERSION_STRING_RAW,
+                                 GUEST_PROP_F_TRANSIENT | GUEST_PROP_F_RDONLYGUEST, nsTimestamp);
+    AssertRCReturn(rc, rc);
 
     /* Set the full VBox version string as a guest property. Can contain vendor-specific
      * information/branding and/or pre-release tags. */
-    setPropertyInternal("/VirtualBox/HostInfo/VBoxVerExt", VBOX_VERSION_STRING,
-                        GUEST_PROP_F_TRANSIENT | GUEST_PROP_F_RDONLYGUEST, nsTimestamp);
+    rc = setPropertyInternal("/VirtualBox/HostInfo/VBoxVerExt", VBOX_VERSION_STRING,
+                             GUEST_PROP_F_TRANSIENT | GUEST_PROP_F_RDONLYGUEST, nsTimestamp + 1);
+    AssertRCReturn(rc, rc);
 
     /* Set the VBox SVN revision as a guest property */
-    setPropertyInternal("/VirtualBox/HostInfo/VBoxRev", RTBldCfgRevisionStr(),
-                        GUEST_PROP_F_TRANSIENT | GUEST_PROP_F_RDONLYGUEST, nsTimestamp);
+    rc = setPropertyInternal("/VirtualBox/HostInfo/VBoxRev", RTBldCfgRevisionStr(),
+                             GUEST_PROP_F_TRANSIENT | GUEST_PROP_F_RDONLYGUEST, nsTimestamp + 2);
+    AssertRCReturn(rc, rc);
+    return VINF_SUCCESS;
 }
 
 
@@ -1650,27 +1684,20 @@ void Service::setHostVersionProps()
     SELF *pThis = reinterpret_cast<SELF *>(pvService);
     AssertPtrReturnVoid(pThis);
 
-    try
+    /* Make sure the host version properties have been touched and are
+       up-to-date after a restore: */
+    if (   !pThis->m_fSetHostVersionProps
+        && (enmEvent == HGCMNOTIFYEVENT_RESUME || enmEvent == HGCMNOTIFYEVENT_POWER_ON))
     {
-        /* Make sure the host version properties have been touched and are
-           up-to-date after a restore: */
-        if (   !pThis->m_fSetHostVersionProps
-            && (enmEvent == HGCMNOTIFYEVENT_RESUME || enmEvent == HGCMNOTIFYEVENT_POWER_ON))
-        {
-            pThis->setHostVersionProps();
-            pThis->m_fSetHostVersionProps = true;
-        }
-
-        if (enmEvent == HGCMNOTIFYEVENT_RESUME)
-            pThis->incrementCounterProp("/VirtualBox/VMInfo/ResumeCounter");
-
-        if (enmEvent == HGCMNOTIFYEVENT_RESET)
-            pThis->incrementCounterProp("/VirtualBox/VMInfo/ResetCounter");
+        pThis->setHostVersionProps();
+        pThis->m_fSetHostVersionProps = true;
     }
-    catch (std::bad_alloc &)
-    {
-        /* ignore */
-    }
+
+    if (enmEvent == HGCMNOTIFYEVENT_RESUME)
+        pThis->incrementCounterProp("/VirtualBox/VMInfo/ResumeCounter");
+
+    if (enmEvent == HGCMNOTIFYEVENT_RESET)
+        pThis->incrementCounterProp("/VirtualBox/VMInfo/ResetCounter");
 }
 
 
@@ -1712,29 +1739,27 @@ int Service::initialize()
     /*
      * Insert standard host properties.
      */
-    try
-    {
-        /* The host version will but updated again on power on or resume
-           (after restore), however we need the properties now for restored
-           guest notification/wait calls. */
-        setHostVersionProps();
+    /* The host version will but updated again on power on or resume
+       (after restore), however we need the properties now for restored
+       guest notification/wait calls. */
+    int rc = setHostVersionProps();
+    AssertRCReturn(rc, rc);
 
-        /* Sysprep execution by VBoxService (host is allowed to change these). */
-        uint64_t nsNow = getCurrentTimestamp();
-        setPropertyInternal("/VirtualBox/HostGuest/SysprepExec", "", GUEST_PROP_F_TRANSIENT | GUEST_PROP_F_RDONLYGUEST, nsNow);
-        setPropertyInternal("/VirtualBox/HostGuest/SysprepArgs", "", GUEST_PROP_F_TRANSIENT | GUEST_PROP_F_RDONLYGUEST, nsNow);
+    /* Sysprep execution by VBoxService (host is allowed to change these). */
+    uint64_t nsNow = getCurrentTimestamp();
+    rc = setPropertyInternal("/VirtualBox/HostGuest/SysprepExec", "", GUEST_PROP_F_TRANSIENT | GUEST_PROP_F_RDONLYGUEST, nsNow);
+    AssertRCReturn(rc, rc);
+    rc = setPropertyInternal("/VirtualBox/HostGuest/SysprepArgs", "", GUEST_PROP_F_TRANSIENT | GUEST_PROP_F_RDONLYGUEST, nsNow);
+    AssertRCReturn(rc, rc);
 
-        /* Resume and reset counters. */
-        setPropertyInternal("/VirtualBox/VMInfo/ResumeCounter", "0", GUEST_PROP_F_TRANSIENT | GUEST_PROP_F_RDONLYGUEST, nsNow);
-        setPropertyInternal("/VirtualBox/VMInfo/ResetCounter", "0", GUEST_PROP_F_TRANSIENT | GUEST_PROP_F_RDONLYGUEST, nsNow);
-    }
-    catch (std::bad_alloc &)
-    {
-        return VERR_NO_MEMORY;
-    }
+    /* Resume and reset counters. */
+    rc = setPropertyInternal("/VirtualBox/VMInfo/ResumeCounter", "0", GUEST_PROP_F_TRANSIENT | GUEST_PROP_F_RDONLYGUEST, nsNow);
+    AssertRCReturn(rc, rc);
+    rc = setPropertyInternal("/VirtualBox/VMInfo/ResetCounter",  "0", GUEST_PROP_F_TRANSIENT | GUEST_PROP_F_RDONLYGUEST, nsNow);
+    AssertRCReturn(rc, rc);
 
     /* The host notification thread and queue. */
-    int rc = RTReqQueueCreate(&mhReqQNotifyHost);
+    rc = RTReqQueueCreate(&mhReqQNotifyHost);
     if (RT_SUCCESS(rc))
     {
         rc = RTThreadCreate(&mhThreadNotifyHost,
@@ -1743,7 +1768,7 @@ int Service::initialize()
                             0 /* default stack size */,
                             RTTHREADTYPE_DEFAULT,
                             RTTHREADFLAGS_WAITABLE,
-                            "GSTPROPNTFY");
+                            "GstPropNtfy");
         if (RT_SUCCESS(rc))
         {
             /* Finally debug stuff (ignore failures): */
