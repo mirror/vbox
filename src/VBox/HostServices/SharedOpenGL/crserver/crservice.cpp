@@ -1546,6 +1546,7 @@ extern "C" DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad (VBOXHGCMSVCFNTABLE *pt
             ptable->pfnHostCall   = svcHostCall;
             ptable->pfnSaveState  = svcSaveState;
             ptable->pfnLoadState  = svcLoadState;
+            ptable->pfnNotify     = NULL;
             ptable->pvService     = NULL;
 
             if (!crVBoxServerInit())

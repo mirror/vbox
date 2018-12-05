@@ -175,6 +175,8 @@ class HGCMService
         int DisconnectClient(uint32_t u32ClientId, bool fFromService);
 
         int HostCall(uint32_t u32Function, uint32_t cParms, VBOXHGCMSVCPARM *paParms);
+        static void BroadcastNotify(HGCMNOTIFYEVENT enmEvent);
+        void Notify(HGCMNOTIFYEVENT enmEvent);
 
 #ifdef VBOX_WITH_CRHGSMI
         int HandleAcquired();
@@ -400,17 +402,18 @@ void HGCMService::unloadServiceDLL(void)
  * Messages processed by service threads. These threads only call the service entry points.
  */
 
-#define SVC_MSG_LOAD       (0)  /* Load the service library and call VBOX_HGCM_SVCLOAD_NAME entry point. */
-#define SVC_MSG_UNLOAD     (1)  /* call pfnUnload and unload the service library. */
-#define SVC_MSG_CONNECT    (2)  /* pfnConnect */
-#define SVC_MSG_DISCONNECT (3)  /* pfnDisconnect */
-#define SVC_MSG_GUESTCALL  (4)  /* pfnGuestCall */
-#define SVC_MSG_HOSTCALL   (5)  /* pfnHostCall */
-#define SVC_MSG_LOADSTATE  (6)  /* pfnLoadState. */
-#define SVC_MSG_SAVESTATE  (7)  /* pfnSaveState. */
-#define SVC_MSG_QUIT       (8)  /* Terminate the thread. */
-#define SVC_MSG_REGEXT     (9)  /* pfnRegisterExtension */
-#define SVC_MSG_UNREGEXT   (10) /* pfnRegisterExtension */
+#define SVC_MSG_LOAD       (0)  /**< Load the service library and call VBOX_HGCM_SVCLOAD_NAME entry point. */
+#define SVC_MSG_UNLOAD     (1)  /**< call pfnUnload and unload the service library. */
+#define SVC_MSG_CONNECT    (2)  /**< pfnConnect */
+#define SVC_MSG_DISCONNECT (3)  /**< pfnDisconnect */
+#define SVC_MSG_GUESTCALL  (4)  /**< pfnGuestCall */
+#define SVC_MSG_HOSTCALL   (5)  /**< pfnHostCall */
+#define SVC_MSG_LOADSTATE  (6)  /**< pfnLoadState. */
+#define SVC_MSG_SAVESTATE  (7)  /**< pfnSaveState. */
+#define SVC_MSG_QUIT       (8)  /**< Terminate the thread. */
+#define SVC_MSG_REGEXT     (9)  /**< pfnRegisterExtension */
+#define SVC_MSG_UNREGEXT   (10) /**< pfnRegisterExtension */
+#define SVC_MSG_NOTIFY     (11) /**< pfnNotify */
 #ifdef VBOX_WITH_CRHGSMI
 # define SVC_MSG_HOSTFASTCALLASYNC (21) /* pfnHostCall */
 #endif
@@ -523,6 +526,13 @@ class HGCMMsgSvcUnregisterExtension: public HGCMMsgCore
         HGCMSVCEXTHANDLE handle;
 };
 
+class HGCMMsgNotify: public HGCMMsgCore
+{
+    public:
+        /** The event. */
+        HGCMNOTIFYEVENT enmEvent;
+};
+
 #ifdef VBOX_WITH_CRHGSMI
 class HGCMMsgHostFastCallAsyncSvc: public HGCMMsgCore
 {
@@ -554,6 +564,7 @@ static HGCMMsgCore *hgcmMessageAllocSvc(uint32_t u32MsgId)
         case SVC_MSG_SAVESTATE:   return new HGCMMsgLoadSaveStateClient();
         case SVC_MSG_REGEXT:      return new HGCMMsgSvcRegisterExtension();
         case SVC_MSG_UNREGEXT:    return new HGCMMsgSvcUnregisterExtension();
+        case SVC_MSG_NOTIFY:      return new HGCMMsgNotify();
         default:
             AssertReleaseMsgFailed(("Msg id = %08X\n", u32MsgId));
     }
@@ -809,6 +820,15 @@ DECLCALLBACK(void) hgcmServiceThread(HGCMThread *pThread, void *pvUser)
 
                     pSvc->m_hExtension = NULL;
                 }
+            } break;
+
+            case SVC_MSG_NOTIFY:
+            {
+                HGCMMsgNotify *pMsg = (HGCMMsgNotify *)pMsgCore;
+
+                LogFlowFunc(("SVC_MSG_NOTIFY enmEvent = %d\n", pMsg->enmEvent));
+
+                pSvc->m_fntable.pfnNotify(pSvc->m_fntable.pvService, pMsg->enmEvent);
             } break;
 
             default:
@@ -1793,6 +1813,40 @@ int HGCMService::HostCall(uint32_t u32Function, uint32_t cParms, VBOXHGCMSVCPARM
     return rc;
 }
 
+/** Posts a broadcast notification event to all interested services.
+ *
+ * @param   enmEvent    The notification event.
+ */
+/*static*/ void HGCMService::BroadcastNotify(HGCMNOTIFYEVENT enmEvent)
+{
+    for (HGCMService *pService = sm_pSvcListHead; pService != NULL; pService = pService->m_pSvcNext)
+    {
+        pService->Notify(enmEvent);
+    }
+}
+
+/** Posts a broadcast notification event to the service.
+ *
+ * @param   enmEvent    The notification event.
+ */
+void HGCMService::Notify(HGCMNOTIFYEVENT enmEvent)
+{
+    LogFlowFunc(("%s enmEvent=%d pfnNotify=%p\n", m_pszSvcName, enmEvent, m_fntable.pfnNotify));
+    if (m_fntable.pfnNotify)
+    {
+        HGCMMsgCore *pCoreMsg;
+        int rc = hgcmMsgAlloc(m_pThread, &pCoreMsg, SVC_MSG_NOTIFY, hgcmMessageAllocSvc);
+        if (RT_SUCCESS(rc))
+        {
+            HGCMMsgNotify *pMsg = (HGCMMsgNotify *)pCoreMsg;
+            pMsg->enmEvent = enmEvent;
+
+            rc = hgcmMsgPost(pMsg, NULL);
+            AssertRC(rc);
+        }
+    }
+}
+
 #ifdef VBOX_WITH_CRHGSMI
 
 static DECLCALLBACK(int) hgcmMsgFastCallCompletionCallback(int32_t result, HGCMMsgCore *pMsgCore)
@@ -1855,19 +1909,20 @@ int HGCMService::HostFastCallAsync(uint32_t u32Function, VBOXHGCMSVCPARM *pParm,
  */
 
 /* Messages processed by the main HGCM thread. */
-#define HGCM_MSG_CONNECT    (10)  /* Connect a client to a service. */
-#define HGCM_MSG_DISCONNECT (11)  /* Disconnect the specified client id. */
-#define HGCM_MSG_LOAD       (12)  /* Load the service. */
-#define HGCM_MSG_HOSTCALL   (13)  /* Call the service. */
-#define HGCM_MSG_LOADSTATE  (14)  /* Load saved state for the specified service. */
-#define HGCM_MSG_SAVESTATE  (15)  /* Save state for the specified service. */
-#define HGCM_MSG_RESET      (16)  /* Disconnect all clients from the specified service. */
-#define HGCM_MSG_QUIT       (17)  /* Unload all services and terminate the thread. */
-#define HGCM_MSG_REGEXT     (18)  /* Register a service extension. */
-#define HGCM_MSG_UNREGEXT   (19)  /* Unregister a service extension. */
+#define HGCM_MSG_CONNECT    (10)  /**< Connect a client to a service. */
+#define HGCM_MSG_DISCONNECT (11)  /**< Disconnect the specified client id. */
+#define HGCM_MSG_LOAD       (12)  /**< Load the service. */
+#define HGCM_MSG_HOSTCALL   (13)  /**< Call the service. */
+#define HGCM_MSG_LOADSTATE  (14)  /**< Load saved state for the specified service. */
+#define HGCM_MSG_SAVESTATE  (15)  /**< Save state for the specified service. */
+#define HGCM_MSG_RESET      (16)  /**< Disconnect all clients from the specified service. */
+#define HGCM_MSG_QUIT       (17)  /**< Unload all services and terminate the thread. */
+#define HGCM_MSG_REGEXT     (18)  /**< Register a service extension. */
+#define HGCM_MSG_UNREGEXT   (19)  /**< Unregister a service extension. */
+#define HGCM_MSG_BRD_NOTIFY (20)  /**< Broadcast notification event (VM state change). */
 #ifdef VBOX_WITH_CRHGSMI
-# define HGCM_MSG_SVCAQUIRE  (30)  /* Acquire a service handle (for fast host calls) */
-# define HGCM_MSG_SVCRELEASE (31)  /* Release a service */
+# define HGCM_MSG_SVCAQUIRE  (30) /**< Acquire a service handle (for fast host calls) */
+# define HGCM_MSG_SVCRELEASE (31) /**< Release a service */
 #endif
 
 class HGCMMsgMainConnect: public HGCMMsgHeader
@@ -1952,6 +2007,13 @@ class HGCMMsgMainUnregisterExtension: public HGCMMsgCore
         HGCMSVCEXTHANDLE handle;
 };
 
+class HGCMMsgMainBroadcastNotify: public HGCMMsgCore
+{
+    public:
+        /** The notification event. */
+        HGCMNOTIFYEVENT enmEvent;
+};
+
 #ifdef VBOX_WITH_CRHGSMI
 class HGCMMsgMainSvcAcquire: public HGCMMsgCore
 {
@@ -1985,6 +2047,7 @@ static HGCMMsgCore *hgcmMainMessageAlloc (uint32_t u32MsgId)
         case HGCM_MSG_QUIT:       return new HGCMMsgMainQuit();
         case HGCM_MSG_REGEXT:     return new HGCMMsgMainRegisterExtension();
         case HGCM_MSG_UNREGEXT:   return new HGCMMsgMainUnregisterExtension();
+        case HGCM_MSG_BRD_NOTIFY: return new HGCMMsgMainBroadcastNotify();
 #ifdef VBOX_WITH_CRHGSMI
         case HGCM_MSG_SVCAQUIRE:  return new HGCMMsgMainSvcAcquire();
         case HGCM_MSG_SVCRELEASE: return new HGCMMsgMainSvcRelease();
@@ -2101,6 +2164,15 @@ static DECLCALLBACK(void) hgcmThread(HGCMThread *pThread, void *pvUser)
                 }
             } break;
 
+            case HGCM_MSG_BRD_NOTIFY:
+            {
+                HGCMMsgMainBroadcastNotify *pMsg = (HGCMMsgMainBroadcastNotify *)pMsgCore;
+
+                LogFlowFunc(("HGCM_MSG_BRD_NOTIFY enmEvent=%d\n", pMsg->enmEvent));
+
+                HGCMService::BroadcastNotify(pMsg->enmEvent);
+            } break;
+
 #ifdef VBOX_WITH_CRHGSMI
             case HGCM_MSG_SVCAQUIRE:
             {
@@ -2146,6 +2218,8 @@ static DECLCALLBACK(void) hgcmThread(HGCMThread *pThread, void *pvUser)
                 LogFlowFunc(("HGCM_MSG_RESET\n"));
 
                 HGCMService::Reset();
+
+                HGCMService::BroadcastNotify(HGCMNOTIFYEVENT_RESET);
             } break;
 
             case HGCM_MSG_LOADSTATE:
@@ -2550,12 +2624,14 @@ int HGCMGuestCall(PPDMIHGCMPORT pHGCMPort,
     return rc;
 }
 
-/* The host calls the service.
+/** The host calls the service.
  *
  * @param pszServiceName The service name to be called.
  * @param u32Function    The function number.
  * @param cParms         Number of parameters.
  * @param paParms        Pointer to array of parameters.
+ * @param fWait          Whether to wait for the call to complete (default),
+ *                       or just post it and return immediately.
  * @return VBox rc.
  */
 int HGCMHostCall(const char *pszServiceName,
@@ -2595,6 +2671,32 @@ int HGCMHostCall(const char *pszServiceName,
     LogFlowFunc(("rc = %Rrc\n", rc));
     return rc;
 }
+
+/** Posts a notification event to all services.
+ *
+ * @param   enmEvent    The notification event.
+ * @return  VBox rc.
+ */
+int HGCMBroadcastEvent(HGCMNOTIFYEVENT enmEvent)
+{
+    LogFlowFunc(("enmEvent=%d\n", enmEvent));
+
+    HGCMMsgCore *pCoreMsg;
+    int rc = hgcmMsgAlloc(g_pHgcmThread, &pCoreMsg, HGCM_MSG_BRD_NOTIFY, hgcmMainMessageAlloc);
+
+    if (RT_SUCCESS(rc))
+    {
+        HGCMMsgMainBroadcastNotify *pMsg = (HGCMMsgMainBroadcastNotify *)pCoreMsg;
+
+        pMsg->enmEvent = enmEvent;
+
+        rc = hgcmMsgPost(pMsg, NULL);
+    }
+
+    LogFlowFunc(("rc = %Rrc\n", rc));
+    return rc;
+}
+
 
 #ifdef VBOX_WITH_CRHGSMI
 int HGCMHostSvcHandleCreate(const char *pszServiceName, HGCMCVSHANDLE * phSvc)

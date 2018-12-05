@@ -163,6 +163,7 @@ int DragAndDropService::init(VBOXHGCMSVCFNTABLE *pTable)
     pTable->pfnSaveState         = NULL;  /* The service is stateless, so the normal */
     pTable->pfnLoadState         = NULL;  /* construction done before restoring suffices */
     pTable->pfnRegisterExtension = svcRegisterExtension;
+    pTable->pfnNotify            = NULL;
 
     /* Drag'n drop mode is disabled by default. */
     modeSet(VBOX_DRAG_AND_DROP_MODE_OFF);

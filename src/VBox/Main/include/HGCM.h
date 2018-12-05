@@ -46,6 +46,7 @@ int HGCMGuestCall(PPDMIHGCMPORT pHGCMPort, PVBOXHGCMCMD pCmdPtr, uint32_t client
                   VBOXHGCMSVCPARM *paParms, uint64_t tsArrival);
 
 int HGCMHostCall(const char *pszServiceName, uint32_t function, uint32_t cParms, VBOXHGCMSVCPARM aParms[]);
+int HGCMBroadcastEvent(HGCMNOTIFYEVENT enmEvent);
 
 #ifdef VBOX_WITH_CRHGSMI
 int HGCMHostSvcHandleCreate(const char *pszServiceName, HGCMCVSHANDLE * phSvc);

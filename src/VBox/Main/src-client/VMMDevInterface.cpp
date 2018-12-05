@@ -28,16 +28,12 @@
 #include <VBox/VMMDev.h>
 #include <VBox/shflsvc.h>
 #include <iprt/asm.h>
-#include <iprt/buildconfig.h>
 
 #ifdef VBOX_WITH_HGCM
 # include "HGCM.h"
 # include "HGCMObjects.h"
 # if defined(RT_OS_DARWIN) && defined(VBOX_WITH_CROGL)
 #  include <VBox/HostServices/VBoxCrOpenGLSvc.h>
-# endif
-# ifdef VBOX_WITH_GUEST_PROPS
-#  include <VBox/version.h>
 # endif
 #endif
 
@@ -769,6 +765,50 @@ DECLCALLBACK(void *) VMMDev::drvQueryInterface(PPDMIBASE pInterface, const char 
 }
 
 /**
+ * @interface_method_impl{PDMDRVREG,pfnSuspend}
+ */
+/*static*/ DECLCALLBACK(void) VMMDev::drvSuspend(PPDMDRVINS pDrvIns)
+{
+    RT_NOREF(pDrvIns);
+#ifdef VBOX_WITH_HGCM
+    HGCMBroadcastEvent(HGCMNOTIFYEVENT_SUSPEND);
+#endif
+}
+
+/**
+ * @interface_method_impl{PDMDRVREG,pfnResume}
+ */
+/*static*/ DECLCALLBACK(void) VMMDev::drvResume(PPDMDRVINS pDrvIns)
+{
+    RT_NOREF(pDrvIns);
+#ifdef VBOX_WITH_HGCM
+    HGCMBroadcastEvent(HGCMNOTIFYEVENT_RESUME);
+#endif
+}
+
+/**
+ * @interface_method_impl{PDMDRVREG,pfnPowerOff}
+ */
+/*static*/ DECLCALLBACK(void) VMMDev::drvPowerOff(PPDMDRVINS pDrvIns)
+{
+    RT_NOREF(pDrvIns);
+#ifdef VBOX_WITH_HGCM
+    HGCMBroadcastEvent(HGCMNOTIFYEVENT_POWER_ON);
+#endif
+}
+
+/**
+ * @interface_method_impl{PDMDRVREG,pfnPowerOn}
+ */
+/*static*/ DECLCALLBACK(void) VMMDev::drvPowerOn(PPDMDRVINS pDrvIns)
+{
+    RT_NOREF(pDrvIns);
+#ifdef VBOX_WITH_HGCM
+    HGCMBroadcastEvent(HGCMNOTIFYEVENT_POWER_ON);
+#endif
+}
+
+/**
  * @interface_method_impl{PDMDRVREG,pfnReset}
  */
 DECLCALLBACK(void) VMMDev::drvReset(PPDMDRVINS pDrvIns)
@@ -777,7 +817,7 @@ DECLCALLBACK(void) VMMDev::drvReset(PPDMDRVINS pDrvIns)
     LogFlow(("VMMDev::drvReset: iInstance=%d\n", pDrvIns->iInstance));
 #ifdef VBOX_WITH_HGCM
     HGCMHostReset();
-#endif /* VBOX_WITH_HGCM */
+#endif
 }
 
 /**
@@ -882,23 +922,15 @@ int VMMDev::i_guestPropLoadAndConfigure()
     ComObjPtr<Console> ptrConsole = this->mParent;
     AssertReturn(ptrConsole.isNotNull(), VERR_INVALID_POINTER);
 
-    /* Load the service */
+    /*
+     * Load the service
+     */
     int rc = hgcmLoadService("VBoxGuestPropSvc", "VBoxGuestPropSvc");
     if (RT_FAILURE(rc))
     {
         LogRel(("VBoxGuestPropSvc is not available. rc = %Rrc\n", rc));
         return VINF_SUCCESS; /* That is not a fatal failure. */
     }
-    /*
-     * Initialize built-in properties that can be changed and saved.
-     *
-     * These are typically transient properties that the guest cannot
-     * change.
-     */
-
-    /* Sysprep execution by VBoxService. */
-    i_guestPropSet("/VirtualBox/HostGuest/SysprepExec", "", "TRANSIENT, RDONLYGUEST");
-    i_guestPropSet("/VirtualBox/HostGuest/SysprepArgs", "", "TRANSIENT, RDONLYGUEST");
 
     /*
      * Pull over the properties from the server.
@@ -961,20 +993,6 @@ int VMMDev::i_guestPropLoadAndConfigure()
     RTMemTmpFree(pai64Timestamps);
     RTMemTmpFree(papszFlags);
     AssertRCReturn(rc, rc);
-
-    /*
-     * These properties have to be set before pulling over the properties
-     * from the machine XML, to ensure that properties saved in the XML
-     * will override them.
-     */
-    /* Set the raw VBox version string as a guest property. Used for host/guest
-     * version comparison. */
-    i_guestPropSet("/VirtualBox/HostInfo/VBoxVer", VBOX_VERSION_STRING_RAW, "TRANSIENT, RDONLYGUEST");
-    /* Set the full VBox version string as a guest property. Can contain vendor-specific
-     * information/branding and/or pre-release tags. */
-    i_guestPropSet("/VirtualBox/HostInfo/VBoxVerExt", VBOX_VERSION_STRING, "TRANSIENT, RDONLYGUEST");
-    /* Set the VBox SVN revision as a guest property */
-    i_guestPropSet("/VirtualBox/HostInfo/VBoxRev", RTBldCfgRevisionStr(), "TRANSIENT, RDONLYGUEST");
 
     /*
      * Register the host notification callback
@@ -1177,19 +1195,19 @@ const PDMDRVREG VMMDev::DrvReg =
     /* pfnIOCtl */
     NULL,
     /* pfnPowerOn */
-    NULL,
+    VMMDev::drvPowerOn,
     /* pfnReset */
     VMMDev::drvReset,
     /* pfnSuspend */
-    NULL,
+    VMMDev::drvSuspend,
     /* pfnResume */
-    NULL,
+    VMMDev::drvResume,
     /* pfnAttach */
     NULL,
     /* pfnDetach */
     NULL,
     /* pfnPowerOff */
-    NULL,
+    VMMDev::drvPowerOff,
     /* pfnSoftReset */
     NULL,
     /* u32EndVersion */

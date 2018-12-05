@@ -2439,6 +2439,7 @@ extern "C" DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad(VBOXHGCMSVCFNTABLE *pTa
                 pTable->pfnSaveState            = GstCtrlService::svcSaveState;
                 pTable->pfnLoadState            = GstCtrlService::svcLoadState;
                 pTable->pfnRegisterExtension    = GstCtrlService::svcRegisterExtension;
+                pTable->pfnNotify               = NULL;
 
                 /* Service specific initialization. */
                 pTable->pvService = pService;

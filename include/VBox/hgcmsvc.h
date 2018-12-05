@@ -72,9 +72,10 @@
  * 6.3->6.4 Bacause pfnConnect got an additional parameter (VBox 6.0).
  * 6.4->6.5 Bacause pfnGetVMMDevSessionId was added pfnLoadState got the version
  *          parameter (VBox 6.0).
+ * 6.5->7.1 Because pfnNotify was added.
  */
-#define VBOX_HGCM_SVC_VERSION_MAJOR (0x0006)
-#define VBOX_HGCM_SVC_VERSION_MINOR (0x0004)
+#define VBOX_HGCM_SVC_VERSION_MAJOR (0x0007)
+#define VBOX_HGCM_SVC_VERSION_MINOR (0x0001)
 #define VBOX_HGCM_SVC_VERSION ((VBOX_HGCM_SVC_VERSION_MAJOR << 16) + VBOX_HGCM_SVC_VERSION_MINOR)
 
 
@@ -447,14 +448,31 @@ typedef HGCMHOSTFASTCALLCB *PHGCMHOSTFASTCALLCB;
 typedef DECLCALLBACK(int) FNHGCMSVCEXT(void *pvExtension, uint32_t u32Function, void *pvParm, uint32_t cbParms);
 typedef FNHGCMSVCEXT *PFNHGCMSVCEXT;
 
+/**
+ * Notification event.
+ */
+typedef enum HGCMNOTIFYEVENT
+{
+    HGCMNOTIFYEVENT_INVALID = 0,
+    HGCMNOTIFYEVENT_POWER_ON,
+    HGCMNOTIFYEVENT_RESUME,
+    HGCMNOTIFYEVENT_SUSPEND,
+    HGCMNOTIFYEVENT_RESET,
+    HGCMNOTIFYEVENT_POWER_OFF,
+    HGCMNOTIFYEVENT_END,
+    HGCMNOTIFYEVENT_32BIT_HACK = 0x7fffffff
+} HGCMNOTIFYEVENT;
+
+
 /** The Service DLL entry points.
  *
  *  HGCM will call the DLL "VBoxHGCMSvcLoad"
  *  function and the DLL must fill in the VBOXHGCMSVCFNTABLE
  *  with function pointers.
+ *
+ *  @note The structure is used in separately compiled binaries so an explicit
+ *        packing is required.
  */
-
-/* The structure is used in separately compiled binaries so an explicit packing is required. */
 typedef struct VBOXHGCMSVCFNTABLE
 {
     /** @name Filled by HGCM
@@ -508,6 +526,9 @@ typedef struct VBOXHGCMSVCFNTABLE
 
     /** Register a service extension callback. */
     DECLR3CALLBACKMEMBER(int, pfnRegisterExtension, (void *pvService, PFNHGCMSVCEXT pfnExtension, void *pvExtension));
+
+    /** Notification (VM state). */
+    DECLR3CALLBACKMEMBER(void, pfnNotify, (void *pvService, HGCMNOTIFYEVENT enmEvent));
 
     /** User/instance data pointer for the service. */
     void *pvService;

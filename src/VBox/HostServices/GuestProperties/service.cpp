@@ -44,6 +44,7 @@
 #include <VBox/log.h>
 #include <iprt/asm.h>
 #include <iprt/assert.h>
+#include <iprt/buildconfig.h>
 #include <iprt/cpp/autores.h>
 #include <iprt/cpp/utils.h>
 #include <iprt/err.h>
@@ -53,6 +54,7 @@
 #include <iprt/thread.h>
 #include <iprt/time.h>
 #include <VBox/vmm/dbgf.h>
+#include <VBox/version.h>
 
 #include <string>
 #include <list>
@@ -96,7 +98,8 @@ struct Property
     Property(std::string name, std::string value, uint64_t u64Timestamp,
              uint32_t u32Flags)
         : mName(name), mValue(value), mTimestamp(u64Timestamp),
-          mFlags(u32Flags) {}
+          mFlags(u32Flags)
+    {}
 
     /** Does the property name match one of a set of patterns? */
     bool Matches(const char *pszPatterns) const
@@ -194,6 +197,8 @@ private:
      * Together with mPrevTimestamp, this defines a set of obsolete timestamp
      * values: {(mPrevTimestamp - mcTimestampAdjustments), ..., mPrevTimestamp} */
     uint64_t mcTimestampAdjustments;
+    /** For helping setting host version properties _after_ restoring VMs. */
+    bool m_fSetHostVersionProps;
 
     /**
      * Get the next property change notification from the queue of saved
@@ -310,6 +315,7 @@ public:
         , mpvHostData(NULL)
         , mPrevTimestamp(0)
         , mcTimestampAdjustments(0)
+        , m_fSetHostVersionProps(false)
 #ifdef ASYNC_HOST_NOTIFY
         , mhThreadNotifyHost(NIL_RTTHREAD)
         , mhReqQNotifyHost(NIL_RTREQQUEUE)
@@ -408,6 +414,9 @@ public:
         return VINF_SUCCESS;
     }
 
+    void setHostVersionProps();
+    static DECLCALLBACK(void) svcNotify(void *pvService, HGCMNOTIFYEVENT enmEvent);
+
     int initialize();
 
 private:
@@ -418,6 +427,7 @@ private:
     int setPropertyBlock(uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
     int getProperty(uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
     int setProperty(uint32_t cParms, VBOXHGCMSVCPARM paParms[], bool isGuest);
+    int setPropertyInternal(const char *pcszName, const char *pcszValue, uint32_t fFlags, uint64_t nsTimestamp, bool fIsGuest);
     int delProperty(uint32_t cParms, VBOXHGCMSVCPARM paParms[], bool isGuest);
     int enumProps(uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
     int getNotification(uint32_t u32ClientId, VBOXHGCMCALLHANDLE callHandle, uint32_t cParms,
@@ -748,17 +758,40 @@ int Service::setProperty(uint32_t cParms, VBOXHGCMSVCPARM paParms[], bool isGues
     }
 
     /*
+     * Hand it over to the internal setter method.
+     */
+    rc = setPropertyInternal(pcszName, pcszValue, fFlags, u64TimeNano, isGuest);
+
+    LogFlowThisFunc(("%s=%s, rc=%Rrc\n", pcszName, pcszValue, rc));
+    return rc;
+}
+
+/**
+ * Internal property setter.
+ *
+ * @returns VBox status code.
+ * @param   pcszName            The property name.
+ * @param   pcszValue           The new value.
+ * @param   fFlags              The flags.
+ * @param   nsTimestamp         The timestamp.
+ * @param   fIsGuest            Is it the guest calling.
+ * @throws  std::bad_alloc  if an out of memory condition occurs
+ * @thread  HGCM
+ */
+int Service::setPropertyInternal(const char *pcszName, const char *pcszValue, uint32_t fFlags, uint64_t nsTimestamp, bool fIsGuest)
+{
+    /*
      * If the property already exists, check its flags to see if we are allowed
      * to change it.
      */
     Property *pProp = getPropertyInternal(pcszName);
-    rc = checkPermission(pProp ? pProp->mFlags : GUEST_PROP_F_NILFLAG, isGuest);
+    int rc = checkPermission(pProp ? pProp->mFlags : GUEST_PROP_F_NILFLAG, fIsGuest);
     /*
      * Handle names which are read-only for the guest.
      */
     if (rc == VINF_SUCCESS && checkHostReserved(pcszName))
     {
-        if (isGuest)
+        if (fIsGuest)
             rc = VERR_PERMISSION_DENIED;
         else
             fFlags |= GUEST_PROP_F_RDONLYGUEST;
@@ -771,7 +804,7 @@ int Service::setProperty(uint32_t cParms, VBOXHGCMSVCPARM paParms[], bool isGues
         if (pProp)
         {
             pProp->mValue = pcszValue;
-            pProp->mTimestamp = u64TimeNano;
+            pProp->mTimestamp = nsTimestamp;
             pProp->mFlags = fFlags;
         }
         else if (mcProperties < GUEST_PROP_MAX_PROPS)
@@ -779,7 +812,7 @@ int Service::setProperty(uint32_t cParms, VBOXHGCMSVCPARM paParms[], bool isGues
             try
             {
                 /* Create a new string space record. */
-                pProp = new Property(pcszName, pcszValue, u64TimeNano, fFlags);
+                pProp = new Property(pcszName, pcszValue, nsTimestamp, fFlags);
                 AssertPtr(pProp);
 
                 if (RTStrSpaceInsert(&mhProperties, &pProp->mStrCore))
@@ -803,9 +836,9 @@ int Service::setProperty(uint32_t cParms, VBOXHGCMSVCPARM paParms[], bool isGues
         /*
          * Send a notification to the guest and host and return.
          */
-        // if (isGuest)  /* Notify the host even for properties that the host
+        // if (fIsGuest) /* Notify the host even for properties that the host
         //                * changed.  Less efficient, but ensures consistency. */
-        int rc2 = doNotifications(pcszName, u64TimeNano);
+        int rc2 = doNotifications(pcszName, nsTimestamp);
         if (RT_SUCCESS(rc))
             rc = rc2;
     }
@@ -1563,6 +1596,52 @@ int Service::hostCall (uint32_t eFunction, uint32_t cParms, VBOXHGCMSVCPARM paPa
     return rc;
 }
 
+
+/**
+ * Sets the VBoxVer, VBoxVerExt and VBoxRev properties.
+ */
+void Service::setHostVersionProps()
+{
+    uint64_t nsTimestamp = getCurrentTimestamp();
+
+    /* Set the raw VBox version string as a guest property. Used for host/guest
+     * version comparison. */
+    setPropertyInternal("/VirtualBox/HostInfo/VBoxVer", VBOX_VERSION_STRING_RAW,
+                        GUEST_PROP_F_TRANSIENT | GUEST_PROP_F_RDONLYGUEST, nsTimestamp, false /*fIsGuest*/);
+
+    /* Set the full VBox version string as a guest property. Can contain vendor-specific
+     * information/branding and/or pre-release tags. */
+    setPropertyInternal("/VirtualBox/HostInfo/VBoxVerExt", VBOX_VERSION_STRING,
+                        GUEST_PROP_F_TRANSIENT | GUEST_PROP_F_RDONLYGUEST, nsTimestamp, false /*fIsGuest*/);
+
+    /* Set the VBox SVN revision as a guest property */
+    setPropertyInternal("/VirtualBox/HostInfo/VBoxRev", RTBldCfgRevisionStr(),
+                        GUEST_PROP_F_TRANSIENT | GUEST_PROP_F_RDONLYGUEST, nsTimestamp, false /*fIsGuest*/);
+}
+
+
+/**
+ * @interface_method_impl{VBOXHGCMSVCFNTABLE,pfnNotify}
+ */
+/*static*/ DECLCALLBACK(void) Service::svcNotify(void *pvService, HGCMNOTIFYEVENT enmEvent)
+{
+    SELF *pThis = reinterpret_cast<SELF *>(pvService);
+    AssertPtrReturnVoid(pThis);
+
+    /* Make sure the host version properties have been touched and are
+       up-to-date after a restore: */
+    if (   !pThis->m_fSetHostVersionProps
+        && (enmEvent == HGCMNOTIFYEVENT_RESUME || enmEvent == HGCMNOTIFYEVENT_POWER_ON))
+    {
+        pThis->setHostVersionProps();
+        pThis->m_fSetHostVersionProps = true;
+    }
+
+    /** @todo add suspend/resume property? */
+    /** @todo add reset counter? */
+}
+
+
 #ifdef ASYNC_HOST_NOTIFY
 
 /* static */
@@ -1601,6 +1680,28 @@ static DECLCALLBACK(int) wakeupNotifyHost(void)
 
 int Service::initialize()
 {
+    /*
+     * Insert standard host properties.
+     */
+    try
+    {
+        /* The host version will but updated again on power on or resume
+           (after restore), however we need the properties now for restored
+           guest notification/wait calls. */
+        setHostVersionProps();
+
+        /* Sysprep execution by VBoxService (host is allowed to change these). */
+        uint64_t nsTimestamp = getCurrentTimestamp();
+        setPropertyInternal("/VirtualBox/HostGuest/SysprepExec", "", GUEST_PROP_F_TRANSIENT | GUEST_PROP_F_RDONLYGUEST,
+                            nsTimestamp, false /*fIsGuest*/);
+        setPropertyInternal("/VirtualBox/HostGuest/SysprepArgs", "", GUEST_PROP_F_TRANSIENT | GUEST_PROP_F_RDONLYGUEST,
+                            nsTimestamp, false /*fIsGuest*/);
+    }
+    catch (std::bad_alloc &)
+    {
+        return VERR_NO_MEMORY;
+    }
+
 #ifdef ASYNC_HOST_NOTIFY
     /* The host notification thread and queue. */
     int rc = RTReqQueueCreate(&mhReqQNotifyHost);
@@ -1727,6 +1828,7 @@ extern "C" DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad(VBOXHGCMSVCFNTABLE *pta
                 ptable->pfnSaveState          = NULL;  /* The service is stateless, so the normal */
                 ptable->pfnLoadState          = NULL;  /* construction done before restoring suffices */
                 ptable->pfnRegisterExtension  = Service::svcRegisterExtension;
+                ptable->pfnNotify             = Service::svcNotify;
                 ptable->pvService             = pService;
 
                 /* Service specific initialization. */
