@@ -1294,11 +1294,22 @@ static int hdaRegWriteSDCTL(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
      */
     u32Value &= 0x00ffffff;
 
-    bool fRun      = RT_BOOL(u32Value & HDA_SDCTL_RUN);
-    bool fInRun    = RT_BOOL(HDA_REG_IND(pThis, iReg) & HDA_SDCTL_RUN);
+    const bool fRun      = RT_BOOL(u32Value & HDA_SDCTL_RUN);
+    const bool fInRun    = RT_BOOL(HDA_REG_IND(pThis, iReg) & HDA_SDCTL_RUN);
 
-    bool fReset    = RT_BOOL(u32Value & HDA_SDCTL_SRST);
-    bool fInReset  = RT_BOOL(HDA_REG_IND(pThis, iReg) & HDA_SDCTL_SRST);
+    const bool fReset    = RT_BOOL(u32Value & HDA_SDCTL_SRST);
+    const bool fInReset  = RT_BOOL(HDA_REG_IND(pThis, iReg) & HDA_SDCTL_SRST);
+
+# ifdef LOG_ENABLED
+    if (fRun)
+    {
+        PDMAUDIOPCMPROPS Props;
+        int rc2 = hdaR3SDFMTToPCMProps(HDA_STREAM_REG(pThis, FMT, uSD), &Props);
+        AssertRC(rc2);
+        LogFunc(("[SD%RU8] %RU32Hz, %RU8bit, %RU8 channel(s)\n",
+                 uSD, Props.uHz, Props.cBytes * 8 /* Bit */, Props.cChannels));
+    }
+# endif
 
     LogFunc(("[SD%RU8] fRun=%RTbool, fInRun=%RTbool, fReset=%RTbool, fInReset=%RTbool, %R[sdctl]\n",
              uSD, fRun, fInRun, fReset, fInReset, u32Value));
