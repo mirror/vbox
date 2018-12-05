@@ -187,9 +187,11 @@ void QIManagerDialog::prepareMenuBar()
 
 #ifdef VBOX_WS_MAC
     /* Prepare 'Window' menu: */
-    AssertPtrReturnVoid(gpWindowMenuManager);
-    menuBar()->addMenu(gpWindowMenuManager->createMenu(this));
-    gpWindowMenuManager->addWindow(this);
+    if (gpWindowMenuManager)
+    {
+        menuBar()->addMenu(gpWindowMenuManager->createMenu(this));
+        gpWindowMenuManager->addWindow(this);
+    }
 #endif
 }
 
@@ -208,9 +210,11 @@ void QIManagerDialog::cleanupMenuBar()
 {
 #ifdef VBOX_WS_MAC
     /* Cleanup 'Window' menu: */
-    AssertPtrReturnVoid(gpWindowMenuManager);
-    gpWindowMenuManager->removeWindow(this);
-    gpWindowMenuManager->destroyMenu(this);
+    if (gpWindowMenuManager)
+    {
+        gpWindowMenuManager->removeWindow(this);
+        gpWindowMenuManager->destroyMenu(this);
+    }
 #endif
 }
 
