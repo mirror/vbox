@@ -18,6 +18,23 @@
 SUB_DEPTH = ../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
+ifeq ($(KBUILD_TARGET),darwin)
+ VBOX_PATH_FUSE := $(lastword $(sort $(wildcard $(KBUILD_DEVTOOLS_TRG)/osxfuse/v*)))
+ ifneq ($(VBOX_PATH_FUSE),)
+  LIB_FUSE     := $(VBOX_PATH_FUSE)/lib/libosxfuse.dylib
+  LIBPATH_FUSE := $(VBOX_PATH_FUSE)/lib
+  FUSE_INCS    := $(VBOX_PATH_FUSE)/include/osxfuse
+ else
+  LIB_FUSE     := /usr/local/lib/libosxfuse.dylib
+  LIBPATH_FUSE := /usr/local/lib
+  FUSE_INCS    := /usr/local/include/osxfuse \
+  	/usr/local/include
+ endif
+else
+ LIB_FUSE := fuse
+ FUSE_INCS := /usr/include
+endif
+
 #
 # vboximg-mount - Disk Image Flatting FUSE Program.
 #
@@ -34,15 +51,10 @@ vboximg-mount_SOURCES = \
 
 vboximg-mount_LIBS = \
 	$(LIB_DDU) \
-	$(LIB_RUNTIME)
+	$(LIB_RUNTIME) \
+	$(LIB_FUSE)
 
-vboximg-mount_INCS.darwin = \
-    /usr/local/include \
-    /usr/local/include/osxfuse \
-vboximg-mount_CXXFLAGS.darwin = -std=c++11
-
-vboximg-mount_LIBS.darwin = /usr/local/lib/libosxfuse.dylib
-vboximg-mount_LIBS.linux = fuse
-vboximg-mount_LIBS.freebsd = fuse
+vboximg-mount_INCS = $(FUSE_INCS)
+#vboximg-mount_CXXFLAGS.darwin = -std=c++11
 
 include $(FILE_KBUILD_SUB_FOOTER)
