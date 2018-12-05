@@ -1303,13 +1303,14 @@ static int hdaRegWriteSDCTL(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
     LogFunc(("[SD%RU8] fRun=%RTbool, fInRun=%RTbool, fReset=%RTbool, fInReset=%RTbool, %R[sdctl]\n",
              uSD, fRun, fInRun, fReset, fInReset, u32Value));
 
-# ifdef DEBUG
     if (hdaGetDirFromSD(uSD) == PDMAUDIODIR_OUT)
     {
         const uint8_t uStripeCtl = ((u32Value >> HDA_SDCTL_STRIPE_SHIFT) & HDA_SDCTL_STRIPE_MASK) + 1;
         LogFunc(("[SD%RU8] Using %RU8 SDOs (stripe control)\n", uSD, uStripeCtl));
+        if (uStripeCtl > 1)
+            LogRel2(("HDA: Warning: Striping output over more than one SDO for stream #%RU8 currently is not implemented " \
+                     "(%RU8 SDOs requested)\n", uSD, uStripeCtl));
     }
-# endif
 
     /*
      * Extract the stream tag the guest wants to use for this specific
