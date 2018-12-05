@@ -231,8 +231,14 @@ static int run(struct VBCLSERVICE **ppInterface, bool fDaemonised)
         {
             if (afEnabled[i])
             {
-                aRects[cHeads].x = (int32_t)adx[i];
-                aRects[cHeads].y = (int32_t)ady[i];
+                if ((i == 0) || (adx[i] || ady[i]))
+                {
+                    aRects[cHeads].x = (int32_t)adx[i];
+                    aRects[cHeads].y = (int32_t)ady[i];
+                } else {
+                    aRects[cHeads].x = (int32_t)(adx[i - 1] + acx[i - 1]);
+                    aRects[cHeads].y = (int32_t)ady[i - 1];
+                }
                 aRects[cHeads].w = acx[i];
                 aRects[cHeads].h = acy[i];
                 ++cHeads;
