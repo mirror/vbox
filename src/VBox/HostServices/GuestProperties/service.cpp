@@ -47,6 +47,7 @@
 #include <iprt/buildconfig.h>
 #include <iprt/cpp/autores.h>
 #include <iprt/cpp/utils.h>
+#include <iprt/cpp/ministring.h>
 #include <iprt/err.h>
 #include <iprt/mem.h>
 #include <iprt/req.h>
@@ -56,7 +57,6 @@
 #include <VBox/vmm/dbgf.h>
 #include <VBox/version.h>
 
-#include <string>
 #include <list>
 
 /** @todo Delete the old !ASYNC_HOST_NOTIFY code and remove this define. */
@@ -72,9 +72,9 @@ struct Property
     /** The string space core record. */
     RTSTRSPACECORE mStrCore;
     /** The name of the property */
-    std::string mName;
+    RTCString mName;
     /** The property value */
-    std::string mValue;
+    RTCString mValue;
     /** The timestamp of the property */
     uint64_t mTimestamp;
     /** The property flags */
@@ -86,19 +86,21 @@ struct Property
         RT_ZERO(mStrCore);
     }
     /** Constructor with const char * */
-    Property(const char *pcszName, const char *pcszValue,
-             uint64_t u64Timestamp, uint32_t u32Flags)
-        : mName(pcszName), mValue(pcszValue), mTimestamp(u64Timestamp),
-          mFlags(u32Flags)
+    Property(const char *pcszName, const char *pcszValue, uint64_t nsTimestamp, uint32_t u32Flags)
+        : mName(pcszName)
+        , mValue(pcszValue)
+        , mTimestamp(nsTimestamp)
+        , mFlags(u32Flags)
     {
         RT_ZERO(mStrCore);
         mStrCore.pszString = mName.c_str();
     }
     /** Constructor with std::string */
-    Property(std::string name, std::string value, uint64_t u64Timestamp,
-             uint32_t u32Flags)
-        : mName(name), mValue(value), mTimestamp(u64Timestamp),
-          mFlags(u32Flags)
+    Property(RTCString const &rName, RTCString const &rValue, uint64_t nsTimestamp, uint32_t fFlags)
+        : mName(rName)
+        , mValue(rValue)
+        , mTimestamp(nsTimestamp)
+        , mFlags(fFlags)
     {}
 
     /** Does the property name match one of a set of patterns? */
@@ -128,7 +130,7 @@ struct Property
     /* Is the property nil? */
     bool isNull()
     {
-        return mName.empty();
+        return mName.isEmpty();
     }
 };
 /** The properties list type */
@@ -233,7 +235,7 @@ private:
         PropertyList::const_iterator it = mGuestNotifications.begin();
         for (;    it != mGuestNotifications.end()
                && it->mTimestamp != u64Timestamp; ++it)
-            {}
+        { /*nothing*/ }
         if (it == mGuestNotifications.end())  /* Not found */
             it = mGuestNotifications.begin();
         else
@@ -667,7 +669,7 @@ int Service::getProperty(uint32_t cParms, VBOXHGCMSVCPARM paParms[])
         {
             /* Check that the buffer is big enough */
             size_t const cbFlags  = strlen(szFlags) + 1;
-            size_t const cbValue  = pProp->mValue.size() + 1;
+            size_t const cbValue  = pProp->mValue.length() + 1;
             size_t const cbNeeded = cbValue + cbFlags;
             HGCMSvcSetU32(&paParms[3], (uint32_t)cbNeeded);
             if (cbBuf >= cbNeeded)
@@ -1084,11 +1086,8 @@ int Service::getNotificationWriteOut(uint32_t cParms, VBOXHGCMSVCPARM paParms[],
     AssertReturn(cParms == 4, VERR_INVALID_PARAMETER); /* Basic sanity checking. */
 
     /* Format the data to write to the buffer. */
-    std::string buffer;
-    uint64_t u64Timestamp;
-    char *pchBuf;
+    char    *pchBuf;
     uint32_t cbBuf;
-
     int rc = HGCMSvcGetBuf(&paParms[2], (void **)&pchBuf, &cbBuf);
     if (RT_SUCCESS(rc))
     {
@@ -1096,24 +1095,23 @@ int Service::getNotificationWriteOut(uint32_t cParms, VBOXHGCMSVCPARM paParms[],
         rc = GuestPropWriteFlags(prop.mFlags, szFlags);
         if (RT_SUCCESS(rc))
         {
-            buffer += prop.mName;
-            buffer += '\0';
-            buffer += prop.mValue;
-            buffer += '\0';
-            buffer += szFlags;
-            buffer += '\0';
-            u64Timestamp = prop.mTimestamp;
+            HGCMSvcSetU64(&paParms[1], prop.mTimestamp);
 
-            /* Write out the data. */
-            if (RT_SUCCESS(rc))
+            size_t const cbFlags  = strlen(szFlags) + 1;
+            size_t const cbName   = prop.mName.length() + 1;
+            size_t const cbValue  = prop.mValue.length() + 1;
+            size_t const cbNeeded = cbName + cbValue + cbFlags;
+            HGCMSvcSetU32(&paParms[3], (uint32_t)cbNeeded);
+            if (cbNeeded <= cbBuf)
             {
-                HGCMSvcSetU64(&paParms[1], u64Timestamp);
-                HGCMSvcSetU32(&paParms[3], (uint32_t)buffer.size());
-                if (buffer.size() <= cbBuf)
-                    buffer.copy(pchBuf, cbBuf);
-                else
-                    rc = VERR_BUFFER_OVERFLOW;
+                memcpy(pchBuf, prop.mName.c_str(), cbName);
+                pchBuf += cbName;
+                memcpy(pchBuf, prop.mValue.c_str(), cbValue);
+                pchBuf += cbValue;
+                memcpy(pchBuf, szFlags, cbFlags);
             }
+            else
+                rc = VERR_BUFFER_OVERFLOW;
         }
     }
     return rc;
