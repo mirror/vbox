@@ -15715,13 +15715,14 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecVmxVirtApicAccessMem(PVMCPU pVCpu, uint16_t of
 
 
 /**
- * Interface for HM and EM to perform a APIC-write emulation.
+ * Interface for HM and EM to perform an APIC-write emulation which may cause a
+ * VM-exit.
  *
  * @returns Strict VBox status code.
  * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
  * @thread  EMT(pVCpu)
  */
-VMM_INT_DECL(VBOXSTRICTRC) IEMExecVmxVirtApicWriteEmulation(PVMCPU pVCpu)
+VMM_INT_DECL(VBOXSTRICTRC) IEMExecVmxVmexitApicWrite(PVMCPU pVCpu)
 {
     IEM_CTX_ASSERT(pVCpu, IEM_CPUMCTX_EXTRN_VMX_VMEXIT_MASK);
 

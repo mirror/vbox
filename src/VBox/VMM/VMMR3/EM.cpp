@@ -2110,7 +2110,22 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
                 Log(("Leaving VMCPU_FF_INHIBIT_INTERRUPTS set at %RGv\n", (RTGCPTR)CPUMGetGuestRIP(pVCpu)));
         }
 
-        /* SMIs take priority over if we ever support them will have to be injected here. */
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
+        /*
+         * VMX Nested-guest APIC-write VM-exit.
+         * Takes priority over SMI, INIT signals.
+         * See Intel spec. 29.4.3.2 "APIC-Write Emulation".
+         */
+        if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_VMX_APIC_WRITE))
+        {
+            rc2 = VBOXSTRICTRC_VAL(IEMExecVmxVmexitApicWrite(pVCpu));
+            if (rc2 != VINF_VMX_INTERCEPT_NOT_ACTIVE)
+                UPDATE_RC();
+        }
+#endif
+
+        /** @todo SMIs. If we implement SMIs, this is where they will have to be
+         *        delivered. */
 
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
         /*
@@ -2137,8 +2152,6 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
         }
 #endif
 
-        /** @todo Enable when I get time to test this specific code path later. */
-#if 0
         /*
          * NMIs.
          * NMIs take priority over external interrupts.
@@ -2161,13 +2174,12 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
                         :                          VINF_EM_RESCHEDULE_REM;
                 }
             }
+            UPDATE_RC();
         }
-#endif
 
         /*
          * Interrupts.
          */
-        bool fWakeupPending = false;
         if (   !VM_FF_IS_SET(pVM, VM_FF_PGM_NO_MEMORY)
             && (!rc || rc >= VINF_EM_RESCHEDULE_HM)
             && !VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS)
