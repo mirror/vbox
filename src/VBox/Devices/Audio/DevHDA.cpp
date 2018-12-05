@@ -1300,28 +1300,8 @@ static int hdaRegWriteSDCTL(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
     const bool fReset    = RT_BOOL(u32Value & HDA_SDCTL_SRST);
     const bool fInReset  = RT_BOOL(HDA_REG_IND(pThis, iReg) & HDA_SDCTL_SRST);
 
-# ifdef LOG_ENABLED
-    if (fRun)
-    {
-        PDMAUDIOPCMPROPS Props;
-        int rc2 = hdaR3SDFMTToPCMProps(HDA_STREAM_REG(pThis, FMT, uSD), &Props);
-        AssertRC(rc2);
-        LogFunc(("[SD%RU8] %RU32Hz, %RU8bit, %RU8 channel(s)\n",
-                 uSD, Props.uHz, Props.cBytes * 8 /* Bit */, Props.cChannels));
-    }
-# endif
-
-    LogFunc(("[SD%RU8] fRun=%RTbool, fInRun=%RTbool, fReset=%RTbool, fInReset=%RTbool, %R[sdctl]\n",
-             uSD, fRun, fInRun, fReset, fInReset, u32Value));
-
-    if (hdaGetDirFromSD(uSD) == PDMAUDIODIR_OUT)
-    {
-        const uint8_t uStripeCtl = ((u32Value >> HDA_SDCTL_STRIPE_SHIFT) & HDA_SDCTL_STRIPE_MASK) + 1;
-        LogFunc(("[SD%RU8] Using %RU8 SDOs (stripe control)\n", uSD, uStripeCtl));
-        if (uStripeCtl > 1)
-            LogRel2(("HDA: Warning: Striping output over more than one SDO for stream #%RU8 currently is not implemented " \
-                     "(%RU8 SDOs requested)\n", uSD, uStripeCtl));
-    }
+    /*LogFunc(("[SD%RU8] fRun=%RTbool, fInRun=%RTbool, fReset=%RTbool, fInReset=%RTbool, %R[sdctl]\n",
+               uSD, fRun, fInRun, fReset, fInReset, u32Value));*/
 
     /*
      * Extract the stream tag the guest wants to use for this specific
@@ -1340,16 +1320,7 @@ static int hdaRegWriteSDCTL(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
         return rc;
     }
 
-    PHDATAG pTag = &pThis->aTags[uTag];
-    AssertPtr(pTag);
-
-    LogFunc(("[SD%RU8] Using stream tag=%RU8\n", uSD, uTag));
-
-    /* Assign new values. */
-    pTag->uTag    = uTag;
-    pTag->pStream = hdaGetStreamFromSD(pThis, uSD);
-
-    PHDASTREAM pStream = pTag->pStream;
+    PHDASTREAM pStream = hdaGetStreamFromSD(pThis, uSD);
     AssertPtr(pStream);
 
     if (fInReset)
@@ -1409,17 +1380,46 @@ static int hdaRegWriteSDCTL(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 # endif
             if (fRun)
             {
+                if (hdaGetDirFromSD(uSD) == PDMAUDIODIR_OUT)
+                {
+                    const uint8_t uStripeCtl = ((u32Value >> HDA_SDCTL_STRIPE_SHIFT) & HDA_SDCTL_STRIPE_MASK) + 1;
+                    LogFunc(("[SD%RU8] Using %RU8 SDOs (stripe control)\n", uSD, uStripeCtl));
+                    if (uStripeCtl > 1)
+                        LogRel2(("HDA: Warning: Striping output over more than one SDO for stream #%RU8 currently is not implemented " \
+                                 "(%RU8 SDOs requested)\n", uSD, uStripeCtl));
+                }
+
+                PHDATAG pTag = &pThis->aTags[uTag];
+                AssertPtr(pTag);
+
+                LogFunc(("[SD%RU8] Using stream tag=%RU8\n", uSD, uTag));
+
+                /* Assign new values. */
+                pTag->uTag    = uTag;
+                pTag->pStream = hdaGetStreamFromSD(pThis, uSD);
+
+# ifdef LOG_ENABLED
+                PDMAUDIOPCMPROPS Props;
+                rc2 = hdaR3SDFMTToPCMProps(HDA_STREAM_REG(pThis, FMT, pStream->u8SD), &Props);
+                AssertRC(rc2);
+                LogFunc(("[SD%RU8] %RU32Hz, %RU8bit, %RU8 channel(s)\n",
+                         pStream->u8SD, Props.uHz, Props.cBytes * 8 /* Bit */, Props.cChannels));
+# endif
                 /* (Re-)initialize the stream with current values. */
                 rc2 = hdaR3StreamInit(pStream, pStream->u8SD);
-                AssertRC(rc2);
+                if (   RT_SUCCESS(rc2)
+                    /* Any vital stream change occurred so that we need to (re-)add the stream to our setup?
+                     * Otherwise just skip this, as this costs a lot of performance. */
+                    && rc2 != VINF_NO_CHANGE)
+                {
+                    /* Remove the old stream from the device setup. */
+                    rc2 = hdaR3RemoveStream(pThis, &pStream->State.Cfg);
+                    AssertRC(rc2);
 
-                /* Remove the old stream from the device setup. */
-                rc2 = hdaR3RemoveStream(pThis, &pStream->State.Cfg);
-                AssertRC(rc2);
-
-                /* Add the stream to the device setup. */
-                rc2 = hdaR3AddStream(pThis, &pStream->State.Cfg);
-                AssertRC(rc2);
+                    /* Add the stream to the device setup. */
+                    rc2 = hdaR3AddStream(pThis, &pStream->State.Cfg);
+                    AssertRC(rc2);
+                }
             }
 
             /* Enable/disable the stream. */
@@ -4209,17 +4209,17 @@ static DECLCALLBACK(int) hdaR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint
             AssertReleaseMsg(cbCircBufUsed <= cbCircBufSize,
                              ("HDA: Saved state contains invalid DMA buffer usage (%RU32/%RU32) for stream #%RU8",
                               cbCircBufUsed, cbCircBufSize, uStreamID));
-            AssertPtr(pStream->State.pCircBuf);
 
             /* Do we need to cre-create the circular buffer do fit the data size? */
-            if (cbCircBufSize != (uint32_t)RTCircBufSize(pStream->State.pCircBuf))
+            if (   pStream->State.pCircBuf
+                && cbCircBufSize != (uint32_t)RTCircBufSize(pStream->State.pCircBuf))
             {
                 RTCircBufDestroy(pStream->State.pCircBuf);
                 pStream->State.pCircBuf = NULL;
-
-                rc = RTCircBufCreate(&pStream->State.pCircBuf, cbCircBufSize);
-                AssertRC(rc);
             }
+
+            rc = RTCircBufCreate(&pStream->State.pCircBuf, cbCircBufSize);
+            AssertRC(rc);
 
             if (   RT_SUCCESS(rc)
                 && cbCircBufUsed)

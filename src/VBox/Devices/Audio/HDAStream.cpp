@@ -134,7 +134,7 @@ void hdaR3StreamDestroy(PHDASTREAM pStream)
 {
     AssertPtrReturnVoid(pStream);
 
-    LogFlowFunc(("[SD%RU8]: Destroying ...\n", pStream->u8SD));
+    LogFlowFunc(("[SD%RU8] Destroying ...\n", pStream->u8SD));
 
     hdaR3StreamMapDestroy(&pStream->State.Mapping);
 
@@ -185,7 +185,8 @@ void hdaR3StreamDestroy(PHDASTREAM pStream)
 /**
  * Initializes an HDA stream.
  *
- * @returns IPRT status code.
+ * @returns IPRT status code. VINF_NO_CHANGE if the stream does not need (re-)initialization because the stream's (hardware)
+ *          parameters did not change.
  * @param   pStream             HDA stream to initialize.
  * @param   uSD                 SD (stream descriptor) number to assign the HDA stream to.
  */
@@ -196,25 +197,84 @@ int hdaR3StreamInit(PHDASTREAM pStream, uint8_t uSD)
     PHDASTATE pThis = pStream->pHDAState;
     AssertPtr(pThis);
 
-    pStream->u8SD       = uSD;
-    pStream->u64BDLBase = RT_MAKE_U64(HDA_STREAM_REG(pThis, BDPL, pStream->u8SD),
-                                      HDA_STREAM_REG(pThis, BDPU, pStream->u8SD));
-    pStream->u16LVI     = HDA_STREAM_REG(pThis, LVI, pStream->u8SD);
-    pStream->u32CBL     = HDA_STREAM_REG(pThis, CBL, pStream->u8SD);
-    pStream->u16FIFOS   = HDA_STREAM_REG(pThis, FIFOS, pStream->u8SD) + 1;
+    const uint64_t u64BDLBase = RT_MAKE_U64(HDA_STREAM_REG(pThis, BDPL, uSD),
+                                            HDA_STREAM_REG(pThis, BDPU, uSD));
+    const uint16_t u16LVI     = HDA_STREAM_REG(pThis, LVI, uSD);
+    const uint32_t u32CBL     = HDA_STREAM_REG(pThis, CBL, uSD);
+    const uint16_t u16FIFOS   = HDA_STREAM_REG(pThis, FIFOS, uSD) + 1;
+    const uint32_t u32FMT     = HDA_STREAM_REG(pThis, FMT, uSD);
 
-    PPDMAUDIOSTREAMCFG pCfg = &pStream->State.Cfg;
+    /* Is the bare minimum set of registers configured for the stream?
+     * If not, bail out early, as there's nothing to do here for us (yet). */
+    if (   !u64BDLBase
+        || !u16LVI
+        || !u32CBL
+        || !u16FIFOS
+        || !u32FMT)
+    {
+        LogFunc(("[SD%RU8] Registers not set up yet, skipping (re-)initialization\n", uSD));
+        return VINF_SUCCESS;
+    }
 
-    int rc = hdaR3SDFMTToPCMProps(HDA_STREAM_REG(pThis, FMT, uSD), &pCfg->Props);
+    PDMAUDIOPCMPROPS Props;
+    int rc = hdaR3SDFMTToPCMProps(u32FMT, &Props);
     if (RT_FAILURE(rc))
     {
         LogRel(("HDA: Warning: Format 0x%x for stream #%RU8 not supported\n", HDA_STREAM_REG(pThis, FMT, uSD), uSD));
         return rc;
     }
 
-    /* Set scheduling hint (if available). */
-    if (pThis->uTimerHz)
-        pCfg->Device.uSchedulingHintMs = 1000 /* ms */ / pThis->uTimerHz;
+    /* Reset (any former) stream map. */
+    hdaR3StreamMapReset(&pStream->State.Mapping);
+
+    /*
+     * Initialize the stream mapping in any case, regardless if
+     * we support surround audio or not. This is needed to handle
+     * the supported channels within a single audio stream, e.g. mono/stereo.
+     *
+     * In other words, the stream mapping *always* knows the real
+     * number of channels in a single audio stream.
+     */
+    rc = hdaR3StreamMapInit(&pStream->State.Mapping, &Props);
+    AssertRCReturn(rc, rc);
+
+#ifndef VBOX_WITH_AUDIO_HDA_51_SURROUND
+    if (Props.cChannels > 2)
+    {
+        /*
+         * When not running with surround support enabled, override the audio channel count
+         * with stereo (2) channels so that we at least can properly work with those.
+         *
+         * Note: This also involves dealing with surround setups the guest might has set up for us.
+         */
+        LogRel2(("HDA: More than stereo (2) channels are not supported (%RU8 requested), "
+                 "falling back to stereo channels for stream #%RU8\n", Props.cChannels, uSD));
+        Props.cChannels = 2;
+    }
+#endif
+
+    /* Did some of the vital / critical parameters change?
+     * If not, we can skip a lot of the (re-)initialization and just (re-)use the existing stuff.
+     * Also, tell the caller so that further actions can be taken. */
+    if (   uSD        == pStream->u8SD
+        && u64BDLBase == pStream->u64BDLBase
+        && u16LVI     == pStream->u16LVI
+        && u32CBL     == pStream->u32CBL
+        && u16FIFOS   == pStream->u16FIFOS
+        && DrvAudioHlpPCMPropsAreEqual(&Props, &pStream->State.Cfg.Props))
+    {
+        LogFunc(("[SD%RU8] No format change, skipping (re-)initialization\n", uSD));
+        return VINF_NO_CHANGE;
+    }
+
+    pStream->u8SD       = uSD;
+    pStream->u64BDLBase = u64BDLBase;
+    pStream->u16LVI     = u16LVI;
+    pStream->u32CBL     = u32CBL;
+    pStream->u16FIFOS   = u16FIFOS;
+
+    PPDMAUDIOSTREAMCFG pCfg = &pStream->State.Cfg;
+    pCfg->Props = Props;
 
     /* (Re-)Allocate the stream's internal DMA buffer, based on the PCM  properties we just got above. */
     if (pStream->State.pCircBuf)
@@ -224,7 +284,8 @@ int hdaR3StreamInit(PHDASTREAM pStream, uint8_t uSD)
     }
 
     /* By default we allocate an internal buffer of 100ms. */
-    rc = RTCircBufCreate(&pStream->State.pCircBuf, DrvAudioHlpMilliToBytes(100 /* ms */, &pCfg->Props)); /** @todo Make this configurable. */
+    rc = RTCircBufCreate(&pStream->State.pCircBuf,
+                         DrvAudioHlpMilliToBytes(100 /* ms */, &pCfg->Props)); /** @todo Make this configurable. */
     AssertRCReturn(rc, rc);
 
     /* Set the stream's direction. */
@@ -253,38 +314,8 @@ int hdaR3StreamInit(PHDASTREAM pStream, uint8_t uSD)
             break;
     }
 
-    if (   !pStream->u32CBL
-        || !pStream->u16LVI
-        || !pStream->u64BDLBase
-        || !pStream->u16FIFOS)
-    {
-        return VINF_SUCCESS;
-    }
-
-    /*
-     * Initialize the stream mapping in any case, regardless if
-     * we support surround audio or not. This is needed to handle
-     * the supported channels within a single audio stream, e.g. mono/stereo.
-     *
-     * In other words, the stream mapping *always* knows the real
-     * number of channels in a single audio stream.
-     */
-    rc = hdaR3StreamMapInit(&pStream->State.Mapping, &pCfg->Props);
-    AssertRCReturn(rc, rc);
-
-#ifndef VBOX_WITH_AUDIO_HDA_51_SURROUND
-    /*
-     * When not running with surround support enabled, override the channel count
-     * with stereo (2) channels so that we at least can properly work with those.
-     *
-     * Note: This also involves dealing with surround setups the guest might has set up for us.
-     */
-    pCfg->Props.cChannels = 2;
-#endif
-
-    LogFunc(("[SD%RU8] DMA @ 0x%x (%RU32 bytes), LVI=%RU16, FIFOS=%RU16, Hz=%RU32, rc=%Rrc\n",
-             pStream->u8SD, pStream->u64BDLBase, pStream->u32CBL, pStream->u16LVI, pStream->u16FIFOS,
-             pStream->State.Cfg.Props.uHz, rc));
+    LogFunc(("[SD%RU8] DMA @ 0x%x (%RU32 bytes), LVI=%RU16, FIFOS=%RU16\n",
+             pStream->u8SD, pStream->u64BDLBase, pStream->u32CBL, pStream->u16LVI, pStream->u16FIFOS));
 
     /* Make sure that mandatory parameters are set up correctly. */
     AssertStmt(pStream->u32CBL %  pStream->State.Mapping.cbFrameSize == 0, rc = VERR_INVALID_PARAMETER);
@@ -396,10 +427,6 @@ int hdaR3StreamInit(PHDASTREAM pStream, uint8_t uSD)
         if (pStream->State.cbTransferChunk > pStream->State.cbTransferSize)
             pStream->State.cbTransferChunk = pStream->State.cbTransferSize;
 
-        pStream->State.cbTransferProcessed        = 0;
-        pStream->State.cTransferPendingInterrupts = 0;
-        pStream->State.tsLastUpdateNs             = 0;
-
         const uint64_t cTicksPerHz = TMTimerGetFreq(pStream->pTimer) / pThis->uTimerHz;
 
         /* Calculate the timer ticks per byte for this stream. */
@@ -409,10 +436,6 @@ int hdaR3StreamInit(PHDASTREAM pStream, uint8_t uSD)
         /* Calculate timer ticks per transfer. */
         pStream->State.cTransferTicks     = pStream->State.cbTransferChunk * pStream->State.cTicksPerByte;
         Assert(pStream->State.cTransferTicks);
-
-        /* Initialize the transfer timestamps. */
-        pStream->State.tsTransferLast     = 0;
-        pStream->State.tsTransferNext     = 0;
 
         LogFunc(("[SD%RU8] Timer %uHz (%RU64 ticks per Hz), cTicksPerByte=%RU64, cbTransferChunk=%RU32, cTransferTicks=%RU64, " \
                  "cbTransferSize=%RU32\n",
@@ -450,7 +473,7 @@ void hdaR3StreamReset(PHDASTATE pThis, PHDASTREAM pStream, uint8_t uSD)
     AssertReleaseMsg(!pStream->State.fRunning, ("[SD%RU8] Cannot reset stream while in running state\n", uSD));
 # endif
 
-    LogFunc(("[SD%RU8]: Reset\n", uSD));
+    LogFunc(("[SD%RU8] Reset\n", uSD));
 
     /*
      * Set reset state.
@@ -481,23 +504,22 @@ void hdaR3StreamReset(PHDASTATE pThis, PHDASTREAM pStream, uint8_t uSD)
 #endif
 
     /* Assign the default mixer sink to the stream. */
-    pStream->pMixSink             = hdaR3GetDefaultSink(pThis, uSD);
+    pStream->pMixSink = hdaR3GetDefaultSink(pThis, uSD);
 
+    /* Reset transfer stuff. */
+    pStream->State.cbTransferProcessed        = 0;
+    pStream->State.cTransferPendingInterrupts = 0;
     pStream->State.tsTransferLast = 0;
     pStream->State.tsTransferNext = 0;
+
+    /* Initialize other timestamps. */
+    pStream->State.tsLastUpdateNs = 0;
 
     RT_ZERO(pStream->State.BDLE);
     pStream->State.uCurBDLE = 0;
 
     if (pStream->State.pCircBuf)
         RTCircBufReset(pStream->State.pCircBuf);
-
-    /* Reset stream map. */
-    hdaR3StreamMapReset(&pStream->State.Mapping);
-
-    /* (Re-)initialize the stream with current values. */
-    int rc2 = hdaR3StreamInit(pStream, uSD);
-    AssertRC(rc2);
 
     /* Reset the stream's period. */
     hdaR3StreamPeriodReset(&pStream->State.Period);
@@ -533,7 +555,7 @@ int hdaR3StreamEnable(PHDASTREAM pStream, bool fEnable)
 {
     AssertPtrReturn(pStream, VERR_INVALID_POINTER);
 
-    LogFunc(("[SD%RU8]: fEnable=%RTbool, pMixSink=%p\n", pStream->u8SD, fEnable, pStream->pMixSink));
+    LogFunc(("[SD%RU8] fEnable=%RTbool, pMixSink=%p\n", pStream->u8SD, fEnable, pStream->pMixSink));
 
     int rc = VINF_SUCCESS;
 
@@ -780,7 +802,7 @@ int hdaR3StreamRead(PHDASTREAM pStream, uint32_t cbToRead, uint32_t *pcbRead)
     PHDAMIXERSINK pSink = pStream->pMixSink;
     if (!pSink)
     {
-        AssertMsgFailed(("[SD%RU8]: Can't read from a stream with no sink attached\n", pStream->u8SD));
+        AssertMsgFailed(("[SD%RU8] Can't read from a stream with no sink attached\n", pStream->u8SD));
 
         if (pcbRead)
             *pcbRead = 0;
@@ -813,7 +835,7 @@ int hdaR3StreamRead(PHDASTREAM pStream, uint32_t cbToRead, uint32_t *pcbRead)
             AssertRC(rc);
 
             Assert(cbSrc >= cbWritten);
-            Log2Func(("[SD%RU8]: %RU32/%zu bytes read\n", pStream->u8SD, cbWritten, cbSrc));
+            Log2Func(("[SD%RU8] %RU32/%zu bytes read\n", pStream->u8SD, cbWritten, cbSrc));
         }
 
         RTCircBufReleaseReadBlock(pCircBuf, cbWritten);
@@ -1564,7 +1586,7 @@ uint32_t hdaR3StreamUpdateLPIB(PHDASTREAM pStream, uint32_t u32LPIB)
 
     u32LPIB = RT_MIN(u32LPIB, pStream->u32CBL);
 
-    LogFlowFunc(("[SD%RU8]: LPIB=%RU32 (DMA Position Buffer Enabled: %RTbool)\n",
+    LogFlowFunc(("[SD%RU8] LPIB=%RU32 (DMA Position Buffer Enabled: %RTbool)\n",
                  pStream->u8SD, u32LPIB, pThis->fDMAPosition));
 
     /* Update LPIB in any case. */
@@ -1776,7 +1798,7 @@ DECLCALLBACK(int) hdaR3StreamAsyncIOThread(RTTHREAD hThreadSelf, void *pvUser)
 
     RTThreadUserSignal(hThreadSelf);
 
-    LogFunc(("[SD%RU8]: Started\n", pStream->u8SD));
+    LogFunc(("[SD%RU8] Started\n", pStream->u8SD));
 
     for (;;)
     {
@@ -1805,7 +1827,7 @@ DECLCALLBACK(int) hdaR3StreamAsyncIOThread(RTTHREAD hThreadSelf, void *pvUser)
         AssertRC(rc2);
     }
 
-    LogFunc(("[SD%RU8]: Ended\n", pStream->u8SD));
+    LogFunc(("[SD%RU8] Ended\n", pStream->u8SD));
 
     ASMAtomicXchgBool(&pAIO->fStarted, false);
 
@@ -1850,7 +1872,7 @@ int hdaR3StreamAsyncIOCreate(PHDASTREAM pStream)
     else
         rc = VINF_SUCCESS;
 
-    LogFunc(("[SD%RU8]: Returning %Rrc\n", pStream->u8SD, rc));
+    LogFunc(("[SD%RU8] Returning %Rrc\n", pStream->u8SD, rc));
     return rc;
 }
 
@@ -1889,7 +1911,7 @@ int hdaR3StreamAsyncIODestroy(PHDASTREAM pStream)
         pAIO->fEnabled  = false;
     }
 
-    LogFunc(("[SD%RU8]: Returning %Rrc\n", pStream->u8SD, rc));
+    LogFunc(("[SD%RU8] Returning %Rrc\n", pStream->u8SD, rc));
     return rc;
 }
 
