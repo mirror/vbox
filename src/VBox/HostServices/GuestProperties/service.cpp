@@ -290,6 +290,8 @@ private:
             return true;
         if (RTStrStartsWith(pszName, "/VirtualBox/HostInfo/"))
             return true;
+        if (RTStrStartsWith(pszName, "/VirtualBox/VMInfo/"))
+            return true;
         return false;
     }
 
@@ -358,6 +360,9 @@ public:
                                            uint32_t /* u32ClientID */,
                                            void * /* pvClient */)
     {
+        /** @todo r=bird: Here be dragons! You must complete all calls for the client as
+         * it disconnects or we'll end wasting space...  We're also confused after
+         * restoring state, but that's a bug somewhere in VMMDev, I think. */
         return VINF_SUCCESS;
     }
 
@@ -415,6 +420,7 @@ public:
     }
 
     void setHostVersionProps();
+    void incrementCounterProp(const char *pszName);
     static DECLCALLBACK(void) svcNotify(void *pvService, HGCMNOTIFYEVENT enmEvent);
 
     int initialize();
@@ -427,7 +433,8 @@ private:
     int setPropertyBlock(uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
     int getProperty(uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
     int setProperty(uint32_t cParms, VBOXHGCMSVCPARM paParms[], bool isGuest);
-    int setPropertyInternal(const char *pcszName, const char *pcszValue, uint32_t fFlags, uint64_t nsTimestamp, bool fIsGuest);
+    int setPropertyInternal(const char *pcszName, const char *pcszValue, uint32_t fFlags, uint64_t nsTimestamp,
+                            bool fIsGuest = false);
     int delProperty(uint32_t cParms, VBOXHGCMSVCPARM paParms[], bool isGuest);
     int enumProps(uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
     int getNotification(uint32_t u32ClientId, VBOXHGCMCALLHANDLE callHandle, uint32_t cParms,
@@ -778,7 +785,8 @@ int Service::setProperty(uint32_t cParms, VBOXHGCMSVCPARM paParms[], bool isGues
  * @throws  std::bad_alloc  if an out of memory condition occurs
  * @thread  HGCM
  */
-int Service::setPropertyInternal(const char *pcszName, const char *pcszValue, uint32_t fFlags, uint64_t nsTimestamp, bool fIsGuest)
+int Service::setPropertyInternal(const char *pcszName, const char *pcszValue, uint32_t fFlags, uint64_t nsTimestamp,
+                                 bool fIsGuest /*= false*/)
 {
     /*
      * If the property already exists, check its flags to see if we are allowed
@@ -1596,6 +1604,33 @@ int Service::hostCall (uint32_t eFunction, uint32_t cParms, VBOXHGCMSVCPARM paPa
     return rc;
 }
 
+/**
+ * Increments a counter property.
+ *
+ * It is assumed that this a transient property that is read-only to the guest.
+ *
+ * @param   pszName     The property name.
+ * @throws  std::bad_alloc  if an out of memory condition occurs
+ */
+void Service::incrementCounterProp(const char *pszName)
+{
+    /* Format the incremented value. */
+    char szValue[64];
+    Property *pProp = getPropertyInternal(pszName);
+    if (pProp)
+    {
+        uint64_t uValue = RTStrToUInt64(pProp->mValue.c_str());
+        RTStrFormatU64(szValue, sizeof(szValue), uValue + 1, 10, 0, 0, 0);
+    }
+    else
+    {
+        szValue[0] = '1';
+        szValue[1] = '\0';
+    }
+
+    /* Set it. */
+    setPropertyInternal(pszName, szValue, GUEST_PROP_F_TRANSIENT | GUEST_PROP_F_RDONLYGUEST, getCurrentTimestamp());
+}
 
 /**
  * Sets the VBoxVer, VBoxVerExt and VBoxRev properties.
@@ -1607,16 +1642,16 @@ void Service::setHostVersionProps()
     /* Set the raw VBox version string as a guest property. Used for host/guest
      * version comparison. */
     setPropertyInternal("/VirtualBox/HostInfo/VBoxVer", VBOX_VERSION_STRING_RAW,
-                        GUEST_PROP_F_TRANSIENT | GUEST_PROP_F_RDONLYGUEST, nsTimestamp, false /*fIsGuest*/);
+                        GUEST_PROP_F_TRANSIENT | GUEST_PROP_F_RDONLYGUEST, nsTimestamp);
 
     /* Set the full VBox version string as a guest property. Can contain vendor-specific
      * information/branding and/or pre-release tags. */
     setPropertyInternal("/VirtualBox/HostInfo/VBoxVerExt", VBOX_VERSION_STRING,
-                        GUEST_PROP_F_TRANSIENT | GUEST_PROP_F_RDONLYGUEST, nsTimestamp, false /*fIsGuest*/);
+                        GUEST_PROP_F_TRANSIENT | GUEST_PROP_F_RDONLYGUEST, nsTimestamp);
 
     /* Set the VBox SVN revision as a guest property */
     setPropertyInternal("/VirtualBox/HostInfo/VBoxRev", RTBldCfgRevisionStr(),
-                        GUEST_PROP_F_TRANSIENT | GUEST_PROP_F_RDONLYGUEST, nsTimestamp, false /*fIsGuest*/);
+                        GUEST_PROP_F_TRANSIENT | GUEST_PROP_F_RDONLYGUEST, nsTimestamp);
 }
 
 
@@ -1628,17 +1663,27 @@ void Service::setHostVersionProps()
     SELF *pThis = reinterpret_cast<SELF *>(pvService);
     AssertPtrReturnVoid(pThis);
 
-    /* Make sure the host version properties have been touched and are
-       up-to-date after a restore: */
-    if (   !pThis->m_fSetHostVersionProps
-        && (enmEvent == HGCMNOTIFYEVENT_RESUME || enmEvent == HGCMNOTIFYEVENT_POWER_ON))
+    try
     {
-        pThis->setHostVersionProps();
-        pThis->m_fSetHostVersionProps = true;
-    }
+        /* Make sure the host version properties have been touched and are
+           up-to-date after a restore: */
+        if (   !pThis->m_fSetHostVersionProps
+            && (enmEvent == HGCMNOTIFYEVENT_RESUME || enmEvent == HGCMNOTIFYEVENT_POWER_ON))
+        {
+            pThis->setHostVersionProps();
+            pThis->m_fSetHostVersionProps = true;
+        }
 
-    /** @todo add suspend/resume property? */
-    /** @todo add reset counter? */
+        if (enmEvent == HGCMNOTIFYEVENT_RESUME)
+            pThis->incrementCounterProp("/VirtualBox/VMInfo/ResumeCounter");
+
+        if (enmEvent == HGCMNOTIFYEVENT_RESET)
+            pThis->incrementCounterProp("/VirtualBox/VMInfo/ResetCounter");
+    }
+    catch (std::bad_alloc &)
+    {
+        /* ignore */
+    }
 }
 
 
@@ -1691,11 +1736,13 @@ int Service::initialize()
         setHostVersionProps();
 
         /* Sysprep execution by VBoxService (host is allowed to change these). */
-        uint64_t nsTimestamp = getCurrentTimestamp();
-        setPropertyInternal("/VirtualBox/HostGuest/SysprepExec", "", GUEST_PROP_F_TRANSIENT | GUEST_PROP_F_RDONLYGUEST,
-                            nsTimestamp, false /*fIsGuest*/);
-        setPropertyInternal("/VirtualBox/HostGuest/SysprepArgs", "", GUEST_PROP_F_TRANSIENT | GUEST_PROP_F_RDONLYGUEST,
-                            nsTimestamp, false /*fIsGuest*/);
+        uint64_t nsNow = getCurrentTimestamp();
+        setPropertyInternal("/VirtualBox/HostGuest/SysprepExec", "", GUEST_PROP_F_TRANSIENT | GUEST_PROP_F_RDONLYGUEST, nsNow);
+        setPropertyInternal("/VirtualBox/HostGuest/SysprepArgs", "", GUEST_PROP_F_TRANSIENT | GUEST_PROP_F_RDONLYGUEST, nsNow);
+
+        /* Resume and reset counters. */
+        setPropertyInternal("/VirtualBox/VMInfo/ResumeCounter", "0", GUEST_PROP_F_TRANSIENT | GUEST_PROP_F_RDONLYGUEST, nsNow);
+        setPropertyInternal("/VirtualBox/VMInfo/ResetCounter", "0", GUEST_PROP_F_TRANSIENT | GUEST_PROP_F_RDONLYGUEST, nsNow);
     }
     catch (std::bad_alloc &)
     {
