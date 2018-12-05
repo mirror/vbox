@@ -435,6 +435,27 @@ create_udev_rule()
     fi
 }
 
+create_module_rebuild_script()
+{
+    # And a post-installation script for rebuilding modules when a new kernel
+    # is installed.
+    mkdir -p /etc/kernel/postinst.d /etc/kernel/prerm.d
+    cat << EOF > /etc/kernel/postinst.d/vboxadd
+#!/bin/sh
+# This only works correctly on Debian derivatives - Red Hat calls it before
+# installing the right header files.
+/sbin/rcvboxadd quicksetup "\${1}"
+exit 0
+EOF
+    cat << EOF > /etc/kernel/prerm.d/vboxadd
+#!/bin/sh
+for i in ${OLDMODULES}; do rm -f /lib/modules/"\${1}"/misc/"\${i}".ko; done
+rmdir -p /lib/modules/"\$1"/misc 2>/dev/null
+exit 0
+EOF
+    chmod 0755 /etc/kernel/postinst.d/vboxadd /etc/kernel/prerm.d/vboxadd
+}
+
 shared_folder_setup()
 {
     # Add a group "vboxsf" for Shared Folders access
@@ -491,6 +512,7 @@ setup()
     fi
     create_vbox_user
     create_udev_rule
+    test -n "${INSTALL_NO_MODULE_BUILDS}" || create_module_rebuild_script
     test -z "$QUICKSETUP" || return 0
     shared_folder_setup
     if  running_vboxguest || running_vboxadd; then
@@ -517,6 +539,10 @@ cleanup()
     "${INSTALL_DIR}/init/vboxadd-x11" cleanup
 
     # Remove other files
+    if test -z "${INSTALL_NO_MODULE_BUILDS}"; then
+        rm -f /etc/kernel/postinst.d/vboxadd /etc/kernel/prerm.d/vboxadd
+        rmdir -p /etc/kernel/postinst.d /etc/kernel/prerm.d 2>/dev/null
+    fi
     rm /sbin/mount.vboxsf 2>/dev/null
     rm /etc/udev/rules.d/60-vboxadd.rules 2>/dev/null
 }
