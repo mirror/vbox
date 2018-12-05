@@ -352,19 +352,7 @@ public:
         return VINF_SUCCESS;
     }
 
-    /**
-     * @interface_method_impl{VBOXHGCMSVCFNTABLE,pfnConnect}
-     * Stub implementation of pfnConnect and pfnDisconnect.
-     */
-    static DECLCALLBACK(int) svcDisconnect(void * /* pvService */,
-                                           uint32_t /* u32ClientID */,
-                                           void * /* pvClient */)
-    {
-        /** @todo r=bird: Here be dragons! You must complete all calls for the client as
-         * it disconnects or we'll end wasting space...  We're also confused after
-         * restoring state, but that's a bug somewhere in VMMDev, I think. */
-        return VINF_SUCCESS;
-    }
+    static DECLCALLBACK(int) svcDisconnect(void *pvService, uint32_t idClient, void *pvClient);
 
     /**
      * @interface_method_impl{VBOXHGCMSVCFNTABLE,pfnCall}
@@ -1602,6 +1590,35 @@ int Service::hostCall (uint32_t eFunction, uint32_t cParms, VBOXHGCMSVCPARM paPa
 
     LogFlowFunc(("rc = %Rrc\n", rc));
     return rc;
+}
+
+/**
+ * @interface_method_impl{VBOXHGCMSVCFNTABLE,pfnDisconnect}
+ */
+/*static*/ DECLCALLBACK(int) Service::svcDisconnect(void *pvService, uint32_t idClient, void *pvClient)
+{
+    RT_NOREF(pvClient);
+    LogFlowFunc(("idClient=%u\n", idClient));
+    SELF *pThis = reinterpret_cast<SELF *>(pvService);
+    AssertLogRelReturn(pThis, VERR_INVALID_POINTER);
+
+    /*
+     * Complete all pending requests for this client.
+     */
+    for (CallList::iterator It = pThis->mGuestWaiters.begin(); It != pThis->mGuestWaiters.end();)
+    {
+        GuestCall &rCurCall = *It;
+        if (rCurCall.u32ClientId != idClient)
+            ++It;
+        else
+        {
+            LogFlowFunc(("Completing call %u (%p)...\n", rCurCall.mFunction, rCurCall.mHandle));
+            pThis->mpHelpers->pfnCallComplete(rCurCall.mHandle, VERR_INTERRUPTED);
+            It = pThis->mGuestWaiters.erase(It);
+        }
+    }
+
+    return VINF_SUCCESS;
 }
 
 /**
