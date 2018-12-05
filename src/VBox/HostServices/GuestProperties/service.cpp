@@ -211,30 +211,30 @@ private:
      * @returns iprt status value
      * @returns VWRN_NOT_FOUND if the last notification was not found in the queue
      * @param   pszPatterns   the patterns to match the property name against
-     * @param   u64Timestamp  the timestamp of the last notification
+     * @param   nsTimestamp   the timestamp of the last notification
      * @param   pProp         where to return the property found.  If none is
      *                        found this will be set to nil.
+     * @throws  can throw std::bad_alloc
      * @thread  HGCM
      */
-    int getOldNotification(const char *pszPatterns, uint64_t u64Timestamp,
-                           Property *pProp)
+    int getOldNotification(const char *pszPatterns, uint64_t nsTimestamp, Property *pProp)
     {
         AssertPtrReturn(pszPatterns, VERR_INVALID_POINTER);
         /* Zero means wait for a new notification. */
-        AssertReturn(u64Timestamp != 0, VERR_INVALID_PARAMETER);
+        AssertReturn(nsTimestamp != 0, VERR_INVALID_PARAMETER);
         AssertPtrReturn(pProp, VERR_INVALID_POINTER);
-        int rc = getOldNotificationInternal(pszPatterns, u64Timestamp, pProp);
+        int rc = getOldNotificationInternal(pszPatterns, nsTimestamp, pProp);
 #ifdef VBOX_STRICT
         /*
          * ENSURE that pProp is the first event in the notification queue that:
-         *  - Appears later than u64Timestamp
+         *  - Appears later than nsTimestamp
          *  - Matches the pszPatterns
          */
         /** @todo r=bird: This incorrectly ASSUMES that mTimestamp is unique.
          *  The timestamp resolution can be very coarse on windows for instance. */
         PropertyList::const_iterator it = mGuestNotifications.begin();
         for (;    it != mGuestNotifications.end()
-               && it->mTimestamp != u64Timestamp; ++it)
+               && it->mTimestamp != nsTimestamp; ++it)
         { /*nothing*/ }
         if (it == mGuestNotifications.end())  /* Not found */
             it = mGuestNotifications.begin();
@@ -427,14 +427,11 @@ private:
                             bool fIsGuest = false);
     int delProperty(uint32_t cParms, VBOXHGCMSVCPARM paParms[], bool isGuest);
     int enumProps(uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
-    int getNotification(uint32_t u32ClientId, VBOXHGCMCALLHANDLE callHandle, uint32_t cParms,
-                        VBOXHGCMSVCPARM paParms[]);
-    int getOldNotificationInternal(const char *pszPattern,
-                                   uint64_t u64Timestamp, Property *pProp);
+    int getNotification(uint32_t u32ClientId, VBOXHGCMCALLHANDLE callHandle, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
+    int getOldNotificationInternal(const char *pszPattern, uint64_t nsTimestamp, Property *pProp);
     int getNotificationWriteOut(uint32_t cParms, VBOXHGCMSVCPARM paParms[], Property prop);
-    int doNotifications(const char *pszProperty, uint64_t u64Timestamp);
-    int notifyHost(const char *pszName, const char *pszValue,
-                   uint64_t u64Timestamp, const char *pszFlags);
+    int doNotifications(const char *pszProperty, uint64_t nsTimestamp);
+    int notifyHost(const char *pszName, const char *pszValue, uint64_t nsTimestamp, const char *pszFlags);
 
     void call(VBOXHGCMCALLHANDLE callHandle, uint32_t u32ClientID,
               void *pvClient, uint32_t eFunction, uint32_t cParms,
@@ -539,7 +536,7 @@ int Service::setPropertyBlock(uint32_t cParms, VBOXHGCMSVCPARM paParms[])
     const char **papszNames;
     const char **papszValues;
     const char **papszFlags;
-    uint64_t    *pau64Timestamps;
+    uint64_t    *paNsTimestamps;
     uint32_t     cbDummy;
     int          rc = VINF_SUCCESS;
 
@@ -549,7 +546,7 @@ int Service::setPropertyBlock(uint32_t cParms, VBOXHGCMSVCPARM paParms[])
     if (   cParms != 4
         || RT_FAILURE(HGCMSvcGetPv(&paParms[0], (void **)&papszNames, &cbDummy))
         || RT_FAILURE(HGCMSvcGetPv(&paParms[1], (void **)&papszValues, &cbDummy))
-        || RT_FAILURE(HGCMSvcGetPv(&paParms[2], (void **)&pau64Timestamps, &cbDummy))
+        || RT_FAILURE(HGCMSvcGetPv(&paParms[2], (void **)&paNsTimestamps, &cbDummy))
         || RT_FAILURE(HGCMSvcGetPv(&paParms[3], (void **)&papszFlags, &cbDummy))
         )
         rc = VERR_INVALID_PARAMETER;
@@ -590,13 +587,13 @@ int Service::setPropertyBlock(uint32_t cParms, VBOXHGCMSVCPARM paParms[])
                 {
                     /* Update existing property. */
                     pProp->mValue     = papszValues[i];
-                    pProp->mTimestamp = pau64Timestamps[i];
+                    pProp->mTimestamp = paNsTimestamps[i];
                     pProp->mFlags     = fFlags;
                 }
                 else
                 {
                     /* Create a new property */
-                    pProp = new Property(papszNames[i], papszValues[i], pau64Timestamps[i], fFlags);
+                    pProp = new Property(papszNames[i], papszValues[i], paNsTimestamps[i], fFlags);
                     if (!pProp)
                     {
                         rc = VERR_NO_MEMORY;
@@ -892,14 +889,14 @@ int Service::delProperty(uint32_t cParms, VBOXHGCMSVCPARM paParms[], bool isGues
      */
     if (rc == VINF_SUCCESS && pProp)
     {
-        uint64_t u64Timestamp = getCurrentTimestamp();
+        uint64_t nsTimestamp = getCurrentTimestamp();
         PRTSTRSPACECORE pStrCore = RTStrSpaceRemove(&mhProperties, pProp->mStrCore.pszString);
         AssertPtr(pStrCore); NOREF(pStrCore);
         mcProperties--;
         delete pProp;
         // if (isGuest)  /* Notify the host even for properties that the host
         //                * changed.  Less efficient, but ensures consistency. */
-        int rc2 = doNotifications(pcszName, u64Timestamp);
+        int rc2 = doNotifications(pcszName, nsTimestamp);
         if (RT_SUCCESS(rc))
             rc = rc2;
     }
@@ -1050,17 +1047,17 @@ int Service::enumProps(uint32_t cParms, VBOXHGCMSVCPARM paParms[])
 }
 
 
-/** Helper query used by getOldNotification */
-int Service::getOldNotificationInternal(const char *pszPatterns,
-                                        uint64_t u64Timestamp,
-                                        Property *pProp)
+/** Helper query used by getOldNotification
+ * @throws  can throw std::bad_alloc
+ */
+int Service::getOldNotificationInternal(const char *pszPatterns, uint64_t nsTimestamp, Property *pProp)
 {
     /* We count backwards, as the guest should normally be querying the
      * most recent events. */
     int rc = VWRN_NOT_FOUND;
     PropertyList::reverse_iterator it = mGuestNotifications.rbegin();
     for (; it != mGuestNotifications.rend(); ++it)
-        if (it->mTimestamp == u64Timestamp)
+        if (it->mTimestamp == nsTimestamp)
         {
             rc = VINF_SUCCESS;
             break;
@@ -1137,7 +1134,7 @@ int Service::getNotification(uint32_t u32ClientId, VBOXHGCMCALLHANDLE callHandle
     char *pchBuf;
     uint32_t cchPatterns = 0;
     uint32_t cbBuf = 0;
-    uint64_t u64Timestamp;
+    uint64_t nsTimestamp;
 
     /*
      * Get the HGCM function arguments and perform basic verification.
@@ -1145,21 +1142,21 @@ int Service::getNotification(uint32_t u32ClientId, VBOXHGCMCALLHANDLE callHandle
     LogFlowThisFunc(("\n"));
     if (   cParms != 4  /* Hardcoded value as the next lines depend on it. */
         || RT_FAILURE(HGCMSvcGetStr(&paParms[0], &pszPatterns, &cchPatterns))  /* patterns */
-        || RT_FAILURE(HGCMSvcGetU64(&paParms[1], &u64Timestamp))  /* timestamp */
+        || RT_FAILURE(HGCMSvcGetU64(&paParms[1], &nsTimestamp))  /* timestamp */
         || RT_FAILURE(HGCMSvcGetBuf(&paParms[2], (void **)&pchBuf, &cbBuf))  /* return buffer */
        )
         rc = VERR_INVALID_PARAMETER;
     else
     {
-        LogFlow(("pszPatterns=%s, u64Timestamp=%llu\n", pszPatterns, u64Timestamp));
+        LogFlow(("pszPatterns=%s, nsTimestamp=%llu\n", pszPatterns, nsTimestamp));
 
         /*
          * If no timestamp was supplied or no notification was found in the queue
          * of old notifications, enqueue the request in the waiting queue.
          */
         Property prop;
-        if (RT_SUCCESS(rc) && u64Timestamp != 0)
-            rc = getOldNotification(pszPatterns, u64Timestamp, &prop);
+        if (RT_SUCCESS(rc) && nsTimestamp != 0)
+            rc = getOldNotification(pszPatterns, nsTimestamp, &prop);
         if (RT_SUCCESS(rc))
         {
             if (prop.isNull())
@@ -1213,18 +1210,18 @@ int Service::getNotification(uint32_t u32ClientId, VBOXHGCMCALLHANDLE callHandle
  * Notify the service owner and the guest that a property has been
  * added/deleted/changed
  * @param pszProperty  the name of the property which has changed
- * @param u64Timestamp the time at which the change took place
+ * @param nsTimestamp  the time at which the change took place
  *
  * @thread  HGCM service
  */
-int Service::doNotifications(const char *pszProperty, uint64_t u64Timestamp)
+int Service::doNotifications(const char *pszProperty, uint64_t nsTimestamp)
 {
     AssertPtrReturn(pszProperty, VERR_INVALID_POINTER);
-    LogFlowThisFunc(("pszProperty=%s, u64Timestamp=%llu\n", pszProperty, u64Timestamp));
+    LogFlowThisFunc(("pszProperty=%s, nsTimestamp=%llu\n", pszProperty, nsTimestamp));
     /* Ensure that our timestamp is different to the last one. */
     if (   !mGuestNotifications.empty()
-        && u64Timestamp == mGuestNotifications.back().mTimestamp)
-        ++u64Timestamp;
+        && nsTimestamp == mGuestNotifications.back().mTimestamp)
+        ++nsTimestamp;
 
     /*
      * Try to find the property.  Create a change event if we find it and a
@@ -1232,7 +1229,7 @@ int Service::doNotifications(const char *pszProperty, uint64_t u64Timestamp)
      */
     Property prop;
     prop.mName = pszProperty;
-    prop.mTimestamp = u64Timestamp;
+    prop.mTimestamp = nsTimestamp;
     /* prop is currently a delete event for pszProperty */
     Property const * const pProp = getPropertyInternal(pszProperty);
     if (pProp)
@@ -1292,7 +1289,7 @@ int Service::doNotifications(const char *pszProperty, uint64_t u64Timestamp)
             const char *pszValue = prop.mValue.c_str();
             rc = GuestPropWriteFlags(prop.mFlags, szFlags);
             if (RT_SUCCESS(rc))
-                rc = notifyHost(pszProperty, pszValue, u64Timestamp, szFlags);
+                rc = notifyHost(pszProperty, pszValue, nsTimestamp, szFlags);
         }
         /*
          * Host notifications - second case: if the property does not exist then
@@ -1301,7 +1298,7 @@ int Service::doNotifications(const char *pszProperty, uint64_t u64Timestamp)
         else
         {
             /* Send out a host notification */
-            rc = notifyHost(pszProperty, "", u64Timestamp, "");
+            rc = notifyHost(pszProperty, "", nsTimestamp, "");
         }
     }
 
@@ -1326,14 +1323,12 @@ static DECLCALLBACK(void) notifyHostAsyncWorker(PFNHGCMSVCEXT pfnHostCallback,
  * @returns  IPRT status value
  * @param    pszName       the property name
  * @param    pszValue      the new value, or NULL if the property was deleted
- * @param    u64Timestamp  the time of the change
+ * @param    nsTimestamp   the time of the change
  * @param    pszFlags      the new flags string
  */
-int Service::notifyHost(const char *pszName, const char *pszValue,
-                        uint64_t u64Timestamp, const char *pszFlags)
+int Service::notifyHost(const char *pszName, const char *pszValue, uint64_t nsTimestamp, const char *pszFlags)
 {
-    LogFlowFunc(("pszName=%s, pszValue=%s, u64Timestamp=%llu, pszFlags=%s\n",
-                 pszName, pszValue, u64Timestamp, pszFlags));
+    LogFlowFunc(("pszName=%s, pszValue=%s, nsTimestamp=%llu, pszFlags=%s\n", pszName, pszValue, nsTimestamp, pszFlags));
 #ifdef ASYNC_HOST_NOTIFY
     int rc = VINF_SUCCESS;
 
@@ -1360,7 +1355,7 @@ int Service::notifyHost(const char *pszName, const char *pszValue,
         pu8 += cbValue;
         *pu8++ = 0;
 
-        pHostCallbackData->u64Timestamp = u64Timestamp;
+        pHostCallbackData->u64Timestamp = nsTimestamp;
 
         pHostCallbackData->pcszFlags    = (const char *)pu8;
         memcpy(pu8, pszFlags, cbFlags);
@@ -1384,7 +1379,7 @@ int Service::notifyHost(const char *pszName, const char *pszValue,
     HostCallbackData.u32Magic     = GUESTPROPHOSTCALLBACKDATA_MAGIC;
     HostCallbackData.pcszName     = pszName;
     HostCallbackData.pcszValue    = pszValue;
-    HostCallbackData.u64Timestamp = u64Timestamp;
+    HostCallbackData.nsTimestamp  = nsTimestamp;
     HostCallbackData.pcszFlags    = pszFlags;
     int rc = mpfnHostCallback(mpvHostData, 0 /*u32Function*/,
                               (void *)(&HostCallbackData),
