@@ -277,7 +277,7 @@ vboximgOptHandler(void *data, const char *arg, int optKey, struct fuse_args *out
 /** @copydoc fuse_operations::open */
 static int vboximgOp_open(const char *pszPath, struct fuse_file_info *pInfo)
 {
-    (void) pInfo;
+    RT_NOREF(pszPath, pInfo);
     LogFlowFunc(("pszPath=%s\n", pszPath));
     uint32_t notsup = 0;
     int rc = 0;
