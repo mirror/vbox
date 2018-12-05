@@ -33,7 +33,7 @@ RT_C_DECLS_BEGIN
 int HGCMHostInit(void);
 int HGCMHostShutdown(bool fUvmIsInvalid = false);
 
-int HGCMHostReset(void);
+int HGCMHostReset(bool fForShutdown);
 
 int HGCMHostLoad(const char *pszServiceLibrary, const char *pszServiceName, PUVM pUVM, PPDMIHGCMPORT pHgcmPort);
 

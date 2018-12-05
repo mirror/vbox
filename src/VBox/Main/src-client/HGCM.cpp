@@ -2065,6 +2065,9 @@ class HGCMMsgMainLoadSaveState: public HGCMMsgCore
 
 class HGCMMsgMainReset: public HGCMMsgCore
 {
+    public:
+        /** Set if this is actually a shutdown and not a VM reset. */
+        bool fForShutdown;
 };
 
 class HGCMMsgMainQuit: public HGCMMsgCore
@@ -2306,7 +2309,9 @@ static DECLCALLBACK(void) hgcmThread(HGCMThread *pThread, void *pvUser)
 
                 HGCMService::Reset();
 
-                HGCMService::BroadcastNotify(HGCMNOTIFYEVENT_RESET);
+                HGCMMsgMainReset *pMsg = (HGCMMsgMainReset *)pMsgCore;
+                if (!pMsg->fForShutdown)
+                    HGCMService::BroadcastNotify(HGCMNOTIFYEVENT_RESET);
             } break;
 
             case HGCM_MSG_LOADSTATE:
@@ -2908,18 +2913,24 @@ int HGCMHostFastCallAsync(HGCMCVSHANDLE hSvc, uint32_t function, VBOXHGCMSVCPARM
 }
 #endif
 
-int HGCMHostReset(void)
+int HGCMHostReset(bool fForShutdown)
 {
     LogFlowFunc(("\n"));
 
     /* Disconnect all clients.
      */
 
-    HGCMMsgCore *pMsg;
-    int rc = hgcmMsgAlloc(g_pHgcmThread, &pMsg, HGCM_MSG_RESET, hgcmMainMessageAlloc);
+    HGCMMsgCore *pMsgCore;
+    int rc = hgcmMsgAlloc(g_pHgcmThread, &pMsgCore, HGCM_MSG_RESET, hgcmMainMessageAlloc);
 
     if (RT_SUCCESS(rc))
+    {
+        HGCMMsgMainReset *pMsg = (HGCMMsgMainReset *)pMsgCore;
+
+        pMsg->fForShutdown = fForShutdown;
+
         rc = hgcmMsgSend(pMsg);
+    }
 
     LogFlowFunc(("rc = %Rrc\n", rc));
     return rc;
@@ -2955,7 +2966,7 @@ int HGCMHostShutdown(bool fUvmIsInvalid /*= false*/)
      * Do HGCMReset and then unload all services.
      */
 
-    int rc = HGCMHostReset();
+    int rc = HGCMHostReset(true /*fForShutdown*/);
 
     if (RT_SUCCESS(rc))
     {
