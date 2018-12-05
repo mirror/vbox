@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * vboxraw - Disk Image Flattening FUSE Program.
+ * vboximg-mount - Disk Image Flattening FUSE Program.
  */
 
 /*
@@ -74,7 +74,7 @@
 #include <iprt/path.h>
 #include <iprt/utf16.h>
 
-#include "vboxraw.h"
+#include "vboximg-mount.h"
 #include "SelfSizingTable.h"
 
 using namespace com;
@@ -90,18 +90,20 @@ union
     uint8_t     abPad[RTPATH_MAX + 1024];
 } g_u;
 
+#if 0 /* unused */
 const uint64_t KB = 1024;
 const uint64_t MB = KB * KB;
 const uint64_t GB = MB * KB;
 const uint64_t TB = GB * KB;
 const uint64_t PB = TB * KB;
+#endif
 
 enum { PARTITION_TABLE_MBR = 1, PARTITION_TABLE_GPT = 2 };
 
 #define GPT_PTABLE_SIZE             32 * BLOCKSIZE   /** Max size we to read for GPT partition table */
 #define MBR_PARTITIONS_MAX          4                /** Fixed number of partitions in Master Boot Record */
 #define BASENAME_MAX                256              /** Maximum name for the basename of a path (for RTStrNLen()*/
-#define VBOXRAW_PARTITION_MAX       256              /** How much storage to allocate to store partition info */
+#define VBOXIMG_PARTITION_MAX       256              /** How much storage to allocate to store partition info */
 #define PARTITION_NAME_MAX          72               /** Maximum partition name size (accomodates GPT partition name) */
 #define BLOCKSIZE                   512              /** Commonly used disk block size */
 #define DOS_BOOT_RECORD_SIGNATURE   0xaa55           /** MBR and EBR (partition table) signature [EOT boundary] */
@@ -123,7 +125,7 @@ enum { PARTITION_TABLE_MBR = 1, PARTITION_TABLE_GPT = 2 };
 #define SAFENULL(strPtr)   (strPtr ? strPtr : "")
 #define CSTR(arg)     Utf8Str(arg).c_str()          /* Converts XPCOM string type to C string type */
 
-static struct fuse_operations g_vboxrawOps;         /** FUSE structure that defines allowed ops for this FS */
+static struct fuse_operations g_vboximgOps;         /** FUSE structure that defines allowed ops for this FS */
 
 /* Global variables */
 
@@ -163,9 +165,9 @@ typedef struct
     } partitionEntry;
 } PARTITIONINFO;
 
-PARTITIONINFO g_aParsedPartitionInfo[VBOXRAW_PARTITION_MAX + 1]; /* Note: Element 0 reserved for EntireDisk partitionEntry */
+PARTITIONINFO g_aParsedPartitionInfo[VBOXIMG_PARTITION_MAX + 1]; /* Note: Element 0 reserved for EntireDisk partitionEntry */
 
-static struct vboxrawOpts {
+static struct vboximgOpts {
      char         *pszVm;                   /** optional VM UUID */
      char         *pszImage;                /** Virtual Disk image UUID or path */
      int32_t       idxPartition;            /** Number of partition to constrain FUSE based FS to (optional) 0 - whole disk*/
@@ -179,11 +181,11 @@ static struct vboxrawOpts {
      uint32_t      fRW;                     /** Flag to allow changes to FUSE-mounted Virtual Disk image */
      uint32_t      fBriefUsage;             /** Flag to display only FS-specific program usage options */
      uint32_t      fVerbose;                /** Make some noise */
-} g_vboxrawOpts;
+} g_vboximgOpts;
 
-#define OPTION(fmt, pos, val) { fmt, offsetof(struct vboxrawOpts, pos), val }
+#define OPTION(fmt, pos, val) { fmt, offsetof(struct vboximgOpts, pos), val }
 
-static struct fuse_opt vboxrawOptDefs[] = {
+static struct fuse_opt vboximgOptDefs[] = {
     OPTION("-l",              fListMediaBrief,   1),
     OPTION("-L",              fListMedia,        1),
     OPTION("-t",              fListParts,        1),
@@ -210,8 +212,8 @@ static struct fuse_opt vboxrawOptDefs[] = {
 static void
 briefUsage()
 {
-    RTPrintf("usage: vboxraw [options] <mountpoint>\n\n"
-        "vboxraw options:\n\n"
+    RTPrintf("usage: vboximg-mount [options] <mountpoint>\n\n"
+        "vboximg-mount options:\n\n"
         "    [ -l ]                                     List virtual disk media (brief version)\n"
         "    [ -L ]                                     List virtual disk media (long version)\n"
         "    [ -t ]                                     List partition table (requires -i or --image option)\n"
@@ -257,7 +259,7 @@ briefUsage()
 }
 
 static int
-vboxrawOptHandler(void *data, const char *arg, int optKey, struct fuse_args *outargs)
+vboximgOptHandler(void *data, const char *arg, int optKey, struct fuse_args *outargs)
 {
     (void) data;
     (void) arg;
@@ -266,14 +268,14 @@ vboxrawOptHandler(void *data, const char *arg, int optKey, struct fuse_args *out
         case USAGE_FLAG:
             briefUsage();
             fuse_opt_add_arg(outargs, "-ho");
-            fuse_main(outargs->argc, outargs->argv, &g_vboxrawOps, NULL);
+            fuse_main(outargs->argc, outargs->argv, &g_vboximgOps, NULL);
             break;
     }
     return 1;
 }
 
 /** @copydoc fuse_operations::open */
-static int vboxrawOp_open(const char *pszPath, struct fuse_file_info *pInfo)
+static int vboximgOp_open(const char *pszPath, struct fuse_file_info *pInfo)
 {
     (void) pInfo;
     LogFlowFunc(("pszPath=%s\n", pszPath));
@@ -335,25 +337,25 @@ if (pInfo->flags & notsup)
 }
 
 /** @todo Remove when VD I/O becomes threadsafe */
-static DECLCALLBACK(int) vboxrawThreadStartRead(void *pvUser)
+static DECLCALLBACK(int) vboximgThreadStartRead(void *pvUser)
 {
     PRTCRITSECT vdioLock = (PRTCRITSECT)pvUser;
     return RTCritSectEnter(vdioLock);
 }
 
-static DECLCALLBACK(int) vboxrawThreadFinishRead(void *pvUser)
+static DECLCALLBACK(int) vboximgThreadFinishRead(void *pvUser)
 {
     PRTCRITSECT vdioLock = (PRTCRITSECT)pvUser;
     return RTCritSectLeave(vdioLock);
 }
 
-static DECLCALLBACK(int) vboxrawThreadStartWrite(void *pvUser)
+static DECLCALLBACK(int) vboximgThreadStartWrite(void *pvUser)
 {
     PRTCRITSECT vdioLock = (PRTCRITSECT)pvUser;
     return RTCritSectEnter(vdioLock);
 }
 
-static DECLCALLBACK(int) vboxrawThreadFinishWrite(void *pvUser)
+static DECLCALLBACK(int) vboximgThreadFinishWrite(void *pvUser)
 {
     PRTCRITSECT vdioLock = (PRTCRITSECT)pvUser;
     return RTCritSectLeave(vdioLock);
@@ -361,7 +363,7 @@ static DECLCALLBACK(int) vboxrawThreadFinishWrite(void *pvUser)
 /** @todo (end of to do section) */
 
 /** @copydoc fuse_operations::release */
-static int vboxrawOp_release(const char *pszPath, struct fuse_file_info *pInfo)
+static int vboximgOp_release(const char *pszPath, struct fuse_file_info *pInfo)
 {
     (void) pszPath;
 
@@ -570,7 +572,7 @@ static int vdWriteSanitizer(PVDISK pDisk, uint64_t off, const void *pvSrc, size_
 
 
 /** @copydoc fuse_operations::read */
-static int vboxrawOp_read(const char *pszPath, char *pbBuf, size_t cbBuf,
+static int vboximgOp_read(const char *pszPath, char *pbBuf, size_t cbBuf,
                            off_t offset, struct fuse_file_info *pInfo)
 {
     (void) pszPath;
@@ -601,7 +603,7 @@ static int vboxrawOp_read(const char *pszPath, char *pbBuf, size_t cbBuf,
 }
 
 /** @copydoc fuse_operations::write */
-static int vboxrawOp_write(const char *pszPath, const char *pbBuf, size_t cbBuf,
+static int vboximgOp_write(const char *pszPath, const char *pbBuf, size_t cbBuf,
                            off_t offset, struct fuse_file_info *pInfo)
 {
     (void) pszPath;
@@ -616,8 +618,8 @@ static int vboxrawOp_write(const char *pszPath, const char *pbBuf, size_t cbBuf,
     int64_t adjOff = offset + g_vDiskOffset;
 
     int rc = 0;
-    if (!g_vboxrawOpts.fRW) {
-        LogFlowFunc(("WARNING: vboxraw (FUSE FS) --rw option not specified\n"
+    if (!g_vboximgOpts.fRW) {
+        LogFlowFunc(("WARNING: vboximg-mount (FUSE FS) --rw option not specified\n"
                      "              (write operation ignored w/o error!)\n"));
         return cbBuf;
     } else if ((off_t)(adjOff + cbBuf) < adjOff)
@@ -637,7 +639,7 @@ static int vboxrawOp_write(const char *pszPath, const char *pbBuf, size_t cbBuf,
 
 /** @copydoc fuse_operations::getattr */
 static int
-vboxrawOp_getattr(const char *pszPath, struct stat *stbuf)
+vboximgOp_getattr(const char *pszPath, struct stat *stbuf)
 {
     int rc = 0;
 
@@ -669,7 +671,7 @@ vboxrawOp_getattr(const char *pszPath, struct stat *stbuf)
          * resolved path to VBox disk image, has appended to it formatted text
          * representing the offset range of the partition.
          *
-         *  $ vboxraw -i /stroll/along/the/path/simple_fixed_disk.vdi -p 1 /mnt/tmpdir
+         *  $ vboximg-mount -i /stroll/along/the/path/simple_fixed_disk.vdi -p 1 /mnt/tmpdir
          *  $ ls /mnt/tmpdir
          *  simple_fixed_disk.vdi[20480:2013244928]    vhdd
          */
@@ -689,7 +691,7 @@ vboxrawOp_getattr(const char *pszPath, struct stat *stbuf)
 
 /** @copydoc fuse_operations::readdir */
 static int
-vboxrawOp_readdir(const char *pszPath, void *pvBuf, fuse_fill_dir_t pfnFiller,
+vboximgOp_readdir(const char *pszPath, void *pvBuf, fuse_fill_dir_t pfnFiller,
                               off_t offset, struct fuse_file_info *pInfo)
 
 {
@@ -733,7 +735,7 @@ vboxrawOp_readdir(const char *pszPath, void *pvBuf, fuse_fill_dir_t pfnFiller,
 
 /** @copydoc fuse_operations::readlink */
 static int
-vboxrawOp_readlink(const char *pszPath, char *buf, size_t size)
+vboximgOp_readlink(const char *pszPath, char *buf, size_t size)
 {
     (void) pszPath;
     RTStrCopy(buf, size, g_pszBaseImagePath);
@@ -791,7 +793,7 @@ listMedia(IMachine *pMachine, char *vmName, char *vmUuid)
 
                 if (ancestorNumber == 0)
                 {
-                    if (!g_vboxrawOpts.fListMediaBrief)
+                    if (!g_vboximgOpts.fListMediaBrief)
                     {
                         RTPrintf("   -----------------------\n");
                         RTPrintf("   HDD base:   \"%s\"\n",   CSTR(pMediumName));
@@ -809,7 +811,7 @@ listMedia(IMachine *pMachine, char *vmName, char *vmUuid)
                 }
                 else
                 {
-                    if (!g_vboxrawOpts.fListMediaBrief)
+                    if (!g_vboximgOpts.fListMediaBrief)
                     {
                         RTPrintf("     Diff %d:\n", ancestorNumber);
                         RTPrintf("          UUID:       %s\n",    CSTR(pMediumUuid));
@@ -854,11 +856,11 @@ listVMs(IVirtualBox *pVirtualBox)
                 CHECK_ERROR(pMachine, COMGETTER(Description)(pDescription.asOutParam()));
                 CHECK_ERROR(pMachine, COMGETTER(SettingsFilePath)(pMachineLocation.asOutParam()));
 
-                if (   g_vboxrawOpts.pszVm == NULL
-                    || RTStrNCmp(CSTR(pMachineUuid), g_vboxrawOpts.pszVm, MAX_UUID_LEN) == 0
-                    || RTStrNCmp((const char *)pMachineName.raw(), g_vboxrawOpts.pszVm, MAX_UUID_LEN) == 0)
+                if (   g_vboximgOpts.pszVm == NULL
+                    || RTStrNCmp(CSTR(pMachineUuid), g_vboximgOpts.pszVm, MAX_UUID_LEN) == 0
+                    || RTStrNCmp((const char *)pMachineName.raw(), g_vboximgOpts.pszVm, MAX_UUID_LEN) == 0)
                 {
-                    if (!g_vboxrawOpts.fListMediaBrief)
+                    if (!g_vboximgOpts.fListMediaBrief)
                     {
                         RTPrintf("------------------------------------------------------\n");
                         RTPrintf("VM Name:   \"%s\"\n", CSTR(pMachineName));
@@ -989,7 +991,7 @@ parsePartitionTable(void)
         if (g_pvDiskUuid)
             RTPrintf("   UUID: %s\n\n", g_pvDiskUuid);
 
-        if (g_vboxrawOpts.fVerbose)
+        if (g_vboximgOpts.fVerbose)
         {
             RTPrintf("   GPT Partition Table Header:\n\n");
             if (RTStrCmp((const char *)&parTblHdr.signature, "EFI PART") == 0)
@@ -1055,7 +1057,7 @@ parsePartitionTable(void)
             return RTMsgErrorExitFailure("Inconsistency for logical partition start. Aborting\n");
 
         for (int idxPartition = 5;
-                 idxPartition <= VBOXRAW_PARTITION_MAX;
+                 idxPartition <= VBOXIMG_PARTITION_MAX;
                  idxPartition++)
         {
 
@@ -1240,26 +1242,26 @@ main(int argc, char **argv)
     if (RT_FAILURE(rc))
         return RTMsgErrorExitFailure("VDInit failed, rc=%Rrc\n", rc);
 
-    memset(&g_vboxrawOps, 0, sizeof(g_vboxrawOps));
-    g_vboxrawOps.open        = vboxrawOp_open;
-    g_vboxrawOps.read        = vboxrawOp_read;
-    g_vboxrawOps.write       = vboxrawOp_write;
-    g_vboxrawOps.getattr     = vboxrawOp_getattr;
-    g_vboxrawOps.release     = vboxrawOp_release;
-    g_vboxrawOps.readdir     = vboxrawOp_readdir;
-    g_vboxrawOps.readlink    = vboxrawOp_readlink;
+    memset(&g_vboximgOps, 0, sizeof(g_vboximgOps));
+    g_vboximgOps.open        = vboximgOp_open;
+    g_vboximgOps.read        = vboximgOp_read;
+    g_vboximgOps.write       = vboximgOp_write;
+    g_vboximgOps.getattr     = vboximgOp_getattr;
+    g_vboximgOps.release     = vboximgOp_release;
+    g_vboximgOps.readdir     = vboximgOp_readdir;
+    g_vboximgOps.readlink    = vboximgOp_readlink;
 
     struct fuse_args args = FUSE_ARGS_INIT(argc, argv);
-    memset(&g_vboxrawOpts, 0, sizeof(g_vboxrawOpts));
+    memset(&g_vboximgOpts, 0, sizeof(g_vboximgOpts));
 
-    rc = fuse_opt_parse(&args, &g_vboxrawOpts, vboxrawOptDefs, vboxrawOptHandler);
+    rc = fuse_opt_parse(&args, &g_vboximgOpts, vboximgOptDefs, vboximgOptHandler);
 
-    if (g_vboxrawOpts.fAllowRoot)
+    if (g_vboximgOpts.fAllowRoot)
         fuse_opt_add_arg(&args, "-oallow_root");
 
     if (rc == -1)
         return RTMsgErrorExitFailure("Couldn't parse fuse options, rc=%Rrc\n", rc);
-    if (g_vboxrawOpts.fBriefUsage)
+    if (g_vboximgOpts.fBriefUsage)
     {
         briefUsage();
         return 0;
@@ -1296,17 +1298,17 @@ main(int argc, char **argv)
     if (FAILED(hrc))
         return RTMsgErrorExit(RTEXITCODE_FAILURE, "Failed to get IVirtualBox object! (hrc=%Rhrc)", hrc);
 
-    if (g_vboxrawOpts.fVerbose)
-        RTPrintf("vboxraw: VirtualBox XPCOM object created\n");
+    if (g_vboximgOpts.fVerbose)
+        RTPrintf("vboximg: VirtualBox XPCOM object created\n");
 
-    if (g_vboxrawOpts.fListMedia || g_vboxrawOpts.fListMediaBrief)
+    if (g_vboximgOpts.fListMedia || g_vboximgOpts.fListMediaBrief)
     {
         listVMs(pVirtualBox);
         return 0;
     }
 
 
-    if (g_vboxrawOpts.pszImage == NULL)
+    if (g_vboximgOpts.pszImage == NULL)
     {
         RTMsgErrorExitFailure("To list partitions, must also specify --i or --image option\n");
         return 0;
@@ -1314,18 +1316,18 @@ main(int argc, char **argv)
     ComPtr<IMedium> pBaseImageMedium = NULL;
     char    *pszFormat;
     VDTYPE  enmType;
-    searchForBaseImage(pVirtualBox, g_vboxrawOpts.pszImage, &pBaseImageMedium);
+    searchForBaseImage(pVirtualBox, g_vboximgOpts.pszImage, &pBaseImageMedium);
     if (pBaseImageMedium == NULL)
     {
         /*
          * Try to locate base image pMedium via the VirtualBox API, given the user-provided path
          * resolving symlinks back to hard path.
          */
-        int cbNameMax = pathconf(g_vboxrawOpts.pszImage, _PC_PATH_MAX);
+        int cbNameMax = pathconf(g_vboximgOpts.pszImage, _PC_PATH_MAX);
         if (cbNameMax < 0)
             return cbNameMax;
 
-        g_pszBaseImagePath = RTStrDup(g_vboxrawOpts.pszImage);
+        g_pszBaseImagePath = RTStrDup(g_vboximgOpts.pszImage);
         if (g_pszBaseImagePath == NULL)
             return RTMsgErrorExitFailure("out of memory\n");
 
@@ -1336,7 +1338,7 @@ main(int argc, char **argv)
              return RTMsgErrorExitFailure(
                     "Virtual disk image not readable: \"%s\"\n", g_pszBaseImagePath);
 
-        if (g_vboxrawOpts.fRW && access(g_vboxrawOpts.pszImage, W_OK) < 0)
+        if (g_vboximgOpts.fRW && access(g_vboximgOpts.pszImage, W_OK) < 0)
              return RTMsgErrorExitFailure(
                     "Virtual disk image not writeable: \"%s\"\n", g_pszBaseImagePath);
         rc = RTPathSplit(g_pszBaseImagePath, &g_u.split, sizeof(g_u), 0);
@@ -1420,17 +1422,17 @@ main(int argc, char **argv)
                 if (RT_FAILURE(rc))
                     return RTMsgErrorExitFailure("VDGetFormat(,,%s,,) "
                         "failed (during HDD container creation), rc=%Rrc\n", g_pszBaseImagePath, rc);
-                if (g_vboxrawOpts.fVerbose)
+                if (g_vboximgOpts.fVerbose)
                     RTPrintf("Creating container for base image of format %s\n", pszFormat);
                 /** @todo Remove I/O CB's and crit sect. when VDRead()/VDWrite() are made threadsafe */
                 rc = RTCritSectInit(&g_vdioLock);
                 if (RT_SUCCESS(rc))
                 {
-                    g_VDIfThreadSync.pfnStartRead   = vboxrawThreadStartRead;
-                    g_VDIfThreadSync.pfnFinishRead  = vboxrawThreadFinishRead;
-                    g_VDIfThreadSync.pfnStartWrite  = vboxrawThreadStartWrite;
-                    g_VDIfThreadSync.pfnFinishWrite = vboxrawThreadFinishWrite;
-                    rc = VDInterfaceAdd(&g_VDIfThreadSync.Core, "vboxraw_ThreadSync", VDINTERFACETYPE_THREADSYNC,
+                    g_VDIfThreadSync.pfnStartRead   = vboximgThreadStartRead;
+                    g_VDIfThreadSync.pfnFinishRead  = vboximgThreadFinishRead;
+                    g_VDIfThreadSync.pfnStartWrite  = vboximgThreadStartWrite;
+                    g_VDIfThreadSync.pfnFinishWrite = vboximgThreadFinishWrite;
+                    rc = VDInterfaceAdd(&g_VDIfThreadSync.Core, "vboximg_ThreadSync", VDINTERFACETYPE_THREADSYNC,
                                         &g_vdioLock, sizeof(VDINTERFACETHREADSYNC), &g_pVdIfs);
                 }
                 else
@@ -1444,16 +1446,16 @@ main(int argc, char **argv)
             }
             /** @todo (end of to do section) */
 
-            if ( g_vboxrawOpts.cHddImageDiffMax != 0 && diffNumber > g_vboxrawOpts.cHddImageDiffMax)
+            if ( g_vboximgOpts.cHddImageDiffMax != 0 && diffNumber > g_vboximgOpts.cHddImageDiffMax)
                 break;
 
-            if (g_vboxrawOpts.fVerbose)
+            if (g_vboximgOpts.fVerbose)
             {
                 if (diffNumber == 0)
-                    RTPrintf("\nvboxraw: Opening base image into container:\n       %s\n",
+                    RTPrintf("\nvboximg-mount: Opening base image into container:\n       %s\n",
                         g_pszBaseImagePath);
                 else
-                    RTPrintf("\nvboxraw: Opening difference image #%d into container:\n       %s\n",
+                    RTPrintf("\nvboximg-mount: Opening difference image #%d into container:\n       %s\n",
                         diffNumber, g_pszBaseImagePath);
             }
 
@@ -1483,7 +1485,7 @@ main(int argc, char **argv)
     g_cWriters   = 0;
     g_cbEntireVDisk  = VDGetSize(g_pVDisk, 0 /* base */);
 
-    if (g_vboxrawOpts.fListParts)
+    if (g_vboximgOpts.fListParts)
     {
         if (g_pVDisk == NULL)
             return RTMsgErrorExitFailure("No valid --image to list partitions from\n");
@@ -1504,12 +1506,12 @@ main(int argc, char **argv)
         }
         return 0;
     }
-    if (g_vboxrawOpts.idxPartition >= 0)
+    if (g_vboximgOpts.idxPartition >= 0)
     {
-        if (g_vboxrawOpts.offset)
+        if (g_vboximgOpts.offset)
             return RTMsgErrorExitFailure("--offset and --partition are mutually exclusive options\n");
 
-        if (g_vboxrawOpts.size)
+        if (g_vboximgOpts.size)
             return RTMsgErrorExitFailure("--size and --partition are mutually exclusive options\n");
 
         /*
@@ -1520,7 +1522,7 @@ main(int argc, char **argv)
         rc = parsePartitionTable();
         if (rc < 0)
             return RTMsgErrorExitFailure("Error parsing disk MBR/Partition table\n");
-        int partNbr = g_vboxrawOpts.idxPartition;
+        int partNbr = g_vboximgOpts.idxPartition;
 
         if (partNbr < 0 || partNbr > g_lastPartNbr)
             return RTMsgErrorExitFailure("Non-valid partition number specified\n");
@@ -1529,12 +1531,12 @@ main(int argc, char **argv)
         {
             g_vDiskOffset = 0;
             g_vDiskSize = VDGetSize(g_pVDisk, 0);
-            if (g_vboxrawOpts.fVerbose)
+            if (g_vboximgOpts.fVerbose)
                 RTPrintf("Partition 0 specified - Whole disk will be accessible\n");
         } else {
             for (int i = 0; i < g_lastPartNbr; i++)
             {
-                /* If GPT, display vboxraw's representation of partition table starts at partition 2
+                /* If GPT, display vboximg's representation of partition table starts at partition 2
                  * but the table is displayed calling it partition 1, because the protective MBR
                  * record is relatively pointless to display or reference in this context */
 
@@ -1542,30 +1544,30 @@ main(int argc, char **argv)
                 {
                      g_vDiskOffset = g_aParsedPartitionInfo[i].offPartition;
                      g_vDiskSize = g_vDiskOffset + g_aParsedPartitionInfo[i].cbPartition;
-                     if (g_vboxrawOpts.fVerbose)
+                     if (g_vboximgOpts.fVerbose)
                         RTPrintf("Partition %d specified. Only sectors %llu to %llu of disk will be accessible\n",
-                            g_vboxrawOpts.idxPartition, g_vDiskOffset / BLOCKSIZE, g_vDiskSize / BLOCKSIZE);
+                            g_vboximgOpts.idxPartition, g_vDiskOffset / BLOCKSIZE, g_vDiskSize / BLOCKSIZE);
                 }
             }
         }
     } else {
-        if (g_vboxrawOpts.offset) {
-            if (g_vboxrawOpts.offset < 0 || g_vboxrawOpts.offset + g_vboxrawOpts.size > g_cbEntireVDisk)
+        if (g_vboximgOpts.offset) {
+            if (g_vboximgOpts.offset < 0 || g_vboximgOpts.offset + g_vboximgOpts.size > g_cbEntireVDisk)
                 return RTMsgErrorExitFailure("User specified offset out of range of virtual disk\n");
 
-            if (g_vboxrawOpts.fVerbose)
+            if (g_vboximgOpts.fVerbose)
                 RTPrintf("Setting r/w bias (offset) to user requested value for sector %llu\n", g_vDiskOffset / BLOCKSIZE);
 
-            g_vDiskOffset = g_vboxrawOpts.offset;
+            g_vDiskOffset = g_vboximgOpts.offset;
         }
-        if (g_vboxrawOpts.size) {
-            if (g_vboxrawOpts.size < 0 || g_vboxrawOpts.offset + g_vboxrawOpts.size > g_cbEntireVDisk)
+        if (g_vboximgOpts.size) {
+            if (g_vboximgOpts.size < 0 || g_vboximgOpts.offset + g_vboximgOpts.size > g_cbEntireVDisk)
                 return RTMsgErrorExitFailure("User specified size out of range of virtual disk\n");
 
-            if (g_vboxrawOpts.fVerbose)
+            if (g_vboximgOpts.fVerbose)
                 RTPrintf("Setting r/w size limit to user requested value %llu\n", g_vDiskSize / BLOCKSIZE);
 
-            g_vDiskSize = g_vboxrawOpts.size;
+            g_vDiskSize = g_vboximgOpts.size;
         }
     }
     if (g_vDiskSize == 0)
@@ -1574,14 +1576,14 @@ main(int argc, char **argv)
     /*
      * Hand control over to libfuse.
      */
-    if (g_vboxrawOpts.fVerbose)
-        RTPrintf("\nvboxraw: Going into background...\n");
+    if (g_vboximgOpts.fVerbose)
+        RTPrintf("\nvboximg-mount: Going into background...\n");
 
-    rc = fuse_main(args.argc, args.argv, &g_vboxrawOps, NULL);
+    rc = fuse_main(args.argc, args.argv, &g_vboximgOps, NULL);
 
     int rc2 = VDClose(g_pVDisk, false /* fDelete */);
     AssertRC(rc2);
-    RTPrintf("vboxraw: fuse_main -> %d\n", rc);
+    RTPrintf("vboximg-mount: fuse_main -> %d\n", rc);
     return rc;
 }
 

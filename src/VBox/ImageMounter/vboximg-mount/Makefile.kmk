@@ -1,6 +1,6 @@
 # $Id$
 ## @file
-# Sub-Makefile for the vboxraw Program.
+# Sub-Makefile for the vboximg-mount Program.
 
 #
 # Copyright (C) 2006-2018 Oracle Corporation
@@ -19,30 +19,30 @@ SUB_DEPTH = ../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
 #
-# vboxraw - Disk Image Flatting FUSE Program.
+# vboximg-mount - Disk Image Flatting FUSE Program.
 #
-PROGRAMS += vboxraw
+PROGRAMS += vboximg-mount
 
-vboxraw_TEMPLATE =  VBOXMAINCLIENTEXE
-vboxraw_DEFS.darwin = __FreeBSD_==10
-vboxraw_DEFS        = _FILE_OFFSET_BITS=64
+vboximg-mount_TEMPLATE =  VBOXMAINCLIENTEXE
+vboximg-mount_DEFS.darwin = __FreeBSD_==10
+vboximg-mount_DEFS        = _FILE_OFFSET_BITS=64
 
-vboxraw_SOURCES = \
-    vboxraw.cpp \
-    vboxraw.h \
+vboximg-mount_SOURCES = \
+    vboximg-mount.cpp \
+    vboximg-mount.h \
     SelfSizingTable.h
 
-vboxraw_LIBS = \
+vboximg-mount_LIBS = \
 	$(LIB_DDU) \
 	$(LIB_RUNTIME)
 
-vboxraw_INCS.darwin = \
+vboximg-mount_INCS.darwin = \
     /usr/local/include \
     /usr/local/include/osxfuse \
-vboxraw_CXXFLAGS.darwin = -std=c++11
+vboximg-mount_CXXFLAGS.darwin = -std=c++11
 
-vboxraw_LIBS.darwin = /usr/local/lib/libosxfuse.dylib
-vboxraw_LIBS.linux = fuse
-vboxraw_LIBS.freebsd = fuse
+vboximg-mount_LIBS.darwin = /usr/local/lib/libosxfuse.dylib
+vboximg-mount_LIBS.linux = fuse
+vboximg-mount_LIBS.freebsd = fuse
 
 include $(FILE_KBUILD_SUB_FOOTER)

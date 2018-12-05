@@ -828,6 +828,8 @@ endif
 # Makes it possible to run some of the testcases and tools on older
 # windows versions (only define when buildling win.x86).
 #VBOX_WITH_MORE_NT4_COMPAT_BINARIES = 1
+# Set this to enable building of the vboximg-mount FUSE mounting utility.
+#VBOX_WITH_VBOXIMGMOUNT = 1
 ## @}
 
 
