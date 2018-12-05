@@ -20,8 +20,6 @@
 
 int  hdaR3StreamChannelDataInit(PPDMAUDIOSTREAMCHANNELDATA pChanData, uint32_t fFlags);
 void hdaR3StreamChannelDataDestroy(PPDMAUDIOSTREAMCHANNELDATA pChanData);
-int  hdaR3StreamChannelExtract(PPDMAUDIOSTREAMCHANNEL pChan, const void *pvBuf, size_t cbBuf);
-int  hdaR3StreamChannelAdvance(PPDMAUDIOSTREAMCHANNEL pChan, size_t cbAdv);
 int  hdaR3StreamChannelAcquireData(PPDMAUDIOSTREAMCHANNELDATA pChanData, void *ppvData, size_t *pcbData);
 int  hdaR3StreamChannelReleaseData(PPDMAUDIOSTREAMCHANNELDATA pChanData);
 

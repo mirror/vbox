@@ -56,9 +56,6 @@
 
 #include "HDACodec.h"
 #include "HDAStream.h"
-# if defined(VBOX_WITH_HDA_AUDIO_INTERLEAVING_STREAMS_SUPPORT) || defined(VBOX_WITH_AUDIO_HDA_51_SURROUND)
-#  include "HDAStreamChannel.h"
-# endif
 #include "HDAStreamMap.h"
 #include "HDAStreamPeriod.h"
 
@@ -107,11 +104,6 @@
 # define HDA_PCI_DEVICE_ID 0x0ac0
 #else
 # error "Please specify your HDA device vendor/device IDs"
-#endif
-
-/* Make sure that interleaving streams support is enabled if the 5.1 surround code is being used. */
-#if defined (VBOX_WITH_AUDIO_HDA_51_SURROUND) && !defined(VBOX_WITH_HDA_AUDIO_INTERLEAVING_STREAMS_SUPPORT)
-# define VBOX_WITH_HDA_AUDIO_INTERLEAVING_STREAMS_SUPPORT
 #endif
 
 /**
@@ -1311,6 +1303,14 @@ static int hdaRegWriteSDCTL(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
     LogFunc(("[SD%RU8] fRun=%RTbool, fInRun=%RTbool, fReset=%RTbool, fInReset=%RTbool, %R[sdctl]\n",
              uSD, fRun, fInRun, fReset, fInReset, u32Value));
 
+# ifdef DEBUG
+    if (hdaGetDirFromSD(uSD) == PDMAUDIODIR_OUT)
+    {
+        const uint8_t uStripeCtl = ((u32Value >> HDA_SDCTL_STRIPE_SHIFT) & HDA_SDCTL_STRIPE_MASK) + 1;
+        LogFunc(("[SD%RU8] Using %RU8 SDOs (stripe control)\n", uSD, uStripeCtl));
+    }
+# endif
+
     /*
      * Extract the stream tag the guest wants to use for this specific
      * stream descriptor (SDn). This only can happen if the stream is in a non-running
@@ -1809,13 +1809,6 @@ static int hdaR3AddStreamOut(PHDASTATE pThis, PPDMAUDIOSTREAMCFG pCfg)
             break;
         }
     }
-# else  /* !VBOX_WITH_AUDIO_HDA_51_SURROUND */
-    /* Only support mono or stereo channels. */
-    if (   pCfg->Props.cChannels != 1 /* Mono */
-        && pCfg->Props.cChannels != 2 /* Stereo */)
-    {
-        rc = VERR_NOT_SUPPORTED;
-    }
 # endif /* !VBOX_WITH_AUDIO_HDA_51_SURROUND */
 
     if (rc == VERR_NOT_SUPPORTED)
@@ -1838,7 +1831,6 @@ static int hdaR3AddStreamOut(PHDASTATE pThis, PPDMAUDIOSTREAMCFG pCfg)
             pCfg->DestSource.Dest = PDMAUDIOPLAYBACKDEST_FRONT;
             pCfg->enmLayout       = PDMAUDIOSTREAMLAYOUT_NON_INTERLEAVED;
 
-            pCfg->Props.cChannels = 2;
             pCfg->Props.cShift    = PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(pCfg->Props.cBytes, pCfg->Props.cChannels);
 
             rc = hdaCodecAddStream(pThis->pCodec, PDMAUDIOMIXERCTL_FRONT, pCfg);
@@ -1854,7 +1846,7 @@ static int hdaR3AddStreamOut(PHDASTATE pThis, PPDMAUDIOSTREAMCFG pCfg)
             pCfg->enmLayout       = PDMAUDIOSTREAMLAYOUT_NON_INTERLEAVED;
 
             pCfg->Props.cChannels = (fUseCenter && fUseLFE) ? 2 : 1;
-            pCfg->Props.cShift    = PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(pCfg->Props.cBits, pCfg->Props.cChannels);
+            pCfg->Props.cShift    = PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(pCfg->Props.cBytes, pCfg->Props.cChannels);
 
             rc = hdaCodecAddStream(pThis->pCodec, PDMAUDIOMIXERCTL_CENTER_LFE, pCfg);
         }
@@ -1868,7 +1860,7 @@ static int hdaR3AddStreamOut(PHDASTATE pThis, PPDMAUDIOSTREAMCFG pCfg)
             pCfg->enmLayout       = PDMAUDIOSTREAMLAYOUT_NON_INTERLEAVED;
 
             pCfg->Props.cChannels = 2;
-            pCfg->Props.cShift    = PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(pCfg->Props.cBits, pCfg->Props.cChannels);
+            pCfg->Props.cShift    = PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(pCfg->Props.cBytes, pCfg->Props.cChannels);
 
             rc = hdaCodecAddStream(pThis->pCodec, PDMAUDIOMIXERCTL_REAR, pCfg);
         }
@@ -2484,7 +2476,7 @@ static int hdaR3MixerAddDrvStream(PHDASTATE pThis, PAUDMIXSINK pMixSink, PPDMAUD
     AssertPtrReturn(pMixSink, VERR_INVALID_POINTER);
     AssertPtrReturn(pCfg,     VERR_INVALID_POINTER);
 
-    LogFunc(("Sink=%s, Stream=%s\n", pMixSink->pszName, pCfg->szName));
+    LogFunc(("szSink=%s, szStream=%s, cChannels=%RU8\n", pMixSink->pszName, pCfg->szName, pCfg->Props.cChannels));
 
     PPDMAUDIOSTREAMCFG pStreamCfg = DrvAudioHlpStreamCfgDup(pCfg);
     if (!pStreamCfg)

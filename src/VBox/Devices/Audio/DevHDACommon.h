@@ -90,8 +90,12 @@ AssertCompile(HDA_MAX_SDI <= HDA_MAX_SDO);
 /** Default timer frequency (in Hz).
  *
  * Lowering this value can ask for trouble, as backends then can run
- * into data underruns. */
-#define HDA_TIMER_HZ_DEFAULT        100
+ * into data underruns.
+ *
+ * Note: For handling surround setups (e.g. 5.1 speaker setups) we need
+ *       a higher Hz rate, as the device emulation otherwise will come into
+ *       timing trouble, making the output (DMA reads) crackling. */
+#define HDA_TIMER_HZ_DEFAULT        200
 
 /** Default position adjustment (in audio samples).
  *
@@ -112,7 +116,7 @@ AssertCompile(HDA_MAX_SDI <= HDA_MAX_SDO);
 
 /** HDA's (fixed) audio frame size in bytes.
  *  We only support 16-bit stereo frames at the moment. */
-#define HDA_FRAME_SIZE              4
+#define HDA_FRAME_SIZE_DEFAULT      4
 
 /** Offset of the SD0 register map. */
 #define HDA_REG_DESC_SD0_BASE       0x80

@@ -60,10 +60,12 @@ typedef struct HDASTREAMDBGINFORT
      *  For input streams, this dumps data being written to the device FIFO,
      *  whereas for output streams this dumps data being read from the device FIFO. */
     R3PTRTYPE(PPDMAUDIOFILE) pFileStream;
-    /** File for dumping DMA reads / writes.
+    /** File for dumping raw DMA reads / writes.
      *  For input streams, this dumps data being written to the device DMA,
      *  whereas for output streams this dumps data being read from the device DMA. */
-    R3PTRTYPE(PPDMAUDIOFILE) pFileDMA;
+    R3PTRTYPE(PPDMAUDIOFILE) pFileDMARaw;
+    /** File for dumping mapped (that is, extracted) DMA reads / writes. */
+    R3PTRTYPE(PPDMAUDIOFILE) pFileDMAMapped;
 } HDASTREAMDBGINFORT, *PHDASTREAMDBGINFORT;
 
 /**
@@ -123,7 +125,7 @@ typedef struct HDASTREAMSTATE
     HDASTREAMSTATEAIO       AIO;
 #endif
     /** This stream's data mapping. */
-    HDASTREAMMAPPING        Mapping;
+    HDASTREAMMAP            Mapping;
     /** Current BDLE (Buffer Descriptor List Entry). */
     HDABDLE                 BDLE;
     /** Circular buffer (FIFO) for holding DMA'ed data. */
@@ -147,14 +149,13 @@ typedef struct HDASTREAMSTATE
     /** How many interrupts are pending due to
      *  BDLE interrupt-on-completion (IOC) bits set. */
     uint8_t                 cTransferPendingInterrupts;
-    /** The stream's current audio frame size (in bytes). */
-    uint32_t                cbFrameSize;
+    uint8_t                 Padding2[4];
     /** How many audio data frames are left to be processed
      *  for the position adjustment handling.
      *
      *  0 if position adjustment handling is done or inactive. */
     uint16_t                cPosAdjustFramesLeft;
-    uint8_t                 Padding2[2];
+    uint8_t                 Padding3[2];
     /** (Virtual) clock ticks per byte. */
     uint64_t                cTicksPerByte;
     /** (Virtual) clock ticks per transfer. */
@@ -164,18 +165,11 @@ typedef struct HDASTREAMSTATE
     /** The stream's current configuration.
      *  Should match SDFMT. */
     PDMAUDIOSTREAMCFG       Cfg;
-    uint32_t                Padding3;
+    uint32_t                Padding4;
 #ifdef HDA_USE_DMA_ACCESS_HANDLER
     /** List of DMA handlers. */
     RTLISTANCHORR3          lstDMAHandlers;
 #endif
-    /** How much DMA data from a previous transfer is left to be processed (in bytes).
-     *  This can happen if the stream's frame size is bigger (e.g. 16 bytes) than
-     *  the current DMA FIFO can hold (e.g. 10 bytes). Mostly needed for more complex
-     *  stuff like interleaved surround streams. */
-    uint16_t                cbDMALeft;
-    /** Unused, padding. */
-    uint8_t                 abPadding4[2+4];
    /** Timestamp (in ns) of last stream update. */
     uint64_t                tsLastUpdateNs;
 } HDASTREAMSTATE;
