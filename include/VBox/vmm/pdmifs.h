@@ -2084,6 +2084,15 @@ typedef struct PDMIHGCMPORT
     DECLR3CALLBACKMEMBER(bool, pfnIsCmdRestored,(PPDMIHGCMPORT pInterface, PVBOXHGCMCMD pCmd));
 
     /**
+     * Checks if @a pCmd was cancelled.
+     *
+     * @returns true if cancelled, false if not.
+     * @param   pInterface          Pointer to this interface.
+     * @param   pCmd                The command we're checking on.
+     */
+    DECLR3CALLBACKMEMBER(bool, pfnIsCmdCancelled,(PPDMIHGCMPORT pInterface, PVBOXHGCMCMD pCmd));
+
+    /**
      * Gets the VMMDevRequestHeader::fRequestor value for @a pCmd.
      *
      * @returns The fRequestor value, VMMDEV_REQUESTOR_LEGACY if guest does not
@@ -2103,7 +2112,7 @@ typedef struct PDMIHGCMPORT
 
 } PDMIHGCMPORT;
 /** PDMIHGCMPORT interface ID. */
-# define PDMIHGCMPORT_IID                       "c9180235-8102-4642-0aa7-f0422124d9b5"
+# define PDMIHGCMPORT_IID                       "28c0a201-68cd-4752-9404-bb42a0c09eb7"
 
 
 /** Pointer to a HGCM service location structure. */
@@ -2157,9 +2166,17 @@ typedef struct PDMIHGCMCONNECTOR
     DECLR3CALLBACKMEMBER(int, pfnCall,(PPDMIHGCMCONNECTOR pInterface, PVBOXHGCMCMD pCmd, uint32_t u32ClientID, uint32_t u32Function,
                                        uint32_t cParms, PVBOXHGCMSVCPARM paParms, uint64_t tsArrival));
 
+    /**
+     * Notification about the guest cancelling a pending request.
+     * @param   pInterface  Pointer to this interface.
+     * @param   pCmd        A pointer that identifies the command.
+     * @param   idclient    The client id returned by the pfnConnect call.
+     */
+    DECLR3CALLBACKMEMBER(void, pfnCancelled,(PPDMIHGCMCONNECTOR pInterface, PVBOXHGCMCMD pCmd, uint32_t idClient));
+
 } PDMIHGCMCONNECTOR;
 /** PDMIHGCMCONNECTOR interface ID. */
-# define PDMIHGCMCONNECTOR_IID                  "a1104758-c888-4437-8f2a-7bac17865b5c"
+# define PDMIHGCMCONNECTOR_IID                  "33cb5c91-6a4a-4ad9-3fec-d1f7d413c4a5"
 
 #endif /* VBOX_WITH_HGCM */
 

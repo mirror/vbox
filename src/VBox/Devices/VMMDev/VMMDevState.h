@@ -155,9 +155,9 @@ typedef struct VMMDevState
 #ifdef VBOX_WITH_HGCM
     /** LUN\#0: HGCM port interface. */
     PDMIHGCMPORT IHGCMPort;
-# if HC_ARCH_BITS == 32
-    RTR3PTR      R3PtrAlignment1;
-# endif
+//# if HC_ARCH_BITS == 32
+//    RTR3PTR      R3PtrAlignment1;
+//# endif
 #endif
     /** Pointer to base interface of the driver. */
     R3PTRTYPE(PPDMIBASE) pDrvBase;

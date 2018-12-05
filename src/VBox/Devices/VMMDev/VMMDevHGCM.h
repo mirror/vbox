@@ -30,6 +30,7 @@ int vmmdevHGCMCancel2(VMMDevState *pVMMDevState, RTGCPHYS GCPtr);
 
 DECLCALLBACK(int)  hgcmCompleted(PPDMIHGCMPORT pInterface, int32_t result, PVBOXHGCMCMD pCmdPtr);
 DECLCALLBACK(bool) hgcmIsCmdRestored(PPDMIHGCMPORT pInterface, PVBOXHGCMCMD pCmd);
+DECLCALLBACK(bool) hgcmIsCmdCancelled(PPDMIHGCMPORT pInterface, PVBOXHGCMCMD pCmd);
 DECLCALLBACK(uint32_t) hgcmGetRequestor(PPDMIHGCMPORT pInterface, PVBOXHGCMCMD pCmd);
 DECLCALLBACK(uint64_t) hgcmGetVMMDevSessionId(PPDMIHGCMPORT pInterface);
 

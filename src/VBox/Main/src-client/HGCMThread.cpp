@@ -703,7 +703,7 @@ DECLINLINE(int) hgcmMsgPostInternal(HGCMMsgCore *pMsg, PHGCMMSGCALLBACK pfnCallb
 
     pMsg->Dereference();
 
-    LogFlow(("MAIN::hgcmMsgPostInternal: pMsg %p, rc = %Rrc\n", pMsg, rc));
+    LogFlow(("MAIN::hgcmMsgPostInternal: pMsg = %p, rc = %Rrc\n", pMsg, rc));
     return rc;
 }
 

@@ -1168,7 +1168,14 @@ int vmmdevHGCMCancel2(PVMMDEV pThis, RTGCPHYS GCPhys)
     if (pCmd)
     {
         pCmd->fCancelled = true;
+
         Log(("vmmdevHGCMCancel2: Cancelled pCmd=%p / GCPhys=%#x\n", pCmd, GCPhys));
+        if (pThis->pHGCMDrv)
+            pThis->pHGCMDrv->pfnCancelled(pThis->pHGCMDrv, pCmd,
+                                          pCmd->enmCmdType == VBOXHGCMCMDTYPE_CALL ? pCmd->u.call.u32ClientID
+                                          : pCmd->enmCmdType == VBOXHGCMCMDTYPE_CONNECT ? pCmd->u.connect.u32ClientID
+                                          : pCmd->enmCmdType == VBOXHGCMCMDTYPE_DISCONNECT ? pCmd->u.disconnect.u32ClientID
+                                          : 0);
     }
     else
         rc = VERR_NOT_FOUND;
@@ -1536,6 +1543,15 @@ DECLCALLBACK(bool) hgcmIsCmdRestored(PPDMIHGCMPORT pInterface, PVBOXHGCMCMD pCmd
 }
 
 /**
+ * @interface_method_impl{PDMIHGCMPORT,pfnIsCmdCancelled}
+ */
+DECLCALLBACK(bool) hgcmIsCmdCancelled(PPDMIHGCMPORT pInterface, PVBOXHGCMCMD pCmd)
+{
+    RT_NOREF(pInterface);
+    return pCmd && pCmd->fCancelled;
+}
+
+/**
  * @interface_method_impl{PDMIHGCMPORT,pfnGetRequestor}
  */
 DECLCALLBACK(uint32_t) hgcmGetRequestor(PPDMIHGCMPORT pInterface, PVBOXHGCMCMD pCmd)
@@ -1588,6 +1604,8 @@ int vmmdevHGCMSaveState(PVMMDEV pThis, PSSMHANDLE pSSM)
         {
             LogFlowFunc(("Saving %RGp, size %d\n", pCmd->GCPhys, pCmd->cbRequest));
 
+            /** @todo Don't save cancelled requests! It serves no purpose.  See restore and
+             *        @bugref{4032#c4} for details. */
             SSMR3PutU32     (pSSM, (uint32_t)pCmd->enmCmdType);
             SSMR3PutBool    (pSSM, pCmd->fCancelled);
             SSMR3PutGCPhys  (pSSM, pCmd->GCPhys);

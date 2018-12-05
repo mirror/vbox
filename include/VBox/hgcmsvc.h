@@ -72,9 +72,10 @@
  * 6.3->6.4 Bacause pfnConnect got an additional parameter (VBox 6.0).
  * 6.4->6.5 Bacause pfnGetVMMDevSessionId was added pfnLoadState got the version
  *          parameter (VBox 6.0).
- * 6.5->7.1 Because pfnNotify was added.
+ * 6.5->7.1 Because pfnNotify was added (VBox 6.0).
+ * 7.1->8.1 Because pfnCancelled & pfnIsCallCancelled were added (VBox 6.0).
  */
-#define VBOX_HGCM_SVC_VERSION_MAJOR (0x0007)
+#define VBOX_HGCM_SVC_VERSION_MAJOR (0x0008)
 #define VBOX_HGCM_SVC_VERSION_MINOR (0x0001)
 #define VBOX_HGCM_SVC_VERSION ((VBOX_HGCM_SVC_VERSION_MAJOR << 16) + VBOX_HGCM_SVC_VERSION_MINOR)
 
@@ -101,6 +102,14 @@ typedef struct VBOXHGCMSVCHELPERS
      * @param   callHandle      The call we're checking up on.
      */
     DECLR3CALLBACKMEMBER(bool, pfnIsCallRestored, (VBOXHGCMCALLHANDLE callHandle));
+
+    /**
+     * Check if the @a callHandle is for a cancelled call.
+     *
+     * @returns true if cancelled, false if not.
+     * @param   callHandle      The call we're checking up on.
+     */
+    DECLR3CALLBACKMEMBER(bool, pfnIsCallCancelled, (VBOXHGCMCALLHANDLE callHandle));
 
     /** Access to STAMR3RegisterV. */
     DECLR3CALLBACKMEMBER(int, pfnStamRegisterV,(void *pvInstance, void *pvSample, STAMTYPE enmType, STAMVISIBILITY enmVisibility,
@@ -511,6 +520,15 @@ typedef struct VBOXHGCMSVCFNTABLE
      */
     DECLR3CALLBACKMEMBER(void, pfnCall, (void *pvService, VBOXHGCMCALLHANDLE callHandle, uint32_t u32ClientID, void *pvClient,
                                          uint32_t function, uint32_t cParms, VBOXHGCMSVCPARM paParms[], uint64_t tsArrival));
+    /** Informs the service that a call was cancelled by the guest (optional).
+     *
+     * This is called for guest calls, connect requests and disconnect requests.
+     * There is unfortunately no way of obtaining the call handle for a guest call
+     * or otherwise identify the request, so that's left to the service to figure
+     * out using VBOXHGCMSVCHELPERS::pfnIsCallCancelled.  Because this is an
+     * asynchronous call, the service may have completed the request already.
+     */
+    DECLR3CALLBACKMEMBER(void, pfnCancelled, (void *pvService, uint32_t idClient, void *pvClient));
 
     /** Host Service entry point meant for privileged features invisible to the guest.
      *  Return code is passed to pfnCallComplete callback.

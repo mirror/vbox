@@ -44,6 +44,7 @@ int HGCMGuestConnect(PPDMIHGCMPORT pHGCMPort, PVBOXHGCMCMD pCmdPtr, const char *
 int HGCMGuestDisconnect(PPDMIHGCMPORT pHGCMPort, PVBOXHGCMCMD pCmdPtr, uint32_t clientID);
 int HGCMGuestCall(PPDMIHGCMPORT pHGCMPort, PVBOXHGCMCMD pCmdPtr, uint32_t clientID, uint32_t function, uint32_t cParms,
                   VBOXHGCMSVCPARM *paParms, uint64_t tsArrival);
+void HGCMGuestCancelled(PPDMIHGCMPORT pHGCMPort, PVBOXHGCMCMD pCmdPtr, uint32_t idClient);
 
 int HGCMHostCall(const char *pszServiceName, uint32_t function, uint32_t cParms, VBOXHGCMSVCPARM aParms[]);
 int HGCMBroadcastEvent(HGCMNOTIFYEVENT enmEvent);
