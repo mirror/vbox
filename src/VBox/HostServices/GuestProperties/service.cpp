@@ -59,8 +59,6 @@
 
 #include <list>
 
-/** @todo Delete the old !ASYNC_HOST_NOTIFY code and remove this define. */
-#define ASYNC_HOST_NOTIFY
 
 namespace guestProp {
 
@@ -320,10 +318,8 @@ public:
         , mPrevTimestamp(0)
         , mcTimestampAdjustments(0)
         , m_fSetHostVersionProps(false)
-#ifdef ASYNC_HOST_NOTIFY
         , mhThreadNotifyHost(NIL_RTTHREAD)
         , mhReqQNotifyHost(NIL_RTREQQUEUE)
-#endif
     { }
 
     /**
@@ -440,13 +436,11 @@ private:
     int uninit();
     static DECLCALLBACK(void) dbgInfo(void *pvUser, PCDBGFINFOHLP pHlp, const char *pszArgs);
 
-#ifdef ASYNC_HOST_NOTIFY
     /* Thread for handling host notifications. */
     RTTHREAD mhThreadNotifyHost;
     /* Queue for handling requests for notifications. */
     RTREQQUEUE mhReqQNotifyHost;
     static DECLCALLBACK(int) threadNotifyHost(RTTHREAD self, void *pvUser);
-#endif
 
     DECLARE_CLS_COPY_CTOR_ASSIGN_NOOP(Service);
 };
@@ -1306,17 +1300,12 @@ int Service::doNotifications(const char *pszProperty, uint64_t nsTimestamp)
     return rc;
 }
 
-#ifdef ASYNC_HOST_NOTIFY
-static DECLCALLBACK(void) notifyHostAsyncWorker(PFNHGCMSVCEXT pfnHostCallback,
-                                                void *pvHostData,
-                                                PGUESTPROPHOSTCALLBACKDATA pHostCallbackData)
+static DECLCALLBACK(void)
+notifyHostAsyncWorker(PFNHGCMSVCEXT pfnHostCallback, void *pvHostData, PGUESTPROPHOSTCALLBACKDATA pHostCallbackData)
 {
-    pfnHostCallback(pvHostData, 0 /*u32Function*/,
-                   (void *)pHostCallbackData,
-                   sizeof(GUESTPROPHOSTCALLBACKDATA));
+    pfnHostCallback(pvHostData, 0 /*u32Function*/, (void *)pHostCallbackData, sizeof(GUESTPROPHOSTCALLBACKDATA));
     RTMemFree(pHostCallbackData);
 }
-#endif
 
 /**
  * Notify the service owner that a property has been added/deleted/changed.
@@ -1329,8 +1318,7 @@ static DECLCALLBACK(void) notifyHostAsyncWorker(PFNHGCMSVCEXT pfnHostCallback,
 int Service::notifyHost(const char *pszName, const char *pszValue, uint64_t nsTimestamp, const char *pszFlags)
 {
     LogFlowFunc(("pszName=%s, pszValue=%s, nsTimestamp=%llu, pszFlags=%s\n", pszName, pszValue, nsTimestamp, pszFlags));
-#ifdef ASYNC_HOST_NOTIFY
-    int rc = VINF_SUCCESS;
+    int rc;
 
     /* Allocate buffer for the callback data and strings. */
     size_t cbName = pszName? strlen(pszName): 0;
@@ -1374,17 +1362,6 @@ int Service::notifyHost(const char *pszName, const char *pszValue, uint64_t nsTi
     {
         rc = VERR_NO_MEMORY;
     }
-#else
-    GUESTPROPHOSTCALLBACKDATA HostCallbackData;
-    HostCallbackData.u32Magic     = GUESTPROPHOSTCALLBACKDATA_MAGIC;
-    HostCallbackData.pcszName     = pszName;
-    HostCallbackData.pcszValue    = pszValue;
-    HostCallbackData.nsTimestamp  = nsTimestamp;
-    HostCallbackData.pcszFlags    = pszFlags;
-    int rc = mpfnHostCallback(mpvHostData, 0 /*u32Function*/,
-                              (void *)(&HostCallbackData),
-                              sizeof(HostCallbackData));
-#endif
     LogFlowFunc(("returning rc=%Rrc\n", rc));
     return rc;
 }
@@ -1697,8 +1674,6 @@ void Service::setHostVersionProps()
 }
 
 
-#ifdef ASYNC_HOST_NOTIFY
-
 /* static */
 DECLCALLBACK(int) Service::threadNotifyHost(RTTHREAD hThreadSelf, void *pvUser)
 {
@@ -1731,7 +1706,6 @@ static DECLCALLBACK(int) wakeupNotifyHost(void)
     return VWRN_STATE_CHANGED;
 }
 
-#endif /* ASYNC_HOST_NOTIFY */
 
 int Service::initialize()
 {
@@ -1759,7 +1733,6 @@ int Service::initialize()
         return VERR_NO_MEMORY;
     }
 
-#ifdef ASYNC_HOST_NOTIFY
     /* The host notification thread and queue. */
     int rc = RTReqQueueCreate(&mhReqQNotifyHost);
     if (RT_SUCCESS(rc))
@@ -1771,28 +1744,19 @@ int Service::initialize()
                             RTTHREADTYPE_DEFAULT,
                             RTTHREADFLAGS_WAITABLE,
                             "GSTPROPNTFY");
-    }
-
-    if (RT_FAILURE(rc))
-    {
-        if (mhReqQNotifyHost != NIL_RTREQQUEUE)
+        if (RT_SUCCESS(rc))
         {
-            RTReqQueueDestroy(mhReqQNotifyHost);
-            mhReqQNotifyHost = NIL_RTREQQUEUE;
+            /* Finally debug stuff (ignore failures): */
+            HGCMSvcHlpInfoRegister(mpHelpers, "guestprops", "Display the guest properties", Service::dbgInfo, this);
+            return rc;
         }
+
+        RTReqQueueDestroy(mhReqQNotifyHost);
+        mhReqQNotifyHost = NIL_RTREQQUEUE;
     }
-#else  /* !ASYNC_HOST_NOTIFY */
-    int rc = VINF_SUCCESS;
-#endif /* !ASYNC_HOST_NOTIFY */
-
-    /* Finally debug stuff (ignore failures): */
-    if (RT_SUCCESS(rc))
-        HGCMSvcHlpInfoRegister(mpHelpers, "guestprops", "Display the guest properties", Service::dbgInfo, this);
-
     return rc;
 }
 
-#ifdef ASYNC_HOST_NOTIFY
 /**
  * @callback_method_impl{FNRTSTRSPACECALLBACK, Destroys Property.}
  */
@@ -1804,14 +1768,12 @@ static DECLCALLBACK(int) destroyProperty(PRTSTRSPACECORE pStr, void *pvUser)
     return 0;
 }
 
-#endif
 
 int Service::uninit()
 {
     if (mpHelpers)
         HGCMSvcHlpInfoDeregister(mpHelpers, "guestprops");
 
-#ifdef ASYNC_HOST_NOTIFY
     if (mhReqQNotifyHost != NIL_RTREQQUEUE)
     {
         /* Stop the thread */
@@ -1828,7 +1790,6 @@ int Service::uninit()
         RTStrSpaceDestroy(&mhProperties, destroyProperty, NULL);
         mhProperties = NULL;
     }
-#endif
     return VINF_SUCCESS;
 }
 
