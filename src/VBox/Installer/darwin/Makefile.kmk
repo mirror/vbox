@@ -486,7 +486,8 @@ VBOX_DI_VBAPP_PROGS = \
 
 VBOX_DI_VBAPP_UNIVERSAL_PROGS = \
 	MacOS/vmstarter \
-	$(if $(VBOX_WITH_VBOX_IMG)$(VBOX_WITH_TESTCASES),MacOS/vbox-img,)
+	$(if $(VBOX_WITH_VBOX_IMG)$(VBOX_WITH_TESTCASES),MacOS/vbox-img,) \
+	$(if $(VBOX_WITH_VBOXIMGMOUNT),MacOS/vboximg-mount,)
 
 VBOX_DI_VBAPP_OTHER_UNIVERSAL_BINS = \
 	MacOS/VMMR0.r0 \
@@ -884,6 +885,10 @@ endif
 if defined(VBOX_WITH_VBOX_IMG) || defined(VBOX_WITH_TESTCASES)
 	$(APPEND) -tn $(VBOX_PATH_PACK_TMP)/VirtualBoxCLI.pkg.root/usr/local/bin/vbox-img \
 		'#!/bin/bash' 'exec /Applications/VirtualBox.app/Contents/MacOS/vbox-img "$$@"'
+endif
+if defined(VBOX_WITH_VBOXIMGMOUNT)
+	$(APPEND) -tn $(VBOX_PATH_PACK_TMP)/VirtualBoxCLI.pkg.root/usr/local/bin/vboximg-mount \
+		'#!/bin/bash' 'exec /Applications/VirtualBox.app/Contents/MacOS/vboximg-mount "$$@"'
 endif
 	$(APPEND) -tn $(VBOX_PATH_PACK_TMP)/VirtualBoxCLI.pkg.root/usr/local/bin/VBoxBugReport \
 		'#!/bin/bash' 'exec /Applications/VirtualBox.app/Contents/MacOS/VBoxBugReport "$$@"'
