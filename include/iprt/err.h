@@ -1090,6 +1090,8 @@ RT_C_DECLS_END
 #define VERR_INVALID_SESSION_ID             (-22418)
 /** Requires process elevation (UAC). */
 #define VERR_PROC_ELEVATION_REQUIRED        (-22419)
+/** Incompatible configuration requested. */
+#define VERR_INCOMPATIBLE_CONFIG            (-22420)
 /** @} */
 
 

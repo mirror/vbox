@@ -19,6 +19,7 @@
 
 #include <VBox/err.h>
 #include <VBox/hgcmsvc.h>
+#include <VBox/shflsvc.h>
 
 #include <VBox/log.h>
 
@@ -53,6 +54,14 @@ typedef struct _SHFLCLIENTDATA
     uint32_t fu32Flags;
     /** Path delimiter. */
     RTUTF16  PathDelimiter;
+    /** Currently unused.   */
+    uint8_t  bPadding;
+    /** Set if the client has mapping usage counts.
+     * This is for helping with saved state. */
+    uint8_t  fHasMappingCounts;
+    /** Mapping counts for each root ID so we can unmap the folders when the
+     *  session disconnects or the VM resets. */
+    uint16_t acMappings[SHFL_MAX_MAPPINGS];
 } SHFLCLIENTDATA;
 /** Pointer to a SHFLCLIENTDATA structure. */
 typedef SHFLCLIENTDATA *PSHFLCLIENTDATA;

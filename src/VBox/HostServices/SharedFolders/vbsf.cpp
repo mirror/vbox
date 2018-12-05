@@ -2070,5 +2070,14 @@ int vbsfDisconnect(SHFLCLIENTDATA *pClient)
             vbsfClose(pClient, pHandle->root, Handle);
         }
     }
+
+    for (uint32_t i = 0; i < RT_ELEMENTS(pClient->acMappings); i++)
+        if (pClient->acMappings[i])
+        {
+            uint16_t cMappings = pClient->acMappings[i];
+            while (cMappings-- > 0)
+                vbsfUnmapFolder(pClient, i);
+        }
+
     return VINF_SUCCESS;
 }

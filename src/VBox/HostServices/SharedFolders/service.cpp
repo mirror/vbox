@@ -155,12 +155,12 @@ static DECLCALLBACK(int) svcUnload (void *)
 
 static DECLCALLBACK(int) svcConnect (void *, uint32_t u32ClientID, void *pvClient, uint32_t fRequestor, bool fRestoring)
 {
-    RT_NOREF(u32ClientID, pvClient, fRequestor, fRestoring);
-    int rc = VINF_SUCCESS;
-
+    RT_NOREF(u32ClientID, fRequestor, fRestoring);
+    SHFLCLIENTDATA *pClient = (SHFLCLIENTDATA *)pvClient;
     Log(("SharedFolders host service: connected, u32ClientID = %u\n", u32ClientID));
 
-    return rc;
+    pClient->fHasMappingCounts = true;
+    return VINF_SUCCESS;
 }
 
 static DECLCALLBACK(int) svcDisconnect (void *, uint32_t u32ClientID, void *pvClient)
@@ -263,14 +263,17 @@ static DECLCALLBACK(int) svcLoadState(void *, uint32_t u32ClientID, void *pvClie
     if (nrMappings != SHFL_MAX_MAPPINGS)
         return VERR_SSM_DATA_UNIT_FORMAT_CHANGED;
 
-    /* Restore the client data (flags + path delimiter at the moment) */
+    /* Restore the client data (flags + path delimiter + mapping counts (new) at the moment) */
     rc = SSMR3GetU32(pSSM, &len);
     AssertRCReturn(rc, rc);
 
-    if (len != sizeof(*pClient))
-        return VERR_SSM_DATA_UNIT_FORMAT_CHANGED;
+    if (len == RT_UOFFSETOF(SHFLCLIENTDATA, acMappings))
+        pClient->fHasMappingCounts = false;
+    else if (len != sizeof(*pClient))
+        return SSMR3SetLoadError(pSSM, VERR_SSM_DATA_UNIT_FORMAT_CHANGED, RT_SRC_POS,
+                                 "Saved SHFLCLIENTDATA size %u differs from current %u!\n", len, sizeof(*pClient));
 
-    rc = SSMR3GetMem(pSSM, pClient, sizeof(*pClient));
+    rc = SSMR3GetMem(pSSM, pClient, len);
     AssertRCReturn(rc, rc);
 
     /* We don't actually (fully) restore the state; we simply check if the current state is as we it expect it to be. */

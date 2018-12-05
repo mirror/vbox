@@ -31,6 +31,7 @@
 #include <iprt/list.h>
 #include <iprt/path.h>
 #include <iprt/string.h>
+#include <VBox/AssertGuest.h>
 
 #ifdef UNITTEST
 # include "teststubs.h"
@@ -721,17 +722,20 @@ int vbsfMapFolder(PSHFLCLIENTDATA pClient, PSHFLSTRING pszMapName,
                         VERR_INVALID_PARAMETER);
     }
 
+    SHFLROOT RootTmp;
+    if (!pRoot)
+        pRoot = &RootTmp;
     if (BIT_FLAG(pClient->fu32Flags, SHFL_CF_UTF8))
     {
         int rc;
         PRTUTF16 utf16Name;
 
-        rc = RTStrToUtf16 ((const char *) pszMapName->String.utf8, &utf16Name);
+        rc = RTStrToUtf16((const char *) pszMapName->String.utf8, &utf16Name);
         if (RT_FAILURE (rc))
             return rc;
 
         pFolderMapping = vbsfMappingGetByName(utf16Name, pRoot);
-        RTUtf16Free (utf16Name);
+        RTUtf16Free(utf16Name);
     }
     else
     {
@@ -743,9 +747,28 @@ int vbsfMapFolder(PSHFLCLIENTDATA pClient, PSHFLSTRING pszMapName,
         return VERR_FILE_NOT_FOUND;
     }
 
+    /*
+     * Check for reference count overflows and settings compatibility.
+     * For paranoid reasons, we don't allow modifying the case sensitivity
+     * setting while there are other mappings of a folder.
+     */
+    AssertLogRelReturn(*pRoot < RT_ELEMENTS(pClient->acMappings), VERR_INTERNAL_ERROR);
+    AssertLogRelReturn(!pClient->fHasMappingCounts || pClient->acMappings[*pRoot] < _32K, VERR_TOO_MANY_OPENS);
+    ASSERT_GUEST_LOGREL_MSG_RETURN(   pFolderMapping->cMappings == 0
+                                   || pFolderMapping->fGuestCaseSensitive == fCaseSensitive,
+                                   ("Incompatible case sensitivity setting: %s: %u mappings, %ssenitive, requested %ssenitive!\n",
+                                    pFolderMapping->pszFolderName, pFolderMapping->cMappings,
+                                    pFolderMapping->fGuestCaseSensitive ? "" : "in",  fCaseSensitive ? "" : "in"),
+                                   VERR_INCOMPATIBLE_CONFIG);
+
+    /*
+     * Go ahead and map it.
+     */
+    if (pClient->fHasMappingCounts)
+        pClient->acMappings[*pRoot] += 1;
     pFolderMapping->cMappings++;
-    Assert(pFolderMapping->cMappings == 1 || pFolderMapping->fGuestCaseSensitive == fCaseSensitive);
     pFolderMapping->fGuestCaseSensitive = fCaseSensitive;
+    Log(("vbsfMmapFolder (cMappings=%u, acMappings[%u]=%u)\n", pFolderMapping->cMappings, *pRoot, pClient->acMappings[*pRoot]));
     return VINF_SUCCESS;
 }
 
@@ -774,12 +797,19 @@ int vbsfUnmapFolder(PSHFLCLIENTDATA pClient, SHFLROOT root)
         AssertFailed();
         return VERR_FILE_NOT_FOUND;
     }
-
     Assert(pFolderMapping->fValid == true && pFolderMapping->cMappings > 0);
+
+    AssertLogRelReturn(root < RT_ELEMENTS(pClient->acMappings), VERR_INTERNAL_ERROR);
+    AssertLogRelReturn(!pClient->fHasMappingCounts || pClient->acMappings[root] > 0, VERR_INVALID_HANDLE);
+
+    if (pClient->fHasMappingCounts)
+        pClient->acMappings[root] -= 1;
+
     if (pFolderMapping->cMappings > 0)
         pFolderMapping->cMappings--;
 
-    if (   pFolderMapping->cMappings == 0
+    uint32_t const cMappings = pFolderMapping->cMappings;
+    if (   cMappings == 0
         && pFolderMapping->fPlaceholder)
     {
         /* Automatically remove, it is not used by the guest anymore. */
@@ -789,7 +819,7 @@ int vbsfUnmapFolder(PSHFLCLIENTDATA pClient, SHFLROOT root)
         vbsfMappingsRemove(pFolderMapping->pMapName);
     }
 
-    Log(("vbsfUnmapFolder\n"));
+    Log(("vbsfUnmapFolder (cMappings=%u, acMappings[%u]=%u)\n", cMappings, root, pClient->acMappings[root]));
     return rc;
 }
 
