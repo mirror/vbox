@@ -10927,7 +10927,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Enable Nested Pa&amp;ging</source>
-        <translation>В&amp;ключить  Nested Paging</translation>
+        <translation>В&amp;ключить Nested Paging</translation>
     </message>
     <message>
         <source>&lt;qt&gt;%1&amp;nbsp;CPUs&lt;/qt&gt;</source>

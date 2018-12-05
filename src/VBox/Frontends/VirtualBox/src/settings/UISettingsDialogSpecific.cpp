@@ -464,6 +464,19 @@ void UISettingsDialogMachine::saveOwnData()
             pGeneralPage->is64BitOSTypeSelected() && !pSystemPage->isHWVirtExEnabled())
             m_machine.SetHWVirtExProperty(KHWVirtExPropertyType_Enabled, true);
 
+        /* System page fixes: */
+        if (pSystemPage)
+        {
+            /* Nested Paging: */
+            if (pSystemPage->isNestedPagingEnabled())
+            {
+                /* Enable HW Virt Ex if supported: */
+                if (   pSystemPage->isHWVirtExSupported()
+                    && !pSystemPage->isHWVirtExEnabled())
+                    m_machine.SetHWVirtExProperty(KHWVirtExPropertyType_Enabled, true);
+            }
+        }
+
 #ifdef VBOX_WITH_VIDEOHWACCEL
         /* Disable 2D Video Acceleration for non-Windows guests: */
         if (pGeneralPage && !pGeneralPage->isWindowsOSTypeSelected())

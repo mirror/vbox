@@ -673,12 +673,5 @@
   </customwidget>
  </customwidgets>
  <resources/>
- <connections>
-  <connection>
-   <sender>m_pCheckBoxVirtualization</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>m_pCheckBoxNestedPaging</receiver>
-   <slot>setEnabled(bool)</slot>
-  </connection>
- </connections>
+ <connections/>
 </ui>

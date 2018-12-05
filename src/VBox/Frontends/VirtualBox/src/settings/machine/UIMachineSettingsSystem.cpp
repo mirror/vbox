@@ -72,6 +72,7 @@ struct UIDataSettingsMachineSystem
         /* Support flags: */
         : m_fSupportedPAE(false)
         , m_fSupportedHwVirtEx(false)
+        , m_fSupportedNestedPaging(false)
         /* Motherboard data: */
         , m_iMemorySize(-1)
         , m_bootItems(QList<UIBootItemData>())
@@ -97,6 +98,7 @@ struct UIDataSettingsMachineSystem
                /* Support flags: */
                && (m_fSupportedPAE == other.m_fSupportedPAE)
                && (m_fSupportedHwVirtEx == other.m_fSupportedHwVirtEx)
+               && (m_fSupportedNestedPaging == other.m_fSupportedNestedPaging)
                /* Motherboard data: */
                && (m_iMemorySize == other.m_iMemorySize)
                && (m_bootItems == other.m_bootItems)
@@ -125,6 +127,8 @@ struct UIDataSettingsMachineSystem
     bool  m_fSupportedPAE;
     /** Holds whether the HW Virt Ex is supported. */
     bool  m_fSupportedHwVirtEx;
+    /** Holds whether the Nested Paging is supported. */
+    bool  m_fSupportedNestedPaging;
 
     /** Holds the RAM size. */
     int                    m_iMemorySize;
@@ -173,9 +177,26 @@ UIMachineSettingsSystem::~UIMachineSettingsSystem()
     cleanup();
 }
 
+bool UIMachineSettingsSystem::isHWVirtExSupported() const
+{
+    AssertPtrReturn(m_pCache, false);
+    return m_pCache->base().m_fSupportedHwVirtEx;
+}
+
 bool UIMachineSettingsSystem::isHWVirtExEnabled() const
 {
     return m_pCheckBoxVirtualization->isChecked();
+}
+
+bool UIMachineSettingsSystem::isNestedPagingSupported() const
+{
+    AssertPtrReturn(m_pCache, false);
+    return m_pCache->base().m_fSupportedNestedPaging;
+}
+
+bool UIMachineSettingsSystem::isNestedPagingEnabled() const
+{
+    return m_pCheckBoxNestedPaging->isChecked();
 }
 
 bool UIMachineSettingsSystem::isHIDEnabled() const
@@ -220,6 +241,7 @@ void UIMachineSettingsSystem::loadToCacheFrom(QVariant &data)
     /* Gather support flags: */
     oldSystemData.m_fSupportedPAE = vboxGlobal().host().GetProcessorFeature(KProcessorFeature_PAE);
     oldSystemData.m_fSupportedHwVirtEx = vboxGlobal().host().GetProcessorFeature(KProcessorFeature_HWVirtEx);
+    oldSystemData.m_fSupportedNestedPaging = vboxGlobal().host().GetProcessorFeature(KProcessorFeature_NestedPaging);
 
     /* Gather old 'Motherboard' data: */
     oldSystemData.m_iMemorySize = m_machine.GetMemorySize();
@@ -328,7 +350,8 @@ void UIMachineSettingsSystem::putToCache()
 
     /* Gather support flags: */
     newSystemData.m_fSupportedPAE = m_pCache->base().m_fSupportedPAE;
-    newSystemData.m_fSupportedHwVirtEx = m_pCache->base().m_fSupportedHwVirtEx;
+    newSystemData.m_fSupportedHwVirtEx = isHWVirtExSupported();
+    newSystemData.m_fSupportedNestedPaging = isNestedPagingSupported();
 
     /* Gather 'Motherboard' data: */
     newSystemData.m_iMemorySize = m_pSliderMemorySize->value();
@@ -356,8 +379,8 @@ void UIMachineSettingsSystem::putToCache()
 
     /* Gather 'Acceleration' data: */
     newSystemData.m_paravirtProvider = (KParavirtProvider)m_pComboParavirtProvider->itemData(m_pComboParavirtProvider->currentIndex()).toInt();
-    newSystemData.m_fEnabledHwVirtEx = m_pCheckBoxVirtualization->checkState() == Qt::Checked || m_pSliderCPUCount->value() > 1;
-    newSystemData.m_fEnabledNestedPaging = m_pCheckBoxNestedPaging->isChecked();
+    newSystemData.m_fEnabledHwVirtEx = isHWVirtExEnabled() || m_pSliderCPUCount->value() > 1;
+    newSystemData.m_fEnabledNestedPaging = isNestedPagingEnabled();
 
     /* Cache new system data: */
     m_pCache->cacheCurrentData(newSystemData);
@@ -462,13 +485,17 @@ bool UIMachineSettingsSystem::validate(QList<UIValidationMessage> &messages)
                 "It will be enabled automatically if you confirm your changes.");
         }
 
-        /* VCPU vs VT-x/AMD-V test: */
-        if (m_pSliderCPUCount->value() > 1 && !m_pCheckBoxVirtualization->isChecked())
+        /* VCPU: */
+        if (m_pSliderCPUCount->value() > 1)
         {
-            message.second << tr(
-                "The hardware virtualization is not currently enabled in the Acceleration section of the System page. "
-                "This is needed to support more than one virtual processor. "
-                "It will be enabled automatically if you confirm your changes.");
+            /* HW Virt Ex test: */
+            if (isHWVirtExSupported() && !isHWVirtExEnabled())
+            {
+                message.second << tr(
+                    "The hardware virtualization is not currently enabled in the Acceleration section of the System page. "
+                    "This is needed to support more than one virtual processor. "
+                    "It will be enabled automatically if you confirm your changes.");
+            }
         }
 
         /* CPU execution cap test: */
@@ -495,13 +522,15 @@ bool UIMachineSettingsSystem::validate(QList<UIValidationMessage> &messages)
         if (!message.second.isEmpty())
             messages << message;
     }
+
     /* Acceleration tab: */
     {
         /* Prepare message: */
         UIValidationMessage message;
         message.first = VBoxGlobal::removeAccelMark(m_pTabWidgetSystem->tabText(2));
-        /* VT-x/AMD-V capability test: */
-        if (!vboxGlobal().host().GetProcessorFeature(KProcessorFeature_HWVirtEx) && m_pCheckBoxVirtualization->isChecked())
+
+        /* HW Virt Ex test: */
+        if (!isHWVirtExSupported() && isHWVirtExEnabled())
         {
             message.second << tr(
                 "The hardware virtualization is enabled in the Acceleration section of the System page although "
@@ -509,11 +538,26 @@ bool UIMachineSettingsSystem::validate(QList<UIValidationMessage> &messages)
 
             fPass = false;
         }
+
+        /* Nested Paging: */
+        if (isNestedPagingEnabled())
+        {
+            /* HW Virt Ex test: */
+            if (isHWVirtExSupported() && !isHWVirtExEnabled())
+            {
+                message.second << tr(
+                    "The hardware virtualization is not currently enabled in the Acceleration section of the System page. "
+                    "This is needed for nested paging support. "
+                    "It will be enabled automatically if you confirm your changes.");
+            }
+        }
+
         /* Serialize message: */
         if (!message.second.isEmpty())
             messages << message;
 
     }
+
     /* Return result: */
     return fPass;
 }
@@ -612,11 +656,11 @@ void UIMachineSettingsSystem::polishPage()
     m_pCheckBoxPAE->setEnabled(isMachineOffline() && systemData.m_fSupportedPAE);
 
     /* Polish 'Acceleration' availability: */
-    /* Enable the hardware virtulization related check-boxes if it is supported by the host system or
-     * it is currently enabled in the vm (in this case check-box is enabled so that user could
-     * uncheck it and that way disable the hardware virtualization. */
-    setAccelerationCheckBoxesEnabled(   (systemData.m_fSupportedHwVirtEx && isMachineOffline())
-                                     || (systemData.m_fEnabledHwVirtEx && isMachineOffline()));
+    m_pCheckBoxVirtualization->setEnabled(   (systemData.m_fSupportedHwVirtEx && isMachineOffline())
+                                          || (systemData.m_fEnabledHwVirtEx && isMachineOffline()));
+    m_pCheckBoxNestedPaging->setEnabled(   m_pCheckBoxVirtualization->isChecked()
+                                        && (   (systemData.m_fSupportedNestedPaging && isMachineOffline())
+                                            || (systemData.m_fEnabledNestedPaging && isMachineOffline())));
     m_pLabelParavirtProvider->setEnabled(isMachineOffline());
     m_pComboParavirtProvider->setEnabled(isMachineOffline());
     m_pLabelVirtualization->setEnabled(isMachineOffline());
@@ -736,6 +780,18 @@ void UIMachineSettingsSystem::sltHandleCPUExecCapEditorChange()
     m_pSliderCPUExecCap->blockSignals(true);
     m_pSliderCPUExecCap->setValue(m_pEditorCPUExecCap->value());
     m_pSliderCPUExecCap->blockSignals(false);
+
+    /* Revalidate: */
+    revalidate();
+}
+
+void UIMachineSettingsSystem::sltHandleHwVirtExToggle()
+{
+    /* Update Nested Paging checkbox: */
+    AssertPtrReturnVoid(m_pCache);
+    m_pCheckBoxNestedPaging->setEnabled(   m_pCheckBoxVirtualization->isChecked()
+                                        && (   (m_pCache->base().m_fSupportedNestedPaging && isMachineOffline())
+                                            || (m_pCache->base().m_fEnabledNestedPaging && isMachineOffline())));
 
     /* Revalidate: */
     revalidate();
@@ -943,7 +999,7 @@ void UIMachineSettingsSystem::prepareTabAcceleration()
         {
             /* Configure widgets: */
 #ifndef VBOX_WITH_RAW_MODE
-            /* Hide VT-x/AMD-V checkbox when raw-mode is not supported: */
+            /* Hide HW Virt Ex checkbox when raw-mode is not supported: */
             m_pWidgetPlaceholder->setVisible(false);
             m_pCheckBoxVirtualization->setVisible(false);
 #endif
@@ -970,7 +1026,8 @@ void UIMachineSettingsSystem::prepareConnections()
     connect(m_pEditorCPUExecCap, SIGNAL(valueChanged(int)), this, SLOT(sltHandleCPUExecCapEditorChange()));
 
     /* Configure 'Acceleration' connections: */
-    connect(m_pCheckBoxVirtualization, SIGNAL(stateChanged(int)), this, SLOT(revalidate()));
+    connect(m_pCheckBoxVirtualization, &QCheckBox::stateChanged,
+            this, &UIMachineSettingsSystem::sltHandleHwVirtExToggle);
 }
 
 void UIMachineSettingsSystem::cleanup()
@@ -1255,10 +1312,4 @@ bool UIMachineSettingsSystem::saveAccelerationData()
     }
     /* Return result: */
     return fSuccess;
-}
-
-void UIMachineSettingsSystem::setAccelerationCheckBoxesEnabled(bool fEnabled)
-{
-    m_pCheckBoxVirtualization->setEnabled(fEnabled);
-    m_pCheckBoxNestedPaging->setEnabled(fEnabled && m_pCheckBoxVirtualization->isChecked());
 }

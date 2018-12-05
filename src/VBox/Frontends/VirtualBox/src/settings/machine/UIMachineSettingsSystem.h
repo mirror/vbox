@@ -39,8 +39,15 @@ public:
     /** Destructs System settings page. */
     ~UIMachineSettingsSystem();
 
+    /** Returns whether the HW Virt Ex is supported. */
+    bool isHWVirtExSupported() const;
     /** Returns whether the HW Virt Ex is enabled. */
     bool isHWVirtExEnabled() const;
+
+    /** Returns whether the Nested Paging is supported. */
+    bool isNestedPagingSupported() const;
+    /** Returns whether the Nested Paging is enabled. */
+    bool isNestedPagingEnabled() const;
 
     /** Returns whether the HID is enabled. */
     bool isHIDEnabled() const;
@@ -104,6 +111,9 @@ private slots:
     /** Handles CPU execution cap editor change. */
     void sltHandleCPUExecCapEditorChange();
 
+    /** Handles HW Virt Ex check-box toggling. */
+    void sltHandleHwVirtExToggle();
+
 private:
 
     /** Prepares all. */
@@ -140,10 +150,6 @@ private:
     bool saveProcessorData();
     /** Saves existing 'Acceleration' data from the cache. */
     bool saveAccelerationData();
-
-    /** Defines whether "hardware virtualization" and "nested paging" check-boxes
-      * (but not the "Paravirtualization Interface" combo-box) is @a fEnabled. */
-    void setAccelerationCheckBoxesEnabled(bool fEnabled);
 
     /** Holds the list of all possible boot items. */
     QList<KDeviceType>  m_possibleBootItems;
