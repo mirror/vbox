@@ -1005,12 +1005,13 @@ template<> QString toString(const UIExtraDataMetaDefs::DetailsElementOptionTypeD
     QString strResult;
     switch (enmDetailsElementOptionTypeDisplay)
     {
-        case UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay_VRAM:         strResult = QApplication::translate("VBoxGlobal", "VRAM"); break;
-        case UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay_ScreenCount:  strResult = QApplication::translate("VBoxGlobal", "Screen Count"); break;
-        case UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay_ScaleFactor:  strResult = QApplication::translate("VBoxGlobal", "Scale Factor"); break;
-        case UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay_Acceleration: strResult = QApplication::translate("VBoxGlobal", "Acceleration"); break;
-        case UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay_VRDE:         strResult = QApplication::translate("VBoxGlobal", "VRDE"); break;
-        case UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay_Recording:    strResult = QApplication::translate("VBoxGlobal", "Recording"); break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay_VRAM:               strResult = QApplication::translate("VBoxGlobal", "VRAM"); break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay_ScreenCount:        strResult = QApplication::translate("VBoxGlobal", "Screen Count"); break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay_ScaleFactor:        strResult = QApplication::translate("VBoxGlobal", "Scale Factor"); break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay_GraphicsController: strResult = QApplication::translate("VBoxGlobal", "Graphics Controller"); break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay_Acceleration:       strResult = QApplication::translate("VBoxGlobal", "Acceleration"); break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay_VRDE:               strResult = QApplication::translate("VBoxGlobal", "VRDE"); break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay_Recording:          strResult = QApplication::translate("VBoxGlobal", "Recording"); break;
         default:
         {
             AssertMsgFailed(("No text for details element option type=%d", enmDetailsElementOptionTypeDisplay));
@@ -1026,12 +1027,13 @@ template<> QString toInternalString(const UIExtraDataMetaDefs::DetailsElementOpt
     QString strResult;
     switch (enmDetailsElementOptionTypeDisplay)
     {
-        case UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay_VRAM:         strResult = "VRAM"; break;
-        case UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay_ScreenCount:  strResult = "ScreenCount"; break;
-        case UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay_ScaleFactor:  strResult = "ScaleFactor"; break;
-        case UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay_Acceleration: strResult = "Acceleration"; break;
-        case UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay_VRDE:         strResult = "VRDE"; break;
-        case UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay_Recording:    strResult = "Recording"; break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay_VRAM:               strResult = "VRAM"; break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay_ScreenCount:        strResult = "ScreenCount"; break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay_ScaleFactor:        strResult = "ScaleFactor"; break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay_GraphicsController: strResult = "GraphicsController"; break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay_Acceleration:       strResult = "Acceleration"; break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay_VRDE:               strResult = "VRDE"; break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay_Recording:          strResult = "Recording"; break;
         default:
         {
             AssertMsgFailed(("No text for details element option type=%d", enmDetailsElementOptionTypeDisplay));
@@ -1046,13 +1048,14 @@ template<> UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay fromInternalStri
 {
     /* Here we have some fancy stuff allowing us
      * to search through the keys using 'case-insensitive' rule: */
-    QStringList keys;       QList<UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay> values;
-    keys << "VRAM";         values << UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay_VRAM;
-    keys << "ScreenCount";  values << UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay_ScreenCount;
-    keys << "ScaleFactor";  values << UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay_ScaleFactor;
-    keys << "Acceleration"; values << UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay_Acceleration;
-    keys << "VRDE";         values << UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay_VRDE;
-    keys << "Recording";    values << UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay_Recording;
+    QStringList keys;             QList<UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay> values;
+    keys << "VRAM";               values << UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay_VRAM;
+    keys << "ScreenCount";        values << UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay_ScreenCount;
+    keys << "ScaleFactor";        values << UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay_ScaleFactor;
+    keys << "GraphicsController"; values << UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay_GraphicsController;
+    keys << "Acceleration";       values << UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay_Acceleration;
+    keys << "VRDE";               values << UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay_VRDE;
+    keys << "Recording";          values << UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay_Recording;
     /* Invalid type for unknown words: */
     if (!keys.contains(strDetailsElementOptionTypeDisplay, Qt::CaseInsensitive))
         return UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay_Invalid;

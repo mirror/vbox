@@ -643,14 +643,15 @@ public:
     /** VirtualBox Manager UI: Details element: "Display" option types. */
     enum DetailsElementOptionTypeDisplay
     {
-        DetailsElementOptionTypeDisplay_Invalid      = 0,
-        DetailsElementOptionTypeDisplay_VRAM         = RT_BIT(0),
-        DetailsElementOptionTypeDisplay_ScreenCount  = RT_BIT(1),
-        DetailsElementOptionTypeDisplay_ScaleFactor  = RT_BIT(2),
-        DetailsElementOptionTypeDisplay_Acceleration = RT_BIT(3),
-        DetailsElementOptionTypeDisplay_VRDE         = RT_BIT(4),
-        DetailsElementOptionTypeDisplay_Recording    = RT_BIT(5),
-        DetailsElementOptionTypeDisplay_Default      = 0xFFFF
+        DetailsElementOptionTypeDisplay_Invalid            = 0,
+        DetailsElementOptionTypeDisplay_VRAM               = RT_BIT(0),
+        DetailsElementOptionTypeDisplay_ScreenCount        = RT_BIT(1),
+        DetailsElementOptionTypeDisplay_ScaleFactor        = RT_BIT(2),
+        DetailsElementOptionTypeDisplay_GraphicsController = RT_BIT(3),
+        DetailsElementOptionTypeDisplay_Acceleration       = RT_BIT(4),
+        DetailsElementOptionTypeDisplay_VRDE               = RT_BIT(5),
+        DetailsElementOptionTypeDisplay_Recording          = RT_BIT(6),
+        DetailsElementOptionTypeDisplay_Default            = 0xFFFF
     };
     Q_ENUM(DetailsElementOptionTypeDisplay);
 

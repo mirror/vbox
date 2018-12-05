@@ -1344,6 +1344,13 @@ QString UISnapshotDetailsWidget::detailsReport(DetailsElementType enmType,
                                                                    QString::number(uScaleFactorOld, 'f', 2)));
             }
 
+            /* Graphics Controller: */
+            ++iRowCount;
+            const QString strGc = gpConverter->toString(comMachine.GetGraphicsControllerType());
+            const QString strGcOld = gpConverter->toString(comMachineOld.GetGraphicsControllerType());
+            strItem += QString(sSectionItemTpl2).arg(QApplication::translate("UIGDetails", "Graphics Controller", "details (display)"),
+                                                     empReport(strGc, strGcOld));
+
             /* Acceleration? */
             const QString strAcceleration = displayAccelerationReport(comMachine);
             const QString strAccelerationOld = displayAccelerationReport(comMachineOld);

@@ -463,6 +463,11 @@ void UIDetailsUpdateTaskDisplay::run()
             }
         }
 
+        /* Graphics Controller: */
+        if (m_fOptions & UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay_GraphicsController)
+            table << UITextTableLine(QApplication::translate("UIDetails", "Graphics Controller", "details (display)"),
+                                     gpConverter->toString(comMachine.GetGraphicsControllerType()));
+
         /* Acceleration: */
         if (m_fOptions & UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay_Acceleration)
         {
