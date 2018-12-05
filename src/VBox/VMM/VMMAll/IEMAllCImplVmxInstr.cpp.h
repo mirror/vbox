@@ -3773,6 +3773,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitPreemptTimer(PVMCPU pVCpu)
 
             /* Cause the VMX-preemption timer VM-exit. The VM-exit qualification MBZ. */
             iemVmxVmcsSetExitQual(pVCpu, 0);
+            VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_VMX_PREEMPT_TIMER);
             return iemVmxVmexit(pVCpu, VMX_EXIT_PREEMPT_TIMER);
         }
     }
@@ -7005,6 +7006,27 @@ IEM_STATIC bool iemVmxVmentryIsPendingDebugXcpt(PVMCPU pVCpu, const char *pszIns
 
 
 /**
+ * Set up the monitor-trap flag (MTF).
+ *
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   pszInstr    The VMX instruction name (for logging purposes).
+ */
+IEM_STATIC void iemVmxVmentrySetupMtf(PVMCPU pVCpu, const char *pszInstr)
+{
+    PCVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
+    Assert(pVmcs);
+    if (pVmcs->u32ProcCtls & VMX_PROC_CTLS_MONITOR_TRAP_FLAG)
+    {
+        VMCPU_FF_SET(pVCpu, VMCPU_FF_VMX_MTF);
+        Log(("%s: Monitor-trap flag set on VM-entry\n", pszInstr));
+    }
+    else
+        Assert(!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_VMX_MTF));
+    NOREF(pszInstr);
+}
+
+
+/**
  * Set up the VMX-preemption timer.
  *
  * @param   pVCpu       The cross context virtual CPU structure.
@@ -7279,6 +7301,9 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmlaunchVmresume(PVMCPU pVCpu, uint8_t cbInstr, VM
 
                                 /* Setup the VMX-preemption timer. */
                                 iemVmxVmentrySetupPreemptTimer(pVCpu, pszInstr);
+
+                                /* Setup monitor-trap flag. */
+                                iemVmxVmentrySetupMtf(pVCpu, pszInstr);
 
                                 /* Now that we've switched page tables, we can inject events if any. */
                                 iemVmxVmentryInjectEvent(pVCpu, pszInstr);
