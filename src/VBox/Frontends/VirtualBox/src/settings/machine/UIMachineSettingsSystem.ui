@@ -516,7 +516,7 @@
           <string>When checked, the nested hardware virtualization CPU feature will be exposed to the virtual machine.</string>
          </property>
          <property name="text">
-          <string>Enable nested &amp;VT-x/AMD-V</string>
+          <string>Enable Nested &amp;VT-x/AMD-V</string>
          </property>
         </widget>
        </item>
