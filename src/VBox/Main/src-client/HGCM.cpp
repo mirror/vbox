@@ -2630,8 +2630,6 @@ int HGCMGuestCall(PPDMIHGCMPORT pHGCMPort,
  * @param u32Function    The function number.
  * @param cParms         Number of parameters.
  * @param paParms        Pointer to array of parameters.
- * @param fWait          Whether to wait for the call to complete (default),
- *                       or just post it and return immediately.
  * @return VBox rc.
  */
 int HGCMHostCall(const char *pszServiceName,
