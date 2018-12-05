@@ -150,12 +150,14 @@ typedef struct HDASTREAMSTATE
      *  BDLE interrupt-on-completion (IOC) bits set. */
     uint8_t                 cTransferPendingInterrupts;
     uint8_t                 Padding2[4];
+    /** Number of audio data frames for the position adjustment.
+     *  0 if no position adjustment is needed. */
+    uint16_t                cfPosAdjustDefault;
     /** How many audio data frames are left to be processed
      *  for the position adjustment handling.
      *
      *  0 if position adjustment handling is done or inactive. */
-    uint16_t                cPosAdjustFramesLeft;
-    uint8_t                 Padding3[2];
+    uint16_t                cfPosAdjustLeft;
     /** (Virtual) clock ticks per byte. */
     uint64_t                cTicksPerByte;
     /** (Virtual) clock ticks per transfer. */

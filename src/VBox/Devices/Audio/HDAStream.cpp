@@ -401,8 +401,11 @@ int hdaR3StreamInit(PHDASTREAM pStream, uint8_t uSD)
                 }
 
                 /* Initialize position adjustment counter. */
-                pStream->State.cPosAdjustFramesLeft = cfPosAdjust;
-                LogRel2(("HDA: Position adjustment for stream #%RU8 active (%RU32 frames)\n", pStream->u8SD, cfPosAdjust));
+                pStream->State.cfPosAdjustDefault = cfPosAdjust;
+                pStream->State.cfPosAdjustLeft    = pStream->State.cfPosAdjustDefault;
+
+                LogRel2(("HDA: Position adjustment for stream #%RU8 active (%RU32 frames)\n",
+                         pStream->u8SD, pStream->State.cfPosAdjustDefault));
             }
         }
 
@@ -505,6 +508,9 @@ void hdaR3StreamReset(PHDASTATE pThis, PHDASTREAM pStream, uint8_t uSD)
 
     /* Assign the default mixer sink to the stream. */
     pStream->pMixSink = hdaR3GetDefaultSink(pThis, uSD);
+
+    /* Reset position adjustment counter. */
+    pStream->State.cfPosAdjustLeft = pStream->State.cfPosAdjustDefault;
 
     /* Reset transfer stuff. */
     pStream->State.cbTransferProcessed        = 0;
@@ -962,11 +968,11 @@ int hdaR3StreamTransfer(PHDASTREAM pStream, uint32_t cbToProcessMax)
 
         /* If there are position adjustment frames left to be processed,
          * make sure that we process them first as a whole. */
-        if (pStream->State.cPosAdjustFramesLeft)
-            cbChunk = RT_MIN(cbChunk, uint32_t(pStream->State.cPosAdjustFramesLeft * pStream->State.Mapping.cbFrameSize));
+        if (pStream->State.cfPosAdjustLeft)
+            cbChunk = RT_MIN(cbChunk, uint32_t(pStream->State.cfPosAdjustLeft * pStream->State.Mapping.cbFrameSize));
 
         Log3Func(("[SD%RU8] cbChunk=%RU32, cPosAdjustFramesLeft=%RU16\n",
-                  pStream->u8SD, cbChunk, pStream->State.cPosAdjustFramesLeft));
+                  pStream->u8SD, cbChunk, pStream->State.cfPosAdjustLeft));
 
         if (!cbChunk)
             break;
@@ -1167,7 +1173,7 @@ int hdaR3StreamTransfer(PHDASTREAM pStream, uint32_t cbToProcessMax)
 
             /* Are we done doing the position adjustment?
              * Only then do the transfer accounting .*/
-            if (pStream->State.cPosAdjustFramesLeft == 0)
+            if (pStream->State.cfPosAdjustLeft == 0)
             {
                 Assert(cbLeft >= cbDMA);
                 cbLeft        -= cbDMA;
@@ -1198,7 +1204,7 @@ int hdaR3StreamTransfer(PHDASTREAM pStream, uint32_t cbToProcessMax)
                  * position adjustment requires an interrupt on completion (IOC) being set.
                  *
                  * In such a case we need to skip such an interrupt and just move on. */
-                && pStream->State.cPosAdjustFramesLeft == 0)
+                && pStream->State.cfPosAdjustLeft == 0)
             {
                 /* If the IOCE ("Interrupt On Completion Enable") bit of the SDCTL register is set
                  * we need to generate an interrupt.
@@ -1225,8 +1231,8 @@ int hdaR3StreamTransfer(PHDASTREAM pStream, uint32_t cbToProcessMax)
         }
 
         /* Do the position adjustment accounting. */
-        pStream->State.cPosAdjustFramesLeft -=
-            RT_MIN(pStream->State.cPosAdjustFramesLeft, cbDMA / pStream->State.Mapping.cbFrameSize);
+        pStream->State.cfPosAdjustLeft -=
+            RT_MIN(pStream->State.cfPosAdjustLeft, cbDMA / pStream->State.Mapping.cbFrameSize);
 
         if (RT_FAILURE(rc))
             break;
@@ -1241,7 +1247,7 @@ int hdaR3StreamTransfer(PHDASTREAM pStream, uint32_t cbToProcessMax)
 
     /* Only do the data accounting if we don't have to do any position
      * adjustment anymore. */
-    if (pStream->State.cPosAdjustFramesLeft == 0)
+    if (pStream->State.cfPosAdjustLeft == 0)
     {
         hdaR3StreamPeriodInc(pPeriod, RT_MIN(cbProcessed / pStream->State.Mapping.cbFrameSize,
                                              hdaR3StreamPeriodGetRemainingFrames(pPeriod)));
