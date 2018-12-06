@@ -1254,6 +1254,7 @@ additions-build-darwin:   additions-build-darwin.amd64 additions-build-darwin.x8
 .PHONY:       additions-build-darwin.amd64 additions-build-darwin.x86
 else
 additions-build-darwin.amd64.rsync-into-vm:
+	$(TIME) -- ssh vbox@$(VBOX_BLD_VM_DARWIN_109_AMD64_IP) 'sudo rm -Rf /Users/vbox/tinderbox/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME)/out/'
 	$(TIME) -- $(call VBOX_RSYNC_IN_FN,darwin,*) \
 		'--exclude=src/libs/xpcom18a4/**' \
 		'--exclude=src/libs/curl*/**' \
@@ -1282,6 +1283,7 @@ additions-build-darwin.amd64.rsync-into-vm:
 		. $(VBOX_BLD_VM_DARWIN_109_AMD64_IP):/Users/vbox/tinderbox/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME)
 
 additions-build-darwin.x86.rsync-into-vm:
+	$(TIME) -- ssh vbox@$(VBOX_BLD_VM_DARWIN_X86_IP) 'sudo rm -Rf /Users/vbox/tinderbox/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME)/out/'
 	$(TIME) -- $(call VBOX_RSYNC_IN_FN,darwin,*) \
 		'--exclude=src/libs/xpcom18a4/**' \
 		'--exclude=src/libs/curl*/**' \
