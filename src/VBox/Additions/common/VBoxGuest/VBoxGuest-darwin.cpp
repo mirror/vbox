@@ -1034,7 +1034,7 @@ bool org_virtualbox_VBoxGuest::terminate(IOOptionBits fOptions)
 #ifdef LOG_ENABLED
     RTLogBackdoorPrintf("vgdrvDarwinIrqHandler: %p %p %p %d\n", pTarget, pvRefCon, pNub, iSrc);
 #endif
-    RT_NOREF(pvRefCon, pNub, iSrc);
+    RT_NOREF(pTarget, pvRefCon, pNub, iSrc);
 
     VGDrvCommonISR(&g_DevExt);
     /* There is in fact no way of indicating that this is our interrupt, other
