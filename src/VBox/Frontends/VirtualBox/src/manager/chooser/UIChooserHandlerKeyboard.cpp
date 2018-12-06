@@ -315,10 +315,17 @@ bool UIChooserHandlerKeyboard::handleKeyPress(QKeyEvent *pEvent) const
         case Qt::Key_Return:
         case Qt::Key_Enter:
         {
-            /* Activate item: */
-            model()->activateMachineItem();
-            /* And filter out that event: */
-            return true;
+            /* If this item is of group or machine type: */
+            if (   model()->focusItem()->type() == UIChooserItemType_Group
+                || model()->focusItem()->type() == UIChooserItemType_Machine)
+            {
+                /* Activate item: */
+                model()->activateMachineItem();
+                /* And filter out that event: */
+                return true;
+            }
+            /* Pass event to other items: */
+            return false;
         }
         case Qt::Key_Space:
         {
