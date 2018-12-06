@@ -1320,10 +1320,10 @@ additions-build-darwin.x86.build-it: additions-build-darwin.x86.rsync-into-vm
 	$(call VBOX_BLD_VM_MSG_END__,Darwin/x86 Additions)
 
 additions-build-darwin.amd64.rsync-out-of-vm: additions-build-darwin.amd64.build-it
-	$(TIME) -- rsync -a --delete $(VBOX_BLD_VM_DARWIN_109_AMD64_IP):/Users/vbox/tinderbox/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME)/out/darwin.amd64 out/
+	$(TIME) -- rsync -a -v --delete $(VBOX_BLD_VM_DARWIN_109_AMD64_IP):/Users/vbox/tinderbox/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME)/out/darwin.amd64 out/
 
 additions-build-darwin.x86.rsync-out-of-vm: additions-build-darwin.x86.build-it
-	$(TIME) -- rsync -a --delete $(VBOX_BLD_VM_DARWIN_X86_IP):/Users/vbox/tinderbox/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME)/out/darwin.x86 out/
+	$(TIME) -- rsync -a -v --delete $(VBOX_BLD_VM_DARWIN_X86_IP):/Users/vbox/tinderbox/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME)/out/darwin.x86 out/
 
 additions-build-darwin.amd64: additions-build-darwin.amd64.rsync-out-of-vm
 additions-build-darwin.x86: additions-build-darwin.x86.rsync-out-of-vm
