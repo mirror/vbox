@@ -1279,7 +1279,7 @@ additions-build-darwin.amd64.rsync-into-vm:
 		'--exclude=src/VBox/VMM/**' \
 		'--exclude=src/apps/**' \
 		'--exclude=src/recompiler/**' \
-		. $(VBOX_BLD_VM_DARWIN_AMD64_IP):/Users/vbox/tinderbox/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME)
+		. $(VBOX_BLD_VM_DARWIN_109_AMD64_IP):/Users/vbox/tinderbox/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME)
 
 additions-build-darwin.x86.rsync-into-vm:
 	$(TIME) -- $(call VBOX_RSYNC_IN_FN,darwin,*) \
@@ -1311,7 +1311,7 @@ additions-build-darwin.x86.rsync-into-vm:
 
 additions-build-darwin.amd64.build-it: additions-build-darwin.amd64.rsync-into-vm
 	$(call VBOX_BLD_VM_MSG_BEGIN,Darwin/amd64 Additions)
-	$(TIME) -- ssh vbox@$(VBOX_BLD_VM_DARWIN_AMD64_IP) 'cd /Users/vbox/tinderbox/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME) && tools/env.sh --no-wine kmk $(VBOX_ADDITIONS_BUILD.amd64) all packing'
+	$(TIME) -- ssh vbox@$(VBOX_BLD_VM_DARWIN_109_AMD64_IP) 'cd /Users/vbox/tinderbox/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME) && tools/env.sh --no-wine kmk $(VBOX_ADDITIONS_BUILD.amd64) all packing'
 	$(call VBOX_BLD_VM_MSG_END__,Darwin/amd64 Additions)
 
 additions-build-darwin.x86.build-it: additions-build-darwin.x86.rsync-into-vm
@@ -1320,7 +1320,7 @@ additions-build-darwin.x86.build-it: additions-build-darwin.x86.rsync-into-vm
 	$(call VBOX_BLD_VM_MSG_END__,Darwin/x86 Additions)
 
 additions-build-darwin.amd64.rsync-out-of-vm: additions-build-darwin.amd64.build-it
-	$(TIME) -- rsync -a --delete $(VBOX_BLD_VM_DARWIN_AMD64_IP):/Users/vbox/tinderbox/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME)/out/darwin.amd64 out/
+	$(TIME) -- rsync -a --delete $(VBOX_BLD_VM_DARWIN_109_AMD64_IP):/Users/vbox/tinderbox/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME)/out/darwin.amd64 out/
 
 additions-build-darwin.x86.rsync-out-of-vm: additions-build-darwin.x86.build-it
 	$(TIME) -- rsync -a --delete $(VBOX_BLD_VM_DARWIN_X86_IP):/Users/vbox/tinderbox/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME)/out/darwin.x86 out/
@@ -1556,8 +1556,8 @@ extpacks-packing:
 #
 validationkit-fetch:
 	+ $(KMK) -C tools fetch VBOX_ONLY_VALIDATIONKIT=1
-	+ $(KMK) -C tools fetch KBUILD_TARGET_ARCH=amd64 KBUILD_TARGET=darwin  BUILD_TARGET_ARCH=amd64 BUILD_TARGET=darwin    VBOX_ONLY_VALIDATIONKIT=1
-	+ $(KMK) -C tools fetch KBUILD_TARGET_ARCH=x86   KBUILD_TARGET=darwin  BUILD_TARGET_ARCH=x86   BUILD_TARGET=darwin    VBOX_ONLY_VALIDATIONKIT=1
+	+ $(KMK) -C tools fetch KBUILD_TARGET_ARCH=amd64 KBUILD_TARGET=darwin  BUILD_TARGET_ARCH=amd64 BUILD_TARGET=darwin    VBOX_ONLY_VALIDATIONKIT=1 VBOX_DEF_MACOSX_VERSION_MIN=10.7
+	+ $(KMK) -C tools fetch KBUILD_TARGET_ARCH=x86   KBUILD_TARGET=darwin  BUILD_TARGET_ARCH=x86   BUILD_TARGET=darwin    VBOX_ONLY_VALIDATIONKIT=1 ##@todo VBOX_DEF_MACOSX_VERSION_MIN=10.4
 #	+ $(KMK) -C tools fetch KBUILD_TARGET_ARCH=amd64 KBUILD_TARGET=freebsd BUILD_TARGET_ARCH=amd64 BUILD_TARGET=freebsd   VBOX_ONLY_VALIDATIONKIT=1
 #	+ $(KMK) -C tools fetch KBUILD_TARGET_ARCH=x86   KBUILD_TARGET=freebsd BUILD_TARGET_ARCH=x86   BUILD_TARGET=freebsd   VBOX_ONLY_VALIDATIONKIT=1
 	+ $(KMK) -C tools fetch KBUILD_TARGET_ARCH=amd64 KBUILD_TARGET=linux   BUILD_TARGET_ARCH=amd64 BUILD_TARGET=linux     VBOX_ONLY_VALIDATIONKIT=1
@@ -1749,7 +1749,8 @@ ifeq ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH),darwin.amd64)
 else
 	$(call VBOX_BLD_VM_MSG_BEGIN,Darwin/amd64 Validation Kit)
 	$(TIME) -- $(call VBOX_RSYNC_IN_FN,darwin,amd64) . $(VBOX_BLD_VM_DARWIN_AMD64_IP):/Users/vbox/tinderbox/$(VBOX_VALIDATIONKIT_BUILD_SUBDIRNAME)
-	$(TIME) -- ssh vbox@$(VBOX_BLD_VM_DARWIN_AMD64_IP) 'cd /Users/vbox/tinderbox/$(VBOX_VALIDATIONKIT_BUILD_SUBDIRNAME) && tools/env.sh --no-wine kmk $(VBOX_VALIDATIONKIT_BUILD.amd64) all '
+	$(TIME) -- ssh vbox@$(VBOX_BLD_VM_DARWIN_AMD64_IP) 'cd /Users/vbox/tinderbox/$(VBOX_VALIDATIONKIT_BUILD_SUBDIRNAME) && tools/env.sh --no-wine kmk $(VBOX_VALIDATIONKIT_BUILD.amd64) VBOX_DEF_MACOSX_VERSION_MIN=10.7 all '
+	$(TIME) -- ssh vbox@$(VBOX_BLD_VM_DARWIN_AMD64_IP) 'cd /Users/vbox/tinderbox/$(VBOX_VALIDATIONKIT_BUILD_SUBDIRNAME) && tools/env.sh --no-wine kmk $(VBOX_VALIDATIONKIT_BUILD.amd64) VBOX_DEF_MACOSX_VERSION_MIN=10.7 packing '
 	$(TIME) -- rsync -am -v --delete $(VBOX_BLD_VM_DARWIN_AMD64_IP):/Users/vbox/tinderbox/$(VBOX_VALIDATIONKIT_BUILD_SUBDIRNAME)/out/darwin.amd64 out/
 	$(call VBOX_BLD_VM_MSG_END__,Darwin/amd64 Validation Kit)
 endif
@@ -1760,7 +1761,8 @@ ifeq ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH),darwin.x86)
 else
 	$(call VBOX_BLD_VM_MSG_BEGIN,Darwin/x86 Validation Kit)
 	$(TIME) -- $(call VBOX_RSYNC_IN_FN,darwin,x86) . $(VBOX_BLD_VM_DARWIN_X86_IP):/Users/vbox/tinderbox/$(VBOX_VALIDATIONKIT_BUILD_SUBDIRNAME)
-	$(TIME) -- ssh vbox@$(VBOX_BLD_VM_DARWIN_X86_IP) 'cd /Users/vbox/tinderbox/$(VBOX_VALIDATIONKIT_BUILD_SUBDIRNAME) && tools/env.sh --no-wine kmk $(VBOX_VALIDATIONKIT_BUILD.x86) all '
+	$(TIME) -- ssh vbox@$(VBOX_BLD_VM_DARWIN_X86_IP) 'cd /Users/vbox/tinderbox/$(VBOX_VALIDATIONKIT_BUILD_SUBDIRNAME) && tools/env.sh --no-wine kmk $(VBOX_VALIDATIONKIT_BUILD.x86) all ' ##@todo VBOX_DEF_MACOSX_VERSION_MIN=10.4 all
+	$(TIME) -- ssh vbox@$(VBOX_BLD_VM_DARWIN_X86_IP) 'cd /Users/vbox/tinderbox/$(VBOX_VALIDATIONKIT_BUILD_SUBDIRNAME) && tools/env.sh --no-wine kmk $(VBOX_VALIDATIONKIT_BUILD.x86) packing ' ##@todo VBOX_DEF_MACOSX_VERSION_MIN=10.4 all
 	$(TIME) -- rsync -am -v --delete $(VBOX_BLD_VM_DARWIN_X86_IP):/Users/vbox/tinderbox/$(VBOX_VALIDATIONKIT_BUILD_SUBDIRNAME)/out/darwin.x86 out/
 	$(call VBOX_BLD_VM_MSG_END__,Darwin/x86 Validation Kit)
 endif
