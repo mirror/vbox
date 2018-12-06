@@ -177,6 +177,7 @@ $(VBOX_PATH_PACK_TMP)/DiskImage/VirtualBox.pkg: \
 		$$(wildcard $(VBOX_PATH_DI_SRC)/VirtualBox_mpkg/* \
 		            $(VBOX_PATH_DI_SRC)/VirtualBox_mpkg/*.lproj/*) \
 		$(foreach f,$(VBOX_INSTALLER_ADD_LANGUAGES), $(VBOX_BRAND_$(f)_VIRTUALBOX_WELCOME_RTF)) \
+		$(if $(VBOX_WITH_FUSE_PACKING), $(VBOX_PATH_PACK_TMP)/Packages/OSXFuseCore.pkg) \
 		$(VBOX_DARWIN_INST_DEP_ON_MAKEFILE)
 	$(call MSG_TOOL,productbuild,,,$@)
 	@# Cleanup any previously failed attempts.
@@ -926,6 +927,18 @@ endif
 		$(VBOX_PATH_PACK_TMP)/VirtualBoxCLI.pkg.root \
 		$(VBOX_PATH_PACK_TMP)/VirtualBoxCLI.pkg.desc \
 		$(VBOX_PATH_PACK_TMP)/VirtualBoxCLI.pkg.res
+
+ifdef VBOX_WITH_FUSE_PACKING
+#
+# The OS X fuse core package.
+#
+$(VBOX_PATH_PACK_TMP)/Packages/OSXFuseCore.pkg: \
+		$(lastword $(sort $(wildcard $(KBUILD_DEVTOOLS_TRG)/osxfuse/v*)))/Core.pkg
+	$(call MSG_TOOL,Preparing OS X Fuse core package,,,$@)
+	@# Cleanup any previously failed attempts.
+	sudo rm -Rf $@
+	pkgutil --flatten $(lastword $(sort $(wildcard $(KBUILD_DEVTOOLS_TRG)/osxfuse/v*)))/Core.pkg $@
+endif
 
 
 #

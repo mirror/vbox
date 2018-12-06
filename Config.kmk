@@ -832,6 +832,10 @@ endif
 if1of ($(KBUILD_TARGET), darwin)
  VBOX_WITH_VBOXIMGMOUNT = 1
 endif
+# Set this to enable packaging the fuse related bits into our installer.
+if1of ($(KBUILD_TARGET), darwin)
+ VBOX_WITH_FUSE_PACKING = 1
+endif
 ## @}
 
 

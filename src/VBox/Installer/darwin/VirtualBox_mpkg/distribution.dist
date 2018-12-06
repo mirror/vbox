@@ -108,6 +108,7 @@
         <line choice="choiceVBoxKEXTs"></line>
         <line choice="choiceVBox"></line>
         <line choice="choiceVBoxCLI"></line>
+        <line choice="choiceOSXFuseCore"></line>
     </choices-outline>
     <choice id="choiceVBoxKEXTs"   title="choiceVBoxKEXTs_title"   description="choiceVBoxKEXTs_msg"   start_selected="true" start_enabled="false" start_visible="true">
         <pkg-ref id="org.virtualbox.pkg.vboxkexts"></pkg-ref>
@@ -118,8 +119,12 @@
     <choice id="choiceVBoxCLI"     title="choiceVBoxCLI_title"     description="choiceVBoxCLI_msg"     start_selected="true" start_enabled="true" start_visible="true">
         <pkg-ref id="org.virtualbox.pkg.virtualboxcli"></pkg-ref>
     </choice>
+    <choice id="choiceOSXFuseCore" title="choiceOSXFuseCore_title" description="choiceOSXFuseCore_msg" start_selected="true" start_enabled="true" start_visible="true">
+        <pkg-ref id="com.github.osxfuse.pkg.Core"></pkg-ref>
+    </choice>
     <pkg-ref id="org.virtualbox.pkg.vboxkexts" auth="Root">file:./Contents/Packages/VBoxKEXTs.pkg</pkg-ref>
     <pkg-ref id="org.virtualbox.pkg.virtualbox" auth="Root">file:./Contents/Packages/VirtualBox.pkg</pkg-ref>
     <pkg-ref id="org.virtualbox.pkg.virtualboxcli" auth="Root">file:./Contents/Packages/VirtualBoxCLI.pkg</pkg-ref>
+    <pkg-ref id="com.github.osxfuse.pkg.Core" auth="Root">file:./Contents/Packages/OSXFuseCore.pkg</pkg-ref>
 </installer-gui-script>
 

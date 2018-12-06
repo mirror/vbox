@@ -9,6 +9,9 @@
 'choiceVBoxCLI_title' = '@VBOX_PRODUCT@ Command Line Utilities';
 'choiceVBoxCLI_msg' = 'Installs the @VBOX_PRODUCT@ command line utilities into /usr/bin.';
 
+'choiceOSXFuseCore_title' = 'OS X Fuse core package';
+'choiceOSXFuseCore_msg' = 'Installs the OS X Fuse core package for the image mounter.';
+
 'RUNNING_VMS_TLE' = "Running VirtualBox virtual machines detected!";
 'RUNNING_VMS_MSG' = "The installer has detected running virtual machines. Please shut down all running VirtualBox machines and then restart the installation.";
 
