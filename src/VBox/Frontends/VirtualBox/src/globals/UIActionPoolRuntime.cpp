@@ -3850,7 +3850,8 @@ void UIActionPoolRuntime::updateMenuViewStatusBar()
 void UIActionPoolRuntime::updateMenuViewResize(QMenu *pMenu)
 {
     AssertPtrReturnVoid(pMenu);
-    /* Prepare new contents: */
+
+    /* Prepare content: */
     const QList<QSize> sizes = QList<QSize>()
                                << QSize(640, 480)
                                << QSize(800, 600)
@@ -3876,7 +3877,7 @@ void UIActionPoolRuntime::updateMenuViewResize(QMenu *pMenu)
         /* Create 'toggle' action: */
         QAction *pToggleAction = pMenu->addAction(QApplication::translate("UIActionPool", "Enable", "Virtual Screen"),
                                                   this, SLOT(sltHandleActionTriggerViewScreenToggle()));
-        AssertPtrReturnVoid(pToggleAction);
+        if (pToggleAction)
         {
             /* Configure 'toggle' action: */
             pToggleAction->setEnabled(m_fGuestSupportsGraphics);
@@ -3890,68 +3891,75 @@ void UIActionPoolRuntime::updateMenuViewResize(QMenu *pMenu)
 
     /* Create exclusive 'resize' action-group: */
     QActionGroup *pActionGroup = new QActionGroup(pMenu);
-    AssertPtrReturnVoid(pActionGroup);
+    if (pActionGroup)
     {
         /* Configure exclusive 'resize' action-group: */
         pActionGroup->setExclusive(true);
+
         /* For every available size: */
         foreach (const QSize &size, sizes)
         {
             /* Create exclusive 'resize' action: */
             QAction *pAction = pActionGroup->addAction(QApplication::translate("UIActionPool", "Resize to %1x%2", "Virtual Screen")
                                                                                .arg(size.width()).arg(size.height()));
-            AssertPtrReturnVoid(pAction);
+            if (pAction)
             {
                 /* Configure exclusive 'resize' action: */
                 pAction->setEnabled(m_fGuestSupportsGraphics && fScreenEnabled);
                 pAction->setProperty("Guest Screen Index", iGuestScreenIndex);
                 pAction->setProperty("Requested Size", size);
                 pAction->setCheckable(true);
-                if (screenSize.width() == size.width() &&
-                    screenSize.height() == size.height())
+                if (   screenSize.width() == size.width()
+                    && screenSize.height() == size.height())
                     pAction->setChecked(true);
             }
         }
+
         /* Insert group actions into menu: */
         pMenu->addActions(pActionGroup->actions());
         /* Install listener for exclusive action-group: */
-        connect(pActionGroup, SIGNAL(triggered(QAction*)),
-                this, SLOT(sltHandleActionTriggerViewScreenResize(QAction*)));
+        connect(pActionGroup, &QActionGroup::triggered,
+                this, &UIActionPoolRuntime::sltHandleActionTriggerViewScreenResize);
     }
 }
 
 void UIActionPoolRuntime::updateMenuViewRemap(QMenu *pMenu)
 {
     AssertPtrReturnVoid(pMenu);
-    /* Get corresponding screen index and size: */
+
+    /* Get corresponding screen index: */
     const int iGuestScreenIndex = pMenu->property("Guest Screen Index").toInt();
 
-    /* Create exclusive action-group: */
+    /* Create exclusive 'remap' action-group: */
     QActionGroup *pActionGroup = new QActionGroup(pMenu);
-    AssertPtrReturnVoid(pActionGroup);
+    if (pActionGroup)
     {
-        /* Configure exclusive action-group: */
+        /* Configure exclusive 'remap' action-group: */
         pActionGroup->setExclusive(true);
+
+        /* For every host-screen index: */
         for (int iHostScreenIndex = 0; iHostScreenIndex < m_cHostScreens; ++iHostScreenIndex)
         {
-            QAction *pAction = pActionGroup->addAction(QApplication::translate("UIMultiScreenLayout",
-                                                                               "Use Host Screen %1")
+            /* Create exclusive 'remap' action: */
+            QAction *pAction = pActionGroup->addAction(QApplication::translate("UIMultiScreenLayout", "Use Host Screen %1")
                                                                                .arg(iHostScreenIndex + 1));
-            AssertPtrReturnVoid(pAction);
+            if (pAction)
             {
+                /* Configure exclusive 'remap' action: */
                 pAction->setCheckable(true);
                 pAction->setProperty("Guest Screen Index", iGuestScreenIndex);
                 pAction->setProperty("Host Screen Index", iHostScreenIndex);
-                if (m_mapHostScreenForGuestScreen.contains(iGuestScreenIndex) &&
-                    m_mapHostScreenForGuestScreen.value(iGuestScreenIndex) == iHostScreenIndex)
+                if (   m_mapHostScreenForGuestScreen.contains(iGuestScreenIndex)
+                    && m_mapHostScreenForGuestScreen.value(iGuestScreenIndex) == iHostScreenIndex)
                     pAction->setChecked(true);
             }
         }
+
         /* Insert group actions into menu: */
         pMenu->addActions(pActionGroup->actions());
         /* Install listener for exclusive action-group: */
-        connect(pActionGroup, SIGNAL(triggered(QAction*)),
-                this, SLOT(sltHandleActionTriggerViewScreenRemap(QAction*)));
+        connect(pActionGroup, &QActionGroup::triggered,
+                this, &UIActionPoolRuntime::sltHandleActionTriggerViewScreenRemap);
     }
 }
 
@@ -3959,16 +3967,16 @@ void UIActionPoolRuntime::updateMenuViewRescale(QMenu *pMenu)
 {
     AssertPtrReturnVoid(pMenu);
 
-    /* Create exclusive 'scale-factor' action-group: */
-    QActionGroup *pActionGroup = new QActionGroup(pMenu);
-    AssertPtrReturnVoid(pActionGroup);
-    {
-        /* Configure exclusive 'scale-factor' action-group: */
-        pActionGroup->setExclusive(true);
+    /* Get corresponding screen index and scale-factor: */
+    const int iGuestScreenIndex = pMenu->property("Guest Screen Index").toInt();
+    const double dCurrentScaleFactor = gEDataManager->scaleFactor(vboxGlobal().managedVMUuid(), iGuestScreenIndex);
 
-        /* Get current scale-factor: */
-        const int iGuestScreenIndex = pMenu->property("Guest Screen Index").toInt();
-        const double dCurrentScaleFactor = gEDataManager->scaleFactor(vboxGlobal().managedVMUuid(), iGuestScreenIndex);
+    /* Create exclusive 'rescale' action-group: */
+    QActionGroup *pActionGroup = new QActionGroup(pMenu);
+    if (pActionGroup)
+    {
+        /* Configure exclusive 'rescale' action-group: */
+        pActionGroup->setExclusive(true);
 
         /* Get device-pixel-ratio: */
         bool fDevicePixelRatioMentioned = false;
@@ -3984,9 +3992,9 @@ void UIActionPoolRuntime::updateMenuViewRescale(QMenu *pMenu)
         double dScaleFactor = dMinimum;
         do
         {
-            /* Create exclusive 'scale-factor' action: */
+            /* Create exclusive 'rescale' action: */
             QAction *pAction = pActionGroup->addAction(QString());
-            AssertPtrReturnVoid(pAction);
+            if (pAction)
             {
                 pAction->setProperty("Guest Screen Index", iGuestScreenIndex);
                 /* For the 'unscaled' action: */
@@ -4032,8 +4040,8 @@ void UIActionPoolRuntime::updateMenuViewRescale(QMenu *pMenu)
         /* Insert group actions into menu: */
         pMenu->addActions(pActionGroup->actions());
         /* Install listener for exclusive action-group: */
-        connect(pActionGroup, SIGNAL(triggered(QAction*)),
-                this, SLOT(sltHandleActionTriggerViewScaleFactor(QAction*)));
+        connect(pActionGroup, &QActionGroup::triggered,
+                this, &UIActionPoolRuntime::sltHandleActionTriggerViewRescale);
     }
 }
 
