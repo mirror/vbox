@@ -200,20 +200,26 @@ typedef struct HDASTREAM
      *  For a stereo stream, this is u8Channel + 1. */
     uint8_t                  u8Channel;
     uint8_t                  Padding0[6];
-    /** DMA base address (SDnBDPU - SDnBDPL). */
+    /** DMA base address (SDnBDPU - SDnBDPL).
+     *  Will be updated in hdaR3StreamInit(). */
     uint64_t                 u64BDLBase;
     /** Cyclic Buffer Length (SDnCBL).
-     *  Represents the size of the ring buffer. */
+     *  Represents the size of the ring buffer.
+     *  Will be updated in hdaR3StreamInit(). */
     uint32_t                 u32CBL;
-    /** Format (SDnFMT). */
+    /** Format (SDnFMT).
+     *  Will be updated in hdaR3StreamInit(). */
     uint16_t                 u16FMT;
     /** FIFO Size (FIFOS).
      *  Maximum number of bytes that may have been DMA'd into
-     *  memory but not yet transmitted on the link. */
+     *  memory but not yet transmitted on the link.
+     *
+     *  Will be updated in hdaR3StreamInit(). */
     uint16_t                 u16FIFOS;
     /** FIFO Watermark. */
     uint16_t                 u16FIFOW;
-    /** Last Valid Index (SDnLVI). */
+    /** Last Valid Index (SDnLVI).
+     *  Will be updated in hdaR3StreamInit(). */
     uint16_t                 u16LVI;
     uint16_t                 Padding1[2];
     /** Pointer to the HDA state this stream is attached to. */

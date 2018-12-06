@@ -1263,16 +1263,6 @@ static int hdaRegWriteSDCBL(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 {
     DEVHDA_LOCK_RETURN(pThis, VINF_IOM_R3_MMIO_WRITE);
 
-    PHDASTREAM pStream = hdaGetStreamFromSD(pThis, HDA_SD_NUM_FROM_REG(pThis, CBL, iReg));
-    if (pStream)
-    {
-        pStream->u32CBL = u32Value;
-        LogFlowFunc(("[SD%RU8] CBL=%RU32\n", pStream->u8SD, u32Value));
-    }
-    else
-        LogFunc(("[SD%RU8] Warning: Changing SDCBL on non-attached stream (0x%x)\n",
-                 HDA_SD_NUM_FROM_REG(pThis, CTL, iReg), u32Value));
-
     int rc = hdaRegWriteU32(pThis, iReg, u32Value);
     AssertRCSuccess(rc);
 
@@ -1603,34 +1593,25 @@ static int hdaRegWriteSDLVI(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 {
     DEVHDA_LOCK_RETURN(pThis, VINF_IOM_R3_MMIO_WRITE);
 
-    if (HDA_REG_IND(pThis, iReg) == u32Value) /* Value already set? */
-    { /* nothing to do */ }
-    else
-    {
-        uint8_t    uSD     = HDA_SD_NUM_FROM_REG(pThis, LVI, iReg);
-        PHDASTREAM pStream = hdaGetStreamFromSD(pThis, uSD);
-        if (pStream)
-        {
-            /** @todo Validate LVI. */
-            pStream->u16LVI = u32Value;
-            LogFunc(("[SD%RU8] Updating LVI to %RU16\n", uSD, pStream->u16LVI));
-
 #ifdef HDA_USE_DMA_ACCESS_HANDLER
-            if (hdaGetDirFromSD(uSD) == PDMAUDIODIR_OUT)
-            {
-                /* Try registering the DMA handlers.
-                 * As we can't be sure in which order LVI + BDL base are set, try registering in both routines. */
-                if (hdaR3StreamRegisterDMAHandlers(pThis, pStream))
-                    LogFunc(("[SD%RU8] DMA logging enabled\n", pStream->u8SD));
-            }
-#endif
-        }
-        else
-            AssertMsgFailed(("[SD%RU8] Warning: Changing SDLVI on non-attached stream (0x%x)\n", uSD, u32Value));
+    uint8_t uSD = HDA_SD_NUM_FROM_REG(pThis, LVI, iReg);
 
-        int rc2 = hdaRegWriteU16(pThis, iReg, u32Value);
-        AssertRC(rc2);
+    if (hdaGetDirFromSD(uSD) == PDMAUDIODIR_OUT)
+    {
+        PHDASTREAM pStream = hdaGetStreamFromSD(pThis, uSD);
+
+        /* Try registering the DMA handlers.
+         * As we can't be sure in which order LVI + BDL base are set, try registering in both routines. */
+        if (   pStream
+            && hdaR3StreamRegisterDMAHandlers(pThis, pStream))
+        {
+            LogFunc(("[SD%RU8] DMA logging enabled\n", pStream->u8SD));
+        }
     }
+#endif
+
+    int rc2 = hdaRegWriteU16(pThis, iReg, u32Value);
+    AssertRC(rc2);
 
     DEVHDA_UNLOCK(pThis);
     return VINF_SUCCESS; /* Always return success to the MMIO handler. */
@@ -1710,17 +1691,7 @@ static int hdaRegWriteSDFIFOS(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
         return VINF_SUCCESS;
     }
 
-    PHDASTREAM pStream = hdaGetStreamFromSD(pThis, uSD);
-    if (!pStream)
-    {
-        AssertMsgFailed(("[SD%RU8] Warning: Changing FIFOS on non-attached stream (0x%x)\n", uSD, u32Value));
-
-        int rc = hdaRegWriteU16(pThis, iReg, u32Value);
-        DEVHDA_UNLOCK(pThis);
-        return rc;
-    }
-
-    uint32_t u32FIFOS = 0;
+    uint32_t u32FIFOS;
 
     switch(u32Value)
     {
@@ -1740,14 +1711,8 @@ static int hdaRegWriteSDFIFOS(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
             break;
     }
 
-    if (u32FIFOS)
-    {
-        pStream->u16FIFOS = u32FIFOS + 1;
-        LogFunc(("[SD%RU8] Updating FIFOS to %RU32 bytes\n", uSD, pStream->u16FIFOS));
-
-        int rc2 = hdaRegWriteU16(pThis, iReg, u32FIFOS);
-        AssertRC(rc2);
-    }
+    int rc2 = hdaRegWriteU16(pThis, iReg, u32FIFOS);
+    AssertRC(rc2);
 
     DEVHDA_UNLOCK(pThis);
     return VINF_SUCCESS; /* Always return success to the MMIO handler. */
@@ -2035,14 +2000,7 @@ static int hdaR3RemoveStream(PHDASTATE pThis, PPDMAUDIOSTREAMCFG pCfg)
 
 static int hdaRegWriteSDFMT(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 {
-    DEVHDA_LOCK(pThis);
-
-# ifdef LOG_ENABLED
-    if (!hdaGetStreamFromSD(pThis, HDA_SD_NUM_FROM_REG(pThis, FMT, iReg)))
-        LogFunc(("[SD%RU8] Warning: Changing SDFMT on non-attached stream (0x%x)\n",
-                 HDA_SD_NUM_FROM_REG(pThis, FMT, iReg), u32Value));
-# endif
-
+    DEVHDA_LOCK_RETURN(pThis, VINF_IOM_R3_MMIO_WRITE);
 
     /* Write the wanted stream format into the register in any case.
      *
@@ -2055,7 +2013,7 @@ static int hdaRegWriteSDFMT(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
     AssertRC(rc);
 
     DEVHDA_UNLOCK(pThis);
-    return VINF_SUCCESS; /* Never return failure. */
+    return VINF_SUCCESS; /* Always return success to the MMIO handler. */
 }
 
 /* Note: Will be called for both, BDPL and BDPU, registers. */
@@ -2064,31 +2022,25 @@ DECLINLINE(int) hdaRegWriteSDBDPX(PHDASTATE pThis, uint32_t iReg, uint32_t u32Va
 #ifdef IN_RING3
     DEVHDA_LOCK(pThis);
 
-    int rc2 = hdaRegWriteU32(pThis, iReg, u32Value);
-    AssertRC(rc2);
-
-    PHDASTREAM pStream = hdaGetStreamFromSD(pThis, uSD);
-    if (!pStream)
-    {
-        DEVHDA_UNLOCK(pThis);
-        return VINF_SUCCESS;
-    }
-
-    /* Update BDL base. */
-    pStream->u64BDLBase = RT_MAKE_U64(HDA_STREAM_REG(pThis, BDPL, uSD),
-                                      HDA_STREAM_REG(pThis, BDPU, uSD));
-
 # ifdef HDA_USE_DMA_ACCESS_HANDLER
     if (hdaGetDirFromSD(uSD) == PDMAUDIODIR_OUT)
     {
+        PHDASTREAM pStream = hdaGetStreamFromSD(pThis, uSD);
+
         /* Try registering the DMA handlers.
          * As we can't be sure in which order LVI + BDL base are set, try registering in both routines. */
-        if (hdaR3StreamRegisterDMAHandlers(pThis, pStream))
+        if (   pStream
+            && hdaR3StreamRegisterDMAHandlers(pThis, pStream))
+        {
             LogFunc(("[SD%RU8] DMA logging enabled\n", pStream->u8SD));
+        }
     }
+# else
+    RT_NOREF(uSD);
 # endif
 
-    LogFlowFunc(("[SD%RU8] BDLBase=0x%x\n", pStream->u8SD, pStream->u64BDLBase));
+    int rc2 = hdaRegWriteU32(pThis, iReg, u32Value);
+    AssertRC(rc2);
 
     DEVHDA_UNLOCK(pThis);
     return VINF_SUCCESS; /* Always return success to the MMIO handler. */

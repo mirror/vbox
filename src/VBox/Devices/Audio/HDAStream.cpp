@@ -202,7 +202,7 @@ int hdaR3StreamInit(PHDASTREAM pStream, uint8_t uSD)
     const uint16_t u16LVI     = HDA_STREAM_REG(pThis, LVI, uSD);
     const uint32_t u32CBL     = HDA_STREAM_REG(pThis, CBL, uSD);
     const uint16_t u16FIFOS   = HDA_STREAM_REG(pThis, FIFOS, uSD) + 1;
-    const uint32_t u32FMT     = HDA_STREAM_REG(pThis, FMT, uSD);
+    const uint16_t u16FMT     = HDA_STREAM_REG(pThis, FMT, uSD);
 
     /* Is the bare minimum set of registers configured for the stream?
      * If not, bail out early, as there's nothing to do here for us (yet). */
@@ -210,14 +210,14 @@ int hdaR3StreamInit(PHDASTREAM pStream, uint8_t uSD)
         || !u16LVI
         || !u32CBL
         || !u16FIFOS
-        || !u32FMT)
+        || !u16FMT)
     {
         LogFunc(("[SD%RU8] Registers not set up yet, skipping (re-)initialization\n", uSD));
         return VINF_SUCCESS;
     }
 
     PDMAUDIOPCMPROPS Props;
-    int rc = hdaR3SDFMTToPCMProps(u32FMT, &Props);
+    int rc = hdaR3SDFMTToPCMProps(u16FMT, &Props);
     if (RT_FAILURE(rc))
     {
         LogRel(("HDA: Warning: Format 0x%x for stream #%RU8 not supported\n", HDA_STREAM_REG(pThis, FMT, uSD), uSD));
@@ -261,17 +261,20 @@ int hdaR3StreamInit(PHDASTREAM pStream, uint8_t uSD)
         && u16LVI     == pStream->u16LVI
         && u32CBL     == pStream->u32CBL
         && u16FIFOS   == pStream->u16FIFOS
-        && DrvAudioHlpPCMPropsAreEqual(&Props, &pStream->State.Cfg.Props))
+        && u16FMT     == pStream->u16FMT)
     {
         LogFunc(("[SD%RU8] No format change, skipping (re-)initialization\n", uSD));
         return VINF_NO_CHANGE;
     }
 
     pStream->u8SD       = uSD;
+
+    /* Update all register copies so that we later know that something has changed. */
     pStream->u64BDLBase = u64BDLBase;
     pStream->u16LVI     = u16LVI;
     pStream->u32CBL     = u32CBL;
     pStream->u16FIFOS   = u16FIFOS;
+    pStream->u16FMT     = u16FMT;
 
     PPDMAUDIOSTREAMCFG pCfg = &pStream->State.Cfg;
     pCfg->Props = Props;
