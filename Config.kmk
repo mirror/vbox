@@ -2220,6 +2220,14 @@ ifeq ($(KBUILD_TARGET),darwin)
   VBOX_PATH_MACOSX_TOOLCHAIN_ROOT ?= $(VBOX_PATH_MACOSX_DEVEL_ROOT)
  endif
 
+# Where to search for SDKs.
+VBOX_PATH_MACOSX_SDK_ROOT_DIRS ?= \
+	$(VBOX_PATH_MACOSX_SDK_ROOT) \
+	$(KBUILD_DEVTOOLS)/darwin.x86/SDKs/ \
+	$(KBUILD_DEVTOOLS)/darwin.amd64/SDKs/ \
+	$(KBUILD_DEVTOOLS)/darwin.x86/xcode/v4.1/SDKs \
+	$(KBUILD_DEVTOOLS)/darwin.x86/xcode/v3.2.6/SDKs
+
  # Figure the default SDK location and obsolete linker tricks.
  ifeq ($(VBOX_DEF_MACOSX_VERSION_MIN),10.4)
   ifeq ($(origin VBOX_DARWIN_CLASSIC_LINKER),undefined)
@@ -2230,9 +2238,15 @@ ifeq ($(KBUILD_TARGET),darwin)
     export VBOX_DARWIN_CLASSIC_LINKER :=
    endif
   endif
-  VBOX_PATH_MACOSX_SDK ?= $(VBOX_PATH_MACOSX_SDK_ROOT)/MacOSX$(VBOX_DEF_MACOSX_VERSION_MIN)u.sdk
+  ifndef VBOX_PATH_MACOSX_SDK
+VBOX_PATH_MACOSX_SDK := $(firstword $(wildcard $(addsuffix /MacOSX$(VBOX_DEF_MACOSX_VERSION_MIN)u.sdk, $(VBOX_PATH_MACOSX_SDK_ROOT_DIRS))) \
+	$(VBOX_PATH_MACOSX_SDK_ROOT)/MacOSX$(VBOX_DEF_MACOSX_VERSION_MIN)u.sdk )
+  endif
  else
-  VBOX_PATH_MACOSX_SDK ?= $(VBOX_PATH_MACOSX_SDK_ROOT)/MacOSX$(VBOX_DEF_MACOSX_VERSION_MIN).sdk
+  ifndef VBOX_PATH_MACOSX_SDK
+VBOX_PATH_MACOSX_SDK := $(firstword $(wildcard $(addsuffix /MacOSX$(VBOX_DEF_MACOSX_VERSION_MIN).sdk, $(VBOX_PATH_MACOSX_SDK_ROOT_DIRS))) \
+	$(VBOX_PATH_MACOSX_SDK_ROOT)/MacOSX$(VBOX_DEF_MACOSX_VERSION_MIN).sdk )
+  endif
  endif
 
  ## The Xcode version.
