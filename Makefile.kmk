@@ -1318,7 +1318,7 @@ additions-build-darwin.amd64.build-it: additions-build-darwin.amd64.rsync-into-v
 additions-build-darwin.x86.build-it: additions-build-darwin.x86.rsync-into-vm
 	$(call VBOX_BLD_VM_MSG_BEGIN,Darwin/x86 Additions)
 	$(TIME) -- ssh vbox@$(VBOX_BLD_VM_DARWIN_X86_IP) 'cd /Users/vbox/tinderbox/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME) && tools/env.sh --no-wine kmk $(VBOX_ADDITIONS_BUILD.x86) all '     # VBOX_DEF_MACOSX_VERSION_MIN=10.5
-	$(TIME) -- ssh vbox@$(VBOX_BLD_VM_DARWIN_X86_IP) 'cd /Users/vbox/tinderbox/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME) && tools/env.sh --no-wine kmk $(VBOX_ADDITIONS_BUILD.x86) packing ' # VBOX_DEF_MACOSX_VERSION_MIN=10.5
+# no pkgbuild #	$(TIME) -- ssh vbox@$(VBOX_BLD_VM_DARWIN_X86_IP) 'cd /Users/vbox/tinderbox/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME) && tools/env.sh --no-wine kmk $(VBOX_ADDITIONS_BUILD.x86) packing ' # VBOX_DEF_MACOSX_VERSION_MIN=10.5
 	$(call VBOX_BLD_VM_MSG_END__,Darwin/x86 Additions)
 
 additions-build-darwin.amd64.rsync-out-of-vm: additions-build-darwin.amd64.build-it
@@ -1339,7 +1339,7 @@ endif
 additions-packing:
 	+ $(KMK) VBOX_ONLY_ADDITIONS=1 \
 		VBOX_WITH_ADDITIONS_ISO.darwin.amd64=1 \
-		VBOX_WITH_ADDITIONS_ISO.darwin.x86=1 \
+		VBOX_WITH_ADDITIONS_ISO.darwin.x86= \
 		VBOX_WITH_ADDITIONS_ISO.freebsd.amd64= \
 		VBOX_WITH_ADDITIONS_ISO.freebsd.x86= \
 		VBOX_WITH_ADDITIONS_ISO.linux.amd64= \
