@@ -13998,6 +13998,45 @@ DECLINLINE(VBOXSTRICTRC) iemExecOneInner(PVMCPU pVCpu, bool fExecuteInhibit, con
 //    AssertMsg(IEM_GET_INSTR_LEN(pVCpu) == cbInstr || rcStrict != VINF_SUCCESS, ("%u %u\n", IEM_GET_INSTR_LEN(pVCpu), cbInstr));
 //#endif
 
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
+    /*
+     * Perform any VMX nested-guest instruction boundary actions.
+     *
+     * If any of these causes a VM-exit, we must skip executing the next
+     * instruction (so we set fExecuteInhibit to false).
+     */
+    if (CPUMIsGuestInVmxNonRootMode(IEM_GET_CTX(pVCpu)))
+    {
+        /* TPR-below threshold/APIC write has the highest priority. */
+        if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_VMX_APIC_WRITE))
+        {
+            rcStrict = iemVmxApicWriteEmulation(pVCpu);
+            if (rcStrict != VINF_SUCCESS)
+                fExecuteInhibit = false;
+            Assert(!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_VMX_APIC_WRITE));
+        }
+        /* MTF takes priority over VMX-preemption timer. */
+        else if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_VMX_MTF))
+        {
+            rcStrict = iemVmxVmexitMtf(pVCpu);
+            fExecuteInhibit = false;
+            Assert(!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_VMX_MTF));
+        }
+        /** Finally, check if the VMX preemption timer has expired. */
+        else if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_VMX_PREEMPT_TIMER))
+        {
+            rcStrict = iemVmxVmexitPreemptTimer(pVCpu);
+            if (rcStrict == VINF_VMX_INTERCEPT_NOT_ACTIVE)
+                rcStrict = VINF_SUCCESS;
+            else
+            {
+                Assert(!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_VMX_PREEMPT_TIMER));
+                fExecuteInhibit = false;
+            }
+        }
+    }
+#endif
+
     /* Execute the next instruction as well if a cli, pop ss or
        mov ss, Gr has just completed successfully. */
     if (   fExecuteInhibit
