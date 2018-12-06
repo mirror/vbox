@@ -339,7 +339,7 @@ IEM_STATIC VBOXSTRICTRC iemSvmVmexit(PVMCPU pVCpu, uint64_t uExitCode, uint64_t 
 
 # if defined(VBOX_WITH_NESTED_HWVIRT_ONLY_IN_IEM) && defined(IN_RING3)
     /* CLGI/STGI may not have been intercepted and thus not executed in IEM. */
-    if (   HMIsEnabled(pVM)
+    if (   HMIsEnabled(pVCpu->CTX_SUFF(pVM))
         && HMSvmIsVGifActive(pVCpu->CTX_SUFF(pVM)))
         return EMR3SetExecutionPolicy(pVCpu->CTX_SUFF(pVM)->pUVM, EMEXECPOLICY_IEM_ALL, false);
 # endif
