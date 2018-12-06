@@ -246,10 +246,16 @@ void UIMachineView::destroy(UIMachineView *pMachineView)
 
 void UIMachineView::applyMachineViewScaleFactor()
 {
+    /* Sanity check: */
+    if (!frameBuffer())
+        return;
+
     /* Acquire selected scale-factor: */
     double dScaleFactor = gEDataManager->scaleFactor(vboxGlobal().managedVMUuid(), m_uScreenId);
 
     /* Take the device-pixel-ratio into account: */
+    frameBuffer()->setDevicePixelRatio(gpDesktop->devicePixelRatio(machineWindow()));
+    frameBuffer()->setDevicePixelRatioActual(gpDesktop->devicePixelRatioActual(machineWindow()));
     const double dDevicePixelRatioActual = frameBuffer()->devicePixelRatioActual();
     const bool fUseUnscaledHiDPIOutput = dScaleFactor != dDevicePixelRatioActual;
     dScaleFactor = fUseUnscaledHiDPIOutput ? dScaleFactor : 1.0;
@@ -608,9 +614,8 @@ void UIMachineView::sltMachineStateChanged()
                     display().InvalidateAndUpdate();
                 }
             }
-            /* Reapply machine-view scale-factor if necessary: */
-            if (m_pFrameBuffer)
-                applyMachineViewScaleFactor();
+            /* Reapply machine-view scale-factor: */
+            applyMachineViewScaleFactor();
             break;
         }
         default:
@@ -1463,19 +1468,8 @@ bool UIMachineView::eventFilter(QObject *pWatched, QEvent *pEvent)
                 {
                     /* Recache current host screen: */
                     m_iHostScreenNumber = iCurrentHostScreenNumber;
-
-                    /* Update frame-buffer arguments: */
-                    if (m_pFrameBuffer)
-                    {
-                        /* Update device-pixel-ratio for underlying frame-buffer: */
-                        m_pFrameBuffer->setDevicePixelRatio(gpDesktop->devicePixelRatio(machineWindow()));
-                        m_pFrameBuffer->setDevicePixelRatioActual(gpDesktop->devicePixelRatioActual(machineWindow()));
-                        /* Perform frame-buffer rescaling: */
-                        m_pFrameBuffer->performRescale();
-                    }
-
-                    /* Update console's display viewport and 3D overlay: */
-                    updateViewport();
+                    /* Reapply machine-view scale-factor if necessary: */
+                    applyMachineViewScaleFactor();
                 }
                 break;
             }
