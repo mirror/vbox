@@ -1270,7 +1270,7 @@ additions-build-darwin.amd64.rsync-into-vm:
 		'--exclude=src/VBox/HostDriver/**' \
 		'--exclude=src/VBox/HostService/**' \
 		'--exclude=src/VBox/ImageMounter/**' \
-		'--exclude=src/VBox/Installer/**' \
+		'--exclude=src/VBox/Installer/win/**' \
 		'--exclude=src/VBox/Main/**' \
 		'--exclude=src/VBox/NetworkService/**' \
 		'--exclude=src/VBox/RDP/**' \
@@ -1298,7 +1298,7 @@ additions-build-darwin.x86.rsync-into-vm:
 		'--exclude=src/VBox/HostDriver/**' \
 		'--exclude=src/VBox/HostService/**' \
 		'--exclude=src/VBox/ImageMounter/**' \
-		'--exclude=src/VBox/Installer/**' \
+		'--exclude=src/VBox/Installer/win/**' \
 		'--exclude=src/VBox/Main/**' \
 		'--exclude=src/VBox/NetworkService/**' \
 		'--exclude=src/VBox/RDP/**' \
