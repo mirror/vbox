@@ -3796,6 +3796,11 @@ static VBOXSTRICTRC hmR0SvmEvaluatePendingEventNested(PVMCPU pVCpu)
      *
      * Physical interrupts always take priority over virtual interrupts,
      * see AMD spec. 15.21.4 "Injecting Virtual (INTR) Interrupts".
+     *
+     * We don't need to inject nested-guest virtual interrupts here, we can let the hardware
+     * do that work when we execute nested guest code esp. since all the required information
+     * is in the VMCB, unlike physical interrupts where we need to fetch the interrupt from
+     * the virtual interrupt controller.
      */
     else if (   VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC)
              && !pVCpu->hm.s.fSingleInstruction)
