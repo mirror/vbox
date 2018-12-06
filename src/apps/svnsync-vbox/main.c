@@ -1549,8 +1549,9 @@ delete_entry(const char *path,
   if (prev_process && !ignore_everything)
   {
     eb->changeset_live = TRUE;
-    SVN_ERR(eb->wrapped_editor->delete_entry(path, base_revision,
-                                             pb->wrapped_node_baton, pool));
+    /* Deliberately ignore error, it's the only safe solution. */
+    eb->wrapped_editor->delete_entry(path, base_revision,
+                                     pb->wrapped_node_baton, pool);
   }
 
   return SVN_NO_ERROR;
@@ -1956,7 +1957,7 @@ open_file(const char *path,
                            pb->process_default, pb->process_recursive, path,
                            eb->current, &fb->process, NULL, NULL, pool));
     if (file_added_this_changeset)
-      fb->prev_process = fb->process;
+      fb->prev_process = FALSE;
     fb->prev_process_default = FALSE;
     fb->process_default = FALSE;
     DX(fprintf(stderr, "  %s (prev %s)\n", fb->process ? "EXPORT" : "IGNORE", fb->prev_process ? "EXPORT" : "IGNORE");)
