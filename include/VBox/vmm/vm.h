@@ -591,9 +591,9 @@ typedef struct VMCPU
 /** High priority post-execution actions. */
 #define VM_FF_HIGH_PRIORITY_POST_MASK           (  VM_FF_PGM_NO_MEMORY )
 /** High priority post-execution actions. */
-#define VMCPU_FF_HIGH_PRIORITY_POST_MASK        (  VMCPU_FF_PDM_CRITSECT  | VM_WHEN_RAW_MODE(VMCPU_FF_CSAM_PENDING_ACTION, 0) \
-                                                 | VMCPU_FF_HM_UPDATE_CR3 | VMCPU_FF_HM_UPDATE_PAE_PDPES \
-                                                 | VMCPU_FF_IEM           | VMCPU_FF_IOM )
+#define VMCPU_FF_HIGH_PRIORITY_POST_MASK        (  VMCPU_FF_PDM_CRITSECT   | VM_WHEN_RAW_MODE(VMCPU_FF_CSAM_PENDING_ACTION, 0) \
+                                                 | VMCPU_FF_HM_UPDATE_CR3  | VMCPU_FF_HM_UPDATE_PAE_PDPES \
+                                                 | VMCPU_FF_VMX_APIC_WRITE | VMCPU_FF_IEM | VMCPU_FF_IOM )
 
 /** Normal priority VM post-execution actions. */
 #define VM_FF_NORMAL_PRIORITY_POST_MASK         (  VM_FF_CHECK_VM_STATE | VM_FF_DBGF | VM_FF_RESET \
@@ -630,11 +630,13 @@ typedef struct VMCPU
 #define VMCPU_FF_YIELD_REPSTR_MASK              (  VMCPU_FF_HIGH_PRIORITY_POST_REPSTR_MASK \
                                                  | VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_UPDATE_APIC   | VMCPU_FF_INTERRUPT_PIC \
                                                  | VMCPU_FF_INTERRUPT_NMI  | VMCPU_FF_INTERRUPT_SMI | VMCPU_FF_PDM_CRITSECT \
-                                                 | VMCPU_FF_TIMER          | VMCPU_FF_REQUEST )
+                                                 | VMCPU_FF_TIMER          | VMCPU_FF_REQUEST       \
+                                                 | VMCPU_FF_INTERRUPT_NESTED_GUEST )
 /** VMCPU flags that cause the REP[|NE|E] STRINS loops to yield, interrupts
  *  disabled. */
 #define VMCPU_FF_YIELD_REPSTR_NOINT_MASK        (  VMCPU_FF_YIELD_REPSTR_MASK \
-                                                 & ~(VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_UPDATE_APIC   | VMCPU_FF_INTERRUPT_PIC) )
+                                                 & ~(  VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_UPDATE_APIC | VMCPU_FF_INTERRUPT_PIC \
+                                                     | VMCPU_FF_INTERRUPT_NESTED_GUEST) )
 
 /** VM Flags that cause the HM loops to go back to ring-3. */
 #define VM_FF_HM_TO_R3_MASK                     (  VM_FF_TM_VIRTUAL_SYNC | VM_FF_PGM_NEED_HANDY_PAGES | VM_FF_PGM_NO_MEMORY \

@@ -1694,6 +1694,19 @@ VBOXSTRICTRC emR3HighPriorityPostForcedActions(PVM pVM, PVMCPU pVCpu, VBOXSTRICT
             pVCpu->em.s.idxContinueExitRec = UINT16_MAX;
     }
 
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
+        /*
+         * VMX Nested-guest APIC-write pending (can cause VM-exits).
+         * Takes priority over even SMI and INIT signals.
+         * See Intel spec. 29.4.3.2 "APIC-Write Emulation".
+         */
+        if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_VMX_APIC_WRITE))
+        {
+            rc = VBOXSTRICTRC_VAL(IEMExecVmxVmexitApicWrite(pVCpu));
+            Assert(rc != VINF_VMX_INTERCEPT_NOT_ACTIVE);
+        }
+#endif
+
 #ifdef VBOX_WITH_RAW_MODE
     if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_CSAM_PENDING_ACTION))
         CSAMR3DoPendingAction(pVM, pVCpu);
@@ -2110,21 +2123,6 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
                 Log(("Leaving VMCPU_FF_INHIBIT_INTERRUPTS set at %RGv\n", (RTGCPTR)CPUMGetGuestRIP(pVCpu)));
         }
 
-#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
-        /*
-         * VMX Nested-guest APIC-write VM-exit.
-         * Takes priority over SMI, INIT signals.
-         * See Intel spec. 29.4.3.2 "APIC-Write Emulation".
-         */
-        if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_VMX_APIC_WRITE))
-        {
-            rc2 = VBOXSTRICTRC_VAL(IEMExecVmxVmexitApicWrite(pVCpu));
-            if (rc2 == VINF_VMX_INTERCEPT_NOT_ACTIVE)
-                rc2 = VINF_SUCCESS;
-            UPDATE_RC();
-        }
-#endif
-
         /** @todo SMIs. If we implement SMIs, this is where they will have to be
          *        delivered. */
 
@@ -2194,7 +2192,10 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
 #endif
             if (fGif)
             {
-                /* In VMX, virtual interrupt takes priority over physical interrupts. */
+                /*
+                 * With VMX, virtual interrupts takes priority over physical interrupts.
+                 * With SVM, physical interrupts takes priority over virtual interrupts.
+                 */
                 if (   VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INTERRUPT_NESTED_GUEST)
                     && CPUMIsGuestInVmxNonRootMode(&pVCpu->cpum.GstCtx)
                     && CPUMIsGuestVmxVirtIntrEnabled(pVCpu, &pVCpu->cpum.GstCtx))
@@ -2202,7 +2203,6 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
                     /** @todo NSTVMX: virtual-interrupt delivery. */
                     rc2 = VINF_NO_CHANGE;
                 }
-                /* In SVM, physical interrupts take priority over virtual interrupts. */
                 else if (   VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC)
                          && CPUMIsGuestPhysIntrEnabled(pVCpu))
                 {
@@ -2917,6 +2917,7 @@ VMMR3_INT_DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                                 APICUpdatePendingInterrupts(pVCpu);
 
                             if (VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC
+                                                         | VMCPU_FF_INTERRUPT_NESTED_GUEST
                                                          | VMCPU_FF_INTERRUPT_NMI  | VMCPU_FF_INTERRUPT_SMI | VMCPU_FF_UNHALT))
                             {
                                 Log(("EMR3ExecuteVM: Triggering reschedule on pending IRQ after MWAIT\n"));
