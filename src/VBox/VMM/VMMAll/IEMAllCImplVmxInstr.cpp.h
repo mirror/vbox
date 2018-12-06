@@ -7285,11 +7285,11 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmlaunchVmresume(PVMCPU pVCpu, uint8_t cbInstr, VM
                                  * to lowest as follows:
                                  *
                                  * 1.  Event injection.
-                                 * 2.  Trap on task-switch.
+                                 * 2.  Trap on task-switch (T flag set in TSS).
                                  * 3.  TPR below threshold / APIC-write.
                                  * 4.  SMI, INIT.
                                  * 5.  MTF exit.
-                                 * 6.  Debug-trap exceptions, pending debug exceptions.
+                                 * 6.  Debug-trap exceptions (EFLAGS.TF), pending debug exceptions.
                                  * 7.  VMX-preemption timer.
                                  * 9.  NMI-window exit.
                                  * 10. NMI injection.
