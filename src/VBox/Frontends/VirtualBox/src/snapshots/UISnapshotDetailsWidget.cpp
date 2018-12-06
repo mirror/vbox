@@ -1203,12 +1203,12 @@ QString UISnapshotDetailsWidget::detailsReport(DetailsElementType enmType,
         {
             /* Name: */
             ++iRowCount;
-            strItem += QString(sSectionItemTpl2).arg(QApplication::translate("UIGDetails", "Name", "details (general)"),
+            strItem += QString(sSectionItemTpl2).arg(QApplication::translate("UIDetails", "Name", "details (general)"),
                                                      empReport(comMachine.GetName(), comMachineOld.GetName()));
 
             /* Operating System: */
             ++iRowCount;
-            strItem += QString(sSectionItemTpl2).arg(QApplication::translate("UIGDetails", "Operating System", "details (general)"),
+            strItem += QString(sSectionItemTpl2).arg(QApplication::translate("UIDetails", "Operating System", "details (general)"),
                                                      empReport(vboxGlobal().vmGuestOSTypeDescription(comMachine.GetOSTypeId()),
                                                                vboxGlobal().vmGuestOSTypeDescription(comMachineOld.GetOSTypeId())));
 
@@ -1221,7 +1221,7 @@ QString UISnapshotDetailsWidget::detailsReport(DetailsElementType enmType,
                 QDir::toNativeSeparators(QFileInfo(strOldSettingsFilePath).absolutePath()) : QString();
 
             ++iRowCount;
-            strItem += QString(sSectionItemTpl2).arg(QApplication::translate("UIGDetails", "Settings File Location", "details (general)"),
+            strItem += QString(sSectionItemTpl2).arg(QApplication::translate("UIDetails", "Settings File Location", "details (general)"),
                                                      empReport(strSettingsFolder, strOldSettingsFolder));
 
             /* Groups? */
@@ -1230,7 +1230,7 @@ QString UISnapshotDetailsWidget::detailsReport(DetailsElementType enmType,
             if (!strGroups.isNull())
             {
                 ++iRowCount;
-                strItem += QString(sSectionItemTpl2).arg(QApplication::translate("UIGDetails", "Groups", "details (general)"),
+                strItem += QString(sSectionItemTpl2).arg(QApplication::translate("UIDetails", "Groups", "details (general)"),
                                                          empReport(strGroups, strGroupsOld));
             }
 
@@ -1240,9 +1240,9 @@ QString UISnapshotDetailsWidget::detailsReport(DetailsElementType enmType,
         {
             /* Base Memory: */
             ++iRowCount;
-            const QString strMemory = QApplication::translate("UIGDetails", "%1 MB", "details").arg(comMachine.GetMemorySize());
-            const QString strMemoryOld = QApplication::translate("UIGDetails", "%1 MB", "details").arg(comMachineOld.GetMemorySize());
-            strItem += QString(sSectionItemTpl2).arg(QApplication::translate("UIGDetails", "Base Memory", "details (system)"),
+            const QString strMemory = QApplication::translate("UIDetails", "%1 MB", "details").arg(comMachine.GetMemorySize());
+            const QString strMemoryOld = QApplication::translate("UIDetails", "%1 MB", "details").arg(comMachineOld.GetMemorySize());
+            strItem += QString(sSectionItemTpl2).arg(QApplication::translate("UIDetails", "Base Memory", "details (system)"),
                                                      empReport(strMemory, strMemoryOld));
 
             /* Processors? */
@@ -1251,7 +1251,7 @@ QString UISnapshotDetailsWidget::detailsReport(DetailsElementType enmType,
             if (cCpu > 1)
             {
                 ++iRowCount;
-                strItem += QString(sSectionItemTpl2).arg(QApplication::translate("UIGDetails", "Processors", "details (system)"),
+                strItem += QString(sSectionItemTpl2).arg(QApplication::translate("UIDetails", "Processors", "details (system)"),
                                                          empReport(QString::number(cCpu), QString::number(cCpuOld)));
             }
 
@@ -1260,9 +1260,9 @@ QString UISnapshotDetailsWidget::detailsReport(DetailsElementType enmType,
             if (uExecutionCap < 100)
             {
                 ++iRowCount;
-                const QString strExecutionCap = QApplication::translate("UIGDetails", "%1%", "details").arg(uExecutionCap);
-                const QString strExecutionCapOld = QApplication::translate("UIGDetails", "%1%", "details").arg(comMachineOld.GetCPUExecutionCap());
-                strItem += QString(sSectionItemTpl2).arg(QApplication::translate("UIGDetails", "Execution Cap", "details (system)"),
+                const QString strExecutionCap = QApplication::translate("UIDetails", "%1%", "details").arg(uExecutionCap);
+                const QString strExecutionCapOld = QApplication::translate("UIDetails", "%1%", "details").arg(comMachineOld.GetCPUExecutionCap());
+                strItem += QString(sSectionItemTpl2).arg(QApplication::translate("UIDetails", "Execution Cap", "details (system)"),
                                                          empReport(strExecutionCap, strExecutionCapOld));
             }
 
@@ -1270,7 +1270,7 @@ QString UISnapshotDetailsWidget::detailsReport(DetailsElementType enmType,
             ++iRowCount;
             const QString strBootOrder = bootOrderReport(comMachine);
             const QString strBootOrderOld = bootOrderReport(comMachineOld);
-            strItem += QString(sSectionItemTpl2).arg(QApplication::translate("UIGDetails", "Boot Order", "details (system)"),
+            strItem += QString(sSectionItemTpl2).arg(QApplication::translate("UIDetails", "Boot Order", "details (system)"),
                                                      empReport(strBootOrder, strBootOrderOld));
 
             /* Chipset Type? */
@@ -1279,7 +1279,7 @@ QString UISnapshotDetailsWidget::detailsReport(DetailsElementType enmType,
             if (enmChipsetType == KChipsetType_ICH9)
             {
                 ++iRowCount;
-                strItem += QString(sSectionItemTpl2).arg(QApplication::translate("UIGDetails", "Chipset Type", "details (system)"),
+                strItem += QString(sSectionItemTpl2).arg(QApplication::translate("UIDetails", "Chipset Type", "details (system)"),
                                                          empReport(gpConverter->toString(enmChipsetType),
                                                                    gpConverter->toString(enmChipsetTypeOld)));
             }
@@ -1290,7 +1290,7 @@ QString UISnapshotDetailsWidget::detailsReport(DetailsElementType enmType,
             if (!strEfiState.isNull())
             {
                 ++iRowCount;
-                strItem += QString(sSectionItemTpl2).arg(QApplication::translate("UIGDetails", "EFI", "details (system)"),
+                strItem += QString(sSectionItemTpl2).arg(QApplication::translate("UIDetails", "EFI", "details (system)"),
                                                          empReport(strEfiState, strEfiStateOld));
             }
 
@@ -1300,7 +1300,7 @@ QString UISnapshotDetailsWidget::detailsReport(DetailsElementType enmType,
             if (!strAcceleration.isNull())
             {
                 ++iRowCount;
-                strItem += QString(sSectionItemTpl2).arg(QApplication::translate("UIGDetails", "Acceleration", "details (system)"),
+                strItem += QString(sSectionItemTpl2).arg(QApplication::translate("UIDetails", "Acceleration", "details (system)"),
                                                          empReport(strAcceleration, strAccelerationOld));
             }
 
@@ -1318,9 +1318,9 @@ QString UISnapshotDetailsWidget::detailsReport(DetailsElementType enmType,
         {
             /* Video Memory: */
             ++iRowCount;
-            const QString strVram = QApplication::translate("UIGDetails", "%1 MB", "details").arg(comMachine.GetVRAMSize());
-            const QString strVramOld = QApplication::translate("UIGDetails", "%1 MB", "details").arg(comMachineOld.GetVRAMSize());
-            strItem += QString(sSectionItemTpl2).arg(QApplication::translate("UIGDetails", "Video Memory", "details (display)"),
+            const QString strVram = QApplication::translate("UIDetails", "%1 MB", "details").arg(comMachine.GetVRAMSize());
+            const QString strVramOld = QApplication::translate("UIDetails", "%1 MB", "details").arg(comMachineOld.GetVRAMSize());
+            strItem += QString(sSectionItemTpl2).arg(QApplication::translate("UIDetails", "Video Memory", "details (display)"),
                                                      empReport(strVram, strVramOld));
 
             /* Screens? */
@@ -1329,7 +1329,7 @@ QString UISnapshotDetailsWidget::detailsReport(DetailsElementType enmType,
             if (cScreens > 1)
             {
                 ++iRowCount;
-                strItem += QString(sSectionItemTpl2).arg(QApplication::translate("UIGDetails", "Screens", "details (display)"),
+                strItem += QString(sSectionItemTpl2).arg(QApplication::translate("UIDetails", "Screens", "details (display)"),
                                                          empReport(QString::number(cScreens), QString::number(cScreensOld)));
             }
 
@@ -1339,7 +1339,7 @@ QString UISnapshotDetailsWidget::detailsReport(DetailsElementType enmType,
             if (uScaleFactor != 1.0)
             {
                 ++iRowCount;
-                strItem += QString(sSectionItemTpl2).arg(QApplication::translate("UIGDetails", "Scale-factor", "details (display)"),
+                strItem += QString(sSectionItemTpl2).arg(QApplication::translate("UIDetails", "Scale-factor", "details (display)"),
                                                          empReport(QString::number(uScaleFactor, 'f', 2),
                                                                    QString::number(uScaleFactorOld, 'f', 2)));
             }
@@ -1348,7 +1348,7 @@ QString UISnapshotDetailsWidget::detailsReport(DetailsElementType enmType,
             ++iRowCount;
             const QString strGc = gpConverter->toString(comMachine.GetGraphicsControllerType());
             const QString strGcOld = gpConverter->toString(comMachineOld.GetGraphicsControllerType());
-            strItem += QString(sSectionItemTpl2).arg(QApplication::translate("UIGDetails", "Graphics Controller", "details (display)"),
+            strItem += QString(sSectionItemTpl2).arg(QApplication::translate("UIDetails", "Graphics Controller", "details (display)"),
                                                      empReport(strGc, strGcOld));
 
             /* Acceleration? */
@@ -1357,7 +1357,7 @@ QString UISnapshotDetailsWidget::detailsReport(DetailsElementType enmType,
             if (!strAcceleration.isNull())
             {
                 ++iRowCount;
-                strItem += QString(sSectionItemTpl2).arg(QApplication::translate("UIGDetails", "Acceleration", "details (display)"),
+                strItem += QString(sSectionItemTpl2).arg(QApplication::translate("UIDetails", "Acceleration", "details (display)"),
                                                          empReport(strAcceleration, strAccelerationOld));
             }
 
@@ -1367,14 +1367,14 @@ QString UISnapshotDetailsWidget::detailsReport(DetailsElementType enmType,
             if (!aVrdeReport.isEmpty())
             {
                 ++iRowCount;
-                strItem += QString(sSectionItemTpl2).arg(QApplication::translate("UIGDetails", "Remote Desktop Server Port", "details (display/vrde)"),
+                strItem += QString(sSectionItemTpl2).arg(QApplication::translate("UIDetails", "Remote Desktop Server Port", "details (display/vrde)"),
                                                          empReport(aVrdeReport.value(0), aVrdeReportOld.value(0)));
             }
             else
             {
                 ++iRowCount;
-                strItem += QString(sSectionItemTpl2).arg(QApplication::translate("UIGDetails", "Remote Desktop Server", "details (display/vrde)"),
-                                                         empReport(QApplication::translate("UIGDetails", "Disabled", "details (display/vrde/VRDE server)"), aVrdeReportOld.isEmpty()));
+                strItem += QString(sSectionItemTpl2).arg(QApplication::translate("UIDetails", "Remote Desktop Server", "details (display/vrde)"),
+                                                         empReport(QApplication::translate("UIDetails", "Disabled", "details (display/vrde/VRDE server)"), aVrdeReportOld.isEmpty()));
             }
 
             /* Recording: */
@@ -1383,17 +1383,17 @@ QString UISnapshotDetailsWidget::detailsReport(DetailsElementType enmType,
             if (!aRecordingReport.isEmpty())
             {
                 ++iRowCount;
-                strItem += QString(sSectionItemTpl2).arg(QApplication::translate("UIGDetails", "Recording File", "details (display/recording)"),
+                strItem += QString(sSectionItemTpl2).arg(QApplication::translate("UIDetails", "Recording File", "details (display/recording)"),
                                                          empReport(aRecordingReport.value(0), aRecordingReportOld.value(0)));
                 ++iRowCount;
-                strItem += QString(sSectionItemTpl2).arg(QApplication::translate("UIGDetails", "Recording Attributes", "details (display/recording)"),
+                strItem += QString(sSectionItemTpl2).arg(QApplication::translate("UIDetails", "Recording Attributes", "details (display/recording)"),
                                                          empReport(aRecordingReport.value(1), aRecordingReportOld.value(1)));
             }
             else
             {
                 ++iRowCount;
-                strItem += QString(sSectionItemTpl2).arg(QApplication::translate("UIGDetails", "Recording", "details (display/recording)"),
-                                                         empReport(QApplication::translate("UIGDetails", "Disabled", "details (display/recording)"), aRecordingReportOld.isEmpty()));
+                strItem += QString(sSectionItemTpl2).arg(QApplication::translate("UIDetails", "Recording", "details (display/recording)"),
+                                                         empReport(QApplication::translate("UIDetails", "Disabled", "details (display/recording)"), aRecordingReportOld.isEmpty()));
             }
 
             break;
@@ -1435,7 +1435,7 @@ QString UISnapshotDetailsWidget::detailsReport(DetailsElementType enmType,
             {
                 /* Not Attached: */
                 ++iRowCount;
-                strItem = QString(sSectionItemTpl1).arg(empReport(QApplication::translate("UIGDetails", "Not Attached", "details (storage)"), aControllersOld.isEmpty()));
+                strItem = QString(sSectionItemTpl1).arg(empReport(QApplication::translate("UIDetails", "Not Attached", "details (storage)"), aControllersOld.isEmpty()));
             }
 
             break;
@@ -1451,23 +1451,23 @@ QString UISnapshotDetailsWidget::detailsReport(DetailsElementType enmType,
             {
                 /* Host Driver: */
                 ++iRowCount;
-                strItem += QString(sSectionItemTpl2).arg(QApplication::translate("UIGDetails", "Host Driver", "details (audio)"),
+                strItem += QString(sSectionItemTpl2).arg(QApplication::translate("UIDetails", "Host Driver", "details (audio)"),
                                                          empReport(aReport.value(0), aReportOld.value(0)));
 
                 /* Controller: */
                 ++iRowCount;
-                strItem += QString(sSectionItemTpl2).arg(QApplication::translate("UIGDetails", "Controller", "details (audio)"),
+                strItem += QString(sSectionItemTpl2).arg(QApplication::translate("UIDetails", "Controller", "details (audio)"),
                                                          empReport(aReport.value(1), aReportOld.value(1)));
 
 #ifdef VBOX_WITH_AUDIO_INOUT_INFO
                 /* Output: */
                 ++iRowCount;
-                strItem += QString(sSectionItemTpl2).arg(QApplication::translate("UIGDetails", "Audio Output", "details (audio)"),
+                strItem += QString(sSectionItemTpl2).arg(QApplication::translate("UIDetails", "Audio Output", "details (audio)"),
                                                          empReport(aReport.value(2), aReportOld.value(2)));
 
                 /* Input: */
                 ++iRowCount;
-                strItem += QString(sSectionItemTpl2).arg(QApplication::translate("UIGDetails", "Audio Input", "details (audio)"),
+                strItem += QString(sSectionItemTpl2).arg(QApplication::translate("UIDetails", "Audio Input", "details (audio)"),
                                                          empReport(aReport.value(3), aReportOld.value(3)));
 #endif /* VBOX_WITH_AUDIO_INOUT_INFO */
             }
@@ -1477,7 +1477,7 @@ QString UISnapshotDetailsWidget::detailsReport(DetailsElementType enmType,
             {
                 /* Disabled: */
                 ++iRowCount;
-                strItem = QString(sSectionItemTpl1).arg(empReport(QApplication::translate("UIGDetails", "Disabled", "details (audio)"), aReportOld.isEmpty()));
+                strItem = QString(sSectionItemTpl1).arg(empReport(QApplication::translate("UIDetails", "Disabled", "details (audio)"), aReportOld.isEmpty()));
             }
 
             break;
@@ -1495,7 +1495,7 @@ QString UISnapshotDetailsWidget::detailsReport(DetailsElementType enmType,
                 const QString &strAdapterInformationOld = aReportOld.value(i);
                 /* Add adapter information: */
                 ++iRowCount;
-                strItem += QString(sSectionItemTpl2).arg(QApplication::translate("UIGDetails", "Adapter %1", "details (network)").arg(i + 1),
+                strItem += QString(sSectionItemTpl2).arg(QApplication::translate("UIDetails", "Adapter %1", "details (network)").arg(i + 1),
                                                          empReport(strAdapterInformation, strAdapterInformationOld));
             }
 
@@ -1504,7 +1504,7 @@ QString UISnapshotDetailsWidget::detailsReport(DetailsElementType enmType,
             {
                 /* Disabled: */
                 ++iRowCount;
-                strItem = QString(sSectionItemTpl1).arg(empReport(QApplication::translate("UIGDetails", "Disabled", "details (network/adapter)"), aReportOld.isEmpty()));
+                strItem = QString(sSectionItemTpl1).arg(empReport(QApplication::translate("UIDetails", "Disabled", "details (network/adapter)"), aReportOld.isEmpty()));
             }
 
             break;
@@ -1522,7 +1522,7 @@ QString UISnapshotDetailsWidget::detailsReport(DetailsElementType enmType,
                 const QString &strPortInformationOld = aReportOld.value(i);
                 /* Add port information: */
                 ++iRowCount;
-                strItem += QString(sSectionItemTpl2).arg(QApplication::translate("UIGDetails", "Port %1", "details (serial)").arg(i + 1),
+                strItem += QString(sSectionItemTpl2).arg(QApplication::translate("UIDetails", "Port %1", "details (serial)").arg(i + 1),
                                                          empReport(strPortInformation, strPortInformationOld));
             }
 
@@ -1531,7 +1531,7 @@ QString UISnapshotDetailsWidget::detailsReport(DetailsElementType enmType,
             {
                 /* Disabled: */
                 ++iRowCount;
-                strItem = QString(sSectionItemTpl1).arg(empReport(QApplication::translate("UIGDetails", "Disabled", "details (serial)"), aReportOld.isEmpty()));
+                strItem = QString(sSectionItemTpl1).arg(empReport(QApplication::translate("UIDetails", "Disabled", "details (serial)"), aReportOld.isEmpty()));
             }
 
             break;
@@ -1547,12 +1547,12 @@ QString UISnapshotDetailsWidget::detailsReport(DetailsElementType enmType,
             {
                 /* USB Controller: */
                 ++iRowCount;
-                strItem += QString(sSectionItemTpl2).arg(QApplication::translate("UIGDetails", "USB Controller", "details (usb)"),
+                strItem += QString(sSectionItemTpl2).arg(QApplication::translate("UIDetails", "USB Controller", "details (usb)"),
                                                          empReport(aReport.value(0), aReportOld.value(0)));
 
                 /* Device Filters: */
                 ++iRowCount;
-                strItem += QString(sSectionItemTpl2).arg(QApplication::translate("UIGDetails", "Device Filters", "details (usb)"),
+                strItem += QString(sSectionItemTpl2).arg(QApplication::translate("UIDetails", "Device Filters", "details (usb)"),
                                                          empReport(aReport.value(1), aReportOld.value(1)));
             }
 
@@ -1561,7 +1561,7 @@ QString UISnapshotDetailsWidget::detailsReport(DetailsElementType enmType,
             {
                 /* Disabled: */
                 ++iRowCount;
-                strItem = QString(sSectionItemTpl1).arg(empReport(QApplication::translate("UIGDetails", "Disabled", "details (usb)"), aReportOld.isEmpty()));
+                strItem = QString(sSectionItemTpl1).arg(empReport(QApplication::translate("UIDetails", "Disabled", "details (usb)"), aReportOld.isEmpty()));
             }
 
             break;
@@ -1574,13 +1574,13 @@ QString UISnapshotDetailsWidget::detailsReport(DetailsElementType enmType,
             if (cFolders > 0)
             {
                 ++iRowCount;
-                strItem = QString(sSectionItemTpl2).arg(QApplication::translate("UIGDetails", "Shared Folders", "details (shared folders)"),
+                strItem = QString(sSectionItemTpl2).arg(QApplication::translate("UIDetails", "Shared Folders", "details (shared folders)"),
                                                         empReport(QString::number(cFolders), QString::number(cFoldersOld)));
             }
             else
             {
                 ++iRowCount;
-                strItem = QString(sSectionItemTpl1).arg(empReport(QApplication::translate("UIGDetails", "None", "details (shared folders)"), cFoldersOld == 0));
+                strItem = QString(sSectionItemTpl1).arg(empReport(QApplication::translate("UIDetails", "None", "details (shared folders)"), cFoldersOld == 0));
             }
 
             break;
@@ -1652,12 +1652,12 @@ QString UISnapshotDetailsWidget::efiStateReport(const CMachine &comMachine)
         case KFirmwareType_EFI64:
         case KFirmwareType_EFIDUAL:
         {
-            strReport = QApplication::translate("UIGDetails", "Enabled", "details (system/EFI)");
+            strReport = QApplication::translate("UIDetails", "Enabled", "details (system/EFI)");
             break;
         }
         default:
         {
-            /* strReport = */ QApplication::translate("UIGDetails", "Disabled", "details (system/EFI)");
+            /* strReport = */ QApplication::translate("UIDetails", "Disabled", "details (system/EFI)");
             break;
         }
     }
@@ -1676,21 +1676,21 @@ QString UISnapshotDetailsWidget::accelerationReport(const CMachine &comMachine)
         /* VT-x/AMD-V? */
         if (comMachine.GetHWVirtExProperty(KHWVirtExPropertyType_Enabled))
         {
-            aReport << QApplication::translate("UIGDetails", "VT-x/AMD-V", "details (system)");
+            aReport << QApplication::translate("UIDetails", "VT-x/AMD-V", "details (system)");
             /* Nested Paging? */
             if (comMachine.GetHWVirtExProperty(KHWVirtExPropertyType_NestedPaging))
-                aReport << QApplication::translate("UIGDetails", "Nested Paging", "details (system)");
+                aReport << QApplication::translate("UIDetails", "Nested Paging", "details (system)");
         }
     }
     /* PAE/NX? */
     if (comMachine.GetCPUProperty(KCPUPropertyType_PAE))
-        aReport << QApplication::translate("UIGDetails", "PAE/NX", "details (system)");
+        aReport << QApplication::translate("UIDetails", "PAE/NX", "details (system)");
     /* Paravirtualization Interface? */
     switch (comMachine.GetEffectiveParavirtProvider())
     {
-        case KParavirtProvider_Minimal: aReport << QApplication::translate("UIGDetails", "Minimal Paravirtualization", "details (system)"); break;
-        case KParavirtProvider_HyperV:  aReport << QApplication::translate("UIGDetails", "Hyper-V Paravirtualization", "details (system)"); break;
-        case KParavirtProvider_KVM:     aReport << QApplication::translate("UIGDetails", "KVM Paravirtualization", "details (system)"); break;
+        case KParavirtProvider_Minimal: aReport << QApplication::translate("UIDetails", "Minimal Paravirtualization", "details (system)"); break;
+        case KParavirtProvider_HyperV:  aReport << QApplication::translate("UIDetails", "Hyper-V Paravirtualization", "details (system)"); break;
+        case KParavirtProvider_KVM:     aReport << QApplication::translate("UIDetails", "KVM Paravirtualization", "details (system)"); break;
         default: break;
     }
     /* Compose and return report: */
@@ -1723,11 +1723,11 @@ QString UISnapshotDetailsWidget::displayAccelerationReport(CMachine comMachine)
 #ifdef VBOX_WITH_VIDEOHWACCEL
     /* 2D Video Acceleration? */
     if (comMachine.GetAccelerate2DVideoEnabled())
-        aReport << QApplication::translate("UIGDetails", "2D Video", "details (display)");
+        aReport << QApplication::translate("UIDetails", "2D Video", "details (display)");
 #endif
     /* 3D Acceleration? */
     if (comMachine.GetAccelerate3DEnabled() && vboxGlobal().is3DAvailable())
-        aReport << QApplication::translate("UIGDetails", "3D", "details (display)");
+        aReport << QApplication::translate("UIDetails", "3D", "details (display)");
     /* Compose and return report: */
     return aReport.isEmpty() ? QString() : aReport.join(", ");
 }
@@ -1762,7 +1762,7 @@ QStringList UISnapshotDetailsWidget::recordingReport(CMachine comMachine)
         /* Recording file: */
         aReport << comRecordingScreen0Settings.GetFilename();
         /* Recording attributes: */
-        aReport << QApplication::translate("UIGDetails", "Frame Size: %1x%2, Frame Rate: %3fps, Bit Rate: %4kbps")
+        aReport << QApplication::translate("UIDetails", "Frame Size: %1x%2, Frame Rate: %3fps, Bit Rate: %4kbps")
                                            .arg(comRecordingScreen0Settings.GetVideoWidth())
                                            .arg(comRecordingScreen0Settings.GetVideoHeight())
                                            .arg(comRecordingScreen0Settings.GetVideoFPS())
@@ -1795,7 +1795,7 @@ QPair<QStringList, QList<QMap<QString, QString> > > UISnapshotDetailsWidget::sto
                                                                             comAttachment.GetPort(),
                                                                             comAttachment.GetDevice()))
                                         + (  comAttachment.GetType() == KDeviceType_DVD
-                                           ? QApplication::translate("UIGDetails", "[Optical Drive]", "details (storage)").prepend(' ')
+                                           ? QApplication::translate("UIDetails", "[Optical Drive]", "details (storage)").prepend(' ')
                                            : QString());
 
             /* Prepare current medium information: */
@@ -1832,13 +1832,13 @@ QStringList UISnapshotDetailsWidget::audioReport(CMachine comMachine)
 #ifdef VBOX_WITH_AUDIO_INOUT_INFO
         /* Output: */
         aReport << (  comAdapter.GetEnabledOut()
-                    ? QApplication::translate("UIGDetails", "Enabled", "details (audio/output)")
-                    : QApplication::translate("UIGDetails", "Disabled", "details (audio/output)"));
+                    ? QApplication::translate("UIDetails", "Enabled", "details (audio/output)")
+                    : QApplication::translate("UIDetails", "Disabled", "details (audio/output)"));
 
         /* Input: */
         aReport << (  comAdapter.GetEnabledIn()
-                    ? QApplication::translate("UIGDetails", "Enabled", "details (audio/input)")
-                    : QApplication::translate("UIGDetails", "Disabled", "details (audio/input)"));
+                    ? QApplication::translate("UIDetails", "Enabled", "details (audio/input)")
+                    : QApplication::translate("UIDetails", "Disabled", "details (audio/input)"));
 #endif /* VBOX_WITH_AUDIO_INOUT_INFO */
     }
     /* Return report: */
@@ -1866,29 +1866,29 @@ QStringList UISnapshotDetailsWidget::networkReport(CMachine comMachine)
             switch (enmType)
             {
                 case KNetworkAttachmentType_Bridged:
-                    strInfo = strInfo.arg(QApplication::translate("UIGDetails", "Bridged Adapter, %1", "details (network)")
+                    strInfo = strInfo.arg(QApplication::translate("UIDetails", "Bridged Adapter, %1", "details (network)")
                                                                   .arg(comAdapter.GetBridgedInterface()));
                     break;
                 case KNetworkAttachmentType_Internal:
-                    strInfo = strInfo.arg(QApplication::translate("UIGDetails", "Internal Network, '%1'", "details (network)")
+                    strInfo = strInfo.arg(QApplication::translate("UIDetails", "Internal Network, '%1'", "details (network)")
                                                                   .arg(comAdapter.GetInternalNetwork()));
                     break;
                 case KNetworkAttachmentType_HostOnly:
-                    strInfo = strInfo.arg(QApplication::translate("UIGDetails", "Host-only Adapter, '%1'", "details (network)")
+                    strInfo = strInfo.arg(QApplication::translate("UIDetails", "Host-only Adapter, '%1'", "details (network)")
                                                                   .arg(comAdapter.GetHostOnlyInterface()));
                     break;
                 case KNetworkAttachmentType_Generic:
                 {
                     QString strGenericDriverProperties(summarizeGenericProperties(comAdapter));
                     strInfo = strInfo.arg(  strGenericDriverProperties.isNull()
-                                          ? strInfo.arg(QApplication::translate("UIGDetails", "Generic Driver, '%1'", "details (network)")
+                                          ? strInfo.arg(QApplication::translate("UIDetails", "Generic Driver, '%1'", "details (network)")
                                                                                 .arg(comAdapter.GetGenericDriver()))
-                                          : strInfo.arg(QApplication::translate("UIGDetails", "Generic Driver, '%1' { %2 }", "details (network)")
+                                          : strInfo.arg(QApplication::translate("UIDetails", "Generic Driver, '%1' { %2 }", "details (network)")
                                                                                 .arg(comAdapter.GetGenericDriver(), strGenericDriverProperties)));
                     break;
                 }
                 case KNetworkAttachmentType_NATNetwork:
-                    strInfo = strInfo.arg(QApplication::translate("UIGDetails", "NAT Network, '%1'", "details (network)")
+                    strInfo = strInfo.arg(QApplication::translate("UIDetails", "NAT Network, '%1'", "details (network)")
                                                                   .arg(comAdapter.GetNATNetwork()));
                     break;
                 default:
@@ -1964,7 +1964,7 @@ QStringList UISnapshotDetailsWidget::usbReport(CMachine comMachine)
             foreach (const CUSBDeviceFilter &comFilter, aFilters)
                 if (comFilter.GetActive())
                     ++cActive;
-            aReport << QApplication::translate("UIGDetails", "%1 (%2 active)", "details (usb)")
+            aReport << QApplication::translate("UIDetails", "%1 (%2 active)", "details (usb)")
                                                .arg(aFilters.size()).arg(cActive);
         }
     }
