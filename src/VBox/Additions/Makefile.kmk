@@ -152,15 +152,23 @@ include $(FILE_KBUILD_SUB_FOOTER)
 ## @todo Create .pkg files not run files. The build server shall create a combined packaged, goverend by
 # the VBOX_WITH_COMBINED_DARWIN_GUEST_PACKAGE macro.
 ifdef VBOX_WITH_ADDITIONS_ISO.darwin.x86
- VBOX_PATH_ADDITIONS.darwin.x86 = $(PATH_OUT_BASE)/darwin.x86/$(KBUILD_TYPE)/dist
- GUESTADDITIONS_FILESPEC.darwin.x86 = \
-	VBoxDarwinAdditions-x86.dmg=$(VBOX_PATH_ADDITIONS.darwin.x86)/VBoxDarwinAdditions.dmg
+VBOX_PATH_ADDITIONS.darwin.x86 = $(PATH_OUT_BASE)/darwin.x86/$(KBUILD_TYPE)/dist/additions
+GUESTADDITIONS_FILESPEC.darwin.x86 = \
+	VBoxDarwinAdditionsLegacy.pkg=$(VBOX_PATH_ADDITIONS.darwin.x86)/VBoxGuestAdditions.pkg
+ ifndef VBOX_WITH_ADDITIONS_ISO.darwin.amd64
+GUESTADDITIONS_FILESPEC.darwin.x86 += \
+	VBoxDarwinAdditionsUninstall.tool=$(VBOX_PATH_ADDITIONS.darwin.x86)/VBoxDarwinAdditionsUninstall.tool
+ endif
 endif
 
 ifdef VBOX_WITH_ADDITIONS_ISO.darwin.amd64
- VBOX_PATH_ADDITIONS.darwin.amd64 = $(PATH_OUT_BASE)/darwin.amd64/$(KBUILD_TYPE)/dist
- GUESTADDITIONS_FILESPEC.darwin.amd64 = \
-	VBoxDarwinAdditions-amd64.dmg=$(VBOX_PATH_ADDITIONS.darwin.amd64)/VBoxDarwinAdditions.dmg
+VBOX_PATH_ADDITIONS.darwin.amd64 = $(PATH_OUT_BASE)/darwin.amd64/$(KBUILD_TYPE)/dist/additions
+GUESTADDITIONS_FILESPEC.darwin.amd64 = \
+	VBoxDarwinAdditions.pkg=$(VBOX_PATH_ADDITIONS.darwin.amd64)/VBoxGuestAdditions.pkg
+ ifndef VBOX_WITH_ADDITIONS_ISO.darwin.x86
+GUESTADDITIONS_FILESPEC.darwin.amd64 += \
+	VBoxDarwinAdditionsUninstall.tool=$(VBOX_PATH_ADDITIONS.darwin.amd64)/VBoxDarwinAdditionsUninstall.tool
+ endif
 endif
 
 # FreeBSD
