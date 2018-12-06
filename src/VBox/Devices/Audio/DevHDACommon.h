@@ -626,7 +626,7 @@ int           hdaR3DMAWrite(PHDASTATE pThis, PHDASTREAM pStream, const void *pvB
  */
 uint32_t      hdaGetINTSTS(PHDASTATE pThis);
 #ifdef IN_RING3
-int           hdaR3SDFMTToPCMProps(uint32_t u32SDFMT, PPDMAUDIOPCMPROPS pProps);
+int           hdaR3SDFMTToPCMProps(uint16_t u16SDFMT, PPDMAUDIOPCMPROPS pProps);
 #endif /* IN_RING3 */
 /** @} */
 

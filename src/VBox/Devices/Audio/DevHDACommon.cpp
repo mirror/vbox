@@ -482,10 +482,10 @@ uint32_t hdaGetINTSTS(PHDASTATE pThis)
  * Converts an HDA stream's SDFMT register into a given PCM properties structure.
  *
  * @return  IPRT status code.
- * @param   u32SDFMT            The HDA stream's SDFMT value to convert.
+ * @param   u16SDFMT            The HDA stream's SDFMT value to convert.
  * @param   pProps              PCM properties structure to hold converted result on success.
  */
-int hdaR3SDFMTToPCMProps(uint32_t u32SDFMT, PPDMAUDIOPCMPROPS pProps)
+int hdaR3SDFMTToPCMProps(uint16_t u16SDFMT, PPDMAUDIOPCMPROPS pProps)
 {
     AssertPtrReturn(pProps, VERR_INVALID_POINTER);
 
@@ -493,12 +493,12 @@ int hdaR3SDFMTToPCMProps(uint32_t u32SDFMT, PPDMAUDIOPCMPROPS pProps)
 
     int rc = VINF_SUCCESS;
 
-    uint32_t u32Hz     = EXTRACT_VALUE(u32SDFMT, HDA_SDFMT_BASE_RATE_MASK, HDA_SDFMT_BASE_RATE_SHIFT)
+    uint32_t u32Hz     = EXTRACT_VALUE(u16SDFMT, HDA_SDFMT_BASE_RATE_MASK, HDA_SDFMT_BASE_RATE_SHIFT)
                        ? 44100 : 48000;
     uint32_t u32HzMult = 1;
     uint32_t u32HzDiv  = 1;
 
-    switch (EXTRACT_VALUE(u32SDFMT, HDA_SDFMT_MULT_MASK, HDA_SDFMT_MULT_SHIFT))
+    switch (EXTRACT_VALUE(u16SDFMT, HDA_SDFMT_MULT_MASK, HDA_SDFMT_MULT_SHIFT))
     {
         case 0: u32HzMult = 1; break;
         case 1: u32HzMult = 2; break;
@@ -506,11 +506,11 @@ int hdaR3SDFMTToPCMProps(uint32_t u32SDFMT, PPDMAUDIOPCMPROPS pProps)
         case 3: u32HzMult = 4; break;
         default:
             LogFunc(("Unsupported multiplier %x\n",
-                     EXTRACT_VALUE(u32SDFMT, HDA_SDFMT_MULT_MASK, HDA_SDFMT_MULT_SHIFT)));
+                     EXTRACT_VALUE(u16SDFMT, HDA_SDFMT_MULT_MASK, HDA_SDFMT_MULT_SHIFT)));
             rc = VERR_NOT_SUPPORTED;
             break;
     }
-    switch (EXTRACT_VALUE(u32SDFMT, HDA_SDFMT_DIV_MASK, HDA_SDFMT_DIV_SHIFT))
+    switch (EXTRACT_VALUE(u16SDFMT, HDA_SDFMT_DIV_MASK, HDA_SDFMT_DIV_SHIFT))
     {
         case 0: u32HzDiv = 1; break;
         case 1: u32HzDiv = 2; break;
@@ -522,13 +522,13 @@ int hdaR3SDFMTToPCMProps(uint32_t u32SDFMT, PPDMAUDIOPCMPROPS pProps)
         case 7: u32HzDiv = 8; break;
         default:
             LogFunc(("Unsupported divisor %x\n",
-                     EXTRACT_VALUE(u32SDFMT, HDA_SDFMT_DIV_MASK, HDA_SDFMT_DIV_SHIFT)));
+                     EXTRACT_VALUE(u16SDFMT, HDA_SDFMT_DIV_MASK, HDA_SDFMT_DIV_SHIFT)));
             rc = VERR_NOT_SUPPORTED;
             break;
     }
 
     uint8_t cBytes = 0;
-    switch (EXTRACT_VALUE(u32SDFMT, HDA_SDFMT_BITS_MASK, HDA_SDFMT_BITS_SHIFT))
+    switch (EXTRACT_VALUE(u16SDFMT, HDA_SDFMT_BITS_MASK, HDA_SDFMT_BITS_SHIFT))
     {
         case 0:
             cBytes = 1;
@@ -541,7 +541,7 @@ int hdaR3SDFMTToPCMProps(uint32_t u32SDFMT, PPDMAUDIOPCMPROPS pProps)
             break;
         default:
             AssertMsgFailed(("Unsupported bits per sample %x\n",
-                             EXTRACT_VALUE(u32SDFMT, HDA_SDFMT_BITS_MASK, HDA_SDFMT_BITS_SHIFT)));
+                             EXTRACT_VALUE(u16SDFMT, HDA_SDFMT_BITS_MASK, HDA_SDFMT_BITS_SHIFT)));
             rc = VERR_NOT_SUPPORTED;
             break;
     }
@@ -552,7 +552,7 @@ int hdaR3SDFMTToPCMProps(uint32_t u32SDFMT, PPDMAUDIOPCMPROPS pProps)
 
         pProps->cBytes    = cBytes;
         pProps->fSigned   = true;
-        pProps->cChannels = (u32SDFMT & 0xf) + 1;
+        pProps->cChannels = (u16SDFMT & 0xf) + 1;
         pProps->uHz       = u32Hz * u32HzMult / u32HzDiv;
         pProps->cShift    = PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(pProps->cBytes, pProps->cChannels);
     }
