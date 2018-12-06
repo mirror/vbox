@@ -3590,39 +3590,17 @@ static int hdaR3SaveStream(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, PHDASTREAM pStre
         void  *pvBuf;
         size_t cbBuf;
         RTCircBufAcquireReadBlock(pStream->State.pCircBuf, cbCircBufUsed, &pvBuf, &cbBuf);
-#if 0 /** @todo r=bird: The disabled code crashes on me. The #else case contains something that seems
-       * to make more sense to me.  I'm not saying this is necessarily correct, so please review, fix, and remove. */
-
+        Assert(cbBuf);
         if (cbBuf)
         {
-            size_t cbToRead = cbCircBufUsed;
-            size_t cbEnd    = 0;
-
-            if (cbCircBufUsed > offBuf)
-                cbEnd = cbCircBufUsed - offBuf;
-
-            if (cbEnd) /* Save end of buffer first. */
+            rc = SSMR3PutMem(pSSM, pvBuf, cbBuf);
+            AssertRC(rc);
+            if (   RT_SUCCESS(rc)
+                && cbBuf < cbCircBufUsed)
             {
-                rc = SSMR3PutMem(pSSM, (uint8_t *)pvBuf + cbCircBufSize - cbEnd /* End of buffer */, cbEnd);
-                AssertRCReturn(rc, rc);
-
-                Assert(cbToRead >= cbEnd);
-                cbToRead -= cbEnd;
-            }
-
-            if (cbToRead) /* Save remaining stuff at start of buffer (if any). */
-            {
-                rc = SSMR3PutMem(pSSM, (uint8_t *)pvBuf - cbCircBufUsed /* Start of buffer */, cbToRead);
-                AssertRCReturn(rc, rc);
+                rc = SSMR3PutMem(pSSM, (uint8_t *)pvBuf - offBuf, cbCircBufUsed - cbBuf);
             }
         }
-
-#else
-        Assert(cbBuf);
-        rc = SSMR3PutMem(pSSM, pvBuf, cbBuf);
-        if (cbBuf < cbCircBufUsed)
-            rc = SSMR3PutMem(pSSM, (uint8_t *)pvBuf - offBuf, cbCircBufUsed - cbBuf);
-#endif
         RTCircBufReleaseReadBlock(pStream->State.pCircBuf, 0 /* Don't advance read pointer -- see comment above */);
     }
 
