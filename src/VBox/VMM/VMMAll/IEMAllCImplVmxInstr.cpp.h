@@ -3057,6 +3057,11 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitMtf(PVMCPU pVCpu)
      * not set (e.g. when VM-entry injects an MTF pending event), so do not
      * check for it here.
      */
+
+    /* Clear the force-flag indicating that monitor-trap flag is no longer active. */
+    VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_VMX_PREEMPT_TIMER);
+
+    /* Cause the MTF VM-exit. The VM-exit qualification MBZ. */
     iemVmxVmcsSetExitQual(pVCpu, 0);
     return iemVmxVmexit(pVCpu, VMX_EXIT_MTF);
 }
@@ -3771,9 +3776,11 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitPreemptTimer(PVMCPU pVCpu)
             if (pVmcs->u32ExitCtls & VMX_EXIT_CTLS_SAVE_PREEMPT_TIMER)
                 pVmcs->u32PreemptTimer = 0;
 
+            /* Clear the force-flag indicating the VMX-preemption timer no longer active. */
+            VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_VMX_PREEMPT_TIMER);
+
             /* Cause the VMX-preemption timer VM-exit. The VM-exit qualification MBZ. */
             iemVmxVmcsSetExitQual(pVCpu, 0);
-            VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_VMX_PREEMPT_TIMER);
             return iemVmxVmexit(pVCpu, VMX_EXIT_PREEMPT_TIMER);
         }
     }
@@ -4912,7 +4919,6 @@ IEM_STATIC VBOXSTRICTRC iemVmxApicWriteEmulation(PVMCPU pVCpu)
 {
     PCVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
     Assert(pVmcs);
-    Assert(pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_APIC_REG_VIRT);
 
     /*
      * Perform APIC-write emulation based on the virtual-APIC register written.
