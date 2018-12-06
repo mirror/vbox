@@ -2440,6 +2440,18 @@ static int pcnetAsyncTransmit(PPCNETSTATE pThis, bool fOnWorkerThread)
                      * length is 0, the OWN bit will be cleared. In the C-LANCE
                      * the buffer length of 0 is interpreted as a 4096-byte
                      * buffer.'' */
+                    /* r=michaln: Perhaps not quite right. The C-LANCE (Am79C90)
+                     * datasheet explains that the old LANCE (Am7990) ignored
+                     * the top four bits next to BCNT and a count of 0 was
+                     * interpreted as 4096. In the C-LANCE, that is still the
+                     * case if the top bits are all ones. If all 16 bits are
+                     * zero, the C-LANCE interprets it as zero-length transmit
+                     * buffer. It's not entirely clear if the later models
+                     * (PCnet-ISA, PCnet-PCI) behave like the C-LANCE or not.
+                     * It is possible that the actual behavior of the C-LANCE
+                     * and later hardware is that the buffer lengths are *16-bit*
+                     * two's complement numbers between 0 and 4096. AMD's drivers
+                     * in fact generally treat the length as a 16-bit quantity. */
                     LogRel(("PCNet#%d: pcnetAsyncTransmit: illegal 4kb frame -> ignoring\n", PCNET_INST_NR));
                     pcnetTmdStorePassHost(pThis, &tmd, PHYSADDR(pThis, CSR_CXDA(pThis)));
                     break;
