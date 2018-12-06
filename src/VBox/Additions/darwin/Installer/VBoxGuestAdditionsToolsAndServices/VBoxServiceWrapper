@@ -26,10 +26,14 @@ for item in $items; do
     loaded=`kextstat | grep $kext_item`
     if [ -z "$loaded" ] ; then
         echo "Loading $item kernel extension..."
-        kextload /Library/Extensions/$item.kext
+        XNU_VERSION=`LC_ALL=C uname -r | LC_ALL=C cut -d . -f 1`
+        if [ "$XNU_VERSION" -ge "10" ]; then
+            kextutil /Library/Extensions/$item.kext
+        else
+            kextload /Library/Extensions/$item.kext
+        fi
     fi
 done
 
-"/Library/Application Support/VirtualBox Guest Additions/VBoxService" -f
+exec "/Library/Application Support/VirtualBox Guest Additions/VBoxService" -f
 
-exit $?

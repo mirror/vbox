@@ -1,11 +1,11 @@
 #!/bin/sh
 # $Id$
 ## #file
-# VirtualBox Uninstaller Script.
+# VirtualBox Guest Additions uninstall script.
 #
 
 #
-# Copyright (C) 2007-2017 Oracle Corporation
+# Copyright (C) 2007-2018 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -103,6 +103,11 @@ for item in $items; do
         sudo -p "Please enter %u's password (removing $pkg_item):" pkgutil --forget "$pkg_item"
     fi
 done
+
+# Remove our kexts from the cache.
+echo "Updating kernel cache."
+sudo -p "Please enter %u's password (refreshing kext cache):" touch "/System/Library/Extensions/"
+sudo -p "Please enter %u's password (refreshing kext cache):" kextcache -update-volume /
 
 echo "Done."
 exit 0;

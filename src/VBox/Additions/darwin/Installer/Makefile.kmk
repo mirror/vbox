@@ -71,7 +71,10 @@ endif
 #
 # The packing.
 #
-PACKING += $(VBOX_PATH_DIST)/VBoxDarwinAdditions.dmg
+PACKING += \
+	$(PATH_STAGE)/$(INST_ADDITIONS)VBoxGuestAdditions.pkg \
+	$(PATH_STAGE)/$(INST_ADDITIONS)osx/Uninstall.tool
+
 #OTHER_CLEAN = TODO
 
 
@@ -96,47 +99,21 @@ ifeq ($(strip $(VBOX_PATH_PACK_TMP)),/)
 endif
 
 #
-# The disk image.
+# The packing targets.
 #
-$(VBOX_PATH_DIST)/VBoxDarwinAdditions.dmg: \
-		$(VBOX_PATH_PACK_TMP)/DiskImage/VBoxGuestAdditions.pkg \
-		$(VBOX_BRAND_DARWIN_DISKIMAGE_BG) \
-		$(VBOX_BRAND_DARWIN_DISKIMAGE_DS_STORE) \
-		$$(wildcard $(VBOX_ADD_PATH_DI_SRC)/DiskImage/*) \
-		$(VBOX_ADD_PATH_DI_SRC)/DiskImage/Uninstall.tool \
-		$(VBOX_DARWIN_INST_DEP_ON_MAKEFILE)
-	$(call MSG_TOOL,hdiutil,,,$@)
-	@# Cleanup any previously failed attempts and various trash.
-	sudo rm -Rf $(VBOX_PATH_PACK_TMP)/DiskImage.tmp
-	$(MKDIR) -p $(VBOX_PATH_PACK_TMP)/DiskImage.tmp/
-	sudo mv $(VBOX_PATH_PACK_TMP)/DiskImage/VBoxGuestAdditions.pkg $(VBOX_PATH_PACK_TMP)/DiskImage.tmp/
-	sudo rm -Rf \
-		$@ \
-		$(VBOX_PATH_PACK_TMP)/DiskImage/
-	sudo mv $(VBOX_PATH_PACK_TMP)/DiskImage.tmp $(VBOX_PATH_PACK_TMP)/DiskImage
-	@# Remove .dmg packages from old depend builds
-	$(QUIET)$(RM) -f $(wildcard $(VBOX_PATH_DIST)/VBoxDarwinAdditions-*-r*.dmg)
-	@# Populate the image with uninstaller, readme, picture, and .VolumeIcon.icns. (TODO)
-	$(INSTALL) $(VBOX_ADD_PATH_DI_SRC)/DiskImage/Uninstall.tool  $(VBOX_PATH_PACK_TMP)/DiskImage/
-ifeq (1,1)
-	@# Pedantic mode...
-	$(INSTALL) -m 644 $(VBOX_BRAND_DARWIN_DISKIMAGE_DS_STORE)           $(VBOX_PATH_PACK_TMP)/DiskImage/.DS_Store
-	$(MKDIR) $(VBOX_PATH_PACK_TMP)/DiskImage/.background
-	$(INSTALL) -m 644 $(VBOX_BRAND_DARWIN_DISKIMAGE_BG)                 $(VBOX_PATH_PACK_TMP)/DiskImage/.background/vbox_folder.tiff
-endif
-	@# Change the owners.
-	sudo chown -R root:admin $(VBOX_PATH_PACK_TMP)/DiskImage
-	@# Create the image.
-	sudo hdiutil create -format UDBZ -volname "VirtualBox Guest Additions" -srcfolder "$(VBOX_PATH_PACK_TMP)/DiskImage" "$@"
-	@# Change (back) the owner so it can be deleted by the user.
-	sudo chown "$(shell whoami)" "$@"
-	sudo chown -R "$(shell whoami)" $(VBOX_PATH_PACK_TMP)/DiskImage
+$(PATH_STAGE)/$(INST_ADDITIONS)VBoxGuestAdditions.pkg: $(VBOX_PATH_PACK_TMP)/VBoxGuestAdditions.pkg
+	$(MKDIR) -p "$(@D)"
+	$(INSTALL) -m 0644 -- "$<" "$@"
+
+$(PATH_STAGE)/$(INST_ADDITIONS)osx/Uninstall.tool: $(VBOX_ADD_PATH_DI_SRC)/DiskImage/Uninstall.tool
+	$(MKDIR) -p "$(@D)"
+	$(INSTALL) -m 0755 -- "$<" "$@"
+
 
 #
 # The meta-package.
 #
-
-$(VBOX_PATH_PACK_TMP)/DiskImage/VBoxGuestAdditions.pkg: \
+$(VBOX_PATH_PACK_TMP)/VBoxGuestAdditions.pkg: \
 		$(VBOX_PATH_PACK_TMP)/Packages/VBoxGuestAdditionsKEXTs.pkg \
 		$(VBOX_PATH_PACK_TMP)/Packages/VBoxGuestAdditionsToolsAndServices.pkg \
 		$$(wildcard $(VBOX_ADD_PATH_DI_SRC)/VBoxGuestAdditions_mpkg/* \
@@ -144,6 +121,7 @@ $(VBOX_PATH_PACK_TMP)/DiskImage/VBoxGuestAdditions.pkg: \
 		$(foreach f,$(VBOX_INSTALLER_ADD_LANGUAGES), $(VBOX_BRAND_$(f)_VIRTUALBOX_WELCOME_RTF)) \
 		$(VBOX_ADD_PATH_DI_SRC)/VBoxGuestAdditions_mpkg/Welcome.rtf \
 		$(VBOX_ADD_PATH_DI_SRC)/VBoxGuestAdditions_mpkg/Conclusion.rtf \
+		$(VBOX_ADD_PATH_DI_SRC)/VBoxGuestAdditions_mpkg/distribution-$(KBUILD_TARGET_ARCH).dist \
 		$(VBOX_DARWIN_INST_DEP_ON_MAKEFILE)
 	$(call MSG_TOOL,productbuild,,,$@)
 	@# Cleanup any previously failed attempts.
@@ -202,7 +180,7 @@ $(VBOX_PATH_PACK_TMP)/DiskImage/VBoxGuestAdditions.pkg: \
 
 	@# Build the package.
 	$(VBOX_PRODUCTBUILD) \
-		--distribution $(VBOX_ADD_PATH_DI_SRC)/VBoxGuestAdditions_mpkg/distribution.dist \
+		--distribution $(VBOX_ADD_PATH_DI_SRC)/VBoxGuestAdditions_mpkg/distribution-$(KBUILD_TARGET_ARCH).dist \
 		--package-path $(VBOX_PATH_PACK_TMP)/Packages \
 		--resources $(VBOX_PATH_PACK_TMP)/VBoxDarwinAdditions.dist.res \
 		--identifier org.VirtualBox.mpkg.GuestAdditions \
@@ -216,7 +194,7 @@ $(VBOX_PATH_PACK_TMP)/DiskImage/VBoxGuestAdditions.pkg: \
 		$(VBOX_PATH_PACK_TMP)/VBoxDarwinAdditions.dist.desc \
 		$(VBOX_PATH_PACK_TMP)/VBoxDarwinAdditions.dist.res
 
-VBoxDarwinAdditions.pkg:: $(VBOX_PATH_PACK_TMP)/DiskImage/VBoxDarwinAdditions.pkg
+VBoxDarwinAdditions.pkg:: $(VBOX_PATH_PACK_TMP)/VBoxDarwinAdditions.pkg
 
 #
 # The VirtualBox Kernel extensions.

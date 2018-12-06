@@ -14,30 +14,31 @@
 -->
 <installer-gui-script minSpecVersion="1.0">
     <title>VirtualBox_title</title>
-    <options customize="allow" allow-external-scripts="yes" rootVolumeOnly="true" hostArchitectures="i386"/>
-    <installation-check script="checkPrerequisite()"></installation-check>
+    <options customize="allow" allow-external-scripts="false" rootVolumeOnly="true" hostArchitectures="i386"/>
     <domains enable_anywhere="false" enable_currentUserHome="false" enable_localSystem="true"/>
+    <!-- This allowes a better error message compared to allowed-os-versions: -->
+    <installation-check script="checkPrerequisites()"></installation-check>
     <script>
     /* js:pkmk:start */
-    function checkPrerequisite()
+    function checkPrerequisites()
     {
-       try
-       {
-           test = system.version['ProductVersion'];
-           system.log("OS version detected: " + test);
-           result = (system.compareVersions(test, '10.6') >= 0);
-       } catch (e) { system.log(e); result = false; }
-
-       if (!result)
-       {
-           my.result.type = 'Fatal';
-           my.result.title = system.localizedString('UNSUPPORTED_OS_TLE');
-           my.result.message = system.localizedString('UNSUPPORTED_OS_MSG');
-           return result;
-       }
-
-       system.log("result:" + result);
-       return result;
+        sArch = system.sysctl('hw.machine');
+        system.log("Detected hw arch:    " + sArch);
+        sVer  = system.version['ProductVersion'];
+        system.log("Detected OS version: " + sVer);
+        if (sArch == 'x86_64')
+        {
+            if (system.compareVersions(sVer, '10.7') &gt;= 0)
+            {
+                system.log("checkPrerequisites returns true");
+                return true;
+            }
+        }
+        system.log("checkPrerequisites returns false!");
+        my.result.type    = 'Fatal';
+        my.result.title   = system.localizedString('UNSUPPORTED_AMD64_OS_TLE');
+        my.result.message = system.localizedString('UNSUPPORTED_AMD64_OS_MSG');
+        return false;
     }
     /* js:pkmk:end */
     </script>
@@ -51,7 +52,7 @@
     <choice id="choiceVBoxToolsAndServices" title="choiceVBoxToolsAndServices_title" description="choiceVBoxToolsAndServices_msg" start_selected="true" start_enabled="false" start_visible="true">
         <pkg-ref id="org.virtualbox.pkg.additions.tools-and-services"></pkg-ref>
     </choice>
-    <choice id="choiceVBoxKEXTs"   title="choiceVBoxKEXTs_title"   description="choiceVBoxKEXTs_msg"   start_selected="true" start_enabled="false" start_visible="true">
+    <choice id="choiceVBoxKEXTs" title="choiceVBoxKEXTs_title" description="choiceVBoxKEXTs_msg" start_selected="true" start_enabled="false" start_visible="true">
         <pkg-ref id="org.virtualbox.pkg.additions.kexts"></pkg-ref>
     </choice>
 
