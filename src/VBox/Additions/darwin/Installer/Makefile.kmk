@@ -73,7 +73,7 @@ endif
 #
 PACKING += \
 	$(PATH_STAGE)/$(INST_ADDITIONS)VBoxGuestAdditions.pkg \
-	$(PATH_STAGE)/$(INST_ADDITIONS)osx/Uninstall.tool
+	$(PATH_STAGE)/$(INST_ADDITIONS)VBoxDarwinAdditionsUninstall.tool
 
 #OTHER_CLEAN = TODO
 
@@ -105,7 +105,7 @@ $(PATH_STAGE)/$(INST_ADDITIONS)VBoxGuestAdditions.pkg: $(VBOX_PATH_PACK_TMP)/VBo
 	$(MKDIR) -p "$(@D)"
 	$(INSTALL) -m 0644 -- "$<" "$@"
 
-$(PATH_STAGE)/$(INST_ADDITIONS)osx/Uninstall.tool: $(VBOX_ADD_PATH_DI_SRC)/DiskImage/Uninstall.tool
+$(PATH_STAGE)/$(INST_ADDITIONS)osx/VBoxDarwinAdditionsUninstall.tool: $(VBOX_ADD_PATH_DI_SRC)/DiskImage/Uninstall.tool
 	$(MKDIR) -p "$(@D)"
 	$(INSTALL) -m 0755 -- "$<" "$@"
 
