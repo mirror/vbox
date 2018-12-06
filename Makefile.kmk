@@ -1336,6 +1336,8 @@ endif
 
 additions-packing:
 	+ $(KMK) VBOX_ONLY_ADDITIONS=1 \
+		VBOX_WITH_ADDITIONS_ISO.darwin.amd64=1 \
+		VBOX_WITH_ADDITIONS_ISO.darwin.x86=1 \
 		VBOX_WITH_ADDITIONS_ISO.freebsd.amd64= \
 		VBOX_WITH_ADDITIONS_ISO.freebsd.x86= \
 		VBOX_WITH_ADDITIONS_ISO.linux.amd64= \
