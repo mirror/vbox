@@ -35,7 +35,7 @@
 #include "CVirtualBoxErrorInfo.h"
 
 /* Other VBox includes: */
-#include <VBox/com/listeners.h>
+#include <VBox/com/listeners.h> /** @todo This drags in VirtualBox.h! It may be possible avoid it for XPCOM, but not COM due to VBoxEventType_T. */
 
 /* Forward declarations: */
 class QPoint;

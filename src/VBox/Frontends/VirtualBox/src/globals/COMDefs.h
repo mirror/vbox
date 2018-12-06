@@ -700,6 +700,12 @@ public:
 #endif
     }
 
+#ifdef VBOX_WITH_LESS_VIRTUALBOX_INCLUDING
+    virtual IID const &getIID() const = 0;
+#else
+    IID const &getIID() const { return COM_IIDOF(I); }
+#endif
+
     // utility methods
     void createInstance(const CLSID &aClsId)
     {
@@ -708,14 +714,12 @@ public:
         {
             I* pObj = NULL;
 #if !defined(VBOX_WITH_XPCOM)
-            B::mRC = CoCreateInstance(aClsId, NULL, CLSCTX_ALL,
-                                      COM_IIDOF(I), (void **)&pObj);
+            B::mRC = CoCreateInstance(aClsId, NULL, CLSCTX_ALL, getIID(), (void **)&pObj);
 #else
             nsCOMPtr<nsIComponentManager> manager;
             B::mRC = NS_GetComponentManager(getter_AddRefs(manager));
             if (SUCCEEDED(B::mRC))
-                B::mRC = manager->CreateInstance(aClsId, nsnull, NS_GET_IID(I),
-                                                 (void **)&pObj);
+                B::mRC = manager->CreateInstance(aClsId, nsnull, getIID(), (void **)&pObj);
 #endif
 
             if (SUCCEEDED(B::mRC))
@@ -745,7 +749,7 @@ public:
         if (aIface)
         {
             amIface = NULL;
-            B::mRC = aIface->QueryInterface(COM_IIDOF(I), (void **)&amIface);
+            B::mRC = aIface->QueryInterface(getIID(), (void **)&amIface);
             this->release((IUnknown*)aIface);
             setPtr(amIface);
         }
@@ -906,6 +910,12 @@ public:
 #endif
     }
 
+#ifdef VBOX_WITH_LESS_VIRTUALBOX_INCLUDING
+    virtual IID const &getIID() const = 0;
+#else
+    IID const &getIID() const { return COM_IIDOF(I); }
+#endif
+
     // utility methods
 
     void createInstance(const CLSID &clsId)
@@ -915,14 +925,12 @@ public:
         {
             I* pObj = NULL;
 #if !defined(VBOX_WITH_XPCOM)
-            COMBase::mRC = CoCreateInstance(clsId, NULL, CLSCTX_ALL,
-                                            COM_IIDOF(I), (void **)&pObj);
+            COMBase::mRC = CoCreateInstance(clsId, NULL, CLSCTX_ALL, getIID(), (void **)&pObj);
 #else
             nsCOMPtr<nsIComponentManager> manager;
             COMBase::mRC = NS_GetComponentManager(getter_AddRefs(manager));
             if (SUCCEEDED(COMBase::mRC))
-                COMBase::mRC = manager->CreateInstance(clsId, nsnull, NS_GET_IID(I),
-                                                       (void **)&pObj);
+                COMBase::mRC = manager->CreateInstance(clsId, nsnull, getIID(), (void **)&pObj);
 #endif
 
             if (SUCCEEDED(COMBase::mRC))
@@ -947,7 +955,7 @@ public:
         if (pIface)
         {
             pmIface = NULL;
-            COMBase::mRC = pIface->QueryInterface(COM_IIDOF(I), (void **)&pmIface);
+            COMBase::mRC = pIface->QueryInterface(getIID(), (void **)&pmIface);
             this->release((IUnknown*)pIface);
             setPtr(pmIface);
         }
@@ -1126,9 +1134,15 @@ public:
         Base::operator=(aIface);
         return *this;
     }
+
+#ifdef VBOX_WITH_LESS_VIRTUALBOX_INCLUDING
+    IID const &getIID() const RT_OVERRIDE { return COM_IIDOF(IUnknown); }
+#else
+    IID const &getIID() const { return COM_IIDOF(IUnknown); }
+#endif
 };
 
 /** @} */
 
-#endif // __COMDefs_h__
+#endif // !__COMDefs_h__
 
