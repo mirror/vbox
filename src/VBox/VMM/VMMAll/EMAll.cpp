@@ -248,14 +248,20 @@ VMM_INT_DECL(void) EMMonitorWaitClear(PVMCPU pVCpu)
  */
 VMM_INT_DECL(bool) EMMonitorWaitShouldContinue(PVMCPU pVCpu, PCPUMCTX pCtx)
 {
-    if (   pCtx->eflags.Bits.u1IF
-        || (   (pVCpu->em.s.MWait.fWait & (EMMWAIT_FLAG_ACTIVE | EMMWAIT_FLAG_BREAKIRQIF0))
-            ==                            (EMMWAIT_FLAG_ACTIVE | EMMWAIT_FLAG_BREAKIRQIF0)) )
+    if (CPUMGetGuestGif(pCtx))
     {
-        if (VMCPU_FF_IS_ANY_SET(pVCpu, (VMCPU_FF_UPDATE_APIC | VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC)))
+        if (   CPUMIsGuestPhysIntrEnabled(pVCpu)
+            || (   CPUMIsGuestInNestedHwvirtMode(pCtx)
+                && CPUMIsGuestVirtIntrEnabled(pVCpu))
+            || (   (pVCpu->em.s.MWait.fWait & (EMMWAIT_FLAG_ACTIVE | EMMWAIT_FLAG_BREAKIRQIF0))
+                ==                            (EMMWAIT_FLAG_ACTIVE | EMMWAIT_FLAG_BREAKIRQIF0)) )
         {
-            pVCpu->em.s.MWait.fWait &= ~(EMMWAIT_FLAG_ACTIVE | EMMWAIT_FLAG_BREAKIRQIF0);
-            return true;
+            if (VMCPU_FF_IS_ANY_SET(pVCpu, (  VMCPU_FF_UPDATE_APIC | VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC
+                                            | VMCPU_FF_INTERRUPT_NESTED_GUEST)))
+            {
+                pVCpu->em.s.MWait.fWait &= ~(EMMWAIT_FLAG_ACTIVE | EMMWAIT_FLAG_BREAKIRQIF0);
+                return true;
+            }
         }
     }
 
@@ -273,9 +279,15 @@ VMM_INT_DECL(bool) EMMonitorWaitShouldContinue(PVMCPU pVCpu, PCPUMCTX pCtx)
  */
 VMM_INT_DECL(bool) EMShouldContinueAfterHalt(PVMCPU pVCpu, PCPUMCTX pCtx)
 {
-    /** @todo Shouldn't we be checking GIF here? */
-    if (pCtx->eflags.Bits.u1IF)
-        return VMCPU_FF_IS_ANY_SET(pVCpu, (VMCPU_FF_UPDATE_APIC | VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC));
+    if (CPUMGetGuestGif(pCtx))
+    {
+        if (CPUMIsGuestPhysIntrEnabled(pVCpu))
+            return VMCPU_FF_IS_ANY_SET(pVCpu, (VMCPU_FF_UPDATE_APIC | VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC));
+
+        if (   CPUMIsGuestInNestedHwvirtMode(pCtx)
+            && CPUMIsGuestVirtIntrEnabled(pVCpu))
+            return VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INTERRUPT_NESTED_GUEST);
+    }
     return false;
 }
 
