@@ -8438,8 +8438,9 @@ static VBOXSTRICTRC hmR0VmxPreRunGuest(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient
 {
     Assert(VMMRZCallRing3IsEnabled(pVCpu));
 
-#ifdef VBOX_WITH_NESTED_HWVIRT_VMX_ONLY_IN_IEM
-    Log2(("hmR0SvmPreRunGuest: Rescheduling to IEM due to nested-hwvirt or forced IEM exec -> VINF_EM_RESCHEDULE_REM\n"));
+#ifdef VBOX_WITH_NESTED_HWVIRT_ONLY_IN_IEM
+    Log2(("hmR0VmxPreRunGuest: Rescheduling to IEM due to nested-hwvirt or forced IEM exec -> VINF_EM_RESCHEDULE_REM\n"));
+    RT_NOREF3(pVCpu, pVmxTransient, fStepping);
     return VINF_EM_RESCHEDULE_REM;
 #endif
 

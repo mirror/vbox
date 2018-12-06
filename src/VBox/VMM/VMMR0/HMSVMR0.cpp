@@ -4305,7 +4305,7 @@ static int hmR0SvmPreRunGuestNested(PVMCPU pVCpu, PSVMTRANSIENT pSvmTransient)
     HMSVM_ASSERT_PREEMPT_SAFE(pVCpu);
     HMSVM_ASSERT_IN_NESTED_GUEST(pCtx);
 
-#ifdef VBOX_WITH_NESTED_HWVIRT_SVM_ONLY_IN_IEM
+#ifdef VBOX_WITH_NESTED_HWVIRT_ONLY_IN_IEM
     Log2(("hmR0SvmPreRunGuest: Rescheduling to IEM due to nested-hwvirt or forced IEM exec -> VINF_EM_RESCHEDULE_REM\n"));
     return VINF_EM_RESCHEDULE_REM;
 #endif
