@@ -6,7 +6,8 @@
  *      AMD Am79C970A PCnet-PCI II Ethernet Controller Data-Sheet
  *      AMD Publication# 19436  Rev:E  Amendment/0  Issue Date: June 2000
  * and
- *      todo
+ *      AMD Am79C973/Am79C975 PCnet-FAST III Single-Chip 10/100 Mbps PCI Ethernet Controller datasheet
+ *      AMD publication# 20510  Rev:E  Amendment/0  Issue Date: August 2000
  */
 
 /*
@@ -23,7 +24,7 @@
  *
  * This code is based on:
  *
- * AMD PC-Net II (Am79C970A) emulation
+ * AMD PCnet-PCI II (Am79C970A) emulation
  *
  * Copyright (c) 2004 Antony T Curtis
  *
@@ -467,7 +468,7 @@ typedef struct PCNETSTATE
 #endif /* VBOX_WITH_STATISTICS */
 } PCNETSTATE;
 //AssertCompileMemberAlignment(PCNETSTATE, StatReceiveBytes, 8);
-/** Pointer to a PC-Net state structure. */
+/** Pointer to a PCnet state structure. */
 typedef PCNETSTATE *PPCNETSTATE;
 
 /** @todo All structs: big endian? */
@@ -3876,7 +3877,7 @@ static DECLCALLBACK(void) pcnetTimerRestore(PPDMDEVINS pDevIns, PTMTIMER pTimer,
 /* -=-=-=-=-=- PCI Device Callbacks -=-=-=-=-=- */
 
 /**
- * @callback_method_impl{FNPCIIOREGIONMAP, For the PC-NET I/O Ports.}
+ * @callback_method_impl{FNPCIIOREGIONMAP, For the PCnet I/O Ports.}
  */
 static DECLCALLBACK(int) pcnetIOPortMap(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t iRegion,
                                         RTGCPHYS GCPhysAddress, RTGCPHYS cb, PCIADDRESSSPACE enmType)
@@ -3927,7 +3928,7 @@ static DECLCALLBACK(int) pcnetIOPortMap(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, 
 
 
 /**
- * @callback_method_impl{FNPCIIOREGIONMAP, For the PC-Net MMIO region.}
+ * @callback_method_impl{FNPCIIOREGIONMAP, For the PCnet MMIO region.}
  */
 static DECLCALLBACK(int) pcnetMMIOMap(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t iRegion,
                                       RTGCPHYS GCPhysAddress, RTGCPHYS cb, PCIADDRESSSPACE enmType)
@@ -4445,7 +4446,7 @@ static DECLCALLBACK(int) pcnetLoadDone(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
  * the pfnRecieve() method is called.
  *
  * @returns VBox status code.
- * @param   pThis           The PC-Net instance data.
+ * @param   pThis           The PCnet instance data.
  */
 static int pcnetCanReceive(PPCNETSTATE pThis)
 {
@@ -5231,7 +5232,7 @@ const PDMDEVREG g_DevicePCNet =
     "",
 #endif
     /* pszDescription */
-    "AMD PC-Net II Ethernet controller.\n",
+    "AMD PCnet Ethernet controller.\n",
     /* fFlags */
 #ifdef PCNET_GC_ENABLED
     PDM_DEVREG_FLAGS_DEFAULT_BITS | PDM_DEVREG_FLAGS_RC | PDM_DEVREG_FLAGS_R0,
