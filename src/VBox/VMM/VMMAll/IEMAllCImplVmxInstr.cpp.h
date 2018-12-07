@@ -7919,7 +7919,8 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmclear(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEf
     }
     else
     {
-        rcStrict = PGMPhysSimpleWriteGCPhys(pVCpu->CTX_SUFF(pVM), GCPtrVmcs + RT_UOFFSETOF(VMXVVMCS, fVmcsState),
+        AssertCompileMemberSize(VMXVVMCS, fVmcsState, sizeof(fVmcsStateClear));
+        rcStrict = PGMPhysSimpleWriteGCPhys(pVCpu->CTX_SUFF(pVM), GCPhysVmcs + RT_UOFFSETOF(VMXVVMCS, fVmcsState),
                                             (const void *)&fVmcsStateClear, sizeof(fVmcsStateClear));
         if (RT_FAILURE(rcStrict))
             return rcStrict;
@@ -8102,15 +8103,15 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmptrld(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEf
     }
 
     /*
-     * We only maintain only the current VMCS in our virtual CPU context (CPUMCTX). Therefore,
-     * VMPTRLD shall always flush any existing current VMCS back to guest memory before loading
-     * a new VMCS as current.
+     * We maintain only the cache of the current VMCS in CPUMCTX. Therefore, VMPTRLD shall
+     * always flush the cache contents of any existing, current VMCS back to guest memory
+     * before loading a new VMCS as current.
      */
-    if (IEM_VMX_GET_CURRENT_VMCS(pVCpu) != GCPhysVmcs)
-    {
+    if (   IEM_VMX_HAS_CURRENT_VMCS(pVCpu)
+        && IEM_VMX_GET_CURRENT_VMCS(pVCpu) != GCPhysVmcs)
         iemVmxCommitCurrentVmcsToMemory(pVCpu);
-        IEM_VMX_SET_CURRENT_VMCS(pVCpu, GCPhysVmcs);
-    }
+
+    IEM_VMX_SET_CURRENT_VMCS(pVCpu, GCPhysVmcs);
 
     iemVmxVmSucceed(pVCpu);
     iemRegAddToRipAndClearRF(pVCpu, cbInstr);
