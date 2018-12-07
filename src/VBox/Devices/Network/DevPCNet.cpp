@@ -104,7 +104,7 @@
 /** Maximum frame size we handle */
 #define MAX_FRAME                       1536
 
-#define PCNETSTATE_2_DEVINS(pPCNet)            ((pPCNet)->CTX_SUFF(pDevIns))
+#define PCNETSTATE_2_DEVINS(pPCnet)            ((pPCnet)->CTX_SUFF(pDevIns))
 #define PCIDEV_2_PCNETSTATE(pPciDev)           RT_FROM_MEMBER((pPciDev), PCNETSTATE, PciDev)
 #define PCNET_INST_NR                          (PCNETSTATE_2_DEVINS(pThis)->iInstance)
 
@@ -1353,7 +1353,7 @@ static void pcnetUpdateRingHandlers(PPCNETSTATE pThis)
                                         pThis->hNoPollingHandlerType, pDevIns,
                                         pThis->pDevInsHC->pvInstanceDataHC,
                                         pThis->pDevInsHC->pvInstanceDataRC,
-                                        "PCNet receive ring write access handler");
+                                        "PCnet receive ring write access handler");
         AssertRC(rc);
 
         pThis->RDRAPhysOld = pThis->GCRDRA;
@@ -1390,7 +1390,7 @@ static void pcnetUpdateRingHandlers(PPCNETSTATE pThis)
                                             pThis->CTX_SUFF(pDevIns)->pvInstanceDataR3,
                                             pThis->CTX_SUFF(pDevIns)->pvInstanceDataR0,
                                             pThis->CTX_SUFF(pDevIns)->pvInstanceDataRC,
-                                            "PCNet transmit ring write access handler");
+                                            "PCnet transmit ring write access handler");
             AssertRC(rc);
 
             pThis->TDRAPhysOld = pThis->GCTDRA;
@@ -1503,7 +1503,7 @@ static void pcnetInit(PPCNETSTATE pThis)
     CSR_CRST(pThis) = CSR_CRBC(pThis) = CSR_NRST(pThis) = CSR_NRBC(pThis) = 0;
     CSR_CXST(pThis) = CSR_CXBC(pThis) = CSR_NXST(pThis) = CSR_NXBC(pThis) = 0;
 
-    LogRel(("PCNet#%d: Init: ss32=%d GCRDRA=%#010x[%d] GCTDRA=%#010x[%d]%s\n",
+    LogRel(("PCnet#%d: Init: ss32=%d GCRDRA=%#010x[%d] GCTDRA=%#010x[%d]%s\n",
             PCNET_INST_NR, BCR_SSIZE32(pThis),
             pThis->GCRDRA, CSR_RCVRL(pThis), pThis->GCTDRA, CSR_XMTRL(pThis),
             !pThis->fSignalRxMiss ? " (CSR0_MISS disabled)" : ""));
@@ -1622,7 +1622,7 @@ static void pcnetRdtePoll(PPCNETSTATE pThis, bool fSkipCurrent=false)
                  * Don't flood the release log with errors.
                  */
                 if (++pThis->uCntBadRMD < 50)
-                    LogRel(("PCNet#%d: BAD RMD ENTRIES AT %#010x (i=%d)\n",
+                    LogRel(("PCnet#%d: BAD RMD ENTRIES AT %#010x (i=%d)\n",
                             PCNET_INST_NR, addr, i));
                 return;
             }
@@ -1656,7 +1656,7 @@ static void pcnetRdtePoll(PPCNETSTATE pThis, bool fSkipCurrent=false)
              * Don't flood the release log with errors.
              */
             if (++pThis->uCntBadRMD < 50)
-                LogRel(("PCNet#%d: BAD RMD ENTRIES + AT %#010x (i=%d)\n",
+                LogRel(("PCnet#%d: BAD RMD ENTRIES + AT %#010x (i=%d)\n",
                         PCNET_INST_NR, addr, i));
             return;
         }
@@ -1693,7 +1693,7 @@ static int pcnetTdtePoll(PPCNETSTATE pThis, TMD *tmd)
         if (RT_UNLIKELY(tmd->tmd1.ones != 15))
         {
             STAM_PROFILE_ADV_STOP(&pThis->CTX_SUFF_Z(StatTdtePoll), a);
-            LogRel(("PCNet#%d: BAD TMD XDA=%#010x\n",
+            LogRel(("PCnet#%d: BAD TMD XDA=%#010x\n",
                     PCNET_INST_NR, PHYSADDR(pThis, cxda)));
             return 0;
         }
@@ -1755,7 +1755,7 @@ static int pcnetCalcPacketLen(PPCNETSTATE pThis, unsigned cb)
         if (RT_UNLIKELY(tmd.tmd1.ones != 15))
         {
             STAM_PROFILE_ADV_STOP(&pThis->CTX_SUFF_Z(StatTxLenCalc), a);
-            LogRel(("PCNet#%d: BAD TMD XDA=%#010x\n",
+            LogRel(("PCnet#%d: BAD TMD XDA=%#010x\n",
                     PCNET_INST_NR, PHYSADDR(pThis, addrDesc)));
             Log3(("#%d pcnetCalcPacketLen: bad TMD, return %u\n", PCNET_INST_NR, cbPacket));
             return cbPacket;
@@ -1813,7 +1813,7 @@ static void pcnetReceiveNoSync(PPCNETSTATE pThis, const uint8_t *buf, size_t cbT
         {
             /* Not owned by controller. This should not be possible as
              * we already called pcnetCanReceive(). */
-            LogRel(("PCNet#%d: no buffer: RCVRC=%d\n", PCNET_INST_NR, CSR_RCVRC(pThis)));
+            LogRel(("PCnet#%d: no buffer: RCVRC=%d\n", PCNET_INST_NR, CSR_RCVRC(pThis)));
             /* Dump the status of all RX descriptors */
             const unsigned  cb = 1 << pThis->iLog2DescSize;
             RTGCPHYS32      GCPhys = pThis->GCRDRA;
@@ -2452,7 +2452,7 @@ static int pcnetAsyncTransmit(PPCNETSTATE pThis, bool fOnWorkerThread)
                      * and later hardware is that the buffer lengths are *16-bit*
                      * two's complement numbers between 0 and 4096. AMD's drivers
                      * in fact generally treat the length as a 16-bit quantity. */
-                    LogRel(("PCNet#%d: pcnetAsyncTransmit: illegal 4kb frame -> ignoring\n", PCNET_INST_NR));
+                    LogRel(("PCnet#%d: pcnetAsyncTransmit: illegal 4kb frame -> ignoring\n", PCNET_INST_NR));
                     pcnetTmdStorePassHost(pThis, &tmd, PHYSADDR(pThis, CSR_CXDA(pThis)));
                     break;
                 }
@@ -2460,7 +2460,7 @@ static int pcnetAsyncTransmit(PPCNETSTATE pThis, bool fOnWorkerThread)
                 {
                     /* Signal error, as this violates the Ethernet specs. */
                     /** @todo check if the correct error is generated. */
-                    LogRel(("PCNet#%d: pcnetAsyncTransmit: illegal 4kb frame -> signalling error\n", PCNET_INST_NR));
+                    LogRel(("PCnet#%d: pcnetAsyncTransmit: illegal 4kb frame -> signalling error\n", PCNET_INST_NR));
 
                     pcnetXmitFailTMDGeneric(pThis, &tmd);
                 }
@@ -2633,7 +2633,7 @@ static int pcnetAsyncTransmit(PPCNETSTATE pThis, bool fOnWorkerThread)
  *
  * @returns VBox status code.  VERR_TRY_AGAIN is returned if we're busy.
  *
- * @param   pThis               The PCNet instance data.
+ * @param   pThis               The PCnet instance data.
  * @param   fOnWorkerThread     Whether we're on a worker thread or on an EMT.
  */
 static int pcnetXmitPending(PPCNETSTATE pThis, bool fOnWorkerThread)
@@ -2757,7 +2757,7 @@ static void pcnetPollTimer(PPCNETSTATE pThis)
          * heavy reprogramming the timer which turned out to be very CPU-intensive.
          * The drawback is that csr46 and csr47 are not updated properly anymore
          * but so far I have not seen any guest depending on these values. The 2ms
-         * interval is the default polling interval of the PCNet card (65536/33MHz). */
+         * interval is the default polling interval of the PCnet card (65536/33MHz). */
 #ifdef PCNET_NO_POLLING
         pcnetPollRxTx(pThis);
 #else
@@ -3857,7 +3857,7 @@ static DECLCALLBACK(void) pcnetTimerRestore(PPDMDEVINS pDevIns, PTMTIMER pTimer,
         pThis->fLinkTempDown = false;
         if (pThis->fLinkUp)
         {
-            LogRel(("PCNet#%d: The link is back up again after the restore.\n",
+            LogRel(("PCnet#%d: The link is back up again after the restore.\n",
                     pDevIns->iInstance));
             Log(("#%d pcnetTimerRestore: Clearing ERR and CERR after load. cLinkDownReported=%d\n",
                  pDevIns->iInstance, pThis->cLinkDownReported));
@@ -3890,33 +3890,33 @@ static DECLCALLBACK(int) pcnetIOPortMap(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, 
     Assert(cb >= 0x20);
 
     rc = PDMDevHlpIOPortRegister(pDevIns, Port, 0x10, 0, pcnetIOPortAPromWrite,
-                                 pcnetIOPortAPromRead, NULL, NULL, "PCNet ARPOM");
+                                 pcnetIOPortAPromRead, NULL, NULL, "PCnet APROM");
     if (RT_FAILURE(rc))
         return rc;
     rc = PDMDevHlpIOPortRegister(pDevIns, Port + 0x10, 0x10, 0, pcnetIOPortWrite,
-                                 pcnetIOPortRead, NULL, NULL, "PCNet");
+                                 pcnetIOPortRead, NULL, NULL, "PCnet");
     if (RT_FAILURE(rc))
         return rc;
 
     if (pThis->fGCEnabled)
     {
         rc = PDMDevHlpIOPortRegisterRC(pDevIns, Port, 0x10, 0, "pcnetIOPortAPromWrite",
-                                       "pcnetIOPortAPromRead", NULL, NULL, "PCNet aprom");
+                                       "pcnetIOPortAPromRead", NULL, NULL, "PCnet APROM");
         if (RT_FAILURE(rc))
             return rc;
         rc = PDMDevHlpIOPortRegisterRC(pDevIns, Port + 0x10, 0x10, 0, "pcnetIOPortWrite",
-                                       "pcnetIOPortRead", NULL, NULL, "PCNet");
+                                       "pcnetIOPortRead", NULL, NULL, "PCnet");
         if (RT_FAILURE(rc))
             return rc;
     }
     if (pThis->fR0Enabled)
     {
         rc = PDMDevHlpIOPortRegisterR0(pDevIns, Port, 0x10, 0, "pcnetIOPortAPromWrite",
-                                       "pcnetIOPortAPromRead", NULL, NULL, "PCNet aprom");
+                                       "pcnetIOPortAPromRead", NULL, NULL, "PCnet APROM");
         if (RT_FAILURE(rc))
             return rc;
         rc = PDMDevHlpIOPortRegisterR0(pDevIns, Port + 0x10, 0x10, 0, "pcnetIOPortWrite",
-                                       "pcnetIOPortRead", NULL, NULL, "PCNet");
+                                       "pcnetIOPortRead", NULL, NULL, "PCnet");
         if (RT_FAILURE(rc))
             return rc;
     }
@@ -3942,7 +3942,7 @@ static DECLCALLBACK(int) pcnetMMIOMap(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, ui
     /* We use the assigned size here, because we only support page aligned MMIO ranges. */
     rc = PDMDevHlpMMIORegister(pDevIns, GCPhysAddress, cb, pThis,
                                IOMMMIO_FLAGS_READ_PASSTHRU | IOMMMIO_FLAGS_WRITE_PASSTHRU,
-                               pcnetMMIOWrite, pcnetMMIORead, "PCNet");
+                               pcnetMMIOWrite, pcnetMMIORead, "PCnet");
     if (RT_FAILURE(rc))
         return rc;
     pThis->MMIOBase = GCPhysAddress;
@@ -4059,8 +4059,8 @@ static DECLCALLBACK(void) pcnetInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, cons
                     pThis->aCSR[58] & 0x7f,
                     (pThis->aCSR[58] & 0x7f) == 0 ? "C-LANCE / PCnet-ISA"
                     : (pThis->aCSR[58] & 0x7f) == 1 ? "ILACC"
-                    : (pThis->aCSR[58] & 0x7f) == 2 ? "PCNet-PCI II"
-                    : (pThis->aCSR[58] & 0x7f) == 3 ? "PCNet-PCI II controller"
+                    : (pThis->aCSR[58] & 0x7f) == 2 ? "PCnet-PCI II"
+                    : (pThis->aCSR[58] & 0x7f) == 3 ? "PCnet-PCI II controller"
                     : "!!reserved!!",
                     !!(pThis->aCSR[58] & RT_BIT(8)), !!(pThis->aCSR[58] & RT_BIT(9)), !!(pThis->aCSR[58] & RT_BIT(10)));
 
@@ -4188,7 +4188,7 @@ static DECLCALLBACK(void) pcnetInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, cons
  * connections have been lost and that it for instance is appropriate to
  * renegotiate any DHCP lease.
  *
- * @param  pThis        The PCNet instance data.
+ * @param  pThis        The PCnet instance data.
  */
 static void pcnetTempLinkDown(PPCNETSTATE pThis)
 {
@@ -4209,7 +4209,7 @@ static void pcnetTempLinkDown(PPCNETSTATE pThis)
 /**
  * Saves the configuration.
  *
- * @param   pThis       The PCNet instance data.
+ * @param   pThis       The PCnet instance data.
  * @param   pSSM        The saved state handle.
  */
 static void pcnetSaveConfig(PPCNETSTATE pThis, PSSMHANDLE pSSM)
@@ -4302,10 +4302,10 @@ static DECLCALLBACK(int) pcnetLoadPrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     {
         /* older saved states contain the shared memory region which was never used for ages. */
         void *pvSharedMMIOR3;
-        rc = PDMDevHlpMMIO2Register(pDevIns, &pThis->PciDev, 2, _512K, 0, (void **)&pvSharedMMIOR3, "PCNetSh");
+        rc = PDMDevHlpMMIO2Register(pDevIns, &pThis->PciDev, 2, _512K, 0, (void **)&pvSharedMMIOR3, "PCnetSh");
         if (RT_FAILURE(rc))
             rc = PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
-                                     N_("Failed to allocate the dummy shmem region for the PCNet device"));
+                                     N_("Failed to allocate the dummy shmem region for the PCnet device"));
         pThis->fSharedRegion = true;
     }
     PDMCritSectLeave(&pThis->CritSect);
@@ -4342,7 +4342,7 @@ static DECLCALLBACK(int) pcnetLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint
             if (fPrivIfEnabled)
             {
                 /* no longer implemented */
-                LogRel(("PCNet#%d: Cannot enabling private interface!\n", PCNET_INST_NR));
+                LogRel(("PCnet#%d: Cannot enable private interface!\n", PCNET_INST_NR));
                 return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
             }
         }
@@ -4367,7 +4367,7 @@ static DECLCALLBACK(int) pcnetLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint
     AssertRCReturn(rc, rc);
     if (    memcmp(&Mac, &pThis->MacConfigured, sizeof(Mac))
         && (uPass == 0 || !PDMDevHlpVMTeleportedAndNotFullyResumedYet(pDevIns)) )
-        LogRel(("PCNet#%u: The mac address differs: config=%RTmac saved=%RTmac\n", PCNET_INST_NR, &pThis->MacConfigured, &Mac));
+        LogRel(("PCnet#%u: The mac address differs: config=%RTmac saved=%RTmac\n", PCNET_INST_NR, &pThis->MacConfigured, &Mac));
 
     bool        fAm79C973;
     rc = SSMR3GetBool(pSSM, &fAm79C973);
@@ -4380,7 +4380,7 @@ static DECLCALLBACK(int) pcnetLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint
     AssertRCReturn(rc, rc);
     if (    pThis->u32LinkSpeed != u32LinkSpeed
         && (uPass == 0 || !PDMDevHlpVMTeleportedAndNotFullyResumedYet(pDevIns)) )
-        LogRel(("PCNet#%u: The mac link speed differs: config=%u saved=%u\n", PCNET_INST_NR, pThis->u32LinkSpeed, u32LinkSpeed));
+        LogRel(("PCnet#%u: The mac link speed differs: config=%u saved=%u\n", PCNET_INST_NR, pThis->u32LinkSpeed, u32LinkSpeed));
 
     if (uPass == SSM_PASS_FINAL)
     {
@@ -4556,11 +4556,11 @@ static DECLCALLBACK(int) pcnetNetworkDown_Receive(PPDMINETWORKDOWN pInterface, c
         if (s_fFirstBigFrameLoss)
         {
             s_fFirstBigFrameLoss = false;
-            Log(("PCNet#%d: Received giant frame %zu, max %u. (Further giants will be reported at level5.)\n",
+            Log(("PCnet#%d: Received giant frame %zu, max %u. (Further giants will be reported at level5.)\n",
                  PCNET_INST_NR, cb, cbMaxFrame));
         }
         else
-            Log5(("PCNet#%d: Received giant frame %zu bytes, max %u.\n",
+            Log5(("PCnet#%d: Received giant frame %zu bytes, max %u.\n",
                   PCNET_INST_NR, cb, cbMaxFrame));
     }
 #endif /* LOG_ENABLED */
@@ -4937,7 +4937,7 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     Assert(pThis->cMsLinkUpDelay <= 300000); /* less than 5 minutes */
     if (pThis->cMsLinkUpDelay > 5000 || pThis->cMsLinkUpDelay < 100)
     {
-        LogRel(("PCNet#%d WARNING! Link up delay is set to %u seconds!\n",
+        LogRel(("PCnet#%d WARNING! Link up delay is set to %u seconds!\n",
                 iInstance, pThis->cMsLinkUpDelay / 1000));
     }
     Log(("#%d Link up delay is set to %u seconds\n",
@@ -4998,7 +4998,7 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     /*
      * We use our own critical section (historical reasons).
      */
-    rc = PDMDevHlpCritSectInit(pDevIns, &pThis->CritSect, RT_SRC_POS, "PCNet#%u", iInstance);
+    rc = PDMDevHlpCritSectInit(pDevIns, &pThis->CritSect, RT_SRC_POS, "PCnet#%u", iInstance);
     AssertRCReturn(rc, rc);
     rc = PDMDevHlpSetDeviceCritSect(pDevIns, &pThis->CritSect);
     AssertRCReturn(rc, rc);
@@ -5032,13 +5032,13 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
                                           pcnetHandleRingWrite,
                                           g_DevicePCNet.szR0Mod, NULL, "pcnetHandleRingWritePf",
                                           g_DevicePCNet.szRCMod, NULL, "pcnetHandleRingWritePf",
-                                          "PCNet ring write access handler",
+                                          "PCnet ring write access handler",
                                           &pThis->hNoPollingHandlerType);
     AssertRCReturn(rc, rc);
 
 #else
     rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL, pcnetTimer, pThis,
-                                TMTIMER_FLAGS_NO_CRIT_SECT, "PCNet Poll Timer", &pThis->pTimerPollR3);
+                                TMTIMER_FLAGS_NO_CRIT_SECT, "PCnet Poll Timer", &pThis->pTimerPollR3);
     if (RT_FAILURE(rc))
         return rc;
     pThis->pTimerPollR0 = TMTimerR0Ptr(pThis->pTimerPollR3);
@@ -5049,7 +5049,7 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     {
         /* Software Interrupt timer */
         rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL, pcnetTimerSoftInt, pThis, /** @todo r=bird: the locking here looks bogus now with SMP... */
-                                    TMTIMER_FLAGS_NO_CRIT_SECT, "PCNet SoftInt Timer", &pThis->pTimerSoftIntR3);
+                                    TMTIMER_FLAGS_NO_CRIT_SECT, "PCnet SoftInt Timer", &pThis->pTimerSoftIntR3);
         if (RT_FAILURE(rc))
             return rc;
         pThis->pTimerSoftIntR0 = TMTimerR0Ptr(pThis->pTimerSoftIntR3);
@@ -5057,7 +5057,7 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
         TMR3TimerSetCritSect(pThis->pTimerSoftIntR3, &pThis->CritSect);
     }
     rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL, pcnetTimerRestore, pThis,
-                                TMTIMER_FLAGS_NO_CRIT_SECT, "PCNet Restore Timer", &pThis->pTimerRestore);
+                                TMTIMER_FLAGS_NO_CRIT_SECT, "PCnet Restore Timer", &pThis->pTimerRestore);
     if (RT_FAILURE(rc))
         return rc;
 
@@ -5072,7 +5072,7 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
      * Create the transmit queue.
      */
     rc = PDMDevHlpQueueCreate(pDevIns, sizeof(PDMQUEUEITEMCORE), 1, 0,
-                              pcnetXmitQueueConsumer, true, "PCNet-Xmit", &pThis->pXmitQueueR3);
+                              pcnetXmitQueueConsumer, true, "PCnet-Xmit", &pThis->pXmitQueueR3);
     if (RT_FAILURE(rc))
         return rc;
     pThis->pXmitQueueR0 = PDMQueueR0Ptr(pThis->pXmitQueueR3);
@@ -5082,7 +5082,7 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
      * Create the RX notifier signaller.
      */
     rc = PDMDevHlpQueueCreate(pDevIns, sizeof(PDMQUEUEITEMCORE), 1, 0,
-                              pcnetCanRxQueueConsumer, true, "PCNet-Rcv", &pThis->pCanRxQueueR3);
+                              pcnetCanRxQueueConsumer, true, "PCnet-Rcv", &pThis->pCanRxQueueR3);
     if (RT_FAILURE(rc))
         return rc;
     pThis->pCanRxQueueR0 = PDMQueueR0Ptr(pThis->pCanRxQueueR3);
@@ -5143,69 +5143,69 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
      */
     pcnetR3HardReset(pThis);
 
-    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatReceiveBytes,       STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_BYTES,          "Amount of data received",            "/Public/Net/PCNet%u/BytesReceived", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatTransmitBytes,      STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_BYTES,          "Amount of data transmitted",         "/Public/Net/PCNet%u/BytesTransmitted", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatReceiveBytes,       STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_BYTES,          "Amount of data received",            "/Public/Net/PCnet%u/BytesReceived", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatTransmitBytes,      STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_BYTES,          "Amount of data transmitted",         "/Public/Net/PCnet%u/BytesTransmitted", iInstance);
 
-    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatReceiveBytes,       STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_BYTES,          "Amount of data received",            "/Devices/PCNet%d/ReceiveBytes", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatTransmitBytes,      STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_BYTES,          "Amount of data transmitted",         "/Devices/PCNet%d/TransmitBytes", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatReceiveBytes,       STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_BYTES,          "Amount of data received",            "/Devices/PCnet%d/ReceiveBytes", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatTransmitBytes,      STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_BYTES,          "Amount of data transmitted",         "/Devices/PCnet%d/TransmitBytes", iInstance);
 
 #ifdef VBOX_WITH_STATISTICS
-    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatMMIOReadRZ,         STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling MMIO reads in RZ",         "/Devices/PCNet%d/MMIO/ReadRZ", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatMMIOReadR3,         STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling MMIO reads in R3",         "/Devices/PCNet%d/MMIO/ReadR3", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatMMIOWriteRZ,        STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling MMIO writes in RZ",        "/Devices/PCNet%d/MMIO/WriteRZ", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatMMIOWriteR3,        STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling MMIO writes in R3",        "/Devices/PCNet%d/MMIO/WriteR3", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatAPROMRead,          STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling APROM reads",              "/Devices/PCNet%d/IO/APROMRead", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatAPROMWrite,         STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling APROM writes",             "/Devices/PCNet%d/IO/APROMWrite", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatIOReadRZ,           STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling IO reads in RZ",           "/Devices/PCNet%d/IO/ReadRZ", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatIOReadR3,           STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling IO reads in R3",           "/Devices/PCNet%d/IO/ReadR3", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatIOWriteRZ,          STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling IO writes in RZ",          "/Devices/PCNet%d/IO/WriteRZ", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatIOWriteR3,          STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling IO writes in R3",          "/Devices/PCNet%d/IO/WriteR3", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatTimer,              STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling Timer",                    "/Devices/PCNet%d/Timer", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatReceive,            STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling receive",                  "/Devices/PCNet%d/Receive", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatRxOverflow,         STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_OCCURENCE, "Profiling RX overflows",        "/Devices/PCNet%d/RxOverflow", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatRxOverflowWakeup,   STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_OCCURENCE, "Nr of RX overflow wakeups",     "/Devices/PCNet%d/RxOverflowWakeup", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatTransmitCase1,      STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,     "Single descriptor transmit",         "/Devices/PCNet%d/Transmit/Case1", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatTransmitCase2,      STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,     "Multi descriptor transmit",          "/Devices/PCNet%d/Transmit/Case2", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatTransmitRZ,         STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling transmits in RZ",          "/Devices/PCNet%d/Transmit/TotalRZ", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatTransmitR3,         STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling transmits in R3",          "/Devices/PCNet%d/Transmit/TotalR3", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatTransmitSendRZ,     STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling PCNet send transmit in RZ","/Devices/PCNet%d/Transmit/SendRZ", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatTransmitSendR3,     STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling PCNet send transmit in R3","/Devices/PCNet%d/Transmit/SendR3", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatTxLenCalcRZ,        STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling PCNet TX len calc in RZ",  "/Devices/PCNet%d/Transmit/LenCalcRZ", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatTxLenCalcR3,        STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling PCNet TX len calc in R3",  "/Devices/PCNet%d/Transmit/LenCalcR3", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatTdtePollRZ,         STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling PCNet TdtePoll in RZ",     "/Devices/PCNet%d/TdtePollRZ", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatTdtePollR3,         STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling PCNet TdtePoll in R3",     "/Devices/PCNet%d/TdtePollR3", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatRdtePollRZ,         STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling PCNet RdtePoll in RZ",     "/Devices/PCNet%d/RdtePollRZ", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatRdtePollR3,         STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling PCNet RdtePoll in R3",     "/Devices/PCNet%d/RdtePollR3", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatMMIOReadRZ,         STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling MMIO reads in RZ",         "/Devices/PCnet%d/MMIO/ReadRZ", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatMMIOReadR3,         STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling MMIO reads in R3",         "/Devices/PCnet%d/MMIO/ReadR3", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatMMIOWriteRZ,        STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling MMIO writes in RZ",        "/Devices/PCnet%d/MMIO/WriteRZ", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatMMIOWriteR3,        STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling MMIO writes in R3",        "/Devices/PCnet%d/MMIO/WriteR3", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatAPROMRead,          STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling APROM reads",              "/Devices/PCnet%d/IO/APROMRead", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatAPROMWrite,         STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling APROM writes",             "/Devices/PCnet%d/IO/APROMWrite", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatIOReadRZ,           STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling IO reads in RZ",           "/Devices/PCnet%d/IO/ReadRZ", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatIOReadR3,           STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling IO reads in R3",           "/Devices/PCnet%d/IO/ReadR3", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatIOWriteRZ,          STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling IO writes in RZ",          "/Devices/PCnet%d/IO/WriteRZ", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatIOWriteR3,          STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling IO writes in R3",          "/Devices/PCnet%d/IO/WriteR3", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatTimer,              STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling Timer",                    "/Devices/PCnet%d/Timer", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatReceive,            STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling receive",                  "/Devices/PCnet%d/Receive", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatRxOverflow,         STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_OCCURENCE, "Profiling RX overflows",        "/Devices/PCnet%d/RxOverflow", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatRxOverflowWakeup,   STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_OCCURENCE, "Nr of RX overflow wakeups",     "/Devices/PCnet%d/RxOverflowWakeup", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatTransmitCase1,      STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,     "Single descriptor transmit",         "/Devices/PCnet%d/Transmit/Case1", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatTransmitCase2,      STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,     "Multi descriptor transmit",          "/Devices/PCnet%d/Transmit/Case2", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatTransmitRZ,         STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling transmits in RZ",          "/Devices/PCnet%d/Transmit/TotalRZ", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatTransmitR3,         STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling transmits in R3",          "/Devices/PCnet%d/Transmit/TotalR3", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatTransmitSendRZ,     STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling PCnet send transmit in RZ","/Devices/PCnet%d/Transmit/SendRZ", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatTransmitSendR3,     STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling PCnet send transmit in R3","/Devices/PCnet%d/Transmit/SendR3", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatTxLenCalcRZ,        STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling PCnet TX len calc in RZ",  "/Devices/PCnet%d/Transmit/LenCalcRZ", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatTxLenCalcR3,        STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling PCnet TX len calc in R3",  "/Devices/PCnet%d/Transmit/LenCalcR3", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatTdtePollRZ,         STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling PCnet TdtePoll in RZ",     "/Devices/PCnet%d/TdtePollRZ", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatTdtePollR3,         STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling PCnet TdtePoll in R3",     "/Devices/PCnet%d/TdtePollR3", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatRdtePollRZ,         STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling PCnet RdtePoll in RZ",     "/Devices/PCnet%d/RdtePollRZ", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatRdtePollR3,         STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling PCnet RdtePoll in R3",     "/Devices/PCnet%d/RdtePollR3", iInstance);
 
-    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatTmdStoreRZ,         STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling PCNet TmdStore in RZ",     "/Devices/PCNet%d/TmdStoreRZ", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatTmdStoreR3,         STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling PCNet TmdStore in R3",     "/Devices/PCNet%d/TmdStoreR3", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatTmdStoreRZ,         STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling PCnet TmdStore in RZ",     "/Devices/PCnet%d/TmdStoreRZ", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatTmdStoreR3,         STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling PCnet TmdStore in R3",     "/Devices/PCnet%d/TmdStoreR3", iInstance);
 
     unsigned i;
     for (i = 0; i < RT_ELEMENTS(pThis->aStatXmitFlush) - 1; i++)
-        PDMDevHlpSTAMRegisterF(pDevIns, &pThis->aStatXmitFlush[i],  STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES,       "",                                   "/Devices/PCNet%d/XmitFlushIrq/%d", iInstance, i + 1);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->aStatXmitFlush[i],      STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES,       "",                                   "/Devices/PCNet%d/XmitFlushIrq/%d+", iInstance, i + 1);
+        PDMDevHlpSTAMRegisterF(pDevIns, &pThis->aStatXmitFlush[i],  STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES,       "",                                   "/Devices/PCnet%d/XmitFlushIrq/%d", iInstance, i + 1);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->aStatXmitFlush[i],      STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES,       "",                                   "/Devices/PCnet%d/XmitFlushIrq/%d+", iInstance, i + 1);
 
     for (i = 0; i < RT_ELEMENTS(pThis->aStatXmitChainCounts) - 1; i++)
-        PDMDevHlpSTAMRegisterF(pDevIns, &pThis->aStatXmitChainCounts[i], STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES,  "",                                   "/Devices/PCNet%d/XmitChainCounts/%d", iInstance, i + 1);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->aStatXmitChainCounts[i], STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES,      "",                                   "/Devices/PCNet%d/XmitChainCounts/%d+", iInstance, i + 1);
+        PDMDevHlpSTAMRegisterF(pDevIns, &pThis->aStatXmitChainCounts[i], STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES,  "",                                   "/Devices/PCnet%d/XmitChainCounts/%d", iInstance, i + 1);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->aStatXmitChainCounts[i], STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES,      "",                                   "/Devices/PCnet%d/XmitChainCounts/%d+", iInstance, i + 1);
 
-    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatXmitSkipCurrent,    STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,     "",                                   "/Devices/PCNet%d/Xmit/Skipped", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatXmitSkipCurrent,    STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,     "",                                   "/Devices/PCnet%d/Xmit/Skipped", iInstance);
 
-    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatInterrupt,          STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling interrupt checks",         "/Devices/PCNet%d/UpdateIRQ", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatPollTimer,          STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling poll timer",               "/Devices/PCNet%d/PollTimer", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatMIIReads,           STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,     "Number of MII reads",                "/Devices/PCNet%d/MIIReads", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatInterrupt,          STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling interrupt checks",         "/Devices/PCnet%d/UpdateIRQ", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatPollTimer,          STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling poll timer",               "/Devices/PCnet%d/PollTimer", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatMIIReads,           STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,     "Number of MII reads",                "/Devices/PCnet%d/MIIReads", iInstance);
 # ifdef PCNET_NO_POLLING
-    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatRCVRingWrite,       STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,     "Nr of receive ring writes",          "/Devices/PCNet%d/Ring/RCVWrites", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatTXRingWrite,        STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,     "Nr of transmit ring writes",         "/Devices/PCNet%d/Ring/TXWrites", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatRingWriteR3,        STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,     "Nr of monitored ring page writes",   "/Devices/PCNet%d/Ring/R3/Writes", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatRingWriteR0,        STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,     "Nr of monitored ring page writes",   "/Devices/PCNet%d/Ring/R0/Writes", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatRingWriteRC,        STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,     "Nr of monitored ring page writes",   "/Devices/PCNet%d/Ring/RC/Writes", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatRingWriteFailedR3,  STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,     "Nr of failed ring page writes",      "/Devices/PCNet%d/Ring/R3/Failed", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatRingWriteFailedR0,  STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,     "Nr of failed ring page writes",      "/Devices/PCNet%d/Ring/R0/Failed", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatRingWriteFailedRC,  STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,     "Nr of failed ring page writes",      "/Devices/PCNet%d/Ring/RC/Failed", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatRingWriteOutsideR3, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,     "Nr of monitored writes outside ring","/Devices/PCNet%d/Ring/R3/Outside", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatRingWriteOutsideR0, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,     "Nr of monitored writes outside ring","/Devices/PCNet%d/Ring/R0/Outside", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatRingWriteOutsideRC, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,     "Nr of monitored writes outside ring","/Devices/PCNet%d/Ring/RC/Outside", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatRCVRingWrite,       STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,     "Nr of receive ring writes",          "/Devices/PCnet%d/Ring/RCVWrites", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatTXRingWrite,        STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,     "Nr of transmit ring writes",         "/Devices/PCnet%d/Ring/TXWrites", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatRingWriteR3,        STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,     "Nr of monitored ring page writes",   "/Devices/PCnet%d/Ring/R3/Writes", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatRingWriteR0,        STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,     "Nr of monitored ring page writes",   "/Devices/PCnet%d/Ring/R0/Writes", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatRingWriteRC,        STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,     "Nr of monitored ring page writes",   "/Devices/PCnet%d/Ring/RC/Writes", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatRingWriteFailedR3,  STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,     "Nr of failed ring page writes",      "/Devices/PCnet%d/Ring/R3/Failed", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatRingWriteFailedR0,  STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,     "Nr of failed ring page writes",      "/Devices/PCnet%d/Ring/R0/Failed", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatRingWriteFailedRC,  STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,     "Nr of failed ring page writes",      "/Devices/PCnet%d/Ring/RC/Failed", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatRingWriteOutsideR3, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,     "Nr of monitored writes outside ring","/Devices/PCnet%d/Ring/R3/Outside", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatRingWriteOutsideR0, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,     "Nr of monitored writes outside ring","/Devices/PCnet%d/Ring/R0/Outside", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatRingWriteOutsideRC, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,     "Nr of monitored writes outside ring","/Devices/PCnet%d/Ring/RC/Outside", iInstance);
 # endif /* PCNET_NO_POLLING */
 #endif /* VBOX_WITH_STATISTICS */
 
