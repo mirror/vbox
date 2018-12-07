@@ -470,11 +470,14 @@ fi
 "$INSTALLATION_DIR/init/vboxadd" setup 1>&2 2>> "${LOGFILE}"
 
 # Install, set up and start init scripts
-for i in "$INSTALLATION_DIR/init/vboxadd" "$INSTALLATION_DIR/init/vboxadd-service"; do
-    install_init_script "$i" "`basename "$i"`" 2>> "${LOGFILE}"
-    addrunlevel "`basename "$i"`" 2>> "${LOGFILE}"
-    start_init_script "`basename "$i"`" 2>> "${LOGFILE}"
-done
+install_init_script "$INSTALLATION_DIR"/init/vboxadd vboxadd 2>> "$LOGFILE"
+install_init_script "$INSTALLATION_DIR"/init/vboxadd-service vboxadd-service \
+    2>> "$LOGFILE"
+finish_init_script_install
+addrunlevel vboxadd 2>> "$LOGFILE"
+addrunlevel vboxadd-service 2>> "$LOGFILE"
+start_init_script vboxadd 2>> "$LOGFILE"
+start_init_script vboxadd-service 2>> "$LOGFILE"
 
 cp $ROUTINES $INSTALLATION_DIR
 echo $INSTALLATION_DIR/$ROUTINES >> "$CONFIG_DIR/$CONFIG_FILES"
@@ -508,14 +511,18 @@ fi
 test -r "$CONFIG_DIR/$CONFIG_FILES" || abort "Required file $CONFIG_FILES not found.  Aborting..."
 
 # Stop and clean up all services
-for i in "$INSTALLATION_DIR/init/vboxadd-service" "$INSTALLATION_DIR/init/vboxadd"; do
-    if test -r "\$i"; then
-        stop_init_script "\`basename "\$i"\`" 2>> "${LOGFILE}"
-        test -z "\${NO_CLEANUP}" && grep -q '^# *cleanup_script *$' "\${i}" && "\${i}" cleanup 2>> "\$LOGFILE"
-        delrunlevel "\`basename "\$i"\`" 2>> "${LOGFILE}"
-        remove_init_script "\`basename "\$i"\`" 2>> "${LOGFILE}"
-    fi
-done
+if test -r "$INSTALLATION_DIR"/init/vboxadd-service; then
+    stop_init_script vboxadd-service 2>> "\$LOGFILE"
+    delrunlevel vboxadd-service 2>> "\$LOGFILE"
+    remove_init_script vboxadd-service 2>> "\$LOGFILE"
+fi
+if test -r "$INSTALLATION_DIR"/init/vboxadd; then
+    stop_init_script vboxadd 2>> "\$LOGFILE"
+    test -n "\$NO_CLEANUP" || "$INSTALLATION_DIR"/init/vboxadd cleanup 2>> "\$LOGFILE"
+    delrunlevel vboxadd 2>> "\$LOGFILE"
+    remove_init_script vboxadd 2>> "\$LOGFILE"
+fi
+finish_init_script_install
 
 # Load all modules
 # Important: This needs to be done before loading the configuration

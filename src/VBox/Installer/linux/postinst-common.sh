@@ -56,6 +56,7 @@ install_init_script "${MY_PATH}/vboxdrv.sh" vboxdrv
 install_init_script "${MY_PATH}/vboxballoonctrl-service.sh" vboxballoonctrl-service
 install_init_script "${MY_PATH}/vboxautostart-service.sh" vboxautostart-service
 install_init_script "${MY_PATH}/vboxweb-service.sh" vboxweb-service
+finish_init_script_install
 
 delrunlevel vboxdrv
 addrunlevel vboxdrv
