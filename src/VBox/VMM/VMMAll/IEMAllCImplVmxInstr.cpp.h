@@ -2830,6 +2830,8 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexit(PVMCPU pVCpu, uint32_t uExitReason)
     RT_NOREF2(pVCpu, uExitReason);
     return VINF_EM_RAW_EMULATE_INSTR;
 # else
+    IEM_CTX_ASSERT(pVCpu, IEM_CPUMCTX_EXTRN_VMX_VMEXIT_MASK);
+
     PVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
     Assert(pVmcs);
 
@@ -7151,16 +7153,14 @@ IEM_STATIC int iemVmxVmentryInjectEvent(PVMCPU pVCpu, const char *pszInstr)
  * @param   cbInstr         The instruction length in bytes.
  * @param   uInstrId        The instruction identity (VMXINSTRID_VMLAUNCH or
  *                          VMXINSTRID_VMRESUME).
- * @param   pExitInfo       Pointer to the VM-exit instruction information struct.
- *                          Optional, can  be NULL.
  *
  * @remarks Common VMX instruction checks are already expected to by the caller,
  *          i.e. CR4.VMXE, Real/V86 mode, EFER/CS.L checks.
  */
-IEM_STATIC VBOXSTRICTRC iemVmxVmlaunchVmresume(PVMCPU pVCpu, uint8_t cbInstr, VMXINSTRID uInstrId, PCVMXVEXITINFO pExitInfo)
+IEM_STATIC VBOXSTRICTRC iemVmxVmlaunchVmresume(PVMCPU pVCpu, uint8_t cbInstr, VMXINSTRID uInstrId)
 {
 # if defined(VBOX_WITH_NESTED_HWVIRT_ONLY_IN_IEM) && !defined(IN_RING3)
-    RT_NOREF4(pVCpu, cbInstr, uInstrId, pExitInfo);
+    RT_NOREF3(pVCpu, cbInstr, uInstrId);
     return VINF_EM_RAW_EMULATE_INSTR;
 # else
     Assert(   uInstrId == VMXINSTRID_VMLAUNCH
@@ -7169,12 +7169,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmlaunchVmresume(PVMCPU pVCpu, uint8_t cbInstr, VM
 
     /* Nested-guest intercept. */
     if (IEM_VMX_IS_NON_ROOT_MODE(pVCpu))
-    {
-        if (pExitInfo)
-            return iemVmxVmexitInstrWithInfo(pVCpu, pExitInfo);
-        uint32_t const uExitReason = uInstrId == VMXINSTRID_VMRESUME ? VMX_EXIT_VMRESUME : VMX_EXIT_VMLAUNCH;
-        return iemVmxVmexitInstrNeedsInfo(pVCpu, uExitReason, uInstrId, cbInstr);
-    }
+        return iemVmxVmexitInstr(pVCpu, uInstrId == VMXINSTRID_VMRESUME ? VMX_EXIT_VMRESUME : VMX_EXIT_VMLAUNCH, cbInstr);
 
     Assert(IEM_VMX_IS_ROOT_MODE(pVCpu));
 
@@ -8383,7 +8378,7 @@ IEM_CIMPL_DEF_2(iemCImpl_vmxon, uint8_t, iEffSeg, RTGCPTR, GCPtrVmxon)
  */
 IEM_CIMPL_DEF_0(iemCImpl_vmlaunch)
 {
-    return iemVmxVmlaunchVmresume(pVCpu, cbInstr, VMXINSTRID_VMLAUNCH, NULL /* pExitInfo */);
+    return iemVmxVmlaunchVmresume(pVCpu, cbInstr, VMXINSTRID_VMLAUNCH);
 }
 
 
@@ -8392,7 +8387,7 @@ IEM_CIMPL_DEF_0(iemCImpl_vmlaunch)
  */
 IEM_CIMPL_DEF_0(iemCImpl_vmresume)
 {
-    return iemVmxVmlaunchVmresume(pVCpu, cbInstr, VMXINSTRID_VMRESUME, NULL /* pExitInfo */);
+    return iemVmxVmlaunchVmresume(pVCpu, cbInstr, VMXINSTRID_VMRESUME);
 }
 
 

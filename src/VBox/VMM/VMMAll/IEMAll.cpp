@@ -16043,6 +16043,29 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecDecodedVmclear(PVMCPU pVCpu, PCVMXVEXITINFO pE
 
 
 /**
+ * Interface for HM and EM to emulate the VMLAUNCH/VMRESUME instruction.
+ *
+ * @returns Strict VBox status code.
+ * @param   pVCpu           The cross context virtual CPU structure of the calling EMT.
+ * @param   cbInstr         The instruction length in bytes.
+ * @param   uInstrId        The instruction ID (VMXINSTRID_VMLAUNCH or
+ *                          VMXINSTRID_VMRESUME).
+ * @thread  EMT(pVCpu)
+ */
+VMM_INT_DECL(VBOXSTRICTRC) IEMExecDecodedVmlaunchVmresume(PVMCPU pVCpu, uint8_t cbInstr, VMXINSTRID uInstrId)
+{
+    IEMEXEC_ASSERT_INSTR_LEN_RETURN(cbInstr, 3);
+    IEM_CTX_ASSERT(pVCpu, IEM_CPUMCTX_EXTRN_VMX_VMENTRY_MASK);
+
+    iemInitExec(pVCpu, false /*fBypassHandlers*/);
+    VBOXSTRICTRC rcStrict = iemVmxVmlaunchVmresume(pVCpu, cbInstr,  uInstrId);
+    if (pVCpu->iem.s.cActiveMappings)
+        iemMemRollback(pVCpu);
+    return iemExecStatusCodeFiddling(pVCpu, rcStrict);
+}
+
+
+/**
  * Interface for HM and EM to emulate the VMXON instruction.
  *
  * @returns Strict VBox status code.
@@ -16079,7 +16102,7 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecDecodedVmxon(PVMCPU pVCpu, PCVMXVEXITINFO pExi
 VMM_INT_DECL(VBOXSTRICTRC) IEMExecDecodedVmxoff(PVMCPU pVCpu, uint8_t cbInstr)
 {
     IEMEXEC_ASSERT_INSTR_LEN_RETURN(cbInstr, 3);
-    IEM_CTX_ASSERT(pVCpu, CPUMCTX_EXTRN_HM_VMX_MASK);
+    IEM_CTX_ASSERT(pVCpu, IEM_CPUMCTX_EXTRN_EXEC_DECODED_NO_MEM_MASK | CPUMCTX_EXTRN_HM_VMX_MASK);
 
     iemInitExec(pVCpu, false /*fBypassHandlers*/);
     VBOXSTRICTRC rcStrict = IEM_CIMPL_CALL_0(iemCImpl_vmxoff);

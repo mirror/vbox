@@ -220,7 +220,8 @@ typedef uint8_t IEMMODE;
                                                     | CPUMCTX_EXTRN_CR4 /* for mode paging mode */ \
                                                     | CPUMCTX_EXTRN_DR7 /* for memory breakpoints */ )
 
-#ifdef VBOX_WITH_NESTED_HWVIRT_SVM
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
+/** @todo NSTVMX: Refine this mask later (probably some MSRs are not required). */
 # define IEM_CPUMCTX_EXTRN_VMX_VMEXIT_MASK         CPUMCTX_EXTRN_ABSOLUTELY_ALL
 # define IEM_CPUMCTX_EXTRN_VMX_VMENTRY_MASK        IEM_CPUMCTX_EXTRN_VMX_VMEXIT_MASK
 #endif
@@ -340,6 +341,7 @@ VMM_INT_DECL(VBOXSTRICTRC)  IEMExecDecodedVmwrite(PVMCPU pVCpu, PCVMXVEXITINFO p
 VMM_INT_DECL(VBOXSTRICTRC)  IEMExecDecodedVmptrld(PVMCPU pVCpu, PCVMXVEXITINFO pExitInfo);
 VMM_INT_DECL(VBOXSTRICTRC)  IEMExecDecodedVmptrst(PVMCPU pVCpu, PCVMXVEXITINFO pExitInfo);
 VMM_INT_DECL(VBOXSTRICTRC)  IEMExecDecodedVmclear(PVMCPU pVCpu, PCVMXVEXITINFO pExitInfo);
+VMM_INT_DECL(VBOXSTRICTRC)  IEMExecDecodedVmlaunchVmresume(PVMCPU pVCpu, uint8_t cbInstr, VMXINSTRID uInstrId);
 VMM_INT_DECL(VBOXSTRICTRC)  IEMExecDecodedVmxon(PVMCPU pVCpu, PCVMXVEXITINFO pExitInfo);
 VMM_INT_DECL(VBOXSTRICTRC)  IEMExecDecodedVmxoff(PVMCPU pVCpu, uint8_t cbInstr);
 #endif
