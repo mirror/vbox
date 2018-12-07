@@ -2521,34 +2521,16 @@ template<> QString toString(const UISettingsDefs::RecordingMode &enmRecordingMod
     return strResult;
 }
 
-/* QString <= UISettingsDefs::RecordingMode: */
-template<> QString toInternalString(const UISettingsDefs::RecordingMode &enmRecordingMode)
-{
-    QString strResult;
-    switch (enmRecordingMode)
-    {
-        case UISettingsDefs::RecordingMode_VideoAudio: strResult = "Video/Audio"; break;
-        case UISettingsDefs::RecordingMode_VideoOnly:  strResult = "VideoOnly";   break;
-        case UISettingsDefs::RecordingMode_AudioOnly:  strResult = "AudioOnly";   break;
-        default:
-        {
-            AssertMsgFailed(("No text for recording mode=%d", enmRecordingMode));
-            break;
-        }
-    }
-    return strResult;
-}
-
 /* UISettingsDefs::RecordingMode <= QString: */
-template<> UISettingsDefs::RecordingMode fromInternalString<UISettingsDefs::RecordingMode>(const QString &strRecordingMode)
+template<> UISettingsDefs::RecordingMode fromString<UISettingsDefs::RecordingMode>(const QString &strRecordingMode)
 {
     /* Here we have some fancy stuff allowing us
      * to search through the keys using 'case-insensitive' rule: */
     QStringList keys;       QList<UISettingsDefs::RecordingMode> values;
     keys << "Video/Audio";  values << UISettingsDefs::RecordingMode_VideoAudio;
-    keys << "VideoOnly";    values << UISettingsDefs::RecordingMode_VideoOnly;
-    keys << "AudioOnly";    values << UISettingsDefs::RecordingMode_AudioOnly;
-    /* VDI format for unknown words: */
+    keys << "Video Only";    values << UISettingsDefs::RecordingMode_VideoOnly;
+    keys << "Audio Only";    values << UISettingsDefs::RecordingMode_AudioOnly;
+    /* Video/Audio for unknown words: */
     if (!keys.contains(strRecordingMode, Qt::CaseInsensitive))
         return UISettingsDefs::RecordingMode_VideoAudio;
     /* Corresponding format for known words: */
