@@ -98,22 +98,22 @@
 # endif /* !IEM_WITH_CODE_TLB */
 
 /** Gets the guest-physical address of the shadows VMCS for the given VCPU. */
-#define IEM_VMX_GET_SHADOW_VMCS(a_pVCpu)            ((a_pVCpu)->cpum.GstCtx.hwvirt.vmx.GCPhysShadowVmcs)
+# define IEM_VMX_GET_SHADOW_VMCS(a_pVCpu)           ((a_pVCpu)->cpum.GstCtx.hwvirt.vmx.GCPhysShadowVmcs)
 
 /** Whether a shadow VMCS is present for the given VCPU. */
-#define IEM_VMX_HAS_SHADOW_VMCS(a_pVCpu)            RT_BOOL(IEM_VMX_GET_SHADOW_VMCS(a_pVCpu) != NIL_RTGCPHYS)
+# define IEM_VMX_HAS_SHADOW_VMCS(a_pVCpu)           RT_BOOL(IEM_VMX_GET_SHADOW_VMCS(a_pVCpu) != NIL_RTGCPHYS)
 
 /** Gets the VMXON region pointer. */
-#define IEM_VMX_GET_VMXON_PTR(a_pVCpu)              ((a_pVCpu)->cpum.GstCtx.hwvirt.vmx.GCPhysVmxon)
+# define IEM_VMX_GET_VMXON_PTR(a_pVCpu)             ((a_pVCpu)->cpum.GstCtx.hwvirt.vmx.GCPhysVmxon)
 
 /** Gets the guest-physical address of the current VMCS for the given VCPU. */
-#define IEM_VMX_GET_CURRENT_VMCS(a_pVCpu)           ((a_pVCpu)->cpum.GstCtx.hwvirt.vmx.GCPhysVmcs)
+# define IEM_VMX_GET_CURRENT_VMCS(a_pVCpu)          ((a_pVCpu)->cpum.GstCtx.hwvirt.vmx.GCPhysVmcs)
 
 /** Whether a current VMCS is present for the given VCPU. */
-#define IEM_VMX_HAS_CURRENT_VMCS(a_pVCpu)           RT_BOOL(IEM_VMX_GET_CURRENT_VMCS(a_pVCpu) != NIL_RTGCPHYS)
+# define IEM_VMX_HAS_CURRENT_VMCS(a_pVCpu)          RT_BOOL(IEM_VMX_GET_CURRENT_VMCS(a_pVCpu) != NIL_RTGCPHYS)
 
 /** Assigns the guest-physical address of the current VMCS for the given VCPU. */
-#define IEM_VMX_SET_CURRENT_VMCS(a_pVCpu, a_GCPhysVmcs) \
+# define IEM_VMX_SET_CURRENT_VMCS(a_pVCpu, a_GCPhysVmcs) \
     do \
     { \
         Assert((a_GCPhysVmcs) != NIL_RTGCPHYS); \
@@ -121,7 +121,7 @@
     } while (0)
 
 /** Clears any current VMCS for the given VCPU. */
-#define IEM_VMX_CLEAR_CURRENT_VMCS(a_pVCpu) \
+# define IEM_VMX_CLEAR_CURRENT_VMCS(a_pVCpu) \
     do \
     { \
         (a_pVCpu)->cpum.GstCtx.hwvirt.vmx.GCPhysVmcs = NIL_RTGCPHYS; \
@@ -129,7 +129,7 @@
 
 /** Check for VMX instructions requiring to be in VMX operation.
  * @note Any changes here, check if IEMOP_HLP_IN_VMX_OPERATION needs updating. */
-#define IEM_VMX_IN_VMX_OPERATION(a_pVCpu, a_szInstr, a_InsDiagPrefix) \
+# define IEM_VMX_IN_VMX_OPERATION(a_pVCpu, a_szInstr, a_InsDiagPrefix) \
     do \
     { \
         if (IEM_VMX_IS_ROOT_MODE(a_pVCpu)) \
@@ -143,7 +143,7 @@
     } while (0)
 
 /** Marks a VM-entry failure with a diagnostic reason, logs and returns. */
-#define IEM_VMX_VMENTRY_FAILED_RET(a_pVCpu, a_pszInstr, a_pszFailure, a_VmxDiag) \
+# define IEM_VMX_VMENTRY_FAILED_RET(a_pVCpu, a_pszInstr, a_pszFailure, a_VmxDiag) \
     do \
     { \
         Log(("%s: VM-entry failed! enmDiag=%u (%s) -> %s\n", (a_pszInstr), (a_VmxDiag), \
@@ -153,7 +153,7 @@
     } while (0)
 
 /** Marks a VM-exit failure with a diagnostic reason, logs and returns. */
-#define IEM_VMX_VMEXIT_FAILED_RET(a_pVCpu, a_uExitReason, a_pszFailure, a_VmxDiag) \
+# define IEM_VMX_VMEXIT_FAILED_RET(a_pVCpu, a_uExitReason, a_pszFailure, a_VmxDiag) \
     do \
     { \
         Log(("VM-exit failed! uExitReason=%u enmDiag=%u (%s) -> %s\n", (a_uExitReason), (a_VmxDiag), \
@@ -161,6 +161,24 @@
         (a_pVCpu)->cpum.GstCtx.hwvirt.vmx.enmDiag = (a_VmxDiag); \
         return VERR_VMX_VMEXIT_FAILED; \
     } while (0)
+
+/** Enables/disables IEM-only EM execution policy in and from ring-3.   */
+# if defined(VBOX_WITH_NESTED_HWVIRT_ONLY_IN_IEM) && defined(IN_RING3)
+#  define IEM_VMX_R3_EXECPOLICY_IEM_ALL_ENABLE_RET(a_pVCpu, a_pszLogPrefix) \
+    do { \
+        Log(("%s: Enabling IEM-only EM execution policy!\n", (a_pszLogPrefix))); \
+        return EMR3SetExecutionPolicy((a_pVCpu)->CTX_SUFF(pVM)->pUVM, EMEXECPOLICY_IEM_ALL, true); \
+    } while (0)
+
+#  define IEM_VMX_R3_EXECPOLICY_IEM_ALL_DISABLE(a_pVCpu, a_pszLogPrefix) \
+    do { \
+        Log(("%s: Disabling IEM-only EM execution policy!\n", (a_pszLogPrefix))); \
+        EMR3SetExecutionPolicy((a_pVCpu)->CTX_SUFF(pVM)->pUVM, EMEXECPOLICY_IEM_ALL, false); \
+    } while (0)
+# else
+#  define IEM_VMX_R3_EXECPOLICY_IEM_ALL_ENABLE_RET(a_pVCpu, a_pszLogPrefix)     do { return VINF_SUCCESS; } while (0)
+#  define IEM_VMX_R3_EXECPOLICY_IEM_ALL_DISABLE(a_pVCpu, a_pszLogPrefix)        do { } while (0)
+# endif
 
 
 /*********************************************************************************************************************************
@@ -2808,6 +2826,10 @@ IEM_STATIC uint32_t iemVmxGetExitInstrInfo(PVMCPU pVCpu, uint32_t uExitReason, V
  */
 IEM_STATIC VBOXSTRICTRC iemVmxVmexit(PVMCPU pVCpu, uint32_t uExitReason)
 {
+# if defined(VBOX_WITH_NESTED_HWVIRT_ONLY_IN_IEM) && !defined(IN_RING3)
+    RT_NOREF2(pVCpu, uExitReason);
+    return VINF_EM_RAW_EMULATE_INSTR;
+# else
     PVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
     Assert(pVmcs);
 
@@ -2829,7 +2851,10 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexit(PVMCPU pVCpu, uint32_t uExitReason)
         if (RT_SUCCESS(rc))
         { /* likely */ }
         else
+        {
+            IEM_VMX_R3_EXECPOLICY_IEM_ALL_DISABLE(pVCpu, "VMX-Abort");
             return iemVmxAbort(pVCpu, VMXABORT_SAVE_GUEST_MSRS);
+        }
     }
     else
     {
@@ -2852,7 +2877,9 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexit(PVMCPU pVCpu, uint32_t uExitReason)
     pVCpu->cpum.GstCtx.hwvirt.vmx.fInVmxNonRootMode = false;
 
     Assert(rcStrict == VINF_SUCCESS);
+    IEM_VMX_R3_EXECPOLICY_IEM_ALL_DISABLE(pVCpu, "VM-exit");
     return VINF_VMX_VMEXIT;
+# endif
 }
 
 
@@ -7132,6 +7159,10 @@ IEM_STATIC int iemVmxVmentryInjectEvent(PVMCPU pVCpu, const char *pszInstr)
  */
 IEM_STATIC VBOXSTRICTRC iemVmxVmlaunchVmresume(PVMCPU pVCpu, uint8_t cbInstr, VMXINSTRID uInstrId, PCVMXVEXITINFO pExitInfo)
 {
+# if defined(VBOX_WITH_NESTED_HWVIRT_ONLY_IN_IEM) && !defined(IN_RING3)
+    RT_NOREF4(pVCpu, cbInstr, uInstrId, pExitInfo);
+    return VINF_EM_RAW_EMULATE_INSTR;
+# else
     Assert(   uInstrId == VMXINSTRID_VMLAUNCH
            || uInstrId == VMXINSTRID_VMRESUME);
     const char *pszInstr = uInstrId == VMXINSTRID_VMRESUME ? "vmresume" : "vmlaunch";
@@ -7331,7 +7362,8 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmlaunchVmresume(PVMCPU pVCpu, uint8_t cbInstr, VM
 
     iemVmxVmFail(pVCpu, VMXINSTRERR_VMENTRY_INVALID_CTLS);
     iemRegAddToRipAndClearRF(pVCpu, cbInstr);
-    return VINF_SUCCESS;
+    IEM_VMX_R3_EXECPOLICY_IEM_ALL_ENABLE_RET(pVCpu, pszInstr);
+# endif
 }
 
 
@@ -7894,11 +7926,13 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmclear(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEf
     {
         rcStrict = PGMPhysSimpleWriteGCPhys(pVCpu->CTX_SUFF(pVM), GCPtrVmcs + RT_UOFFSETOF(VMXVVMCS, fVmcsState),
                                             (const void *)&fVmcsStateClear, sizeof(fVmcsStateClear));
+        if (RT_FAILURE(rcStrict))
+            return rcStrict;
     }
 
     iemVmxVmSucceed(pVCpu);
     iemRegAddToRipAndClearRF(pVCpu, cbInstr);
-    return rcStrict;
+    return VINF_SUCCESS;
 }
 
 
@@ -8107,10 +8141,6 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmptrld(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEf
 IEM_STATIC VBOXSTRICTRC iemVmxVmxon(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEffSeg, RTGCPHYS GCPtrVmxon,
                                     PCVMXVEXITINFO pExitInfo)
 {
-#if defined(VBOX_WITH_NESTED_HWVIRT_ONLY_IN_IEM) && !defined(IN_RING3)
-    RT_NOREF5(pVCpu, cbInstr, iEffSeg, GCPtrVmxon, pExitInfo);
-    return VINF_EM_RAW_EMULATE_INSTR;
-#else
     if (!IEM_VMX_IS_ROOT_MODE(pVCpu))
     {
         /* CPL. */
@@ -8266,11 +8296,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmxon(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEffS
 
         iemVmxVmSucceed(pVCpu);
         iemRegAddToRipAndClearRF(pVCpu, cbInstr);
-# if defined(VBOX_WITH_NESTED_HWVIRT_ONLY_IN_IEM) && defined(IN_RING3)
-        return EMR3SetExecutionPolicy(pVCpu->CTX_SUFF(pVM)->pUVM, EMEXECPOLICY_IEM_ALL, true);
-# else
         return VINF_SUCCESS;
-# endif
     }
     else if (IEM_VMX_IS_NON_ROOT_MODE(pVCpu))
     {
@@ -8295,7 +8321,6 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmxon(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEffS
     pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmxon_VmxAlreadyRoot;
     iemRegAddToRipAndClearRF(pVCpu, cbInstr);
     return VINF_SUCCESS;
-#endif
 }
 
 
@@ -8307,10 +8332,6 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmxon(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEffS
  */
 IEM_CIMPL_DEF_0(iemCImpl_vmxoff)
 {
-# if defined(VBOX_WITH_NESTED_HWVIRT_ONLY_IN_IEM) && !defined(IN_RING3)
-    RT_NOREF2(pVCpu, cbInstr);
-    return VINF_EM_RAW_EMULATE_INSTR;
-# else
     /* Nested-guest intercept. */
     if (IEM_VMX_IS_NON_ROOT_MODE(pVCpu))
         return iemVmxVmexitInstr(pVCpu, VMX_EXIT_VMXOFF, cbInstr);
@@ -8344,12 +8365,7 @@ IEM_CIMPL_DEF_0(iemCImpl_vmxoff)
 
     iemVmxVmSucceed(pVCpu);
     iemRegAddToRipAndClearRF(pVCpu, cbInstr);
-#  if defined(VBOX_WITH_NESTED_HWVIRT_ONLY_IN_IEM) && defined(IN_RING3)
-    return EMR3SetExecutionPolicy(pVCpu->CTX_SUFF(pVM)->pUVM, EMEXECPOLICY_IEM_ALL, false);
-#  else
     return VINF_SUCCESS;
-#  endif
-# endif
 }
 
 
