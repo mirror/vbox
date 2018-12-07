@@ -86,6 +86,11 @@
 /** Enables the fast I/O control code path. */
 #define VBOXDRV_WITH_FAST_IO
 
+/* Missing if we're compiling against older WDKs. */
+#ifndef NonPagedPoolNx
+# define NonPagedPoolNx     ((POOL_TYPE)512)
+#endif
+
 
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
@@ -320,6 +325,8 @@ RT_C_DECLS_END
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
+/** The non-paged pool type to use, NonPagedPool or NonPagedPoolNx. */
+static POOL_TYPE      g_enmNonPagedPoolType = NonPagedPool;
 /** Pointer to the system device instance. */
 static PDEVICE_OBJECT g_pDevObjSys = NULL;
 /** Pointer to the user device instance. */
@@ -588,6 +595,14 @@ NTSTATUS _stdcall DriverEntry(PDRIVER_OBJECT pDrvObj, PUNICODE_STRING pRegPath)
 #endif
 
     /*
+     * Figure out if we can use NonPagedPoolNx or not.
+     */
+    ULONG ulMajorVersion, ulMinorVersion, ulBuildNumber;
+    PsGetVersion(&ulMajorVersion, &ulMinorVersion, &ulBuildNumber, NULL);
+    if (ulMajorVersion > 6 || (ulMajorVersion == 6 && ulMinorVersion >= 2)) /* >= 6.2 (W8)*/
+        g_enmNonPagedPoolType = NonPagedPoolNx;
+
+    /*
      * Query options first so any overflows on unpatched machines will do less
      * harm (see MS11-011 / 2393802 / 2011-03-18).
      *
@@ -595,7 +610,7 @@ NTSTATUS _stdcall DriverEntry(PDRIVER_OBJECT pDrvObj, PUNICODE_STRING pRegPath)
      * quite likely always is, so we have to make a copy here.
      */
     NTSTATUS rcNt;
-    PWSTR pwszCopy = (PWSTR)ExAllocatePoolWithTag(NonPagedPool, pRegPath->Length + sizeof(WCHAR), 'VBox');
+    PWSTR pwszCopy = (PWSTR)ExAllocatePoolWithTag(g_enmNonPagedPoolType, pRegPath->Length + sizeof(WCHAR), 'VBox');
     if (pwszCopy)
     {
         memcpy(pwszCopy, pRegPath->Buffer, pRegPath->Length);
@@ -1191,7 +1206,7 @@ static BOOLEAN _stdcall VBoxDrvNtFastIoDeviceControl(PFILE_OBJECT pFileObj, BOOL
                     && cbBuf < _1M*16)
                 {
                     /* Allocate a buffer and copy all the input into it. */
-                    PSUPREQHDR pHdr = (PSUPREQHDR)ExAllocatePoolWithTag(NonPagedPool, cbBuf, 'VBox');
+                    PSUPREQHDR pHdr = (PSUPREQHDR)ExAllocatePoolWithTag(g_enmNonPagedPoolType, cbBuf, 'VBox');
                     if (pHdr)
                     {
                         __try
