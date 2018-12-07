@@ -1,6 +1,7 @@
+/* $Id$ */
 /** @file
-* VBox Global COM Class definition
-*/
+ * Main - VBoxSDS - VirtualBoxClientList.
+ */
 
 /*
  * Copyright (C) 2017-2018 Oracle Corporation
@@ -26,18 +27,16 @@
 #include "VirtualBoxBase.h"
 #include "VirtualBoxClientListWrap.h"
 
-/**
-* The IVirtualBoxClientList implementation.
-*
-* This class provides COM interface to track and get list of
-* API client processes.
-*
-*/
-
 typedef std::set<LONG> TClientSet;
 
 class CClientListWatcher;
 
+/**
+ * The IVirtualBoxClientList implementation.
+ *
+ * This class provides COM interface to track and get list of
+ * API client processes.
+ */
 class ATL_NO_VTABLE VirtualBoxClientList
     : public VirtualBoxClientListWrap
 #ifdef RT_OS_WINDOWS
@@ -50,7 +49,7 @@ private:
     TClientSet      m_ClientSet;
 
 public:
-    DECLARE_CLASSFACTORY_SINGLETON(VirtualBoxClientList)
+    DECLARE_CLASSFACTORY_SINGLETON(VirtualBoxClientList) /**< r=bird: It is _NOT_ a singleton. */
     DECLARE_NOT_AGGREGATABLE(VirtualBoxClientList)
     VirtualBoxClientList() : m_pWatcher(NULL) {}
     virtual ~VirtualBoxClientList() {}
@@ -65,9 +64,10 @@ private:
 
     // Private members
     // polling of unexpectedly finished api client processes
-    CClientListWatcher* m_pWatcher;
+    CClientListWatcher *m_pWatcher;
 };
 
 
 
 #endif // !____H_VIRTUALBOXCLIENTLISTIMPL
+

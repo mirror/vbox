@@ -164,8 +164,9 @@ STDMETHODIMP VirtualBoxSDS::RegisterVBoxSVC(IVBoxSVCRegistration *aVBoxSVC, LONG
             if (pUserData)
             {
                 /*
-                 * If there already is a chosen one, check that it is still around,
-                 * replace it with the caller if no response.
+                 * If there already is a chosen one, ask it for a IVirtualBox instance
+                 * to return to the caller.  Should it be dead or unresponsive, the caller
+                 * takes its place.
                  */
                 if (pUserData->m_ptrTheChosenOne.isNotNull())
                 {
@@ -180,7 +181,7 @@ STDMETHODIMP VirtualBoxSDS::RegisterVBoxSVC(IVBoxSVCRegistration *aVBoxSVC, LONG
                     }
                     if (FAILED_DEAD_INTERFACE(hrc))
                     {
-                        LogRel(("VirtualBoxSDS::registerVBoxSVC: Seems VBoxSVC instance died.  Dropping it and letting caller take over.\n"));
+                        LogRel(("VirtualBoxSDS::registerVBoxSVC: Seems VBoxSVC instance died.  Dropping it and letting caller take over. (hrc=%Rhrc)\n", hrc));
                         pUserData->m_ptrTheChosenOne.setNull();
 
                         /* Release the client list and stop client list watcher thread*/
@@ -200,13 +201,9 @@ STDMETHODIMP VirtualBoxSDS::RegisterVBoxSVC(IVBoxSVCRegistration *aVBoxSVC, LONG
                             aPid, aPid, pUserData->m_strUserSid.c_str(), pUserData->m_strUsername.c_str()));
                     try
                     {
-#if 1
-                        hrc = pUserData->m_ptrClientList.createLocalObject(CLSID_VirtualBoxClientList);
-#else
-                        hrc = CoCreateInstance(CLSID_VirtualBoxClientList, NULL, CLSCTX_LOCAL_SERVER,
-                                               IID_IVirtualBoxClientList,
-                                               (void **)pUserData->m_ptrClientList.asOutParam());
-#endif
+                        /// @todo r=bird: Enable when design has been corrected.
+                        ///hrc = pUserData->m_ptrClientList.createLocalObject(CLSID_VirtualBoxClientList);
+                        hrc = S_OK;
                         if (SUCCEEDED(hrc))
                         {
                             LogFunc(("Created API client list instance in VBoxSDS: hrc=%Rhrc\n", hrc));
@@ -237,9 +234,10 @@ STDMETHODIMP VirtualBoxSDS::RegisterVBoxSVC(IVBoxSVCRegistration *aVBoxSVC, LONG
     return hrc;
 }
 
+
 STDMETHODIMP VirtualBoxSDS::DeregisterVBoxSVC(IVBoxSVCRegistration *aVBoxSVC, LONG aPid)
 {
-    LogRel(("VirtualBoxSDS::deregisterVBoxSVC: aVBoxSVC=%p aPid=%u\n", (IVBoxSVCRegistration *)aVBoxSVC, aPid));
+    LogRel(("VirtualBoxSDS::deregisterVBoxSVC: aVBoxSVC=%p aPid=%u (%#x)\n", (IVBoxSVCRegistration *)aVBoxSVC, aPid, aPid));
     HRESULT hrc;
     if (RT_VALID_PTR(aVBoxSVC))
     {
@@ -256,7 +254,6 @@ STDMETHODIMP VirtualBoxSDS::DeregisterVBoxSVC(IVBoxSVCRegistration *aVBoxSVC, LO
                     LogRel(("VirtualBoxSDS::deregisterVBoxSVC: It's the chosen one for %s (%s)!\n",
                             pUserData->m_strUserSid.c_str(), pUserData->m_strUsername.c_str()));
                     pUserData->m_ptrTheChosenOne.setNull();
-                    /** @todo consider evicting the user from the table...   */
                     /* Release the client list and stop client list watcher thread*/
                     pUserData->m_ptrClientList.setNull();
                 }
@@ -292,16 +289,20 @@ STDMETHODIMP VirtualBoxSDS::NotifyClientsFinished()
     int vrc = RTCritSectRwEnterShared(&m_MapCritSect);
     if (RT_SUCCESS(vrc))
     {
+/** @todo r=bird: Why notify all VBoxSVC instances?  That makes zero sense!   */
         for (UserDataMap_T::iterator it = m_UserDataMap.begin(); it != m_UserDataMap.end(); ++it)
         {
             VBoxSDSPerUserData *pUserData = it->second;
             if (pUserData && pUserData->m_ptrTheChosenOne)
             {
+                /*
+                 * Notify VBoxSVC about finishing all API clients it should free
+                 * references to VBoxSDS and clean up itself
+                 */
                 LogRelFunc(("Notify VBoxSVC that all clients finished\n"));
-                /* Notify VBoxSVC about finishing all API clients it should free references to VBoxSDS
-                   and clean up itself */
-                if (pUserData->m_ptrClientList)
+                if (pUserData->m_ptrClientList.isNotNull())
                     pUserData->m_ptrClientList.setNull();
+
                 pUserData->m_ptrTheChosenOne->NotifyClientsFinished();
             }
         }

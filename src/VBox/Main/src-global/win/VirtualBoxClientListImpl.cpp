@@ -16,6 +16,9 @@
  */
 
 
+/*********************************************************************************************************************************
+*   Header Files                                                                                                                 *
+*********************************************************************************************************************************/
 #include "Logging.h"
 #include "VirtualBoxClientListImpl.h"
 
@@ -23,7 +26,9 @@
 #include <iprt/asm.h>
 
 
-////////////////// CClientListWatcher implementation /////////////////
+/*********************************************************************************************************************************
+*   CClientListWatcher                                                                                                           *
+*********************************************************************************************************************************/
 
 /**
  * Helper class that tracks existance of registered client processes.
@@ -40,39 +45,44 @@ public:
     virtual ~CClientListWatcher();
 
 protected:
-    static DECLCALLBACK(int) WatcherWorker(RTTHREAD ThreadSelf, void *pvUser);
+    static DECLCALLBACK(int) WatcherThreadProc(RTTHREAD hThreadSelf, void *pvUser);
     void NotifySDSAllClientsFinished();
-    // s_WatcherThread is static to check that single watcher thread used only
-    static volatile RTTHREAD    s_WatcherThread;
+
     volatile bool               m_fWatcherRunning;
-    TClientSet&                 m_clientList;
-    RTCRITSECTRW&               m_clientListCritSect;
-    RTSEMEVENT                  m_wakeUpWatcherEvent;
+    TClientSet                 &m_clientList;
+    RTCRITSECTRW               &m_rClientListCritSect;
+    RTSEMEVENT                  m_hEvtWakeUpWatcher;
+
+    /** There is a single watcher thread. */
+    static volatile RTTHREAD    s_hThreadWatcher;
 };
 
-volatile RTTHREAD CClientListWatcher::s_WatcherThread = NULL;
 
-CClientListWatcher::CClientListWatcher(TClientSet& list, RTCRITSECTRW& clientListCritSect)
-    : m_clientList(list), m_clientListCritSect(clientListCritSect)
+volatile RTTHREAD CClientListWatcher::s_hThreadWatcher = NIL_RTTHREAD;
+
+
+CClientListWatcher::CClientListWatcher(TClientSet &list, RTCRITSECTRW &rClientListCritSect)
+    : m_clientList(list), m_rClientListCritSect(rClientListCritSect)
 {
-    Assert(ASMAtomicReadPtr((void* volatile*)&CClientListWatcher::s_WatcherThread) == NULL);
+    Assert(ASMAtomicReadPtr((void * volatile *)&CClientListWatcher::s_hThreadWatcher) == NULL);
 
-    if (ASMAtomicReadPtr((void* volatile*)&CClientListWatcher::s_WatcherThread) != NULL)
+    if (ASMAtomicReadPtr((void * volatile *)&CClientListWatcher::s_hThreadWatcher) != NULL)
     {
         LogRelFunc(("Error: Watcher thread already created!\n"));
         return;
     }
 
-    int rc = RTSemEventCreate(&m_wakeUpWatcherEvent);
+    int rc = RTSemEventCreate(&m_hEvtWakeUpWatcher);
     if (RT_FAILURE(rc))
     {
         LogRelFunc(("Error: Failed to create wake up event for watcher thread: %Rrs\n", rc));
         return;
     }
 
-    RTTHREAD watcherThread;
-    rc = RTThreadCreate(&watcherThread,
-                        (PFNRTTHREAD)CClientListWatcher::WatcherWorker,
+    ASMAtomicWriteBool(&m_fWatcherRunning, true);
+    RTTHREAD hThreadWatcher;
+    rc = RTThreadCreate(&hThreadWatcher,
+                        (PFNRTTHREAD)CClientListWatcher::WatcherThreadProc,
                         this, // pVUser
                         0,    // cbStack
                         RTTHREADTYPE_DEFAULT,
@@ -81,11 +91,14 @@ CClientListWatcher::CClientListWatcher(TClientSet& list, RTCRITSECTRW& clientLis
     Assert(RT_SUCCESS(rc));
     if (RT_SUCCESS(rc))
     {
-        ASMAtomicWritePtr((void* volatile*)&CClientListWatcher::s_WatcherThread, watcherThread);
+        ASMAtomicWriteHandle(&CClientListWatcher::s_hThreadWatcher, hThreadWatcher);
         LogRelFunc(("Created client list watcher thread.\n"));
     }
     else
+    {
+        ASMAtomicWriteBool(&m_fWatcherRunning, false);
         LogRelFunc(("Failed to create client list watcher thread: %Rrs\n", rc));
+    }
 }
 
 
@@ -95,18 +108,18 @@ CClientListWatcher::~CClientListWatcher()
     ASMAtomicWriteBool(&m_fWatcherRunning, false);
 
     // Wake up watcher thread to finish it faster
-    int rc = RTSemEventSignal(m_wakeUpWatcherEvent);
-    Assert(RT_SUCCESS(rc));
+    int rc = RTSemEventSignal(m_hEvtWakeUpWatcher);
+    AssertRC(rc);
 
-    rc = RTThreadWait(CClientListWatcher::s_WatcherThread, RT_INDEFINITE_WAIT, NULL);
+    rc = RTThreadWait(CClientListWatcher::s_hThreadWatcher, RT_INDEFINITE_WAIT, NULL);
     if (RT_FAILURE(rc))
         LogRelFunc(("Error: watcher thread didn't finished. Possible thread leak. %Rrs\n", rc));
     else
         LogRelFunc(("Watcher thread finished.\n"));
 
-    ASMAtomicWriteNullPtr((void* volatile*)&CClientListWatcher::s_WatcherThread);
+    ASMAtomicWriteHandle(&CClientListWatcher::s_hThreadWatcher, NIL_RTTHREAD);
 
-    RTSemEventDestroy(m_wakeUpWatcherEvent);
+    RTSemEventDestroy(m_hEvtWakeUpWatcher);
 }
 
 
@@ -120,9 +133,10 @@ CClientListWatcher::~CClientListWatcher()
 void CClientListWatcher::NotifySDSAllClientsFinished()
 {
     ComPtr<IVirtualBoxSDS> ptrVirtualBoxSDS;
+
     /*
-    * Connect to VBoxSDS.
-    */
+     * Connect to VBoxSDS.
+     */
     HRESULT hrc = CoCreateInstance(CLSID_VirtualBoxSDS, NULL, CLSCTX_LOCAL_SERVER, IID_IVirtualBoxSDS,
                                    (void **)ptrVirtualBoxSDS.asOutParam());
     if (SUCCEEDED(hrc))
@@ -135,28 +149,19 @@ void CClientListWatcher::NotifySDSAllClientsFinished()
 
 /**
  * Deregister all staled VBoxSVC through VBoxSDS and forcebly close VBoxSVC process
- * @param   ThreadSelf  current thread id
+ * @param   hThreadSelf The thread handle.
  * @param   pvUser      pointer to CClientListWatcher that created this thread.
  */
-DECLCALLBACK(int) CClientListWatcher::WatcherWorker(RTTHREAD ThreadSelf, void *pvUser)
+DECLCALLBACK(int) CClientListWatcher::WatcherThreadProc(RTTHREAD hThreadSelf, void *pvUser)
 {
-    NOREF(ThreadSelf);
-    /** @todo r=bird: This will fail once in a while because you don't know
-     *        for sure how the scheduling is going to be.  So, RTThreadCreate
-     *        may return and set g_hWatcherThread after the thread started
-     *        executing and got here! */
-    Assert(ASMAtomicReadPtr((void* volatile*)&CClientListWatcher::s_WatcherThread));
-    LogRelFunc(("Enter watcher thread\n"));
-
+    LogRelFunc(("Enter watcher thread (%p)\n", hThreadSelf)); NOREF(hThreadSelf);
     CClientListWatcher *pThis = (CClientListWatcher *)pvUser;
     Assert(pThis);
-
-    ASMAtomicWriteBool(&pThis->m_fWatcherRunning, true);
 
     while (ASMAtomicReadBool(&pThis->m_fWatcherRunning))
     {
         /* remove finished API clients from list */
-        int rc = RTCritSectRwEnterShared(&pThis->m_clientListCritSect);
+        int rc = RTCritSectRwEnterShared(&pThis->m_rClientListCritSect);
         Assert(RT_SUCCESS(rc));
         NOREF(rc);
 
@@ -194,7 +199,7 @@ DECLCALLBACK(int) CClientListWatcher::WatcherWorker(RTTHREAD ThreadSelf, void *p
             }
         }
 
-        rc = RTCritSectRwLeaveShared(&pThis->m_clientListCritSect);
+        rc = RTCritSectRwLeaveShared(&pThis->m_rClientListCritSect);
         Assert(RT_SUCCESS(rc));
 
         /*
@@ -204,11 +209,17 @@ DECLCALLBACK(int) CClientListWatcher::WatcherWorker(RTTHREAD ThreadSelf, void *p
 /** @todo r=bird: This is where wait for multiple objects would be really nice, as
  * you could wait on the first 63 client processes here in addition to the event.
  * That would speed up the response time. */
-        RTSemEventWait(pThis->m_wakeUpWatcherEvent, 2000);
+        RTSemEventWait(pThis->m_hEvtWakeUpWatcher, 2000);
     }
     LogRelFunc(("Finish watcher thread.  Client list size: %d\n", pThis->m_clientList.size()));
     return 0;
 }
+
+
+
+/*********************************************************************************************************************************
+*   VirtualBoxClientList                                                                                                         *
+*********************************************************************************************************************************/
 
 ///////////////////////// VirtualBoxClientList implementation //////////////////////////
 
@@ -299,7 +310,7 @@ HRESULT VirtualBoxClientList::getClients(std::vector<LONG> &aPids)
             aPids.reserve(cClients);
             aPids.assign(m_ClientSet.begin(), m_ClientSet.end());
         }
-        catch (std::bad_alloc)
+        catch (std::bad_alloc &)
         {
             RTCritSectRwLeaveShared(&m_MapCritSect);
             AssertLogRelMsgFailedReturn(("cClients=%zu\n", cClients), E_OUTOFMEMORY);

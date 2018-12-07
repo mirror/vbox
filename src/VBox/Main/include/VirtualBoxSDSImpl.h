@@ -70,14 +70,16 @@ public:
 
 private:
 
-    // IVirtualBoxSDS methods
+    /** @name IVirtualBoxSDS methods
+     * @{ */
     STDMETHOD(RegisterVBoxSVC)(IVBoxSVCRegistration *aVBoxSVC, LONG aPid, IUnknown **aExistingVirtualBox);
     STDMETHOD(DeregisterVBoxSVC)(IVBoxSVCRegistration *aVBoxSVC, LONG aPid);
-    STDMETHOD(NotifyClientsFinished)();
+    STDMETHOD(NotifyClientsFinished)(); /**< @todo r=bird: Internal within SDS! Make private. */
+    /** @} */
 
 
-    // Private methods
-
+    /** @name Private methods
+     * @{ */
     /**
      * Gets the client user SID of the
      */
@@ -99,6 +101,7 @@ private:
      * @param   a_rStrUsername  The user name if available.
      */
     VBoxSDSPerUserData *i_lookupOrCreatePerUserData(com::Utf8Str const &a_rStrUserSid, com::Utf8Str const &a_rStrUsername);
+    /** @} */
 };
 
 
