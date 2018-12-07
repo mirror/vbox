@@ -3504,7 +3504,7 @@ static DECLCALLBACK(int) hdaR3PciIoRegionMap(PPDMDEVINS pDevIns, PPDMPCIDEV pPci
 static int hdaR3SaveStream(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, PHDASTREAM pStream)
 {
     RT_NOREF(pDevIns);
-#if defined(VBOX_STRICT) || defined(LOG_ENABLED)
+#if defined(LOG_ENABLED)
     PHDASTATE pThis = PDMINS_2_DATA(pDevIns, PHDASTATE);
 #endif
 
@@ -3518,17 +3518,6 @@ static int hdaR3SaveStream(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, PHDASTREAM pStre
     rc = SSMR3PutStructEx(pSSM, &pStream->State, sizeof(HDASTREAMSTATE), 0 /*fFlags*/, g_aSSMStreamStateFields7, NULL);
     AssertRCReturn(rc, rc);
 
-#ifdef VBOX_STRICT
-    uint64_t u64BaseDMA = RT_MAKE_U64(HDA_STREAM_REG(pThis, BDPL, pStream->u8SD),
-                                      HDA_STREAM_REG(pThis, BDPU, pStream->u8SD));
-    uint16_t u16LVI     = HDA_STREAM_REG(pThis, LVI, pStream->u8SD);
-    uint32_t u32CBL     = HDA_STREAM_REG(pThis, CBL, pStream->u8SD);
-
-    Assert(u64BaseDMA == pStream->u64BDLBase);
-    Assert(u16LVI     == pStream->u16LVI);
-    Assert(u32CBL     == pStream->u32CBL);
-#endif
-
     rc = SSMR3PutStructEx(pSSM, &pStream->State.BDLE.Desc, sizeof(HDABDLEDESC),
                           0 /*fFlags*/, g_aSSMBDLEDescFields7, NULL);
     AssertRCReturn(rc, rc);
@@ -3540,27 +3529,6 @@ static int hdaR3SaveStream(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, PHDASTREAM pStre
     rc = SSMR3PutStructEx(pSSM, &pStream->State.Period, sizeof(HDASTREAMPERIOD),
                           0 /* fFlags */, g_aSSMStreamPeriodFields7, NULL);
     AssertRCReturn(rc, rc);
-
-#ifdef VBOX_STRICT /* Sanity checks. */
-    PHDABDLE pBDLE = &pStream->State.BDLE;
-    if (u64BaseDMA)
-    {
-        Assert(pStream->State.uCurBDLE <= u16LVI + 1);
-
-        HDABDLE curBDLE;
-        rc = hdaR3BDLEFetch(pThis, &curBDLE, u64BaseDMA, pStream->State.uCurBDLE);
-        AssertRC(rc);
-
-        Assert(curBDLE.Desc.u32BufSize == pBDLE->Desc.u32BufSize);
-        Assert(curBDLE.Desc.u64BufAddr  == pBDLE->Desc.u64BufAddr);
-        Assert(curBDLE.Desc.fFlags     == pBDLE->Desc.fFlags);
-    }
-    else
-    {
-        Assert(pBDLE->Desc.u64BufAddr  == 0);
-        Assert(pBDLE->Desc.u32BufSize == 0);
-    }
-#endif
 
     uint32_t cbCircBufSize = 0;
     uint32_t cbCircBufUsed = 0;
