@@ -146,9 +146,9 @@ void VirtualBoxSDS::FinalRelease()
 
 
 /* SDS plan B interfaces: */
-STDMETHODIMP_(HRESULT) VirtualBoxSDS::RegisterVBoxSVC(IVBoxSVCRegistration *aVBoxSVC, LONG aPid, IUnknown **aExistingVirtualBox)
+STDMETHODIMP VirtualBoxSDS::RegisterVBoxSVC(IVBoxSVCRegistration *aVBoxSVC, LONG aPid, IUnknown **aExistingVirtualBox)
 {
-    LogRel(("VirtualBoxSDS::registerVBoxSVC: aVBoxSVC=%p aPid=%u\n", (IVBoxSVCRegistration *)aVBoxSVC, aPid));
+    LogRel(("VirtualBoxSDS::registerVBoxSVC: aVBoxSVC=%p aPid=%u (%#x)\n", (IVBoxSVCRegistration *)aVBoxSVC, aPid, aPid));
     HRESULT hrc;
     if (   RT_VALID_PTR(aVBoxSVC)
         && RT_VALID_PTR(aExistingVirtualBox))
@@ -163,6 +163,10 @@ STDMETHODIMP_(HRESULT) VirtualBoxSDS::RegisterVBoxSVC(IVBoxSVCRegistration *aVBo
             VBoxSDSPerUserData *pUserData = i_lookupOrCreatePerUserData(strSid, strUsername);
             if (pUserData)
             {
+                /*
+                 * If there already is a chosen one, check that it is still around,
+                 * replace it with the caller if no response.
+                 */
                 if (pUserData->m_ptrTheChosenOne.isNotNull())
                 {
                     try
@@ -178,6 +182,7 @@ STDMETHODIMP_(HRESULT) VirtualBoxSDS::RegisterVBoxSVC(IVBoxSVCRegistration *aVBo
                     {
                         LogRel(("VirtualBoxSDS::registerVBoxSVC: Seems VBoxSVC instance died.  Dropping it and letting caller take over.\n"));
                         pUserData->m_ptrTheChosenOne.setNull();
+
                         /* Release the client list and stop client list watcher thread*/
                         pUserData->m_ptrClientList.setNull();
                     }
@@ -185,34 +190,35 @@ STDMETHODIMP_(HRESULT) VirtualBoxSDS::RegisterVBoxSVC(IVBoxSVCRegistration *aVBo
                 else
                     hrc = S_OK;
 
+                /*
+                 * Is the caller the chosen one?
+                 * The chosen one always have a client list object for monitoring purposes.
+                 */
                 if (pUserData->m_ptrTheChosenOne.isNull())
                 {
-                    LogRel(("VirtualBoxSDS::registerVBoxSVC: Making aPid=%u the chosen one for user %s (%s)!\n",
-                            aPid, pUserData->m_strUserSid.c_str(), pUserData->m_strUsername.c_str()));
+                    LogRel(("VirtualBoxSDS::registerVBoxSVC: Making aPid=%u (%#x) the chosen one for user %s (%s)!\n",
+                            aPid, aPid, pUserData->m_strUserSid.c_str(), pUserData->m_strUsername.c_str()));
                     try
                     {
-                        pUserData->m_ptrTheChosenOne = aVBoxSVC;
-                        /*
-                        * Create instance of ClientList
-                        */
-                        HRESULT hrc = CoCreateInstance(CLSID_VirtualBoxClientList, NULL, CLSCTX_LOCAL_SERVER,
-                            IID_IVirtualBoxClientList,
-                            (void **)pUserData->m_ptrClientList.asOutParam());
+#if 1
+                        hrc = pUserData->m_ptrClientList.createLocalObject(CLSID_VirtualBoxClientList);
+#else
+                        hrc = CoCreateInstance(CLSID_VirtualBoxClientList, NULL, CLSCTX_LOCAL_SERVER,
+                                               IID_IVirtualBoxClientList,
+                                               (void **)pUserData->m_ptrClientList.asOutParam());
+#endif
                         if (SUCCEEDED(hrc))
                         {
-                            LogFunc(("Created API client list instance in VBoxSDS : hr=%Rhrf\n", hrc));
+                            LogFunc(("Created API client list instance in VBoxSDS: hrc=%Rhrc\n", hrc));
+                            pUserData->m_ptrTheChosenOne = aVBoxSVC;
                         }
                         else
-                        {
-                            LogFunc(("Error in creating API client list instance: hr=%Rhrf\n", hrc));
-                        }
-
-                        hrc = S_OK;
+                            LogRel(("VirtualBoxSDS::registerVBoxSVC: Error in creating API client list instance: hrc=%Rhrc\n", hrc));
                     }
                     catch (...)
                     {
-                        LogRel(("VirtualBoxSDS::registerVBoxSVC: unexpected exception setting the chosen one.\n"));
-                        hrc = E_FAIL;
+                        LogRel(("VirtualBoxSDS::registerVBoxSVC: Unexpected exception setting the chosen one!\n"));
+                        hrc = E_UNEXPECTED;
                     }
                 }
 
@@ -231,7 +237,7 @@ STDMETHODIMP_(HRESULT) VirtualBoxSDS::RegisterVBoxSVC(IVBoxSVCRegistration *aVBo
     return hrc;
 }
 
-STDMETHODIMP_(HRESULT) VirtualBoxSDS::DeregisterVBoxSVC(IVBoxSVCRegistration *aVBoxSVC, LONG aPid)
+STDMETHODIMP VirtualBoxSDS::DeregisterVBoxSVC(IVBoxSVCRegistration *aVBoxSVC, LONG aPid)
 {
     LogRel(("VirtualBoxSDS::deregisterVBoxSVC: aVBoxSVC=%p aPid=%u\n", (IVBoxSVCRegistration *)aVBoxSVC, aPid));
     HRESULT hrc;
@@ -245,8 +251,7 @@ STDMETHODIMP_(HRESULT) VirtualBoxSDS::DeregisterVBoxSVC(IVBoxSVCRegistration *aV
             VBoxSDSPerUserData *pUserData = i_lookupPerUserData(strSid);
             if (pUserData)
             {
-                if (   (IVBoxSVCRegistration *)aVBoxSVC
-                    == (IVBoxSVCRegistration *)pUserData->m_ptrTheChosenOne)
+                if (aVBoxSVC == (IVBoxSVCRegistration *)pUserData->m_ptrTheChosenOne)
                 {
                     LogRel(("VirtualBoxSDS::deregisterVBoxSVC: It's the chosen one for %s (%s)!\n",
                             pUserData->m_strUserSid.c_str(), pUserData->m_strUsername.c_str()));
@@ -280,7 +285,7 @@ STDMETHODIMP_(HRESULT) VirtualBoxSDS::DeregisterVBoxSVC(IVBoxSVCRegistration *aV
 }
 
 
-STDMETHODIMP_(HRESULT) VirtualBoxSDS::NotifyClientsFinished()
+STDMETHODIMP VirtualBoxSDS::NotifyClientsFinished()
 {
     LogRelFlowThisFuncEnter();
 
@@ -344,7 +349,7 @@ STDMETHODIMP_(HRESULT) VirtualBoxSDS::NotifyClientsFinished()
                         a_pStrSid->toUpper(); /* (just to be on the safe side) */
                         fRet = true;
                     }
-                    catch (std::bad_alloc)
+                    catch (std::bad_alloc &)
                     {
                         LogRel(("VirtualBoxSDS::i_GetClientUserSID: std::bad_alloc setting rstrSid.\n"));
                     }
@@ -371,7 +376,7 @@ STDMETHODIMP_(HRESULT) VirtualBoxSDS::NotifyClientsFinished()
                                 a_pStrUsername->append('/');
                                 a_pStrUsername->append(Utf8Str(wszUsername));
                             }
-                            catch (std::bad_alloc)
+                            catch (std::bad_alloc &)
                             {
                                 LogRel(("VirtualBoxSDS::i_GetClientUserSID: std::bad_alloc setting rStrUsername.\n"));
                                 a_pStrUsername->setNull();
@@ -457,7 +462,7 @@ VBoxSDSPerUserData *VirtualBoxSDS::i_lookupOrCreatePerUserData(com::Utf8Str cons
         {
             pUserData = new VBoxSDSPerUserData(a_rStrUserSid, a_rStrUsername);
         }
-        catch (std::bad_alloc)
+        catch (std::bad_alloc &)
         {
             pUserData = NULL;
         }
@@ -481,7 +486,7 @@ VBoxSDSPerUserData *VirtualBoxSDS::i_lookupOrCreatePerUserData(com::Utf8Str cons
                         m_UserDataMap[a_rStrUserSid] = pUserData;
                         pUserData->i_retain();
                     }
-                    catch (std::bad_alloc)
+                    catch (std::bad_alloc &)
                     {
                         pUserData = NULL;
                     }
