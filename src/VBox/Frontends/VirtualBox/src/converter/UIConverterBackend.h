@@ -262,7 +262,6 @@ template<> SHARED_LIBRARY_STUFF UIMediumFormat fromInternalString<UIMediumFormat
 template<> SHARED_LIBRARY_STUFF QString toString(const UISettingsDefs::RecordingMode &enmRecordingMode);
 template<> SHARED_LIBRARY_STUFF UISettingsDefs::RecordingMode fromString<UISettingsDefs::RecordingMode>(const QString &enmRecordingMode);
 
-
 /* Declare COM conversion specializations: */
 template<> SHARED_LIBRARY_STUFF QColor toColor(const KMachineState &state);
 template<> SHARED_LIBRARY_STUFF QIcon toIcon(const KMachineState &state);

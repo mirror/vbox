@@ -2510,8 +2510,8 @@ template<> QString toString(const UISettingsDefs::RecordingMode &enmRecordingMod
     switch (enmRecordingMode)
     {
         case UISettingsDefs::RecordingMode_VideoAudio: strResult = QApplication::translate("VBoxGlobal", "Video/Audio", "UISettingsDefs::RecordingMode"); break;
-        case UISettingsDefs::RecordingMode_VideoOnly:  strResult = QApplication::translate("VBoxGlobal", "Video Only", "UISettingsDefs::RecordingMode"); break;
-        case UISettingsDefs::RecordingMode_AudioOnly:  strResult = QApplication::translate("VBoxGlobal", "Audio Only", "UISettingsDefs::RecordingMode"); break;
+        case UISettingsDefs::RecordingMode_VideoOnly:  strResult = QApplication::translate("VBoxGlobal", "Video Only",  "UISettingsDefs::RecordingMode"); break;
+        case UISettingsDefs::RecordingMode_AudioOnly:  strResult = QApplication::translate("VBoxGlobal", "Audio Only",  "UISettingsDefs::RecordingMode"); break;
         default:
         {
             AssertMsgFailed(("No text for recording mode format=%d", enmRecordingMode));
@@ -2526,10 +2526,10 @@ template<> UISettingsDefs::RecordingMode fromString<UISettingsDefs::RecordingMod
 {
     /* Here we have some fancy stuff allowing us
      * to search through the keys using 'case-insensitive' rule: */
-    QStringList keys;       QList<UISettingsDefs::RecordingMode> values;
-    keys << "Video/Audio";  values << UISettingsDefs::RecordingMode_VideoAudio;
-    keys << "Video Only";    values << UISettingsDefs::RecordingMode_VideoOnly;
-    keys << "Audio Only";    values << UISettingsDefs::RecordingMode_AudioOnly;
+    QStringList keys;      QList<UISettingsDefs::RecordingMode> values;
+    keys << "Video/Audio"; values << UISettingsDefs::RecordingMode_VideoAudio;
+    keys << "Video Only";  values << UISettingsDefs::RecordingMode_VideoOnly;
+    keys << "Audio Only";  values << UISettingsDefs::RecordingMode_AudioOnly;
     /* Video/Audio for unknown words: */
     if (!keys.contains(strRecordingMode, Qt::CaseInsensitive))
         return UISettingsDefs::RecordingMode_VideoAudio;

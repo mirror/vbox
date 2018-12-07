@@ -510,15 +510,17 @@ void UIMachineSettingsDisplay::putToCache()
     newDisplayData.m_vecRecordingScreens = m_pScrollerVideoCaptureScreens->value();
 
     /* Update recording options */
-    UISettingsDefs::RecordingMode enmRecordingMode =
+    const UISettingsDefs::RecordingMode enmRecordingMode =
         gpConverter->fromString<UISettingsDefs::RecordingMode>(m_pComboBoxCaptureMode->currentText());
     QStringList optionValues;
     /* Option value for video recording: */
-    optionValues.push_back((enmRecordingMode == UISettingsDefs::RecordingMode_VideoAudio) ||
-                           (enmRecordingMode == UISettingsDefs::RecordingMode_VideoOnly) ? "true" : "false");
+    optionValues.push_back(     (enmRecordingMode == UISettingsDefs::RecordingMode_VideoAudio)
+                             || (enmRecordingMode == UISettingsDefs::RecordingMode_VideoOnly)
+                           ? "true" : "false");
     /* Option value for audio recording: */
-    optionValues.push_back((enmRecordingMode == UISettingsDefs::RecordingMode_VideoAudio) ||
-                           (enmRecordingMode == UISettingsDefs::RecordingMode_AudioOnly) ? "true" : "false");
+    optionValues.push_back(     (enmRecordingMode == UISettingsDefs::RecordingMode_VideoAudio)
+                             || (enmRecordingMode == UISettingsDefs::RecordingMode_AudioOnly)
+                           ? "true" : "false");
 
     if (m_pSliderAudioCaptureQuality->value() == 1)
         optionValues.push_back("low");
@@ -1731,17 +1733,15 @@ void UIMachineSettingsDisplay::enableDisableRecordingWidgets()
     const bool fIsRecordingOptionsEnabled = ((isMachineOffline() || isMachineSaved()) && m_pCheckboxVideoCapture->isChecked()) ||
                                              (isMachineOnline() && !m_pCache->base().m_fRecordingEnabled && m_pCheckboxVideoCapture->isChecked());
 
-    UISettingsDefs::RecordingMode enmRecordingMode =
-        gpConverter->fromString<UISettingsDefs::RecordingMode>(m_pComboBoxCaptureMode->currentText());
-
     /* Video Capture Screens option should be enabled only if:
      * Machine is in *any* valid state and check-box is checked. */
     const bool fIsVideoCaptureScreenOptionEnabled = isMachineInValidMode() && m_pCheckboxVideoCapture->isChecked();
-
-    bool fRecordVideo = enmRecordingMode == UISettingsDefs::RecordingMode_VideoOnly ||
-        enmRecordingMode == UISettingsDefs::RecordingMode_VideoAudio;
-    bool fRecordAudio = enmRecordingMode == UISettingsDefs::RecordingMode_AudioOnly ||
-        enmRecordingMode == UISettingsDefs::RecordingMode_VideoAudio;
+    const UISettingsDefs::RecordingMode enmRecordingMode =
+        gpConverter->fromString<UISettingsDefs::RecordingMode>(m_pComboBoxCaptureMode->currentText());
+    const bool fRecordVideo =    enmRecordingMode == UISettingsDefs::RecordingMode_VideoOnly
+                              || enmRecordingMode == UISettingsDefs::RecordingMode_VideoAudio;
+    const bool fRecordAudio =    enmRecordingMode == UISettingsDefs::RecordingMode_AudioOnly
+                              || enmRecordingMode == UISettingsDefs::RecordingMode_VideoAudio;
 
     m_pLabelVideoCaptureSize->setEnabled(fIsRecordingOptionsEnabled && fRecordVideo);
     m_pComboVideoCaptureSize->setEnabled(fIsRecordingOptionsEnabled && fRecordVideo);
