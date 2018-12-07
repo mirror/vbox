@@ -112,13 +112,6 @@ struct UIDataSettingsMachineDisplay
         RecordingOption_AC_Profile
     };
 
-    enum RecordingMode
-    {
-        RecordingMode_VideoAudio,
-        RecordingMode_VideoOnly,
-        RecordingMode_AudioOnly
-    };
-
     /** Returns enum value corresponding to passed @a strKey. */
     static RecordingOption toRecordingOptionKey(const QString &strKey)
     {
@@ -465,11 +458,11 @@ void UIMachineSettingsDisplay::getFromCache()
     bool fRecordVideo = UIDataSettingsMachineDisplay::isRecordingOptionEnabled(oldDisplayData.m_strRecordingVideoOptions,
                                                                                 UIDataSettingsMachineDisplay::RecordingOption_VC);
     if (fRecordAudio && fRecordVideo)
-        m_pComboBoxCaptureMode->setCurrentIndex(static_cast<int>(UIDataSettingsMachineDisplay::RecordingMode_VideoAudio));
+        m_pComboBoxCaptureMode->setCurrentIndex(m_pComboBoxCaptureMode->findText(gpConverter->toString(UISettingsDefs::RecordingMode_VideoAudio)));
     else if (fRecordAudio && !fRecordVideo)
-        m_pComboBoxCaptureMode->setCurrentIndex(static_cast<int>(UIDataSettingsMachineDisplay::RecordingMode_AudioOnly));
+        m_pComboBoxCaptureMode->setCurrentIndex(m_pComboBoxCaptureMode->findText(gpConverter->toString(UISettingsDefs::RecordingMode_AudioOnly)));
     else
-        m_pComboBoxCaptureMode->setCurrentIndex(static_cast<int>(UIDataSettingsMachineDisplay::RecordingMode_VideoOnly));
+        m_pComboBoxCaptureMode->setCurrentIndex(m_pComboBoxCaptureMode->findText(gpConverter->toString(UISettingsDefs::RecordingMode_VideoOnly)));
 
     m_pSliderAudioCaptureQuality->setValue(UIDataSettingsMachineDisplay::getAudioQualityFromOptions(oldDisplayData.m_strRecordingVideoOptions));
 
@@ -518,10 +511,10 @@ void UIMachineSettingsDisplay::putToCache()
 
     /* Update recording options */
     QStringList optionValues;
-    optionValues.push_back((m_pComboBoxCaptureMode->currentIndex() == static_cast<int>(UIDataSettingsMachineDisplay::RecordingMode_VideoAudio) ||
-                            m_pComboBoxCaptureMode->currentIndex() == static_cast<int>(UIDataSettingsMachineDisplay::RecordingMode_VideoOnly)) ? "true" : "false");
-    optionValues.push_back((m_pComboBoxCaptureMode->currentIndex() == static_cast<int>(UIDataSettingsMachineDisplay::RecordingMode_VideoAudio) ||
-                            m_pComboBoxCaptureMode->currentIndex() == static_cast<int>(UIDataSettingsMachineDisplay::RecordingMode_AudioOnly)) ? "true" : "false");
+    optionValues.push_back((m_pComboBoxCaptureMode->currentIndex() == static_cast<int>(UISettingsDefs::RecordingMode_VideoAudio) ||
+                            m_pComboBoxCaptureMode->currentIndex() == static_cast<int>(UISettingsDefs::RecordingMode_VideoOnly)) ? "true" : "false");
+    optionValues.push_back((m_pComboBoxCaptureMode->currentIndex() == static_cast<int>(UISettingsDefs::RecordingMode_VideoAudio) ||
+                            m_pComboBoxCaptureMode->currentIndex() == static_cast<int>(UISettingsDefs::RecordingMode_AudioOnly)) ? "true" : "false");
     if (m_pSliderAudioCaptureQuality->value() == 1)
         optionValues.push_back("low");
     else if (m_pSliderAudioCaptureQuality->value() == 2)
@@ -741,6 +734,11 @@ void UIMachineSettingsDisplay::retranslateUi()
     m_pLabelAudioCaptureQualityMin->setText(tr("low", "quality"));
     m_pLabelAudioCaptureQualityMed->setText(tr("medium", "quality"));
     m_pLabelAudioCaptureQualityMax->setText(tr("high", "quality"));
+
+    m_pComboBoxCaptureMode->setItemText(0, gpConverter->toString(UISettingsDefs::RecordingMode_VideoAudio));
+    m_pComboBoxCaptureMode->setItemText(1, gpConverter->toString(UISettingsDefs::RecordingMode_VideoOnly));
+    m_pComboBoxCaptureMode->setItemText(2, gpConverter->toString(UISettingsDefs::RecordingMode_AudioOnly));
+
     updateRecordingFileSizeHint();
 }
 
@@ -1074,9 +1072,9 @@ void UIMachineSettingsDisplay::prepareTabRecording()
         /* Capture mode selection combo box. */
         AssertPtrReturnVoid(m_pComboBoxCaptureMode);
         {
-            m_pComboBoxCaptureMode->insertItem(UIDataSettingsMachineDisplay::RecordingMode_VideoAudio, "Video/Audio");
-            m_pComboBoxCaptureMode->insertItem(UIDataSettingsMachineDisplay::RecordingMode_VideoOnly, "Video Only");
-            m_pComboBoxCaptureMode->insertItem(UIDataSettingsMachineDisplay::RecordingMode_AudioOnly, "Audio Only");
+            m_pComboBoxCaptureMode->insertItem(0, ""); /* UISettingsDefs::RecordingMode_VideoAudio */
+            m_pComboBoxCaptureMode->insertItem(1, ""); /* UISettingsDefs::RecordingMode_VideoOnly */
+            m_pComboBoxCaptureMode->insertItem(2, ""); /* UISettingsDefs::RecordingMode_AudioOnly */
         }
 
         /* File-path selector created in the .ui file. */
@@ -1728,17 +1726,17 @@ void UIMachineSettingsDisplay::enableDisableRecordingWidgets()
     const bool fIsRecordingOptionsEnabled = ((isMachineOffline() || isMachineSaved()) && m_pCheckboxVideoCapture->isChecked()) ||
                                              (isMachineOnline() && !m_pCache->base().m_fRecordingEnabled && m_pCheckboxVideoCapture->isChecked());
 
-    const UIDataSettingsMachineDisplay::RecordingMode enmRecordingMode =
-        static_cast<UIDataSettingsMachineDisplay::RecordingMode>(m_pComboBoxCaptureMode->currentIndex());
+    const UISettingsDefs::RecordingMode enmRecordingMode =
+        static_cast<UISettingsDefs::RecordingMode>(m_pComboBoxCaptureMode->currentIndex());
 
     /* Video Capture Screens option should be enabled only if:
      * Machine is in *any* valid state and check-box is checked. */
     const bool fIsVideoCaptureScreenOptionEnabled = isMachineInValidMode() && m_pCheckboxVideoCapture->isChecked();
 
-    bool fRecordVideo = enmRecordingMode == UIDataSettingsMachineDisplay::RecordingMode_VideoOnly ||
-        enmRecordingMode == UIDataSettingsMachineDisplay::RecordingMode_VideoAudio;
-    bool fRecordAudio = enmRecordingMode == UIDataSettingsMachineDisplay::RecordingMode_AudioOnly ||
-        enmRecordingMode == UIDataSettingsMachineDisplay::RecordingMode_VideoAudio;
+    bool fRecordVideo = enmRecordingMode == UISettingsDefs::RecordingMode_VideoOnly ||
+        enmRecordingMode == UISettingsDefs::RecordingMode_VideoAudio;
+    bool fRecordAudio = enmRecordingMode == UISettingsDefs::RecordingMode_AudioOnly ||
+        enmRecordingMode == UISettingsDefs::RecordingMode_VideoAudio;
 
     m_pLabelVideoCaptureSize->setEnabled(fIsRecordingOptionsEnabled && fRecordVideo);
     m_pComboVideoCaptureSize->setEnabled(fIsRecordingOptionsEnabled && fRecordVideo);

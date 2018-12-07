@@ -83,6 +83,7 @@ template<> bool canConvert<MiniToolbarAlignment>() { return true; }
 template<> bool canConvert<InformationElementType>() { return true; }
 template<> bool canConvert<MaxGuestResolutionPolicy>() { return true; }
 template<> bool canConvert<UIMediumFormat>() { return true; }
+template<> bool canConvert<UISettingsDefs::RecordingMode>() { return true; }
 
 
 /* QString <= SizeSuffix: */
@@ -2500,4 +2501,56 @@ template<> UIMediumFormat fromInternalString<UIMediumFormat>(const QString &strU
         return UIMediumFormat_VDI;
     /* Corresponding format for known words: */
     return values.at(keys.indexOf(QRegExp(strUIMediumFormat, Qt::CaseInsensitive)));
+}
+
+/* QString <= UISettingsDefs::RecordingMode: */
+template<> QString toString(const UISettingsDefs::RecordingMode &enmRecordingMode)
+{
+    QString strResult;
+    switch (enmRecordingMode)
+    {
+        case UISettingsDefs::RecordingMode_VideoAudio: strResult = QApplication::translate("VBoxGlobal", "Video/Audio", "UISettingsDefs::RecordingMode"); break;
+        case UISettingsDefs::RecordingMode_VideoOnly:  strResult = QApplication::translate("VBoxGlobal", "Video Only", "UISettingsDefs::RecordingMode"); break;
+        case UISettingsDefs::RecordingMode_AudioOnly:  strResult = QApplication::translate("VBoxGlobal", "Audio Only", "UISettingsDefs::RecordingMode"); break;
+        default:
+        {
+            AssertMsgFailed(("No text for recording mode format=%d", enmRecordingMode));
+            break;
+        }
+    }
+    return strResult;
+}
+
+/* QString <= UISettingsDefs::RecordingMode: */
+template<> QString toInternalString(const UISettingsDefs::RecordingMode &enmRecordingMode)
+{
+    QString strResult;
+    switch (enmRecordingMode)
+    {
+        case UISettingsDefs::RecordingMode_VideoAudio: strResult = "Video/Audio"; break;
+        case UISettingsDefs::RecordingMode_VideoOnly:  strResult = "VideoOnly";   break;
+        case UISettingsDefs::RecordingMode_AudioOnly:  strResult = "AudioOnly";   break;
+        default:
+        {
+            AssertMsgFailed(("No text for recording mode=%d", enmRecordingMode));
+            break;
+        }
+    }
+    return strResult;
+}
+
+/* UISettingsDefs::RecordingMode <= QString: */
+template<> UISettingsDefs::RecordingMode fromInternalString<UISettingsDefs::RecordingMode>(const QString &strRecordingMode)
+{
+    /* Here we have some fancy stuff allowing us
+     * to search through the keys using 'case-insensitive' rule: */
+    QStringList keys;       QList<UISettingsDefs::RecordingMode> values;
+    keys << "Video/Audio";  values << UISettingsDefs::RecordingMode_VideoAudio;
+    keys << "VideoOnly";    values << UISettingsDefs::RecordingMode_VideoOnly;
+    keys << "AudioOnly";    values << UISettingsDefs::RecordingMode_AudioOnly;
+    /* VDI format for unknown words: */
+    if (!keys.contains(strRecordingMode, Qt::CaseInsensitive))
+        return UISettingsDefs::RecordingMode_VideoAudio;
+    /* Corresponding format for known words: */
+    return values.at(keys.indexOf(QRegExp(strRecordingMode, Qt::CaseInsensitive)));
 }

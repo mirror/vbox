@@ -48,6 +48,14 @@ namespace UISettingsDefs
         ConfigurationAccessLevel_Partial_Running,
     };
 
+    /** Recording mode enum is used in Display setting page to determine the recording mode. */
+    enum RecordingMode
+    {
+        RecordingMode_VideoAudio = 0,
+        RecordingMode_VideoOnly  = 1,
+        RecordingMode_AudioOnly  = 2
+    };
+
     /** Determines configuration access level for passed @a enmSessionState and @a enmMachineState. */
     SHARED_LIBRARY_STUFF ConfigurationAccessLevel configurationAccessLevel(KSessionState enmSessionState,
                                                                            KMachineState enmMachineState);
@@ -286,4 +294,3 @@ private:
 
 
 #endif /* !___UISettingsDefs_h___ */
-
