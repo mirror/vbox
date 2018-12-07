@@ -4087,8 +4087,7 @@ static DECLCALLBACK(int) hdaR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint
         }
 
         rc = SSMR3GetStructEx(pSSM, &pStream->State, sizeof(HDASTREAMSTATE),
-                              0 /* fFlags */, g_aSSMStreamStateFields7,
-                              NULL);
+                              0 /* fFlags */, g_aSSMStreamStateFields7, NULL);
         AssertRC(rc);
 
         /*
@@ -4106,18 +4105,13 @@ static DECLCALLBACK(int) hdaR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint
 
         /*
          * Load period state.
-         * Don't annoy other team mates (forgot this for state v7).
          */
         hdaR3StreamPeriodInit(&pStream->State.Period,
                               pStream->u8SD, pStream->u16LVI, pStream->u32CBL, &pStream->State.Cfg);
 
-        if (   SSMR3HandleRevision(pSSM) >= 116273
-            || SSMR3HandleVersion(pSSM)  >= VBOX_FULL_VERSION_MAKE(5, 2, 0))
-        {
-            rc = SSMR3GetStructEx(pSSM, &pStream->State.Period, sizeof(HDASTREAMPERIOD),
-                                  0 /* fFlags */, g_aSSMStreamPeriodFields7, NULL);
-            AssertRC(rc);
-        }
+        rc = SSMR3GetStructEx(pSSM, &pStream->State.Period, sizeof(HDASTREAMPERIOD),
+                              0 /* fFlags */, g_aSSMStreamPeriodFields7, NULL);
+        AssertRC(rc);
 
         /*
          * Load internal (FIFO) buffer.
