@@ -1,8 +1,6 @@
 /* $Id$ */
 /** @file
  * VBox Global COM Class implementation.
- *
- * @todo r=bird: Why is this file in src-all? Shouldn't it be in src-global/win/?!?
  */
 
 /*
