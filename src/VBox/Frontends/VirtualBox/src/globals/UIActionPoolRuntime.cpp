@@ -3596,6 +3596,9 @@ void UIActionPoolRuntime::updateMenus()
 
     /* 'Log Viewer' menu: */
     updateMenuLogViewerWindow();
+
+    /* 'Guest Control File Manager' menu: */
+    updateMenuGuestControlFileManager();
 }
 
 void UIActionPoolRuntime::updateMenuMachine()
