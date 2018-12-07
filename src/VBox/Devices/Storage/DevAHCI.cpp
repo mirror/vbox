@@ -572,6 +572,8 @@ typedef struct AHCI
     bool                            fBootable;
     /** Flag whether the legacy port reset method should be used to make it work with saved states. */
     bool                            fLegacyPortResetMethod;
+    /** Enable tiger (10.4.x) SSTS hack or not. */
+    bool                            fTigerHack;
 
     /** Number of usable ports on this controller. */
     uint32_t                        cPortsImpl;
@@ -1178,7 +1180,10 @@ static int PortSControl_w(PAHCI pAhci, PAHCIPort pAhciPort, uint32_t iReg, uint3
         }
         else
         {
-            pAhciPort->regSSTS = 0x1; /* Indicate device presence detected but communication not established. */
+            if (!pAhci->fTigerHack)
+                pAhciPort->regSSTS = 0x1;   /* Indicate device presence detected but communication not established. */
+            else
+                pAhciPort->regSSTS = 0x0;   /* Indicate no device detected after COMRESET. [tiger hack] */
             pAhciPort->regSCTL = u32Value;  /* Update before kicking the I/O thread. */
 
             /* Kick the thread to finish the reset. */
@@ -5881,7 +5886,8 @@ static DECLCALLBACK(int) ahciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
                                     "SecondarySlave\0"
                                     "PortCount\0"
                                     "Bootable\0"
-                                    "CmdSlotsAvail\0"))
+                                    "CmdSlotsAvail\0"
+                                    "TigerHack\0"))
         return PDMDEV_SET_ERROR(pDevIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES,
                                 N_("AHCI configuration error: unknown option specified"));
 
@@ -5929,6 +5935,10 @@ static DECLCALLBACK(int) ahciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
         return PDMDevHlpVMSetError(pDevIns, VERR_INVALID_PARAMETER, RT_SRC_POS,
                                    N_("AHCI configuration error: CmdSlotsAvail=%u should be at least 1"),
                                    pThis->cCmdSlotsAvail);
+    bool fTigerHack;
+    rc = CFGMR3QueryBoolDef(pCfg, "TigerHack", &fTigerHack, false);
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("AHCI configuration error: failed to read TigerHack as boolean"));
 
     /*
      * Initialize the instance data (everything touched by the destructor need
