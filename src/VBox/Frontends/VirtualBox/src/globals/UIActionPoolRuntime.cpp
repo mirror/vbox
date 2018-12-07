@@ -3124,10 +3124,15 @@ void UIActionPoolRuntime::setGuestSupportsGraphics(bool fSupports)
     m_invalidations << UIActionIndexRT_M_View << UIActionIndexRT_M_ViewPopup;
 }
 
-void UIActionPoolRuntime::setHostScreenForGuestScreenMap(const QMap<int, int> &map)
+void UIActionPoolRuntime::setHostScreenForGuestScreenMap(const QMap<int, int> &scheme)
 {
-    m_mapHostScreenForGuestScreen = map;
+    m_mapHostScreenForGuestScreen = scheme;
     m_invalidations << UIActionIndexRT_M_View << UIActionIndexRT_M_ViewPopup;
+}
+
+QMap<int, int> UIActionPoolRuntime::hostScreenForGuestScreenMap() const
+{
+    return m_mapHostScreenForGuestScreen;
 }
 
 bool UIActionPoolRuntime::isAllowedInMenuMachine(UIExtraDataMetaDefs::RuntimeMenuMachineActionType type) const
@@ -3299,7 +3304,7 @@ void UIActionPoolRuntime::sltHandleActionTriggerViewScreenRemap(QAction *pAction
     emit sigNotifyAboutTriggeringViewScreenRemap(iGuestScreenIndex, iHostScreenIndex);
 }
 
-void UIActionPoolRuntime::sltHandleActionTriggerViewRescale(QAction *pAction)
+void UIActionPoolRuntime::sltHandleActionTriggerViewScreenRescale(QAction *pAction)
 {
     /* Make sure sender is valid: */
     AssertPtrReturnVoid(pAction);
@@ -3983,7 +3988,7 @@ void UIActionPoolRuntime::updateMenuViewRescale(QMenu *pMenu)
 
         /* Get device-pixel-ratio: */
         bool fDevicePixelRatioMentioned = false;
-        const double dDevicePixelRatioActual = qMin(gpDesktop->devicePixelRatioActual(),
+        const double dDevicePixelRatioActual = qMin(gpDesktop->devicePixelRatioActual(m_mapHostScreenForGuestScreen.value(iGuestScreenIndex)),
                                                     10.0 /* meh, who knows? */);
 
         /* Calculate minimum, maximum and step: */
@@ -4044,7 +4049,7 @@ void UIActionPoolRuntime::updateMenuViewRescale(QMenu *pMenu)
         pMenu->addActions(pActionGroup->actions());
         /* Install listener for exclusive action-group: */
         connect(pActionGroup, &QActionGroup::triggered,
-                this, &UIActionPoolRuntime::sltHandleActionTriggerViewRescale);
+                this, &UIActionPoolRuntime::sltHandleActionTriggerViewScreenRescale);
     }
 }
 

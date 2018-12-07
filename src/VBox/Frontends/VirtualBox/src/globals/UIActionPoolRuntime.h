@@ -165,8 +165,10 @@ public:
     /** Defines whether guest supports graphics. */
     void setGuestSupportsGraphics(bool fSupports);
 
-    /** Defines host-to-guest mapping scheme. */
-    void setHostScreenForGuestScreenMap(const QMap<int, int> &map);
+    /** Defines host-to-guest mapping @a scheme. */
+    void setHostScreenForGuestScreenMap(const QMap<int, int> &scheme);
+    /** Returns host-to-guest mapping scheme. */
+    QMap<int, int> hostScreenForGuestScreenMap() const;
 
     /** Returns whether the action with passed @a type is allowed in the 'Machine' menu. */
     bool isAllowedInMenuMachine(UIExtraDataMetaDefs::RuntimeMenuMachineActionType type) const;
@@ -210,7 +212,7 @@ protected slots:
     /** Handles 'View' : 'Virtual Screen #' menu : 'Remap' @a pAction trigger. */
     void sltHandleActionTriggerViewScreenRemap(QAction *pAction);
     /** Handles 'View' : 'Virtual Screen #' menu : 'Rescale' @a pAction trigger. */
-    void sltHandleActionTriggerViewRescale(QAction *pAction);
+    void sltHandleActionTriggerViewScreenRescale(QAction *pAction);
 
 protected:
 

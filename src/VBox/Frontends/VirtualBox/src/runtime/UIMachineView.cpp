@@ -27,6 +27,7 @@
 
 /* GUI includes: */
 # include "VBoxGlobal.h"
+# include "UIActionPoolRuntime.h"
 # include "UIDesktopWidgetWatchdog.h"
 # include "UIExtraDataManager.h"
 # include "UIMessageCenter.h"
@@ -1470,6 +1471,21 @@ bool UIMachineView::eventFilter(QObject *pWatched, QEvent *pEvent)
                     m_iHostScreenNumber = iCurrentHostScreenNumber;
                     /* Reapply machine-view scale-factor if necessary: */
                     applyMachineViewScaleFactor();
+                    /* For 'normal'/'scaled' visual state type: */
+                    if (   visualStateType() == UIVisualStateType_Normal
+                        || visualStateType() == UIVisualStateType_Scale)
+                    {
+                        /* Make sure action-pool is of 'runtime' type: */
+                        UIActionPoolRuntime *pActionPool = actionPool() && actionPool()->toRuntime() ? actionPool()->toRuntime() : 0;
+                        AssertPtr(pActionPool);
+                        if (pActionPool)
+                        {
+                            /* Inform action-pool about current guest-to-host screen mapping: */
+                            QMap<int, int> screenMap = pActionPool->hostScreenForGuestScreenMap();
+                            screenMap[m_uScreenId] = m_iHostScreenNumber;
+                            pActionPool->setHostScreenForGuestScreenMap(screenMap);
+                        }
+                    }
                 }
                 break;
             }
