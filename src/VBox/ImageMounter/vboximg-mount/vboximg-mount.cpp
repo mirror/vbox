@@ -174,8 +174,8 @@ static struct vboximgOpts {
      int32_t       offset;                  /** Offset to base virtual disk reads and writes from (altnerative to partition) */
      int32_t       size;                    /** Size of accessible disk region, starting at offset, default = offset 0 */
      uint32_t      cHddImageDiffMax;        /** Max number of differencing images (snapshots) to apply to image */
-     uint32_t      fListMedia;              /** Flag to list virtual disks of all known VMs */
-     uint32_t      fListMediaBrief;         /** Flag to list virtual disks of all known VMs */
+     uint32_t      fListMediaLong;          /** Flag to list virtual disks of all known VMs */
+     uint32_t      fList;                   /** Flag to list virtual disks of all known VMs */
      uint32_t      fListParts;              /** Flag to summarily list partitions associated with pszImage */
      uint32_t      fAllowRoot;              /** Flag to allow root to access this FUSE FS */
      uint32_t      fRW;                     /** Flag to allow changes to FUSE-mounted Virtual Disk image */
@@ -186,9 +186,8 @@ static struct vboximgOpts {
 #define OPTION(fmt, pos, val) { fmt, offsetof(struct vboximgOpts, pos), val }
 
 static struct fuse_opt vboximgOptDefs[] = {
-    OPTION("-l",              fListMediaBrief,   1),
-    OPTION("-L",              fListMedia,        1),
-    OPTION("-t",              fListParts,        1),
+    OPTION("-l",              fList,             1),
+    OPTION("--list",          fList,             1),
     OPTION("--root",          fAllowRoot,        1),
     OPTION("--vm=%s",         pszVm,             0),
     OPTION("--maxdiff=%d",    cHddImageDiffMax,  1),
@@ -214,9 +213,13 @@ briefUsage()
 {
     RTPrintf("usage: vboximg-mount [options] <mountpoint>\n\n"
         "vboximg-mount options:\n\n"
-        "    [ -l ]                                     List virtual disk media (brief version)\n"
-        "    [ -L ]                                     List virtual disk media (long version)\n"
-        "    [ -t ]                                     List partition table (requires -i or --image option)\n"
+        "    [ { -l | --list } ]                        If a disk image is specified [-i, --image], list partition table\n"
+        "                                               for the specified disk image.\n"
+        "\n"
+        "                                               If no image is specified on the command line, list registered VMs\n"
+        "                                               and their disk media.  If a verbose flag is specified,\n"
+        "                                               VM and media list will be long format, including snapshot images\n"
+        "                                               and component locations (e.g. paths).\n"
         "\n"
         "    [ { -i | --image= } <UUID | name | path> ] Virtual Box disk image to use\n"
         "\n"
@@ -225,7 +228,7 @@ briefUsage()
         "    [ { -o | --offset= } <byte #> ]            Disk I/O will be based on offset from disk start\n"
         "                                               (Can't use with -p or --partition options)\n"
         "\n"
-        "    [ -s | --size=<bytes>]                     Sets size of mounted disk from disk start or from\n"
+        "    [ -s | --size=<bytes> ]                    Sets size of mounted disk from disk start or from\n"
         "                                               offset, if specified. (Can't use with\n"
         "                                               -p or --partition options)\n"
         "\n"
@@ -234,14 +237,15 @@ briefUsage()
         "                                               specified diff number.\n"
         "                                               (0 = Apply no diffs, default = Apply all diffs)\n"
         "\n"
-        "    [ --rw]                                    Make image writeable (default = readonly)\n"
-        "    [ --root]                                  Same as -o allow_root\n"
+        "    [ --rw ]                                   Make image writeable (default = readonly)\n"
+        "    [ --root ]                                 Same as -o allow_root\n"
         "\n"
         "    [ --vm < Path | UUID >]                    VM UUID (limit media list to specific VM)\n"
         "\n"
         "    [ --verbose]                               Log extra information\n"
         "    -o opt[,opt...]                            FUSE mount options\n"
         "    -h                                         Display short usage info showing only the above\n"
+        "    -?                                         Display short usage info showing only the above\n"
         "    --help                                     Display long usage info (including FUSE opts)\n\n"
     );
     RTPrintf("\n");
@@ -695,7 +699,6 @@ vboximgOp_readdir(const char *pszPath, void *pvBuf, fuse_fill_dir_t pfnFiller,
                               off_t offset, struct fuse_file_info *pInfo)
 
 {
-
     (void) offset;
     (void) pInfo;
 
@@ -793,7 +796,7 @@ listMedia(IMachine *pMachine, char *vmName, char *vmUuid)
 
                 if (ancestorNumber == 0)
                 {
-                    if (!g_vboximgOpts.fListMediaBrief)
+                    if (g_vboximgOpts.fVerbose)
                     {
                         RTPrintf("   -----------------------\n");
                         RTPrintf("   HDD base:   \"%s\"\n",   CSTR(pMediumName));
@@ -811,7 +814,7 @@ listMedia(IMachine *pMachine, char *vmName, char *vmUuid)
                 }
                 else
                 {
-                    if (!g_vboximgOpts.fListMediaBrief)
+                    if (g_vboximgOpts.fVerbose)
                     {
                         RTPrintf("     Diff %d:\n", ancestorNumber);
                         RTPrintf("          UUID:       %s\n",    CSTR(pMediumUuid));
@@ -860,7 +863,7 @@ listVMs(IVirtualBox *pVirtualBox)
                     || RTStrNCmp(CSTR(pMachineUuid), g_vboximgOpts.pszVm, MAX_UUID_LEN) == 0
                     || RTStrNCmp((const char *)pMachineName.raw(), g_vboximgOpts.pszVm, MAX_UUID_LEN) == 0)
                 {
-                    if (!g_vboximgOpts.fListMediaBrief)
+                    if (g_vboximgOpts.fVerbose)
                     {
                         RTPrintf("------------------------------------------------------\n");
                         RTPrintf("VM Name:   \"%s\"\n", CSTR(pMachineName));
@@ -1261,7 +1264,8 @@ main(int argc, char **argv)
 
     if (rc == -1)
         return RTMsgErrorExitFailure("Couldn't parse fuse options, rc=%Rrc\n", rc);
-    if (g_vboximgOpts.fBriefUsage)
+
+    if (argc < 2 || RTStrCmp(argv[1], "-?" ) == 0 || g_vboximgOpts.fBriefUsage)
     {
         briefUsage();
         return 0;
@@ -1301,18 +1305,12 @@ main(int argc, char **argv)
     if (g_vboximgOpts.fVerbose)
         RTPrintf("vboximg: VirtualBox XPCOM object created\n");
 
-    if (g_vboximgOpts.fListMedia || g_vboximgOpts.fListMediaBrief)
+    if (g_vboximgOpts.fList && g_vboximgOpts.pszImage == NULL)
     {
         listVMs(pVirtualBox);
         return 0;
     }
 
-
-    if (g_vboximgOpts.pszImage == NULL)
-    {
-        RTMsgErrorExitFailure("To list partitions, must also specify --i or --image option\n");
-        return 0;
-    }
     ComPtr<IMedium> pBaseImageMedium = NULL;
     char    *pszFormat;
     VDTYPE  enmType;
@@ -1485,7 +1483,7 @@ main(int argc, char **argv)
     g_cWriters   = 0;
     g_cbEntireVDisk  = VDGetSize(g_pVDisk, 0 /* base */);
 
-    if (g_vboximgOpts.fListParts)
+    if (g_vboximgOpts.fList)
     {
         if (g_pVDisk == NULL)
             return RTMsgErrorExitFailure("No valid --image to list partitions from\n");
