@@ -96,6 +96,37 @@
     } while (0)
 
 
+#define CHECKCIDR(String, rcExpected, ExpectedAddr, iExpectedPrefix)    \
+    do {                                                                \
+        RTNETADDRIPV4 Addr;                                             \
+        int iPrefix;                                                    \
+                                                                        \
+        int rc2 = RTNetStrToIPv4Cidr(String, &Addr, &iPrefix);          \
+        if ((rcExpected) && !rc2)                                       \
+        {                                                               \
+            RTTestIFailed("at line %d: '%s': expected %Rrc got %Rrc\n", \
+                          __LINE__, String, (rcExpected), rc2);         \
+        }                                                               \
+        else if (   (rcExpected) != rc2                                 \
+                 || (   rc2 == VINF_SUCCESS                             \
+                     && (   RT_H2N_U32_C(ExpectedAddr) != Addr.u        \
+                         || iExpectedPrefix != iPrefix)))               \
+        {                                                               \
+            RTTestIFailed("at line %d: '%s': expected %Rrc got %Rrc,"   \
+                          " expected address %RTnaipv4/%d got %RTnaipv4/%d\n", \
+                          __LINE__, String, rcExpected, rc2,            \
+                          RT_H2N_U32_C(ExpectedAddr), (iExpectedPrefix), \
+                          Addr.u, iPrefix);                             \
+        }                                                               \
+    } while (0)
+
+#define GOODCIDR(String, ExpectedAddr, iExpectedPrefix) \
+    CHECKCIDR(String, VINF_SUCCESS, ExpectedAddr, iExpectedPrefix)
+
+#define BADCIDR(String) \
+    CHECKCIDR(String, VERR_INVALID_PARAMETER, 0, 0)
+
+
 #define CHECKISADDR(String, fExpected)                                  \
     do {                                                                \
         bool fRc = RTNetIsIPv4AddrStr(String);                          \
@@ -273,6 +304,32 @@ int main()
     CHECKADDREX("1.2.3.4",  " ",  VWRN_TRAILING_SPACES,   0x01020304);
     CHECKADDREX("1.2.3.4",  "x",  VWRN_TRAILING_CHARS,    0x01020304);
     CHECKADDREX("1.2.3.444", "",  VERR_INVALID_PARAMETER,          0);
+
+
+    GOODCIDR("1.2.3.4",         0x01020304, 32);
+    GOODCIDR("1.2.3.4/32",      0x01020304, 32);
+    GOODCIDR("1.2.3.4/24",      0x01020304, 24); /* address is not truncated to prefix */
+
+    GOODCIDR("\t " "1.2.3.4/24",       0x01020304, 24); /* leading spaces ok */
+    GOODCIDR(      "1.2.3.4/24" " \t", 0x01020304, 24); /* trailing spaces ok */
+    GOODCIDR("\t " "1.2.3.4/24" " \t", 0x01020304, 24); /* both are ok */
+
+    BADCIDR("1.2.3.4/0");       /* prefix can't be zero */
+    BADCIDR("1.2.3.4/33");      /* prefix is too big */
+    BADCIDR("1.2.3.4/-1");      /* prefix is negative */
+    BADCIDR("1.2.3.4/");        /* prefix is missing */
+    BADCIDR("1.2.3.4/");        /* prefix is missing */
+    BADCIDR("1.2.3.4/a");       /* prefix is not a number */
+    BADCIDR("1.2.3.4/0xa");     /* prefix is not decimal */
+//  BADCIDR("1.2.3.0/024");     /* XXX: prefix is not decimal */
+
+    BADCIDR("1.2.3.0 /24");     /* no spaces after address */
+    BADCIDR("1.2.3.0/ 24");     /* no spaces after slash */
+
+    BADCIDR("1.2.3.0/24" "x");  /* trailing chars */
+    BADCIDR("1.2.3.0/24" " x"); /* trailing chars */
+
+
 
     /* NB: RTNetIsIPv4AddrStr does NOT allow leading/trailing whitespace */
     IS_ADDR("1.2.3.4");

@@ -103,6 +103,21 @@ RTDECL(int) RTNetStrToIPv4AddrEx(const char *pcszAddr, PRTNETADDRIPV4 pAddr, cha
 RTDECL(int) RTNetStrToIPv4Addr(const char *pcszAddr, PRTNETADDRIPV4 pAddr);
 
 /**
+ * Parses dotted-decimal IPv4 CIDR notation into RTNETADDRIPV4
+ * representation and prefix length.  Missing prefix specification is
+ * treated as exact address specification (prefix length 32).  Leading
+ * and trailing whitespace is ignored.
+ *
+ * @returns VINF_SUCCESS on success, VERR_INVALID_PARAMETER on
+ *          failure.
+ *
+ * @param   pcszAddr        The value to convert.
+ * @param   pAddr           Where to store the address.
+ * @param   piPrefix        Where to store the prefix length;
+ */
+RTDECL(int) RTNetStrToIPv4Cidr(const char *pcszAddr, PRTNETADDRIPV4 pAddr, int *piPrefix);
+
+/**
  * Verifies that RTNETADDRIPV4 is a valid contiguous netmask and
  * computes its prefix length.
  *

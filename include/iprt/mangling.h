@@ -1549,6 +1549,7 @@
 # define RTNetStrIsIPv4AddrAny                          RT_MANGLER(RTNetStrIsIPv4AddrAny)
 # define RTNetStrToIPv4AddrEx                           RT_MANGLER(RTNetStrToIPv4AddrEx)
 # define RTNetStrToIPv4Addr                             RT_MANGLER(RTNetStrToIPv4Addr)
+# define RTNetStrToIPv4Cidr                             RT_MANGLER(RTNetStrToIPv4Cidr)
 # define RTNetIsIPv6AddrStr                             RT_MANGLER(RTNetIsIPv6AddrStr)
 # define RTNetStrIsIPv6AddrAny                          RT_MANGLER(RTNetStrIsIPv6AddrAny)
 # define RTNetStrToIPv6AddrEx                           RT_MANGLER(RTNetStrToIPv6AddrEx)
