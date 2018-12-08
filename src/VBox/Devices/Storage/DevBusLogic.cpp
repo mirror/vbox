@@ -322,7 +322,7 @@ enum BL_DEVICE_TYPE
 {
     DEV_BT_958D     = 0,    /* BusLogic BT-958D, PCI. */
     DEV_BT_545C     = 1,    /* BusLogic BT-545C, ISA. */
-    DEV_AHA_1540C   = 2     /* Adaptec AHA-1540C, ISA. */
+    DEV_AHA_1540B   = 2     /* Adaptec AHA-1540B, ISA. */
 };
 
 /** Pointer to a task state structure. */
@@ -406,6 +406,8 @@ typedef struct BUSLOGIC
 
     /** Emulated device type. */
     uint8_t                         uDevType;
+    /** Signature index for Adaptec models. */
+    uint8_t                         uAhaSigIdx;
 
     /** Number of mailboxes the guest set up. */
     uint32_t                        cMailbox;
@@ -1150,6 +1152,7 @@ static int buslogicR3HwReset(PBUSLOGIC pBusLogic, bool fResetIO)
     pBusLogic->fExtendedLunCCBFormat = false;
     pBusLogic->uMailboxOutgoingPositionCurrent = 0;
     pBusLogic->uMailboxIncomingPositionCurrent = 0;
+    pBusLogic->uAhaSigIdx = 0;
 
     /* Clear any active/pending interrupts. */
     pBusLogic->uPendingIntr = 0;
@@ -1839,8 +1842,16 @@ static int buslogicProcessCommand(PBUSLOGIC pBusLogic)
              * for Adaptec AHA-154x may claim the adapter. The BusLogic drivers will claim
              * the adapter only when the byte is *not* '0' or 'B'.
              */
-            pBusLogic->aReplyBuffer[0] = 'A'; /* Firmware option bytes */
-            pBusLogic->aReplyBuffer[1] = 'A'; /* Special option byte */
+            if (pBusLogic->uDevType == DEV_AHA_1540B)
+            {
+                pBusLogic->aReplyBuffer[0] = 'A'; /* Firmware option bytes */
+                pBusLogic->aReplyBuffer[1] = '0'; /* Special option byte */
+            }
+            else
+            {
+                pBusLogic->aReplyBuffer[0] = 'A'; /* Firmware option bytes */
+                pBusLogic->aReplyBuffer[1] = 'A'; /* Special option byte */
+            }
 
             /* We report version 5.07B. This reply will provide the first two digits. */
             pBusLogic->aReplyBuffer[2] = '5'; /* Major version 5 */
@@ -1850,6 +1861,15 @@ static int buslogicProcessCommand(PBUSLOGIC pBusLogic)
         }
         case BUSLOGICCOMMAND_INQUIRE_FIRMWARE_VERSION_3RD_LETTER:
         {
+            if (pBusLogic->uDevType == DEV_AHA_1540B)
+            {
+                /* Newer ASPI4DOS.SYS versions expect this command to fail. */
+                Log(("Command %#x not valid for this adapter\n", pBusLogic->uOperationCode));
+                pBusLogic->cbReplyParametersLeft = 0;
+                pBusLogic->regStatus |= BL_STAT_CMDINV;
+                break;
+            }
+
             pBusLogic->aReplyBuffer[0] = '7';
             pBusLogic->cbReplyParametersLeft = 1;
             break;
@@ -1906,6 +1926,15 @@ static int buslogicProcessCommand(PBUSLOGIC pBusLogic)
 
         case BUSLOGICCOMMAND_INQUIRE_HOST_ADAPTER_MODEL_NUMBER:
         {
+            /* Not supported on AHA-154x. */
+            if (pBusLogic->uDevType == DEV_AHA_1540B)
+            {
+                Log(("Command %#x not valid for this adapter\n", pBusLogic->uOperationCode));
+                pBusLogic->cbReplyParametersLeft = 0;
+                pBusLogic->regStatus |= BL_STAT_CMDINV;
+                break;
+            }
+
             /* The reply length is set by the guest and is found in the first byte of the command buffer. */
             if (pBusLogic->aCommandBuffer[0] > sizeof(pBusLogic->aReplyBuffer))
             {
@@ -1967,6 +1996,13 @@ static int buslogicProcessCommand(PBUSLOGIC pBusLogic)
              * it to fail. If it succeeds, the drivers refuse to load. However, some newer
              * Adaptec 154x models supposedly support it too??
              */
+            if (pBusLogic->uDevType == DEV_AHA_1540B)
+            {
+                Log(("Command %#x not valid for this adapter\n", pBusLogic->uOperationCode));
+                pBusLogic->cbReplyParametersLeft = 0;
+                pBusLogic->regStatus |= BL_STAT_CMDINV;
+                break;
+            }
 
             /* The reply length is set by the guest and is found in the first byte of the command buffer. */
             pBusLogic->cbReplyParametersLeft = pBusLogic->aCommandBuffer[0];
@@ -1995,11 +2031,20 @@ static int buslogicProcessCommand(PBUSLOGIC pBusLogic)
             pReply->fParityCheckingEnabled = true;
             pReply->cMailbox = pBusLogic->cMailbox;
             U32_TO_ADDR(pReply->MailboxAddress, pBusLogic->GCPhysAddrMailboxOutgoingBase);
-            pReply->uSignature = 'B';
-            /* The 'D' signature prevents Adaptec's OS/2 drivers from getting too
-             * friendly with BusLogic hardware and upsetting the HBA state.
+            /* The 'D' signature (actually 'SD' for Storage Dimensions, and 'BD' for BusLogic)
+             * prevents Adaptec's OS/2 drivers from getting too friendly with BusLogic hardware
+             * and upsetting the HBA state.
              */
-            pReply->uCharacterD = 'D';      /* BusLogic model. */
+            if (pBusLogic->uDevType == DEV_AHA_1540B)
+            {
+                pReply->uSignature  = 0;    /* Zeros for Adaptec. */
+                pReply->uCharacterD = 0;
+            }
+            else
+            {
+                pReply->uSignature  = 'B';
+                pReply->uCharacterD = 'D';      /* BusLogic model. */
+            }
             pReply->uHostBusType = 'F';     /* PCI bus. */
             break;
         }
@@ -2043,6 +2088,14 @@ static int buslogicProcessCommand(PBUSLOGIC pBusLogic)
         }
         case BUSLOGICCOMMAND_INITIALIZE_EXTENDED_MAILBOX:
         {
+            if (pBusLogic->uDevType == DEV_AHA_1540B)
+            {
+                Log(("Command %#x not valid for this adapter\n", pBusLogic->uOperationCode));
+                pBusLogic->cbReplyParametersLeft = 0;
+                pBusLogic->regStatus |= BL_STAT_CMDINV;
+                break;
+            }
+
             PRequestInitializeExtendedMailbox pRequest = (PRequestInitializeExtendedMailbox)pBusLogic->aCommandBuffer;
 
             pBusLogic->cbReplyParametersLeft = 0;
@@ -2144,6 +2197,15 @@ static int buslogicProcessCommand(PBUSLOGIC pBusLogic)
         }
         case BUSLOGICCOMMAND_DISABLE_HOST_ADAPTER_INTERRUPT:
         {
+            /* Not supported on AHA-154x HBAs. */
+            if (pBusLogic->uDevType == DEV_AHA_1540B)
+            {
+                Log(("Command %#x not valid for this adapter\n", pBusLogic->uOperationCode));
+                pBusLogic->cbReplyParametersLeft = 0;
+                pBusLogic->regStatus |= BL_STAT_CMDINV;
+                break;
+            }
+
             pBusLogic->cbReplyParametersLeft = 0;
             if (pBusLogic->aCommandBuffer[0] == 0)
                 pBusLogic->fIRQEnabled = false;
@@ -2271,6 +2333,7 @@ static int buslogicProcessCommand(PBUSLOGIC pBusLogic)
  */
 static int buslogicRegisterRead(PBUSLOGIC pBusLogic, unsigned iRegister, uint32_t *pu32)
 {
+    static const char achAhaSig[] = "ADAP";
     int rc = VINF_SUCCESS;
 
     switch (iRegister)
@@ -2340,7 +2403,13 @@ static int buslogicRegisterRead(PBUSLOGIC pBusLogic, unsigned iRegister, uint32_
         }
         case BUSLOGIC_REGISTER_GEOMETRY:
         {
-            *pu32 = pBusLogic->regGeometry;
+            if (pBusLogic->uDevType == DEV_AHA_1540B)
+            {
+                *pu32 = achAhaSig[pBusLogic->uAhaSigIdx];
+                pBusLogic->uAhaSigIdx = (pBusLogic->uAhaSigIdx + 1) & 3;
+            }
+            else
+                *pu32 = pBusLogic->regGeometry;
             break;
         }
         default:
@@ -2448,12 +2517,19 @@ static int buslogicRegisterWrite(PBUSLOGIC pBusLogic, unsigned iRegister, uint8_
                         break;
                     case BUSLOGICCOMMAND_MODIFY_IO_ADDRESS:
                     case BUSLOGICCOMMAND_INQUIRE_EXTENDED_SETUP_INFORMATION:
-                    case BUSLOGICCOMMAND_INQUIRE_SETUP_INFORMATION:
+                    case BUSLOGICCOMMAND_DISABLE_HOST_ADAPTER_INTERRUPT:
                     case BUSLOGICCOMMAND_INQUIRE_HOST_ADAPTER_MODEL_NUMBER:
+                        /* These commands are not on AHA-154x, some Adaptec drivers (ASPI4DOS.SYS) test them. */
+                        if (pBusLogic->uDevType == DEV_AHA_1540B)
+                        {
+                            pBusLogic->cbCommandParametersLeft = 0;
+                            break;
+                        }
+                        /* Fall through. */
+                    case BUSLOGICCOMMAND_INQUIRE_SETUP_INFORMATION:
                     case BUSLOGICCOMMAND_ENABLE_STRICT_ROUND_ROBIN_MODE:
                     case BUSLOGICCOMMAND_SET_CCB_FORMAT:
                     case BUSLOGICCOMMAND_INQUIRE_SYNCHRONOUS_PERIOD:
-                    case BUSLOGICCOMMAND_DISABLE_HOST_ADAPTER_INTERRUPT:
                     case BUSLOGICCOMMAND_ECHO_COMMAND_DATA:
                     case BUSLOGICCOMMAND_ENABLE_OUTGOING_MAILBOX_AVAILABLE_INTERRUPT:
                     case BUSLOGICCOMMAND_SET_PREEMPT_TIME_ON_BUS:
@@ -2475,6 +2551,12 @@ static int buslogicRegisterWrite(PBUSLOGIC pBusLogic, unsigned iRegister, uint8_
                         pBusLogic->cbCommandParametersLeft = sizeof(RequestInitMbx);
                         break;
                     case BUSLOGICCOMMAND_INITIALIZE_EXTENDED_MAILBOX:
+                        /* Some Adaptec drivers (ASPI4DOS.SYS) test this command. */
+                        if (pBusLogic->uDevType == DEV_AHA_1540B)
+                        {
+                            pBusLogic->cbCommandParametersLeft = 0;
+                            break;
+                        }
                         pBusLogic->cbCommandParametersLeft = sizeof(RequestInitializeExtendedMailbox);
                         break;
                     case BUSLOGICCOMMAND_SET_ADAPTER_OPTIONS:
@@ -2529,10 +2611,14 @@ static int buslogicRegisterWrite(PBUSLOGIC pBusLogic, unsigned iRegister, uint8_
          * That is different from Adaptec 154x where those are read only.
          */
         case BUSLOGIC_REGISTER_INTERRUPT:
+            if (pBusLogic->uDevType == DEV_AHA_1540B)
+                break;
             pBusLogic->regInterrupt = uVal;
             break;
 
         case BUSLOGIC_REGISTER_GEOMETRY:
+            if (pBusLogic->uDevType == DEV_AHA_1540B)
+                break;
             pBusLogic->regGeometry = uVal;
             break;
 
@@ -3751,7 +3837,7 @@ static DECLCALLBACK(int) buslogicR3WorkerWakeUp(PPDMDEVINS pDevIns, PPDMTHREAD p
  */
 static DECLCALLBACK(void) buslogicR3Info(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
-    static const char *apszModels[] = { "BusLogic BT-958D", "BusLogic BT-545C", "Adaptec AHA-1540C" };
+    static const char *apszModels[] = { "BusLogic BT-958D", "BusLogic BT-545C", "Adaptec AHA-1540B" };
     PBUSLOGIC   pThis = PDMINS_2_DATA(pDevIns, PBUSLOGIC);
     unsigned    i;
     bool        fVerbose = false;
@@ -4200,13 +4286,11 @@ static DECLCALLBACK(int) buslogicR3Construct(PPDMDEVINS pDevIns, int iInstance, 
         pThis->uDevType = DEV_BT_545C;
         pThis->uIsaIrq = 11;
     }
-#if 0   /* Maybe someday. */
-    else if (!strcmp(achCfgStr, "AHA-1540C"))   /* Competitor ISA device. */
+    else if (!strcmp(achCfgStr, "AHA-1540B"))   /* Competitor ISA device. */
     {
-        pThis->uDevType = DEV_AHA_1540C;
+        pThis->uDevType = DEV_AHA_1540B;
         pThis->uIsaIrq = 11;
     }
-#endif
     else
         return PDMDEV_SET_ERROR(pDevIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES,
                                 N_("BusLogic configuration error: invalid AdapterType setting"));
