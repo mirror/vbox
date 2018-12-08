@@ -406,12 +406,12 @@ typedef struct BUSLOGIC
     /** Emulated device type. */
     uint8_t                         uDevType;
 
-    /** Signature index for Adaptec models. */
-    uint8_t                         uAhaSigIdx;
-    uint8_t                         Alignment0[3];
-
     /** Number of mailboxes the guest set up. */
     uint32_t                        cMailbox;
+
+    /** Signature index for Adaptec models. */
+    uint8_t                         uAhaSigIdx;
+    uint8_t                         Alignment0[7];
 
     /** Time when HBA reset was last initiated. */  /**< @todo does this need to be saved? */
     uint64_t                        u64ResetTime;
