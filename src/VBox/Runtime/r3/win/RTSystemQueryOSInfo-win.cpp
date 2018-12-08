@@ -346,3 +346,9 @@ RTDECL(uint32_t) RTSystemGetNtBuildNo(void)
     return g_WinOsInfoEx.dwBuildNumber;
 }
 
+
+RTDECL(uint32_t) RTSystemGetNtVersion(void)
+{
+    return RTSYSTEM_MAKE_NT_VERSION(g_WinOsInfoEx.dwMajorVersion, g_WinOsInfoEx.dwMinorVersion, g_WinOsInfoEx.dwBuildNumber);
+}
+

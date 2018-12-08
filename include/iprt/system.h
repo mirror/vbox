@@ -267,6 +267,19 @@ RTDECL(bool) RTSystemIsInsideVM(void);
  */
 RTDECL(uint32_t) RTSystemGetNtBuildNo(void);
 
+/** Makes an NT version for comparison with RTSystemGetNtVersion(). */
+# define RTSYSTEM_MAKE_NT_VERSION(a_uMajor, a_uMinor, a_uBuild) \
+    ( ((uint64_t)(a_uMajor) << 52) | ((uint64_t)((a_uMinor) & 0xfffU) << 40) | ((uint32_t)(a_uBuild)) )
+
+/**
+ * Get the Windows NT version number.
+ *
+ * @returns Version formatted using RTSYSTEM_MAKE_NT_VERSION().
+ *
+ * @remarks Windows NT only.  Requires IPRT to be initialized.
+ */
+RTDECL(uint32_t) RTSystemGetNtVersion(void);
+
 #endif /* RT_OS_WINDOWS */
 
 /** @} */
