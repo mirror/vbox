@@ -299,34 +299,32 @@ testschemadefs: $(VBOX_XML_SCHEMADEFS_H) $(VBOX_XML_SCHEMADEFS_CPP)
 # VBoxSDS executable
 #
 if defined(VBOX_WITH_SDS) && "$(KBUILD_TARGET)" == "win"
- PROGRAMS += VBoxSDS
- VBoxSDS_TEMPLATE = VBOXMAINEXE
- VBoxSDS_DEFS.win += VBOX_COM_OUTOFPROC_MODULE
+PROGRAMS.win += VBoxSDS
+VBoxSDS_TEMPLATE = VBOXMAINEXE
+VBoxSDS_DEFS += VBOX_COM_OUTOFPROC_MODULE
  if "$(KBUILD_TYPE)" == "debug" && "$(USERNAME)" == "bird"
-VBoxSDS_DEFS.win += _WIN32_WINNT=0x0610 # ClientPID query requires vista+
+VBoxSDS_DEFS += _WIN32_WINNT=0x0610 # ClientPID query requires vista+
  else
-VBoxSDS_DEFS.win += _WIN32_WINNT=0x0510
+VBoxSDS_DEFS += _WIN32_WINNT=0x0510
  endif
- VBoxSDS_INCS = \
- 	include \
- 	$(VBoxSDS_0_OUTDIR)
- VBoxSDS_INCS.win = \
- 	$(VBoxCOM_0_OUTDIR)
- VBoxSDS_INTERMEDIATES = \
- 	$(VBOX_MAIN_PREREQS)
- VBoxSDS_SOURCES = \
- 	src-global/VirtualBoxSDSImpl.cpp
- VBoxSDS_SOURCES.win = \
- 	src-global/win/VBoxSDS.cpp \
- 	src-global/win/VBoxSDS.rc
- $(call KB_FN_DO_PASS0_ON_TARGET,VBoxSDS) # Sets VBoxSDS_0_OUTDIR
+VBoxSDS_INCS  = \
+	include \
+	$(VBoxSDS_0_OUTDIR) \
+	$(VBoxCOM_0_OUTDIR)
+VBoxSDS_INTERMEDIATES = \
+	$(VBOX_MAIN_PREREQS)
+VBoxSDS_SOURCES = \
+	src-global/win/VBoxSDS.cpp \
+	src-global/win/VirtualBoxSDSImpl.cpp \
+	src-global/win/VBoxSDS.rc
+$(call KB_FN_DO_PASS0_ON_TARGET,VBoxSDS) # Sets VBoxSDS_0_OUTDIR
 
- src-global/win/VBoxSDS.rc_INCS  = $(VBoxSDS_0_OUTDIR)
- src-global/win/VBoxSDS.rc_DEPS  = $(VBoxSDS_0_OUTDIR)/VBoxSDS-icon.rc #$(VBoxSDS_0_OUTDIR)/VBoxSDS.rgs
- src-global/win/VBoxSDS.rc_CLEAN = $(VBoxSDS_0_OUTDIR)/VBoxSDS-icon.rc #$(VBoxSDS_0_OUTDIR)/VBoxSDS.rgs
+src-global/win/VBoxSDS.rc_INCS  = $(VBoxSDS_0_OUTDIR)
+src-global/win/VBoxSDS.rc_DEPS  = $(VBoxSDS_0_OUTDIR)/VBoxSDS-icon.rc #$(VBoxSDS_0_OUTDIR)/VBoxSDS.rgs
+src-global/win/VBoxSDS.rc_CLEAN = $(VBoxSDS_0_OUTDIR)/VBoxSDS-icon.rc #$(VBoxSDS_0_OUTDIR)/VBoxSDS.rgs
 
- $(call KB_FN_AUTO_CMD_DEPS,$(VBoxSDS_0_OUTDIR)/VBoxSDS-icon.rc)
- $(VBoxSDS_0_OUTDIR)/VBoxSDS-icon.rc: $(VBOX_WINDOWS_ICON_FILE) | $$(dir $$@)
+$(call KB_FN_AUTO_CMD_DEPS,$(VBoxSDS_0_OUTDIR)/VBoxSDS-icon.rc)
+$(VBoxSDS_0_OUTDIR)/VBoxSDS-icon.rc: $(VBOX_WINDOWS_ICON_FILE) | $$(dir $$@)
 	$(call KB_FN_AUTO_CMD_DEPS_COMMANDS)
 	$(APPEND) -t $@ '1 ICON DISCARDABLE "$(subst /,\\,$(VBOX_WINDOWS_ICON_FILE))"'
 
