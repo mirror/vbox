@@ -148,6 +148,14 @@ void VirtualBoxSDS::FinalRelease()
 STDMETHODIMP VirtualBoxSDS::RegisterVBoxSVC(IVBoxSVCRegistration *aVBoxSVC, LONG aPid, IUnknown **aExistingVirtualBox)
 {
     LogRel(("VirtualBoxSDS::registerVBoxSVC: aVBoxSVC=%p aPid=%u (%#x)\n", (IVBoxSVCRegistration *)aVBoxSVC, aPid, aPid));
+#ifdef DEBUG_bird
+    RPC_CALL_ATTRIBUTES_V2_W CallAttribs = { RPC_CALL_ATTRIBUTES_VERSION, RPC_QUERY_CLIENT_PID | RPC_QUERY_IS_CLIENT_LOCAL};
+    RPC_STATUS rcRpc = RpcServerInqCallAttributesW(NULL, &CallAttribs);
+    LogRel(("RpcServerInqCallAttributesW -> %#x ClientPID=%#x IsClientLocal=%d ProtocolSequence=%#x CallStatus=%#x CallType=%#x OpNum=%#x InterfaceUuid=%RTuuid\n",
+            rcRpc, CallAttribs.ClientPID, CallAttribs.IsClientLocal, CallAttribs.ProtocolSequence, CallAttribs.CallStatus,
+            CallAttribs.CallType, CallAttribs.OpNum, &CallAttribs.InterfaceUuid));
+#endif
+
     HRESULT hrc;
     if (   RT_VALID_PTR(aVBoxSVC)
         && RT_VALID_PTR(aExistingVirtualBox))

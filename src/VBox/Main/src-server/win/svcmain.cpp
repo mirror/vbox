@@ -19,10 +19,10 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
-#include <iprt/win/windows.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <tchar.h>
+# include <iprt/win/windows.h>
+#ifdef DEBUG_bird
+# include <RpcAsync.h>
+#endif
 
 #include "VBox/com/defs.h"
 #include "VBox/com/com.h"
@@ -38,13 +38,14 @@
 #include <iprt/buildconfig.h>
 #include <iprt/initterm.h>
 #include <iprt/string.h>
-#include <iprt/uni.h>
 #include <iprt/path.h>
 #include <iprt/getopt.h>
 #include <iprt/message.h>
 #include <iprt/asm.h>
 
-#include <TlHelp32.h>
+//#ifdef VBOX_WITH_SDS
+//# include <TlHelp32.h>
+//#endif
 
 
 /*********************************************************************************************************************************
@@ -219,10 +220,10 @@ bool IsWindows8OrGreaterWrap()
 #endif // !VBOX_WITH_SDS
 
 
-/* Passed to CreateThread to monitor the shutdown event */
-static DWORD WINAPI MonitorProc(void* pv)
+/** Passed to CreateThread to monitor the shutdown event. */
+static DWORD WINAPI MonitorProc(void *pv)
 {
-    CExeModule* p = (CExeModule*)pv;
+    CExeModule *p = (CExeModule *)pv;
     p->MonitorShutdown();
     return 0;
 }
@@ -460,6 +461,14 @@ public:
 
 HRESULT VirtualBoxClassFactory::i_registerWithSds(IUnknown **ppOtherVirtualBox)
 {
+# ifdef DEBUG_bird
+    RPC_CALL_ATTRIBUTES_V2_W CallAttribs = { RPC_CALL_ATTRIBUTES_VERSION, RPC_QUERY_CLIENT_PID | RPC_QUERY_IS_CLIENT_LOCAL };
+    RPC_STATUS rcRpc = RpcServerInqCallAttributesW(NULL, &CallAttribs);
+    LogRel(("i_registerWithSds: RpcServerInqCallAttributesW -> %#x ClientPID=%#x IsClientLocal=%d ProtocolSequence=%#x CallStatus=%#x CallType=%#x OpNum=%#x InterfaceUuid=%RTuuid\n",
+            rcRpc, CallAttribs.ClientPID, CallAttribs.IsClientLocal, CallAttribs.ProtocolSequence, CallAttribs.CallStatus,
+            CallAttribs.CallType, CallAttribs.OpNum, &CallAttribs.InterfaceUuid));
+# endif
+
     /*
      * Connect to VBoxSDS.
      */
@@ -504,6 +513,13 @@ void VirtualBoxClassFactory::i_deregisterWithSds(void)
 
 HRESULT VirtualBoxClassFactory::i_getVirtualBox(IUnknown **ppResult)
 {
+# ifdef DEBUG_bird
+    RPC_CALL_ATTRIBUTES_V2_W CallAttribs = { RPC_CALL_ATTRIBUTES_VERSION, RPC_QUERY_CLIENT_PID | RPC_QUERY_IS_CLIENT_LOCAL };
+    RPC_STATUS rcRpc = RpcServerInqCallAttributesW(NULL, &CallAttribs);
+    LogRel(("i_getVirtualBox: RpcServerInqCallAttributesW -> %#x ClientPID=%#x IsClientLocal=%d ProtocolSequence=%#x CallStatus=%#x CallType=%#x OpNum=%#x InterfaceUuid=%RTuuid\n",
+            rcRpc, CallAttribs.ClientPID, CallAttribs.IsClientLocal, CallAttribs.ProtocolSequence, CallAttribs.CallStatus,
+            CallAttribs.CallType, CallAttribs.OpNum, &CallAttribs.InterfaceUuid));
+# endif
     IUnknown *pObj = m_pObj;
     if (pObj)
     {
@@ -536,6 +552,101 @@ void    VirtualBoxClassFactory::i_finishVBoxSvc()
     }
 }
 
+#ifdef DEBUG_bird
+# include <psapi.h> /* for GetProcessImageFileNameW */
+
+/** Logs the RPC caller info to the release log. */
+static void logCaller(const char *pszFormat, ...)
+{
+    char szTmp[80];
+    va_list va;
+    va_start(va, pszFormat);
+    RTStrPrintfV(szTmp, sizeof(szTmp), pszFormat, va);
+    va_end(va);
+
+    RPC_CALL_ATTRIBUTES_V2_W CallAttribs = { RPC_CALL_ATTRIBUTES_VERSION, RPC_QUERY_CLIENT_PID | RPC_QUERY_IS_CLIENT_LOCAL };
+    RPC_STATUS rcRpc = RpcServerInqCallAttributesW(NULL, &CallAttribs);
+
+    RTUTF16 wszProcName[256];
+    wszProcName[0] = '\0';
+    if (rcRpc == 0 && CallAttribs.ClientPID != 0)
+    {
+        HANDLE hProcess = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, FALSE, (DWORD)(uintptr_t)CallAttribs.ClientPID);
+        if (hProcess)
+        {
+            RT_ZERO(wszProcName);
+            GetProcessImageFileNameW(hProcess, wszProcName, RT_ELEMENTS(wszProcName) - 1);
+            CloseHandle(hProcess);
+        }
+    }
+    LogRel(("%s [rcRpc=%#x ClientPID=%#zx/%zu (%ls) IsClientLocal=%d ProtocolSequence=%#x CallStatus=%#x CallType=%#x OpNum=%#x InterfaceUuid=%RTuuid]\n",
+            szTmp, rcRpc, CallAttribs.ClientPID, CallAttribs.ClientPID, wszProcName, CallAttribs.IsClientLocal,
+            CallAttribs.ProtocolSequence, CallAttribs.CallStatus, CallAttribs.CallType, CallAttribs.OpNum,
+            &CallAttribs.InterfaceUuid));
+}
+
+/**
+ * Caller watcher wrapper exploration wrapping CComObjectCached.
+ * @sa @bugref{3300}
+ */
+template <class Base> class DebugWatcher : public Base
+{
+public:
+    DebugWatcher(void *a_pWhatever = NULL) : Base(a_pWhatever)
+    {
+    }
+
+    virtual ~DebugWatcher()
+    {
+    }
+
+    STDMETHOD_(ULONG, AddRef)() throw()
+    {
+        ULONG cRefs = Base::AddRef();
+        logCaller("AddRef -> %u", cRefs);
+        return cRefs;
+    }
+
+    STDMETHOD_(ULONG, Release)() throw()
+    {
+        ULONG cRefs = Base::Release();
+        logCaller("Release -> %u", cRefs);
+        return cRefs;
+    }
+
+    STDMETHOD(QueryInterface)(REFIID iid, void **ppvObj) throw()
+    {
+        HRESULT hrc = Base::QueryInterface(iid, ppvObj);
+        logCaller("QueryInterface %RTuuid -> %Rhrc %p", iid, hrc, *ppvObj);
+        return hrc;
+    }
+
+    static HRESULT WINAPI CreateInstance(DebugWatcher<Base> **pp) throw()
+    {
+        AssertReturn(pp, E_POINTER);
+        *pp = NULL;
+
+        HRESULT hrc = E_OUTOFMEMORY;
+        DebugWatcher<Base> *p = new (std::nothrow) DebugWatcher<Base>();
+        if (p)
+        {
+            p->SetVoid(NULL);
+            p->InternalFinalConstructAddRef();
+            hrc = p->_AtlInitialConstruct();
+            if (SUCCEEDED(hrc))
+                hrc = p->FinalConstruct();
+            p->InternalFinalConstructRelease();
+            if (FAILED(hrc))
+                delete p;
+            else
+                *pp = p;
+        }
+        return hrc;
+    }
+
+};
+
+#endif /* DEBUG_bird */
 
 /**
  * Custom class factory impl for the VirtualBox singleton.
@@ -552,6 +663,9 @@ void    VirtualBoxClassFactory::i_finishVBoxSvc()
  */
 STDMETHODIMP VirtualBoxClassFactory::CreateInstance(LPUNKNOWN pUnkOuter, REFIID riid, void **ppvObj)
 {
+# ifdef DEBUG_bird
+    logCaller("VirtualBoxClassFactory::CreateInstance: %RTuuid", riid);
+# endif
     HRESULT hrc = E_POINTER;
     if (ppvObj != NULL)
     {
@@ -588,8 +702,13 @@ STDMETHODIMP VirtualBoxClassFactory::CreateInstance(LPUNKNOWN pUnkOuter, REFIID 
                         else if (SUCCEEDED(hrc))
                         {
                             ATL::_pAtlModule->Lock();
+#ifdef DEBUG_bird
+                            DebugWatcher<ATL::CComObjectCached<VirtualBox>> *p;
+                            m_hrcCreate = hrc = DebugWatcher<ATL::CComObjectCached<VirtualBox>>::CreateInstance(&p);
+#else
                             ATL::CComObjectCached<VirtualBox> *p;
                             m_hrcCreate = hrc = ATL::CComObjectCached<VirtualBox>::CreateInstance(&p);
+#endif
                             if (SUCCEEDED(hrc))
                             {
                                 m_hrcCreate = hrc = p->QueryInterface(IID_IUnknown, (void **)&m_pObj);
@@ -934,28 +1053,28 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPSTR /*lpC
 
             case 'h':
             {
-                TCHAR txt[]= L"Options:\n\n"
-                             L"/RegServer:\tregister COM out-of-proc server\n"
-                             L"/UnregServer:\tunregister COM out-of-proc server\n"
-                             L"/ReregServer:\tunregister and register COM server\n"
-                             L"no options:\trun the server";
-                TCHAR title[]=_T("Usage");
+                static const WCHAR s_wszText[]  = L"Options:\n\n"
+                                                  L"/RegServer:\tregister COM out-of-proc server\n"
+                                                  L"/UnregServer:\tunregister COM out-of-proc server\n"
+                                                  L"/ReregServer:\tunregister and register COM server\n"
+                                                  L"no options:\trun the server";
+                static const WCHAR s_wszTitle[] = L"Usage";
                 fRun = false;
-                MessageBox(NULL, txt, title, MB_OK);
+                MessageBoxW(NULL, s_wszText, s_wszTitle, MB_OK);
                 return 0;
             }
 
             case 'V':
             {
-                char *psz = NULL;
-                RTStrAPrintf(&psz, "%sr%s\n", RTBldCfgVersion(), RTBldCfgRevisionStr());
-                PRTUTF16 txt = NULL;
-                RTStrToUtf16(psz, &txt);
-                TCHAR title[]=_T("Version");
+                static const WCHAR s_wszTitle[] = L"Version";
+                char         *pszText = NULL;
+                RTStrAPrintf(&pszText, "%sr%s\n", RTBldCfgVersion(), RTBldCfgRevisionStr());
+                PRTUTF16     pwszText = NULL;
+                RTStrToUtf16(pszText, &pwszText);
+                RTStrFree(pszText);
+                MessageBoxW(NULL, pwszText, s_wszTitle, MB_OK);
+                RTUtf16Free(pwszText);
                 fRun = false;
-                MessageBox(NULL, txt, title, MB_OK);
-                RTStrFree(psz);
-                RTUtf16Free(txt);
                 return 0;
             }
 
