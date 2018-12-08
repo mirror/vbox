@@ -1,3 +1,4 @@
+# $Id$
 # Oracle VM VirtualBox
 # VirtualBox installer shell routines
 #
@@ -231,7 +232,7 @@ remove_init_script()
 finish_init_script_install()
 {
     if use_systemd; then
-        systemctl daemon-reexec
+        systemctl daemon-reload
     fi
 }
 
