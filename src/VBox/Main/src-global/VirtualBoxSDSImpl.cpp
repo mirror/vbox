@@ -52,7 +52,6 @@ public:
     /** The VBoxSVC chosen to instantiate CLSID_VirtualBox.
      * This is NULL if not set. */
     ComPtr<IVBoxSVCRegistration>    m_ptrTheChosenOne;
-    ComPtr<IVirtualBoxClientList>   m_ptrClientList;
 private:
     /** Reference count to make destruction safe wrt hung callers.
      * (References are retain while holding the map lock in some form, but
@@ -183,9 +182,6 @@ STDMETHODIMP VirtualBoxSDS::RegisterVBoxSVC(IVBoxSVCRegistration *aVBoxSVC, LONG
                     {
                         LogRel(("VirtualBoxSDS::registerVBoxSVC: Seems VBoxSVC instance died.  Dropping it and letting caller take over. (hrc=%Rhrc)\n", hrc));
                         pUserData->m_ptrTheChosenOne.setNull();
-
-                        /* Release the client list and stop client list watcher thread*/
-                        pUserData->m_ptrClientList.setNull();
                     }
                 }
                 else
@@ -193,30 +189,12 @@ STDMETHODIMP VirtualBoxSDS::RegisterVBoxSVC(IVBoxSVCRegistration *aVBoxSVC, LONG
 
                 /*
                  * Is the caller the chosen one?
-                 * The chosen one always have a client list object for monitoring purposes.
                  */
                 if (pUserData->m_ptrTheChosenOne.isNull())
                 {
                     LogRel(("VirtualBoxSDS::registerVBoxSVC: Making aPid=%u (%#x) the chosen one for user %s (%s)!\n",
                             aPid, aPid, pUserData->m_strUserSid.c_str(), pUserData->m_strUsername.c_str()));
-                    try
-                    {
-                        /// @todo r=bird: Enable when design has been corrected.
-                        ///hrc = pUserData->m_ptrClientList.createLocalObject(CLSID_VirtualBoxClientList);
-                        hrc = S_OK;
-                        if (SUCCEEDED(hrc))
-                        {
-                            LogFunc(("Created API client list instance in VBoxSDS: hrc=%Rhrc\n", hrc));
-                            pUserData->m_ptrTheChosenOne = aVBoxSVC;
-                        }
-                        else
-                            LogRel(("VirtualBoxSDS::registerVBoxSVC: Error in creating API client list instance: hrc=%Rhrc\n", hrc));
-                    }
-                    catch (...)
-                    {
-                        LogRel(("VirtualBoxSDS::registerVBoxSVC: Unexpected exception setting the chosen one!\n"));
-                        hrc = E_UNEXPECTED;
-                    }
+                    pUserData->m_ptrTheChosenOne = aVBoxSVC;
                 }
 
                 pUserData->i_unlock();
@@ -254,8 +232,6 @@ STDMETHODIMP VirtualBoxSDS::DeregisterVBoxSVC(IVBoxSVCRegistration *aVBoxSVC, LO
                     LogRel(("VirtualBoxSDS::deregisterVBoxSVC: It's the chosen one for %s (%s)!\n",
                             pUserData->m_strUserSid.c_str(), pUserData->m_strUsername.c_str()));
                     pUserData->m_ptrTheChosenOne.setNull();
-                    /* Release the client list and stop client list watcher thread*/
-                    pUserData->m_ptrClientList.setNull();
                 }
                 else
                     LogRel(("VirtualBoxSDS::deregisterVBoxSVC: not the choosen one (%p != %p)\n",
@@ -282,39 +258,9 @@ STDMETHODIMP VirtualBoxSDS::DeregisterVBoxSVC(IVBoxSVCRegistration *aVBoxSVC, LO
 }
 
 
-STDMETHODIMP VirtualBoxSDS::NotifyClientsFinished()
-{
-    LogRelFlowThisFuncEnter();
-
-    int vrc = RTCritSectRwEnterShared(&m_MapCritSect);
-    if (RT_SUCCESS(vrc))
-    {
-/** @todo r=bird: Why notify all VBoxSVC instances?  That makes zero sense!   */
-        for (UserDataMap_T::iterator it = m_UserDataMap.begin(); it != m_UserDataMap.end(); ++it)
-        {
-            VBoxSDSPerUserData *pUserData = it->second;
-            if (pUserData && pUserData->m_ptrTheChosenOne)
-            {
-                /*
-                 * Notify VBoxSVC about finishing all API clients it should free
-                 * references to VBoxSDS and clean up itself
-                 */
-                LogRelFunc(("Notify VBoxSVC that all clients finished\n"));
-                if (pUserData->m_ptrClientList.isNotNull())
-                    pUserData->m_ptrClientList.setNull();
-
-                pUserData->m_ptrTheChosenOne->NotifyClientsFinished();
-            }
-        }
-        RTCritSectRwLeaveShared(&m_MapCritSect);
-    }
-
-    LogRelFlowThisFuncLeave();
-    return S_OK;
-}
-
-// private methods
-///////////////////////////////////////////////////////////////////////////////
+/*********************************************************************************************************************************
+*   Internal Methods                                                                                                             *
+*********************************************************************************************************************************/
 
 /*static*/ bool VirtualBoxSDS::i_getClientUserSid(com::Utf8Str *a_pStrSid, com::Utf8Str *a_pStrUsername)
 {

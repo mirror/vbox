@@ -305,23 +305,14 @@ if defined(VBOX_WITH_SDS) && "$(KBUILD_TARGET)" == "win"
  VBoxSDS_DEFS.win += _WIN32_WINNT=0x0510
  VBoxSDS_INCS = \
  	include \
- 	$(VBoxSDS_0_OUTDIR) \
- 	$(VBOX_MAIN_APIWRAPPER_INCS)
+ 	$(VBoxSDS_0_OUTDIR)
  VBoxSDS_INCS.win = \
  	$(VBoxCOM_0_OUTDIR)
- VBoxSDS_LIBS += \
- 	$(PATH_STAGE_LIB)/VBoxAPIWrap$(VBOX_SUFF_LIB)
  VBoxSDS_INTERMEDIATES = \
- 	$(VBOX_MAIN_PREREQS) \
- 	$(VBOX_MAIN_APIWRAPPER_GEN_HDRS)
+ 	$(VBOX_MAIN_PREREQS)
  VBoxSDS_SOURCES = \
- 	src-all/Global.cpp \
- 	src-all/AutoCaller.cpp \
- 	src-all/VirtualBoxBase.cpp \
- 	src-all/VirtualBoxErrorInfoImpl.cpp \
  	src-global/VirtualBoxSDSImpl.cpp
  VBoxSDS_SOURCES.win = \
- 	src-global/win/VirtualBoxClientListImpl.cpp \
  	src-global/win/VBoxSDS.cpp \
  	src-global/win/VBoxSDS.rc
  $(call KB_FN_DO_PASS0_ON_TARGET,VBoxSDS) # Sets VBoxSDS_0_OUTDIR
@@ -1207,8 +1198,8 @@ if defined(VBOX_WITH_MIDL_PROXY_STUB) && "$(KBUILD_TARGET)" == "win" && !defined
  	VirtualBox_i.c \
  	$(PATH_SUB_CURRENT)/src-all/win/VBoxProxyStub.def \
  	$(PATH_SUB_CURRENT)/src-all/win/VBoxProxyStub.rc \
- 	$(PATH_SUB_CURRENT)/src-all/win/RpcChannelHook.cpp \
  	$(PATH_SUB_CURRENT)/src-all/win/VBoxProxyStub.c
+# 	$(PATH_SUB_CURRENT)/src-all/win/RpcChannelHook.cpp
  src-all/win/VBoxProxyStub.rc_DEPS = $(VBoxCOM_0_OUTDIR)/VirtualBox.tlb
  VBoxProxyStub_VirtualBox_p.c_CFLAGS.x86 = /Gz # Workaround for incorrect ObjectStublessClient* prototypes in SDK v7.1.
 
@@ -1223,8 +1214,8 @@ if defined(VBOX_WITH_MIDL_PROXY_STUB) && "$(KBUILD_TARGET)" == "win" && !defined
  	$(VBoxCOM_0_OUTDIR)/legacy/VirtualBox_i.c \
  	src-all/win/VBoxProxyStub.def \
  	src-all/win/VBoxProxyStubLegacy.rc \
- 	src-all/win/RpcChannelHook.cpp \
   	src-all/win/VBoxProxyStub.c
+# 	src-all/win/RpcChannelHook.cpp
  src-all/win/VBoxProxyStubLegacy.rc_DEPS = $(VBoxCOM_0_OUTDIR)/legacy/VirtualBox.tlb
 
  ifdef VBOX_WITH_32_ON_64_MAIN_API
@@ -1239,8 +1230,8 @@ if defined(VBOX_WITH_MIDL_PROXY_STUB) && "$(KBUILD_TARGET)" == "win" && !defined
   	$(VBoxCOM-x86_0_OUTDIR)/VirtualBox_i.c \
  	src-all/win/VBoxProxyStub.c \
  	src-all/win/VBoxProxyStub-x86.rc \
- 	src-all/win/RpcChannelHook.cpp \
  	src-all/win/VBoxProxyStub.def
+# 	src-all/win/RpcChannelHook.cpp
   src-all/win/VBoxProxyStub-x86.rc_DEPS = $(VBoxCOM-x86_0_OUTDIR)/VirtualBox-x86.tlb
  endif
 endif

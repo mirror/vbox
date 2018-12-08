@@ -1,7 +1,7 @@
 /* $Id$ */
 /** @file
-* VBox Global COM Class implementation.
-*/
+ * VirtualBox Main - RPC Channel Hook Hack, VBoxProxyStub.
+ */
 
 /*
  * Copyright (C) 2017-2018 Oracle Corporation
@@ -16,17 +16,19 @@
  */
 
 
-#include <iprt\assert.h>
-#include <iprt\process.h>
-#include <iprt\string.h>
+/*********************************************************************************************************************************
+*   Header Files                                                                                                                 *
+*********************************************************************************************************************************/
+#include <iprt/assert.h>
+#include <iprt/process.h>
+#include <iprt/string.h>
 #include <iprt/asm.h>
 #include "Logging.h"
 #include <VBox/com/VirtualBox.h>
 
-#include <string>
-
 #include "VirtualBox.h"
 #include "RpcChannelHook.h"
+
 
 #if defined(RT_OS_WINDOWS) && defined(VBOX_WITH_SDS)
 
@@ -42,18 +44,15 @@ CRpcChannelHook CRpcChannelHook::s_RpcChannelHook;
 STDMETHODIMP CRpcChannelHook::QueryInterface(REFIID riid, void **ppv)
 {
     if (riid == IID_IUnknown)
-    {
-        *ppv = (IUnknown*)this;
-    }
+        *ppv = (IUnknown *)this;
     else if (riid == IID_IChannelHook)
-    {
-        *ppv = (IChannelHook*)this;
-    }
+        *ppv = (IChannelHook *)this;
     else
     {
-        *ppv = 0;
+        *ppv = NULL;
         return E_NOINTERFACE;
     }
+
     this->AddRef();
     return S_OK;
 }

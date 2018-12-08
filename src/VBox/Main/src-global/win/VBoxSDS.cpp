@@ -86,7 +86,6 @@
 #include "VBox/com/VirtualBox.h"
 
 #include "VirtualBoxSDSImpl.h"
-#include "VirtualBoxClientListImpl.h"
 #include "Logging.h"
 
 #include <VBox/err.h>
@@ -925,7 +924,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         {
             BEGIN_OBJECT_MAP(s_aObjectMap)
                 OBJECT_ENTRY(CLSID_VirtualBoxSDS, VirtualBoxSDS)
-                OBJECT_ENTRY(CLSID_VirtualBoxClientList, VirtualBoxClientList)
             END_OBJECT_MAP()
             hrcExit = pServiceModule->init(s_aObjectMap, hInstance, &LIBID_VirtualBox,
                                            L"VBoxSDS",

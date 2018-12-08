@@ -97,7 +97,7 @@ const DWORD dwNormalTimeout = 5000;
 volatile uint32_t dwTimeOut = dwNormalTimeout; /* time for EXE to be idle before shutting down. Can be decreased at system shutdown phase. */
 
 
-#ifdef VBOX_WITH_SDS
+#if 0 //def VBOX_WITH_SDS
 
 BOOL CALLBACK CloseWindowProc(_In_ HWND   hWnd, _In_ LPARAM /* lParam */)
 {
@@ -690,7 +690,7 @@ static LRESULT CALLBACK WinMainWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARA
                     Log(("VBoxSVCWinMain: WM_QUERYENDSESSION: VBoxSvc has active connections. bActivity = %d. Loc count = %d\n",
                          g_pModule->bActivity, g_pModule->GetLockCount()));
 
-#ifdef VBOX_WITH_SDS
+#if 0 //def VBOX_WITH_SDS
                     // On Windows 7 our clients doesn't receive right sequence of Session End events
                     // So we send them all WM_QUIT to forcible close them.
                     // Windows 10 sends end session events correctly

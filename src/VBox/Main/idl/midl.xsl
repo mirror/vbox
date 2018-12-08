@@ -126,12 +126,12 @@ import "unknwn.idl";
          http://msdn.microsoft.com/en-us/library/windows/desktop/aa366841(v=vs.85).aspx -->
     <xsl:text>&#x0A;</xsl:text>
     <!-- forward declarations -->
-    <xsl:apply-templates select="application/if | application/interface" mode="forward"/>
+    <xsl:apply-templates select="descendant::application/if   | descendant::application/interface" mode="forward"/>
     <xsl:text>&#x0A;</xsl:text>
     <!-- all enums go first -->
-    <xsl:apply-templates select="application/enum | application/if[enum]"/>
+    <xsl:apply-templates select="descendant::application/enum | descendant::application/if[enum]"/>
     <!-- declare the interfaces -->
-    <xsl:apply-templates select="application/if | application/interface"/>
+    <xsl:apply-templates select="descendant::application/if   | descendant::application/interface"/>
   </xsl:if>
 
 [
@@ -152,19 +152,19 @@ import "unknwn.idl";
   <xsl:choose>
     <xsl:when test="$g_fGenProxy = 'yes'">
       <!-- reference enums and interfaces -->
-      <xsl:apply-templates select="application/if | application/interface" mode="forward"/>
-      <xsl:apply-templates select="application/enum | application/if[enum]" mode="forward"/>
+      <xsl:apply-templates select="descendant::application/if          | descendant::application/interface" mode="forward"/>
+      <xsl:apply-templates select="descendant::application/enum        | descendant::application/if[enum]" mode="forward"/>
       <!-- the modules (i.e. everything else) -->
-      <xsl:apply-templates select="application/module | application/if[module]"/>
+      <xsl:apply-templates select="descendant::application/module      | descendant::application/if[module]"/>
     </xsl:when>
     <xsl:otherwise>
       <!-- forward declarations -->
-      <xsl:apply-templates select="application/if | application/interface" mode="forward"/>
+      <xsl:apply-templates select="descendant::application/if          | descendant::application/interface" mode="forward"/>
       <!-- all enums go first -->
-      <xsl:apply-templates select="application/enum | application/if[enum]"/>
+      <xsl:apply-templates select="descendant::application/enum        | descendant::application/if[enum]"/>
       <!-- everything else but result codes and enums -->
-      <xsl:apply-templates select="  application/interface | application/if[interface]
-                                   | application/module | application/if[module]"/>
+      <xsl:apply-templates select="  descendant::application/interface | descendant::application/if[interface]
+                                   | descendant::application/module    | descendant::application/if[module]"/>
     </xsl:otherwise>
   </xsl:choose>
   <!-- -->
@@ -856,15 +856,19 @@ warning MIDL2460 : dual interface should be derived from IDispatch : IVirtualBox
           <xsl:choose>
             <!-- enum types -->
             <xsl:when test="
-              (ancestor::library/application/enum[@name=current()]) or
-              (ancestor::library/application/if[@target=$self_target]/enum[@name=current()])
+                 (ancestor::library/application/enum[@name=current()])
+              or (ancestor::library/if/application/enum[@name=current()])
+              or (ancestor::library/application/if[@target=$self_target]/enum[@name=current()])
+              or (ancestor::library/if/application/if[@target=$self_target]/enum[@name=current()])
             ">
               <xsl:value-of select="."/>
             </xsl:when>
             <!-- custom interface types -->
             <xsl:when test="
-              ((ancestor::library/application/interface[@name=current()]) or
-               (ancestor::library/application/if[@target=$self_target]/interface[@name=current()])
+              (    (ancestor::library/application/interface[@name=current()])
+                or (ancestor::library/if/application/interface[@name=current()])
+                or (ancestor::library/application/if[@target=$self_target]/interface[@name=current()])
+                or (ancestor::library/if/application/if[@target=$self_target]/interface[@name=current()])
               )
             ">
               <xsl:value-of select="."/><xsl:text> *</xsl:text>
@@ -886,20 +890,20 @@ warning MIDL2460 : dual interface should be derived from IDispatch : IVirtualBox
 
 <!-- Filters for switch on/off VBoxSDS definitions -->
 
-<xsl:template match="application[@uuid='ec0e78e8-fa43-43e8-ac0a-02c784c4a4fa']//module/class" >
+<xsl:template match="if[@target='midl']/application[@uuid='ec0e78e8-fa43-43e8-ac0a-02c784c4a4fa']//module/class" >
     <xsl:if test="$g_fVBoxWithSDS='yes'" >
         <xsl:call-template name="template_class" />
     </xsl:if>
 </xsl:template>
 
-<xsl:template match="application[@uuid='ec0e78e8-fa43-43e8-ac0a-02c784c4a4fa']/if//interface
+<xsl:template match="if[@target='midl']/application[@uuid='ec0e78e8-fa43-43e8-ac0a-02c784c4a4fa']/if//interface
                                 | application[@uuid='ec0e78e8-fa43-43e8-ac0a-02c784c4a4fa']//interface" >
     <xsl:if test="$g_fVBoxWithSDS='yes'" >
         <xsl:call-template name="template_interface" />
     </xsl:if>
 </xsl:template>
 
-<xsl:template match="application[@uuid='ec0e78e8-fa43-43e8-ac0a-02c784c4a4fa']//interface" mode="forward" >
+<xsl:template match="if[@target='midl']/application[@uuid='ec0e78e8-fa43-43e8-ac0a-02c784c4a4fa']//interface" mode="forward" >
     <xsl:if test="$g_fVBoxWithSDS='yes'" >
         <xsl:call-template name="template_interface_forward" />
     </xsl:if>

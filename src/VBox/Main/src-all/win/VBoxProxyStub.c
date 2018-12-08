@@ -1356,10 +1356,12 @@ void RegisterXidlModulesAndClassesGenerated(VBPSREGSTATE *pState, PCRTUTF16 pwsz
     VbpsRegisterClassId(pState, &CLSID_VirtualBoxSDS, "VirtualBoxSDS Class", pszSdsAppId, "VirtualBox.VirtualBoxSDS", ".1",
                         &LIBID_VirtualBox, "LocalServer32", pwszVBoxDir, pszSdsExe, NULL /*N/A*/);
 
+# if 0
     VbpsRegisterClassName(pState, "VirtualBox.VirtualBoxClientList.1", "VirtualBoxClientList Class", &CLSID_VirtualBoxClientList, NULL);
     VbpsRegisterClassName(pState, "VirtualBox.VirtualBoxClientList", "VirtualBoxClientList Class", &CLSID_VirtualBoxClientList, ".1");
     VbpsRegisterClassId(pState, &CLSID_VirtualBoxClientList, "VirtualBoxClientList Class", pszSdsAppId, "VirtualBox.VirtualBoxClientList", ".1",
         &LIBID_VirtualBox, "LocalServer32", pwszVBoxDir, pszSdsExe, NULL /*N/A*/);
+# endif
 #endif
 }
 

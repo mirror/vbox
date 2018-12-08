@@ -25768,6 +25768,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
 </application>
 
+<if target="midl">
 <!-- Pay attention! Application uuid of this application is used in midl.xsl
      So if you change it then change filter in "interface" and "class" template in midl.xsl too
 -->
@@ -25776,8 +25777,6 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   uuid="ec0e78e8-fa43-43e8-ac0a-02c784c4a4fa"
   supportsErrorInfo="yes"
 >
-
-<if target="midl">
 
   <!--
   // IVBoxSVC
@@ -25818,7 +25817,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IVirtualBoxSDS" extends="$unknown" notdual="yes"
-    uuid="787d20ed-faf3-4170-6697-3a2a7de6e086"
+    uuid="152265b8-fe7d-4077-9dd6-032bc3f1c5a3"
     wsmap="suppress" internal="yes"
     reservedMethods="0" reservedAttributes="0"
     >
@@ -25856,41 +25855,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         </param>
       </method>
 
-      <method name="notifyClientsFinished">
-          <desc>Notify SDS that clients finished.</desc>
-      </method>
-
   </interface>
-
-    <!--
-  // IVirtualBoxClientList
-  //////////////////////////////////////////////////////////////////////////
-  -->
-
-    <interface
-      name="IVirtualBoxClientList" extends="$unknown"
-      uuid="6e7f09c9-da13-4126-9cc8-9aab81fed413"
-      wsmap="suppress"
-      reservedMethods="2" reservedAttributes="2"
-    >
-        <desc>
-            The IVirtualBoxClientList interface represents a list of VirtualBox API clients.
-        </desc>
-
-        <method name="registerClient">
-            <desc>Register VirtualBox API Client.</desc>
-            <param name="pid" type="long" dir="in">
-                <desc>Process ID of VirtualBox API client.</desc>
-            </param>
-        </method>
-
-        <attribute name="clients" readonly="yes" type="long" dir="out" safearray="yes">
-            <desc>List of registered VirtualBox API clients.</desc>
-        </attribute>
-
-    </interface>
-
-</if> <!-- bird: shouldn't this if-element at leat include the VBoxSDS module, if not the whole system service application? -->
 
 <!-- Warning: the name of module should coincide with real windows service name.
      VirtualBox_Typelib.xsl and VirtualBox_TypeLibWithInterfaces.xsl uses this name to make list of COM registration
@@ -25906,11 +25871,9 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
              namespace="virtualbox.org">
           <interface name="IVirtualBoxSDS" default="yes"/>
       </class>
-      <class name="VirtualBoxClientList" uuid="b2313c29-07eb-4613-ab27-f86bda7a0cae" namespace="virtualbox.org" >
-          <interface name="IVirtualBoxClientList" default="yes" />
-      </class>
   </module>
 </application>
+</if>
 
 </library>
 
