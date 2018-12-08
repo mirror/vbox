@@ -180,7 +180,7 @@ static struct vboximgOpts {
      uint32_t      fAllowRoot;              /** Flag to allow root to access this FUSE FS */
      uint32_t      fRW;                     /** Flag to allow changes to FUSE-mounted Virtual Disk image */
      uint32_t      fBriefUsage;             /** Flag to display only FS-specific program usage options */
-     uint32_t      fVerbose;                /** Make some noise */
+     uint32_t      fVerbose;                /** Add more info to lists and operations */
 } g_vboximgOpts;
 
 #define OPTION(fmt, pos, val) { fmt, offsetof(struct vboximgOpts, pos), val }
@@ -205,6 +205,7 @@ static struct fuse_opt vboximgOptDefs[] = {
     OPTION("-v",              fVerbose,          1),
     OPTION("-h",              fBriefUsage,       1),
     FUSE_OPT_KEY("--help",    USAGE_FLAG),
+    FUSE_OPT_KEY("-vm",       FUSE_OPT_KEY_NONOPT),
     FUSE_OPT_END
 };
 
@@ -213,53 +214,48 @@ briefUsage()
 {
     RTPrintf("usage: vboximg-mount [options] <mountpoint>\n\n"
         "vboximg-mount options:\n\n"
-        "    [ { -l | --list } ]                        If a disk image is specified [-i, --image], list partition table\n"
-        "                                               for the specified disk image.\n"
+        "  [ { -i | --image= } <specifier> ]  VirtualBox disk image (UUID, name or path)\n"
         "\n"
-        "                                               If no image is specified on the command line, list registered VMs\n"
-        "                                               and their disk media.  If a verbose flag is specified,\n"
-        "                                               VM and media list will be long format, including snapshot images\n"
-        "                                               and component locations (e.g. paths).\n"
+        "  [ { -l | --list } ]                If image specified, list its partitions, \n"
+        "                                     otherwise, list registered VMs and\n"
+        "                                     associated disks. In verbose mode,\n"
+        "                                     VM/media list will be long format, i.e.\n"
+        "                                     including snapshot images and file paths.\n"
         "\n"
-        "    [ { -i | --image= } <UUID | name | path> ] Virtual Box disk image to use\n"
+        "  [ --vm=UUID ]                      Restrict media list to specified vm.\n"
         "\n"
-        "    [ { -p | --partition= } <partition #> ]    Mount specified partition number via FUSE\n"
+        "  [ { -p | --partition= } <part #> ] Expose only specified partition via FUSE.\n"
         "\n"
-        "    [ { -o | --offset= } <byte #> ]            Disk I/O will be based on offset from disk start\n"
-        "                                               (Can't use with -p or --partition options)\n"
+        "  [ { -o | --offset= } <byte #> ]    Bias disk I/O by offset from disk start.\n"
+        "                                     (incompatible with -p, --partition)\n"
         "\n"
-        "    [ -s | --size=<bytes> ]                    Sets size of mounted disk from disk start or from\n"
-        "                                               offset, if specified. (Can't use with\n"
-        "                                               -p or --partition options)\n"
+        "  [ { -s | --size=<bytes> } ]        Specify size of mounted disk.\n"
+        "                                     (incompatible with -p, --partition)\n"
         "\n"
-        "    [ --diff=<diff #> ]                        Apply diffs (snapshot differencing disk images)\n"
-        "                                               to specified base disk image up to and including\n"
-        "                                               specified diff number.\n"
-        "                                               (0 = Apply no diffs, default = Apply all diffs)\n"
+        "  [ { --diff=<diff #> } ]            Limits default operation (of applying all\n"
+        "                                     snapshots of virtual disk) to specified\n"
+        "                                     disk differencing image #. Diffs will\n"
+        "                                     be merged-in up to and including diff #.\n"
+        "                                     (default: All diffs, 0 = No diffs)\n"
         "\n"
-        "    [ --rw ]                                   Make image writeable (default = readonly)\n"
-        "    [ --root ]                                 Same as -o allow_root\n"
+        "  [ --rw ]                           Make image writeable (default = readonly)\n"
+        "  [ --root ]                         Same as -o allow_root.\n"
         "\n"
-        "    [ --vm < Path | UUID >]                    VM UUID (limit media list to specific VM)\n"
+        "  [ { -v | --verbose }]              Log extra information.\n"
         "\n"
-        "    [ --verbose]                               Log extra information\n"
-        "    -o opt[,opt...]                            FUSE mount options\n"
-        "    -h                                         Display short usage info showing only the above\n"
-        "    -?                                         Display short usage info showing only the above\n"
-        "    --help                                     Display long usage info (including FUSE opts)\n\n"
+        "  [ -o opt[,opt...]]                 FUSE mount options.\n"
+        "\n"
+        "  [ { -h | -? } ]                    Display short usage info (no FUSE options).\n"
+        "  [ --help ]                         Display long usage info (incl. FUSE opts).\n\n"
     );
     RTPrintf("\n");
-    RTPrintf("When successful, the --image option creates a one-directory-deep filesystem \n");
-    RTPrintf("rooted at the specified mountpoint.  The contents of the directory will be \n");
-    RTPrintf("a symbolic link with the base name of the image file pointing to the path of\n");
-    RTPrintf("the virtual disk image, and a regular file named 'vhdd', which represents\n");
-    RTPrintf("the byte stream of the disk image as interpreted by VirtualBox.\n");
-    RTPrintf("It is the vhdd file that the user or a utility will subsequently mount on\n");
-    RTPrintf("the host OS to gain access to the virtual disk contents.\n\n");
-    RTPrintf("If any of the partition, size or offset related options are used, the\n");
-    RTPrintf("constraining start offset (in bytes) and size (in bytes) will be\n");
-    RTPrintf("appended in brackets to the symbolic link basename to indicate\n");
-    RTPrintf("which part of the image is exposed by the FUSE filesystem implementation.\n\n");
+    RTPrintf("When successful, the --image option instantiates a one-directory-deep FUSE\n");
+    RTPrintf("filesystem rooted at the specified mountpoint.  Its contents are a\n");
+    RTPrintf("symbolic link named as basename of the image path, pointing to full path of\n");
+    RTPrintf("the virtual disk image. Also a regular file named 'vhdd', which is a device\n");
+    RTPrintf("node through which a raw byte stream of the disk image (as synthesized by\n");
+    RTPrintf("the VirtualBox runtime engine) can be accessed. It is the vhdd file that the\n");
+    RTPrintf("user or a utility can subsequently mount on the host OS.\n");
 }
 
 static int
@@ -267,15 +263,14 @@ vboximgOptHandler(void *data, const char *arg, int optKey, struct fuse_args *out
 {
     (void) data;
     (void) arg;
-    switch(optKey)
-    {
-        case USAGE_FLAG:
-            briefUsage();
-            fuse_opt_add_arg(outargs, "-ho");
-            fuse_main(outargs->argc, outargs->argv, &g_vboximgOps, NULL);
-            break;
-    }
-    return 1;
+    (void) optKey;
+    (void) outargs;
+    /*
+     * Apparently this handler is only called for arguments FUSE can't parse,
+     * and arguments that don't result in variable assignment such as "USAGE"
+     * In this impl. that's always deemed a parsing error.
+     */
+    return -1;
 }
 
 /** @copydoc fuse_operations::open */
@@ -859,6 +854,7 @@ listVMs(IVirtualBox *pVirtualBox)
                 CHECK_ERROR(pMachine, COMGETTER(Description)(pDescription.asOutParam()));
                 CHECK_ERROR(pMachine, COMGETTER(SettingsFilePath)(pMachineLocation.asOutParam()));
 
+
                 if (   g_vboximgOpts.pszVm == NULL
                     || RTStrNCmp(CSTR(pMachineUuid), g_vboximgOpts.pszVm, MAX_UUID_LEN) == 0
                     || RTStrNCmp((const char *)pMachineName.raw(), g_vboximgOpts.pszVm, MAX_UUID_LEN) == 0)
@@ -872,10 +868,6 @@ listVMs(IVirtualBox *pVirtualBox)
                             RTPrintf("Description:  %s\n",      CSTR(pDescription));
                         RTPrintf("Location:  %s\n",      CSTR(pMachineLocation));
                     }
-                    listMedia(pMachine, RTStrDup(CSTR(pMachineName)), RTStrDup(CSTR(pMachineUuid)));
-                }
-                else
-                {
                     listMedia(pMachine, RTStrDup(CSTR(pMachineName)), RTStrDup(CSTR(pMachineUuid)));
                 }
             }
@@ -1258,18 +1250,14 @@ main(int argc, char **argv)
     memset(&g_vboximgOpts, 0, sizeof(g_vboximgOpts));
 
     rc = fuse_opt_parse(&args, &g_vboximgOpts, vboximgOptDefs, vboximgOptHandler);
-
-    if (g_vboximgOpts.fAllowRoot)
-        fuse_opt_add_arg(&args, "-oallow_root");
-
-    if (rc == -1)
-        return RTMsgErrorExitFailure("Couldn't parse fuse options, rc=%Rrc\n", rc);
-
-    if (argc < 2 || RTStrCmp(argv[1], "-?" ) == 0 || g_vboximgOpts.fBriefUsage)
+    if (rc < 0 || argc < 2 || RTStrCmp(argv[1], "-?" ) == 0 || g_vboximgOpts.fBriefUsage)
     {
         briefUsage();
         return 0;
     }
+
+    if (g_vboximgOpts.fAllowRoot)
+        fuse_opt_add_arg(&args, "-oallow_root");
 
     /*
      * Initialize COM.
