@@ -1,7 +1,6 @@
 /* $Id$ */
 /** @file
- *
- *  Declaration of SVC Helper Process control routines.
+ * Declaration of SVC Helper Process control routines.
  */
 
 /*
@@ -16,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __VBox_svchlp_h__
-#define __VBox_svchlp_h__
+#ifndef ___VBox_svchlp_h___
+#define ___VBox_svchlp_h___
 
 #include "VBox/com/string.h"
 #include "VBox/com/guid.h"
@@ -91,5 +90,5 @@ public:
     int run();
 };
 
-#endif /* __VBox_svchlp_h__ */
+#endif /* !___VBox_svchlp_h___ */
 
