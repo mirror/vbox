@@ -74,6 +74,7 @@
                      specifies that this event can be waited for. -->
     <!ATTLIST interface wrap-hint-server-addinterfaces CDATA #IMPLIED>
     <!ATTLIST interface wrap-hint-server CDATA #IMPLIED>
+    <!ATTLIST interface wrap-gen-hook (yes|no) "no">
     <!-- DTrace has a probe name length limit, so dtracename helps dealing with excessivly long names. -->
     <!ATTLIST interface dtracename CDATA #IMPLIED>
     <!ATTLIST interface reservedAttributes CDATA #IMPLIED>

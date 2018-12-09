@@ -1220,6 +1220,13 @@ Returns empty if not needed, non-empty ('yes') if needed. -->
     </xsl:apply-templates>
     <xsl:text>));
 
+</xsl:text>
+    <xsl:if test="@wrap-gen-hook='yes'">
+        <xsl:text>
+    callHook();
+        <xsl:text>
+    </xsl:if>
+<xsl:text>
     VirtualBoxBase::clearError();
 
     HRESULT hrc;
