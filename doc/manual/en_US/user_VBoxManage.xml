@@ -2320,22 +2320,19 @@ UUID="457af700-bc0a-4258-aa3c-13b03da171f2"
 
             <listitem>
               <para>
-                Only IPv4: <computeroutput>--vrdeaddress "0.0.0.0"
-                </computeroutput>
+                Only IPv4: <computeroutput>--vrdeaddress "0.0.0.0"</computeroutput>
               </para>
             </listitem>
 
             <listitem>
               <para>
-                Only IPv6: <computeroutput>--vrdeaddress "::"
-                </computeroutput>
+                Only IPv6: <computeroutput>--vrdeaddress "::"</computeroutput>
               </para>
             </listitem>
 
             <listitem>
               <para>
-                Both IPv6 and IPv4: <computeroutput>--vrdeaddress ""
-                </computeroutput>
+                Both IPv6 and IPv4: <computeroutput>--vrdeaddress ""</computeroutput>
               </para>
 
               <para>
@@ -3476,8 +3473,8 @@ Virtual system 0:
         <para>
           <computeroutput>nicproperty&lt;1-N&gt;
           &lt;paramname&gt;="paramvalue"</computeroutput>: This option,
-          in combination with <computeroutput>nicgenericdrv
-          </computeroutput>enables you to pass parameters to rarely-used
+          in combination with <computeroutput>nicgenericdrv</computeroutput>
+          enables you to pass parameters to rarely-used
           network backends.
         </para>
 
@@ -6916,8 +6913,7 @@ VBoxManage sharedfolder     remove &lt;uuid|vmname&gt;
 
           <varlistentry>
             <term>
-              <computeroutput>-E|--putenv &lt;NAME&gt;=&lt;VALUE&gt;
-              </computeroutput>
+              <computeroutput>-E|--putenv &lt;NAME&gt;=&lt;VALUE&gt;</computeroutput>
             </term>
 
             <listitem>
@@ -7194,8 +7190,7 @@ VBoxManage sharedfolder     remove &lt;uuid|vmname&gt;
 
           <varlistentry>
             <term>
-              <computeroutput>-E|--putenv &lt;NAME&gt;=&lt;VALUE&gt;
-              </computeroutput>
+              <computeroutput>-E|--putenv &lt;NAME&gt;=&lt;VALUE&gt;</computeroutput>
             </term>
 
             <listitem>
@@ -8379,8 +8374,8 @@ VBoxManage sharedfolder     remove &lt;uuid|vmname&gt;
     <para>
       Metric collection can only be enabled for started VMs. Collected
       data and collection settings for a particular VM will disappear as
-      soon as it shuts down. Use <command>VBoxManage metrics list
-      </command> subcommand to see which metrics are currently
+      soon as it shuts down. Use <command>VBoxManage metrics list</command>
+      subcommand to see which metrics are currently
       available. You can also use <option>--list</option> option with
       any subcommand that modifies metric settings to find out which
       metrics were affected.
@@ -8471,7 +8466,7 @@ VBoxManage sharedfolder     remove &lt;uuid|vmname&gt;
             and the number of samples retained internally. The retained
             data is available for displaying with the
             <command>query</command> subcommand. The
-            <computeroutput>--list </computeroutput> option shows which
+            <computeroutput>--list</computeroutput> option shows which
             metrics have been modified as the result of the command
             execution.
           </para>

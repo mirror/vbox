@@ -1328,8 +1328,7 @@
           also use <emphasis>large pages</emphasis> to reduce TLB usage
           and overhead. This can yield a performance improvement of up
           to 5%. To enable this feature for a VM, you need to use the
-          <computeroutput>VBoxManage modifyvm
-          </computeroutput><computeroutput>--largepages</computeroutput>
+          <computeroutput>VBoxManage modifyvm --largepages</computeroutput>
           command. See <xref linkend="vboxmanage-modifyvm" />.
         </para>
       </listitem>

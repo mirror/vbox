@@ -593,7 +593,7 @@
             <computeroutput>linux-headers-i686</computeroutput> or
             <computeroutput>linux-headers-i686-pae</computeroutput> best
             matches the kernel version name. Also, the
-            <computeroutput>linux-kbuild </computeroutput> package if it
+            <computeroutput>linux-kbuild</computeroutput> package if it
             exists. Basic Ubuntu releases should have the correct
             packages installed by default.
           </para>
