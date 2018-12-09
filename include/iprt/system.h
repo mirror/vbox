@@ -278,7 +278,7 @@ RTDECL(uint32_t) RTSystemGetNtBuildNo(void);
  *
  * @remarks Windows NT only.  Requires IPRT to be initialized.
  */
-RTDECL(uint32_t) RTSystemGetNtVersion(void);
+RTDECL(uint64_t) RTSystemGetNtVersion(void);
 
 #endif /* RT_OS_WINDOWS */
 
