@@ -892,7 +892,7 @@
 
   <xsl:template match="replaceable">
     <xsl:choose>
-      <xsl:when test="not(ancestor::cmdsynopsis) or ancestor::arg">
+      <xsl:when test="(not(ancestor::cmdsynopsis) and not(ancestor::option)) or ancestor::arg">
         <xsl:text>\texttt{\textit{</xsl:text>
         <xsl:apply-templates />
         <xsl:text>}}</xsl:text>
@@ -935,7 +935,7 @@
                      ">
         <xsl:variable name="subst2">
           <xsl:call-template name="str:subst">
-            <xsl:with-param name="text" select="$subst1" />
+            <xsl:with-param name="text" select="translate(normalize-space(concat('&#x7F;',$subst1,'&#x7F;')),'&#x7F;','')" />
             <xsl:with-param name="replace" select="'--'" />
             <xsl:with-param name="with" select="'-{}-'" />
             <xsl:with-param name="disable-output-escaping" select="no" />
