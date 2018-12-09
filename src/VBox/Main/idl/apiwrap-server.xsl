@@ -178,6 +178,12 @@ public:
 
 <xsl:template match="interface" mode="classfooter">
     <xsl:param name="addinterfaces"/>
+    <xsl:if test="@wrap-gen-hook = 'yes'">
+        <xsl:text>
+public:
+    virtual void i_callHook(const char *a_pszFunction) { RT_NOREF_PV(a_pszFunction); }
+</xsl:text>
+    </xsl:if>
     <xsl:text>
 private:
     DECLARE_CLS_COPY_CTOR_ASSIGN_NOOP(</xsl:text>
@@ -1219,7 +1225,12 @@ Returns empty if not needed, non-empty ('yes') if needed. -->
         <xsl:with-param name="isref" select="'yes'"/>
     </xsl:apply-templates>
     <xsl:text>));
-
+</xsl:text>
+    <xsl:if test="ancestor::interface[@wrap-gen-hook = 'yes']">
+        <xsl:text>
+    i_callHook(__FUNCTION__);</xsl:text>
+    </xsl:if>
+<xsl:text>
     VirtualBoxBase::clearError();
 
     HRESULT hrc;
@@ -1361,7 +1372,12 @@ Returns empty if not needed, non-empty ('yes') if needed. -->
             <xsl:with-param name="isref" select="''"/>
         </xsl:apply-templates>
         <xsl:text>));
-
+</xsl:text>
+    <xsl:if test="ancestor::interface[@wrap-gen-hook = 'yes']">
+        <xsl:text>
+    i_callHook(__FUNCTION__);</xsl:text>
+    </xsl:if>
+<xsl:text>
     VirtualBoxBase::clearError();
 
     HRESULT hrc;
@@ -1799,7 +1815,12 @@ Returns empty if not needed, non-empty ('yes') if needed. -->
         </xsl:apply-templates>
     </xsl:for-each>
     <xsl:text>));
-
+</xsl:text>
+    <xsl:if test="ancestor::interface[@wrap-gen-hook = 'yes']">
+        <xsl:text>
+    i_callHook(__FUNCTION__);</xsl:text>
+    </xsl:if>
+<xsl:text>
     VirtualBoxBase::clearError();
 
     HRESULT hrc;

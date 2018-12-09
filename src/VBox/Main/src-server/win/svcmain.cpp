@@ -552,82 +552,74 @@ void    VirtualBoxClassFactory::i_finishVBoxSvc()
     }
 }
 
-#ifdef DEBUG_bird
-# include <psapi.h> /* for GetProcessImageFileNameW */
-
-/** Logs the RPC caller info to the release log. */
-static void logCaller(const char *pszFormat, ...)
-{
-    char szTmp[80];
-    va_list va;
-    va_start(va, pszFormat);
-    RTStrPrintfV(szTmp, sizeof(szTmp), pszFormat, va);
-    va_end(va);
-
-    RPC_CALL_ATTRIBUTES_V2_W CallAttribs = { RPC_CALL_ATTRIBUTES_VERSION, RPC_QUERY_CLIENT_PID | RPC_QUERY_IS_CLIENT_LOCAL };
-    RPC_STATUS rcRpc = RpcServerInqCallAttributesW(NULL, &CallAttribs);
-
-    RTUTF16 wszProcName[256];
-    wszProcName[0] = '\0';
-    if (rcRpc == 0 && CallAttribs.ClientPID != 0)
-    {
-        HANDLE hProcess = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, FALSE, (DWORD)(uintptr_t)CallAttribs.ClientPID);
-        if (hProcess)
-        {
-            RT_ZERO(wszProcName);
-            GetProcessImageFileNameW(hProcess, wszProcName, RT_ELEMENTS(wszProcName) - 1);
-            CloseHandle(hProcess);
-        }
-    }
-    LogRel(("%s [rcRpc=%#x ClientPID=%#zx/%zu (%ls) IsClientLocal=%d ProtocolSequence=%#x CallStatus=%#x CallType=%#x OpNum=%#x InterfaceUuid=%RTuuid]\n",
-            szTmp, rcRpc, CallAttribs.ClientPID, CallAttribs.ClientPID, wszProcName, CallAttribs.IsClientLocal,
-            CallAttribs.ProtocolSequence, CallAttribs.CallStatus, CallAttribs.CallType, CallAttribs.OpNum,
-            &CallAttribs.InterfaceUuid));
-}
 
 /**
- * Caller watcher wrapper exploration wrapping CComObjectCached.
- * @sa @bugref{3300}
+ * Custom instantiation of CComObjectCached.
+ *
+ * This catches certain QueryInterface callers for the purpose of watching for
+ * abnormal client process termination (@bugref{3300}).
+ *
+ * @todo just merge this into class VirtualBox VirtualBoxImpl.h
  */
-template <class Base> class DebugWatcher : public Base
+class VirtualBoxObjectCached : public VirtualBox
 {
 public:
-    DebugWatcher(void *a_pWhatever = NULL) : Base(a_pWhatever)
+    VirtualBoxObjectCached(void * = NULL)
+        : VirtualBox()
     {
     }
 
-    virtual ~DebugWatcher()
+    virtual ~VirtualBoxObjectCached()
     {
+        m_iRef = LONG_MIN / 2; /* Catch refcount screwups by setting refcount something insane. */
+        FinalRelease();
     }
+
+    /** @name IUnknown implementation for VirtualBox
+     * @{  */
 
     STDMETHOD_(ULONG, AddRef)() throw()
     {
-        ULONG cRefs = Base::AddRef();
-        logCaller("AddRef -> %u", cRefs);
+        ULONG cRefs = InternalAddRef();
+        if (cRefs == 2)
+        {
+            AssertMsg(ATL::_pAtlModule, ("ATL: referring to ATL module without having one declared in this linking namespace\n"));
+            ATL::_pAtlModule->Lock();
+        }
         return cRefs;
     }
 
     STDMETHOD_(ULONG, Release)() throw()
     {
-        ULONG cRefs = Base::Release();
-        logCaller("Release -> %u", cRefs);
+        ULONG cRefs = InternalRelease();
+        if (cRefs == 0)
+            delete this;
+        else if (cRefs == 1)
+        {
+            AssertMsg(ATL::_pAtlModule, ("ATL: referring to ATL module without having one declared in this linking namespace\n"));
+            ATL::_pAtlModule->Unlock();
+        }
         return cRefs;
     }
 
     STDMETHOD(QueryInterface)(REFIID iid, void **ppvObj) throw()
     {
-        HRESULT hrc = Base::QueryInterface(iid, ppvObj);
-        logCaller("QueryInterface %RTuuid -> %Rhrc %p", iid, hrc, *ppvObj);
+        HRESULT hrc = _InternalQueryInterface(iid, ppvObj);
+#ifdef VBOXSVC_WITH_CLIENT_WATCHER
+        i_logCaller("QueryInterface %RTuuid -> %Rhrc %p", &iid, hrc, *ppvObj);
+#endif
         return hrc;
     }
 
-    static HRESULT WINAPI CreateInstance(DebugWatcher<Base> **pp) throw()
+    /** @} */
+
+    static HRESULT WINAPI CreateInstance(VirtualBoxObjectCached **ppObj) throw()
     {
-        AssertReturn(pp, E_POINTER);
-        *pp = NULL;
+        AssertReturn(ppObj, E_POINTER);
+        *ppObj = NULL;
 
         HRESULT hrc = E_OUTOFMEMORY;
-        DebugWatcher<Base> *p = new (std::nothrow) DebugWatcher<Base>();
+        VirtualBoxObjectCached *p = new (std::nothrow) VirtualBoxObjectCached();
         if (p)
         {
             p->SetVoid(NULL);
@@ -639,14 +631,12 @@ public:
             if (FAILED(hrc))
                 delete p;
             else
-                *pp = p;
+                *ppObj = p;
         }
         return hrc;
     }
-
 };
 
-#endif /* DEBUG_bird */
 
 /**
  * Custom class factory impl for the VirtualBox singleton.
@@ -663,8 +653,8 @@ public:
  */
 STDMETHODIMP VirtualBoxClassFactory::CreateInstance(LPUNKNOWN pUnkOuter, REFIID riid, void **ppvObj)
 {
-# ifdef DEBUG_bird
-    logCaller("VirtualBoxClassFactory::CreateInstance: %RTuuid", riid);
+# ifdef VBOXSVC_WITH_CLIENT_WATCHER
+    VirtualBox::i_logCaller("VirtualBoxClassFactory::CreateInstance: %RTuuid", riid);
 # endif
     HRESULT hrc = E_POINTER;
     if (ppvObj != NULL)
@@ -702,13 +692,8 @@ STDMETHODIMP VirtualBoxClassFactory::CreateInstance(LPUNKNOWN pUnkOuter, REFIID 
                         else if (SUCCEEDED(hrc))
                         {
                             ATL::_pAtlModule->Lock();
-#ifdef DEBUG_bird
-                            DebugWatcher<ATL::CComObjectCached<VirtualBox>> *p;
-                            m_hrcCreate = hrc = DebugWatcher<ATL::CComObjectCached<VirtualBox>>::CreateInstance(&p);
-#else
-                            ATL::CComObjectCached<VirtualBox> *p;
-                            m_hrcCreate = hrc = ATL::CComObjectCached<VirtualBox>::CreateInstance(&p);
-#endif
+                            VirtualBoxObjectCached *p;
+                            m_hrcCreate = hrc = VirtualBoxObjectCached::CreateInstance(&p);
                             if (SUCCEEDED(hrc))
                             {
                                 m_hrcCreate = hrc = p->QueryInterface(IID_IUnknown, (void **)&m_pObj);

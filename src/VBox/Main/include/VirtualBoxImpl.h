@@ -26,6 +26,10 @@
 # include "win/resource.h"
 #endif
 
+//#ifdef DEBUG_bird
+//# define VBOXSVC_WITH_CLIENT_WATCHER
+//#endif
+
 namespace com
 {
     class Event;
@@ -403,6 +407,15 @@ private:
     static void i_SVCHelperClientThreadTask(StartSVCHelperClientData *pTask);
 #endif
 
+#if defined(RT_OS_WINDOWS) && defined(VBOXSVC_WITH_CLIENT_WATCHER)
+protected:
+    void i_callHook(const char *a_pszFunction) RT_OVERRIDE;
+    bool i_watchClientProcess(RTPROCESS a_pidClient, const char *a_pszFunction);
+public:
+    static void i_logCaller(const char *a_pszFormat, ...);
+private:
+
+#endif
 };
 
 ////////////////////////////////////////////////////////////////////////////////
