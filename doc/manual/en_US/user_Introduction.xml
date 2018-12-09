@@ -534,62 +534,98 @@
 
       <listitem>
         <para>
-          <emphasis role="bold">Windows hosts:</emphasis>
+          <emphasis role="bold">Windows hosts (64-bit):</emphasis>
         </para>
 
         <itemizedlist>
 
           <listitem>
             <para>
-              Windows Server 2008 (64-bit)
+              Windows 7
             </para>
           </listitem>
 
           <listitem>
             <para>
-              Windows Server 2008 R2 (64-bit)
+              Windows 8
             </para>
           </listitem>
 
           <listitem>
             <para>
-              Windows 7 (32-bit and 64-bit)
+              Windows 8.1
             </para>
           </listitem>
 
           <listitem>
             <para>
-              Windows 8 (32-bit and 64-bit)
+              Windows 10 RTM (1507) build 10240
             </para>
           </listitem>
 
           <listitem>
             <para>
-              Windows 8.1 (32-bit and 64-bit)
+              Windows 10 November Update (1511) build 10586
             </para>
           </listitem>
 
           <listitem>
             <para>
-              Windows 10 RTM build 10240 (32-bit and 64-bit)
+              Windows 10 Anniversary Update (1607) build 14393
             </para>
           </listitem>
 
           <listitem>
             <para>
-              Windows Server 2012 (64-bit)
+              Windows 10 Creators Update (1703) build 15063
             </para>
           </listitem>
 
           <listitem>
             <para>
-              Windows Server 2012 R2 (64-bit)
+              Windows 10 Fall Creators Update (1709) build 16299
             </para>
           </listitem>
 
           <listitem>
             <para>
-              Windows Server 2016 (64-bit)
+              Windows 10 April 2018 Update (1803) build 17134
+            </para>
+          </listitem>
+
+          <listitem>
+            <para>
+              Windows 10 October 2018 Update (1809) build 17763
+            </para>
+          </listitem>
+
+          <listitem>
+            <para>
+              Windows Server 2008 R2
+            </para>
+          </listitem>
+
+          <listitem>
+            <para>
+              Windows Server 2012
+            </para>
+          </listitem>
+
+          <listitem>
+            <para>
+              Windows Server 2012 R2
+            </para>
+          </listitem>
+
+          <listitem>
+            <para>
+              Windows Server 2016
+            </para>
+          </listitem>
+
+          <listitem>
+            <para>
+              Windows Server 2019
             </para>
           </listitem>
 
@@ -605,18 +641,6 @@
 
           <listitem>
             <para>
-              10.10 (Yosemite)
-            </para>
-          </listitem>
-
-          <listitem>
-            <para>
-              10.11 (El Capitan)
-            </para>
-          </listitem>
-
-          <listitem>
-            <para>
               10.12 (Sierra)
             </para>
           </listitem>
@@ -624,6 +648,12 @@
           <listitem>
             <para>
               10.13 (High Sierra)
+            </para>
+          </listitem>
+
+          <listitem>
+            <para>
+              10.14 (Mojave)
             </para>
           </listitem>
 
@@ -638,41 +668,38 @@
 
       <listitem>
         <para>
-          <emphasis role="bold">Linux hosts (32-bit and
-          64-bit).</emphasis> Includes the following:
+          <emphasis role="bold">Linux hosts (64-bit).</emphasis> Includes the following:
         </para>
 
         <itemizedlist>
 
           <listitem>
             <para>
-              Ubuntu 14.04 LTS, 16.04 LTS, and 17.04
+              Ubuntu 16.04 LTS, 18.04 LTS and 18.10
             </para>
           </listitem>
 
           <listitem>
             <para>
-              Debian GNU/Linux 7 ("Wheezy"), 8 ("Jessie"), and 9
-              ("Stretch")
+              Debian GNU/Linux 9 ("Stretch")
             </para>
           </listitem>
 
           <listitem>
             <para>
-              Oracle Enterprise Linux 5, Oracle Linux 6, and Oracle
-              Linux 7
+              Oracle Linux 6 and 7
             </para>
           </listitem>
 
           <listitem>
             <para>
-              Redhat Enterprise Linux 5, 6, and 7
+              Redhat Enterprise Linux 6 and 7
             </para>
           </listitem>
 
           <listitem>
             <para>
-              Fedora 25 and 26
+              Fedora 28 and 29
             </para>
           </listitem>
 
@@ -684,7 +711,13 @@
 
           <listitem>
             <para>
-              openSUSE 13.2
+              SUSE Linux Enterprise server 12 and 15
+            </para>
+          </listitem>
+
+          <listitem>
+            <para>
+              openSUSE Leap 42.3 and 15.0
             </para>
           </listitem>
 
@@ -717,12 +750,6 @@
           <listitem>
             <para>
               Oracle Solaris 11
-            </para>
-          </listitem>
-
-          <listitem>
-            <para>
-              Oracle Solaris 10 8/11 and later
             </para>
           </listitem>
 

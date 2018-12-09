@@ -88,8 +88,9 @@
         <para>
           <emphasis role="bold">Windows 2000, Windows XP, Windows Server
           2003, Windows Vista, Windows Server 2008, Windows 7, Windows
-          8, Windows 8.1, Windows 10 RTM 10240, Windows Server
-          2012:</emphasis>
+          Server 2008 R2, Windows 8, Windows Server 2012, Windows 8.1,
+          Windows Server 2012 R2, Windows 10 (non-Insider Preview releases),
+          Windows Server 2016, Windows server 2019:</emphasis>
         </para>
 
         <itemizedlist>
@@ -97,9 +98,7 @@
           <listitem>
             <para>
               Fully supports all versions, editions, and service packs,
-              including 64-bit versions under the preconditions for
-              MS-DOS, Windows 3.x, Windows 95, Windows 98, and Windows
-              ME.
+              including 64-bit versions.
             </para>
           </listitem>
 
