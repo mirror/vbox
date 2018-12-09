@@ -20,10 +20,10 @@
 
 #include "VirtualBoxBase.h"
 
-///* Enable the watcher code in debug builds. */
-//#ifdef DEBUG
-//# define WITH_WATCHER
-//#endif
+/* Enable the watcher code in debug builds. */
+#ifdef DEBUG
+# define WITH_WATCHER
+#endif
 
 
 class VBoxSDSPerUserData; /* See VirtualBoxSDSImpl.cpp. */
