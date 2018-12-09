@@ -485,6 +485,10 @@ private:
     bool m_fComInitialized;
     /** Part of the shutdown monitoring logic. */
     bool volatile m_fActivity;
+#ifdef WITH_WATCHER
+    /** Part of the shutdown monitoring logic. */
+    bool volatile m_fHasClients;
+#endif
     /** Auto reset event for communicating with the shutdown thread.
      * This is created by startMonitor(). */
     HANDLE m_hEventShutdown;
@@ -496,6 +500,9 @@ public:
     /** Time for EXE to be idle before shutting down.
      * Can be decreased at system shutdown phase. */
     volatile uint32_t m_cMsShutdownTimeOut;
+
+    /** The service module instance. */
+    static CComServiceModule * volatile s_pInstance;
 
 public:
     /**
@@ -516,6 +523,9 @@ public:
         : m_fInitialized(false)
         , m_fComInitialized(false)
         , m_fActivity(false)
+#ifdef WITH_WATCHER
+        , m_fHasClients(false)
+#endif
         , m_cMsShutdownTimeOut(cMsShutdownTimeout)
         , m_hEventShutdown(INVALID_HANDLE_VALUE)
         , m_dwMainThreadID(~(DWORD)42)
@@ -531,7 +541,6 @@ public:
         HRESULT hrc = ATL::CComModule::Init(p, h, pLibID);
         if (SUCCEEDED(hrc))
         {
-
             // copy service name
             int rc = ::RTUtf16Copy(m_wszServiceName, sizeof(m_wszServiceName), p_wszServiceName);
             AssertRCReturn(rc, E_NOT_SUFFICIENT_BUFFER);
@@ -555,17 +564,55 @@ public:
         LogFunc(("Unlock() called. Ref=%d\n", cLocks));
         if (cLocks == 0)
         {
-            m_fActivity = true;
+            ::ASMAtomicWriteBool(&m_fActivity, true);
             ::SetEvent(m_hEventShutdown); // tell monitor that we transitioned to zero
         }
         return cLocks;
     }
 
+    /**
+     * Overload CAtlModule::Lock to untrigger automatic shutdown.
+     */
+    virtual LONG Lock() throw()
+    {
+        LONG cLocks = ATL::CComModule::Lock();
+        LogFunc(("Lock() called. Ref=%d\n", cLocks));
+#ifdef WITH_WATCHER
+        ::ASMAtomicWriteBool(&m_fActivity, true);
+        ::SetEvent(m_hEventShutdown); /* reset the timeout interval */
+#endif
+        return cLocks;
+    }
+
+#ifdef WITH_WATCHER
+
+    /** Called to start the automatic shutdown behaviour based on client count
+     *  rather than lock count.. */
+    void notifyZeroClientConnections()
+    {
+        m_fHasClients = false;
+        ::ASMAtomicWriteBool(&m_fActivity, true);
+        ::SetEvent(m_hEventShutdown);
+    }
+
+    /** Called to make sure automatic shutdown is cancelled. */
+    void notifyHasClientConnections()
+    {
+        m_fHasClients = true;
+        ::ASMAtomicWriteBool(&m_fActivity, true);
+    }
+
+#endif /* WITH_WATCHER */
+
 protected:
 
     bool hasActiveConnection()
     {
+#ifdef WITH_WATCHER
+        return m_fActivity || (m_fHasClients && GetLockCount() > 0);
+#else
         return m_fActivity || GetLockCount() > 0;
+#endif
     }
 
     void monitorShutdown() throw()
@@ -583,13 +630,12 @@ protected:
             /* timed out */
             if (!hasActiveConnection()) /* if no activity let's really bail */
             {
-                /*
-                 * Disable log rotation at this point, worst case a log file
-                 * becomes slightly bigger than it should. Avoids quirks with
-                 * log rotation: there might be another API service process
-                 * running at this point which would rotate the logs concurrently,
-                 * creating a mess.
-                 */
+                ::CoSuspendClassObjects();
+
+                /* Disable log rotation at this point, worst case a log file becomes slightly
+                   bigger than it should.  Avoids quirks with log rotation:  There might be
+                   another API service process running at this point which would rotate the
+                   logs concurrently, creating a mess. */
                 PRTLOGGER pReleaseLogger = ::RTLogRelGetDefaultInstance();
                 if (pReleaseLogger)
                 {
@@ -605,7 +651,7 @@ protected:
                         }
                     }
                 }
-                ::CoSuspendClassObjects();
+
                 if (!hasActiveConnection())
                     break;
                 LogRel(("Still got active connection(s)...\n"));
@@ -685,6 +731,26 @@ protected:
         return S_OK;
     }
 };
+
+/*static*/ CComServiceModule * volatile CComServiceModule::s_pInstance = NULL;
+
+
+#ifdef WITH_WATCHER
+/**
+ * Go-between for CComServiceModule and VirtualBoxSDS.
+ */
+void VBoxSDSNotifyClientCount(uint32_t cClients)
+{
+    CComServiceModule *pInstance = CComServiceModule::s_pInstance;
+    if (pInstance)
+    {
+        if (cClients == 0)
+            pInstance->notifyZeroClientConnections();
+        else
+            pInstance->notifyHasClientConnections();
+    }
+}
+#endif
 
 
 /** Special export that make VBoxProxyStub not register this process as one that
@@ -948,8 +1014,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
                     /*
                      * Run service.
                      */
+                    CComServiceModule::s_pInstance = pServiceModule;
                     hrcExit = pServiceModule->startService(nShowCmd);
                     LogRelFunc(("VBoxSDS: Calling _ServiceModule.RevokeClassObjects()...\n"));
+                    CComServiceModule::s_pInstance = NULL;
                     pServiceModule->RevokeClassObjects();
                 }
 

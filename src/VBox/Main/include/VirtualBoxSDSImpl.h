@@ -20,8 +20,14 @@
 
 #include "VirtualBoxBase.h"
 
+///* Enable the watcher code in debug builds. */
+//#ifdef DEBUG
+//# define WITH_WATCHER
+//#endif
+
 
 class VBoxSDSPerUserData; /* See VirtualBoxSDSImpl.cpp. */
+struct VBoxSDSWatcher;    /* See VirtualBoxSDSImpl.cpp. */
 
 /**
  * The IVirtualBoxSDS implementation.
@@ -50,9 +56,19 @@ private:
     typedef std::map<com::Utf8Str, VBoxSDSPerUserData *> UserDataMap_T;
     /** Per user data map (key is SID string).
      * This is an insert-only map! */
-    UserDataMap_T       m_UserDataMap;
-    /** Lock protecting m_UserDataMap.*/
-    RTCRITSECTRW        m_MapCritSect;
+    UserDataMap_T           m_UserDataMap;
+    /** Number of registered+watched VBoxSVC processes. */
+    uint32_t                m_cVBoxSvcProcesses;
+#ifdef WITH_WATCHER
+    /** Number of watcher threads.   */
+    uint32_t                m_cWatchers;
+    /** Pointer to an array of watcher pointers. */
+    VBoxSDSWatcher        **m_papWatchers;
+    /** Lock protecting m_papWatchers and associated structures. */
+    RTCRITSECT              m_WatcherCritSect;
+#endif
+    /** Lock protecting m_UserDataMap . */
+    RTCRITSECTRW            m_MapCritSect;
 
 public:
     DECLARE_CLASSFACTORY_SINGLETON(VirtualBoxSDS)
@@ -100,9 +116,22 @@ private:
      * @param   a_rStrUsername  The user name if available.
      */
     VBoxSDSPerUserData *i_lookupOrCreatePerUserData(com::Utf8Str const &a_rStrUserSid, com::Utf8Str const &a_rStrUsername);
+
+#ifdef WITH_WATCHER
+    static DECLCALLBACK(int) i_watcherThreadProc(RTTHREAD hSelf, void *pvUser);
+    bool i_watchIt(VBoxSDSPerUserData *pProcess, HANDLE hProcess, RTPROCESS pid);
+    void i_stopWatching(VBoxSDSPerUserData *pProcess, RTPROCESS pid);
+    void i_shutdownAllWatchers(void);
+
+    void i_decrementClientCount();
+    void i_incrementClientCount();
+#endif
     /** @} */
 };
 
+#ifdef WITH_WATCHER
+void VBoxSDSNotifyClientCount(uint32_t cClients);
+#endif
 
 #endif // !____H_VIRTUALBOXSDSIMPL
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */

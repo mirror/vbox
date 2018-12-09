@@ -28,6 +28,8 @@
 #include <VBox/err.h>
 #include <iprt/asm.h>
 #include <iprt/critsect.h>
+#include <iprt/mem.h>
+#include <iprt/system.h>
 
 #include <rpcasync.h>
 #include <rpcdcep.h>
@@ -52,6 +54,13 @@ public:
     /** The VBoxSVC chosen to instantiate CLSID_VirtualBox.
      * This is NULL if not set. */
     ComPtr<IVBoxSVCRegistration>    m_ptrTheChosenOne;
+    /** The PID of the chosen one. */
+    RTPROCESS                       m_pidTheChosenOne;
+    /** The current watcher thread index, UINT32_MAX if not watched. */
+    uint32_t                        m_iWatcher;
+    /** The chosen one revision number.
+     * This is used to detect races while waiting for a full watcher queue.  */
+    uint32_t volatile               m_iTheChosenOneRevision;
 private:
     /** Reference count to make destruction safe wrt hung callers.
      * (References are retain while holding the map lock in some form, but
@@ -62,7 +71,14 @@ private:
 
 public:
     VBoxSDSPerUserData(com::Utf8Str const &a_rStrUserSid, com::Utf8Str const &a_rStrUsername)
-        : m_strUserSid(a_rStrUserSid), m_strUsername(a_rStrUsername), m_cRefs(1)
+        : m_strUserSid(a_rStrUserSid)
+        , m_strUsername(a_rStrUsername)
+#ifdef WITH_WATCHER
+        , m_iWatcher(UINT32_MAX)
+        , m_iTheChosenOneRevision(0)
+#endif
+        , m_pidTheChosenOne(NIL_RTPROCESS)
+        , m_cRefs(1)
     {
         RTCritSectInit(&m_Lock);
     }
@@ -70,6 +86,7 @@ public:
     ~VBoxSDSPerUserData()
     {
         RTCritSectDelete(&m_Lock);
+        i_unchooseTheOne(true /*fIrregular*/);
     }
 
     uint32_t i_retain()
@@ -97,15 +114,53 @@ public:
     {
         RTCritSectLeave(&m_Lock);
     }
+
+    /** Reset the chosen one. */
+    void i_unchooseTheOne(bool fIrregular)
+    {
+        if (m_ptrTheChosenOne.isNotNull())
+        {
+            if (!fIrregular)
+                m_ptrTheChosenOne.setNull();
+            else
+            {
+                LogRel(("i_unchooseTheOne: Irregular release ... (pid=%d (%#x) user=%s sid=%s)\n",
+                        m_pidTheChosenOne, m_pidTheChosenOne, m_strUsername.c_str(), m_strUserSid.c_str()));
+                m_ptrTheChosenOne.setNull();
+                LogRel(("i_unchooseTheOne: ... done.\n"));
+            }
+        }
+        m_pidTheChosenOne = NIL_RTPROCESS;
+    }
+
 };
 
 
 
+/*********************************************************************************************************************************
+*   VirtualBoxSDS - constructor / destructor                                                                                     *
+*********************************************************************************************************************************/
 
-// constructor / destructor
-/////////////////////////////////////////////////////////////////////////////
+VirtualBoxSDS::VirtualBoxSDS()
+    : m_cVBoxSvcProcesses(0)
+#ifdef WITH_WATCHER
+    , m_cWatchers(0)
+    , m_papWatchers(NULL)
+#endif
+{
+}
 
-DEFINE_EMPTY_CTOR_DTOR(VirtualBoxSDS)
+
+VirtualBoxSDS::~VirtualBoxSDS()
+{
+#ifdef WITH_WATCHER
+    i_shutdownAllWatchers();
+    RTMemFree(m_papWatchers);
+    m_papWatchers = NULL;
+    m_cWatchers   = 0;
+#endif
+}
+
 
 HRESULT VirtualBoxSDS::FinalConstruct()
 {
@@ -113,6 +168,11 @@ HRESULT VirtualBoxSDS::FinalConstruct()
 
     int vrc = RTCritSectRwInit(&m_MapCritSect);
     AssertLogRelRCReturn(vrc, E_FAIL);
+
+#ifdef WITH_WATCHER
+    vrc = RTCritSectInit(&m_WatcherCritSect);
+    AssertLogRelRCReturn(vrc, E_FAIL);
+#endif
 
     LogRelFlowThisFuncLeave();
     return S_OK;
@@ -122,6 +182,11 @@ HRESULT VirtualBoxSDS::FinalConstruct()
 void VirtualBoxSDS::FinalRelease()
 {
     LogRelFlowThisFuncEnter();
+
+#ifdef WITH_WATCHER
+    i_shutdownAllWatchers();
+    RTCritSectDelete(&m_WatcherCritSect);
+#endif
 
     RTCritSectRwDelete(&m_MapCritSect);
 
@@ -140,34 +205,45 @@ void VirtualBoxSDS::FinalRelease()
 
 
 
-// IVirtualBoxSDS methods
-/////////////////////////////////////////////////////////////////////////////
-
+/*********************************************************************************************************************************
+*   VirtualBoxSDS - IVirtualBoxSDS methods                                                                                       *
+*********************************************************************************************************************************/
 
 /* SDS plan B interfaces: */
 STDMETHODIMP VirtualBoxSDS::RegisterVBoxSVC(IVBoxSVCRegistration *aVBoxSVC, LONG aPid, IUnknown **aExistingVirtualBox)
 {
-    LogRel(("VirtualBoxSDS::registerVBoxSVC: aVBoxSVC=%p aPid=%u (%#x)\n", (IVBoxSVCRegistration *)aVBoxSVC, aPid, aPid));
-#ifdef DEBUG_bird
-    RPC_CALL_ATTRIBUTES_V2_W CallAttribs = { RPC_CALL_ATTRIBUTES_VERSION, RPC_QUERY_CLIENT_PID | RPC_QUERY_IS_CLIENT_LOCAL};
-    RPC_STATUS rcRpc = RpcServerInqCallAttributesW(NULL, &CallAttribs);
-    LogRel(("RpcServerInqCallAttributesW -> %#x ClientPID=%#x IsClientLocal=%d ProtocolSequence=%#x CallStatus=%#x CallType=%#x OpNum=%#x InterfaceUuid=%RTuuid\n",
-            rcRpc, CallAttribs.ClientPID, CallAttribs.IsClientLocal, CallAttribs.ProtocolSequence, CallAttribs.CallStatus,
-            CallAttribs.CallType, CallAttribs.OpNum, &CallAttribs.InterfaceUuid));
-#endif
+    LogRel(("registerVBoxSVC: aVBoxSVC=%p aPid=%u (%#x)\n", (IVBoxSVCRegistration *)aVBoxSVC, aPid, aPid));
+
+    /*
+     * Get the caller PID so we can validate the aPid parameter with the other two.
+     * The V2 structure requires Vista or later, so fake it if older.
+     */
+    RPC_CALL_ATTRIBUTES_V2_W CallAttribs = { RPC_CALL_ATTRIBUTES_VERSION, RPC_QUERY_CLIENT_PID | RPC_QUERY_IS_CLIENT_LOCAL };
+    RPC_STATUS rcRpc;
+    if (RTSystemGetNtVersion() >= RTSYSTEM_MAKE_NT_VERSION(6, 0, 0))
+        rcRpc = RpcServerInqCallAttributesW(NULL, &CallAttribs);
+    else
+    {
+        CallAttribs.ClientPID = (HANDLE)(intptr_t)aPid;
+        rcRpc = RPC_S_OK;
+    }
 
     HRESULT hrc;
     if (   RT_VALID_PTR(aVBoxSVC)
-        && RT_VALID_PTR(aExistingVirtualBox))
+        && RT_VALID_PTR(aExistingVirtualBox)
+        && rcRpc == RPC_S_OK
+        && (intptr_t)CallAttribs.ClientPID == aPid)
     {
         *aExistingVirtualBox = NULL;
 
-        /* Get the client user SID and name. */
+        /*
+         * Get the client user SID and name.
+         */
         com::Utf8Str strSid;
         com::Utf8Str strUsername;
         if (i_getClientUserSid(&strSid, &strUsername))
         {
-            VBoxSDSPerUserData *pUserData = i_lookupOrCreatePerUserData(strSid, strUsername);
+            VBoxSDSPerUserData *pUserData = i_lookupOrCreatePerUserData(strSid, strUsername); /* (returns holding the lock) */
             if (pUserData)
             {
                 /*
@@ -183,26 +259,59 @@ STDMETHODIMP VirtualBoxSDS::RegisterVBoxSVC(IVBoxSVCRegistration *aVBoxSVC, LONG
                     }
                     catch (...)
                     {
-                        LogRel(("VirtualBoxSDS::registerVBoxSVC: unexpected exception calling GetVirtualBox.\n"));
+                        LogRel(("registerVBoxSVC: Unexpected exception calling GetVirtualBox!!\n"));
                         hrc = E_FAIL;
                     }
                     if (FAILED_DEAD_INTERFACE(hrc))
                     {
-                        LogRel(("VirtualBoxSDS::registerVBoxSVC: Seems VBoxSVC instance died.  Dropping it and letting caller take over. (hrc=%Rhrc)\n", hrc));
-                        pUserData->m_ptrTheChosenOne.setNull();
+                        LogRel(("registerVBoxSVC: Seems VBoxSVC instance died.  Dropping it and letting caller take over. (hrc=%Rhrc)\n", hrc));
+#ifdef WITH_WATCHER
+                        i_stopWatching(pUserData, pUserData->m_pidTheChosenOne);
+#endif
+                        pUserData->i_unchooseTheOne(true /*fIrregular*/);
                     }
                 }
                 else
                     hrc = S_OK;
 
                 /*
-                 * Is the caller the chosen one?
+                 * No chosen one?  Make the caller the new chosen one!
                  */
                 if (pUserData->m_ptrTheChosenOne.isNull())
                 {
-                    LogRel(("VirtualBoxSDS::registerVBoxSVC: Making aPid=%u (%#x) the chosen one for user %s (%s)!\n",
+                    LogRel(("registerVBoxSVC: Making aPid=%u (%#x) the chosen one for user %s (%s)!\n",
                             aPid, aPid, pUserData->m_strUserSid.c_str(), pUserData->m_strUsername.c_str()));
-                    pUserData->m_ptrTheChosenOne = aVBoxSVC;
+#ifdef WITH_WATCHER
+                    /* Open the process so we can watch it. */
+                    HANDLE hProcess = OpenProcess(SYNCHRONIZE | PROCESS_QUERY_INFORMATION, FALSE /*fInherit*/, aPid);
+                    if (hProcess == NULL)
+                        hProcess = OpenProcess(SYNCHRONIZE | PROCESS_QUERY_LIMITED_INFORMATION, FALSE /*fInherit*/, aPid);
+                    if (hProcess == NULL)
+                        hProcess = OpenProcess(SYNCHRONIZE, FALSE /*fInherit*/, aPid);
+                    if (hProcess != NULL)
+                    {
+                        if (i_watchIt(pUserData, hProcess, aPid))
+#endif
+                        {
+                            /* Make it official... */
+                            pUserData->m_ptrTheChosenOne = aVBoxSVC;
+                            pUserData->m_pidTheChosenOne = aPid;
+                            hrc = S_OK;
+                        }
+#ifdef WITH_WATCHER
+                        else
+                        {
+
+                            LogRel(("registerVBoxSVC: i_watchIt failed!\n"));
+                            hrc = RPC_E_OUT_OF_RESOURCES;
+                        }
+                    }
+                    else
+                    {
+                        LogRel(("registerVBoxSVC: OpenProcess failed: %u\n", GetLastError()));
+                        hrc = E_ACCESSDENIED;
+                    }
+#endif
                 }
 
                 pUserData->i_unlock();
@@ -214,8 +323,20 @@ STDMETHODIMP VirtualBoxSDS::RegisterVBoxSVC(IVBoxSVCRegistration *aVBoxSVC, LONG
         else
             hrc = E_FAIL;
     }
-    else
+    else if (   !RT_VALID_PTR(aVBoxSVC)
+             || !RT_VALID_PTR(aExistingVirtualBox))
         hrc = E_INVALIDARG;
+    else if (rcRpc != RPC_S_OK)
+    {
+        LogRel(("registerVBoxSVC: rcRpc=%d (%#x)!\n", rcRpc, rcRpc));
+        hrc = E_UNEXPECTED;
+    }
+    else
+    {
+        LogRel(("registerVBoxSVC: Client PID mismatch: aPid=%d (%#x), RPC ClientPID=%zd (%#zx)\n",
+                aPid, aPid, CallAttribs.ClientPID, CallAttribs.ClientPID));
+        hrc = E_INVALIDARG;
+    }
     LogRel2(("VirtualBoxSDS::registerVBoxSVC: returns %Rhrc aExistingVirtualBox=%p\n", hrc, (IUnknown *)aExistingVirtualBox));
     return hrc;
 }
@@ -223,7 +344,7 @@ STDMETHODIMP VirtualBoxSDS::RegisterVBoxSVC(IVBoxSVCRegistration *aVBoxSVC, LONG
 
 STDMETHODIMP VirtualBoxSDS::DeregisterVBoxSVC(IVBoxSVCRegistration *aVBoxSVC, LONG aPid)
 {
-    LogRel(("VirtualBoxSDS::deregisterVBoxSVC: aVBoxSVC=%p aPid=%u (%#x)\n", (IVBoxSVCRegistration *)aVBoxSVC, aPid, aPid));
+    LogRel(("deregisterVBoxSVC: aVBoxSVC=%p aPid=%u (%#x)\n", (IVBoxSVCRegistration *)aVBoxSVC, aPid, aPid));
     HRESULT hrc;
     if (RT_VALID_PTR(aVBoxSVC))
     {
@@ -237,12 +358,15 @@ STDMETHODIMP VirtualBoxSDS::DeregisterVBoxSVC(IVBoxSVCRegistration *aVBoxSVC, LO
             {
                 if (aVBoxSVC == (IVBoxSVCRegistration *)pUserData->m_ptrTheChosenOne)
                 {
-                    LogRel(("VirtualBoxSDS::deregisterVBoxSVC: It's the chosen one for %s (%s)!\n",
+                    LogRel(("deregisterVBoxSVC: It's the chosen one for %s (%s)!\n",
                             pUserData->m_strUserSid.c_str(), pUserData->m_strUsername.c_str()));
-                    pUserData->m_ptrTheChosenOne.setNull();
+#ifdef WITH_WATCHER
+                    i_stopWatching(pUserData, pUserData->m_pidTheChosenOne);
+#endif
+                    pUserData->i_unchooseTheOne(false /*fIrregular*/);
                 }
                 else
-                    LogRel(("VirtualBoxSDS::deregisterVBoxSVC: not the choosen one (%p != %p)\n",
+                    LogRel(("deregisterVBoxSVC: not the choosen one (%p != %p)\n",
                             (IVBoxSVCRegistration *)aVBoxSVC, (IVBoxSVCRegistration *)pUserData->m_ptrTheChosenOne));
                 pUserData->i_unlock();
                 pUserData->i_release();
@@ -251,7 +375,7 @@ STDMETHODIMP VirtualBoxSDS::DeregisterVBoxSVC(IVBoxSVCRegistration *aVBoxSVC, LO
             }
             else
             {
-                LogRel(("VirtualBoxSDS::deregisterVBoxSVC: Found no user data for %s (%s) (pid %u)\n",
+                LogRel(("deregisterVBoxSVC: Found no user data for %s (%s) (pid %u)\n",
                         strSid.c_str(), strUsername.c_str(), aPid));
                 hrc = S_OK;
             }
@@ -267,7 +391,7 @@ STDMETHODIMP VirtualBoxSDS::DeregisterVBoxSVC(IVBoxSVCRegistration *aVBoxSVC, LO
 
 
 /*********************************************************************************************************************************
-*   Internal Methods                                                                                                             *
+*   VirtualBoxSDS - Internal Methods                                                                                             *
 *********************************************************************************************************************************/
 
 /*static*/ bool VirtualBoxSDS::i_getClientUserSid(com::Utf8Str *a_pStrSid, com::Utf8Str *a_pStrUsername)
@@ -306,7 +430,7 @@ STDMETHODIMP VirtualBoxSDS::DeregisterVBoxSVC(IVBoxSVCRegistration *aVBoxSVC, LO
                     }
                     catch (std::bad_alloc &)
                     {
-                        LogRel(("VirtualBoxSDS::i_GetClientUserSID: std::bad_alloc setting rstrSid.\n"));
+                        LogRel(("i_GetClientUserSID: std::bad_alloc setting rstrSid.\n"));
                     }
                     LocalFree((HLOCAL)pwszString);
 
@@ -333,30 +457,30 @@ STDMETHODIMP VirtualBoxSDS::DeregisterVBoxSVC(IVBoxSVCRegistration *aVBoxSVC, LO
                             }
                             catch (std::bad_alloc &)
                             {
-                                LogRel(("VirtualBoxSDS::i_GetClientUserSID: std::bad_alloc setting rStrUsername.\n"));
+                                LogRel(("i_GetClientUserSID: std::bad_alloc setting rStrUsername.\n"));
                                 a_pStrUsername->setNull();
                             }
                         }
                         else
-                            LogRel(("VirtualBoxSDS::i_GetClientUserSID: LookupAccountSidW failed: %u/%x (cwcUsername=%u, cwcDomain=%u)\n",
+                            LogRel(("i_GetClientUserSID: LookupAccountSidW failed: %u/%x (cwcUsername=%u, cwcDomain=%u)\n",
                                    GetLastError(), cwcUsername, cwcDomain));
                     }
                 }
                 else
-                    LogRel(("VirtualBoxSDS::i_GetClientUserSID: ConvertSidToStringSidW failed: %u\n", GetLastError()));
+                    LogRel(("i_GetClientUserSID: ConvertSidToStringSidW failed: %u\n", GetLastError()));
             }
             else
-                LogRel(("VirtualBoxSDS::i_GetClientUserSID: GetTokenInformation/TokenUser failed: %u\n", GetLastError()));
+                LogRel(("i_GetClientUserSID: GetTokenInformation/TokenUser failed: %u\n", GetLastError()));
             CloseHandle(hToken);
         }
         else
         {
             CoRevertToSelf();
-            LogRel(("VirtualBoxSDS::i_GetClientUserSID: OpenThreadToken failed: %u\n", GetLastError()));
+            LogRel(("i_GetClientUserSID: OpenThreadToken failed: %u\n", GetLastError()));
         }
     }
     else
-        LogRel(("VirtualBoxSDS::i_GetClientUserSID: CoImpersonateClient failed: %Rhrc\n", hrc));
+        LogRel(("i_GetClientUserSID: CoImpersonateClient failed: %Rhrc\n", hrc));
     CoUninitialize();
     return fRet;
 }
@@ -452,7 +576,7 @@ VBoxSDSPerUserData *VirtualBoxSDS::i_lookupOrCreatePerUserData(com::Utf8Str cons
                 RTCritSectRwLeaveExcl(&m_MapCritSect);
 
                 if (pUserData)
-                    LogRel(("VirtualBoxSDS::i_lookupOrCreatePerUserData: Created new entry for %s (%s)\n",
+                    LogRel(("i_lookupOrCreatePerUserData: Created new entry for %s (%s)\n",
                             pUserData->m_strUserSid.c_str(), pUserData->m_strUsername.c_str() ));
                 else
                 {
@@ -465,5 +589,550 @@ VBoxSDSPerUserData *VirtualBoxSDS::i_lookupOrCreatePerUserData(com::Utf8Str cons
 
     return pUserData;
 }
+
+#ifdef WITH_WATCHER
+/**
+ * Data about what's being watched.
+ */
+typedef struct VBoxSDSWatcherData
+{
+    /** The per-user data (referenced). */
+    VBoxSDSPerUserData *pUserData;
+    /** The chosen one revision number (for handling an almost impossible race
+     * where a client terminates while making a deregistration call). */
+    uint32_t            iRevision;
+    /** The PID we're watching. */
+    RTPROCESS           pid;
+
+    /** Sets the members to NULL values. */
+    void setNull()
+    {
+        pUserData = NULL;
+        iRevision = UINT32_MAX;
+        pid       = NIL_RTPROCESS;
+    }
+} VBoxSDSWatcherData;
+
+/**
+ * Per watcher data.
+ */
+typedef struct VBoxSDSWatcher
+{
+    /** Pointer to the VBoxSDS instance. */
+    VirtualBoxSDS      *pVBoxSDS;
+    /** The thread handle. */
+    RTTHREAD            hThread;
+    /** Number of references to this structure. */
+    uint32_t volatile   cRefs;
+    /** Set if the thread should shut down. */
+    bool volatile       fShutdown;
+    /** Number of pending items in the todo array. */
+    uint32_t            cTodos;
+    /** The watcher number. */
+    uint32_t            iWatcher;
+    /** The number of handles once TODOs have been taken into account. */
+    uint32_t            cHandlesEffective;
+    /** Number of handles / user data items being monitored. */
+    uint32_t            cHandles;
+    /** Array of handles.
+     * The zero'th entry is the event semaphore use to signal the thread. */
+    HANDLE              aHandles[MAXIMUM_WAIT_OBJECTS];
+    /** Array the runs parallel to aHandles with the VBoxSVC data. */
+    VBoxSDSWatcherData  aData[MAXIMUM_WAIT_OBJECTS];
+    /** Todo items. */
+    struct
+    {
+        /** If NULL the data is being removed, otherwise it's being added and
+         * this is the process handle to watch for termination. */
+        HANDLE              hProcess;
+        /** The data about what's being watched. */
+        VBoxSDSWatcherData  Data;
+    }                   aTodos[MAXIMUM_WAIT_OBJECTS * 4];
+
+
+    /** Helper for removing a handle & data table entry. */
+    uint32_t removeHandle(uint32_t iEntry, uint32_t cHandles)
+    {
+        uint32_t cToShift = cHandles - iEntry - 1;
+        if (cToShift > 0)
+        {
+            memmove(&aData[iEntry], &aData[iEntry + 1], sizeof(aData[0]) * cToShift);
+            memmove(&aHandles[iEntry], &aHandles[iEntry + 1], sizeof(aHandles[0]) * cToShift);
+        }
+        cHandles--;
+        aHandles[cHandles] = NULL;
+        aData[cHandles].setNull();
+
+        return cHandles;
+    }
+} VBoxSDSWatcher;
+
+
+
+/**
+ * Watcher thread.
+ */
+/*static*/ DECLCALLBACK(int) VirtualBoxSDS::i_watcherThreadProc(RTTHREAD hSelf, void *pvUser)
+{
+    VBoxSDSWatcher *pThis    = (VBoxSDSWatcher *)pvUser;
+    VirtualBoxSDS  *pVBoxSDS = pThis->pVBoxSDS;
+    RT_NOREF(hSelf);
+
+    /*
+     * This thread may release references to IVBoxSVCRegistration objects.
+     */
+    CoInitializeEx(NULL, COINIT_MULTITHREADED);
+
+    /*
+     * The loop.
+     */
+    RTCritSectEnter(&pVBoxSDS->m_WatcherCritSect);
+    while (!pThis->fShutdown)
+    {
+        /*
+         * Deal with the todo list.
+         */
+        uint32_t cHandles = pThis->cHandles;
+        uint32_t cTodos   = pThis->cTodos;
+
+        for (uint32_t i = 0; i < cTodos; i++)
+        {
+            VBoxSDSPerUserData *pUserData = pThis->aTodos[i].Data.pUserData;
+            AssertContinue(pUserData);
+            if (pThis->aTodos[i].hProcess != NULL)
+            {
+                /* Add: */
+                AssertLogRelMsgBreakStmt(cHandles < RT_ELEMENTS(pThis->aHandles),
+                                         ("cHandles=%u cTodos=%u i=%u iWatcher=%u\n", cHandles, cTodos, i, pThis->iWatcher),
+                                         pThis->fShutdown = true);
+                pThis->aHandles[cHandles] = pThis->aTodos[i].hProcess;
+                pThis->aData[cHandles]    = pThis->aTodos[i].Data;
+                cHandles++;
+            }
+            else
+            {
+                /* Remove: */
+                uint32_t cRemoved = 0;
+                uint32_t j        = cHandles;
+                while (j-- > 1)
+                    if (pThis->aData[j].pUserData == pUserData)
+                    {
+                        cHandles = pThis->removeHandle(j, cHandles);
+                        pUserData->i_release();
+                        cRemoved++;
+                    }
+                if (cRemoved != 1)
+                    LogRel(("i_watcherThreadProc/#%u: Warning! cRemoved=%u pUserData=%p\n", pThis->iWatcher, cRemoved, pUserData));
+            }
+            /* Zap the entry in case we assert and leave further up. */
+            pThis->aTodos[i].Data.setNull();
+            pThis->aTodos[i].hProcess = NULL;
+        }
+
+        Assert(cHandles > 0 && cHandles <= RT_ELEMENTS(pThis->aHandles));
+        pThis->cHandles          = cHandles;
+        pThis->cHandlesEffective = cHandles;
+        pThis->cTodos            = 0;
+
+        if (pThis->fShutdown)
+            break;
+
+        /*
+         * Wait.
+         */
+        RTCritSectLeave(&pVBoxSDS->m_WatcherCritSect);
+
+        LogRel(("i_watcherThreadProc/#%u: Waiting on %u handles...\n", pThis->iWatcher, cHandles));
+        DWORD const dwWait = WaitForMultipleObjects(cHandles, pThis->aHandles, FALSE /*fWaitAll*/, INFINITE);
+        LogRel(("i_watcherThreadProc/#%u: ... wait returned: %#x (%d)\n", pThis->iWatcher, dwWait, dwWait));
+
+        uint32_t const iHandle = dwWait - WAIT_OBJECT_0;
+        if (iHandle < cHandles && iHandle > 0)
+        {
+            /*
+             * A VBoxSVC process has terminated.
+             *
+             * Note! We need to take the user data lock before the watcher one here.
+             */
+            VBoxSDSPerUserData * const pUserData = pThis->aData[iHandle].pUserData;
+            uint32_t const             iRevision = pThis->aData[iHandle].iRevision;
+            RTPROCESS const            pid       = pThis->aData[iHandle].pid;
+
+            pUserData->i_lock();
+            RTCritSectEnter(&pVBoxSDS->m_WatcherCritSect);
+
+            DWORD dwExit = 0;
+            GetExitCodeProcess(pThis->aHandles[iHandle], &dwExit);
+            LogRel(("i_watcherThreadProc/#%u: %p/%s: PID %u/%#x termination detected: %d (%#x)  [iRev=%u, cur %u]\n",
+                    pThis->iWatcher, pUserData, pUserData->m_strUsername.c_str(), pid, pid, dwExit, dwExit,
+                    iRevision, pUserData->m_iTheChosenOneRevision));
+
+            /* Remove it from the handle array. */
+            CloseHandle(pThis->aHandles[iHandle]);
+            pThis->cHandles = cHandles = pThis->removeHandle(iHandle, cHandles);
+            pThis->cHandlesEffective -= 1;
+
+            /* If the process we were watching is still the current chosen one,
+               unchoose it and decrement the client count.  Otherwise we were subject
+               to a deregistration/termination race (unlikely). */
+            if (pUserData->m_iTheChosenOneRevision == iRevision)
+            {
+                pUserData->i_unchooseTheOne(true /*fIrregular*/);
+                pUserData->i_unlock();
+                pVBoxSDS->i_decrementClientCount();
+            }
+            else
+                pUserData->i_unlock();
+            pUserData->i_release();
+        }
+        else
+        {
+            RTCritSectEnter(&pThis->pVBoxSDS->m_WatcherCritSect);
+            AssertLogRelMsgBreak(iHandle == 0 || dwWait == WAIT_TIMEOUT,
+                                 ("dwWait=%u (%#x) cHandles=%u\n", dwWait, dwWait, cHandles));
+        }
+    }
+
+    RTCritSectLeave(&pThis->pVBoxSDS->m_WatcherCritSect);
+
+    /*
+     * In case we quit w/o being told, signal i_watchIt that we're out of action.
+     */
+    pThis->fShutdown = true;
+
+    /*
+     * Release all our data on the way out.
+     */
+    uint32_t i = pThis->cHandles;
+    while (i-- > 1)
+    {
+        if (pThis->aData[i].pUserData)
+        {
+            pThis->aData[i].pUserData->i_release();
+            pThis->aData[i].pUserData = NULL;
+        }
+        if (pThis->aHandles[i])
+        {
+            CloseHandle(pThis->aHandles[i]);
+            pThis->aHandles[i] = NULL;
+        }
+    }
+    if (pThis->aHandles[0])
+    {
+        CloseHandle(pThis->aHandles[0]);
+        pThis->aHandles[0] = NULL;
+    }
+
+    i = pThis->cTodos;
+    pThis->cTodos = 0;
+    while (i-- > 0)
+    {
+        if (pThis->aTodos[i].Data.pUserData)
+        {
+            pThis->aTodos[i].Data.pUserData->i_release();
+            pThis->aTodos[i].Data.pUserData = NULL;
+        }
+        if (pThis->aTodos[i].hProcess)
+        {
+            CloseHandle(pThis->aTodos[i].hProcess);
+            pThis->aTodos[i].hProcess = NULL;
+        }
+    }
+
+    if (ASMAtomicDecU32(&pThis->cRefs) == 0)
+        RTMemFree(pThis);
+
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Starts monitoring a VBoxSVC process.
+ *
+ * @param   pUserData   The user which chosen VBoxSVC should be watched.
+ * @param   hProcess    Handle to the VBoxSVC process.  Consumed.
+ * @param   pid         The VBoxSVC PID.
+ * @returns Success indicator.
+ */
+bool VirtualBoxSDS::i_watchIt(VBoxSDSPerUserData *pUserData, HANDLE hProcess, RTPROCESS pid)
+{
+    RTCritSectEnter(&m_WatcherCritSect);
+
+    /*
+     * Find a watcher with capacity left over (we save 8 entries for removals).
+     */
+    for (uint32_t i = 0; i < m_cWatchers; i++)
+    {
+        VBoxSDSWatcher *pWatcher = m_papWatchers[i];
+        if (   pWatcher->cHandlesEffective < RT_ELEMENTS(pWatcher->aHandles)
+            && !pWatcher->fShutdown)
+        {
+            uint32_t iTodo = pWatcher->cTodos;
+            if (iTodo + 8 < RT_ELEMENTS(pWatcher->aTodos))
+            {
+                pWatcher->aTodos[iTodo].hProcess       = hProcess;
+                pWatcher->aTodos[iTodo].Data.pUserData = pUserData;
+                pWatcher->aTodos[iTodo].Data.iRevision = ++pUserData->m_iTheChosenOneRevision;
+                pWatcher->aTodos[iTodo].Data.pid       = pid;
+                pWatcher->cTodos = iTodo + 1;
+
+                pUserData->m_iWatcher = pWatcher->iWatcher;
+                pUserData->i_retain();
+
+                BOOL fRc = SetEvent(pWatcher->aHandles[0]);
+                AssertLogRelMsg(fRc, ("SetEvent(%p) failed: %u\n", pWatcher->aHandles[0], GetLastError()));
+                LogRel(("i_watchIt: Added %p/%p to watcher #%u: %RTbool\n", pUserData, hProcess, pWatcher->iWatcher, fRc));
+
+                i_incrementClientCount();
+                RTCritSectLeave(&m_WatcherCritSect);
+                RTThreadYield();
+                return true;
+            }
+        }
+    }
+
+    /*
+     * No watcher with capacity was found, so create a new one with
+     * the user/handle prequeued.
+     */
+    void *pvNew = RTMemRealloc(m_papWatchers, sizeof(m_papWatchers[0]) * (m_cWatchers + 1));
+    if (pvNew)
+    {
+        m_papWatchers = (VBoxSDSWatcher **)pvNew;
+        VBoxSDSWatcher *pWatcher = (VBoxSDSWatcher *)RTMemAllocZ(sizeof(*pWatcher));
+        if (pWatcher)
+        {
+            for (uint32_t i = 0; i < RT_ELEMENTS(pWatcher->aData); i++)
+                pWatcher->aData[i].setNull();
+            for (uint32_t i = 0; i < RT_ELEMENTS(pWatcher->aTodos); i++)
+                pWatcher->aTodos[i].Data.setNull();
+
+            pWatcher->pVBoxSDS          = this;
+            pWatcher->iWatcher          = m_cWatchers;
+            pWatcher->cRefs             = 2;
+            pWatcher->cHandlesEffective = 2;
+            pWatcher->cHandles          = 2;
+            pWatcher->aHandles[0]       = CreateEventW(NULL, FALSE /*fManualReset*/, FALSE /*fInitialState*/,  NULL);
+            if (pWatcher->aHandles[0])
+            {
+                /* Add incoming VBoxSVC process in slot #1: */
+                pWatcher->aHandles[1]        = hProcess;
+                pWatcher->aData[1].pid       = pid;
+                pWatcher->aData[1].pUserData = pUserData;
+                pWatcher->aData[1].iRevision = ++pUserData->m_iTheChosenOneRevision;
+                pUserData->i_retain();
+                pUserData->m_iWatcher = pWatcher->iWatcher;
+
+                /* Start the thread and we're good. */
+                m_papWatchers[m_cWatchers++] = pWatcher;
+                int rc = RTThreadCreateF(&pWatcher->hThread, i_watcherThreadProc, pWatcher, 0, RTTHREADTYPE_MAIN_WORKER,
+                                         RTTHREADFLAGS_WAITABLE, "watcher%u", pWatcher->iWatcher);
+                if (RT_SUCCESS(rc))
+                {
+                    LogRel(("i_watchIt: Created new watcher #%u for %p/%p\n", m_cWatchers, pUserData, hProcess));
+
+                    i_incrementClientCount();
+                    RTCritSectLeave(&m_WatcherCritSect);
+                    return true;
+                }
+
+                LogRel(("i_watchIt: Error starting watcher thread: %Rrc\n", rc));
+                m_papWatchers[--m_cWatchers] = NULL;
+
+                pUserData->m_iWatcher = UINT32_MAX;
+                pUserData->i_release();
+                CloseHandle(pWatcher->aHandles[0]);
+            }
+            else
+                LogRel(("i_watchIt: CreateEventW failed: %u\n", GetLastError()));
+            RTMemFree(pWatcher);
+        }
+        else
+            LogRel(("i_watchIt: failed to allocate watcher structure!\n"));
+    }
+    else
+        LogRel(("i_watchIt: Failed to grow watcher array to %u entries!\n", m_cWatchers + 1));
+
+    RTCritSectLeave(&m_WatcherCritSect);
+    CloseHandle(hProcess);
+    return false;
+}
+
+
+/**
+ * Stops monitoring a VBoxSVC process.
+ *
+ * @param   pUserData   The user which chosen VBoxSVC should be watched.
+ * @param   pid         The VBoxSVC PID.
+ */
+void VirtualBoxSDS::i_stopWatching(VBoxSDSPerUserData *pUserData, RTPROCESS pid)
+{
+    /*
+     * Add a remove order in the watcher's todo queue.
+     */
+    RTCritSectEnter(&m_WatcherCritSect);
+    for (uint32_t iRound = 0; ; iRound++)
+    {
+        uint32_t const iWatcher = pUserData->m_iWatcher;
+        if (iWatcher < m_cWatchers)
+        {
+            VBoxSDSWatcher *pWatcher = m_papWatchers[pUserData->m_iWatcher];
+            if (!pWatcher->fShutdown)
+            {
+                /*
+                 * Remove duplicate todo entries.
+                 */
+                bool fAddIt = true;
+                uint32_t iTodo = pWatcher->cTodos;
+                while (iTodo-- > 0)
+                    if (pWatcher->aTodos[iTodo].Data.pUserData == pUserData)
+                    {
+                        if (pWatcher->aTodos[iTodo].hProcess == NULL)
+                            fAddIt = true;
+                        else
+                        {
+                            fAddIt = false;
+                            CloseHandle(pWatcher->aTodos[iTodo].hProcess);
+                        }
+                        uint32_t const cTodos = --pWatcher->cTodos;
+                        uint32_t const cToShift = cTodos - iTodo;
+                        if (cToShift > 0)
+                            memmove(&pWatcher->aTodos[iTodo], &pWatcher->aTodos[iTodo + 1], sizeof(pWatcher->aTodos[0]) * cToShift);
+                        pWatcher->aTodos[cTodos].hProcess = NULL;
+                        pWatcher->aTodos[cTodos].Data.setNull();
+                    }
+
+                /*
+                 * Did we just eliminated the add and cancel out this operation?
+                 */
+                if (!fAddIt)
+                {
+                    pUserData->m_iWatcher = UINT32_MAX;
+                    pUserData->m_iTheChosenOneRevision++;
+                    i_decrementClientCount();
+
+                    RTCritSectLeave(&m_WatcherCritSect);
+                    RTThreadYield();
+                    return;
+                }
+
+                /*
+                 * No we didn't.  So, try append a removal item.
+                 */
+                iTodo = pWatcher->cTodos;
+                if (iTodo < RT_ELEMENTS(pWatcher->aTodos))
+                {
+                    pWatcher->aTodos[iTodo].hProcess       = NULL;
+                    pWatcher->aTodos[iTodo].Data.pUserData = pUserData;
+                    pWatcher->aTodos[iTodo].Data.pid       = pid;
+                    pWatcher->aTodos[iTodo].Data.iRevision = pUserData->m_iTheChosenOneRevision++;
+                    pWatcher->cTodos = iTodo + 1;
+                    SetEvent(pWatcher->aHandles[0]);
+
+                    pUserData->m_iWatcher = UINT32_MAX;
+                    i_decrementClientCount();
+
+                    RTCritSectLeave(&m_WatcherCritSect);
+                    RTThreadYield();
+                    return;
+                }
+            }
+            else
+            {
+                LogRel(("i_stopWatching: Watcher #%u has shut down.\n", iWatcher));
+                break;
+            }
+
+            /*
+             * Todo queue is full.  Sleep a little and let the watcher process it.
+             */
+            LogRel(("i_stopWatching: Watcher #%u todo queue is full! (round #%u)\n", iWatcher, iRound));
+
+            uint32_t const iTheChosenOneRevision = pUserData->m_iTheChosenOneRevision;
+            SetEvent(pWatcher->aHandles[0]);
+
+            RTCritSectLeave(&m_WatcherCritSect);
+            RTThreadSleep(1 + (iRound & 127));
+            RTCritSectEnter(&m_WatcherCritSect);
+
+            AssertLogRelMsgBreak(pUserData->m_iTheChosenOneRevision == iTheChosenOneRevision,
+                                 ("Impossible! m_iTheChosenOneRevision changed %#x -> %#x!\n",
+                                  iTheChosenOneRevision, pUserData->m_iTheChosenOneRevision));
+        }
+        else
+        {
+            AssertLogRelMsg(pUserData->m_iWatcher == UINT32_MAX,
+                            ("Impossible! iWatcher=%d m_cWatcher=%u\n", iWatcher, m_cWatchers));
+            break;
+        }
+    }
+    RTCritSectLeave(&m_WatcherCritSect);
+}
+
+
+/**
+ * Shutdowns all the watchers.
+ */
+void VirtualBoxSDS::i_shutdownAllWatchers(void)
+{
+    LogRel(("i_shutdownAllWatchers: %u watchers\n", m_cWatchers));
+
+    /* Notify them all. */
+    uint32_t i = m_cWatchers;
+    while (i-- > 0)
+    {
+        ASMAtomicWriteBool(&m_papWatchers[i]->fShutdown, true);
+        SetEvent(m_papWatchers[i]->aHandles[0]);
+    }
+
+    /* Wait for them to complete and destroy their data. */
+    i = m_cWatchers;
+    m_cWatchers = 0;
+    while (i-- > 0)
+    {
+        VBoxSDSWatcher *pWatcher = m_papWatchers[i];
+        if (pWatcher)
+        {
+            m_papWatchers[i] = NULL;
+
+            int rc = RTThreadWait(pWatcher->hThread, RT_MS_1MIN / 2, NULL);
+            if (RT_SUCCESS(rc))
+                pWatcher->hThread = NIL_RTTHREAD;
+            else
+                LogRel(("i_shutdownAllWatchers: RTThreadWait failed on #%u: %Rrc\n", i, rc));
+
+            if (ASMAtomicDecU32(&pWatcher->cRefs) == 0)
+                RTMemFree(pWatcher);
+        }
+    }
+}
+
+
+/**
+ * Increments the VBoxSVC client count.
+ */
+void VirtualBoxSDS::i_incrementClientCount()
+{
+    Assert(RTCritSectIsOwner(&m_WatcherCritSect));
+    uint32_t cClients = ++m_cVBoxSvcProcesses;
+    Assert(cClients < 4096);
+    VBoxSDSNotifyClientCount(cClients);
+}
+
+
+/**
+ * Decrements the VBoxSVC client count.
+ */
+void VirtualBoxSDS::i_decrementClientCount()
+{
+    Assert(RTCritSectIsOwner(&m_WatcherCritSect));
+    uint32_t cClients = --m_cVBoxSvcProcesses;
+    Assert(cClients < 4096);
+    VBoxSDSNotifyClientCount(cClients);
+}
+
+
+#endif /* WITH_WATCHER */
+
 
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */
