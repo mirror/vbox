@@ -301,12 +301,7 @@ testschemadefs: $(VBOX_XML_SCHEMADEFS_H) $(VBOX_XML_SCHEMADEFS_CPP)
 if defined(VBOX_WITH_SDS) && "$(KBUILD_TARGET)" == "win"
 PROGRAMS.win += VBoxSDS
 VBoxSDS_TEMPLATE = VBOXMAINEXE
-VBoxSDS_DEFS += VBOX_COM_OUTOFPROC_MODULE
- ifneq ($(KBUILD_TYPE),release)
-VBoxSDS_DEFS += _WIN32_WINNT=0x0610 # ClientPID query requires vista+
- else
-VBoxSDS_DEFS += _WIN32_WINNT=0x0510
- endif
+VBoxSDS_DEFS += VBOX_COM_OUTOFPROC_MODULE _WIN32_WINNT=0x0600
 VBoxSDS_INCS  = \
 	include \
 	$(VBoxSDS_0_OUTDIR) \
@@ -378,12 +373,7 @@ ifdef VBOX_WITH_USB
 	$(if $(VBOX_WITH_EHCI),VBOX_WITH_EHCI,) \
 	$(if $(VBOX_WITH_NEW_USB_CODE_ON_DARWIN),VBOX_WITH_NEW_USB_CODE_ON_DARWIN,)
 endif
-VBoxSVC_DEFS.win += VBOX_COM_OUTOFPROC_MODULE
- ifneq ($(KBUILD_TYPE),release)
-VBoxSVC_DEFS.win += _WIN32_WINNT=0x0610 # ClientPID query requires vista+
- else
-VBoxSVC_DEFS.win += _WIN32_WINNT=0x0510
- endif
+VBoxSVC_DEFS.win += VBOX_COM_OUTOFPROC_MODULE _WIN32_WINNT=0x0600
 # Try to load and use libhal at runtime for probing removable media
 # VBoxSVC_DEFS.linux += VBOX_USE_LIBHAL
 VBoxSVC_DEFS.solaris += VBOX_USE_LIBHAL
