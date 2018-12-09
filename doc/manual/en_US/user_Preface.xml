@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN"
+"http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd"
+[
+  <!ENTITY % all.entities SYSTEM "all-entities.ent">
+  %all.entities;
+]>
+<chapter id="user-preface" role="frontmatter">
+
+  <title>Preface</title>
+
+  <para>
+    The <emphasis>&product-name;</emphasis> User Manual provides an
+    introduction to using &product-name;. The manual provides
+    information on how to install &product-name; and use it to create
+    and configure virtual machines.
+  </para>
+
+  <sect1 id="user-preface-audience">
+
+    <title>Audience</title>
+
+    <para>
+      This document is intended for both new and existing users of
+      &product-name;. It is assumed that readers are familiar with Web
+      technologies and have a general understanding of Windows and UNIX
+      platforms.
+    </para>
+
+  </sect1>
+
+  <sect1 id="user-preface-reldocs">
+
+    <title>Related Documents</title>
+
+    <para>
+      The documentation for this product is available at:
+    </para>
+
+    <para>
+      <ulink url="&otn-doc-tab;">&otn-doc-tab;</ulink>
+    </para>
+
+  </sect1>
+
+  <sect1 id="user-preface-convs">
+
+    <title>Conventions</title>
+
+    <para>
+      The following text conventions are used in this document:
+    </para>
+
+    <itemizedlist>
+
+      <listitem>
+        <para>
+          <emphasis role="bold">boldface</emphasis>: Boldface type
+          indicates graphical user interface elements associated with an
+          action, or terms defined in text or the glossary.
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
+          <emphasis>italic</emphasis>: Italic type indicates book
+          titles, emphasis, or placeholder variables for which you
+          supply particular values.
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
+          <computeroutput>monospace</computeroutput>: Monospace type
+          indicates commands within a paragraph, URLs, code in examples,
+          text that appears on the screen, or text that you enter.
+        </para>
+      </listitem>
+
+    </itemizedlist>
+
+  </sect1>
+
+  <sect1 id="user-preface-accessibility-statement">
+
+    <title>Documentation Accessibility</title>
+
+<!-- Oracle accessibility statement -->
+
+    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude"
+    href="../common/oracle-accessibility-en.xml"
+    xpointer="xpointer(simplesect/title/following-sibling::node())" />
+
+  </sect1>
+
+  <sect1 id="user-preface-support-statement">
+
+    <title>Access to Oracle Support</title>
+
+<!-- Oracle Support statement -->
+
+    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude"
+    href="../common/oracle-legal-notices/oracle-support-en.xml" 
+    xpointer="xpointer(simplesect/title/following-sibling::node())" />
+
+  </sect1>
+
+</chapter>

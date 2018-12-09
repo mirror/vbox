@@ -13,7 +13,7 @@
     <title>Experimental Features</title>
 
     <para>
-      Some VirtualBox features are labeled as experimental. Such
+      Some &product-name; features are labeled as experimental. Such
       features are provided on an "as-is" basis and are not formally
       supported. However, feedback and suggestions about such features
       are welcome. A comprehensive list of experimental features is as
@@ -25,7 +25,7 @@
       <listitem>
         <para>
           Hardware 3D acceleration support for Windows, Linux, and
-          Solaris guests
+          Oracle Solaris guests
         </para>
       </listitem>
 
@@ -68,7 +68,13 @@
 
       <listitem>
         <para>
-          Support of iSCSI via internal networking
+          Support of iSCSI using internal networking
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
+          Using &product-name; and Hyper-V on the same host
         </para>
       </listitem>
 
@@ -82,8 +88,8 @@
 
     <para>
       The following section describes known problems with this release
-      of VirtualBox. Unless marked otherwise, these issues are planned
-      to be fixed in later releases.
+      of &product-name;. Unless marked otherwise, these issues are
+      planned to be fixed in later releases.
     </para>
 
     <itemizedlist>
@@ -100,10 +106,10 @@
             <para>
               <emphasis role="bold">Poor performance</emphasis> with
               32-bit guests on AMD CPUs. This affects mainly Windows and
-              Solaris guests, but possibly also some Linux kernel
-              revisions. Partially solved in 3.0.6 for 32 bits Windows
-              NT, 2000, XP and 2003 guests. Requires 3.0.6 or higher
-              Guest Additions to be installed.
+              Oracle Solaris guests, but possibly also some Linux kernel
+              revisions. Partially solved in 3.0.6 for 32-bit Windows
+              NT, 2000, XP, and 2003 guests. Requires Guest Additions
+              3.0.6 or later to be installed.
             </para>
           </listitem>
 
@@ -112,10 +118,11 @@
               <emphasis role="bold">Poor performance</emphasis> with
               32-bit guests on certain Intel CPU models that do not
               include virtual APIC hardware optimization support. This
-              affects mainly Windows and Solaris guests, but possibly
-              also some Linux kernel revisions. Partially solved in
-              3.0.12 for 32 bits Windows NT, 2000, XP, and 2003 guests.
-              Requires 3.0.12 or higher Guest Additions to be installed.
+              affects mainly Windows and Oracle Solaris guests, but
+              possibly also some Linux kernel revisions. Partially
+              solved in 3.0.12 for 32-bit Windows NT, 2000, XP, and 2003
+              guests. Requires Guest Additions 3.0.12 or later to be
+              installed.
             </para>
           </listitem>
 
@@ -135,27 +142,27 @@
         <para>
           For <emphasis role="bold">basic Direct3D support in Windows
           guests</emphasis> to work, the Guest Additions must be
-          installed in Windows "safe mode". Press F8 when the Windows
-          guest is booting and select "Safe mode", then install the
-          Guest Additions. Otherwise the Windows file protection
-          mechanism will interfere with the replacement DLLs installed
-          by VirtualBox and keep restoring the original Windows system
-          DLLs.
-
-          <note>
-            <para>
-              This does <emphasis>not</emphasis> apply to the WDDM
-              Direct3D video driver available for Vista and Windows 7
-              guests shipped with VirtualBox 4.1.
-            </para>
-          </note>
+          installed in Windows safe mode. Press F8 when the Windows
+          guest is booting and select <emphasis role="bold">Safe
+          Mode</emphasis>, then install the Guest Additions. Otherwise
+          the Windows file protection mechanism will interfere with the
+          replacement DLLs installed by &product-name; and keep
+          restoring the original Windows system DLLs.
         </para>
+
+        <note>
+          <para>
+            This does <emphasis>not</emphasis> apply to the WDDM
+            Direct3D video driver available for Vista and Windows 7
+            guests shipped with &product-name; 4.1.
+          </para>
+        </note>
       </listitem>
 
       <listitem>
         <para>
           <emphasis role="bold">Guest control.</emphasis> On Windows
-          guests, a process lauched via the guest control execute
+          guests, a process started using the guest control execute
           support will not be able to display a graphical user interface
           <emphasis>unless</emphasis> the user account under which it is
           running is currently logged in and has a desktop session.
@@ -165,24 +172,24 @@
           Also, to use accounts without or with an empty password, the
           guest's group policy must be changed. To do so, open the group
           policy editor on the command line by typing
-          <computeroutput>gpedit.msc</computeroutput>, open the key
-          <emphasis>Computer Configuration\Windows Settings\Security
-          Settings\Local Policies\Security Options</emphasis> and change
-          the value of <emphasis>Accounts: Limit local account use of
-          blank passwords to console logon only</emphasis> to
-          <emphasis>Disabled</emphasis>.
+          <command>gpedit.msc</command>, open the key
+          <computeroutput>Computer Configuration\Windows
+          Settings\Security Settings\Local Policies\Security
+          Options</computeroutput> and change the value of
+          <computeroutput>Accounts: Limit local account use of blank
+          passwords to console logon only</computeroutput> to Disabled.
         </para>
       </listitem>
 
       <listitem>
         <para>
           <emphasis role="bold">Compacting virtual disk images is
-          limited to VDI files.</emphasis> The <code>VBoxManage modifyhd
-          --compact</code> command is currently only implemented for VDI
-          files. At the moment the only way to optimize the size of a
-          virtual disk images in other formats (VMDK, VHD) is to clone
-          the image and then use the cloned image in the VM
-          configuration.
+          limited to VDI files.</emphasis> The <command>VBoxManage
+          modifyhd --compact</command> command is currently only
+          implemented for VDI files. At the moment the only way to
+          optimize the size of a virtual disk images in other formats,
+          such as VMDK or VHD, is to clone the image and then use the
+          cloned image in the VM configuration.
         </para>
       </listitem>
 
@@ -217,7 +224,7 @@
 
           <listitem>
             <para>
-              Remote files via HTTP or other mechanisms are not yet
+              Remote files using HTTP or other mechanisms are not yet
               supported.
             </para>
           </listitem>
@@ -237,9 +244,10 @@
 
       <listitem>
         <para>
-          The RDP server in the VirtualBox extension pack supports only
-          audio streams in format 22.05kHz stereo 16 bit. If the RDP
-          client requests any other audio format there will be no audio.
+          The RDP server in the &product-name; extension pack supports
+          only audio streams in format 22.05kHz stereo 16 bit. If the
+          RDP client requests any other audio format there will be no
+          audio.
         </para>
       </listitem>
 
@@ -297,8 +305,8 @@
 
           <listitem>
             <para>
-              VirtualBox does not provide Guest Additions for Mac OS X
-              at this time.
+              &product-name; does not provide Guest Additions for Mac OS
+              X at this time.
             </para>
           </listitem>
 
@@ -329,19 +337,22 @@
 
           <listitem>
             <para>
-              By default, the VirtualBox EFI enables debug output of the
-              Mac OS X kernel to help you diagnose boot problems. Note
-              that there is a lot of output and not all errors are
+              By default, the &product-name; EFI enables debug output of
+              the Mac OS X kernel to help you diagnose boot problems.
+              Note that there is a lot of output and not all errors are
               fatal. They would also show when using a physical Apple
               Macintosh computer. You can turn off these messages by
-              issuing this command:
+              using the following command:
+            </para>
 
 <screen>VBoxManage setextradata "VM name" "VBoxInternal2/EfiBootArgs" "  "</screen>
 
-              To revert to the previous behavior, use:
+            <para>
+              To revert to the previous behavior, use the following
+              command:
+            </para>
 
 <screen>VBoxManage setextradata "VM name" "VBoxInternal2/EfiBootArgs" ""</screen>
-            </para>
           </listitem>
 
           <listitem>
@@ -357,32 +368,32 @@
 
       <listitem>
         <para>
-          <emphasis role="bold">Solaris hosts:</emphasis>
+          <emphasis role="bold">Oracle Solaris hosts:</emphasis>
         </para>
 
         <itemizedlist>
 
           <listitem>
             <para>
-              There is no support for USB devices connected to Solaris
-              10 hosts.
+              There is no support for USB devices connected to Oracle
+              Solaris 10 hosts.
             </para>
           </listitem>
 
           <listitem>
             <para>
-              USB support on Solaris hosts requires Solaris 11 version
-              snv_124 or higher. Webcams and other isochronous devices
-              are known to have poor performance.
+              USB support on Oracle Solaris hosts requires Oracle
+              Solaris 11 version snv_124 or later. Webcams and other
+              isochronous devices are known to have poor performance.
             </para>
           </listitem>
 
           <listitem>
             <para>
               Host Webcam passthrough is restricted to 640x480 frames at
-              20 frames per second due to limitations in the Solaris
-              V4L2 API. This may be addressed in a future Solaris
-              release.
+              20 frames per second due to limitations in the Oracle
+              Solaris V4L2 API. This may be addressed in a future Oracle
+              Solaris release.
             </para>
           </listitem>
 
@@ -402,12 +413,13 @@
 
           <listitem>
             <para>
-              Crossbow-based bridged networking on Solaris 11 hosts does
-              not work directly with aggregate links. However, you can
-              use <computeroutput>dladm</computeroutput> to manually
-              create a VNIC over the aggregate link and use that with a
-              VM. This limitation does not exist in Solaris 11u1 build
-              17 and newer.
+              Crossbow-based bridged networking on Oracle Solaris 11
+              hosts does not work directly with aggregate links.
+              However, you can use
+              <computeroutput>dladm</computeroutput> to manually create
+              a VNIC over the aggregate link and use that with a VM.
+              This limitation does not exist in Oracle Solaris 11u1
+              build 17 and newer.
             </para>
           </listitem>
 
@@ -417,10 +429,10 @@
       <listitem>
         <para>
           <emphasis role="bold">Guest Additions of version 4.1, 4.1.2
-          and 4.1.4 for Windows.</emphasis> The VirtualBox WDDM Video
-          driver may be installed and remain in the guest system when
-          Guest additions uninstallation is performed. This is caused by
-          a bug in Guest Additions uninstaller.
+          and 4.1.4 for Windows.</emphasis> The &product-name; WDDM
+          Video driver may be installed and remain in the guest system
+          when Guest additions uninstallation is performed. This is
+          caused by a bug in Guest Additions uninstaller.
         </para>
 
         <note>
@@ -432,16 +444,17 @@
         </note>
 
         <para>
-          To solve this problem, uninstall the VirtualBox WDDM Video
+          To solve this problem, uninstall the &product-name; WDDM Video
           driver manually. Open Device Manager, and check whether the
-          Display Adapter is named "VirtualBox Graphics Adapter ..". If
-          not, there is nothing to be done. If it is, right-click the
-          VirtualBox Graphics Adapter in Device Manager, select
+          Display Adapter is named "&product-name; Graphics Adapter ..".
+          If not, there is nothing to be done. If it is, right-click the
+          &product-name; Graphics Adapter in Device Manager, select
           <emphasis role="bold">Uninstall</emphasis>, check
           <emphasis role="bold">Delete the Driver Software for this
           Device</emphasis> and click
           <emphasis role="bold">OK</emphasis>. Once uninstallation is
-          done, start Device Manager, go to the Action menu and select
+          done, start Device Manager, go to the
+          <emphasis role="bold">Action</emphasis> menu and select
           <emphasis role="bold">Scan for Hardware Change</emphasis>s to
           ensure that the correct Windows default driver be picked up
           for the Graphics adapter.

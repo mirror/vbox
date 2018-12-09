@@ -288,8 +288,15 @@
   <xsl:template name="title-wrapper">
     <xsl:param name="texcmd" select="concat('\',name(..))"/>
     <xsl:param name="refid" select="../@id"/>
+    <xsl:param name="role" select="../@role"/>
 
     <xsl:call-template name="xsltprocNewlineOutputHack"/>
+    <xsl:if test="$texcmd='\chapter' and $role='frontmatter'">
+      <xsl:text>\frontmatter&#x0a;</xsl:text>
+    </xsl:if>
+    <xsl:if test="$texcmd='\chapter' and ../preceding-sibling::*[1][@role='frontmatter']">
+      <xsl:text>\mainmatter&#x0a;</xsl:text>
+    </xsl:if>
     <xsl:choose>
       <xsl:when test="$refid">
         <xsl:text>&#x0a;</xsl:text>
@@ -324,6 +331,11 @@
       </xsl:when>
       <xsl:when test="name(..)='chapter'">
         <xsl:call-template name="title-wrapper"/>
+      </xsl:when>
+      <xsl:when test="name(..)='sect1' and ../../@role='frontmatter'">
+        <xsl:call-template name="title-wrapper">
+          <xsl:with-param name="texcmd">\section*</xsl:with-param>
+        </xsl:call-template>
       </xsl:when>
       <xsl:when test="name(..)='sect1'">
         <xsl:call-template name="title-wrapper">

@@ -9,7 +9,7 @@
   <title>Virtual Networking</title>
 
   <para>
-    As mentioned in <xref linkend="settings-network" />, VirtualBox
+    As mentioned in <xref linkend="settings-network" />, &product-name;
     provides up to eight virtual PCI Ethernet cards for each virtual
     machine. For each such card, you can individually select the
     following:
@@ -33,11 +33,12 @@
   </itemizedlist>
 
   <para>
-    Four of the network cards can be configured in the Network section
-    of the settings dialog in the graphical user interface of
-    VirtualBox. You can configure all eight network cards on the command
-    line using VBoxManage modifyvm. See
-    <xref linkend="vboxmanage-modifyvm" />.
+    Four of the network cards can be configured in the
+    <emphasis role="bold">Network</emphasis> section of the
+    <emphasis role="bold">Settings</emphasis> dialog in the graphical
+    user interface of &product-name;. You can configure all eight
+    network cards on the command line using <command>VBoxManage
+    modifyvm</command>. See <xref linkend="vboxmanage-modifyvm" />.
   </para>
 
   <para>
@@ -52,7 +53,7 @@
     <para>
       For each card, you can individually select what kind of
       <emphasis>hardware</emphasis> will be presented to the virtual
-      machine. VirtualBox can virtualize the following types of
+      machine. &product-name; can virtualize the following types of
       networking hardware:
     </para>
 
@@ -114,15 +115,15 @@
 
     <para>
       The Paravirtualized network adapter (virtio-net) is special. If
-      you select this adapter, then VirtualBox does
+      you select this adapter, then &product-name; does
       <emphasis>not</emphasis> virtualize common networking hardware
       that is supported by common guest operating systems. Instead,
-      VirtualBox expects a special software interface for virtualized
-      environments to be provided by the guest, thus avoiding the
-      complexity of emulating networking hardware and improving network
-      performance. Starting with version 3.1, VirtualBox provides
-      support for the industry-standard <emphasis>virtio</emphasis>
-      networking drivers, which are part of the open source KVM project.
+      &product-name; expects a special software interface for
+      virtualized environments to be provided by the guest, thus
+      avoiding the complexity of emulating networking hardware and
+      improving network performance. &product-name; provides support for
+      the industry-standard <emphasis>virtio</emphasis> networking
+      drivers, which are part of the open source KVM project.
     </para>
 
     <para>
@@ -148,14 +149,14 @@
 
         <para>
           <ulink
-              url="http://www.linux-kvm.org/page/WindowsGuestDrivers"/>.
+            url="http://www.linux-kvm.org/page/WindowsGuestDrivers">http://www.linux-kvm.org/page/WindowsGuestDrivers</ulink>.
         </para>
       </listitem>
 
     </itemizedlist>
 
     <para>
-      VirtualBox also has limited support for <emphasis>jumbo
+      &product-name; also has limited support for <emphasis>jumbo
       frames</emphasis>. These are networking packets with more than
       1500 bytes of data, provided that you use the Intel card
       virtualization and bridged networking. Jumbo frames are not
@@ -184,7 +185,7 @@
       <listitem>
         <para>
           <emphasis role="bold">Not attached.</emphasis> In this mode,
-          VirtualBox reports to the guest that a network card is
+          &product-name; reports to the guest that a network card is
           present, but that there is no connection. This is as if no
           Ethernet cable was plugged into the card. Using this mode, it
           is possible to "pull" the virtual Ethernet cable and disrupt
@@ -208,9 +209,9 @@
 
       <listitem>
         <para>
-          <emphasis role="bold">NAT Network.</emphasis> The NAT network
-          is a new NAT flavour introduced in VirtualBox 4.3. See
-          <xref linkend="network_nat_service"/>.
+          <emphasis role="bold">NAT Network.</emphasis> A NAT network is
+          a type of internal network that allows outbound connections.
+          See <xref linkend="network_nat_service"/>.
         </para>
       </listitem>
 
@@ -219,9 +220,9 @@
           <emphasis role="bold">Bridged networking.</emphasis> This is
           for more advanced networking needs, such as network
           simulations and running servers in a guest. When enabled,
-          VirtualBox connects to one of your installed network cards and
-          exchanges network packets directly, circumventing your host
-          operating system's network stack.
+          &product-name; connects to one of your installed network cards
+          and exchanges network packets directly, circumventing your
+          host operating system's network stack.
         </para>
       </listitem>
 
@@ -250,7 +251,7 @@
           <emphasis role="bold"> Generic networking.</emphasis> Rarely
           used modes which share the same generic network interface, by
           allowing the user to select a driver which can be included
-          with VirtualBox or be distributed in an extension pack.
+          with &product-name; or be distributed in an extension pack.
         </para>
 
         <para>
@@ -274,7 +275,7 @@
               networking:</emphasis> Used to connect to a Virtual
               Distributed Ethernet switch on a Linux or a FreeBSD host.
               At the moment this option requires compilation of
-              VirtualBox from sources, as the Oracle packages do not
+              &product-name; from sources, as the Oracle packages do not
               include it.
             </para>
           </listitem>
@@ -301,53 +302,123 @@
         <thead valign="middle">
           <row>
             <entry></entry>
-            <entry><emphasis role="bold">VM&rarr;Host</emphasis></entry>
-            <entry><emphasis role="bold">VM&larr;Host</emphasis></entry>
-            <entry><emphasis role="bold">VM1&harr;VM2</emphasis></entry>
-            <entry><emphasis role="bold">VM&rarr;Net/LAN</emphasis></entry>
-            <entry><emphasis role="bold">VM&larr;Net/LAN</emphasis></entry>
+            <entry><para>
+                <emphasis role="bold">VM&rarr;Host</emphasis>
+              </para></entry>
+            <entry><para>
+                <emphasis role="bold">VM&larr;Host</emphasis>
+              </para></entry>
+            <entry><para>
+                <emphasis role="bold">VM1&harr;VM2</emphasis>
+              </para></entry>
+            <entry><para>
+                <emphasis role="bold">VM&rarr;Net/LAN</emphasis>
+              </para></entry>
+            <entry><para>
+                <emphasis role="bold">VM&larr;Net/LAN</emphasis>
+              </para></entry>
           </row>
         </thead>
         <tbody valign="middle">
           <row>
-            <entry>Host-only</entry>
-            <entry><emphasis role="bold">+</emphasis></entry>
-            <entry><emphasis role="bold">+</emphasis></entry>
-            <entry align="center"><emphasis role="bold">+</emphasis></entry>
-            <entry>&ndash;</entry>
-            <entry>&ndash;</entry>
+            <entry><para>
+                Host-only
+              </para></entry>
+            <entry><para>
+                <emphasis role="bold">+</emphasis>
+              </para></entry>
+            <entry><para>
+                <emphasis role="bold">+</emphasis>
+              </para></entry>
+            <entry align="center"><para>
+                <emphasis role="bold">+</emphasis>
+              </para></entry>
+            <entry><para>
+                &ndash;
+              </para></entry>
+            <entry><para>
+                &ndash;
+              </para></entry>
           </row>
           <row>
-            <entry>Internal</entry>
-            <entry>&ndash;</entry>
-            <entry>&ndash;</entry>
-            <entry><emphasis role="bold">+</emphasis></entry>
-            <entry>&ndash;</entry>
-            <entry>&ndash;</entry>
+            <entry><para>
+                Internal
+              </para></entry>
+            <entry><para>
+                &ndash;
+              </para></entry>
+            <entry><para>
+                &ndash;
+              </para></entry>
+            <entry><para>
+                <emphasis role="bold">+</emphasis>
+              </para></entry>
+            <entry><para>
+                &ndash;
+              </para></entry>
+            <entry><para>
+                &ndash;
+              </para></entry>
           </row>
           <row>
-            <entry>Bridged</entry>
-            <entry><emphasis role="bold">+</emphasis></entry>
-            <entry><emphasis role="bold">+</emphasis></entry>
-            <entry><emphasis role="bold">+</emphasis></entry>
-            <entry><emphasis role="bold">+</emphasis></entry>
-            <entry><emphasis role="bold">+</emphasis></entry>
+            <entry><para>
+                Bridged
+              </para></entry>
+            <entry><para>
+                <emphasis role="bold">+</emphasis>
+              </para></entry>
+            <entry><para>
+                <emphasis role="bold">+</emphasis>
+              </para></entry>
+            <entry><para>
+                <emphasis role="bold">+</emphasis>
+              </para></entry>
+            <entry><para>
+                <emphasis role="bold">+</emphasis>
+              </para></entry>
+            <entry><para>
+                <emphasis role="bold">+</emphasis>
+              </para></entry>
           </row>
           <row>
-            <entry>NAT</entry>
-            <entry><emphasis role="bold">+</emphasis></entry>
-            <entry><link linkend="natforward">Port forward</link></entry>
-            <entry>&ndash;</entry>
-            <entry><emphasis role="bold">+</emphasis></entry>
-            <entry><link linkend="natforward">Port forward</link></entry>
+            <entry><para>
+                NAT
+              </para></entry>
+            <entry><para>
+                <emphasis role="bold">+</emphasis>
+              </para></entry>
+            <entry><para>
+                <link linkend="natforward">Port forward</link>
+              </para></entry>
+            <entry><para>
+                &ndash;
+              </para></entry>
+            <entry><para>
+                <emphasis role="bold">+</emphasis>
+              </para></entry>
+            <entry><para>
+                <link linkend="natforward">Port forward</link>
+              </para></entry>
           </row>
           <row>
-            <entry>NATservice</entry>
-            <entry><emphasis role="bold">+</emphasis></entry>
-            <entry><link linkend="network_nat_service">Port forward</link></entry>
-            <entry><emphasis role="bold">+</emphasis></entry>
-            <entry><emphasis role="bold">+</emphasis></entry>
-            <entry><link linkend="network_nat_service">Port forward</link></entry>
+            <entry><para>
+                NATservice
+              </para></entry>
+            <entry><para>
+                <emphasis role="bold">+</emphasis>
+              </para></entry>
+            <entry><para>
+                <link linkend="network_nat_service">Port forward</link>
+              </para></entry>
+            <entry><para>
+                <emphasis role="bold">+</emphasis>
+              </para></entry>
+            <entry><para>
+                <emphasis role="bold">+</emphasis>
+              </para></entry>
+            <entry><para>
+                <link linkend="network_nat_service">Port forward</link>
+              </para></entry>
           </row>
         </tbody>
       </tgroup>
@@ -368,17 +439,18 @@
       Network Address Translation (NAT) is the simplest way of accessing
       an external network from a virtual machine. Usually, it does not
       require any configuration on the host network and guest system.
-      For this reason, it is the default networking mode in VirtualBox.
+      For this reason, it is the default networking mode in
+      &product-name;.
     </para>
 
     <para>
       A virtual machine with NAT enabled acts much like a real computer
       that connects to the Internet through a router. The router, in
-      this case, is the VirtualBox networking engine, which maps traffic
-      from and to the virtual machine transparently. In VirtualBox this
-      router is placed between each virtual machine and the host. This
-      separation maximizes security since by default virtual machines
-      cannot talk to each other.
+      this case, is the &product-name; networking engine, which maps
+      traffic from and to the virtual machine transparently. In
+      &product-name; this router is placed between each virtual machine
+      and the host. This separation maximizes security since by default
+      virtual machines cannot talk to each other.
     </para>
 
     <para>
@@ -390,25 +462,25 @@
 
     <para>
       The network frames sent out by the guest operating system are
-      received by VirtualBox's NAT engine, which extracts the TCP/IP
+      received by &product-name;'s NAT engine, which extracts the TCP/IP
       data and resends it using the host operating system. To an
       application on the host, or to another computer on the same
       network as the host, it looks like the data was sent by the
-      VirtualBox application on the host, using an IP address belonging
-      to the host. VirtualBox listens for replies to the packages sent,
-      and repacks and resends them to the guest machine on its private
-      network.
+      &product-name; application on the host, using an IP address
+      belonging to the host. &product-name; listens for replies to the
+      packages sent, and repacks and resends them to the guest machine
+      on its private network.
     </para>
 
     <para>
       The virtual machine receives its network address and configuration
       on the private network from a DHCP server integrated into
-      VirtualBox. The IP address thus assigned to the virtual machine is
-      usually on a completely different network than the host. As more
-      than one card of a virtual machine can be set up to use NAT, the
-      first card is connected to the private network 10.0.2.0, the
-      second card to the network 10.0.3.0 and so on. If you need to
-      change the guest-assigned IP range, see
+      &product-name;. The IP address thus assigned to the virtual
+      machine is usually on a completely different network than the
+      host. As more than one card of a virtual machine can be set up to
+      use NAT, the first card is connected to the private network
+      10.0.2.0, the second card to the network 10.0.3.0 and so on. If
+      you need to change the guest-assigned IP range, see
       <xref linkend="changenat" />.
     </para>
 
@@ -418,18 +490,18 @@
 
       <para>
         As the virtual machine is connected to a private network
-        internal to VirtualBox and invisible to the host, network
+        internal to &product-name; and invisible to the host, network
         services on the guest are not accessible to the host machine or
         to other computers on the same network. However, like a physical
-        router, VirtualBox can make selected services available to the
-        world outside the guest through <emphasis>port
-        forwarding</emphasis>. This means that VirtualBox listens to
+        router, &product-name; can make selected services available to
+        the world outside the guest through <emphasis>port
+        forwarding</emphasis>. This means that &product-name; listens to
         certain ports on the host and resends all packets which arrive
         there to the guest, on the same or a different port.
       </para>
 
       <para>
-        To an application on the host or other physical (or virtual)
+        To an application on the host or other physical or virtual
         machines on the network, it looks as though the service being
         proxied is actually running on the host. This also means that
         you cannot run the same service on the same ports on the host.
@@ -441,16 +513,17 @@
       </para>
 
       <para>
-        To configure port forwarding you can use the graphical Port
-        Forwarding editor which can be found in the Network Settings
-        dialog for network adaptors configured to use NAT. Here, you can
-        map host ports to guest ports to allow network traffic to be
-        routed to a specific port in the guest.
+        To configure port forwarding you can use the graphical
+        <emphasis role="bold">Port Forwarding</emphasis> editor which
+        can be found in the <emphasis role="bold">Network
+        Settings</emphasis> dialog for network adaptors configured to
+        use NAT. Here, you can map host ports to guest ports to allow
+        network traffic to be routed to a specific port in the guest.
       </para>
 
       <para>
         Alternatively, the command line tool
-        <computeroutput>VBoxManage</computeroutput> can be used. See
+        <command>VBoxManage</command> can be used. See
         <xref linkend="vboxmanage-modifyvm" />.
       </para>
 
@@ -462,33 +535,38 @@
         example, to set up incoming NAT connections to an
         <computeroutput>ssh</computeroutput> server in the guest, use
         the following command:
+      </para>
 
 <screen>VBoxManage modifyvm "VM name" --natpf1 "guestssh,tcp,,2222,,22"</screen>
 
-        With the above example, all TCP traffic arriving on port 2222 on
+      <para>
+        In the above example, all TCP traffic arriving on port 2222 on
         any host interface will be forwarded to port 22 in the guest.
         The protocol name <computeroutput>tcp</computeroutput> is a
         mandatory attribute defining which protocol should be used for
         forwarding, <computeroutput>udp</computeroutput> could also be
         used. The name <computeroutput>guestssh</computeroutput> is
         purely descriptive and will be auto-generated if omitted. The
-        number after <computeroutput>--natpf</computeroutput> denotes
-        the network card, as with other VBoxManage command.
+        number after <option>--natpf</option> denotes the network card,
+        as with other <command>VBoxManage</command> commands.
       </para>
 
       <para>
         To remove this forwarding rule, use the following command:
+      </para>
 
 <screen>VBoxManage modifyvm "VM name" --natpf1 delete "guestssh"</screen>
-      </para>
 
       <para>
         If for some reason the guest uses a static assigned IP address
         not leased from the built-in DHCP server, it is required to
-        specify the guest IP when registering the forwarding rule:
+        specify the guest IP when registering the forwarding rule, as
+        follows:
+      </para>
 
 <screen>VBoxManage modifyvm "VM name" --natpf1 "guestssh,tcp,,2222,10.0.2.19,22"</screen>
 
+      <para>
         This example is identical to the previous one, except that the
         NAT engine is being told that the guest can be found at the
         10.0.2.19 address.
@@ -497,12 +575,15 @@
       <para>
         To forward <emphasis>all</emphasis> incoming traffic from a
         specific host interface to the guest, specify the IP of that
-        host interface like this:
+        host interface as follows:
+      </para>
 
 <screen>VBoxManage modifyvm "VM name" --natpf1 "guestssh,tcp,127.0.0.1,2222,,22"</screen>
 
-        This forwards all TCP traffic arriving on the localhost
-        interface (127.0.0.1) via port 2222 to port 22 in the guest.
+      <para>
+        This example forwards all TCP traffic arriving on the localhost
+        interface at 127.0.0.1 through port 2222 to port 22 in the
+        guest.
       </para>
 
       <para>
@@ -545,9 +626,9 @@
             Some frequently used network debugging tools, such as
             <computeroutput>ping</computeroutput> or tracerouting, rely
             on the ICMP protocol for sending and receiving messages.
-            While ICMP support has been improved with VirtualBox 2.1,
-            meaning <computeroutput>ping</computeroutput> should now
-            work, some other tools may not work reliably.
+            While ICMP support has been improved with &product-name;
+            2.1, meaning <computeroutput>ping</computeroutput> should
+            now work, some other tools may not work reliably.
           </para>
         </listitem>
 
@@ -578,7 +659,7 @@
         <listitem>
           <para>
             <emphasis role="bold">Forwarding host ports below
-            1024.</emphasis> On Unix-based hosts, such as Linux,
+            1024.</emphasis> On UNIX-based hosts, such as Linux, Oracle
             Solaris, and Mac OS X, it is not possible to bind to ports
             below 1024 from applications that are not run by
             <computeroutput>root</computeroutput>. As a result, if you
@@ -620,13 +701,11 @@
       which are to make use of it should be attached to that internal
       network. The name of internal network is chosen when the NAT
       service is created and the internal network will be created if it
-      does not already exist. An example command to create a NAT network
-      is:
+      does not already exist. The following is an example command to
+      create a NAT network:
     </para>
 
-    <para>
 <screen>VBoxManage natnetwork add --netname natnet1 --network "192.168.15.0/24" --enable</screen>
-    </para>
 
     <para>
       Here, natnet1 is the name of the internal network to be used and
@@ -634,29 +713,24 @@
       interface. By default in this static configuration the gateway
       will be assigned the address 192.168.15.1, the address following
       the interface address, though this is subject to change. To attach
-      a DHCP server to the internal network, we modify the example as
-      follows:
+      a DHCP server to the internal network, modify the example command
+      as follows:
     </para>
 
-    <para>
 <screen>VBoxManage natnetwork add --netname natnet1 --network "192.168.15.0/24" --enable --dhcp on</screen>
-    </para>
 
     <para>
-      To add a DHCP server to an existing network:
+      To add a DHCP server to an existing network, use the following
+      command:
     </para>
 
-    <para>
 <screen>VBoxManage natnetwork modify --netname natnet1 --dhcp on</screen>
-    </para>
 
     <para>
-      To disable the DHCP server:
+      To disable the DHCP server, use the following command:
     </para>
 
-    <para>
 <screen>VBoxManage natnetwork modify --netname natnet1 --dhcp off</screen>
-    </para>
 
     <para>
       A DHCP server provides a list of registered nameservers, but does
@@ -667,9 +741,7 @@
       To start the NAT service, use the following command:
     </para>
 
-    <para>
 <screen>VBoxManage natnetwork start --netname natnet1</screen>
-    </para>
 
     <para>
       If the network has a DHCP server attached then it will start
@@ -677,20 +749,16 @@
     </para>
 
     <para>
-      To stops the NAT network service, together with any DHCP server:
+      To stop the NAT network service, together with any DHCP server:
     </para>
 
-    <para>
 <screen>VBoxManage natnetwork stop --netname natnet1</screen>
-    </para>
 
     <para>
       To delete the NAT network service:
     </para>
 
-    <para>
 <screen>VBoxManage natnetwork remove --netname natnet1</screen>
-    </para>
 
     <para>
       This command does not remove the DHCP server if one is enabled on
@@ -704,20 +772,17 @@
       For example:
     </para>
 
-    <para>
 <screen>VBoxManage natnetwork modify \
   --netname natnet1 --port-forward-4 "ssh:tcp:[]:1022:[192.168.15.5]:22"</screen>
-    </para>
 
     <para>
       This adds a port-forwarding rule from the host's TCP 1022 port to
       the port 22 on the guest with IP address 192.168.15.5. Host port,
-      guest port and guest IP are mandatory. To delete the rule, use:
+      guest port and guest IP are mandatory. To delete the rule, use the
+      following command:
     </para>
 
-    <para>
 <screen>VBoxManage natnetwork modify --netname natnet1 --port-forward-4 delete ssh</screen>
-    </para>
 
     <para>
       It is possible to bind a NAT service to specified interface. For
@@ -727,12 +792,11 @@
 <screen>VBoxManage setextradata global "NAT/win-nat-test-0/SourceIp4" 192.168.1.185</screen>
 
     <para>
-      To see the list of registered NAT networks, use:
+      To see the list of registered NAT networks, use the following
+      command:
     </para>
 
-    <para>
 <screen>VBoxManage list natnetworks</screen>
-    </para>
 
   </sect1>
 
@@ -741,66 +805,41 @@
     <title>Bridged Networking</title>
 
     <para>
-      With bridged networking, VirtualBox uses a device driver on your
-      <emphasis>host</emphasis> system that filters data from your
+      With bridged networking, &product-name; uses a device driver on
+      your <emphasis>host</emphasis> system that filters data from your
       physical network adapter. This driver is therefore called a
-      <emphasis>net filter</emphasis> driver. This allows VirtualBox to
-      intercept data from the physical network and inject data into it,
-      effectively creating a new network interface in software. When a
-      guest is using such a new software interface, it looks to the host
-      system as though the guest were physically connected to the
-      interface using a network cable. The host can send data to the
-      guest through that interface and receive data from it. This means
-      that you can set up routing or bridging between the guest and the
-      rest of your network.
-    </para>
-
-    <para>
-      For this to work, VirtualBox needs a device driver on your host
-      system. The way bridged networking works has been completely
-      rewritten with VirtualBox 2.0 and 2.1, depending on the host
-      operating system. From the user perspective, the main difference
-      is that complex configuration is no longer necessary on any of the
-      supported host operating systems.
-
-      <footnote>
-
-        <para>
-          For Mac OS X and Solaris hosts, net filter drivers were
-          already added in VirtualBox 2.0, as initial support for Host
-          Interface Networking on these platforms. With VirtualBox 2.1,
-          net filter drivers were also added for the Windows and Linux
-          hosts, replacing the mechanisms previously present in
-          VirtualBox for those platforms; especially on Linux, the
-          earlier method required creating TAP interfaces and bridges,
-          which was complex and varied from one distribution to the
-          next. None of this is necessary anymore. Bridged network was
-          formerly called Host Interface Networking and has been renamed
-          with version 2.2 without any change in functionality.
-        </para>
-
-      </footnote>
+      <emphasis>net filter</emphasis> driver. This enables
+      &product-name; to intercept data from the physical network and
+      inject data into it, effectively creating a new network interface
+      in software. When a guest is using such a new software interface,
+      it looks to the host system as though the guest were physically
+      connected to the interface using a network cable. The host can
+      send data to the guest through that interface and receive data
+      from it. This means that you can set up routing or bridging
+      between the guest and the rest of your network.
     </para>
 
     <note>
       <para>
-        Even though TAP is no longer necessary on Linux with bridged
-        networking, you <emphasis>can</emphasis> still use TAP
+        Even though TAP interfaces are no longer necessary on Linux for
+        bridged networking, you <emphasis>can</emphasis> still use TAP
         interfaces for certain advanced setups, since you can connect a
         VM to any host interface.
       </para>
     </note>
 
     <para>
-      To enable bridged networking, open the Settings dialog of a
-      virtual machine, go to the Network page and select
-      <emphasis role="bold">Bridged Network</emphasis> in the drop-down
-      list for the Attached To field. Select a host interface from the
-      list at the bottom of the page, which contains the physical
-      network interfaces of your systems. On a typical MacBook, for
-      example, this will allow you to select between en1: AirPort, which
-      is the wireless interface, and en0: Ethernet, which represents the
-      interface with a network cable.
+      To enable bridged networking, open the
+      <emphasis role="bold">Settings</emphasis> dialog of a virtual
+      machine, go to the <emphasis role="bold">Network</emphasis> page
+      and select <emphasis role="bold">Bridged Network</emphasis> in the
+      drop-down list for the <emphasis role="bold">Attached
+      To</emphasis> field. Select a host interface from the list at the
+      bottom of the page, which contains the physical network interfaces
+      of your systems. On a typical MacBook, for example, this will
+      allow you to select between en1: AirPort, which is the wireless
+      interface, and en0: Ethernet, which represents the interface with
+      a network cable.
     </para>
 
     <note>
@@ -808,15 +847,15 @@
         Bridging to a wireless interface is done differently from
         bridging to a wired interface, because most wireless adapters do
         not support promiscuous mode. All traffic has to use the MAC
-        address of the host's wireless adapter, and therefore VirtualBox
-        needs to replace the source MAC address in the Ethernet header
-        of an outgoing packet to make sure the reply will be sent to the
-        host interface. When VirtualBox sees an incoming packet with a
-        destination IP address that belongs to one of the virtual
-        machine adapters it replaces the destination MAC address in the
-        Ethernet header with the VM adapter's MAC address and passes it
-        on. VirtualBox examines ARP and DHCP packets in order to learn
-        the IP addresses of virtual machines.
+        address of the host's wireless adapter, and therefore
+        &product-name; needs to replace the source MAC address in the
+        Ethernet header of an outgoing packet to make sure the reply
+        will be sent to the host interface. When &product-name; sees an
+        incoming packet with a destination IP address that belongs to
+        one of the virtual machine adapters it replaces the destination
+        MAC address in the Ethernet header with the VM adapter's MAC
+        address and passes it on. &product-name; examines ARP and DHCP
+        packets in order to learn the IP addresses of virtual machines.
       </para>
     </note>
 
@@ -831,9 +870,9 @@
         <para>
           <emphasis role="bold">Mac OS X hosts.</emphasis> Functionality
           is limited when using AirPort, the Mac's wireless networking
-          system, for bridged networking. Currently, VirtualBox supports
-          only IPv4 and IPv6 over AirPort. For other protocols, such as
-          IPX, you must choose a wired interface.
+          system, for bridged networking. Currently, &product-name;
+          supports only IPv4 and IPv6 over AirPort. For other protocols,
+          such as IPX, you must choose a wired interface.
         </para>
       </listitem>
 
@@ -841,7 +880,7 @@
         <para>
           <emphasis role="bold">Linux hosts.</emphasis> Functionality is
           limited when using wireless interfaces for bridged networking.
-          Currently, VirtualBox supports only IPv4 and IPv6 over
+          Currently, &product-name; supports only IPv4 and IPv6 over
           wireless. For other protocols, such as IPX, you must choose a
           wired interface.
         </para>
@@ -855,59 +894,35 @@
 
         <para>
           Some adapters strip VLAN tags in hardware. This does not allow
-          to use VLAN trunking between VM and the external network with
-          pre-2.6.27 Linux kernels nor with host operating systems other
-          than Linux.
+          you to use VLAN trunking between VM and the external network
+          with pre-2.6.27 Linux kernels, or with host operating systems
+          other than Linux.
         </para>
       </listitem>
 
       <listitem>
         <para>
-          <emphasis role="bold">Solaris hosts.</emphasis> There is no
-          support for using wireless interfaces. Filtering guest traffic
-          using IPFilter is also not completely supported due to
-          technical restrictions of the Solaris networking subsystem.
-          These issues would be addressed in a future release of Solaris
-          11.
+          <emphasis role="bold">Oracle Solaris hosts.</emphasis> There
+          is no support for using wireless interfaces. Filtering guest
+          traffic using IPFilter is also not completely supported due to
+          technical restrictions of the Oracle Solaris networking
+          subsystem. These issues may be addressed in later releases of
+          Oracle Solaris 11.
         </para>
 
         <para>
-          Starting with VirtualBox 4.1, on Solaris 11 hosts build 159
-          and above, it is possible to use Solaris Crossbow Virtual
-          Network Interfaces (VNICs) directly with VirtualBox without
-          any additional configuration other than each VNIC must be
-          exclusive for every guest network interface.
+          On Oracle Solaris 11 hosts build 159 and above, it is possible
+          to use Oracle Solaris Crossbow Virtual Network Interfaces
+          (VNICs) directly with &product-name; without any additional
+          configuration other than each VNIC must be exclusive for every
+          guest network interface.
         </para>
 
         <para>
-          Starting with VirtualBox 2.0.4 and up to VirtualBox 4.0, VNICs
-          can be used, but with the following caveats:
-        </para>
-
-        <itemizedlist>
-
-          <listitem>
-            <para>
-              A VNIC cannot be shared between multiple guest network
-              interfaces. For example, each guest network interface must
-              have its own, exclusive VNIC.
-            </para>
-          </listitem>
-
-          <listitem>
-            <para>
-              The VNIC and the guest network interface that uses the
-              VNIC must be assigned identical MAC addresses.
-            </para>
-          </listitem>
-
-        </itemizedlist>
-
-        <para>
-          When using VLAN interfaces with VirtualBox, they must be named
-          according to the PPA-hack naming scheme, such as e1000g513001.
-          Otherwise, the guest may receive packets in an unexpected
-          format.
+          When using VLAN interfaces with &product-name;, they must be
+          named according to the PPA-hack naming scheme, such as
+          e1000g513001. Otherwise, the guest may receive packets in an
+          unexpected format.
         </para>
       </listitem>
 
@@ -943,11 +958,11 @@
       Internal networks are created automatically as needed. There is no
       central configuration. Every internal network is identified simply
       by its name. Once there is more than one active virtual network
-      card with the same internal network ID, the VirtualBox support
+      card with the same internal network ID, the &product-name; support
       driver will automatically <emphasis>wire</emphasis> the cards and
-      act as a network switch. The VirtualBox support driver implements
-      a complete Ethernet switch and supports both broadcast/multicast
-      frames and promiscuous mode.
+      act as a network switch. The &product-name; support driver
+      implements a complete Ethernet switch and supports both
+      broadcast/multicast frames and promiscuous mode.
     </para>
 
     <para>
@@ -960,12 +975,14 @@
 
       <listitem>
         <para>
-          Use the VM's Settings dialog in the VirtualBox graphical user
-          interface. In the Networking category of the settings dialog,
-          select <emphasis role="bold">Internal Networking</emphasis>
-          from the drop-down list of networking modes. Select the name
-          of an existing internal network from the drop-down list below,
-          or enter a new name into the entry field.
+          Use the VM's <emphasis role="bold">Settings</emphasis> dialog
+          in the &product-name; graphical user interface. In the
+          <emphasis role="bold">Networking</emphasis> category of the
+          settings dialog, select <emphasis role="bold">Internal
+          Networking</emphasis> from the drop-down list of networking
+          modes. Select the name of an existing internal network from
+          the drop-down list below, or enter a new name into the
+          <emphasis role="bold">Name</emphasis> field.
         </para>
       </listitem>
 
@@ -995,7 +1012,7 @@
       Unless you configure the virtual network cards in the guest
       operating systems that are participating in the internal network
       to use static IP addresses, you may want to use the DHCP server
-      that is built into VirtualBox to manage IP addresses for the
+      that is built into &product-name; to manage IP addresses for the
       internal network. See <xref linkend="vboxmanage-dhcpserver" />.
     </para>
 
@@ -1015,18 +1032,18 @@
 
     <para>
       Host-only networking is another networking mode that was added
-      with version 2.2 of VirtualBox. It can be thought of as a hybrid
-      between the bridged and internal networking modes. As with bridged
-      networking, the virtual machines can talk to each other and the
-      host as if they were connected through a physical Ethernet switch.
-      As with internal networking, a physical networking interface need
-      not be present, and the virtual machines cannot talk to the world
-      outside the host since they are not connected to a physical
-      networking interface.
+      with version 2.2 of &product-name;. It can be thought of as a
+      hybrid between the bridged and internal networking modes. As with
+      bridged networking, the virtual machines can talk to each other
+      and the host as if they were connected through a physical Ethernet
+      switch. As with internal networking, a physical networking
+      interface need not be present, and the virtual machines cannot
+      talk to the world outside the host since they are not connected to
+      a physical networking interface.
     </para>
 
     <para>
-      When host-only networking is used, VirtualBox creates a new
+      When host-only networking is used, &product-name; creates a new
       software interface on the host which then appears next to your
       existing network interfaces. In other words, whereas with bridged
       networking an existing physical interface is used to attach
@@ -1043,9 +1060,9 @@
       together and designed to cooperate. For example, one virtual
       machine may contain a web server and a second one a database, and
       since they are intended to talk to each other, the appliance can
-      instruct VirtualBox to set up a host-only network for the two. A
-      second, bridged, network would then connect the web server to the
-      outside world to serve data to, but the outside world cannot
+      instruct &product-name; to set up a host-only network for the two.
+      A second, bridged, network would then connect the web server to
+      the outside world to serve data to, but the outside world cannot
       connect to the database.
     </para>
 
@@ -1058,7 +1075,8 @@
 
       <listitem>
         <para>
-          Go to the Network page in the virtual machine's Settings
+          Go to the <emphasis role="bold">Network</emphasis> page in the
+          virtual machine's <emphasis role="bold">Settings</emphasis>
           dialog and select <emphasis role="bold">Host-Only
           Networking</emphasis>.
         </para>
@@ -1066,7 +1084,7 @@
 
       <listitem>
         <para>
-          On the command line, type <computeroutput>VBoxManage modifyvm
+          On the command line, enter <computeroutput>VBoxManage modifyvm
           "VM name" --nic&lt;x&gt; hostonly</computeroutput>. See
           <xref
           linkend="vboxmanage-modifyvm" />.
@@ -1097,18 +1115,18 @@
 
     <para>
       For host-only networking, as with internal networking, you may
-      find the DHCP server useful that is built into VirtualBox. This
-      can be enabled to then manage the IP addresses in the host-only
-      network since otherwise you would need to configure all IP
-      addresses statically.
+      find the DHCP server useful that is built into &product-name;.
+      This can be enabled to then manage the IP addresses in the
+      host-only network since otherwise you would need to configure all
+      IP addresses statically.
     </para>
 
     <itemizedlist>
 
       <listitem>
         <para>
-          In the VirtualBox graphical user interface, you can configure
-          all these items in the global settings by choosing
+          In the &product-name; graphical user interface, you can
+          configure all these items in the global settings by choosing
           <emphasis role="bold">File</emphasis>,
           <emphasis role="bold">Preferences</emphasis>,
           <emphasis role="bold">Network</emphasis>. This lists all
@@ -1121,8 +1139,8 @@
 
       <listitem>
         <para>
-          Alternatively, you can use <computeroutput>VBoxManage
-          dhcpserver</computeroutput> on the command line. See
+          Alternatively, you can use <command>VBoxManage
+          dhcpserver</command> on the command line. See
           <xref
           linkend="vboxmanage-dhcpserver" />.
         </para>
@@ -1133,7 +1151,7 @@
     <note>
       <para>
         On Linux and Mac OS X hosts the number of host-only interfaces
-        is limited to 128. There is no such limit for Solaris and
+        is limited to 128. There is no such limit for Oracle Solaris and
         Windows hosts.
       </para>
     </note>
@@ -1145,7 +1163,7 @@
     <title>UDP Tunnel Networking</title>
 
     <para>
-      This networking mode allows you to interconnect virtual machines
+      This networking mode enables you to interconnect virtual machines
       running on different hosts.
     </para>
 
@@ -1220,11 +1238,12 @@
 
     <note>
       <para>
-        On Unix-based hosts, such as Linux, Solaris, and Mac OS X, it is
-        not possible to bind to ports below 1024 from applications that
-        are not run by <computeroutput>root</computeroutput>. As a
-        result, if you try to configure such a source UDP port, the VM
-        will refuse to start.
+        On UNIX-based hosts, such as Linux, Oracle Solaris, and Mac OS
+        X, it is not possible to bind to ports below 1024 from
+        applications that are not run by
+        <computeroutput>root</computeroutput>. As a result, if you try
+        to configure such a source UDP port, the VM will refuse to
+        start.
       </para>
     </note>
 
@@ -1235,31 +1254,25 @@
     <title>VDE Networking</title>
 
     <para>
-      Virtual Distributed Ethernet (VDE)
+      Virtual Distributed Ethernet (VDE) is a flexible, virtual network
+      infrastructure system, spanning across multiple hosts in a secure
+      way. It enables L2/L3 switching, including spanning-tree protocol,
+      VLANs, and WAN emulation. It is an optional part of &product-name;
+      which is only included in the source code.
+    </para>
 
-      <footnote>
-
-        <para>
-          VDE is a project developed by Renzo Davoli, Associate
-          Professor at the University of Bologna, Italy.
-        </para>
-
-      </footnote>
-
-      is a flexible, virtual network infrastructure system, spanning
-      across multiple hosts in a secure way. It allows for L2/L3
-      switching, including spanning-tree protocol, VLANs, and WAN
-      emulation. It is an optional part of VirtualBox which is only
-      included in the source code.
+    <para>
+      VDE is a project developed by Renzo Davoli, Associate Professor at
+      the University of Bologna, Italy.
     </para>
 
     <para>
       The basic building blocks of the infrastructure are VDE switches,
-      VDE plugs and VDE wires which inter-connect the switches.
+      VDE plugs, and VDE wires which interconnect the switches.
     </para>
 
     <para>
-      The VirtualBox VDE driver has a single parameter: VDE network.
+      The &product-name; VDE driver has a single parameter: VDE network.
       This is the name of the VDE network switch socket to which the VM
       will be connected.
     </para>
@@ -1325,61 +1338,54 @@
     <para>
       VDE is available on Linux and FreeBSD hosts only. It is only
       available if the VDE software and the VDE plugin library from the
-      VirtualSquare project are installed on the host system
+      VirtualSquare project are installed on the host system.
+    </para>
 
-      <footnote>
+    <note>
+      <para>
+        For Linux hosts, the shared library libvdeplug.so must be
+        available in the search path for shared libraries.
+      </para>
+    </note>
 
-        <para>
-          For Linux hosts, the shared library libvdeplug.so must be
-          available in the search path for shared libraries
-        </para>
-
-      </footnote>
-
-      . For more information on setting up VDE networks, please see the
-      documentation accompanying the software.
-
-      <footnote>
-
-        <para>
-          <ulink
+    <para>
+      For more information on setting up VDE networks, please see the
+      documentation accompanying the software. See also
+      <ulink
         url="http://wiki.virtualsquare.org/wiki/index.php/VDE_Basic_Networking">http://wiki.virtualsquare.org/wiki/index.php/VDE_Basic_Networking</ulink>.
-        </para>
-
-      </footnote>
     </para>
 
   </sect1>
 
   <sect1 id="network_bandwidth_limit">
 
-    <title>Limiting Bandwidth for Network I/O</title>
+    <title>Limiting Bandwidth for Network Input/Output</title>
 
     <para>
-      Starting with version 4.2, VirtualBox allows for limiting the
-      maximum bandwidth used for network transmission. Several network
-      adapters of one VM may share limits through bandwidth groups. It
-      is possible to have more than one such limit.
+      &product-name; supports limiting of the maximum bandwidth used for
+      network transmission. Several network adapters of one VM may share
+      limits through bandwidth groups. It is possible to have more than
+      one such limit.
     </para>
 
     <note>
       <para>
-        VirtualBox shapes VM traffic only in the transmit direction,
+        &product-name; shapes VM traffic only in the transmit direction,
         delaying the packets being sent by virtual machines. It does not
         limit the traffic being received by virtual machines.
       </para>
     </note>
 
     <para>
-      Limits are configured through
-      <computeroutput>VBoxManage</computeroutput>. The example below
-      creates a bandwidth group named Limit, sets the limit to 20 Mbps
-      and assigns the group to the first and second adapters of the VM:
+      Limits are configured through <command>VBoxManage</command>. The
+      following example creates a bandwidth group named Limit, sets the
+      limit to 20 Mbps and assigns the group to the first and second
+      adapters of the VM:
+    </para>
 
 <screen>VBoxManage bandwidthctl "VM name" add Limit --type network --limit 20m
 VBoxManage modifyvm "VM name" --nicbandwidthgroup1 Limit
 VBoxManage modifyvm "VM name" --nicbandwidthgroup2 Limit</screen>
-    </para>
 
     <para>
       All adapters in a group share the bandwidth limit, meaning that in
@@ -1390,28 +1396,28 @@ VBoxManage modifyvm "VM name" --nicbandwidthgroup2 Limit</screen>
 
     <para>
       The limits for each group can be changed while the VM is running,
-      with changes being picked up immediately. The example below
-      changes the limit for the group created in the example above to
+      with changes being picked up immediately. The following example
+      changes the limit for the group created in the previous example to
       100 Kbps:
+    </para>
 
 <screen>VBoxManage bandwidthctl "VM name" set Limit --limit 100k</screen>
-    </para>
 
     <para>
       To completely disable shaping for the first adapter of VM use the
       following command:
+    </para>
 
 <screen>VBoxManage modifyvm "VM name" --nicbandwidthgroup1 none</screen>
-    </para>
 
     <para>
       It is also possible to disable shaping for all adapters assigned
       to a bandwidth group while VM is running, by specifying the zero
       limit for the group. For example, for the bandwidth group named
-      Limit use:
+      Limit:
+    </para>
 
 <screen>VBoxManage bandwidthctl "VM name" set Limit --limit 0</screen>
-    </para>
 
   </sect1>
 
@@ -1420,16 +1426,17 @@ VBoxManage modifyvm "VM name" --nicbandwidthgroup2 Limit</screen>
     <title>Improving Network Performance</title>
 
     <para>
-      VirtualBox provides a variety of virtual network adapters that can
-      be attached to the host's network in a number of ways. Depending
-      on which types of adapters and attachments are used the network
-      performance will be different. Performance-wise the virtio network
-      adapter is preferable over Intel PRO/1000 emulated adapters, which
-      are preferred over the PCNet family of adapters. Both virtio and
-      Intel PRO/1000 adapters enjoy the benefit of segmentation and
-      checksum offloading. Segmentation offloading is essential for high
-      performance as it allows for less context switches, dramatically
-      increasing the sizes of packets that cross the VM/host boundary.
+      &product-name; provides a variety of virtual network adapters that
+      can be attached to the host's network in a number of ways.
+      Depending on which types of adapters and attachments are used the
+      network performance will be different. Performance-wise the virtio
+      network adapter is preferable over Intel PRO/1000 emulated
+      adapters, which are preferred over the PCNet family of adapters.
+      Both virtio and Intel PRO/1000 adapters enjoy the benefit of
+      segmentation and checksum offloading. Segmentation offloading is
+      essential for high performance as it allows for less context
+      switches, dramatically increasing the sizes of packets that cross
+      the VM/host boundary.
     </para>
 
     <note>
@@ -1482,8 +1489,7 @@ VBoxManage modifyvm "VM name" --nicbandwidthgroup2 Limit</screen>
           Make sure segmentation offloading is enabled in the guest OS.
           Usually it will be enabled by default. You can check and
           modify offloading settings using the
-          <computeroutput>ethtool</computeroutput> command on Linux
-          guests.
+          <command>ethtool</command> command on Linux guests.
         </para>
       </listitem>
 
@@ -1499,9 +1505,9 @@ VBoxManage modifyvm "VM name" --nicbandwidthgroup2 Limit</screen>
 
         <para>
           To setup a promiscuous mode policy, either select from the
-          drop down list located in the Network Settings dialog for the
-          network adaptor or use the command line tool
-          <computeroutput>VBoxManage</computeroutput>. See
+          drop down list located in the <emphasis role="bold">Network
+          Settings</emphasis> dialog for the network adaptor or use the
+          command line tool <command>VBoxManage</command>. See
           <xref linkend="vboxmanage-modifyvm" />.
         </para>
 

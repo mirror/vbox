@@ -176,6 +176,7 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
 
  VBOX_MANUAL_XML_FILES = \
  	UserManual.xml \
+ 	user_Preface.xml \
  	user_Introduction.xml \
  	user_Installation.xml \
  	user_BasicConcepts.xml \
@@ -193,7 +194,9 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
  	user_ChangeLog.xml \
  	user_ThirdParty.xml \
  	user_PrivacyPolicy.xml \
- 	user_Glossary.xml
+ 	user_Glossary.xml \
+ 	oracle-accessibility-en.xml \
+ 	oracle-support-en.xml
 
  VBOX_MANUAL_XML_FILES_COMMON = \
  	$(VBOX_PATH_MANUAL_SRC)/user_ChangeLogImpl.xml

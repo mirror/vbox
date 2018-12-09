@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE simplesect PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN"
+"http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd"
+[
+<!ENTITY % all.entities SYSTEM "all-entities.ent">
+%all.entities;
+]>
+<simplesect>
+
+<!-- 
+    Include this statement in the document Preface ONLY if your product 
+    and/or documentation has been tested for accessibility, is determined 
+    to be accessible, and has a VPAT.
+  -->
+
+  <title>Documentation Accessibility</title>
+
+  <para>
+    For information about Oracle's commitment to accessibility, visit
+    the Oracle Accessibility Program website at
+
+<?fo-linebreak?>
+
+    <ulink url="http://www.oracle.com/pls/topic/lookup?ctx=acc&amp;id=docacc">http://www.oracle.com/pls/topic/lookup?ctx=acc&amp;id=docacc</ulink>.
+  </para>
+
+</simplesect>

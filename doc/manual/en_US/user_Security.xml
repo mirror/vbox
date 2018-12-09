@@ -24,11 +24,11 @@
           <emphasis role="strong">Keep software up to date</emphasis>.
           One of the principles of good security practise is to keep all
           software versions and patches up to date. Activate the
-          VirtualBox update notification to get notified when a new
-          VirtualBox release is available. When updating VirtualBox, do
-          not forget to update the Guest Additions. Keep the host
-          operating system as well as the guest operating system up to
-          date.
+          &product-name; update notification to get notified when a new
+          &product-name; release is available. When updating
+          &product-name;, do not forget to update the Guest Additions.
+          Keep the host operating system as well as the guest operating
+          system up to date.
         </para>
       </listitem>
 
@@ -48,9 +48,9 @@
           <emphasis role="strong">Follow the principle of least
           privilege.</emphasis> The principle of least privilege states
           that users should be given the least amount of privilege
-          necessary to perform their jobs. Always execute VirtualBox as
-          a regular user. We strongly discourage anyone from executing
-          VirtualBox with system privileges.
+          necessary to perform their jobs. Always execute &product-name;
+          as a regular user. We strongly discourage anyone from
+          executing &product-name; with system privileges.
         </para>
 
         <para>
@@ -94,7 +94,7 @@
       <title>Installation Overview</title>
 
       <para>
-        The VirtualBox base package should be downloaded only from a
+        The &product-name; base package should be downloaded only from a
         trusted source, for instance the official website
         <ulink url="http://www.virtualbox.org">http://www.virtualbox.org</ulink>.
         The integrity of the package should be verified with the
@@ -103,41 +103,41 @@
       </para>
 
       <para>
-        General VirtualBox installation instructions for the supported
-        hosts can be found in <xref linkend="installation"/>.
+        General &product-name; installation instructions for the
+        supported hosts can be found in <xref linkend="installation"/>.
       </para>
 
       <para>
-        On Windows hosts, the installer allows for disabling USB
+        On Windows hosts, the installer can be used to disable USB
         support, support for bridged networking, support for host-only
         networking and the Python language binding. See
         <xref linkend="installation_windows"/>. All these features are
         enabled by default but disabling some of them could be
         appropriate if the corresponding functionality is not required
         by any virtual machine. The Python language bindings are only
-        required if the VirtualBox API is to be used by external Python
-        applications. In particular USB support and support for the two
-        networking modes require the installation of Windows kernel
-        drivers on the host. Therefore disabling those selected features
-        can not only be used to restrict the user to certain
+        required if the &product-name; API is to be used by external
+        Python applications. In particular USB support and support for
+        the two networking modes require the installation of Windows
+        kernel drivers on the host. Therefore disabling those selected
+        features can not only be used to restrict the user to certain
         functionality but also to minimize the surface provided to a
         potential attacker.
       </para>
 
       <para>
-        The general case is to install the complete VirtualBox package.
-        The installation must be done with system privileges. All
-        VirtualBox binaries should be executed as a regular user and
-        never as a privileged user.
+        The general case is to install the complete &product-name;
+        package. The installation must be done with system privileges.
+        All &product-name; binaries should be executed as a regular user
+        and never as a privileged user.
       </para>
 
       <para>
-        The Oracle VM VirtualBox extension pack provides additional
-        features and must be downloaded and installed separately, see
+        The &product-name; Extension Pack provides additional features
+        and must be downloaded and installed separately, see
         <xref linkend="intro-installing"/>. As for the base package, the
         SHA256 checksum of the extension pack should be verified. As the
-        installation requires system privileges, VirtualBox will ask for
-        the system password during the installation of the extension
+        installation requires system privileges, &product-name; will ask
+        for the system password during the installation of the extension
         pack.
       </para>
 
@@ -149,13 +149,13 @@
 
       <para>
         Normally there is no post installation configuration of
-        VirtualBox components required. However, on Solaris and Linux
-        hosts it is necessary to configure the proper permissions for
-        users executing VMs and who should be able to access certain
-        host resources. For instance, Linux users must be member of the
-        <emphasis>vboxusers</emphasis> group to be able to pass USB
-        devices to a guest. If a serial host interface should be
-        accessed from a VM, the proper permissions must be granted to
+        &product-name; components required. However, on Oracle Solaris
+        and Linux hosts it is necessary to configure the proper
+        permissions for users executing VMs and who should be able to
+        access certain host resources. For instance, Linux users must be
+        member of the <emphasis>vboxusers</emphasis> group to be able to
+        pass USB devices to a guest. If a serial host interface should
+        be accessed from a VM, the proper permissions must be granted to
         the user to be able to access that device. The same applies to
         other resources like raw partitions, DVD/CD drives, and sound
         devices.
@@ -171,7 +171,7 @@
 
     <para>
       This section outlines the specific security mechanisms offered by
-      VirtualBox.
+      &product-name;.
     </para>
 
     <sect2 id="security-model">
@@ -179,18 +179,18 @@
       <title>The Security Model</title>
 
       <para>
-        One property of virtual machine monitors (VMMs) like VirtualBox
-        is to encapsulate a guest by executing it in a protected
-        environment, a virtual machine, running as a user process on the
-        host operating system. The guest cannot communicate directly
-        with the hardware or other computers but only through the VMM.
-        The VMM provides emulated physical resources and devices to the
-        guest which are accessed by the guest operating system to
-        perform the required tasks. The VM settings control the
-        resources provided to the guest, for example the amount of guest
-        memory or the number of guest processors and the enabled
-        features for that guest. For example remote control, certain
-        screen settings and others. See
+        One property of virtual machine monitors (VMMs) like
+        &product-name; is to encapsulate a guest by executing it in a
+        protected environment, a virtual machine, running as a user
+        process on the host operating system. The guest cannot
+        communicate directly with the hardware or other computers but
+        only through the VMM. The VMM provides emulated physical
+        resources and devices to the guest which are accessed by the
+        guest operating system to perform the required tasks. The VM
+        settings control the resources provided to the guest, for
+        example the amount of guest memory or the number of guest
+        processors and the enabled features for that guest. For example
+        remote control, certain screen settings and others. See
         <xref linkend="generalsettings"/>.
       </para>
 
@@ -246,8 +246,8 @@
         <title>VRDP Remote Desktop Authentication</title>
 
         <para>
-          When using the VirtualBox extension pack provided by Oracle
-          for VRDP remote desktop support, you can optionally use
+          When using the &product-name; Extension Pack provided by
+          Oracle for VRDP remote desktop support, you can optionally use
           various methods to configure RDP authentication. The "null"
           method is very insecure and should be avoided in a public
           network. See <xref linkend="vbox-auth" />.
@@ -260,9 +260,9 @@
         <title>Clipboard</title>
 
         <para>
-          The shared clipboard allows users to share data between the
+          The shared clipboard enables users to share data between the
           host and the guest. Enabling the clipboard in Bidirectional
-          mode allows the guest to read and write the host clipboard.
+          mode enables the guest to read and write the host clipboard.
           The Host to Guest mode and the Guest to Host mode limit the
           access to one direction. If the guest is able to access the
           host clipboard it can also potentially access sensitive data
@@ -297,8 +297,8 @@
         <title>3D Graphics Acceleration</title>
 
         <para>
-          Enabling 3D graphics via the Guest Additions exposes the host
-          to additional security risks. See
+          Enabling 3D graphics using the Guest Additions exposes the
+          host to additional security risks. See
           <xref
           linkend="guestadd-3d" />.
         </para>
@@ -310,7 +310,7 @@
         <title>CD/DVD Passthrough</title>
 
         <para>
-          Enabling CD/DVD passthrough allows the guest to perform
+          Enabling CD/DVD passthrough enables the guest to perform
           advanced operations on the CD/DVD drive, see
           <xref linkend="storage-cds"/>. This could induce a security
           risk as a guest could overwrite data on a CD/DVD medium.
@@ -340,7 +340,7 @@
       <title>Configuring and Using Authentication</title>
 
       <para>
-        The following components of VirtualBox can use passwords for
+        The following components of &product-name; can use passwords for
         authentication:
       </para>
 
@@ -350,27 +350,24 @@
           <para>
             When using remote iSCSI storage and the storage server
             requires authentication, an initiator secret can optionally
-            be supplied with the <computeroutput>VBoxManage
-            storageattach</computeroutput> command. As long as no
-            settings password is provided, by using the command line
-            option <option>--settingspwfile</option>, then this secret
-            is stored <emphasis>unencrypted</emphasis> in the machine
+            be supplied with the <command>VBoxManage
+            storageattach</command> command. As long as no settings
+            password is provided, by using the command line option
+            <option>--settingspwfile</option>, then this secret is
+            stored <emphasis>unencrypted</emphasis> in the machine
             configuration and is therefore potentially readable on the
-            host. See <xref
-          linkend="storage-iscsi" /> and
-            <xref
-          linkend="vboxmanage-storageattach" />.
+            host. See <xref linkend="storage-iscsi" /> and
+            <xref linkend="vboxmanage-storageattach" />.
           </para>
         </listitem>
 
         <listitem>
           <para>
-            When using the VirtualBox web service to control a
-            VirtualBox host remotely, connections to the web service are
-            authenticated in various ways. This is described in detail
-            in the VirtualBox Software Development Kit (SDK) reference.
-            See <xref
-          linkend="VirtualBoxAPI" />.
+            When using the &product-name; web service to control an
+            &product-name; host remotely, connections to the web service
+            are authenticated in various ways. This is described in
+            detail in the &product-name; Software Development Kit (SDK)
+            reference. See <xref linkend="VirtualBoxAPI" />.
           </para>
         </listitem>
 
@@ -397,7 +394,7 @@
       <title>Potentially Insecure Operations</title>
 
       <para>
-        The following features of VirtualBox can present security
+        The following features of &product-name; can present security
         problems:
       </para>
 
@@ -405,7 +402,7 @@
 
         <listitem>
           <para>
-            Enabling 3D graphics via the Guest Additions exposes the
+            Enabling 3D graphics using the Guest Additions exposes the
             host to additional security risks. See
             <xref
           linkend="guestadd-3d" />.
@@ -430,11 +427,11 @@
           <para>
             When Page Fusion, see <xref linkend="guestadd-pagefusion"/>,
             is enabled, it is possible that a side-channel opens up that
-            allows a malicious guest to determine the address space of
+            enables a malicious guest to determine the address space of
             another VM running on the same host layout. For example,
             where DLLs are typically loaded. This information leak in
             itself is harmless, however the malicious guest may use it
-            to optimize attack against that VM via unrelated attack
+            to optimize attack against that VM through unrelated attack
             vectors. It is recommended to only enable Page Fusion if you
             do not think this is a concern in your setup.
           </para>
@@ -442,12 +439,12 @@
 
         <listitem>
           <para>
-            When using the VirtualBox web service to control a
-            VirtualBox host remotely, connections to the web service,
-            over which the API calls are transferred using SOAP XML, are
-            not encrypted. They use plain HTTP by default. This is a
-            potential security risk. For details about the web service,
-            see <xref linkend="VirtualBoxAPI" />.
+            When using the &product-name; web service to control an
+            &product-name; host remotely, connections to the web
+            service, over which the API calls are transferred using SOAP
+            XML, are not encrypted. They use plain HTTP by default. This
+            is a potential security risk. For details about the web
+            service, see <xref linkend="VirtualBoxAPI" />.
           </para>
 
           <para>
@@ -473,8 +470,8 @@
         <listitem>
           <para>
             Because of shortcomings in older Windows versions, using
-            VirtualBox on Windows versions older than Vista with Service
-            Pack 1 is not recommended.
+            &product-name; on Windows versions older than Vista with
+            Service Pack 1 is not recommended.
           </para>
         </listitem>
 
@@ -487,20 +484,21 @@
       <title>Encryption</title>
 
       <para>
-        The following components of VirtualBox use encryption to protect
-        sensitive data:
+        The following components of &product-name; use encryption to
+        protect sensitive data:
       </para>
 
       <itemizedlist>
 
         <listitem>
           <para>
-            When using the VirtualBox extension pack provided by Oracle
-            for VRDP remote desktop support, RDP data can optionally be
-            encrypted. See <xref linkend="vrde-crypt" />. Only the
-            Enhanced RDP Security method (RDP5.2) with TLS protocol
-            provides a secure connection. Standard RDP Security (RDP4
-            and RDP5.1) is vulnerable to a man-in-the-middle attack.
+            When using the &product-name; Extension Pack provided by
+            Oracle for VRDP remote desktop support, RDP data can
+            optionally be encrypted. See <xref linkend="vrde-crypt" />.
+            Only the Enhanced RDP Security method (RDP5.2) with TLS
+            protocol provides a secure connection. Standard RDP Security
+            (RDP4 and RDP5.1) is vulnerable to a man-in-the-middle
+            attack.
           </para>
         </listitem>
 

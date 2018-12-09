@@ -9,45 +9,44 @@
   <title>Technical Background</title>
 
   <para>
-    The contents of this chapter are not required to use VirtualBox
-    successfully. The following is provided as additional information
-    for readers who are more familiar with computer architecture and
-    technology and wish to find out more about how VirtualBox works
-    "under the hood".
+    This chapter provides additional information for readers who are
+    familiar with computer architecture and technology and wish to find
+    out more about how &product-name; works <emphasis>under the
+    hood</emphasis>. The contents of this chapter are not required
+    reading in order to use &product-name; successfully.
   </para>
 
   <sect1 id="vboxconfigdata">
 
-    <title>Where VirtualBox Stores its Files</title>
+    <title>Where &product-name; Stores its Files</title>
 
     <para>
-      In VirtualBox, a virtual machine and its settings are described in
-      a virtual machine settings file in XML format. In addition, most
-      virtual machine have one or more virtual hard disks, which are
-      typically represented by disk images, such as those in VDI format.
-      Where all these files are stored depends on which version of
-      VirtualBox created the machine.
+      In &product-name;, a virtual machine and its settings are
+      described in a virtual machine settings file in XML format. In
+      addition, most virtual machine have one or more virtual hard
+      disks, which are typically represented by disk images, such as
+      those in VDI format. Where all these files are stored depends on
+      which version of &product-name; created the machine.
     </para>
 
-    <sect2 id="vboxconfigdata-pre-version-four">
+    <sect2 id="vboxconfigdata-post-version-four">
 
-      <title>Machines Created by VirtualBox Version 4.0 or Later</title>
+      <title>Machines Created by &product-name; Version 4.0 or Later</title>
 
       <para>
-        Starting with version 4.0, by default, each virtual machine has
-        one directory on your host computer where all the files of that
-        machine are stored: the XML settings file, with a
-        <computeroutput>.vbox</computeroutput> file extension, and its
-        disk images.
+        By default, each virtual machine has one directory on your host
+        computer where all the files of that machine are stored: the XML
+        settings file, with a <computeroutput>.vbox</computeroutput>
+        file extension, and its disk images.
       </para>
 
       <para>
-        By default, this <replaceable>machine folder</replaceable> is
-        placed in a common folder called <computeroutput>VirtualBox
-        VMs</computeroutput>, which VirtualBox creates in the current
-        system user's home directory. The location of this home
+        By default, this <emphasis>machine folder</emphasis> is placed
+        in a common folder called <computeroutput>VirtualBox
+        VMs</computeroutput>, which &product-name; creates in the
+        current system user's home directory. The location of this home
         directory depends on the conventions of the host operating
-        system:
+        system, as follows:
       </para>
 
       <itemizedlist>
@@ -70,16 +69,16 @@
 
         <listitem>
           <para>
-            On Linux, Mac OS X and Solaris, this is generally taken from
-            the environment variable
+            On Linux, Mac OS X, and Oracle Solaris, this is generally
+            taken from the environment variable
             <computeroutput>$HOME</computeroutput>, except for the user
             <computeroutput>root</computeroutput> where it is taken from
             the account database. This is a workaround for the frequent
-            trouble caused by users using VirtualBox in combination with
-            the tool <computeroutput>sudo</computeroutput> which by
+            trouble caused by users using &product-name; in combination
+            with the tool <computeroutput>sudo</computeroutput> which by
             default does not reset the environment variable
             <computeroutput>$HOME</computeroutput>. A typical location
-            on Linux and Solaris is
+            on Linux and Oracle Solaris is
             <computeroutput>/home/username</computeroutput> and on Mac
             OS X <computeroutput>/Users/username</computeroutput>.
           </para>
@@ -96,7 +95,7 @@
 
       <para>
         As an example, when you create a virtual machine called "Example
-        VM", you will find that VirtualBox creates the following:
+        VM", &product-name; creates the following:
       </para>
 
       <itemizedlist>
@@ -125,12 +124,12 @@
       </itemizedlist>
 
       <para>
-        This is the default layout if you use the Create New Virtual
-        Machine wizard described in <xref linkend="gui-createvm" />.
-        Once you start working with the VM, additional files are added.
-        Log files are in a subfolder called
-        <computeroutput>Logs</computeroutput>, and if you have taken
-        snapshots, they are in a
+        This is the default layout if you use the
+        <emphasis role="bold">Create New Virtual Machine</emphasis>
+        wizard described in <xref linkend="gui-createvm" />. Once you
+        start working with the VM, additional files are added. Log files
+        are in a subfolder called <computeroutput>Logs</computeroutput>,
+        and if you have taken snapshots, they are in a
         <computeroutput>Snapshots</computeroutput> subfolder. For each
         VM, you can change the location of its snapshots folder in the
         VM settings.
@@ -138,42 +137,43 @@
 
       <para>
         You can change the default machine folder by selecting
-        <emphasis role="bold">Preferences</emphasis> from the File menu
-        in the VirtualBox main window. Then, in the displayed window,
-        click on the <emphasis role="bold">General</emphasis> tab.
-        Alternatively, use <computeroutput>VBoxManage setproperty
-        machinefolder</computeroutput>. See
-        <xref
-      linkend="vboxmanage-setproperty" />.
+        <emphasis role="bold">Preferences</emphasis> from the
+        <emphasis role="bold">File</emphasis> menu in the &product-name;
+        main window. Then, in the displayed window, click on the
+        <emphasis role="bold">General</emphasis> tab. Alternatively, use
+        <command>VBoxManage setproperty machinefolder</command>. See
+        <xref linkend="vboxmanage-setproperty" />.
       </para>
 
     </sect2>
 
-    <sect2 id="vboxconfigdata-post-version-four">
+    <sect2 id="vboxconfigdata-pre-version-four">
 
-      <title>Machines Created by VirtualBox Versions Before 4.0</title>
+      <title>Machines Created by &product-name; Versions Before 4.0</title>
 
       <para>
-        If you have upgraded to VirtualBox 4.0 from an earlier version
-        of VirtualBox, you probably have settings files and disks in the
-        earlier file system layout.
+        If you have upgraded to &product-name; 4.0 from an earlier
+        version of &product-name;, you probably have settings files and
+        disks in the earlier file system layout.
       </para>
 
       <para>
-        Before version 4.0, VirtualBox separated the machine settings
-        files from virtual disk images. The machine settings files had
-        an <computeroutput>.xml</computeroutput> file extension and
-        resided in a folder called "Machines" under the global
-        VirtualBox configuration directory. See
+        Before version 4.0, &product-name; separated the machine
+        settings files from virtual disk images. The machine settings
+        files had an <computeroutput>.xml</computeroutput> file
+        extension and resided in a folder called
+        <computeroutput>Machines</computeroutput> under the global
+        &product-name; configuration directory. See
         <xref linkend="vboxconfigdata-global"/>. On Linux, for example,
-        this was the hidden
-        <computeroutput>$HOME/.VirtualBox/Machines</computeroutput>
-        directory. The default hard disks folder was called "HardDisks"
-        and resided in the <computeroutput>.VirtualBox</computeroutput>
-        folder as well. Both locations could be changed by the user in
-        the global preferences. The concept of a default hard disk
-        folder has been abandoned with VirtualBox 4.0, since disk images
-        now reside in each machine's folder by default.
+        this was the hidden directory
+        <computeroutput>$HOME/.VirtualBox/Machines</computeroutput>. The
+        default hard disks folder was called
+        <computeroutput>HardDisks</computeroutput> and was also located
+        in the <computeroutput>.VirtualBox</computeroutput> folder. Both
+        locations could be changed by the user in the global
+        preferences. The concept of a default hard disk folder was
+        abandoned with &product-name; 4.0, since disk images now reside
+        in each machine's folder by default.
       </para>
 
       <para>
@@ -188,7 +188,7 @@
             host to another because the files involved did not reside in
             the same folder. In addition, the virtual media of all
             machines were registered with a global registry in the
-            central VirtualBox settings file,
+            central &product-name; settings file,
             <computeroutput>$HOME/.VirtualBox/VirtualBox.xml</computeroutput>.
           </para>
 
@@ -207,19 +207,19 @@
             Storing virtual disk images, which can grow very large,
             under the hidden
             <computeroutput>.VirtualBox</computeroutput> directory, at
-            least on Linux and Solaris hosts, made many users wonder
-            where their disk space had gone.
+            least on Linux and Oracle Solaris hosts, made many users
+            wonder where their disk space had gone.
           </para>
         </listitem>
 
       </itemizedlist>
 
       <para>
-        Whereas new VMs created with VirtualBox 4.0 or later will
+        Whereas new VMs created with &product-name; 4.0 or later will
         conform to the new layout, for maximum compatibility, old VMs
         are <emphasis>not</emphasis> converted to the new layout.
         Otherwise machine settings would be irrevocably broken if a user
-        downgraded from 4.0 back to an older version of VirtualBox.
+        downgraded from 4.0 back to an older version of &product-name;.
       </para>
 
     </sect2>
@@ -229,61 +229,84 @@
       <title>Global Configuration Data</title>
 
       <para>
-        In addition to the files of the virtual machines, VirtualBox
-        maintains global configuration data. On Linux and Solaris as of
-        VirtualBox 4.3, this is in the hidden directory
-        <computeroutput>$HOME/.config/VirtualBox</computeroutput>,
-        although <computeroutput>$HOME/.VirtualBox</computeroutput> will
-        be used if it exists for compatibility with earlier versions. On
-        Windows, and on Linux and Solaris with VirtualBox 4.2 and
-        earlier, this is in
-        <computeroutput>$HOME/.VirtualBox</computeroutput>. On Mac OS X,
-        it resides in
-        <computeroutput>$HOME/Library/VirtualBox</computeroutput>.
+        In addition to the files of the virtual machines, &product-name;
+        maintains global configuration data in the following directory:
       </para>
 
+      <itemizedlist>
+
+        <listitem>
+          <para>
+            <emphasis role="bold">Linux and Oracle Solaris:</emphasis>
+            <computeroutput>$HOME/.config/VirtualBox</computeroutput>.
+          </para>
+
+          <para>
+            <computeroutput>$HOME/.VirtualBox</computeroutput> is used
+            if it exists, for compatibility with legacy versions before
+            &product-name; 4.3.
+          </para>
+        </listitem>
+
+        <listitem>
+          <para>
+            <emphasis role="bold">Windows:</emphasis>
+            <computeroutput>$HOME/.VirtualBox</computeroutput>.
+          </para>
+        </listitem>
+
+        <listitem>
+          <para>
+            <emphasis role="bold">Mac OS X:</emphasis>
+            <computeroutput>$HOME/Library/VirtualBox</computeroutput>.
+          </para>
+        </listitem>
+
+      </itemizedlist>
+
       <para>
-        VirtualBox creates this configuration directory automatically if
-        necessary. Optionally, you can supply an alternate configuration
-        directory by setting the
-        <computeroutput><literal>VBOX_USER_HOME</literal></computeroutput>
-        environment variable, or additionally on Linux or Solaris by
-        using the standard
-        <computeroutput><literal>XDG_CONFIG_HOME</literal></computeroutput>
+        &product-name; creates this configuration directory
+        automatically, if necessary. Optionally, you can specify an
+        alternate configuration directory by setting the
+        <computeroutput>VBOX_USER_HOME</computeroutput> environment
+        variable, or additionally on Linux or Oracle Solaris by using
+        the standard <computeroutput>XDG_CONFIG_HOME</computeroutput>
         variable. Since the global
         <computeroutput>VirtualBox.xml</computeroutput> settings file
-        points to all other configuration files, this allows for
-        switching between several VirtualBox configurations entirely.
+        points to all other configuration files, this enables switching
+        between several &product-name; configurations.
       </para>
 
       <para>
-        Most importantly, in this directory, VirtualBox stores its
+        Most importantly, in this directory, &product-name; stores its
         global settings file, another XML file called
         <computeroutput>VirtualBox.xml</computeroutput>. This includes
         global configuration options and the list of registered virtual
         machines with pointers to their XML settings files. Neither the
         location of this file nor its directory has changed with
-        VirtualBox 4.0.
+        &product-name; 4.0.
       </para>
 
       <para>
-        Before VirtualBox 4.0, all virtual media (disk image files) were
-        also contained in a global registry in this settings file. For
-        compatibility, this media registry still exists if you upgrade
-        VirtualBox and there are media from machines which were created
-        with a version before 4.0. If you have no such machines, then
-        there will be no global media registry. With VirtualBox 4.0,
-        each machine XML file has its own media registry.
+        Before &product-name; 4.0, all virtual media, such as disk image
+        files, were also contained in a global registry in this settings
+        file. For compatibility, this media registry still exists if you
+        upgrade &product-name; and there are media from machines which
+        were created with a version before 4.0. If you have no such
+        machines, then there will be no global media registry. With
+        &product-name; 4.0, each machine XML file has its own media
+        registry.
       </para>
 
       <para>
-        Also before VirtualBox 4.0, the default "Machines" folder and
-        the default "HardDisks" folder resided under the VirtualBox
-        configuration directory, such as
+        Also before &product-name; 4.0, the default
+        <computeroutput>Machines</computeroutput> folder and the default
+        <computeroutput>HardDisks</computeroutput> folder resided under
+        the &product-name; configuration directory, such as
         <computeroutput>$HOME/.VirtualBox/Machines</computeroutput> on
-        Linux. If you are upgrading from a VirtualBox version before
-        4.0, files in these directories are not automatically moved in
-        order not to break backwards compatibility.
+        Linux. If you are upgrading from an &product-name; version
+        before 4.0, files in these directories are not automatically
+        moved in order not to break backwards compatibility.
       </para>
 
     </sect2>
@@ -303,36 +326,73 @@
         <tgroup cols="3">
           <thead>
             <row>
-              <entry><emphasis role="bold">Setting</emphasis></entry>
-              <entry><emphasis role="bold">Before 4.0</emphasis></entry>
-              <entry><emphasis role="bold">4.0 or above</emphasis></entry>
+              <entry><para>
+                  <emphasis role="bold">Setting</emphasis>
+                </para></entry>
+              <entry><para>
+                  <emphasis role="bold">Before 4.0</emphasis>
+                </para></entry>
+              <entry><para>
+                  <emphasis role="bold">4.0 or above</emphasis>
+                </para></entry>
             </row>
           </thead>
           <tbody>
             <row>
-              <entry>Default machines folder</entry>
-              <entry><computeroutput>$HOME/.VirtualBox/Machines</computeroutput></entry>
-              <entry><computeroutput>$HOME/VirtualBox VMs</computeroutput></entry>
+              <entry><para>
+                  Default machines folder
+                </para></entry>
+              <entry><para>
+                  <computeroutput>$HOME/.VirtualBox/Machines</computeroutput>
+                </para></entry>
+              <entry><para>
+                  <computeroutput>$HOME/VirtualBox VMs</computeroutput>
+                </para></entry>
             </row>
             <row>
-              <entry>Default disk image location</entry>
-              <entry><computeroutput>$HOME/.VirtualBox/HardDisks</computeroutput></entry>
-              <entry>In each machine's folder</entry>
+              <entry><para>
+                  Default disk image location
+                </para></entry>
+              <entry><para>
+                  <computeroutput>$HOME/.VirtualBox/HardDisks</computeroutput>
+                </para></entry>
+              <entry><para>
+                  In each machine's folder
+                </para></entry>
             </row>
             <row>
-              <entry>Machine settings file extension</entry>
-              <entry><computeroutput>.xml</computeroutput></entry>
-              <entry><computeroutput>.vbox</computeroutput></entry>
+              <entry><para>
+                  Machine settings file extension
+                </para></entry>
+              <entry><para>
+                  <computeroutput>.xml</computeroutput>
+                </para></entry>
+              <entry><para>
+                  <computeroutput>.vbox</computeroutput>
+                </para></entry>
             </row>
             <row>
-              <entry>Media registry</entry>
-              <entry>Global <computeroutput>VirtualBox.xml</computeroutput> file</entry>
-              <entry>Each machine settings file</entry>
+              <entry><para>
+                  Media registry
+                </para></entry>
+              <entry><para>
+                  Global <computeroutput>VirtualBox.xml</computeroutput>
+                  file
+                </para></entry>
+              <entry><para>
+                  Each machine settings file
+                </para></entry>
             </row>
             <row>
-              <entry>Media registration</entry>
-              <entry>Explicit open/close required</entry>
-              <entry>Automatic on attach</entry>
+              <entry><para>
+                  Media registration
+                </para></entry>
+              <entry><para>
+                  Explicit open/close required
+                </para></entry>
+              <entry><para>
+                  Automatic on attach
+                </para></entry>
             </row>
           </tbody>
         </tgroup>
@@ -342,64 +402,60 @@
 
     <sect2 id="vboxconfigdata-XML-files">
 
-      <title>VirtualBox XML Files</title>
+      <title>&product-name; XML Files</title>
 
       <para>
-        VirtualBox uses XML for both the machine settings files and the
-        global configuration file,
+        &product-name; uses XML for both the machine settings files and
+        the global configuration file,
         <computeroutput>VirtualBox.xml</computeroutput>.
       </para>
 
       <para>
-        All VirtualBox XML files are versioned. When a new settings file
-        is created, for example because a new virtual machine is
-        created, VirtualBox automatically uses the settings format of
-        the current VirtualBox version. These files may not be readable
-        if you downgrade to an earlier version of VirtualBox. However,
-        when VirtualBox encounters a settings file from an earlier
-        version, such as after upgrading VirtualBox, it attempts to
-        preserve the settings format as much as possible. It will only
-        silently upgrade the settings format if the current settings
-        cannot be expressed in the old format, for example because you
-        enabled a feature that was not present in an earlier version of
-        VirtualBox.
+        All &product-name; XML files are versioned. When a new settings
+        file is created, for example because a new virtual machine is
+        created, &product-name; automatically uses the settings format
+        of the current &product-name; version. These files may not be
+        readable if you downgrade to an earlier version of
+        &product-name;. However, when &product-name; encounters a
+        settings file from an earlier version, such as after upgrading
+        &product-name;, it attempts to preserve the settings format as
+        much as possible. It will only silently upgrade the settings
+        format if the current settings cannot be expressed in the old
+        format, for example because you enabled a feature that was not
+        present in an earlier version of &product-name;.
+      </para>
 
-        <footnote>
+      <para>
+        As an example, before &product-name; 3.1, it was only possible
+        to enable or disable a single DVD drive in a virtual machine. If
+        it was enabled, then it would always be visible as the secondary
+        master of the IDE controller. With &product-name; 3.1, DVD
+        drives can be attached to arbitrary slots of arbitrary
+        controllers, so they could be the secondary slave of an IDE
+        controller or in a SATA slot. If you have a machine settings
+        file from an earlier version and upgrade &product-name; to 3.1
+        and then move the DVD drive from its default position, this
+        cannot be expressed in the old settings format; the XML machine
+        file would get written in the new format, and a backup file of
+        the old format would be kept.
+      </para>
 
-          <para>
-            As an example, before VirtualBox 3.1, it was only possible
-            to enable or disable a single DVD drive in a virtual
-            machine. If it was enabled, then it would always be visible
-            as the secondary master of the IDE controller. With
-            VirtualBox 3.1, DVD drives can be attached to arbitrary
-            slots of arbitrary controllers, so they could be the
-            secondary slave of an IDE controller or in a SATA slot. If
-            you have a machine settings file from an earlier version and
-            upgrade VirtualBox to 3.1 and then move the DVD drive from
-            its default position, this cannot be expressed in the old
-            settings format; the XML machine file would get written in
-            the new format, and a backup file of the old format would be
-            kept.
-          </para>
-
-        </footnote>
-
-        In such cases, VirtualBox backs up the old settings file in the
-        virtual machine's configuration directory. If you need to go
-        back to the earlier version of VirtualBox, then you will need to
-        manually copy these backup files back.
+      <para>
+        In such cases, &product-name; backs up the old settings file in
+        the virtual machine's configuration directory. If you need to go
+        back to the earlier version of &product-name;, then you will
+        need to manually copy these backup files back.
       </para>
 
       <para>
         We intentionally do not document the specifications of the
-        VirtualBox XML files, as we must reserve the right to modify
+        &product-name; XML files, as we must reserve the right to modify
         them in the future. We therefore strongly suggest that you do
-        not edit these files manually. VirtualBox provides complete
+        not edit these files manually. &product-name; provides complete
         access to its configuration data through its the
-        <computeroutput>VBoxManage</computeroutput> command line tool,
-        see <xref linkend="vboxmanage" /> and its API, see
-        <xref
-      linkend="VirtualBoxAPI" />.
+        <command>VBoxManage</command> command line tool, see
+        <xref linkend="vboxmanage" /> and its API, see
+        <xref linkend="VirtualBoxAPI" />.
       </para>
 
     </sect2>
@@ -408,61 +464,63 @@
 
   <sect1 id="technical-components">
 
-    <title>VirtualBox Executables and Components</title>
+    <title>&product-name; Executables and Components</title>
 
     <para>
-      VirtualBox was designed to be modular and flexible. When the
-      VirtualBox graphical user interface (GUI) is opened and a VM is
-      started, at least the following three processes are running:
+      &product-name; was designed to be modular and flexible. When the
+      &product-name; graphical user interface (GUI) is opened and a VM
+      is started, at least the following three processes are running:
     </para>
 
     <itemizedlist>
 
       <listitem>
         <para>
-          <computeroutput>VBoxSVC</computeroutput>, the VirtualBox
+          <computeroutput>VBoxSVC</computeroutput>, the &product-name;
           service process which always runs in the background. This
-          process is started automatically by the first VirtualBox
+          process is started automatically by the first &product-name;
           client process and exits a short time after the last client
-          exits. The first VirtualBox service can be the GUI,
+          exits. The first &product-name; service can be the GUI,
           <computeroutput>VBoxManage</computeroutput>,
           <computeroutput>VBoxHeadless</computeroutput>, the web service
           amongst others. The service is responsible for bookkeeping,
           maintaining the state of all VMs, and for providing
-          communication between VirtualBox components. This
-          communication is implemented via COM/XPCOM.
+          communication between &product-name; components. This
+          communication is implemented using COM/XPCOM.
         </para>
 
         <note>
           <para>
-            When we refer to "clients" here, we mean the local clients
-            of a particular <computeroutput>VBoxSVC</computeroutput>
-            server process, not clients in a network. VirtualBox employs
-            its own client/server design to allow its processes to
-            cooperate, but all these processes run under the same user
-            account on the host operating system, and this is totally
-            transparent to the user.
+            When we refer to <emphasis>clients</emphasis> here, we mean
+            the local clients of a particular
+            <computeroutput>VBoxSVC</computeroutput> server process, not
+            clients in a network. &product-name; employs its own
+            client/server design to allow its processes to cooperate,
+            but all these processes run under the same user account on
+            the host operating system, and this is totally transparent
+            to the user.
           </para>
         </note>
       </listitem>
 
       <listitem>
         <para>
-          The GUI process, <computeroutput>VirtualBox</computeroutput>,
-          a client application based on the cross-platform Qt library.
-          When started without the
-          <computeroutput>--startvm</computeroutput> option, this
-          application acts as the VirtualBox manager, displaying the VMs
-          and their settings. It then communicates settings and state
-          changes to <computeroutput>VBoxSVC</computeroutput> and also
-          reflects changes effected through other means, such as
-          <computeroutput>VBoxManage</computeroutput>.
+          The GUI process,
+          <computeroutput>VirtualBoxVM</computeroutput>, a client
+          application based on the cross-platform Qt library. When
+          started without the <computeroutput>--startvm</computeroutput>
+          option, this application acts as the &product-name; manager,
+          displaying the VMs and their settings. It then communicates
+          settings and state changes to
+          <computeroutput>VBoxSVC</computeroutput> and also reflects
+          changes effected through other means, such as the
+          <command>VBoxManage</command> command.
         </para>
       </listitem>
 
       <listitem>
         <para>
-          If the <computeroutput>VirtualBox</computeroutput> client
+          If the <computeroutput>VirtualBoxVM</computeroutput> client
           application is started with the
           <computeroutput>--startvm</computeroutput> argument, it loads
           the VMM library which includes the actual hypervisor and then
@@ -474,7 +532,7 @@
     </itemizedlist>
 
     <para>
-      Any VirtualBox front-end, or client, will communicate with the
+      Any &product-name; front-end, or client, will communicate with the
       service process and can both control and reflect the current
       state. For example, either the VM selector or the VM window or
       VBoxManage can be used to pause the running VM, and other
@@ -482,17 +540,17 @@
     </para>
 
     <para>
-      The VirtualBox GUI application is only one of several available
-      front ends, or clients. The complete list shipped with VirtualBox
-      is as follows:
+      The &product-name; GUI application is only one of several
+      available front ends, or clients. The complete list shipped with
+      &product-name; is as follows:
     </para>
 
     <itemizedlist>
 
       <listitem>
         <para>
-          <computeroutput>VirtualBox</computeroutput>: The Qt front end
-          implementing the manager and running VMs.
+          <computeroutput>VirtualBoxVM</computeroutput>: The Qt front
+          end implementing the manager and running VMs.
         </para>
       </listitem>
 
@@ -500,52 +558,42 @@
         <para>
           <computeroutput>VBoxManage</computeroutput>: A less
           user-friendly but more powerful alternative. See
-          <xref
-          linkend="vboxmanage" />.
-        </para>
-      </listitem>
-
-      <listitem>
-        <para>
-          <computeroutput>VBoxSDL</computeroutput>: A simple graphical
-          front end based on the SDL library. See
-          <xref
-          linkend="vboxsdl" />.
+          <xref linkend="vboxmanage" />.
         </para>
       </listitem>
 
       <listitem>
         <para>
           <computeroutput>VBoxHeadless</computeroutput>: A VM front end
-          which does not directly provide any video output and
-          keyboard/mouse input, but allows redirection via VirtualBox
+          which does not directly provide any video output and keyboard
+          or mouse input, but enables redirection through the VirtualBox
           Remote Desktop Extension. See <xref linkend="vboxheadless" />.
         </para>
       </listitem>
 
       <listitem>
         <para>
-          <computeroutput>vboxwebsrv</computeroutput>: The VirtualBox
-          web service process which allows for controlling a VirtualBox
-          host remotely. This is described in detail in the VirtualBox
-          Software Development Kit (SDK) reference. See
-          <xref
-          linkend="VirtualBoxAPI" />.
+          <computeroutput>vboxwebsrv</computeroutput>: The
+          &product-name; web service process which enables control of an
+          &product-name; host remotely. This is described in detail in
+          the &product-name; Software Development Kit (SDK) reference.
+          See <xref linkend="VirtualBoxAPI" />.
         </para>
       </listitem>
 
       <listitem>
         <para>
-          The VirtualBox Python shell: A Python alternative to
-          VBoxManage. This is also described in the SDK reference.
+          The &product-name; Python shell: A Python alternative to
+          <computeroutput>VBoxManage</computeroutput>. This is also
+          described in the SDK reference.
         </para>
       </listitem>
 
     </itemizedlist>
 
     <para>
-      Internally, VirtualBox consists of many more or less separate
-      components. You may encounter these when analyzing VirtualBox
+      Internally, &product-name; consists of many more or less separate
+      components. You may encounter these when analyzing &product-name;
       internal error messages or log files. These include the following:
     </para>
 
@@ -554,7 +602,7 @@
       <listitem>
         <para>
           IPRT: A portable runtime library which abstracts file access,
-          threading, and string manipulation. Whenever VirtualBox
+          threading, and string manipulation. Whenever &product-name;
           accesses host operating features, it does so through this
           library for cross-platform portability.
         </para>
@@ -606,8 +654,8 @@
           the VMM and emulated devices which separates device
           implementations from VMM internals and makes it easy to add
           new emulated devices. Through PDM, third-party developers can
-          add new virtual devices to VirtualBox without having to change
-          VirtualBox itself.
+          add new virtual devices to &product-name; without having to
+          change &product-name; itself.
         </para>
       </listitem>
 
@@ -661,7 +709,7 @@
 
       <listitem>
         <para>
-          VirtualBox emulates a number of devices to provide the
+          &product-name; emulates a number of devices to provide the
           hardware environment that various guests need. Most of these
           are standard devices found in many PC compatible machines and
           widely supported by guest operating systems. For network and
@@ -675,22 +723,21 @@
         <para>
           Guest Additions for various guest operating systems. This is
           code that is installed from within a virtual machine. See
-          <xref
-        linkend="guestadditions" />.
+          <xref linkend="guestadditions" />.
         </para>
       </listitem>
 
       <listitem>
         <para>
           The "Main" component is special. It ties all the above bits
-          together and is the only public API that VirtualBox provides.
-          All the client processes listed above use only this API and
-          never access the hypervisor components directly. As a result,
-          third-party applications that use the VirtualBox Main API can
-          rely on the fact that it is always well-tested and that all
-          capabilities of VirtualBox are fully exposed. It is this API
-          that is described in the VirtualBox SDK. See
-          <xref linkend="VirtualBoxAPI" />.
+          together and is the only public API that &product-name;
+          provides. All the client processes listed above use only this
+          API and never access the hypervisor components directly. As a
+          result, third-party applications that use the &product-name;
+          Main API can rely on the fact that it is always well-tested
+          and that all capabilities of &product-name; are fully exposed.
+          It is this API that is described in the &product-name; SDK.
+          See <xref linkend="VirtualBoxAPI" />.
         </para>
       </listitem>
 
@@ -703,23 +750,24 @@
     <title>Hardware vs. Software Virtualization</title>
 
     <para>
-      VirtualBox allows software in the virtual machine to run directly
-      on the processor of the host, but an array of complex techniques
-      is employed to intercept operations that would interfere with your
-      host. Whenever the guest attempts to do something that could be
-      harmful to your computer and its data, VirtualBox steps in and
-      takes action. In particular, for lots of hardware that the guest
-      believes to be accessing, VirtualBox simulates a certain "virtual"
-      environment according to how you have configured a virtual
-      machine. For example, when the guest attempts to access a hard
-      disk, VirtualBox redirects these requests to whatever you have
-      configured to be the virtual machine's virtual hard disk. This is
-      normally an image file on your host.
+      &product-name; enables software in the virtual machine to run
+      directly on the processor of the host, but an array of complex
+      techniques is employed to intercept operations that would
+      interfere with your host. Whenever the guest attempts to do
+      something that could be harmful to your computer and its data,
+      &product-name; steps in and takes action. In particular, for lots
+      of hardware that the guest believes to be accessing,
+      &product-name; simulates a certain "virtual" environment according
+      to how you have configured a virtual machine. For example, when
+      the guest attempts to access a hard disk, &product-name; redirects
+      these requests to whatever you have configured to be the virtual
+      machine's virtual hard disk. This is normally an image file on
+      your host.
     </para>
 
     <para>
       Unfortunately, the x86 platform was never designed to be
-      virtualized. Detecting situations in which VirtualBox needs to
+      virtualized. Detecting situations in which &product-name; needs to
       take control over the guest code that is executing, as described
       above, is difficult. There are two ways in which to achieve this:
     </para>
@@ -730,10 +778,10 @@
         <para>
           Since 2006, Intel and AMD processors have had support for
           so-called <emphasis>hardware virtualization</emphasis>. This
-          means that these processors can help VirtualBox to intercept
-          potentially dangerous operations that a guest operating system
-          may be attempting and also makes it easier to present virtual
-          hardware to a virtual machine.
+          means that these processors can help &product-name; to
+          intercept potentially dangerous operations that a guest
+          operating system may be attempting and also makes it easier to
+          present virtual hardware to a virtual machine.
         </para>
 
         <para>
@@ -746,7 +794,7 @@
         <note>
           <para>
             On many systems, the hardware virtualization features first
-            need to be enabled in the BIOS before VirtualBox can use
+            need to be enabled in the BIOS before &product-name; can use
             them.
           </para>
         </note>
@@ -755,19 +803,20 @@
       <listitem>
         <para>
           As opposed to other virtualization software, for many usage
-          scenarios, VirtualBox does not <emphasis>require</emphasis>
-          hardware virtualization features to be present. Through
-          sophisticated techniques, VirtualBox virtualizes many guest
-          operating systems entirely in <emphasis>software</emphasis>.
-          This means that you can run virtual machines even on older
-          processors which do not support hardware virtualization.
+          scenarios, &product-name; does not
+          <emphasis>require</emphasis> hardware virtualization features
+          to be present. Through sophisticated techniques,
+          &product-name; virtualizes many guest operating systems
+          entirely in <emphasis>software</emphasis>. This means that you
+          can run virtual machines even on older processors which do not
+          support hardware virtualization.
         </para>
       </listitem>
 
     </itemizedlist>
 
     <para>
-      Even though VirtualBox does not always require hardware
+      Even though &product-name; does not always require hardware
       virtualization, enabling it is <emphasis>required</emphasis> in
       the following scenarios:
     </para>
@@ -786,12 +835,12 @@
 
       <listitem>
         <para>
-          VirtualBox's 64-bit guest support (added with version 2.0) and
-          multiprocessing (SMP, added with version 3.0) both require
-          hardware virtualization to be enabled. This is not much of a
-          limitation since the vast majority of today's 64-bit and
-          multicore CPUs ship with hardware virtualization anyway. The
-          exceptions to this rule are older Intel Celeron and AMD
+          &product-name;'s 64-bit guest support, added with version 2.0,
+          and multiprocessing (SMP), added with version 3.0, both
+          require hardware virtualization to be enabled. This is not
+          much of a limitation since the vast majority of today's 64-bit
+          and multicore CPUs ship with hardware virtualization anyway.
+          The exceptions to this rule are older Intel Celeron and AMD
           Opteron CPUs, for example.
         </para>
       </listitem>
@@ -801,20 +850,21 @@
     <warning>
       <para>
         Do not run other hypervisors, either open source or commercial
-        virtualization products, together with VirtualBox. While several
-        hypervisors can normally be <emphasis>installed</emphasis> in
-        parallel, do not attempt to <emphasis>run</emphasis> several
-        virtual machines from competing hypervisors at the same time.
-        VirtualBox cannot track what another hypervisor is currently
-        attempting to do on the same host, and especially if several
-        products attempt to use hardware virtualization features such as
-        VT-x, this can crash the entire host. Also, within VirtualBox,
-        you can mix software and hardware virtualization when running
-        multiple VMs. In certain cases a small performance penalty will
-        be unavoidable when mixing VT-x and software virtualization VMs.
-        We recommend not mixing virtualization modes if maximum
-        performance and low overhead are essential. This does
-        <emphasis>not</emphasis> apply to AMD-V.
+        virtualization products, together with &product-name;. While
+        several hypervisors can normally be
+        <emphasis>installed</emphasis> in parallel, do not attempt to
+        <emphasis>run</emphasis> several virtual machines from competing
+        hypervisors at the same time. &product-name; cannot track what
+        another hypervisor is currently attempting to do on the same
+        host, and especially if several products attempt to use hardware
+        virtualization features such as VT-x, this can crash the entire
+        host. Also, within &product-name;, you can mix software and
+        hardware virtualization when running multiple VMs. In certain
+        cases a small performance penalty will be unavoidable when
+        mixing VT-x and software virtualization VMs. We recommend not
+        mixing virtualization modes if maximum performance and low
+        overhead are essential. This does <emphasis>not</emphasis> apply
+        to AMD-V.
       </para>
     </warning>
 
@@ -825,12 +875,12 @@
     <title>Paravirtualization Providers</title>
 
     <para>
-      VirtualBox allows exposing a paravirtualization interface to
-      facilitate accurate and efficient execution of software within a
-      virtual machine. These interfaces require the guest operating
-      system to recognize their presence and make use of them in order
-      to leverage the benefits of communicating with the VirtualBox
-      hypervisor.
+      &product-name; enables the exposure of a paravirtualization
+      interface, to facilitate accurate and efficient execution of
+      software within a virtual machine. These interfaces require the
+      guest operating system to recognize their presence and make use of
+      them in order to leverage the benefits of communicating with the
+      &product-name; hypervisor.
     </para>
 
     <para>
@@ -846,11 +896,11 @@
       system does not rely on the choice of host platforms. For example,
       the <emphasis>Hyper-V</emphasis> paravirtualization provider can
       be used for VMs to run on any host platform supported by
-      VirtualBox and not just Windows.
+      &product-name; and not just Windows.
     </para>
 
     <para>
-      VirtualBox provides the following interfaces:
+      &product-name; provides the following interfaces:
     </para>
 
     <itemizedlist>
@@ -868,7 +918,7 @@
         <para>
           <emphasis role="bold">KVM</emphasis>: Presents a Linux KVM
           hypervisor interface which is recognized by Linux kernels
-          starting with version 2.6.25. VirtualBox's implementation
+          version 2.6.25 or later. &product-name;'s implementation
           currently supports paravirtualized clocks and SMP spinlocks.
           This provider is recommended for Linux guests.
         </para>
@@ -878,7 +928,7 @@
         <para>
           <emphasis role="bold">Hyper-V</emphasis>: Presents a Microsoft
           Hyper-V hypervisor interface which is recognized by Windows 7
-          and newer operating systems. VirtualBox's implementation
+          and newer operating systems. &product-name;'s implementation
           currently supports paravirtualized clocks, APIC frequency
           reporting, guest debugging, guest crash reporting and relaxed
           timer checks. This provider is recommended for Windows guests.
@@ -907,9 +957,9 @@
       underwent significant changes with the addition of protected mode
       in the 1980s with the 286 CPU architecture and then again with the
       Intel 386 and its 32-bit architecture. Whereas the 386 did have
-      limited virtualization support for real mode operation (V86 mode,
-      as used by the "DOS Box" of Windows 3.x and OS/2 2.x), no support
-      was provided for virtualizing the entire architecture.
+      limited virtualization support for real mode operation with V86
+      mode, as used by the "DOS Box" of Windows 3.x and OS/2 2.x, no
+      support was provided for virtualizing the entire architecture.
     </para>
 
     <para>
@@ -943,8 +993,8 @@
       analyzed, transformed into a form which will not allow the guest
       to either modify or see the true state of the CPU, and only then
       executed. This process is obviously highly complex and costly in
-      terms of performance. VirtualBox contains a recompiler based on
-      QEMU which can be used for pure software emulation, but the
+      terms of performance. &product-name; contains a recompiler based
+      on QEMU which can be used for pure software emulation, but the
       recompiler is only activated in special situations, described
       below.
     </para>
@@ -961,17 +1011,18 @@
     </para>
 
     <para>
-      VirtualBox chooses a different approach. When starting a virtual
-      machine, through its ring-0 support kernel driver, VirtualBox has
-      set up the host system so that it can run most of the guest code
-      natively, but it has inserted itself at the "bottom" of the
-      picture. It can then assume control when needed. If a privileged
-      instruction is executed, the guest traps, in particular because an
-      I/O register was accessed and a device needs to be virtualized, or
-      external interrupts occur. VirtualBox may then handle this and
-      either route a request to a virtual device or possibly delegate
-      handling such things to the guest or host OS. In guest context,
-      VirtualBox can therefore be in one of three states:
+      &product-name; chooses a different approach. When starting a
+      virtual machine, through its ring-0 support kernel driver,
+      &product-name; has set up the host system so that it can run most
+      of the guest code natively, but it has inserted itself at the
+      "bottom" of the picture. It can then assume control when needed.
+      If a privileged instruction is executed, the guest traps, in
+      particular because an I/O register was accessed and a device needs
+      to be virtualized, or external interrupts occur. &product-name;
+      may then handle this and either route a request to a virtual
+      device or possibly delegate handling such things to the guest or
+      host OS. In guest context, &product-name; can therefore be in one
+      of three states:
     </para>
 
     <itemizedlist>
@@ -989,31 +1040,31 @@
 
       <listitem>
         <para>
-          For guest code in ring 0, VirtualBox employs a clever trick.
-          It actually reconfigures the guest so that its ring-0 code is
-          run in ring 1 instead, which is normally not used in x86
-          operating systems). As a result, when guest ring-0 code,
+          For guest code in ring 0, &product-name; employs a clever
+          trick. It actually reconfigures the guest so that its ring-0
+          code is run in ring 1 instead, which is normally not used in
+          x86 operating systems). As a result, when guest ring-0 code,
           actually running n ring 1, such as a guest device driver
           attempts to write to an I/O register or execute a privileged
-          instruction, the VirtualBox hypervisor in the "real" ring 0
-          can take over.
+          instruction, the &product-name; hypervisor in the "real" ring
+          0 can take over.
         </para>
       </listitem>
 
       <listitem>
         <para>
           The hypervisor (VMM) can be active. Every time a fault occurs,
-          VirtualBox looks at the offending instruction and can relegate
-          it to a virtual device or the host OS or the guest OS or run
-          it in the recompiler.
+          &product-name; looks at the offending instruction and can
+          relegate it to a virtual device or the host OS or the guest OS
+          or run it in the recompiler.
         </para>
 
         <para>
           In particular, the recompiler is used when guest code disables
-          interrupts and VirtualBox cannot figure out when they will be
-          switched back on. In these situations, VirtualBox actually
-          analyzes the guest code using its own disassembler. Also,
-          certain privileged instructions such as LIDT need to be
+          interrupts and &product-name; cannot figure out when they will
+          be switched back on. In these situations, &product-name;
+          actually analyzes the guest code using its own disassembler.
+          Also, certain privileged instructions such as LIDT need to be
           handled specially. Finally, any real-mode or protected-mode
           code, such as BIOS code, a DOS guest, or any operating system
           startup, is run in the recompiler entirely.
@@ -1089,18 +1140,19 @@
           performance overhead. An example is the TPR (Task Priority)
           register in 32-bit mode. Accesses to this register must be
           trapped by the hypervisor. But certain guest operating
-          systems, notably Windows and Solaris, write this register very
-          often, which adversely affects virtualization performance.
+          systems, notably Windows and Oracle Solaris, write this
+          register very often, which adversely affects virtualization
+          performance.
         </para>
       </listitem>
 
     </itemizedlist>
 
     <para>
-      To fix these performance and security issues, VirtualBox contains
-      a Code Scanning and Analysis Manager (CSAM), which disassembles
-      guest code, and the Patch Manager (PATM), which can replace it at
-      runtime.
+      To fix these performance and security issues, &product-name;
+      contains a Code Scanning and Analysis Manager (CSAM), which
+      disassembles guest code, and the Patch Manager (PATM), which can
+      replace it at runtime.
     </para>
 
     <para>
@@ -1116,9 +1168,9 @@
     </para>
 
     <para>
-      In addition, every time a fault occurs, VirtualBox analyzes the
-      offending code to determine if it is possible to patch it in order
-      to prevent it from causing more faults in the future. This
+      In addition, every time a fault occurs, &product-name; analyzes
+      the offending code to determine if it is possible to patch it in
+      order to prevent it from causing more faults in the future. This
       approach works well in practice and dramatically improves software
       virtualization performance.
     </para>
@@ -1232,25 +1284,16 @@
     <para>
       In addition to normal hardware virtualization, your processor may
       also support the following additional sophisticated techniques:
-
-      <footnote>
-
-        <para>
-          VirtualBox 2.0 added support for AMD's nested paging; support
-          for Intel's EPT and VPIDs was added with version 2.1.
-        </para>
-
-      </footnote>
     </para>
 
     <itemizedlist>
 
       <listitem>
         <para>
-          A newer feature called <emphasis>nested paging</emphasis>
-          implements some memory management in hardware, which can
-          greatly accelerate hardware virtualization since these tasks
-          no longer need to be performed by the virtualization software.
+          Nested paging implements some memory management in hardware,
+          which can greatly accelerate hardware virtualization since
+          these tasks no longer need to be performed by the
+          virtualization software.
         </para>
 
         <para>
@@ -1274,18 +1317,18 @@
 
         <para>
           On AMD processors, nested paging has been available starting
-          with the Barcelona (K10) architecture. They now call it "rapid
-          virtualization indexing" (RVI). Intel added support for nested
+          with the Barcelona (K10) architecture. They now call it rapid
+          virtualization indexing (RVI). Intel added support for nested
           paging, which they call extended page tables (EPT), with their
           Core i7 (Nehalem) processors.
         </para>
 
         <para>
-          If nested paging is enabled, the VirtualBox hypervisor can
-          also use <emphasis role="bold">large pages</emphasis> to
-          reduce TLB usage and overhead. This can yield a performance
-          improvement of up to 5%. To enable this feature for a VM, you
-          need to use the <computeroutput>VBoxManage modifyvm
+          If nested paging is enabled, the &product-name; hypervisor can
+          also use <emphasis>large pages</emphasis> to reduce TLB usage
+          and overhead. This can yield a performance improvement of up
+          to 5%. To enable this feature for a VM, you need to use the
+          <computeroutput>VBoxManage modifyvm
           </computeroutput><computeroutput>--largepages</computeroutput>
           command. See <xref linkend="vboxmanage-modifyvm" />.
         </para>
@@ -1293,18 +1336,17 @@
 
       <listitem>
         <para>
-          On Intel CPUs, another hardware feature called Virtual
-          Processor Identifiers" (VPIDs) can greatly accelerate context
-          switching by reducing the need for expensive flushing of the
-          processor's Translation Lookaside Buffers (TLBs).
+          On Intel CPUs, a hardware feature called Virtual Processor
+          Identifiers (VPIDs) can greatly accelerate context switching
+          by reducing the need for expensive flushing of the processor's
+          Translation Lookaside Buffers (TLBs).
         </para>
 
         <para>
           To enable these features for a VM, you need to use the
           <computeroutput>VBoxManage modifyvm --vtxvpid</computeroutput>
           and <computeroutput>--largepages</computeroutput> commands.
-          See <xref
-          linkend="vboxmanage-modifyvm" />.
+          See <xref linkend="vboxmanage-modifyvm" />.
         </para>
       </listitem>
 
