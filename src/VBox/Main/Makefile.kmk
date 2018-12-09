@@ -302,7 +302,7 @@ if defined(VBOX_WITH_SDS) && "$(KBUILD_TARGET)" == "win"
 PROGRAMS.win += VBoxSDS
 VBoxSDS_TEMPLATE = VBOXMAINEXE
 VBoxSDS_DEFS += VBOX_COM_OUTOFPROC_MODULE
- if "$(KBUILD_TYPE)" == "debug" && "$(USERNAME)" == "bird"
+ ifneq ($(KBUILD_TYPE),release)
 VBoxSDS_DEFS += _WIN32_WINNT=0x0610 # ClientPID query requires vista+
  else
 VBoxSDS_DEFS += _WIN32_WINNT=0x0510
@@ -379,7 +379,7 @@ ifdef VBOX_WITH_USB
 	$(if $(VBOX_WITH_NEW_USB_CODE_ON_DARWIN),VBOX_WITH_NEW_USB_CODE_ON_DARWIN,)
 endif
 VBoxSVC_DEFS.win += VBOX_COM_OUTOFPROC_MODULE
- if "$(KBUILD_TYPE)" == "debug" && "$(USERNAME)" == "bird"
+ ifneq ($(KBUILD_TYPE),release)
 VBoxSVC_DEFS.win += _WIN32_WINNT=0x0610 # ClientPID query requires vista+
  else
 VBoxSVC_DEFS.win += _WIN32_WINNT=0x0510
