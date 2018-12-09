@@ -2009,7 +2009,6 @@
     uuid="d0a0163f-e254-4e5b-a1f2-011cf991c38d"
     wsmap="managed"
     reservedMethods="8" reservedAttributes="12"
-    wrap-gen-hook="yes"
     >
     <desc>
       The IVirtualBox interface represents the main interface exposed by the
