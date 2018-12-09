@@ -114,7 +114,6 @@
 \usepackage{graphicx}
 \usepackage{hyperref}
 \usepackage{fancybox}
-\usepackage{fancyvrb}
 \usepackage{alltt}
 \usepackage{color}
 \usepackage{scrextend}
@@ -504,9 +503,9 @@
   </xsl:template>
 
   <xsl:template match="screen">
-    <xsl:text>&#x0a;&#x0a;\begin{Verbatim}[fontsize=\footnotesize]&#x0a;</xsl:text>
+    <xsl:text>&#x0a;&#x0a;{\footnotesize\begin{alltt}&#x0a;</xsl:text>
     <xsl:apply-templates />
-    <xsl:text>&#x0a;\end{Verbatim}&#x0a;</xsl:text>
+    <xsl:text>&#x0a;\end{alltt}}&#x0a;</xsl:text>
   </xsl:template>
 
   <xsl:template match="programlisting">
@@ -892,7 +891,7 @@
 
   <xsl:template match="replaceable">
     <xsl:choose>
-      <xsl:when test="(not(ancestor::cmdsynopsis) and not(ancestor::option)) or ancestor::arg">
+      <xsl:when test="(not(ancestor::cmdsynopsis) and not(ancestor::option) and not(ancestor::screen)) or ancestor::arg">
         <xsl:text>\texttt{\textit{</xsl:text>
         <xsl:apply-templates />
         <xsl:text>}}</xsl:text>
@@ -921,10 +920,6 @@
     </xsl:variable>
 
     <xsl:choose>
-      <xsl:when test="(name(..)='screen') or (name(../..)='screen')">
-        <xsl:value-of select="." />
-      </xsl:when>
-
       <xsl:when test="(name(..) = 'computeroutput') or (name(../..) = 'computeroutput')
                    or (name(..) = 'code')           or (name(../..) = 'code')
                    or (name(..) = 'arg')            or (name(../..) = 'arg')
@@ -1019,50 +1014,67 @@
         <xsl:value-of select="$subst2" />
       </xsl:when>
 
+      <!-- <screen> and <programlisting>, which work with alltt environment. -->
       <xsl:otherwise>
         <xsl:variable name="subst2">
           <xsl:call-template name="str:subst">
             <xsl:with-param name="text" select="$subst1" />
-            <xsl:with-param name="replace" select="'_'" />
-            <xsl:with-param name="with" select="'\_'" />
+            <xsl:with-param name="replace" select="'{'" />
+            <xsl:with-param name="with" select="'\{'" />
             <xsl:with-param name="disable-output-escaping" select="no" />
           </xsl:call-template>
         </xsl:variable>
         <xsl:variable name="subst3">
           <xsl:call-template name="str:subst">
             <xsl:with-param name="text" select="$subst2" />
-            <xsl:with-param name="replace" select="'$'" />
-            <xsl:with-param name="with" select="'\$'" />
+            <xsl:with-param name="replace" select="'}'" />
+            <xsl:with-param name="with" select="'\}'" />
             <xsl:with-param name="disable-output-escaping" select="no" />
           </xsl:call-template>
         </xsl:variable>
         <xsl:variable name="subst4">
           <xsl:call-template name="str:subst">
             <xsl:with-param name="text" select="$subst3" />
-            <xsl:with-param name="replace" select="'%'" />
-            <xsl:with-param name="with" select="'\%'" />
+            <xsl:with-param name="replace" select="'_'" />
+            <xsl:with-param name="with" select="'\_'" />
             <xsl:with-param name="disable-output-escaping" select="no" />
           </xsl:call-template>
         </xsl:variable>
         <xsl:variable name="subst5">
           <xsl:call-template name="str:subst">
             <xsl:with-param name="text" select="$subst4" />
-            <xsl:with-param name="replace" select="'#'" />
-            <xsl:with-param name="with" select="'\#'" />
+            <xsl:with-param name="replace" select="'$'" />
+            <xsl:with-param name="with" select="'\$'" />
             <xsl:with-param name="disable-output-escaping" select="no" />
           </xsl:call-template>
         </xsl:variable>
         <xsl:variable name="subst6">
           <xsl:call-template name="str:subst">
             <xsl:with-param name="text" select="$subst5" />
-            <xsl:with-param name="replace" select="'µ'" />
-            <xsl:with-param name="with" select="'$\mu$'" />
+            <xsl:with-param name="replace" select="'%'" />
+            <xsl:with-param name="with" select="'\%'" />
             <xsl:with-param name="disable-output-escaping" select="no" />
           </xsl:call-template>
         </xsl:variable>
         <xsl:variable name="subst7">
           <xsl:call-template name="str:subst">
             <xsl:with-param name="text" select="$subst6" />
+            <xsl:with-param name="replace" select="'#'" />
+            <xsl:with-param name="with" select="'\#'" />
+            <xsl:with-param name="disable-output-escaping" select="no" />
+          </xsl:call-template>
+        </xsl:variable>
+        <xsl:variable name="subst8">
+          <xsl:call-template name="str:subst">
+            <xsl:with-param name="text" select="$subst7" />
+            <xsl:with-param name="replace" select="'µ'" />
+            <xsl:with-param name="with" select="'$\mu$'" />
+            <xsl:with-param name="disable-output-escaping" select="no" />
+          </xsl:call-template>
+        </xsl:variable>
+        <xsl:variable name="subst9">
+          <xsl:call-template name="str:subst">
+            <xsl:with-param name="text" select="$subst8" />
             <xsl:with-param name="replace" select="'®'" />
             <xsl:with-param name="with" select="'\texorpdfstring{\textregistered}{}'" />
             <xsl:with-param name="disable-output-escaping" select="no" />
@@ -1073,31 +1085,40 @@
              sections with "\QUOTE{}" strings, which the makefile will then replace
              with pretty quotes by invoking sed a few times. Unfortunately there are
              no regular expressions in XSLT so there's no other way. -->
-        <xsl:variable name="subst8">
-          <xsl:call-template name="str:subst">
-            <xsl:with-param name="text" select="$subst7" />
-            <xsl:with-param name="replace" select="$quote" />
-            <xsl:with-param name="with" select="'\QUOTE{}'" />
-            <xsl:with-param name="disable-output-escaping" select="no" />
-          </xsl:call-template>
+        <xsl:variable name="subst10">
+          <xsl:choose>
+            <xsl:when test="(name(..)='screen') or (name(../..)='screen')
+                         or (name(..)='programlisting') or (name(../..)='programlisting')
+                           ">
+              <xsl:value-of select="$subst9" />
+            </xsl:when>
+            <xsl:otherwise>
+              <xsl:call-template name="str:subst">
+                <xsl:with-param name="text" select="$subst9" />
+                <xsl:with-param name="replace" select="$quote" />
+                <xsl:with-param name="with" select="'\QUOTE{}'" />
+                <xsl:with-param name="disable-output-escaping" select="no" />
+              </xsl:call-template>
+            </xsl:otherwise>
+          </xsl:choose>
         </xsl:variable>
-        <xsl:variable name="subst9">
+        <xsl:variable name="subst11">
           <xsl:call-template name="str:subst">
-            <xsl:with-param name="text" select="$subst8" />
+            <xsl:with-param name="text" select="$subst10" />
             <xsl:with-param name="replace" select="'~'" />
             <xsl:with-param name="with" select="'\textasciitilde '" />
             <xsl:with-param name="disable-output-escaping" select="no" />
           </xsl:call-template>
         </xsl:variable>
-        <xsl:variable name="subst10">
+        <xsl:variable name="subst12">
           <xsl:call-template name="str:subst">
-            <xsl:with-param name="text" select="$subst9" />
+            <xsl:with-param name="text" select="$subst11" />
             <xsl:with-param name="replace" select="'&amp;'" />
             <xsl:with-param name="with" select="'\&amp;'" />
             <xsl:with-param name="disable-output-escaping" select="no" />
           </xsl:call-template>
         </xsl:variable>
-        <xsl:value-of select="$subst10" />
+        <xsl:value-of select="$subst12" />
       </xsl:otherwise>
     </xsl:choose>
   </xsl:template>
