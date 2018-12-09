@@ -25787,7 +25787,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   -->
   <interface
     name="IVBoxSVCRegistration" extends="$unknown" notdual="yes"
-    uuid="f22181fb-921b-4f2a-7801-0cc5ec28cdae"
+    uuid="9e106366-4521-44cc-df95-186e4d057c83"
     wsmap="suppress" internal="yes"
     reservedMethods="0" reservedAttributes="0"
     >
@@ -25801,10 +25801,6 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         <param name="result" type="$unknown" dir="return" >
           <desc> Where to return the IUnknown interface. </desc>
         </param>
-      </method>
-
-      <method name="notifyClientsFinished">
-          <desc>Notify service that their clients finished.</desc>
       </method>
 
   </interface>

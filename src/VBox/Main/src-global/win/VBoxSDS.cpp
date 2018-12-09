@@ -753,15 +753,6 @@ void VBoxSDSNotifyClientCount(uint32_t cClients)
 #endif
 
 
-/** Special export that make VBoxProxyStub not register this process as one that
- * VBoxSDS should be watching.
- */
-extern "C" DECLEXPORT(void) VBOXCALL Is_VirtualBox_service_process_like_VBoxSDS_And_VBoxSDS(void)
-{
-    /* never called, just need to be here */
-}
-
-
 /**
  * Main function for the VBoxSDS process.
  *

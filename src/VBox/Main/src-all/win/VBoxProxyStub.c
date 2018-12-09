@@ -40,7 +40,6 @@
 #include <iprt/string.h>
 #include <iprt/uuid.h>
 #include <iprt/utf16.h>
-#include "RpcChannelHook.h"
 
 
 /*********************************************************************************************************************************
@@ -171,15 +170,6 @@ BOOL WINAPI DllMain(HINSTANCE hInstance, DWORD dwReason, LPVOID lpReserved)
             /* Init IPRT. */
             RTR3InitDll(RTR3INIT_FLAGS_UNOBTRUSIVE);
             Log12(("VBoxProxyStub[%u]/DllMain: DLL_PROCESS_ATTACH\n", GetCurrentProcessId()));
-
-#ifdef VBOX_WITH_SDS_CLIENT_WATCHER
-            /*
-             * Install RPC channel hook to intercept a moment just after VirtualBox object activation.
-             * It's reports to VBoxSDS that a new VirtualBox API client started.
-             */
-            if (GetProcAddress(GetModuleHandle(NULL), "Is_VirtualBox_service_process_like_VBoxSDS_And_VBoxSDS") == NULL)
-                SetupClientRpcChannelHook();
-#endif
 
 #ifdef VBOX_STRICT
             {
@@ -1355,13 +1345,6 @@ void RegisterXidlModulesAndClassesGenerated(VBPSREGSTATE *pState, PCRTUTF16 pwsz
     VbpsRegisterClassName(pState, "VirtualBox.VirtualBoxSDS", "VirtualBoxSDS Class", &CLSID_VirtualBoxSDS, ".1");
     VbpsRegisterClassId(pState, &CLSID_VirtualBoxSDS, "VirtualBoxSDS Class", pszSdsAppId, "VirtualBox.VirtualBoxSDS", ".1",
                         &LIBID_VirtualBox, "LocalServer32", pwszVBoxDir, pszSdsExe, NULL /*N/A*/);
-
-# if 0
-    VbpsRegisterClassName(pState, "VirtualBox.VirtualBoxClientList.1", "VirtualBoxClientList Class", &CLSID_VirtualBoxClientList, NULL);
-    VbpsRegisterClassName(pState, "VirtualBox.VirtualBoxClientList", "VirtualBoxClientList Class", &CLSID_VirtualBoxClientList, ".1");
-    VbpsRegisterClassId(pState, &CLSID_VirtualBoxClientList, "VirtualBoxClientList Class", pszSdsAppId, "VirtualBox.VirtualBoxClientList", ".1",
-        &LIBID_VirtualBox, "LocalServer32", pwszVBoxDir, pszSdsExe, NULL /*N/A*/);
-# endif
 #endif
 }
 

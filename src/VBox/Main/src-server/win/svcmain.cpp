@@ -27,7 +27,6 @@
 #include "VBox/com/defs.h"
 #include "VBox/com/com.h"
 #include "VBox/com/VirtualBox.h"
-#include "VBox/com/array.h"
 
 #include "VirtualBoxImpl.h"
 #include "Logging.h"
@@ -42,10 +41,6 @@
 #include <iprt/getopt.h>
 #include <iprt/message.h>
 #include <iprt/asm.h>
-
-//#ifdef VBOX_WITH_SDS
-//# include <TlHelp32.h>
-//#endif
 
 
 /*********************************************************************************************************************************
@@ -97,127 +92,6 @@ bool        g_fRegisteredWithVBoxSDS = false;
 const DWORD dwNormalTimeout = 5000;
 volatile uint32_t dwTimeOut = dwNormalTimeout; /* time for EXE to be idle before shutting down. Can be decreased at system shutdown phase. */
 
-
-#if 0 //def VBOX_WITH_SDS
-
-BOOL CALLBACK CloseWindowProc(_In_ HWND   hWnd, _In_ LPARAM /* lParam */)
-{
-    _ASSERTE(hWnd);
-    DWORD_PTR dwResult;
-    // Close topmost windows in the thread
-    LRESULT lResult = SendMessageTimeout(hWnd, WM_CLOSE, NULL, NULL,
-        SMTO_ABORTIFHUNG | SMTO_BLOCK, 0, &dwResult);
-    if (lResult != 0)
-    {
-        LogRel(("EnumThreadWndProc: Close message sent to window %x successfully \n", hWnd));
-    }
-    else
-    {
-        LogRel(("EnumThreadWndProc: Cannot send event to window %x. result: %d, last error: %x\n",
-            hWnd, dwResult, GetLastError()));
-    }
-    return TRUE;
-}
-
-void SendCloseToAllThreads(DWORD dwTargetPid)
-{
-    HANDLE hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, 0);
-    if (hSnapshot == NULL)
-    {
-        LogRel(("SendCloseToAllThreads: cannot get threads snapshot. error: 0x%x \n",
-            GetLastError()));
-        return;
-    }
-
-    THREADENTRY32 threadEntry;
-    ZeroMemory(&threadEntry, sizeof(threadEntry));
-    threadEntry.dwSize = sizeof(threadEntry);
-
-    if (Thread32First(hSnapshot, &threadEntry))
-    {
-        do
-        {
-            LogRel(("SendCloseToAllThreads: process: %d thread: %x \n",
-                threadEntry.th32OwnerProcessID, threadEntry.th32ThreadID));
-            if (threadEntry.th32OwnerProcessID == dwTargetPid)
-            {
-                BOOL bRes = EnumThreadWindows(threadEntry.th32ThreadID, CloseWindowProc, NULL);
-                if (!bRes)
-                {
-                    LogRel(("SendCloseToAllThreads: EnumThreadWindows() failed to enumerate threads. error: %x \n",
-                        GetLastError()));
-                }
-                else
-                {
-                    LogRel(("SendCloseToAllThreads: about to close window in thread %x of process d\n",
-                        threadEntry.th32ThreadID, dwTargetPid));
-                }
-            }
-        } while (Thread32Next(hSnapshot, &threadEntry));
-    }
-    CloseHandle(hSnapshot);
-}
-
-static int CloseActiveClients()
-{
-    ComPtr<IVirtualBoxClientList> ptrClientList;
-    /**
-    * Connect to VBoxSDS.
-    * here we close all API client processes: our own and customers
-    */
-    LogRelFunc(("Forcibly close API clients during system shutdown on Windows 7:\n"));
-    HRESULT hrc = CoCreateInstance(CLSID_VirtualBoxClientList, NULL, CLSCTX_LOCAL_SERVER, IID_IVirtualBoxClientList,
-        (void **)ptrClientList.asOutParam());
-    if (SUCCEEDED(hrc))
-    {
-        com::SafeArray<LONG> aCllients;
-        hrc = ptrClientList->get_Clients(aCllients.__asOutParam());
-        RTCList<LONG> clientsList = aCllients.toList();
-        LogRel(("==========Client list begin ========\n"));
-        for (size_t i = 0; i < clientsList.size(); i++)
-        {
-            LogRel(("About to close client pid: %d\n", clientsList[i]));
-            SendCloseToAllThreads(clientsList[i]);
-        }
-        LogRel(("==========Client list end ========\n"));
-    }
-    else
-    {
-        LogFunc(("Error to connect to VBoxSDS: hr=%Rhrf\n", hrc));
-    }
-    return 0;
-}
-
-// These are copies of functions defined in VersionHelpers.h
-bool IsWindowsVersionOrGreaterWrap(WORD wMajorVersion, WORD wMinorVersion, WORD wServicePackMajor)
-{
-    OSVERSIONINFOEXW osvi = { sizeof(osvi), 0, 0, 0, 0,{ 0 }, 0, 0 };
-    DWORDLONG        const dwlConditionMask = VerSetConditionMask(
-        VerSetConditionMask(
-            VerSetConditionMask(
-                0, VER_MAJORVERSION, VER_GREATER_EQUAL),
-            VER_MINORVERSION, VER_GREATER_EQUAL),
-        VER_SERVICEPACKMAJOR, VER_GREATER_EQUAL);
-
-    osvi.dwMajorVersion = wMajorVersion;
-    osvi.dwMinorVersion = wMinorVersion;
-    osvi.wServicePackMajor = wServicePackMajor;
-
-    return VerifyVersionInfoW(&osvi, VER_MAJORVERSION | VER_MINORVERSION | VER_SERVICEPACKMAJOR, dwlConditionMask) != FALSE;
-}
-
-#if !defined _WIN32_WINNT_WIN8
-
-#define _WIN32_WINNT_WIN8                   0x0602
-
-#endif  // #if !defined _WIN32_WINNT_WIN8
-
-bool IsWindows8OrGreaterWrap()
-{
-    return IsWindowsVersionOrGreaterWrap(HIBYTE(_WIN32_WINNT_WIN8), LOBYTE(_WIN32_WINNT_WIN8), 0);
-}
-
-#endif // !VBOX_WITH_SDS
 
 
 /** Passed to CreateThread to monitor the shutdown event. */
@@ -366,7 +240,6 @@ public:
 private:
     HRESULT VirtualBoxClassFactory::i_registerWithSds(IUnknown **ppOtherVirtualBox);
     void    VirtualBoxClassFactory::i_deregisterWithSds(void);
-    void    VirtualBoxClassFactory::i_finishVBoxSvc();
 
     friend VBoxSVCRegistration;
 };
@@ -438,24 +311,6 @@ public:
             return m_pFactory->i_getVirtualBox(ppResult);
         return E_FAIL;
     }
-
-    // IVBoxSVCRegistration: called from
-    STDMETHOD(NotifyClientsFinished)()
-    {
-        LogRelFunc(("All clients gone - shutdown sequence initiated\n"));
-        if (m_pFactory)
-            m_pFactory->i_finishVBoxSvc();
-
-        // This is not enough to finish VBoxSvc such as reference to crashed client still is in action
-        // So I forcebly shutdown VBoxSvc
-        LONG cLocks = g_pModule->Unlock();
-        LogRelFunc(("Unlock -> %d\n", cLocks));
-        while (cLocks > 0)
-            cLocks = g_pModule->Unlock();
-
-        LogRelFunc(("returns\n"));
-        return S_OK;
-    }
 };
 
 
@@ -506,8 +361,15 @@ void VirtualBoxClassFactory::i_deregisterWithSds(void)
             HRESULT hrc = m_ptrVirtualBoxSDS->DeregisterVBoxSVC(m_pVBoxSVC, GetCurrentProcessId());
             NOREF(hrc);
         }
+        m_ptrVirtualBoxSDS.setNull();
+        g_fRegisteredWithVBoxSDS = false;
     }
-    i_finishVBoxSvc();
+    if (m_pVBoxSVC)
+    {
+        m_pVBoxSVC->m_pFactory = NULL;
+        m_pVBoxSVC->Release();
+        m_pVBoxSVC = NULL;
+    }
 }
 
 
@@ -533,23 +395,6 @@ HRESULT VirtualBoxClassFactory::i_getVirtualBox(IUnknown **ppResult)
     *ppResult = NULL;
     Log(("VirtualBoxClassFactory::GetVirtualBox: E_FAIL\n"));
     return E_FAIL;
-}
-
-
-void    VirtualBoxClassFactory::i_finishVBoxSvc()
-{
-    LogRelFunc(("Finish work of VBoxSVC and VBoxSDS\n"));
-    if (m_ptrVirtualBoxSDS.isNotNull())
-    {
-        m_ptrVirtualBoxSDS.setNull();
-        g_fRegisteredWithVBoxSDS = false;
-    }
-    if (m_pVBoxSVC)
-    {
-        m_pVBoxSVC->m_pFactory = NULL;
-        m_pVBoxSVC->Release();
-        m_pVBoxSVC = NULL;
-    }
 }
 
 
@@ -793,16 +638,6 @@ static LRESULT CALLBACK WinMainWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARA
                     ASMAtomicXchgU32(&dwTimeOut, 100);
                     Log(("VBoxSVCWinMain: WM_QUERYENDSESSION: VBoxSvc has active connections. bActivity = %d. Loc count = %d\n",
                          g_pModule->bActivity, g_pModule->GetLockCount()));
-
-#if 0 //def VBOX_WITH_SDS
-                    // On Windows 7 our clients doesn't receive right sequence of Session End events
-                    // So we send them all WM_QUIT to forcible close them.
-                    // Windows 10 sends end session events correctly
-                    // Note: the IsWindows8Point1() and IsWindows10OrGreater() doesnt work in
-                    // application without manifest so I use old compatible functions for detection of Win 7
-                    if(!IsWindows8OrGreaterWrap())
-                        CloseActiveClients();
-#endif
                 }
                 rc = !fActiveConnection;
             }
