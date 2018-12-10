@@ -85,6 +85,8 @@ RTDECL(int)  RTErrConvertFromNtStatus(long lNativeCode)
         case STATUS_SHARING_VIOLATION:      return VERR_SHARING_VIOLATION;
         case STATUS_NO_MEDIA_IN_DEVICE:     return VERR_DRIVE_IS_EMPTY;
 
+        case STATUS_REPARSE_POINT_NOT_RESOLVED:
+                                            return VERR_TOO_MANY_SYMLINKS;
         case STATUS_UNEXPECTED_NETWORK_ERROR:
                                             return VERR_NET_IO_ERROR;
         case STATUS_INVALID_IMAGE_HASH:     return VERR_LDR_IMAGE_HASH;
