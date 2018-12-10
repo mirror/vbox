@@ -107,8 +107,7 @@ $(foreach lang,$(sort $(VBOX_INSTALLER_LANGUAGES) $(VBOX_LICENSE_ADD_LANGUAGES) 
 	$(eval VBOX_BRAND_$(lang)_LANGUAGE_CODEPAGE := 1252))
 # Exceptions:
 VBOX_BRAND_zh_TW_LANGUAGE_CODEPAGE := 950
-
-
+VBOX_BRAND_fa_IR_LANGUAGE_CODEPAGE := 1256
 
 #
 # If we want to build a combined package, we separate all common stuff
