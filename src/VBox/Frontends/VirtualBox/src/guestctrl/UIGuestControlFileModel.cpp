@@ -51,9 +51,9 @@ bool UIGuestControlFileProxyModel::lessThan(const QModelIndex &left, const QMode
         /* List the directories before the files if options say so: */
         if (pOptions && pOptions->bListDirectoriesOnTop)
         {
-            if (pLeftItem->isDirectory() && !pRightItem->isDirectory())
+            if ((pLeftItem->isDirectory() || pLeftItem->isSymLinkToADirectory()) && !pRightItem->isDirectory())
                 return (sortOrder() == Qt::AscendingOrder);
-            if (!pLeftItem->isDirectory() && pRightItem->isDirectory())
+            if ((pRightItem->isDirectory() || pRightItem->isSymLinkToADirectory()) && !pLeftItem->isDirectory())
                 return (sortOrder() == Qt::DescendingOrder);
         }
         /* Up directory item should be always the first item: */
@@ -188,7 +188,7 @@ QVariant UIGuestControlFileModel::data(const QModelIndex &index, int role) const
             return QIcon(":/file_manager_file_16px.png");
         else if (item->isSymLink())
         {
-            if (item->isTargetADirectory())
+            if (item->isSymLinkToADirectory())
                 return QIcon(":/file_manager_folder_symlink_16px.png");
             else
                 return QIcon(":/file_manager_file_symlink_16px.png");

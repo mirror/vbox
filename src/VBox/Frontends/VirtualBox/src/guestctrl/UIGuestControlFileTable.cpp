@@ -605,14 +605,19 @@ void UIFileTableItem::setTargetPath(const QString &path)
     m_strTargetPath = path;
 }
 
-bool UIFileTableItem::isTargetADirectory() const
+bool UIFileTableItem::isSymLinkToADirectory() const
 {
     return m_isTargetADirectory;
 }
 
-void UIFileTableItem::setIsTargetADirectory(bool flag)
+void UIFileTableItem::setIsSymLinkToADirectory(bool flag)
 {
     m_isTargetADirectory = flag;
+}
+
+bool UIFileTableItem::isSymLinkToAFile() const
+{
+    return isSymLink() && !m_isTargetADirectory;
 }
 
 void UIFileTableItem::setIsDriveItem(bool flag)
@@ -992,7 +997,7 @@ void UIGuestControlFileTable::goIntoDirectory(const QModelIndex &itemIndex)
         return;
     }
 
-    if (item->isDirectory() || (item->isSymLink() && item->isTargetADirectory()))
+    if (item->isDirectory() || item->isSymLinkToADirectory())
     {
         if (!item->isOpened())
             readDirectory(item->path(),item);

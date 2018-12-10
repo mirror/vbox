@@ -230,7 +230,7 @@ void UIHostFileTable::readDirectory(const QString& strPath, UIFileTableItem *par
         if (fileInfo.isSymLink()) /** @todo No symlinks here on windows, while fsObjectPropertyString() does see them.  RTDirReadEx works wrt symlinks, btw. */
         {
             item->setTargetPath(fileInfo.symLinkTarget());
-            item->setIsTargetADirectory(QFileInfo(fileInfo.symLinkTarget()).isDir());
+            item->setIsSymLinkToADirectory(QFileInfo(fileInfo.symLinkTarget()).isDir());
         }
         if (fileInfo.isDir())
         {

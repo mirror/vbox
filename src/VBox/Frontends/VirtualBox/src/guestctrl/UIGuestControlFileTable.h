@@ -203,8 +203,10 @@ public:
     const QString &targetPath() const;
     void setTargetPath(const QString &path);
 
-    bool isTargetADirectory() const;
-    void setIsTargetADirectory(bool flag);
+    bool isSymLinkToADirectory() const;
+    void setIsSymLinkToADirectory(bool flag);
+
+    bool isSymLinkToAFile() const;
 
     const QString &owner() const;
     void setOwner(const QString &owner);
