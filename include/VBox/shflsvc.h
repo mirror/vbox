@@ -1221,6 +1221,15 @@ typedef struct _VBoxSFCreate
  * @{
  */
 
+/** SHFL_FN_CLOSE parameters. */
+typedef struct VBoxSFParmClose
+{
+    /** value32, in: SHFLROOT of the mapping with the handle. */
+    HGCMFunctionParameter id32Root;
+    /** value64, in: SHFLHANDLE of object to close. */
+    HGCMFunctionParameter u64Handle;
+} VBoxSFParmClose;
+
 /** Parameters structure. */
 typedef struct _VBoxSFClose
 {
@@ -1534,21 +1543,16 @@ typedef struct _VBoxSFReadLink
 /** SHFL_FN_INFORMATION parameters. */
 typedef struct VBoxSFParmInformation
 {
-    /** value32, in: SHFLROOT
-     * Root handle of the mapping which name is queried.  */
+    /** value32, in: SHFLROOT of the mapping the handle belongs to. */
     HGCMFunctionParameter id32Root;
-    /** value64, in:
-     * SHFLHANDLE of object to be listed.  */
+    /** value64, in: SHFLHANDLE of object to be queried/set. */
     HGCMFunctionParameter u64Handle;
-    /** value32, in:
-     * SHFL_INFO_*  */
+    /** value32, in: SHFL_INFO_XXX  */
     HGCMFunctionParameter f32Flags;
-    /** value32, in/out:
-     * Bytes to be used for information/How many bytes were used.  */
+    /** value32, in/out: Bytes to be used for information/How many bytes were used.  */
     HGCMFunctionParameter cb32;
-    /** pointer, in/out:
-     * Information to be set/get (SHFLFSOBJINFO or SHFLSTRING). Do not forget
-     * to set the SHFLFSOBJINFO::Attr::enmAdditional for Get operation as well.  */
+    /** pointer, in/out: Information to be set/get (SHFLFSOBJINFO, SHFLVOLINFO, or SHFLSTRING).
+     * Do not forget to set the SHFLFSOBJINFO::Attr::enmAdditional for Get operation as well.  */
     HGCMFunctionParameter pInfo;
 } VBoxSFParmInformation;
 

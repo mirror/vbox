@@ -285,5 +285,75 @@ DECLINLINE(int) vboxSfOs2HostReqCreate(PVBOXSFFOLDER pFolder, VBOXSFCREATEREQ *p
 }
 
 
+/** Request structure for vboxSfOs2HostReqCreate.  */
+typedef struct VBOXSFCLOSEREQ
+{
+    VBGLIOCIDCHGCMFASTCALL  Hdr;
+    VMMDevHGCMCall          Call;
+    VBoxSFParmClose         Parms;
+} VBOXSFCLOSEREQ;
+
+/**
+ * SHFL_FN_CLOSE request.
+ */
+DECLINLINE(int) vboxSfOs2HostReqClose(PVBOXSFFOLDER pFolder, VBOXSFCLOSEREQ *pReq, uint64_t uHandle)
+{
+    VBGLIOCIDCHGCMFASTCALL_INIT(&pReq->Hdr, VbglR0PhysHeapGetPhysAddr(pReq), &pReq->Call, g_SfClient.idClient,
+                                SHFL_FN_CLOSE, SHFL_CPARMS_CLOSE, sizeof(*pReq));
+
+    pReq->Parms.id32Root.type                   = VMMDevHGCMParmType_32bit;
+    pReq->Parms.id32Root.u.value32              = pFolder->hHostFolder.root;
+
+    pReq->Parms.u64Handle.type                  = VMMDevHGCMParmType_64bit;
+    pReq->Parms.u64Handle.u.value64             = uHandle;
+
+    int vrc = VbglR0HGCMFastCall(g_SfClient.handle, &pReq->Hdr, sizeof(*pReq));
+    if (RT_SUCCESS(vrc))
+        vrc = pReq->Call.header.result;
+    return vrc;
+}
+
+
+/** Request structure for vboxSfOs2HostReqQueryVolInfo.  */
+typedef struct VBOXSFVOLINFOREQ
+{
+    VBGLIOCIDCHGCMFASTCALL  Hdr;
+    VMMDevHGCMCall          Call;
+    VBoxSFParmInformation   Parms;
+    SHFLVOLINFO             VolInfo;
+} VBOXSFVOLINFOREQ;
+
+/**
+ * SHFL_FN_INFORMATION[SHFL_INFO_VOLUME | SHFL_INFO_GET] request.
+ */
+DECLINLINE(int) vboxSfOs2HostReqQueryVolInfo(PVBOXSFFOLDER pFolder, VBOXSFVOLINFOREQ *pReq, uint64_t uHandle)
+{
+    VBGLIOCIDCHGCMFASTCALL_INIT(&pReq->Hdr, VbglR0PhysHeapGetPhysAddr(pReq), &pReq->Call, g_SfClient.idClient,
+                                SHFL_FN_INFORMATION, SHFL_CPARMS_INFORMATION, sizeof(*pReq));
+
+    pReq->Parms.id32Root.type                   = VMMDevHGCMParmType_32bit;
+    pReq->Parms.id32Root.u.value32              = pFolder->hHostFolder.root;
+
+    pReq->Parms.u64Handle.type                  = VMMDevHGCMParmType_64bit;
+    pReq->Parms.u64Handle.u.value64             = uHandle;
+
+    pReq->Parms.f32Flags.type                   = VMMDevHGCMParmType_32bit;
+    pReq->Parms.f32Flags.u.value32              = SHFL_INFO_VOLUME | SHFL_INFO_GET;
+
+    pReq->Parms.cb32.type                       = VMMDevHGCMParmType_32bit;
+    pReq->Parms.cb32.u.value32                  = sizeof(pReq->VolInfo);
+
+    pReq->Parms.pInfo.type                      = VMMDevHGCMParmType_Embedded;
+    pReq->Parms.pInfo.u.Embedded.cbData         = sizeof(pReq->VolInfo);
+    pReq->Parms.pInfo.u.Embedded.offData        = RT_UOFFSETOF(VBOXSFVOLINFOREQ, VolInfo) - sizeof(VBGLIOCIDCHGCMFASTCALL);
+    pReq->Parms.pInfo.u.Embedded.fFlags         = VBOX_HGCM_F_PARM_DIRECTION_FROM_HOST;
+
+    int vrc = VbglR0HGCMFastCall(g_SfClient.handle, &pReq->Hdr, sizeof(*pReq));
+    if (RT_SUCCESS(vrc))
+        vrc = pReq->Call.header.result;
+    return vrc;
+}
+
+
 #endif
 

@@ -1314,22 +1314,19 @@ FS32_FSINFO(ULONG fFlags, USHORT hVpb, PBYTE pbData, ULONG cbData, ULONG uLevel)
         {
             struct
             {
-                SHFLCREATEPARMS Params;
-                union
-                {
-                    SHFLSTRING Path;
-                    uint8_t    abPadding[SHFLSTRING_HEADER_SIZE + 4 * sizeof(RTUTF16)];
-                };
+                VBOXSFCREATEREQ Req;
+                uint8_t         PathStringSpace[4 * sizeof(RTUTF16)];
             } Open;
             struct
             {
-                SHFLVOLINFO VolInfo;
+                VBOXSFVOLINFOREQ Req;
                 union
                 {
                     FSALLOCATE  Alloc;
                     FSINFO      FsInfo;
                 };
             } Info;
+            VBOXSFCLOSEREQ Close;
         } *pu = (union FsInfoBufs *)VbglR0PhysHeapAlloc(sizeof(*pu));
         if (!pu)
             return ERROR_NOT_ENOUGH_MEMORY;
@@ -1337,26 +1334,25 @@ FS32_FSINFO(ULONG fFlags, USHORT hVpb, PBYTE pbData, ULONG cbData, ULONG uLevel)
         /*
          * To get the info we need to open the root of the folder.
          */
-        RT_ZERO(pu->Open.Params);
-        pu->Open.Params.CreateFlags = SHFL_CF_DIRECTORY   | SHFL_CF_ACT_FAIL_IF_NEW  | SHFL_CF_ACT_OPEN_IF_EXISTS
-                                    | SHFL_CF_ACCESS_READ | SHFL_CF_ACCESS_ATTR_READ | SHFL_CF_ACCESS_DENYNONE;
-        pu->Open.Path.u16Size   = 3 * sizeof(RTUTF16);
-        pu->Open.Path.u16Length = 2 * sizeof(RTUTF16);
-        pu->Open.Path.String.utf16[0] = '\\';
-        pu->Open.Path.String.utf16[1] = '.';
-        pu->Open.Path.String.utf16[2] = '\0';
+        RT_ZERO(pu->Open.Req);
+        pu->Open.Req.CreateParms.CreateFlags = SHFL_CF_DIRECTORY   | SHFL_CF_ACT_FAIL_IF_NEW  | SHFL_CF_ACT_OPEN_IF_EXISTS
+                                             | SHFL_CF_ACCESS_READ | SHFL_CF_ACCESS_ATTR_READ | SHFL_CF_ACCESS_DENYNONE;
+        pu->Open.Req.StrPath.u16Size   = 3 * sizeof(RTUTF16);
+        pu->Open.Req.StrPath.u16Length = 2 * sizeof(RTUTF16);
+        pu->Open.Req.StrPath.String.utf16[0] = '\\';
+        pu->Open.Req.StrPath.String.utf16[1] = '.';
+        pu->Open.Req.StrPath.String.utf16[2] = '\0';
 
-        int vrc = VbglR0SfCreate(&g_SfClient, &pFolder->hHostFolder, &pu->Open.Path, &pu->Open.Params);
-        LogFlow(("FS32_FSINFO: VbglR0SfCreate -> %Rrc Result=%d Handle=%#RX64\n", vrc, pu->Open.Params.Result, pu->Open.Params.Handle));
+        int vrc = vboxSfOs2HostReqCreate(pFolder, &pu->Open.Req);
+        LogFlow(("FS32_FSINFO: vboxSfOs2HostReqCreate -> %Rrc Result=%d Handle=%#RX64\n",
+                 vrc, pu->Open.Req.CreateParms.Result, pu->Open.Req.CreateParms.Handle));
         if (   RT_SUCCESS(vrc)
-            && pu->Open.Params.Handle != SHFL_HANDLE_NIL)
+            && pu->Open.Req.CreateParms.Handle != SHFL_HANDLE_NIL)
         {
-            SHFLHANDLE hHandle = pu->Open.Params.Handle;
+            SHFLHANDLE hHandle = pu->Open.Req.CreateParms.Handle;
 
-            RT_ZERO(pu->Info.VolInfo);
-            uint32_t cbBuf = sizeof(pu->Info.VolInfo);
-            vrc = VbglR0SfFsInfo(&g_SfClient, &pFolder->hHostFolder, hHandle, SHFL_INFO_VOLUME | SHFL_INFO_GET,
-                                 &cbBuf, (PSHFLDIRINFO)&pu->Info.VolInfo);
+            RT_ZERO(pu->Info.Req);
+            vrc = vboxSfOs2HostReqQueryVolInfo(pFolder, &pu->Info.Req, hHandle);
             if (RT_SUCCESS(vrc))
             {
                 /*
@@ -1365,10 +1361,11 @@ FS32_FSINFO(ULONG fFlags, USHORT hVpb, PBYTE pbData, ULONG cbData, ULONG uLevel)
                 if (uLevel == FSIL_ALLOC)
                 {
                     pu->Info.Alloc.idFileSystem = 0; /* unknown */
-                    pu->Info.Alloc.cSectorUnit  = pu->Info.VolInfo.ulBytesPerAllocationUnit / RT_MAX(pu->Info.VolInfo.ulBytesPerSector, 1);
-                    pu->Info.Alloc.cUnit        = (uint32_t)(pu->Info.VolInfo.ullTotalAllocationBytes  / RT_MAX(pu->Info.VolInfo.ulBytesPerAllocationUnit, 1));
-                    pu->Info.Alloc.cUnitAvail   = (uint32_t)(pu->Info.VolInfo.ullAvailableAllocationBytes  / RT_MAX(pu->Info.VolInfo.ulBytesPerAllocationUnit, 1));
-                    pu->Info.Alloc.cbSector     = (uint16_t)(pu->Info.VolInfo.ulBytesPerSector);
+                    uint32_t const cbSector = RT_MAX(pu->Info.Req.VolInfo.ulBytesPerSector, 1);
+                    pu->Info.Alloc.cSectorUnit  = pu->Info.Req.VolInfo.ulBytesPerAllocationUnit               / cbSector;
+                    pu->Info.Alloc.cUnit        = (uint32_t)(pu->Info.Req.VolInfo.ullTotalAllocationBytes     / cbSector);
+                    pu->Info.Alloc.cUnitAvail   = (uint32_t)(pu->Info.Req.VolInfo.ullAvailableAllocationBytes / cbSector);
+                    pu->Info.Alloc.cbSector     = (uint16_t)pu->Info.Req.VolInfo.ulBytesPerSector;
                     rc = KernCopyOut(pbData, &pu->Info.Alloc, sizeof(pu->Info.Alloc));
                 }
                 else
@@ -1376,7 +1373,7 @@ FS32_FSINFO(ULONG fFlags, USHORT hVpb, PBYTE pbData, ULONG cbData, ULONG uLevel)
                     RT_ZERO(pu->Info.FsInfo);
                     pu->Info.FsInfo.vol.cch = (uint8_t)RT_MIN(pFolder->cchName, sizeof(pu->Info.FsInfo.vol.szVolLabel) - 1);
                     memcpy(pu->Info.FsInfo.vol.szVolLabel, pFolder->szName, pu->Info.FsInfo.vol.cch);
-                    *(uint32_t *)&pu->Info.FsInfo.fdateCreation = pu->Info.VolInfo.ulSerial;
+                    *(uint32_t *)&pu->Info.FsInfo.fdateCreation = pu->Info.Req.VolInfo.ulSerial;
                     rc = KernCopyOut(pbData, &pu->Info.FsInfo, sizeof(pu->Info.FsInfo));
                 }
             }
@@ -1386,7 +1383,7 @@ FS32_FSINFO(ULONG fFlags, USHORT hVpb, PBYTE pbData, ULONG cbData, ULONG uLevel)
                 rc = ERROR_GEN_FAILURE;
             }
 
-            vrc = VbglR0SfClose(&g_SfClient, &pFolder->hHostFolder, hHandle);
+            vrc = vboxSfOs2HostReqClose(pFolder, &pu->Close, hHandle);
             AssertRC(vrc);
         }
         else
