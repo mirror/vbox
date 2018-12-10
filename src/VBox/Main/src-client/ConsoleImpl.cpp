@@ -7550,7 +7550,7 @@ HRESULT Console::i_consoleInitReleaseLog(const ComPtr<IMachine> aMachine)
 
     RTERRINFOSTATIC ErrInfo;
     int vrc = com::VBoxLogRelCreate("VM", logFile.c_str(),
-                                    RTLOGFLAGS_PREFIX_TIME_PROG /*| RTLOGFLAGS_RESTRICT_GROUPS*/,
+                                    RTLOGFLAGS_PREFIX_TIME_PROG | RTLOGFLAGS_RESTRICT_GROUPS,
                                     "all all.restrict -default.restrict",
                                     "VBOX_RELEASE_LOG", RTLOGDEST_FILE,
                                     32768 /* cMaxEntriesPerGroup */,
