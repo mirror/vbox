@@ -1355,7 +1355,7 @@ VBoxControl sharedfolder list</screen>
           <para>
             The guest properties
             <computeroutput>/VirtualBox/GuestAdd/SharedFolders/MountDir</computeroutput>
-            and
+            and (more generic)
             <computeroutput>/VirtualBox/GuestAdd/SharedFolders/MountPrefix</computeroutput>
             can be used to override the automatic mount directory and
             prefix. See <xref linkend="guestadd-guestprops" />.
