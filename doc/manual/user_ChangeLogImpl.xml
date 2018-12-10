@@ -57,7 +57,12 @@ are ordered as follows:
     <itemizedlist>
 
       <listitem>
-        <para>Dummy entry</para>
+        <para>Linux Additions: fix for building vboxvideo on EL 7.6 standard
+           kernel, contributed by Robert Conde (bug #18093)</para>
+      </listitem>
+
+      <listitem>
+        <para>Shared folders: performance improvements</para>
       </listitem>
 
     </itemizedlist>
