@@ -630,15 +630,19 @@ owns the object will most likely fail or crash your application.
           <xsl:choose>
             <!-- enum types -->
             <xsl:when test="
-              (ancestor::library/application/enum[@name=current()]) or
-              (ancestor::library/application/if[@target=$self_target]/enum[@name=current()])
+                 (ancestor::library/application/enum[@name=current()])
+              or (ancestor::library/if/application/enum[@name=current()])
+              or (ancestor::library/application/if[@target=$self_target]/enum[@name=current()])
+              or (ancestor::library/if/application/if[@target=$self_target]/enum[@name=current()])
             ">
               <xsl:value-of select="."/>
             </xsl:when>
             <!-- custom interface types -->
             <xsl:when test="
-              ((ancestor::library/application/interface[@name=current()]) or
-               (ancestor::library/application/if[@target=$self_target]/interface[@name=current()])
+              (   (ancestor::library/application/interface[@name=current()])
+               or (ancestor::library/if/application/interface[@name=current()])
+               or (ancestor::library/application/if[@target=$self_target]/interface[@name=current()])
+               or (ancestor::library/if/application/if[@target=$self_target]/interface[@name=current()])
               )
             ">
               <xsl:value-of select="."/>
