@@ -1451,48 +1451,44 @@ FS32_CHDIR(ULONG fFlags, PCDFSI pCdFsi, PVBOXSFCD pCdFsd, PCSZ pszDir, LONG offC
         if (fFlags == CD_VERIFY)
             pszDir = pCdFsi->cdi_curdir;
 
-        PVBOXSFFOLDER pFolder;
-        PSHFLSTRING   pStrFolderPath;
-        rc = vboxSfOs2ResolvePath(pszDir, pCdFsd, offCurDirEnd, &pFolder, &pStrFolderPath);
+        PVBOXSFFOLDER       pFolder;
+        VBOXSFCREATEREQ    *pReq;
+        rc = vboxSfOs2ResolvePathEx(pszDir, pCdFsd, offCurDirEnd, RT_UOFFSETOF(VBOXSFCREATEREQ, StrPath),
+                                    &pFolder, (void **)&pReq);
         if (rc == NO_ERROR)
         {
-            SHFLCREATEPARMS *pParams = (SHFLCREATEPARMS *)VbglR0PhysHeapAlloc(sizeof(*pParams));
-            if (pParams)
+            pReq->CreateParms.CreateFlags = SHFL_CF_LOOKUP;
+
+            int vrc = vboxSfOs2HostReqCreate(pFolder, pReq);
+            LogFlow(("FS32_CHDIR: vboxSfOs2HostReqCreate -> %Rrc Result=%d fMode=%#x\n",
+                     vrc, pReq->CreateParms.Result, pReq->CreateParms.Info.Attr.fMode));
+            if (RT_SUCCESS(vrc))
             {
-                RT_ZERO(*pParams);
-                pParams->CreateFlags = SHFL_CF_LOOKUP;
-
-                int vrc = VbglR0SfCreate(&g_SfClient, &pFolder->hHostFolder, pStrFolderPath, pParams);
-                LogFlow(("FS32_CHDIR: VbglR0SfCreate -> %Rrc Result=%d fMode=%#x\n", vrc, pParams->Result, pParams->Info.Attr.fMode));
-                if (RT_SUCCESS(vrc))
+                switch (pReq->CreateParms.Result)
                 {
-                    switch (pParams->Result)
-                    {
-                        case SHFL_FILE_EXISTS:
-                            if (RTFS_IS_DIRECTORY(pParams->Info.Attr.fMode))
-                                rc = NO_ERROR;
-                            else
-                                rc = ERROR_ACCESS_DENIED;
-                            break;
+                    case SHFL_FILE_EXISTS:
+                        if (RTFS_IS_DIRECTORY(pReq->CreateParms.Info.Attr.fMode))
+                            rc = NO_ERROR;
+                        else
+                            rc = ERROR_ACCESS_DENIED;
+                        break;
 
-                        case SHFL_PATH_NOT_FOUND:
-                            rc = ERROR_PATH_NOT_FOUND;
-                            break;
+                    case SHFL_PATH_NOT_FOUND:
+                        rc = ERROR_PATH_NOT_FOUND;
+                        break;
 
-                        default:
-                        case SHFL_FILE_NOT_FOUND:
-                            rc = ERROR_FILE_NOT_FOUND;
-                            break;
-                    }
+                    default:
+                    case SHFL_FILE_NOT_FOUND:
+                        rc = ERROR_FILE_NOT_FOUND;
+                        break;
                 }
-                else
-                    rc = vboxSfOs2ConvertStatusToOs2(vrc, ERROR_PATH_NOT_FOUND);
-                VbglR0PhysHeapFree(pParams);
             }
             else
-                rc = ERROR_NOT_ENOUGH_MEMORY;
-            vboxSfOs2ReleasePathAndFolder(pStrFolderPath, pFolder);
+                rc = vboxSfOs2ConvertStatusToOs2(vrc, ERROR_PATH_NOT_FOUND);
         }
+
+        VbglR0PhysHeapFree(pReq);
+        vboxSfOs2ReleaseFolder(pFolder);
     }
     else if (fFlags == CD_FREE)
     {
@@ -1524,60 +1520,57 @@ FS32_MKDIR(PCDFSI pCdFsi, PVBOXSFCD pCdFsd, PCSZ pszDir, LONG offCurDirEnd, PEAO
         /*
          * Resolve the path.
          */
-        PVBOXSFFOLDER pFolder;
-        PSHFLSTRING   pStrFolderPath;
-        rc = vboxSfOs2ResolvePath(pszDir, pCdFsd, offCurDirEnd, &pFolder, &pStrFolderPath);
+        PVBOXSFFOLDER       pFolder;
+        VBOXSFCREATEREQ    *pReq;
+        rc = vboxSfOs2ResolvePathEx(pszDir, pCdFsd, offCurDirEnd, RT_UOFFSETOF(VBOXSFCREATEREQ, StrPath),
+                                    &pFolder, (void **)&pReq);
         if (rc == NO_ERROR)
         {
             /*
              * The silly interface for creating directories amounts an open call that
              * fails if it exists and we get a file handle back that needs closing.  Sigh.
              */
-            SHFLCREATEPARMS *pParams = (SHFLCREATEPARMS *)VbglR0PhysHeapAlloc(sizeof(*pParams));
-            if (pParams != NULL)
+            pReq->CreateParms.CreateFlags = SHFL_CF_DIRECTORY | SHFL_CF_ACT_CREATE_IF_NEW | SHFL_CF_ACT_FAIL_IF_EXISTS
+                                          | SHFL_CF_ACCESS_READ | SHFL_CF_ACCESS_DENYNONE;
+
+            int vrc = vboxSfOs2HostReqCreate(pFolder, pReq);
+            LogFlow(("FS32_MKDIR: vboxSfOs2HostReqCreate -> %Rrc Result=%d fMode=%#x\n",
+                     vrc, pReq->CreateParms.Result, pReq->CreateParms.Info.Attr.fMode));
+            if (RT_SUCCESS(vrc))
             {
-                RT_ZERO(*pParams);
-                pParams->CreateFlags = SHFL_CF_DIRECTORY | SHFL_CF_ACT_CREATE_IF_NEW | SHFL_CF_ACT_FAIL_IF_EXISTS
-                                     | SHFL_CF_ACCESS_READ | SHFL_CF_ACCESS_DENYNONE;
-
-                int vrc = VbglR0SfCreate(&g_SfClient, &pFolder->hHostFolder, pStrFolderPath, pParams);
-                LogFlow(("FS32_MKDIR: VbglR0SfCreate -> %Rrc Result=%d fMode=%#x\n", vrc, pParams->Result, pParams->Info.Attr.fMode));
-                if (RT_SUCCESS(vrc))
+                switch (pReq->CreateParms.Result)
                 {
-                    switch (pParams->Result)
-                    {
-                        case SHFL_FILE_CREATED:
-                            if (pParams->Handle != SHFL_HANDLE_NIL)
-                            {
-                                vrc = VbglR0SfClose(&g_SfClient, &pFolder->hHostFolder, pParams->Handle);
-                                AssertRC(vrc);
-                            }
-                            rc = NO_ERROR;
-                            break;
+                    case SHFL_FILE_CREATED:
+                        if (pReq->CreateParms.Handle != SHFL_HANDLE_NIL)
+                        {
+                            AssertCompile(RTASSERT_OFFSET_OF(VBOXSFCREATEREQ, CreateParms.Handle) > sizeof(VBOXSFCLOSEREQ)); /* no aliasing issues */
+                            vrc = vboxSfOs2HostReqClose(pFolder, (VBOXSFCLOSEREQ *)pReq, pReq->CreateParms.Handle);
+                            AssertRC(vrc);
+                        }
+                        rc = NO_ERROR;
+                        break;
 
-                        case SHFL_FILE_EXISTS:
-                            rc = ERROR_ACCESS_DENIED;
-                            break;
+                    case SHFL_FILE_EXISTS:
+                        rc = ERROR_ACCESS_DENIED;
+                        break;
 
-                        case SHFL_PATH_NOT_FOUND:
-                            rc = ERROR_PATH_NOT_FOUND;
-                            break;
+                    case SHFL_PATH_NOT_FOUND:
+                        rc = ERROR_PATH_NOT_FOUND;
+                        break;
 
-                        default:
-                        case SHFL_FILE_NOT_FOUND:
-                            rc = ERROR_FILE_NOT_FOUND;
-                            break;
-                    }
+                    default:
+                    case SHFL_FILE_NOT_FOUND:
+                        rc = ERROR_FILE_NOT_FOUND;
+                        break;
                 }
-                else if (vrc == VERR_ALREADY_EXISTS)
-                    rc = ERROR_ACCESS_DENIED;
-                else
-                    rc = vboxSfOs2ConvertStatusToOs2(vrc, ERROR_FILE_NOT_FOUND);
-                VbglR0PhysHeapFree(pParams);
             }
+            else if (vrc == VERR_ALREADY_EXISTS)
+                rc = ERROR_ACCESS_DENIED;
             else
-                rc = ERROR_NOT_ENOUGH_MEMORY;
-            vboxSfOs2ReleasePathAndFolder(pStrFolderPath, pFolder);
+                rc = vboxSfOs2ConvertStatusToOs2(vrc, ERROR_FILE_NOT_FOUND);
+
+            VbglR0PhysHeapFree(pReq);
+            vboxSfOs2ReleaseFolder(pFolder);
         }
     }
     else
