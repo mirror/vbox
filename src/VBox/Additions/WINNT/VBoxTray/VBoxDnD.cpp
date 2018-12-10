@@ -768,6 +768,34 @@ void VBoxDnDWnd::OnDestroy(void)
 }
 
 /**
+ * Aborts an in-flight DnD operation on the guest.
+ *
+ * @return  VBox status code.
+ */
+int VBoxDnDWnd::Abort(void)
+{
+    LogFlowThisFunc(("mMode=%ld, mState=%RU32\n", mMode, mState));
+    LogRel(("DnD: Drag and drop operation aborted\n"));
+
+    int rc = RTCritSectEnter(&mCritSect);
+    if (RT_SUCCESS(rc))
+    {
+        if (startupInfo.pDataObject)
+            startupInfo.pDataObject->Abort();
+
+        RTCritSectLeave(&mCritSect);
+    }
+
+    /* Post ESC to our window to officially abort the
+     * drag and drop operation. */
+    this->PostMessage(WM_KEYDOWN, VK_ESCAPE /* wParam */, 0 /* lParam */);
+
+    Reset();
+
+    return rc;
+}
+
+/**
  * Handles actions required when the host cursor enters
  * the guest's screen to initiate a host -> guest DnD operation.
  *
@@ -976,16 +1004,7 @@ int VBoxDnDWnd::OnHgLeave(void)
     if (mMode == GH) /* Wrong mode? Bail out. */
         return VERR_WRONG_ORDER;
 
-    LogFlowThisFunc(("mMode=%ld, mState=%RU32\n", mMode, mState));
-    LogRel(("DnD: Drag and drop operation aborted\n"));
-
-    Reset();
-
-    int rc = VINF_SUCCESS;
-
-    /* Post ESC to our window to officially abort the
-     * drag and drop operation. */
-    this->PostMessage(WM_KEYDOWN, VK_ESCAPE /* wParam */, 0 /* lParam */);
+    int rc = Abort();
 
     LogFlowFuncLeaveRC(rc);
     return rc;
@@ -1085,22 +1104,7 @@ int VBoxDnDWnd::OnHgDataReceive(PVBGLR3GUESTDNDMETADATA pMeta)
  */
 int VBoxDnDWnd::OnHgCancel(void)
 {
-    int rc = RTCritSectEnter(&mCritSect);
-    if (RT_SUCCESS(rc))
-    {
-        if (startupInfo.pDataObject)
-            startupInfo.pDataObject->Abort();
-
-        RTCritSectLeave(&mCritSect);
-    }
-
-    int rc2 = mouseRelease();
-    if (RT_SUCCESS(rc))
-        rc = rc2;
-
-    Reset();
-
-    return rc;
+    return Abort();
 }
 
 #ifdef VBOX_WITH_DRAG_AND_DROP_GH
@@ -1874,7 +1878,8 @@ DECLCALLBACK(int) VBoxDnDWorker(void *pInstance, bool volatile *pfShutdown)
 
             /* Make sure our proxy window is hidden when an error occured to
              * not block the guest's UI. */
-            pWnd->Reset();
+            int rc2 = pWnd->Abort();
+            AssertRC(rc2);
         }
 
         if (*pfShutdown)

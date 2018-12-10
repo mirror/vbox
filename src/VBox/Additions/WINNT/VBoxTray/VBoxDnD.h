@@ -331,6 +331,8 @@ public:
     int OnCreate(void);
     void OnDestroy(void);
 
+    int Abort(void);
+
     /* Host -> Guest */
     int OnHgEnter(const RTCList<RTCString> &formats, VBOXDNDACTIONLIST dndLstActionsAllowed);
     int OnHgMove(uint32_t u32xPos, uint32_t u32yPos, VBOXDNDACTION dndAction);
