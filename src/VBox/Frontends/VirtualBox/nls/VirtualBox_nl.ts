@@ -1241,40 +1241,8 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Move to guest</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Move the Selected Object(s) from Host to Guest</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Move the selected object(s) from host to guest</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Move to host</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Move the Selected Object(s) from Guest to Host</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Move the selected object(s) from guest to host</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Settings</source>
-        <translation type="unfinished">Instellingen</translation>
-    </message>
-    <message>
-        <source>Open panel with file manager settings</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Open Panel With File Manager Settings</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Instellingen</translation>
     </message>
     <message>
         <source>Log</source>
@@ -1797,6 +1765,18 @@
     <message>
         <source>Scale to %1% (autoscaled output)</source>
         <comment>scale-factor</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Options</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open panel with file manager options</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open Panel With File Manager Options</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -2708,6 +2688,11 @@
         <comment>details (display/recording)</comment>
         <translation type="unfinished">Uitgeschakeld</translation>
     </message>
+    <message>
+        <source>Graphics Controller</source>
+        <comment>details (display)</comment>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIDetailsElement</name>
@@ -2853,13 +2838,6 @@
         <source>%1, %2: %3</source>
         <comment>col.2 text, col.3 name: col.3 text</comment>
         <translation>%1, %2: %3</translation>
-    </message>
-</context>
-<context>
-    <name>UIFileManagerLogViewer</name>
-    <message>
-        <source>Clear</source>
-        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -3010,92 +2988,92 @@
     <message>
         <source>Name</source>
         <comment>details (general)</comment>
-        <translation>Naam</translation>
+        <translation type="vanished">Naam</translation>
     </message>
     <message>
         <source>Groups</source>
         <comment>details (general)</comment>
-        <translation>Groepen</translation>
+        <translation type="vanished">Groepen</translation>
     </message>
     <message>
         <source>%1 MB</source>
         <comment>details</comment>
-        <translation>%1 MB</translation>
+        <translation type="vanished">%1 MB</translation>
     </message>
     <message>
         <source>Processors</source>
         <comment>details (system)</comment>
-        <translation>Processoren</translation>
+        <translation type="vanished">Processoren</translation>
     </message>
     <message>
         <source>%1%</source>
         <comment>details</comment>
-        <translation>%1%</translation>
+        <translation type="vanished">%1%</translation>
     </message>
     <message>
         <source>VT-x/AMD-V</source>
         <comment>details (system)</comment>
-        <translation>VT-x/AMD-V</translation>
+        <translation type="vanished">VT-x/AMD-V</translation>
     </message>
     <message>
         <source>PAE/NX</source>
         <comment>details (system)</comment>
-        <translation>PAE/NX</translation>
+        <translation type="vanished">PAE/NX</translation>
     </message>
     <message>
         <source>Acceleration</source>
         <comment>details (system)</comment>
-        <translation>Acceleratie</translation>
+        <translation type="vanished">Acceleratie</translation>
     </message>
     <message>
         <source>Screens</source>
         <comment>details (display)</comment>
-        <translation>Beeldschermen</translation>
+        <translation type="vanished">Beeldschermen</translation>
     </message>
     <message>
         <source>3D</source>
         <comment>details (display)</comment>
-        <translation>3D</translation>
+        <translation type="vanished">3D</translation>
     </message>
     <message>
         <source>Acceleration</source>
         <comment>details (display)</comment>
-        <translation>Acceleratie</translation>
+        <translation type="vanished">Acceleratie</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details (display/vrde/VRDE server)</comment>
-        <translation>Uitgeschakeld</translation>
+        <translation type="vanished">Uitgeschakeld</translation>
     </message>
     <message>
         <source>Controller</source>
         <comment>details (audio)</comment>
-        <translation>Controller</translation>
+        <translation type="vanished">Controller</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details (audio)</comment>
-        <translation>Uitgeschakeld</translation>
+        <translation type="vanished">Uitgeschakeld</translation>
     </message>
     <message>
         <source>Adapter %1</source>
         <comment>details (network)</comment>
-        <translation>Adapter %1</translation>
+        <translation type="vanished">Adapter %1</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details (network/adapter)</comment>
-        <translation>Uitgeschakeld</translation>
+        <translation type="vanished">Uitgeschakeld</translation>
     </message>
     <message>
         <source>Port %1</source>
         <comment>details (serial)</comment>
-        <translation>Poort %1</translation>
+        <translation type="vanished">Poort %1</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details (serial)</comment>
-        <translation>Uitgeschakeld</translation>
+        <translation type="vanished">Uitgeschakeld</translation>
     </message>
     <message>
         <source>Port %1</source>
@@ -3110,17 +3088,17 @@
     <message>
         <source>%1 (%2 active)</source>
         <comment>details (usb)</comment>
-        <translation>%1 (%2 actief)</translation>
+        <translation type="vanished">%1 (%2 actief)</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details (usb)</comment>
-        <translation>Uitgeschakeld</translation>
+        <translation type="vanished">Uitgeschakeld</translation>
     </message>
     <message>
         <source>None</source>
         <comment>details (shared folders)</comment>
-        <translation>Geen</translation>
+        <translation type="vanished">Geen</translation>
     </message>
     <message>
         <source>None</source>
@@ -3130,7 +3108,7 @@
     <message>
         <source>Operating System</source>
         <comment>details (general)</comment>
-        <translation>Besturingssysteem</translation>
+        <translation type="vanished">Besturingssysteem</translation>
     </message>
     <message>
         <source>Information Inaccessible</source>
@@ -3140,82 +3118,82 @@
     <message>
         <source>Base Memory</source>
         <comment>details (system)</comment>
-        <translation>Basisgeheugen</translation>
+        <translation type="vanished">Basisgeheugen</translation>
     </message>
     <message>
         <source>Execution Cap</source>
         <comment>details (system)</comment>
-        <translation>Execution Cap</translation>
+        <translation type="vanished">Execution Cap</translation>
     </message>
     <message>
         <source>Boot Order</source>
         <comment>details (system)</comment>
-        <translation>Opstartvolgorde</translation>
+        <translation type="vanished">Opstartvolgorde</translation>
     </message>
     <message>
         <source>Nested Paging</source>
         <comment>details (system)</comment>
-        <translation>Geneste Paging</translation>
+        <translation type="vanished">Geneste Paging</translation>
     </message>
     <message>
         <source>Video Memory</source>
         <comment>details (display)</comment>
-        <translation>Videogeheugen</translation>
+        <translation type="vanished">Videogeheugen</translation>
     </message>
     <message>
         <source>2D Video</source>
         <comment>details (display)</comment>
-        <translation>2D-video</translation>
+        <translation type="vanished">2D-video</translation>
     </message>
     <message>
         <source>Remote Desktop Server Port</source>
         <comment>details (display/vrde)</comment>
-        <translation>Remote Desktop Serverpoort</translation>
+        <translation type="vanished">Remote Desktop Serverpoort</translation>
     </message>
     <message>
         <source>Remote Desktop Server</source>
         <comment>details (display/vrde)</comment>
-        <translation>Remote Desktop Server</translation>
+        <translation type="vanished">Remote Desktop Server</translation>
     </message>
     <message>
         <source>Not Attached</source>
         <comment>details (storage)</comment>
-        <translation>Niet aangesloten</translation>
+        <translation type="vanished">Niet aangesloten</translation>
     </message>
     <message>
         <source>Host Driver</source>
         <comment>details (audio)</comment>
-        <translation>Hoststuurprogramma</translation>
+        <translation type="vanished">Hoststuurprogramma</translation>
     </message>
     <message>
         <source>Bridged Adapter, %1</source>
         <comment>details (network)</comment>
-        <translation>Bridged adapter, %1</translation>
+        <translation type="vanished">Bridged adapter, %1</translation>
     </message>
     <message>
         <source>Internal Network, &apos;%1&apos;</source>
         <comment>details (network)</comment>
-        <translation>Intern netwerk, &apos;%1&apos;</translation>
+        <translation type="vanished">Intern netwerk, &apos;%1&apos;</translation>
     </message>
     <message>
         <source>Host-only Adapter, &apos;%1&apos;</source>
         <comment>details (network)</comment>
-        <translation>Host-only adapter, &apos;%1&apos;</translation>
+        <translation type="vanished">Host-only adapter, &apos;%1&apos;</translation>
     </message>
     <message>
         <source>Generic Driver, &apos;%1&apos;</source>
         <comment>details (network)</comment>
-        <translation>Generiek stuurprogramma, &apos;%1&apos;</translation>
+        <translation type="vanished">Generiek stuurprogramma, &apos;%1&apos;</translation>
     </message>
     <message>
         <source>Generic Driver, &apos;%1&apos; { %2 }</source>
         <comment>details (network)</comment>
-        <translation>Generiek stuurprogramma, &apos;%1&apos; { %2 }</translation>
+        <translation type="vanished">Generiek stuurprogramma, &apos;%1&apos; { %2 }</translation>
     </message>
     <message>
         <source>Device Filters</source>
         <comment>details (usb)</comment>
-        <translation>Apparaatfilters</translation>
+        <translation type="vanished">Apparaatfilters</translation>
     </message>
     <message>
         <source>USB Controller Inaccessible</source>
@@ -3225,7 +3203,7 @@
     <message>
         <source>Shared Folders</source>
         <comment>details (shared folders)</comment>
-        <translation>Gedeelde mappen</translation>
+        <translation type="vanished">Gedeelde mappen</translation>
     </message>
     <message>
         <source>Video Capture File</source>
@@ -3250,36 +3228,36 @@
     <message>
         <source>NAT Network, &apos;%1&apos;</source>
         <comment>details (network)</comment>
-        <translation>NAT-netwerk, &apos;%1&apos;</translation>
+        <translation type="vanished">NAT-netwerk, &apos;%1&apos;</translation>
     </message>
     <message>
         <source>Frame Size: %1x%2, Frame Rate: %3fps, Bit Rate: %4kbps</source>
-        <translation>Framegrootte: %1x%2, Framerate: %3fps, Bitrate: %4kbps</translation>
+        <translation type="vanished">Framegrootte: %1x%2, Framerate: %3fps, Bitrate: %4kbps</translation>
     </message>
     <message>
         <source>Minimal Paravirtualization</source>
         <comment>details (system)</comment>
-        <translation>Minimale paravirtualisatie</translation>
+        <translation type="vanished">Minimale paravirtualisatie</translation>
     </message>
     <message>
         <source>Hyper-V Paravirtualization</source>
         <comment>details (system)</comment>
-        <translation>Hyper-V paravirtualisatie</translation>
+        <translation type="vanished">Hyper-V paravirtualisatie</translation>
     </message>
     <message>
         <source>KVM Paravirtualization</source>
         <comment>details (system)</comment>
-        <translation>KVM paravirtualisatie</translation>
+        <translation type="vanished">KVM paravirtualisatie</translation>
     </message>
     <message>
         <source>[Optical Drive]</source>
         <comment>details (storage)</comment>
-        <translation>[Optisch station]</translation>
+        <translation type="vanished">[Optisch station]</translation>
     </message>
     <message>
         <source>USB Controller</source>
         <comment>details (usb)</comment>
-        <translation>USB-controller</translation>
+        <translation type="vanished">USB-controller</translation>
     </message>
     <message>
         <source>Mini-toolbar Position</source>
@@ -3309,7 +3287,7 @@
     <message>
         <source>Scale-factor</source>
         <comment>details (display)</comment>
-        <translation>Schaalfactor</translation>
+        <translation type="vanished">Schaalfactor</translation>
     </message>
     <message>
         <source>Unscaled HiDPI Video Output</source>
@@ -3354,22 +3332,22 @@
     <message>
         <source>Chipset Type</source>
         <comment>details (system)</comment>
-        <translation>Chipset-type</translation>
+        <translation type="vanished">Chipset-type</translation>
     </message>
     <message>
         <source>Enabled</source>
         <comment>details (system/EFI)</comment>
-        <translation>Ingeschakeld</translation>
+        <translation type="vanished">Ingeschakeld</translation>
     </message>
     <message>
         <source>EFI</source>
         <comment>details (system)</comment>
-        <translation>EFI</translation>
+        <translation type="vanished">EFI</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details (system/EFI)</comment>
-        <translation>Uitgeschakeld</translation>
+        <translation type="vanished">Uitgeschakeld</translation>
     </message>
     <message>
         <source>Disabled</source>
@@ -3379,57 +3357,37 @@
     <message>
         <source>Audio Output</source>
         <comment>details (audio)</comment>
-        <translation>Audio Output</translation>
+        <translation type="vanished">Audio Output</translation>
     </message>
     <message>
         <source>Enabled</source>
         <comment>details (audio/output)</comment>
-        <translation>Ingeschakeld</translation>
+        <translation type="vanished">Ingeschakeld</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details (audio/output)</comment>
-        <translation>Uitgeschakeld</translation>
+        <translation type="vanished">Uitgeschakeld</translation>
     </message>
     <message>
         <source>Audio Input</source>
         <comment>details (audio)</comment>
-        <translation>Audio Input</translation>
+        <translation type="vanished">Audio Input</translation>
     </message>
     <message>
         <source>Enabled</source>
         <comment>details (audio/input)</comment>
-        <translation>Ingeschakeld</translation>
+        <translation type="vanished">Ingeschakeld</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details (audio/input)</comment>
-        <translation>Uitgeschakeld</translation>
-    </message>
-    <message>
-        <source>Settings File Location</source>
-        <comment>details (general)</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Recording File</source>
-        <comment>details (display/recording)</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Recording Attributes</source>
-        <comment>details (display/recording)</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Recording</source>
-        <comment>details (display/recording)</comment>
-        <translation type="unfinished"></translation>
+        <translation type="vanished">Uitgeschakeld</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details (display/recording)</comment>
-        <translation type="unfinished">Uitgeschakeld</translation>
+        <translation type="obsolete">Uitgeschakeld</translation>
     </message>
 </context>
 <context>
@@ -4332,14 +4290,6 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Clean Finished</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Clean All</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>List directories on top</source>
         <translation type="unfinished"></translation>
     </message>
@@ -4444,10 +4394,6 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;b&gt;Owner:&lt;/b&gt; %1&lt;br/&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>&lt;b&gt;Selected:&lt;/b&gt; %1 files and %2 directories&lt;br/&gt;</source>
         <translation type="unfinished"></translation>
     </message>
@@ -4464,18 +4410,166 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;b&gt;Name:&lt;/b&gt; %1</source>
+        <source>&lt;b&gt;Owner:&lt;/b&gt; %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;b&gt;Owner:&lt;/b&gt; %1</source>
+        <source>%1 - Guest Control File Manager</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Clear</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation type="unfinished">Annuleren</translation>
+    </message>
+    <message>
+        <source>Not yet started</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Working</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Paused</source>
+        <translation type="unfinished">Gepauzeerd</translation>
+    </message>
+    <message>
+        <source>Canceled</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Succeded</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Invalid</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove Selected</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove Finished</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove All</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show a confirmation dialog before deleting files and directories</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show file/directory sizes in human readable format rather than in bytes</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show Password</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;Allocated:&lt;/b&gt; %1 bytes</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;INode:&lt;/b&gt; %1&lt;br/&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;Device:&lt;/b&gt; %1&lt;br/&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;Hardlinks:&lt;/b&gt; %1&lt;br/&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;Mode:&lt;/b&gt; %1&lt;br/&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;Attributes:&lt;/b&gt; %1&lt;br/&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;Device ID:&lt;/b&gt; %1&lt;br/&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;Owner:&lt;/b&gt; %1 (%2)&lt;br/&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;Group:&lt;/b&gt; %1 (%2)&lt;br/&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;Birth:&lt;/b&gt; %1&lt;br/&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;Change:&lt;/b&gt; %1&lt;br/&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;Access:&lt;/b&gt; %1&lt;br/&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;Name:&lt;/b&gt; %1&lt;br/&gt;</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
-    <name>UIGuestControlFileManagerDialog</name>
+    <name>UIGuestFileTable</name>
     <message>
-        <source>%1 - Guest Control</source>
+        <source>directory</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>symbolic link</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>character device</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>block device</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>fifo</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>socket</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>whiteout</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>unknown</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>illegal-value</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -6060,6 +6154,14 @@
         <source>&amp;Audio Quality:</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>&amp;Graphics Controller:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Selects the graphics adapter type the virtual machine will use.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIMachineSettingsGeneral</name>
@@ -7232,6 +7334,26 @@
     </message>
     <message>
         <source>The hardware virtualization is enabled in the Acceleration section of the System page although it is not supported by the host system. It should be disabled in order to start the virtual system.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When checked, the nested hardware virtualization CPU feature will be exposed to the virtual machine.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enable Nested &amp;VT-x/AMD-V</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The hardware virtualization is not currently enabled in the Acceleration section of the System page. This is needed to support nested hardware virtualization. It will be enabled automatically if you confirm your changes.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The nested paging is not currently enabled in the Acceleration section of the System page. This is needed to support nested hardware virtualization. It will be enabled automatically if you confirm your changes.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The hardware virtualization is not currently enabled in the Acceleration section of the System page. This is needed for nested paging support. It will be enabled automatically if you confirm your changes.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -13487,6 +13609,45 @@ Home folders can also be individually (per virtual machine)  modified.</source>
     </message>
     <message>
         <source>Please select files to be on the VISO</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>None</source>
+        <comment>GraphicsControllerType</comment>
+        <translation type="unfinished">Geen</translation>
+    </message>
+    <message>
+        <source>VBoxVGA</source>
+        <comment>GraphicsControllerType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>VMSVGA</source>
+        <comment>GraphicsControllerType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>VBoxSVGA</source>
+        <comment>GraphicsControllerType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Graphics Controller</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Video/Audio</source>
+        <comment>UISettingsDefs::RecordingMode</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Video Only</source>
+        <comment>UISettingsDefs::RecordingMode</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Audio Only</source>
+        <comment>UISettingsDefs::RecordingMode</comment>
         <translation type="unfinished"></translation>
     </message>
 </context>

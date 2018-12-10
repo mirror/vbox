@@ -582,7 +582,7 @@
     </message>
     <message>
         <location line="+27"/>
-        <location line="+242"/>
+        <location line="+168"/>
         <location line="+40"/>
         <location line="+40"/>
         <location line="+40"/>
@@ -590,7 +590,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-361"/>
+        <location line="-287"/>
         <source>Open the guest control file manager</source>
         <translation type="unfinished"></translation>
     </message>
@@ -618,8 +618,6 @@
     <message>
         <location line="+1"/>
         <location line="+37"/>
-        <location line="+37"/>
-        <location line="+37"/>
         <location line="+198"/>
         <location line="+39"/>
         <location line="+39"/>
@@ -636,7 +634,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-724"/>
+        <location line="-650"/>
         <source>Copy the Selected Object(s) from Host to Guest</source>
         <translation type="unfinished"></translation>
     </message>
@@ -661,49 +659,23 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+34"/>
-        <source>Move to guest</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+2"/>
-        <source>Move the Selected Object(s) from Host to Guest</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>Move the selected object(s) from host to guest</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+34"/>
-        <source>Move to host</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+2"/>
-        <source>Move the Selected Object(s) from Guest to Host</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>Move the selected object(s) from guest to host</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <location line="+37"/>
-        <source>Settings</source>
-        <translation type="unfinished">Nastavitve</translation>
+        <source>Options</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+2"/>
-        <source>Open panel with file manager settings</source>
+        <source>Open panel with file manager options</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+1"/>
-        <source>Open Panel With File Manager Settings</source>
+        <source>Open Panel With File Manager Options</source>
         <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Settings</source>
+        <translation type="obsolete">Nastavitve</translation>
     </message>
     <message>
         <location line="+37"/>
@@ -1053,7 +1025,7 @@
         <translation>Prikaži &amp;dnevnik …</translation>
     </message>
     <message>
-        <location filename="../src/globals/UIActionPool.cpp" line="-1520"/>
+        <location filename="../src/globals/UIActionPool.cpp" line="-1446"/>
         <source>&amp;VirtualBox Web Site...</source>
         <translation>Spletno mesto &amp;VirtualBox …</translation>
     </message>
@@ -1479,7 +1451,7 @@
         <translation>Omogoči zvočni vhod</translation>
     </message>
     <message>
-        <location line="+1544"/>
+        <location line="+1668"/>
         <location line="+20"/>
         <source>Scale to %1%</source>
         <comment>scale-factor</comment>
@@ -1499,7 +1471,7 @@
     </message>
     <message>
         <location filename="../src/globals/UIActionPoolManager.cpp" line="+885"/>
-        <location filename="../src/globals/UIActionPoolRuntime.cpp" line="-1519"/>
+        <location filename="../src/globals/UIActionPoolRuntime.cpp" line="-1643"/>
         <source>&amp;Network</source>
         <translation>&amp;Omrežje</translation>
     </message>
@@ -1534,13 +1506,13 @@
         <translation type="vanished">%1%</translation>
     </message>
     <message>
-        <location line="+1212"/>
+        <location line="+1139"/>
         <source>Enable</source>
         <comment>Virtual Screen</comment>
         <translation>Omogoči</translation>
     </message>
     <message>
-        <location line="+24"/>
+        <location line="+25"/>
         <source>Resize to %1x%2</source>
         <comment>Virtual Screen</comment>
         <translation>Spremeni velikost na %1x%2</translation>
@@ -2270,7 +2242,7 @@
     </message>
     <message>
         <location filename="../src/globals/UIActionPoolManager.cpp" line="-85"/>
-        <location filename="../src/globals/UIActionPoolRuntime.cpp" line="-3508"/>
+        <location filename="../src/globals/UIActionPoolRuntime.cpp" line="-3436"/>
         <source>&amp;Detach GUI</source>
         <translation>&amp;Odpni GUI</translation>
     </message>
@@ -2915,33 +2887,37 @@
 <context>
     <name>UIDetails</name>
     <message>
+        <location filename="../src/snapshots/UISnapshotDetailsWidget.cpp" line="+1206"/>
         <location filename="../src/manager/details/UIDetailsElements.cpp" line="+245"/>
         <source>Name</source>
         <comment>details (general)</comment>
         <translation type="unfinished">Ime</translation>
     </message>
     <message>
-        <location line="+4"/>
+        <location line="+5"/>
+        <location filename="../src/manager/details/UIDetailsElements.cpp" line="+4"/>
         <source>Operating System</source>
         <comment>details (general)</comment>
         <translation type="unfinished">Operacijski sistem</translation>
     </message>
     <message>
-        <location line="+5"/>
+        <location line="+13"/>
+        <location filename="../src/manager/details/UIDetailsElements.cpp" line="+5"/>
         <source>Settings File Location</source>
         <comment>details (general)</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+21"/>
+        <location line="+9"/>
+        <location filename="../src/manager/details/UIDetailsElements.cpp" line="+21"/>
         <source>Groups</source>
         <comment>details (general)</comment>
         <translation type="unfinished">Skupine</translation>
     </message>
     <message>
-        <location line="+5"/>
+        <location filename="../src/manager/details/UIDetailsElements.cpp" line="+5"/>
         <location line="+128"/>
-        <location line="+115"/>
+        <location line="+120"/>
         <location line="+99"/>
         <location line="+58"/>
         <location line="+97"/>
@@ -2955,158 +2931,195 @@
         <translation type="unfinished">Podatki niso dostopni</translation>
     </message>
     <message>
-        <location line="-789"/>
+        <location filename="../src/snapshots/UISnapshotDetailsWidget.cpp" line="+12"/>
+        <location filename="../src/manager/details/UIDetailsElements.cpp" line="-794"/>
         <source>Base Memory</source>
         <comment>details (system)</comment>
         <translation type="unfinished">Osnovni pomnilnik</translation>
     </message>
     <message>
+        <location line="-2"/>
         <location line="+1"/>
+        <location line="+77"/>
+        <location line="+1"/>
+        <location filename="../src/manager/details/UIDetailsElements.cpp" line="+1"/>
         <location line="+129"/>
         <source>%1 MB</source>
         <comment>details</comment>
         <translation type="unfinished">%1 MB</translation>
     </message>
     <message>
-        <location line="-122"/>
+        <location line="-68"/>
+        <location filename="../src/manager/details/UIDetailsElements.cpp" line="-122"/>
         <source>Processors</source>
         <comment>details (system)</comment>
         <translation type="unfinished">Procesorji</translation>
     </message>
     <message>
-        <location line="+9"/>
+        <location line="+11"/>
+        <location filename="../src/manager/details/UIDetailsElements.cpp" line="+9"/>
         <source>Execution Cap</source>
         <comment>details (system)</comment>
         <translation type="unfinished">Omejitev izvajanja</translation>
     </message>
     <message>
+        <location line="-2"/>
         <location line="+1"/>
+        <location filename="../src/manager/details/UIDetailsElements.cpp" line="+1"/>
         <source>%1%</source>
         <comment>details</comment>
         <translation type="unfinished">%1%</translation>
     </message>
     <message>
-        <location line="+16"/>
+        <location line="+9"/>
+        <location filename="../src/manager/details/UIDetailsElements.cpp" line="+16"/>
         <source>Boot Order</source>
         <comment>details (system)</comment>
         <translation type="unfinished">Vrstni red zagona</translation>
     </message>
     <message>
-        <location line="+8"/>
+        <location line="+9"/>
+        <location filename="../src/manager/details/UIDetailsElements.cpp" line="+8"/>
         <source>Chipset Type</source>
         <comment>details (system)</comment>
         <translation type="unfinished">Vrsta veznega nabora</translation>
     </message>
     <message>
-        <location line="+14"/>
+        <location line="+11"/>
+        <location filename="../src/manager/details/UIDetailsElements.cpp" line="+14"/>
         <source>EFI</source>
         <comment>details (system)</comment>
         <translation type="unfinished">EFI</translation>
     </message>
     <message>
-        <location line="+1"/>
+        <location line="+58"/>
+        <location filename="../src/manager/details/UIDetailsElements.cpp" line="+105"/>
+        <source>Graphics Controller</source>
+        <comment>details (display)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+304"/>
+        <location filename="../src/manager/details/UIDetailsElements.cpp" line="-104"/>
         <source>Enabled</source>
         <comment>details (system/EFI)</comment>
         <translation type="unfinished">Omogočeno</translation>
     </message>
     <message>
-        <location line="+6"/>
+        <location line="+5"/>
+        <location filename="../src/manager/details/UIDetailsElements.cpp" line="+6"/>
         <source>Disabled</source>
         <comment>details (system/EFI)</comment>
         <translation type="unfinished">Onemogočeno</translation>
     </message>
     <message>
-        <location line="+15"/>
+        <location line="+19"/>
+        <location filename="../src/manager/details/UIDetailsElements.cpp" line="+15"/>
         <source>VT-x/AMD-V</source>
         <comment>details (system)</comment>
         <translation type="unfinished">VT-x/AMD-V</translation>
     </message>
     <message>
         <location line="+3"/>
+        <location filename="../src/manager/details/UIDetailsElements.cpp" line="+3"/>
         <source>Nested Paging</source>
         <comment>details (system)</comment>
         <translation type="unfinished">Ugnezdeno odstranjevanje</translation>
     </message>
     <message>
         <location line="+5"/>
+        <location filename="../src/manager/details/UIDetailsElements.cpp" line="+5"/>
         <source>PAE/NX</source>
         <comment>details (system)</comment>
         <translation type="unfinished">PAE/NX</translation>
     </message>
     <message>
         <location line="+4"/>
+        <location filename="../src/manager/details/UIDetailsElements.cpp" line="+4"/>
         <source>Minimal Paravirtualization</source>
         <comment>details (system)</comment>
         <translation type="unfinished">Najmanjša paranavideznost</translation>
     </message>
     <message>
         <location line="+1"/>
+        <location filename="../src/manager/details/UIDetailsElements.cpp" line="+1"/>
         <source>Hyper-V Paravirtualization</source>
         <comment>details (system)</comment>
         <translation type="unfinished">Paranavideznost Hyper-V</translation>
     </message>
     <message>
         <location line="+1"/>
+        <location filename="../src/manager/details/UIDetailsElements.cpp" line="+1"/>
         <source>KVM Paravirtualization</source>
         <comment>details (system)</comment>
         <translation type="unfinished">Paranavideznost KVM</translation>
     </message>
     <message>
-        <location line="+4"/>
+        <location line="-390"/>
+        <location filename="../src/manager/details/UIDetailsElements.cpp" line="+4"/>
         <source>Acceleration</source>
         <comment>details (system)</comment>
         <translation type="unfinished">Pospeševanje</translation>
     </message>
     <message>
-        <location line="+33"/>
+        <location line="+20"/>
+        <location filename="../src/manager/details/UIDetailsElements.cpp" line="+33"/>
         <source>Video Memory</source>
         <comment>details (display)</comment>
         <translation type="unfinished">Grafični pomnilnik</translation>
     </message>
     <message>
-        <location line="+8"/>
+        <location line="+9"/>
+        <location filename="../src/manager/details/UIDetailsElements.cpp" line="+8"/>
         <source>Screens</source>
         <comment>details (display)</comment>
         <translation type="unfinished">Zasloni</translation>
     </message>
     <message>
-        <location line="+17"/>
+        <location line="+10"/>
+        <location filename="../src/manager/details/UIDetailsElements.cpp" line="+17"/>
         <source>Scale-factor</source>
         <comment>details (display)</comment>
         <translation type="unfinished">Faktor umerjanja</translation>
     </message>
     <message>
-        <location line="+12"/>
+        <location line="+384"/>
+        <location filename="../src/manager/details/UIDetailsElements.cpp" line="+17"/>
         <source>2D Video</source>
         <comment>details (display)</comment>
         <translation type="unfinished">Grafika 2D</translation>
     </message>
     <message>
         <location line="+4"/>
+        <location filename="../src/manager/details/UIDetailsElements.cpp" line="+4"/>
         <source>3D</source>
         <comment>details (display)</comment>
         <translation type="unfinished">3D</translation>
     </message>
     <message>
-        <location line="+2"/>
+        <location line="-370"/>
+        <location filename="../src/manager/details/UIDetailsElements.cpp" line="+2"/>
         <source>Acceleration</source>
         <comment>details (display)</comment>
         <translation type="unfinished">Pospeševanje</translation>
     </message>
     <message>
-        <location line="+11"/>
+        <location line="+10"/>
+        <location filename="../src/manager/details/UIDetailsElements.cpp" line="+11"/>
         <source>Remote Desktop Server Port</source>
         <comment>details (display/vrde)</comment>
         <translation type="unfinished">Vrata strežnika oddaljenega namizja</translation>
     </message>
     <message>
-        <location line="+3"/>
+        <location line="+6"/>
+        <location filename="../src/manager/details/UIDetailsElements.cpp" line="+3"/>
         <source>Remote Desktop Server</source>
         <comment>details (display/vrde)</comment>
         <translation type="unfinished">Strežnik oddaljenega namizja</translation>
     </message>
     <message>
         <location line="+1"/>
+        <location filename="../src/manager/details/UIDetailsElements.cpp" line="+1"/>
         <source>Disabled</source>
         <comment>details (display/vrde/VRDE server)</comment>
         <translation type="unfinished">Onemogočeno</translation>
@@ -3122,7 +3135,8 @@
         <translation type="obsolete">Lastnosti zajema videoposnetka</translation>
     </message>
     <message>
-        <location line="+17"/>
+        <location line="+388"/>
+        <location filename="../src/manager/details/UIDetailsElements.cpp" line="+17"/>
         <source>Frame Size: %1x%2, Frame Rate: %3fps, Bit Rate: %4kbps</source>
         <translation type="unfinished">Velikost sličic: %1x%2, hitrost sličic: %3 sl./s, bitna hitrost: %4 kb/s</translation>
     </message>
@@ -3137,199 +3151,236 @@
         <translation type="obsolete">Onemogočeno</translation>
     </message>
     <message>
-        <location line="-3"/>
+        <location line="-379"/>
+        <location filename="../src/manager/details/UIDetailsElements.cpp" line="-3"/>
         <source>Recording File</source>
         <comment>details (display/recording)</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+2"/>
+        <location line="+3"/>
+        <location filename="../src/manager/details/UIDetailsElements.cpp" line="+2"/>
         <source>Recording Attributes</source>
         <comment>details (display/recording)</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+7"/>
+        <location line="+6"/>
+        <location filename="../src/manager/details/UIDetailsElements.cpp" line="+7"/>
         <source>Recording</source>
         <comment>details (display/recording)</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+1"/>
+        <location filename="../src/manager/details/UIDetailsElements.cpp" line="+1"/>
         <source>Disabled</source>
         <comment>details (display/recording)</comment>
         <translation type="unfinished">Onemogočeno</translation>
     </message>
     <message>
-        <location line="+71"/>
+        <location line="+402"/>
+        <location filename="../src/manager/details/UIDetailsElements.cpp" line="+71"/>
         <source>[Optical Drive]</source>
         <comment>details (storage)</comment>
         <translation type="unfinished">[optični pogon]</translation>
     </message>
     <message>
-        <location line="+30"/>
+        <location line="-360"/>
+        <location filename="../src/manager/details/UIDetailsElements.cpp" line="+30"/>
         <source>Not Attached</source>
         <comment>details (storage)</comment>
         <translation type="unfinished">Ni priklopljen</translation>
     </message>
     <message>
-        <location line="+33"/>
+        <location line="+16"/>
+        <location filename="../src/manager/details/UIDetailsElements.cpp" line="+33"/>
         <source>Host Driver</source>
         <comment>details (audio)</comment>
         <translation type="unfinished">Gonilnik gostitelja</translation>
     </message>
     <message>
         <location line="+5"/>
+        <location filename="../src/manager/details/UIDetailsElements.cpp" line="+5"/>
         <source>Controller</source>
         <comment>details (audio)</comment>
         <translation type="unfinished">Krmilnik</translation>
     </message>
     <message>
-        <location line="+11"/>
+        <location line="+6"/>
+        <location filename="../src/manager/details/UIDetailsElements.cpp" line="+11"/>
+        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="+432"/>
         <source>Audio Output</source>
         <comment>details (audio)</comment>
         <translation type="unfinished">Zvočni izhod</translation>
     </message>
     <message>
-        <location line="+2"/>
+        <location line="+370"/>
+        <location filename="../src/manager/details/UIDetailsElements.cpp" line="+2"/>
+        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="+2"/>
         <source>Enabled</source>
         <comment>details (audio/output)</comment>
         <translation type="unfinished">Omogočeno</translation>
     </message>
     <message>
         <location line="+1"/>
+        <location filename="../src/manager/details/UIDetailsElements.cpp" line="+1"/>
+        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="+1"/>
         <source>Disabled</source>
         <comment>details (audio/output)</comment>
         <translation type="unfinished">Onemogočeno</translation>
     </message>
     <message>
-        <location line="-7"/>
+        <location line="-366"/>
+        <location filename="../src/manager/details/UIDetailsElements.cpp" line="-7"/>
+        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="+1"/>
         <source>Audio Input</source>
         <comment>details (audio)</comment>
         <translation type="unfinished">Zvočni vhod</translation>
     </message>
     <message>
-        <location line="+2"/>
+        <location line="+370"/>
+        <location filename="../src/manager/details/UIDetailsElements.cpp" line="+2"/>
+        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="+2"/>
         <source>Enabled</source>
         <comment>details (audio/input)</comment>
         <translation type="unfinished">Omogočeno</translation>
     </message>
     <message>
         <location line="+1"/>
+        <location filename="../src/manager/details/UIDetailsElements.cpp" line="+1"/>
+        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="+1"/>
         <source>Disabled</source>
         <comment>details (audio/input)</comment>
         <translation type="unfinished">Onemogočeno</translation>
     </message>
     <message>
-        <location line="+9"/>
+        <location line="-361"/>
+        <location filename="../src/manager/details/UIDetailsElements.cpp" line="+9"/>
         <source>Disabled</source>
         <comment>details (audio)</comment>
         <translation type="unfinished">Onemogočeno</translation>
     </message>
     <message>
-        <location line="+49"/>
+        <location line="+389"/>
+        <location filename="../src/manager/details/UIDetailsElements.cpp" line="+49"/>
         <source>Bridged Adapter, %1</source>
         <comment>details (network)</comment>
         <translation type="unfinished">Povezan vmesnik, %1</translation>
     </message>
     <message>
-        <location line="+7"/>
+        <location line="+4"/>
+        <location filename="../src/manager/details/UIDetailsElements.cpp" line="+7"/>
         <source>Internal Network, &apos;%1&apos;</source>
         <comment>details (network)</comment>
         <translation type="unfinished">Notranje omrežje, &apos;%1&apos;</translation>
     </message>
     <message>
-        <location line="+7"/>
+        <location line="+4"/>
+        <location filename="../src/manager/details/UIDetailsElements.cpp" line="+7"/>
         <source>Host-only Adapter, &apos;%1&apos;</source>
         <comment>details (network)</comment>
         <translation type="unfinished">Gostiteljski vmesnik, &apos;%1&apos;</translation>
     </message>
     <message>
-        <location line="+10"/>
+        <location line="+7"/>
+        <location filename="../src/manager/details/UIDetailsElements.cpp" line="+10"/>
         <source>Generic Driver, &apos;%1&apos;</source>
         <comment>details (network)</comment>
         <translation type="unfinished">Splošni gonilnik, &apos;%1&apos;</translation>
     </message>
     <message>
         <location line="+2"/>
+        <location filename="../src/manager/details/UIDetailsElements.cpp" line="+2"/>
         <source>Generic Driver, &apos;%1&apos; { %2 }</source>
         <comment>details (network)</comment>
         <translation type="unfinished">Splošni gonilnik, &apos;%1&apos; {%2}</translation>
     </message>
     <message>
-        <location line="+8"/>
+        <location line="+5"/>
+        <location filename="../src/manager/details/UIDetailsElements.cpp" line="+8"/>
         <source>NAT Network, &apos;%1&apos;</source>
         <comment>details (network)</comment>
         <translation type="unfinished">Omrežje NAT, &apos;%1&apos;</translation>
     </message>
     <message>
-        <location line="+12"/>
+        <location line="-393"/>
+        <location filename="../src/manager/details/UIDetailsElements.cpp" line="+12"/>
         <source>Adapter %1</source>
         <comment>details (network)</comment>
         <translation type="unfinished">Vmesnik %1</translation>
     </message>
     <message>
-        <location line="+3"/>
+        <location line="+9"/>
+        <location filename="../src/manager/details/UIDetailsElements.cpp" line="+3"/>
         <source>Disabled</source>
         <comment>details (network/adapter)</comment>
         <translation type="unfinished">Onemogočeno</translation>
     </message>
     <message>
-        <location line="+92"/>
+        <location line="+18"/>
+        <location filename="../src/manager/details/UIDetailsElements.cpp" line="+92"/>
         <source>Port %1</source>
         <comment>details (serial)</comment>
         <translation type="unfinished">Vrata %1</translation>
     </message>
     <message>
-        <location line="+3"/>
+        <location line="+9"/>
+        <location filename="../src/manager/details/UIDetailsElements.cpp" line="+3"/>
         <source>Disabled</source>
         <comment>details (serial)</comment>
         <translation type="unfinished">Onemogočeno</translation>
     </message>
     <message>
-        <location line="+41"/>
+        <location line="+16"/>
+        <location filename="../src/manager/details/UIDetailsElements.cpp" line="+41"/>
         <source>USB Controller</source>
         <comment>details (usb)</comment>
         <translation type="unfinished">Krmilnik USB</translation>
     </message>
     <message>
-        <location line="+12"/>
+        <location line="+5"/>
+        <location filename="../src/manager/details/UIDetailsElements.cpp" line="+12"/>
         <source>Device Filters</source>
         <comment>details (usb)</comment>
         <translation type="unfinished">Filtri naprav</translation>
     </message>
     <message>
-        <location line="+1"/>
+        <location line="+412"/>
+        <location filename="../src/manager/details/UIDetailsElements.cpp" line="+1"/>
         <source>%1 (%2 active)</source>
         <comment>details (usb)</comment>
         <translation type="unfinished">%1 (%2 dejavnih)</translation>
     </message>
     <message>
-        <location line="+4"/>
+        <location line="-403"/>
+        <location filename="../src/manager/details/UIDetailsElements.cpp" line="+4"/>
         <source>Disabled</source>
         <comment>details (usb)</comment>
         <translation type="unfinished">Onemogočeno</translation>
     </message>
     <message>
-        <location line="+3"/>
+        <location filename="../src/manager/details/UIDetailsElements.cpp" line="+3"/>
         <source>USB Controller Inaccessible</source>
         <comment>details (usb)</comment>
         <translation type="unfinished">Krmilnik USB ni dostopen</translation>
     </message>
     <message>
-        <location line="+31"/>
+        <location filename="../src/snapshots/UISnapshotDetailsWidget.cpp" line="+13"/>
+        <location filename="../src/manager/details/UIDetailsElements.cpp" line="+31"/>
         <source>Shared Folders</source>
         <comment>details (shared folders)</comment>
         <translation type="unfinished">Deljene mape</translation>
     </message>
     <message>
-        <location line="+2"/>
+        <location line="+6"/>
+        <location filename="../src/manager/details/UIDetailsElements.cpp" line="+2"/>
         <source>None</source>
         <comment>details (shared folders)</comment>
         <translation type="unfinished">Brez</translation>
     </message>
     <message>
-        <location line="+39"/>
+        <location filename="../src/manager/details/UIDetailsElements.cpp" line="+39"/>
         <source>Menu-bar</source>
         <comment>details (user interface)</comment>
         <translation type="unfinished">Menijska vrstica</translation>
@@ -3570,14 +3621,6 @@
     </message>
 </context>
 <context>
-    <name>UIFileManagerLogViewer</name>
-    <message>
-        <location filename="../src/guestctrl/UIGuestControlFileManagerLogPanel.cpp" line="+75"/>
-        <source>Clear</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
     <name>UIFilePathSelector</name>
     <message>
         <location filename="../src/widgets/UIFilePathSelector.cpp" line="+258"/>
@@ -3742,158 +3785,124 @@
 <context>
     <name>UIGDetails</name>
     <message>
-        <location filename="../src/snapshots/UISnapshotDetailsWidget.cpp" line="+1206"/>
         <source>Name</source>
         <comment>details (general)</comment>
-        <translation>Ime</translation>
+        <translation type="vanished">Ime</translation>
     </message>
     <message>
-        <location line="+27"/>
         <source>Groups</source>
         <comment>details (general)</comment>
-        <translation>Skupine</translation>
+        <translation type="vanished">Skupine</translation>
     </message>
     <message>
-        <location line="+10"/>
-        <location line="+1"/>
-        <location line="+77"/>
-        <location line="+1"/>
         <source>%1 MB</source>
         <comment>details</comment>
-        <translation>%1 MB</translation>
+        <translation type="vanished">%1 MB</translation>
     </message>
     <message>
-        <location line="-68"/>
         <source>Processors</source>
         <comment>details (system)</comment>
-        <translation>Procesorji</translation>
+        <translation type="vanished">Procesorji</translation>
     </message>
     <message>
-        <location line="+9"/>
-        <location line="+1"/>
         <source>%1%</source>
         <comment>details</comment>
-        <translation>%1%</translation>
+        <translation type="vanished">%1%</translation>
     </message>
     <message>
-        <location line="+408"/>
         <source>VT-x/AMD-V</source>
         <comment>details (system)</comment>
-        <translation>VT-x/AMD-V</translation>
+        <translation type="vanished">VT-x/AMD-V</translation>
     </message>
     <message>
-        <location line="+8"/>
         <source>PAE/NX</source>
         <comment>details (system)</comment>
-        <translation>PAE/NX</translation>
+        <translation type="vanished">PAE/NX</translation>
     </message>
     <message>
-        <location line="-377"/>
         <source>Acceleration</source>
         <comment>details (system)</comment>
-        <translation>Pospeševanje</translation>
+        <translation type="vanished">Pospeševanje</translation>
     </message>
     <message>
-        <location line="+29"/>
         <source>Screens</source>
         <comment>details (display)</comment>
-        <translation>Zasloni</translation>
+        <translation type="vanished">Zasloni</translation>
     </message>
     <message>
-        <location line="+391"/>
         <source>3D</source>
         <comment>details (display)</comment>
-        <translation>3D</translation>
+        <translation type="vanished">3D</translation>
     </message>
     <message>
-        <location line="-370"/>
         <source>Acceleration</source>
         <comment>details (display)</comment>
-        <translation>Pospeševanje</translation>
+        <translation type="vanished">Pospeševanje</translation>
     </message>
     <message>
-        <location line="+17"/>
         <source>Disabled</source>
         <comment>details (display/vrde/VRDE server)</comment>
-        <translation>Onemogočeno</translation>
+        <translation type="vanished">Onemogočeno</translation>
     </message>
     <message>
-        <location line="+82"/>
         <source>Controller</source>
         <comment>details (audio)</comment>
-        <translation>Krmilnik</translation>
+        <translation type="vanished">Krmilnik</translation>
     </message>
     <message>
-        <location line="+6"/>
-        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="+432"/>
         <source>Audio Output</source>
         <comment>details (audio)</comment>
-        <translation>Zvočni izhod</translation>
+        <translation type="vanished">Zvočni izhod</translation>
     </message>
     <message>
-        <location line="+370"/>
-        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="+2"/>
         <source>Enabled</source>
         <comment>details (audio/output)</comment>
-        <translation>Omogočeno</translation>
+        <translation type="vanished">Omogočeno</translation>
     </message>
     <message>
-        <location line="+1"/>
-        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="+1"/>
         <source>Disabled</source>
         <comment>details (audio/output)</comment>
-        <translation>Onemogočeno</translation>
+        <translation type="vanished">Onemogočeno</translation>
     </message>
     <message>
-        <location line="-366"/>
-        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="+1"/>
         <source>Audio Input</source>
         <comment>details (audio)</comment>
-        <translation>Zvočni vhod</translation>
+        <translation type="vanished">Zvočni vhod</translation>
     </message>
     <message>
-        <location line="+370"/>
-        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="+2"/>
         <source>Enabled</source>
         <comment>details (audio/input)</comment>
-        <translation>Omogočeno</translation>
+        <translation type="vanished">Omogočeno</translation>
     </message>
     <message>
-        <location line="+1"/>
-        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="+1"/>
         <source>Disabled</source>
         <comment>details (audio/input)</comment>
-        <translation>Onemogočeno</translation>
+        <translation type="vanished">Onemogočeno</translation>
     </message>
     <message>
-        <location line="-361"/>
         <source>Disabled</source>
         <comment>details (audio)</comment>
-        <translation>Onemogočeno</translation>
+        <translation type="vanished">Onemogočeno</translation>
     </message>
     <message>
-        <location line="+18"/>
         <source>Adapter %1</source>
         <comment>details (network)</comment>
-        <translation>Vmesnik %1</translation>
+        <translation type="vanished">Vmesnik %1</translation>
     </message>
     <message>
-        <location line="+9"/>
         <source>Disabled</source>
         <comment>details (network/adapter)</comment>
-        <translation>Onemogočeno</translation>
+        <translation type="vanished">Onemogočeno</translation>
     </message>
     <message>
-        <location line="+18"/>
         <source>Port %1</source>
         <comment>details (serial)</comment>
-        <translation>Vrata %1</translation>
+        <translation type="vanished">Vrata %1</translation>
     </message>
     <message>
-        <location line="+9"/>
         <source>Disabled</source>
         <comment>details (serial)</comment>
-        <translation>Onemogočeno</translation>
+        <translation type="vanished">Onemogočeno</translation>
     </message>
     <message>
         <source>Port %1</source>
@@ -3906,22 +3915,19 @@
         <translation type="vanished">Onemogočeno</translation>
     </message>
     <message>
-        <location line="+433"/>
         <source>%1 (%2 active)</source>
         <comment>details (usb)</comment>
-        <translation>%1 (%2 dejavnih)</translation>
+        <translation type="vanished">%1 (%2 dejavnih)</translation>
     </message>
     <message>
-        <location line="-403"/>
         <source>Disabled</source>
         <comment>details (usb)</comment>
-        <translation>Onemogočeno</translation>
+        <translation type="vanished">Onemogočeno</translation>
     </message>
     <message>
-        <location line="+19"/>
         <source>None</source>
         <comment>details (shared folders)</comment>
-        <translation>Brez</translation>
+        <translation type="vanished">Brez</translation>
     </message>
     <message>
         <source>None</source>
@@ -3929,10 +3935,9 @@
         <translation type="vanished">Brez</translation>
     </message>
     <message>
-        <location line="-365"/>
         <source>Operating System</source>
         <comment>details (general)</comment>
-        <translation>Operacijski sistem</translation>
+        <translation type="vanished">Operacijski sistem</translation>
     </message>
     <message>
         <source>Information Inaccessible</source>
@@ -3940,58 +3945,49 @@
         <translation type="vanished">Podatki niso dostopni</translation>
     </message>
     <message>
-        <location line="+34"/>
         <source>Base Memory</source>
         <comment>details (system)</comment>
-        <translation>Osnovni pomnilnik</translation>
+        <translation type="vanished">Osnovni pomnilnik</translation>
     </message>
     <message>
-        <location line="+20"/>
         <source>Execution Cap</source>
         <comment>details (system)</comment>
-        <translation>Omejitev izvajanja</translation>
+        <translation type="vanished">Omejitev izvajanja</translation>
     </message>
     <message>
-        <location line="+8"/>
         <source>Boot Order</source>
         <comment>details (system)</comment>
-        <translation>Vrstni red zagona</translation>
+        <translation type="vanished">Vrstni red zagona</translation>
     </message>
     <message>
-        <location line="+9"/>
         <source>Chipset Type</source>
         <comment>details (system)</comment>
-        <translation>Vrsta veznega nabora</translation>
+        <translation type="vanished">Vrsta veznega nabora</translation>
     </message>
     <message>
-        <location line="+366"/>
         <source>Enabled</source>
         <comment>details (system/EFI)</comment>
-        <translation>Omogočeno</translation>
+        <translation type="vanished">Omogočeno</translation>
     </message>
     <message>
-        <location line="-355"/>
         <source>EFI</source>
         <comment>details (system)</comment>
-        <translation>EFI</translation>
+        <translation type="vanished">EFI</translation>
     </message>
     <message>
-        <location line="+360"/>
         <source>Disabled</source>
         <comment>details (system/EFI)</comment>
-        <translation>Onemogočeno</translation>
+        <translation type="vanished">Onemogočeno</translation>
     </message>
     <message>
-        <location line="+22"/>
         <source>Nested Paging</source>
         <comment>details (system)</comment>
-        <translation>Ugnezdeno odstranjevanje</translation>
+        <translation type="vanished">Ugnezdeno odstranjevanje</translation>
     </message>
     <message>
-        <location line="-352"/>
         <source>Video Memory</source>
         <comment>details (display)</comment>
-        <translation>Grafični pomnilnik</translation>
+        <translation type="vanished">Grafični pomnilnik</translation>
     </message>
     <message>
         <source>Disabled</source>
@@ -3999,94 +3995,59 @@
         <translation type="vanished">Onemogočeno</translation>
     </message>
     <message>
-        <location line="+396"/>
         <source>2D Video</source>
         <comment>details (display)</comment>
-        <translation>Grafika 2D</translation>
+        <translation type="vanished">Grafika 2D</translation>
     </message>
     <message>
-        <location line="-356"/>
         <source>Remote Desktop Server Port</source>
         <comment>details (display/vrde)</comment>
-        <translation>Vrata strežnika oddaljenega namizja</translation>
+        <translation type="vanished">Vrata strežnika oddaljenega namizja</translation>
     </message>
     <message>
-        <location line="-139"/>
-        <source>Settings File Location</source>
-        <comment>details (general)</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+145"/>
         <source>Remote Desktop Server</source>
         <comment>details (display/vrde)</comment>
-        <translation>Strežnik oddaljenega namizja</translation>
+        <translation type="vanished">Strežnik oddaljenega namizja</translation>
     </message>
     <message>
-        <location line="+10"/>
-        <source>Recording File</source>
-        <comment>details (display/recording)</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+3"/>
-        <source>Recording Attributes</source>
-        <comment>details (display/recording)</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+6"/>
-        <source>Recording</source>
-        <comment>details (display/recording)</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+1"/>
         <source>Disabled</source>
         <comment>details (display/recording)</comment>
-        <translation type="unfinished">Onemogočeno</translation>
+        <translation type="obsolete">Onemogočeno</translation>
     </message>
     <message>
-        <location line="+42"/>
         <source>Not Attached</source>
         <comment>details (storage)</comment>
-        <translation>Ni priklopljen</translation>
+        <translation type="vanished">Ni priklopljen</translation>
     </message>
     <message>
-        <location line="+16"/>
         <source>Host Driver</source>
         <comment>details (audio)</comment>
-        <translation>Gonilnik gostitelja</translation>
+        <translation type="vanished">Gonilnik gostitelja</translation>
     </message>
     <message>
-        <location line="+415"/>
         <source>Bridged Adapter, %1</source>
         <comment>details (network)</comment>
-        <translation>Povezan vmesnik, %1</translation>
+        <translation type="vanished">Povezan vmesnik, %1</translation>
     </message>
     <message>
-        <location line="+4"/>
         <source>Internal Network, &apos;%1&apos;</source>
         <comment>details (network)</comment>
-        <translation>Notranje omrežje, &apos;%1&apos;</translation>
+        <translation type="vanished">Notranje omrežje, &apos;%1&apos;</translation>
     </message>
     <message>
-        <location line="+4"/>
         <source>Host-only Adapter, &apos;%1&apos;</source>
         <comment>details (network)</comment>
-        <translation>Gostiteljski vmesnik, &apos;%1&apos;</translation>
+        <translation type="vanished">Gostiteljski vmesnik, &apos;%1&apos;</translation>
     </message>
     <message>
-        <location line="+7"/>
         <source>Generic Driver, &apos;%1&apos;</source>
         <comment>details (network)</comment>
-        <translation>Splošni gonilnik, &apos;%1&apos;</translation>
+        <translation type="vanished">Splošni gonilnik, &apos;%1&apos;</translation>
     </message>
     <message>
-        <location line="-329"/>
         <source>Device Filters</source>
         <comment>details (usb)</comment>
-        <translation>Filtri naprav</translation>
+        <translation type="vanished">Filtri naprav</translation>
     </message>
     <message>
         <source>USB Controller Inaccessible</source>
@@ -4094,10 +4055,9 @@
         <translation type="vanished">Krmilnik USB ni dostopen</translation>
     </message>
     <message>
-        <location line="+22"/>
         <source>Shared Folders</source>
         <comment>details (shared folders)</comment>
-        <translation>Deljene mape</translation>
+        <translation type="vanished">Deljene mape</translation>
     </message>
     <message>
         <source>Video Capture File</source>
@@ -4120,45 +4080,38 @@
         <translation type="vanished">Onemogočeno</translation>
     </message>
     <message>
-        <location line="+314"/>
         <source>NAT Network, &apos;%1&apos;</source>
         <comment>details (network)</comment>
-        <translation>Omrežje NAT, &apos;%1&apos;</translation>
+        <translation type="vanished">Omrežje NAT, &apos;%1&apos;</translation>
     </message>
     <message>
-        <location line="-126"/>
         <source>Frame Size: %1x%2, Frame Rate: %3fps, Bit Rate: %4kbps</source>
-        <translation>Velikost sličic: %1x%2, hitrost sličic: %3 sl./s, bitna hitrost: %4 kb/s</translation>
+        <translation type="vanished">Velikost sličic: %1x%2, hitrost sličic: %3 sl./s, bitna hitrost: %4 kb/s</translation>
     </message>
     <message>
-        <location line="-74"/>
         <source>Minimal Paravirtualization</source>
         <comment>details (system)</comment>
-        <translation>Najmanjša paranavideznost</translation>
+        <translation type="vanished">Najmanjša paranavideznost</translation>
     </message>
     <message>
-        <location line="+1"/>
         <source>Hyper-V Paravirtualization</source>
         <comment>details (system)</comment>
-        <translation>Paranavideznost Hyper-V</translation>
+        <translation type="vanished">Paranavideznost Hyper-V</translation>
     </message>
     <message>
-        <location line="+1"/>
         <source>KVM Paravirtualization</source>
         <comment>details (system)</comment>
-        <translation>Paranavideznost KVM</translation>
+        <translation type="vanished">Paranavideznost KVM</translation>
     </message>
     <message>
-        <location line="+105"/>
         <source>[Optical Drive]</source>
         <comment>details (storage)</comment>
-        <translation>[optični pogon]</translation>
+        <translation type="vanished">[optični pogon]</translation>
     </message>
     <message>
-        <location line="-248"/>
         <source>USB Controller</source>
         <comment>details (usb)</comment>
-        <translation>Krmilnik USB</translation>
+        <translation type="vanished">Krmilnik USB</translation>
     </message>
     <message>
         <source>Mini-toolbar Position</source>
@@ -4186,10 +4139,9 @@
         <translation type="vanished">Onemogočeno</translation>
     </message>
     <message>
-        <location line="-201"/>
         <source>Scale-factor</source>
         <comment>details (display)</comment>
-        <translation>Faktor umerjanja</translation>
+        <translation type="vanished">Faktor umerjanja</translation>
     </message>
     <message>
         <source>Unscaled HiDPI Video Output</source>
@@ -4232,10 +4184,9 @@
         <translation type="vanished">Onemogočeno</translation>
     </message>
     <message>
-        <location line="+537"/>
         <source>Generic Driver, &apos;%1&apos; { %2 }</source>
         <comment>details (network)</comment>
-        <translation>Splošni gonilnik, &apos;%1&apos; {%2}</translation>
+        <translation type="vanished">Splošni gonilnik, &apos;%1&apos; {%2}</translation>
     </message>
 </context>
 <context>
@@ -5244,18 +5195,22 @@
 <context>
     <name>UIGuestControlFileManager</name>
     <message>
-        <location filename="../src/guestctrl/UIGuestControlFileManagerDialog.cpp" line="+79"/>
+        <location filename="../src/guestctrl/UIGuestControlFileManagerDialog.cpp" line="+77"/>
+        <source>%1 - Guest Control File Manager</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+2"/>
         <source>Close</source>
         <translation type="unfinished">Zapri</translation>
     </message>
     <message>
         <location filename="../src/guestctrl/UIGuestControlFileManagerPanel.cpp" line="+101"/>
-        <location filename="../src/guestctrl/UIGuestControlFileManagerOperationsPanel.cpp" line="+128"/>
         <source>Close the pane</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/guestctrl/UIGuestControlFileManagerSessionPanel.cpp" line="+164"/>
+        <location filename="../src/guestctrl/UIGuestControlFileManagerSessionPanel.cpp" line="+167"/>
         <source>User name to authenticate session creation</source>
         <translation type="unfinished"></translation>
     </message>
@@ -5270,12 +5225,18 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+1"/>
+        <location line="-56"/>
+        <location line="+57"/>
         <source>Password</source>
         <translation type="unfinished">Geslo</translation>
     </message>
     <message>
-        <location line="+4"/>
+        <location line="-50"/>
+        <source>Show Password</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+54"/>
         <source>Create Session</source>
         <translation type="unfinished"></translation>
     </message>
@@ -5285,30 +5246,23 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/guestctrl/UIGuestControlFileManagerOperationsPanel.cpp" line="+155"/>
-        <source>Clean Finished</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>Clean All</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/guestctrl/UIGuestControlFileManagerSettingsPanel.cpp" line="+160"/>
+        <location filename="../src/guestctrl/UIGuestControlFileManagerOptionsPanel.cpp" line="+160"/>
         <source>List directories on top</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+1"/>
-        <location line="+6"/>
-        <location line="+6"/>
         <source>List directories before files</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-7"/>
+        <location line="+5"/>
         <source>Ask before delete</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Show a confirmation dialog before deleting files and directories</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -5317,7 +5271,12 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/guestctrl/UIGuestControlFileTable.cpp" line="+430"/>
+        <location line="+1"/>
+        <source>Show file/directory sizes in human readable format rather than in bytes</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/guestctrl/UIGuestControlFileTable.cpp" line="+431"/>
         <source>Total Size</source>
         <translation type="unfinished"></translation>
     </message>
@@ -5332,7 +5291,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+206"/>
+        <location line="+211"/>
         <source>Delete the selected file(s) and/or folder(s)</source>
         <translation type="unfinished"></translation>
     </message>
@@ -5347,7 +5306,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+609"/>
+        <location line="+612"/>
         <source>Name</source>
         <translation type="unfinished">Ime</translation>
     </message>
@@ -5377,7 +5336,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+156"/>
+        <location line="+166"/>
         <source>Unknown</source>
         <translation type="unfinished"></translation>
     </message>
@@ -5407,37 +5366,96 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+273"/>
-        <location filename="../src/guestctrl/UIHostFileTable.cpp" line="+372"/>
+        <location line="+276"/>
+        <location filename="../src/guestctrl/UIHostFileTable.cpp" line="+364"/>
         <location line="+34"/>
         <source>&lt;b&gt;Size:&lt;/b&gt; %1 bytes</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+6"/>
+        <location line="+8"/>
+        <source>&lt;b&gt;Allocated:&lt;/b&gt; %1 bytes</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+22"/>
         <location filename="../src/guestctrl/UIHostFileTable.cpp" line="-29"/>
         <source>&lt;b&gt;Type:&lt;/b&gt; %1&lt;br/&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+2"/>
-        <location filename="../src/guestctrl/UIHostFileTable.cpp" line="+2"/>
-        <source>&lt;b&gt;Created:&lt;/b&gt; %1&lt;br/&gt;</source>
+        <location line="+3"/>
+        <source>&lt;b&gt;INode:&lt;/b&gt; %1&lt;br/&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>&lt;b&gt;Device:&lt;/b&gt; %1&lt;br/&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>&lt;b&gt;Hardlinks:&lt;/b&gt; %1&lt;br/&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <source>&lt;b&gt;Mode:&lt;/b&gt; %1&lt;br/&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>&lt;b&gt;Attributes:&lt;/b&gt; %1&lt;br/&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>&lt;b&gt;Device ID:&lt;/b&gt; %1&lt;br/&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+3"/>
+        <source>&lt;b&gt;Owner:&lt;/b&gt; %1 (%2)&lt;br/&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>&lt;b&gt;Group:&lt;/b&gt; %1 (%2)&lt;br/&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>&lt;b&gt;Birth:&lt;/b&gt; %1&lt;br/&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>&lt;b&gt;Change:&lt;/b&gt; %1&lt;br/&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>&lt;b&gt;Access:&lt;/b&gt; %1&lt;br/&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/guestctrl/UIHostFileTable.cpp" line="-7"/>
+        <source>&lt;b&gt;Name:&lt;/b&gt; %1&lt;br/&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <source>&lt;b&gt;Created:&lt;/b&gt; %1&lt;br/&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/guestctrl/UIGuestFileTable.cpp" line="-2"/>
         <location filename="../src/guestctrl/UIHostFileTable.cpp" line="+2"/>
         <source>&lt;b&gt;Modified:&lt;/b&gt; %1&lt;br/&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+3"/>
-        <source>&lt;b&gt;Owner:&lt;/b&gt; %1&lt;br/&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+27"/>
+        <location line="+31"/>
         <location filename="../src/guestctrl/UIHostFileTable.cpp" line="+23"/>
         <source>&lt;b&gt;Selected:&lt;/b&gt; %1 files and %2 directories&lt;br/&gt;</source>
         <translation type="unfinished"></translation>
@@ -5453,26 +5471,126 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/guestctrl/UIHostFileTable.cpp" line="-259"/>
+        <location filename="../src/guestctrl/UIHostFileTable.cpp" line="-256"/>
         <source>Host System</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+222"/>
-        <source>&lt;b&gt;Name:&lt;/b&gt; %1</source>
+        <location line="+235"/>
+        <source>&lt;b&gt;Owner:&lt;/b&gt; %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+16"/>
-        <source>&lt;b&gt;Owner:&lt;/b&gt; %1</source>
+        <location filename="../src/guestctrl/UIGuestControlFileManagerLogPanel.cpp" line="+75"/>
+        <source>Clear</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/guestctrl/UIGuestControlFileManagerOperationsPanel.cpp" line="+155"/>
+        <source>Cancel</source>
+        <translation type="unfinished">Prekliči</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>Not yet started</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Working</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Paused</source>
+        <translation type="unfinished">Premor</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Canceled</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Succeded</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Failed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>Invalid</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+218"/>
+        <source>Remove Selected</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>Remove Finished</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Remove All</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
-    <name>UIGuestControlFileManagerDialog</name>
+    <name>UIGuestFileTable</name>
     <message>
-        <location filename="../src/guestctrl/UIGuestControlFileManagerDialog.cpp" line="-2"/>
-        <source>%1 - Guest Control</source>
+        <location filename="../src/guestctrl/UIGuestFileTable.cpp" line="-119"/>
+        <source>directory</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>symbolic link</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>character device</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>block device</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>fifo</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>socket</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>whiteout</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>unknown</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>illegal-value</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -7026,12 +7144,12 @@
         <translation>Nadzira količino grafičnega pomnilnika, ki se ga dobavi navideznemu računalniku.</translation>
     </message>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsDisplay.cpp" line="+712"/>
+        <location filename="../src/settings/machine/UIMachineSettingsDisplay.cpp" line="+717"/>
         <source>MB</source>
         <translation>MB</translation>
     </message>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsDisplay.ui" line="+247"/>
+        <location filename="../src/settings/machine/UIMachineSettingsDisplay.ui" line="+290"/>
         <source>Extended Features:</source>
         <translation>Razširjene značilnosti:</translation>
     </message>
@@ -7041,7 +7159,17 @@
         <translation>Ko je označeno, bo navidezni računalnik dobil dostop do zmogljivosti grafike 3D, ki je na voljo na gostitelju.</translation>
     </message>
     <message>
-        <location line="+3"/>
+        <location line="-59"/>
+        <source>&amp;Graphics Controller:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+21"/>
+        <source>Selects the graphics adapter type the virtual machine will use.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+41"/>
         <source>Enable &amp;3D Acceleration</source>
         <translation>Omogoči pospeševanje &amp;3D</translation>
     </message>
@@ -7086,7 +7214,7 @@
         <translation>Omogoči grafično pospeševanje &amp;2D</translation>
     </message>
     <message>
-        <location line="-115"/>
+        <location line="-158"/>
         <source>Mo&amp;nitor Count:</source>
         <translation>&amp;Število zaslonov:</translation>
     </message>
@@ -7097,7 +7225,7 @@
         <translation>Nadzira količino navideznih zaslonov, ki jih dobavi navidezni računalnik.</translation>
     </message>
     <message>
-        <location line="+210"/>
+        <location line="+253"/>
         <source>&amp;Allow Multiple Connections</source>
         <translation>&amp;Dovoli več povezav</translation>
     </message>
@@ -7148,7 +7276,7 @@
         <translation>&amp;Zasloni:</translation>
     </message>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsDisplay.cpp" line="-142"/>
+        <location filename="../src/settings/machine/UIMachineSettingsDisplay.cpp" line="-143"/>
         <source>The virtual machine is set up to use hardware graphics acceleration. However the host system does not currently provide this, so you will not be able to start the machine.</source>
         <translation>Navidezni računalnik je nastavljen za uporabo strojnega grafičnega poseševanja. Vendar gostiteljski sistem tega trenutno ne ponuja, tako da ne boste mogli zagnati računalnka.</translation>
     </message>
@@ -7173,7 +7301,7 @@
         <translation>Vrednost časovne omejitve overitve VRDE trenutno ni navedena.</translation>
     </message>
     <message>
-        <location line="+67"/>
+        <location line="+72"/>
         <source>User Defined</source>
         <translation>Uporabniško določeno</translation>
     </message>
@@ -7220,12 +7348,12 @@
         <translation>Zaslon %1</translation>
     </message>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsDisplay.cpp" line="+593"/>
+        <location filename="../src/settings/machine/UIMachineSettingsDisplay.cpp" line="+609"/>
         <source>&lt;i&gt;About %1MB per 5 minute video&lt;/i&gt;</source>
         <translation>&lt;i&gt;Okoli %1 MB na 5 min. videoposnetka&lt;/i&gt;</translation>
     </message>
     <message>
-        <location line="-677"/>
+        <location line="-698"/>
         <source>Remote Display is currently enabled for this virtual machine. However, this requires the &lt;i&gt;%1&lt;/i&gt; to be installed. Please install the Extension Pack from the VirtualBox download site as otherwise your VM will be started with Remote Display disabled.</source>
         <translation>Oddaljeni zaslon je trenutno omogočen za ta navidezni računalnik. Vendar to zahteva namestitev &lt;i&gt;%1&lt;/i&gt;. Namestite paket razširitev z mesta za prejem VirtualBox ali pa se bo vaš navidezni računalnik zaganal z onemogočenim oddaljenim zaslonom.</translation>
     </message>
@@ -7235,7 +7363,7 @@
         <translation>Navidezni računalnik je nastavljen za uporabo strojnega grafičnega poseševanja in namig operacijskega sistema je nastavljen na Windows Vista ali starejši. Za najboljšo zmogljivost morate grafični pomnilnik računalnika nastaviti na najmanj &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsDisplay.ui" line="-677"/>
+        <location filename="../src/settings/machine/UIMachineSettingsDisplay.ui" line="-720"/>
         <source>&amp;Screen</source>
         <translation>&amp;Zaslon</translation>
     </message>
@@ -7262,7 +7390,7 @@
         <translation type="vanished">Uporabi &amp;neumerjen izhod HiDPI</translation>
     </message>
     <message>
-        <location line="+9"/>
+        <location line="+52"/>
         <source>Acceleration:</source>
         <translation>Pospeševanje:</translation>
     </message>
@@ -7358,9 +7486,9 @@
         <translation>Navideznemu računalniku je trenutno dodeljeno manj kot &lt;b&gt;%1&lt;/b&gt; grafičnega pomnilnika, kar je najmanjša količina zahtevana za preklop na celozaslonski ali tekoči način.</translation>
     </message>
     <message>
-        <location line="+130"/>
+        <location line="+131"/>
         <location line="+1"/>
-        <location line="+554"/>
+        <location line="+574"/>
         <source>%1 MB</source>
         <translation>%1 MB</translation>
     </message>
@@ -8338,7 +8466,7 @@
         <translation>Izbere števec vrat krmilnika pomnilniških naprav SATA, ki je trenutno izbran v drevesu  pomnilniških naprav. To mora biti vsaj za eno večje od največjega števila vrat, ki jih je treba uporabiti.</translation>
     </message>
     <message>
-        <location filename="../src/snapshots/UISnapshotDetailsWidget.cpp" line="-101"/>
+        <location filename="../src/snapshots/UISnapshotDetailsWidget.cpp" line="+202"/>
         <location filename="../src/manager/details/UIDetailsElements.cpp" line="-541"/>
         <location filename="../src/runtime/information/UIInformationDataItem.cpp" line="-243"/>
         <location line="+742"/>
@@ -8539,7 +8667,7 @@
         <translation>Nadzira količino pomnilnika , ki je dodeljen navideznemu računalniku. Če dodelite preveč, se računalnik morda ne bo zagnal.</translation>
     </message>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsSystem.cpp" line="+558"/>
+        <location filename="../src/settings/machine/UIMachineSettingsSystem.cpp" line="+659"/>
         <source>MB</source>
         <translation>MB</translation>
     </message>
@@ -8600,6 +8728,16 @@
         <translation>Omogoči PA&amp;E/NX</translation>
     </message>
     <message>
+        <location line="+7"/>
+        <source>When checked, the nested hardware virtualization CPU feature will be exposed to the virtual machine.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Enable Nested &amp;VT-x/AMD-V</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <location line="+21"/>
         <source>Acce&amp;leration</source>
         <translation>&amp;Pospeševanje</translation>
@@ -8630,7 +8768,7 @@
         <translation>Omogoči &amp;ugnezdeno odstranjevanje</translation>
     </message>
     <message>
-        <location line="-304"/>
+        <location line="-314"/>
         <source>When checked, the guest will support the Extended Firmware Interface (EFI), which is required to boot certain guest OSes. Non-EFI aware OSes will not be able to boot if this option is activated.</source>
         <translation>Ko je označeno, bo gost podprl razširjen vmesnik strojne programske opreme (EFI), ki je zahtevan za zagon določenih gostujočih OS-ov. OS-i brez podpore za EFI se ne bodo mogli zagnati, če je ta možnost omogočena.</translation>
     </message>
@@ -8682,7 +8820,7 @@
         <translation>Določi, ali je posnemana naprava običajna miška PS/2, tablica USB ali večdotična tablica USB.</translation>
     </message>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsSystem.cpp" line="-165"/>
+        <location filename="../src/settings/machine/UIMachineSettingsSystem.cpp" line="-209"/>
         <source>More than &lt;b&gt;%1%&lt;/b&gt; of the host computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) is assigned to the virtual machine. Not enough memory is left for the host operating system. Please select a smaller amount.</source>
         <translation>Več kot &lt;b&gt;%1%&lt;/b&gt; pomnilnika gostiteljskega računalnika (&lt;b&gt;%2&lt;/b&gt;) je dodeljeno navideznemu računalniku. Gostiteljskemu operacijskemu sistemu ni ostalo dovolj pomnilnika. Izberite manjšo količino.</translation>
     </message>
@@ -8717,12 +8855,12 @@
         <translation>Značilnost I/O APIC v odseku Matična plošča na strani Sistem trenutno ni omogočena. Za podporo več kot enemu navideznemu procesorju jo je treba omogočiti. Samodejno bo omogočena, če potrdite svoje spremembe.</translation>
     </message>
     <message>
-        <location line="+9"/>
+        <location line="+12"/>
         <source>The hardware virtualization is not currently enabled in the Acceleration section of the System page. This is needed to support more than one virtual processor. It will be enabled automatically if you confirm your changes.</source>
         <translation>Strojan navideznost v odseku Pospeševanje na strani Sistem trenutno ni omogočena. Za podporo več kot enemu navideznemu procesorju jo je treba omogočiti. Samodejno bo omogočena, če potrdite svoje spremembe.</translation>
     </message>
     <message>
-        <location line="+9"/>
+        <location line="+10"/>
         <source>The processor execution cap is set to a low value. This may make the machine feel slow to respond.</source>
         <translation>Omejitev izvajanja procesorja je nastavljena na nizko vrednost. To lahko povzroči počasen odziv računalnika.</translation>
     </message>
@@ -8737,12 +8875,27 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+16"/>
+        <location line="+10"/>
+        <source>The hardware virtualization is not currently enabled in the Acceleration section of the System page. This is needed to support nested hardware virtualization. It will be enabled automatically if you confirm your changes.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <source>The nested paging is not currently enabled in the Acceleration section of the System page. This is needed to support nested hardware virtualization. It will be enabled automatically if you confirm your changes.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+21"/>
         <source>The hardware virtualization is enabled in the Acceleration section of the System page although it is not supported by the host system. It should be disabled in order to start the virtual system.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsSystem.ui" line="+259"/>
+        <location line="+13"/>
+        <source>The hardware virtualization is not currently enabled in the Acceleration section of the System page. This is needed for nested paging support. It will be enabled automatically if you confirm your changes.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/settings/machine/UIMachineSettingsSystem.ui" line="+269"/>
         <source>&amp;Paravirtualization Interface:</source>
         <translation>&amp;Vmesnik paranavideznosti:</translation>
     </message>
@@ -8768,7 +8921,7 @@
         <translation type="vanished">Strojna navideznost trenutno v odseku Pospeševanje sistemske strani ni omogočena. To je potrebno zaradi podpore več kot enega navideznega procesorja, ki ste jo omogočili za ta navidezni računalnik. To bo opravljeno samodejno, če potrdite spremembe.</translation>
     </message>
     <message>
-        <location line="-228"/>
+        <location line="-238"/>
         <source>When checked, the RTC device will report the time in UTC, otherwise in local (host) time. Unix usually expects the hardware clock to be set to UTC.</source>
         <translation>Ko je označeno, bo naprava RTC sporočila čas UTC, v nasprotnem primeru pa krajevni (gostiteljski) čas. Unix običajno pričakuje nastavitev strojne ure na UTC.</translation>
     </message>
@@ -8778,7 +8931,7 @@
         <translation>%</translation>
     </message>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsSystem.cpp" line="+53"/>
+        <location filename="../src/settings/machine/UIMachineSettingsSystem.cpp" line="+56"/>
         <location line="+1"/>
         <source>%1 MB</source>
         <translation>%1 MB</translation>
@@ -11318,13 +11471,13 @@
 <context>
     <name>UIMultiScreenLayout</name>
     <message>
-        <location filename="../src/globals/UIActionPoolRuntime.cpp" line="+654"/>
+        <location filename="../src/globals/UIActionPoolRuntime.cpp" line="+662"/>
         <location line="+43"/>
         <source>Virtual Screen %1</source>
         <translation>Navidezni zaslon %1</translation>
     </message>
     <message>
-        <location line="+243"/>
+        <location line="+168"/>
         <source>Use Host Screen %1</source>
         <translation>Uporabi zaslon gostitelja %1</translation>
     </message>
@@ -11680,7 +11833,7 @@
 <context>
     <name>UIScreenshotViewer</name>
     <message>
-        <location filename="../src/snapshots/UISnapshotDetailsWidget.cpp" line="-1371"/>
+        <location filename="../src/snapshots/UISnapshotDetailsWidget.cpp" line="-1378"/>
         <source>Screenshot of %1 (%2)</source>
         <translation>Posnetek stanja %1 (%2)</translation>
     </message>
@@ -13446,7 +13599,7 @@
         <translation>&lt;p&gt;Izberite navidezne računalnike, ki morajo biti dodani k namenski napravi. Lahko izberete več kot enega. Upoštevajte, da morate te računalnike pred izvozom izklopiti.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/wizards/exportappliance/UIWizardExportAppPageBasic2.cpp" line="+1042"/>
+        <location filename="../src/wizards/exportappliance/UIWizardExportAppPageBasic2.cpp" line="+1050"/>
         <location filename="../src/wizards/exportappliance/UIWizardExportAppPageExpert.cpp" line="+421"/>
         <source>Appliance settings</source>
         <translation>Nastavitve namenske naprave</translation>
@@ -14024,7 +14177,7 @@ Home folders can also be individually (per virtual machine)  modified.</source>
 <context>
     <name>UIWizardNewVM</name>
     <message>
-        <location filename="../src/wizards/newvm/UIWizardNewVM.cpp" line="+337"/>
+        <location filename="../src/wizards/newvm/UIWizardNewVM.cpp" line="+340"/>
         <source>Create Virtual Machine</source>
         <translation>Ustvari navidezni računalnik</translation>
     </message>
@@ -14315,7 +14468,7 @@ Home folders can also be individually (per virtual machine)  modified.</source>
         <translation type="vanished">Onemogočeno</translation>
     </message>
     <message>
-        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="+142"/>
+        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="+143"/>
         <source>Powered Off</source>
         <comment>MachineState</comment>
         <translation>Izklopljen</translation>
@@ -14399,7 +14552,7 @@ Home folders can also be individually (per virtual machine)  modified.</source>
         <translation>Omrežje</translation>
     </message>
     <message>
-        <location line="+243"/>
+        <location line="+272"/>
         <location line="+18"/>
         <source>Null Audio Driver</source>
         <comment>AudioDriverType</comment>
@@ -14495,7 +14648,7 @@ Home folders can also be individually (per virtual machine)  modified.</source>
         <translation>Zajeto</translation>
     </message>
     <message>
-        <location line="-194"/>
+        <location line="-223"/>
         <source>Disabled</source>
         <comment>ClipboardType</comment>
         <translation>Onemogočeno</translation>
@@ -14554,7 +14707,7 @@ Home folders can also be individually (per virtual machine)  modified.</source>
         <translation type="vanished">Deljene mape</translation>
     </message>
     <message>
-        <location line="+142"/>
+        <location line="+171"/>
         <location line="+14"/>
         <source>Disconnected</source>
         <comment>PortMode</comment>
@@ -14636,7 +14789,7 @@ Home folders can also be individually (per virtual machine)  modified.</source>
         <translation type="vanished">Vzporedna vrata</translation>
     </message>
     <message>
-        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="-173"/>
+        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="-202"/>
         <source>USB</source>
         <comment>DeviceType</comment>
         <translation>USB</translation>
@@ -14648,7 +14801,7 @@ Home folders can also be individually (per virtual machine)  modified.</source>
         <translation>Deljena mapa</translation>
     </message>
     <message>
-        <location line="+334"/>
+        <location line="+363"/>
         <source>IDE</source>
         <comment>StorageBus</comment>
         <translation>IDE</translation>
@@ -14795,7 +14948,7 @@ Home folders can also be individually (per virtual machine)  modified.</source>
         <translation>Onemogočeno</translation>
     </message>
     <message>
-        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="-175"/>
+        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="-204"/>
         <source>Setting Up</source>
         <comment>MachineState</comment>
         <translation>Nastavitev</translation>
@@ -14826,7 +14979,7 @@ Home folders can also be individually (per virtual machine)  modified.</source>
         <translation type="vanished">Notranje omrežje, &apos;%1&apos;</translation>
     </message>
     <message>
-        <location line="+387"/>
+        <location line="+416"/>
         <source>SCSI</source>
         <comment>StorageBus</comment>
         <translation>SCSI</translation>
@@ -14960,7 +15113,7 @@ Home folders can also be individually (per virtual machine)  modified.</source>
         <translation type="vanished">Pomnilnške naprave</translation>
     </message>
     <message>
-        <location line="-243"/>
+        <location line="-272"/>
         <source>Teleported</source>
         <comment>MachineState</comment>
         <translation>Prenesen na daljavo</translation>
@@ -15005,7 +15158,7 @@ Home folders can also be individually (per virtual machine)  modified.</source>
         <translation>Brisanje posnetka stanja</translation>
     </message>
     <message>
-        <location line="+389"/>
+        <location line="+418"/>
         <source>Floppy</source>
         <comment>StorageBus</comment>
         <translation>Disketa</translation>
@@ -15173,7 +15326,7 @@ Home folders can also be individually (per virtual machine)  modified.</source>
         <translation>LsiLogic SAS</translation>
     </message>
     <message>
-        <location filename="../src/converter/UIConverterBackendGlobal.cpp" line="+94"/>
+        <location filename="../src/converter/UIConverterBackendGlobal.cpp" line="+95"/>
         <location line="+19"/>
         <location filename="../src/globals/VBoxGlobal.cpp" line="+24"/>
         <location line="+28"/>
@@ -15267,7 +15420,7 @@ Home folders can also be individually (per virtual machine)  modified.</source>
         <translation>Vse datoteke (*)</translation>
     </message>
     <message>
-        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="-433"/>
+        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="-462"/>
         <source>Fault Tolerant Syncing</source>
         <comment>MachineState</comment>
         <translation>Usklajevanje strpno do napak</translation>
@@ -15291,7 +15444,7 @@ Home folders can also be individually (per virtual machine)  modified.</source>
         <translation>Odklepanje</translation>
     </message>
     <message>
-        <location line="+340"/>
+        <location line="+369"/>
         <location line="+12"/>
         <source>Null</source>
         <comment>AuthType</comment>
@@ -15358,7 +15511,7 @@ Home folders can also be individually (per virtual machine)  modified.</source>
         <translation>Vmesnik %1</translation>
     </message>
     <message>
-        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="-84"/>
+        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="-113"/>
         <source>Disabled</source>
         <comment>DragAndDropType</comment>
         <translation>Onemogočeno</translation>
@@ -15383,6 +15536,34 @@ Home folders can also be individually (per virtual machine)  modified.</source>
     </message>
     <message>
         <location line="+26"/>
+        <location line="+13"/>
+        <source>None</source>
+        <comment>GraphicsControllerType</comment>
+        <translation type="unfinished">Brez</translation>
+    </message>
+    <message>
+        <location line="-12"/>
+        <location line="+13"/>
+        <source>VBoxVGA</source>
+        <comment>GraphicsControllerType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="-12"/>
+        <location line="+13"/>
+        <source>VMSVGA</source>
+        <comment>GraphicsControllerType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="-12"/>
+        <location line="+13"/>
+        <source>VBoxSVGA</source>
+        <comment>GraphicsControllerType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+13"/>
         <source>Normal</source>
         <comment>MediumType</comment>
         <translation>Običajen</translation>
@@ -15629,12 +15810,12 @@ Home folders can also be individually (per virtual machine)  modified.</source>
     </message>
     <message>
         <location line="+1"/>
-        <location line="+61"/>
+        <location line="+62"/>
         <source>Acceleration</source>
         <translation type="unfinished">Pospeševanje</translation>
     </message>
     <message>
-        <location line="-3"/>
+        <location line="-4"/>
         <source>VRAM</source>
         <translation type="unfinished"></translation>
     </message>
@@ -15649,6 +15830,11 @@ Home folders can also be individually (per virtual machine)  modified.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location line="+1"/>
+        <source>Graphics Controller</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <location line="+2"/>
         <source>VRDE</source>
         <translation type="unfinished"></translation>
@@ -15659,7 +15845,7 @@ Home folders can also be individually (per virtual machine)  modified.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+56"/>
+        <location line="+58"/>
         <source>Hard Disks</source>
         <translation type="unfinished">Trdi diski</translation>
     </message>
@@ -15863,12 +16049,30 @@ Home folders can also be individually (per virtual machine)  modified.</source>
         <translation type="unfinished">QCOW (kopiranje ob pisanju QEMU - angl. QEMU Copy-On-Write)</translation>
     </message>
     <message>
+        <location line="+56"/>
+        <source>Video/Audio</source>
+        <comment>UISettingsDefs::RecordingMode</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Video Only</source>
+        <comment>UISettingsDefs::RecordingMode</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Audio Only</source>
+        <comment>UISettingsDefs::RecordingMode</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Parallel ports</source>
         <comment>DetailsElementType</comment>
         <translation type="vanished">Vzporedna vrata</translation>
     </message>
     <message>
-        <location line="-885"/>
+        <location line="-943"/>
         <location line="+27"/>
         <source>USB</source>
         <comment>DetailsElementType</comment>
@@ -15938,7 +16142,7 @@ Home folders can also be individually (per virtual machine)  modified.</source>
         <translation type="vanished">Neomejeno izvajanje</translation>
     </message>
     <message>
-        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="-366"/>
+        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="-395"/>
         <source>PS/2 Mouse</source>
         <comment>PointingHIDType</comment>
         <translation>Miška PS/2</translation>
@@ -15973,7 +16177,7 @@ Home folders can also be individually (per virtual machine)  modified.</source>
         <translation>Večdotična tablica USB</translation>
     </message>
     <message>
-        <location line="+67"/>
+        <location line="+96"/>
         <source>NAT Network</source>
         <comment>NetworkAttachmentType</comment>
         <translation>Omrežje NAT</translation>
@@ -15996,7 +16200,7 @@ Home folders can also be individually (per virtual machine)  modified.</source>
         <translation>USB</translation>
     </message>
     <message>
-        <location filename="../src/converter/UIConverterBackendGlobal.cpp" line="-1364"/>
+        <location filename="../src/converter/UIConverterBackendGlobal.cpp" line="-1367"/>
         <location line="+40"/>
         <source>USB Port %1</source>
         <comment>StorageSlot</comment>
@@ -16015,7 +16219,7 @@ Home folders can also be individually (per virtual machine)  modified.</source>
         <translation>Vmesnik paranavideznosti</translation>
     </message>
     <message>
-        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="-400"/>
+        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="-429"/>
         <source>None</source>
         <comment>ParavirtProvider</comment>
         <translation>Brez</translation>
@@ -16045,7 +16249,7 @@ Home folders can also be individually (per virtual machine)  modified.</source>
         <translation>Hyper-V</translation>
     </message>
     <message>
-        <location line="+92"/>
+        <location line="+121"/>
         <source>New dynamically allocated storage</source>
         <comment>MediumVariant</comment>
         <translation>Nova dinamično dodeljena pomnilniška naprava</translation>
@@ -16110,7 +16314,7 @@ Home folders can also be individually (per virtual machine)  modified.</source>
         <translation type="unfinished">Procesorji</translation>
     </message>
     <message>
-        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="-139"/>
+        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="-168"/>
         <source>Taking Snapshot</source>
         <comment>MachineState</comment>
         <translation>Zajemanje posnetka stanja</translation>
@@ -16134,7 +16338,7 @@ Home folders can also be individually (per virtual machine)  modified.</source>
         <translation>Optični</translation>
     </message>
     <message>
-        <location line="+164"/>
+        <location line="+193"/>
         <location line="+14"/>
         <source>TCP</source>
         <comment>PortMode</comment>
@@ -16159,7 +16363,7 @@ Home folders can also be individually (per virtual machine)  modified.</source>
         <translation>xHCI</translation>
     </message>
     <message>
-        <location filename="../src/converter/UIConverterBackendGlobal.cpp" line="+1296"/>
+        <location filename="../src/converter/UIConverterBackendGlobal.cpp" line="+1299"/>
         <location line="+27"/>
         <source>User interface</source>
         <comment>DetailsElementType</comment>
@@ -16228,13 +16432,13 @@ Home folders can also be individually (per virtual machine)  modified.</source>
         <translation>NVMe</translation>
     </message>
     <message>
-        <location filename="../src/converter/UIConverterBackendGlobal.cpp" line="-1347"/>
+        <location filename="../src/converter/UIConverterBackendGlobal.cpp" line="-1350"/>
         <source>NVMe Port %1</source>
         <comment>StorageSlot</comment>
         <translation>Vrata NVMe %1</translation>
     </message>
     <message>
-        <location line="+1801"/>
+        <location line="+1804"/>
         <source>Hard Disks</source>
         <comment>IndicatorType</comment>
         <translation>Trdi diski</translation>

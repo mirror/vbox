@@ -1230,40 +1230,8 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Move to guest</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Move the Selected Object(s) from Host to Guest</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Move the selected object(s) from host to guest</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Move to host</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Move the Selected Object(s) from Guest to Host</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Move the selected object(s) from guest to host</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Settings</source>
-        <translation type="unfinished">Ρυθμίσεις</translation>
-    </message>
-    <message>
-        <source>Open panel with file manager settings</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Open Panel With File Manager Settings</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Ρυθμίσεις</translation>
     </message>
     <message>
         <source>Log</source>
@@ -1786,6 +1754,18 @@
     <message>
         <source>Scale to %1% (autoscaled output)</source>
         <comment>scale-factor</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Options</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open panel with file manager options</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open Panel With File Manager Options</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -2690,6 +2670,11 @@
         <comment>details (display/recording)</comment>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Graphics Controller</source>
+        <comment>details (display)</comment>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIDetailsElement</name>
@@ -2832,13 +2817,6 @@
         <source>%1, %2: %3</source>
         <comment>col.2 text, col.3 name: col.3 text</comment>
         <translation>%1, %2: %3</translation>
-    </message>
-</context>
-<context>
-    <name>UIFileManagerLogViewer</name>
-    <message>
-        <source>Clear</source>
-        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -2989,92 +2967,92 @@
     <message>
         <source>Name</source>
         <comment>details (general)</comment>
-        <translation>Όνομα</translation>
+        <translation type="vanished">Όνομα</translation>
     </message>
     <message>
         <source>Groups</source>
         <comment>details (general)</comment>
-        <translation>Ομάδες</translation>
+        <translation type="vanished">Ομάδες</translation>
     </message>
     <message>
         <source>%1 MB</source>
         <comment>details</comment>
-        <translation>%1 MB</translation>
+        <translation type="vanished">%1 MB</translation>
     </message>
     <message>
         <source>Processors</source>
         <comment>details (system)</comment>
-        <translation>Επεξεργαστές</translation>
+        <translation type="vanished">Επεξεργαστές</translation>
     </message>
     <message>
         <source>%1%</source>
         <comment>details</comment>
-        <translation>%1%</translation>
+        <translation type="vanished">%1%</translation>
     </message>
     <message>
         <source>VT-x/AMD-V</source>
         <comment>details (system)</comment>
-        <translation>VT-x/AMD-V</translation>
+        <translation type="vanished">VT-x/AMD-V</translation>
     </message>
     <message>
         <source>PAE/NX</source>
         <comment>details (system)</comment>
-        <translation>PAE/NX</translation>
+        <translation type="vanished">PAE/NX</translation>
     </message>
     <message>
         <source>Acceleration</source>
         <comment>details (system)</comment>
-        <translation>Επιτάχυνση</translation>
+        <translation type="vanished">Επιτάχυνση</translation>
     </message>
     <message>
         <source>Screens</source>
         <comment>details (display)</comment>
-        <translation>Οθόνες</translation>
+        <translation type="vanished">Οθόνες</translation>
     </message>
     <message>
         <source>3D</source>
         <comment>details (display)</comment>
-        <translation>3Δ</translation>
+        <translation type="vanished">3Δ</translation>
     </message>
     <message>
         <source>Acceleration</source>
         <comment>details (display)</comment>
-        <translation>Επιτάχυνση</translation>
+        <translation type="vanished">Επιτάχυνση</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details (display/vrde/VRDE server)</comment>
-        <translation>Απενεργοποιημένο</translation>
+        <translation type="vanished">Απενεργοποιημένο</translation>
     </message>
     <message>
         <source>Controller</source>
         <comment>details (audio)</comment>
-        <translation>Ελεγκτής</translation>
+        <translation type="vanished">Ελεγκτής</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details (audio)</comment>
-        <translation>Απενεργοποιημένο</translation>
+        <translation type="vanished">Απενεργοποιημένο</translation>
     </message>
     <message>
         <source>Adapter %1</source>
         <comment>details (network)</comment>
-        <translation>Κάρτα δικτύου %1</translation>
+        <translation type="vanished">Κάρτα δικτύου %1</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details (network/adapter)</comment>
-        <translation>Απενεργοποιημένη</translation>
+        <translation type="vanished">Απενεργοποιημένη</translation>
     </message>
     <message>
         <source>Port %1</source>
         <comment>details (serial)</comment>
-        <translation>Θύρα %1</translation>
+        <translation type="vanished">Θύρα %1</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details (serial)</comment>
-        <translation>Απενεργοποιημένη</translation>
+        <translation type="vanished">Απενεργοποιημένη</translation>
     </message>
     <message>
         <source>Port %1</source>
@@ -3089,17 +3067,17 @@
     <message>
         <source>%1 (%2 active)</source>
         <comment>details (usb)</comment>
-        <translation>%1 (%2 ενεργά)</translation>
+        <translation type="vanished">%1 (%2 ενεργά)</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details (usb)</comment>
-        <translation>Απενεργοποιημένο</translation>
+        <translation type="vanished">Απενεργοποιημένο</translation>
     </message>
     <message>
         <source>None</source>
         <comment>details (shared folders)</comment>
-        <translation>Κανένας</translation>
+        <translation type="vanished">Κανένας</translation>
     </message>
     <message>
         <source>None</source>
@@ -3109,7 +3087,7 @@
     <message>
         <source>Operating System</source>
         <comment>details (general)</comment>
-        <translation>Λειτουργικό Σύστημα</translation>
+        <translation type="vanished">Λειτουργικό Σύστημα</translation>
     </message>
     <message>
         <source>Information Inaccessible</source>
@@ -3119,77 +3097,77 @@
     <message>
         <source>Base Memory</source>
         <comment>details (system)</comment>
-        <translation>Βασική Μνήμη</translation>
+        <translation type="vanished">Βασική Μνήμη</translation>
     </message>
     <message>
         <source>Execution Cap</source>
         <comment>details (system)</comment>
-        <translation>Όριο εκτέλεσης</translation>
+        <translation type="vanished">Όριο εκτέλεσης</translation>
     </message>
     <message>
         <source>Boot Order</source>
         <comment>details (system)</comment>
-        <translation>Σειρά εκκίνησης</translation>
+        <translation type="vanished">Σειρά εκκίνησης</translation>
     </message>
     <message>
         <source>Nested Paging</source>
         <comment>details (system)</comment>
-        <translation>Ένθετη σελιδοποίηση</translation>
+        <translation type="vanished">Ένθετη σελιδοποίηση</translation>
     </message>
     <message>
         <source>Video Memory</source>
         <comment>details (display)</comment>
-        <translation>Μνήμη Γραφικών</translation>
+        <translation type="vanished">Μνήμη Γραφικών</translation>
     </message>
     <message>
         <source>2D Video</source>
         <comment>details (display)</comment>
-        <translation>2Δ Γραφικά</translation>
+        <translation type="vanished">2Δ Γραφικά</translation>
     </message>
     <message>
         <source>Remote Desktop Server Port</source>
         <comment>details (display/vrde)</comment>
-        <translation>Θύρα διακομιστή απομακρυσμένης επιφάνειας</translation>
+        <translation type="vanished">Θύρα διακομιστή απομακρυσμένης επιφάνειας</translation>
     </message>
     <message>
         <source>Remote Desktop Server</source>
         <comment>details (display/vrde)</comment>
-        <translation>Διακομιστής απομακρυσμένης επιφάνειας</translation>
+        <translation type="vanished">Διακομιστής απομακρυσμένης επιφάνειας</translation>
     </message>
     <message>
         <source>Not Attached</source>
         <comment>details (storage)</comment>
-        <translation>Μη συνδεδεμένο</translation>
+        <translation type="vanished">Μη συνδεδεμένο</translation>
     </message>
     <message>
         <source>Host Driver</source>
         <comment>details (audio)</comment>
-        <translation>Οδηγός Οικοδεσπότη</translation>
+        <translation type="vanished">Οδηγός Οικοδεσπότη</translation>
     </message>
     <message>
         <source>Bridged Adapter, %1</source>
         <comment>details (network)</comment>
-        <translation>Γεφυρωμένη Κάρτα, &apos;%1&apos;</translation>
+        <translation type="vanished">Γεφυρωμένη Κάρτα, &apos;%1&apos;</translation>
     </message>
     <message>
         <source>Internal Network, &apos;%1&apos;</source>
         <comment>details (network)</comment>
-        <translation>Εσωτερικό δίκτυο, &apos;%1&apos;</translation>
+        <translation type="vanished">Εσωτερικό δίκτυο, &apos;%1&apos;</translation>
     </message>
     <message>
         <source>Host-only Adapter, &apos;%1&apos;</source>
         <comment>details (network)</comment>
-        <translation>Μόνο-με-οικοδεσπότη κάρτα, &apos;%1&apos;</translation>
+        <translation type="vanished">Μόνο-με-οικοδεσπότη κάρτα, &apos;%1&apos;</translation>
     </message>
     <message>
         <source>Generic Driver, &apos;%1&apos;</source>
         <comment>details (network)</comment>
-        <translation>Γενικός Οδηγός, &apos;%1&apos;</translation>
+        <translation type="vanished">Γενικός Οδηγός, &apos;%1&apos;</translation>
     </message>
     <message>
         <source>Device Filters</source>
         <comment>details (usb)</comment>
-        <translation>Φίλτρα Συσκευών</translation>
+        <translation type="vanished">Φίλτρα Συσκευών</translation>
     </message>
     <message>
         <source>USB Controller Inaccessible</source>
@@ -3199,7 +3177,7 @@
     <message>
         <source>Shared Folders</source>
         <comment>details (shared folders)</comment>
-        <translation>Κοινόχρηστοι Φάκελοι</translation>
+        <translation type="vanished">Κοινόχρηστοι Φάκελοι</translation>
     </message>
     <message>
         <source>Video Capture File</source>
@@ -3224,36 +3202,36 @@
     <message>
         <source>NAT Network, &apos;%1&apos;</source>
         <comment>details (network)</comment>
-        <translation>Δίκτυο NAT, %1</translation>
+        <translation type="vanished">Δίκτυο NAT, %1</translation>
     </message>
     <message>
         <source>Frame Size: %1x%2, Frame Rate: %3fps, Bit Rate: %4kbps</source>
-        <translation>Μέγεθος εικόνας: %1x%2, Ρυθμός εικόνας: %3fps, Ρυθμός μετάδοσης: %4kbps</translation>
+        <translation type="vanished">Μέγεθος εικόνας: %1x%2, Ρυθμός εικόνας: %3fps, Ρυθμός μετάδοσης: %4kbps</translation>
     </message>
     <message>
         <source>Minimal Paravirtualization</source>
         <comment>details (system)</comment>
-        <translation>Ελάχιστη παραεικονοποίηση</translation>
+        <translation type="vanished">Ελάχιστη παραεικονοποίηση</translation>
     </message>
     <message>
         <source>Hyper-V Paravirtualization</source>
         <comment>details (system)</comment>
-        <translation>Παραεικονοποίηση Hyper-V</translation>
+        <translation type="vanished">Παραεικονοποίηση Hyper-V</translation>
     </message>
     <message>
         <source>KVM Paravirtualization</source>
         <comment>details (system)</comment>
-        <translation>Παραεικονοποίηση KVM</translation>
+        <translation type="vanished">Παραεικονοποίηση KVM</translation>
     </message>
     <message>
         <source>[Optical Drive]</source>
         <comment>details (storage)</comment>
-        <translation>[Οπτική συσκευή]</translation>
+        <translation type="vanished">[Οπτική συσκευή]</translation>
     </message>
     <message>
         <source>USB Controller</source>
         <comment>details (usb)</comment>
-        <translation>Ελεγκτής USB</translation>
+        <translation type="vanished">Ελεγκτής USB</translation>
     </message>
     <message>
         <source>Mini-toolbar Position</source>
@@ -3283,7 +3261,7 @@
     <message>
         <source>Scale-factor</source>
         <comment>details (display)</comment>
-        <translation>Συντελεστής κλίμακας</translation>
+        <translation type="vanished">Συντελεστής κλίμακας</translation>
     </message>
     <message>
         <source>Unscaled HiDPI Video Output</source>
@@ -3328,27 +3306,27 @@
     <message>
         <source>Generic Driver, &apos;%1&apos; { %2 }</source>
         <comment>details (network)</comment>
-        <translation>Γενικός Οδηγός, &apos;%1&apos; { %2 }</translation>
+        <translation type="vanished">Γενικός Οδηγός, &apos;%1&apos; { %2 }</translation>
     </message>
     <message>
         <source>Chipset Type</source>
         <comment>details (system)</comment>
-        <translation>Τύπος Ολοκληρωμένου Κυκλώματος</translation>
+        <translation type="vanished">Τύπος Ολοκληρωμένου Κυκλώματος</translation>
     </message>
     <message>
         <source>Enabled</source>
         <comment>details (system/EFI)</comment>
-        <translation>Ενεργοποιημένο</translation>
+        <translation type="vanished">Ενεργοποιημένο</translation>
     </message>
     <message>
         <source>EFI</source>
         <comment>details (system)</comment>
-        <translation>EFI</translation>
+        <translation type="vanished">EFI</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details (system/EFI)</comment>
-        <translation>Απενεργοποιημένο</translation>
+        <translation type="vanished">Απενεργοποιημένο</translation>
     </message>
     <message>
         <source>Disabled</source>
@@ -3358,57 +3336,32 @@
     <message>
         <source>Audio Output</source>
         <comment>details (audio)</comment>
-        <translation>Έξοδος Ήχου</translation>
+        <translation type="vanished">Έξοδος Ήχου</translation>
     </message>
     <message>
         <source>Enabled</source>
         <comment>details (audio/output)</comment>
-        <translation>Ενεργοποιημένη</translation>
+        <translation type="vanished">Ενεργοποιημένη</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details (audio/output)</comment>
-        <translation>Απενεργοποιημένη</translation>
+        <translation type="vanished">Απενεργοποιημένη</translation>
     </message>
     <message>
         <source>Audio Input</source>
         <comment>details (audio)</comment>
-        <translation>Είσοδος Ήχου</translation>
+        <translation type="vanished">Είσοδος Ήχου</translation>
     </message>
     <message>
         <source>Enabled</source>
         <comment>details (audio/input)</comment>
-        <translation>Ενεργοποιημένη</translation>
+        <translation type="vanished">Ενεργοποιημένη</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details (audio/input)</comment>
-        <translation>Απενεργοποιημένη</translation>
-    </message>
-    <message>
-        <source>Settings File Location</source>
-        <comment>details (general)</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Recording File</source>
-        <comment>details (display/recording)</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Recording Attributes</source>
-        <comment>details (display/recording)</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Recording</source>
-        <comment>details (display/recording)</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Disabled</source>
-        <comment>details (display/recording)</comment>
-        <translation type="unfinished"></translation>
+        <translation type="vanished">Απενεργοποιημένη</translation>
     </message>
 </context>
 <context>
@@ -4308,14 +4261,6 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Clean Finished</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Clean All</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>List directories on top</source>
         <translation type="unfinished"></translation>
     </message>
@@ -4420,10 +4365,6 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;b&gt;Owner:&lt;/b&gt; %1&lt;br/&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>&lt;b&gt;Selected:&lt;/b&gt; %1 files and %2 directories&lt;br/&gt;</source>
         <translation type="unfinished"></translation>
     </message>
@@ -4440,18 +4381,166 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;b&gt;Name:&lt;/b&gt; %1</source>
+        <source>&lt;b&gt;Owner:&lt;/b&gt; %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;b&gt;Owner:&lt;/b&gt; %1</source>
+        <source>%1 - Guest Control File Manager</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Clear</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation type="unfinished">Ακύρωση</translation>
+    </message>
+    <message>
+        <source>Not yet started</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Working</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Paused</source>
+        <translation type="unfinished">Σε παύση</translation>
+    </message>
+    <message>
+        <source>Canceled</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Succeded</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Invalid</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove Selected</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove Finished</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove All</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show a confirmation dialog before deleting files and directories</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show file/directory sizes in human readable format rather than in bytes</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show Password</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;Allocated:&lt;/b&gt; %1 bytes</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;INode:&lt;/b&gt; %1&lt;br/&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;Device:&lt;/b&gt; %1&lt;br/&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;Hardlinks:&lt;/b&gt; %1&lt;br/&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;Mode:&lt;/b&gt; %1&lt;br/&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;Attributes:&lt;/b&gt; %1&lt;br/&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;Device ID:&lt;/b&gt; %1&lt;br/&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;Owner:&lt;/b&gt; %1 (%2)&lt;br/&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;Group:&lt;/b&gt; %1 (%2)&lt;br/&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;Birth:&lt;/b&gt; %1&lt;br/&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;Change:&lt;/b&gt; %1&lt;br/&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;Access:&lt;/b&gt; %1&lt;br/&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;Name:&lt;/b&gt; %1&lt;br/&gt;</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
-    <name>UIGuestControlFileManagerDialog</name>
+    <name>UIGuestFileTable</name>
     <message>
-        <source>%1 - Guest Control</source>
+        <source>directory</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>symbolic link</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>character device</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>block device</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>fifo</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>socket</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>whiteout</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>unknown</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>illegal-value</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -6096,6 +6185,14 @@
         <source>&amp;Audio Quality:</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>&amp;Graphics Controller:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Selects the graphics adapter type the virtual machine will use.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIMachineSettingsGeneral</name>
@@ -7260,6 +7357,26 @@
     </message>
     <message>
         <source>The hardware virtualization is enabled in the Acceleration section of the System page although it is not supported by the host system. It should be disabled in order to start the virtual system.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When checked, the nested hardware virtualization CPU feature will be exposed to the virtual machine.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enable Nested &amp;VT-x/AMD-V</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The hardware virtualization is not currently enabled in the Acceleration section of the System page. This is needed to support nested hardware virtualization. It will be enabled automatically if you confirm your changes.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The nested paging is not currently enabled in the Acceleration section of the System page. This is needed to support nested hardware virtualization. It will be enabled automatically if you confirm your changes.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The hardware virtualization is not currently enabled in the Acceleration section of the System page. This is needed for nested paging support. It will be enabled automatically if you confirm your changes.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -13499,6 +13616,45 @@ Home folders can also be individually (per virtual machine)  modified.</source>
     </message>
     <message>
         <source>Please select files to be on the VISO</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>None</source>
+        <comment>GraphicsControllerType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>VBoxVGA</source>
+        <comment>GraphicsControllerType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>VMSVGA</source>
+        <comment>GraphicsControllerType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>VBoxSVGA</source>
+        <comment>GraphicsControllerType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Graphics Controller</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Video/Audio</source>
+        <comment>UISettingsDefs::RecordingMode</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Video Only</source>
+        <comment>UISettingsDefs::RecordingMode</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Audio Only</source>
+        <comment>UISettingsDefs::RecordingMode</comment>
         <translation type="unfinished"></translation>
     </message>
 </context>

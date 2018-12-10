@@ -1704,40 +1704,8 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Move to guest</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Move the Selected Object(s) from Host to Guest</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Move the selected object(s) from host to guest</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Move to host</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Move the Selected Object(s) from Guest to Host</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Move the selected object(s) from guest to host</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Settings</source>
-        <translation type="unfinished">Настройки</translation>
-    </message>
-    <message>
-        <source>Open panel with file manager settings</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Open Panel With File Manager Settings</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Настройки</translation>
     </message>
     <message>
         <source>Log</source>
@@ -2324,6 +2292,18 @@
     <message>
         <source>Scale to %1% (autoscaled output)</source>
         <comment>scale-factor</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Options</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open panel with file manager options</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open Panel With File Manager Options</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -3428,6 +3408,11 @@
         <comment>details (display/recording)</comment>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Graphics Controller</source>
+        <comment>details (display)</comment>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIDetailsBlock</name>
@@ -4495,13 +4480,6 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>UIFileManagerLogViewer</name>
-    <message>
-        <source>Clear</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
     <name>UIFilePathSelector</name>
     <message>
         <source>&amp;Copy</source>
@@ -4837,62 +4815,62 @@ p, li { white-space: pre-wrap; &lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; 
     <message>
         <source>Name</source>
         <comment>details (general)</comment>
-        <translation>Име</translation>
+        <translation type="vanished">Име</translation>
     </message>
     <message>
         <source>Groups</source>
         <comment>details (general)</comment>
-        <translation>Групи</translation>
+        <translation type="vanished">Групи</translation>
     </message>
     <message>
         <source>%1 MB</source>
         <comment>details</comment>
-        <translation>%1 МБ</translation>
+        <translation type="vanished">%1 МБ</translation>
     </message>
     <message>
         <source>Processors</source>
         <comment>details (system)</comment>
-        <translation>Процесори</translation>
+        <translation type="vanished">Процесори</translation>
     </message>
     <message>
         <source>%1%</source>
         <comment>details</comment>
-        <translation>%1%</translation>
+        <translation type="vanished">%1%</translation>
     </message>
     <message>
         <source>VT-x/AMD-V</source>
         <comment>details (system)</comment>
-        <translation>VT-x/AMD-V</translation>
+        <translation type="vanished">VT-x/AMD-V</translation>
     </message>
     <message>
         <source>PAE/NX</source>
         <comment>details (system)</comment>
-        <translation>PAE/NX</translation>
+        <translation type="vanished">PAE/NX</translation>
     </message>
     <message>
         <source>Acceleration</source>
         <comment>details (system)</comment>
-        <translation>Ускорение</translation>
+        <translation type="vanished">Ускорение</translation>
     </message>
     <message>
         <source>Screens</source>
         <comment>details (display)</comment>
-        <translation>Екрани</translation>
+        <translation type="vanished">Екрани</translation>
     </message>
     <message>
         <source>3D</source>
         <comment>details (display)</comment>
-        <translation>3D</translation>
+        <translation type="vanished">3D</translation>
     </message>
     <message>
         <source>Acceleration</source>
         <comment>details (display)</comment>
-        <translation>Ускорение</translation>
+        <translation type="vanished">Ускорение</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details (display/vrde/VRDE server)</comment>
-        <translation>Забранен</translation>
+        <translation type="vanished">Забранен</translation>
     </message>
     <message>
         <source>[CD/DVD]</source>
@@ -4907,12 +4885,12 @@ p, li { white-space: pre-wrap; &lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; 
     <message>
         <source>Controller</source>
         <comment>details (audio)</comment>
-        <translation>Контролер</translation>
+        <translation type="vanished">Контролер</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details (audio)</comment>
-        <translation>Забранено</translation>
+        <translation type="vanished">Забранено</translation>
     </message>
     <message>
         <source>Bridged adapter, %1</source>
@@ -4942,22 +4920,22 @@ p, li { white-space: pre-wrap; &lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; 
     <message>
         <source>Adapter %1</source>
         <comment>details (network)</comment>
-        <translation>Адаптер %1</translation>
+        <translation type="vanished">Адаптер %1</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details (network/adapter)</comment>
-        <translation>Забранен</translation>
+        <translation type="vanished">Забранен</translation>
     </message>
     <message>
         <source>Port %1</source>
         <comment>details (serial)</comment>
-        <translation>Порт %1</translation>
+        <translation type="vanished">Порт %1</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details (serial)</comment>
-        <translation>Забранен</translation>
+        <translation type="vanished">Забранен</translation>
     </message>
     <message>
         <source>Port %1</source>
@@ -4972,17 +4950,17 @@ p, li { white-space: pre-wrap; &lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; 
     <message>
         <source>%1 (%2 active)</source>
         <comment>details (usb)</comment>
-        <translation>%1 (%2 активен)</translation>
+        <translation type="vanished">%1 (%2 активен)</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details (usb)</comment>
-        <translation>Забранен</translation>
+        <translation type="vanished">Забранен</translation>
     </message>
     <message>
         <source>None</source>
         <comment>details (shared folders)</comment>
-        <translation>Няма</translation>
+        <translation type="vanished">Няма</translation>
     </message>
     <message>
         <source>None</source>
@@ -4992,7 +4970,7 @@ p, li { white-space: pre-wrap; &lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; 
     <message>
         <source>Operating System</source>
         <comment>details (general)</comment>
-        <translation>Операционна система</translation>
+        <translation type="vanished">Операционна система</translation>
     </message>
     <message>
         <source>Information Inaccessible</source>
@@ -5002,82 +4980,82 @@ p, li { white-space: pre-wrap; &lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; 
     <message>
         <source>Base Memory</source>
         <comment>details (system)</comment>
-        <translation>Оперативна памет</translation>
+        <translation type="vanished">Оперативна памет</translation>
     </message>
     <message>
         <source>Execution Cap</source>
         <comment>details (system)</comment>
-        <translation>Лимит за изпълнение</translation>
+        <translation type="vanished">Лимит за изпълнение</translation>
     </message>
     <message>
         <source>Boot Order</source>
         <comment>details (system)</comment>
-        <translation>Ред на зареждане</translation>
+        <translation type="vanished">Ред на зареждане</translation>
     </message>
     <message>
         <source>Nested Paging</source>
         <comment>details (system)</comment>
-        <translation>Вместено страниране</translation>
+        <translation type="vanished">Вместено страниране</translation>
     </message>
     <message>
         <source>Video Memory</source>
         <comment>details (display)</comment>
-        <translation>Видео памет</translation>
+        <translation type="vanished">Видео памет</translation>
     </message>
     <message>
         <source>2D Video</source>
         <comment>details (display)</comment>
-        <translation>2D видео</translation>
+        <translation type="vanished">2D видео</translation>
     </message>
     <message>
         <source>Remote Desktop Server Port</source>
         <comment>details (display/vrde)</comment>
-        <translation>Порт за Отдалечен работен плот</translation>
+        <translation type="vanished">Порт за Отдалечен работен плот</translation>
     </message>
     <message>
         <source>Remote Desktop Server</source>
         <comment>details (display/vrde)</comment>
-        <translation>Отдалечен работен плот</translation>
+        <translation type="vanished">Отдалечен работен плот</translation>
     </message>
     <message>
         <source>Not Attached</source>
         <comment>details (storage)</comment>
-        <translation>Няма свързани</translation>
+        <translation type="vanished">Няма свързани</translation>
     </message>
     <message>
         <source>Host Driver</source>
         <comment>details (audio)</comment>
-        <translation>Реален драйвер</translation>
+        <translation type="vanished">Реален драйвер</translation>
     </message>
     <message>
         <source>Bridged Adapter, %1</source>
         <comment>details (network)</comment>
-        <translation>Мостов адаптер, %1</translation>
+        <translation type="vanished">Мостов адаптер, %1</translation>
     </message>
     <message>
         <source>Internal Network, &apos;%1&apos;</source>
         <comment>details (network)</comment>
-        <translation>Вътрешна мрежа, &apos;%1&apos;</translation>
+        <translation type="vanished">Вътрешна мрежа, &apos;%1&apos;</translation>
     </message>
     <message>
         <source>Host-only Adapter, &apos;%1&apos;</source>
         <comment>details (network)</comment>
-        <translation>Адаптер само-хост, &apos;%1&apos;</translation>
+        <translation type="vanished">Адаптер само-хост, &apos;%1&apos;</translation>
     </message>
     <message>
         <source>Generic Driver, &apos;%1&apos;</source>
         <comment>details (network)</comment>
-        <translation>Основен драйвер, &apos;%1&apos;</translation>
+        <translation type="vanished">Основен драйвер, &apos;%1&apos;</translation>
     </message>
     <message>
         <source>Generic Driver, &apos;%1&apos; { %2 }</source>
         <comment>details (network)</comment>
-        <translation>Основен драйвер, &apos;%1&apos; { %2 }</translation>
+        <translation type="vanished">Основен драйвер, &apos;%1&apos; { %2 }</translation>
     </message>
     <message>
         <source>Device Filters</source>
         <comment>details (usb)</comment>
-        <translation>Филтри на устройствата</translation>
+        <translation type="vanished">Филтри на устройствата</translation>
     </message>
     <message>
         <source>USB Controller Inaccessible</source>
@@ -5087,7 +5065,7 @@ p, li { white-space: pre-wrap; &lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; 
     <message>
         <source>Shared Folders</source>
         <comment>details (shared folders)</comment>
-        <translation>Споделени папки</translation>
+        <translation type="vanished">Споделени папки</translation>
     </message>
     <message>
         <source>Video Capture File</source>
@@ -5112,36 +5090,36 @@ p, li { white-space: pre-wrap; &lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; 
     <message>
         <source>NAT Network, &apos;%1&apos;</source>
         <comment>details (network)</comment>
-        <translation>NAT мрежа, &apos;%1&apos;</translation>
+        <translation type="vanished">NAT мрежа, &apos;%1&apos;</translation>
     </message>
     <message>
         <source>Frame Size: %1x%2, Frame Rate: %3fps, Bit Rate: %4kbps</source>
-        <translation>Размер на кадър: %1x%2, Скорост на кадри: %3fps, Скорост на битове: %4kbps</translation>
+        <translation type="vanished">Размер на кадър: %1x%2, Скорост на кадри: %3fps, Скорост на битове: %4kbps</translation>
     </message>
     <message>
         <source>Minimal Paravirtualization</source>
         <comment>details (system)</comment>
-        <translation>Минимална паравиртуализация</translation>
+        <translation type="vanished">Минимална паравиртуализация</translation>
     </message>
     <message>
         <source>Hyper-V Paravirtualization</source>
         <comment>details (system)</comment>
-        <translation>Hyper-V паравиртуализация</translation>
+        <translation type="vanished">Hyper-V паравиртуализация</translation>
     </message>
     <message>
         <source>KVM Paravirtualization</source>
         <comment>details (system)</comment>
-        <translation>KVM паравиртуализация</translation>
+        <translation type="vanished">KVM паравиртуализация</translation>
     </message>
     <message>
         <source>[Optical Drive]</source>
         <comment>details (storage)</comment>
-        <translation>[Оптично устройство]</translation>
+        <translation type="vanished">[Оптично устройство]</translation>
     </message>
     <message>
         <source>USB Controller</source>
         <comment>details (usb)</comment>
-        <translation>USB контролер</translation>
+        <translation type="vanished">USB контролер</translation>
     </message>
     <message>
         <source>Scale-factor</source>
@@ -5186,7 +5164,7 @@ p, li { white-space: pre-wrap; &lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; 
     <message>
         <source>Scale-factor</source>
         <comment>details (display)</comment>
-        <translation>Фактор на мащаба</translation>
+        <translation type="vanished">Фактор на мащаба</translation>
     </message>
     <message>
         <source>Unscaled HiDPI Video Output</source>
@@ -5227,81 +5205,6 @@ p, li { white-space: pre-wrap; &lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; 
         <source>Disabled</source>
         <comment>details (user interface/status-bar)</comment>
         <translation type="vanished">Забранена</translation>
-    </message>
-    <message>
-        <source>Chipset Type</source>
-        <comment>details (system)</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Enabled</source>
-        <comment>details (system/EFI)</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>EFI</source>
-        <comment>details (system)</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Disabled</source>
-        <comment>details (system/EFI)</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Audio Output</source>
-        <comment>details (audio)</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Enabled</source>
-        <comment>details (audio/output)</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Disabled</source>
-        <comment>details (audio/output)</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Audio Input</source>
-        <comment>details (audio)</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Enabled</source>
-        <comment>details (audio/input)</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Disabled</source>
-        <comment>details (audio/input)</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Settings File Location</source>
-        <comment>details (general)</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Recording File</source>
-        <comment>details (display/recording)</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Recording Attributes</source>
-        <comment>details (display/recording)</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Recording</source>
-        <comment>details (display/recording)</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Disabled</source>
-        <comment>details (display/recording)</comment>
-        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -6697,14 +6600,6 @@ p, li { white-space: pre-wrap; &lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; 
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Clean Finished</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Clean All</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>List directories on top</source>
         <translation type="unfinished"></translation>
     </message>
@@ -6809,10 +6704,6 @@ p, li { white-space: pre-wrap; &lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; 
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;b&gt;Owner:&lt;/b&gt; %1&lt;br/&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>&lt;b&gt;Selected:&lt;/b&gt; %1 files and %2 directories&lt;br/&gt;</source>
         <translation type="unfinished"></translation>
     </message>
@@ -6829,18 +6720,166 @@ p, li { white-space: pre-wrap; &lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; 
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;b&gt;Name:&lt;/b&gt; %1</source>
+        <source>&lt;b&gt;Owner:&lt;/b&gt; %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;b&gt;Owner:&lt;/b&gt; %1</source>
+        <source>%1 - Guest Control File Manager</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Clear</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation type="unfinished">Отказ</translation>
+    </message>
+    <message>
+        <source>Not yet started</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Working</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Paused</source>
+        <translation type="unfinished">На пауза</translation>
+    </message>
+    <message>
+        <source>Canceled</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Succeded</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Invalid</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove Selected</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove Finished</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove All</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show a confirmation dialog before deleting files and directories</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show file/directory sizes in human readable format rather than in bytes</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show Password</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;Allocated:&lt;/b&gt; %1 bytes</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;INode:&lt;/b&gt; %1&lt;br/&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;Device:&lt;/b&gt; %1&lt;br/&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;Hardlinks:&lt;/b&gt; %1&lt;br/&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;Mode:&lt;/b&gt; %1&lt;br/&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;Attributes:&lt;/b&gt; %1&lt;br/&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;Device ID:&lt;/b&gt; %1&lt;br/&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;Owner:&lt;/b&gt; %1 (%2)&lt;br/&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;Group:&lt;/b&gt; %1 (%2)&lt;br/&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;Birth:&lt;/b&gt; %1&lt;br/&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;Change:&lt;/b&gt; %1&lt;br/&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;Access:&lt;/b&gt; %1&lt;br/&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;Name:&lt;/b&gt; %1&lt;br/&gt;</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
-    <name>UIGuestControlFileManagerDialog</name>
+    <name>UIGuestFileTable</name>
     <message>
-        <source>%1 - Guest Control</source>
+        <source>directory</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>symbolic link</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>character device</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>block device</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>fifo</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>socket</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>whiteout</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>unknown</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>illegal-value</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -8909,6 +8948,14 @@ p, li { white-space: pre-wrap; }
         <source>&amp;Audio Quality:</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>&amp;Graphics Controller:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Selects the graphics adapter type the virtual machine will use.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIMachineSettingsGeneral</name>
@@ -10955,6 +11002,26 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>The hardware virtualization is enabled in the Acceleration section of the System page although it is not supported by the host system. It should be disabled in order to start the virtual system.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When checked, the nested hardware virtualization CPU feature will be exposed to the virtual machine.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enable Nested &amp;VT-x/AMD-V</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The hardware virtualization is not currently enabled in the Acceleration section of the System page. This is needed to support nested hardware virtualization. It will be enabled automatically if you confirm your changes.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The nested paging is not currently enabled in the Acceleration section of the System page. This is needed to support nested hardware virtualization. It will be enabled automatically if you confirm your changes.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The hardware virtualization is not currently enabled in the Acceleration section of the System page. This is needed for nested paging support. It will be enabled automatically if you confirm your changes.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -20278,6 +20345,45 @@ Home folders can also be individually (per virtual machine)  modified.</source>
     </message>
     <message>
         <source>Please select files to be on the VISO</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>None</source>
+        <comment>GraphicsControllerType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>VBoxVGA</source>
+        <comment>GraphicsControllerType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>VMSVGA</source>
+        <comment>GraphicsControllerType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>VBoxSVGA</source>
+        <comment>GraphicsControllerType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Graphics Controller</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Video/Audio</source>
+        <comment>UISettingsDefs::RecordingMode</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Video Only</source>
+        <comment>UISettingsDefs::RecordingMode</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Audio Only</source>
+        <comment>UISettingsDefs::RecordingMode</comment>
         <translation type="unfinished"></translation>
     </message>
 </context>

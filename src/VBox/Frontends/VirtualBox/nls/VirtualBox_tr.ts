@@ -1762,39 +1762,39 @@
     </message>
     <message>
         <source>Move to guest</source>
-        <translation>Misafire taşı</translation>
+        <translation type="vanished">Misafire taşı</translation>
     </message>
     <message>
         <source>Move the Selected Object(s) from Host to Guest</source>
-        <translation>Seçilen Nesne(leri)yi Anamakineden Misafire Taşı</translation>
+        <translation type="vanished">Seçilen Nesne(leri)yi Anamakineden Misafire Taşı</translation>
     </message>
     <message>
         <source>Move the selected object(s) from host to guest</source>
-        <translation>Seçilen nesne(leri)yi anamakineden misafire taşı</translation>
+        <translation type="vanished">Seçilen nesne(leri)yi anamakineden misafire taşı</translation>
     </message>
     <message>
         <source>Move to host</source>
-        <translation>Anamakineye taşı</translation>
+        <translation type="vanished">Anamakineye taşı</translation>
     </message>
     <message>
         <source>Move the Selected Object(s) from Guest to Host</source>
-        <translation>Seçilen Nesne(leri)yi Misafirden Anamakineye Taşı</translation>
+        <translation type="vanished">Seçilen Nesne(leri)yi Misafirden Anamakineye Taşı</translation>
     </message>
     <message>
         <source>Move the selected object(s) from guest to host</source>
-        <translation>Seçilen nesne(leri)yi misafirden anamakineye taşı</translation>
+        <translation type="vanished">Seçilen nesne(leri)yi misafirden anamakineye taşı</translation>
     </message>
     <message>
         <source>Settings</source>
-        <translation>Ayarlar</translation>
+        <translation type="vanished">Ayarlar</translation>
     </message>
     <message>
         <source>Open panel with file manager settings</source>
-        <translation>Dosya yöneticisi ayarları ile paneli aç</translation>
+        <translation type="vanished">Dosya yöneticisi ayarları ile paneli aç</translation>
     </message>
     <message>
         <source>Open Panel With File Manager Settings</source>
-        <translation>Dosya Yöneticisi Ayarları İle Paneli Aç</translation>
+        <translation type="vanished">Dosya Yöneticisi Ayarları İle Paneli Aç</translation>
     </message>
     <message>
         <source>Log</source>
@@ -2314,6 +2314,18 @@
         <source>Scale to %1% (autoscaled output)</source>
         <comment>scale-factor</comment>
         <translation>% %1 olarak ölçeklendir (oto. ölçeklendirilmiş çıktı)</translation>
+    </message>
+    <message>
+        <source>Options</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open panel with file manager options</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open Panel With File Manager Options</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -3327,6 +3339,11 @@
         <comment>details (display/recording)</comment>
         <translation>Etkisizleştirildi</translation>
     </message>
+    <message>
+        <source>Graphics Controller</source>
+        <comment>details (display)</comment>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIDetailsBlock</name>
@@ -4010,7 +4027,7 @@
     <name>UIFileManagerLogViewer</name>
     <message>
         <source>Clear</source>
-        <translation>Temzile</translation>
+        <translation type="vanished">Temzile</translation>
     </message>
 </context>
 <context>
@@ -4354,62 +4371,62 @@
     <message>
         <source>Name</source>
         <comment>details (general)</comment>
-        <translation>Adı</translation>
+        <translation type="vanished">Adı</translation>
     </message>
     <message>
         <source>Groups</source>
         <comment>details (general)</comment>
-        <translation>Gruplar</translation>
+        <translation type="vanished">Gruplar</translation>
     </message>
     <message>
         <source>%1 MB</source>
         <comment>details</comment>
-        <translation>%1 MB</translation>
+        <translation type="vanished">%1 MB</translation>
     </message>
     <message>
         <source>Processors</source>
         <comment>details (system)</comment>
-        <translation>İşlemci</translation>
+        <translation type="vanished">İşlemci</translation>
     </message>
     <message>
         <source>%1%</source>
         <comment>details</comment>
-        <translation>% %1</translation>
+        <translation type="vanished">% %1</translation>
     </message>
     <message>
         <source>VT-x/AMD-V</source>
         <comment>details (system)</comment>
-        <translation>VT-x/AMD-V</translation>
+        <translation type="vanished">VT-x/AMD-V</translation>
     </message>
     <message>
         <source>PAE/NX</source>
         <comment>details (system)</comment>
-        <translation>PAE/NX</translation>
+        <translation type="vanished">PAE/NX</translation>
     </message>
     <message>
         <source>Acceleration</source>
         <comment>details (system)</comment>
-        <translation>Hızlandırma</translation>
+        <translation type="vanished">Hızlandırma</translation>
     </message>
     <message>
         <source>Screens</source>
         <comment>details (display)</comment>
-        <translation>Ekran</translation>
+        <translation type="vanished">Ekran</translation>
     </message>
     <message>
         <source>3D</source>
         <comment>details (display)</comment>
-        <translation>3B</translation>
+        <translation type="vanished">3B</translation>
     </message>
     <message>
         <source>Acceleration</source>
         <comment>details (display)</comment>
-        <translation>Hızlandırma</translation>
+        <translation type="vanished">Hızlandırma</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details (display/vrde/VRDE server)</comment>
-        <translation>Etkisizleştirildi</translation>
+        <translation type="vanished">Etkisizleştirildi</translation>
     </message>
     <message>
         <source>[CD/DVD]</source>
@@ -4424,32 +4441,32 @@
     <message>
         <source>Controller</source>
         <comment>details (audio)</comment>
-        <translation>Denetleyici</translation>
+        <translation type="vanished">Denetleyici</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details (audio)</comment>
-        <translation>Etkisizleştirildi</translation>
+        <translation type="vanished">Etkisizleştirildi</translation>
     </message>
     <message>
         <source>Adapter %1</source>
         <comment>details (network)</comment>
-        <translation>Bağdaştırıcı %1</translation>
+        <translation type="vanished">Bağdaştırıcı %1</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details (network/adapter)</comment>
-        <translation>Etkisizleştirildi</translation>
+        <translation type="vanished">Etkisizleştirildi</translation>
     </message>
     <message>
         <source>Port %1</source>
         <comment>details (serial)</comment>
-        <translation>B.Noktası %1</translation>
+        <translation type="vanished">B.Noktası %1</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details (serial)</comment>
-        <translation>Etkisizleştirildi</translation>
+        <translation type="vanished">Etkisizleştirildi</translation>
     </message>
     <message>
         <source>Port %1</source>
@@ -4464,17 +4481,17 @@
     <message>
         <source>%1 (%2 active)</source>
         <comment>details (usb)</comment>
-        <translation>%1 (%2 etkin)</translation>
+        <translation type="vanished">%1 (%2 etkin)</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details (usb)</comment>
-        <translation>Etkisizleştirildi</translation>
+        <translation type="vanished">Etkisizleştirildi</translation>
     </message>
     <message>
         <source>None</source>
         <comment>details (shared folders)</comment>
-        <translation>Yok</translation>
+        <translation type="vanished">Yok</translation>
     </message>
     <message>
         <source>None</source>
@@ -4484,7 +4501,7 @@
     <message>
         <source>Operating System</source>
         <comment>details (general)</comment>
-        <translation>İşletim Sistemi</translation>
+        <translation type="vanished">İşletim Sistemi</translation>
     </message>
     <message>
         <source>Information Inaccessible</source>
@@ -4494,82 +4511,82 @@
     <message>
         <source>Base Memory</source>
         <comment>details (system)</comment>
-        <translation>Ana Bellek</translation>
+        <translation type="vanished">Ana Bellek</translation>
     </message>
     <message>
         <source>Execution Cap</source>
         <comment>details (system)</comment>
-        <translation>Çalıştırılma Üst Sınırı</translation>
+        <translation type="vanished">Çalıştırılma Üst Sınırı</translation>
     </message>
     <message>
         <source>Boot Order</source>
         <comment>details (system)</comment>
-        <translation>Önyükleme Sırası</translation>
+        <translation type="vanished">Önyükleme Sırası</translation>
     </message>
     <message>
         <source>Nested Paging</source>
         <comment>details (system)</comment>
-        <translation>İç İçe Disk Belleği</translation>
+        <translation type="vanished">İç İçe Disk Belleği</translation>
     </message>
     <message>
         <source>Video Memory</source>
         <comment>details (display)</comment>
-        <translation>Görüntü Belleği</translation>
+        <translation type="vanished">Görüntü Belleği</translation>
     </message>
     <message>
         <source>2D Video</source>
         <comment>details (display)</comment>
-        <translation>2B Görüntü</translation>
+        <translation type="vanished">2B Görüntü</translation>
     </message>
     <message>
         <source>Remote Desktop Server Port</source>
         <comment>details (display/vrde)</comment>
-        <translation>Uzak Masaüstü Sunucusu B.Noktası</translation>
+        <translation type="vanished">Uzak Masaüstü Sunucusu B.Noktası</translation>
     </message>
     <message>
         <source>Remote Desktop Server</source>
         <comment>details (display/vrde)</comment>
-        <translation>Uzak Masaüstü Sunucusu</translation>
+        <translation type="vanished">Uzak Masaüstü Sunucusu</translation>
     </message>
     <message>
         <source>Not Attached</source>
         <comment>details (storage)</comment>
-        <translation>Takılmadı</translation>
+        <translation type="vanished">Takılmadı</translation>
     </message>
     <message>
         <source>Host Driver</source>
         <comment>details (audio)</comment>
-        <translation>Anamakine Sürücüsü</translation>
+        <translation type="vanished">Anamakine Sürücüsü</translation>
     </message>
     <message>
         <source>Bridged Adapter, %1</source>
         <comment>details (network)</comment>
-        <translation>Köprü Bağdaştırıcı, %1</translation>
+        <translation type="vanished">Köprü Bağdaştırıcı, %1</translation>
     </message>
     <message>
         <source>Internal Network, &apos;%1&apos;</source>
         <comment>details (network)</comment>
-        <translation>Dahili Ağ, &apos;%1&apos;</translation>
+        <translation type="vanished">Dahili Ağ, &apos;%1&apos;</translation>
     </message>
     <message>
         <source>Host-only Adapter, &apos;%1&apos;</source>
         <comment>details (network)</comment>
-        <translation>Yalnızca-Anamakine Bağdaştırıcısı, &apos;%1&apos;</translation>
+        <translation type="vanished">Yalnızca-Anamakine Bağdaştırıcısı, &apos;%1&apos;</translation>
     </message>
     <message>
         <source>Generic Driver, &apos;%1&apos;</source>
         <comment>details (network)</comment>
-        <translation>Kapsamlı Sürücü, &apos;%1&apos;</translation>
+        <translation type="vanished">Kapsamlı Sürücü, &apos;%1&apos;</translation>
     </message>
     <message>
         <source>Generic Driver, &apos;%1&apos; { %2 }</source>
         <comment>details (network)</comment>
-        <translation>Kapsamlı Sürücü, &apos;%1&apos; { %2 }</translation>
+        <translation type="vanished">Kapsamlı Sürücü, &apos;%1&apos; { %2 }</translation>
     </message>
     <message>
         <source>Device Filters</source>
         <comment>details (usb)</comment>
-        <translation>Aygıt Süzgeçleri</translation>
+        <translation type="vanished">Aygıt Süzgeçleri</translation>
     </message>
     <message>
         <source>USB Controller Inaccessible</source>
@@ -4579,7 +4596,7 @@
     <message>
         <source>Shared Folders</source>
         <comment>details (shared folders)</comment>
-        <translation>Paylaşılan Klasör</translation>
+        <translation type="vanished">Paylaşılan Klasör</translation>
     </message>
     <message>
         <source>Video Capture File</source>
@@ -4604,36 +4621,36 @@
     <message>
         <source>NAT Network, &apos;%1&apos;</source>
         <comment>details (network)</comment>
-        <translation>NAT Ağı, &apos;%1&apos;</translation>
+        <translation type="vanished">NAT Ağı, &apos;%1&apos;</translation>
     </message>
     <message>
         <source>Frame Size: %1x%2, Frame Rate: %3fps, Bit Rate: %4kbps</source>
-        <translation>Kare Boyutu: %1x%2, Kare Oranı: %3fps, Bit Oranı: %4kbps</translation>
+        <translation type="vanished">Kare Boyutu: %1x%2, Kare Oranı: %3fps, Bit Oranı: %4kbps</translation>
     </message>
     <message>
         <source>Minimal Paravirtualization</source>
         <comment>details (system)</comment>
-        <translation>En Az Yarı Sanallaştırma</translation>
+        <translation type="vanished">En Az Yarı Sanallaştırma</translation>
     </message>
     <message>
         <source>Hyper-V Paravirtualization</source>
         <comment>details (system)</comment>
-        <translation>Hyper-V Yarı Sanallaştırma</translation>
+        <translation type="vanished">Hyper-V Yarı Sanallaştırma</translation>
     </message>
     <message>
         <source>KVM Paravirtualization</source>
         <comment>details (system)</comment>
-        <translation>KVM Yarı Sanallaştırma</translation>
+        <translation type="vanished">KVM Yarı Sanallaştırma</translation>
     </message>
     <message>
         <source>[Optical Drive]</source>
         <comment>details (storage)</comment>
-        <translation>[Optik Sürücü]</translation>
+        <translation type="vanished">[Optik Sürücü]</translation>
     </message>
     <message>
         <source>USB Controller</source>
         <comment>details (usb)</comment>
-        <translation>USB Denetleyicisi</translation>
+        <translation type="vanished">USB Denetleyicisi</translation>
     </message>
     <message>
         <source>Scale-factor</source>
@@ -4678,7 +4695,7 @@
     <message>
         <source>Scale-factor</source>
         <comment>details (display)</comment>
-        <translation>Ölçek etkeni</translation>
+        <translation type="vanished">Ölçek etkeni</translation>
     </message>
     <message>
         <source>Unscaled HiDPI Video Output</source>
@@ -4723,22 +4740,22 @@
     <message>
         <source>Chipset Type</source>
         <comment>details (system)</comment>
-        <translation>Yonga Seti Türü</translation>
+        <translation type="vanished">Yonga Seti Türü</translation>
     </message>
     <message>
         <source>Enabled</source>
         <comment>details (system/EFI)</comment>
-        <translation>Etkinleştirildi</translation>
+        <translation type="vanished">Etkinleştirildi</translation>
     </message>
     <message>
         <source>EFI</source>
         <comment>details (system)</comment>
-        <translation>EFI</translation>
+        <translation type="vanished">EFI</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details (system/EFI)</comment>
-        <translation>Etkisizleştirildi</translation>
+        <translation type="vanished">Etkisizleştirildi</translation>
     </message>
     <message>
         <source>Disabled</source>
@@ -4748,57 +4765,57 @@
     <message>
         <source>Audio Output</source>
         <comment>details (audio)</comment>
-        <translation>Ses Çıkışı</translation>
+        <translation type="vanished">Ses Çıkışı</translation>
     </message>
     <message>
         <source>Enabled</source>
         <comment>details (audio/output)</comment>
-        <translation>Etkinleştirildi</translation>
+        <translation type="vanished">Etkinleştirildi</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details (audio/output)</comment>
-        <translation>Etkisizleştirildi</translation>
+        <translation type="vanished">Etkisizleştirildi</translation>
     </message>
     <message>
         <source>Audio Input</source>
         <comment>details (audio)</comment>
-        <translation>Ses Girişi</translation>
+        <translation type="vanished">Ses Girişi</translation>
     </message>
     <message>
         <source>Enabled</source>
         <comment>details (audio/input)</comment>
-        <translation>Etkinleştirildi</translation>
+        <translation type="vanished">Etkinleştirildi</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details (audio/input)</comment>
-        <translation>Etkisizleştirildi</translation>
+        <translation type="vanished">Etkisizleştirildi</translation>
     </message>
     <message>
         <source>Settings File Location</source>
         <comment>details (general)</comment>
-        <translation>Ayarlar Dosyası Yeri</translation>
+        <translation type="vanished">Ayarlar Dosyası Yeri</translation>
     </message>
     <message>
         <source>Recording File</source>
         <comment>details (display/recording)</comment>
-        <translation>Kayıt Dosyası</translation>
+        <translation type="vanished">Kayıt Dosyası</translation>
     </message>
     <message>
         <source>Recording Attributes</source>
         <comment>details (display/recording)</comment>
-        <translation>Kayıt Öznitelikleri</translation>
+        <translation type="vanished">Kayıt Öznitelikleri</translation>
     </message>
     <message>
         <source>Recording</source>
         <comment>details (display/recording)</comment>
-        <translation>Kayıt</translation>
+        <translation type="vanished">Kayıt</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details (display/recording)</comment>
-        <translation>Etkisizleştirildi</translation>
+        <translation type="vanished">Etkisizleştirildi</translation>
     </message>
 </context>
 <context>
@@ -6174,11 +6191,11 @@
     </message>
     <message>
         <source>Clean Finished</source>
-        <translation>Tamamlananı Temizle</translation>
+        <translation type="vanished">Tamamlananı Temizle</translation>
     </message>
     <message>
         <source>Clean All</source>
-        <translation>Tümünü Tamamla</translation>
+        <translation type="vanished">Tümünü Tamamla</translation>
     </message>
     <message>
         <source>List directories on top</source>
@@ -6286,7 +6303,7 @@
     </message>
     <message>
         <source>&lt;b&gt;Owner:&lt;/b&gt; %1&lt;br/&gt;</source>
-        <translation>&lt;b&gt;Sahibi:&lt;/b&gt; %1&lt;br/&gt;</translation>
+        <translation type="vanished">&lt;b&gt;Sahibi:&lt;/b&gt; %1&lt;br/&gt;</translation>
     </message>
     <message>
         <source>&lt;b&gt;Selected:&lt;/b&gt; %1 files and %2 directories&lt;br/&gt;</source>
@@ -6306,18 +6323,177 @@
     </message>
     <message>
         <source>&lt;b&gt;Name:&lt;/b&gt; %1</source>
-        <translation>&lt;b&gt;Adı:&lt;/b&gt; %1</translation>
+        <translation type="vanished">&lt;b&gt;Adı:&lt;/b&gt; %1</translation>
     </message>
     <message>
         <source>&lt;b&gt;Owner:&lt;/b&gt; %1</source>
         <translation>&lt;b&gt;Sahibi:&lt;/b&gt; %1</translation>
+    </message>
+    <message>
+        <source>%1 - Guest Control File Manager</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Clear</source>
+        <translation type="unfinished">Temzile</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Not yet started</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Working</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Paused</source>
+        <translation type="unfinished">Duraklatıldı</translation>
+    </message>
+    <message>
+        <source>Canceled</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Succeded</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Invalid</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove Selected</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove Finished</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove All</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show a confirmation dialog before deleting files and directories</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show file/directory sizes in human readable format rather than in bytes</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show Password</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;Allocated:&lt;/b&gt; %1 bytes</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;INode:&lt;/b&gt; %1&lt;br/&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;Device:&lt;/b&gt; %1&lt;br/&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;Hardlinks:&lt;/b&gt; %1&lt;br/&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;Mode:&lt;/b&gt; %1&lt;br/&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;Attributes:&lt;/b&gt; %1&lt;br/&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;Device ID:&lt;/b&gt; %1&lt;br/&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;Owner:&lt;/b&gt; %1 (%2)&lt;br/&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;Group:&lt;/b&gt; %1 (%2)&lt;br/&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;Birth:&lt;/b&gt; %1&lt;br/&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;Change:&lt;/b&gt; %1&lt;br/&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;Access:&lt;/b&gt; %1&lt;br/&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;Name:&lt;/b&gt; %1&lt;br/&gt;</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>UIGuestControlFileManagerDialog</name>
     <message>
         <source>%1 - Guest Control</source>
-        <translation>%1 - Misafir Denetimi</translation>
+        <translation type="vanished">%1 - Misafir Denetimi</translation>
+    </message>
+</context>
+<context>
+    <name>UIGuestFileTable</name>
+    <message>
+        <source>directory</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>symbolic link</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>character device</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>block device</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>fifo</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>socket</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>whiteout</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>unknown</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>illegal-value</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -8377,6 +8553,14 @@
         <source>&amp;Audio Quality:</source>
         <translation>&amp;Ses Kalitesi:</translation>
     </message>
+    <message>
+        <source>&amp;Graphics Controller:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Selects the graphics adapter type the virtual machine will use.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIMachineSettingsGeneral</name>
@@ -10352,6 +10536,26 @@
     <message>
         <source>The hardware virtualization is enabled in the Acceleration section of the System page although it is not supported by the host system. It should be disabled in order to start the virtual system.</source>
         <translation>Donanım sanallaştırma, anamakine sistemi tarafından desteklenmemesine rağmen Sistem sayfasının Hızlandırma bölümünde etkinleştirildi. Sanal sistemi başlatmak için etkisizleştirilmelidir.</translation>
+    </message>
+    <message>
+        <source>When checked, the nested hardware virtualization CPU feature will be exposed to the virtual machine.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enable Nested &amp;VT-x/AMD-V</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The hardware virtualization is not currently enabled in the Acceleration section of the System page. This is needed to support nested hardware virtualization. It will be enabled automatically if you confirm your changes.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The nested paging is not currently enabled in the Acceleration section of the System page. This is needed to support nested hardware virtualization. It will be enabled automatically if you confirm your changes.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The hardware virtualization is not currently enabled in the Acceleration section of the System page. This is needed for nested paging support. It will be enabled automatically if you confirm your changes.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -19845,6 +20049,45 @@ Version %1</source>
     <message>
         <source>Please select files to be on the VISO</source>
         <translation>Lütfen VISO üzerinde olacak dosyaları seçin</translation>
+    </message>
+    <message>
+        <source>None</source>
+        <comment>GraphicsControllerType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>VBoxVGA</source>
+        <comment>GraphicsControllerType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>VMSVGA</source>
+        <comment>GraphicsControllerType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>VBoxSVGA</source>
+        <comment>GraphicsControllerType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Graphics Controller</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Video/Audio</source>
+        <comment>UISettingsDefs::RecordingMode</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Video Only</source>
+        <comment>UISettingsDefs::RecordingMode</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Audio Only</source>
+        <comment>UISettingsDefs::RecordingMode</comment>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

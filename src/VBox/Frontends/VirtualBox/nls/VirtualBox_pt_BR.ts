@@ -1930,40 +1930,8 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Move to guest</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Move the Selected Object(s) from Host to Guest</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Move the selected object(s) from host to guest</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Move to host</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Move the Selected Object(s) from Guest to Host</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Move the selected object(s) from guest to host</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Settings</source>
-        <translation type="unfinished">Configurações</translation>
-    </message>
-    <message>
-        <source>Open panel with file manager settings</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Open Panel With File Manager Settings</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Configurações</translation>
     </message>
     <message>
         <source>Log</source>
@@ -2482,6 +2450,18 @@
     <message>
         <source>Scale to %1% (autoscaled output)</source>
         <comment>scale-factor</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Options</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open panel with file manager options</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open Panel With File Manager Options</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -3586,6 +3566,11 @@
     <message>
         <source>Disabled</source>
         <comment>details (display/recording)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Graphics Controller</source>
+        <comment>details (display)</comment>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -4703,13 +4688,6 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>UIFileManagerLogViewer</name>
-    <message>
-        <source>Clear</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
     <name>UIFilePathSelector</name>
     <message>
         <source>&amp;Copy</source>
@@ -5091,7 +5069,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Name</source>
         <comment>details (general)</comment>
-        <translation>Nome</translation>
+        <translation type="vanished">Nome</translation>
     </message>
     <message>
         <source>Operating system</source>
@@ -5101,7 +5079,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Groups</source>
         <comment>details (general)</comment>
-        <translation>Grupos</translation>
+        <translation type="vanished">Grupos</translation>
     </message>
     <message>
         <source>Information inaccessible</source>
@@ -5116,12 +5094,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>%1 MB</source>
         <comment>details</comment>
-        <translation>%1 MB</translation>
+        <translation type="vanished">%1 MB</translation>
     </message>
     <message>
         <source>Processors</source>
         <comment>details (system)</comment>
-        <translation>Processadores</translation>
+        <translation type="vanished">Processadores</translation>
     </message>
     <message>
         <source>Execution cap</source>
@@ -5131,7 +5109,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>%1%</source>
         <comment>details</comment>
-        <translation>%1%</translation>
+        <translation type="vanished">%1%</translation>
     </message>
     <message>
         <source>Boot order</source>
@@ -5141,7 +5119,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>VT-x/AMD-V</source>
         <comment>details (system)</comment>
-        <translation>VT-x/AMD-V</translation>
+        <translation type="vanished">VT-x/AMD-V</translation>
     </message>
     <message>
         <source>Nested paging</source>
@@ -5151,12 +5129,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>PAE/NX</source>
         <comment>details (system)</comment>
-        <translation>PAE/NX</translation>
+        <translation type="vanished">PAE/NX</translation>
     </message>
     <message>
         <source>Acceleration</source>
         <comment>details (system)</comment>
-        <translation>Aceleração</translation>
+        <translation type="vanished">Aceleração</translation>
     </message>
     <message>
         <source>Video memory</source>
@@ -5166,7 +5144,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Screens</source>
         <comment>details (display)</comment>
-        <translation>Telas</translation>
+        <translation type="vanished">Telas</translation>
     </message>
     <message>
         <source>2D video</source>
@@ -5176,12 +5154,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>3D</source>
         <comment>details (display)</comment>
-        <translation>3D</translation>
+        <translation type="vanished">3D</translation>
     </message>
     <message>
         <source>Acceleration</source>
         <comment>details (display)</comment>
-        <translation>Aceleração</translation>
+        <translation type="vanished">Aceleração</translation>
     </message>
     <message>
         <source>Remote desktop server port</source>
@@ -5196,7 +5174,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Disabled</source>
         <comment>details (display/vrde/VRDE server)</comment>
-        <translation>Desabilitado</translation>
+        <translation type="vanished">Desabilitado</translation>
     </message>
     <message>
         <source>[CD/DVD]</source>
@@ -5216,12 +5194,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Controller</source>
         <comment>details (audio)</comment>
-        <translation>Controladora</translation>
+        <translation type="vanished">Controladora</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details (audio)</comment>
-        <translation>Desabilitado</translation>
+        <translation type="vanished">Desabilitado</translation>
     </message>
     <message>
         <source>Bridged adapter, %1</source>
@@ -5251,22 +5229,22 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Adapter %1</source>
         <comment>details (network)</comment>
-        <translation>Adaptador %1</translation>
+        <translation type="vanished">Adaptador %1</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details (network/adapter)</comment>
-        <translation>Desabilitado</translation>
+        <translation type="vanished">Desabilitado</translation>
     </message>
     <message>
         <source>Port %1</source>
         <comment>details (serial)</comment>
-        <translation>Porta %1</translation>
+        <translation type="vanished">Porta %1</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details (serial)</comment>
-        <translation>Desabilitado</translation>
+        <translation type="vanished">Desabilitado</translation>
     </message>
     <message>
         <source>Port %1</source>
@@ -5286,12 +5264,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>%1 (%2 active)</source>
         <comment>details (usb)</comment>
-        <translation>%1 (%2 ativos)</translation>
+        <translation type="vanished">%1 (%2 ativos)</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details (usb)</comment>
-        <translation>Desabilitado</translation>
+        <translation type="vanished">Desabilitado</translation>
     </message>
     <message>
         <source>USB controller inaccessible</source>
@@ -5306,7 +5284,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>None</source>
         <comment>details (shared folders)</comment>
-        <translation>Nenhum</translation>
+        <translation type="vanished">Nenhum</translation>
     </message>
     <message>
         <source>None</source>
@@ -5316,7 +5294,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Operating System</source>
         <comment>details (general)</comment>
-        <translation>Sistema Operacional</translation>
+        <translation type="vanished">Sistema Operacional</translation>
     </message>
     <message>
         <source>Information Inaccessible</source>
@@ -5326,82 +5304,82 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Base Memory</source>
         <comment>details (system)</comment>
-        <translation>Memória Principal</translation>
+        <translation type="vanished">Memória Principal</translation>
     </message>
     <message>
         <source>Execution Cap</source>
         <comment>details (system)</comment>
-        <translation>Limite de execução</translation>
+        <translation type="vanished">Limite de execução</translation>
     </message>
     <message>
         <source>Boot Order</source>
         <comment>details (system)</comment>
-        <translation>Ordem de Boot</translation>
+        <translation type="vanished">Ordem de Boot</translation>
     </message>
     <message>
         <source>Nested Paging</source>
         <comment>details (system)</comment>
-        <translation>Paginação Aninhada</translation>
+        <translation type="vanished">Paginação Aninhada</translation>
     </message>
     <message>
         <source>Video Memory</source>
         <comment>details (display)</comment>
-        <translation>Memória de Vídeo</translation>
+        <translation type="vanished">Memória de Vídeo</translation>
     </message>
     <message>
         <source>2D Video</source>
         <comment>details (display)</comment>
-        <translation>Vídeo 2D</translation>
+        <translation type="vanished">Vídeo 2D</translation>
     </message>
     <message>
         <source>Remote Desktop Server Port</source>
         <comment>details (display/vrde)</comment>
-        <translation>Porta para Servidor de Desktop Remoto</translation>
+        <translation type="vanished">Porta para Servidor de Desktop Remoto</translation>
     </message>
     <message>
         <source>Remote Desktop Server</source>
         <comment>details (display/vrde)</comment>
-        <translation>Servidor de Desktop Remoto</translation>
+        <translation type="vanished">Servidor de Desktop Remoto</translation>
     </message>
     <message>
         <source>Not Attached</source>
         <comment>details (storage)</comment>
-        <translation>Não Conectado</translation>
+        <translation type="vanished">Não Conectado</translation>
     </message>
     <message>
         <source>Host Driver</source>
         <comment>details (audio)</comment>
-        <translation>Driver do Hospedeiro </translation>
+        <translation type="vanished">Driver do Hospedeiro </translation>
     </message>
     <message>
         <source>Bridged Adapter, %1</source>
         <comment>details (network)</comment>
-        <translation>Placa em modo Bridge, %1</translation>
+        <translation type="vanished">Placa em modo Bridge, %1</translation>
     </message>
     <message>
         <source>Internal Network, &apos;%1&apos;</source>
         <comment>details (network)</comment>
-        <translation>Rede interna, &apos;%1&apos;</translation>
+        <translation type="vanished">Rede interna, &apos;%1&apos;</translation>
     </message>
     <message>
         <source>Host-only Adapter, &apos;%1&apos;</source>
         <comment>details (network)</comment>
-        <translation>Placa de rede exclusiva de hospedeiro (host-only), &apos;%1&apos;</translation>
+        <translation type="vanished">Placa de rede exclusiva de hospedeiro (host-only), &apos;%1&apos;</translation>
     </message>
     <message>
         <source>Generic Driver, &apos;%1&apos;</source>
         <comment>details (network)</comment>
-        <translation>Driver genérico, &apos;%1&apos;</translation>
+        <translation type="vanished">Driver genérico, &apos;%1&apos;</translation>
     </message>
     <message>
         <source>Generic Driver, &apos;%1&apos; { %2 }</source>
         <comment>details (network)</comment>
-        <translation>Driver genérico, &apos;%1&apos; { %2 }</translation>
+        <translation type="vanished">Driver genérico, &apos;%1&apos; { %2 }</translation>
     </message>
     <message>
         <source>Device Filters</source>
         <comment>details (usb)</comment>
-        <translation>Filtros de Dispositivo</translation>
+        <translation type="vanished">Filtros de Dispositivo</translation>
     </message>
     <message>
         <source>USB Controller Inaccessible</source>
@@ -5411,7 +5389,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Shared Folders</source>
         <comment>details (shared folders)</comment>
-        <translation>Pastas Compartilhadas</translation>
+        <translation type="vanished">Pastas Compartilhadas</translation>
     </message>
     <message>
         <source>Video Capture File</source>
@@ -5436,36 +5414,36 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>NAT Network, &apos;%1&apos;</source>
         <comment>details (network)</comment>
-        <translation>Rede NAT, &apos;%1&apos;</translation>
+        <translation type="vanished">Rede NAT, &apos;%1&apos;</translation>
     </message>
     <message>
         <source>Frame Size: %1x%2, Frame Rate: %3fps, Bit Rate: %4kbps</source>
-        <translation>Tamanho do Frame: %1x%2, Frame Rate: %3fps, Bit Rate: %4kbps</translation>
+        <translation type="vanished">Tamanho do Frame: %1x%2, Frame Rate: %3fps, Bit Rate: %4kbps</translation>
     </message>
     <message>
         <source>Minimal Paravirtualization</source>
         <comment>details (system)</comment>
-        <translation>Paravirtualização Mínima</translation>
+        <translation type="vanished">Paravirtualização Mínima</translation>
     </message>
     <message>
         <source>Hyper-V Paravirtualization</source>
         <comment>details (system)</comment>
-        <translation>Paravirtualização Hyper-V</translation>
+        <translation type="vanished">Paravirtualização Hyper-V</translation>
     </message>
     <message>
         <source>KVM Paravirtualization</source>
         <comment>details (system)</comment>
-        <translation>Paravirtualização KVM</translation>
+        <translation type="vanished">Paravirtualização KVM</translation>
     </message>
     <message>
         <source>[Optical Drive]</source>
         <comment>details (storage)</comment>
-        <translation>[Discos Óptico]</translation>
+        <translation type="vanished">[Discos Óptico]</translation>
     </message>
     <message>
         <source>USB Controller</source>
         <comment>details (usb)</comment>
-        <translation>Controladora USB</translation>
+        <translation type="vanished">Controladora USB</translation>
     </message>
     <message>
         <source>Scale-factor</source>
@@ -5510,7 +5488,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Scale-factor</source>
         <comment>details (display)</comment>
-        <translation>Fator de Escala</translation>
+        <translation type="vanished">Fator de Escala</translation>
     </message>
     <message>
         <source>Unscaled HiDPI Video Output</source>
@@ -5555,22 +5533,22 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Chipset Type</source>
         <comment>details (system)</comment>
-        <translation>Tipo de Chipset</translation>
+        <translation type="vanished">Tipo de Chipset</translation>
     </message>
     <message>
         <source>Enabled</source>
         <comment>details (system/EFI)</comment>
-        <translation>Habilitado</translation>
+        <translation type="vanished">Habilitado</translation>
     </message>
     <message>
         <source>EFI</source>
         <comment>details (system)</comment>
-        <translation>EFI</translation>
+        <translation type="vanished">EFI</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details (system/EFI)</comment>
-        <translation>Desabilitado</translation>
+        <translation type="vanished">Desabilitado</translation>
     </message>
     <message>
         <source>Disabled</source>
@@ -5580,57 +5558,32 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Audio Output</source>
         <comment>details (audio)</comment>
-        <translation>Saída de Áudio</translation>
+        <translation type="vanished">Saída de Áudio</translation>
     </message>
     <message>
         <source>Enabled</source>
         <comment>details (audio/output)</comment>
-        <translation>Habilitado</translation>
+        <translation type="vanished">Habilitado</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details (audio/output)</comment>
-        <translation>Desabilitado</translation>
+        <translation type="vanished">Desabilitado</translation>
     </message>
     <message>
         <source>Audio Input</source>
         <comment>details (audio)</comment>
-        <translation>Entrada de Áudio</translation>
+        <translation type="vanished">Entrada de Áudio</translation>
     </message>
     <message>
         <source>Enabled</source>
         <comment>details (audio/input)</comment>
-        <translation>Habilitada</translation>
+        <translation type="vanished">Habilitada</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details (audio/input)</comment>
-        <translation>Desabilitada</translation>
-    </message>
-    <message>
-        <source>Settings File Location</source>
-        <comment>details (general)</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Recording File</source>
-        <comment>details (display/recording)</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Recording Attributes</source>
-        <comment>details (display/recording)</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Recording</source>
-        <comment>details (display/recording)</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Disabled</source>
-        <comment>details (display/recording)</comment>
-        <translation type="unfinished"></translation>
+        <translation type="vanished">Desabilitada</translation>
     </message>
 </context>
 <context>
@@ -7102,14 +7055,6 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Clean Finished</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Clean All</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>List directories on top</source>
         <translation type="unfinished"></translation>
     </message>
@@ -7214,10 +7159,6 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;b&gt;Owner:&lt;/b&gt; %1&lt;br/&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>&lt;b&gt;Selected:&lt;/b&gt; %1 files and %2 directories&lt;br/&gt;</source>
         <translation type="unfinished"></translation>
     </message>
@@ -7234,18 +7175,166 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;b&gt;Name:&lt;/b&gt; %1</source>
+        <source>&lt;b&gt;Owner:&lt;/b&gt; %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;b&gt;Owner:&lt;/b&gt; %1</source>
+        <source>%1 - Guest Control File Manager</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Clear</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation type="unfinished">Cancelar</translation>
+    </message>
+    <message>
+        <source>Not yet started</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Working</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Paused</source>
+        <translation type="unfinished">Pausada</translation>
+    </message>
+    <message>
+        <source>Canceled</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Succeded</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Invalid</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove Selected</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove Finished</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove All</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show a confirmation dialog before deleting files and directories</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show file/directory sizes in human readable format rather than in bytes</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show Password</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;Allocated:&lt;/b&gt; %1 bytes</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;INode:&lt;/b&gt; %1&lt;br/&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;Device:&lt;/b&gt; %1&lt;br/&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;Hardlinks:&lt;/b&gt; %1&lt;br/&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;Mode:&lt;/b&gt; %1&lt;br/&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;Attributes:&lt;/b&gt; %1&lt;br/&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;Device ID:&lt;/b&gt; %1&lt;br/&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;Owner:&lt;/b&gt; %1 (%2)&lt;br/&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;Group:&lt;/b&gt; %1 (%2)&lt;br/&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;Birth:&lt;/b&gt; %1&lt;br/&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;Change:&lt;/b&gt; %1&lt;br/&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;Access:&lt;/b&gt; %1&lt;br/&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;Name:&lt;/b&gt; %1&lt;br/&gt;</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
-    <name>UIGuestControlFileManagerDialog</name>
+    <name>UIGuestFileTable</name>
     <message>
-        <source>%1 - Guest Control</source>
+        <source>directory</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>symbolic link</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>character device</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>block device</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>fifo</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>socket</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>whiteout</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>unknown</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>illegal-value</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -9416,6 +9505,14 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Audio Quality:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Graphics Controller:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Selects the graphics adapter type the virtual machine will use.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -11678,6 +11775,26 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>The hardware virtualization is enabled in the Acceleration section of the System page although it is not supported by the host system. It should be disabled in order to start the virtual system.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When checked, the nested hardware virtualization CPU feature will be exposed to the virtual machine.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enable Nested &amp;VT-x/AMD-V</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The hardware virtualization is not currently enabled in the Acceleration section of the System page. This is needed to support nested hardware virtualization. It will be enabled automatically if you confirm your changes.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The nested paging is not currently enabled in the Acceleration section of the System page. This is needed to support nested hardware virtualization. It will be enabled automatically if you confirm your changes.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The hardware virtualization is not currently enabled in the Acceleration section of the System page. This is needed for nested paging support. It will be enabled automatically if you confirm your changes.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -22487,6 +22604,45 @@ Versão %1</translation>
     </message>
     <message>
         <source>Please select files to be on the VISO</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>None</source>
+        <comment>GraphicsControllerType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>VBoxVGA</source>
+        <comment>GraphicsControllerType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>VMSVGA</source>
+        <comment>GraphicsControllerType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>VBoxSVGA</source>
+        <comment>GraphicsControllerType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Graphics Controller</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Video/Audio</source>
+        <comment>UISettingsDefs::RecordingMode</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Video Only</source>
+        <comment>UISettingsDefs::RecordingMode</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Audio Only</source>
+        <comment>UISettingsDefs::RecordingMode</comment>
         <translation type="unfinished"></translation>
     </message>
 </context>

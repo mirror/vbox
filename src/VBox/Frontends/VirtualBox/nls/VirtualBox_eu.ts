@@ -642,7 +642,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+810"/>
+        <location line="+934"/>
         <location line="+20"/>
         <source>Scale to %1%</source>
         <comment>scale-factor</comment>
@@ -662,7 +662,7 @@
     </message>
     <message>
         <location filename="../src/globals/UIActionPoolManager.cpp" line="+857"/>
-        <location filename="../src/globals/UIActionPoolRuntime.cpp" line="-1519"/>
+        <location filename="../src/globals/UIActionPoolRuntime.cpp" line="-1643"/>
         <source>&amp;Network</source>
         <translation>&amp;Sarea</translation>
     </message>
@@ -694,13 +694,13 @@
         <translation type="vanished">%1%</translation>
     </message>
     <message>
-        <location line="+1002"/>
+        <location line="+929"/>
         <source>Enable</source>
         <comment>Virtual Screen</comment>
         <translation>Gaitu</translation>
     </message>
     <message>
-        <location line="+24"/>
+        <location line="+25"/>
         <source>Resize to %1x%2</source>
         <comment>Virtual Screen</comment>
         <translation>Birneurriratu %1x%2-ra</translation>
@@ -718,7 +718,7 @@
         <translation type="obsolete">&amp;USB Gailuak</translation>
     </message>
     <message>
-        <location line="-1435"/>
+        <location line="-1363"/>
         <source>&amp;Webcams</source>
         <translation>&amp;Webkamerak</translation>
     </message>
@@ -1133,7 +1133,7 @@
     </message>
     <message>
         <location line="+27"/>
-        <location line="+242"/>
+        <location line="+168"/>
         <location line="+40"/>
         <location line="+40"/>
         <location line="+40"/>
@@ -1141,7 +1141,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-361"/>
+        <location line="-287"/>
         <source>Open the guest control file manager</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1169,8 +1169,6 @@
     <message>
         <location line="+1"/>
         <location line="+37"/>
-        <location line="+37"/>
-        <location line="+37"/>
         <location line="+198"/>
         <location line="+39"/>
         <location line="+39"/>
@@ -1187,7 +1185,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-724"/>
+        <location line="-650"/>
         <source>Copy the Selected Object(s) from Host to Guest</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1212,49 +1210,23 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+34"/>
-        <source>Move to guest</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+2"/>
-        <source>Move the Selected Object(s) from Host to Guest</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>Move the selected object(s) from host to guest</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+34"/>
-        <source>Move to host</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+2"/>
-        <source>Move the Selected Object(s) from Guest to Host</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>Move the selected object(s) from guest to host</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <location line="+37"/>
-        <source>Settings</source>
-        <translation type="unfinished">Ezarpenak</translation>
+        <source>Options</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+2"/>
-        <source>Open panel with file manager settings</source>
+        <source>Open panel with file manager options</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+1"/>
-        <source>Open Panel With File Manager Settings</source>
+        <source>Open Panel With File Manager Options</source>
         <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Settings</source>
+        <translation type="obsolete">Ezarpenak</translation>
     </message>
     <message>
         <location line="+37"/>
@@ -1462,7 +1434,7 @@
         <translation type="obsolete">Erakutsi Sare Eragiketa Kudeatzailea</translation>
     </message>
     <message>
-        <location line="-1233"/>
+        <location line="-1159"/>
         <source>Check for a new VirtualBox version</source>
         <translation>Egiaztatu VirtualBox bertsio berririk dagoen</translation>
     </message>
@@ -3263,33 +3235,37 @@
 <context>
     <name>UIDetails</name>
     <message>
+        <location filename="../src/snapshots/UISnapshotDetailsWidget.cpp" line="+1206"/>
         <location filename="../src/manager/details/UIDetailsElements.cpp" line="+245"/>
         <source>Name</source>
         <comment>details (general)</comment>
         <translation type="unfinished">Izena</translation>
     </message>
     <message>
-        <location line="+4"/>
+        <location line="+5"/>
+        <location filename="../src/manager/details/UIDetailsElements.cpp" line="+4"/>
         <source>Operating System</source>
         <comment>details (general)</comment>
         <translation type="unfinished">Sistema Eragilea</translation>
     </message>
     <message>
-        <location line="+5"/>
+        <location line="+13"/>
+        <location filename="../src/manager/details/UIDetailsElements.cpp" line="+5"/>
         <source>Settings File Location</source>
         <comment>details (general)</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+21"/>
+        <location line="+9"/>
+        <location filename="../src/manager/details/UIDetailsElements.cpp" line="+21"/>
         <source>Groups</source>
         <comment>details (general)</comment>
         <translation type="unfinished">Taldeak</translation>
     </message>
     <message>
-        <location line="+5"/>
+        <location filename="../src/manager/details/UIDetailsElements.cpp" line="+5"/>
         <location line="+128"/>
-        <location line="+115"/>
+        <location line="+120"/>
         <location line="+99"/>
         <location line="+58"/>
         <location line="+97"/>
@@ -3303,158 +3279,195 @@
         <translation type="unfinished">Argibideak eskuraezin</translation>
     </message>
     <message>
-        <location line="-789"/>
+        <location filename="../src/snapshots/UISnapshotDetailsWidget.cpp" line="+12"/>
+        <location filename="../src/manager/details/UIDetailsElements.cpp" line="-794"/>
         <source>Base Memory</source>
         <comment>details (system)</comment>
         <translation type="unfinished">Ohinarri Oroimena</translation>
     </message>
     <message>
+        <location line="-2"/>
         <location line="+1"/>
+        <location line="+77"/>
+        <location line="+1"/>
+        <location filename="../src/manager/details/UIDetailsElements.cpp" line="+1"/>
         <location line="+129"/>
         <source>%1 MB</source>
         <comment>details</comment>
         <translation type="unfinished">%1 MB</translation>
     </message>
     <message>
-        <location line="-122"/>
+        <location line="-68"/>
+        <location filename="../src/manager/details/UIDetailsElements.cpp" line="-122"/>
         <source>Processors</source>
         <comment>details (system)</comment>
         <translation type="unfinished">Prozesagailuak</translation>
     </message>
     <message>
-        <location line="+9"/>
+        <location line="+11"/>
+        <location filename="../src/manager/details/UIDetailsElements.cpp" line="+9"/>
         <source>Execution Cap</source>
         <comment>details (system)</comment>
         <translation type="unfinished">Exekuzio Muga</translation>
     </message>
     <message>
+        <location line="-2"/>
         <location line="+1"/>
+        <location filename="../src/manager/details/UIDetailsElements.cpp" line="+1"/>
         <source>%1%</source>
         <comment>details</comment>
         <translation type="unfinished">%1%</translation>
     </message>
     <message>
-        <location line="+16"/>
+        <location line="+9"/>
+        <location filename="../src/manager/details/UIDetailsElements.cpp" line="+16"/>
         <source>Boot Order</source>
         <comment>details (system)</comment>
         <translation type="unfinished">Abiarazpen Hurrenkera</translation>
     </message>
     <message>
-        <location line="+8"/>
+        <location line="+9"/>
+        <location filename="../src/manager/details/UIDetailsElements.cpp" line="+8"/>
         <source>Chipset Type</source>
         <comment>details (system)</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+14"/>
+        <location line="+11"/>
+        <location filename="../src/manager/details/UIDetailsElements.cpp" line="+14"/>
         <source>EFI</source>
         <comment>details (system)</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+1"/>
+        <location line="+58"/>
+        <location filename="../src/manager/details/UIDetailsElements.cpp" line="+105"/>
+        <source>Graphics Controller</source>
+        <comment>details (display)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+304"/>
+        <location filename="../src/manager/details/UIDetailsElements.cpp" line="-104"/>
         <source>Enabled</source>
         <comment>details (system/EFI)</comment>
         <translation type="unfinished">Gaituta</translation>
     </message>
     <message>
-        <location line="+6"/>
+        <location line="+5"/>
+        <location filename="../src/manager/details/UIDetailsElements.cpp" line="+6"/>
         <source>Disabled</source>
         <comment>details (system/EFI)</comment>
         <translation type="unfinished">Ezgaituta</translation>
     </message>
     <message>
-        <location line="+15"/>
+        <location line="+19"/>
+        <location filename="../src/manager/details/UIDetailsElements.cpp" line="+15"/>
         <source>VT-x/AMD-V</source>
         <comment>details (system)</comment>
         <translation type="unfinished">VT-x/AMD-V</translation>
     </message>
     <message>
         <location line="+3"/>
+        <location filename="../src/manager/details/UIDetailsElements.cpp" line="+3"/>
         <source>Nested Paging</source>
         <comment>details (system)</comment>
         <translation type="unfinished">Nested Orrialdeztapena</translation>
     </message>
     <message>
         <location line="+5"/>
+        <location filename="../src/manager/details/UIDetailsElements.cpp" line="+5"/>
         <source>PAE/NX</source>
         <comment>details (system)</comment>
         <translation type="unfinished">PAE/NX</translation>
     </message>
     <message>
         <location line="+4"/>
+        <location filename="../src/manager/details/UIDetailsElements.cpp" line="+4"/>
         <source>Minimal Paravirtualization</source>
         <comment>details (system)</comment>
         <translation type="unfinished">Parabirtualizazio Txikiena</translation>
     </message>
     <message>
         <location line="+1"/>
+        <location filename="../src/manager/details/UIDetailsElements.cpp" line="+1"/>
         <source>Hyper-V Paravirtualization</source>
         <comment>details (system)</comment>
         <translation type="unfinished">Hyper-V Parabirtualizazioa</translation>
     </message>
     <message>
         <location line="+1"/>
+        <location filename="../src/manager/details/UIDetailsElements.cpp" line="+1"/>
         <source>KVM Paravirtualization</source>
         <comment>details (system)</comment>
         <translation type="unfinished">KVM Parabirtualizazioa</translation>
     </message>
     <message>
-        <location line="+4"/>
+        <location line="-390"/>
+        <location filename="../src/manager/details/UIDetailsElements.cpp" line="+4"/>
         <source>Acceleration</source>
         <comment>details (system)</comment>
         <translation type="unfinished">Bizkorpena</translation>
     </message>
     <message>
-        <location line="+33"/>
+        <location line="+20"/>
+        <location filename="../src/manager/details/UIDetailsElements.cpp" line="+33"/>
         <source>Video Memory</source>
         <comment>details (display)</comment>
         <translation type="unfinished">Bideo Oroimena</translation>
     </message>
     <message>
-        <location line="+8"/>
+        <location line="+9"/>
+        <location filename="../src/manager/details/UIDetailsElements.cpp" line="+8"/>
         <source>Screens</source>
         <comment>details (display)</comment>
         <translation type="unfinished">Ikusleihoak</translation>
     </message>
     <message>
-        <location line="+17"/>
+        <location line="+10"/>
+        <location filename="../src/manager/details/UIDetailsElements.cpp" line="+17"/>
         <source>Scale-factor</source>
         <comment>details (display)</comment>
         <translation type="unfinished">Eskala-ezaugarria</translation>
     </message>
     <message>
-        <location line="+12"/>
+        <location line="+384"/>
+        <location filename="../src/manager/details/UIDetailsElements.cpp" line="+17"/>
         <source>2D Video</source>
         <comment>details (display)</comment>
         <translation type="unfinished">2D Bideoa</translation>
     </message>
     <message>
         <location line="+4"/>
+        <location filename="../src/manager/details/UIDetailsElements.cpp" line="+4"/>
         <source>3D</source>
         <comment>details (display)</comment>
         <translation type="unfinished">3D</translation>
     </message>
     <message>
-        <location line="+2"/>
+        <location line="-370"/>
+        <location filename="../src/manager/details/UIDetailsElements.cpp" line="+2"/>
         <source>Acceleration</source>
         <comment>details (display)</comment>
         <translation type="unfinished">Bizkorpena</translation>
     </message>
     <message>
-        <location line="+11"/>
+        <location line="+10"/>
+        <location filename="../src/manager/details/UIDetailsElements.cpp" line="+11"/>
         <source>Remote Desktop Server Port</source>
         <comment>details (display/vrde)</comment>
         <translation type="unfinished">Hurruneko Mahaigain Zerbitzari Ataka</translation>
     </message>
     <message>
-        <location line="+3"/>
+        <location line="+6"/>
+        <location filename="../src/manager/details/UIDetailsElements.cpp" line="+3"/>
         <source>Remote Desktop Server</source>
         <comment>details (display/vrde)</comment>
         <translation type="unfinished">Hurruneko Mahaigain Zerbitzaria</translation>
     </message>
     <message>
         <location line="+1"/>
+        <location filename="../src/manager/details/UIDetailsElements.cpp" line="+1"/>
         <source>Disabled</source>
         <comment>details (display/vrde/VRDE server)</comment>
         <translation type="unfinished">Ezgaituta</translation>
@@ -3470,7 +3483,8 @@
         <translation type="obsolete">Bideo Harpen Ezaugarriak</translation>
     </message>
     <message>
-        <location line="+17"/>
+        <location line="+388"/>
+        <location filename="../src/manager/details/UIDetailsElements.cpp" line="+17"/>
         <source>Frame Size: %1x%2, Frame Rate: %3fps, Bit Rate: %4kbps</source>
         <translation type="unfinished">Frame Neurria: %1x%2, Frame Maila: %3fps-ko, Bit Maila: %4kbs-ko</translation>
     </message>
@@ -3485,199 +3499,236 @@
         <translation type="obsolete">Ezgaituta</translation>
     </message>
     <message>
-        <location line="-3"/>
+        <location line="-379"/>
+        <location filename="../src/manager/details/UIDetailsElements.cpp" line="-3"/>
         <source>Recording File</source>
         <comment>details (display/recording)</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+2"/>
+        <location line="+3"/>
+        <location filename="../src/manager/details/UIDetailsElements.cpp" line="+2"/>
         <source>Recording Attributes</source>
         <comment>details (display/recording)</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+7"/>
+        <location line="+6"/>
+        <location filename="../src/manager/details/UIDetailsElements.cpp" line="+7"/>
         <source>Recording</source>
         <comment>details (display/recording)</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+1"/>
+        <location filename="../src/manager/details/UIDetailsElements.cpp" line="+1"/>
         <source>Disabled</source>
         <comment>details (display/recording)</comment>
         <translation type="unfinished">Ezgaituta</translation>
     </message>
     <message>
-        <location line="+71"/>
+        <location line="+402"/>
+        <location filename="../src/manager/details/UIDetailsElements.cpp" line="+71"/>
         <source>[Optical Drive]</source>
         <comment>details (storage)</comment>
         <translation type="unfinished">[Diska Optikoa]</translation>
     </message>
     <message>
-        <location line="+30"/>
+        <location line="-360"/>
+        <location filename="../src/manager/details/UIDetailsElements.cpp" line="+30"/>
         <source>Not Attached</source>
         <comment>details (storage)</comment>
         <translation type="unfinished">Erantsi gabe</translation>
     </message>
     <message>
-        <location line="+33"/>
+        <location line="+16"/>
+        <location filename="../src/manager/details/UIDetailsElements.cpp" line="+33"/>
         <source>Host Driver</source>
         <comment>details (audio)</comment>
         <translation type="unfinished">Hostalari Gidagailua</translation>
     </message>
     <message>
         <location line="+5"/>
+        <location filename="../src/manager/details/UIDetailsElements.cpp" line="+5"/>
         <source>Controller</source>
         <comment>details (audio)</comment>
         <translation type="unfinished">Kontrolatzailea</translation>
     </message>
     <message>
-        <location line="+11"/>
+        <location line="+6"/>
+        <location filename="../src/manager/details/UIDetailsElements.cpp" line="+11"/>
+        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="+432"/>
         <source>Audio Output</source>
         <comment>details (audio)</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+2"/>
+        <location line="+370"/>
+        <location filename="../src/manager/details/UIDetailsElements.cpp" line="+2"/>
+        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="+2"/>
         <source>Enabled</source>
         <comment>details (audio/output)</comment>
         <translation type="unfinished">Gaituta</translation>
     </message>
     <message>
         <location line="+1"/>
+        <location filename="../src/manager/details/UIDetailsElements.cpp" line="+1"/>
+        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="+1"/>
         <source>Disabled</source>
         <comment>details (audio/output)</comment>
         <translation type="unfinished">Ezgaituta</translation>
     </message>
     <message>
-        <location line="-7"/>
+        <location line="-366"/>
+        <location filename="../src/manager/details/UIDetailsElements.cpp" line="-7"/>
+        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="+1"/>
         <source>Audio Input</source>
         <comment>details (audio)</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+2"/>
+        <location line="+370"/>
+        <location filename="../src/manager/details/UIDetailsElements.cpp" line="+2"/>
+        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="+2"/>
         <source>Enabled</source>
         <comment>details (audio/input)</comment>
         <translation type="unfinished">Gaituta</translation>
     </message>
     <message>
         <location line="+1"/>
+        <location filename="../src/manager/details/UIDetailsElements.cpp" line="+1"/>
+        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="+1"/>
         <source>Disabled</source>
         <comment>details (audio/input)</comment>
         <translation type="unfinished">Ezgaituta</translation>
     </message>
     <message>
-        <location line="+9"/>
+        <location line="-361"/>
+        <location filename="../src/manager/details/UIDetailsElements.cpp" line="+9"/>
         <source>Disabled</source>
         <comment>details (audio)</comment>
         <translation type="unfinished">Ezgaituta</translation>
     </message>
     <message>
-        <location line="+49"/>
+        <location line="+389"/>
+        <location filename="../src/manager/details/UIDetailsElements.cpp" line="+49"/>
         <source>Bridged Adapter, %1</source>
         <comment>details (network)</comment>
         <translation type="unfinished">Zubi egokitzailea, %1</translation>
     </message>
     <message>
-        <location line="+7"/>
+        <location line="+4"/>
+        <location filename="../src/manager/details/UIDetailsElements.cpp" line="+7"/>
         <source>Internal Network, &apos;%1&apos;</source>
         <comment>details (network)</comment>
         <translation type="unfinished">Barneko sarea, &apos;%1&apos;</translation>
     </message>
     <message>
-        <location line="+7"/>
+        <location line="+4"/>
+        <location filename="../src/manager/details/UIDetailsElements.cpp" line="+7"/>
         <source>Host-only Adapter, &apos;%1&apos;</source>
         <comment>details (network)</comment>
         <translation type="unfinished">Hostalaria-bakarrik Egokitzailea, &apos;%1&apos;</translation>
     </message>
     <message>
-        <location line="+10"/>
+        <location line="+7"/>
+        <location filename="../src/manager/details/UIDetailsElements.cpp" line="+10"/>
         <source>Generic Driver, &apos;%1&apos;</source>
         <comment>details (network)</comment>
         <translation type="unfinished">Gidagailu generikoa, &apos;%1&apos;</translation>
     </message>
     <message>
         <location line="+2"/>
+        <location filename="../src/manager/details/UIDetailsElements.cpp" line="+2"/>
         <source>Generic Driver, &apos;%1&apos; { %2 }</source>
         <comment>details (network)</comment>
         <translation type="unfinished">Gidagailu generikoa, &apos;%1&apos; { %2 }</translation>
     </message>
     <message>
-        <location line="+8"/>
+        <location line="+5"/>
+        <location filename="../src/manager/details/UIDetailsElements.cpp" line="+8"/>
         <source>NAT Network, &apos;%1&apos;</source>
         <comment>details (network)</comment>
         <translation type="unfinished">NAT Sarea, &apos;%1&apos;</translation>
     </message>
     <message>
-        <location line="+12"/>
+        <location line="-393"/>
+        <location filename="../src/manager/details/UIDetailsElements.cpp" line="+12"/>
         <source>Adapter %1</source>
         <comment>details (network)</comment>
         <translation type="unfinished">Egokitzailea %1</translation>
     </message>
     <message>
-        <location line="+3"/>
+        <location line="+9"/>
+        <location filename="../src/manager/details/UIDetailsElements.cpp" line="+3"/>
         <source>Disabled</source>
         <comment>details (network/adapter)</comment>
         <translation type="unfinished">Ezgaituta</translation>
     </message>
     <message>
-        <location line="+92"/>
+        <location line="+18"/>
+        <location filename="../src/manager/details/UIDetailsElements.cpp" line="+92"/>
         <source>Port %1</source>
         <comment>details (serial)</comment>
         <translation type="unfinished">Ataka %1</translation>
     </message>
     <message>
-        <location line="+3"/>
+        <location line="+9"/>
+        <location filename="../src/manager/details/UIDetailsElements.cpp" line="+3"/>
         <source>Disabled</source>
         <comment>details (serial)</comment>
         <translation type="unfinished">Ezgaituta</translation>
     </message>
     <message>
-        <location line="+41"/>
+        <location line="+16"/>
+        <location filename="../src/manager/details/UIDetailsElements.cpp" line="+41"/>
         <source>USB Controller</source>
         <comment>details (usb)</comment>
         <translation type="unfinished">USB Kontrolatzailea</translation>
     </message>
     <message>
-        <location line="+12"/>
+        <location line="+5"/>
+        <location filename="../src/manager/details/UIDetailsElements.cpp" line="+12"/>
         <source>Device Filters</source>
         <comment>details (usb)</comment>
         <translation type="unfinished">Gailu Iragazkiak</translation>
     </message>
     <message>
-        <location line="+1"/>
+        <location line="+412"/>
+        <location filename="../src/manager/details/UIDetailsElements.cpp" line="+1"/>
         <source>%1 (%2 active)</source>
         <comment>details (usb)</comment>
         <translation type="unfinished">%1 (%2 gaituta)</translation>
     </message>
     <message>
-        <location line="+4"/>
+        <location line="-403"/>
+        <location filename="../src/manager/details/UIDetailsElements.cpp" line="+4"/>
         <source>Disabled</source>
         <comment>details (usb)</comment>
         <translation type="unfinished">Ezgaituta</translation>
     </message>
     <message>
-        <location line="+3"/>
+        <location filename="../src/manager/details/UIDetailsElements.cpp" line="+3"/>
         <source>USB Controller Inaccessible</source>
         <comment>details (usb)</comment>
         <translation type="unfinished">USB Kontrolatzailea Eskuraezina</translation>
     </message>
     <message>
-        <location line="+31"/>
+        <location filename="../src/snapshots/UISnapshotDetailsWidget.cpp" line="+13"/>
+        <location filename="../src/manager/details/UIDetailsElements.cpp" line="+31"/>
         <source>Shared Folders</source>
         <comment>details (shared folders)</comment>
         <translation type="unfinished">Elkarbanatutako Agiritegiak</translation>
     </message>
     <message>
-        <location line="+2"/>
+        <location line="+6"/>
+        <location filename="../src/manager/details/UIDetailsElements.cpp" line="+2"/>
         <source>None</source>
         <comment>details (shared folders)</comment>
         <translation type="unfinished">Ezer ez</translation>
     </message>
     <message>
-        <location line="+39"/>
+        <location filename="../src/manager/details/UIDetailsElements.cpp" line="+39"/>
         <source>Menu-bar</source>
         <comment>details (user interface)</comment>
         <translation type="unfinished">Menu-barra</translation>
@@ -4202,14 +4253,6 @@
     </message>
 </context>
 <context>
-    <name>UIFileManagerLogViewer</name>
-    <message>
-        <location filename="../src/guestctrl/UIGuestControlFileManagerLogPanel.cpp" line="+75"/>
-        <source>Clear</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
     <name>UIFilePathSelector</name>
     <message>
         <location filename="../src/widgets/UIFilePathSelector.cpp" line="+258"/>
@@ -4350,116 +4393,74 @@
 <context>
     <name>UIGDetails</name>
     <message>
-        <location filename="../src/snapshots/UISnapshotDetailsWidget.cpp" line="+1206"/>
         <source>Name</source>
         <comment>details (general)</comment>
-        <translation>Izena</translation>
+        <translation type="vanished">Izena</translation>
     </message>
     <message>
-        <location line="+18"/>
-        <source>Settings File Location</source>
-        <comment>details (general)</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+9"/>
         <source>Groups</source>
         <comment>details (general)</comment>
-        <translation>Taldeak</translation>
+        <translation type="vanished">Taldeak</translation>
     </message>
     <message>
-        <location line="+10"/>
-        <location line="+1"/>
-        <location line="+77"/>
-        <location line="+1"/>
         <source>%1 MB</source>
         <comment>details</comment>
-        <translation>%1 MB</translation>
+        <translation type="vanished">%1 MB</translation>
     </message>
     <message>
-        <location line="-68"/>
         <source>Processors</source>
         <comment>details (system)</comment>
-        <translation>Prozesagailuak</translation>
+        <translation type="vanished">Prozesagailuak</translation>
     </message>
     <message>
-        <location line="+9"/>
-        <location line="+1"/>
         <source>%1%</source>
         <comment>details</comment>
-        <translation>%1%</translation>
+        <translation type="vanished">%1%</translation>
     </message>
     <message>
-        <location line="+115"/>
-        <source>Recording File</source>
-        <comment>details (display/recording)</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+3"/>
-        <source>Recording Attributes</source>
-        <comment>details (display/recording)</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+6"/>
-        <source>Recording</source>
-        <comment>details (display/recording)</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+1"/>
         <source>Disabled</source>
         <comment>details (display/recording)</comment>
-        <translation type="unfinished">Ezgaituta</translation>
+        <translation type="obsolete">Ezgaituta</translation>
     </message>
     <message>
-        <location line="+283"/>
         <source>VT-x/AMD-V</source>
         <comment>details (system)</comment>
-        <translation>VT-x/AMD-V</translation>
+        <translation type="vanished">VT-x/AMD-V</translation>
     </message>
     <message>
-        <location line="+8"/>
         <source>PAE/NX</source>
         <comment>details (system)</comment>
-        <translation>PAE/NX</translation>
+        <translation type="vanished">PAE/NX</translation>
     </message>
     <message>
-        <location line="+4"/>
         <source>Minimal Paravirtualization</source>
         <comment>details (system)</comment>
-        <translation>Parabirtualizazio Txikiena</translation>
+        <translation type="vanished">Parabirtualizazio Txikiena</translation>
     </message>
     <message>
-        <location line="+1"/>
         <source>Hyper-V Paravirtualization</source>
         <comment>details (system)</comment>
-        <translation>Hyper-V Parabirtualizazioa</translation>
+        <translation type="vanished">Hyper-V Parabirtualizazioa</translation>
     </message>
     <message>
-        <location line="+1"/>
         <source>KVM Paravirtualization</source>
         <comment>details (system)</comment>
-        <translation>KVM Parabirtualizazioa</translation>
+        <translation type="vanished">KVM Parabirtualizazioa</translation>
     </message>
     <message>
-        <location line="-383"/>
         <source>Acceleration</source>
         <comment>details (system)</comment>
-        <translation>Bizkorpena</translation>
+        <translation type="vanished">Bizkorpena</translation>
     </message>
     <message>
-        <location line="+29"/>
         <source>Screens</source>
         <comment>details (display)</comment>
-        <translation>Ikusleihoak</translation>
+        <translation type="vanished">Ikusleihoak</translation>
     </message>
     <message>
-        <location line="+10"/>
         <source>Scale-factor</source>
         <comment>details (display)</comment>
-        <translation>Eskala-ezaugarria</translation>
+        <translation type="vanished">Eskala-ezaugarria</translation>
     </message>
     <message>
         <source>Unscaled HiDPI Video Output</source>
@@ -4472,22 +4473,19 @@
         <translation type="vanished">Gaituta</translation>
     </message>
     <message>
-        <location line="+381"/>
         <source>3D</source>
         <comment>details (display)</comment>
-        <translation>3D</translation>
+        <translation type="vanished">3D</translation>
     </message>
     <message>
-        <location line="-370"/>
         <source>Acceleration</source>
         <comment>details (display)</comment>
-        <translation>Bizkorpena</translation>
+        <translation type="vanished">Bizkorpena</translation>
     </message>
     <message>
-        <location line="+17"/>
         <source>Disabled</source>
         <comment>details (display/vrde/VRDE server)</comment>
-        <translation>Ezgaituta</translation>
+        <translation type="vanished">Ezgaituta</translation>
     </message>
     <message>
         <source>Video Capture File</source>
@@ -4500,9 +4498,8 @@
         <translation type="vanished">Bideo Harpen Ezaugarriak</translation>
     </message>
     <message>
-        <location line="+388"/>
         <source>Frame Size: %1x%2, Frame Rate: %3fps, Bit Rate: %4kbps</source>
-        <translation>Frame Neurria: %1x%2, Frame Maila: %3fps-ko, Bit Maila: %4kbs-ko</translation>
+        <translation type="vanished">Frame Neurria: %1x%2, Frame Maila: %3fps-ko, Bit Maila: %4kbs-ko</translation>
     </message>
     <message>
         <source>Video Capture</source>
@@ -4520,52 +4517,44 @@
         <translation type="obsolete">[CD/DVD]</translation>
     </message>
     <message>
-        <location line="-306"/>
         <source>Controller</source>
         <comment>details (audio)</comment>
-        <translation>Kontrolatzailea</translation>
+        <translation type="vanished">Kontrolatzailea</translation>
     </message>
     <message>
-        <location line="+21"/>
         <source>Disabled</source>
         <comment>details (audio)</comment>
-        <translation>Ezgaituta</translation>
+        <translation type="vanished">Ezgaituta</translation>
     </message>
     <message>
-        <location line="+406"/>
         <source>Generic Driver, &apos;%1&apos; { %2 }</source>
         <comment>details (network)</comment>
-        <translation>Gidagailu generikoa, &apos;%1&apos; { %2 }</translation>
+        <translation type="vanished">Gidagailu generikoa, &apos;%1&apos; { %2 }</translation>
     </message>
     <message>
-        <location line="+5"/>
         <source>NAT Network, &apos;%1&apos;</source>
         <comment>details (network)</comment>
-        <translation>NAT Sarea, &apos;%1&apos;</translation>
+        <translation type="vanished">NAT Sarea, &apos;%1&apos;</translation>
     </message>
     <message>
-        <location line="-393"/>
         <source>Adapter %1</source>
         <comment>details (network)</comment>
-        <translation>Egokitzailea %1</translation>
+        <translation type="vanished">Egokitzailea %1</translation>
     </message>
     <message>
-        <location line="+9"/>
         <source>Disabled</source>
         <comment>details (network/adapter)</comment>
-        <translation>Ezgaituta</translation>
+        <translation type="vanished">Ezgaituta</translation>
     </message>
     <message>
-        <location line="+18"/>
         <source>Port %1</source>
         <comment>details (serial)</comment>
-        <translation>Ataka %1</translation>
+        <translation type="vanished">Ataka %1</translation>
     </message>
     <message>
-        <location line="+9"/>
         <source>Disabled</source>
         <comment>details (serial)</comment>
-        <translation>Ezgaituta</translation>
+        <translation type="vanished">Ezgaituta</translation>
     </message>
     <message>
         <source>Port %1</source>
@@ -4578,28 +4567,24 @@
         <translation type="vanished">Ezgaituta</translation>
     </message>
     <message>
-        <location line="+16"/>
         <source>USB Controller</source>
         <comment>details (usb)</comment>
-        <translation>USB Kontrolatzailea</translation>
+        <translation type="vanished">USB Kontrolatzailea</translation>
     </message>
     <message>
-        <location line="+417"/>
         <source>%1 (%2 active)</source>
         <comment>details (usb)</comment>
-        <translation>%1 (%2 gaituta)</translation>
+        <translation type="vanished">%1 (%2 gaituta)</translation>
     </message>
     <message>
-        <location line="-403"/>
         <source>Disabled</source>
         <comment>details (usb)</comment>
-        <translation>Ezgaituta</translation>
+        <translation type="vanished">Ezgaituta</translation>
     </message>
     <message>
-        <location line="+19"/>
         <source>None</source>
         <comment>details (shared folders)</comment>
-        <translation>Ezer ez</translation>
+        <translation type="vanished">Ezer ez</translation>
     </message>
     <message>
         <source>Menu-bar</source>
@@ -4662,10 +4647,9 @@
         <translation type="vanished">Ezer ez</translation>
     </message>
     <message>
-        <location line="-365"/>
         <source>Operating System</source>
         <comment>details (general)</comment>
-        <translation>Sistema Eragilea</translation>
+        <translation type="vanished">Sistema Eragilea</translation>
     </message>
     <message>
         <source>Information Inaccessible</source>
@@ -4673,58 +4657,39 @@
         <translation type="vanished">Argibideak eskuraezin</translation>
     </message>
     <message>
-        <location line="+34"/>
         <source>Base Memory</source>
         <comment>details (system)</comment>
-        <translation>Ohinarri Oroimena</translation>
+        <translation type="vanished">Ohinarri Oroimena</translation>
     </message>
     <message>
-        <location line="+20"/>
         <source>Execution Cap</source>
         <comment>details (system)</comment>
-        <translation>Exekuzio Muga</translation>
+        <translation type="vanished">Exekuzio Muga</translation>
     </message>
     <message>
-        <location line="+8"/>
         <source>Boot Order</source>
         <comment>details (system)</comment>
-        <translation>Abiarazpen Hurrenkera</translation>
+        <translation type="vanished">Abiarazpen Hurrenkera</translation>
     </message>
     <message>
-        <location line="+9"/>
-        <source>Chipset Type</source>
-        <comment>details (system)</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+366"/>
         <source>Enabled</source>
         <comment>details (system/EFI)</comment>
-        <translation type="unfinished">Gaituta</translation>
+        <translation type="obsolete">Gaituta</translation>
     </message>
     <message>
-        <location line="-355"/>
-        <source>EFI</source>
-        <comment>details (system)</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+360"/>
         <source>Disabled</source>
         <comment>details (system/EFI)</comment>
-        <translation type="unfinished">Ezgaituta</translation>
+        <translation type="obsolete">Ezgaituta</translation>
     </message>
     <message>
-        <location line="+22"/>
         <source>Nested Paging</source>
         <comment>details (system)</comment>
-        <translation>Nested Orrialdeztapena</translation>
+        <translation type="vanished">Nested Orrialdeztapena</translation>
     </message>
     <message>
-        <location line="-352"/>
         <source>Video Memory</source>
         <comment>details (display)</comment>
-        <translation>Bideo Oroimena</translation>
+        <translation type="vanished">Bideo Oroimena</translation>
     </message>
     <message>
         <source>Disabled</source>
@@ -4732,106 +4697,74 @@
         <translation type="obsolete">Ezgaituta</translation>
     </message>
     <message>
-        <location line="+396"/>
         <source>2D Video</source>
         <comment>details (display)</comment>
-        <translation>2D Bideoa</translation>
+        <translation type="vanished">2D Bideoa</translation>
     </message>
     <message>
-        <location line="-356"/>
         <source>Remote Desktop Server Port</source>
         <comment>details (display/vrde)</comment>
-        <translation>Hurruneko Mahaigain Zerbitzari Ataka</translation>
+        <translation type="vanished">Hurruneko Mahaigain Zerbitzari Ataka</translation>
     </message>
     <message>
-        <location line="+6"/>
         <source>Remote Desktop Server</source>
         <comment>details (display/vrde)</comment>
-        <translation>Hurruneko Mahaigain Zerbitzaria</translation>
+        <translation type="vanished">Hurruneko Mahaigain Zerbitzaria</translation>
     </message>
     <message>
-        <location line="+422"/>
         <source>[Optical Drive]</source>
         <comment>details (storage)</comment>
-        <translation>[Diska Optikoa]</translation>
+        <translation type="vanished">[Diska Optikoa]</translation>
     </message>
     <message>
-        <location line="-360"/>
         <source>Not Attached</source>
         <comment>details (storage)</comment>
-        <translation>Erantsi gabe</translation>
+        <translation type="vanished">Erantsi gabe</translation>
     </message>
     <message>
-        <location line="+16"/>
         <source>Host Driver</source>
         <comment>details (audio)</comment>
-        <translation>Hostalari Gidagailua</translation>
+        <translation type="vanished">Hostalari Gidagailua</translation>
     </message>
     <message>
-        <location line="+11"/>
-        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="+432"/>
-        <source>Audio Output</source>
-        <comment>details (audio)</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+370"/>
-        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="+2"/>
         <source>Enabled</source>
         <comment>details (audio/output)</comment>
-        <translation type="unfinished">Gaituta</translation>
+        <translation type="obsolete">Gaituta</translation>
     </message>
     <message>
-        <location line="+1"/>
-        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="+1"/>
         <source>Disabled</source>
         <comment>details (audio/output)</comment>
-        <translation type="unfinished">Ezgaituta</translation>
+        <translation type="obsolete">Ezgaituta</translation>
     </message>
     <message>
-        <location line="-366"/>
-        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="+1"/>
-        <source>Audio Input</source>
-        <comment>details (audio)</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+370"/>
-        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="+2"/>
         <source>Enabled</source>
         <comment>details (audio/input)</comment>
-        <translation type="unfinished">Gaituta</translation>
+        <translation type="obsolete">Gaituta</translation>
     </message>
     <message>
-        <location line="+1"/>
-        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="+1"/>
         <source>Disabled</source>
         <comment>details (audio/input)</comment>
-        <translation type="unfinished">Ezgaituta</translation>
+        <translation type="obsolete">Ezgaituta</translation>
     </message>
     <message>
-        <location line="+28"/>
         <source>Bridged Adapter, %1</source>
         <comment>details (network)</comment>
-        <translation>Zubi egokitzailea, %1</translation>
+        <translation type="vanished">Zubi egokitzailea, %1</translation>
     </message>
     <message>
-        <location line="+4"/>
         <source>Internal Network, &apos;%1&apos;</source>
         <comment>details (network)</comment>
-        <translation>Barneko sarea, &apos;%1&apos;</translation>
+        <translation type="vanished">Barneko sarea, &apos;%1&apos;</translation>
     </message>
     <message>
-        <location line="+4"/>
         <source>Host-only Adapter, &apos;%1&apos;</source>
         <comment>details (network)</comment>
-        <translation>Hostalaria-bakarrik Egokitzailea, &apos;%1&apos;</translation>
+        <translation type="vanished">Hostalaria-bakarrik Egokitzailea, &apos;%1&apos;</translation>
     </message>
     <message>
-        <location line="+7"/>
         <source>Generic Driver, &apos;%1&apos;</source>
         <comment>details (network)</comment>
-        <translation>Gidagailu generikoa, &apos;%1&apos;</translation>
+        <translation type="vanished">Gidagailu generikoa, &apos;%1&apos;</translation>
     </message>
     <message>
         <source>Generic Driver, &apos;%1&apos; {&amp;nbsp;%2&amp;nbsp;}</source>
@@ -4839,10 +4772,9 @@
         <translation type="obsolete">Gidagailu generikoa, &apos;%1&apos; {&amp;nbsp;%2&amp;nbsp;}</translation>
     </message>
     <message>
-        <location line="-329"/>
         <source>Device Filters</source>
         <comment>details (usb)</comment>
-        <translation>Gailu Iragazkiak</translation>
+        <translation type="vanished">Gailu Iragazkiak</translation>
     </message>
     <message>
         <source>USB Controller Inaccessible</source>
@@ -4850,10 +4782,9 @@
         <translation type="vanished">USB Kontrolatzailea Eskuraezina</translation>
     </message>
     <message>
-        <location line="+22"/>
         <source>Shared Folders</source>
         <comment>details (shared folders)</comment>
-        <translation>Elkarbanatutako Agiritegiak</translation>
+        <translation type="vanished">Elkarbanatutako Agiritegiak</translation>
     </message>
 </context>
 <context>
@@ -6123,18 +6054,22 @@
 <context>
     <name>UIGuestControlFileManager</name>
     <message>
-        <location filename="../src/guestctrl/UIGuestControlFileManagerDialog.cpp" line="+79"/>
+        <location filename="../src/guestctrl/UIGuestControlFileManagerDialog.cpp" line="+77"/>
+        <source>%1 - Guest Control File Manager</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+2"/>
         <source>Close</source>
         <translation type="unfinished">Itxi</translation>
     </message>
     <message>
         <location filename="../src/guestctrl/UIGuestControlFileManagerPanel.cpp" line="+101"/>
-        <location filename="../src/guestctrl/UIGuestControlFileManagerOperationsPanel.cpp" line="+128"/>
         <source>Close the pane</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/guestctrl/UIGuestControlFileManagerSessionPanel.cpp" line="+164"/>
+        <location filename="../src/guestctrl/UIGuestControlFileManagerSessionPanel.cpp" line="+167"/>
         <source>User name to authenticate session creation</source>
         <translation type="unfinished"></translation>
     </message>
@@ -6149,12 +6084,18 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+1"/>
+        <location line="-56"/>
+        <location line="+57"/>
         <source>Password</source>
         <translation type="unfinished">Sarhitza</translation>
     </message>
     <message>
-        <location line="+4"/>
+        <location line="-50"/>
+        <source>Show Password</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+54"/>
         <source>Create Session</source>
         <translation type="unfinished"></translation>
     </message>
@@ -6164,30 +6105,23 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/guestctrl/UIGuestControlFileManagerOperationsPanel.cpp" line="+155"/>
-        <source>Clean Finished</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>Clean All</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/guestctrl/UIGuestControlFileManagerSettingsPanel.cpp" line="+160"/>
+        <location filename="../src/guestctrl/UIGuestControlFileManagerOptionsPanel.cpp" line="+160"/>
         <source>List directories on top</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+1"/>
-        <location line="+6"/>
-        <location line="+6"/>
         <source>List directories before files</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-7"/>
+        <location line="+5"/>
         <source>Ask before delete</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Show a confirmation dialog before deleting files and directories</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -6196,7 +6130,12 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/guestctrl/UIGuestControlFileTable.cpp" line="+430"/>
+        <location line="+1"/>
+        <source>Show file/directory sizes in human readable format rather than in bytes</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/guestctrl/UIGuestControlFileTable.cpp" line="+431"/>
         <source>Total Size</source>
         <translation type="unfinished"></translation>
     </message>
@@ -6211,7 +6150,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+206"/>
+        <location line="+211"/>
         <source>Delete the selected file(s) and/or folder(s)</source>
         <translation type="unfinished"></translation>
     </message>
@@ -6226,7 +6165,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+609"/>
+        <location line="+612"/>
         <source>Name</source>
         <translation type="unfinished">Izena</translation>
     </message>
@@ -6256,7 +6195,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+156"/>
+        <location line="+166"/>
         <source>Unknown</source>
         <translation type="unfinished"></translation>
     </message>
@@ -6286,37 +6225,96 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+273"/>
-        <location filename="../src/guestctrl/UIHostFileTable.cpp" line="+372"/>
+        <location line="+276"/>
+        <location filename="../src/guestctrl/UIHostFileTable.cpp" line="+364"/>
         <location line="+34"/>
         <source>&lt;b&gt;Size:&lt;/b&gt; %1 bytes</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+6"/>
+        <location line="+8"/>
+        <source>&lt;b&gt;Allocated:&lt;/b&gt; %1 bytes</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+22"/>
         <location filename="../src/guestctrl/UIHostFileTable.cpp" line="-29"/>
         <source>&lt;b&gt;Type:&lt;/b&gt; %1&lt;br/&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+2"/>
-        <location filename="../src/guestctrl/UIHostFileTable.cpp" line="+2"/>
-        <source>&lt;b&gt;Created:&lt;/b&gt; %1&lt;br/&gt;</source>
+        <location line="+3"/>
+        <source>&lt;b&gt;INode:&lt;/b&gt; %1&lt;br/&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>&lt;b&gt;Device:&lt;/b&gt; %1&lt;br/&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>&lt;b&gt;Hardlinks:&lt;/b&gt; %1&lt;br/&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <source>&lt;b&gt;Mode:&lt;/b&gt; %1&lt;br/&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>&lt;b&gt;Attributes:&lt;/b&gt; %1&lt;br/&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>&lt;b&gt;Device ID:&lt;/b&gt; %1&lt;br/&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+3"/>
+        <source>&lt;b&gt;Owner:&lt;/b&gt; %1 (%2)&lt;br/&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>&lt;b&gt;Group:&lt;/b&gt; %1 (%2)&lt;br/&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>&lt;b&gt;Birth:&lt;/b&gt; %1&lt;br/&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>&lt;b&gt;Change:&lt;/b&gt; %1&lt;br/&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>&lt;b&gt;Access:&lt;/b&gt; %1&lt;br/&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/guestctrl/UIHostFileTable.cpp" line="-7"/>
+        <source>&lt;b&gt;Name:&lt;/b&gt; %1&lt;br/&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <source>&lt;b&gt;Created:&lt;/b&gt; %1&lt;br/&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/guestctrl/UIGuestFileTable.cpp" line="-2"/>
         <location filename="../src/guestctrl/UIHostFileTable.cpp" line="+2"/>
         <source>&lt;b&gt;Modified:&lt;/b&gt; %1&lt;br/&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+3"/>
-        <source>&lt;b&gt;Owner:&lt;/b&gt; %1&lt;br/&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+27"/>
+        <location line="+31"/>
         <location filename="../src/guestctrl/UIHostFileTable.cpp" line="+23"/>
         <source>&lt;b&gt;Selected:&lt;/b&gt; %1 files and %2 directories&lt;br/&gt;</source>
         <translation type="unfinished"></translation>
@@ -6332,26 +6330,126 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/guestctrl/UIHostFileTable.cpp" line="-259"/>
+        <location filename="../src/guestctrl/UIHostFileTable.cpp" line="-256"/>
         <source>Host System</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+222"/>
-        <source>&lt;b&gt;Name:&lt;/b&gt; %1</source>
+        <location line="+235"/>
+        <source>&lt;b&gt;Owner:&lt;/b&gt; %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+16"/>
-        <source>&lt;b&gt;Owner:&lt;/b&gt; %1</source>
+        <location filename="../src/guestctrl/UIGuestControlFileManagerLogPanel.cpp" line="+75"/>
+        <source>Clear</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/guestctrl/UIGuestControlFileManagerOperationsPanel.cpp" line="+155"/>
+        <source>Cancel</source>
+        <translation type="unfinished">Ezeztatu</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>Not yet started</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Working</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Paused</source>
+        <translation type="unfinished">Pausatuta</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Canceled</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Succeded</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Failed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>Invalid</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+218"/>
+        <source>Remove Selected</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>Remove Finished</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Remove All</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
-    <name>UIGuestControlFileManagerDialog</name>
+    <name>UIGuestFileTable</name>
     <message>
-        <location filename="../src/guestctrl/UIGuestControlFileManagerDialog.cpp" line="-2"/>
-        <source>%1 - Guest Control</source>
+        <location filename="../src/guestctrl/UIGuestFileTable.cpp" line="-119"/>
+        <source>directory</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>symbolic link</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>character device</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>block device</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>fifo</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>socket</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>whiteout</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>unknown</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>illegal-value</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -7966,7 +8064,7 @@
 <context>
     <name>UIMachineSettingsDisplay</name>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsDisplay.cpp" line="+570"/>
+        <location filename="../src/settings/machine/UIMachineSettingsDisplay.cpp" line="+574"/>
         <source>The virtual machine is set up to use hardware graphics acceleration. However the host system does not currently provide this, so you will not be able to start the machine.</source>
         <translation>Makina birtual hau hardware bizkorpena erabiltzeko ezarrita dago Horrela ere hostalari sistemak ezin du oraingoz hau hornitu, hortaz ez zara makina abiarazeko gai izango.</translation>
     </message>
@@ -7995,7 +8093,7 @@
         <translation type="obsolete">&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location line="+67"/>
+        <location line="+72"/>
         <source>User Defined</source>
         <translation>Erabiltzaileak Zehaztuta</translation>
     </message>
@@ -8011,7 +8109,7 @@
         <translation>fs-ko</translation>
     </message>
     <message>
-        <location line="-141"/>
+        <location line="-146"/>
         <source>The virtual machine is currently assigned less than &lt;b&gt;%1&lt;/b&gt; of video memory which is the minimum amount required to switch to full-screen or seamless mode.</source>
         <translation>Makina birtualak une honetan ikusleiho-osoko edo irudizko modura aldatzeko behar den kopuru gutxiena baino &lt;b&gt;%1&lt;/b&gt; bideo oroimen gutxiago du esleituta.</translation>
     </message>
@@ -8026,9 +8124,9 @@
         <translation>Hurruneko Erakuspena une honetan gaituta dago makina birtual honentzat. Horrela ere, honek &lt;i&gt;%1&lt;/i&gt; ezarrita behar du. Mesedez ezarri Hedapen Paketea VirtualBox jeisketa gunetik bestela zure MB Hurruneko Erakuspen ezgaituta duela abiatuko da.</translation>
     </message>
     <message>
-        <location line="+72"/>
+        <location line="+73"/>
         <location line="+1"/>
-        <location line="+554"/>
+        <location line="+574"/>
         <source>%1 MB</source>
         <translation>%1 MB</translation>
     </message>
@@ -8037,7 +8135,7 @@
         <translation type="vanished">%1%</translation>
     </message>
     <message>
-        <location line="-539"/>
+        <location line="-555"/>
         <location line="+3"/>
         <source>low</source>
         <comment>quality</comment>
@@ -8058,12 +8156,12 @@
         <translation>handia</translation>
     </message>
     <message>
-        <location line="+584"/>
+        <location line="+600"/>
         <source>&lt;i&gt;About %1MB per 5 minute video&lt;/i&gt;</source>
         <translation>&lt;i&gt;%1MB 5 minutuko bideo inguru&lt;/i&gt;</translation>
     </message>
     <message>
-        <location line="-593"/>
+        <location line="-609"/>
         <source>kbps</source>
         <translation>kbs-ko</translation>
     </message>
@@ -8083,12 +8181,12 @@
         <translation>Makina birtualari hornitutako bideo oroimen kopurua agintzen du.</translation>
     </message>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsDisplay.cpp" line="-13"/>
+        <location filename="../src/settings/machine/UIMachineSettingsDisplay.cpp" line="-17"/>
         <source>MB</source>
         <translation>MB</translation>
     </message>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsDisplay.ui" line="+247"/>
+        <location filename="../src/settings/machine/UIMachineSettingsDisplay.ui" line="+290"/>
         <source>Extended Features:</source>
         <translation>Ezaugarri Hedatuak:</translation>
     </message>
@@ -8098,7 +8196,7 @@
         <translation>Hautatutakoan, makina birtualak sarbidea emango du hostalarian eskuragarri dauden 3D grafika gaitasunetara.</translation>
     </message>
     <message>
-        <location line="-161"/>
+        <location line="-204"/>
         <source>&amp;Screen</source>
         <translation>&amp;Ikusleihoa</translation>
     </message>
@@ -8129,7 +8227,7 @@
         <translation type="vanished">Erabili &amp;Eskalatu gabeko HiDPI Irteera</translation>
     </message>
     <message>
-        <location line="+9"/>
+        <location line="+52"/>
         <source>Acceleration:</source>
         <translation>Bizkorpena:</translation>
     </message>
@@ -8330,7 +8428,17 @@
         <translation>Hautatutakoan, makina birtualak hostalarian eskuragarri dauden Bideo Bizkorpen gaitasunetarako sarbidea emango du.</translation>
     </message>
     <message>
-        <location line="+3"/>
+        <location line="-75"/>
+        <source>&amp;Graphics Controller:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+21"/>
+        <source>Selects the graphics adapter type the virtual machine will use.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+57"/>
         <source>Enable &amp;2D Video Acceleration</source>
         <translation>Gaitu &amp;2D Bideo Bizkorpena</translation>
     </message>
@@ -8339,7 +8447,7 @@
         <translation type="obsolete">VRDP Zerbitzari ataka zenbakia. Adierazi dezakezu &lt;tt&gt;0&lt;/tt&gt; (huts), 3389 ataka hautatzeko, RDP-rako ataka estandarra.</translation>
     </message>
     <message>
-        <location line="-115"/>
+        <location line="-158"/>
         <source>Mo&amp;nitor Count:</source>
         <translation>&amp;Monitore Zenbatekoa:</translation>
     </message>
@@ -8358,7 +8466,7 @@
         <translation type="obsolete">Makina Birtualera zenbat elkarketa aldiberean baimentzen diren adierazten du.</translation>
     </message>
     <message>
-        <location line="+210"/>
+        <location line="+253"/>
         <source>&amp;Allow Multiple Connections</source>
         <translation>&amp;Ahalbidetu Elkarketa Anitz</translation>
     </message>
@@ -9904,7 +10012,7 @@
         <translation>Biltegi Zuhaitzean hautatutako SATA biltegiratze kontrolatzailearen ataka kopurua hautatzen du. Hau gutxienez izan behar da erabiltzea behar duzun ataka zenbateko gehiena baino bat gehiago.</translation>
     </message>
     <message>
-        <location filename="../src/snapshots/UISnapshotDetailsWidget.cpp" line="+208"/>
+        <location filename="../src/snapshots/UISnapshotDetailsWidget.cpp" line="+202"/>
         <location filename="../src/manager/details/UIDetailsElements.cpp" line="-541"/>
         <location filename="../src/runtime/information/UIInformationDataItem.cpp" line="-243"/>
         <location line="+742"/>
@@ -9940,7 +10048,7 @@
         <translation type="obsolete">CPU birtual bat baino gehiago esleitu dizkiozu MB honi. Honek ez du lan egingo hardware birtualizazioa (VT-x/AMD-V) ere gaituta ez badago. Hau berezgaitasunez egingo da MB Ezarpenak onartzen dituzunean Ongi botoia sakatuz.</translation>
     </message>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsSystem.cpp" line="+393"/>
+        <location filename="../src/settings/machine/UIMachineSettingsSystem.cpp" line="+450"/>
         <source>More than &lt;b&gt;%1%&lt;/b&gt; of the host computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) is assigned to the virtual machine. Not enough memory is left for the host operating system. Please select a smaller amount.</source>
         <translation>Zure ordenagailuaren (&lt;b&gt;%2&lt;/b&gt;) &lt;b&gt;%1%&lt;/b&gt; baino oroimen gehigo duzu esleituta makina birtualera. Ez da nahikoa oroimen gelditzen zure hostalari sistema eragilerako. Mesedez hautatu kopuru txikiago bat.</translation>
     </message>
@@ -9966,7 +10074,7 @@
         <translation type="vanished">Hardware birtualizazioa une honetan ez dago gaituta Bizkorpena ataleko Sistema orrialdean. Hau beharrezkoa da MB honentzat hautatuta duzun prozesagailu birtual bat baino gehiago sostengatzerako orduan. Hau berezgaitasunez egingo da zure aldaketak baieztatzen badituzu.</translation>
     </message>
     <message>
-        <location line="+157"/>
+        <location line="+201"/>
         <location line="+1"/>
         <source>%1 MB</source>
         <translation>%1 MB</translation>
@@ -9990,7 +10098,7 @@
         <translation>%1%</translation>
     </message>
     <message>
-        <location line="-126"/>
+        <location line="-170"/>
         <source>For performance reasons, the number of virtual CPUs attached to the virtual machine may not be more than twice the number of physical CPUs on the host (&lt;b&gt;%1&lt;/b&gt;). Please reduce the number of virtual CPUs.</source>
         <translation>Egintza zergaitiengaitik, makina birtualera erantsitako CPU birtual zenbatekoa ezin da hostalariko CPU fisikoak (&lt;b&gt;%1&lt;/b&gt; baino bi aldiz gehiago izan. Mesedez murriztu CPU birtual zenbatekoa.</translation>
     </message>
@@ -10015,12 +10123,12 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+9"/>
+        <location line="+12"/>
         <source>The hardware virtualization is not currently enabled in the Acceleration section of the System page. This is needed to support more than one virtual processor. It will be enabled automatically if you confirm your changes.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+9"/>
+        <location line="+10"/>
         <source>The processor execution cap is set to a low value. This may make the machine feel slow to respond.</source>
         <translation>Prozesagailuaren exekuzio muga bailo apal batean ezarri duzu. Honek makinak astiro erantzutea eragingo du.</translation>
     </message>
@@ -10035,8 +10143,23 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+16"/>
+        <location line="+10"/>
+        <source>The hardware virtualization is not currently enabled in the Acceleration section of the System page. This is needed to support nested hardware virtualization. It will be enabled automatically if you confirm your changes.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <source>The nested paging is not currently enabled in the Acceleration section of the System page. This is needed to support nested hardware virtualization. It will be enabled automatically if you confirm your changes.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+21"/>
         <source>The hardware virtualization is enabled in the Acceleration section of the System page although it is not supported by the host system. It should be disabled in order to start the virtual system.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+13"/>
+        <source>The hardware virtualization is not currently enabled in the Acceleration section of the System page. This is needed for nested paging support. It will be enabled automatically if you confirm your changes.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -10065,7 +10188,7 @@
         <translation>Makina birtutalari hornitutako oroimen kopurua kontrolatzen du. Gehiegi esleitzen baduzu, badaiteke makina ez abiatzea.</translation>
     </message>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsSystem.cpp" line="+52"/>
+        <location filename="../src/settings/machine/UIMachineSettingsSystem.cpp" line="+55"/>
         <source>MB</source>
         <translation>MB</translation>
     </message>
@@ -10133,6 +10256,16 @@
         <translation>Gaitu PA&amp;E/NX</translation>
     </message>
     <message>
+        <location line="+7"/>
+        <source>When checked, the nested hardware virtualization CPU feature will be exposed to the virtual machine.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Enable Nested &amp;VT-x/AMD-V</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <location line="+21"/>
         <source>Acce&amp;leration</source>
         <translation>&amp;Bizkorpena</translation>
@@ -10178,7 +10311,7 @@
         <translation type="obsolete">&lt;qt&gt;%1&amp;nbsp;CPU&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location line="-304"/>
+        <location line="-314"/>
         <source>When checked, the guest will support the Extended Firmware Interface (EFI), which is required to boot certain guest OSes. Non-EFI aware OSes will not be able to boot if this option is activated.</source>
         <translation>Hautatutakoan, gonbidatuak Firmware Hedatu Interfazea (EFI) sostengatuko du, hau beharrezkoa da zenbait gonbidatu SE abiarazteko. Ez-EFI SE-ak ez dira abiatzeko gai izango aukera hau gaituta badago.</translation>
     </message>
@@ -13002,13 +13135,13 @@
 <context>
     <name>UIMultiScreenLayout</name>
     <message>
-        <location filename="../src/globals/UIActionPoolRuntime.cpp" line="+3115"/>
+        <location filename="../src/globals/UIActionPoolRuntime.cpp" line="+3123"/>
         <location line="+43"/>
         <source>Virtual Screen %1</source>
         <translation>Ikusleiho Birtuala %1</translation>
     </message>
     <message>
-        <location line="+243"/>
+        <location line="+168"/>
         <source>Use Host Screen %1</source>
         <translation>Erabili Hostalari Ikusleihoa %1</translation>
     </message>
@@ -13407,7 +13540,7 @@
 <context>
     <name>UIScreenshotViewer</name>
     <message>
-        <location filename="../src/snapshots/UISnapshotDetailsWidget.cpp" line="-1371"/>
+        <location filename="../src/snapshots/UISnapshotDetailsWidget.cpp" line="-1378"/>
         <source>Screenshot of %1 (%2)</source>
         <translation type="unfinished">Ikusleiho-argazkiak %1 (%2)</translation>
     </message>
@@ -15208,7 +15341,7 @@
         <translation>&lt;p&gt;Mesedez hautatu gailura gehitu behar diren makina birtualak. Bat  baino gehiago hautatu ditzakezu. Mesedez ohartu makina hauek itzali egin behar direla esportatu ahal izan aurretik.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/wizards/exportappliance/UIWizardExportAppPageBasic2.cpp" line="+1042"/>
+        <location filename="../src/wizards/exportappliance/UIWizardExportAppPageBasic2.cpp" line="+1050"/>
         <location filename="../src/wizards/exportappliance/UIWizardExportAppPageExpert.cpp" line="+421"/>
         <source>Appliance settings</source>
         <translation>Makina Birtual ezarpenak</translation>
@@ -15834,7 +15967,7 @@ Home folders can also be individually (per virtual machine)  modified.</source>
 <context>
     <name>UIWizardNewVM</name>
     <message>
-        <location filename="../src/wizards/newvm/UIWizardNewVM.cpp" line="+337"/>
+        <location filename="../src/wizards/newvm/UIWizardNewVM.cpp" line="+340"/>
         <source>Create Virtual Machine</source>
         <translation>Sortu Makina Birtuala</translation>
     </message>
@@ -16254,7 +16387,7 @@ Home folders can also be individually (per virtual machine)  modified.</source>
         <translation type="vanished">Ezgaituta</translation>
     </message>
     <message>
-        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="+142"/>
+        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="+143"/>
         <source>Powered Off</source>
         <comment>MachineState</comment>
         <translation>Itzalita</translation>
@@ -16391,7 +16524,7 @@ Home folders can also be individually (per virtual machine)  modified.</source>
         <translation>Sarea</translation>
     </message>
     <message>
-        <location line="+243"/>
+        <location line="+272"/>
         <location line="+18"/>
         <source>Null Audio Driver</source>
         <comment>AudioDriverType</comment>
@@ -16492,7 +16625,7 @@ Home folders can also be individually (per virtual machine)  modified.</source>
         <translation>Hartuta</translation>
     </message>
     <message>
-        <location line="-194"/>
+        <location line="-223"/>
         <source>Disabled</source>
         <comment>ClipboardType</comment>
         <translation>Ezgaituta</translation>
@@ -16551,7 +16684,7 @@ Home folders can also be individually (per virtual machine)  modified.</source>
         <translation type="vanished">Elkarbanatutako Agiritegiak</translation>
     </message>
     <message>
-        <location line="+142"/>
+        <location line="+171"/>
         <location line="+14"/>
         <source>Disconnected</source>
         <comment>PortMode</comment>
@@ -16662,7 +16795,7 @@ Home folders can also be individually (per virtual machine)  modified.</source>
         <translation type="vanished">Ataka Kidetuak</translation>
     </message>
     <message>
-        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="-173"/>
+        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="-202"/>
         <source>USB</source>
         <comment>DeviceType</comment>
         <translation>USB</translation>
@@ -16674,7 +16807,7 @@ Home folders can also be individually (per virtual machine)  modified.</source>
         <translation>Elkarbanatutako Agiritegiak</translation>
     </message>
     <message>
-        <location line="+334"/>
+        <location line="+363"/>
         <source>IDE</source>
         <comment>StorageBus</comment>
         <translation>IDE</translation>
@@ -16821,7 +16954,7 @@ Home folders can also be individually (per virtual machine)  modified.</source>
         <translation>Ezgaituta</translation>
     </message>
     <message>
-        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="-175"/>
+        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="-204"/>
         <source>Setting Up</source>
         <comment>MachineState</comment>
         <translation>Ezarrita</translation>
@@ -16852,7 +16985,7 @@ Home folders can also be individually (per virtual machine)  modified.</source>
         <translation type="vanished">Barneko Sarea, &apos;%1&apos;</translation>
     </message>
     <message>
-        <location line="+387"/>
+        <location line="+416"/>
         <source>SCSI</source>
         <comment>StorageBus</comment>
         <translation>SCSI</translation>
@@ -16986,7 +17119,7 @@ Home folders can also be individually (per virtual machine)  modified.</source>
         <translation type="vanished">Biltegia</translation>
     </message>
     <message>
-        <location line="-243"/>
+        <location line="-272"/>
         <source>Teleported</source>
         <comment>MachineState</comment>
         <translation>Teleramana</translation>
@@ -17031,7 +17164,7 @@ Home folders can also be individually (per virtual machine)  modified.</source>
         <translation>Berehalakoa Ezabatzen</translation>
     </message>
     <message>
-        <location line="+389"/>
+        <location line="+418"/>
         <source>Floppy</source>
         <comment>StorageBus</comment>
         <translation>Disketea</translation>
@@ -17234,7 +17367,7 @@ Home folders can also be individually (per virtual machine)  modified.</source>
         <translation>LsiLogic SAS</translation>
     </message>
     <message>
-        <location filename="../src/converter/UIConverterBackendGlobal.cpp" line="+94"/>
+        <location filename="../src/converter/UIConverterBackendGlobal.cpp" line="+95"/>
         <location line="+19"/>
         <location filename="../src/globals/VBoxGlobal.cpp" line="+24"/>
         <location line="+28"/>
@@ -17353,7 +17486,7 @@ Home folders can also be individually (per virtual machine)  modified.</source>
         <translation>Agiri guztiak (*)</translation>
     </message>
     <message>
-        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="-433"/>
+        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="-462"/>
         <source>Fault Tolerant Syncing</source>
         <comment>MachineState</comment>
         <translation>Jasangarritasun Aldiberetze Hutsegitea</translation>
@@ -17383,7 +17516,7 @@ Home folders can also be individually (per virtual machine)  modified.</source>
         <translation>Optikoa</translation>
     </message>
     <message>
-        <location line="+311"/>
+        <location line="+340"/>
         <location line="+12"/>
         <source>Null</source>
         <comment>AuthType</comment>
@@ -17450,7 +17583,7 @@ Home folders can also be individually (per virtual machine)  modified.</source>
         <translation>Egokitzailea %1</translation>
     </message>
     <message>
-        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="-84"/>
+        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="-113"/>
         <source>Disabled</source>
         <comment>DragAndDropType</comment>
         <translation>Ezgaituta</translation>
@@ -17505,6 +17638,34 @@ Home folders can also be individually (per virtual machine)  modified.</source>
     </message>
     <message>
         <location line="+11"/>
+        <location line="+13"/>
+        <source>None</source>
+        <comment>GraphicsControllerType</comment>
+        <translation type="unfinished">Ezer ez</translation>
+    </message>
+    <message>
+        <location line="-12"/>
+        <location line="+13"/>
+        <source>VBoxVGA</source>
+        <comment>GraphicsControllerType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="-12"/>
+        <location line="+13"/>
+        <source>VMSVGA</source>
+        <comment>GraphicsControllerType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="-12"/>
+        <location line="+13"/>
+        <source>VBoxSVGA</source>
+        <comment>GraphicsControllerType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+13"/>
         <source>Normal</source>
         <comment>MediumType</comment>
         <translation>Arrunta</translation>
@@ -17827,12 +17988,12 @@ Home folders can also be individually (per virtual machine)  modified.</source>
     </message>
     <message>
         <location line="+1"/>
-        <location line="+61"/>
+        <location line="+62"/>
         <source>Acceleration</source>
         <translation type="unfinished">Bizkorpena</translation>
     </message>
     <message>
-        <location line="-3"/>
+        <location line="-4"/>
         <source>VRAM</source>
         <translation type="unfinished"></translation>
     </message>
@@ -17847,6 +18008,11 @@ Home folders can also be individually (per virtual machine)  modified.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location line="+1"/>
+        <source>Graphics Controller</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <location line="+2"/>
         <source>VRDE</source>
         <translation type="unfinished"></translation>
@@ -17857,7 +18023,7 @@ Home folders can also be individually (per virtual machine)  modified.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+56"/>
+        <location line="+58"/>
         <source>Hard Disks</source>
         <translation type="unfinished"></translation>
     </message>
@@ -18106,12 +18272,30 @@ Home folders can also be individually (per virtual machine)  modified.</source>
         <translation type="unfinished">QCOW (QEMU Kopiatu-Eta-Idatzi)</translation>
     </message>
     <message>
+        <location line="+56"/>
+        <source>Video/Audio</source>
+        <comment>UISettingsDefs::RecordingMode</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Video Only</source>
+        <comment>UISettingsDefs::RecordingMode</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Audio Only</source>
+        <comment>UISettingsDefs::RecordingMode</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Parallel ports</source>
         <comment>DetailsElementType</comment>
         <translation type="vanished">Ataka Kidetuak</translation>
     </message>
     <message>
-        <location line="-885"/>
+        <location line="-943"/>
         <location line="+27"/>
         <source>USB</source>
         <comment>DetailsElementType</comment>
