@@ -2315,7 +2315,7 @@ static int hmR0VmxSetupPinCtls(PVMCPU pVCpu)
 
     if ((fVal & fZap) != fVal)
     {
-        LogRelFunc(("Invalid pin-based VM-execution controls combo! Cpu=%#RX64 fVal=%#RX64 fZap=%#RX64\n",
+        LogRelFunc(("Invalid pin-based VM-execution controls combo! Cpu=%#RX32 fVal=%#RX32 fZap=%#RX32\n",
                     pVM->hm.s.vmx.Msrs.PinCtls.n.disallowed0, fVal, fZap));
         pVCpu->hm.s.u32HMError = VMX_UFC_CTRL_PIN_EXEC;
         return VERR_HM_UNSUPPORTED_CPU_FEATURE_COMBO;
@@ -2412,7 +2412,7 @@ static int hmR0VmxSetupProcCtls2(PVMCPU pVCpu)
 
     if ((fVal & fZap) != fVal)
     {
-        LogRelFunc(("Invalid secondary processor-based VM-execution controls combo! cpu=%#RX64 fVal=%#RX64 fZap=%#RX64\n",
+        LogRelFunc(("Invalid secondary processor-based VM-execution controls combo! cpu=%#RX32 fVal=%#RX32 fZap=%#RX32\n",
                     pVM->hm.s.vmx.Msrs.ProcCtls2.n.disallowed0, fVal, fZap));
         pVCpu->hm.s.u32HMError = VMX_UFC_CTRL_PROC_EXEC2;
         return VERR_HM_UNSUPPORTED_CPU_FEATURE_COMBO;
@@ -2543,7 +2543,7 @@ static int hmR0VmxSetupProcCtls(PVMCPU pVCpu)
 
     if ((fVal & fZap) != fVal)
     {
-        LogRelFunc(("Invalid processor-based VM-execution controls combo! cpu=%#RX64 fVal=%#RX64 fZap=%#RX64\n",
+        LogRelFunc(("Invalid processor-based VM-execution controls combo! cpu=%#RX32 fVal=%#RX32 fZap=%#RX32\n",
                     pVM->hm.s.vmx.Msrs.ProcCtls.n.disallowed0, fVal, fZap));
         pVCpu->hm.s.u32HMError = VMX_UFC_CTRL_PROC_EXEC;
         return VERR_HM_UNSUPPORTED_CPU_FEATURE_COMBO;
@@ -3260,7 +3260,7 @@ static int hmR0VmxExportGuestEntryCtls(PVMCPU pVCpu)
 
         if ((fVal & fZap) != fVal)
         {
-            Log4Func(("Invalid VM-entry controls combo! Cpu=%RX64 fVal=%RX64 fZap=%RX64\n",
+            Log4Func(("Invalid VM-entry controls combo! Cpu=%RX32 fVal=%RX32 fZap=%RX32\n",
                       pVM->hm.s.vmx.Msrs.EntryCtls.n.disallowed0, fVal, fZap));
             pVCpu->hm.s.u32HMError = VMX_UFC_CTRL_ENTRY;
             return VERR_HM_UNSUPPORTED_CPU_FEATURE_COMBO;
@@ -3344,7 +3344,7 @@ static int hmR0VmxExportGuestExitCtls(PVMCPU pVCpu)
 
         if ((fVal & fZap) != fVal)
         {
-            LogRelFunc(("Invalid VM-exit controls combo! cpu=%RX64 fVal=%RX64 fZap=%RX64\n",
+            LogRelFunc(("Invalid VM-exit controls combo! cpu=%RX32 fVal=%RX32 fZap=%RX32\n",
                         pVM->hm.s.vmx.Msrs.ExitCtls.n.disallowed0, fVal, fZap));
             pVCpu->hm.s.u32HMError = VMX_UFC_CTRL_EXIT;
             return VERR_HM_UNSUPPORTED_CPU_FEATURE_COMBO;
