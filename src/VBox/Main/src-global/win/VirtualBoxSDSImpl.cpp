@@ -639,7 +639,7 @@ typedef struct VBoxSDSWatcher
     HANDLE              aHandles[MAXIMUM_WAIT_OBJECTS];
     /** Array the runs parallel to aHandles with the VBoxSVC data. */
     VBoxSDSWatcherData  aData[MAXIMUM_WAIT_OBJECTS];
-    /** Todo items. */
+    /** Pending changes. */
     struct
     {
         /** If NULL the data is being removed, otherwise it's being added and
