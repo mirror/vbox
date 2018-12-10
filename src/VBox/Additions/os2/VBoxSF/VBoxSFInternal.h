@@ -46,6 +46,7 @@
 #include <iprt/assert.h>
 #include <iprt/list.h>
 #include <VBox/VBoxGuestLibSharedFolders.h>
+#include <VBox/VBoxGuest.h>
 
 
 /** Allocation header used by RTMemAlloc.
@@ -181,9 +182,6 @@ typedef struct VBOXSFFSBUF
     PSHFLDIRINFO        pEntry;
     /** Staging area for staging a full FILEFINDBUF4L (+ 32 safe bytes). */
     uint8_t             abStaging[RT_ALIGN_32(sizeof(FILEFINDBUF4L) + 32, 8)];
-    /** For temporary convertion to UTF-8 so we can use KernStrFromUcs to get
-     *  string encoded according to the process codepage. */
-    RTUTF16             wszTmp[260];
 } VBOXSFFSBUF;
 AssertCompileSizeAlignment(VBOXSFFSBUF, 8);
 /** Pointer to a file search buffer. */
@@ -223,12 +221,14 @@ typedef VBOXSFFS *PVBOXSFFS;
 
 extern VBGLSFCLIENT g_SfClient;
 
-PSHFLSTRING vboxSfOs2StrAlloc(size_t cchLength);
-PSHFLSTRING vboxSfOs2StrDup(const char *pachSrc, size_t cchSrc);
+PSHFLSTRING vboxSfOs2StrAlloc(size_t cwcLength);
+PSHFLSTRING vboxSfOs2StrDup(PCSHFLSTRING pSrc);
 void        vboxSfOs2StrFree(PSHFLSTRING pStr);
 
 APIRET      vboxSfOs2ResolvePath(const char *pszPath, PVBOXSFCD pCdFsd, LONG offCurDirEnd,
                                  PVBOXSFFOLDER *ppFolder, PSHFLSTRING *ppStrFolderPath);
+APIRET      vboxSfOs2ResolvePathEx(const char *pszPath, PVBOXSFCD pCdFsd, LONG offCurDirEnd, uint32_t offStrInBuf,
+                                   PVBOXSFFOLDER *ppFolder, void **ppvBuf);
 void        vboxSfOs2ReleasePathAndFolder(PSHFLSTRING pStrPath, PVBOXSFFOLDER pFolder);
 void        vboxSfOs2ReleaseFolder(PVBOXSFFOLDER pFolder);
 APIRET      vboxSfOs2ConvertStatusToOs2(int vrc, APIRET rcDefault);
@@ -242,6 +242,48 @@ APIRET      vboxSfOs2MakeEmptyEaList(PEAOP pEaOp, ULONG uLevel);
 APIRET      vboxSfOs2MakeEmptyEaListEx(PEAOP pEaOp, ULONG uLevel, uint32_t *pcbWritten, ULONG *poffError);
 
 DECLASM(PVBOXSFVP) Fsh32GetVolParams(USHORT hVbp, PVPFSI *ppVpFsi /*optional*/);
+
+
+
+/** Request structure for vboxSfOs2HostReqCreate.  */
+typedef struct VBOXSFCREATEREQ
+{
+    VBGLIOCIDCHGCMFASTCALL  Hdr;
+    VMMDevHGCMCall          Call;
+    VBoxSFParmCreate        Parms;
+    SHFLCREATEPARMS         CreateParms;
+    SHFLSTRING              StrPath;
+} VBOXSFCREATEREQ;
+
+/**
+ * SHFL_FN_CREATE request.
+ */
+DECLINLINE(int) vboxSfOs2HostReqCreate(PVBOXSFFOLDER pFolder, VBOXSFCREATEREQ *pReq)
+{
+    VBGLIOCIDCHGCMFASTCALL_INIT(&pReq->Hdr, VbglR0PhysHeapGetPhysAddr(pReq), &pReq->Call, g_SfClient.idClient,
+                                SHFL_FN_CREATE, SHFL_CPARMS_CREATE,
+                                RT_UOFFSETOF(VBOXSFCREATEREQ, StrPath.String) + pReq->StrPath.u16Size);
+
+    pReq->Parms.id32Root.type                   = VMMDevHGCMParmType_32bit;
+    pReq->Parms.id32Root.u.value32              = pFolder->hHostFolder.root;
+
+    pReq->Parms.pStrPath.type                   = VMMDevHGCMParmType_Embedded;
+    pReq->Parms.pStrPath.u.Embedded.cbData      = SHFLSTRING_HEADER_SIZE + pReq->StrPath.u16Size;
+    pReq->Parms.pStrPath.u.Embedded.offData     = RT_UOFFSETOF(VBOXSFCREATEREQ, StrPath) - sizeof(VBGLIOCIDCHGCMFASTCALL);
+    pReq->Parms.pStrPath.u.Embedded.fFlags      = VBOX_HGCM_F_PARM_DIRECTION_TO_HOST;
+
+    pReq->Parms.pCreateParms.type               = VMMDevHGCMParmType_Embedded;
+    pReq->Parms.pCreateParms.u.Embedded.cbData  = sizeof(pReq->CreateParms);
+    pReq->Parms.pCreateParms.u.Embedded.offData = RT_UOFFSETOF(VBOXSFCREATEREQ, CreateParms) - sizeof(VBGLIOCIDCHGCMFASTCALL);
+    pReq->Parms.pCreateParms.u.Embedded.fFlags  = VBOX_HGCM_F_PARM_DIRECTION_BOTH;
+
+    int vrc = VbglR0HGCMFastCall(g_SfClient.handle, &pReq->Hdr,
+                                 RT_UOFFSETOF(VBOXSFCREATEREQ, StrPath.String) + pReq->StrPath.u16Size);
+    if (RT_SUCCESS(vrc))
+        vrc = pReq->Call.header.result;
+    return vrc;
+}
+
 
 #endif
 

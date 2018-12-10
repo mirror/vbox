@@ -48,145 +48,101 @@
  * Checks if the given name is 8-dot-3 compatible.
  *
  * @returns true if compatible, false if not.
- * @param   pszName     The name to inspect (UTF-8).
- * @param   cchName     The length of the name.
- * @param   pwszTmp     Buffer for test conversions.
- * @param   cwcTmp      The size of the buffer.
+ * @param   pwszName    The name to inspect (UTF-16).
+ * @param   cwcName     The length of the name.
+ * @param   pszTmp      Buffer for test conversions.
+ * @param   cbTmp       The size of the buffer.
  */
-static bool vboxSfOs2IsUtf8Name8dot3(const char *pszName, size_t cchName, PRTUTF16 pwszTmp, size_t cwcTmp)
+static bool vboxSfOs2IsUtf16Name8dot3(PRTUTF16 pwszName, size_t cwcName, char *pszTmp, size_t cbTmp)
 {
-    /* Reject names that must be too long when using maximum UTF-8 encoding. */
-    if (cchName > (8 + 1 + 3) * 4)
+    /* Reject names that must be too long. */
+    if (cwcName > 8 + 1 + 3)
         return false;
 
-    /* First char cannot be a dot. */
-    if (*pszName == '.' || !*pszName)
+    /* First char cannot be a dot, nor can it be an empty string. */
+    if (*pwszName == '.' || !*pwszName)
         return false;
 
     /*
      * To basic checks on code point level before doing full conversion.
      */
-    const char *pszCursor = pszName;
-    for (uint32_t cuc = 0; ; cuc++)
+    for (unsigned off = 0; ; off++)
     {
-        RTUNICP uCp;
-        RTStrGetCpEx(&pszCursor, &uCp);
-        if (uCp == '.')
+        RTUTF16 wc = pwszName[off];
+        if (wc == '.')
         {
-            for (cuc = 0; ; cuc++)
+            unsigned const offMax = off + 3;
+            for (++off;; off++)
             {
-                RTStrGetCpEx(&pszCursor, &uCp);
-                if (!uCp)
+                wc = pwszName[off];
+                if (!wc)
                     break;
-                if (uCp == '.')
+                if (wc == '.')
                     return false;
-                if (cuc >= 3)
+                if (off >= offMax)
                     return false;
             }
             break;
         }
-        if (!uCp)
+        if (!wc)
             break;
-        if (cuc >= 8)
+        if (off >= 8)
             return false;
     }
 
     /*
-     * Convert to UTF-16 and then to native codepage.
+     * Conver to the native code page.
      */
-    size_t cwcActual = cwcTmp;
-    int rc = RTStrToUtf16Ex(pszName, cchName, &pwszTmp, cwcTmp, &cwcActual);
-    if (RT_SUCCESS(rc))
+    APIRET rc = KernStrFromUcs(NULL, pszTmp, pwszName, cbTmp, cwcName);
+    if (rc != NO_ERROR)
     {
-        char *pszTmp = (char *)&pwszTmp[cwcActual + 1];
-        rc = KernStrFromUcs(NULL, pszTmp, pwszTmp, (cwcTmp - cwcActual - 1) * sizeof(RTUTF16), cwcActual);
-        if (rc != NO_ERROR)
-        {
-            LogRel(("vboxSfOs2IsUtf8Name8dot3: KernStrFromUcs failed: %d\n", rc));
+        LogRel(("vboxSfOs2IsUtf8Name8dot3: KernStrFromUcs failed: %d\n", rc));
+        return false;
+    }
+
+    /*
+     * Redo the check.
+     * Note! This could be bogus if a DBCS leadin sequence collides with '.'.
+     */
+    for (unsigned cch = 0; ; cch++)
+    {
+        char ch = *pszTmp++;
+        if (ch == '.')
+            break;
+        if (ch == '\0')
+            return true;
+        if (cch >= 8)
             return false;
-        }
-
-        /*
-         * Redo the check.
-         * Note! This could be bogus if a DBCS leadin sequence collides with '.'.
-         */
-        for (uint32_t cch = 0; ; cch++)
-        {
-            char ch = *pszTmp++;
-            if (ch == '.')
-                break;
-            if (ch == '\0')
-                return true;
-            if (cch >= 8)
-                return false;
-        }
-        for (uint32_t cch = 0; ; cch++)
-        {
-            char ch = *pszTmp++;
-            if (ch == '\0')
-                return true;
-            if (ch != '.')
-                return false;
-            if (cch >= 3)
-                return false;
-        }
     }
-    else
-        LogRel(("vboxSfOs2IsUtf8Name8dot3: RTStrToUtf16Ex failed: %Rrc\n", rc));
-    return false;
+    for (unsigned cch = 0; ; cch++)
+    {
+        char ch = *pszTmp++;
+        if (ch == '\0')
+            return true;
+        if (ch != '.')
+            return false;
+        if (cch >= 3)
+            return false;
+    }
 }
 
 
 /**
  * @returns Updated pbDst on success, NULL on failure.
  */
-static uint8_t *vboxSfOs2CopyUtf8Name(uint8_t *pbDst, PRTUTF16 pwszTmp, size_t cwcTmp, const char *pszSrc, size_t cchSrc)
+static uint8_t *vboxSfOs2CopyUtf16Name(uint8_t *pbDst, PRTUTF16 pwszSrc, size_t cwcSrc)
 {
-    /* Convert UTF-8 to UTF-16: */
-    int rc = RTStrToUtf16Ex(pszSrc, cchSrc, &pwszTmp, cwcTmp, &cwcTmp);
-    if (RT_SUCCESS(rc))
+    char *pszDst = (char *)pbDst + 1;
+    APIRET rc = KernStrFromUcs(NULL, pszDst, pwszSrc, CCHMAXPATHCOMP, cwcSrc);
+    if (rc == NO_ERROR)
     {
-        char *pszDst = (char *)(pbDst + 1);
-        rc = KernStrFromUcs(NULL, pszDst, pwszTmp, CCHMAXPATHCOMP, cwcTmp);
-        if (rc == NO_ERROR)
-        {
-            size_t cchDst = strlen(pszDst);
-            *pbDst++ = (uint8_t)cchDst;
-            pbDst   += cchDst;
-            *pbDst++ = '\0';
-            return pbDst;
-        }
-        LogRel(("vboxSfOs2CopyUtf8Name: KernStrFromUcs failed: %d\n", rc));
+        size_t cchDst = strlen(pszDst);
+        *pbDst++ = (uint8_t)cchDst;
+        pbDst   += cchDst;
+        *pbDst++ = '\0';
+        return pbDst;
     }
-    else
-        LogRel(("vboxSfOs2CopyUtf8Name: RTStrToUtf16Ex failed: %Rrc\n", rc));
-    return NULL;
-}
-
-
-/**
- * @returns Updated pbDst on success, NULL on failure.
- */
-static uint8_t *vboxSfOs2CopyUtf8NameAndUpperCase(uint8_t *pbDst, PRTUTF16 pwszTmp, size_t cwcTmp, const char *pszSrc, size_t cchSrc)
-{
-    /* Convert UTF-8 to UTF-16: */
-    int rc = RTStrToUtf16Ex(pszSrc, cchSrc, &pwszTmp, cwcTmp, &cwcTmp);
-    if (RT_SUCCESS(rc))
-    {
-        char *pszDst = (char *)(pbDst + 1);
-        rc = KernStrFromUcs(NULL, pszDst, RTUtf16ToUpper(pwszTmp), CCHMAXPATHCOMP, cwcTmp);
-        if (rc == NO_ERROR)
-        {
-            size_t cchDst = strlen(pszDst);
-            *pbDst++ = (uint8_t)cchDst;
-            pbDst   += cchDst;
-            *pbDst++ = '\0';
-            return pbDst;
-        }
-        LogRel(("vboxSfOs2CopyUtf8NameAndUpperCase: KernStrFromUcs failed: %d\n", rc));
-    }
-    else
-        LogRel(("vboxSfOs2CopyUtf8NameAndUpperCase: RTStrToUtf16Ex failed: %Rrc\n", rc));
+    LogRel(("vboxSfOs2CopyUtf8Name: KernStrFromUcs failed: %d\n", rc));
     return NULL;
 }
 
@@ -313,8 +269,8 @@ static APIRET vboxSfOs2ReadDirEntries(PVBOXSFFOLDER pFolder, PVBOXSFFS pFsFsd, P
             && ((pEntry->Info.Attr.fMode >> RTFS_DOS_SHIFT) & pDataBuf->fMustHaveAttribs) == pDataBuf->fMustHaveAttribs
             && (   pDataBuf->fLongFilenames
                 || pEntry->cucShortName
-                || vboxSfOs2IsUtf8Name8dot3((char *)pEntry->name.String.utf8, pEntry->name.u16Length,
-                                            pDataBuf->wszTmp, sizeof(pDataBuf->wszTmp))))
+                || vboxSfOs2IsUtf16Name8dot3(pEntry->name.String.utf16, pEntry->name.u16Length / sizeof(RTUTF16),
+                                             (char *)pDataBuf->abStaging, sizeof(pDataBuf->abStaging))))
         {
             /*
              * We stages all but FEAs (level 3, 4, 13 and 14).
@@ -401,11 +357,9 @@ static APIRET vboxSfOs2ReadDirEntries(PVBOXSFFOLDER pFolder, PVBOXSFFS pFsFsd, P
 
             /* The length prefixed filename. */
             if (pDataBuf->fLongFilenames)
-                pbDst = vboxSfOs2CopyUtf8Name(pbDst, pDataBuf->wszTmp, sizeof(pDataBuf->wszTmp),
-                                           (char *)pEntry->name.String.utf8, pEntry->name.u16Length);
+                pbDst = vboxSfOs2CopyUtf16Name(pbDst, pEntry->name.String.utf16, pEntry->name.u16Length / sizeof(RTUTF16));
             else if (pEntry->cucShortName == 0)
-                pbDst = vboxSfOs2CopyUtf8NameAndUpperCase(pbDst, pDataBuf->wszTmp, sizeof(pDataBuf->wszTmp),
-                                                       (char *)pEntry->name.String.utf8, pEntry->name.u16Length);
+                pbDst = vboxSfOs2CopyUtf16NameAndUpperCase(pbDst, pEntry->name.String.utf16, pEntry->name.u16Length / sizeof(RTUTF16));
             else
                 pbDst = vboxSfOs2CopyUtf16NameAndUpperCase(pbDst, pEntry->uszShortName, pEntry->cucShortName);
             if (pbDst)
@@ -519,53 +473,54 @@ FS32_FINDFIRST(PCDFSI pCdFsi, PVBOXSFCD pCdFsd, PCSZ pszPath, LONG offCurDirEnd,
     LogFlow(("FS32_FINDFIRST: vboxSfOs2ResolvePath: -> %u pFolder=%p\n", rc, pFolder));
     if (rc == NO_ERROR)
     {
+LogRel(("pStrFolderPath: %#x %#x '%ls'\n", pStrFolderPath->u16Size, pStrFolderPath->u16Length, pStrFolderPath->String.ucs2));
         /*
          * Look for a wildcard filter at the end of the path, saving it all for
          * later in NT filter speak if present.
          */
         PSHFLSTRING pFilter = NULL;
-        char *pszFilter = RTPathFilename((char *)pStrFolderPath->String.utf8);
-        if (   pszFilter
-            && (   strchr(pszFilter, '*') != NULL
-                || strchr(pszFilter, '?') != NULL))
+        PRTUTF16 pwszFilter = RTPathFilenameUtf16(pStrFolderPath->String.utf16);
+        if (   pwszFilter
+            && (   RTUtf16Chr(pwszFilter, '*') != NULL
+                || RTUtf16Chr(pwszFilter, '?') != NULL))
         {
-            if (strcmp(pszFilter, "*.*") == 0)
+            if (RTUtf16CmpAscii(pwszFilter, "*.*") == 0)
             {
                 /* All files, no filtering needed. Just drop the filter expression from the directory path. */
-                *pszFilter = '\0';
-                pStrFolderPath->u16Length = (uint16_t)((uint8_t *)pszFilter - &pStrFolderPath->String.utf8[0]);
+                *pwszFilter = '\0';
+                pStrFolderPath->u16Length = (uint16_t)((uint8_t *)pwszFilter - &pStrFolderPath->String.utf8[0]);
             }
             else
             {
                 /* Duplicate the whole path. */
-                pFilter = vboxSfOs2StrDup(pStrFolderPath->String.ach, pStrFolderPath->u16Length);
+                pFilter = vboxSfOs2StrDup(pStrFolderPath);
                 if (pFilter)
                 {
                     /* Drop filter from directory path. */
-                    *pszFilter = '\0';
-                    pStrFolderPath->u16Length = (uint16_t)((uint8_t *)pszFilter - &pStrFolderPath->String.utf8[0]);
+                    *pwszFilter = '\0';
+                    pStrFolderPath->u16Length = (uint16_t)((uint8_t *)pwszFilter - &pStrFolderPath->String.utf8[0]);
 
                     /* Convert filter part of the copy to NT speak. */
-                    pszFilter = (char *)&pFilter->String.utf8[(uint8_t *)pszFilter - &pStrFolderPath->String.utf8[0]];
+                    pwszFilter = (PRTUTF16)&pFilter->String.utf8[(uint8_t *)pwszFilter - &pStrFolderPath->String.utf8[0]];
                     for (;;)
                     {
-                        char ch = *pszFilter;
-                        if (ch == '?')
-                            *pszFilter = '>';       /* The DOS question mark: Matches one char, but dots and end-of-name eats them. */
-                        else if (ch == '.')
+                        RTUTF16 wc = *pwszFilter;
+                        if (wc == '?')
+                            *pwszFilter = '>';      /* The DOS question mark: Matches one char, but dots and end-of-name eats them. */
+                        else if (wc == '.')
                         {
-                            char ch2 = pszFilter[1];
-                            if (ch2 == '*' || ch2 == '?')
-                                *pszFilter = '"';   /* The DOS dot: Matches a dot or end-of-name. */
+                            RTUTF16 wc2 = pwszFilter[1];
+                            if (wc2 == '*' || wc2 == '?')
+                                *pwszFilter = '"';  /* The DOS dot: Matches a dot or end-of-name. */
                         }
-                        else if (ch == '*')
+                        else if (wc == '*')
                         {
-                            if (pszFilter[1] == '.')
-                                *pszFilter = '<';   /* The DOS star: Matches zero or more chars except the DOS dot.*/
+                            if (pwszFilter[1] == '.')
+                                *pwszFilter = '<';  /* The DOS star: Matches zero or more chars except the DOS dot.*/
                         }
-                        else if (ch == '\0')
+                        else if (wc == '\0')
                             break;
-                        pszFilter++;
+                        pwszFilter++;
                     }
                 }
                 else
@@ -580,20 +535,26 @@ FS32_FINDFIRST(PCDFSI pCdFsi, PVBOXSFCD pCdFsd, PCSZ pszPath, LONG offCurDirEnd,
          * Not sure if we'll ever see a trailing slash here (pszFilter == NULL),
          * but if we do we should accept it only for the root.
          */
-        else if (pszFilter)
+        else if (pwszFilter)
         {
             pFilter = pStrFolderPath;
-            pStrFolderPath = vboxSfOs2StrDup(pFilter->String.ach, pszFilter - pFilter->String.ach);
-            if (!pStrFolderPath)
+            pStrFolderPath = vboxSfOs2StrAlloc(pwszFilter - pFilter->String.utf16);
+            if (pStrFolderPath)
+            {
+                pStrFolderPath->u16Length = (uint16_t)((uintptr_t)pwszFilter - (uintptr_t)pFilter->String.utf16);
+                memcpy(pStrFolderPath->String.utf16, pFilter->String.utf16, pStrFolderPath->u16Length);
+                pStrFolderPath->String.utf16[pStrFolderPath->u16Length / sizeof(RTUTF16)] = '\0';
+            }
+            else
                 rc = ERROR_NOT_ENOUGH_MEMORY;
         }
-        else if (!pszFilter && pStrFolderPath->u16Length > 1)
+        else if (!pwszFilter && pStrFolderPath->u16Length > 1)
         {
-            LogFlow(("FS32_FINDFIRST: Trailing slash (%s)\n", pStrFolderPath->String.utf8));
+            LogFlow(("FS32_FINDFIRST: Trailing slash (%ls)\n", pStrFolderPath->String.utf16));
             rc = ERROR_PATH_NOT_FOUND;
         }
         else
-            LogFlow(("FS32_FINDFIRST: Root dir (%s)\n", pStrFolderPath->String.utf8));
+            LogFlow(("FS32_FINDFIRST: Root dir (%ls)\n", pStrFolderPath->String.utf16));
 
         /*
          * Make sure we've got a buffer for keeping unused search results.
@@ -625,8 +586,8 @@ FS32_FINDFIRST(PCDFSI pCdFsi, PVBOXSFCD pCdFsd, PCSZ pszPath, LONG offCurDirEnd,
             pParams->CreateFlags = SHFL_CF_DIRECTORY   | SHFL_CF_ACT_FAIL_IF_NEW  | SHFL_CF_ACT_OPEN_IF_EXISTS
                                  | SHFL_CF_ACCESS_READ | SHFL_CF_ACCESS_ATTR_READ | SHFL_CF_ACCESS_DENYNONE;
             int vrc = VbglR0SfCreate(&g_SfClient, &pFolder->hHostFolder, pStrFolderPath, pParams);
-            LogFlow(("FS32_FINDFIRST: VbglR0SfCreate(%s) -> %Rrc Result=%d fMode=%#x hHandle=%#RX64\n",
-                     pStrFolderPath->String.ach, vrc, pParams->Result, pParams->Info.Attr.fMode, pParams->Handle));
+            LogFlow(("FS32_FINDFIRST: VbglR0SfCreate(%ls) -> %Rrc Result=%d fMode=%#x hHandle=%#RX64\n",
+                     pStrFolderPath->String.utf16, vrc, pParams->Result, pParams->Info.Attr.fMode, pParams->Handle));
             if (RT_SUCCESS(vrc))
             {
                 switch (pParams->Result)
@@ -680,7 +641,7 @@ FS32_FINDFIRST(PCDFSI pCdFsi, PVBOXSFCD pCdFsd, PCSZ pszPath, LONG offCurDirEnd,
                         }
                         else
                         {
-                            LogFlow(("FS32_FINDFIRST: VbglR0SfCreate returns NIL handle for '%s'\n", pStrFolderPath->String.utf8));
+                            LogFlow(("FS32_FINDFIRST: VbglR0SfCreate returns NIL handle for '%ls'\n", pStrFolderPath->String.utf16));
                             rc = ERROR_PATH_NOT_FOUND;
                         }
                         break;

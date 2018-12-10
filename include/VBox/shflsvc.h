@@ -1178,6 +1178,18 @@ typedef struct _VBoxSFUnmapFolder
  * @{
  */
 
+/** SHFL_FN_CREATE parameters. */
+typedef struct VBoxSFParmCreate
+{
+    /** value32, in: SHFLROOT
+     * Root handle of the mapping which name is queried.  */
+    HGCMFunctionParameter id32Root;
+    /** pointer, in: Points to SHFLSTRING buffer. */
+    HGCMFunctionParameter pStrPath;
+    /** pointer, in/out:  Points to SHFLCREATEPARMS buffer. */
+    HGCMFunctionParameter pCreateParms;
+} VBoxSFParmCreate;
+
 /** Parameters structure. */
 typedef struct _VBoxSFCreate
 {

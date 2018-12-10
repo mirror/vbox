@@ -188,21 +188,24 @@ PRTTIMESPEC vboxSfOs2DateTimeToTimeSpec(FDATE DosDate, FTIME DosTime, int16_t cM
 *********************************************************************************************************************************/
 
 /**
- * Allocates a SHFLSTRING buffer.
+ * Allocates a SHFLSTRING buffer (UTF-16).
  *
  * @returns Pointer to a SHFLSTRING buffer, NULL if out of memory.
- * @param   cchLength   The desired string buffer length (excluding terminator).
+ * @param   cwcLength   The desired string buffer length in UTF-16 units
+ *                      (excluding terminator).
  */
-PSHFLSTRING vboxSfOs2StrAlloc(size_t cchLength)
+PSHFLSTRING vboxSfOs2StrAlloc(size_t cwcLength)
 {
-    AssertReturn(cchLength <= 0x1000, NULL);
+    AssertReturn(cwcLength <= 0x1000, NULL);
+    uint16_t cb = (uint16_t)cwcLength + 1;
+    cb *= sizeof(RTUTF16);
 
-    PSHFLSTRING pStr = (PSHFLSTRING)VbglR0PhysHeapAlloc(SHFLSTRING_HEADER_SIZE + cchLength + 1);
+    PSHFLSTRING pStr = (PSHFLSTRING)VbglR0PhysHeapAlloc(SHFLSTRING_HEADER_SIZE + cb);
     if (pStr)
     {
-        pStr->u16Size       = (uint16_t)(cchLength + 1);
-        pStr->u16Length     = 0;
-        pStr->String.ach[0] = '\0';
+        pStr->u16Size         = cb;
+        pStr->u16Length       = 0;
+        pStr->String.utf16[0] = '\0';
         return pStr;
     }
     return NULL;
@@ -210,28 +213,22 @@ PSHFLSTRING vboxSfOs2StrAlloc(size_t cchLength)
 
 
 /**
- * Duplicates a UTF-8 string into a SHFLSTRING buffer.
+ * Duplicates a shared folders string buffer (UTF-16).
  *
  * @returns Pointer to a SHFLSTRING buffer containing the copy.
  *          NULL if out of memory or the string is too long.
- * @param   pachSrc     The string to clone.
- * @param   cchSrc      The length of the substring, RTMAX_STR for the whole.
+ * @param   pSrc        The string to clone.
  */
-PSHFLSTRING vboxSfOs2StrDup(const char *pachSrc, size_t cchSrc)
+PSHFLSTRING vboxSfOs2StrDup(PCSHFLSTRING pSrc)
 {
-    if (cchSrc == RTSTR_MAX)
-        cchSrc = strlen(pachSrc);
-    if (cchSrc < 0x1000)
+    PSHFLSTRING pDst = (PSHFLSTRING)VbglR0PhysHeapAlloc(SHFLSTRING_HEADER_SIZE + pSrc->u16Length + sizeof(RTUTF16));
+    if (pDst)
     {
-        PSHFLSTRING pStr = (PSHFLSTRING)VbglR0PhysHeapAlloc(SHFLSTRING_HEADER_SIZE + cchSrc + 1);
-        if (pStr)
-        {
-            pStr->u16Size  = (uint16_t)(cchSrc + 1);
-            pStr->u16Length = (uint16_t)cchSrc;
-            memcpy(pStr->String.ach, pachSrc, cchSrc);
-            pStr->String.ach[cchSrc] = '\0';
-            return pStr;
-        }
+        pDst->u16Size   = pSrc->u16Length + (uint16_t)sizeof(RTUTF16);
+        pDst->u16Length = pSrc->u16Length;
+        memcpy(&pDst->String, &pSrc->String, pSrc->u16Length);
+        pDst->String.utf16[pSrc->u16Length / sizeof(RTUTF16)] = '\0';
+        return pDst;
     }
     return NULL;
 }
@@ -267,16 +264,7 @@ static int vboxSfOs2EnsureConnected(void)
 
     int rc = VbglR0SfConnect(&g_SfClient);
     if (RT_SUCCESS(rc))
-    {
-        rc = VbglR0SfSetUtf8(&g_SfClient);
-        if (RT_SUCCESS(rc))
-            g_fIsConnectedToService = true;
-        else
-        {
-            LogRel(("VbglR0SfSetUtf8 failed: %Rrc\n", rc));
-            VbglR0SfDisconnect(&g_SfClient);
-        }
-    }
+        g_fIsConnectedToService = true;
     else
         LogRel(("VbglR0SfConnect failed: %Rrc\n", rc));
     return rc;
@@ -357,7 +345,9 @@ static PVBOXSFFOLDER vboxSfOs2FindAndRetainFolder(const char *pachName, size_t c
  * it.  The list also have a reference to it.
  *
  * @returns VBox status code.
- * @param   pName       The name of the folder to map.
+ * @param   pName       The name of the folder to map - ASCII (not UTF-16!).
+ *                      Must be large enough to hold UTF-16 expansion of the
+ *                      string, will do so upon return.
  * @param   pszTag      Folder tag (for the VBoxService automounter).  Optional.
  * @param   ppFolder    Where to return the folder structure on success.
  *
@@ -385,6 +375,17 @@ static int vboxSfOs2MapFolder(PSHFLSTRING pName, const char *pszTag, PVBOXSFFOLD
         if (cbTag)
             memcpy(&pNew->szName[pName->u16Length + 1], pszTag, cbTag);
 
+        /* Expand the folder name to UTF-16. */
+        uint8_t                 off     = pNew->cchName;
+        uint8_t volatile const *pbSrc   = &pName->String.utf8[0];
+        RTUTF16 volatile       *pwcDst  = &pName->String.utf16[0];
+        do
+            pwcDst[off] = pbSrc[off];
+        while (off-- > 0);
+        pName->u16Length *= sizeof(RTUTF16);
+        Assert(pName->u16Length + sizeof(RTUTF16) <= pName->u16Size);
+
+        /* Try do the mapping.*/
         rc = VbglR0SfMapFolder(&g_SfClient, pName, &pNew->hHostFolder);
         if (RT_SUCCESS(rc))
         {
@@ -396,7 +397,7 @@ static int vboxSfOs2MapFolder(PSHFLSTRING pName, const char *pszTag, PVBOXSFFOLD
         }
         else
         {
-            LogRel(("vboxSfOs2MapFolder: VbglR0SfMapFolder(,%.*s,) -> %Rrc\n", pName->u16Length, pName->String.utf8, rc));
+            LogRel(("vboxSfOs2MapFolder: VbglR0SfMapFolder(,%s,) -> %Rrc\n", pNew->szName, rc));
             RTMemFree(pNew);
         }
     }
@@ -464,7 +465,7 @@ DECLINLINE(size_t) vboxSfOs2UncPrefixLength(const char *pszPath)
 
 
 /**
- * Converts a path to UTF-8 and puts it in a VBGL friendly buffer.
+ * Converts a path to UTF-16 and puts it in a VBGL friendly buffer.
  *
  * @returns OS/2 status code
  * @param   pszFolderPath   The path to convert.
@@ -473,25 +474,134 @@ DECLINLINE(size_t) vboxSfOs2UncPrefixLength(const char *pszPath)
  */
 APIRET vboxSfOs2ConvertPath(const char *pszFolderPath, PSHFLSTRING *ppStr)
 {
-    /* Skip unnecessary leading slashes. */
+    /*
+     * Skip unnecessary leading slashes.
+     */
     char ch = *pszFolderPath;
     if (ch == '\\' || ch == '/')
         while ((ch = pszFolderPath[1]) == '\\' || ch == '/')
             pszFolderPath++;
 
-    /** @todo do proper codepage -> utf8 conversion and straighten out
-     *        everything... */
+    /*
+     * Since the KEE unicode conversion routines does not seem to know of
+     * surrogate pairs, we will get a very good output size estimate by
+     * using strlen() on the input.
+     */
     size_t cchSrc = strlen(pszFolderPath);
-    PSHFLSTRING pDst = vboxSfOs2StrAlloc(cchSrc);
+    PSHFLSTRING pDst = vboxSfOs2StrAlloc(cchSrc + 4 /*fudge*/);
     if (pDst)
     {
-        pDst->u16Length = (uint16_t)cchSrc;
-        memcpy(pDst->String.utf8, pszFolderPath, cchSrc);
-        pDst->String.utf8[cchSrc] = '\0';
-        *ppStr = pDst;
-        return NO_ERROR;
+        APIRET rc = KernStrToUcs(NULL, &pDst->String.utf16[0], (char *)pszFolderPath, cchSrc + 4, cchSrc);
+        if (rc == NO_ERROR)
+        {
+            pDst->u16Length = (uint16_t)RTUtf16Len(pDst->String.utf16) * (uint16_t)sizeof(RTUTF16);
+            *ppStr = pDst;
+            return NO_ERROR;
+        }
+        VbglR0PhysHeapFree(pDst);
+
+        /*
+         * This shouldn't happen, but just in case we try again with
+         * twice the buffer size.
+         */
+        if (rc == 0x20412 /*ULS_BUFFERFULL*/)
+        {
+            pDst = vboxSfOs2StrAlloc((cchSrc + 16) * 2);
+            if (pDst)
+            {
+                rc = KernStrToUcs(NULL, pDst->String.utf16, (char *)pszFolderPath, (cchSrc + 16) * 2, cchSrc);
+                if (rc == NO_ERROR)
+                {
+                    pDst->u16Length = (uint16_t)RTUtf16Len(pDst->String.utf16) * (uint16_t)sizeof(RTUTF16);
+                    *ppStr = pDst;
+                    return NO_ERROR;
+                }
+                VbglR0PhysHeapFree(pDst);
+                LogRel(("vboxSfOs2ConvertPath: KernStrToUcs returns %#x for %.*Rhxs\n", rc, cchSrc, pszFolderPath));
+            }
+        }
+        else
+            LogRel(("vboxSfOs2ConvertPath: KernStrToUcs returns %#x for %.*Rhxs\n", rc, cchSrc, pszFolderPath));
     }
+
+    LogRel(("vboxSfOs2ConvertPath: Out of memory - cchSrc=%#x\n", cchSrc));
     *ppStr = NULL;
+    return ERROR_NOT_ENOUGH_MEMORY;
+}
+
+
+/**
+ * Converts a path to UTF-16 and puts it in a VBGL friendly buffer within a
+ * larger buffer.
+ *
+ * @returns OS/2 status code
+ * @param   pszFolderPath   The path to convert.
+ * @param   offStrInBuf     The offset of the SHLFSTRING in the return buffer.
+ *                          This first part of the buffer is zeroed.
+ * @param   ppvBuf          Where to return the pointer to the buffer.  Free
+ *                          using vboxSfOs2FreePath.
+ */
+APIRET vboxSfOs2ConvertPathEx(const char *pszFolderPath, uint32_t offStrInBuf, void **ppvBuf)
+{
+    /*
+     * Skip unnecessary leading slashes.
+     */
+    char ch = *pszFolderPath;
+    if (ch == '\\' || ch == '/')
+        while ((ch = pszFolderPath[1]) == '\\' || ch == '/')
+            pszFolderPath++;
+
+    /*
+     * Since the KEE unicode conversion routines does not seem to know of
+     * surrogate pairs, we will get a very good output size estimate by
+     * using strlen() on the input.
+     */
+    size_t cchSrc = strlen(pszFolderPath);
+    void *pvBuf = VbglR0PhysHeapAlloc(offStrInBuf + SHFLSTRING_HEADER_SIZE + (cchSrc + 4) * sizeof(RTUTF16));
+    if (pvBuf)
+    {
+        RT_BZERO(pvBuf, offStrInBuf);
+
+        PSHFLSTRING pDst = (PSHFLSTRING)((uint8_t *)pvBuf + offStrInBuf);
+        APIRET rc = KernStrToUcs(NULL, &pDst->String.utf16[0], (char *)pszFolderPath, cchSrc + 4, cchSrc);
+        if (rc == NO_ERROR)
+        {
+            pDst->u16Length = (uint16_t)RTUtf16Len(pDst->String.utf16) * (uint16_t)sizeof(RTUTF16);
+            pDst->u16Size   = (uint16_t)((cchSrc + 4) * sizeof(RTUTF16));
+            Assert(pDst->u16Length < pDst->u16Size);
+            *ppvBuf = pvBuf;
+            return NO_ERROR;
+        }
+        VbglR0PhysHeapFree(pvBuf);
+
+#if 0
+        /*
+         * This shouldn't happen, but just in case we try again with
+         * twice the buffer size.
+         */
+        if (rc == 0x20412 /*ULS_BUFFERFULL*/)
+        {
+            pDst = vboxSfOs2StrAlloc((cchSrc + 16) * 2);
+            if (pDst)
+            {
+                rc = KernStrToUcs(NULL, pDst->String.utf16, (char *)pszFolderPath, (cchSrc + 16) * 2, cchSrc);
+                if (rc == NO_ERROR)
+                {
+                    pDst->u16Length = (uint16_t)RTUtf16Len(pDst->String.utf16) * (uint16_t)sizeof(RTUTF16);
+                    *ppStr = pDst;
+                    return NO_ERROR;
+                }
+                VbglR0PhysHeapFree(pDst);
+                LogRel(("vboxSfOs2ConvertPath: KernStrToUcs returns %#x for %.*Rhxs\n", rc, cchSrc, pszFolderPath));
+            }
+        }
+        else
+#endif
+            LogRel(("vboxSfOs2ConvertPath: KernStrToUcs returns %#x for %.*Rhxs\n", rc, cchSrc, pszFolderPath));
+    }
+
+    LogRel(("vboxSfOs2ConvertPath: Out of memory - cchSrc=%#x offStrInBuf=%#x\n", cchSrc, offStrInBuf));
+    *ppvBuf = NULL;
     return ERROR_NOT_ENOUGH_MEMORY;
 }
 
@@ -552,9 +662,13 @@ DECL_NO_INLINE(static, int) vboxSfOs2AttachUncAndRetain(const char *pachFolderNa
         /*
          * Copy the name into the buffer format that Vbgl desires.
          */
-        PSHFLSTRING pStrName = vboxSfOs2StrDup(pachFolderName, cchFolderName);
+        PSHFLSTRING pStrName = vboxSfOs2StrAlloc(cchFolderName);
         if (pStrName)
         {
+            memcpy(pStrName->String.ach, pachFolderName, cchFolderName);
+            pStrName->String.ach[cchFolderName] = '\0';
+            pStrName->u16Length = (uint16_t)cchFolderName;
+
             /*
              * Do the attaching.
              */
@@ -691,6 +805,137 @@ APIRET vboxSfOs2ResolvePath(const char *pszPath, PVBOXSFCD pCdFsd, LONG offCurDi
                  * Convert the path and put it in a Vbgl compatible buffer..
                  */
                 rc = vboxSfOs2ConvertPath(&pszPath[3], ppStrFolderPath);
+                if (rc == NO_ERROR)
+                    return rc;
+
+                vboxSfOs2ReleaseFolder(pFolder);
+                *ppFolder = NULL;
+                return rc;
+            }
+            KernReleaseSharedMutex(&g_MtxFolders);
+            LogRel(("vboxSfOs2ResolvePath: No folder mapped on '%s'. Detach race?\n", pszPath));
+            return ERROR_PATH_NOT_FOUND;
+        }
+        LogRel(("vboxSfOs2ResolvePath: No root slash: '%s'\n", pszPath));
+        return ERROR_PATH_NOT_FOUND;
+    }
+    LogRel(("vboxSfOs2ResolvePath: Unexpected path: %s\n", pszPath));
+    RT_NOREF_PV(pCdFsd); RT_NOREF_PV(offCurDirEnd);
+    return ERROR_PATH_NOT_FOUND;
+}
+
+
+/**
+ * Resolves the given path to a folder structure and folder relative string,
+ * the latter placed within a larger request buffer.
+ *
+ * @returns OS/2 status code.
+ * @param   pszPath         The path to resolve.
+ * @param   pCdFsd          The IFS dependent CWD structure if present.
+ * @param   offCurDirEnd    The offset into @a pszPath of the CWD.  -1 if not
+ *                          CWD relative path.
+ * @param   offStrInBuf     The offset of the SHLFSTRING in the return buffer.
+ *                          This first part of the buffer is zeroed.
+ * @param   ppFolder        Where to return the referenced pointer to the folder
+ *                          structure.  Call vboxSfOs2ReleaseFolder() when done.
+ * @param   ppvBuf          Where to return the Pointer to the buffer.  Free
+ *                          using VbglR0PhysHeapFree.
+ */
+APIRET vboxSfOs2ResolvePathEx(const char *pszPath, PVBOXSFCD pCdFsd, LONG offCurDirEnd, uint32_t offStrInBuf,
+                              PVBOXSFFOLDER *ppFolder, void **ppvBuf)
+{
+    APIRET rc;
+
+    /*
+     * UNC path?  Reject the prefix to be on the safe side.
+     */
+    char ch = pszPath[0];
+    if (ch == '\\' || ch == '/')
+    {
+        size_t cchPrefix = vboxSfOs2UncPrefixLength(pszPath);
+        if (cchPrefix > 0)
+        {
+            /* Find the length of the folder name (share). */
+            const char *pszFolderName = &pszPath[cchPrefix];
+            size_t      cchFolderName = 0;
+            while ((ch = pszFolderName[cchFolderName]) != '\0' && ch != '\\' && ch != '/')
+            {
+                if ((uint8_t)ch >= 0x20 && (uint8_t)ch <= 0x7f && ch != ':')
+                    cchFolderName++;
+                else
+                {
+                    LogRel(("vboxSfOs2ResolvePath: Invalid share name (@%u): %.*Rhxs\n",
+                            cchPrefix + cchFolderName, strlen(pszPath), pszPath));
+                    return ERROR_INVALID_NAME;
+                }
+            }
+            if (cchFolderName >= VBOXSFOS2_MAX_FOLDER_NAME)
+            {
+                LogRel(("vboxSfOs2ResolvePath: Folder name is too long: %u, max %u (%s)\n",
+                        cchFolderName, VBOXSFOS2_MAX_FOLDER_NAME, pszPath));
+                return ERROR_FILENAME_EXCED_RANGE;
+            }
+
+            /*
+             * Look for the share.
+             */
+            KernRequestSharedMutex(&g_MtxFolders);
+            PVBOXSFFOLDER pFolder = *ppFolder = vboxSfOs2FindAndRetainFolder(pszFolderName, cchFolderName);
+            if (pFolder)
+            {
+                vboxSfOs2RetainFolder(pFolder);
+                KernReleaseSharedMutex(&g_MtxFolders);
+            }
+            else
+            {
+                uint32_t const uRevBefore = g_uFolderRevision;
+                KernReleaseSharedMutex(&g_MtxFolders);
+                rc = vboxSfOs2AttachUncAndRetain(pszFolderName, cchFolderName, uRevBefore, ppFolder);
+                if (rc == NO_ERROR)
+                    pFolder = *ppFolder;
+                else
+                    return rc;
+            }
+
+            /*
+             * Convert the path and put it in a Vbgl compatible buffer..
+             */
+            rc = vboxSfOs2ConvertPathEx(&pszFolderName[cchFolderName], offStrInBuf, ppvBuf);
+            if (rc == NO_ERROR)
+                return rc;
+
+            vboxSfOs2ReleaseFolder(pFolder);
+            *ppFolder = NULL;
+            return rc;
+        }
+
+        LogRel(("vboxSfOs2ResolvePath: Unexpected path: %s\n", pszPath));
+        return ERROR_PATH_NOT_FOUND;
+    }
+
+    /*
+     * Drive letter?
+     */
+    ch &= ~0x20; /* upper case */
+    if (   ch >= 'A'
+        && ch <= 'Z'
+        && pszPath[1] == ':')
+    {
+        unsigned iDrive = ch - 'A';
+        ch  = pszPath[2];
+        if (ch == '\\' || ch == '/')
+        {
+            KernRequestSharedMutex(&g_MtxFolders);
+            PVBOXSFFOLDER pFolder = *ppFolder = g_apDriveFolders[iDrive];
+            if (pFolder)
+            {
+                vboxSfOs2RetainFolder(pFolder);
+                KernReleaseSharedMutex(&g_MtxFolders);
+
+                /*
+                 * Convert the path and put it in a Vbgl compatible buffer..
+                 */
+                rc = vboxSfOs2ConvertPathEx(&pszPath[3], offStrInBuf, ppvBuf);
                 if (rc == NO_ERROR)
                     return rc;
 
@@ -1005,7 +1250,7 @@ FS32_VERIFYUNCNAME(ULONG uType, PCSZ pszName)
     LogFlow(("FS32_VERIFYUNCNAME: uType=%#x pszName=%p:{%s}\n", uType, pszName, pszName));
     RT_NOREF(uType); /* pass 1 or pass 2 doesn't matter to us, we've only got one 'server'. */
 
-    if (vboxSfOs2UncPrefixLength(pszName) > 0 )
+    if (vboxSfOs2UncPrefixLength(pszName) > 0)
         return NO_ERROR;
     return ERROR_NOT_SUPPORTED;
 }
@@ -1073,7 +1318,7 @@ FS32_FSINFO(ULONG fFlags, USHORT hVpb, PBYTE pbData, ULONG cbData, ULONG uLevel)
                 union
                 {
                     SHFLSTRING Path;
-                    uint8_t    abPadding[SHFLSTRING_HEADER_SIZE + 4];
+                    uint8_t    abPadding[SHFLSTRING_HEADER_SIZE + 4 * sizeof(RTUTF16)];
                 };
             } Open;
             struct
@@ -1095,11 +1340,11 @@ FS32_FSINFO(ULONG fFlags, USHORT hVpb, PBYTE pbData, ULONG cbData, ULONG uLevel)
         RT_ZERO(pu->Open.Params);
         pu->Open.Params.CreateFlags = SHFL_CF_DIRECTORY   | SHFL_CF_ACT_FAIL_IF_NEW  | SHFL_CF_ACT_OPEN_IF_EXISTS
                                     | SHFL_CF_ACCESS_READ | SHFL_CF_ACCESS_ATTR_READ | SHFL_CF_ACCESS_DENYNONE;
-        pu->Open.Path.u16Size   = 3;
-        pu->Open.Path.u16Length = 2;
-        pu->Open.Path.String.utf8[0] = '\\';
-        pu->Open.Path.String.utf8[1] = '.';
-        pu->Open.Path.String.utf8[2] = '\0';
+        pu->Open.Path.u16Size   = 3 * sizeof(RTUTF16);
+        pu->Open.Path.u16Length = 2 * sizeof(RTUTF16);
+        pu->Open.Path.String.utf16[0] = '\\';
+        pu->Open.Path.String.utf16[1] = '.';
+        pu->Open.Path.String.utf16[2] = '\0';
 
         int vrc = VbglR0SfCreate(&g_SfClient, &pFolder->hHostFolder, &pu->Open.Path, &pu->Open.Params);
         LogFlow(("FS32_FSINFO: VbglR0SfCreate -> %Rrc Result=%d Handle=%#RX64\n", vrc, pu->Open.Params.Result, pu->Open.Params.Handle));
@@ -1271,6 +1516,7 @@ DECLASM(APIRET)
 FS32_MKDIR(PCDFSI pCdFsi, PVBOXSFCD pCdFsd, PCSZ pszDir, LONG offCurDirEnd, PEAOP pEaOp, ULONG fFlags)
 {
     LogFlow(("FS32_MKDIR: pCdFsi=%p pCdFsd=%p pszDir=%p:{%s} pEAOp=%p fFlags=%#x\n", pCdFsi, pCdFsd, pszDir, pszDir, offCurDirEnd, pEaOp, fFlags));
+    RT_NOREF(fFlags);
 
     /*
      * We don't do EAs.
@@ -1625,7 +1871,7 @@ FS32_FILEATTRIBUTE(ULONG fFlags, PCDFSI pCdFsi, PVBOXSFCD pCdFsd, PCSZ pszName, 
 {
     LogFlow(("FS32_FILEATTRIBUTE: fFlags=%#x pCdFsi=%p:{%#x,%s} pCdFsd=%p pszName=%p:{%s} offCurDirEnd=%d pfAttr=%p\n",
              fFlags, pCdFsi, pCdFsi->cdi_hVPB, pCdFsi->cdi_curdir, pCdFsd, pszName, pszName, offCurDirEnd, pfAttr));
-    RT_NOREF(offCurDirEnd);
+    RT_NOREF(pCdFsi, offCurDirEnd);
 
     APIRET rc;
     if (   fFlags == FA_RETRIEVE

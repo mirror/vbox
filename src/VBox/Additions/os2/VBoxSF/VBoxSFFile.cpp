@@ -49,7 +49,7 @@ FS32_OPENCREATE(PCDFSI pCdFsi, PVBOXSFCD pCdFsd, PCSZ pszName, LONG offCurDirEnd
 {
     LogFlow(("FS32_OPENCREATE: pCdFsi=%p pCdFsd=%p pszName=%p:{%s} offCurDirEnd=%d pSfFsi=%p pSfFsd=%p fOpenMode=%#x fOpenFlags=%#x puAction=%p fAttribs=%#x pbEaBuf=%p pfGenFlag=%p\n",
              pCdFsi, pCdFsd, pszName, pszName, offCurDirEnd, pSfFsi, pSfFsd, fOpenMode, fOpenFlags, puAction, fAttribs, pbEaBuf, pfGenFlag));
-    RT_NOREF(pfGenFlag);
+    RT_NOREF(pfGenFlag, pCdFsi);
 
     /*
      * Validate and convert parameters.
@@ -72,30 +72,41 @@ FS32_OPENCREATE(PCDFSI pCdFsi, PVBOXSFCD pCdFsd, PCSZ pszName, LONG offCurDirEnd
         return ERROR_ACCESS_DENIED;
     }
 
-    SHFLCREATEPARMS *pParams = (SHFLCREATEPARMS *)VbglR0PhysHeapAlloc(sizeof(*pParams));
-    if (!pParams)
-        return ERROR_NOT_ENOUGH_MEMORY;
-    RT_ZERO(*pParams);
+    /*
+     * Allocate request buffer and resovle the path to folder and folder relative path.
+     */
+    PVBOXSFFOLDER       pFolder;
+    VBOXSFCREATEREQ    *pReq;
+    APIRET rc = vboxSfOs2ResolvePathEx(pszName, pCdFsd, offCurDirEnd, RT_UOFFSETOF(VBOXSFCREATEREQ, StrPath),
+                                       &pFolder, (void **)&pReq);
+    LogFlow(("FS32_OPENCREATE: vboxSfOs2ResolvePath: -> %u pFolder=%p\n", rc, pFolder));
+    if (rc == NO_ERROR)
+    { /* likely */ }
+    else
+        return rc;
 
+    /*
+     * Continue validating and converting parameters.
+     */
     /* access: */
     if (fOpenMode & OPEN_ACCESS_READWRITE)
-        pParams->CreateFlags = SHFL_CF_ACCESS_READWRITE | SHFL_CF_ACCESS_ATTR_READWRITE;
+        pReq->CreateParms.CreateFlags = SHFL_CF_ACCESS_READWRITE | SHFL_CF_ACCESS_ATTR_READWRITE;
     else if (fOpenMode & OPEN_ACCESS_WRITEONLY)
-        pParams->CreateFlags = SHFL_CF_ACCESS_WRITE     | SHFL_CF_ACCESS_ATTR_WRITE;
+        pReq->CreateParms.CreateFlags = SHFL_CF_ACCESS_WRITE     | SHFL_CF_ACCESS_ATTR_WRITE;
     else
-        pParams->CreateFlags = SHFL_CF_ACCESS_READ      | SHFL_CF_ACCESS_ATTR_READ; /* read or/and exec */
+        pReq->CreateParms.CreateFlags = SHFL_CF_ACCESS_READ      | SHFL_CF_ACCESS_ATTR_READ; /* read or/and exec */
 
     /* Sharing: */
     switch (fOpenMode & (OPEN_SHARE_DENYNONE | OPEN_SHARE_DENYREADWRITE | OPEN_SHARE_DENYREAD | OPEN_SHARE_DENYWRITE))
     {
-        case OPEN_SHARE_DENYNONE:       pParams->CreateFlags |= SHFL_CF_ACCESS_DENYNONE; break;
-        case OPEN_SHARE_DENYWRITE:      pParams->CreateFlags |= SHFL_CF_ACCESS_DENYWRITE; break;
-        case OPEN_SHARE_DENYREAD:       pParams->CreateFlags |= SHFL_CF_ACCESS_DENYREAD; break;
-        case OPEN_SHARE_DENYREADWRITE:  pParams->CreateFlags |= SHFL_CF_ACCESS_DENYALL; break;
-        case 0:                         pParams->CreateFlags |= SHFL_CF_ACCESS_DENYWRITE; break; /* compatibility */
+        case OPEN_SHARE_DENYNONE:       pReq->CreateParms.CreateFlags |= SHFL_CF_ACCESS_DENYNONE; break;
+        case OPEN_SHARE_DENYWRITE:      pReq->CreateParms.CreateFlags |= SHFL_CF_ACCESS_DENYWRITE; break;
+        case OPEN_SHARE_DENYREAD:       pReq->CreateParms.CreateFlags |= SHFL_CF_ACCESS_DENYREAD; break;
+        case OPEN_SHARE_DENYREADWRITE:  pReq->CreateParms.CreateFlags |= SHFL_CF_ACCESS_DENYALL; break;
+        case 0:                         pReq->CreateParms.CreateFlags |= SHFL_CF_ACCESS_DENYWRITE; break; /* compatibility */
         default:
             LogRel(("FS32_OPENCREATE: Invalid file sharing mode: %#x\n", fOpenMode));
-            VbglR0PhysHeapFree(pParams);
+            VbglR0PhysHeapFree(pReq);
             return VERR_INVALID_PARAMETER;
 
     }
@@ -103,123 +114,112 @@ FS32_OPENCREATE(PCDFSI pCdFsi, PVBOXSFCD pCdFsd, PCSZ pszName, LONG offCurDirEnd
     /* How to open the file: */
     switch (fOpenFlags & 0x13)
     {
-        case                        OPEN_ACTION_FAIL_IF_EXISTS | OPEN_ACTION_FAIL_IF_NEW:      /* 0x00 */
-            pParams->CreateFlags |= SHFL_CF_ACT_FAIL_IF_EXISTS | SHFL_CF_ACT_FAIL_IF_NEW;
+        case                                 OPEN_ACTION_FAIL_IF_EXISTS | OPEN_ACTION_FAIL_IF_NEW:      /* 0x00 */
+            pReq->CreateParms.CreateFlags |= SHFL_CF_ACT_FAIL_IF_EXISTS | SHFL_CF_ACT_FAIL_IF_NEW;
             break;
-        case                        OPEN_ACTION_FAIL_IF_EXISTS | OPEN_ACTION_CREATE_IF_NEW:    /* 0x10 */
-            pParams->CreateFlags |= SHFL_CF_ACT_FAIL_IF_EXISTS | SHFL_CF_ACT_CREATE_IF_NEW;
+        case                                 OPEN_ACTION_FAIL_IF_EXISTS | OPEN_ACTION_CREATE_IF_NEW:    /* 0x10 */
+            pReq->CreateParms.CreateFlags |= SHFL_CF_ACT_FAIL_IF_EXISTS | SHFL_CF_ACT_CREATE_IF_NEW;
             break;
-        case                        OPEN_ACTION_OPEN_IF_EXISTS | OPEN_ACTION_FAIL_IF_NEW:      /* 0x01 */
-            pParams->CreateFlags |= SHFL_CF_ACT_OPEN_IF_EXISTS | SHFL_CF_ACT_FAIL_IF_NEW;
+        case                                 OPEN_ACTION_OPEN_IF_EXISTS | OPEN_ACTION_FAIL_IF_NEW:      /* 0x01 */
+            pReq->CreateParms.CreateFlags |= SHFL_CF_ACT_OPEN_IF_EXISTS | SHFL_CF_ACT_FAIL_IF_NEW;
             break;
-        case                        OPEN_ACTION_OPEN_IF_EXISTS | OPEN_ACTION_CREATE_IF_NEW:    /* 0x11 */
-            pParams->CreateFlags |= SHFL_CF_ACT_OPEN_IF_EXISTS | SHFL_CF_ACT_CREATE_IF_NEW;
+        case                                 OPEN_ACTION_OPEN_IF_EXISTS | OPEN_ACTION_CREATE_IF_NEW:    /* 0x11 */
+            pReq->CreateParms.CreateFlags |= SHFL_CF_ACT_OPEN_IF_EXISTS | SHFL_CF_ACT_CREATE_IF_NEW;
             break;
-        case                        OPEN_ACTION_REPLACE_IF_EXISTS | OPEN_ACTION_FAIL_IF_NEW:   /* 0x02 */
-            pParams->CreateFlags |= SHFL_CF_ACT_REPLACE_IF_EXISTS | SHFL_CF_ACT_FAIL_IF_NEW;
+        case                                 OPEN_ACTION_REPLACE_IF_EXISTS | OPEN_ACTION_FAIL_IF_NEW:   /* 0x02 */
+            pReq->CreateParms.CreateFlags |= SHFL_CF_ACT_REPLACE_IF_EXISTS | SHFL_CF_ACT_FAIL_IF_NEW;
             break;
-        case                        OPEN_ACTION_REPLACE_IF_EXISTS | OPEN_ACTION_CREATE_IF_NEW: /* 0x12 */
-            pParams->CreateFlags |= SHFL_CF_ACT_REPLACE_IF_EXISTS | SHFL_CF_ACT_CREATE_IF_NEW;
+        case                                 OPEN_ACTION_REPLACE_IF_EXISTS | OPEN_ACTION_CREATE_IF_NEW: /* 0x12 */
+            pReq->CreateParms.CreateFlags |= SHFL_CF_ACT_REPLACE_IF_EXISTS | SHFL_CF_ACT_CREATE_IF_NEW;
             break;
         default:
             LogRel(("FS32_OPENCREATE: Invalid file open flags: %#x\n", fOpenFlags));
-            VbglR0PhysHeapFree(pParams);
+            VbglR0PhysHeapFree(pReq);
             return VERR_INVALID_PARAMETER;
     }
 
     /* Misc: cache, etc? There seems to be no API for that. */
 
     /* Attributes: */
-    pParams->Info.Attr.fMode = ((uint32_t)fAttribs << RTFS_DOS_SHIFT) & RTFS_DOS_MASK_OS2;
+    pReq->CreateParms.Info.Attr.fMode = ((uint32_t)fAttribs << RTFS_DOS_SHIFT) & RTFS_DOS_MASK_OS2;
 
     /* Initial size: */
     if (pSfFsi->sfi_sizel > 0)
-        pParams->Info.cbObject = pSfFsi->sfi_sizel;
+        pReq->CreateParms.Info.cbObject = pSfFsi->sfi_sizel;
 
     /*
-     * Resolve path to a folder and folder relative path.
+     * Try open the file.
      */
-    PVBOXSFFOLDER pFolder;
-    PSHFLSTRING   pStrFolderPath;
-    RT_NOREF(pCdFsi);
-    APIRET rc = vboxSfOs2ResolvePath(pszName, pCdFsd, offCurDirEnd, &pFolder, &pStrFolderPath);
-    LogFlow(("FS32_OPENCREATE: vboxSfOs2ResolvePath: -> %u pFolder=%p\n", rc, pFolder));
-    if (rc == NO_ERROR)
+    int vrc = vboxSfOs2HostReqCreate(pFolder, pReq);
+    LogFlow(("FS32_OPENCREATE: VbglR0SfCreate -> %Rrc Result=%d fMode=%#x\n", vrc, pReq->CreateParms.Result, pReq->CreateParms.Info.Attr.fMode));
+    if (RT_SUCCESS(vrc))
     {
-        /*
-         * Try open the file.
-         */
-        int vrc = VbglR0SfCreate(&g_SfClient, &pFolder->hHostFolder, pStrFolderPath, pParams);
-        LogFlow(("FS32_OPENCREATE: VbglR0SfCreate -> %Rrc Result=%d fMode=%#x\n", vrc, pParams->Result, pParams->Info.Attr.fMode));
-        if (RT_SUCCESS(vrc))
+        switch (pReq->CreateParms.Result)
         {
-            switch (pParams->Result)
-            {
-                case SHFL_FILE_EXISTS:
-                    if (pParams->Handle == SHFL_HANDLE_NIL)
-                    {
-                        rc = ERROR_OPEN_FAILED; //ERROR_FILE_EXISTS;
-                        break;
-                    }
-                    RT_FALL_THRU();
-                case SHFL_FILE_CREATED:
-                case SHFL_FILE_REPLACED:
-                    if (   pParams->Info.cbObject < _2G
-                        || (fOpenMode & OPEN_FLAGS_LARGEFILE))
-                    {
-                        pSfFsd->u32Magic    = VBOXSFSYFI_MAGIC;
-                        pSfFsd->pSelf       = pSfFsd;
-                        pSfFsd->hHostFile   = pParams->Handle;
-                        pSfFsd->pFolder     = pFolder;
-
-                        uint32_t cOpenFiles = ASMAtomicIncU32(&pFolder->cOpenFiles);
-                        Assert(cOpenFiles < _32K);
-                        pFolder = NULL; /* Reference now taken by pSfFsd->pFolder. */
-
-                        pSfFsi->sfi_sizel   = pParams->Info.cbObject;
-                        pSfFsi->sfi_type    = STYPE_FILE;
-                        pSfFsi->sfi_DOSattr = (uint8_t)((pParams->Info.Attr.fMode & RTFS_DOS_MASK_OS2) >> RTFS_DOS_SHIFT);
-                        int16_t cMinLocalTimeDelta = vboxSfOs2GetLocalTimeDelta();
-                        vboxSfOs2DateTimeFromTimeSpec(&pSfFsi->sfi_cdate, &pSfFsi->sfi_ctime, pParams->Info.BirthTime,        cMinLocalTimeDelta);
-                        vboxSfOs2DateTimeFromTimeSpec(&pSfFsi->sfi_adate, &pSfFsi->sfi_atime, pParams->Info.AccessTime,       cMinLocalTimeDelta);
-                        vboxSfOs2DateTimeFromTimeSpec(&pSfFsi->sfi_mdate, &pSfFsi->sfi_mtime, pParams->Info.ModificationTime, cMinLocalTimeDelta);
-                        if (pParams->Result == SHFL_FILE_CREATED)
-                            pSfFsi->sfi_tstamp |= ST_PCREAT | ST_SCREAT | ST_PWRITE | ST_SWRITE | ST_PREAD | ST_SREAD;
-
-                        *puAction = pParams->Result == SHFL_FILE_CREATED ? FILE_CREATED
-                                  : pParams->Result == SHFL_FILE_EXISTS  ? FILE_EXISTED
-                                  :                                        FILE_TRUNCATED;
-
-                        Log(("FS32_OPENCREATE: hHandle=%#RX64 for '%s'\n", pSfFsd->hHostFile, pszName));
-                        rc = NO_ERROR;
-                    }
-                    else
-                    {
-                        LogRel(("FS32_OPENCREATE: cbObject=%#RX64 no OPEN_FLAGS_LARGEFILE (%s)\n", pParams->Info.cbObject, pszName));
-                        VbglR0SfClose(&g_SfClient, &pFolder->hHostFolder, pParams->Handle);
-                        rc = ERROR_ACCESS_DENIED;
-                    }
+            case SHFL_FILE_EXISTS:
+                if (pReq->CreateParms.Handle == SHFL_HANDLE_NIL)
+                {
+                    rc = ERROR_OPEN_FAILED; //ERROR_FILE_EXISTS;
                     break;
+                }
+                RT_FALL_THRU();
+            case SHFL_FILE_CREATED:
+            case SHFL_FILE_REPLACED:
+                if (   pReq->CreateParms.Info.cbObject < _2G
+                    || (fOpenMode & OPEN_FLAGS_LARGEFILE))
+                {
+                    pSfFsd->u32Magic    = VBOXSFSYFI_MAGIC;
+                    pSfFsd->pSelf       = pSfFsd;
+                    pSfFsd->hHostFile   = pReq->CreateParms.Handle;
+                    pSfFsd->pFolder     = pFolder;
 
-                case SHFL_PATH_NOT_FOUND:
-                    rc = ERROR_PATH_NOT_FOUND;
-                    break;
+                    uint32_t cOpenFiles = ASMAtomicIncU32(&pFolder->cOpenFiles);
+                    Assert(cOpenFiles < _32K);
+                    pFolder = NULL; /* Reference now taken by pSfFsd->pFolder. */
 
-                default:
-                case SHFL_FILE_NOT_FOUND:
-                    rc = ERROR_OPEN_FAILED;
-                    break;
-            }
+                    pSfFsi->sfi_sizel   = pReq->CreateParms.Info.cbObject;
+                    pSfFsi->sfi_type    = STYPE_FILE;
+                    pSfFsi->sfi_DOSattr = (uint8_t)((pReq->CreateParms.Info.Attr.fMode & RTFS_DOS_MASK_OS2) >> RTFS_DOS_SHIFT);
+                    int16_t cMinLocalTimeDelta = vboxSfOs2GetLocalTimeDelta();
+                    vboxSfOs2DateTimeFromTimeSpec(&pSfFsi->sfi_cdate, &pSfFsi->sfi_ctime, pReq->CreateParms.Info.BirthTime,        cMinLocalTimeDelta);
+                    vboxSfOs2DateTimeFromTimeSpec(&pSfFsi->sfi_adate, &pSfFsi->sfi_atime, pReq->CreateParms.Info.AccessTime,       cMinLocalTimeDelta);
+                    vboxSfOs2DateTimeFromTimeSpec(&pSfFsi->sfi_mdate, &pSfFsi->sfi_mtime, pReq->CreateParms.Info.ModificationTime, cMinLocalTimeDelta);
+                    if (pReq->CreateParms.Result == SHFL_FILE_CREATED)
+                        pSfFsi->sfi_tstamp |= ST_PCREAT | ST_SCREAT | ST_PWRITE | ST_SWRITE | ST_PREAD | ST_SREAD;
+
+                    *puAction = pReq->CreateParms.Result == SHFL_FILE_CREATED ? FILE_CREATED
+                              : pReq->CreateParms.Result == SHFL_FILE_EXISTS  ? FILE_EXISTED
+                              :                                                 FILE_TRUNCATED;
+
+                    Log(("FS32_OPENCREATE: hHandle=%#RX64 for '%s'\n", pSfFsd->hHostFile, pszName));
+                    rc = NO_ERROR;
+                }
+                else
+                {
+                    LogRel(("FS32_OPENCREATE: cbObject=%#RX64 no OPEN_FLAGS_LARGEFILE (%s)\n", pReq->CreateParms.Info.cbObject, pszName));
+                    VbglR0SfClose(&g_SfClient, &pFolder->hHostFolder, pReq->CreateParms.Handle);
+                    rc = ERROR_ACCESS_DENIED;
+                }
+                break;
+
+            case SHFL_PATH_NOT_FOUND:
+                rc = ERROR_PATH_NOT_FOUND;
+                break;
+
+            default:
+            case SHFL_FILE_NOT_FOUND:
+                rc = ERROR_OPEN_FAILED;
+                break;
         }
-        else if (vrc == VERR_ALREADY_EXISTS)
-            rc = ERROR_ACCESS_DENIED;
-        else if (vrc == VERR_FILE_NOT_FOUND)
-            rc = ERROR_OPEN_FAILED;
-        else
-            rc = vboxSfOs2ConvertStatusToOs2(vrc, ERROR_PATH_NOT_FOUND);
-        vboxSfOs2ReleasePathAndFolder(pStrFolderPath, pFolder);
     }
-    VbglR0PhysHeapFree(pParams);
+    else if (vrc == VERR_ALREADY_EXISTS)
+        rc = ERROR_ACCESS_DENIED;
+    else if (vrc == VERR_FILE_NOT_FOUND)
+        rc = ERROR_OPEN_FAILED;
+    else
+        rc = vboxSfOs2ConvertStatusToOs2(vrc, ERROR_PATH_NOT_FOUND);
+    VbglR0PhysHeapFree(pReq);
+    vboxSfOs2ReleaseFolder(pFolder);
     LogFlow(("FS32_OPENCREATE: returns %u\n", rc));
     return rc;
 }
@@ -464,9 +464,6 @@ vboxSfOs2SetFileInfo(PVBOXSFFOLDER pFolder, PSFFSI pSfFsi, PVBOXSFSYFI pSfFsd, U
         rc = ERROR_NOT_ENOUGH_MEMORY;
     return rc;
 }
-
-#include <VBox/VBoxGuest.h>
-
 
 
 
