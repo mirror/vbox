@@ -2291,10 +2291,10 @@ static int hmR0VmxSetupPinCtls(PVMCPU pVCpu)
     uint32_t const fZap = pVM->hm.s.vmx.Msrs.PinCtls.n.allowed1;      /* Bits cleared here must always be cleared. */
 
     fVal |= VMX_PIN_CTLS_EXT_INT_EXIT                        /* External interrupts cause a VM-exit. */
-          | VMX_PIN_CTLS_NMI_EXIT;                           /* Non-maskable interrupts (NMIs) cause a VM-exit. */
+         |  VMX_PIN_CTLS_NMI_EXIT;                           /* Non-maskable interrupts (NMIs) cause a VM-exit. */
 
     if (pVM->hm.s.vmx.Msrs.PinCtls.n.allowed1 & VMX_PIN_CTLS_VIRT_NMI)
-        fVal |= VMX_PIN_CTLS_VIRT_NMI;                        /* Use virtual NMIs and virtual-NMI blocking features. */
+        fVal |= VMX_PIN_CTLS_VIRT_NMI;                       /* Use virtual NMIs and virtual-NMI blocking features. */
 
     /* Enable the VMX preemption timer. */
     if (pVM->hm.s.vmx.fUsePreemptTimer)
@@ -2443,12 +2443,12 @@ static int hmR0VmxSetupProcCtls(PVMCPU pVCpu)
     uint32_t const fZap = pVM->hm.s.vmx.Msrs.ProcCtls.n.allowed1;     /* Bits cleared here must be cleared in the VMCS. */
 
     fVal |= VMX_PROC_CTLS_HLT_EXIT                                    /* HLT causes a VM-exit. */
-          | VMX_PROC_CTLS_USE_TSC_OFFSETTING                          /* Use TSC-offsetting. */
-          | VMX_PROC_CTLS_MOV_DR_EXIT                                 /* MOV DRx causes a VM-exit. */
-          | VMX_PROC_CTLS_UNCOND_IO_EXIT                              /* All IO instructions cause a VM-exit. */
-          | VMX_PROC_CTLS_RDPMC_EXIT                                  /* RDPMC causes a VM-exit. */
-          | VMX_PROC_CTLS_MONITOR_EXIT                                /* MONITOR causes a VM-exit. */
-          | VMX_PROC_CTLS_MWAIT_EXIT;                                 /* MWAIT causes a VM-exit. */
+         |  VMX_PROC_CTLS_USE_TSC_OFFSETTING                          /* Use TSC-offsetting. */
+         |  VMX_PROC_CTLS_MOV_DR_EXIT                                 /* MOV DRx causes a VM-exit. */
+         |  VMX_PROC_CTLS_UNCOND_IO_EXIT                              /* All IO instructions cause a VM-exit. */
+         |  VMX_PROC_CTLS_RDPMC_EXIT                                  /* RDPMC causes a VM-exit. */
+         |  VMX_PROC_CTLS_MONITOR_EXIT                                /* MONITOR causes a VM-exit. */
+         |  VMX_PROC_CTLS_MWAIT_EXIT;                                 /* MWAIT causes a VM-exit. */
 
     /* We toggle VMX_PROC_CTLS_MOV_DR_EXIT later, check if it's not -always- needed to be set or clear. */
     if (   !(pVM->hm.s.vmx.Msrs.ProcCtls.n.allowed1 & VMX_PROC_CTLS_MOV_DR_EXIT)
@@ -2464,8 +2464,8 @@ static int hmR0VmxSetupProcCtls(PVMCPU pVCpu)
     {
         Assert(!pVM->hm.s.vmx.fUnrestrictedGuest);                /* Paranoia. */
         fVal |= VMX_PROC_CTLS_INVLPG_EXIT
-              | VMX_PROC_CTLS_CR3_LOAD_EXIT
-              | VMX_PROC_CTLS_CR3_STORE_EXIT;
+             |  VMX_PROC_CTLS_CR3_LOAD_EXIT
+             |  VMX_PROC_CTLS_CR3_STORE_EXIT;
     }
 
     /* Use TPR shadowing if supported by the CPU. */
@@ -2492,7 +2492,7 @@ static int hmR0VmxSetupProcCtls(PVMCPU pVCpu)
         if (pVM->hm.s.fAllow64BitGuests)
         {
             fVal |= VMX_PROC_CTLS_CR8_STORE_EXIT                  /* CR8 reads cause a VM-exit. */
-                  | VMX_PROC_CTLS_CR8_LOAD_EXIT;                  /* CR8 writes cause a VM-exit. */
+                 |  VMX_PROC_CTLS_CR8_LOAD_EXIT;                  /* CR8 writes cause a VM-exit. */
         }
     }
 
@@ -3681,7 +3681,7 @@ static int hmR0VmxExportGuestCR0(PVMCPU pVCpu)
             {
                 /* The guest doesn't have paging enabled, make CR3 access cause a VM-exit to update our shadow. */
                 uProcCtls |= VMX_PROC_CTLS_CR3_LOAD_EXIT
-                           | VMX_PROC_CTLS_CR3_STORE_EXIT;
+                          |  VMX_PROC_CTLS_CR3_STORE_EXIT;
             }
 
             /* If we have unrestricted guest execution, we never have to intercept CR3 reads. */
@@ -3729,17 +3729,17 @@ static int hmR0VmxExportGuestCR0(PVMCPU pVCpu)
         /* Additional intercepts for debugging, define these yourself explicitly. */
 #ifdef HMVMX_ALWAYS_TRAP_ALL_XCPTS
         uXcptBitmap |= 0
-                     | RT_BIT(X86_XCPT_BP)
-                     | RT_BIT(X86_XCPT_DE)
-                     | RT_BIT(X86_XCPT_NM)
-                     | RT_BIT(X86_XCPT_TS)
-                     | RT_BIT(X86_XCPT_UD)
-                     | RT_BIT(X86_XCPT_NP)
-                     | RT_BIT(X86_XCPT_SS)
-                     | RT_BIT(X86_XCPT_GP)
-                     | RT_BIT(X86_XCPT_PF)
-                     | RT_BIT(X86_XCPT_MF)
-                     ;
+                    |  RT_BIT(X86_XCPT_BP)
+                    |  RT_BIT(X86_XCPT_DE)
+                    |  RT_BIT(X86_XCPT_NM)
+                    |  RT_BIT(X86_XCPT_TS)
+                    |  RT_BIT(X86_XCPT_UD)
+                    |  RT_BIT(X86_XCPT_NP)
+                    |  RT_BIT(X86_XCPT_SS)
+                    |  RT_BIT(X86_XCPT_GP)
+                    |  RT_BIT(X86_XCPT_PF)
+                    |  RT_BIT(X86_XCPT_MF)
+                    ;
 #elif defined(HMVMX_ALWAYS_TRAP_PF)
         uXcptBitmap |= RT_BIT(X86_XCPT_PF);
 #endif
@@ -3851,7 +3851,7 @@ static VBOXSTRICTRC hmR0VmxExportGuestCR3AndCR4(PVMCPU pVCpu)
 
             /* VMX_EPT_MEMTYPE_WB support is already checked in hmR0VmxSetupTaggedTlb(). */
             pVCpu->hm.s.vmx.HCPhysEPTP |= VMX_EPT_MEMTYPE_WB
-                                        | (VMX_EPT_PAGE_WALK_LENGTH_DEFAULT << VMX_EPT_PAGE_WALK_LENGTH_SHIFT);
+                                       |  (VMX_EPT_PAGE_WALK_LENGTH_DEFAULT << VMX_EPT_PAGE_WALK_LENGTH_SHIFT);
 
             /* Validate. See Intel spec. 26.2.1 "Checks on VMX Controls" */
             AssertMsg(   ((pVCpu->hm.s.vmx.HCPhysEPTP >> 3) & 0x07) == 3      /* Bits 3:5 (EPT page walk length - 1) must be 3. */
@@ -6521,8 +6521,9 @@ DECLINLINE(int) hmR0VmxImportGuestIntrState(PVMCPU pVCpu)
     {
         if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS))
         {
-            rc =  hmR0VmxImportGuestRip(pVCpu);
+            rc  = hmR0VmxImportGuestRip(pVCpu);
             rc |= hmR0VmxImportGuestRFlags(pVCpu);
+            AssertRCReturn(rc, rc);
             VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS);
         }
 
@@ -6531,8 +6532,9 @@ DECLINLINE(int) hmR0VmxImportGuestIntrState(PVMCPU pVCpu)
     }
     else
     {
-        rc =  hmR0VmxImportGuestRip(pVCpu);
+        rc  = hmR0VmxImportGuestRip(pVCpu);
         rc |= hmR0VmxImportGuestRFlags(pVCpu);
+        AssertRCReturn(rc, rc);
 
         if (u32Val & (  VMX_VMCS_GUEST_INT_STATE_BLOCK_MOVSS
                       | VMX_VMCS_GUEST_INT_STATE_BLOCK_STI))
