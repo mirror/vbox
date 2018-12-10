@@ -2527,7 +2527,7 @@ static int buslogicRegisterWrite(PBUSLOGIC pBusLogic, unsigned iRegister, uint8_
                             pBusLogic->cbCommandParametersLeft = 0;
                             break;
                         }
-                        /* Fall through. */
+                        RT_FALL_THRU();
                     case BUSLOGICCOMMAND_INQUIRE_SETUP_INFORMATION:
                     case BUSLOGICCOMMAND_ENABLE_STRICT_ROUND_ROBIN_MODE:
                     case BUSLOGICCOMMAND_SET_CCB_FORMAT:
