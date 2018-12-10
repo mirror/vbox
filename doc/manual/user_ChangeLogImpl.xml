@@ -43,6 +43,11 @@ are ordered as follows:
           Windows 10 Build 1809)</para>
       </listitem>
 
+      <listitem>
+        <para>Storage: added utility <computeroutput>vboximg-mount</computeroutput>
+          on OS X to access the content of disk images on the host.</para>
+      </listitem>
+
     </itemizedlist>
 
     <para>
