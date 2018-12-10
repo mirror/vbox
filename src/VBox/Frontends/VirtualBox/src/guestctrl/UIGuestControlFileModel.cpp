@@ -182,16 +182,16 @@ QVariant UIGuestControlFileModel::data(const QModelIndex &index, int role) const
             else if(item->isDriveItem())
                 return QIcon(":/hd_32px.png");
             else
-                return QIcon(":/sf_32px.png");
+                return QIcon(":/file_manager_folder_16px.png");
         }
         else if (item->isFile())
-            return QIcon(":/vm_open_filemanager_16px.png");
+            return QIcon(":/file_manager_file_16px.png");
         else if (item->isSymLink())
         {
             if (item->isTargetADirectory())
-                return QIcon(":/sf_read_16px.png");
+                return QIcon(":/file_manager_folder_symlink_16px.png");
             else
-                return QIcon(":/drag_drop_16px.png");
+                return QIcon(":/file_manager_file_symlink_16px.png");
         }
     }
 

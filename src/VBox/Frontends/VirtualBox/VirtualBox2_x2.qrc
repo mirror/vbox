@@ -1,5 +1,7 @@
 <RCC>
     <qresource suffix="/">
+        <file alias="media_manager_24px_x2.png">images/x2/media_manager_24px_x2.png</file>
+        <file alias="media_manager_32px_x2.png">images/x2/media_manager_32px_x2.png</file>
         <file alias="media_manager_disabled_16px_x2.png">images/x2/media_manager_disabled_16px_x2.png</file>
         <file alias="media_manager_disabled_24px_x2.png">images/x2/media_manager_disabled_24px_x2.png</file>
         <file alias="meditation_32px_x2.png">images/x2/meditation_32px_x2.png</file>

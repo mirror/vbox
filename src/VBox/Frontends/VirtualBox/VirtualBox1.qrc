@@ -189,6 +189,10 @@
         <file alias="file_manager_disabled_16px.png">images/file_manager_disabled_16px.png</file>
         <file alias="file_manager_disabled_24px.png">images/file_manager_disabled_24px.png</file>
         <file alias="file_manager_disabled_32px.png">images/file_manager_disabled_32px.png</file>
+        <file alias="file_manager_file_16px.png">images/file_manager_file_16px.png</file>
+        <file alias="file_manager_file_symlink_16px.png">images/file_manager_file_symlink_16px.png</file>
+        <file alias="file_manager_folder_16px.png">images/file_manager_folder_16px.png</file>
+        <file alias="file_manager_folder_symlink_16px.png">images/file_manager_folder_symlink_16px.png</file>
         <file alias="file_manager_go_home_16px.png">images/file_manager_go_home_16px.png</file>
         <file alias="file_manager_go_home_24px.png">images/file_manager_go_home_24px.png</file>
         <file alias="file_manager_go_home_disabled_16px.png">images/file_manager_go_home_disabled_16px.png</file>
@@ -377,7 +381,5 @@
         <file alias="media_manager_16px.png">images/media_manager_16px.png</file>
         <file alias="media_manager_24px.png">images/media_manager_24px.png</file>
         <file alias="media_manager_32px.png">images/media_manager_32px.png</file>
-        <file alias="media_manager_disabled_16px.png">images/media_manager_disabled_16px.png</file>
-        <file alias="media_manager_disabled_24px.png">images/media_manager_disabled_24px.png</file>
     </qresource>
 </RCC>
