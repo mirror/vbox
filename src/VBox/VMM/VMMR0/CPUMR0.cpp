@@ -130,8 +130,6 @@ VMMR0_INT_DECL(int) CPUMR0ModuleTerm(void)
 
 
 /**
- *
- *
  * Check the CPUID features of this particular CPU and disable relevant features
  * for the guest which do not exist on this CPU. We have seen systems where the
  * X86_CPUID_FEATURE_ECX_MONITOR feature flag is only set on some host CPUs, see
