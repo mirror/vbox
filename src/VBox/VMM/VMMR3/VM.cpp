@@ -1070,7 +1070,7 @@ static int vmR3InitRing3(PVM pVM, PUVM pUVM)
 
 
 /**
- * Initializes all R0 components of the VM
+ * Initializes all R0 components of the VM.
  */
 static int vmR3InitRing0(PVM pVM)
 {
