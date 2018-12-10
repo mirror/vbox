@@ -90,6 +90,8 @@ static STAMPROFILE g_StatRenameFail;
 static STAMPROFILE g_StatFlush;
 static STAMPROFILE g_StatFlushFail;
 static STAMPROFILE g_StatSetUtf8;
+static STAMPROFILE g_StatSetFileSize;
+static STAMPROFILE g_StatSetFileSizeFail;
 static STAMPROFILE g_StatSymlink;
 static STAMPROFILE g_StatSymlinkFail;
 static STAMPROFILE g_StatSetSymlinks;
@@ -1496,6 +1498,23 @@ static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32
 
             /* Execute the function: */
             rc = vbsfMappingsCancelChangesWaits(pClient);
+            break;
+        }
+
+        case SHFL_FN_SET_FILE_SIZE:
+        {
+            pStat     = &g_StatSetFileSize;
+            pStatFail = &g_StatSetFileSizeFail;
+            Log(("SharedFolders host service: svcCall: SHFL_FN_SET_FILE_SIZE\n"));
+
+            /* Validate input: */
+            ASSERT_GUEST_STMT_BREAK(cParms == SHFL_CPARMS_SET_FILE_SIZE,         rc = VERR_WRONG_PARAMETER_COUNT);
+            ASSERT_GUEST_STMT_BREAK(paParms[0].type == VBOX_HGCM_SVC_PARM_32BIT, rc = VERR_WRONG_PARAMETER_TYPE); /* id32Root */
+            ASSERT_GUEST_STMT_BREAK(paParms[1].type == VBOX_HGCM_SVC_PARM_64BIT, rc = VERR_WRONG_PARAMETER_TYPE); /* u64Handle */
+            ASSERT_GUEST_STMT_BREAK(paParms[2].type == VBOX_HGCM_SVC_PARM_64BIT, rc = VERR_WRONG_PARAMETER_TYPE); /* cb64NewSize */
+
+            /* Execute the function: */
+            rc = vbsfSetFileSize(pClient, paParms[0].u.uint32, paParms[1].u.uint64, paParms[2].u.uint64);
             break;
         }
 

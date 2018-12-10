@@ -151,7 +151,8 @@ FS32_OPENCREATE(PCDFSI pCdFsi, PVBOXSFCD pCdFsd, PCSZ pszName, LONG offCurDirEnd
      * Try open the file.
      */
     int vrc = vboxSfOs2HostReqCreate(pFolder, pReq);
-    LogFlow(("FS32_OPENCREATE: VbglR0SfCreate -> %Rrc Result=%d fMode=%#x\n", vrc, pReq->CreateParms.Result, pReq->CreateParms.Info.Attr.fMode));
+    LogFlow(("FS32_OPENCREATE: vboxSfOs2HostReqCreate -> %Rrc Result=%d fMode=%#x\n",
+             vrc, pReq->CreateParms.Result, pReq->CreateParms.Info.Attr.fMode));
     if (RT_SUCCESS(vrc))
     {
         switch (pReq->CreateParms.Result)
@@ -197,7 +198,8 @@ FS32_OPENCREATE(PCDFSI pCdFsi, PVBOXSFCD pCdFsd, PCSZ pszName, LONG offCurDirEnd
                 else
                 {
                     LogRel(("FS32_OPENCREATE: cbObject=%#RX64 no OPEN_FLAGS_LARGEFILE (%s)\n", pReq->CreateParms.Info.cbObject, pszName));
-                    VbglR0SfClose(&g_SfClient, &pFolder->hHostFolder, pReq->CreateParms.Handle);
+                    AssertCompile(RTASSERT_OFFSET_OF(VBOXSFCREATEREQ, CreateParms.Handle) > sizeof(VBOXSFCLOSEREQ)); /* no aliasing issues */
+                    vboxSfOs2HostReqClose(pFolder, (VBOXSFCLOSEREQ *)pReq, pReq->CreateParms.Handle);
                     rc = ERROR_ACCESS_DENIED;
                 }
                 break;
@@ -250,7 +252,7 @@ FS32_CLOSE(ULONG uType, ULONG fIoFlags, PSFFSI pSfFsi, PVBOXSFSYFI pSfFsd)
     /** @todo flush file if fIoFlags says so? */
     RT_NOREF(fIoFlags);
 
-    int vrc = VbglR0SfClose(&g_SfClient, &pFolder->hHostFolder, pSfFsd->hHostFile);
+    int vrc = vboxSfOs2HostReqCloseSimple(pFolder, pSfFsd->hHostFile);
     AssertRC(vrc);
 
     pSfFsd->hHostFile = SHFL_HANDLE_NIL;
@@ -289,10 +291,10 @@ FS32_COMMIT(ULONG uType, ULONG fIoFlags, PSFFSI pSfFsi, PVBOXSFSYFI pSfFsd)
     if (   (pSfFsi->sfi_mode & SFMODE_OPEN_ACCESS) == SFMODE_OPEN_WRITEONLY
         || (pSfFsi->sfi_mode & SFMODE_OPEN_ACCESS) == SFMODE_OPEN_READWRITE)
     {
-        int vrc = VbglR0SfFlush(&g_SfClient, &pFolder->hHostFolder, pSfFsd->hHostFile);
+        int vrc = vboxSfOs2HostReqFlushSimple(pFolder, pSfFsd->hHostFile);
         if (RT_FAILURE(vrc))
         {
-            LogRel(("FS32_COMMIT: VbglR0SfFlush failed: %Rrc\n", vrc));
+            LogRel(("FS32_COMMIT: vboxSfOs2HostReqFlushSimple failed: %Rrc\n", vrc));
             return ERROR_FLUSHBUF_FAILED;
         }
     }
@@ -344,25 +346,24 @@ FS32_CHGFILEPTRL(PSFFSI pSfFsi, PVBOXSFSYFI pSfFsd, LONGLONG off, ULONG uMethod,
         case CFP_RELEND:
         {
             /* Have to consult the host to get the current file size. */
-
-            PSHFLFSOBJINFO pObjInfo = (PSHFLFSOBJINFO)VbglR0PhysHeapAlloc(sizeof(*pObjInfo));
-            if (!pObjInfo)
+            VBOXSFOBJINFOREQ *pReq = (VBOXSFOBJINFOREQ *)VbglR0PhysHeapAlloc(sizeof(*pReq));
+            if (pReq)
+                RT_ZERO(*pReq);
+            else
                 return ERROR_NOT_ENOUGH_MEMORY;
-            RT_ZERO(*pObjInfo);
-            uint32_t cbObjInfo = sizeof(*pObjInfo);
 
-            int vrc = VbglR0SfFsInfo(&g_SfClient, &pFolder->hHostFolder, pSfFsd->hHostFile,
-                                     SHFL_INFO_FILE | SHFL_INFO_GET, &cbObjInfo, (PSHFLDIRINFO)pObjInfo);
+            int vrc = vboxSfOs2HostReqQueryObjInfo(pFolder, pReq, pSfFsd->hHostFile);
             if (RT_SUCCESS(vrc))
             {
                 if (pSfFsi->sfi_mode & SFMODE_LARGE_FILE)
-                    pSfFsi->sfi_sizel = pObjInfo->cbObject;
+                    pSfFsi->sfi_sizel = pReq->ObjInfo.cbObject;
                 else
-                    pSfFsi->sfi_sizel = RT_MIN(pObjInfo->cbObject, _2G - 1);
+                    pSfFsi->sfi_sizel = RT_MIN(pReq->ObjInfo.cbObject, _2G - 1);
             }
             else
                 LogRel(("FS32_CHGFILEPTRL/CFP_RELEND: VbglR0SfFsInfo failed: %Rrc\n", vrc));
-            VbglR0PhysHeapFree(pObjInfo);
+
+            VbglR0PhysHeapFree(pReq);
 
             offNew = pSfFsi->sfi_sizel + off;
             if (offNew >= 0)
@@ -424,7 +425,6 @@ vboxSfOs2SetFileInfo(PVBOXSFFOLDER pFolder, PSFFSI pSfFsi, PVBOXSFSYFI pSfFsd, U
             FILESTATUS3L    Lvl1L;
         };
         SHFLFSOBJINFO ObjInfo;
-
     } *pBuf = (struct SetFileInfoBuf *)VbglR0PhysHeapAlloc(sizeof(*pBuf));
     if (pBuf)
     {
@@ -437,7 +437,7 @@ vboxSfOs2SetFileInfo(PVBOXSFFOLDER pFolder, PSFFSI pSfFsi, PVBOXSFSYFI pSfFsd, U
              */
             rc = vboxSfOs2SetInfoCommonWorker(pFolder, pSfFsd->hHostFile,
                                               uLevel == FI_LVL_STANDARD ? pBuf->Lvl1.attrFile : pBuf->Lvl1L.attrFile,
-                                              &pBuf->Lvl1, &pBuf->ObjInfo);
+                                              &pBuf->Lvl1, &pBuf->ObjInfo, RT_UOFFSETOF(struct SetFileInfoBuf, ObjInfo));
             if (rc == NO_ERROR)
             {
                 /*
@@ -466,6 +466,7 @@ vboxSfOs2SetFileInfo(PVBOXSFFOLDER pFolder, PSFFSI pSfFsi, PVBOXSFSYFI pSfFsd, U
 }
 
 
+#if 0
 
 DECLVBGL(int) VbglR0SfFastPhysFsInfo(PVBGLSFCLIENT pClient, PVBGLSFMAP pMap, SHFLHANDLE hFile,
                                      uint32_t flags, uint32_t *pcbBuffer, PSHFLDIRINFO pBuffer)
@@ -586,6 +587,8 @@ DECLVBGL(int) VbglR0SfPhysFsInfo(PVBGLSFCLIENT pClient, PVBGLSFMAP pMap, SHFLHAN
     }
     return rc;
 }
+
+#endif
 
 
 /**
@@ -711,7 +714,7 @@ vboxSfOs2QueryFileInfo(PVBOXSFFOLDER pFolder, PSFFSI pSfFsi, PVBOXSFSYFI pSfFsd,
     }
     else
         rc = ERROR_NOT_ENOUGH_MEMORY;
-#else
+#elif  0
     APIRET rc;
     struct MyEmbReq
     {
@@ -760,6 +763,37 @@ vboxSfOs2QueryFileInfo(PVBOXSFFOLDER pFolder, PSFFSI pSfFsi, PVBOXSFSYFI pSfFsd,
         else
         {
             Log(("vboxSfOs2QueryFileInfo: VbglR0SfFsInfo failed: %Rrc\n", vrc));
+            rc = vboxSfOs2ConvertStatusToOs2(vrc, ERROR_GEN_FAILURE);
+        }
+
+        VbglR0PhysHeapFree(pReq);
+    }
+    else
+        rc = ERROR_NOT_ENOUGH_MEMORY;
+#else /* clean version of the above. */
+    APIRET rc;
+    VBOXSFOBJINFOREQ *pReq = (VBOXSFOBJINFOREQ *)VbglR0PhysHeapAlloc(sizeof(*pReq));
+    if (pReq)
+    {
+        int vrc = vboxSfOs2HostReqQueryObjInfo(pFolder, pReq, pSfFsd->hHostFile);
+        if (RT_SUCCESS(vrc))
+        {
+            rc = vboxSfOs2FileStatusFromObjInfo(pbData, cbData, uLevel, &pReq->ObjInfo);
+            if (rc == NO_ERROR)
+            {
+                /* Update the timestamps in the independent file data: */
+                int16_t cMinLocalTimeDelta = vboxSfOs2GetLocalTimeDelta();
+                vboxSfOs2DateTimeFromTimeSpec(&pSfFsi->sfi_cdate, &pSfFsi->sfi_ctime, pReq->ObjInfo.BirthTime,        cMinLocalTimeDelta);
+                vboxSfOs2DateTimeFromTimeSpec(&pSfFsi->sfi_adate, &pSfFsi->sfi_atime, pReq->ObjInfo.AccessTime,       cMinLocalTimeDelta);
+                vboxSfOs2DateTimeFromTimeSpec(&pSfFsi->sfi_mdate, &pSfFsi->sfi_mtime, pReq->ObjInfo.ModificationTime, cMinLocalTimeDelta);
+
+                /* And the size field as we're at it: */
+                pSfFsi->sfi_sizel = pReq->ObjInfo.cbObject;
+            }
+        }
+        else
+        {
+            Log(("vboxSfOs2QueryFileInfo: vboxSfOs2HostReqQueryObjInfo failed: %Rrc\n", vrc));
             rc = vboxSfOs2ConvertStatusToOs2(vrc, ERROR_GEN_FAILURE);
         }
 
@@ -928,35 +962,19 @@ FS32_NEWSIZEL(PSFFSI pSfFsi, PVBOXSFSYFI pSfFsd, LONGLONG cbFile, ULONG fIoFlags
         || (pSfFsi->sfi_mode & SFMODE_OPEN_ACCESS) == SFMODE_OPEN_READWRITE)
     {
         /*
-         * Call the host.  We need a full object info structure here to pass
-         * a 64-bit unsigned integer value.  Sigh.
+         * Call the host.
          */
-        /** @todo Shared folders: New SET_FILE_SIZE API. */
-        PSHFLFSOBJINFO pObjInfo = (PSHFLFSOBJINFO)VbglR0PhysHeapAlloc(sizeof(*pObjInfo));
-        if (pObjInfo)
+        int vrc = vboxSfOs2HostReqSetFileSizeSimple(pFolder, pSfFsd->hHostFile, cbFile);
+        if (RT_SUCCESS(vrc))
         {
-            RT_ZERO(*pObjInfo);
-            pObjInfo->cbObject = cbFile;
-            uint32_t cbObjInfo = sizeof(*pObjInfo);
-            int vrc = VbglR0SfFsInfo(&g_SfClient, &pFolder->hHostFolder, pSfFsd->hHostFile,
-                                     SHFL_INFO_SIZE | SHFL_INFO_SET, &cbObjInfo, (PSHFLDIRINFO)pObjInfo);
-            if (RT_SUCCESS(vrc))
-            {
-                pSfFsi->sfi_sizel = cbFile;
-                rc = NO_ERROR;
-            }
-            else
-            {
-                LogRel(("FS32_NEWSIZEL: VbglR0SfFsInfo failed: %Rrc\n", vrc));
-                if (vrc == VERR_DISK_FULL)
-                    rc = ERROR_DISK_FULL;
-                else
-                    rc = ERROR_GEN_FAILURE;
-            }
-            VbglR0PhysHeapFree(pObjInfo);
+            pSfFsi->sfi_sizel = cbFile;
+            rc = NO_ERROR;
         }
         else
-            rc = ERROR_NOT_ENOUGH_MEMORY;
+        {
+            LogRel(("FS32_NEWSIZEL: VbglR0SfFsInfo failed: %Rrc\n", vrc));
+            rc = vboxSfOs2ConvertStatusToOs2(vrc, ERROR_GEN_FAILURE);
+        }
     }
     else
         rc = ERROR_ACCESS_DENIED;
@@ -987,21 +1005,25 @@ FS32_READ(PSFFSI pSfFsi, PVBOXSFSYFI pSfFsd, PVOID pvData, PULONG pcb, ULONG fIo
      * If the read request is small enough, go thru a temporary buffer to
      * avoid locking/unlocking user memory.
      */
-    uint64_t offRead  = pSfFsi->sfi_positionl;
-    uint32_t cbRead   = *pcb;
-    uint32_t cbActual = cbRead;
-    if (cbRead <= _8K - ALLOC_HDR_SIZE)
+    uint64_t const offRead  = pSfFsi->sfi_positionl;
+    uint32_t const cbToRead = *pcb;
+    uint32_t       cbActual = cbToRead;
+#if 0 /** @todo debug some other day. */
+    if (cbToRead <= _8K - ALLOC_HDR_SIZE - RT_UOFFSETOF(VBOXSFREADEMBEDDEDREQ, abData[0]))
     {
-        void *pvBuf = VbglR0PhysHeapAlloc(cbRead);
-        if (pvBuf != NULL)
+        size_t                 cbReq = RT_UOFFSETOF(VBOXSFREADEMBEDDEDREQ, abData[0]) + RT_ALIGN_32(cbToRead, 4);
+        VBOXSFREADEMBEDDEDREQ *pReq  = (VBOXSFREADEMBEDDEDREQ *)VbglR0PhysHeapAlloc(cbReq);
+        if (pReq != NULL)
         {
+            RT_BZERO(pReq, cbReq);
+
             APIRET rc;
-            int vrc = VbglR0SfRead(&g_SfClient, &pFolder->hHostFolder, pSfFsd->hHostFile,
-                                   offRead, &cbActual, (uint8_t *)pvBuf, true /*fLocked*/);
+            int vrc = vboxSfOs2HostReqReadEmbedded(pFolder, pReq, pSfFsd->hHostFile, offRead, cbToRead);
             if (RT_SUCCESS(vrc))
             {
-                AssertStmt(cbActual <= cbRead, cbActual = cbRead);
-                rc = KernCopyOut(pvData, pvBuf, cbActual);
+                cbActual = pReq->Parms.cb32Read.u.value32;
+                AssertStmt(cbActual <= cbToRead, cbActual = cbToRead);
+                rc = KernCopyOut(pvData, &pReq->abData[0], cbActual);
                 if (rc == NO_ERROR)
                 {
                     *pcb = cbActual;
@@ -1014,13 +1036,15 @@ FS32_READ(PSFFSI pSfFsi, PVBOXSFSYFI pSfFsd, PVOID pvData, PULONG pcb, ULONG fIo
             }
             else
             {
-                Log(("FS32_READ: VbglR0SfRead(off=%#x,cb=%#x) -> %Rrc [copy]\n", offRead, cbRead, vrc));
+                Log(("FS32_READ: vboxSfOs2HostReqReadEmbedded(off=%#RU64,cb=%#x) -> %Rrc [copy]\n", offRead, cbToRead, vrc));
                 rc = ERROR_BAD_NET_RESP;
             }
-            VbglR0PhysHeapFree(pvBuf);
+            VbglR0PhysHeapFree(pReq);
             return rc;
         }
     }
+#endif
+
 
     /*
      * Do the read directly on the buffer, Vbgl will do the locking for us.
@@ -1029,7 +1053,7 @@ FS32_READ(PSFFSI pSfFsi, PVBOXSFSYFI pSfFsd, PVOID pvData, PULONG pcb, ULONG fIo
                            offRead, &cbActual, (uint8_t *)pvData, false /*fLocked*/);
     if (RT_SUCCESS(vrc))
     {
-        AssertStmt(cbActual <= cbRead, cbActual = cbRead);
+        AssertStmt(cbActual <= cbToRead, cbActual = cbToRead);
         *pcb = cbActual;
         pSfFsi->sfi_positionl = offRead + cbActual;
         if ((uint64_t)pSfFsi->sfi_sizel < offRead + cbActual)
@@ -1038,7 +1062,7 @@ FS32_READ(PSFFSI pSfFsi, PVBOXSFSYFI pSfFsd, PVOID pvData, PULONG pcb, ULONG fIo
         LogFlow(("FS32_READ: returns; cbActual=%#x sfi_positionl=%RI64 [direct]\n", cbActual, pSfFsi->sfi_positionl));
         return NO_ERROR;
     }
-    Log(("FS32_READ: VbglR0SfRead(off=%#x,cb=%#x) -> %Rrc [direct]\n", offRead, cbRead, vrc));
+    Log(("FS32_READ: VbglR0SfRead(off=%#RU64,cb=%#x) -> %Rrc [direct]\n", offRead, cbToRead, vrc));
     RT_NOREF_PV(fIoFlags);
     return ERROR_BAD_NET_RESP;
 }

@@ -466,13 +466,16 @@ FS32_FINDFIRST(PCDFSI pCdFsi, PVBOXSFCD pCdFsd, PCSZ pszPath, LONG offCurDirEnd,
     /*
      * Resolve path to a folder and folder relative path.
      */
-    PVBOXSFFOLDER pFolder;
-    PSHFLSTRING   pStrFolderPath;
     RT_NOREF(pCdFsi);
-    APIRET rc = vboxSfOs2ResolvePath(pszPath, pCdFsd, offCurDirEnd, &pFolder, &pStrFolderPath);
-    LogFlow(("FS32_FINDFIRST: vboxSfOs2ResolvePath: -> %u pFolder=%p\n", rc, pFolder));
+    PVBOXSFFOLDER       pFolder;
+    VBOXSFCREATEREQ    *pReq;
+    APIRET rc = vboxSfOs2ResolvePathEx(pszPath, pCdFsd, offCurDirEnd, RT_UOFFSETOF(VBOXSFCREATEREQ, StrPath),
+                                       &pFolder, (void **)&pReq);
+    LogFlow(("FS32_FINDFIRST: vboxSfOs2ResolvePathEx: -> %u pReq=%p\n", rc, pReq));
     if (rc == NO_ERROR)
     {
+        PSHFLSTRING pStrFolderPath = &pReq->StrPath;
+
         /*
          * Look for a wildcard filter at the end of the path, saving it all for
          * later in NT filter speak if present.
@@ -536,12 +539,13 @@ FS32_FINDFIRST(PCDFSI pCdFsi, PVBOXSFCD pCdFsd, PCSZ pszPath, LONG offCurDirEnd,
          */
         else if (pwszFilter)
         {
-            pFilter = pStrFolderPath;
-            pStrFolderPath = vboxSfOs2StrAlloc(pwszFilter - pFilter->String.utf16);
-            if (pStrFolderPath)
+            /* Copy the whole path for filtering. */
+            pFilter = vboxSfOs2StrDup(pStrFolderPath);
+            if (pFilter)
             {
-                pStrFolderPath->u16Length = (uint16_t)((uintptr_t)pwszFilter - (uintptr_t)pFilter->String.utf16);
-                memcpy(pStrFolderPath->String.utf16, pFilter->String.utf16, pStrFolderPath->u16Length);
+                /* Strip the filename off the one we're opening. */
+                pStrFolderPath->u16Length = (uint16_t)((uintptr_t)pwszFilter - (uintptr_t)pStrFolderPath->String.utf16);
+                pStrFolderPath->u16Size   = pStrFolderPath->u16Length + (uint16_t)sizeof(RTUTF16);
                 pStrFolderPath->String.utf16[pStrFolderPath->u16Length / sizeof(RTUTF16)] = '\0';
             }
             else
@@ -558,6 +562,7 @@ FS32_FINDFIRST(PCDFSI pCdFsi, PVBOXSFCD pCdFsd, PCSZ pszPath, LONG offCurDirEnd,
         /*
          * Make sure we've got a buffer for keeping unused search results.
          */
+        /** @todo use phys heap for this too?  */
         PVBOXSFFSBUF pDataBuf = NULL;
         if (rc == NO_ERROR)
         {
@@ -577,27 +582,25 @@ FS32_FINDFIRST(PCDFSI pCdFsi, PVBOXSFCD pCdFsd, PCSZ pszPath, LONG offCurDirEnd,
         {
             /*
              * Now, try open the directory for reading.
-             * We pre-use the data buffer for parameter passin to avoid
-             * wasting any stack space.
              */
-            PSHFLCREATEPARMS pParams = (PSHFLCREATEPARMS)(pDataBuf + 1);
-            RT_ZERO(*pParams);
-            pParams->CreateFlags = SHFL_CF_DIRECTORY   | SHFL_CF_ACT_FAIL_IF_NEW  | SHFL_CF_ACT_OPEN_IF_EXISTS
-                                 | SHFL_CF_ACCESS_READ | SHFL_CF_ACCESS_ATTR_READ | SHFL_CF_ACCESS_DENYNONE;
-            int vrc = VbglR0SfCreate(&g_SfClient, &pFolder->hHostFolder, pStrFolderPath, pParams);
-            LogFlow(("FS32_FINDFIRST: VbglR0SfCreate(%ls) -> %Rrc Result=%d fMode=%#x hHandle=%#RX64\n",
-                     pStrFolderPath->String.utf16, vrc, pParams->Result, pParams->Info.Attr.fMode, pParams->Handle));
+            pReq->CreateParms.CreateFlags = SHFL_CF_DIRECTORY   | SHFL_CF_ACT_FAIL_IF_NEW  | SHFL_CF_ACT_OPEN_IF_EXISTS
+                                          | SHFL_CF_ACCESS_READ | SHFL_CF_ACCESS_ATTR_READ | SHFL_CF_ACCESS_DENYNONE;
+
+            int vrc = vboxSfOs2HostReqCreate(pFolder, pReq);
+            LogFlow(("FS32_FINDFIRST: vboxSfOs2HostReqCreate(%ls) -> %Rrc Result=%d fMode=%#x hHandle=%#RX64\n",
+                     pStrFolderPath->String.utf16, vrc, pReq->CreateParms.Result, pReq->CreateParms.Info.Attr.fMode,
+                     pReq->CreateParms.Handle));
             if (RT_SUCCESS(vrc))
             {
-                switch (pParams->Result)
+                switch (pReq->CreateParms.Result)
                 {
                     case SHFL_FILE_EXISTS:
-                        if (pParams->Handle != SHFL_HANDLE_NIL)
+                        if (pReq->CreateParms.Handle != SHFL_HANDLE_NIL)
                         {
                             /*
                              * Initialize the structures.
                              */
-                            pFsFsd->hHostDir        = pParams->Handle;
+                            pFsFsd->hHostDir        = pReq->CreateParms.Handle;
                             pFsFsd->u32Magic        = VBOXSFFS_MAGIC;
                             pFsFsd->pFolder         = pFolder;
                             pFsFsd->pBuf            = pDataBuf;
@@ -630,7 +633,8 @@ FS32_FINDFIRST(PCDFSI pCdFsi, PVBOXSFCD pCdFsd, PCSZ pszPath, LONG offCurDirEnd,
                             }
                             else
                             {
-                                vrc = VbglR0SfClose(&g_SfClient, &pFolder->hHostFolder, pFsFsd->hHostDir);
+                                AssertCompile(sizeof(VBOXSFCLOSEREQ) < sizeof(*pReq));
+                                vrc = vboxSfOs2HostReqClose(pFolder, (VBOXSFCLOSEREQ *)pReq, pFsFsd->hHostDir);
                                 AssertRC(vrc);
                                 pFsFsd->u32Magic = ~VBOXSFFS_MAGIC;
                                 pDataBuf->u32Magic = ~VBOXSFFSBUF_MAGIC;
@@ -640,7 +644,8 @@ FS32_FINDFIRST(PCDFSI pCdFsi, PVBOXSFCD pCdFsd, PCSZ pszPath, LONG offCurDirEnd,
                         }
                         else
                         {
-                            LogFlow(("FS32_FINDFIRST: VbglR0SfCreate returns NIL handle for '%ls'\n", pStrFolderPath->String.utf16));
+                            LogFlow(("FS32_FINDFIRST: vboxSfOs2HostReqCreate returns NIL handle for '%ls'\n",
+                                     pStrFolderPath->String.utf16));
                             rc = ERROR_PATH_NOT_FOUND;
                         }
                         break;
@@ -660,9 +665,9 @@ FS32_FINDFIRST(PCDFSI pCdFsi, PVBOXSFCD pCdFsd, PCSZ pszPath, LONG offCurDirEnd,
         }
 
         RTMemFree(pDataBuf);
-        if (pFilter != pStrFolderPath)
-            vboxSfOs2StrFree(pFilter);
-        vboxSfOs2ReleasePathAndFolder(pStrFolderPath, pFolder);
+        vboxSfOs2StrFree(pFilter);
+        VbglR0PhysHeapFree(pReq);
+        vboxSfOs2ReleaseFolder(pFolder);
     }
 
     RT_NOREF_PV(pFsFsi);
@@ -800,7 +805,7 @@ FS32_FINDCLOSE(PFSFSI pFsFsi, PVBOXSFFS pFsFsd)
      */
     if (pFsFsd->hHostDir != SHFL_HANDLE_NIL)
     {
-        int vrc = VbglR0SfClose(&g_SfClient, &pFolder->hHostFolder, pFsFsd->hHostDir);
+        int vrc = vboxSfOs2HostReqCloseSimple(pFolder, pFsFsd->hHostDir);
         AssertRC(vrc);
     }
 

@@ -130,6 +130,9 @@
  * The wait calls will return VERR_CANCELLED.
  * @since VBox 6.0  */
 #define SHFL_FN_CANCEL_MAPPINGS_CHANGES_WAITS   (23)
+/** Sets the file size.
+ * @since VBox 6.0  */
+#define SHFL_FN_SET_FILE_SIZE       (24)
 /** @} */
 
 
@@ -1121,6 +1124,19 @@ typedef struct _VBoxSFMapFolder_Old
  * @{
  */
 
+/** SHFL_FN_MAP_FOLDER parameters. */
+typedef struct VBoxSFParmMapFolder
+{
+    /** pointer, in: SHFLSTRING with the name of the folder to map. */
+    HGCMFunctionParameter pStrName;
+    /** value32, out: The root ID (SHFLROOT) of the mapping. */
+    HGCMFunctionParameter id32Root;
+    /** value32, in: Path delimiter code point. */
+    HGCMFunctionParameter uc32Delimiter;
+    /** value32, in: case senstive flag */
+    HGCMFunctionParameter fCaseSensitive;
+} VBoxSFParmMapFolder;
+
 /** Parameters structure. */
 typedef struct _VBoxSFMapFolder
 {
@@ -1156,6 +1172,13 @@ typedef struct _VBoxSFMapFolder
 /** @name SHFL_FN_UNMAP_FOLDER
  * @{
  */
+
+/** SHFL_FN_UNMAP_FOLDER parameters. */
+typedef struct VBoxSFParmUnmapFolder
+{
+    /** value32, in: SHFLROOT of the mapping to unmap */
+    HGCMFunctionParameter id32Root;
+} VBoxSFParmUnmapFolder;
 
 /** Parameters structure. */
 typedef struct _VBoxSFUnmapFolder
@@ -1256,6 +1279,21 @@ typedef struct _VBoxSFClose
 /** @name  SHFL_FN_READ
  * @{
  */
+
+/** Parameters structure. */
+typedef struct VBoxSFParmRead
+{
+    /** value32, in: SHFLROOT of the mapping with the handle. */
+    HGCMFunctionParameter id32Root;
+    /** value64, in: SHFLHANDLE of object to read from . */
+    HGCMFunctionParameter u64Handle;
+    /** value64, in: Offset to start reading from. */
+    HGCMFunctionParameter off64Read;
+    /** value32, in/out: How much to try read / Actually read. */
+    HGCMFunctionParameter cb32Read;
+    /** pointer, out: Buffer to return the data in. */
+    HGCMFunctionParameter pBuf;
+} VBoxSFParmRead;
 
 /** Parameters structure. */
 typedef struct _VBoxSFRead
@@ -1399,6 +1437,15 @@ typedef struct _VBoxSFLock
 /** @name SHFL_FN_FLUSH
  * @{
  */
+
+/** SHFL_FN_FLUSH parameters. */
+typedef struct VBoxSFParmFlush
+{
+    /** value32, in: SHFLROOT of the mapping with the handle. */
+    HGCMFunctionParameter id32Root;
+    /** value64, in: SHFLHANDLE of object to flush. */
+    HGCMFunctionParameter u64Handle;
+} VBoxSFParmFlush;
 
 /** Parameters structure. */
 typedef struct _VBoxSFFlush
@@ -1603,6 +1650,17 @@ typedef struct _VBoxSFInformation
 #define SHFL_REMOVE_DIR         (0x2)
 #define SHFL_REMOVE_SYMLINK     (0x4)
 
+/** SHFL_FN_REMOVE parameters. */
+typedef struct VBoxSFParmRemove
+{
+    /** value32, in: SHFLROOT of the mapping the path is relative to. */
+    HGCMFunctionParameter id32Root;
+    /** pointer, in: Points to SHFLSTRING buffer. */
+    HGCMFunctionParameter pStrPath;
+    /** value32, in: SHFL_REMOVE_XXX */
+    HGCMFunctionParameter f32Flags;
+} VBoxSFParmRemove;
+
 /** Parameters structure. */
 typedef struct _VBoxSFRemove
 {
@@ -1636,6 +1694,19 @@ typedef struct _VBoxSFRemove
 #define SHFL_RENAME_FILE                (0x1)
 #define SHFL_RENAME_DIR                 (0x2)
 #define SHFL_RENAME_REPLACE_IF_EXISTS   (0x4)
+
+/** SHFL_FN_RENAME parameters. */
+typedef struct VBoxSFParmRename
+{
+    /** value32, in: SHFLROOT of the mapping the paths are relative to. */
+    HGCMFunctionParameter id32Root;
+    /** pointer, in: SHFLSTRING giving the source (old) path. */
+    HGCMFunctionParameter pStrSrcPath;
+    /** pointer, in: SHFLSTRING giving the destination (new) path. */
+    HGCMFunctionParameter pStrDstPath;
+    /** value32, in: SHFL_RENAME_XXX  */
+    HGCMFunctionParameter f32Flags;
+} VBoxSFParmRename;
 
 /** Parameters structure. */
 typedef struct _VBoxSFRename
@@ -1772,6 +1843,27 @@ typedef struct VBoxSFWaitForMappingsChanges
 /** Number of parameters */
 #define SHFL_CPARMS_CANCEL_MAPPINGS_CHANGES_WAITS   (0)
 /** @} */
+
+
+/** @name SHFL_FN_SET_FILE_SIZE
+ * @{
+ */
+/** SHFL_FN_SET_FILE_SIZE parameters. */
+typedef struct VBoxSFParmSetFileSize
+{
+    /** value32, in: SHFLROOT of the mapping the handle belongs to. */
+    HGCMFunctionParameter id32Root;
+    /** value64, in: SHFLHANDLE of the file to change the size of. */
+    HGCMFunctionParameter u64Handle;
+    /** value64, in: The new file size. */
+    HGCMFunctionParameter cb64NewSize;
+} VBoxSFParmSetFileSize;
+/** Number of parameters */
+#define SHFL_CPARMS_SET_FILE_SIZE (3)
+/** @} */
+
+
+
 
 
 /** @name SHFL_FN_ADD_MAPPING

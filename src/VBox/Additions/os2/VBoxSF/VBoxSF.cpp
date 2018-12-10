@@ -39,6 +39,7 @@
 #include <iprt/assert.h>
 #include <iprt/ctype.h>
 #include <iprt/mem.h>
+#include <iprt/path.h>
 
 #include <iprt/asm.h>
 #include <iprt/asm-amd64-x86.h>
@@ -91,6 +92,7 @@ APIRET vboxSfOs2ConvertStatusToOs2(int vrc, APIRET rcDefault)
         case VERR_ALREADY_EXISTS:       return ERROR_ACCESS_DENIED;
         case VERR_WRITE_PROTECT:        return ERROR_WRITE_PROTECT;
         case VERR_IS_A_DIRECTORY:       return ERROR_DIRECTORY;
+        case VERR_DISK_FULL:            return ERROR_DISK_FULL;
         case VINF_SUCCESS:              return NO_ERROR;
     }
 }
@@ -280,7 +282,7 @@ static void vboxSfOs2DestroyFolder(PVBOXSFFOLDER pFolder)
 {
     /* Note! We won't get there while the folder is on the list. */
     LogRel(("vboxSfOs2ReleaseFolder: Destroying %p [%s]\n", pFolder, pFolder->szName));
-    VbglR0SfUnmapFolder(&g_SfClient, &pFolder->hHostFolder);
+    vboxSfOs2HostReqUnmapFolderSimple(pFolder->hHostFolder.root);
     RT_ZERO(pFolder);
     RTMemFree(pFolder);
 }
@@ -386,20 +388,28 @@ static int vboxSfOs2MapFolder(PSHFLSTRING pName, const char *pszTag, PVBOXSFFOLD
         Assert(pName->u16Length + sizeof(RTUTF16) <= pName->u16Size);
 
         /* Try do the mapping.*/
-        rc = VbglR0SfMapFolder(&g_SfClient, pName, &pNew->hHostFolder);
-        if (RT_SUCCESS(rc))
+        VBOXSFMAPFOLDERWITHBUFREQ *pReq = (VBOXSFMAPFOLDERWITHBUFREQ *)VbglR0PhysHeapAlloc(sizeof(*pReq));
+        if (pReq)
         {
-            RTListAppend(&g_FolderHead, &pNew->ListEntry);
-            ASMAtomicIncU32(&g_uFolderRevision);
-            LogRel(("vboxSfOs2MapFolder: %p - %s\n", pNew, pNew->szName));
+            rc = vboxSfOs2HostReqMapFolderWithBuf(pReq, pName, RTPATH_DELIMITER, false /*fCaseSensitive*/);
+            if (RT_SUCCESS(rc))
+            {
+                pNew->hHostFolder.root = pReq->Parms.id32Root.u.value32;
 
-            *ppFolder = pNew;
+                RTListAppend(&g_FolderHead, &pNew->ListEntry);
+                ASMAtomicIncU32(&g_uFolderRevision);
+                LogRel(("vboxSfOs2MapFolder: %p - %s\n", pNew, pNew->szName));
+
+                *ppFolder = pNew;
+                pNew = NULL;
+            }
+            else
+                LogRel(("vboxSfOs2MapFolder: vboxSfOs2HostReqMapFolderWithBuf(,%s,) -> %Rrc\n", pNew->szName, rc));
+            VbglR0PhysHeapFree(pReq);
         }
         else
-        {
-            LogRel(("vboxSfOs2MapFolder: VbglR0SfMapFolder(,%s,) -> %Rrc\n", pNew->szName, rc));
-            RTMemFree(pNew);
-        }
+            LogRel(("vboxSfOs2MapFolder: Out of physical heap :-(\n"));
+        RTMemFree(pNew);
     }
     else
     {
@@ -1349,7 +1359,7 @@ FS32_FSINFO(ULONG fFlags, USHORT hVpb, PBYTE pbData, ULONG cbData, ULONG uLevel)
         if (   RT_SUCCESS(vrc)
             && pu->Open.Req.CreateParms.Handle != SHFL_HANDLE_NIL)
         {
-            SHFLHANDLE hHandle = pu->Open.Req.CreateParms.Handle;
+            SHFLHANDLE volatile hHandle = pu->Open.Req.CreateParms.Handle;
 
             RT_ZERO(pu->Info.Req);
             vrc = vboxSfOs2HostReqQueryVolInfo(pFolder, &pu->Info.Req, hHandle);
@@ -1379,7 +1389,7 @@ FS32_FSINFO(ULONG fFlags, USHORT hVpb, PBYTE pbData, ULONG cbData, ULONG uLevel)
             }
             else
             {
-                LogRel(("FS32_FSINFO: VbglR0SfFsInfo/SHFL_INFO_VOLUME failed: %Rrc\n", vrc));
+                LogRel(("FS32_FSINFO: vboxSfOs2HostReqQueryVolInfo failed: %Rrc\n", vrc));
                 rc = ERROR_GEN_FAILURE;
             }
 
@@ -1594,18 +1604,20 @@ FS32_RMDIR(PCDFSI pCdFsi, PVBOXSFCD pCdFsd, PCSZ pszDir, LONG offCurDirEnd)
      * Resolve the path.
      */
     PVBOXSFFOLDER pFolder;
-    PSHFLSTRING   pStrFolderPath;
-    APIRET rc = vboxSfOs2ResolvePath(pszDir, pCdFsd, offCurDirEnd, &pFolder, &pStrFolderPath);
+    VBOXSFREMOVEREQ    *pReq;
+    APIRET rc = vboxSfOs2ResolvePathEx(pszDir, pCdFsd, offCurDirEnd, RT_UOFFSETOF(VBOXSFREMOVEREQ, StrPath),
+                                       &pFolder, (void **)&pReq);
     if (rc == NO_ERROR)
     {
-        int vrc = VbglR0SfRemove(&g_SfClient, &pFolder->hHostFolder, pStrFolderPath, SHFL_REMOVE_DIR);
-        LogFlow(("FS32_RMDIR: VbglR0SfRemove -> %Rrc\n", rc));
+        int vrc = vboxSfOs2HostReqRemove(pFolder, pReq, SHFL_REMOVE_DIR);
+        LogFlow(("FS32_RMDIR: vboxSfOs2HostReqRemove -> %Rrc\n", rc));
         if (RT_SUCCESS(vrc))
             rc = NO_ERROR;
         else
             rc = vboxSfOs2ConvertStatusToOs2(vrc, ERROR_ACCESS_DENIED);
 
-        vboxSfOs2ReleasePathAndFolder(pStrFolderPath, pFolder);
+        VbglR0PhysHeapFree(pReq);
+        vboxSfOs2ReleaseFolder(pFolder);
     }
 
     RT_NOREF_PV(pCdFsi);
@@ -1643,9 +1655,10 @@ FS32_MOVE(PCDFSI pCdFsi, PVBOXSFCD pCdFsd, PCSZ pszSrc, LONG offSrcCurDirEnd, PC
     APIRET rc = vboxSfOs2ResolvePath(pszSrc, pCdFsd, offSrcCurDirEnd, &pSrcFolder, &pSrcFolderPath);
     if (rc == NO_ERROR)
     {
-        PVBOXSFFOLDER pDstFolder;
-        PSHFLSTRING   pDstFolderPath;
-        rc = vboxSfOs2ResolvePath(pszDst, pCdFsd, offDstCurDirEnd, &pDstFolder, &pDstFolderPath);
+        PVBOXSFFOLDER               pDstFolder;
+        VBOXSFRENAMEWITHSRCBUFREQ  *pReq;
+        rc = vboxSfOs2ResolvePathEx(pszDst, pCdFsd, offDstCurDirEnd, RT_UOFFSETOF(VBOXSFRENAMEWITHSRCBUFREQ, StrDstPath),
+                                    &pDstFolder, (void **)&pReq);
         if (rc == NO_ERROR)
         {
             if (pSrcFolder == pDstFolder)
@@ -1654,22 +1667,22 @@ FS32_MOVE(PCDFSI pCdFsi, PVBOXSFCD pCdFsd, PCSZ pszSrc, LONG offSrcCurDirEnd, PC
                  * Do the renaming.
                  * Note! Requires 6.0.0beta2+ or 5.2.24+ host for renaming files.
                  */
-                int vrc = VbglR0SfRename(&g_SfClient, &pSrcFolder->hHostFolder, pSrcFolderPath, pDstFolderPath,
-                                         SHFL_RENAME_FILE | SHFL_RENAME_DIR);
+                int vrc = vboxSfOs2HostReqRenameWithSrcBuf(pSrcFolder, pReq, pSrcFolderPath, SHFL_RENAME_FILE | SHFL_RENAME_DIR);
                 if (RT_SUCCESS(vrc))
                     rc = NO_ERROR;
                 else
                 {
-                    Log(("FS32_MOVE: VbglR0SfRename failed: %Rrc\n", rc));
+                    Log(("FS32_MOVE: vboxSfOs2HostReqRenameWithSrcBuf failed: %Rrc\n", rc));
                     rc = vboxSfOs2ConvertStatusToOs2(vrc, ERROR_ACCESS_DENIED);
                 }
             }
             else
             {
-                Log(("FS32_MOVE: source folder '%s' != destiation folder '%s'\n", pSrcFolder->szName, pDstFolder->szName));
+                Log(("FS32_MOVE: source folder '%s' != destiation folder '%s'\n", pszSrc, pszDst));
                 rc = ERROR_NOT_SAME_DEVICE;
             }
-            vboxSfOs2ReleasePathAndFolder(pDstFolderPath, pDstFolder);
+            VbglR0PhysHeapFree(pReq);
+            vboxSfOs2ReleaseFolder(pDstFolder);
         }
         vboxSfOs2ReleasePathAndFolder(pSrcFolderPath, pSrcFolder);
     }
@@ -1687,19 +1700,21 @@ FS32_DELETE(PCDFSI pCdFsi, PVBOXSFCD pCdFsd, PCSZ pszFile, LONG offCurDirEnd)
     /*
      * Resolve the path.
      */
-    PVBOXSFFOLDER pFolder;
-    PSHFLSTRING   pStrFolderPath;
-    APIRET rc = vboxSfOs2ResolvePath(pszFile, pCdFsd, offCurDirEnd, &pFolder, &pStrFolderPath);
+    PVBOXSFFOLDER       pFolder;
+    VBOXSFREMOVEREQ    *pReq;
+    APIRET rc = vboxSfOs2ResolvePathEx(pszFile, pCdFsd, offCurDirEnd, RT_UOFFSETOF(VBOXSFREMOVEREQ, StrPath),
+                                       &pFolder, (void **)&pReq);
     if (rc == NO_ERROR)
     {
-        int vrc = VbglR0SfRemove(&g_SfClient, &pFolder->hHostFolder, pStrFolderPath, SHFL_REMOVE_FILE);
-        LogFlow(("FS32_DELETE: VbglR0SfRemove -> %Rrc\n", rc));
+        int vrc = vboxSfOs2HostReqRemove(pFolder, pReq, SHFL_REMOVE_FILE);
+        LogFlow(("FS32_DELETE: vboxSfOs2HostReqRemove -> %Rrc\n", rc));
         if (RT_SUCCESS(vrc))
             rc = NO_ERROR;
         else
             rc = vboxSfOs2ConvertStatusToOs2(vrc, ERROR_ACCESS_DENIED);
 
-        vboxSfOs2ReleasePathAndFolder(pStrFolderPath, pFolder);
+        VbglR0PhysHeapFree(pReq);
+        vboxSfOs2ReleaseFolder(pFolder);
     }
 
     RT_NOREF_PV(pCdFsi);
@@ -1713,16 +1728,19 @@ FS32_DELETE(PCDFSI pCdFsi, PVBOXSFCD pCdFsd, PCSZ pszFile, LONG offCurDirEnd)
  * Worker for FS32_PATHINFO that handles file stat setting.
  *
  * @returns OS/2 status code
- * @param   pFolder         The folder.
- * @param   hHostFile       The host file handle.
- * @param   fAttribs        The attributes to set.
- * @param   pTimestamps     Pointer to the timestamps.  NULL if none should be
- *                          modified.
- * @param   pObjInfoBuf     Buffer to use when setting the attributes (host will
- *                          return current info upon successful return).
+ * @param   pFolder             The folder.
+ * @param   hHostFile           The host file handle.
+ * @param   fAttribs            The attributes to set.
+ * @param   pTimestamps         Pointer to the timestamps.  NULL if none should be
+ *                              modified.
+ * @param   pObjInfoBuf         Buffer to use when setting the attributes (host
+ *                              will return current info upon successful
+ *                              return).  This must life on the phys heap.
+ * @param   offObjInfoInAlloc   Offset of pObjInfoBuf in the phys heap
+ *                              allocation where it lives.
  */
 APIRET vboxSfOs2SetInfoCommonWorker(PVBOXSFFOLDER pFolder, SHFLHANDLE hHostFile, ULONG fAttribs,
-                                    PFILESTATUS pTimestamps, PSHFLFSOBJINFO pObjInfoBuf)
+                                    PFILESTATUS pTimestamps, PSHFLFSOBJINFO pObjInfoBuf, uint32_t offObjInfoInAlloc)
 {
     /*
      * Validate the data a little and convert it to host speak.
@@ -1765,14 +1783,18 @@ APIRET vboxSfOs2SetInfoCommonWorker(PVBOXSFFOLDER pFolder, SHFLHANDLE hHostFile,
     /*
      * Call the host to do the updating.
      */
-    uint32_t cbBuf = sizeof(*pObjInfoBuf);
-    int vrc = VbglR0SfFsInfo(&g_SfClient, &pFolder->hHostFolder, hHostFile, SHFL_INFO_SET | SHFL_INFO_FILE,
-                             &cbBuf, (SHFLDIRINFO *)pObjInfoBuf);
-    LogFlow(("vboxSfOs2SetFileInfo: VbglR0SfFsInfo -> %Rrc\n", vrc));
+    VBOXSFOBJINFOWITHBUFREQ *pReq = (VBOXSFOBJINFOWITHBUFREQ *)VbglR0PhysHeapAlloc(sizeof(*pReq));
+    if (pReq)
+    {
+        int vrc = vboxSfOs2HostReqSetObjInfoWithBuf(pFolder, pReq, hHostFile, pObjInfoBuf, offObjInfoInAlloc);
+        LogFlow(("vboxSfOs2SetFileInfo: vboxSfOs2HostReqSetObjInfoWithBuf -> %Rrc\n", vrc));
 
-    if (RT_SUCCESS(vrc))
-        return NO_ERROR;
-    return vboxSfOs2ConvertStatusToOs2(vrc, ERROR_ACCESS_DENIED);
+        VbglR0PhysHeapFree(pReq);
+        if (RT_SUCCESS(vrc))
+            return NO_ERROR;
+        return vboxSfOs2ConvertStatusToOs2(vrc, ERROR_ACCESS_DENIED);
+    }
+    return ERROR_NOT_ENOUGH_MEMORY;
 }
 
 
@@ -1820,14 +1842,11 @@ static APIRET vboxSfOs2SetPathInfoWorker(PVBOXSFFOLDER pFolder, VBOXSFCREATEREQ 
                     /*
                      * Join up with FS32_FILEINFO to do the actual setting.
                      */
-                    uint64_t const uHandle = pReq->CreateParms.Handle;
-                    ASMCompilerBarrier(); /* paranoia */
-
                     rc = vboxSfOs2SetInfoCommonWorker(pFolder, pReq->CreateParms.Handle, fAttribs, pTimestamps,
-                                                      &pReq->CreateParms.Info);
+                                                      &pReq->CreateParms.Info, RT_UOFFSETOF(VBOXSFCREATEREQ, CreateParms.Info));
 
-                    AssertCompile(sizeof(VBOXSFCLOSEREQ) < sizeof(*pReq));
-                    vrc = vboxSfOs2HostReqClose(pFolder, (VBOXSFCLOSEREQ *)pReq, uHandle);
+                    AssertCompile(RTASSERT_OFFSET_OF(VBOXSFCREATEREQ, CreateParms.Handle) > sizeof(VBOXSFCLOSEREQ)); /* no aliasing issues */
+                    vrc = vboxSfOs2HostReqClose(pFolder, (VBOXSFCLOSEREQ *)pReq, pReq->CreateParms.Handle);
                     AssertRC(vrc);
                 }
                 else
