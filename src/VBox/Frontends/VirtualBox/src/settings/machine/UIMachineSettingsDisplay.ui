@@ -421,7 +421,7 @@
      </widget>
      <widget class="QWidget" name="m_pTabVideoCapture">
       <attribute name="title">
-       <string>&amp;Capture</string>
+       <string>Re&amp;cording</string>
       </attribute>
       <layout class="QVBoxLayout" name="m_pLayoutTabVideoCapture">
        <item>
@@ -436,7 +436,7 @@
              <string>When checked, VirtualBox will record the virtual machine session as a video file.</string>
             </property>
             <property name="text">
-             <string>&amp;Enable Capture</string>
+             <string>&amp;Enable Recording</string>
             </property>
            </widget>
           </item>
@@ -465,7 +465,7 @@
              <item row="0" column="0">
               <widget class="QLabel" name="m_pLabelCaptureMode">
                <property name="text">
-                <string>Capture &amp;Mode:</string>
+                <string>Recording &amp;Mode:</string>
                </property>
                <property name="alignment">
                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -478,7 +478,7 @@
              <item row="0" column="1" colspan="1">
               <widget class="QComboBox" name="m_pComboBoxCaptureMode">
                <property name="whatsThis">
-                <string>Stores the capture mode.</string>
+                <string>Stores the recording mode.</string>
                </property>
               </widget>
              </item>
