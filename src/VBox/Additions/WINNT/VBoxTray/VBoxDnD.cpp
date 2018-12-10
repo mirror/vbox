@@ -1857,8 +1857,6 @@ DECLCALLBACK(int) VBoxDnDWorker(void *pInstance, bool volatile *pfShutdown)
         {
             if (pEvent)
             {
-                VbglR3DnDEventFree(pEvent->pVbglR3Event);
-
                 RTMemFree(pEvent);
                 pEvent = NULL;
             }
