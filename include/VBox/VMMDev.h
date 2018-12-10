@@ -1655,7 +1655,7 @@ AssertCompileSize(VMMDevHGCMCall, 32+12);
 /** Macro for validating that the specified flags are valid. */
 #define VBOX_HGCM_F_PARM_ARE_VALID(fFlags) \
     (   (fFlags) > VBOX_HGCM_F_PARM_DIRECTION_NONE \
-     && (fFlags) < VBOX_HGCM_F_PARM_DIRECTION_BOTH )
+     && (fFlags) <= VBOX_HGCM_F_PARM_DIRECTION_BOTH )
 /** @} */
 
 /**
