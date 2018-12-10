@@ -521,6 +521,7 @@ RuntimeR3_SOURCES       = \
 	common/path/RTPathEnsureTrailingSeparator.cpp \
 	common/path/RTPathExt.cpp \
 	common/path/RTPathFilename.cpp \
+	common/path/RTPathFilenameUtf16.cpp \
 	common/path/RTPathGlob.cpp \
 	common/path/RTPathHasExt.cpp \
 	common/path/RTPathHasPath.cpp \
@@ -2868,6 +2869,7 @@ RuntimeR0Drv_SOURCES.win = \
 	common/checksum/sha512t224str.cpp \
 	common/checksum/sha512t256str.cpp \
 	common/err/errinfolog.cpp \
+	common/path/RTPathFilenameUtf16.cpp \
 	common/path/RTPathChangeToUnixSlashes.cpp \
 	common/math/bignum.cpp \
 	common/misc/zero.asm \
@@ -3063,6 +3065,7 @@ RuntimeR0Drv_SOURCES.darwin = \
 	r0drv/powernotification-r0drv.c
 
 RuntimeR0Drv_SOURCES.os2 = \
+	common/path/RTPathFilenameUtf16.cpp \
 	common/string/memchr.asm \
 	common/string/memcmp.asm \
 	common/string/memcpy.asm \
@@ -3073,10 +3076,8 @@ RuntimeR0Drv_SOURCES.os2 = \
 	common/string/strcmp.asm \
 	common/string/strcpy.asm \
 	common/string/strlen.asm \
-	\
 	common/string/strncmp.cpp \
 	common/string/strpbrk.cpp \
-	\
 	common/misc/thread.cpp \
 	generic/RTAssertShouldPanic-generic.cpp \
 	generic/RTLogWriteDebugger-generic.cpp \

@@ -456,6 +456,7 @@ RTDECL(size_t) RTPathParseSimple(const char *pszPath, size_t *pcchDir, ssize_t *
  * @param   pszPath     Path to find filename in.
  */
 RTDECL(char *) RTPathFilename(const char *pszPath);
+RTDECL(PRTUTF16) RTPathFilenameUtf16(PCRTUTF16 pwszPath);
 
 /**
  * Finds the filename in a path, extended version.
@@ -467,6 +468,7 @@ RTDECL(char *) RTPathFilename(const char *pszPath);
  *                      will be ignored.
  */
 RTDECL(char *) RTPathFilenameEx(const char *pszPath, uint32_t fFlags);
+RTDECL(PRTUTF16) RTPathFilenameExUtf16(PCRTUTF16 pwszPath, uint32_t fFlags);
 
 /**
  * Finds the suffix part of in a path (last dot and onwards).

@@ -1580,6 +1580,7 @@
 # define RTPathExistsEx                                 RT_MANGLER(RTPathExistsEx)
 # define RTPathSuffix                                   RT_MANGLER(RTPathSuffix)
 # define RTPathFilename                                 RT_MANGLER(RTPathFilename)
+# define RTPathFilenameUtf16                            RT_MANGLER(RTPathFilenameUtf16)
 # define RTPathFilenameEx                               RT_MANGLER(RTPathFilenameEx)
 # define RTPathGetCurrent                               RT_MANGLER(RTPathGetCurrent)
 # define RTPathGetCurrentDrive                          RT_MANGLER(RTPathGetCurrentDrive)
