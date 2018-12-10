@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2017 Oracle Corporation
+ * Copyright (C) 2006-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -98,7 +98,12 @@ DECLCALLBACK(int) VBoxSeamlessInit(const PVBOXSERVICEENV pEnv, void **ppInstance
             *ppInstance = pCtx;
         }
         else
+        {
+            if (rc == VERR_FILE_NOT_FOUND)
+                VBoxTrayShowError("VBoxHook.dll not found");
+
             LogFlowFunc(("Unable to load %s, rc=%Rrc\n", VBOXHOOK_DLL_NAME, rc));
+        }
     }
 
     LogFlowFuncLeaveRC(rc);
