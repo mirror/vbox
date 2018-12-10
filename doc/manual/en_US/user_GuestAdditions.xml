@@ -1288,7 +1288,7 @@ $</screen>
           </para>
 
 <screen>VBoxControl sharedfolder use D: MyShareName
-VBoxControl sharedfolder unuse D: 
+VBoxControl sharedfolder unuse D:
 VBoxControl sharedfolder list</screen>
 
           <para>
