@@ -1582,6 +1582,7 @@
 # define RTPathFilename                                 RT_MANGLER(RTPathFilename)
 # define RTPathFilenameUtf16                            RT_MANGLER(RTPathFilenameUtf16)
 # define RTPathFilenameEx                               RT_MANGLER(RTPathFilenameEx)
+# define RTPathFilenameExUtf16                          RT_MANGLER(RTPathFilenameExUtf16)
 # define RTPathGetCurrent                               RT_MANGLER(RTPathGetCurrent)
 # define RTPathGetCurrentDrive                          RT_MANGLER(RTPathGetCurrentDrive)
 # define RTPathGetCurrentOnDrive                        RT_MANGLER(RTPathGetCurrentOnDrive)
