@@ -411,7 +411,7 @@ static int                hmR3TermCPU(PVM pVM);
  * Initializes the HM.
  *
  * This is the very first component to really do init after CFGM so that we can
- * establish the predominat execution engine for the VM prior to initializing
+ * establish the predominant execution engine for the VM prior to initializing
  * other modules.  It takes care of NEM initialization if needed (HM disabled or
  * not available in HW).
  *
