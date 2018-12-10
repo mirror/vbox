@@ -4,7 +4,7 @@
 #
 
 #
-# Copyright (C) 2006-2017 Oracle Corporation
+# Copyright (C) 2006-2018 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -55,7 +55,7 @@ VBOX_WIN_INST_REPACK_DIR   := $(PATH_OUT)/repack
 
 # Note: en_US *must* come first for the dependency file generation.
 ifndef VBOX_INSTALLER_LANGUAGES
- VBOX_INSTALLER_LANGUAGES   = en_US de_DE fr_FR it_IT zh_TW
+ VBOX_INSTALLER_LANGUAGES   = en_US de_DE fa_IR fr_FR it_IT tr_TR zh_TW
  VBOX_INSTALLER_LANGUAGES  += $(VBOX_INSTALLER_ADD_LANGUAGES)
 endif
 
@@ -75,12 +75,14 @@ ifdef VBOX_WITH_MSM_INSTALL
 endif
 
 #
-# Language IDs.
+# Language IDs (LCID, decimal)
 #
 VBOX_BRAND_en_US_LANG_ID ?= 1033
 VBOX_BRAND_de_DE_LANG_ID ?= 1031
+VBOX_BRAND_fa_IR_LANG_ID ?= 1065
 VBOX_BRAND_fr_FR_LANG_ID ?= 1036
 VBOX_BRAND_it_IT_LANG_ID ?= 1040
+VBOX_BRAND_tr_TR_LANG_ID ?= 1055
 VBOX_BRAND_zh_TW_LANG_ID ?= 1028
 
 # Standard language names (in the native language), to be extended as we go.
