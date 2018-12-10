@@ -1825,10 +1825,10 @@ DECLCALLBACK(int) VBoxDnDWorker(void *pInstance, bool volatile *pfShutdown)
 
         PVBGLR3DNDEVENT pVbglR3Event = NULL;
         rc = VbglR3DnDEventGetNext(&pCtx->cmdCtx, &pVbglR3Event);
-        LogFlowFunc(("enmType=%RU32, rc=%Rrc\n", pVbglR3Event->enmType, rc));
-
         if (RT_SUCCESS(rc))
         {
+            LogFunc(("enmType=%RU32, rc=%Rrc\n", pVbglR3Event->enmType, rc));
+
             cMsgSkippedInvalid = 0; /* Reset skipped messages count. */
 
             LogRel2(("DnD: Received new event, type=%RU32, rc=%Rrc\n", pVbglR3Event->enmType, rc));
