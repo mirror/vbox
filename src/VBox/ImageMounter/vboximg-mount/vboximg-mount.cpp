@@ -270,6 +270,9 @@ vboximgOptHandler(void *data, const char *arg, int optKey, struct fuse_args *out
      * and arguments that don't result in variable assignment such as "USAGE"
      * In this impl. that's always deemed a parsing error.
      */
+    if (*arg != '-') /* could be user's mount point */
+        return 1;
+
     return -1;
 }
 
