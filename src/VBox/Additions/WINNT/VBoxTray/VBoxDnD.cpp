@@ -1369,6 +1369,8 @@ int VBoxDnDWnd::ProcessEvent(PVBOXDNDEVENT pEvent)
                     pEvent, dwErr, RTErrConvertFromWin32(dwErr)));
         }
 
+        VbglR3DnDEventFree(pEvent->pVbglR3Event);
+
         RTMemFree(pEvent);
         pEvent = NULL;
 
