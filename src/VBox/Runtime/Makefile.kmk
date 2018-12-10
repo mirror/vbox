@@ -3068,6 +3068,7 @@ RuntimeR0Drv_SOURCES.darwin = \
 RuntimeR0Drv_SOURCES.os2 = \
 	common/path/RTPathFilenameUtf16.cpp \
 	common/string/RTUtf16Chr.cpp \
+	common/string/RTUtf16CmpAscii.cpp \
 	common/string/memchr.asm \
 	common/string/memcmp.asm \
 	common/string/memcpy.asm \
