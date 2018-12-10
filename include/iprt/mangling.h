@@ -3757,6 +3757,7 @@
 # define RTUtf16CopyAscii                               RT_MANGLER(RTUtf16CopyAscii)
 # define RTUtf16Cat                                     RT_MANGLER(RTUtf16Cat)
 # define RTUtf16CatAscii                                RT_MANGLER(RTUtf16CatAscii)
+# define RTUtf16Chr                                     RT_MANGLER(RTUtf16Chr)
 # define RTUtf16End                                     RT_MANGLER(RTUtf16End)
 # define RTUtf16ICmpAscii                               RT_MANGLER(RTUtf16ICmpAscii)
 # define RTUtf16NICmpAscii                              RT_MANGLER(RTUtf16NICmpAscii)

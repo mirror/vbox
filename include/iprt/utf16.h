@@ -265,6 +265,17 @@ RTDECL(int) RTUtf16NLenEx(PCRTUTF16 pwszString, size_t cwcMax, size_t *pcwc);
 RTDECL(PCRTUTF16) RTUtf16End(PCRTUTF16 pwszString, size_t cwcMax);
 
 /**
+ * Finds a give UTF-16 character in a UTF-16 string.
+ *
+ * @returns Pointer to the first occurence of @a wc.
+ * @returns NULL if @a wc was not found.
+ *
+ * @param   pwszString  The string to search.
+ * @param   wc          The UTF-16 character to search for.
+ */
+RTDECL(PRTUTF16) RTUtf16Chr(PCRTUTF16 pwszString, RTUTF16 wc);
+
+/**
  * Strips blankspaces from both ends of the string.
  *
  * @returns Pointer to first non-blank char in the string.
