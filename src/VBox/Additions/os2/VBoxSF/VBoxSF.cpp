@@ -1696,7 +1696,7 @@ FS32_DELETE(PCDFSI pCdFsi, PVBOXSFCD pCdFsd, PCSZ pszFile, LONG offCurDirEnd)
         LogFlow(("FS32_DELETE: VbglR0SfRemove -> %Rrc\n", rc));
         if (RT_SUCCESS(vrc))
             rc = NO_ERROR;
-        else if (vrc == VERR_FILE_NOT_FOUND)
+        else
             rc = vboxSfOs2ConvertStatusToOs2(vrc, ERROR_ACCESS_DENIED);
 
         vboxSfOs2ReleasePathAndFolder(pStrFolderPath, pFolder);
@@ -1781,77 +1781,74 @@ APIRET vboxSfOs2SetInfoCommonWorker(PVBOXSFFOLDER pFolder, SHFLHANDLE hHostFile,
  *
  * @returns OS/2 status code.
  * @param   pFolder             The folder.
- * @param   pFolderPath         The path within the folder.
+ * @param   pReq                Open/create request buffer with path.
  * @param   fAttribs            New file attributes.
  * @param   pTimestamps         New timestamps.  May be NULL.
  */
-static APIRET vboxSfOs2SetPathInfoWorker(PVBOXSFFOLDER pFolder, PSHFLSTRING pFolderPath, ULONG fAttribs, PFILESTATUS pTimestamps)
+static APIRET vboxSfOs2SetPathInfoWorker(PVBOXSFFOLDER pFolder, VBOXSFCREATEREQ *pReq, ULONG fAttribs, PFILESTATUS pTimestamps)
 
 {
     /*
      * In order to do anything we need to open the object.
      */
     APIRET rc;
-    SHFLCREATEPARMS *pParams = (SHFLCREATEPARMS *)VbglR0PhysHeapAlloc(sizeof(*pParams));
-    if (pParams)
+    pReq->CreateParms.CreateFlags = SHFL_CF_ACT_OPEN_IF_EXISTS | SHFL_CF_ACT_FAIL_IF_NEW
+                                  | SHFL_CF_ACCESS_ATTR_READWRITE | SHFL_CF_ACCESS_DENYNONE | SHFL_CF_ACCESS_NONE;
+
+    int vrc = vboxSfOs2HostReqCreate(pFolder, pReq);
+    LogFlow(("vboxSfOs2SetPathInfoWorker: vboxSfOs2HostReqCreate -> %Rrc Result=%d Handle=%#RX64 fMode=%#x\n",
+             vrc, pReq->CreateParms.Result, pReq->CreateParms.Handle, pReq->CreateParms.Info.Attr.fMode));
+    if (   vrc == VERR_IS_A_DIRECTORY
+        || (   RT_SUCCESS(vrc)
+            && pReq->CreateParms.Handle == SHFL_HANDLE_NIL
+            && RTFS_IS_DIRECTORY(pReq->CreateParms.Info.Attr.fMode)))
     {
-        RT_ZERO(*pParams);
-        pParams->CreateFlags = SHFL_CF_ACT_OPEN_IF_EXISTS | SHFL_CF_ACT_FAIL_IF_NEW
-                             | SHFL_CF_ACCESS_ATTR_READWRITE | SHFL_CF_ACCESS_DENYNONE | SHFL_CF_ACCESS_NONE;
-
-        int vrc = VbglR0SfCreate(&g_SfClient, &pFolder->hHostFolder, pFolderPath, pParams);
-        LogFlow(("vboxSfOs2SetPathInfoWorker: VbglR0SfCreate -> %Rrc Result=%d Handle=%#RX64 fMode=%#x\n",
-                 vrc, pParams->Result, pParams->Handle, pParams->Info.Attr.fMode));
-        if (   vrc == VERR_IS_A_DIRECTORY
-            || (   RT_SUCCESS(vrc)
-                && pParams->Handle == SHFL_HANDLE_NIL
-                && RTFS_IS_DIRECTORY(pParams->Info.Attr.fMode)))
+        RT_ZERO(pReq->CreateParms);
+        pReq->CreateParms.CreateFlags = SHFL_CF_DIRECTORY | SHFL_CF_ACT_OPEN_IF_EXISTS | SHFL_CF_ACT_FAIL_IF_NEW
+                                      | SHFL_CF_ACCESS_ATTR_READWRITE | SHFL_CF_ACCESS_DENYNONE | SHFL_CF_ACCESS_NONE;
+        vrc = vboxSfOs2HostReqCreate(pFolder, pReq);
+        LogFlow(("vboxSfOs2SetPathInfoWorker: vboxSfOs2HostReqCreate#2 -> %Rrc Result=%d Handle=%#RX64 fMode=%#x\n",
+                 vrc, pReq->CreateParms.Result, pReq->CreateParms.Handle, pReq->CreateParms.Info.Attr.fMode));
+    }
+    if (RT_SUCCESS(vrc))
+    {
+        switch (pReq->CreateParms.Result)
         {
-            RT_ZERO(*pParams);
-            pParams->CreateFlags = SHFL_CF_DIRECTORY | SHFL_CF_ACT_OPEN_IF_EXISTS | SHFL_CF_ACT_FAIL_IF_NEW
-                                 | SHFL_CF_ACCESS_ATTR_READWRITE | SHFL_CF_ACCESS_DENYNONE | SHFL_CF_ACCESS_NONE;
-            vrc = VbglR0SfCreate(&g_SfClient, &pFolder->hHostFolder, pFolderPath, pParams);
-            LogFlow(("vboxSfOs2SetPathInfoWorker: VbglR0SfCreate#2 -> %Rrc Result=%d Handle=%#RX64 fMode=%#x\n",
-                     vrc, pParams->Result, pParams->Handle, pParams->Info.Attr.fMode));
+            case SHFL_FILE_EXISTS:
+                if (pReq->CreateParms.Handle != SHFL_HANDLE_NIL)
+                {
+                    /*
+                     * Join up with FS32_FILEINFO to do the actual setting.
+                     */
+                    uint64_t const uHandle = pReq->CreateParms.Handle;
+                    ASMCompilerBarrier(); /* paranoia */
+
+                    rc = vboxSfOs2SetInfoCommonWorker(pFolder, pReq->CreateParms.Handle, fAttribs, pTimestamps,
+                                                      &pReq->CreateParms.Info);
+
+                    AssertCompile(sizeof(VBOXSFCLOSEREQ) < sizeof(*pReq));
+                    vrc = vboxSfOs2HostReqClose(pFolder, (VBOXSFCLOSEREQ *)pReq, uHandle);
+                    AssertRC(vrc);
+                }
+                else
+                {
+                    LogRel(("vboxSfOs2SetPathInfoWorker: No handle! fMode=%#x\n", pReq->CreateParms.Info.Attr.fMode));
+                    rc = ERROR_SYS_INTERNAL;
+                }
+                break;
+
+            case SHFL_PATH_NOT_FOUND:
+                rc = ERROR_PATH_NOT_FOUND;
+                break;
+
+            default:
+            case SHFL_FILE_NOT_FOUND:
+                rc = ERROR_FILE_NOT_FOUND;
+                break;
         }
-        if (RT_SUCCESS(vrc))
-        {
-            switch (pParams->Result)
-            {
-                case SHFL_FILE_EXISTS:
-                    if (pParams->Handle != SHFL_HANDLE_NIL)
-                    {
-                        /*
-                         * Join up with FS32_FILEINFO to do the actual setting.
-                         */
-                        rc = vboxSfOs2SetInfoCommonWorker(pFolder, pParams->Handle, fAttribs, pTimestamps, &pParams->Info);
-
-                        vrc = VbglR0SfClose(&g_SfClient, &pFolder->hHostFolder, pParams->Handle);
-                        AssertRC(vrc);
-                    }
-                    else
-                    {
-                        LogRel(("vboxSfOs2SetPathInfoWorker: No handle! fMode=%#x\n", pParams->Info.Attr.fMode));
-                        rc = ERROR_SYS_INTERNAL;
-                    }
-                    break;
-
-                case SHFL_PATH_NOT_FOUND:
-                    rc = ERROR_PATH_NOT_FOUND;
-                    break;
-
-                default:
-                case SHFL_FILE_NOT_FOUND:
-                    rc = ERROR_FILE_NOT_FOUND;
-                    break;
-            }
-        }
-        else
-            rc = vboxSfOs2ConvertStatusToOs2(vrc, ERROR_FILE_NOT_FOUND);
-        VbglR0PhysHeapFree(pParams);
     }
     else
-        rc = ERROR_NOT_ENOUGH_MEMORY;
+        rc = vboxSfOs2ConvertStatusToOs2(vrc, ERROR_FILE_NOT_FOUND);
     return rc;
 }
 
@@ -1867,10 +1864,11 @@ FS32_FILEATTRIBUTE(ULONG fFlags, PCDFSI pCdFsi, PVBOXSFCD pCdFsd, PCSZ pszName, 
     if (   fFlags == FA_RETRIEVE
         || fFlags == FA_SET)
     {
-        PVBOXSFFOLDER pFolder;
-        PSHFLSTRING   pStrFolderPath;
-        rc = vboxSfOs2ResolvePath(pszName, pCdFsd, offCurDirEnd, &pFolder, &pStrFolderPath);
-        LogRel(("FS32_FILEATTRIBUTE: vboxSfOs2ResolvePath: -> %u pFolder=%p\n", rc, pFolder));
+        /* Both setting and querying needs to make a create request. */
+        PVBOXSFFOLDER       pFolder;
+        VBOXSFCREATEREQ    *pReq;
+        rc = vboxSfOs2ResolvePathEx(pszName, pCdFsd, offCurDirEnd, RT_UOFFSETOF(VBOXSFCREATEREQ, StrPath),
+                                    &pFolder, (void **)&pReq);
         if (rc == NO_ERROR)
         {
             if (fFlags == FA_RETRIEVE)
@@ -1878,48 +1876,42 @@ FS32_FILEATTRIBUTE(ULONG fFlags, PCDFSI pCdFsi, PVBOXSFCD pCdFsd, PCSZ pszName, 
                 /*
                  * Query it.
                  */
-                SHFLCREATEPARMS *pParams = (SHFLCREATEPARMS *)VbglR0PhysHeapAlloc(sizeof(*pParams));
-                if (pParams)
+                pReq->CreateParms.CreateFlags = SHFL_CF_LOOKUP;
+
+                int vrc = vboxSfOs2HostReqCreate(pFolder, pReq);
+                LogFlow(("FS32_FILEATTRIBUTE: vboxSfOs2HostReqCreate -> %Rrc Result=%d fMode=%#x\n",
+                         vrc, pReq->CreateParms.Result, pReq->CreateParms.Info.Attr.fMode));
+                if (RT_SUCCESS(vrc))
                 {
-                    RT_ZERO(*pParams);
-                    pParams->CreateFlags = SHFL_CF_LOOKUP;
-
-                    int vrc = VbglR0SfCreate(&g_SfClient, &pFolder->hHostFolder, pStrFolderPath, pParams);
-                    LogFlow(("FS32_FILEATTRIBUTE: VbglR0SfCreate -> %Rrc Result=%d fMode=%#x\n", vrc, pParams->Result, pParams->Info.Attr.fMode));
-                    if (RT_SUCCESS(vrc))
+                    switch (pReq->CreateParms.Result)
                     {
-                        switch (pParams->Result)
-                        {
-                            case SHFL_FILE_EXISTS:
-                                *pfAttr = (uint16_t)((pParams->Info.Attr.fMode & RTFS_DOS_MASK_OS2) >> RTFS_DOS_SHIFT);
-                                rc = NO_ERROR;
-                                break;
+                        case SHFL_FILE_EXISTS:
+                            *pfAttr = (uint16_t)((pReq->CreateParms.Info.Attr.fMode & RTFS_DOS_MASK_OS2) >> RTFS_DOS_SHIFT);
+                            rc = NO_ERROR;
+                            break;
 
-                            case SHFL_PATH_NOT_FOUND:
-                                rc = ERROR_PATH_NOT_FOUND;
-                                break;
+                        case SHFL_PATH_NOT_FOUND:
+                            rc = ERROR_PATH_NOT_FOUND;
+                            break;
 
-                            default:
-                            case SHFL_FILE_NOT_FOUND:
-                                rc = ERROR_FILE_NOT_FOUND;
-                                break;
-                        }
+                        default:
+                        case SHFL_FILE_NOT_FOUND:
+                            rc = ERROR_FILE_NOT_FOUND;
+                            break;
                     }
-                    else
-                        rc = vboxSfOs2ConvertStatusToOs2(vrc, ERROR_FILE_NOT_FOUND);
-                    VbglR0PhysHeapFree(pParams);
                 }
                 else
-                    rc = ERROR_NOT_ENOUGH_MEMORY;
+                    rc = vboxSfOs2ConvertStatusToOs2(vrc, ERROR_FILE_NOT_FOUND);
             }
             else
             {
                 /*
                  * Set the info.  Join paths with FS32_PATHINFO.
                  */
-                rc = vboxSfOs2SetPathInfoWorker(pFolder, pStrFolderPath, *pfAttr, NULL);
+                rc = vboxSfOs2SetPathInfoWorker(pFolder, pReq, *pfAttr, NULL);
             }
-            vboxSfOs2ReleasePathAndFolder(pStrFolderPath, pFolder);
+            VbglR0PhysHeapFree(pReq);
+            vboxSfOs2ReleaseFolder(pFolder);
         }
     }
     else
@@ -2115,17 +2107,17 @@ vboxSfOs2MakeEmptyEaList(PEAOP pEaOp, ULONG uLevel)
  *
  * @returns OS/2 status code
  * @param   pFolder         The folder.
- * @param   pStrFolderPath  The path within the folder.
+ * @param   pReq            Open/create request buffer with folder path.
  * @param   pszPath         The original path for figuring the drive letter or
  *                          UNC part of the path.
  * @param   pbData          Where to return the data (user address).
  * @param   cbData          The maximum amount of data we can return.
  */
-static int vboxSfOs2QueryCorrectCase(PVBOXSFFOLDER pFolder, PSHFLSTRING pStrFolderPath, const char *pszPath,
+static int vboxSfOs2QueryCorrectCase(PVBOXSFFOLDER pFolder, VBOXSFCREATEREQ *pReq, const char *pszPath,
                                      PBYTE pbData, ULONG cbData)
 {
 /** @todo do case correction.  Can do step-by-step dir info... but slow */
-    RT_NOREF(pFolder, pStrFolderPath, pszPath, pbData, cbData);
+    RT_NOREF(pFolder, pReq, pszPath, pbData, cbData);
     return ERROR_NOT_SUPPORTED;
 }
 
@@ -2181,73 +2173,66 @@ vboxSfOs2FileStatusFromObjInfo(PBYTE pbDst, ULONG cbDst, ULONG uLevel, SHFLFSOBJ
  *
  * @returns OS/2 status code
  * @param   pFolder         The folder.
- * @param   pStrFolderPath  The path within the folder.
+ * @param   pReq            Open/create request buffer with folder path.
  * @param   uLevel          The information level.
  * @param   pbData          Where to return the data (user address).
  * @param   cbData          The amount of data to produce.
  */
-static APIRET vboxSfOs2QueryPathInfo(PVBOXSFFOLDER pFolder, PSHFLSTRING pStrFolderPath, ULONG uLevel, PBYTE pbData, ULONG cbData)
+static APIRET vboxSfOs2QueryPathInfo(PVBOXSFFOLDER pFolder, VBOXSFCREATEREQ *pReq, ULONG uLevel, PBYTE pbData, ULONG cbData)
 {
     APIRET rc;
-    SHFLCREATEPARMS *pParams = (SHFLCREATEPARMS *)VbglR0PhysHeapAlloc(sizeof(*pParams));
-    if (pParams)
+    pReq->CreateParms.CreateFlags = SHFL_CF_LOOKUP;
+
+    int vrc = vboxSfOs2HostReqCreate(pFolder, pReq);
+    LogFlow(("FS32_PATHINFO: vboxSfOs2HostReqCreate -> %Rrc Result=%d fMode=%#x\n",
+             vrc, pReq->CreateParms.Result, pReq->CreateParms.Info.Attr.fMode));
+    if (RT_SUCCESS(vrc))
     {
-        RT_ZERO(*pParams);
-        pParams->CreateFlags = SHFL_CF_LOOKUP;
-
-        int vrc = VbglR0SfCreate(&g_SfClient, &pFolder->hHostFolder, pStrFolderPath, pParams);
-        LogFlow(("FS32_PATHINFO: VbglR0SfCreate -> %Rrc Result=%d fMode=%#x\n", vrc, pParams->Result, pParams->Info.Attr.fMode));
-        if (RT_SUCCESS(vrc))
+        switch (pReq->CreateParms.Result)
         {
-            switch (pParams->Result)
-            {
-                case SHFL_FILE_EXISTS:
-                    switch (uLevel)
-                    {
-                        /*
-                         * Produce the desired file stat data.
-                         */
-                        case FI_LVL_STANDARD:
-                        case FI_LVL_STANDARD_EASIZE:
-                        case FI_LVL_STANDARD_64:
-                        case FI_LVL_STANDARD_EASIZE_64:
-                            rc = vboxSfOs2FileStatusFromObjInfo(pbData, cbData, uLevel, &pParams->Info);
-                            break;
+            case SHFL_FILE_EXISTS:
+                switch (uLevel)
+                {
+                    /*
+                     * Produce the desired file stat data.
+                     */
+                    case FI_LVL_STANDARD:
+                    case FI_LVL_STANDARD_EASIZE:
+                    case FI_LVL_STANDARD_64:
+                    case FI_LVL_STANDARD_EASIZE_64:
+                        rc = vboxSfOs2FileStatusFromObjInfo(pbData, cbData, uLevel, &pReq->CreateParms.Info);
+                        break;
 
-                        /*
-                         * We don't do EAs and we "just" need to return no-EAs.
-                         * However, that's not as easy as you might think.
-                         */
-                        case FI_LVL_EAS_FROM_LIST:
-                        case FI_LVL_EAS_FULL:
-                        case FI_LVL_EAS_FULL_5:
-                        case FI_LVL_EAS_FULL_8:
-                            rc = vboxSfOs2MakeEmptyEaList((PEAOP)pbData, uLevel);
-                            break;
+                    /*
+                     * We don't do EAs and we "just" need to return no-EAs.
+                     * However, that's not as easy as you might think.
+                     */
+                    case FI_LVL_EAS_FROM_LIST:
+                    case FI_LVL_EAS_FULL:
+                    case FI_LVL_EAS_FULL_5:
+                    case FI_LVL_EAS_FULL_8:
+                        rc = vboxSfOs2MakeEmptyEaList((PEAOP)pbData, uLevel);
+                        break;
 
-                        default:
-                            AssertFailed();
-                            rc = ERROR_GEN_FAILURE;
-                            break;
-                    }
-                    break;
+                    default:
+                        AssertFailed();
+                        rc = ERROR_GEN_FAILURE;
+                        break;
+                }
+                break;
 
-                case SHFL_PATH_NOT_FOUND:
-                    rc = ERROR_PATH_NOT_FOUND;
-                    break;
+            case SHFL_PATH_NOT_FOUND:
+                rc = ERROR_PATH_NOT_FOUND;
+                break;
 
-                default:
-                case SHFL_FILE_NOT_FOUND:
-                    rc = ERROR_FILE_NOT_FOUND;
-                    break;
-            }
+            default:
+            case SHFL_FILE_NOT_FOUND:
+                rc = ERROR_FILE_NOT_FOUND;
+                break;
         }
-        else
-            rc = vboxSfOs2ConvertStatusToOs2(vrc, ERROR_FILE_NOT_FOUND);
-        VbglR0PhysHeapFree(pParams);
     }
     else
-        rc = ERROR_NOT_ENOUGH_MEMORY;
+        rc = vboxSfOs2ConvertStatusToOs2(vrc, ERROR_FILE_NOT_FOUND);
     return rc;
 }
 
@@ -2315,10 +2300,10 @@ FS32_PATHINFO(USHORT fFlags, PCDFSI pCdFsi, PVBOXSFCD pCdFsd, PCSZ pszPath, LONG
     /*
      * Resolve the path to a folder and folder path.
      */
-    PVBOXSFFOLDER pFolder;
-    PSHFLSTRING   pStrFolderPath;
-    APIRET rc = vboxSfOs2ResolvePath(pszPath, pCdFsd, offCurDirEnd, &pFolder, &pStrFolderPath);
-    LogFlow(("FS32_PATHINFO: vboxSfOs2ResolvePath: -> %u pFolder=%p\n", rc, pFolder));
+    PVBOXSFFOLDER       pFolder;
+    VBOXSFCREATEREQ    *pReq;
+    int rc = vboxSfOs2ResolvePathEx(pszPath, pCdFsd, offCurDirEnd, RT_UOFFSETOF(VBOXSFCREATEREQ, StrPath),
+                                    &pFolder, (void **)&pReq);
     if (rc == NO_ERROR)
     {
         /*
@@ -2328,11 +2313,11 @@ FS32_PATHINFO(USHORT fFlags, PCDFSI pCdFsi, PVBOXSFCD pCdFsd, PCSZ pszPath, LONG
         {
             if (   uLevel != FI_LVL_VERIFY_PATH
                 && uLevel != FI_LVL_CASE_CORRECT_PATH)
-                rc = vboxSfOs2QueryPathInfo(pFolder, pStrFolderPath, uLevel, pbData, cbMinData);
+                rc = vboxSfOs2QueryPathInfo(pFolder, pReq, uLevel, pbData, cbMinData);
             else if (uLevel == FI_LVL_VERIFY_PATH)
                 rc = NO_ERROR; /* vboxSfOs2ResolvePath should've taken care of this already */
             else
-                rc = vboxSfOs2QueryCorrectCase(pFolder, pStrFolderPath, pszPath, pbData, cbData);
+                rc = vboxSfOs2QueryCorrectCase(pFolder, pReq, pszPath, pbData, cbData);
         }
         /*
          * Update information.
@@ -2349,7 +2334,7 @@ FS32_PATHINFO(USHORT fFlags, PCDFSI pCdFsi, PVBOXSFCD pCdFsd, PCSZ pszPath, LONG
                 {
                     rc = KernCopyIn(pDataCopy, pbData, cbMinData);
                     if (rc == NO_ERROR)
-                        rc = vboxSfOs2SetPathInfoWorker(pFolder, pStrFolderPath,
+                        rc = vboxSfOs2SetPathInfoWorker(pFolder, pReq,
                                                         uLevel == FI_LVL_STANDARD
                                                         ? (ULONG)pDataCopy->attrFile
                                                         : ((PFILESTATUS3L)pDataCopy)->attrFile,
@@ -2369,7 +2354,8 @@ FS32_PATHINFO(USHORT fFlags, PCDFSI pCdFsi, PVBOXSFCD pCdFsd, PCSZ pszPath, LONG
             LogRel(("FS32_PATHINFO: Unknown flags value: %#x (path: %s)\n", fFlags, pszPath));
             rc = ERROR_INVALID_PARAMETER;
         }
-        vboxSfOs2ReleasePathAndFolder(pStrFolderPath, pFolder);
+        VbglR0PhysHeapFree(pReq);
+        vboxSfOs2ReleaseFolder(pFolder);
     }
     RT_NOREF_PV(pCdFsi);
     return rc;
