@@ -1992,7 +1992,8 @@ static int sb16CreateDrvStream(PSB16STATE pThis, PPDMAUDIOSTREAMCFG pCfg, PSB16D
         LogFlowFunc(("LUN#%RU8: Created output \"%s\", rc=%Rrc\n", pDrv->uLUN, pCfg->szName, rc));
     }
 
-    RTMemFree(pCfgHost);
+    DrvAudioHlpStreamCfgFree(pCfgHost);
+
     return rc;
 }
 
