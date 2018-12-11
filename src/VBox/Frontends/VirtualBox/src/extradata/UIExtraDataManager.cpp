@@ -3708,7 +3708,8 @@ void UIExtraDataManager::setGuestScreenAutoResizeEnabled(bool fEnabled, const QU
 bool UIExtraDataManager::lastGuestScreenVisibilityStatus(ulong uScreenIndex, const QUuid &uID)
 {
     /* Not for primary screen: */
-    AssertReturn(uScreenIndex > 0, true);
+    if (uScreenIndex == 0)
+        return true;
 
     /* Compose corresponding key: */
     const QString strKey = extraDataKeyPerScreen(GUI_LastVisibilityStatusForGuestScreen, uScreenIndex);
@@ -3720,7 +3721,8 @@ bool UIExtraDataManager::lastGuestScreenVisibilityStatus(ulong uScreenIndex, con
 void UIExtraDataManager::setLastGuestScreenVisibilityStatus(ulong uScreenIndex, bool fEnabled, const QUuid &uID)
 {
     /* Not for primary screen: */
-    AssertReturnVoid(uScreenIndex > 0);
+    if (uScreenIndex == 0)
+        return;
 
     /* Compose corresponding key: */
     const QString strKey = extraDataKeyPerScreen(GUI_LastVisibilityStatusForGuestScreen, uScreenIndex);

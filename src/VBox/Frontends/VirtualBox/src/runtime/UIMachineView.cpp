@@ -318,6 +318,9 @@ void UIMachineView::sltPerformGuestResize(const QSize &toSize)
             "Sending guest size-hint to screen %d as %dx%d if necessary\n",
             (int)screenId(), size.width(), size.height()));
 
+    /* Record the hint to extra data, needed for guests using VMSVGA: */
+    storeGuestSizeHint(size);
+
     /* If auto-mount of guest-screens (auto-pilot) enabled: */
     if (gEDataManager->autoMountGuestScreensEnabled(vboxGlobal().managedVMUuid()))
     {
@@ -433,7 +436,13 @@ void UIMachineView::sltHandleNotifyChange(int iWidth, int iHeight)
 
     /* If we are in normal or scaled mode and if GA are active,
      * remember the guest-screen size to be able to restore it when necessary: */
-    if (!isFullscreenOrSeamless() && uisession()->isGuestSupportsGraphics())
+    /* As machines with Linux/Solaris and VMSVGA are not able to tell us
+     * whether a resize was due to the system or user interaction we currently
+     * do not store hints for these systems except when we explicitly send them
+     * ourselves.  Windows guests should use VBoxVGA controllers, not VMSVGA. */
+    if (   !isFullscreenOrSeamless()
+        && uisession()->isGuestSupportsGraphics()
+        && (machine().GetGraphicsControllerType() != KGraphicsControllerType_VMSVGA))
         storeGuestSizeHint(QSize(iWidth, iHeight));
 
     LogRelFlow(("GUI: UIMachineView::sltHandleNotifyChange: Complete for Screen=%d, Size=%dx%d\n",

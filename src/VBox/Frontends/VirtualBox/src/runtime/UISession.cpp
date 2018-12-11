@@ -2060,6 +2060,9 @@ void UISession::setScreenVisibleHostDesires(ulong uScreenId, bool fIsMonitorVisi
 
     /* Remember 'actual' (host-desire) visibility status: */
     m_monitorVisibilityVectorHostDesires[(int)uScreenId] = fIsMonitorVisible;
+
+    /* And remember the request in extra data for guests with VMSVGA: */
+    gEDataManager->setLastGuestScreenVisibilityStatus(uScreenId, fIsMonitorVisible, vboxGlobal().managedVMUuid());
 }
 
 bool UISession::isScreenVisible(ulong uScreenId) const
@@ -2079,7 +2082,9 @@ void UISession::setScreenVisible(ulong uScreenId, bool fIsMonitorVisible)
     /* Remember 'actual' visibility status: */
     m_monitorVisibilityVector[(int)uScreenId] = fIsMonitorVisible;
     /* Remember 'desired' visibility status: */
-    gEDataManager->setLastGuestScreenVisibilityStatus(uScreenId, fIsMonitorVisible, vboxGlobal().managedVMUuid());
+    /* See note in UIMachineView::sltHandleNotifyChange() regarding the graphics controller check. */
+    if (machine().GetGraphicsControllerType() != KGraphicsControllerType_VMSVGA)
+        gEDataManager->setLastGuestScreenVisibilityStatus(uScreenId, fIsMonitorVisible, vboxGlobal().managedVMUuid());
 
     /* Make sure action-pool knows guest-screen visibility status: */
     actionPool()->toRuntime()->setGuestScreenVisible(uScreenId, fIsMonitorVisible);
