@@ -269,9 +269,17 @@ ifdef VBOX_WITH_ADDITIONS_ISO.win.x86
 	VBoxWindowsAdditions-x86.exe=$(VBOX_PATH_ADDITIONS.win.x86)/VBoxWindowsAdditions-x86.exe \
 	VBoxWindowsAdditions.exe=$(VBOX_PATH_ADDITIONS.win.x86)/VBoxWindowsAdditions.exe \
 	AUTORUN.INF=$(VBOX_PATH_ADDITIONS_SRC)/WINNT/Installer/ISO/AUTORUN.INF \
-	32Bit/Readme.txt=$(VBOX_PATH_ADDITIONS_SRC)/WINNT/Installer/ISO/ReadmeDrivers.txt \
-	64Bit/Readme.txt=$(VBOX_PATH_ADDITIONS_SRC)/WINNT/Installer/ISO/ReadmeDrivers.txt \
-	cert/VBoxCertUtil.exe=$(VBOX_PATH_ADDITIONS.win.x86)/VBoxCertUtil.exe
+	cert/VBoxCertUtil.exe=$(VBOX_PATH_ADDITIONS.win.x86)/VBoxCertUtil.exe \
+	NT3x/Readme.txt=$(VBOX_PATH_ADDITIONS_SRC)/WINNT/Installer/ISO/NT3xReadme.txt \
+	NT3x/VBoxGuest.sys=$(VBOX_PATH_ADDITIONS.win.x86)/VBoxGuest.sys \
+	NT3x/VBoxGuest.cat=$(VBOX_PATH_ADDITIONS.win.x86)/VBoxGuest.cat \
+	NT3x/VBoxGuest.inf=$(VBOX_PATH_ADDITIONS.win.x86)/VBoxGuest.inf \
+	NT3x/VBoxMouseNT.sys=$(VBOX_PATH_ADDITIONS.win.x86)/VBoxMouseNT.sys \
+	NT3x/VBoxMouse.inf=$(VBOX_PATH_ADDITIONS.win.x86)/VBoxMouse.inf \
+	NT3x/VBoxMouse.cat=$(VBOX_PATH_ADDITIONS.win.x86)/VBoxMouse.cat \
+	NT3x/VBoxMouse.sys=$(VBOX_PATH_ADDITIONS.win.x86)/VBoxMouse.sys \
+	NT3x/VBoxControl.exe=$(VBOX_PATH_ADDITIONS.win.x86)/VBoxControl.exe \
+	NT3x/VBoxService.exe=$(VBOX_PATH_ADDITIONS.win.x86)/VBoxService.exe
 endif # win.x86
 
 if defined(VBOX_WITH_ADDITIONS_ISO.win.amd64) || defined(VBOX_WITH_ADDITIONS_ISO.win.x86)

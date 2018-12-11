@@ -16,7 +16,7 @@
 #
 
 /ISO/AUTORUN.INF: --treat-as drvinf --del-action force-native-eol --add-action force-crlf
---filter-out-files /ISO/ReadmeDrivers.txt
+/ISO/NT3xReadme.txt: --add-action force-crlf
 
 /dumplog.nsh:           --external-copyright
 /ReplaceDLL.nsh:        --external-copyright
