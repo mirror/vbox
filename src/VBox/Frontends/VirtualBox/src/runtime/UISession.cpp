@@ -2062,6 +2062,7 @@ void UISession::setScreenVisibleHostDesires(ulong uScreenId, bool fIsMonitorVisi
     m_monitorVisibilityVectorHostDesires[(int)uScreenId] = fIsMonitorVisible;
 
     /* And remember the request in extra data for guests with VMSVGA: */
+    /* This should be done before the actual hint is sent in case the guest overrides it. */
     gEDataManager->setLastGuestScreenVisibilityStatus(uScreenId, fIsMonitorVisible, vboxGlobal().managedVMUuid());
 }
 

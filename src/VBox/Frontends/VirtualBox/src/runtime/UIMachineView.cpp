@@ -319,6 +319,7 @@ void UIMachineView::sltPerformGuestResize(const QSize &toSize)
             (int)screenId(), size.width(), size.height()));
 
     /* Record the hint to extra data, needed for guests using VMSVGA: */
+    /* This should be done before the actual hint is sent in case the guest overrides it. */
     storeGuestSizeHint(size);
 
     /* If auto-mount of guest-screens (auto-pilot) enabled: */

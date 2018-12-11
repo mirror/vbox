@@ -179,10 +179,10 @@ void UIMachineViewScale::resendSizeHint()
     setMaxGuestSize(sizeHint);
 
     /* Send saved size-hint to the guest: */
+    uisession()->setScreenVisibleHostDesires(screenId(), guestScreenVisibilityStatus());
     display().SetVideoModeHint(screenId(),
                                guestScreenVisibilityStatus(),
                                false, 0, 0, sizeHint.width(), sizeHint.height(), 0);
-    uisession()->setScreenVisibleHostDesires(screenId(), guestScreenVisibilityStatus());
 }
 
 QSize UIMachineViewScale::sizeHint() const
