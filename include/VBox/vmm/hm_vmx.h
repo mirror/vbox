@@ -1161,10 +1161,10 @@ typedef struct VMXMSRS
     uint64_t        u64VmcsEnum;
     uint64_t        u64VmFunc;
     uint64_t        u64EptVpidCaps;
-    uint64_t        a_u64Reserved[2];
+    uint64_t        a_u64Reserved[5];
 } VMXMSRS;
 AssertCompileSizeAlignment(VMXMSRS, 8);
-AssertCompileSize(VMXMSRS, 168);
+AssertCompileSize(VMXMSRS, 192);
 /** Pointer to a VMXMSRS struct. */
 typedef VMXMSRS *PVMXMSRS;
 /** Pointer to a const VMXMSRS struct. */
