@@ -55,7 +55,7 @@ VBOX_WIN_INST_REPACK_DIR   := $(PATH_OUT)/repack
 
 # Note: en_US *must* come first for the dependency file generation.
 ifndef VBOX_INSTALLER_LANGUAGES
- VBOX_INSTALLER_LANGUAGES   = en_US de_DE fa_IR fr_FR it_IT tr_TR zh_TW
+ VBOX_INSTALLER_LANGUAGES   = en_US de_DE fr_FR it_IT tr_TR zh_TW
  VBOX_INSTALLER_LANGUAGES  += $(VBOX_INSTALLER_ADD_LANGUAGES)
 endif
 
@@ -108,6 +108,7 @@ $(foreach lang,$(sort $(VBOX_INSTALLER_LANGUAGES) $(VBOX_LICENSE_ADD_LANGUAGES) 
 # Exceptions:
 VBOX_BRAND_zh_TW_LANGUAGE_CODEPAGE := 950
 VBOX_BRAND_fa_IR_LANGUAGE_CODEPAGE := 1256
+VBOX_BRAND_tr_TR_LANGUAGE_CODEPAGE := 1254
 
 #
 # If we want to build a combined package, we separate all common stuff
