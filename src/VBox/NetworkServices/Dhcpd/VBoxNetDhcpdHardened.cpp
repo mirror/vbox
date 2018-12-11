@@ -20,6 +20,6 @@
 
 int main(int argc, char **argv, char **envp)
 {
-    return SUPR3HardenedMain("VBoxNetDhcpd", 0 /* fFlags */, argc, argv, envp);
+    return SUPR3HardenedMain("VBoxNetDHCP", 0 /* fFlags */, argc, argv, envp);
 }
 
