@@ -126,6 +126,7 @@
     <String Id="Customize2Dlg_CreateStartMenuEntries">Create start menu entries</String>
     <String Id="Customize2Dlg_CreateDesktopShortcut">Masaüstüne kısayol oluştur</String>
     <String Id="Customize2Dlg_CreateQuickLaunch">Hızlı Başlat Çubuğuna kısayol oluştur</String>
+    <String Id="Customize2Dlg_RegisterFileExtensions">Dosya uzantılarını kayda geçir.</String>
 
 	<!---->
 
