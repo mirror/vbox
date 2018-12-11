@@ -29,7 +29,11 @@
 
 /* GUI includes: */
 # include "QIAdvancedSlider.h"
+# include "UIDesktopWidgetWatchdog.h"
 # include "UIScaleFactorEditor.h"
+
+/* External includes: */
+# include <math.h>
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
@@ -254,7 +258,7 @@ void UIScaleFactorEditor::prepare()
                 this, &UIScaleFactorEditor::sltScaleSpinBoxValueChanged);
     }
 
-
+    configureScaleFactorMinMaxValues();
     setLayout(m_pMainLayout);
     retranslateUi();
 }
@@ -303,4 +307,28 @@ void UIScaleFactorEditor::updateValuesAfterMonitorChange()
         setSliderValue(100 * m_scaleFactors.at(currentMonitorIndex));
 
     }
+}
+
+void UIScaleFactorEditor::configureScaleFactorMinMaxValues()
+{
+    int iHostScreenCount = gpDesktop->screenCount();
+    if (iHostScreenCount == 0)
+        return;
+    double dMaxDevicePixelRatio = gpDesktop->devicePixelRatio(0);
+    for (int i = 1; i < iHostScreenCount; ++i)
+        if (dMaxDevicePixelRatio < gpDesktop->devicePixelRatio(i))
+            dMaxDevicePixelRatio = gpDesktop->devicePixelRatio(i);
+
+    const int iMinimum = 100;
+    const int iMaximum = ceil(iMinimum + 100 * dMaxDevicePixelRatio);
+
+    const int iStep = 25;
+
+    m_pScaleSlider->setMinimum(iMinimum);
+    m_pScaleSlider->setMaximum(iMaximum);
+    m_pScaleSlider->setPageStep(iStep);
+    m_pScaleSlider->setSingleStep(1);
+    m_pScaleSlider->setTickInterval(iStep);
+    m_pScaleSpinBox->setMinimum(iMinimum);
+    m_pScaleSpinBox->setMaximum(iMaximum);
 }

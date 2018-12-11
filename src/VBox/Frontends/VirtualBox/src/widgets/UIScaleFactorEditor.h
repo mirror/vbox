@@ -86,7 +86,8 @@ private:
 
     /** Sets the spinbox and slider to scale factor of currently selected monitor. */
     void updateValuesAfterMonitorChange();
-
+    /** Sets the min/max values of related widgets wrt. device pixel ratio(s) */
+    void configureScaleFactorMinMaxValues();
     /** @name Member widgets.
       * @{ */
         QSpinBox         *m_pScaleSpinBox;
