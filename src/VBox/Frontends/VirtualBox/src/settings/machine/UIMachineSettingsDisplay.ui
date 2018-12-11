@@ -475,7 +475,7 @@
                </property>
               </widget>
              </item>
-             <item row="0" column="1" colspan="1">
+             <item row="0" column="1" colspan="3">
               <widget class="QComboBox" name="m_pComboBoxCaptureMode">
                <property name="whatsThis">
                 <string>Stores the recording mode.</string>
