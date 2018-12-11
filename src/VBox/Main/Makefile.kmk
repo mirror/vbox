@@ -426,6 +426,7 @@ VBoxSVC_SOURCES = \
 	src-all/DisplayUtils.cpp \
 	src-all/EventImpl.cpp \
 	src-all/Global.cpp \
+	src-all/GlobalStatusConversion.cpp \
 	src-all/HashedPw.cpp \
 	src-all/Logging.cpp \
 	src-all/PCIDeviceAttachmentImpl.cpp \
@@ -850,6 +851,7 @@ VBoxC_SOURCES += \
 	src-all/DisplayUtils.cpp \
 	src-all/EventImpl.cpp \
 	src-all/Global.cpp \
+	src-all/GlobalStatusConversion.cpp \
 	src-all/HashedPw.cpp \
 	src-all/Logging.cpp \
 	src-all/PCIDeviceAttachmentImpl.cpp \
@@ -994,6 +996,7 @@ endif
  VBoxClient-x86_SOURCES = \
  	src-all/EventImpl.cpp \
  	src-all/Global.cpp \
+ 	src-all/GlobalStatusConversion.cpp \
 	src-all/AutoCaller.cpp \
  	src-all/ThreadTask.cpp \
  	src-all/VirtualBoxBase.cpp \
