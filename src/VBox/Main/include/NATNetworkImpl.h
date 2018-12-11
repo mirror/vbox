@@ -117,6 +117,8 @@ private:
     void i_getPortForwardRulesFromMap(std::vector<Utf8Str> &aPortForwardRules, settings::NATRulesMap &aRules);
 
     void i_updateDnsOptions();
+    void i_updateDomainNameOption(ComPtr<IHost> &host);
+    void i_updateDomainNameServerOption(ComPtr<IHost> &host);
 
     struct Data;
     Data *m;

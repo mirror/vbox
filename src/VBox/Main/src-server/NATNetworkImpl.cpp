@@ -642,84 +642,109 @@ HRESULT NATNetwork::removePortForwardRule(BOOL aIsIpv6, const com::Utf8Str &aPor
 }
 
 
-void NATNetwork::i_updateDnsOptions()
+void NATNetwork::i_updateDomainNameOption(ComPtr<IHost> &host)
+{
+    com::Bstr domain;
+    if (FAILED(host->COMGETTER(DomainName)(domain.asOutParam())))
+        LogRel(("NATNetwork: Failed to get host's domain name\n"));
+    if (domain.isNotEmpty())
+    {
+        HRESULT hrc = m->dhcpServer->AddGlobalOption(DhcpOpt_DomainName, domain.raw());
+        if (FAILED(hrc))
+            LogRel(("NATNetwork: Failed to add domain name option with %Rhrc\n", hrc));
+    }
+    else
+        m->dhcpServer->RemoveGlobalOption(DhcpOpt_DomainName);
+}
+
+void NATNetwork::i_updateDomainNameServerOption(ComPtr<IHost> &host)
 {
     RTNETADDRIPV4 networkid, netmask;
 
     int rc = RTCidrStrToIPv4(m->s.strIPv4NetworkCidr.c_str(), &networkid, &netmask);
     if (RT_FAILURE(rc))
+    {
+        LogRel(("NATNetwork: Failed to parse cidr %s with %Rrc\n", m->s.strIPv4NetworkCidr.c_str(), rc));
         return;
+    }
 
+    com::SafeArray<BSTR> nameServers;
+    HRESULT hrc = host->COMGETTER(NameServers)(ComSafeArrayAsOutParam(nameServers));
+    if (FAILED(hrc))
+    {
+        LogRel(("NATNetwork: Failed to get name servers from host with %Rhrc\n", hrc));
+        return;
+    }
+
+    size_t cAddresses = nameServers.size();
+    if (cAddresses)
+    {
+        RTCList<RTCString> lstServers;
+        /* The following code was copied (and adapted a bit) from VBoxNetDhcp::hostDnsServers */
+        /*
+        * Recent fashion is to run dnsmasq on 127.0.1.1 which we
+        * currently can't map.  If that's the only nameserver we've got,
+        * we need to use DNS proxy for VMs to reach it.
+        */
+        bool fUnmappedLoopback = false;
+
+        for (size_t i = 0; i < nameServers.size(); ++i)
+        {
+            RTNETADDRIPV4 addr;
+
+            com::Utf8Str strNameServerAddress(nameServers[i]);
+            rc = RTNetStrToIPv4Addr(strNameServerAddress.c_str(), &addr);
+            if (RT_FAILURE(rc))
+            {
+                LogRel(("NATNetwork: Failed to parse IP address %s with %Rrc\n", strNameServerAddress.c_str(), rc));
+                continue;
+            }
+
+            if (addr.u == INADDR_ANY)
+            {
+                /*
+                * This doesn't seem to be very well documented except for
+                * RTFS of res_init.c, but INADDR_ANY is a valid value for
+                * for "nameserver".
+                */
+                addr.u = RT_H2N_U32_C(INADDR_LOOPBACK);
+            }
+
+            if (addr.au8[0] == 127)
+            {
+                settings::NATLoopbackOffsetList::const_iterator it;
+
+                it = std::find(m->s.llHostLoopbackOffsetList.begin(),
+                               m->s.llHostLoopbackOffsetList.end(),
+                               strNameServerAddress);
+                if (it == m->s.llHostLoopbackOffsetList.end())
+                {
+                    fUnmappedLoopback = true;
+                    continue;
+                }
+                addr.u = RT_H2N_U32(RT_N2H_U32(networkid.u) + it->u32Offset);
+            }
+            lstServers.append(RTCStringFmt("%RTnaipv4", addr));
+        }
+
+        if (lstServers.isEmpty() && fUnmappedLoopback)
+            lstServers.append(RTCStringFmt("%RTnaipv4", networkid.u | RT_H2N_U32_C(1U))); /* proxy */
+
+        hrc = m->dhcpServer->AddGlobalOption(DhcpOpt_DomainNameServer, Bstr(RTCString::join(lstServers, " ")).raw());
+        if (FAILED(hrc))
+            LogRel(("NATNetwork: Failed to add domain name server option '%s' with %Rhrc\n", RTCString::join(lstServers, " ").c_str(), hrc));
+    }
+    else
+        m->dhcpServer->RemoveGlobalOption(DhcpOpt_DomainNameServer);
+}
+
+void NATNetwork::i_updateDnsOptions()
+{
     ComPtr<IHost> host;
     if (SUCCEEDED(m->pVirtualBox->COMGETTER(Host)(host.asOutParam())))
     {
-        com::Bstr domain;
-        if (SUCCEEDED(host->COMGETTER(DomainName)(domain.asOutParam())))
-        {
-            if (domain.isNotEmpty())
-                m->dhcpServer->AddGlobalOption(DhcpOpt_DomainName, domain.raw());
-        }
-        RTCList<RTCString> lstServers;
-        com::SafeArray<BSTR> nameServers;
-        if (SUCCEEDED(host->COMGETTER(NameServers)(ComSafeArrayAsOutParam(nameServers))))
-        {
-            size_t cAddresses = nameServers.size();
-            if (cAddresses)
-            {
-                /* The following code was copied (and adapted a bit) from VBoxNetDhcp::hostDnsServers */
-                /*
-                * Recent fashion is to run dnsmasq on 127.0.1.1 which we
-                * currently can't map.  If that's the only nameserver we've got,
-                * we need to use DNS proxy for VMs to reach it.
-                */
-                bool fUnmappedLoopback = false;
-
-                for (size_t i = 0; i < nameServers.size(); ++i)
-                {
-                    RTNETADDRIPV4 addr;
-
-                    com::Utf8Str strNameServerAddress(nameServers[i]);
-                    rc = RTNetStrToIPv4Addr(strNameServerAddress.c_str(), &addr);
-                    if (RT_FAILURE(rc))
-                        continue;
-
-                    if (addr.u == INADDR_ANY)
-                    {
-                        /*
-                        * This doesn't seem to be very well documented except for
-                        * RTFS of res_init.c, but INADDR_ANY is a valid value for
-                        * for "nameserver".
-                        */
-                        addr.u = RT_H2N_U32_C(INADDR_LOOPBACK);
-                    }
-
-                    if (addr.au8[0] == 127)
-                    {
-                        settings::NATLoopbackOffsetList::const_iterator it;
-                        for (it = m->s.llHostLoopbackOffsetList.begin();
-                             it != m->s.llHostLoopbackOffsetList.end(); ++it)
-                        {
-                            if (it->strLoopbackHostAddress == strNameServerAddress)
-                            {
-                                addr.u = RT_H2N_U32(RT_N2H_U32(networkid.u) + it->u32Offset);
-                                break;
-                            }
-                        }
-                        if (it == m->s.llHostLoopbackOffsetList.end())
-                        {
-                            fUnmappedLoopback = true;
-                            continue;
-                        }
-                    }
-                    lstServers.append(RTCStringFmt("%RTnaipv4", addr));
-                }
-
-                if (lstServers.isEmpty() && fUnmappedLoopback)
-                    lstServers.append(RTCStringFmt("%RTnaipv4", networkid.u | RT_H2N_U32_C(1U))); /* proxy */
-
-                m->dhcpServer->AddGlobalOption(DhcpOpt_DomainNameServer, Bstr(RTCString::join(lstServers, " ")).raw());
-            }
-        }
+        i_updateDomainNameOption(host);
+        i_updateDomainNameServerOption(host);
     }
 }
 
