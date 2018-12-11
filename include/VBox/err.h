@@ -1676,7 +1676,8 @@
 #define VERR_VD_RAW_SIZE_OPTICAL_TOO_SMALL          (-3288)
 /** The size of the raw floppy image is too big (>2.88MB) */
 #define VERR_VD_RAW_SIZE_FLOPPY_TOO_BIG             (-3289)
-
+/** Reducing the size is not supported */
+#define VERR_VD_SHRINK_NOT_SUPPORTED                (-3290)
 /** @} */
 
 
