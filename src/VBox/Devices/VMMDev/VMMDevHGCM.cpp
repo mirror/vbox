@@ -1190,8 +1190,10 @@ int vmmdevHGCMCancel2(PVMMDEV pThis, RTGCPHYS GCPhys)
  * @param   pThis           The VMMDev instance data.
  * @param   pCmd            Completed call command.
  * @param   pHGCMCall       The guestrequest which needs updating (cached in the host memory).
+ * @param   pbReq           The request copy or locked memory for handling
+ *                          embedded buffers.
  */
-static int vmmdevHGCMCompleteCallRequest(PVMMDEV pThis, PVBOXHGCMCMD pCmd, VMMDevHGCMCall *pHGCMCall)
+static int vmmdevHGCMCompleteCallRequest(PVMMDEV pThis, PVBOXHGCMCMD pCmd, VMMDevHGCMCall *pHGCMCall, uint8_t *pbReq)
 {
     AssertReturn(pCmd->enmCmdType == VBOXHGCMCMDTYPE_CALL, VERR_INTERNAL_ERROR);
 
@@ -1246,10 +1248,7 @@ static int vmmdevHGCMCompleteCallRequest(PVMMDEV pThis, PVBOXHGCMCMD pCmd, VMMDe
                     const void *pvSrc    = pHostParm->u.pointer.addr;
                     uint32_t    cbSrc    = pHostParm->u.pointer.size;
                     uint32_t    cbToCopy = RT_MIN(cbSrc, pPtr->cbData);
-                    if (pCmd->pvReqLocked)
-                        memcpy((uint8_t *)pCmd->pvReqLocked + pPtr->offFirstPage, pvSrc, cbToCopy);
-                    else
-                        rc = PDMDevHlpPhysWrite(pThis->pDevInsR3, pGuestParm->u.ptr.GCPhysSinglePage, pvSrc, cbToCopy);
+                    memcpy(pbReq + pPtr->offFirstPage, pvSrc, cbToCopy);
                 }
                 break;
             }
@@ -1345,7 +1344,7 @@ static int hgcmCompletedWorker(PPDMIHGCMPORT pInterface, int32_t result, PVBOXHG
 #endif
                         {
                             VMMDevHGCMCall *pHGCMCall = (VMMDevHGCMCall *)pHeader;
-                            rc = vmmdevHGCMCompleteCallRequest(pThis, pCmd, pHGCMCall);
+                            rc = vmmdevHGCMCompleteCallRequest(pThis, pCmd, pHGCMCall, (uint8_t *)pHeader);
 #ifdef VBOX_WITH_DTRACE
                             idFunction = pCmd->u.call.u32Function;
                             idClient   = pCmd->u.call.u32ClientID;
@@ -1428,7 +1427,7 @@ static int hgcmCompletedWorker(PPDMIHGCMPORT pInterface, int32_t result, PVBOXHG
 #endif
                     {
                         VMMDevHGCMCall *pHGCMCall = (VMMDevHGCMCall *)pHeader;
-                        rc = vmmdevHGCMCompleteCallRequest(pThis, pCmd, pHGCMCall);
+                        rc = vmmdevHGCMCompleteCallRequest(pThis, pCmd, pHGCMCall, (uint8_t *)pHeader);
 #ifdef VBOX_WITH_DTRACE
                         idFunction = pCmd->u.call.u32Function;
                         idClient   = pCmd->u.call.u32ClientID;
