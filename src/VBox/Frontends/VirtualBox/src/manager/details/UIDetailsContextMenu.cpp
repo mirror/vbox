@@ -981,8 +981,8 @@ void UIDetailsContextMenu::adjustListWidgets()
     iH += m_pListWidgetCategories->sizeHintForRow(0) * m_pListWidgetCategories->count();
 
     /* Category list size is constant, options list size is vague: */
-    m_pListWidgetCategories->setFixedSize(QSize(iW, iH));
-    m_pListWidgetOptions->setFixedSize(QSize(iW * 1.5, iH));
+    m_pListWidgetCategories->setFixedSize(QSize(iW * 1.3, iH));
+    m_pListWidgetOptions->setFixedSize(QSize(iW * 1.3, iH));
 }
 
 QListWidgetItem *UIDetailsContextMenu::createCategoryItem(const QIcon &icon)
