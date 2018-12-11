@@ -2031,6 +2031,26 @@ Name: /VirtualBox/GuestInfo/OS/Version, value: #59-Ubuntu SMP Thu Jan 28 01:23:0
       interfaces. See <xref linkend="VirtualBoxAPI" />.
     </para>
 
+    <sect2 id="guestadd-guestprops-waits">
+
+      <title>Using Guest Properties to Wait on VM Events</title>
+
+      <para>
+        The properties <computeroutput>/VirtualBox/HostInfo/VBoxVer</computeroutput>,
+        <computeroutput>/VirtualBox/HostInfo/VBoxVerExt</computeroutput> or
+        <computeroutput>/VirtualBox/HostInfo/VBoxRev</computeroutput> can be waited
+        on to detect that the VM state was restored from saved state or snapshot:
+      </para>
+
+<screen>$ VBoxControl guestproperty wait /VirtualBox/HostInfo/VBoxVer</screen>
+
+      <para>
+        Similarly the <computeroutput>/VirtualBox/HostInfo/ResumeCounter</computeroutput>
+        can be used to detect that a VM was resumed from the paused state or saved state.
+      </para>
+
+    </sect2>
+
   </sect1>
 
   <sect1 id="guestadd-gc-file-manager">
