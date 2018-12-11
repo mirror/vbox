@@ -221,6 +221,7 @@ typedef VBOXSFFS *PVBOXSFFS;
 
 extern VBGLSFCLIENT g_SfClient;
 
+void        vboxSfOs2InitFileBuffers(void);
 PSHFLSTRING vboxSfOs2StrAlloc(size_t cwcLength);
 PSHFLSTRING vboxSfOs2StrDup(PCSHFLSTRING pSrc);
 void        vboxSfOs2StrFree(PSHFLSTRING pStr);
@@ -797,7 +798,7 @@ DECLINLINE(int) vboxSfOs2HostReqSetFileSizeSimple(PVBOXSFFOLDER pFolder, uint64_
 }
 
 
-/** Request structure for vboxSfOs2HostReqRead. */
+/** Request structure for vboxSfOs2HostReqReadEmbedded. */
 typedef struct VBOXSFREADEMBEDDEDREQ
 {
     VBGLIOCIDCHGCMFASTCALL  Hdr;
@@ -807,7 +808,7 @@ typedef struct VBOXSFREADEMBEDDEDREQ
 } VBOXSFREADEMBEDDEDREQ;
 
 /**
- * SHFL_FN_INFORMATION[SHFL_INFO_GET | SHFL_INFO_FILE] request.
+ * SHFL_FN_READ request using embedded data buffer.
  */
 DECLINLINE(int) vboxSfOs2HostReqReadEmbedded(PVBOXSFFOLDER pFolder, VBOXSFREADEMBEDDEDREQ *pReq, uint64_t hHostFile,
                                              uint64_t offRead, uint32_t cbToRead)
@@ -833,6 +834,143 @@ DECLINLINE(int) vboxSfOs2HostReqReadEmbedded(PVBOXSFFOLDER pFolder, VBOXSFREADEM
     pReq->Parms.pBuf.u.Embedded.fFlags      = VBOX_HGCM_F_PARM_DIRECTION_FROM_HOST;
 
     int vrc = VbglR0HGCMFastCall(g_SfClient.handle, &pReq->Hdr, RT_UOFFSETOF(VBOXSFREADEMBEDDEDREQ, abData[0]) + cbToRead);
+    if (RT_SUCCESS(vrc))
+        vrc = pReq->Call.header.result;
+    return vrc;
+}
+
+
+/** Request structure for vboxSfOs2HostReqRead. */
+typedef struct VBOXSFREADPGLSTREQ
+{
+    VBGLIOCIDCHGCMFASTCALL  Hdr;
+    VMMDevHGCMCall          Call;
+    VBoxSFParmRead          Parms;
+    HGCMPageListInfo        PgLst;
+} VBOXSFREADPGLSTREQ;
+
+/**
+ * SHFL_FN_READ request using page list for data buffer (caller populated).
+ */
+DECLINLINE(int) vboxSfOs2HostReqReadPgLst(PVBOXSFFOLDER pFolder, VBOXSFREADPGLSTREQ *pReq, uint64_t hHostFile,
+                                          uint64_t offRead, uint32_t cbToRead, uint32_t cPages)
+{
+    VBGLIOCIDCHGCMFASTCALL_INIT(&pReq->Hdr, VbglR0PhysHeapGetPhysAddr(pReq), &pReq->Call, g_SfClient.idClient,
+                                SHFL_FN_READ, SHFL_CPARMS_READ,
+                                RT_UOFFSETOF_DYN(VBOXSFREADPGLSTREQ, PgLst.aPages[cPages]));
+
+    pReq->Parms.id32Root.type               = VMMDevHGCMParmType_32bit;
+    pReq->Parms.id32Root.u.value32          = pFolder->hHostFolder.root;
+
+    pReq->Parms.u64Handle.type              = VMMDevHGCMParmType_64bit;
+    pReq->Parms.u64Handle.u.value64         = hHostFile;
+
+    pReq->Parms.off64Read.type              = VMMDevHGCMParmType_64bit;
+    pReq->Parms.off64Read.u.value64         = offRead;
+
+    pReq->Parms.cb32Read.type               = VMMDevHGCMParmType_32bit;
+    pReq->Parms.cb32Read.u.value32          = cbToRead;
+
+    pReq->Parms.pBuf.type                   = VMMDevHGCMParmType_PageList;
+    pReq->Parms.pBuf.u.PageList.size        = cbToRead;
+    pReq->Parms.pBuf.u.PageList.offset      = RT_UOFFSETOF(VBOXSFREADEMBEDDEDREQ, abData[0]) - sizeof(VBGLIOCIDCHGCMFASTCALL);
+    pReq->PgLst.flags                       = VBOX_HGCM_F_PARM_DIRECTION_FROM_HOST;
+    pReq->PgLst.cPages                      = (uint16_t)cPages;
+    AssertReturn(cPages <= UINT16_MAX, VERR_OUT_OF_RANGE);
+    /* caller sets offset */
+
+    int vrc = VbglR0HGCMFastCall(g_SfClient.handle, &pReq->Hdr,
+                                 RT_UOFFSETOF_DYN(VBOXSFREADPGLSTREQ, PgLst.aPages[cPages]));
+    if (RT_SUCCESS(vrc))
+        vrc = pReq->Call.header.result;
+    return vrc;
+}
+
+
+
+/** Request structure for vboxSfOs2HostReqWriteEmbedded. */
+typedef struct VBOXSFWRITEEMBEDDEDREQ
+{
+    VBGLIOCIDCHGCMFASTCALL  Hdr;
+    VMMDevHGCMCall          Call;
+    VBoxSFParmWrite         Parms;
+    uint8_t                 abData[RT_FLEXIBLE_ARRAY];
+} VBOXSFWRITEEMBEDDEDREQ;
+
+/**
+ * SHFL_FN_WRITE request using embedded data buffer.
+ */
+DECLINLINE(int) vboxSfOs2HostReqWriteEmbedded(PVBOXSFFOLDER pFolder, VBOXSFWRITEEMBEDDEDREQ *pReq, uint64_t hHostFile,
+                                              uint64_t offWrite, uint32_t cbToWrite)
+{
+    VBGLIOCIDCHGCMFASTCALL_INIT(&pReq->Hdr, VbglR0PhysHeapGetPhysAddr(pReq), &pReq->Call, g_SfClient.idClient,
+                                SHFL_FN_WRITE, SHFL_CPARMS_WRITE, RT_UOFFSETOF(VBOXSFWRITEEMBEDDEDREQ, abData[0]) + cbToWrite);
+
+    pReq->Parms.id32Root.type               = VMMDevHGCMParmType_32bit;
+    pReq->Parms.id32Root.u.value32          = pFolder->hHostFolder.root;
+
+    pReq->Parms.u64Handle.type              = VMMDevHGCMParmType_64bit;
+    pReq->Parms.u64Handle.u.value64         = hHostFile;
+
+    pReq->Parms.off64Write.type             = VMMDevHGCMParmType_64bit;
+    pReq->Parms.off64Write.u.value64        = offWrite;
+
+    pReq->Parms.cb32Write.type              = VMMDevHGCMParmType_32bit;
+    pReq->Parms.cb32Write.u.value32         = cbToWrite;
+
+    pReq->Parms.pBuf.type                   = VMMDevHGCMParmType_Embedded;
+    pReq->Parms.pBuf.u.Embedded.cbData      = cbToWrite;
+    pReq->Parms.pBuf.u.Embedded.offData     = RT_UOFFSETOF(VBOXSFWRITEEMBEDDEDREQ, abData[0]) - sizeof(VBGLIOCIDCHGCMFASTCALL);
+    pReq->Parms.pBuf.u.Embedded.fFlags      = VBOX_HGCM_F_PARM_DIRECTION_TO_HOST;
+
+    int vrc = VbglR0HGCMFastCall(g_SfClient.handle, &pReq->Hdr, RT_UOFFSETOF(VBOXSFWRITEEMBEDDEDREQ, abData[0]) + cbToWrite);
+    if (RT_SUCCESS(vrc))
+        vrc = pReq->Call.header.result;
+    return vrc;
+}
+
+
+/** Request structure for vboxSfOs2HostReqWrite. */
+typedef struct VBOXSFWRITEPGLSTREQ
+{
+    VBGLIOCIDCHGCMFASTCALL  Hdr;
+    VMMDevHGCMCall          Call;
+    VBoxSFParmWrite         Parms;
+    HGCMPageListInfo        PgLst;
+} VBOXSFWRITEPGLSTREQ;
+
+/**
+ * SHFL_FN_WRITE request using page list for data buffer (caller populated).
+ */
+DECLINLINE(int) vboxSfOs2HostReqWritePgLst(PVBOXSFFOLDER pFolder, VBOXSFWRITEPGLSTREQ *pReq, uint64_t hHostFile,
+                                           uint64_t offWrite, uint32_t cbToWrite, uint32_t cPages)
+{
+    VBGLIOCIDCHGCMFASTCALL_INIT(&pReq->Hdr, VbglR0PhysHeapGetPhysAddr(pReq), &pReq->Call, g_SfClient.idClient,
+                                SHFL_FN_WRITE, SHFL_CPARMS_WRITE,
+                                RT_UOFFSETOF_DYN(VBOXSFWRITEPGLSTREQ, PgLst.aPages[cPages]));
+
+    pReq->Parms.id32Root.type               = VMMDevHGCMParmType_32bit;
+    pReq->Parms.id32Root.u.value32          = pFolder->hHostFolder.root;
+
+    pReq->Parms.u64Handle.type              = VMMDevHGCMParmType_64bit;
+    pReq->Parms.u64Handle.u.value64         = hHostFile;
+
+    pReq->Parms.off64Write.type              = VMMDevHGCMParmType_64bit;
+    pReq->Parms.off64Write.u.value64         = offWrite;
+
+    pReq->Parms.cb32Write.type               = VMMDevHGCMParmType_32bit;
+    pReq->Parms.cb32Write.u.value32          = cbToWrite;
+
+    pReq->Parms.pBuf.type                   = VMMDevHGCMParmType_PageList;
+    pReq->Parms.pBuf.u.PageList.size        = cbToWrite;
+    pReq->Parms.pBuf.u.PageList.offset      = RT_UOFFSETOF(VBOXSFWRITEEMBEDDEDREQ, abData[0]) - sizeof(VBGLIOCIDCHGCMFASTCALL);
+    pReq->PgLst.flags                       = VBOX_HGCM_F_PARM_DIRECTION_FROM_HOST;
+    pReq->PgLst.cPages                      = (uint16_t)cPages;
+    AssertReturn(cPages <= UINT16_MAX, VERR_OUT_OF_RANGE);
+    /* caller sets offset */
+
+    int vrc = VbglR0HGCMFastCall(g_SfClient.handle, &pReq->Hdr,
+                                 RT_UOFFSETOF_DYN(VBOXSFWRITEPGLSTREQ, PgLst.aPages[cPages]));
     if (RT_SUCCESS(vrc))
         vrc = pReq->Call.header.result;
     return vrc;

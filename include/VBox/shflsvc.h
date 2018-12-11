@@ -1280,7 +1280,7 @@ typedef struct _VBoxSFClose
  * @{
  */
 
-/** Parameters structure. */
+/** SHFL_FN_READ parameters. */
 typedef struct VBoxSFParmRead
 {
     /** value32, in: SHFLROOT of the mapping with the handle. */
@@ -1335,6 +1335,21 @@ typedef struct _VBoxSFRead
 /** @name SHFL_FN_WRITE
  * @{
  */
+
+/** SHFL_FN_WRITE parameters. */
+typedef struct VBoxSFParmWrite
+{
+    /** value32, in: SHFLROOT of the mapping with the handle. */
+    HGCMFunctionParameter id32Root;
+    /** value64, in: SHFLHANDLE of object to write to. */
+    HGCMFunctionParameter u64Handle;
+    /** value64, in: Offset to start writing at. */
+    HGCMFunctionParameter off64Write;
+    /** value32, in/out: How much to try write / Actually written. */
+    HGCMFunctionParameter cb32Write;
+    /** pointer, out: Buffer to return the data in. */
+    HGCMFunctionParameter pBuf;
+} VBoxSFParmWrite;
 
 /** Parameters structure. */
 typedef struct _VBoxSFWrite

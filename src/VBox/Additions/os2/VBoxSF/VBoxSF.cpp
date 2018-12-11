@@ -505,14 +505,16 @@ APIRET vboxSfOs2ConvertPath(const char *pszFolderPath, PSHFLSTRING *ppStr)
         if (rc == NO_ERROR)
         {
             pDst->u16Length = (uint16_t)RTUtf16Len(pDst->String.utf16) * (uint16_t)sizeof(RTUTF16);
+            Assert(pDst->u16Length < pDst->u16Size);
+            pDst->u16Size   = pDst->u16Length + (uint16_t)sizeof(RTUTF16); /* (limit how much is copied to the host) */
             *ppStr = pDst;
             return NO_ERROR;
         }
         VbglR0PhysHeapFree(pDst);
 
         /*
-         * This shouldn't happen, but just in case we try again with
-         * twice the buffer size.
+         * This shouldn't happen, but just in case we try again with twice
+         * the buffer size.
          */
         if (rc == 0x20412 /*ULS_BUFFERFULL*/)
         {
@@ -523,6 +525,8 @@ APIRET vboxSfOs2ConvertPath(const char *pszFolderPath, PSHFLSTRING *ppStr)
                 if (rc == NO_ERROR)
                 {
                     pDst->u16Length = (uint16_t)RTUtf16Len(pDst->String.utf16) * (uint16_t)sizeof(RTUTF16);
+                    Assert(pDst->u16Length < pDst->u16Size);
+                    pDst->u16Size   = pDst->u16Length + (uint16_t)sizeof(RTUTF16);
                     *ppStr = pDst;
                     return NO_ERROR;
                 }
@@ -571,34 +575,38 @@ APIRET vboxSfOs2ConvertPathEx(const char *pszFolderPath, uint32_t offStrInBuf, v
     if (pvBuf)
     {
         RT_BZERO(pvBuf, offStrInBuf);
-
         PSHFLSTRING pDst = (PSHFLSTRING)((uint8_t *)pvBuf + offStrInBuf);
+
         APIRET rc = KernStrToUcs(NULL, &pDst->String.utf16[0], (char *)pszFolderPath, cchSrc + 4, cchSrc);
         if (rc == NO_ERROR)
         {
             pDst->u16Length = (uint16_t)RTUtf16Len(pDst->String.utf16) * (uint16_t)sizeof(RTUTF16);
-            pDst->u16Size   = (uint16_t)((cchSrc + 4) * sizeof(RTUTF16));
-            Assert(pDst->u16Length < pDst->u16Size);
+            Assert(pDst->u16Length < (cchSrc + 4) * sizeof(RTUTF16));
+            pDst->u16Size   = pDst->u16Length + (uint16_t)sizeof(RTUTF16); /* (limit how much is copied to the host) */
             *ppvBuf = pvBuf;
             return NO_ERROR;
         }
         VbglR0PhysHeapFree(pvBuf);
 
-#if 0
         /*
-         * This shouldn't happen, but just in case we try again with
-         * twice the buffer size.
+         * This shouldn't happen, but just in case we try again with twice
+         * the buffer size.
          */
         if (rc == 0x20412 /*ULS_BUFFERFULL*/)
         {
-            pDst = vboxSfOs2StrAlloc((cchSrc + 16) * 2);
-            if (pDst)
+            pvBuf = VbglR0PhysHeapAlloc(offStrInBuf + SHFLSTRING_HEADER_SIZE + (cchSrc + 16) * sizeof(RTUTF16) * 2);
+            if (pvBuf)
             {
+                RT_BZERO(pvBuf, offStrInBuf);
+                pDst = (PSHFLSTRING)((uint8_t *)pvBuf + offStrInBuf);
+
                 rc = KernStrToUcs(NULL, pDst->String.utf16, (char *)pszFolderPath, (cchSrc + 16) * 2, cchSrc);
                 if (rc == NO_ERROR)
                 {
                     pDst->u16Length = (uint16_t)RTUtf16Len(pDst->String.utf16) * (uint16_t)sizeof(RTUTF16);
-                    *ppStr = pDst;
+                    Assert(pDst->u16Length < (cchSrc + 16) * 2 * sizeof(RTUTF16));
+                    pDst->u16Size   = pDst->u16Length + (uint16_t)sizeof(RTUTF16);
+                    *ppvBuf = pvBuf;
                     return NO_ERROR;
                 }
                 VbglR0PhysHeapFree(pDst);
@@ -606,7 +614,6 @@ APIRET vboxSfOs2ConvertPathEx(const char *pszFolderPath, uint32_t offStrInBuf, v
             }
         }
         else
-#endif
             LogRel(("vboxSfOs2ConvertPath: KernStrToUcs returns %#x for %.*Rhxs\n", rc, cchSrc, pszFolderPath));
     }
 

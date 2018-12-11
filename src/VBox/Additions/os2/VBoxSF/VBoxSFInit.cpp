@@ -103,6 +103,11 @@ DECLASM(void) VBoxSFR0Init(void)
                 else if (!(fFeatures & VMMDEV_HVF_HGCM_EMBEDDED_BUFFERS))
                     RTLogBackdoorPrintf("VBoxSFR0Init: Embedded buffers feature is missing.  Upgrade to latest VirtualBox!\n");
 
+                /*
+                 * Allocate some big buffers for reading and writing.
+                 */
+                vboxSfOs2InitFileBuffers();
+
 #ifndef DONT_LOCK_SEGMENTS
                 /*
                  * Lock the 32-bit segments in memory.

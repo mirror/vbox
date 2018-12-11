@@ -41,6 +41,87 @@
 #include <iprt/mem.h>
 
 
+/*********************************************************************************************************************************
+*   Structures and Typedefs                                                                                                      *
+*********************************************************************************************************************************/
+/** A preallocated buffer. */
+typedef struct
+{
+    RTCCPHYS        PhysAddr;
+    void           *pvBuf;
+    bool volatile   fBusy;
+} VBOXSFOS2BUF;
+
+
+/*********************************************************************************************************************************
+*   Global Variables                                                                                                             *
+*********************************************************************************************************************************/
+/** Buffer spinlock. */
+static SpinLock_t   g_BufferLock;
+/** 64KB buffers. */
+static VBOXSFOS2BUF g_aBigBuffers[4];
+
+
+
+/**
+ * Initialize file buffers.
+ */
+void vboxSfOs2InitFileBuffers(void)
+{
+    KernAllocSpinLock(&g_BufferLock);
+
+    for (uint32_t i = 0; i < RT_ELEMENTS(g_aBigBuffers); i++)
+    {
+        g_aBigBuffers[i].pvBuf = RTMemContAlloc(&g_aBigBuffers[i].PhysAddr, _64K);
+        g_aBigBuffers[i].fBusy = g_aBigBuffers[i].pvBuf == NULL;
+    }
+}
+
+
+/**
+ * Allocates a big buffer.
+ * @returns Pointer to buffer on success, NULL on failure.
+ * @param   pPhysAddr           The physical address of the buffer.
+ */
+DECLINLINE(void *) vboxSfOs2AllocBigBuffer(RTGCPHYS *pPhysAddr)
+{
+    KernAcquireSpinLock(&g_BufferLock);
+    for (uint32_t i = 0; i < RT_ELEMENTS(g_aBigBuffers); i++)
+        if (!g_aBigBuffers[i].fBusy)
+        {
+            g_aBigBuffers[i].fBusy = true;
+            KernReleaseSpinLock(&g_BufferLock);
+
+            *pPhysAddr = g_aBigBuffers[i].PhysAddr;
+            return g_aBigBuffers[i].pvBuf;
+        }
+    KernReleaseSpinLock(&g_BufferLock);
+    *pPhysAddr = NIL_RTGCPHYS;
+    return NULL;
+}
+
+
+/**
+ * Frees a big buffer.
+ * @param   pvBuf               The address of the buffer to be freed.
+ */
+DECLINLINE(void) vboxSfOs2FreeBigBuffer(void *pvBuf)
+{
+    Assert(pvBuf);
+    KernAcquireSpinLock(&g_BufferLock);
+    for (uint32_t i = 0; i < RT_ELEMENTS(g_aBigBuffers); i++)
+        if (g_aBigBuffers[i].pvBuf == pvBuf)
+        {
+            Assert(g_aBigBuffers[i].fBusy);
+            g_aBigBuffers[i].fBusy = false;
+            KernReleaseSpinLock(&g_BufferLock);
+            return;
+        }
+    KernReleaseSpinLock(&g_BufferLock);
+    AssertFailed();
+}
+
+
 
 DECLASM(APIRET)
 FS32_OPENCREATE(PCDFSI pCdFsi, PVBOXSFCD pCdFsd, PCSZ pszName, LONG offCurDirEnd,
@@ -985,13 +1066,77 @@ FS32_NEWSIZEL(PSFFSI pSfFsi, PVBOXSFSYFI pSfFsd, LONGLONG cbFile, ULONG fIoFlags
 }
 
 
+/**
+ * Convert KernVMLock page list to HGCM page list.
+ *
+ * The trouble is that it combine pages.
+ */
+static void vboxSfOs2ConvertPageList(KernPageList_t volatile *paSrc, RTGCPHYS64 volatile *paDst, ULONG cSrc, uint32_t cDst)
+{
+    LogFlow(("vboxSfOs2ConvertPageList: %d vs %d\n", cSrc, cDst));
+
+    /* If the list have identical length, the job is easy. */
+    if (cSrc == cDst)
+        for (uint32_t i = 0; i < cSrc; i++)
+            paDst[i] &= ~(uint32_t)PAGE_OFFSET_MASK;
+    else
+    {
+        Assert(cSrc <= cDst);
+        Assert(cSrc > 0);
+
+        /*
+         * We have fewer source entries than destiation pages, so something needs
+         * expanding.  The fact that the first and last pages might be partial ones
+         * makes this more interesting.  We have to do it backwards, of course.
+         */
+
+        /* Deal with the partial page stuff first. */
+        paSrc[0].Size += paSrc[0].Addr & PAGE_OFFSET_MASK;
+        paSrc[0].Addr &= ~(ULONG)PAGE_OFFSET_MASK;
+        paSrc[cSrc - 1].Size = RT_ALIGN_32(paSrc[cSrc - 1].Size, PAGE_SIZE);
+
+        /* The go do work on the conversion. */
+        uint32_t iDst = cDst;
+        uint32_t iSrc = cSrc;
+        while (iSrc-- > 0)
+        {
+            ULONG cbSrc    = paSrc[iSrc].Size;
+            ULONG uAddrSrc = paSrc[iSrc].Addr + cbSrc;
+            Assert(!(cbSrc & PAGE_OFFSET_MASK));
+            Assert(!(uAddrSrc & PAGE_OFFSET_MASK));
+            while (cbSrc > 0)
+            {
+                uAddrSrc     -= PAGE_SIZE;
+                Assert(iDst > 0);
+                paDst[--iDst] = uAddrSrc;
+                cbSrc        -= PAGE_SIZE;
+            }
+        }
+        Assert(iDst == 0);
+    }
+}
+
+
+/**
+ * Helper for FS32_READ.
+ */
+DECLINLINE(uint32_t) vboxSfOs2ReadFinalize(PSFFSI pSfFsi, uint64_t offRead, uint32_t cbActual)
+{
+    pSfFsi->sfi_positionl = offRead + cbActual;
+    if ((uint64_t)pSfFsi->sfi_sizel < offRead + cbActual)
+        pSfFsi->sfi_sizel = offRead + cbActual;
+    pSfFsi->sfi_tstamp   |= ST_SREAD | ST_PREAD;
+    return cbActual;
+}
+
+
 extern "C" APIRET APIENTRY
 FS32_READ(PSFFSI pSfFsi, PVBOXSFSYFI pSfFsd, PVOID pvData, PULONG pcb, ULONG fIoFlags)
 {
     LogFlow(("FS32_READ: pSfFsi=%p pSfFsd=%p pvData=%p pcb=%p:{%#x} fIoFlags=%#x\n", pSfFsi, pSfFsd, pvData, pcb, *pcb, fIoFlags));
 
     /*
-     * Validate input.
+     * Validate and extract input.
      */
     AssertReturn(pSfFsd->u32Magic == VBOXSFSYFI_MAGIC, ERROR_SYS_INTERNAL);
     AssertReturn(pSfFsd->pSelf    == pSfFsd, ERROR_SYS_INTERNAL);
@@ -1001,22 +1146,23 @@ FS32_READ(PSFFSI pSfFsi, PVBOXSFSYFI pSfFsd, PVOID pvData, PULONG pcb, ULONG fIo
     Assert(pFolder->cOpenFiles > 0);
     RT_NOREF(pFolder);
 
-    /*
-     * If the read request is small enough, go thru a temporary buffer to
-     * avoid locking/unlocking user memory.
-     */
     uint64_t const offRead  = pSfFsi->sfi_positionl;
     uint32_t const cbToRead = *pcb;
     uint32_t       cbActual = cbToRead;
-#if 0 /** @todo debug some other day. */
-    if (cbToRead <= _8K - ALLOC_HDR_SIZE - RT_UOFFSETOF(VBOXSFREADEMBEDDEDREQ, abData[0]))
-    {
-        size_t                 cbReq = RT_UOFFSETOF(VBOXSFREADEMBEDDEDREQ, abData[0]) + RT_ALIGN_32(cbToRead, 4);
-        VBOXSFREADEMBEDDEDREQ *pReq  = (VBOXSFREADEMBEDDEDREQ *)VbglR0PhysHeapAlloc(cbReq);
-        if (pReq != NULL)
-        {
-            RT_BZERO(pReq, cbReq);
 
+    /*
+     * We'll try embedded buffers for reads a smaller than ~2KB if we get
+     * a heap block that's entirely within one page so the host can lock it
+     * and avoid bouncing it off the heap on completion.
+     */
+    if (cbToRead <= _2K)
+    {
+        size_t                 cbReq = RT_UOFFSETOF(VBOXSFREADEMBEDDEDREQ, abData[0]) + cbToRead;
+        VBOXSFREADEMBEDDEDREQ *pReq  = (VBOXSFREADEMBEDDEDREQ *)VbglR0PhysHeapAlloc(cbReq);
+        if (   pReq != NULL
+            && (   PAGE_SIZE - (PAGE_OFFSET_MASK & (uintptr_t)pReq) >= cbReq
+                || cbToRead == 0))
+        {
             APIRET rc;
             int vrc = vboxSfOs2HostReqReadEmbedded(pFolder, pReq, pSfFsd->hHostFile, offRead, cbToRead);
             if (RT_SUCCESS(vrc))
@@ -1026,45 +1172,137 @@ FS32_READ(PSFFSI pSfFsi, PVBOXSFSYFI pSfFsd, PVOID pvData, PULONG pcb, ULONG fIo
                 rc = KernCopyOut(pvData, &pReq->abData[0], cbActual);
                 if (rc == NO_ERROR)
                 {
-                    *pcb = cbActual;
-                    pSfFsi->sfi_positionl = offRead + cbActual;
-                    if ((uint64_t)pSfFsi->sfi_sizel < offRead + cbActual)
-                        pSfFsi->sfi_sizel = offRead + cbActual;
-                    pSfFsi->sfi_tstamp   |= ST_SREAD | ST_PREAD;
-                    LogFlow(("FS32_READ: returns; cbActual=%#x sfi_positionl=%RI64 [copy]\n", cbActual, pSfFsi->sfi_positionl));
+                    *pcb = vboxSfOs2ReadFinalize(pSfFsi, offRead, cbActual);
+                    LogFlow(("FS32_READ: returns; cbActual=%#x sfi_positionl=%RI64 [embedded]\n", cbActual, pSfFsi->sfi_positionl));
                 }
             }
             else
             {
-                Log(("FS32_READ: vboxSfOs2HostReqReadEmbedded(off=%#RU64,cb=%#x) -> %Rrc [copy]\n", offRead, cbToRead, vrc));
+                Log(("FS32_READ: vboxSfOs2HostReqReadEmbedded(off=%#RU64,cb=%#x) -> %Rrc [embedded]\n", offRead, cbToRead, vrc));
                 rc = ERROR_BAD_NET_RESP;
             }
             VbglR0PhysHeapFree(pReq);
             return rc;
         }
+        if (pReq)
+            VbglR0PhysHeapFree(pReq);
     }
-#endif
-
 
     /*
-     * Do the read directly on the buffer, Vbgl will do the locking for us.
+     * Whatever we do now we're going to use a page list request.
+     * So, allocate one with sufficient space to cover the whole buffer.
      */
-    int vrc = VbglR0SfRead(&g_SfClient, &pFolder->hHostFolder, pSfFsd->hHostFile,
-                           offRead, &cbActual, (uint8_t *)pvData, false /*fLocked*/);
-    if (RT_SUCCESS(vrc))
+    uint32_t cPages = ((cbToRead + PAGE_SIZE - 1) >> PAGE_SHIFT) + 1;
+    VBOXSFREADPGLSTREQ *pReq = (VBOXSFREADPGLSTREQ *)VbglR0PhysHeapAlloc(RT_UOFFSETOF_DYN(VBOXSFREADPGLSTREQ, PgLst.aPages[cPages]));
+    if (pReq)
+    { /* likely */ }
+    else
     {
-        AssertStmt(cbActual <= cbToRead, cbActual = cbToRead);
-        *pcb = cbActual;
-        pSfFsi->sfi_positionl = offRead + cbActual;
-        if ((uint64_t)pSfFsi->sfi_sizel < offRead + cbActual)
-            pSfFsi->sfi_sizel = offRead + cbActual;
-        pSfFsi->sfi_tstamp   |= ST_SREAD | ST_PREAD;
-        LogFlow(("FS32_READ: returns; cbActual=%#x sfi_positionl=%RI64 [direct]\n", cbActual, pSfFsi->sfi_positionl));
-        return NO_ERROR;
+        LogRel(("FS32_READ: Out of memory for page list request (%u pages)\n", cPages));
+        return ERROR_NOT_ENOUGH_MEMORY;
     }
-    Log(("FS32_READ: VbglR0SfRead(off=%#RU64,cb=%#x) -> %Rrc [direct]\n", offRead, cbToRead, vrc));
+
+    /*
+     * If the request is less than 16KB or smaller, we try bounce it off the
+     * physical heap (slab size is 64KB).  For requests up to 64KB we try use
+     * one of a handful of preallocated big buffers rather than the phys heap.
+     */
+    if (cbToRead <= _64K)
+    {
+        RTGCPHYS GCPhys;
+        void    *pvBuf = NULL;
+        if (cbToRead <= _16K)
+        {
+            pvBuf = VbglR0PhysHeapAlloc(cbToRead);
+            GCPhys = pvBuf ? VbglR0PhysHeapGetPhysAddr(pvBuf) : NIL_RTGCPHYS;
+        }
+        else
+            pvBuf = vboxSfOs2AllocBigBuffer(&GCPhys);
+        if (pvBuf)
+        {
+            pReq->PgLst.offFirstPage = (uint16_t)GCPhys & (uint16_t)PAGE_OFFSET_MASK;
+            cPages = (cbToRead + ((uint16_t)GCPhys & (uint16_t)PAGE_OFFSET_MASK) + PAGE_SIZE - 1) >> PAGE_SHIFT;
+            GCPhys &= ~(RTGCPHYS)PAGE_OFFSET_MASK;
+            for (uint32_t i = 0; i < cPages; i++, GCPhys += PAGE_SIZE)
+                pReq->PgLst.aPages[i] = GCPhys;
+
+            APIRET rc;
+            int vrc = vboxSfOs2HostReqReadPgLst(pFolder, pReq, pSfFsd->hHostFile, offRead, cbToRead, cPages);
+            if (RT_SUCCESS(vrc))
+            {
+                cbActual = pReq->Parms.cb32Read.u.value32;
+                AssertStmt(cbActual <= cbToRead, cbActual = cbToRead);
+                rc = KernCopyOut(pvData, pvBuf, cbActual);
+                if (rc == NO_ERROR)
+                {
+                    *pcb = vboxSfOs2ReadFinalize(pSfFsi, offRead, cbActual);
+                    LogFlow(("FS32_READ: returns; cbActual=%#x sfi_positionl=%RI64 [bounced]\n", cbActual, pSfFsi->sfi_positionl));
+                }
+            }
+            else
+            {
+                Log(("FS32_READ: vboxSfOs2HostReqReadEmbedded(off=%#RU64,cb=%#x) -> %Rrc [bounced]\n", offRead, cbToRead, vrc));
+                rc = ERROR_BAD_NET_RESP;
+            }
+
+            if (cbToRead <= _16K)
+                VbglR0PhysHeapFree(pvBuf);
+            else
+                vboxSfOs2FreeBigBuffer(pvBuf);
+            VbglR0PhysHeapFree(pReq);
+            return rc;
+        }
+    }
+
+    /*
+     * We couldn't use a bounce buffer for it, so lock the buffer pages.
+     */
+    KernVMLock_t Lock;
+    ULONG cPagesRet;
+    AssertCompile(sizeof(KernPageList_t) == sizeof(pReq->PgLst.aPages[0]));
+    APIRET rc = KernVMLock(VMDHL_LONG | VMDHL_WRITE, (void *)pvData, cbToRead, &Lock,
+                           (KernPageList_t *)&pReq->PgLst.aPages[0], &cPagesRet);
+    if (rc == NO_ERROR)
+    {
+        pReq->PgLst.offFirstPage = (uint16_t)(uintptr_t)pvData & (uint16_t)PAGE_OFFSET_MASK;
+        cPages = (cbToRead + ((uint16_t)(uintptr_t)pvData & (uint16_t)PAGE_OFFSET_MASK) + PAGE_SIZE - 1) >> PAGE_SHIFT;
+        vboxSfOs2ConvertPageList((KernPageList_t volatile *)&pReq->PgLst.aPages[0], &pReq->PgLst.aPages[0], cPagesRet, cPages);
+
+        APIRET rc;
+        int vrc = vboxSfOs2HostReqReadPgLst(pFolder, pReq, pSfFsd->hHostFile, offRead, cbToRead, cPages);
+        if (RT_SUCCESS(vrc))
+        {
+            cbActual = pReq->Parms.cb32Read.u.value32;
+            AssertStmt(cbActual <= cbToRead, cbActual = cbToRead);
+            *pcb = vboxSfOs2ReadFinalize(pSfFsi, offRead, cbActual);
+            LogFlow(("FS32_READ: returns; cbActual=%#x sfi_positionl=%RI64 [locked]\n", cbActual, pSfFsi->sfi_positionl));
+        }
+        else
+        {
+            Log(("FS32_READ: vboxSfOs2HostReqReadEmbedded(off=%#RU64,cb=%#x) -> %Rrc [locked]\n", offRead, cbToRead, vrc));
+            rc = ERROR_BAD_NET_RESP;
+        }
+
+        KernVMUnlock(&Lock);
+    }
+    else
+        Log(("FS32_READ: KernVMLock(,%p,%#x,) failed -> %u\n", pvData, cbToRead, rc));
+    VbglR0PhysHeapFree(pReq);
     RT_NOREF_PV(fIoFlags);
-    return ERROR_BAD_NET_RESP;
+    return rc;
+}
+
+
+/**
+ * Helper for FS32_WRITE.
+ */
+DECLINLINE(uint32_t) vboxSfOs2WriteFinalize(PSFFSI pSfFsi, uint64_t offWrite, uint32_t cbActual)
+{
+    pSfFsi->sfi_positionl = offWrite + cbActual;
+    if ((uint64_t)pSfFsi->sfi_sizel < offWrite + cbActual)
+        pSfFsi->sfi_sizel = offWrite + cbActual;
+    pSfFsi->sfi_tstamp   |= ST_SWRITE | ST_PWRITE;
+    return cbActual;
 }
 
 
@@ -1072,7 +1310,7 @@ extern "C" APIRET APIENTRY
 FS32_WRITE(PSFFSI pSfFsi, PVBOXSFSYFI pSfFsd, void const *pvData, PULONG pcb, ULONG fIoFlags)
 {
     /*
-     * Validate input.
+     * Validate and extract input.
      */
     AssertReturn(pSfFsd->u32Magic == VBOXSFSYFI_MAGIC, ERROR_SYS_INTERNAL);
     AssertReturn(pSfFsd->pSelf    == pSfFsd, ERROR_SYS_INTERNAL);
@@ -1082,63 +1320,148 @@ FS32_WRITE(PSFFSI pSfFsi, PVBOXSFSYFI pSfFsd, void const *pvData, PULONG pcb, UL
     Assert(pFolder->cOpenFiles > 0);
     RT_NOREF(pFolder);
 
+    uint64_t offWrite  = pSfFsi->sfi_positionl;
+    uint32_t cbToWrite = *pcb;
+    uint32_t cbActual  = cbToWrite;
+
     /*
-     * If the write request is small enough, go thru a temporary buffer to
-     * avoid locking/unlocking user memory.
+     * We'll try embedded buffers for writes a smaller than ~2KB if we get
+     * a heap block that's entirely within one page so the host can lock it
+     * and avoid bouncing it off the heap on completion.
      */
-    uint64_t offWrite = pSfFsi->sfi_positionl;
-    uint32_t cbWrite  = *pcb;
-    uint32_t cbActual = cbWrite;
-    if (cbWrite <= _8K - ALLOC_HDR_SIZE)
+    if (cbToWrite <= _2K)
     {
-        void *pvBuf = VbglR0PhysHeapAlloc(cbWrite);
-        if (pvBuf != NULL)
+        size_t                  cbReq = RT_UOFFSETOF(VBOXSFWRITEEMBEDDEDREQ, abData[0]) + cbToWrite;
+        VBOXSFWRITEEMBEDDEDREQ *pReq  = (VBOXSFWRITEEMBEDDEDREQ *)VbglR0PhysHeapAlloc(cbReq);
+        if (   pReq != NULL
+            && (   PAGE_SIZE - (PAGE_OFFSET_MASK & (uintptr_t)pReq) >= cbReq
+                || cbToWrite == 0))
         {
-            APIRET rc = KernCopyIn(pvBuf, pvData, cbWrite);
+            APIRET rc = KernCopyIn(&pReq->abData[0], pvData, cbToWrite);
             if (rc == NO_ERROR)
             {
-                int vrc = VbglR0SfWrite(&g_SfClient, &pFolder->hHostFolder, pSfFsd->hHostFile,
-                                        offWrite, &cbActual, (uint8_t *)pvBuf, true /*fLocked*/);
+                int vrc = vboxSfOs2HostReqWriteEmbedded(pFolder, pReq, pSfFsd->hHostFile, offWrite, cbToWrite);
                 if (RT_SUCCESS(vrc))
                 {
-                    AssertStmt(cbActual <= cbWrite, cbActual = cbWrite);
-                    *pcb = cbActual;
-                    pSfFsi->sfi_positionl = offWrite + cbActual;
-                    if ((uint64_t)pSfFsi->sfi_sizel < offWrite + cbActual)
-                        pSfFsi->sfi_sizel = offWrite + cbActual;
-                    pSfFsi->sfi_tstamp   |= ST_SWRITE | ST_PWRITE;
-                    LogFlow(("FS32_READ: returns; cbActual=%#x sfi_positionl=%RI64 [copy]\n", cbActual, pSfFsi->sfi_positionl));
+                    cbActual = pReq->Parms.cb32Write.u.value32;
+                    AssertStmt(cbActual <= cbToWrite, cbActual = cbToWrite);
+                    *pcb = vboxSfOs2WriteFinalize(pSfFsi, offWrite, cbActual);
+                    LogFlow(("FS32_WRITE: returns; cbActual=%#x sfi_positionl=%RI64 [embedded]\n", cbActual, pSfFsi->sfi_positionl));
                 }
                 else
                 {
-                    Log(("FS32_READ: VbglR0SfWrite(off=%#x,cb=%#x) -> %Rrc [copy]\n", offWrite, cbWrite, vrc));
+                    Log(("FS32_WRITE: vboxSfOs2HostReqWriteEmbedded(off=%#RU64,cb=%#x) -> %Rrc [embedded]\n", offWrite, cbToWrite, vrc));
                     rc = ERROR_BAD_NET_RESP;
                 }
             }
-            VbglR0PhysHeapFree(pvBuf);
+            VbglR0PhysHeapFree(pReq);
+            return rc;
+        }
+        if (pReq)
+            VbglR0PhysHeapFree(pReq);
+    }
+
+    /*
+     * Whatever we do now we're going to use a page list request.
+     * So, allocate one with sufficient space to cover the whole buffer.
+     */
+    uint32_t cPages = ((cbToWrite + PAGE_SIZE - 1) >> PAGE_SHIFT) + 1;
+    VBOXSFWRITEPGLSTREQ *pReq = (VBOXSFWRITEPGLSTREQ *)VbglR0PhysHeapAlloc(RT_UOFFSETOF_DYN(VBOXSFWRITEPGLSTREQ, PgLst.aPages[cPages]));
+    if (pReq)
+    { /* likely */ }
+    else
+    {
+        LogRel(("FS32_WRITE: Out of memory for page list request (%u pages)\n", cPages));
+        return ERROR_NOT_ENOUGH_MEMORY;
+    }
+
+    /*
+     * If the request is less than 16KB or smaller, we try bounce it off the
+     * physical heap (slab size is 64KB).  For requests up to 64KB we try use
+     * one of a handful of preallocated big buffers rather than the phys heap.
+     */
+    if (cbToWrite <= _64K)
+    {
+        RTGCPHYS GCPhys;
+        void    *pvBuf = NULL;
+        if (cbToWrite <= _16K)
+        {
+            pvBuf = VbglR0PhysHeapAlloc(cbToWrite);
+            GCPhys = pvBuf ? VbglR0PhysHeapGetPhysAddr(pvBuf) : NIL_RTGCPHYS;
+        }
+        else
+            pvBuf = vboxSfOs2AllocBigBuffer(&GCPhys);
+        if (pvBuf)
+        {
+            APIRET rc = KernCopyIn(pvBuf, pvData, cbToWrite);
+            if (rc == NO_ERROR)
+            {
+                pReq->PgLst.offFirstPage = (uint16_t)GCPhys & (uint16_t)PAGE_OFFSET_MASK;
+                cPages = (cbToWrite + ((uint16_t)GCPhys & (uint16_t)PAGE_OFFSET_MASK) + PAGE_SIZE - 1) >> PAGE_SHIFT;
+                GCPhys &= ~(RTGCPHYS)PAGE_OFFSET_MASK;
+                for (uint32_t i = 0; i < cPages; i++, GCPhys += PAGE_SIZE)
+                    pReq->PgLst.aPages[i] = GCPhys;
+
+                APIRET rc;
+                int vrc = vboxSfOs2HostReqWritePgLst(pFolder, pReq, pSfFsd->hHostFile, offWrite, cbToWrite, cPages);
+                if (RT_SUCCESS(vrc))
+                {
+                    cbActual = pReq->Parms.cb32Write.u.value32;
+                    AssertStmt(cbActual <= cbToWrite, cbActual = cbToWrite);
+                    *pcb = vboxSfOs2WriteFinalize(pSfFsi, offWrite, cbActual);
+                    LogFlow(("FS32_WRITE: returns; cbActual=%#x sfi_positionl=%RI64 [bounced]\n", cbActual, pSfFsi->sfi_positionl));
+                }
+                else
+                {
+                    Log(("FS32_WRITE: vboxSfOs2HostReqWriteEmbedded(off=%#RU64,cb=%#x) -> %Rrc [bounced]\n", offWrite, cbToWrite, vrc));
+                    rc = ERROR_BAD_NET_RESP;
+                }
+            }
+
+            if (cbToWrite <= _16K)
+                VbglR0PhysHeapFree(pvBuf);
+            else
+                vboxSfOs2FreeBigBuffer(pvBuf);
+            VbglR0PhysHeapFree(pReq);
             return rc;
         }
     }
 
     /*
-     * Do the write directly on the buffer, Vbgl will do the locking for us.
+     * We couldn't use a bounce buffer for it, so lock the buffer pages.
      */
-    int vrc = VbglR0SfWrite(&g_SfClient, &pFolder->hHostFolder, pSfFsd->hHostFile,
-                            offWrite, &cbActual, (uint8_t *)pvData, false /*fLocked*/);
-    if (RT_SUCCESS(vrc))
+    KernVMLock_t Lock;
+    ULONG cPagesRet;
+    AssertCompile(sizeof(KernPageList_t) == sizeof(pReq->PgLst.aPages[0]));
+    APIRET rc = KernVMLock(VMDHL_LONG, (void *)pvData, cbToWrite, &Lock, (KernPageList_t *)&pReq->PgLst.aPages[0], &cPagesRet);
+    if (rc == NO_ERROR)
     {
-        AssertStmt(cbActual <= cbWrite, cbActual = cbWrite);
-        *pcb = cbActual;
-        pSfFsi->sfi_positionl = offWrite + cbActual;
-        if ((uint64_t)pSfFsi->sfi_sizel < offWrite + cbActual)
-            pSfFsi->sfi_sizel = offWrite + cbActual;
-        pSfFsi->sfi_tstamp   |= ST_SWRITE | ST_PWRITE;
-        LogFlow(("FS32_READ: returns; cbActual=%#x sfi_positionl=%RI64 [direct]\n", cbActual, pSfFsi->sfi_positionl));
-        return NO_ERROR;
+        pReq->PgLst.offFirstPage = (uint16_t)(uintptr_t)pvData & (uint16_t)PAGE_OFFSET_MASK;
+        cPages = (cbToWrite + ((uint16_t)(uintptr_t)pvData & (uint16_t)PAGE_OFFSET_MASK) + PAGE_SIZE - 1) >> PAGE_SHIFT;
+        vboxSfOs2ConvertPageList((KernPageList_t volatile *)&pReq->PgLst.aPages[0], &pReq->PgLst.aPages[0], cPagesRet, cPages);
+
+        APIRET rc;
+        int vrc = vboxSfOs2HostReqWritePgLst(pFolder, pReq, pSfFsd->hHostFile, offWrite, cbToWrite, cPages);
+        if (RT_SUCCESS(vrc))
+        {
+            cbActual = pReq->Parms.cb32Write.u.value32;
+            AssertStmt(cbActual <= cbToWrite, cbActual = cbToWrite);
+            *pcb = vboxSfOs2WriteFinalize(pSfFsi, offWrite, cbActual);
+            LogFlow(("FS32_WRITE: returns; cbActual=%#x sfi_positionl=%RI64 [locked]\n", cbActual, pSfFsi->sfi_positionl));
+        }
+        else
+        {
+            Log(("FS32_WRITE: vboxSfOs2HostReqWriteEmbedded(off=%#RU64,cb=%#x) -> %Rrc [locked]\n", offWrite, cbToWrite, vrc));
+            rc = ERROR_BAD_NET_RESP;
+        }
+
+        KernVMUnlock(&Lock);
     }
-    Log(("FS32_READ: VbglR0SfWrite(off=%#x,cb=%#x) -> %Rrc [direct]\n", offWrite, cbWrite, vrc));
+    else
+        Log(("FS32_WRITE: KernVMLock(,%p,%#x,) failed -> %u\n", pvData, cbToWrite, rc));
+    VbglR0PhysHeapFree(pReq);
     RT_NOREF_PV(fIoFlags);
-    return ERROR_BAD_NET_RESP;
+    return rc;
 }
 
 
