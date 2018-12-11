@@ -38,8 +38,8 @@
 
 using namespace std;
 
-
 #ifdef VBOX_WITH_UNATTENDED
+
 
 /*********************************************************************************************************************************
 *   UnattendedScriptTemplate Implementation                                                                                      *
@@ -476,10 +476,9 @@ HRESULT UnattendedScriptTemplate::getConditional(const char *pachPlaceholder, si
 }
 
 #endif /* VBOX_WITH_UNATTENDED */
-
-
-
 #if 0 /* Keeping this a reference */
+
+
 /*********************************************************************************************************************************
 *   UnattendedSUSEXMLScript Implementation                                                                                       *
 *********************************************************************************************************************************/
