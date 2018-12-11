@@ -1907,53 +1907,55 @@ static int ichac97R3StreamOpen(PAC97STATE pThis, PAC97STREAM pStream)
 {
     int rc = VINF_SUCCESS;
 
-    LogFunc(("[SD%RU8]\n", pStream->u8SD));
+    PDMAUDIOSTREAMCFG Cfg;
+    RT_ZERO(Cfg);
 
-    RT_ZERO(pStream->State.Cfg);
-
-    PPDMAUDIOSTREAMCFG pCfg     = &pStream->State.Cfg;
-    PAUDMIXSINK        pMixSink = NULL;
-    AssertCompile(sizeof(pCfg->szName) >= 8);
+    PAUDMIXSINK pMixSink = NULL;
 
     /* Set scheduling hint (if available). */
     if (pThis->uTimerHz)
-        pCfg->Device.uSchedulingHintMs = 1000 /* ms */ / pThis->uTimerHz;
+        Cfg.Device.uSchedulingHintMs = 1000 /* ms */ / pThis->uTimerHz;
+
+    Cfg.Props.cChannels = 2;
+    Cfg.Props.cBytes    = 2 /* 16-bit */;
+    Cfg.Props.fSigned   = true;
+    Cfg.Props.cShift    = PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(Cfg.Props.cBytes, Cfg.Props.cChannels);
 
     switch (pStream->u8SD)
     {
         case AC97SOUNDSOURCE_PI_INDEX:
         {
-            pCfg->Props.uHz         = ichac97MixerGet(pThis, AC97_PCM_LR_ADC_Rate);
-            pCfg->enmDir            = PDMAUDIODIR_IN;
-            pCfg->DestSource.Source = PDMAUDIORECSOURCE_LINE;
-            pCfg->enmLayout         = PDMAUDIOSTREAMLAYOUT_NON_INTERLEAVED;
-            strcpy(pCfg->szName, "Line-In");
+            Cfg.Props.uHz         = ichac97MixerGet(pThis, AC97_PCM_LR_ADC_Rate);
+            Cfg.enmDir            = PDMAUDIODIR_IN;
+            Cfg.DestSource.Source = PDMAUDIORECSOURCE_LINE;
+            Cfg.enmLayout         = PDMAUDIOSTREAMLAYOUT_NON_INTERLEAVED;
+            RTStrCopy(Cfg.szName, sizeof(Cfg.szName), "Line-In");
 
-            pMixSink                = pThis->pSinkLineIn;
+            pMixSink              = pThis->pSinkLineIn;
             break;
         }
 
         case AC97SOUNDSOURCE_MC_INDEX:
         {
-            pCfg->Props.uHz         = ichac97MixerGet(pThis, AC97_MIC_ADC_Rate);
-            pCfg->enmDir            = PDMAUDIODIR_IN;
-            pCfg->DestSource.Source = PDMAUDIORECSOURCE_MIC;
-            pCfg->enmLayout         = PDMAUDIOSTREAMLAYOUT_NON_INTERLEAVED;
-            strcpy(pCfg->szName, "Mic-In");
+            Cfg.Props.uHz         = ichac97MixerGet(pThis, AC97_MIC_ADC_Rate);
+            Cfg.enmDir            = PDMAUDIODIR_IN;
+            Cfg.DestSource.Source = PDMAUDIORECSOURCE_MIC;
+            Cfg.enmLayout         = PDMAUDIOSTREAMLAYOUT_NON_INTERLEAVED;
+            RTStrCopy(Cfg.szName, sizeof(Cfg.szName), "Mic-In");
 
-            pMixSink                = pThis->pSinkMicIn;
+            pMixSink              = pThis->pSinkMicIn;
             break;
         }
 
         case AC97SOUNDSOURCE_PO_INDEX:
         {
-            pCfg->Props.uHz         = ichac97MixerGet(pThis, AC97_PCM_Front_DAC_Rate);
-            pCfg->enmDir            = PDMAUDIODIR_OUT;
-            pCfg->DestSource.Dest   = PDMAUDIOPLAYBACKDEST_FRONT;
-            pCfg->enmLayout         = PDMAUDIOSTREAMLAYOUT_NON_INTERLEAVED;
-            strcpy(pCfg->szName, "Output");
+            Cfg.Props.uHz         = ichac97MixerGet(pThis, AC97_PCM_Front_DAC_Rate);
+            Cfg.enmDir            = PDMAUDIODIR_OUT;
+            Cfg.DestSource.Dest   = PDMAUDIOPLAYBACKDEST_FRONT;
+            Cfg.enmLayout         = PDMAUDIOSTREAMLAYOUT_NON_INTERLEAVED;
+            RTStrCopy(Cfg.szName, sizeof(Cfg.szName), "Output");
 
-            pMixSink                = pThis->pSinkOut;
+            pMixSink              = pThis->pSinkOut;
             break;
         }
 
@@ -1964,27 +1966,35 @@ static int ichac97R3StreamOpen(PAC97STATE pThis, PAC97STREAM pStream)
 
     if (RT_SUCCESS(rc))
     {
-        ichac97R3MixerRemoveDrvStreams(pThis, pMixSink, pCfg->enmDir, pCfg->DestSource);
-
-        if (pCfg->Props.uHz)
+        /* Only (re-)create the stream (and driver chain) if we really have to.
+         * Otherwise avoid this and just reuse it, as this costs performance. */
+        if (!DrvAudioHlpPCMPropsAreEqual(&Cfg.Props, &pStream->State.Cfg.Props))
         {
-            Assert(pCfg->enmDir != PDMAUDIODIR_UNKNOWN);
+            LogFlowFunc(("[SD%RU8] uHz=%RU32\n", pStream->u8SD, Cfg.Props.uHz));
 
-            pCfg->Props.cChannels = 2;
-            pCfg->Props.cBytes    = 2 /* 16-bit */;
-            pCfg->Props.fSigned   = true;
-            pCfg->Props.cShift    = PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(pCfg->Props.cBytes, pCfg->Props.cChannels);
-
-            if (pStream->State.pCircBuf)
+            if (Cfg.Props.uHz)
             {
-                RTCircBufDestroy(pStream->State.pCircBuf);
-                pStream->State.pCircBuf = NULL;
-            }
+                Assert(Cfg.enmDir != PDMAUDIODIR_UNKNOWN);
 
-            rc = RTCircBufCreate(&pStream->State.pCircBuf, DrvAudioHlpMilliToBytes(500 /* ms */, &pCfg->Props)); /** @todo Make this configurable. */
-            if (RT_SUCCESS(rc))
-                rc = ichac97R3MixerAddDrvStreams(pThis, pMixSink, pCfg);
+                if (pStream->State.pCircBuf)
+                {
+                    RTCircBufDestroy(pStream->State.pCircBuf);
+                    pStream->State.pCircBuf = NULL;
+                }
+
+                rc = RTCircBufCreate(&pStream->State.pCircBuf, DrvAudioHlpMilliToBytes(500 /* ms */, &Cfg.Props)); /** @todo Make this configurable. */
+                if (RT_SUCCESS(rc))
+                {
+                    ichac97R3MixerRemoveDrvStreams(pThis, pMixSink, Cfg.enmDir, Cfg.DestSource);
+
+                    rc = ichac97R3MixerAddDrvStreams(pThis, pMixSink, &Cfg);
+                    if (RT_SUCCESS(rc))
+                        rc = DrvAudioHlpStreamCfgCopy(&pStream->State.Cfg, &Cfg);
+                }
+            }
         }
+        else
+            LogFlowFunc(("[SD%RU8] Skipping (re-)creation\n", pStream->u8SD));
     }
 
     LogFlowFunc(("[SD%RU8] rc=%Rrc\n", pStream->u8SD, rc));
