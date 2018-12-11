@@ -1385,10 +1385,13 @@ VMM_INT_DECL(uint64_t) CPUMGetGuestIa32VmxPinbasedCtls(PVMCPU pVCpu)
                                  | (pGuestFeatures->fVmxVirtNmi      << VMX_BF_PIN_CTLS_VIRT_NMI_SHIFT     )
                                  | (pGuestFeatures->fVmxPreemptTimer << VMX_BF_PIN_CTLS_PREEMPT_TIMER_SHIFT)
                                  | (pGuestFeatures->fVmxPostedInt    << VMX_BF_PIN_CTLS_POSTED_INT_SHIFT   );
-        uint32_t const fVal      = VMX_PIN_CTLS_DEFAULT1;
-        uint32_t const fZap      = fFeatures | VMX_PIN_CTLS_DEFAULT1;
-        AssertMsg((fVal & fZap) == fVal, ("fVal=%#RX32 fZap=%#RX32 fFeatures=%#RX32\n", fVal, fZap, fFeatures));
-        uVmxMsr = RT_MAKE_U64(fVal, fZap);
+        /* Set the default1 class bits. See Intel spec. A.3.1 "Pin-Based VM-Execution Controls". */
+        uint32_t const fAllowed0 = VMX_PIN_CTLS_DEFAULT1;
+        uint32_t const fAllowed1 = fFeatures | VMX_PIN_CTLS_DEFAULT1;
+        AssertMsg((fAllowed0 & fAllowed1) == fAllowed0, ("fAllowed0=%#RX32 fAllowed1=%#RX32 fFeatures=%#RX32\n",
+                                                         fAllowed0, fAllowed1, fFeatures));
+        uVmxMsr = RT_MAKE_U64(fAllowed0, fAllowed1);
+        LogRel(("fVmxExtIntExit=%u fFeatures=%#RX32 uVmxMsr=%#RX64\n", !!pGuestFeatures->fVmxExtIntExit, fFeatures, uVmxMsr));
     }
     else
         uVmxMsr = 0;
@@ -1438,10 +1441,12 @@ VMM_INT_DECL(uint64_t) CPUMGetGuestIa32VmxProcbasedCtls(PVMCPU pVCpu)
                                  | (pGuestFeatures->fVmxMonitorExit       << VMX_BF_PROC_CTLS_MONITOR_EXIT_SHIFT      )
                                  | (pGuestFeatures->fVmxPauseExit         << VMX_BF_PROC_CTLS_PAUSE_EXIT_SHIFT        )
                                  | (pGuestFeatures->fVmxSecondaryExecCtls << VMX_BF_PROC_CTLS_USE_SECONDARY_CTLS_SHIFT);
-        uint32_t const fVal      = VMX_PROC_CTLS_DEFAULT1;
-        uint32_t const fZap      = fFeatures | VMX_PROC_CTLS_DEFAULT1;
-        AssertMsg((fVal & fZap) == fVal, ("fVal=%#RX32 fZap=%#RX32 fFeatures=%#RX32\n", fVal, fZap, fFeatures));
-        uVmxMsr = RT_MAKE_U64(fVal, fZap);
+        /* Set the default1 class bits. See Intel spec. A.3.2 "Primary Processor-Based VM-Execution Controls". */
+        uint32_t const fAllowed0 = VMX_PROC_CTLS_DEFAULT1;
+        uint32_t const fAllowed1 = fFeatures | VMX_PROC_CTLS_DEFAULT1;
+        AssertMsg((fAllowed0 & fAllowed1) == fAllowed0, ("fAllowed0=%#RX32 fAllowed1=%#RX32 fFeatures=%#RX32\n", fAllowed0,
+                                                         fAllowed1, fFeatures));
+        uVmxMsr = RT_MAKE_U64(fAllowed0, fAllowed1);
     }
     else
         uVmxMsr = 0;
@@ -1478,10 +1483,12 @@ VMM_INT_DECL(uint64_t) CPUMGetGuestIa32VmxExitCtls(PVMCPU pVCpu)
                                  | (pGuestFeatures->fVmxExitSaveEferMsr   << VMX_BF_EXIT_CTLS_SAVE_EFER_MSR_SHIFT       )
                                  | (pGuestFeatures->fVmxExitLoadEferMsr   << VMX_BF_EXIT_CTLS_LOAD_EFER_MSR_SHIFT       )
                                  | (pGuestFeatures->fVmxSavePreemptTimer  << VMX_BF_EXIT_CTLS_SAVE_PREEMPT_TIMER_SHIFT  );
-        uint32_t const fVal      = VMX_EXIT_CTLS_DEFAULT1;
-        uint32_t const fZap      = fFeatures | VMX_EXIT_CTLS_DEFAULT1;
-        AssertMsg((fVal & fZap) == fVal, ("fVal=%#RX32 fZap=%#RX32 fFeatures=%#RX32\n", fVal, fZap, fFeatures));
-        uVmxMsr = RT_MAKE_U64(fVal, fZap);
+        /* Set the default1 class bits. See Intel spec. A.4 "VM-exit Controls". */
+        uint32_t const fAllowed0 = VMX_EXIT_CTLS_DEFAULT1;
+        uint32_t const fAllowed1 = fFeatures | VMX_EXIT_CTLS_DEFAULT1;
+        AssertMsg((fAllowed0 & fAllowed1) == fAllowed0, ("fAllowed0=%#RX32 fAllowed1=%#RX32 fFeatures=%#RX32\n", fAllowed0,
+                                                         fAllowed1, fFeatures));
+        uVmxMsr = RT_MAKE_U64(fAllowed0, fAllowed1);
     }
     else
         uVmxMsr = 0;
@@ -1514,11 +1521,12 @@ VMM_INT_DECL(uint64_t) CPUMGetGuestIa32VmxEntryCtls(PVMCPU pVCpu)
                                  | (pGuestFeatures->fVmxIa32eModeGuest     << VMX_BF_ENTRY_CTLS_IA32E_MODE_GUEST_SHIFT)
                                  | (pGuestFeatures->fVmxEntryLoadEferMsr   << VMX_BF_ENTRY_CTLS_LOAD_EFER_MSR_SHIFT   )
                                  | (pGuestFeatures->fVmxEntryLoadPatMsr    << VMX_BF_ENTRY_CTLS_LOAD_PAT_MSR_SHIFT    );
-        uint32_t const fDefault1 = VMX_ENTRY_CTLS_DEFAULT1;
-        uint32_t const fVal      = fDefault1;
-        uint32_t const fZap      = fFeatures | fDefault1;
-        AssertMsg((fVal & fZap) == fVal, ("fVal=%#RX32 fZap=%#RX32 fFeatures=%#RX32\n", fVal, fZap, fFeatures));
-        uVmxMsr = RT_MAKE_U64(fVal, fZap);
+        /* Set the default1 class bits. See Intel spec. A.5 "VM-entry Controls". */
+        uint32_t const fAllowed0 = VMX_ENTRY_CTLS_DEFAULT1;
+        uint32_t const fAllowed1 = fFeatures | VMX_ENTRY_CTLS_DEFAULT1;
+        AssertMsg((fAllowed0 & fAllowed1) == fAllowed0, ("fAllowed0=%#RX32 fAllowed0=%#RX32 fFeatures=%#RX32\n", fAllowed0,
+                                                         fAllowed1, fFeatures));
+        uVmxMsr = RT_MAKE_U64(fAllowed0, fAllowed1);
     }
     else
         uVmxMsr = 0;
@@ -1753,9 +1761,10 @@ VMM_INT_DECL(uint64_t) CPUMGetGuestIa32VmxProcbasedCtls2(PVMCPU pVCpu)
                                  | (pGuestFeatures->fVmxEptXcptVe         << VMX_BF_PROC_CTLS2_EPT_VE_SHIFT            )
                                  | (pGuestFeatures->fVmxXsavesXrstors     << VMX_BF_PROC_CTLS2_XSAVES_XRSTORS_SHIFT    )
                                  | (pGuestFeatures->fVmxUseTscScaling     << VMX_BF_PROC_CTLS2_TSC_SCALING_SHIFT       );
-        uint32_t const fVal      = 0;
-        uint32_t const fZap      = fFeatures;
-        uVmxMsr = RT_MAKE_U64(fVal, fZap);
+        /* No default1 class bits. A.3.3 "Secondary Processor-Based VM-Execution Controls". */
+        uint32_t const fAllowed0 = 0;
+        uint32_t const fAllowed1 = fFeatures;
+        uVmxMsr = RT_MAKE_U64(fAllowed0, fAllowed1);
     }
     else
         uVmxMsr = 0;
