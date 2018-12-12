@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIGuestControlFileTable class implementation.
+ * VBox Qt GUI - UIFileManagerHostTable class implementation.
  */
 
 /*
@@ -27,9 +27,9 @@
 /* GUI includes: */
 # include "QILabel.h"
 # include "UIActionPool.h"
-# include "UIGuestControlFileManager.h"
-# include "UIGuestControlFileModel.h"
-# include "UIHostFileTable.h"
+# include "UIFileManager.h"
+# include "UIFileManagerModel.h"
+# include "UIFileManagerHostTable.h"
 # include "UIToolBar.h"
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
@@ -104,7 +104,7 @@ void UIHostDirectoryDiskUsageComputer::directoryStatisticsRecursive(const QStrin
     {
         const QFileInfo &entryInfo = entryList.at(i);
         if (entryInfo.baseName().isEmpty() || entryInfo.baseName() == "." ||
-            entryInfo.baseName() == UIGuestControlFileModel::strUpDirectoryString)
+            entryInfo.baseName() == UIFileManagerModel::strUpDirectoryString)
             continue;
         statistics.m_totalSize += entryInfo.size();
         if (entryInfo.isSymLink())
@@ -122,11 +122,11 @@ void UIHostDirectoryDiskUsageComputer::directoryStatisticsRecursive(const QStrin
 
 
 /*********************************************************************************************************************************
-*   UIHostFileTable implementation.                                                                                              *
+*   UIFileManagerHostTable implementation.                                                                                       *
 *********************************************************************************************************************************/
 
-UIHostFileTable::UIHostFileTable(UIActionPool *pActionPool, QWidget *pParent /* = 0 */)
-    :UIGuestControlFileTable(pActionPool, pParent)
+UIFileManagerHostTable::UIFileManagerHostTable(UIActionPool *pActionPool, QWidget *pParent /* = 0 */)
+    :UIFileManagerTable(pActionPool, pParent)
 {
     initializeFileTree();
     prepareToolbar();
@@ -134,73 +134,73 @@ UIHostFileTable::UIHostFileTable(UIActionPool *pActionPool, QWidget *pParent /* 
     retranslateUi();
 }
 
-void UIHostFileTable::retranslateUi()
+void UIFileManagerHostTable::retranslateUi()
 {
     if (m_pLocationLabel)
-        m_pLocationLabel->setText(UIGuestControlFileManager::tr("Host System"));
-    UIGuestControlFileTable::retranslateUi();
+        m_pLocationLabel->setText(UIFileManager::tr("Host System"));
+    UIFileManagerTable::retranslateUi();
 }
 
-void UIHostFileTable::prepareToolbar()
+void UIFileManagerHostTable::prepareToolbar()
 {
     if (m_pToolBar && m_pActionPool)
     {
-        m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Host_GoUp));
-        m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Host_GoHome));
-        m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Host_Refresh));
+        m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_FileManager_S_Host_GoUp));
+        m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_FileManager_S_Host_GoHome));
+        m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_FileManager_S_Host_Refresh));
         m_pToolBar->addSeparator();
-        m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Host_Delete));
-        m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Host_Rename));
-        m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Host_CreateNewDirectory));
+        m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_FileManager_S_Host_Delete));
+        m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_FileManager_S_Host_Rename));
+        m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_FileManager_S_Host_CreateNewDirectory));
         /* Hide cut, copy, and paste for now. We will implement those
            when we have an API for host file operations: */
         // m_pToolBar->addSeparator();
-        // m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Host_Copy));
-        // m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Host_Cut));
-        // m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Host_Paste));
+        // m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_FileManager_S_Host_Copy));
+        // m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_FileManager_S_Host_Cut));
+        // m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_FileManager_S_Host_Paste));
         m_pToolBar->addSeparator();
-        m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Host_SelectAll));
-        m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Host_InvertSelection));
+        m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_FileManager_S_Host_SelectAll));
+        m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_FileManager_S_Host_InvertSelection));
         m_pToolBar->addSeparator();
-        m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Host_ShowProperties));
+        m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_FileManager_S_Host_ShowProperties));
 
-        m_selectionDependentActions.insert(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Host_Delete));
-        m_selectionDependentActions.insert(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Host_Rename));
-        m_selectionDependentActions.insert(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Host_ShowProperties));
+        m_selectionDependentActions.insert(m_pActionPool->action(UIActionIndex_M_FileManager_S_Host_Delete));
+        m_selectionDependentActions.insert(m_pActionPool->action(UIActionIndex_M_FileManager_S_Host_Rename));
+        m_selectionDependentActions.insert(m_pActionPool->action(UIActionIndex_M_FileManager_S_Host_ShowProperties));
     }
 
     setSelectionDependentActionsEnabled(false);
 }
 
-void UIHostFileTable::createFileViewContextMenu(const QWidget *pWidget, const QPoint &point)
+void UIFileManagerHostTable::createFileViewContextMenu(const QWidget *pWidget, const QPoint &point)
 {
     if (!pWidget)
         return;
 
     QMenu menu;
-    menu.addAction(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Host_GoUp));
+    menu.addAction(m_pActionPool->action(UIActionIndex_M_FileManager_S_Host_GoUp));
 
-    menu.addAction(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Host_GoHome));
-    menu.addAction(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Host_Refresh));
+    menu.addAction(m_pActionPool->action(UIActionIndex_M_FileManager_S_Host_GoHome));
+    menu.addAction(m_pActionPool->action(UIActionIndex_M_FileManager_S_Host_Refresh));
     menu.addSeparator();
-    menu.addAction(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Host_Delete));
-    menu.addAction(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Host_Rename));
-    menu.addAction(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Host_CreateNewDirectory));
+    menu.addAction(m_pActionPool->action(UIActionIndex_M_FileManager_S_Host_Delete));
+    menu.addAction(m_pActionPool->action(UIActionIndex_M_FileManager_S_Host_Rename));
+    menu.addAction(m_pActionPool->action(UIActionIndex_M_FileManager_S_Host_CreateNewDirectory));
     /* Hide cut, copy, and paste for now. We will implement those
        when we have an API for host file operations: */
     // menu.addSeparator();
-    // menu.addAction(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Host_Copy));
-    // menu.addAction(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Host_Cut));
-    // menu.addAction(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Host_Paste));
+    // menu.addAction(m_pActionPool->action(UIActionIndex_M_FileManager_S_Host_Copy));
+    // menu.addAction(m_pActionPool->action(UIActionIndex_M_FileManager_S_Host_Cut));
+    // menu.addAction(m_pActionPool->action(UIActionIndex_M_FileManager_S_Host_Paste));
     menu.addSeparator();
-    menu.addAction(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Host_SelectAll));
-    menu.addAction(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Host_InvertSelection));
+    menu.addAction(m_pActionPool->action(UIActionIndex_M_FileManager_S_Host_SelectAll));
+    menu.addAction(m_pActionPool->action(UIActionIndex_M_FileManager_S_Host_InvertSelection));
     menu.addSeparator();
-    menu.addAction(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Host_ShowProperties));
+    menu.addAction(m_pActionPool->action(UIActionIndex_M_FileManager_S_Host_ShowProperties));
     menu.exec(pWidget->mapToGlobal(point));
 }
 
-void UIHostFileTable::readDirectory(const QString& strPath, UIFileTableItem *parent, bool isStartDir /*= false*/)
+void UIFileManagerHostTable::readDirectory(const QString& strPath, UIFileTableItem *parent, bool isStartDir /*= false*/)
 {
     if (!parent)
         return;
@@ -248,7 +248,7 @@ void UIHostFileTable::readDirectory(const QString& strPath, UIFileTableItem *par
     //updateCurrentLocationEdit(strPath);
 }
 
-void UIHostFileTable::deleteByItem(UIFileTableItem *item)
+void UIFileManagerHostTable::deleteByItem(UIFileTableItem *item)
 {
     if (item->isUpDirectory())
         return;
@@ -270,7 +270,7 @@ void UIHostFileTable::deleteByItem(UIFileTableItem *item)
          emit sigLogOutput(QString(item->path()).append(" could not be deleted"), FileManagerLogType_Error);
 }
 
-void UIHostFileTable::deleteByPath(const QStringList &pathList)
+void UIFileManagerHostTable::deleteByPath(const QStringList &pathList)
 {
     foreach (const QString &strPath, pathList)
     {
@@ -291,7 +291,7 @@ void UIHostFileTable::deleteByPath(const QStringList &pathList)
     }
 }
 
-void UIHostFileTable::goToHomeDirectory()
+void UIFileManagerHostTable::goToHomeDirectory()
 {
     if (!m_pRootItem || m_pRootItem->childCount() <= 0)
         return;
@@ -303,7 +303,7 @@ void UIHostFileTable::goToHomeDirectory()
     goIntoDirectory(UIPathOperations::pathTrail(userHome));
 }
 
-bool UIHostFileTable::renameItem(UIFileTableItem *item, QString newBaseName)
+bool UIFileManagerHostTable::renameItem(UIFileTableItem *item, QString newBaseName)
 {
     if (!item || item->isUpDirectory() || newBaseName.isEmpty())
         return false;
@@ -317,7 +317,7 @@ bool UIHostFileTable::renameItem(UIFileTableItem *item, QString newBaseName)
     return false;
 }
 
-bool UIHostFileTable::createDirectory(const QString &path, const QString &directoryName)
+bool UIFileManagerHostTable::createDirectory(const QString &path, const QString &directoryName)
 {
     QDir parentDir(path);
     if (!parentDir.mkdir(directoryName))
@@ -329,7 +329,7 @@ bool UIHostFileTable::createDirectory(const QString &path, const QString &direct
     return true;
 }
 
-FileObjectType UIHostFileTable::fileType(const QFileInfo &fsInfo)
+FileObjectType UIFileManagerHostTable::fileType(const QFileInfo &fsInfo)
 {
     if (!fsInfo.exists())
         return FileObjectType_Unknown;
@@ -345,7 +345,7 @@ FileObjectType UIHostFileTable::fileType(const QFileInfo &fsInfo)
     return FileObjectType_Other;
 }
 
-QString UIHostFileTable::fsObjectPropertyString()
+QString UIFileManagerHostTable::fsObjectPropertyString()
 {
     QStringList selectedObjects = selectedItemPathList();
     if (selectedObjects.isEmpty())
@@ -359,20 +359,20 @@ QString UIHostFileTable::fsObjectPropertyString()
             return QString();
         QStringList propertyStringList;
         /* Name: */
-        propertyStringList << UIGuestControlFileManager::tr("<b>Name:</b> %1<br/>").arg(fileInfo.fileName());
+        propertyStringList << UIFileManager::tr("<b>Name:</b> %1<br/>").arg(fileInfo.fileName());
         /* Size: */
-        propertyStringList << UIGuestControlFileManager::tr("<b>Size:</b> %1 bytes").arg(QString::number(fileInfo.size()));
+        propertyStringList << UIFileManager::tr("<b>Size:</b> %1 bytes").arg(QString::number(fileInfo.size()));
         if (fileInfo.size() >= m_iKiloByte)
             propertyStringList << QString(" (%1)").arg(humanReadableSize(fileInfo.size()));
         propertyStringList << "<br/>";
         /* Type: */
-        propertyStringList << UIGuestControlFileManager::tr("<b>Type:</b> %1<br/>").arg(fileTypeString(fileType(fileInfo)));
+        propertyStringList << UIFileManager::tr("<b>Type:</b> %1<br/>").arg(fileTypeString(fileType(fileInfo)));
         /* Creation Date: */
-        propertyStringList << UIGuestControlFileManager::tr("<b>Created:</b> %1<br/>").arg(fileInfo.created().toString());
+        propertyStringList << UIFileManager::tr("<b>Created:</b> %1<br/>").arg(fileInfo.created().toString());
         /* Last Modification Date: */
-        propertyStringList << UIGuestControlFileManager::tr("<b>Modified:</b> %1<br/>").arg(fileInfo.lastModified().toString());
+        propertyStringList << UIFileManager::tr("<b>Modified:</b> %1<br/>").arg(fileInfo.lastModified().toString());
         /* Owner: */
-        propertyStringList << UIGuestControlFileManager::tr("<b>Owner:</b> %1").arg(fileInfo.owner());
+        propertyStringList << UIFileManager::tr("<b>Owner:</b> %1").arg(fileInfo.owner());
 
         return propertyStringList.join(QString());;
     }
@@ -393,16 +393,16 @@ QString UIHostFileTable::fsObjectPropertyString()
         totalSize += fileInfo.size();
     }
     QStringList propertyStringList;
-    propertyStringList << UIGuestControlFileManager::tr("<b>Selected:</b> %1 files and %2 directories<br/>").
+    propertyStringList << UIFileManager::tr("<b>Selected:</b> %1 files and %2 directories<br/>").
         arg(QString::number(fileCount)).arg(QString::number(directoryCount));
-    propertyStringList << UIGuestControlFileManager::tr("<b>Size:</b> %1 bytes").arg(QString::number(totalSize));
+    propertyStringList << UIFileManager::tr("<b>Size:</b> %1 bytes").arg(QString::number(totalSize));
     if (totalSize >= m_iKiloByte)
         propertyStringList << QString(" (%1)").arg(humanReadableSize(totalSize));
 
     return propertyStringList.join(QString());
 }
 
-void  UIHostFileTable::showProperties()
+void  UIFileManagerHostTable::showProperties()
 {
     qRegisterMetaType<UIDirectoryStatistics>();
     QString fsPropertyString = fsObjectPropertyString();
@@ -423,7 +423,7 @@ void  UIHostFileTable::showProperties()
         if (directoryThread)
         {
             connect(directoryThread, &UIHostDirectoryDiskUsageComputer::sigResultUpdated,
-                    this, &UIHostFileTable::sltReceiveDirectoryStatistics/*, Qt::DirectConnection*/);
+                    this, &UIFileManagerHostTable::sltReceiveDirectoryStatistics/*, Qt::DirectConnection*/);
             directoryThread->start();
         }
     }
@@ -435,12 +435,12 @@ void  UIHostFileTable::showProperties()
         if (directoryThread->isRunning())
             directoryThread->stopRecursion();
         disconnect(directoryThread, &UIHostDirectoryDiskUsageComputer::sigResultUpdated,
-                this, &UIHostFileTable::sltReceiveDirectoryStatistics/*, Qt::DirectConnection*/);
+                this, &UIFileManagerHostTable::sltReceiveDirectoryStatistics/*, Qt::DirectConnection*/);
         directoryThread->wait();
     }
 }
 
-void UIHostFileTable::determineDriveLetters()
+void UIFileManagerHostTable::determineDriveLetters()
 {
     QFileInfoList drive = QDir::drives();
     m_driveLetterList.clear();
@@ -452,7 +452,7 @@ void UIHostFileTable::determineDriveLetters()
     }
 }
 
-QString UIHostFileTable::permissionString(QFileDevice::Permissions permissions)
+QString UIFileManagerHostTable::permissionString(QFileDevice::Permissions permissions)
 {
     QString strPermissions;
     if (permissions & QFileDevice::ReadOwner)
@@ -502,32 +502,32 @@ QString UIHostFileTable::permissionString(QFileDevice::Permissions permissions)
     return strPermissions;
 }
 
-void UIHostFileTable::prepareActionConnections()
+void UIFileManagerHostTable::prepareActionConnections()
 {
-    connect(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Host_GoUp), &QAction::triggered,
-            this, &UIGuestControlFileTable::sltGoUp);
-    connect(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Host_GoHome), &QAction::triggered,
-            this, &UIGuestControlFileTable::sltGoHome);
-    connect(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Host_Refresh), &QAction::triggered,
-            this, &UIGuestControlFileTable::sltRefresh);
-    connect(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Host_Delete), &QAction::triggered,
-            this, &UIGuestControlFileTable::sltDelete);
-    connect(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Host_Rename), &QAction::triggered,
-            this, &UIGuestControlFileTable::sltRename);
-    connect(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Host_Copy), &QAction::triggered,
-            this, &UIGuestControlFileTable::sltCopy);
-    connect(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Host_Cut), &QAction::triggered,
-            this, &UIGuestControlFileTable::sltCut);
-    connect(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Host_Paste), &QAction::triggered,
-            this, &UIGuestControlFileTable::sltPaste);
-    connect(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Host_SelectAll), &QAction::triggered,
-            this, &UIGuestControlFileTable::sltSelectAll);
-    connect(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Host_InvertSelection), &QAction::triggered,
-            this, &UIGuestControlFileTable::sltInvertSelection);
-    connect(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Host_ShowProperties), &QAction::triggered,
-            this, &UIGuestControlFileTable::sltShowProperties);
-    connect(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_S_Host_CreateNewDirectory), &QAction::triggered,
-            this, &UIGuestControlFileTable::sltCreateNewDirectory);
+    connect(m_pActionPool->action(UIActionIndex_M_FileManager_S_Host_GoUp), &QAction::triggered,
+            this, &UIFileManagerTable::sltGoUp);
+    connect(m_pActionPool->action(UIActionIndex_M_FileManager_S_Host_GoHome), &QAction::triggered,
+            this, &UIFileManagerTable::sltGoHome);
+    connect(m_pActionPool->action(UIActionIndex_M_FileManager_S_Host_Refresh), &QAction::triggered,
+            this, &UIFileManagerTable::sltRefresh);
+    connect(m_pActionPool->action(UIActionIndex_M_FileManager_S_Host_Delete), &QAction::triggered,
+            this, &UIFileManagerTable::sltDelete);
+    connect(m_pActionPool->action(UIActionIndex_M_FileManager_S_Host_Rename), &QAction::triggered,
+            this, &UIFileManagerTable::sltRename);
+    connect(m_pActionPool->action(UIActionIndex_M_FileManager_S_Host_Copy), &QAction::triggered,
+            this, &UIFileManagerTable::sltCopy);
+    connect(m_pActionPool->action(UIActionIndex_M_FileManager_S_Host_Cut), &QAction::triggered,
+            this, &UIFileManagerTable::sltCut);
+    connect(m_pActionPool->action(UIActionIndex_M_FileManager_S_Host_Paste), &QAction::triggered,
+            this, &UIFileManagerTable::sltPaste);
+    connect(m_pActionPool->action(UIActionIndex_M_FileManager_S_Host_SelectAll), &QAction::triggered,
+            this, &UIFileManagerTable::sltSelectAll);
+    connect(m_pActionPool->action(UIActionIndex_M_FileManager_S_Host_InvertSelection), &QAction::triggered,
+            this, &UIFileManagerTable::sltInvertSelection);
+    connect(m_pActionPool->action(UIActionIndex_M_FileManager_S_Host_ShowProperties), &QAction::triggered,
+            this, &UIFileManagerTable::sltShowProperties);
+    connect(m_pActionPool->action(UIActionIndex_M_FileManager_S_Host_CreateNewDirectory), &QAction::triggered,
+            this, &UIFileManagerTable::sltCreateNewDirectory);
 }
 
-#include "UIHostFileTable.moc"
+#include "UIFileManagerHostTable.moc"

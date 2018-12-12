@@ -15,42 +15,46 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___UIGuestControlFileManagerLogPanel_h___
-#define ___UIGuestControlFileManagerLogPanel_h___
+#ifndef ___UIFileManagerSessionPanel_h___
+#define ___UIFileManagerSessionPanel_h___
 
 /* GUI includes: */
-#include "UIGuestControlDefs.h"
-#include "UIGuestControlFileManagerPanel.h"
+#include "UIFileManagerPanel.h"
 
 /* Forward declarations: */
 class QTextEdit;
-class UIGuestControlFileManager;
+class UIFileManager;
+class UIGuestSessionCreateWidget;
 
-/** UIGuestControlFileManagerPanel extension to display file manager logs. */
-class UIGuestControlFileManagerLogPanel : public UIGuestControlFileManagerPanel
+/** UIFileManagerPanel extension providing GUI for creating/stopping a guest session. */
+class UIFileManagerSessionPanel : public UIFileManagerPanel
 {
     Q_OBJECT;
 
 public:
 
-    UIGuestControlFileManagerLogPanel(UIGuestControlFileManager *pManagerWidget, QWidget *pParent);
-    void appendLog(const QString &str, FileManagerLogType);
+    UIFileManagerSessionPanel(UIFileManager *pManagerWidget, QWidget *pParent);
+    /** @name Enable/disable member widget wrt. guest session status.
+      * @{ */
+        void switchSessionCloseMode();
+        void switchSessionCreateMode();
+    /** @} */
     virtual QString panelName() const /* override */;
+
+signals:
+
+    void sigCreateSession(QString strUserName, QString strPassword);
+    void sigCloseSession();
 
 protected:
 
     virtual void prepareWidgets() /* override */;
     virtual void prepareConnections() /* override */;
-
-    /** Handles the translation event. */
     void retranslateUi();
-
-private slots:
-
 
 private:
 
-    QTextEdit *m_pLogTextEdit;
+    UIGuestSessionCreateWidget *m_pSessionCreateWidget;
 };
 
-#endif /* !___UIGuestControlFileManagerLogPanel_h___ */
+#endif /* !___UIFileManagerSessionPanel_h___ */

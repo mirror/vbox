@@ -560,7 +560,7 @@ template<> QString toInternalString(const UIExtraDataMetaDefs::RuntimeMenuMachin
         case UIExtraDataMetaDefs::RuntimeMenuMachineActionType_SettingsDialog:                strResult = "SettingsDialog"; break;
         case UIExtraDataMetaDefs::RuntimeMenuMachineActionType_TakeSnapshot:                  strResult = "TakeSnapshot"; break;
         case UIExtraDataMetaDefs::RuntimeMenuMachineActionType_InformationDialog:             strResult = "InformationDialog"; break;
-        case UIExtraDataMetaDefs::RuntimeMenuMachineActionType_GuestControlFileManagerDialog: strResult = "GuestControlFileManagerDialog"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuMachineActionType_FileManagerDialog:             strResult = "FileManagerDialog"; break;
         case UIExtraDataMetaDefs::RuntimeMenuMachineActionType_GuestProcessControlDialog:     strResult = "GuestProcessControlDialog"; break;
         case UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Pause:                         strResult = "Pause"; break;
         case UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Reset:                         strResult = "Reset"; break;
@@ -588,7 +588,7 @@ template<> UIExtraDataMetaDefs::RuntimeMenuMachineActionType fromInternalString<
     keys << "SettingsDialog";                values << UIExtraDataMetaDefs::RuntimeMenuMachineActionType_SettingsDialog;
     keys << "TakeSnapshot";                  values << UIExtraDataMetaDefs::RuntimeMenuMachineActionType_TakeSnapshot;
     keys << "InformationDialog";             values << UIExtraDataMetaDefs::RuntimeMenuMachineActionType_InformationDialog;
-    keys << "GuestControlFileManagerDialog"; values << UIExtraDataMetaDefs::RuntimeMenuMachineActionType_GuestControlFileManagerDialog;
+    keys << "FileManagerDialog";             values << UIExtraDataMetaDefs::RuntimeMenuMachineActionType_FileManagerDialog;
     keys << "GuestProcessControlDialog";     values << UIExtraDataMetaDefs::RuntimeMenuMachineActionType_GuestProcessControlDialog;
     keys << "Pause";                         values << UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Pause;
     keys << "Reset";                         values << UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Reset;

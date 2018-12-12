@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIGuestControlFileModel class declaration.
+ * VBox Qt GUI - UIFileManagerModel class declaration.
  */
 
 /*
@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___UIGuestControlFileModel_h___
-#define ___UIGuestControlFileModel_h___
+#ifndef ___UIFileManagerModel_h___
+#define ___UIFileManagerModel_h___
 
 /* Qt includes: */
 #include <QAbstractItemModel>
@@ -27,16 +27,16 @@
 
 /* Forward declarations: */
 class UIFileTableItem;
-class UIGuestControlFileTable;
+class UIFileManagerTable;
 
-enum UIGuestControlFileModelColumn
+enum UIFileManagerModelColumn
 {
-    UIGuestControlFileModelColumn_Name = 0,
-    UIGuestControlFileModelColumn_Size,
-    UIGuestControlFileModelColumn_ChangeTime,
-    UIGuestControlFileModelColumn_Owner,
-    UIGuestControlFileModelColumn_Permissions,
-    UIGuestControlFileModelColumn_Max
+    UIFileManagerModelColumn_Name = 0,
+    UIFileManagerModelColumn_Size,
+    UIFileManagerModelColumn_ChangeTime,
+    UIFileManagerModelColumn_Owner,
+    UIFileManagerModelColumn_Permissions,
+    UIFileManagerModelColumn_Max
 };
 
 /** A QSortFilterProxyModel extension used in file tables. Modifies some
@@ -55,20 +55,20 @@ protected:
     bool lessThan(const QModelIndex &left, const QModelIndex &right) const /* override */;
 };
 
-/** UIGuestControlFileModel serves as the model for a file structure.
+/** UIFileManagerModel serves as the model for a file structure.
  *  it supports a tree level hierarchy which can be displayed with
  *  QTableView and/or QTreeView. Note the file structure data is not
  *  kept by the model but rather by the containing widget which also servers
  *  as the interface to functionality that this model provides.*/
-class UIGuestControlFileModel : public QAbstractItemModel
+class UIFileManagerModel : public QAbstractItemModel
 {
 
     Q_OBJECT;
 
 public:
 
-    explicit UIGuestControlFileModel(QObject *parent = 0);
-    ~UIGuestControlFileModel();
+    explicit UIFileManagerModel(QObject *parent = 0);
+    ~UIFileManagerModel();
 
     QVariant       data(const QModelIndex &index, int role) const /* override */;
     bool           setData(const QModelIndex &index, const QVariant &value, int role);
@@ -92,9 +92,9 @@ private:
 
     UIFileTableItem* rootItem() const;
     void setupModelData(const QStringList &lines, UIFileTableItem *parent);
-    UIGuestControlFileTable* m_pParent;
-    UIFileTableItem *m_pRootItem;
+    UIFileManagerTable *m_pParent;
+    UIFileTableItem    *m_pRootItem;
 };
 
 
-#endif /* !___UIGuestControlFileModel_h___ */
+#endif /* !___UIFileManagerModel_h___ */

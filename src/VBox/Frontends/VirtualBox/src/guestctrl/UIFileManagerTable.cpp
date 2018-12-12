@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIGuestControlFileTable class implementation.
+ * VBox Qt GUI - UIFileManagerTable class implementation.
  */
 
 /*
@@ -42,11 +42,11 @@
 # include "VBoxGlobal.h"
 # include "UIActionPool.h"
 # include "UIErrorString.h"
-# include "UIGuestFileTable.h"
+# include "UIFileManagerGuestTable.h"
 # include "UIIconPool.h"
-# include "UIGuestControlFileTable.h"
-# include "UIGuestControlFileManager.h"
-# include "UIGuestControlFileModel.h"
+# include "UIFileManagerTable.h"
+# include "UIFileManager.h"
+# include "UIFileManagerModel.h"
 # include "UIToolBar.h"
 
 /* COM includes: */
@@ -419,8 +419,8 @@ void UIPropertiesDialog::addDirectoryStatistics(UIDirectoryStatistics directoryS
         return;
     // QString propertyString = m_pInfoEdit->toHtml();
     // propertyString += "<b>Total Size:</b> " + QString::number(directoryStatistics.m_totalSize) + QString(" bytes");
-    // if (directoryStatistics.m_totalSize >= UIGuestControlFileTable::m_iKiloByte)
-    //     propertyString += " (" + UIGuestControlFileTable::humanReadableSize(directoryStatistics.m_totalSize) + ")";
+    // if (directoryStatistics.m_totalSize >= UIFileManagerTable::m_iKiloByte)
+    //     propertyString += " (" + UIFileManagerTable::humanReadableSize(directoryStatistics.m_totalSize) + ")";
     // propertyString += "<br/>";
     // propertyString += "<b>File Count:</b> " + QString::number(directoryStatistics.m_uFileCount);
 
@@ -428,13 +428,13 @@ void UIPropertiesDialog::addDirectoryStatistics(UIDirectoryStatistics directoryS
 
     QString detailsString(m_strProperty);
     detailsString += "<br/>";
-    detailsString += "<b>" + UIGuestControlFileManager::tr("Total Size") + "</b> " +
-        QString::number(directoryStatistics.m_totalSize) + UIGuestControlFileManager::tr(" bytes");
-    if (directoryStatistics.m_totalSize >= UIGuestControlFileTable::m_iKiloByte)
-        detailsString += " (" + UIGuestControlFileTable::humanReadableSize(directoryStatistics.m_totalSize) + ")";
+    detailsString += "<b>" + UIFileManager::tr("Total Size") + "</b> " +
+        QString::number(directoryStatistics.m_totalSize) + UIFileManager::tr(" bytes");
+    if (directoryStatistics.m_totalSize >= UIFileManagerTable::m_iKiloByte)
+        detailsString += " (" + UIFileManagerTable::humanReadableSize(directoryStatistics.m_totalSize) + ")";
     detailsString += "<br/>";
 
-    detailsString += "<b>" + UIGuestControlFileManager::tr("File Count") + ":</b> " +
+    detailsString += "<b>" + UIFileManager::tr("File Count") + ":</b> " +
         QString::number(directoryStatistics.m_uFileCount);
 
     m_pInfoEdit->setHtml(detailsString);
@@ -585,7 +585,7 @@ bool UIFileTableItem::isUpDirectory() const
 {
     if (!isDirectory())
         return false;
-    if (data(0) == UIGuestControlFileModel::strUpDirectoryString)
+    if (data(0) == UIFileManagerModel::strUpDirectoryString)
         return true;
     return false;
 }
@@ -645,7 +645,7 @@ UIFileDeleteConfirmationDialog::UIFileDeleteConfirmationDialog(QWidget *pParent 
     if (m_pQuestionLabel)
     {
         pLayout->addWidget(m_pQuestionLabel);
-        m_pQuestionLabel->setText(UIGuestControlFileManager::tr("Delete the selected file(s) and/or folder(s)"));
+        m_pQuestionLabel->setText(UIFileManager::tr("Delete the selected file(s) and/or folder(s)"));
     }
 
     QIDialogButtonBox *pButtonBox =
@@ -661,13 +661,13 @@ UIFileDeleteConfirmationDialog::UIFileDeleteConfirmationDialog(QWidget *pParent 
 
     if (m_pAskNextTimeCheckBox)
     {
-        UIGuestControlFileManagerOptions *pFileManagerOptions = UIGuestControlFileManagerOptions::instance();
+        UIFileManagerOptions *pFileManagerOptions = UIFileManagerOptions::instance();
         if (pFileManagerOptions)
             m_pAskNextTimeCheckBox->setChecked(pFileManagerOptions->bAskDeleteConfirmation);
 
         pLayout->addWidget(m_pAskNextTimeCheckBox);
-        m_pAskNextTimeCheckBox->setText(UIGuestControlFileManager::tr("Ask for this confirmation next time"));
-        m_pAskNextTimeCheckBox->setToolTip(UIGuestControlFileManager::tr("Delete confirmation can be "
+        m_pAskNextTimeCheckBox->setText(UIFileManager::tr("Ask for this confirmation next time"));
+        m_pAskNextTimeCheckBox->setToolTip(UIFileManager::tr("Delete confirmation can be "
                                                                          "disabled/enabled also from the Options panel."));
     }
 }
@@ -681,10 +681,10 @@ bool UIFileDeleteConfirmationDialog::askDeleteConfirmationNextTime() const
 
 
 /*********************************************************************************************************************************
-*   UIGuestControlFileTable implementation.                                                                                      *
+*   UIFileManagerTable implementation.                                                                                      *
 *********************************************************************************************************************************/
-const unsigned UIGuestControlFileTable::m_iKiloByte = 1024; /**< Our kilo bytes are a power of two! (bird) */
-UIGuestControlFileTable::UIGuestControlFileTable(UIActionPool *pActionPool, QWidget *pParent /* = 0 */)
+const unsigned UIFileManagerTable::m_iKiloByte = 1024; /**< Our kilo bytes are a power of two! (bird) */
+UIFileManagerTable::UIFileManagerTable(UIActionPool *pActionPool, QWidget *pParent /* = 0 */)
     :QIWithRetranslateUI<QWidget>(pParent)
     , m_eFileOperationType(FileOperationType_None)
     , m_pRootItem(0)
@@ -702,12 +702,12 @@ UIGuestControlFileTable::UIGuestControlFileTable(UIActionPool *pActionPool, QWid
     prepareObjects();
 }
 
-UIGuestControlFileTable::~UIGuestControlFileTable()
+UIFileManagerTable::~UIFileManagerTable()
 {
     delete m_pRootItem;
 }
 
-void UIGuestControlFileTable::reset()
+void UIFileManagerTable::reset()
 {
     if (m_pModel)
         m_pModel->beginReset();
@@ -718,19 +718,19 @@ void UIGuestControlFileTable::reset()
     if (m_pLocationComboBox)
     {
         disconnect(m_pLocationComboBox, static_cast<void(QComboBox::*)(const QString&)>(&QComboBox::currentIndexChanged),
-                   this, &UIGuestControlFileTable::sltLocationComboCurrentChange);
+                   this, &UIFileManagerTable::sltLocationComboCurrentChange);
         m_pLocationComboBox->clear();
         connect(m_pLocationComboBox, static_cast<void(QComboBox::*)(const QString&)>(&QComboBox::currentIndexChanged),
-                this, &UIGuestControlFileTable::sltLocationComboCurrentChange);
+                this, &UIFileManagerTable::sltLocationComboCurrentChange);
     }
 }
 
-void UIGuestControlFileTable::emitLogOutput(const QString& strOutput, FileManagerLogType eLogType)
+void UIFileManagerTable::emitLogOutput(const QString& strOutput, FileManagerLogType eLogType)
 {
     emit sigLogOutput(strOutput, eLogType);
 }
 
-void UIGuestControlFileTable::prepareObjects()
+void UIFileManagerTable::prepareObjects()
 {
     m_pMainLayout = new QGridLayout();
     if (!m_pMainLayout)
@@ -757,11 +757,11 @@ void UIGuestControlFileTable::prepareObjects()
         m_pMainLayout->addWidget(m_pLocationComboBox, 1, 1, 1, 4);
         m_pLocationComboBox->setEditable(false);
         connect(m_pLocationComboBox, static_cast<void(QComboBox::*)(const QString&)>(&QComboBox::currentIndexChanged),
-                this, &UIGuestControlFileTable::sltLocationComboCurrentChange);
+                this, &UIFileManagerTable::sltLocationComboCurrentChange);
     }
 
 
-    m_pModel = new UIGuestControlFileModel(this);
+    m_pModel = new UIFileManagerModel(this);
     if (!m_pModel)
         return;
 
@@ -785,13 +785,13 @@ void UIGuestControlFileTable::prepareObjects()
         m_pView->sortByColumn(0, Qt::AscendingOrder);
 
         connect(m_pView, &UIGuestControlFileView::doubleClicked,
-                this, &UIGuestControlFileTable::sltItemDoubleClicked);
+                this, &UIFileManagerTable::sltItemDoubleClicked);
         connect(m_pView, &UIGuestControlFileView::clicked,
-                this, &UIGuestControlFileTable::sltItemClicked);
+                this, &UIFileManagerTable::sltItemClicked);
         connect(m_pView, &UIGuestControlFileView::sigSelectionChanged,
-                this, &UIGuestControlFileTable::sltSelectionChanged);
+                this, &UIFileManagerTable::sltSelectionChanged);
         connect(m_pView, &UIGuestControlFileView::customContextMenuRequested,
-                this, &UIGuestControlFileTable::sltCreateFileViewContextMenu);
+                this, &UIFileManagerTable::sltCreateFileViewContextMenu);
 
     }
     m_pWarningLabel = new QILabel(this);
@@ -819,11 +819,11 @@ void UIGuestControlFileTable::prepareObjects()
         m_pSearchLineEdit->hide();
         m_pSearchLineEdit->setClearButtonEnabled(true);
         connect(m_pSearchLineEdit, &QLineEdit::textChanged,
-                this, &UIGuestControlFileTable::sltSearchTextChanged);
+                this, &UIFileManagerTable::sltSearchTextChanged);
     }
 }
 
-void UIGuestControlFileTable::updateCurrentLocationEdit(const QString& strLocation)
+void UIFileManagerTable::updateCurrentLocationEdit(const QString& strLocation)
 {
     if (!m_pLocationComboBox)
         return;
@@ -837,7 +837,7 @@ void UIGuestControlFileTable::updateCurrentLocationEdit(const QString& strLocati
     m_pLocationComboBox->setCurrentIndex(itemIndex);
 }
 
-void UIGuestControlFileTable::changeLocation(const QModelIndex &index)
+void UIFileManagerTable::changeLocation(const QModelIndex &index)
 {
     if (!index.isValid() || !m_pView)
         return;
@@ -853,7 +853,7 @@ void UIGuestControlFileTable::changeLocation(const QModelIndex &index)
     //m_pModel->signalUpdate();
 }
 
-void UIGuestControlFileTable::initializeFileTree()
+void UIFileManagerTable::initializeFileTree()
 {
     if (m_pRootItem)
         reset();
@@ -861,7 +861,7 @@ void UIGuestControlFileTable::initializeFileTree()
     /* Root item: */
     const QString startPath("/");
     QVector<QVariant> headData;
-    headData.resize(UIGuestControlFileModelColumn_Max);
+    headData.resize(UIFileManagerModelColumn_Max);
     m_pRootItem = new UIFileTableItem(headData, 0, FileObjectType_Directory);
     UIFileTableItem* startItem = new UIFileTableItem(createTreeItemData(startPath, 4096, QDateTime(),
                                                                         "" /* owner */, "" /* permissions */),
@@ -876,7 +876,7 @@ void UIGuestControlFileTable::initializeFileTree()
     m_pView->setRootIndex(m_pProxyModel->mapFromSource(m_pModel->rootIndex()));
 }
 
-void UIGuestControlFileTable::populateStartDirectory(UIFileTableItem *startItem)
+void UIFileManagerTable::populateStartDirectory(UIFileTableItem *startItem)
 {
     determineDriveLetters();
     if (m_driveLetterList.isEmpty())
@@ -900,7 +900,7 @@ void UIGuestControlFileTable::populateStartDirectory(UIFileTableItem *startItem)
     }
 }
 
-void UIGuestControlFileTable::insertItemsToTree(QMap<QString,UIFileTableItem*> &map,
+void UIFileManagerTable::insertItemsToTree(QMap<QString,UIFileTableItem*> &map,
                                                 UIFileTableItem *parent, bool isDirectoryMap, bool isStartDir)
 {
     if (parent)
@@ -908,18 +908,18 @@ void UIGuestControlFileTable::insertItemsToTree(QMap<QString,UIFileTableItem*> &
     /* Make sure we have an item representing up directory, and make sure it is not there for the start dir: */
     if (isDirectoryMap)
     {
-        if (!map.contains(UIGuestControlFileModel::strUpDirectoryString)  && !isStartDir)
+        if (!map.contains(UIFileManagerModel::strUpDirectoryString)  && !isStartDir)
         {
             QVector<QVariant> data;
-            UIFileTableItem *item = new UIFileTableItem(createTreeItemData(UIGuestControlFileModel::strUpDirectoryString, 4096,
+            UIFileTableItem *item = new UIFileTableItem(createTreeItemData(UIFileManagerModel::strUpDirectoryString, 4096,
                                                                            QDateTime(), QString(), QString())
                                                         , parent, FileObjectType_Directory);
             item->setIsOpened(false);
-            map.insert(UIGuestControlFileModel::strUpDirectoryString, item);
+            map.insert(UIFileManagerModel::strUpDirectoryString, item);
         }
-        else if (map.contains(UIGuestControlFileModel::strUpDirectoryString)  && isStartDir)
+        else if (map.contains(UIFileManagerModel::strUpDirectoryString)  && isStartDir)
         {
-            map.remove(UIGuestControlFileModel::strUpDirectoryString);
+            map.remove(UIFileManagerModel::strUpDirectoryString);
         }
     }
     for (QMap<QString,UIFileTableItem*>::const_iterator iterator = map.begin();
@@ -931,7 +931,7 @@ void UIGuestControlFileTable::insertItemsToTree(QMap<QString,UIFileTableItem*> &
     }
 }
 
-void UIGuestControlFileTable::sltItemDoubleClicked(const QModelIndex &index)
+void UIFileManagerTable::sltItemDoubleClicked(const QModelIndex &index)
 {
     if (!index.isValid() ||  !m_pModel || !m_pView)
         return;
@@ -939,13 +939,13 @@ void UIGuestControlFileTable::sltItemDoubleClicked(const QModelIndex &index)
     goIntoDirectory(nIndex);
 }
 
-void UIGuestControlFileTable::sltItemClicked(const QModelIndex &index)
+void UIFileManagerTable::sltItemClicked(const QModelIndex &index)
 {
     Q_UNUSED(index);
     disableSelectionSearch();
 }
 
-void UIGuestControlFileTable::sltGoUp()
+void UIFileManagerTable::sltGoUp()
 {
     if (!m_pView || !m_pModel)
         return;
@@ -964,17 +964,17 @@ void UIGuestControlFileTable::sltGoUp()
     }
 }
 
-void UIGuestControlFileTable::sltGoHome()
+void UIFileManagerTable::sltGoHome()
 {
     goToHomeDirectory();
 }
 
-void UIGuestControlFileTable::sltRefresh()
+void UIFileManagerTable::sltRefresh()
 {
     refresh();
 }
 
-void UIGuestControlFileTable::goIntoDirectory(const QModelIndex &itemIndex)
+void UIFileManagerTable::goIntoDirectory(const QModelIndex &itemIndex)
 {
     if (!m_pModel)
         return;
@@ -1005,7 +1005,7 @@ void UIGuestControlFileTable::goIntoDirectory(const QModelIndex &itemIndex)
     }
 }
 
-void UIGuestControlFileTable::goIntoDirectory(const QStringList &pathTrail)
+void UIFileManagerTable::goIntoDirectory(const QStringList &pathTrail)
 {
     UIFileTableItem *parent = getStartDirectoryItem();
 
@@ -1029,21 +1029,21 @@ void UIGuestControlFileTable::goIntoDirectory(const QStringList &pathTrail)
     goIntoDirectory(parent);
 }
 
-void UIGuestControlFileTable::goIntoDirectory(UIFileTableItem *item)
+void UIFileManagerTable::goIntoDirectory(UIFileTableItem *item)
 {
     if (!item || !m_pModel)
         return;
     goIntoDirectory(m_pModel->index(item));
 }
 
-UIFileTableItem* UIGuestControlFileTable::indexData(const QModelIndex &index) const
+UIFileTableItem* UIFileManagerTable::indexData(const QModelIndex &index) const
 {
     if (!index.isValid())
         return 0;
     return static_cast<UIFileTableItem*>(index.internalPointer());
 }
 
-void UIGuestControlFileTable::refresh()
+void UIFileManagerTable::refresh()
 {
     if (!m_pView || !m_pModel)
         return;
@@ -1065,14 +1065,14 @@ void UIGuestControlFileTable::refresh()
     setSelectionDependentActionsEnabled(m_pView->hasSelection());
 }
 
-void UIGuestControlFileTable::relist()
+void UIFileManagerTable::relist()
 {
     if (!m_pProxyModel)
         return;
     m_pProxyModel->invalidate();
 }
 
-void UIGuestControlFileTable::sltDelete()
+void UIFileManagerTable::sltDelete()
 {
     if (!checkIfDeleteOK())
         return;
@@ -1097,7 +1097,7 @@ void UIGuestControlFileTable::sltDelete()
     refresh();
 }
 
-void UIGuestControlFileTable::sltRename()
+void UIFileManagerTable::sltRename()
 {
     if (!m_pView)
         return;
@@ -1116,7 +1116,7 @@ void UIGuestControlFileTable::sltRename()
     m_pView->edit(selectedItemIndices.at(0));
 }
 
-void UIGuestControlFileTable::sltCreateNewDirectory()
+void UIFileManagerTable::sltCreateNewDirectory()
 {
     if (!m_pModel || !m_pView)
         return;
@@ -1139,21 +1139,21 @@ void UIGuestControlFileTable::sltCreateNewDirectory()
     }
 }
 
-void UIGuestControlFileTable::sltCopy()
+void UIFileManagerTable::sltCopy()
 {
     m_copyCutBuffer = selectedItemPathList();
     m_eFileOperationType = FileOperationType_Copy;
     setPasteActionEnabled(true);
 }
 
-void UIGuestControlFileTable::sltCut()
+void UIFileManagerTable::sltCut()
 {
     m_copyCutBuffer = selectedItemPathList();
     m_eFileOperationType = FileOperationType_Cut;
     setPasteActionEnabled(true);
 }
 
-void UIGuestControlFileTable::sltPaste()
+void UIFileManagerTable::sltPaste()
 {
     m_copyCutBuffer.clear();
 
@@ -1161,19 +1161,19 @@ void UIGuestControlFileTable::sltPaste()
     setPasteActionEnabled(false);
 }
 
-void UIGuestControlFileTable::sltShowProperties()
+void UIFileManagerTable::sltShowProperties()
 {
     showProperties();
 }
 
-void UIGuestControlFileTable::sltSelectionChanged(const QItemSelection & selected, const QItemSelection & deselected)
+void UIFileManagerTable::sltSelectionChanged(const QItemSelection & selected, const QItemSelection & deselected)
 {
     Q_UNUSED(selected);
     Q_UNUSED(deselected);
     setSelectionDependentActionsEnabled(m_pView->hasSelection());
 }
 
-void UIGuestControlFileTable::sltLocationComboCurrentChange(const QString &strLocation)
+void UIFileManagerTable::sltLocationComboCurrentChange(const QString &strLocation)
 {
     QString comboLocation(UIPathOperations::sanitize(strLocation));
     if (comboLocation == currentDirectoryPath())
@@ -1181,7 +1181,7 @@ void UIGuestControlFileTable::sltLocationComboCurrentChange(const QString &strLo
     goIntoDirectory(UIPathOperations::pathTrail(comboLocation));
 }
 
-void UIGuestControlFileTable::sltSelectAll()
+void UIFileManagerTable::sltSelectAll()
 {
     if (!m_pModel || !m_pView)
         return;
@@ -1189,18 +1189,18 @@ void UIGuestControlFileTable::sltSelectAll()
     deSelectUpDirectoryItem();
 }
 
-void UIGuestControlFileTable::sltInvertSelection()
+void UIFileManagerTable::sltInvertSelection()
 {
     setSelectionForAll(QItemSelectionModel::Toggle | QItemSelectionModel::Rows);
     deSelectUpDirectoryItem();
 }
 
-void UIGuestControlFileTable::sltSearchTextChanged(const QString &strText)
+void UIFileManagerTable::sltSearchTextChanged(const QString &strText)
 {
     performSelectionSearch(strText);
 }
 
-void UIGuestControlFileTable::sltCreateFileViewContextMenu(const QPoint &point)
+void UIFileManagerTable::sltCreateFileViewContextMenu(const QPoint &point)
 {
     QWidget *pSender = qobject_cast<QWidget*>(sender());
     if (!pSender)
@@ -1208,7 +1208,7 @@ void UIGuestControlFileTable::sltCreateFileViewContextMenu(const QPoint &point)
     createFileViewContextMenu(pSender, point);
 }
 
-void UIGuestControlFileTable::deSelectUpDirectoryItem()
+void UIFileManagerTable::deSelectUpDirectoryItem()
 {
     if (!m_pView)
         return;
@@ -1235,7 +1235,7 @@ void UIGuestControlFileTable::deSelectUpDirectoryItem()
     }
 }
 
-void UIGuestControlFileTable::setSelectionForAll(QItemSelectionModel::SelectionFlags flags)
+void UIFileManagerTable::setSelectionForAll(QItemSelectionModel::SelectionFlags flags)
 {
     if (!m_pView)
         return;
@@ -1256,7 +1256,7 @@ void UIGuestControlFileTable::setSelectionForAll(QItemSelectionModel::SelectionF
     }
 }
 
-void UIGuestControlFileTable::setSelection(const QModelIndex &indexInProxyModel)
+void UIFileManagerTable::setSelection(const QModelIndex &indexInProxyModel)
 {
     if (!m_pView)
         return;
@@ -1267,7 +1267,7 @@ void UIGuestControlFileTable::setSelection(const QModelIndex &indexInProxyModel)
     m_pView->scrollTo(indexInProxyModel, QAbstractItemView::EnsureVisible);
 }
 
-void UIGuestControlFileTable::deleteByIndex(const QModelIndex &itemIndex)
+void UIFileManagerTable::deleteByIndex(const QModelIndex &itemIndex)
 {
     UIFileTableItem *treeItem = indexData(itemIndex);
     if (!treeItem)
@@ -1275,21 +1275,21 @@ void UIGuestControlFileTable::deleteByIndex(const QModelIndex &itemIndex)
     deleteByItem(treeItem);
 }
 
-void UIGuestControlFileTable::retranslateUi()
+void UIFileManagerTable::retranslateUi()
 {
     if (m_pRootItem)
     {
-        m_pRootItem->setData(UIGuestControlFileManager::tr("Name"), UIGuestControlFileModelColumn_Name);
-        m_pRootItem->setData(UIGuestControlFileManager::tr("Size"), UIGuestControlFileModelColumn_Size);
-        m_pRootItem->setData(UIGuestControlFileManager::tr("Change Time"), UIGuestControlFileModelColumn_ChangeTime);
-        m_pRootItem->setData(UIGuestControlFileManager::tr("Owner"), UIGuestControlFileModelColumn_Owner);
-        m_pRootItem->setData(UIGuestControlFileManager::tr("Permissions"), UIGuestControlFileModelColumn_Permissions);
+        m_pRootItem->setData(UIFileManager::tr("Name"), UIFileManagerModelColumn_Name);
+        m_pRootItem->setData(UIFileManager::tr("Size"), UIFileManagerModelColumn_Size);
+        m_pRootItem->setData(UIFileManager::tr("Change Time"), UIFileManagerModelColumn_ChangeTime);
+        m_pRootItem->setData(UIFileManager::tr("Owner"), UIFileManagerModelColumn_Owner);
+        m_pRootItem->setData(UIFileManager::tr("Permissions"), UIFileManagerModelColumn_Permissions);
     }
     if (m_pWarningLabel)
-        m_pWarningLabel->setText(UIGuestControlFileManager::tr("No Guest Session"));
+        m_pWarningLabel->setText(UIFileManager::tr("No Guest Session"));
 }
 
-bool UIGuestControlFileTable::eventFilter(QObject *pObject, QEvent *pEvent) /* override */
+bool UIFileManagerTable::eventFilter(QObject *pObject, QEvent *pEvent) /* override */
 {
     Q_UNUSED(pObject);
     if (pEvent->type() == QEvent::KeyPress)
@@ -1348,7 +1348,7 @@ bool UIGuestControlFileTable::eventFilter(QObject *pObject, QEvent *pEvent) /* o
     return false;
 }
 
-UIFileTableItem *UIGuestControlFileTable::getStartDirectoryItem()
+UIFileTableItem *UIFileManagerTable::getStartDirectoryItem()
 {
     if (!m_pRootItem)
         return 0;
@@ -1358,7 +1358,7 @@ UIFileTableItem *UIGuestControlFileTable::getStartDirectoryItem()
 }
 
 
-QString UIGuestControlFileTable::getNewDirectoryName()
+QString UIFileManagerTable::getNewDirectoryName()
 {
     UIStringInputDialog *dialog = new UIStringInputDialog();
     if (dialog->execute())
@@ -1371,7 +1371,7 @@ QString UIGuestControlFileTable::getNewDirectoryName()
     return QString();
 }
 
-QString UIGuestControlFileTable::currentDirectoryPath() const
+QString UIFileManagerTable::currentDirectoryPath() const
 {
     if (!m_pView)
         return QString();
@@ -1387,7 +1387,7 @@ QString UIGuestControlFileTable::currentDirectoryPath() const
     return item->path();
 }
 
-QStringList UIGuestControlFileTable::selectedItemPathList()
+QStringList UIFileManagerTable::selectedItemPathList()
 {
     QItemSelectionModel *selectionModel =  m_pView->selectionModel();
     if (!selectionModel)
@@ -1407,7 +1407,7 @@ QStringList UIGuestControlFileTable::selectedItemPathList()
     return pathList;
 }
 
-CGuestFsObjInfo UIGuestControlFileTable::guestFsObjectInfo(const QString& path, CGuestSession &comGuestSession) const
+CGuestFsObjInfo UIFileManagerTable::guestFsObjectInfo(const QString& path, CGuestSession &comGuestSession) const
 {
     if (comGuestSession.isNull())
         return CGuestFsObjInfo();
@@ -1417,7 +1417,7 @@ CGuestFsObjInfo UIGuestControlFileTable::guestFsObjectInfo(const QString& path, 
     return comFsObjInfo;
 }
 
-void UIGuestControlFileTable::setSelectionDependentActionsEnabled(bool fIsEnabled)
+void UIFileManagerTable::setSelectionDependentActionsEnabled(bool fIsEnabled)
 {
     foreach (QAction *pAction, m_selectionDependentActions)
     {
@@ -1426,20 +1426,20 @@ void UIGuestControlFileTable::setSelectionDependentActionsEnabled(bool fIsEnable
 }
 
 
-QVector<QVariant> UIGuestControlFileTable::createTreeItemData(const QString &strName, ULONG64 size, const QDateTime &changeTime,
+QVector<QVariant> UIFileManagerTable::createTreeItemData(const QString &strName, ULONG64 size, const QDateTime &changeTime,
                                                             const QString &strOwner, const QString &strPermissions)
 {
     QVector<QVariant> data;
-    data.resize(UIGuestControlFileModelColumn_Max);
-    data[UIGuestControlFileModelColumn_Name]        = strName;
-    data[UIGuestControlFileModelColumn_Size]        = (qulonglong)size;
-    data[UIGuestControlFileModelColumn_ChangeTime]  = changeTime;
-    data[UIGuestControlFileModelColumn_Owner]       = strOwner;
-    data[UIGuestControlFileModelColumn_Permissions] = strPermissions;
+    data.resize(UIFileManagerModelColumn_Max);
+    data[UIFileManagerModelColumn_Name]        = strName;
+    data[UIFileManagerModelColumn_Size]        = (qulonglong)size;
+    data[UIFileManagerModelColumn_ChangeTime]  = changeTime;
+    data[UIFileManagerModelColumn_Owner]       = strOwner;
+    data[UIFileManagerModelColumn_Permissions] = strPermissions;
     return data;
 }
 
-bool UIGuestControlFileTable::event(QEvent *pEvent)
+bool UIFileManagerTable::event(QEvent *pEvent)
 {
     if (pEvent->type() == QEvent::EnabledChange)
     {
@@ -1450,22 +1450,22 @@ bool UIGuestControlFileTable::event(QEvent *pEvent)
     return QIWithRetranslateUI<QWidget>::event(pEvent);
 }
 
-QString UIGuestControlFileTable::fileTypeString(FileObjectType type)
+QString UIFileManagerTable::fileTypeString(FileObjectType type)
 {
-    QString strType = UIGuestControlFileManager::tr("Unknown");
+    QString strType = UIFileManager::tr("Unknown");
     switch (type)
     {
         case FileObjectType_File:
-            strType = UIGuestControlFileManager::tr("File");
+            strType = UIFileManager::tr("File");
             break;
         case FileObjectType_Directory:
-            strType = UIGuestControlFileManager::tr("Directory");
+            strType = UIFileManager::tr("Directory");
             break;
         case FileObjectType_SymLink:
-            strType = UIGuestControlFileManager::tr("Symbolic Link");
+            strType = UIFileManager::tr("Symbolic Link");
             break;
         case FileObjectType_Other:
-            strType = UIGuestControlFileManager::tr("Other");
+            strType = UIFileManager::tr("Other");
             break;
 
         case FileObjectType_Unknown:
@@ -1475,19 +1475,19 @@ QString UIGuestControlFileTable::fileTypeString(FileObjectType type)
     return strType;
 }
 
-/* static */ QString UIGuestControlFileTable::humanReadableSize(ULONG64 size)
+/* static */ QString UIFileManagerTable::humanReadableSize(ULONG64 size)
 {
     return vboxGlobal().formatSize(size);
 }
 
-void UIGuestControlFileTable::sltReceiveDirectoryStatistics(UIDirectoryStatistics statistics)
+void UIFileManagerTable::sltReceiveDirectoryStatistics(UIDirectoryStatistics statistics)
 {
     if (!m_pPropertiesDialog)
         return;
     m_pPropertiesDialog->addDirectoryStatistics(statistics);
 }
 
-QModelIndex UIGuestControlFileTable::currentRootIndex() const
+QModelIndex UIFileManagerTable::currentRootIndex() const
 {
     if (!m_pView)
         return QModelIndex();
@@ -1496,7 +1496,7 @@ QModelIndex UIGuestControlFileTable::currentRootIndex() const
     return m_pProxyModel->mapToSource(m_pView->rootIndex());
 }
 
-void UIGuestControlFileTable::performSelectionSearch(const QString &strSearchText)
+void UIFileManagerTable::performSelectionSearch(const QString &strSearchText)
 {
     if (!m_pProxyModel | !m_pView || strSearchText.isEmpty())
         return;
@@ -1524,7 +1524,7 @@ void UIGuestControlFileTable::performSelectionSearch(const QString &strSearchTex
     }
 }
 
-void UIGuestControlFileTable::disableSelectionSearch()
+void UIFileManagerTable::disableSelectionSearch()
 {
     if (!m_pSearchLineEdit)
         return;
@@ -1534,9 +1534,9 @@ void UIGuestControlFileTable::disableSelectionSearch()
     m_pSearchLineEdit->blockSignals(false);
 }
 
-bool UIGuestControlFileTable::checkIfDeleteOK()
+bool UIFileManagerTable::checkIfDeleteOK()
 {
-    UIGuestControlFileManagerOptions *pFileManagerOptions = UIGuestControlFileManagerOptions::instance();
+    UIFileManagerOptions *pFileManagerOptions = UIFileManagerOptions::instance();
     if (!pFileManagerOptions)
         return true;
     if (!pFileManagerOptions->bAskDeleteConfirmation)
@@ -1561,4 +1561,4 @@ bool UIGuestControlFileTable::checkIfDeleteOK()
 
 }
 
-#include "UIGuestControlFileTable.moc"
+#include "UIFileManagerTable.moc"

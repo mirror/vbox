@@ -65,7 +65,7 @@
 # include "UIExtraDataManager.h"
 # include "UIAddDiskEncryptionPasswordDialog.h"
 # include "UIVMInformationDialog.h"
-# include "UIGuestControlFileManagerDialog.h"
+# include "UIFileManagerDialog.h"
 # include "UIGuestProcessControlDialog.h"
 
 
@@ -1108,8 +1108,8 @@ void UIMachineLogic::prepareActionConnections()
             this, SLOT(sltTakeSnapshot()));
     connect(actionPool()->action(UIActionIndexRT_M_Machine_S_ShowInformation), SIGNAL(triggered()),
             this, SLOT(sltShowInformationDialog()));
-    connect(actionPool()->action(UIActionIndexRT_M_Machine_S_ShowGuestControlFileManager), SIGNAL(triggered()),
-            this, SLOT(sltShowGuestControlFileManagerDialog()));
+    connect(actionPool()->action(UIActionIndexRT_M_Machine_S_ShowFileManager), SIGNAL(triggered()),
+            this, SLOT(sltShowFileManagerDialog()));
     connect(actionPool()->action(UIActionIndexRT_M_Machine_S_ShowGuestProcessControl), SIGNAL(triggered()),
             this, SLOT(sltShowGuestProcessControlDialog()));
     connect(actionPool()->action(UIActionIndexRT_M_Machine_T_Pause), SIGNAL(toggled(bool)),
@@ -1781,7 +1781,7 @@ void UIMachineLogic::sltShowInformationDialog()
     UIVMInformationDialog::invoke(activeMachineWindow());
 }
 
-void UIMachineLogic::sltShowGuestControlFileManagerDialog()
+void UIMachineLogic::sltShowFileManagerDialog()
 {
     if (machine().isNull() || !activeMachineWindow())
         return;
@@ -1791,7 +1791,7 @@ void UIMachineLogic::sltShowGuestControlFileManagerDialog()
         return;
 
     QIManagerDialog *pFileManagerDialog;
-    UIGuestControlFileManagerDialogFactory dialogFactory(actionPool(), console().GetGuest(), machine().GetName());
+    UIFileManagerDialogFactory dialogFactory(actionPool(), console().GetGuest(), machine().GetName());
     dialogFactory.prepare(pFileManagerDialog, activeMachineWindow());
     if (pFileManagerDialog)
     {
@@ -1802,11 +1802,11 @@ void UIMachineLogic::sltShowGuestControlFileManagerDialog()
         pFileManagerDialog->setWindowState(pFileManagerDialog->windowState() & ~Qt::WindowMinimized);
         pFileManagerDialog->activateWindow();
         connect(pFileManagerDialog, &QIManagerDialog::sigClose,
-                this, &UIMachineLogic::sltCloseGuestControlFileManagerDialog);
+                this, &UIMachineLogic::sltCloseFileManagerDialog);
     }
 }
 
-void UIMachineLogic::sltCloseGuestControlFileManagerDialog()
+void UIMachineLogic::sltCloseFileManagerDialog()
 {
     QIManagerDialog* pDialog = qobject_cast<QIManagerDialog*>(sender());
     if (m_pFileManagerDialog != pDialog || !pDialog)
@@ -1815,7 +1815,7 @@ void UIMachineLogic::sltCloseGuestControlFileManagerDialog()
     /* Set the m_pLogViewerDialog to NULL before closing the dialog. or we will have redundant deletes*/
     m_pFileManagerDialog = 0;
     pDialog->close();
-    UIGuestControlFileManagerDialogFactory().cleanup(pDialog);
+    UIFileManagerDialogFactory().cleanup(pDialog);
 }
 
 void UIMachineLogic::sltShowGuestProcessControlDialog()

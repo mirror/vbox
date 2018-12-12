@@ -30,15 +30,15 @@
 /* GUI includes: */
 # include "QIToolButton.h"
 # include "UIIconPool.h"
-# include "UIGuestControlFileManager.h"
-# include "UIGuestControlFileManagerPanel.h"
+# include "UIFileManager.h"
+# include "UIFileManagerPanel.h"
 # ifdef VBOX_WS_MAC
 #  include "VBoxUtils-darwin.h"
 # endif
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 
-UIGuestControlFileManagerPanel::UIGuestControlFileManagerPanel(UIGuestControlFileManager *pManagerWidget, QWidget *pParent)
+UIFileManagerPanel::UIFileManagerPanel(UIFileManager *pManagerWidget, QWidget *pParent)
     : QIWithRetranslateUI<QWidget>(pParent)
     , m_pMainLayout(0)
     , m_pCloseButton(0)
@@ -47,26 +47,26 @@ UIGuestControlFileManagerPanel::UIGuestControlFileManagerPanel(UIGuestControlFil
     prepare();
 }
 
-void UIGuestControlFileManagerPanel::setCloseButtonShortCut(QKeySequence shortCut)
+void UIFileManagerPanel::setCloseButtonShortCut(QKeySequence shortCut)
 {
     if (!m_pCloseButton)
         return;
     m_pCloseButton->setShortcut(shortCut);
 }
 
-QHBoxLayout* UIGuestControlFileManagerPanel::mainLayout()
+QHBoxLayout* UIFileManagerPanel::mainLayout()
 {
     return m_pMainLayout;
 }
 
-void UIGuestControlFileManagerPanel::prepare()
+void UIFileManagerPanel::prepare()
 {
     prepareWidgets();
     prepareConnections();
     retranslateUi();
 }
 
-void UIGuestControlFileManagerPanel::prepareWidgets()
+void UIFileManagerPanel::prepareWidgets()
 {
     m_pMainLayout = new QHBoxLayout(this);
     if (m_pMainLayout)
@@ -89,19 +89,19 @@ void UIGuestControlFileManagerPanel::prepareWidgets()
     }
 }
 
-void UIGuestControlFileManagerPanel::prepareConnections()
+void UIFileManagerPanel::prepareConnections()
 {
     if (m_pCloseButton)
-        connect(m_pCloseButton, &QIToolButton::clicked, this, &UIGuestControlFileManagerPanel::hide);
+        connect(m_pCloseButton, &QIToolButton::clicked, this, &UIFileManagerPanel::hide);
 }
 
-void UIGuestControlFileManagerPanel::retranslateUi()
+void UIFileManagerPanel::retranslateUi()
 {
     if (m_pCloseButton)
-        m_pCloseButton->setToolTip(UIGuestControlFileManager::tr("Close the pane"));
+        m_pCloseButton->setToolTip(UIFileManager::tr("Close the pane"));
 }
 
-bool UIGuestControlFileManagerPanel::eventFilter(QObject *pObject, QEvent *pEvent)
+bool UIFileManagerPanel::eventFilter(QObject *pObject, QEvent *pEvent)
 {
     Q_UNUSED(pObject);
     Q_UNUSED(pEvent);
@@ -109,12 +109,12 @@ bool UIGuestControlFileManagerPanel::eventFilter(QObject *pObject, QEvent *pEven
     return false;
 }
 
-void UIGuestControlFileManagerPanel::showEvent(QShowEvent *pEvent)
+void UIFileManagerPanel::showEvent(QShowEvent *pEvent)
 {
     QWidget::showEvent(pEvent);
 }
 
-void UIGuestControlFileManagerPanel::hideEvent(QHideEvent *pEvent)
+void UIFileManagerPanel::hideEvent(QHideEvent *pEvent)
 {
     /* Get focused widget: */
     QWidget *pFocus = QApplication::focusWidget();

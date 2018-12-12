@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIGuestControlFileTable class declaration.
+ * VBox Qt GUI - UIFileManagerTable class declaration.
  */
 
 /*
@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___UIGuestControlFileTable_h___
-#define ___UIGuestControlFileTable_h___
+#ifndef ___UIFileManagerTable_h___
+#define ___UIFileManagerTable_h___
 
 /* Qt includes: */
 #include <QItemSelectionModel>
@@ -46,7 +46,7 @@ class QTextEdit;
 class QVBoxLayout;
 class UIActionPool;
 class UIFileTableItem;
-class UIGuestControlFileModel;
+class UIFileManagerModel;
 class UIGuestControlFileProxyModel;
 class UIGuestControlFileView;
 class UIToolBar;
@@ -160,7 +160,7 @@ public:
 };
 
 /** A UIFileTableItem instance is a tree node representing a file object (file, directory, etc). The tree contructed
-    by these instances is the data source for the UIGuestControlFileModel. */
+    by these instances is the data source for the UIFileManagerModel. */
 class UIFileTableItem
 {
 public:
@@ -239,9 +239,9 @@ private:
 
 /** This class serves a base class for file table. Currently a guest version
  *  and a host version are derived from this base. Each of these children
- *  populates the UIGuestControlFileModel by scanning the file system
+ *  populates the UIFileManagerModel by scanning the file system
  *  differently. The file structre kept in this class as a tree. */
-class UIGuestControlFileTable : public QIWithRetranslateUI<QWidget>
+class UIFileManagerTable : public QIWithRetranslateUI<QWidget>
 {
     Q_OBJECT;
 
@@ -252,8 +252,8 @@ signals:
 
 public:
 
-    UIGuestControlFileTable(UIActionPool *pActionPool, QWidget *pParent = 0);
-    virtual ~UIGuestControlFileTable();
+    UIFileManagerTable(UIActionPool *pActionPool, QWidget *pParent = 0);
+    virtual ~UIFileManagerTable();
     /** Deletes all the tree nodes */
     void        reset();
     void        emitLogOutput(const QString& strOutput, FileManagerLogType eLogType);
@@ -340,7 +340,7 @@ protected:
     bool             eventFilter(QObject *pObject, QEvent *pEvent) /* override */;
     CGuestFsObjInfo  guestFsObjectInfo(const QString& path, CGuestSession &comGuestSession) const;
     void             setSelectionDependentActionsEnabled(bool fIsEnabled);
-    /** Creates a QList out of the parameters wrt. UIGuestControlFileModelColumn enum */
+    /** Creates a QList out of the parameters wrt. UIFileManagerModelColumn enum */
     QVector<QVariant>  createTreeItemData(const QString &strName, ULONG64 size, const QDateTime &changeTime,
                                         const QString &strOwner, const QString &strPermissions);
 
@@ -392,7 +392,7 @@ private:
      *  if deletion can continue */
     bool            checkIfDeleteOK();
 
-    UIGuestControlFileModel      *m_pModel;
+    UIFileManagerModel      *m_pModel;
     UIGuestControlFileView       *m_pView;
     UIGuestControlFileProxyModel *m_pProxyModel;
 
@@ -401,7 +401,7 @@ private:
     QILineEdit      *m_pSearchLineEdit;
     QILabel         *m_pWarningLabel;
 
-    friend class     UIGuestControlFileModel;
+    friend class     UIFileManagerModel;
 };
 
-#endif /* !___UIGuestControlFileTable_h___ */
+#endif /* !___UIFileManagerTable_h___ */

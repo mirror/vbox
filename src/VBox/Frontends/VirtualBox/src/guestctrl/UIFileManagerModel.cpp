@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIGuestControlFileModel class implementation.
+ * VBox Qt GUI - UIFileManagerModel class implementation.
  */
 
 /*
@@ -25,14 +25,14 @@
 
 /* GUI includes: */
 # include "UIErrorString.h"
-# include "UIGuestControlFileModel.h"
-# include "UIGuestControlFileTable.h"
-# include "UIGuestControlFileManager.h"
+# include "UIFileManagerModel.h"
+# include "UIFileManagerTable.h"
+# include "UIFileManager.h"
 
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
-const char* UIGuestControlFileModel::strUpDirectoryString = "..";
+const char* UIFileManagerModel::strUpDirectoryString = "..";
 
 UIGuestControlFileProxyModel::UIGuestControlFileProxyModel(QObject *parent /* = 0 */)
     :QSortFilterProxyModel(parent)
@@ -44,7 +44,7 @@ bool UIGuestControlFileProxyModel::lessThan(const QModelIndex &left, const QMode
     UIFileTableItem *pLeftItem = static_cast<UIFileTableItem*>(left.internalPointer());
     UIFileTableItem *pRightItem = static_cast<UIFileTableItem*>(right.internalPointer());
 
-    UIGuestControlFileManagerOptions *pOptions = UIGuestControlFileManagerOptions::instance();
+    UIFileManagerOptions *pOptions = UIFileManagerOptions::instance();
 
     if (pLeftItem && pRightItem)
     {
@@ -63,19 +63,19 @@ bool UIGuestControlFileProxyModel::lessThan(const QModelIndex &left, const QMode
             return (sortOrder() == Qt::DescendingOrder);
 
         /* If the sort column is QDateTime than handle it correctly: */
-        if (sortColumn() == UIGuestControlFileModelColumn_ChangeTime)
+        if (sortColumn() == UIFileManagerModelColumn_ChangeTime)
         {
-            QVariant dataLeft = pLeftItem->data(UIGuestControlFileModelColumn_ChangeTime);
-            QVariant dataRight = pRightItem->data(UIGuestControlFileModelColumn_ChangeTime);
+            QVariant dataLeft = pLeftItem->data(UIFileManagerModelColumn_ChangeTime);
+            QVariant dataRight = pRightItem->data(UIFileManagerModelColumn_ChangeTime);
             QDateTime leftDateTime = dataLeft.toDateTime();
             QDateTime rightDateTime = dataRight.toDateTime();
             return (leftDateTime < rightDateTime);
         }
         /* When we show human readble sizes in size column sorting gets confused, so do it here: */
-        else if(sortColumn() == UIGuestControlFileModelColumn_Size)
+        else if(sortColumn() == UIFileManagerModelColumn_Size)
         {
-            qulonglong leftSize = pLeftItem->data(UIGuestControlFileModelColumn_Size).toULongLong();
-            qulonglong rightSize = pRightItem->data(UIGuestControlFileModelColumn_Size).toULongLong();
+            qulonglong leftSize = pLeftItem->data(UIFileManagerModelColumn_Size).toULongLong();
+            qulonglong rightSize = pRightItem->data(UIFileManagerModelColumn_Size).toULongLong();
             return (leftSize < rightSize);
 
         }
@@ -83,23 +83,23 @@ bool UIGuestControlFileProxyModel::lessThan(const QModelIndex &left, const QMode
     return QSortFilterProxyModel::lessThan(left, right);
 }
 
-UIGuestControlFileModel::UIGuestControlFileModel(QObject *parent)
+UIFileManagerModel::UIFileManagerModel(QObject *parent)
     : QAbstractItemModel(parent)
-    , m_pParent(qobject_cast<UIGuestControlFileTable*>(parent))
+    , m_pParent(qobject_cast<UIFileManagerTable*>(parent))
 {
 }
 
-UIFileTableItem* UIGuestControlFileModel::rootItem() const
+UIFileTableItem* UIFileManagerModel::rootItem() const
 {
     if (!m_pParent)
         return 0;
     return m_pParent->m_pRootItem;
 }
 
-UIGuestControlFileModel::~UIGuestControlFileModel()
+UIFileManagerModel::~UIFileManagerModel()
 {}
 
-int UIGuestControlFileModel::columnCount(const QModelIndex &parent) const
+int UIFileManagerModel::columnCount(const QModelIndex &parent) const
 {
     if (parent.isValid())
         return static_cast<UIFileTableItem*>(parent.internalPointer())->columnCount();
@@ -112,7 +112,7 @@ int UIGuestControlFileModel::columnCount(const QModelIndex &parent) const
     }
 }
 
-bool UIGuestControlFileModel::setData(const QModelIndex &index, const QVariant &value, int role)
+bool UIFileManagerModel::setData(const QModelIndex &index, const QVariant &value, int role)
 {
     if (index.isValid() && role == Qt::EditRole)
     {
@@ -137,7 +137,7 @@ bool UIGuestControlFileModel::setData(const QModelIndex &index, const QVariant &
     return false;
 }
 
-QVariant UIGuestControlFileModel::data(const QModelIndex &index, int role) const
+QVariant UIFileManagerModel::data(const QModelIndex &index, int role) const
 {
     if (!index.isValid())
         return QVariant();
@@ -148,7 +148,7 @@ QVariant UIGuestControlFileModel::data(const QModelIndex &index, int role) const
     if (role == Qt::DisplayRole || role == Qt::EditRole)
     {
         /* dont show anything but the name for up directories: */
-        if (item->isUpDirectory() && index.column() != UIGuestControlFileModelColumn_Name)
+        if (item->isUpDirectory() && index.column() != UIFileManagerModelColumn_Name)
             return QVariant();
         /* Format date/time column: */
         if (item->data(index.column()).canConvert(QMetaType::QDateTime))
@@ -158,14 +158,14 @@ QVariant UIGuestControlFileModel::data(const QModelIndex &index, int role) const
                 return dateTime.toString("dd.MM.yyyy hh:mm:ss");
         }
         /* Decide whether to show human-readable file object sizes: */
-        if (index.column() == UIGuestControlFileModelColumn_Size)
+        if (index.column() == UIFileManagerModelColumn_Size)
         {
-            UIGuestControlFileManagerOptions* pOptions =
-                UIGuestControlFileManagerOptions::instance();
+            UIFileManagerOptions* pOptions =
+                UIFileManagerOptions::instance();
             if (pOptions && pOptions->bShowHumanReadableSizes)
             {
                 qulonglong size = item->data(index.column()).toULongLong();
-                return UIGuestControlFileTable::humanReadableSize(size);
+                return UIFileManagerTable::humanReadableSize(size);
             }
             else
                 return item->data(index.column());
@@ -198,7 +198,7 @@ QVariant UIGuestControlFileModel::data(const QModelIndex &index, int role) const
     return QVariant();
 }
 
-Qt::ItemFlags UIGuestControlFileModel::flags(const QModelIndex &index) const
+Qt::ItemFlags UIFileManagerModel::flags(const QModelIndex &index) const
 {
     if (!index.isValid())
         return 0;
@@ -211,7 +211,7 @@ Qt::ItemFlags UIGuestControlFileModel::flags(const QModelIndex &index) const
     return QAbstractItemModel::flags(index);
 }
 
-QVariant UIGuestControlFileModel::headerData(int section, Qt::Orientation orientation,
+QVariant UIFileManagerModel::headerData(int section, Qt::Orientation orientation,
                                int role) const
 {
     if (orientation == Qt::Horizontal && role == Qt::DisplayRole)
@@ -224,14 +224,14 @@ QVariant UIGuestControlFileModel::headerData(int section, Qt::Orientation orient
     return QVariant();
 }
 
-QModelIndex UIGuestControlFileModel::index(UIFileTableItem* item)
+QModelIndex UIFileManagerModel::index(UIFileTableItem* item)
 {
     if (!item)
         return QModelIndex();
     return createIndex(item->row(), 0, item);
 }
 
-QModelIndex UIGuestControlFileModel::index(int row, int column, const QModelIndex &parent)
+QModelIndex UIFileManagerModel::index(int row, int column, const QModelIndex &parent)
             const
 {
     if (!hasIndex(row, column, parent))
@@ -254,7 +254,7 @@ QModelIndex UIGuestControlFileModel::index(int row, int column, const QModelInde
 }
 
 
-QModelIndex UIGuestControlFileModel::parent(const QModelIndex &index) const
+QModelIndex UIFileManagerModel::parent(const QModelIndex &index) const
 {
     if (!index.isValid())
         return QModelIndex();
@@ -268,7 +268,7 @@ QModelIndex UIGuestControlFileModel::parent(const QModelIndex &index) const
     return createIndex(parentItem->row(), 0, parentItem);
 }
 
-int UIGuestControlFileModel::rowCount(const QModelIndex &parent) const
+int UIFileManagerModel::rowCount(const QModelIndex &parent) const
 {
     if (parent.column() > 0)
         return 0;
@@ -282,12 +282,12 @@ int UIGuestControlFileModel::rowCount(const QModelIndex &parent) const
     return parentItem->childCount();
 }
 
-void UIGuestControlFileModel::signalUpdate()
+void UIFileManagerModel::signalUpdate()
 {
     emit layoutChanged();
 }
 
-QModelIndex UIGuestControlFileModel::rootIndex() const
+QModelIndex UIFileManagerModel::rootIndex() const
 {
     if (!rootItem())
         return QModelIndex();
@@ -295,12 +295,12 @@ QModelIndex UIGuestControlFileModel::rootIndex() const
                        rootItem()->child(0));
 }
 
-void UIGuestControlFileModel::beginReset()
+void UIFileManagerModel::beginReset()
 {
     beginResetModel();
 }
 
-void UIGuestControlFileModel::endReset()
+void UIFileManagerModel::endReset()
 {
     endResetModel();
 }

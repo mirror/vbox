@@ -229,15 +229,15 @@ protected:
     }
 };
 
-/** Simple action extension, used as 'Show Guest Control File Manager Dialog' action class. */
-class UIActionSimpleRuntimeShowGuestControlFileManagerDialog : public UIActionSimple
+/** Simple action extension, used as 'Show File Manager Dialog' action class. */
+class UIActionSimpleRuntimeShowFileManagerDialog : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionSimpleRuntimeShowGuestControlFileManagerDialog(UIActionPool *pParent)
+    UIActionSimpleRuntimeShowFileManagerDialog(UIActionPool *pParent)
         : UIActionSimple(pParent, ":/session_info_16px.png", ":/session_info_disabled_16px.png", true)
     {}
 
@@ -246,23 +246,23 @@ protected:
     /** Returns action extra-data ID. */
     virtual int extraDataID() const /* override */
     {
-        return UIExtraDataMetaDefs::RuntimeMenuMachineActionType_GuestControlFileManagerDialog;
+        return UIExtraDataMetaDefs::RuntimeMenuMachineActionType_FileManagerDialog;
     }
     /** Returns action extra-data key. */
     virtual QString extraDataKey() const /* override */
     {
-        return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_GuestControlFileManagerDialog);
+        return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_FileManagerDialog);
     }
     /** Returns whether action is allowed. */
     virtual bool isAllowed() const /* override */
     {
-        return actionPool()->toRuntime()->isAllowedInMenuMachine(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_GuestControlFileManagerDialog);
+        return actionPool()->toRuntime()->isAllowedInMenuMachine(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_FileManagerDialog);
     }
 
     /** Returns shortcut extra-data ID. */
     virtual QString shortcutExtraDataID() const /* override */
     {
-        return QString("GuestControlFileManagerDialog");
+        return QString("FileManagerDialog");
     }
 
     /** Returns default shortcut. */
@@ -275,7 +275,7 @@ protected:
     virtual void retranslateUi() /* override */
     {
         setName(QApplication::translate("UIActionPool", "File Manager..."));
-        setStatusTip(QApplication::translate("UIActionPool", "Display the virtual machine guest control file manager window"));
+        setStatusTip(QApplication::translate("UIActionPool", "Display the virtual machine file manager window"));
     }
 };
 
@@ -3322,7 +3322,7 @@ void UIActionPoolRuntime::preparePool()
     m_pool[UIActionIndexRT_M_Machine_S_Settings] = new UIActionSimpleRuntimeShowSettings(this);
     m_pool[UIActionIndexRT_M_Machine_S_TakeSnapshot] = new UIActionSimpleRuntimePerformTakeSnapshot(this);
     m_pool[UIActionIndexRT_M_Machine_S_ShowInformation] = new UIActionSimpleRuntimeShowInformationDialog(this);
-    m_pool[UIActionIndexRT_M_Machine_S_ShowGuestControlFileManager] = new UIActionSimpleRuntimeShowGuestControlFileManagerDialog(this);
+    m_pool[UIActionIndexRT_M_Machine_S_ShowFileManager] = new UIActionSimpleRuntimeShowFileManagerDialog(this);
     m_pool[UIActionIndexRT_M_Machine_S_ShowGuestProcessControl] = new UIActionSimpleRuntimeShowGuestProcessControlDialog(this);
     m_pool[UIActionIndexRT_M_Machine_T_Pause] = new UIActionToggleRuntimePause(this);
     m_pool[UIActionIndexRT_M_Machine_S_Reset] = new UIActionSimpleRuntimePerformReset(this);
@@ -3602,8 +3602,8 @@ void UIActionPoolRuntime::updateMenus()
     /* 'Log Viewer' menu: */
     updateMenuLogViewerWindow();
 
-    /* 'Guest Control File Manager' menu: */
-    updateMenuGuestControlFileManager();
+    /* 'File Manager' menu: */
+    updateMenuFileManager();
 }
 
 void UIActionPoolRuntime::updateMenuMachine()
@@ -3631,7 +3631,7 @@ void UIActionPoolRuntime::updateMenuMachine()
     fSeparator = addAction(pMenu, action(UIActionIndexRT_M_Machine_S_TakeSnapshot)) || fSeparator;
     /* 'Information Dialog' action: */
     fSeparator = addAction(pMenu, action(UIActionIndexRT_M_Machine_S_ShowInformation)) || fSeparator;
-    fSeparator = addAction(pMenu, action(UIActionIndexRT_M_Machine_S_ShowGuestControlFileManager)) || fSeparator;
+    fSeparator = addAction(pMenu, action(UIActionIndexRT_M_Machine_S_ShowFileManager)) || fSeparator;
 #ifdef VBOX_GUI_WITH_GUEST_CONTROL_UI
     fSeparator = addAction(pMenu, action(UIActionIndexRT_M_Machine_S_ShowGuestProcessControl)) || fSeparator;
 #endif

@@ -29,8 +29,8 @@
 /* GUI includes: */
 # include "QIToolButton.h"
 # include "UIIconPool.h"
-# include "UIGuestControlFileManager.h"
-# include "UIGuestControlFileManagerLogPanel.h"
+# include "UIFileManager.h"
+# include "UIFileManagerLogPanel.h"
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
@@ -72,7 +72,7 @@ void UIFileManagerLogViewer::contextMenuEvent(QContextMenuEvent *event)
 {
     QMenu *menu = createStandardContextMenu();
 
-    QAction *pClearAction = menu->addAction(UIGuestControlFileManager::tr("Clear"));
+    QAction *pClearAction = menu->addAction(UIFileManager::tr("Clear"));
     connect(pClearAction, &QAction::triggered, this, &UIFileManagerLogViewer::sltClear);
     menu->exec(event->globalPos());
     delete menu;
@@ -85,17 +85,17 @@ void UIFileManagerLogViewer::sltClear()
 
 
 /*********************************************************************************************************************************
-*   UIGuestControlFileManagerLogPanel implementation.                                                                            *
+*   UIFileManagerLogPanel implementation.                                                                            *
 *********************************************************************************************************************************/
 
-UIGuestControlFileManagerLogPanel::UIGuestControlFileManagerLogPanel(UIGuestControlFileManager *pManagerWidget, QWidget *pParent)
-    : UIGuestControlFileManagerPanel(pManagerWidget, pParent)
+UIFileManagerLogPanel::UIFileManagerLogPanel(UIFileManager *pManagerWidget, QWidget *pParent)
+    : UIFileManagerPanel(pManagerWidget, pParent)
     , m_pLogTextEdit(0)
 {
     prepare();
 }
 
-void UIGuestControlFileManagerLogPanel::appendLog(const QString &strLog, FileManagerLogType eLogType)
+void UIFileManagerLogPanel::appendLog(const QString &strLog, FileManagerLogType eLogType)
 {
     if (!m_pLogTextEdit)
         return;
@@ -108,12 +108,12 @@ void UIGuestControlFileManagerLogPanel::appendLog(const QString &strLog, FileMan
     m_pLogTextEdit->append(strColoredLog);
 }
 
-QString UIGuestControlFileManagerLogPanel::panelName() const
+QString UIFileManagerLogPanel::panelName() const
 {
     return "LogPanel";
 }
 
-void UIGuestControlFileManagerLogPanel::prepareWidgets()
+void UIFileManagerLogPanel::prepareWidgets()
 {
     if (!mainLayout())
         return;
@@ -124,15 +124,15 @@ void UIGuestControlFileManagerLogPanel::prepareWidgets()
     }
 }
 
-void UIGuestControlFileManagerLogPanel::prepareConnections()
+void UIFileManagerLogPanel::prepareConnections()
 {
 }
 
-void UIGuestControlFileManagerLogPanel::retranslateUi()
+void UIFileManagerLogPanel::retranslateUi()
 {
-    UIGuestControlFileManagerPanel::retranslateUi();
+    UIFileManagerPanel::retranslateUi();
 
 }
 
 
-#include "UIGuestControlFileManagerLogPanel.moc"
+#include "UIFileManagerLogPanel.moc"

@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIGuestControlFileManager class declaration.
+ * VBox Qt GUI - UIFileManager class declaration.
  */
 
 /*
@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___UIGuestControlFileManager_h___
-#define ___UIGuestControlFileManager_h___
+#ifndef ___UIFileManager_h___
+#define ___UIFileManager_h___
 
 /* Qt includes: */
 #include <QWidget>
@@ -46,23 +46,23 @@ class UIActionPool;
 class UIFileOperationsList;
 class UIGuestControlConsole;
 class UIGuestControlInterface;
-class UIGuestControlFileManagerPanel;
-class UIGuestControlFileManagerLogPanel;
-class UIGuestControlFileManagerOperationsPanel;
-class UIGuestControlFileManagerSessionPanel;
-class UIGuestControlFileManagerOptionsPanel;
-class UIGuestFileTable;
-class UIHostFileTable;
+class UIFileManagerPanel;
+class UIFileManagerLogPanel;
+class UIFileManagerOperationsPanel;
+class UIFileManagerSessionPanel;
+class UIFileManagerOptionsPanel;
+class UIFileManagerGuestTable;
+class UIFileManagerHostTable;
 class UIGuestSessionCreateWidget;
 class UIToolBar;
 
 /** A Utility class to manage file  manager options. */
-class UIGuestControlFileManagerOptions
+class UIFileManagerOptions
 {
 
 public:
 
-    static UIGuestControlFileManagerOptions* instance();
+    static UIFileManagerOptions* instance();
     static void create();
     static void destroy();
 
@@ -72,24 +72,24 @@ public:
 
 private:
 
-    UIGuestControlFileManagerOptions();
-    ~UIGuestControlFileManagerOptions();
+    UIFileManagerOptions();
+    ~UIFileManagerOptions();
 
-    static UIGuestControlFileManagerOptions *m_pInstance;
+    static UIFileManagerOptions *m_pInstance;
 };
 
 /** A QWidget extension. it includes a QWidget extension for initiating a guest session
  *  one host and one guest file table views, a log viewer
  *  and some other file manager related widgets. */
-class UIGuestControlFileManager : public QIWithRetranslateUI<QWidget>
+class UIFileManager : public QIWithRetranslateUI<QWidget>
 {
     Q_OBJECT;
 
 public:
 
-    UIGuestControlFileManager(EmbedTo enmEmbedding, UIActionPool *pActionPool,
+    UIFileManager(EmbedTo enmEmbedding, UIActionPool *pActionPool,
                               const CGuest &comGuest, QWidget *pParent, bool fShowToolbar = true);
-    ~UIGuestControlFileManager();
+    ~UIFileManager();
     QMenu *menu() const;
 
 #ifdef VBOX_WS_MAC
@@ -156,8 +156,8 @@ private:
     /** Loads file manager options. This should be done before widget creation
      *  since some widgets are initilized with these options */
     void loadOptions();
-    void hidePanel(UIGuestControlFileManagerPanel *panel);
-    void showPanel(UIGuestControlFileManagerPanel *panel);
+    void hidePanel(UIFileManagerPanel *panel);
+    void showPanel(UIFileManagerPanel *panel);
     /** Makes sure escape key is assigned to only a single widget. This is done by checking
         several things in the following order:
         - when there are no more panels visible assign it to the parent dialog
@@ -178,8 +178,8 @@ private:
 
     UIGuestControlConsole    *m_pConsole;
     UIGuestControlInterface  *m_pControlInterface;
-    UIGuestFileTable         *m_pGuestFileTable;
-    UIHostFileTable          *m_pHostFileTable;
+    UIFileManagerGuestTable         *m_pGuestFileTable;
+    UIFileManagerHostTable   *m_pHostFileTable;
 
     ComObjPtr<UIMainEventListenerImpl> m_pQtGuestListener;
     ComObjPtr<UIMainEventListenerImpl> m_pQtSessionListener;
@@ -188,15 +188,15 @@ private:
     const EmbedTo  m_enmEmbedding;
     UIActionPool  *m_pActionPool;
     const bool     m_fShowToolbar;
-    QMap<UIGuestControlFileManagerPanel*, QAction*> m_panelActionMap;
-    QList<UIGuestControlFileManagerPanel*>          m_visiblePanelsList;
-    UIGuestControlFileManagerOptionsPanel          *m_pOptionsPanel;
-    UIGuestControlFileManagerLogPanel              *m_pLogPanel;
-    UIGuestControlFileManagerSessionPanel          *m_pSessionPanel;
-    UIGuestControlFileManagerOperationsPanel       *m_pOperationsPanel;
-    friend class UIGuestControlFileManagerOptionsPanel;
-    friend class UIGuestControlFileManagerPanel;
-    friend class UIGuestControlFileManagerDialog;
+    QMap<UIFileManagerPanel*, QAction*> m_panelActionMap;
+    QList<UIFileManagerPanel*>          m_visiblePanelsList;
+    UIFileManagerOptionsPanel          *m_pOptionsPanel;
+    UIFileManagerLogPanel              *m_pLogPanel;
+    UIFileManagerSessionPanel          *m_pSessionPanel;
+    UIFileManagerOperationsPanel       *m_pOperationsPanel;
+    friend class UIFileManagerOptionsPanel;
+    friend class UIFileManagerPanel;
+    friend class UIFileManagerDialog;
 };
 
-#endif /* !___UIGuestControlFileManager_h___ */
+#endif /* !___UIFileManager_h___ */

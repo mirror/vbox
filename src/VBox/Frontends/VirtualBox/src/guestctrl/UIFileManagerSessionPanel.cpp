@@ -31,8 +31,8 @@
 # include "QILineEdit.h"
 # include "QIToolButton.h"
 # include "UIIconPool.h"
-# include "UIGuestControlFileManager.h"
-# include "UIGuestControlFileManagerSessionPanel.h"
+# include "UIFileManager.h"
+# include "UIFileManagerSessionPanel.h"
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
@@ -114,14 +114,14 @@ void UIGuestSessionCreateWidget::prepareWidgets()
     if (m_pPasswordEdit)
     {
         m_pMainLayout->addWidget(m_pPasswordEdit, 2);
-        m_pPasswordEdit->setPlaceholderText(UIGuestControlFileManager::tr("Password"));
+        m_pPasswordEdit->setPlaceholderText(UIFileManager::tr("Password"));
         m_pPasswordEdit->setEchoMode(QLineEdit::Password);
     }
 
     m_pShowPasswordCheckBox = new QCheckBox;
     if (m_pShowPasswordCheckBox)
     {
-        m_pShowPasswordCheckBox->setText(UIGuestControlFileManager::tr("Show Password"));
+        m_pShowPasswordCheckBox->setText(UIFileManager::tr("Show Password"));
         m_pMainLayout->addWidget(m_pShowPasswordCheckBox);
         connect(m_pShowPasswordCheckBox, &QCheckBox::toggled,
                 this, &UIGuestSessionCreateWidget::sltShowHidePassword);
@@ -164,20 +164,20 @@ void UIGuestSessionCreateWidget::retranslateUi()
 {
     if (m_pUserNameEdit)
     {
-        m_pUserNameEdit->setToolTip(UIGuestControlFileManager::tr("User name to authenticate session creation"));
-        m_pUserNameEdit->setPlaceholderText(UIGuestControlFileManager::tr("User Name"));
+        m_pUserNameEdit->setToolTip(UIFileManager::tr("User name to authenticate session creation"));
+        m_pUserNameEdit->setPlaceholderText(UIFileManager::tr("User Name"));
 
     }
     if (m_pPasswordEdit)
     {
-        m_pPasswordEdit->setToolTip(UIGuestControlFileManager::tr("Password to authenticate session creation"));
-        m_pPasswordEdit->setPlaceholderText(UIGuestControlFileManager::tr("Password"));
+        m_pPasswordEdit->setToolTip(UIFileManager::tr("Password to authenticate session creation"));
+        m_pPasswordEdit->setPlaceholderText(UIFileManager::tr("Password"));
     }
 
     if (m_pCreateButton)
-        m_pCreateButton->setText(UIGuestControlFileManager::tr("Create Session"));
+        m_pCreateButton->setText(UIFileManager::tr("Create Session"));
     if (m_pCloseButton)
-        m_pCloseButton->setText(UIGuestControlFileManager::tr("Close Session"));
+        m_pCloseButton->setText(UIFileManager::tr("Close Session"));
 }
 
 void UIGuestSessionCreateWidget::keyPressEvent(QKeyEvent * pEvent)
@@ -218,34 +218,34 @@ void UIGuestSessionCreateWidget::switchSessionCloseMode()
 
 
 /*********************************************************************************************************************************
-*   UIGuestControlFileManagerSessionPanel implementation.                                                                        *
+*   UIFileManagerSessionPanel implementation.                                                                        *
 *********************************************************************************************************************************/
 
-UIGuestControlFileManagerSessionPanel::UIGuestControlFileManagerSessionPanel(UIGuestControlFileManager *pManagerWidget, QWidget *pParent)
-    : UIGuestControlFileManagerPanel(pManagerWidget, pParent)
+UIFileManagerSessionPanel::UIFileManagerSessionPanel(UIFileManager *pManagerWidget, QWidget *pParent)
+    : UIFileManagerPanel(pManagerWidget, pParent)
     , m_pSessionCreateWidget(0)
 {
     prepare();
 }
 
-void UIGuestControlFileManagerSessionPanel::switchSessionCloseMode()
+void UIFileManagerSessionPanel::switchSessionCloseMode()
 {
     if (m_pSessionCreateWidget)
         m_pSessionCreateWidget->switchSessionCloseMode();
 }
 
-void UIGuestControlFileManagerSessionPanel::switchSessionCreateMode()
+void UIFileManagerSessionPanel::switchSessionCreateMode()
 {
     if (m_pSessionCreateWidget)
         m_pSessionCreateWidget->switchSessionCreateMode();
 }
 
-QString UIGuestControlFileManagerSessionPanel::panelName() const
+QString UIFileManagerSessionPanel::panelName() const
 {
     return "SessionPanel";
 }
 
-void UIGuestControlFileManagerSessionPanel::prepareWidgets()
+void UIFileManagerSessionPanel::prepareWidgets()
 {
     if (!mainLayout())
         return;
@@ -254,21 +254,21 @@ void UIGuestControlFileManagerSessionPanel::prepareWidgets()
         mainLayout()->addWidget(m_pSessionCreateWidget);
 }
 
-void UIGuestControlFileManagerSessionPanel::prepareConnections()
+void UIFileManagerSessionPanel::prepareConnections()
 {
     if (m_pSessionCreateWidget)
     {
         connect(m_pSessionCreateWidget, &UIGuestSessionCreateWidget::sigCreateSession,
-                this, &UIGuestControlFileManagerSessionPanel::sigCreateSession);
+                this, &UIFileManagerSessionPanel::sigCreateSession);
         connect(m_pSessionCreateWidget, &UIGuestSessionCreateWidget::sigCloseSession,
-                this, &UIGuestControlFileManagerSessionPanel::sigCloseSession);
+                this, &UIFileManagerSessionPanel::sigCloseSession);
     }
 }
 
-void UIGuestControlFileManagerSessionPanel::retranslateUi()
+void UIFileManagerSessionPanel::retranslateUi()
 {
-    UIGuestControlFileManagerPanel::retranslateUi();
+    UIFileManagerPanel::retranslateUi();
 
 }
 
-#include "UIGuestControlFileManagerSessionPanel.moc"
+#include "UIFileManagerSessionPanel.moc"

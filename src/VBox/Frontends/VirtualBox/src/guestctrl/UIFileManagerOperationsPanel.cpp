@@ -35,8 +35,8 @@
 # include "QILabel.h"
 # include "UIErrorString.h"
 # include "UIIconPool.h"
-# include "UIGuestControlFileManager.h"
-# include "UIGuestControlFileManagerOperationsPanel.h"
+# include "UIFileManager.h"
+# include "UIFileManagerOperationsPanel.h"
 # include "UIProgressEventHandler.h"
 
 /* COM includes: */
@@ -152,32 +152,32 @@ bool UIFileOperationProgressWidget::isCanceled() const
 void UIFileOperationProgressWidget::retranslateUi()
 {
     if (m_pCancelButton)
-        m_pCancelButton->setToolTip(UIGuestControlFileManager::tr("Cancel"));
+        m_pCancelButton->setToolTip(UIFileManager::tr("Cancel"));
 
     switch (m_eStatus)
     {
         case OperationStatus_NotStarted:
-            m_pStatusLabel->setText(UIGuestControlFileManager::tr("Not yet started"));
+            m_pStatusLabel->setText(UIFileManager::tr("Not yet started"));
             break;
         case OperationStatus_Working:
-            m_pStatusLabel->setText(UIGuestControlFileManager::tr("Working"));
+            m_pStatusLabel->setText(UIFileManager::tr("Working"));
             break;
         case OperationStatus_Paused:
-            m_pStatusLabel->setText(UIGuestControlFileManager::tr("Paused"));
+            m_pStatusLabel->setText(UIFileManager::tr("Paused"));
             break;
         case OperationStatus_Canceled:
-            m_pStatusLabel->setText(UIGuestControlFileManager::tr("Canceled"));
+            m_pStatusLabel->setText(UIFileManager::tr("Canceled"));
             break;
         case OperationStatus_Succeded:
-            m_pStatusLabel->setText(UIGuestControlFileManager::tr("Succeded"));
+            m_pStatusLabel->setText(UIFileManager::tr("Succeded"));
             break;
         case OperationStatus_Failed:
-            m_pStatusLabel->setText(UIGuestControlFileManager::tr("Failed"));
+            m_pStatusLabel->setText(UIFileManager::tr("Failed"));
             break;
         case OperationStatus_Invalid:
         case OperationStatus_Max:
         default:
-            m_pStatusLabel->setText(UIGuestControlFileManager::tr("Invalid"));
+            m_pStatusLabel->setText(UIFileManager::tr("Invalid"));
             break;
     }
 }
@@ -311,12 +311,12 @@ void UIFileOperationProgressWidget::sltCancelProgress()
 
 
 /*********************************************************************************************************************************
-*   UIGuestControlFileManagerOperationsPanel implementation.                                                                     *
+*   UIFileManagerOperationsPanel implementation.                                                                     *
 *********************************************************************************************************************************/
 
-UIGuestControlFileManagerOperationsPanel::UIGuestControlFileManagerOperationsPanel(UIGuestControlFileManager *pManagerWidget,
+UIFileManagerOperationsPanel::UIFileManagerOperationsPanel(UIFileManager *pManagerWidget,
                                                                                    QWidget *pParent)
-    : UIGuestControlFileManagerPanel(pManagerWidget, pParent)
+    : UIFileManagerPanel(pManagerWidget, pParent)
     , m_pScrollArea(0)
     , m_pContainerWidget(0)
     , m_pContainerLayout(0)
@@ -326,7 +326,7 @@ UIGuestControlFileManagerOperationsPanel::UIGuestControlFileManagerOperationsPan
     prepare();
 }
 
-void UIGuestControlFileManagerOperationsPanel::addNewProgress(const CProgress &comProgress)
+void UIFileManagerOperationsPanel::addNewProgress(const CProgress &comProgress)
 {
     if (!m_pContainerLayout)
         return;
@@ -338,22 +338,22 @@ void UIGuestControlFileManagerOperationsPanel::addNewProgress(const CProgress &c
     m_pContainerLayout->insertWidget(m_pContainerLayout->count() - 1, pOperationsWidget);
 
     connect(pOperationsWidget, &UIFileOperationProgressWidget::sigProgressComplete,
-            this, &UIGuestControlFileManagerOperationsPanel::sigFileOperationComplete);
+            this, &UIFileManagerOperationsPanel::sigFileOperationComplete);
     connect(pOperationsWidget, &UIFileOperationProgressWidget::sigProgressFail,
-            this, &UIGuestControlFileManagerOperationsPanel::sigFileOperationFail);
+            this, &UIFileManagerOperationsPanel::sigFileOperationFail);
 
     connect(pOperationsWidget, &UIFileOperationProgressWidget::sigFocusIn,
-            this, &UIGuestControlFileManagerOperationsPanel::sltHandleWidgetFocusIn);
+            this, &UIFileManagerOperationsPanel::sltHandleWidgetFocusIn);
     connect(pOperationsWidget, &UIFileOperationProgressWidget::sigFocusOut,
-            this, &UIGuestControlFileManagerOperationsPanel::sltHandleWidgetFocusOut);
+            this, &UIFileManagerOperationsPanel::sltHandleWidgetFocusOut);
 }
 
-QString UIGuestControlFileManagerOperationsPanel::panelName() const
+QString UIFileManagerOperationsPanel::panelName() const
 {
     return "OperationsPanel";
 }
 
-void UIGuestControlFileManagerOperationsPanel::prepareWidgets()
+void UIFileManagerOperationsPanel::prepareWidgets()
 {
     if (!mainLayout())
         return;
@@ -367,7 +367,7 @@ void UIGuestControlFileManagerOperationsPanel::prepareWidgets()
 
     QScrollBar *pVerticalScrollBar = m_pScrollArea->verticalScrollBar();
     if (pVerticalScrollBar)
-        QObject::connect(pVerticalScrollBar, &QScrollBar::rangeChanged, this, &UIGuestControlFileManagerOperationsPanel::sltScrollToBottom);
+        QObject::connect(pVerticalScrollBar, &QScrollBar::rangeChanged, this, &UIFileManagerOperationsPanel::sltScrollToBottom);
 
     m_pScrollArea->setBackgroundRole(QPalette::Window);
     m_pScrollArea->setWidgetResizable(true);
@@ -379,40 +379,40 @@ void UIGuestControlFileManagerOperationsPanel::prepareWidgets()
     m_pContainerLayout->addStretch(4);
 }
 
-void UIGuestControlFileManagerOperationsPanel::prepareConnections()
+void UIFileManagerOperationsPanel::prepareConnections()
 {
 
 }
 
-void UIGuestControlFileManagerOperationsPanel::retranslateUi()
+void UIFileManagerOperationsPanel::retranslateUi()
 {
-    UIGuestControlFileManagerPanel::retranslateUi();
+    UIFileManagerPanel::retranslateUi();
 }
 
-void UIGuestControlFileManagerOperationsPanel::contextMenuEvent(QContextMenuEvent *pEvent)
+void UIFileManagerOperationsPanel::contextMenuEvent(QContextMenuEvent *pEvent)
 {
     QMenu *menu = new QMenu(this);
 
     if (m_pWidgetInFocus)
     {
-        QAction *pRemoveSelected = menu->addAction(UIGuestControlFileManager::tr("Remove Selected"));
+        QAction *pRemoveSelected = menu->addAction(UIFileManager::tr("Remove Selected"));
         connect(pRemoveSelected, &QAction::triggered,
-                this, &UIGuestControlFileManagerOperationsPanel::sltRemoveSelected);
+                this, &UIFileManagerOperationsPanel::sltRemoveSelected);
     }
 
-    QAction *pRemoveFinished = menu->addAction(UIGuestControlFileManager::tr("Remove Finished"));
-    QAction *pRemoveAll = menu->addAction(UIGuestControlFileManager::tr("Remove All"));
+    QAction *pRemoveFinished = menu->addAction(UIFileManager::tr("Remove Finished"));
+    QAction *pRemoveAll = menu->addAction(UIFileManager::tr("Remove All"));
 
     connect(pRemoveFinished, &QAction::triggered,
-            this, &UIGuestControlFileManagerOperationsPanel::sltRemoveFinished);
+            this, &UIFileManagerOperationsPanel::sltRemoveFinished);
     connect(pRemoveAll, &QAction::triggered,
-            this, &UIGuestControlFileManagerOperationsPanel::sltRemoveAll);
+            this, &UIFileManagerOperationsPanel::sltRemoveAll);
 
     menu->exec(pEvent->globalPos());
     delete menu;
 }
 
-void UIGuestControlFileManagerOperationsPanel::sltRemoveFinished()
+void UIFileManagerOperationsPanel::sltRemoveFinished()
 {
     QList<UIFileOperationProgressWidget*> widgetsToRemove;
     foreach (QWidget *pWidget, m_widgetSet)
@@ -428,7 +428,7 @@ void UIGuestControlFileManagerOperationsPanel::sltRemoveFinished()
         m_widgetSet.remove(pWidget);
 }
 
-void UIGuestControlFileManagerOperationsPanel::sltRemoveAll()
+void UIFileManagerOperationsPanel::sltRemoveAll()
 {
     foreach (QWidget *pWidget, m_widgetSet)
     {
@@ -440,7 +440,7 @@ void UIGuestControlFileManagerOperationsPanel::sltRemoveAll()
     m_widgetSet.clear();
 }
 
-void UIGuestControlFileManagerOperationsPanel::sltRemoveSelected()
+void UIFileManagerOperationsPanel::sltRemoveSelected()
 {
     if (!m_pWidgetInFocus)
         return;
@@ -448,25 +448,25 @@ void UIGuestControlFileManagerOperationsPanel::sltRemoveSelected()
     m_widgetSet.remove(m_pWidgetInFocus);
 }
 
-void UIGuestControlFileManagerOperationsPanel::sltHandleWidgetFocusIn(QWidget *pWidget)
+void UIFileManagerOperationsPanel::sltHandleWidgetFocusIn(QWidget *pWidget)
 {
     if (!pWidget)
         return;
     m_pWidgetInFocus = pWidget;
 }
 
-void UIGuestControlFileManagerOperationsPanel::sltHandleWidgetFocusOut(QWidget *pWidget)
+void UIFileManagerOperationsPanel::sltHandleWidgetFocusOut(QWidget *pWidget)
 {
     if (!pWidget)
         return;
     m_pWidgetInFocus = 0;
 }
 
-void UIGuestControlFileManagerOperationsPanel::sltScrollToBottom(int iMin, int iMax)
+void UIFileManagerOperationsPanel::sltScrollToBottom(int iMin, int iMax)
 {
     Q_UNUSED(iMin);
     if (m_pScrollArea)
     m_pScrollArea->verticalScrollBar()->setValue(iMax);
 }
 
-#include "UIGuestControlFileManagerOperationsPanel.moc"
+#include "UIFileManagerOperationsPanel.moc"

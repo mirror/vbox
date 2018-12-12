@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIGuestControlFileManagerDialog class implementation.
+ * VBox Qt GUI - UIFileManagerDialog class implementation.
  */
 
 /*
@@ -27,8 +27,8 @@
 # include "UIDesktopWidgetWatchdog.h"
 # include "UIExtraDataManager.h"
 # include "UIIconPool.h"
-# include "UIGuestControlFileManager.h"
-# include "UIGuestControlFileManagerDialog.h"
+# include "UIFileManager.h"
+# include "UIFileManagerDialog.h"
 # include "VBoxGlobal.h"
 # ifdef VBOX_WS_MAC
 #  include "VBoxUtils-darwin.h"
@@ -38,10 +38,10 @@
 
 
 /*********************************************************************************************************************************
-*   Class UIGuestControlFileManagerDialogFactory implementation.                                                                 *
+*   Class UIFileManagerDialogFactory implementation.                                                                 *
 *********************************************************************************************************************************/
 
-UIGuestControlFileManagerDialogFactory::UIGuestControlFileManagerDialogFactory(UIActionPool *pActionPool /* = 0 */,
+UIFileManagerDialogFactory::UIFileManagerDialogFactory(UIActionPool *pActionPool /* = 0 */,
                                                          const CGuest &comGuest /* = CGuest() */,
                                                          const QString &strMachineName /* = QString() */)
     : m_pActionPool(pActionPool)
@@ -50,17 +50,17 @@ UIGuestControlFileManagerDialogFactory::UIGuestControlFileManagerDialogFactory(U
 {
 }
 
-void UIGuestControlFileManagerDialogFactory::create(QIManagerDialog *&pDialog, QWidget *pCenterWidget)
+void UIFileManagerDialogFactory::create(QIManagerDialog *&pDialog, QWidget *pCenterWidget)
 {
-    pDialog = new UIGuestControlFileManagerDialog(pCenterWidget, m_pActionPool, m_comGuest, m_strMachineName);
+    pDialog = new UIFileManagerDialog(pCenterWidget, m_pActionPool, m_comGuest, m_strMachineName);
 }
 
 
 /*********************************************************************************************************************************
-*   Class UIGuestControlFileManagerDialog implementation.                                                                        *
+*   Class UIFileManagerDialog implementation.                                                                        *
 *********************************************************************************************************************************/
 
-UIGuestControlFileManagerDialog::UIGuestControlFileManagerDialog(QWidget *pCenterWidget,
+UIFileManagerDialog::UIFileManagerDialog(QWidget *pCenterWidget,
                                            UIActionPool *pActionPool,
                                            const CGuest &comGuest,
                                            const QString &strMachineName /* = QString() */)
@@ -71,24 +71,24 @@ UIGuestControlFileManagerDialog::UIGuestControlFileManagerDialog(QWidget *pCente
 {
 }
 
-void UIGuestControlFileManagerDialog::retranslateUi()
+void UIFileManagerDialog::retranslateUi()
 {
     /* Translate window title: */
-    setWindowTitle(UIGuestControlFileManager::tr("%1 - Guest Control File Manager").arg(m_strMachineName));
+    setWindowTitle(UIFileManager::tr("%1 - File Manager").arg(m_strMachineName));
     /* Translate buttons: */
-    button(ButtonType_Close)->setText(UIGuestControlFileManager::tr("Close"));
+    button(ButtonType_Close)->setText(UIFileManager::tr("Close"));
 }
 
-void UIGuestControlFileManagerDialog::configure()
+void UIFileManagerDialog::configure()
 {
     /* Apply window icons: */
     setWindowIcon(UIIconPool::iconSetFull(":/file_manager_32px.png", ":/file_manager_16px.png"));
 }
 
-void UIGuestControlFileManagerDialog::configureCentralWidget()
+void UIFileManagerDialog::configureCentralWidget()
 {
     /* Create widget: */
-    UIGuestControlFileManager *pWidget = new UIGuestControlFileManager(EmbedTo_Dialog, m_pActionPool,
+    UIFileManager *pWidget = new UIFileManager(EmbedTo_Dialog, m_pActionPool,
                                                                        m_comGuest, this);
 
     if (pWidget)
@@ -99,22 +99,22 @@ void UIGuestControlFileManagerDialog::configureCentralWidget()
 #ifdef VBOX_WS_MAC
         setWidgetToolbar(pWidget->toolbar());
 #endif
-        connect(pWidget, &UIGuestControlFileManager::sigSetCloseButtonShortCut,
-                this, &UIGuestControlFileManagerDialog::sltSetCloseButtonShortCut);
+        connect(pWidget, &UIFileManager::sigSetCloseButtonShortCut,
+                this, &UIFileManagerDialog::sltSetCloseButtonShortCut);
 
         /* Add into layout: */
         centralWidget()->layout()->addWidget(pWidget);
     }
 }
 
-void UIGuestControlFileManagerDialog::finalize()
+void UIFileManagerDialog::finalize()
 {
     /* Apply language settings: */
     retranslateUi();
     manageEscapeShortCut();
 }
 
-void UIGuestControlFileManagerDialog::loadSettings()
+void UIFileManagerDialog::loadSettings()
 {
     const QRect desktopRect = gpDesktop->availableGeometry(this);
     int iDefaultWidth = desktopRect.width() / 2;
@@ -125,43 +125,43 @@ void UIGuestControlFileManagerDialog::loadSettings()
         defaultGeometry.moveCenter(centerWidget()->geometry().center());
 
     /* Load geometry from extradata: */
-    QRect geometry = gEDataManager->guestControlFileManagerDialogGeometry(this, defaultGeometry);
+    QRect geometry = gEDataManager->fileManagerDialogGeometry(this, defaultGeometry);
 
     /* Restore geometry: */
-    LogRel2(("GUI: UIGuestControlFileManagerDialog: Restoring geometry to: Origin=%dx%d, Size=%dx%d\n",
+    LogRel2(("GUI: UIFileManagerDialog: Restoring geometry to: Origin=%dx%d, Size=%dx%d\n",
              geometry.x(), geometry.y(), geometry.width(), geometry.height()));
     setDialogGeometry(geometry);
 }
 
-void UIGuestControlFileManagerDialog::saveSettings() const
+void UIFileManagerDialog::saveSettings() const
 {
     /* Save window geometry to extradata: */
     const QRect saveGeometry = geometry();
 #ifdef VBOX_WS_MAC
     /* darwinIsWindowMaximized expects a non-const QWidget*. thus const_cast: */
     QWidget *pw = const_cast<QWidget*>(qobject_cast<const QWidget*>(this));
-    gEDataManager->setGuestControlFileManagerDialogGeometry(saveGeometry, ::darwinIsWindowMaximized(pw));
+    gEDataManager->setFileManagerDialogGeometry(saveGeometry, ::darwinIsWindowMaximized(pw));
 #else /* !VBOX_WS_MAC */
-    gEDataManager->setGuestControlFileManagerDialogGeometry(saveGeometry, isMaximized());
+    gEDataManager->setFileManagerDialogGeometry(saveGeometry, isMaximized());
 #endif /* !VBOX_WS_MAC */
-    LogRel2(("GUI: Guest Control File Manager Dialog: Geometry saved as: Origin=%dx%d, Size=%dx%d\n",
+    LogRel2(("GUI: File Manager Dialog: Geometry saved as: Origin=%dx%d, Size=%dx%d\n",
              saveGeometry.x(), saveGeometry.y(), saveGeometry.width(), saveGeometry.height()));
 }
 
-bool UIGuestControlFileManagerDialog::shouldBeMaximized() const
+bool UIFileManagerDialog::shouldBeMaximized() const
 {
-    return gEDataManager->guestControlFileManagerDialogShouldBeMaximized();
+    return gEDataManager->fileManagerDialogShouldBeMaximized();
 }
 
-void UIGuestControlFileManagerDialog::sltSetCloseButtonShortCut(QKeySequence shortcut)
+void UIFileManagerDialog::sltSetCloseButtonShortCut(QKeySequence shortcut)
 {
     if (button(ButtonType_Close))
         button(ButtonType_Close)->setShortcut(shortcut);
 }
 
-void UIGuestControlFileManagerDialog::manageEscapeShortCut()
+void UIFileManagerDialog::manageEscapeShortCut()
 {
-    UIGuestControlFileManager *pWidget = qobject_cast<UIGuestControlFileManager*>(widget());
+    UIFileManager *pWidget = qobject_cast<UIFileManager*>(widget());
     if (!pWidget)
         return;
     pWidget->manageEscapeShortCut();

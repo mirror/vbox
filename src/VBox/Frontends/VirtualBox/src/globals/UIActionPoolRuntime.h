@@ -42,7 +42,7 @@ enum UIActionIndexRT
     UIActionIndexRT_M_Machine_S_Settings,
     UIActionIndexRT_M_Machine_S_TakeSnapshot,
     UIActionIndexRT_M_Machine_S_ShowInformation,
-    UIActionIndexRT_M_Machine_S_ShowGuestControlFileManager,
+    UIActionIndexRT_M_Machine_S_ShowFileManager,
     UIActionIndexRT_M_Machine_S_ShowGuestProcessControl,
     UIActionIndexRT_M_Machine_T_Pause,
     UIActionIndexRT_M_Machine_S_Reset,

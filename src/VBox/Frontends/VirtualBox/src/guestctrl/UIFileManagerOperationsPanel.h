@@ -15,15 +15,15 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___UIGuestControlFileManagerOperationsPanel_h___
-#define ___UIGuestControlFileManagerOperationsPanel_h___
+#ifndef ___UIFileManagerOperationsPanel_h___
+#define ___UIFileManagerOperationsPanel_h___
 
 /* Qt includes: */
 # include <QUuid>
 
 /* GUI includes: */
 #include "UIGuestControlDefs.h"
-#include "UIGuestControlFileManagerPanel.h"
+#include "UIFileManagerPanel.h"
 
 /* Forward declarations: */
 class CProgress;
@@ -33,12 +33,12 @@ class QVBoxLayout;
 
 class UIFileOperationModel;
 class UIFileOperationProgressWidget;
-class UIGuestControlFileManager;
+class UIFileManager;
 
 
 /** UIVMLogViewerPanel extension hosting a QListWidget which in turn has a special QWidget extension
   * to manage multiple CProgress instances. This is particulary used in monitoring file operations. */
-class UIGuestControlFileManagerOperationsPanel : public UIGuestControlFileManagerPanel
+class UIFileManagerOperationsPanel : public UIFileManagerPanel
 {
     Q_OBJECT;
 
@@ -49,7 +49,7 @@ signals:
 
 public:
 
-    UIGuestControlFileManagerOperationsPanel(UIGuestControlFileManager *pManagerWidget, QWidget *pParent);
+    UIFileManagerOperationsPanel(UIFileManager *pManagerWidget, QWidget *pParent);
     virtual QString panelName() const /* override */;
     void addNewProgress(const CProgress &comProgress);
 
@@ -91,4 +91,4 @@ private:
 
 };
 
-#endif /* !___UIGuestControlFileManagerOperationsPanel_h___ */
+#endif /* !___UIFileManagerOperationsPanel_h___ */

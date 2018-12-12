@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___UIGuestControlFileManagerPanel_h___
-#define ___UIGuestControlFileManagerPanel_h___
+#ifndef ___UIFileManagerPanel_h___
+#define ___UIFileManagerPanel_h___
 
 /* Qt includes: */
 #include <QWidget>
@@ -29,16 +29,16 @@ class QHBoxLayout;
 class QPlainTextEdit;
 class QTextDocument;
 class QIToolButton;
-class UIGuestControlFileManager;
+class UIFileManager;
 
 /** QWidget extension acting as the base class for UIVMLogViewerXXXPanel widgets. */
-class UIGuestControlFileManagerPanel : public QIWithRetranslateUI<QWidget>
+class UIFileManagerPanel : public QIWithRetranslateUI<QWidget>
 {
     Q_OBJECT;
 
 public:
 
-    UIGuestControlFileManagerPanel(UIGuestControlFileManager *pManagerWidget, QWidget *pParent);
+    UIFileManagerPanel(UIFileManager *pManagerWidget, QWidget *pParent);
     void setCloseButtonShortCut(QKeySequence shortCut);
     virtual QString panelName() const = 0;
 
@@ -67,9 +67,9 @@ protected:
 private:
 
     /** Holds the reference to VM Log-Viewer this panel belongs to. */
-    QHBoxLayout         *m_pMainLayout;
-    QIToolButton        *m_pCloseButton;
-    UIGuestControlFileManager *m_pFileManager;
+    QHBoxLayout   *m_pMainLayout;
+    QIToolButton  *m_pCloseButton;
+    UIFileManager *m_pFileManager;
 };
 
-#endif /* !___UIGuestControlFileManagerPanel!_h___ */
+#endif /* !___UIFileManagerPanel!_h___ */

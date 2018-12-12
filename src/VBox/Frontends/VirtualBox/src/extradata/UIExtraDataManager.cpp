@@ -4218,12 +4218,12 @@ QList<int> UIExtraDataManager::guestControlProcessControlSplitterHints()
     return hints;
 }
 
-QRect UIExtraDataManager::guestControlFileManagerDialogGeometry(QWidget *pWidget, const QRect &defaultGeometry)
+QRect UIExtraDataManager::fileManagerDialogGeometry(QWidget *pWidget, const QRect &defaultGeometry)
 {
     return dialogGeometry(GUI_GuestControl_FileManagerDialogGeometry, pWidget, defaultGeometry);
 }
 
-bool UIExtraDataManager::guestControlFileManagerDialogShouldBeMaximized()
+bool UIExtraDataManager::fileManagerDialogShouldBeMaximized()
 {
     /* Get corresponding extra-data: */
     const QStringList data = extraDataStringList(GUI_GuestControl_FileManagerDialogGeometry);
@@ -4232,23 +4232,23 @@ bool UIExtraDataManager::guestControlFileManagerDialogShouldBeMaximized()
     return data.size() == 5 && data[4] == GUI_Geometry_State_Max;
 }
 
-void UIExtraDataManager::setGuestControlFileManagerDialogGeometry(const QRect &geometry, bool fMaximized)
+void UIExtraDataManager::setFileManagerDialogGeometry(const QRect &geometry, bool fMaximized)
 {
     setDialogGeometry(GUI_GuestControl_FileManagerDialogGeometry, geometry, fMaximized);
 }
 
-void UIExtraDataManager::setGuestControlFileManagerVisiblePanels(const QStringList &panelNameList)
+void UIExtraDataManager::setFileManagerVisiblePanels(const QStringList &panelNameList)
 {
     setExtraDataStringList(GUI_GuestControl_FileManagerVisiblePanels, panelNameList);
 }
 
-QStringList UIExtraDataManager::guestControlFileManagerVisiblePanels()
+QStringList UIExtraDataManager::fileManagerVisiblePanels()
 {
     return extraDataStringList(GUI_GuestControl_FileManagerVisiblePanels);
 }
 
-void UIExtraDataManager::setGuestControlFileManagerOptions(bool fListDirectoriesFirst,
-                                       bool fShowDeleteConfirmation, bool fShowHumanReadableSizes)
+void UIExtraDataManager::setFileManagerOptions(bool fListDirectoriesFirst,
+                                               bool fShowDeleteConfirmation, bool fShowHumanReadableSizes)
 {
     /* Serialize passed values: */
     QStringList data;
@@ -4264,7 +4264,7 @@ void UIExtraDataManager::setGuestControlFileManagerOptions(bool fListDirectories
     setExtraDataStringList(GUI_GuestControl_FileManagerOptions, data);
 }
 
-bool UIExtraDataManager::guestControlFileManagerListDirectoriesFirst()
+bool UIExtraDataManager::fileManagerListDirectoriesFirst()
 {
     const QStringList data = extraDataStringList(GUI_GuestControl_FileManagerOptions);
     for (int i = 0; i < data.size(); ++i)
@@ -4275,7 +4275,7 @@ bool UIExtraDataManager::guestControlFileManagerListDirectoriesFirst()
     return false;
 }
 
-bool UIExtraDataManager::guestControlFileManagerShowDeleteConfirmation()
+bool UIExtraDataManager::fileManagerShowDeleteConfirmation()
 {
     const QStringList data = extraDataStringList(GUI_GuestControl_FileManagerOptions);
     for (int i = 0; i < data.size(); ++i)
@@ -4286,7 +4286,7 @@ bool UIExtraDataManager::guestControlFileManagerShowDeleteConfirmation()
     return false;
 }
 
-bool UIExtraDataManager::guestControlFileManagerShowHumanReadableSizes()
+bool UIExtraDataManager::fileManagerShowHumanReadableSizes()
 {
     const QStringList data = extraDataStringList(GUI_GuestControl_FileManagerOptions);
     for (int i = 0; i < data.size(); ++i)

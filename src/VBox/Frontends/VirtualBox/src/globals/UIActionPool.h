@@ -97,40 +97,40 @@ enum UIActionIndex
     UIActionIndex_M_Log_S_Refresh,
     UIActionIndex_M_Log_S_Save,
 
-    /* Guest control file manager actions: */
-    UIActionIndex_M_GuestControlFileManager,
-    UIActionIndex_M_GuestControlFileManager_M_HostSubmenu,
-    UIActionIndex_M_GuestControlFileManager_M_GuestSubmenu,
-    UIActionIndex_M_GuestControlFileManager_S_CopyToGuest,
-    UIActionIndex_M_GuestControlFileManager_S_CopyToHost,
-    UIActionIndex_M_GuestControlFileManager_T_Options,
-    UIActionIndex_M_GuestControlFileManager_T_Log,
-    UIActionIndex_M_GuestControlFileManager_T_FileOperations,
-    UIActionIndex_M_GuestControlFileManager_T_Session,
-    UIActionIndex_M_GuestControlFileManager_S_Host_GoUp,
-    UIActionIndex_M_GuestControlFileManager_S_Guest_GoUp,
-    UIActionIndex_M_GuestControlFileManager_S_Host_GoHome,
-    UIActionIndex_M_GuestControlFileManager_S_Guest_GoHome,
-    UIActionIndex_M_GuestControlFileManager_S_Host_Refresh,
-    UIActionIndex_M_GuestControlFileManager_S_Guest_Refresh,
-    UIActionIndex_M_GuestControlFileManager_S_Host_Delete,
-    UIActionIndex_M_GuestControlFileManager_S_Guest_Delete,
-    UIActionIndex_M_GuestControlFileManager_S_Host_Rename,
-    UIActionIndex_M_GuestControlFileManager_S_Guest_Rename,
-    UIActionIndex_M_GuestControlFileManager_S_Host_CreateNewDirectory,
-    UIActionIndex_M_GuestControlFileManager_S_Guest_CreateNewDirectory,
-    UIActionIndex_M_GuestControlFileManager_S_Host_Copy,
-    UIActionIndex_M_GuestControlFileManager_S_Guest_Copy,
-    UIActionIndex_M_GuestControlFileManager_S_Host_Cut,
-    UIActionIndex_M_GuestControlFileManager_S_Guest_Cut,
-    UIActionIndex_M_GuestControlFileManager_S_Host_Paste,
-    UIActionIndex_M_GuestControlFileManager_S_Guest_Paste,
-    UIActionIndex_M_GuestControlFileManager_S_Host_SelectAll,
-    UIActionIndex_M_GuestControlFileManager_S_Guest_SelectAll,
-    UIActionIndex_M_GuestControlFileManager_S_Host_InvertSelection,
-    UIActionIndex_M_GuestControlFileManager_S_Guest_InvertSelection,
-    UIActionIndex_M_GuestControlFileManager_S_Host_ShowProperties,
-    UIActionIndex_M_GuestControlFileManager_S_Guest_ShowProperties,
+    /* File Manager actions: */
+    UIActionIndex_M_FileManager,
+    UIActionIndex_M_FileManager_M_HostSubmenu,
+    UIActionIndex_M_FileManager_M_GuestSubmenu,
+    UIActionIndex_M_FileManager_S_CopyToGuest,
+    UIActionIndex_M_FileManager_S_CopyToHost,
+    UIActionIndex_M_FileManager_T_Options,
+    UIActionIndex_M_FileManager_T_Log,
+    UIActionIndex_M_FileManager_T_Operations,
+    UIActionIndex_M_FileManager_T_Session,
+    UIActionIndex_M_FileManager_S_Host_GoUp,
+    UIActionIndex_M_FileManager_S_Guest_GoUp,
+    UIActionIndex_M_FileManager_S_Host_GoHome,
+    UIActionIndex_M_FileManager_S_Guest_GoHome,
+    UIActionIndex_M_FileManager_S_Host_Refresh,
+    UIActionIndex_M_FileManager_S_Guest_Refresh,
+    UIActionIndex_M_FileManager_S_Host_Delete,
+    UIActionIndex_M_FileManager_S_Guest_Delete,
+    UIActionIndex_M_FileManager_S_Host_Rename,
+    UIActionIndex_M_FileManager_S_Guest_Rename,
+    UIActionIndex_M_FileManager_S_Host_CreateNewDirectory,
+    UIActionIndex_M_FileManager_S_Guest_CreateNewDirectory,
+    UIActionIndex_M_FileManager_S_Host_Copy,
+    UIActionIndex_M_FileManager_S_Guest_Copy,
+    UIActionIndex_M_FileManager_S_Host_Cut,
+    UIActionIndex_M_FileManager_S_Guest_Cut,
+    UIActionIndex_M_FileManager_S_Host_Paste,
+    UIActionIndex_M_FileManager_S_Guest_Paste,
+    UIActionIndex_M_FileManager_S_Host_SelectAll,
+    UIActionIndex_M_FileManager_S_Guest_SelectAll,
+    UIActionIndex_M_FileManager_S_Host_InvertSelection,
+    UIActionIndex_M_FileManager_S_Guest_InvertSelection,
+    UIActionIndex_M_FileManager_S_Host_ShowProperties,
+    UIActionIndex_M_FileManager_S_Guest_ShowProperties,
 
 
 
@@ -611,10 +611,10 @@ protected:
     /** Updates 'Log Viewer' @a pMenu. */
     virtual void updateMenuLogViewerWrapper(UIMenu *pMenu);
 
-    /** Updates 'Guest Control Window' menu. */
-    virtual void updateMenuGuestControlFileManager();
-    /** Updates 'Guest Control' @a pMenu. */
-    virtual void updateMenuGuestControlFileManagerWrapper(UIMenu *pMenu);
+    /** Updates 'File Manager' menu. */
+    virtual void updateMenuFileManager();
+    /** Updates 'File Manager' @a pMenu. */
+    virtual void updateMenuFileManagerWrapper(UIMenu *pMenu);
 
     /** Updates shortcuts. */
     virtual void updateShortcuts();

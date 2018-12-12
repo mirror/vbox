@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIGuestFileTable class declaration.
+ * VBox Qt GUI - UIFileManagerHostTable class declaration.
  */
 
 /*
@@ -15,42 +15,28 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___UIGuestTable_h___
-#define ___UIGuestTable_h___
-
-/* Qt includes: */
-# include <QUuid>
-
-/* COM includes: */
-#include "COMEnums.h"
-#include "CGuestSession.h"
+#ifndef ___UIFileManagerHostTable_h___
+#define ___UIFileManagerHostTable_h___
 
 /* GUI includes: */
-#include "UIGuestControlFileTable.h"
+#include "UIFileManagerTable.h"
 
 /* Forward declarations: */
 class UIActionPool;
 
-/** This class scans the guest file system by using the VBox Guest Control API
- *  and populates the UIGuestControlFileModel*/
-class UIGuestFileTable : public UIGuestControlFileTable
+/** This class scans the host file system by using the Qt API
+    and connects to the UIFileManagerModel*/
+class UIFileManagerHostTable : public UIFileManagerTable
 {
     Q_OBJECT;
 
 public:
 
-    UIGuestFileTable(UIActionPool *pActionPool, QWidget *pParent = 0);
-    void initGuestFileTable(const CGuestSession &session);
-    void copyGuestToHost(const QString& hostDestinationPath);
-    void copyHostToGuest(const QStringList &hostSourcePathList,
-                         const QString &strDestination = QString());
-
-signals:
-
-    void sigNewFileOperation(const CProgress &comProgress);
+    UIFileManagerHostTable(UIActionPool *pActionPool, QWidget *pParent = 0);
 
 protected:
 
+    FileObjectType  fileType(const QFileInfo &fsInfo);
     void            retranslateUi() /* override */;
     virtual void    readDirectory(const QString& strPath, UIFileTableItem *parent, bool isStartDir = false) /* override */;
     virtual void    deleteByItem(UIFileTableItem *item) /* override */;
@@ -63,22 +49,18 @@ protected:
     virtual void    determineDriveLetters() /* override */;
     virtual void    prepareToolbar() /* override */;
     virtual void    createFileViewContextMenu(const QWidget *pWidget, const QPoint &point) /* override */;
-    /** @name Copy/Cut guest-to-guest stuff.
+    /** @name Copy/Cut host-to-host stuff. Currently not implemented.
      * @{ */
         /** Disable/enable paste action depending on the m_eFileOperationType. */
-        virtual void  setPasteActionEnabled(bool fEnabled) /* override */;
-        virtual void  pasteCutCopiedObjects() /* override */;
+        virtual void  setPasteActionEnabled(bool) /* override */{}
+        virtual void  pasteCutCopiedObjects() /* override */{}
     /** @} */
 
 private:
 
-    FileObjectType  fileType(const CFsObjInfo &fsInfo);
-    FileObjectType  fileType(const CGuestFsObjInfo &fsInfo);
+    QString permissionString(QFileDevice::Permissions permissions);
+    void    prepareActionConnections();
 
-    void prepareActionConnections();
-    bool checkGuestSession();
-    QString permissionString(const CFsObjInfo &fsInfo);
-    mutable CGuestSession     m_comGuestSession;
 };
 
-#endif /* !___UIGuestFileTable_h___ */
+#endif /* !___UIFileManagerHostTable_h___ */

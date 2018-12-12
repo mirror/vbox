@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIGuestControlFileManagerDialog class declaration.
+ * VBox Qt GUI - UIFileManagerDialog class declaration.
  */
 
 /*
@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___UIGuestControlFileManagerDialog_h___
-#define ___UIGuestControlFileManagerDialog_h___
+#ifndef ___UIFileManagerDialog_h___
+#define ___UIFileManagerDialog_h___
 
 /* Qt includes: */
 #include <QString>
@@ -33,16 +33,16 @@
 class QDialogButtonBox;
 class QVBoxLayout;
 class UIActionPool;
-class UIGuestControlFileManagerDialog;
+class UIFileManagerDialog;
 class CGuest;
 
 
-/** QIManagerDialogFactory extension used as a factory for the Guest Control dialog. */
-class UIGuestControlFileManagerDialogFactory : public QIManagerDialogFactory
+/** QIManagerDialogFactory extension used as a factory for the file manager dialog. */
+class UIFileManagerDialogFactory : public QIManagerDialogFactory
 {
 public:
 
-    UIGuestControlFileManagerDialogFactory(UIActionPool *pActionPool = 0, const CGuest &comGuest = CGuest(), const QString &strMachineName = QString());
+    UIFileManagerDialogFactory(UIActionPool *pActionPool = 0, const CGuest &comGuest = CGuest(), const QString &strMachineName = QString());
 
 protected:
 
@@ -56,18 +56,18 @@ protected:
 };
 
 
-/** QIManagerDialog extension providing GUI with the dialog displaying guest control releated logs. */
-class UIGuestControlFileManagerDialog : public QIWithRetranslateUI<QIManagerDialog>
+/** QIManagerDialog extension providing GUI with the dialog displaying file manager releated logs. */
+class UIFileManagerDialog : public QIWithRetranslateUI<QIManagerDialog>
 {
     Q_OBJECT;
 
 public:
 
-    /** Constructs Guest Control dialog.
+    /** Constructs File Manager dialog.
       * @param  pCenterWidget  Passes the widget reference to center according to.
       * @param  pActionPool    Passes the action-pool reference.
       * @param  comGuest       Passes the com-guest reference. */
-    UIGuestControlFileManagerDialog(QWidget *pCenterWidget, UIActionPool *pActionPool, const CGuest &comGuest, const QString &strMachineName = QString());
+    UIFileManagerDialog(QWidget *pCenterWidget, UIActionPool *pActionPool, const CGuest &comGuest, const QString &strMachineName = QString());
 
 protected:
 
@@ -111,4 +111,4 @@ private:
 };
 
 
-#endif /* !___UIGuestControlFileManagerDialog_h___ */
+#endif /* !___UIFileManagerDialog_h___ */
