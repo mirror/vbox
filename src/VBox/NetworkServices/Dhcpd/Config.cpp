@@ -453,9 +453,11 @@ Config *Config::compat(int argc, char **argv)
 }
 
 
+#define DHCPD_GETOPT_COMMENT 256 /* No short option for --comment */
 static const RTGETOPTDEF g_aOptions[] =
 {
-    { "--config",       'c',    RTGETOPT_REQ_STRING },
+    { "--config",       'c',                  RTGETOPT_REQ_STRING },
+    { "--comment",      DHCPD_GETOPT_COMMENT, RTGETOPT_REQ_STRING }
 };
 
 
@@ -493,6 +495,13 @@ Config *Config::create(int argc, char **argv)
                     return NULL;
 
                 break;
+
+            case DHCPD_GETOPT_COMMENT: /* --comment */
+                /* The sole purpose of this option is to allow identification of DHCP
+                 * server instances in the process list. We ignore the required string
+                 * argument of this option.
+                 */
+                continue;
 
             case VINF_GETOPT_NOT_OPTION:
                 RTMsgError("Unexpected command line argument: '%s'", Val.psz);

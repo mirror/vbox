@@ -50,6 +50,7 @@ public:
     static const std::string kDsrKeyLowerIp;
     static const std::string kDsrKeyUpperIp;
     static const std::string kDsrKeyConfig;
+    static const std::string kDsrKeyComment;
 };
 
 /**

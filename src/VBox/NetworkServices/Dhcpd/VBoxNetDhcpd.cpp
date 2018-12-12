@@ -630,9 +630,11 @@ int VBoxNetDhcpd::main(int argc, char **argv)
 
     ClientId::registerFormat();
 
+    /* XXX: We no longer need hardcoded and compat methods. We should remove them soon. */
     if (argc < 2)
         m_Config = Config::hardcoded();
-    else if (strcmp(argv[1], "--config") == 0)
+    else if (   strcmp(argv[1], "--config") == 0
+             || strcmp(argv[1], "--comment") == 0)
         m_Config = Config::create(argc, argv);
     else
         m_Config = Config::compat(argc, argv);
