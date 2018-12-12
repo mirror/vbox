@@ -478,7 +478,7 @@
              <item row="0" column="1" colspan="3">
               <widget class="QComboBox" name="m_pComboBoxCaptureMode">
                <property name="whatsThis">
-                <string>Stores the recording mode.</string>
+                <string>Selects the recording mode.</string>
                </property>
               </widget>
              </item>
@@ -603,7 +603,7 @@
              <item row="5" column="0">
               <widget class="QLabel" name="m_pLabelVideoCaptureRate">
                <property name="text">
-                <string>&amp;Quality:</string>
+                <string>&amp;Video Quality:</string>
                </property>
                <property name="alignment">
                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -696,7 +696,7 @@
                 <item row="0" column="0" colspan="5">
                  <widget class="QIAdvancedSlider" name="m_pSliderAudioCaptureQuality">
                   <property name="whatsThis">
-                   <string>Controls the &lt;b>quality&lt;/b>. Increasing this value will make the video look better at the cost of an increased file size.</string>
+                   <string>Controls the &lt;b>quality&lt;/b>. Increasing this value will make the audio sound better at the cost of an increased file size.</string>
                   </property>
                   <property name="orientation">
                    <enum>Qt::Horizontal</enum>
