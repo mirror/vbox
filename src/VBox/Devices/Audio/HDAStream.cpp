@@ -434,7 +434,7 @@ int hdaR3StreamInit(PHDASTREAM pStream, uint8_t uSD)
         LogFunc(("[SD%RU8] cfPosAdjust=%RU32, cFragments=%RU8\n", pStream->u8SD, cfPosAdjust, cFragments));
 
         /*
-         * Set up data transfer transfer stuff.
+         * Set up data transfer stuff.
          */
 
         /* Calculate the fragment size the guest OS expects interrupt delivery at. */
