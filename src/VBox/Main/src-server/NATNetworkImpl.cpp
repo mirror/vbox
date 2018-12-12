@@ -668,6 +668,10 @@ void NATNetwork::i_updateDomainNameServerOption(ComPtr<IHost> &host)
         return;
     }
 
+    /* XXX: these are returned, surprisingly, in host order */
+    networkid.u = RT_H2N_U32(networkid.u);
+    netmask.u = RT_H2N_U32(netmask.u);
+
     com::SafeArray<BSTR> nameServers;
     HRESULT hrc = host->COMGETTER(NameServers)(ComSafeArrayAsOutParam(nameServers));
     if (FAILED(hrc))
