@@ -1220,7 +1220,7 @@ PDMBOTHCBDECL(int) vmsvgaReadPort(PVGASTATE pThis, uint32_t *pu32)
         /* We must return something sensible here otherwise the Linux driver
          * will take a legacy code path without 3d support.  This number also
          * limits how many screens Linux guests will allow. */
-        *pu32 = 32;
+        *pu32 = pThis->cMonitors;
         break;
 
     default:
