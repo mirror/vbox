@@ -2784,10 +2784,11 @@ void UIActionPool::updateMenuGuestControlFileManager()
 
 void UIActionPool::updateMenuGuestControlFileManagerWrapper(UIMenu *pMenu)
 {
-    addAction(pMenu, action(UIActionIndex_M_GuestControlFileManager_T_Options));
-    addAction(pMenu, action(UIActionIndex_M_GuestControlFileManager_T_Log));
-    addAction(pMenu, action(UIActionIndex_M_GuestControlFileManager_T_FileOperations));
     addAction(pMenu, action(UIActionIndex_M_GuestControlFileManager_T_Session));
+    addAction(pMenu, action(UIActionIndex_M_GuestControlFileManager_T_Options));
+    addAction(pMenu, action(UIActionIndex_M_GuestControlFileManager_T_FileOperations));
+    addAction(pMenu, action(UIActionIndex_M_GuestControlFileManager_T_Log));
+
     addAction(pMenu, action(UIActionIndex_M_GuestControlFileManager_M_HostSubmenu));
     addAction(pMenu, action(UIActionIndex_M_GuestControlFileManager_M_GuestSubmenu));
 

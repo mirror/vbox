@@ -375,8 +375,8 @@ void UIGuestControlFileManager::prepareToolBar()
 
         m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_T_Session));
         m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_T_Options));
-        m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_T_Log));
         m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_T_FileOperations));
+        m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_T_Log));
 
         connect(m_pActionPool->action(UIActionIndex_M_GuestControlFileManager_T_Options), &QAction::toggled,
                 this, &UIGuestControlFileManager::sltPanelActionToggled);
