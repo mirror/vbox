@@ -504,8 +504,7 @@ QVariant UIVirtualHardwareItem::data(int iColumn, int iRole) const
                     case KVirtualSystemDescriptionType_CloudOCISubnet:
                     case KVirtualSystemDescriptionType_CloudPublicIP:
                     case KVirtualSystemDescriptionType_CloudKeepObject:
-                    case KVirtualSystemDescriptionType_CloudLaunchInstance: 
-                        value = UIApplianceEditorWidget::tr(m_pParent->nameHint(m_enmVSDType).toUtf8().constData()); break;
+                    case KVirtualSystemDescriptionType_CloudLaunchInstance:    value = UIApplianceEditorWidget::tr(m_pParent->nameHint(m_enmVSDType).toUtf8().constData()); break;
                     default:                                                   value = UIApplianceEditorWidget::tr("Unknown Hardware Item"); break;
                 }
             }
@@ -678,7 +677,7 @@ QVariant UIVirtualHardwareItem::data(int iColumn, int iRole) const
                     case KVirtualSystemDescriptionType_CloudOCISubnet:
                     case KVirtualSystemDescriptionType_CloudPublicIP:
                     case KVirtualSystemDescriptionType_CloudKeepObject:
-                    case KVirtualSystemDescriptionType_CloudLaunchInstance: value = UIIconPool::iconSet(":/session_info_16px.pn   g"); break;
+                    case KVirtualSystemDescriptionType_CloudLaunchInstance:    value = UIIconPool::iconSet(":/session_info_16px.png"); break;
                     default: break;
                 }
             }
@@ -1679,7 +1678,6 @@ KVirtualSystemDescriptionType UIApplianceSortProxyModel::s_aSortList[] =
     KVirtualSystemDescriptionType_HardDiskControllerSCSI,
     KVirtualSystemDescriptionType_HardDiskControllerSAS,
     /* OCI */
-
     KVirtualSystemDescriptionType_CloudProfileName,
     KVirtualSystemDescriptionType_CloudBucket,
     KVirtualSystemDescriptionType_CloudKeepObject,
