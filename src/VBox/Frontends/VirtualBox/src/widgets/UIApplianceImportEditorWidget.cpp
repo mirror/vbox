@@ -324,7 +324,7 @@ void UIApplianceImportEditorWidget::retranslateUi()
     if (m_pImportHDsAsVDI)
     {
         m_pImportHDsAsVDI->setText(tr("&Import hard drives as VDI"));
-        m_pImportHDsAsVDI->setToolTip(tr("When checked a all the hard drives that belong to this appliance will be imported in VDI format"));
+        m_pImportHDsAsVDI->setToolTip(tr("When checked, all the hard drives that belong to this appliance will be imported in VDI format."));
     }
 
     /* Translate MAC address policy combo-box: */
