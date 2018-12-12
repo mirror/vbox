@@ -1473,7 +1473,7 @@ protected:
     virtual void retranslateUi() /* override */
     {
         setName(QApplication::translate("UIActionPool", "File Manager"));
-        setStatusTip(QApplication::translate("UIActionPool", "Open the guest control file manager"));
+        setStatusTip(QApplication::translate("UIActionPool", "Open the file manager"));
     }
 };
 
@@ -1500,7 +1500,7 @@ protected:
     virtual void retranslateUi() /* override */
     {
         setName(QApplication::translate("UIActionPool", "Host"));
-        setStatusTip(QApplication::translate("UIActionPool", "Open the guest control file manager submenu"));
+        setStatusTip(QApplication::translate("UIActionPool", "Open the file manager host submenu"));
     }
 };
 
@@ -1527,7 +1527,7 @@ protected:
     virtual void retranslateUi() /* override */
     {
         setName(QApplication::translate("UIActionPool", "Guest"));
-        setStatusTip(QApplication::translate("UIActionPool", "Open the guest control file manager submenu"));
+        setStatusTip(QApplication::translate("UIActionPool", "Open the file manager guest submenu"));
     }
 };
 
@@ -1642,7 +1642,7 @@ protected:
         setName(QApplication::translate("UIActionPool", "Options"));
         setShortcutScope(QApplication::translate("UIActionPool", "File Manager"));
         setStatusTip(QApplication::translate("UIActionPool", "Open panel with file manager options"));
-        setToolTip(QApplication::translate("UIActionPool", "Open Panel With File Manager Options"));
+        setToolTip(QApplication::translate("UIActionPool", "Open File Manager Options"));
     }
 };
 
@@ -1681,8 +1681,8 @@ protected:
     {
         setName(QApplication::translate("UIActionPool", "Log"));
         setShortcutScope(QApplication::translate("UIActionPool", "File Manager"));
-        setStatusTip(QApplication::translate("UIActionPool", "Open panel with to view file manager log"));
-        setToolTip(QApplication::translate("UIActionPool", "Open Panel With to View File Manager Log"));
+        setStatusTip(QApplication::translate("UIActionPool", "Open panel with file manager log"));
+        setToolTip(QApplication::translate("UIActionPool", "Open File Manager Log"));
     }
 };
 
@@ -1719,10 +1719,10 @@ protected:
     /** Handles translation event. */
     virtual void retranslateUi() /* override */
     {
-        setName(QApplication::translate("UIActionPool", "File Operations"));
+        setName(QApplication::translate("UIActionPool", "Operations"));
         setShortcutScope(QApplication::translate("UIActionPool", "File Manager"));
-        setStatusTip(QApplication::translate("UIActionPool", "Open panel with to view file manager file operations"));
-        setToolTip(QApplication::translate("UIActionPool", "Open Panel With to View File Manager File Operations"));
+        setStatusTip(QApplication::translate("UIActionPool", "Open panel with file manager operations"));
+        setToolTip(QApplication::translate("UIActionPool", "Open File Manager Operations"));
     }
 };
 
@@ -1761,7 +1761,7 @@ protected:
     {
         setName(QApplication::translate("UIActionPool", "Session"));
         setShortcutScope(QApplication::translate("UIActionPool", "File Manager"));
-        setStatusTip(QApplication::translate("UIActionPool", "Open file manager account"));
+        setStatusTip(QApplication::translate("UIActionPool", "Open panel with file manager session"));
         setToolTip(QApplication::translate("UIActionPool", "Open File Manager Session"));
     }
 };
@@ -1797,7 +1797,7 @@ protected:
     /** Handles translation event. */
     virtual void retranslateUi() /* override */
     {
-        setName(QApplication::translate("UIActionPool", "GoUp"));
+        setName(QApplication::translate("UIActionPool", "Go Up"));
         setShortcutScope(QApplication::translate("UIActionPool", "Guest Control File Manager"));
         setStatusTip(QApplication::translate("UIActionPool", "Go one level up to parent folder"));
         setToolTip(QApplication::translate("UIActionPool", "Go One Level Up to Parent Folder"));
