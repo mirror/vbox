@@ -862,7 +862,7 @@ HRESULT Appliance::i_writeCloudImpl(const LocationInfo &aLocInfo, ComObjPtr<Prog
          * Fills out the OCI settings
         */
         std::list<VirtualSystemDescriptionEntry*> profileName =
-            vsdescThis->i_findByType(VirtualSystemDescriptionType_CloudOCIProfileName);
+            vsdescThis->i_findByType(VirtualSystemDescriptionType_CloudProfileName);
         if (profileName.size() > 1)
             return setError(VBOX_E_OBJECT_NOT_FOUND,
                                 tr("Cloud: More than one profile name was found."));
@@ -2266,7 +2266,7 @@ HRESULT Appliance::i_writeFSCloud(TaskCloud *pTask)
     com::SafeArray<BSTR> aVBoxValues;
     com::SafeArray<BSTR> aExtraConfigValues;
 
-    hrc = vsd->GetDescriptionByType(VirtualSystemDescriptionType_CloudOCIProfileName,
+    hrc = vsd->GetDescriptionByType(VirtualSystemDescriptionType_CloudProfileName,
                              ComSafeArrayAsOutParam(retTypes),
                              ComSafeArrayAsOutParam(aRefs),
                              ComSafeArrayAsOutParam(aOvfValues),

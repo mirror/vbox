@@ -3595,7 +3595,7 @@
 
   <enum
     name="VirtualSystemDescriptionType"
-    uuid="99870ce5-c613-4a49-8ac8-bdad54565c54"
+    uuid="425d0e49-eb9c-43e8-bb0d-be7f78fd3b47"
     >
     <desc>Used with <link to="IVirtualSystemDescription" /> to describe the type of
     a configuration value.</desc>
@@ -3640,16 +3640,16 @@
         selection of the VM folder. Additional groups may be configured later
         using <link to="IMachine::groups"/>, after importing.</desc>
     </const>
-    <const name="CloudOCIInstanceShape" value="27" />
-    <const name="CloudOCIDomain" value="28" />
-    <const name="CloudOCIBootDiskSize" value="29" />
-    <const name="CloudOCIBucket" value="30" />
+    <const name="CloudInstanceShape" value="27" />
+    <const name="CloudDomain" value="28" />
+    <const name="CloudBootDiskSize" value="29" />
+    <const name="CloudBucket" value="30" />
     <const name="CloudOCIVCN" value="31" />
-    <const name="CloudOCIPublicIP" value="32" />
-    <const name="CloudOCIProfileName" value="33" />
+    <const name="CloudPublicIP" value="32" />
+    <const name="CloudProfileName" value="33" />
     <const name="CloudOCISubnet" value="34" />
-    <const name="CloudOCIKeepObject" value="35" />
-    <const name="CloudOCILaunchInstance" value="36" />
+    <const name="CloudKeepObject" value="35" />
+    <const name="CloudLaunchInstance" value="36" />
   </enum>
 
   <enum
@@ -3668,7 +3668,7 @@
 
   <interface
     name="IVirtualSystemDescription" extends="$unknown"
-    uuid="316c99a2-405d-41af-8508-46889144d067"
+    uuid="ec49259c-1c50-4353-97a5-0fd92e2caac2"
     wsmap="managed"
     reservedMethods="4" reservedAttributes="4"
     >

@@ -909,20 +909,20 @@ RTEXITCODE handleImportAppliance(HandlerArg *arg)
                                         a, bstrFinalValue.raw(), i);
                             break;
 
-
-                        case VirtualSystemDescriptionType_CloudOCIInstanceShape:
-                        case VirtualSystemDescriptionType_CloudOCIDomain:
-                        case VirtualSystemDescriptionType_CloudOCIBootDiskSize:
-                        case VirtualSystemDescriptionType_CloudOCIBucket:
+                        case VirtualSystemDescriptionType_CloudInstanceShape:
+                        case VirtualSystemDescriptionType_CloudDomain:
+                        case VirtualSystemDescriptionType_CloudBootDiskSize:
+                        case VirtualSystemDescriptionType_CloudBucket:
                         case VirtualSystemDescriptionType_CloudOCIVCN:
-                        case VirtualSystemDescriptionType_CloudOCIPublicIP:
-                        case VirtualSystemDescriptionType_CloudOCIProfileName:
+                        case VirtualSystemDescriptionType_CloudPublicIP:
+                        case VirtualSystemDescriptionType_CloudProfileName:
                         case VirtualSystemDescriptionType_CloudOCISubnet:
-                        case VirtualSystemDescriptionType_CloudOCIKeepObject:
-                        case VirtualSystemDescriptionType_CloudOCILaunchInstance:
+                        case VirtualSystemDescriptionType_CloudKeepObject:
+                        case VirtualSystemDescriptionType_CloudLaunchInstance:
                         case VirtualSystemDescriptionType_Miscellaneous:
                             /** @todo  VirtualSystemDescriptionType_Miscellaneous? */
                             break;
+
                         case VirtualSystemDescriptionType_Ignore:
 #ifdef VBOX_WITH_XPCOM_CPP_ENUM_HACK
                         case VirtualSystemDescriptionType_32BitHack:
@@ -1121,7 +1121,8 @@ RTEXITCODE handleExportAppliance(HandlerArg *a)
 
                 case 'V':   // --vmname
                     if (exportType == NOT_SET || ulCurVsys == (uint32_t)-1)
-                        return errorSyntax(USAGE_EXPORTAPPLIANCE, "Option \"%s\" requires preceding --vsys argument.", GetState.pDef->pszLong);
+                        return errorSyntax(USAGE_EXPORTAPPLIANCE, "Option \"%s\" requires preceding --vsys or --cloud argument.",
+                                           GetState.pDef->pszLong);
                     mapArgsMapsPerVsys[ulCurVsys]["vmname"] = ValueUnion.psz;
                     break;
 
@@ -1412,19 +1413,19 @@ RTEXITCODE handleExportAppliance(HandlerArg *a)
                     }
                     /* add cloud export settings */
                     else if (itD->first == "cloudshape")
-                        pVSD->AddDescription(VirtualSystemDescriptionType_CloudOCIInstanceShape,
+                        pVSD->AddDescription(VirtualSystemDescriptionType_CloudInstanceShape,
                                              Bstr(itD->second).raw(),
                                              Bstr(itD->second).raw());
                     else if (itD->first == "clouddomain")
-                        pVSD->AddDescription(VirtualSystemDescriptionType_CloudOCIDomain,
+                        pVSD->AddDescription(VirtualSystemDescriptionType_CloudDomain,
                                              Bstr(itD->second).raw(),
                                              Bstr(itD->second).raw());
                     else if (itD->first == "clouddisksize")
-                        pVSD->AddDescription(VirtualSystemDescriptionType_CloudOCIBootDiskSize,
+                        pVSD->AddDescription(VirtualSystemDescriptionType_CloudBootDiskSize,
                                              Bstr(itD->second).raw(),
                                              Bstr(itD->second).raw());
                     else if (itD->first == "cloudbucket")
-                        pVSD->AddDescription(VirtualSystemDescriptionType_CloudOCIBucket,
+                        pVSD->AddDescription(VirtualSystemDescriptionType_CloudBucket,
                                              Bstr(itD->second).raw(),
                                              Bstr(itD->second).raw());
                     else if (itD->first == "cloudocivcn")
@@ -1432,11 +1433,11 @@ RTEXITCODE handleExportAppliance(HandlerArg *a)
                                              Bstr(itD->second).raw(),
                                              Bstr(itD->second).raw());
                     else if (itD->first == "cloudpublicip")
-                        pVSD->AddDescription(VirtualSystemDescriptionType_CloudOCIPublicIP,
+                        pVSD->AddDescription(VirtualSystemDescriptionType_CloudPublicIP,
                                              Bstr(itD->second).raw(),
                                              Bstr(itD->second).raw());
                     else if (itD->first == "cloudprofile")
-                        pVSD->AddDescription(VirtualSystemDescriptionType_CloudOCIProfileName,
+                        pVSD->AddDescription(VirtualSystemDescriptionType_CloudProfileName,
                                              Bstr(itD->second).raw(),
                                              Bstr(itD->second).raw());
                     else if (itD->first == "cloudocisubnet")
@@ -1444,11 +1445,11 @@ RTEXITCODE handleExportAppliance(HandlerArg *a)
                                              Bstr(itD->second).raw(),
                                              Bstr(itD->second).raw());
                     else if (itD->first == "cloudkeepobject")
-                        pVSD->AddDescription(VirtualSystemDescriptionType_CloudOCIKeepObject,
+                        pVSD->AddDescription(VirtualSystemDescriptionType_CloudKeepObject,
                                              Bstr(itD->second).raw(),
                                              Bstr(itD->second).raw());
                     else if (itD->first == "cloudlaunchinstance")
-                        pVSD->AddDescription(VirtualSystemDescriptionType_CloudOCILaunchInstance,
+                        pVSD->AddDescription(VirtualSystemDescriptionType_CloudLaunchInstance,
                                              Bstr(itD->second).raw(),
                                              Bstr(itD->second).raw());
                 }

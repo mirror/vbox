@@ -364,9 +364,9 @@ Qt::ItemFlags UIVirtualHardwareItem::itemFlags(int iColumn) const
             m_enmVSDType == KVirtualSystemDescriptionType_USBController ||
             m_enmVSDType == KVirtualSystemDescriptionType_SoundCard ||
             m_enmVSDType == KVirtualSystemDescriptionType_NetworkAdapter ||
-            m_enmVSDType == KVirtualSystemDescriptionType_CloudOCIPublicIP ||
-            m_enmVSDType == KVirtualSystemDescriptionType_CloudOCIKeepObject ||
-            m_enmVSDType == KVirtualSystemDescriptionType_CloudOCILaunchInstance)
+            m_enmVSDType == KVirtualSystemDescriptionType_CloudPublicIP ||
+            m_enmVSDType == KVirtualSystemDescriptionType_CloudKeepObject ||
+            m_enmVSDType == KVirtualSystemDescriptionType_CloudLaunchInstance)
             enmFlags |= Qt::ItemIsUserCheckable;
         /* Some items are editable */
         if ((m_enmVSDType == KVirtualSystemDescriptionType_Name ||
@@ -387,10 +387,10 @@ Qt::ItemFlags UIVirtualHardwareItem::itemFlags(int iColumn) const
              m_enmVSDType == KVirtualSystemDescriptionType_SettingsFile ||
              m_enmVSDType == KVirtualSystemDescriptionType_BaseFolder ||
              m_enmVSDType == KVirtualSystemDescriptionType_PrimaryGroup ||
-             m_enmVSDType == KVirtualSystemDescriptionType_CloudOCIInstanceShape ||
-             m_enmVSDType == KVirtualSystemDescriptionType_CloudOCIDomain ||
-             m_enmVSDType == KVirtualSystemDescriptionType_CloudOCIBootDiskSize ||
-             m_enmVSDType == KVirtualSystemDescriptionType_CloudOCIBucket ||
+             m_enmVSDType == KVirtualSystemDescriptionType_CloudInstanceShape ||
+             m_enmVSDType == KVirtualSystemDescriptionType_CloudDomain ||
+             m_enmVSDType == KVirtualSystemDescriptionType_CloudBootDiskSize ||
+             m_enmVSDType == KVirtualSystemDescriptionType_CloudBucket ||
              m_enmVSDType == KVirtualSystemDescriptionType_CloudOCIVCN ||
              m_enmVSDType == KVirtualSystemDescriptionType_CloudOCISubnet) &&
             m_checkState == Qt::Checked) /* Item has to be enabled */
@@ -422,9 +422,9 @@ bool UIVirtualHardwareItem::setData(int iColumn, const QVariant &value, int iRol
                         break;
                     }
                     /* These option items can be enabled: */
-                    case KVirtualSystemDescriptionType_CloudOCIPublicIP:
-                    case KVirtualSystemDescriptionType_CloudOCIKeepObject:
-                    case KVirtualSystemDescriptionType_CloudOCILaunchInstance:
+                    case KVirtualSystemDescriptionType_CloudPublicIP:
+                    case KVirtualSystemDescriptionType_CloudKeepObject:
+                    case KVirtualSystemDescriptionType_CloudLaunchInstance:
                     {
                         if (value.toInt() == Qt::Unchecked)
                             m_strConfigValue = "false";
@@ -495,15 +495,17 @@ QVariant UIVirtualHardwareItem::data(int iColumn, int iRole) const
                     case KVirtualSystemDescriptionType_SettingsFile:           value = UIApplianceEditorWidget::tr("Settings File"); break;
                     case KVirtualSystemDescriptionType_BaseFolder:             value = UIApplianceEditorWidget::tr("Base Folder"); break;
                     case KVirtualSystemDescriptionType_PrimaryGroup:           value = UIApplianceEditorWidget::tr("Primary Group"); break;
-                    case KVirtualSystemDescriptionType_CloudOCIInstanceShape:
-                    case KVirtualSystemDescriptionType_CloudOCIDomain:
-                    case KVirtualSystemDescriptionType_CloudOCIBootDiskSize:
-                    case KVirtualSystemDescriptionType_CloudOCIBucket:
+                    case KVirtualSystemDescriptionType_CloudProfileName:
+                    case KVirtualSystemDescriptionType_CloudInstanceShape:
+                    case KVirtualSystemDescriptionType_CloudDomain:
+                    case KVirtualSystemDescriptionType_CloudBootDiskSize:
+                    case KVirtualSystemDescriptionType_CloudBucket:
                     case KVirtualSystemDescriptionType_CloudOCIVCN:
                     case KVirtualSystemDescriptionType_CloudOCISubnet:
-                    case KVirtualSystemDescriptionType_CloudOCIPublicIP:
-                    case KVirtualSystemDescriptionType_CloudOCIKeepObject:
-                    case KVirtualSystemDescriptionType_CloudOCILaunchInstance: value = UIApplianceEditorWidget::tr(m_pParent->nameHint(m_enmVSDType).toUtf8().constData()); break;
+                    case KVirtualSystemDescriptionType_CloudPublicIP:
+                    case KVirtualSystemDescriptionType_CloudKeepObject:
+                    case KVirtualSystemDescriptionType_CloudLaunchInstance: 
+                        value = UIApplianceEditorWidget::tr(m_pParent->nameHint(m_enmVSDType).toUtf8().constData()); break;
                     default:                                                   value = UIApplianceEditorWidget::tr("Unknown Hardware Item"); break;
                 }
             }
@@ -528,10 +530,10 @@ QVariant UIVirtualHardwareItem::data(int iColumn, int iRole) const
                     case KVirtualSystemDescriptionType_Memory:           value = m_strConfigValue + " " + VBoxGlobal::tr("MB", "size suffix MBytes=1024 KBytes"); break;
                     case KVirtualSystemDescriptionType_SoundCard:        value = gpConverter->toString(static_cast<KAudioControllerType>(m_strConfigValue.toInt())); break;
                     case KVirtualSystemDescriptionType_NetworkAdapter:   value = gpConverter->toString(static_cast<KNetworkAdapterType>(m_strConfigValue.toInt())); break;
-                    case KVirtualSystemDescriptionType_CloudOCIInstanceShape:
-                    case KVirtualSystemDescriptionType_CloudOCIDomain:
-                    case KVirtualSystemDescriptionType_CloudOCIBootDiskSize:
-                    case KVirtualSystemDescriptionType_CloudOCIBucket:
+                    case KVirtualSystemDescriptionType_CloudInstanceShape:
+                    case KVirtualSystemDescriptionType_CloudDomain:
+                    case KVirtualSystemDescriptionType_CloudBootDiskSize:
+                    case KVirtualSystemDescriptionType_CloudBucket:
                     case KVirtualSystemDescriptionType_CloudOCIVCN:
                     case KVirtualSystemDescriptionType_CloudOCISubnet:
                     {
@@ -567,9 +569,9 @@ QVariant UIVirtualHardwareItem::data(int iColumn, int iRole) const
                         }
                         break;
                     }
-                    case KVirtualSystemDescriptionType_CloudOCIPublicIP: break;
-                    case KVirtualSystemDescriptionType_CloudOCIKeepObject: break;
-                    case KVirtualSystemDescriptionType_CloudOCILaunchInstance: break;
+                    case KVirtualSystemDescriptionType_CloudPublicIP: break;
+                    case KVirtualSystemDescriptionType_CloudKeepObject: break;
+                    case KVirtualSystemDescriptionType_CloudLaunchInstance: break;
                     default:                                             value = m_strConfigValue; break;
                 }
             }
@@ -588,10 +590,10 @@ QVariant UIVirtualHardwareItem::data(int iColumn, int iRole) const
                     /* Handle certain VSD types separately: */
                     switch (m_enmVSDType)
                     {
-                        case KVirtualSystemDescriptionType_CloudOCIInstanceShape:
-                        case KVirtualSystemDescriptionType_CloudOCIDomain:
-                        case KVirtualSystemDescriptionType_CloudOCIBootDiskSize:
-                        case KVirtualSystemDescriptionType_CloudOCIBucket:
+                        case KVirtualSystemDescriptionType_CloudInstanceShape:
+                        case KVirtualSystemDescriptionType_CloudDomain:
+                        case KVirtualSystemDescriptionType_CloudBootDiskSize:
+                        case KVirtualSystemDescriptionType_CloudBucket:
                         case KVirtualSystemDescriptionType_CloudOCIVCN:
                         case KVirtualSystemDescriptionType_CloudOCISubnet:
                         {
@@ -667,15 +669,16 @@ QVariant UIVirtualHardwareItem::data(int iColumn, int iRole) const
                     case KVirtualSystemDescriptionType_SoundCard:              value = UIIconPool::iconSet(":/sound_16px.png"); break;
                     case KVirtualSystemDescriptionType_BaseFolder:             value = vboxGlobal().icon(QFileIconProvider::Folder); break;
                     case KVirtualSystemDescriptionType_PrimaryGroup:           value = UIIconPool::iconSet(":/vm_group_name_16px.png"); break;
-                    case KVirtualSystemDescriptionType_CloudOCIInstanceShape:
-                    case KVirtualSystemDescriptionType_CloudOCIDomain:
-                    case KVirtualSystemDescriptionType_CloudOCIBootDiskSize:
-                    case KVirtualSystemDescriptionType_CloudOCIBucket:
+                    case KVirtualSystemDescriptionType_CloudProfileName:
+                    case KVirtualSystemDescriptionType_CloudInstanceShape:
+                    case KVirtualSystemDescriptionType_CloudDomain:
+                    case KVirtualSystemDescriptionType_CloudBootDiskSize:
+                    case KVirtualSystemDescriptionType_CloudBucket:
                     case KVirtualSystemDescriptionType_CloudOCIVCN:
                     case KVirtualSystemDescriptionType_CloudOCISubnet:
-                    case KVirtualSystemDescriptionType_CloudOCIPublicIP:
-                    case KVirtualSystemDescriptionType_CloudOCIKeepObject:
-                    case KVirtualSystemDescriptionType_CloudOCILaunchInstance: value = UIIconPool::iconSet(":/session_info_16px.png"); break;
+                    case KVirtualSystemDescriptionType_CloudPublicIP:
+                    case KVirtualSystemDescriptionType_CloudKeepObject:
+                    case KVirtualSystemDescriptionType_CloudLaunchInstance: value = UIIconPool::iconSet(":/session_info_16px.pn   g"); break;
                     default: break;
                 }
             }
@@ -723,9 +726,9 @@ QVariant UIVirtualHardwareItem::data(int iColumn, int iRole) const
                         break;
                     }
                     /* These option items can be enabled: */
-                    case KVirtualSystemDescriptionType_CloudOCIPublicIP:
-                    case KVirtualSystemDescriptionType_CloudOCIKeepObject:
-                    case KVirtualSystemDescriptionType_CloudOCILaunchInstance:
+                    case KVirtualSystemDescriptionType_CloudPublicIP:
+                    case KVirtualSystemDescriptionType_CloudKeepObject:
+                    case KVirtualSystemDescriptionType_CloudLaunchInstance:
                     {
                         if (m_strConfigValue == "true")
                             value = Qt::Checked;
@@ -881,10 +884,10 @@ QWidget *UIVirtualHardwareItem::createEditor(QWidget *pParent, const QStyleOptio
                 pEditor = pComboBox;
                 break;
             }
-            case KVirtualSystemDescriptionType_CloudOCIInstanceShape:
-            case KVirtualSystemDescriptionType_CloudOCIDomain:
-            case KVirtualSystemDescriptionType_CloudOCIBootDiskSize:
-            case KVirtualSystemDescriptionType_CloudOCIBucket:
+            case KVirtualSystemDescriptionType_CloudInstanceShape:
+            case KVirtualSystemDescriptionType_CloudDomain:
+            case KVirtualSystemDescriptionType_CloudBootDiskSize:
+            case KVirtualSystemDescriptionType_CloudBucket:
             case KVirtualSystemDescriptionType_CloudOCIVCN:
             case KVirtualSystemDescriptionType_CloudOCISubnet:
             {
@@ -1028,10 +1031,10 @@ bool UIVirtualHardwareItem::setEditorData(QWidget *pEditor, const QModelIndex & 
             }
             break;
         }
-        case KVirtualSystemDescriptionType_CloudOCIInstanceShape:
-        case KVirtualSystemDescriptionType_CloudOCIDomain:
-        case KVirtualSystemDescriptionType_CloudOCIBootDiskSize:
-        case KVirtualSystemDescriptionType_CloudOCIBucket:
+        case KVirtualSystemDescriptionType_CloudInstanceShape:
+        case KVirtualSystemDescriptionType_CloudDomain:
+        case KVirtualSystemDescriptionType_CloudBootDiskSize:
+        case KVirtualSystemDescriptionType_CloudBucket:
         case KVirtualSystemDescriptionType_CloudOCIVCN:
         case KVirtualSystemDescriptionType_CloudOCISubnet:
         {
@@ -1215,10 +1218,10 @@ bool UIVirtualHardwareItem::setModelData(QWidget *pEditor, QAbstractItemModel *p
             }
             break;
         }
-        case KVirtualSystemDescriptionType_CloudOCIInstanceShape:
-        case KVirtualSystemDescriptionType_CloudOCIDomain:
-        case KVirtualSystemDescriptionType_CloudOCIBootDiskSize:
-        case KVirtualSystemDescriptionType_CloudOCIBucket:
+        case KVirtualSystemDescriptionType_CloudInstanceShape:
+        case KVirtualSystemDescriptionType_CloudDomain:
+        case KVirtualSystemDescriptionType_CloudBootDiskSize:
+        case KVirtualSystemDescriptionType_CloudBucket:
         case KVirtualSystemDescriptionType_CloudOCIVCN:
         case KVirtualSystemDescriptionType_CloudOCISubnet:
         {
@@ -1676,15 +1679,17 @@ KVirtualSystemDescriptionType UIApplianceSortProxyModel::s_aSortList[] =
     KVirtualSystemDescriptionType_HardDiskControllerSCSI,
     KVirtualSystemDescriptionType_HardDiskControllerSAS,
     /* OCI */
-    KVirtualSystemDescriptionType_CloudOCIBucket,
-    KVirtualSystemDescriptionType_CloudOCIKeepObject,
-    KVirtualSystemDescriptionType_CloudOCILaunchInstance,
-    KVirtualSystemDescriptionType_CloudOCIInstanceShape,
-    KVirtualSystemDescriptionType_CloudOCIBootDiskSize,
+
+    KVirtualSystemDescriptionType_CloudProfileName,
+    KVirtualSystemDescriptionType_CloudBucket,
+    KVirtualSystemDescriptionType_CloudKeepObject,
+    KVirtualSystemDescriptionType_CloudLaunchInstance,
+    KVirtualSystemDescriptionType_CloudInstanceShape,
+    KVirtualSystemDescriptionType_CloudBootDiskSize,
     KVirtualSystemDescriptionType_CloudOCIVCN,
     KVirtualSystemDescriptionType_CloudOCISubnet,
-    KVirtualSystemDescriptionType_CloudOCIPublicIP,
-    KVirtualSystemDescriptionType_CloudOCIDomain
+    KVirtualSystemDescriptionType_CloudPublicIP,
+    KVirtualSystemDescriptionType_CloudDomain
 };
 
 UIApplianceSortProxyModel::UIApplianceSortProxyModel(QObject *pParent)
