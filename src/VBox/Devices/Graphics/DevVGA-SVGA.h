@@ -23,6 +23,7 @@
 
 #include <VBox/vmm/pdmthread.h>
 
+#include "vmsvga/svga3d_reg.h"
 
 /** Default FIFO size. */
 #define VMSVGA_FIFO_SIZE                _2M
@@ -366,11 +367,26 @@ int vmsvgaSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM);
 DECLCALLBACK(void) vmsvgaR3PowerOn(PPDMDEVINS pDevIns);
 DECLCALLBACK(void) vmsvgaR3PowerOff(PPDMDEVINS pDevIns);
 
-#ifdef IN_RING3
 typedef struct VGAState *PVGASTATE;
+
+#ifdef IN_RING3
 VMSVGASCREENOBJECT *vmsvgaGetScreenObject(PVGASTATE pThis, uint32_t idScreen);
 int vmsvgaUpdateScreen(PVGASTATE pThis, VMSVGASCREENOBJECT *pScreen, int x, int y, int w, int h);
 #endif
+
+void vmsvgaGMRFree(PVGASTATE pThis, uint32_t idGMR);
+int vmsvgaGMRTransfer(PVGASTATE pThis, const SVGA3dTransferType enmTransferType,
+                      uint8_t *pbHstBuf, uint32_t cbHstBuf, uint32_t offHst, int32_t cbHstPitch,
+                      SVGAGuestPtr gstPtr, uint32_t offGst, int32_t cbGstPitch,
+                      uint32_t cbWidth, uint32_t cHeight);
+
+void vmsvgaClipCopyBox(const SVGA3dSize *pSizeSrc,
+                       const SVGA3dSize *pSizeDest,
+                       SVGA3dCopyBox *pBox);
+void vmsvgaClipBox(const SVGA3dSize *pSize,
+                   SVGA3dBox *pBox);
+void vmsvgaClipRect(SVGASignedRect const *pBound,
+                    SVGASignedRect *pRect);
 
 #endif
 

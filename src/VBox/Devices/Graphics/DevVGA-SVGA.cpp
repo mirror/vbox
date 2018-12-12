@@ -153,10 +153,8 @@
 #include "DevVGA.h"
 
 #include "DevVGA-SVGA.h"
-#include "vmsvga/svga_reg.h"
 #include "vmsvga/svga_escape.h"
 #include "vmsvga/svga_overlay.h"
-#include "vmsvga/svga3d_reg.h"
 #include "vmsvga/svga3d_caps.h"
 #ifdef VBOX_WITH_VMSVGA3D
 # include "DevVGA-SVGA3d.h"
@@ -3846,7 +3844,7 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
                 vmsvgaChangeMode(pThis);
                 break;
             }
-# ifdef VBOX_WITH_VMSVGA3D
+
             case SVGA_CMD_DEFINE_GMRFB:
             {
                 SVGAFifoCmdDefineGMRFB *pCmd;
@@ -4001,7 +3999,7 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
                 AssertRC(rc);
                 break;
             }
-# endif // VBOX_WITH_VMSVGA3D
+
             case SVGA_CMD_ANNOTATION_FILL:
             {
                 SVGAFifoCmdAnnotationFill *pCmd;
@@ -4769,6 +4767,143 @@ int vmsvgaGMRTransfer(PVGASTATE pThis, const SVGA3dTransferType enmTransferType,
     }
 
     return VINF_SUCCESS;
+}
+
+
+/** Unsigned coordinates in pBox. Clip to [0; pSizeSrc), [0;pSizeDest).
+ *
+ * @param pSizeSrc  Source surface dimensions.
+ * @param pSizeDest Destination surface dimensions.
+ * @param pBox      Coordinates to be clipped.
+ */
+void vmsvgaClipCopyBox(const SVGA3dSize *pSizeSrc,
+                       const SVGA3dSize *pSizeDest,
+                       SVGA3dCopyBox *pBox)
+{
+    /* Src x, w */
+    if (pBox->srcx > pSizeSrc->width)
+        pBox->srcx = pSizeSrc->width;
+    if (pBox->w > pSizeSrc->width - pBox->srcx)
+        pBox->w = pSizeSrc->width - pBox->srcx;
+
+    /* Src y, h */
+    if (pBox->srcy > pSizeSrc->height)
+        pBox->srcy = pSizeSrc->height;
+    if (pBox->h > pSizeSrc->height - pBox->srcy)
+        pBox->h = pSizeSrc->height - pBox->srcy;
+
+    /* Src z, d */
+    if (pBox->srcz > pSizeSrc->depth)
+        pBox->srcz = pSizeSrc->depth;
+    if (pBox->d > pSizeSrc->depth - pBox->srcz)
+        pBox->d = pSizeSrc->depth - pBox->srcz;
+
+    /* Dest x, w */
+    if (pBox->x > pSizeDest->width)
+        pBox->x = pSizeDest->width;
+    if (pBox->w > pSizeDest->width - pBox->x)
+        pBox->w = pSizeDest->width - pBox->x;
+
+    /* Dest y, h */
+    if (pBox->y > pSizeDest->height)
+        pBox->y = pSizeDest->height;
+    if (pBox->h > pSizeDest->height - pBox->y)
+        pBox->h = pSizeDest->height - pBox->y;
+
+    /* Dest z, d */
+    if (pBox->z > pSizeDest->depth)
+        pBox->z = pSizeDest->depth;
+    if (pBox->d > pSizeDest->depth - pBox->z)
+        pBox->d = pSizeDest->depth - pBox->z;
+}
+
+/** Unsigned coordinates in pBox. Clip to [0; pSize).
+ *
+ * @param pSize     Source surface dimensions.
+ * @param pBox      Coordinates to be clipped.
+ */
+void vmsvgaClipBox(const SVGA3dSize *pSize,
+                   SVGA3dBox *pBox)
+{
+    /* x, w */
+    if (pBox->x > pSize->width)
+        pBox->x = pSize->width;
+    if (pBox->w > pSize->width - pBox->x)
+        pBox->w = pSize->width - pBox->x;
+
+    /* y, h */
+    if (pBox->y > pSize->height)
+        pBox->y = pSize->height;
+    if (pBox->h > pSize->height - pBox->y)
+        pBox->h = pSize->height - pBox->y;
+
+    /* z, d */
+    if (pBox->z > pSize->depth)
+        pBox->z = pSize->depth;
+    if (pBox->d > pSize->depth - pBox->z)
+        pBox->d = pSize->depth - pBox->z;
+}
+
+/** Clip.
+ *
+ * @param pBound    Bounding rectangle.
+ * @param pRect     Rectangle to be clipped.
+ */
+void vmsvgaClipRect(SVGASignedRect const *pBound,
+                    SVGASignedRect *pRect)
+{
+    int32_t left;
+    int32_t top;
+    int32_t right;
+    int32_t bottom;
+
+    /* Right order. */
+    Assert(pBound->left <= pBound->right && pBound->top <= pBound->bottom);
+    if (pRect->left < pRect->right)
+    {
+        left = pRect->left;
+        right = pRect->right;
+    }
+    else
+    {
+        left = pRect->right;
+        right = pRect->left;
+    }
+    if (pRect->top < pRect->bottom)
+    {
+        top = pRect->top;
+        bottom = pRect->bottom;
+    }
+    else
+    {
+        top = pRect->bottom;
+        bottom = pRect->top;
+    }
+
+    if (left < pBound->left)
+        left = pBound->left;
+    if (right < pBound->left)
+        right = pBound->left;
+
+    if (left > pBound->right)
+        left = pBound->right;
+    if (right > pBound->right)
+        right = pBound->right;
+
+    if (top < pBound->top)
+        top = pBound->top;
+    if (bottom < pBound->top)
+        bottom = pBound->top;
+
+    if (top > pBound->bottom)
+        top = pBound->bottom;
+    if (bottom > pBound->bottom)
+        bottom = pBound->bottom;
+
+    pRect->left = left;
+    pRect->right = right;
+    pRect->top = top;
+    pRect->bottom = bottom;
 }
 
 /**

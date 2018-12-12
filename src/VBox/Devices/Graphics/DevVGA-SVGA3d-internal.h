@@ -1159,12 +1159,6 @@ int  vmsvga3dBackSurfaceDMACopyBox(PVGASTATE pThis, PVMSVGA3DSTATE pState, PVMSV
 int  vmsvga3dBackCreateTexture(PVMSVGA3DSTATE pState, PVMSVGA3DCONTEXT pContext, uint32_t idAssociatedContext,
                                PVMSVGA3DSURFACE pSurface);
 
-void vmsvgaClipCopyBox(const SVGA3dSize *pSizeSrc,
-                       const SVGA3dSize *pSizeDest,
-                       SVGA3dCopyBox *pBox);
-void vmsvgaClipBox(const SVGA3dSize *pSize,
-                   SVGA3dBox *pBox);
-
 DECLINLINE(int) vmsvga3dContextFromCid(PVMSVGA3DSTATE pState, uint32_t cid, PVMSVGA3DCONTEXT *ppContext)
 {
     /** @todo stricter checks for associated context */

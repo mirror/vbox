@@ -148,7 +148,6 @@
 
 #ifdef VBOX_WITH_VMSVGA
 #include "DevVGA-SVGA.h"
-#include "vmsvga/svga_reg.h"
 #endif
 
 
