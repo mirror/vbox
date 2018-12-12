@@ -3737,7 +3737,8 @@ static DECLCALLBACK(int) ichac97R3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, 
         const PAC97STREAM pStream = &pThis->aStreams[i];
 
         rc2 = ichac97R3StreamEnable(pThis, pStream, fEnable);
-        if (RT_SUCCESS(rc2))
+        if (   fEnable
+            && RT_SUCCESS(rc2))
         {
             /* Re-arm the timer for this stream. */
             rc2 = ichac97R3TimerSet(pThis, pStream,
