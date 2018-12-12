@@ -21,12 +21,12 @@
     <message>
         <source>--</source>
         <comment>Native language country name (empty if this language is for all countries)</comment>
-        <translation type="unfinished">--</translation>
+        <translation></translation>
     </message>
     <message>
         <source>--</source>
         <comment>Language country name, in English (empty if native country name is empty)</comment>
-        <translation type="unfinished">--</translation>
+        <translation></translation>
     </message>
 </context>
 <context>
@@ -186,7 +186,7 @@
     <name>QIInputDialog</name>
     <message>
         <source>Name:</source>
-        <translation type="unfinished"></translation>
+        <translation>Имя:</translation>
     </message>
 </context>
 <context>
@@ -303,7 +303,7 @@
     <message>
         <source>%1, %2: %3, %4: %5, %6: %7, %8: %9</source>
         <comment>col.1 text, col.2 name: col.2 text, col.3 name: col.3 text, col.4 name: col.4 text, col.5 name: col.5 text</comment>
-        <translation type="unfinished"></translation>
+        <translation>%1, %2: %3, %4: %5, %6: %7, %8: %9</translation>
     </message>
 </context>
 <context>
@@ -762,7 +762,7 @@
     </message>
     <message>
         <source>Re&amp;fresh...</source>
-        <translation type="unfinished">Об&amp;новить</translation>
+        <translation>Об&amp;новить...</translation>
     </message>
     <message>
         <source>Refresh the accessibility state of the selected virtual machine</source>
@@ -1604,666 +1604,666 @@
     </message>
     <message>
         <source>&amp;Log</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Журнал</translation>
     </message>
     <message>
         <source>Open the log menu</source>
-        <translation type="unfinished"></translation>
+        <translation>Открыть меню журнала</translation>
     </message>
     <message>
         <source>&amp;Find</source>
-        <translation type="unfinished">&amp;Найти</translation>
+        <translation>&amp;Поиск</translation>
     </message>
     <message>
         <source>Log Viewer</source>
-        <translation type="unfinished">Просмотр журналов</translation>
+        <translation>Просмотр журналов</translation>
     </message>
     <message>
         <source>Open pane with searching options</source>
-        <translation type="unfinished"></translation>
+        <translation>Открыть панель с настройками поиска</translation>
     </message>
     <message>
         <source>Open Find Pane (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>Открыть панель поиска (%1)</translation>
     </message>
     <message>
         <source>&amp;Filter</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Фильтр</translation>
     </message>
     <message>
         <source>Open pane with filtering options</source>
-        <translation type="unfinished"></translation>
+        <translation>Открыть панель с настройками фильтра</translation>
     </message>
     <message>
         <source>Open Filter Pane (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>Открыть панель фильтра (%1)</translation>
     </message>
     <message>
         <source>&amp;Bookmark</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Закладки</translation>
     </message>
     <message>
         <source>Open pane with bookmarking options</source>
-        <translation type="unfinished"></translation>
+        <translation>Открыть панель с настройками закладок</translation>
     </message>
     <message>
         <source>Open Bookmark Pane (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>Открыть панель закладок (%1)</translation>
     </message>
     <message>
         <source>&amp;Options</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Опции</translation>
     </message>
     <message>
         <source>Open pane with log viewer options</source>
-        <translation type="unfinished"></translation>
+        <translation>Открыть панель опций</translation>
     </message>
     <message>
         <source>Open Options Pane (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>Открыть панель опций (%1)</translation>
     </message>
     <message>
         <source>&amp;Refresh</source>
-        <translation type="unfinished">О&amp;бновить</translation>
+        <translation>О&amp;бновить</translation>
     </message>
     <message>
         <source>Refresh selected virtual machine log</source>
-        <translation type="unfinished"></translation>
+        <translation>Обновить выбранный журнал виртуальной машины</translation>
     </message>
     <message>
         <source>Refresh Virtual Machine Log (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>Обновить журнал виртуальной машины (%1)</translation>
     </message>
     <message>
         <source>&amp;Save...</source>
-        <translation type="unfinished">&amp;Сохранить...</translation>
+        <translation>&amp;Сохранить...</translation>
     </message>
     <message>
         <source>Save selected virtual machine log</source>
-        <translation type="unfinished"></translation>
+        <translation>Сохранить выбранный журнал виртуальной машины</translation>
     </message>
     <message>
         <source>Save Virtual Machine Log (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>Сохранить журнал виртуальной машины (%1)</translation>
     </message>
     <message>
         <source>File Manager</source>
-        <translation type="unfinished"></translation>
+        <translation>Менеджер файлов</translation>
     </message>
     <message>
         <source>Open the guest control file manager</source>
-        <translation type="unfinished"></translation>
+        <translation>Открыть файловый менеджер гостевой ОС</translation>
     </message>
     <message>
         <source>Host</source>
-        <translation type="unfinished"></translation>
+        <translation>Хост</translation>
     </message>
     <message>
         <source>Open the guest control file manager submenu</source>
-        <translation type="unfinished"></translation>
+        <translation>Открыть меню файлового менеджера гостевой ОС</translation>
     </message>
     <message>
         <source>Guest</source>
-        <translation type="unfinished">Гостевая ОС</translation>
+        <translation>Гостевая ОС</translation>
     </message>
     <message>
         <source>Copy to guest</source>
-        <translation type="unfinished"></translation>
+        <translation>Скопировать в гостевую ОС</translation>
     </message>
     <message>
         <source>Guest Control File Manager</source>
-        <translation type="unfinished"></translation>
+        <translation>Менеджер файлов гостевой ОС</translation>
     </message>
     <message>
         <source>Copy the Selected Object(s) from Host to Guest</source>
-        <translation type="unfinished"></translation>
+        <translation>Скопировать выбранные объекты с хоста в готевую ОС</translation>
     </message>
     <message>
         <source>Copy the selected object(s) from host to guest</source>
-        <translation type="unfinished"></translation>
+        <translation>Скопировать выбранные объекты с хоста в готевую ОС</translation>
     </message>
     <message>
         <source>Copy to host</source>
-        <translation type="unfinished"></translation>
+        <translation>Скопировать на хост</translation>
     </message>
     <message>
         <source>Copy the Selected Object(s) from Guest to Host</source>
-        <translation type="unfinished"></translation>
+        <translation>Скопировать выбранные объекты с готевой ОС на хост</translation>
     </message>
     <message>
         <source>Copy the selected object(s) from guest to host</source>
-        <translation type="unfinished"></translation>
+        <translation>Скопировать выбранные объекты с готевой ОС на хост</translation>
     </message>
     <message>
         <source>Log</source>
-        <translation type="unfinished">Журнал</translation>
+        <translation>Журнал</translation>
     </message>
     <message>
         <source>Open panel with to view file manager log</source>
-        <translation type="unfinished"></translation>
+        <translation>Открыть панель с журналами менеджера файлов</translation>
     </message>
     <message>
         <source>Open Panel With to View File Manager Log</source>
-        <translation type="unfinished"></translation>
+        <translation>Открыть панель с журналами менеджера файлов</translation>
     </message>
     <message>
         <source>File Operations</source>
-        <translation type="unfinished"></translation>
+        <translation>Файловые операции</translation>
     </message>
     <message>
         <source>Open panel with to view file manager file operations</source>
-        <translation type="unfinished"></translation>
+        <translation>Открыть панель с операциями менеджера файлов</translation>
     </message>
     <message>
         <source>Open Panel With to View File Manager File Operations</source>
-        <translation type="unfinished"></translation>
+        <translation>Открыть панель с операциями менеджера файлов</translation>
     </message>
     <message>
         <source>Session</source>
-        <translation type="unfinished"></translation>
+        <translation>Сессия</translation>
     </message>
     <message>
         <source>Open file manager account</source>
-        <translation type="unfinished"></translation>
+        <translation>Открыть панель сессии менеджера файлов</translation>
     </message>
     <message>
         <source>Open File Manager Session</source>
-        <translation type="unfinished"></translation>
+        <translation>Открыть панель сессии менеджера файлов</translation>
     </message>
     <message>
         <source>GoUp</source>
-        <translation type="unfinished"></translation>
+        <translation>Перейти вверх</translation>
     </message>
     <message>
         <source>Go one level up to parent folder</source>
-        <translation type="unfinished"></translation>
+        <translation>Перейти на один уровень вверх в родительский каталог</translation>
     </message>
     <message>
         <source>Go One Level Up to Parent Folder</source>
-        <translation type="unfinished"></translation>
+        <translation>Перейти на один уровень вверх в родительский каталог</translation>
     </message>
     <message>
         <source>Go Home</source>
-        <translation type="unfinished"></translation>
+        <translation>Перейти домой</translation>
     </message>
     <message>
         <source>Go to home folder</source>
-        <translation type="unfinished"></translation>
+        <translation>Перейти в домашний каталог</translation>
     </message>
     <message>
         <source>Go to Home Folder</source>
-        <translation type="unfinished"></translation>
+        <translation>Перейти в домашний каталог</translation>
     </message>
     <message>
         <source>Delete</source>
-        <translation type="unfinished">Удалить</translation>
+        <translation>Удалить</translation>
     </message>
     <message>
         <source>Delete selected file object(s)</source>
-        <translation type="unfinished"></translation>
+        <translation>Удалить выбранные объекты</translation>
     </message>
     <message>
         <source>Delete Selected File Object(s)</source>
-        <translation type="unfinished"></translation>
+        <translation>Удалить выбранные объекты</translation>
     </message>
     <message>
         <source>Refresh</source>
-        <translation type="unfinished"></translation>
+        <translation>Обновить</translation>
     </message>
     <message>
         <source>Rename</source>
-        <translation type="unfinished">Переименовать</translation>
+        <translation>Переименовать</translation>
     </message>
     <message>
         <source>Create New Directory</source>
-        <translation type="unfinished"></translation>
+        <translation>Создать новую папку</translation>
     </message>
     <message>
         <source>Copy</source>
-        <translation type="unfinished">Копировать</translation>
+        <translation>Копировать</translation>
     </message>
     <message>
         <source>Copy selected file object(s)</source>
-        <translation type="unfinished"></translation>
+        <translation>Копировать выбранные объекты</translation>
     </message>
     <message>
         <source>Copy Selected File Object(s)</source>
-        <translation type="unfinished"></translation>
+        <translation>Копировать выбранные объекты</translation>
     </message>
     <message>
         <source>Cut</source>
-        <translation type="unfinished"></translation>
+        <translation>Вырезать</translation>
     </message>
     <message>
         <source>Cut selected file object(s)</source>
-        <translation type="unfinished"></translation>
+        <translation>Вырезать выбранные объекты</translation>
     </message>
     <message>
         <source>Cut Selected File Object(s)</source>
-        <translation type="unfinished"></translation>
+        <translation>Вырезать выбранные объекты</translation>
     </message>
     <message>
         <source>Paste</source>
-        <translation type="unfinished"></translation>
+        <translation>Вставить</translation>
     </message>
     <message>
         <source>Paste copied/cut file object(s)</source>
-        <translation type="unfinished"></translation>
+        <translation>Вставить скопированные/вырезанные объекты</translation>
     </message>
     <message>
         <source>Paste Copied/Cut File Object(s)</source>
-        <translation type="unfinished"></translation>
+        <translation>Вставить скопированные/вырезанные объекты</translation>
     </message>
     <message>
         <source>Select All</source>
-        <translation type="unfinished"></translation>
+        <translation>Выбрать всё</translation>
     </message>
     <message>
         <source>Select all files objects</source>
-        <translation type="unfinished"></translation>
+        <translation>Вырезать все объекты</translation>
     </message>
     <message>
         <source>Select All Files Objects</source>
-        <translation type="unfinished"></translation>
+        <translation>Вырезать все объекты</translation>
     </message>
     <message>
         <source>Invert Selection</source>
-        <translation type="unfinished"></translation>
+        <translation>Обратить выбор</translation>
     </message>
     <message>
         <source>Invert the current selection</source>
-        <translation type="unfinished"></translation>
+        <translation>Обратить текущий выбор</translation>
     </message>
     <message>
         <source>Invert the Current Selection</source>
-        <translation type="unfinished"></translation>
+        <translation>Обратить текущий выбор</translation>
     </message>
     <message>
         <source>Show Properties</source>
-        <translation type="unfinished"></translation>
+        <translation>Показать свойства</translation>
     </message>
     <message>
         <source>Show the properties of currently selected file object(s)</source>
-        <translation type="unfinished"></translation>
+        <translation>Показать свойства выбранных объектов</translation>
     </message>
     <message>
         <source>Show the Properties of Currently Selected File Object(s)</source>
-        <translation type="unfinished"></translation>
+        <translation>Показать свойства выбранных объектов</translation>
     </message>
     <message>
         <source>&amp;Cloud Profile Manager...</source>
-        <translation type="unfinished"></translation>
+        <translation>Менеджер &amp;облачных профилей...</translation>
     </message>
     <message>
         <source>Display the Cloud Profile Manager window</source>
-        <translation type="unfinished"></translation>
+        <translation>Открыть менеджер облачных профилей</translation>
     </message>
     <message>
         <source>Import</source>
-        <translation type="unfinished">Импорт</translation>
+        <translation>Импортировать</translation>
     </message>
     <message>
         <source>Export</source>
-        <translation type="unfinished">Экспорт</translation>
+        <translation>Экспортировать</translation>
     </message>
     <message>
         <source>&amp;Move...</source>
-        <translation type="unfinished">&amp;Переместить...</translation>
+        <translation>&amp;Переместить...</translation>
     </message>
     <message>
         <source>Move selected virtual machine</source>
-        <translation type="unfinished"></translation>
+        <translation>Переместить выбранную виртуальную машину</translation>
     </message>
     <message>
         <source>&amp;Logs</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Журналы</translation>
     </message>
     <message>
         <source>Open the machine logs pane</source>
-        <translation type="unfinished"></translation>
+        <translation>Открыть панель журналов машины</translation>
     </message>
     <message>
         <source>&amp;Cloud Profile Manager</source>
-        <translation type="unfinished"></translation>
+        <translation>Менеджер &amp;облачных профилей</translation>
     </message>
     <message>
         <source>Open the Cloud Profile Manager</source>
-        <translation type="unfinished"></translation>
+        <translation>Открыть менеджер облачных профилей</translation>
     </message>
     <message>
         <source>&amp;Snapshot</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Снимок</translation>
     </message>
     <message>
         <source>Open the snapshot menu</source>
-        <translation type="unfinished"></translation>
+        <translation>Открыть меню снимка</translation>
     </message>
     <message>
         <source>&amp;Take...</source>
-        <translation type="unfinished">&amp;Сделать...</translation>
+        <translation>&amp;Сделать...</translation>
     </message>
     <message>
         <source>Snapshot Pane</source>
-        <translation type="unfinished"></translation>
+        <translation>Панель снимков</translation>
     </message>
     <message>
         <source>Take a snapshot of the current virtual machine state</source>
-        <translation type="unfinished">Сделать снимок текущего состояния виртуальной машины</translation>
+        <translation>Сделать снимок текущего состояния виртуальной машины</translation>
     </message>
     <message>
         <source>Take Snapshot (%1)</source>
-        <translation type="unfinished">Сделать снимок (%1)</translation>
+        <translation>Сделать снимок (%1)</translation>
     </message>
     <message>
         <source>&amp;Delete...</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Удалить...</translation>
     </message>
     <message>
         <source>Delete selected snapshot of the virtual machine</source>
-        <translation type="unfinished">Удалить выбранный снимок виртуальной машины</translation>
+        <translation>Удалить выбранный снимок виртуальной машины</translation>
     </message>
     <message>
         <source>Delete Snapshot (%1)</source>
-        <translation type="unfinished">Удалить снимок (%1)</translation>
+        <translation>Удалить снимок (%1)</translation>
     </message>
     <message>
         <source>&amp;Restore...</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Восстановить...</translation>
     </message>
     <message>
         <source>Restore selected snapshot of the virtual machine</source>
-        <translation type="unfinished">Восстановить выбранный снимок виртуальной машины</translation>
+        <translation>Восстановить выбранный снимок виртуальной машины</translation>
     </message>
     <message>
         <source>Restore Snapshot (%1)</source>
-        <translation type="unfinished">Восстановить снимок (%1)</translation>
+        <translation>Восстановить снимок (%1)</translation>
     </message>
     <message>
         <source>&amp;Properties</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Свойства</translation>
     </message>
     <message>
         <source>Open pane with the selected snapshot properties</source>
-        <translation type="unfinished">Открыть панель свойств выбранного снимка</translation>
+        <translation>Открыть панель свойств выбранного снимка</translation>
     </message>
     <message>
         <source>Open Snapshot Properties (%1)</source>
-        <translation type="unfinished">Открыть свойства снимка (%1)</translation>
+        <translation>Открыть свойства снимка (%1)</translation>
     </message>
     <message>
         <source>&amp;Clone...</source>
-        <translation type="unfinished">&amp;Клонировать...</translation>
+        <translation>&amp;Клонировать...</translation>
     </message>
     <message>
         <source>Clone Virtual Machine (%1)</source>
-        <translation type="unfinished">Копировать виртуальную машину (%1)</translation>
+        <translation>Копировать виртуальную машину (%1)</translation>
     </message>
     <message>
         <source>&amp;Medium</source>
-        <translation type="unfinished">&amp;Носитель</translation>
+        <translation>&amp;Носитель</translation>
     </message>
     <message>
         <source>Open the medium menu</source>
-        <translation type="unfinished"></translation>
+        <translation>Открыть меню носителя</translation>
     </message>
     <message>
         <source>Media Manager</source>
-        <translation type="unfinished"></translation>
+        <translation>Менеджер носителей</translation>
     </message>
     <message>
         <source>Add a disk image file</source>
-        <translation type="unfinished"></translation>
+        <translation>Добавить файл образа диска</translation>
     </message>
     <message>
         <source>Add a Disk Image File (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>Добавить файл образа диска (%1)</translation>
     </message>
     <message>
         <source>&amp;Copy...</source>
-        <translation type="unfinished">&amp;Копировать...</translation>
+        <translation>&amp;Копировать...</translation>
     </message>
     <message>
         <source>Copy selected disk image file</source>
-        <translation type="unfinished">Копировать выбранный файл образа диска</translation>
+        <translation>Копировать выбранный файл образа диска</translation>
     </message>
     <message>
         <source>Copy Disk Image File (%1)</source>
-        <translation type="unfinished">Копировать файл образа диска (%1)</translation>
+        <translation>Копировать файл образа диска (%1)</translation>
     </message>
     <message>
         <source>Move selected disk image file</source>
-        <translation type="unfinished">Переместить выбранный файл образа диска</translation>
+        <translation>Переместить выбранный файл образа диска</translation>
     </message>
     <message>
         <source>Move Disk Image File (%1)</source>
-        <translation type="unfinished">Переместить файл образа диска (%1)</translation>
+        <translation>Переместить файл образа диска (%1)</translation>
     </message>
     <message>
         <source>Remove selected disk image file</source>
-        <translation type="unfinished">Удалить выбранный файл образа диска</translation>
+        <translation>Удалить выбранный файл образа диска</translation>
     </message>
     <message>
         <source>Remove Disk Image File (%1)</source>
-        <translation type="unfinished">Удалить файл образа диска (%1)</translation>
+        <translation>Удалить файл образа диска (%1)</translation>
     </message>
     <message>
         <source>Re&amp;lease...</source>
-        <translation type="unfinished">&amp;Отключить...</translation>
+        <translation>&amp;Отключить...</translation>
     </message>
     <message>
         <source>Release selected disk image file</source>
-        <translation type="unfinished"></translation>
+        <translation>Отключить выбранный файл образа диска</translation>
     </message>
     <message>
         <source>Release Disk Image File (%1)</source>
-        <translation type="unfinished">Отключить файл образа диска (%1)</translation>
+        <translation>Отключить файл образа диска (%1)</translation>
     </message>
     <message>
         <source>Open pane with selected disk image file properties</source>
-        <translation type="unfinished">Открыть панель свойств выбранного файла образа диска</translation>
+        <translation>Открыть панель свойств выбранного файла образа диска</translation>
     </message>
     <message>
         <source>Open Disk Image File Properties (%1)</source>
-        <translation type="unfinished">Открыть свойства файла образа диска (%1)</translation>
+        <translation>Открыть свойства файла образа диска (%1)</translation>
     </message>
     <message>
         <source>Refresh the list of disk image files</source>
-        <translation type="unfinished"></translation>
+        <translation>Обновить список файлов образа диска</translation>
     </message>
     <message>
         <source>Refresh Disk Image Files (%1)</source>
-        <translation type="unfinished">Обновить файлы образа диска (%1)</translation>
+        <translation>Обновить файлы образа диска (%1)</translation>
     </message>
     <message>
         <source>Open the network menu</source>
-        <translation type="unfinished"></translation>
+        <translation>Открыть меню сетей</translation>
     </message>
     <message>
         <source>&amp;Create...</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Создать...</translation>
     </message>
     <message>
         <source>Network Manager</source>
-        <translation type="unfinished"></translation>
+        <translation>Менеджер сетей</translation>
     </message>
     <message>
         <source>Create new host-only network</source>
-        <translation type="unfinished">Создать новую виртуальную сеть хоста</translation>
+        <translation>Создать новую виртуальную сеть хоста</translation>
     </message>
     <message>
         <source>Create Host-only Network (%1)</source>
-        <translation type="unfinished">Создать виртуальную сеть хоста (%1)</translation>
+        <translation>Создать виртуальную сеть хоста (%1)</translation>
     </message>
     <message>
         <source>Remove selected host-only network</source>
-        <translation type="unfinished">Удалить выбранную виртуальную сеть хоста</translation>
+        <translation>Удалить выбранную виртуальную сеть хоста</translation>
     </message>
     <message>
         <source>Remove Host-only Network (%1)</source>
-        <translation type="unfinished">Удалить виртуальную сеть хоста (%1)</translation>
+        <translation>Удалить виртуальную сеть хоста (%1)</translation>
     </message>
     <message>
         <source>Open pane with selected host-only network properties</source>
-        <translation type="unfinished">Открыть панель свойств выбранной виртуальной сети хоста</translation>
+        <translation>Открыть панель свойств выбранной виртуальной сети хоста</translation>
     </message>
     <message>
         <source>Open Host-only Network Properties (%1)</source>
-        <translation type="unfinished">Открыть свойства виртуальной сети хоста (%1)</translation>
+        <translation>Открыть свойства виртуальной сети хоста (%1)</translation>
     </message>
     <message>
         <source>Refresh the list of host-only networks</source>
-        <translation type="unfinished">Обновить виртуальные сети хоста</translation>
+        <translation>Обновить виртуальные сети хоста</translation>
     </message>
     <message>
         <source>Refresh Host-only Networks (%1)</source>
-        <translation type="unfinished">Обновить виртуальные сети хоста (%1)</translation>
+        <translation>Обновить виртуальные сети хоста (%1)</translation>
     </message>
     <message>
         <source>&amp;Cloud</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Облако</translation>
     </message>
     <message>
         <source>Open the cloud menu</source>
-        <translation type="unfinished"></translation>
+        <translation>Открыть меню облаков</translation>
     </message>
     <message>
         <source>Add</source>
-        <translation type="unfinished"></translation>
+        <translation>Добавить</translation>
     </message>
     <message>
         <source>&amp;Add Profile...</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Добавить профиль...</translation>
     </message>
     <message>
         <source>Cloud Profile Manager</source>
-        <translation type="unfinished"></translation>
+        <translation>Менеджер облачных профилей</translation>
     </message>
     <message>
         <source>Add new cloud profile</source>
-        <translation type="unfinished"></translation>
+        <translation>Добавить новый облачный профиль</translation>
     </message>
     <message>
         <source>Add Cloud Profile (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>Добавить облачный профиль (%1)</translation>
     </message>
     <message>
         <source>&amp;Import Profiles...</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Импортировать профили...</translation>
     </message>
     <message>
         <source>Import the list of cloud profiles from external files</source>
-        <translation type="unfinished"></translation>
+        <translation>Импортировать список облачных профилей из внешних файлов</translation>
     </message>
     <message>
         <source>Import Cloud Profiles (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>Импортировать облачные профили (%1)</translation>
     </message>
     <message>
         <source>Remove</source>
-        <translation type="unfinished">Убрать</translation>
+        <translation>Удалить</translation>
     </message>
     <message>
         <source>&amp;Remove Profile...</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Удалить профиль...</translation>
     </message>
     <message>
         <source>Remove selected cloud profile</source>
-        <translation type="unfinished"></translation>
+        <translation>Удалить выбранный облачный профиль</translation>
     </message>
     <message>
         <source>Remove Cloud Profile (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>Удалить облачный профиль (%1)</translation>
     </message>
     <message>
         <source>Properties</source>
-        <translation type="unfinished"></translation>
+        <translation>Свойства</translation>
     </message>
     <message>
         <source>Profile &amp;Properties</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Свойства профиля</translation>
     </message>
     <message>
         <source>Open pane with selected cloud profile properties</source>
-        <translation type="unfinished"></translation>
+        <translation>Открыть панель свойств выбранного облачного профиля</translation>
     </message>
     <message>
         <source>Open Cloud Profile Properties (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>Открыть свойства выбранного облачного профиля (%1)</translation>
     </message>
     <message>
         <source>Help</source>
-        <translation type="unfinished"></translation>
+        <translation>Справка</translation>
     </message>
     <message>
         <source>&amp;Show Help...</source>
-        <translation type="unfinished"></translation>
+        <translation>Показать &amp;справку...</translation>
     </message>
     <message>
         <source>Show cloud profile help</source>
-        <translation type="unfinished"></translation>
+        <translation>Показать справку по облачным профилям</translation>
     </message>
     <message>
         <source>Show Cloud Profile Help (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>Показать справку по облачным профилям (%1)</translation>
     </message>
     <message>
         <source>File Manager...</source>
-        <translation type="unfinished"></translation>
+        <translation>Менеджер файлов...</translation>
     </message>
     <message>
         <source>Display the virtual machine guest control file manager window</source>
-        <translation type="unfinished"></translation>
+        <translation>Открыть файловый менеджер виртуальной машины</translation>
     </message>
     <message>
         <source>Guest Process Control...</source>
-        <translation type="unfinished"></translation>
+        <translation>Мнеджер контроля процессов...</translation>
     </message>
     <message>
         <source>Display the virtual machine guest process control window</source>
-        <translation type="unfinished"></translation>
+        <translation>Открыть менеджер контроля процессов гостевой ОС виртуальной машины</translation>
     </message>
     <message>
         <source>&amp;Recording</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Запись</translation>
     </message>
     <message>
         <source>&amp;Recording Settings...</source>
-        <translation type="unfinished"></translation>
+        <translation>Настройки &amp;записи...</translation>
     </message>
     <message>
         <source>Display virtual machine settings window to configure video/audio recording</source>
-        <translation type="unfinished"></translation>
+        <translation>Открыть диалог настроек виртуальной машины на странице настроек записи видео/аудио</translation>
     </message>
     <message>
         <source>Enable guest video/audio recording</source>
-        <translation type="unfinished"></translation>
+        <translation>Включить видео/аудио запись гостевой ОС</translation>
     </message>
     <message>
         <source>Scale to %1%</source>
         <comment>scale-factor</comment>
-        <translation type="unfinished"></translation>
+        <translation>Масштабировать к %1%</translation>
     </message>
     <message>
         <source>Scale to %1% (unscaled output)</source>
         <comment>scale-factor</comment>
-        <translation type="unfinished"></translation>
+        <translation>Масштабировать к %1% (немасштабируемый вывод)</translation>
     </message>
     <message>
         <source>Scale to %1% (autoscaled output)</source>
         <comment>scale-factor</comment>
-        <translation type="unfinished"></translation>
+        <translation>Масштабировать к %1% (автомасштабируемый вывод)</translation>
     </message>
     <message>
         <source>Options</source>
-        <translation type="unfinished"></translation>
+        <translation>Опции</translation>
     </message>
     <message>
         <source>Open panel with file manager options</source>
-        <translation type="unfinished"></translation>
+        <translation>Открыть панель с опциями менеджера файлов</translation>
     </message>
     <message>
         <source>Open Panel With File Manager Options</source>
-        <translation type="unfinished"></translation>
+        <translation>Открыть панель с опциями менеджера файлов</translation>
     </message>
 </context>
 <context>
