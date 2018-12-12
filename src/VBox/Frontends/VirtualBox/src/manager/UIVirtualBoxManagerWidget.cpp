@@ -177,7 +177,7 @@ void UIVirtualBoxManagerWidget::sltHandleContextMenuRequest(const QPoint &positi
     /* Populate toolbar actions: */
     QList<QAction*> actions;
     /* Add 'Show Toolbar Text' action: */
-    QAction *pShowToolBarText = new QAction(tr("Show Toolbar Text"), 0);
+    QAction *pShowToolBarText = new QAction(UIVirtualBoxManager::tr("Show Toolbar Text"), 0);
     AssertPtrReturnVoid(pShowToolBarText);
     {
         /* Configure action: */

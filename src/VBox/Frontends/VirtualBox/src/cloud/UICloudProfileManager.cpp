@@ -299,7 +299,7 @@ void UICloudProfileManagerWidget::sltAddCloudProfile()
         if (pDialog)
         {
             pDialog->setWindowIcon(UIIconPool::iconSet(":/cloud_profile_add_16px.png"));
-            pDialog->setWindowTitle(tr("Add Profile"));
+            pDialog->setWindowTitle(UICloudProfileManager::tr("Add Profile"));
             if (pDialog->exec() == QDialog::Accepted)
             {
                 strProfileName = pDialog->textValue();
