@@ -98,7 +98,7 @@ ifndef VBOX_ONLY_VALIDATIONKIT
   VBoxGuest-inf_MODE = a+r,u+w
   VBoxGuest-inf_SOURCES = \
 	$(PATH_TARGET)/VBoxGuestCat.dir/VBoxGuest.inf \
-	$(PATH_TARGET)/VBoxGuestCat.dir/VBoxGuest.cat \
+	$(if-expr defined(VBOX_SIGN_ADDITIONS),$(PATH_TARGET)/VBoxGuestCat.dir/VBoxGuest.cat,) \
 	$(PATH_TARGET)/VBoxGuestCat.dir/VBoxGuest.sys \
 	$(PATH_TARGET)/VBoxGuestCat.dir/VBoxControl.exe \
 	$(PATH_TARGET)/VBoxGuestCat.dir/VBoxTray.exe
@@ -269,11 +269,11 @@ ifdef VBOX_WITH_ADDITIONS_ISO.win.x86
 	cert/VBoxCertUtil.exe=$(VBOX_PATH_ADDITIONS.win.x86)/VBoxCertUtil.exe \
 	NT3x/Readme.txt=$(VBOX_PATH_ADDITIONS_SRC)/WINNT/Installer/ISO/NT3xReadme.txt \
 	NT3x/VBoxGuest.sys=$(VBOX_PATH_ADDITIONS.win.x86)/VBoxGuest.sys \
-	NT3x/VBoxGuest.cat=$(VBOX_PATH_ADDITIONS.win.x86)/VBoxGuest.cat \
+	$(if-expr defined(VBOX_SIGN_ADDITIONS),NT3x/VBoxGuest.cat=$(VBOX_PATH_ADDITIONS.win.x86)/VBoxGuest.cat,) \
 	NT3x/VBoxGuest.inf=$(VBOX_PATH_ADDITIONS.win.x86)/VBoxGuest.inf \
 	NT3x/VBoxMouseNT.sys=$(VBOX_PATH_ADDITIONS.win.x86)/VBoxMouseNT.sys \
 	NT3x/VBoxMouse.inf=$(VBOX_PATH_ADDITIONS.win.x86)/VBoxMouse.inf \
-	NT3x/VBoxMouse.cat=$(VBOX_PATH_ADDITIONS.win.x86)/VBoxMouse.cat \
+	$(if-expr defined(VBOX_SIGN_ADDITIONS),NT3x/VBoxMouse.cat=$(VBOX_PATH_ADDITIONS.win.x86)/VBoxMouse.cat,) \
 	NT3x/VBoxMouse.sys=$(VBOX_PATH_ADDITIONS.win.x86)/VBoxMouse.sys \
 	NT3x/VBoxControl.exe=$(VBOX_PATH_ADDITIONS.win.x86)/VBoxControl.exe \
 	NT3x/VBoxService.exe=$(VBOX_PATH_ADDITIONS.win.x86)/VBoxService.exe

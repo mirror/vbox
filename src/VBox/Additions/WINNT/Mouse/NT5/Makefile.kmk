@@ -55,7 +55,7 @@ VBoxMouse-inf_SOURCES = VBoxMouse.inf
 else
 VBoxMouse-inf_SOURCES = \
 	$(PATH_TARGET)/VBoxMouseCat.dir/VBoxMouse.inf \
-	$(PATH_TARGET)/VBoxMouseCat.dir/VBoxMouse.cat
+	$(if-expr defined(VBOX_SIGN_ADDITIONS),$(PATH_TARGET)/VBoxMouseCat.dir/VBoxMouse.cat,)
 VBoxMouse-inf_CLEAN += \
 	$(PATH_TARGET)/VBoxMouseCat.dir/VBoxMouse.cat \
 	$(PATH_TARGET)/VBoxMouseCat.dir/VBoxMouse.sys \
