@@ -540,11 +540,13 @@ AssertCompileSize(VMMDevReqHostVersion, 24+16);
 /** @name VMMDEV_HVF_XXX - VMMDevReqHostVersion::features
  * @{ */
 /** Physical page lists are supported by HGCM. */
-#define VMMDEV_HVF_HGCM_PHYS_PAGE_LIST      RT_BIT_32(0)
+#define VMMDEV_HVF_HGCM_PHYS_PAGE_LIST          RT_BIT_32(0)
 /** HGCM supports the embedded buffer parameter type. */
-#define VMMDEV_HVF_HGCM_EMBEDDED_BUFFERS    RT_BIT_32(1)
+#define VMMDEV_HVF_HGCM_EMBEDDED_BUFFERS        RT_BIT_32(1)
+/** HGCM supports the contiguous page list parameter type. */
+#define VMMDEV_HVF_HGCM_CONTIGUOUS_PAGE_LIST    RT_BIT_32(2)
 /** VMMDev supports fast IRQ acknowledgements. */
-#define VMMDEV_HVF_FAST_IRQ_ACK             RT_BIT_32(31)
+#define VMMDEV_HVF_FAST_IRQ_ACK                 RT_BIT_32(31)
 /** @} */
 
 

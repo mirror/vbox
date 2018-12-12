@@ -217,6 +217,7 @@ static int vbglR0HGCMInternalPreprocessCall(PCVBGLIOCHGCMCALL pCallInfo, uint32_
                 break;
 
             case VMMDevHGCMParmType_PageList:
+            case VMMDevHGCMParmType_ContiguousPageList:
                 if (fIsUser)
                     return VERR_INVALID_PARAMETER;
                 cb = pSrcParm->u.PageList.size;
@@ -552,7 +553,8 @@ static void vbglR0HGCMInternalInitCall(VMMDevHGCMCall *pHGCMCall, PCVBGLIOCHGCMC
                 break;
 
             case VMMDevHGCMParmType_PageList:
-                pDstParm->type = VMMDevHGCMParmType_PageList;
+            case VMMDevHGCMParmType_ContiguousPageList:
+                pDstParm->type = pSrcParm->type;
                 pDstParm->u.PageList.size = pSrcParm->u.PageList.size;
                 if (pSrcParm->u.PageList.size)
                 {
@@ -856,6 +858,7 @@ static int vbglR0HGCMInternalCopyBackResult(PVBGLIOCHGCMCALL pCallInfo, uint32_t
                 break;
 
             case VMMDevHGCMParmType_PageList:
+            case VMMDevHGCMParmType_ContiguousPageList:
                 pDstParm->u.PageList.size = pSrcParm->u.PageList.size;
                 break;
 

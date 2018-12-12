@@ -328,7 +328,8 @@ static void vmmdevHGCMCmdFree(PVMMDEV pThis, PVBOXHGCMCMD pCmd)
                 if (   pGuestParm->enmType == VMMDevHGCMParmType_LinAddr_In
                     || pGuestParm->enmType == VMMDevHGCMParmType_LinAddr_Out
                     || pGuestParm->enmType == VMMDevHGCMParmType_LinAddr
-                    || pGuestParm->enmType == VMMDevHGCMParmType_PageList)
+                    || pGuestParm->enmType == VMMDevHGCMParmType_PageList
+                    || pGuestParm->enmType == VMMDevHGCMParmType_ContiguousPageList)
                     if (pGuestParm->u.ptr.paPages != &pGuestParm->u.ptr.GCPhysSinglePage)
                         RTMemFree(pGuestParm->u.ptr.paPages);
             }
@@ -666,6 +667,7 @@ static int vmmdevHGCMInitHostParameters(PVMMDEV pThis, PVBOXHGCMCMD pCmd, uint8_
             case VMMDevHGCMParmType_LinAddr:
             case VMMDevHGCMParmType_PageList:
             case VMMDevHGCMParmType_Embedded:
+            case VMMDevHGCMParmType_ContiguousPageList:
             {
                 const uint32_t cbData = pGuestParm->u.ptr.cbData;
 
@@ -683,9 +685,20 @@ static int vmmdevHGCMInitHostParameters(PVMMDEV pThis, PVBOXHGCMCMD pCmd, uint8_
                     {
                         if (pGuestParm->enmType != VMMDevHGCMParmType_Embedded)
                         {
-                            int rc = vmmdevHGCMGuestBufferRead(pThis->pDevInsR3, pv, cbData, &pGuestParm->u.ptr);
-                            ASSERT_GUEST_RETURN(RT_SUCCESS(rc), rc);
-                            RT_UNTRUSTED_NONVOLATILE_COPY_FENCE();
+                            if (pGuestParm->enmType != VMMDevHGCMParmType_ContiguousPageList)
+                            {
+                                int rc = vmmdevHGCMGuestBufferRead(pThis->pDevInsR3, pv, cbData, &pGuestParm->u.ptr);
+                                ASSERT_GUEST_RETURN(RT_SUCCESS(rc), rc);
+                                RT_UNTRUSTED_NONVOLATILE_COPY_FENCE();
+                            }
+                            else
+                            {
+                                int rc = PDMDevHlpPhysRead(pThis->pDevInsR3,
+                                                           pGuestParm->u.ptr.paPages[0] | pGuestParm->u.ptr.offFirstPage,
+                                                           pv, cbData);
+                                ASSERT_GUEST_RETURN(RT_SUCCESS(rc), rc);
+                                RT_UNTRUSTED_NONVOLATILE_COPY_FENCE();
+                            }
                         }
                         else
                         {
@@ -897,6 +910,7 @@ static int vmmdevHGCMCallFetchGuestParms(PVMMDEV pThis, PVBOXHGCMCMD pCmd,
             }
 
             case VMMDevHGCMParmType_PageList:
+            case VMMDevHGCMParmType_ContiguousPageList:
             {
 #ifdef VBOX_WITH_64_BITS_GUESTS
                 AssertCompileMembersSameSizeAndOffset(HGCMFunctionParameter64, u.PageList.size,   HGCMFunctionParameter32, u.PageList.size);
@@ -928,6 +942,10 @@ static int vmmdevHGCMCallFetchGuestParms(PVMMDEV pThis, PVBOXHGCMCMD pCmd,
                 ASSERT_GUEST_RETURN(   pPageListInfo->cPages > 0
                                     && pPageListInfo->cPages <= cMaxPages,
                                     VERR_INVALID_PARAMETER);
+
+                /* Contiguous page lists only ever have a single page. */
+                ASSERT_GUEST_RETURN(   pPageListInfo->cPages == 1
+                                    || pGuestParm->enmType == VMMDevHGCMParmType_PageList, VERR_INVALID_PARAMETER);
 
                 /* Other fields of PageListInfo. */
                 ASSERT_GUEST_RETURN(   (pPageListInfo->flags & ~VBOX_HGCM_F_PARM_DIRECTION_BOTH) == 0
@@ -1197,8 +1215,6 @@ static int vmmdevHGCMCompleteCallRequest(PVMMDEV pThis, PVBOXHGCMCMD pCmd, VMMDe
 {
     AssertReturn(pCmd->enmCmdType == VBOXHGCMCMDTYPE_CALL, VERR_INTERNAL_ERROR);
 
-    int rc = VINF_SUCCESS;
-
     /*
      * Go over parameter descriptions saved in pCmd.
      */
@@ -1229,11 +1245,13 @@ static int vmmdevHGCMCompleteCallRequest(PVMMDEV pThis, PVBOXHGCMCMD pCmd, VMMDe
 /** @todo Update the return buffer size.  */
                 const VBOXHGCMPARMPTR * const pPtr = &pGuestParm->u.ptr;
                 if (   pPtr->cbData > 0
-                    && pPtr->fu32Direction & VBOX_HGCM_F_PARM_DIRECTION_FROM_HOST)
+                    && (pPtr->fu32Direction & VBOX_HGCM_F_PARM_DIRECTION_FROM_HOST))
                 {
                     const void *pvSrc = pHostParm->u.pointer.addr;
                     uint32_t cbSrc = pHostParm->u.pointer.size;
-                    rc = vmmdevHGCMGuestBufferWrite(pThis->pDevInsR3, pPtr, pvSrc, cbSrc);
+                    int rc = vmmdevHGCMGuestBufferWrite(pThis->pDevInsR3, pPtr, pvSrc, cbSrc);
+                    if (RT_FAILURE(rc))
+                        break;
                 }
                 break;
             }
@@ -1253,15 +1271,29 @@ static int vmmdevHGCMCompleteCallRequest(PVMMDEV pThis, PVBOXHGCMCMD pCmd, VMMDe
                 break;
             }
 
+            case VMMDevHGCMParmType_ContiguousPageList:
+            {
+/** @todo Update the return buffer size.  */
+                const VBOXHGCMPARMPTR * const pPtr = &pGuestParm->u.ptr;
+                if (   pPtr->cbData > 0
+                    && (pPtr->fu32Direction & VBOX_HGCM_F_PARM_DIRECTION_FROM_HOST))
+                {
+                    const void *pvSrc    = pHostParm->u.pointer.addr;
+                    uint32_t    cbSrc    = pHostParm->u.pointer.size;
+                    uint32_t    cbToCopy = RT_MIN(cbSrc, pPtr->cbData);
+                    int rc = PDMDevHlpPhysWrite(pThis->pDevInsR3, pGuestParm->u.ptr.paPages[0], pvSrc, cbToCopy);
+                    if (RT_FAILURE(rc))
+                        break;
+                }
+                break;
+            }
+
             default:
                 break;
         }
-
-        if (RT_FAILURE(rc))
-            break;
     }
 
-    return rc;
+    return VINF_SUCCESS;
 }
 
 /** Update HGCM request in the guest memory and mark it as completed.
@@ -1641,7 +1673,8 @@ int vmmdevHGCMSaveState(PVMMDEV pThis, PSSMHANDLE pSSM)
                              || pGuestParm->enmType == VMMDevHGCMParmType_LinAddr_Out
                              || pGuestParm->enmType == VMMDevHGCMParmType_LinAddr
                              || pGuestParm->enmType == VMMDevHGCMParmType_PageList
-                             || pGuestParm->enmType == VMMDevHGCMParmType_Embedded)
+                             || pGuestParm->enmType == VMMDevHGCMParmType_Embedded
+                             || pGuestParm->enmType == VMMDevHGCMParmType_ContiguousPageList)
                     {
                         const VBOXHGCMPARMPTR * const pPtr = &pGuestParm->u.ptr;
                         SSMR3PutU32     (pSSM, pPtr->cbData);
@@ -1775,7 +1808,8 @@ int vmmdevHGCMLoadState(PVMMDEV pThis, PSSMHANDLE pSSM, uint32_t uVersion)
                              || pGuestParm->enmType == VMMDevHGCMParmType_LinAddr_Out
                              || pGuestParm->enmType == VMMDevHGCMParmType_LinAddr
                              || pGuestParm->enmType == VMMDevHGCMParmType_PageList
-                             || pGuestParm->enmType == VMMDevHGCMParmType_Embedded)
+                             || pGuestParm->enmType == VMMDevHGCMParmType_Embedded
+                             || pGuestParm->enmType == VMMDevHGCMParmType_ContiguousPageList)
                     {
                         VBOXHGCMPARMPTR * const pPtr = &pGuestParm->u.ptr;
                         SSMR3GetU32     (pSSM, &pPtr->cbData);
@@ -1788,7 +1822,8 @@ int vmmdevHGCMLoadState(PVMMDEV pThis, PSSMHANDLE pSSM, uint32_t uVersion)
                                 pPtr->paPages = &pPtr->GCPhysSinglePage;
                             else
                             {
-                                AssertReturn(pGuestParm->enmType != VMMDevHGCMParmType_Embedded, VERR_INTERNAL_ERROR_3);
+                                AssertReturn(   pGuestParm->enmType != VMMDevHGCMParmType_Embedded
+                                             && pGuestParm->enmType != VMMDevHGCMParmType_ContiguousPageList, VERR_INTERNAL_ERROR_3);
                                 pPtr->paPages = (RTGCPHYS *)RTMemAlloc(pPtr->cPages * sizeof(RTGCPHYS));
                                 AssertStmt(pPtr->paPages, rc = VERR_NO_MEMORY);
                             }

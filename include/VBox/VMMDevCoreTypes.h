@@ -274,6 +274,7 @@ typedef enum
     VMMDevHGCMParmType_LinAddr_Locked_Out = 9,  /**< Locked Out (write; host->guest) */
     VMMDevHGCMParmType_PageList           = 10, /**< Physical addresses of locked pages for a buffer. */
     VMMDevHGCMParmType_Embedded           = 11, /**< Small buffer embedded in request. */
+    VMMDevHGCMParmType_ContiguousPageList = 12, /**< Like PageList but with physically contiguous memory, so only one page entry. */
     VMMDevHGCMParmType_SizeHack           = 0x7fffffff
 } HGCMFunctionParameterType;
 AssertCompileSize(HGCMFunctionParameterType, 4);
