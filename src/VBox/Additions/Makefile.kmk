@@ -97,14 +97,11 @@ ifndef VBOX_ONLY_VALIDATIONKIT
   VBoxGuest-inf_INST = $(INST_ADDITIONS)
   VBoxGuest-inf_MODE = a+r,u+w
   VBoxGuest-inf_SOURCES = \
-	$(PATH_TARGET)/VBoxGuestCat.dir/VBoxGuest.inf
-  ifdef VBOX_SIGN_ADDITIONS
-  VBoxGuest-inf_SOURCES += \
+	$(PATH_TARGET)/VBoxGuestCat.dir/VBoxGuest.inf \
 	$(PATH_TARGET)/VBoxGuestCat.dir/VBoxGuest.cat \
 	$(PATH_TARGET)/VBoxGuestCat.dir/VBoxGuest.sys \
 	$(PATH_TARGET)/VBoxGuestCat.dir/VBoxControl.exe \
 	$(PATH_TARGET)/VBoxGuestCat.dir/VBoxTray.exe
-  endif # signing
   VBoxGuest-inf_CLEAN = $(VBoxGuest-inf_SOURCES)
   VBoxGuest-inf_BLDDIRS = \
 	$(PATH_TARGET)/VBoxGuestCat.dir
