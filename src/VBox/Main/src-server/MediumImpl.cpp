@@ -4919,6 +4919,8 @@ HRESULT Medium::i_createMediumLockList(bool fFailIfInaccessible,
  *                          operation completion.
  * @param aWait             @c true if this method should block instead of
  *                          creating an asynchronous thread.
+ * @param aNotify           Notify about mediums which metadatа are changed
+ *                          during execution of the function.
  *
  * @note Locks this object and @a aTarget for writing.
  */
@@ -5183,6 +5185,8 @@ HRESULT Medium::i_close(AutoCaller &autoCaller)
  *                      completion.
  * @param aWait         @c true if this method should block instead of creating
  *                      an asynchronous thread.
+ * @param aNotify       Notify about mediums which metadatа are changed
+ *                      during execution of the function.
  *
  * @note Locks mVirtualBox and this object for writing. Locks medium tree for
  *       writing.
@@ -6004,6 +6008,8 @@ HRESULT Medium::i_prepareMergeTo(const ComObjPtr<Medium> &pTarget,
  *                      completion.
  * @param aWait         @c true if this method should block instead of creating
  *                      an asynchronous thread.
+ * @param aNotify       Notify about mediums which metadatа are changed
+ *                      during execution of the function.
  *
  * @note Locks the tree lock for writing. Locks the media from the chain
  *       for writing.
@@ -6185,6 +6191,8 @@ void Medium::i_cancelMergeTo(MediumLockList *aChildrenToReparent,
  *                      completion.
  * @param aWait         @c true if this method should block instead of creating
  *                      an asynchronous thread.
+ * @param aNotify       Notify about mediums which metadatа are changed
+ *                      during execution of the function.
  *
  * @note Locks the media from the chain for writing.
  */
@@ -6536,6 +6544,8 @@ HRESULT Medium::i_exportFile(const char *aFilename,
  * @param aVfsIosSrc            Handle to the source I/O stream.
  * @param aParent               Parent medium. May be NULL.
  * @param aProgress             Progress object to use.
+ * @param aNotify               Notify about mediums which metadatа are changed
+ *                              during execution of the function.
  * @return
  * @note The destination format is defined by the Medium instance.
  *
@@ -6645,6 +6655,8 @@ HRESULT Medium::i_importFile(const char *aFilename,
  * @param idxDstImageSame    The last image in the destination chain which has the
  *                           same content as the given image in the source chain.
  *                           Use UINT32_MAX to disable this optimization.
+ * @param aNotify            Notify about mediums which metadatа are changed
+ *                           during execution of the function.
  * @return
  */
 HRESULT Medium::i_cloneToEx(const ComObjPtr<Medium> &aTarget, MediumVariant_T aVariant,
