@@ -332,50 +332,50 @@ DECLINLINE(const char *) hmSvmGetSpecialExitReasonDesc(uint16_t uExit)
 /** @def HMVMX_REPORT_FEAT
  * Reports VT-x feature to the release log.
  *
- * @param   allowed1        Mask of allowed feature bits.
- * @param   disallowed0     Mask of disallowed feature bits.
- * @param   strdesc         The description string to report.
- * @param   featflag        Mask of the feature to report.
+ * @param   a_uAllowed1       Mask of allowed-1 feature bits.
+ * @param   a_uAllowed0       Mask of allowed-0 feature bits.
+ * @param   a_StrDesc         The description string to report.
+ * @param   a_Featflag        Mask of the feature to report.
  */
-#define HMVMX_REPORT_FEAT(allowed1, disallowed0, strdesc, featflag) \
+#define HMVMX_REPORT_FEAT(a_uAllowed1, a_uAllowed0, a_StrDesc, a_Featflag) \
     do { \
-        if ((allowed1) & (featflag)) \
+        if ((a_uAllowed1) & (a_Featflag)) \
         { \
-            if ((disallowed0) & (featflag)) \
-                LogRel(("HM:   " strdesc " (must be set)\n")); \
+            if ((a_uAllowed0) & (a_Featflag)) \
+                LogRel(("HM:   " a_StrDesc " (must be set)\n")); \
             else \
-                LogRel(("HM:   " strdesc "\n")); \
+                LogRel(("HM:   " a_StrDesc "\n")); \
         } \
         else \
-            LogRel(("HM:   " strdesc " (must be cleared)\n")); \
+            LogRel(("HM:   " a_StrDesc " (must be cleared)\n")); \
     } while (0)
 
 /** @def HMVMX_REPORT_ALLOWED_FEAT
  * Reports an allowed VT-x feature to the release log.
  *
- * @param   allowed1        Mask of allowed feature bits.
- * @param   strdesc         The description string to report.
- * @param   featflag        Mask of the feature to report.
+ * @param   a_uAllowed1     Mask of allowed-1 feature bits.
+ * @param   a_StrDesc       The description string to report.
+ * @param   a_FeatFlag      Mask of the feature to report.
  */
-#define HMVMX_REPORT_ALLOWED_FEAT(allowed1, strdesc, featflag) \
+#define HMVMX_REPORT_ALLOWED_FEAT(a_uAllowed1, a_StrDesc, a_FeatFlag) \
     do { \
-        if ((allowed1) & (featflag)) \
-            LogRel(("HM:   " strdesc "\n")); \
+        if ((a_uAllowed1) & (a_FeatFlag)) \
+            LogRel(("HM:   " a_StrDesc "\n")); \
         else \
-            LogRel(("HM:   " strdesc " not supported\n")); \
+            LogRel(("HM:   " a_StrDesc " not supported\n")); \
     } while (0)
 
 /** @def HMVMX_REPORT_MSR_CAP
  * Reports MSR feature capability.
  *
- * @param   msrcaps         Mask of MSR feature bits.
- * @param   strdesc         The description string to report.
- * @param   cap             Mask of the feature to report.
+ * @param   a_MsrCaps           Mask of MSR feature bits.
+ * @param   a_StrDesc           The description string to report.
+ * @param   a_fCap              Mask of the feature to report.
  */
-#define HMVMX_REPORT_MSR_CAP(msrcaps, strdesc, cap) \
+#define HMVMX_REPORT_MSR_CAP(a_MsrCaps, a_StrDesc, a_fCap) \
     do { \
-        if ((msrcaps) & (cap)) \
-            LogRel(("HM:   " strdesc "\n")); \
+        if ((a_MsrCaps) & (a_fCap)) \
+            LogRel(("HM:   " a_StrDesc "\n")); \
     } while (0)
 
 /** @def HMVMX_LOGREL_FEAT
@@ -1442,14 +1442,14 @@ static void hmR3VmxReportBasicMsr(uint64_t uBasicMsr)
  */
 static void hmR3VmxReportPinBasedCtlsMsr(PCVMXCTLSMSR pVmxMsr)
 {
-    uint64_t const val = pVmxMsr->n.allowed1;
-    uint64_t const zap = pVmxMsr->n.disallowed0;
+    uint64_t const fAllowed1 = pVmxMsr->n.allowed1;
+    uint64_t const fAllowed0 = pVmxMsr->n.allowed0;
     LogRel(("HM: MSR_IA32_VMX_PINBASED_CTLS        = %#RX64\n", pVmxMsr->u));
-    HMVMX_REPORT_FEAT(val, zap, "EXT_INT_EXIT",  VMX_PIN_CTLS_EXT_INT_EXIT);
-    HMVMX_REPORT_FEAT(val, zap, "NMI_EXIT",      VMX_PIN_CTLS_NMI_EXIT);
-    HMVMX_REPORT_FEAT(val, zap, "VIRTUAL_NMI",   VMX_PIN_CTLS_VIRT_NMI);
-    HMVMX_REPORT_FEAT(val, zap, "PREEMPT_TIMER", VMX_PIN_CTLS_PREEMPT_TIMER);
-    HMVMX_REPORT_FEAT(val, zap, "POSTED_INT",    VMX_PIN_CTLS_POSTED_INT);
+    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "EXT_INT_EXIT",  VMX_PIN_CTLS_EXT_INT_EXIT);
+    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "NMI_EXIT",      VMX_PIN_CTLS_NMI_EXIT);
+    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "VIRTUAL_NMI",   VMX_PIN_CTLS_VIRT_NMI);
+    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "PREEMPT_TIMER", VMX_PIN_CTLS_PREEMPT_TIMER);
+    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "POSTED_INT",    VMX_PIN_CTLS_POSTED_INT);
 }
 
 
@@ -1460,30 +1460,30 @@ static void hmR3VmxReportPinBasedCtlsMsr(PCVMXCTLSMSR pVmxMsr)
  */
 static void hmR3VmxReportProcBasedCtlsMsr(PCVMXCTLSMSR pVmxMsr)
 {
-    uint64_t const val = pVmxMsr->n.allowed1;
-    uint64_t const zap = pVmxMsr->n.disallowed0;
+    uint64_t const fAllowed1 = pVmxMsr->n.allowed1;
+    uint64_t const fAllowed0 = pVmxMsr->n.allowed0;
     LogRel(("HM: MSR_IA32_VMX_PROCBASED_CTLS       = %#RX64\n", pVmxMsr->u));
-    HMVMX_REPORT_FEAT(val, zap, "INT_WINDOW_EXIT",         VMX_PROC_CTLS_INT_WINDOW_EXIT);
-    HMVMX_REPORT_FEAT(val, zap, "USE_TSC_OFFSETTING",      VMX_PROC_CTLS_USE_TSC_OFFSETTING);
-    HMVMX_REPORT_FEAT(val, zap, "HLT_EXIT",                VMX_PROC_CTLS_HLT_EXIT);
-    HMVMX_REPORT_FEAT(val, zap, "INVLPG_EXIT",             VMX_PROC_CTLS_INVLPG_EXIT);
-    HMVMX_REPORT_FEAT(val, zap, "MWAIT_EXIT",              VMX_PROC_CTLS_MWAIT_EXIT);
-    HMVMX_REPORT_FEAT(val, zap, "RDPMC_EXIT",              VMX_PROC_CTLS_RDPMC_EXIT);
-    HMVMX_REPORT_FEAT(val, zap, "RDTSC_EXIT",              VMX_PROC_CTLS_RDTSC_EXIT);
-    HMVMX_REPORT_FEAT(val, zap, "CR3_LOAD_EXIT",           VMX_PROC_CTLS_CR3_LOAD_EXIT);
-    HMVMX_REPORT_FEAT(val, zap, "CR3_STORE_EXIT",          VMX_PROC_CTLS_CR3_STORE_EXIT);
-    HMVMX_REPORT_FEAT(val, zap, "CR8_LOAD_EXIT",           VMX_PROC_CTLS_CR8_LOAD_EXIT);
-    HMVMX_REPORT_FEAT(val, zap, "CR8_STORE_EXIT",          VMX_PROC_CTLS_CR8_STORE_EXIT);
-    HMVMX_REPORT_FEAT(val, zap, "USE_TPR_SHADOW",          VMX_PROC_CTLS_USE_TPR_SHADOW);
-    HMVMX_REPORT_FEAT(val, zap, "NMI_WINDOW_EXIT",         VMX_PROC_CTLS_NMI_WINDOW_EXIT);
-    HMVMX_REPORT_FEAT(val, zap, "MOV_DR_EXIT",             VMX_PROC_CTLS_MOV_DR_EXIT);
-    HMVMX_REPORT_FEAT(val, zap, "UNCOND_IO_EXIT",          VMX_PROC_CTLS_UNCOND_IO_EXIT);
-    HMVMX_REPORT_FEAT(val, zap, "USE_IO_BITMAPS",          VMX_PROC_CTLS_USE_IO_BITMAPS);
-    HMVMX_REPORT_FEAT(val, zap, "MONITOR_TRAP_FLAG",       VMX_PROC_CTLS_MONITOR_TRAP_FLAG);
-    HMVMX_REPORT_FEAT(val, zap, "USE_MSR_BITMAPS",         VMX_PROC_CTLS_USE_MSR_BITMAPS);
-    HMVMX_REPORT_FEAT(val, zap, "MONITOR_EXIT",            VMX_PROC_CTLS_MONITOR_EXIT);
-    HMVMX_REPORT_FEAT(val, zap, "PAUSE_EXIT",              VMX_PROC_CTLS_PAUSE_EXIT);
-    HMVMX_REPORT_FEAT(val, zap, "USE_SECONDARY_CTLS",      VMX_PROC_CTLS_USE_SECONDARY_CTLS);
+    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "INT_WINDOW_EXIT",         VMX_PROC_CTLS_INT_WINDOW_EXIT);
+    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "USE_TSC_OFFSETTING",      VMX_PROC_CTLS_USE_TSC_OFFSETTING);
+    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "HLT_EXIT",                VMX_PROC_CTLS_HLT_EXIT);
+    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "INVLPG_EXIT",             VMX_PROC_CTLS_INVLPG_EXIT);
+    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "MWAIT_EXIT",              VMX_PROC_CTLS_MWAIT_EXIT);
+    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "RDPMC_EXIT",              VMX_PROC_CTLS_RDPMC_EXIT);
+    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "RDTSC_EXIT",              VMX_PROC_CTLS_RDTSC_EXIT);
+    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "CR3_LOAD_EXIT",           VMX_PROC_CTLS_CR3_LOAD_EXIT);
+    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "CR3_STORE_EXIT",          VMX_PROC_CTLS_CR3_STORE_EXIT);
+    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "CR8_LOAD_EXIT",           VMX_PROC_CTLS_CR8_LOAD_EXIT);
+    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "CR8_STORE_EXIT",          VMX_PROC_CTLS_CR8_STORE_EXIT);
+    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "USE_TPR_SHADOW",          VMX_PROC_CTLS_USE_TPR_SHADOW);
+    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "NMI_WINDOW_EXIT",         VMX_PROC_CTLS_NMI_WINDOW_EXIT);
+    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "MOV_DR_EXIT",             VMX_PROC_CTLS_MOV_DR_EXIT);
+    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "UNCOND_IO_EXIT",          VMX_PROC_CTLS_UNCOND_IO_EXIT);
+    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "USE_IO_BITMAPS",          VMX_PROC_CTLS_USE_IO_BITMAPS);
+    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "MONITOR_TRAP_FLAG",       VMX_PROC_CTLS_MONITOR_TRAP_FLAG);
+    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "USE_MSR_BITMAPS",         VMX_PROC_CTLS_USE_MSR_BITMAPS);
+    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "MONITOR_EXIT",            VMX_PROC_CTLS_MONITOR_EXIT);
+    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "PAUSE_EXIT",              VMX_PROC_CTLS_PAUSE_EXIT);
+    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "USE_SECONDARY_CTLS",      VMX_PROC_CTLS_USE_SECONDARY_CTLS);
 }
 
 
@@ -1494,31 +1494,31 @@ static void hmR3VmxReportProcBasedCtlsMsr(PCVMXCTLSMSR pVmxMsr)
  */
 static void hmR3VmxReportProcBasedCtls2Msr(PCVMXCTLSMSR pVmxMsr)
 {
-    uint64_t const val = pVmxMsr->n.allowed1;
-    uint64_t const zap = pVmxMsr->n.disallowed0;
+    uint64_t const fAllowed1 = pVmxMsr->n.allowed1;
+    uint64_t const fAllowed0 = pVmxMsr->n.allowed0;
     LogRel(("HM: MSR_IA32_VMX_PROCBASED_CTLS2      = %#RX64\n", pVmxMsr->u));
-    HMVMX_REPORT_FEAT(val, zap, "VIRT_APIC_ACCESS",      VMX_PROC_CTLS2_VIRT_APIC_ACCESS);
-    HMVMX_REPORT_FEAT(val, zap, "EPT",                   VMX_PROC_CTLS2_EPT);
-    HMVMX_REPORT_FEAT(val, zap, "DESC_TABLE_EXIT",       VMX_PROC_CTLS2_DESC_TABLE_EXIT);
-    HMVMX_REPORT_FEAT(val, zap, "RDTSCP",                VMX_PROC_CTLS2_RDTSCP);
-    HMVMX_REPORT_FEAT(val, zap, "VIRT_X2APIC_MODE",      VMX_PROC_CTLS2_VIRT_X2APIC_MODE);
-    HMVMX_REPORT_FEAT(val, zap, "VPID",                  VMX_PROC_CTLS2_VPID);
-    HMVMX_REPORT_FEAT(val, zap, "WBINVD_EXIT",           VMX_PROC_CTLS2_WBINVD_EXIT);
-    HMVMX_REPORT_FEAT(val, zap, "UNRESTRICTED_GUEST",    VMX_PROC_CTLS2_UNRESTRICTED_GUEST);
-    HMVMX_REPORT_FEAT(val, zap, "APIC_REG_VIRT",         VMX_PROC_CTLS2_APIC_REG_VIRT);
-    HMVMX_REPORT_FEAT(val, zap, "VIRT_INT_DELIVERY",     VMX_PROC_CTLS2_VIRT_INT_DELIVERY);
-    HMVMX_REPORT_FEAT(val, zap, "PAUSE_LOOP_EXIT",       VMX_PROC_CTLS2_PAUSE_LOOP_EXIT);
-    HMVMX_REPORT_FEAT(val, zap, "RDRAND_EXIT",           VMX_PROC_CTLS2_RDRAND_EXIT);
-    HMVMX_REPORT_FEAT(val, zap, "INVPCID",               VMX_PROC_CTLS2_INVPCID);
-    HMVMX_REPORT_FEAT(val, zap, "VMFUNC",                VMX_PROC_CTLS2_VMFUNC);
-    HMVMX_REPORT_FEAT(val, zap, "VMCS_SHADOWING",        VMX_PROC_CTLS2_VMCS_SHADOWING);
-    HMVMX_REPORT_FEAT(val, zap, "ENCLS_EXIT",            VMX_PROC_CTLS2_ENCLS_EXIT);
-    HMVMX_REPORT_FEAT(val, zap, "RDSEED_EXIT",           VMX_PROC_CTLS2_RDSEED_EXIT);
-    HMVMX_REPORT_FEAT(val, zap, "PML",                   VMX_PROC_CTLS2_PML);
-    HMVMX_REPORT_FEAT(val, zap, "EPT_VE",                VMX_PROC_CTLS2_EPT_VE);
-    HMVMX_REPORT_FEAT(val, zap, "CONCEAL_FROM_PT",       VMX_PROC_CTLS2_CONCEAL_FROM_PT);
-    HMVMX_REPORT_FEAT(val, zap, "XSAVES_XRSTORS",        VMX_PROC_CTLS2_XSAVES_XRSTORS);
-    HMVMX_REPORT_FEAT(val, zap, "TSC_SCALING",           VMX_PROC_CTLS2_TSC_SCALING);
+    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "VIRT_APIC_ACCESS",      VMX_PROC_CTLS2_VIRT_APIC_ACCESS);
+    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "EPT",                   VMX_PROC_CTLS2_EPT);
+    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "DESC_TABLE_EXIT",       VMX_PROC_CTLS2_DESC_TABLE_EXIT);
+    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "RDTSCP",                VMX_PROC_CTLS2_RDTSCP);
+    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "VIRT_X2APIC_MODE",      VMX_PROC_CTLS2_VIRT_X2APIC_MODE);
+    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "VPID",                  VMX_PROC_CTLS2_VPID);
+    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "WBINVD_EXIT",           VMX_PROC_CTLS2_WBINVD_EXIT);
+    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "UNRESTRICTED_GUEST",    VMX_PROC_CTLS2_UNRESTRICTED_GUEST);
+    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "APIC_REG_VIRT",         VMX_PROC_CTLS2_APIC_REG_VIRT);
+    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "VIRT_INT_DELIVERY",     VMX_PROC_CTLS2_VIRT_INT_DELIVERY);
+    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "PAUSE_LOOP_EXIT",       VMX_PROC_CTLS2_PAUSE_LOOP_EXIT);
+    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "RDRAND_EXIT",           VMX_PROC_CTLS2_RDRAND_EXIT);
+    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "INVPCID",               VMX_PROC_CTLS2_INVPCID);
+    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "VMFUNC",                VMX_PROC_CTLS2_VMFUNC);
+    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "VMCS_SHADOWING",        VMX_PROC_CTLS2_VMCS_SHADOWING);
+    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "ENCLS_EXIT",            VMX_PROC_CTLS2_ENCLS_EXIT);
+    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "RDSEED_EXIT",           VMX_PROC_CTLS2_RDSEED_EXIT);
+    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "PML",                   VMX_PROC_CTLS2_PML);
+    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "EPT_VE",                VMX_PROC_CTLS2_EPT_VE);
+    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "CONCEAL_FROM_PT",       VMX_PROC_CTLS2_CONCEAL_FROM_PT);
+    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "XSAVES_XRSTORS",        VMX_PROC_CTLS2_XSAVES_XRSTORS);
+    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "TSC_SCALING",           VMX_PROC_CTLS2_TSC_SCALING);
 }
 
 
@@ -1529,16 +1529,16 @@ static void hmR3VmxReportProcBasedCtls2Msr(PCVMXCTLSMSR pVmxMsr)
  */
 static void hmR3VmxReportEntryCtlsMsr(PCVMXCTLSMSR pVmxMsr)
 {
-    uint64_t const val = pVmxMsr->n.allowed1;
-    uint64_t const zap = pVmxMsr->n.disallowed0;
+    uint64_t const fAllowed1 = pVmxMsr->n.allowed1;
+    uint64_t const fAllowed0 = pVmxMsr->n.allowed0;
     LogRel(("HM: MSR_IA32_VMX_ENTRY_CTLS           = %#RX64\n", pVmxMsr->u));
-    HMVMX_REPORT_FEAT(val, zap, "LOAD_DEBUG",          VMX_ENTRY_CTLS_LOAD_DEBUG);
-    HMVMX_REPORT_FEAT(val, zap, "IA32E_MODE_GUEST",    VMX_ENTRY_CTLS_IA32E_MODE_GUEST);
-    HMVMX_REPORT_FEAT(val, zap, "ENTRY_TO_SMM",        VMX_ENTRY_CTLS_ENTRY_TO_SMM);
-    HMVMX_REPORT_FEAT(val, zap, "DEACTIVATE_DUAL_MON", VMX_ENTRY_CTLS_DEACTIVATE_DUAL_MON);
-    HMVMX_REPORT_FEAT(val, zap, "LOAD_PERF_MSR",       VMX_ENTRY_CTLS_LOAD_PERF_MSR);
-    HMVMX_REPORT_FEAT(val, zap, "LOAD_PAT_MSR",        VMX_ENTRY_CTLS_LOAD_PAT_MSR);
-    HMVMX_REPORT_FEAT(val, zap, "LOAD_EFER_MSR",       VMX_ENTRY_CTLS_LOAD_EFER_MSR);
+    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "LOAD_DEBUG",          VMX_ENTRY_CTLS_LOAD_DEBUG);
+    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "IA32E_MODE_GUEST",    VMX_ENTRY_CTLS_IA32E_MODE_GUEST);
+    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "ENTRY_TO_SMM",        VMX_ENTRY_CTLS_ENTRY_TO_SMM);
+    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "DEACTIVATE_DUAL_MON", VMX_ENTRY_CTLS_DEACTIVATE_DUAL_MON);
+    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "LOAD_PERF_MSR",       VMX_ENTRY_CTLS_LOAD_PERF_MSR);
+    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "LOAD_PAT_MSR",        VMX_ENTRY_CTLS_LOAD_PAT_MSR);
+    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "LOAD_EFER_MSR",       VMX_ENTRY_CTLS_LOAD_EFER_MSR);
 }
 
 
@@ -1549,18 +1549,18 @@ static void hmR3VmxReportEntryCtlsMsr(PCVMXCTLSMSR pVmxMsr)
  */
 static void hmR3VmxReportExitCtlsMsr(PCVMXCTLSMSR pVmxMsr)
 {
-    uint64_t const val = pVmxMsr->n.allowed1;
-    uint64_t const zap = pVmxMsr->n.disallowed0;
+    uint64_t const fAllowed1 = pVmxMsr->n.allowed1;
+    uint64_t const fAllowed0 = pVmxMsr->n.allowed0;
     LogRel(("HM: MSR_IA32_VMX_EXIT_CTLS            = %#RX64\n", pVmxMsr->u));
-    HMVMX_REPORT_FEAT(val, zap, "SAVE_DEBUG",             VMX_EXIT_CTLS_SAVE_DEBUG);
-    HMVMX_REPORT_FEAT(val, zap, "HOST_ADDR_SPACE_SIZE",   VMX_EXIT_CTLS_HOST_ADDR_SPACE_SIZE);
-    HMVMX_REPORT_FEAT(val, zap, "LOAD_PERF_MSR",          VMX_EXIT_CTLS_LOAD_PERF_MSR);
-    HMVMX_REPORT_FEAT(val, zap, "ACK_EXT_INT",            VMX_EXIT_CTLS_ACK_EXT_INT);
-    HMVMX_REPORT_FEAT(val, zap, "SAVE_PAT_MSR",           VMX_EXIT_CTLS_SAVE_PAT_MSR);
-    HMVMX_REPORT_FEAT(val, zap, "LOAD_PAT_MSR",           VMX_EXIT_CTLS_LOAD_PAT_MSR);
-    HMVMX_REPORT_FEAT(val, zap, "SAVE_EFER_MSR",          VMX_EXIT_CTLS_SAVE_EFER_MSR);
-    HMVMX_REPORT_FEAT(val, zap, "LOAD_EFER_MSR",          VMX_EXIT_CTLS_LOAD_EFER_MSR);
-    HMVMX_REPORT_FEAT(val, zap, "SAVE_PREEMPT_TIMER",     VMX_EXIT_CTLS_SAVE_PREEMPT_TIMER);
+    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "SAVE_DEBUG",             VMX_EXIT_CTLS_SAVE_DEBUG);
+    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "HOST_ADDR_SPACE_SIZE",   VMX_EXIT_CTLS_HOST_ADDR_SPACE_SIZE);
+    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "LOAD_PERF_MSR",          VMX_EXIT_CTLS_LOAD_PERF_MSR);
+    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "ACK_EXT_INT",            VMX_EXIT_CTLS_ACK_EXT_INT);
+    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "SAVE_PAT_MSR",           VMX_EXIT_CTLS_SAVE_PAT_MSR);
+    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "LOAD_PAT_MSR",           VMX_EXIT_CTLS_LOAD_PAT_MSR);
+    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "SAVE_EFER_MSR",          VMX_EXIT_CTLS_SAVE_EFER_MSR);
+    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "LOAD_EFER_MSR",          VMX_EXIT_CTLS_LOAD_EFER_MSR);
+    HMVMX_REPORT_FEAT(fAllowed1, fAllowed0, "SAVE_PREEMPT_TIMER",     VMX_EXIT_CTLS_SAVE_PREEMPT_TIMER);
 }
 
 
@@ -3207,8 +3207,8 @@ VMMR3_INT_DECL(void) HMR3CheckError(PVM pVM, int iStatusCode)
 
     if (iStatusCode == VERR_VMX_UNABLE_TO_START_VM)
     {
-        LogRel(("HM: VERR_VMX_UNABLE_TO_START_VM: VM-entry allowed    %#RX32\n", pVM->hm.s.vmx.Msrs.EntryCtls.n.allowed1));
-        LogRel(("HM: VERR_VMX_UNABLE_TO_START_VM: VM-entry disallowed %#RX32\n", pVM->hm.s.vmx.Msrs.EntryCtls.n.disallowed0));
+        LogRel(("HM: VERR_VMX_UNABLE_TO_START_VM: VM-entry allowed-1  %#RX32\n", pVM->hm.s.vmx.Msrs.EntryCtls.n.allowed1));
+        LogRel(("HM: VERR_VMX_UNABLE_TO_START_VM: VM-entry allowed-0  %#RX32\n", pVM->hm.s.vmx.Msrs.EntryCtls.n.allowed0));
     }
     else if (iStatusCode == VERR_VMX_INVALID_VMXON_PTR)
         LogRel(("HM: HCPhysVmxEnableError         = %#RHp\n", pVM->hm.s.vmx.HCPhysVmxEnableError));

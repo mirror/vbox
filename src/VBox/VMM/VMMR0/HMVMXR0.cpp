@@ -2287,7 +2287,7 @@ static int hmR0VmxSetupTaggedTlb(PVM pVM)
 static int hmR0VmxSetupPinCtls(PVMCPU pVCpu)
 {
     PVM pVM = pVCpu->CTX_SUFF(pVM);
-    uint32_t       fVal = pVM->hm.s.vmx.Msrs.PinCtls.n.disallowed0;   /* Bits set here must always be set. */
+    uint32_t       fVal = pVM->hm.s.vmx.Msrs.PinCtls.n.allowed0;      /* Bits set here must always be set. */
     uint32_t const fZap = pVM->hm.s.vmx.Msrs.PinCtls.n.allowed1;      /* Bits cleared here must always be cleared. */
 
     fVal |= VMX_PIN_CTLS_EXT_INT_EXIT                        /* External interrupts cause a VM-exit. */
@@ -2316,7 +2316,7 @@ static int hmR0VmxSetupPinCtls(PVMCPU pVCpu)
     if ((fVal & fZap) != fVal)
     {
         LogRelFunc(("Invalid pin-based VM-execution controls combo! Cpu=%#RX32 fVal=%#RX32 fZap=%#RX32\n",
-                    pVM->hm.s.vmx.Msrs.PinCtls.n.disallowed0, fVal, fZap));
+                    pVM->hm.s.vmx.Msrs.PinCtls.n.allowed0, fVal, fZap));
         pVCpu->hm.s.u32HMError = VMX_UFC_CTRL_PIN_EXEC;
         return VERR_HM_UNSUPPORTED_CPU_FEATURE_COMBO;
     }
@@ -2342,7 +2342,7 @@ static int hmR0VmxSetupPinCtls(PVMCPU pVCpu)
 static int hmR0VmxSetupProcCtls2(PVMCPU pVCpu)
 {
     PVM pVM = pVCpu->CTX_SUFF(pVM);
-    uint32_t       fVal = pVM->hm.s.vmx.Msrs.ProcCtls2.n.disallowed0; /* Bits set here must be set in the VMCS. */
+    uint32_t       fVal = pVM->hm.s.vmx.Msrs.ProcCtls2.n.allowed0;    /* Bits set here must be set in the VMCS. */
     uint32_t const fZap = pVM->hm.s.vmx.Msrs.ProcCtls2.n.allowed1;    /* Bits cleared here must be cleared in the VMCS. */
 
     /* WBINVD causes a VM-exit. */
@@ -2413,7 +2413,7 @@ static int hmR0VmxSetupProcCtls2(PVMCPU pVCpu)
     if ((fVal & fZap) != fVal)
     {
         LogRelFunc(("Invalid secondary processor-based VM-execution controls combo! cpu=%#RX32 fVal=%#RX32 fZap=%#RX32\n",
-                    pVM->hm.s.vmx.Msrs.ProcCtls2.n.disallowed0, fVal, fZap));
+                    pVM->hm.s.vmx.Msrs.ProcCtls2.n.allowed0, fVal, fZap));
         pVCpu->hm.s.u32HMError = VMX_UFC_CTRL_PROC_EXEC2;
         return VERR_HM_UNSUPPORTED_CPU_FEATURE_COMBO;
     }
@@ -2439,7 +2439,7 @@ static int hmR0VmxSetupProcCtls2(PVMCPU pVCpu)
 static int hmR0VmxSetupProcCtls(PVMCPU pVCpu)
 {
     PVM pVM = pVCpu->CTX_SUFF(pVM);
-    uint32_t       fVal = pVM->hm.s.vmx.Msrs.ProcCtls.n.disallowed0;  /* Bits set here must be set in the VMCS. */
+    uint32_t       fVal = pVM->hm.s.vmx.Msrs.ProcCtls.n.allowed0;     /* Bits set here must be set in the VMCS. */
     uint32_t const fZap = pVM->hm.s.vmx.Msrs.ProcCtls.n.allowed1;     /* Bits cleared here must be cleared in the VMCS. */
 
     fVal |= VMX_PROC_CTLS_HLT_EXIT                                    /* HLT causes a VM-exit. */
@@ -2452,7 +2452,7 @@ static int hmR0VmxSetupProcCtls(PVMCPU pVCpu)
 
     /* We toggle VMX_PROC_CTLS_MOV_DR_EXIT later, check if it's not -always- needed to be set or clear. */
     if (   !(pVM->hm.s.vmx.Msrs.ProcCtls.n.allowed1 & VMX_PROC_CTLS_MOV_DR_EXIT)
-        ||  (pVM->hm.s.vmx.Msrs.ProcCtls.n.disallowed0 & VMX_PROC_CTLS_MOV_DR_EXIT))
+        ||  (pVM->hm.s.vmx.Msrs.ProcCtls.n.allowed0 & VMX_PROC_CTLS_MOV_DR_EXIT))
     {
         LogRelFunc(("Unsupported VMX_PROC_CTLS_MOV_DR_EXIT combo!"));
         pVCpu->hm.s.u32HMError = VMX_UFC_CTRL_PROC_MOV_DRX_EXIT;
@@ -2544,7 +2544,7 @@ static int hmR0VmxSetupProcCtls(PVMCPU pVCpu)
     if ((fVal & fZap) != fVal)
     {
         LogRelFunc(("Invalid processor-based VM-execution controls combo! cpu=%#RX32 fVal=%#RX32 fZap=%#RX32\n",
-                    pVM->hm.s.vmx.Msrs.ProcCtls.n.disallowed0, fVal, fZap));
+                    pVM->hm.s.vmx.Msrs.ProcCtls.n.allowed0, fVal, fZap));
         pVCpu->hm.s.u32HMError = VMX_UFC_CTRL_PROC_EXEC;
         return VERR_HM_UNSUPPORTED_CPU_FEATURE_COMBO;
     }
@@ -3226,7 +3226,7 @@ static int hmR0VmxExportGuestEntryCtls(PVMCPU pVCpu)
     if (ASMAtomicUoReadU64(&pVCpu->hm.s.fCtxChanged) & HM_CHANGED_VMX_ENTRY_CTLS)
     {
         PVM pVM = pVCpu->CTX_SUFF(pVM);
-        uint32_t       fVal = pVM->hm.s.vmx.Msrs.EntryCtls.n.disallowed0; /* Bits set here must be set in the VMCS. */
+        uint32_t       fVal = pVM->hm.s.vmx.Msrs.EntryCtls.n.allowed0;    /* Bits set here must be set in the VMCS. */
         uint32_t const fZap = pVM->hm.s.vmx.Msrs.EntryCtls.n.allowed1;    /* Bits cleared here must be cleared in the VMCS. */
 
         /* Load debug controls (DR7 & IA32_DEBUGCTL_MSR). The first VT-x capable CPUs only supports the 1-setting of this bit. */
@@ -3260,8 +3260,8 @@ static int hmR0VmxExportGuestEntryCtls(PVMCPU pVCpu)
 
         if ((fVal & fZap) != fVal)
         {
-            Log4Func(("Invalid VM-entry controls combo! Cpu=%RX32 fVal=%RX32 fZap=%RX32\n",
-                      pVM->hm.s.vmx.Msrs.EntryCtls.n.disallowed0, fVal, fZap));
+            Log4Func(("Invalid VM-entry controls combo! Cpu=%#RX32 fVal=%#RX32 fZap=%#RX32\n",
+                      pVM->hm.s.vmx.Msrs.EntryCtls.n.allowed0, fVal, fZap));
             pVCpu->hm.s.u32HMError = VMX_UFC_CTRL_ENTRY;
             return VERR_HM_UNSUPPORTED_CPU_FEATURE_COMBO;
         }
@@ -3293,7 +3293,7 @@ static int hmR0VmxExportGuestExitCtls(PVMCPU pVCpu)
     if (ASMAtomicUoReadU64(&pVCpu->hm.s.fCtxChanged) & HM_CHANGED_VMX_EXIT_CTLS)
     {
         PVM pVM = pVCpu->CTX_SUFF(pVM);
-        uint32_t       fVal = pVM->hm.s.vmx.Msrs.ExitCtls.n.disallowed0;  /* Bits set here must be set in the VMCS. */
+        uint32_t       fVal = pVM->hm.s.vmx.Msrs.ExitCtls.n.allowed0;     /* Bits set here must be set in the VMCS. */
         uint32_t const fZap = pVM->hm.s.vmx.Msrs.ExitCtls.n.allowed1;     /* Bits cleared here must be cleared in the VMCS. */
 
         /* Save debug controls (DR7 & IA32_DEBUGCTL_MSR). The first VT-x CPUs only supported the 1-setting of this bit. */
@@ -3344,8 +3344,8 @@ static int hmR0VmxExportGuestExitCtls(PVMCPU pVCpu)
 
         if ((fVal & fZap) != fVal)
         {
-            LogRelFunc(("Invalid VM-exit controls combo! cpu=%RX32 fVal=%RX32 fZap=%RX32\n",
-                        pVM->hm.s.vmx.Msrs.ExitCtls.n.disallowed0, fVal, fZap));
+            LogRelFunc(("Invalid VM-exit controls combo! cpu=%#RX32 fVal=%#RX32 fZap=%R#X32\n",
+                        pVM->hm.s.vmx.Msrs.ExitCtls.n.allowed0, fVal, fZap));
             pVCpu->hm.s.u32HMError = VMX_UFC_CTRL_EXIT;
             return VERR_HM_UNSUPPORTED_CPU_FEATURE_COMBO;
         }
@@ -9434,7 +9434,7 @@ static void hmR0VmxPreRunGuestDebugStateUpdate(PVMCPU pVCpu, PVMXRUNDBGSTATE pDb
     if (pDbgState->fCpe2Extra)
         pDbgState->fCpe1Extra   |= VMX_PROC_CTLS_USE_SECONDARY_CTLS;
     pDbgState->fCpe1Extra       &= pVM->hm.s.vmx.Msrs.ProcCtls.n.allowed1;
-    pDbgState->fCpe1Unwanted    &= ~pVM->hm.s.vmx.Msrs.ProcCtls.n.disallowed0;
+    pDbgState->fCpe1Unwanted    &= ~pVM->hm.s.vmx.Msrs.ProcCtls.n.allowed0;
     if (pVCpu->hm.s.fDebugWantRdTscExit != RT_BOOL(pDbgState->fCpe1Extra & VMX_PROC_CTLS_RDTSC_EXIT))
     {
         pVCpu->hm.s.fDebugWantRdTscExit ^= true;

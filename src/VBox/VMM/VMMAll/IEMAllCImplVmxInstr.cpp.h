@@ -6226,7 +6226,7 @@ IEM_STATIC int iemVmxVmentryCheckEntryCtls(PVMCPU pVCpu, const char *pszInstr)
     /* VM-entry controls. */
     VMXCTLSMSR EntryCtls;
     EntryCtls.u = CPUMGetGuestIa32VmxEntryCtls(pVCpu);
-    if (~pVmcs->u32EntryCtls & EntryCtls.n.disallowed0)
+    if (~pVmcs->u32EntryCtls & EntryCtls.n.allowed0)
         IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_EntryCtlsDisallowed0);
 
     if (pVmcs->u32EntryCtls & ~EntryCtls.n.allowed1)
@@ -6329,7 +6329,7 @@ IEM_STATIC int iemVmxVmentryCheckExitCtls(PVMCPU pVCpu, const char *pszInstr)
     /* VM-exit controls. */
     VMXCTLSMSR ExitCtls;
     ExitCtls.u = CPUMGetGuestIa32VmxExitCtls(pVCpu);
-    if (~pVmcs->u32ExitCtls & ExitCtls.n.disallowed0)
+    if (~pVmcs->u32ExitCtls & ExitCtls.n.allowed0)
         IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_ExitCtlsDisallowed0);
 
     if (pVmcs->u32ExitCtls & ~ExitCtls.n.allowed1)
@@ -6384,7 +6384,7 @@ IEM_STATIC int iemVmxVmentryCheckExecCtls(PVMCPU pVCpu, const char *pszInstr)
     {
         VMXCTLSMSR PinCtls;
         PinCtls.u = CPUMGetGuestIa32VmxPinbasedCtls(pVCpu);
-        if (~pVmcs->u32PinCtls & PinCtls.n.disallowed0)
+        if (~pVmcs->u32PinCtls & PinCtls.n.allowed0)
             IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_PinCtlsDisallowed0);
 
         if (pVmcs->u32PinCtls & ~PinCtls.n.allowed1)
@@ -6395,7 +6395,7 @@ IEM_STATIC int iemVmxVmentryCheckExecCtls(PVMCPU pVCpu, const char *pszInstr)
     {
         VMXCTLSMSR ProcCtls;
         ProcCtls.u = CPUMGetGuestIa32VmxProcbasedCtls(pVCpu);
-        if (~pVmcs->u32ProcCtls & ProcCtls.n.disallowed0)
+        if (~pVmcs->u32ProcCtls & ProcCtls.n.allowed0)
             IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_ProcCtlsDisallowed0);
 
         if (pVmcs->u32ProcCtls & ~ProcCtls.n.allowed1)
@@ -6407,7 +6407,7 @@ IEM_STATIC int iemVmxVmentryCheckExecCtls(PVMCPU pVCpu, const char *pszInstr)
     {
         VMXCTLSMSR ProcCtls2;
         ProcCtls2.u = CPUMGetGuestIa32VmxProcbasedCtls2(pVCpu);
-        if (~pVmcs->u32ProcCtls2 & ProcCtls2.n.disallowed0)
+        if (~pVmcs->u32ProcCtls2 & ProcCtls2.n.allowed0)
             IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_ProcCtls2Disallowed0);
 
         if (pVmcs->u32ProcCtls2 & ~ProcCtls2.n.allowed1)
