@@ -70,11 +70,11 @@ bool UIMediumItem::move()
 {
     /* Open file-save dialog to choose location for current medium: */
     const QString strFileName = QIFileDialog::getSaveFileName(location(),
-                                                              QApplication::translate("UIMediumManager", "Current extension (*.%1)")
-                                                              .arg(QFileInfo(location()).suffix()),
+                                                              tr("Current extension (*.%1)")
+                                                                 .arg(QFileInfo(location()).suffix()),
                                                               treeWidget(),
-                                                              QApplication::translate("UIMediumManager", "Choose the location of this medium"),
-                                                              0, true, true);
+                                                              tr("Choose the location of this medium"),
+                                                                 0, true, true);
     /* Negative if nothing changed: */
     if (strFileName.isNull())
         return false;
@@ -100,7 +100,7 @@ bool UIMediumItem::move()
         else
         {
             /* Show move storage progress: */
-            msgCenter().showModalProgressDialog(comProgress, QApplication::translate("UIMediumManager", "Moving medium..."),
+            msgCenter().showModalProgressDialog(comProgress, tr("Moving medium..."),
                                                 ":/progress_media_move_90px.png", treeWidget());
 
             /* Show error message if necessary: */
@@ -181,10 +181,10 @@ bool UIMediumItem::operator<(const QTreeWidgetItem &other) const
 
 QString UIMediumItem::defaultText() const
 {
-    return QApplication::translate("UIMediumManager", "%1, %2: %3, %4: %5", "col.1 text, col.2 name: col.2 text, col.3 name: col.3 text")
-                               .arg(text(0))
-                               .arg(parentTree()->headerItem()->text(1)).arg(text(1))
-                               .arg(parentTree()->headerItem()->text(2)).arg(text(2));
+    return tr("%1, %2: %3, %4: %5", "col.1 text, col.2 name: col.2 text, col.3 name: col.3 text")
+              .arg(text(0))
+              .arg(parentTree()->headerItem()->text(1)).arg(text(1))
+              .arg(parentTree()->headerItem()->text(2)).arg(text(2));
 }
 
 void UIMediumItem::refresh()
@@ -216,19 +216,19 @@ void UIMediumItem::refresh()
     {
         case UIMediumDeviceType_HardDisk:
         {
-            m_details.m_aLabels << QApplication::translate("UIMediumManager", "Format:");
-            m_details.m_aLabels << QApplication::translate("UIMediumManager", "Storage details:");
-            m_details.m_aLabels << QApplication::translate("UIMediumManager", "Attached to:");
-            m_details.m_aLabels << QApplication::translate("UIMediumManager", "Encrypted with key:");
-            m_details.m_aLabels << QApplication::translate("UIMediumManager", "UUID:");
+            m_details.m_aLabels << tr("Format:");
+            m_details.m_aLabels << tr("Storage details:");
+            m_details.m_aLabels << tr("Attached to:");
+            m_details.m_aLabels << tr("Encrypted with key:");
+            m_details.m_aLabels << tr("UUID:");
 
             m_details.m_aFields << hardDiskFormat();
             m_details.m_aFields << details();
             m_details.m_aFields << (usage().isNull() ?
-                                    formatFieldText(QApplication::translate("UIMediumManager", "<i>Not&nbsp;Attached</i>"), false) :
+                                    formatFieldText(tr("<i>Not&nbsp;Attached</i>"), false) :
                                     formatFieldText(usage()));
             m_details.m_aFields << (encryptionPasswordID().isNull() ?
-                                    formatFieldText(QApplication::translate("UIMediumManager", "<i>Not&nbsp;Encrypted</i>"), false) :
+                                    formatFieldText(tr("<i>Not&nbsp;Encrypted</i>"), false) :
                                     formatFieldText(encryptionPasswordID()));
             m_details.m_aFields << id().toString();
 
@@ -237,11 +237,11 @@ void UIMediumItem::refresh()
         case UIMediumDeviceType_DVD:
         case UIMediumDeviceType_Floppy:
         {
-            m_details.m_aLabels << QApplication::translate("UIMediumManager", "Attached to:");
-            m_details.m_aLabels << QApplication::translate("UIMediumManager", "UUID:");
+            m_details.m_aLabels << tr("Attached to:");
+            m_details.m_aLabels << tr("UUID:");
 
             m_details.m_aFields << (usage().isNull() ?
-                                    formatFieldText(QApplication::translate("UIMediumManager", "<i>Not&nbsp;Attached</i>"), false) :
+                                    formatFieldText(tr("<i>Not&nbsp;Attached</i>"), false) :
                                     formatFieldText(usage()));
             m_details.m_aFields << id().toString();
             break;
@@ -289,7 +289,7 @@ QString UIMediumItem::formatFieldText(const QString &strText, bool fCompact /* =
     QString strCompactString = QString("<compact elipsis=\"%1\">").arg(strElipsis);
     QString strInfo = QString("<nobr>%1%2%3</nobr>")
                               .arg(fCompact ? strCompactString : "")
-                              .arg(strText.isEmpty() ? QApplication::translate("UIMediumManager", "--", "no info") : strText)
+                              .arg(strText.isEmpty() ? tr("--", "no info") : strText)
                               .arg(fCompact ? "</compact>" : "");
     return strInfo;
 }
@@ -413,7 +413,7 @@ bool UIMediumItemHD::maybeRemoveStorage()
             return false;
         }
         /* Show delete storage progress: */
-        msgCenter().showModalProgressDialog(progress, QApplication::translate("UIMediumManager", "Removing medium..."),
+        msgCenter().showModalProgressDialog(progress, UIMediumItem::tr("Removing medium..."),
                                             ":/progress_media_delete_90px.png", treeWidget());
         if (!progress.isOk() || progress.GetResultCode() != 0)
         {

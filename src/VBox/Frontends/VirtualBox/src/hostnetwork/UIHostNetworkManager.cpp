@@ -95,7 +95,7 @@ void UIItemHostNetwork::updateFields()
                          QString("%1/%2").arg(m_interface.m_strAddress).arg(maskToCidr(m_interface.m_strMask)));
     setText(Column_IPv6, m_interface.m_strAddress6.isEmpty() || !m_interface.m_fSupportedIPv6 ? QString() :
                          QString("%1/%2").arg(m_interface.m_strAddress6).arg(m_interface.m_strPrefixLength6.toInt()));
-    setText(Column_DHCP, UIHostNetworkManager::tr("Enable", "DHCP Server"));
+    setText(Column_DHCP, tr("Enable", "DHCP Server"));
     setCheckState(Column_DHCP, m_dhcpserver.m_fEnabled ? Qt::Checked : Qt::Unchecked);
 
     /* Compose item tool-tip: */
@@ -105,52 +105,52 @@ void UIItemHostNetwork::updateFields()
     QString strToolTip;
 
     /* Interface information: */
-    strToolTip += strHeader.arg(UIHostNetworkManager::tr("Adapter"))
+    strToolTip += strHeader.arg(tr("Adapter"))
                            .arg(m_interface.m_fDHCPEnabled ?
-                                UIHostNetworkManager::tr("Automatically configured", "interface") :
-                                UIHostNetworkManager::tr("Manually configured", "interface"));
-    strToolTip += strSubHeader.arg(UIHostNetworkManager::tr("IPv4 Address"))
+                                tr("Automatically configured", "interface") :
+                                tr("Manually configured", "interface"));
+    strToolTip += strSubHeader.arg(tr("IPv4 Address"))
                               .arg(m_interface.m_strAddress.isEmpty() ?
-                                   UIHostNetworkManager::tr ("Not set", "address") :
+                                   tr ("Not set", "address") :
                                    m_interface.m_strAddress) +
-                  strSubHeader.arg(UIHostNetworkManager::tr("IPv4 Network Mask"))
+                  strSubHeader.arg(tr("IPv4 Network Mask"))
                               .arg(m_interface.m_strMask.isEmpty() ?
-                                   UIHostNetworkManager::tr ("Not set", "mask") :
+                                   tr ("Not set", "mask") :
                                    m_interface.m_strMask);
     if (m_interface.m_fSupportedIPv6)
     {
-        strToolTip += strSubHeader.arg(UIHostNetworkManager::tr("IPv6 Address"))
+        strToolTip += strSubHeader.arg(tr("IPv6 Address"))
                                   .arg(m_interface.m_strAddress6.isEmpty() ?
-                                       UIHostNetworkManager::tr("Not set", "address") :
+                                       tr("Not set", "address") :
                                        m_interface.m_strAddress6) +
-                      strSubHeader.arg(UIHostNetworkManager::tr("IPv6 Prefix Length"))
+                      strSubHeader.arg(tr("IPv6 Prefix Length"))
                                   .arg(m_interface.m_strPrefixLength6.isEmpty() ?
-                                       UIHostNetworkManager::tr("Not set", "length") :
+                                       tr("Not set", "length") :
                                        m_interface.m_strPrefixLength6);
     }
 
     /* DHCP server information: */
-    strToolTip += strHeader.arg(UIHostNetworkManager::tr("DHCP Server"))
+    strToolTip += strHeader.arg(tr("DHCP Server"))
                            .arg(m_dhcpserver.m_fEnabled ?
-                                UIHostNetworkManager::tr("Enabled", "server") :
-                                UIHostNetworkManager::tr("Disabled", "server"));
+                                tr("Enabled", "server") :
+                                tr("Disabled", "server"));
     if (m_dhcpserver.m_fEnabled)
     {
-        strToolTip += strSubHeader.arg(UIHostNetworkManager::tr("Address"))
+        strToolTip += strSubHeader.arg(tr("Address"))
                                   .arg(m_dhcpserver.m_strAddress.isEmpty() ?
-                                       UIHostNetworkManager::tr("Not set", "address") :
+                                       tr("Not set", "address") :
                                        m_dhcpserver.m_strAddress) +
-                      strSubHeader.arg(UIHostNetworkManager::tr("Network Mask"))
+                      strSubHeader.arg(tr("Network Mask"))
                                   .arg(m_dhcpserver.m_strMask.isEmpty() ?
-                                       UIHostNetworkManager::tr("Not set", "mask") :
+                                       tr("Not set", "mask") :
                                        m_dhcpserver.m_strMask) +
-                      strSubHeader.arg(UIHostNetworkManager::tr("Lower Bound"))
+                      strSubHeader.arg(tr("Lower Bound"))
                                   .arg(m_dhcpserver.m_strLowerAddress.isEmpty() ?
-                                       UIHostNetworkManager::tr("Not set", "bound") :
+                                       tr("Not set", "bound") :
                                        m_dhcpserver.m_strLowerAddress) +
-                      strSubHeader.arg(UIHostNetworkManager::tr("Upper Bound"))
+                      strSubHeader.arg(tr("Upper Bound"))
                                   .arg(m_dhcpserver.m_strUpperAddress.isEmpty() ?
-                                       UIHostNetworkManager::tr("Not set", "bound") :
+                                       tr("Not set", "bound") :
                                        m_dhcpserver.m_strUpperAddress);
     }
 

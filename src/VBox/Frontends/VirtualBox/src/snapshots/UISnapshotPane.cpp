@@ -278,13 +278,13 @@ void UISnapshotItem::recache()
         AssertReturnVoid(m_comMachine.isNotNull());
         m_fCurrentStateModified = m_comMachine.GetCurrentStateModified();
         m_strName = m_fCurrentStateModified
-                  ? UISnapshotPane::tr("Current State (changed)", "Current State (Modified)")
-                  : UISnapshotPane::tr("Current State", "Current State (Unmodified)");
+                  ? tr("Current State (changed)", "Current State (Modified)")
+                  : tr("Current State", "Current State (Unmodified)");
         setText(Column_Name, m_strName);
         m_strDescription = m_fCurrentStateModified
-                         ? UISnapshotPane::tr("The current state differs from the state stored in the current snapshot")
+                         ? tr("The current state differs from the state stored in the current snapshot")
                          : QTreeWidgetItem::parent() != 0
-                         ? UISnapshotPane::tr("The current state is identical to the state stored in the current snapshot")
+                         ? tr("The current state is identical to the state stored in the current snapshot")
                          : QString();
     }
     /* For snapshot item: */
@@ -348,26 +348,26 @@ SnapshotAgeFormat UISnapshotItem::updateAge()
     }
     else if (then.secsTo(now) > 60 * 60 * 24)
     {
-        strAge = UISnapshotPane::tr("%1 (%2 ago)", "date time (how long ago)")
-                 .arg(then.toString(Qt::LocalDate), VBoxGlobal::daysToString(then.secsTo(now) / 60 / 60 / 24));
+        strAge = tr("%1 (%2 ago)", "date time (how long ago)")
+                    .arg(then.toString(Qt::LocalDate), VBoxGlobal::daysToString(then.secsTo(now) / 60 / 60 / 24));
         enmAgeFormat = SnapshotAgeFormat_InDays;
     }
     else if (then.secsTo(now) > 60 * 60)
     {
-        strAge = UISnapshotPane::tr("%1 (%2 ago)", "date time (how long ago)")
-                 .arg(then.toString(Qt::LocalDate), VBoxGlobal::hoursToString(then.secsTo(now) / 60 / 60));
+        strAge = tr("%1 (%2 ago)", "date time (how long ago)")
+                    .arg(then.toString(Qt::LocalDate), VBoxGlobal::hoursToString(then.secsTo(now) / 60 / 60));
         enmAgeFormat = SnapshotAgeFormat_InHours;
     }
     else if (then.secsTo(now) > 60)
     {
-        strAge = UISnapshotPane::tr("%1 (%2 ago)", "date time (how long ago)")
-                 .arg(then.toString(Qt::LocalDate), VBoxGlobal::minutesToString(then.secsTo(now) / 60));
+        strAge = tr("%1 (%2 ago)", "date time (how long ago)")
+                    .arg(then.toString(Qt::LocalDate), VBoxGlobal::minutesToString(then.secsTo(now) / 60));
         enmAgeFormat = SnapshotAgeFormat_InMinutes;
     }
     else
     {
-        strAge = UISnapshotPane::tr("%1 (%2 ago)", "date time (how long ago)")
-                 .arg(then.toString(Qt::LocalDate), VBoxGlobal::secondsToString(then.secsTo(now)));
+        strAge = tr("%1 (%2 ago)", "date time (how long ago)")
+                    .arg(then.toString(Qt::LocalDate), VBoxGlobal::secondsToString(then.secsTo(now)));
         enmAgeFormat = SnapshotAgeFormat_InSeconds;
     }
 
@@ -395,8 +395,8 @@ void UISnapshotItem::recacheToolTip()
     /* For "current state" item: */
     if (m_fCurrentStateItem)
     {
-        strDateTime = UISnapshotPane::tr("%1 since %2", "Current State (time or date + time)")
-                      .arg(gpConverter->toString(m_enmMachineState)).arg(strDateTime);
+        strDateTime = tr("%1 since %2", "Current State (time or date + time)")
+                         .arg(gpConverter->toString(m_enmMachineState)).arg(strDateTime);
     }
     /* For snapshot item: */
     else
@@ -404,16 +404,16 @@ void UISnapshotItem::recacheToolTip()
         /* Gather details: */
         QStringList details;
         if (isCurrentSnapshotItem())
-            details << UISnapshotPane::tr("current", "snapshot");
-        details << (m_fOnline ? UISnapshotPane::tr("online", "snapshot")
-                              : UISnapshotPane::tr("offline", "snapshot"));
+            details << tr("current", "snapshot");
+        details << (m_fOnline ? tr("online", "snapshot")
+                              : tr("offline", "snapshot"));
         strDetails = QString(" (%1)").arg(details.join(", "));
 
         /* Add date/time information: */
         if (fDateTimeToday)
-            strDateTime = UISnapshotPane::tr("Taken at %1", "Snapshot (time)").arg(strDateTime);
+            strDateTime = tr("Taken at %1", "Snapshot (time)").arg(strDateTime);
         else
-            strDateTime = UISnapshotPane::tr("Taken on %1", "Snapshot (date + time)").arg(strDateTime);
+            strDateTime = tr("Taken on %1", "Snapshot (date + time)").arg(strDateTime);
     }
 
     /* Prepare tool-tip: */

@@ -167,8 +167,8 @@ public:
         else
             m_fields << m_strName
                      << m_strPath
-                     << (m_fWritable ? UIMachineSettingsSF::tr("Full") : UIMachineSettingsSF::tr("Read-only"))
-                     << (m_fAutoMount ? UIMachineSettingsSF::tr("Yes") : "")
+                     << (m_fWritable ? tr("Full") : tr("Read-only"))
+                     << (m_fAutoMount ? tr("Yes") : "")
                      << m_strAutoMountPoint;
 
         /* Adjust item layout: */
@@ -188,7 +188,7 @@ protected:
     virtual QString defaultText() const /* override */
     {
         return parentItem()
-             ? UIMachineSettingsSF::tr("%1, %2: %3, %4: %5, %6: %7, %8: %9",
+             ? tr("%1, %2: %3, %4: %5, %6: %7, %8: %9",
                   "col.1 text, col.2 name: col.2 text, col.3 name: col.3 text, col.4 name: col.4 text, col.5 name: col.5 text")
                   .arg(text(0))
                   .arg(parentTree()->headerItem()->text(1)).arg(text(1))

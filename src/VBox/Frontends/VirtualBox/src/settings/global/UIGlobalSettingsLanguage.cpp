@@ -113,8 +113,8 @@ public:
         }
         else
         {
-            strItemName += UIGlobalSettingsLanguage::tr(" (built-in)", "Language");
-            strLanguageName += UIGlobalSettingsLanguage::tr(" (built-in)", "Language");
+            strItemName += tr(" (built-in)", "Language");
+            strLanguageName += tr(" (built-in)", "Language");
         }
 
         setText(0, strItemName);
@@ -140,8 +140,8 @@ public:
 
         setText(0, QString("<%1>").arg(strId));
         setText(1, strId);
-        setText(2, UIGlobalSettingsLanguage::tr("<unavailable>", "Language"));
-        setText(3, UIGlobalSettingsLanguage::tr("<unknown>", "Author(s)"));
+        setText(2, tr("<unavailable>", "Language"));
+        setText(3, tr("<unknown>", "Author(s)"));
 
         /* Invalid language appears in italic: */
         QFont fnt = font(0);
@@ -154,7 +154,7 @@ public:
     UILanguageItem(QITreeWidget *pParent)
         : QITreeWidgetItem(pParent), m_fBuiltIn(false)
     {
-        setText(0, UIGlobalSettingsLanguage::tr("Default", "Language"));
+        setText(0, tr("Default", "Language"));
         setText(1, QString::null);
         /* Empty strings of some reasonable length to prevent the info part
          * from being shrinked too much when the list wants to be wider */
