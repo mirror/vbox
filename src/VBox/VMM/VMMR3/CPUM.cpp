@@ -1235,6 +1235,26 @@ DECLCALLBACK(void) cpumR3InfoVmxFeatures(PVM pVM, PCDBGFINFOHLP pHlp, const char
 
 
 /**
+ * Checks whether VMX nested-guest may be executed using hardware-assisted VMX (e.g,
+ * using HM or NEM).
+ *
+ * @returns @c true if hardware-assisted VMX nested-guest is allowed, @c false
+ *        otherwise.
+ * @param   pVM     The cross context VM structure.
+ */
+static bool cpumR3IsHwAssistVmxNstGstExecAllowed(PVM pVM)
+{
+    AssertMsg(pVM->bMainExecutionEngine != VM_EXEC_ENGINE_NOT_SET, ("Calling this function too early!\n"));
+#ifndef VBOX_WITH_NESTED_HWVIRT_ONLY_IN_IEM
+    if (   pVM->bMainExecutionEngine == VM_EXEC_ENGINE_HW_VIRT
+        || pVM->bMainExecutionEngine == VM_EXEC_ENGINE_NATIVE_API)
+        return true;
+#endif
+    return false;
+}
+
+
+/**
  * Initializes the guest VMX MSRs from guest-CPU features.
  *
  * @param   pVM     The cross context VM structure.
@@ -1545,6 +1565,96 @@ static void cpumR3ExplodeVmxFeatures(PCVMXMSRS pVmxMsrs, PCPUMFEATURES pFeatures
 }
 
 
+#if 0
+/**
+ * Checks whether the given guest CPU VMX features are compatible with the provided
+ * base features.
+ *
+ * @returns @c true if compatible, @c false otherwise.
+ * @param   pVM     The cross context VM structure.
+ * @param   pBase   The base VMX CPU features.
+ * @param   pGst    The guest VMX CPU features.
+ *
+ * @remarks Only VMX feature bits are examined.
+ */
+static bool cpumR3AreVmxCpuFeaturesCompatible(PVM pVM, PCCPUMFEATURES pBase, PCCPUMFEATURES pGst)
+{
+    if (cpumR3IsHwAssistVmxNstGstExecAllowed(pVM))
+    {
+        uint64_t const fBase = ((uint64_t)pBase->fVmxInsOutInfo         <<  0) | ((uint64_t)pBase->fVmxExtIntExit         <<  1)
+                             | ((uint64_t)pBase->fVmxNmiExit            <<  2) | ((uint64_t)pBase->fVmxVirtNmi            <<  3)
+                             | ((uint64_t)pBase->fVmxPreemptTimer       <<  4) | ((uint64_t)pBase->fVmxPostedInt          <<  5)
+                             | ((uint64_t)pBase->fVmxIntWindowExit      <<  6) | ((uint64_t)pBase->fVmxTscOffsetting      <<  7)
+                             | ((uint64_t)pBase->fVmxHltExit            <<  8) | ((uint64_t)pBase->fVmxInvlpgExit         <<  9)
+                             | ((uint64_t)pBase->fVmxMwaitExit          << 10) | ((uint64_t)pBase->fVmxRdpmcExit          << 11)
+                             | ((uint64_t)pBase->fVmxRdtscExit          << 12) | ((uint64_t)pBase->fVmxCr3LoadExit        << 13)
+                             | ((uint64_t)pBase->fVmxCr3StoreExit       << 14) | ((uint64_t)pBase->fVmxCr8LoadExit        << 15)
+                             | ((uint64_t)pBase->fVmxCr8StoreExit       << 16) | ((uint64_t)pBase->fVmxUseTprShadow       << 17)
+                             | ((uint64_t)pBase->fVmxNmiWindowExit      << 18) | ((uint64_t)pBase->fVmxMovDRxExit         << 19)
+                             | ((uint64_t)pBase->fVmxUncondIoExit       << 20) | ((uint64_t)pBase->fVmxUseIoBitmaps       << 21)
+                             | ((uint64_t)pBase->fVmxMonitorTrapFlag    << 22) | ((uint64_t)pBase->fVmxUseMsrBitmaps      << 23)
+                             | ((uint64_t)pBase->fVmxMonitorExit        << 24) | ((uint64_t)pBase->fVmxPauseExit          << 25)
+                             | ((uint64_t)pBase->fVmxSecondaryExecCtls  << 26) | ((uint64_t)pBase->fVmxVirtApicAccess     << 27)
+                             | ((uint64_t)pBase->fVmxEpt                << 28) | ((uint64_t)pBase->fVmxDescTableExit      << 29)
+                             | ((uint64_t)pBase->fVmxRdtscp             << 30) | ((uint64_t)pBase->fVmxVirtX2ApicMode     << 31)
+                             | ((uint64_t)pBase->fVmxVpid               << 32) | ((uint64_t)pBase->fVmxWbinvdExit         << 33)
+                             | ((uint64_t)pBase->fVmxUnrestrictedGuest  << 34) | ((uint64_t)pBase->fVmxApicRegVirt        << 35)
+                             | ((uint64_t)pBase->fVmxVirtIntDelivery    << 36) | ((uint64_t)pBase->fVmxPauseLoopExit      << 37)
+                             | ((uint64_t)pBase->fVmxRdrandExit         << 38) | ((uint64_t)pBase->fVmxInvpcid            << 39)
+                             | ((uint64_t)pBase->fVmxVmFunc             << 40) | ((uint64_t)pBase->fVmxVmcsShadowing      << 41)
+                             | ((uint64_t)pBase->fVmxRdseedExit         << 42) | ((uint64_t)pBase->fVmxPml                << 43)
+                             | ((uint64_t)pBase->fVmxEptXcptVe          << 44) | ((uint64_t)pBase->fVmxXsavesXrstors      << 45)
+                             | ((uint64_t)pBase->fVmxUseTscScaling      << 46) | ((uint64_t)pBase->fVmxEntryLoadDebugCtls << 47)
+                             | ((uint64_t)pBase->fVmxIa32eModeGuest     << 48) | ((uint64_t)pBase->fVmxEntryLoadEferMsr   << 49)
+                             | ((uint64_t)pBase->fVmxEntryLoadPatMsr    << 50) | ((uint64_t)pBase->fVmxExitSaveDebugCtls  << 51)
+                             | ((uint64_t)pBase->fVmxHostAddrSpaceSize  << 52) | ((uint64_t)pBase->fVmxExitAckExtInt      << 53)
+                             | ((uint64_t)pBase->fVmxExitSavePatMsr     << 54) | ((uint64_t)pBase->fVmxExitLoadPatMsr     << 55)
+                             | ((uint64_t)pBase->fVmxExitSaveEferMsr    << 56) | ((uint64_t)pBase->fVmxExitLoadEferMsr    << 57)
+                             | ((uint64_t)pBase->fVmxSavePreemptTimer   << 58) | ((uint64_t)pBase->fVmxExitSaveEferLma    << 59)
+                             | ((uint64_t)pBase->fVmxIntelPt            << 60) | ((uint64_t)pBase->fVmxVmwriteAll         << 61)
+                             | ((uint64_t)pBase->fVmxEntryInjectSoftInt << 62);
+
+        uint64_t const fGst  = ((uint64_t)pGst->fVmxInsOutInfo          <<  0) | ((uint64_t)pGst->fVmxExtIntExit          <<  1)
+                             | ((uint64_t)pGst->fVmxNmiExit             <<  2) | ((uint64_t)pGst->fVmxVirtNmi             <<  3)
+                             | ((uint64_t)pGst->fVmxPreemptTimer        <<  4) | ((uint64_t)pGst->fVmxPostedInt           <<  5)
+                             | ((uint64_t)pGst->fVmxIntWindowExit       <<  6) | ((uint64_t)pGst->fVmxTscOffsetting       <<  7)
+                             | ((uint64_t)pGst->fVmxHltExit             <<  8) | ((uint64_t)pGst->fVmxInvlpgExit          <<  9)
+                             | ((uint64_t)pGst->fVmxMwaitExit           << 10) | ((uint64_t)pGst->fVmxRdpmcExit           << 11)
+                             | ((uint64_t)pGst->fVmxRdtscExit           << 12) | ((uint64_t)pGst->fVmxCr3LoadExit         << 13)
+                             | ((uint64_t)pGst->fVmxCr3StoreExit        << 14) | ((uint64_t)pGst->fVmxCr8LoadExit         << 15)
+                             | ((uint64_t)pGst->fVmxCr8StoreExit        << 16) | ((uint64_t)pGst->fVmxUseTprShadow        << 17)
+                             | ((uint64_t)pGst->fVmxNmiWindowExit       << 18) | ((uint64_t)pGst->fVmxMovDRxExit          << 19)
+                             | ((uint64_t)pGst->fVmxUncondIoExit        << 20) | ((uint64_t)pGst->fVmxUseIoBitmaps        << 21)
+                             | ((uint64_t)pGst->fVmxMonitorTrapFlag     << 22) | ((uint64_t)pGst->fVmxUseMsrBitmaps       << 23)
+                             | ((uint64_t)pGst->fVmxMonitorExit         << 24) | ((uint64_t)pGst->fVmxPauseExit           << 25)
+                             | ((uint64_t)pGst->fVmxSecondaryExecCtls   << 26) | ((uint64_t)pGst->fVmxVirtApicAccess      << 27)
+                             | ((uint64_t)pGst->fVmxEpt                 << 28) | ((uint64_t)pGst->fVmxDescTableExit       << 29)
+                             | ((uint64_t)pGst->fVmxRdtscp              << 30) | ((uint64_t)pGst->fVmxVirtX2ApicMode      << 31)
+                             | ((uint64_t)pGst->fVmxVpid                << 32) | ((uint64_t)pGst->fVmxWbinvdExit          << 33)
+                             | ((uint64_t)pGst->fVmxUnrestrictedGuest   << 34) | ((uint64_t)pGst->fVmxApicRegVirt         << 35)
+                             | ((uint64_t)pGst->fVmxVirtIntDelivery     << 36) | ((uint64_t)pGst->fVmxPauseLoopExit       << 37)
+                             | ((uint64_t)pGst->fVmxRdrandExit          << 38) | ((uint64_t)pGst->fVmxInvpcid             << 39)
+                             | ((uint64_t)pGst->fVmxVmFunc              << 40) | ((uint64_t)pGst->fVmxVmcsShadowing       << 41)
+                             | ((uint64_t)pGst->fVmxRdseedExit          << 42) | ((uint64_t)pGst->fVmxPml                 << 43)
+                             | ((uint64_t)pGst->fVmxEptXcptVe           << 44) | ((uint64_t)pGst->fVmxXsavesXrstors       << 45)
+                             | ((uint64_t)pGst->fVmxUseTscScaling       << 46) | ((uint64_t)pGst->fVmxEntryLoadDebugCtls  << 47)
+                             | ((uint64_t)pGst->fVmxIa32eModeGuest      << 48) | ((uint64_t)pGst->fVmxEntryLoadEferMsr    << 49)
+                             | ((uint64_t)pGst->fVmxEntryLoadPatMsr     << 50) | ((uint64_t)pGst->fVmxExitSaveDebugCtls   << 51)
+                             | ((uint64_t)pGst->fVmxHostAddrSpaceSize   << 52) | ((uint64_t)pGst->fVmxExitAckExtInt       << 53)
+                             | ((uint64_t)pGst->fVmxExitSavePatMsr      << 54) | ((uint64_t)pGst->fVmxExitLoadPatMsr      << 55)
+                             | ((uint64_t)pGst->fVmxExitSaveEferMsr     << 56) | ((uint64_t)pGst->fVmxExitLoadEferMsr     << 57)
+                             | ((uint64_t)pGst->fVmxSavePreemptTimer    << 58) | ((uint64_t)pGst->fVmxExitSaveEferLma     << 59)
+                             | ((uint64_t)pGst->fVmxIntelPt             << 60) | ((uint64_t)pGst->fVmxVmwriteAll          << 61)
+                             | ((uint64_t)pGst->fVmxEntryInjectSoftInt  << 62);
+
+        if ((fBase | fGst) != fBase)
+            return false;
+        return true;
+    }
+    return true;
+}
+#endif
+
 /**
  * Initializes VMX host and guest features.
  *
@@ -1642,9 +1752,7 @@ static void cpumR3InitVmxCpuFeatures(PVM pVM)
      * When hardware-assisted VMX may be used, any feature we emulate must also be supported
      * by the hardware, hence we merge our emulated features with the host features below.
      */
-    bool const fHostSupportsVmx = pHostFeat->fVmx;
-    AssertLogRelReturnVoid(!fHostSupportsVmx || HMIsVmxSupported(pVM));
-    PCCPUMFEATURES pBaseFeat    = fHostSupportsVmx ? pHostFeat : &EmuFeat;
+    PCCPUMFEATURES pBaseFeat    = cpumR3IsHwAssistVmxNstGstExecAllowed(pVM) ? pHostFeat : &EmuFeat;
     PCPUMFEATURES  pGuestFeat   = &pVM->cpum.s.GuestFeatures;
     pGuestFeat->fVmx                      = (pBaseFeat->fVmx                      & EmuFeat.fVmx                     );
     pGuestFeat->fVmxInsOutInfo            = (pBaseFeat->fVmxInsOutInfo            & EmuFeat.fVmxInsOutInfo           );
