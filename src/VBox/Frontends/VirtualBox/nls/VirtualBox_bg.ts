@@ -301,6 +301,18 @@
         <comment>col.1 text, col.2 name: col.2 text, col.3 name: col.3 text, col.4 name: col.4 text, col.5 name: col.5 text</comment>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Full</source>
+        <translation type="unfinished">Пълен</translation>
+    </message>
+    <message>
+        <source>Read-only</source>
+        <translation type="unfinished">Само за четене</translation>
+    </message>
+    <message>
+        <source>Yes</source>
+        <translation type="unfinished">Да</translation>
+    </message>
 </context>
 <context>
     <name>UIActionPool</name>
@@ -1660,15 +1672,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Open the guest control file manager</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Host</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Open the guest control file manager submenu</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1677,10 +1681,6 @@
     </message>
     <message>
         <source>Copy to guest</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Guest Control File Manager</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1712,39 +1712,11 @@
         <translation type="unfinished">Записки</translation>
     </message>
     <message>
-        <source>Open panel with to view file manager log</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Open Panel With to View File Manager Log</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>File Operations</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Open panel with to view file manager file operations</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Open Panel With to View File Manager File Operations</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Session</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Open file manager account</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Open File Manager Session</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>GoUp</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -2232,10 +2204,6 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Display the virtual machine guest control file manager window</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Guest Process Control...</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2303,7 +2271,51 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Open Panel With File Manager Options</source>
+        <source>Open the file manager</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open the file manager host submenu</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open the file manager guest submenu</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open File Manager Options</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open panel with file manager log</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open File Manager Log</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Operations</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open panel with file manager operations</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open File Manager Operations</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open panel with file manager session</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Go Up</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Display the virtual machine file manager window</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -2539,10 +2551,6 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>When checked a all the hard drives that belong to this appliance will be imported in VDI format</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>MAC Address &amp;Policy:</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2559,10 +2567,6 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Include all network adapter MAC addresses in exported during cloning.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Include only NAT network adapter MAC addresses during cloning.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2572,6 +2576,14 @@
     </message>
     <message>
         <source>Additional Options:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When checked, all the hard drives that belong to this appliance will be imported in VDI format.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Include all network adapter MAC addresses during cloning.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -2989,9 +3001,6 @@
         <source>Close Window (%1)</source>
         <translation type="unfinished"></translation>
     </message>
-</context>
-<context>
-    <name>UICloudProfileManagerWidget</name>
     <message>
         <source>Add Profile</source>
         <translation type="unfinished"></translation>
@@ -4480,6 +4489,356 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
+    <name>UIFDCreationDialog</name>
+    <message>
+        <source>Create a Floppy Disk</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>File Path:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Size:</source>
+        <translation type="unfinished">Размер:</translation>
+    </message>
+    <message>
+        <source>Format disk as FAT12</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>1.44M</source>
+        <translation type="unfinished">200% {1.44M?}</translation>
+    </message>
+    <message>
+        <source>1.2M</source>
+        <translation type="unfinished">200% {1.2M?}</translation>
+    </message>
+    <message>
+        <source>720K</source>
+        <translation type="unfinished">200% {720K?}</translation>
+    </message>
+    <message>
+        <source>360K</source>
+        <translation type="unfinished">200% {360K?}</translation>
+    </message>
+</context>
+<context>
+    <name>UIFileManager</name>
+    <message>
+        <source>%1 - File Manager</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Close</source>
+        <translation type="unfinished">Затваряне</translation>
+    </message>
+    <message>
+        <source>Clear</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation type="unfinished">Отказ</translation>
+    </message>
+    <message>
+        <source>Not yet started</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Working</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Paused</source>
+        <translation type="unfinished">На пауза</translation>
+    </message>
+    <message>
+        <source>Canceled</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Succeded</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Invalid</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove Selected</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove Finished</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove All</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>List directories on top</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>List directories before files</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Ask before delete</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show a confirmation dialog before deleting files and directories</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Human readable sizes</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show file/directory sizes in human readable format rather than in bytes</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Close the pane</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Password</source>
+        <translation type="unfinished">Парола</translation>
+    </message>
+    <message>
+        <source>Show Password</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>User name to authenticate session creation</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>User Name</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Password to authenticate session creation</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Create Session</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Close Session</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Total Size</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source> bytes</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>File Count</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Delete the selected file(s) and/or folder(s)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Ask for this confirmation next time</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Delete confirmation can be disabled/enabled also from the Options panel.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Name</source>
+        <translation type="unfinished">Име</translation>
+    </message>
+    <message>
+        <source>Size</source>
+        <translation type="unfinished">Размер</translation>
+    </message>
+    <message>
+        <source>Change Time</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Owner</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Permissions</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No Guest Session</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unknown</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>File</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Directory</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Symbolic Link</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Other</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Guest System</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;Size:&lt;/b&gt; %1 bytes</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;Allocated:&lt;/b&gt; %1 bytes</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>directory</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>symbolic link</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>character device</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>block device</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>fifo</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>socket</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>whiteout</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>unknown</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>illegal-value</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;Type:&lt;/b&gt; %1&lt;br/&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;INode:&lt;/b&gt; %1&lt;br/&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;Device:&lt;/b&gt; %1&lt;br/&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;Hardlinks:&lt;/b&gt; %1&lt;br/&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;Mode:&lt;/b&gt; %1&lt;br/&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;Attributes:&lt;/b&gt; %1&lt;br/&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;Device ID:&lt;/b&gt; %1&lt;br/&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;Owner:&lt;/b&gt; %1 (%2)&lt;br/&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;Group:&lt;/b&gt; %1 (%2)&lt;br/&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;Birth:&lt;/b&gt; %1&lt;br/&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;Change:&lt;/b&gt; %1&lt;br/&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;Modified:&lt;/b&gt; %1&lt;br/&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;Access:&lt;/b&gt; %1&lt;br/&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;Selected:&lt;/b&gt; %1 files and %2 directories&lt;br/&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;Size (non-recursive):&lt;/b&gt; %1 bytes</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Properties</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Host System</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;Name:&lt;/b&gt; %1&lt;br/&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;Created:&lt;/b&gt; %1&lt;br/&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;Owner:&lt;/b&gt; %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>UIFilePathSelector</name>
     <message>
         <source>&amp;Copy</source>
@@ -5707,22 +6066,22 @@ p, li { white-space: pre-wrap; &lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; 
     <message>
         <source> (built-in)</source>
         <comment>Language</comment>
-        <translation>(вграден)</translation>
+        <translation type="vanished">(вграден)</translation>
     </message>
     <message>
         <source>&lt;unavailable&gt;</source>
         <comment>Language</comment>
-        <translation>&lt;недостъпен&gt;</translation>
+        <translation type="vanished">&lt;недостъпен&gt;</translation>
     </message>
     <message>
         <source>&lt;unknown&gt;</source>
         <comment>Author(s)</comment>
-        <translation>&lt;неразпознат&gt;</translation>
+        <translation type="vanished">&lt;неразпознат&gt;</translation>
     </message>
     <message>
         <source>Default</source>
         <comment>Language</comment>
-        <translation>По подразбиране</translation>
+        <translation type="vanished">По подразбиране</translation>
     </message>
     <message>
         <source>Language:</source>
@@ -5927,67 +6286,67 @@ p, li { white-space: pre-wrap; &lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; 
     </message>
     <message>
         <source>No new name specified for the NAT network previously called &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Не е зададено ново име за NAT мрежата с предишно име &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <translation type="vanished">Не е зададено ново име за NAT мрежата с предишно име &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>No CIDR specified for the NAT network &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Не е указан CIDR за NAT мрежата &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <translation type="vanished">Не е указан CIDR за NAT мрежата &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>No CIDR specified for the NAT network previously called &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Не е указан CIDR за NAT мрежата с предишно име &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <translation type="vanished">Не е указан CIDR за NAT мрежата с предишно име &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Invalid CIDR specified (&lt;i&gt;%1&lt;/i&gt;) for the NAT network &lt;b&gt;%2&lt;/b&gt;.</source>
-        <translation>Невалидно указан CIDR (&lt;i&gt;%1&lt;/i&gt;) за NAT мрежата &lt;b&gt;%2&lt;/b&gt;.</translation>
+        <translation type="vanished">Невалидно указан CIDR (&lt;i&gt;%1&lt;/i&gt;) за NAT мрежата &lt;b&gt;%2&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Invalid CIDR specified (&lt;i&gt;%1&lt;/i&gt;) for the NAT network previously called &lt;b&gt;%2&lt;/b&gt;.</source>
-        <translation>Невалидно указан CIDR (&lt;i&gt;%1&lt;/i&gt;) за NAT мрежата с предишно име &lt;b&gt;%2&lt;/b&gt;.</translation>
+        <translation type="vanished">Невалидно указан CIDR (&lt;i&gt;%1&lt;/i&gt;) за NAT мрежата с предишно име &lt;b&gt;%2&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Network Name</source>
-        <translation>Име на мрежа</translation>
+        <translation type="vanished">Име на мрежа</translation>
     </message>
     <message>
         <source>[empty]</source>
-        <translation>[празно]</translation>
+        <translation type="vanished">[празно]</translation>
     </message>
     <message>
         <source>%1 (renamed from %2)</source>
-        <translation>%1 (преименувана от %2)</translation>
+        <translation type="vanished">%1 (преименувана от %2)</translation>
     </message>
     <message>
         <source>Old Network Name</source>
-        <translation>Старо име на мрежа</translation>
+        <translation type="vanished">Старо име на мрежа</translation>
     </message>
     <message>
         <source>New Network Name</source>
-        <translation>Ново име на мрежа</translation>
+        <translation type="vanished">Ново име на мрежа</translation>
     </message>
     <message>
         <source>Network CIDR</source>
-        <translation>CIDR на мрежата</translation>
+        <translation type="vanished">CIDR на мрежата</translation>
     </message>
     <message>
         <source>Supports DHCP</source>
-        <translation>Поддържа DHCP</translation>
+        <translation type="vanished">Поддържа DHCP</translation>
     </message>
     <message>
         <source>yes</source>
-        <translation>да</translation>
+        <translation type="vanished">да</translation>
     </message>
     <message>
         <source>no</source>
-        <translation>не</translation>
+        <translation type="vanished">не</translation>
     </message>
     <message>
         <source>Supports IPv6</source>
-        <translation>Поддържа IPv6</translation>
+        <translation type="vanished">Поддържа IPv6</translation>
     </message>
     <message>
         <source>Default IPv6 route</source>
-        <translation>Подразбиращо IPv6 рутиране</translation>
+        <translation type="vanished">Подразбиращо IPv6 рутиране</translation>
     </message>
     <message>
         <source>Host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid IPv4 address.</source>
@@ -6569,317 +6928,45 @@ p, li { white-space: pre-wrap; &lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; 
     <name>UIGuestControlFileManager</name>
     <message>
         <source>Close</source>
-        <translation type="unfinished">Затваряне</translation>
-    </message>
-    <message>
-        <source>Close the pane</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>User name to authenticate session creation</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>User Name</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Password to authenticate session creation</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Затваряне</translation>
     </message>
     <message>
         <source>Password</source>
-        <translation type="unfinished">Парола</translation>
+        <translation type="obsolete">Парола</translation>
     </message>
     <message>
-        <source>Create Session</source>
-        <translation type="unfinished"></translation>
+        <source>Name</source>
+        <translation type="obsolete">Име</translation>
     </message>
+    <message>
+        <source>Size</source>
+        <translation type="obsolete">Размер</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation type="obsolete">Отказ</translation>
+    </message>
+    <message>
+        <source>Paused</source>
+        <translation type="obsolete">На пауза</translation>
+    </message>
+</context>
+<context>
+    <name>UIGuestControlTreeWidget</name>
     <message>
         <source>Close Session</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>List directories on top</source>
+        <source>Terminate Process</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>List directories before files</source>
+        <source>Expand All</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Ask before delete</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Human readable sizes</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Total Size</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source> bytes</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>File Count</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Delete the selected file(s) and/or folder(s)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Ask for this confirmation next time</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Delete confirmation can be disabled/enabled also from the Options panel.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Name</source>
-        <translation type="unfinished">Име</translation>
-    </message>
-    <message>
-        <source>Size</source>
-        <translation type="unfinished">Размер</translation>
-    </message>
-    <message>
-        <source>Change Time</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Owner</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Permissions</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>No Guest Session</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Unknown</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>File</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Directory</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Symbolic Link</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Other</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Guest System</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;b&gt;Size:&lt;/b&gt; %1 bytes</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;b&gt;Type:&lt;/b&gt; %1&lt;br/&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;b&gt;Created:&lt;/b&gt; %1&lt;br/&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;b&gt;Modified:&lt;/b&gt; %1&lt;br/&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;b&gt;Selected:&lt;/b&gt; %1 files and %2 directories&lt;br/&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;b&gt;Size (non-recursive):&lt;/b&gt; %1 bytes</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Properties</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Host System</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;b&gt;Owner:&lt;/b&gt; %1</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>%1 - Guest Control File Manager</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Clear</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Cancel</source>
-        <translation type="unfinished">Отказ</translation>
-    </message>
-    <message>
-        <source>Not yet started</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Working</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Paused</source>
-        <translation type="unfinished">На пауза</translation>
-    </message>
-    <message>
-        <source>Canceled</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Succeded</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Failed</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Invalid</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Remove Selected</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Remove Finished</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Remove All</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Show a confirmation dialog before deleting files and directories</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Show file/directory sizes in human readable format rather than in bytes</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Show Password</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;b&gt;Allocated:&lt;/b&gt; %1 bytes</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;b&gt;INode:&lt;/b&gt; %1&lt;br/&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;b&gt;Device:&lt;/b&gt; %1&lt;br/&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;b&gt;Hardlinks:&lt;/b&gt; %1&lt;br/&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;b&gt;Mode:&lt;/b&gt; %1&lt;br/&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;b&gt;Attributes:&lt;/b&gt; %1&lt;br/&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;b&gt;Device ID:&lt;/b&gt; %1&lt;br/&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;b&gt;Owner:&lt;/b&gt; %1 (%2)&lt;br/&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;b&gt;Group:&lt;/b&gt; %1 (%2)&lt;br/&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;b&gt;Birth:&lt;/b&gt; %1&lt;br/&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;b&gt;Change:&lt;/b&gt; %1&lt;br/&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;b&gt;Access:&lt;/b&gt; %1&lt;br/&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;b&gt;Name:&lt;/b&gt; %1&lt;br/&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
-    <name>UIGuestFileTable</name>
-    <message>
-        <source>directory</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>file</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>symbolic link</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>character device</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>block device</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>fifo</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>socket</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>whiteout</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>unknown</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>illegal-value</source>
+        <source>Collapse All</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -7145,89 +7232,54 @@ p, li { white-space: pre-wrap; &lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; 
 <context>
     <name>UIHostNetworkManager</name>
     <message>
-        <source>Enable</source>
-        <comment>DHCP Server</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Adapter</source>
-        <translation type="unfinished">Адаптер</translation>
+        <translation type="obsolete">Адаптер</translation>
     </message>
     <message>
         <source>Automatically configured</source>
         <comment>interface</comment>
-        <translation type="unfinished">Автоматично конфигуриран</translation>
+        <translation type="obsolete">Автоматично конфигуриран</translation>
     </message>
     <message>
         <source>Manually configured</source>
         <comment>interface</comment>
-        <translation type="unfinished">Ръчно конфигуриран</translation>
+        <translation type="obsolete">Ръчно конфигуриран</translation>
     </message>
     <message>
         <source>IPv4 Address</source>
-        <translation type="unfinished">IPv4 адрес</translation>
-    </message>
-    <message>
-        <source>Not set</source>
-        <comment>address</comment>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">IPv4 адрес</translation>
     </message>
     <message>
         <source>IPv4 Network Mask</source>
-        <translation type="unfinished">IPv4 мрежова маска</translation>
-    </message>
-    <message>
-        <source>Not set</source>
-        <comment>mask</comment>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">IPv4 мрежова маска</translation>
     </message>
     <message>
         <source>IPv6 Address</source>
-        <translation type="unfinished">IPv6 адрес</translation>
+        <translation type="obsolete">IPv6 адрес</translation>
     </message>
     <message>
         <source>IPv6 Prefix Length</source>
-        <translation type="unfinished">Дължина на IPv6 мрежовата маска</translation>
-    </message>
-    <message>
-        <source>Not set</source>
-        <comment>length</comment>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Дължина на IPv6 мрежовата маска</translation>
     </message>
     <message>
         <source>DHCP Server</source>
         <translation type="unfinished">DHCP сървър</translation>
     </message>
     <message>
-        <source>Enabled</source>
-        <comment>server</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Disabled</source>
-        <comment>server</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Address</source>
-        <translation type="unfinished">Адрес</translation>
+        <translation type="obsolete">Адрес</translation>
     </message>
     <message>
         <source>Network Mask</source>
-        <translation type="unfinished">Мрежова маска</translation>
+        <translation type="obsolete">Мрежова маска</translation>
     </message>
     <message>
         <source>Lower Bound</source>
-        <translation type="unfinished">Долна граница</translation>
-    </message>
-    <message>
-        <source>Not set</source>
-        <comment>bound</comment>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Долна граница</translation>
     </message>
     <message>
         <source>Upper Bound</source>
-        <translation type="unfinished">Горна граница</translation>
+        <translation type="obsolete">Горна граница</translation>
     </message>
     <message>
         <source>&amp;Network</source>
@@ -7293,13 +7345,6 @@ p, li { white-space: pre-wrap; &lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; 
         <source>Close Window (%1)</source>
         <translation type="unfinished"></translation>
     </message>
-</context>
-<context>
-    <name>UIHostNetworkManagerWidget</name>
-    <message>
-        <source>Networking</source>
-        <translation type="obsolete">Мрежова свързаност</translation>
-    </message>
     <message>
         <source>Adding network...</source>
         <translation type="unfinished"></translation>
@@ -7307,6 +7352,13 @@ p, li { white-space: pre-wrap; &lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; 
     <message>
         <source>Removing network...</source>
         <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIHostNetworkManagerWidget</name>
+    <message>
+        <source>Networking</source>
+        <translation type="obsolete">Мрежова свързаност</translation>
     </message>
 </context>
 <context>
@@ -8343,6 +8395,94 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
+    <name>UIItemHostNetwork</name>
+    <message>
+        <source>Enable</source>
+        <comment>DHCP Server</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Adapter</source>
+        <translation type="unfinished">Адаптер</translation>
+    </message>
+    <message>
+        <source>Automatically configured</source>
+        <comment>interface</comment>
+        <translation type="unfinished">Автоматично конфигуриран</translation>
+    </message>
+    <message>
+        <source>Manually configured</source>
+        <comment>interface</comment>
+        <translation type="unfinished">Ръчно конфигуриран</translation>
+    </message>
+    <message>
+        <source>IPv4 Address</source>
+        <translation type="unfinished">IPv4 адрес</translation>
+    </message>
+    <message>
+        <source>Not set</source>
+        <comment>address</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>IPv4 Network Mask</source>
+        <translation type="unfinished">IPv4 мрежова маска</translation>
+    </message>
+    <message>
+        <source>Not set</source>
+        <comment>mask</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>IPv6 Address</source>
+        <translation type="unfinished">IPv6 адрес</translation>
+    </message>
+    <message>
+        <source>IPv6 Prefix Length</source>
+        <translation type="unfinished">Дължина на IPv6 мрежовата маска</translation>
+    </message>
+    <message>
+        <source>Not set</source>
+        <comment>length</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>DHCP Server</source>
+        <translation type="unfinished">DHCP сървър</translation>
+    </message>
+    <message>
+        <source>Enabled</source>
+        <comment>server</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>server</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Address</source>
+        <translation type="unfinished">Адрес</translation>
+    </message>
+    <message>
+        <source>Network Mask</source>
+        <translation type="unfinished">Мрежова маска</translation>
+    </message>
+    <message>
+        <source>Lower Bound</source>
+        <translation type="unfinished">Долна граница</translation>
+    </message>
+    <message>
+        <source>Not set</source>
+        <comment>bound</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Upper Bound</source>
+        <translation type="unfinished">Горна граница</translation>
+    </message>
+</context>
+<context>
     <name>UIItemNetworkNAT</name>
     <message>
         <source>%1, %2</source>
@@ -8353,6 +8493,93 @@ p, li { white-space: pre-wrap; }
         <source>%1</source>
         <comment>col.2 text</comment>
         <translation type="unfinished">%1% {1?}</translation>
+    </message>
+    <message>
+        <source>Network Name</source>
+        <translation type="unfinished">Име на мрежа</translation>
+    </message>
+    <message>
+        <source>[empty]</source>
+        <translation type="unfinished">[празно]</translation>
+    </message>
+    <message>
+        <source>%1 (renamed from %2)</source>
+        <translation type="unfinished">%1 (преименувана от %2)</translation>
+    </message>
+    <message>
+        <source>Old Network Name</source>
+        <translation type="unfinished">Старо име на мрежа</translation>
+    </message>
+    <message>
+        <source>New Network Name</source>
+        <translation type="unfinished">Ново име на мрежа</translation>
+    </message>
+    <message>
+        <source>Network CIDR</source>
+        <translation type="unfinished">CIDR на мрежата</translation>
+    </message>
+    <message>
+        <source>Supports DHCP</source>
+        <translation type="unfinished">Поддържа DHCP</translation>
+    </message>
+    <message>
+        <source>yes</source>
+        <translation type="unfinished">да</translation>
+    </message>
+    <message>
+        <source>no</source>
+        <translation type="unfinished">не</translation>
+    </message>
+    <message>
+        <source>Supports IPv6</source>
+        <translation type="unfinished">Поддържа IPv6</translation>
+    </message>
+    <message>
+        <source>Default IPv6 route</source>
+        <translation type="unfinished">Подразбиращо IPv6 рутиране</translation>
+    </message>
+    <message>
+        <source>No new name specified for the NAT network previously called &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished">Не е зададено ново име за NAT мрежата с предишно име &lt;b&gt;%1&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>No CIDR specified for the NAT network &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished">Не е указан CIDR за NAT мрежата &lt;b&gt;%1&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>No CIDR specified for the NAT network previously called &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished">Не е указан CIDR за NAT мрежата с предишно име &lt;b&gt;%1&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>Invalid CIDR specified (&lt;i&gt;%1&lt;/i&gt;) for the NAT network &lt;b&gt;%2&lt;/b&gt;.</source>
+        <translation type="unfinished">Невалидно указан CIDR (&lt;i&gt;%1&lt;/i&gt;) за NAT мрежата &lt;b&gt;%2&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>Invalid CIDR specified (&lt;i&gt;%1&lt;/i&gt;) for the NAT network previously called &lt;b&gt;%2&lt;/b&gt;.</source>
+        <translation type="unfinished">Невалидно указан CIDR (&lt;i&gt;%1&lt;/i&gt;) за NAT мрежата с предишно име &lt;b&gt;%2&lt;/b&gt;.</translation>
+    </message>
+</context>
+<context>
+    <name>UILanguageItem</name>
+    <message>
+        <source> (built-in)</source>
+        <comment>Language</comment>
+        <translation type="unfinished">(вграден)</translation>
+    </message>
+    <message>
+        <source>&lt;unavailable&gt;</source>
+        <comment>Language</comment>
+        <translation type="unfinished">&lt;недостъпен&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;unknown&gt;</source>
+        <comment>Author(s)</comment>
+        <translation type="unfinished">&lt;неразпознат&gt;</translation>
+    </message>
+    <message>
+        <source>Default</source>
+        <comment>Language</comment>
+        <translation type="unfinished">По подразбиране</translation>
     </message>
 </context>
 <context>
@@ -8695,7 +8922,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Quality:</source>
-        <translation>&amp;Качество:</translation>
+        <translation type="vanished">&amp;Качество:</translation>
     </message>
     <message>
         <source>This setting determines the &lt;b&gt;quality&lt;/b&gt;. Increasing this value will make the video look better at the cost of an increased file size.</source>
@@ -8929,22 +9156,6 @@ p, li { white-space: pre-wrap; }
         <translation>Когато е избрано, включва видео записване на екран %1.</translation>
     </message>
     <message>
-        <source>&amp;Capture</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Enable Capture</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Capture &amp;Mode:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Stores the capture mode.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>&amp;Audio Quality:</source>
         <translation type="unfinished"></translation>
     </message>
@@ -8954,6 +9165,30 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Selects the graphics adapter type the virtual machine will use.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Re&amp;cording</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Enable Recording</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Recording &amp;Mode:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Selects the recording mode.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Video Quality:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Controls the &lt;b&gt;quality&lt;/b&gt;. Increasing this value will make the audio sound better at the cost of an increased file size.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -9781,11 +10016,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Full</source>
-        <translation>Пълен</translation>
+        <translation type="vanished">Пълен</translation>
     </message>
     <message>
         <source>Read-only</source>
-        <translation>Само за четене</translation>
+        <translation type="vanished">Само за четене</translation>
     </message>
     <message>
         <source>Lists all shared folders accessible to this machine. Use &apos;net use x: \\vboxsvr\share&apos; to access a shared folder named &lt;i&gt;share&lt;/i&gt; from a DOS-like OS, or &apos;mount -t vboxsf share mount_point&apos; to access it from a Linux OS. This feature requires Guest Additions.</source>
@@ -9829,7 +10064,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Yes</source>
-        <translation>Да</translation>
+        <translation type="vanished">Да</translation>
     </message>
     <message>
         <source>Add Shared Folder</source>
@@ -11111,42 +11346,42 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>&lt;nobr&gt;Vendor ID: %1&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation>&lt;nobr&gt;Производител ID: %1&lt;/nobr&gt;</translation>
+        <translation type="vanished">&lt;nobr&gt;Производител ID: %1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Product ID: %2&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation>&lt;nobr&gt;Продукт ID: %2&lt;/nobr&gt;</translation>
+        <translation type="vanished">&lt;nobr&gt;Продукт ID: %2&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Revision: %3&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation>&lt;nobr&gt;Ревизия: %3&lt;/nobr&gt;</translation>
+        <translation type="vanished">&lt;nobr&gt;Ревизия: %3&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Product: %4&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation>&lt;nobr&gt;Продукт: %4&lt;/nobr&gt;</translation>
+        <translation type="vanished">&lt;nobr&gt;Продукт: %4&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Manufacturer: %5&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation>&lt;nobr&gt;Фабрикант: %5&lt;/nobr&gt;</translation>
+        <translation type="vanished">&lt;nobr&gt;Фабрикант: %5&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Serial No.: %1&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation>&lt;nobr&gt;Сериен No.: %1&lt;/nobr&gt;</translation>
+        <translation type="vanished">&lt;nobr&gt;Сериен No.: %1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Port: %1&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation>&lt;nobr&gt;Порт: %1&lt;/nobr&gt;</translation>
+        <translation type="vanished">&lt;nobr&gt;Порт: %1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;State: %1&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation>&lt;nobr&gt;Област: %1&lt;/nobr&gt;</translation>
+        <translation type="vanished">&lt;nobr&gt;Област: %1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>USB 2.0 is currently enabled for this virtual machine. However this requires the &lt;b&gt;%1&lt;/b&gt; to be installed. Please install the Extension Pack from the VirtualBox download site. After this you will be able to re-enable USB 2.0. It will be disabled in the meantime unless you cancel the current settings changes.</source>
@@ -11497,6 +11732,63 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
+    <name>UIMediumItem</name>
+    <message>
+        <source>Current extension (*.%1)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Choose the location of this medium</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Moving medium...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1, %2: %3, %4: %5</source>
+        <comment>col.1 text, col.2 name: col.2 text, col.3 name: col.3 text</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Format:</source>
+        <translation type="unfinished">Формат:</translation>
+    </message>
+    <message>
+        <source>Storage details:</source>
+        <translation type="unfinished">Детайли на паметта:</translation>
+    </message>
+    <message>
+        <source>Attached to:</source>
+        <translation type="unfinished">Закачен към:</translation>
+    </message>
+    <message>
+        <source>Encrypted with key:</source>
+        <translation type="unfinished">Криптиране с ключ:</translation>
+    </message>
+    <message>
+        <source>UUID:</source>
+        <translation type="unfinished">UUID:</translation>
+    </message>
+    <message>
+        <source>&lt;i&gt;Not&amp;nbsp;Attached&lt;/i&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;i&gt;Not&amp;nbsp;Encrypted&lt;/i&gt;</source>
+        <translation type="unfinished">&lt;i&gt;Некриптирано&lt;/i&gt;</translation>
+    </message>
+    <message>
+        <source>--</source>
+        <comment>no info</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Removing medium...</source>
+        <translation type="unfinished">Премахване на медия...</translation>
+    </message>
+</context>
+<context>
     <name>UIMediumManager</name>
     <message>
         <source>&amp;Hard drives</source>
@@ -11520,7 +11812,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Removing medium...</source>
-        <translation>Премахване на медия...</translation>
+        <translation type="vanished">Премахване на медия...</translation>
     </message>
     <message>
         <source>&amp;Hard disks</source>
@@ -11528,27 +11820,27 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Format:</source>
-        <translation type="unfinished">Формат:</translation>
+        <translation type="obsolete">Формат:</translation>
     </message>
     <message>
         <source>Storage details:</source>
-        <translation type="unfinished">Детайли на паметта:</translation>
+        <translation type="obsolete">Детайли на паметта:</translation>
     </message>
     <message>
         <source>Attached to:</source>
-        <translation type="unfinished">Закачен към:</translation>
+        <translation type="obsolete">Закачен към:</translation>
     </message>
     <message>
         <source>Encrypted with key:</source>
-        <translation type="unfinished">Криптиране с ключ:</translation>
+        <translation type="obsolete">Криптиране с ключ:</translation>
     </message>
     <message>
         <source>UUID:</source>
-        <translation type="unfinished">UUID:</translation>
+        <translation type="obsolete">UUID:</translation>
     </message>
     <message>
         <source>&lt;i&gt;Not&amp;nbsp;Encrypted&lt;/i&gt;</source>
-        <translation type="unfinished">&lt;i&gt;Некриптирано&lt;/i&gt;</translation>
+        <translation type="obsolete">&lt;i&gt;Некриптирано&lt;/i&gt;</translation>
     </message>
     <message>
         <source>&amp;Copy...</source>
@@ -11560,7 +11852,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Refresh the list of disk image files</source>
-        <translation type="unfinished">Обновяване на списъка с дискове</translation>
+        <translation type="obsolete">Обновяване на списъка с дискове</translation>
     </message>
     <message>
         <source>Name</source>
@@ -11639,78 +11931,83 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Create a Floppy Disk</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>File Path:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Size:</source>
-        <translation type="unfinished">Размер:</translation>
-    </message>
-    <message>
-        <source>Format disk as FAT12</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Размер:</translation>
     </message>
     <message>
         <source>1.44M</source>
-        <translation type="unfinished">200% {1.44M?}</translation>
+        <translation type="obsolete">200% {1.44M?}</translation>
     </message>
     <message>
         <source>1.2M</source>
-        <translation type="unfinished">200% {1.2M?}</translation>
+        <translation type="obsolete">200% {1.2M?}</translation>
     </message>
     <message>
         <source>720K</source>
-        <translation type="unfinished">200% {720K?}</translation>
+        <translation type="obsolete">200% {720K?}</translation>
     </message>
     <message>
         <source>360K</source>
-        <translation type="unfinished">200% {360K?}</translation>
-    </message>
-    <message>
-        <source>%1, %2: %3, %4: %5</source>
-        <comment>col.1 text, col.2 name: col.2 text, col.3 name: col.3 text</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;i&gt;Not&amp;nbsp;Attached&lt;/i&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>--</source>
-        <comment>no info</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Add</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Add Disk Image File</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Add disk image file</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">200% {360K?}</translation>
     </message>
     <message>
         <source>&amp;Create</source>
-        <translation type="unfinished">&amp;Създаване</translation>
+        <translation type="obsolete">&amp;Създаване</translation>
+    </message>
+</context>
+<context>
+    <name>UIMediumSelector</name>
+    <message>
+        <source>&amp;Add...</source>
+        <translation type="unfinished">&amp;Добавяне...</translation>
     </message>
     <message>
-        <source>Create an Empty Disk Image</source>
+        <source>Add Disk Image</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Re&amp;fresh</source>
+        <source>Add existing disk image file</source>
         <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Create...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Create Disk Image</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Create new disk image file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Refresh</source>
+        <translation type="unfinished">&amp;Обновяване</translation>
     </message>
     <message>
         <source>Refresh Disk Image Files (%1)</source>
         <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Refresh the list of disk image files</source>
+        <translation type="unfinished">Обновяване на списъка с дискове</translation>
+    </message>
+    <message>
+        <source>Choose</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Name</source>
+        <translation type="unfinished">Име</translation>
+    </message>
+    <message>
+        <source>Virtual Size</source>
+        <translation type="unfinished">Виртуален размер</translation>
+    </message>
+    <message>
+        <source>Actual Size</source>
+        <translation type="unfinished">Настоящ размер</translation>
     </message>
 </context>
 <context>
@@ -14971,12 +15268,12 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Monitor(%1)</source>
+        <source>Monitor %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Controls the guest screen scale factor</source>
-        <translation type="unfinished"></translation>
+        <source>Controls the guest screen scale factor.</source>
+        <translation type="unfinished">Контролира фактора на мащаба на виртуалния екран.</translation>
     </message>
 </context>
 <context>
@@ -15305,7 +15602,7 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>UISnapshotPane</name>
+    <name>UISnapshotItem</name>
     <message>
         <source>Current State (changed)</source>
         <comment>Current State (Modified)</comment>
@@ -15358,6 +15655,42 @@ p, li { white-space: pre-wrap; }
         <source>Taken on %1</source>
         <comment>Snapshot (date + time)</comment>
         <translation type="unfinished">Направена на %1</translation>
+    </message>
+</context>
+<context>
+    <name>UISnapshotPane</name>
+    <message>
+        <source>Current State (changed)</source>
+        <comment>Current State (Modified)</comment>
+        <translation type="obsolete">Текущо състояние (променено)</translation>
+    </message>
+    <message>
+        <source>Current State</source>
+        <comment>Current State (Unmodified)</comment>
+        <translation type="obsolete">Текущо състояние</translation>
+    </message>
+    <message>
+        <source>The current state differs from the state stored in the current snapshot</source>
+        <translation type="obsolete">Текущото състояние се различава от състоянието, записано в настоящата снимка</translation>
+    </message>
+    <message>
+        <source>The current state is identical to the state stored in the current snapshot</source>
+        <translation type="obsolete">Текущото състояние е еднакво със състоянието, записано в настоящата снимка</translation>
+    </message>
+    <message>
+        <source>%1 since %2</source>
+        <comment>Current State (time or date + time)</comment>
+        <translation type="obsolete">%1 от %2</translation>
+    </message>
+    <message>
+        <source>Taken at %1</source>
+        <comment>Snapshot (time)</comment>
+        <translation type="obsolete">Направена в %1</translation>
+    </message>
+    <message>
+        <source>Taken on %1</source>
+        <comment>Snapshot (date + time)</comment>
+        <translation type="obsolete">Направена на %1</translation>
     </message>
     <message>
         <source>Contains the snapshot tree of the current virtual machine</source>
@@ -15522,6 +15855,46 @@ p, li { white-space: pre-wrap; }
         <source>%1, Active</source>
         <comment>col.1 text, col.1 state</comment>
         <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;Vendor ID: %1&lt;/nobr&gt;</source>
+        <comment>USB filter tooltip</comment>
+        <translation type="unfinished">&lt;nobr&gt;Производител ID: %1&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;Product ID: %2&lt;/nobr&gt;</source>
+        <comment>USB filter tooltip</comment>
+        <translation type="unfinished">&lt;nobr&gt;Продукт ID: %2&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;Revision: %3&lt;/nobr&gt;</source>
+        <comment>USB filter tooltip</comment>
+        <translation type="unfinished">&lt;nobr&gt;Ревизия: %3&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;Product: %4&lt;/nobr&gt;</source>
+        <comment>USB filter tooltip</comment>
+        <translation type="unfinished">&lt;nobr&gt;Продукт: %4&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;Manufacturer: %5&lt;/nobr&gt;</source>
+        <comment>USB filter tooltip</comment>
+        <translation type="unfinished">&lt;nobr&gt;Фабрикант: %5&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;Serial No.: %1&lt;/nobr&gt;</source>
+        <comment>USB filter tooltip</comment>
+        <translation type="unfinished">&lt;nobr&gt;Сериен No.: %1&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;Port: %1&lt;/nobr&gt;</source>
+        <comment>USB filter tooltip</comment>
+        <translation type="unfinished">&lt;nobr&gt;Порт: %1&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;State: %1&lt;/nobr&gt;</source>
+        <comment>USB filter tooltip</comment>
+        <translation type="unfinished">&lt;nobr&gt;Област: %1&lt;/nobr&gt;</translation>
     </message>
 </context>
 <context>
@@ -15856,22 +16229,6 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>&amp;Runtime Information</source>
         <translation>Ин&amp;формация за сесията</translation>
-    </message>
-    <message>
-        <source>Close Session</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Terminate Process</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Expand All</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Collapse All</source>
-        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -16210,9 +16567,6 @@ p, li { white-space: pre-wrap; }
         <source>Select a destination folder to move the selected virtual machine</source>
         <translation type="unfinished"></translation>
     </message>
-</context>
-<context>
-    <name>UIVirtualBoxManagerWidget</name>
     <message>
         <source>Show Toolbar Text</source>
         <translation type="unfinished"></translation>
@@ -16513,7 +16867,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>New machine name</source>
-        <translation>Име на новата машина</translation>
+        <translation type="vanished">Име на новата машина</translation>
     </message>
     <message>
         <source>&lt;p&gt;Please choose a name for the new virtual machine. The new machine will be a clone of the machine &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</source>
@@ -16624,10 +16978,6 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Include all network adapter MAC addresses in exported during cloning.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Include only NAT network adapter MAC addresses during cloning.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -16660,7 +17010,15 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Clone options</source>
+        <source>New machine name and path</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Include all network adapter MAC addresses during cloning.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Additional options</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -16907,10 +17265,6 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Please choose one of cloud service accounts you have registered to export virtual machines to.  Make sure profile settings reflected in the underlying table are valid.  They will be used to establish network connection required to upload your virtual machine files to a remote cloud facility.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>&lt;p&gt;Please choose a filename to export the virtual appliance to. Besides that you can specify a certain amount of options which affects the size and content of resulting archive.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
@@ -16923,23 +17277,11 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Oracle Cloud Infrastructure - Classic</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Write in Oracle Cloud Infrastructure - Classic format.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Include all network adapter MAC addresses to exported appliance archive.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Include only NAT network adapter MAC addresses to exported appliance archive.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Include ISO image files into exported VM archive.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Please choose one of cloud service accounts you have registered to export virtual machines to. Make sure profile settings reflected in the underlying table are valid. They will be used to establish network connection required to upload your virtual machine files to a remote cloud facility.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -17075,8 +17417,7 @@ p, li { white-space: pre-wrap; }
         <translation>Непроверен самоподписан ключ от %1!</translation>
     </message>
     <message>
-        <source>You can modify the base folder which will host all the virtual machines.
-Home folders can also be individually (per virtual machine)  modified.</source>
+        <source>You can modify the base folder which will host all the virtual machines. Home folders can also be individually (per virtual machine) modified.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -20215,7 +20556,7 @@ Home folders can also be individually (per virtual machine)  modified.</source>
     </message>
     <message>
         <source>Not Attached</source>
-        <translation type="unfinished">Няма свързани</translation>
+        <translation type="obsolete">Няма свързани</translation>
     </message>
     <message>
         <source>NAT</source>
@@ -20239,7 +20580,7 @@ Home folders can also be individually (per virtual machine)  modified.</source>
     </message>
     <message>
         <source>Disconnected</source>
-        <translation type="unfinished">Несвързан</translation>
+        <translation type="obsolete">Несвързан</translation>
     </message>
     <message>
         <source>Host Pipe</source>
@@ -20385,6 +20726,16 @@ Home folders can also be individually (per virtual machine)  modified.</source>
         <source>Audio Only</source>
         <comment>UISettingsDefs::RecordingMode</comment>
         <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Not Attached</source>
+        <comment>network adapter</comment>
+        <translation type="unfinished">Няма свързани</translation>
+    </message>
+    <message>
+        <source>Disconnected</source>
+        <comment>serial port</comment>
+        <translation type="unfinished">Несвързан</translation>
     </message>
 </context>
 <context>

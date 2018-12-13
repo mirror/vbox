@@ -197,6 +197,18 @@
         <comment>col.1 text, col.2 name: col.2 text, col.3 name: col.3 text, col.4 name: col.4 text, col.5 name: col.5 text</comment>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Full</source>
+        <translation type="unfinished">เต็มที่</translation>
+    </message>
+    <message>
+        <source>Read-only</source>
+        <translation type="unfinished">อ่านอย่างเดียว</translation>
+    </message>
+    <message>
+        <source>Yes</source>
+        <translation type="unfinished">ใช่</translation>
+    </message>
 </context>
 <context>
     <name>UIActionPool</name>
@@ -1072,15 +1084,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Open the guest control file manager</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Host</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Open the guest control file manager submenu</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1089,10 +1093,6 @@
     </message>
     <message>
         <source>Copy to guest</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Guest Control File Manager</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1124,39 +1124,11 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Open panel with to view file manager log</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Open Panel With to View File Manager Log</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>File Operations</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Open panel with to view file manager file operations</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Open Panel With to View File Manager File Operations</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Session</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Open file manager account</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Open File Manager Session</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>GoUp</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1648,10 +1620,6 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Display the virtual machine guest control file manager window</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Guest Process Control...</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1719,7 +1687,51 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Open Panel With File Manager Options</source>
+        <source>Open the file manager</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open the file manager host submenu</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open the file manager guest submenu</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open File Manager Options</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open panel with file manager log</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open File Manager Log</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Operations</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open panel with file manager operations</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open File Manager Operations</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open panel with file manager session</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Go Up</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Display the virtual machine file manager window</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -1900,10 +1912,6 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>When checked a all the hard drives that belong to this appliance will be imported in VDI format</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>MAC Address &amp;Policy:</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1920,10 +1928,6 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Include all network adapter MAC addresses in exported during cloning.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Include only NAT network adapter MAC addresses during cloning.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1933,6 +1937,14 @@
     </message>
     <message>
         <source>Additional Options:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When checked, all the hard drives that belong to this appliance will be imported in VDI format.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Include all network adapter MAC addresses during cloning.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -2215,9 +2227,6 @@
         <source>Close Window (%1)</source>
         <translation type="unfinished"></translation>
     </message>
-</context>
-<context>
-    <name>UICloudProfileManagerWidget</name>
     <message>
         <source>Add Profile</source>
         <translation type="unfinished"></translation>
@@ -2770,6 +2779,356 @@
     <message>
         <source>%1, %2: %3</source>
         <comment>col.2 text, col.3 name: col.3 text</comment>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIFDCreationDialog</name>
+    <message>
+        <source>Create a Floppy Disk</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>File Path:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Size:</source>
+        <translation type="unfinished">ขนาด:</translation>
+    </message>
+    <message>
+        <source>Format disk as FAT12</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>1.44M</source>
+        <translation type="unfinished">3D {1.44M?}</translation>
+    </message>
+    <message>
+        <source>1.2M</source>
+        <translation type="unfinished">3D {1.2M?}</translation>
+    </message>
+    <message>
+        <source>720K</source>
+        <translation type="unfinished">3D {720K?}</translation>
+    </message>
+    <message>
+        <source>360K</source>
+        <translation type="unfinished">3D {360K?}</translation>
+    </message>
+</context>
+<context>
+    <name>UIFileManager</name>
+    <message>
+        <source>%1 - File Manager</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Close</source>
+        <translation type="unfinished">ปิด</translation>
+    </message>
+    <message>
+        <source>Clear</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation type="unfinished">ยกเลิก</translation>
+    </message>
+    <message>
+        <source>Not yet started</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Working</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Paused</source>
+        <translation type="unfinished">หยุดชั่วคราว</translation>
+    </message>
+    <message>
+        <source>Canceled</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Succeded</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Invalid</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove Selected</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove Finished</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove All</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>List directories on top</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>List directories before files</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Ask before delete</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show a confirmation dialog before deleting files and directories</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Human readable sizes</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show file/directory sizes in human readable format rather than in bytes</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Close the pane</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Password</source>
+        <translation type="unfinished">รหัสผ่าน</translation>
+    </message>
+    <message>
+        <source>Show Password</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>User name to authenticate session creation</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>User Name</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Password to authenticate session creation</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Create Session</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Close Session</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Total Size</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source> bytes</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>File Count</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Delete the selected file(s) and/or folder(s)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Ask for this confirmation next time</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Delete confirmation can be disabled/enabled also from the Options panel.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Name</source>
+        <translation type="unfinished">ชื่อ</translation>
+    </message>
+    <message>
+        <source>Size</source>
+        <translation type="unfinished">ขนาด</translation>
+    </message>
+    <message>
+        <source>Change Time</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Owner</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Permissions</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No Guest Session</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unknown</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>File</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Directory</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Symbolic Link</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Other</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Guest System</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;Size:&lt;/b&gt; %1 bytes</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;Allocated:&lt;/b&gt; %1 bytes</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>directory</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>symbolic link</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>character device</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>block device</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>fifo</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>socket</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>whiteout</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>unknown</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>illegal-value</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;Type:&lt;/b&gt; %1&lt;br/&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;INode:&lt;/b&gt; %1&lt;br/&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;Device:&lt;/b&gt; %1&lt;br/&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;Hardlinks:&lt;/b&gt; %1&lt;br/&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;Mode:&lt;/b&gt; %1&lt;br/&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;Attributes:&lt;/b&gt; %1&lt;br/&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;Device ID:&lt;/b&gt; %1&lt;br/&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;Owner:&lt;/b&gt; %1 (%2)&lt;br/&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;Group:&lt;/b&gt; %1 (%2)&lt;br/&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;Birth:&lt;/b&gt; %1&lt;br/&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;Change:&lt;/b&gt; %1&lt;br/&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;Modified:&lt;/b&gt; %1&lt;br/&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;Access:&lt;/b&gt; %1&lt;br/&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;Selected:&lt;/b&gt; %1 files and %2 directories&lt;br/&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;Size (non-recursive):&lt;/b&gt; %1 bytes</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Properties</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Host System</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;Name:&lt;/b&gt; %1&lt;br/&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;Created:&lt;/b&gt; %1&lt;br/&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;Owner:&lt;/b&gt; %1</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -3505,22 +3864,22 @@
     <message>
         <source> (built-in)</source>
         <comment>Language</comment>
-        <translation>(บิลท์อิน)</translation>
+        <translation type="vanished">(บิลท์อิน)</translation>
     </message>
     <message>
         <source>&lt;unavailable&gt;</source>
         <comment>Language</comment>
-        <translation>&lt;ไม่พร้อมใช้งาน&gt;</translation>
+        <translation type="vanished">&lt;ไม่พร้อมใช้งาน&gt;</translation>
     </message>
     <message>
         <source>&lt;unknown&gt;</source>
         <comment>Author(s)</comment>
-        <translation>&lt;ไม่รู้จัก&gt;</translation>
+        <translation type="vanished">&lt;ไม่รู้จัก&gt;</translation>
     </message>
     <message>
         <source>Default</source>
         <comment>Language</comment>
-        <translation>ค่าตั้งต้น</translation>
+        <translation type="vanished">ค่าตั้งต้น</translation>
     </message>
     <message>
         <source>Language:</source>
@@ -3663,67 +4022,67 @@
     </message>
     <message>
         <source>No new name specified for the NAT network previously called &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>ไม่ได้กำหนดชื่อใหม่สำหรับเครือข่าย NAT ที่ถูกเรียกใช้ก่อนหน้านี้ &lt;b&gt;%1&lt;/b&gt;</translation>
+        <translation type="vanished">ไม่ได้กำหนดชื่อใหม่สำหรับเครือข่าย NAT ที่ถูกเรียกใช้ก่อนหน้านี้ &lt;b&gt;%1&lt;/b&gt;</translation>
     </message>
     <message>
         <source>No CIDR specified for the NAT network &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>ไม่ได้กำหนด CIDR สำหรับเครือข่าย NAT &lt;b&gt;%1&lt;/b&gt;</translation>
+        <translation type="vanished">ไม่ได้กำหนด CIDR สำหรับเครือข่าย NAT &lt;b&gt;%1&lt;/b&gt;</translation>
     </message>
     <message>
         <source>No CIDR specified for the NAT network previously called &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>ไม่ได้กำหนด CIDR สำหรับเครือข่าย NAT ที่ถูกเรียกใช้ก่อนหน้านี้ &lt;b&gt;%1&lt;/b&gt;</translation>
+        <translation type="vanished">ไม่ได้กำหนด CIDR สำหรับเครือข่าย NAT ที่ถูกเรียกใช้ก่อนหน้านี้ &lt;b&gt;%1&lt;/b&gt;</translation>
     </message>
     <message>
         <source>Invalid CIDR specified (&lt;i&gt;%1&lt;/i&gt;) for the NAT network &lt;b&gt;%2&lt;/b&gt;.</source>
-        <translation>กำหนด CIDR ไม่ถูกต้อง (&lt;i&gt;%1&lt;/i&gt;) สำหรับเครือข่าย NAT &lt;b&gt;%2&lt;/b&gt;</translation>
+        <translation type="vanished">กำหนด CIDR ไม่ถูกต้อง (&lt;i&gt;%1&lt;/i&gt;) สำหรับเครือข่าย NAT &lt;b&gt;%2&lt;/b&gt;</translation>
     </message>
     <message>
         <source>Invalid CIDR specified (&lt;i&gt;%1&lt;/i&gt;) for the NAT network previously called &lt;b&gt;%2&lt;/b&gt;.</source>
-        <translation>กำหนด CIDR ไม่ถูกต้อง (&lt;i&gt;%1&lt;/i&gt;) สำหรับเครือข่าย NAT ที่ถูกเรียกใช้ก่อนหน้านี้ &lt;b&gt;%2&lt;/b&gt;</translation>
+        <translation type="vanished">กำหนด CIDR ไม่ถูกต้อง (&lt;i&gt;%1&lt;/i&gt;) สำหรับเครือข่าย NAT ที่ถูกเรียกใช้ก่อนหน้านี้ &lt;b&gt;%2&lt;/b&gt;</translation>
     </message>
     <message>
         <source>Network Name</source>
-        <translation>ชื่อเครือข่าย</translation>
+        <translation type="vanished">ชื่อเครือข่าย</translation>
     </message>
     <message>
         <source>[empty]</source>
-        <translation>[ว่าง]</translation>
+        <translation type="vanished">[ว่าง]</translation>
     </message>
     <message>
         <source>%1 (renamed from %2)</source>
-        <translation>%1 (เปลี่ยนชื่อจาก %2)</translation>
+        <translation type="vanished">%1 (เปลี่ยนชื่อจาก %2)</translation>
     </message>
     <message>
         <source>Old Network Name</source>
-        <translation>ชื่อเครือข่ายเดิม</translation>
+        <translation type="vanished">ชื่อเครือข่ายเดิม</translation>
     </message>
     <message>
         <source>New Network Name</source>
-        <translation>ชื่อเครือข่ายใหม่</translation>
+        <translation type="vanished">ชื่อเครือข่ายใหม่</translation>
     </message>
     <message>
         <source>Network CIDR</source>
-        <translation>CIDR ของเครือข่าย</translation>
+        <translation type="vanished">CIDR ของเครือข่าย</translation>
     </message>
     <message>
         <source>Supports DHCP</source>
-        <translation>รองรับ DHCP</translation>
+        <translation type="vanished">รองรับ DHCP</translation>
     </message>
     <message>
         <source>yes</source>
-        <translation>ใช่</translation>
+        <translation type="vanished">ใช่</translation>
     </message>
     <message>
         <source>no</source>
-        <translation>ไม่ใช่</translation>
+        <translation type="vanished">ไม่ใช่</translation>
     </message>
     <message>
         <source>Supports IPv6</source>
-        <translation>รองรับ IPv6</translation>
+        <translation type="vanished">รองรับ IPv6</translation>
     </message>
     <message>
         <source>Default IPv6 route</source>
-        <translation>เส้นทางตั้งต้น IPv6</translation>
+        <translation type="vanished">เส้นทางตั้งต้น IPv6</translation>
     </message>
     <message>
         <source>Host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid IPv4 address.</source>
@@ -4126,317 +4485,45 @@
     <name>UIGuestControlFileManager</name>
     <message>
         <source>Close</source>
-        <translation type="unfinished">ปิด</translation>
-    </message>
-    <message>
-        <source>Close the pane</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>User name to authenticate session creation</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>User Name</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Password to authenticate session creation</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">ปิด</translation>
     </message>
     <message>
         <source>Password</source>
-        <translation type="unfinished">รหัสผ่าน</translation>
+        <translation type="obsolete">รหัสผ่าน</translation>
     </message>
     <message>
-        <source>Create Session</source>
-        <translation type="unfinished"></translation>
+        <source>Name</source>
+        <translation type="obsolete">ชื่อ</translation>
     </message>
+    <message>
+        <source>Size</source>
+        <translation type="obsolete">ขนาด</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation type="obsolete">ยกเลิก</translation>
+    </message>
+    <message>
+        <source>Paused</source>
+        <translation type="obsolete">หยุดชั่วคราว</translation>
+    </message>
+</context>
+<context>
+    <name>UIGuestControlTreeWidget</name>
     <message>
         <source>Close Session</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>List directories on top</source>
+        <source>Terminate Process</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>List directories before files</source>
+        <source>Expand All</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Ask before delete</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Human readable sizes</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Total Size</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source> bytes</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>File Count</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Delete the selected file(s) and/or folder(s)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Ask for this confirmation next time</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Delete confirmation can be disabled/enabled also from the Options panel.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Name</source>
-        <translation type="unfinished">ชื่อ</translation>
-    </message>
-    <message>
-        <source>Size</source>
-        <translation type="unfinished">ขนาด</translation>
-    </message>
-    <message>
-        <source>Change Time</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Owner</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Permissions</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>No Guest Session</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Unknown</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>File</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Directory</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Symbolic Link</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Other</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Guest System</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;b&gt;Size:&lt;/b&gt; %1 bytes</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;b&gt;Type:&lt;/b&gt; %1&lt;br/&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;b&gt;Created:&lt;/b&gt; %1&lt;br/&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;b&gt;Modified:&lt;/b&gt; %1&lt;br/&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;b&gt;Selected:&lt;/b&gt; %1 files and %2 directories&lt;br/&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;b&gt;Size (non-recursive):&lt;/b&gt; %1 bytes</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Properties</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Host System</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;b&gt;Owner:&lt;/b&gt; %1</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>%1 - Guest Control File Manager</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Clear</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Cancel</source>
-        <translation type="unfinished">ยกเลิก</translation>
-    </message>
-    <message>
-        <source>Not yet started</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Working</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Paused</source>
-        <translation type="unfinished">หยุดชั่วคราว</translation>
-    </message>
-    <message>
-        <source>Canceled</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Succeded</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Failed</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Invalid</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Remove Selected</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Remove Finished</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Remove All</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Show a confirmation dialog before deleting files and directories</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Show file/directory sizes in human readable format rather than in bytes</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Show Password</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;b&gt;Allocated:&lt;/b&gt; %1 bytes</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;b&gt;INode:&lt;/b&gt; %1&lt;br/&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;b&gt;Device:&lt;/b&gt; %1&lt;br/&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;b&gt;Hardlinks:&lt;/b&gt; %1&lt;br/&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;b&gt;Mode:&lt;/b&gt; %1&lt;br/&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;b&gt;Attributes:&lt;/b&gt; %1&lt;br/&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;b&gt;Device ID:&lt;/b&gt; %1&lt;br/&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;b&gt;Owner:&lt;/b&gt; %1 (%2)&lt;br/&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;b&gt;Group:&lt;/b&gt; %1 (%2)&lt;br/&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;b&gt;Birth:&lt;/b&gt; %1&lt;br/&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;b&gt;Change:&lt;/b&gt; %1&lt;br/&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;b&gt;Access:&lt;/b&gt; %1&lt;br/&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;b&gt;Name:&lt;/b&gt; %1&lt;br/&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
-    <name>UIGuestFileTable</name>
-    <message>
-        <source>directory</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>file</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>symbolic link</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>character device</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>block device</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>fifo</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>socket</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>whiteout</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>unknown</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>illegal-value</source>
+        <source>Collapse All</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -4704,52 +4791,52 @@
     <message>
         <source>Enable</source>
         <comment>DHCP Server</comment>
-        <translation type="unfinished">ใช้</translation>
+        <translation type="obsolete">ใช้</translation>
     </message>
     <message>
         <source>Adapter</source>
-        <translation type="unfinished">แผงวงจร</translation>
+        <translation type="obsolete">แผงวงจร</translation>
     </message>
     <message>
         <source>Automatically configured</source>
         <comment>interface</comment>
-        <translation type="unfinished">ตั้งค่าอัตโนมัติ</translation>
+        <translation type="obsolete">ตั้งค่าอัตโนมัติ</translation>
     </message>
     <message>
         <source>Manually configured</source>
         <comment>interface</comment>
-        <translation type="unfinished">ตั้งค่าด้วยตนเอง</translation>
+        <translation type="obsolete">ตั้งค่าด้วยตนเอง</translation>
     </message>
     <message>
         <source>IPv4 Address</source>
-        <translation type="unfinished">ที่อยู่ IPv4</translation>
+        <translation type="obsolete">ที่อยู่ IPv4</translation>
     </message>
     <message>
         <source>Not set</source>
         <comment>address</comment>
-        <translation type="unfinished">ไม่ได้กำหนด</translation>
+        <translation type="obsolete">ไม่ได้กำหนด</translation>
     </message>
     <message>
         <source>IPv4 Network Mask</source>
-        <translation type="unfinished">มาสก์เครือข่าย IPv4</translation>
+        <translation type="obsolete">มาสก์เครือข่าย IPv4</translation>
     </message>
     <message>
         <source>Not set</source>
         <comment>mask</comment>
-        <translation type="unfinished">ไม่ได้กำหนด</translation>
+        <translation type="obsolete">ไม่ได้กำหนด</translation>
     </message>
     <message>
         <source>IPv6 Address</source>
-        <translation type="unfinished">ที่อยู่ IPv6</translation>
+        <translation type="obsolete">ที่อยู่ IPv6</translation>
     </message>
     <message>
         <source>IPv6 Prefix Length</source>
-        <translation type="unfinished">ความยาวมาสก์เครือข่าย IPv6</translation>
+        <translation type="obsolete">ความยาวมาสก์เครือข่าย IPv6</translation>
     </message>
     <message>
         <source>Not set</source>
         <comment>length</comment>
-        <translation type="unfinished">ไม่ได้กำหนด</translation>
+        <translation type="obsolete">ไม่ได้กำหนด</translation>
     </message>
     <message>
         <source>DHCP Server</source>
@@ -4758,33 +4845,33 @@
     <message>
         <source>Enabled</source>
         <comment>server</comment>
-        <translation type="unfinished">ใช้</translation>
+        <translation type="obsolete">ใช้</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>server</comment>
-        <translation type="unfinished">ไม่ใช้</translation>
+        <translation type="obsolete">ไม่ใช้</translation>
     </message>
     <message>
         <source>Address</source>
-        <translation type="unfinished">ที่อยู่</translation>
+        <translation type="obsolete">ที่อยู่</translation>
     </message>
     <message>
         <source>Network Mask</source>
-        <translation type="unfinished">มาสก์เครือข่าย</translation>
+        <translation type="obsolete">มาสก์เครือข่าย</translation>
     </message>
     <message>
         <source>Lower Bound</source>
-        <translation type="unfinished">ที่อยู่เริ่มต้น</translation>
+        <translation type="obsolete">ที่อยู่เริ่มต้น</translation>
     </message>
     <message>
         <source>Not set</source>
         <comment>bound</comment>
-        <translation type="unfinished">ไม่ได้กำหนด</translation>
+        <translation type="obsolete">ไม่ได้กำหนด</translation>
     </message>
     <message>
         <source>Upper Bound</source>
-        <translation type="unfinished">ที่อยู่สุดท้าย</translation>
+        <translation type="obsolete">ที่อยู่สุดท้าย</translation>
     </message>
     <message>
         <source>&amp;Network</source>
@@ -4846,13 +4933,6 @@
         <source>Close Window (%1)</source>
         <translation type="unfinished"></translation>
     </message>
-</context>
-<context>
-    <name>UIHostNetworkManagerWidget</name>
-    <message>
-        <source>Networking</source>
-        <translation type="obsolete">เครือข่าย</translation>
-    </message>
     <message>
         <source>Adding network...</source>
         <translation type="unfinished"></translation>
@@ -4860,6 +4940,13 @@
     <message>
         <source>Removing network...</source>
         <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIHostNetworkManagerWidget</name>
+    <message>
+        <source>Networking</source>
+        <translation type="obsolete">เครือข่าย</translation>
     </message>
 </context>
 <context>
@@ -5523,6 +5610,94 @@
     </message>
 </context>
 <context>
+    <name>UIItemHostNetwork</name>
+    <message>
+        <source>Enable</source>
+        <comment>DHCP Server</comment>
+        <translation type="unfinished">ใช้</translation>
+    </message>
+    <message>
+        <source>Adapter</source>
+        <translation type="unfinished">แผงวงจร</translation>
+    </message>
+    <message>
+        <source>Automatically configured</source>
+        <comment>interface</comment>
+        <translation type="unfinished">ตั้งค่าอัตโนมัติ</translation>
+    </message>
+    <message>
+        <source>Manually configured</source>
+        <comment>interface</comment>
+        <translation type="unfinished">ตั้งค่าด้วยตนเอง</translation>
+    </message>
+    <message>
+        <source>IPv4 Address</source>
+        <translation type="unfinished">ที่อยู่ IPv4</translation>
+    </message>
+    <message>
+        <source>Not set</source>
+        <comment>address</comment>
+        <translation type="unfinished">ไม่ได้กำหนด</translation>
+    </message>
+    <message>
+        <source>IPv4 Network Mask</source>
+        <translation type="unfinished">มาสก์เครือข่าย IPv4</translation>
+    </message>
+    <message>
+        <source>Not set</source>
+        <comment>mask</comment>
+        <translation type="unfinished">ไม่ได้กำหนด</translation>
+    </message>
+    <message>
+        <source>IPv6 Address</source>
+        <translation type="unfinished">ที่อยู่ IPv6</translation>
+    </message>
+    <message>
+        <source>IPv6 Prefix Length</source>
+        <translation type="unfinished">ความยาวมาสก์เครือข่าย IPv6</translation>
+    </message>
+    <message>
+        <source>Not set</source>
+        <comment>length</comment>
+        <translation type="unfinished">ไม่ได้กำหนด</translation>
+    </message>
+    <message>
+        <source>DHCP Server</source>
+        <translation type="unfinished">เซอร์ฟเวอร์ DHCP</translation>
+    </message>
+    <message>
+        <source>Enabled</source>
+        <comment>server</comment>
+        <translation type="unfinished">ใช้</translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>server</comment>
+        <translation type="unfinished">ไม่ใช้</translation>
+    </message>
+    <message>
+        <source>Address</source>
+        <translation type="unfinished">ที่อยู่</translation>
+    </message>
+    <message>
+        <source>Network Mask</source>
+        <translation type="unfinished">มาสก์เครือข่าย</translation>
+    </message>
+    <message>
+        <source>Lower Bound</source>
+        <translation type="unfinished">ที่อยู่เริ่มต้น</translation>
+    </message>
+    <message>
+        <source>Not set</source>
+        <comment>bound</comment>
+        <translation type="unfinished">ไม่ได้กำหนด</translation>
+    </message>
+    <message>
+        <source>Upper Bound</source>
+        <translation type="unfinished">ที่อยู่สุดท้าย</translation>
+    </message>
+</context>
+<context>
     <name>UIItemNetworkNAT</name>
     <message>
         <source>%1, %2</source>
@@ -5533,6 +5708,93 @@
         <source>%1</source>
         <comment>col.2 text</comment>
         <translation type="unfinished">%1% {1?}</translation>
+    </message>
+    <message>
+        <source>Network Name</source>
+        <translation type="unfinished">ชื่อเครือข่าย</translation>
+    </message>
+    <message>
+        <source>[empty]</source>
+        <translation type="unfinished">[ว่าง]</translation>
+    </message>
+    <message>
+        <source>%1 (renamed from %2)</source>
+        <translation type="unfinished">%1 (เปลี่ยนชื่อจาก %2)</translation>
+    </message>
+    <message>
+        <source>Old Network Name</source>
+        <translation type="unfinished">ชื่อเครือข่ายเดิม</translation>
+    </message>
+    <message>
+        <source>New Network Name</source>
+        <translation type="unfinished">ชื่อเครือข่ายใหม่</translation>
+    </message>
+    <message>
+        <source>Network CIDR</source>
+        <translation type="unfinished">CIDR ของเครือข่าย</translation>
+    </message>
+    <message>
+        <source>Supports DHCP</source>
+        <translation type="unfinished">รองรับ DHCP</translation>
+    </message>
+    <message>
+        <source>yes</source>
+        <translation type="unfinished">ใช่</translation>
+    </message>
+    <message>
+        <source>no</source>
+        <translation type="unfinished">ไม่ใช่</translation>
+    </message>
+    <message>
+        <source>Supports IPv6</source>
+        <translation type="unfinished">รองรับ IPv6</translation>
+    </message>
+    <message>
+        <source>Default IPv6 route</source>
+        <translation type="unfinished">เส้นทางตั้งต้น IPv6</translation>
+    </message>
+    <message>
+        <source>No new name specified for the NAT network previously called &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished">ไม่ได้กำหนดชื่อใหม่สำหรับเครือข่าย NAT ที่ถูกเรียกใช้ก่อนหน้านี้ &lt;b&gt;%1&lt;/b&gt;</translation>
+    </message>
+    <message>
+        <source>No CIDR specified for the NAT network &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished">ไม่ได้กำหนด CIDR สำหรับเครือข่าย NAT &lt;b&gt;%1&lt;/b&gt;</translation>
+    </message>
+    <message>
+        <source>No CIDR specified for the NAT network previously called &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished">ไม่ได้กำหนด CIDR สำหรับเครือข่าย NAT ที่ถูกเรียกใช้ก่อนหน้านี้ &lt;b&gt;%1&lt;/b&gt;</translation>
+    </message>
+    <message>
+        <source>Invalid CIDR specified (&lt;i&gt;%1&lt;/i&gt;) for the NAT network &lt;b&gt;%2&lt;/b&gt;.</source>
+        <translation type="unfinished">กำหนด CIDR ไม่ถูกต้อง (&lt;i&gt;%1&lt;/i&gt;) สำหรับเครือข่าย NAT &lt;b&gt;%2&lt;/b&gt;</translation>
+    </message>
+    <message>
+        <source>Invalid CIDR specified (&lt;i&gt;%1&lt;/i&gt;) for the NAT network previously called &lt;b&gt;%2&lt;/b&gt;.</source>
+        <translation type="unfinished">กำหนด CIDR ไม่ถูกต้อง (&lt;i&gt;%1&lt;/i&gt;) สำหรับเครือข่าย NAT ที่ถูกเรียกใช้ก่อนหน้านี้ &lt;b&gt;%2&lt;/b&gt;</translation>
+    </message>
+</context>
+<context>
+    <name>UILanguageItem</name>
+    <message>
+        <source> (built-in)</source>
+        <comment>Language</comment>
+        <translation type="unfinished">(บิลท์อิน)</translation>
+    </message>
+    <message>
+        <source>&lt;unavailable&gt;</source>
+        <comment>Language</comment>
+        <translation type="unfinished">&lt;ไม่พร้อมใช้งาน&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;unknown&gt;</source>
+        <comment>Author(s)</comment>
+        <translation type="unfinished">&lt;ไม่รู้จัก&gt;</translation>
+    </message>
+    <message>
+        <source>Default</source>
+        <comment>Language</comment>
+        <translation type="unfinished">ค่าตั้งต้น</translation>
     </message>
 </context>
 <context>
@@ -5723,7 +5985,7 @@
     </message>
     <message>
         <source>&amp;Quality:</source>
-        <translation>&amp;คุณภาพ:</translation>
+        <translation type="vanished">&amp;คุณภาพ:</translation>
     </message>
     <message>
         <source>&amp;Screens:</source>
@@ -5889,22 +6151,6 @@
         <translation>เลือกที่นี่หากต้องการเปิดใช้การบันทึกวิดีโอสำหรับหน้าจอ %1</translation>
     </message>
     <message>
-        <source>&amp;Capture</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Enable Capture</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Capture &amp;Mode:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Stores the capture mode.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>&amp;Audio Quality:</source>
         <translation type="unfinished"></translation>
     </message>
@@ -5914,6 +6160,30 @@
     </message>
     <message>
         <source>Selects the graphics adapter type the virtual machine will use.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Re&amp;cording</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Enable Recording</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Recording &amp;Mode:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Selects the recording mode.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Video Quality:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Controls the &lt;b&gt;quality&lt;/b&gt;. Increasing this value will make the audio sound better at the cost of an increased file size.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -6319,11 +6589,11 @@
     </message>
     <message>
         <source>Full</source>
-        <translation>เต็มที่</translation>
+        <translation type="vanished">เต็มที่</translation>
     </message>
     <message>
         <source>Read-only</source>
-        <translation>อ่านอย่างเดียว</translation>
+        <translation type="vanished">อ่านอย่างเดียว</translation>
     </message>
     <message>
         <source>Lists all shared folders accessible to this machine. Use &apos;net use x: \\vboxsvr\share&apos; to access a shared folder named &lt;i&gt;share&lt;/i&gt; from a DOS-like OS, or &apos;mount -t vboxsf share mount_point&apos; to access it from a Linux OS. This feature requires Guest Additions.</source>
@@ -6351,7 +6621,7 @@
     </message>
     <message>
         <source>Yes</source>
-        <translation>ใช่</translation>
+        <translation type="vanished">ใช่</translation>
     </message>
     <message>
         <source>Add Shared Folder</source>
@@ -7133,42 +7403,42 @@
     <message>
         <source>&lt;nobr&gt;Vendor ID: %1&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation>&lt;nobr&gt;รหัสผู้ผลิต: %1&lt;/nobr&gt;</translation>
+        <translation type="vanished">&lt;nobr&gt;รหัสผู้ผลิต: %1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Product ID: %2&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation>&lt;nobr&gt;รหัสผลิตภัณฑ์: %2&lt;/nobr&gt;</translation>
+        <translation type="vanished">&lt;nobr&gt;รหัสผลิตภัณฑ์: %2&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Revision: %3&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation>&lt;nobr&gt;ครั้งที่แก้ไข: %3&lt;/nobr&gt;</translation>
+        <translation type="vanished">&lt;nobr&gt;ครั้งที่แก้ไข: %3&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Product: %4&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation>&lt;nobr&gt;ผลิตภัณฑ์: %4&lt;/nobr&gt;</translation>
+        <translation type="vanished">&lt;nobr&gt;ผลิตภัณฑ์: %4&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Manufacturer: %5&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation>&lt;nobr&gt;ผู้ผลิต: %5&lt;/nobr&gt;</translation>
+        <translation type="vanished">&lt;nobr&gt;ผู้ผลิต: %5&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Serial No.: %1&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation>&lt;nobr&gt;เลขลำดับ: %1&lt;/nobr&gt;</translation>
+        <translation type="vanished">&lt;nobr&gt;เลขลำดับ: %1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Port: %1&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation>&lt;nobr&gt;พอร์ต: %1&lt;/nobr&gt;</translation>
+        <translation type="vanished">&lt;nobr&gt;พอร์ต: %1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;State: %1&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation>&lt;nobr&gt;สถานะ: %1&lt;/nobr&gt;</translation>
+        <translation type="vanished">&lt;nobr&gt;สถานะ: %1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>USB &amp;1.1 (OHCI) Controller</source>
@@ -7459,22 +7729,23 @@
     </message>
 </context>
 <context>
-    <name>UIMediumManager</name>
+    <name>UIMediumItem</name>
     <message>
-        <source>&amp;Optical disks</source>
-        <translation>&amp;ออปติคัลดิสก์</translation>
+        <source>Current extension (*.%1)</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&amp;Floppy disks</source>
-        <translation>&amp;ฟลอปปี้ดิสก์</translation>
+        <source>Choose the location of this medium</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Removing medium...</source>
-        <translation>กำลังนำสื่อบันทึกออก...</translation>
+        <source>Moving medium...</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&amp;Hard disks</source>
-        <translation>&amp;ฮาร์ดดิสก์:</translation>
+        <source>%1, %2: %3, %4: %5</source>
+        <comment>col.1 text, col.2 name: col.2 text, col.3 name: col.3 text</comment>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Format:</source>
@@ -7510,6 +7781,62 @@
         <translation type="unfinished">--</translation>
     </message>
     <message>
+        <source>Removing medium...</source>
+        <translation type="unfinished">กำลังนำสื่อบันทึกออก...</translation>
+    </message>
+</context>
+<context>
+    <name>UIMediumManager</name>
+    <message>
+        <source>&amp;Optical disks</source>
+        <translation>&amp;ออปติคัลดิสก์</translation>
+    </message>
+    <message>
+        <source>&amp;Floppy disks</source>
+        <translation>&amp;ฟลอปปี้ดิสก์</translation>
+    </message>
+    <message>
+        <source>Removing medium...</source>
+        <translation type="vanished">กำลังนำสื่อบันทึกออก...</translation>
+    </message>
+    <message>
+        <source>&amp;Hard disks</source>
+        <translation>&amp;ฮาร์ดดิสก์:</translation>
+    </message>
+    <message>
+        <source>Format:</source>
+        <translation type="obsolete">รูปแบบ:</translation>
+    </message>
+    <message>
+        <source>Storage details:</source>
+        <translation type="obsolete">รายละเอียดหน่วยเก็บข้อมูล:</translation>
+    </message>
+    <message>
+        <source>Attached to:</source>
+        <translation type="obsolete">เชื่อมต่อกับ:</translation>
+    </message>
+    <message>
+        <source>Encrypted with key:</source>
+        <translation type="obsolete">เข้ารหัสลับด้วยกุญแจ:</translation>
+    </message>
+    <message>
+        <source>UUID:</source>
+        <translation type="obsolete">UUID:</translation>
+    </message>
+    <message>
+        <source>&lt;i&gt;Not&amp;nbsp;Attached&lt;/i&gt;</source>
+        <translation type="obsolete">&lt;i&gt;ไม่ได้เชื่อมต่อไว้&lt;/i&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;i&gt;Not&amp;nbsp;Encrypted&lt;/i&gt;</source>
+        <translation type="obsolete">&lt;i&gt;ไม่ได้เข้ารหัสลับไว้&lt;/i&gt;</translation>
+    </message>
+    <message>
+        <source>--</source>
+        <comment>no info</comment>
+        <translation type="obsolete">--</translation>
+    </message>
+    <message>
         <source>&amp;Copy...</source>
         <translation type="obsolete">&amp;คัดลอก...</translation>
     </message>
@@ -7519,11 +7846,11 @@
     </message>
     <message>
         <source>Re&amp;fresh</source>
-        <translation type="unfinished">เรียก&amp;ซ้ำ</translation>
+        <translation type="obsolete">เรียก&amp;ซ้ำ</translation>
     </message>
     <message>
         <source>Refresh the list of disk image files</source>
-        <translation type="unfinished">เรียกรายการไฟล์ดิสก์อิมเมจซ้ำอีกครั้ง</translation>
+        <translation type="obsolete">เรียกรายการไฟล์ดิสก์อิมเมจซ้ำอีกครั้ง</translation>
     </message>
     <message>
         <source>Name</source>
@@ -7602,65 +7929,79 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Create a Floppy Disk</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>File Path:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Size:</source>
-        <translation type="unfinished">ขนาด:</translation>
-    </message>
-    <message>
-        <source>Format disk as FAT12</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">ขนาด:</translation>
     </message>
     <message>
         <source>1.44M</source>
-        <translation type="unfinished">3D {1.44M?}</translation>
+        <translation type="obsolete">3D {1.44M?}</translation>
     </message>
     <message>
         <source>1.2M</source>
-        <translation type="unfinished">3D {1.2M?}</translation>
+        <translation type="obsolete">3D {1.2M?}</translation>
     </message>
     <message>
         <source>720K</source>
-        <translation type="unfinished">3D {720K?}</translation>
+        <translation type="obsolete">3D {720K?}</translation>
     </message>
     <message>
         <source>360K</source>
-        <translation type="unfinished">3D {360K?}</translation>
+        <translation type="obsolete">3D {360K?}</translation>
+    </message>
+</context>
+<context>
+    <name>UIMediumSelector</name>
+    <message>
+        <source>&amp;Add...</source>
+        <translation type="unfinished">เ&amp;พิ่ม...</translation>
     </message>
     <message>
-        <source>%1, %2: %3, %4: %5</source>
-        <comment>col.1 text, col.2 name: col.2 text, col.3 name: col.3 text</comment>
+        <source>Add Disk Image</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&amp;Add</source>
+        <source>Add existing disk image file</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Add Disk Image File</source>
+        <source>&amp;Create...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Add disk image file</source>
+        <source>Create Disk Image</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&amp;Create</source>
+        <source>Create new disk image file</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Create an Empty Disk Image</source>
-        <translation type="unfinished"></translation>
+        <source>&amp;Refresh</source>
+        <translation type="unfinished">เรียก&amp;ซ้ำ</translation>
     </message>
     <message>
         <source>Refresh Disk Image Files (%1)</source>
         <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Refresh the list of disk image files</source>
+        <translation type="unfinished">เรียกรายการไฟล์ดิสก์อิมเมจซ้ำอีกครั้ง</translation>
+    </message>
+    <message>
+        <source>Choose</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Name</source>
+        <translation type="unfinished">ชื่อ</translation>
+    </message>
+    <message>
+        <source>Virtual Size</source>
+        <translation type="unfinished">ขนาดเสมือน</translation>
+    </message>
+    <message>
+        <source>Actual Size</source>
+        <translation type="unfinished">ขนาดจริง</translation>
     </message>
 </context>
 <context>
@@ -9328,12 +9669,12 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Monitor(%1)</source>
+        <source>Monitor %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Controls the guest screen scale factor</source>
-        <translation type="unfinished"></translation>
+        <source>Controls the guest screen scale factor.</source>
+        <translation type="unfinished">ควบคุมค่าสเกลหน้าจอของเกสต์</translation>
     </message>
 </context>
 <context>
@@ -9614,7 +9955,7 @@
     </message>
 </context>
 <context>
-    <name>UISnapshotPane</name>
+    <name>UISnapshotItem</name>
     <message>
         <source>Current State (changed)</source>
         <comment>Current State (Modified)</comment>
@@ -9667,6 +10008,42 @@
         <source>Taken on %1</source>
         <comment>Snapshot (date + time)</comment>
         <translation type="unfinished">เก็บไว้เมื่อ %1</translation>
+    </message>
+</context>
+<context>
+    <name>UISnapshotPane</name>
+    <message>
+        <source>Current State (changed)</source>
+        <comment>Current State (Modified)</comment>
+        <translation type="obsolete">สถานะปัจจุบัน (มีการเปลี่ยนแปลง)</translation>
+    </message>
+    <message>
+        <source>Current State</source>
+        <comment>Current State (Unmodified)</comment>
+        <translation type="obsolete">สถานะปัจจุบัน</translation>
+    </message>
+    <message>
+        <source>The current state differs from the state stored in the current snapshot</source>
+        <translation type="obsolete">สถานะปัจจุบันมีความแตกต่างจากสถานะที่ถูกจัดเก็บไว้ในสแนปช็อต</translation>
+    </message>
+    <message>
+        <source>The current state is identical to the state stored in the current snapshot</source>
+        <translation type="obsolete">สถานะปัจจุบันตรงกับสถานะที่ถูกจัดเก็บไว้ในสแนปช็อต</translation>
+    </message>
+    <message>
+        <source>%1 since %2</source>
+        <comment>Current State (time or date + time)</comment>
+        <translation type="obsolete">%1 ตั้งแต่ %2</translation>
+    </message>
+    <message>
+        <source>Taken at %1</source>
+        <comment>Snapshot (time)</comment>
+        <translation type="obsolete">เก็บไว้เมื่อ %1</translation>
+    </message>
+    <message>
+        <source>Taken on %1</source>
+        <comment>Snapshot (date + time)</comment>
+        <translation type="obsolete">เก็บไว้เมื่อ %1</translation>
     </message>
     <message>
         <source>Contains the snapshot tree of the current virtual machine</source>
@@ -9819,6 +10196,46 @@
         <source>%1, Active</source>
         <comment>col.1 text, col.1 state</comment>
         <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;Vendor ID: %1&lt;/nobr&gt;</source>
+        <comment>USB filter tooltip</comment>
+        <translation type="unfinished">&lt;nobr&gt;รหัสผู้ผลิต: %1&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;Product ID: %2&lt;/nobr&gt;</source>
+        <comment>USB filter tooltip</comment>
+        <translation type="unfinished">&lt;nobr&gt;รหัสผลิตภัณฑ์: %2&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;Revision: %3&lt;/nobr&gt;</source>
+        <comment>USB filter tooltip</comment>
+        <translation type="unfinished">&lt;nobr&gt;ครั้งที่แก้ไข: %3&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;Product: %4&lt;/nobr&gt;</source>
+        <comment>USB filter tooltip</comment>
+        <translation type="unfinished">&lt;nobr&gt;ผลิตภัณฑ์: %4&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;Manufacturer: %5&lt;/nobr&gt;</source>
+        <comment>USB filter tooltip</comment>
+        <translation type="unfinished">&lt;nobr&gt;ผู้ผลิต: %5&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;Serial No.: %1&lt;/nobr&gt;</source>
+        <comment>USB filter tooltip</comment>
+        <translation type="unfinished">&lt;nobr&gt;เลขลำดับ: %1&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;Port: %1&lt;/nobr&gt;</source>
+        <comment>USB filter tooltip</comment>
+        <translation type="unfinished">&lt;nobr&gt;พอร์ต: %1&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;State: %1&lt;/nobr&gt;</source>
+        <comment>USB filter tooltip</comment>
+        <translation type="unfinished">&lt;nobr&gt;สถานะ: %1&lt;/nobr&gt;</translation>
     </message>
 </context>
 <context>
@@ -10052,22 +10469,6 @@
     <message>
         <source>&amp;Runtime Information</source>
         <translation>ข้อมูลของ&amp;รุ่นที่ใช้งาน</translation>
-    </message>
-    <message>
-        <source>Close Session</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Terminate Process</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Expand All</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Collapse All</source>
-        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -10343,9 +10744,6 @@
         <source>Select a destination folder to move the selected virtual machine</source>
         <translation type="unfinished"></translation>
     </message>
-</context>
-<context>
-    <name>UIVirtualBoxManagerWidget</name>
     <message>
         <source>Show Toolbar Text</source>
         <translation type="unfinished"></translation>
@@ -10566,7 +10964,7 @@
     </message>
     <message>
         <source>New machine name</source>
-        <translation>ชื่อเครื่องใหม่</translation>
+        <translation type="vanished">ชื่อเครื่องใหม่</translation>
     </message>
     <message>
         <source>&lt;p&gt;Please choose a name for the new virtual machine. The new machine will be a clone of the machine &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</source>
@@ -10673,10 +11071,6 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Include all network adapter MAC addresses in exported during cloning.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Include only NAT network adapter MAC addresses during cloning.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -10709,7 +11103,15 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Clone options</source>
+        <source>New machine name and path</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Include all network adapter MAC addresses during cloning.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Additional options</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -10948,10 +11350,6 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Please choose one of cloud service accounts you have registered to export virtual machines to.  Make sure profile settings reflected in the underlying table are valid.  They will be used to establish network connection required to upload your virtual machine files to a remote cloud facility.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>&lt;p&gt;Please choose a filename to export the virtual appliance to. Besides that you can specify a certain amount of options which affects the size and content of resulting archive.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
@@ -10964,23 +11362,11 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Oracle Cloud Infrastructure - Classic</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Write in Oracle Cloud Infrastructure - Classic format.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Include all network adapter MAC addresses to exported appliance archive.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Include only NAT network adapter MAC addresses to exported appliance archive.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Include ISO image files into exported VM archive.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Please choose one of cloud service accounts you have registered to export virtual machines to. Make sure profile settings reflected in the underlying table are valid. They will be used to establish network connection required to upload your virtual machine files to a remote cloud facility.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -11104,8 +11490,7 @@
         <translation>มีลายเซ็นด้วยตนเองที่ไม่ได้ยืนยันของ %1!</translation>
     </message>
     <message>
-        <source>You can modify the base folder which will host all the virtual machines.
-Home folders can also be individually (per virtual machine)  modified.</source>
+        <source>You can modify the base folder which will host all the virtual machines. Home folders can also be individually (per virtual machine) modified.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -12952,7 +13337,7 @@ Home folders can also be individually (per virtual machine)  modified.</source>
     </message>
     <message>
         <source>Not Attached</source>
-        <translation type="unfinished">ไม่ได้เชื่อมต่อ</translation>
+        <translation type="obsolete">ไม่ได้เชื่อมต่อ</translation>
     </message>
     <message>
         <source>NAT</source>
@@ -12976,7 +13361,7 @@ Home folders can also be individually (per virtual machine)  modified.</source>
     </message>
     <message>
         <source>Disconnected</source>
-        <translation type="unfinished">ไม่ได้เชื่อมต่อ</translation>
+        <translation type="obsolete">ไม่ได้เชื่อมต่อ</translation>
     </message>
     <message>
         <source>Host Pipe</source>
@@ -13117,6 +13502,16 @@ Home folders can also be individually (per virtual machine)  modified.</source>
         <source>Audio Only</source>
         <comment>UISettingsDefs::RecordingMode</comment>
         <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Not Attached</source>
+        <comment>network adapter</comment>
+        <translation type="unfinished">ไม่ได้เชื่อมต่อ</translation>
+    </message>
+    <message>
+        <source>Disconnected</source>
+        <comment>serial port</comment>
+        <translation type="unfinished">ไม่ได้เชื่อมต่อ</translation>
     </message>
 </context>
 <context>
