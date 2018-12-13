@@ -35,6 +35,7 @@
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
+const qulonglong UIMediumSizeEditor::m_uSectorSize = 512;
 
 UIMediumSizeEditor::UIMediumSizeEditor(QWidget *pParent /* = 0 */)
     : QIWithRetranslateUI<QWidget>(pParent)
@@ -109,6 +110,16 @@ void UIMediumSizeEditor::sltSizeEditorChanged(const QString &strValue)
     emit sigSizeChanged(m_uSize);
 }
 
+void UIMediumSizeEditor::sltSizeEditorEditingFinished()
+{
+    qulonglong uSize = checkSectorSizeAlignment(m_uSize);
+
+    /* The size is already aligned to sector size: */
+    if (uSize == m_uSize)
+        return;
+    setMediumSize(uSize);
+}
+
 void UIMediumSizeEditor::prepare()
 {
     /* Create layout: */
@@ -175,6 +186,8 @@ void UIMediumSizeEditor::prepare()
             m_pEditor->setValidator(new QRegExpValidator(QRegExp(vboxGlobal().sizeRegexp()), this));
             connect(m_pEditor, &QILineEdit::textChanged,
                     this, &UIMediumSizeEditor::sltSizeEditorChanged);
+            connect(m_pEditor, &QILineEdit::editingFinished,
+                    this, &UIMediumSizeEditor::sltSizeEditorEditingFinished);
 
             /* Add into layout: */
             pLayout->addWidget(m_pEditor, 0, 2, Qt::AlignTop);
@@ -228,8 +241,8 @@ int UIMediumSizeEditor::log2i(qulonglong uValue)
 /* static */
 int UIMediumSizeEditor::sizeMBToSlider(qulonglong uValue, int iSliderScale)
 {
-    /* Make sure *any* slider value is multiple of 512: */
-    uValue /= 512;
+    /* Make sure *any* slider value is multiple of m_uSectorSize: */
+    uValue /= m_uSectorSize;
 
     /* Calculate result: */
     int iPower = log2i(uValue);
@@ -252,8 +265,8 @@ qulonglong UIMediumSizeEditor::sliderToSizeMB(int uValue, int iSliderScale)
     qulonglong uTickMBNext = qulonglong (1) << (iPower + 1);
     qulonglong uResult = uTickMB + (uTickMBNext - uTickMB) * iStep / iSliderScale;
 
-    /* Make sure *any* slider value is multiple of 512: */
-    uResult *= 512;
+    /* Make sure *any* slider value is multiple of m_uSectorSize: */
+    uResult *= m_uSectorSize;
 
     /* Return result: */
     return uResult;
@@ -264,4 +277,12 @@ void UIMediumSizeEditor::updateSizeToolTips(qulonglong uSize)
     const QString strToolTip = tr("<nobr>%1 (%2 B)</nobr>").arg(vboxGlobal().formatSize(uSize)).arg(uSize);
     m_pSlider->setToolTip(strToolTip);
     m_pEditor->setToolTip(strToolTip);
+}
+
+qulonglong UIMediumSizeEditor::checkSectorSizeAlignment(qulonglong uSize)
+{
+    if (m_uSectorSize == 0 || uSize % m_uSectorSize == 0)
+        return uSize;
+    qulonglong uNewSize = (uSize / m_uSectorSize) * m_uSectorSize;
+    return uNewSize;
 }
