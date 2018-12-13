@@ -71,6 +71,8 @@ struct UIDataSettingsGlobalLanguage
 /* Language item: */
 class UILanguageItem : public QITreeWidgetItem
 {
+    Q_OBJECT;
+
 public:
 
     /* Language item constructor: */
@@ -459,3 +461,5 @@ bool UIGlobalSettingsLanguage::saveLanguageData()
     return fSuccess;
 }
 
+
+#include "UIGlobalSettingsLanguage.moc"

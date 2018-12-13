@@ -26,6 +26,8 @@
 /** QITreeWidgetItem extension representing Media Manager item. */
 class SHARED_LIBRARY_STUFF UIMediumItem : public QITreeWidgetItem, public UIDataMedium
 {
+    Q_OBJECT;
+
 public:
 
     /** Constructs top-level item.

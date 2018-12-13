@@ -66,6 +66,8 @@ enum
 /** Host Network Manager: Tree-widget item. */
 class UIItemHostNetwork : public QITreeWidgetItem, public UIDataHostNetwork
 {
+    Q_OBJECT;
+
 public:
 
     /** Updates item fields from data. */
@@ -1065,3 +1067,5 @@ UIHostNetworkManagerWidget *UIHostNetworkManager::widget()
     return qobject_cast<UIHostNetworkManagerWidget*>(QIManagerDialog::widget());
 }
 
+
+#include "UIHostNetworkManager.moc"
