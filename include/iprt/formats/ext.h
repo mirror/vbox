@@ -1,10 +1,10 @@
 /* $Id$ */
 /** @file
- * IPRT Filesystem API (FileSys) - ext2/3 format.
+ * IPRT, Ext2/3/4 format.
  */
 
 /*
- * Copyright (C) 2012-2017 Oracle Corporation
+ * Copyright (C) 2012-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -24,24 +24,24 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
-#ifndef ___iprt_formats_ext2_h
-#define ___iprt_formats_ext2_h
+#ifndef ___iprt_formats_ext_h
+#define ___iprt_formats_ext_h
 
 #include <iprt/types.h>
 #include <iprt/assertcompile.h>
 
 
 /*
- * The filesystem structures are from http://wiki.osdev.org/Ext2 and
- * http://www.nongnu.org/ext2-doc/ext2.html
+ * The filesystem structures were retrieved from:
+ * https://www.kernel.org/doc/html/latest/filesystems/ext4/index.html
  */
 
 /**
- * Ext2 superblock.
+ * Ext superblock.
  *
  * Everything is stored little endian on the disk.
  */
-typedef struct EXT2SUPERBLOCK
+typedef struct EXTSUPERBLOCK
 {
     /** Total number of inodes in the filesystem. */
     uint32_t    cInodesTotal;
@@ -95,24 +95,24 @@ typedef struct EXT2SUPERBLOCK
     uint16_t    u16GidReservedBlocks;
     /** Reserved fields. */
     uint8_t     abReserved[940];
-} EXT2SUPERBLOCK;
-AssertCompileSize(EXT2SUPERBLOCK, 1024);
-/** Pointer to an ext2 super block. */
-typedef EXT2SUPERBLOCK *PEXT2SUPERBLOCK;
-/** Pointer to a const ext2 super block. */
-typedef EXT2SUPERBLOCK const *PCEXT2SUPERBLOCK;
+} EXTSUPERBLOCK;
+AssertCompileSize(EXTSUPERBLOCK, 1024);
+/** Pointer to an ext super block. */
+typedef EXTSUPERBLOCK *PEXTSUPERBLOCK;
+/** Pointer to a const ext super block. */
+typedef EXTSUPERBLOCK const *PCEXTSUPERBLOCK;
 
-/** Ext2 signature. */
-#define EXT2_SIGNATURE      UINT16_C(0xef53)
+/** Ext signature. */
+#define EXT_SIGNATURE      UINT16_C(0xef53)
 /** Clean filesystem state. */
-#define EXT2_STATE_CLEAN    UINT16_C(0x0001)
+#define EXT_STATE_CLEAN    UINT16_C(0x0001)
 /** Error filesystem state. */
-#define EXT2_STATE_ERRORS   UINT16_C(0x0002)
+#define EXT_STATE_ERRORS   UINT16_C(0x0002)
 
 /**
  * Block group descriptor.
  */
-typedef struct EXT2BLOCKGROUPDESC
+typedef struct EXTBLOCKGROUPDESC
 {
     /** Block address of the block bitmap. */
     uint32_t    offBlockBitmap;
@@ -130,10 +130,10 @@ typedef struct EXT2BLOCKGROUPDESC
     uint16_t    u16Padding;
     /** Reserved. */
     uint8_t     abReserved[12];
-} EXT2BLOCKGROUPDESC;
-AssertCompileSize(EXT2BLOCKGROUPDESC, 32);
+} EXTBLOCKGROUPDESC;
+AssertCompileSize(EXTBLOCKGROUPDESC, 32);
 /** Pointer to an ext block group descriptor. */
-typedef EXT2BLOCKGROUPDESC *PEXT2BLOCKGROUPDESC;
+typedef EXTBLOCKGROUPDESC *PEXTBLOCKGROUPDESC;
 
 #endif
 

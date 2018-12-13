@@ -44,7 +44,7 @@
 #include <iprt/formats/fat.h>
 #include <iprt/formats/iso9660.h>
 #include <iprt/formats/udf.h>
-#include <iprt/formats/ext2.h>
+#include <iprt/formats/ext.h>
 
 
 /*********************************************************************************************************************************
@@ -351,27 +351,27 @@ static bool rtVfsMountIsFat(PCFATBOOTSECTOR pBootSector, uint8_t const *pbRaw, s
 
 
 /**
- * Check if the given bootsector is an HPFS boot sector.
+ * Check if the given bootsector is an ext2/3/4 super block.
  *
  * @returns true if NTFS, false if not.
  * @param   pSuperBlock         The ext2 superblock.
  */
-static bool rtVfsMountIsExt2(PCEXT2SUPERBLOCK pSuperBlock)
+static bool rtVfsMountIsExt(PCEXTSUPERBLOCK pSuperBlock)
 {
-    if (RT_LE2H_U16(pSuperBlock->u16Signature) != EXT2_SIGNATURE)
+    if (RT_LE2H_U16(pSuperBlock->u16Signature) != EXT_SIGNATURE)
         return false;
 
     uint32_t cShift = RT_LE2H_U32(pSuperBlock->cBitsShiftLeftBlockSize);
     if (cShift > 54)
     {
-        Log2(("rtVfsMountIsExt2: cBitsShiftLeftBlockSize=%#x: out of range\n", cShift));
+        Log2(("rtVfsMountIsExt: cBitsShiftLeftBlockSize=%#x: out of range\n", cShift));
         return false;
     }
 
     cShift = RT_LE2H_U32(pSuperBlock->cBitsShiftLeftFragmentSize);
     if (cShift > 54)
     {
-        Log2(("rtVfsMountIsExt2: cBitsShiftLeftFragmentSize=%#x: out of range\n", cShift));
+        Log2(("rtVfsMountIsExt: cBitsShiftLeftFragmentSize=%#x: out of range\n", cShift));
         return false;
     }
 
@@ -434,11 +434,11 @@ static int rtVfsMountInner(RTVFSFILE hVfsFileIn, uint32_t fFlags, RTVFSMOUNTBUF 
         return RTFsFatVolOpen(hVfsFileIn, RT_BOOL(fFlags & RTVFSMNT_F_READ_ONLY), 0 /*offBootSector*/, phVfs, pErrInfo);
     }
 
-    AssertCompile(sizeof(*pBuf) >= 1024 + sizeof(EXT2SUPERBLOCK));
-    if (rtVfsMountIsExt2((PCEXT2SUPERBLOCK)&pBuf->ab[1024]))
+    AssertCompile(sizeof(*pBuf) >= 1024 + sizeof(EXTSUPERBLOCK));
+    if (rtVfsMountIsExt((PCEXTSUPERBLOCK)&pBuf->ab[1024]))
     {
-        Log(("RTVfsMount: Detected ISO-9660 or UDF.\n"));
-        return RTFsExt2VolOpen(hVfsFileIn, fFlags, 0 /*fExt2Flags*/, phVfs, pErrInfo);
+        Log(("RTVfsMount: Detected EXT2/3/4.\n"));
+        return RTFsExtVolOpen(hVfsFileIn, fFlags, 0 /*fExt2Flags*/, phVfs, pErrInfo);
     }
 
     return VERR_VFS_UNSUPPORTED_FORMAT;

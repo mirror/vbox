@@ -437,7 +437,7 @@ RuntimeR3_SOURCES       = \
 	common/err/errmsg.cpp \
 	common/err/RTErrConvertFromErrno.cpp \
 	common/err/RTErrConvertToErrno.cpp \
-	common/fs/ext2vfs.cpp \
+	common/fs/extvfs.cpp \
 	common/fs/fatvfs.cpp \
 	common/fs/isovfs.cpp \
 	common/fs/isomaker.cpp \
