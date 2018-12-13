@@ -4036,7 +4036,8 @@ HRESULT Machine::attachDevice(const com::Utf8Str &aName,
                                                  medium->i_getPreferredDiffVariant(),
                                                  pMediumLockList,
                                                  NULL /* aProgress */,
-                                                 true /* aWait */);
+                                                 true /* aWait */,
+                                                 false /* aNotify */);
 
                 alock.acquire();
                 treeLock.acquire();
@@ -4144,6 +4145,8 @@ HRESULT Machine::attachDevice(const com::Utf8Str &aName,
     mParent->i_unmarkRegistryModified(i_getId());
     mParent->i_saveModifiedRegistries();
 
+    if (aM)
+        mParent->i_onMediumConfigChanged(aM);
     return rc;
 }
 
@@ -10818,7 +10821,8 @@ HRESULT Machine::i_createImplicitDiffs(IProgress *aProgress,
                                               pMedium->i_getPreferredDiffVariant(),
                                               pMediumLockList,
                                               NULL /* aProgress */,
-                                              true /* aWait */);
+                                              true /* aWait */,
+                                              false /* aNotify */);
             alock.acquire();
             if (FAILED(rc)) throw rc;
 
@@ -11054,7 +11058,7 @@ HRESULT Machine::i_deleteImplicitDiffs(bool aOnline)
                 ComObjPtr<Medium> pMedium = pAtt->i_getMedium();
                 Assert(pMedium);
 
-                rc = pMedium->i_deleteStorage(NULL /*aProgress*/, true /*aWait*/);
+                rc = pMedium->i_deleteStorage(NULL /*aProgress*/, true /*aWait*/, false /*aNotify*/);
                 // continue on delete failure, just collect error messages
                 AssertMsg(SUCCEEDED(rc), ("rc=%Rhrc it=%s hd=%s\n", rc, pAtt->i_getLogName(),
                                           pMedium->i_getLocationFull().c_str() ));
@@ -11222,7 +11226,8 @@ HRESULT Machine::i_detachDevice(MediumAttachment *pAttach,
         writeLock.release();
 
         HRESULT rc = oldmedium->i_deleteStorage(NULL /*aProgress*/,
-                                                true /*aWait*/);
+                                                true /*aWait*/,
+                                                false /*aNotify*/);
 
         writeLock.acquire();
 
@@ -14022,6 +14027,8 @@ HRESULT SessionMachine::i_onMediumChange(IMediumAttachment *aAttachment, BOOL aF
             directControl = mData->mSession.mDirectControl;
     }
 
+    mParent->i_onMediumChanged(aAttachment);
+
     /* ignore notifications sent after #OnSessionEnd() is called */
     if (!directControl)
         return S_OK;
@@ -14258,6 +14265,8 @@ HRESULT SessionMachine::i_onStorageDeviceChange(IMediumAttachment *aAttachment, 
         if (mData->mSession.mLockType == LockType_VM)
             directControl = mData->mSession.mDirectControl;
     }
+
+    mParent->i_onStorageDeviceChanged(aAttachment, aRemove, aSilent);
 
     /* ignore notifications sent after #OnSessionEnd() is called */
     if (!directControl)
