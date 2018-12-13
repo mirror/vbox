@@ -120,16 +120,16 @@ RTDECL(int) RTFsFatVolFormat144(RTVFSFILE hVfsFile, bool fQuick);
 
 
 /**
- * Opens an EXT2 file system volume.
+ * Opens an EXT2/3/4 file system volume.
  *
  * @returns IPRT status code.
  * @param   hVfsFileIn      The file or device backing the volume.
  * @param   fMntFlags       RTVFSMNT_F_XXX.
- * @param   fExt2Flags      Reserved, MBZ.
+ * @param   fExtFlags       Reserved, MBZ.
  * @param   phVfs           Where to return the virtual file system handle.
  * @param   pErrInfo        Where to return additional error information.
  */
-RTDECL(int) RTFsExt2VolOpen(RTVFSFILE hVfsFileIn, uint32_t fMntFlags, uint32_t fExt2Flags, PRTVFS phVfs, PRTERRINFO pErrInfo);
+RTDECL(int) RTFsExtVolOpen(RTVFSFILE hVfsFileIn, uint32_t fMntFlags, uint32_t fExtFlags, PRTVFS phVfs, PRTERRINFO pErrInfo);
 
 
 
