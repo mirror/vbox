@@ -1389,7 +1389,8 @@ static void cpumR3InitGuestVmxMsrs(PVM pVM)
     /* Miscellaneous data. */
     {
         uint64_t uHostMsr = 0;
-        HMVmxGetHostMsr(pVM, MSR_IA32_VMX_MISC, &uHostMsr);
+        if (cpumR3IsHwAssistVmxNstGstExecAllowed(pVM))
+            HMVmxGetHostMsr(pVM, MSR_IA32_VMX_MISC, &uHostMsr);
         uint8_t const cMaxMsrs       = RT_MIN(RT_BF_GET(uHostMsr, VMX_BF_MISC_MAX_MSRS), VMX_V_AUTOMSR_COUNT_MAX);
         uint8_t const fActivityState = RT_BF_GET(uHostMsr, VMX_BF_MISC_ACTIVITY_STATES) & VMX_V_GUEST_ACTIVITY_STATE_MASK;
         pVmxMsrs->u64Misc = RT_BF_MAKE(VMX_BF_MISC_PREEMPT_TIMER_TSC,      VMX_V_PREEMPT_TIMER_SHIFT        )
@@ -1411,7 +1412,8 @@ static void cpumR3InitGuestVmxMsrs(PVM pVM)
     /* CR0 Fixed-1. */
     {
         uint64_t uHostMsr = 0;
-        HMVmxGetHostMsr(pVM, MSR_IA32_VMX_CR0_FIXED1, &uHostMsr);
+        if (cpumR3IsHwAssistVmxNstGstExecAllowed(pVM))
+            HMVmxGetHostMsr(pVM, MSR_IA32_VMX_CR0_FIXED1, &uHostMsr);
         pVmxMsrs->u64Cr0Fixed1 = uHostMsr | VMX_V_CR0_FIXED0;   /* Make sure the CR0 MB1 bits are not clear. */
     }
 
@@ -1421,7 +1423,8 @@ static void cpumR3InitGuestVmxMsrs(PVM pVM)
     /* CR4 Fixed-1. */
     {
         uint64_t uHostMsr = 0;
-        HMVmxGetHostMsr(pVM, MSR_IA32_VMX_CR4_FIXED1, &uHostMsr);
+        if (cpumR3IsHwAssistVmxNstGstExecAllowed(pVM))
+            HMVmxGetHostMsr(pVM, MSR_IA32_VMX_CR4_FIXED1, &uHostMsr);
         pVmxMsrs->u64Cr4Fixed1 = uHostMsr | VMX_V_CR4_FIXED0;   /* Make sure the CR4 MB1 bits are not clear. */
     }
 
