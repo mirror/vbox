@@ -190,33 +190,33 @@ void UIMediumSelector::retranslateUi()
 {
     if (m_pActionAdd)
     {
-        m_pActionAdd->setText(QApplication::translate("UIMediumManager", "&Add"));
-        m_pActionAdd->setToolTip(QApplication::translate("UIMediumManager", "Add Disk Image File"));
-        m_pActionAdd->setStatusTip(QApplication::translate("UIMediumManager", "Add disk image file"));
+        m_pActionAdd->setText(tr("&Add..."));
+        m_pActionAdd->setToolTip(tr("Add Disk Image"));
+        m_pActionAdd->setStatusTip(tr("Add existing disk image file"));
     }
 
     if (m_pActionCreate)
     {
-        m_pActionCreate->setText(QApplication::translate("UIMediumManager", "&Create"));
-        m_pActionCreate->setToolTip(QApplication::translate("UIMediumManager", "Create an Empty Disk Image"));
-        m_pActionCreate->setStatusTip(QApplication::translate("UIMediumManager", "Create an Empty Disk Image"));
+        m_pActionCreate->setText(tr("&Create..."));
+        m_pActionCreate->setToolTip(tr("Create Disk Image"));
+        m_pActionCreate->setStatusTip(tr("Create new disk image file"));
     }
 
     if (m_pActionRefresh)
     {
-        m_pActionRefresh->setText(QApplication::translate("UIMediumManager","Re&fresh"));
-        m_pActionRefresh->setToolTip(QApplication::translate("UIMediumManager","Refresh Disk Image Files (%1)").arg(m_pActionRefresh->shortcut().toString()));
-        m_pActionRefresh->setStatusTip(QApplication::translate("UIMediumManager","Refresh the list of disk image files"));
+        m_pActionRefresh->setText(tr("&Refresh"));
+        m_pActionRefresh->setToolTip(tr("Refresh Disk Image Files (%1)").arg(m_pActionRefresh->shortcut().toString()));
+        m_pActionRefresh->setStatusTip(tr("Refresh the list of disk image files"));
     }
 
     if (m_pButtonBox)
-        m_pButtonBox->button(QDialogButtonBox::Ok)->setText("Choose");
+        m_pButtonBox->button(QDialogButtonBox::Ok)->setText(tr("Choose"));
 
     if (m_pTreeWidget)
     {
-        m_pTreeWidget->headerItem()->setText(0, QApplication::translate("UIMediumManager","Name"));
-        m_pTreeWidget->headerItem()->setText(1, QApplication::translate("UIMediumManager","Virtual Size"));
-        m_pTreeWidget->headerItem()->setText(2, QApplication::translate("UIMediumManager","Actual Size"));
+        m_pTreeWidget->headerItem()->setText(0, tr("Name"));
+        m_pTreeWidget->headerItem()->setText(1, tr("Virtual Size"));
+        m_pTreeWidget->headerItem()->setText(2, tr("Actual Size"));
     }
 }
 

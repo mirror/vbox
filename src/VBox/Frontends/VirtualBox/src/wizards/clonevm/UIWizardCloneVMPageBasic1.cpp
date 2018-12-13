@@ -286,7 +286,7 @@ UIWizardCloneVMPageBasic1::UIWizardCloneVMPageBasic1(const QString &strOriginalN
 void UIWizardCloneVMPageBasic1::retranslateUi()
 {
     /* Translate page: */
-    setTitle(UIWizardCloneVM::tr("New machine name"));
+    setTitle(UIWizardCloneVM::tr("New machine name and path"));
 
     /* Translate widgets: */
     if (m_pMainLabel)
@@ -309,14 +309,11 @@ void UIWizardCloneVMPageBasic1::retranslateUi()
     m_pMACComboBox->setItemText(MACAddressClonePolicy_StripAllMACs,
                                 UIWizardCloneVM::tr("Generate new MAC addresses for all network adapters"));
     m_pMACComboBox->setItemData(MACAddressClonePolicy_KeepAllMACs,
-                                UIWizardCloneVM::tr("Include all network adapter MAC addresses in exported "
-                                                      "during cloning."), Qt::ToolTipRole);
+                                UIWizardCloneVM::tr("Include all network adapter MAC addresses during cloning."), Qt::ToolTipRole);
     m_pMACComboBox->setItemData(MACAddressClonePolicy_KeepNATMACs,
-                                UIWizardCloneVM::tr("Include only NAT network adapter MAC addresses "
-                                                      "during cloning."), Qt::ToolTipRole);
+                                UIWizardCloneVM::tr("Include only NAT network adapter MAC addresses during cloning."), Qt::ToolTipRole);
     m_pMACComboBox->setItemData(MACAddressClonePolicy_StripAllMACs,
-                                UIWizardCloneVM::tr("Generate new MAC addresses for all network adapters "
-                                                      "during cloning."), Qt::ToolTipRole);
+                                UIWizardCloneVM::tr("Generate new MAC addresses for all network adapters during cloning."), Qt::ToolTipRole);
 
     m_pAdditionalOptionsLabel->setText(UIWizardCloneVM::tr("Additional Options:"));
     m_pKeepDiskNamesCheckBox->setToolTip(UIWizardCloneVM::tr("Don't change the disk names during cloning."));

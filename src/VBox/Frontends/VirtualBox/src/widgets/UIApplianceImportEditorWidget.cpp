@@ -319,8 +319,8 @@ void UIApplianceImportEditorWidget::retranslateUi()
 {
     UIApplianceEditorWidget::retranslateUi();
     if (m_pPathSelectorLabel)
-        m_pPathSelectorLabel->setText(UIWizardImportApp::tr("You can modify the base folder which will host all the virtual machines.\n"
-                                                            "Home folders can also be individually (per virtual machine)  modified."));
+        m_pPathSelectorLabel->setText(UIWizardImportApp::tr("You can modify the base folder which will host all the virtual machines. "
+                                                            "Home folders can also be individually (per virtual machine) modified."));
     if (m_pImportHDsAsVDI)
     {
         m_pImportHDsAsVDI->setText(tr("&Import hard drives as VDI"));
@@ -336,14 +336,11 @@ void UIApplianceImportEditorWidget::retranslateUi()
     m_pMACComboBox->setItemText(MACAddressImportPolicy_StripAllMACs,
                                 tr("Generate new MAC addresses for all network adapters"));
     m_pMACComboBox->setItemData(MACAddressImportPolicy_KeepAllMACs,
-                                tr("Include all network adapter MAC addresses in exported "
-                                                    "during cloning."), Qt::ToolTipRole);
+                                tr("Include all network adapter MAC addresses during cloning."), Qt::ToolTipRole);
     m_pMACComboBox->setItemData(MACAddressImportPolicy_KeepNATMACs,
-                                tr("Include only NAT network adapter MAC addresses "
-                                                    "during cloning."), Qt::ToolTipRole);
+                                tr("Include only NAT network adapter MAC addresses during cloning."), Qt::ToolTipRole);
     m_pMACComboBox->setItemData(MACAddressImportPolicy_StripAllMACs,
-                                tr("Generate new MAC addresses for all network adapters "
-                                                    "during cloning."), Qt::ToolTipRole);
+                                tr("Generate new MAC addresses for all network adapters during cloning."), Qt::ToolTipRole);
 
     m_pAdditionalOptionsLabel->setText(tr("Additional Options:"));
 

@@ -1174,7 +1174,7 @@ template<> QString toString(const UIExtraDataMetaDefs::DetailsElementOptionTypeN
     QString strResult;
     switch (enmDetailsElementOptionTypeNetwork)
     {
-        case UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_NotAttached:     strResult = QApplication::translate("VBoxGlobal", "Not Attached"); break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_NotAttached:     strResult = QApplication::translate("VBoxGlobal", "Not Attached", "network adapter"); break;
         case UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_NAT:             strResult = QApplication::translate("VBoxGlobal", "NAT"); break;
         case UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_BridgetAdapter:  strResult = QApplication::translate("VBoxGlobal", "Bridget Adapter"); break;
         case UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_InternalNetwork: strResult = QApplication::translate("VBoxGlobal", "Internal Network"); break;
@@ -1235,7 +1235,7 @@ template<> QString toString(const UIExtraDataMetaDefs::DetailsElementOptionTypeS
     QString strResult;
     switch (enmDetailsElementOptionTypeSerial)
     {
-        case UIExtraDataMetaDefs::DetailsElementOptionTypeSerial_Disconnected: strResult = QApplication::translate("VBoxGlobal", "Disconnected"); break;
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeSerial_Disconnected: strResult = QApplication::translate("VBoxGlobal", "Disconnected", "serial port"); break;
         case UIExtraDataMetaDefs::DetailsElementOptionTypeSerial_HostPipe:     strResult = QApplication::translate("VBoxGlobal", "Host Pipe"); break;
         case UIExtraDataMetaDefs::DetailsElementOptionTypeSerial_HostDevice:   strResult = QApplication::translate("VBoxGlobal", "Host Device"); break;
         case UIExtraDataMetaDefs::DetailsElementOptionTypeSerial_RawFile:      strResult = QApplication::translate("VBoxGlobal", "Raw File"); break;

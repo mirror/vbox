@@ -1094,14 +1094,11 @@ void UIWizardExportAppPageBasic2::retranslateUi()
     m_pMACComboBox->setItemText(MACAddressPolicy_StripAllMACs,
                                 UIWizardExportApp::tr("Strip all network adapter MAC addresses"));
     m_pMACComboBox->setItemData(MACAddressPolicy_KeepAllMACs,
-                                UIWizardExportApp::tr("Include all network adapter MAC addresses in exported "
-                                                      "appliance archive."), Qt::ToolTipRole);
+                                UIWizardExportApp::tr("Include all network adapter MAC addresses in exported appliance archive."), Qt::ToolTipRole);
     m_pMACComboBox->setItemData(MACAddressPolicy_StripAllNonNATMACs,
-                                UIWizardExportApp::tr("Include only NAT network adapter MAC addresses in "
-                                                      "exported appliance archive."), Qt::ToolTipRole);
+                                UIWizardExportApp::tr("Include only NAT network adapter MAC addresses in exported appliance archive."), Qt::ToolTipRole);
     m_pMACComboBox->setItemData(MACAddressPolicy_StripAllMACs,
-                                UIWizardExportApp::tr("Strip all network adapter MAC addresses from exported "
-                                                      "appliance archive."), Qt::ToolTipRole);
+                                UIWizardExportApp::tr("Strip all network adapter MAC addresses from exported appliance archive."), Qt::ToolTipRole);
 
     /* Translate addtional stuff: */
     m_pAdditionalLabel->setText(UIWizardExportApp::tr("Additionally:"));
@@ -1206,9 +1203,9 @@ void UIWizardExportAppPageBasic2::updatePageAppearance()
     {
         m_pLabelSettings->setText(UIWizardExportApp::
                                   tr("<p>Please choose one of cloud service accounts you have registered to export virtual "
-                                     "machines to.  Make sure profile settings reflected in the underlying table are valid.  "
+                                     "machines to. Make sure profile settings reflected in the underlying table are valid. "
                                      "They will be used to establish network connection required to upload your virtual machine "
-                                     "files to a remote cloud facility."));
+                                     "files to a remote cloud facility.</p>"));
         m_pAccountComboBox->setFocus();
     }
     else

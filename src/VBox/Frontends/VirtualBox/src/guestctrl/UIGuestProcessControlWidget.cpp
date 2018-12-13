@@ -87,7 +87,7 @@ protected:
         /* Create a guest session related context menu */
         if (sessionTreeItem)
         {
-            pSessionCloseAction = menu->addAction(UIVMInformationDialog::tr("Close Session"));
+            pSessionCloseAction = menu->addAction(tr("Close Session"));
             if (pSessionCloseAction)
                 connect(pSessionCloseAction, &QAction::triggered,
                         this, &UIGuestControlTreeWidget::sigCloseSessionOrProcess);
@@ -98,7 +98,7 @@ protected:
         QAction *pProcessTerminateAction = 0;
         if (processTreeItem)
         {
-            pProcessTerminateAction = menu->addAction(UIVMInformationDialog::tr("Terminate Process"));
+            pProcessTerminateAction = menu->addAction(tr("Terminate Process"));
             if (pProcessTerminateAction)
                 connect(pProcessTerminateAction, &QAction::triggered,
                         this, &UIGuestControlTreeWidget::sigCloseSessionOrProcess);
@@ -106,11 +106,11 @@ protected:
         if (pProcessTerminateAction || pSessionCloseAction)
             menu->addSeparator();
         // Add actions to expand/collapse all tree items
-        QAction *pExpandAllAction = menu->addAction(UIVMInformationDialog::tr("Expand All"));
+        QAction *pExpandAllAction = menu->addAction(tr("Expand All"));
         if (pExpandAllAction)
             connect(pExpandAllAction, &QAction::triggered,
                     this, &UIGuestControlTreeWidget::sltExpandAll);
-        QAction *pCollapseAllAction = menu->addAction(UIVMInformationDialog::tr("Collapse All"));
+        QAction *pCollapseAllAction = menu->addAction(tr("Collapse All"));
         if (pCollapseAllAction)
             connect(pCollapseAllAction, &QAction::triggered,
                     this, &UIGuestControlTreeWidget::sltCollapseAll);

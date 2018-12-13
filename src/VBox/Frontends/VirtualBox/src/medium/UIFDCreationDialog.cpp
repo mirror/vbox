@@ -68,22 +68,22 @@ UIFDCreationDialog::UIFDCreationDialog(QWidget *pParent /* = 0 */,
 
 void UIFDCreationDialog::retranslateUi()
 {
-    setWindowTitle(QApplication::translate("UIMediumManager", "Create a Floppy Disk"));
+    setWindowTitle(tr("Create a Floppy Disk"));
     if (m_pPathLabel)
-        m_pPathLabel->setText(QApplication::translate("UIMediumManager", "File Path:"));
+        m_pPathLabel->setText(tr("File Path:"));
     if (m_pSizeLabel)
-        m_pSizeLabel->setText(QApplication::translate("UIMediumManager", "Size:"));
+        m_pSizeLabel->setText(tr("Size:"));
     if (m_pButtonBox)
         m_pButtonBox->button(QDialogButtonBox::Ok)->setText("Create");
     if (m_pFormatCheckBox)
-        m_pFormatCheckBox->setText(QApplication::translate("UIMediumManager", "Format disk as FAT12"));
+        m_pFormatCheckBox->setText(tr("Format disk as FAT12"));
     if (m_pSizeCombo)
     {
-        //m_pSizeCombo->setItemText(FDSize_2_88M, QApplication::translate("UIMediumManager", "2.88M"));
-        m_pSizeCombo->setItemText(FDSize_1_44M, QApplication::translate("UIMediumManager", "1.44M"));
-        m_pSizeCombo->setItemText(FDSize_1_2M, QApplication::translate("UIMediumManager", "1.2M"));
-        m_pSizeCombo->setItemText(FDSize_720K, QApplication::translate("UIMediumManager", "720K"));
-        m_pSizeCombo->setItemText(FDSize_360K, QApplication::translate("UIMediumManager", "360K"));
+        //m_pSizeCombo->setItemText(FDSize_2_88M, tr("2.88M"));
+        m_pSizeCombo->setItemText(FDSize_1_44M, tr("1.44M"));
+        m_pSizeCombo->setItemText(FDSize_1_2M, tr("1.2M"));
+        m_pSizeCombo->setItemText(FDSize_720K, tr("720K"));
+        m_pSizeCombo->setItemText(FDSize_360K, tr("360K"));
     }
 }
 

@@ -217,8 +217,7 @@ void UIWizardCloneVMPageExpert::retranslateUi()
     m_pAllRadio->setText(UIWizardCloneVM::tr("&Everything"));
     m_pNameLabel->setText(UIWizardCloneVM::tr("Name:"));
     m_pPathLabel->setText(UIWizardCloneVM::tr("Path:"));
-
-    m_pCloneOptionsCnt->setTitle(UIWizardCloneVM::tr("Clone options"));
+    m_pCloneOptionsCnt->setTitle(UIWizardCloneVM::tr("Additional options"));
 
     /* Translate MAC address policy combo-box: */
     m_pMACComboBoxLabel->setText(UIWizardCloneVM::tr("MAC Address &Policy:"));
@@ -229,14 +228,11 @@ void UIWizardCloneVMPageExpert::retranslateUi()
     m_pMACComboBox->setItemText(MACAddressClonePolicy_StripAllMACs,
                                 UIWizardCloneVM::tr("Generate new MAC addresses for all network adapters"));
     m_pMACComboBox->setItemData(MACAddressClonePolicy_KeepAllMACs,
-                                UIWizardCloneVM::tr("Include all network adapter MAC addresses in exported "
-                                                      "during cloning."), Qt::ToolTipRole);
+                                UIWizardCloneVM::tr("Include all network adapter MAC addresses during cloning."), Qt::ToolTipRole);
     m_pMACComboBox->setItemData(MACAddressClonePolicy_KeepNATMACs,
-                                UIWizardCloneVM::tr("Include only NAT network adapter MAC addresses "
-                                                      "during cloning."), Qt::ToolTipRole);
+                                UIWizardCloneVM::tr("Include only NAT network adapter MAC addresses during cloning."), Qt::ToolTipRole);
     m_pMACComboBox->setItemData(MACAddressClonePolicy_StripAllMACs,
-                                UIWizardCloneVM::tr("Generate new MAC addresses for all network adapters "
-                                                      "during cloning."), Qt::ToolTipRole);
+                                UIWizardCloneVM::tr("Generate new MAC addresses for all network adapters during cloning."), Qt::ToolTipRole);
 
     m_pAdditionalOptionsLabel->setText(UIWizardCloneVM::tr("Additional Options:"));
     m_pKeepDiskNamesCheckBox->setToolTip(UIWizardCloneVM::tr("Don't change the disk names during cloning."));

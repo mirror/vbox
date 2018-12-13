@@ -430,12 +430,10 @@ void UIWizardExportAppPageExpert::retranslateUi()
     m_pFormatComboBox->setItemText(0, UIWizardExportApp::tr("Open Virtualization Format 0.9"));
     m_pFormatComboBox->setItemText(1, UIWizardExportApp::tr("Open Virtualization Format 1.0"));
     m_pFormatComboBox->setItemText(2, UIWizardExportApp::tr("Open Virtualization Format 2.0"));
-    m_pFormatComboBox->setItemText(3, UIWizardExportApp::tr("Oracle Cloud Infrastructure - Classic"));
     m_pFormatComboBox->setItemData(0, UIWizardExportApp::tr("Write in legacy OVF 0.9 format for compatibility "
                                                             "with other virtualization products."), Qt::ToolTipRole);
     m_pFormatComboBox->setItemData(1, UIWizardExportApp::tr("Write in standard OVF 1.0 format."), Qt::ToolTipRole);
     m_pFormatComboBox->setItemData(2, UIWizardExportApp::tr("Write in new OVF 2.0 format."), Qt::ToolTipRole);
-    m_pFormatComboBox->setItemData(3, UIWizardExportApp::tr("Write in Oracle Cloud Infrastructure - Classic format."), Qt::ToolTipRole);
     /* Translate received values of Format combo-box.
      * We are enumerating starting from 0 for simplicity: */
     for (int i = 0; i < m_pFormatComboBox->count(); ++i)
@@ -454,14 +452,11 @@ void UIWizardExportAppPageExpert::retranslateUi()
     m_pMACComboBox->setItemText(MACAddressPolicy_StripAllMACs,
                                 UIWizardExportApp::tr("Strip all network adapter MAC addresses"));
     m_pMACComboBox->setItemData(MACAddressPolicy_KeepAllMACs,
-                                UIWizardExportApp::tr("Include all network adapter MAC addresses to exported "
-                                                      "appliance archive."), Qt::ToolTipRole);
+                                UIWizardExportApp::tr("Include all network adapter MAC addresses in exported appliance archive."), Qt::ToolTipRole);
     m_pMACComboBox->setItemData(MACAddressPolicy_StripAllNonNATMACs,
-                                UIWizardExportApp::tr("Include only NAT network adapter MAC addresses to "
-                                                      "exported appliance archive."), Qt::ToolTipRole);
+                                UIWizardExportApp::tr("Include only NAT network adapter MAC addresses in exported appliance archive."), Qt::ToolTipRole);
     m_pMACComboBox->setItemData(MACAddressPolicy_StripAllMACs,
-                                UIWizardExportApp::tr("Strip all network adapter MAC addresses from exported "
-                                                      "appliance archive."), Qt::ToolTipRole);
+                                UIWizardExportApp::tr("Strip all network adapter MAC addresses from exported appliance archive."), Qt::ToolTipRole);
 
     /* Translate addtional stuff: */
     m_pAdditionalLabel->setText(UIWizardExportApp::tr("Additionally:"));
