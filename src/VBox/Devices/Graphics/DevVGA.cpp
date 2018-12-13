@@ -1245,6 +1245,18 @@ static uint32_t vga_mem_readb(PVGASTATE pThis, RTGCPHYS addr, int *prc)
     RTGCPHYS GCPhys = addr; /* save original address */
 #endif
 
+#ifdef VMSVGA_WITH_VGA_FB_BACKUP_AND_IN_RZ
+    /* VMSVGA keeps the VGA and SVGA framebuffers separate unlike this boch-based
+       VGA implementation, so we fake it by going to ring-3 and using a heap buffer.  */
+    if (!pThis->svga.fEnabled)
+    { /*likely*/ }
+    else
+    {
+        *prc = VINF_IOM_R3_MMIO_READ;
+        return 0;
+    }
+#endif
+
     addr &= 0x1ffff;
     switch(memory_map_mode) {
     case 0:
@@ -3429,13 +3441,6 @@ PDMBOTHCBDECL(int) vgaMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhys
     STAM_PROFILE_START(&pThis->CTX_MID_Z(Stat,MemoryRead), a);
     Assert(PDMCritSectIsOwner(pDevIns->CTX_SUFF(pCritSectRo)));
     NOREF(pvUser);
-
-#ifdef VMSVGA_WITH_VGA_FB_BACKUP_AND_IN_RZ
-    /* VMSVGA keeps the VGA and SVGA framebuffers separate unlike this boch-based
-       VGA implementation, so we fake it by going to ring-3 and using a heap buffer.  */
-    if (!pThis->svga.fEnabled) { /*likely*/ }
-    else                       return VINF_IOM_R3_MMIO_READ;
-#endif
 
     int rc = VINF_SUCCESS;
     switch (cb)
