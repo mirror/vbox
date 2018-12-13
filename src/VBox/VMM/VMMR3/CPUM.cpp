@@ -1235,6 +1235,205 @@ DECLCALLBACK(void) cpumR3InfoVmxFeatures(PVM pVM, PCDBGFINFOHLP pHlp, const char
 
 
 /**
+ * Initializes the guest VMX MSRs from guest-CPU features.
+ *
+ * @param   pVM     The cross context VM structure.
+ */
+static void cpumR3InitGuestVmxMsrs(PVM pVM)
+{
+    PVMCPU         pVCpu0    = &pVM->aCpus[0];
+    PCCPUMFEATURES pFeatures = &pVM->cpum.s.GuestFeatures;
+    PVMXMSRS       pVmxMsrs  = &pVCpu0->cpum.s.Guest.hwvirt.vmx.Msrs;
+
+    Assert(pFeatures->fVmx);
+    RT_ZERO(*pVmxMsrs);
+
+    /* Feature control. */
+    pVmxMsrs->u64FeatCtrl = MSR_IA32_FEATURE_CONTROL_LOCK | MSR_IA32_FEATURE_CONTROL_VMXON;
+
+    /* Basic information. */
+    {
+        uint64_t const u64Basic = RT_BF_MAKE(VMX_BF_BASIC_VMCS_ID,         VMX_V_VMCS_REVISION_ID   )
+                                | RT_BF_MAKE(VMX_BF_BASIC_VMCS_SIZE,       VMX_V_VMCS_SIZE          )
+                                | RT_BF_MAKE(VMX_BF_BASIC_PHYSADDR_WIDTH,  !pFeatures->fLongMode    )
+                                | RT_BF_MAKE(VMX_BF_BASIC_DUAL_MON,        0                        )
+                                | RT_BF_MAKE(VMX_BF_BASIC_VMCS_MEM_TYPE,   VMX_BASIC_MEM_TYPE_WB    )
+                                | RT_BF_MAKE(VMX_BF_BASIC_VMCS_INS_OUTS,   pFeatures->fVmxInsOutInfo)
+                                | RT_BF_MAKE(VMX_BF_BASIC_TRUE_CTLS,       0                        );
+        pVmxMsrs->u64Basic = u64Basic;
+    }
+
+    /* Pin-based VM-execution controls. */
+    {
+        uint32_t const fFeatures = (pFeatures->fVmxExtIntExit   << VMX_BF_PIN_CTLS_EXT_INT_EXIT_SHIFT )
+                                 | (pFeatures->fVmxNmiExit      << VMX_BF_PIN_CTLS_NMI_EXIT_SHIFT     )
+                                 | (pFeatures->fVmxVirtNmi      << VMX_BF_PIN_CTLS_VIRT_NMI_SHIFT     )
+                                 | (pFeatures->fVmxPreemptTimer << VMX_BF_PIN_CTLS_PREEMPT_TIMER_SHIFT)
+                                 | (pFeatures->fVmxPostedInt    << VMX_BF_PIN_CTLS_POSTED_INT_SHIFT   );
+        uint32_t const fAllowed0 = VMX_PIN_CTLS_DEFAULT1;
+        uint32_t const fAllowed1 = fFeatures | VMX_PIN_CTLS_DEFAULT1;
+        AssertMsg((fAllowed0 & fAllowed1) == fAllowed0, ("fAllowed0=%#RX32 fAllowed1=%#RX32 fFeatures=%#RX32\n",
+                                                         fAllowed0, fAllowed1, fFeatures));
+        pVmxMsrs->PinCtls.u = RT_MAKE_U64(fAllowed0, fAllowed1);
+    }
+
+    /* Processor-based VM-execution controls. */
+    {
+        uint32_t const fFeatures = (pFeatures->fVmxIntWindowExit     << VMX_BF_PROC_CTLS_INT_WINDOW_EXIT_SHIFT   )
+                                 | (pFeatures->fVmxTscOffsetting     << VMX_BF_PROC_CTLS_USE_TSC_OFFSETTING_SHIFT)
+                                 | (pFeatures->fVmxHltExit           << VMX_BF_PROC_CTLS_HLT_EXIT_SHIFT          )
+                                 | (pFeatures->fVmxInvlpgExit        << VMX_BF_PROC_CTLS_INVLPG_EXIT_SHIFT       )
+                                 | (pFeatures->fVmxMwaitExit         << VMX_BF_PROC_CTLS_MWAIT_EXIT_SHIFT        )
+                                 | (pFeatures->fVmxRdpmcExit         << VMX_BF_PROC_CTLS_RDPMC_EXIT_SHIFT        )
+                                 | (pFeatures->fVmxRdtscExit         << VMX_BF_PROC_CTLS_RDTSC_EXIT_SHIFT        )
+                                 | (pFeatures->fVmxCr3LoadExit       << VMX_BF_PROC_CTLS_CR3_LOAD_EXIT_SHIFT     )
+                                 | (pFeatures->fVmxCr3StoreExit      << VMX_BF_PROC_CTLS_CR3_STORE_EXIT_SHIFT    )
+                                 | (pFeatures->fVmxCr8LoadExit       << VMX_BF_PROC_CTLS_CR8_LOAD_EXIT_SHIFT     )
+                                 | (pFeatures->fVmxCr8StoreExit      << VMX_BF_PROC_CTLS_CR8_STORE_EXIT_SHIFT    )
+                                 | (pFeatures->fVmxUseTprShadow      << VMX_BF_PROC_CTLS_USE_TPR_SHADOW_SHIFT    )
+                                 | (pFeatures->fVmxNmiWindowExit     << VMX_BF_PROC_CTLS_NMI_WINDOW_EXIT_SHIFT   )
+                                 | (pFeatures->fVmxMovDRxExit        << VMX_BF_PROC_CTLS_MOV_DR_EXIT_SHIFT       )
+                                 | (pFeatures->fVmxUncondIoExit      << VMX_BF_PROC_CTLS_UNCOND_IO_EXIT_SHIFT    )
+                                 | (pFeatures->fVmxUseIoBitmaps      << VMX_BF_PROC_CTLS_USE_IO_BITMAPS_SHIFT    )
+                                 | (pFeatures->fVmxMonitorTrapFlag   << VMX_BF_PROC_CTLS_MONITOR_TRAP_FLAG_SHIFT )
+                                 | (pFeatures->fVmxUseMsrBitmaps     << VMX_BF_PROC_CTLS_USE_MSR_BITMAPS_SHIFT   )
+                                 | (pFeatures->fVmxMonitorExit       << VMX_BF_PROC_CTLS_MONITOR_EXIT_SHIFT      )
+                                 | (pFeatures->fVmxPauseExit         << VMX_BF_PROC_CTLS_PAUSE_EXIT_SHIFT        )
+                                 | (pFeatures->fVmxSecondaryExecCtls << VMX_BF_PROC_CTLS_USE_SECONDARY_CTLS_SHIFT);
+        uint32_t const fAllowed0 = VMX_PROC_CTLS_DEFAULT1;
+        uint32_t const fAllowed1 = fFeatures | VMX_PROC_CTLS_DEFAULT1;
+        AssertMsg((fAllowed0 & fAllowed1) == fAllowed0, ("fAllowed0=%#RX32 fAllowed1=%#RX32 fFeatures=%#RX32\n", fAllowed0,
+                                                         fAllowed1, fFeatures));
+        pVmxMsrs->ProcCtls.u = RT_MAKE_U64(fAllowed0, fAllowed1);
+    }
+
+    /* Secondary processor-based VM-execution controls. */
+    if (pFeatures->fVmxSecondaryExecCtls)
+    {
+        uint32_t const fFeatures = (pFeatures->fVmxVirtApicAccess    << VMX_BF_PROC_CTLS2_VIRT_APIC_ACCESS_SHIFT  )
+                                 | (pFeatures->fVmxEpt               << VMX_BF_PROC_CTLS2_EPT_SHIFT               )
+                                 | (pFeatures->fVmxDescTableExit     << VMX_BF_PROC_CTLS2_DESC_TABLE_EXIT_SHIFT   )
+                                 | (pFeatures->fVmxRdtscp            << VMX_BF_PROC_CTLS2_RDTSCP_SHIFT            )
+                                 | (pFeatures->fVmxVirtX2ApicMode    << VMX_BF_PROC_CTLS2_VIRT_X2APIC_MODE_SHIFT  )
+                                 | (pFeatures->fVmxVpid              << VMX_BF_PROC_CTLS2_VPID_SHIFT              )
+                                 | (pFeatures->fVmxWbinvdExit        << VMX_BF_PROC_CTLS2_WBINVD_EXIT_SHIFT       )
+                                 | (pFeatures->fVmxUnrestrictedGuest << VMX_BF_PROC_CTLS2_UNRESTRICTED_GUEST_SHIFT)
+                                 | (pFeatures->fVmxApicRegVirt       << VMX_BF_PROC_CTLS2_APIC_REG_VIRT_SHIFT     )
+                                 | (pFeatures->fVmxVirtIntDelivery   << VMX_BF_PROC_CTLS2_VIRT_INT_DELIVERY_SHIFT )
+                                 | (pFeatures->fVmxPauseLoopExit     << VMX_BF_PROC_CTLS2_PAUSE_LOOP_EXIT_SHIFT   )
+                                 | (pFeatures->fVmxRdrandExit        << VMX_BF_PROC_CTLS2_RDRAND_EXIT_SHIFT       )
+                                 | (pFeatures->fVmxInvpcid           << VMX_BF_PROC_CTLS2_INVPCID_SHIFT           )
+                                 | (pFeatures->fVmxVmFunc            << VMX_BF_PROC_CTLS2_VMFUNC_SHIFT            )
+                                 | (pFeatures->fVmxVmcsShadowing     << VMX_BF_PROC_CTLS2_VMCS_SHADOWING_SHIFT    )
+                                 | (pFeatures->fVmxRdseedExit        << VMX_BF_PROC_CTLS2_RDSEED_EXIT_SHIFT       )
+                                 | (pFeatures->fVmxPml               << VMX_BF_PROC_CTLS2_PML_SHIFT               )
+                                 | (pFeatures->fVmxEptXcptVe         << VMX_BF_PROC_CTLS2_EPT_VE_SHIFT            )
+                                 | (pFeatures->fVmxXsavesXrstors     << VMX_BF_PROC_CTLS2_XSAVES_XRSTORS_SHIFT    )
+                                 | (pFeatures->fVmxUseTscScaling     << VMX_BF_PROC_CTLS2_TSC_SCALING_SHIFT       );
+        uint32_t const fAllowed0 = 0;
+        uint32_t const fAllowed1 = fFeatures;
+        pVmxMsrs->ProcCtls2.u = RT_MAKE_U64(fAllowed0, fAllowed1);
+    }
+
+    /* VM-exit controls. */
+    {
+        uint32_t const fFeatures = (pFeatures->fVmxExitSaveDebugCtls << VMX_BF_EXIT_CTLS_SAVE_DEBUG_SHIFT          )
+                                 | (pFeatures->fVmxHostAddrSpaceSize << VMX_BF_EXIT_CTLS_HOST_ADDR_SPACE_SIZE_SHIFT)
+                                 | (pFeatures->fVmxExitAckExtInt     << VMX_BF_EXIT_CTLS_ACK_EXT_INT_SHIFT         )
+                                 | (pFeatures->fVmxExitSavePatMsr    << VMX_BF_EXIT_CTLS_SAVE_PAT_MSR_SHIFT        )
+                                 | (pFeatures->fVmxExitLoadPatMsr    << VMX_BF_EXIT_CTLS_LOAD_PAT_MSR_SHIFT        )
+                                 | (pFeatures->fVmxExitSaveEferMsr   << VMX_BF_EXIT_CTLS_SAVE_EFER_MSR_SHIFT       )
+                                 | (pFeatures->fVmxExitLoadEferMsr   << VMX_BF_EXIT_CTLS_LOAD_EFER_MSR_SHIFT       )
+                                 | (pFeatures->fVmxSavePreemptTimer  << VMX_BF_EXIT_CTLS_SAVE_PREEMPT_TIMER_SHIFT  );
+        /* Set the default1 class bits. See Intel spec. A.4 "VM-exit Controls". */
+        uint32_t const fAllowed0 = VMX_EXIT_CTLS_DEFAULT1;
+        uint32_t const fAllowed1 = fFeatures | VMX_EXIT_CTLS_DEFAULT1;
+        AssertMsg((fAllowed0 & fAllowed1) == fAllowed0, ("fAllowed0=%#RX32 fAllowed1=%#RX32 fFeatures=%#RX32\n", fAllowed0,
+                                                         fAllowed1, fFeatures));
+        pVmxMsrs->ExitCtls.u = RT_MAKE_U64(fAllowed0, fAllowed1);
+    }
+
+    /* VM-entry controls. */
+    {
+        uint32_t const fFeatures = (pFeatures->fVmxEntryLoadDebugCtls << VMX_BF_ENTRY_CTLS_LOAD_DEBUG_SHIFT      )
+                                 | (pFeatures->fVmxIa32eModeGuest     << VMX_BF_ENTRY_CTLS_IA32E_MODE_GUEST_SHIFT)
+                                 | (pFeatures->fVmxEntryLoadEferMsr   << VMX_BF_ENTRY_CTLS_LOAD_EFER_MSR_SHIFT   )
+                                 | (pFeatures->fVmxEntryLoadPatMsr    << VMX_BF_ENTRY_CTLS_LOAD_PAT_MSR_SHIFT    );
+        uint32_t const fAllowed0 = VMX_ENTRY_CTLS_DEFAULT1;
+        uint32_t const fAllowed1 = fFeatures | VMX_ENTRY_CTLS_DEFAULT1;
+        AssertMsg((fAllowed0 & fAllowed1) == fAllowed0, ("fAllowed0=%#RX32 fAllowed0=%#RX32 fFeatures=%#RX32\n", fAllowed0,
+                                                         fAllowed1, fFeatures));
+        pVmxMsrs->EntryCtls.u = RT_MAKE_U64(fAllowed0, fAllowed1);
+    }
+
+    /* Miscellaneous data. */
+    {
+        uint64_t uHostMsr = 0;
+        HMVmxGetHostMsr(pVM, MSR_IA32_VMX_MISC, &uHostMsr);
+        uint8_t const cMaxMsrs       = RT_MIN(RT_BF_GET(uHostMsr, VMX_BF_MISC_MAX_MSRS), VMX_V_AUTOMSR_COUNT_MAX);
+        uint8_t const fActivityState = RT_BF_GET(uHostMsr, VMX_BF_MISC_ACTIVITY_STATES) & VMX_V_GUEST_ACTIVITY_STATE_MASK;
+        pVmxMsrs->u64Misc = RT_BF_MAKE(VMX_BF_MISC_PREEMPT_TIMER_TSC,      VMX_V_PREEMPT_TIMER_SHIFT        )
+                          | RT_BF_MAKE(VMX_BF_MISC_EXIT_SAVE_EFER_LMA,     pFeatures->fVmxExitSaveEferLma   )
+                          | RT_BF_MAKE(VMX_BF_MISC_ACTIVITY_STATES,        fActivityState                   )
+                          | RT_BF_MAKE(VMX_BF_MISC_INTEL_PT,               pFeatures->fVmxIntelPt           )
+                          | RT_BF_MAKE(VMX_BF_MISC_SMM_READ_SMBASE_MSR,    0                                )
+                          | RT_BF_MAKE(VMX_BF_MISC_CR3_TARGET,             VMX_V_CR3_TARGET_COUNT           )
+                          | RT_BF_MAKE(VMX_BF_MISC_MAX_MSRS,               cMaxMsrs                         )
+                          | RT_BF_MAKE(VMX_BF_MISC_VMXOFF_BLOCK_SMI,       0                                )
+                          | RT_BF_MAKE(VMX_BF_MISC_VMWRITE_ALL,            pFeatures->fVmxVmwriteAll        )
+                          | RT_BF_MAKE(VMX_BF_MISC_ENTRY_INJECT_SOFT_INT,  pFeatures->fVmxEntryInjectSoftInt)
+                          | RT_BF_MAKE(VMX_BF_MISC_MSEG_ID,                VMX_V_MSEG_REV_ID                );
+    }
+
+    /* CR0 Fixed-0. */
+    pVmxMsrs->u64Cr0Fixed0 = pFeatures->fVmxUnrestrictedGuest ? VMX_V_CR0_FIXED0_UX:  VMX_V_CR0_FIXED0;
+
+    /* CR0 Fixed-1. */
+    {
+        uint64_t uHostMsr = 0;
+        HMVmxGetHostMsr(pVM, MSR_IA32_VMX_CR0_FIXED1, &uHostMsr);
+        pVmxMsrs->u64Cr0Fixed1 = uHostMsr | VMX_V_CR0_FIXED0;   /* Make sure the CR0 MB1 bits are not clear. */
+    }
+
+    /* CR4 Fixed-0. */
+    pVmxMsrs->u64Cr4Fixed0 = VMX_V_CR4_FIXED0;
+
+    /* CR4 Fixed-1. */
+    {
+        uint64_t uHostMsr = 0;
+        HMVmxGetHostMsr(pVM, MSR_IA32_VMX_CR4_FIXED1, &uHostMsr);
+        pVmxMsrs->u64Cr4Fixed1 = uHostMsr | VMX_V_CR4_FIXED0;   /* Make sure the CR4 MB1 bits are not clear. */
+    }
+
+    /* VMCS Enumeration. */
+    pVmxMsrs->u64VmcsEnum = VMX_V_VMCS_MAX_INDEX << VMX_BF_VMCS_ENUM_HIGHEST_IDX_SHIFT;
+
+    /* VM Functions. */
+    if (pFeatures->fVmxVmFunc)
+        pVmxMsrs->u64VmFunc = RT_BF_MAKE(VMX_BF_VMFUNC_EPTP_SWITCHING, 1);
+
+    /*
+     * We don't support the following MSRs yet:
+     *   - True Pin-based VM-execution controls.
+     *   - True Processor-based VM-execution controls.
+     *   - True VM-entry VM-execution controls.
+     *   - True VM-exit VM-execution controls.
+     *   - EPT/VPID capabilities.
+     */
+
+    /*
+     * Copy the MSRs values initialized in VCPU 0 to all other VCPUs.
+     */
+    for (VMCPUID idCpu = 1; idCpu < pVM->cCpus; idCpu++)
+    {
+        PVMCPU pVCpu = &pVM->aCpus[idCpu];
+        Assert(pVCpu);
+        memcpy(&pVCpu->cpum.s.Guest.hwvirt.vmx.Msrs, pVmxMsrs, sizeof(*pVmxMsrs));
+    }
+}
+
+
+/**
  * Explode VMX features from the provided MSRs.
  *
  * @param   pVmxMsrs        Pointer to the VMX MSRs.
@@ -1244,6 +1443,7 @@ static void cpumR3ExplodeVmxFeatures(PCVMXMSRS pVmxMsrs, PCPUMFEATURES pFeatures
 {
     Assert(pVmxMsrs);
     Assert(pFeatures);
+    Assert(pFeatures->fVmx);
 
     /* Basic information. */
     {
@@ -1312,15 +1512,6 @@ static void cpumR3ExplodeVmxFeatures(PCVMXMSRS pVmxMsrs, PCPUMFEATURES pFeatures
         pFeatures->fVmxUseTscScaling         = RT_BOOL(fProcCtls2 & VMX_PROC_CTLS2_TSC_SCALING);
     }
 
-    /* VM-entry controls. */
-    {
-        uint32_t const fEntryCtls = pVmxMsrs->EntryCtls.n.allowed1;
-        pFeatures->fVmxEntryLoadDebugCtls    = RT_BOOL(fEntryCtls & VMX_ENTRY_CTLS_LOAD_DEBUG);
-        pFeatures->fVmxIa32eModeGuest        = RT_BOOL(fEntryCtls & VMX_ENTRY_CTLS_IA32E_MODE_GUEST);
-        pFeatures->fVmxEntryLoadEferMsr      = RT_BOOL(fEntryCtls & VMX_ENTRY_CTLS_LOAD_EFER_MSR);
-        pFeatures->fVmxEntryLoadPatMsr       = RT_BOOL(fEntryCtls & VMX_ENTRY_CTLS_LOAD_PAT_MSR);
-    }
-
     /* VM-exit controls. */
     {
         uint32_t const fExitCtls = pVmxMsrs->ExitCtls.n.allowed1;
@@ -1332,6 +1523,15 @@ static void cpumR3ExplodeVmxFeatures(PCVMXMSRS pVmxMsrs, PCPUMFEATURES pFeatures
         pFeatures->fVmxExitSaveEferMsr       = RT_BOOL(fExitCtls & VMX_EXIT_CTLS_SAVE_EFER_MSR);
         pFeatures->fVmxExitLoadEferMsr       = RT_BOOL(fExitCtls & VMX_EXIT_CTLS_LOAD_EFER_MSR);
         pFeatures->fVmxSavePreemptTimer      = RT_BOOL(fExitCtls & VMX_EXIT_CTLS_SAVE_PREEMPT_TIMER);
+    }
+
+    /* VM-entry controls. */
+    {
+        uint32_t const fEntryCtls = pVmxMsrs->EntryCtls.n.allowed1;
+        pFeatures->fVmxEntryLoadDebugCtls    = RT_BOOL(fEntryCtls & VMX_ENTRY_CTLS_LOAD_DEBUG);
+        pFeatures->fVmxIa32eModeGuest        = RT_BOOL(fEntryCtls & VMX_ENTRY_CTLS_IA32E_MODE_GUEST);
+        pFeatures->fVmxEntryLoadEferMsr      = RT_BOOL(fEntryCtls & VMX_ENTRY_CTLS_LOAD_EFER_MSR);
+        pFeatures->fVmxEntryLoadPatMsr       = RT_BOOL(fEntryCtls & VMX_ENTRY_CTLS_LOAD_PAT_MSR);
     }
 
     /* Miscellaneous data. */
@@ -1535,6 +1735,11 @@ static void cpumR3InitVmxCpuFeatures(PVM pVM)
         Assert(!pGuestFeat->fVmxXsavesXrstors);
         Assert(!pGuestFeat->fVmxUseTscScaling);
     }
+
+    /*
+     * Finally initialize the VMX guest MSRs after merging the guest features.
+     */
+    cpumR3InitGuestVmxMsrs(pVM);
 }
 
 

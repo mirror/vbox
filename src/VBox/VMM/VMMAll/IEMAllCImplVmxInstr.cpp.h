@@ -558,7 +558,7 @@ IEM_STATIC bool iemVmxIsVmcsFieldValid(PVMCPU pVCpu, uint64_t u64FieldEnc)
         case VMX_VMCS64_CTRL_EPTP_LIST_FULL:
         case VMX_VMCS64_CTRL_EPTP_LIST_HIGH:
         {
-            uint64_t const uVmFuncMsr = CPUMGetGuestIa32VmxVmFunc(pVCpu);
+            uint64_t const uVmFuncMsr = pVCpu->cpum.GstCtx.hwvirt.vmx.Msrs.u64VmFunc;
             return RT_BOOL(RT_BF_GET(uVmFuncMsr, VMX_BF_VMFUNC_EPTP_SWITCHING));
         }
         case VMX_VMCS64_CTRL_VMREAD_BITMAP_FULL:
@@ -1174,7 +1174,7 @@ DECL_FORCE_INLINE(void) iemVmxVmFail(PVMCPU pVCpu, VMXINSTRERR enmInsErr)
  */
 DECL_FORCE_INLINE(bool) iemVmxIsAutoMsrCountValid(PVMCPU pVCpu, uint32_t uMsrCount)
 {
-    uint64_t const u64VmxMiscMsr      = CPUMGetGuestIa32VmxMisc(pVCpu);
+    uint64_t const u64VmxMiscMsr      = pVCpu->cpum.GstCtx.hwvirt.vmx.Msrs.u64Misc;
     uint32_t const cMaxSupportedMsrs  = VMX_MISC_MAX_MSRS(u64VmxMiscMsr);
     Assert(cMaxSupportedMsrs <= VMX_V_AUTOMSR_AREA_SIZE / sizeof(VMXAUTOMSR));
     if (uMsrCount <= cMaxSupportedMsrs)
@@ -2071,7 +2071,7 @@ IEM_STATIC void iemVmxVmexitLoadHostControlRegsMsrs(PVMCPU pVCpu)
     /* CR0. */
     {
         /* Bits 63:32, 28:19, 17, 15:6, ET, CD, NW and CR0 MB1 bits are not modified. */
-        uint64_t const uCr0Fixed0  = CPUMGetGuestIa32VmxCr0Fixed0(pVCpu);
+        uint64_t const uCr0Fixed0  = pVCpu->cpum.GstCtx.hwvirt.vmx.Msrs.u64Cr0Fixed0;
         uint64_t const fCr0IgnMask = UINT64_C(0xffffffff1ff8ffc0) | X86_CR0_ET | X86_CR0_CD | X86_CR0_NW | uCr0Fixed0;
         uint64_t const uHostCr0    = pVmcs->u64HostCr0.u;
         uint64_t const uGuestCr0   = pVCpu->cpum.GstCtx.cr0;
@@ -2082,7 +2082,7 @@ IEM_STATIC void iemVmxVmexitLoadHostControlRegsMsrs(PVMCPU pVCpu)
     /* CR4. */
     {
         /* CR4 MB1 bits are not modified. */
-        uint64_t const fCr4IgnMask = CPUMGetGuestIa32VmxCr4Fixed0(pVCpu);
+        uint64_t const fCr4IgnMask = pVCpu->cpum.GstCtx.hwvirt.vmx.Msrs.u64Cr4Fixed0;
         uint64_t const uHostCr4    = pVmcs->u64HostCr4.u;
         uint64_t const uGuestCr4   = pVCpu->cpum.GstCtx.cr4;
         uint64_t       uValidCr4   = (uHostCr4 & ~fCr4IgnMask) | (uGuestCr4 & fCr4IgnMask);
@@ -5045,7 +5045,7 @@ IEM_STATIC int iemVmxVmentryCheckGuestControlRegsMsrs(PVMCPU pVCpu, const char *
     /* CR0 reserved bits. */
     {
         /* CR0 MB1 bits. */
-        uint64_t u64Cr0Fixed0 = CPUMGetGuestIa32VmxCr0Fixed0(pVCpu);
+        uint64_t u64Cr0Fixed0 = pVCpu->cpum.GstCtx.hwvirt.vmx.Msrs.u64Cr0Fixed0;
         Assert(!(u64Cr0Fixed0 & (X86_CR0_NW | X86_CR0_CD)));
         if (fUnrestrictedGuest)
             u64Cr0Fixed0 &= ~(X86_CR0_PE | X86_CR0_PG);
@@ -5053,7 +5053,7 @@ IEM_STATIC int iemVmxVmentryCheckGuestControlRegsMsrs(PVMCPU pVCpu, const char *
             IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_GuestCr0Fixed0);
 
         /* CR0 MBZ bits. */
-        uint64_t const u64Cr0Fixed1 = CPUMGetGuestIa32VmxCr0Fixed1(pVCpu);
+        uint64_t const u64Cr0Fixed1 = pVCpu->cpum.GstCtx.hwvirt.vmx.Msrs.u64Cr0Fixed1;
         if (pVmcs->u64GuestCr0.u & ~u64Cr0Fixed1)
             IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_GuestCr0Fixed1);
 
@@ -5067,12 +5067,12 @@ IEM_STATIC int iemVmxVmentryCheckGuestControlRegsMsrs(PVMCPU pVCpu, const char *
     /* CR4 reserved bits. */
     {
         /* CR4 MB1 bits. */
-        uint64_t const u64Cr4Fixed0 = CPUMGetGuestIa32VmxCr4Fixed0(pVCpu);
+        uint64_t const u64Cr4Fixed0 = pVCpu->cpum.GstCtx.hwvirt.vmx.Msrs.u64Cr4Fixed0;
         if ((pVmcs->u64GuestCr4.u & u64Cr4Fixed0) != u64Cr4Fixed0)
             IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_GuestCr4Fixed0);
 
         /* CR4 MBZ bits. */
-        uint64_t const u64Cr4Fixed1 = CPUMGetGuestIa32VmxCr4Fixed1(pVCpu);
+        uint64_t const u64Cr4Fixed1 = pVCpu->cpum.GstCtx.hwvirt.vmx.Msrs.u64Cr4Fixed1;
         if (pVmcs->u64GuestCr4.u & ~u64Cr4Fixed1)
             IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_GuestCr4Fixed1);
     }
@@ -5681,7 +5681,7 @@ IEM_STATIC int iemVmxVmentryCheckGuestNonRegState(PVMCPU pVCpu,  const char *psz
     /*
      * Activity state.
      */
-    uint64_t const u64GuestVmxMiscMsr = CPUMGetGuestIa32VmxMisc(pVCpu);
+    uint64_t const u64GuestVmxMiscMsr = pVCpu->cpum.GstCtx.hwvirt.vmx.Msrs.u64Misc;
     uint32_t const fActivityStateMask = RT_BF_GET(u64GuestVmxMiscMsr, VMX_BF_MISC_ACTIVITY_STATES);
     if (!(pVmcs->u32GuestActivityState & fActivityStateMask))
     { /* likely */ }
@@ -6034,12 +6034,12 @@ IEM_STATIC int iemVmxVmentryCheckHostState(PVMCPU pVCpu, const char *pszInstr)
     /* CR0 reserved bits. */
     {
         /* CR0 MB1 bits. */
-        uint64_t const u64Cr0Fixed0 = CPUMGetGuestIa32VmxCr0Fixed0(pVCpu);
+        uint64_t const u64Cr0Fixed0 = pVCpu->cpum.GstCtx.hwvirt.vmx.Msrs.u64Cr0Fixed0;
         if ((pVmcs->u64HostCr0.u & u64Cr0Fixed0) != u64Cr0Fixed0)
             IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_HostCr0Fixed0);
 
         /* CR0 MBZ bits. */
-        uint64_t const u64Cr0Fixed1 = CPUMGetGuestIa32VmxCr0Fixed1(pVCpu);
+        uint64_t const u64Cr0Fixed1 = pVCpu->cpum.GstCtx.hwvirt.vmx.Msrs.u64Cr0Fixed1;
         if (pVmcs->u64HostCr0.u & ~u64Cr0Fixed1)
             IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_HostCr0Fixed1);
     }
@@ -6047,12 +6047,12 @@ IEM_STATIC int iemVmxVmentryCheckHostState(PVMCPU pVCpu, const char *pszInstr)
     /* CR4 reserved bits. */
     {
         /* CR4 MB1 bits. */
-        uint64_t const u64Cr4Fixed0 = CPUMGetGuestIa32VmxCr4Fixed0(pVCpu);
+        uint64_t const u64Cr4Fixed0 = pVCpu->cpum.GstCtx.hwvirt.vmx.Msrs.u64Cr4Fixed0;
         if ((pVmcs->u64HostCr4.u & u64Cr4Fixed0) != u64Cr4Fixed0)
             IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_HostCr4Fixed0);
 
         /* CR4 MBZ bits. */
-        uint64_t const u64Cr4Fixed1 = CPUMGetGuestIa32VmxCr4Fixed1(pVCpu);
+        uint64_t const u64Cr4Fixed1 = pVCpu->cpum.GstCtx.hwvirt.vmx.Msrs.u64Cr4Fixed1;
         if (pVmcs->u64HostCr4.u & ~u64Cr4Fixed1)
             IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_HostCr4Fixed1);
     }
@@ -6224,8 +6224,7 @@ IEM_STATIC int iemVmxVmentryCheckEntryCtls(PVMCPU pVCpu, const char *pszInstr)
     const char * const pszFailure = "VMFail";
 
     /* VM-entry controls. */
-    VMXCTLSMSR EntryCtls;
-    EntryCtls.u = CPUMGetGuestIa32VmxEntryCtls(pVCpu);
+    VMXCTLSMSR const EntryCtls = pVCpu->cpum.GstCtx.hwvirt.vmx.Msrs.EntryCtls;
     if (~pVmcs->u32EntryCtls & EntryCtls.n.allowed0)
         IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_EntryCtlsDisallowed0);
 
@@ -6327,8 +6326,7 @@ IEM_STATIC int iemVmxVmentryCheckExitCtls(PVMCPU pVCpu, const char *pszInstr)
     const char * const pszFailure = "VMFail";
 
     /* VM-exit controls. */
-    VMXCTLSMSR ExitCtls;
-    ExitCtls.u = CPUMGetGuestIa32VmxExitCtls(pVCpu);
+    VMXCTLSMSR const ExitCtls = pVCpu->cpum.GstCtx.hwvirt.vmx.Msrs.ExitCtls;
     if (~pVmcs->u32ExitCtls & ExitCtls.n.allowed0)
         IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_ExitCtlsDisallowed0);
 
@@ -6382,8 +6380,7 @@ IEM_STATIC int iemVmxVmentryCheckExecCtls(PVMCPU pVCpu, const char *pszInstr)
 
     /* Pin-based VM-execution controls. */
     {
-        VMXCTLSMSR PinCtls;
-        PinCtls.u = CPUMGetGuestIa32VmxPinbasedCtls(pVCpu);
+        VMXCTLSMSR const PinCtls = pVCpu->cpum.GstCtx.hwvirt.vmx.Msrs.PinCtls;
         if (~pVmcs->u32PinCtls & PinCtls.n.allowed0)
             IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_PinCtlsDisallowed0);
 
@@ -6393,8 +6390,7 @@ IEM_STATIC int iemVmxVmentryCheckExecCtls(PVMCPU pVCpu, const char *pszInstr)
 
     /* Processor-based VM-execution controls. */
     {
-        VMXCTLSMSR ProcCtls;
-        ProcCtls.u = CPUMGetGuestIa32VmxProcbasedCtls(pVCpu);
+        VMXCTLSMSR const ProcCtls = pVCpu->cpum.GstCtx.hwvirt.vmx.Msrs.ProcCtls;
         if (~pVmcs->u32ProcCtls & ProcCtls.n.allowed0)
             IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_ProcCtlsDisallowed0);
 
@@ -6405,8 +6401,7 @@ IEM_STATIC int iemVmxVmentryCheckExecCtls(PVMCPU pVCpu, const char *pszInstr)
     /* Secondary processor-based VM-execution controls. */
     if (pVmcs->u32ProcCtls & VMX_PROC_CTLS_USE_SECONDARY_CTLS)
     {
-        VMXCTLSMSR ProcCtls2;
-        ProcCtls2.u = CPUMGetGuestIa32VmxProcbasedCtls2(pVCpu);
+        VMXCTLSMSR const ProcCtls2 = pVCpu->cpum.GstCtx.hwvirt.vmx.Msrs.ProcCtls2;
         if (~pVmcs->u32ProcCtls2 & ProcCtls2.n.allowed0)
             IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_ProcCtls2Disallowed0);
 
@@ -8158,7 +8153,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmxon(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEffS
         /* CR0. */
         {
             /* CR0 MB1 bits. */
-            uint64_t const uCr0Fixed0 = CPUMGetGuestIa32VmxCr0Fixed0(pVCpu);
+            uint64_t const uCr0Fixed0 = pVCpu->cpum.GstCtx.hwvirt.vmx.Msrs.u64Cr0Fixed0;
             if ((pVCpu->cpum.GstCtx.cr0 & uCr0Fixed0) != uCr0Fixed0)
             {
                 Log(("vmxon: CR0 fixed0 bits cleared -> #GP(0)\n"));
@@ -8167,7 +8162,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmxon(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEffS
             }
 
             /* CR0 MBZ bits. */
-            uint64_t const uCr0Fixed1 = CPUMGetGuestIa32VmxCr0Fixed1(pVCpu);
+            uint64_t const uCr0Fixed1 = pVCpu->cpum.GstCtx.hwvirt.vmx.Msrs.u64Cr0Fixed1;
             if (pVCpu->cpum.GstCtx.cr0 & ~uCr0Fixed1)
             {
                 Log(("vmxon: CR0 fixed1 bits set -> #GP(0)\n"));
@@ -8179,7 +8174,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmxon(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEffS
         /* CR4. */
         {
             /* CR4 MB1 bits. */
-            uint64_t const uCr4Fixed0 = CPUMGetGuestIa32VmxCr4Fixed0(pVCpu);
+            uint64_t const uCr4Fixed0 = pVCpu->cpum.GstCtx.hwvirt.vmx.Msrs.u64Cr4Fixed0;
             if ((pVCpu->cpum.GstCtx.cr4 & uCr4Fixed0) != uCr4Fixed0)
             {
                 Log(("vmxon: CR4 fixed0 bits cleared -> #GP(0)\n"));
@@ -8188,7 +8183,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmxon(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEffS
             }
 
             /* CR4 MBZ bits. */
-            uint64_t const uCr4Fixed1 = CPUMGetGuestIa32VmxCr4Fixed1(pVCpu);
+            uint64_t const uCr4Fixed1 = pVCpu->cpum.GstCtx.hwvirt.vmx.Msrs.u64Cr4Fixed1;
             if (pVCpu->cpum.GstCtx.cr4 & ~uCr4Fixed1)
             {
                 Log(("vmxon: CR4 fixed1 bits set -> #GP(0)\n"));
@@ -8198,8 +8193,9 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmxon(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEffS
         }
 
         /* Feature control MSR's LOCK and VMXON bits. */
-        uint64_t const uMsrFeatCtl = CPUMGetGuestIa32FeatureControl(pVCpu);
-        if (!(uMsrFeatCtl & (MSR_IA32_FEATURE_CONTROL_LOCK | MSR_IA32_FEATURE_CONTROL_VMXON)))
+        uint64_t const uMsrFeatCtl = pVCpu->cpum.GstCtx.hwvirt.vmx.Msrs.u64FeatCtrl;
+        if ((uMsrFeatCtl & (MSR_IA32_FEATURE_CONTROL_LOCK | MSR_IA32_FEATURE_CONTROL_VMXON))
+                        != (MSR_IA32_FEATURE_CONTROL_LOCK | MSR_IA32_FEATURE_CONTROL_VMXON))
         {
             Log(("vmxon: Feature control lock bit or VMXON bit cleared -> #GP(0)\n"));
             pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmxon_MsrFeatCtl;
