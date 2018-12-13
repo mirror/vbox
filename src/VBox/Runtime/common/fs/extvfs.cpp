@@ -367,7 +367,7 @@ static DECLCALLBACK(int) rtVfsChainExtVol_Instantiate(PCRTVFSCHAINELEMENTREG pPr
     if (hVfsFileIn != NIL_RTVFSFILE)
     {
         RTVFS hVfs;
-        rc = RTFsFatVolOpen(hVfsFileIn, (uint32_t)pElement->uProvider, (uint32_t)(pElement->uProvider >> 32), &hVfs, pErrInfo);
+        rc = RTFsExtVolOpen(hVfsFileIn, (uint32_t)pElement->uProvider, (uint32_t)(pElement->uProvider >> 32), &hVfs, pErrInfo);
         RTVfsFileRelease(hVfsFileIn);
         if (RT_SUCCESS(rc))
         {
