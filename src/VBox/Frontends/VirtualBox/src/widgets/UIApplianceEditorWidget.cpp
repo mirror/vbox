@@ -51,6 +51,8 @@
   * Represented as a tree structure with a parent & multiple children. */
 class UIApplianceModelItem : public QITreeViewItem
 {
+    Q_OBJECT;
+
 public:
 
     /** Constructs root item with specified @a iNumber, @a enmType and @a pParent. */
@@ -1891,3 +1893,6 @@ void UIApplianceEditorWidget::setVirtualSystemBaseFolder(const QString& path)
         return;
     m_pModel->setVirtualSystemBaseFolder(path);
 }
+
+
+#include "UIApplianceEditorWidget.moc"

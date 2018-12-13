@@ -1210,6 +1210,7 @@ endif # VBOX_GUI_WITH_SHARED_LIBRARY
 VirtualBox_QT_MOCSRCS = \
 	src/snapshots/UISnapshotDetailsWidget.cpp \
 	src/snapshots/UISnapshotPane.cpp \
+	src/widgets/UIApplianceEditorWidget.cpp \
 	src/widgets/UIMenuToolBar.cpp \
 	src/widgets/UITabBar.cpp \
 	src/wizards/importappliance/UIWizardImportApp.cpp
@@ -1244,9 +1245,12 @@ ifndef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/guestctrl/UIFileManagerGuestTable.cpp \
 	src/guestctrl/UIGuestProcessControlWidget.cpp \
 	src/guestctrl/UIFileManagerHostTable.cpp \
+	src/settings/global/UIGlobalSettingsExtension.cpp \
 	src/settings/global/UIGlobalSettingsInput.cpp \
+	src/settings/global/UIGlobalSettingsNetwork.cpp \
 	src/settings/machine/UIMachineSettingsNetwork.cpp \
 	src/settings/machine/UIMachineSettingsSerial.cpp \
+	src/settings/machine/UIMachineSettingsSF.cpp \
 	src/settings/machine/UIMachineSettingsStorage.cpp \
 	src/settings/machine/UIMachineSettingsUSB.cpp \
 	src/widgets/UIAddDiskEncryptionPasswordDialog.cpp \
@@ -1319,9 +1323,12 @@ ifdef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/logviewer/UIVMLogViewerTextEdit.cpp \
 	src/medium/UIMediumEnumerator.cpp \
 	src/medium/UIMediumSelector.cpp \
+	src/settings/global/UIGlobalSettingsExtension.cpp \
 	src/settings/global/UIGlobalSettingsInput.cpp \
+	src/settings/global/UIGlobalSettingsNetwork.cpp \
 	src/settings/machine/UIMachineSettingsNetwork.cpp \
 	src/settings/machine/UIMachineSettingsSerial.cpp \
+	src/settings/machine/UIMachineSettingsSF.cpp \
 	src/settings/machine/UIMachineSettingsStorage.cpp \
 	src/settings/machine/UIMachineSettingsUSB.cpp \
 	src/widgets/UIAddDiskEncryptionPasswordDialog.cpp \

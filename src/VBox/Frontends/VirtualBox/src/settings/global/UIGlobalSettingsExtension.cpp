@@ -115,6 +115,8 @@ struct UIDataSettingsGlobalExtension
 /* Extension package item: */
 class UIExtensionPackageItem : public QITreeWidgetItem
 {
+    Q_OBJECT;
+
 public:
 
     /* Extension package item constructor: */
@@ -477,3 +479,5 @@ void UIGlobalSettingsExtension::loadData(const CExtPack &package, UIDataSettings
         item.m_strWhyUnusable = package.GetWhyUnusable();
 }
 
+
+#include "UIGlobalSettingsExtension.moc"

@@ -59,6 +59,8 @@ struct UIDataSettingsGlobalNetwork
 /** Global settings: Network page: NAT network tree-widget item. */
 class UIItemNetworkNAT : public QITreeWidgetItem, public UIDataSettingsGlobalNetworkNAT
 {
+    Q_OBJECT;
+
 public:
 
     /** Constructs item. */
@@ -1009,3 +1011,5 @@ bool UIGlobalSettingsNetwork::isNetworkCouldBeUpdated(const UISettingsCacheGloba
            ;
 }
 
+
+#include "UIGlobalSettingsNetwork.moc"

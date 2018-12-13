@@ -255,6 +255,8 @@ private:
 /** Machine settings: USB Filter tree-widget item. */
 class UIUSBFilterItem : public QITreeWidgetItem, public UIDataSettingsMachineUSBFilter
 {
+    Q_OBJECT;
+
 public:
 
     /** Constructs USB filter (root) item.
@@ -1332,5 +1334,5 @@ bool UIMachineSettingsUSB::createUSBFilter(CUSBDeviceFilters &comFiltersObject, 
     return fSuccess;
 }
 
-#include "UIMachineSettingsUSB.moc"
 
+#include "UIMachineSettingsUSB.moc"

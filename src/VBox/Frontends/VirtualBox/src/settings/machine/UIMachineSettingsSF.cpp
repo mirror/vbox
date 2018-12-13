@@ -98,6 +98,8 @@ struct UIDataSettingsSharedFolders
 /** Machine settings: Shared Folder tree-widget item. */
 class SFTreeViewItem : public QITreeWidgetItem, public UIDataSettingsSharedFolder
 {
+    Q_OBJECT;
+
 public:
 
     /** Format type. */
@@ -1112,3 +1114,5 @@ bool UIMachineSettingsSF::createSharedFolder(const UISettingsCacheSharedFolder &
     return fSuccess;
 }
 
+
+#include "UIMachineSettingsSF.moc"
