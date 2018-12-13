@@ -3842,7 +3842,7 @@ void UIMachineSettingsStorage::addAttachmentWrapper(KDeviceType enmDevice)
         default: break; /* Shut up, MSC! */
     }
 
-    if (!fCancelled)
+    if (!fCancelled && !uMediumId.isNull())
     {
         m_pModelStorage->addAttachment(QUuid(m_pModelStorage->data(index, StorageModel::R_ItemId).toString()), enmDevice, uMediumId);
         m_pModelStorage->sort();
