@@ -2994,18 +2994,12 @@ int vmsvga3dContextDefineOgl(PVGASTATE pThis, uint32_t cid, uint32_t fFlags)
     }
 
 #elif defined(RT_OS_DARWIN)
-    /** @todo No overlay like on Windows. */
-    VMSVGASCREENOBJECT *pScreen = vmsvgaGetScreenObject(pThis, 0);
-    uint32_t const uWidth  = pScreen ? pScreen->cWidth : -1;
-    uint32_t const uHeight = pScreen ? pScreen->cHeight: -1;
-
     pContext->fOtherProfile = RT_BOOL(fFlags & VMSVGA3D_DEF_CTX_F_OTHER_PROFILE);
 
     NativeNSOpenGLContextRef pShareContext = pSharedCtx ? pSharedCtx->cocoaContext : NULL;
-    NativeNSViewRef          pHostView    = (NativeNSViewRef)pThis->svga.u64HostWindowId;
     vmsvga3dCocoaCreateViewAndContext(&pContext->cocoaView, &pContext->cocoaContext,
-                                      pSharedCtx ? NULL : pHostView, /* Only attach one subview, the one we'll present in. */ /** @todo screen objects and stuff. */
-                                      uWidth, uHeight,
+                                      NULL,
+                                      4, 4,
                                       pShareContext, pContext->fOtherProfile);
 
 #else
