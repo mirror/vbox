@@ -8,10 +8,13 @@
  * and
  *      AMD Am79C973/Am79C975 PCnet-FAST III Single-Chip 10/100 Mbps PCI Ethernet Controller datasheet
  *      AMD publication# 20510  Rev:E  Amendment/0  Issue Date: August 2000
+ * and
+ *      AMD Am79C960 PCnet-ISA III Single-Chip ISA Single-Chip Ethernet Controller datasheet
+ *      AMD publication# 16907  Rev:B  Amendment/0  Issue Date: May 1994
  */
 
 /*
- * Copyright (C) 2006-2017 Oracle Corporation
+ * Copyright (C) 2006-2018 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -232,8 +235,9 @@
 
 /** @name Version for the PCnet/FAST III 79C973 card
  * @{ */
-#define CSR_VERSION_LOW_79C973  0x5003  /* the lower two bits must be 11b for AMD */
-#define CSR_VERSION_LOW_79C970A 0x1003  /* the lower two bits must be 11b for AMD */
+#define CSR_VERSION_LOW_79C973  0x5003  /* the lower two bits are always 11b for AMD (JEDEC) */
+#define CSR_VERSION_LOW_79C970A 0x1003
+#define CSR_VERSION_LOW_79C960  0x0003
 #define CSR_VERSION_HIGH        0x0262
 /** @}  */
 
@@ -244,6 +248,51 @@
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
 *********************************************************************************************************************************/
+
+/**
+ * Emulated device types.
+ */
+enum PCNET_DEVICE_TYPE
+{
+    DEV_AM79C970A   = 0,    /* PCnet-PCI II (PCI, 10 Mbps). */
+    DEV_AM79C973    = 1,    /* PCnet-FAST III (PCI, 10/100 Mbps). */
+    DEV_AM79C960    = 2     /* PCnet-ISA (ISA, 10 Mbps, NE2100/NE1500T compatible) */
+};
+
+#define PCNET_IS_PCI(pcnet) ((pcnet->uDevType == DEV_AM79C970A) || (pcnet->uDevType == DEV_AM79C973))
+#define PCNET_IS_ISA(pcnet) (pcnet->uDevType == DEV_AM79C960)
+
+/*
+ *  Note: Old adapters, including the original NE2100/NE1500T, used the LANCE (Am7990) or
+ *  possibly C-LANCE (Am79C90) chips. Those only had the RAP/RDP register and any PROMs were
+ *  decoded by external circuitry; as a consequence, different vendors used different layouts.
+ *  Several different variants are known:
+ *
+ *   1) Racal Interlan NI6510 (before PCnet-based EtherBlaster variants):
+ *      - RDP     at iobase + 0x00 (16-bit)
+ *      - RAP     at iobase + 0x02 (16-bit)
+ *      - reset   at iobase + 0x04 (8-bit)
+ *      - config  at iobase + 0x05 (8-bit)
+ *      - PROM    at iobase + 0x08
+ *
+ *   2) BICC Data Networks ISOLAN 4110-2 (ISA) / 4110-3 (MCA):
+ *      - PROM    at iobase + 0x00
+ *      - reset   at iobase + 0x04
+ *      - config  at iobase + 0x05
+ *      - RDP     at iobase + 0x0c (16-bit)
+ *      - RAP     at iobase + 0x0e (16-bit)
+ *
+ *   3) Novell NE2100/NE1500T, AMD Am2100, all PCnet chips:
+ *      - PROM    at iobase + 0x00
+ *      - RDP     at iobase + 0x10 (16-bit)
+ *      - RAP     at iobase + 0x12 (16-bit)
+ *      - reset   at iobase + 0x14 (16-bit)
+ *      - BDP/IDP at iobase + 0x16 (16-bit)
+ *
+ * There were also non-busmastering LANCE adapters, such as the BICC 4110-1, DEC DEPCA,
+ * or NTI 16. Those are uninteresting.
+ */
+
 /**
  * PCNET state.
  *
@@ -315,6 +364,7 @@ typedef struct PCNETSTATE
 
     /** Alignment padding. */
     uint32_t                            Alignment1;
+
     /** Register Address Pointer */
     uint32_t                            u32RAP;
     /** Internal interrupt service */
@@ -342,8 +392,10 @@ typedef struct PCNETSTATE
     /** The recv buffer. */
     uint8_t                             abRecvBuf[4096];
 
+    /** The configured IRQ for ISA operation. */
+    uint8_t                             uIsaIrq;
     /** Alignment padding. */
-    uint32_t                            Alignment2;
+    uint8_t                             Alignment2[3];
 
     /** Size of a RX/TX descriptor (8 or 16 bytes according to SWSTYLE */
     int                                 iLog2DescSize;
@@ -352,7 +404,8 @@ typedef struct PCNETSTATE
 
     /** Base address of the MMIO region. */
     RTGCPHYS32                          MMIOBase;
-    /** Base port of the I/O space region. */
+
+    /** Base port of the I/O space region (PCI). */
     RTIOPORT                            IOPortBase;
     /** If set the link is currently up. */
     bool                                fLinkUp;
@@ -363,8 +416,8 @@ typedef struct PCNETSTATE
     RTUINT                              cLinkDownReported;
     /** The configured MAC address. */
     RTMAC                               MacConfigured;
-    /** Alignment padding. */
-    uint8_t                             Alignment3[2];
+    /** Base port of the I/O space region (ISA). */
+    RTIOPORT                            IOPortBaseISA;
 
     /** The LED. */
     PDMLED                              Led;
@@ -402,11 +455,11 @@ typedef struct PCNETSTATE
     bool                                fGCEnabled;
     /* True if R0 context is enabled. */
     bool                                fR0Enabled;
-    /* True: Emulate Am79C973. False: Emulate 79C970A. */
-    bool                                fAm79C973;
-    /* Link speed to be reported through CSR68. */
+    /* Emulated device type. */
+    uint8_t                             uDevType;
+    /* Backwards compatible shared memory region. */
     bool                                fSharedRegion;
-    /* Alignment padding. */
+    /* Link speed to be reported through CSR68. */
     uint32_t                            u32LinkSpeed;
     /* MS to wait before we enable the link. */
     uint32_t                            cMsLinkUpDelay;
@@ -659,6 +712,23 @@ DECLINLINE(bool) pcnetIsLinkUp(PPCNETSTATE pThis)
 }
 
 /**
+ * Memory write helper to handle PCI/ISA differences.
+ *
+ * @returns nothing.
+ * @param   pThis       Pointer to the BusLogic device instance
+ * @param   GCPhys      Guest physical memory address
+ * @param   pvBuf       Host side buffer address
+ * @param   cbWrite     Number of bytes to write
+ */
+static void pcnetPhysWrite(PPCNETSTATE pThis, RTGCPHYS GCPhys, const void *pvBuf, size_t cbWrite)
+{
+    if (!PCNET_IS_ISA(pThis))
+        PDMDevHlpPCIPhysWrite(pThis->CTX_SUFF(pDevIns), GCPhys, pvBuf, cbWrite);
+    else
+        PDMDevHlpPhysWrite(pThis->CTX_SUFF(pDevIns), GCPhys, pvBuf, cbWrite);
+}
+
+/**
  * Load transmit message descriptor
  * Make sure we read the own flag first.
  *
@@ -722,7 +792,6 @@ DECLINLINE(bool) pcnetTmdLoad(PPCNETSTATE pThis, TMD *tmd, RTGCPHYS32 addr, bool
 DECLINLINE(void) pcnetTmdStorePassHost(PPCNETSTATE pThis, TMD *tmd, RTGCPHYS32 addr)
 {
     STAM_PROFILE_ADV_START(&pThis->CTX_SUFF_Z(StatTmdStore), a);
-    PPDMDEVINS pDevIns = PCNETSTATE_2_DEVINS(pThis);
     if (RT_UNLIKELY(BCR_SWSTYLE(pThis) == 0))
     {
         uint16_t xda[4];
@@ -731,16 +800,16 @@ DECLINLINE(void) pcnetTmdStorePassHost(PPCNETSTATE pThis, TMD *tmd, RTGCPHYS32 a
         xda[2] =   ((uint32_t *)tmd)[1]        & 0xffff;
         xda[3] =   ((uint32_t *)tmd)[2] >> 16;
         xda[1] |=  0x8000;
-        PDMDevHlpPCIPhysWrite(pDevIns, addr, (void*)&xda[0], sizeof(xda));
+        pcnetPhysWrite(pThis, addr, (void*)&xda[0], sizeof(xda));
         xda[1] &= ~0x8000;
-        PDMDevHlpPCIPhysWrite(pDevIns, addr+3, (uint8_t*)xda + 3, 1);
+        pcnetPhysWrite(pThis, addr+3, (uint8_t*)xda + 3, 1);
     }
     else if (RT_LIKELY(BCR_SWSTYLE(pThis) != 3))
     {
         ((uint32_t*)tmd)[1] |=  0x80000000;
-        PDMDevHlpPCIPhysWrite(pDevIns, addr, (void*)tmd, 16);
+        pcnetPhysWrite(pThis, addr, (void*)tmd, 16);
         ((uint32_t*)tmd)[1] &= ~0x80000000;
-        PDMDevHlpPCIPhysWrite(pDevIns, addr+7, (uint8_t*)tmd + 7, 1);
+        pcnetPhysWrite(pThis, addr+7, (uint8_t*)tmd + 7, 1);
     }
     else
     {
@@ -750,9 +819,9 @@ DECLINLINE(void) pcnetTmdStorePassHost(PPCNETSTATE pThis, TMD *tmd, RTGCPHYS32 a
         xda[2] = ((uint32_t *)tmd)[0];
         xda[3] = ((uint32_t *)tmd)[3];
         xda[1] |=  0x80000000;
-        PDMDevHlpPCIPhysWrite(pDevIns, addr, (void*)&xda[0], sizeof(xda));
+        pcnetPhysWrite(pThis, addr, (void*)&xda[0], sizeof(xda));
         xda[1] &= ~0x80000000;
-        PDMDevHlpPCIPhysWrite(pDevIns, addr+7, (uint8_t*)xda + 7, 1);
+        pcnetPhysWrite(pThis, addr+7, (uint8_t*)xda + 7, 1);
     }
     STAM_PROFILE_ADV_STOP(&pThis->CTX_SUFF_Z(StatTmdStore), a);
 }
@@ -820,7 +889,6 @@ DECLINLINE(bool) pcnetRmdLoad(PPCNETSTATE pThis, RMD *rmd, RTGCPHYS32 addr, bool
  */
 DECLINLINE(void) pcnetRmdStorePassHost(PPCNETSTATE pThis, RMD *rmd, RTGCPHYS32 addr)
 {
-    PPDMDEVINS pDevIns = PCNETSTATE_2_DEVINS(pThis);
     if (RT_UNLIKELY(BCR_SWSTYLE(pThis) == 0))
     {
         uint16_t rda[4];
@@ -829,16 +897,16 @@ DECLINLINE(void) pcnetRmdStorePassHost(PPCNETSTATE pThis, RMD *rmd, RTGCPHYS32 a
         rda[2] =   ((uint32_t *)rmd)[1]      & 0xffff;
         rda[3] =   ((uint32_t *)rmd)[2]      & 0xffff;
         rda[1] |=  0x8000;
-        PDMDevHlpPCIPhysWrite(pDevIns, addr, (void*)&rda[0], sizeof(rda));
+        pcnetPhysWrite(pThis, addr, (void*)&rda[0], sizeof(rda));
         rda[1] &= ~0x8000;
-        PDMDevHlpPCIPhysWrite(pDevIns, addr+3, (uint8_t*)rda + 3, 1);
+        pcnetPhysWrite(pThis, addr+3, (uint8_t*)rda + 3, 1);
     }
     else if (RT_LIKELY(BCR_SWSTYLE(pThis) != 3))
     {
         ((uint32_t*)rmd)[1] |=  0x80000000;
-        PDMDevHlpPCIPhysWrite(pDevIns, addr, (void*)rmd, 16);
+        pcnetPhysWrite(pThis, addr, (void*)rmd, 16);
         ((uint32_t*)rmd)[1] &= ~0x80000000;
-        PDMDevHlpPCIPhysWrite(pDevIns, addr+7, (uint8_t*)rmd + 7, 1);
+        pcnetPhysWrite(pThis, addr+7, (uint8_t*)rmd + 7, 1);
     }
     else
     {
@@ -848,9 +916,9 @@ DECLINLINE(void) pcnetRmdStorePassHost(PPCNETSTATE pThis, RMD *rmd, RTGCPHYS32 a
         rda[2] = ((uint32_t *)rmd)[0];
         rda[3] = ((uint32_t *)rmd)[3];
         rda[1] |=  0x80000000;
-        PDMDevHlpPCIPhysWrite(pDevIns, addr, (void*)&rda[0], sizeof(rda));
+        pcnetPhysWrite(pThis, addr, (void*)&rda[0], sizeof(rda));
         rda[1] &= ~0x80000000;
-        PDMDevHlpPCIPhysWrite(pDevIns, addr+7, (uint8_t*)rda + 7, 1);
+        pcnetPhysWrite(pThis, addr+7, (uint8_t*)rda + 7, 1);
     }
 }
 
@@ -869,7 +937,7 @@ static void pcnetDescTouch(PPCNETSTATE pThis, RTGCPHYS32 addr)
     else
         cbDesc = 16;
     PDMDevHlpPhysRead(pDevIns, addr, aBuf, cbDesc);
-    PDMDevHlpPCIPhysWrite(pDevIns, addr, aBuf, cbDesc);
+    pcnetPhysWrite(pThis, addr, aBuf, cbDesc);
 }
 #endif /* IN_RING3 */
 
@@ -1226,8 +1294,22 @@ static void pcnetSoftReset(PPCNETSTATE pThis)
     CSR_RCVRL(pThis) = 1;
     CSR_XMTRL(pThis) = 1;
     pThis->aCSR[80]  = 0x1410;
-    pThis->aCSR[88]  = pThis->fAm79C973 ? CSR_VERSION_LOW_79C973 : CSR_VERSION_LOW_79C970A;
-    pThis->aCSR[89]  = CSR_VERSION_HIGH;
+    switch (pThis->uDevType)
+    {
+    default:
+    case DEV_AM79C970A:
+        pThis->aCSR[88] = CSR_VERSION_LOW_79C970A;
+        pThis->aCSR[89] = CSR_VERSION_HIGH;
+        break;
+    case DEV_AM79C973:
+        pThis->aCSR[88] = CSR_VERSION_LOW_79C973;
+        pThis->aCSR[89] = CSR_VERSION_HIGH;
+        break;
+    case DEV_AM79C960:
+        pThis->aCSR[88] = CSR_VERSION_LOW_79C960;
+        pThis->aCSR[89] = 0x0000;
+        break;
+    }
     pThis->aCSR[94]  = 0x0000;
     pThis->aCSR[100] = 0x0200;
     pThis->aCSR[103] = 0x0105;
@@ -1322,8 +1404,16 @@ static void pcnetUpdateIrq(PPCNETSTATE pThis)
     /* normal path is to _not_ change the IRQ status */
     if (RT_UNLIKELY(iISR != pThis->iISR))
     {
-        Log(("#%d INTA=%d\n", PCNET_INST_NR, iISR));
-        PDMDevHlpPCISetIrq(PCNETSTATE_2_DEVINS(pThis), 0, iISR);
+        if (!PCNET_IS_ISA(pThis))
+        {
+            Log(("#%d INTA=%d\n", PCNET_INST_NR, iISR));
+            PDMDevHlpPCISetIrq(PCNETSTATE_2_DEVINS(pThis), 0, iISR);
+        }
+        else
+        {
+            Log(("#%d IRQ=%d, state=%d\n", PCNET_INST_NR, pThis->uIsaIrq, iISR));
+            PDMDevHlpISASetIrq(PCNETSTATE_2_DEVINS(pThis), pThis->uIsaIrq, iISR);
+        }
         pThis->iISR = iISR;
     }
     STAM_PROFILE_ADV_STOP(&pThis->StatInterrupt, a);
@@ -1903,7 +1993,7 @@ static void pcnetReceiveNoSync(PPCNETSTATE pThis, const uint8_t *buf, size_t cbT
              *  - we don't cache any register state beyond this point
              */
             PDMCritSectLeave(&pThis->CritSect);
-            PDMDevHlpPCIPhysWrite(pDevIns, rbadr, src, cbBuf);
+            pcnetPhysWrite(pThis, rbadr, src, cbBuf);
             int rc = PDMCritSectEnter(&pThis->CritSect, VERR_SEM_BUSY);
             AssertReleaseRC(rc);
 
@@ -1950,7 +2040,7 @@ static void pcnetReceiveNoSync(PPCNETSTATE pThis, const uint8_t *buf, size_t cbT
                  * with EMT when the write is to an unallocated page or has an access
                  * handler associated with it. See above for additional comments. */
                 PDMCritSectLeave(&pThis->CritSect);
-                PDMDevHlpPCIPhysWrite(pDevIns, rbadr2, src, cbBuf);
+                pcnetPhysWrite(pThis, rbadr2, src, cbBuf);
                 rc = PDMCritSectEnter(&pThis->CritSect, VERR_SEM_BUSY);
                 AssertReleaseRC(rc);
 
@@ -3076,7 +3166,7 @@ static int pcnetBCRWriteU16(PPCNETSTATE pThis, uint32_t u32RAP, uint32_t val)
         case BCR_STVAL:
             val &= 0xffff;
             pThis->aBCR[BCR_STVAL] = val;
-            if (pThis->fAm79C973)
+            if (pThis->uDevType == DEV_AM79C973)
                 TMTimerSetNano(pThis->CTX_SUFF(pTimerSoftInt), 12800U * val);
             break;
 
@@ -3229,7 +3319,7 @@ static uint32_t pcnetBCRReadU16(PPCNETSTATE pThis, uint32_t u32RAP)
             break;
 
         case BCR_MIIMDR:
-            if (pThis->fAm79C973 && (pThis->aBCR[BCR_MIIADDR] >> 5 & 0x1f) == 0)
+            if ((pThis->uDevType == DEV_AM79C973) && (pThis->aBCR[BCR_MIIADDR] >> 5 & 0x1f) == 0)
             {
                 uint32_t miiaddr = pThis->aBCR[BCR_MIIADDR] & 0x1f;
                 val = pcnetMIIReadU16(pThis, miiaddr);
@@ -3258,7 +3348,7 @@ static void pcnetR3HardReset(PPCNETSTATE pThis)
     Assert(sizeof(pThis->MacConfigured) == 6);
     memcpy(pThis->aPROM, &pThis->MacConfigured, sizeof(pThis->MacConfigured));
     pThis->aPROM[ 8] = 0x00;
-    pThis->aPROM[ 9] = 0x11;
+    pThis->aPROM[ 9] = 0x00;    /* 0x00/0xFF=ISA, 0x01=PnP, 0x10=VLB, 0x11=PCI */
     pThis->aPROM[12] = pThis->aPROM[13] = 0x00;
     pThis->aPROM[14] = pThis->aPROM[15] = 0x57;
 
@@ -3974,11 +4064,19 @@ static DECLCALLBACK(void) pcnetInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, cons
     /*
      * Show info.
      */
+    const char *pcszModel;
+    switch (pThis->uDevType)
+    {
+    case DEV_AM79C970A: pcszModel = "AM79C970A";    break;
+    case DEV_AM79C973:  pcszModel = "AM79C973";     break;
+    case DEV_AM79C960:  pcszModel = "AM79C960";     break;
+    default:            pcszModel = "Unknown";      break;
+    }
     pHlp->pfnPrintf(pHlp,
                     "pcnet #%d: port=%RTiop mmio=%RX32 mac-cfg=%RTmac %s%s%s\n",
                     pDevIns->iInstance,
                     pThis->IOPortBase, pThis->MMIOBase, &pThis->MacConfigured,
-                    pThis->fAm79C973 ? "Am79C973" : "Am79C970A", pThis->fGCEnabled ? " RC" : "", pThis->fR0Enabled ? " R0" : "");
+                    pcszModel, pThis->fGCEnabled ? " RC" : "", pThis->fR0Enabled ? " R0" : "");
 
     PDMCritSectEnter(&pThis->CritSect, VERR_INTERNAL_ERROR); /* Take it here so we know why we're hanging... */
 
@@ -4216,7 +4314,7 @@ static void pcnetTempLinkDown(PPCNETSTATE pThis)
 static void pcnetSaveConfig(PPCNETSTATE pThis, PSSMHANDLE pSSM)
 {
     SSMR3PutMem(pSSM, &pThis->MacConfigured, sizeof(pThis->MacConfigured));
-    SSMR3PutBool(pSSM, pThis->fAm79C973);                   /* >= If version 0.8 */
+    SSMR3PutU8(pSSM, pThis->uDevType);
     SSMR3PutU32(pSSM, pThis->u32LinkSpeed);
 }
 
@@ -4279,7 +4377,7 @@ static DECLCALLBACK(int) pcnetSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     if (RT_FAILURE(rc))
         return rc;
 #endif
-    if (pThis->fAm79C973)
+    if (pThis->uDevType == DEV_AM79C973)
         rc = TMR3TimerSave(pThis->CTX_SUFF(pTimerSoftInt), pSSM);
     return rc;
 }
@@ -4370,11 +4468,11 @@ static DECLCALLBACK(int) pcnetLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint
         && (uPass == 0 || !PDMDevHlpVMTeleportedAndNotFullyResumedYet(pDevIns)) )
         LogRel(("PCnet#%u: The mac address differs: config=%RTmac saved=%RTmac\n", PCNET_INST_NR, &pThis->MacConfigured, &Mac));
 
-    bool        fAm79C973;
-    rc = SSMR3GetBool(pSSM, &fAm79C973);
+    uint8_t     uDevType;
+    rc = SSMR3GetU8(pSSM, &uDevType);
     AssertRCReturn(rc, rc);
-    if (pThis->fAm79C973 != fAm79C973)
-        return SSMR3SetCfgError(pSSM, RT_SRC_POS, N_("The fAm79C973 flag differs: config=%RTbool saved=%RTbool"), pThis->fAm79C973, fAm79C973);
+    if (pThis->uDevType != uDevType)
+        return SSMR3SetCfgError(pSSM, RT_SRC_POS, N_("The uDevType setting differs: config=%u saved=%u"), pThis->uDevType, uDevType);
 
     uint32_t    u32LinkSpeed;
     rc = SSMR3GetU32(pSSM, &u32LinkSpeed);
@@ -4389,7 +4487,7 @@ static DECLCALLBACK(int) pcnetLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint
 #ifndef PCNET_NO_POLLING
         TMR3TimerLoad(pThis->CTX_SUFF(pTimerPoll), pSSM);
 #endif
-        if (pThis->fAm79C973)
+        if (pThis->uDevType == DEV_AM79C973)
         {
             if (   SSM_VERSION_MAJOR(uVersion) >  0
                 || SSM_VERSION_MINOR(uVersion) >= 8)
@@ -4842,7 +4940,7 @@ static DECLCALLBACK(void) pcnetRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
 #else
     pThis->pTimerPollRC  = TMTimerRCPtr(pThis->pTimerPollR3);
 #endif
-    if (pThis->fAm79C973)
+    if (pThis->uDevType == DEV_AM79C973)
         pThis->pTimerSoftIntRC = TMTimerRCPtr(pThis->pTimerSoftIntR3);
 }
 
@@ -4889,7 +4987,7 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     /*
      * Validate configuration.
      */
-    if (!CFGMR3AreValuesValid(pCfg, "MAC\0" "CableConnected\0" "Am79C973\0" "LineSpeed\0" "GCEnabled\0" "R0Enabled\0" "PrivIfEnabled\0" "LinkUpDelay\0"))
+    if (!CFGMR3AreValuesValid(pCfg, "MAC\0" "CableConnected\0" "Am79C973\0" "ChipType\0" "LineSpeed\0" "GCEnabled\0" "R0Enabled\0" "PrivIfEnabled\0" "LinkUpDelay\0"))
         return PDMDEV_SET_ERROR(pDevIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES,
                                 N_("Invalid configuration for pcnet device"));
 
@@ -4905,10 +5003,52 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to get the \"CableConnected\" value"));
 
-    rc = CFGMR3QueryBoolDef(pCfg, "Am79C973", &pThis->fAm79C973, false);
+    /*
+     * Determine the model.
+     */
+    char szChipType[16];
+    rc = CFGMR3QueryStringDef(pCfg, "ChipType", &szChipType[0], sizeof(szChipType), "Am79C970A");
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES,
+                                N_("Configuration error: Querying \"ChipType\" as string failed"));
+
+    if (!strcmp(szChipType, "Am79C970A"))
+        pThis->uDevType = DEV_AM79C970A;    /* 10 Mbps PCnet-PCI II. */
+    else if (!strcmp(szChipType, "Am79C973"))
+        pThis->uDevType = DEV_AM79C970A;    /* 10/100 Mbps PCnet-FAST III. */
+    else if (!strcmp(szChipType, "Am79C960"))
+        pThis->uDevType = DEV_AM79C960;     /* 10 Mbps PCnet-ISA, NE2100/Am2100 compatible. */
+    else
+    {
+        return PDMDevHlpVMSetError(pDevIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES, RT_SRC_POS,
+                                   N_("Configuration error: The \"ChipType\" value \"%s\" is unsupported"),
+                                   szChipType);
+    }
+
+
+    /*
+     * Process the old model configuration. If present, it must take precedence for saved state compatibility.
+     */
+    bool fAm79C973;
+    rc = CFGMR3QueryBoolDef(pCfg, "Am79C973", &fAm79C973, false);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to get the \"Am79C973\" value"));
+    if (fAm79C973)
+        pThis->uDevType = DEV_AM79C973;
+
+    /*
+     * Process ISA configuration options. The defaults are chosen to be NE2100/Am2100 compatible.
+     */
+    rc = CFGMR3QueryPortDef(pCfg, "Port", &pThis->IOPortBaseISA, 0x300);
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("Configuration error: Failed to get the \"Port\" value"));
+
+    rc = CFGMR3QueryU8Def(pCfg, "IRQ", &pThis->uIsaIrq, 3);
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("Configuration error: Failed to get the \"IRQ\" value"));
 
     rc = CFGMR3QueryU32Def(pCfg, "LineSpeed", &pThis->u32LinkSpeed, 1000000); /* 1GBit/s (in kbps units)*/
     if (RT_FAILURE(rc))
@@ -4972,7 +5112,7 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     pThis->PciDev.abConfig[0x05] = 0x00;
     pThis->PciDev.abConfig[0x06] = 0x80; /* status */
     pThis->PciDev.abConfig[0x07] = 0x02;
-    pThis->PciDev.abConfig[0x08] = pThis->fAm79C973 ? 0x40 : 0x10; /* revision */
+    pThis->PciDev.abConfig[0x08] = pThis->uDevType == DEV_AM79C973 ? 0x40 : 0x10; /* revision */
     pThis->PciDev.abConfig[0x09] = 0x00;
     pThis->PciDev.abConfig[0x0a] = 0x00; /* ethernet network controller */
     pThis->PciDev.abConfig[0x0b] = 0x02;
@@ -5010,15 +5150,58 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     /*
      * Register the PCI device, its I/O regions, the timer and the saved state item.
      */
-    rc = PDMDevHlpPCIRegister(pDevIns, &pThis->PciDev);
-    if (RT_FAILURE(rc))
-        return rc;
-    rc = PDMDevHlpPCIIORegionRegister(pDevIns, 0, PCNET_IOPORT_SIZE,  PCI_ADDRESS_SPACE_IO,  pcnetIOPortMap);
-    if (RT_FAILURE(rc))
-        return rc;
-    rc = PDMDevHlpPCIIORegionRegister(pDevIns, 1, PCNET_PNPMMIO_SIZE, PCI_ADDRESS_SPACE_MEM, pcnetMMIOMap);
-    if (RT_FAILURE(rc))
-        return rc;
+    if (PCNET_IS_PCI(pThis))
+    {
+        rc = PDMDevHlpPCIRegister(pDevIns, &pThis->PciDev);
+        if (RT_FAILURE(rc))
+            return rc;
+        rc = PDMDevHlpPCIIORegionRegister(pDevIns, 0, PCNET_IOPORT_SIZE,  PCI_ADDRESS_SPACE_IO,  pcnetIOPortMap);
+        if (RT_FAILURE(rc))
+            return rc;
+        rc = PDMDevHlpPCIIORegionRegister(pDevIns, 1, PCNET_PNPMMIO_SIZE, PCI_ADDRESS_SPACE_MEM, pcnetMMIOMap);
+        if (RT_FAILURE(rc))
+            return rc;
+    }
+
+    /*
+     * Register ISA I/O ranges for PCnet-ISA.
+     */
+    if (PCNET_IS_ISA(pThis))
+    {
+        rc = PDMDevHlpIOPortRegister(pDevIns, pThis->IOPortBaseISA, 0x10, 0, pcnetIOPortAPromWrite,
+                                     pcnetIOPortAPromRead, NULL, NULL, "PCnet APROM");
+        if (RT_FAILURE(rc))
+            return rc;
+        rc = PDMDevHlpIOPortRegister(pDevIns, pThis->IOPortBaseISA + 0x10, 0x10, 0, pcnetIOPortWrite,
+                                     pcnetIOPortRead, NULL, NULL, "PCnet");
+        if (RT_FAILURE(rc))
+            return rc;
+
+        if (pThis->fGCEnabled)
+        {
+            rc = PDMDevHlpIOPortRegisterRC(pDevIns, pThis->IOPortBaseISA, 0x10, 0, "pcnetIOPortAPromWrite",
+                                           "pcnetIOPortAPromRead", NULL, NULL, "PCnet APROM");
+            if (RT_FAILURE(rc))
+                return rc;
+            rc = PDMDevHlpIOPortRegisterRC(pDevIns, pThis->IOPortBaseISA + 0x10, 0x10, 0, "pcnetIOPortWrite",
+                                           "pcnetIOPortRead", NULL, NULL, "PCnet");
+            if (RT_FAILURE(rc))
+                return rc;
+        }
+        if (pThis->fR0Enabled)
+        {
+            rc = PDMDevHlpIOPortRegisterR0(pDevIns, pThis->IOPortBaseISA, 0x10, 0, "pcnetIOPortAPromWrite",
+                                           "pcnetIOPortAPromRead", NULL, NULL, "PCnet APROM");
+            if (RT_FAILURE(rc))
+                return rc;
+            rc = PDMDevHlpIOPortRegisterR0(pDevIns, pThis->IOPortBaseISA + 0x10, 0x10, 0, "pcnetIOPortWrite",
+                                           "pcnetIOPortRead", NULL, NULL, "PCnet");
+            if (RT_FAILURE(rc))
+                return rc;
+        }
+
+    }
+
 
 #ifdef PCNET_NO_POLLING
     /*
@@ -5046,7 +5229,7 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     pThis->pTimerPollRC = TMTimerRCPtr(pThis->pTimerPollR3);
     TMR3TimerSetCritSect(pThis->pTimerPollR3, &pThis->CritSect);
 #endif
-    if (pThis->fAm79C973)
+    if (pThis->uDevType == DEV_AM79C973)
     {
         /* Software Interrupt timer */
         rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL, pcnetTimerSoftInt, pThis, /** @todo r=bird: the locking here looks bogus now with SMP... */
