@@ -1381,7 +1381,8 @@ public:
     /** Constructs action passing @a pParent to the base-class. */
     UIActionMenuSelectorLogPerformRefresh(UIActionPool *pParent)
         : UIActionSimple(pParent,
-                         ":/log_viewer_refresh_32px.png", ":/log_viewer_refresh_disabled_32px.png")
+                         ":/log_viewer_refresh_32px.png", ":/log_viewer_refresh_16px.png",
+                         ":/log_viewer_refresh_disabled_32px.png", ":/log_viewer_refresh_disabled_16px.png")
     {
         setShortcutContext(Qt::WidgetWithChildrenShortcut);
     }
@@ -1420,7 +1421,8 @@ public:
     /** Constructs action passing @a pParent to the base-class. */
     UIActionMenuSelectorLogPerformSave(UIActionPool *pParent)
         : UIActionSimple(pParent,
-                         ":/log_viewer_save_32px.png", ":/log_viewer_save_disabled_32px.png")
+                         ":/log_viewer_save_32px.png", ":/log_viewer_save_16px.png",
+                         ":/log_viewer_save_disabled_32px.png", ":/log_viewer_save_disabled_16px.png")
     {
         setShortcutContext(Qt::WidgetWithChildrenShortcut);
     }
