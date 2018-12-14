@@ -1536,6 +1536,11 @@ PDMBOTHCBDECL(int) vmsvgaWritePort(PVGASTATE pThis, uint32_t u32)
 
             /* Disable or enable dirty page tracking according to the current fTraces value. */
             vmsvgaSetTraces(pThis, !!pThis->svga.fTraces);
+
+            for (uint32_t iScreen = 0; iScreen < pThis->cMonitors; ++iScreen)
+            {
+                pThis->pDrv->pfnVBVAEnable(pThis->pDrv, iScreen, NULL, false);
+            }
         }
         else
         {
@@ -1546,6 +1551,11 @@ PDMBOTHCBDECL(int) vmsvgaWritePort(PVGASTATE pThis, uint32_t u32)
 
             /* Enable dirty page tracking again when going into legacy mode. */
             vmsvgaSetTraces(pThis, true);
+
+            for (uint32_t iScreen = 0; iScreen < pThis->cMonitors; ++iScreen)
+            {
+                pThis->pDrv->pfnVBVADisable(pThis->pDrv, iScreen);
+            }
         }
 #else  /* !IN_RING3 */
         rc = VINF_IOM_R3_IOPORT_WRITE;

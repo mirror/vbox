@@ -5327,7 +5327,8 @@ vgaPortCopyRect(PPDMIDISPLAYPORT pInterface,
      * That is a not paused VBVA means that the video mode can be handled even if VBE_DISPI_ENABLED is clear.
      */
     if (   (pThis->vbe_regs[VBE_DISPI_INDEX_ENABLE] & VBE_DISPI_ENABLED) == 0
-        && VBVAIsPaused(pThis))
+        && VBVAIsPaused(pThis)
+        && !pThis->svga.fEnabled)
     {
         PDMCritSectLeave(&pThis->CritSect);
         return VERR_INVALID_STATE;
