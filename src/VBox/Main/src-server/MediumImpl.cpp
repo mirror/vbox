@@ -2401,7 +2401,7 @@ HRESULT Medium::close(AutoCaller &aAutoCaller)
     pVirtualBox->i_saveModifiedRegistries();
 
     if (SUCCEEDED(mrc) && wasCreated)
-        m->pVirtualBox->i_onMediumRegistered(uId, devType, FALSE);
+        pVirtualBox->i_onMediumRegistered(uId, devType, FALSE);
 
     return mrc;
 }

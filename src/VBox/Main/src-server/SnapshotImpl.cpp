@@ -1914,7 +1914,6 @@ void SessionMachine::i_takeSnapshotHandler(TakeSnapshotTask &task)
 
     if (SUCCEEDED(rc))
         mParent->i_onSnapshotTaken(mData->mUuid, task.m_uuidSnapshot);
-    LogFlowThisFuncLeave();
 
     if (SUCCEEDED(rc))
     {
@@ -1933,6 +1932,7 @@ void SessionMachine::i_takeSnapshotHandler(TakeSnapshotTask &task)
                 mParent->i_onMediumConfigChanged(*it);
         }
     }
+    LogFlowThisFuncLeave();
 }
 
 
