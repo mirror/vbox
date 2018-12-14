@@ -2056,8 +2056,6 @@
 #define VERR_VMX_INVALID_HOST_STATE                 (-4006)
 /** VMX CPU extension not available in hardware. */
 #define VERR_VMX_NO_VMX                             (-4009)
-/** VMX CPU extension not supported as something went wrong during init. */
-#define VERR_VMX_NOT_SUPPORTED                      (-4010)
 /** CPU was incorrectly left in VMX root mode; incompatible with VirtualBox */
 #define VERR_VMX_IN_VMX_ROOT_MODE                   (-4011)
 /** Somebody cleared X86_CR4_VMXE in the CR4 register. */
