@@ -1329,7 +1329,7 @@
     </message>
     <message>
         <source>&amp;Cloud Profile Manager...</source>
-        <translation>&amp;Cloud-Profilmanager...</translation>
+        <translation>Manager für &amp;Cloud-Profile...</translation>
     </message>
     <message>
         <source>Display the Cloud Profile Manager window</source>
@@ -1361,11 +1361,11 @@
     </message>
     <message>
         <source>&amp;Cloud Profile Manager</source>
-        <translation>&amp;Cloud-Profilmanager</translation>
+        <translation>Manager für &amp;Cloud-Profile</translation>
     </message>
     <message>
         <source>Open the Cloud Profile Manager</source>
-        <translation>Öffnet den Cloud-Profilmanager</translation>
+        <translation>Öffnet den Manager für Cloud-Profile</translation>
     </message>
     <message>
         <source>&amp;Snapshot</source>
@@ -1577,7 +1577,7 @@
     </message>
     <message>
         <source>Cloud Profile Manager</source>
-        <translation>Cloud-Profilmanager</translation>
+        <translation>Manager für Cloud-Profile</translation>
     </message>
     <message>
         <source>Add new cloud profile</source>
@@ -1589,7 +1589,7 @@
     </message>
     <message>
         <source>&amp;Import Profiles...</source>
-        <translation>Profil &amp;importieren...</translation>
+        <translation>Profile &amp;importieren...</translation>
     </message>
     <message>
         <source>Import the list of cloud profiles from external files</source>
@@ -2210,7 +2210,7 @@
     <name>UICloudProfileManager</name>
     <message>
         <source>Cloud Profile Manager</source>
-        <translation>Cloud-Profilmanager</translation>
+        <translation>Manager für Cloud-Profile</translation>
     </message>
     <message>
         <source>Reset</source>
@@ -9765,7 +9765,7 @@
     </message>
     <message>
         <source>Machine Folder:</source>
-        <translation>Order der virtuellen Maschine:</translation>
+        <translation>Ordner der virtuellen Maschine:</translation>
     </message>
 </context>
 <context>
@@ -11245,14 +11245,14 @@
     <name>UIWelcomePane</name>
     <message>
         <source>&lt;h3&gt;Welcome to VirtualBox!&lt;/h3&gt;&lt;p&gt;The left part of application window contains global tools and lists all virtual machines and virtual machine groups on your computer. You can import, add and create new VMs using corresponding toolbar buttons. You can popup a tools of currently selected element using corresponding element button.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;%1&lt;/b&gt; key to get instant help, or visit &lt;a href=https://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; for more information and latest news.&lt;/p&gt;</source>
-        <translation> &lt;h3&gt;Willkommen zu VirtualBox!&lt;/h3&gt;&lt;p&gt;Der linke Teil dieses Fensters allgemeine Werkzeuge sowie eine Liste aller virtuellen Maschinen auf Ihrem Computer. Um virtuelle Maschinen zu importieren, hinzuzufügen oder zu erstellen, können die entsprechenden Werkzeug-Schaltflächen benutzt werden.&lt;/p&gt;&lt;p&gt;Die Taste &lt;b&gt;%1&lt;/b&gt; öffnet das Hilfefenster. Für aktuelle Produktinformationen aus dem Internet öffnen Sie &lt;a href=https://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt;.&lt;/p&gt;</translation>
+        <translation>&lt;h3&gt;Willkommen zu VirtualBox!&lt;/h3&gt;&lt;p&gt;Der linke Teil dieses Fensters zeigt allgemeine Werkzeuge sowie eine Liste aller virtuellen Maschinen auf Ihrem Computer. Um virtuelle Maschinen zu importieren, hinzuzufügen oder zu erstellen, können die entsprechenden Werkzeug-Schaltflächen benutzt werden.&lt;/p&gt;&lt;p&gt;Die Taste &lt;b&gt;%1&lt;/b&gt; öffnet das Hilfefenster. Für aktuelle Produktinformationen aus dem Internet öffnen Sie &lt;a href=https://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt;.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
     <name>UIWizard</name>
     <message>
         <source>&amp;Expert Mode</source>
-        <translation>&amp;Expert-Modus</translation>
+        <translation>&amp;Experten-Modus</translation>
     </message>
     <message>
         <source>Switch to &lt;nobr&gt;&lt;b&gt;Expert Mode&lt;/b&gt;&lt;/nobr&gt;, a one-page dialog for experienced users.</source>
