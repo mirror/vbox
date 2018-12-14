@@ -4100,6 +4100,70 @@ SUPR0DECL(int) SUPR0GetRawModeUsability(void)
 }
 
 
+/**
+ * Gets AMD-V and VT-x support for the calling CPU.
+ *
+ * @returns VBox status code.
+ * @param   pfCaps          Where to store whether VT-x (SUPVTCAPS_VT_X) or AMD-V
+ *                          (SUPVTCAPS_AMD_V) is supported.
+ */
+SUPR0DECL(int) SUPR0GetVTSupport(uint32_t *pfCaps)
+{
+    Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
+    Assert(pfCaps);
+    *pfCaps = 0;
+
+    /* Check if the CPU even supports CPUID (extremely ancient CPUs). */
+    if (ASMHasCpuId())
+    {
+        /* Check the range of standard CPUID leafs. */
+        uint32_t uMaxLeaf, uVendorEbx, uVendorEcx, uVendorEdx;
+        ASMCpuId(0, &uMaxLeaf, &uVendorEbx, &uVendorEcx, &uVendorEdx);
+        if (ASMIsValidStdRange(uMaxLeaf))
+        {
+            /* Query the standard CPUID leaf. */
+            uint32_t fFeatEcx, fFeatEdx, uDummy;
+            ASMCpuId(1, &uDummy, &uDummy, &fFeatEcx, &fFeatEdx);
+
+            /* Check if the vendor is Intel (or compatible). */
+            if (   ASMIsIntelCpuEx(uVendorEbx, uVendorEcx, uVendorEdx)
+                || ASMIsViaCentaurCpuEx(uVendorEbx, uVendorEcx, uVendorEdx))
+            {
+                /* Check VT-x support. In addition, VirtualBox requires MSR and FXSAVE/FXRSTOR to function. */
+                if (   (fFeatEcx & X86_CPUID_FEATURE_ECX_VMX)
+                    && (fFeatEdx & X86_CPUID_FEATURE_EDX_MSR)
+                    && (fFeatEdx & X86_CPUID_FEATURE_EDX_FXSR))
+                {
+                    *pfCaps = SUPVTCAPS_VT_X;
+                    return VINF_SUCCESS;
+                }
+                return VERR_VMX_NO_VMX;
+            }
+
+            /* Check if the vendor is AMD (or compatible). */
+            if (ASMIsAmdCpuEx(uVendorEbx, uVendorEcx, uVendorEdx))
+            {
+                uint32_t fExtFeatEcx, uExtMaxId;
+                ASMCpuId(0x80000000, &uExtMaxId, &uDummy, &uDummy, &uDummy);
+                ASMCpuId(0x80000001, &uDummy, &uDummy, &fExtFeatEcx, &uDummy);
+
+                /* Check AMD-V support. In addition, VirtualBox requires MSR and FXSAVE/FXRSTOR to function. */
+                if (   ASMIsValidExtRange(uExtMaxId)
+                    && uExtMaxId >= 0x8000000a
+                    && (fExtFeatEcx & X86_CPUID_AMD_FEATURE_ECX_SVM)
+                    && (fFeatEdx    & X86_CPUID_FEATURE_EDX_MSR)
+                    && (fFeatEdx    & X86_CPUID_FEATURE_EDX_FXSR))
+                {
+                    *pfCaps = SUPVTCAPS_AMD_V;
+                    return VINF_SUCCESS;
+                }
+                return VERR_SVM_NO_SVM;
+            }
+        }
+    }
+    return VERR_UNSUPPORTED_CPU;
+}
+
 
 /**
  * Checks if Intel VT-x feature is usable on this CPU.
@@ -4300,86 +4364,61 @@ int VBOXCALL supdrvQueryVTCapsInternal(uint32_t *pfCaps)
      * Input validation.
      */
     AssertPtrReturn(pfCaps, VERR_INVALID_POINTER);
-
     *pfCaps = 0;
+
     /* We may modify MSRs and re-read them, disable preemption so we make sure we don't migrate CPUs. */
     RTThreadPreemptDisable(&PreemptState);
-    if (ASMHasCpuId())
+
+    /* Check if VT-x/AMD-V is supported. */
+    rc = SUPR0GetVTSupport(pfCaps);
+    if (RT_SUCCESS(rc))
     {
-        uint32_t fFeaturesECX, fFeaturesEDX, uDummy;
-        uint32_t uMaxId, uVendorEBX, uVendorECX, uVendorEDX;
-
-        ASMCpuId(0, &uMaxId, &uVendorEBX, &uVendorECX, &uVendorEDX);
-        ASMCpuId(1, &uDummy, &uDummy, &fFeaturesECX, &fFeaturesEDX);
-
-        if (   ASMIsValidStdRange(uMaxId)
-            && (   ASMIsIntelCpuEx(     uVendorEBX, uVendorECX, uVendorEDX)
-                || ASMIsViaCentaurCpuEx(uVendorEBX, uVendorECX, uVendorEDX) )
-           )
+        /* Check if VT-x is supported. */
+        if (*pfCaps & SUPVTCAPS_VT_X)
         {
-            if (    (fFeaturesECX & X86_CPUID_FEATURE_ECX_VMX)
-                 && (fFeaturesEDX & X86_CPUID_FEATURE_EDX_MSR)
-                 && (fFeaturesEDX & X86_CPUID_FEATURE_EDX_FXSR)
-               )
+            /* Check if VT-x is usable. */
+            rc = SUPR0GetVmxUsability(&fIsSmxModeAmbiguous);
+            if (RT_SUCCESS(rc))
             {
-                rc = SUPR0GetVmxUsability(&fIsSmxModeAmbiguous);
-                if (rc == VINF_SUCCESS)
+                /* Query some basic VT-x capabilities (mainly required by our GUI). */
+                VMXCTLSMSR vtCaps;
+                vtCaps.u = ASMRdMsr(MSR_IA32_VMX_PROCBASED_CTLS);
+                if (vtCaps.n.allowed1 & VMX_PROC_CTLS_USE_SECONDARY_CTLS)
                 {
-                    VMXCTLSMSR vtCaps;
-
-                    *pfCaps |= SUPVTCAPS_VT_X;
-
-                    vtCaps.u = ASMRdMsr(MSR_IA32_VMX_PROCBASED_CTLS);
-                    if (vtCaps.n.allowed1 & VMX_PROC_CTLS_USE_SECONDARY_CTLS)
-                    {
-                        vtCaps.u = ASMRdMsr(MSR_IA32_VMX_PROCBASED_CTLS2);
-                        if (vtCaps.n.allowed1 & VMX_PROC_CTLS2_EPT)
-                            *pfCaps |= SUPVTCAPS_NESTED_PAGING;
-                        if (vtCaps.n.allowed1 & VMX_PROC_CTLS2_UNRESTRICTED_GUEST)
-                            *pfCaps |= SUPVTCAPS_VTX_UNRESTRICTED_GUEST;
-                    }
-                }
-            }
-            else
-                rc = VERR_VMX_NO_VMX;
-        }
-        else if (   ASMIsAmdCpuEx(uVendorEBX, uVendorECX, uVendorEDX)
-                 && ASMIsValidStdRange(uMaxId))
-        {
-            uint32_t fExtFeaturesEcx, uExtMaxId;
-            ASMCpuId(0x80000000, &uExtMaxId, &uDummy, &uDummy, &uDummy);
-            ASMCpuId(0x80000001, &uDummy, &uDummy, &fExtFeaturesEcx, &uDummy);
-
-            /* Check if SVM is available. */
-            if (   ASMIsValidExtRange(uExtMaxId)
-                && uExtMaxId >= 0x8000000a
-                && (fExtFeaturesEcx & X86_CPUID_AMD_FEATURE_ECX_SVM)
-                && (fFeaturesEDX    & X86_CPUID_FEATURE_EDX_MSR)
-                && (fFeaturesEDX    & X86_CPUID_FEATURE_EDX_FXSR)
-               )
-            {
-                rc = SUPR0GetSvmUsability(false /* fInitSvm */);
-                if (RT_SUCCESS(rc))
-                {
-                    uint32_t fSvmFeatures;
-                    *pfCaps |= SUPVTCAPS_AMD_V;
-
-                    /* Query AMD-V features. */
-                    ASMCpuId(0x8000000a, &uDummy, &uDummy, &uDummy, &fSvmFeatures);
-                    if (fSvmFeatures & X86_CPUID_SVM_FEATURE_EDX_NESTED_PAGING)
+                    vtCaps.u = ASMRdMsr(MSR_IA32_VMX_PROCBASED_CTLS2);
+                    if (vtCaps.n.allowed1 & VMX_PROC_CTLS2_EPT)
                         *pfCaps |= SUPVTCAPS_NESTED_PAGING;
+                    if (vtCaps.n.allowed1 & VMX_PROC_CTLS2_UNRESTRICTED_GUEST)
+                        *pfCaps |= SUPVTCAPS_VTX_UNRESTRICTED_GUEST;
                 }
             }
-            else
-                rc = VERR_SVM_NO_SVM;
+        }
+        /* Check if AMD-V is supported. */
+        else if (*pfCaps & SUPVTCAPS_AMD_V)
+        {
+            /* Check is SVM is usable. */
+            rc = SUPR0GetSvmUsability(false /* fInitSvm */);
+            if (RT_SUCCESS(rc))
+            {
+                /* Query some basic AMD-V capabilities (mainly required by our GUI). */
+                uint32_t uDummy, fSvmFeatures;
+                ASMCpuId(0x8000000a, &uDummy, &uDummy, &uDummy, &fSvmFeatures);
+                if (fSvmFeatures & X86_CPUID_SVM_FEATURE_EDX_NESTED_PAGING)
+                    *pfCaps |= SUPVTCAPS_NESTED_PAGING;
+            }
         }
     }
 
+    /* Restore preemption. */
     RTThreadPreemptRestore(&PreemptState);
+
+    /* After restoring preemption, if we may be in SMX mode, print a warning as it's difficult to debug such problems. */
     if (fIsSmxModeAmbiguous)
         SUPR0Printf(("WARNING! CR4 hints SMX mode but your CPU is too secretive. Proceeding anyway... We wish you good luck!\n"));
+
     return rc;
 }
+
 
 /**
  * Queries the AMD-V and VT-x capabilities of the calling CPU.
