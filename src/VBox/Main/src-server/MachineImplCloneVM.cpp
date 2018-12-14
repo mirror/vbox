@@ -15,8 +15,6 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#include <set>
-#include <map>
 #include "MachineImplCloneVM.h"
 
 #include "VirtualBoxImpl.h"
@@ -731,8 +729,7 @@ HRESULT MachineCloneVMPrivate::createDifferencingMedium(const ComObjPtr<Machine>
                                           pParent->i_getPreferredDiffVariant(),
                                           pMediumLockList,
                                           NULL /* aProgress */,
-                                          true /* aWait */,
-                                          false /* aNotify */);
+                                          true /* aWait */);
         delete pMediumLockList;
         if (FAILED(rc)) throw rc;
         /* Remember created medium. */
@@ -1018,8 +1015,6 @@ HRESULT MachineCloneVM::run()
 
     RTCList<ComObjPtr<Medium> > newMedia;   /* All created images */
     RTCList<Utf8Str> newFiles;              /* All extra created files (save states, ...) */
-    std::set<ComObjPtr<Medium> > pMediumsForNotify;
-    std::map<Guid, DeviceType_T> uIdsForNotify;
     try
     {
         /* Copy all the configuration from this machine to an empty
@@ -1157,8 +1152,6 @@ HRESULT MachineCloneVM::run()
                         map.insert(TStrMediumPair(Utf8Str(bstrSrcId), pDiff));
                         /* diff image has to be used... */
                         pNewParent = pDiff;
-                        pMediumsForNotify.insert(pDiff->i_getParent());
-                        uIdsForNotify[pDiff->i_getId()] = pDiff->i_getDeviceType();
                     }
                     else
                     {
@@ -1290,8 +1283,7 @@ HRESULT MachineCloneVM::run()
                                                    pNewParent,
                                                    progress2.asOutParam(),
                                                    uSrcParentIdx,
-                                                   uTrgParentIdx,
-                                                   false /* aNotify */);
+                                                   uTrgParentIdx);
                         srcLock.acquire();
                         if (FAILED(rc)) throw rc;
 
@@ -1325,7 +1317,6 @@ HRESULT MachineCloneVM::run()
                         /* This medium becomes the parent of the next medium in the
                          * chain. */
                         pNewParent = pTarget;
-                        uIdsForNotify[pTarget->i_getId()] = pTarget->i_getDeviceType();
                     }
                 }
                 /* Save the current source medium index as the new parent
@@ -1364,8 +1355,6 @@ HRESULT MachineCloneVM::run()
                     if (FAILED(rc)) throw rc;
                     /* diff image has to be used... */
                     pNewParent = pDiff;
-                    pMediumsForNotify.insert(pDiff->i_getParent());
-                    uIdsForNotify[pDiff->i_getId()] = pDiff->i_getDeviceType();
                 }
                 else
                 {
@@ -1544,8 +1533,7 @@ HRESULT MachineCloneVM::run()
         {
             const ComObjPtr<Medium> &pMedium = newMedia.at(i - 1);
             mrc = pMedium->i_deleteStorage(NULL /* aProgress */,
-                                           true /* aWait */,
-                                           false /* aNotify */);
+                                           true /* aWait */);
             pMedium->Close();
         }
         /* Delete the snapshot folder when not empty. */
@@ -1556,22 +1544,6 @@ HRESULT MachineCloneVM::run()
 
         /* Must save the modified registries */
         p->mParent->i_saveModifiedRegistries();
-    }
-    else
-    {
-        for (std::map<Guid, DeviceType_T>::const_iterator it = uIdsForNotify.begin();
-             it != uIdsForNotify.end();
-             ++it)
-        {
-            p->mParent->i_onMediumRegistered(it->first, it->second, TRUE);
-        }
-        for (std::set<ComObjPtr<Medium> >::const_iterator it = pMediumsForNotify.begin();
-             it != pMediumsForNotify.end();
-             ++it)
-        {
-            if (it->isNotNull())
-                p->mParent->i_onMediumConfigChanged(*it);
-        }
     }
 
     return mrc;

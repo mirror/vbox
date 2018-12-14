@@ -45,8 +45,6 @@
 
 #include <algorithm>
 #include <list>
-#include <set>
-#include <map>
 
 
 typedef std::list<Guid> GuidList;
@@ -223,14 +221,13 @@ typedef struct VDSOCKETINT
 class Medium::Task : public ThreadTask
 {
 public:
-    Task(Medium *aMedium, Progress *aProgress, bool fNotifyAboutChanges = true)
+    Task(Medium *aMedium, Progress *aProgress)
         : ThreadTask("Medium::Task"),
           mVDOperationIfaces(NULL),
           mMedium(aMedium),
           mMediumCaller(aMedium),
           mProgress(aProgress),
-          mVirtualBoxCaller(NULL),
-          mNotifyAboutChanges(fNotifyAboutChanges)
+          mVirtualBoxCaller(NULL)
     {
         AssertReturnVoidStmt(aMedium, mRC = E_FAIL);
         mRC = mMediumCaller.rc();
@@ -273,7 +270,6 @@ public:
 
     HRESULT rc() const { return mRC; }
     bool isOk() const { return SUCCEEDED(rc()); }
-    bool NotifyAboutChanges() const { return mNotifyAboutChanges; }
 
     const ComPtr<Progress>& GetProgressObject() const {return mProgress;}
 
@@ -334,7 +330,6 @@ private:
      * uninit uses event semaphores which sabotages deadlock detection. */
     ComObjPtr<VirtualBox> mVirtualBox;
     AutoCaller mVirtualBoxCaller;
-    bool mNotifyAboutChanges;
 };
 
 HRESULT Medium::Task::executeTask()
@@ -348,9 +343,8 @@ public:
     CreateBaseTask(Medium *aMedium,
                    Progress *aProgress,
                    uint64_t aSize,
-                   MediumVariant_T aVariant,
-                   bool fNotifyAboutChanges = true)
-        : Medium::Task(aMedium, aProgress, fNotifyAboutChanges),
+                   MediumVariant_T aVariant)
+        : Medium::Task(aMedium, aProgress),
           mSize(aSize),
           mVariant(aVariant)
     {
@@ -372,9 +366,8 @@ public:
                    Medium *aTarget,
                    MediumVariant_T aVariant,
                    MediumLockList *aMediumLockList,
-                   bool fKeepMediumLockList = false,
-                   bool fNotifyAboutChanges = true)
-        : Medium::Task(aMedium, aProgress, fNotifyAboutChanges),
+                   bool fKeepMediumLockList = false)
+        : Medium::Task(aMedium, aProgress),
           mpMediumLockList(aMediumLockList),
           mTarget(aTarget),
           mVariant(aVariant),
@@ -418,9 +411,8 @@ public:
               MediumLockList *aSourceMediumLockList,
               MediumLockList *aTargetMediumLockList,
               bool fKeepSourceMediumLockList = false,
-              bool fKeepTargetMediumLockList = false,
-              bool fNotifyAboutChanges = true)
-        : Medium::Task(aMedium, aProgress, fNotifyAboutChanges),
+              bool fKeepTargetMediumLockList = false)
+        : Medium::Task(aMedium, aProgress),
           mTarget(aTarget),
           mParent(aParent),
           mpSourceMediumLockList(aSourceMediumLockList),
@@ -477,9 +469,8 @@ public:
               Progress *aProgress,
               MediumVariant_T aVariant,
               MediumLockList *aMediumLockList,
-              bool fKeepMediumLockList = false,
-              bool fNotifyAboutChanges = true)
-        : Medium::Task(aMedium, aProgress, fNotifyAboutChanges),
+              bool fKeepMediumLockList = false)
+        : Medium::Task(aMedium, aProgress),
           mpMediumLockList(aMediumLockList),
           mVariant(aVariant),
           mfKeepMediumLockList(fKeepMediumLockList)
@@ -508,9 +499,8 @@ public:
     CompactTask(Medium *aMedium,
                 Progress *aProgress,
                 MediumLockList *aMediumLockList,
-                bool fKeepMediumLockList = false,
-                bool fNotifyAboutChanges = true)
-        : Medium::Task(aMedium, aProgress, fNotifyAboutChanges),
+                bool fKeepMediumLockList = false)
+        : Medium::Task(aMedium, aProgress),
           mpMediumLockList(aMediumLockList),
           mfKeepMediumLockList(fKeepMediumLockList)
     {
@@ -538,9 +528,8 @@ public:
                uint64_t aSize,
                Progress *aProgress,
                MediumLockList *aMediumLockList,
-               bool fKeepMediumLockList = false,
-               bool fNotifyAboutChanges = true)
-        : Medium::Task(aMedium, aProgress, fNotifyAboutChanges),
+               bool fKeepMediumLockList = false)
+        : Medium::Task(aMedium, aProgress),
           mSize(aSize),
           mpMediumLockList(aMediumLockList),
           mfKeepMediumLockList(fKeepMediumLockList)
@@ -569,9 +558,8 @@ public:
     ResetTask(Medium *aMedium,
               Progress *aProgress,
               MediumLockList *aMediumLockList,
-              bool fKeepMediumLockList = false,
-              bool fNotifyAboutChanges = true)
-        : Medium::Task(aMedium, aProgress, fNotifyAboutChanges),
+              bool fKeepMediumLockList = false)
+        : Medium::Task(aMedium, aProgress),
           mpMediumLockList(aMediumLockList),
           mfKeepMediumLockList(fKeepMediumLockList)
     {
@@ -597,9 +585,8 @@ public:
     DeleteTask(Medium *aMedium,
                Progress *aProgress,
                MediumLockList *aMediumLockList,
-               bool fKeepMediumLockList = false,
-               bool fNotifyAboutChanges = true)
-        : Medium::Task(aMedium, aProgress, fNotifyAboutChanges),
+               bool fKeepMediumLockList = false)
+        : Medium::Task(aMedium, aProgress),
           mpMediumLockList(aMediumLockList),
           mfKeepMediumLockList(fKeepMediumLockList)
     {
@@ -629,9 +616,8 @@ public:
               MediumLockList *aChildrenToReparent,
               Progress *aProgress,
               MediumLockList *aMediumLockList,
-              bool fKeepMediumLockList = false,
-              bool fNotifyAboutChanges = true)
-        : Medium::Task(aMedium, aProgress, fNotifyAboutChanges),
+              bool fKeepMediumLockList = false)
+        : Medium::Task(aMedium, aProgress),
           mTarget(aTarget),
           mfMergeForward(fMergeForward),
           mParentForTarget(aParentForTarget),
@@ -679,9 +665,8 @@ public:
                RTVFSIOSTREAM aVfsIosSrc,
                Medium *aParent,
                MediumLockList *aTargetMediumLockList,
-               bool fKeepTargetMediumLockList = false,
-               bool fNotifyAboutChanges = true)
-        : Medium::Task(aMedium, aProgress, fNotifyAboutChanges),
+               bool fKeepTargetMediumLockList = false)
+        : Medium::Task(aMedium, aProgress),
           mFilename(aFilename),
           mFormat(aFormat),
           mVariant(aVariant),
@@ -744,7 +729,7 @@ public:
                 const com::Utf8Str &strNewPasswordId,
                 Progress *aProgress,
                 MediumLockList *aMediumLockList)
-        : Medium::Task(aMedium, aProgress, false),
+        : Medium::Task(aMedium, aProgress),
           mstrNewPassword(strNewPassword),
           mstrCurrentPassword(strCurrentPassword),
           mstrCipher(strCipher),
@@ -1658,7 +1643,6 @@ HRESULT Medium::setDescription(AutoCaller &autoCaller, const com::Utf8Str &aDesc
         treeLock.release();
         i_markRegistriesModified();
         m->pVirtualBox->i_saveModifiedRegistries();
-        m->pVirtualBox->i_onMediumConfigChanged(this);
     }
     catch (HRESULT aRC) { rc = aRC; }
 
@@ -1894,7 +1878,6 @@ HRESULT Medium::setType(AutoCaller &autoCaller, MediumType_T aType)
     treeLock.release();
     i_markRegistriesModified();
     m->pVirtualBox->i_saveModifiedRegistries();
-    m->pVirtualBox->i_onMediumConfigChanged(this);
 
     return S_OK;
 }
@@ -2006,7 +1989,6 @@ HRESULT Medium::setAutoReset(BOOL aAutoReset)
         mlock.release();
         i_markRegistriesModified();
         m->pVirtualBox->i_saveModifiedRegistries();
-        m->pVirtualBox->i_onMediumConfigChanged(this);
     }
 
     return S_OK;
@@ -2073,9 +2055,7 @@ HRESULT Medium::setIds(AutoCaller &autoCaller,
             parentId = aParentId;
     }
 
-    const Guid uPrevImage = m->uuidImage;
     unconst(m->uuidImage) = imageId;
-    ComObjPtr<Medium> pPrevParent = i_getParent();
     unconst(m->uuidParentImage) = parentId;
 
     // must not hold any locks before calling Medium::i_queryInfo
@@ -2084,22 +2064,6 @@ HRESULT Medium::setIds(AutoCaller &autoCaller,
     HRESULT rc = i_queryInfo(!!aSetImageId /* fSetImageId */,
                              !!aSetParentId /* fSetParentId */,
                              autoCaller);
-
-    AutoReadLock arlock(this COMMA_LOCKVAL_SRC_POS);
-    const Guid uCurrImage = m->uuidImage;
-    ComObjPtr<Medium> pCurrParent = i_getParent();
-    arlock.release();
-
-    if (SUCCEEDED(rc))
-    {
-        if (uCurrImage != uPrevImage)
-            m->pVirtualBox->i_onMediumConfigChanged(this);
-        if (pPrevParent != pCurrParent)
-        {
-            m->pVirtualBox->i_onMediumConfigChanged(pPrevParent);
-            m->pVirtualBox->i_onMediumConfigChanged(pCurrParent);
-        }
-    }
 
     return rc;
 }
@@ -2393,15 +2357,9 @@ HRESULT Medium::close(AutoCaller &aAutoCaller)
     // make a copy of VirtualBox pointer which gets nulled by uninit()
     ComObjPtr<VirtualBox> pVirtualBox(m->pVirtualBox);
 
-    Guid uId = i_getId();
-    DeviceType_T devType = i_getDeviceType();
-    bool wasCreated = m->state != MediumState_NotCreated;
     MultiResult mrc = i_close(aAutoCaller);
 
     pVirtualBox->i_saveModifiedRegistries();
-
-    if (SUCCEEDED(mrc) && wasCreated)
-        pVirtualBox->i_onMediumRegistered(uId, devType, FALSE);
 
     return mrc;
 }
@@ -2471,7 +2429,6 @@ HRESULT Medium::setProperty(const com::Utf8Str &aName,
     mlock.release();
     i_markRegistriesModified();
     m->pVirtualBox->i_saveModifiedRegistries();
-    m->pVirtualBox->i_onMediumConfigChanged(this);
 
     return S_OK;
 }
@@ -2551,11 +2508,9 @@ HRESULT Medium::setProperties(const std::vector<com::Utf8Str> &aNames,
     mlock.release();
     i_markRegistriesModified();
     m->pVirtualBox->i_saveModifiedRegistries();
-    m->pVirtualBox->i_onMediumConfigChanged(this);
 
     return S_OK;
 }
-
 HRESULT Medium::createBaseStorage(LONG64 aLogicalSize,
                                   const std::vector<MediumVariant_T> &aVariant,
                                   ComPtr<IProgress> &aProgress)
@@ -2641,8 +2596,7 @@ HRESULT Medium::deleteStorage(ComPtr<IProgress> &aProgress)
     ComObjPtr<Progress> pProgress;
 
     MultiResult mrc = i_deleteStorage(&pProgress,
-                                      false /* aWait */,
-                                      true /* aNotify */);
+                                      false /* aWait */);
     /* Must save the registries in any case, since an entry was removed. */
     m->pVirtualBox->i_saveModifiedRegistries();
 
@@ -2761,7 +2715,7 @@ HRESULT Medium::createDiffStorage(AutoCaller &autoCaller,
     }
 
     rc = i_createDiffStorage(diff, (MediumVariant_T)mediumVariantFlags, pMediumLockList,
-                             &pProgress, false /* aWait */, true /* aNotify */);
+                             &pProgress, false /* aWait */);
     if (FAILED(rc))
         delete pMediumLockList;
     else
@@ -2793,7 +2747,7 @@ HRESULT Medium::mergeTo(const ComPtr<IMedium> &aTarget,
     ComObjPtr<Progress> pProgress;
 
     rc = i_mergeTo(pTarget, fMergeForward, pParentForTarget, pChildrenToReparent,
-                   pMediumLockList, &pProgress, false /* aWait */, true /* aNotify */);
+                   pMediumLockList, &pProgress, false /* aWait */);
     if (FAILED(rc))
         i_cancelMergeTo(pChildrenToReparent, pMediumLockList);
     else
@@ -3344,7 +3298,6 @@ HRESULT Medium::setLocation(const com::Utf8Str &aLocation)
 
         MediumState_T mediumState;
         refreshState(autoCaller, &mediumState);
-        m->pVirtualBox->i_onMediumConfigChanged(this);
     }
     catch (HRESULT aRC) { rc = aRC; }
 
@@ -3472,7 +3425,7 @@ HRESULT Medium::resize(LONG64 aLogicalSize,
     catch (HRESULT aRC) { rc = aRC; }
 
     if (SUCCEEDED(rc))
-        rc = i_resize(aLogicalSize, pMediumLockList, &pProgress, false /* aWait */, true /* aNotify */);
+        rc = i_resize(aLogicalSize, pMediumLockList, &pProgress, false /* aWait */);
 
     if (SUCCEEDED(rc))
         pProgress.queryInterfaceTo(aProgress.asOutParam());
@@ -4525,8 +4478,6 @@ HRESULT Medium::i_updatePath(const Utf8Str &strOldPath, const Utf8Str &strNewPat
         newPath.append(pcszMediumPath + strOldPath.length());
         unconst(m->strLocationFull) = newPath;
 
-        m->pVirtualBox->i_onMediumConfigChanged(this);
-
         LogFlowThisFunc(("locationFull.after='%s'\n", m->strLocationFull.c_str()));
         // we changed something
         return S_OK;
@@ -4673,7 +4624,7 @@ bool Medium::i_isReadOnly()
 }
 
 /**
- * Internal method to update the medium's id. Must have caller + locking!
+ * Internal method to return the medium's size. Must have caller + locking!
  * @return
  */
 void Medium::i_updateId(const Guid &id)
@@ -4919,8 +4870,6 @@ HRESULT Medium::i_createMediumLockList(bool fFailIfInaccessible,
  *                          operation completion.
  * @param aWait             @c true if this method should block instead of
  *                          creating an asynchronous thread.
- * @param aNotify           Notify about mediums which metadatа are changed
- *                          during execution of the function.
  *
  * @note Locks this object and @a aTarget for writing.
  */
@@ -4928,8 +4877,7 @@ HRESULT Medium::i_createDiffStorage(ComObjPtr<Medium> &aTarget,
                                     MediumVariant_T aVariant,
                                     MediumLockList *aMediumLockList,
                                     ComObjPtr<Progress> *aProgress,
-                                    bool aWait,
-                                    bool aNotify)
+                                    bool aWait)
 {
     AssertReturn(!aTarget.isNull(), E_FAIL);
     AssertReturn(aMediumLockList, E_FAIL);
@@ -5004,8 +4952,7 @@ HRESULT Medium::i_createDiffStorage(ComObjPtr<Medium> &aTarget,
         /* setup task object to carry out the operation sync/async */
         pTask = new Medium::CreateDiffTask(this, pProgress, aTarget, aVariant,
                                            aMediumLockList,
-                                           aWait /* fKeepMediumLockList */,
-                                           aNotify);
+                                           aWait /* fKeepMediumLockList */);
         rc = pTask->rc();
         AssertComRC(rc);
         if (FAILED(rc))
@@ -5185,14 +5132,12 @@ HRESULT Medium::i_close(AutoCaller &autoCaller)
  *                      completion.
  * @param aWait         @c true if this method should block instead of creating
  *                      an asynchronous thread.
- * @param aNotify       Notify about mediums which metadatа are changed
- *                      during execution of the function.
  *
  * @note Locks mVirtualBox and this object for writing. Locks medium tree for
  *       writing.
  */
 HRESULT Medium::i_deleteStorage(ComObjPtr<Progress> *aProgress,
-                              bool aWait, bool aNotify)
+                              bool aWait)
 {
     AssertReturn(aProgress != NULL || aWait == true, E_FAIL);
 
@@ -5363,7 +5308,7 @@ HRESULT Medium::i_deleteStorage(ComObjPtr<Progress> *aProgress,
         }
 
         /* setup task object to carry out the operation sync/async */
-        pTask = new Medium::DeleteTask(this, pProgress, pMediumLockList, false, aNotify);
+        pTask = new Medium::DeleteTask(this, pProgress, pMediumLockList);
         rc = pTask->rc();
         AssertComRC(rc);
         if (FAILED(rc))
@@ -6008,8 +5953,6 @@ HRESULT Medium::i_prepareMergeTo(const ComObjPtr<Medium> &pTarget,
  *                      completion.
  * @param aWait         @c true if this method should block instead of creating
  *                      an asynchronous thread.
- * @param aNotify       Notify about mediums which metadatа are changed
- *                      during execution of the function.
  *
  * @note Locks the tree lock for writing. Locks the media from the chain
  *       for writing.
@@ -6020,7 +5963,7 @@ HRESULT Medium::i_mergeTo(const ComObjPtr<Medium> &pTarget,
                           MediumLockList *aChildrenToReparent,
                           MediumLockList *aMediumLockList,
                           ComObjPtr<Progress> *aProgress,
-                          bool aWait, bool aNotify)
+                          bool aWait)
 {
     AssertReturn(pTarget != NULL, E_FAIL);
     AssertReturn(pTarget != this, E_FAIL);
@@ -6075,8 +6018,7 @@ HRESULT Medium::i_mergeTo(const ComObjPtr<Medium> &pTarget,
         pTask = new Medium::MergeTask(this, pTarget, fMergeForward,
                                       pParentForTarget, aChildrenToReparent,
                                       pProgress, aMediumLockList,
-                                      aWait /* fKeepMediumLockList */,
-                                      aNotify);
+                                      aWait /* fKeepMediumLockList */);
         rc = pTask->rc();
         AssertComRC(rc);
         if (FAILED(rc))
@@ -6191,8 +6133,6 @@ void Medium::i_cancelMergeTo(MediumLockList *aChildrenToReparent,
  *                      completion.
  * @param aWait         @c true if this method should block instead of creating
  *                      an asynchronous thread.
- * @param aNotify       Notify about mediums which metadatа are changed
- *                      during execution of the function.
  *
  * @note Locks the media from the chain for writing.
  */
@@ -6200,8 +6140,7 @@ void Medium::i_cancelMergeTo(MediumLockList *aChildrenToReparent,
 HRESULT Medium::i_resize(LONG64 aLogicalSize,
                          MediumLockList *aMediumLockList,
                          ComObjPtr<Progress> *aProgress,
-                         bool aWait,
-                         bool aNotify)
+                         bool aWait)
 {
     AssertReturn(aMediumLockList != NULL, E_FAIL);
     AssertReturn(aProgress != NULL || aWait == true, E_FAIL);
@@ -6240,8 +6179,7 @@ HRESULT Medium::i_resize(LONG64 aLogicalSize,
                                        aLogicalSize,
                                        pProgress,
                                        aMediumLockList,
-                                       aWait /* fKeepMediumLockList */,
-                                       aNotify);
+                                       aWait /* fKeepMediumLockList */);
         rc = pTask->rc();
         AssertComRC(rc);
         if (FAILED(rc))
@@ -6544,8 +6482,6 @@ HRESULT Medium::i_exportFile(const char *aFilename,
  * @param aVfsIosSrc            Handle to the source I/O stream.
  * @param aParent               Parent medium. May be NULL.
  * @param aProgress             Progress object to use.
- * @param aNotify               Notify about mediums which metadatа are changed
- *                              during execution of the function.
  * @return
  * @note The destination format is defined by the Medium instance.
  *
@@ -6559,8 +6495,7 @@ HRESULT Medium::i_importFile(const char *aFilename,
                              MediumVariant_T aVariant,
                              RTVFSIOSTREAM aVfsIosSrc,
                              const ComObjPtr<Medium> &aParent,
-                             const ComObjPtr<Progress> &aProgress,
-                             bool aNotify)
+                             const ComObjPtr<Progress> &aProgress)
 {
     /** @todo r=klaus The code below needs to be double checked with regard
      * to lock order violations, it probably causes lock order issues related
@@ -6621,7 +6556,7 @@ HRESULT Medium::i_importFile(const char *aFilename,
 
         /* setup task object to carry out the operation asynchronously */
         pTask = new Medium::ImportTask(this, aProgress, aFilename, aFormat, aVariant,
-                                       aVfsIosSrc, aParent, pTargetMediumLockList, false, aNotify);
+                                       aVfsIosSrc, aParent, pTargetMediumLockList);
         rc = pTask->rc();
         AssertComRC(rc);
         if (FAILED(rc))
@@ -6655,13 +6590,11 @@ HRESULT Medium::i_importFile(const char *aFilename,
  * @param idxDstImageSame    The last image in the destination chain which has the
  *                           same content as the given image in the source chain.
  *                           Use UINT32_MAX to disable this optimization.
- * @param aNotify            Notify about mediums which metadatа are changed
- *                           during execution of the function.
  * @return
  */
 HRESULT Medium::i_cloneToEx(const ComObjPtr<Medium> &aTarget, MediumVariant_T aVariant,
                             const ComObjPtr<Medium> &aParent, IProgress **aProgress,
-                            uint32_t idxSrcImageSame, uint32_t idxDstImageSame, bool aNotify)
+                            uint32_t idxSrcImageSame, uint32_t idxDstImageSame)
 {
     /** @todo r=klaus The code below needs to be double checked with regard
      * to lock order violations, it probably causes lock order issues related
@@ -6766,7 +6699,7 @@ HRESULT Medium::i_cloneToEx(const ComObjPtr<Medium> &aTarget, MediumVariant_T aV
         pTask = new Medium::CloneTask(this, pProgress, aTarget, aVariant,
                                       aParent, idxSrcImageSame,
                                       idxDstImageSame, pSourceMediumLockList,
-                                      pTargetMediumLockList, false, false, aNotify);
+                                      pTargetMediumLockList);
         rc = pTask->rc();
         AssertComRC(rc);
         if (FAILED(rc))
@@ -7366,8 +7299,7 @@ HRESULT Medium::i_queryInfo(bool fSetImageId, bool fSetParentId, AutoCaller &aut
     pToken->Abandon();
     pToken.setNull();
 
-    if (FAILED(rc))
-        return rc;
+    if (FAILED(rc)) return rc;
 
     /* If this is a base image which incorrectly has a parent UUID set,
      * repair the image now by zeroing the parent UUID. This is only done
@@ -7375,55 +7307,50 @@ HRESULT Medium::i_queryInfo(bool fSetImageId, bool fSetParentId, AutoCaller &aut
      * this is not possible. If someone would accidentally call openMedium
      * with a diff image before the base is registered this would destroy
      * the diff. Not acceptable. */
-    do
+    if (fRepairImageZeroParentUuid)
     {
-        if (fRepairImageZeroParentUuid)
-        {
-            rc = LockWrite(pToken.asOutParam());
-            if (FAILED(rc))
-                break;
+        rc = LockWrite(pToken.asOutParam());
+        if (FAILED(rc)) return rc;
 
-            alock.release();
+        alock.release();
+
+        try
+        {
+            PVDISK hdd;
+            vrc = VDCreate(m->vdDiskIfaces, i_convertDeviceType(), &hdd);
+            ComAssertRCThrow(vrc, E_FAIL);
 
             try
             {
-                PVDISK hdd;
-                vrc = VDCreate(m->vdDiskIfaces, i_convertDeviceType(), &hdd);
+                vrc = VDOpen(hdd,
+                             format.c_str(),
+                             location.c_str(),
+                             (uOpenFlags & ~VD_OPEN_FLAGS_READONLY) | m->uOpenFlagsDef,
+                             m->vdImageIfaces);
+                if (RT_FAILURE(vrc))
+                    throw S_OK;
+
+                RTUUID zeroParentUuid;
+                RTUuidClear(&zeroParentUuid);
+                vrc = VDSetParentUuid(hdd, 0, &zeroParentUuid);
                 ComAssertRCThrow(vrc, E_FAIL);
-
-                try
-                {
-                    vrc = VDOpen(hdd,
-                                 format.c_str(),
-                                 location.c_str(),
-                                 (uOpenFlags & ~VD_OPEN_FLAGS_READONLY) | m->uOpenFlagsDef,
-                                 m->vdImageIfaces);
-                    if (RT_FAILURE(vrc))
-                        throw S_OK;
-
-                    RTUUID zeroParentUuid;
-                    RTUuidClear(&zeroParentUuid);
-                    vrc = VDSetParentUuid(hdd, 0, &zeroParentUuid);
-                    ComAssertRCThrow(vrc, E_FAIL);
-                }
-                catch (HRESULT aRC)
-                {
-                    rc = aRC;
-                }
-
-                VDDestroy(hdd);
             }
             catch (HRESULT aRC)
             {
                 rc = aRC;
             }
 
-            pToken->Abandon();
-            pToken.setNull();
-            if (FAILED(rc))
-                break;
+            VDDestroy(hdd);
         }
-    } while(0);
+        catch (HRESULT aRC)
+        {
+            rc = aRC;
+        }
+
+        pToken->Abandon();
+        pToken.setNull();
+        if (FAILED(rc)) return rc;
+    }
 
     return rc;
 }
@@ -8565,8 +8492,6 @@ HRESULT Medium::i_taskCreateBaseHandler(Medium::CreateBaseTask &task)
             // in asynchronous mode, save settings now
             m->pVirtualBox->i_saveModifiedRegistries();
         }
-        if (task.NotifyAboutChanges())
-            m->pVirtualBox->i_onMediumRegistered(m->id, m->devType, TRUE);
     }
     else
     {
@@ -8802,12 +8727,6 @@ HRESULT Medium::i_taskCreateDiffHandler(Medium::CreateDiffTask &task)
     /* Note that in sync mode, it's the caller's responsibility to
      * unlock the medium. */
 
-    if (task.NotifyAboutChanges() && SUCCEEDED(mrc))
-    {
-        m->pVirtualBox->i_onMediumRegistered(pTarget->i_getId(), pTarget->i_getDeviceType(), TRUE);
-        m->pVirtualBox->i_onMediumConfigChanged(this);
-    }
-
     return mrc;
 }
 
@@ -8900,7 +8819,7 @@ HRESULT Medium::i_taskMergeHandler(Medium::MergeTask &task)
                 }
 
                 ComObjPtr<Progress> pProgress(task.GetProgressObject());
-                rc = pTarget->i_resize(sourceSize, pMediumLockListForResize, &pProgress, true, false);
+                rc = pTarget->i_resize(sourceSize, pMediumLockListForResize, &pProgress, true);
                 if (FAILED(rc))
                 {
                     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
@@ -9066,9 +8985,6 @@ HRESULT Medium::i_taskMergeHandler(Medium::MergeTask &task)
     MultiResult mrc(rcTmp);
     HRESULT rc2;
 
-    std::set<ComObjPtr<Medium> > pMediumsForNotify;
-    std::map<Guid, DeviceType_T> uIdsForNotify;
-
     if (SUCCEEDED(mrc))
     {
         /* all media but the target were successfully deleted by
@@ -9088,11 +9004,7 @@ HRESULT Medium::i_taskMergeHandler(Medium::MergeTask &task)
             pTarget->i_deparent();
             pTarget->i_setParent(task.mParentForTarget);
             if (task.mParentForTarget)
-            {
                 i_deparent();
-                if (task.NotifyAboutChanges())
-                    pMediumsForNotify.insert(task.mParentForTarget);
-            }
 
             /* then, register again */
             ComObjPtr<Medium> pMedium;
@@ -9127,12 +9039,8 @@ HRESULT Medium::i_taskMergeHandler(Medium::MergeTask &task)
                     pMedium->i_deparent();  // removes pMedium from source
                     // no depth check, reduces depth
                     pMedium->i_setParent(pTarget);
-
-                    if (task.NotifyAboutChanges())
-                        pMediumsForNotify.insert(pMedium);
                 }
             }
-            pMediumsForNotify.insert(pTarget);
         }
 
         /* unregister and uninitialize all media removed by the merge */
@@ -9157,7 +9065,6 @@ HRESULT Medium::i_taskMergeHandler(Medium::MergeTask &task)
                 continue;
             }
 
-            uIdsForNotify[pMedium->i_getId()] = pMedium->i_getDeviceType();
             rc2 = pMedium->m->pVirtualBox->i_unregisterMedium(pMedium);
             AssertComRC(rc2);
 
@@ -9218,22 +9125,6 @@ HRESULT Medium::i_taskMergeHandler(Medium::MergeTask &task)
          * don't own the merge chain, so release it in this case. */
         if (task.isAsync())
             i_cancelMergeTo(task.mpChildrenToReparent, task.mpMediumLockList);
-    }
-    else if (task.NotifyAboutChanges())
-    {
-        for (std::set<ComObjPtr<Medium> >::const_iterator it = pMediumsForNotify.begin();
-             it != pMediumsForNotify.end();
-             ++it)
-        {
-            if (it->isNotNull())
-                m->pVirtualBox->i_onMediumConfigChanged(*it);
-        }
-        for (std::map<Guid, DeviceType_T>::const_iterator it = uIdsForNotify.begin();
-             it != uIdsForNotify.end();
-             ++it)
-        {
-            m->pVirtualBox->i_onMediumRegistered(it->first, it->second, FALSE);
-        }
     }
 
     return mrc;
@@ -9554,20 +9445,6 @@ HRESULT Medium::i_taskCloneHandler(Medium::CloneTask &task)
                 eik.restore();
                 m->pVirtualBox->i_saveModifiedRegistries();
                 eik.fetch();
-
-                if (task.NotifyAboutChanges())
-                {
-                    if (!fCreatingTarget)
-                    {
-                        if (!aFilterPropNames.empty())
-                            m->pVirtualBox->i_onMediumConfigChanged(pTargetBase);
-                        m->pVirtualBox->i_onMediumConfigChanged(pParent);
-                    }
-                    else
-                    {
-                        m->pVirtualBox->i_onMediumRegistered(pTarget->i_getId(), pTarget->i_getDeviceType(), TRUE);
-                    }
-                }
             }
         }
     }
@@ -9743,8 +9620,6 @@ HRESULT Medium::i_taskMoveHandler(Medium::MoveTask &task)
 
     task.mpMediumLockList->Clear();
 
-    if (task.NotifyAboutChanges() && SUCCEEDED(mrc))
-        m->pVirtualBox->i_onMediumConfigChanged(this);
     return mrc;
 }
 
@@ -9812,9 +9687,6 @@ HRESULT Medium::i_taskDeleteHandler(Medium::DeleteTask &task)
 
     /* Reset UUID to prevent Create* from reusing it again */
     unconst(m->id).clear();
-
-    if (task.NotifyAboutChanges() && SUCCEEDED(rc) && m->pParent.isNotNull())
-        m->pVirtualBox->i_onMediumConfigChanged(m->pParent);
 
     return rc;
 }
@@ -9959,9 +9831,6 @@ HRESULT Medium::i_taskResetHandler(Medium::ResetTask &task)
     m->logicalSize = logicalSize;
     m->variant = variant;
 
-    if (task.NotifyAboutChanges() && SUCCEEDED(rc))
-        m->pVirtualBox->i_onMediumConfigChanged(this);
-
     /* Everything is explicitly unlocked when the task exits,
      * as the task destruction also destroys the media chain. */
 
@@ -10058,9 +9927,6 @@ HRESULT Medium::i_taskCompactHandler(Medium::CompactTask &task)
         VDDestroy(hdd);
     }
     catch (HRESULT aRC) { rc = aRC; }
-
-    if (task.NotifyAboutChanges() && SUCCEEDED(rc))
-        m->pVirtualBox->i_onMediumConfigChanged(this);
 
     /* Everything is explicitly unlocked when the task exits,
      * as the task destruction also destroys the media chain. */
@@ -10177,9 +10043,6 @@ HRESULT Medium::i_taskResizeHandler(Medium::ResizeTask &task)
         AutoWriteLock thisLock(this COMMA_LOCKVAL_SRC_POS);
         m->size = size;
         m->logicalSize = logicalSize;
-
-        if (task.NotifyAboutChanges())
-            m->pVirtualBox->i_onMediumConfigChanged(this);
     }
 
     /* Everything is explicitly unlocked when the task exits,
@@ -10447,16 +10310,6 @@ HRESULT Medium::i_taskImportHandler(Medium::ImportTask &task)
     /* Make sure the target chain is released early, otherwise it can
      * lead to deadlocks with concurrent IAppliance activities. */
     task.mpTargetMediumLockList->Clear();
-
-    if (task.NotifyAboutChanges() && SUCCEEDED(mrc))
-    {
-        if (pParent)
-            m->pVirtualBox->i_onMediumConfigChanged(pParent);
-        if (fCreatingTarget)
-            m->pVirtualBox->i_onMediumConfigChanged(this);
-        else
-            m->pVirtualBox->i_onMediumRegistered(m->id, m->devType, TRUE);
-    }
 
     return mrc;
 }

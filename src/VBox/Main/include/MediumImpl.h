@@ -168,15 +168,14 @@ public:
                                 MediumVariant_T aVariant,
                                 MediumLockList *pMediumLockList,
                                 ComObjPtr<Progress> *aProgress,
-                                bool aWait,
-                                bool aNotify);
+                                bool aWait);
     Utf8Str i_getPreferredDiffFormat();
     MediumVariant_T i_getPreferredDiffVariant();
 
     HRESULT i_close(AutoCaller &autoCaller);
     HRESULT i_unlockRead(MediumState_T *aState);
     HRESULT i_unlockWrite(MediumState_T *aState);
-    HRESULT i_deleteStorage(ComObjPtr<Progress> *aProgress, bool aWait, bool aNotify);
+    HRESULT i_deleteStorage(ComObjPtr<Progress> *aProgress, bool aWait);
     HRESULT i_markForDeletion();
     HRESULT i_unmarkForDeletion();
     HRESULT i_markLockedForDeletion();
@@ -199,16 +198,14 @@ public:
                       MediumLockList *aChildrenToReparent,
                       MediumLockList *aMediumLockList,
                       ComObjPtr<Progress> *aProgress,
-                      bool aWait,
-                      bool aNotify);
+                      bool aWait);
     void i_cancelMergeTo(MediumLockList *aChildrenToReparent,
                        MediumLockList *aMediumLockList);
 
     HRESULT i_resize(LONG64 aLogicalSize,
                      MediumLockList *aMediumLockList,
                      ComObjPtr<Progress> *aProgress,
-                     bool aWait,
-                     bool aNotify);
+                     bool aWait);
 
     HRESULT i_fixParentUuidOfChildren(MediumLockList *pChildrenToReparent);
 
@@ -222,16 +219,15 @@ public:
                          RTVFSIOSTREAM hVfsIosDst,
                          const ComObjPtr<Progress> &aProgress);
     HRESULT i_importFile(const char *aFilename,
-                         const ComObjPtr<MediumFormat> &aFormat,
-                         MediumVariant_T aVariant,
-                         RTVFSIOSTREAM hVfsIosSrc,
-                         const ComObjPtr<Medium> &aParent,
-                         const ComObjPtr<Progress> &aProgress,
-                         bool aNotify);
+                        const ComObjPtr<MediumFormat> &aFormat,
+                        MediumVariant_T aVariant,
+                        RTVFSIOSTREAM hVfsIosSrc,
+                        const ComObjPtr<Medium> &aParent,
+                        const ComObjPtr<Progress> &aProgress);
 
     HRESULT i_cloneToEx(const ComObjPtr<Medium> &aTarget, MediumVariant_T aVariant,
                         const ComObjPtr<Medium> &aParent, IProgress **aProgress,
-                        uint32_t idxSrcImageSame, uint32_t idxDstImageSame, bool aNotify);
+                        uint32_t idxSrcImageSame, uint32_t idxDstImageSame);
 
     const Utf8Str& i_getKeyId();
 
