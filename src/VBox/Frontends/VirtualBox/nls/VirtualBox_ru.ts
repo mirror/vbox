@@ -1708,7 +1708,7 @@
     </message>
     <message>
         <source>Host</source>
-        <translation>Хост</translation>
+        <translation>Основная ОС</translation>
     </message>
     <message>
         <source>Open the guest control file manager submenu</source>
@@ -1728,23 +1728,23 @@
     </message>
     <message>
         <source>Copy the Selected Object(s) from Host to Guest</source>
-        <translation>Скопировать выбранные объекты с хоста в готевую ОС</translation>
+        <translation>Скопировать выбранные объекты с основной ОС в готевую</translation>
     </message>
     <message>
         <source>Copy the selected object(s) from host to guest</source>
-        <translation>Скопировать выбранные объекты с хоста в готевую ОС</translation>
+        <translation>Скопировать выбранные объекты с основной ОС в готевую</translation>
     </message>
     <message>
         <source>Copy to host</source>
-        <translation>Скопировать на хост</translation>
+        <translation>Скопировать в основную ОС</translation>
     </message>
     <message>
         <source>Copy the Selected Object(s) from Guest to Host</source>
-        <translation>Скопировать выбранные объекты с готевой ОС на хост</translation>
+        <translation>Скопировать выбранные объекты с готевой ОС в основную</translation>
     </message>
     <message>
         <source>Copy the selected object(s) from guest to host</source>
-        <translation>Скопировать выбранные объекты с готевой ОС на хост</translation>
+        <translation>Скопировать выбранные объекты с готевой ОС в основную</translation>
     </message>
     <message>
         <source>Log</source>
@@ -1868,15 +1868,15 @@
     </message>
     <message>
         <source>Select All</source>
-        <translation>Выбрать всё</translation>
+        <translation>Выделить всё</translation>
     </message>
     <message>
         <source>Select all files objects</source>
-        <translation>Вырезать все объекты</translation>
+        <translation>Выделить все объекты</translation>
     </message>
     <message>
         <source>Select All Files Objects</source>
-        <translation>Вырезать все объекты</translation>
+        <translation>Выделить все объекты</translation>
     </message>
     <message>
         <source>Invert Selection</source>
@@ -4569,315 +4569,315 @@ p, li { white-space: pre-wrap; }
     <name>UIFileManager</name>
     <message>
         <source>%1 - File Manager</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 - Менеджер файлов</translation>
     </message>
     <message>
         <source>Close</source>
-        <translation type="unfinished">Закрыть</translation>
+        <translation>Закрыть</translation>
     </message>
     <message>
         <source>Clear</source>
-        <translation type="unfinished"></translation>
+        <translation>Очистить</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation type="unfinished">Отмена</translation>
+        <translation>Отмена</translation>
     </message>
     <message>
         <source>Not yet started</source>
-        <translation type="unfinished"></translation>
+        <translation>Ещё не начата</translation>
     </message>
     <message>
         <source>Working</source>
-        <translation type="unfinished"></translation>
+        <translation>В процессе</translation>
     </message>
     <message>
         <source>Paused</source>
-        <translation type="unfinished">Приостановлена</translation>
+        <translation>Приостановлена</translation>
     </message>
     <message>
         <source>Canceled</source>
-        <translation type="unfinished"></translation>
+        <translation>Отменена</translation>
     </message>
     <message>
         <source>Succeded</source>
-        <translation type="unfinished"></translation>
+        <translation>Успех</translation>
     </message>
     <message>
         <source>Failed</source>
-        <translation type="unfinished"></translation>
+        <translation>Сбой</translation>
     </message>
     <message>
         <source>Invalid</source>
-        <translation type="unfinished"></translation>
+        <translation>Некорректна</translation>
     </message>
     <message>
         <source>Remove Selected</source>
-        <translation type="unfinished"></translation>
+        <translation>Удалить выбранные</translation>
     </message>
     <message>
         <source>Remove Finished</source>
-        <translation type="unfinished"></translation>
+        <translation>Удалить выполненные</translation>
     </message>
     <message>
         <source>Remove All</source>
-        <translation type="unfinished"></translation>
+        <translation>Удалить все</translation>
     </message>
     <message>
         <source>List directories on top</source>
-        <translation type="unfinished"></translation>
+        <translation>Отражать папки сверху</translation>
     </message>
     <message>
         <source>List directories before files</source>
-        <translation type="unfinished"></translation>
+        <translation>Отражать папки перед файлами</translation>
     </message>
     <message>
         <source>Ask before delete</source>
-        <translation type="unfinished"></translation>
+        <translation>Спрашивать перед удалением</translation>
     </message>
     <message>
         <source>Show a confirmation dialog before deleting files and directories</source>
-        <translation type="unfinished"></translation>
+        <translation>Показывать диалог подтверждения перед удалением файлов и папок</translation>
     </message>
     <message>
         <source>Human readable sizes</source>
-        <translation type="unfinished"></translation>
+        <translation>Размеры в читабельном формате</translation>
     </message>
     <message>
         <source>Show file/directory sizes in human readable format rather than in bytes</source>
-        <translation type="unfinished"></translation>
+        <translation>Показывать размеры файлов/папок в читабельном формате</translation>
     </message>
     <message>
         <source>Close the pane</source>
-        <translation type="unfinished"></translation>
+        <translation>Закрыть данную панель</translation>
     </message>
     <message>
         <source>Password</source>
-        <translation type="unfinished">Пароль</translation>
+        <translation>Пароль</translation>
     </message>
     <message>
         <source>Show Password</source>
-        <translation type="unfinished"></translation>
+        <translation>Показать пароль</translation>
     </message>
     <message>
         <source>User name to authenticate session creation</source>
-        <translation type="unfinished"></translation>
+        <translation>Имя пользователя для аутентификации сессии</translation>
     </message>
     <message>
         <source>User Name</source>
-        <translation type="unfinished"></translation>
+        <translation>Имя пользователя</translation>
     </message>
     <message>
         <source>Password to authenticate session creation</source>
-        <translation type="unfinished"></translation>
+        <translation>Пароль пользователя для аутентификации сессии</translation>
     </message>
     <message>
         <source>Create Session</source>
-        <translation type="unfinished"></translation>
+        <translation>Создать сесию</translation>
     </message>
     <message>
         <source>Close Session</source>
-        <translation type="unfinished">Закрыть сессию</translation>
+        <translation>Закрыть сессию</translation>
     </message>
     <message>
         <source>Total Size</source>
-        <translation type="unfinished"></translation>
+        <translation>Общий размер</translation>
     </message>
     <message>
         <source> bytes</source>
-        <translation type="unfinished"></translation>
+        <translation> байт</translation>
     </message>
     <message>
         <source>File Count</source>
-        <translation type="unfinished"></translation>
+        <translation>Количество файлов</translation>
     </message>
     <message>
         <source>Delete the selected file(s) and/or folder(s)</source>
-        <translation type="unfinished"></translation>
+        <translation>Удалить выбранные файлы и папки</translation>
     </message>
     <message>
         <source>Ask for this confirmation next time</source>
-        <translation type="unfinished"></translation>
+        <translation>Спрашивать в следующий раз</translation>
     </message>
     <message>
         <source>Delete confirmation can be disabled/enabled also from the Options panel.</source>
-        <translation type="unfinished"></translation>
+        <translation>Подтверждение удаления может быть выключено/включено с панели опций.</translation>
     </message>
     <message>
         <source>Name</source>
-        <translation type="unfinished"></translation>
+        <translation>Имя</translation>
     </message>
     <message>
         <source>Size</source>
-        <translation type="unfinished">Размер</translation>
+        <translation>Размер</translation>
     </message>
     <message>
         <source>Change Time</source>
-        <translation type="unfinished"></translation>
+        <translation>Дата изменения</translation>
     </message>
     <message>
         <source>Owner</source>
-        <translation type="unfinished"></translation>
+        <translation>Владелец</translation>
     </message>
     <message>
         <source>Permissions</source>
-        <translation type="unfinished"></translation>
+        <translation>Права доступа</translation>
     </message>
     <message>
         <source>No Guest Session</source>
-        <translation type="unfinished"></translation>
+        <translation>Нет сессии гостевой ОС</translation>
     </message>
     <message>
         <source>Unknown</source>
-        <translation type="unfinished"></translation>
+        <translation>Неизвестно</translation>
     </message>
     <message>
         <source>File</source>
-        <translation type="unfinished"></translation>
+        <translation>Файл</translation>
     </message>
     <message>
         <source>Directory</source>
-        <translation type="unfinished"></translation>
+        <translation>Папка</translation>
     </message>
     <message>
         <source>Symbolic Link</source>
-        <translation type="unfinished"></translation>
+        <translation>Ссылка</translation>
     </message>
     <message>
         <source>Other</source>
-        <translation type="unfinished"></translation>
+        <translation>Другое</translation>
     </message>
     <message>
         <source>Guest System</source>
-        <translation type="unfinished"></translation>
+        <translation>Гостевая ОС</translation>
     </message>
     <message>
         <source>&lt;b&gt;Size:&lt;/b&gt; %1 bytes</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;Размер:&lt;/b&gt; %1 байт</translation>
     </message>
     <message>
         <source>&lt;b&gt;Allocated:&lt;/b&gt; %1 bytes</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;На диске:&lt;/b&gt; %1 байт</translation>
     </message>
     <message>
         <source>directory</source>
-        <translation type="unfinished"></translation>
+        <translation>папка</translation>
     </message>
     <message>
         <source>file</source>
-        <translation type="unfinished"></translation>
+        <translation>файл</translation>
     </message>
     <message>
         <source>symbolic link</source>
-        <translation type="unfinished"></translation>
+        <translation>ссылка</translation>
     </message>
     <message>
         <source>character device</source>
-        <translation type="unfinished"></translation>
+        <translation>символьное устройство</translation>
     </message>
     <message>
         <source>block device</source>
-        <translation type="unfinished"></translation>
+        <translation>блочное устройство</translation>
     </message>
     <message>
         <source>fifo</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>socket</source>
-        <translation type="unfinished"></translation>
+        <translation>сокет</translation>
     </message>
     <message>
         <source>whiteout</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>unknown</source>
-        <translation type="unfinished"></translation>
+        <translation>неизвестно</translation>
     </message>
     <message>
         <source>illegal-value</source>
-        <translation type="unfinished"></translation>
+        <translation>неверное значение</translation>
     </message>
     <message>
         <source>&lt;b&gt;Type:&lt;/b&gt; %1&lt;br/&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;Тип:&lt;/b&gt; %1&lt;br/&gt;</translation>
     </message>
     <message>
         <source>&lt;b&gt;INode:&lt;/b&gt; %1&lt;br/&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>&lt;b&gt;Device:&lt;/b&gt; %1&lt;br/&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;Устройство:&lt;/b&gt; %1&lt;br/&gt;</translation>
     </message>
     <message>
         <source>&lt;b&gt;Hardlinks:&lt;/b&gt; %1&lt;br/&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;Жёсткие ссылки:&lt;/b&gt; %1&lt;br/&gt;</translation>
     </message>
     <message>
         <source>&lt;b&gt;Mode:&lt;/b&gt; %1&lt;br/&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;Режим:&lt;/b&gt; %1&lt;br/&gt;</translation>
     </message>
     <message>
         <source>&lt;b&gt;Attributes:&lt;/b&gt; %1&lt;br/&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;Атрибуты:&lt;/b&gt; %1&lt;br/&gt;</translation>
     </message>
     <message>
         <source>&lt;b&gt;Device ID:&lt;/b&gt; %1&lt;br/&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;ID устройства:&lt;/b&gt; %1&lt;br/&gt;</translation>
     </message>
     <message>
         <source>&lt;b&gt;Owner:&lt;/b&gt; %1 (%2)&lt;br/&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;Владелец:&lt;/b&gt; %1 (%2)&lt;br/&gt;</translation>
     </message>
     <message>
         <source>&lt;b&gt;Group:&lt;/b&gt; %1 (%2)&lt;br/&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;Группа:&lt;/b&gt; %1 (%2)&lt;br/&gt;</translation>
     </message>
     <message>
         <source>&lt;b&gt;Birth:&lt;/b&gt; %1&lt;br/&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;Создан:&lt;/b&gt; %1&lt;br/&gt;</translation>
     </message>
     <message>
         <source>&lt;b&gt;Change:&lt;/b&gt; %1&lt;br/&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;Изменён статус:&lt;/b&gt; %1&lt;br/&gt;</translation>
     </message>
     <message>
         <source>&lt;b&gt;Modified:&lt;/b&gt; %1&lt;br/&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;Изменёно содержимое:&lt;/b&gt; %1&lt;br/&gt;</translation>
     </message>
     <message>
         <source>&lt;b&gt;Access:&lt;/b&gt; %1&lt;br/&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;Последний доступ:&lt;/b&gt; %1&lt;br/&gt;</translation>
     </message>
     <message>
         <source>&lt;b&gt;Selected:&lt;/b&gt; %1 files and %2 directories&lt;br/&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;Выбрано:&lt;/b&gt; %1 файлов и %2 папок&lt;br/&gt;</translation>
     </message>
     <message>
         <source>&lt;b&gt;Size (non-recursive):&lt;/b&gt; %1 bytes</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;Размер (нерекурсивный):&lt;/b&gt; %1 байт</translation>
     </message>
     <message>
         <source>Properties</source>
-        <translation type="unfinished">Свойства</translation>
+        <translation>Свойства</translation>
     </message>
     <message>
         <source>Host System</source>
-        <translation type="unfinished"></translation>
+        <translation>Основная ОС</translation>
     </message>
     <message>
         <source>&lt;b&gt;Name:&lt;/b&gt; %1&lt;br/&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;Имя:&lt;/b&gt; %1&lt;br/&gt;</translation>
     </message>
     <message>
         <source>&lt;b&gt;Created:&lt;/b&gt; %1&lt;br/&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;Создан:&lt;/b&gt; %1&lt;br/&gt;</translation>
     </message>
     <message>
         <source>&lt;b&gt;Owner:&lt;/b&gt; %1</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;Владелец:&lt;/b&gt; %1</translation>
     </message>
 </context>
 <context>
@@ -16843,158 +16843,158 @@ p, li { white-space: pre-wrap; }
     <name>UIVMLogViewerDialog</name>
     <message>
         <source>%1 - Log Viewer</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 - Просмотр журналов</translation>
     </message>
 </context>
 <context>
     <name>UIVMLogViewerWidget</name>
     <message>
         <source>Delete the current bookmark</source>
-        <translation type="unfinished"></translation>
+        <translation>Удалить текущую закладку</translation>
     </message>
     <message>
         <source>Delete all bookmarks</source>
-        <translation type="unfinished"></translation>
+        <translation>Удалить все закладки</translation>
     </message>
     <message>
         <source>Goto the next bookmark</source>
-        <translation type="unfinished"></translation>
+        <translation>Перейти к следующей закладке</translation>
     </message>
     <message>
         <source>Goto the previous bookmark</source>
-        <translation type="unfinished"></translation>
+        <translation>Перейти к предыдущей закладке</translation>
     </message>
     <message>
         <source>Goto selected bookmark</source>
-        <translation type="unfinished"></translation>
+        <translation>Перейти к выбранной закладке</translation>
     </message>
     <message>
         <source>Log Viewer</source>
-        <translation type="unfinished">Просмотр журналов</translation>
+        <translation>Просмотр журналов</translation>
     </message>
     <message>
         <source>Close</source>
-        <translation type="unfinished">Закрыть</translation>
+        <translation>Закрыть</translation>
     </message>
     <message>
         <source>Select or enter a term which will be used in filtering the log text</source>
-        <translation type="unfinished"></translation>
+        <translation>Выбрать или ввести условие, используемое для фильтрации журнала</translation>
     </message>
     <message>
         <source>Add the filter term to the set of filter terms</source>
-        <translation type="unfinished"></translation>
+        <translation>Добавить фильтр к текущему набору</translation>
     </message>
     <message>
         <source>Showing %1/%2</source>
-        <translation type="unfinished"></translation>
+        <translation>Отражено %1/%2</translation>
     </message>
     <message>
         <source>The filter terms list, select one to remove or click the button on the right side to remove them all</source>
-        <translation type="unfinished"></translation>
+        <translation>Список условий фильтрации, выберите одно из них или используйте кнопку справа для удаления всех</translation>
     </message>
     <message>
         <source>The type of boolean operator for filter operation</source>
-        <translation type="unfinished"></translation>
+        <translation>Тип логического оператора для условий фильтрации</translation>
     </message>
     <message>
         <source>Show Line Numbers</source>
-        <translation type="unfinished"></translation>
+        <translation>Показывать номера строк</translation>
     </message>
     <message>
         <source>When checked, show line numbers</source>
-        <translation type="unfinished"></translation>
+        <translation>Если галочка стоит, будут отображены номера строк</translation>
     </message>
     <message>
         <source>Wrap Lines</source>
-        <translation type="unfinished"></translation>
+        <translation>Осуществлять перенос строк</translation>
     </message>
     <message>
         <source>When checked, wrap lines</source>
-        <translation type="unfinished"></translation>
+        <translation>Если галочка стоит, длинные предложения будут переноситься на следующую строку</translation>
     </message>
     <message>
         <source>Font Size</source>
-        <translation type="unfinished"></translation>
+        <translation>Размер шрифта</translation>
     </message>
     <message>
         <source>Log viewer font size</source>
-        <translation type="unfinished"></translation>
+        <translation>Размер шрифта журналов</translation>
     </message>
     <message>
         <source>Open a font dialog to select font face for the logviewer</source>
-        <translation type="unfinished"></translation>
+        <translation>Открыть диалог выбора шрифта журнала</translation>
     </message>
     <message>
         <source>Reset options to application defaults</source>
-        <translation type="unfinished"></translation>
+        <translation>Сбросить к настройкам по умолчанию</translation>
     </message>
     <message>
         <source>Close the pane</source>
-        <translation type="unfinished"></translation>
+        <translation>Закрыть данную панель</translation>
     </message>
     <message>
         <source>Enter a search string here</source>
-        <translation type="unfinished">Введите здесь строку для поиска</translation>
+        <translation>Введите здесь строку для поиска</translation>
     </message>
     <message>
         <source>Search for the next occurrence of the string (F3)</source>
-        <translation type="unfinished"></translation>
+        <translation>Искать следующее совпадение строки (F3)</translation>
     </message>
     <message>
         <source>Search for the previous occurrence of the string (Shift+F3)</source>
-        <translation type="unfinished"></translation>
+        <translation>Искать предыдущее совпадение строки (Shift+F3)</translation>
     </message>
     <message>
         <source>C&amp;ase Sensitive</source>
-        <translation type="unfinished">С &amp;учетом регистра</translation>
+        <translation>С &amp;учетом регистра</translation>
     </message>
     <message>
         <source>When checked, perform case sensitive search</source>
-        <translation type="unfinished"></translation>
+        <translation>Если галочка стоит, поиск будет осуществляться с учётом регистра</translation>
     </message>
     <message>
         <source>Ma&amp;tch Whole Word</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Только слова целиком</translation>
     </message>
     <message>
         <source>When checked, search matches only complete words</source>
-        <translation type="unfinished"></translation>
+        <translation>Если галочка стоит, будут найдены лишь целые слова, отвечающие запросу</translation>
     </message>
     <message>
         <source>&amp;Highlight All</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Подсветить всё</translation>
     </message>
     <message>
         <source>When checked, all occurence of the search text are highlighted</source>
-        <translation type="unfinished"></translation>
+        <translation>Если галочка стоит, все появления искомого текста будут подсвечены</translation>
     </message>
     <message>
         <source>String not found</source>
-        <translation type="unfinished">Строка не найдена</translation>
+        <translation>Строка не найдена</translation>
     </message>
     <message>
         <source>%1 Matches Found</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 совпадений найдено</translation>
     </message>
     <message>
         <source>Filtered</source>
-        <translation type="unfinished"></translation>
+        <translation>Фильтр</translation>
     </message>
     <message>
         <source>Bookmark</source>
-        <translation type="unfinished"></translation>
+        <translation>Закладка</translation>
     </message>
     <message>
         <source>Save VirtualBox Log As</source>
-        <translation type="unfinished">Сохранить журнал VirtualBox как</translation>
+        <translation>Сохранить журнал VirtualBox как</translation>
     </message>
     <message>
         <source>&lt;p&gt;&lt;b&gt;No machine&lt;/b&gt; is currently selected or the selected machine is not valid. Please select a Virtual Machine to see its logs</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;&lt;b&gt;Ни одной машины&lt;/b&gt; не выбрано или выбранная машина настроена неверно. Пожалуйста выберите машину для просмотра её журналов</translation>
     </message>
     <message>
         <source>&lt;p&gt;No log files found. Press the &lt;b&gt;Refresh&lt;/b&gt; button to rescan the log folder &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.&lt;/p&gt;</source>
-        <translation type="unfinished">&lt;p&gt;Файлы журналов не найдены. Нажмите кнопку &lt;b&gt;Обновить&lt;/b&gt; для того, чтобы перечитать содержимое папки &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Файлы журналов не найдены. Нажмите кнопку &lt;b&gt;Обновить&lt;/b&gt; для того, чтобы перечитать содержимое папки &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
