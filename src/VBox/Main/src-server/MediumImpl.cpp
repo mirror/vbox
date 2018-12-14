@@ -9086,11 +9086,13 @@ HRESULT Medium::i_taskMergeHandler(Medium::MergeTask &task)
             /* then, reparent it and disconnect the deleted branch at both ends
              * (chain->parent() is source's parent). Depth check above. */
             pTarget->i_deparent();
-            if (task.NotifyAboutChanges())
-                pMediumsForNotify.insert(task.mParentForTarget);
             pTarget->i_setParent(task.mParentForTarget);
             if (task.mParentForTarget)
+            {
                 i_deparent();
+                if (task.NotifyAboutChanges())
+                    pMediumsForNotify.insert(task.mParentForTarget);
+            }
 
             /* then, register again */
             ComObjPtr<Medium> pMedium;

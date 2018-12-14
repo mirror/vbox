@@ -1790,6 +1790,8 @@ void SessionMachine::i_takeSnapshotHandler(TakeSnapshotTask &task)
             {
                 MediumAttachment *pAttach = *it;
                 Medium *pMedium = pAttach->i_getMedium();
+                if (!pMedium)
+                    continue;
 
                 bool fFound = false;
                 /* was this medium attached before? */
@@ -2284,6 +2286,8 @@ void SessionMachine::i_restoreSnapshotHandler(RestoreSnapshotTask &task)
             {
                 MediumAttachment *pAttach = *it;
                 Medium *pMedium = pAttach->i_getMedium();
+                if (!pMedium)
+                    continue;
 
                 bool fFound = false;
                 /* was this medium attached before? */
