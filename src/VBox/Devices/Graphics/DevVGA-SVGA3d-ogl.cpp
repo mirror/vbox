@@ -907,7 +907,13 @@ int vmsvga3dPowerOn(PVGASTATE pThis)
      *
      */
     /** @todo distinguish between vertex and pixel shaders??? */
+#ifdef VBOX_VMSVGA3D_DUAL_OPENGL_PROFILE /* The alternative profile has a higher number here (ati/darwin). */
+    VMSVGA3D_SET_CURRENT_CONTEXT(pState, pOtherCtx);
     const char *pszShadingLanguageVersion = (const char *)glGetString(GL_SHADING_LANGUAGE_VERSION);
+    VMSVGA3D_SET_CURRENT_CONTEXT(pState, pContext);
+#else
+    const char *pszShadingLanguageVersion = (const char *)glGetString(GL_SHADING_LANGUAGE_VERSION);
+#endif
     float v = pszShadingLanguageVersion ? atof(pszShadingLanguageVersion) : 0.0f;
     if (v >= 3.30f)
     {
