@@ -2163,12 +2163,8 @@
 /** @name VBox HM Status Codes
  * @{
  */
-/** Unable to start VM execution. */
-#define VERR_HM_UNKNOWN_CPU                         (-4100)
-/** No CPUID support. */
-#define VERR_HM_NO_CPUID                            (-4101)
 /** Host is about to go into suspend mode. */
-#define VERR_HM_SUSPEND_PENDING                     (-4102)
+#define VERR_HM_SUSPEND_PENDING                     (-4100)
 /** Conflicting CFGM values. */
 #define VERR_HM_CONFIG_MISMATCH                     (-4103)
 /** Internal processing error in the HM init code. */

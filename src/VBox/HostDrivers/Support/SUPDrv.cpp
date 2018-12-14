@@ -202,6 +202,7 @@ static SUPFUNC g_aFunctions[] =
     { "SUPR0GetKernelFeatures",                 (void *)(uintptr_t)SUPR0GetKernelFeatures },
     { "SUPR0GetPagingMode",                     (void *)(uintptr_t)SUPR0GetPagingMode },
     { "SUPR0GetSvmUsability",                   (void *)(uintptr_t)SUPR0GetSvmUsability },
+    { "SUPR0GetVTSupport",                      (void *)(uintptr_t)SUPR0GetVTSupport },
     { "SUPR0GetVmxUsability",                   (void *)(uintptr_t)SUPR0GetVmxUsability },
     { "SUPR0GetRawModeUsability",               (void *)(uintptr_t)SUPR0GetRawModeUsability },
     { "SUPR0LockMem",                           (void *)(uintptr_t)SUPR0LockMem },
@@ -4109,7 +4110,6 @@ SUPR0DECL(int) SUPR0GetRawModeUsability(void)
  */
 SUPR0DECL(int) SUPR0GetVTSupport(uint32_t *pfCaps)
 {
-    Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
     Assert(pfCaps);
     *pfCaps = 0;
 
