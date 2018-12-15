@@ -117,11 +117,78 @@ static void *MyGLXGetProcAddress(const char *pszSymbol)
 
 #define GLGETPROC_(ProcName, NameSuffix) do { \
     *(void **)&pfn_##ProcName = OGLGETPROCADDRESS(#ProcName NameSuffix); \
-    AssertLogRelMsgReturn(pfn_##ProcName, (#ProcName NameSuffix " missing\n"), VERR_NOT_IMPLEMENTED); \
+    AssertLogRelMsgReturn(pfn_##ProcName, ("%s missing\n", #ProcName NameSuffix), VERR_NOT_IMPLEMENTED); \
 } while(0)
 
 int glLdrInit(void)
 {
+    pfn_glAlphaFunc = 0;
+    pfn_glBindTexture = 0;
+    pfn_glBlendColor = 0;
+    pfn_glBlendEquation = 0;
+    pfn_glBlendFunc = 0;
+    pfn_glClear = 0;
+    pfn_glClearColor = 0;
+    pfn_glClearDepth = 0;
+    pfn_glClearStencil = 0;
+    pfn_glClientActiveTexture = 0;
+    pfn_glClipPlane = 0;
+    pfn_glColorMask = 0;
+    pfn_glColorPointer = 0;
+    pfn_glCullFace = 0;
+    pfn_glDeleteTextures = 0;
+    pfn_glDepthFunc = 0;
+    pfn_glDepthMask = 0;
+    pfn_glDepthRange = 0;
+    pfn_glDisable = 0;
+    pfn_glDisableClientState = 0;
+    pfn_glDrawArrays = 0;
+    pfn_glDrawElements = 0;
+    pfn_glEnable = 0;
+    pfn_glEnableClientState = 0;
+    pfn_glFogf = 0;
+    pfn_glFogfv = 0;
+    pfn_glFogi = 0;
+    pfn_glFrontFace = 0;
+    pfn_glGenTextures = 0;
+    pfn_glGetBooleanv = 0;
+    pfn_glGetError = 0;
+    pfn_glGetFloatv = 0;
+    pfn_glGetIntegerv = 0;
+    pfn_glGetString = 0;
+    pfn_glGetTexImage = 0;
+    pfn_glLightModelfv = 0;
+    pfn_glLightf = 0;
+    pfn_glLightfv = 0;
+    pfn_glLineWidth = 0;
+    pfn_glLoadIdentity = 0;
+    pfn_glLoadMatrixf = 0;
+    pfn_glMaterialfv = 0;
+    pfn_glMatrixMode = 0;
+    pfn_glMultMatrixf = 0;
+    pfn_glNormalPointer = 0;
+    pfn_glPixelStorei = 0;
+    pfn_glPointSize = 0;
+    pfn_glPolygonMode = 0;
+    pfn_glPolygonOffset = 0;
+    pfn_glPopAttrib = 0;
+    pfn_glPopMatrix = 0;
+    pfn_glPushAttrib = 0;
+    pfn_glPushMatrix = 0;
+    pfn_glScissor = 0;
+    pfn_glShadeModel = 0;
+    pfn_glStencilFunc = 0;
+    pfn_glStencilMask = 0;
+    pfn_glStencilOp = 0;
+    pfn_glTexCoordPointer = 0;
+    pfn_glTexImage2D = 0;
+    pfn_glTexParameterf = 0;
+    pfn_glTexParameterfv = 0;
+    pfn_glTexParameteri = 0;
+    pfn_glTexSubImage2D = 0;
+    pfn_glVertexPointer = 0;
+    pfn_glViewport = 0;
+
     GLGETPROC_(glAlphaFunc, "");
     GLGETPROC_(glBindTexture, "");
     GLGETPROC_(glBlendFunc, "");
@@ -197,4 +264,12 @@ int glLdrInit(void)
 void *glLdrGetProcAddress(const char *pszSymbol)
 {
     return OGLGETPROCADDRESS(pszSymbol);
+}
+
+int glLdrGetExtFunctions(void)
+{
+    GLGETPROC_(glBlendColor, "");
+    GLGETPROC_(glBlendEquation, "");
+    GLGETPROC_(glClientActiveTexture, "");
+    return VINF_SUCCESS;
 }
