@@ -277,6 +277,7 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
   VBoxDD_SOURCES        += Graphics/DevVGA-SVGA.cpp
  endif
  ifdef VBOX_WITH_VMSVGA3D
+  #VBOX_WITH_VMSVGA3D_DYNAMIC_LOAD = 1
   VBoxDD_DEFS           += VBOX_WITH_VMSVGA3D
   VBoxDD_SOURCES        += \
   	Graphics/DevVGA-SVGA3d.cpp \
@@ -305,8 +306,15 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
 	$(QUIET)$(RM) -f -- "$@"
 	$(VBOX_DEF_2_LAZY_LOAD) --explicit-load-function --library VBoxSVGA3DObjC --output "$@" $(filter %.def, $^)
 
-   VBoxDD_LIBS.linux    += GL X11
+   VBoxDD_LIBS.linux    += X11
+   ifdef VBOX_WITH_VMSVGA3D_DYNAMIC_LOAD
+   VBoxDD_DEFS          += VMSVGA3D_DYNAMIC_LOAD
+   VBoxDD_SOURCES       += \
+   	Graphics/DevVGA-SVGA3d-glLdr.cpp
+   else
+   VBoxDD_LIBS.linux    += GL
    VBoxDD_LIBS.win      += $(PATH_SDK_$(VBOX_WINPSDK)_LIB)/Opengl32.lib
+   endif
    VBoxDD_LDFLAGS.darwin += -framework OpenGL
    VBoxDD_DEFS.darwin    += VBOX_VMSVGA3D_DUAL_OPENGL_PROFILE
    if 0 # Use the OpenGL 3.2 Core profile (see also VBoxSVGA3D_DEFS.darwin and VBoxSVGA3DObjC_DEFS.darwin).

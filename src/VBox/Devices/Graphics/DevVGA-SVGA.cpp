@@ -4048,6 +4048,14 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
                     uint32_t cbCmd = sizeof(SVGA3dCmdHeader) + pHdr->size;
                     VMSVGAFIFO_GET_MORE_CMD_BUFFER_BREAK(pHdr, SVGA3dCmdHeader, cbCmd);
 
+                    if (RT_LIKELY(pThis->svga.f3DEnabled))
+                    { /* likely */ }
+                    else
+                    {
+                        LogRelMax(8, ("VMSVGA3d: 3D disabled, command %d skipped\n", enmCmdId));
+                        break;
+                    }
+
 /**
  * Check that the 3D command has at least a_cbMin of payload bytes after the
  * header.  Will break out of the switch if it doesn't.

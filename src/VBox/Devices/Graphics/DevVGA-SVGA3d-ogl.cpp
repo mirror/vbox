@@ -63,6 +63,9 @@
 # define VBOX_VMSVGA3D_DEFAULT_OGL_PROFILE 1.0
 #endif
 
+#ifdef VMSVGA3D_DYNAMIC_LOAD
+# define OGLGETPROCADDRESS glLdrGetProcAddress
+#else
 #ifdef RT_OS_WINDOWS
 # define OGLGETPROCADDRESS      MyWinGetProcAddress
 DECLINLINE(PROC) MyWinGetProcAddress(const char *pszSymbol)
@@ -88,6 +91,7 @@ static void *MyNSGLGetProcAddress(const char *pszSymbol)
 
 #else
 # define OGLGETPROCADDRESS(x)   glXGetProcAddress((const GLubyte *)x)
+#endif
 #endif
 
 /* Invert y-coordinate for OpenGL's bottom left origin. */
@@ -581,14 +585,25 @@ static DECLCALLBACK(bool) vmsvga3dShaderIfGetNextExtension(PVBOXVMSVGASHADERIF p
  */
 int vmsvga3dInit(PVGASTATE pThis)
 {
+    int rc;
+
     AssertCompile(GL_TRUE == 1);
     AssertCompile(GL_FALSE == 0);
+
+#ifdef VMSVGA3D_DYNAMIC_LOAD
+    rc = glLdrInit();
+    if (RT_FAILURE(rc))
+    {
+        LogRel(("VMSVGA3d: Error loading OpenGL library and resolving necessary functions: %Rrc\n", rc));
+        return rc;
+    }
+#endif
 
     /*
      * Load and resolve imports from the external shared libraries.
      */
     RTERRINFOSTATIC ErrInfo;
-    int rc = ExplicitlyLoadVBoxSVGA3D(true /*fResolveAllImports*/, RTErrInfoInitStatic(&ErrInfo));
+    rc = ExplicitlyLoadVBoxSVGA3D(true /*fResolveAllImports*/, RTErrInfoInitStatic(&ErrInfo));
     if (RT_FAILURE(rc))
     {
         LogRel(("VMSVGA3d: Error loading VBoxSVGA3D and resolving necessary functions: %Rrc - %s\n", rc, ErrInfo.Core.pszMsg));
@@ -793,6 +808,16 @@ int vmsvga3dPowerOn(PVGASTATE pThis)
 
     pContext = pState->papContexts[1];
     VMSVGA3D_SET_CURRENT_CONTEXT(pState, pContext);
+
+#ifdef VMSVGA3D_DYNAMIC_LOAD
+    /* Context is set and it is possible now to resolve extension functions. */
+    rc = glLdrGetExtFunctions();
+    if (RT_FAILURE(rc))
+    {
+        LogRel(("VMSVGA3d: Error resolving extension functions: %Rrc\n", rc));
+        return rc;
+    }
+#endif
 
     LogRel(("VMSVGA3d: OpenGL version: %s\n"
             "VMSVGA3d: OpenGL Vendor: %s\n"
