@@ -85,7 +85,7 @@
       <xsl:attribute name="Language">0</xsl:attribute>
       <xsl:attribute name="Description"><xsl:value-of select="@name"/></xsl:attribute>
       <xsl:attribute name="HelpDirectory"><xsl:text>msm_VBoxApplicationFolder</xsl:text></xsl:attribute>
-        <xsl:apply-templates select="application" />
+      <xsl:apply-templates select="application | if[@target='midl']/application" />
     </TypeLib>
   </Include>
 </xsl:template>
@@ -192,7 +192,10 @@ Applications.
 <!--
   Interfaces.
 -->
-<xsl:template match="library/application/interface | library/application/if[@target='midl']/interface">
+<xsl:template match=" library/application/interface
+                    | library/application/if[@target='midl']/interface
+                    | library/if[@target='midl']/application/interface
+                    ">
   <Interface>
 <!-- Interface Id="{00C8F974-92C5-44A1-8F3F-702469FDD04B}" Name="IDHCPServer" ProxyStubClassId32="{0BB3B78C-1807-4249-5BA5-EA42D66AF0BF}" NumMethods="33" -->
     <xsl:attribute name="Id">

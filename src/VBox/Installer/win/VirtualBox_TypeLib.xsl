@@ -68,7 +68,7 @@
       <xsl:attribute name="Language">0</xsl:attribute>
       <xsl:attribute name="Description"><xsl:value-of select="@name"/></xsl:attribute>
       <xsl:attribute name="HelpDirectory"><xsl:text>msm_VBoxApplicationFolder</xsl:text></xsl:attribute>
-      <xsl:apply-templates select="application"/>
+      <xsl:apply-templates select="application | if[@target='midl']/application"/>
     </TypeLib>
   </Include>
 </xsl:template>
