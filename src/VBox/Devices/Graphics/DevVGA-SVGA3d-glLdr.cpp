@@ -108,7 +108,14 @@ static void *MyGLXGetProcAddress(const char *pszSymbol)
 
     if (s_glXGetProcAddress)
     {
-        return glXGetProcAddress((const GLubyte *)pszSymbol);
+        void *p = glXGetProcAddress((const GLubyte *)pszSymbol);
+        if (RT_VALID_PTR(p))
+            return p;
+
+        /* Might be an exported symbol. */
+        rc = RTLdrGetSymbol(s_hGL, pszSymbol, (void **)&p);
+        if (RT_SUCCESS(rc))
+            return p;
     }
 
     return 0;
@@ -188,6 +195,18 @@ int glLdrInit(void)
     pfn_glTexSubImage2D = 0;
     pfn_glVertexPointer = 0;
     pfn_glViewport = 0;
+#ifdef RT_OS_WINDOWS
+    pfn_wglCreateContext = 0;
+    pfn_wglDeleteContext = 0;
+    pfn_wglMakeCurrent = 0;
+    pfn_wglShareLists = 0;
+#elif defined(RT_OS_LINUX)
+    pfn_glXQueryVersion = 0;
+    pfn_glXChooseVisual = 0;
+    pfn_glXCreateContext = 0;
+    pfn_glXMakeCurrent = 0;
+    pfn_glXDestroyContext = 0;
+#endif
 
     GLGETPROC_(glAlphaFunc, "");
     GLGETPROC_(glBindTexture, "");
@@ -257,6 +276,12 @@ int glLdrInit(void)
     GLGETPROC_(wglDeleteContext, "");
     GLGETPROC_(wglMakeCurrent, "");
     GLGETPROC_(wglShareLists, "");
+#elif defined(RT_OS_LINUX)
+    GLGETPROC_(glXQueryVersion, "");
+    GLGETPROC_(glXChooseVisual, "");
+    GLGETPROC_(glXCreateContext, "");
+    GLGETPROC_(glXMakeCurrent, "");
+    GLGETPROC_(glXDestroyContext, "");
 #endif
     return VINF_SUCCESS;
 }

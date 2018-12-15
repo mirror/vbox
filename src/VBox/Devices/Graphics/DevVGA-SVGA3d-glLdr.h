@@ -305,6 +305,26 @@ GLPFN BOOL (WINAPI *pfn_wglMakeCurrent)(HDC, HGLRC);
 
 GLPFN BOOL (WINAPI *pfn_wglShareLists)(HGLRC, HGLRC);
 #define wglShareLists pfn_wglShareLists
+
+#elif defined(RT_OS_LINUX)
+/*
+ * GLX
+ */
+GLPFN Bool (* pfn_glXQueryVersion)(Display * dpy,  int * major,  int * minor);
+#define glXQueryVersion pfn_glXQueryVersion
+
+GLPFN XVisualInfo* (* pfn_glXChooseVisual)(Display * dpy,  int screen,  int * attribList);
+#define glXChooseVisual pfn_glXChooseVisual
+
+GLPFN GLXContext (* pfn_glXCreateContext)(Display * dpy,  XVisualInfo * vis,  GLXContext shareList,  Bool direct);
+#define glXCreateContext pfn_glXCreateContext
+
+GLPFN Bool (* pfn_glXMakeCurrent)(Display * dpy,  GLXDrawable drawable,  GLXContext ctx);
+#define glXMakeCurrent pfn_glXMakeCurrent
+
+GLPFN void (* pfn_glXDestroyContext)(Display * dpy,  GLXContext ctx);
+#define glXDestroyContext pfn_glXDestroyContext
+
 #endif
 
 #endif
