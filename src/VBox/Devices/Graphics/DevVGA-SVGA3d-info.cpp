@@ -1826,28 +1826,66 @@ static int vmsvga3dInfoBmpWrite(const char *pszFilename, const void *pvBits, int
     if (!f)
         return VERR_FILE_NOT_FOUND;
 
-    BITMAPFILEHEADER bf;
-    bf.bfType = 'MB';
-    bf.bfSize = sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER) + cbBitmap;
-    bf.bfReserved1 = 0;
-    bf.bfReserved2 = 0;
-    bf.bfOffBits = sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER);
+    if (cbPixel == 4)
+    {
+        BITMAPV4HEADER bh;
+        RT_ZERO(bh);
+        bh.bV4Size          = sizeof(bh);
+        bh.bV4Width         = w;
+        bh.bV4Height        = -h;
+        bh.bV4Planes        = 1;
+        bh.bV4BitCount      = 32;
+        bh.bV4V4Compression = BI_BITFIELDS;
+        bh.bV4SizeImage     = cbBitmap;
+        bh.bV4XPelsPerMeter = 2835;
+        bh.bV4YPelsPerMeter = 2835;
+        // bh.bV4ClrUsed       = 0;
+        // bh.bV4ClrImportant  = 0;
+        bh.bV4RedMask       = 0x00ff0000;
+        bh.bV4GreenMask     = 0x0000ff00;
+        bh.bV4BlueMask      = 0x000000ff;
+        bh.bV4AlphaMask     = 0xff000000;
+        bh.bV4CSType        = LCS_WINDOWS_COLOR_SPACE;
+        // bh.bV4Endpoints     = {0};
+        // bh.bV4GammaRed      = 0;
+        // bh.bV4GammaGreen    = 0;
+        // bh.bV4GammaBlue     = 0;
 
-    BITMAPINFOHEADER bi;
-    bi.biSize = sizeof(bi);
-    bi.biWidth = w;
-    bi.biHeight = -h;
-    bi.biPlanes = 1;
-    bi.biBitCount = 32;
-    bi.biCompression = 0;
-    bi.biSizeImage = cbBitmap;
-    bi.biXPelsPerMeter = 0;
-    bi.biYPelsPerMeter = 0;
-    bi.biClrUsed = 0;
-    bi.biClrImportant = 0;
+        BITMAPFILEHEADER bf;
+        bf.bfType = 'MB';
+        bf.bfSize = sizeof(bf) + sizeof(bh) + cbBitmap;
+        bf.bfReserved1 = 0;
+        bf.bfReserved2 = 0;
+        bf.bfOffBits = sizeof(bf) + sizeof(bh);
 
-    fwrite(&bf, 1, sizeof(bf), f);
-    fwrite(&bi, 1, sizeof(bi), f);
+        fwrite(&bf, 1, sizeof(bf), f);
+        fwrite(&bh, 1, sizeof(bh), f);
+    }
+    else
+    {
+        BITMAPFILEHEADER bf;
+        bf.bfType = 'MB';
+        bf.bfSize = sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER) + cbBitmap;
+        bf.bfReserved1 = 0;
+        bf.bfReserved2 = 0;
+        bf.bfOffBits = sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER);
+
+        BITMAPINFOHEADER bi;
+        bi.biSize = sizeof(bi);
+        bi.biWidth = w;
+        bi.biHeight = -h;
+        bi.biPlanes = 1;
+        bi.biBitCount = 32;
+        bi.biCompression = 0;
+        bi.biSizeImage = cbBitmap;
+        bi.biXPelsPerMeter = 0;
+        bi.biYPelsPerMeter = 0;
+        bi.biClrUsed = 0;
+        bi.biClrImportant = 0;
+
+        fwrite(&bf, 1, sizeof(bf), f);
+        fwrite(&bi, 1, sizeof(bi), f);
+    }
 
     if (cbPixel == 4)
     {
