@@ -81,7 +81,7 @@ static void *MyNSGLGetProcAddress(const char *pszSymbol)
 
 #else
 # define OGLGETPROCADDRESS MyGLXGetProcAddress
-static void *MyGLXGetProcAddress(const char *pszSymbol)
+static PFNRT MyGLXGetProcAddress(const char *pszSymbol)
 {
     int rc;
 
@@ -98,7 +98,7 @@ static void *MyGLXGetProcAddress(const char *pszSymbol)
         }
     }
 
-    typedef void * (* PFNGLXGETPROCADDRESS)(const GLubyte * procName);
+    typedef PFNRT (* PFNGLXGETPROCADDRESS)(const GLubyte * procName);
     static PFNGLXGETPROCADDRESS s_glXGetProcAddress = NULL;
     if (s_glXGetProcAddress == NULL)
     {
@@ -111,7 +111,7 @@ static void *MyGLXGetProcAddress(const char *pszSymbol)
         }
     }
 
-    void *p = s_glXGetProcAddress((const GLubyte *)pszSymbol);
+    PFNRT p = s_glXGetProcAddress((const GLubyte *)pszSymbol);
     if (RT_VALID_PTR(p))
         return p;
 
@@ -125,7 +125,7 @@ static void *MyGLXGetProcAddress(const char *pszSymbol)
 #endif
 
 #define GLGETPROC_(ProcName, NameSuffix) do { \
-    *(void **)&pfn_##ProcName = OGLGETPROCADDRESS(#ProcName NameSuffix); \
+    *(PFNRT *)&pfn_##ProcName = OGLGETPROCADDRESS(#ProcName NameSuffix); \
     AssertLogRelMsgReturn(pfn_##ProcName, ("%s missing\n", #ProcName NameSuffix), VERR_NOT_IMPLEMENTED); \
 } while(0)
 
@@ -288,7 +288,7 @@ int glLdrInit(void)
     return VINF_SUCCESS;
 }
 
-void *glLdrGetProcAddress(const char *pszSymbol)
+PFNRT glLdrGetProcAddress(const char *pszSymbol)
 {
     return OGLGETPROCADDRESS(pszSymbol);
 }

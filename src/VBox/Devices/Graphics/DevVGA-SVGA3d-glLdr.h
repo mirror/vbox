@@ -22,6 +22,8 @@
 # error "This include file is for VMSVGA3D_OPENGL."
 #endif
 
+#include <iprt/types.h>
+
 /** @todo VBOX_VMSVGA3D_GL_HACK_LEVEL is not necessary when dynamic loading is used. */
 
 #ifdef RT_OS_WINDOWS
@@ -78,7 +80,7 @@ typedef void (APIENTRYP PFNGLGETPROGRAMIVARBPROC) (GLenum target, GLenum pname, 
 /* Load OpenGL library and initialize function pointers. */
 int glLdrInit(void);
 /* Resolve an OpenGL function name. */
-void *glLdrGetProcAddress(const char *pszSymbol);
+PFNRT glLdrGetProcAddress(const char *pszSymbol);
 /* Get pointers to extension function. They are available on Windows only when OpenGL context is set. */
 int glLdrGetExtFunctions(void);
 
