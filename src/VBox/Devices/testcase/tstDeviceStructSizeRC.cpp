@@ -357,7 +357,6 @@ int main()
     GEN_CHECK_OFF(VGASTATE, RefreshTimer);
     GEN_CHECK_OFF(VGASTATE, pDevInsR0);
 #ifdef VBOX_WITH_VMSVGA
-    GEN_CHECK_OFF(VGASTATE, svga.u64HostWindowId);
     GEN_CHECK_OFF(VGASTATE, svga.pFIFOR3);
     GEN_CHECK_OFF(VGASTATE, svga.pFIFOR0);
     GEN_CHECK_OFF(VGASTATE, svga.pSvgaR3State);

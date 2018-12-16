@@ -399,7 +399,6 @@ int main()
 #ifdef VBOX_WITH_VMSVGA
     CHECK_SIZE(VMSVGAState, RT_ALIGN_Z(sizeof(VMSVGAState), 8));
     CHECK_MEMBER_ALIGNMENT(VGASTATE, svga, 8);
-    CHECK_MEMBER_ALIGNMENT(VGASTATE, svga.u64HostWindowId, 8);
     CHECK_MEMBER_ALIGNMENT(VGASTATE, svga.au32ScratchRegion, 8);
     CHECK_MEMBER_ALIGNMENT(VGASTATE, svga.StatRegBitsPerPixelWr, 8);
 #endif

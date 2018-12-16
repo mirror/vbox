@@ -2965,8 +2965,6 @@ int vmsvga3dContextDefineOgl(PVGASTATE pThis, uint32_t cid, uint32_t fFlags)
     for (uint32_t i = 0; i < RT_ELEMENTS(pContext->state.aRenderTargets); i++)
         pContext->state.aRenderTargets[i] = SVGA3D_INVALID_ID;
 
-    AssertReturn(pThis->svga.u64HostWindowId, VERR_INTERNAL_ERROR);
-
 #ifdef RT_OS_WINDOWS
     /* Create a context window with minimal 4x4 size. We will never use the swapchain
      * to present the rendered image. Rendered images from the guest will be copied to

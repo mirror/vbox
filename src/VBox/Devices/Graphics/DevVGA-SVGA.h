@@ -162,8 +162,6 @@ typedef struct VMSVGA3DSTATE *PVMSVGA3DSTATE;
  */
 typedef struct VMSVGAState
 {
-    /** The host window handle */
-    uint64_t                    u64HostWindowId;
     /** The R3 FIFO pointer. */
     R3PTRTYPE(uint32_t *)       pFIFOR3;
     /** The R0 FIFO pointer. */

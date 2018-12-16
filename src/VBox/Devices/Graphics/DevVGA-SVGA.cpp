@@ -475,7 +475,6 @@ static SSMFIELD const g_aVMSVGAR3STATEFields[] =
  */
 static SSMFIELD const g_aVGAStateSVGAFields[] =
 {
-    SSMFIELD_ENTRY_IGNORE(          VMSVGAState, u64HostWindowId),
     SSMFIELD_ENTRY_IGN_HCPTR(       VMSVGAState, pFIFOR3),
     SSMFIELD_ENTRY_IGN_HCPTR(       VMSVGAState, pFIFOR0),
     SSMFIELD_ENTRY_IGN_HCPTR(       VMSVGAState, pSvgaR3State),
@@ -5215,9 +5214,6 @@ static DECLCALLBACK(void) vmsvgaR3Info(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, c
 
 # ifdef VBOX_WITH_VMSVGA3D
     pHlp->pfnPrintf(pHlp, "3D enabled:         %RTbool\n", pThis->svga.f3DEnabled);
-    pHlp->pfnPrintf(pHlp, "Host windows ID:    %#RX64\n", pThis->svga.u64HostWindowId);
-    if (pThis->svga.u64HostWindowId != 0)
-        vmsvga3dInfoHostWindow(pHlp, pThis->svga.u64HostWindowId);
 # endif
 }
 

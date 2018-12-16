@@ -6193,7 +6193,6 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
 #endif
 #ifdef VBOX_WITH_VMSVGA3D
                                           "VMSVGA3dEnabled\0"
-                                          "HostWindowId\0"
 #endif
                                           "SuppressNewYearSplash\0"
                                           "3DEnabled\0"
@@ -6250,10 +6249,7 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
 #ifdef VBOX_WITH_VMSVGA3D
     rc = CFGMR3QueryBoolDef(pCfg, "VMSVGA3dEnabled", &pThis->svga.f3DEnabled, false);
     AssertLogRelRCReturn(rc, rc);
-    rc = CFGMR3QueryU64Def(pCfg, "HostWindowId", &pThis->svga.u64HostWindowId, 0);
-    AssertLogRelRCReturn(rc, rc);
     Log(("VMSVGA: VMSVGA3dEnabled = %d\n", pThis->svga.f3DEnabled));
-    Log(("VMSVGA: HostWindowId    = 0x%x\n", pThis->svga.u64HostWindowId));
 #endif
 
     pThis->pDevInsR3 = pDevIns;
