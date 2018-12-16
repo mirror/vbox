@@ -3816,18 +3816,6 @@ int Console::i_configGraphicsController(PCFGMNODE pDevices,
             if (enmGraphicsController == GraphicsControllerType_VMSVGA)
                 InsertConfigInteger(pCfg, "VMSVGAPciId", true);
 #ifdef VBOX_WITH_VMSVGA3D
-            IFramebuffer *pFramebuffer = NULL;
-            hrc = i_getDisplay()->QueryFramebuffer(0, &pFramebuffer);
-            if (SUCCEEDED(hrc) && pFramebuffer)
-            {
-                LONG64 winId = 0;
-                /** @todo deal with multimonitor setup */
-                /** @todo The device should not need "HostWindowId". */
-                // Assert(cMonitorCount == 1);
-                hrc = pFramebuffer->COMGETTER(WinId)(&winId);
-                InsertConfigInteger(pCfg, "HostWindowId", winId);
-                pFramebuffer->Release();
-            }
             InsertConfigInteger(pCfg, "VMSVGA3dEnabled", f3DEnabled);
 #else
             LogRel(("VMSVGA3d not available in this build!\n"));
