@@ -358,20 +358,20 @@ static bool rtVfsMountIsFat(PCFATBOOTSECTOR pBootSector, uint8_t const *pbRaw, s
  */
 static bool rtVfsMountIsExt(PCEXTSUPERBLOCK pSuperBlock)
 {
-    if (RT_LE2H_U16(pSuperBlock->u16Signature) != EXT_SIGNATURE)
+    if (RT_LE2H_U16(pSuperBlock->u16Signature) != EXT_SB_SIGNATURE)
         return false;
 
-    uint32_t cShift = RT_LE2H_U32(pSuperBlock->cBitsShiftLeftBlockSize);
+    uint32_t cShift = RT_LE2H_U32(pSuperBlock->cLogBlockSize);
     if (cShift > 54)
     {
-        Log2(("rtVfsMountIsExt: cBitsShiftLeftBlockSize=%#x: out of range\n", cShift));
+        Log2(("rtVfsMountIsExt: cLogBlockSize=%#x: out of range\n", cShift));
         return false;
     }
 
-    cShift = RT_LE2H_U32(pSuperBlock->cBitsShiftLeftFragmentSize);
+    cShift = RT_LE2H_U32(pSuperBlock->cLogClusterSize);
     if (cShift > 54)
     {
-        Log2(("rtVfsMountIsExt: cBitsShiftLeftFragmentSize=%#x: out of range\n", cShift));
+        Log2(("rtVfsMountIsExt: cLogClusterSize=%#x: out of range\n", cShift));
         return false;
     }
 
