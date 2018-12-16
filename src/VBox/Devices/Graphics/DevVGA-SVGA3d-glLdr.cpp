@@ -80,7 +80,6 @@ static void *MyNSGLGetProcAddress(const char *pszSymbol)
 }
 
 #else
-// # define OGLGETPROCADDRESS(x)   glXGetProcAddress((const GLubyte *)x)
 # define OGLGETPROCADDRESS MyGLXGetProcAddress
 static void *MyGLXGetProcAddress(const char *pszSymbol)
 {
@@ -89,36 +88,39 @@ static void *MyGLXGetProcAddress(const char *pszSymbol)
     static RTLDRMOD s_hGL = NULL;
     if (s_hGL == NULL)
     {
-        rc = RTLdrLoadSystem("libGL.so", /* fNoUnload = */ true, &s_hGL);
+        static const char s_szLibGL[] = "libGL.so.1";
+        rc = RTLdrLoadEx(s_szLibGL, &s_hGL, RTLDRLOAD_FLAGS_GLOBAL | RTLDRLOAD_FLAGS_NO_UNLOAD, NULL);
         if (RT_FAILURE(rc))
-           s_hGL = NULL;
-    }
-
-    typedef void(*)() (* PFNGLXGETPROCADDRESS)(const GLubyte * procName);
-    static PFNGLXGETPROCADDRESS s_glXGetProcAddress = NULL;
-    if (s_glXGetProcAddress == NULL)
-    {
-        if (s_hGL != NULL)
         {
-            rc = RTLdrGetSymbol(s_hGL, "glXGetProcAddress", (void **)&s_glXGetProcAddress);
-            if (RT_FAILURE(rc))
-               s_glXGetProcAddress = NULL;
+            LogRel(("VMSVGA3d: failed to load %s: %Rrc\n", s_szLibGL, rc));
+            s_hGL = NULL;
+            return NULL;
         }
     }
 
-    if (s_glXGetProcAddress)
+    typedef void * (* PFNGLXGETPROCADDRESS)(const GLubyte * procName);
+    static PFNGLXGETPROCADDRESS s_glXGetProcAddress = NULL;
+    if (s_glXGetProcAddress == NULL)
     {
-        void *p = glXGetProcAddress((const GLubyte *)pszSymbol);
-        if (RT_VALID_PTR(p))
-            return p;
-
-        /* Might be an exported symbol. */
-        rc = RTLdrGetSymbol(s_hGL, pszSymbol, (void **)&p);
-        if (RT_SUCCESS(rc))
-            return p;
+        rc = RTLdrGetSymbol(s_hGL, "glXGetProcAddress", (void **)&s_glXGetProcAddress);
+        if (RT_FAILURE(rc))
+        {
+            LogRel(("VMSVGA3d: failed to get glXGetProcAddress: %Rrc\n", rc));
+            s_glXGetProcAddress = NULL;
+            return NULL;
+        }
     }
 
-    return 0;
+    void *p = s_glXGetProcAddress((const GLubyte *)pszSymbol);
+    if (RT_VALID_PTR(p))
+        return p;
+
+    /* Might be an exported symbol. */
+    rc = RTLdrGetSymbol(s_hGL, pszSymbol, (void **)&p);
+    if (RT_SUCCESS(rc))
+        return p;
+
+    return NULL;
 }
 #endif
 
