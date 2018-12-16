@@ -277,7 +277,11 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
   VBoxDD_SOURCES        += Graphics/DevVGA-SVGA.cpp
  endif
  ifdef VBOX_WITH_VMSVGA3D
-  #VBOX_WITH_VMSVGA3D_DYNAMIC_LOAD = 1
+  if1of ($(KBUILD_TARGET), linux win)
+# Dynamically load 3D library (opengl32, libGL).
+# This is a temporary solution. In future the 3D backend will be in a separate library.
+VBOX_WITH_VMSVGA3D_DYNAMIC_LOAD = 1
+  endif
   VBoxDD_DEFS           += VBOX_WITH_VMSVGA3D
   VBoxDD_SOURCES        += \
   	Graphics/DevVGA-SVGA3d.cpp \
