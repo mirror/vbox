@@ -18,9 +18,10 @@
 #define VMSVGA3D_GL_DEFINE_PFN
 #include "DevVGA-SVGA3d-glLdr.h"
 
+#include <VBox/vmm/pdmdev.h>
+#include <VBox/err.h>
 #include <iprt/assert.h>
 #include <iprt/cdefs.h>
-#include <iprt/err.h>
 #include <iprt/ldr.h>
 #include <iprt/log.h>
 
@@ -125,12 +126,25 @@ static PFNRT MyGLXGetProcAddress(const char *pszSymbol)
 #endif
 
 #define GLGETPROC_(ProcName, NameSuffix) do { \
-    *(PFNRT *)&pfn_##ProcName = OGLGETPROCADDRESS(#ProcName NameSuffix); \
-    AssertLogRelMsgReturn(pfn_##ProcName, ("%s missing\n", #ProcName NameSuffix), VERR_NOT_IMPLEMENTED); \
+    *(PFNRT *)&pfn_##ProcName = pfnRet = OGLGETPROCADDRESS(#ProcName NameSuffix); \
+    if (pfnRet) { /* likely */ } \
+    else \
+    { \
+        AssertLogRelMsg(pfnRet, ("%s missing\n", #ProcName NameSuffix)); \
+        return PDMDevHlpVMSetError(pDevIns, VERR_VGA_GL_SYMBOL_NOT_FOUND, RT_SRC_POS, \
+                                   "Missing OpenGL symbol '%s'\n", #ProcName NameSuffix); \
+    } \
 } while(0)
 
-int glLdrInit(void)
+int glLdrInit(PPDMDEVINS pDevIns)
 {
+    /** @todo r=bird: Perhaps make this template include file driven? See
+     * include/VBox/dbus.h, include/VBox/dbus-calls.h and iprt/runtime-loader.h for
+     * instance.  Regardless, it would be would be nice if we could move up the
+     * RTLdrLoadSystem/dlopen bits and have separate error reporting for those,
+     * making use of VERR_VGA_GL_LOAD_FAILURE.  I can look into that, but
+     * probably only after the release is out... */
+
     pfn_glAlphaFunc = 0;
     pfn_glBindTexture = 0;
     pfn_glBlendColor = 0;
@@ -210,6 +224,7 @@ int glLdrInit(void)
     pfn_glXDestroyContext = 0;
 #endif
 
+    PFNRT pfnRet;
     GLGETPROC_(glAlphaFunc, "");
     GLGETPROC_(glBindTexture, "");
     GLGETPROC_(glBlendFunc, "");
@@ -293,8 +308,9 @@ PFNRT glLdrGetProcAddress(const char *pszSymbol)
     return OGLGETPROCADDRESS(pszSymbol);
 }
 
-int glLdrGetExtFunctions(void)
+int glLdrGetExtFunctions(PPDMDEVINS pDevIns)
 {
+    PFNRT pfnRet;
     GLGETPROC_(glBlendColor, "");
     GLGETPROC_(glBlendEquation, "");
     GLGETPROC_(glClientActiveTexture, "");

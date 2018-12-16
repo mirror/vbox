@@ -39,7 +39,7 @@
 #include "DevVGA-SVGA3d.h"
 
 #if defined(VMSVGA3D_DYNAMIC_LOAD) && defined(VMSVGA3D_OPENGL)
-#include "DevVGA-SVGA3d-glLdr.h"
+# include "DevVGA-SVGA3d-glLdr.h"
 #endif
 
 #ifdef RT_OS_WINDOWS
