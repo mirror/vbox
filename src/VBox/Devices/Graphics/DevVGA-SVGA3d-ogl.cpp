@@ -64,7 +64,7 @@
 #endif
 
 #ifdef VMSVGA3D_DYNAMIC_LOAD
-# define OGLGETPROCADDRESS glLdrGetProcAddress
+# define OGLGETPROCADDRESS(x)   glLdrGetProcAddress(x)
 #else
 #ifdef RT_OS_WINDOWS
 # define OGLGETPROCADDRESS      MyWinGetProcAddress
