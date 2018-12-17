@@ -349,6 +349,9 @@ GLPFN Window (* pfn_XDefaultRootWindow)(Display *display);
 GLPFN int (* pfn_XDestroyWindow)(Display *display, Window w);
 #define XDestroyWindow pfn_XDestroyWindow
 
+GLPFN Status (* pfn_XInitThreads)(void);
+#define XInitThreads pfn_XInitThreads
+
 GLPFN int (* pfn_XNextEvent)(Display *display, XEvent *event_return);
 #define XNextEvent pfn_XNextEvent
 

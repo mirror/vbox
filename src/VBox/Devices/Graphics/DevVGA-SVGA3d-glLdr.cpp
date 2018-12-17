@@ -187,20 +187,21 @@ int glLdrInit(PPDMDEVINS pDevIns)
     pfn_wglMakeCurrent = 0;
     pfn_wglShareLists = 0;
 #elif defined(RT_OS_LINUX)
-    pfn_glXQueryVersion = 0;
-    pfn_glXChooseVisual = 0;
-    pfn_glXCreateContext = 0;
-    pfn_glXMakeCurrent = 0;
-    pfn_glXDestroyContext = 0;
     pfn_XConfigureWindow = 0;
     pfn_XCloseDisplay = 0;
     pfn_XCreateColormap = 0;
     pfn_XCreateWindow = 0;
     pfn_XDefaultRootWindow = 0;
     pfn_XDestroyWindow = 0;
+    pfn_XInitThreads = 0;
     pfn_XNextEvent = 0;
     pfn_XOpenDisplay = 0;
     pfn_XPending = 0;
+    pfn_glXQueryVersion = 0;
+    pfn_glXChooseVisual = 0;
+    pfn_glXCreateContext = 0;
+    pfn_glXMakeCurrent = 0;
+    pfn_glXDestroyContext = 0;
 #endif
     pfn_glAlphaFunc = 0;
     pfn_glBindTexture = 0;
@@ -282,6 +283,7 @@ int glLdrInit(PPDMDEVINS pDevIns)
     X11GETPROC_(XCreateWindow);
     X11GETPROC_(XDefaultRootWindow);
     X11GETPROC_(XDestroyWindow);
+    X11GETPROC_(XInitThreads);
     X11GETPROC_(XNextEvent);
     X11GETPROC_(XOpenDisplay);
     X11GETPROC_(XPending);
@@ -354,6 +356,10 @@ int glLdrInit(PPDMDEVINS pDevIns)
     GLGETPROC_(glTexSubImage2D, "");
     GLGETPROC_(glVertexPointer, "");
     GLGETPROC_(glViewport, "");
+
+#ifdef RT_OS_LINUX
+    XInitThreads();
+#endif
     return VINF_SUCCESS;
 }
 
