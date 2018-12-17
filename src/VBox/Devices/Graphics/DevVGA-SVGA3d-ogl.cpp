@@ -3251,30 +3251,8 @@ int vmsvga3dContextDestroy(PVGASTATE pThis, uint32_t cid)
  */
 static void vmsvga3dChangeModeOneContext(PVGASTATE pThis, PVMSVGA3DSTATE pState, PVMSVGA3DCONTEXT pContext)
 {
-#ifdef RT_OS_WINDOWS
     RT_NOREF3(pThis, pState, pContext);
     /* Do nothing. The window is not used for presenting. */
-
-#elif defined(RT_OS_DARWIN)
-    /** @todo No overlay like on Windows. */
-    VMSVGASCREENOBJECT *pScreen = vmsvgaGetScreenObject(pThis, 0);
-    uint32_t const uWidth  = pScreen ? pScreen->cWidth : -1;
-    uint32_t const uHeight = pScreen ? pScreen->cHeight: -1;
-
-    RT_NOREF(pState);
-    vmsvga3dCocoaViewSetSize(pContext->cocoaView, uWidth, uHeight);
-
-#elif defined(RT_OS_LINUX)
-    /** @todo No overlay like on Windows. */
-    VMSVGASCREENOBJECT *pScreen = vmsvgaGetScreenObject(pThis, 0);
-    uint32_t const uWidth  = pScreen ? pScreen->cWidth : -1;
-    uint32_t const uHeight = pScreen ? pScreen->cHeight: -1;
-
-    XWindowChanges wc;
-    wc.width = uWidth;
-    wc.height = uHeight;
-    XConfigureWindow(pState->display, pContext->window, CWWidth | CWHeight, &wc);
-#endif
 }
 
 /* Handle resize */
