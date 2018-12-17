@@ -132,7 +132,7 @@ static PFNRT MyX11GetProcAddress(const char *pszSymbol)
     if (s_hX11 == NULL)
     {
         static const char s_szLibX11[] = "libX11.so.6";
-        rc = RTLdrLoadEx(s_szLibX11, &s_hX11, RTLDRLOAD_FLAGS_GLOBAL | RTLDRLOAD_FLAGS_NO_UNLOAD, NULL);
+        rc = RTLdrLoadEx(s_szLibX11, &s_hX11, RTLDRLOAD_FLAGS_LOCAL | RTLDRLOAD_FLAGS_NO_UNLOAD, NULL);
         if (RT_FAILURE(rc))
         {
             LogRel(("VMSVGA3d: failed to load %s: %Rrc\n", s_szLibX11, rc));
@@ -181,6 +181,27 @@ int glLdrInit(PPDMDEVINS pDevIns)
      * making use of VERR_VGA_GL_LOAD_FAILURE.  I can look into that, but
      * probably only after the release is out... */
 
+#ifdef RT_OS_WINDOWS
+    pfn_wglCreateContext = 0;
+    pfn_wglDeleteContext = 0;
+    pfn_wglMakeCurrent = 0;
+    pfn_wglShareLists = 0;
+#elif defined(RT_OS_LINUX)
+    pfn_glXQueryVersion = 0;
+    pfn_glXChooseVisual = 0;
+    pfn_glXCreateContext = 0;
+    pfn_glXMakeCurrent = 0;
+    pfn_glXDestroyContext = 0;
+    pfn_XConfigureWindow = 0;
+    pfn_XCloseDisplay = 0;
+    pfn_XCreateColormap = 0;
+    pfn_XCreateWindow = 0;
+    pfn_XDefaultRootWindow = 0;
+    pfn_XDestroyWindow = 0;
+    pfn_XNextEvent = 0;
+    pfn_XOpenDisplay = 0;
+    pfn_XPending = 0;
+#endif
     pfn_glAlphaFunc = 0;
     pfn_glBindTexture = 0;
     pfn_glBlendColor = 0;
@@ -247,29 +268,29 @@ int glLdrInit(PPDMDEVINS pDevIns)
     pfn_glTexSubImage2D = 0;
     pfn_glVertexPointer = 0;
     pfn_glViewport = 0;
-#ifdef RT_OS_WINDOWS
-    pfn_wglCreateContext = 0;
-    pfn_wglDeleteContext = 0;
-    pfn_wglMakeCurrent = 0;
-    pfn_wglShareLists = 0;
-#elif defined(RT_OS_LINUX)
-    pfn_glXQueryVersion = 0;
-    pfn_glXChooseVisual = 0;
-    pfn_glXCreateContext = 0;
-    pfn_glXMakeCurrent = 0;
-    pfn_glXDestroyContext = 0;
-    pfn_XConfigureWindow = 0;
-    pfn_XCloseDisplay = 0;
-    pfn_XCreateColormap = 0;
-    pfn_XCreateWindow = 0;
-    pfn_XDefaultRootWindow = 0;
-    pfn_XDestroyWindow = 0;
-    pfn_XNextEvent = 0;
-    pfn_XOpenDisplay = 0;
-    pfn_XPending = 0;
-#endif
 
     PFNRT pfnRet;
+#ifdef RT_OS_WINDOWS
+    GLGETPROC_(wglCreateContext, "");
+    GLGETPROC_(wglDeleteContext, "");
+    GLGETPROC_(wglMakeCurrent, "");
+    GLGETPROC_(wglShareLists, "");
+#elif defined(RT_OS_LINUX)
+    X11GETPROC_(XConfigureWindow);
+    X11GETPROC_(XCloseDisplay);
+    X11GETPROC_(XCreateColormap);
+    X11GETPROC_(XCreateWindow);
+    X11GETPROC_(XDefaultRootWindow);
+    X11GETPROC_(XDestroyWindow);
+    X11GETPROC_(XNextEvent);
+    X11GETPROC_(XOpenDisplay);
+    X11GETPROC_(XPending);
+    GLGETPROC_(glXQueryVersion, "");
+    GLGETPROC_(glXChooseVisual, "");
+    GLGETPROC_(glXCreateContext, "");
+    GLGETPROC_(glXMakeCurrent, "");
+    GLGETPROC_(glXDestroyContext, "");
+#endif
     GLGETPROC_(glAlphaFunc, "");
     GLGETPROC_(glBindTexture, "");
     GLGETPROC_(glBlendFunc, "");
@@ -333,27 +354,6 @@ int glLdrInit(PPDMDEVINS pDevIns)
     GLGETPROC_(glTexSubImage2D, "");
     GLGETPROC_(glVertexPointer, "");
     GLGETPROC_(glViewport, "");
-#ifdef RT_OS_WINDOWS
-    GLGETPROC_(wglCreateContext, "");
-    GLGETPROC_(wglDeleteContext, "");
-    GLGETPROC_(wglMakeCurrent, "");
-    GLGETPROC_(wglShareLists, "");
-#elif defined(RT_OS_LINUX)
-    GLGETPROC_(glXQueryVersion, "");
-    GLGETPROC_(glXChooseVisual, "");
-    GLGETPROC_(glXCreateContext, "");
-    GLGETPROC_(glXMakeCurrent, "");
-    GLGETPROC_(glXDestroyContext, "");
-    X11GETPROC_(XConfigureWindow);
-    X11GETPROC_(XCloseDisplay);
-    X11GETPROC_(XCreateColormap);
-    X11GETPROC_(XCreateWindow);
-    X11GETPROC_(XDefaultRootWindow);
-    X11GETPROC_(XDestroyWindow);
-    X11GETPROC_(XNextEvent);
-    X11GETPROC_(XOpenDisplay);
-    X11GETPROC_(XPending);
-#endif
     return VINF_SUCCESS;
 }
 

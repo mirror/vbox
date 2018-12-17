@@ -3031,19 +3031,16 @@ int vmsvga3dContextDefineOgl(PVGASTATE pThis, uint32_t cid, uint32_t fFlags)
     {
         /* get an X display and make sure we have glX 1.3 */
         pState->display = XOpenDisplay(0);
-        Assert(pState->display);
+        AssertLogRelMsgReturn(pState->display, ("XOpenDisplay failed"), VERR_INTERNAL_ERROR);
         int glxMajor, glxMinor;
         Bool ret = glXQueryVersion(pState->display, &glxMajor, &glxMinor);
-        AssertMsgReturn(ret && glxMajor == 1 && glxMinor >= 3, ("glX >=1.3 not present"), VERR_INTERNAL_ERROR);
+        AssertLogRelMsgReturn(ret && glxMajor == 1 && glxMinor >= 3, ("glX >=1.3 not present"), VERR_INTERNAL_ERROR);
         /* start our X event handling thread */
         rc = RTThreadCreate(&pState->pWindowThread, vmsvga3dXEventThread, pState, 0, RTTHREADTYPE_GUI, RTTHREADFLAGS_WAITABLE, "VMSVGA3DXEVENT");
-        if (RT_FAILURE(rc))
-        {
-            AssertMsgFailed(("%s: Async IO Thread creation for 3d window handling failed rc=%d\n", __FUNCTION__, rc));
-            return rc;
-        }
+        AssertLogRelMsgReturn(RT_SUCCESS(rc), ("Async IO Thread creation for 3d window handling failed rc=%Rrc\n", rc), rc);
     }
 
+    Window defaultRootWindow = XDefaultRootWindow(pState->display);
     /* Create a small 4x4 window required for GL context. */
     int attrib[] =
     {
@@ -3056,13 +3053,15 @@ int vmsvga3dContextDefineOgl(PVGASTATE pThis, uint32_t cid, uint32_t fFlags)
         None
     };
     XVisualInfo *vi = glXChooseVisual(pState->display, DefaultScreen(pState->display), attrib);
+    AssertLogRelMsgReturn(vi, ("glXChooseVisual failed"), VERR_INTERNAL_ERROR);
     XSetWindowAttributes swa;
-    swa.colormap = XCreateColormap(pState->display, XDefaultRootWindow(pState->display), vi->visual, AllocNone);
+    swa.colormap = XCreateColormap(pState->display, defaultRootWindow, vi->visual, AllocNone);
+    AssertLogRelMsgReturn(swa.colormap, ("XCreateColormap failed"), VERR_INTERNAL_ERROR);
     swa.border_pixel = 0;
     swa.background_pixel = 0;
     swa.event_mask = StructureNotifyMask;
     unsigned long flags = CWBorderPixel | CWBackPixel | CWColormap | CWEventMask;
-    pContext->window = XCreateWindow(pState->display, XDefaultRootWindow(pState->display),
+    pContext->window = XCreateWindow(pState->display, defaultRootWindow,
                                      0, 0, 4, 4,
                                      0, vi->depth, InputOutput,
                                      vi->visual, flags, &swa);
