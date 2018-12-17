@@ -940,18 +940,6 @@ int vmsvga3dPowerOn(PVGASTATE pThis)
     const char *pszShadingLanguageVersion = (const char *)glGetString(GL_SHADING_LANGUAGE_VERSION);
 #endif
     float v = pszShadingLanguageVersion ? atof(pszShadingLanguageVersion) : 0.0f;
-    if (v >= 3.30f)
-    {
-        pState->caps.vertexShaderVersion   = SVGA3DVSVERSION_40;
-        pState->caps.fragmentShaderVersion = SVGA3DPSVERSION_40;
-    }
-    else
-    if (v >= 1.20f)
-    {
-        pState->caps.vertexShaderVersion   = SVGA3DVSVERSION_20;
-        pState->caps.fragmentShaderVersion = SVGA3DPSVERSION_20;
-    }
-    else
     if (   vmsvga3dCheckGLExtension(pState, 0.0f, " GL_NV_gpu_program4 ")
         || strstr(pState->pszOtherExtensions, " GL_NV_gpu_program4 "))
     {
@@ -980,6 +968,19 @@ int vmsvga3dPowerOn(PVGASTATE pThis)
         LogRel(("VMSVGA3D: WARNING: unknown support for assembly shaders!!\n"));
         pState->caps.vertexShaderVersion   = SVGA3DVSVERSION_11;
         pState->caps.fragmentShaderVersion = SVGA3DPSVERSION_11;
+    }
+
+    /* Now check the shading language version, in case it indicates a higher supported version. */
+    if (v >= 3.30f)
+    {
+        pState->caps.vertexShaderVersion   = RT_MAX(pState->caps.vertexShaderVersion,   SVGA3DVSVERSION_40);
+        pState->caps.fragmentShaderVersion = RT_MAX(pState->caps.fragmentShaderVersion, SVGA3DPSVERSION_40);
+    }
+    else
+    if (v >= 1.20f)
+    {
+        pState->caps.vertexShaderVersion   = RT_MAX(pState->caps.vertexShaderVersion,   SVGA3DVSVERSION_20);
+        pState->caps.fragmentShaderVersion = RT_MAX(pState->caps.fragmentShaderVersion, SVGA3DPSVERSION_20);
     }
 
     if (   !vmsvga3dCheckGLExtension(pState, 0.0f, " GL_ARB_vertex_array_bgra ")
