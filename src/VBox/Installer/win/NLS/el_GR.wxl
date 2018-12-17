@@ -158,7 +158,7 @@
     <String Id="BrowseDlg_ChangeCurFolder">Αλλαγή τρέχοντος φακέλου προορισμού</String>
     <String Id="BrowseDlg_UpOneLevelTooltip">Ένα επίπεδο πιο πάνω</String>
     <String Id="BrowseDlg_CreateNewFolderTooltip">Δημιουργία νέου φακέλου</String>
-    <String Id="BrowseDlg_LookIn">& Αναζήτηση σε:</String>
+    <String Id="BrowseDlg_LookIn">Αναζήτηση σε:</String>
     <String Id="BrowseDlg_FolderName">Όνομα φακέλου:</String>
 
     <!---->
