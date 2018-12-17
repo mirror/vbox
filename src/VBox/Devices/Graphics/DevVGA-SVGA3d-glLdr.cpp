@@ -123,6 +123,42 @@ static PFNRT MyGLXGetProcAddress(const char *pszSymbol)
 
     return NULL;
 }
+
+static PFNRT MyX11GetProcAddress(const char *pszSymbol)
+{
+    int rc;
+
+    static RTLDRMOD s_hX11 = NULL;
+    if (s_hX11 == NULL)
+    {
+        static const char s_szLibX11[] = "libX11.so.6";
+        rc = RTLdrLoadEx(s_szLibX11, &s_hX11, RTLDRLOAD_FLAGS_GLOBAL | RTLDRLOAD_FLAGS_NO_UNLOAD, NULL);
+        if (RT_FAILURE(rc))
+        {
+            LogRel(("VMSVGA3d: failed to load %s: %Rrc\n", s_szLibX11, rc));
+            s_hX11 = NULL;
+            return NULL;
+        }
+    }
+
+    PFNRT p = NULL;
+    rc = RTLdrGetSymbol(s_hX11, pszSymbol, (void **)&p);
+    if (RT_SUCCESS(rc))
+        return p;
+
+    return NULL;
+}
+
+#define X11GETPROC_(ProcName) do { \
+    *(PFNRT *)&pfn_##ProcName = pfnRet = MyX11GetProcAddress(#ProcName); \
+    if (pfnRet) { /* likely */ } \
+    else \
+    { \
+        AssertLogRelMsg(pfnRet, ("%s missing\n", #ProcName)); \
+        return PDMDevHlpVMSetError(pDevIns, VERR_VGA_GL_SYMBOL_NOT_FOUND, RT_SRC_POS, \
+                                   "Missing libX11 symbol '%s'\n", #ProcName); \
+    } \
+} while(0)
 #endif
 
 #define GLGETPROC_(ProcName, NameSuffix) do { \
@@ -222,6 +258,15 @@ int glLdrInit(PPDMDEVINS pDevIns)
     pfn_glXCreateContext = 0;
     pfn_glXMakeCurrent = 0;
     pfn_glXDestroyContext = 0;
+    pfn_XConfigureWindow = 0;
+    pfn_XCloseDisplay = 0;
+    pfn_XCreateColormap = 0;
+    pfn_XCreateWindow = 0;
+    pfn_XDefaultRootWindow = 0;
+    pfn_XDestroyWindow = 0;
+    pfn_XNextEvent = 0;
+    pfn_XOpenDisplay = 0;
+    pfn_XPending = 0;
 #endif
 
     PFNRT pfnRet;
@@ -299,6 +344,15 @@ int glLdrInit(PPDMDEVINS pDevIns)
     GLGETPROC_(glXCreateContext, "");
     GLGETPROC_(glXMakeCurrent, "");
     GLGETPROC_(glXDestroyContext, "");
+    X11GETPROC_(XConfigureWindow);
+    X11GETPROC_(XCloseDisplay);
+    X11GETPROC_(XCreateColormap);
+    X11GETPROC_(XCreateWindow);
+    X11GETPROC_(XDefaultRootWindow);
+    X11GETPROC_(XDestroyWindow);
+    X11GETPROC_(XNextEvent);
+    X11GETPROC_(XOpenDisplay);
+    X11GETPROC_(XPending);
 #endif
     return VINF_SUCCESS;
 }

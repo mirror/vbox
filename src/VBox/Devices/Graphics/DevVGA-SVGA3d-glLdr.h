@@ -327,6 +327,37 @@ GLPFN Bool (* pfn_glXMakeCurrent)(Display * dpy,  GLXDrawable drawable,  GLXCont
 GLPFN void (* pfn_glXDestroyContext)(Display * dpy,  GLXContext ctx);
 #define glXDestroyContext pfn_glXDestroyContext
 
+/*
+ * X11
+ */
+GLPFN int (* pfn_XConfigureWindow)(Display *display, Window w, unsigned value_mask, XWindowChanges *changes);
+#define XConfigureWindow pfn_XConfigureWindow
+
+GLPFN int (* pfn_XCloseDisplay)(Display *display);
+#define XCloseDisplay pfn_XCloseDisplay
+
+GLPFN Colormap (* pfn_XCreateColormap)(Display *display, Window w, Visual *visual, int alloc);
+#define XCreateColormap pfn_XCreateColormap
+
+GLPFN Window (* pfn_XCreateWindow)(Display *display, Window parent, int x, int y, unsigned int width, unsigned int height,
+    unsigned int border_width, int depth, unsigned int window_class, Visual *visual, unsigned long valuemask, XSetWindowAttributes *attributes);
+#define XCreateWindow pfn_XCreateWindow
+
+GLPFN Window (* pfn_XDefaultRootWindow)(Display *display);
+#define XDefaultRootWindow pfn_XDefaultRootWindow
+
+GLPFN int (* pfn_XDestroyWindow)(Display *display, Window w);
+#define XDestroyWindow pfn_XDestroyWindow
+
+GLPFN int (* pfn_XNextEvent)(Display *display, XEvent *event_return); 
+#define XNextEvent pfn_XNextEvent
+
+GLPFN Display *(* pfn_XOpenDisplay)(char *display_name);
+#define XOpenDisplay pfn_XOpenDisplay
+
+GLPFN int (* pfn_XPending)(Display *display);
+#define XPending pfn_XPending
+
 #endif
 
 #endif
