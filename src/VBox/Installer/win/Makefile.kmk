@@ -55,7 +55,7 @@ VBOX_WIN_INST_REPACK_DIR   := $(PATH_OUT)/repack
 
 # Note: en_US *must* come first for the dependency file generation.
 ifndef VBOX_INSTALLER_LANGUAGES
- VBOX_INSTALLER_LANGUAGES   = en_US de_DE fr_FR it_IT tr_TR zh_TW
+ VBOX_INSTALLER_LANGUAGES   = en_US de_DE el_GR fr_FR it_IT tr_TR zh_TW
  VBOX_INSTALLER_LANGUAGES  += $(VBOX_INSTALLER_ADD_LANGUAGES)
 endif
 
@@ -79,6 +79,7 @@ endif
 #
 VBOX_BRAND_en_US_LANG_ID ?= 1033
 VBOX_BRAND_de_DE_LANG_ID ?= 1031
+VBOX_BRAND_el_GR_LANG_ID ?= 1032
 VBOX_BRAND_fa_IR_LANG_ID ?= 1065
 VBOX_BRAND_fr_FR_LANG_ID ?= 1036
 VBOX_BRAND_it_IT_LANG_ID ?= 1040
@@ -88,7 +89,13 @@ VBOX_BRAND_zh_TW_LANG_ID ?= 1028
 # Standard language names (in the native language), to be extended as we go.
 # VBOX_BRAND_$(lang)_LANG_NAME must be defined for each language which occurs
 # in either VBOX_LICENSE_ADD_LANGUAGES or VBOX_MANUAL_ADD_LANGUAGES.
+VBOX_BRAND_en_US_LANG_NAME := English
+VBOX_BRAND_de_DE_LANG_NAME := Deutsch
+VBOX_BRAND_el_GR_LANG_NAME := Ελληνικά 
 VBOX_BRAND_fr_FR_LANG_NAME := Français
+VBOX_BRAND_it_IT_LANG_NAME := Italiano
+VBOX_BRAND_tr_TR_LANG_NAME := Türkçe
+VBOX_BRAND_zh_TW_LANG_NAME := 正體中文
 
 
 #
