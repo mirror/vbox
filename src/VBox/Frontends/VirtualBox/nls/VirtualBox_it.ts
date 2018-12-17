@@ -360,15 +360,15 @@
     </message>
     <message>
         <source>Full</source>
-        <translation type="unfinished">Completo</translation>
+        <translation>Completo</translation>
     </message>
     <message>
         <source>Read-only</source>
-        <translation type="unfinished">Sola lettura</translation>
+        <translation>Sola lettura</translation>
     </message>
     <message>
         <source>Yes</source>
-        <translation type="unfinished">Sì</translation>
+        <translation>Sì</translation>
     </message>
 </context>
 <context>
@@ -2529,59 +2529,59 @@
     </message>
     <message>
         <source>Options</source>
-        <translation type="unfinished"></translation>
+        <translation>Opzioni</translation>
     </message>
     <message>
         <source>Open panel with file manager options</source>
-        <translation type="unfinished"></translation>
+        <translation>Apri pannello con le impostazioni del gestore file</translation>
     </message>
     <message>
         <source>Open the file manager</source>
-        <translation type="unfinished"></translation>
+        <translation>Apri il gestore file</translation>
     </message>
     <message>
         <source>Open the file manager host submenu</source>
-        <translation type="unfinished"></translation>
+        <translation>Apri il sottomenu del gestore file dell&apos;host</translation>
     </message>
     <message>
         <source>Open the file manager guest submenu</source>
-        <translation type="unfinished"></translation>
+        <translation>Apri il sottomenu del gestore file del guest</translation>
     </message>
     <message>
         <source>Open File Manager Options</source>
-        <translation type="unfinished"></translation>
+        <translation>Apri opzioni del gestore file</translation>
     </message>
     <message>
         <source>Open panel with file manager log</source>
-        <translation type="unfinished"></translation>
+        <translation>Apri pannello con i log del gestore file</translation>
     </message>
     <message>
         <source>Open File Manager Log</source>
-        <translation type="unfinished"></translation>
+        <translation>Apri il log del gestore file</translation>
     </message>
     <message>
         <source>Operations</source>
-        <translation type="unfinished"></translation>
+        <translation>Operazioni</translation>
     </message>
     <message>
         <source>Open panel with file manager operations</source>
-        <translation type="unfinished"></translation>
+        <translation>Apri pannello con le operazioni del gestore file</translation>
     </message>
     <message>
         <source>Open File Manager Operations</source>
-        <translation type="unfinished"></translation>
+        <translation>Apri operazioni del gestore file</translation>
     </message>
     <message>
         <source>Open panel with file manager session</source>
-        <translation type="unfinished"></translation>
+        <translation>Apri pannello con la sessione del gestore file</translation>
     </message>
     <message>
         <source>Go Up</source>
-        <translation type="unfinished"></translation>
+        <translation>Vai su</translation>
     </message>
     <message>
         <source>Display the virtual machine file manager window</source>
-        <translation type="unfinished"></translation>
+        <translation>Visualizza la finestra del gestore dei file della macchina virtuale</translation>
     </message>
 </context>
 <context>
@@ -2850,11 +2850,11 @@
     </message>
     <message>
         <source>When checked, all the hard drives that belong to this appliance will be imported in VDI format.</source>
-        <translation type="unfinished"></translation>
+        <translation>Se selezionata, tutti i dischi fissi che appartengono a questa applicazione virtuale saranno importati in formato VDI.</translation>
     </message>
     <message>
         <source>Include all network adapter MAC addresses during cloning.</source>
-        <translation type="unfinished"></translation>
+        <translation>Includi solo gli indirizzi MAC delle schede di rete durante la clonazione.</translation>
     </message>
 </context>
 <context>
@@ -3313,7 +3313,7 @@
     </message>
     <message>
         <source>Add Profile</source>
-        <translation type="unfinished">Aggiungi profilo</translation>
+        <translation>Aggiungi profilo</translation>
     </message>
 </context>
 <context>
@@ -3737,7 +3737,7 @@
     <message>
         <source>Graphics Controller</source>
         <comment>details (display)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Scheda grafica</translation>
     </message>
 </context>
 <context>
@@ -4827,350 +4827,350 @@
     <name>UIFDCreationDialog</name>
     <message>
         <source>Create a Floppy Disk</source>
-        <translation type="unfinished">Crea un disco floppy</translation>
+        <translation>Crea un disco floppy</translation>
     </message>
     <message>
         <source>File Path:</source>
-        <translation type="unfinished">Percorso file:</translation>
+        <translation>Percorso file:</translation>
     </message>
     <message>
         <source>Size:</source>
-        <translation type="unfinished">Dimensione:</translation>
+        <translation>Dimensione:</translation>
     </message>
     <message>
         <source>Format disk as FAT12</source>
-        <translation type="unfinished">Formatta disco come FAT12</translation>
+        <translation>Formatta disco come FAT12</translation>
     </message>
     <message>
         <source>1.44M</source>
-        <translation type="unfinished">1.44M</translation>
+        <translation>1.44M</translation>
     </message>
     <message>
         <source>1.2M</source>
-        <translation type="unfinished">1.2M</translation>
+        <translation>1.2M</translation>
     </message>
     <message>
         <source>720K</source>
-        <translation type="unfinished">720K</translation>
+        <translation>720K</translation>
     </message>
     <message>
         <source>360K</source>
-        <translation type="unfinished">360K</translation>
+        <translation>360K</translation>
     </message>
 </context>
 <context>
     <name>UIFileManager</name>
     <message>
         <source>%1 - File Manager</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 - Gestore file</translation>
     </message>
     <message>
         <source>Close</source>
-        <translation type="unfinished">Chiudi</translation>
+        <translation>Chiudi</translation>
     </message>
     <message>
         <source>Clear</source>
-        <translation type="unfinished">Cancella</translation>
+        <translation>Cancella</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation type="unfinished">Annulla</translation>
+        <translation>Annulla</translation>
     </message>
     <message>
         <source>Not yet started</source>
-        <translation type="unfinished"></translation>
+        <translation>Non ancora avviato</translation>
     </message>
     <message>
         <source>Working</source>
-        <translation type="unfinished"></translation>
+        <translation>Funzionante</translation>
     </message>
     <message>
         <source>Paused</source>
-        <translation type="unfinished">In pausa</translation>
+        <translation>In pausa</translation>
     </message>
     <message>
         <source>Canceled</source>
-        <translation type="unfinished"></translation>
+        <translation>Annullato</translation>
     </message>
     <message>
         <source>Succeded</source>
-        <translation type="unfinished"></translation>
+        <translation>Completato</translation>
     </message>
     <message>
         <source>Failed</source>
-        <translation type="unfinished"></translation>
+        <translation>Non riuscito</translation>
     </message>
     <message>
         <source>Invalid</source>
-        <translation type="unfinished"></translation>
+        <translation>Non valido</translation>
     </message>
     <message>
         <source>Remove Selected</source>
-        <translation type="unfinished"></translation>
+        <translation>Rimuovi selezionati</translation>
     </message>
     <message>
         <source>Remove Finished</source>
-        <translation type="unfinished"></translation>
+        <translation>Rimuovi terminati</translation>
     </message>
     <message>
         <source>Remove All</source>
-        <translation type="unfinished"></translation>
+        <translation>Rimuovi tutti</translation>
     </message>
     <message>
         <source>List directories on top</source>
-        <translation type="unfinished">Elenca le cartelle in alto</translation>
+        <translation>Elenca le cartelle in alto</translation>
     </message>
     <message>
         <source>List directories before files</source>
-        <translation type="unfinished">Elenca le cartelle prima dei file</translation>
+        <translation>Elenca le cartelle prima dei file</translation>
     </message>
     <message>
         <source>Ask before delete</source>
-        <translation type="unfinished">Chiedi prima di eliminare</translation>
+        <translation>Chiedi prima di eliminare</translation>
     </message>
     <message>
         <source>Show a confirmation dialog before deleting files and directories</source>
-        <translation type="unfinished"></translation>
+        <translation>Mostra una finestra di conferma prima di eliminare file e cartelle</translation>
     </message>
     <message>
         <source>Human readable sizes</source>
-        <translation type="unfinished">Dimensioni comprensibili</translation>
+        <translation>Dimensioni comprensibili</translation>
     </message>
     <message>
         <source>Show file/directory sizes in human readable format rather than in bytes</source>
-        <translation type="unfinished"></translation>
+        <translation>Mostra le dimensioni di file/cartelle in formato facilmente comprensibile invece che in byte</translation>
     </message>
     <message>
         <source>Close the pane</source>
-        <translation type="unfinished">Chiudi il pannello</translation>
+        <translation>Chiudi il pannello</translation>
     </message>
     <message>
         <source>Password</source>
-        <translation type="unfinished">Password</translation>
+        <translation>Password</translation>
     </message>
     <message>
         <source>Show Password</source>
-        <translation type="unfinished"></translation>
+        <translation>Mostra password</translation>
     </message>
     <message>
         <source>User name to authenticate session creation</source>
-        <translation type="unfinished">Creazione del nome utente per autenticare la sessione</translation>
+        <translation>Creazione del nome utente per autenticare la sessione</translation>
     </message>
     <message>
         <source>User Name</source>
-        <translation type="unfinished">Nome utente</translation>
+        <translation>Nome utente</translation>
     </message>
     <message>
         <source>Password to authenticate session creation</source>
-        <translation type="unfinished">Creazione della password per autenticare la sessione</translation>
+        <translation>Creazione della password per autenticare la sessione</translation>
     </message>
     <message>
         <source>Create Session</source>
-        <translation type="unfinished">Crea sessione</translation>
+        <translation>Crea sessione</translation>
     </message>
     <message>
         <source>Close Session</source>
-        <translation type="unfinished">Chiudi sessione</translation>
+        <translation>Chiudi sessione</translation>
     </message>
     <message>
         <source>Total Size</source>
-        <translation type="unfinished">Dimensione totale</translation>
+        <translation>Dimensione totale</translation>
     </message>
     <message>
         <source> bytes</source>
-        <translation type="unfinished"> byte</translation>
+        <translation> byte</translation>
     </message>
     <message>
         <source>File Count</source>
-        <translation type="unfinished">Conteggio file</translation>
+        <translation>Conteggio file</translation>
     </message>
     <message>
         <source>Delete the selected file(s) and/or folder(s)</source>
-        <translation type="unfinished">Elimina i file e/o le cartelle selezionati</translation>
+        <translation>Elimina i file e/o le cartelle selezionati</translation>
     </message>
     <message>
         <source>Ask for this confirmation next time</source>
-        <translation type="unfinished">Chiedi questa conferma la prossima volta</translation>
+        <translation>Chiedi questa conferma la prossima volta</translation>
     </message>
     <message>
         <source>Delete confirmation can be disabled/enabled also from the Options panel.</source>
-        <translation type="unfinished">L&apos;eliminazione della conferma può essere disabilitata/abilitata dal pannello Opzioni.</translation>
+        <translation>L&apos;eliminazione della conferma può essere disabilitata/abilitata dal pannello Opzioni.</translation>
     </message>
     <message>
         <source>Name</source>
-        <translation type="unfinished">Nome</translation>
+        <translation>Nome</translation>
     </message>
     <message>
         <source>Size</source>
-        <translation type="unfinished">Dimensione</translation>
+        <translation>Dimensione</translation>
     </message>
     <message>
         <source>Change Time</source>
-        <translation type="unfinished">Cambia orario</translation>
+        <translation>Cambia orario</translation>
     </message>
     <message>
         <source>Owner</source>
-        <translation type="unfinished">Proprietario</translation>
+        <translation>Proprietario</translation>
     </message>
     <message>
         <source>Permissions</source>
-        <translation type="unfinished">Permessi</translation>
+        <translation>Permessi</translation>
     </message>
     <message>
         <source>No Guest Session</source>
-        <translation type="unfinished">Nessuna sessione guest</translation>
+        <translation>Nessuna sessione guest</translation>
     </message>
     <message>
         <source>Unknown</source>
-        <translation type="unfinished">Sconosciuto</translation>
+        <translation>Sconosciuto</translation>
     </message>
     <message>
         <source>File</source>
-        <translation type="unfinished">File</translation>
+        <translation>File</translation>
     </message>
     <message>
         <source>Directory</source>
-        <translation type="unfinished">Cartella</translation>
+        <translation>Cartella</translation>
     </message>
     <message>
         <source>Symbolic Link</source>
-        <translation type="unfinished">Collegamento simbolico</translation>
+        <translation>Collegamento simbolico</translation>
     </message>
     <message>
         <source>Other</source>
-        <translation type="unfinished">Altro</translation>
+        <translation>Altro</translation>
     </message>
     <message>
         <source>Guest System</source>
-        <translation type="unfinished">Sistema guest</translation>
+        <translation>Sistema guest</translation>
     </message>
     <message>
         <source>&lt;b&gt;Size:&lt;/b&gt; %1 bytes</source>
-        <translation type="unfinished">&lt;b&gt;Dimensione:&lt;/b&gt; %1 byte</translation>
+        <translation>&lt;b&gt;Dimensione:&lt;/b&gt; %1 byte</translation>
     </message>
     <message>
         <source>&lt;b&gt;Allocated:&lt;/b&gt; %1 bytes</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;Allocati:&lt;/b&gt; %1 byte</translation>
     </message>
     <message>
         <source>directory</source>
-        <translation type="unfinished"></translation>
+        <translation>cartella</translation>
     </message>
     <message>
         <source>file</source>
-        <translation type="unfinished"></translation>
+        <translation>file</translation>
     </message>
     <message>
         <source>symbolic link</source>
-        <translation type="unfinished"></translation>
+        <translation>collegamento simbolico</translation>
     </message>
     <message>
         <source>character device</source>
-        <translation type="unfinished"></translation>
+        <translation>dispositivo a caratteri</translation>
     </message>
     <message>
         <source>block device</source>
-        <translation type="unfinished"></translation>
+        <translation>dispositivo a blocchi</translation>
     </message>
     <message>
         <source>fifo</source>
-        <translation type="unfinished"></translation>
+        <translation>fifo</translation>
     </message>
     <message>
         <source>socket</source>
-        <translation type="unfinished"></translation>
+        <translation>socket</translation>
     </message>
     <message>
         <source>whiteout</source>
-        <translation type="unfinished"></translation>
+        <translation>whiteout</translation>
     </message>
     <message>
         <source>unknown</source>
-        <translation type="unfinished"></translation>
+        <translation>sconosciuto</translation>
     </message>
     <message>
         <source>illegal-value</source>
-        <translation type="unfinished"></translation>
+        <translation>valore non consentito</translation>
     </message>
     <message>
         <source>&lt;b&gt;Type:&lt;/b&gt; %1&lt;br/&gt;</source>
-        <translation type="unfinished">&lt;b&gt;Tipo:&lt;/b&gt; %1&lt;br/&gt;</translation>
+        <translation>&lt;b&gt;Tipo:&lt;/b&gt; %1&lt;br/&gt;</translation>
     </message>
     <message>
         <source>&lt;b&gt;INode:&lt;/b&gt; %1&lt;br/&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;Inode:&lt;/b&gt; %1&lt;br/&gt;</translation>
     </message>
     <message>
         <source>&lt;b&gt;Device:&lt;/b&gt; %1&lt;br/&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;Dispositivo:&lt;/b&gt; %1&lt;br/&gt;</translation>
     </message>
     <message>
         <source>&lt;b&gt;Hardlinks:&lt;/b&gt; %1&lt;br/&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;Collegamenti fisici:&lt;/b&gt; %1&lt;br/&gt;</translation>
     </message>
     <message>
         <source>&lt;b&gt;Mode:&lt;/b&gt; %1&lt;br/&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;Modalità:&lt;/b&gt; %1&lt;br/&gt;</translation>
     </message>
     <message>
         <source>&lt;b&gt;Attributes:&lt;/b&gt; %1&lt;br/&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;Attributi:&lt;/b&gt; %1&lt;br/&gt;</translation>
     </message>
     <message>
         <source>&lt;b&gt;Device ID:&lt;/b&gt; %1&lt;br/&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;ID dispositivo:&lt;/b&gt; %1&lt;br/&gt;</translation>
     </message>
     <message>
         <source>&lt;b&gt;Owner:&lt;/b&gt; %1 (%2)&lt;br/&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;Proprietario:&lt;/b&gt;  %1 (%2)&lt;br/&gt;</translation>
     </message>
     <message>
         <source>&lt;b&gt;Group:&lt;/b&gt; %1 (%2)&lt;br/&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;Gruppo:&lt;/b&gt; %1 (%2)&lt;br/&gt;</translation>
     </message>
     <message>
         <source>&lt;b&gt;Birth:&lt;/b&gt; %1&lt;br/&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;Origine:&lt;/b&gt; %1&lt;br/&gt;</translation>
     </message>
     <message>
         <source>&lt;b&gt;Change:&lt;/b&gt; %1&lt;br/&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;Modifica:&lt;/b&gt; %1&lt;br/&gt;</translation>
     </message>
     <message>
         <source>&lt;b&gt;Modified:&lt;/b&gt; %1&lt;br/&gt;</source>
-        <translation type="unfinished">&lt;b&gt;Modificato il:&lt;/b&gt; %1&lt;br/&gt;</translation>
+        <translation>&lt;b&gt;Modificato il:&lt;/b&gt; %1&lt;br/&gt;</translation>
     </message>
     <message>
         <source>&lt;b&gt;Access:&lt;/b&gt; %1&lt;br/&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;Accesso:&lt;/b&gt; %1&lt;br/&gt;</translation>
     </message>
     <message>
         <source>&lt;b&gt;Selected:&lt;/b&gt; %1 files and %2 directories&lt;br/&gt;</source>
-        <translation type="unfinished">&lt;b&gt;Selezionati:&lt;/b&gt; %1 file e %2 cartelle&lt;br/&gt;</translation>
+        <translation>&lt;b&gt;Selezionati:&lt;/b&gt; %1 file e %2 cartelle&lt;br/&gt;</translation>
     </message>
     <message>
         <source>&lt;b&gt;Size (non-recursive):&lt;/b&gt; %1 bytes</source>
-        <translation type="unfinished">&lt;b&gt;Dimensione (non ricorsiva):&lt;/b&gt; %1 byte</translation>
+        <translation>&lt;b&gt;Dimensione (non ricorsiva):&lt;/b&gt; %1 byte</translation>
     </message>
     <message>
         <source>Properties</source>
-        <translation type="unfinished">Proprietà</translation>
+        <translation>Proprietà</translation>
     </message>
     <message>
         <source>Host System</source>
-        <translation type="unfinished">Sistema host</translation>
+        <translation>Sistema host</translation>
     </message>
     <message>
         <source>&lt;b&gt;Name:&lt;/b&gt; %1&lt;br/&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;Nome:&lt;/b&gt; %1&lt;br/&gt;</translation>
     </message>
     <message>
         <source>&lt;b&gt;Created:&lt;/b&gt; %1&lt;br/&gt;</source>
-        <translation type="unfinished">&lt;b&gt;Creato il:&lt;/b&gt; %1&lt;br/&gt;</translation>
+        <translation>&lt;b&gt;Creato il:&lt;/b&gt; %1&lt;br/&gt;</translation>
     </message>
     <message>
         <source>&lt;b&gt;Owner:&lt;/b&gt; %1</source>
-        <translation type="unfinished">&lt;b&gt;Proprietario:&lt;/b&gt; %1</translation>
+        <translation>&lt;b&gt;Proprietario:&lt;/b&gt; %1</translation>
     </message>
 </context>
 <context>
@@ -7836,19 +7836,19 @@ p, li { white-space: pre-wrap; }
     <name>UIGuestControlTreeWidget</name>
     <message>
         <source>Close Session</source>
-        <translation type="unfinished">Chiudi sessione</translation>
+        <translation>Chiudi sessione</translation>
     </message>
     <message>
         <source>Terminate Process</source>
-        <translation type="unfinished">Termina processo</translation>
+        <translation>Termina processo</translation>
     </message>
     <message>
         <source>Expand All</source>
-        <translation type="unfinished">Espandi tutto</translation>
+        <translation>Espandi tutto</translation>
     </message>
     <message>
         <source>Collapse All</source>
-        <translation type="unfinished">Contrai tutto</translation>
+        <translation>Contrai tutto</translation>
     </message>
 </context>
 <context>
@@ -8303,11 +8303,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Adding network...</source>
-        <translation type="unfinished">Aggiunta rete...</translation>
+        <translation>Aggiunta rete...</translation>
     </message>
     <message>
         <source>Removing network...</source>
-        <translation type="unfinished">Rimozione rete...</translation>
+        <translation>Rimozione rete...</translation>
     </message>
 </context>
 <context>
@@ -9434,87 +9434,87 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Enable</source>
         <comment>DHCP Server</comment>
-        <translation type="unfinished">Abilita</translation>
+        <translation>Abilita</translation>
     </message>
     <message>
         <source>Adapter</source>
-        <translation type="unfinished"></translation>
+        <translation>Scheda</translation>
     </message>
     <message>
         <source>Automatically configured</source>
         <comment>interface</comment>
-        <translation type="unfinished">Configurata automaticamente</translation>
+        <translation>Configurata automaticamente</translation>
     </message>
     <message>
         <source>Manually configured</source>
         <comment>interface</comment>
-        <translation type="unfinished">Configurata manualmente</translation>
+        <translation>Configurata manualmente</translation>
     </message>
     <message>
         <source>IPv4 Address</source>
-        <translation type="unfinished">Indirizzo IPv4</translation>
+        <translation>Indirizzo IPv4</translation>
     </message>
     <message>
         <source>Not set</source>
         <comment>address</comment>
-        <translation type="unfinished"></translation>
+        <translation>Non impostato</translation>
     </message>
     <message>
         <source>IPv4 Network Mask</source>
-        <translation type="unfinished">Maschera di rete IPv4</translation>
+        <translation>Maschera di rete IPv4</translation>
     </message>
     <message>
         <source>Not set</source>
         <comment>mask</comment>
-        <translation type="unfinished"></translation>
+        <translation>Non impostata</translation>
     </message>
     <message>
         <source>IPv6 Address</source>
-        <translation type="unfinished">Indirizzo IPv6</translation>
+        <translation>Indirizzo IPv6</translation>
     </message>
     <message>
         <source>IPv6 Prefix Length</source>
-        <translation type="unfinished"></translation>
+        <translation>Lunghezza della prefisso IPv6</translation>
     </message>
     <message>
         <source>Not set</source>
         <comment>length</comment>
-        <translation type="unfinished"></translation>
+        <translation>Non impostata</translation>
     </message>
     <message>
         <source>DHCP Server</source>
-        <translation type="unfinished">Server DHCP</translation>
+        <translation>Server DHCP</translation>
     </message>
     <message>
         <source>Enabled</source>
         <comment>server</comment>
-        <translation type="unfinished"></translation>
+        <translation>Abilitato</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>server</comment>
-        <translation type="unfinished"></translation>
+        <translation>Disabilitato</translation>
     </message>
     <message>
         <source>Address</source>
-        <translation type="unfinished">Indirizzo</translation>
+        <translation>Indirizzo</translation>
     </message>
     <message>
         <source>Network Mask</source>
-        <translation type="unfinished">Maschera di rete</translation>
+        <translation>Maschera di rete</translation>
     </message>
     <message>
         <source>Lower Bound</source>
-        <translation type="unfinished">Limite inferiore</translation>
+        <translation>Limite inferiore</translation>
     </message>
     <message>
         <source>Not set</source>
         <comment>bound</comment>
-        <translation type="unfinished"></translation>
+        <translation>Non impostato</translation>
     </message>
     <message>
         <source>Upper Bound</source>
-        <translation type="unfinished">Limite superiore</translation>
+        <translation>Limite superiore</translation>
     </message>
 </context>
 <context>
@@ -9531,67 +9531,67 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Network Name</source>
-        <translation type="unfinished">Nome della rete</translation>
+        <translation>Nome della rete</translation>
     </message>
     <message>
         <source>[empty]</source>
-        <translation type="unfinished">[vuoto]</translation>
+        <translation>[vuoto]</translation>
     </message>
     <message>
         <source>%1 (renamed from %2)</source>
-        <translation type="unfinished">%1 (rinominata da %2)</translation>
+        <translation>%1 (rinominata da %2)</translation>
     </message>
     <message>
         <source>Old Network Name</source>
-        <translation type="unfinished">Vecchio nome della rete</translation>
+        <translation>Vecchio nome della rete</translation>
     </message>
     <message>
         <source>New Network Name</source>
-        <translation type="unfinished">Nuovo nome della rete</translation>
+        <translation>Nuovo nome della rete</translation>
     </message>
     <message>
         <source>Network CIDR</source>
-        <translation type="unfinished">Rete CIDR</translation>
+        <translation>Rete CIDR</translation>
     </message>
     <message>
         <source>Supports DHCP</source>
-        <translation type="unfinished">Supporta DHCP</translation>
+        <translation>Supporta DHCP</translation>
     </message>
     <message>
         <source>yes</source>
-        <translation type="unfinished">sì</translation>
+        <translation>sì</translation>
     </message>
     <message>
         <source>no</source>
-        <translation type="unfinished">no</translation>
+        <translation>no</translation>
     </message>
     <message>
         <source>Supports IPv6</source>
-        <translation type="unfinished">Supporta IPv6</translation>
+        <translation>Supporta IPv6</translation>
     </message>
     <message>
         <source>Default IPv6 route</source>
-        <translation type="unfinished">Rotte IPv6 predefinita</translation>
+        <translation>Rotte IPv6 predefinita</translation>
     </message>
     <message>
         <source>No new name specified for the NAT network previously called &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished">Nessun nuovo nome specificato per la rete con NAT chiamata in precedenza &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <translation>Nessun nuovo nome specificato per la rete con NAT chiamata in precedenza &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>No CIDR specified for the NAT network &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished">Nessun CIDR specificato per la rete con NAT &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <translation>Nessun CIDR specificato per la rete con NAT &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>No CIDR specified for the NAT network previously called &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished">Nessun CIDR specificato per la rete con NAT chiamata in precedenza &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <translation>Nessun CIDR specificato per la rete con NAT chiamata in precedenza &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Invalid CIDR specified (&lt;i&gt;%1&lt;/i&gt;) for the NAT network &lt;b&gt;%2&lt;/b&gt;.</source>
-        <translation type="unfinished">CIDR specificato non valido (&lt;i&gt;%1&lt;/i&gt;) per la rete con NAT &lt;b&gt;%2&lt;/b&gt;.</translation>
+        <translation>CIDR specificato non valido (&lt;i&gt;%1&lt;/i&gt;) per la rete con NAT &lt;b&gt;%2&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Invalid CIDR specified (&lt;i&gt;%1&lt;/i&gt;) for the NAT network previously called &lt;b&gt;%2&lt;/b&gt;.</source>
-        <translation type="unfinished">CIDR specificato non valido (&lt;i&gt;%1&lt;/i&gt;) per la rete con NAT chiamata in precedenza &lt;b&gt;%2&lt;/b&gt;.</translation>
+        <translation>CIDR specificato non valido (&lt;i&gt;%1&lt;/i&gt;) per la rete con NAT chiamata in precedenza &lt;b&gt;%2&lt;/b&gt;.</translation>
     </message>
 </context>
 <context>
@@ -9599,22 +9599,22 @@ p, li { white-space: pre-wrap; }
     <message>
         <source> (built-in)</source>
         <comment>Language</comment>
-        <translation type="unfinished"></translation>
+        <translation> (integrata)</translation>
     </message>
     <message>
         <source>&lt;unavailable&gt;</source>
         <comment>Language</comment>
-        <translation type="unfinished">&lt;non disponibile&gt;</translation>
+        <translation>&lt;non disponibile&gt;</translation>
     </message>
     <message>
         <source>&lt;unknown&gt;</source>
         <comment>Author(s)</comment>
-        <translation type="unfinished">&lt;sconosciuto&gt;</translation>
+        <translation>&lt;sconosciuto&gt;</translation>
     </message>
     <message>
         <source>Default</source>
         <comment>Language</comment>
-        <translation type="unfinished">Predefinita</translation>
+        <translation>Predefinita</translation>
     </message>
 </context>
 <context>
@@ -10184,35 +10184,35 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Graphics Controller:</source>
-        <translation type="unfinished"></translation>
+        <translation>Scheda &amp;grafica:</translation>
     </message>
     <message>
         <source>Selects the graphics adapter type the virtual machine will use.</source>
-        <translation type="unfinished"></translation>
+        <translation>Seleziona il tipo di scheda grafica che sarà utilizzata dalla macchina virtuale.</translation>
     </message>
     <message>
         <source>Re&amp;cording</source>
-        <translation type="unfinished"></translation>
+        <translation>Registra&amp;zione</translation>
     </message>
     <message>
         <source>&amp;Enable Recording</source>
-        <translation type="unfinished"></translation>
+        <translation>Abilita r&amp;egistrazione</translation>
     </message>
     <message>
         <source>Recording &amp;Mode:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Modalità registrazione:</translation>
     </message>
     <message>
         <source>Selects the recording mode.</source>
-        <translation type="unfinished"></translation>
+        <translation>Seleziona la modalità di registrazione.</translation>
     </message>
     <message>
         <source>&amp;Video Quality:</source>
-        <translation type="unfinished"></translation>
+        <translation>Qualità &amp;video:</translation>
     </message>
     <message>
         <source>Controls the &lt;b&gt;quality&lt;/b&gt;. Increasing this value will make the audio sound better at the cost of an increased file size.</source>
-        <translation type="unfinished"></translation>
+        <translation>Controlla la &lt;b&gt;qualità&lt;/b&gt;. L&apos;incremento di questo valore migliorerà la resa dell&apos;audio al costo di maggiori dimensioni del file.</translation>
     </message>
 </context>
 <context>
@@ -12510,23 +12510,23 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>When checked, the nested hardware virtualization CPU feature will be exposed to the virtual machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>Se marcata, la funzionalità della CPU di virtualizzazione hardware nidificata sarà esposta alla macchina virtuale.</translation>
     </message>
     <message>
         <source>Enable Nested &amp;VT-x/AMD-V</source>
-        <translation type="unfinished"></translation>
+        <translation>Abilita &amp;VT-x/AMD-V nidificate</translation>
     </message>
     <message>
         <source>The hardware virtualization is not currently enabled in the Acceleration section of the System page. This is needed to support nested hardware virtualization. It will be enabled automatically if you confirm your changes.</source>
-        <translation type="unfinished"></translation>
+        <translation>La virtualizzazione hardware non è attualmente abilitata nella sezione Accelerazione della pagina Sistema. Questa funzionalità è richiesta per supportare la virtualizzazione hardware nidificata. Sarà abilitata automaticamente se confermi le modifiche.</translation>
     </message>
     <message>
         <source>The nested paging is not currently enabled in the Acceleration section of the System page. This is needed to support nested hardware virtualization. It will be enabled automatically if you confirm your changes.</source>
-        <translation type="unfinished"></translation>
+        <translation>La paginazione nidificata non è attualmente abilitata nella sezione Accelerazione del pagina Sistema. Questa funzionalità è richiesta per supportare la virtualizzazione hardware nidificata. Sarà abilitata automaticamente se confermi le modifiche.</translation>
     </message>
     <message>
         <source>The hardware virtualization is not currently enabled in the Acceleration section of the System page. This is needed for nested paging support. It will be enabled automatically if you confirm your changes.</source>
-        <translation type="unfinished"></translation>
+        <translation>La virtualizzazione hardware non è attualmente abilitata nella sezione Accelerazione della pagina Sistema. Questa funzionalità è richiesta per supportare la paginazione nidificata. Sarà abilitata automaticamente se confermi le modifiche.</translation>
     </message>
 </context>
 <context>
@@ -13004,57 +13004,57 @@ p, li { white-space: pre-wrap; }
     <name>UIMediumItem</name>
     <message>
         <source>Current extension (*.%1)</source>
-        <translation type="unfinished">Estensione attuale(*.%1) </translation>
+        <translation>Estensione attuale (*.%1)</translation>
     </message>
     <message>
         <source>Choose the location of this medium</source>
-        <translation type="unfinished">Scegli la posizione del supporto</translation>
+        <translation>Scegli la posizione del supporto</translation>
     </message>
     <message>
         <source>Moving medium...</source>
-        <translation type="unfinished">Spostamento supporto...</translation>
+        <translation>Spostamento supporto...</translation>
     </message>
     <message>
         <source>%1, %2: %3, %4: %5</source>
         <comment>col.1 text, col.2 name: col.2 text, col.3 name: col.3 text</comment>
-        <translation type="unfinished">%1, %2: %3, %4: %5</translation>
+        <translation>%1, %2: %3, %4: %5</translation>
     </message>
     <message>
         <source>Format:</source>
-        <translation type="unfinished">Formato:</translation>
+        <translation>Formato:</translation>
     </message>
     <message>
         <source>Storage details:</source>
-        <translation type="unfinished">Dettagli di archiviazione:</translation>
+        <translation>Dettagli di archiviazione:</translation>
     </message>
     <message>
         <source>Attached to:</source>
-        <translation type="unfinished">Collegato a:</translation>
+        <translation>Collegato a:</translation>
     </message>
     <message>
         <source>Encrypted with key:</source>
-        <translation type="unfinished">Cifrato con chiave:</translation>
+        <translation>Cifrato con chiave:</translation>
     </message>
     <message>
         <source>UUID:</source>
-        <translation type="unfinished">UUID:</translation>
+        <translation>UUID:</translation>
     </message>
     <message>
         <source>&lt;i&gt;Not&amp;nbsp;Attached&lt;/i&gt;</source>
-        <translation type="unfinished">&lt;i&gt;Non&amp;nbsp;connesso&lt;/i&gt;</translation>
+        <translation>&lt;i&gt;Non&amp;nbsp;connesso&lt;/i&gt;</translation>
     </message>
     <message>
         <source>&lt;i&gt;Not&amp;nbsp;Encrypted&lt;/i&gt;</source>
-        <translation type="unfinished">&lt;i&gt;Non&amp;nbsp;cifrato&lt;/i&gt;</translation>
+        <translation>&lt;i&gt;Non&amp;nbsp;cifrato&lt;/i&gt;</translation>
     </message>
     <message>
         <source>--</source>
         <comment>no info</comment>
-        <translation type="unfinished"></translation>
+        <translation>--</translation>
     </message>
     <message>
         <source>Removing medium...</source>
-        <translation type="unfinished">Rimozione supporto...</translation>
+        <translation>Rimozione supporto...</translation>
     </message>
 </context>
 <context>
@@ -13357,55 +13357,55 @@ p, li { white-space: pre-wrap; }
     <name>UIMediumSelector</name>
     <message>
         <source>&amp;Add...</source>
-        <translation type="unfinished">&amp;Aggiungi...</translation>
+        <translation>&amp;Aggiungi...</translation>
     </message>
     <message>
         <source>Add Disk Image</source>
-        <translation type="unfinished"></translation>
+        <translation>Aggiunfi immagine disco</translation>
     </message>
     <message>
         <source>Add existing disk image file</source>
-        <translation type="unfinished"></translation>
+        <translation>Aggiungi immagine disco esistente</translation>
     </message>
     <message>
         <source>&amp;Create...</source>
-        <translation type="unfinished">&amp;Crea...</translation>
+        <translation>&amp;Crea...</translation>
     </message>
     <message>
         <source>Create Disk Image</source>
-        <translation type="unfinished"></translation>
+        <translation>Crea immagine disco</translation>
     </message>
     <message>
         <source>Create new disk image file</source>
-        <translation type="unfinished"></translation>
+        <translation>Crea nuova immagine disco</translation>
     </message>
     <message>
         <source>&amp;Refresh</source>
-        <translation type="unfinished"></translation>
+        <translation>Aggio&amp;rna</translation>
     </message>
     <message>
         <source>Refresh Disk Image Files (%1)</source>
-        <translation type="unfinished">Aggiorna i file immagine dei dischi (%1)</translation>
+        <translation>Aggiorna i file immagine dei dischi (%1)</translation>
     </message>
     <message>
         <source>Refresh the list of disk image files</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>Choose</source>
-        <translation type="unfinished"></translation>
+        <translation>Scegli</translation>
     </message>
     <message>
         <source>Name</source>
-        <translation type="unfinished">Nome</translation>
+        <translation>Nome</translation>
     </message>
     <message>
         <source>Virtual Size</source>
-        <translation type="unfinished">Dimensione virtuale</translation>
+        <translation>Dimensione virtuale</translation>
     </message>
     <message>
         <source>Actual Size</source>
-        <translation type="unfinished">Dimensione effettiva</translation>
+        <translation>Dimensione effettiva</translation>
     </message>
 </context>
 <context>
@@ -17097,11 +17097,11 @@ questo passo e collegare hard disk più tardi tramite Impostazioni della MV.&lt;
     </message>
     <message>
         <source>Monitor %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Monitor %1</translation>
     </message>
     <message>
         <source>Controls the guest screen scale factor.</source>
-        <translation type="unfinished">Controlla il fattore di scala dello schermo del guest.</translation>
+        <translation>Controlla il fattore di scala dello schermo del guest.</translation>
     </message>
 </context>
 <context>
@@ -17442,55 +17442,55 @@ questo passo e collegare hard disk più tardi tramite Impostazioni della MV.&lt;
     <message>
         <source>Current State (changed)</source>
         <comment>Current State (Modified)</comment>
-        <translation type="unfinished">Stato attuale (modificato)</translation>
+        <translation>Stato attuale (modificato)</translation>
     </message>
     <message>
         <source>Current State</source>
         <comment>Current State (Unmodified)</comment>
-        <translation type="unfinished">Stato attuale</translation>
+        <translation>Stato attuale</translation>
     </message>
     <message>
         <source>The current state differs from the state stored in the current snapshot</source>
-        <translation type="unfinished">Lo stato attuale differisce da quello memorizzato nell&apos;istantanea attuale</translation>
+        <translation>Lo stato attuale differisce da quello memorizzato nell&apos;istantanea attuale</translation>
     </message>
     <message>
         <source>The current state is identical to the state stored in the current snapshot</source>
-        <translation type="unfinished">Lo stato attuale è identico a quello memorizzato nell&apos;istantanea attuale</translation>
+        <translation>Lo stato attuale è identico a quello memorizzato nell&apos;istantanea attuale</translation>
     </message>
     <message>
         <source>%1 (%2 ago)</source>
         <comment>date time (how long ago)</comment>
-        <translation type="unfinished">%1 (%2 fa)</translation>
+        <translation>%1 (%2 fa)</translation>
     </message>
     <message>
         <source>%1 since %2</source>
         <comment>Current State (time or date + time)</comment>
-        <translation type="unfinished">%1 da %2</translation>
+        <translation>%1 da %2</translation>
     </message>
     <message>
         <source>current</source>
         <comment>snapshot</comment>
-        <translation type="unfinished">attuale</translation>
+        <translation>attuale</translation>
     </message>
     <message>
         <source>online</source>
         <comment>snapshot</comment>
-        <translation type="unfinished">in linea</translation>
+        <translation>in linea</translation>
     </message>
     <message>
         <source>offline</source>
         <comment>snapshot</comment>
-        <translation type="unfinished">non in linea</translation>
+        <translation>non in linea</translation>
     </message>
     <message>
         <source>Taken at %1</source>
         <comment>Snapshot (time)</comment>
-        <translation type="unfinished">Creata alle %1</translation>
+        <translation>Creata alle %1</translation>
     </message>
     <message>
         <source>Taken on %1</source>
         <comment>Snapshot (date + time)</comment>
-        <translation type="unfinished">Creata il %1</translation>
+        <translation>Creata il %1</translation>
     </message>
 </context>
 <context>
@@ -17785,42 +17785,42 @@ questo passo e collegare hard disk più tardi tramite Impostazioni della MV.&lt;
     <message>
         <source>&lt;nobr&gt;Vendor ID: %1&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation type="unfinished">&lt;nobr&gt;ID venditore: %1&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;ID venditore: %1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Product ID: %2&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation type="unfinished">&lt;nobr&gt;ID prodotto: %2&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;ID prodotto: %2&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Revision: %3&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation type="unfinished">&lt;nobr&gt;Revisione: %3&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;Revisione: %3&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Product: %4&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation type="unfinished">&lt;nobr&gt;Prodotto: %4&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;Prodotto: %4&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Manufacturer: %5&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation type="unfinished">&lt;nobr&gt;Produttore: %5&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;Produttore: %5&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Serial No.: %1&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation type="unfinished">&lt;nobr&gt;Num. seriale: %1&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;Num. seriale: %1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Port: %1&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation type="unfinished">&lt;nobr&gt;Porta: %1&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;Porta: %1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;State: %1&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation type="unfinished">&lt;nobr&gt;Stato: %1&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;Stato: %1&lt;/nobr&gt;</translation>
     </message>
 </context>
 <context>
@@ -18486,7 +18486,7 @@ questo passo e collegare hard disk più tardi tramite Impostazioni della MV.&lt;
     </message>
     <message>
         <source>Show Toolbar Text</source>
-        <translation type="unfinished">Mostra testo della barra degli strumenti</translation>
+        <translation>Mostra testo della barra degli strumenti</translation>
     </message>
 </context>
 <context>
@@ -18943,15 +18943,15 @@ questo passo e collegare hard disk più tardi tramite Impostazioni della MV.&lt;
     </message>
     <message>
         <source>New machine name and path</source>
-        <translation type="unfinished"></translation>
+        <translation>Nome e percorso della nuova macchina</translation>
     </message>
     <message>
         <source>Include all network adapter MAC addresses during cloning.</source>
-        <translation type="unfinished"></translation>
+        <translation>Includi tutti gli indirizzi MAC delle schede di rete durante la clonazione.</translation>
     </message>
     <message>
         <source>Additional options</source>
-        <translation type="unfinished"></translation>
+        <translation>Opzioni aggiuntive</translation>
     </message>
 </context>
 <context>
@@ -19246,7 +19246,7 @@ questo passo e collegare hard disk più tardi tramite Impostazioni della MV.&lt;
     </message>
     <message>
         <source>&lt;p&gt;Please choose one of cloud service accounts you have registered to export virtual machines to. Make sure profile settings reflected in the underlying table are valid. They will be used to establish network connection required to upload your virtual machine files to a remote cloud facility.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Scegli uno degli account di servizio cloud che hai registrato per esportare le macchine virtuali. Assicurati che le impostazioni di profilo rappresentate nella tabella sottostante siano valide. Saranno utilizzate per stabilire la connessione richiesta per caricare i file della macchina virtuale in una struttura remota nel cloud.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -19392,7 +19392,7 @@ La cartelle Home possono essere modificate singolarmente (per macchina virtuale)
     </message>
     <message>
         <source>You can modify the base folder which will host all the virtual machines. Home folders can also be individually (per virtual machine) modified.</source>
-        <translation type="unfinished"></translation>
+        <translation>Puoi modificare la cartella di base che ospiterà tutte le macchine virtuali. Le cartelle Home possono essere modificate singolarmente (per macchina virtuale).</translation>
     </message>
 </context>
 <context>
@@ -23366,51 +23366,51 @@ Versione %1</translation>
     <message>
         <source>None</source>
         <comment>GraphicsControllerType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Nessuno</translation>
     </message>
     <message>
         <source>VBoxVGA</source>
         <comment>GraphicsControllerType</comment>
-        <translation type="unfinished"></translation>
+        <translation>VBoxVGA</translation>
     </message>
     <message>
         <source>VMSVGA</source>
         <comment>GraphicsControllerType</comment>
-        <translation type="unfinished"></translation>
+        <translation>VMSVGA</translation>
     </message>
     <message>
         <source>VBoxSVGA</source>
         <comment>GraphicsControllerType</comment>
-        <translation type="unfinished"></translation>
+        <translation>VBoxSVGA</translation>
     </message>
     <message>
         <source>Graphics Controller</source>
-        <translation type="unfinished"></translation>
+        <translation>Scheda grafica</translation>
     </message>
     <message>
         <source>Video/Audio</source>
         <comment>UISettingsDefs::RecordingMode</comment>
-        <translation type="unfinished"></translation>
+        <translation>Video/Audio</translation>
     </message>
     <message>
         <source>Video Only</source>
         <comment>UISettingsDefs::RecordingMode</comment>
-        <translation type="unfinished"></translation>
+        <translation>Solo video</translation>
     </message>
     <message>
         <source>Audio Only</source>
         <comment>UISettingsDefs::RecordingMode</comment>
-        <translation type="unfinished"></translation>
+        <translation>Solo audio</translation>
     </message>
     <message>
         <source>Not Attached</source>
         <comment>network adapter</comment>
-        <translation type="unfinished"></translation>
+        <translation>Non collegata</translation>
     </message>
     <message>
         <source>Disconnected</source>
         <comment>serial port</comment>
-        <translation type="unfinished">Non connessa</translation>
+        <translation>Non connessa</translation>
     </message>
 </context>
 <context>

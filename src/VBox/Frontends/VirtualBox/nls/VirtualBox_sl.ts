@@ -500,13 +500,13 @@
         <location line="+40"/>
         <location line="+40"/>
         <location line="+40"/>
-        <location line="+39"/>
-        <location line="+39"/>
+        <location line="+40"/>
+        <location line="+40"/>
         <source>Log Viewer</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-197"/>
+        <location line="-199"/>
         <source>Open pane with searching options</source>
         <translation type="unfinished"></translation>
     </message>
@@ -561,7 +561,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+36"/>
+        <location line="+37"/>
         <source>&amp;Refresh</source>
         <translation type="unfinished">&amp;Osveži</translation>
     </message>
@@ -576,7 +576,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+36"/>
+        <location line="+37"/>
         <source>&amp;Save...</source>
         <translation type="unfinished">&amp;Shrani …</translation>
     </message>
@@ -1035,7 +1035,7 @@
         <translation>Prikaži &amp;dnevnik …</translation>
     </message>
     <message>
-        <location filename="../src/globals/UIActionPool.cpp" line="-1446"/>
+        <location filename="../src/globals/UIActionPool.cpp" line="-1448"/>
         <source>&amp;VirtualBox Web Site...</source>
         <translation>Spletno mesto &amp;VirtualBox …</translation>
     </message>

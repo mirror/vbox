@@ -1056,13 +1056,13 @@
         <location line="+40"/>
         <location line="+40"/>
         <location line="+40"/>
-        <location line="+39"/>
-        <location line="+39"/>
+        <location line="+40"/>
+        <location line="+40"/>
         <source>Log Viewer</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-197"/>
+        <location line="-199"/>
         <source>Open pane with searching options</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1117,7 +1117,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+36"/>
+        <location line="+37"/>
         <source>&amp;Refresh</source>
         <translation type="unfinished">B&amp;erritu</translation>
     </message>
@@ -1132,7 +1132,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+36"/>
+        <location line="+37"/>
         <source>&amp;Save...</source>
         <translation type="unfinished">&amp;Gorde...</translation>
     </message>
@@ -1449,7 +1449,7 @@
         <translation type="obsolete">Erakutsi Sare Eragiketa Kudeatzailea</translation>
     </message>
     <message>
-        <location line="-1159"/>
+        <location line="-1161"/>
         <source>Check for a new VirtualBox version</source>
         <translation>Egiaztatu VirtualBox bertsio berririk dagoen</translation>
     </message>

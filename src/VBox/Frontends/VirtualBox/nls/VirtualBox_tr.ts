@@ -345,15 +345,15 @@
     </message>
     <message>
         <source>Full</source>
-        <translation type="unfinished">Tam</translation>
+        <translation>Tam</translation>
     </message>
     <message>
         <source>Read-only</source>
-        <translation type="unfinished">Salt-okunur</translation>
+        <translation>Salt-okunur</translation>
     </message>
     <message>
         <source>Yes</source>
-        <translation type="unfinished">Evet</translation>
+        <translation>Evet</translation>
     </message>
 </context>
 <context>
@@ -2146,7 +2146,7 @@
     </message>
     <message>
         <source>Refresh Disk Image Files (%1)</source>
-        <translation>Disk Kalıbı Dosyasını Yenile (%1)</translation>
+        <translation>Disk Kalıbı Dosyalarını Yenile (%1)</translation>
     </message>
     <message>
         <source>Open the network menu</source>
@@ -2341,51 +2341,51 @@
     </message>
     <message>
         <source>Open the file manager</source>
-        <translation type="unfinished"></translation>
+        <translation>Dosya yöneticisini aç</translation>
     </message>
     <message>
         <source>Open the file manager host submenu</source>
-        <translation type="unfinished"></translation>
+        <translation>Dosya yöneticisi anamakine alt menüsünü aç</translation>
     </message>
     <message>
         <source>Open the file manager guest submenu</source>
-        <translation type="unfinished"></translation>
+        <translation>Dosya yöneticisi misafir alt menüsünü aç</translation>
     </message>
     <message>
         <source>Open File Manager Options</source>
-        <translation type="unfinished"></translation>
+        <translation>Dosya Yöneticisi Seçeneklerini Aç</translation>
     </message>
     <message>
         <source>Open panel with file manager log</source>
-        <translation type="unfinished"></translation>
+        <translation>Dosya yöneticisi günlüğü ile paneli aç</translation>
     </message>
     <message>
         <source>Open File Manager Log</source>
-        <translation type="unfinished"></translation>
+        <translation>Dosya Yöneticisi Günlüğünü Aç</translation>
     </message>
     <message>
         <source>Operations</source>
-        <translation type="unfinished"></translation>
+        <translation>İşlemler</translation>
     </message>
     <message>
         <source>Open panel with file manager operations</source>
-        <translation type="unfinished"></translation>
+        <translation>Dosya yöneticisi işlemleri ile paneli aç</translation>
     </message>
     <message>
         <source>Open File Manager Operations</source>
-        <translation type="unfinished"></translation>
+        <translation>Dosya Yöneticisi İşlemlerini Aç</translation>
     </message>
     <message>
         <source>Open panel with file manager session</source>
-        <translation type="unfinished"></translation>
+        <translation>Dosya yöneticisi oturumu ile paneli aç</translation>
     </message>
     <message>
         <source>Go Up</source>
-        <translation type="unfinished"></translation>
+        <translation>Yukarı Git</translation>
     </message>
     <message>
         <source>Display the virtual machine file manager window</source>
-        <translation type="unfinished"></translation>
+        <translation>Sanal makine dosya yöneticisi penceresini görüntüle</translation>
     </message>
 </context>
 <context>
@@ -2662,11 +2662,11 @@
     </message>
     <message>
         <source>When checked, all the hard drives that belong to this appliance will be imported in VDI format.</source>
-        <translation type="unfinished"></translation>
+        <translation>İşaretlendiğinde, bu cihaza ait tüm sabit sürücüler VDI biçiminde içe aktarılacaktır.</translation>
     </message>
     <message>
         <source>Include all network adapter MAC addresses during cloning.</source>
-        <translation type="unfinished"></translation>
+        <translation>Çoğaltma sırasında tüm ağ bağdaştırıcısı MAC adreslerini dahil et.</translation>
     </message>
 </context>
 <context>
@@ -2990,7 +2990,7 @@
     </message>
     <message>
         <source>Add Profile</source>
-        <translation type="unfinished">Profil Ekle</translation>
+        <translation>Profil Ekle</translation>
     </message>
 </context>
 <context>
@@ -4099,350 +4099,350 @@
     <name>UIFDCreationDialog</name>
     <message>
         <source>Create a Floppy Disk</source>
-        <translation type="unfinished">Bir Disket Oluştur</translation>
+        <translation>Bir Disket Oluştur</translation>
     </message>
     <message>
         <source>File Path:</source>
-        <translation type="unfinished">Dosya Yolu:</translation>
+        <translation>Dosya Yolu:</translation>
     </message>
     <message>
         <source>Size:</source>
-        <translation type="unfinished">Boyut:</translation>
+        <translation>Boyut:</translation>
     </message>
     <message>
         <source>Format disk as FAT12</source>
-        <translation type="unfinished">Diski FAT12 olarak biçimlendir</translation>
+        <translation>Diski FAT12 olarak biçimlendir</translation>
     </message>
     <message>
         <source>1.44M</source>
-        <translation type="unfinished">1.44M</translation>
+        <translation>1.44M</translation>
     </message>
     <message>
         <source>1.2M</source>
-        <translation type="unfinished">1.2M</translation>
+        <translation>1.2M</translation>
     </message>
     <message>
         <source>720K</source>
-        <translation type="unfinished">720K</translation>
+        <translation>720K</translation>
     </message>
     <message>
         <source>360K</source>
-        <translation type="unfinished">360K</translation>
+        <translation>360K</translation>
     </message>
 </context>
 <context>
     <name>UIFileManager</name>
     <message>
         <source>%1 - File Manager</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 - Dosya Yöneticisi</translation>
     </message>
     <message>
         <source>Close</source>
-        <translation type="unfinished">Kapat</translation>
+        <translation>Kapat</translation>
     </message>
     <message>
         <source>Clear</source>
-        <translation type="unfinished">Temizle</translation>
+        <translation>Temizle</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation type="unfinished"></translation>
+        <translation>İptal</translation>
     </message>
     <message>
         <source>Not yet started</source>
-        <translation type="unfinished">Henüz başlatılmadı</translation>
+        <translation>Henüz başlatılmadı</translation>
     </message>
     <message>
         <source>Working</source>
-        <translation type="unfinished">Çalışıyor</translation>
+        <translation>Çalışıyor</translation>
     </message>
     <message>
         <source>Paused</source>
-        <translation type="unfinished">Duraklatıldı</translation>
+        <translation>Duraklatıldı</translation>
     </message>
     <message>
         <source>Canceled</source>
-        <translation type="unfinished">İptal edildi</translation>
+        <translation>İptal edildi</translation>
     </message>
     <message>
         <source>Succeded</source>
-        <translation type="unfinished">Başarılı oldu</translation>
+        <translation>Başarılı oldu</translation>
     </message>
     <message>
         <source>Failed</source>
-        <translation type="unfinished">Başarısız oldu</translation>
+        <translation>Başarısız oldu</translation>
     </message>
     <message>
         <source>Invalid</source>
-        <translation type="unfinished">Geçersiz</translation>
+        <translation>Geçersiz</translation>
     </message>
     <message>
         <source>Remove Selected</source>
-        <translation type="unfinished">Seçileni Kaldır</translation>
+        <translation>Seçileni Kaldır</translation>
     </message>
     <message>
         <source>Remove Finished</source>
-        <translation type="unfinished">Tamamlananı Kaldır</translation>
+        <translation>Tamamlananı Kaldır</translation>
     </message>
     <message>
         <source>Remove All</source>
-        <translation type="unfinished">Tümünü Kaldır</translation>
+        <translation>Tümünü Kaldır</translation>
     </message>
     <message>
         <source>List directories on top</source>
-        <translation type="unfinished">Dizinleri üstte listele</translation>
+        <translation>Dizinleri üstte listele</translation>
     </message>
     <message>
         <source>List directories before files</source>
-        <translation type="unfinished">Dizinleri dosyalardan önce listele</translation>
+        <translation>Dizinleri dosyalardan önce listele</translation>
     </message>
     <message>
         <source>Ask before delete</source>
-        <translation type="unfinished">Silmeden önce sor</translation>
+        <translation>Silmeden önce sor</translation>
     </message>
     <message>
         <source>Show a confirmation dialog before deleting files and directories</source>
-        <translation type="unfinished">Dosyaları ve dizinleri silmeden önce bir onaylama ileti penceresi göster</translation>
+        <translation>Dosyaları ve dizinleri silmeden önce bir onaylama ileti penceresi göster</translation>
     </message>
     <message>
         <source>Human readable sizes</source>
-        <translation type="unfinished">Kişinin okuyabileceği boyutlar</translation>
+        <translation>Kişinin okuyabileceği boyutlar</translation>
     </message>
     <message>
         <source>Show file/directory sizes in human readable format rather than in bytes</source>
-        <translation type="unfinished">Dosya/dizin boyutlarını bayt yerine okunabilir biçimde göster</translation>
+        <translation>Dosya/dizin boyutlarını bayt yerine okunabilir biçimde göster</translation>
     </message>
     <message>
         <source>Close the pane</source>
-        <translation type="unfinished">Bölmeyi kapat</translation>
+        <translation>Bölmeyi kapat</translation>
     </message>
     <message>
         <source>Password</source>
-        <translation type="unfinished">Parola</translation>
+        <translation>Parola</translation>
     </message>
     <message>
         <source>Show Password</source>
-        <translation type="unfinished">Parolayı Göster</translation>
+        <translation>Parolayı Göster</translation>
     </message>
     <message>
         <source>User name to authenticate session creation</source>
-        <translation type="unfinished">Oturum oluşturma kimlik doğrulaması için kullanıcı adı</translation>
+        <translation>Oturum oluşturma kimlik doğrulaması için kullanıcı adı</translation>
     </message>
     <message>
         <source>User Name</source>
-        <translation type="unfinished">Kullanıcı Adı</translation>
+        <translation>Kullanıcı Adı</translation>
     </message>
     <message>
         <source>Password to authenticate session creation</source>
-        <translation type="unfinished">Oturum oluşturma kimlik doğrulaması için parola</translation>
+        <translation>Oturum oluşturma kimlik doğrulaması için parola</translation>
     </message>
     <message>
         <source>Create Session</source>
-        <translation type="unfinished">Oturum Oluştur</translation>
+        <translation>Oturum Oluştur</translation>
     </message>
     <message>
         <source>Close Session</source>
-        <translation type="unfinished">Oturumu Kapat</translation>
+        <translation>Oturumu Kapat</translation>
     </message>
     <message>
         <source>Total Size</source>
-        <translation type="unfinished">Toplam Boyut</translation>
+        <translation>Toplam Boyut</translation>
     </message>
     <message>
         <source> bytes</source>
-        <translation type="unfinished">bayt</translation>
+        <translation>bayt</translation>
     </message>
     <message>
         <source>File Count</source>
-        <translation type="unfinished">Dosya Sayısı</translation>
+        <translation>Dosya Sayısı</translation>
     </message>
     <message>
         <source>Delete the selected file(s) and/or folder(s)</source>
-        <translation type="unfinished">Seçilen dosya(ları)yı ve/veya klasör(leri)ü sil</translation>
+        <translation>Seçilen dosya(ları)yı ve/veya klasör(leri)ü sil</translation>
     </message>
     <message>
         <source>Ask for this confirmation next time</source>
-        <translation type="unfinished">Bir dahaki sefere bu onayı iste</translation>
+        <translation>Bir dahaki sefere bu onayı iste</translation>
     </message>
     <message>
         <source>Delete confirmation can be disabled/enabled also from the Options panel.</source>
-        <translation type="unfinished">Silme onayı, Seçenekler panelinden de etkisizleştirilebilir/etkinleştirilebilir.</translation>
+        <translation>Silme onayı, Seçenekler panelinden de etkisizleştirilebilir/etkinleştirilebilir.</translation>
     </message>
     <message>
         <source>Name</source>
-        <translation type="unfinished"></translation>
+        <translation>Adı</translation>
     </message>
     <message>
         <source>Size</source>
-        <translation type="unfinished">Boyut</translation>
+        <translation>Boyut</translation>
     </message>
     <message>
         <source>Change Time</source>
-        <translation type="unfinished">Saati Değiştir</translation>
+        <translation>Saati Değiştir</translation>
     </message>
     <message>
         <source>Owner</source>
-        <translation type="unfinished">Sahibi</translation>
+        <translation>Sahibi</translation>
     </message>
     <message>
         <source>Permissions</source>
-        <translation type="unfinished">İzinler</translation>
+        <translation>İzinler</translation>
     </message>
     <message>
         <source>No Guest Session</source>
-        <translation type="unfinished">Misafir Oturumu Yok</translation>
+        <translation>Misafir Oturumu Yok</translation>
     </message>
     <message>
         <source>Unknown</source>
-        <translation type="unfinished">Bilinmiyor</translation>
+        <translation>Bilinmiyor</translation>
     </message>
     <message>
         <source>File</source>
-        <translation type="unfinished">Dosya</translation>
+        <translation>Dosya</translation>
     </message>
     <message>
         <source>Directory</source>
-        <translation type="unfinished">Dizin</translation>
+        <translation>Dizin</translation>
     </message>
     <message>
         <source>Symbolic Link</source>
-        <translation type="unfinished">Sembolik Bağlantı</translation>
+        <translation>Sembolik Bağlantı</translation>
     </message>
     <message>
         <source>Other</source>
-        <translation type="unfinished">Diğer</translation>
+        <translation>Diğer</translation>
     </message>
     <message>
         <source>Guest System</source>
-        <translation type="unfinished">Misafir Sistemi</translation>
+        <translation>Misafir Sistemi</translation>
     </message>
     <message>
         <source>&lt;b&gt;Size:&lt;/b&gt; %1 bytes</source>
-        <translation type="unfinished">&lt;b&gt;Boyut:&lt;/b&gt; %1 bayt</translation>
+        <translation>&lt;b&gt;Boyut:&lt;/b&gt; %1 bayt</translation>
     </message>
     <message>
         <source>&lt;b&gt;Allocated:&lt;/b&gt; %1 bytes</source>
-        <translation type="unfinished">&lt;b&gt;Ayrılan:&lt;/b&gt; %1 bayt</translation>
+        <translation>&lt;b&gt;Ayrılan:&lt;/b&gt; %1 bayt</translation>
     </message>
     <message>
         <source>directory</source>
-        <translation type="unfinished">dizin</translation>
+        <translation>dizin</translation>
     </message>
     <message>
         <source>file</source>
-        <translation type="unfinished">dosya</translation>
+        <translation>dosya</translation>
     </message>
     <message>
         <source>symbolic link</source>
-        <translation type="unfinished">sembolik bağlantı</translation>
+        <translation>sembolik bağlantı</translation>
     </message>
     <message>
         <source>character device</source>
-        <translation type="unfinished">karakter aygıtı</translation>
+        <translation>karakter aygıtı</translation>
     </message>
     <message>
         <source>block device</source>
-        <translation type="unfinished">blok aygıtı</translation>
+        <translation>blok aygıtı</translation>
     </message>
     <message>
         <source>fifo</source>
-        <translation type="unfinished">fifo</translation>
+        <translation>fifo</translation>
     </message>
     <message>
         <source>socket</source>
-        <translation type="unfinished">soket</translation>
+        <translation>soket</translation>
     </message>
     <message>
         <source>whiteout</source>
-        <translation type="unfinished">sıfır görüş</translation>
+        <translation>sıfır görüş</translation>
     </message>
     <message>
         <source>unknown</source>
-        <translation type="unfinished">bilinmiyor</translation>
+        <translation>bilinmiyor</translation>
     </message>
     <message>
         <source>illegal-value</source>
-        <translation type="unfinished">hatalı değer</translation>
+        <translation>geçersiz-değer</translation>
     </message>
     <message>
         <source>&lt;b&gt;Type:&lt;/b&gt; %1&lt;br/&gt;</source>
-        <translation type="unfinished">&lt;b&gt;Türü:&lt;/b&gt; %1&lt;br/&gt;</translation>
+        <translation>&lt;b&gt;Türü:&lt;/b&gt; %1&lt;br/&gt;</translation>
     </message>
     <message>
         <source>&lt;b&gt;INode:&lt;/b&gt; %1&lt;br/&gt;</source>
-        <translation type="unfinished">&lt;b&gt;INode:&lt;/b&gt; %1&lt;br/&gt;</translation>
+        <translation>&lt;b&gt;INode:&lt;/b&gt; %1&lt;br/&gt;</translation>
     </message>
     <message>
         <source>&lt;b&gt;Device:&lt;/b&gt; %1&lt;br/&gt;</source>
-        <translation type="unfinished">&lt;b&gt;Aygıt:&lt;/b&gt; %1&lt;br/&gt;</translation>
+        <translation>&lt;b&gt;Aygıt:&lt;/b&gt; %1&lt;br/&gt;</translation>
     </message>
     <message>
         <source>&lt;b&gt;Hardlinks:&lt;/b&gt; %1&lt;br/&gt;</source>
-        <translation type="unfinished">&lt;b&gt;Sabit bağlantılar:&lt;/b&gt; %1&lt;br/&gt;</translation>
+        <translation>&lt;b&gt;Sabit bağlantılar:&lt;/b&gt; %1&lt;br/&gt;</translation>
     </message>
     <message>
         <source>&lt;b&gt;Mode:&lt;/b&gt; %1&lt;br/&gt;</source>
-        <translation type="unfinished">&lt;b&gt;Kip:&lt;/b&gt; %1&lt;br/&gt;</translation>
+        <translation>&lt;b&gt;Kip:&lt;/b&gt; %1&lt;br/&gt;</translation>
     </message>
     <message>
         <source>&lt;b&gt;Attributes:&lt;/b&gt; %1&lt;br/&gt;</source>
-        <translation type="unfinished">&lt;b&gt;Öznitelikler:&lt;/b&gt; %1&lt;br/&gt;</translation>
+        <translation>&lt;b&gt;Öznitelikler:&lt;/b&gt; %1&lt;br/&gt;</translation>
     </message>
     <message>
         <source>&lt;b&gt;Device ID:&lt;/b&gt; %1&lt;br/&gt;</source>
-        <translation type="unfinished">&lt;b&gt;Aygıt kimliği:&lt;/b&gt; %1&lt;br/&gt;</translation>
+        <translation>&lt;b&gt;Aygıt kimliği:&lt;/b&gt; %1&lt;br/&gt;</translation>
     </message>
     <message>
         <source>&lt;b&gt;Owner:&lt;/b&gt; %1 (%2)&lt;br/&gt;</source>
-        <translation type="unfinished">&lt;b&gt;Sahibi:&lt;/b&gt; %1 (%2)&lt;br/&gt;</translation>
+        <translation>&lt;b&gt;Sahibi:&lt;/b&gt; %1 (%2)&lt;br/&gt;</translation>
     </message>
     <message>
         <source>&lt;b&gt;Group:&lt;/b&gt; %1 (%2)&lt;br/&gt;</source>
-        <translation type="unfinished">&lt;b&gt;Grup:&lt;/b&gt; %1 (%2)&lt;br/&gt;</translation>
+        <translation>&lt;b&gt;Grup:&lt;/b&gt; %1 (%2)&lt;br/&gt;</translation>
     </message>
     <message>
         <source>&lt;b&gt;Birth:&lt;/b&gt; %1&lt;br/&gt;</source>
-        <translation type="unfinished">&lt;b&gt;Doğma:&lt;/b&gt; %1&lt;br/&gt;</translation>
+        <translation>&lt;b&gt;Doğma:&lt;/b&gt; %1&lt;br/&gt;</translation>
     </message>
     <message>
         <source>&lt;b&gt;Change:&lt;/b&gt; %1&lt;br/&gt;</source>
-        <translation type="unfinished">&lt;b&gt;Değişim:&lt;/b&gt; %1&lt;br/&gt;</translation>
+        <translation>&lt;b&gt;Değişim:&lt;/b&gt; %1&lt;br/&gt;</translation>
     </message>
     <message>
         <source>&lt;b&gt;Modified:&lt;/b&gt; %1&lt;br/&gt;</source>
-        <translation type="unfinished">&lt;b&gt;Değiştirme:&lt;/b&gt; %1&lt;br/&gt;</translation>
+        <translation>&lt;b&gt;Değiştirme:&lt;/b&gt; %1&lt;br/&gt;</translation>
     </message>
     <message>
         <source>&lt;b&gt;Access:&lt;/b&gt; %1&lt;br/&gt;</source>
-        <translation type="unfinished">&lt;b&gt;Erişim:&lt;/b&gt; %1&lt;br/&gt;</translation>
+        <translation>&lt;b&gt;Erişim:&lt;/b&gt; %1&lt;br/&gt;</translation>
     </message>
     <message>
         <source>&lt;b&gt;Selected:&lt;/b&gt; %1 files and %2 directories&lt;br/&gt;</source>
-        <translation type="unfinished">&lt;b&gt;Seçilen:&lt;/b&gt; %1 dosya ve %2 dizin&lt;br/&gt;</translation>
+        <translation>&lt;b&gt;Seçilen:&lt;/b&gt; %1 dosya ve %2 dizin&lt;br/&gt;</translation>
     </message>
     <message>
         <source>&lt;b&gt;Size (non-recursive):&lt;/b&gt; %1 bytes</source>
-        <translation type="unfinished">&lt;b&gt;Boyut (yinelemesiz):&lt;/b&gt; %1 bayt</translation>
+        <translation>&lt;b&gt;Boyut (yinelemesiz):&lt;/b&gt; %1 bayt</translation>
     </message>
     <message>
         <source>Properties</source>
-        <translation type="unfinished">Özellikler</translation>
+        <translation>Özellikler</translation>
     </message>
     <message>
         <source>Host System</source>
-        <translation type="unfinished">Anamakine Sistemi</translation>
+        <translation>Anamakine Sistemi</translation>
     </message>
     <message>
         <source>&lt;b&gt;Name:&lt;/b&gt; %1&lt;br/&gt;</source>
-        <translation type="unfinished">&lt;b&gt;Adı:&lt;/b&gt; %1&lt;br/&gt;</translation>
+        <translation>&lt;b&gt;Adı:&lt;/b&gt; %1&lt;br/&gt;</translation>
     </message>
     <message>
         <source>&lt;b&gt;Created:&lt;/b&gt; %1&lt;br/&gt;</source>
-        <translation type="unfinished">&lt;b&gt;Oluşturma:&lt;/b&gt; %1&lt;br/&gt;</translation>
+        <translation>&lt;b&gt;Oluşturma:&lt;/b&gt; %1&lt;br/&gt;</translation>
     </message>
     <message>
         <source>&lt;b&gt;Owner:&lt;/b&gt; %1</source>
-        <translation type="unfinished">&lt;b&gt;Sahibi:&lt;/b&gt; %1</translation>
+        <translation>&lt;b&gt;Sahibi:&lt;/b&gt; %1</translation>
     </message>
 </context>
 <context>
@@ -5733,7 +5733,7 @@
     <message>
         <source> (built-in)</source>
         <comment>Language</comment>
-        <translation type="vanished"> (bütünleşik)</translation>
+        <translation type="vanished"> (yerleşik)</translation>
     </message>
     <message>
         <source>&lt;unavailable&gt;</source>
@@ -5743,7 +5743,7 @@
     <message>
         <source>&lt;unknown&gt;</source>
         <comment>Author(s)</comment>
-        <translation type="vanished">&lt;bilinmeyen&gt;</translation>
+        <translation type="vanished">&lt;bilinmiyor&gt;</translation>
     </message>
     <message>
         <source>Default</source>
@@ -6879,19 +6879,19 @@
     <name>UIGuestControlTreeWidget</name>
     <message>
         <source>Close Session</source>
-        <translation type="unfinished">Oturumu Kapat</translation>
+        <translation>Oturumu Kapat</translation>
     </message>
     <message>
         <source>Terminate Process</source>
-        <translation type="unfinished">İşlemi Sonlandır</translation>
+        <translation>İşlemi Sonlandır</translation>
     </message>
     <message>
         <source>Expand All</source>
-        <translation type="unfinished">Tümünü Genişlet</translation>
+        <translation>Tümünü Genişlet</translation>
     </message>
     <message>
         <source>Collapse All</source>
-        <translation type="unfinished">Tümünü Daralt</translation>
+        <translation>Tümünü Daralt</translation>
     </message>
 </context>
 <context>
@@ -6934,7 +6934,7 @@
     </message>
     <message>
         <source>illegal-value</source>
-        <translation type="vanished">hatalı değer</translation>
+        <translation type="vanished">geçersiz-değer</translation>
     </message>
 </context>
 <context>
@@ -7389,11 +7389,11 @@
     </message>
     <message>
         <source>Adding network...</source>
-        <translation type="unfinished">Ağ ekleniyor...</translation>
+        <translation>Ağ ekleniyor...</translation>
     </message>
     <message>
         <source>Removing network...</source>
-        <translation type="unfinished">Ağ kaldırılıyor...</translation>
+        <translation>Ağ kaldırılıyor...</translation>
     </message>
 </context>
 <context>
@@ -8433,87 +8433,87 @@
     <message>
         <source>Enable</source>
         <comment>DHCP Server</comment>
-        <translation type="unfinished">Etkinleştir</translation>
+        <translation>Etkinleştir</translation>
     </message>
     <message>
         <source>Adapter</source>
-        <translation type="unfinished">Bağdaştırıcı</translation>
+        <translation>Bağdaştırıcı</translation>
     </message>
     <message>
         <source>Automatically configured</source>
         <comment>interface</comment>
-        <translation type="unfinished">Otomatik olarak yapılandırılmış</translation>
+        <translation>Otomatik olarak yapılandırılmış</translation>
     </message>
     <message>
         <source>Manually configured</source>
         <comment>interface</comment>
-        <translation type="unfinished">El ile yapılandırılmış</translation>
+        <translation>El ile yapılandırılmış</translation>
     </message>
     <message>
         <source>IPv4 Address</source>
-        <translation type="unfinished">IPv4 Adresi</translation>
+        <translation>IPv4 Adresi</translation>
     </message>
     <message>
         <source>Not set</source>
         <comment>address</comment>
-        <translation type="unfinished">Ayarlı değil</translation>
+        <translation>Ayarlı değil</translation>
     </message>
     <message>
         <source>IPv4 Network Mask</source>
-        <translation type="unfinished">IPv4 Ağ Maskesi</translation>
+        <translation>IPv4 Ağ Maskesi</translation>
     </message>
     <message>
         <source>Not set</source>
         <comment>mask</comment>
-        <translation type="unfinished">Ayarlı değil</translation>
+        <translation>Ayarlı değil</translation>
     </message>
     <message>
         <source>IPv6 Address</source>
-        <translation type="unfinished">IPv6 Adresi</translation>
+        <translation>IPv6 Adresi</translation>
     </message>
     <message>
         <source>IPv6 Prefix Length</source>
-        <translation type="unfinished">IPv6 Önek Uzunluğu</translation>
+        <translation>IPv6 Önek Uzunluğu</translation>
     </message>
     <message>
         <source>Not set</source>
         <comment>length</comment>
-        <translation type="unfinished">Ayarlı değil</translation>
+        <translation>Ayarlı değil</translation>
     </message>
     <message>
         <source>DHCP Server</source>
-        <translation type="unfinished">DHCP Sunucusu</translation>
+        <translation>DHCP Sunucusu</translation>
     </message>
     <message>
         <source>Enabled</source>
         <comment>server</comment>
-        <translation type="unfinished"></translation>
+        <translation>Etkinleştirildi</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>server</comment>
-        <translation type="unfinished"></translation>
+        <translation>Etkisizleştirildi</translation>
     </message>
     <message>
         <source>Address</source>
-        <translation type="unfinished">Adres</translation>
+        <translation>Adres</translation>
     </message>
     <message>
         <source>Network Mask</source>
-        <translation type="unfinished">Ağ Maskesi</translation>
+        <translation>Ağ Maskesi</translation>
     </message>
     <message>
         <source>Lower Bound</source>
-        <translation type="unfinished">Alt Sınır</translation>
+        <translation>Alt Sınır</translation>
     </message>
     <message>
         <source>Not set</source>
         <comment>bound</comment>
-        <translation type="unfinished">Ayarlı değil</translation>
+        <translation>Ayarlı değil</translation>
     </message>
     <message>
         <source>Upper Bound</source>
-        <translation type="unfinished">Üst Sınır</translation>
+        <translation>Üst Sınır</translation>
     </message>
 </context>
 <context>
@@ -8530,67 +8530,67 @@
     </message>
     <message>
         <source>Network Name</source>
-        <translation type="unfinished">Ağ Adı</translation>
+        <translation>Ağ Adı</translation>
     </message>
     <message>
         <source>[empty]</source>
-        <translation type="unfinished">[boş]</translation>
+        <translation>[boş]</translation>
     </message>
     <message>
         <source>%1 (renamed from %2)</source>
-        <translation type="unfinished">%1 (%2 adından yeniden adlandırıldı)</translation>
+        <translation>%1 (%2 adından yeniden adlandırıldı)</translation>
     </message>
     <message>
         <source>Old Network Name</source>
-        <translation type="unfinished">Eski Ağ Adı</translation>
+        <translation>Eski Ağ Adı</translation>
     </message>
     <message>
         <source>New Network Name</source>
-        <translation type="unfinished">Yeni Ağ Adı</translation>
+        <translation>Yeni Ağ Adı</translation>
     </message>
     <message>
         <source>Network CIDR</source>
-        <translation type="unfinished">Ağ CIDR</translation>
+        <translation>Ağ CIDR</translation>
     </message>
     <message>
         <source>Supports DHCP</source>
-        <translation type="unfinished">DHCP destekler</translation>
+        <translation>DHCP destekler</translation>
     </message>
     <message>
         <source>yes</source>
-        <translation type="unfinished">evet</translation>
+        <translation>evet</translation>
     </message>
     <message>
         <source>no</source>
-        <translation type="unfinished">hayır</translation>
+        <translation>hayır</translation>
     </message>
     <message>
         <source>Supports IPv6</source>
-        <translation type="unfinished">IPv6 destekler</translation>
+        <translation>IPv6 destekler</translation>
     </message>
     <message>
         <source>Default IPv6 route</source>
-        <translation type="unfinished">Varsayılan IPv6 yönlendirme</translation>
+        <translation>Varsayılan IPv6 yönlendirme</translation>
     </message>
     <message>
         <source>No new name specified for the NAT network previously called &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished">Daha önceki adı &lt;b&gt;%1&lt;/b&gt; olan NAT ağı için belirtilmiş yeni ad yok.</translation>
+        <translation>Daha önceki adı &lt;b&gt;%1&lt;/b&gt; olan NAT ağı için belirtilmiş yeni ad yok.</translation>
     </message>
     <message>
         <source>No CIDR specified for the NAT network &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished">NAT ağı &lt;b&gt;%1&lt;/b&gt; için belirtilmiş CIDR yok.</translation>
+        <translation>NAT ağı &lt;b&gt;%1&lt;/b&gt; için belirtilmiş CIDR yok.</translation>
     </message>
     <message>
         <source>No CIDR specified for the NAT network previously called &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished">Daha önceki adı &lt;b&gt;%1&lt;/b&gt; olan NAT ağı için belirtilmiş CIDR yok.</translation>
+        <translation>Daha önceki adı &lt;b&gt;%1&lt;/b&gt; olan NAT ağı için belirtilmiş CIDR yok.</translation>
     </message>
     <message>
         <source>Invalid CIDR specified (&lt;i&gt;%1&lt;/i&gt;) for the NAT network &lt;b&gt;%2&lt;/b&gt;.</source>
-        <translation type="unfinished">NAT ağı &lt;b&gt;%2&lt;/b&gt; için geçersiz CIDR belirtilmiş (&lt;i&gt;%1&lt;/i&gt;).</translation>
+        <translation>NAT ağı &lt;b&gt;%2&lt;/b&gt; için geçersiz CIDR belirtilmiş (&lt;i&gt;%1&lt;/i&gt;).</translation>
     </message>
     <message>
         <source>Invalid CIDR specified (&lt;i&gt;%1&lt;/i&gt;) for the NAT network previously called &lt;b&gt;%2&lt;/b&gt;.</source>
-        <translation type="unfinished">Daha önceki adı &lt;b&gt;%2&lt;/b&gt; olan NAT ağı için geçersiz CIDR belirtilmiş (&lt;i&gt;%1&lt;/i&gt;).</translation>
+        <translation>Daha önceki adı &lt;b&gt;%2&lt;/b&gt; olan NAT ağı için geçersiz CIDR belirtilmiş (&lt;i&gt;%1&lt;/i&gt;).</translation>
     </message>
 </context>
 <context>
@@ -8598,22 +8598,22 @@
     <message>
         <source> (built-in)</source>
         <comment>Language</comment>
-        <translation type="unfinished"> (bütünleşik)</translation>
+        <translation> (yerleşik)</translation>
     </message>
     <message>
         <source>&lt;unavailable&gt;</source>
         <comment>Language</comment>
-        <translation type="unfinished">&lt;kullanılamaz&gt;</translation>
+        <translation>&lt;kullanılamaz&gt;</translation>
     </message>
     <message>
         <source>&lt;unknown&gt;</source>
         <comment>Author(s)</comment>
-        <translation type="unfinished">&lt;bilinmeyen&gt;</translation>
+        <translation>&lt;bilinmiyor&gt;</translation>
     </message>
     <message>
         <source>Default</source>
         <comment>Language</comment>
-        <translation type="unfinished"></translation>
+        <translation>Varsayılan</translation>
     </message>
 </context>
 <context>
@@ -9127,7 +9127,7 @@
     </message>
     <message>
         <source>Controls the &lt;b&gt;quality&lt;/b&gt;. Increasing this value will make the video look better at the cost of an increased file size.</source>
-        <translation>&lt;b&gt;Kaliteyi&lt;/b&gt; denetler. Bu değeri arttırmak görüntüyü daha iyi görünür yapacak ama dosya boyutunun artmasına neden olacak.</translation>
+        <translation>&lt;b&gt;Kaliteyi&lt;/b&gt; denetler. Bu değeri arttırmak dosya boyutunun artması pahasına görüntüyü daha iyi görünür yapacak.</translation>
     </message>
     <message>
         <source>Holds the bitrate in &lt;b&gt;kilobits per second&lt;/b&gt;. Increasing this value will make the video look better at the cost of an increased file size.</source>
@@ -9187,27 +9187,27 @@
     </message>
     <message>
         <source>Re&amp;cording</source>
-        <translation type="unfinished"></translation>
+        <translation>Ka&amp;yıt</translation>
     </message>
     <message>
         <source>&amp;Enable Recording</source>
-        <translation type="unfinished"></translation>
+        <translation>Kaydı &amp;etkinleştir</translation>
     </message>
     <message>
         <source>Recording &amp;Mode:</source>
-        <translation type="unfinished"></translation>
+        <translation>Kayıt &amp;Kipi:</translation>
     </message>
     <message>
         <source>Selects the recording mode.</source>
-        <translation type="unfinished"></translation>
+        <translation>Kayıt kipini seçer.</translation>
     </message>
     <message>
         <source>&amp;Video Quality:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Görüntü Kalitesi:</translation>
     </message>
     <message>
         <source>Controls the &lt;b&gt;quality&lt;/b&gt;. Increasing this value will make the audio sound better at the cost of an increased file size.</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;Kaliteyi&lt;/b&gt; denetler. Bu değeri arttırmak dosya boyutunun artması pahasına sesi daha iyi duyulur yapacak.</translation>
     </message>
 </context>
 <context>
@@ -11677,57 +11677,57 @@
     <name>UIMediumItem</name>
     <message>
         <source>Current extension (*.%1)</source>
-        <translation type="unfinished">Şu anki genişletme (*.%1)</translation>
+        <translation>Şu anki genişletme (*.%1)</translation>
     </message>
     <message>
         <source>Choose the location of this medium</source>
-        <translation type="unfinished">Bu ortamın konumunu seçin</translation>
+        <translation>Bu ortamın konumunu seçin</translation>
     </message>
     <message>
         <source>Moving medium...</source>
-        <translation type="unfinished">Ortam taşınıyor...</translation>
+        <translation>Ortam taşınıyor...</translation>
     </message>
     <message>
         <source>%1, %2: %3, %4: %5</source>
         <comment>col.1 text, col.2 name: col.2 text, col.3 name: col.3 text</comment>
-        <translation type="unfinished">%1, %2: %3, %4: %5</translation>
+        <translation>%1, %2: %3, %4: %5</translation>
     </message>
     <message>
         <source>Format:</source>
-        <translation type="unfinished">Biçim:</translation>
+        <translation>Biçim:</translation>
     </message>
     <message>
         <source>Storage details:</source>
-        <translation type="unfinished">Depolama ayrıntıları:</translation>
+        <translation>Depolama ayrıntıları:</translation>
     </message>
     <message>
         <source>Attached to:</source>
-        <translation type="unfinished"></translation>
+        <translation>Şuna takıldı:</translation>
     </message>
     <message>
         <source>Encrypted with key:</source>
-        <translation type="unfinished">Şu anahtar ile şifrelenmiş:</translation>
+        <translation>Şu anahtar ile şifrelenmiş:</translation>
     </message>
     <message>
         <source>UUID:</source>
-        <translation type="unfinished">UUID:</translation>
+        <translation>UUID:</translation>
     </message>
     <message>
         <source>&lt;i&gt;Not&amp;nbsp;Attached&lt;/i&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;i&gt;Takılmadı&lt;/i&gt;</translation>
     </message>
     <message>
         <source>&lt;i&gt;Not&amp;nbsp;Encrypted&lt;/i&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;i&gt;Şifrelenmedi&lt;/i&gt;</translation>
     </message>
     <message>
         <source>--</source>
         <comment>no info</comment>
-        <translation type="unfinished"></translation>
+        <translation>--</translation>
     </message>
     <message>
         <source>Removing medium...</source>
-        <translation type="unfinished">Ortam kaldırılıyor...</translation>
+        <translation>Ortam kaldırılıyor...</translation>
     </message>
 </context>
 <context>
@@ -11924,7 +11924,7 @@
     </message>
     <message>
         <source>Refresh Disk Image Files (%1)</source>
-        <translation type="vanished">Disk Kalıbı Dosyasını Yenile (%1)</translation>
+        <translation type="vanished">Disk Kalıbı Dosyalarını Yenile (%1)</translation>
     </message>
     <message>
         <source>Current extension (*.%1)</source>
@@ -12023,62 +12023,62 @@
     </message>
     <message>
         <source>Refresh Disk Image Files (%1)</source>
-        <translation type="vanished">Disk Kalıbı Dosyasını Yenile (%1)</translation>
+        <translation type="vanished">Disk Kalıbı Dosyalarını Yenile (%1)</translation>
     </message>
 </context>
 <context>
     <name>UIMediumSelector</name>
     <message>
         <source>&amp;Add...</source>
-        <translation type="unfinished">&amp;Ekle...</translation>
+        <translation>&amp;Ekle...</translation>
     </message>
     <message>
         <source>Add Disk Image</source>
-        <translation type="unfinished"></translation>
+        <translation>Disk Kalıbı Ekle</translation>
     </message>
     <message>
         <source>Add existing disk image file</source>
-        <translation type="unfinished"></translation>
+        <translation>Varolan disk kalıbı ekle</translation>
     </message>
     <message>
         <source>&amp;Create...</source>
-        <translation type="unfinished">&amp;Oluştur...</translation>
+        <translation>&amp;Oluştur...</translation>
     </message>
     <message>
         <source>Create Disk Image</source>
-        <translation type="unfinished"></translation>
+        <translation>Disk Kalıbı Oluştur</translation>
     </message>
     <message>
         <source>Create new disk image file</source>
-        <translation type="unfinished"></translation>
+        <translation>Yeni disk kalıbı dosyası oluştur</translation>
     </message>
     <message>
         <source>&amp;Refresh</source>
-        <translation type="unfinished">&amp;Yenile</translation>
+        <translation>&amp;Yenile</translation>
     </message>
     <message>
         <source>Refresh Disk Image Files (%1)</source>
-        <translation type="unfinished">Disk Kalıbı Dosyasını Yenile (%1)</translation>
+        <translation>Disk Kalıbı Dosyalarını Yenile (%1)</translation>
     </message>
     <message>
         <source>Refresh the list of disk image files</source>
-        <translation type="unfinished"></translation>
+        <translation>Disk kalıbı dosyaları listesini yenile</translation>
     </message>
     <message>
         <source>Choose</source>
-        <translation type="unfinished"></translation>
+        <translation>Seçin</translation>
     </message>
     <message>
         <source>Name</source>
-        <translation type="unfinished"></translation>
+        <translation>Adı</translation>
     </message>
     <message>
         <source>Virtual Size</source>
-        <translation type="unfinished">Sanal Boyut</translation>
+        <translation>Sanal Boyut</translation>
     </message>
     <message>
         <source>Actual Size</source>
-        <translation type="unfinished">Gerçek Boyut</translation>
+        <translation>Gerçek Boyut</translation>
     </message>
 </context>
 <context>
@@ -13153,7 +13153,7 @@
     </message>
     <message>
         <source>&lt;p&gt;You are about to add a virtual hard disk to controller &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Would you like to create a new, empty file to hold the disk contents or select an existing one?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;&lt;b&gt;%1&lt;/b&gt; denetleyicisine sanal bir sabit disk eklemek üzeresiniz.&lt;/p&gt;&lt;p&gt;Disk içeriklerini tutmak için boş, yeni bir dosya oluşturmak ya da mevcut bir tane seçmek ister misiniz?&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;&lt;b&gt;%1&lt;/b&gt; denetleyicisine sanal bir sabit disk eklemek üzeresiniz.&lt;/p&gt;&lt;p&gt;Disk içeriklerini tutmak için boş, yeni bir dosya oluşturmak ya da varolan bir tane seçmek ister misiniz?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Create &amp;new disk</source>
@@ -13530,11 +13530,11 @@
     </message>
     <message>
         <source>&lt;p&gt;Could not find a language file for the language &lt;b&gt;%1&lt;/b&gt; in the directory &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The language will be temporarily reset to the system default language. Please go to the &lt;b&gt;Preferences&lt;/b&gt; window which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the VirtualBox Manager window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;&lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; dizinindeki &lt;b&gt;%1&lt;/b&gt; dili için bir dil dosyası bulunamadı.&lt;/p&gt;&lt;p&gt;Dil, sistem varsayılan diline geçici olarak sıfırlanacaktır. Lütfen VirtualBox Yöneticisi penceresinin &lt;b&gt;Dosya&lt;/b&gt; menüsünden açabileceğiniz &lt;b&gt;Tercihler&lt;/b&gt; penceresine gidin ve &lt;b&gt;Dil&lt;/b&gt; sayfasındaki mevcut dillerden birini seçin.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;&lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; dizinindeki &lt;b&gt;%1&lt;/b&gt; dili için bir dil dosyası bulunamadı.&lt;/p&gt;&lt;p&gt;Dil, sistem varsayılan diline geçici olarak sıfırlanacaktır. Lütfen VirtualBox Yöneticisi penceresinin &lt;b&gt;Dosya&lt;/b&gt; menüsünden açabileceğiniz &lt;b&gt;Tercihler&lt;/b&gt; penceresine gidin ve &lt;b&gt;Dil&lt;/b&gt; sayfasında varolan dillerden birini seçin.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Could not load the language file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;The language will be temporarily reset to English (built-in). Please go to the &lt;b&gt;Preferences&lt;/b&gt; window which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the VirtualBox Manager window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;&lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; dil dosyası yüklenemedi. &lt;p&gt;Dil, İngilizce (bütünleşik) diline geçici olarak sıfırlanacaktır. Lütfen VirtualBox Yöneticisi penceresinin &lt;b&gt;Dosya&lt;/b&gt; menüsünden açabileceğiniz &lt;b&gt;Tercihler&lt;/b&gt; penceresine gidin ve &lt;b&gt;Dil&lt;/b&gt; sayfasındaki mevcut dillerden birini seçin.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;&lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; dil dosyası yüklenemedi. &lt;p&gt;Dil, İngilizce (yerleşik) diline geçici olarak sıfırlanacaktır. Lütfen VirtualBox Yöneticisi penceresinin &lt;b&gt;Dosya&lt;/b&gt; menüsünden açabileceğiniz &lt;b&gt;Tercihler&lt;/b&gt; penceresine gidin ve &lt;b&gt;Dil&lt;/b&gt; sayfasında varolan dillerden birini seçin.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>There is no virtual machine with the identifier &lt;b&gt;%1&lt;/b&gt;.</source>
@@ -13570,7 +13570,7 @@
     </message>
     <message>
         <source>&amp;Choose existing disk</source>
-        <translation>Mevcut diski &amp;seç</translation>
+        <translation>Varolan diski &amp;seç</translation>
     </message>
     <message>
         <source>Leave &amp;empty</source>
@@ -15142,11 +15142,11 @@ bu basamağı atlayarak sabit diskleri Sanal Makine Ayarları penceresinden ekle
     </message>
     <message>
         <source>Monitor %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Monitör %1</translation>
     </message>
     <message>
         <source>Controls the guest screen scale factor.</source>
-        <translation type="unfinished">Misafir ekranı ölçek etkenini denetler.</translation>
+        <translation>Misafir ekranı ölçek etkenini denetler.</translation>
     </message>
 </context>
 <context>
@@ -15459,55 +15459,55 @@ bu basamağı atlayarak sabit diskleri Sanal Makine Ayarları penceresinden ekle
     <message>
         <source>Current State (changed)</source>
         <comment>Current State (Modified)</comment>
-        <translation type="unfinished">Şu Anki Durum (değişti)</translation>
+        <translation>Şu Anki Durum (değişti)</translation>
     </message>
     <message>
         <source>Current State</source>
         <comment>Current State (Unmodified)</comment>
-        <translation type="unfinished">Şu Anki Durum</translation>
+        <translation>Şu Anki Durum</translation>
     </message>
     <message>
         <source>The current state differs from the state stored in the current snapshot</source>
-        <translation type="unfinished">Şu anki durum şu anki anlık görüntüde saklanan durumdan farklı</translation>
+        <translation>Şu anki durum şu anki anlık görüntüde saklanan durumdan farklı</translation>
     </message>
     <message>
         <source>The current state is identical to the state stored in the current snapshot</source>
-        <translation type="unfinished">Şu anki durum şu anki anlık görüntüde saklanan durumla aynı</translation>
+        <translation>Şu anki durum şu anki anlık görüntüde saklanan durumla aynı</translation>
     </message>
     <message>
         <source>%1 (%2 ago)</source>
         <comment>date time (how long ago)</comment>
-        <translation type="unfinished">%1 (%2 önce)</translation>
+        <translation>%1 (%2 önce)</translation>
     </message>
     <message>
         <source>%1 since %2</source>
         <comment>Current State (time or date + time)</comment>
-        <translation type="unfinished"></translation>
+        <translation>%2 tarihinden/saatinden bu yana %1</translation>
     </message>
     <message>
         <source>current</source>
         <comment>snapshot</comment>
-        <translation type="unfinished">şu anki</translation>
+        <translation>şu anki</translation>
     </message>
     <message>
         <source>online</source>
         <comment>snapshot</comment>
-        <translation type="unfinished">çevrimiçi</translation>
+        <translation>çevrimiçi</translation>
     </message>
     <message>
         <source>offline</source>
         <comment>snapshot</comment>
-        <translation type="unfinished">çevrimdışı</translation>
+        <translation>çevrimdışı</translation>
     </message>
     <message>
         <source>Taken at %1</source>
         <comment>Snapshot (time)</comment>
-        <translation type="unfinished">Alınma saati %1</translation>
+        <translation>Alınma saati %1</translation>
     </message>
     <message>
         <source>Taken on %1</source>
         <comment>Snapshot (date + time)</comment>
-        <translation type="unfinished">Alınma tarihi/saati %1</translation>
+        <translation>Alınma tarihi/saati %1</translation>
     </message>
 </context>
 <context>
@@ -15538,7 +15538,7 @@ bu basamağı atlayarak sabit diskleri Sanal Makine Ayarları penceresinden ekle
     <message>
         <source>%1 since %2</source>
         <comment>Current State (time or date + time)</comment>
-        <translation type="vanished">%2 tarih/saatinden bu yana %1</translation>
+        <translation type="vanished">%2 tarihinden/saatinden bu yana %1</translation>
     </message>
     <message>
         <source>current</source>
@@ -15801,42 +15801,42 @@ bu basamağı atlayarak sabit diskleri Sanal Makine Ayarları penceresinden ekle
     <message>
         <source>&lt;nobr&gt;Vendor ID: %1&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation type="unfinished">&lt;nobr&gt;Satıcı Kimliği: %1&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;Satıcı Kimliği: %1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Product ID: %2&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation type="unfinished">&lt;nobr&gt;Ürün Kimliği: %2&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;Ürün Kimliği: %2&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Revision: %3&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation type="unfinished">&lt;nobr&gt;Gözden Geçirme: %3&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;Gözden Geçirme: %3&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Product: %4&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation type="unfinished">&lt;nobr&gt;Ürün: %4&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;Ürün: %4&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Manufacturer: %5&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation type="unfinished">&lt;nobr&gt;Üretici: %5&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;Üretici: %5&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Serial No.: %1&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation type="unfinished">&lt;nobr&gt;Seri No.: %1&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;Seri No.: %1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Port: %1&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation type="unfinished">&lt;nobr&gt;B.Noktası: %1&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;B.Noktası: %1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;State: %1&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation type="unfinished">&lt;nobr&gt;Durum: %1&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;Durum: %1&lt;/nobr&gt;</translation>
     </message>
 </context>
 <context>
@@ -16534,7 +16534,7 @@ bu basamağı atlayarak sabit diskleri Sanal Makine Ayarları penceresinden ekle
     </message>
     <message>
         <source>Show Toolbar Text</source>
-        <translation type="unfinished">Araç Çubuğu Metnini Göster</translation>
+        <translation>Araç Çubuğu Metnini Göster</translation>
     </message>
 </context>
 <context>
@@ -16991,15 +16991,15 @@ bu basamağı atlayarak sabit diskleri Sanal Makine Ayarları penceresinden ekle
     </message>
     <message>
         <source>New machine name and path</source>
-        <translation type="unfinished"></translation>
+        <translation>Yeni makine adı ve yolu</translation>
     </message>
     <message>
         <source>Include all network adapter MAC addresses during cloning.</source>
-        <translation type="unfinished"></translation>
+        <translation>Çoğaltma sırasında tüm ağ bağdaştırıcısı MAC adreslerini dahil et.</translation>
     </message>
     <message>
         <source>Additional options</source>
-        <translation type="unfinished"></translation>
+        <translation>İlave seçenekler</translation>
     </message>
 </context>
 <context>
@@ -17294,7 +17294,7 @@ bu basamağı atlayarak sabit diskleri Sanal Makine Ayarları penceresinden ekle
     </message>
     <message>
         <source>&lt;p&gt;Please choose one of cloud service accounts you have registered to export virtual machines to. Make sure profile settings reflected in the underlying table are valid. They will be used to establish network connection required to upload your virtual machine files to a remote cloud facility.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Lütfen sanal makineleri dışa aktarmak için kaydolduğunuz bulut hizmeti hesaplarından birini seçin.  Alttaki tabloya yansıtılan profil ayarlarının geçerli olduğundan emin olun.  Sanal makine dosyalarınızı uzak bulut tesisine göndermek için gereken ağ bağlantısını kurmada kullanılacaklardır.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -17440,7 +17440,7 @@ Ana klasörler aynı zamanda ayrı ayrı (sanal makine başına) değiştirilebi
     </message>
     <message>
         <source>You can modify the base folder which will host all the virtual machines. Home folders can also be individually (per virtual machine) modified.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tüm sanal makineleri barındıracak temel klasörü değiştirebilirsiniz. Ana klasörler aynı zamanda ayrı ayrı (sanal makine başına) değiştirilebilir.</translation>
     </message>
 </context>
 <context>
@@ -20980,12 +20980,12 @@ Version %1</source>
     <message>
         <source>Not Attached</source>
         <comment>network adapter</comment>
-        <translation type="unfinished"></translation>
+        <translation>Takılmadı</translation>
     </message>
     <message>
         <source>Disconnected</source>
         <comment>serial port</comment>
-        <translation type="unfinished">Bağlantı kesildi</translation>
+        <translation>Bağlantı kesildi</translation>
     </message>
 </context>
 <context>
@@ -21772,7 +21772,7 @@ to the system default language.&lt;/qt&gt;
     </message>
     <message>
         <source>Copy an existing disk image file</source>
-        <translation type="vanished">Mevcut disk kalıbı dosyasını kopyala</translation>
+        <translation type="vanished">Varolan disk kalıbı dosyasını kopyala</translation>
     </message>
     <message>
         <source>Modify the attributes of the selected disk image file</source>
