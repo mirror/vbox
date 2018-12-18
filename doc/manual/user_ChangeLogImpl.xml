@@ -81,7 +81,8 @@ technical terms if no non-technical ones are clear enough.
       
       <listitem>
         <para>Added support for using Hyper-V as the fallback execution core on
-           Windows host, to avoid inability to run VMs</para>
+           Windows host, to avoid inability to run VMs at the price of reduced
+           performance</para>
       </listitem>
 
     </itemizedlist>
