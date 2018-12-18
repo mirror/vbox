@@ -14003,7 +14003,10 @@ DECLINLINE(VBOXSTRICTRC) iemExecOneInner(PVMCPU pVCpu, bool fExecuteInhibit, con
      * Perform any VMX nested-guest instruction boundary actions.
      *
      * If any of these causes a VM-exit, we must skip executing the next
-     * instruction (so we set fExecuteInhibit to false).
+     * instruction (would run into stale page tables). A VM-exit makes sure
+     * there is no interrupt-inhibition, so that should ensure we don't go
+     * to try execute the next instruction. Clearing fExecuteInhibit is
+     * problematic because of the setjmp/longjmp clobbering above.
      */
     if (   rcStrict == VINF_SUCCESS
         && CPUMIsGuestInVmxNonRootMode(IEM_GET_CTX(pVCpu)))
@@ -14012,15 +14015,14 @@ DECLINLINE(VBOXSTRICTRC) iemExecOneInner(PVMCPU pVCpu, bool fExecuteInhibit, con
         if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_VMX_APIC_WRITE))
         {
             rcStrict = iemVmxApicWriteEmulation(pVCpu);
-            if (rcStrict != VINF_SUCCESS)
-                fExecuteInhibit = false;
+            Assert(!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS));
             Assert(!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_VMX_APIC_WRITE));
         }
         /* MTF takes priority over VMX-preemption timer. */
         else if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_VMX_MTF))
         {
             rcStrict = iemVmxVmexitMtf(pVCpu);
-            fExecuteInhibit = false;
+            Assert(!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS));
             Assert(!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_VMX_MTF));
         }
         /** Finally, check if the VMX preemption timer has expired. */
@@ -14031,8 +14033,8 @@ DECLINLINE(VBOXSTRICTRC) iemExecOneInner(PVMCPU pVCpu, bool fExecuteInhibit, con
                 rcStrict = VINF_SUCCESS;
             else
             {
+                Assert(!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS));
                 Assert(!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_VMX_PREEMPT_TIMER));
-                fExecuteInhibit = false;
             }
         }
     }
