@@ -125,6 +125,11 @@ technical terms if no non-technical ones are clear enough.
       </listitem>
 
       <listitem>
+        <para>Networking: fixed wrong RCODE from DNS AAAA query with
+           --natdnshostresolver1 (bug #18171)</para>
+      </listitem>
+
+      <listitem>
         <para>iSCSI: In cases where there is no ambiguity, the LUN of an iSCSI
           target is automatically determined, for targets with non-zero LUNs
         </para>
@@ -136,6 +141,10 @@ technical terms if no non-technical ones are clear enough.
 
       <listitem>
         <para>VBoxManage: support for DHCP options</para>
+      </listitem>
+
+      <listitem>
+        <para>Fixed VNC/RDP (bug 18153)</para>
       </listitem>
 
       <listitem>
