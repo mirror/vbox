@@ -85,13 +85,13 @@ technical terms if no non-technical ones are clear enough.
     <itemizedlist>
 
       <listitem>
-        <para>User interface: video and audio recording can now be separately
-          enabled</para>
+        <para>Execution core: fixed single-stepping in certain circumstances
+           (bug #17316)</para>
       </listitem>
 
       <listitem>
-        <para>Execution: fixed single-stepping in certain circumstances
-           (bug #17316)</para>
+        <para>User interface: video and audio recording can now be separately
+          enabled</para>
       </listitem>
 
       <listitem>
@@ -128,8 +128,7 @@ technical terms if no non-technical ones are clear enough.
       </listitem>
 
       <listitem>
-        <para>API: transparently resize disk images when merging if
-          possible</para>
+        <para>Transparently resize disk images when merging if possible</para>
       </listitem>
 
       <listitem>
@@ -173,6 +172,10 @@ technical terms if no non-technical ones are clear enough.
 
       <listitem>
         <para>Linux guests: support VMSVGA in the Linux and X11 Additions</para>
+      </listitem>
+
+      <listitem>
+        <para>MacOS Guest Additions: initial support</para>
       </listitem>
 
       <listitem>
