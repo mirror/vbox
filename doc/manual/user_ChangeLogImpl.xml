@@ -104,10 +104,6 @@ technical terms if no non-technical ones are clear enough.
       </listitem>
 
       <listitem>
-        <para>New BusLogic ISA device variant</para>
-      </listitem>
-
-      <listitem>
         <para>Serial port emulation fixes</para>
       </listitem>
 
