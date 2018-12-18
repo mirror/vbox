@@ -3038,7 +3038,7 @@ Virtual system 0:
 
       <note>
         <para>
-          By default an exported image is converted into "stream vmdk" 
+          By default an exported image is converted into "stream vmdk"
           to comply OCI requirement.
         </para>
       </note>
@@ -3094,7 +3094,7 @@ Virtual system 0:
           <para>
             <computeroutput>--cloudprofile &lt;cloud profile
             name&gt;</computeroutput>: The cloud profile contains data for
-            communication with a cloud provider or service. The cloud profile contains details 
+            communication with a cloud provider or service. The cloud profile contains details
             for your &oci; account, such as your user OCID, and the fingerprint for
             your public key. See <xref linkend="ovf-export-oci"/>.
           </para>
@@ -3129,7 +3129,7 @@ Virtual system 0:
         <listitem>
           <para>
             <computeroutput>--cloudbucket &lt;bucket
-            name&gt;</computeroutput>: A bucket is a kind of storage for the uploaded 
+            name&gt;</computeroutput>: A bucket is a kind of storage for the uploaded
             objects. In the &oci; a bucket is used to store the uploaded files.
           </para>
         </listitem>
