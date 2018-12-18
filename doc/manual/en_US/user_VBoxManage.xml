@@ -3036,6 +3036,13 @@ Virtual system 0:
 
       <title>Export to &oci;</title>
 
+      <note>
+        <para>
+          By default an exported image is converted into "stream vmdk" 
+          to comply OCI requirement.
+        </para>
+      </note>
+
       <para>
         List the machine that you want to export to &oci; and specify
         output to &oci; by using the
@@ -3063,7 +3070,7 @@ Virtual system 0:
           <para>
             <computeroutput>--output</computeroutput>: The short name
             for the cloud service you are exporting to. For &oci;, enter
-            <computeroutput>OCI//</computeroutput>.
+            <computeroutput>OCI://</computeroutput>.
           </para>
         </listitem>
 
@@ -3078,18 +3085,17 @@ Virtual system 0:
 
         <listitem>
           <para>
-            <computeroutput>--vmname &lt;vnamem&gt;</computeroutput>:
-            The name of the VM to export. This is the name used in the
-            VirtualBox Manager.
+            <computeroutput>--vmname &lt;name&gt;</computeroutput>:
+            The exported VM gets this name in the cloud service.
           </para>
         </listitem>
 
         <listitem>
           <para>
             <computeroutput>--cloudprofile &lt;cloud profile
-            name&gt;</computeroutput>: The cloud profile used for the
-            export. The cloud profile contains details for your &oci;
-            account, such as your user OCID, and the fingerprint for
+            name&gt;</computeroutput>: The cloud profile contains data for
+            communication with a cloud provider or service. The cloud profile contains details 
+            for your &oci; account, such as your user OCID, and the fingerprint for
             your public key. See <xref linkend="ovf-export-oci"/>.
           </para>
         </listitem>
@@ -3097,9 +3103,9 @@ Virtual system 0:
         <listitem>
           <para>
             <computeroutput>--cloudshape &lt;shape&gt;</computeroutput>:
-            The shape used for the VM instance. This determines the
-            number of CPUs and the amount of memory allocated to a the
-            VM instance.
+            The shape is used for the VM instance. Usually, determines the
+            number of CPUs and the amount of memory allocated to a
+            VM instance. The shape must be compatible with the exported image.
           </para>
         </listitem>
 
@@ -3115,17 +3121,16 @@ Virtual system 0:
         <listitem>
           <para>
             <computeroutput>--clouddisksize &lt;disk
-            size&gt;</computeroutput>: The disk size used for the VM
-            instance, in gigabytes.
+            size&gt;</computeroutput>: The disk size used for the exported
+            image, in gigabytes. Minimum is 50GB, maximum - 300GB.
           </para>
         </listitem>
 
         <listitem>
           <para>
             <computeroutput>--cloudbucket &lt;bucket
-            name&gt;</computeroutput>: The bucket used to store the VM
-            instance. In &oci;, a bucket is a logical container for
-            storing objects.
+            name&gt;</computeroutput>: A bucket is a kind of storage for the uploaded 
+            objects. In the &oci; a bucket is used to store the uploaded files.
           </para>
         </listitem>
 
@@ -3149,7 +3154,7 @@ Virtual system 0:
           <para>
             <computeroutput>--cloudkeepobject
             &lt;true/false&gt;</computeroutput>: Whether to store the
-            exported disk image in Oracle Object Storage.
+            exported image in Oracle Object Storage or not.
           </para>
         </listitem>
 
@@ -3157,7 +3162,7 @@ Virtual system 0:
           <para>
             <computeroutput>--cloudlaunchinstance
             &lt;true/false&gt;</computeroutput>: Whether to start the VM
-            instance after export to &oci; has completed.
+            instance after export to &oci; or not.
           </para>
         </listitem>
 
@@ -3165,7 +3170,7 @@ Virtual system 0:
           <para>
             <computeroutput>--cloudpublicip
             &lt;true/false&gt;</computeroutput>: Whether to enable a
-            public IP address for the VM instance.
+            public IP address for the VM instance or not.
           </para>
         </listitem>
 
