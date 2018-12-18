@@ -46,7 +46,8 @@ are ordered as follows:
     <itemizedlist>
 
       <listitem>
-        <para>Dummy entry</para>
+        <para>VMM: fixed single-stepping of certain instructions when falling
+          back from HM execution to the interpreter (bug #17316)</para>
       </listitem>
 
     </itemizedlist>
