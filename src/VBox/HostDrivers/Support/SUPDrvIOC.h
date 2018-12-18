@@ -1611,7 +1611,7 @@ typedef struct SUPGIPSETFLAGS
  *
  * @{
  */
-#define SUP_IOCTL_UCODE_REV                             SUP_CTL_CODE_SIZE(40, SUP_IOCTL_VT_CAPS_SIZE)
+#define SUP_IOCTL_UCODE_REV                             SUP_CTL_CODE_SIZE(40, SUP_IOCTL_UCODE_REV_SIZE)
 #define SUP_IOCTL_UCODE_REV_SIZE                        sizeof(SUPUCODEREV)
 #define SUP_IOCTL_UCODE_REV_SIZE_IN                     sizeof(SUPREQHDR)
 #define SUP_IOCTL_UCODE_REV_SIZE_OUT                    sizeof(SUPUCODEREV)
