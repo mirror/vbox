@@ -28,8 +28,33 @@ are ordered as follows:
                            So, we use chapter and xpointer="xpointer(/chapter/)" with xi:include. -->
 
   <sect1>
+    <title>Version 6.0.0 release candidate 2 (2018-xx-xx)</title>
 
-    <title>Version 6.0.0_RC1 (2018-12-10)</title>
+    <para>This is a major update. The following major new features
+      were added:</para>
+
+    <itemizedlist>
+
+      <listitem>
+        <para>Dummy entry</para>
+      </listitem>
+
+    </itemizedlist>
+
+    <para>In addition, the following items were fixed and/or added:</para>
+
+    <itemizedlist>
+
+      <listitem>
+        <para>Dummy entry</para>
+      </listitem>
+
+    </itemizedlist>
+  </sect1>
+
+  <sect1>
+
+    <title>Version 6.0.0 release candidate 1 (2018-12-10)</title>
 
     <para>
       This is a major update. The following major new features were
