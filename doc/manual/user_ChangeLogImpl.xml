@@ -21,14 +21,21 @@ are ordered as follows:
     Device-related entries
     VBoxManage/API/Main-related entries
     Host-related entries
-    Guest-related entries -->
+    Guest-related entries
+    BIOS/EFI/ACPI-related entries
+    
+Please do further ordering as seems appropriate by importance and visibility for
+users, e.g. audio before serial ports and generally Windows before Linux.  Please
+also try to describe the user impact, not the technical details, and only use
+technical terms if no non-technical ones are clear enough. 
+-->
 <chapter>
 
 <!-- HACK ALERT! Seems we must have a single top level element for xi:include to work.
                            So, we use chapter and xpointer="xpointer(/chapter/)" with xi:include. -->
 
   <sect1>
-    <title>Version 6.0.0 release candidate 2 (2018-xx-xx)</title>
+    <title>Version 6.0.0 (2018-12-18)</title>
 
     <para>This is a major update. The following major new features
       were added:</para>
@@ -36,228 +43,41 @@ are ordered as follows:
     <itemizedlist>
 
       <listitem>
-        <para>Dummy entry</para>
-      </listitem>
-
-    </itemizedlist>
-
-    <para>In addition, the following items were fixed and/or added:</para>
-
-    <itemizedlist>
-
-      <listitem>
-        <para>VMM: fixed single-stepping over certain instructions when falling
-          back from HM execution to the interpreter (bug #17316)</para>
-      </listitem>
-
-    </itemizedlist>
-  </sect1>
-
-  <sect1>
-
-    <title>Version 6.0.0 release candidate 1 (2018-12-10)</title>
-
-    <para>
-      This is a major update. The following major new features were
-      added:
-    </para>
-
-    <itemizedlist>
-
-      <listitem>
-        <para>Audio: added support for surround speaker setups (e.g. used by
-          Windows 10 Build 1809)</para>
-      </listitem>
-
-      <listitem>
-        <para>Storage: added utility <computeroutput>vboximg-mount</computeroutput>
-          on OS X to access the content of disk images on the host.</para>
-      </listitem>
-
-    </itemizedlist>
-
-    <para>
-      In addition, the following items were fixed or added:
-    </para>
-
-    <itemizedlist>
-
-      <listitem>
-        <para>Linux Additions: fix for building vboxvideo on EL 7.6 standard
-           kernel, contributed by Robert Conde (bug #18093)</para>
-      </listitem>
-
-      <listitem>
-        <para>Shared folders: performance improvements</para>
-      </listitem>
-
-    </itemizedlist>
-
-  </sect1>
-  <sect1>
-    <title>Version 6.0.0_BETA3 (2018-11-30)</title>
-
-    <para>This is a beta release. The following major new features
-      were added:</para>
-
-    <itemizedlist>
-
-      <listitem>
-        <para>OCI integration: exporting a VM is now possible from the command line
-          interface (VBoxManage)</para>
-      </listitem>
-
-      <listitem>
-        <para>OCI integration: all virtualized shapes are supported, e.g.
-          VM.Standard2.*</para>
-      </listitem>
-
-      <listitem>
-        <para>Devices/graphics: enable support for VMSVGA graphics device emulation
-          by default</para>
-      </listitem>
-
-      <listitem>
-        <para>VBoxManage: support for DHCP options</para>
-      </listitem>
-
-      <listitem>
-        <para>Windows guests: support VMSVGA in the Windows Additions</para>
-      </listitem>
-
-    </itemizedlist>
-
-    <para>In addition, the following items were fixed and/or added:</para>
-
-    <itemizedlist>
-
-      <listitem>
-        <para>Serial: allow changing the serial port attachment while the
-          VM is running (bug #6115)</para>
-      </listitem>
-
-      <listitem>
-        <para>Linux hosts: support Linux 4.20 (thank you Larry Finger)</para>
-      </listitem>
-
-      <listitem>
-        <para>Linux guests: support Linux 4.20 (thank you Larry Finger)</para>
-      </listitem>
-
-      <listitem>
-        <para>Linux guests: support VMSVGA in the Linux and X11 Additions</para>
-      </listitem>
-
-    </itemizedlist>
-  </sect1>
-
-  <sect1>
-    <title>Version 6.0.0_BETA2 (2018-11-15)</title>
-
-    <para>This is a beta release. The following major new features
-      were added:</para>
-
-    <itemizedlist>
-
-      <listitem>
-        <para>User interface: a new file manager enabling user to control the guest file system and copy file objects between host and guest.</para>
-      </listitem>
-
-    </itemizedlist>
-
-    <para>In addition, the following items were fixed and/or added:</para>
-
-    <itemizedlist>
-
-      <listitem>
-        <para>Oracle Cloud integration fixes and improvements</para>
-      </listitem>
-
-      <listitem>
-        <para>User interface: many improvements</para>
-      </listitem>
-
-      <listitem>
-        <para>Audio/Video recording fixes and improvements</para>
-      </listitem>
-
-      <listitem>
-        <para>Devices: new BusLogic ISA variant</para>
-      </listitem>
-
-      <listitem>
-        <para>Devices: serial port fixes</para>
-      </listitem>
-
-      <listitem>
-        <para>BIOS: fixes</para>
-      </listitem>
-
-      <listitem>
-        <para>API: transparently resize disk images when merging if
-          possible</para>
-      </listitem>
-
-      <listitem>
-        <para>Solaris: installer fixes</para>
-      </listitem>
-
-      <listitem>
-        <para>Windows Guest Additions: fix incorrect tablet co-ordinate
-          handling with recent Windows 10 builds</para>
-      </listitem>
-
-      <listitem>
-        <para>Guest Additions: improved shared folder auto-mounting</para>
-      </listitem>
-
-      <listitem>
-        <para>OS/2 Guest Additions: initial shared folder support</para>
-      </listitem>
-
-    </itemizedlist>
-  </sect1>
-
-  <sect1>
-    <title>Version 6.0.0_BETA1 (2018-10-22)</title>
-
-    <para>This is a beta release. The following major new features
-      were added:</para>
-
-    <itemizedlist>
-
-      <listitem>
-        <para>OCI Integration: implemented support for exporting a VM to
-          Oracle Cloud Infrastructure</para>
+        <para>Implemented support for exporting a virtual machine to Oracle
+           Cloud Infrastructure</para>
       </listitem>
 
       <listitem>
         <para>User interface: greatly improved HiDPI and scaling support,
-          including better using host HiDPI support, HiDPI icons,
-          improved detection and per-machine configuration</para>
+          including better detection and per-machine configuration</para>
       </listitem>
 
       <listitem>
-        <para>User interface: major rework of interface style with improved
-          ease of access for application and machine set-up</para>
+        <para>Major rework of user interface with simpler and more powerful
+           application and virtual machine set-up</para>
       </listitem>
 
       <listitem>
-        <para>User interface: an improved logviewer widget.</para>
+        <para>User interface: a new file manager enabling user to control
+           the guest file system and copy files between host and guest.</para>
       </listitem>
 
       <listitem>
-        <para>User interface: several improvements to import appliance and clone virtual machine wizards including (not limited to) enabling user to select non-default folders per machine.</para>
+        <para>Graphics: major update of 3D graphics support for Windows guests,
+           and VMSVGA 3D graphics device emulation on Linux and Solaris guests
+           </para>
       </listitem>
 
       <listitem>
-        <para>User interface: a new floppy disk creation widget enabling user to create/add a (optionally formatted) floppy disk.</para>
+        <para>Added support for surround speaker setups (as used by
+          Windows 10 Build 1809)</para>
       </listitem>
 
       <listitem>
-        <para>User interface: a new media selection widget enabling the user to select one of the already known media or select a disk image file.</para>
+        <para>Added utility <computeroutput>vboximg-mount</computeroutput>
+           on Apple hosts to access the content of guest disks on the host
+           </para>
       </listitem>
-
     </itemizedlist>
 
     <para>In addition, the following items were fixed and/or added:</para>
@@ -270,13 +90,30 @@ are ordered as follows:
       </listitem>
 
       <listitem>
-        <para>Audio: implemented support for attaching / detaching VRDE
-          audio drivers at runtime</para>
+        <para>Execution: fixed single-stepping in certain circumstances
+           (bug #17316)</para>
       </listitem>
 
       <listitem>
-        <para>Guest Control: various new APIs and features were implemented
-          (see SDK documentation for more)</para>
+        <para>Audio/Video recording fixes and improvements</para>
+      </listitem>
+
+      <listitem>
+        <para>Audio: better support for attaching and detaching remote desktop
+           connections</para>
+      </listitem>
+
+      <listitem>
+        <para>New BusLogic ISA device variant</para>
+      </listitem>
+
+      <listitem>
+        <para>Serial port emulation fixes</para>
+      </listitem>
+
+      <listitem>
+        <para>Serial ports: allow changing the serial port attachment while a
+           machine is running (bug #6115)</para>
       </listitem>
 
       <listitem>
@@ -286,16 +123,70 @@ are ordered as follows:
 
       <listitem>
         <para>iSCSI: In cases where there is no ambiguity, the LUN of an iSCSI
-          target is automatically determined; this makes eases the use of iSCSI
-          targets with LUNs other than zero
+          target is automatically determined, for targets with non-zero LUNs
         </para>
+      </listitem>
+
+      <listitem>
+        <para>API: transparently resize disk images when merging if
+          possible</para>
+      </listitem>
+
+      <listitem>
+        <para>VBoxManage: support for DHCP options</para>
+      </listitem>
+
+      <listitem>
+        <para>Guest Control: various new interfaces and features
+          (see SDK documentation)</para>
+      </listitem>
+
+      <listitem>
+        <para>Linux hosts: support Linux 4.20 (thank you Larry Finger)</para>
+      </listitem>
+
+      <listitem>
+        <para>Solaris: installer fixes</para>
+      </listitem>
+
+      <listitem>
+        <para>Shared folders: performance improvements</para>
+      </listitem>
+
+      <listitem>
+        <para>Guest Additions: improved shared folder auto-mounting</para>
+      </listitem>
+
+      <listitem>
+        <para>Windows Guest Additions: fix incorrect tablet co-ordinate
+          handling with recent Windows 10 builds</para>
+      </listitem>
+
+      <listitem>
+        <para>Linux Additions: fix for building vboxvideo on EL 7.6 standard
+           kernel, contributed by Robert Conde (bug #18093)</para>
+      </listitem>
+
+      <listitem>
+        <para>Linux guests: support Linux 4.20 (thank you Larry Finger)</para>
+      </listitem>
+
+      <listitem>
+        <para>Linux guests: support VMSVGA in the Linux and X11 Additions</para>
+      </listitem>
+
+      <listitem>
+        <para>OS/2 Guest Additions: initial shared folder support</para>
+      </listitem>
+
+      <listitem>
+        <para>BIOS fixes</para>
       </listitem>
 
       <listitem>
         <para>ACPI: Up to four custom ACPI tables can now be configured for a VM
         </para>
       </listitem>
-
     </itemizedlist>
   </sect1>
 
