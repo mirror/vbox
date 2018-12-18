@@ -78,6 +78,12 @@ technical terms if no non-technical ones are clear enough.
            on Apple hosts to access the content of guest disks on the host
            </para>
       </listitem>
+      
+      <listitem>
+        <para>Added support for using Hyper-V as the fallback execution core on
+           Windows host, to avoid inability to run VMs</para>
+      </listitem>
+
     </itemizedlist>
 
     <para>In addition, the following items were fixed and/or added:</para>
