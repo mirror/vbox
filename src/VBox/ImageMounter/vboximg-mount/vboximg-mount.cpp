@@ -35,7 +35,6 @@
 #include <libgen.h>
 #include <unistd.h>
 #include <math.h>
-//#include <stdarg.h>
 #include <cstdarg>
 #include <sys/stat.h>
 #endif
@@ -60,7 +59,7 @@
 #include <VBox/com/Guid.h>
 #include <VBox/com/array.h>
 #include <VBox/com/errorprint.h>
-
+#include <VBox/vd-plugin.h>
 #include <iprt/initterm.h>
 #include <iprt/assert.h>
 #include <iprt/message.h>
@@ -73,9 +72,13 @@
 #include <iprt/types.h>
 #include <iprt/path.h>
 #include <iprt/utf16.h>
+#include <iprt/base64.h>
 
 #include "vboximg-mount.h"
+#include "vboximgCrypto.h"
+#include "vboximgMedia.h"
 #include "SelfSizingTable.h"
+#include "vboximgOpts.h"
 
 using namespace com;
 
@@ -83,23 +86,9 @@ enum {
      USAGE_FLAG,
 };
 
-/* For getting the basename of the image path */
-union
-{
-    RTPATHSPLIT split;
-    uint8_t     abPad[RTPATH_MAX + 1024];
-} g_u;
-
-#if 0 /* unused */
-const uint64_t KB = 1024;
-const uint64_t MB = KB * KB;
-const uint64_t GB = MB * KB;
-const uint64_t TB = GB * KB;
-const uint64_t PB = TB * KB;
-#endif
-
 enum { PARTITION_TABLE_MBR = 1, PARTITION_TABLE_GPT = 2 };
 
+#define VBOX_EXTPACK                "Oracle VM VirtualBox Extension Pack"
 #define GPT_PTABLE_SIZE             32 * BLOCKSIZE   /** Max size we to read for GPT partition table */
 #define MBR_PARTITIONS_MAX          4                /** Fixed number of partitions in Master Boot Record */
 #define BASENAME_MAX                256              /** Maximum name for the basename of a path (for RTStrNLen()*/
@@ -113,7 +102,7 @@ enum { PARTITION_TABLE_MBR = 1, PARTITION_TABLE_GPT = 2 };
 #define VD_SECTOR_SIZE              512              /** Virtual disk sector/blocksize */
 #define VD_SECTOR_MASK              (VD_SECTOR_SIZE - 1)    /** Masks off a blocks worth of data */
 #define VD_SECTOR_OUT_OF_BOUNDS_MASK  (~UINT64_C(VD_SECTOR_MASK))         /** Masks the overflow of a blocks worth of data */
-
+#define VERBOSE                     g_vboximgOpts.fVerbose
 #define IS_BIG_ENDIAN (*(uint16_t *)"\0\xff" < 0x100)
 
 #define PARTTYPE_IS_NULL(parType) ((uint8_t)parType == 0x00)
@@ -130,19 +119,22 @@ static struct fuse_operations g_vboximgOps;         /** FUSE structure that defi
 /* Global variables */
 
 static PVDISK                g_pVDisk;              /** Handle for Virtual Disk in contet */
-static char                 *g_pvDiskUuid;          /** UUID of image (if known, otherwise NULL) */
+static char                 *g_pszDiskUuid;          /** UUID of image (if known, otherwise NULL) */
 static off_t                 g_vDiskOffset;         /** Biases r/w from start of VD */
 static off_t                 g_vDiskSize;           /** Limits r/w length for VD */
 static int32_t               g_cReaders;            /** Number of readers for VD */
 static int32_t               g_cWriters;            /** Number of writers for VD */
 static RTFOFF                g_cbEntireVDisk;       /** Size of VD */
-static char                 *g_pszBaseImageName;    /** Base filename for current VD image */
-static char                 *g_pszBaseImagePath;    /** Full path to current VD image */
 static PVDINTERFACE          g_pVdIfs;              /** @todo Remove when VD I/O becomes threadsafe */
 static VDINTERFACETHREADSYNC g_VDIfThreadSync;      /** @todo Remove when VD I/O becomes threadsafe */
 static RTCRITSECT            g_vdioLock;            /** @todo Remove when VD I/O becomes threadsafe */
 static uint16_t              g_lastPartNbr;         /** Last partition number found in MBR + EBR chain */
 static bool                  g_fGPT;                /** True if GPT type partition table was found */
+static char                 *g_pszImageName;        /** Base filename for current VD image */
+static char                 *g_pszImagePath;        /** Full path to current VD image */
+static char                 *g_pszBaseImagePath;    /** Base image known after parsing */
+static char                 *g_pszBaseImageName;    /** Base image known after parsing */
+static uint32_t              g_cImages;             /** Number of images in diff chain */
 
 /* Table entry containing partition info parsed out of GPT or MBR and EBR chain of specified VD */
 
@@ -167,60 +159,68 @@ typedef struct
 
 PARTITIONINFO g_aParsedPartitionInfo[VBOXIMG_PARTITION_MAX + 1]; /* Note: Element 0 reserved for EntireDisk partitionEntry */
 
-static struct vboximgOpts {
-     char         *pszVm;                   /** optional VM UUID */
-     char         *pszImage;                /** Virtual Disk image UUID or path */
-     int32_t       idxPartition;            /** Number of partition to constrain FUSE based FS to (optional) 0 - whole disk*/
-     int32_t       offset;                  /** Offset to base virtual disk reads and writes from (altnerative to partition) */
-     int32_t       size;                    /** Size of accessible disk region, starting at offset, default = offset 0 */
-     uint32_t      cHddImageDiffMax;        /** Max number of differencing images (snapshots) to apply to image */
-     uint32_t      fListMediaLong;          /** Flag to list virtual disks of all known VMs */
-     uint32_t      fList;                   /** Flag to list virtual disks of all known VMs */
-     uint32_t      fListParts;              /** Flag to summarily list partitions associated with pszImage */
-     uint32_t      fAllowRoot;              /** Flag to allow root to access this FUSE FS */
-     uint32_t      fRW;                     /** Flag to allow changes to FUSE-mounted Virtual Disk image */
-     uint32_t      fBriefUsage;             /** Flag to display only FS-specific program usage options */
-     uint32_t      fVerbose;                /** Add more info to lists and operations */
-} g_vboximgOpts;
+VBOXIMGOPTS g_vboximgOpts;
 
 #define OPTION(fmt, pos, val) { fmt, offsetof(struct vboximgOpts, pos), val }
 
 static struct fuse_opt vboximgOptDefs[] = {
-    OPTION("-l",              fList,             1),
-    OPTION("--list",          fList,             1),
-    OPTION("--root",          fAllowRoot,        1),
-    OPTION("--vm=%s",         pszVm,             0),
-    OPTION("--maxdiff=%d",    cHddImageDiffMax,  1),
-    OPTION("--diff=%d",       cHddImageDiffMax,  1),
-    OPTION("--partition=%d",  idxPartition,      1),
-    OPTION("-p %d",           idxPartition,      1),
-    OPTION("--offset=%d",     offset,            1),
-    OPTION("-o %d",           offset,            1),
-    OPTION("--size=%d",       size,              1),
-    OPTION("-s %d",           size,              1),
-    OPTION("--image=%s",      pszImage,          0),
-    OPTION("-i %s",           pszImage,          0),
-    OPTION("--rw",            fRW,               1),
-    OPTION("--verbose",       fVerbose,          1),
-    OPTION("-v",              fVerbose,          1),
-    OPTION("-h",              fBriefUsage,       1),
+    OPTION("--image=%s",      pszImageUuidOrPath,   0),
+    OPTION("-i %s",           pszImageUuidOrPath,   0),
+    OPTION("--rw",            fRW,                  1),
+    OPTION("--root",          fAllowRoot,           0),
+    OPTION("--vm=%s",         pszVm,                0),
+    OPTION("--partition=%d",  idxPartition,         1),
+    OPTION("-p %d",           idxPartition,         1),
+    OPTION("--offset=%d",     offset,               1),
+    OPTION("-o %d",           offset,               1),
+    OPTION("--size=%d",       size,                 1),
+    OPTION("-s %d",           size,                 1),
+    OPTION("-l",              fList,                1),
+    OPTION("--list",          fList,                1),
+    OPTION("--verbose",       fVerbose,             1),
+    OPTION("-v",              fVerbose,             1),
+    OPTION("--wide",          fWide,                1),
+    OPTION("-w",              fWide,                1),
+    OPTION("-lv",             fVerboseList,         1),
+    OPTION("-vl",             fVerboseList,         1),
+    OPTION("-lw",             fWideList,            1),
+    OPTION("-wl",             fWideList,            1),
+    OPTION("-h",              fBriefUsage,          1),
     FUSE_OPT_KEY("--help",    USAGE_FLAG),
     FUSE_OPT_KEY("-vm",       FUSE_OPT_KEY_NONOPT),
     FUSE_OPT_END
 };
 
+typedef struct IMAGELIST
+{
+    struct IMAGELIST *next;
+    struct IMAGELIST *prev;
+    ComPtr<IToken> pLockToken;
+    bool   fWriteable;
+    ComPtr<IMedium> pImage;
+    Bstr   pImageName;
+    Bstr   pImagePath;
+} IMAGELIST;
+
+IMAGELIST listHeadLockList;  /* flink & blink intentionally left NULL */
+
 static void
 briefUsage()
 {
-    RTPrintf("usage: vboximg-mount [options] <mountpoint>\n\n"
+    RTPrintf("usage: vboximg-mount [options] <mount point directory path>\n\n"
         "vboximg-mount options:\n\n"
-        "  [ { -i | --image= } <specifier> ]  VirtualBox disk image (UUID, name or path)\n"
+        "  [ { -i | --image= } <specifier> ]  VirtualBox disk base or snapshot image,\n"
+        "                                     specified by UUID, or fully-qualified path\n"
         "\n"
-        "  [ { -l | --list } ]                If image specified, list its partitions, \n"
-        "                                     otherwise, list registered VMs and\n"
-        "                                     associated disks. In verbose mode,\n"
-        "                                     VM/media list will be long format, i.e.\n"
-        "                                     including snapshot images and file paths.\n"
+        "  [ { -l | --list } ]                If --image specified, list its partitions,\n"
+        "                                     otherwise, list registered VMs and their\n"
+        "                                     attached virtual HDD disk media. In verbose\n"
+        "                                     mode, VM/media list will be long format,\n"
+        "                                     i.e. including snapshot images and paths.\n"
+        "\n"
+        " [ { -w | --wide } ]                 List media in wide / tabular format\n"
+        "                                     (reduces vertical scrolling but requires\n"
+        "                                     wider than standard 80 column window\n)"
         "\n"
         "  [ --vm=UUID ]                      Restrict media list to specified vm.\n"
         "\n"
@@ -232,39 +232,51 @@ briefUsage()
         "  [ { -s | --size=<bytes> } ]        Specify size of mounted disk.\n"
         "                                     (incompatible with -p, --partition)\n"
         "\n"
-        "  [ { --diff=<diff #> } ]            Limits default operation (of applying all\n"
-        "                                     snapshots of virtual disk) to specified\n"
-        "                                     disk differencing image #. Diffs will\n"
-        "                                     be merged-in up to and including diff #.\n"
-        "                                     (default: All diffs, 0 = No diffs)\n"
-        "\n"
         "  [ --rw ]                           Make image writeable (default = readonly)\n"
+        "\n"
         "  [ --root ]                         Same as -o allow_root.\n"
         "\n"
-        "  [ { -v | --verbose }]              Log extra information.\n"
+        "  [ { -v | --verbose } ]              Log extra information.\n"
         "\n"
         "  [ -o opt[,opt...]]                 FUSE mount options.\n"
         "\n"
         "  [ { -h | -? } ]                    Display short usage info (no FUSE options).\n"
         "  [ --help ]                         Display long usage info (incl. FUSE opts).\n\n"
     );
-    RTPrintf("\n");
-    RTPrintf("When successful, the --image option instantiates a one-directory-deep FUSE\n");
-    RTPrintf("filesystem rooted at the specified mountpoint.  Its contents are a\n");
-    RTPrintf("symbolic link named as basename of the image path, pointing to full path of\n");
-    RTPrintf("the virtual disk image. Also a regular file named 'vhdd', which is a device\n");
-    RTPrintf("node through which a raw byte stream of the disk image (as synthesized by\n");
-    RTPrintf("the VirtualBox runtime engine) can be accessed. It is the vhdd file that the\n");
-    RTPrintf("user or a utility can subsequently mount on the host OS.\n");
+    RTPrintf("\n"
+      "vboximg-mount is a utility to make VirtualBox disk images available to the host\n"
+      "operating system in a root or non-root accessible way. The user determines the\n"
+      "historical representation of the disk by choosing either the base image or a\n"
+      "snapshot, to establish the desired level of currency of the mounted disk.\n"
+      "\n"
+      "The disk image is mounted through this utility inside a FUSE-based filesystem\n"
+      "that overlays the user-provided mount point. The FUSE filesystem presents a\n"
+      "a directory that contains two files: an HDD pseudo device node and a symbolic\n"
+      "link. The device node is named 'vhdd' and is the access point to the synthesized\n"
+      "state of the virtual disk. It is the entity that can be mounted or otherwise\n"
+      "accessed through the host OS. The symbolic link is given the same name as the\n"
+      "base image, as determined from '--image' option argument. The link equates\n"
+      "to the specified image's location (path).\n"
+      "\n"
+      "If the user provides a base image UUID/path with the --image option, only\n"
+      "the base image will be exposed via vhdd, disregarding any snapshots.\n"
+      "Alternatively, if a snapshot (e.g. disk differencing image) is provided,\n"
+      "the chain of snapshots is calculated from that \"leaf\" snapshot\n"
+      "to the base image and the whole chain of images is merged to form the exposed\n"
+      "state of the FUSE-mounted disk.\n"
+      "\n"
+
+    );
 }
 
 static int
 vboximgOptHandler(void *data, const char *arg, int optKey, struct fuse_args *outargs)
 {
-    (void) data;
-    (void) arg;
-    (void) optKey;
-    (void) outargs;
+    NOREF(data);
+    NOREF(arg);
+    NOREF(optKey);
+    NOREF(outargs);
+
     /*
      * Apparently this handler is only called for arguments FUSE can't parse,
      * and arguments that don't result in variable assignment such as "USAGE"
@@ -279,7 +291,7 @@ vboximgOptHandler(void *data, const char *arg, int optKey, struct fuse_args *out
 /** @copydoc fuse_operations::open */
 static int vboximgOp_open(const char *pszPath, struct fuse_file_info *pInfo)
 {
-    RT_NOREF(pszPath, pInfo);
+    RT_NOREF(pszPath, pInfo);;
     LogFlowFunc(("pszPath=%s\n", pszPath));
     uint32_t notsup = 0;
     int rc = 0;
@@ -338,6 +350,7 @@ if (pInfo->flags & notsup)
 
 }
 
+
 /** @todo Remove when VD I/O becomes threadsafe */
 static DECLCALLBACK(int) vboximgThreadStartRead(void *pvUser)
 {
@@ -367,7 +380,7 @@ static DECLCALLBACK(int) vboximgThreadFinishWrite(void *pvUser)
 /** @copydoc fuse_operations::release */
 static int vboximgOp_release(const char *pszPath, struct fuse_file_info *pInfo)
 {
-    (void) pszPath;
+    NOREF(pszPath);
 
     LogFlowFunc(("pszPath=%s\n", pszPath));
 
@@ -577,8 +590,8 @@ static int vdWriteSanitizer(PVDISK pDisk, uint64_t off, const void *pvSrc, size_
 static int vboximgOp_read(const char *pszPath, char *pbBuf, size_t cbBuf,
                            off_t offset, struct fuse_file_info *pInfo)
 {
-    (void) pszPath;
-    (void) pInfo;
+    NOREF(pszPath);
+    NOREF(pInfo);
 
     LogFlowFunc(("my offset=%#llx size=%#zx path=\"%s\"\n", (uint64_t)offset, cbBuf, pszPath));
 
@@ -608,8 +621,8 @@ static int vboximgOp_read(const char *pszPath, char *pbBuf, size_t cbBuf,
 static int vboximgOp_write(const char *pszPath, const char *pbBuf, size_t cbBuf,
                            off_t offset, struct fuse_file_info *pInfo)
 {
-    (void) pszPath;
-    (void) pInfo;
+    NOREF(pszPath);
+    NOREF(pInfo);
 
     LogFlowFunc(("offset=%#llx size=%#zx path=\"%s\"\n", (uint64_t)offset, cbBuf, pszPath));
 
@@ -645,7 +658,7 @@ vboximgOp_getattr(const char *pszPath, struct stat *stbuf)
 {
     int rc = 0;
 
-    LogFlowFunc(("pszPath=%s, stat(\"%s\")\n", pszPath, g_pszBaseImagePath));
+    LogFlowFunc(("pszPath=%s, stat(\"%s\")\n", pszPath, g_pszImagePath));
 
     memset(stbuf, 0, sizeof(struct stat));
 
@@ -656,7 +669,7 @@ vboximgOp_getattr(const char *pszPath, struct stat *stbuf)
     }
     else if (RTStrCmp(pszPath + 1, "vhdd") == 0)
     {
-        rc = stat(g_pszBaseImagePath, stbuf);
+        rc = stat(g_pszImagePath, stbuf);
         if (rc < 0)
             return rc;
         /*
@@ -667,7 +680,7 @@ vboximgOp_getattr(const char *pszPath, struct stat *stbuf)
         stbuf->st_size = g_vDiskSize;
         stbuf->st_nlink = 1;
     }
-    else if (RTStrNCmp(pszPath + 1, g_pszBaseImageName, strlen(g_pszBaseImageName)) == 0)
+    else if (RTStrNCmp(pszPath + 1, g_pszImageName, strlen(g_pszImageName)) == 0)
     {
         /* When the disk is partitioned, the symbolic link named from `basename` of
          * resolved path to VBox disk image, has appended to it formatted text
@@ -677,7 +690,7 @@ vboximgOp_getattr(const char *pszPath, struct stat *stbuf)
          *  $ ls /mnt/tmpdir
          *  simple_fixed_disk.vdi[20480:2013244928]    vhdd
          */
-        rc = stat(g_pszBaseImagePath, stbuf);
+        rc = stat(g_pszImagePath, stbuf);
         if (rc < 0)
             return rc;
         stbuf->st_size = 0;
@@ -697,8 +710,8 @@ vboximgOp_readdir(const char *pszPath, void *pvBuf, fuse_fill_dir_t pfnFiller,
                               off_t offset, struct fuse_file_info *pInfo)
 
 {
-    (void) offset;
-    (void) pInfo;
+    NOREF(offset);
+    NOREF(pInfo);
 
     if (RTStrCmp(pszPath, "/") != 0)
         return -ENOENT;
@@ -718,11 +731,11 @@ vboximgOp_readdir(const char *pszPath, void *pvBuf, fuse_fill_dir_t pfnFiller,
      */
 
     if (g_vDiskOffset == 0 && (g_vDiskSize == 0 || g_vDiskSize == g_cbEntireVDisk))
-        pfnFiller(pvBuf, g_pszBaseImageName, NULL, 0);
+        pfnFiller(pvBuf, g_pszImageName, NULL, 0);
     else
     {
         char tmp[BASENAME_MAX];
-        RTStrPrintf(tmp, sizeof (tmp), "%s[%d:%d]", g_pszBaseImageName, g_vDiskOffset, g_vDiskSize);
+        RTStrPrintf(tmp, sizeof (tmp), "%s[%jd:%jd]", g_pszImageName, g_vDiskOffset, g_vDiskSize);
         pfnFiller(pvBuf, tmp, NULL, 0);
     }
     /*
@@ -738,171 +751,9 @@ vboximgOp_readdir(const char *pszPath, void *pvBuf, fuse_fill_dir_t pfnFiller,
 static int
 vboximgOp_readlink(const char *pszPath, char *buf, size_t size)
 {
-    (void) pszPath;
-    RTStrCopy(buf, size, g_pszBaseImagePath);
+    NOREF(pszPath);
+    RTStrCopy(buf, size, g_pszImagePath);
     return 0;
-}
-
-static void
-listMedia(IMachine *pMachine, char *vmName, char *vmUuid)
-{
-    int rc = 0;
-    com::SafeIfaceArray<IMediumAttachment> pMediumAttachments;
-
-    CHECK_ERROR(pMachine, COMGETTER(MediumAttachments)(ComSafeArrayAsOutParam(pMediumAttachments)));
-    int firstIteration = 1;
-    for (size_t i = 0; i < pMediumAttachments.size(); i++)
-    {
-
-        ComPtr<IMedium> pMedium;
-        DeviceType_T deviceType;
-        Bstr pMediumUuid;
-        Bstr pMediumName;
-        Bstr pMediumPath;
-
-        CHECK_ERROR(pMediumAttachments[i], COMGETTER(Type)(&deviceType));
-
-        if (deviceType == DeviceType_HardDisk)
-        {
-            CHECK_ERROR(pMediumAttachments[i], COMGETTER(Medium)(pMedium.asOutParam()));
-            if (pMedium.isNull())
-                return;
-
-            MediumState_T state;
-            CHECK_ERROR(pMedium, COMGETTER(State)(&state));
-            if (FAILED(rc))
-                return;
-            if (state == MediumState_Inaccessible)
-            {
-                CHECK_ERROR(pMedium, RefreshState(&state));
-                if (FAILED(rc))
-                return;
-            }
-
-            ComPtr<IMedium> pEarliestAncestor;
-            CHECK_ERROR(pMedium, COMGETTER(Base)(pEarliestAncestor.asOutParam()));
-            ComPtr<IMedium> pChild = pEarliestAncestor;
-            uint32_t ancestorNumber = 0;
-            if (pEarliestAncestor.isNull())
-                return;
-            do
-            {
-                com::SafeIfaceArray<IMedium> aMediumChildren;
-                CHECK_ERROR(pChild, COMGETTER(Name)(pMediumName.asOutParam()));
-                CHECK_ERROR(pChild, COMGETTER(Id)(pMediumUuid.asOutParam()));
-                CHECK_ERROR(pChild, COMGETTER(Location)(pMediumPath.asOutParam()));
-
-                if (ancestorNumber == 0)
-                {
-                    if (g_vboximgOpts.fVerbose)
-                    {
-                        RTPrintf("   -----------------------\n");
-                        RTPrintf("   HDD base:   \"%s\"\n",   CSTR(pMediumName));
-                        RTPrintf("   UUID:       %s\n",       CSTR(pMediumUuid));
-                        RTPrintf("   Location:   %s\n\n",     CSTR(pMediumPath));
-                    }
-                    else
-                    {
-                        if (firstIteration)
-                            RTPrintf("\nVM:    %s " ANSI_BOLD "%-20s" ANSI_RESET "\n",
-                                vmUuid, vmName);
-                        RTPrintf("  img: %s " ANSI_BOLD "  %s" ANSI_RESET "\n",
-                            CSTR(pMediumUuid), CSTR(pMediumName));
-                    }
-                }
-                else
-                {
-                    if (g_vboximgOpts.fVerbose)
-                    {
-                        RTPrintf("     Diff %d:\n", ancestorNumber);
-                        RTPrintf("          UUID:       %s\n",    CSTR(pMediumUuid));
-                        RTPrintf("          Location:   %s\n",  CSTR(pMediumPath));
-                    }
-                }
-                CHECK_ERROR_BREAK(pChild, COMGETTER(Children)(ComSafeArrayAsOutParam(aMediumChildren)));
-                pChild = (aMediumChildren.size()) ? aMediumChildren[0] : NULL;
-                ++ancestorNumber;
-                firstIteration = 0;
-            } while(pChild);
-        }
-    }
-}
-/**
- * Display all registered VMs on the screen with some information about each
- *
- * @param virtualBox VirtualBox instance object.
- */
-static void
-listVMs(IVirtualBox *pVirtualBox)
-{
-    HRESULT rc = 0;
-    com::SafeIfaceArray<IMachine> pMachines;
-    CHECK_ERROR(pVirtualBox, COMGETTER(Machines)(ComSafeArrayAsOutParam(pMachines)));
-    for (size_t i = 0; i < pMachines.size(); ++i)
-    {
-        ComPtr<IMachine> pMachine = pMachines[i];
-        if (pMachine)
-        {
-            BOOL fAccessible;
-            CHECK_ERROR(pMachines[i], COMGETTER(Accessible)(&fAccessible));
-            if (fAccessible)
-            {
-                Bstr pMachineName;
-                Bstr pMachineUuid;
-                Bstr pDescription;
-                Bstr pMachineLocation;
-
-                CHECK_ERROR(pMachine, COMGETTER(Name)(pMachineName.asOutParam()));
-                CHECK_ERROR(pMachine, COMGETTER(Id)(pMachineUuid.asOutParam()));
-                CHECK_ERROR(pMachine, COMGETTER(Description)(pDescription.asOutParam()));
-                CHECK_ERROR(pMachine, COMGETTER(SettingsFilePath)(pMachineLocation.asOutParam()));
-
-
-                if (   g_vboximgOpts.pszVm == NULL
-                    || RTStrNCmp(CSTR(pMachineUuid), g_vboximgOpts.pszVm, MAX_UUID_LEN) == 0
-                    || RTStrNCmp((const char *)pMachineName.raw(), g_vboximgOpts.pszVm, MAX_UUID_LEN) == 0)
-                {
-                    if (g_vboximgOpts.fVerbose)
-                    {
-                        RTPrintf("------------------------------------------------------\n");
-                        RTPrintf("VM Name:   \"%s\"\n", CSTR(pMachineName));
-                        RTPrintf("UUID:      %s\n",     CSTR(pMachineUuid));
-                        if (*pDescription.raw() != '\0')
-                            RTPrintf("Description:  %s\n",      CSTR(pDescription));
-                        RTPrintf("Location:  %s\n",      CSTR(pMachineLocation));
-                    }
-                    listMedia(pMachine, RTStrDup(CSTR(pMachineName)), RTStrDup(CSTR(pMachineUuid)));
-                }
-            }
-        }
-    }
-}
-
-static void
-searchForBaseImage(IVirtualBox *pVirtualBox, char *pszImageString, ComPtr<IMedium> *pBaseImage)
-{
-    int rc = 0;
-    com::SafeIfaceArray<IMedium> aDisks;
-
-    CHECK_ERROR(pVirtualBox, COMGETTER(HardDisks)(ComSafeArrayAsOutParam(aDisks)));
-    for (size_t i = 0; i < aDisks.size() && aDisks[i]; i++)
-    {
-        if (aDisks[i])
-        {
-            Bstr pMediumUuid;
-            Bstr pMediumName;
-
-            CHECK_ERROR(aDisks[i], COMGETTER(Name)(pMediumName.asOutParam()));
-            CHECK_ERROR(aDisks[i], COMGETTER(Id)(pMediumUuid.asOutParam()));
-
-            if (   RTStrCmp(pszImageString, CSTR(pMediumUuid)) == 0
-                || RTStrCmp(pszImageString, CSTR(pMediumName)) == 0)
-            {
-                *pBaseImage = aDisks[i];
-                return;
-            }
-        }
-    }
 }
 
 uint8_t
@@ -983,28 +834,6 @@ parsePartitionTable(void)
             return RTMsgErrorExitFailure("Error reading Partition Table Header (LBA 1) from disk\n");
 
         uint8_t *pTblBuf = (uint8_t *)RTMemAlloc(GPT_PTABLE_SIZE);
-
-        RTPrintf( "Virtual disk image:\n\n");
-        RTPrintf("   Path: %s\n", g_pszBaseImagePath);
-        if (g_pvDiskUuid)
-            RTPrintf("   UUID: %s\n\n", g_pvDiskUuid);
-
-        if (g_vboximgOpts.fVerbose)
-        {
-            RTPrintf("   GPT Partition Table Header:\n\n");
-            if (RTStrCmp((const char *)&parTblHdr.signature, "EFI PART") == 0)
-                RTPrintf(
-                     "      Signature               \"EFI PART\" (0x%llx)\n", parTblHdr.signature);
-            else
-                RTPrintf(
-                     "      Signature:              0x%llx\n",  parTblHdr.signature);
-            RTPrintf("      Revision:               %-8.8x\n",  parTblHdr.revision);
-            RTPrintf("      Current LBA:            %lld\n",    parTblHdr.headerLba);
-            RTPrintf("      Backup LBA:             %lld\n",    parTblHdr.backupLba);
-            RTPrintf("      Partition entries LBA:  %lld\n",    parTblHdr.partitionEntriesLba);
-            RTPrintf("      # of partitions:        %d\n",      parTblHdr.cPartitionEntries);
-            RTPrintf("      size of entry:          %d\n\n",    parTblHdr.cbPartitionEntry);
-        }
 
         if (!pTblBuf)
             return RTMsgErrorExitFailure("Out of memory\n");
@@ -1111,6 +940,13 @@ void
 displayGptPartitionTable(void)
 {
 
+    RTPrintf( "Virtual disk image:\n\n");
+    RTPrintf("   Base: %s\n", g_pszBaseImagePath);
+    if (g_cImages > 1)
+        RTPrintf("   Diff: %s\n", g_pszImagePath);
+    if (g_pszDiskUuid)
+            RTPrintf("   UUID: %s\n\n", g_pszDiskUuid);
+
     void *colBoot = NULL;
 
     SELFSIZINGTABLE tbl(2);
@@ -1118,7 +954,7 @@ displayGptPartitionTable(void)
     /* Note: Omitting partition name column because type/UUID seems suffcient */
     void *colPartNbr   = tbl.addCol("#",                 "%3d",       1);
 
-    /* If none of the partitions supports legacy BIOS boot, don't show column */
+    /* If none of the partitions supports legacy BIOS boot, don't show that column */
     for (int idxPartition = 2; idxPartition <= g_lastPartNbr; idxPartition++)
         if (g_aParsedPartitionInfo[idxPartition].fBootable) {
             colBoot    = tbl.addCol("Boot",         "%c   ",     1);
@@ -1127,25 +963,19 @@ displayGptPartitionTable(void)
 
     void *colStart     = tbl.addCol("Start",             "%lld",      1);
     void *colSectors   = tbl.addCol("Sectors",           "%lld",     -1, 2);
-    void *colSize      = tbl.addCol("Size",              "%d.%d%c",   1);
+    void *colSize      = tbl.addCol("Size",              "%s",        1);
     void *colOffset    = tbl.addCol("Offset",            "%lld",      1);
-    /* Need to see how other OSes with GPT schemes use this field. Seems like type covers it
-    void *colName      = tbl.addCol("Name",              "%s",       -1); */
     void *colType      = tbl.addCol("Type",              "%s",       -1, 2);
+
+#if 0 /* need to see how other OSes w/GPT use 'Name' field, right now 'Type' seems to suffice */
+    void *colName      = tbl.addCol("Name",              "%s",       -1); */
+#endif
 
     for (int idxPartition = 2; idxPartition <= g_lastPartNbr; idxPartition++)
     {
         PARTITIONINFO *ppi = &g_aParsedPartitionInfo[idxPartition];
         if (ppi->idxPartition)
         {
-            uint8_t exp = log2((double)ppi->cbPartition);
-            char scaledMagnitude = ((char []){ ' ', 'K', 'M', 'G', 'T', 'P' })[exp / 10];
-
-             /* This workaround is because IPRT RT*Printf* funcs don't handle floating point format specifiers */
-            double cbPartitionScaled = (double)ppi->cbPartition / pow(2, (double)(((uint8_t)(exp / 10)) * 10));
-            uint8_t cbPartitionIntPart = cbPartitionScaled;
-            uint8_t cbPartitionFracPart = (cbPartitionScaled - (double)cbPartitionIntPart) * 10;
-
             char abGuid[GUID_STRING_LENGTH * 2];
             RTStrPrintf(abGuid, sizeof(abGuid), "%RTuuid",  &ppi->partitionType.gptGuidTypeSpecifier);
 
@@ -1166,10 +996,14 @@ displayGptPartitionTable(void)
                 tbl.setCell(row, colBoot,   ppi->fBootable ? '*' : ' ');
             tbl.setCell(row, colStart,      ppi->offPartition / BLOCKSIZE);
             tbl.setCell(row, colSectors,    ppi->cbPartition / BLOCKSIZE);
-            tbl.setCell(row, colSize,       cbPartitionIntPart, cbPartitionFracPart, scaledMagnitude);
+            tbl.setCell(row, colSize,       vboximgScaledSize(ppi->cbPartition));
             tbl.setCell(row, colOffset,     ppi->offPartition);
-/*          tbl.setCell(row, colName,       ppi->pszName);    ... see comment for column definition */
             tbl.setCell(row, colType,       SAFENULL(pszPartitionTypeDesc));
+
+#if 0 /* see comment for stubbed-out 'Name' column definition above */
+            tbl.setCell(row, colName,       ppi->pszName);
+#endif
+
         }
     }
     tbl.displayTable();
@@ -1183,18 +1017,21 @@ displayLegacyPartitionTable(void)
      * Partition table is most readable and concise when headers and columns
      * are adapted to the actual data, to avoid insufficient or excessive whitespace.
      */
+
     RTPrintf( "Virtual disk image:\n\n");
-    RTPrintf("   Path: %s\n", g_pszBaseImagePath);
-    if (g_pvDiskUuid)
-        RTPrintf("   UUID: %s\n\n", g_pvDiskUuid);
+    RTPrintf("   Base: %s\n", g_pszBaseImagePath);
+    if (g_cImages > 1)
+        RTPrintf("   Diff: %s\n", g_pszImagePath);
+    if (g_pszDiskUuid)
+            RTPrintf("   UUID: %s\n\n", g_pszDiskUuid);
 
     SELFSIZINGTABLE tbl(2);
 
-    void *colPartition = tbl.addCol("Partition",    "%s%d",     -1);
+    void *colPartition = tbl.addCol("Partition",    "%s(%d)",     -1);
     void *colBoot      = tbl.addCol("Boot",         "%c   ",     1);
     void *colStart     = tbl.addCol("Start",        "%lld",      1);
     void *colSectors   = tbl.addCol("Sectors",      "%lld",     -1, 2);
-    void *colSize      = tbl.addCol("Size",         "%d.%d%c",   1);
+    void *colSize      = tbl.addCol("Size",         "%s",        1);
     void *colOffset    = tbl.addCol("Offset",       "%lld",      1);
     void *colId        = tbl.addCol("Id",           "%2x",       1);
     void *colType      = tbl.addCol("Type",         "%s",       -1, 2);
@@ -1204,21 +1041,12 @@ displayLegacyPartitionTable(void)
         PARTITIONINFO *p = &g_aParsedPartitionInfo[idxPartition];
         if (p->idxPartition)
         {
-            uint8_t exp = log2((double)p->cbPartition);
-            char scaledMagnitude = ((char []){ ' ', 'K', 'M', 'G', 'T', 'P' })[exp / 10];
-
-             /* This workaround is because IPRT RT*Printf* funcs don't handle floating point format specifiers */
-            double  cbPartitionScaled = (double)p->cbPartition / pow(2, (double)(((uint8_t)(exp / 10)) * 10));
-            uint8_t cbPartitionIntPart = cbPartitionScaled;
-            uint8_t cbPartitionFracPart = (cbPartitionScaled - (double)cbPartitionIntPart) * 10;
-
             void *row = tbl.addRow();
-
             tbl.setCell(row, colPartition,  g_pszBaseImageName, idxPartition);
             tbl.setCell(row, colBoot,       p->fBootable ? '*' : ' ');
             tbl.setCell(row, colStart,      p->offPartition / BLOCKSIZE);
             tbl.setCell(row, colSectors,    p->cbPartition / BLOCKSIZE);
-            tbl.setCell(row, colSize,       cbPartitionIntPart, cbPartitionFracPart, scaledMagnitude);
+            tbl.setCell(row, colSize,       vboximgScaledSize(p->cbPartition));
             tbl.setCell(row, colOffset,     p->offPartition);
             tbl.setCell(row, colId,         p->partitionType.legacy);
             tbl.setCell(row, colType,       getClassicPartitionDesc((p->partitionType).legacy));
@@ -1252,6 +1080,8 @@ main(int argc, char **argv)
     struct fuse_args args = FUSE_ARGS_INIT(argc, argv);
     memset(&g_vboximgOpts, 0, sizeof(g_vboximgOpts));
 
+    g_vboximgOpts.idxPartition = -1;
+
     rc = fuse_opt_parse(&args, &g_vboximgOpts, vboximgOptDefs, vboximgOptHandler);
     if (rc < 0 || argc < 2 || RTStrCmp(argv[1], "-?" ) == 0 || g_vboximgOpts.fBriefUsage)
     {
@@ -1259,6 +1089,26 @@ main(int argc, char **argv)
         return 0;
     }
 
+    if (g_vboximgOpts.fAllowRoot)
+        fuse_opt_add_arg(&args, "-oallow_root");
+
+    /*
+     * FUSE doesn't seem to like combining options with one hyphen, as traditional UNIX
+     * command line utilities allow. The following flags, fWideList and fVerboseList,
+     * and their respective option definitions give the appearance of combined opts,
+     * so that -vl, -lv, -wl, -lw options are allowed, since those in particular would
+     * tend to conveniently facilitate some of the most common use cases.
+     */
+    if (g_vboximgOpts.fWideList)
+    {
+        g_vboximgOpts.fWide = true;
+        g_vboximgOpts.fList = true;
+    }
+    if (g_vboximgOpts.fVerboseList)
+    {
+        g_vboximgOpts.fVerbose = true;
+        g_vboximgOpts.fList    = true;
+    }
     if (g_vboximgOpts.fAllowRoot)
         fuse_opt_add_arg(&args, "-oallow_root");
 
@@ -1290,188 +1140,281 @@ main(int argc, char **argv)
     hrc = pVirtualBoxClient.createInprocObject(CLSID_VirtualBoxClient);
     if (SUCCEEDED(hrc))
         hrc = pVirtualBoxClient->COMGETTER(VirtualBox)(pVirtualBox.asOutParam());
+
     if (FAILED(hrc))
         return RTMsgErrorExit(RTEXITCODE_FAILURE, "Failed to get IVirtualBox object! (hrc=%Rhrc)", hrc);
 
-    if (g_vboximgOpts.fVerbose)
-        RTPrintf("vboximg: VirtualBox XPCOM object created\n");
-
-    if (g_vboximgOpts.fList && g_vboximgOpts.pszImage == NULL)
+    if (g_vboximgOpts.fList && g_vboximgOpts.pszImageUuidOrPath == NULL)
     {
-        listVMs(pVirtualBox);
-        return 0;
+        vboximgListVMs(pVirtualBox);
+        return VINF_SUCCESS;
     }
 
-    ComPtr<IMedium> pBaseImageMedium = NULL;
-    char    *pszFormat;
+    Bstr    pMediumUuid;
+    ComPtr<IMedium> pVDiskMedium = NULL;
+    char   *pszFormat;
     VDTYPE  enmType;
-    searchForBaseImage(pVirtualBox, g_vboximgOpts.pszImage, &pBaseImageMedium);
-    if (pBaseImageMedium == NULL)
+
+    /*
+     * Open chain of images from what is provided on command line, to base image
+     */
+    if (g_vboximgOpts.pszImageUuidOrPath)
     {
+        /* compiler was too fussy about access mode's data type in conditional expr, so... */
+        if (g_vboximgOpts.fRW)
+            CHECK_ERROR(pVirtualBox, OpenMedium(Bstr(g_vboximgOpts.pszImageUuidOrPath).raw(), DeviceType_HardDisk,
+                AccessMode_ReadWrite, false /* forceNewUuid */, pVDiskMedium.asOutParam()));
+
+        else
+            CHECK_ERROR(pVirtualBox, OpenMedium(Bstr(g_vboximgOpts.pszImageUuidOrPath).raw(), DeviceType_HardDisk,
+                AccessMode_ReadOnly, false /* forceNewUuid */, pVDiskMedium.asOutParam()));
+
+        if (FAILED(rc))
+            return RTMsgErrorExitFailure("\nCould't find specified VirtualBox base or snapshot disk image:\n%s",
+                 g_vboximgOpts.pszImageUuidOrPath);
+
+
+        CHECK_ERROR(pVDiskMedium, COMGETTER(Id)(pMediumUuid.asOutParam()));
+        g_pszDiskUuid = RTStrDup((char *)CSTR(pMediumUuid));
+
         /*
-         * Try to locate base image pMedium via the VirtualBox API, given the user-provided path
-         * resolving symlinks back to hard path.
+         * Lock & cache the disk image media chain (from leaf to base).
+         * Only leaf can be rw (and only if media is being mounted in non-default writable (rw) mode)
+         *
+         * Note: Failure to acquire lock is intentionally fatal (e.g. program termination)
          */
-        int cbNameMax = pathconf(g_vboximgOpts.pszImage, _PC_PATH_MAX);
-        if (cbNameMax < 0)
-            return cbNameMax;
 
-        g_pszBaseImagePath = RTStrDup(g_vboximgOpts.pszImage);
-        if (g_pszBaseImagePath == NULL)
-            return RTMsgErrorExitFailure("out of memory\n");
+        if (VERBOSE)
+            RTPrintf("\nAttempting to lock medium chain from leaf image to base image\n");
 
-        if (access(g_pszBaseImagePath, F_OK) < 0)
-            return RTMsgErrorExitFailure("Virtual disk image not found: \"%s\"\n", g_pszBaseImagePath);
+        bool fLeaf = true;
+        g_cImages = 0;
 
-        if (access(g_pszBaseImagePath, R_OK) < 0)
-             return RTMsgErrorExitFailure(
-                    "Virtual disk image not readable: \"%s\"\n", g_pszBaseImagePath);
-
-        if (g_vboximgOpts.fRW && access(g_vboximgOpts.pszImage, W_OK) < 0)
-             return RTMsgErrorExitFailure(
-                    "Virtual disk image not writeable: \"%s\"\n", g_pszBaseImagePath);
-        rc = RTPathSplit(g_pszBaseImagePath, &g_u.split, sizeof(g_u), 0);
-
-        if (RT_FAILURE(rc))
-             return RTMsgErrorExitFailure(
-                    "RTPathSplit failed on '%s': %Rrc",  g_pszBaseImagePath);
-
-        if (!(g_u.split.fProps & RTPATH_PROP_FILENAME))
-             return RTMsgErrorExitFailure(
-                    "RTPATH_PROP_FILENAME not set for: '%s'",  g_pszBaseImagePath);
-
-        g_pszBaseImageName = g_u.split.apszComps[g_u.split.cComps - 1];
-        searchForBaseImage(pVirtualBox, g_pszBaseImageName, &pBaseImageMedium);
-
-        if (pBaseImageMedium == NULL)
-        {
-            /*
-             *  Can't find the user specified image Medium via the VirtualBox API
-             *  Try to 'mount' the image via the user-provided path (without differencing images)
-             *  Create VirtualBox disk container and open main image
-             */
-            rc = VDGetFormat(NULL /* pVDIIfsDisk */, NULL /* pVDIIfsImage*/,
-                g_pszBaseImagePath, &pszFormat, &enmType);
-            if (RT_FAILURE(rc))
-                return RTMsgErrorExitFailure("VDGetFormat(%s,) "
-                    "failed, rc=%Rrc\n", g_pszBaseImagePath, rc);
-
-            g_pVDisk = NULL;
-            rc = VDCreate(NULL /* pVDIIfsDisk */, enmType, &g_pVDisk);
-            if (RT_SUCCESS(rc))
-            {
-                rc = VDOpen(g_pVDisk, pszFormat, g_pszBaseImagePath, 0, NULL /* pVDIfsImage */);
-                if (RT_FAILURE(rc))
-                {
-                    VDClose(g_pVDisk, false /* fDeletes */);
-                    return RTMsgErrorExitFailure("VDCreate(,%s,%s,,,) failed,"
-                        " rc=%Rrc\n", pszFormat, g_pszBaseImagePath, rc);
-                }
-            }
-            else
-                return RTMsgErrorExitFailure("VDCreate failed, rc=%Rrc\n", rc);
-        }
-    } else {
-        Bstr pMediumUuid;
-        CHECK_ERROR(pBaseImageMedium, COMGETTER(Id)(pMediumUuid.asOutParam()));
-        g_pvDiskUuid = RTStrDup((char *)CSTR(pMediumUuid));
-    }
-
-    if (g_pVDisk == NULL)
-    {
-
-        com::SafeIfaceArray<IMedium> aMediumChildren;
-        ComPtr<IMedium> pChild = pBaseImageMedium;
-        uint32_t diffNumber = 0; /* diff # 0 = base image */
         do
         {
-            Bstr pMediumName;
-            Bstr pMediumPath;
+            ++g_cImages;
+            IMAGELIST *pNewEntry= new IMAGELIST();
+            pNewEntry->pImage = pVDiskMedium;
+            CHECK_ERROR(pVDiskMedium, COMGETTER(Name)((pNewEntry->pImageName).asOutParam()));
+            CHECK_ERROR(pVDiskMedium, COMGETTER(Location)((pNewEntry->pImagePath).asOutParam()));
 
-            CHECK_ERROR(pChild, COMGETTER(Name)(pMediumName.asOutParam()));
-            CHECK_ERROR(pChild, COMGETTER(Location)(pMediumPath.asOutParam()));
+            if (VERBOSE)
+                RTPrintf("  %s", CSTR(pNewEntry->pImageName));
 
-            if (pChild == pBaseImageMedium)
+            if (fLeaf && g_vboximgOpts.fRW)
             {
-                free((void *)g_pszBaseImageName);
-                g_pszBaseImageName = RTStrDup(CSTR(pMediumName));
-
-                free((void *)g_pszBaseImagePath);
-                g_pszBaseImagePath = RTStrDup(CSTR(pMediumPath));
-                if (g_pszBaseImageName == NULL)
-                    return RTMsgErrorExitFailure("out of memory\n");
-
-                if (g_pszBaseImagePath == NULL)
-                    return RTMsgErrorExitFailure("out of memory\n");
-                /*
-                 * Create HDD container to open base image and differencing images into
-                 */
-                rc = VDGetFormat(NULL /* pVDIIfsDisk */, NULL /* pVDIIfsImage*/,
-                        g_pszBaseImagePath, &pszFormat, &enmType);
-                if (RT_FAILURE(rc))
-                    return RTMsgErrorExitFailure("VDGetFormat(,,%s,,) "
-                        "failed (during HDD container creation), rc=%Rrc\n", g_pszBaseImagePath, rc);
-                if (g_vboximgOpts.fVerbose)
-                    RTPrintf("Creating container for base image of format %s\n", pszFormat);
-                /** @todo Remove I/O CB's and crit sect. when VDRead()/VDWrite() are made threadsafe */
-                rc = RTCritSectInit(&g_vdioLock);
-                if (RT_SUCCESS(rc))
-                {
-                    g_VDIfThreadSync.pfnStartRead   = vboximgThreadStartRead;
-                    g_VDIfThreadSync.pfnFinishRead  = vboximgThreadFinishRead;
-                    g_VDIfThreadSync.pfnStartWrite  = vboximgThreadStartWrite;
-                    g_VDIfThreadSync.pfnFinishWrite = vboximgThreadFinishWrite;
-                    rc = VDInterfaceAdd(&g_VDIfThreadSync.Core, "vboximg_ThreadSync", VDINTERFACETYPE_THREADSYNC,
-                                        &g_vdioLock, sizeof(VDINTERFACETHREADSYNC), &g_pVdIfs);
-                }
-                else
-                    return RTMsgErrorExitFailure("ERROR: Failed to create critsects "
-                                                 "for virtual disk I/O, rc=%Rrc\n", rc);
-
-                g_pVDisk = NULL;
-                rc = VDCreate(g_pVdIfs, enmType, &g_pVDisk);
-                if (NS_FAILED(rc))
-                    return RTMsgErrorExitFailure("ERROR: Couldn't create virtual disk container\n");
+                if (VERBOSE)
+                    RTPrintf(" ... Locking for write\n");
+                CHECK_ERROR_RET(pVDiskMedium, LockWrite((pNewEntry->pLockToken).asOutParam()), rc);
+                pNewEntry->fWriteable = true;
             }
-            /** @todo (end of to do section) */
-
-            if ( g_vboximgOpts.cHddImageDiffMax != 0 && diffNumber > g_vboximgOpts.cHddImageDiffMax)
-                break;
-
-            if (g_vboximgOpts.fVerbose)
+            else
             {
-                if (diffNumber == 0)
-                    RTPrintf("\nvboximg-mount: Opening base image into container:\n       %s\n",
-                        g_pszBaseImagePath);
-                else
-                    RTPrintf("\nvboximg-mount: Opening difference image #%d into container:\n       %s\n",
-                        diffNumber, g_pszBaseImagePath);
+                if (VERBOSE)
+                    RTPrintf(" ... Locking for read\n");
+                CHECK_ERROR_RET(pVDiskMedium, LockRead((pNewEntry->pLockToken).asOutParam()), rc);
             }
 
-            rc = VDOpen(g_pVDisk, pszFormat, g_pszBaseImagePath, 0, NULL /* pVDIfsImage */);
-            if (RT_FAILURE(rc))
-            {
-                VDClose(g_pVDisk, false /* fDeletes */);
-                return RTMsgErrorExitFailure("VDOpen(,,%s,,) failed, rc=%Rrc\n",
-                   g_pszBaseImagePath, rc);
-            }
+            IMAGELIST *pCurImageEntry = &listHeadLockList;
+            while (pCurImageEntry->next)
+                pCurImageEntry = pCurImageEntry->next;
+            pCurImageEntry->next = pNewEntry;
+            pNewEntry->prev = pCurImageEntry;
+            listHeadLockList.prev = pNewEntry;
 
-            CHECK_ERROR(pChild, COMGETTER(Children)(ComSafeArrayAsOutParam(aMediumChildren)));
-
-            if (aMediumChildren.size() != 0) {
-                pChild = aMediumChildren[0];
-            }
-
-            aMediumChildren.setNull();
-
-            ++diffNumber;
-
-
-        } while(NS_SUCCEEDED(rc) && aMediumChildren.size());
+            CHECK_ERROR(pVDiskMedium, COMGETTER(Parent)(pVDiskMedium.asOutParam()));
+            fLeaf = false;
+        }
+        while(pVDiskMedium);
     }
 
-    g_cReaders    = VDIsReadOnly(g_pVDisk) ? INT32_MAX / 2 : 0;
-    g_cWriters   = 0;
+    ComPtr<IMedium> pVDiskBaseMedium = listHeadLockList.prev->pImage;
+    Bstr pVDiskBaseImagePath = listHeadLockList.prev->pImagePath;
+    Bstr pVDiskBaseImageName = listHeadLockList.prev->pImageName;
+
+    g_pszBaseImagePath = RTStrDup((char *)CSTR(pVDiskBaseImagePath));
+    g_pszBaseImageName = RTStrDup((char *)CSTR(pVDiskBaseImageName));
+
+    g_pszImagePath = RTStrDup((char *)CSTR(listHeadLockList.next->pImagePath));
+    g_pszImageName = RTStrDup((char *)CSTR(listHeadLockList.next->pImageName));
+
+    /*
+     * Attempt to VDOpen media (base and any snapshots), handling encryption,
+     * if that property is set for base media
+     */
+    Bstr pBase64EncodedKeyStore;
+
+    rc = pVDiskBaseMedium->GetProperty(Bstr("CRYPT/KeyStore").raw(), pBase64EncodedKeyStore.asOutParam());
+    if (SUCCEEDED(rc) && strlen(CSTR(pBase64EncodedKeyStore)) != 0)
+    {
+        RTPrintf("\nvboximgMount: Encrypted disks not supported in this version\n\n");
+        return -1;
+    }
+
+
+/* ***************** BEGIN IFDEF'D (STUBBED-OUT) CODE ************** */
+/* vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv */
+
+#if 0 /* The following encrypted disk related code is stubbed out until it can be finished.
+       * What is here is an attempt to port the VBoxSVC specific code in i_openForIO to
+       * a client's proximity. It is supplemented by code in vboximgCrypto.cpp and
+       * vboximageCrypt.h that was lifed from SecretKeyStore.cpp along with the setup
+       * task function.
+       *
+       * The ultimate solution may be to use a simpler but less efficient COM interface,
+       * or to use VD encryption interfaces and key containers entirely. The keystore
+       * handling/filter approach that is here may be a bumbling hybrid approach
+       * that is broken (trying to bridge incompatible disk encryption mechanisms) or otherwise
+       * doesn't make sense. */
+
+    Bstr pKeyId;
+    ComPtr<IExtPackManager> pExtPackManager;
+    ComPtr<IExtPack> pExtPack;
+    com::SafeIfaceArray<IExtPackPlugIn> pExtPackPlugIns;
+
+    if (SUCCEEDED(rc))
+    {
+        RTPrintf("Got GetProperty(\"CRYPT/KeyStore\") = %s\n", CSTR(pBase64EncodedKeyStore));
+        if (strlen(CSTR(pBase64EncodedKeyStore)) == 0)
+            return RTMsgErrorExitFailure("Image '%s' is configured for encryption but "
+                    "there is no key store to retrieve the password from", CSTR(pVDiskBaseImageName));
+
+        SecretKeyStore keyStore(false);
+        RTBase64Decode(CSTR(pBase64EncodedKeyStore), &keyStore, sizeof (SecretKeyStore), NULL, NULL);
+
+        rc = pVDiskBaseMedium->GetProperty(Bstr("CRYPT/KeyId").raw(), pKeyId.asOutParam());
+        if (SUCCEEDED(rc) && strlen(CSTR(pKeyId)) == 0)
+            return RTMsgErrorExitFailure("Image '%s' is configured for encryption but "
+                "doesn't have a key identifier set", CSTR(pVDiskBaseImageName));
+
+        RTPrintf("        key id: %s\n", CSTR(pKeyId));
+
+#ifndef VBOX_WITH_EXTPACK
+        return RTMsgErrorExitFailure(
+            "Encryption is not supported because extension pack support is not built in");
+#endif
+
+        CHECK_ERROR(pVirtualBox, COMGETTER(ExtensionPackManager)(pExtPackManager.asOutParam()));
+        BOOL fExtPackUsable;
+        CHECK_ERROR(pExtPackManager, IsExtPackUsable((PRUnichar *)VBOX_EXTPACK, &fExtPackUsable));
+        if (fExtPackUsable)
+        {
+            /* Load the PlugIn */
+
+            CHECK_ERROR(pExtPackManager, Find((PRUnichar *)VBOX_EXTPACK, pExtPack.asOutParam()));
+            if (RT_FAILURE(rc))
+                return RTMsgErrorExitFailure(
+                    "Encryption is not supported because the extension pack '%s' is missing",
+                    VBOX_EXTPACK);
+
+            CHECK_ERROR(pExtPack, COMGETTER(PlugIns)(ComSafeArrayAsOutParam(pExtPackPlugIns)));
+
+            Bstr pPlugInPath;
+            size_t iPlugIn;
+            for (iPlugIn = 0; iPlugIn < pExtPackPlugIns.size(); iPlugIn++)
+            {
+                Bstr pPlugInName;
+                CHECK_ERROR(pExtPackPlugIns[iPlugIn], COMGETTER(Name)(pPlugInName.asOutParam()));
+                if (RTStrCmp(CSTR(pPlugInName), "VDPlugInCrypt") == 0)
+                {
+                    CHECK_ERROR(pExtPackPlugIns[iPlugIn], COMGETTER(ModulePath)(pPlugInPath.asOutParam()));
+                    break;
+                }
+            }
+            if (iPlugIn == pExtPackPlugIns.size())
+                return RTMsgErrorExitFailure("Encryption is not supported because the extension pack '%s' "
+                    "is missing the encryption PlugIn (old extension pack installed?)", VBOX_EXTPACK);
+
+            rc = VDPluginLoadFromFilename(CSTR(pPlugInPath));
+            if (RT_FAILURE(rc))
+                return RTMsgErrorExitFailure("Retrieving encryption settings of the image failed "
+                    "because the encryption PlugIn could not be loaded\n");
+        }
+
+        SecretKey *pKey = NULL;
+        rc = keyStore.retainSecretKey(Utf8Str(pKeyId), &pKey);
+        if (RT_FAILURE(rc))
+                return RTMsgErrorExitFailure(
+                    "Failed to retrieve the secret key with ID \"%s\" from the store (%Rrc)",
+                    CSTR(pKeyId), rc);
+
+        VDISKCRYPTOSETTINGS vdiskCryptoSettings, *pVDiskCryptoSettings = &vdiskCryptoSettings;
+
+        vboxImageCryptoSetup(pVDiskCryptoSettings, NULL,
+            (const char *)CSTR(pBase64EncodedKeyStore), (const char *)pKey->getKeyBuffer(), false);
+
+        rc = VDFilterAdd(g_pVDisk, "CRYPT", VD_FILTER_FLAGS_DEFAULT, pVDiskCryptoSettings->vdFilterIfaces);
+        keyStore.releaseSecretKey(Utf8Str(pKeyId));
+
+        if (rc == VERR_VD_PASSWORD_INCORRECT)
+            return RTMsgErrorExitFailure("The password to decrypt the image is incorrect");
+
+        if (RT_FAILURE(rc))
+            return RTMsgErrorExitFailure("Failed to load the decryption filter: %Rrc", rc);
+    }
+#endif
+
+/* ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ */
+/* **************** END IFDEF'D (STUBBED-OUT) CODE ***************** */
+
+     rc = RTCritSectInit(&g_vdioLock);
+    if (RT_SUCCESS(rc))
+    {
+        g_VDIfThreadSync.pfnStartRead   = vboximgThreadStartRead;
+        g_VDIfThreadSync.pfnFinishRead  = vboximgThreadFinishRead;
+        g_VDIfThreadSync.pfnStartWrite  = vboximgThreadStartWrite;
+        g_VDIfThreadSync.pfnFinishWrite = vboximgThreadFinishWrite;
+        rc = VDInterfaceAdd(&g_VDIfThreadSync.Core, "vboximg_ThreadSync", VDINTERFACETYPE_THREADSYNC,
+                            &g_vdioLock, sizeof(VDINTERFACETHREADSYNC), &g_pVdIfs);
+    }
+    else
+        return RTMsgErrorExitFailure("ERROR: Failed to create critsects "
+                                     "for virtual disk I/O, rc=%Rrc\n", rc);
+
+   /*
+     * Create HDD container to open base image and differencing images into
+     */
+    rc = VDGetFormat(NULL /* pVDIIfsDisk */, NULL /* pVDIIfsImage*/,
+            CSTR(pVDiskBaseImagePath), &pszFormat, &enmType);
+
+    if (RT_FAILURE(rc))
+        return RTMsgErrorExitFailure("VDGetFormat(,,%s,,) "
+            "failed (during HDD container creation), rc=%Rrc\n", g_pszImagePath, rc);
+
+    if (VERBOSE)
+        RTPrintf("\nCreating container for base image of format %s\n", pszFormat);
+
+    g_pVDisk = NULL;
+    rc = VDCreate(g_pVdIfs, enmType, &g_pVDisk);
+    if ((rc))
+        return RTMsgErrorExitFailure("ERROR: Couldn't create virtual disk container\n");
+
+    /* Open all virtual disk media from leaf snapshot (if any) to base image*/
+
+    if (VERBOSE)
+        RTPrintf("\nOpening medium chain\n");
+
+    IMAGELIST *pCurMedium = listHeadLockList.prev;  /* point to base image */
+    while (pCurMedium != &listHeadLockList)
+    {
+        if (VERBOSE)
+            RTPrintf("  Open: %s\n", CSTR(pCurMedium->pImagePath));
+
+        rc = VDOpen(g_pVDisk,
+                    CSTR(pszFormat),
+                    CSTR(pCurMedium->pImagePath),
+                    pCurMedium->fWriteable,
+                    g_pVdIfs);
+
+        if (RT_FAILURE(rc))
+            return RTMsgErrorExitFailure("Could not open the medium storage unit '%s' %Rrc",
+                CSTR(pCurMedium->pImagePath), rc);
+
+        pCurMedium = pCurMedium->prev;
+    }
+
+    g_cReaders  = VDIsReadOnly(g_pVDisk) ? INT32_MAX / 2 : 0;
+    g_cWriters  = 0;
     g_cbEntireVDisk  = VDGetSize(g_pVDisk, 0 /* base */);
 
     if (g_vboximgOpts.fList)
@@ -1480,7 +1423,6 @@ main(int argc, char **argv)
             return RTMsgErrorExitFailure("No valid --image to list partitions from\n");
 
         RTPrintf("\n");
-
         rc = parsePartitionTable();
         switch(rc)
         {
@@ -1495,6 +1437,7 @@ main(int argc, char **argv)
         }
         return 0;
     }
+
     if (g_vboximgOpts.idxPartition >= 0)
     {
         if (g_vboximgOpts.offset)
@@ -1515,36 +1458,38 @@ main(int argc, char **argv)
 
         if (partNbr < 0 || partNbr > g_lastPartNbr)
             return RTMsgErrorExitFailure("Non-valid partition number specified\n");
-
         if (partNbr == 0)
         {
             g_vDiskOffset = 0;
             g_vDiskSize = VDGetSize(g_pVDisk, 0);
-            if (g_vboximgOpts.fVerbose)
-                RTPrintf("Partition 0 specified - Whole disk will be accessible\n");
+            if (VERBOSE)
+                RTPrintf("\nPartition 0 specified - Whole disk will be accessible\n");
         } else {
-            for (int i = 0; i < g_lastPartNbr; i++)
+            int fFoundPartition = false;
+            for (int i = 1; i < g_lastPartNbr + 1; i++)
             {
                 /* If GPT, display vboximg's representation of partition table starts at partition 2
                  * but the table is displayed calling it partition 1, because the protective MBR
                  * record is relatively pointless to display or reference in this context */
-
-                if (g_aParsedPartitionInfo[i].idxPartition == partNbr + g_fGPT ? 1 : 0)
+                if (g_aParsedPartitionInfo[i].idxPartition == partNbr + (g_fGPT ? 1 : 0))
                 {
+                     fFoundPartition = true;
                      g_vDiskOffset = g_aParsedPartitionInfo[i].offPartition;
                      g_vDiskSize = g_vDiskOffset + g_aParsedPartitionInfo[i].cbPartition;
-                     if (g_vboximgOpts.fVerbose)
-                        RTPrintf("Partition %d specified. Only sectors %llu to %llu of disk will be accessible\n",
+                     if (VERBOSE)
+                        RTPrintf("\nPartition %d specified. Only sectors %llu to %llu of disk will be accessible\n",
                             g_vboximgOpts.idxPartition, g_vDiskOffset / BLOCKSIZE, g_vDiskSize / BLOCKSIZE);
                 }
             }
+            if (!fFoundPartition)
+                return RTMsgErrorExitFailure("Couldn't find partition %d in partition table\n", partNbr);
         }
     } else {
         if (g_vboximgOpts.offset) {
             if (g_vboximgOpts.offset < 0 || g_vboximgOpts.offset + g_vboximgOpts.size > g_cbEntireVDisk)
                 return RTMsgErrorExitFailure("User specified offset out of range of virtual disk\n");
 
-            if (g_vboximgOpts.fVerbose)
+            if (VERBOSE)
                 RTPrintf("Setting r/w bias (offset) to user requested value for sector %llu\n", g_vDiskOffset / BLOCKSIZE);
 
             g_vDiskOffset = g_vboximgOpts.offset;
@@ -1553,7 +1498,7 @@ main(int argc, char **argv)
             if (g_vboximgOpts.size < 0 || g_vboximgOpts.offset + g_vboximgOpts.size > g_cbEntireVDisk)
                 return RTMsgErrorExitFailure("User specified size out of range of virtual disk\n");
 
-            if (g_vboximgOpts.fVerbose)
+            if (VERBOSE)
                 RTPrintf("Setting r/w size limit to user requested value %llu\n", g_vDiskSize / BLOCKSIZE);
 
             g_vDiskSize = g_vboximgOpts.size;
@@ -1565,7 +1510,7 @@ main(int argc, char **argv)
     /*
      * Hand control over to libfuse.
      */
-    if (g_vboximgOpts.fVerbose)
+    if (VERBOSE)
         RTPrintf("\nvboximg-mount: Going into background...\n");
 
     rc = fuse_main(args.argc, args.argv, &g_vboximgOps, NULL);

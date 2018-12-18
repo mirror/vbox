@@ -19,7 +19,7 @@ SUB_DEPTH = ../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
 ifeq ($(KBUILD_TARGET),darwin)
- VBOX_PATH_FUSE ?= $(lastword $(sort $(wildcard $(KBUILD_DEVTOOLS_TRG)/osxfuse/v*)))
+ VBOX_PATH_FUSE := $(lastword $(sort $(wildcard $(KBUILD_DEVTOOLS_TRG)/osxfuse/v*)))
  ifneq ($(VBOX_PATH_FUSE),)
   LIB_FUSE     := $(VBOX_PATH_FUSE)/lib/libosxfuse.dylib
   LIBPATH_FUSE := $(VBOX_PATH_FUSE)/lib
@@ -47,6 +47,11 @@ vboximg-mount_DEFS        = _FILE_OFFSET_BITS=64
 vboximg-mount_SOURCES = \
     vboximg-mount.cpp \
     vboximg-mount.h \
+    vboximgCrypto.cpp \
+    vboximgCrypto.h \
+    vboximgMedia.cpp \
+    vboximgMedia.h \
+    vboximgOpts.h \
     SelfSizingTable.h
 
 vboximg-mount_LIBS = \
