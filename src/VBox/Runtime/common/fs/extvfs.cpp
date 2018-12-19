@@ -102,12 +102,14 @@ typedef struct RTFSEXTINODE
     RTLISTNODE        NdLru;
     /** Reference counter. */
     volatile uint32_t cRefs;
-    /** Block number where the inode is stored. */
-    uint64_t          iBlockInode;
-    /** Offset in bytes into block where the inode is stored. */
-    uint32_t          offInode;
-    /** Inode data size. */
-    uint64_t          cbData;
+    /** Byte offset in the backing file where the inode is stored.. */
+    uint64_t          offInode;
+    /** Inode data. */
+    RTFSOBJINFO       ObjInfo;
+    /** Inode flags (copied from the on disk inode). */
+    uint32_t          fFlags;
+    /** Copy of the block map/extent tree. */
+    uint32_t          aiBlocks[EXT_INODE_BLOCK_ENTRIES];
 } RTFSEXTINODE;
 /** Pointer to an in-memory inode. */
 typedef RTFSEXTINODE *PRTFSEXTINODE;
@@ -120,6 +122,8 @@ typedef struct RTFSEXTDIR
 {
     /** Volume this directory belongs to. */
     PRTFSEXTVOL         pVol;
+    /** The underlying inode structure. */
+    PRTFSEXTINODE       pInode;
     /** Set if we've reached the end of the directory enumeration. */
     bool                fNoMoreFiles;
 } RTFSEXTDIR;
@@ -324,11 +328,11 @@ static void rtFsExtSb_Log(PCEXTSUPERBLOCK pSb)
             Log2(("EXT:   cSnapshotRsvdBlocks         %#RX64\n", RT_LE2H_U64(pSb->cSnapshotRsvdBlocks)));
             Log2(("EXT:   iSnapshotListInode          %#RX32\n", RT_LE2H_U32(pSb->iSnapshotListInode)));
             Log2(("EXT:   cErrorsSeen                 %#RX32\n", RT_LE2H_U32(pSb->cErrorsSeen)));
-            Log2(("EXT:   [...]\n")); /** @todo: Missing fields if becoming interesting. */
+            Log2(("EXT:   [...]\n")); /** @todo Missing fields if becoming interesting. */
             Log2(("EXT:   iInodeLostFound             %#RX32\n", RT_LE2H_U32(pSb->iInodeLostFound)));
             Log2(("EXT:   iInodeProjQuota             %#RX32\n", RT_LE2H_U32(pSb->iInodeProjQuota)));
             Log2(("EXT:   u32ChksumSeed               %#RX32\n", RT_LE2H_U32(pSb->u32ChksumSeed)));
-            Log2(("EXT:   [...]\n")); /** @todo: Missing fields if becoming interesting. */
+            Log2(("EXT:   [...]\n")); /** @todo Missing fields if becoming interesting. */
             Log2(("EXT:   u32Chksum                   %#RX32\n", RT_LE2H_U32(pSb->u32Chksum)));
         }
     }
@@ -796,7 +800,86 @@ static int rtFsExtInodeLoad(PRTFSEXTVOL pThis, uint32_t iInode, PRTFSEXTINODE *p
 #ifdef LOG_ENABLED
                     rtFsExtInode_Log(pThis, iInode, &Inode);
 #endif
-                    /** @todo Fill in data. */
+                    pInode->offInode            = offRead;
+                    pInode->fFlags              = RT_LE2H_U32(Inode.Core.fFlags);
+                    pInode->ObjInfo.cbObject    =   (uint64_t)RT_LE2H_U32(Inode.Core.cbSizeHigh) << 32
+                                                  | (uint64_t)RT_LE2H_U32(Inode.Core.cbSizeLow);
+                    pInode->ObjInfo.cbAllocated = (  (uint64_t)RT_LE2H_U16(Inode.Core.Osd2.Lnx.cBlocksHigh) << 32
+                                                   | (uint64_t)RT_LE2H_U32(Inode.Core.cBlocksLow)) * pThis->cbBlock;
+                    RTTimeSpecSetSeconds(&pInode->ObjInfo.AccessTime, RT_LE2H_U32(Inode.Core.u32TimeLastAccess));
+                    RTTimeSpecSetSeconds(&pInode->ObjInfo.ModificationTime, RT_LE2H_U32(Inode.Core.u32TimeLastModification));
+                    RTTimeSpecSetSeconds(&pInode->ObjInfo.ChangeTime, RT_LE2H_U32(Inode.Core.u32TimeLastChange));
+                    pInode->ObjInfo.Attr.enmAdditional = RTFSOBJATTRADD_UNIX;
+                    pInode->ObjInfo.Attr.u.Unix.uid    =   (uint32_t)RT_LE2H_U16(Inode.Core.Osd2.Lnx.uUidHigh) << 16
+                                                         | (uint32_t)RT_LE2H_U16(Inode.Core.uUidLow);
+                    pInode->ObjInfo.Attr.u.Unix.gid    =   (uint32_t)RT_LE2H_U16(Inode.Core.Osd2.Lnx.uGidHigh) << 16
+                                                         | (uint32_t)RT_LE2H_U16(Inode.Core.uGidLow);
+                    pInode->ObjInfo.Attr.u.Unix.cHardlinks = RT_LE2H_U16(Inode.Core.cHardLinks);
+                    pInode->ObjInfo.Attr.u.Unix.INodeIdDevice = 0;
+                    pInode->ObjInfo.Attr.u.Unix.INodeId       = iInode;
+                    pInode->ObjInfo.Attr.u.Unix.fFlags        = 0;
+                    pInode->ObjInfo.Attr.u.Unix.GenerationId  = RT_LE2H_U32(Inode.Core.u32Version);
+                    pInode->ObjInfo.Attr.u.Unix.Device        = 0;
+                    if (pThis->cbInode >= sizeof(EXTINODECOMB))
+                        RTTimeSpecSetSeconds(&pInode->ObjInfo.BirthTime, RT_LE2H_U32(Inode.Extra.u32TimeCreation));
+                    else
+                        RTTimeSpecSetSeconds(&pInode->ObjInfo.BirthTime, RT_LE2H_U32(Inode.Core.u32TimeLastChange));
+                    for (unsigned i = 0; i < RT_ELEMENTS(pInode->aiBlocks); i++)
+                        pInode->aiBlocks[i] = RT_LE2H_U32(Inode.Core.au32Block[i]);
+
+                    /* Fill in the mode. */
+                    pInode->ObjInfo.Attr.fMode = 0;
+                    uint32_t fInodeMode = RT_LE2H_U32(Inode.Core.fMode);
+                    switch (EXT_INODE_MODE_TYPE_GET_TYPE(fInodeMode))
+                    {
+                        case EXT_INODE_MODE_TYPE_FIFO: 
+                            pInode->ObjInfo.Attr.fMode |= RTFS_TYPE_FIFO;
+                            break;
+                        case EXT_INODE_MODE_TYPE_CHAR:
+                            pInode->ObjInfo.Attr.fMode |= RTFS_TYPE_DEV_CHAR;
+                            break;
+                        case EXT_INODE_MODE_TYPE_DIR:
+                            pInode->ObjInfo.Attr.fMode |= RTFS_TYPE_DIRECTORY;
+                            break;
+                        case EXT_INODE_MODE_TYPE_BLOCK:
+                            pInode->ObjInfo.Attr.fMode |= RTFS_TYPE_DEV_BLOCK;
+                            break;
+                        case EXT_INODE_MODE_TYPE_REGULAR:
+                            pInode->ObjInfo.Attr.fMode |= RTFS_TYPE_FILE;
+                            break;
+                        case EXT_INODE_MODE_TYPE_SYMLINK:
+                            pInode->ObjInfo.Attr.fMode |= RTFS_TYPE_SYMLINK;
+                            break;
+                        case EXT_INODE_MODE_TYPE_SOCKET:
+                            pInode->ObjInfo.Attr.fMode |= RTFS_TYPE_SOCKET;
+                            break;
+                        default:
+                            rc = VERR_VFS_BOGUS_FORMAT;
+                    }
+                    if (fInodeMode & EXT_INODE_MODE_EXEC_OTHER)
+                        pInode->ObjInfo.Attr.fMode |= RTFS_UNIX_IXOTH;
+                    if (fInodeMode & EXT_INODE_MODE_WRITE_OTHER)
+                        pInode->ObjInfo.Attr.fMode |= RTFS_UNIX_IWOTH;
+                    if (fInodeMode & EXT_INODE_MODE_READ_OTHER)
+                        pInode->ObjInfo.Attr.fMode |= RTFS_UNIX_IROTH;
+                    if (fInodeMode & EXT_INODE_MODE_EXEC_GROUP)
+                        pInode->ObjInfo.Attr.fMode |= RTFS_UNIX_IXGRP;
+                    if (fInodeMode & EXT_INODE_MODE_WRITE_GROUP)
+                        pInode->ObjInfo.Attr.fMode |= RTFS_UNIX_IWGRP;
+                    if (fInodeMode & EXT_INODE_MODE_READ_GROUP)
+                        pInode->ObjInfo.Attr.fMode |= RTFS_UNIX_IRGRP;
+                    if (fInodeMode & EXT_INODE_MODE_EXEC_OWNER)
+                        pInode->ObjInfo.Attr.fMode |= RTFS_UNIX_IXUSR;
+                    if (fInodeMode & EXT_INODE_MODE_WRITE_OWNER)
+                        pInode->ObjInfo.Attr.fMode |= RTFS_UNIX_IWUSR;
+                    if (fInodeMode & EXT_INODE_MODE_READ_OWNER)
+                        pInode->ObjInfo.Attr.fMode |= RTFS_UNIX_IRUSR;
+                    if (fInodeMode & EXT_INODE_MODE_STICKY)
+                        pInode->ObjInfo.Attr.fMode |= RTFS_UNIX_ISTXT;
+                    if (fInodeMode & EXT_INODE_MODE_SET_GROUP_ID)
+                        pInode->ObjInfo.Attr.fMode |= RTFS_UNIX_ISGID;
+                    if (fInodeMode & EXT_INODE_MODE_SET_USER_ID)
+                        pInode->ObjInfo.Attr.fMode |= RTFS_UNIX_ISUID;
                 }
             }
         }
@@ -838,6 +921,48 @@ static void rtFsExtInodeRelease(PRTFSEXTVOL pThis, PRTFSEXTINODE pInode)
 }
 
 
+/**
+ * Worker for various QueryInfo methods.
+ *
+ * @returns IPRT status code.
+ * @param   pInode              The inode structure to return info for.
+ * @param   pObjInfo            Where to return object info.
+ * @param   enmAddAttr          What additional info to return.
+ */
+static int rtFsExtInode_QueryInfo(PRTFSEXTINODE pInode, PRTFSOBJINFO pObjInfo, RTFSOBJATTRADD enmAddAttr)
+{
+    RT_ZERO(*pObjInfo);
+
+    pObjInfo->cbObject           = pInode->ObjInfo.cbObject;
+    pObjInfo->cbAllocated        = pInode->ObjInfo.cbAllocated;
+    pObjInfo->AccessTime         = pInode->ObjInfo.AccessTime;
+    pObjInfo->ModificationTime   = pInode->ObjInfo.ModificationTime;
+    pObjInfo->ChangeTime         = pInode->ObjInfo.ChangeTime;
+    pObjInfo->BirthTime          = pInode->ObjInfo.BirthTime;
+    pObjInfo->Attr.fMode         = pInode->ObjInfo.Attr.fMode;
+    pObjInfo->Attr.enmAdditional = enmAddAttr;
+    switch (enmAddAttr)
+    {
+        case RTFSOBJATTRADD_UNIX:
+            memcpy(&pObjInfo->Attr.u.Unix, &pInode->ObjInfo.Attr.u.Unix, sizeof(pInode->ObjInfo.Attr.u.Unix));
+            break;
+
+        case RTFSOBJATTRADD_UNIX_OWNER:
+            pObjInfo->Attr.u.UnixOwner.uid = pInode->ObjInfo.Attr.u.Unix.uid;
+            break;
+
+        case RTFSOBJATTRADD_UNIX_GROUP:
+            pObjInfo->Attr.u.UnixGroup.gid = pInode->ObjInfo.Attr.u.Unix.gid;
+            break;
+
+        default:
+            break;
+    }
+
+    return VINF_SUCCESS;
+}
+
+
 /*
  *
  * Directory instance methods
@@ -853,7 +978,8 @@ static DECLCALLBACK(int) rtFsExtDir_Close(void *pvThis)
 {
     PRTFSEXTDIR pThis = (PRTFSEXTDIR)pvThis;
     LogFlowFunc(("pThis=%p\n", pThis));
-    RT_NOREF(pThis);
+    rtFsExtInodeRelease(pThis->pVol, pThis->pInode);
+    pThis->pInode = NULL;
     return VINF_SUCCESS;
 }
 
@@ -865,8 +991,7 @@ static DECLCALLBACK(int) rtFsExtDir_QueryInfo(void *pvThis, PRTFSOBJINFO pObjInf
 {
     PRTFSEXTDIR pThis = (PRTFSEXTDIR)pvThis;
     LogFlowFunc(("\n"));
-    RT_NOREF(pThis, pObjInfo, enmAddAttr);
-    return VERR_NOT_IMPLEMENTED;
+    return rtFsExtInode_QueryInfo(pThis->pInode, pObjInfo, enmAddAttr);
 }
 
 
@@ -1073,7 +1198,26 @@ static int rtFsExtVol_OpenDirByInode(PRTFSEXTVOL pThis, uint32_t iInode, PRTVFSD
     PRTFSEXTINODE pInode = NULL;
     int rc = rtFsExtInodeLoad(pThis, iInode, &pInode);
     if (RT_SUCCESS(rc))
-        rtFsExtInodeRelease(pThis, pInode);
+    {
+        if (RTFS_IS_DIRECTORY(pInode->ObjInfo.Attr.fMode))
+        {
+            PRTFSEXTDIR pNewDir;
+            rc = RTVfsNewDir(&g_rtFsExtDirOps, sizeof(*pNewDir), 0 /*fFlags*/, pThis->hVfsSelf, NIL_RTVFSLOCK,
+                             phVfsDir, (void **)&pNewDir);
+            if (RT_SUCCESS(rc))
+            {
+                pNewDir->fNoMoreFiles = false;
+                pNewDir->pVol         = pThis;
+                pNewDir->pInode       = pInode;
+            }
+        }
+        else
+            rc = VERR_VFS_BOGUS_FORMAT;
+
+        if (RT_FAILURE(rc))
+            rtFsExtInodeRelease(pThis, pInode);
+    }
+
     RT_NOREF(phVfsDir, g_rtFsExtDirOps);
     return rc;
 }
@@ -1099,7 +1243,7 @@ static int rtFsExtVol_OpenDirByInode(PRTFSEXTVOL pThis, uint32_t iInode, PRTVFSD
  */
 static bool rtFsExtIsBlockRangeInUse(PRTFSEXTBLKGRP pBlkGrpDesc, uint64_t iBlockStart, size_t cBlocks)
 {
-    /** @todo: Optimize with ASMBitFirstSet(). */
+    /** @todo Optimize with ASMBitFirstSet(). */
     while (cBlocks)
     {
         uint32_t idxByte = iBlockStart / 8;

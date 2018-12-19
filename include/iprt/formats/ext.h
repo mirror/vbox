@@ -550,11 +550,11 @@ typedef const EXTBLOCKGROUPDESC64 *PCEXTBLOCKGROUPDESC64;
 /** @name EXT_GROUP_DESC_F_XXX - Group descriptor flags
  * @{ */
 /** Inode table and bitmaps are not initialized. */
-#define EXT_GROUP_DESC_F_INODE_UNINIT                RT_BIT_16(0)
+#define EXT_GROUP_DESC_F_INODE_UNINIT                RT_BIT(0)
 /** Block bitmap is not initialized. */
-#define EXT_GROUP_DESC_F_BLOCK_UNINIT                RT_BIT_16(1)
+#define EXT_GROUP_DESC_F_BLOCK_UNINIT                RT_BIT(1)
 /** Inode table is zeroed. */
-#define EXT_GROUP_DESC_F_INODE_ZEROED                RT_BIT_16(2)
+#define EXT_GROUP_DESC_F_INODE_ZEROED                RT_BIT(2)
 /** @} */
 
 
@@ -575,6 +575,9 @@ typedef EXTBLOCKGROUPDESC *PEXTBLOCKGROUPDESC;
 /** Poiner to a const unified block gorup descriptor view. */
 typedef const EXTBLOCKGROUPDESC *PCEXTBLOCKGROUPDESC;
 
+
+/** Number of block entries in the inodes block map. */
+#define EXT_INODE_BLOCK_ENTRIES                      15
 
 /**
  * Inode table entry (standard 128 byte version).
@@ -610,7 +613,7 @@ typedef struct EXTINODE
         uint32_t    u32LnxVersion;
     } Osd1;
     /** 0x28: Block map or extent tree. */
-    uint32_t    au32Block[15];
+    uint32_t    au32Block[EXT_INODE_BLOCK_ENTRIES];
     /** 0x64: File version. */
     uint32_t    u32Version;
     /** 0x68: Extended attribute control block (lower 32bits). */
@@ -697,29 +700,29 @@ typedef const EXTINODECOMB *PCEXTINODECOMB;
 /** @name EXT_INODE_MODE_XXX - File mode
  * @{ */
 /** Others can execute the file. */
-#define EXT_INODE_MODE_EXEC_OTHER                    RT_BIT_16(0)
+#define EXT_INODE_MODE_EXEC_OTHER                    RT_BIT(0)
 /** Others can write to the file. */
-#define EXT_INODE_MODE_WRITE_OTHER                   RT_BIT_16(1)
+#define EXT_INODE_MODE_WRITE_OTHER                   RT_BIT(1)
 /** Others can read the file. */
-#define EXT_INODE_MODE_READ_OTHER                    RT_BIT_16(2)
+#define EXT_INODE_MODE_READ_OTHER                    RT_BIT(2)
 /** Members of the same group can execute the file. */
-#define EXT_INODE_MODE_EXEC_GROUP                    RT_BIT_16(3)
+#define EXT_INODE_MODE_EXEC_GROUP                    RT_BIT(3)
 /** Members of the same group can write to the file. */
-#define EXT_INODE_MODE_WRITE_GROUP                   RT_BIT_16(4)
+#define EXT_INODE_MODE_WRITE_GROUP                   RT_BIT(4)
 /** Members of the same group can read the file. */
-#define EXT_INODE_MODE_READ_GROUP                    RT_BIT_16(5)
+#define EXT_INODE_MODE_READ_GROUP                    RT_BIT(5)
 /** Owner can execute the file. */
-#define EXT_INODE_MODE_EXEC_OWNER                    RT_BIT_16(6)
+#define EXT_INODE_MODE_EXEC_OWNER                    RT_BIT(6)
 /** Owner can write to the file. */
-#define EXT_INODE_MODE_WRITE_OWNER                   RT_BIT_16(7)
+#define EXT_INODE_MODE_WRITE_OWNER                   RT_BIT(7)
 /** Owner can read the file. */
-#define EXT_INODE_MODE_READ_OWNER                    RT_BIT_16(8)
+#define EXT_INODE_MODE_READ_OWNER                    RT_BIT(8)
 /** Sticky file mode. */
-#define EXT_INODE_MODE_STICKY                        RT_BIT_16(9)
+#define EXT_INODE_MODE_STICKY                        RT_BIT(9)
 /** File is set GID. */
-#define EXT_INODE_MODE_SET_GROUP_ID                  RT_BIT_16(10)
+#define EXT_INODE_MODE_SET_GROUP_ID                  RT_BIT(10)
 /** File is set UID. */
-#define EXT_INODE_MODE_SET_USER_ID                   RT_BIT_16(11)
+#define EXT_INODE_MODE_SET_USER_ID                   RT_BIT(11)
 /** @} */
 
 /** @name EXT_INODE_MODE_TYPE_XXX - File type
@@ -738,6 +741,8 @@ typedef const EXTINODECOMB *PCEXTINODECOMB;
 #define EXT_INODE_MODE_TYPE_SYMLINK                  UINT16_C(0xa000)
 /** Inode represents a socket. */
 #define EXT_INODE_MODE_TYPE_SOCKET                   UINT16_C(0xc000)
+/** Returns the inode type from the combined mode field. */
+#define EXT_INODE_MODE_TYPE_GET_TYPE(a_Mode)         ((a_Mode) & 0xf000)
 /** @} */
 
 /** @name EXT_INODE_F_XXX - Inode flags
