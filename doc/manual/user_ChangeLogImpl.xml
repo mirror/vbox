@@ -23,11 +23,11 @@ are ordered as follows:
     Host-related entries
     Guest-related entries
     BIOS/EFI/ACPI-related entries
-    
+
 Please do further ordering as seems appropriate by importance and visibility for
 users, e.g. audio before serial ports and generally Windows before Linux.  Please
 also try to describe the user impact, not the technical details, and only use
-technical terms if no non-technical ones are clear enough. 
+technical terms if no non-technical ones are clear enough.
 -->
 <chapter>
 
@@ -93,7 +93,7 @@ technical terms if no non-technical ones are clear enough.
            on Apple hosts to access the content of guest disks on the host
            </para>
       </listitem>
-      
+
       <listitem>
         <para>Added support for using Hyper-V as the fallback execution core on
            Windows host, to avoid inability to run VMs at the price of reduced
