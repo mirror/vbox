@@ -26,7 +26,7 @@
     <message>
         <source>Oracle Corporation</source>
         <comment>Comma-separated list of translators</comment>
-        <translation type="unfinished"></translation>
+        <translation>None</translation>
     </message>
 </context>
 <context>
@@ -160,22 +160,22 @@
     </message>
     <message>
         <source>Full</source>
-        <translation type="unfinished">完整</translation>
+        <translation>完整</translation>
     </message>
     <message>
         <source>Read-only</source>
-        <translation type="unfinished">唯讀</translation>
+        <translation>唯讀</translation>
     </message>
     <message>
         <source>Yes</source>
-        <translation type="unfinished">是</translation>
+        <translation>是</translation>
     </message>
 </context>
 <context>
     <name>UIActionPool</name>
     <message>
         <source>Preview Monitor %1</source>
-        <translation>預覽監視器 %1</translation>
+        <translation>預覽顯示器 %1</translation>
     </message>
     <message>
         <source>&amp;Connect Network Adapter</source>
@@ -336,7 +336,7 @@
     </message>
     <message>
         <source>Open Find Pane (%1)</source>
-        <translation>開啟尋找窗格 (%1)</translation>
+        <translation>開啟「尋找」窗格 (%1)</translation>
     </message>
     <message>
         <source>&amp;Filter</source>
@@ -348,7 +348,7 @@
     </message>
     <message>
         <source>Open Filter Pane (%1)</source>
-        <translation>開啟篩選器窗格 (%1)</translation>
+        <translation>開啟「篩選器」窗格 (%1)</translation>
     </message>
     <message>
         <source>&amp;Bookmark</source>
@@ -360,7 +360,7 @@
     </message>
     <message>
         <source>Open Bookmark Pane (%1)</source>
-        <translation>開啟書籤窗格 (%1)</translation>
+        <translation>開啟「書籤」窗格 (%1)</translation>
     </message>
     <message>
         <source>&amp;Options</source>
@@ -372,7 +372,7 @@
     </message>
     <message>
         <source>Open Options Pane (%1)</source>
-        <translation>開啟篩選器窗格 (%1)</translation>
+        <translation>開啟「選項」窗格 (%1)</translation>
     </message>
     <message>
         <source>&amp;Refresh</source>
@@ -403,16 +403,8 @@
         <translation>檔案管理員</translation>
     </message>
     <message>
-        <source>Open the guest control file manager</source>
-        <translation type="vanished">開啟客體控制檔案管理員</translation>
-    </message>
-    <message>
         <source>Host</source>
         <translation>主機</translation>
-    </message>
-    <message>
-        <source>Open the guest control file manager submenu</source>
-        <translation type="vanished">開啟客體控制檔案管理員子功能表</translation>
     </message>
     <message>
         <source>Guest</source>
@@ -421,10 +413,6 @@
     <message>
         <source>Copy to guest</source>
         <translation>複製到客體</translation>
-    </message>
-    <message>
-        <source>Guest Control File Manager</source>
-        <translation type="vanished">客體控制檔案管理員</translation>
     </message>
     <message>
         <source>Copy the Selected Object(s) from Host to Guest</source>
@@ -447,80 +435,16 @@
         <translation>將選取的物件從客體複製到主機</translation>
     </message>
     <message>
-        <source>Move to guest</source>
-        <translation type="vanished">移動到客體</translation>
-    </message>
-    <message>
-        <source>Move the Selected Object(s) from Host to Guest</source>
-        <translation type="vanished">將選取的物件從主機移動到客體</translation>
-    </message>
-    <message>
-        <source>Move the selected object(s) from host to guest</source>
-        <translation type="vanished">將選取的物件從主機移動到客體</translation>
-    </message>
-    <message>
-        <source>Move to host</source>
-        <translation type="vanished">移動到主機</translation>
-    </message>
-    <message>
-        <source>Move the Selected Object(s) from Guest to Host</source>
-        <translation type="vanished">將選取的物件從客體移動到主機</translation>
-    </message>
-    <message>
-        <source>Move the selected object(s) from guest to host</source>
-        <translation type="vanished">將選取的物件從客體移動到主機</translation>
-    </message>
-    <message>
-        <source>Settings</source>
-        <translation type="vanished">設定</translation>
-    </message>
-    <message>
-        <source>Open panel with file manager settings</source>
-        <translation type="vanished">開啟「檔案管理員設定」面板</translation>
-    </message>
-    <message>
-        <source>Open Panel With File Manager Settings</source>
-        <translation type="vanished">開啟「檔案管理員設定」面板</translation>
-    </message>
-    <message>
         <source>Log</source>
         <translation>日誌</translation>
-    </message>
-    <message>
-        <source>Open panel with to view file manager log</source>
-        <translation type="vanished">開啟「檢視檔案管理員日誌」面板</translation>
-    </message>
-    <message>
-        <source>Open Panel With to View File Manager Log</source>
-        <translation type="vanished">開啟「檢視檔案管理員日誌」面板</translation>
-    </message>
-    <message>
-        <source>File Operations</source>
-        <translation type="vanished">檔案操作</translation>
-    </message>
-    <message>
-        <source>Open panel with to view file manager file operations</source>
-        <translation type="vanished">開啟「檢視檔案管理員檔案操作」面板</translation>
-    </message>
-    <message>
-        <source>Open Panel With to View File Manager File Operations</source>
-        <translation type="vanished">開啟「檢視檔案管理員檔案操作」面板</translation>
     </message>
     <message>
         <source>Session</source>
         <translation>工作階段</translation>
     </message>
     <message>
-        <source>Open file manager account</source>
-        <translation type="vanished">開啟檔案管理員帳戶</translation>
-    </message>
-    <message>
         <source>Open File Manager Session</source>
-        <translation>開啟檔案管理員工作階段</translation>
-    </message>
-    <message>
-        <source>GoUp</source>
-        <translation type="vanished">啟動</translation>
+        <translation>開啟「檔案管理員工作階段」</translation>
     </message>
     <message>
         <source>Go one level up to parent folder</source>
@@ -536,11 +460,11 @@
     </message>
     <message>
         <source>Go to home folder</source>
-        <translation>轉到主資料夾</translation>
+        <translation>移至主資料夾</translation>
     </message>
     <message>
         <source>Go to Home Folder</source>
-        <translation>移至首頁主資料夾</translation>
+        <translation>移至主資料夾</translation>
     </message>
     <message>
         <source>Delete</source>
@@ -970,11 +894,11 @@
     </message>
     <message>
         <source>&amp;Machine Tools Menu</source>
-        <translation>機器功能表(&amp;M)</translation>
+        <translation>機器工具功能表(&amp;M)</translation>
     </message>
     <message>
         <source>Open the machine tools menu</source>
-        <translation>開啟「機器工具」窗格</translation>
+        <translation>開啟「機器工具功能表」</translation>
     </message>
     <message>
         <source>&amp;Details</source>
@@ -982,7 +906,7 @@
     </message>
     <message>
         <source>Open the machine details pane</source>
-        <translation>開啟「電腦詳細資料」窗格</translation>
+        <translation>開啟「機器詳細資料」窗格</translation>
     </message>
     <message>
         <source>&amp;Snapshots</source>
@@ -990,7 +914,7 @@
     </message>
     <message>
         <source>Open the machine snapshots pane</source>
-        <translation>開啟「電腦快照」窗格</translation>
+        <translation>開啟「機器快照」窗格</translation>
     </message>
     <message>
         <source>&amp;Logs</source>
@@ -998,7 +922,7 @@
     </message>
     <message>
         <source>Open the machine logs pane</source>
-        <translation>開啟「電腦日誌」窗格</translation>
+        <translation>開啟「機器日誌」窗格</translation>
     </message>
     <message>
         <source>&amp;Global Tools Menu</source>
@@ -1038,7 +962,7 @@
     </message>
     <message>
         <source>Open the snapshot menu</source>
-        <translation>開啟快照功能表</translation>
+        <translation>開啟「快照功能表」</translation>
     </message>
     <message>
         <source>&amp;Take...</source>
@@ -1090,7 +1014,7 @@
     </message>
     <message>
         <source>Open Snapshot Properties (%1)</source>
-        <translation>開啟快照內容 (%1)</translation>
+        <translation>開啟「快照內容」 (%1)</translation>
     </message>
     <message>
         <source>&amp;Clone...</source>
@@ -1106,7 +1030,7 @@
     </message>
     <message>
         <source>Open the medium menu</source>
-        <translation>開啟媒體功能表</translation>
+        <translation>開啟「媒體功能表」</translation>
     </message>
     <message>
         <source>Media Manager</source>
@@ -1166,7 +1090,7 @@
     </message>
     <message>
         <source>Open Disk Image File Properties (%1)</source>
-        <translation>開啟磁碟映像檔內容 (%1)</translation>
+        <translation>開啟「磁碟映像檔內容」 (%1)</translation>
     </message>
     <message>
         <source>Re&amp;fresh...</source>
@@ -1186,7 +1110,7 @@
     </message>
     <message>
         <source>Open the network menu</source>
-        <translation>開啟網路功能表</translation>
+        <translation>開啟「網路功能表」</translation>
     </message>
     <message>
         <source>&amp;Create...</source>
@@ -1218,7 +1142,7 @@
     </message>
     <message>
         <source>Open Host-only Network Properties (%1)</source>
-        <translation>開啟僅限主機網路內容 (%1)</translation>
+        <translation>開啟「僅限主機網路內容」 (%1)</translation>
     </message>
     <message>
         <source>Refresh the list of host-only networks</source>
@@ -1298,7 +1222,7 @@
     </message>
     <message>
         <source>Open Cloud Profile Properties (%1)</source>
-        <translation>開啟雲端組態檔內容 (%1)</translation>
+        <translation>開啟「雲端組態檔內容」 (%1)</translation>
     </message>
     <message>
         <source>Help</source>
@@ -1335,10 +1259,6 @@
     <message>
         <source>File Manager...</source>
         <translation>檔案管理員...</translation>
-    </message>
-    <message>
-        <source>Display the virtual machine guest control file manager window</source>
-        <translation type="vanished">顯示「虛擬機器客體控制檔案管理員」視窗</translation>
     </message>
     <message>
         <source>Guest Process Control...</source>
@@ -1418,7 +1338,7 @@
     </message>
     <message>
         <source>Take Screensh&amp;ot...</source>
-        <translation>取得快照(&amp;O)...</translation>
+        <translation>取得螢幕快照(&amp;O)...</translation>
     </message>
     <message>
         <source>Take guest display screenshot</source>
@@ -1438,7 +1358,7 @@
     </message>
     <message>
         <source>Enable guest video/audio recording</source>
-        <translation>啟用客體視訊/音訊錄製</translation>
+        <translation>啟用客體錄影/錄音</translation>
     </message>
     <message>
         <source>R&amp;emote Display</source>
@@ -1507,7 +1427,7 @@
     <message>
         <source>&amp;Insert %1</source>
         <comment>that means send the %1 key sequence to the virtual machine</comment>
-        <translation>插入%1(&amp;I)</translation>
+        <translation>插入 %1(&amp;I)</translation>
     </message>
     <message>
         <source>Send the %1 sequence to the virtual machine</source>
@@ -1692,59 +1612,59 @@
     </message>
     <message>
         <source>Options</source>
-        <translation type="unfinished"></translation>
+        <translation>選項</translation>
     </message>
     <message>
         <source>Open panel with file manager options</source>
-        <translation type="unfinished"></translation>
+        <translation>開啟「檔案管理員選項」面板</translation>
     </message>
     <message>
         <source>Open the file manager</source>
-        <translation type="unfinished"></translation>
+        <translation>開啟檔案管理員</translation>
     </message>
     <message>
         <source>Open the file manager host submenu</source>
-        <translation type="unfinished"></translation>
+        <translation>開啟檔案管理員主機子功能表</translation>
     </message>
     <message>
         <source>Open the file manager guest submenu</source>
-        <translation type="unfinished"></translation>
+        <translation>開啟檔案管理員客體子功能表</translation>
     </message>
     <message>
         <source>Open File Manager Options</source>
-        <translation type="unfinished"></translation>
+        <translation>開啟「檔案管理員選項」</translation>
     </message>
     <message>
         <source>Open panel with file manager log</source>
-        <translation type="unfinished"></translation>
+        <translation>開啟「檔案管理員日誌」面板</translation>
     </message>
     <message>
         <source>Open File Manager Log</source>
-        <translation type="unfinished"></translation>
+        <translation>開啟「檔案管理員日誌」</translation>
     </message>
     <message>
         <source>Operations</source>
-        <translation type="unfinished"></translation>
+        <translation>操作</translation>
     </message>
     <message>
         <source>Open panel with file manager operations</source>
-        <translation type="unfinished"></translation>
+        <translation>開啟「檔案管理員操作」面板</translation>
     </message>
     <message>
         <source>Open File Manager Operations</source>
-        <translation type="unfinished"></translation>
+        <translation>開啟「檔案管理員操作」</translation>
     </message>
     <message>
         <source>Open panel with file manager session</source>
-        <translation type="unfinished"></translation>
+        <translation>開啟「檔案管理員工作階段」面板</translation>
     </message>
     <message>
         <source>Go Up</source>
-        <translation type="unfinished"></translation>
+        <translation>上移一層</translation>
     </message>
     <message>
         <source>Display the virtual machine file manager window</source>
-        <translation type="unfinished"></translation>
+        <translation>顯示「虛擬機器檔案管理員」視窗</translation>
     </message>
 </context>
 <context>
@@ -1916,10 +1836,6 @@
         <translation>匯入硬碟磁碟機作為 VDI(&amp;I)</translation>
     </message>
     <message>
-        <source>When checked a all the hard drives that belong to this appliance will be imported in VDI format</source>
-        <translation type="vanished">勾選時，屬於這個應用裝置的所有硬碟磁碟機都將以 VDI 格式匯入</translation>
-    </message>
-    <message>
         <source>MAC Address &amp;Policy:</source>
         <translation>MAC 位址原則(&amp;P):</translation>
     </message>
@@ -1936,10 +1852,6 @@
         <translation>為所有網路卡產生新的 MAC 位址</translation>
     </message>
     <message>
-        <source>Include all network adapter MAC addresses in exported during cloning.</source>
-        <translation type="vanished">再製期間在匯出中包含所有網路卡 MAC 位址。</translation>
-    </message>
-    <message>
         <source>Include only NAT network adapter MAC addresses during cloning.</source>
         <translation>再製期間只包含 NAT 網路卡 MAC 位址。</translation>
     </message>
@@ -1953,11 +1865,11 @@
     </message>
     <message>
         <source>When checked, all the hard drives that belong to this appliance will be imported in VDI format.</source>
-        <translation type="unfinished"></translation>
+        <translation>勾選時，屬於這個應用裝置的所有硬碟磁碟機都將以 VDI 格式匯入。</translation>
     </message>
     <message>
         <source>Include all network adapter MAC addresses during cloning.</source>
-        <translation type="unfinished"></translation>
+        <translation>再製期間包含所有網路卡 MAC 位址。</translation>
     </message>
 </context>
 <context>
@@ -2095,7 +2007,7 @@
         <source>(%n running)</source>
         <comment>Group item tool-tip / Running machine info</comment>
         <translation>
-            <numerusform>(%n 執行中)</numerusform>
+            <numerusform>(%n 個執行中)</numerusform>
         </translation>
     </message>
     <message>
@@ -2110,7 +2022,7 @@
     </message>
     <message>
         <source>Collapse group</source>
-        <translation>摺疊群組</translation>
+        <translation>折疊群組</translation>
     </message>
     <message>
         <source>Expand group</source>
@@ -2217,11 +2129,11 @@
     </message>
     <message>
         <source>Reset changes in current cloud profile details</source>
-        <translation>重設目前雲設定檔詳細資料中的變更</translation>
+        <translation>重設目前雲端設定檔詳細資料中的變更</translation>
     </message>
     <message>
         <source>Apply changes in current cloud profile details</source>
-        <translation>套用目前雲設定檔詳細資料中的變更</translation>
+        <translation>套用目前雲端設定檔詳細資料中的變更</translation>
     </message>
     <message>
         <source>Close dialog without saving</source>
@@ -2241,14 +2153,7 @@
     </message>
     <message>
         <source>Add Profile</source>
-        <translation type="unfinished">加入設定檔</translation>
-    </message>
-</context>
-<context>
-    <name>UICloudProfileManagerWidget</name>
-    <message>
-        <source>Add Profile</source>
-        <translation type="vanished">加入設定檔</translation>
+        <translation>加入設定檔</translation>
     </message>
 </context>
 <context>
@@ -2635,7 +2540,7 @@
     <message>
         <source>Graphics Controller</source>
         <comment>details (display)</comment>
-        <translation type="unfinished"></translation>
+        <translation>圖形控制器</translation>
     </message>
 </context>
 <context>
@@ -2778,357 +2683,350 @@
     <name>UIFDCreationDialog</name>
     <message>
         <source>Create a Floppy Disk</source>
-        <translation type="unfinished">建立軟碟</translation>
+        <translation>建立軟碟</translation>
     </message>
     <message>
         <source>File Path:</source>
-        <translation type="unfinished">檔案路徑:</translation>
+        <translation>檔案路徑:</translation>
     </message>
     <message>
         <source>Size:</source>
-        <translation type="unfinished">大小:</translation>
+        <translation>大小:</translation>
     </message>
     <message>
         <source>Format disk as FAT12</source>
-        <translation type="unfinished">格式化磁碟為 FAT12</translation>
+        <translation>格式化磁碟為 FAT12</translation>
     </message>
     <message>
         <source>1.44M</source>
-        <translation type="unfinished">1.44M</translation>
+        <translation>1.44M</translation>
     </message>
     <message>
         <source>1.2M</source>
-        <translation type="unfinished">1.2M</translation>
+        <translation>1.2M</translation>
     </message>
     <message>
         <source>720K</source>
-        <translation type="unfinished">720K</translation>
+        <translation>720K</translation>
     </message>
     <message>
         <source>360K</source>
-        <translation type="unfinished">360K</translation>
+        <translation>360K</translation>
     </message>
 </context>
 <context>
     <name>UIFileManager</name>
     <message>
         <source>%1 - File Manager</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 - 檔案管理員</translation>
     </message>
     <message>
         <source>Close</source>
-        <translation type="unfinished">關閉</translation>
+        <translation>關閉</translation>
     </message>
     <message>
         <source>Clear</source>
-        <translation type="unfinished">清除</translation>
+        <translation>清除</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation type="unfinished">取消</translation>
+        <translation>取消</translation>
     </message>
     <message>
         <source>Not yet started</source>
-        <translation type="unfinished"></translation>
+        <translation>尚未開始</translation>
     </message>
     <message>
         <source>Working</source>
-        <translation type="unfinished"></translation>
+        <translation>工作中</translation>
     </message>
     <message>
         <source>Paused</source>
-        <translation type="unfinished">暫停</translation>
+        <translation>暫停</translation>
     </message>
     <message>
         <source>Canceled</source>
-        <translation type="unfinished"></translation>
+        <translation>取消</translation>
     </message>
     <message>
         <source>Succeded</source>
-        <translation type="unfinished"></translation>
+        <translation>成功</translation>
     </message>
     <message>
         <source>Failed</source>
-        <translation type="unfinished"></translation>
+        <translation>失敗</translation>
     </message>
     <message>
         <source>Invalid</source>
-        <translation type="unfinished"></translation>
+        <translation>無效</translation>
     </message>
     <message>
         <source>Remove Selected</source>
-        <translation type="unfinished"></translation>
+        <translation>移除選取</translation>
     </message>
     <message>
         <source>Remove Finished</source>
-        <translation type="unfinished"></translation>
+        <translation>移除已完成</translation>
     </message>
     <message>
         <source>Remove All</source>
-        <translation type="unfinished"></translation>
+        <translation>全部移除</translation>
     </message>
     <message>
         <source>List directories on top</source>
-        <translation type="unfinished">在頂端列出目錄</translation>
+        <translation>在頂端列出目錄</translation>
     </message>
     <message>
         <source>List directories before files</source>
-        <translation type="unfinished">在檔案前列出目錄</translation>
+        <translation>在檔案前列出目錄</translation>
     </message>
     <message>
         <source>Ask before delete</source>
-        <translation type="unfinished">刪除前詢問</translation>
+        <translation>刪除前詢問</translation>
     </message>
     <message>
         <source>Show a confirmation dialog before deleting files and directories</source>
-        <translation type="unfinished"></translation>
+        <translation>刪除檔案和目錄之前顯示確認對話方塊</translation>
     </message>
     <message>
         <source>Human readable sizes</source>
-        <translation type="unfinished">人類可讀大小</translation>
+        <translation>人類可讀大小</translation>
     </message>
     <message>
         <source>Show file/directory sizes in human readable format rather than in bytes</source>
-        <translation type="unfinished"></translation>
+        <translation>以人類可讀的格式而不是以 bytes 為單位顯示檔案/目錄大小</translation>
     </message>
     <message>
         <source>Close the pane</source>
-        <translation type="unfinished">關閉窗格</translation>
+        <translation>關閉窗格</translation>
     </message>
     <message>
         <source>Password</source>
-        <translation type="unfinished">密碼</translation>
+        <translation>密碼</translation>
     </message>
     <message>
         <source>Show Password</source>
-        <translation type="unfinished"></translation>
+        <translation>顯示密碼</translation>
     </message>
     <message>
         <source>User name to authenticate session creation</source>
-        <translation type="unfinished">對工作階段建立進行身份驗證的使用者名稱</translation>
+        <translation>對工作階段建立進行身份驗證的使用者名稱</translation>
     </message>
     <message>
         <source>User Name</source>
-        <translation type="unfinished">使用者名稱</translation>
+        <translation>使用者名稱</translation>
     </message>
     <message>
         <source>Password to authenticate session creation</source>
-        <translation type="unfinished">對工作階段建立進行身份驗證的密碼</translation>
+        <translation>對工作階段建立進行身份驗證的密碼</translation>
     </message>
     <message>
         <source>Create Session</source>
-        <translation type="unfinished">建立工作階段</translation>
+        <translation>建立工作階段</translation>
     </message>
     <message>
         <source>Close Session</source>
-        <translation type="unfinished">關閉工作階段</translation>
+        <translation>關閉工作階段</translation>
     </message>
     <message>
         <source>Total Size</source>
-        <translation type="unfinished">總計大小</translation>
+        <translation>總計大小</translation>
     </message>
     <message>
         <source> bytes</source>
-        <translation type="unfinished"> 位元組</translation>
+        <translation> bytes</translation>
     </message>
     <message>
         <source>File Count</source>
-        <translation type="unfinished">檔案數</translation>
+        <translation>檔案數</translation>
     </message>
     <message>
         <source>Delete the selected file(s) and/or folder(s)</source>
-        <translation type="unfinished">刪除選取的檔案和/或資料夾</translation>
+        <translation>刪除選取的檔案和/或資料夾</translation>
     </message>
     <message>
         <source>Ask for this confirmation next time</source>
-        <translation type="unfinished">下次詢問這個確認</translation>
+        <translation>下次詢問這個確認</translation>
     </message>
     <message>
         <source>Delete confirmation can be disabled/enabled also from the Options panel.</source>
-        <translation type="unfinished">刪除確認也可以從「選項」面板中停用/啟用。</translation>
+        <translation>刪除確認也可以從「選項」面板中停用/啟用。</translation>
     </message>
     <message>
         <source>Name</source>
-        <translation type="unfinished">名稱</translation>
+        <translation>名稱</translation>
     </message>
     <message>
         <source>Size</source>
-        <translation type="unfinished">大小</translation>
+        <translation>大小</translation>
     </message>
     <message>
         <source>Change Time</source>
-        <translation type="unfinished">變更時間</translation>
+        <translation>變更時間</translation>
     </message>
     <message>
         <source>Owner</source>
-        <translation type="unfinished">擁有者</translation>
+        <translation>擁有者</translation>
     </message>
     <message>
         <source>Permissions</source>
-        <translation type="unfinished">權限</translation>
+        <translation>權限</translation>
     </message>
     <message>
         <source>No Guest Session</source>
-        <translation type="unfinished">無客體工作階段</translation>
+        <translation>沒有客體工作階段</translation>
     </message>
     <message>
         <source>Unknown</source>
-        <translation type="unfinished">未知</translation>
+        <translation>未知</translation>
     </message>
     <message>
         <source>File</source>
-        <translation type="unfinished">檔案</translation>
+        <translation>檔案</translation>
     </message>
     <message>
         <source>Directory</source>
-        <translation type="unfinished">目錄</translation>
+        <translation>目錄</translation>
     </message>
     <message>
         <source>Symbolic Link</source>
-        <translation type="unfinished">符號連結</translation>
+        <translation>符號連結</translation>
     </message>
     <message>
         <source>Other</source>
-        <translation type="unfinished">其它</translation>
+        <translation>其它</translation>
     </message>
     <message>
         <source>Guest System</source>
-        <translation type="unfinished">客體系統</translation>
+        <translation>客體系統</translation>
     </message>
     <message>
         <source>&lt;b&gt;Size:&lt;/b&gt; %1 bytes</source>
-        <translation type="unfinished">&lt;b&gt;大小:&lt;/b&gt; %1 位元組</translation>
+        <translation>&lt;b&gt;大小:&lt;/b&gt; %1 bytes</translation>
     </message>
     <message>
         <source>&lt;b&gt;Allocated:&lt;/b&gt; %1 bytes</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;配置:&lt;/b&gt; %1 bytes</translation>
     </message>
     <message>
         <source>directory</source>
-        <translation type="unfinished"></translation>
+        <translation>目錄</translation>
     </message>
     <message>
         <source>file</source>
-        <translation type="unfinished"></translation>
+        <translation>檔案</translation>
     </message>
     <message>
         <source>symbolic link</source>
-        <translation type="unfinished"></translation>
+        <translation>符號連結</translation>
     </message>
     <message>
         <source>character device</source>
-        <translation type="unfinished"></translation>
+        <translation>字元裝置</translation>
     </message>
     <message>
         <source>block device</source>
-        <translation type="unfinished"></translation>
+        <translation>區塊裝置</translation>
     </message>
     <message>
         <source>fifo</source>
-        <translation type="unfinished"></translation>
+        <translation>fifo</translation>
     </message>
     <message>
         <source>socket</source>
-        <translation type="unfinished"></translation>
+        <translation>socket</translation>
     </message>
     <message>
         <source>whiteout</source>
-        <translation type="unfinished"></translation>
+        <translation>whiteout</translation>
     </message>
     <message>
         <source>unknown</source>
-        <translation type="unfinished"></translation>
+        <translation>未知</translation>
     </message>
     <message>
         <source>illegal-value</source>
-        <translation type="unfinished"></translation>
+        <translation>非法值</translation>
     </message>
     <message>
         <source>&lt;b&gt;Type:&lt;/b&gt; %1&lt;br/&gt;</source>
-        <translation type="unfinished">&lt;b&gt;類型:&lt;/b&gt; %1&lt;br/&gt;</translation>
+        <translation>&lt;b&gt;類型:&lt;/b&gt; %1&lt;br/&gt;</translation>
     </message>
     <message>
         <source>&lt;b&gt;INode:&lt;/b&gt; %1&lt;br/&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;INode:&lt;/b&gt; %1&lt;br/&gt;</translation>
     </message>
     <message>
         <source>&lt;b&gt;Device:&lt;/b&gt; %1&lt;br/&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;裝置:&lt;/b&gt; %1&lt;br/&gt;</translation>
     </message>
     <message>
         <source>&lt;b&gt;Hardlinks:&lt;/b&gt; %1&lt;br/&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;Hardlinks:&lt;/b&gt; %1&lt;br/&gt;</translation>
     </message>
     <message>
         <source>&lt;b&gt;Mode:&lt;/b&gt; %1&lt;br/&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;模式:&lt;/b&gt; %1&lt;br/&gt;</translation>
     </message>
     <message>
         <source>&lt;b&gt;Attributes:&lt;/b&gt; %1&lt;br/&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;屬性:&lt;/b&gt; %1&lt;br/&gt;</translation>
     </message>
     <message>
         <source>&lt;b&gt;Device ID:&lt;/b&gt; %1&lt;br/&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;裝置 ID:&lt;/b&gt; %1&lt;br/&gt;</translation>
     </message>
     <message>
         <source>&lt;b&gt;Owner:&lt;/b&gt; %1 (%2)&lt;br/&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;擁有者:&lt;/b&gt; %1 (%2)&lt;br/&gt;</translation>
     </message>
     <message>
         <source>&lt;b&gt;Group:&lt;/b&gt; %1 (%2)&lt;br/&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;群組:&lt;/b&gt; %1 (%2)&lt;br/&gt;</translation>
     </message>
     <message>
         <source>&lt;b&gt;Birth:&lt;/b&gt; %1&lt;br/&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;出生:&lt;/b&gt; %1&lt;br/&gt;</translation>
     </message>
     <message>
         <source>&lt;b&gt;Change:&lt;/b&gt; %1&lt;br/&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;變更:&lt;/b&gt; %1&lt;br/&gt;</translation>
     </message>
     <message>
         <source>&lt;b&gt;Modified:&lt;/b&gt; %1&lt;br/&gt;</source>
-        <translation type="unfinished">&lt;b&gt;修改時間:&lt;/b&gt; %1&lt;br/&gt;</translation>
+        <translation>&lt;b&gt;修改時間:&lt;/b&gt; %1&lt;br/&gt;</translation>
     </message>
     <message>
         <source>&lt;b&gt;Access:&lt;/b&gt; %1&lt;br/&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;存取:&lt;/b&gt; %1&lt;br/&gt;</translation>
     </message>
     <message>
         <source>&lt;b&gt;Selected:&lt;/b&gt; %1 files and %2 directories&lt;br/&gt;</source>
-        <translation type="unfinished">&lt;b&gt;已選取:&lt;/b&gt; %1 個檔案和 %2 個目錄&lt;br/&gt;</translation>
+        <translation>&lt;b&gt;已選取:&lt;/b&gt; %1 個檔案和 %2 個目錄&lt;br/&gt;</translation>
     </message>
     <message>
         <source>&lt;b&gt;Size (non-recursive):&lt;/b&gt; %1 bytes</source>
-        <translation type="unfinished">&lt;b&gt;大小 (非遞迴):&lt;/b&gt; %1 位元組</translation>
+        <translation>&lt;b&gt;大小 (非遞迴):&lt;/b&gt; %1 位元組</translation>
     </message>
     <message>
         <source>Properties</source>
-        <translation type="unfinished">內容</translation>
+        <translation>內容</translation>
     </message>
     <message>
         <source>Host System</source>
-        <translation type="unfinished">主機系統</translation>
+        <translation>主機系統</translation>
     </message>
     <message>
         <source>&lt;b&gt;Name:&lt;/b&gt; %1&lt;br/&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;名稱:&lt;/b&gt; %1&lt;br/&gt;</translation>
     </message>
     <message>
         <source>&lt;b&gt;Created:&lt;/b&gt; %1&lt;br/&gt;</source>
-        <translation type="unfinished">&lt;b&gt;建立時間:&lt;/b&gt; %1&lt;br/&gt;</translation>
+        <translation>&lt;b&gt;建立時間:&lt;/b&gt; %1&lt;br/&gt;</translation>
     </message>
     <message>
         <source>&lt;b&gt;Owner:&lt;/b&gt; %1</source>
-        <translation type="unfinished">&lt;b&gt;擁有者:&lt;/b&gt; %1</translation>
-    </message>
-</context>
-<context>
-    <name>UIFileManagerLogViewer</name>
-    <message>
-        <source>Clear</source>
-        <translation type="vanished">清除</translation>
+        <translation>&lt;b&gt;擁有者:&lt;/b&gt; %1</translation>
     </message>
 </context>
 <context>
@@ -3184,318 +3082,6 @@
     <message>
         <source>Holds the file path.</source>
         <translation>保存檔案路徑。</translation>
-    </message>
-</context>
-<context>
-    <name>UIGDetails</name>
-    <message>
-        <source>Name</source>
-        <comment>details (general)</comment>
-        <translation type="vanished">名稱</translation>
-    </message>
-    <message>
-        <source>Groups</source>
-        <comment>details (general)</comment>
-        <translation type="vanished">群組</translation>
-    </message>
-    <message>
-        <source>%1 MB</source>
-        <comment>details</comment>
-        <translation type="vanished">%1 MB</translation>
-    </message>
-    <message>
-        <source>Processors</source>
-        <comment>details (system)</comment>
-        <translation type="vanished">處理器</translation>
-    </message>
-    <message>
-        <source>%1%</source>
-        <comment>details</comment>
-        <translation type="vanished">%1%</translation>
-    </message>
-    <message>
-        <source>VT-x/AMD-V</source>
-        <comment>details (system)</comment>
-        <translation type="vanished">VT-x/AMD-V</translation>
-    </message>
-    <message>
-        <source>PAE/NX</source>
-        <comment>details (system)</comment>
-        <translation type="vanished">PAE/NX</translation>
-    </message>
-    <message>
-        <source>Acceleration</source>
-        <comment>details (system)</comment>
-        <translation type="vanished">加速</translation>
-    </message>
-    <message>
-        <source>Screens</source>
-        <comment>details (display)</comment>
-        <translation type="vanished">畫面</translation>
-    </message>
-    <message>
-        <source>3D</source>
-        <comment>details (display)</comment>
-        <translation type="vanished">3D</translation>
-    </message>
-    <message>
-        <source>Acceleration</source>
-        <comment>details (display)</comment>
-        <translation type="vanished">加速</translation>
-    </message>
-    <message>
-        <source>Disabled</source>
-        <comment>details (display/vrde/VRDE server)</comment>
-        <translation type="vanished">停用</translation>
-    </message>
-    <message>
-        <source>Controller</source>
-        <comment>details (audio)</comment>
-        <translation type="vanished">控制器</translation>
-    </message>
-    <message>
-        <source>Disabled</source>
-        <comment>details (audio)</comment>
-        <translation type="vanished">停用</translation>
-    </message>
-    <message>
-        <source>Adapter %1</source>
-        <comment>details (network)</comment>
-        <translation type="vanished">介面卡 %1</translation>
-    </message>
-    <message>
-        <source>Disabled</source>
-        <comment>details (network/adapter)</comment>
-        <translation type="vanished">停用</translation>
-    </message>
-    <message>
-        <source>Port %1</source>
-        <comment>details (serial)</comment>
-        <translation type="vanished">連接埠 %1</translation>
-    </message>
-    <message>
-        <source>Disabled</source>
-        <comment>details (serial)</comment>
-        <translation type="vanished">停用</translation>
-    </message>
-    <message>
-        <source>%1 (%2 active)</source>
-        <comment>details (usb)</comment>
-        <translation type="vanished">%1 (%2 個啟用)</translation>
-    </message>
-    <message>
-        <source>Disabled</source>
-        <comment>details (usb)</comment>
-        <translation type="vanished">停用</translation>
-    </message>
-    <message>
-        <source>None</source>
-        <comment>details (shared folders)</comment>
-        <translation type="vanished">無</translation>
-    </message>
-    <message>
-        <source>Operating System</source>
-        <comment>details (general)</comment>
-        <translation type="vanished">作業系統</translation>
-    </message>
-    <message>
-        <source>Base Memory</source>
-        <comment>details (system)</comment>
-        <translation type="vanished">基礎記憶體</translation>
-    </message>
-    <message>
-        <source>Execution Cap</source>
-        <comment>details (system)</comment>
-        <translation type="vanished">執行上限</translation>
-    </message>
-    <message>
-        <source>Boot Order</source>
-        <comment>details (system)</comment>
-        <translation type="vanished">開機順序</translation>
-    </message>
-    <message>
-        <source>Nested Paging</source>
-        <comment>details (system)</comment>
-        <translation type="vanished">巢式分頁</translation>
-    </message>
-    <message>
-        <source>Video Memory</source>
-        <comment>details (display)</comment>
-        <translation type="vanished">視訊記憶體</translation>
-    </message>
-    <message>
-        <source>2D Video</source>
-        <comment>details (display)</comment>
-        <translation type="vanished">2D 視訊</translation>
-    </message>
-    <message>
-        <source>Remote Desktop Server Port</source>
-        <comment>details (display/vrde)</comment>
-        <translation type="vanished">遠端桌面伺服器連接埠</translation>
-    </message>
-    <message>
-        <source>Remote Desktop Server</source>
-        <comment>details (display/vrde)</comment>
-        <translation type="vanished">遠端桌面伺服器</translation>
-    </message>
-    <message>
-        <source>Not Attached</source>
-        <comment>details (storage)</comment>
-        <translation type="vanished">未附加</translation>
-    </message>
-    <message>
-        <source>Host Driver</source>
-        <comment>details (audio)</comment>
-        <translation type="vanished">主機驅動程式</translation>
-    </message>
-    <message>
-        <source>Bridged Adapter, %1</source>
-        <comment>details (network)</comment>
-        <translation type="vanished">橋接介面卡，%1</translation>
-    </message>
-    <message>
-        <source>Internal Network, &apos;%1&apos;</source>
-        <comment>details (network)</comment>
-        <translation type="vanished">內部網路，「%1」</translation>
-    </message>
-    <message>
-        <source>Host-only Adapter, &apos;%1&apos;</source>
-        <comment>details (network)</comment>
-        <translation type="vanished">「僅限主機」介面卡，「%1」</translation>
-    </message>
-    <message>
-        <source>Generic Driver, &apos;%1&apos;</source>
-        <comment>details (network)</comment>
-        <translation type="vanished">通用驅動程式，「%1」</translation>
-    </message>
-    <message>
-        <source>Device Filters</source>
-        <comment>details (usb)</comment>
-        <translation type="vanished">裝置篩選器</translation>
-    </message>
-    <message>
-        <source>Shared Folders</source>
-        <comment>details (shared folders)</comment>
-        <translation type="vanished">共用資料夾</translation>
-    </message>
-    <message>
-        <source>NAT Network, &apos;%1&apos;</source>
-        <comment>details (network)</comment>
-        <translation type="vanished">NAT 網路，「%1」</translation>
-    </message>
-    <message>
-        <source>Frame Size: %1x%2, Frame Rate: %3fps, Bit Rate: %4kbps</source>
-        <translation type="vanished">框架大小: %1x%2，畫面播放率: %3fps，位元率: %4kbps</translation>
-    </message>
-    <message>
-        <source>Minimal Paravirtualization</source>
-        <comment>details (system)</comment>
-        <translation type="vanished">最小半虛擬化</translation>
-    </message>
-    <message>
-        <source>Hyper-V Paravirtualization</source>
-        <comment>details (system)</comment>
-        <translation type="vanished">Hyper-V 半虛擬化</translation>
-    </message>
-    <message>
-        <source>KVM Paravirtualization</source>
-        <comment>details (system)</comment>
-        <translation type="vanished">KVM 半虛擬化</translation>
-    </message>
-    <message>
-        <source>[Optical Drive]</source>
-        <comment>details (storage)</comment>
-        <translation type="vanished">[光碟機]</translation>
-    </message>
-    <message>
-        <source>USB Controller</source>
-        <comment>details (usb)</comment>
-        <translation type="vanished">USB 控制器</translation>
-    </message>
-    <message>
-        <source>Scale-factor</source>
-        <comment>details (display)</comment>
-        <translation type="vanished">縮放係數</translation>
-    </message>
-    <message>
-        <source>Generic Driver, &apos;%1&apos; { %2 }</source>
-        <comment>details (network)</comment>
-        <translation type="vanished">通用驅動程式，「%1」 { %2 }</translation>
-    </message>
-    <message>
-        <source>Chipset Type</source>
-        <comment>details (system)</comment>
-        <translation type="vanished">晶片組類型</translation>
-    </message>
-    <message>
-        <source>Enabled</source>
-        <comment>details (system/EFI)</comment>
-        <translation type="vanished">啟用</translation>
-    </message>
-    <message>
-        <source>EFI</source>
-        <comment>details (system)</comment>
-        <translation type="vanished">EFI</translation>
-    </message>
-    <message>
-        <source>Disabled</source>
-        <comment>details (system/EFI)</comment>
-        <translation type="vanished">停用</translation>
-    </message>
-    <message>
-        <source>Audio Output</source>
-        <comment>details (audio)</comment>
-        <translation type="vanished">音訊輸出</translation>
-    </message>
-    <message>
-        <source>Enabled</source>
-        <comment>details (audio/output)</comment>
-        <translation type="vanished">啟用</translation>
-    </message>
-    <message>
-        <source>Disabled</source>
-        <comment>details (audio/output)</comment>
-        <translation type="vanished">停用</translation>
-    </message>
-    <message>
-        <source>Audio Input</source>
-        <comment>details (audio)</comment>
-        <translation type="vanished">音訊輸入</translation>
-    </message>
-    <message>
-        <source>Enabled</source>
-        <comment>details (audio/input)</comment>
-        <translation type="vanished">啟用</translation>
-    </message>
-    <message>
-        <source>Disabled</source>
-        <comment>details (audio/input)</comment>
-        <translation type="vanished">停用</translation>
-    </message>
-    <message>
-        <source>Settings File Location</source>
-        <comment>details (general)</comment>
-        <translation type="vanished">設定檔位置</translation>
-    </message>
-    <message>
-        <source>Recording File</source>
-        <comment>details (display/recording)</comment>
-        <translation type="vanished">錄製檔案</translation>
-    </message>
-    <message>
-        <source>Recording Attributes</source>
-        <comment>details (display/recording)</comment>
-        <translation type="vanished">錄製屬性</translation>
-    </message>
-    <message>
-        <source>Recording</source>
-        <comment>details (display/recording)</comment>
-        <translation type="vanished">錄製</translation>
-    </message>
-    <message>
-        <source>Disabled</source>
-        <comment>details (display/recording)</comment>
-        <translation type="vanished">停用</translation>
     </message>
 </context>
 <context>
@@ -3639,7 +3225,7 @@
     </message>
     <message>
         <source>When checked, the host screensaver will be disabled whenever a virtual machine is running.</source>
-        <translation>勾選時，每當虛擬機器執行中將停用主機螢幕保護。</translation>
+        <translation>勾選時，每當虛擬機器執行中將停用主機螢幕保護裝置。</translation>
     </message>
     <message>
         <source>Host Screensaver:</source>
@@ -3678,7 +3264,7 @@
     </message>
     <message>
         <source>Lists all available shortcuts which can be configured.</source>
-        <translation>列出可組態的所有可用快速鍵方式。</translation>
+        <translation>列出可組態的所有可用快速鍵。</translation>
     </message>
     <message>
         <source>Holds a sequence to filter the shortcut list.</source>
@@ -3712,26 +3298,6 @@
         <translation>介面語言(&amp;I)</translation>
     </message>
     <message>
-        <source> (built-in)</source>
-        <comment>Language</comment>
-        <translation type="vanished"> (內建)</translation>
-    </message>
-    <message>
-        <source>&lt;unavailable&gt;</source>
-        <comment>Language</comment>
-        <translation type="vanished">&lt;不可用&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;unknown&gt;</source>
-        <comment>Author(s)</comment>
-        <translation type="vanished">&lt;不明&gt;</translation>
-    </message>
-    <message>
-        <source>Default</source>
-        <comment>Language</comment>
-        <translation type="vanished">預設值</translation>
-    </message>
-    <message>
         <source>Language:</source>
         <translation>語言:</translation>
     </message>
@@ -3749,70 +3315,6 @@
     <message>
         <source>Lists all available NAT networks.</source>
         <translation>列出所有可用的 NAT 網路。</translation>
-    </message>
-    <message>
-        <source>Network Name</source>
-        <translation type="vanished">網路名稱</translation>
-    </message>
-    <message>
-        <source>[empty]</source>
-        <translation type="vanished">[空]</translation>
-    </message>
-    <message>
-        <source>%1 (renamed from %2)</source>
-        <translation type="vanished">%1 (從 %2 重新命名)</translation>
-    </message>
-    <message>
-        <source>Old Network Name</source>
-        <translation type="vanished">舊的網路名稱</translation>
-    </message>
-    <message>
-        <source>New Network Name</source>
-        <translation type="vanished">新的網路名稱</translation>
-    </message>
-    <message>
-        <source>Network CIDR</source>
-        <translation type="vanished">網路 CIDR</translation>
-    </message>
-    <message>
-        <source>Supports DHCP</source>
-        <translation type="vanished">支援 DHCP</translation>
-    </message>
-    <message>
-        <source>yes</source>
-        <translation type="vanished">是</translation>
-    </message>
-    <message>
-        <source>no</source>
-        <translation type="vanished">否</translation>
-    </message>
-    <message>
-        <source>Supports IPv6</source>
-        <translation type="vanished">支援 IPv6</translation>
-    </message>
-    <message>
-        <source>Default IPv6 route</source>
-        <translation type="vanished">預設 IPv6 路由</translation>
-    </message>
-    <message>
-        <source>No new name specified for the NAT network previously called &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="vanished">沒有為先前名為 &lt;b&gt;%1&lt;/b&gt; 的 NAT 網路指定新名稱。</translation>
-    </message>
-    <message>
-        <source>No CIDR specified for the NAT network &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="vanished">沒有為 NAT 網路 &lt;b&gt;%1&lt;/b&gt; 指定 CIDR。</translation>
-    </message>
-    <message>
-        <source>No CIDR specified for the NAT network previously called &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="vanished">沒有為先前名為 &lt;b&gt;%1&lt;/b&gt; 的 NAT 網路指定 CIDR。</translation>
-    </message>
-    <message>
-        <source>Invalid CIDR specified (&lt;i&gt;%1&lt;/i&gt;) for the NAT network &lt;b&gt;%2&lt;/b&gt;.</source>
-        <translation type="vanished">NAT 網路 &lt;b&gt;%2&lt;/b&gt; 所指定的 CIDR 無效 (&lt;i&gt;%1&lt;/i&gt;)。</translation>
-    </message>
-    <message>
-        <source>Invalid CIDR specified (&lt;i&gt;%1&lt;/i&gt;) for the NAT network previously called &lt;b&gt;%2&lt;/b&gt;.</source>
-        <translation type="vanished">NAT 網路先前名為 &lt;b&gt;%2&lt;/b&gt; 所指定的 CIDR 無效 (&lt;i&gt;%1&lt;/i&gt;)。</translation>
     </message>
     <message>
         <source>The name &lt;b&gt;%1&lt;/b&gt; is being used for several NAT networks.</source>
@@ -4041,216 +3543,22 @@
     </message>
 </context>
 <context>
-    <name>UIGuestControlFileManager</name>
-    <message>
-        <source>Close</source>
-        <translation type="vanished">關閉</translation>
-    </message>
-    <message>
-        <source>Close the pane</source>
-        <translation type="vanished">關閉窗格</translation>
-    </message>
-    <message>
-        <source>User name to authenticate session creation</source>
-        <translation type="vanished">對工作階段建立進行身份驗證的使用者名稱</translation>
-    </message>
-    <message>
-        <source>User Name</source>
-        <translation type="vanished">使用者名稱</translation>
-    </message>
-    <message>
-        <source>Password to authenticate session creation</source>
-        <translation type="vanished">對工作階段建立進行身份驗證的密碼</translation>
-    </message>
-    <message>
-        <source>Password</source>
-        <translation type="vanished">密碼</translation>
-    </message>
-    <message>
-        <source>Create Session</source>
-        <translation type="vanished">建立工作階段</translation>
-    </message>
-    <message>
-        <source>Close Session</source>
-        <translation type="vanished">關閉工作階段</translation>
-    </message>
-    <message>
-        <source>Clean Finished</source>
-        <translation type="vanished">清理完成</translation>
-    </message>
-    <message>
-        <source>Clean All</source>
-        <translation type="vanished">全部清理</translation>
-    </message>
-    <message>
-        <source>List directories on top</source>
-        <translation type="vanished">在頂端列出目錄</translation>
-    </message>
-    <message>
-        <source>List directories before files</source>
-        <translation type="vanished">在檔案前列出目錄</translation>
-    </message>
-    <message>
-        <source>Ask before delete</source>
-        <translation type="vanished">刪除前詢問</translation>
-    </message>
-    <message>
-        <source>Human readable sizes</source>
-        <translation type="vanished">人類可讀大小</translation>
-    </message>
-    <message>
-        <source>Total Size</source>
-        <translation type="vanished">總計大小</translation>
-    </message>
-    <message>
-        <source> bytes</source>
-        <translation type="vanished"> 位元組</translation>
-    </message>
-    <message>
-        <source>File Count</source>
-        <translation type="vanished">檔案數</translation>
-    </message>
-    <message>
-        <source>Delete the selected file(s) and/or folder(s)</source>
-        <translation type="vanished">刪除選取的檔案和/或資料夾</translation>
-    </message>
-    <message>
-        <source>Ask for this confirmation next time</source>
-        <translation type="vanished">下次詢問這個確認</translation>
-    </message>
-    <message>
-        <source>Delete confirmation can be disabled/enabled also from the Options panel.</source>
-        <translation type="vanished">刪除確認也可以從「選項」面板中停用/啟用。</translation>
-    </message>
-    <message>
-        <source>Name</source>
-        <translation type="vanished">名稱</translation>
-    </message>
-    <message>
-        <source>Size</source>
-        <translation type="vanished">大小</translation>
-    </message>
-    <message>
-        <source>Change Time</source>
-        <translation type="vanished">變更時間</translation>
-    </message>
-    <message>
-        <source>Owner</source>
-        <translation type="vanished">擁有者</translation>
-    </message>
-    <message>
-        <source>Permissions</source>
-        <translation type="vanished">權限</translation>
-    </message>
-    <message>
-        <source>No Guest Session</source>
-        <translation type="vanished">無客體工作階段</translation>
-    </message>
-    <message>
-        <source>Unknown</source>
-        <translation type="vanished">未知</translation>
-    </message>
-    <message>
-        <source>File</source>
-        <translation type="vanished">檔案</translation>
-    </message>
-    <message>
-        <source>Directory</source>
-        <translation type="vanished">目錄</translation>
-    </message>
-    <message>
-        <source>Symbolic Link</source>
-        <translation type="vanished">符號連結</translation>
-    </message>
-    <message>
-        <source>Other</source>
-        <translation type="vanished">其它</translation>
-    </message>
-    <message>
-        <source>Guest System</source>
-        <translation type="vanished">客體系統</translation>
-    </message>
-    <message>
-        <source>&lt;b&gt;Size:&lt;/b&gt; %1 bytes</source>
-        <translation type="vanished">&lt;b&gt;大小:&lt;/b&gt; %1 位元組</translation>
-    </message>
-    <message>
-        <source>&lt;b&gt;Type:&lt;/b&gt; %1&lt;br/&gt;</source>
-        <translation type="vanished">&lt;b&gt;類型:&lt;/b&gt; %1&lt;br/&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;b&gt;Created:&lt;/b&gt; %1&lt;br/&gt;</source>
-        <translation type="vanished">&lt;b&gt;建立時間:&lt;/b&gt; %1&lt;br/&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;b&gt;Modified:&lt;/b&gt; %1&lt;br/&gt;</source>
-        <translation type="vanished">&lt;b&gt;修改時間:&lt;/b&gt; %1&lt;br/&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;b&gt;Owner:&lt;/b&gt; %1&lt;br/&gt;</source>
-        <translation type="vanished">&lt;b&gt;擁有者:&lt;/b&gt; %1&lt;br/&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;b&gt;Selected:&lt;/b&gt; %1 files and %2 directories&lt;br/&gt;</source>
-        <translation type="vanished">&lt;b&gt;已選取:&lt;/b&gt; %1 個檔案和 %2 個目錄&lt;br/&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;b&gt;Size (non-recursive):&lt;/b&gt; %1 bytes</source>
-        <translation type="vanished">&lt;b&gt;大小 (非遞迴):&lt;/b&gt; %1 位元組</translation>
-    </message>
-    <message>
-        <source>Properties</source>
-        <translation type="vanished">內容</translation>
-    </message>
-    <message>
-        <source>Host System</source>
-        <translation type="vanished">主機系統</translation>
-    </message>
-    <message>
-        <source>&lt;b&gt;Name:&lt;/b&gt; %1</source>
-        <translation type="vanished">&lt;b&gt;名稱:&lt;/b&gt; %1</translation>
-    </message>
-    <message>
-        <source>&lt;b&gt;Owner:&lt;/b&gt; %1</source>
-        <translation type="vanished">&lt;b&gt;擁有者:&lt;/b&gt; %1</translation>
-    </message>
-    <message>
-        <source>Clear</source>
-        <translation type="obsolete">清除</translation>
-    </message>
-    <message>
-        <source>Cancel</source>
-        <translation type="obsolete">取消</translation>
-    </message>
-    <message>
-        <source>Paused</source>
-        <translation type="obsolete">暫停</translation>
-    </message>
-</context>
-<context>
-    <name>UIGuestControlFileManagerDialog</name>
-    <message>
-        <source>%1 - Guest Control</source>
-        <translation type="vanished">%1 - 客體控制</translation>
-    </message>
-</context>
-<context>
     <name>UIGuestControlTreeWidget</name>
     <message>
         <source>Close Session</source>
-        <translation type="unfinished">關閉工作階段</translation>
+        <translation>關閉工作階段</translation>
     </message>
     <message>
         <source>Terminate Process</source>
-        <translation type="unfinished">終止處理程序</translation>
+        <translation>終止處理程序</translation>
     </message>
     <message>
         <source>Expand All</source>
-        <translation type="unfinished">全部展開</translation>
+        <translation>全部展開</translation>
     </message>
     <message>
         <source>Collapse All</source>
-        <translation type="unfinished">全部折疊</translation>
+        <translation>全部折疊</translation>
     </message>
 </context>
 <context>
@@ -4441,7 +3749,7 @@
     </message>
     <message>
         <source>Holds the network mask of the DHCP server servicing the network associated with this host-only adapter.</source>
-        <translation>保存 DHCP 伺服器的網路遮罩，服務與這個「僅限主機」網路卡關聯的網路。</translation>
+        <translation>保存 DHCP 伺服器服務的網路遮罩，與這個「僅限主機」網路卡關聯的網路。</translation>
     </message>
     <message>
         <source>&amp;Lower Address Bound:</source>
@@ -4507,89 +3815,8 @@
 <context>
     <name>UIHostNetworkManager</name>
     <message>
-        <source>Enable</source>
-        <comment>DHCP Server</comment>
-        <translation type="vanished">啟用</translation>
-    </message>
-    <message>
-        <source>Adapter</source>
-        <translation type="vanished">介面卡</translation>
-    </message>
-    <message>
-        <source>Automatically configured</source>
-        <comment>interface</comment>
-        <translation type="vanished">已自動組態</translation>
-    </message>
-    <message>
-        <source>Manually configured</source>
-        <comment>interface</comment>
-        <translation type="vanished">已手動組態</translation>
-    </message>
-    <message>
-        <source>IPv4 Address</source>
-        <translation type="vanished">IPv4 位址</translation>
-    </message>
-    <message>
-        <source>Not set</source>
-        <comment>address</comment>
-        <translation type="vanished">未設定</translation>
-    </message>
-    <message>
-        <source>IPv4 Network Mask</source>
-        <translation type="vanished">IPv4 網路遮罩</translation>
-    </message>
-    <message>
-        <source>Not set</source>
-        <comment>mask</comment>
-        <translation type="vanished">未設定</translation>
-    </message>
-    <message>
-        <source>IPv6 Address</source>
-        <translation type="vanished">IPv6 位址</translation>
-    </message>
-    <message>
-        <source>IPv6 Prefix Length</source>
-        <translation type="vanished">IPv6 首碼長度</translation>
-    </message>
-    <message>
-        <source>Not set</source>
-        <comment>length</comment>
-        <translation type="vanished">未設定</translation>
-    </message>
-    <message>
         <source>DHCP Server</source>
         <translation>DHCP 伺服器</translation>
-    </message>
-    <message>
-        <source>Enabled</source>
-        <comment>server</comment>
-        <translation type="vanished">啟用</translation>
-    </message>
-    <message>
-        <source>Disabled</source>
-        <comment>server</comment>
-        <translation type="vanished">停用</translation>
-    </message>
-    <message>
-        <source>Address</source>
-        <translation type="vanished">位址</translation>
-    </message>
-    <message>
-        <source>Network Mask</source>
-        <translation type="vanished">網路遮罩</translation>
-    </message>
-    <message>
-        <source>Lower Bound</source>
-        <translation type="vanished">下限</translation>
-    </message>
-    <message>
-        <source>Not set</source>
-        <comment>bound</comment>
-        <translation type="vanished">未設定</translation>
-    </message>
-    <message>
-        <source>Upper Bound</source>
-        <translation type="vanished">上限</translation>
     </message>
     <message>
         <source>Name</source>
@@ -4645,22 +3872,11 @@
     </message>
     <message>
         <source>Adding network...</source>
-        <translation type="unfinished">正在加入網路...</translation>
+        <translation>正在加入網路...</translation>
     </message>
     <message>
         <source>Removing network...</source>
-        <translation type="unfinished">正在移除網路...</translation>
-    </message>
-</context>
-<context>
-    <name>UIHostNetworkManagerWidget</name>
-    <message>
-        <source>Adding network...</source>
-        <translation type="vanished">正在加入網路...</translation>
-    </message>
-    <message>
-        <source>Removing network...</source>
-        <translation type="vanished">正在移除網路...</translation>
+        <translation>正在移除網路...</translation>
     </message>
 </context>
 <context>
@@ -5216,87 +4432,87 @@
     <message>
         <source>Enable</source>
         <comment>DHCP Server</comment>
-        <translation type="unfinished">啟用</translation>
+        <translation>啟用</translation>
     </message>
     <message>
         <source>Adapter</source>
-        <translation type="unfinished">介面卡</translation>
+        <translation>介面卡</translation>
     </message>
     <message>
         <source>Automatically configured</source>
         <comment>interface</comment>
-        <translation type="unfinished">已自動組態</translation>
+        <translation>已自動組態</translation>
     </message>
     <message>
         <source>Manually configured</source>
         <comment>interface</comment>
-        <translation type="unfinished">已手動組態</translation>
+        <translation>已手動組態</translation>
     </message>
     <message>
         <source>IPv4 Address</source>
-        <translation type="unfinished">IPv4 位址</translation>
+        <translation>IPv4 位址</translation>
     </message>
     <message>
         <source>Not set</source>
         <comment>address</comment>
-        <translation type="unfinished">未設定</translation>
+        <translation>未設定</translation>
     </message>
     <message>
         <source>IPv4 Network Mask</source>
-        <translation type="unfinished">IPv4 網路遮罩</translation>
+        <translation>IPv4 網路遮罩</translation>
     </message>
     <message>
         <source>Not set</source>
         <comment>mask</comment>
-        <translation type="unfinished">未設定</translation>
+        <translation>未設定</translation>
     </message>
     <message>
         <source>IPv6 Address</source>
-        <translation type="unfinished">IPv6 位址</translation>
+        <translation>IPv6 位址</translation>
     </message>
     <message>
         <source>IPv6 Prefix Length</source>
-        <translation type="unfinished">IPv6 首碼長度</translation>
+        <translation>IPv6 首碼長度</translation>
     </message>
     <message>
         <source>Not set</source>
         <comment>length</comment>
-        <translation type="unfinished">未設定</translation>
+        <translation>未設定</translation>
     </message>
     <message>
         <source>DHCP Server</source>
-        <translation type="unfinished">DHCP 伺服器</translation>
+        <translation>DHCP 伺服器</translation>
     </message>
     <message>
         <source>Enabled</source>
         <comment>server</comment>
-        <translation type="unfinished">啟用</translation>
+        <translation>啟用</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>server</comment>
-        <translation type="unfinished">停用</translation>
+        <translation>停用</translation>
     </message>
     <message>
         <source>Address</source>
-        <translation type="unfinished">位址</translation>
+        <translation>位址</translation>
     </message>
     <message>
         <source>Network Mask</source>
-        <translation type="unfinished">網路遮罩</translation>
+        <translation>網路遮罩</translation>
     </message>
     <message>
         <source>Lower Bound</source>
-        <translation type="unfinished">下限</translation>
+        <translation>下限</translation>
     </message>
     <message>
         <source>Not set</source>
         <comment>bound</comment>
-        <translation type="unfinished">未設定</translation>
+        <translation>未設定</translation>
     </message>
     <message>
         <source>Upper Bound</source>
-        <translation type="unfinished">上限</translation>
+        <translation>上限</translation>
     </message>
 </context>
 <context>
@@ -5313,67 +4529,67 @@
     </message>
     <message>
         <source>Network Name</source>
-        <translation type="unfinished">網路名稱</translation>
+        <translation>網路名稱</translation>
     </message>
     <message>
         <source>[empty]</source>
-        <translation type="unfinished">[空]</translation>
+        <translation>[空]</translation>
     </message>
     <message>
         <source>%1 (renamed from %2)</source>
-        <translation type="unfinished">%1 (從 %2 重新命名)</translation>
+        <translation>%1 (從 %2 重新命名)</translation>
     </message>
     <message>
         <source>Old Network Name</source>
-        <translation type="unfinished">舊的網路名稱</translation>
+        <translation>舊的網路名稱</translation>
     </message>
     <message>
         <source>New Network Name</source>
-        <translation type="unfinished">新的網路名稱</translation>
+        <translation>新的網路名稱</translation>
     </message>
     <message>
         <source>Network CIDR</source>
-        <translation type="unfinished">網路 CIDR</translation>
+        <translation>網路 CIDR</translation>
     </message>
     <message>
         <source>Supports DHCP</source>
-        <translation type="unfinished">支援 DHCP</translation>
+        <translation>支援 DHCP</translation>
     </message>
     <message>
         <source>yes</source>
-        <translation type="unfinished">是</translation>
+        <translation>是</translation>
     </message>
     <message>
         <source>no</source>
-        <translation type="unfinished">否</translation>
+        <translation>否</translation>
     </message>
     <message>
         <source>Supports IPv6</source>
-        <translation type="unfinished">支援 IPv6</translation>
+        <translation>支援 IPv6</translation>
     </message>
     <message>
         <source>Default IPv6 route</source>
-        <translation type="unfinished">預設 IPv6 路由</translation>
+        <translation>預設 IPv6 路由</translation>
     </message>
     <message>
         <source>No new name specified for the NAT network previously called &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished">沒有為先前名為 &lt;b&gt;%1&lt;/b&gt; 的 NAT 網路指定新名稱。</translation>
+        <translation>沒有為先前名為 &lt;b&gt;%1&lt;/b&gt; 的 NAT 網路指定新名稱。</translation>
     </message>
     <message>
         <source>No CIDR specified for the NAT network &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished">沒有為 NAT 網路 &lt;b&gt;%1&lt;/b&gt; 指定 CIDR。</translation>
+        <translation>沒有為 NAT 網路 &lt;b&gt;%1&lt;/b&gt; 指定 CIDR。</translation>
     </message>
     <message>
         <source>No CIDR specified for the NAT network previously called &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished">沒有為先前名為 &lt;b&gt;%1&lt;/b&gt; 的 NAT 網路指定 CIDR。</translation>
+        <translation>沒有為先前名為 &lt;b&gt;%1&lt;/b&gt; 的 NAT 網路指定 CIDR。</translation>
     </message>
     <message>
         <source>Invalid CIDR specified (&lt;i&gt;%1&lt;/i&gt;) for the NAT network &lt;b&gt;%2&lt;/b&gt;.</source>
-        <translation type="unfinished">NAT 網路 &lt;b&gt;%2&lt;/b&gt; 所指定的 CIDR 無效 (&lt;i&gt;%1&lt;/i&gt;)。</translation>
+        <translation>NAT 網路 &lt;b&gt;%2&lt;/b&gt; 所指定的 CIDR 無效 (&lt;i&gt;%1&lt;/i&gt;)。</translation>
     </message>
     <message>
         <source>Invalid CIDR specified (&lt;i&gt;%1&lt;/i&gt;) for the NAT network previously called &lt;b&gt;%2&lt;/b&gt;.</source>
-        <translation type="unfinished">NAT 網路先前名為 &lt;b&gt;%2&lt;/b&gt; 所指定的 CIDR 無效 (&lt;i&gt;%1&lt;/i&gt;)。</translation>
+        <translation>NAT 網路先前名為 &lt;b&gt;%2&lt;/b&gt; 所指定的 CIDR 無效 (&lt;i&gt;%1&lt;/i&gt;)。</translation>
     </message>
 </context>
 <context>
@@ -5381,22 +4597,22 @@
     <message>
         <source> (built-in)</source>
         <comment>Language</comment>
-        <translation type="unfinished"> (內建)</translation>
+        <translation> (內建)</translation>
     </message>
     <message>
         <source>&lt;unavailable&gt;</source>
         <comment>Language</comment>
-        <translation type="unfinished">&lt;不可用&gt;</translation>
+        <translation>&lt;不可用&gt;</translation>
     </message>
     <message>
         <source>&lt;unknown&gt;</source>
         <comment>Author(s)</comment>
-        <translation type="unfinished">&lt;不明&gt;</translation>
+        <translation>&lt;不明&gt;</translation>
     </message>
     <message>
         <source>Default</source>
         <comment>Language</comment>
-        <translation type="unfinished">預設值</translation>
+        <translation>預設值</translation>
     </message>
 </context>
 <context>
@@ -5574,10 +4790,6 @@
         <translation>畫面播放速率(&amp;F):</translation>
     </message>
     <message>
-        <source>&amp;Quality:</source>
-        <translation type="vanished">不透明度(&amp;Q):</translation>
-    </message>
-    <message>
         <source>&amp;Screens:</source>
         <translation>畫面(&amp;S):</translation>
     </message>
@@ -5640,22 +4852,6 @@
     <message>
         <source>Holds the bitrate in &lt;b&gt;kilobits per second&lt;/b&gt;. Increasing this value will make the video look better at the cost of an increased file size.</source>
         <translation>保存位元率，單位 &lt;b&gt;KB/每秒&lt;/b&gt;。 這個值愈大視訊的效果愈好，但會增加檔案大小。</translation>
-    </message>
-    <message>
-        <source>&amp;Capture</source>
-        <translation type="vanished">擷取(&amp;C)</translation>
-    </message>
-    <message>
-        <source>&amp;Enable Capture</source>
-        <translation type="vanished">啟用擷取(&amp;E)</translation>
-    </message>
-    <message>
-        <source>Capture &amp;Mode:</source>
-        <translation type="vanished">擷取模式(&amp;M):</translation>
-    </message>
-    <message>
-        <source>Stores the capture mode.</source>
-        <translation type="vanished">存放擷取模式。</translation>
     </message>
     <message>
         <source>&amp;Audio Quality:</source>
@@ -5746,35 +4942,35 @@
     </message>
     <message>
         <source>&amp;Graphics Controller:</source>
-        <translation type="unfinished"></translation>
+        <translation>圖形控制器(&amp;G):</translation>
     </message>
     <message>
         <source>Selects the graphics adapter type the virtual machine will use.</source>
-        <translation type="unfinished"></translation>
+        <translation>選取虛擬機器將使用的圖形介面卡類型。</translation>
     </message>
     <message>
         <source>Re&amp;cording</source>
-        <translation type="unfinished"></translation>
+        <translation>錄製(&amp;C)</translation>
     </message>
     <message>
         <source>&amp;Enable Recording</source>
-        <translation type="unfinished"></translation>
+        <translation>啟用錄製(&amp;E)</translation>
     </message>
     <message>
         <source>Recording &amp;Mode:</source>
-        <translation type="unfinished"></translation>
+        <translation>錄製模式(&amp;M):</translation>
     </message>
     <message>
         <source>Selects the recording mode.</source>
-        <translation type="unfinished"></translation>
+        <translation>選取錄製模式。</translation>
     </message>
     <message>
         <source>&amp;Video Quality:</source>
-        <translation type="unfinished"></translation>
+        <translation>視訊品質(&amp;V):</translation>
     </message>
     <message>
         <source>Controls the &lt;b&gt;quality&lt;/b&gt;. Increasing this value will make the audio sound better at the cost of an increased file size.</source>
-        <translation type="unfinished"></translation>
+        <translation>控制&lt;b&gt;品質&lt;/b&gt;。 增加這個值將使音訊聲音更好，代價是增加檔案大小。</translation>
     </message>
 </context>
 <context>
@@ -6088,18 +5284,6 @@
     <message>
         <source>At</source>
         <translation>At</translation>
-    </message>
-    <message>
-        <source>Full</source>
-        <translation type="vanished">完整</translation>
-    </message>
-    <message>
-        <source>Read-only</source>
-        <translation type="vanished">唯讀</translation>
-    </message>
-    <message>
-        <source>Yes</source>
-        <translation type="vanished">是</translation>
     </message>
     <message>
         <source>Add Shared Folder</source>
@@ -6808,23 +5992,23 @@
     </message>
     <message>
         <source>When checked, the nested hardware virtualization CPU feature will be exposed to the virtual machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>勾選時，巢式硬體虛擬化 CPU 功能將公開在虛擬機器。</translation>
     </message>
     <message>
         <source>Enable Nested &amp;VT-x/AMD-V</source>
-        <translation type="unfinished"></translation>
+        <translation>啟用 Nested VT-x/AMD-V(&amp;V)</translation>
     </message>
     <message>
         <source>The hardware virtualization is not currently enabled in the Acceleration section of the System page. This is needed to support nested hardware virtualization. It will be enabled automatically if you confirm your changes.</source>
-        <translation type="unfinished"></translation>
+        <translation>在「系統」頁的「加速」部分中目前未啟用硬體虛擬化。 這是支援巢式硬體虛擬化所必需的。 如果您確認所做的變更，它將自動啟用。</translation>
     </message>
     <message>
         <source>The nested paging is not currently enabled in the Acceleration section of the System page. This is needed to support nested hardware virtualization. It will be enabled automatically if you confirm your changes.</source>
-        <translation type="unfinished"></translation>
+        <translation>在「系統」頁的「加速」部分中目前未啟用 Nested Paging。 這是支援巢式硬體虛擬化所必需的。 如果您確認所做的變更，它將自動啟用。</translation>
     </message>
     <message>
         <source>The hardware virtualization is not currently enabled in the Acceleration section of the System page. This is needed for nested paging support. It will be enabled automatically if you confirm your changes.</source>
-        <translation type="unfinished"></translation>
+        <translation>在「系統」頁的「加速」部分中目前未啟用硬體虛擬化。 這是支援 Nested Paging 所必需的。 如果您確認所做的變更，它將自動啟用。</translation>
     </message>
 </context>
 <context>
@@ -6872,46 +6056,6 @@
     <message>
         <source>When chosen, enables the virtual USB xHCI controller of this machine. The USB xHCI controller provides USB 3.0 support.</source>
         <translation>勾選時，啟用這部機器的虛擬 USB xHCI 控制器。 USB xHCI 控制器提供 USB 3.0 支援。</translation>
-    </message>
-    <message>
-        <source>&lt;nobr&gt;Vendor ID: %1&lt;/nobr&gt;</source>
-        <comment>USB filter tooltip</comment>
-        <translation type="vanished">&lt;nobr&gt;供應商 ID: %1&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;nobr&gt;Product ID: %2&lt;/nobr&gt;</source>
-        <comment>USB filter tooltip</comment>
-        <translation type="vanished">&lt;nobr&gt;產品 ID: %2&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;nobr&gt;Revision: %3&lt;/nobr&gt;</source>
-        <comment>USB filter tooltip</comment>
-        <translation type="vanished">&lt;nobr&gt;修訂: %3&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;nobr&gt;Product: %4&lt;/nobr&gt;</source>
-        <comment>USB filter tooltip</comment>
-        <translation type="vanished">&lt;nobr&gt;產品: %4&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;nobr&gt;Manufacturer: %5&lt;/nobr&gt;</source>
-        <comment>USB filter tooltip</comment>
-        <translation type="vanished">&lt;nobr&gt;製造商: %5&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;nobr&gt;Serial No.: %1&lt;/nobr&gt;</source>
-        <comment>USB filter tooltip</comment>
-        <translation type="vanished">&lt;nobr&gt;序號: %1&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;nobr&gt;Port: %1&lt;/nobr&gt;</source>
-        <comment>USB filter tooltip</comment>
-        <translation type="vanished">&lt;nobr&gt;連接埠: %1&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;nobr&gt;State: %1&lt;/nobr&gt;</source>
-        <comment>USB filter tooltip</comment>
-        <translation type="vanished">&lt;nobr&gt;狀態: %1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>USB 2.0/3.0 is currently enabled for this virtual machine. However, this requires the &lt;i&gt;%1&lt;/i&gt; to be installed. Please install the Extension Pack from the VirtualBox download site or disable USB 2.0/3.0 to be able to start the machine.</source>
@@ -7186,57 +6330,57 @@
     <name>UIMediumItem</name>
     <message>
         <source>Current extension (*.%1)</source>
-        <translation type="unfinished">目前附檔名 (*.%1)</translation>
+        <translation>目前附檔名 (*.%1)</translation>
     </message>
     <message>
         <source>Choose the location of this medium</source>
-        <translation type="unfinished">選擇這個媒體的位置</translation>
+        <translation>選擇這個媒體的位置</translation>
     </message>
     <message>
         <source>Moving medium...</source>
-        <translation type="unfinished">移動媒體...</translation>
+        <translation>移動媒體...</translation>
     </message>
     <message>
         <source>%1, %2: %3, %4: %5</source>
         <comment>col.1 text, col.2 name: col.2 text, col.3 name: col.3 text</comment>
-        <translation type="unfinished">%1, %2: %3, %4: %5</translation>
+        <translation>%1, %2: %3, %4: %5</translation>
     </message>
     <message>
         <source>Format:</source>
-        <translation type="unfinished">格式化:</translation>
+        <translation>格式:</translation>
     </message>
     <message>
         <source>Storage details:</source>
-        <translation type="unfinished">存放裝置詳細資料:</translation>
+        <translation>存放裝置詳細資料:</translation>
     </message>
     <message>
         <source>Attached to:</source>
-        <translation type="unfinished">附加到:</translation>
+        <translation>附加到:</translation>
     </message>
     <message>
         <source>Encrypted with key:</source>
-        <translation type="unfinished">使用金鑰加密:</translation>
+        <translation>使用金鑰加密:</translation>
     </message>
     <message>
         <source>UUID:</source>
-        <translation type="unfinished">UUID:</translation>
+        <translation>UUID:</translation>
     </message>
     <message>
         <source>&lt;i&gt;Not&amp;nbsp;Attached&lt;/i&gt;</source>
-        <translation type="unfinished">&lt;i&gt;未附加&lt;/i&gt;</translation>
+        <translation>&lt;i&gt;未附加&lt;/i&gt;</translation>
     </message>
     <message>
         <source>&lt;i&gt;Not&amp;nbsp;Encrypted&lt;/i&gt;</source>
-        <translation type="unfinished">&lt;i&gt;未加密&lt;/i&gt;</translation>
+        <translation>&lt;i&gt;未加密&lt;/i&gt;</translation>
     </message>
     <message>
         <source>--</source>
         <comment>no info</comment>
-        <translation type="unfinished">--</translation>
+        <translation>--</translation>
     </message>
     <message>
         <source>Removing medium...</source>
-        <translation type="unfinished">正在移除媒體...</translation>
+        <translation>正在移除媒體...</translation>
     </message>
 </context>
 <context>
@@ -7329,166 +6473,60 @@
         <source>Resizing medium...</source>
         <translation>調整媒體大小...</translation>
     </message>
-    <message>
-        <source>Create a Floppy Disk</source>
-        <translation type="vanished">建立軟碟</translation>
-    </message>
-    <message>
-        <source>File Path:</source>
-        <translation type="vanished">檔案路徑:</translation>
-    </message>
-    <message>
-        <source>Size:</source>
-        <translation type="vanished">大小:</translation>
-    </message>
-    <message>
-        <source>Format disk as FAT12</source>
-        <translation type="vanished">格式化磁碟為 FAT12</translation>
-    </message>
-    <message>
-        <source>1.44M</source>
-        <translation type="vanished">1.44M</translation>
-    </message>
-    <message>
-        <source>1.2M</source>
-        <translation type="vanished">1.2M</translation>
-    </message>
-    <message>
-        <source>720K</source>
-        <translation type="vanished">720K</translation>
-    </message>
-    <message>
-        <source>360K</source>
-        <translation type="vanished">360K</translation>
-    </message>
-    <message>
-        <source>%1, %2: %3, %4: %5</source>
-        <comment>col.1 text, col.2 name: col.2 text, col.3 name: col.3 text</comment>
-        <translation type="vanished">%1, %2: %3, %4: %5</translation>
-    </message>
-    <message>
-        <source>Format:</source>
-        <translation type="vanished">格式化:</translation>
-    </message>
-    <message>
-        <source>Storage details:</source>
-        <translation type="vanished">存放裝置詳細資料:</translation>
-    </message>
-    <message>
-        <source>Attached to:</source>
-        <translation type="vanished">附加到:</translation>
-    </message>
-    <message>
-        <source>Encrypted with key:</source>
-        <translation type="vanished">使用金鑰加密:</translation>
-    </message>
-    <message>
-        <source>UUID:</source>
-        <translation type="vanished">UUID:</translation>
-    </message>
-    <message>
-        <source>&lt;i&gt;Not&amp;nbsp;Attached&lt;/i&gt;</source>
-        <translation type="vanished">&lt;i&gt;未附加&lt;/i&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;i&gt;Not&amp;nbsp;Encrypted&lt;/i&gt;</source>
-        <translation type="vanished">&lt;i&gt;未加密&lt;/i&gt;</translation>
-    </message>
-    <message>
-        <source>--</source>
-        <comment>no info</comment>
-        <translation type="vanished">--</translation>
-    </message>
-    <message>
-        <source>Removing medium...</source>
-        <translation type="vanished">正在移除媒體...</translation>
-    </message>
-    <message>
-        <source>&amp;Add</source>
-        <translation type="vanished">加入(&amp;A)</translation>
-    </message>
-    <message>
-        <source>Add Disk Image File</source>
-        <translation type="vanished">加入磁碟映像檔</translation>
-    </message>
-    <message>
-        <source>Add disk image file</source>
-        <translation type="vanished">加入磁碟映像檔</translation>
-    </message>
-    <message>
-        <source>&amp;Create</source>
-        <translation type="vanished">建立(&amp;C)</translation>
-    </message>
-    <message>
-        <source>Create an Empty Disk Image</source>
-        <translation type="vanished">建立空的磁碟映像</translation>
-    </message>
-    <message>
-        <source>Re&amp;fresh</source>
-        <translation type="vanished">重新整理(&amp;F)</translation>
-    </message>
-    <message>
-        <source>Refresh Disk Image Files (%1)</source>
-        <translation type="vanished">重新整理磁碟映像檔 (%1)</translation>
-    </message>
-    <message>
-        <source>Refresh the list of disk image files</source>
-        <translation type="vanished">重新整理磁碟映像檔清單</translation>
-    </message>
 </context>
 <context>
     <name>UIMediumSelector</name>
     <message>
         <source>&amp;Add...</source>
-        <translation type="unfinished">加入(&amp;A)...</translation>
+        <translation>加入(&amp;A)...</translation>
     </message>
     <message>
         <source>Add Disk Image</source>
-        <translation type="unfinished"></translation>
+        <translation>加入磁碟映像檔</translation>
     </message>
     <message>
         <source>Add existing disk image file</source>
-        <translation type="unfinished"></translation>
+        <translation>加入現有磁碟映像檔</translation>
     </message>
     <message>
         <source>&amp;Create...</source>
-        <translation type="unfinished">建立(&amp;C)...</translation>
+        <translation>建立(&amp;C)...</translation>
     </message>
     <message>
         <source>Create Disk Image</source>
-        <translation type="unfinished"></translation>
+        <translation>建立磁碟映像</translation>
     </message>
     <message>
         <source>Create new disk image file</source>
-        <translation type="unfinished"></translation>
+        <translation>新建磁碟映像檔</translation>
     </message>
     <message>
         <source>&amp;Refresh</source>
-        <translation type="unfinished">重新整理(&amp;R)</translation>
+        <translation>重新整理(&amp;R)</translation>
     </message>
     <message>
         <source>Refresh Disk Image Files (%1)</source>
-        <translation type="unfinished">重新整理磁碟映像檔 (%1)</translation>
+        <translation>重新整理磁碟映像檔 (%1)</translation>
     </message>
     <message>
         <source>Refresh the list of disk image files</source>
-        <translation type="unfinished">重新整理磁碟映像檔清單</translation>
+        <translation>重新整理磁碟映像檔清單</translation>
     </message>
     <message>
         <source>Choose</source>
-        <translation type="unfinished"></translation>
+        <translation>選擇</translation>
     </message>
     <message>
         <source>Name</source>
-        <translation type="unfinished">名稱</translation>
+        <translation>名稱</translation>
     </message>
     <message>
         <source>Virtual Size</source>
-        <translation type="unfinished">虛擬大小</translation>
+        <translation>虛擬大小</translation>
     </message>
     <message>
         <source>Actual Size</source>
-        <translation type="unfinished">實際大小</translation>
+        <translation>實際大小</translation>
     </message>
 </context>
 <context>
@@ -7957,7 +6995,7 @@
     </message>
     <message>
         <source>The current port forwarding rules are not valid. Few rules have same host ports and conflicting IP addresses.</source>
-        <translation>目前連接埠轉送規則無效。 很少有規則具有相同的主機連接埠和衝突的 IP 位址。</translation>
+        <translation>目前連接埠轉送規則無效。 少數規則具有相同的主機連接埠和衝突的 IP 位址。</translation>
     </message>
     <message>
         <source>&lt;p&gt;There are unsaved changes in the port forwarding configuration.&lt;/p&gt;&lt;p&gt;If you proceed your changes will be discarded.&lt;/p&gt;</source>
@@ -8077,7 +7115,7 @@
     </message>
     <message>
         <source>Force Unmount</source>
-        <translation>強制解除安裝</translation>
+        <translation>強制卸載</translation>
     </message>
     <message>
         <source>Failed to open the disk image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
@@ -8211,7 +7249,7 @@
     </message>
     <message>
         <source>Failed to register the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>無法冊虛擬機器 &lt;b&gt;%1&lt;/b&gt;。</translation>
+        <translation>無法註冊虛擬機器 &lt;b&gt;%1&lt;/b&gt;。</translation>
     </message>
     <message>
         <source>Failed to clone the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
@@ -8621,7 +7659,7 @@
     </message>
     <message>
         <source>Ok</source>
-        <translation>確定</translation>
+        <translation>正常</translation>
     </message>
     <message>
         <source>You are trying to shut down the guest with the ACPI power button. This is currently not possible because the guest does not support software shutdown.</source>
@@ -9012,35 +8050,27 @@
         <translation>所有顯示器</translation>
     </message>
     <message>
-        <source>Monitor(%1)</source>
-        <translation type="vanished">顯示器 (%1)</translation>
-    </message>
-    <message>
-        <source>Controls the guest screen scale factor</source>
-        <translation type="vanished">控制客體畫面縮放係數</translation>
-    </message>
-    <message>
         <source>Monitor %1</source>
-        <translation type="unfinished"></translation>
+        <translation>顯示器 %1</translation>
     </message>
     <message>
         <source>Controls the guest screen scale factor.</source>
-        <translation type="unfinished">控制客體畫面縮放係數。</translation>
+        <translation>控制客體畫面縮放係數。</translation>
     </message>
 </context>
 <context>
     <name>UIScreenshotViewer</name>
     <message>
         <source>Screenshot of %1 (%2)</source>
-        <translation>%1 (%2) 的快照</translation>
+        <translation>%1 (%2) 的螢幕快照</translation>
     </message>
     <message>
         <source>Click to view non-scaled screenshot.</source>
-        <translation>按一下檢視非縮放的快照。</translation>
+        <translation>按一下檢視非縮放的螢幕快照。</translation>
     </message>
     <message>
         <source>Click to view scaled screenshot.</source>
-        <translation>按一下檢視縮放的快照。</translation>
+        <translation>按一下檢視縮放的螢幕快照。</translation>
     </message>
 </context>
 <context>
@@ -9246,7 +8276,7 @@
     </message>
     <message>
         <source>Click to enlarge the screenshot.</source>
-        <translation>按一下放大快照。</translation>
+        <translation>按一下放大螢幕快照。</translation>
     </message>
     <message>
         <source>Snapshot name is empty</source>
@@ -9278,112 +8308,59 @@
     <message>
         <source>Current State (changed)</source>
         <comment>Current State (Modified)</comment>
-        <translation type="unfinished">目前狀態 (已變更)</translation>
+        <translation>目前狀態 (已變更)</translation>
     </message>
     <message>
         <source>Current State</source>
         <comment>Current State (Unmodified)</comment>
-        <translation type="unfinished">目前狀態</translation>
+        <translation>目前狀態</translation>
     </message>
     <message>
         <source>The current state differs from the state stored in the current snapshot</source>
-        <translation type="unfinished">目前狀態與目前快照中儲存的狀態不同</translation>
+        <translation>目前狀態與目前快照中儲存的狀態不同</translation>
     </message>
     <message>
         <source>The current state is identical to the state stored in the current snapshot</source>
-        <translation type="unfinished">目前狀態與目前快照中儲存的狀態完全相同</translation>
+        <translation>目前狀態與目前快照中儲存的狀態完全相同</translation>
     </message>
     <message>
         <source>%1 (%2 ago)</source>
         <comment>date time (how long ago)</comment>
-        <translation type="unfinished">%1 (%2 前)</translation>
+        <translation>%1 (%2 前)</translation>
     </message>
     <message>
         <source>%1 since %2</source>
         <comment>Current State (time or date + time)</comment>
-        <translation type="unfinished">自從 %2 %1</translation>
+        <translation>%1 自從 %2</translation>
     </message>
     <message>
         <source>current</source>
         <comment>snapshot</comment>
-        <translation type="unfinished">目前</translation>
+        <translation>目前</translation>
     </message>
     <message>
         <source>online</source>
         <comment>snapshot</comment>
-        <translation type="unfinished">線上</translation>
+        <translation>線上</translation>
     </message>
     <message>
         <source>offline</source>
         <comment>snapshot</comment>
-        <translation type="unfinished">離線</translation>
+        <translation>離線</translation>
     </message>
     <message>
         <source>Taken at %1</source>
         <comment>Snapshot (time)</comment>
-        <translation type="unfinished">在 %1 取得</translation>
+        <translation>在 %1 取得</translation>
     </message>
     <message>
         <source>Taken on %1</source>
         <comment>Snapshot (date + time)</comment>
-        <translation type="unfinished">在 %1 取得</translation>
+        <translation>在 %1 取得</translation>
     </message>
 </context>
 <context>
     <name>UISnapshotPane</name>
-    <message>
-        <source>Current State (changed)</source>
-        <comment>Current State (Modified)</comment>
-        <translation type="vanished">目前狀態 (已變更)</translation>
-    </message>
-    <message>
-        <source>Current State</source>
-        <comment>Current State (Unmodified)</comment>
-        <translation type="vanished">目前狀態</translation>
-    </message>
-    <message>
-        <source>The current state differs from the state stored in the current snapshot</source>
-        <translation type="vanished">目前狀態與目前快照中儲存的狀態不同</translation>
-    </message>
-    <message>
-        <source>The current state is identical to the state stored in the current snapshot</source>
-        <translation type="vanished">目前狀態與目前快照中儲存的狀態完全相同</translation>
-    </message>
-    <message>
-        <source>%1 (%2 ago)</source>
-        <comment>date time (how long ago)</comment>
-        <translation type="vanished">%1 (%2 前)</translation>
-    </message>
-    <message>
-        <source>%1 since %2</source>
-        <comment>Current State (time or date + time)</comment>
-        <translation type="vanished">自從 %2 %1</translation>
-    </message>
-    <message>
-        <source>current</source>
-        <comment>snapshot</comment>
-        <translation type="vanished">目前</translation>
-    </message>
-    <message>
-        <source>online</source>
-        <comment>snapshot</comment>
-        <translation type="vanished">線上</translation>
-    </message>
-    <message>
-        <source>offline</source>
-        <comment>snapshot</comment>
-        <translation type="vanished">離線</translation>
-    </message>
-    <message>
-        <source>Taken at %1</source>
-        <comment>Snapshot (time)</comment>
-        <translation type="vanished">在 %1 取得</translation>
-    </message>
-    <message>
-        <source>Taken on %1</source>
-        <comment>Snapshot (date + time)</comment>
-        <translation type="vanished">在 %1 取得</translation>
-    </message>
     <message>
         <source>Contains the snapshot tree of the current virtual machine</source>
         <translation>包含目前虛擬機器的快照樹</translation>
@@ -9519,42 +8496,42 @@
     <message>
         <source>&lt;nobr&gt;Vendor ID: %1&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation type="unfinished">&lt;nobr&gt;供應商 ID: %1&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;供應商 ID: %1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Product ID: %2&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation type="unfinished">&lt;nobr&gt;產品 ID: %2&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;產品 ID: %2&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Revision: %3&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation type="unfinished">&lt;nobr&gt;修訂: %3&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;修訂: %3&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Product: %4&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation type="unfinished">&lt;nobr&gt;產品: %4&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;產品: %4&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Manufacturer: %5&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation type="unfinished">&lt;nobr&gt;製造商: %5&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;製造商: %5&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Serial No.: %1&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation type="unfinished">&lt;nobr&gt;序號: %1&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;序號: %1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Port: %1&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation type="unfinished">&lt;nobr&gt;連接埠: %1&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;連接埠: %1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;State: %1&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation type="unfinished">&lt;nobr&gt;狀態: %1&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;狀態: %1&lt;/nobr&gt;</translation>
     </message>
 </context>
 <context>
@@ -9679,22 +8656,6 @@
     <message>
         <source>&amp;Runtime Information</source>
         <translation>執行階段資訊(&amp;R)</translation>
-    </message>
-    <message>
-        <source>Close Session</source>
-        <translation type="vanished">關閉工作階段</translation>
-    </message>
-    <message>
-        <source>Terminate Process</source>
-        <translation type="vanished">終止處理程序</translation>
-    </message>
-    <message>
-        <source>Expand All</source>
-        <translation type="vanished">全部展開</translation>
-    </message>
-    <message>
-        <source>Collapse All</source>
-        <translation type="vanished">全部折疊</translation>
     </message>
 </context>
 <context>
@@ -9893,14 +8854,7 @@
     </message>
     <message>
         <source>Show Toolbar Text</source>
-        <translation type="unfinished">顯示工具列文字</translation>
-    </message>
-</context>
-<context>
-    <name>UIVirtualBoxManagerWidget</name>
-    <message>
-        <source>Show Toolbar Text</source>
-        <translation type="vanished">顯示工具列文字</translation>
+        <translation>顯示工具列文字</translation>
     </message>
 </context>
 <context>
@@ -9973,7 +8927,7 @@
     </message>
     <message>
         <source>Please choose the type of file that you would like to use for the new virtual disk image. If you do not need to use it with other virtualization software you can leave this setting unchanged.</source>
-        <translation>請選擇新虛擬磁碟映像希望使用的檔案類型。 如果不需要用在其它虛擬化軟體，您可以保留這個設定不變更。</translation>
+        <translation>請選擇新的虛擬磁碟映像希望使用的檔案類型。 如果不需要用在其它虛擬化軟體，您可以保留這個設定不變更。</translation>
     </message>
     <message>
         <source>Please choose whether the new virtual disk image file should grow as it is used (dynamically allocated) or if it should be created at its maximum size (fixed size).</source>
@@ -9993,7 +8947,7 @@
     </message>
     <message>
         <source>Please choose a location for new virtual disk image file</source>
-        <translation>請選擇新虛擬磁碟映像檔位置</translation>
+        <translation>請選擇新的虛擬磁碟映像檔位置</translation>
     </message>
     <message>
         <source>New disk image to create</source>
@@ -10042,10 +8996,6 @@
     <message>
         <source>%1 Clone</source>
         <translation>%1 再製</translation>
-    </message>
-    <message>
-        <source>New machine name</source>
-        <translation type="vanished">新虛擬機器名稱</translation>
     </message>
     <message>
         <source>Clone type</source>
@@ -10136,10 +9086,6 @@
         <translation>為所有網路卡產生新的 MAC 位址</translation>
     </message>
     <message>
-        <source>Include all network adapter MAC addresses in exported during cloning.</source>
-        <translation type="vanished">再製期間在匯出中包含所有網路卡 MAC 位址。</translation>
-    </message>
-    <message>
         <source>Include only NAT network adapter MAC addresses during cloning.</source>
         <translation>再製期間只包含 NAT 網路卡 MAC 位址。</translation>
     </message>
@@ -10172,20 +9118,16 @@
         <translation>新機器名稱和路徑(&amp;N)</translation>
     </message>
     <message>
-        <source>Clone options</source>
-        <translation type="vanished">再製選項</translation>
-    </message>
-    <message>
         <source>New machine name and path</source>
-        <translation type="unfinished"></translation>
+        <translation>新機器名稱和路徑</translation>
     </message>
     <message>
         <source>Include all network adapter MAC addresses during cloning.</source>
-        <translation type="unfinished"></translation>
+        <translation>再製期間包含所有網路卡 MAC 位址。</translation>
     </message>
     <message>
         <source>Additional options</source>
-        <translation type="unfinished"></translation>
+        <translation>額外選項</translation>
     </message>
 </context>
 <context>
@@ -10347,10 +9289,6 @@
         <translation>帳戶(&amp;A):</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Please choose one of cloud service accounts you have registered to export virtual machines to.  Make sure profile settings reflected in the underlying table are valid.  They will be used to establish network connection required to upload your virtual machine files to a remote cloud facility.</source>
-        <translation type="vanished">&lt;p&gt;請選擇要將虛擬機器匯出到的已註冊雲服務帳戶之一。 確認基礎資料表中反映的設定檔設定有效。 它們將用於建立虛擬機器檔上傳到遠端雲設施所需的網路連線。</translation>
-    </message>
-    <message>
         <source>&lt;p&gt;Please choose a filename to export the virtual appliance to. Besides that you can specify a certain amount of options which affects the size and content of resulting archive.&lt;/p&gt;</source>
         <translation>&lt;p&gt;請選擇要將虛擬裝置匯出到的檔案名稱。 除此之外，您還可以指定一定數量的選項，這些選項會影響產生的存檔大小和內容。&lt;/p&gt;</translation>
     </message>
@@ -10363,28 +9301,12 @@
         <translation>虛擬系統設定(&amp;S)</translation>
     </message>
     <message>
-        <source>Oracle Cloud Infrastructure - Classic</source>
-        <translation type="vanished">Oracle Cloud Infrastructure - 典型</translation>
-    </message>
-    <message>
-        <source>Write in Oracle Cloud Infrastructure - Classic format.</source>
-        <translation type="vanished">以 Oracle Cloud Infrastructure 寫入 - 典型格式。</translation>
-    </message>
-    <message>
-        <source>Include all network adapter MAC addresses to exported appliance archive.</source>
-        <translation type="vanished">將所有網路卡 MAC 位址包含到匯出的應用裝置存檔。</translation>
-    </message>
-    <message>
-        <source>Include only NAT network adapter MAC addresses to exported appliance archive.</source>
-        <translation type="vanished">只將 NAT 網路卡 MAC 位址包含到匯出的應用裝置存檔。</translation>
-    </message>
-    <message>
         <source>Include ISO image files into exported VM archive.</source>
         <translation>將 ISO 映像檔包含到匯出的虛擬機器存檔。</translation>
     </message>
     <message>
         <source>&lt;p&gt;Please choose one of cloud service accounts you have registered to export virtual machines to. Make sure profile settings reflected in the underlying table are valid. They will be used to establish network connection required to upload your virtual machine files to a remote cloud facility.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;請選擇要將虛擬機器匯出到的雲端服務帳戶之一。 請確認基礎資料表中反映的設定檔設定有效。 它們將用於建立將虛擬機器檔上傳到遠端雲設施所需的網路連線。&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -10481,14 +9403,8 @@
         <translation>由 %1 未驗證的自我簽章簽署!</translation>
     </message>
     <message>
-        <source>You can modify the base folder which will host all the virtual machines.
-Home folders can also be individually (per virtual machine)  modified.</source>
-        <translation type="vanished">您可以修改將承載所有虛擬機器的基礎資料夾。
-主資料夾也可以單獨修改 (每個虛擬機器)。</translation>
-    </message>
-    <message>
         <source>You can modify the base folder which will host all the virtual machines. Home folders can also be individually (per virtual machine) modified.</source>
-        <translation type="unfinished"></translation>
+        <translation>您可以修改將承載所有虛擬機器的基礎資料夾。 主資料夾也可以單獨修改 (每個虛擬機器)。</translation>
     </message>
 </context>
 <context>
@@ -10507,7 +9423,7 @@ Home folders can also be individually (per virtual machine)  modified.</source>
     </message>
     <message>
         <source>Please choose the type of file that you would like to use for the new virtual hard disk. If you do not need to use it with other virtualization software you can leave this setting unchanged.</source>
-        <translation>請選擇新虛擬硬碟希望使用的檔案類型。 如果不需要用在其它虛擬化軟體，您可以保留這個設定不變更。</translation>
+        <translation>請選擇新的虛擬硬碟希望使用的檔案類型。 如果不需要用在其它虛擬化軟體，您可以保留這個設定不變更。</translation>
     </message>
     <message>
         <source>Storage on physical hard disk</source>
@@ -10622,7 +9538,7 @@ Home folders can also be individually (per virtual machine)  modified.</source>
     </message>
     <message>
         <source>Please choose a descriptive name and destination folder for the new virtual machine and select the type of operating system you intend to install on it. The name you choose will be used throughout VirtualBox to identify this machine.</source>
-        <translation>請為新虛擬機器選擇描述性名稱和目的地資料夾，並選取要在其上安裝的作業系統類型。 您選擇的名稱將在整個 VirtualBox 中使用，以標識這部電腦。</translation>
+        <translation>請為新的虛擬機器選擇描述性名稱和目的地資料夾，並選取要在其上安裝的作業系統類型。 您選擇的名稱將在整個 VirtualBox 中使用，以標識這部電腦。</translation>
     </message>
 </context>
 <context>
@@ -11138,7 +10054,7 @@ Home folders can also be individually (per virtual machine)  modified.</source>
     <message>
         <source>Paravirtualized Network (virtio-net)</source>
         <comment>NetworkAdapterType</comment>
-        <translation>半虛擬化網路 (虛擬網)</translation>
+        <translation>半虛擬化網路 (virtio-net)</translation>
     </message>
     <message>
         <source>Deny</source>
@@ -11574,10 +10490,6 @@ Home folders can also be individually (per virtual machine)  modified.</source>
         <translation>輸入/輸出</translation>
     </message>
     <message>
-        <source>Not Attached</source>
-        <translation type="vanished">未附加</translation>
-    </message>
-    <message>
         <source>NAT</source>
         <translation>NAT</translation>
     </message>
@@ -11596,10 +10508,6 @@ Home folders can also be individually (per virtual machine)  modified.</source>
     <message>
         <source>Generic Driver</source>
         <translation>通用驅動程式</translation>
-    </message>
-    <message>
-        <source>Disconnected</source>
-        <translation type="vanished">中斷連接</translation>
     </message>
     <message>
         <source>Host Pipe</source>
@@ -12095,51 +11003,51 @@ Home folders can also be individually (per virtual machine)  modified.</source>
     <message>
         <source>None</source>
         <comment>GraphicsControllerType</comment>
-        <translation type="unfinished">無</translation>
+        <translation>無</translation>
     </message>
     <message>
         <source>VBoxVGA</source>
         <comment>GraphicsControllerType</comment>
-        <translation type="unfinished"></translation>
+        <translation>VBoxVGA</translation>
     </message>
     <message>
         <source>VMSVGA</source>
         <comment>GraphicsControllerType</comment>
-        <translation type="unfinished"></translation>
+        <translation>VMSVGA</translation>
     </message>
     <message>
         <source>VBoxSVGA</source>
         <comment>GraphicsControllerType</comment>
-        <translation type="unfinished"></translation>
+        <translation>VBoxSVGA</translation>
     </message>
     <message>
         <source>Graphics Controller</source>
-        <translation type="unfinished"></translation>
+        <translation>圖形控制器</translation>
     </message>
     <message>
         <source>Video/Audio</source>
         <comment>UISettingsDefs::RecordingMode</comment>
-        <translation type="unfinished"></translation>
+        <translation>視訊/音訊</translation>
     </message>
     <message>
         <source>Video Only</source>
         <comment>UISettingsDefs::RecordingMode</comment>
-        <translation type="unfinished"></translation>
+        <translation>只有視訊</translation>
     </message>
     <message>
         <source>Audio Only</source>
         <comment>UISettingsDefs::RecordingMode</comment>
-        <translation type="unfinished"></translation>
+        <translation>只有音訊</translation>
     </message>
     <message>
         <source>Not Attached</source>
         <comment>network adapter</comment>
-        <translation type="unfinished">未附加</translation>
+        <translation>未附加</translation>
     </message>
     <message>
         <source>Disconnected</source>
         <comment>serial port</comment>
-        <translation type="unfinished">中斷連接</translation>
+        <translation>中斷連接</translation>
     </message>
 </context>
 <context>
