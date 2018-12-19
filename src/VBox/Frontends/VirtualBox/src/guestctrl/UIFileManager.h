@@ -115,7 +115,6 @@ private slots:
     void sltCopyGuestToHost();
     void sltCopyHostToGuest();
     void sltPanelActionToggled(bool fChecked);
-    void sltListDirectoriesBeforeChanged();
     void sltReceieveNewFileOperation(const CProgress &comProgress);
     void sltFileOperationComplete(QUuid progressId);
     /** Performs whatever necessary when some signal about option change has been receieved. */

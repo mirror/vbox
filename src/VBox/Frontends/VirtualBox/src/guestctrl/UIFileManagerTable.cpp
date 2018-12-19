@@ -821,6 +821,7 @@ void UIFileManagerTable::prepareObjects()
         connect(m_pSearchLineEdit, &QLineEdit::textChanged,
                 this, &UIFileManagerTable::sltSearchTextChanged);
     }
+    optionsUpdated();
 }
 
 void UIFileManagerTable::updateCurrentLocationEdit(const QString& strLocation)
@@ -1479,6 +1480,20 @@ QString UIFileManagerTable::fileTypeString(FileObjectType type)
 {
     return vboxGlobal().formatSize(size);
 }
+
+void UIFileManagerTable::optionsUpdated()
+{
+    UIFileManagerOptions *pOptions = UIFileManagerOptions::instance();
+    if (pOptions)
+    {
+        if (m_pProxyModel)
+            m_pProxyModel->setListDirectoriesOnTop(pOptions->bListDirectoriesOnTop);
+        if (m_pModel)
+            m_pModel->setShowHumanReadableSizes(pOptions->bShowHumanReadableSizes);
+    }
+    relist();
+}
+
 
 void UIFileManagerTable::sltReceiveDirectoryStatistics(UIDirectoryStatistics statistics)
 {

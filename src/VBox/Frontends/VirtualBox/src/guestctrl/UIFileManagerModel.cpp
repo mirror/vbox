@@ -28,7 +28,7 @@
 # include "UIFileManagerModel.h"
 # include "UIFileManagerTable.h"
 # include "UIFileManager.h"
-
+# include "VBoxGlobal.h"
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
@@ -36,7 +36,18 @@ const char* UIFileManagerModel::strUpDirectoryString = "..";
 
 UIGuestControlFileProxyModel::UIGuestControlFileProxyModel(QObject *parent /* = 0 */)
     :QSortFilterProxyModel(parent)
+    , m_fListDirectoriesOnTop(false)
 {
+}
+
+void UIGuestControlFileProxyModel::setListDirectoriesOnTop(bool fListDirectoriesOnTop)
+{
+    m_fListDirectoriesOnTop = fListDirectoriesOnTop;
+}
+
+bool UIGuestControlFileProxyModel::listDirectoriesOnTop() const
+{
+    return m_fListDirectoriesOnTop;
 }
 
 bool UIGuestControlFileProxyModel::lessThan(const QModelIndex &left, const QModelIndex &right) const
@@ -44,12 +55,10 @@ bool UIGuestControlFileProxyModel::lessThan(const QModelIndex &left, const QMode
     UIFileTableItem *pLeftItem = static_cast<UIFileTableItem*>(left.internalPointer());
     UIFileTableItem *pRightItem = static_cast<UIFileTableItem*>(right.internalPointer());
 
-    UIFileManagerOptions *pOptions = UIFileManagerOptions::instance();
-
     if (pLeftItem && pRightItem)
     {
         /* List the directories before the files if options say so: */
-        if (pOptions && pOptions->bListDirectoriesOnTop)
+        if (m_fListDirectoriesOnTop)
         {
             if ((pLeftItem->isDirectory() || pLeftItem->isSymLinkToADirectory()) && !pRightItem->isDirectory())
                 return (sortOrder() == Qt::AscendingOrder);
@@ -86,6 +95,7 @@ bool UIGuestControlFileProxyModel::lessThan(const QModelIndex &left, const QMode
 UIFileManagerModel::UIFileManagerModel(QObject *parent)
     : QAbstractItemModel(parent)
     , m_pParent(qobject_cast<UIFileManagerTable*>(parent))
+    , m_fShowHumanReadableSizes(false)
 {
 }
 
@@ -160,12 +170,10 @@ QVariant UIFileManagerModel::data(const QModelIndex &index, int role) const
         /* Decide whether to show human-readable file object sizes: */
         if (index.column() == UIFileManagerModelColumn_Size)
         {
-            UIFileManagerOptions* pOptions =
-                UIFileManagerOptions::instance();
-            if (pOptions && pOptions->bShowHumanReadableSizes)
+            if (m_fShowHumanReadableSizes)
             {
                 qulonglong size = item->data(index.column()).toULongLong();
-                return UIFileManagerTable::humanReadableSize(size);
+                return vboxGlobal().formatSize(size);
             }
             else
                 return item->data(index.column());
@@ -303,4 +311,14 @@ void UIFileManagerModel::beginReset()
 void UIFileManagerModel::endReset()
 {
     endResetModel();
+}
+
+void UIFileManagerModel::setShowHumanReadableSizes(bool fShowHumanReadableSizes)
+{
+    m_fShowHumanReadableSizes = fShowHumanReadableSizes;
+}
+
+bool UIFileManagerModel::showHumanReadableSizes() const
+{
+    return m_fShowHumanReadableSizes;
 }

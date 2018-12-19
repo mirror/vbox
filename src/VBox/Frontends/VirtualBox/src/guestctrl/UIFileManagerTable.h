@@ -262,9 +262,10 @@ public:
     /** Returns the paths of the selected items (if any) as a list */
     QStringList selectedItemPathList();
     virtual void refresh();
-    void         relist();
     static const unsigned    m_iKiloByte;
     static QString humanReadableSize(ULONG64 size);
+    /** Peroforms whatever is necessary after a UIFileManagerOptions change. */
+    void optionsUpdated();
 
 public slots:
 
@@ -369,6 +370,7 @@ private slots:
 
 private:
 
+    void             relist();
     void             prepareObjects();
     /** @p itemIndex is assumed to be 'model' index not 'proxy model' index */
     void             deleteByIndex(const QModelIndex &itemIndex);

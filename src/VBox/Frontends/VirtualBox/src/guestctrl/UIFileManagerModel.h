@@ -50,9 +50,16 @@ public:
 
     UIGuestControlFileProxyModel(QObject *parent = 0);
 
+    void setListDirectoriesOnTop(bool fListDirectoriesOnTop);
+    bool listDirectoriesOnTop() const;
+
 protected:
 
     bool lessThan(const QModelIndex &left, const QModelIndex &right) const /* override */;
+
+private:
+
+    bool m_fListDirectoriesOnTop;
 };
 
 /** UIFileManagerModel serves as the model for a file structure.
@@ -86,6 +93,9 @@ public:
     QModelIndex    rootIndex() const;
     void           beginReset();
     void           endReset();
+    void           setShowHumanReadableSizes(bool fShowHumanReadableSizes);
+    bool           showHumanReadableSizes() const;
+
     static const char* strUpDirectoryString;
 
 private:
@@ -94,6 +104,8 @@ private:
     void setupModelData(const QStringList &lines, UIFileTableItem *parent);
     UIFileManagerTable *m_pParent;
     UIFileTableItem    *m_pRootItem;
+    bool                m_fShowHumanReadableSizes;
+
 };
 
 
