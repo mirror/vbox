@@ -28,6 +28,7 @@
 # include "QILabel.h"
 # include "UIActionPool.h"
 # include "UIErrorString.h"
+# include "UICustomFileSystemModel.h"
 # include "UIFileManager.h"
 # include "UIFileManagerGuestTable.h"
 # include "UIMessageCenter.h"
