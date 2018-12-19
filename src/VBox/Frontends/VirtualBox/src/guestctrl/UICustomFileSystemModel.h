@@ -25,11 +25,7 @@
 /* COM includes: */
 #include "COMEnums.h"
 
-/* GUI includes: */
-#include "QITableView.h"
-
 /* Forward declarations: */
-class UIFileTableItem;
 class UIFileManagerTable;
 
 enum UICustomFileSystemModelColumn

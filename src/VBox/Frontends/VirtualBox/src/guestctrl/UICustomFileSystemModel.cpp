@@ -222,8 +222,9 @@ void UICustomFileSystemProxyModel::setListDirectoriesOnTop(bool fListDirectories
     m_fListDirectoriesOnTop = fListDirectoriesOnTop;
 }
 
+
 /*********************************************************************************************************************************
-*   UICustomFileSystemProxyModel implementation.                                                                                  *
+*   UICustomFileSystemProxyModel implementation.                                                                                 *
 *********************************************************************************************************************************/
 
 bool UICustomFileSystemProxyModel::listDirectoriesOnTop() const
