@@ -41,6 +41,9 @@
  * https://www.kernel.org/doc/html/latest/filesystems/ext4/index.html
  */
 
+/** Offset where to find the first superblock on the disk, this is constant. */
+#define EXT_SB_OFFSET               1024
+
 /** @name EXT_INODE_NR_XXX - Special inode numbers.
  * @{ */
 #define EXT_INODE_NR_DEF_BLOCKS     1   /**< List of defective blocks. */
@@ -135,7 +138,7 @@ typedef struct EXTSUPERBLOCK
     /** 0xcc: Number of blocks to try to preallocate for files(?). */
     uint8_t     cBlocksPrealloc;
     /** 0xcd: Number of blocks to try to preallocate for directories. */
-    uint8_t     cBlocksPreallocDirextory;
+    uint8_t     cBlocksPreallocDirectory;
     /** 0xce: Number of reserved group descriptor entries for future filesystem expansion. */
     uint16_t    cGdtEntriesRsvd;
     /** 0xd0: 128bit UUID for the journal superblock. */
@@ -504,6 +507,9 @@ typedef struct EXTBLOCKGROUPDESC32
 AssertCompileSize(EXTBLOCKGROUPDESC32, 32);
 /** Pointer to an ext block group descriptor. */
 typedef EXTBLOCKGROUPDESC32 *PEXTBLOCKGROUPDESC32;
+/** Pointer to a const 32 byte block group descriptor. */
+typedef const EXTBLOCKGROUPDESC32 *PCEXTBLOCKGROUPDESC32;
+
 
 /**
  * Block group descriptor (64byte version).
@@ -538,6 +544,8 @@ typedef struct EXTBLOCKGROUPDESC64
 AssertCompileSize(EXTBLOCKGROUPDESC64, 64);
 /** Pointer to an ext block group descriptor. */
 typedef EXTBLOCKGROUPDESC64 *PEXTBLOCKGROUPDESC64;
+/** Pointer to a const 64 byte block group descriptor. */
+typedef const EXTBLOCKGROUPDESC64 *PCEXTBLOCKGROUPDESC64;
 
 /** @name EXT_GROUP_DESC_F_XXX - Group descriptor flags
  * @{ */
@@ -548,6 +556,24 @@ typedef EXTBLOCKGROUPDESC64 *PEXTBLOCKGROUPDESC64;
 /** Inode table is zeroed. */
 #define EXT_GROUP_DESC_F_INODE_ZEROED                RT_BIT_16(2)
 /** @} */
+
+
+/**
+ * Combiend view of the different block gorup descriptor versions.
+ */
+typedef union EXTBLOCKGROUPDESC
+{
+    /** 32 byte version. */
+    EXTBLOCKGROUPDESC32    v32;
+    /** 64 byte version. */
+    EXTBLOCKGROUPDESC64    v64;
+    /** Byte view. */
+    uint8_t               au8[64];
+} EXTBLOCKGROUPDESC;
+/** Poiner to a unified block gorup descriptor view. */
+typedef EXTBLOCKGROUPDESC *PEXTBLOCKGROUPDESC;
+/** Poiner to a const unified block gorup descriptor view. */
+typedef const EXTBLOCKGROUPDESC *PCEXTBLOCKGROUPDESC;
 
 
 /**
@@ -620,6 +646,7 @@ typedef EXTINODE *PEXTINODE;
 /** Pointer to a const inode. */
 typedef const EXTINODE *PCEXTINODE;
 
+
 /**
  * Extra inode data (coming right behind the fixed inode data).
  */
@@ -648,6 +675,24 @@ typedef struct EXTINODEEXTRA
 typedef EXTINODEEXTRA *PEXTINODEEXTRA;
 /** Pointer to a const extra inode data. */
 typedef const EXTINODEEXTRA *PCEXTINODEEXTRA;
+
+
+/**
+ * Combined inode data.
+ */
+typedef struct EXTINODECOMB
+{
+    /** Core inode structure. */
+    EXTINODE      Core;
+    /** Any extra inode data which might be present. */
+    EXTINODEEXTRA Extra;
+} EXTINODECOMB;
+/** Pointer to combined inode data. */
+typedef EXTINODECOMB *PEXTINODECOMB;
+/** Pointer to a const combined inode data. */
+typedef const EXTINODECOMB *PCEXTINODECOMB;
+
+
 
 /** @name EXT_INODE_MODE_XXX - File mode
  * @{ */
