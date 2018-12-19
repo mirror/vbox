@@ -858,7 +858,7 @@ ifndef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/guestctrl/UIFileManagerOptionsPanel.h \
 	src/guestctrl/UIFileManagerPanel.h \
 	src/guestctrl/UIFileManagerSessionPanel.h \
-	src/guestctrl/UIFileManagerModel.h \
+	src/guestctrl/UICustomFileSystemModel.h \
 	src/guestctrl/UIFileManagerTable.h \
 	src/guestctrl/UIGuestControlInterface.h \
 	src/guestctrl/UIGuestControlTreeItem.h \
@@ -1014,7 +1014,7 @@ ifdef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/guestctrl/UIFileManagerOptionsPanel.h \
 	src/guestctrl/UIFileManagerPanel.h \
 	src/guestctrl/UIFileManagerSessionPanel.h \
-	src/guestctrl/UIFileManagerModel.h \
+	src/guestctrl/UICustomFileSystemModel.h \
 	src/guestctrl/UIFileManagerTable.h \
 	src/guestctrl/UIGuestControlInterface.h \
 	src/guestctrl/UIGuestControlTreeItem.h \
@@ -1587,7 +1587,7 @@ ifndef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/guestctrl/UIFileManagerOptionsPanel.cpp \
 	src/guestctrl/UIFileManagerPanel.cpp \
 	src/guestctrl/UIFileManagerSessionPanel.cpp \
-	src/guestctrl/UIFileManagerModel.cpp \
+	src/guestctrl/UICustomFileSystemModel.cpp \
 	src/guestctrl/UIFileManagerTable.cpp \
 	src/guestctrl/UIGuestControlInterface.cpp \
 	src/guestctrl/UIGuestControlTreeItem.cpp \
@@ -1766,7 +1766,7 @@ ifdef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/guestctrl/UIFileManagerOptionsPanel.cpp \
 	src/guestctrl/UIFileManagerPanel.cpp \
 	src/guestctrl/UIFileManagerSessionPanel.cpp \
-	src/guestctrl/UIFileManagerModel.cpp \
+	src/guestctrl/UICustomFileSystemModel.cpp \
 	src/guestctrl/UIFileManagerTable.cpp \
 	src/guestctrl/UIGuestControlInterface.cpp \
 	src/guestctrl/UIGuestControlTreeItem.cpp \

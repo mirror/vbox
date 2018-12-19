@@ -46,7 +46,7 @@
 # include "UIIconPool.h"
 # include "UIFileManagerTable.h"
 # include "UIFileManager.h"
-# include "UIFileManagerModel.h"
+# include "UICustomFileSystemModel.h"
 # include "UIToolBar.h"
 
 /* COM includes: */
@@ -585,7 +585,7 @@ bool UIFileTableItem::isUpDirectory() const
 {
     if (!isDirectory())
         return false;
-    if (data(0) == UIFileManagerModel::strUpDirectoryString)
+    if (data(0) == UICustomFileSystemModel::strUpDirectoryString)
         return true;
     return false;
 }
@@ -761,11 +761,11 @@ void UIFileManagerTable::prepareObjects()
     }
 
 
-    m_pModel = new UIFileManagerModel(this);
+    m_pModel = new UICustomFileSystemModel(this);
     if (!m_pModel)
         return;
 
-    m_pProxyModel = new UIGuestControlFileProxyModel(this);
+    m_pProxyModel = new UICustomFileSystemProxyModel(this);
     if (!m_pProxyModel)
         return;
     m_pProxyModel->setSourceModel(m_pModel);
@@ -862,7 +862,7 @@ void UIFileManagerTable::initializeFileTree()
     /* Root item: */
     const QString startPath("/");
     QVector<QVariant> headData;
-    headData.resize(UIFileManagerModelColumn_Max);
+    headData.resize(UICustomFileSystemModelColumn_Max);
     m_pRootItem = new UIFileTableItem(headData, 0, FileObjectType_Directory);
     UIFileTableItem* startItem = new UIFileTableItem(createTreeItemData(startPath, 4096, QDateTime(),
                                                                         "" /* owner */, "" /* permissions */),
@@ -909,18 +909,18 @@ void UIFileManagerTable::insertItemsToTree(QMap<QString,UIFileTableItem*> &map,
     /* Make sure we have an item representing up directory, and make sure it is not there for the start dir: */
     if (isDirectoryMap)
     {
-        if (!map.contains(UIFileManagerModel::strUpDirectoryString)  && !isStartDir)
+        if (!map.contains(UICustomFileSystemModel::strUpDirectoryString)  && !isStartDir)
         {
             QVector<QVariant> data;
-            UIFileTableItem *item = new UIFileTableItem(createTreeItemData(UIFileManagerModel::strUpDirectoryString, 4096,
+            UIFileTableItem *item = new UIFileTableItem(createTreeItemData(UICustomFileSystemModel::strUpDirectoryString, 4096,
                                                                            QDateTime(), QString(), QString())
                                                         , parent, FileObjectType_Directory);
             item->setIsOpened(false);
-            map.insert(UIFileManagerModel::strUpDirectoryString, item);
+            map.insert(UICustomFileSystemModel::strUpDirectoryString, item);
         }
-        else if (map.contains(UIFileManagerModel::strUpDirectoryString)  && isStartDir)
+        else if (map.contains(UICustomFileSystemModel::strUpDirectoryString)  && isStartDir)
         {
-            map.remove(UIFileManagerModel::strUpDirectoryString);
+            map.remove(UICustomFileSystemModel::strUpDirectoryString);
         }
     }
     for (QMap<QString,UIFileTableItem*>::const_iterator iterator = map.begin();
@@ -1280,11 +1280,11 @@ void UIFileManagerTable::retranslateUi()
 {
     if (m_pRootItem)
     {
-        m_pRootItem->setData(UIFileManager::tr("Name"), UIFileManagerModelColumn_Name);
-        m_pRootItem->setData(UIFileManager::tr("Size"), UIFileManagerModelColumn_Size);
-        m_pRootItem->setData(UIFileManager::tr("Change Time"), UIFileManagerModelColumn_ChangeTime);
-        m_pRootItem->setData(UIFileManager::tr("Owner"), UIFileManagerModelColumn_Owner);
-        m_pRootItem->setData(UIFileManager::tr("Permissions"), UIFileManagerModelColumn_Permissions);
+        m_pRootItem->setData(UIFileManager::tr("Name"), UICustomFileSystemModelColumn_Name);
+        m_pRootItem->setData(UIFileManager::tr("Size"), UICustomFileSystemModelColumn_Size);
+        m_pRootItem->setData(UIFileManager::tr("Change Time"), UICustomFileSystemModelColumn_ChangeTime);
+        m_pRootItem->setData(UIFileManager::tr("Owner"), UICustomFileSystemModelColumn_Owner);
+        m_pRootItem->setData(UIFileManager::tr("Permissions"), UICustomFileSystemModelColumn_Permissions);
     }
     if (m_pWarningLabel)
         m_pWarningLabel->setText(UIFileManager::tr("No Guest Session"));
@@ -1431,12 +1431,12 @@ QVector<QVariant> UIFileManagerTable::createTreeItemData(const QString &strName,
                                                             const QString &strOwner, const QString &strPermissions)
 {
     QVector<QVariant> data;
-    data.resize(UIFileManagerModelColumn_Max);
-    data[UIFileManagerModelColumn_Name]        = strName;
-    data[UIFileManagerModelColumn_Size]        = (qulonglong)size;
-    data[UIFileManagerModelColumn_ChangeTime]  = changeTime;
-    data[UIFileManagerModelColumn_Owner]       = strOwner;
-    data[UIFileManagerModelColumn_Permissions] = strPermissions;
+    data.resize(UICustomFileSystemModelColumn_Max);
+    data[UICustomFileSystemModelColumn_Name]        = strName;
+    data[UICustomFileSystemModelColumn_Size]        = (qulonglong)size;
+    data[UICustomFileSystemModelColumn_ChangeTime]  = changeTime;
+    data[UICustomFileSystemModelColumn_Owner]       = strOwner;
+    data[UICustomFileSystemModelColumn_Permissions] = strPermissions;
     return data;
 }
 

@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIFileManagerModel class declaration.
+ * VBox Qt GUI - UICustomFileSystemModel class declaration.
  */
 
 /*
@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___UIFileManagerModel_h___
-#define ___UIFileManagerModel_h___
+#ifndef ___UICustomFileSystemModel_h___
+#define ___UICustomFileSystemModel_h___
 
 /* Qt includes: */
 #include <QAbstractItemModel>
@@ -29,26 +29,26 @@
 class UIFileTableItem;
 class UIFileManagerTable;
 
-enum UIFileManagerModelColumn
+enum UICustomFileSystemModelColumn
 {
-    UIFileManagerModelColumn_Name = 0,
-    UIFileManagerModelColumn_Size,
-    UIFileManagerModelColumn_ChangeTime,
-    UIFileManagerModelColumn_Owner,
-    UIFileManagerModelColumn_Permissions,
-    UIFileManagerModelColumn_Max
+    UICustomFileSystemModelColumn_Name = 0,
+    UICustomFileSystemModelColumn_Size,
+    UICustomFileSystemModelColumn_ChangeTime,
+    UICustomFileSystemModelColumn_Owner,
+    UICustomFileSystemModelColumn_Permissions,
+    UICustomFileSystemModelColumn_Max
 };
 
 /** A QSortFilterProxyModel extension used in file tables. Modifies some
  *  of the base class behavior like lessThan(..) */
-class UIGuestControlFileProxyModel : public QSortFilterProxyModel
+class UICustomFileSystemProxyModel : public QSortFilterProxyModel
 {
 
     Q_OBJECT;
 
 public:
 
-    UIGuestControlFileProxyModel(QObject *parent = 0);
+    UICustomFileSystemProxyModel(QObject *parent = 0);
 
     void setListDirectoriesOnTop(bool fListDirectoriesOnTop);
     bool listDirectoriesOnTop() const;
@@ -62,20 +62,20 @@ private:
     bool m_fListDirectoriesOnTop;
 };
 
-/** UIFileManagerModel serves as the model for a file structure.
+/** UICustomFileSystemModel serves as the model for a file structure.
  *  it supports a tree level hierarchy which can be displayed with
  *  QTableView and/or QTreeView. Note the file structure data is not
  *  kept by the model but rather by the containing widget which also servers
  *  as the interface to functionality that this model provides.*/
-class UIFileManagerModel : public QAbstractItemModel
+class UICustomFileSystemModel : public QAbstractItemModel
 {
 
     Q_OBJECT;
 
 public:
 
-    explicit UIFileManagerModel(QObject *parent = 0);
-    ~UIFileManagerModel();
+    explicit UICustomFileSystemModel(QObject *parent = 0);
+    ~UICustomFileSystemModel();
 
     QVariant       data(const QModelIndex &index, int role) const /* override */;
     bool           setData(const QModelIndex &index, const QVariant &value, int role);
@@ -109,4 +109,4 @@ private:
 };
 
 
-#endif /* !___UIFileManagerModel_h___ */
+#endif /* !___UICustomFileSystemModel_h___ */

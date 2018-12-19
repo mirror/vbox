@@ -25,7 +25,7 @@
 class UIActionPool;
 
 /** This class scans the host file system by using the Qt API
-    and connects to the UIFileManagerModel*/
+    and connects to the UICustomFileSystemModel*/
 class UIFileManagerHostTable : public UIFileManagerTable
 {
     Q_OBJECT;

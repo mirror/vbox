@@ -46,8 +46,8 @@ class QTextEdit;
 class QVBoxLayout;
 class UIActionPool;
 class UIFileTableItem;
-class UIFileManagerModel;
-class UIGuestControlFileProxyModel;
+class UICustomFileSystemModel;
+class UICustomFileSystemProxyModel;
 class UIGuestControlFileView;
 class UIToolBar;
 
@@ -160,7 +160,7 @@ public:
 };
 
 /** A UIFileTableItem instance is a tree node representing a file object (file, directory, etc). The tree contructed
-    by these instances is the data source for the UIFileManagerModel. */
+    by these instances is the data source for the UICustomFileSystemModel. */
 class UIFileTableItem
 {
 public:
@@ -239,7 +239,7 @@ private:
 
 /** This class serves a base class for file table. Currently a guest version
  *  and a host version are derived from this base. Each of these children
- *  populates the UIFileManagerModel by scanning the file system
+ *  populates the UICustomFileSystemModel by scanning the file system
  *  differently. The file structre kept in this class as a tree. */
 class UIFileManagerTable : public QIWithRetranslateUI<QWidget>
 {
@@ -341,7 +341,7 @@ protected:
     bool             eventFilter(QObject *pObject, QEvent *pEvent) /* override */;
     CGuestFsObjInfo  guestFsObjectInfo(const QString& path, CGuestSession &comGuestSession) const;
     void             setSelectionDependentActionsEnabled(bool fIsEnabled);
-    /** Creates a QList out of the parameters wrt. UIFileManagerModelColumn enum */
+    /** Creates a QList out of the parameters wrt. UICustomFileSystemModelColumn enum */
     QVector<QVariant>  createTreeItemData(const QString &strName, ULONG64 size, const QDateTime &changeTime,
                                         const QString &strOwner, const QString &strPermissions);
 
@@ -394,16 +394,16 @@ private:
      *  if deletion can continue */
     bool            checkIfDeleteOK();
 
-    UIFileManagerModel      *m_pModel;
+    UICustomFileSystemModel      *m_pModel;
     UIGuestControlFileView       *m_pView;
-    UIGuestControlFileProxyModel *m_pProxyModel;
+    UICustomFileSystemProxyModel *m_pProxyModel;
 
     QGridLayout     *m_pMainLayout;
     QComboBox       *m_pLocationComboBox;
     QILineEdit      *m_pSearchLineEdit;
     QILabel         *m_pWarningLabel;
 
-    friend class     UIFileManagerModel;
+    friend class     UICustomFileSystemModel;
 };
 
 #endif /* !___UIFileManagerTable_h___ */
