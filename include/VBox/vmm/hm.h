@@ -217,6 +217,7 @@ VMM_INT_DECL(int)               HMHCSvmMaybeMovTprHypercall(PVMCPU pVCpu);
  */
 VMMR0_INT_DECL(int)             HMR0Init(void);
 VMMR0_INT_DECL(int)             HMR0Term(void);
+VMMR0_INT_DECL(int)             HMR0PreInitVM(PVM pVM);
 VMMR0_INT_DECL(int)             HMR0InitVM(PVM pVM);
 VMMR0_INT_DECL(int)             HMR0TermVM(PVM pVM);
 VMMR0_INT_DECL(int)             HMR0EnableAllCpus(PVM pVM);

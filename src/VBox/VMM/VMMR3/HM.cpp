@@ -45,6 +45,7 @@
 #include <VBox/vmm/pdmapi.h>
 #include <VBox/vmm/pgm.h>
 #include <VBox/vmm/ssm.h>
+#include <VBox/vmm/gim.h>
 #include <VBox/vmm/trpm.h>
 #include <VBox/vmm/dbgf.h>
 #include <VBox/vmm/iom.h>
@@ -399,7 +400,7 @@ static DECLCALLBACK(int)  hmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, 
 static DECLCALLBACK(void) hmR3InfoSvmNstGstVmcbCache(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs);
 static DECLCALLBACK(void) hmR3Info(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs);
 static DECLCALLBACK(void) hmR3InfoEventPending(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs);
-static int                hmR3InitCPU(PVM pVM);
+static int                hmR3InitFinalizeR3(PVM pVM);
 static int                hmR3InitFinalizeR0(PVM pVM);
 static int                hmR3InitFinalizeR0Intel(PVM pVM);
 static int                hmR3InitFinalizeR0Amd(PVM pVM);
@@ -701,8 +702,11 @@ VMMR3_INT_DECL(int) HMR3Init(PVM pVM)
         {
             if (fCaps & SUPVTCAPS_AMD_V)
             {
+                rc = SUPR3CallVMMR0Ex(pVM->pVMR0, 0 /*idCpu*/, VMMR0_DO_HM_PRE_INIT, 0, NULL);
+                AssertRCReturn(rc, rc);
+                Assert(pVM->hm.s.svm.fSupported);
+
                 LogRel(("HM: HMR3Init: AMD-V%s\n", fCaps & SUPVTCAPS_NESTED_PAGING ? " w/ nested paging" : ""));
-                pVM->hm.s.svm.fSupported = true;
                 VM_SET_MAIN_EXECUTION_ENGINE(pVM, VM_EXEC_ENGINE_HW_VIRT);
             }
             else if (fCaps & SUPVTCAPS_VT_X)
@@ -711,11 +715,14 @@ VMMR3_INT_DECL(int) HMR3Init(PVM pVM)
                 rc = SUPR3QueryVTxSupported(&pszWhy);
                 if (RT_SUCCESS(rc))
                 {
+                    rc = SUPR3CallVMMR0Ex(pVM->pVMR0, 0 /*idCpu*/, VMMR0_DO_HM_PRE_INIT, 0, NULL);
+                    AssertRCReturn(rc, rc);
+                    Assert(pVM->hm.s.vmx.fSupported);
+
                     LogRel(("HM: HMR3Init: VT-x%s%s%s\n",
                             fCaps & SUPVTCAPS_NESTED_PAGING ? " w/ nested paging" : "",
                             fCaps & SUPVTCAPS_VTX_UNRESTRICTED_GUEST ? " and unrestricted guest execution" : "",
                             (fCaps & (SUPVTCAPS_NESTED_PAGING | SUPVTCAPS_VTX_UNRESTRICTED_GUEST)) ? " hw support" : ""));
-                    pVM->hm.s.vmx.fSupported = true;
                     VM_SET_MAIN_EXECUTION_ENGINE(pVM, VM_EXEC_ENGINE_HW_VIRT);
                 }
                 else
@@ -843,12 +850,12 @@ VMMR3_INT_DECL(int) HMR3Init(PVM pVM)
 
 
 /**
- * Initializes the per-VCPU HM.
+ * Initializes HM components after ring-3 phase has been fully initialized.
  *
  * @returns VBox status code.
  * @param   pVM         The cross context VM structure.
  */
-static int hmR3InitCPU(PVM pVM)
+static int hmR3InitFinalizeR3(PVM pVM)
 {
     LogFlow(("HMR3InitCPU\n"));
 
@@ -859,6 +866,7 @@ static int hmR3InitCPU(PVM pVM)
     {
         PVMCPU pVCpu = &pVM->aCpus[i];
         pVCpu->hm.s.fActive = false;
+        pVCpu->hm.s.fGIMTrapXcptUD = GIMShouldTrapXcptUD(pVCpu);    /* Is safe to call now since GIMR3Init() has completed. */
     }
 
 #ifdef VBOX_WITH_STATISTICS
@@ -1179,7 +1187,7 @@ VMMR3_INT_DECL(int) HMR3InitCompleted(PVM pVM, VMINITCOMPLETED enmWhat)
     switch (enmWhat)
     {
         case VMINITCOMPLETED_RING3:
-            return hmR3InitCPU(pVM);
+            return hmR3InitFinalizeR3(pVM);
         case VMINITCOMPLETED_RING0:
             return hmR3InitFinalizeR0(pVM);
         default:

@@ -27,7 +27,6 @@
 #include <VBox/vmm/vm.h>
 #include <VBox/vmm/hm_vmx.h>
 #include <VBox/vmm/hm_svm.h>
-#include <VBox/vmm/gim.h>
 #include <VBox/err.h>
 #include <VBox/log.h>
 #include <iprt/assert.h>
@@ -1197,28 +1196,24 @@ static DECLCALLBACK(void) hmR0PowerCallback(RTPOWEREVENT enmEvent, void *pvUser)
 
 
 /**
- * Does ring-0 per-VM HM initialization.
+ * Pre-initializes ring-0 HM per-VM structures.
  *
- * This will copy HM global into the VM structure and call the CPU specific
- * init routine which will allocate resources for each virtual CPU and such.
+ * This is the first HM ring-0 function to be called when a VM is created. It is
+ * called after VT-x/AMD-V has been detected, and initialized and -after- HM's CFGM
+ * settings have been queried.
+ *
+ * This copies relevant, global HM structures into per-VM data and initializes some
+ * per-VCPU data.
  *
  * @returns VBox status code.
  * @param   pVM         The cross context VM structure.
  *
- * @remarks This is called after HMR3Init(), see vmR3CreateU() and
- *          vmR3InitRing3().
+ * @remarks This is called during HMR3Init(). Be really careful what we call here as
+ *          almost no VM machinery is up at this point (e.g. PGM, CPUM).
  */
-VMMR0_INT_DECL(int) HMR0InitVM(PVM pVM)
+VMMR0_INT_DECL(int) HMR0PreInitVM(PVM pVM)
 {
     AssertReturn(pVM, VERR_INVALID_PARAMETER);
-
-#ifdef LOG_ENABLED
-    SUPR0Printf("HMR0InitVM: %p\n", pVM);
-#endif
-
-    /* Make sure we don't touch HM after we've disabled HM in preparation of a suspend. */
-    if (ASMAtomicReadBool(&g_HmR0.fSuspended))
-        return VERR_HM_SUSPEND_PENDING;
 
     /*
      * Copy globals to the VM structure.
@@ -1263,12 +1258,42 @@ VMMR0_INT_DECL(int) HMR0InitVM(PVM pVM)
         PVMCPU pVCpu = &pVM->aCpus[i];
         pVCpu->hm.s.idEnteredCpu   = NIL_RTCPUID;
         pVCpu->hm.s.idLastCpu      = NIL_RTCPUID;
-        pVCpu->hm.s.fGIMTrapXcptUD = GIMShouldTrapXcptUD(pVCpu);
 
         /* We'll aways increment this the first time (host uses ASID 0). */
         AssertReturn(!pVCpu->hm.s.uCurrentAsid, VERR_HM_IPE_3);
     }
 
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Does ring-0 per-VM HM initialization.
+ *
+ * This will call the CPU specific init. routine which may initialize and allocate
+ * resources for virtual CPUs.
+ *
+ * @returns VBox status code.
+ * @param   pVM         The cross context VM structure.
+ *
+ * @remarks This is called after HMR3Init(), see vmR3CreateU() and
+ *          vmR3InitRing3().
+ */
+VMMR0_INT_DECL(int) HMR0InitVM(PVM pVM)
+{
+    AssertReturn(pVM, VERR_INVALID_PARAMETER);
+
+    /* Make sure we don't touch HM after we've disabled HM in preparation of a suspend. */
+    if (ASMAtomicReadBool(&g_HmR0.fSuspended))
+        return VERR_HM_SUSPEND_PENDING;
+
+    /*
+     * Get host kernel features that HM might need to know in order
+     * to co-operate and function properly with the host OS (e.g. SMAP).
+     *
+     * Technically, we could do this as part of the pre-init VM procedure
+     * but it shouldn't be done later than this point so we do it here.
+     */
     pVM->hm.s.fHostKernelFeatures = SUPR0GetKernelFeatures();
 
     /*
