@@ -204,23 +204,23 @@ void UIFileManagerGuestTable::readDirectory(const QString& strPath,
             data << fsInfo.GetName() << static_cast<qulonglong>(fsInfo.GetObjectSize())
                  << changeTime << fsInfo.GetUserName() << permissionString(fsInfo);
 
-            FileObjectType fsObjectType = fileType(fsInfo);
+            KFsObjType fsObjectType = fileType(fsInfo);
             UIFileTableItem *item = new UIFileTableItem(data, parent, fsObjectType);
 
             if (!item)
                 continue;
             item->setPath(UIPathOperations::mergePaths(strPath, fsInfo.GetName()));
-            if (fsObjectType == FileObjectType_Directory)
+            if (fsObjectType == KFsObjType_Directory)
             {
                 directories.insert(fsInfo.GetName(), item);
                 item->setIsOpened(false);
             }
-            else if(fsObjectType == FileObjectType_File)
+            else if(fsObjectType == KFsObjType_File)
             {
                 files.insert(fsInfo.GetName(), item);
                 item->setIsOpened(false);
             }
-            else if(fsObjectType == FileObjectType_SymLink)
+            else if(fsObjectType == KFsObjType_Symlink)
             {
                 files.insert(fsInfo.GetName(), item);
                 item->setIsOpened(false);
@@ -266,12 +266,12 @@ void UIFileManagerGuestTable::deleteByPath(const QStringList &pathList)
     foreach (const QString &strPath, pathList)
     {
         CGuestFsObjInfo fileInfo = m_comGuestSession.FsObjQueryInfo(strPath, true);
-        FileObjectType eType = fileType(fileInfo);
-        if (eType == FileObjectType_File || eType == FileObjectType_SymLink)
+        KFsObjType eType = fileType(fileInfo);
+        if (eType == KFsObjType_File || eType == KFsObjType_Symlink)
         {
               m_comGuestSession.FsObjRemove(strPath);
         }
-        else if (eType == FileObjectType_Directory)
+        else if (eType == KFsObjType_Directory)
         {
             QVector<KDirectoryRemoveRecFlag> flags(KDirectoryRemoveRecFlag_ContentAndDir);
             m_comGuestSession.DirectoryRemoveRecursive(strPath, flags);
@@ -390,32 +390,32 @@ void UIFileManagerGuestTable::copyGuestToHost(const QString& hostDestinationPath
     emit sigNewFileOperation(progress);
 }
 
-FileObjectType UIFileManagerGuestTable::fileType(const CFsObjInfo &fsInfo)
+KFsObjType UIFileManagerGuestTable::fileType(const CFsObjInfo &fsInfo)
 {
     if (fsInfo.isNull() || !fsInfo.isOk())
-        return FileObjectType_Unknown;
+        return KFsObjType_Unknown;
     if (fsInfo.GetType() == KFsObjType_Directory)
-         return FileObjectType_Directory;
+         return KFsObjType_Directory;
     else if (fsInfo.GetType() == KFsObjType_File)
-        return FileObjectType_File;
+        return KFsObjType_File;
     else if (fsInfo.GetType() == KFsObjType_Symlink)
-        return FileObjectType_SymLink;
+        return KFsObjType_Symlink;
 
-    return FileObjectType_Other;
+    return KFsObjType_Unknown;
 }
 
-FileObjectType UIFileManagerGuestTable::fileType(const CGuestFsObjInfo &fsInfo)
+KFsObjType UIFileManagerGuestTable::fileType(const CGuestFsObjInfo &fsInfo)
 {
     if (fsInfo.isNull() || !fsInfo.isOk())
-        return FileObjectType_Unknown;
+        return KFsObjType_Unknown;
     if (fsInfo.GetType() == KFsObjType_Directory)
-         return FileObjectType_Directory;
+         return KFsObjType_Directory;
     else if (fsInfo.GetType() == KFsObjType_File)
-        return FileObjectType_File;
+        return KFsObjType_File;
     else if (fsInfo.GetType() == KFsObjType_Symlink)
-        return FileObjectType_SymLink;
+        return KFsObjType_Symlink;
 
-    return FileObjectType_Other;
+    return KFsObjType_Unknown;
 }
 
 
@@ -529,11 +529,11 @@ QString UIFileManagerGuestTable::fsObjectPropertyString()
             continue;
         }
 
-        FileObjectType type = fileType(fileInfo);
+        KFsObjType type = fileType(fileInfo);
 
-        if (type == FileObjectType_File)
+        if (type == KFsObjType_File)
             ++fileCount;
-        if (type == FileObjectType_Directory)
+        if (type == KFsObjType_Directory)
             ++directoryCount;
         totalSize += fileInfo.GetObjectSize();
     }
@@ -568,7 +568,7 @@ void UIFileManagerGuestTable::showProperties()
        to compute total size of the selection (recusively) */
     // bool createWorkerThread = (selectedObjects.size() > 1);
     // if (!createWorkerThread &&
-    //     fileType(m_comGuestSession.FsObjQueryInfo(selectedObjects[0], true)) == FileObjectType_Directory)
+    //     fileType(m_comGuestSession.FsObjQueryInfo(selectedObjects[0], true)) == KFsObjType_Directory)
     //     createWorkerThread = true;
     // if (createWorkerThread)
     // {

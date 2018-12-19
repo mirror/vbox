@@ -36,7 +36,7 @@ public:
 
 protected:
 
-    FileObjectType  fileType(const QFileInfo &fsInfo);
+    KFsObjType  fileType(const QFileInfo &fsInfo);
     void            retranslateUi() /* override */;
     virtual void    readDirectory(const QString& strPath, UIFileTableItem *parent, bool isStartDir = false) /* override */;
     virtual void    deleteByItem(UIFileTableItem *item) /* override */;

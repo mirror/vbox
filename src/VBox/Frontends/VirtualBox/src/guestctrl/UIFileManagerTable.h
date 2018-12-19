@@ -51,17 +51,6 @@ class UICustomFileSystemProxyModel;
 class UIGuestControlFileView;
 class UIToolBar;
 
-/** @todo r=bird: Why don't you just use KFsObjType? */
-enum FileObjectType
-{
-    FileObjectType_File = 0,
-    FileObjectType_Directory,
-    FileObjectType_SymLink,
-    FileObjectType_Other,
-    FileObjectType_Unknown,
-    FileObjectType_Max
-};
-
 /** A simple struck to store some statictics for a directory. Mainly used by  UIDirectoryDiskUsageComputer instances. */
 class UIDirectoryStatistics
 {
@@ -169,7 +158,7 @@ public:
      *  the name of the file object which is the file name including extension or name of the
      *  directory */
     explicit UIFileTableItem(const QVector<QVariant> &data,
-                             UIFileTableItem *parentItem, FileObjectType type);
+                             UIFileTableItem *parentItem, KFsObjType type);
     ~UIFileTableItem();
 
     void appendChild(UIFileTableItem *child);
@@ -198,7 +187,7 @@ public:
     bool isUpDirectory() const;
     void clearChildren();
 
-    FileObjectType   type() const;
+    KFsObjType  type() const;
 
     const QString &targetPath() const;
     void setTargetPath(const QString &path);
@@ -231,7 +220,7 @@ private:
     QString          m_strTargetPath;
     /** True if this is a symlink and the target is a directory */
     bool             m_isTargetADirectory;
-    FileObjectType   m_type;
+    KFsObjType  m_type;
     /** True if only this item represents a DOS style drive letter item */
     bool             m_isDriveItem;
 };
@@ -330,7 +319,7 @@ protected:
         FileOperationType m_eFileOperationType;
     /** @} */
 
-    QString          fileTypeString(FileObjectType type);
+    QString          fileTypeString(KFsObjType type);
     /* @p item index is item location in model not in 'proxy' model */
     void             goIntoDirectory(const QModelIndex &itemIndex);
     /** Follows the path trail, opens directories as it descends */

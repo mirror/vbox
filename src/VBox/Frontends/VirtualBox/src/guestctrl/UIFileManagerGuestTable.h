@@ -72,8 +72,8 @@ protected:
 
 private:
 
-    FileObjectType  fileType(const CFsObjInfo &fsInfo);
-    FileObjectType  fileType(const CGuestFsObjInfo &fsInfo);
+    KFsObjType  fileType(const CFsObjInfo &fsInfo);
+    KFsObjType  fileType(const CGuestFsObjInfo &fsInfo);
 
     void prepareActionConnections();
     bool checkGuestSession();

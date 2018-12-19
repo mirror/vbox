@@ -459,7 +459,7 @@ UIDirectoryStatistics::UIDirectoryStatistics()
 *********************************************************************************************************************************/
 
 UIFileTableItem::UIFileTableItem(const QVector<QVariant> &data,
-                                 UIFileTableItem *parent, FileObjectType type)
+                                 UIFileTableItem *parent, KFsObjType type)
     : m_itemData(data)
     , m_parentItem(parent)
     , m_bIsOpened(false)
@@ -538,17 +538,17 @@ int UIFileTableItem::row() const
 
 bool UIFileTableItem::isDirectory() const
 {
-    return m_type == FileObjectType_Directory;
+    return m_type == KFsObjType_Directory;
 }
 
 bool UIFileTableItem::isSymLink() const
 {
-    return m_type == FileObjectType_SymLink;
+    return m_type == KFsObjType_Symlink;
 }
 
 bool UIFileTableItem::isFile() const
 {
-    return m_type == FileObjectType_File;
+    return m_type == KFsObjType_File;
 }
 
 void UIFileTableItem::clearChildren()
@@ -590,7 +590,7 @@ bool UIFileTableItem::isUpDirectory() const
     return false;
 }
 
-FileObjectType UIFileTableItem::type() const
+KFsObjType UIFileTableItem::type() const
 {
     return m_type;
 }
@@ -863,10 +863,10 @@ void UIFileManagerTable::initializeFileTree()
     const QString startPath("/");
     QVector<QVariant> headData;
     headData.resize(UICustomFileSystemModelColumn_Max);
-    m_pRootItem = new UIFileTableItem(headData, 0, FileObjectType_Directory);
+    m_pRootItem = new UIFileTableItem(headData, 0, KFsObjType_Directory);
     UIFileTableItem* startItem = new UIFileTableItem(createTreeItemData(startPath, 4096, QDateTime(),
                                                                         "" /* owner */, "" /* permissions */),
-                                                     m_pRootItem, FileObjectType_Directory);
+                                                     m_pRootItem, KFsObjType_Directory);
     startItem->setPath(startPath);
     m_pRootItem->appendChild(startItem);
     startItem->setIsOpened(false);
@@ -891,7 +891,7 @@ void UIFileManagerTable::populateStartDirectory(UIFileTableItem *startItem)
         {
             UIFileTableItem* driveItem = new UIFileTableItem(createTreeItemData(m_driveLetterList[i], 4096,
                                                                                 QDateTime(), QString(), QString()),
-                                                             startItem, FileObjectType_Directory);
+                                                             startItem, KFsObjType_Directory);
             driveItem->setPath(m_driveLetterList[i]);
             startItem->appendChild(driveItem);
             driveItem->setIsOpened(false);
@@ -914,7 +914,7 @@ void UIFileManagerTable::insertItemsToTree(QMap<QString,UIFileTableItem*> &map,
             QVector<QVariant> data;
             UIFileTableItem *item = new UIFileTableItem(createTreeItemData(UICustomFileSystemModel::strUpDirectoryString, 4096,
                                                                            QDateTime(), QString(), QString())
-                                                        , parent, FileObjectType_Directory);
+                                                        , parent, KFsObjType_Directory);
             item->setIsOpened(false);
             map.insert(UICustomFileSystemModel::strUpDirectoryString, item);
         }
@@ -1451,26 +1451,23 @@ bool UIFileManagerTable::event(QEvent *pEvent)
     return QIWithRetranslateUI<QWidget>::event(pEvent);
 }
 
-QString UIFileManagerTable::fileTypeString(FileObjectType type)
+QString UIFileManagerTable::fileTypeString(KFsObjType type)
 {
     QString strType = UIFileManager::tr("Unknown");
     switch (type)
     {
-        case FileObjectType_File:
+        case KFsObjType_File:
             strType = UIFileManager::tr("File");
             break;
-        case FileObjectType_Directory:
+        case KFsObjType_Directory:
             strType = UIFileManager::tr("Directory");
             break;
-        case FileObjectType_SymLink:
+        case KFsObjType_Symlink:
             strType = UIFileManager::tr("Symbolic Link");
             break;
-        case FileObjectType_Other:
-            strType = UIFileManager::tr("Other");
-            break;
-
-        case FileObjectType_Unknown:
+        case KFsObjType_Unknown:
         default:
+            strType = UIFileManager::tr("Unknown");
             break;
     }
     return strType;
