@@ -23724,7 +23724,6 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <desc>
       The given medium was registered or unregistered
       within this VirtualBox installation.
-      <note>This event is not yet implemented.</note>
     </desc>
 
     <attribute name="mediumId" readonly="yes" type="uuid" mod="string">
@@ -23751,7 +23750,6 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <desc>
       The configuration of the given medium was changed (location, properties,
       child/parent or anything else).
-      <note>This event is not yet implemented.</note>
     </desc>
 
     <attribute name="medium" type="IMedium" readonly="yes">
@@ -24143,7 +24141,6 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       Notification when a
       <link to="IMachine::mediumAttachments">medium attachment</link>
       changes.
-      <note>This event is not yet implemented.</note>
     </desc>
     <attribute name="mediumAttachment" type="IMediumAttachment" readonly="yes">
       <desc>

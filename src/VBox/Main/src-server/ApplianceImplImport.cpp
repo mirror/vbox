@@ -2640,7 +2640,8 @@ void Appliance::i_importOneDiskImage(const ovf::DiskImage &di,
                                                      MediumVariant_Standard,
                                                      hVfsIosReadAhead,
                                                      nullParent,
-                                                     pProgressImportTmp);
+                                                     pProgressImportTmp,
+                                                     true /* aNotify */);
                     RTVfsIoStrmRelease(hVfsIosReadAhead);
                     hVfsIosSrc = NIL_RTVFSIOSTREAM;
                     if (FAILED(rc))
