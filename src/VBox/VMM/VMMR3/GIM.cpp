@@ -31,7 +31,7 @@
  *
  * The GIM provider configured for the VM needs to be recognized by the guest OS
  * in order to make use of features supported by the interface. Since it
- * requires co-operation from the guest OS, a GIM provider may also referred to
+ * requires co-operation from the guest OS, a GIM provider may also be referred to
  * as a paravirtualization interface.
  *
  * One of the goals of having a paravirtualized interface is for enabling guests
