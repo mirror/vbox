@@ -255,8 +255,9 @@ protected:
     /** Creates a QList out of the parameters wrt. UICustomFileSystemModelColumn enum */
     QVector<QVariant>  createTreeItemData(const QString &strName, ULONG64 size, const QDateTime &changeTime,
                                         const QString &strOwner, const QString &strPermissions);
+    UIFileTableItem*   rootItem();
 
-    UIFileTableItem         *m_pRootItem;
+
     QILabel                 *m_pLocationLabel;
     UIPropertiesDialog      *m_pPropertiesDialog;
     UIActionPool            *m_pActionPool;

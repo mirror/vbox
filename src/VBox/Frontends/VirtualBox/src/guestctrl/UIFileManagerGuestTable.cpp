@@ -285,9 +285,9 @@ void UIFileManagerGuestTable::goToHomeDirectory()
 {
     if (m_comGuestSession.isNull())
         return;
-    if (!m_pRootItem || m_pRootItem->childCount() <= 0)
+    if (!rootItem() || rootItem()->childCount() <= 0)
         return;
-    UIFileTableItem *startDirItem = m_pRootItem->child(0);
+    UIFileTableItem *startDirItem = rootItem()->child(0);
     if (!startDirItem)
         return;
 

@@ -52,7 +52,7 @@ public:
     ~UIFileTableItem();
 
     void appendChild(UIFileTableItem *child);
-
+    void reset();
     UIFileTableItem *child(int row) const;
     /** Searches for the child by path and returns it if found. */
     UIFileTableItem *child(const QString &path) const;
@@ -140,9 +140,7 @@ private:
 
 /** UICustomFileSystemModel serves as the model for a file structure.
  *  it supports a tree level hierarchy which can be displayed with
- *  QTableView and/or QTreeView. Note the file structure data is not
- *  kept by the model but rather by the containing widget which also servers
- *  as the interface to functionality that this model provides.*/
+ *  QTableView and/or QTreeView. .*/
 class UICustomFileSystemModel : public QAbstractItemModel
 {
 
@@ -169,17 +167,20 @@ public:
     QModelIndex    rootIndex() const;
     void           beginReset();
     void           endReset();
+    void           reset();
+
     void           setShowHumanReadableSizes(bool fShowHumanReadableSizes);
     bool           showHumanReadableSizes() const;
+    UIFileTableItem* rootItem();
+    const UIFileTableItem* rootItem() const;
 
     static const char* strUpDirectoryString;
 
 private:
-
-    UIFileTableItem* rootItem() const;
+    void                initializeTree();
+    UIFileTableItem    *m_pRootItem;
     void setupModelData(const QStringList &lines, UIFileTableItem *parent);
     UIFileManagerTable *m_pParent;
-    UIFileTableItem    *m_pRootItem;
     bool                m_fShowHumanReadableSizes;
 
 };

@@ -293,9 +293,9 @@ void UIFileManagerHostTable::deleteByPath(const QStringList &pathList)
 
 void UIFileManagerHostTable::goToHomeDirectory()
 {
-    if (!m_pRootItem || m_pRootItem->childCount() <= 0)
+    if (!rootItem() || rootItem()->childCount() <= 0)
         return;
-    UIFileTableItem *startDirItem = m_pRootItem->child(0);
+    UIFileTableItem *startDirItem = rootItem()->child(0);
     if (!startDirItem)
         return;
 

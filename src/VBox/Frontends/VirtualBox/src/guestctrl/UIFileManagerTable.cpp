@@ -510,7 +510,6 @@ const unsigned UIFileManagerTable::m_iKiloByte = 1024; /**< Our kilo bytes are a
 UIFileManagerTable::UIFileManagerTable(UIActionPool *pActionPool, QWidget *pParent /* = 0 */)
     :QIWithRetranslateUI<QWidget>(pParent)
     , m_eFileOperationType(FileOperationType_None)
-    , m_pRootItem(0)
     , m_pLocationLabel(0)
     , m_pPropertiesDialog(0)
     , m_pActionPool(pActionPool)
@@ -527,17 +526,13 @@ UIFileManagerTable::UIFileManagerTable(UIActionPool *pActionPool, QWidget *pPare
 
 UIFileManagerTable::~UIFileManagerTable()
 {
-    delete m_pRootItem;
 }
 
 void UIFileManagerTable::reset()
 {
     if (m_pModel)
-        m_pModel->beginReset();
-    delete m_pRootItem;
-    m_pRootItem = 0;
-    if (m_pModel)
-        m_pModel->endReset();
+        m_pModel->reset();
+
     if (m_pLocationComboBox)
     {
         disconnect(m_pLocationComboBox, static_cast<void(QComboBox::*)(const QString&)>(&QComboBox::currentIndexChanged),
@@ -679,19 +674,17 @@ void UIFileManagerTable::changeLocation(const QModelIndex &index)
 
 void UIFileManagerTable::initializeFileTree()
 {
-    if (m_pRootItem)
-        reset();
+    if (m_pModel)
+        m_pModel->reset();
+    if (!rootItem())
+        return;
 
-    /* Root item: */
     const QString startPath("/");
-    QVector<QVariant> headData;
-    headData.resize(UICustomFileSystemModelColumn_Max);
-    m_pRootItem = new UIFileTableItem(headData, 0, KFsObjType_Directory);
     UIFileTableItem* startItem = new UIFileTableItem(createTreeItemData(startPath, 4096, QDateTime(),
                                                                         "" /* owner */, "" /* permissions */),
-                                                     m_pRootItem, KFsObjType_Directory);
+                                                     rootItem(), KFsObjType_Directory);
     startItem->setPath(startPath);
-    m_pRootItem->appendChild(startItem);
+    rootItem()->appendChild(startItem);
     startItem->setIsOpened(false);
     populateStartDirectory(startItem);
 
@@ -1101,13 +1094,14 @@ void UIFileManagerTable::deleteByIndex(const QModelIndex &itemIndex)
 
 void UIFileManagerTable::retranslateUi()
 {
-    if (m_pRootItem)
+    UIFileTableItem *pRootItem = rootItem();
+    if (pRootItem)
     {
-        m_pRootItem->setData(UIFileManager::tr("Name"), UICustomFileSystemModelColumn_Name);
-        m_pRootItem->setData(UIFileManager::tr("Size"), UICustomFileSystemModelColumn_Size);
-        m_pRootItem->setData(UIFileManager::tr("Change Time"), UICustomFileSystemModelColumn_ChangeTime);
-        m_pRootItem->setData(UIFileManager::tr("Owner"), UICustomFileSystemModelColumn_Owner);
-        m_pRootItem->setData(UIFileManager::tr("Permissions"), UICustomFileSystemModelColumn_Permissions);
+        pRootItem->setData(UIFileManager::tr("Name"), UICustomFileSystemModelColumn_Name);
+        pRootItem->setData(UIFileManager::tr("Size"), UICustomFileSystemModelColumn_Size);
+        pRootItem->setData(UIFileManager::tr("Change Time"), UICustomFileSystemModelColumn_ChangeTime);
+        pRootItem->setData(UIFileManager::tr("Owner"), UICustomFileSystemModelColumn_Owner);
+        pRootItem->setData(UIFileManager::tr("Permissions"), UICustomFileSystemModelColumn_Permissions);
     }
     if (m_pWarningLabel)
         m_pWarningLabel->setText(UIFileManager::tr("No Guest Session"));
@@ -1174,11 +1168,12 @@ bool UIFileManagerTable::eventFilter(QObject *pObject, QEvent *pEvent) /* overri
 
 UIFileTableItem *UIFileManagerTable::getStartDirectoryItem()
 {
-    if (!m_pRootItem)
+    UIFileTableItem* pRootItem = rootItem();
+    if (!pRootItem)
         return 0;
-    if (m_pRootItem->childCount() <= 0)
+    if (pRootItem->childCount() <= 0)
         return 0;
-    return m_pRootItem->child(0);
+    return pRootItem->child(0);
 }
 
 
@@ -1249,7 +1244,6 @@ void UIFileManagerTable::setSelectionDependentActionsEnabled(bool fIsEnabled)
     }
 }
 
-
 QVector<QVariant> UIFileManagerTable::createTreeItemData(const QString &strName, ULONG64 size, const QDateTime &changeTime,
                                                             const QString &strOwner, const QString &strPermissions)
 {
@@ -1261,6 +1255,13 @@ QVector<QVariant> UIFileManagerTable::createTreeItemData(const QString &strName,
     data[UICustomFileSystemModelColumn_Owner]       = strOwner;
     data[UICustomFileSystemModelColumn_Permissions] = strPermissions;
     return data;
+}
+
+UIFileTableItem* UIFileManagerTable::rootItem()
+{
+    if (!m_pModel)
+        return 0;
+    return m_pModel->rootItem();
 }
 
 bool UIFileManagerTable::event(QEvent *pEvent)
