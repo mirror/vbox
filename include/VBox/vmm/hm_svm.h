@@ -1017,6 +1017,23 @@ AssertCompileMemberOffset(SVMVMCB, u8Reserved1,  0x698);
 AssertCompileSize(SVMVMCB, 0x1000);
 
 /**
+ * SVM MSRs.
+ */
+typedef struct SVMMSRS
+{
+    /** HWCR MSR. */
+    uint64_t        u64MsrHwcr;
+    /** Reserved for future. */
+    uint64_t        u64Padding[23];
+} SVMMSRS;
+AssertCompileSizeAlignment(SVMMSRS, 8);
+AssertCompileSize(SVMMSRS, 192);
+/** Pointer to a SVMMSRS struct. */
+typedef SVMMSRS *PSVMMSRS;
+/** Pointer to a const SVMMSRS struct. */
+typedef const SVMMSRS *PCSVMMSRS;
+
+/**
  * SVM nested-guest VMCB cache.
  *
  * Contains VMCB fields from the nested-guest VMCB before they're modified by
