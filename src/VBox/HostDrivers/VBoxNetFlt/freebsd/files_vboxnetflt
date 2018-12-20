@@ -38,6 +38,7 @@ VBOX_VBOXNETFLT_SOURCES=" \
     ${PATH_ROOT}/include/iprt/cpuset.h=>include/iprt/cpuset.h \
     ${PATH_ROOT}/include/iprt/ctype.h=>include/iprt/ctype.h \
     ${PATH_ROOT}/include/iprt/err.h=>include/iprt/err.h \
+    ${PATH_ROOT}/include/iprt/errcore.h=>include/iprt/errcore.h \
     ${PATH_ROOT}/include/iprt/heap.h=>include/iprt/heap.h \
     ${PATH_ROOT}/include/iprt/initterm.h=>include/iprt/initterm.h \
     ${PATH_ROOT}/include/iprt/latin1.h=>include/iprt/latin1.h \

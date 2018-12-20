@@ -38,6 +38,7 @@ FILES_VBOXDRV_NOBIN=" \
     ${PATH_ROOT}/include/iprt/crc.h=>include/iprt/crc.h \
     ${PATH_ROOT}/include/iprt/ctype.h=>include/iprt/ctype.h \
     ${PATH_ROOT}/include/iprt/err.h=>include/iprt/err.h \
+    ${PATH_ROOT}/include/iprt/errcore.h=>include/iprt/errcore.h \
     ${PATH_ROOT}/include/iprt/errno.h=>include/iprt/errno.h \
     ${PATH_ROOT}/include/iprt/heap.h=>include/iprt/heap.h \
     ${PATH_ROOT}/include/iprt/handletable.h=>include/iprt/handletable.h \

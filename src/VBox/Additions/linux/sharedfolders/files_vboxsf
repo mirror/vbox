@@ -26,6 +26,7 @@ FILES_VBOXSF_NOBIN=" \
     ${PATH_ROOT}/include/iprt/assertcompile.h=>include/iprt/assertcompile.h \
     ${PATH_ROOT}/include/iprt/cdefs.h=>include/iprt/cdefs.h \
     ${PATH_ROOT}/include/iprt/err.h=>include/iprt/err.h \
+    ${PATH_ROOT}/include/iprt/errcore.h=>include/iprt/errcore.h \
     ${PATH_ROOT}/include/iprt/fs.h=>include/iprt/fs.h \
     ${PATH_ROOT}/include/iprt/latin1.h=>include/iprt/latin1.h \
     ${PATH_ROOT}/include/iprt/log.h=>include/iprt/log.h \
