@@ -42,12 +42,18 @@ __version__ = "$Revision$"
 import sys;
 import os;
 import hashlib;
+import subprocess;
+import smtplib
 if sys.version_info[0] >= 3:
     from io       import StringIO as StringIO;      # pylint: disable=import-error,no-name-in-module
 else:
     from StringIO import StringIO as StringIO;      # pylint: disable=import-error,no-name-in-module
 from optparse import OptionParser;                  # pylint: disable=deprecated-module
 from PIL import Image;                              # pylint: disable=import-error
+
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from email.utils import COMMASPACE
 
 # Add Test Manager's modules path
 g_ksTestManagerDir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))));
@@ -64,6 +70,7 @@ from testmanager.core.testset               import TestSetLogic, TestSetData;
 from testmanager.core.testresults           import TestResultLogic, TestResultFileData;
 from testmanager.core.testresultfailures    import TestResultFailureLogic, TestResultFailureData;
 from testmanager.core.useraccount           import UserAccountLogic;
+from testmanager.config                     import g_ksSmtpHost, g_kcSmtpPort, g_ksAlertSubject, g_asAlertList;
 
 # Python 3 hacks:
 if sys.version_info[0] >= 3:
@@ -358,6 +365,38 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
                 rcExit = self.eprint(u'Cannot find my user account "%s"!' % (VirtualTestSheriff.ksLoginName,));
         return rcExit;
 
+    def emailAlert(self, uidAuthor, sBodyText):
+        asEmailList = [];
+
+        # Get author email
+        self.oDb.execute('SELECT sEmail FROM Users WHERE uid=%s', (uidAuthor,));
+        sFrom = self.oDb.fetchOne();
+        if sFrom is not None:
+            sFrom = sFrom[0];
+        else:
+            sFrom = 'vseriff@oracle.com';
+
+        for sUser in g_asAlertList:
+            self.oDb.execute('SELECT sEmail FROM Users WHERE sUsername=%s', (sUser,));
+            sEmail = self.oDb.fetchOne();
+            if sEmail is None:
+                # No address to send an alert.
+                return;
+            asEmailList.append(sEmail[0]);
+
+        oMsg = MIMEMultipart();
+        oMsg['From'] = sFrom;
+        oMsg['To'] = COMMASPACE.join(asEmailList);
+        oMsg['Subject'] = g_ksAlertSubject;
+        oMsg.attach(MIMEText(sBodyText, 'plain'))
+
+        try:
+            oSMTP = smtplib.SMTP(g_ksSmtpHost, g_kcSmtpPort);
+            oSMTP.sendmail(sFrom, asEmailList, oMsg.as_string())
+            oSMTP.quit()
+        except smtplib.SMTPException as oXcpt:
+            rcExit = self.eprint('Failed to send mail: %s' % (oXcpt,));
+
 
 
     def badTestBoxManagement(self):
@@ -453,10 +492,47 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
                                                         sComment = 'Automatically rebooted (iFirstOkay=%u cBad=%u cOkay=%u)'
                                                                  % (iFirstOkay, cBad, cOkay),);
                         except Exception as oXcpt:
-                            rcExit = self.eprint(u'Error rebooting testbox #%u (%u): %s\n' % (idTestBox, oTestBox.sName, oXcpt,));
+                            rcExit = self.eprint(u'Error rebooting testbox #%u (%s): %s\n' % (idTestBox, oTestBox.sName, oXcpt,));
             else:
                 self.dprint(u'badTestBoxManagement: #%u (%s) looks ok:  iFirstOkay=%u cBad=%u cOkay=%u'
                             % ( idTestBox, oTestBox.sName, iFirstOkay, cBad, cOkay));
+        #
+        # Reset hanged testboxes
+        #
+        cStatusTimeoutMins = 10;
+
+        self.oDb.execute('SELECT idTestBox FROM TestBoxStatuses WHERE tsUpdated < (CURRENT_TIMESTAMP - interval \'%s minutes\')', (cStatusTimeoutMins,));
+        for idTestBox in self.oDb.fetchAll():
+            idTestBox = idTestBox[0];
+            try:
+                oTestBox = TestBoxData().initFromDbWithId(self.oDb, idTestBox);
+            except Exception as oXcpt:
+                rcExit = self.eprint('Failed to get data for test box #%u in badTestBoxManagement: %s' % (idTestBox, oXcpt,));
+                continue;
+            # Skip if the testbox is already disabled, already reset or there's no iLOM
+            if not oTestBox.fEnabled or oTestBox.ipLom is None or \
+                oTestBox.sComment is not None and oTestBox.sComment.find('Automatically reset') >= 0:
+                    self.dprint(u'badTestBoxManagement: Skipping test box #%u (%s) as it has been disabled already.'
+                                % ( idTestBox, oTestBox.sName, ));
+                    continue;
+            ## @todo get iLOM credentials from a table?
+            sCmd = 'sshpass -pchangeme ssh -oStrictHostKeyChecking=no root@%s show /SP && reset /SYS' % (oTestBox.ipLom,);
+            try:
+                oPs = subprocess.Popen(sCmd, stdout=subprocess.PIPE, shell=True);
+                sStdout = oPs.communicate()[0];
+                iRC = oPs.wait();
+
+                oTestBox.sComment = 'Automatically reset (iRC=%u sStdout=%s)' % (iRC, sStdout,);
+                oTestBoxLogic.editEntry(oTestBox, self.uidSelf, fCommit = True);
+
+                sComment = u'Reset testbox #%u (%s) - iRC=%u sStduot=%s' % ( idTestBox, oTestBox.sName, iRC, sStdout);
+                self.vprint(sComment);
+
+                self.emailAlert(self.uidSelf, sComment);
+
+            except Exception as oXcpt:
+                rcExit = self.eprint(u'Error reseting testbox #%u (%s): %s\n' % (idTestBox, oTestBox.sName, oXcpt,));
+
         return rcExit;
 
 

@@ -185,3 +185,16 @@ g_kfProfileIndex        = False;
 g_ksTestBoxDispXpctLog  = '/tmp/testmanager-testboxdisp-xcpt.log'
 ## @}
 
+## @name Virtual Sheriff email alerts
+## @{
+
+## SMTP server host name.
+g_ksSmtpHost            = 'internal-mail-router.oracle.com';
+## SMTP server port number.
+g_kcSmtpPort            = 25;
+## Subject for email alert.
+g_ksAlertSubject        = 'Virtual Sheriff alert';
+## List of users to send alerts.
+g_asAlertList           = ['lelik', 'werner'];
+
+## @}
