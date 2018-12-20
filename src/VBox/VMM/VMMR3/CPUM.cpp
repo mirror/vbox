@@ -801,7 +801,7 @@ static void cpumR3CheckLeakyFpu(PVM pVM)
  */
 static void cpumR3FreeSvmHwVirtState(PVM pVM)
 {
-    Assert(pVM->cpum.ro.GuestFeatures.fSvm);
+    Assert(pVM->cpum.s.GuestFeatures.fSvm);
     for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
         PVMCPU pVCpu = &pVM->aCpus[i];
@@ -835,7 +835,7 @@ static void cpumR3FreeSvmHwVirtState(PVM pVM)
  */
 static int cpumR3AllocSvmHwVirtState(PVM pVM)
 {
-    Assert(pVM->cpum.ro.GuestFeatures.fSvm);
+    Assert(pVM->cpum.s.GuestFeatures.fSvm);
 
     int rc = VINF_SUCCESS;
     LogRel(("CPUM: Allocating %u pages for the nested-guest SVM MSR and IO permission bitmaps\n",
@@ -924,7 +924,7 @@ DECLINLINE(void) cpumR3InitSvmHwVirtState(PVMCPU pVCpu)
  */
 static void cpumR3FreeVmxHwVirtState(PVM pVM)
 {
-    Assert(pVM->cpum.ro.GuestFeatures.fVmx);
+    Assert(pVM->cpum.s.GuestFeatures.fVmx);
     for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
         PVMCPU pVCpu = &pVM->aCpus[i];
@@ -1673,9 +1673,20 @@ static void cpumR3InitVmxCpuFeatures(PVM pVM)
      */
     PCPUMFEATURES pHostFeat = &pVM->cpum.s.HostFeatures;
     VMXMSRS VmxMsrs;
-    int rc = HMVmxGetHostMsrs(pVM, &VmxMsrs);
-    if (RT_SUCCESS(rc))
-        cpumR3ExplodeVmxFeatures(&VmxMsrs, pHostFeat);
+    if (cpumR3IsHwAssistVmxNstGstExecAllowed(pVM))
+    {
+        /** @todo NSTVMX: When NEM support for nested-VMX is there, we'll need to fetch
+         *        the MSRs from NEM or do the support driver IOCTL route, see patch in
+         *        @bugref{9180}. */
+        if (HMIsEnabled(pVM))
+        {
+            int rc = HMVmxGetHostMsrs(pVM, &VmxMsrs);
+            if (RT_SUCCESS(rc))
+                cpumR3ExplodeVmxFeatures(&VmxMsrs, pHostFeat);
+        }
+        else
+            AssertMsgFailed(("NEM support for nested-VMX is not implemented yet\n"));
+    }
 
     /*
      * Initialize the set of VMX features we emulate.
@@ -2037,9 +2048,9 @@ VMMR3DECL(int) CPUMR3Init(PVM pVM)
     /*
      * Allocate memory required by the guest hardware virtualization state.
      */
-    if (pVM->cpum.ro.GuestFeatures.fVmx)
+    if (pVM->cpum.s.GuestFeatures.fVmx)
         rc = cpumR3AllocVmxHwVirtState(pVM);
-    else if (pVM->cpum.ro.GuestFeatures.fSvm)
+    else if (pVM->cpum.s.GuestFeatures.fSvm)
         rc = cpumR3AllocSvmHwVirtState(pVM);
     else
         Assert(pVM->aCpus[0].cpum.s.Guest.hwvirt.enmHwvirt == CPUMHWVIRT_NONE);
@@ -2054,6 +2065,10 @@ VMMR3DECL(int) CPUMR3Init(PVM pVM)
     {
         for (VMCPUID i = 0; i < pVM->cCpus; i++)
             cpumR3InitVmxHwVirtState(&pVM->aCpus[i]);
+
+        /* Initialize VMX features. */
+        cpumR3InitVmxCpuFeatures(pVM);
+        DBGFR3Info(pVM->pUVM, "cpumvmxfeat", "default", DBGFR3InfoLogRelHlp());
     }
     else if (enmHwvirt == CPUMHWVIRT_SVM)
     {
@@ -2136,9 +2151,9 @@ VMMR3DECL(int) CPUMR3Term(PVM pVM)
     }
 #endif
 
-    if (pVM->cpum.ro.GuestFeatures.fVmx)
+    if (pVM->cpum.s.GuestFeatures.fVmx)
         cpumR3FreeVmxHwVirtState(pVM);
-    else if (pVM->cpum.ro.GuestFeatures.fSvm)
+    else if (pVM->cpum.s.GuestFeatures.fSvm)
         cpumR3FreeSvmHwVirtState(pVM);
     return VINF_SUCCESS;
 }
@@ -2296,10 +2311,10 @@ VMMR3DECL(void) CPUMR3ResetCpu(PVM pVM, PVMCPU pVCpu)
      * Hardware virtualization state.
      */
     CPUMSetGuestGif(pCtx, true);
-    Assert(!pVM->cpum.ro.GuestFeatures.fVmx || !pVM->cpum.ro.GuestFeatures.fSvm);   /* Paranoia. */
-    if (pVM->cpum.ro.GuestFeatures.fVmx)
+    Assert(!pVM->cpum.s.GuestFeatures.fVmx || !pVM->cpum.s.GuestFeatures.fSvm);   /* Paranoia. */
+    if (pVM->cpum.s.GuestFeatures.fVmx)
         cpumR3InitVmxHwVirtState(pVCpu);
-    else if (pVM->cpum.ro.GuestFeatures.fSvm)
+    else if (pVM->cpum.s.GuestFeatures.fSvm)
         cpumR3InitSvmHwVirtState(pVCpu);
 }
 
@@ -2396,7 +2411,7 @@ static DECLCALLBACK(int) cpumR3SaveExec(PVM pVM, PSSMHANDLE pSSM)
             PCX86XSAVEZMM16HI pZmm16Hi = CPUMCTX_XSAVE_C_PTR(pGstCtx, XSAVE_C_ZMM_16HI_BIT, PCX86XSAVEZMM16HI);
             SSMR3PutStructEx(pSSM, pZmm16Hi, sizeof(*pZmm16Hi), SSMSTRUCT_FLAGS_FULL_STRUCT, g_aCpumZmm16HiFields, NULL);
         }
-        if (pVM->cpum.ro.GuestFeatures.fSvm)
+        if (pVM->cpum.s.GuestFeatures.fSvm)
         {
             Assert(pGstCtx->hwvirt.svm.CTX_SUFF(pVmcb));
             SSMR3PutU64(pSSM,    pGstCtx->hwvirt.svm.uMsrHSavePa);
@@ -2636,7 +2651,7 @@ static DECLCALLBACK(int) cpumR3LoadExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uVers
                 }
                 if (uVersion >= CPUM_SAVED_STATE_VERSION_HWVIRT_SVM)
                 {
-                    if (pVM->cpum.ro.GuestFeatures.fSvm)
+                    if (pVM->cpum.s.GuestFeatures.fSvm)
                     {
                         Assert(pGstCtx->hwvirt.svm.CTX_SUFF(pVmcb));
                         SSMR3GetU64(pSSM,      &pGstCtx->hwvirt.svm.uMsrHSavePa);
@@ -3454,8 +3469,8 @@ static DECLCALLBACK(void) cpumR3InfoGuestHwvirt(PVM pVM, PCDBGFINFOHLP pHlp, con
 
     PCPUMCTX pCtx = &pVCpu->cpum.s.Guest;
     static const char *const s_aHwvirtModes[] = { "No/inactive", "SVM", "VMX", "Common" };
-    bool const fSvm = pVM->cpum.ro.GuestFeatures.fSvm;
-    bool const fVmx = pVM->cpum.ro.GuestFeatures.fVmx;
+    bool const fSvm = pVM->cpum.s.GuestFeatures.fSvm;
+    bool const fVmx = pVM->cpum.s.GuestFeatures.fVmx;
     uint8_t const idxHwvirtState = fSvm ? CPUMHWVIRTDUMP_SVM : (fVmx ? CPUMHWVIRTDUMP_VMX : CPUMHWVIRTDUMP_NONE);
     AssertCompile(CPUMHWVIRTDUMP_LAST <= RT_ELEMENTS(s_aHwvirtModes));
     Assert(idxHwvirtState < RT_ELEMENTS(s_aHwvirtModes));
@@ -3982,28 +3997,6 @@ VMMR3DECL(int) CPUMR3InitCompleted(PVM pVM, VMINITCOMPLETED enmWhat)
 
             /* Register statistic counters for MSRs. */
             cpumR3MsrRegStats(pVM);
-            break;
-        }
-
-        case VMINITCOMPLETED_HM:
-        {
-            /*
-             * Currently, nested VMX/SVM both derives their guest VMX/SVM CPUID bit from the host
-             * CPUID bit. This could be later changed if we need to support nested-VMX on CPUs
-             * that are not capable of VMX.
-             */
-            if (pVM->cpum.s.GuestFeatures.fVmx)
-            {
-                Assert(   pVM->cpum.s.GuestFeatures.enmCpuVendor == CPUMCPUVENDOR_INTEL
-                       || pVM->cpum.s.GuestFeatures.enmCpuVendor == CPUMCPUVENDOR_VIA);
-                cpumR3InitVmxCpuFeatures(pVM);
-                DBGFR3Info(pVM->pUVM, "cpumvmxfeat", "default", DBGFR3InfoLogRelHlp());
-            }
-
-            if (pVM->cpum.s.GuestFeatures.fVmx)
-                LogRel(("CPUM: Enabled guest VMX support\n"));
-            else if (pVM->cpum.s.GuestFeatures.fSvm)
-                LogRel(("CPUM: Enabled guest SVM support\n"));
             break;
         }
 
