@@ -60,6 +60,8 @@
 # define RTFSEXT_MAX_INODE_CACHE_SIZE       _128K
 #endif
 
+/** All supported incompatible features. */
+#define RTFSEXT_INCOMPAT_FEATURES_SUPP      (EXT_SB_FEAT_INCOMPAT_DIR_FILETYPE)
 
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
@@ -126,9 +128,29 @@ typedef struct RTFSEXTDIR
     PRTFSEXTINODE       pInode;
     /** Set if we've reached the end of the directory enumeration. */
     bool                fNoMoreFiles;
+    /** Current offset into the directory where the next entry should be read. */
+    uint64_t            offEntry;
+    /** Next entry index (for logging purposes). */
+    uint32_t            idxEntry;
 } RTFSEXTDIR;
 /** Pointer to an open directory instance. */
 typedef RTFSEXTDIR *PRTFSEXTDIR;
+
+
+/**
+ * Open file instance.
+ */
+typedef struct RTFSEXTFILE
+{
+    /** Volume this directory belongs to. */
+    PRTFSEXTVOL         pVol;
+    /** The underlying inode structure. */
+    PRTFSEXTINODE       pInode;
+    /** Current offset into the file for I/O. */
+    RTFOFF              offFile;
+} RTFSEXTFILE;
+/** Pointer to an open file instance. */
+typedef RTFSEXTFILE *PRTFSEXTFILE;
 
 
 /**
@@ -169,6 +191,10 @@ typedef struct RTFSEXTVOL
     /** Size of an inode. */
     size_t              cbInode;
 
+    /** Incompatible features selected for this filesystem. */
+    uint32_t            fFeaturesIncompat;
+
+
     /** @name Block group cache.
      * @{ */
     /** LRU list anchor. */
@@ -195,6 +221,7 @@ typedef struct RTFSEXTVOL
 /*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
+static int rtFsExtVol_OpenDirByInode(PRTFSEXTVOL pThis, uint32_t iInode, PRTVFSDIR phVfsDir);
 
 #ifdef LOG_ENABLED
 /**
@@ -440,6 +467,39 @@ static void rtFsExtInode_Log(PRTFSEXTVOL pThis, uint32_t iInode, PCEXTINODECOMB 
             Log2(("EXT:   u32VersionHigh                      %#RX32\n", RT_LE2H_U16(pInode->Extra.u32VersionHigh)));
             Log2(("EXT:   u32ProjectId                        %#RX32\n", RT_LE2H_U16(pInode->Extra.u32ProjectId)));
         }
+    }
+}
+
+
+/**
+ * Logs a ext filesystem directory entry.
+ *
+ * @returns nothing.
+ * @param   pThis               The ext volume instance.
+ * @param   idxDirEntry         Directory entry index number.
+ * @param   pDirEntry           The directory entry.
+ */
+static void rtFsExtDirEntry_Log(PRTFSEXTVOL pThis, uint32_t idxDirEntry, PCEXTDIRENTRYEX pDirEntry)
+{
+    if (LogIs2Enabled())
+    {
+        int cbName = 0;
+
+        Log2(("EXT: Directory entry %#RX32:\n", idxDirEntry));
+        Log2(("EXT:   iInodeRef                           %#RX32\n", RT_LE2H_U32(pDirEntry->Core.iInodeRef)));
+        Log2(("EXT:   cbRecord                            %#RX32\n", RT_LE2H_U32(pDirEntry->Core.cbRecord)));
+        if (pThis->fFeaturesIncompat & EXT_SB_FEAT_INCOMPAT_DIR_FILETYPE)
+        {
+            Log2(("EXT:   cbName                              %#RU8\n", pDirEntry->Core.u.v2.cbName));
+            Log2(("EXT:   uType                               %#RX8\n", pDirEntry->Core.u.v2.uType));
+            cbName = pDirEntry->Core.u.v2.cbName;
+        }
+        else
+        {
+            Log2(("EXT:   cbName                              %#RU16\n", RT_LE2H_U16(pDirEntry->Core.u.v1.cbName)));
+            cbName = RT_LE2H_U16(pDirEntry->Core.u.v1.cbName);
+        }
+        Log2(("EXT:   achName                             %*s\n", cbName, &pDirEntry->Core.achName[0]));
     }
 }
 #endif
@@ -963,6 +1023,490 @@ static int rtFsExtInode_QueryInfo(PRTFSEXTINODE pInode, PRTFSOBJINFO pObjInfo, R
 }
 
 
+/**
+ * Maps the given inode block to the destination filesystem block.
+ *
+ * @returns IPRT status code.
+ * @param   pThis               The ext volume instance.
+ * @param   pInode              The inode structure to read from.
+ * @param   iBlock              The inode block to map.
+ * @param   piBlockFs           Where to store the filesystem block on success.
+ *
+ * @todo Optimize
+ */
+static int rtFsExtInode_MapBlockToFs(PRTFSEXTVOL pThis, PRTFSEXTINODE pInode, uint64_t iBlock, uint64_t *piBlockFs)
+{
+    int rc = VINF_SUCCESS;
+
+    /* The first 12 inode blocks are directly mapped from the inode. */
+    if (iBlock <= 11)
+        *piBlockFs = pInode->aiBlocks[iBlock];
+    else
+    {
+        uint32_t cEntriesPerBlockMap = pThis->cbBlock << sizeof(uint32_t);
+        uint32_t *paBlockMap = (uint32_t *)RTMemTmpAllocZ(cEntriesPerBlockMap * sizeof(uint32_t));
+
+        if (!paBlockMap)
+            return VERR_NO_MEMORY;
+
+        if (iBlock <= cEntriesPerBlockMap + 11)
+        {
+            /* Indirect block. */
+            uint64_t offRead = rtFsExtBlockIdxToDiskOffset(pThis, pInode->aiBlocks[12]);
+            rc = RTVfsFileReadAt(pThis->hVfsBacking, offRead, paBlockMap, pThis->cbBlock, NULL);
+            if (RT_SUCCESS(rc))
+                *piBlockFs = RT_LE2H_U32(paBlockMap[iBlock - 12]);
+        }
+        else if (iBlock <= cEntriesPerBlockMap * cEntriesPerBlockMap + cEntriesPerBlockMap + 11)
+        {
+            /* Double indirect block. */
+            iBlock -= 12;
+            uint64_t offRead = rtFsExtBlockIdxToDiskOffset(pThis, pInode->aiBlocks[13]);
+            rc = RTVfsFileReadAt(pThis->hVfsBacking, offRead, paBlockMap, pThis->cbBlock, NULL);
+            if (RT_SUCCESS(rc))
+            {
+                uint32_t idxBlockL2 = iBlock / cEntriesPerBlockMap;
+                uint32_t idxBlockL1 = iBlock % cEntriesPerBlockMap;
+                offRead = rtFsExtBlockIdxToDiskOffset(pThis, RT_LE2H_U32(paBlockMap[idxBlockL2]));
+                rc = RTVfsFileReadAt(pThis->hVfsBacking, offRead, paBlockMap, pThis->cbBlock, NULL);
+                if (RT_SUCCESS(rc))
+                    *piBlockFs = RT_LE2H_U32(paBlockMap[idxBlockL1]);
+            }
+        }
+        else
+        {
+            /* Triple indirect block. */
+            rc = VERR_NOT_IMPLEMENTED;
+        }
+
+        RTMemTmpFree(paBlockMap);
+    }
+
+    return rc;
+}
+
+
+/**
+ * Reads data from the given inode at the given byte offset.
+ *
+ * @returns IPRT status code.
+ * @param   pThis               The ext volume instance.
+ * @param   pInode              The inode structure to read from.
+ * @param   off                 The byte offset to start reading from.
+ * @param   pvBuf               Where to store the read data to.
+ * @param   pcbRead             Where to return the amount of data read.
+ */
+static int rtFsExtInode_Read(PRTFSEXTVOL pThis, PRTFSEXTINODE pInode, uint64_t off, void *pvBuf, size_t cbRead, size_t *pcbRead)
+{
+    int rc = VINF_SUCCESS;
+    uint8_t *pbBuf = (uint8_t *)pvBuf;
+
+    if (((uint64_t)pInode->ObjInfo.cbObject < off + cbRead))
+    {
+        if (!pcbRead)
+            return VERR_EOF;
+        else
+            cbRead = (uint64_t)pInode->ObjInfo.cbObject - off;
+    }
+
+    while (   cbRead
+           && RT_SUCCESS(rc))
+    {
+        uint64_t iBlockStart   = rtFsExtDiskOffsetToBlockIdx(pThis, off);
+        uint32_t offBlockStart = off % pThis->cbBlock;
+
+        /* Resolve the inode block to the proper filesystem block. */
+        uint64_t iBlockFs = 0;
+        rc = rtFsExtInode_MapBlockToFs(pThis, pInode, iBlockStart, &iBlockFs);
+        if (RT_SUCCESS(rc))
+        {
+            size_t cbThisRead = RT_MIN(cbRead, pThis->cbBlock - offBlockStart);
+            uint64_t offRead = rtFsExtBlockIdxToDiskOffset(pThis, iBlockFs);
+            rc = RTVfsFileReadAt(pThis->hVfsBacking, offRead + offBlockStart, pbBuf, cbThisRead, NULL);
+            if (RT_SUCCESS(rc))
+            {
+                pbBuf  += cbThisRead;
+                cbRead -= cbThisRead;
+                off    += cbThisRead;
+                if (pcbRead)
+                    *pcbRead += cbThisRead;
+            }
+        }
+    }
+
+    return rc;
+}
+
+
+
+/*
+ *
+ * File operations.
+ * File operations.
+ * File operations.
+ *
+ */
+
+/**
+ * @interface_method_impl{RTVFSOBJOPS,pfnClose}
+ */
+static DECLCALLBACK(int) rtFsExtFile_Close(void *pvThis)
+{
+    PRTFSEXTFILE pThis = (PRTFSEXTFILE)pvThis;
+    LogFlow(("rtFsExtFile_Close(%p/%p)\n", pThis, pThis->pInode));
+
+    rtFsExtInodeRelease(pThis->pVol, pThis->pInode);
+    pThis->pInode = NULL;
+    pThis->pVol   = NULL;
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * @interface_method_impl{RTVFSOBJOPS,pfnQueryInfo}
+ */
+static DECLCALLBACK(int) rtFsExtFile_QueryInfo(void *pvThis, PRTFSOBJINFO pObjInfo, RTFSOBJATTRADD enmAddAttr)
+{
+    PRTFSEXTFILE pThis = (PRTFSEXTFILE)pvThis;
+    return rtFsExtInode_QueryInfo(pThis->pInode, pObjInfo, enmAddAttr);
+}
+
+
+/**
+ * @interface_method_impl{RTVFSIOSTREAMOPS,pfnRead}
+ */
+static DECLCALLBACK(int) rtFsExtFile_Read(void *pvThis, RTFOFF off, PCRTSGBUF pSgBuf, bool fBlocking, size_t *pcbRead)
+{
+    PRTFSEXTFILE pThis = (PRTFSEXTFILE)pvThis;
+    AssertReturn(pSgBuf->cSegs == 1, VERR_INTERNAL_ERROR_3);
+    RT_NOREF(fBlocking);
+
+    if (off == -1)
+        off = pThis->offFile;
+    else
+        AssertReturn(off >= 0, VERR_INTERNAL_ERROR_3);
+
+    int rc;
+    size_t cbRead = pSgBuf->paSegs[0].cbSeg;
+    if (!pcbRead)
+    {
+        rc = rtFsExtInode_Read(pThis->pVol, pThis->pInode, (uint64_t)off, pSgBuf->paSegs[0].pvSeg, cbRead, NULL);
+        if (RT_SUCCESS(rc))
+            pThis->offFile = off + cbRead;
+        Log6(("rtFsExtFile_Read: off=%#RX64 cbSeg=%#x -> %Rrc\n", off, pSgBuf->paSegs[0].cbSeg, rc));
+    }
+    else
+    {
+        PRTFSEXTINODE pInode = pThis->pInode;
+        if (off >= pInode->ObjInfo.cbObject)
+        {
+            *pcbRead = 0;
+            rc = VINF_EOF;
+        }
+        else
+        {
+            if (off + cbRead <= (uint64_t)pInode->ObjInfo.cbObject)
+                rc = rtFsExtInode_Read(pThis->pVol, pThis->pInode, (uint64_t)off, pSgBuf->paSegs[0].pvSeg, cbRead, NULL);
+            else
+            {
+                /* Return VINF_EOF if beyond end-of-file. */
+                cbRead = (size_t)(pInode->ObjInfo.cbObject - off);
+                rc = rtFsExtInode_Read(pThis->pVol, pThis->pInode, off, pSgBuf->paSegs[0].pvSeg, cbRead, NULL);
+                if (RT_SUCCESS(rc))
+                    rc = VINF_EOF;
+            }
+            if (RT_SUCCESS(rc))
+            {
+                pThis->offFile = off + cbRead;
+                *pcbRead = cbRead;
+            }
+            else
+                *pcbRead = 0;
+        }
+        Log6(("rtFsExtFile_Read: off=%#RX64 cbSeg=%#x -> %Rrc *pcbRead=%#x\n", off, pSgBuf->paSegs[0].cbSeg, rc, *pcbRead));
+    }
+
+    return rc;
+}
+
+
+/**
+ * @interface_method_impl{RTVFSIOSTREAMOPS,pfnWrite}
+ */
+static DECLCALLBACK(int) rtFsExtFile_Write(void *pvThis, RTFOFF off, PCRTSGBUF pSgBuf, bool fBlocking, size_t *pcbWritten)
+{
+    RT_NOREF(pvThis, off, pSgBuf, fBlocking, pcbWritten);
+    return VERR_WRITE_PROTECT;
+}
+
+
+/**
+ * @interface_method_impl{RTVFSIOSTREAMOPS,pfnFlush}
+ */
+static DECLCALLBACK(int) rtFsExtFile_Flush(void *pvThis)
+{
+    RT_NOREF(pvThis);
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * @interface_method_impl{RTVFSIOSTREAMOPS,pfnTell}
+ */
+static DECLCALLBACK(int) rtFsExtFile_Tell(void *pvThis, PRTFOFF poffActual)
+{
+    PRTFSEXTFILE pThis = (PRTFSEXTFILE)pvThis;
+    *poffActual = pThis->offFile;
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * @interface_method_impl{RTVFSOBJSETOPS,pfnMode}
+ */
+static DECLCALLBACK(int) rtFsExtFile_SetMode(void *pvThis, RTFMODE fMode, RTFMODE fMask)
+{
+    RT_NOREF(pvThis, fMode, fMask);
+    return VERR_WRITE_PROTECT;
+}
+
+
+/**
+ * @interface_method_impl{RTVFSOBJSETOPS,pfnSetTimes}
+ */
+static DECLCALLBACK(int) rtFsExtFile_SetTimes(void *pvThis, PCRTTIMESPEC pAccessTime, PCRTTIMESPEC pModificationTime,
+                                              PCRTTIMESPEC pChangeTime, PCRTTIMESPEC pBirthTime)
+{
+    RT_NOREF(pvThis, pAccessTime, pModificationTime, pChangeTime, pBirthTime);
+    return VERR_WRITE_PROTECT;
+}
+
+
+/**
+ * @interface_method_impl{RTVFSOBJSETOPS,pfnSetOwner}
+ */
+static DECLCALLBACK(int) rtFsExtFile_SetOwner(void *pvThis, RTUID uid, RTGID gid)
+{
+    RT_NOREF(pvThis, uid, gid);
+    return VERR_WRITE_PROTECT;
+}
+
+
+/**
+ * @interface_method_impl{RTVFSFILEOPS,pfnSeek}
+ */
+static DECLCALLBACK(int) rtFsExtFile_Seek(void *pvThis, RTFOFF offSeek, unsigned uMethod, PRTFOFF poffActual)
+{
+    PRTFSEXTFILE pThis = (PRTFSEXTFILE)pvThis;
+    RTFOFF offNew;
+    switch (uMethod)
+    {
+        case RTFILE_SEEK_BEGIN:
+            offNew = offSeek;
+            break;
+        case RTFILE_SEEK_END:
+            offNew = pThis->pInode->ObjInfo.cbObject + offSeek;
+            break;
+        case RTFILE_SEEK_CURRENT:
+            offNew = (RTFOFF)pThis->offFile + offSeek;
+            break;
+        default:
+            return VERR_INVALID_PARAMETER;
+    }
+    if (offNew >= 0)
+    {
+        pThis->offFile = offNew;
+        *poffActual    = offNew;
+        return VINF_SUCCESS;
+    }
+    return VERR_NEGATIVE_SEEK;
+}
+
+
+/**
+ * @interface_method_impl{RTVFSFILEOPS,pfnQuerySize}
+ */
+static DECLCALLBACK(int) rtFsExtFile_QuerySize(void *pvThis, uint64_t *pcbFile)
+{
+    PRTFSEXTFILE pThis = (PRTFSEXTFILE)pvThis;
+    *pcbFile = (uint64_t)pThis->pInode->ObjInfo.cbObject;
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * @interface_method_impl{RTVFSFILEOPS,pfnSetSize}
+ */
+static DECLCALLBACK(int) rtFsExtFile_SetSize(void *pvThis, uint64_t cbFile, uint32_t fFlags)
+{
+    RT_NOREF(pvThis, cbFile, fFlags);
+    return VERR_WRITE_PROTECT;
+}
+
+
+/**
+ * @interface_method_impl{RTVFSFILEOPS,pfnQueryMaxSize}
+ */
+static DECLCALLBACK(int) rtFsExtFile_QueryMaxSize(void *pvThis, uint64_t *pcbMax)
+{
+    RT_NOREF(pvThis);
+    *pcbMax = INT64_MAX; /** @todo */
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * EXT file operations.
+ */
+static const RTVFSFILEOPS g_rtFsExtFileOps =
+{
+    { /* Stream */
+        { /* Obj */
+            RTVFSOBJOPS_VERSION,
+            RTVFSOBJTYPE_FILE,
+            "EXT File",
+            rtFsExtFile_Close,
+            rtFsExtFile_QueryInfo,
+            RTVFSOBJOPS_VERSION
+        },
+        RTVFSIOSTREAMOPS_VERSION,
+        RTVFSIOSTREAMOPS_FEAT_NO_SG,
+        rtFsExtFile_Read,
+        rtFsExtFile_Write,
+        rtFsExtFile_Flush,
+        NULL /*PollOne*/,
+        rtFsExtFile_Tell,
+        NULL /*pfnSkip*/,
+        NULL /*pfnZeroFill*/,
+        RTVFSIOSTREAMOPS_VERSION,
+    },
+    RTVFSFILEOPS_VERSION,
+    0,
+    { /* ObjSet */
+        RTVFSOBJSETOPS_VERSION,
+        RT_UOFFSETOF(RTVFSFILEOPS, ObjSet) - RT_UOFFSETOF(RTVFSFILEOPS, Stream.Obj),
+        rtFsExtFile_SetMode,
+        rtFsExtFile_SetTimes,
+        rtFsExtFile_SetOwner,
+        RTVFSOBJSETOPS_VERSION
+    },
+    rtFsExtFile_Seek,
+    rtFsExtFile_QuerySize,
+    rtFsExtFile_SetSize,
+    rtFsExtFile_QueryMaxSize,
+    RTVFSFILEOPS_VERSION
+};
+
+
+/**
+ * Creates a new VFS file from the given regular file inode.
+ *
+ * @returns IPRT status code.
+ * @param   pThis               The ext volume instance.
+ * @param   fOpen               Open flags passed.
+ * @param   iInode              The inode for the file.
+ * @param   phVfsFile           Where to store the VFS file handle on success.
+ * @param   pErrInfo            Where to record additional error information on error, optional.
+ * @param   pszWhat             Logging prefix.
+ */
+static int rtFsExtVol_NewFile(PRTFSEXTVOL pThis, uint64_t fOpen, uint32_t iInode,
+                              PRTVFSFILE phVfsFile, PRTERRINFO pErrInfo, const char *pszWhat)
+{
+    /*
+     * Load the inode and check that it really is a file.
+     */
+    PRTFSEXTINODE pInode = NULL;
+    int rc = rtFsExtInodeLoad(pThis, iInode, &pInode);
+    if (RT_SUCCESS(rc))
+    {
+        if (RTFS_IS_FILE(pInode->ObjInfo.Attr.fMode))
+        {
+            PRTFSEXTFILE pNewFile;
+            rc = RTVfsNewFile(&g_rtFsExtFileOps, sizeof(*pNewFile), fOpen, pThis->hVfsSelf, NIL_RTVFSLOCK,
+                             phVfsFile, (void **)&pNewFile);
+            if (RT_SUCCESS(rc))
+            {
+                pNewFile->pVol    = pThis;
+                pNewFile->pInode  = pInode;
+                pNewFile->offFile = 0;
+            }
+        }
+        else
+            rc = RTERRINFO_LOG_SET_F(pErrInfo, VERR_NOT_A_FILE, "%s: fMode=%#RX32", pszWhat, pInode->ObjInfo.Attr.fMode);
+
+        if (RT_FAILURE(rc))
+            rtFsExtInodeRelease(pThis, pInode);
+    }
+
+    return rc;
+}
+
+
+
+/*
+ *
+ * EXT directory code.
+ * EXT directory code.
+ * EXT directory code.
+ *
+ */
+
+/**
+ * Looks up an entry in the given directory inode.
+ *
+ * @returns IPRT status code.
+ * @param   pThis               The ext volume instance.
+ * @param   pInode              The directory inode structure to.
+ * @param   pszEntry            The entry to lookup.
+ * @param   piInode             Where to store the inode number if the entry was found.
+ */
+static int rtFsExtDir_Lookup(PRTFSEXTVOL pThis, PRTFSEXTINODE pInode, const char *pszEntry, uint32_t *piInode)
+{
+    uint64_t offEntry = 0;
+    int rc = VERR_FILE_NOT_FOUND;
+    uint32_t idxDirEntry = 0;
+    size_t cchEntry = strlen(pszEntry);
+
+    if (cchEntry > 255)
+        return VERR_FILENAME_TOO_LONG;
+
+    while (offEntry < (uint64_t)pInode->ObjInfo.cbObject)
+    {
+        EXTDIRENTRYEX DirEntry;
+        size_t cbThis = RT_MIN(sizeof(DirEntry), (uint64_t)pInode->ObjInfo.cbObject - offEntry);
+        int rc2 = rtFsExtInode_Read(pThis, pInode, offEntry, &DirEntry, cbThis, NULL);
+        if (RT_SUCCESS(rc2))
+        {
+#ifdef LOG_ENABLED
+            rtFsExtDirEntry_Log(pThis, idxDirEntry, &DirEntry);
+#endif
+
+            uint16_t cbName =   pThis->fFeaturesIncompat & EXT_SB_FEAT_INCOMPAT_DIR_FILETYPE
+                              ? DirEntry.Core.u.v2.cbName
+                              : RT_LE2H_U16(DirEntry.Core.u.v1.cbName);
+            if (   cchEntry == cbName
+                && !memcmp(pszEntry, &DirEntry.Core.achName[0], cchEntry))
+            {
+                *piInode = RT_LE2H_U32(DirEntry.Core.iInodeRef);
+                rc = VINF_SUCCESS;
+                break;
+            }
+
+            offEntry += RT_LE2H_U16(DirEntry.Core.cbRecord);
+            idxDirEntry++;
+        }
+        else
+        {
+            rc = rc2;
+            break;
+        }
+    }
+
+    return rc;
+}
+
+
+
 /*
  *
  * Directory instance methods
@@ -1051,6 +1595,44 @@ static DECLCALLBACK(int) rtFsExtDir_Open(void *pvThis, const char *pszEntry, uin
     else
         return VERR_WRITE_PROTECT;
 
+    /*
+     * Lookup the entry.
+     */
+    uint32_t iInode = 0;
+    rc = rtFsExtDir_Lookup(pVol, pThis->pInode, pszEntry, &iInode);
+    if (RT_SUCCESS(rc))
+    {
+        PRTFSEXTINODE pInode = NULL;
+        rc = rtFsExtInodeLoad(pVol, iInode, &pInode);
+        if (RT_SUCCESS(rc))
+        {
+            if (RTFS_IS_DIRECTORY(pInode->ObjInfo.Attr.fMode))
+            {
+                RTVFSDIR hVfsDir;
+                rc = rtFsExtVol_OpenDirByInode(pVol, iInode, &hVfsDir);
+                if (RT_SUCCESS(rc))
+                {
+                    *phVfsObj = RTVfsObjFromDir(hVfsDir);
+                    RTVfsDirRelease(hVfsDir);
+                    AssertStmt(*phVfsObj != NIL_RTVFSOBJ, rc = VERR_INTERNAL_ERROR_3);
+                }
+            }
+            else if (RTFS_IS_FILE(pInode->ObjInfo.Attr.fMode))
+            {
+                RTVFSFILE hVfsFile;
+                rc = rtFsExtVol_NewFile(pVol, fOpen, iInode, &hVfsFile, NULL, pszEntry);
+                if (RT_SUCCESS(rc))
+                {
+                    *phVfsObj = RTVfsObjFromFile(hVfsFile);
+                    RTVfsFileRelease(hVfsFile);
+                    AssertStmt(*phVfsObj != NIL_RTVFSOBJ, rc = VERR_INTERNAL_ERROR_3);
+                }
+            }
+            else
+                rc = VERR_NOT_SUPPORTED;
+        }
+    }
+
     LogFlow(("rtFsExtDir_Open(%s): returns %Rrc\n", pszEntry, rc));
     return rc;
 }
@@ -1121,6 +1703,8 @@ static DECLCALLBACK(int) rtFsExtDir_RewindDir(void *pvThis)
     LogFlowFunc(("\n"));
 
     pThis->fNoMoreFiles = false;
+    pThis->offEntry     = 0;
+    pThis->idxEntry     = 0;
     return VINF_SUCCESS;
 }
 
@@ -1132,17 +1716,71 @@ static DECLCALLBACK(int) rtFsExtDir_ReadDir(void *pvThis, PRTDIRENTRYEX pDirEntr
                                             RTFSOBJATTRADD enmAddAttr)
 {
     PRTFSEXTDIR     pThis = (PRTFSEXTDIR)pvThis;
-    int             rc = VINF_SUCCESS;
+    PRTFSEXTINODE   pInode = pThis->pInode;
     LogFlowFunc(("\n"));
 
-    RT_NOREF(pThis, rc, pDirEntry, pcbDirEntry, enmAddAttr);
+    if (pThis->fNoMoreFiles)
+        return VERR_NO_MORE_FILES;
 
-    /*
-     * The End.
-     */
-    LogFlowFunc(("no more files\n"));
-    pThis->fNoMoreFiles = true;
-    return VERR_NO_MORE_FILES;
+    EXTDIRENTRYEX DirEntry;
+    size_t cbThis = RT_MIN(sizeof(DirEntry), (uint64_t)pInode->ObjInfo.cbObject - pThis->offEntry);
+    int rc = rtFsExtInode_Read(pThis->pVol, pInode, pThis->offEntry, &DirEntry, cbThis, NULL);
+    if (RT_SUCCESS(rc))
+    {
+#ifdef LOG_ENABLED
+        rtFsExtDirEntry_Log(pThis->pVol, pThis->idxEntry, &DirEntry);
+#endif
+
+        /* 0 inode entry means unused entry. */
+        /** @todo Can there be unused entries somewhere in the middle? */
+        uint32_t iInodeRef = RT_LE2H_U32(DirEntry.Core.iInodeRef);
+        if (iInodeRef != 0)
+        {
+            uint16_t cbName =   pThis->pVol->fFeaturesIncompat & EXT_SB_FEAT_INCOMPAT_DIR_FILETYPE
+                              ? DirEntry.Core.u.v2.cbName
+                              : RT_LE2H_U16(DirEntry.Core.u.v1.cbName);
+
+            if (cbName <= 255)
+            {
+                size_t const cbDirEntry = *pcbDirEntry;
+
+                *pcbDirEntry = RT_UOFFSETOF_DYN(RTDIRENTRYEX, szName[cbName + 2]);
+                if (*pcbDirEntry <= cbDirEntry)
+                {
+                    /* Load the referenced inode. */
+                    PRTFSEXTINODE pInodeRef;
+                    rc = rtFsExtInodeLoad(pThis->pVol, iInodeRef, &pInodeRef);
+                    if (RT_SUCCESS(rc))
+                    {
+                        memcpy(&pDirEntry->szName[0], &DirEntry.Core.achName[0], cbName);
+                        pDirEntry->szName[cbName] = '\0';
+                        pDirEntry->cbName         = cbName;
+                        rc = rtFsExtInode_QueryInfo(pInode, &pDirEntry->Info, enmAddAttr);
+                        if (RT_SUCCESS(rc))
+                        {
+                            pThis->offEntry += RT_LE2H_U16(DirEntry.Core.cbRecord);
+                            pThis->idxEntry++;
+                            rtFsExtInodeRelease(pThis->pVol, pInode);
+                            return VINF_SUCCESS;
+                        }
+                        rtFsExtInodeRelease(pThis->pVol, pInode);
+                    }
+                }
+                else
+                    rc = VERR_BUFFER_OVERFLOW;
+            }
+            else
+                rc = VERR_FILENAME_TOO_LONG;
+        }
+        else
+        {
+            rc = VERR_NO_MORE_FILES;
+            LogFlowFunc(("no more files\n"));
+            pThis->fNoMoreFiles = true;
+        }
+    }
+
+    return rc;
 }
 
 
@@ -1218,9 +1856,9 @@ static int rtFsExtVol_OpenDirByInode(PRTFSEXTVOL pThis, uint32_t iInode, PRTVFSD
             rtFsExtInodeRelease(pThis, pInode);
     }
 
-    RT_NOREF(phVfsDir, g_rtFsExtDirOps);
     return rc;
 }
+
 
 
 /*
@@ -1230,7 +1868,6 @@ static int rtFsExtVol_OpenDirByInode(PRTFSEXTVOL pThis, uint32_t iInode, PRTVFSD
  * Volume level code.
  *
  */
-
 
 /**
  * Checks whether the block range in the given block group is in use by checking the
@@ -1271,6 +1908,17 @@ static DECLCALLBACK(int) rtFsExtVolBlockGroupTreeDestroy(PAVLU32NODECORE pCore, 
 }
 
 
+static DECLCALLBACK(int) rtFsExtVolInodeTreeDestroy(PAVLU32NODECORE pCore, void *pvUser)
+{
+    RT_NOREF(pvUser);
+
+    PRTFSEXTINODE pInode = (PRTFSEXTINODE)pCore;
+    Assert(!pInode->cRefs);
+    RTMemFree(pInode);
+    return VINF_SUCCESS;
+}
+
+
 /**
  * @interface_method_impl{RTVFSOBJOPS::Obj,pfnClose}
  */
@@ -1282,6 +1930,11 @@ static DECLCALLBACK(int) rtFsExtVol_Close(void *pvThis)
     RTAvlU32Destroy(&pThis->BlockGroupRoot, rtFsExtVolBlockGroupTreeDestroy, pThis);
     pThis->BlockGroupRoot = NULL;
     RTListInit(&pThis->LstBlockGroupLru);
+
+    /* Destroy the inode tree. */
+    RTAvlU32Destroy(&pThis->InodeRoot, rtFsExtVolInodeTreeDestroy, pThis);
+    pThis->InodeRoot = NULL;
+    RTListInit(&pThis->LstInodeLru);
 
     /*
      * Backing file and handles.
@@ -1423,13 +2076,29 @@ static int rtFsExtVolLoadAndParseSuperBlockV0(PRTFSEXTVOL pThis, PCEXTSUPERBLOCK
  */
 static int rtFsExtVolLoadAndParseSuperBlockV1(PRTFSEXTVOL pThis, PCEXTSUPERBLOCK pSb, PRTERRINFO pErrInfo)
 {
-    if (RT_LE2H_U32(pSb->fFeaturesIncompat) != 0)
+    if ((RT_LE2H_U32(pSb->fFeaturesIncompat) & ~RTFSEXT_INCOMPAT_FEATURES_SUPP) != 0)
         return RTERRINFO_LOG_SET_F(pErrInfo, VERR_VFS_UNSUPPORTED_FORMAT, "EXT filesystem contains unsupported incompatible features: %RX32",
-                                   RT_LE2H_U32(pSb->fFeaturesIncompat));
+                                   RT_LE2H_U32(pSb->fFeaturesIncompat) & ~RTFSEXT_INCOMPAT_FEATURES_SUPP);
     if (   RT_LE2H_U32(pSb->fFeaturesCompatRo) != 0
         && !(pThis->fMntFlags & RTVFSMNT_F_READ_ONLY))
         return RTERRINFO_LOG_SET_F(pErrInfo, VERR_VFS_UNSUPPORTED_FORMAT, "EXT filesystem contains unsupported readonly features: %RX32",
                                    RT_LE2H_U32(pSb->fFeaturesCompatRo));
+
+    pThis->f64Bit          = false;
+    pThis->cBlockShift     = 10 + RT_LE2H_U32(pSb->cLogBlockSize);
+    pThis->cbBlock         = UINT64_C(1) << pThis->cBlockShift;
+    pThis->cbInode         = RT_LE2H_U16(pSb->cbInode);
+    pThis->cbBlkGrpDesc    = sizeof(EXTBLOCKGROUPDESC32);
+    pThis->cBlocksPerGroup = RT_LE2H_U32(pSb->cBlocksPerGroup);
+    pThis->cInodesPerGroup = RT_LE2H_U32(pSb->cInodesPerBlockGroup);
+    pThis->cBlockGroups    = RT_LE2H_U32(pSb->cBlocksTotalLow) / pThis->cBlocksPerGroup;
+    pThis->cbBlockBitmap   = pThis->cBlocksPerGroup / 8;
+    if (pThis->cBlocksPerGroup % 8)
+        pThis->cbBlockBitmap++;
+    pThis->cbInodeBitmap   = pThis->cInodesPerGroup / 8;
+    if (pThis->cInodesPerGroup % 8)
+        pThis->cbInodeBitmap++;
+    pThis->fFeaturesIncompat = RT_LE2H_U32(pSb->fFeaturesIncompat);
 
     return VINF_SUCCESS;
 }

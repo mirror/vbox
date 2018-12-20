@@ -909,6 +909,26 @@ typedef EXTDIRENTRY *PEXTDIRENTRY;
 /** Poiner to a const directory entry. */
 typedef const EXTDIRENTRY *PCEXTDIRENTRY;
 
+
+/**
+ * Extended directory entry with the maximum size (263 bytes).
+ */
+#pragma pack(1)
+typedef union EXTDIRENTRYEX
+{
+    /** The directory entry. */
+    EXTDIRENTRY Core;
+    /** The byte view. */
+    uint8_t     au8[263];
+} EXTDIRENTRYEX;
+#pragma pack()
+AssertCompileSize(EXTDIRENTRYEX, 263);
+/** Pointer to an extended directory entry. */
+typedef EXTDIRENTRYEX *PEXTDIRENTRYEX;
+/** Pointer to a const extended directory entry. */
+typedef const EXTDIRENTRYEX *PCEXTDIRENTRYEX;
+
+
 /** @name EXT_DIRENTRY_TYPE_XXX - file type
  * @{ */
 /** Entry is of unknown file type. */
