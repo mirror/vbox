@@ -582,6 +582,8 @@ void UIFileManagerTable::prepareObjects()
     m_pModel = new UICustomFileSystemModel(this);
     if (!m_pModel)
         return;
+    connect(m_pModel, &UICustomFileSystemModel::sigItemRenamed,
+            this, &UIFileManagerTable::sltHandleItemRenameAttempt);
 
     m_pProxyModel = new UICustomFileSystemProxyModel(this);
     if (!m_pProxyModel)
@@ -916,7 +918,7 @@ void UIFileManagerTable::sltDelete()
 
 void UIFileManagerTable::sltRename()
 {
-    if (!m_pView)
+    if (!m_pView || !m_pModel)
         return;
     QItemSelectionModel *selectionModel =  m_pView->selectionModel();
     if (!selectionModel)
@@ -1016,6 +1018,21 @@ void UIFileManagerTable::sltSearchTextChanged(const QString &strText)
 {
     performSelectionSearch(strText);
 }
+
+void UIFileManagerTable::sltHandleItemRenameAttempt(UIFileTableItem *pItem, QString strOldName, QString strNewName)
+{
+    if (!pItem)
+        return;
+    /* Attempt to chage item name in the file system: */
+    if (!renameItem(pItem, strNewName))
+    {
+        /* Restore the previous name. relist the view: */
+        pItem->setData(strOldName, static_cast<int>(UICustomFileSystemModelColumn_Name));
+        relist();
+        sigLogOutput(QString(pItem->path()).append(" could not be renamed"), FileManagerLogType_Error);
+    }
+}
+
 
 void UIFileManagerTable::sltCreateFileViewContextMenu(const QPoint &point)
 {

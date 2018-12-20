@@ -189,6 +189,10 @@ public slots:
     void sltGoHome();
     void sltRefresh();
     void sltDelete();
+    /** Calls the edit on the data item over m_pView. This causes setData(..) call on the model. After setting
+     *  user entered text as the name of the item m_pModel signals. This signal is handled by sltHandleItemRenameAttempt which
+     *  tries to rename the corresponding file object by calling renameItem(...). If this rename fails the old name of the
+     *  model item is restored and view is refreshed by sltHandleItemRenameAttempt. */
     void sltRename();
     void sltCopy();
     void sltCut();
@@ -279,6 +283,10 @@ private slots:
     void sltSelectionChanged(const QItemSelection & selected, const QItemSelection & deselected);
     void sltLocationComboCurrentChange(const QString &strLocation);
     void sltSearchTextChanged(const QString &strText);
+    /** m_pModel signals when an tree item is renamed. we try to apply this rename to the file system.
+     *  if the file system rename fails we restore the old name of the item. See the comment of
+     *  sltRename() for more details. */
+    void sltHandleItemRenameAttempt(UIFileTableItem *pItem, QString strOldName, QString strNewName);
 
 private:
 

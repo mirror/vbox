@@ -25,9 +25,6 @@
 /* COM includes: */
 #include "COMEnums.h"
 
-/* Forward declarations: */
-class UIFileManagerTable;
-
 enum UICustomFileSystemModelColumn
 {
     UICustomFileSystemModelColumn_Name = 0,
@@ -125,7 +122,6 @@ class UICustomFileSystemProxyModel : public QSortFilterProxyModel
 public:
 
     UICustomFileSystemProxyModel(QObject *parent = 0);
-
     void setListDirectoriesOnTop(bool fListDirectoriesOnTop);
     bool listDirectoriesOnTop() const;
 
@@ -140,11 +136,15 @@ private:
 
 /** UICustomFileSystemModel serves as the model for a file structure.
  *  it supports a tree level hierarchy which can be displayed with
- *  QTableView and/or QTreeView. .*/
+ *  QTableView and/or QTreeView.*/
 class UICustomFileSystemModel : public QAbstractItemModel
 {
 
     Q_OBJECT;
+
+signals:
+
+    void sigItemRenamed(UIFileTableItem *pItem, QString strOldName, QString strNewName);
 
 public:
 
@@ -180,9 +180,7 @@ private:
     void                initializeTree();
     UIFileTableItem    *m_pRootItem;
     void setupModelData(const QStringList &lines, UIFileTableItem *parent);
-    UIFileManagerTable *m_pParent;
     bool                m_fShowHumanReadableSizes;
-
 };
 
 
