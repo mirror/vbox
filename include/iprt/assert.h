@@ -74,7 +74,8 @@ RT_C_DECLS_BEGIN
 #if  !defined(IPRT_WITHOUT_ASSERT_STACK) \
   && defined(IN_RING3) \
   && !defined(IN_RT_STATIC) /* try keep static binaries small */ \
-  && (defined(RT_ARCH_AMD64) /*|| defined(RT_ARCH_X86)*/)
+  && (defined(RT_ARCH_AMD64) /*|| defined(RT_ARCH_X86)*/) \
+  && (defined(RT_OS_WINDOWS) /*|| ... */)
 /** @def IPRT_WITH_ASSERT_STACK
  * Indicates that we collect a callstack stack on assertion. */
 # define IPRT_WITH_ASSERT_STACK

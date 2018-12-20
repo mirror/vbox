@@ -109,7 +109,6 @@ static void tstBasic(RTTEST hTest)
         { "\"\\uDbff\\uDfff\"", VINF_SUCCESS},
         { "\"\\t\\n\\b\\f\\r\\\\\\/\"", VINF_SUCCESS},
     };
-AssertFailed(); // DONT COMMIT THIS!
     for (unsigned iTest = 0; iTest < RT_ELEMENTS(aTests); iTest++)
     {
         RTERRINFOSTATIC ErrInfo;

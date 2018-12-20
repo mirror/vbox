@@ -532,10 +532,6 @@ ifeq ($(KBUILD_TARGET),linux)
 	%$(QUIET2)$(RM) -f -- $(PATH_TARGET)/VBoxNetFlt-src-1.dep
 	%$(QUIET2)$(APPEND) '$(PATH_TARGET)/VBoxNetFlt-src-1.dep' 'VBoxNetFlt/linux/Makefile_VBOX_HARDENED=$(VBOX_WITH_HARDENING)'
 
- #
- # Build test for the linux host kernel modules.
- #
- $(evalcall2 VBOX_LINUX_KMOD_TEST_BUILD_RULE_FN,VBoxNetFlt-src,vboxdrv-src,)
 endif # linux
 
 # Gross hack for FreeBSD 7, should figure this out properly

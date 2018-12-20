@@ -64,6 +64,22 @@ if  !defined(VBOX_ONLY_DOCS) \
 
 endif # !defined(VBOX_ONLY_DOCS) && !defined(VBOX_ONLY_VALIDATIONKIT)
 
+
+#
+# Build test for the linux host kernel modules.
+#
+$(evalcall2 VBOX_LINUX_KMOD_TEST_BUILD_RULE_FN,vboxdrv-src,,save_symvers)
+ifdef VBOX_WITH_NETFLT
+$(evalcall2 VBOX_LINUX_KMOD_TEST_BUILD_RULE_FN,VBoxNetFlt-src,vboxdrv-src,)
+endif
+ifdef VBOX_WITH_NETADP
+$(evalcall2 VBOX_LINUX_KMOD_TEST_BUILD_RULE_FN,VBoxNetAdp-src,vboxdrv-src,)
+endif
+ifdef VBOX_WITH_PCI_PASSTHROUGH
+$(evalcall2 VBOX_LINUX_KMOD_TEST_BUILD_RULE_FN,VBoxPci-src,vboxdrv-src,)
+endif
+
+
 # Let kBuild generate the rules.
 include $(FILE_KBUILD_SUB_FOOTER)
 
