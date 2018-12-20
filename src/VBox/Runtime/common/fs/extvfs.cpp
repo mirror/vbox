@@ -61,7 +61,8 @@
 #endif
 
 /** All supported incompatible features. */
-#define RTFSEXT_INCOMPAT_FEATURES_SUPP      (EXT_SB_FEAT_INCOMPAT_DIR_FILETYPE | EXT_SB_FEAT_INCOMPAT_EXTENTS | EXT_SB_FEAT_INCOMPAT_64BIT)
+#define RTFSEXT_INCOMPAT_FEATURES_SUPP      (  EXT_SB_FEAT_INCOMPAT_DIR_FILETYPE | EXT_SB_FEAT_INCOMPAT_EXTENTS | EXT_SB_FEAT_INCOMPAT_64BIT \
+                                             | EXT_SB_FEAT_INCOMPAT_FLEX_BG)
 
 
 /*********************************************************************************************************************************
