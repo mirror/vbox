@@ -75,15 +75,18 @@ if   defined(VBOX_WITH_TESTCASES) \
  && !defined(VBOX_WITHOUT_LINUX_TEST_BUILDS) \
  && "$(KBUILD_TARGET)" == "linux" \
  && "$(KBUILD_HOST_ARCH)" == "$(KBUILD_TARGET_ARCH)"
-
  ifneq ($(KERN_DIR),)
-  save_symvers = vboxdrv-src
-  use_symvers  = vboxdrv-src
-  $(foreach module, vboxdrv-src $(if $(VBOX_WITH_NETFLT),VBoxNetFlt-src) \
-   $(if $(VBOX_WITH_NETADP),VBoxNetAdp-src) $(if $(VBOX_WITH_PCI_PASSTHROUGH),VBoxPci-src), \
-   $(eval $(VBOX_LINUX_GENERATE_KMOD_TEST)))
+$(evalcall2 VBOX_LINUX_KMOD_TEST_BUILD_RULE_FN,vboxdrv-src,,save_symvers)
+  ifdef VBOX_WITH_NETFLT
+$(evalcall2 VBOX_LINUX_KMOD_TEST_BUILD_RULE_FN,VBoxNetFlt-src,vboxdrv-src,)
+  endif
+  ifdef VBOX_WITH_NETADP
+$(evalcall2 VBOX_LINUX_KMOD_TEST_BUILD_RULE_FN,VBoxNetAdp-src,vboxdrv-src,)
+  endif
+  ifdef VBOX_WITH_PCI_PASSTHROUGH
+$(evalcall2 VBOX_LINUX_KMOD_TEST_BUILD_RULE_FN,VBoxPci-src,vboxdrv-src,)
+  endif
  endif
-
 endif
 
 

@@ -237,8 +237,7 @@ ifeq ($(KBUILD_TARGET),linux)
   && "$(KBUILD_TARGET)" == "linux" \
   && "$(KBUILD_HOST_ARCH)" == "$(KBUILD_TARGET_ARCH)"
   ifneq ($(KERN_DIR),)
-   save_symvers = vboxguest-src
-   $(foreach module, vboxguest-src, $(evalcall2 VBOX_LINUX_GENERATE_KMOD_TEST))
+$(evalcall2 VBOX_LINUX_KMOD_TEST_BUILD_RULE_FN,vboxguest-src,,save_symvers)
   endif
  endif
 endif # Linux
