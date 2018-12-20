@@ -58,7 +58,7 @@ apt-get update
 # We deal with different distributions having different lists of prerequisites
 # by splitting them into several apt commands.  Some will fail on some
 # distributions, but at the end everything needed should be there.
-apt-get install -y chrpath g++ make iasl libidl-dev libsdl1.2-dev \
+apt-get install -y chrpath g++ make wget iasl libidl-dev libsdl1.2-dev \
     libsdl-ttf2.0-dev libpam0g-dev libssl-dev libpulse-dev \
     libasound2-dev xsltproc libxml2-dev libxml2-utils unzip \
     libxrandr-dev libxinerama-dev libcap-dev python-dev \
