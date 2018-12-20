@@ -59,6 +59,12 @@
 #else
 # define RTFSEXT_MAX_INODE_CACHE_SIZE       _128K
 #endif
+/** The maximum extent/block map cache size (in bytes). */
+#if ARCH_BITS >= 64
+# define RTFSEXT_MAX_BLOCK_CACHE_SIZE       _512K
+#else
+# define RTFSEXT_MAX_BLOCK_CACHE_SIZE       _128K
+#endif
 
 /** All supported incompatible features. */
 #define RTFSEXT_INCOMPAT_FEATURES_SUPP      (  EXT_SB_FEAT_INCOMPAT_DIR_FILETYPE | EXT_SB_FEAT_INCOMPAT_EXTENTS | EXT_SB_FEAT_INCOMPAT_64BIT \
@@ -117,6 +123,24 @@ typedef struct RTFSEXTINODE
 } RTFSEXTINODE;
 /** Pointer to an in-memory inode. */
 typedef RTFSEXTINODE *PRTFSEXTINODE;
+
+
+/**
+ * Block cache entry.
+ */
+typedef struct RTFSEXTBLOCKENTRY
+{
+    /** AVL tree node, indexed by the filesystem block number. */
+    AVLU64NODECORE    Core;
+    /** List node for the inode LRU list used for eviction. */
+    RTLISTNODE        NdLru;
+    /** Reference counter. */
+    volatile uint32_t cRefs;
+    /** The block data. */
+    uint8_t           abData[1];
+} RTFSEXTBLOCKENTRY;
+/** Pointer to a block cache entry. */
+typedef RTFSEXTBLOCKENTRY *PRTFSEXTBLOCKENTRY;
 
 
 /**
@@ -196,7 +220,6 @@ typedef struct RTFSEXTVOL
     /** Incompatible features selected for this filesystem. */
     uint32_t            fFeaturesIncompat;
 
-
     /** @name Block group cache.
      * @{ */
     /** LRU list anchor. */
@@ -215,6 +238,16 @@ typedef struct RTFSEXTVOL
     AVLU32TREE          InodeRoot;
     /** Size of the cached inodes. */
     size_t              cbInodes;
+    /** @} */
+
+    /** @name Block cache.
+     * @{ */
+    /** LRU list anchor for the block cache. */
+    RTLISTANCHOR        LstBlockLru;
+    /** Root of the cached block tree. */
+    AVLU64TREE          BlockRoot;
+    /** Size of cached blocks. */
+    size_t              cbBlocks;
     /** @} */
 } RTFSEXTVOL;
 
@@ -616,6 +649,163 @@ DECLINLINE(uint64_t) rtFsExtBlockIdxLowHighToDiskOffset(PRTFSEXTVOL pThis, uint3
 {
     uint64_t iBlock = rtFsExtBlockFromLowHigh(pThis, uLow, uHigh);
     return rtFsExtBlockIdxToDiskOffset(pThis, iBlock);
+}
+
+
+/**
+ * Allocates a new block group.
+ *
+ * @returns Pointer to the new block group descriptor or NULL if out of memory.
+ * @param   pThis               The ext volume instance.
+ * @param   cbAlloc             How much to allocate.
+ * @param   iBlockGroup         Block group number.
+ */
+static PRTFSEXTBLOCKENTRY rtFsExtVol_BlockAlloc(PRTFSEXTVOL pThis, size_t cbAlloc, uint64_t iBlock)
+{
+    PRTFSEXTBLOCKENTRY pBlock = (PRTFSEXTBLOCKENTRY)RTMemAllocZ(cbAlloc);
+    if (RT_LIKELY(pBlock))
+    {
+        pBlock->Core.Key = iBlock;
+        pBlock->cRefs    = 0;
+        pThis->cbBlocks  += cbAlloc;
+    }
+
+    return pBlock;
+}
+
+
+/**
+ * Returns a new block entry utilizing the cache if possible.
+ *
+ * @returns Pointer to the new block entry or NULL if out of memory.
+ * @param   pThis               The ext volume instance.
+ * @param   iBlock              Block number.
+ */
+static PRTFSEXTBLOCKENTRY rtFsExtVol_BlockGetNew(PRTFSEXTVOL pThis, uint64_t iBlock)
+{
+    PRTFSEXTBLOCKENTRY pBlock = NULL;
+    size_t cbAlloc = RT_UOFFSETOF_DYN(RTFSEXTBLOCKENTRY, abData[pThis->cbBlock]);
+    if (pThis->cbBlocks + cbAlloc <= RTFSEXT_MAX_BLOCK_GROUP_CACHE_SIZE)
+        pBlock = rtFsExtVol_BlockAlloc(pThis, cbAlloc, iBlock);
+    else
+    {
+        pBlock = RTListRemoveLast(&pThis->LstBlockLru, RTFSEXTBLOCKENTRY, NdLru);
+        if (!pBlock)
+            pBlock = rtFsExtVol_BlockAlloc(pThis, cbAlloc, iBlock);
+        else
+        {
+            /* Remove the block group from the tree because it gets a new key. */
+            PAVLU64NODECORE pCore = RTAvlU64Remove(&pThis->BlockRoot, pBlock->Core.Key);
+            Assert(pCore == &pBlock->Core); RT_NOREF(pCore);
+        }
+    }
+
+    Assert(!pBlock->cRefs);
+    pBlock->Core.Key = iBlock;
+    pBlock->cRefs    = 1;
+
+    return pBlock;
+}
+
+
+/**
+ * Frees the given block.
+ *
+ * @returns nothing.
+ * @param   pThis               The ext volume instance.
+ * @param   pBlock              The block to free.
+ */
+static void rtFsExtVol_BlockFree(PRTFSEXTVOL pThis, PRTFSEXTBLOCKENTRY pBlock)
+{
+    Assert(!pBlock->cRefs);
+
+    /*
+     * Put it into the cache if the limit wasn't exceeded, otherwise the block group
+     * is freed right away.
+     */
+    if (pThis->cbBlocks <= RTFSEXT_MAX_BLOCK_CACHE_SIZE)
+    {
+        /* Put onto the LRU list. */
+        RTListPrepend(&pThis->LstBlockLru, &pBlock->NdLru);
+    }
+    else
+    {
+        /* Remove from the tree and free memory. */
+        PAVLU64NODECORE pCore = RTAvlU64Remove(&pThis->BlockRoot, pBlock->Core.Key);
+        Assert(pCore == &pBlock->Core); RT_NOREF(pCore);
+        RTMemFree(pBlock);
+        pThis->cbBlocks -= RT_UOFFSETOF_DYN(RTFSEXTBLOCKENTRY, abData[pThis->cbBlock]);
+    }
+}
+
+
+/**
+ * Gets the specified block data from the volume.
+ *
+ * @returns IPRT status code.
+ * @param   pThis               The ext volume instance.
+ * @param   iBlock              The filesystem block to load.
+ * @param   ppBlock             Where to return the pointer to the block entry on success.
+ * @param   ppvData             Where to return the pointer to the block data on success.
+ */
+static int rtFsExtVol_BlockLoad(PRTFSEXTVOL pThis, uint64_t iBlock, PRTFSEXTBLOCKENTRY *ppBlock, void **ppvData)
+{
+    int rc = VINF_SUCCESS;
+
+    /* Try to fetch the block group from the cache first. */
+    PRTFSEXTBLOCKENTRY pBlock = (PRTFSEXTBLOCKENTRY)RTAvlU64Get(&pThis->BlockRoot, iBlock);
+    if (!pBlock)
+    {
+        /* Slow path, load from disk. */
+        pBlock = rtFsExtVol_BlockGetNew(pThis, iBlock);
+        if (RT_LIKELY(pBlock))
+        {
+            uint64_t offRead = rtFsExtBlockIdxToDiskOffset(pThis, iBlock);
+            rc = RTVfsFileReadAt(pThis->hVfsBacking, offRead, &pBlock->abData[0], pThis->cbBlock, NULL);
+            if (RT_SUCCESS(rc))
+            {
+                bool fIns = RTAvlU64Insert(&pThis->BlockRoot, &pBlock->Core);
+                Assert(fIns); RT_NOREF(fIns);
+            }
+        }
+        else
+            rc = VERR_NO_MEMORY;
+    }
+    else
+    {
+        /* Remove from current LRU list position and add to the beginning. */
+        uint32_t cRefs = ASMAtomicIncU32(&pBlock->cRefs);
+        if (cRefs == 1) /* Blocks get removed from the LRU list if they are referenced. */
+            RTListNodeRemove(&pBlock->NdLru);
+    }
+
+    if (RT_SUCCESS(rc))
+    {
+        *ppBlock = pBlock;
+        *ppvData = &pBlock->abData[0];
+    }
+    else if (pBlock)
+    {
+        ASMAtomicDecU32(&pBlock->cRefs);
+        rtFsExtVol_BlockFree(pThis, pBlock); /* Free the block. */
+    }
+
+    return rc;
+}
+
+
+/**
+ * Releases a reference of the given block.
+ *
+ * @returns nothing.
+ * @param   pThis               The ext volume instance.
+ * @param   pBlock              The block to release.
+ */
+static void rtFsExtVol_BlockRelease(PRTFSEXTVOL pThis, PRTFSEXTBLOCKENTRY pBlock)
+{
+    uint32_t cRefs = ASMAtomicDecU32(&pBlock->cRefs);
+    if (!cRefs)
+        rtFsExtVol_BlockFree(pThis, pBlock);
 }
 
 
@@ -1228,65 +1418,63 @@ static int rtFsExtInode_MapBlockToFsViaExtent(PRTFSEXTVOL pThis, PRTFSEXTINODE p
         }
         else
         {
-            uint8_t *pbExtent = (uint8_t *)RTMemTmpAllocZ(pThis->cbBlock);
-            if (RT_LIKELY(pbExtent))
+            uint8_t *pbExtent = NULL;
+            PRTFSEXTBLOCKENTRY pBlock = NULL;
+            uint64_t iBlockNext = 0;
+            PCEXTEXTENTIDX paExtentIdx = (PCEXTEXTENTIDX)(pExtentHdr + 1);
+            uint16_t cEntries = RT_LE2H_U16(pExtentHdr->cEntries);
+
+            /* Descend the tree until we reached the leaf nodes. */
+            do
             {
-                uint64_t iBlockNext = 0;
-                PCEXTEXTENTIDX paExtentIdx = (PCEXTEXTENTIDX)(pExtentHdr + 1);
-                uint16_t cEntries = RT_LE2H_U16(pExtentHdr->cEntries);
-
-                /* Descend the tree until we reached the leaf nodes. */
-                do
-                {
-                    iBlockNext = rtFsExtInode_ExtentIndexLocateNextLvl(paExtentIdx, cEntries, iBlock);
-                    /* Read in the full block. */
-                    uint64_t offRead = rtFsExtBlockIdxToDiskOffset(pThis, iBlockNext);
-                    rc = RTVfsFileReadAt(pThis->hVfsBacking, offRead, pbExtent, pThis->cbBlock, NULL);
-                    if (RT_SUCCESS(rc))
-                    {
-                        pExtentHdr = (PCEXTEXTENTHDR)pbExtent;
-
-#ifdef LOG_ENABLED
-                        rtFsExtExtentHdr_Log(pExtentHdr);
-#endif
-
-                        if (   rtFsExtInode_ExtentHdrValidate(pExtentHdr)
-                            && RT_LE2H_U16(pExtentHdr->cMax) <= (pThis->cbBlock - sizeof(EXTEXTENTHDR)) / sizeof(EXTEXTENTIDX)
-                            && RT_LE2H_U16(pExtentHdr->uDepth) == uDepthCur - 1)
-                        {
-                            uDepthCur--;
-                            cEntries = RT_LE2H_U16(pExtentHdr->cEntries);
-                            paExtentIdx = (PCEXTEXTENTIDX)(pExtentHdr + 1);
-                        }
-                        else
-                            rc = VERR_VFS_BOGUS_FORMAT;
-                    }
-                }
-                while (   uDepthCur > 0
-                       && RT_SUCCESS(rc));
-
+                iBlockNext = rtFsExtInode_ExtentIndexLocateNextLvl(paExtentIdx, cEntries, iBlock);
+                /* Read in the full block. */
+                rc = rtFsExtVol_BlockLoad(pThis, iBlockNext, &pBlock, (void **)&pbExtent);
                 if (RT_SUCCESS(rc))
                 {
-                    Assert(!uDepthCur);
+                    pExtentHdr = (PCEXTEXTENTHDR)pbExtent;
 
-                    /* We reached the leaf nodes. */
-                    PCEXTEXTENT pExtent = (PCEXTEXTENT)(pExtentHdr + 1);
-                    for (uint32_t i = 0; i < RT_LE2H_U16(pExtentHdr->cEntries); i++)
+#ifdef LOG_ENABLED
+                    rtFsExtExtentHdr_Log(pExtentHdr);
+#endif
+
+                    if (   rtFsExtInode_ExtentHdrValidate(pExtentHdr)
+                        && RT_LE2H_U16(pExtentHdr->cMax) <= (pThis->cbBlock - sizeof(EXTEXTENTHDR)) / sizeof(EXTEXTENTIDX)
+                        && RT_LE2H_U16(pExtentHdr->uDepth) == uDepthCur - 1)
                     {
-                        /* Check whether the extent intersects with the block. */
-                        if (rtFsExtInode_ExtentParse(pExtent, iBlock, cBlocks, piBlockFs, pcBlocks, pfSparse))
-                        {
-                            rc = VINF_SUCCESS;
-                            break;
-                        }
-                        pExtent++;
+                        uDepthCur--;
+                        cEntries = RT_LE2H_U16(pExtentHdr->cEntries);
+                        paExtentIdx = (PCEXTEXTENTIDX)(pExtentHdr + 1);
+                        if (uDepthCur)
+                            rtFsExtVol_BlockRelease(pThis, pBlock);
                     }
+                    else
+                        rc = VERR_VFS_BOGUS_FORMAT;
                 }
-
-                RTMemTmpFree(pbExtent);
             }
-            else
-                rc = VERR_NO_MEMORY;
+            while (   uDepthCur > 0
+                   && RT_SUCCESS(rc));
+
+            if (RT_SUCCESS(rc))
+            {
+                Assert(!uDepthCur);
+
+                /* We reached the leaf nodes. */
+                PCEXTEXTENT pExtent = (PCEXTEXTENT)(pExtentHdr + 1);
+                for (uint32_t i = 0; i < RT_LE2H_U16(pExtentHdr->cEntries); i++)
+                {
+                    /* Check whether the extent intersects with the block. */
+                    if (rtFsExtInode_ExtentParse(pExtent, iBlock, cBlocks, piBlockFs, pcBlocks, pfSparse))
+                    {
+                        rc = VINF_SUCCESS;
+                        break;
+                    }
+                    pExtent++;
+                }
+            }
+
+            if (pBlock)
+                rtFsExtVol_BlockRelease(pThis, pBlock);
         }
     }
     else
@@ -1325,42 +1513,73 @@ static int rtFsExtInode_MapBlockToFsViaBlockMap(PRTFSEXTVOL pThis, PRTFSEXTINODE
     else
     {
         uint32_t cEntriesPerBlockMap = (uint32_t)(pThis->cbBlock >> sizeof(uint32_t));
-        uint32_t *paBlockMap = (uint32_t *)RTMemTmpAllocZ(pThis->cbBlock);
-
-        if (!paBlockMap)
-            return VERR_NO_MEMORY;
 
         if (iBlock <= cEntriesPerBlockMap + 11)
         {
             /* Indirect block. */
-            uint64_t offRead = rtFsExtBlockIdxToDiskOffset(pThis, pInode->aiBlocks[12]);
-            rc = RTVfsFileReadAt(pThis->hVfsBacking, offRead, paBlockMap, pThis->cbBlock, NULL);
+            PRTFSEXTBLOCKENTRY pBlock = NULL;
+            uint32_t *paBlockMap = NULL;
+            rc = rtFsExtVol_BlockLoad(pThis, pInode->aiBlocks[12], &pBlock, (void **)&paBlockMap);
             if (RT_SUCCESS(rc))
+            {
                 *piBlockFs = RT_LE2H_U32(paBlockMap[iBlock - 12]);
+                rtFsExtVol_BlockRelease(pThis, pBlock);
+            }
         }
         else if (iBlock <= cEntriesPerBlockMap * cEntriesPerBlockMap + cEntriesPerBlockMap + 11)
         {
             /* Double indirect block. */
-            iBlock -= 12;
-            uint64_t offRead = rtFsExtBlockIdxToDiskOffset(pThis, pInode->aiBlocks[13]);
-            rc = RTVfsFileReadAt(pThis->hVfsBacking, offRead, paBlockMap, pThis->cbBlock, NULL);
+            PRTFSEXTBLOCKENTRY pBlock = NULL;
+            uint32_t *paBlockMap = NULL;
+
+            iBlock -= 12 + cEntriesPerBlockMap;
+            rc = rtFsExtVol_BlockLoad(pThis, pInode->aiBlocks[13], &pBlock, (void **)&paBlockMap);
             if (RT_SUCCESS(rc))
             {
                 uint32_t idxBlockL2 = iBlock / cEntriesPerBlockMap;
                 uint32_t idxBlockL1 = iBlock % cEntriesPerBlockMap;
-                offRead = rtFsExtBlockIdxToDiskOffset(pThis, RT_LE2H_U32(paBlockMap[idxBlockL2]));
-                rc = RTVfsFileReadAt(pThis->hVfsBacking, offRead, paBlockMap, pThis->cbBlock, NULL);
+                uint32_t iBlockNext = RT_LE2H_U32(paBlockMap[idxBlockL2]);
+
+                rtFsExtVol_BlockRelease(pThis, pBlock);
+                rc = rtFsExtVol_BlockLoad(pThis, iBlockNext, &pBlock, (void **)&paBlockMap);
                 if (RT_SUCCESS(rc))
+                {
                     *piBlockFs = RT_LE2H_U32(paBlockMap[idxBlockL1]);
+                    rtFsExtVol_BlockRelease(pThis, pBlock);
+                }
             }
         }
         else
         {
             /* Triple indirect block. */
-            rc = VERR_NOT_IMPLEMENTED;
-        }
+            PRTFSEXTBLOCKENTRY pBlock = NULL;
+            uint32_t *paBlockMap = NULL;
 
-        RTMemTmpFree(paBlockMap);
+            iBlock -= 12 + cEntriesPerBlockMap * cEntriesPerBlockMap + cEntriesPerBlockMap;
+            rc = rtFsExtVol_BlockLoad(pThis, pInode->aiBlocks[14], &pBlock, (void **)&paBlockMap);
+            if (RT_SUCCESS(rc))
+            {
+                uint32_t idxBlockL3 = iBlock / (cEntriesPerBlockMap * cEntriesPerBlockMap);
+                uint32_t iBlockNext = RT_LE2H_U32(paBlockMap[idxBlockL3]);
+
+                rtFsExtVol_BlockRelease(pThis, pBlock);
+                rc = rtFsExtVol_BlockLoad(pThis, iBlockNext, &pBlock, (void **)&paBlockMap);
+                if (RT_SUCCESS(rc))
+                {
+                    uint32_t idxBlockL2 = (iBlock % (cEntriesPerBlockMap * cEntriesPerBlockMap)) / cEntriesPerBlockMap;
+                    uint32_t idxBlockL1 = iBlock % cEntriesPerBlockMap;
+                    iBlockNext = RT_LE2H_U32(paBlockMap[idxBlockL2]);
+
+                    rtFsExtVol_BlockRelease(pThis, pBlock);
+                    rc = rtFsExtVol_BlockLoad(pThis, iBlockNext, &pBlock, (void **)&paBlockMap);
+                    if (RT_SUCCESS(rc))
+                    {
+                        *piBlockFs = RT_LE2H_U32(paBlockMap[idxBlockL1]);
+                        rtFsExtVol_BlockRelease(pThis, pBlock);
+                    }
+                }
+            }
+        }
     }
 
     return rc;
@@ -2235,6 +2454,17 @@ static DECLCALLBACK(int) rtFsExtVolInodeTreeDestroy(PAVLU32NODECORE pCore, void 
 }
 
 
+static DECLCALLBACK(int) rtFsExtVolBlockTreeDestroy(PAVLU64NODECORE pCore, void *pvUser)
+{
+    RT_NOREF(pvUser);
+
+    PRTFSEXTBLOCKENTRY pBlock = (PRTFSEXTBLOCKENTRY)pCore;
+    Assert(!pBlock->cRefs);
+    RTMemFree(pBlock);
+    return VINF_SUCCESS;
+}
+
+
 /**
  * @interface_method_impl{RTVFSOBJOPS::Obj,pfnClose}
  */
@@ -2251,6 +2481,11 @@ static DECLCALLBACK(int) rtFsExtVol_Close(void *pvThis)
     RTAvlU32Destroy(&pThis->InodeRoot, rtFsExtVolInodeTreeDestroy, pThis);
     pThis->InodeRoot = NULL;
     RTListInit(&pThis->LstInodeLru);
+
+    /* Destroy the block cache tree. */
+    RTAvlU64Destroy(&pThis->BlockRoot, rtFsExtVolBlockTreeDestroy, pThis);
+    pThis->BlockRoot = NULL;
+    RTListInit(&pThis->LstBlockLru);
 
     /*
      * Backing file and handles.
@@ -2478,10 +2713,13 @@ RTDECL(int) RTFsExtVolOpen(RTVFSFILE hVfsFileIn, uint32_t fMntFlags, uint32_t fE
         pThis->fExtFlags      = fExtFlags;
         pThis->BlockGroupRoot = NULL;
         pThis->InodeRoot      = NULL;
+        pThis->BlockRoot      = NULL;
         pThis->cbBlockGroups  = 0;
         pThis->cbInodes       = 0;
+        pThis->cbBlocks       = 0;
         RTListInit(&pThis->LstBlockGroupLru);
         RTListInit(&pThis->LstInodeLru);
+        RTListInit(&pThis->LstBlockLru);
 
         rc = RTVfsFileGetSize(pThis->hVfsBacking, &pThis->cbBacking);
         if (RT_SUCCESS(rc))
