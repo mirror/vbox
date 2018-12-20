@@ -61,7 +61,7 @@
 #endif
 
 /** All supported incompatible features. */
-#define RTFSEXT_INCOMPAT_FEATURES_SUPP      (EXT_SB_FEAT_INCOMPAT_DIR_FILETYPE)
+#define RTFSEXT_INCOMPAT_FEATURES_SUPP      (EXT_SB_FEAT_INCOMPAT_DIR_FILETYPE | EXT_SB_FEAT_INCOMPAT_EXTENTS | EXT_SB_FEAT_INCOMPAT_64BIT)
 
 
 /*********************************************************************************************************************************
@@ -501,6 +501,63 @@ static void rtFsExtDirEntry_Log(PRTFSEXTVOL pThis, uint32_t idxDirEntry, PCEXTDI
             cbName = RT_LE2H_U16(pDirEntry->Core.u.v1.cbName);
         }
         Log2(("EXT:   achName                             %*s\n", cbName, &pDirEntry->Core.achName[0]));
+    }
+}
+
+
+/**
+ * Logs an extent header.
+ *
+ * @returns nothing.
+ * @param   pExtentHdr          The extent header node.
+ */
+static void rtFsExtExtentHdr_Log(PCEXTEXTENTHDR pExtentHdr)
+{
+    if (LogIs2Enabled())
+    {
+        Log2(("EXT: Extent header:\n"));
+        Log2(("EXT:   u16Magic                            %#RX16\n", RT_LE2H_U32(pExtentHdr->u16Magic)));
+        Log2(("EXT:   cEntries                            %#RX16\n", RT_LE2H_U32(pExtentHdr->cEntries)));
+        Log2(("EXT:   cMax                                %#RX16\n", RT_LE2H_U32(pExtentHdr->cMax)));
+        Log2(("EXT:   uDepth                              %#RX16\n", RT_LE2H_U32(pExtentHdr->uDepth)));
+        Log2(("EXT:   cGeneration                         %#RX32\n", RT_LE2H_U32(pExtentHdr->cGeneration)));
+    }
+}
+
+
+/**
+ * Logs an extent index node.
+ *
+ * @returns nothing.
+ * @param   pExtentIdx          The extent index node.
+ */
+static void rtFsExtExtentIdx_Log(PCEXTEXTENTIDX pExtentIdx)
+{
+    if (LogIs2Enabled())
+    {
+        Log2(("EXT: Extent index node:\n"));
+        Log2(("EXT:   iBlock                              %#RX32\n", RT_LE2H_U32(pExtentIdx->iBlock)));
+        Log2(("EXT:   offChildLow                         %#RX32\n", RT_LE2H_U32(pExtentIdx->offChildLow)));
+        Log2(("EXT:   offChildHigh                        %#RX16\n", RT_LE2H_U16(pExtentIdx->offChildHigh)));
+    }
+}
+
+
+/**
+ * Logs an extent.
+ *
+ * @returns nothing.
+ * @param   pExtent             The extent.
+ */
+static void rtFsExtExtent_Log(PCEXTEXTENT pExtent)
+{
+    if (LogIs2Enabled())
+    {
+        Log2(("EXT: Extent:\n"));
+        Log2(("EXT:   iBlock                              %#RX32\n", RT_LE2H_U32(pExtent->iBlock)));
+        Log2(("EXT:   cBlocks                             %#RX16\n", RT_LE2H_U16(pExtent->cBlocks)));
+        Log2(("EXT:   offStartHigh                        %#RX16\n", RT_LE2H_U32(pExtent->offStartHigh)));
+        Log2(("EXT:   offStartLow                         %#RX16\n", RT_LE2H_U16(pExtent->offStartLow)));
     }
 }
 #endif
@@ -1025,19 +1082,241 @@ static int rtFsExtInode_QueryInfo(PRTFSEXTINODE pInode, PRTFSOBJINFO pObjInfo, R
 
 
 /**
- * Maps the given inode block to the destination filesystem block.
+ * Validates a given extent header.
+ *
+ * @returns Flag whether the extent header appears to be valid.
+ * @param   pExtentHdr          The extent header to validate.
+ */
+DECLINLINE(bool) rtFsExtInode_ExtentHdrValidate(PCEXTEXTENTHDR pExtentHdr)
+{
+    return    RT_LE2H_U16(pExtentHdr->u16Magic) == EXT_EXTENT_HDR_MAGIC
+           && RT_LE2H_U16(pExtentHdr->cEntries) <= RT_LE2H_U16(pExtentHdr->cMax)
+           && RT_LE2H_U16(pExtentHdr->uDepth) <= EXT_EXTENT_HDR_DEPTH_MAX;
+}
+
+
+/**
+ * Parses the given extent, checking whether it intersects with the given block.
+ *
+ * @returns Flag whether the extent maps the given range (at least partly).
+ * @param   pExtent             The extent to parse.
+ * @param   iBlock              The starting inode block to map.
+ * @param   cBlocks             Number of blocks requested.
+ * @param   piBlockFs           Where to store the filesystem block on success.
+ * @param   pcBlocks            Where to store the number of contiguous blocks on success.
+ * @param   pfSparse            Where to store the sparse flag on success.
+ */
+DECLINLINE(bool) rtFsExtInode_ExtentParse(PCEXTEXTENT pExtent, uint64_t iBlock, size_t cBlocks,
+                                          uint64_t *piBlockFs, size_t *pcBlocks, bool *pfSparse)
+{
+#ifdef LOG_ENABLED
+    rtFsExtExtent_Log(pExtent);
+#endif
+
+    uint32_t iExtentBlock = RT_LE2H_U32(pExtent->iBlock);
+    uint16_t cExtentLength = RT_LE2H_U16(pExtent->cBlocks);
+
+    /* Length over EXT_EXTENT_LENGTH_LIMIT blocks indicate a sparse extent. */
+    if (cExtentLength > EXT_EXTENT_LENGTH_LIMIT)
+    {
+        *pfSparse = true;
+        cExtentLength -= EXT_EXTENT_LENGTH_LIMIT;
+    }
+    else
+        *pfSparse = false;
+
+    if (   iExtentBlock <= iBlock
+        && iExtentBlock + cExtentLength > iBlock)
+    {
+        uint32_t iBlockRel = iBlock - iExtentBlock;
+        *pcBlocks = RT_MIN(cBlocks, cExtentLength - iBlockRel);
+        *piBlockFs = (  ((uint64_t)RT_LE2H_U16(pExtent->offStartHigh)) << 32
+                      | ((uint64_t)RT_LE2H_U32(pExtent->offStartLow))) + iBlockRel;
+        return true;
+    }
+
+    return false;
+}
+
+
+/**
+ * Locates the location of the next level in the extent tree mapping the given block.
+ *
+ * @returns Filesystem block number where the next level of the extent is stored.
+ * @param   paExtentIdx         Pointer to the array of extent index nodes.
+ * @param   cEntries            Number of entries in the extent index node array.
+ * @param   iBlock              The block to resolve.
+ */
+DECLINLINE(uint64_t) rtFsExtInode_ExtentIndexLocateNextLvl(PCEXTEXTENTIDX paExtentIdx, uint16_t cEntries, uint64_t iBlock)
+{
+    for (uint32_t i = 1; i < cEntries; i++)
+    {
+        PCEXTEXTENTIDX pPrev = &paExtentIdx[i - 1];
+        PCEXTEXTENTIDX pCur  = &paExtentIdx[i];
+
+#ifdef LOG_ENABLED
+        rtFsExtExtentIdx_Log(pPrev);
+#endif
+
+        if (   RT_LE2H_U32(pPrev->iBlock) <= iBlock
+            && RT_LE2H_U32(pCur->iBlock) > iBlock)
+            return   (uint64_t)RT_LE2H_U16(pPrev->offChildHigh) << 32
+                   | (uint64_t)RT_LE2H_U32(pPrev->offChildLow);
+    }
+
+    /* Nothing found so far, the blast extent index must cover the block as the array is sorted. */
+    PCEXTEXTENTIDX pLast = &paExtentIdx[cEntries - 1];
+#ifdef LOG_ENABLED
+    rtFsExtExtentIdx_Log(pLast);
+#endif
+
+    return   (uint64_t)RT_LE2H_U16(pLast->offChildHigh) << 32
+           | (uint64_t)RT_LE2H_U32(pLast->offChildLow);
+}
+
+
+/**
+ * Maps the given inode block to the destination filesystem block using the embedded extent tree.
+ *
+ * @returns IPRT status code.
+ * @param   pThis               The ext volume instance.
+ * @param   pInode              The inode structure to read from.
+ * @param   iBlock              The starting inode block to map.
+ * @param   cBlocks             Number of blocks requested.
+ * @param   piBlockFs           Where to store the filesystem block on success.
+ * @param   pcBlocks            Where to store the number of contiguous blocks on success.
+ * @param   pfSparse            Where to store the sparse flag on success.
+ *
+ * @todo Optimize
+ */
+static int rtFsExtInode_MapBlockToFsViaExtent(PRTFSEXTVOL pThis, PRTFSEXTINODE pInode, uint64_t iBlock, size_t cBlocks,
+                                              uint64_t *piBlockFs, size_t *pcBlocks, bool *pfSparse)
+{
+    int rc = VINF_SUCCESS;
+
+    /* The root of the extent tree is located in the block data of the inode. */
+    PCEXTEXTENTHDR pExtentHdr = (PCEXTEXTENTHDR)&pInode->aiBlocks[0];
+
+#ifdef LOG_ENABLED
+    rtFsExtExtentHdr_Log(pExtentHdr);
+#endif
+
+    /*
+     * Some validation, the top level is located inside the inode block data
+     * and has a maxmimum of 4 entries.
+     */
+    if (   rtFsExtInode_ExtentHdrValidate(pExtentHdr)
+        && RT_LE2H_U16(pExtentHdr->cMax) <= 4)
+    {
+        uint16_t uDepthCur = RT_LE2H_U16(pExtentHdr->uDepth);
+        if (!uDepthCur)
+        {
+            PCEXTEXTENT pExtent = (PCEXTEXTENT)(pExtentHdr + 1);
+
+            rc = VERR_VFS_BOGUS_FORMAT;
+            for (uint32_t i = 0; i < RT_LE2H_U16(pExtentHdr->cEntries); i++)
+            {
+                /* Check whether the extent intersects with the block. */
+                if (rtFsExtInode_ExtentParse(pExtent, iBlock, cBlocks, piBlockFs, pcBlocks, pfSparse))
+                {
+                    rc = VINF_SUCCESS;
+                    break;
+                }
+                pExtent++;
+            }
+        }
+        else
+        {
+            uint8_t *pbExtent = (uint8_t *)RTMemTmpAllocZ(pThis->cbBlock);
+            if (RT_LIKELY(pbExtent))
+            {
+                uint64_t iBlockNext = 0;
+                PCEXTEXTENTIDX paExtentIdx = (PCEXTEXTENTIDX)(pExtentHdr + 1);
+                uint16_t cEntries = RT_LE2H_U16(pExtentHdr->cEntries);
+
+                /* Descend the tree until we reached the leaf nodes. */
+                do
+                {
+                    iBlockNext = rtFsExtInode_ExtentIndexLocateNextLvl(paExtentIdx, cEntries, iBlock);
+                    /* Read in the full block. */
+                    uint64_t offRead = rtFsExtBlockIdxToDiskOffset(pThis, iBlockNext);
+                    rc = RTVfsFileReadAt(pThis->hVfsBacking, offRead, pbExtent, pThis->cbBlock, NULL);
+                    if (RT_SUCCESS(rc))
+                    {
+                        pExtentHdr = (PCEXTEXTENTHDR)pbExtent;
+
+#ifdef LOG_ENABLED
+                        rtFsExtExtentHdr_Log(pExtentHdr);
+#endif
+
+                        if (   rtFsExtInode_ExtentHdrValidate(pExtentHdr)
+                            && RT_LE2H_U16(pExtentHdr->cMax) <= (pThis->cbBlock - sizeof(EXTEXTENTHDR)) / sizeof(EXTEXTENTIDX)
+                            && RT_LE2H_U16(pExtentHdr->uDepth) == uDepthCur - 1)
+                        {
+                            uDepthCur--;
+                            cEntries = RT_LE2H_U16(pExtentHdr->cEntries);
+                            paExtentIdx = (PCEXTEXTENTIDX)(pExtentHdr + 1);
+                        }
+                        else
+                            rc = VERR_VFS_BOGUS_FORMAT;
+                    }
+                }
+                while (   uDepthCur > 0
+                       && RT_SUCCESS(rc));
+
+                if (RT_SUCCESS(rc))
+                {
+                    Assert(!uDepthCur);
+
+                    /* We reached the leaf nodes. */
+                    PCEXTEXTENT pExtent = (PCEXTEXTENT)(pExtentHdr + 1);
+                    for (uint32_t i = 0; i < RT_LE2H_U16(pExtentHdr->cEntries); i++)
+                    {
+                        /* Check whether the extent intersects with the block. */
+                        if (rtFsExtInode_ExtentParse(pExtent, iBlock, cBlocks, piBlockFs, pcBlocks, pfSparse))
+                        {
+                            rc = VINF_SUCCESS;
+                            break;
+                        }
+                        pExtent++;
+                    }
+                }
+
+                RTMemTmpFree(pbExtent);
+            }
+            else
+                rc = VERR_NO_MEMORY;
+        }
+    }
+    else
+        rc = VERR_VFS_BOGUS_FORMAT;
+
+    return rc;
+}
+
+
+/**
+ * Maps the given inode block to the destination filesystem block using the original block mapping scheme.
  *
  * @returns IPRT status code.
  * @param   pThis               The ext volume instance.
  * @param   pInode              The inode structure to read from.
  * @param   iBlock              The inode block to map.
+ * @param   cBlocks             Number of blocks requested.
  * @param   piBlockFs           Where to store the filesystem block on success.
+ * @param   pcBlocks            Where to store the number of contiguous blocks on success.
+ * @param   pfSparse            Where to store the sparse flag on success.
  *
- * @todo Optimize
+ * @todo Optimize and handle sparse files.
  */
-static int rtFsExtInode_MapBlockToFs(PRTFSEXTVOL pThis, PRTFSEXTINODE pInode, uint64_t iBlock, uint64_t *piBlockFs)
+static int rtFsExtInode_MapBlockToFsViaBlockMap(PRTFSEXTVOL pThis, PRTFSEXTINODE pInode, uint64_t iBlock, size_t cBlocks,
+                                                uint64_t *piBlockFs, size_t *pcBlocks, bool *pfSparse)
 {
     int rc = VINF_SUCCESS;
+    RT_NOREF(cBlocks);
+
+    *pfSparse = false;
+    *pcBlocks = 1;
 
     /* The first 12 inode blocks are directly mapped from the inode. */
     if (iBlock <= 11)
@@ -1088,6 +1367,30 @@ static int rtFsExtInode_MapBlockToFs(PRTFSEXTVOL pThis, PRTFSEXTINODE pInode, ui
 
 
 /**
+ * Maps the given inode block to the destination filesystem block.
+ *
+ * @returns IPRT status code.
+ * @param   pThis               The ext volume instance.
+ * @param   pInode              The inode structure to read from.
+ * @param   iBlock              The inode block to map.
+ * @param   cBlocks             Number of blocks requested.
+ * @param   piBlockFs           Where to store the filesystem block on success.
+ * @param   pcBlocks            Where to store the number of contiguous blocks on success.
+ * @param   pfSparse            Where to store the sparse flag on success.
+ *
+ * @todo Optimize
+ */
+static int rtFsExtInode_MapBlockToFs(PRTFSEXTVOL pThis, PRTFSEXTINODE pInode, uint64_t iBlock, size_t cBlocks,
+                                     uint64_t *piBlockFs, size_t *pcBlocks, bool *pfSparse)
+{
+    if (pInode->fFlags & EXT_INODE_F_EXTENTS)
+        return rtFsExtInode_MapBlockToFsViaExtent(pThis, pInode, iBlock, cBlocks, piBlockFs, pcBlocks, pfSparse);
+    else
+        return rtFsExtInode_MapBlockToFsViaBlockMap(pThis, pInode, iBlock, cBlocks, piBlockFs, pcBlocks, pfSparse);
+}
+
+
+/**
  * Reads data from the given inode at the given byte offset.
  *
  * @returns IPRT status code.
@@ -1118,12 +1421,23 @@ static int rtFsExtInode_Read(PRTFSEXTVOL pThis, PRTFSEXTINODE pInode, uint64_t o
 
         /* Resolve the inode block to the proper filesystem block. */
         uint64_t iBlockFs = 0;
-        rc = rtFsExtInode_MapBlockToFs(pThis, pInode, iBlockStart, &iBlockFs);
+        size_t cBlocks = 0;
+        bool fSparse = false;
+        rc = rtFsExtInode_MapBlockToFs(pThis, pInode, iBlockStart, 1, &iBlockFs, &cBlocks, &fSparse);
         if (RT_SUCCESS(rc))
         {
+            Assert(cBlocks == 1);
+
             size_t cbThisRead = RT_MIN(cbRead, pThis->cbBlock - offBlockStart);
-            uint64_t offRead = rtFsExtBlockIdxToDiskOffset(pThis, iBlockFs);
-            rc = RTVfsFileReadAt(pThis->hVfsBacking, offRead + offBlockStart, pbBuf, cbThisRead, NULL);
+
+            if (!fSparse)
+            {
+                uint64_t offRead = rtFsExtBlockIdxToDiskOffset(pThis, iBlockFs);
+                rc = RTVfsFileReadAt(pThis->hVfsBacking, offRead + offBlockStart, pbBuf, cbThisRead, NULL);
+            }
+            else
+                memset(pbBuf, 0, cbThisRead);
+
             if (RT_SUCCESS(rc))
             {
                 pbBuf  += cbThisRead;
@@ -2085,11 +2399,12 @@ static int rtFsExtVolLoadAndParseSuperBlockV1(PRTFSEXTVOL pThis, PCEXTSUPERBLOCK
         return RTERRINFO_LOG_SET_F(pErrInfo, VERR_VFS_UNSUPPORTED_FORMAT, "EXT filesystem contains unsupported readonly features: %RX32",
                                    RT_LE2H_U32(pSb->fFeaturesCompatRo));
 
-    pThis->f64Bit          = false;
+    pThis->fFeaturesIncompat = RT_LE2H_U32(pSb->fFeaturesIncompat);
+    pThis->f64Bit            = RT_BOOL(pThis->fFeaturesIncompat & EXT_SB_FEAT_INCOMPAT_64BIT);
     pThis->cBlockShift     = 10 + RT_LE2H_U32(pSb->cLogBlockSize);
     pThis->cbBlock         = UINT64_C(1) << pThis->cBlockShift;
     pThis->cbInode         = RT_LE2H_U16(pSb->cbInode);
-    pThis->cbBlkGrpDesc    = sizeof(EXTBLOCKGROUPDESC32);
+    pThis->cbBlkGrpDesc    = pThis->f64Bit ? RT_LE2H_U16(pSb->cbGroupDesc) : sizeof(EXTBLOCKGROUPDESC32);
     pThis->cBlocksPerGroup = RT_LE2H_U32(pSb->cBlocksPerGroup);
     pThis->cInodesPerGroup = RT_LE2H_U32(pSb->cInodesPerBlockGroup);
     pThis->cBlockGroups    = RT_LE2H_U32(pSb->cBlocksTotalLow) / pThis->cBlocksPerGroup;
@@ -2099,7 +2414,6 @@ static int rtFsExtVolLoadAndParseSuperBlockV1(PRTFSEXTVOL pThis, PCEXTSUPERBLOCK
     pThis->cbInodeBitmap   = pThis->cInodesPerGroup / 8;
     if (pThis->cInodesPerGroup % 8)
         pThis->cbInodeBitmap++;
-    pThis->fFeaturesIncompat = RT_LE2H_U32(pSb->fFeaturesIncompat);
 
     return VINF_SUCCESS;
 }
