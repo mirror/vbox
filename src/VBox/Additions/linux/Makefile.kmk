@@ -358,18 +358,8 @@ OTHER_CLEAN += \
 #
 # Build test for the Guest Additions kernel modules (kmk check).
 #
-if   defined(VBOX_WITH_TESTCASES) \
- && !defined(VBOX_ONLY_SDK) \
- && !defined(VBOX_ONLY_DOCS) \
- && !defined(VBOX_ONLY_VALIDATIONKIT) \
- && !defined(VBOX_WITHOUT_LINUX_TEST_BUILDS) \
- && "$(KBUILD_TARGET)" == "linux" \
- && "$(KBUILD_HOST_ARCH)" == "$(KBUILD_TARGET_ARCH)"
- ifneq ($(KERN_DIR),)
-  $(evalcall2 VBOX_LINUX_KMOD_TEST_BUILD_RULE_FN,vboxsf-src,vboxguest-src,)
-  $(evalcall2 VBOX_LINUX_KMOD_TEST_BUILD_RULE_FN,vboxvideo-src,,)
- endif
-endif
+$(evalcall2 VBOX_LINUX_KMOD_TEST_BUILD_RULE_FN,vboxsf-src,vboxguest-src,)
+$(evalcall2 VBOX_LINUX_KMOD_TEST_BUILD_RULE_FN,vboxvideo-src,,)
 
 
 include $(FILE_KBUILD_SUB_FOOTER)

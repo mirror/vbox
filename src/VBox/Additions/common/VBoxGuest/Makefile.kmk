@@ -229,17 +229,7 @@ ifeq ($(KBUILD_TARGET),linux)
  #
  # Build test for the Guest Additions kernel module (kmk check).
  #
- if   defined(VBOX_WITH_TESTCASES) \
-  && !defined(VBOX_ONLY_SDK) \
-  && !defined(VBOX_ONLY_DOCS) \
-  && !defined(VBOX_ONLY_VALIDATIONKIT) \
-  && !defined(VBOX_WITHOUT_LINUX_TEST_BUILDS) \
-  && "$(KBUILD_TARGET)" == "linux" \
-  && "$(KBUILD_HOST_ARCH)" == "$(KBUILD_TARGET_ARCH)"
-  ifneq ($(KERN_DIR),)
 $(evalcall2 VBOX_LINUX_KMOD_TEST_BUILD_RULE_FN,vboxguest-src,,save_symvers)
-  endif
- endif
 endif # Linux
 
 ifeq ($(KBUILD_TARGET),freebsd)
