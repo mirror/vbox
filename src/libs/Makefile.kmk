@@ -27,8 +27,8 @@ include $(KBUILD_PATH)/subheader.kmk
 # Compression libs used by IPRT and <what was it again?>.
 include $(PATH_SUB_CURRENT)/liblzf-3.4/Makefile.kmk
 if  !defined(VBOX_ONLY_SDK) \
- && "$(SDK_VBOX_ZLIB_INCS)" == "$(PATH_ROOT)/src/libs/zlib-1.2.8"
- include $(PATH_SUB_CURRENT)/zlib-1.2.8/Makefile.kmk
+ && "$(SDK_VBOX_ZLIB_INCS)" == "$(PATH_ROOT)/src/libs/zlib-1.2.11"
+ include $(PATH_SUB_CURRENT)/zlib-1.2.11/Makefile.kmk
 endif
 
 # PNG support (for screenshots).
