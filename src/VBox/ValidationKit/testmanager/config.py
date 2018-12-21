@@ -192,9 +192,13 @@ g_ksTestBoxDispXpctLog  = '/tmp/testmanager-testboxdisp-xcpt.log'
 g_ksSmtpHost            = 'internal-mail-router.oracle.com';
 ## SMTP server port number.
 g_kcSmtpPort            = 25;
+## Default email 'From' for email alert.
+g_ksAlertFrom           = 'vseriff@oracle.com';
 ## Subject for email alert.
 g_ksAlertSubject        = 'Virtual Sheriff alert';
 ## List of users to send alerts.
 g_asAlertList           = ['lelik', 'werner'];
+## iLOM password.
+g_ksLomPassword         = 'password';
 
 ## @}

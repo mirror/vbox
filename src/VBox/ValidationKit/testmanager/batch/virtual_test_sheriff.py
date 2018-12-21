@@ -44,16 +44,16 @@ import os;
 import hashlib;
 import subprocess;
 import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from email.utils import COMMASPACE
+
 if sys.version_info[0] >= 3:
     from io       import StringIO as StringIO;      # pylint: disable=import-error,no-name-in-module
 else:
     from StringIO import StringIO as StringIO;      # pylint: disable=import-error,no-name-in-module
 from optparse import OptionParser;                  # pylint: disable=deprecated-module
 from PIL import Image;                              # pylint: disable=import-error
-
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
-from email.utils import COMMASPACE
 
 # Add Test Manager's modules path
 g_ksTestManagerDir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))));
@@ -70,7 +70,8 @@ from testmanager.core.testset               import TestSetLogic, TestSetData;
 from testmanager.core.testresults           import TestResultLogic, TestResultFileData;
 from testmanager.core.testresultfailures    import TestResultFailureLogic, TestResultFailureData;
 from testmanager.core.useraccount           import UserAccountLogic;
-from testmanager.config                     import g_ksSmtpHost, g_kcSmtpPort, g_ksAlertSubject, g_asAlertList;
+from testmanager.config                     import g_ksSmtpHost, g_kcSmtpPort, g_ksAlertFrom, \
+                                                   g_ksAlertSubject, g_asAlertList, g_ksLomPassword;
 
 # Python 3 hacks:
 if sys.version_info[0] >= 3:
@@ -374,7 +375,7 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
         if sFrom is not None:
             sFrom = sFrom[0];
         else:
-            sFrom = 'vseriff@oracle.com';
+            sFrom = g_ksAlertFrom;
 
         for sUser in g_asAlertList:
             self.oDb.execute('SELECT sEmail FROM Users WHERE sUsername=%s', (sUser,));
@@ -516,7 +517,7 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
                                 % ( idTestBox, oTestBox.sName, ));
                     continue;
             ## @todo get iLOM credentials from a table?
-            sCmd = 'sshpass -pchangeme ssh -oStrictHostKeyChecking=no root@%s show /SP && reset /SYS' % (oTestBox.ipLom,);
+            sCmd = 'sshpass -p%s ssh -oStrictHostKeyChecking=no root@%s show /SP && reset /SYS' % (g_ksLomPassword, oTestBox.ipLom,);
             try:
                 oPs = subprocess.Popen(sCmd, stdout=subprocess.PIPE, shell=True);
                 sStdout = oPs.communicate()[0];
@@ -527,7 +528,6 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
 
                 sComment = u'Reset testbox #%u (%s) - iRC=%u sStduot=%s' % ( idTestBox, oTestBox.sName, iRC, sStdout);
                 self.vprint(sComment);
-
                 self.emailAlert(self.uidSelf, sComment);
 
             except Exception as oXcpt:
