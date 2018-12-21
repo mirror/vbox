@@ -1640,7 +1640,7 @@ static VUSBSTATUS vusbProxyLinuxStatusToVUsbStatus(int iStatus)
         case -ESHUTDOWN:
             Log(("vusbProxyLinuxStatusToVUsbStatus: SHUTDOWN!!\n"));
             return VUSBSTATUS_STALL;
-        
+
         case -ENOENT:
             Log(("vusbProxyLinuxStatusToVUsbStatus: ENOENT!!\n"));
             return VUSBSTATUS_STALL;
