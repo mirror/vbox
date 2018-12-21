@@ -26,7 +26,7 @@
 /* GUI includes: */
 # include "UIErrorString.h"
 # include "UICustomFileSystemModel.h"
-# include "UIFileManagerTable.h"
+# include "UIPathOperations.h"
 # include "VBoxGlobal.h"
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */

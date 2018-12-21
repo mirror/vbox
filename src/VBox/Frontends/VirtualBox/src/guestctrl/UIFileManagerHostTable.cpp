@@ -30,6 +30,7 @@
 # include "UIFileManager.h"
 # include "UICustomFileSystemModel.h"
 # include "UIFileManagerHostTable.h"
+# include "UIPathOperations.h"
 # include "UIToolBar.h"
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */

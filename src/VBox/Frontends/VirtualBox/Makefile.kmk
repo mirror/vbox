@@ -866,6 +866,7 @@ ifndef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/guestctrl/UIGuestProcessControlDialog.h \
 	src/guestctrl/UIGuestProcessControlWidget.h \
 	src/guestctrl/UIFileManagerHostTable.h \
+	src/guestctrl/UIPathOperations.h \
 	src/runtime/normal/UIKeyboardHandlerNormal.h \
 	src/runtime/normal/UIMachineLogicNormal.h \
 	src/runtime/normal/UIMachineViewNormal.h \
@@ -1022,6 +1023,7 @@ ifdef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/guestctrl/UIGuestProcessControlDialog.h \
 	src/guestctrl/UIGuestProcessControlWidget.h \
 	src/guestctrl/UIFileManagerHostTable.h \
+	src/guestctrl/UIPathOperations.h \
 	src/runtime/normal/UIKeyboardHandlerNormal.h \
 	src/runtime/normal/UIMachineLogicNormal.h \
 	src/runtime/normal/UIMachineViewNormal.h \
@@ -1595,6 +1597,7 @@ ifndef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/guestctrl/UIGuestProcessControlDialog.cpp \
 	src/guestctrl/UIGuestProcessControlWidget.cpp \
 	src/guestctrl/UIFileManagerHostTable.cpp \
+	src/guestctrl/UIPathOperations.cpp \
 	src/runtime/normal/UIKeyboardHandlerNormal.cpp \
 	src/runtime/normal/UIMachineLogicNormal.cpp \
 	src/runtime/normal/UIMachineViewNormal.cpp \
@@ -1774,6 +1777,7 @@ ifdef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/guestctrl/UIGuestProcessControlWidget.cpp \
 	src/guestctrl/UIGuestProcessControlDialog.cpp \
 	src/guestctrl/UIFileManagerHostTable.cpp \
+	src/guestctrl/UIPathOperations.cpp \
 	src/runtime/normal/UIKeyboardHandlerNormal.cpp \
 	src/runtime/normal/UIMachineLogicNormal.cpp \
 	src/runtime/normal/UIMachineViewNormal.cpp \

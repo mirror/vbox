@@ -32,6 +32,7 @@
 # include "UIFileManager.h"
 # include "UIFileManagerGuestTable.h"
 # include "UIMessageCenter.h"
+# include "UIPathOperations.h"
 # include "UIToolBar.h"
 
 /* COM includes: */
