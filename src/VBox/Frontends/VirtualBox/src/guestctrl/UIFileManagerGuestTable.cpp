@@ -441,7 +441,7 @@ QString UIFileManagerGuestTable::fsObjectPropertyString()
         QStringList propertyStringList;
 
         /* Name: */
-        propertyStringList << QString("<b>Name:</b> %1<br/>").arg(UIPathOperations::getObjectName(fileInfo.GetName()));
+        propertyStringList << UIFileManager::tr("<b>Name:</b> %1<br/>").arg(UIPathOperations::getObjectName(fileInfo.GetName()));
 
         /* Size: */
         LONG64 size = fileInfo.GetObjectSize();
