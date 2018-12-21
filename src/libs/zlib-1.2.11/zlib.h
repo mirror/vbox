@@ -1845,7 +1845,14 @@ ZEXTERN int ZEXPORT gzgetc_ OF((gzFile file));  /* backward compatibility */
 #endif
 
 #if !defined(ZLIB_INTERNAL) && defined(Z_WANT64)
-#  ifdef Z_PREFIX_SET
+#  if defined(VBOX)
+#    define vboxzlib_gzopen vboxzlib_gzopen64
+#    define vboxzlib_gzseek vboxzlib_gzseek64
+#    define vboxzlib_gztell vboxzlib_gztell64
+#    define vboxzlib_gzoffset vboxzlib_gzoffset64
+#    define vboxzlib_adler32_combine vboxzlib_adler32_combine64
+#    define vboxzlib_crc32_combine vboxzlib_crc32_combine64
+#  elif defined(Z_PREFIX_SET)
 #    define z_gzopen z_gzopen64
 #    define z_gzseek z_gzseek64
 #    define z_gztell z_gztell64
