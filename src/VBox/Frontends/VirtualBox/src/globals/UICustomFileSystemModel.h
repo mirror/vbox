@@ -35,30 +35,30 @@ enum UICustomFileSystemModelColumn
     UICustomFileSystemModelColumn_Max
 };
 
-/** A UIFileTableItem instance is a tree node representing a file object (file, directory, etc). The tree contructed
+/** A UICustomFileSystemItem instance is a tree node representing a file object (file, directory, etc). The tree contructed
     by these instances is the data source for the UICustomFileSystemModel. */
-class UIFileTableItem
+class UICustomFileSystemItem
 {
 public:
 
     /** @p data contains values to be shown in table view's colums. data[0] is assumed to be
      *  the name of the file object which is the file name including extension or name of the
      *  directory */
-    explicit UIFileTableItem(const QVector<QVariant> &data,
-                             UIFileTableItem *parentItem, KFsObjType type);
-    ~UIFileTableItem();
+    explicit UICustomFileSystemItem(const QVector<QVariant> &data,
+                             UICustomFileSystemItem *parentItem, KFsObjType type);
+    ~UICustomFileSystemItem();
 
-    void appendChild(UIFileTableItem *child);
+    void appendChild(UICustomFileSystemItem *child);
     void reset();
-    UIFileTableItem *child(int row) const;
+    UICustomFileSystemItem *child(int row) const;
     /** Searches for the child by path and returns it if found. */
-    UIFileTableItem *child(const QString &path) const;
+    UICustomFileSystemItem *child(const QString &path) const;
     int childCount() const;
     int columnCount() const;
     QVariant data(int column) const;
     void setData(const QVariant &data, int index);
     int row() const;
-    UIFileTableItem *parentItem();
+    UICustomFileSystemItem *parentItem();
 
     bool isDirectory() const;
     bool isSymLink() const;
@@ -92,14 +92,17 @@ public:
     void setIsDriveItem(bool flag);
     bool isDriveItem() const;
 
+    static QVector<QVariant> createTreeItemData(const QString &strName, unsigned long long size, const QDateTime &changeTime,
+                                                const QString &strOwner, const QString &strPermissions);
+
 private:
 
-    QList<UIFileTableItem*>         m_childItems;
+    QList<UICustomFileSystemItem*>         m_childItems;
     /** Used to find children by name */
-    QMap<QString, UIFileTableItem*> m_childMap;
+    QMap<QString, UICustomFileSystemItem*> m_childMap;
     /** It is required that m_itemData[0] is name (QString) of the file object */
     QVector<QVariant>  m_itemData;
-    UIFileTableItem *m_parentItem;
+    UICustomFileSystemItem *m_parentItem;
     bool             m_bIsOpened;
     /** Full absolute path of the item. Without the trailing '/' */
     QString          m_strPath;
@@ -144,7 +147,7 @@ class UICustomFileSystemModel : public QAbstractItemModel
 
 signals:
 
-    void sigItemRenamed(UIFileTableItem *pItem, QString strOldName, QString strNewName);
+    void sigItemRenamed(UICustomFileSystemItem *pItem, QString strOldName, QString strNewName);
 
 public:
 
@@ -159,7 +162,7 @@ public:
                               int role = Qt::DisplayRole) const /* override */;
     QModelIndex    index(int row, int column,
                       const QModelIndex &parent = QModelIndex()) const /* override */;
-    QModelIndex    index(UIFileTableItem* item);
+    QModelIndex    index(UICustomFileSystemItem* item);
     QModelIndex    parent(const QModelIndex &index) const /* override */;
     int            rowCount(const QModelIndex &parent = QModelIndex()) const /* override */;
     int            columnCount(const QModelIndex &parent = QModelIndex()) const /* override */;
@@ -171,15 +174,15 @@ public:
 
     void           setShowHumanReadableSizes(bool fShowHumanReadableSizes);
     bool           showHumanReadableSizes() const;
-    UIFileTableItem* rootItem();
-    const UIFileTableItem* rootItem() const;
+    UICustomFileSystemItem* rootItem();
+    const UICustomFileSystemItem* rootItem() const;
 
     static const char* strUpDirectoryString;
 
 private:
     void                initializeTree();
-    UIFileTableItem    *m_pRootItem;
-    void setupModelData(const QStringList &lines, UIFileTableItem *parent);
+    UICustomFileSystemItem    *m_pRootItem;
+    void setupModelData(const QStringList &lines, UICustomFileSystemItem *parent);
     bool                m_fShowHumanReadableSizes;
 };
 

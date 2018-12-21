@@ -201,7 +201,7 @@ void UIFileManagerHostTable::createFileViewContextMenu(const QWidget *pWidget, c
     menu.exec(pWidget->mapToGlobal(point));
 }
 
-void UIFileManagerHostTable::readDirectory(const QString& strPath, UIFileTableItem *parent, bool isStartDir /*= false*/)
+void UIFileManagerHostTable::readDirectory(const QString& strPath, UICustomFileSystemItem *parent, bool isStartDir /*= false*/)
 {
     if (!parent)
         return;
@@ -212,17 +212,17 @@ void UIFileManagerHostTable::readDirectory(const QString& strPath, UIFileTableIt
     if (!directory.exists())
         return;
     QFileInfoList entries = directory.entryInfoList();
-    QMap<QString, UIFileTableItem*> directories;
-    QMap<QString, UIFileTableItem*> files;
+    QMap<QString, UICustomFileSystemItem*> directories;
+    QMap<QString, UICustomFileSystemItem*> files;
 
     for (int i = 0; i < entries.size(); ++i)
     {
 
         const QFileInfo &fileInfo = entries.at(i);
-        UIFileTableItem *item = new UIFileTableItem(createTreeItemData(fileInfo.fileName(), fileInfo.size(),
-                                                                       fileInfo.lastModified(), fileInfo.owner(),
-                                                                       permissionString(fileInfo.permissions())),
-                                                    parent, fileType(fileInfo));
+        QVector<QVariant> itemData = UICustomFileSystemItem::createTreeItemData(fileInfo.fileName(), fileInfo.size(),
+                                                                                fileInfo.lastModified(), fileInfo.owner(),
+                                                                                permissionString(fileInfo.permissions()));
+        UICustomFileSystemItem *item = new UICustomFileSystemItem(itemData, parent, fileType(fileInfo));
         if (!item)
             continue;
         item->setPath(fileInfo.absoluteFilePath());
@@ -249,7 +249,7 @@ void UIFileManagerHostTable::readDirectory(const QString& strPath, UIFileTableIt
     //updateCurrentLocationEdit(strPath);
 }
 
-void UIFileManagerHostTable::deleteByItem(UIFileTableItem *item)
+void UIFileManagerHostTable::deleteByItem(UICustomFileSystemItem *item)
 {
     if (item->isUpDirectory())
         return;
@@ -296,7 +296,7 @@ void UIFileManagerHostTable::goToHomeDirectory()
 {
     if (!rootItem() || rootItem()->childCount() <= 0)
         return;
-    UIFileTableItem *startDirItem = rootItem()->child(0);
+    UICustomFileSystemItem *startDirItem = rootItem()->child(0);
     if (!startDirItem)
         return;
 
@@ -304,7 +304,7 @@ void UIFileManagerHostTable::goToHomeDirectory()
     goIntoDirectory(UIPathOperations::pathTrail(userHome));
 }
 
-bool UIFileManagerHostTable::renameItem(UIFileTableItem *item, QString newBaseName)
+bool UIFileManagerHostTable::renameItem(UICustomFileSystemItem *item, QString newBaseName)
 {
     if (!item || item->isUpDirectory() || newBaseName.isEmpty())
         return false;

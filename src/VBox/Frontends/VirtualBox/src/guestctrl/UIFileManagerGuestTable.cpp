@@ -174,7 +174,7 @@ void UIFileManagerGuestTable::retranslateUi()
 }
 
 void UIFileManagerGuestTable::readDirectory(const QString& strPath,
-                                     UIFileTableItem *parent, bool isStartDir /*= false*/)
+                                     UICustomFileSystemItem *parent, bool isStartDir /*= false*/)
 
 {
     if (!parent)
@@ -195,8 +195,8 @@ void UIFileManagerGuestTable::readDirectory(const QString& strPath,
     if (directory.isOk())
     {
         CFsObjInfo fsInfo = directory.Read();
-        QMap<QString, UIFileTableItem*> directories;
-        QMap<QString, UIFileTableItem*> files;
+        QMap<QString, UICustomFileSystemItem*> directories;
+        QMap<QString, UICustomFileSystemItem*> files;
 
         while (fsInfo.isOk())
         {
@@ -207,7 +207,7 @@ void UIFileManagerGuestTable::readDirectory(const QString& strPath,
                  << changeTime << fsInfo.GetUserName() << permissionString(fsInfo);
 
             KFsObjType fsObjectType = fileType(fsInfo);
-            UIFileTableItem *item = new UIFileTableItem(data, parent, fsObjectType);
+            UICustomFileSystemItem *item = new UICustomFileSystemItem(data, parent, fsObjectType);
 
             if (!item)
                 continue;
@@ -242,7 +242,7 @@ void UIFileManagerGuestTable::readDirectory(const QString& strPath,
     directory.Close();
 }
 
-void UIFileManagerGuestTable::deleteByItem(UIFileTableItem *item)
+void UIFileManagerGuestTable::deleteByItem(UICustomFileSystemItem *item)
 {
     if (!item)
         return;
@@ -288,7 +288,7 @@ void UIFileManagerGuestTable::goToHomeDirectory()
         return;
     if (!rootItem() || rootItem()->childCount() <= 0)
         return;
-    UIFileTableItem *startDirItem = rootItem()->child(0);
+    UICustomFileSystemItem *startDirItem = rootItem()->child(0);
     if (!startDirItem)
         return;
 
@@ -302,7 +302,7 @@ void UIFileManagerGuestTable::goToHomeDirectory()
     goIntoDirectory(UIPathOperations::pathTrail(userHome));
 }
 
-bool UIFileManagerGuestTable::renameItem(UIFileTableItem *item, QString newBaseName)
+bool UIFileManagerGuestTable::renameItem(UICustomFileSystemItem *item, QString newBaseName)
 {
 
     if (!item || item->isUpDirectory() || newBaseName.isEmpty())

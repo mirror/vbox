@@ -35,11 +35,11 @@ const char* UICustomFileSystemModel::strUpDirectoryString = "..";
 
 
 /*********************************************************************************************************************************
-*   UIFileTableItem implementation.                                                                                              *
+*   UICustomFileSystemItem implementation.                                                                                       *
 *********************************************************************************************************************************/
 
-UIFileTableItem::UIFileTableItem(const QVector<QVariant> &data,
-                                 UIFileTableItem *parent, KFsObjType type)
+UICustomFileSystemItem::UICustomFileSystemItem(const QVector<QVariant> &data,
+                                 UICustomFileSystemItem *parent, KFsObjType type)
     : m_itemData(data)
     , m_parentItem(parent)
     , m_bIsOpened(false)
@@ -49,12 +49,12 @@ UIFileTableItem::UIFileTableItem(const QVector<QVariant> &data,
 {
 }
 
-UIFileTableItem::~UIFileTableItem()
+UICustomFileSystemItem::~UICustomFileSystemItem()
 {
     reset();
 }
 
-void UIFileTableItem::appendChild(UIFileTableItem *item)
+void UICustomFileSystemItem::appendChild(UICustomFileSystemItem *item)
 {
     if (!item)
         return;
@@ -62,7 +62,7 @@ void UIFileTableItem::appendChild(UIFileTableItem *item)
     m_childMap.insert(item->name(), item);
 }
 
-void UIFileTableItem::reset()
+void UICustomFileSystemItem::reset()
 {
     qDeleteAll(m_childItems);
     m_childItems.clear();
@@ -70,97 +70,97 @@ void UIFileTableItem::reset()
     m_bIsOpened = false;
 }
 
-UIFileTableItem *UIFileTableItem::child(int row) const
+UICustomFileSystemItem *UICustomFileSystemItem::child(int row) const
 {
     return m_childItems.value(row);
 }
 
-UIFileTableItem *UIFileTableItem::child(const QString &path) const
+UICustomFileSystemItem *UICustomFileSystemItem::child(const QString &path) const
 {
     if (!m_childMap.contains(path))
         return 0;
     return m_childMap.value(path);
 }
 
-int UIFileTableItem::childCount() const
+int UICustomFileSystemItem::childCount() const
 {
     return m_childItems.count();
 }
 
-int UIFileTableItem::columnCount() const
+int UICustomFileSystemItem::columnCount() const
 {
     return m_itemData.count();
 }
 
-QVariant UIFileTableItem::data(int column) const
+QVariant UICustomFileSystemItem::data(int column) const
 {
     return m_itemData.value(column);
 }
 
-QString UIFileTableItem::name() const
+QString UICustomFileSystemItem::name() const
 {
     if (m_itemData.isEmpty() || !m_itemData[0].canConvert(QMetaType::QString))
         return QString();
     return m_itemData[0].toString();
 }
 
-void UIFileTableItem::setData(const QVariant &data, int index)
+void UICustomFileSystemItem::setData(const QVariant &data, int index)
 {
     if (index >= m_itemData.length())
         return;
     m_itemData[index] = data;
 }
 
-UIFileTableItem *UIFileTableItem::parentItem()
+UICustomFileSystemItem *UICustomFileSystemItem::parentItem()
 {
     return m_parentItem;
 }
 
-int UIFileTableItem::row() const
+int UICustomFileSystemItem::row() const
 {
     if (m_parentItem)
-        return m_parentItem->m_childItems.indexOf(const_cast<UIFileTableItem*>(this));
+        return m_parentItem->m_childItems.indexOf(const_cast<UICustomFileSystemItem*>(this));
     return 0;
 }
 
-bool UIFileTableItem::isDirectory() const
+bool UICustomFileSystemItem::isDirectory() const
 {
     return m_type == KFsObjType_Directory;
 }
 
-bool UIFileTableItem::isSymLink() const
+bool UICustomFileSystemItem::isSymLink() const
 {
     return m_type == KFsObjType_Symlink;
 }
 
-bool UIFileTableItem::isFile() const
+bool UICustomFileSystemItem::isFile() const
 {
     return m_type == KFsObjType_File;
 }
 
-void UIFileTableItem::clearChildren()
+void UICustomFileSystemItem::clearChildren()
 {
     qDeleteAll(m_childItems);
     m_childItems.clear();
     m_childMap.clear();
 }
 
-bool UIFileTableItem::isOpened() const
+bool UICustomFileSystemItem::isOpened() const
 {
     return m_bIsOpened;
 }
 
-void UIFileTableItem::setIsOpened(bool flag)
+void UICustomFileSystemItem::setIsOpened(bool flag)
 {
     m_bIsOpened = flag;
 }
 
-const QString  &UIFileTableItem::path() const
+const QString  &UICustomFileSystemItem::path() const
 {
     return m_strPath;
 }
 
-void UIFileTableItem::setPath(const QString &path)
+void UICustomFileSystemItem::setPath(const QString &path)
 {
     if (path.isNull() || path.isEmpty())
         return;
@@ -168,7 +168,7 @@ void UIFileTableItem::setPath(const QString &path)
     UIPathOperations::removeTrailingDelimiters(m_strPath);
 }
 
-bool UIFileTableItem::isUpDirectory() const
+bool UICustomFileSystemItem::isUpDirectory() const
 {
     if (!isDirectory())
         return false;
@@ -177,55 +177,58 @@ bool UIFileTableItem::isUpDirectory() const
     return false;
 }
 
-KFsObjType UIFileTableItem::type() const
+KFsObjType UICustomFileSystemItem::type() const
 {
     return m_type;
 }
 
-const QString &UIFileTableItem::targetPath() const
+const QString &UICustomFileSystemItem::targetPath() const
 {
     return m_strTargetPath;
 }
 
-void UIFileTableItem::setTargetPath(const QString &path)
+void UICustomFileSystemItem::setTargetPath(const QString &path)
 {
     m_strTargetPath = path;
 }
 
-bool UIFileTableItem::isSymLinkToADirectory() const
+bool UICustomFileSystemItem::isSymLinkToADirectory() const
 {
     return m_isTargetADirectory;
 }
 
-void UIFileTableItem::setIsSymLinkToADirectory(bool flag)
+void UICustomFileSystemItem::setIsSymLinkToADirectory(bool flag)
 {
     m_isTargetADirectory = flag;
 }
 
-bool UIFileTableItem::isSymLinkToAFile() const
+bool UICustomFileSystemItem::isSymLinkToAFile() const
 {
     return isSymLink() && !m_isTargetADirectory;
 }
 
-void UIFileTableItem::setIsDriveItem(bool flag)
+void UICustomFileSystemItem::setIsDriveItem(bool flag)
 {
     m_isDriveItem = flag;
 }
 
-bool UIFileTableItem::isDriveItem() const
+bool UICustomFileSystemItem::isDriveItem() const
 {
     return m_isDriveItem;
 }
 
-UICustomFileSystemProxyModel::UICustomFileSystemProxyModel(QObject *parent /* = 0 */)
-    :QSortFilterProxyModel(parent)
-    , m_fListDirectoriesOnTop(false)
+/* static */QVector<QVariant> UICustomFileSystemItem::createTreeItemData(const QString &strName, unsigned long long size,
+                                                                         const QDateTime &changeTime,
+                                                                         const QString &strOwner, const QString &strPermissions)
 {
-}
-
-void UICustomFileSystemProxyModel::setListDirectoriesOnTop(bool fListDirectoriesOnTop)
-{
-    m_fListDirectoriesOnTop = fListDirectoriesOnTop;
+    QVector<QVariant> data;
+    data.resize(UICustomFileSystemModelColumn_Max);
+    data[UICustomFileSystemModelColumn_Name]        = strName;
+    data[UICustomFileSystemModelColumn_Size]        = (qulonglong)size;
+    data[UICustomFileSystemModelColumn_ChangeTime]  = changeTime;
+    data[UICustomFileSystemModelColumn_Owner]       = strOwner;
+    data[UICustomFileSystemModelColumn_Permissions] = strPermissions;
+    return data;
 }
 
 
@@ -240,8 +243,8 @@ bool UICustomFileSystemProxyModel::listDirectoriesOnTop() const
 
 bool UICustomFileSystemProxyModel::lessThan(const QModelIndex &left, const QModelIndex &right) const
 {
-    UIFileTableItem *pLeftItem = static_cast<UIFileTableItem*>(left.internalPointer());
-    UIFileTableItem *pRightItem = static_cast<UIFileTableItem*>(right.internalPointer());
+    UICustomFileSystemItem *pLeftItem = static_cast<UICustomFileSystemItem*>(left.internalPointer());
+    UICustomFileSystemItem *pRightItem = static_cast<UICustomFileSystemItem*>(right.internalPointer());
 
     if (pLeftItem && pRightItem)
     {
@@ -280,6 +283,22 @@ bool UICustomFileSystemProxyModel::lessThan(const QModelIndex &left, const QMode
     return QSortFilterProxyModel::lessThan(left, right);
 }
 
+UICustomFileSystemProxyModel::UICustomFileSystemProxyModel(QObject *parent /* = 0 */)
+    :QSortFilterProxyModel(parent)
+    , m_fListDirectoriesOnTop(false)
+{
+}
+
+void UICustomFileSystemProxyModel::setListDirectoriesOnTop(bool fListDirectoriesOnTop)
+{
+    m_fListDirectoriesOnTop = fListDirectoriesOnTop;
+}
+
+
+/*********************************************************************************************************************************
+*   UICustomFileSystemModel implementation.                                                                                      *
+*********************************************************************************************************************************/
+
 UICustomFileSystemModel::UICustomFileSystemModel(QObject *parent)
     : QAbstractItemModel(parent)
     , m_fShowHumanReadableSizes(false)
@@ -287,12 +306,12 @@ UICustomFileSystemModel::UICustomFileSystemModel(QObject *parent)
     initializeTree();
 }
 
-UIFileTableItem* UICustomFileSystemModel::rootItem()
+UICustomFileSystemItem* UICustomFileSystemModel::rootItem()
 {
     return m_pRootItem;
 }
 
-const UIFileTableItem* UICustomFileSystemModel::rootItem() const
+const UICustomFileSystemItem* UICustomFileSystemModel::rootItem() const
 {
     return m_pRootItem;
 }
@@ -305,7 +324,7 @@ UICustomFileSystemModel::~UICustomFileSystemModel()
 int UICustomFileSystemModel::columnCount(const QModelIndex &parent) const
 {
     if (parent.isValid())
-        return static_cast<UIFileTableItem*>(parent.internalPointer())->columnCount();
+        return static_cast<UICustomFileSystemItem*>(parent.internalPointer())->columnCount();
     else
     {
         if (!rootItem())
@@ -321,7 +340,7 @@ bool UICustomFileSystemModel::setData(const QModelIndex &index, const QVariant &
     {
         if (index.column() == 0 && value.canConvert(QMetaType::QString))
         {
-            UIFileTableItem *pItem = static_cast<UIFileTableItem*>(index.internalPointer());
+            UICustomFileSystemItem *pItem = static_cast<UICustomFileSystemItem*>(index.internalPointer());
             if (!pItem)
                 return false;
             QString strOldName = pItem->name();
@@ -338,7 +357,7 @@ QVariant UICustomFileSystemModel::data(const QModelIndex &index, int role) const
 {
     if (!index.isValid())
         return QVariant();
-    UIFileTableItem *item = static_cast<UIFileTableItem*>(index.internalPointer());
+    UICustomFileSystemItem *item = static_cast<UICustomFileSystemItem*>(index.internalPointer());
     if (!item)
         return QVariant();
 
@@ -397,7 +416,7 @@ Qt::ItemFlags UICustomFileSystemModel::flags(const QModelIndex &index) const
 {
     if (!index.isValid())
         return 0;
-    UIFileTableItem *item = static_cast<UIFileTableItem*>(index.internalPointer());
+    UICustomFileSystemItem *item = static_cast<UICustomFileSystemItem*>(index.internalPointer());
     if (!item)
         return QAbstractItemModel::flags(index);
 
@@ -419,7 +438,7 @@ QVariant UICustomFileSystemModel::headerData(int section, Qt::Orientation orient
     return QVariant();
 }
 
-QModelIndex UICustomFileSystemModel::index(UIFileTableItem* item)
+QModelIndex UICustomFileSystemModel::index(UICustomFileSystemItem* item)
 {
     if (!item)
         return QModelIndex();
@@ -431,15 +450,15 @@ QModelIndex UICustomFileSystemModel::index(int row, int column, const QModelInde
     if (!hasIndex(row, column, parent))
         return QModelIndex();
 
-    const UIFileTableItem* parentItem = rootItem();
+    const UICustomFileSystemItem* parentItem = rootItem();
 
     if (parent.isValid())
-        parentItem = static_cast<UIFileTableItem*>(parent.internalPointer());
+        parentItem = static_cast<UICustomFileSystemItem*>(parent.internalPointer());
 
     if (!parentItem)
         return QModelIndex();
 
-    UIFileTableItem *childItem = parentItem->child(row);
+    UICustomFileSystemItem *childItem = parentItem->child(row);
     if (childItem)
         return createIndex(row, column, childItem);
     else
@@ -452,8 +471,8 @@ QModelIndex UICustomFileSystemModel::parent(const QModelIndex &index) const
     if (!index.isValid())
         return QModelIndex();
 
-    UIFileTableItem *childItem = static_cast<UIFileTableItem*>(index.internalPointer());
-    UIFileTableItem *parentItem = childItem->parentItem();
+    UICustomFileSystemItem *childItem = static_cast<UICustomFileSystemItem*>(index.internalPointer());
+    UICustomFileSystemItem *parentItem = childItem->parentItem();
 
     if (parentItem == rootItem())
         return QModelIndex();
@@ -465,9 +484,9 @@ int UICustomFileSystemModel::rowCount(const QModelIndex &parent) const
 {
     if (parent.column() > 0)
         return 0;
-    const UIFileTableItem *parentItem = rootItem();
+    const UICustomFileSystemItem *parentItem = rootItem();
     if (parent.isValid())
-        parentItem = static_cast<UIFileTableItem*>(parent.internalPointer());
+        parentItem = static_cast<UICustomFileSystemItem*>(parent.internalPointer());
     if (!parentItem)
         return 0;
     return parentItem->childCount();
@@ -517,5 +536,5 @@ void UICustomFileSystemModel::initializeTree()
 {
     QVector<QVariant> headData;
     headData.resize(UICustomFileSystemModelColumn_Max);
-    m_pRootItem = new UIFileTableItem(headData, 0, KFsObjType_Directory);
+    m_pRootItem = new UICustomFileSystemItem(headData, 0, KFsObjType_Directory);
 }

@@ -30,6 +30,7 @@
 
 /* Forward declarations: */
 class UIActionPool;
+class UICustomFileSystemItem;
 
 /** This class scans the guest file system by using the VBox Guest Control API
  *  and populates the UIGuestControlFileModel*/
@@ -52,11 +53,11 @@ signals:
 protected:
 
     void            retranslateUi() /* override */;
-    virtual void    readDirectory(const QString& strPath, UIFileTableItem *parent, bool isStartDir = false) /* override */;
-    virtual void    deleteByItem(UIFileTableItem *item) /* override */;
+    virtual void    readDirectory(const QString& strPath, UICustomFileSystemItem *parent, bool isStartDir = false) /* override */;
+    virtual void    deleteByItem(UICustomFileSystemItem *item) /* override */;
     virtual void    deleteByPath(const QStringList &pathList) /* override */;
     virtual void    goToHomeDirectory() /* override */;
-    virtual bool    renameItem(UIFileTableItem *item, QString newBaseName);
+    virtual bool    renameItem(UICustomFileSystemItem *item, QString newBaseName);
     virtual bool    createDirectory(const QString &path, const QString &directoryName);
     virtual QString fsObjectPropertyString() /* override */;
     virtual void    showProperties() /* override */;
