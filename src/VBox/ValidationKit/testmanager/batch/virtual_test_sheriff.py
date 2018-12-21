@@ -398,6 +398,7 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
         except smtplib.SMTPException as oXcpt:
             rcExit = self.eprint('Failed to send mail: %s' % (oXcpt,));
 
+        return rcExit;
 
 
     def badTestBoxManagement(self):
@@ -511,11 +512,10 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
                 rcExit = self.eprint('Failed to get data for test box #%u in badTestBoxManagement: %s' % (idTestBox, oXcpt,));
                 continue;
             # Skip if the testbox is already disabled, already reset or there's no iLOM
-            if not oTestBox.fEnabled or oTestBox.ipLom is None or \
-                oTestBox.sComment is not None and oTestBox.sComment.find('Automatically reset') >= 0:
-                    self.dprint(u'badTestBoxManagement: Skipping test box #%u (%s) as it has been disabled already.'
-                                % ( idTestBox, oTestBox.sName, ));
-                    continue;
+            if not oTestBox.fEnabled or oTestBox.ipLom is None or oTestBox.sComment is not None and oTestBox.sComment.find('Automatically reset') >= 0:
+                self.dprint(u'badTestBoxManagement: Skipping test box #%u (%s) as it has been disabled already.'
+                            % ( idTestBox, oTestBox.sName, ));
+                continue;
             ## @todo get iLOM credentials from a table?
             sCmd = 'sshpass -p%s ssh -oStrictHostKeyChecking=no root@%s show /SP && reset /SYS' % (g_ksLomPassword, oTestBox.ipLom,);
             try:
