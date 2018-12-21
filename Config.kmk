@@ -6887,6 +6887,9 @@ TEMPLATE_NewVBoxGuestR3Exe_LIBS     = \
 ifeq ($(KBUILD_TARGET),linux)
 TEMPLATE_NewVBoxGuestR3Exe_LIBS += crypt
 endif
+ifeq ($(KBUILD_TARGET),solaris)
+TEMPLATE_NewVBoxGuestR3Exe_LIBS += contract
+endif
 
 #
 # Template for building normal R3 programs for the guest additions, strict.
