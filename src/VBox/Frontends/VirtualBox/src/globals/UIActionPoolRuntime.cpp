@@ -238,7 +238,7 @@ public:
 
     /** Constructs action passing @a pParent to the base-class. */
     UIActionSimpleRuntimeShowFileManagerDialog(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/session_info_16px.png", ":/session_info_disabled_16px.png", true)
+        : UIActionSimple(pParent, ":/file_manager_16px.png", ":/file_manager_disabled_16px.png", true)
     {}
 
 protected:
