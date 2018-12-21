@@ -803,10 +803,12 @@ ifndef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/globals/UIActionPoolManager.h \
 	src/globals/UIActionPoolRuntime.h \
 	src/globals/UIAnimationFramework.h \
+	src/globals/UICustomFileSystemModel.h \
 	src/globals/UIDesktopWidgetWatchdog.h \
 	src/globals/UIMainEventListener.h \
 	src/globals/UIMessageCenter.h \
 	src/globals/UIModalWindowManager.h \
+	src/globals/UIPathOperations.h \
 	src/globals/UIPopupCenter.h \
 	src/globals/UIProgressEventHandler.h \
 	src/globals/UIShortcutPool.h \
@@ -858,7 +860,6 @@ ifndef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/guestctrl/UIFileManagerOptionsPanel.h \
 	src/guestctrl/UIFileManagerPanel.h \
 	src/guestctrl/UIFileManagerSessionPanel.h \
-	src/guestctrl/UICustomFileSystemModel.h \
 	src/guestctrl/UIFileManagerTable.h \
 	src/guestctrl/UIGuestControlInterface.h \
 	src/guestctrl/UIGuestControlTreeItem.h \
@@ -866,7 +867,6 @@ ifndef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/guestctrl/UIGuestProcessControlDialog.h \
 	src/guestctrl/UIGuestProcessControlWidget.h \
 	src/guestctrl/UIFileManagerHostTable.h \
-	src/guestctrl/UIPathOperations.h \
 	src/runtime/normal/UIKeyboardHandlerNormal.h \
 	src/runtime/normal/UIMachineLogicNormal.h \
 	src/runtime/normal/UIMachineViewNormal.h \
@@ -983,6 +983,8 @@ ifdef VBOX_GUI_WITH_SHARED_LIBRARY
  # Headers containing definitions of classes that use the Q_OBJECT macro.
  #
  VirtualBoxVM_QT_MOCHDRS = \
+	src/globals/UICustomFileSystemModel.h \
+	src/globals/UIPathOperations.h \
 	src/globals/UIStarter.h \
 	src/runtime/UIConsoleEventHandler.h \
 	src/runtime/UIFrameBuffer.h \
@@ -1015,7 +1017,6 @@ ifdef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/guestctrl/UIFileManagerOptionsPanel.h \
 	src/guestctrl/UIFileManagerPanel.h \
 	src/guestctrl/UIFileManagerSessionPanel.h \
-	src/guestctrl/UICustomFileSystemModel.h \
 	src/guestctrl/UIFileManagerTable.h \
 	src/guestctrl/UIGuestControlInterface.h \
 	src/guestctrl/UIGuestControlTreeItem.h \
@@ -1023,7 +1024,6 @@ ifdef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/guestctrl/UIGuestProcessControlDialog.h \
 	src/guestctrl/UIGuestProcessControlWidget.h \
 	src/guestctrl/UIFileManagerHostTable.h \
-	src/guestctrl/UIPathOperations.h \
 	src/runtime/normal/UIKeyboardHandlerNormal.h \
 	src/runtime/normal/UIMachineLogicNormal.h \
 	src/runtime/normal/UIMachineViewNormal.h \
@@ -1527,6 +1527,7 @@ ifndef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/globals/UIActionPoolManager.cpp \
 	src/globals/UIActionPoolRuntime.cpp \
 	src/globals/UIAnimationFramework.cpp \
+	src/globals/UICustomFileSystemModel.cpp \
 	src/globals/UIDefs.cpp \
 	src/globals/UIDesktopWidgetWatchdog.cpp \
 	src/globals/UIErrorString.cpp \
@@ -1535,6 +1536,7 @@ ifndef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/globals/UIMainEventListener.cpp \
 	src/globals/UIMessageCenter.cpp \
 	src/globals/UIModalWindowManager.cpp \
+	src/globals/UIPathOperations.cpp \
 	src/globals/UIPopupCenter.cpp \
 	src/globals/UIProgressEventHandler.cpp \
 	src/globals/UIShortcutPool.cpp \
@@ -1589,7 +1591,6 @@ ifndef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/guestctrl/UIFileManagerOptionsPanel.cpp \
 	src/guestctrl/UIFileManagerPanel.cpp \
 	src/guestctrl/UIFileManagerSessionPanel.cpp \
-	src/guestctrl/UICustomFileSystemModel.cpp \
 	src/guestctrl/UIFileManagerTable.cpp \
 	src/guestctrl/UIGuestControlInterface.cpp \
 	src/guestctrl/UIGuestControlTreeItem.cpp \
@@ -1597,7 +1598,6 @@ ifndef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/guestctrl/UIGuestProcessControlDialog.cpp \
 	src/guestctrl/UIGuestProcessControlWidget.cpp \
 	src/guestctrl/UIFileManagerHostTable.cpp \
-	src/guestctrl/UIPathOperations.cpp \
 	src/runtime/normal/UIKeyboardHandlerNormal.cpp \
 	src/runtime/normal/UIMachineLogicNormal.cpp \
 	src/runtime/normal/UIMachineViewNormal.cpp \
@@ -1737,6 +1737,8 @@ ifdef VBOX_GUI_WITH_SHARED_LIBRARY
  #
  VirtualBoxVM_SOURCES = \
 	src/main.cpp \
+	src/globals/UICustomFileSystemModel.cpp \
+	src/globals/UIPathOperations.cpp \
 	src/globals/UIStarter.cpp \
 	src/runtime/UIConsoleEventHandler.cpp \
 	src/runtime/UIFrameBuffer.cpp \
@@ -1769,7 +1771,6 @@ ifdef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/guestctrl/UIFileManagerOptionsPanel.cpp \
 	src/guestctrl/UIFileManagerPanel.cpp \
 	src/guestctrl/UIFileManagerSessionPanel.cpp \
-	src/guestctrl/UICustomFileSystemModel.cpp \
 	src/guestctrl/UIFileManagerTable.cpp \
 	src/guestctrl/UIGuestControlInterface.cpp \
 	src/guestctrl/UIGuestControlTreeItem.cpp \
@@ -1777,7 +1778,6 @@ ifdef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/guestctrl/UIGuestProcessControlWidget.cpp \
 	src/guestctrl/UIGuestProcessControlDialog.cpp \
 	src/guestctrl/UIFileManagerHostTable.cpp \
-	src/guestctrl/UIPathOperations.cpp \
 	src/runtime/normal/UIKeyboardHandlerNormal.cpp \
 	src/runtime/normal/UIMachineLogicNormal.cpp \
 	src/runtime/normal/UIMachineViewNormal.cpp \
