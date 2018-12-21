@@ -1092,6 +1092,9 @@ bool VBoxCmdVbvaPreempt(PVBOXMP_DEVEXT pDevExt, VBOXCMDVBVA *pVbva, uint32_t u32
 
 bool VBoxCmdVbvaCheckCompletedIrq(PVBOXMP_DEVEXT pDevExt, VBOXCMDVBVA *pVbva)
 {
+    if (pVbva->Vbva.pVBVA == NULL)
+        return false;
+
     VBVAEXBUFFERFORWARDITER Iter;
     VBoxVBVAExCFIterInit(&pVbva->Vbva, &Iter);
 
