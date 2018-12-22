@@ -25,10 +25,11 @@
 #include <new> /* For bad_alloc. */
 #include <iprt/win/shlobj.h>
 
+#include <iprt/mem.h>
+#include <iprt/err.h>
 #include <iprt/path.h>
 #include <iprt/semaphore.h>
 #include <iprt/string.h>
-#include <iprt/mem.h>
 #include <iprt/uri.h>
 
 #include <QStringList>
