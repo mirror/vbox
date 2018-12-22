@@ -33,6 +33,7 @@
 #include "internal/iprt.h"
 
 #include <iprt/assert.h>
+#include <iprt/err.h>
 #include <iprt/string.h>
 #include <iprt/param.h>
 #include "../allocex.h"
