@@ -20,6 +20,7 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #define LOG_GROUP LOG_GROUP_SHARED_FOLDERS
+#include <iprt/err.h>
 #include <iprt/path.h>
 #include <iprt/string.h>
 
