@@ -240,7 +240,7 @@ static int _crVBoxHGSMIClientInit(PCRVBOXHGSMI_CLIENT pClient, PVBOXUHGSMI pHgsm
     int rc;
     VBOXUHGSMI_BUFFER_TYPE_FLAGS Flags = {0};
     pClient->pHgsmi = pHgsmi;
-    Flags.fCommand = 1;
+    Flags.s.fCommand = 1;
     rc = pHgsmi->pfnBufferCreate(pHgsmi, CRVBOXHGSMI_PAGE_ALIGN(1), Flags, &pClient->pCmdBuffer);
     if (RT_SUCCESS(rc))
     {
@@ -416,12 +416,11 @@ static CRVBOXHGSMIHDR *_crVBoxHGSMICmdBufferLock(PCRVBOXHGSMI_CLIENT pClient, ui
     VBOXUHGSMI_BUFFER_LOCK_FLAGS fFlags;
     int rc;
     fFlags.Value = 0;
-    fFlags.bDiscard = 1;
+    fFlags.s.fDiscard = 1;
     rc = pClient->pCmdBuffer->pfnLock(pClient->pCmdBuffer, 0, cbBuffer, fFlags, (void**)&pHdr);
     if (RT_SUCCESS(rc))
         return pHdr;
-    else
-        crWarning("_crVBoxHGSMICmdBufferLock: pfnLock failed rc %d", rc);
+    crWarning("_crVBoxHGSMICmdBufferLock: pfnLock failed rc %d", rc);
 
     crWarning("Failed to Lock the command buffer of size(%d), rc(%d)\n", cbBuffer, rc);
     return NULL;
@@ -443,7 +442,7 @@ static CRVBOXHGSMIHDR *_crVBoxHGSMICmdBufferLockRo(PCRVBOXHGSMI_CLIENT pClient, 
     VBOXUHGSMI_BUFFER_LOCK_FLAGS fFlags;
     int rc;
     fFlags.Value = 0;
-    fFlags.bReadOnly = 1;
+    fFlags.s.fReadOnly = 1;
     rc = pClient->pCmdBuffer->pfnLock(pClient->pCmdBuffer, 0, cbBuffer, fFlags, (void**)&pHdr);
     if (RT_FAILURE(rc))
         crWarning("Failed to Lock the command buffer of size(%d), rc(%d)\n", cbBuffer, rc);
@@ -464,7 +463,7 @@ static int32_t _crVBoxHGSMICmdBufferGetRc(PCRVBOXHGSMI_CLIENT pClient)
     int rc;
 
     fFlags.Value = 0;
-    fFlags.bReadOnly = 1;
+    fFlags.s.fReadOnly = 1;
     rc = pClient->pCmdBuffer->pfnLock(pClient->pCmdBuffer, 0, sizeof (*pHdr), fFlags, (void**)&pHdr);
     if (RT_FAILURE(rc))
     {
@@ -514,7 +513,7 @@ DECLINLINE(void) _crVBoxHGSMIFillCmd(VBOXUHGSMI_BUFFER_SUBMIT *pSubm, PCRVBOXHGS
     pSubm->offData = 0;
     pSubm->cbData = cbData;
     pSubm->fFlags.Value = 0;
-    pSubm->fFlags.bDoNotRetire = 1;
+    pSubm->fFlags.s.fDoNotRetire = 1;
 # if 0
     pSubm->fFlags.bDoNotSignalCompletion = 1; /* <- we do not need that actually since
                                                * in case we want completion,
@@ -1614,7 +1613,7 @@ static void _crVBoxHGSMIPollHost(CRConnection *conn, PCRVBOXHGSMI_CLIENT pClient
     aSubmit[1].offData = 0;
     aSubmit[1].cbData = pRecvBuffer->cbBuffer;
     aSubmit[1].fFlags.Value = 0;
-    aSubmit[1].fFlags.bHostWriteOnly = 1;
+    aSubmit[1].fFlags.s.fHostWriteOnly = 1;
 
     rc = pClient->pHgsmi->pfnBufferSubmit(pClient->pHgsmi, aSubmit, 2);
     if (RT_FAILURE(rc))
@@ -1701,8 +1700,8 @@ _crVBoxHGSMIWriteReadExact(CRConnection *conn, PCRVBOXHGSMI_CLIENT pClient, void
 
         offBuffer = 0;
         fFlags.Value = 0;
-        fFlags.bDiscard = 1;
-        fFlags.bWriteOnly = 1;
+        fFlags.s.fDiscard = 1;
+        fFlags.s.fWriteOnly = 1;
         rc = pBuf->pfnLock(pBuf, 0, len, fFlags, &pvBuf);
         if (RT_SUCCESS(rc))
         {
@@ -1739,7 +1738,7 @@ _crVBoxHGSMIWriteReadExact(CRConnection *conn, PCRVBOXHGSMI_CLIENT pClient, void
         aSubmit[1].offData = offBuffer;
         aSubmit[1].cbData = len;
         aSubmit[1].fFlags.Value = 0;
-        aSubmit[1].fFlags.bHostReadOnly = 1;
+        aSubmit[1].fFlags.s.fHostReadOnly = 1;
 
         aSubmit[2].pBuf = pRecvBuffer;
         aSubmit[2].offData = 0;
@@ -1861,7 +1860,7 @@ static void _crVBoxHGSMIWriteExact(CRConnection *conn, PCRVBOXHGSMI_CLIENT pClie
         aSubmit[1].offData = offStart;
         aSubmit[1].cbData = len;
         aSubmit[1].fFlags.Value = 0;
-        aSubmit[1].fFlags.bHostReadOnly = 1;
+        aSubmit[1].fFlags.s.fHostReadOnly = 1;
 
         rc = pClient->pHgsmi->pfnBufferSubmit(pClient->pHgsmi, aSubmit, 2);
         if (RT_SUCCESS(rc))
@@ -1893,7 +1892,7 @@ static void _crVBoxHGSMIWriteExact(CRConnection *conn, PCRVBOXHGSMI_CLIENT pClie
         aSubmit[1].offData = offStart;
         aSubmit[1].cbData = len;
         aSubmit[1].fFlags.Value = 0;
-        aSubmit[1].fFlags.bHostReadOnly = 1;
+        aSubmit[1].fFlags.s.fHostReadOnly = 1;
 
         rc = pClient->pHgsmi->pfnBufferSubmit(pClient->pHgsmi, aSubmit, 2);
         if (RT_SUCCESS(rc))

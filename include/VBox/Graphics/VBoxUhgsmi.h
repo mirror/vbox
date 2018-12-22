@@ -34,50 +34,41 @@ typedef struct VBOXUHGSMI *PVBOXUHGSMI;
 
 typedef struct VBOXUHGSMI_BUFFER *PVBOXUHGSMI_BUFFER;
 
-typedef struct VBOXUHGSMI_BUFFER_TYPE_FLAGS
+typedef union VBOXUHGSMI_BUFFER_TYPE_FLAGS
 {
-    union
+    uint32_t Value;
+    struct
     {
-        struct
-        {
-            uint32_t fCommand    : 1;
-            uint32_t Reserved    : 31;
-        } RT_STRUCT_NM(s);
-        uint32_t Value;
-    } RT_UNION_NM(u);
+        uint32_t fCommand       : 1;
+        uint32_t Reserved       : 31;
+    } s;
 } VBOXUHGSMI_BUFFER_TYPE_FLAGS;
 
-typedef struct VBOXUHGSMI_BUFFER_LOCK_FLAGS
+typedef union VBOXUHGSMI_BUFFER_LOCK_FLAGS
 {
-    union
+    uint32_t Value;
+    struct
     {
-        struct
-        {
-            uint32_t bReadOnly   : 1;
-            uint32_t bWriteOnly  : 1;
-            uint32_t bDonotWait  : 1;
-            uint32_t bDiscard    : 1;
-            uint32_t bLockEntire : 1;
-            uint32_t Reserved    : 27;
-        } RT_STRUCT_NM(s);
-        uint32_t Value;
-    } RT_UNION_NM(u);
+        uint32_t fReadOnly      : 1;
+        uint32_t fWriteOnly     : 1;
+        uint32_t fDonotWait     : 1;
+        uint32_t fDiscard       : 1;
+        uint32_t fLockEntire    : 1;
+        uint32_t Reserved       : 27;
+    } s;
 } VBOXUHGSMI_BUFFER_LOCK_FLAGS;
 
-typedef struct VBOXUHGSMI_BUFFER_SUBMIT_FLAGS
+typedef union VBOXUHGSMI_BUFFER_SUBMIT_FLAGS
 {
-    union
+    uint32_t Value;
+    struct
     {
-        struct
-        {
-            uint32_t bHostReadOnly          : 1;
-            uint32_t bHostWriteOnly         : 1;
-            uint32_t bDoNotRetire           : 1; /**< the buffer will be used in a subsequent command */
-            uint32_t bEntireBuffer          : 1;
-            uint32_t Reserved               : 28;
-        } RT_STRUCT_NM(s);
-        uint32_t Value;
-    } RT_UNION_NM(u);
+        uint32_t fHostReadOnly  : 1;
+        uint32_t fHostWriteOnly : 1;
+        uint32_t fDoNotRetire   : 1; /**< the buffer will be used in a subsequent command */
+        uint32_t fEntireBuffer  : 1;
+        uint32_t Reserved       : 28;
+    } s;
 } VBOXUHGSMI_BUFFER_SUBMIT_FLAGS, *PVBOXUHGSMI_BUFFER_SUBMIT_FLAGS;
 
 /* the caller can specify NULL as a hSynch and specify a valid enmSynchType to make UHGSMI create a proper object itself,

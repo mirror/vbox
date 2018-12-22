@@ -93,7 +93,7 @@ DECLINLINE(int) vboxUhgsmiBaseDxLockData(PVBOXUHGSMI_BUFFER_PRIVATE_DX_ALLOC_BAS
     PVBOXUHGSMI_BUFFER pBuf = &pPrivate->BasePrivate.Base;
     D3DDDICB_LOCKFLAGS fLockFlags;
     fLockFlags.Value = 0;
-    if (fFlags.bLockEntire)
+    if (fFlags.s.fLockEntire)
     {
         Assert(!offLock);
         fLockFlags.LockEntire = 1;
@@ -125,10 +125,10 @@ DECLINLINE(int) vboxUhgsmiBaseDxLockData(PVBOXUHGSMI_BUFFER_PRIVATE_DX_ALLOC_BAS
 
     }
 
-    fLockFlags.ReadOnly = fFlags.bReadOnly;
-    fLockFlags.WriteOnly = fFlags.bWriteOnly;
-    fLockFlags.DonotWait = fFlags.bDonotWait;
-//    fLockFlags.Discard = fFlags.bDiscard;
+    fLockFlags.ReadOnly  = fFlags.s.fReadOnly;
+    fLockFlags.WriteOnly = fFlags.s.fWriteOnly;
+    fLockFlags.DonotWait = fFlags.s.fDonotWait;
+//    fLockFlags.Discard = fFlags.s.fDiscard;
     *pfFlags = fLockFlags;
     return VINF_SUCCESS;
 }
@@ -172,9 +172,9 @@ DECLINLINE(int) vboxUhgsmiBaseDxDmaFill(PVBOXUHGSMI_BUFFER_SUBMIT aBuffers, uint
         memset(pAllocationList, 0, sizeof (D3DDDI_ALLOCATIONLIST));
         pAllocationList->hAllocation = pBuffer->hAllocation;
         pAllocationList->Value = 0;
-        pAllocationList->WriteOperation = !pBufInfo->fFlags.bHostReadOnly;
-        pAllocationList->DoNotRetireInstance = pBufInfo->fFlags.bDoNotRetire;
-        if (pBufInfo->fFlags.bEntireBuffer)
+        pAllocationList->WriteOperation = !pBufInfo->fFlags.s.fHostReadOnly;
+        pAllocationList->DoNotRetireInstance = pBufInfo->fFlags.s.fDoNotRetire;
+        if (pBufInfo->fFlags.s.fEntireBuffer)
         {
             pBufSubmInfo->offData = 0;
             pBufSubmInfo->cbData = pBuffer->BasePrivate.Base.cbBuffer;
