@@ -157,7 +157,7 @@ typedef struct BLDPROGSTRTAB
 } BLDPROGSTRTAB;
 typedef BLDPROGSTRTAB *PBLDPROGSTRTAB;
 
-#if RT_CLANG_PREREQ(4, 0)
+#if RT_CLANG_PREREQ(4, 0) || RT_GCC_PREREQ(4, 6)
 #  pragma GCC diagnostic push
 #  pragma GCC diagnostic ignored "-Wunused-function"
 #endif
@@ -1038,7 +1038,7 @@ static void BldProgStrTab_WriteStringTable(PBLDPROGSTRTAB pThis, FILE *pOut,
 #endif
 }
 
-#if RT_CLANG_PREREQ(4, 0)
+#if RT_CLANG_PREREQ(4, 0) || RT_GCC_PREREQ(4, 6)
 #  pragma GCC diagnostic pop
 #endif
 
