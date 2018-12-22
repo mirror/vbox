@@ -109,6 +109,11 @@ extern const fenv_t     RT_NOCRT(__fe_dfl_env);
 #define __ldmxcsr(__csr)        __asm __volatile("ldmxcsr %0" : : "m" (__csr))
 #define __stmxcsr(__csr)        __asm __volatile("stmxcsr %0" : "=m" (*(__csr)))
 
+#if RT_GNUC_PREREQ(4, 6)
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wshadow"
+#endif
+
 DECLINLINE(int)
 feclearexcept(int __excepts)
 {
@@ -215,6 +220,10 @@ fegetexcept(void)
         __fnstcw(&__control);
         return (~__control & FE_ALL_EXCEPT);
 }
+
+#if RT_GNUC_PREREQ(4, 6)
+# pragma GCC diagnostic pop
+#endif
 
 RT_C_DECLS_END
 
