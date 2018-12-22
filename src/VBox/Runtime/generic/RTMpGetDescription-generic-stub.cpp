@@ -30,7 +30,9 @@
 *********************************************************************************************************************************/
 #include <iprt/mp.h>
 #include "internal/iprt.h"
+
 #include <iprt/string.h>
+#include <iprt/err.h>
 
 
 RTDECL(int) RTMpGetDescription(RTCPUID idCpu, char *pszBuf, size_t cbBuf)
