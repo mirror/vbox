@@ -32,6 +32,7 @@
 
 #include <iprt/alloca.h>
 #include <iprt/assert.h>
+#include <iprt/err.h>
 #include <iprt/string.h>
 #include <iprt/mem.h>
 
