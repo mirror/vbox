@@ -36,7 +36,7 @@
 
 #include <iprt/stdarg.h>
 #ifdef IN_RING3
-# include <iprt/err.h>
+# include <iprt/errcore.h>
 #endif
 
 RT_C_DECLS_BEGIN
