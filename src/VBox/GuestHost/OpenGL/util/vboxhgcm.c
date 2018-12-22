@@ -1496,7 +1496,7 @@ static void *_crVBoxHGSMIDoAlloc(CRConnection *conn, PCRVBOXHGSMI_CLIENT pClient
         VBOXUHGSMI_BUFFER_LOCK_FLAGS fFlags;
         buf->pvUserData = pClient;
         fFlags.Value = 0;
-        fFlags.bDiscard = 1;
+        fFlags.s.fDiscard = 1;
         rc = buf->pfnLock(buf, 0, CRVBOXHGSMI_BUF_LOCK_SIZE(cbSize), fFlags, (void**)&pData);
         if (RT_SUCCESS(rc))
         {
