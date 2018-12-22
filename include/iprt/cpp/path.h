@@ -26,10 +26,10 @@
 #ifndef ___iprt_cpp_path_h
 #define ___iprt_cpp_path_h
 
-#include <iprt/types.h>
 #include <iprt/assert.h>
-#include <iprt/cpp/ministring.h>
+#include <iprt/err.h>
 #include <iprt/path.h>
+#include <iprt/cpp/ministring.h>
 
 
 /** @defgroup grp_rt_cpp_path    C++ Path Utilities
