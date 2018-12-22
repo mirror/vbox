@@ -36,6 +36,7 @@
 #include <iprt/asm.h>
 #include <iprt/dbg.h>
 #include <iprt/err.h>
+#include <iprt/latin1.h>
 #include <iprt/log.h>
 #include <iprt/md5.h>
 #include <iprt/mem.h>

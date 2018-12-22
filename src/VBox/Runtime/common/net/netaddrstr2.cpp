@@ -32,6 +32,7 @@
 #include <iprt/net.h>
 
 #include <iprt/asm.h>
+#include <iprt/err.h>
 #include <iprt/mem.h>
 #include <iprt/string.h>
 #include <iprt/stream.h>

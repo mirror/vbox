@@ -31,6 +31,8 @@
 #include <iprt/string.h>
 #include "internal/iprt.h"
 
+#include <iprt/err.h>
+
 
 RTDECL(int) RTUtf16NLenEx(PCRTUTF16 pwszString, size_t cwcMax, size_t *pcwc)
 {

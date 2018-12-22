@@ -32,9 +32,10 @@
 #include <iprt/time.h>
 #include "internal/iprt.h"
 
-#include <iprt/ctype.h>
-#include <iprt/string.h>
 #include <iprt/assert.h>
+#include <iprt/ctype.h>
+#include <iprt/err.h>
+#include <iprt/string.h>
 #include "internal/time.h"
 
 

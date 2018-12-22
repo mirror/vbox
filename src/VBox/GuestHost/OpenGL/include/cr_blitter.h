@@ -18,8 +18,8 @@
 #ifndef ___cr_blitter_h
 #define ___cr_blitter_h
 
-#include <iprt/cdefs.h>
 #include <iprt/asm.h>
+#include <iprt/err.h>
 #include <iprt/string.h>
 #include "cr_vreg.h"
 #ifdef IN_VMSVGA3D

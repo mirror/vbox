@@ -32,6 +32,7 @@
 
 #include <iprt/asm.h>
 #include <iprt/env.h>
+#include <iprt/err.h>
 #include <iprt/initterm.h>
 #include <iprt/mem.h>
 #include <iprt/message.h>

@@ -62,6 +62,7 @@
  */
 
 #include <slirp.h>
+#include <iprt/err.h>
 #include "alias.h"
 
 static const uint8_t broadcast_ethaddr[6] =

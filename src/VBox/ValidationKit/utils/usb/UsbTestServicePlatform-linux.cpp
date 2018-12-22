@@ -29,17 +29,15 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
-
 #include <iprt/asm.h>
-#include <iprt/cdefs.h>
 #include <iprt/ctype.h>
+#include <iprt/err.h>
 #include <iprt/dir.h>
 #include <iprt/env.h>
 #include <iprt/mem.h>
 #include <iprt/path.h>
 #include <iprt/process.h>
 #include <iprt/string.h>
-#include <iprt/types.h>
 
 #include <iprt/linux/sysfs.h>
 

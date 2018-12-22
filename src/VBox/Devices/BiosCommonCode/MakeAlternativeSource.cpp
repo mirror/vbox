@@ -23,6 +23,7 @@
 #include <iprt/buildconfig.h>
 #include <iprt/ctype.h>
 #include <iprt/dbg.h>
+#include <iprt/err.h>
 #include <iprt/file.h>
 #include <iprt/getopt.h>
 #include <iprt/initterm.h>

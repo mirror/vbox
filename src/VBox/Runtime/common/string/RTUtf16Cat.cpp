@@ -31,6 +31,8 @@
 #include <iprt/string.h>
 #include "internal/iprt.h"
 
+#include <iprt/err.h>
+
 
 RTDECL(int) RTUtf16Cat(PRTUTF16 pwszDst, size_t cwcDst, PCRTUTF16 pwszSrc)
 {

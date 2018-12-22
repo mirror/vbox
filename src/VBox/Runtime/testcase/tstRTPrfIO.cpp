@@ -32,6 +32,7 @@
 #include <iprt/dir.h>
 #include <iprt/fs.h>
 
+#include <iprt/err.h>
 #include <iprt/getopt.h>
 #include <iprt/param.h>
 #include <iprt/path.h>

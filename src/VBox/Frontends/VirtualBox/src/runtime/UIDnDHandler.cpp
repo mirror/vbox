@@ -62,6 +62,7 @@
 #endif
 #define LOG_GROUP LOG_GROUP_GUEST_DND
 #include <VBox/log.h>
+#include <iprt/err.h>
 
 #if 0
 # ifdef DEBUG

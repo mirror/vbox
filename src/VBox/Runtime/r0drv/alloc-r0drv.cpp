@@ -36,6 +36,7 @@
 # include <iprt/asm-amd64-x86.h>
 #endif
 #include <iprt/assert.h>
+#include <iprt/err.h>
 #ifdef RT_MORE_STRICT
 # include <iprt/mp.h>
 #endif

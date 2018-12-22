@@ -52,6 +52,7 @@
 #include <iprt/assert.h>
 #include <iprt/err.h>
 #include <iprt/file.h>
+#include <iprt/latin1.h>
 #include <iprt/log.h>
 #include <iprt/mem.h>
 #include <iprt/param.h>

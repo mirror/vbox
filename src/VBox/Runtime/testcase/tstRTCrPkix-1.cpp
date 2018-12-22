@@ -30,6 +30,7 @@
 *********************************************************************************************************************************/
 #include <iprt/crypto/pkix.h>
 
+#include <iprt/err.h>
 #include <iprt/string.h>
 #include <iprt/test.h>
 #include <iprt/crypto/key.h>

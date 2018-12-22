@@ -36,6 +36,7 @@
 #include <iprt/assert.h>
 #include <iprt/ctype.h>
 #include <iprt/critsect.h>
+#include <iprt/err.h>
 #include <iprt/mem.h>
 #include <iprt/log.h>
 #include <iprt/poll.h>

@@ -32,6 +32,7 @@
 
 #include <iprt/buildconfig.h>
 #include <iprt/ctype.h>
+#include <iprt/err.h>
 #include <iprt/file.h>
 #include <iprt/dir.h>
 #include <iprt/getopt.h>

@@ -26,8 +26,9 @@
 #ifndef ___iprt_bldprog_strtab_h
 #define ___iprt_bldprog_strtab_h
 
-#include <iprt/string.h>
 #include <iprt/assert.h>
+#include <iprt/err.h>
+#include <iprt/string.h>
 
 
 /**

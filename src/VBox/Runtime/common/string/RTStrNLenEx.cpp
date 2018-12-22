@@ -31,6 +31,8 @@
 #include <iprt/string.h>
 #include "internal/iprt.h"
 
+#include <iprt/err.h>
+
 
 RTDECL(int) RTStrNLenEx(const char *pszString, size_t cchMax, size_t *pcch)
 {

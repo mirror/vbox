@@ -30,6 +30,7 @@
 *********************************************************************************************************************************/
 #include <iprt/dir.h>
 
+#include <iprt/err.h>
 #include <iprt/path.h>
 #include <iprt/mem.h>
 #include <iprt/string.h>

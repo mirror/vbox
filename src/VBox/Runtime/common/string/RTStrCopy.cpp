@@ -31,6 +31,8 @@
 #include <iprt/string.h>
 #include "internal/iprt.h"
 
+#include <iprt/err.h>
+
 
 RTDECL(int) RTStrCopy(char *pszDst, size_t cbDst, const char *pszSrc)
 {

@@ -42,8 +42,9 @@
  */
 
 #include <slirp.h>
-#include <iprt/file.h>
 #include <iprt/asm-math.h>
+#include <iprt/file.h>
+#include <iprt/err.h>
 
 typedef enum ENMTFTPSESSIONFMT
 {

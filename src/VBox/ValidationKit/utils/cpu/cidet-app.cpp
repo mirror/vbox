@@ -32,6 +32,7 @@
 
 #include <iprt/asm-amd64-x86.h>
 #include <iprt/buildconfig.h>
+#include <iprt/err.h>
 #include <iprt/getopt.h>
 #include <iprt/initterm.h>
 #include <iprt/mem.h>

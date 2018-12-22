@@ -23,6 +23,7 @@
 
 #include <iprt/ctype.h>
 #include <iprt/dir.h>
+#include <iprt/err.h>
 #include <iprt/file.h>
 #include <iprt/manifest.h>
 #include <iprt/param.h>

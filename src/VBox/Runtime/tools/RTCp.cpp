@@ -33,6 +33,7 @@
 #include <iprt/buildconfig.h>
 #include <iprt/file.h>
 #include <iprt/fs.h>
+#include <iprt/err.h>
 #include <iprt/getopt.h>
 #include <iprt/initterm.h>
 #include <iprt/message.h>

@@ -31,6 +31,7 @@
 #include <iprt/zip.h>
 
 #include <iprt/buildconfig.h>
+#include <iprt/err.h>
 #include <iprt/file.h>
 #include <iprt/getopt.h>
 #include <iprt/initterm.h>

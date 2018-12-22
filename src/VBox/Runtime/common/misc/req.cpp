@@ -33,6 +33,7 @@
 
 #include <iprt/assert.h>
 #include <iprt/asm.h>
+#include <iprt/err.h>
 #include <iprt/string.h>
 #include <iprt/time.h>
 #include <iprt/semaphore.h>

@@ -32,9 +32,10 @@
 #include <iprt/string.h>
 #include "internal/iprt.h"
 
-#include <iprt/assert.h>
-#include <iprt/stdarg.h>
 #include <iprt/asm.h>
+#include <iprt/assert.h>
+#include <iprt/err.h>
+#include <iprt/stdarg.h>
 #include "internal/string.h"
 
 

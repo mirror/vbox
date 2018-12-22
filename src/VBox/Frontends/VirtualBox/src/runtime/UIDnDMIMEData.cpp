@@ -33,6 +33,7 @@
 #undef LOG_GROUP
 #define LOG_GROUP LOG_GROUP_GUEST_DND
 #include <VBox/log.h>
+#include <iprt/err.h>
 
 
 UIDnDMIMEData::UIDnDMIMEData(UIDnDHandler *pDnDHandler,

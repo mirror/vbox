@@ -32,6 +32,7 @@
 
 #include <iprt/buildconfig.h>
 #include <iprt/dbg.h>
+#include <iprt/err.h>
 #include <iprt/file.h>
 #include <iprt/formats/mach-o.h>
 #include <iprt/getopt.h>

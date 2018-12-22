@@ -39,8 +39,7 @@ DECLINLINE(void) crWarning(const char *format, ... ) {}
 # include "cr_bmpscale.h"
 #endif
 
-#include <iprt/cdefs.h>
-#include <iprt/types.h>
+#include <iprt/err.h>
 #include <iprt/mem.h>
 
 

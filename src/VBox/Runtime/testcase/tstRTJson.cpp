@@ -29,6 +29,8 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #include <iprt/json.h>
+
+#include <iprt/err.h>
 #include <iprt/string.h>
 #include <iprt/test.h>
 

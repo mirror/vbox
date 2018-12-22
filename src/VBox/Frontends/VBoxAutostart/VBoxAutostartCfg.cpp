@@ -19,13 +19,13 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
-
-#include <iprt/stream.h>
-#include <iprt/process.h>
-#include <iprt/string.h>
-#include <iprt/mem.h>
 #include <iprt/ctype.h>
+#include <iprt/err.h>
+#include <iprt/mem.h>
 #include <iprt/message.h>
+#include <iprt/process.h>
+#include <iprt/stream.h>
+#include <iprt/string.h>
 
 #include "VBoxAutostart.h"
 

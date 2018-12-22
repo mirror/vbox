@@ -30,6 +30,7 @@
 *********************************************************************************************************************************/
 #include <iprt/buildconfig.h>
 #include <iprt/env.h>
+#include <iprt/err.h>
 #include <iprt/file.h>
 #include <iprt/path.h>
 #include <iprt/getopt.h>

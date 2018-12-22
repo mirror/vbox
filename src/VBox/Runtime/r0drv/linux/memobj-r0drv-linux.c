@@ -31,9 +31,10 @@
 #include "the-linux-kernel.h"
 
 #include <iprt/memobj.h>
-#include <iprt/alloc.h>
 #include <iprt/assert.h>
+#include <iprt/err.h>
 #include <iprt/log.h>
+#include <iprt/mem.h>
 #include <iprt/process.h>
 #include <iprt/string.h>
 #include "internal/memobj.h"

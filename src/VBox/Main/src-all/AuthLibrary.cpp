@@ -18,6 +18,7 @@
 #include "AuthLibrary.h"
 #include "Logging.h"
 
+#include <iprt/err.h>
 #include <iprt/ldr.h>
 #include <iprt/path.h>
 #include <iprt/string.h>

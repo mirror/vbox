@@ -29,6 +29,7 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #include <iprt/string.h>
+#include <iprt/latin1.h>
 
 #include <iprt/alloc.h>
 #include <iprt/assert.h>

@@ -33,6 +33,7 @@
 
 #include <iprt/assert.h>
 #include <iprt/ctype.h>
+#include <iprt/err.h>
 #include <iprt/string.h>
 #include <iprt/stream.h>
 

@@ -34,6 +34,7 @@
 
 # include <iprt/rand.h>
 # include <iprt/assert.h>
+# include <iprt/err.h>
 
 # include "internal/iprt-openssl.h"
 # include "openssl/rand.h"

@@ -31,6 +31,8 @@
 #include "internal/iprt.h"
 #include <iprt/dbg.h>
 
+#include <iprt/err.h>
+#include <iprt/string.h>
 #include <iprt/ldr.h>
 #include <iprt/list.h>
 #include <iprt/mem.h>
