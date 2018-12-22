@@ -32,6 +32,7 @@
 # include "internal/iprt.h"
 # include <iprt/crypto/misc.h>
 
+# include <iprt/err.h>
 # include <iprt/rand.h>
 # include <iprt/assert.h>
 

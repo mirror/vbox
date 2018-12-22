@@ -33,6 +33,7 @@
 
 # include <iprt/asm.h>
 # include <iprt/assert.h>
+# include <iprt/err.h>
 # include <iprt/file.h>
 # include <iprt/mem.h>
 # include <iprt/string.h>

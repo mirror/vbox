@@ -31,6 +31,7 @@
 #include <VBox/usbfilter.h>
 #include "VBoxUSBFilterMgr.h"
 
+#include <iprt/err.h>
 #include <iprt/handletable.h>
 #include <iprt/mem.h>
 #ifdef VBOXUSBFILTERMGR_USB_SPINLOCK
