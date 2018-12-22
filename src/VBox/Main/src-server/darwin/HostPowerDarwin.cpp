@@ -1,7 +1,6 @@
 /* $Id$ */
 /** @file
- *
- * VirtualBox interface to host's power notification service
+ * VirtualBox interface to host's power notification service, darwin specifics.
  */
 
 /*
@@ -18,6 +17,7 @@
 
 #include "HostPower.h"
 #include "Logging.h"
+#include "iprt/err.h"
 
 #include <IOKit/IOMessage.h>
 #include <IOKit/ps/IOPowerSources.h>
