@@ -1,4 +1,3 @@
-/* $Id$ */
 /** @file
  * IPRT - Linux symver and compatibility definitions.
  */
@@ -71,4 +70,4 @@ __asm__(".symver fcntl64,fcntl@GLIBC_2.2.5");
 __asm__(".symver fcntl64,fcntl@GLIBC_2.0");
 #endif
 
-#endif /* ___iprt_linux_symvers_h */
+#endif

@@ -77,7 +77,8 @@ VBOX_HDRS_R3_ONLY := \
 	iprt/localipc.h \
 	iprt/linux/sysfs.h \
 	iprt/socket.h \
-	iprt/udp.h
+	iprt/udp.h \
+       iprt/linux/symvers.h
 
 # Ring-0 only headers.
 VBOX_HDRS_R0_ONLY := \
