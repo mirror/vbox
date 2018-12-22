@@ -36,6 +36,7 @@
 #endif
 
 #include <iprt/mem.h>
+#include <iprt/err.h>
 #include <iprt/string.h>
 
 

@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Testcase that attempts to locate and open the specfied device.
+ * Testcase that attempts to locate and open the specified device.
  */
 
 /*
@@ -37,6 +37,7 @@
 #include <IOKit/usb/IOUSBLib.h>
 #include <IOKit/IOCFPlugIn.h>
 
+#include <iprt/err.h>
 #include <iprt/mem.h>
 #include <iprt/string.h>
 #include <iprt/process.h>
@@ -45,6 +46,7 @@
 #include <iprt/getopt.h>
 #include <iprt/initterm.h>
 #include <iprt/stream.h>
+
 
 /**
  * Gets an unsigned 32-bit integer value.
