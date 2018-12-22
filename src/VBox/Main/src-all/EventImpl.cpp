@@ -57,9 +57,10 @@
 #include "AutoCaller.h"
 #include "Logging.h"
 
-#include <iprt/semaphore.h>
-#include <iprt/critsect.h>
 #include <iprt/asm.h>
+#include <iprt/critsect.h>
+#include <iprt/err.h>
+#include <iprt/semaphore.h>
 #include <iprt/time.h>
 
 #include <VBox/com/array.h>

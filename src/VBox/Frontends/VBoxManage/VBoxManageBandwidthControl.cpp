@@ -27,6 +27,7 @@
 #include <VBox/com/errorprint.h>
 #include <VBox/com/VirtualBox.h>
 
+#include <iprt/err.h>
 #include <iprt/path.h>
 #include <iprt/param.h>
 #include <iprt/string.h>

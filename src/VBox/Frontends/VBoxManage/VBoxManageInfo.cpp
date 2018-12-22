@@ -36,6 +36,7 @@
 
 #include <VBox/log.h>
 #include <VBox/version.h>
+#include <iprt/err.h>
 #include <iprt/stream.h>
 #include <iprt/time.h>
 #include <iprt/string.h>

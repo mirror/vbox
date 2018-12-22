@@ -19,7 +19,6 @@
 #include <VBox/com/com.h>
 #include <VBox/com/string.h>
 #include <VBox/com/array.h>
-//#include <VBox/com/Guid.h>
 #include <VBox/com/ErrorInfo.h>
 #include <VBox/com/errorprint.h>
 #include <VBox/com/VirtualBox.h>
@@ -27,6 +26,7 @@
 #include <VBox/version.h>
 
 #include <iprt/buildconfig.h>
+#include <iprt/err.h>
 #include <iprt/env.h>
 #include <iprt/file.h>
 #include <iprt/getopt.h>

@@ -46,6 +46,7 @@
 # include "CSystemProperties.h"
 
 /* Other VBox includes: */
+# include <iprt/err.h>
 # include <iprt/path.h>
 # include <iprt/system.h>
 # include <VBox/version.h>

@@ -19,8 +19,7 @@
 #define ___H_DNSHOSTSERVICE
 #include "VirtualBoxBase.h"
 
-#include <iprt/cdefs.h>
-#include <iprt/types.h>
+#include <iprt/err.h> /* VERR_IGNORED */
 #include <iprt/cpp/lock.h>
 
 #include <list>

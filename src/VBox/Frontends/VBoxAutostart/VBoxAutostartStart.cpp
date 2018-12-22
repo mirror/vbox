@@ -22,14 +22,14 @@
 #include <VBox/com/ErrorInfo.h>
 #include <VBox/com/errorprint.h>
 
-#include <iprt/message.h>
-#include <iprt/thread.h>
-#include <iprt/stream.h>
+#include <iprt/err.h>
 #include <iprt/log.h>
+#include <iprt/message.h>
+#include <iprt/stream.h>
+#include <iprt/thread.h>
 
 #include <algorithm>
 #include <list>
-#include <string>
 
 #include "VBoxAutostart.h"
 

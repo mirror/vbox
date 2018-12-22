@@ -38,7 +38,6 @@
 #include "VBox/com/string.h"
 
 #include <iprt/uuid.h>
-#include <iprt/err.h>
 
 
 /** @defgroup grp_com_guid  GUID Class
