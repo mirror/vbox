@@ -900,6 +900,7 @@ char *yytext_ptr;
 #  endif
 # endif
 # include <iprt/ctype.h>
+# include <iprt/err.h>
 # define isdigit(a_ch) RT_C_IS_DIGIT(a_ch)
 #endif /* VBOX */
 
