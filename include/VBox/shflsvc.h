@@ -39,6 +39,7 @@
 #include <VBox/types.h>
 #include <iprt/fs.h>
 #include <iprt/assert.h>
+#include <iprt/err.h>
 #if defined(IN_RING3) || (defined(IN_RING0) && defined(RT_OS_DARWIN))
 # include <iprt/mem.h>
 #endif
