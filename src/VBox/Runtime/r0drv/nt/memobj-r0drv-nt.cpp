@@ -33,6 +33,7 @@
 #include <iprt/memobj.h>
 #include <iprt/alloc.h>
 #include <iprt/assert.h>
+#include <iprt/err.h>
 #include <iprt/log.h>
 #include <iprt/param.h>
 #include <iprt/string.h>
