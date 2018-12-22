@@ -26,10 +26,10 @@
 #ifndef ___VBox_com_microatl_h
 #define ___VBox_com_microatl_h
 
-#include <VBox/cdefs.h> /* VBOX_STRICT */
+#include <VBox/cdefs.h>   /* VBOX_STRICT */
 #include <iprt/assert.h>
 #include <iprt/critsect.h>
-#include <iprt/err.h>
+#include <iprt/errcore.h> /* RT_FAILURE() */
 
 #include <iprt/win/windows.h>
 

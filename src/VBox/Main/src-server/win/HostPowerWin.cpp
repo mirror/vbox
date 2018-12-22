@@ -28,10 +28,16 @@ extern "C" {
 }
 
 #include <VBox/com/ptr.h>
+#include <iprt/err.h>
 #include "HostPower.h"
 #include "Logging.h"
 
+
+/*********************************************************************************************************************************
+*   Global Variables                                                                                                             *
+*********************************************************************************************************************************/
 static WCHAR gachWindowClassName[] = L"VBoxPowerNotifyClass";
+
 
 HostPowerServiceWin::HostPowerServiceWin(VirtualBox *aVirtualBox) : HostPowerService(aVirtualBox), mThread(NIL_RTTHREAD)
 {

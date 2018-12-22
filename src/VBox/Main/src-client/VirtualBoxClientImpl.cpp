@@ -31,6 +31,7 @@
 #include <iprt/cpp/utils.h>
 #include <iprt/utf16.h>
 #ifdef RT_OS_WINDOWS
+# include <iprt/err.h>
 # include <iprt/ldr.h>
 # include <msi.h>
 # include <WbemIdl.h>
