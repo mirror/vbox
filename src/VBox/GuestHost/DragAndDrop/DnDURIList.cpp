@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * DnD: URI list class.
+ * DnD - URI list class.
  */
 
 /*
@@ -19,8 +19,11 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
+#define LOG_GROUP LOG_GROUP_GUEST_DND
+#include <VBox/GuestHost/DragAndDrop.h>
 
 #include <iprt/dir.h>
+#include <iprt/err.h>
 #include <iprt/file.h>
 #include <iprt/fs.h>
 #include <iprt/path.h>
@@ -28,13 +31,8 @@
 #include <iprt/symlink.h>
 #include <iprt/uri.h>
 
-#ifdef LOG_GROUP
- #undef LOG_GROUP
-#endif
-#define LOG_GROUP LOG_GROUP_GUEST_DND
 #include <VBox/log.h>
 
-#include <VBox/GuestHost/DragAndDrop.h>
 
 DnDURIList::DnDURIList(void)
     : m_cTotal(0)

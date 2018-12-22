@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * DnD: Path list class.
+ * DnD - Path list class.
  */
 
 /*
@@ -19,10 +19,11 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
+#define LOG_GROUP LOG_GROUP_GUEST_DND
+#include <VBox/GuestHost/DragAndDrop.h>
 
 #include <iprt/string.h>
 
-#include <VBox/GuestHost/DragAndDrop.h>
 
 bool DnDMIMEHasFileURLs(const char *pcszFormat, size_t cchFormatMax)
 {

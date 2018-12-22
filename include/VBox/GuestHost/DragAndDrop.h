@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * DnD: Shared functions between host and guest.
+ * DnD - Shared functions between host and guest.
  */
 
 /*
@@ -28,11 +28,7 @@
 #define ___VBox_GuestHost_DragAndDrop_h
 
 #include <iprt/assert.h>
-#include <iprt/cdefs.h>
-#include <iprt/dir.h>
-#include <iprt/err.h>
-#include <iprt/file.h>
-#include <iprt/types.h>
+#include <iprt/fs.h>
 
 #include <iprt/cpp/list.h>
 #include <iprt/cpp/ministring.h>

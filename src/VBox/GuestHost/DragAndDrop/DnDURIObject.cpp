@@ -1,7 +1,6 @@
 /* $Id$ */
 /** @file
- * DnD: URI object class. For handling creation/reading/writing to files and directories
- *      on host or guest side.
+ * DnD - URI object class. For handling creation/reading/writing to files and directories on host or guest side.
  */
 
 /*
@@ -20,20 +19,18 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
+#define LOG_GROUP LOG_GROUP_GUEST_DND
+#include <VBox/GuestHost/DragAndDrop.h>
 
 #include <iprt/dir.h>
+#include <iprt/err.h>
 #include <iprt/file.h>
 #include <iprt/fs.h>
 #include <iprt/path.h>
 #include <iprt/uri.h>
 
-#ifdef LOG_GROUP
- #undef LOG_GROUP
-#endif
-#define LOG_GROUP LOG_GROUP_GUEST_DND
 #include <VBox/log.h>
 
-#include <VBox/GuestHost/DragAndDrop.h>
 
 DnDURIObject::DnDURIObject(void)
     : m_enmType(Type_Unknown)

@@ -19,11 +19,13 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
+#define LOG_GROUP LOG_GROUP_GUEST_DND
+#include <VBox/GuestHost/DragAndDrop.h>
 
+#include <iprt/err.h>
 #include <iprt/path.h>
 #include <iprt/string.h>
 
-#include <VBox/GuestHost/DragAndDrop.h>
 
 /**
  * Sanitizes the file name component so that unsupported characters
