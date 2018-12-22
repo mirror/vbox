@@ -35,8 +35,9 @@
 #include "internal-r3-win.h"
 #include <iprt/system.h>
 #include <iprt/assert.h>
-#include <iprt/string.h>
 #include <iprt/ctype.h>
+#include <iprt/err.h>
+#include <iprt/string.h>
 
 
 /*********************************************************************************************************************************
