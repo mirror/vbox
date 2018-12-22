@@ -27,6 +27,7 @@
 #define ___iprt_latin1_h
 
 #include <iprt/string.h>
+#include <iprt/err.h> /* VERR_END_OF_STRING */
 
 RT_C_DECLS_BEGIN
 
