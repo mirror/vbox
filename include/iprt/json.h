@@ -27,7 +27,6 @@
 #define ___iprt_json_h
 
 #include <iprt/types.h>
-#include <iprt/err.h>
 
 RT_C_DECLS_BEGIN
 

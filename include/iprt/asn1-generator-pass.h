@@ -28,6 +28,7 @@
 #define ___iprt_asn1_generator_pass_h
 
 #include <iprt/formats/asn1.h>
+#include <iprt/err.h>
 
 
 /** @def RTASN1TMPL_MEMBER_OPT_ANY

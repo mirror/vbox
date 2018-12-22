@@ -27,7 +27,7 @@
 #define ___iprt_vfslowlevel_h
 
 #include <iprt/vfs.h>
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 #include <iprt/list.h>
 #include <iprt/param.h>
 

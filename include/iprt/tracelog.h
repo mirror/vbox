@@ -28,7 +28,6 @@
 
 #include <iprt/sg.h>
 #include <iprt/types.h>
-#include <iprt/err.h>
 
 RT_C_DECLS_BEGIN
 

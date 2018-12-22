@@ -28,7 +28,7 @@
 
 #include <iprt/time.h>
 #include <iprt/stdarg.h>
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 #include <iprt/formats/asn1.h>
 
 

@@ -28,6 +28,7 @@
 
 #include <iprt/cdefs.h>
 #include <iprt/types.h>
+#include <iprt/err.h>
 #include <iprt/json.h>
 #include <iprt/stdarg.h>
 #include <iprt/time.h>

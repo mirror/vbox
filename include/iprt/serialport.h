@@ -26,7 +26,6 @@
 #ifndef ___iprt_serialport_h
 #define ___iprt_serialport_h
 
-#include <iprt/err.h>
 #include <iprt/types.h>
 
 RT_C_DECLS_BEGIN

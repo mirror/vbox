@@ -29,7 +29,7 @@
 #include <iprt/ldrlazy.h>
 #include <iprt/path.h>
 #include <iprt/env.h>
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 
 
 /**
