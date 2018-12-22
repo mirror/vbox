@@ -29,7 +29,9 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #include <iprt/zip.h>
+
 #include <iprt/file.h>
+#include <iprt/err.h>
 #include <iprt/fs.h>
 #include <iprt/mem.h>
 #include <iprt/string.h>

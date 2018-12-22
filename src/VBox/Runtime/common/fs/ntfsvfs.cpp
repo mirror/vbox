@@ -35,6 +35,7 @@
 #include <iprt/avl.h>
 #include <iprt/assert.h>
 #include <iprt/ctype.h>
+#include <iprt/err.h>
 #include <iprt/file.h>
 #include <iprt/log.h>
 #include <iprt/mem.h>
