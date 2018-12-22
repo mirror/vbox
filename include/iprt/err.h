@@ -61,12 +61,12 @@
 
 /* SED-START */
 
-/** @name Misc. Status Codes
- * @{
- */
 /** Success. */
 #define VINF_SUCCESS                        0
 
+/** @name Misc. Status Codes
+ * @{
+ */
 /** General failure - DON'T USE THIS!!! */
 #define VERR_GENERAL_FAILURE                (-1)
 /** Invalid parameter. */

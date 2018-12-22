@@ -36,6 +36,81 @@
  * @{
  */
 
+/** Success.
+ * @ingroup grp_rt_err  */
+#define VINF_SUCCESS                        0
+
+
+/** @def RTERR_STRICT_RC
+ * Indicates that RT_SUCCESS_NP, RT_SUCCESS, RT_FAILURE_NP and RT_FAILURE should
+ * make type enforcing at compile time.
+ *
+ * @remarks     Only define this for C++ code.
+ */
+#if defined(__cplusplus) \
+ && !defined(RTERR_STRICT_RC) \
+ && !defined(RTERR_NO_STRICT_RC) \
+ && (   defined(DOXYGEN_RUNNING) \
+     || defined(DEBUG) \
+     || defined(RT_STRICT) )
+# define RTERR_STRICT_RC        1
+#endif
+
+
+/** @def RT_SUCCESS
+ * Check for success. We expect success in normal cases, that is the code path depending on
+ * this check is normally taken. To prevent any prediction use RT_SUCCESS_NP instead.
+ *
+ * @returns true if rc indicates success.
+ * @returns false if rc indicates failure.
+ *
+ * @param   rc  The iprt status code to test.
+ */
+#define RT_SUCCESS(rc)      ( RT_LIKELY(RT_SUCCESS_NP(rc)) )
+
+/** @def RT_SUCCESS_NP
+ * Check for success. Don't predict the result.
+ *
+ * @returns true if rc indicates success.
+ * @returns false if rc indicates failure.
+ *
+ * @param   rc  The iprt status code to test.
+ */
+#ifdef RTERR_STRICT_RC
+# define RT_SUCCESS_NP(rc)   ( RTErrStrictType(rc).success() )
+#else
+# define RT_SUCCESS_NP(rc)   ( (int)(rc) >= VINF_SUCCESS )
+#endif
+
+/** @def RT_FAILURE
+ * Check for failure, predicting unlikely.
+ *
+ * We don't expect in normal cases, that is the code path depending on this
+ * check is normally NOT taken. To prevent any prediction use RT_FAILURE_NP
+ * instead.
+ *
+ * @returns true if rc indicates failure.
+ * @returns false if rc indicates success.
+ *
+ * @param   rc  The iprt status code to test.
+ *
+ * @remarks Please structure your code to use the RT_SUCCESS() macro instead of
+ *          RT_FAILURE() where possible, as that gives us a better shot at good
+ *          code with the windows compilers.
+ */
+#define RT_FAILURE(rc)      ( RT_UNLIKELY(!RT_SUCCESS_NP(rc)) )
+
+/** @def RT_FAILURE_NP
+ * Check for failure, no prediction.
+ *
+ * @returns true if rc indicates failure.
+ * @returns false if rc indicates success.
+ *
+ * @param   rc  The iprt status code to test.
+ */
+#define RT_FAILURE_NP(rc)   ( !RT_SUCCESS_NP(rc) )
+
+
 #ifdef __cplusplus
 /**
  * Strict type validation class.
@@ -109,75 +184,6 @@ private:
 };
 #endif /* __cplusplus */
 
-
-/** @def RTERR_STRICT_RC
- * Indicates that RT_SUCCESS_NP, RT_SUCCESS, RT_FAILURE_NP and RT_FAILURE should
- * make type enforcing at compile time.
- *
- * @remarks     Only define this for C++ code.
- */
-#if defined(__cplusplus) \
- && !defined(RTERR_STRICT_RC) \
- && !defined(RTERR_NO_STRICT_RC) \
- && (   defined(DOXYGEN_RUNNING) \
-     || defined(DEBUG) \
-     || defined(RT_STRICT) )
-# define RTERR_STRICT_RC        1
-#endif
-
-
-/** @def RT_SUCCESS
- * Check for success. We expect success in normal cases, that is the code path depending on
- * this check is normally taken. To prevent any prediction use RT_SUCCESS_NP instead.
- *
- * @returns true if rc indicates success.
- * @returns false if rc indicates failure.
- *
- * @param   rc  The iprt status code to test.
- */
-#define RT_SUCCESS(rc)      ( RT_LIKELY(RT_SUCCESS_NP(rc)) )
-
-/** @def RT_SUCCESS_NP
- * Check for success. Don't predict the result.
- *
- * @returns true if rc indicates success.
- * @returns false if rc indicates failure.
- *
- * @param   rc  The iprt status code to test.
- */
-#ifdef RTERR_STRICT_RC
-# define RT_SUCCESS_NP(rc)   ( RTErrStrictType(rc).success() )
-#else
-# define RT_SUCCESS_NP(rc)   ( (int)(rc) >= VINF_SUCCESS )
-#endif
-
-/** @def RT_FAILURE
- * Check for failure, predicting unlikely.
- *
- * We don't expect in normal cases, that is the code path depending on this
- * check is normally NOT taken. To prevent any prediction use RT_FAILURE_NP
- * instead.
- *
- * @returns true if rc indicates failure.
- * @returns false if rc indicates success.
- *
- * @param   rc  The iprt status code to test.
- *
- * @remarks Please structure your code to use the RT_SUCCESS() macro instead of
- *          RT_FAILURE() where possible, as that gives us a better shot at good
- *          code with the windows compilers.
- */
-#define RT_FAILURE(rc)      ( RT_UNLIKELY(!RT_SUCCESS_NP(rc)) )
-
-/** @def RT_FAILURE_NP
- * Check for failure, no prediction.
- *
- * @returns true if rc indicates failure.
- * @returns false if rc indicates success.
- *
- * @param   rc  The iprt status code to test.
- */
-#define RT_FAILURE_NP(rc)   ( !RT_SUCCESS_NP(rc) )
 
 RT_C_DECLS_BEGIN
 
