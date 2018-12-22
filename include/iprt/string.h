@@ -30,7 +30,7 @@
 #include <iprt/types.h>
 #include <iprt/assert.h>
 #include <iprt/stdarg.h>
-#include <iprt/err.h> /* for VINF_SUCCESS */
+#include <iprt/errcore.h> /* for VINF_SUCCESS */
 #if defined(RT_OS_LINUX) && defined(__KERNEL__)
   /* no C++ hacks ('new' etc) here anymore! */
 # include <linux/string.h>
@@ -67,7 +67,7 @@
 
 /* For the time being: */
 #include <iprt/utf16.h>
-#include <iprt/latin1.h>
+/*#include <iprt/latin1.h> - this sucker drags in err.h for VERR_END_OF_STRING. */
 
 /*
  * Supply prototypes for standard string functions provided by
