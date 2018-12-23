@@ -28,7 +28,9 @@
 
 #include <VBox/vmm/pdmqueue.h>
 #include <VBox/vmm/pdmcritsect.h>
-#include <VBox/vmm/pdmthread.h>
+#ifdef IN_RING3
+# include <VBox/vmm/pdmthread.h>
+#endif
 #include <VBox/vmm/pdmifs.h>
 #include <VBox/vmm/pdmins.h>
 #include <VBox/vmm/pdmcommon.h>
@@ -38,9 +40,7 @@
 #include <VBox/vmm/ssm.h>
 #include <VBox/vmm/cfgm.h>
 #include <VBox/vmm/dbgf.h>
-#include <VBox/err.h>
-#include <VBox/pci.h>
-#include <VBox/sup.h>
+#include <VBox/err.h>  /* VINF_EM_DBG_STOP */
 #include <iprt/stdarg.h>
 
 

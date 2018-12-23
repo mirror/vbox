@@ -26,8 +26,8 @@
 #ifndef ___VBox_vmm_apic_h
 #define ___VBox_vmm_apic_h
 
-#include <VBox/vmm/pdmins.h>
-#include <VBox/vmm/pdmdev.h>
+#include <VBox/types.h>
+struct PDMDEVREGCB;
 
 /** @defgroup grp_apic   The local APIC VMM API
  * @ingroup grp_vmm
@@ -157,6 +157,7 @@ RT_C_DECLS_BEGIN
 /** @defgroup grp_apic_r3  The APIC Host Context Ring-3 API
  * @{
  */
+VMMR3_INT_DECL(int)         APICR3RegisterDevice(struct PDMDEVREGCB *pCallbacks);
 VMMR3_INT_DECL(void)        APICR3InitIpi(PVMCPU pVCpu);
 VMMR3_INT_DECL(void)        APICR3HvEnable(PVM pVM);
 /** @} */
@@ -200,7 +201,6 @@ VMM_INT_DECL(VBOXSTRICTRC)  APICHvSetEoi(PVMCPU pVCpu, uint32_t uEoi);
 
 RT_C_DECLS_END
 
-extern const PDMDEVREG      g_DeviceAPIC;
 /** @} */
 
 #endif

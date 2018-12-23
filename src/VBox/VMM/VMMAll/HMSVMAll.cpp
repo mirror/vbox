@@ -27,6 +27,8 @@
 #include <VBox/vmm/iem.h>
 #include <VBox/vmm/vm.h>
 
+#include <VBox/err.h>
+
 
 #ifndef IN_RC
 

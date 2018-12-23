@@ -34,6 +34,7 @@
 #include <VBox/vmm/apic.h>
 #include "HMInternal.h"
 #include <VBox/vmm/vm.h>
+#include <VBox/err.h>
 #include "HMSVMR0.h"
 #include "dtrace/VBoxVMM.h"
 

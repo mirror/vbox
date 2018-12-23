@@ -21,6 +21,7 @@
 #include <VBox/sup.h>
 #include <VBox/types.h>
 #include <VBox/vmm/apic.h>
+#include <VBox/vmm/pdmdev.h>
 
 /** @defgroup grp_apic_int       Internal
  * @ingroup grp_apic

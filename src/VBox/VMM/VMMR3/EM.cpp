@@ -66,6 +66,7 @@
 #include <VBox/vmm/cpumdis.h>
 #include <VBox/dis.h>
 #include <VBox/disopcode.h>
+#include <VBox/err.h>
 #include "VMMTracing.h"
 
 #include <iprt/asm.h>

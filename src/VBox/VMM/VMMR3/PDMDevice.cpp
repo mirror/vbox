@@ -494,15 +494,15 @@ static int pdmR3DevLoadModules(PVM pVM)
     /*
      * Load the internal VMM APIC device.
      */
-    int rc2 = pdmR3DevReg_Register(&RegCB.Core, &g_DeviceAPIC);
-    AssertRCReturn(rc2, rc2);
+    int rc = APICR3RegisterDevice(&RegCB.Core);
+    AssertRCReturn(rc, rc);
 
     /*
      * Load the builtin module.
      */
     PCFGMNODE pDevicesNode = CFGMR3GetChild(CFGMR3GetRoot(pVM), "PDM/Devices");
     bool fLoadBuiltin;
-    int rc = CFGMR3QueryBool(pDevicesNode, "LoadBuiltin", &fLoadBuiltin);
+    rc = CFGMR3QueryBool(pDevicesNode, "LoadBuiltin", &fLoadBuiltin);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND || rc == VERR_CFGM_NO_PARENT)
         fLoadBuiltin = true;
     else if (RT_FAILURE(rc))
