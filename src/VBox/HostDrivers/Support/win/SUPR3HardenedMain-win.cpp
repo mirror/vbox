@@ -50,6 +50,7 @@
 #include <iprt/param.h>
 #include <iprt/path.h>
 #include <iprt/thread.h>
+#include <iprt/utf16.h>
 #include <iprt/zero.h>
 
 #include "SUPLibInternal.h"
