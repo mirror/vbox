@@ -31,7 +31,7 @@
 #include <iprt/string.h>
 #include <VBox/cdefs.h>
 #include <VBox/types.h>
-#include <VBox/err.h>
+#include <iprt/err.h>
 #ifdef IN_RING3
 # include <VBox/vmm/stam.h>
 # include <VBox/vmm/dbgf.h>
@@ -572,3 +572,4 @@ typedef VBOXHGCMSVCLOAD *PFNVBOXHGCMSVCLOAD;
 
 
 #endif
+
