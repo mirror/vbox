@@ -30,6 +30,7 @@
 *********************************************************************************************************************************/
 #include <iprt/string.h>
 #include <iprt/latin1.h>
+#include <iprt/utf16.h>
 
 #include <iprt/alloc.h>
 #include <iprt/assert.h>

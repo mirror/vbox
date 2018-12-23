@@ -31,10 +31,12 @@
 #include <iprt/latin1.h>
 #include "internal/iprt.h"
 
-#include <iprt/uni.h>
-#include <iprt/alloc.h>
 #include <iprt/assert.h>
 #include <iprt/err.h>
+#include <iprt/mem.h>
+#include <iprt/string.h>
+#include <iprt/utf16.h>
+#include <iprt/uni.h>
 #include "internal/string.h"
 
 

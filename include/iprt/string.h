@@ -65,10 +65,6 @@
 # include <string.h>
 #endif
 
-/* For the time being: */
-#include <iprt/utf16.h>
-/*#include <iprt/latin1.h> - this sucker drags in err.h for VERR_END_OF_STRING. */
-
 /*
  * Supply prototypes for standard string functions provided by
  * IPRT instead of the operating environment.

@@ -38,6 +38,7 @@
 #include <iprt/mem.h>
 #include <iprt/stream.h>
 #include <iprt/string.h>
+#include <iprt/utf16.h>
 
 #include <stdlib.h> /* strtod() */
 #include <errno.h>  /* errno */

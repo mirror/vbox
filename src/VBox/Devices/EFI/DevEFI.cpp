@@ -46,6 +46,7 @@
 # include <iprt/stream.h>
 # define DEVEFI_WITH_VBOXDBG_SCRIPT
 #endif
+#include <iprt/utf16.h>
 
 #include "DevEFI.h"
 #include "VBoxDD.h"

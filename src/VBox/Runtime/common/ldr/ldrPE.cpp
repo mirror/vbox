@@ -43,6 +43,7 @@
 #include <iprt/path.h>
 #include <iprt/sha.h>
 #include <iprt/string.h>
+#include <iprt/utf16.h>
 #include <iprt/x86.h>
 #ifndef IPRT_WITHOUT_LDR_VERIFY
 #include <iprt/zero.h>

@@ -32,6 +32,7 @@
 #include <iprt/initterm.h>
 #include <iprt/mem.h>
 #include <iprt/string.h>
+#include <iprt/utf16.h>
 #include <iprt/uuid.h>
 #include <VBox/log.h>
 #include <VBox/version.h>

@@ -37,6 +37,7 @@
 # include <iprt/alloc.h>
 # include <iprt/err.h>
 # include <iprt/uni.h>
+# include <iprt/utf16.h>
 #endif
 #include <iprt/ctype.h>
 #include <iprt/string.h>

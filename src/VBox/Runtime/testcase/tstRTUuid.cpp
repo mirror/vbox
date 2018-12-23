@@ -34,6 +34,7 @@
 #include <iprt/err.h>
 #include <iprt/string.h>
 #include <iprt/initterm.h>
+#include <iprt/utf16.h>
 
 
 int main()

@@ -46,6 +46,7 @@
 #include <iprt/vfs.h>
 #include <iprt/vfslowlevel.h>
 #include <iprt/uni.h>
+#include <iprt/utf16.h>
 #include <iprt/formats/iso9660.h>
 #include <iprt/formats/udf.h>
 

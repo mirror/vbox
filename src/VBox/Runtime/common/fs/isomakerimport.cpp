@@ -42,6 +42,7 @@
 #include <iprt/log.h>
 #include <iprt/mem.h>
 #include <iprt/string.h>
+#include <iprt/utf16.h>
 #include <iprt/vfs.h>
 #include <iprt/formats/iso9660.h>
 

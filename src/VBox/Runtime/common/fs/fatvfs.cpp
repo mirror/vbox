@@ -46,6 +46,7 @@
 #include <iprt/sg.h>
 #include <iprt/thread.h>
 #include <iprt/uni.h>
+#include <iprt/utf16.h>
 #include <iprt/vfs.h>
 #include <iprt/vfslowlevel.h>
 #include <iprt/zero.h>

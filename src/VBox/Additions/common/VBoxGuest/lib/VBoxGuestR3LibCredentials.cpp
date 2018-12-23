@@ -32,6 +32,7 @@
 #include <iprt/mem.h>
 #include <iprt/rand.h>
 #include <iprt/string.h>
+#include <iprt/utf16.h>
 #include <VBox/log.h>
 
 #include "VBoxGuestR3LibInternal.h"

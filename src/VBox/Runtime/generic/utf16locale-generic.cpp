@@ -29,7 +29,7 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #define LOG_GROUP RTLOGGROUP_UTF16
-#include <iprt/string.h>
+#include <iprt/utf16.h>
 #include "internal/iprt.h"
 
 

@@ -34,9 +34,10 @@
 #include <iprt/assert.h>
 #include <iprt/alloc.h>
 #include <iprt/alloca.h>
-#include <iprt/string.h>
-#include <iprt/sort.h>
 #include <iprt/err.h>
+#include <iprt/sort.h>
+#include <iprt/string.h>
+#include <iprt/utf16.h>
 #include "internal/magics.h"
 
 #include <stdlib.h>

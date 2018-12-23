@@ -43,6 +43,7 @@
 #include "VBox/com/assert.h"
 
 #include <iprt/mem.h>
+#include <iprt/utf16.h>
 #include <iprt/cpp/ministring.h>
 
 

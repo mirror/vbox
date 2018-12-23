@@ -43,6 +43,7 @@
 #if defined(IN_RING3) || (defined(IN_RING0) && defined(RT_OS_DARWIN))
 # include <iprt/mem.h>
 #endif
+#include <iprt/utf16.h>
 
 
 

@@ -38,6 +38,7 @@
 #include <iprt/latin1.h>
 #include <iprt/mem.h>
 #include <iprt/string.h>
+#include <iprt/utf16.h>
 #include <iprt/vfs.h>
 
 #include "internal/magics.h"

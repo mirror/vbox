@@ -32,6 +32,7 @@
 #include <iprt/path.h>
 #include <iprt/stream.h>
 #include <iprt/string.h>
+#include <iprt/utf16.h>
 #include <iprt/formats/pecoff.h>
 #include <iprt/formats/mz.h>
 #include <iprt/nt/nt-structures.h>

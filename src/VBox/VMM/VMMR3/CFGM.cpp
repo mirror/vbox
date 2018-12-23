@@ -69,6 +69,7 @@
 #include <iprt/mem.h>
 #include <iprt/param.h>
 #include <iprt/string.h>
+#include <iprt/utf16.h>
 #include <iprt/uuid.h>
 
 

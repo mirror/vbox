@@ -23,6 +23,10 @@
  * to LocalConfig.kmk will cause the tests to be run every time the code is
  * changed. */
 
+
+/*********************************************************************************************************************************
+*   Header Files                                                                                                                 *
+*********************************************************************************************************************************/
 #define LOG_GROUP LOG_GROUP_SHARED_CLIPBOARD
 
 #include <errno.h>
@@ -46,6 +50,7 @@
 #include <iprt/mem.h>
 #include <iprt/semaphore.h>
 #include <iprt/thread.h>
+#include <iprt/utf16.h>
 
 #include <VBox/log.h>
 #include <VBox/version.h>
@@ -54,6 +59,10 @@
 #include <VBox/GuestHost/clipboard-helper.h>
 #include <VBox/HostServices/VBoxClipboardSvc.h>
 
+
+/*********************************************************************************************************************************
+*   Defined Constants And Macros                                                                                                 *
+*********************************************************************************************************************************/
 /* The serialisation mechanism looks like it is not needed (everything using it
  * runs on one thread, and the flag is always cleared at the end of calls which
  * use it).  So we will remove it after the 5.2 series. */
@@ -61,9 +70,10 @@
 # define VBOX_AFTER_5_2
 #endif
 
-class formats;
-static Atom clipGetAtom(CLIPBACKEND *pCtx, const char *pszName);
 
+/*********************************************************************************************************************************
+*   Structures and Typedefs                                                                                                      *
+*********************************************************************************************************************************/
 /** The different clipboard formats which we support. */
 enum CLIPFORMAT
 {
@@ -72,9 +82,22 @@ enum CLIPFORMAT
     TEXT,  /* Treat this as Utf8, but it may really be ascii */
     UTF8,
     BMP,
-        HTML
+    HTML
 };
 
+typedef unsigned CLIPX11FORMAT;
+
+
+/*********************************************************************************************************************************
+*   Internal Functions                                                                                                           *
+*********************************************************************************************************************************/
+class formats;
+static Atom clipGetAtom(CLIPBACKEND *pCtx, const char *pszName);
+
+
+/*********************************************************************************************************************************
+*   Global Variables                                                                                                             *
+*********************************************************************************************************************************/
 /** The table mapping X11 names to data formats and to the corresponding
  * VBox clipboard formats (currently only Unicode) */
 static struct _CLIPFORMATTABLE
@@ -108,13 +131,12 @@ static struct _CLIPFORMATTABLE
     /** @todo Inkscape exports image/png but not bmp... */
 };
 
-typedef unsigned CLIPX11FORMAT;
-
 enum
 {
     NIL_CLIPX11FORMAT = 0,
     MAX_CLIP_X11_FORMATS = RT_ELEMENTS(g_aFormats)
 };
+
 
 /** Return the atom corresponding to a supported X11 format.
  * @param widget a valid Xt widget

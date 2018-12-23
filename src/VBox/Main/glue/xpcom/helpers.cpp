@@ -1,6 +1,5 @@
 /* $Id$ */
 /** @file
- *
  * COM helper functions for XPCOM
  */
 
@@ -20,7 +19,7 @@
 
 #include <nsMemory.h>
 
-#include <iprt/string.h>
+#include <iprt/utf16.h>
 
 
 //
