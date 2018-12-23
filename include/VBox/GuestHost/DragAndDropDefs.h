@@ -76,4 +76,5 @@ typedef uint32_t VBOXDNDACTIONLIST;
     "application/x-openoffice-embed-source-xml;windows_formatname=\"Star Embed Source (XML)\"", \
     "application/x-openoffice;windows_formatname=\"Bitmap\""
 
-#endif /* ___VBox_DnDDefs_h */
+#endif
+
