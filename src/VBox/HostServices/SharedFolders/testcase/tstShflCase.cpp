@@ -22,12 +22,13 @@
 #define LOG_ENABLED
 #include <VBox/shflsvc.h>
 #include <VBox/log.h>
-#include <iprt/alloc.h>
 #include <iprt/assert.h>
+#include <iprt/err.h>
 #include <iprt/file.h>
 #include <iprt/fs.h>
 #include <iprt/dir.h>
 #include <iprt/initterm.h>
+#include <iprt/mem.h>
 #include <iprt/path.h>
 #include <iprt/string.h>
 #include <iprt/uni.h>

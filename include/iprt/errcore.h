@@ -36,165 +36,6 @@
  * @{
  */
 
-/* We duplicate a handful of very commonly used status codes from err.h here.
-   Needless to say, these needs to match the err.h definition exactly: */
-
-/** Success.
- * @ingroup grp_rt_err  */
-#define VINF_SUCCESS                        0
-
-/** General failure - DON'T USE THIS!!!
- * @ingroup grp_rt_err */
-#define VERR_GENERAL_FAILURE                (-1)
-/** Invalid parameter.
- * @ingroup grp_rt_err */
-#define VERR_INVALID_PARAMETER              (-2)
-/** Invalid parameter.
- * @ingroup grp_rt_err */
-#define VWRN_INVALID_PARAMETER              2
-/** Invalid magic or cookie.
- * @ingroup grp_rt_err */
-#define VERR_INVALID_MAGIC                  (-3)
-/** Invalid magic or cookie.
- * @ingroup grp_rt_err */
-#define VWRN_INVALID_MAGIC                  3
-/** Invalid loader handle.
- * @ingroup grp_rt_err */
-#define VERR_INVALID_HANDLE                 (-4)
-/** Invalid loader handle.
- * @ingroup grp_rt_err */
-#define VWRN_INVALID_HANDLE                 4
-/** Invalid memory pointer. */
-#define VERR_INVALID_POINTER                (-6)
-/** Memory allocation failed.
- * @ingroup grp_rt_err */
-#define VERR_NO_MEMORY                      (-8)
-/** Permission denied.
- * @ingroup grp_rt_err */
-#define VERR_PERMISSION_DENIED              (-10)
-/** Permission denied.
- * @ingroup grp_rt_err */
-#define VINF_PERMISSION_DENIED              10
-/** Version mismatch.
- * @ingroup grp_rt_err */
-#define VERR_VERSION_MISMATCH               (-11)
-/** The request function is not implemented.
- * @ingroup grp_rt_err */
-#define VERR_NOT_IMPLEMENTED                (-12)
-/** Invalid flags was given.
- * @ingroup grp_rt_err */
-#define VERR_INVALID_FLAGS                  (-13)
-/** Invalid function.
- * @ingroup grp_rt_err */
-#define VERR_INVALID_FUNCTION               (-36)
-/** Not supported.
- * @ingroup grp_rt_err */
-#define VERR_NOT_SUPPORTED                  (-37)
-/** Not supported.
- * @ingroup grp_rt_err */
-#define VINF_NOT_SUPPORTED                  37
-/** Access denied.
- * @ingroup grp_rt_err */
-#define VERR_ACCESS_DENIED                  (-38)
-/** Call interrupted.
- * @ingroup grp_rt_err */
-#define VERR_INTERRUPTED                    (-39)
-/** Call interrupted.
- * @ingroup grp_rt_err */
-#define VINF_INTERRUPTED                    39
-/** Timeout.
- * @ingroup grp_rt_err */
-#define VERR_TIMEOUT                        (-40)
-/** Timeout.
- * @ingroup grp_rt_err */
-#define VINF_TIMEOUT                        40
-/** Buffer too small to save result.
- * @ingroup grp_rt_err */
-#define VERR_BUFFER_OVERFLOW                (-41)
-/** Buffer too small to save result.
- * @ingroup grp_rt_err */
-#define VINF_BUFFER_OVERFLOW                41
-/** The operation was cancelled by the user (copy) or another thread (local ipc).
- * @ingroup grp_rt_err */
-#define VERR_CANCELLED                      (-70)
-/** Trailing characters.
- * @ingroup grp_rt_err */
-#define VERR_TRAILING_CHARS                 (-76)
-/** Trailing characters.
- * @ingroup grp_rt_err */
-#define VWRN_TRAILING_CHARS                 76
-/** Trailing spaces.
- * @ingroup grp_rt_err */
-#define VERR_TRAILING_SPACES                (-77)
-/** Trailing spaces.
- * @ingroup grp_rt_err */
-#define VWRN_TRAILING_SPACES                77
-/** Generic not found error.
- * @ingroup grp_rt_err */
-#define VERR_NOT_FOUND                      (-78)
-/** Generic not found warning.
- * @ingroup grp_rt_err */
-#define VWRN_NOT_FOUND                      78
-/** Generic invalid state error.
- * @ingroup grp_rt_err */
-#define VERR_INVALID_STATE                  (-79)
-/** Generic invalid state warning.
- * @ingroup grp_rt_err */
-#define VWRN_INVALID_STATE                  79
-/** Generic out of resources error.
- * @ingroup grp_rt_err */
-#define VERR_OUT_OF_RESOURCES               (-80)
-/** Generic out of resources warning.
- * @ingroup grp_rt_err */
-#define VWRN_OUT_OF_RESOURCES               80
-/** End of string.
- * @ingroup grp_rt_err */
-#define VERR_END_OF_STRING                  (-83)
-/** Duplicate something.
- * @ingroup grp_rt_err */
-#define VERR_DUPLICATE                      (-98)
-/** Something is missing.
- * @ingroup grp_rt_err */
-#define VERR_MISSING                        (-99)
-/** Buffer underflow.
- * @ingroup grp_rt_err */
-#define VERR_BUFFER_UNDERFLOW               (-22401)
-/** Buffer underflow.
- * @ingroup grp_rt_err */
-#define VINF_BUFFER_UNDERFLOW               22401
-/** Something is not available or not working properly.
- * @ingroup grp_rt_err */
-#define VERR_NOT_AVAILABLE                  (-22403)
-/** Mismatch.
- * @ingroup grp_rt_err */
-#define VERR_MISMATCH                       (-22408)
-/** Wrong type.
- * @ingroup grp_rt_err */
-#define VERR_WRONG_TYPE                     (-22409)
-/** Wrong type.
- * @ingroup grp_rt_err */
-#define VWRN_WRONG_TYPE                     (22409)
-/** Wrong parameter count.
- * @ingroup grp_rt_err */
-#define VERR_WRONG_PARAMETER_COUNT          (-22415)
-/** Wrong parameter type.
- * @ingroup grp_rt_err */
-#define VERR_WRONG_PARAMETER_TYPE           (-22416)
-/** Invalid client ID.
- * @ingroup grp_rt_err */
-#define VERR_INVALID_CLIENT_ID              (-22417)
-/** Invalid session ID.
- * @ingroup grp_rt_err */
-#define VERR_INVALID_SESSION_ID             (-22418)
-/** Incompatible configuration requested.
- * @ingroup grp_rt_err */
-#define VERR_INCOMPATIBLE_CONFIG            (-22420)
-/** Internal error - this should never happen.
- * @ingroup grp_rt_err */
-#define VERR_INTERNAL_ERROR                 (-225)
-
-
-
 /** @def RTERR_STRICT_RC
  * Indicates that RT_SUCCESS_NP, RT_SUCCESS, RT_FAILURE_NP and RT_FAILURE should
  * make type enforcing at compile time.
@@ -911,6 +752,168 @@ RTDECL(bool) RTErrVarsAreEqual(PCRTERRVARS pVars1, PCRTERRVARS pVars2);
 RTDECL(bool) RTErrVarsHaveChanged(PCRTERRVARS pVars);
 
 RT_C_DECLS_END
+
+
+/* We duplicate a handful of very commonly used status codes from err.h here.
+   Needless to say, these needs to match the err.h definition exactly: */
+
+/** Success.
+ * @ingroup grp_rt_err  */
+#define VINF_SUCCESS                        0
+
+/** General failure - DON'T USE THIS!!!
+ * @ingroup grp_rt_err */
+#define VERR_GENERAL_FAILURE                (-1)
+/** Invalid parameter.
+ * @ingroup grp_rt_err */
+#define VERR_INVALID_PARAMETER              (-2)
+/** Invalid parameter.
+ * @ingroup grp_rt_err */
+#define VWRN_INVALID_PARAMETER              2
+/** Invalid magic or cookie.
+ * @ingroup grp_rt_err */
+#define VERR_INVALID_MAGIC                  (-3)
+/** Invalid magic or cookie.
+ * @ingroup grp_rt_err */
+#define VWRN_INVALID_MAGIC                  3
+/** Invalid loader handle.
+ * @ingroup grp_rt_err */
+#define VERR_INVALID_HANDLE                 (-4)
+/** Invalid loader handle.
+ * @ingroup grp_rt_err */
+#define VWRN_INVALID_HANDLE                 4
+/** Invalid memory pointer. */
+#define VERR_INVALID_POINTER                (-6)
+/** Memory allocation failed.
+ * @ingroup grp_rt_err */
+#define VERR_NO_MEMORY                      (-8)
+/** Permission denied.
+ * @ingroup grp_rt_err */
+#define VERR_PERMISSION_DENIED              (-10)
+/** Permission denied.
+ * @ingroup grp_rt_err */
+#define VINF_PERMISSION_DENIED              10
+/** Version mismatch.
+ * @ingroup grp_rt_err */
+#define VERR_VERSION_MISMATCH               (-11)
+/** The request function is not implemented.
+ * @ingroup grp_rt_err */
+#define VERR_NOT_IMPLEMENTED                (-12)
+/** Invalid flags was given.
+ * @ingroup grp_rt_err */
+#define VERR_INVALID_FLAGS                  (-13)
+/** Invalid function.
+ * @ingroup grp_rt_err */
+#define VERR_INVALID_FUNCTION               (-36)
+/** Not supported.
+ * @ingroup grp_rt_err */
+#define VERR_NOT_SUPPORTED                  (-37)
+/** Not supported.
+ * @ingroup grp_rt_err */
+#define VINF_NOT_SUPPORTED                  37
+/** Access denied.
+ * @ingroup grp_rt_err */
+#define VERR_ACCESS_DENIED                  (-38)
+/** Call interrupted.
+ * @ingroup grp_rt_err */
+#define VERR_INTERRUPTED                    (-39)
+/** Call interrupted.
+ * @ingroup grp_rt_err */
+#define VINF_INTERRUPTED                    39
+/** Timeout.
+ * @ingroup grp_rt_err */
+#define VERR_TIMEOUT                        (-40)
+/** Timeout.
+ * @ingroup grp_rt_err */
+#define VINF_TIMEOUT                        40
+/** Buffer too small to save result.
+ * @ingroup grp_rt_err */
+#define VERR_BUFFER_OVERFLOW                (-41)
+/** Buffer too small to save result.
+ * @ingroup grp_rt_err */
+#define VINF_BUFFER_OVERFLOW                41
+/** Data size overflow.
+ * @ingroup grp_rt_err */
+#define VERR_TOO_MUCH_DATA                  (-42)
+/** The operation was cancelled by the user (copy) or another thread (local ipc).
+ * @ingroup grp_rt_err */
+#define VERR_CANCELLED                      (-70)
+/** Trailing characters.
+ * @ingroup grp_rt_err */
+#define VERR_TRAILING_CHARS                 (-76)
+/** Trailing characters.
+ * @ingroup grp_rt_err */
+#define VWRN_TRAILING_CHARS                 76
+/** Trailing spaces.
+ * @ingroup grp_rt_err */
+#define VERR_TRAILING_SPACES                (-77)
+/** Trailing spaces.
+ * @ingroup grp_rt_err */
+#define VWRN_TRAILING_SPACES                77
+/** Generic not found error.
+ * @ingroup grp_rt_err */
+#define VERR_NOT_FOUND                      (-78)
+/** Generic not found warning.
+ * @ingroup grp_rt_err */
+#define VWRN_NOT_FOUND                      78
+/** Generic invalid state error.
+ * @ingroup grp_rt_err */
+#define VERR_INVALID_STATE                  (-79)
+/** Generic invalid state warning.
+ * @ingroup grp_rt_err */
+#define VWRN_INVALID_STATE                  79
+/** Generic out of resources error.
+ * @ingroup grp_rt_err */
+#define VERR_OUT_OF_RESOURCES               (-80)
+/** Generic out of resources warning.
+ * @ingroup grp_rt_err */
+#define VWRN_OUT_OF_RESOURCES               80
+/** End of string.
+ * @ingroup grp_rt_err */
+#define VERR_END_OF_STRING                  (-83)
+/** Duplicate something.
+ * @ingroup grp_rt_err */
+#define VERR_DUPLICATE                      (-98)
+/** Something is missing.
+ * @ingroup grp_rt_err */
+#define VERR_MISSING                        (-99)
+/** Buffer underflow.
+ * @ingroup grp_rt_err */
+#define VERR_BUFFER_UNDERFLOW               (-22401)
+/** Buffer underflow.
+ * @ingroup grp_rt_err */
+#define VINF_BUFFER_UNDERFLOW               22401
+/** Something is not available or not working properly.
+ * @ingroup grp_rt_err */
+#define VERR_NOT_AVAILABLE                  (-22403)
+/** Mismatch.
+ * @ingroup grp_rt_err */
+#define VERR_MISMATCH                       (-22408)
+/** Wrong type.
+ * @ingroup grp_rt_err */
+#define VERR_WRONG_TYPE                     (-22409)
+/** Wrong type.
+ * @ingroup grp_rt_err */
+#define VWRN_WRONG_TYPE                     (22409)
+/** Wrong parameter count.
+ * @ingroup grp_rt_err */
+#define VERR_WRONG_PARAMETER_COUNT          (-22415)
+/** Wrong parameter type.
+ * @ingroup grp_rt_err */
+#define VERR_WRONG_PARAMETER_TYPE           (-22416)
+/** Invalid client ID.
+ * @ingroup grp_rt_err */
+#define VERR_INVALID_CLIENT_ID              (-22417)
+/** Invalid session ID.
+ * @ingroup grp_rt_err */
+#define VERR_INVALID_SESSION_ID             (-22418)
+/** Incompatible configuration requested.
+ * @ingroup grp_rt_err */
+#define VERR_INCOMPATIBLE_CONFIG            (-22420)
+/** Internal error - this should never happen.
+ * @ingroup grp_rt_err */
+#define VERR_INTERNAL_ERROR                 (-225)
+
 
 /** @} */
 
