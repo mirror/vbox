@@ -943,6 +943,9 @@ RT_C_DECLS_END
 /** RTGetOpt: Not an option.
  * @ingroup grp_rt_err */
 #define VINF_GETOPT_NOT_OPTION              828
+/** RTGetOpt: Command line option not recognized.
+ * @ingroup grp_rt_err */
+#define VERR_GETOPT_UNKNOWN_OPTION          (-825)
 
 /** @} */
 
