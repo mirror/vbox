@@ -25,9 +25,10 @@
 #include <iprt/win/windows.h>
 #include <Wincrypt.h>
 
-#include <iprt/string.h>
-#include <iprt/message.h>
 #include <iprt/err.h>
+#include <iprt/message.h>
+#include <iprt/string.h>
+#include <iprt/utf16.h>
 
 
 /**
