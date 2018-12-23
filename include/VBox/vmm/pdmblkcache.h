@@ -27,8 +27,6 @@
 #define ___VBox_vmm_pdmblkcache_h
 
 #include <VBox/types.h>
-#include <VBox/err.h>
-#include <iprt/assert.h>
 #include <iprt/sg.h>
 
 
