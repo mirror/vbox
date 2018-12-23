@@ -28,11 +28,11 @@
 
 #include <VBox/vmm/pdmqueue.h>
 #include <VBox/vmm/pdmcritsect.h>
-#include <VBox/vmm/pdmthread.h>
 #include <VBox/vmm/pdmifs.h>
 #include <VBox/vmm/pdmins.h>
 #include <VBox/vmm/pdmcommon.h>
 #ifdef IN_RING3
+# include <VBox/vmm/pdmthread.h>
 # include <VBox/vmm/pdmasynccompletion.h>
 # include <VBox/vmm/pdmblkcache.h>
 #endif
