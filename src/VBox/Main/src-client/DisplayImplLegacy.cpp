@@ -25,6 +25,7 @@
 #include "ConsoleImpl.h"
 #include "ConsoleVRDPServer.h"
 #include "VMMDev.h"
+#include <VBox/VMMDev.h>
 
 /* generated header */
 #include "VBoxEvents.h"

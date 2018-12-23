@@ -18,11 +18,8 @@
 #ifndef ___HGCM_h_
 #define ___HGCM_h_
 
-#include <VBox/cdefs.h>
-#include <VBox/types.h>
 #include <VBox/vmm/pdmifs.h>
 
-#include <VBox/VMMDev.h>
 #include <VBox/hgcmsvc.h>
 
 /* Handle of a HGCM service extension. */

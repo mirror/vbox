@@ -23,6 +23,7 @@
 #include <iprt/list.h>
 #include <iprt/time.h>
 #include <VBox/ostypes.h>
+#include <VBox/param.h>
 #include <VBox/vmm/stam.h>
 
 #include "AdditionsFacilityImpl.h"

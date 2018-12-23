@@ -41,6 +41,7 @@
 #if defined(DEBUG) || defined(VBOX_STRICT) /* for VM_ASSERT_EMT(). */
 # include <VBox/vmm/vm.h>
 #endif
+#include <VBox/VMMDev.h>
 
 #ifdef VBOX_WITH_VIDEOHWACCEL
 # include <VBoxVideo.h>
