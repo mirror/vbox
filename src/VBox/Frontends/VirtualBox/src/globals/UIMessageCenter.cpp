@@ -90,7 +90,7 @@
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 
 
 /* static */

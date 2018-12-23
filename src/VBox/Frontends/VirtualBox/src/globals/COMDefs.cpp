@@ -43,10 +43,6 @@
 #ifdef VBOX_WITH_XPCOM
 
 /* Other VBox includes: */
-# include <iprt/env.h>
-# include <iprt/err.h>
-# include <iprt/path.h>
-# include <iprt/param.h>
 # include <nsEventQueueUtils.h>
 # include <nsIEventQueue.h>
 # include <nsIExceptionService.h>

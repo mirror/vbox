@@ -90,9 +90,7 @@
 /* Other VBox includes: */
 #include <VBox/VBoxOGL.h>
 #include <VBoxVideo.h>
-#ifdef VBOX_WS_MAC
-# include <VBox/err.h>
-#endif /* VBOX_WS_MAC */
+#include <iprt/errcore.h>
 
 /* External includes: */
 #include <math.h>
@@ -1578,12 +1576,13 @@ void UIMachineView::focusOutEvent(QFocusEvent *pEvent)
 }
 
 #ifdef VBOX_WITH_DRAG_AND_DROP
+
 bool UIMachineView::dragAndDropCanAccept(void) const
 {
     bool fAccept =  m_pDnDHandler
-#ifdef VBOX_WITH_DRAG_AND_DROP_GH
+# ifdef VBOX_WITH_DRAG_AND_DROP_GH
                  && !m_fIsDraggingFromGuest
-#endif
+# endif
                  && machine().GetDnDMode() != KDnDMode_Disabled;
     return fAccept;
 }
@@ -1667,7 +1666,7 @@ int UIMachineView::dragCheckPending(void)
 
     if (!dragAndDropIsActive())
         rc = VERR_ACCESS_DENIED;
-#ifdef VBOX_WITH_DRAG_AND_DROP_GH
+# ifdef VBOX_WITH_DRAG_AND_DROP_GH
     else if (!m_fIsDraggingFromGuest)
     {
         /// @todo Add guest->guest DnD functionality here by getting
@@ -1678,9 +1677,9 @@ int UIMachineView::dragCheckPending(void)
     }
     else /* Already dragging, so report success. */
         rc = VINF_SUCCESS;
-#else
+# else
     rc = VERR_NOT_SUPPORTED;
-#endif
+# endif
 
     DNDDEBUG(("DnD: dragCheckPending ended with rc=%Rrc\n", rc));
     return rc;
@@ -1692,7 +1691,7 @@ int UIMachineView::dragStart(void)
 
     if (!dragAndDropIsActive())
         rc = VERR_ACCESS_DENIED;
-#ifdef VBOX_WITH_DRAG_AND_DROP_GH
+# ifdef VBOX_WITH_DRAG_AND_DROP_GH
     else if (!m_fIsDraggingFromGuest)
         rc = VERR_WRONG_ORDER;
     else
@@ -1703,9 +1702,9 @@ int UIMachineView::dragStart(void)
 
         m_fIsDraggingFromGuest = false;
     }
-#else
+# else
     rc = VERR_NOT_SUPPORTED;
-#endif
+# endif
 
     DNDDEBUG(("DnD: dragStart ended with rc=%Rrc\n", rc));
     return rc;
@@ -1717,14 +1716,14 @@ int UIMachineView::dragStop(void)
 
     if (!dragAndDropIsActive())
         rc = VERR_ACCESS_DENIED;
-#ifdef VBOX_WITH_DRAG_AND_DROP_GH
+# ifdef VBOX_WITH_DRAG_AND_DROP_GH
     else if (!m_fIsDraggingFromGuest)
         rc = VERR_WRONG_ORDER;
     else
         rc = m_pDnDHandler->dragStop(screenId());
-#else
+# else
     rc = VERR_NOT_SUPPORTED;
-#endif
+# endif
 
     DNDDEBUG(("DnD: dragStop ended with rc=%Rrc\n", rc));
     return rc;
@@ -1755,6 +1754,7 @@ void UIMachineView::dropEvent(QDropEvent *pEvent)
 
     DNDDEBUG(("DnD: dropEvent ended with rc=%Rrc\n", rc));
 }
+
 #endif /* VBOX_WITH_DRAG_AND_DROP */
 
 bool UIMachineView::nativeEventPreprocessor(const QByteArray &eventType, void *pMessage)

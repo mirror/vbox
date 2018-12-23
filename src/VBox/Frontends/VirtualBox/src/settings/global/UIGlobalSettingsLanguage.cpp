@@ -39,7 +39,7 @@
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 /* Other VBox includes: */
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 
 
 /** Global settings: Language page data structure. */

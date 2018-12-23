@@ -36,7 +36,7 @@
 # include <iprt/stream.h>
 #endif
 #ifdef VBOX_WITH_KBD_LEDS_SYNC
-# include <iprt/err.h>
+# include <iprt/errcore.h>
 # include <iprt/semaphore.h>
 # include <VBox/sup.h>
 #endif

@@ -802,6 +802,9 @@ RT_C_DECLS_END
 /** Invalid flags was given.
  * @ingroup grp_rt_err */
 #define VERR_INVALID_FLAGS                  (-13)
+/** Incorrect call order.
+ * @ingroup grp_rt_err */
+#define VERR_WRONG_ORDER                    (-22)
 /** Invalid function.
  * @ingroup grp_rt_err */
 #define VERR_INVALID_FUNCTION               (-36)
@@ -835,6 +838,24 @@ RT_C_DECLS_END
 /** Data size overflow.
  * @ingroup grp_rt_err */
 #define VERR_TOO_MUCH_DATA                  (-42)
+/** Retry the operation.
+ * @ingroup grp_rt_err */
+#define VERR_TRY_AGAIN                      (-52)
+/** Retry the operation.
+ * @ingroup grp_rt_err */
+#define VINF_TRY_AGAIN                      52
+/** Generic parse error.
+ * @ingroup grp_rt_err */
+#define VERR_PARSE_ERROR                    (-53)
+/** Value out of range.
+ * @ingroup grp_rt_err */
+#define VERR_OUT_OF_RANGE                   (-54)
+/** A numeric conversion encountered a value which was too big for the target.
+ * @ingroup grp_rt_err */
+#define VERR_NUMBER_TOO_BIG                 (-55)
+/** A numeric conversion encountered a value which was too big for the target.
+ * @ingroup grp_rt_err */
+#define VWRN_NUMBER_TOO_BIG                 55
 /** The operation was cancelled by the user (copy) or another thread (local ipc).
  * @ingroup grp_rt_err */
 #define VERR_CANCELLED                      (-70)
@@ -871,6 +892,12 @@ RT_C_DECLS_END
 /** End of string.
  * @ingroup grp_rt_err */
 #define VERR_END_OF_STRING                  (-83)
+/** Return instigated by a callback or similar.
+ * @ingroup grp_rt_err */
+#define VERR_CALLBACK_RETURN                (-88)
+/** Return instigated by a callback or similar.
+ * @ingroup grp_rt_err */
+#define VINF_CALLBACK_RETURN                88
 /** Duplicate something.
  * @ingroup grp_rt_err */
 #define VERR_DUPLICATE                      (-98)
@@ -913,7 +940,9 @@ RT_C_DECLS_END
 /** Internal error - this should never happen.
  * @ingroup grp_rt_err */
 #define VERR_INTERNAL_ERROR                 (-225)
-
+/** RTGetOpt: Not an option.
+ * @ingroup grp_rt_err */
+#define VINF_GETOPT_NOT_OPTION              828
 
 /** @} */
 

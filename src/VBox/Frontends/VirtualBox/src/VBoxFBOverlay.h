@@ -47,7 +47,6 @@
 #include <iprt/assert.h>
 #include <iprt/critsect.h>
 #include <iprt/asm.h>
-#include <iprt/err.h>
 #include <iprt/list.h>
 #include <VBox/VBoxGL2D.h>
 #ifdef VBOXVHWA_PROFILE_FPS
