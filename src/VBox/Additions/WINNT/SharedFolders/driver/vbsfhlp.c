@@ -19,6 +19,7 @@
 #include <iprt/win/ntdddisk.h>
 
 #include "vbsfhlp.h"
+#include <iprt/err.h>
 
 #ifdef DEBUG
 static int s_iAllocRefCount = 0;
@@ -71,9 +72,7 @@ uint32_t VBoxToNTFileAttributes(uint32_t fMode)
     if (fMode & RTFS_DOS_NT_ENCRYPTED)
         FileAttributes |= FILE_ATTRIBUTE_ENCRYPTED;
     if (fMode & RTFS_DOS_NT_NORMAL)
-    {
         FileAttributes |= FILE_ATTRIBUTE_NORMAL;
-    }
     return FileAttributes;
 }
 
@@ -152,87 +151,87 @@ NTSTATUS VBoxErrorToNTStatus(int vboxRC)
 
     switch (vboxRC)
     {
-    case VINF_SUCCESS:
-        Status = STATUS_SUCCESS;
-        break;
+        case VINF_SUCCESS:
+            Status = STATUS_SUCCESS;
+            break;
 
-    case VERR_ACCESS_DENIED:
-        Status = STATUS_ACCESS_DENIED;
-        break;
+        case VERR_ACCESS_DENIED:
+            Status = STATUS_ACCESS_DENIED;
+            break;
 
-    case VERR_NO_MORE_FILES:
-        Status = STATUS_NO_MORE_FILES;
-        break;
+        case VERR_NO_MORE_FILES:
+            Status = STATUS_NO_MORE_FILES;
+            break;
 
-    case VERR_PATH_NOT_FOUND:
-        Status = STATUS_OBJECT_PATH_NOT_FOUND;
-        break;
+        case VERR_PATH_NOT_FOUND:
+            Status = STATUS_OBJECT_PATH_NOT_FOUND;
+            break;
 
-    case VERR_FILE_NOT_FOUND:
-        Status = STATUS_OBJECT_NAME_NOT_FOUND;
-        break;
+        case VERR_FILE_NOT_FOUND:
+            Status = STATUS_OBJECT_NAME_NOT_FOUND;
+            break;
 
-    case VERR_DIR_NOT_EMPTY:
-        Status = STATUS_DIRECTORY_NOT_EMPTY;
-        break;
+        case VERR_DIR_NOT_EMPTY:
+            Status = STATUS_DIRECTORY_NOT_EMPTY;
+            break;
 
-    case VERR_SHARING_VIOLATION:
-        Status = STATUS_SHARING_VIOLATION;
-        break;
+        case VERR_SHARING_VIOLATION:
+            Status = STATUS_SHARING_VIOLATION;
+            break;
 
-    case VERR_FILE_LOCK_VIOLATION:
-        Status = STATUS_FILE_LOCK_CONFLICT;
-        break;
+        case VERR_FILE_LOCK_VIOLATION:
+            Status = STATUS_FILE_LOCK_CONFLICT;
+            break;
 
-    case VERR_FILE_LOCK_FAILED:
-        Status = STATUS_LOCK_NOT_GRANTED;
-        break;
+        case VERR_FILE_LOCK_FAILED:
+            Status = STATUS_LOCK_NOT_GRANTED;
+            break;
 
-    case VINF_BUFFER_OVERFLOW:
-        Status = STATUS_BUFFER_OVERFLOW;
-        break;
+        case VINF_BUFFER_OVERFLOW:
+            Status = STATUS_BUFFER_OVERFLOW;
+            break;
 
-    case VERR_EOF:
-    case VINF_EOF:
-        Status = STATUS_END_OF_FILE;
-        break;
+        case VERR_EOF:
+        case VINF_EOF:
+            Status = STATUS_END_OF_FILE;
+            break;
 
-    case VERR_READ_ERROR:
-    case VERR_WRITE_ERROR:
-    case VERR_FILE_IO_ERROR:
-        Status = STATUS_UNEXPECTED_IO_ERROR;
-        break;
+        case VERR_READ_ERROR:
+        case VERR_WRITE_ERROR:
+        case VERR_FILE_IO_ERROR:
+            Status = STATUS_UNEXPECTED_IO_ERROR;
+            break;
 
-    case VERR_WRITE_PROTECT:
-        Status = STATUS_MEDIA_WRITE_PROTECTED;
-        break;
+        case VERR_WRITE_PROTECT:
+            Status = STATUS_MEDIA_WRITE_PROTECTED;
+            break;
 
-    case VERR_ALREADY_EXISTS:
-        Status = STATUS_OBJECT_NAME_COLLISION;
-        break;
+        case VERR_ALREADY_EXISTS:
+            Status = STATUS_OBJECT_NAME_COLLISION;
+            break;
 
-    case VERR_NOT_A_DIRECTORY:
-        Status = STATUS_NOT_A_DIRECTORY;
-        break;
+        case VERR_NOT_A_DIRECTORY:
+            Status = STATUS_NOT_A_DIRECTORY;
+            break;
 
-    case VERR_SEEK:
-        Status = STATUS_INVALID_PARAMETER;
-        break;
+        case VERR_SEEK:
+            Status = STATUS_INVALID_PARAMETER;
+            break;
 
-    case VERR_INVALID_PARAMETER:
-        Status = STATUS_INVALID_PARAMETER;
-        break;
+        case VERR_INVALID_PARAMETER:
+            Status = STATUS_INVALID_PARAMETER;
+            break;
 
-    case VERR_NOT_SUPPORTED:
-        Status = STATUS_NOT_SUPPORTED;
-        break;
+        case VERR_NOT_SUPPORTED:
+            Status = STATUS_NOT_SUPPORTED;
+            break;
 
-    default:
-        /** @todo error handling */
-        Status = STATUS_INVALID_PARAMETER;
-        Log(("Unexpected vbox error %Rrc\n",
-             vboxRC));
-        break;
+        default:
+            /** @todo error handling */
+            Status = STATUS_INVALID_PARAMETER;
+            Log(("Unexpected vbox error %Rrc\n",
+                 vboxRC));
+            break;
     }
     return Status;
 }

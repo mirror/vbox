@@ -1,9 +1,6 @@
 /* $Id$ */
 /** @file
- *
- * VirtualBox Windows Guest Shared Folders
- *
- * File System Driver path related routines
+ * VirtualBox Windows Guest Shared Folders - Path related routines.
  */
 
 /*
@@ -19,8 +16,10 @@
  */
 
 #include "vbsf.h"
+#include <iprt/err.h>
 
-static UNICODE_STRING UnicodeBackslash = { 2, 4, L"\\" };
+
+static UNICODE_STRING g_UnicodeBackslash = { 2, 4, L"\\" };
 
 static NTSTATUS vbsfProcessCreate(PRX_CONTEXT RxContext,
                                   PUNICODE_STRING RemainingName,
@@ -498,7 +497,7 @@ NTSTATUS VBoxMRxCreate(IN OUT PRX_CONTEXT RxContext)
         if (FlagOn(RxContext->Create.Flags, RX_CONTEXT_CREATE_FLAG_STRIPPED_TRAILING_BACKSLASH))
         {
             Log(("VBOXSF: MRxCreate: Empty name -> Only backslash used\n"));
-            RemainingName = &UnicodeBackslash;
+            RemainingName = &g_UnicodeBackslash;
         }
     }
 
