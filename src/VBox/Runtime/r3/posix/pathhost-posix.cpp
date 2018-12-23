@@ -35,6 +35,7 @@
 #include "internal/thread.h"
 
 #include <iprt/env.h>
+#include <iprt/err.h>
 #include <iprt/string.h>
 #include <iprt/once.h>
 

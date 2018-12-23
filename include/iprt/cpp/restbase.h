@@ -28,7 +28,7 @@
 
 #include <iprt/cdefs.h>
 #include <iprt/types.h>
-#include <iprt/err.h> /* VERR_NO_MEMORY */
+#include <iprt/errcore.h> /* VERR_NO_MEMORY */
 #include <iprt/json.h>
 #include <iprt/stdarg.h>
 #include <iprt/time.h>

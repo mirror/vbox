@@ -73,7 +73,7 @@
 
 #include <iprt/assert.h>
 #include <iprt/cdefs.h>
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 #include <iprt/mem.h>  /** @todo Should the caller include this if they need
                         *        it? */
 

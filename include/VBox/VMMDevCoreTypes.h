@@ -36,7 +36,7 @@
 #include <iprt/assertcompile.h>
 #include <iprt/types.h>
 #ifdef __cplusplus
-# include <iprt/err.h> /* VERR_INVALID_PARAMETER */
+# include <iprt/errcore.h>
 #endif
 
 

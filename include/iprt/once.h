@@ -29,7 +29,7 @@
 #include <iprt/cdefs.h>
 #include <iprt/types.h>
 #include <iprt/asm.h>
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 #include <iprt/list.h>
 
 RT_C_DECLS_BEGIN
