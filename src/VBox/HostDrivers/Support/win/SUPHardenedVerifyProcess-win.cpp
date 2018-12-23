@@ -42,6 +42,7 @@
 #include <iprt/ctype.h>
 #include <iprt/param.h>
 #include <iprt/string.h>
+#include <iprt/utf16.h>
 #include <iprt/zero.h>
 
 #ifdef IN_RING0
