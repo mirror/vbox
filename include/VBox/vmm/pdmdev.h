@@ -40,7 +40,7 @@
 #include <VBox/vmm/ssm.h>
 #include <VBox/vmm/cfgm.h>
 #include <VBox/vmm/dbgf.h>
-#include <VBox/err.h>  /* VINF_EM_DBG_STOP */
+#include <VBox/err.h>  /* VINF_EM_DBG_STOP, also 120+ source files expecting this. */
 #include <iprt/stdarg.h>
 
 
