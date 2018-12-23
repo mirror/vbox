@@ -22,8 +22,9 @@
 #define LOG_GROUP LOG_GROUP_MISC
 #include <VBox/vmm/pdmdrv.h>
 #include <VBox/vmm/pdmstorageifs.h>
-#include <VBox/version.h>
+#include <VBox/err.h>
 #include <VBox/log.h>
+#include <VBox/version.h>
 
 #include <iprt/uuid.h>
 

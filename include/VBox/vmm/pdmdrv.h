@@ -45,7 +45,6 @@
 #include <VBox/vmm/dbgf.h>
 #include <VBox/vmm/mm.h>
 #include <VBox/vmm/ftm.h>
-#include <VBox/err.h>
 #include <iprt/stdarg.h>
 
 

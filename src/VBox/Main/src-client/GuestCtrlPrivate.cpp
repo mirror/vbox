@@ -34,7 +34,7 @@
 #include <iprt/ctype.h>
 #ifdef DEBUG
 # include <iprt/file.h>
-#endif /* DEBUG */
+#endif
 #include <iprt/fs.h>
 #include <iprt/rand.h>
 #include <iprt/time.h>

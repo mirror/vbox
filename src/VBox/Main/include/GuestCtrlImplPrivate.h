@@ -30,6 +30,7 @@
 #include <VBox/com/ErrorInfo.h>
 #include <VBox/com/string.h>
 #include <VBox/com/VirtualBox.h>
+#include <VBox/err.h> /* VERR_GSTCTL_GUEST_ERROR */
 
 #include <map>
 #include <vector>
