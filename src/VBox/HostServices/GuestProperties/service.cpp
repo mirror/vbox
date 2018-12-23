@@ -48,7 +48,7 @@
 #include <iprt/cpp/autores.h>
 #include <iprt/cpp/utils.h>
 #include <iprt/cpp/ministring.h>
-#include <iprt/err.h>
+#include <VBox/err.h>
 #include <iprt/mem.h>
 #include <iprt/req.h>
 #include <iprt/string.h>

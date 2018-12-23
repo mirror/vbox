@@ -81,6 +81,7 @@
 #include <iprt/string.h>
 #include <iprt/assert.h>
 #include <iprt/critsect.h>
+#include <VBox/err.h>
 #include <VBox/vmm/ssm.h>
 
 #include "VBoxClipboard.h"

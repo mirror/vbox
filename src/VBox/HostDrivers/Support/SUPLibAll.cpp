@@ -39,6 +39,7 @@
 #if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
 # include <iprt/asm-amd64-x86.h>
 #endif
+#include <iprt/errcore.h>
 
 
 #if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)

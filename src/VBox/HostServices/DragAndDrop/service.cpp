@@ -24,19 +24,17 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
-#ifdef LOG_GROUP
- #undef LOG_GROUP
-#endif
 #define LOG_GROUP LOG_GROUP_GUEST_DND
-
-#include <algorithm>
-#include <list>
-#include <map>
-
 #include <VBox/GuestHost/DragAndDrop.h>
 #include <VBox/GuestHost/DragAndDropDefs.h>
 #include <VBox/HostServices/Service.h>
 #include <VBox/HostServices/DragAndDropSvc.h>
+
+#include <VBox/err.h>
+
+#include <algorithm>
+#include <list>
+#include <map>
 
 #include "dndmanager.h"
 

@@ -1,6 +1,5 @@
 /* $Id$ */
 /** @file
- *
  * Host video capture device implementation.
  */
 
@@ -16,6 +15,7 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+
 #include "HostVideoInputDeviceImpl.h"
 #include "Logging.h"
 #include "VirtualBoxImpl.h"
@@ -23,6 +23,7 @@
 # include "ExtPackManagerImpl.h"
 #endif
 
+#include <iprt/err.h>
 #include <iprt/ldr.h>
 #include <iprt/path.h>
 

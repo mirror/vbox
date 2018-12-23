@@ -29,9 +29,14 @@
 
 #include <VBox/GuestHost/SharedClipboard.h>
 #include <VBox/HostServices/VBoxClipboardSvc.h>
+#include <VBox/err.h>
 
 #include "VBoxClipboard.h"
 
+
+/*********************************************************************************************************************************
+*   Structures and Typedefs                                                                                                      *
+*********************************************************************************************************************************/
 struct _VBOXCLIPBOARDREQFROMVBOX;
 typedef struct _VBOXCLIPBOARDREQFROMVBOX VBOXCLIPBOARDREQFROMVBOX;
 
@@ -59,6 +64,8 @@ struct _VBOXCLIPBOARDCONTEXT
      * requests. */
     bool fShuttingDown;
 };
+
+
 
 /**
  * Report formats available in the X11 clipboard to VBox.

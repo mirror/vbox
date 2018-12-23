@@ -27,6 +27,7 @@
 #include <iprt/asm.h>
 #include <iprt/assert.h>
 #include <iprt/dbg.h>
+#include <iprt/err.h>
 #include <iprt/mem.h>
 #include <iprt/string.h>
 

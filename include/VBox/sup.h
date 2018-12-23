@@ -28,7 +28,6 @@
 
 #include <VBox/cdefs.h>
 #include <VBox/types.h>
-#include <VBox/err.h>
 #include <iprt/assert.h>
 #include <iprt/stdarg.h>
 #include <iprt/cpuset.h>

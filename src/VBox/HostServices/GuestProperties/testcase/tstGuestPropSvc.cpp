@@ -21,6 +21,7 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #include <VBox/HostServices/GuestPropertySvc.h>
+#include <VBox/err.h>
 #include <iprt/test.h>
 #include <iprt/time.h>
 
