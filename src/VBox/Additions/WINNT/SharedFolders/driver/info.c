@@ -19,6 +19,7 @@
  */
 
 #include "vbsf.h"
+#include <iprt/err.h>
 
 /** Macro for copying a SHFLSTRING file name into a FILE_DIRECTORY_INFORMATION structure. */
 #define INIT_FILE_NAME(obj, str) \
