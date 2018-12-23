@@ -29,6 +29,7 @@
 
 #include <iprt/cdefs.h>
 #include <iprt/types.h>
+#include <iprt/errcore.h> /* for VINF_GETOPT_NOT_OPTION */
 
 RT_C_DECLS_BEGIN
 
