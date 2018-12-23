@@ -587,34 +587,24 @@ void UIFileManagerTable::populateStartDirectory(UICustomFileSystemItem *startIte
     }
 }
 
-void UIFileManagerTable::insertItemsToTree(QMap<QString,UICustomFileSystemItem*> &map,
-                                                UICustomFileSystemItem *parent, bool isDirectoryMap, bool isStartDir)
+void UIFileManagerTable::checkDotDot(QMap<QString,UICustomFileSystemItem*> &map,
+                                     UICustomFileSystemItem *parent, bool isStartDir)
 {
     if (!parent)
         return;
     /* Make sure we have an item representing up directory, and make sure it is not there for the start dir: */
-    if (isDirectoryMap)
+    if (!map.contains(UICustomFileSystemModel::strUpDirectoryString)  && !isStartDir)
     {
-        if (!map.contains(UICustomFileSystemModel::strUpDirectoryString)  && !isStartDir)
-        {
-            QVector<QVariant> data = UICustomFileSystemItem::createTreeItemData(UICustomFileSystemModel::strUpDirectoryString,
-                                                                                4096, QDateTime(), QString(), QString());
+        QVector<QVariant> data = UICustomFileSystemItem::createTreeItemData(UICustomFileSystemModel::strUpDirectoryString,
+                                                                            4096, QDateTime(), QString(), QString());
 
-            UICustomFileSystemItem *item = new UICustomFileSystemItem(data, parent, KFsObjType_Directory);
-            item->setIsOpened(false);
-            map.insert(UICustomFileSystemModel::strUpDirectoryString, item);
-        }
-        else if (map.contains(UICustomFileSystemModel::strUpDirectoryString)  && isStartDir)
-        {
-            map.remove(UICustomFileSystemModel::strUpDirectoryString);
-        }
+        UICustomFileSystemItem *item = new UICustomFileSystemItem(data, parent, KFsObjType_Directory);
+        item->setIsOpened(false);
+        map.insert(UICustomFileSystemModel::strUpDirectoryString, item);
     }
-    for (QMap<QString,UICustomFileSystemItem*>::const_iterator iterator = map.begin();
-        iterator != map.end(); ++iterator)
+    else if (map.contains(UICustomFileSystemModel::strUpDirectoryString)  && isStartDir)
     {
-        if (iterator.key() == "." || iterator.key().isEmpty())
-            continue;
-        parent->appendChild(iterator.value());
+        map.remove(UICustomFileSystemModel::strUpDirectoryString);
     }
 }
 

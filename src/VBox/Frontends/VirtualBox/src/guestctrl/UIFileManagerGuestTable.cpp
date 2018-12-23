@@ -195,36 +195,25 @@ void UIFileManagerGuestTable::readDirectory(const QString& strPath,
     if (directory.isOk())
     {
         CFsObjInfo fsInfo = directory.Read();
-        QMap<QString, UICustomFileSystemItem*> directories;
-        QMap<QString, UICustomFileSystemItem*> files;
+        QMap<QString, UICustomFileSystemItem*> fileObjects;
 
         while (fsInfo.isOk())
         {
-            QVector<QVariant> data;
-            QDateTime changeTime = QDateTime::fromMSecsSinceEpoch(fsInfo.GetChangeTime()/RT_NS_1MS);
-
-            data << fsInfo.GetName() << static_cast<qulonglong>(fsInfo.GetObjectSize())
-                 << changeTime << fsInfo.GetUserName() << permissionString(fsInfo);
-
-            KFsObjType fsObjectType = fileType(fsInfo);
-            UICustomFileSystemItem *item = new UICustomFileSystemItem(data, parent, fsObjectType);
-
-            if (!item)
-                continue;
-            item->setPath(UIPathOperations::mergePaths(strPath, fsInfo.GetName()));
-            if (fsObjectType == KFsObjType_Directory)
+            if (fsInfo.GetName() != "." && fsInfo.GetName() != "..")
             {
-                directories.insert(fsInfo.GetName(), item);
-                item->setIsOpened(false);
-            }
-            else if(fsObjectType == KFsObjType_File)
-            {
-                files.insert(fsInfo.GetName(), item);
-                item->setIsOpened(false);
-            }
-            else if(fsObjectType == KFsObjType_Symlink)
-            {
-                files.insert(fsInfo.GetName(), item);
+                QVector<QVariant> data;
+                QDateTime changeTime = QDateTime::fromMSecsSinceEpoch(fsInfo.GetChangeTime()/RT_NS_1MS);
+
+                data << fsInfo.GetName() << static_cast<qulonglong>(fsInfo.GetObjectSize())
+                     << changeTime << fsInfo.GetUserName() << permissionString(fsInfo);
+
+                KFsObjType fsObjectType = fileType(fsInfo);
+                UICustomFileSystemItem *item = new UICustomFileSystemItem(data, parent, fsObjectType);
+
+                if (!item)
+                    continue;
+                item->setPath(UIPathOperations::mergePaths(strPath, fsInfo.GetName()));
+                fileObjects.insert(fsInfo.GetName(), item);
                 item->setIsOpened(false);
                 /* @todo. We will need to wait a fully implemented SymlinkRead function
                  * to be able to handle sym links properly: */
@@ -233,11 +222,9 @@ void UIFileManagerGuestTable::readDirectory(const QString& strPath,
                 // printf("%s %s %s\n", qPrintable(fsInfo.GetName()), qPrintable(path),
                 //        qPrintable(m_comGuestSession.SymlinkRead(path, aFlags)));
             }
-
             fsInfo = directory.Read();
         }
-        insertItemsToTree(directories, parent, true, isStartDir);
-        insertItemsToTree(files, parent, false, isStartDir);
+        checkDotDot(fileObjects, parent, isStartDir);
     }
     directory.Close();
 }

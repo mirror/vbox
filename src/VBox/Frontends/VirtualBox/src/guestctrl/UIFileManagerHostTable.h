@@ -34,10 +34,14 @@ class UIFileManagerHostTable : public UIFileManagerTable
 public:
 
     UIFileManagerHostTable(UIActionPool *pActionPool, QWidget *pParent = 0);
+    /** Scans the directory with the path @strPath and inserts items to the
+     *  tree under the @p parent. */
+    static void scanDirectory(const QString& strPath, UICustomFileSystemItem *parent,
+                              QMap<QString, UICustomFileSystemItem*> &fileObjects);
 
 protected:
 
-    KFsObjType  fileType(const QFileInfo &fsInfo);
+    static KFsObjType  fileType(const QFileInfo &fsInfo);
     void            retranslateUi() /* override */;
     virtual void    readDirectory(const QString& strPath, UICustomFileSystemItem *parent, bool isStartDir = false) /* override */;
     virtual void    deleteByItem(UICustomFileSystemItem *item) /* override */;
@@ -59,7 +63,7 @@ protected:
 
 private:
 
-    QString permissionString(QFileDevice::Permissions permissions);
+    static QString permissionString(QFileDevice::Permissions permissions);
     void    prepareActionConnections();
 
 };

@@ -192,8 +192,8 @@ protected:
     /* @p index is for model not for 'proxy' model */
     void changeLocation(const QModelIndex &index);
     void initializeFileTree();
-    void insertItemsToTree(QMap<QString,UICustomFileSystemItem*> &map, UICustomFileSystemItem *parent,
-                           bool isDirectoryMap, bool isStartDir);
+    void checkDotDot(QMap<QString,UICustomFileSystemItem*> &map, UICustomFileSystemItem *parent, bool isStartDir);
+
     virtual void     readDirectory(const QString& strPath, UICustomFileSystemItem *parent, bool isStartDir = false) = 0;
     virtual void     deleteByItem(UICustomFileSystemItem *item) = 0;
     virtual void     deleteByPath(const QStringList &pathList) = 0;

@@ -49,7 +49,6 @@ UICustomFileSystemItem::UICustomFileSystemItem(const QVector<QVariant> &data,
 {
     if (parent)
         parent->appendChild(this);
-
 }
 
 UICustomFileSystemItem::~UICustomFileSystemItem()

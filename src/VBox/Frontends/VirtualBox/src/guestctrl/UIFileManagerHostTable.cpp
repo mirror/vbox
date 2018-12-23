@@ -135,6 +135,50 @@ UIFileManagerHostTable::UIFileManagerHostTable(UIActionPool *pActionPool, QWidge
     retranslateUi();
 }
 
+/* static */ void UIFileManagerHostTable::scanDirectory(const QString& strPath, UICustomFileSystemItem *parent,
+                                                        QMap<QString, UICustomFileSystemItem*> &fileObjects)
+{
+
+    QDir directory(strPath);
+    /* For some reason when this filter is applied, folder content  QDir::entryInfoList()
+       returns an empty list: */
+    /*directory.setFilter(QDir::NoDotAndDotDot);*/
+    parent->setIsOpened(true);
+    if (!directory.exists())
+        return;
+    QFileInfoList entries = directory.entryInfoList();
+
+
+    for (int i = 0; i < entries.size(); ++i)
+    {
+
+
+        const QFileInfo &fileInfo = entries.at(i);
+        QVector<QVariant> itemData = UICustomFileSystemItem::createTreeItemData(fileInfo.fileName(), fileInfo.size(),
+                                                                                fileInfo.lastModified(), fileInfo.owner(),
+                                                                                permissionString(fileInfo.permissions()));
+        if (fileInfo.fileName() == ".")
+            continue;
+        if (fileInfo.fileName() == "..")
+            continue;
+
+        UICustomFileSystemItem *item = new UICustomFileSystemItem(itemData, parent, fileType(fileInfo));
+        if (!item)
+            continue;
+        item->setPath(fileInfo.absoluteFilePath());
+        /* if the item is a symlink set the target path and
+           check the target if it is a directory: */
+        if (fileInfo.isSymLink()) /** @todo No symlinks here on windows, while fsObjectPropertyString() does see them.  RTDirReadEx works wrt symlinks, btw. */
+        {
+            item->setTargetPath(fileInfo.symLinkTarget());
+            item->setIsSymLinkToADirectory(QFileInfo(fileInfo.symLinkTarget()).isDir());
+        }
+        fileObjects.insert(fileInfo.fileName(), item);
+        item->setIsOpened(false);
+    }
+
+}
+
 void UIFileManagerHostTable::retranslateUi()
 {
     if (m_pLocationLabel)
@@ -206,47 +250,9 @@ void UIFileManagerHostTable::readDirectory(const QString& strPath, UICustomFileS
     if (!parent)
         return;
 
-    QDir directory(strPath);
-    //directory.setFilter(QDir::NoDotAndDotDot);
-    parent->setIsOpened(true);
-    if (!directory.exists())
-        return;
-    QFileInfoList entries = directory.entryInfoList();
-    QMap<QString, UICustomFileSystemItem*> directories;
-    QMap<QString, UICustomFileSystemItem*> files;
-
-    for (int i = 0; i < entries.size(); ++i)
-    {
-
-        const QFileInfo &fileInfo = entries.at(i);
-        QVector<QVariant> itemData = UICustomFileSystemItem::createTreeItemData(fileInfo.fileName(), fileInfo.size(),
-                                                                                fileInfo.lastModified(), fileInfo.owner(),
-                                                                                permissionString(fileInfo.permissions()));
-        UICustomFileSystemItem *item = new UICustomFileSystemItem(itemData, parent, fileType(fileInfo));
-        if (!item)
-            continue;
-        item->setPath(fileInfo.absoluteFilePath());
-        /* if the item is a symlink set the target path and
-           check the target if it is a directory: */
-        if (fileInfo.isSymLink()) /** @todo No symlinks here on windows, while fsObjectPropertyString() does see them.  RTDirReadEx works wrt symlinks, btw. */
-        {
-            item->setTargetPath(fileInfo.symLinkTarget());
-            item->setIsSymLinkToADirectory(QFileInfo(fileInfo.symLinkTarget()).isDir());
-        }
-        if (fileInfo.isDir())
-        {
-            directories.insert(fileInfo.fileName(), item);
-            item->setIsOpened(false);
-        }
-        else
-        {
-            files.insert(fileInfo.fileName(), item);
-            item->setIsOpened(false);
-        }
-    }
-    insertItemsToTree(directories, parent, true, isStartDir);
-    insertItemsToTree(files, parent, false, isStartDir);
-    //updateCurrentLocationEdit(strPath);
+    QMap<QString, UICustomFileSystemItem*> fileObjects;
+    scanDirectory(strPath, parent, fileObjects);
+    checkDotDot(fileObjects, parent, isStartDir);
 }
 
 void UIFileManagerHostTable::deleteByItem(UICustomFileSystemItem *item)
@@ -330,7 +336,7 @@ bool UIFileManagerHostTable::createDirectory(const QString &path, const QString 
     return true;
 }
 
-KFsObjType UIFileManagerHostTable::fileType(const QFileInfo &fsInfo)
+/* static */ KFsObjType UIFileManagerHostTable::fileType(const QFileInfo &fsInfo)
 {
     if (!fsInfo.exists())
         return KFsObjType_Unknown;
@@ -453,7 +459,7 @@ void UIFileManagerHostTable::determineDriveLetters()
     }
 }
 
-QString UIFileManagerHostTable::permissionString(QFileDevice::Permissions permissions)
+/* static */QString UIFileManagerHostTable::permissionString(QFileDevice::Permissions permissions)
 {
     QString strPermissions;
     if (permissions & QFileDevice::ReadOwner)
