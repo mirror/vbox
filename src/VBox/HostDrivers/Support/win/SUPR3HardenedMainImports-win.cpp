@@ -33,9 +33,10 @@
 #include <VBox/sup.h>
 #include <VBox/err.h>
 #include <iprt/ctype.h>
-#include <iprt/string.h>
 #include <iprt/initterm.h>
 #include <iprt/param.h>
+#include <iprt/string.h>
+#include <iprt/utf16.h>
 
 #include "SUPLibInternal.h"
 #include "SUPHardenedVerify-win.h"
