@@ -35,6 +35,7 @@
 #include <string.h>
 
 #include <VBox/VBoxGuest.h> /* for VBOXGUEST_SERVICE_NAME */
+#include <iprt/err.h>
 
 
 //#define TESTMODE
