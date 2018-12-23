@@ -45,6 +45,7 @@
 #include <iprt/param.h>
 #include <iprt/path.h>
 #include <iprt/mem.h>
+#include <iprt/utf16.h>
 
 #include "SUPLibInternal.h"
 #include "win/SUPHardenedVerify-win.h"
