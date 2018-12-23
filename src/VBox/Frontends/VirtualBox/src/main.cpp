@@ -35,7 +35,6 @@
 /* Other VBox includes: */
 # include <iprt/buildconfig.h>
 # include <iprt/stream.h>
-# include <VBox/err.h>
 # include <VBox/version.h>
 # ifdef VBOX_WITH_HARDENING
 #  include <VBox/sup.h>
@@ -62,9 +61,8 @@
 /* Other VBox includes: */
 #ifdef VBOX_WITH_HARDENING
 # include <iprt/ctype.h>
-#else /* !VBOX_WITH_HARDENING */
-# include <VBox/err.h>
-#endif /* !VBOX_WITH_HARDENING */
+#endif
+#include <VBox/err.h>
 
 /* Other includes: */
 #ifdef VBOX_WS_MAC
