@@ -40,11 +40,11 @@
 #include <iprt/err.h>
 #include <iprt/file.h>
 #include <iprt/log.h>
+#include <iprt/once.h>
 #include <iprt/path.h>
 #include <iprt/string.h>
+#include <iprt/utf16.h>
 
-#include <iprt/once.h>
-#include <iprt/string.h>
 #include "internal/ldr.h"
 #include "internal-r3-win.h"
 

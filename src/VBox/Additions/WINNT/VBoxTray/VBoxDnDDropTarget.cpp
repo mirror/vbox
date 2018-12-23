@@ -15,6 +15,7 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#define LOG_GROUP LOG_GROUP_GUEST_DND
 #include <iprt/win/windows.h>
 #include <new> /* For bad_alloc. */
 #include <iprt/win/shlobj.h> /* For DROPFILES and friends. */
@@ -26,10 +27,7 @@
 #include "VBox/GuestHost/DragAndDrop.h"
 #include "VBox/HostServices/DragAndDropSvc.h"
 
-#ifdef LOG_GROUP
-# undef LOG_GROUP
-#endif
-#define LOG_GROUP LOG_GROUP_GUEST_DND
+#include <iprt/utf16.h>
 #include <VBox/log.h>
 
 

@@ -58,6 +58,7 @@
 #include <iprt/string.h>
 #include <iprt/uni.h>
 #include <iprt/uri.h>
+#include <iprt/utf16.h>
 #include <iprt/crypto/digest.h>
 #include <iprt/crypto/pkix.h>
 #include <iprt/crypto/key.h>

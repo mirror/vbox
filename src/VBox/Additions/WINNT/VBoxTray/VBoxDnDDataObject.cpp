@@ -16,6 +16,7 @@
  */
 
 
+#define LOG_GROUP LOG_GROUP_GUEST_DND
 #include <iprt/win/windows.h>
 #include <new> /* For bad_alloc. */
 #include <iprt/win/shlobj.h>
@@ -23,11 +24,8 @@
 #include <iprt/path.h>
 #include <iprt/semaphore.h>
 #include <iprt/uri.h>
+#include <iprt/utf16.h>
 
-#ifdef LOG_GROUP
-# undef LOG_GROUP
-#endif
-#define LOG_GROUP LOG_GROUP_GUEST_DND
 #include <VBox/log.h>
 
 #include "VBoxTray.h"

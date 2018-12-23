@@ -39,6 +39,7 @@
 #include <iprt/system.h>
 #include <iprt/time.h>
 #include <iprt/thread.h>
+#include <iprt/utf16.h>
 
 #include <VBox/VBoxGuestLib.h>
 #include "VBoxServiceInternal.h"

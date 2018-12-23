@@ -39,6 +39,7 @@
 #include <iprt/err.h>
 #include <iprt/file.h>
 #include <iprt/log.h>
+#include <iprt/utf16.h>
 #include "internal/fs.h"
 #include "internal/dir.h"
 #include "internal/path.h"

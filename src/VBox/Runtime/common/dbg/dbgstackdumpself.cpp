@@ -47,6 +47,7 @@
 
 #ifdef RT_OS_WINDOWS
 # include <iprt/param.h>
+# include <iprt/utf16.h>
 # include <iprt/win/windows.h>
 #elif defined(RT_OS_LINUX)
 # include <dlfcn.h>

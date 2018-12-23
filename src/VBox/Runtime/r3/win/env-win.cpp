@@ -35,6 +35,7 @@
 #include <iprt/err.h>
 #include <iprt/string.h>
 #include <iprt/mem.h>
+#include <iprt/utf16.h>
 
 #include <stdlib.h>
 #include <errno.h>

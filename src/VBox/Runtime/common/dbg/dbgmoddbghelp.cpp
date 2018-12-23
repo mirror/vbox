@@ -40,6 +40,7 @@
 #include <iprt/mem.h>
 #include <iprt/path.h>
 #include <iprt/string.h>
+#include <iprt/utf16.h>
 #include "internal/dbgmod.h"
 
 #include <iprt/win/windows.h>

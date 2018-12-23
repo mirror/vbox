@@ -31,11 +31,12 @@
 #include <iprt/path.h>
 
 #include <iprt/err.h>
-#include <iprt/param.h>
 #include <iprt/getopt.h>
 #include <iprt/ldr.h>
+#include <iprt/param.h>
 #include <iprt/string.h>
 #include <iprt/test.h>
+#include <iprt/utf16.h>
 
 
 /*********************************************************************************************************************************

@@ -60,6 +60,9 @@
 #include <iprt/time.h>
 #include <iprt/string.h>
 #include <iprt/param.h>
+#ifdef RT_OS_WINDOWS
+# include <iprt/utf16.h>
+#endif
 #if !defined(IN_GUEST) && !defined(RT_NO_GIP)
 # include <iprt/file.h>
 # include <VBox/sup.h>

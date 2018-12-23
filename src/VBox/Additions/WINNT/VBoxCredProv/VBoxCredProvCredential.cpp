@@ -36,6 +36,7 @@
 #include <iprt/initterm.h>
 #include <iprt/mem.h>
 #include <iprt/string.h>
+#include <iprt/utf16.h>
 
 
 

@@ -35,6 +35,7 @@
 #include <iprt/alloc.h>
 #include <iprt/assert.h>
 #include <iprt/err.h>
+#include <iprt/utf16.h>
 
 
 RTR3DECL(int)  RTStrUtf8ToCurrentCPTag(char **ppszString, const char *pszString, const char *pszTag)

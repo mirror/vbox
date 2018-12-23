@@ -26,6 +26,7 @@
 #include <iprt/file.h>
 
 #ifdef RT_OS_WINDOWS
+# include <iprt/utf16.h>
 # include <Winnls.h>
 # define _WINSOCK2API_
 # include <iprt/win/iphlpapi.h>

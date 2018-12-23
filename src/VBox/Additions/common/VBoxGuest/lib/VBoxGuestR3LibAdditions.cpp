@@ -31,6 +31,9 @@
 #include <iprt/mem.h>
 #include <iprt/path.h>
 #include <iprt/string.h>
+#ifdef RT_OS_WINDOWS
+# include <iprt/utf16.h>
+#endif
 #include <VBox/log.h>
 #include <VBox/version.h>
 #include "VBoxGuestR3LibInternal.h"

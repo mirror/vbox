@@ -25,6 +25,7 @@
 #include <iprt/alloc.h>
 #include <iprt/list.h>
 #include <iprt/ldr.h>
+#include <iprt/utf16.h>
 
 #ifdef DEBUG
 # define LOG_ENABLED

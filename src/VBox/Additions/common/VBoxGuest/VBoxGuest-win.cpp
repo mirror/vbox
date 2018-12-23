@@ -45,6 +45,7 @@
 #include <iprt/mp.h>
 #include <iprt/spinlock.h>
 #include <iprt/string.h>
+#include <iprt/utf16.h>
 
 #ifdef TARGET_NT4
 # include <VBox/pci.h>

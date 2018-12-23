@@ -36,6 +36,7 @@
 #include <iprt/sha.h>
 #include <iprt/string.h>
 #include <iprt/stream.h>
+#include <iprt/utf16.h>
 #include <iprt/vfs.h>
 #include <iprt/zip.h>
 #include <iprt/cpp/ministring.h>

@@ -27,6 +27,7 @@
 #include <iprt/alloc.h>
 #include <iprt/system.h>
 #include <iprt/uuid.h>
+#include <iprt/utf16.h>
 
 #include "DrvAudio.h"
 #include "VBoxDD.h"

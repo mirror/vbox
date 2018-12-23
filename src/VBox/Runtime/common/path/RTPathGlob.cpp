@@ -43,6 +43,7 @@
 #include <iprt/uni.h>
 
 #if defined(RT_OS_WINDOWS)
+# include <iprt/utf16.h>
 # include <iprt/win/windows.h>
 # include "../../r3/win/internal-r3-win.h"
 

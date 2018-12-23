@@ -40,6 +40,7 @@
 #include <iprt/path.h>
 #include <iprt/mem.h>
 #include <iprt/string.h>
+#include <iprt/utf16.h>
 #include "internal/path.h"
 
 

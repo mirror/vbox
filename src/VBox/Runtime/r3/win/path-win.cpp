@@ -34,13 +34,14 @@
 
 #include <iprt/path.h>
 #include <iprt/assert.h>
-#include <iprt/string.h>
-#include <iprt/time.h>
+#include <iprt/err.h>
 #include <iprt/ldr.h>
+#include <iprt/log.h>
 #include <iprt/mem.h>
 #include <iprt/param.h>
-#include <iprt/log.h>
-#include <iprt/err.h>
+#include <iprt/string.h>
+#include <iprt/time.h>
+#include <iprt/utf16.h>
 #include "internal/path.h"
 #include "internal/fs.h"
 

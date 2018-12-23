@@ -59,6 +59,7 @@
 #include <iprt/string.h>
 #include <iprt/thread.h>
 #include <iprt/time.h>
+#include <iprt/utf16.h>
 
 #include "internal/magics.h"
 #include "internal-r3-win.h"

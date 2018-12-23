@@ -31,11 +31,12 @@
 #define LOG_GROUP RTLOGGROUP_PROCESS
 #include <iprt/win/windows.h>
 
-#include <iprt/string.h>
 #include <iprt/assert.h>
 #include <iprt/err.h>
 #include <iprt/path.h>
 #include <iprt/param.h>
+#include <iprt/string.h>
+#include <iprt/utf16.h>
 #include "internal/process.h"
 
 

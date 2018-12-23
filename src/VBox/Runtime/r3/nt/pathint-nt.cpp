@@ -31,11 +31,12 @@
 #define LOG_GROUP RTLOGGROUP_FS
 #include "internal-r3-nt.h"
 
-#include <iprt/path.h>
-#include <iprt/mem.h>
-#include <iprt/string.h>
-#include <iprt/err.h>
 #include <iprt/assert.h>
+#include <iprt/err.h>
+#include <iprt/mem.h>
+#include <iprt/path.h>
+#include <iprt/string.h>
+#include <iprt/utf16.h>
 
 
 /*********************************************************************************************************************************

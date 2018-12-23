@@ -40,6 +40,7 @@
 #include <iprt/alloc.h>
 #include <iprt/string.h>
 #include <iprt/thread.h>
+#include <iprt/utf16.h>
 #include <VBox/log.h>
 #include <VBox/usblib.h>
 #include <VBox/usblib-win.h>

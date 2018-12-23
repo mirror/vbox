@@ -34,6 +34,7 @@
 #include <iprt/alloca.h>
 #include <iprt/dir.h>
 #include <iprt/file.h>
+#include <iprt/err.h>
 #include <iprt/getopt.h>
 #include <iprt/initterm.h>
 #include <iprt/list.h>
@@ -42,7 +43,7 @@
 #include <iprt/path.h>
 #include <iprt/stream.h>
 #include <iprt/string.h>
-#include <iprt/err.h>
+#include <iprt/utf16.h>
 
 #include "r0drv/nt/symdb.h"
 

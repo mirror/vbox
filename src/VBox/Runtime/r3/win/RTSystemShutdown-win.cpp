@@ -34,6 +34,7 @@
 #include <iprt/assert.h>
 #include <iprt/err.h>
 #include <iprt/string.h>
+#include <iprt/utf16.h>
 
 #include <iprt/win/windows.h>
 

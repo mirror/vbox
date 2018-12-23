@@ -72,6 +72,7 @@
 #include <iprt/param.h>
 #include <iprt/path.h>
 #include <iprt/string.h>
+#include <iprt/utf16.h>
 
 #include "SUPLibInternal.h"
 #if defined(RT_OS_WINDOWS) && defined(VBOX_WITH_HARDENING)

@@ -34,6 +34,7 @@
 #include <iprt/err.h>
 #include <iprt/env.h>
 #include <iprt/string.h>
+#include <iprt/utf16.h>
 #include <iprt/win/windows.h>
 #include "internal-r3-win.h"
 

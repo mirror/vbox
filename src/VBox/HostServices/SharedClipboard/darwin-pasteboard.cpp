@@ -24,9 +24,10 @@
 #define LOG_GROUP LOG_GROUP_SHARED_CLIPBOARD
 #include <Carbon/Carbon.h>
 
-#include <iprt/mem.h>
 #include <iprt/assert.h>
-#include "iprt/err.h"
+#include <iprt/mem.h>
+#include <iprt/err.h>
+#include <iprt/utf16.h>
 
 #include "VBox/log.h"
 #include "VBox/HostServices/VBoxClipboardSvc.h"

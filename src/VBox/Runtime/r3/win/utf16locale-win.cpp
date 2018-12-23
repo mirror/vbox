@@ -31,7 +31,7 @@
 #define LOG_GROUP RTLOGGROUP_UTF16
 #include <iprt/win/windows.h>
 
-#include <iprt/string.h>
+#include <iprt/utf16.h>
 
 
 RTDECL(int) RTUtf16LocaleICmp(PCRTUTF16 pusz1, PCRTUTF16 pusz2)

@@ -35,6 +35,7 @@
 #include <iprt/ctype.h>
 #include <iprt/err.h>
 #include <iprt/string.h>
+#include <iprt/utf16.h>
 
 #include <iprt/nt/nt-and-windows.h>
 

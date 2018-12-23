@@ -39,6 +39,7 @@
 #include <iprt/err.h>
 #include <iprt/mem.h>
 #include <iprt/string.h>
+#include <iprt/utf16.h>
 #include "internal/magics.h"
 #include "internal/path.h"
 #include "internal-r3-win.h" /* For g_enmWinVer + kRTWinOSType_XXX */

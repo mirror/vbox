@@ -38,6 +38,7 @@
 #include <iprt/path.h>
 #include <iprt/string.h>
 #include <iprt/symlink.h>
+#include <iprt/utf16.h>
 #include "internal/dir.h"
 #include "internal/file.h"
 #include "internal/fs.h"
