@@ -59,6 +59,7 @@
 #include <iprt/system.h>
 #include <iprt/thread.h>
 #include <iprt/time.h>
+#include <VBox/err.h>
 #include <VBox/VMMDev.h>
 #include <VBox/VBoxGuestLib.h>
 

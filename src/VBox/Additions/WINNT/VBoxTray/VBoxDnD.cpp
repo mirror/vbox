@@ -32,7 +32,6 @@ using namespace DragAndDropSvc;
 
 #include <iprt/asm.h>
 #include <iprt/assert.h>
-#include <iprt/err.h>
 #include <iprt/ldr.h>
 #include <iprt/list.h>
 #include <iprt/mem.h>
@@ -42,6 +41,7 @@ using namespace DragAndDropSvc;
 
 #include <iprt/cpp/mtlist.h>
 
+#include <VBox/err.h>
 #include <VBox/log.h>
 
 

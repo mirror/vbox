@@ -39,6 +39,7 @@
 #include <iprt/asm-amd64-x86.h>
 #include <iprt/critsect.h>
 #include <iprt/dbg.h>
+#include <iprt/err.h>
 #include <iprt/initterm.h>
 #include <iprt/memobj.h>
 #include <iprt/mem.h>

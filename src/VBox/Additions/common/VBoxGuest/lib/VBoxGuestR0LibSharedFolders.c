@@ -36,6 +36,7 @@
 #include "VBoxGuestR0LibInternal.h"
 #include <VBox/VBoxGuestLibSharedFolders.h>
 #include <VBox/log.h>
+#include <iprt/err.h>
 #include <iprt/time.h>
 #include <iprt/mem.h>
 #include <iprt/path.h>
