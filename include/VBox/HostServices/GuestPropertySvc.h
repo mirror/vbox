@@ -29,7 +29,7 @@
 #include <VBox/VMMDevCoreTypes.h>
 #include <VBox/VBoxGuestCoreTypes.h>
 #include <VBox/log.h>
-#include <VBox/hgcmsvc.h>
+#include <iprt/err.h>
 #include <iprt/assertcompile.h>
 #include <iprt/string.h>
 

@@ -49,6 +49,7 @@
 #include <iprt/cpp/utils.h>
 #include <iprt/cpp/ministring.h>
 #include <VBox/err.h>
+#include <VBox/hgcmsvc.h>
 #include <iprt/mem.h>
 #include <iprt/req.h>
 #include <iprt/string.h>
