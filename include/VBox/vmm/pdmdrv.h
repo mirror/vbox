@@ -32,11 +32,13 @@
 #include <VBox/vmm/pdmifs.h>
 #include <VBox/vmm/pdmins.h>
 #include <VBox/vmm/pdmcommon.h>
-#include <VBox/vmm/pdmasynccompletion.h>
+#ifdef IN_RING3
+# include <VBox/vmm/pdmasynccompletion.h>
+# include <VBox/vmm/pdmblkcache.h>
+#endif
 #ifdef VBOX_WITH_NETSHAPER
-#include <VBox/vmm/pdmnetshaper.h>
-#endif /* VBOX_WITH_NETSHAPER */
-#include <VBox/vmm/pdmblkcache.h>
+# include <VBox/vmm/pdmnetshaper.h>
+#endif
 #include <VBox/vmm/tm.h>
 #include <VBox/vmm/ssm.h>
 #include <VBox/vmm/cfgm.h>
