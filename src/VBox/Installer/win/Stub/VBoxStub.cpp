@@ -54,6 +54,7 @@
 #include <iprt/stream.h>
 #include <iprt/string.h>
 #include <iprt/thread.h>
+#include <iprt/utf16.h>
 
 #include "VBoxStub.h"
 #include "../StubBld/VBoxStubBld.h"
