@@ -35,7 +35,6 @@
 #include <iprt/vfs.h>
 #include <VBox/cdefs.h>
 #include <VBox/types.h>
-#include <VBox/err.h>
 #include <VBox/vdmedia.h>
 #include <VBox/vd-ifs.h>
 
