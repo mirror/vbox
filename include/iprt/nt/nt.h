@@ -1561,11 +1561,20 @@ NTSYSAPI NTSTATUS NTAPI ZwOpenProcessToken(HANDLE, ACCESS_MASK, PHANDLE);
 NTSYSAPI NTSTATUS NTAPI ZwOpenThreadToken(HANDLE, ACCESS_MASK, BOOLEAN, PHANDLE);
 
 #ifdef IPRT_NT_USE_WINTERNL
+typedef struct _FILE_FS_SIZE_INFORMATION
+{
+    LARGE_INTEGER   TotalAllocationUnits;
+    LARGE_INTEGER   AvailableAllocationUnits;
+    ULONG           SectorsPerAllocationUnit;
+    ULONG           BytesPerSector;
+} FILE_FS_SIZE_INFORMATION;
+typedef FILE_FS_SIZE_INFORMATION *PFILE_FS_SIZE_INFORMATION;
+
 typedef enum _FSINFOCLASS
 {
     FileFsVolumeInformation = 1,
     FileFsLabelInformation,
-    FileFsSizeInformation,
+    FileFsSizeInformation,          /**< FILE_FS_SIZE_INFORMATION */
     FileFsDeviceInformation,
     FileFsAttributeInformation,
     FileFsControlInformation,
