@@ -37,7 +37,6 @@
 #include <VBox/vmm/cfgm.h>
 #include <VBox/vmm/dbgf.h>
 #include <VBox/vmm/mm.h>
-#include <VBox/err.h>
 #include <VBox/vusb.h>
 #include <iprt/stdarg.h>
 
