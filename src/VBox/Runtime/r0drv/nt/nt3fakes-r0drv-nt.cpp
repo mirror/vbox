@@ -39,6 +39,7 @@
 #include <iprt/err.h>
 #include <iprt/log.h>
 #include <iprt/string.h>
+#include <iprt/utf16.h>
 #include <iprt/x86.h>
 #include <iprt/formats/mz.h>
 #include <iprt/formats/pecoff.h>
