@@ -44,6 +44,7 @@
 #include <iprt/semaphore.h>
 #include <iprt/sort.h>
 #include <iprt/string.h>
+#include <VBox/err.h>
 #include <VBox/VBoxGuestLib.h>
 #include <VBox/shflsvc.h>
 #include "VBoxServiceInternal.h"

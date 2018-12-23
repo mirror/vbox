@@ -37,6 +37,7 @@
 #include <iprt/string.h>
 #include <iprt/assert.h>
 #include <iprt/semaphore.h>
+#include <VBox/err.h>
 
 
 /*********************************************************************************************************************************

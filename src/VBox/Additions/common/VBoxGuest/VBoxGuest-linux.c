@@ -60,7 +60,6 @@
 #include <iprt/assert.h>
 #include <iprt/asm.h>
 #include <iprt/ctype.h>
-#include <iprt/err.h>
 #include <iprt/initterm.h>
 #include <iprt/mem.h>
 #include <iprt/mp.h>
@@ -68,6 +67,7 @@
 #include <iprt/spinlock.h>
 #include <iprt/semaphore.h>
 #include <iprt/string.h>
+#include <VBox/err.h>
 #include <VBox/log.h>
 
 

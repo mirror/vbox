@@ -37,6 +37,7 @@
 #include <iprt/asm-amd64-x86.h>
 #include <iprt/assert.h>
 #include <iprt/string.h>
+#include <VBox/err.h>
 
 
 DECLR0VBGL(int) VbglGR0Verify(const VMMDevRequestHeader *pReq, size_t cbReq)

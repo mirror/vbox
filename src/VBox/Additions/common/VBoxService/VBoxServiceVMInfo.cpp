@@ -94,6 +94,7 @@
 #include <iprt/system.h>
 #include <iprt/time.h>
 #include <iprt/assert.h>
+#include <VBox/err.h>
 #include <VBox/version.h>
 #include <VBox/VBoxGuestLib.h>
 #include "VBoxServiceInternal.h"

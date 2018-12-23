@@ -58,6 +58,7 @@
 
 #include <iprt/assert.h>
 #include <iprt/asm.h>
+#include <iprt/err.h>
 #include <iprt/file.h>
 #include <iprt/time.h>
 #include <iprt/string.h>

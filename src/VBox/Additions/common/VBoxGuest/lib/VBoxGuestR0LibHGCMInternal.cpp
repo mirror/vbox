@@ -42,6 +42,7 @@
 #include <iprt/string.h>
 #include <iprt/thread.h>
 #include <iprt/time.h>
+#include <VBox/err.h>
 
 #ifndef VBGL_VBOXGUEST
 # error "This file should only be part of the VBoxGuestR0LibBase library that is linked into VBoxGuest."

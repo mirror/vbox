@@ -43,6 +43,7 @@
 
 #include <iprt/assert.h>
 #include <iprt/file.h>
+#include <iprt/err.h>
 #include <iprt/string.h>
 
 /** Maximum number of supported screens.  DRM and X11 both limit this to 32. */

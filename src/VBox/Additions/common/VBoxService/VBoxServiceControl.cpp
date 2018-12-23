@@ -57,6 +57,7 @@
 #include <iprt/process.h>
 #include <iprt/semaphore.h>
 #include <iprt/thread.h>
+#include <VBox/err.h>
 #include <VBox/VBoxGuestLib.h>
 #include <VBox/HostServices/GuestControlSvc.h>
 #include "VBoxServiceInternal.h"

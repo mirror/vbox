@@ -53,6 +53,7 @@
 #define LOG_GROUP   LOG_GROUP_DEFAULT
 #include "VBoxGuestInternal.h"
 #include <VBox/VMMDev.h> /* for VMMDEV_RAM_SIZE */
+#include <VBox/err.h>
 #include <VBox/log.h>
 #include <VBox/HostServices/GuestPropertySvc.h>
 #include <iprt/ctype.h>

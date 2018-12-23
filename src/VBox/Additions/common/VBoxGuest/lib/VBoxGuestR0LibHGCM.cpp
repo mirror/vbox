@@ -40,6 +40,7 @@
 #include <iprt/assert.h>
 #include <iprt/semaphore.h>
 #include <iprt/string.h>
+#include <VBox/err.h>
 
 #ifdef VBGL_VBOXGUEST
 # error "This file shouldn't be part of the VBoxGuestR0LibBase library that is linked into VBoxGuest.  It's client code."

@@ -33,6 +33,7 @@
 #include <iprt/assert.h>
 #include <iprt/cpp/autores.h>
 #include <iprt/stdarg.h>
+#include <VBox/err.h>
 #include <VBox/log.h>
 #include <VBox/HostServices/GuestControlSvc.h>
 

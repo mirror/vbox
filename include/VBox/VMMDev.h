@@ -33,10 +33,10 @@
 #include <VBox/cdefs.h>
 #include <VBox/param.h>                 /* for the PCI IDs. */
 #include <VBox/types.h>
-#include <VBox/err.h> /** @todo replace with errcore.h */
 #include <VBox/ostypes.h>
 #include <VBox/VMMDevCoreTypes.h>
 #include <iprt/assertcompile.h>
+#include <iprt/errcore.h>
 
 
 #pragma pack(4) /* force structure dword packing here. */

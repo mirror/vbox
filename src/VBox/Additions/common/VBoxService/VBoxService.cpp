@@ -86,6 +86,7 @@
 #include <iprt/system.h>
 #include <iprt/thread.h>
 
+#include <VBox/err.h>
 #include <VBox/log.h>
 
 #include "VBoxServiceInternal.h"
