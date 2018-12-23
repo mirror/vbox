@@ -14,6 +14,10 @@
  * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
+
+/*********************************************************************************************************************************
+*   Header Files                                                                                                                 *
+*********************************************************************************************************************************/
 #define LOG_GROUP LOG_GROUP_DRV_HOST_BASE
 #include <mach/mach.h>
 #include <Carbon/Carbon.h>
@@ -25,9 +29,8 @@
 #include <DiskArbitration/DiskArbitration.h>
 #include <mach/mach_error.h>
 #include <VBox/scsi.h>
+#include <iprt/string.h>
 
-/** Maximum buffer size we support, check whether darwin has some real upper limit. */
-#define DARWIN_SCSI_MAX_BUFFER_SIZE (100 * _1K)
 
 /**
  * Host backend specific data.
@@ -56,8 +59,17 @@ AssertCompile(sizeof(DRVHOSTBASEOS) <= 64);
 #define DRVHOSTBASE_OS_INT_DECLARED
 #include "DrvHostBase.h"
 
+
+/*********************************************************************************************************************************
+*   Defined Constants And Macros                                                                                                 *
+*********************************************************************************************************************************/
+/** Maximum buffer size we support, check whether darwin has some real upper limit. */
+#define DARWIN_SCSI_MAX_BUFFER_SIZE (100 * _1K)
+
 /** The runloop input source name for the disk arbitration events. */
-# define MY_RUN_LOOP_MODE    CFSTR("drvHostBaseDA") /** @todo r=bird: Check if this will cause trouble in the same way that the one in the USB code did. */
+#define MY_RUN_LOOP_MODE  CFSTR("drvHostBaseDA") /** @todo r=bird: Check if this will cause trouble in the same way that the one in the USB code did. */
+
+
 
 /**
  * Gets the BSD Name (/dev/disc[0-9]+) for the service.

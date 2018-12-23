@@ -14,6 +14,11 @@
  * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
+
+
+/*********************************************************************************************************************************
+*   Header Files                                                                                                                 *
+*********************************************************************************************************************************/
 #define LOG_GROUP LOG_GROUP_DRV_HOST_BASE
 #pragma warning(disable : 4163)
 #define _interlockedbittestandset      they_messed_it_up_in_winnt_h_this_time_sigh__interlockedbittestandset
@@ -78,10 +83,8 @@ NTSTATUS __stdcall NtQueryVolumeInformationFile(
 
 #include <iprt/ctype.h>
 #include <iprt/file.h>
+#include <iprt/string.h>
 #include <VBox/scsi.h>
-
-/** Maximum buffer size we support, check whether darwin has some real upper limit. */
-#define WIN_SCSI_MAX_BUFFER_SIZE (100 * _1K)
 
 /**
  * Host backend specific data.
@@ -103,6 +106,14 @@ AssertCompile(sizeof(DRVHOSTBASEOS) <= 64);
 
 #define DRVHOSTBASE_OS_INT_DECLARED
 #include "DrvHostBase.h"
+
+
+/*********************************************************************************************************************************
+*   Defined Constants And Macros                                                                                                 *
+*********************************************************************************************************************************/
+/** Maximum buffer size we support, check whether darwin has some real upper limit. */
+#define WIN_SCSI_MAX_BUFFER_SIZE (100 * _1K)
+
 
 
 /**
