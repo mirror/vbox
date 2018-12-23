@@ -35,7 +35,6 @@
 #include <iprt/ctype.h>
 #include <iprt/dir.h>
 #include <iprt/env.h>
-#include <VBox/err.h>
 #include <iprt/file.h>
 #include <iprt/sha.h>
 #include <iprt/initterm.h>
@@ -131,15 +130,13 @@ RTEXITCODE handleUnregisterVM(HandlerArg *a)
                 {
                     if (RT_C_IS_PRINT(c))
                         return errorSyntax(USAGE_UNREGISTERVM, "Invalid option -%c", c);
-                    else
-                        return errorSyntax(USAGE_UNREGISTERVM, "Invalid option case %i", c);
+                    return errorSyntax(USAGE_UNREGISTERVM, "Invalid option case %i", c);
                 }
-                else if (c == VERR_GETOPT_UNKNOWN_OPTION)
+                if (c == VERR_GETOPT_UNKNOWN_OPTION)
                     return errorSyntax(USAGE_UNREGISTERVM, "unknown option: %s\n", ValueUnion.psz);
-                else if (ValueUnion.pDef)
+                if (ValueUnion.pDef)
                     return errorSyntax(USAGE_UNREGISTERVM, "%s: %Rrs", ValueUnion.pDef->pszLong, c);
-                else
-                    return errorSyntax(USAGE_UNREGISTERVM, "error: %Rrs", c);
+                return errorSyntax(USAGE_UNREGISTERVM, "error: %Rrs", c);
         }
     }
 

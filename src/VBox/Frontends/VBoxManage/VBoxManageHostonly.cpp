@@ -28,7 +28,6 @@
 #endif /* !VBOX_ONLY_DOCS */
 
 #include <iprt/cidr.h>
-#include <iprt/err.h>
 #include <iprt/param.h>
 #include <iprt/path.h>
 #include <iprt/stream.h>

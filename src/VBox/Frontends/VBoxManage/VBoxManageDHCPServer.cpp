@@ -28,7 +28,6 @@
 #endif /* !VBOX_ONLY_DOCS */
 
 #include <iprt/cidr.h>
-#include <iprt/err.h>
 #include <iprt/param.h>
 #include <iprt/path.h>
 #include <iprt/stream.h>
@@ -338,15 +337,13 @@ static RTEXITCODE handleOp(HandlerArg *a, OPCODE enmCode, int iStart)
                 {
                     if (RT_C_IS_GRAPH(c))
                         return errorSyntax(USAGE_DHCPSERVER, "unhandled option: -%c", c);
-                    else
-                        return errorSyntax(USAGE_DHCPSERVER, "unhandled option: %i", c);
+                    return errorSyntax(USAGE_DHCPSERVER, "unhandled option: %i", c);
                 }
-                else if (c == VERR_GETOPT_UNKNOWN_OPTION)
+                if (c == VERR_GETOPT_UNKNOWN_OPTION)
                     return errorSyntax(USAGE_DHCPSERVER, "unknown option: %s", ValueUnion.psz);
-                else if (ValueUnion.pDef)
+                if (ValueUnion.pDef)
                     return errorSyntax(USAGE_DHCPSERVER, "%s: %Rrs", ValueUnion.pDef->pszLong, c);
-                else
-                    return errorSyntax(USAGE_DHCPSERVER, "%Rrs", c);
+                return errorSyntax(USAGE_DHCPSERVER, "%Rrs", c);
         }
     }
 

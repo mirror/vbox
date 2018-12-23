@@ -31,7 +31,6 @@
 # include <VBox/com/VirtualBox.h>
 #endif /* !VBOX_ONLY_DOCS */
 
-#include <VBox/err.h>
 #include <VBox/version.h>
 
 #include <iprt/asm.h>

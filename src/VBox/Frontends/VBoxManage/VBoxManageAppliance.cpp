@@ -34,7 +34,6 @@
 #include <map>
 #endif /* !VBOX_ONLY_DOCS */
 
-#include <iprt/err.h>
 #include <iprt/stream.h>
 #include <iprt/getopt.h>
 #include <iprt/ctype.h>

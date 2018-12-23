@@ -34,7 +34,6 @@
 
 #include <VBox/vd.h>
 #include <VBox/sup.h>
-#include <VBox/err.h>
 #include <VBox/log.h>
 
 #include <iprt/ctype.h>

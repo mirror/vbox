@@ -29,7 +29,6 @@
 
 #include <VBox/types.h>
 #include <iprt/ctype.h>
-#include <VBox/err.h>
 #include <iprt/getopt.h>
 #include <iprt/path.h>
 #include <iprt/param.h>

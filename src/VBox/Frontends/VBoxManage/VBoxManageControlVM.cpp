@@ -28,7 +28,6 @@
 #include <VBox/com/VirtualBox.h>
 
 #include <iprt/ctype.h>
-#include <VBox/err.h>
 #include <iprt/getopt.h>
 #include <iprt/stream.h>
 #include <iprt/string.h>
