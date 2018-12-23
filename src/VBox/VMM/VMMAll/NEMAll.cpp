@@ -23,6 +23,7 @@
 #include <VBox/vmm/nem.h>
 #include "NEMInternal.h"
 #include <VBox/vmm/vm.h>
+#include <VBox/err.h>
 
 
 /**

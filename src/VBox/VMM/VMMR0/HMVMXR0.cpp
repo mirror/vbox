@@ -39,6 +39,7 @@
 #endif
 #include "HMInternal.h"
 #include <VBox/vmm/vm.h>
+#include <VBox/vmm/hmvmxinline.h>
 #include "HMVMXR0.h"
 #include "dtrace/VBoxVMM.h"
 

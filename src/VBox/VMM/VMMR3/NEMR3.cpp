@@ -35,6 +35,7 @@
 #include "NEMInternal.h"
 #include <VBox/vmm/vm.h>
 #include <VBox/vmm/uvm.h>
+#include <VBox/err.h>
 
 #include <iprt/asm.h>
 

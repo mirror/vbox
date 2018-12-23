@@ -30,11 +30,11 @@
 #include <VBox/vmm/vm.h>
 
 #include <VBox/disopcode.h>
+#include <VBox/err.h>
 #include <VBox/version.h>
 
 #include <iprt/asm-math.h>
 #include <iprt/assert.h>
-#include <iprt/err.h>
 #include <iprt/string.h>
 #include <iprt/mem.h>
 

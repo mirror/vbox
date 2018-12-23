@@ -18,6 +18,8 @@
 #ifndef ___IOMInline_h
 #define ___IOMInline_h
 
+#include <iprt/errcore.h>
+
 /** @addtogroup grp_iom_int   Internals
  * @internal
  * @{

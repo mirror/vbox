@@ -35,6 +35,7 @@
 # include "qemu-common.h"
 # include <math.h>
 # include "tcg.h"
+# include <VBox/err.h>
 #endif /* VBOX */
 
 //#define DEBUG_PCALL

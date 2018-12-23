@@ -50,6 +50,7 @@
 #include <VBox/vmm/dbgf.h>
 #include "VMMTracing.h"
 
+#include <VBox/err.h>
 #include <VBox/log.h>
 #include <iprt/asm.h>
 #include <iprt/string.h>

@@ -26,6 +26,7 @@
 #include "HMInternal.h"
 #include <VBox/vmm/vm.h>
 #include <VBox/vmm/hm_vmx.h>
+#include <VBox/vmm/hmvmxinline.h>
 #include <VBox/vmm/hm_svm.h>
 #include <VBox/err.h>
 #include <VBox/log.h>
