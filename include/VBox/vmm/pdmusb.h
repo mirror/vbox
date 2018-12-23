@@ -38,6 +38,7 @@
 #include <VBox/vmm/dbgf.h>
 #include <VBox/vmm/mm.h>
 #include <VBox/vusb.h>
+#include <iprt/errcore.h>
 #include <iprt/stdarg.h>
 
 RT_C_DECLS_BEGIN
