@@ -445,6 +445,7 @@
 #include <VBox/err.h>
 #ifdef RT_OS_WINDOWS
 # include <VBox/version.h>
+# include <iprt/utf16.h>
 #endif
 #include <iprt/ctype.h>
 #include <iprt/string.h>

@@ -49,6 +49,7 @@
 #include <iprt/log.h>
 #include <iprt/path.h>
 #include <iprt/string.h>
+#include <iprt/utf16.h>
 #include <iprt/crypto/pkcs7.h>
 #include <iprt/crypto/store.h>
 
