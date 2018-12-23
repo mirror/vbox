@@ -34,6 +34,7 @@
 #include <VBox/err.h>
 #include <VBox/log.h>
 #include <iprt/assert.h>
+#include <iprt/string.h>
 #include "IOMInline.h"
 
 

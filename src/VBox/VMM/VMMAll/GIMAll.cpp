@@ -27,6 +27,7 @@
 
 #include <VBox/dis.h>       /* For DISCPUSTATE */
 #include <VBox/err.h>
+#include <iprt/string.h>
 
 /* Include all the providers. */
 #include "GIMHvInternal.h"

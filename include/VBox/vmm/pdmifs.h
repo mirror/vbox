@@ -28,7 +28,6 @@
 
 #include <iprt/sg.h>
 #include <VBox/types.h>
-#include <VBox/hgcmsvc.h>
 
 
 RT_C_DECLS_BEGIN
@@ -2114,10 +2113,10 @@ typedef struct PDMIHGCMPORT
 /** PDMIHGCMPORT interface ID. */
 # define PDMIHGCMPORT_IID                       "28c0a201-68cd-4752-9404-bb42a0c09eb7"
 
-
+/* forward decl to hgvmsvc.h. */
+struct VBOXHGCMSVCPARM;
 /** Pointer to a HGCM service location structure. */
 typedef struct HGCMSERVICELOCATION *PHGCMSERVICELOCATION;
-
 /** Pointer to a HGCM connector interface. */
 typedef struct PDMIHGCMCONNECTOR *PPDMIHGCMCONNECTOR;
 /**
@@ -2164,7 +2163,7 @@ typedef struct PDMIHGCMCONNECTOR
      * @thread  The emulation thread.
      */
     DECLR3CALLBACKMEMBER(int, pfnCall,(PPDMIHGCMCONNECTOR pInterface, PVBOXHGCMCMD pCmd, uint32_t u32ClientID, uint32_t u32Function,
-                                       uint32_t cParms, PVBOXHGCMSVCPARM paParms, uint64_t tsArrival));
+                                       uint32_t cParms, struct VBOXHGCMSVCPARM *paParms, uint64_t tsArrival));
 
     /**
      * Notification about the guest cancelling a pending request.

@@ -29,10 +29,11 @@
 #include <iprt/asm.h>
 #include <iprt/net.h>
 #include <iprt/semaphore.h>
+#include <iprt/string.h>
 #ifdef IN_RING3
 # include <iprt/mem.h>
 # include <iprt/uuid.h>
-#endif /* IN_RING3 */
+#endif
 #include <VBox/VBoxPktDmp.h>
 #include "VBoxDD.h"
 #include "../VirtIO/Virtio.h"

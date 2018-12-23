@@ -20,6 +20,7 @@
 
 #include "VirtualBoxBase.h"
 #include <VBox/vmm/pdmdrv.h>
+#include <VBox/hgcmsvc.h>
 #include <iprt/asm.h>
 
 class Console;

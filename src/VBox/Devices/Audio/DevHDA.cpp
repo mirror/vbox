@@ -39,10 +39,10 @@
 #include <iprt/asm-math.h>
 #include <iprt/file.h>
 #include <iprt/list.h>
+# include <iprt/string.h>
 #ifdef IN_RING3
 # include <iprt/mem.h>
 # include <iprt/semaphore.h>
-# include <iprt/string.h>
 # include <iprt/uuid.h>
 #endif
 
