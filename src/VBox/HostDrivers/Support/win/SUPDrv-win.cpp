@@ -45,6 +45,7 @@
 #include <iprt/semaphore.h>
 #include <iprt/spinlock.h>
 #include <iprt/string.h>
+#include <iprt/utf16.h>
 #include <iprt/x86.h>
 #include <VBox/log.h>
 #include <VBox/err.h>
