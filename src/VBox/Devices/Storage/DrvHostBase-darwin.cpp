@@ -29,6 +29,7 @@
 #include <IOKit/IOBSD.h>
 #include <DiskArbitration/DiskArbitration.h>
 #include <mach/mach_error.h>
+#include <VBox/err.h>
 #include <VBox/scsi.h>
 #include <iprt/string.h>
 

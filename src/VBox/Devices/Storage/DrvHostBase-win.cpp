@@ -27,6 +27,7 @@
 #include <iprt/ctype.h>
 #include <iprt/file.h>
 #include <iprt/string.h>
+#include <VBox/err.h>
 #include <VBox/scsi.h>
 
 /**

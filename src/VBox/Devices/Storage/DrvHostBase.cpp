@@ -23,6 +23,7 @@
 
 #include <VBox/vmm/pdmdrv.h>
 #include <VBox/vmm/pdmstorageifs.h>
+#include <VBox/err.h>
 #include <iprt/assert.h>
 #include <iprt/file.h>
 #include <iprt/path.h>

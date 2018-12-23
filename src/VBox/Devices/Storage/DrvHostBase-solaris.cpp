@@ -36,6 +36,7 @@
 
 extern "C" char *getfullblkname(char *);
 
+#include <VBox/err.h>
 #include <iprt/file.h>
 #include <iprt/string.h>
 

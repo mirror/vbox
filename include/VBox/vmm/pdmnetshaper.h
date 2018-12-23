@@ -27,9 +27,7 @@
 #define ___VBox_vmm_pdmnetshaper_h
 
 #include <VBox/types.h>
-#include <VBox/err.h>
 #include <VBox/vmm/pdmnetifs.h>
-#include <iprt/assert.h>
 #include <iprt/sg.h>
 
 
@@ -59,12 +57,6 @@ typedef struct PDMNSFILTER
     /** The driver this filter is aggregated into (ring-3). */
     R3PTRTYPE(PPDMINETWORKDOWN)         pIDrvNetR3;
 } PDMNSFILTER;
-
-/** Pointer to a PDM filter handle. */
-typedef struct PDMNSFILTER *PPDMNSFILTER;
-/** Pointer to a network shaper. */
-typedef struct PDMNETSHAPER *PPDMNETSHAPER;
-
 
 VMMDECL(bool)       PDMNsAllocateBandwidth(PPDMNSFILTER pFilter, size_t cbTransfer);
 VMMR3_INT_DECL(int) PDMR3NsAttach(PUVM pUVM, PPDMDRVINS pDrvIns, const char *pcszBwGroup, PPDMNSFILTER pFilter);

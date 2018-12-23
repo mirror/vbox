@@ -940,6 +940,8 @@ typedef enum PDMNETWORKGSOTYPE
  *
  * @remarks This is part of the internal network GSO packets.  Take great care
  *          when making changes.  The size is expected to be exactly 8 bytes.
+ *
+ * @ingroup grp_pdm
  */
 typedef struct PDMNETWORKGSO
 {
@@ -959,16 +961,26 @@ typedef struct PDMNETWORKGSO
     /** Unused. */
     uint8_t             u8Unused;
 } PDMNETWORKGSO;
-/** Pointer to a GSO context. */
+/** Pointer to a GSO context.
+ * @ingroup grp_pdm */
 typedef PDMNETWORKGSO *PPDMNETWORKGSO;
-/** Pointer to a const GSO context. */
+/** Pointer to a const GSO context.
+ * @ingroup grp_pdm */
 typedef PDMNETWORKGSO const *PCPDMNETWORKGSO;
+
+/** Pointer to a PDM filter handle.
+ * @ingroup grp_pdm_net_shaper  */
+typedef struct PDMNSFILTER *PPDMNSFILTER;
+/** Pointer to a network shaper.
+ * @ingroup grp_pdm_net_shaper */
+typedef struct PDMNETSHAPER *PPDMNETSHAPER;
 
 
 /**
  * The current ROM page protection.
  *
  * @remarks This is part of the saved state.
+ * @ingroup grp_pgm
  */
 typedef enum PGMROMPROT
 {
@@ -995,6 +1007,7 @@ typedef enum PGMROMPROT
 
 /**
  * Page mapping lock.
+ * @ingroup grp_pgm
  */
 typedef struct PGMPAGEMAPLOCK
 {
@@ -1019,7 +1032,8 @@ typedef struct PGMPAGEMAPLOCK
     void       *pvMap;
 #endif
 } PGMPAGEMAPLOCK;
-/** Pointer to a page mapping lock. */
+/** Pointer to a page mapping lock.
+ * @ingroup grp_pgm */
 typedef PGMPAGEMAPLOCK *PPGMPAGEMAPLOCK;
 
 
@@ -1081,6 +1095,7 @@ typedef PCDISSTATE PCDISCPUSTATE;
 
 /**
  * Shared region description (needed by GMM and others, thus global).
+ * @ingroup grp_vmmdev
  */
 typedef struct VMMDEVSHAREDREGIONDESC
 {

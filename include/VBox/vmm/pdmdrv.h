@@ -36,9 +36,6 @@
 # include <VBox/vmm/pdmasynccompletion.h>
 # include <VBox/vmm/pdmblkcache.h>
 #endif
-#ifdef VBOX_WITH_NETSHAPER
-# include <VBox/vmm/pdmnetshaper.h>
-#endif
 #include <VBox/vmm/tm.h>
 #include <VBox/vmm/ssm.h>
 #include <VBox/vmm/cfgm.h>
@@ -1184,7 +1181,6 @@ typedef struct PDMDRVHLPR3
                                                                 PFNPDMASYNCCOMPLETEDRV pfnCompleted, void *pvTemplateUser,
                                                                 const char *pszDesc));
 
-#ifdef VBOX_WITH_NETSHAPER
     /**
      * Attaches network filter driver to a bandwidth group.
      *
@@ -1193,9 +1189,7 @@ typedef struct PDMDRVHLPR3
      * @param   pcszBwGroup     Name of the bandwidth group to attach to.
      * @param   pFilter         Pointer to the filter we attach.
      */
-    DECLR3CALLBACKMEMBER(int, pfnNetShaperAttach,(PPDMDRVINS pDrvIns, const char *pszBwGroup,
-                                                  PPDMNSFILTER pFilter));
-
+    DECLR3CALLBACKMEMBER(int, pfnNetShaperAttach,(PPDMDRVINS pDrvIns, const char *pszBwGroup, PPDMNSFILTER pFilter));
 
     /**
      * Detaches network filter driver to a bandwidth group.
@@ -1205,8 +1199,6 @@ typedef struct PDMDRVHLPR3
      * @param   pFilter         Pointer to the filter we attach.
      */
     DECLR3CALLBACKMEMBER(int, pfnNetShaperDetach,(PPDMDRVINS pDrvIns, PPDMNSFILTER pFilter));
-#endif /* VBOX_WITH_NETSHAPER */
-
 
     /**
      * Resolves the symbol for a raw-mode context interface.
