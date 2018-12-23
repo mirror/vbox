@@ -1401,16 +1401,7 @@ typedef struct
 AssertCompileSize(VMMDevGetCpuHotPlugRequest, 24+4+4+4);
 
 
-/**
- * Shared region description
- */
-typedef struct VMMDEVSHAREDREGIONDESC
-{
-    RTGCPTR64           GCRegionAddr;
-    uint32_t            cbRegion;
-    uint32_t            u32Alignment;
-} VMMDEVSHAREDREGIONDESC;
-AssertCompileSize(VMMDEVSHAREDREGIONDESC, 16);
+AssertCompileSize(VMMDEVSHAREDREGIONDESC, 16); /* structure was promoted to VBox/types.h. */
 
 #define VMMDEVSHAREDREGIONDESC_MAX          32
 

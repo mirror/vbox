@@ -1079,6 +1079,17 @@ typedef PDISSTATE PDISCPUSTATE;
 typedef PCDISSTATE PCDISCPUSTATE;
 
 
+/**
+ * Shared region description (needed by GMM and others, thus global).
+ */
+typedef struct VMMDEVSHAREDREGIONDESC
+{
+    RTGCPTR64           GCRegionAddr;
+    uint32_t            cbRegion;
+    uint32_t            u32Alignment;
+} VMMDEVSHAREDREGIONDESC;
+
+
 /** @} */
 
 #endif

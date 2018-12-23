@@ -159,6 +159,7 @@
 #include <VBox/log.h>
 #include <VBox/param.h>
 #include <VBox/err.h>
+#include <VBox/VMMDev.h>
 #include <iprt/asm.h>
 #include <iprt/avl.h>
 #ifdef VBOX_STRICT
