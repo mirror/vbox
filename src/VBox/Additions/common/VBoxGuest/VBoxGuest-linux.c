@@ -847,7 +847,7 @@ static int vgdrvLinuxOpen(struct inode *pInode, struct file *pFilp)
     if (MINOR(pInode->i_rdev) == g_MiscDeviceUser.minor)
     {
         fRequestor |= VMMDEV_REQUESTOR_USER_DEVICE;
-        if (vgdrvLinuxIsGroupZero(pInode->i_gid) && vgdrvLinuxIsInGroupEff(pInode->i_gid))
+        if (!vgdrvLinuxIsGroupZero(pInode->i_gid) && vgdrvLinuxIsInGroupEff(pInode->i_gid))
             fRequestor |= VMMDEV_REQUESTOR_GRP_VBOX;
     }
     fRequestor |= vgdrvLinuxRequestorOnConsole();
