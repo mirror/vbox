@@ -39,6 +39,7 @@
 #include <sys/bus.h>
 #include <sys/poll.h>
 #include <sys/proc.h>
+#include <sys/kauth.h>
 #include <sys/stat.h>
 #include <sys/selinfo.h>
 #include <sys/queue.h>
@@ -645,13 +646,14 @@ static int VBoxGuestNetBSDOpen(dev_t device, int flags, int fmt, struct lwp *pLw
              */
             int rc;
             struct kauth_cred *pCred = pLwp->l_cred;
+            int fIsWheel;
             uint32_t fRequestor = VMMDEV_REQUESTOR_USERMODE | VMMDEV_REQUESTOR_TRUST_NOT_GIVEN;
             if (pCred && kauth_cred_geteuid(pCred) == 0)
                 fRequestor |= VMMDEV_REQUESTOR_USR_ROOT;
             else
                 fRequestor |= VMMDEV_REQUESTOR_USR_USER;
 
-            if (pCred && kauth_cred_ismember_gid(pCred, 0))
+            if (pCred && kauth_cred_ismember_gid(pCred, 0, &fIsWheel) == 0 && fIsWheel)
                 fRequestor |= VMMDEV_REQUESTOR_GRP_WHEEL;
             fRequestor |= VMMDEV_REQUESTOR_NO_USER_DEVICE; /** @todo implement /dev/vboxuser
             if (!fUnrestricted)
