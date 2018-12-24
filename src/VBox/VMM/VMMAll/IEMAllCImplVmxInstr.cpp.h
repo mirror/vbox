@@ -3894,9 +3894,6 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitExtInt(PVMCPU pVCpu, uint8_t uVector, bool f
  */
 IEM_STATIC VBOXSTRICTRC iemVmxVmexitStartupIpi(PVMCPU pVCpu, uint8_t uVector)
 {
-    PCVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
-    Assert(pVmcs);
-
     iemVmxVmcsSetExitQual(pVCpu, uVector);
     return iemVmxVmexit(pVCpu, VMX_EXIT_SIPI);
 }
@@ -3910,9 +3907,6 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitStartupIpi(PVMCPU pVCpu, uint8_t uVector)
  */
 IEM_STATIC VBOXSTRICTRC iemVmxVmexitInitIpi(PVMCPU pVCpu)
 {
-    PCVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
-    Assert(pVmcs);
-
     iemVmxVmcsSetExitQual(pVCpu, 0);
     return iemVmxVmexit(pVCpu, VMX_EXIT_INIT_SIGNAL);
 }
@@ -4075,8 +4069,6 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitEvent(PVMCPU pVCpu, uint8_t uVector, uint32_
  */
 IEM_STATIC VBOXSTRICTRC iemVmxVmexitTripleFault(PVMCPU pVCpu)
 {
-    PCVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
-    Assert(pVmcs);
     iemVmxVmcsSetExitQual(pVCpu, 0);
     return iemVmxVmexit(pVCpu, VMX_EXIT_TRIPLE_FAULT);
 }
@@ -4517,7 +4509,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVirtApicAccessMem(PVMCPU pVCpu, uint16_t offAccess
 {
     PCVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
     Assert(pVmcs);
-    Assert(pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_VIRT_APIC_ACCESS);
+    Assert(pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_VIRT_APIC_ACCESS); NOREF(pVmcs);
     Assert(pvData);
     Assert(   (fAccess & IEM_ACCESS_TYPE_READ)
            || (fAccess & IEM_ACCESS_TYPE_WRITE)
@@ -4721,7 +4713,7 @@ static int iemVmxVirtApicGetHighestSetBitInReg(PVMCPU pVCpu, uint16_t offReg, ui
     for (int8_t iFrag = cFrags; iFrag >= 0; iFrag--)
     {
         uint16_t const offFrag = iFrag * 16;
-        uint32_t const u32Frag = iemVmxVirtApicReadRaw32(pVCpu, offFrag);
+        uint32_t const u32Frag = iemVmxVirtApicReadRaw32(pVCpu, offReg + offFrag);
         if (!u32Frag)
             continue;
 
@@ -5944,6 +5936,7 @@ IEM_STATIC int iemVmxVmentryCheckGuestPdptesForCr3(PVMCPU pVCpu, const char *psz
     }
 
     NOREF(pszFailure);
+    NOREF(pszInstr);
     return rc;
 }
 
