@@ -72,9 +72,9 @@ typedef union NTFSMFTREF
     struct
     {
         /** Index of the master file table record. */
-        uint64_t        idxMft : 48;
+        RT_GCC_EXTENSION uint64_t idxMft : 48;
         /** MFT record reuse sequence number (for catching dangling references). */
-        uint64_t        uRecReuseSeqNo : 16;
+        RT_GCC_EXTENSION uint64_t uRecReuseSeqNo : 16;
     } s;
 } NTFSMFTREF;
 AssertCompileSize(NTFSMFTREF, 8);
