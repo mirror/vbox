@@ -60,6 +60,7 @@
 #include "VBoxGuestInternal.h"
 #include <VBox/version.h>
 #include <iprt/assert.h>
+#include <iprt/err.h>
 #include <iprt/initterm.h>
 #include <iprt/log.h>
 #include <iprt/memobj.h>
