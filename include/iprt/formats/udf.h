@@ -232,16 +232,16 @@ typedef struct UDFTIMESTAMP
 {
 #ifdef RT_BIG_ENDIAN
     /** 0x00: Type (UDFTIMESTAMP_T_XXX). */
-    uint16_t        fType : 4;
+    RT_GCC_EXTENSION uint16_t   fType : 4;
     /** 0x00: Time zone offset in minutes.
      * For EST this will be -300, whereas for CET it will be 60. */
-    int16_t         offUtcInMin : 12;
+    RT_GCC_EXTENSION int16_t    offUtcInMin : 12;
 #else
     /** 0x00: Time zone offset in minutes.
      * For EST this will be -300, whereas for CET it will be 60. */
-    int16_t         offUtcInMin : 12;
+    RT_GCC_EXTENSION int16_t    offUtcInMin : 12;
     /** 0x00: Type (UDFTIMESTAMP_T_XXX). */
-    uint16_t        fType : 4;
+    RT_GCC_EXTENSION uint16_t   fType : 4;
 #endif
     /** 0x02: The year. */
     int16_t         iYear;

@@ -687,9 +687,9 @@ typedef union IMAGE_UNWIND_CODE
         uint8_t CodeOffset;
         /** Unwind opcode.
          * For AMD64 see IMAGE_AMD64_UNWIND_OP_CODES. */
-        uint8_t UnwindOp : 4;
+        RT_GCC_EXTENSION uint8_t UnwindOp : 4;
         /** Opcode specific. */
-        uint8_t OpInfo   : 4;
+        RT_GCC_EXTENSION uint8_t OpInfo   : 4;
     } u;
     uint16_t    FrameOffset;
 } IMAGE_UNWIND_CODE;
@@ -705,17 +705,17 @@ AssertCompileSize(IMAGE_UNWIND_CODE, 2);
 typedef struct IMAGE_UNWIND_INFO
 {
     /** Version, currently 1 or 2.  The latter if IMAGE_AMD64_UWOP_EPILOG is used. */
-    uint8_t             Version : 3;
+    RT_GCC_EXTENSION uint8_t    Version : 3;
     /** IMAGE_UNW_FLAG_XXX */
-    uint8_t             Flags : 5;
+    RT_GCC_EXTENSION uint8_t    Flags : 5;
     /** Size of function prolog. */
-    uint8_t             SizeOfProlog;
+    uint8_t                     SizeOfProlog;
     /** Number of opcodes in aOpcodes. */
-    uint8_t             CountOfCodes;
+    uint8_t                     CountOfCodes;
     /** Initial frame register. */
-    uint8_t             FrameRegister : 4;
+    RT_GCC_EXTENSION uint8_t    FrameRegister : 4;
     /** Scaled frame register offset. */
-    uint8_t             FrameOffset : 4;
+    RT_GCC_EXTENSION uint8_t    FrameOffset : 4;
     /** Unwind opcodes. */
     IMAGE_UNWIND_CODE   aOpcodes[RT_FLEXIBLE_ARRAY];
 } IMAGE_UNWIND_INFO;
