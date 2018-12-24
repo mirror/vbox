@@ -671,7 +671,7 @@ static int VBoxGuestNetBSDOpen(dev_t device, int flags, int fmt, struct lwp *pLw
         kmem_free(fdata, sizeof(*fdata));
     }
     else
-        error = NOMEM;
+        error = ENOMEM;
     return error;
 
 }
