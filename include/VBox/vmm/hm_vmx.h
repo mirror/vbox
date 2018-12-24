@@ -468,19 +468,19 @@ AssertCompileSizeAlignment(VMXRESTOREHOST, 8);
 typedef struct EPTPML4EBITS
 {
     /** Present bit. */
-    uint64_t    u1Present       : 1;
+    RT_GCC_EXTENSION uint64_t u1Present       : 1;
     /** Writable bit. */
-    uint64_t    u1Write         : 1;
+    RT_GCC_EXTENSION uint64_t u1Write         : 1;
     /** Executable bit. */
-    uint64_t    u1Execute       : 1;
+    RT_GCC_EXTENSION uint64_t u1Execute       : 1;
     /** Reserved (must be 0). */
-    uint64_t    u5Reserved      : 5;
+    RT_GCC_EXTENSION uint64_t u5Reserved      : 5;
     /** Available for software. */
-    uint64_t    u4Available     : 4;
+    RT_GCC_EXTENSION uint64_t u4Available     : 4;
     /** Physical address of the next level (PD). Restricted by maximum physical address width of the cpu. */
-    uint64_t    u40PhysAddr     : 40;
+    RT_GCC_EXTENSION uint64_t u40PhysAddr     : 40;
     /** Available for software. */
-    uint64_t    u12Available    : 12;
+    RT_GCC_EXTENSION uint64_t u12Available    : 12;
 } EPTPML4EBITS;
 AssertCompileSize(EPTPML4EBITS, 8);
 
@@ -530,19 +530,19 @@ typedef const EPTPML4 *PCEPTPML4;
 typedef struct EPTPDPTEBITS
 {
     /** Present bit. */
-    uint64_t    u1Present       : 1;
+    RT_GCC_EXTENSION uint64_t u1Present       : 1;
     /** Writable bit. */
-    uint64_t    u1Write         : 1;
+    RT_GCC_EXTENSION uint64_t u1Write         : 1;
     /** Executable bit. */
-    uint64_t    u1Execute       : 1;
+    RT_GCC_EXTENSION uint64_t u1Execute       : 1;
     /** Reserved (must be 0). */
-    uint64_t    u5Reserved      : 5;
+    RT_GCC_EXTENSION uint64_t u5Reserved      : 5;
     /** Available for software. */
-    uint64_t    u4Available     : 4;
+    RT_GCC_EXTENSION uint64_t u4Available     : 4;
     /** Physical address of the next level (PD). Restricted by maximum physical address width of the cpu. */
-    uint64_t    u40PhysAddr     : 40;
+    RT_GCC_EXTENSION uint64_t u40PhysAddr     : 40;
     /** Available for software. */
-    uint64_t    u12Available    : 12;
+    RT_GCC_EXTENSION uint64_t u12Available    : 12;
 } EPTPDPTEBITS;
 AssertCompileSize(EPTPDPTEBITS, 8);
 
@@ -592,21 +592,21 @@ typedef const EPTPDPT *PCEPTPDPT;
 typedef struct EPTPDEBITS
 {
     /** Present bit. */
-    uint64_t    u1Present       : 1;
+    RT_GCC_EXTENSION uint64_t u1Present       : 1;
     /** Writable bit. */
-    uint64_t    u1Write         : 1;
+    RT_GCC_EXTENSION uint64_t u1Write         : 1;
     /** Executable bit. */
-    uint64_t    u1Execute       : 1;
+    RT_GCC_EXTENSION uint64_t u1Execute       : 1;
     /** Reserved (must be 0). */
-    uint64_t    u4Reserved      : 4;
+    RT_GCC_EXTENSION uint64_t u4Reserved      : 4;
     /** Big page (must be 0 here). */
-    uint64_t    u1Size          : 1;
+    RT_GCC_EXTENSION uint64_t u1Size          : 1;
     /** Available for software. */
-    uint64_t    u4Available     : 4;
+    RT_GCC_EXTENSION uint64_t u4Available     : 4;
     /** Physical address of page table. Restricted by maximum physical address width of the cpu. */
-    uint64_t    u40PhysAddr     : 40;
+    RT_GCC_EXTENSION uint64_t u40PhysAddr     : 40;
     /** Available for software. */
-    uint64_t    u12Available    : 12;
+    RT_GCC_EXTENSION uint64_t u12Available    : 12;
 } EPTPDEBITS;
 AssertCompileSize(EPTPDEBITS, 8);
 
@@ -623,25 +623,25 @@ AssertCompileSize(EPTPDEBITS, 8);
 typedef struct EPTPDE2MBITS
 {
     /** Present bit. */
-    uint64_t    u1Present       : 1;
+    RT_GCC_EXTENSION uint64_t u1Present       : 1;
     /** Writable bit. */
-    uint64_t    u1Write         : 1;
+    RT_GCC_EXTENSION uint64_t u1Write         : 1;
     /** Executable bit. */
-    uint64_t    u1Execute       : 1;
+    RT_GCC_EXTENSION uint64_t u1Execute       : 1;
     /** EPT Table Memory Type. MBZ for non-leaf nodes. */
-    uint64_t    u3EMT           : 3;
+    RT_GCC_EXTENSION uint64_t u3EMT           : 3;
     /** Ignore PAT memory type */
-    uint64_t    u1IgnorePAT     : 1;
+    RT_GCC_EXTENSION uint64_t u1IgnorePAT     : 1;
     /** Big page (must be 1 here). */
-    uint64_t    u1Size          : 1;
+    RT_GCC_EXTENSION uint64_t u1Size          : 1;
     /** Available for software. */
-    uint64_t    u4Available     : 4;
+    RT_GCC_EXTENSION uint64_t u4Available     : 4;
     /** Reserved (must be 0). */
-    uint64_t    u9Reserved      : 9;
+    RT_GCC_EXTENSION uint64_t u9Reserved      : 9;
     /** Physical address of the 2MB page. Restricted by maximum physical address width of the cpu. */
-    uint64_t    u31PhysAddr     : 31;
+    RT_GCC_EXTENSION uint64_t u31PhysAddr     : 31;
     /** Available for software. */
-    uint64_t    u12Available    : 12;
+    RT_GCC_EXTENSION uint64_t u12Available    : 12;
 } EPTPDE2MBITS;
 AssertCompileSize(EPTPDE2MBITS, 8);
 
@@ -693,22 +693,22 @@ typedef struct EPTPTEBITS
      *          and the CPU will consider an entry with any of the first three bits set
      *          as present.  Since all our valid entries will have this bit set, it can
      *          be used as a present indicator and allow some code sharing. */
-    uint64_t    u1Present       : 1;
+    RT_GCC_EXTENSION uint64_t u1Present       : 1;
     /** 1 - Writable bit. */
-    uint64_t    u1Write         : 1;
+    RT_GCC_EXTENSION uint64_t u1Write         : 1;
     /** 2 - Executable bit. */
-    uint64_t    u1Execute       : 1;
+    RT_GCC_EXTENSION uint64_t u1Execute       : 1;
     /** 5:3 - EPT Memory Type. MBZ for non-leaf nodes. */
-    uint64_t    u3EMT           : 3;
+    RT_GCC_EXTENSION uint64_t u3EMT           : 3;
     /** 6 - Ignore PAT memory type */
-    uint64_t    u1IgnorePAT     : 1;
+    RT_GCC_EXTENSION uint64_t u1IgnorePAT     : 1;
     /** 11:7 - Available for software. */
-    uint64_t    u5Available     : 5;
+    RT_GCC_EXTENSION uint64_t u5Available     : 5;
     /** 51:12 - Physical address of page. Restricted by maximum physical
      *  address width of the cpu. */
-    uint64_t    u40PhysAddr     : 40;
+    RT_GCC_EXTENSION uint64_t u40PhysAddr     : 40;
     /** 63:52 - Available for software. */
-    uint64_t    u12Available    : 12;
+    RT_GCC_EXTENSION uint64_t u12Available    : 12;
 } EPTPTEBITS;
 AssertCompileSize(EPTPTEBITS, 8);
 

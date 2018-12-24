@@ -661,9 +661,9 @@ typedef union
 {
     struct
     {
-        uint64_t    u12Reserved0        : 12;
-        uint64_t    u40Addr             : 40;
-        uint64_t    u12Reserved1        : 12;
+        RT_GCC_EXTENSION uint64_t u12Reserved0        : 12;
+        RT_GCC_EXTENSION uint64_t u40Addr             : 40;
+        RT_GCC_EXTENSION uint64_t u12Reserved1        : 12;
     } n;
     uint64_t    u;
 } SVMAVIC;
@@ -676,10 +676,10 @@ typedef union
 {
     struct
     {
-        uint64_t    u8LastGuestCoreId   : 8;
-        uint64_t    u4Reserved          : 4;
-        uint64_t    u40Addr             : 40;
-        uint64_t    u12Reserved         : 12;
+        RT_GCC_EXTENSION uint64_t u8LastGuestCoreId   : 8;
+        RT_GCC_EXTENSION uint64_t u4Reserved          : 4;
+        RT_GCC_EXTENSION uint64_t u40Addr             : 40;
+        RT_GCC_EXTENSION uint64_t u12Reserved         : 12;
     } n;
     uint64_t    u;
 } SVMAVICPHYS;
