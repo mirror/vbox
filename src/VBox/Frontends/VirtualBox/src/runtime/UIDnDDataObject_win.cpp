@@ -28,6 +28,7 @@
 #include <iprt/semaphore.h>
 #include <iprt/string.h>
 #include <iprt/uri.h>
+#include <iprt/utf16.h>
 
 #include <QStringList>
 
