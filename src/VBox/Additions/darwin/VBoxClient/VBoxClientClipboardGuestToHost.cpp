@@ -25,9 +25,10 @@
 
 #include <iprt/thread.h>
 #include <iprt/mem.h>
-#include <iprt/stream.h>
 #include <iprt/initterm.h>
 #include <iprt/message.h>
+#include <iprt/stream.h>
+#include <iprt/utf16.h>
 #include <VBox/VBoxGuestLib.h>
 #include <VBox/HostServices/VBoxClipboardSvc.h>
 #include <VBox/GuestHost/clipboard-helper.h>
