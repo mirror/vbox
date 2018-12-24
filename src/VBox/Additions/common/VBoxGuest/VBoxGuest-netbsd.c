@@ -64,6 +64,7 @@
 #endif
 #include "VBoxGuestInternal.h"
 #include <VBox/log.h>
+#include <iprt/err.h>
 #include <iprt/assert.h>
 #include <iprt/initterm.h>
 #include <iprt/process.h>
