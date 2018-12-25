@@ -948,6 +948,24 @@ typedef CPUMMSRRANGE const *PCCPUMMSRRANGE;
 
 
 /**
+ * MSRs.
+ * MSRs which are required while exploding features.
+ */
+typedef struct CPUMMSRS
+{
+    union
+    {
+        VMXMSRS         vmx;
+        SVMMSRS         svm;
+    } hwvirt;
+} CPUMMSRS;
+/** Pointer to an CPUMMSRS struct. */
+typedef CPUMMSRS *PCPUMMSRS;
+/** Pointer to a const CPUMMSRS struct. */
+typedef CPUMMSRS const *PCCPUMMSRS;
+
+
+/**
  * CPU features and quirks.
  * This is mostly exploded CPUID info.
  */

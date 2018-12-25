@@ -702,10 +702,7 @@ VMMR3_INT_DECL(int) HMR3Init(PVM pVM)
         {
             if (fCaps & SUPVTCAPS_AMD_V)
             {
-                rc = SUPR3CallVMMR0Ex(pVM->pVMR0, 0 /*idCpu*/, VMMR0_DO_HM_PRE_INIT, 0, NULL);
-                AssertRCReturn(rc, rc);
-                Assert(pVM->hm.s.svm.fSupported);
-
+                pVM->hm.s.svm.fSupported = true;
                 LogRel(("HM: HMR3Init: AMD-V%s\n", fCaps & SUPVTCAPS_NESTED_PAGING ? " w/ nested paging" : ""));
                 VM_SET_MAIN_EXECUTION_ENGINE(pVM, VM_EXEC_ENGINE_HW_VIRT);
             }
@@ -715,10 +712,7 @@ VMMR3_INT_DECL(int) HMR3Init(PVM pVM)
                 rc = SUPR3QueryVTxSupported(&pszWhy);
                 if (RT_SUCCESS(rc))
                 {
-                    rc = SUPR3CallVMMR0Ex(pVM->pVMR0, 0 /*idCpu*/, VMMR0_DO_HM_PRE_INIT, 0, NULL);
-                    AssertRCReturn(rc, rc);
-                    Assert(pVM->hm.s.vmx.fSupported);
-
+                    pVM->hm.s.vmx.fSupported = true;
                     LogRel(("HM: HMR3Init: VT-x%s%s%s\n",
                             fCaps & SUPVTCAPS_NESTED_PAGING ? " w/ nested paging" : "",
                             fCaps & SUPVTCAPS_VTX_UNRESTRICTED_GUEST ? " and unrestricted guest execution" : "",

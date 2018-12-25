@@ -279,7 +279,7 @@ struc CPUMCTX
     .hwvirt.svm.pvIoBitmapR3           RTR3PTR_RES   1
     alignb 8
     .hwvirt.svm.HCPhysVmcb             RTHCPHYS_RES  1
-    .hwvirt.svm.u64Padding0            resb        120
+    .hwvirt.svm.u64Padding0            resq         19
     .hwvirt.enmHwvirt                  resd          1
     .hwvirt.fGif                       resb          1
     alignb 8

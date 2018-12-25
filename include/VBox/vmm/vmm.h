@@ -341,8 +341,6 @@ typedef enum VMMR0OPERATION
     VMMR0_DO_HM_SETUP_VM = 128,
     /** Attempt to enable or disable hardware-assisted mode. */
     VMMR0_DO_HM_ENABLE,
-    /** Pre-initialize hardware-assisted VM session. */
-    VMMR0_DO_HM_PRE_INIT,
 
     /** Call PGMR0PhysAllocateHandyPages(). */
     VMMR0_DO_PGM_ALLOCATE_HANDY_PAGES = 192,

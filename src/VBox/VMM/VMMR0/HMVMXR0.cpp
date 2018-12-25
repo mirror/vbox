@@ -223,6 +223,7 @@
         { \
             uint8_t const uXcptTmp = VMX_ENTRY_INT_INFO_VECTOR((a_pVCpu)->hm.s.Event.u64IntInfo); \
             Log4Func(("Memory operand decoding failed, raising xcpt %#x\n", uXcptTmp)); \
+            NOREF(uXcptTmp); \
             return VINF_SUCCESS; \
         } \
         else \
@@ -1126,13 +1127,13 @@ VMMR0DECL(void) VMXR0GlobalTerm()
  *                          @a fEnabledByHost is @c true).
  * @param   fEnabledByHost  Set if SUPR0EnableVTx() or similar was used to
  *                          enable VT-x on the host.
- * @param   pvMsrs          Opaque pointer to VMXMSRS struct.
+ * @param   pHwvirtMsrs     Pointer to the hardware-virtualization MSRs.
  */
 VMMR0DECL(int) VMXR0EnableCpu(PHMGLOBALCPUINFO pHostCpu, PVM pVM, void *pvCpuPage, RTHCPHYS HCPhysCpuPage, bool fEnabledByHost,
-                              void *pvMsrs)
+                              PCSUPHWVIRTMSRS pHwvirtMsrs)
 {
     Assert(pHostCpu);
-    Assert(pvMsrs);
+    Assert(pHwvirtMsrs);
     Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
 
     /* Enable VT-x if it's not already enabled by the host. */
@@ -1148,7 +1149,7 @@ VMMR0DECL(int) VMXR0EnableCpu(PHMGLOBALCPUINFO pHostCpu, PVM pVM, void *pvCpuPag
      * using EPTPs) so we don't retain any stale guest-physical mappings which won't get
      * invalidated when flushing by VPID.
      */
-    PVMXMSRS pMsrs = (PVMXMSRS)pvMsrs;
+    PCVMXMSRS pMsrs = &pHwvirtMsrs->u.vmx;
     if (pMsrs->u64EptVpidCaps & MSR_IA32_VMX_EPT_VPID_CAP_INVEPT_ALL_CONTEXTS)
     {
         hmR0VmxFlushEpt(NULL /* pVCpu */, VMXTLBFLUSHEPT_ALL_CONTEXTS);

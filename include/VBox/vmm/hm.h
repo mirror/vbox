@@ -145,8 +145,6 @@ VMM_INT_DECL(void)              HMHCPagingModeChanged(PVM pVM, PVMCPU pVCpu, PGM
  * based purely on the Intel VT-x specification (used by IEM/REM and HM) can be
  * found in CPUM.
  * @{ */
-VMM_INT_DECL(int)               HMVmxGetHostMsrs(PVM pVM, PVMXMSRS pVmxMsrs);
-VMM_INT_DECL(int)               HMVmxGetHostMsr(PVM pVM, uint32_t idMsr, uint64_t *puValue);
 VMM_INT_DECL(bool)              HMVmxCanExecuteGuest(PVMCPU pVCpu, PCCPUMCTX pCtx);
 VMM_INT_DECL(int)               HMVmxEntryIntInfoInjectTrpmEvent(PVMCPU pVCpu, uint32_t uEntryIntInfo, uint32_t uErrCode,
                                                                  uint32_t cbInstr, RTGCUINTPTR GCPtrFaultAddress);
@@ -217,7 +215,6 @@ VMM_INT_DECL(int)               HMHCSvmMaybeMovTprHypercall(PVMCPU pVCpu);
  */
 VMMR0_INT_DECL(int)             HMR0Init(void);
 VMMR0_INT_DECL(int)             HMR0Term(void);
-VMMR0_INT_DECL(int)             HMR0PreInitVM(PVM pVM);
 VMMR0_INT_DECL(int)             HMR0InitVM(PVM pVM);
 VMMR0_INT_DECL(int)             HMR0TermVM(PVM pVM);
 VMMR0_INT_DECL(int)             HMR0EnableAllCpus(PVM pVM);

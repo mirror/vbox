@@ -1929,14 +1929,6 @@ static int vmmR0EntryExWorker(PGVM pGVM, PVM pVM, VMCPUID idCpu, VMMR0OPERATION 
             break;
 
         /*
-         * Pre-initialize hardware-assisted mode per-VM data.
-         */
-        case VMMR0_DO_HM_PRE_INIT:
-            rc = HMR0PreInitVM(pVM);
-            VMM_CHECK_SMAP_CHECK2(pVM, RT_NOTHING);
-            break;
-
-        /*
          * Switch to RC to execute Hypervisor function.
          */
         case VMMR0_DO_CALL_HYPERVISOR:

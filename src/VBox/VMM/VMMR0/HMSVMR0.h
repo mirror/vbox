@@ -38,7 +38,7 @@ VMMR0DECL(void)         SVMR0GlobalTerm(void);
 VMMR0DECL(int)          SVMR0Enter(PVMCPU pVCpu, PHMGLOBALCPUINFO pHostCpu);
 VMMR0DECL(void)         SVMR0ThreadCtxCallback(RTTHREADCTXEVENT enmEvent, PVMCPU pVCpu, bool fGlobalInit);
 VMMR0DECL(int)          SVMR0EnableCpu(PHMGLOBALCPUINFO pHostCpu, PVM pVM, void *pvPageCpu, RTHCPHYS HCPhysCpuPage,
-                                       bool fEnabledBySystem, void *pvArg);
+                                       bool fEnabledBySystem, PCSUPHWVIRTMSRS pHwvirtMsrs);
 VMMR0DECL(int)          SVMR0DisableCpu(PHMGLOBALCPUINFO pHostCpu, void *pvPageCpu, RTHCPHYS pPageCpuPhys);
 VMMR0DECL(int)          SVMR0InitVM(PVM pVM);
 VMMR0DECL(int)          SVMR0TermVM(PVM pVM);

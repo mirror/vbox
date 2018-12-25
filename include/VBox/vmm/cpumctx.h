@@ -551,7 +551,7 @@ typedef struct CPUMCTX
                 /** 0x3e8 - Host physical address of the nested-guest VMCB.  */
                 RTHCPHYS                HCPhysVmcb;
                 /** 0x3f0 - Padding. */
-                uint64_t                u64Padding0[15];
+                uint64_t                u64Padding0[19];
             } svm;
 
             struct
@@ -673,12 +673,12 @@ typedef struct CPUMCTX
             } vmx;
         } CPUM_UNION_NM(s);
 
-        /** 0x468 - Hardware virtualization type currently in use. */
+        /** 0x488 - Hardware virtualization type currently in use. */
         CPUMHWVIRT              enmHwvirt;
-        /** 0x46c - Global interrupt flag - AMD only (always true on Intel). */
+        /** 0x48c - Global interrupt flag - AMD only (always true on Intel). */
         bool                    fGif;
         bool                    afPadding1[3];
-        /** 0x470 - A subset of guest force flags that are saved while running the
+        /** 0x490 - A subset of guest force flags that are saved while running the
          *  nested-guest. */
 #ifdef VMCPU_WITH_64_BIT_FFS
         uint64_t                fLocalForcedActions;
@@ -686,8 +686,8 @@ typedef struct CPUMCTX
         uint32_t                fLocalForcedActions;
         uint32_t                fPadding;
 #endif
-        /* Pad to 64-byte boundary. */
-        uint64_t                u64Align64;
+        /** 0x498 - Pad to 64 byte boundary. */
+        uint8_t                 abPadding0[40];
     } hwvirt;
     /** @} */
 } CPUMCTX;
@@ -794,9 +794,9 @@ AssertCompileMemberAlignment(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.pAutoMsrAreaR
 AssertCompileMemberAlignment(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.pvMsrBitmapR0,     8);
 AssertCompileMemberAlignment(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.pvIoBitmapR0,      8);
 AssertCompileMemberAlignment(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.Msrs,              8);
-AssertCompileMemberOffset(CPUMCTX, hwvirt.enmHwvirt,           0x468);
-AssertCompileMemberOffset(CPUMCTX, hwvirt.fGif,                0x46c);
-AssertCompileMemberOffset(CPUMCTX, hwvirt.fLocalForcedActions, 0x470);
+AssertCompileMemberOffset(CPUMCTX, hwvirt.enmHwvirt,           0x488);
+AssertCompileMemberOffset(CPUMCTX, hwvirt.fGif,                0x48c);
+AssertCompileMemberOffset(CPUMCTX, hwvirt.fLocalForcedActions, 0x490);
 AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_STRUCT_NM(g,qw.) rax, CPUMCTX, CPUM_UNION_NM(g.) aGRegs);
 AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_STRUCT_NM(g,qw.) rax, CPUMCTX, CPUM_UNION_STRUCT_NM(g,qw2.)  r0);
 AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_STRUCT_NM(g,qw.) rcx, CPUMCTX, CPUM_UNION_STRUCT_NM(g,qw2.)  r1);
