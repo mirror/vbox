@@ -33,7 +33,7 @@
 #include <iprt/locale.h>
 #include "internal/iprt.h"
 
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 #include <iprt/string.h>
 
 

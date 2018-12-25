@@ -30,7 +30,7 @@
 *********************************************************************************************************************************/
 #include <IOKit/IOReturn.h>
 
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 #include <iprt/assert.h>
 
 

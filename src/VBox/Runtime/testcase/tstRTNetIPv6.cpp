@@ -30,7 +30,7 @@
 *********************************************************************************************************************************/
 #include <iprt/net.h>
 
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 #include <iprt/initterm.h>
 #include <iprt/test.h>
 

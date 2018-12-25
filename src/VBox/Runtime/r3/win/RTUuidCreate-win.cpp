@@ -33,7 +33,7 @@
 
 #include <iprt/uuid.h>
 #include <iprt/assert.h>
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 #include <iprt/rand.h>
 
 #include "internal-r3-win.h"

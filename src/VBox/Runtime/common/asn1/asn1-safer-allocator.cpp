@@ -32,7 +32,7 @@
 #include <iprt/asn1.h>
 
 #include <iprt/memsafer.h>
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 #include <iprt/string.h>
 
 

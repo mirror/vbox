@@ -34,7 +34,7 @@
 #include <iprt/alloc.h>
 #include <iprt/assert.h>
 #include <iprt/asm.h>
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 #if defined(RT_STRICT) || defined(IPRT_DEBUG_SEMS)
 # include <iprt/thread.h>
 #endif

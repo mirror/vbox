@@ -31,7 +31,7 @@
 #include <iprt/string.h>
 #include "internal/iprt.h"
 
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 
 
 RTDECL(int) RTStrCatPEx(char **ppszDst, size_t *pcbDst, const char *pszSrc, size_t cchMaxSrc)

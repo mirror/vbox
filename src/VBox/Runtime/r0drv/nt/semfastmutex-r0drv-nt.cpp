@@ -34,7 +34,7 @@
 #include <iprt/alloc.h>
 #include <iprt/assert.h>
 #include <iprt/asm.h>
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 
 #include "internal/magics.h"
 

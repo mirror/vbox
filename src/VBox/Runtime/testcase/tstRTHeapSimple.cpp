@@ -30,7 +30,7 @@
 *********************************************************************************************************************************/
 #include <iprt/heap.h>
 #include <iprt/initterm.h>
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 #include <iprt/stream.h>
 #include <iprt/string.h>
 #include <iprt/param.h>

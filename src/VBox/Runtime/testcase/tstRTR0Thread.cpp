@@ -31,7 +31,7 @@
 #include <iprt/thread.h>
 
 #include <iprt/asm-amd64-x86.h>
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 #include <VBox/sup.h>
 #include "tstRTR0Thread.h"
 #include "tstRTR0Common.h"

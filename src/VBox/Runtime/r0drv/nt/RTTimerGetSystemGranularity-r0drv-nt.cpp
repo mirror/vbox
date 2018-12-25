@@ -31,7 +31,7 @@
 #include "the-nt-kernel.h"
 
 #include <iprt/timer.h>
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 #include <iprt/asm.h>
 #include <iprt/assert.h>
 

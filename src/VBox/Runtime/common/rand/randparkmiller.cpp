@@ -34,7 +34,7 @@
 #include <iprt/asm-math.h>
 #include <iprt/mem.h>
 #include <iprt/string.h>
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 #include "internal/rand.h"
 #include "internal/magics.h"
 

@@ -32,7 +32,7 @@
 
 #include <iprt/asm.h>
 #include <iprt/assert.h>
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 #include <iprt/rand.h>
 #include <iprt/stream.h>
 #include <iprt/string.h>

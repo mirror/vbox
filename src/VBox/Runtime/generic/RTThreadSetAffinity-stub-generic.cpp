@@ -32,7 +32,7 @@
 #include "internal/iprt.h"
 
 #include <iprt/cpuset.h>
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 
 
 RTR3DECL(int) RTThreadSetAffinity(PCRTCPUSET pCpuSet)

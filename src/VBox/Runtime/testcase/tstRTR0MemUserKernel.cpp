@@ -30,7 +30,7 @@
 *********************************************************************************************************************************/
 #include <iprt/mem.h>
 
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 #include <iprt/param.h>
 #include <iprt/time.h>
 #include <iprt/string.h>

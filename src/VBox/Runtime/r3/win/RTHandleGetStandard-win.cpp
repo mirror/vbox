@@ -34,7 +34,7 @@
 #include <iprt/file.h>
 #include <iprt/pipe.h>
 #include <iprt/assert.h>
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 #include <iprt/log.h>
 
 #include <iprt/win/windows.h>

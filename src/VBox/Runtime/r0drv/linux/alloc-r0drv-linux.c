@@ -33,7 +33,7 @@
 #include <iprt/mem.h>
 
 #include <iprt/assert.h>
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 #include "r0drv/alloc-r0drv.h"
 
 
@@ -59,7 +59,7 @@
 #ifdef RTMEMALLOC_EXEC_HEAP
 # include <iprt/heap.h>
 # include <iprt/spinlock.h>
-# include <iprt/err.h>
+# include <iprt/errcore.h>
 #endif
 
 

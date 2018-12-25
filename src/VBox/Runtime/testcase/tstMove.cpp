@@ -31,7 +31,7 @@
 #include <iprt/file.h>
 #include <iprt/path.h>
 #include <iprt/dir.h>
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 #include <iprt/initterm.h>
 #include <iprt/stream.h>
 

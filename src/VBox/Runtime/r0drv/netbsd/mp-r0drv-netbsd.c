@@ -31,7 +31,7 @@
 #include "the-netbsd-kernel.h"
 
 #include <iprt/mp.h>
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 #include <iprt/asm.h>
 #include <iprt/cpuset.h>
 #include "r0drv/mp-r0drv.h"

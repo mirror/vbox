@@ -30,7 +30,7 @@
 *********************************************************************************************************************************/
 #include <mach/kern_return.h>
 
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 #include <iprt/assert.h>
 
 

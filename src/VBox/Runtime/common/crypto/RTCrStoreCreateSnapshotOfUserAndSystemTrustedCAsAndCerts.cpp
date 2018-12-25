@@ -31,7 +31,7 @@
 #include "internal/iprt.h"
 #include <iprt/crypto/store.h>
 
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 
 
 

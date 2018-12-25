@@ -35,7 +35,7 @@
 #include <iprt/alloc.h>
 #include <iprt/asm.h>
 #include <iprt/assert.h>
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 #include "internal/string.h"
 
 

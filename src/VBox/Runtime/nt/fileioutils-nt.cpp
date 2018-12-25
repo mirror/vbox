@@ -31,7 +31,7 @@
 #include <iprt/nt/nt.h>
 #include "internal/iprt.h"
 
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 #include "internal/file.h"
 
 

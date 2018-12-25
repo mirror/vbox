@@ -34,7 +34,7 @@
 #include <iprt/stream.h>
 #include <iprt/semaphore.h>
 #include <iprt/env.h>
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 #include <iprt/string.h>
 
 

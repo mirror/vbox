@@ -30,7 +30,7 @@
 *********************************************************************************************************************************/
 #include <iprt/path.h>
 
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 #include <iprt/getopt.h>
 #include <iprt/ldr.h>
 #include <iprt/param.h>

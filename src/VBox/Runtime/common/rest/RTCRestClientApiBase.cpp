@@ -33,7 +33,7 @@
 
 #include <iprt/assert.h>
 #include <iprt/ctype.h>
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 #include <iprt/http.h>
 #include <iprt/log.h>
 #include <iprt/uri.h>

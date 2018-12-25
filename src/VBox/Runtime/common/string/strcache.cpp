@@ -35,7 +35,7 @@
 #include <iprt/asm.h>
 #include <iprt/assert.h>
 #include <iprt/critsect.h>
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 #include <iprt/list.h>
 #include <iprt/mem.h>
 #include <iprt/once.h>

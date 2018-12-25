@@ -31,7 +31,7 @@
 #include "the-nt-kernel.h"
 
 #include <iprt/mem.h>
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 
 #include "internal-r0drv-nt.h"
 

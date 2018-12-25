@@ -33,7 +33,7 @@
 #include <iprt/thread.h>
 
 #include <iprt/assert.h>
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 
 
 

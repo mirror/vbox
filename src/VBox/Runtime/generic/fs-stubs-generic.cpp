@@ -32,7 +32,7 @@
 #include <iprt/fs.h>
 #include "internal/iprt.h"
 
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 #include <iprt/log.h>
 #include <iprt/assert.h>
 #include "internal/fs.h"

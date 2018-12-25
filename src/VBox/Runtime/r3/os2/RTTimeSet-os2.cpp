@@ -41,7 +41,7 @@
 #include "internal/iprt.h"
 
 #include <iprt/assert.h>
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 
 
 RTDECL(int) RTTimeSet(PCRTTIMESPEC pTime)

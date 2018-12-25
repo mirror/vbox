@@ -29,7 +29,7 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #include <iprt/fsisomaker.h>
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 #include <iprt/initterm.h>
 #include <iprt/message.h>
 

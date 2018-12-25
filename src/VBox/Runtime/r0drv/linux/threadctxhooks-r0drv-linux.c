@@ -34,7 +34,7 @@
 #include <iprt/mem.h>
 #include <iprt/assert.h>
 #include <iprt/thread.h>
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 #include <iprt/asm.h>
 #if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
 # include <iprt/asm-amd64-x86.h>

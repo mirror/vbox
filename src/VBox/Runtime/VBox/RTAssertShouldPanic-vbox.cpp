@@ -30,7 +30,7 @@
 *********************************************************************************************************************************/
 #include <iprt/assert.h>
 #include <iprt/env.h>
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 #include <iprt/string.h>
 
 /** @def VBOX_RTASSERT_WITH_GDB

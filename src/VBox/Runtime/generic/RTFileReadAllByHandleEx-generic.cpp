@@ -34,7 +34,7 @@
 #include <iprt/mem.h>
 #include <iprt/assert.h>
 #include <iprt/string.h>
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 
 
 RTDECL(int) RTFileReadAllByHandleEx(RTFILE File, RTFOFF off, RTFOFF cbMax, uint32_t fFlags, void **ppvFile, size_t *pcbFile)

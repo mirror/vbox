@@ -31,7 +31,7 @@
 #include "the-nt-kernel.h"
 #include <iprt/asm-amd64-x86.h>
 #include <iprt/dbg.h>
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 #include <iprt/string.h>
 #include "internal/initterm.h"
 #include "internal-r0drv-nt.h"

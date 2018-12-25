@@ -31,7 +31,7 @@
 #include "internal/iprt.h"
 #include <iprt/crypto/pkcs7.h>
 
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 #include <iprt/string.h>
 #include <iprt/crypto/tsp.h>
 

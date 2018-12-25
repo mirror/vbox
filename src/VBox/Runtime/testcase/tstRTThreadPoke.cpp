@@ -30,7 +30,7 @@
 *********************************************************************************************************************************/
 #include <iprt/thread.h>
 
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 #include <iprt/test.h>
 #include <iprt/string.h>
 

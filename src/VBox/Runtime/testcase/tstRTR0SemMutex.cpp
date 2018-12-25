@@ -30,7 +30,7 @@
 *********************************************************************************************************************************/
 #include <iprt/semaphore.h>
 
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 #include <VBox/sup.h>
 #include <iprt/string.h>
 #include <iprt/time.h>

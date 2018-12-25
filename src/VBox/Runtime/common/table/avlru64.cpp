@@ -65,7 +65,7 @@ static const char szFileId[] = "Id: kAVLULInt.c,v 1.5 2003/02/13 02:02:35 bird E
 *********************************************************************************************************************************/
 #include <iprt/avl.h>
 #include <iprt/assert.h>
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 
 /*
  * Include the code.

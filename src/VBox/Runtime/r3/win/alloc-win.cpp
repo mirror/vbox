@@ -36,7 +36,7 @@
 #include <iprt/assert.h>
 #include <iprt/param.h>
 #include <iprt/string.h>
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 
 #ifndef USE_VIRTUAL_ALLOC
 # include <malloc.h>

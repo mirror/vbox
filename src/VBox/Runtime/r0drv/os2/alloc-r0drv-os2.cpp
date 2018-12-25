@@ -37,7 +37,7 @@
 #include <iprt/mem.h>
 
 #include <iprt/assert.h>
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 #include <iprt/param.h>
 #include "r0drv/alloc-r0drv.h" /** @todo drop the r0drv/alloc-r0drv.cpp stuff on OS/2? */
 

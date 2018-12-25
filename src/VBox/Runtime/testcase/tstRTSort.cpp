@@ -30,7 +30,7 @@
 *********************************************************************************************************************************/
 #include <iprt/sort.h>
 
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 #include <iprt/rand.h>
 #include <iprt/string.h>
 #include <iprt/test.h>

@@ -35,7 +35,7 @@
 #include <iprt/thread.h>
 #include <iprt/log.h>
 #include <iprt/assert.h>
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 
 
 AssertCompile(sizeof(pthread_key_t) <= sizeof(RTTLS));

@@ -31,7 +31,7 @@
 #include "internal/iprt.h"
 #include <iprt/crypto/pkix.h>
 
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 #include <iprt/string.h>
 
 #ifdef IPRT_WITH_OPENSSL

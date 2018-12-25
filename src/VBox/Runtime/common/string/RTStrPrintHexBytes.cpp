@@ -32,7 +32,7 @@
 #include <iprt/string.h>
 
 #include <iprt/assert.h>
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 
 
 RTDECL(int) RTStrPrintHexBytes(char *pszBuf, size_t cbBuf, void const *pv, size_t cb, uint32_t fFlags)

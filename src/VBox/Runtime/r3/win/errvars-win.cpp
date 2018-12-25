@@ -31,7 +31,7 @@
 #include <iprt/win/winsock2.h>
 #include <errno.h>
 
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 #include "internal/iprt.h"
 
 #include <iprt/assert.h>

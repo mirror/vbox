@@ -32,7 +32,7 @@
 #include "internal/iprt.h"
 
 #include <iprt/mem.h>
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 
 
 RTR0DECL(int) RTR0MemUserCopyFrom(void *pvDst, RTR3PTR R3PtrSrc, size_t cb)

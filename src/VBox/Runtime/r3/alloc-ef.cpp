@@ -34,7 +34,7 @@
 #include <iprt/asm.h>
 #include <iprt/thread.h>
 #include <VBox/sup.h>
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>

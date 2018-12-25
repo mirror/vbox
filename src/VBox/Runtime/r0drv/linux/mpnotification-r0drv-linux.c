@@ -32,7 +32,7 @@
 #include "internal/iprt.h"
 
 #include <iprt/asm-amd64-x86.h>
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 #include <iprt/cpuset.h>
 #include <iprt/thread.h>
 #include "r0drv/mp-r0drv.h"

@@ -31,7 +31,7 @@
 #include <iprt/system.h>
 #include <iprt/assert.h>
 #include <iprt/string.h>
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 
 #include <errno.h>
 #include <sys/utsname.h>

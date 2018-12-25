@@ -36,7 +36,7 @@
 
 #include <iprt/asm.h>
 #include <iprt/assert.h>
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 #include "internal/time.h"
 #include "internal-r3-win.h"
 

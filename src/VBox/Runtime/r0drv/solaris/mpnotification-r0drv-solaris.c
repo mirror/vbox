@@ -31,7 +31,7 @@
 #include "the-solaris-kernel.h"
 #include "internal/iprt.h"
 
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 #include <iprt/mp.h>
 #include <iprt/cpuset.h>
 #include <iprt/string.h>

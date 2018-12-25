@@ -34,7 +34,7 @@
 #include <iprt/uuid.h>
 #include <iprt/assert.h>
 #include <iprt/string.h>
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 
 
 RTDECL(int)  RTUuidClear(PRTUUID pUuid)

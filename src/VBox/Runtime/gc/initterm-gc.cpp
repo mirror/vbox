@@ -34,7 +34,7 @@
 #include <iprt/initterm.h>
 #include <iprt/time.h>
 #include <iprt/log.h>
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 #include <iprt/string.h>
 #include "internal/time.h"
 

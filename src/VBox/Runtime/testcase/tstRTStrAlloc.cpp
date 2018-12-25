@@ -31,7 +31,7 @@
 #include <iprt/string.h>
 
 #include <iprt/asm.h>
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 #include <iprt/test.h>
 
 

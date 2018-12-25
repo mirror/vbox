@@ -38,7 +38,7 @@
 # endif
 # include <iprt/dbg.h>
 #endif
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 #include <iprt/log.h>
 #include <iprt/string.h>
 #include <iprt/stdarg.h>

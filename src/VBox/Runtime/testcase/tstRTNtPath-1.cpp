@@ -30,7 +30,7 @@
 *********************************************************************************************************************************/
 #include <iprt/nt/nt-and-windows.h>
 
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 #include <iprt/dir.h>
 #include <iprt/env.h>
 #include <iprt/path.h>

@@ -31,7 +31,7 @@
 #include <iprt/utf16.h>
 #include "internal/iprt.h"
 
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 
 
 RTDECL(int) RTUtf16Copy(PRTUTF16 pwszDst, size_t cwcDst, PCRTUTF16 pwszSrc)

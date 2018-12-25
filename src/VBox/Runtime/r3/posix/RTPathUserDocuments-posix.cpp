@@ -29,7 +29,7 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #include <iprt/path.h>
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 #include <iprt/assert.h>
 
 RTDECL(int) RTPathUserDocuments(char *pszPath, size_t cchPath)

@@ -32,7 +32,7 @@
 #include <iprt/trace.h>
 
 #include <iprt/asm.h>
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 #include <iprt/thread.h>
 
 

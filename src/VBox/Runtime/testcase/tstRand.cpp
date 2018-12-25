@@ -29,7 +29,7 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #include <iprt/rand.h>
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 #include <iprt/stream.h>
 #include <iprt/initterm.h>
 #include <iprt/string.h>

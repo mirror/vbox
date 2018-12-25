@@ -32,7 +32,7 @@
 #include "internal/iprt.h"
 
 #include <iprt/dir.h>
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 #include <iprt/log.h>
 #include <iprt/path.h>
 

@@ -59,7 +59,7 @@
 #include <iprt/path.h>
 #include <iprt/assert.h>
 #include <iprt/string.h>
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 #include <iprt/log.h>
 #include "internal/file.h"
 #include "internal/fs.h"

@@ -29,7 +29,7 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #include <iprt/vfs.h>
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 #include <iprt/test.h>
 #include <iprt/file.h>
 #include <iprt/string.h>

@@ -32,7 +32,7 @@
 
 #include <iprt/test.h>
 #include <iprt/stream.h>
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 #include <iprt/initterm.h>
 
 

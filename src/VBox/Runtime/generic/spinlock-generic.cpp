@@ -45,7 +45,7 @@
 #if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
 # include <iprt/asm-amd64-x86.h>
 #endif
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 #include <iprt/assert.h>
 #if RT_CFG_SPINLOCK_GENERIC_DO_SLEEP
 # include <iprt/thread.h>

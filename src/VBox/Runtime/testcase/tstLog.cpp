@@ -30,7 +30,7 @@
 *********************************************************************************************************************************/
 #include <iprt/log.h>
 #include <iprt/initterm.h>
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 
 #include <stdio.h>
 

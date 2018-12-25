@@ -34,7 +34,7 @@
 #include <iprt/mem.h>
 #include <iprt/assert.h>
 #include <iprt/thread.h>
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 #include <iprt/asm.h>
 #include <iprt/log.h>
 #include "internal/thread.h"

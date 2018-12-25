@@ -37,7 +37,7 @@
 #include <OS.h>
 
 #include <iprt/time.h>
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 #include "internal/time.h"
 
 

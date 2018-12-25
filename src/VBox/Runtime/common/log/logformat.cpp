@@ -35,7 +35,7 @@
 #include <iprt/assert.h>
 #ifdef IN_RING3
 # include <iprt/thread.h>
-# include <iprt/err.h>
+# include <iprt/errcore.h>
 #endif
 
 #include <iprt/stdarg.h>

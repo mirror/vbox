@@ -34,7 +34,7 @@
 #include <iprt/assert.h>
 #include <iprt/base64.h>
 #include <iprt/dir.h>
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 #include <iprt/mem.h>
 #include <iprt/stream.h>
 

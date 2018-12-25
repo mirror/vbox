@@ -41,7 +41,7 @@
 #include <iprt/string.h>
 #include <iprt/stdarg.h>
 #ifdef IN_RING3
-# include <iprt/err.h>
+# include <iprt/errcore.h>
 # include <iprt/thread.h>
 # include <iprt/utf16.h>
 #endif

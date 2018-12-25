@@ -34,7 +34,7 @@
 #include <iprt/assert.h>
 #include <iprt/initterm.h>
 #include <VBox/dis.h>
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 #include <iprt/string.h>
 
 

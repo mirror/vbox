@@ -153,7 +153,7 @@
 
 #include <VBox/log.h>
 #include <iprt/asm.h>
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 #include <iprt/time.h>
 #ifdef IN_RING3
 # include <iprt/param.h>

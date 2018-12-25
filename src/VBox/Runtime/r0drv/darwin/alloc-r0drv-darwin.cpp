@@ -35,7 +35,7 @@
 #include <iprt/memobj.h>
 
 #include <iprt/assert.h>
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 #include <iprt/thread.h>
 #include "r0drv/alloc-r0drv.h"
 

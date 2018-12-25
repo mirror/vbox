@@ -31,7 +31,7 @@
 #include "internal/iprt.h"
 #include <iprt/dbg.h>
 
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 
 
 RTR0DECL(void *) RTR0DbgKrnlInfoGetSymbol(RTDBGKRNLINFO hKrnlInfo, const char *pszModule, const char *pszSymbol)

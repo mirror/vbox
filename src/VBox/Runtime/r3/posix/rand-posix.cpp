@@ -43,7 +43,7 @@
 
 #include <iprt/rand.h>
 #include <iprt/mem.h>
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 #include <iprt/assert.h>
 #include "internal/rand.h"
 #include "internal/magics.h"

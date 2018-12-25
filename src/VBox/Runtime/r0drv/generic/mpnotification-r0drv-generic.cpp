@@ -31,7 +31,7 @@
 #include <iprt/mp.h>
 #include "internal/iprt.h"
 
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 #include "r0drv/mp-r0drv.h"
 
 

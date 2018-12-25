@@ -38,7 +38,7 @@
 #ifdef IN_RING3
 # include <iprt/file.h>
 #endif
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 #include <iprt/list.h>
 #include <iprt/log.h>
 #include <iprt/mem.h>

@@ -31,7 +31,7 @@
 #define LOG_GROUP RTLOGGROUP_REST
 #include <iprt/cpp/restbase.h>
 
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 #include <iprt/string.h>
 
 

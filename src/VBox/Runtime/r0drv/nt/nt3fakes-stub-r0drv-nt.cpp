@@ -29,7 +29,7 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #include "the-nt-kernel.h"
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 #include <iprt/dbg.h>
 #include "internal-r0drv-nt.h"
 
