@@ -1037,6 +1037,7 @@ typedef const VMXEXITINSTRINFO *PCVMXEXITINSTRINFO;
 
 /** @name VM-entry failure reported in VM-exit qualification.
  * See Intel spec. 26.7 "VM-entry failures during or after loading guest-state".
+ * @{
  */
 /** No errors during VM-entry. */
 #define VMX_ENTRY_FAIL_QUAL_NO_ERROR                            (0)
@@ -1136,8 +1137,6 @@ typedef const VMXCTLSMSR *PCVMXCTLSMSR;
 
 /**
  * VMX MSRs.
- * @remarks Although treated as a plain-old data (POD) in several places, please
- *          update HMVmxGetHostMsr() if new MSRs are added here.
  */
 typedef struct VMXMSRS
 {
@@ -1160,10 +1159,10 @@ typedef struct VMXMSRS
     uint64_t        u64VmcsEnum;
     uint64_t        u64VmFunc;
     uint64_t        u64EptVpidCaps;
-    uint64_t        a_u64Reserved[5];
+    uint64_t        a_u64Reserved[9];
 } VMXMSRS;
 AssertCompileSizeAlignment(VMXMSRS, 8);
-AssertCompileSize(VMXMSRS, 192);
+AssertCompileSize(VMXMSRS, 224);
 /** Pointer to a VMXMSRS struct. */
 typedef VMXMSRS *PVMXMSRS;
 /** Pointer to a const VMXMSRS struct. */
@@ -3717,7 +3716,6 @@ AssertCompileMemberOffset(VMXVVMCS, u64Cr0Mask,         0x4d0);
 AssertCompileMemberOffset(VMXVVMCS, u64RoExitQual,      0x610);
 AssertCompileMemberOffset(VMXVVMCS, u64GuestCr0,        0x6c0);
 AssertCompileMemberOffset(VMXVVMCS, u64HostCr0,         0x860);
-/** @} */
 
 /**
  * Virtual VMX-instruction and VM-exit diagnostics.

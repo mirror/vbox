@@ -1023,10 +1023,10 @@ typedef struct SVMMSRS
     /** HWCR MSR. */
     uint64_t        u64MsrHwcr;
     /** Reserved for future. */
-    uint64_t        u64Padding[23];
+    uint64_t        u64Padding[27];
 } SVMMSRS;
 AssertCompileSizeAlignment(SVMMSRS, 8);
-AssertCompileSize(SVMMSRS, 192);
+AssertCompileSize(SVMMSRS, 224);
 /** Pointer to a SVMMSRS struct. */
 typedef SVMMSRS *PSVMMSRS;
 /** Pointer to a const SVMMSRS struct. */
