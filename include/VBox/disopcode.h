@@ -1056,7 +1056,7 @@ enum OP_PARM
 #define OP_PARM_Vx              (OP_PARM_V+OP_PARM_x)
 #define OP_PARM_Vy              (OP_PARM_V+OP_PARM_y)
 #define OP_PARM_Wq              (OP_PARM_W+OP_PARM_q)
-//#define OP_PARM_Ws              (OP_PARM_W+OP_PARM_s) - wtf? Same as lgdt (OP_PARM_Ms)?
+/*#define OP_PARM_Ws              (OP_PARM_W+OP_PARM_s) - wtf? Same as lgdt (OP_PARM_Ms)?*/
 #define OP_PARM_Wx              (OP_PARM_W+OP_PARM_x)
 #define OP_PARM_Xb              (OP_PARM_X+OP_PARM_b)
 #define OP_PARM_Xv              (OP_PARM_X+OP_PARM_v)
