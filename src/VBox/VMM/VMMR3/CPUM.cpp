@@ -1755,7 +1755,7 @@ static int cpumR3GetHostHwvirtMsrs(PCPUMMSRS pMsrs)
                 return VINF_SUCCESS;
             }
 
-            LogRel(("CPUM: Query hardware-virtualization MSRs failed. rc=%Rrc\n", rc));
+            LogRel(("CPUM: Querying hardware-virtualization MSRs failed. rc=%Rrc\n", rc));
             return rc;
         }
         else
