@@ -1745,7 +1745,7 @@ static int cpumR3GetHostHwvirtMsrs(PCPUMMSRS pMsrs)
         if (fCaps & (SUPVTCAPS_VT_X | SUPVTCAPS_AMD_V))
         {
             SUPHWVIRTMSRS HwvirtMsrs;
-            int rc = SUPR3GetHwvirtMsrs(&HwvirtMsrs, false /* fForceRequery */);
+            rc = SUPR3GetHwvirtMsrs(&HwvirtMsrs, false /* fForceRequery */);
             if (RT_SUCCESS(rc))
             {
                 if (fCaps & SUPVTCAPS_VT_X)
