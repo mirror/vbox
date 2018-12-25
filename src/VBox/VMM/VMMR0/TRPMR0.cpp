@@ -24,7 +24,7 @@
 #include "TRPMInternal.h"
 #include <VBox/vmm/vm.h>
 #include <VBox/vmm/vmm.h>
-#include <VBox/err.h>
+#include <iprt/errcore.h>
 #include <VBox/log.h>
 #include <iprt/assert.h>
 #include <iprt/asm-amd64-x86.h>

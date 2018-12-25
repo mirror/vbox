@@ -32,7 +32,7 @@
 #include <VBox/vmm/pdmasynccompletion.h>
 #include <VBox/vmm/vmm.h>
 #include <VBox/vmm/cpum.h>
-#include <VBox/err.h>
+#include <iprt/errcore.h>
 #include <VBox/log.h>
 #include <VBox/vmm/pdmapi.h>
 #include <iprt/alloc.h>

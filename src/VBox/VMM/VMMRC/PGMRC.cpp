@@ -38,7 +38,7 @@
 #include <iprt/assert.h>
 #include <VBox/log.h>
 #include <VBox/param.h>
-#include <VBox/err.h>
+#include <iprt/errcore.h>
 #include <VBox/dis.h>
 #include <VBox/disopcode.h>
 

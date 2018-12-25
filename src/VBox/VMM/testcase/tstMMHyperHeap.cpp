@@ -25,7 +25,7 @@
 #include <VBox/vmm/uvm.h>
 #include <VBox/sup.h>
 #include <VBox/param.h>
-#include <VBox/err.h>
+#include <iprt/errcore.h>
 
 #include <VBox/log.h>
 #include <iprt/initterm.h>

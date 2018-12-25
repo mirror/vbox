@@ -20,7 +20,7 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #include "VBoxCpuReport.h"
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 #include <iprt/x86.h>
 
 

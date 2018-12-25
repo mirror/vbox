@@ -26,7 +26,7 @@
 #include "PATMInternal.h"
 #include "PATMA.h"
 #include <VBox/vmm/vm.h>
-#include <VBox/err.h>
+#include <iprt/errcore.h>
 #include <VBox/log.h>
 
 #include <iprt/assert.h>

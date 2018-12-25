@@ -24,7 +24,7 @@
 #include <VBox/vmm/cpum.h>
 #include <VBox/vmm/tm.h>
 #include <VBox/vmm/pdmapi.h>
-#include <VBox/err.h>
+#include <iprt/errcore.h>
 #include <VBox/log.h>
 #include <iprt/assert.h>
 #include <iprt/ctype.h>

@@ -28,7 +28,7 @@
 #include "MMInternal.h"
 #include <VBox/vmm/vm.h>
 #include <VBox/param.h>
-#include <VBox/err.h>
+#include <iprt/errcore.h>
 #include <VBox/log.h>
 #include <iprt/alloc.h>
 #include <iprt/assert.h>

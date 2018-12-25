@@ -20,7 +20,7 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #include <VBox/vmm/vmm.h>
-#include <VBox/err.h>
+#include <iprt/errcore.h>
 #include <iprt/assert.h>
 #include <iprt/initterm.h>
 #include <iprt/stream.h>

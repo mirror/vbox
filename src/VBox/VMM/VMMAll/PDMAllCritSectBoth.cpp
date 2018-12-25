@@ -24,7 +24,7 @@
 #include <VBox/vmm/pdmcritsect.h>
 #include <VBox/vmm/pdmcritsectrw.h>
 #include <VBox/vmm/vm.h>
-#include <VBox/err.h>
+#include <iprt/errcore.h>
 
 #include <VBox/log.h>
 #include <iprt/assert.h>

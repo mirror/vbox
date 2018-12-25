@@ -26,7 +26,7 @@
 #include <VBox/vmm/pdmapi.h>
 #include <VBox/vmm/dbgf.h>
 #include <VBox/vmm/pgm.h>
-#include <VBox/err.h>
+#include <iprt/errcore.h>
 #include <VBox/param.h>
 
 #include <VBox/log.h>

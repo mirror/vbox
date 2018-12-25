@@ -26,7 +26,7 @@
 #include <VBox/vmm/gvmm.h>
 
 #include <VBox/log.h>
-#include <VBox/err.h>
+#include <iprt/errcore.h>
 #include <iprt/assert.h>
 
 

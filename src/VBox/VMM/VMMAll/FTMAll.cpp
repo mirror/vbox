@@ -23,7 +23,7 @@
 #include "FTMInternal.h"
 #include <VBox/vmm/vm.h>
 #include <VBox/vmm/vmm.h>
-#include <VBox/err.h>
+#include <iprt/errcore.h>
 #include <VBox/param.h>
 #include <VBox/log.h>
 
