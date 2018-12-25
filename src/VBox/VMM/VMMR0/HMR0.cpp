@@ -477,7 +477,7 @@ static int hmR0InitIntel(void)
              * Check for the VMX-Preemption Timer and adjust for the "VMX-Preemption
              * Timer Does Not Count Down at the Rate Specified" CPU erratum.
              */
-            uint32_t const fPinCtls = g_HmR0.hwvirt.Msrs.u.vmx.PinCtls.n.allowed1;
+            uint32_t const fPinCtls = RT_HI_U32(g_HmR0.hwvirt.Msrs.u.vmx.u64PinCtls);
             if (fPinCtls & VMX_PIN_CTLS_PREEMPT_TIMER)
             {
                 uint64_t const uVmxMiscMsr = g_HmR0.hwvirt.Msrs.u.vmx.u64Misc;
@@ -1175,7 +1175,26 @@ VMMR0_INT_DECL(int) HMR0InitVM(PVM pVM)
         pVM->hm.s.vmx.u64HostCr4            = g_HmR0.hwvirt.u.vmx.u64HostCr4;
         pVM->hm.s.vmx.u64HostEfer           = g_HmR0.hwvirt.u.vmx.u64HostEfer;
         pVM->hm.s.vmx.u64HostSmmMonitorCtl  = g_HmR0.hwvirt.u.vmx.u64HostSmmMonitorCtl;
-        pVM->hm.s.vmx.Msrs                  = g_HmR0.hwvirt.Msrs.u.vmx;
+
+        pVM->hm.s.vmx.Msrs.u64FeatCtrl      = g_HmR0.hwvirt.Msrs.u.vmx.u64FeatCtrl;
+        pVM->hm.s.vmx.Msrs.u64Basic         = g_HmR0.hwvirt.Msrs.u.vmx.u64Basic;
+        pVM->hm.s.vmx.Msrs.PinCtls.u        = g_HmR0.hwvirt.Msrs.u.vmx.u64PinCtls;
+        pVM->hm.s.vmx.Msrs.ProcCtls.u       = g_HmR0.hwvirt.Msrs.u.vmx.u64ProcCtls;
+        pVM->hm.s.vmx.Msrs.ProcCtls2.u      = g_HmR0.hwvirt.Msrs.u.vmx.u64ProcCtls2;
+        pVM->hm.s.vmx.Msrs.ExitCtls.u       = g_HmR0.hwvirt.Msrs.u.vmx.u64ExitCtls;
+        pVM->hm.s.vmx.Msrs.EntryCtls.u      = g_HmR0.hwvirt.Msrs.u.vmx.u64EntryCtls;
+        pVM->hm.s.vmx.Msrs.TruePinCtls.u    = g_HmR0.hwvirt.Msrs.u.vmx.u64TruePinCtls;
+        pVM->hm.s.vmx.Msrs.TrueProcCtls.u   = g_HmR0.hwvirt.Msrs.u.vmx.u64TrueProcCtls;
+        pVM->hm.s.vmx.Msrs.TrueEntryCtls.u  = g_HmR0.hwvirt.Msrs.u.vmx.u64TrueEntryCtls;
+        pVM->hm.s.vmx.Msrs.TrueExitCtls.u   = g_HmR0.hwvirt.Msrs.u.vmx.u64TrueExitCtls;
+        pVM->hm.s.vmx.Msrs.u64Misc          = g_HmR0.hwvirt.Msrs.u.vmx.u64Misc;
+        pVM->hm.s.vmx.Msrs.u64Cr0Fixed0     = g_HmR0.hwvirt.Msrs.u.vmx.u64Cr0Fixed0;
+        pVM->hm.s.vmx.Msrs.u64Cr0Fixed1     = g_HmR0.hwvirt.Msrs.u.vmx.u64Cr0Fixed1;
+        pVM->hm.s.vmx.Msrs.u64Cr4Fixed0     = g_HmR0.hwvirt.Msrs.u.vmx.u64Cr4Fixed0;
+        pVM->hm.s.vmx.Msrs.u64Cr4Fixed1     = g_HmR0.hwvirt.Msrs.u.vmx.u64Cr4Fixed1;
+        pVM->hm.s.vmx.Msrs.u64VmcsEnum      = g_HmR0.hwvirt.Msrs.u.vmx.u64VmcsEnum;
+        pVM->hm.s.vmx.Msrs.u64VmFunc        = g_HmR0.hwvirt.Msrs.u.vmx.u64VmFunc;
+        pVM->hm.s.vmx.Msrs.u64EptVpidCaps   = g_HmR0.hwvirt.Msrs.u.vmx.u64EptVpidCaps;
     }
     else if (pVM->hm.s.svm.fSupported)
     {

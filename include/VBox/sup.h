@@ -28,8 +28,6 @@
 
 #include <VBox/cdefs.h>
 #include <VBox/types.h>
-#include <VBox/vmm/hm_vmx.h>
-#include <VBox/vmm/hm_svm.h>
 #include <iprt/assert.h>
 #include <iprt/stdarg.h>
 #include <iprt/cpuset.h>
@@ -116,9 +114,35 @@ typedef struct SUPHWVIRTMSRS
 {
     union
     {
-        VMXMSRS     vmx;
-        SVMMSRS     svm;
-    } u ;
+        struct
+        {
+            uint64_t        u64FeatCtrl;
+            uint64_t        u64Basic;
+            uint64_t        u64PinCtls;
+            uint64_t        u64ProcCtls;
+            uint64_t        u64ProcCtls2;
+            uint64_t        u64ExitCtls;
+            uint64_t        u64EntryCtls;
+            uint64_t        u64TruePinCtls;
+            uint64_t        u64TrueProcCtls;
+            uint64_t        u64TrueEntryCtls;
+            uint64_t        u64TrueExitCtls;
+            uint64_t        u64Misc;
+            uint64_t        u64Cr0Fixed0;
+            uint64_t        u64Cr0Fixed1;
+            uint64_t        u64Cr4Fixed0;
+            uint64_t        u64Cr4Fixed1;
+            uint64_t        u64VmcsEnum;
+            uint64_t        u64VmFunc;
+            uint64_t        u64EptVpidCaps;
+            uint64_t        a_u64Reserved[9];
+        } vmx;
+        struct
+        {
+            uint64_t        u64MsrHwcr;
+            uint64_t        u64Padding[27];
+        }svm;
+    } u;
 } SUPHWVIRTMSRS;
 AssertCompileSize(SUPHWVIRTMSRS, 224);
 /** Pointer to a hardware-virtualization MSRs struct. */

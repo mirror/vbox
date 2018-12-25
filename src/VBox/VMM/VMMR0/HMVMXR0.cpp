@@ -1149,8 +1149,7 @@ VMMR0DECL(int) VMXR0EnableCpu(PHMGLOBALCPUINFO pHostCpu, PVM pVM, void *pvCpuPag
      * using EPTPs) so we don't retain any stale guest-physical mappings which won't get
      * invalidated when flushing by VPID.
      */
-    PCVMXMSRS pMsrs = &pHwvirtMsrs->u.vmx;
-    if (pMsrs->u64EptVpidCaps & MSR_IA32_VMX_EPT_VPID_CAP_INVEPT_ALL_CONTEXTS)
+    if (pHwvirtMsrs->u.vmx.u64EptVpidCaps & MSR_IA32_VMX_EPT_VPID_CAP_INVEPT_ALL_CONTEXTS)
     {
         hmR0VmxFlushEpt(NULL /* pVCpu */, VMXTLBFLUSHEPT_ALL_CONTEXTS);
         pHostCpu->fFlushAsidBeforeUse = false;

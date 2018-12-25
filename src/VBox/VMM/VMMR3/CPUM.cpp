@@ -1749,9 +1749,29 @@ static int cpumR3GetHostHwvirtMsrs(PCPUMMSRS pMsrs)
             if (RT_SUCCESS(rc))
             {
                 if (fCaps & SUPVTCAPS_VT_X)
-                    pMsrs->hwvirt.vmx = HwvirtMsrs.u.vmx;
+                {
+                    pMsrs->hwvirt.vmx.u64FeatCtrl       = HwvirtMsrs.u.vmx.u64FeatCtrl;
+                    pMsrs->hwvirt.vmx.u64Basic          = HwvirtMsrs.u.vmx.u64Basic;
+                    pMsrs->hwvirt.vmx.PinCtls.u         = HwvirtMsrs.u.vmx.u64PinCtls;
+                    pMsrs->hwvirt.vmx.ProcCtls.u        = HwvirtMsrs.u.vmx.u64ProcCtls;
+                    pMsrs->hwvirt.vmx.ProcCtls2.u       = HwvirtMsrs.u.vmx.u64ProcCtls2;
+                    pMsrs->hwvirt.vmx.ExitCtls.u        = HwvirtMsrs.u.vmx.u64ExitCtls;
+                    pMsrs->hwvirt.vmx.EntryCtls.u       = HwvirtMsrs.u.vmx.u64EntryCtls;
+                    pMsrs->hwvirt.vmx.TruePinCtls.u     = HwvirtMsrs.u.vmx.u64TruePinCtls;
+                    pMsrs->hwvirt.vmx.TrueProcCtls.u    = HwvirtMsrs.u.vmx.u64TrueProcCtls;
+                    pMsrs->hwvirt.vmx.TrueEntryCtls.u   = HwvirtMsrs.u.vmx.u64TrueEntryCtls;
+                    pMsrs->hwvirt.vmx.TrueExitCtls.u    = HwvirtMsrs.u.vmx.u64TrueExitCtls;
+                    pMsrs->hwvirt.vmx.u64Misc           = HwvirtMsrs.u.vmx.u64Misc;
+                    pMsrs->hwvirt.vmx.u64Cr0Fixed0      = HwvirtMsrs.u.vmx.u64Cr0Fixed0;
+                    pMsrs->hwvirt.vmx.u64Cr0Fixed1      = HwvirtMsrs.u.vmx.u64Cr0Fixed1;
+                    pMsrs->hwvirt.vmx.u64Cr4Fixed0      = HwvirtMsrs.u.vmx.u64Cr4Fixed0;
+                    pMsrs->hwvirt.vmx.u64Cr4Fixed1      = HwvirtMsrs.u.vmx.u64Cr4Fixed1;
+                    pMsrs->hwvirt.vmx.u64VmcsEnum       = HwvirtMsrs.u.vmx.u64VmcsEnum;
+                    pMsrs->hwvirt.vmx.u64VmFunc         = HwvirtMsrs.u.vmx.u64VmFunc;
+                    pMsrs->hwvirt.vmx.u64EptVpidCaps    = HwvirtMsrs.u.vmx.u64EptVpidCaps;
+                }
                 else
-                    pMsrs->hwvirt.svm = HwvirtMsrs.u.svm;
+                    pMsrs->hwvirt.svm.u64MsrHwcr = HwvirtMsrs.u.svm.u64MsrHwcr;
                 return VINF_SUCCESS;
             }
 
