@@ -35,7 +35,7 @@
 #include <QContextMenuEvent>
 #include <QHeaderView>
 
-#include <VBox/err.h>
+#include <iprt/errcore.h>
 #include <VBox/log.h>
 #include <iprt/string.h>
 #include <iprt/mem.h>

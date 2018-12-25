@@ -37,7 +37,7 @@
 #include <iprt/thread.h>
 #include <iprt/cpp/utils.h>
 
-#include <VBox/err.h>
+#include <iprt/errcore.h>
 #include <VBox/RemoteDesktop/VRDEOrders.h>
 #include <VBox/RemoteDesktop/VRDE.h>
 

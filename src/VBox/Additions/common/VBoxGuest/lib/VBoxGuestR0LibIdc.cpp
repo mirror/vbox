@@ -33,7 +33,7 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #include "VBoxGuestR0LibInternal.h"
-#include <VBox/err.h>
+#include <iprt/errcore.h>
 #include <VBox/VBoxGuest.h>
 /*#include <iprt/asm.h>*/
 

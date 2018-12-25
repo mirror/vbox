@@ -21,7 +21,7 @@
 #include <iprt/string.h>
 
 #include <VBox/log.h>
-#include <VBox/err.h>
+#include <iprt/errcore.h>
 #include <VBox/cdefs.h>
 #include <VBox/scsi.h>
 #include <VBox/scsiinline.h>

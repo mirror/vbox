@@ -22,7 +22,7 @@
 #include <iprt/buildconfig.h>
 #include <iprt/initterm.h>
 #include <iprt/ldr.h>
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 
 #include <VBox/VBoxGuestLib.h>
 

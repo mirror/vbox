@@ -18,7 +18,7 @@
  */
 
 #define LOG_GROUP LOG_GROUP_GUI
-#include <VBox/err.h>
+#include <iprt/errcore.h>
 #include <VBox/log.h>
 #include <iprt/asm.h>
 #include <iprt/assert.h>

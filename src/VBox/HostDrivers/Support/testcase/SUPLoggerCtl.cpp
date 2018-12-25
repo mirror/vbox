@@ -35,7 +35,7 @@
 #include <iprt/stream.h>
 #include <iprt/string.h>
 #include <iprt/ctype.h>
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 
 
 /**

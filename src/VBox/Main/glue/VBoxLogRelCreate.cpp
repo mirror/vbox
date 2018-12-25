@@ -28,7 +28,7 @@
 #include <iprt/process.h>
 #include <iprt/time.h>
 
-#include <VBox/err.h>
+#include <iprt/errcore.h>
 #include <VBox/log.h>
 #include <VBox/version.h>
 #include "package-generated.h"

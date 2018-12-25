@@ -32,13 +32,13 @@
 #include <iprt/win/setupapi.h>
 #include <newdev.h>
 #include <iprt/assert.h>
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 #include <iprt/initterm.h>
 #include <iprt/param.h>
 #include <iprt/path.h>
 #include <iprt/stream.h>
 #include <iprt/string.h>
-#include <VBox/err.h>
+#include <iprt/errcore.h>
 #include <stdio.h>
 
 #include <VBox/VBoxDrvCfg-win.h>

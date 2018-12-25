@@ -39,7 +39,7 @@
 
 #include <iprt/assert.h>
 #include <iprt/initterm.h>
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 #include <VBox/log.h>
 #include <iprt/mem.h>
 #include <iprt/rand.h>

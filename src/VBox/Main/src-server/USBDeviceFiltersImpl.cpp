@@ -31,7 +31,7 @@
 #include <iprt/string.h>
 #include <iprt/cpp/utils.h>
 
-#include <VBox/err.h>
+#include <iprt/errcore.h>
 #include <VBox/settings.h>
 #include <VBox/com/array.h>
 

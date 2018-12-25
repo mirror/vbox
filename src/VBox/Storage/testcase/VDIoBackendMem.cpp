@@ -16,7 +16,7 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 #define LOGGROUP LOGGROUP_DEFAULT /** @todo Log group */
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 #include <iprt/log.h>
 #include <iprt/assert.h>
 #include <iprt/asm.h>

@@ -56,7 +56,7 @@
 
 #define LOG_GROUP LOG_GROUP_NET_ADP_DRV
 #include <VBox/version.h>
-#include <VBox/err.h>
+#include <iprt/errcore.h>
 #include <VBox/log.h>
 #include <iprt/initterm.h>
 #include <iprt/string.h>
@@ -65,7 +65,7 @@
 #include <iprt/assert.h>
 #include <iprt/uuid.h>
 #include <iprt/alloc.h>
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 
 #define VBOXNETADP_OS_SPECFIC 1
 #include "../VBoxNetAdpInternal.h"

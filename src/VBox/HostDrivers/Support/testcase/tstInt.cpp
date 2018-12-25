@@ -32,7 +32,7 @@
 #include <VBox/vmm/vm.h>
 #include <VBox/vmm/vmm.h>
 #include <VBox/vmm/gvmm.h>
-#include <VBox/err.h>
+#include <iprt/errcore.h>
 #include <VBox/param.h>
 #include <iprt/asm-amd64-x86.h>
 #include <iprt/initterm.h>

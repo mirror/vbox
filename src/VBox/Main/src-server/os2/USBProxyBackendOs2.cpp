@@ -25,13 +25,13 @@
 #include "Logging.h"
 
 #include <VBox/usb.h>
-#include <VBox/err.h>
+#include <iprt/errcore.h>
 
 #include <iprt/string.h>
 #include <iprt/alloc.h>
 #include <iprt/assert.h>
 #include <iprt/file.h>
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 
 
 /**

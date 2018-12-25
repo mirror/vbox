@@ -20,7 +20,7 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #define LOG_GROUP LOG_GROUP_DBGG
-#include <VBox/err.h>
+#include <iprt/errcore.h>
 #include <iprt/asm.h>
 #include <iprt/assert.h>
 #include <limits.h>

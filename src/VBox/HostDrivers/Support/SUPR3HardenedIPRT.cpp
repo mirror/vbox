@@ -30,7 +30,7 @@
 *********************************************************************************************************************************/
 #define LOG_GROUP LOG_GROUP_SUP
 #include <VBox/sup.h>
-#include <VBox/err.h>
+#include <iprt/errcore.h>
 #include <VBox/log.h>
 #include <iprt/string.h>
 #include <iprt/stdarg.h>

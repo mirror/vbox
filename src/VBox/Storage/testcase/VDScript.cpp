@@ -44,7 +44,7 @@
 
 #define LOGGROUP LOGGROUP_DEFAULT
 #include <iprt/ctype.h>
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 #include <iprt/list.h>
 #include <iprt/mem.h>
 #include <iprt/stream.h>

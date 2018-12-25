@@ -16,7 +16,7 @@
  */
 
 #include <VBox/vd.h>
-#include <VBox/err.h>
+#include <iprt/errcore.h>
 #include <VBox/log.h>
 #include <iprt/asm.h>
 #include <iprt/dir.h>

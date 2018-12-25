@@ -18,7 +18,7 @@
 #define LOG_GROUP LOG_GROUP_DRV_MOUSE
 #include <iprt/asm.h>
 #include <iprt/initterm.h>
-#include <VBox/err.h>
+#include <iprt/errcore.h>
 #include <VBox/log.h>
 
 #include <stdarg.h>

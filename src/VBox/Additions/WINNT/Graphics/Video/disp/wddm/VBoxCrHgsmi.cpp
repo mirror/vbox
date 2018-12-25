@@ -16,7 +16,7 @@
  */
 
 #include <VBoxCrHgsmi.h>
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 
 #include "VBoxUhgsmiKmt.h"
 

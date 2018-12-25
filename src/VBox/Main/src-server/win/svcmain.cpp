@@ -33,7 +33,7 @@
 
 #include "svchlp.h"
 
-#include <VBox/err.h>
+#include <iprt/errcore.h>
 #include <iprt/buildconfig.h>
 #include <iprt/initterm.h>
 #include <iprt/string.h>

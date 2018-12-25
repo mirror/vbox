@@ -23,7 +23,7 @@
 
 #include <stdlib.h>
 
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 
 namespace matching
 {

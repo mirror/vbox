@@ -47,7 +47,7 @@
 #include "server.h"
 #include "Logging.h"
 
-#include <VBox/err.h>
+#include <iprt/errcore.h>
 
 #include <iprt/assert.h>
 #include <iprt/param.h>

@@ -28,7 +28,7 @@
 #include "exdll.h"
 #pragma warning(pop)
 
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 #include <iprt/initterm.h>
 #include <iprt/ldr.h>
 #include <iprt/localipc.h>

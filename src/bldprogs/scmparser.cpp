@@ -24,7 +24,7 @@
 #include <iprt/dir.h>
 #include <iprt/env.h>
 #include <iprt/file.h>
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 #include <iprt/getopt.h>
 #include <iprt/initterm.h>
 #include <iprt/mem.h>

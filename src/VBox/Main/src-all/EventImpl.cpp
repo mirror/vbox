@@ -59,7 +59,7 @@
 
 #include <iprt/asm.h>
 #include <iprt/critsect.h>
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 #include <iprt/semaphore.h>
 #include <iprt/time.h>
 

@@ -29,7 +29,7 @@
 #include <iprt/cdefs.h>
 #include <iprt/cidr.h>
 #include <iprt/ctype.h>
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 #include <iprt/getopt.h>
 #include <iprt/net.h>
 #include <iprt/param.h>

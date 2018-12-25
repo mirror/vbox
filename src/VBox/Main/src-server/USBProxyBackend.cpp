@@ -26,7 +26,7 @@
 #include "Logging.h"
 
 #include <VBox/com/array.h>
-#include <VBox/err.h>
+#include <iprt/errcore.h>
 #include <iprt/asm.h>
 #include <iprt/semaphore.h>
 #include <iprt/thread.h>

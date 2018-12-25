@@ -31,7 +31,7 @@
 #include <iprt/mem.h>
 #include <iprt/assert.h>
 #include <iprt/string.h>
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 #include "VBoxGuestR3LibInternal.h"
 
 

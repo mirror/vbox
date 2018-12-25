@@ -24,7 +24,7 @@
 #include <iprt/win/windows.h>
 #include <credentialprovider.h>
 
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 #include <VBox/VBoxGuestLib.h>
 
 #include "VBoxCredentialProvider.h"

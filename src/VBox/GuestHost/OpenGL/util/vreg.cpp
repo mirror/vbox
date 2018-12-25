@@ -27,7 +27,7 @@
 # include <cr_error.h>
 #endif
 
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 #include <iprt/assert.h>
 #include <iprt/asm.h>
 

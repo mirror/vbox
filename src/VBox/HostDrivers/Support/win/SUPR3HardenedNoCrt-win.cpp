@@ -36,7 +36,7 @@
 #endif
 
 #include <VBox/sup.h>
-#include <VBox/err.h>
+#include <iprt/errcore.h>
 #include <iprt/assert.h>
 #include <iprt/ctype.h>
 #include <iprt/heap.h>

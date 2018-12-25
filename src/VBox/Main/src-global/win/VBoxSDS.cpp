@@ -88,7 +88,7 @@
 #include "VirtualBoxSDSImpl.h"
 #include "Logging.h"
 
-#include <VBox/err.h>
+#include <iprt/errcore.h>
 #include <iprt/asm.h>
 #include <iprt/buildconfig.h>
 #include <iprt/dir.h>

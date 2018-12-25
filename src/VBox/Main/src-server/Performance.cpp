@@ -34,7 +34,7 @@
 #include <VBox/com/array.h>
 #include <VBox/com/ptr.h>
 #include <VBox/com/string.h>
-#include <VBox/err.h>
+#include <iprt/errcore.h>
 #include <iprt/string.h>
 #include <iprt/mem.h>
 #include <iprt/cpuset.h>

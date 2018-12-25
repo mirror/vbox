@@ -18,7 +18,7 @@
 #include "VBoxTray.h"
 #define _WIN32_WINNT 0x0601
 #include <iprt/log.h>
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 #include <iprt/assert.h>
 
 #include <malloc.h>

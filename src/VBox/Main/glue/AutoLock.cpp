@@ -30,7 +30,7 @@
 #include <iprt/thread.h>
 #include <iprt/semaphore.h>
 
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 #include <iprt/assert.h>
 
 #if defined(RT_LOCK_STRICT)

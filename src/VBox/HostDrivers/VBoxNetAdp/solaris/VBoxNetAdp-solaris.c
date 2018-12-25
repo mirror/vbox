@@ -30,7 +30,7 @@
 *********************************************************************************************************************************/
 #define LOG_GROUP LOG_GROUP_NET_ADP_DRV
 #include <VBox/log.h>
-#include <VBox/err.h>
+#include <iprt/errcore.h>
 #include <VBox/version.h>
 #include <iprt/assert.h>
 #include <iprt/semaphore.h>

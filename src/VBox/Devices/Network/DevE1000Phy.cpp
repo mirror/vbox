@@ -30,7 +30,7 @@
 // #undef  RT_STRICT
 // #endif
 
-#include <VBox/err.h>
+#include <iprt/errcore.h>
 #include <VBox/log.h>
 #include <VBox/vmm/ssm.h>
 #include "DevE1000Phy.h"

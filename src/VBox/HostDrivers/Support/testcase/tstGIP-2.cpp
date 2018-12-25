@@ -29,7 +29,7 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #include <VBox/sup.h>
-#include <VBox/err.h>
+#include <iprt/errcore.h>
 #include <VBox/param.h>
 #include <iprt/asm.h>
 #include <iprt/assert.h>

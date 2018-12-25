@@ -31,7 +31,7 @@
 
 #include <iprt/cdefs.h>
 #include <iprt/types.h>
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 #include <iprt/log.h>
 
 #include <unistd.h>

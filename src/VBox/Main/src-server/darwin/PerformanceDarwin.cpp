@@ -22,7 +22,7 @@
 #include <mach/vm_statistics.h>
 #include <sys/sysctl.h>
 #include <sys/errno.h>
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 #include <iprt/log.h>
 #include <iprt/mp.h>
 #include <iprt/param.h>

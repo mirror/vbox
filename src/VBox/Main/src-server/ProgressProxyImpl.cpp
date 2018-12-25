@@ -27,7 +27,7 @@
 #include <iprt/time.h>
 #include <iprt/semaphore.h>
 
-#include <VBox/err.h>
+#include <iprt/errcore.h>
 
 ////////////////////////////////////////////////////////////////////////////////
 // ProgressProxy class

@@ -20,7 +20,7 @@
 #endif
 #include <iprt/assert.h>
 #include <iprt/ctype.h>
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 #include <slirp.h>
 
 #define isdigit(ch)    RT_C_IS_DIGIT(ch)

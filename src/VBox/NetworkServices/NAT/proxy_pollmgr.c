@@ -35,14 +35,14 @@
 #include <time.h>
 #include <unistd.h>
 #else
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 #include <stdlib.h>
 #include <string.h>
 #include "winpoll.h"
 #endif
 
 #include <iprt/req.h>
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 
 
 #define POLLMGR_GARBAGE (-1)

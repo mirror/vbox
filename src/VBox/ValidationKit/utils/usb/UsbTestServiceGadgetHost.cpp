@@ -30,7 +30,7 @@
 *********************************************************************************************************************************/
 #include <iprt/asm.h>
 #include <iprt/ctype.h>
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 #include <iprt/mem.h>
 #include <iprt/string.h>
 

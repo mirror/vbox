@@ -20,7 +20,7 @@
 #include <VBox/vd.h>
 #include <VBox/vd-ifs.h>
 #include <VBox/log.h>
-#include <VBox/err.h>
+#include <iprt/errcore.h>
 #include <VBox/com/ErrorInfo.h>
 #include <VBox/com/NativeEventQueue.h>
 #include <VBox/com/com.h>

@@ -24,7 +24,7 @@
 
 #define NETIF_WITHOUT_NETCFG
 
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 #include <list>
 
 #define _WIN32_DCOM

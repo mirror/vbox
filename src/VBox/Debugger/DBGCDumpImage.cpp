@@ -23,7 +23,7 @@
 #include <VBox/dbg.h>
 #include <VBox/vmm/dbgf.h>
 #include <VBox/param.h>
-#include <VBox/err.h>
+#include <iprt/errcore.h>
 #include <VBox/log.h>
 
 #include <iprt/assert.h>

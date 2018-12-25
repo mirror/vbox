@@ -24,7 +24,7 @@
 #include "fakedri_drv.h"
 #include "dri_glx.h"
 #include "iprt/mem.h"
-#include "iprt/err.h"
+#include <iprt/errcore.h>
 #include <dlfcn.h>
 #include <elf.h>
 #include <unistd.h>

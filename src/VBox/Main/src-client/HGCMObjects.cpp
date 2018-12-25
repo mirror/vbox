@@ -21,7 +21,7 @@
 #include "HGCMObjects.h"
 
 #include <iprt/string.h>
-#include <VBox/err.h>
+#include <iprt/errcore.h>
 
 
 static RTCRITSECT g_critsect;

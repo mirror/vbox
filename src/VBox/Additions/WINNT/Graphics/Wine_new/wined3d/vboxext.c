@@ -21,7 +21,7 @@
 #include "vboxext.h"
 #ifdef VBOX_WITH_WDDM
 #include <VBoxCrHgsmi.h>
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 #endif
 
 WINE_DEFAULT_DEBUG_CHANNEL(d3d_vbox);

@@ -17,7 +17,7 @@
 
 #include "HostPower.h"
 #include "Logging.h"
-#include "iprt/err.h"
+#include <iprt/errcore.h>
 
 #include <IOKit/IOMessage.h>
 #include <IOKit/ps/IOPowerSources.h>

@@ -35,7 +35,7 @@
 
 #include <VBox/log.h>
 #include <VBox/version.h>
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 #include <iprt/initterm.h>
 #include <iprt/mem.h>
 #include <iprt/getopt.h>

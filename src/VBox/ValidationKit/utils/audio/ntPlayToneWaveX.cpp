@@ -34,7 +34,7 @@
 #include <iprt/initterm.h>
 #include <iprt/message.h>
 #include <iprt/stream.h>
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 
 #define _USE_MATH_DEFINES
 #include <math.h>

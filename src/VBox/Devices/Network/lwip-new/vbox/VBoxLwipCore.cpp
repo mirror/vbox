@@ -31,7 +31,7 @@
 #define LOG_GROUP LOG_GROUP_DRV_NAT
 #include <iprt/cpp/lock.h>
 #include <iprt/timer.h>
-#include <VBox/err.h>
+#include <iprt/errcore.h>
 #include <VBox/log.h>
 
 extern "C" {

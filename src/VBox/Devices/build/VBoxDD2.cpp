@@ -24,7 +24,7 @@
 #define LOG_GROUP LOG_GROUP_DEV
 #include <VBox/vmm/pdm.h>
 #include <VBox/version.h>
-#include <VBox/err.h>
+#include <iprt/errcore.h>
 
 #include <VBox/log.h>
 #include <iprt/assert.h>

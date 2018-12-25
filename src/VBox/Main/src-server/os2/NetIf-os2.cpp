@@ -22,7 +22,7 @@
 *********************************************************************************************************************************/
 #define LOG_GROUP LOG_GROUP_MAIN
 
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 #include <list>
 
 #include "HostNetworkInterfaceImpl.h"

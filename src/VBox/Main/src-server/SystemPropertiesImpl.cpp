@@ -36,7 +36,7 @@
 #include <iprt/uri.h>
 #include <iprt/cpp/utils.h>
 
-#include <VBox/err.h>
+#include <iprt/errcore.h>
 #include <VBox/param.h>
 #include <VBox/settings.h>
 #include <VBox/vd.h>

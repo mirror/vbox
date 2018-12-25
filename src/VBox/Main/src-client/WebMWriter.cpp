@@ -35,7 +35,7 @@
 #include <iprt/buildconfig.h>
 #include <iprt/cdefs.h>
 #include <iprt/critsect.h>
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 #include <iprt/file.h>
 #include <iprt/rand.h>
 #include <iprt/string.h>

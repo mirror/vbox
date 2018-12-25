@@ -8,7 +8,7 @@
 #include "cr_error.h"
 #include "cr_mem.h"
 #include "cr_pixeldata.h"
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 #include <stdio.h>
 
 void crStateDiffContext( CRContext *from, CRContext *to )

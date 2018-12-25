@@ -28,7 +28,7 @@
 #include "UnattendedScript.h"
 #include "UnattendedImpl.h"
 
-#include <VBox/err.h>
+#include <iprt/errcore.h>
 
 #include <iprt/ctype.h>
 #include <iprt/file.h>

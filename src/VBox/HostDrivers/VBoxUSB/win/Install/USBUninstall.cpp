@@ -33,11 +33,11 @@
 #include <newdev.h>
 
 #include <iprt/assert.h>
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 #include <iprt/param.h>
 #include <iprt/path.h>
 #include <iprt/string.h>
-#include <VBox/err.h>
+#include <iprt/errcore.h>
 #include <VBox/VBoxDrvCfg-win.h>
 #include <stdio.h>
 

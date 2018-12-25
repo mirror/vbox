@@ -24,7 +24,7 @@
 #include <VBox/vmm/pdmnetinline.h>
 #include <VBox/sup.h>
 #include <VBox/vmm/vmm.h>
-#include <VBox/err.h>
+#include <iprt/errcore.h>
 #include <iprt/initterm.h>
 #include <iprt/alloc.h>
 #include <iprt/path.h>

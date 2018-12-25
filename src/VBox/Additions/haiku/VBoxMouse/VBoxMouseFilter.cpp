@@ -57,7 +57,7 @@
 #include <VBox/VBoxGuestLib.h>
 #include <VBoxGuestInternal.h>
 #include <VBox/log.h>
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 
 /** @todo can this be merged with VBoxMouse? */
 

@@ -25,7 +25,7 @@
 #include <VBox/com/ErrorInfo.h>
 #include <VBox/com/errorprint.h>
 #include <iprt/assert.h>
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 #include <VBox/com/VirtualBox.h>
 #include <iprt/stream.h>
 #include <iprt/semaphore.h>

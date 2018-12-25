@@ -19,10 +19,10 @@
 #include <iprt/asm.h>
 #include <iprt/assert.h>
 #include <iprt/cdefs.h>
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 #include <iprt/string.h>
 
-#include <VBox/err.h>
+#include <iprt/errcore.h>
 #include <VBox/log.h>
 
 #include <iprt/win/winsock2.h>

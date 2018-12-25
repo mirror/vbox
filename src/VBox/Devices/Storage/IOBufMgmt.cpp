@@ -16,7 +16,7 @@
  */
 #define LOG_GROUP LOG_GROUP_IOBUFMGMT
 #include <VBox/cdefs.h>
-#include <VBox/err.h>
+#include <iprt/errcore.h>
 #include <VBox/log.h>
 #include <iprt/assert.h>
 #include <iprt/critsect.h>

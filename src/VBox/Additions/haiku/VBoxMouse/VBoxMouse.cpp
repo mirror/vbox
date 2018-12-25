@@ -59,7 +59,7 @@
 #include <VBoxGuestInternal.h>
 #include <VBox/VMMDev.h>
 #include <VBox/log.h>
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 
 /* Export as global symbol with C linkage, RTDECL is necessary. */
 RTDECL(BInputServerDevice *)

@@ -19,7 +19,7 @@
 #include <iprt/assert.h>
 #include <iprt/ldr.h>
 #include <VBox/log.h>
-#include <VBox/err.h>
+#include <iprt/errcore.h>
 
 #include <pulse/pulseaudio.h>
 

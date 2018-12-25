@@ -17,7 +17,7 @@
 
 #include <iprt/assert.h>
 #include <iprt/buildconfig.h>
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 #include <iprt/getopt.h>
 #include <iprt/initterm.h>
 #include <iprt/stream.h>

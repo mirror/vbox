@@ -19,7 +19,7 @@
 #include <set>
 #include <algorithm>
 #include <iterator>
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 #include <iprt/file.h>
 #include <iprt/asm.h>
 #include <VBox/com/string.h>

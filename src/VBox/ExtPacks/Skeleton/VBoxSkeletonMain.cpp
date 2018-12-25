@@ -34,7 +34,7 @@
 *********************************************************************************************************************************/
 #include <VBox/ExtPack/ExtPack.h>
 
-#include <VBox/err.h>
+#include <iprt/errcore.h>
 #include <VBox/version.h>
 #include <iprt/string.h>
 #include <iprt/param.h>

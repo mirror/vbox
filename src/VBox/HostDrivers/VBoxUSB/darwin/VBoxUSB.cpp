@@ -50,7 +50,7 @@
 #include <iprt/semaphore.h>
 #include <iprt/process.h>
 #include <iprt/alloc.h>
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 #include <iprt/asm.h>
 
 #include <mach/kmod.h>

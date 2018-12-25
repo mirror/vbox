@@ -20,7 +20,7 @@
 *   Header files                                                                                                                 *
 *********************************************************************************************************************************/
 
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 #include <iprt/assert.h>
 #include <iprt/vector.h>
 #include <VBox/log.h>

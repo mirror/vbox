@@ -22,7 +22,7 @@
 *********************************************************************************************************************************/
 #define LOG_GROUP LOG_GROUP_MAIN
 
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 #include <iprt/ctype.h>
 #include <iprt/mem.h>
 #include <iprt/path.h>

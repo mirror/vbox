@@ -29,7 +29,7 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #include <VBox/usbfilter.h>
-#include <VBox/err.h>
+#include <iprt/errcore.h>
 
 #include <iprt/string.h>
 #include <iprt/stream.h>

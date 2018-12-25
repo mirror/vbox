@@ -31,7 +31,7 @@
 #define LOG_GROUP LOG_GROUP_SUP
 #include <VBox/sup.h>
 
-#include <VBox/err.h>
+#include <iprt/errcore.h>
 #include <VBox/param.h>
 #include <iprt/assert.h>
 

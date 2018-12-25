@@ -28,7 +28,7 @@
 #include <VBox/com/ptr.h>
 
 #include <iprt/assert.h>
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 #include <VBox/log.h>
 
 #include <iprt/win/windows.h>

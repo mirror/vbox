@@ -23,7 +23,7 @@
 #include <iprt/cpp/autores.h>
 #include <iprt/buildconfig.h>
 #include <iprt/ctype.h>
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 #include <iprt/getopt.h>
 #include <iprt/initterm.h>
 #include <iprt/mem.h>

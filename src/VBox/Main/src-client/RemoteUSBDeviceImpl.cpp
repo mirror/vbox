@@ -24,7 +24,7 @@
 
 #include <iprt/cpp/utils.h>
 
-#include <VBox/err.h>
+#include <iprt/errcore.h>
 
 #include <VBox/RemoteDesktop/VRDE.h>
 #include <VBox/vrdpusb.h>

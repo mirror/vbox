@@ -32,7 +32,7 @@ extern "C" {
 #include <powrprof.h>
 }
 
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 #include <iprt/ldr.h>
 #include <iprt/mp.h>
 #include <iprt/mem.h>

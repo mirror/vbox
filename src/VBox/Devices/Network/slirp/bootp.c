@@ -43,7 +43,7 @@
 
 #include <slirp.h>
 #include <libslirp.h>
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 
 /** Entry in the table of known DHCP clients. */
 typedef struct

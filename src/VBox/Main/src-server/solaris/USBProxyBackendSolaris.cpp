@@ -24,7 +24,7 @@
 
 #include <VBox/usb.h>
 #include <VBox/usblib.h>
-#include <VBox/err.h>
+#include <iprt/errcore.h>
 #include <iprt/semaphore.h>
 #include <iprt/path.h>
 

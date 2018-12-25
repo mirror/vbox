@@ -20,7 +20,7 @@
 # include <paths.h>
 #endif
 
-#include <VBox/err.h>
+#include <iprt/errcore.h>
 #include <VBox/vmm/pdmdrv.h>
 #include <iprt/assert.h>
 #include <iprt/file.h>

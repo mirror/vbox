@@ -23,7 +23,7 @@
 #define VBOX_COM_NO_ATL
 #include <VBox/com/defs.h>
 #include <VBox/vmm/vm.h>
-#include <VBox/err.h>
+#include <iprt/errcore.h>
 
 #include "VBoxDbgGui.h"
 #include <QDesktopWidget>

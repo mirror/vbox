@@ -46,7 +46,7 @@
 
 #include <VBox/VMMDev.h> /* for VMMDEV_MOUSE_XXX */
 #include <VBox/VBoxGuestLib.h>
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 #include <xf86.h>
 #include <xf86Xinput.h>
 #include <mipointer.h>

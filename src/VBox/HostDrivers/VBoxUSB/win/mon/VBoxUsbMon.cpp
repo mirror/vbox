@@ -30,7 +30,7 @@
 *********************************************************************************************************************************/
 #include "VBoxUsbMon.h"
 #include "../cmn/VBoxUsbIdc.h"
-#include <vbox/err.h>
+#include <iprt/errcore.h>
 #include <VBox/usblib.h>
 #include <excpt.h>
 

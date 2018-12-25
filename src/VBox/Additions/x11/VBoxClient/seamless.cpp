@@ -25,7 +25,7 @@
 
 #include <VBox/log.h>
 #include <VBox/VBoxGuestLib.h>
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 #include <iprt/mem.h>
 
 #include "VBoxClient.h"

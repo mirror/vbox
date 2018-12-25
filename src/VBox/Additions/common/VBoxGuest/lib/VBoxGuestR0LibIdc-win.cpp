@@ -35,7 +35,7 @@
 #include <iprt/nt/nt.h>
 #include "VBoxGuestR0LibInternal.h"
 #include <VBox/VBoxGuest.h>
-#include <VBox/err.h>
+#include <iprt/errcore.h>
 #include <VBox/log.h>
 
 

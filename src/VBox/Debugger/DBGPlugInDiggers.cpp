@@ -24,7 +24,7 @@
 #include <VBox/vmm/dbgf.h>
 #include "DBGPlugIns.h"
 #include <VBox/version.h>
-#include <VBox/err.h>
+#include <iprt/errcore.h>
 
 
 DECLEXPORT(int) DbgPlugInEntry(DBGFPLUGINOP enmOperation, PUVM pUVM, uintptr_t uArg)

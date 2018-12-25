@@ -33,7 +33,7 @@
 
 #include <VBox/dbg.h>
 #include <VBox/vmm/cfgm.h>
-#include <VBox/err.h>
+#include <iprt/errcore.h>
 
 #include <iprt/thread.h>
 #include <iprt/tcp.h>

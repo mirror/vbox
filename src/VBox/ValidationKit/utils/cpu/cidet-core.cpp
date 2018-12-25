@@ -67,7 +67,7 @@
 #include <iprt/rand.h>
 #include <iprt/param.h>
 #include <iprt/string.h>
-#include <VBox/err.h>
+#include <iprt/errcore.h>
 #if defined(CIDET_DPRINTF_ENABLED) || defined(CIDET_DEBUG_DISAS)
 # include <VBox/dis.h>
 # include <iprt/stream.h>

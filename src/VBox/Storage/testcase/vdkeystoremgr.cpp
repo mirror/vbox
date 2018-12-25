@@ -20,7 +20,7 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #include <VBox/vd.h>
-#include <VBox/err.h>
+#include <iprt/errcore.h>
 #include <VBox/version.h>
 #include <iprt/initterm.h>
 #include <iprt/base64.h>

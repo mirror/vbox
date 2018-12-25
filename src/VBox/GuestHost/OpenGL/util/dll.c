@@ -16,7 +16,7 @@
 
 #if defined(IRIX) || defined(IRIX64) || defined(Linux) || defined(FreeBSD) || defined(AIX) || defined(DARWIN) || defined(SunOS) || defined(OSF1)
 # include <iprt/assert.h>
-# include <iprt/err.h>
+# include <iprt/errcore.h>
 # include <iprt/log.h>
 # include <iprt/path.h>
 #include <dlfcn.h>

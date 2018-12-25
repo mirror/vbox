@@ -66,7 +66,7 @@
 #include <iprt/string.h>
 
 #include <VBox/AssertGuest.h>
-#include <VBox/err.h>
+#include <iprt/errcore.h>
 #define LOG_GROUP LOG_GROUP_HGSMI
 #include <VBox/log.h>
 #include <VBox/vmm/ssm.h>

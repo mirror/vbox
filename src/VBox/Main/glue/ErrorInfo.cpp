@@ -32,7 +32,7 @@
 #include <iprt/stream.h>
 #include <iprt/string.h>
 
-#include <VBox/err.h>
+#include <iprt/errcore.h>
 
 namespace com
 {

@@ -47,7 +47,7 @@
 
 #include <VBox/param.h>
 #include <VBox/log.h>
-#include <VBox/err.h>
+#include <iprt/errcore.h>
 
 
 /**

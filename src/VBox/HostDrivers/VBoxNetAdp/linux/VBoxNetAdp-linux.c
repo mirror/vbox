@@ -39,7 +39,7 @@
 
 #define LOG_GROUP LOG_GROUP_NET_ADP_DRV
 #include <VBox/log.h>
-#include <VBox/err.h>
+#include <iprt/errcore.h>
 #include <iprt/process.h>
 #include <iprt/initterm.h>
 #include <iprt/mem.h>

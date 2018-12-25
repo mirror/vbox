@@ -43,7 +43,7 @@
 
 #ifdef VBOX_WITH_WDDM
 #include <VBoxDispMpLogger.h>
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 #else
 #include <iprt/log.h>
 #endif

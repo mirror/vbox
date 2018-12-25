@@ -20,7 +20,7 @@
 //#include "HostImpl.h"
 #include "Logging.h"
 
-#include <VBox/err.h>
+#include <iprt/errcore.h>
 
 int netIfNetworkInterfaceHelperServer (SVCHlpClient *aClient,
                                         SVCHlpMsg::Code aMsgCode);

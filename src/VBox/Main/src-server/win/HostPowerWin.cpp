@@ -28,7 +28,7 @@ extern "C" {
 }
 
 #include <VBox/com/ptr.h>
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 #include "HostPower.h"
 #include "Logging.h"
 

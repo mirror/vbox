@@ -34,7 +34,7 @@
 #include <iprt/cdefs.h>
 #include <iprt/types.h>
 #include <iprt/mem.h>
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 
 VBOXHTABLEDECL(int) CrHTableCreate(PCRHTABLE pTbl, uint32_t cSize)
 {

@@ -21,7 +21,7 @@
 #include "dlm_generated.h"
 
 #include "VBox/vmm/ssm.h"
-#include "iprt/err.h"
+#include <iprt/errcore.h>
 
 
 typedef struct {
