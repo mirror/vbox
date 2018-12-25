@@ -31,9 +31,9 @@
 #include <ntstatus.h>
 typedef long NTSTATUS;                  /** @todo figure out which headers to include to get this one typedef... */
 
-#include <iprt/errcore.h>
+#include <iprt/err.h>
 #ifdef VBOX
-# include <iprt/errcore.h>
+# include <VBox/err.h>
 #endif
 #include <iprt/log.h>
 #include <iprt/assert.h>
