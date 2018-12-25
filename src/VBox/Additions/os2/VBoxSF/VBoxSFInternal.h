@@ -251,6 +251,7 @@ DECLASM(PVBOXSFVP) Fsh32GetVolParams(USHORT hVbp, PVPFSI *ppVpFsi /*optional*/);
  *
  * @{  */
 
+#include <iprt/err.h>
 
 /** Request structure for vboxSfOs2HostReqMapFolderWithBuf.  */
 typedef struct VBOXSFMAPFOLDERWITHBUFREQ
