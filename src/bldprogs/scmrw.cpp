@@ -2518,7 +2518,7 @@ bool rewrite_Fix_Err_H(PSCMRWSTATE pState, PSCMSTREAM pIn, PSCMSTREAM pOut, PCSC
         const char *pszHeader;
         unsigned    cchHeader;
         int         iLevel;
-    } const s_aHeaders[]
+    } const s_aHeaders[] =
     {
         { RT_STR_TUPLE("iprt/errcore.h"), 1 },
         { RT_STR_TUPLE("iprt/err.h"),     2 },
@@ -2666,7 +2666,7 @@ bool rewrite_Fix_Err_H(PSCMRWSTATE pState, PSCMSTREAM pIn, PSCMSTREAM pOut, PCSC
 
                     if (iUsageLevel <= 1)
                     {
-                        iUsageLevel = 2;
+                        iUsageLevel = 3; /* Cannot distingish between iprt/err.h and VBox/err.h, so pick the latter for now. */
                         for (unsigned i = 0; i < RT_ELEMENTS(g_aLevel1Statuses); i++)
                             if (   cchIdentifier == g_aLevel1Statuses[i].cch
                                 && memcmp(pchHit, g_aLevel1Statuses[i].psz, cchIdentifier) == 0)
