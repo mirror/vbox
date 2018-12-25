@@ -4060,6 +4060,8 @@ typedef enum
 } VMXVDIAG;
 AssertCompileSize(VMXVDIAG, 4);
 
+/** @} */
+
 
 /** @defgroup grp_hm_vmx_c    VMX C Helpers
  *
