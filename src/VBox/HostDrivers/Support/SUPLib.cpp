@@ -276,7 +276,7 @@ SUPR3DECL(int) SUPR3InitEx(bool fUnrestricted, PSUPDRVSESSION *ppSession)
         strcpy(CookieReq.u.In.szMagic, SUPCOOKIE_MAGIC);
         CookieReq.u.In.u32ReqVersion = SUPDRV_IOC_VERSION;
         const uint32_t uMinVersion = (SUPDRV_IOC_VERSION & 0xffff0000) == 0x00290000
-                                   ? 0x00290007
+                                   ? 0x00290008
                                    : SUPDRV_IOC_VERSION & 0xffff0000;
         CookieReq.u.In.u32MinVersion = uMinVersion;
         rc = suplibOsIOCtl(&g_supLibData, SUP_IOCTL_COOKIE, &CookieReq, SUP_IOCTL_COOKIE_SIZE);
@@ -2330,6 +2330,35 @@ SUPR3DECL(int) SUPR3GipSetFlags(uint32_t fOrMask, uint32_t fAndMask)
     int rc = suplibOsIOCtl(&g_supLibData, SUP_IOCTL_GIP_SET_FLAGS, &Req, SUP_IOCTL_GIP_SET_FLAGS_SIZE);
     if (RT_SUCCESS(rc))
         rc = Req.Hdr.rc;
+    return rc;
+}
+
+
+SUPR3DECL(int) SUPR3GetHwvirtMsrs(PSUPHWVIRTMSRS pHwvirtMsrs, bool fForceRequery)
+{
+    AssertReturn(pHwvirtMsrs, VERR_INVALID_PARAMETER);
+
+    SUPGETHWVIRTMSRS Req;
+    Req.Hdr.u32Cookie        = g_u32Cookie;
+    Req.Hdr.u32SessionCookie = g_u32SessionCookie;
+    Req.Hdr.cbIn             = SUP_IOCTL_GET_HWVIRT_MSRS_SIZE_IN;
+    Req.Hdr.cbOut            = SUP_IOCTL_GET_HWVIRT_MSRS_SIZE_OUT;
+    Req.Hdr.fFlags           = SUPREQHDR_FLAGS_DEFAULT;
+    Req.Hdr.rc               = VERR_INTERNAL_ERROR;
+
+    Req.u.In.fForce          = fForceRequery;
+    Req.u.In.fReserved0      = false;
+    Req.u.In.fReserved1      = false;
+    Req.u.In.fReserved2      = false;
+
+    int rc = suplibOsIOCtl(&g_supLibData, SUP_IOCTL_GET_HWVIRT_MSRS, &Req, SUP_IOCTL_GET_HWVIRT_MSRS_SIZE);
+    if (RT_SUCCESS(rc))
+    {
+        rc = Req.Hdr.rc;
+        *pHwvirtMsrs = Req.u.Out.HwvirtMsrs;
+    }
+    else
+        RT_ZERO(*pHwvirtMsrs);
     return rc;
 }
 

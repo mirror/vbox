@@ -223,7 +223,7 @@ typedef SUPREQHDR *PSUPREQHDR;
  *
  * @remarks 0x002a0000 is used by 5.1. The next version number must be 0x002b0000.
  */
-#define SUPDRV_IOC_VERSION                              0x00290007
+#define SUPDRV_IOC_VERSION                              0x00290008
 
 /** SUP_IOCTL_COOKIE. */
 typedef struct SUPCOOKIE
@@ -1628,6 +1628,45 @@ typedef struct SUPUCODEREV
         } Out;
     } u;
 } SUPUCODEREV, *PSUPUCODEREV;
+/** @} */
+
+
+/** @name SUP_IOCTL_HWVIRT_MSRS
+ * Get hardware-virtualization MSRs.
+ *
+ * This queries a lot more information than merely VT-x/AMD-V basic capabilities
+ * provided by SUP_IOCTL_VT_CAPS.
+ */
+#define SUP_IOCTL_GET_HWVIRT_MSRS                       SUP_CTL_CODE_SIZE(41, SUP_IOCTL_GET_HWVIRT_MSRS_SIZE)
+#define SUP_IOCTL_GET_HWVIRT_MSRS_SIZE                  sizeof(SUPGETHWVIRTMSRS)
+#define SUP_IOCTL_GET_HWVIRT_MSRS_SIZE_IN               (sizeof(SUPREQHDR) + RT_SIZEOFMEMB(SUPGETHWVIRTMSRS, u.In))
+#define SUP_IOCTL_GET_HWVIRT_MSRS_SIZE_OUT              sizeof(SUPGETHWVIRTMSRS)
+
+typedef struct SUPGETHWVIRTMSRS
+{
+    /** The header. */
+    SUPREQHDR               Hdr;
+    union
+    {
+        struct
+        {
+            /** Whether to force re-querying of MSRs. */
+            bool                fForce;
+            /** Reserved. Must be false. */
+            bool                fReserved0;
+            /** Reserved. Must be false. */
+            bool                fReserved1;
+            /** Reserved. Must be false. */
+            bool                fReserved2;
+        } In;
+
+        struct
+        {
+            /** Hardware-virtualization MSRs. */
+            SUPHWVIRTMSRS      HwvirtMsrs;
+        } Out;
+    } u;
+} SUPGETHWVIRTMSRS, *PSUPGETHWVIRTMSRS;
 /** @} */
 
 

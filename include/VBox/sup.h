@@ -28,6 +28,8 @@
 
 #include <VBox/cdefs.h>
 #include <VBox/types.h>
+#include <VBox/vmm/hm_vmx.h>
+#include <VBox/vmm/hm_svm.h>
 #include <iprt/assert.h>
 #include <iprt/stdarg.h>
 #include <iprt/cpuset.h>
@@ -105,6 +107,24 @@ typedef enum SUPPAGINGMODE
 /** GDT is read-only but the writable GDT can be fetched by SUPR0GetCurrentGdtRw(). */
 #define SUPKERNELFEATURES_GDT_NEED_WRITABLE   RT_BIT(2)
 /** @} */
+
+
+/**
+ * Hardware-virtualization MSRs.
+ */
+typedef struct SUPHWVIRTMSRS
+{
+    union
+    {
+        VMXMSRS     vmx;
+        SVMMSRS     svm;
+    } u ;
+} SUPHWVIRTMSRS;
+AssertCompileSize(SUPHWVIRTMSRS, 224);
+/** Pointer to a hardware-virtualization MSRs struct. */
+typedef SUPHWVIRTMSRS *PSUPHWVIRTMSRS;
+/** Pointer to a hardware-virtualization MSRs struct. */
+typedef const SUPHWVIRTMSRS *PCSUPHWVIRTMSRS;
 
 
 /**
@@ -1836,6 +1856,16 @@ SUPR3DECL(int) SUPR3GipSetFlags(uint32_t fOrMask, uint32_t fAndMask);
  */
 SUPR3DECL(int) SUPR3QueryMicrocodeRev(uint32_t *puMicrocodeRev);
 
+/**
+ * Gets hardware-virtualization MSRs of the CPU, if available.
+ *
+ * @returns VINF_SUCCESS if available, error code indicating why if not.
+ * @param   pHwvirtMsrs     Where to store the hardware-virtualization MSRs.
+ * @param   fForceRequery   Whether to force complete re-querying of MSRs (rather
+ *                          than fetching cached values when available).
+ */
+SUPR3DECL(int) SUPR3GetHwvirtMsrs(PSUPHWVIRTMSRS pHwvirtMsrs, bool fForceRequery);
+
 /** @} */
 #endif /* IN_RING3 */
 
@@ -1918,6 +1948,7 @@ SUPR0DECL(int) SUPR0PageProtect(PSUPDRVSESSION pSession, RTR3PTR pvR3, RTR0PTR p
 SUPR0DECL(int) SUPR0PageFree(PSUPDRVSESSION pSession, RTR3PTR pvR3);
 SUPR0DECL(int) SUPR0GipMap(PSUPDRVSESSION pSession, PRTR3PTR ppGipR3, PRTHCPHYS pHCPhysGip);
 SUPR0DECL(int) SUPR0GetVTSupport(uint32_t *pfCaps);
+SUPR0DECL(int) SUPR0GetHwvirtMsrs(PSUPHWVIRTMSRS pMsrs, uint32_t fCaps, bool fForce);
 SUPR0DECL(int) SUPR0GetSvmUsability(bool fInitSvm);
 SUPR0DECL(int) SUPR0GetVmxUsability(bool *pfIsSmxModeAmbiguous);
 SUPR0DECL(int) SUPR0GetRawModeUsability(void);

@@ -200,6 +200,7 @@ static SUPFUNC g_aFunctions[] =
     { "SUPR0ResumeVTxOnCpu",                    (void *)(uintptr_t)SUPR0ResumeVTxOnCpu },
     { "SUPR0GetCurrentGdtRw",                   (void *)(uintptr_t)SUPR0GetCurrentGdtRw },
     { "SUPR0GetKernelFeatures",                 (void *)(uintptr_t)SUPR0GetKernelFeatures },
+    { "SUPR0GetHwvirtMsrs",                     (void *)(uintptr_t)SUPR0GetHwvirtMsrs },
     { "SUPR0GetPagingMode",                     (void *)(uintptr_t)SUPR0GetPagingMode },
     { "SUPR0GetSvmUsability",                   (void *)(uintptr_t)SUPR0GetSvmUsability },
     { "SUPR0GetVTSupport",                      (void *)(uintptr_t)SUPR0GetVTSupport },
@@ -486,6 +487,11 @@ PFNRT g_apfnVBoxDrvIPRTDeps[] =
     NULL
 };
 #endif  /* RT_OS_DARWIN || RT_OS_SOLARIS || RT_OS_SOLARIS */
+
+/** Hardware-virtualization MSRs. */
+static SUPHWVIRTMSRS            g_HwvirtMsrs;
+/** Whether the hardware-virtualization MSRs are cached. */
+static bool                     g_fHwvirtMsrsCached;
 
 
 /**
@@ -2399,6 +2405,22 @@ static int supdrvIOCtlInnerUnrestricted(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt,
 
             /* execute */
             pReq->Hdr.rc = SUPR0QueryUcodeRev(pSession, &pReq->u.Out.MicrocodeRev);
+            if (RT_FAILURE(pReq->Hdr.rc))
+                pReq->Hdr.cbOut = sizeof(pReq->Hdr);
+            return 0;
+        }
+
+        case SUP_CTL_CODE_NO_SIZE(SUP_IOCTL_GET_HWVIRT_MSRS):
+        {
+            /* validate */
+            PSUPGETHWVIRTMSRS pReq = (PSUPGETHWVIRTMSRS)pReqHdr;
+            REQ_CHECK_SIZES(SUP_IOCTL_GET_HWVIRT_MSRS);
+            REQ_CHECK_EXPR_FMT(!pReq->u.In.fReserved0 && !pReq->u.In.fReserved1 && !pReq->u.In.fReserved2,
+                               ("SUP_IOCTL_GET_HWVIRT_MSRS: fReserved0=%d fReserved1=%d fReserved2=%d\n", pReq->u.In.fReserved0,
+                                pReq->u.In.fReserved1, pReq->u.In.fReserved2));
+
+            /* execute */
+            pReq->Hdr.rc = SUPR0GetHwvirtMsrs(&pReq->u.Out.HwvirtMsrs, 0 /* fCaps */, pReq->u.In.fForce);
             if (RT_FAILURE(pReq->Hdr.rc))
                 pReq->Hdr.cbOut = sizeof(pReq->Hdr);
             return 0;
@@ -4541,6 +4563,121 @@ SUPR0DECL(int) SUPR0QueryUcodeRev(PSUPDRVSESSION pSession, uint32_t *puRevision)
      * Call common worker.
      */
     return supdrvQueryUcodeRev(puRevision);
+}
+
+
+/**
+ * Gets hardware-virtualization MSRs of the calling CPU.
+ *
+ * @returns VBox status code.
+ * @param   pMsrs       Where to store the hardware-virtualization MSRs.
+ * @param   fCaps       Hardware virtualization capabilities (SUPVTCAPS_XXX). Pass 0
+ *                      to explicitly check for the presence of VT-x/AMD-V before
+ *                      querying MSRs.
+ * @param   fForce      Force querying of MSRs from the hardware.
+ */
+SUPR0DECL(int) SUPR0GetHwvirtMsrs(PSUPHWVIRTMSRS pMsrs, uint32_t fCaps, bool fForce)
+{
+    int rc;
+    RTTHREADPREEMPTSTATE PreemptState = RTTHREADPREEMPTSTATE_INITIALIZER;
+
+    /*
+     * Input validation.
+     */
+    AssertPtrReturn(pMsrs, VERR_INVALID_POINTER);
+
+    /*
+     * Disable preemption so we make sure we don't migrate CPUs and because
+     * we access global data.
+     */
+    RTThreadPreemptDisable(&PreemptState);
+
+    /*
+     * Querying MSRs from hardware can be expensive (exponentially more so
+     * in a nested-virtualization scenario if they happen to cause VM-exits).
+     *
+     * So, if the caller does not force re-querying of MSRs and we have them
+     * already cached, simply copy the cached MSRs and we're done.
+     */
+    if (   !fForce
+        && g_fHwvirtMsrsCached)
+    {
+        memcpy(pMsrs, &g_HwvirtMsrs, sizeof(*pMsrs));
+        RTThreadPreemptRestore(&PreemptState);
+        return VINF_SUCCESS;
+    }
+
+    /*
+     * Query the MSRs from hardware, since it's either the first call since
+     * driver load or the caller has forced re-querying of the MSRs.
+     */
+    RT_ZERO(*pMsrs);
+
+    /* If the caller claims VT-x/AMD-V is supported, don't need to recheck it. */
+    if (!(fCaps & (SUPVTCAPS_VT_X | SUPVTCAPS_AMD_V)))
+        rc = SUPR0GetVTSupport(&fCaps);
+    else
+        rc = VINF_SUCCESS;
+    if (RT_SUCCESS(rc))
+    {
+        if (fCaps & SUPVTCAPS_VT_X)
+        {
+            g_HwvirtMsrs.u.vmx.u64FeatCtrl  = ASMRdMsr(MSR_IA32_FEATURE_CONTROL);
+            g_HwvirtMsrs.u.vmx.u64Basic     = ASMRdMsr(MSR_IA32_VMX_BASIC);
+            g_HwvirtMsrs.u.vmx.PinCtls.u    = ASMRdMsr(MSR_IA32_VMX_PINBASED_CTLS);
+            g_HwvirtMsrs.u.vmx.ProcCtls.u   = ASMRdMsr(MSR_IA32_VMX_PROCBASED_CTLS);
+            g_HwvirtMsrs.u.vmx.ExitCtls.u   = ASMRdMsr(MSR_IA32_VMX_EXIT_CTLS);
+            g_HwvirtMsrs.u.vmx.EntryCtls.u  = ASMRdMsr(MSR_IA32_VMX_ENTRY_CTLS);
+            g_HwvirtMsrs.u.vmx.u64Misc      = ASMRdMsr(MSR_IA32_VMX_MISC);
+            g_HwvirtMsrs.u.vmx.u64Cr0Fixed0 = ASMRdMsr(MSR_IA32_VMX_CR0_FIXED0);
+            g_HwvirtMsrs.u.vmx.u64Cr0Fixed1 = ASMRdMsr(MSR_IA32_VMX_CR0_FIXED1);
+            g_HwvirtMsrs.u.vmx.u64Cr4Fixed0 = ASMRdMsr(MSR_IA32_VMX_CR4_FIXED0);
+            g_HwvirtMsrs.u.vmx.u64Cr4Fixed1 = ASMRdMsr(MSR_IA32_VMX_CR4_FIXED1);
+            g_HwvirtMsrs.u.vmx.u64VmcsEnum  = ASMRdMsr(MSR_IA32_VMX_VMCS_ENUM);
+
+            if (RT_BF_GET(g_HwvirtMsrs.u.vmx.u64Basic, VMX_BF_BASIC_TRUE_CTLS))
+            {
+                g_HwvirtMsrs.u.vmx.TruePinCtls.u   = ASMRdMsr(MSR_IA32_VMX_TRUE_PINBASED_CTLS);
+                g_HwvirtMsrs.u.vmx.TrueProcCtls.u  = ASMRdMsr(MSR_IA32_VMX_TRUE_PROCBASED_CTLS);
+                g_HwvirtMsrs.u.vmx.TrueEntryCtls.u = ASMRdMsr(MSR_IA32_VMX_TRUE_ENTRY_CTLS);
+                g_HwvirtMsrs.u.vmx.TrueExitCtls.u  = ASMRdMsr(MSR_IA32_VMX_TRUE_EXIT_CTLS);
+            }
+
+            uint32_t const fProcCtlsAllowed1 = g_HwvirtMsrs.u.vmx.ProcCtls.n.allowed1;
+            if (fProcCtlsAllowed1 & VMX_PROC_CTLS_USE_SECONDARY_CTLS)
+            {
+                g_HwvirtMsrs.u.vmx.ProcCtls2.u = ASMRdMsr(MSR_IA32_VMX_PROCBASED_CTLS2);
+
+                uint32_t const fProcCtls2Allowed1 = g_HwvirtMsrs.u.vmx.ProcCtls2.n.allowed1;
+                if (fProcCtls2Allowed1 & (VMX_PROC_CTLS2_EPT | VMX_PROC_CTLS2_VPID))
+                    g_HwvirtMsrs.u.vmx.u64EptVpidCaps = ASMRdMsr(MSR_IA32_VMX_EPT_VPID_CAP);
+
+                if (fProcCtls2Allowed1 & VMX_PROC_CTLS2_VMFUNC)
+                    g_HwvirtMsrs.u.vmx.u64VmFunc = ASMRdMsr(MSR_IA32_VMX_VMFUNC);
+            }
+            g_fHwvirtMsrsCached = true;
+        }
+        else if (fCaps & SUPVTCAPS_AMD_V)
+        {
+            g_HwvirtMsrs.u.svm.u64MsrHwcr = ASMRdMsr(MSR_K8_HWCR);
+            g_fHwvirtMsrsCached = true;
+        }
+        else
+        {
+            RTThreadPreemptRestore(&PreemptState);
+            AssertMsgFailedReturn(("SUPR0GetVTSupport returns success but neither VT-x nor AMD-V reported!\n"),
+                                  VERR_INTERNAL_ERROR_2);
+        }
+
+        /*
+         * We have successfully populated the cache, copy the MSRs to the caller.
+         */
+        memcpy(pMsrs, &g_HwvirtMsrs, sizeof(*pMsrs));
+    }
+
+    RTThreadPreemptRestore(&PreemptState);
+
+    return rc;
 }
 
 
