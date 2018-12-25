@@ -22,7 +22,7 @@
 #define LOG_GROUP LOG_GROUP_DIS
 #include <VBox/dis.h>
 #include <VBox/disopcode.h>
-#include <VBox/err.h>
+#include <iprt/errcore.h>
 #include <iprt/assert.h>
 #include <iprt/string.h>
 #include "DisasmInternal.h"

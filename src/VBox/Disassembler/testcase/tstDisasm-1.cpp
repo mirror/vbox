@@ -23,7 +23,7 @@
 #include <iprt/test.h>
 #include <iprt/ctype.h>
 #include <iprt/string.h>
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 #include <iprt/time.h>
 
 
