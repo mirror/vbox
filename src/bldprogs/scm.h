@@ -149,6 +149,50 @@ typedef FNSCMCOMMENTENUMERATOR *PFNSCMCOMMENTENUMERATOR;
 
 int ScmEnumerateComments(PSCMSTREAM pIn, SCMCOMMENTSTYLE enmCommentStyle, PFNSCMCOMMENTENUMERATOR pfnCallback, void *pvUser);
 
+
+/**
+ * Include directive type.
+ */
+typedef enum SCMINCLUDEDIR
+{
+    kScmIncludeDir_Invalid = 0, /**< Constomary invalid enum value. */
+    kScmIncludeDir_Quoted,      /**< \#include \"filename.h\" */
+    kScmIncludeDir_Bracketed,   /**< \#include \<filename.h\> */
+    kScmIncludeDir_Macro,       /**< \#include MACRO_H */
+    kScmIncludeDir_End          /**< End of valid enum values. */
+} SCMINCLUDEDIR;
+
+SCMINCLUDEDIR ScmMaybeParseCIncludeLine(PSCMRWSTATE pState, const char *pchLine, size_t cchLine,
+                                        const char **ppchFilename, size_t *pcchFilename);
+
+/**
+ * Checks if the given character is a valid C identifier lead character.
+ *
+ * @returns true / false.
+ * @param   ch                  The character to inspect.
+ * @sa      vbcppIsCIdentifierLeadChar
+ */
+DECLINLINE(bool) ScmIsCIdentifierLeadChar(char ch)
+{
+    return RT_C_IS_ALPHA(ch)
+        || ch == '_';
+}
+
+
+/**
+ * Checks if the given character is a valid C identifier character.
+ *
+ * @returns true / false.
+ * @param   ch                  The character to inspect.
+ * @sa      vbcppIsCIdentifierChar
+ */
+DECLINLINE(bool) scmIsCIdentifierChar(char ch)
+{
+    return RT_C_IS_ALNUM(ch)
+        || ch == '_';
+}
+
+
 /** @} */
 
 
@@ -214,6 +258,7 @@ FNSCMREWRITER rewrite_Makefile_kup;
 FNSCMREWRITER rewrite_Makefile_kmk;
 FNSCMREWRITER rewrite_FixFlowerBoxMarkers;
 FNSCMREWRITER rewrite_Fix_C_and_CPP_Todos;
+FNSCMREWRITER rewrite_Fix_Err_H;
 FNSCMREWRITER rewrite_C_and_CPP;
 
 /**
@@ -287,6 +332,8 @@ typedef struct SCMSETTINGSBASE
 
     /** Whether to fix C/C++ todos. */
     bool            fFixTodos;
+    /** Whether to fix C/C++ err.h/errcore.h usage. */
+    bool            fFixErrH;
 
     /** Update the copyright year. */
     bool            fUpdateCopyrightYear;

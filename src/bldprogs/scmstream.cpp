@@ -1279,7 +1279,7 @@ int ScmStreamCopyLines(PSCMSTREAM pDst, PSCMSTREAM pSrc, size_t cLines)
         size_t      cchLine;
         const char *pchLine = ScmStreamGetLine(pSrc, &cchLine, &enmEol);
         if (!pchLine)
-            return pDst->rc = (RT_FAILURE(pSrc->rc) ? pSrc->rc : VERR_EOF);
+            return pDst->rc = RT_FAILURE(pSrc->rc) ? pSrc->rc : VERR_EOF;
 
         int rc = ScmStreamPutLine(pDst, pchLine, cchLine, enmEol);
         if (RT_FAILURE(rc))

@@ -538,6 +538,25 @@ DECLINLINE(bool) isBlankLine(const char *pchLine, size_t cchLine)
 
 
 /**
+ * Checks if there are @a cch blanks at @a pch.
+ *
+ * @returns true if span of @a cch blanks, false if not.
+ * @param   pch                 The start of the span to check.
+ * @param   cch                 The length of the span.
+ */
+DECLINLINE(bool) isSpanOfBlanks(const char *pch, size_t cch)
+{
+    while (cch-- > 0)
+    {
+        char const ch = *pch++;
+        if (!RT_C_IS_BLANK(ch))
+            return false;
+    }
+    return true;
+}
+
+
+/**
  * Strip trailing blanks (space & tab).
  *
  * @returns True if modified, false if not.
@@ -2298,9 +2317,10 @@ static size_t findTodo(char const *pchLine, size_t cchLine)
 
 
 /**
- * Flower box marker comments in C and C++ code.
+ * Doxygen todos in C and C++ code.
  *
  * @returns true if modifications were made, false if not.
+ * @param   pState              The rewriter state.
  * @param   pIn                 The input stream.
  * @param   pOut                The output stream.
  * @param   pSettings           The settings.
@@ -2384,6 +2404,345 @@ bool rewrite_Fix_C_and_CPP_Todos(PSCMRWSTATE pState, PSCMSTREAM pIn, PSCMSTREAM 
     return cChanges != 0;
 }
 
+
+
+/**
+ * Tries to parse a C/C++ preprocessor include directive.
+ *
+ * This is resonably forgiving and expects sane input.
+ *
+ * @retval  kScmIncludeDir_Invalid if not a valid include directive.
+ * @retval  kScmIncludeDir_Quoted
+ * @retval  kScmIncludeDir_Bracketed
+ * @retval  kScmIncludeDir_Macro
+ *
+ * @param   pState          The rewriter state (for repording malformed
+ *                          directives).
+ * @param   pchLine         The line to try parse as an include statement.
+ * @param   cchLine         The line length.
+ * @param   ppchFilename    Where to return the pointer to the filename part.
+ * @param   pcchFilename    Where to return the length of the filename.
+ */
+SCMINCLUDEDIR ScmMaybeParseCIncludeLine(PSCMRWSTATE pState, const char *pchLine, size_t cchLine,
+                                        const char **ppchFilename, size_t *pcchFilename)
+{
+    /* Skip leading spaces: */
+    while (cchLine > 0 && RT_C_IS_BLANK(*pchLine))
+        cchLine--, pchLine++;
+
+    /* Check for '#': */
+    if (cchLine > 0 && *pchLine == '#')
+    {
+        cchLine--;
+        pchLine++;
+
+        /* Skip spaces after '#' (optional): */
+        while (cchLine > 0 && RT_C_IS_BLANK(*pchLine))
+            cchLine--, pchLine++;
+
+        /* Check for 'include': */
+        static char const s_szInclude[] = "include";
+        if (   cchLine >= sizeof(s_szInclude)
+            && memcmp(pchLine, RT_STR_TUPLE(s_szInclude)) == 0)
+        {
+            cchLine -= sizeof(s_szInclude) - 1;
+            pchLine += sizeof(s_szInclude) - 1;
+
+            /* Skip spaces after 'include' word (optional): */
+            while (cchLine > 0 && RT_C_IS_BLANK(*pchLine))
+                cchLine--, pchLine++;
+            if (cchLine > 0)
+            {
+                /* Quoted or bracketed? */
+                char const chFirst = *pchLine;
+                if (chFirst == '"' || chFirst == '<')
+                {
+                    cchLine--;
+                    pchLine++;
+                    const char *pchEnd = (const char *)memchr(pchLine, chFirst == '"' ? '"' : '>', cchLine);
+                    if (pchEnd)
+                    {
+                        if (ppchFilename)
+                            *ppchFilename = pchLine;
+                        if (pcchFilename)
+                            *pcchFilename = pchEnd - pchLine;
+                        return chFirst == '"' ? kScmIncludeDir_Quoted : kScmIncludeDir_Bracketed;
+                    }
+                    ScmError(pState,  VERR_PARSE_ERROR, "Unbalanced #include filename %s: %.*s\n",
+                             chFirst == '"' ? "quotes" : "brackets" , cchLine, pchLine);
+                }
+                /* C prepreprocessor macro? */
+                else if (ScmIsCIdentifierLeadChar(chFirst))
+                {
+                    size_t cchFilename = 1;
+                    while (   cchFilename < cchLine
+                           && scmIsCIdentifierChar(pchLine[cchFilename]))
+                        cchFilename++;
+                    if (ppchFilename)
+                        *ppchFilename = pchLine;
+                    if (pcchFilename)
+                        *pcchFilename = cchFilename;
+                    return kScmIncludeDir_Macro;
+                }
+                else
+                    ScmError(pState,  VERR_PARSE_ERROR, "Malformed #include filename part: %.*s\n", cchLine, pchLine);
+            }
+            else
+                ScmError(pState,  VERR_PARSE_ERROR, "Missing #include filename!\n");
+        }
+    }
+
+    if (ppchFilename)
+        *ppchFilename = NULL;
+    if (pcchFilename)
+        *pcchFilename = 0;
+    return kScmIncludeDir_Invalid;
+}
+
+
+/**
+ * Fix err.h/errcore.h usage.
+ *
+ * @returns true if modifications were made, false if not.
+ * @param   pIn                 The input stream.
+ * @param   pOut                The output stream.
+ * @param   pSettings           The settings.
+ */
+bool rewrite_Fix_Err_H(PSCMRWSTATE pState, PSCMSTREAM pIn, PSCMSTREAM pOut, PCSCMSETTINGSBASE pSettings)
+{
+    if (!pSettings->fFixErrH)
+        return false;
+
+    static struct
+    {
+        const char *pszHeader;
+        unsigned    cchHeader;
+        int         iLevel;
+    } const s_aHeaders[]
+    {
+        { RT_STR_TUPLE("iprt/errcore.h"), 1 },
+        { RT_STR_TUPLE("iprt/err.h"),     2 },
+        { RT_STR_TUPLE("VBox/err.h"),     3 },
+    };
+    static RTSTRTUPLE const g_aLevel1Statuses[] =  /* Note! Keep in sync with errcore.h content! */
+    {
+        RT_STR_TUPLE("VINF_SUCCESS"),
+        RT_STR_TUPLE("VERR_GENERAL_FAILURE"),
+        RT_STR_TUPLE("VERR_INVALID_PARAMETER"),
+        RT_STR_TUPLE("VWRN_INVALID_PARAMETER"),
+        RT_STR_TUPLE("VERR_INVALID_MAGIC"),
+        RT_STR_TUPLE("VWRN_INVALID_MAGIC"),
+        RT_STR_TUPLE("VERR_INVALID_HANDLE"),
+        RT_STR_TUPLE("VWRN_INVALID_HANDLE"),
+        RT_STR_TUPLE("VERR_INVALID_POINTER"),
+        RT_STR_TUPLE("VERR_NO_MEMORY"),
+        RT_STR_TUPLE("VERR_PERMISSION_DENIED"),
+        RT_STR_TUPLE("VINF_PERMISSION_DENIED"),
+        RT_STR_TUPLE("VERR_VERSION_MISMATCH"),
+        RT_STR_TUPLE("VERR_NOT_IMPLEMENTED"),
+        RT_STR_TUPLE("VERR_INVALID_FLAGS"),
+        RT_STR_TUPLE("VERR_WRONG_ORDER"),
+        RT_STR_TUPLE("VERR_INVALID_FUNCTION"),
+        RT_STR_TUPLE("VERR_NOT_SUPPORTED"),
+        RT_STR_TUPLE("VINF_NOT_SUPPORTED"),
+        RT_STR_TUPLE("VERR_ACCESS_DENIED"),
+        RT_STR_TUPLE("VERR_INTERRUPTED"),
+        RT_STR_TUPLE("VINF_INTERRUPTED"),
+        RT_STR_TUPLE("VERR_TIMEOUT"),
+        RT_STR_TUPLE("VINF_TIMEOUT"),
+        RT_STR_TUPLE("VERR_BUFFER_OVERFLOW"),
+        RT_STR_TUPLE("VINF_BUFFER_OVERFLOW"),
+        RT_STR_TUPLE("VERR_TOO_MUCH_DATA"),
+        RT_STR_TUPLE("VERR_TRY_AGAIN"),
+        RT_STR_TUPLE("VINF_TRY_AGAIN"),
+        RT_STR_TUPLE("VERR_PARSE_ERROR"),
+        RT_STR_TUPLE("VERR_OUT_OF_RANGE"),
+        RT_STR_TUPLE("VERR_NUMBER_TOO_BIG"),
+        RT_STR_TUPLE("VWRN_NUMBER_TOO_BIG"),
+        RT_STR_TUPLE("VERR_CANCELLED"),
+        RT_STR_TUPLE("VERR_TRAILING_CHARS"),
+        RT_STR_TUPLE("VWRN_TRAILING_CHARS"),
+        RT_STR_TUPLE("VERR_TRAILING_SPACES"),
+        RT_STR_TUPLE("VWRN_TRAILING_SPACES"),
+        RT_STR_TUPLE("VERR_NOT_FOUND"),
+        RT_STR_TUPLE("VWRN_NOT_FOUND"),
+        RT_STR_TUPLE("VERR_INVALID_STATE"),
+        RT_STR_TUPLE("VWRN_INVALID_STATE"),
+        RT_STR_TUPLE("VERR_OUT_OF_RESOURCES"),
+        RT_STR_TUPLE("VWRN_OUT_OF_RESOURCES"),
+        RT_STR_TUPLE("VERR_END_OF_STRING"),
+        RT_STR_TUPLE("VERR_CALLBACK_RETURN"),
+        RT_STR_TUPLE("VINF_CALLBACK_RETURN"),
+        RT_STR_TUPLE("VERR_DUPLICATE"),
+        RT_STR_TUPLE("VERR_MISSING"),
+        RT_STR_TUPLE("VERR_BUFFER_UNDERFLOW"),
+        RT_STR_TUPLE("VINF_BUFFER_UNDERFLOW"),
+        RT_STR_TUPLE("VERR_NOT_AVAILABLE"),
+        RT_STR_TUPLE("VERR_MISMATCH"),
+        RT_STR_TUPLE("VERR_WRONG_TYPE"),
+        RT_STR_TUPLE("VWRN_WRONG_TYPE"),
+        RT_STR_TUPLE("VERR_WRONG_PARAMETER_COUNT"),
+        RT_STR_TUPLE("VERR_WRONG_PARAMETER_TYPE"),
+        RT_STR_TUPLE("VERR_INVALID_CLIENT_ID"),
+        RT_STR_TUPLE("VERR_INVALID_SESSION_ID"),
+        RT_STR_TUPLE("VERR_INCOMPATIBLE_CONFIG"),
+        RT_STR_TUPLE("VERR_INTERNAL_ERROR"),
+        RT_STR_TUPLE("VINF_GETOPT_NOT_OPTION"),
+        RT_STR_TUPLE("VERR_GETOPT_UNKNOWN_OPTION"),
+    };
+
+    /*
+     * First pass: Scout #include err.h/errcore.h locations and usage.
+     *
+     * Note! This isn't entirely optimal since it's also parsing comments and
+     *       strings, not just code.  However it does a decent job for now.
+     */
+    int         iIncludeLevel = 0;
+    int         iUsageLevel   = 0;
+    uint32_t    iLine         = 0;
+    SCMEOL      enmEol;
+    size_t      cchLine;
+    const char *pchLine;
+    while ((pchLine = ScmStreamGetLine(pIn, &cchLine, &enmEol)) != NULL)
+    {
+        iLine++;
+        if (cchLine < 6)
+            continue;
+
+        /*
+         * Look for #includes.
+         */
+        const char *pchHash = (const char *)memchr(pchLine, '#', cchLine);
+        if (    pchHash
+            && isSpanOfBlanks(pchLine, pchHash - pchLine))
+        {
+            const char     *pchFilename;
+            size_t          cchFilename;
+            SCMINCLUDEDIR   enmIncDir = ScmMaybeParseCIncludeLine(pState, pchLine, cchLine, &pchFilename, &cchFilename);
+            if (   enmIncDir == kScmIncludeDir_Bracketed
+                || enmIncDir == kScmIncludeDir_Quoted)
+            {
+                unsigned i = RT_ELEMENTS(s_aHeaders);
+                while (i-- > 0)
+                    if (   s_aHeaders[i].cchHeader == cchFilename
+                        && RTStrNICmpAscii(pchFilename, s_aHeaders[i].pszHeader, cchFilename) == 0)
+                    {
+                        if (iIncludeLevel < s_aHeaders[i].iLevel)
+                            iIncludeLevel = s_aHeaders[i].iLevel;
+                        break;
+                    }
+
+                /* Special hack for error info. */
+                if (cchFilename == sizeof("errmsgdata.h") - 1 && memcmp(pchFilename, RT_STR_TUPLE("errmsgdata.h")) == 0)
+                    iUsageLevel = 3;
+                continue;
+            }
+        }
+        /*
+         * Look for VERR_, VWRN_, VINF_ prefixed identifiers in the current line.
+         */
+        const char *pchHit = (const char *)memchr(pchLine, 'V', cchLine);
+        if (pchHit)
+        {
+            const char *pchLeft = pchLine;
+            size_t      cchLeft = cchLine;
+            do
+            {
+                size_t cchLeftHit = &pchLeft[cchLeft] - pchHit;
+                if (cchLeftHit < 6)
+                    break;
+                if (    pchHit[4] == '_'
+                    && (   pchHit == pchLine
+                        || !scmIsCIdentifierChar(pchHit[-1]))
+                    && (   (pchHit[1] == 'E' && pchHit[2] == 'R' && pchHit[3] == 'R')
+                        || (pchHit[1] == 'W' && pchHit[2] == 'R' && pchHit[3] == 'N')
+                        || (pchHit[1] == 'I' && pchHit[2] == 'N' && pchHit[3] == 'F') ) )
+                {
+                    size_t cchIdentifier = 5;
+                    while (cchIdentifier < cchLeftHit && scmIsCIdentifierChar(pchHit[cchIdentifier]))
+                        cchIdentifier++;
+                    ScmVerbose(pState, 4, "--- status code at %u col %zu: %.*s\n",
+                               iLine, pchHit - pchLine, cchIdentifier, pchHit);
+
+                    if (iUsageLevel <= 1)
+                    {
+                        iUsageLevel = 2;
+                        for (unsigned i = 0; i < RT_ELEMENTS(g_aLevel1Statuses); i++)
+                            if (   cchIdentifier == g_aLevel1Statuses[i].cch
+                                && memcmp(pchHit, g_aLevel1Statuses[i].psz, cchIdentifier) == 0)
+                            {
+                                iUsageLevel = 1;
+                                break;
+                            }
+                    }
+
+                    pchLeft = pchHit     + cchIdentifier;
+                    cchLeft = cchLeftHit - cchIdentifier;
+                }
+                else
+                {
+                    pchLeft = pchHit     + 1;
+                    cchLeft = cchLeftHit - 1;
+                }
+                pchHit  = (const char *)memchr(pchLeft, 'V', cchLeft);
+            } while (pchHit != NULL);
+        }
+    }
+    ScmVerbose(pState, 3, "--- iIncludeLevel=%d iUsageLevel=%d\n", iIncludeLevel, iUsageLevel);
+
+    /*
+     * Second pass: Change err.h to errcore.h if we detected a need for change.
+     */
+    if (iIncludeLevel <= iUsageLevel)
+        return false;
+
+    unsigned cChanges = 0;
+    ScmStreamRewindForReading(pIn);
+    while ((pchLine = ScmStreamGetLine(pIn, &cchLine, &enmEol)) != NULL)
+    {
+        /*
+         * Look for #includes to modify.
+         */
+        if (cchLine >= 6)
+        {
+            const char *pchHash = (const char *)memchr(pchLine, '#', cchLine);
+            if (    pchHash
+                && isSpanOfBlanks(pchLine, pchHash - pchLine))
+            {
+                const char     *pchFilename;
+                size_t          cchFilename;
+                SCMINCLUDEDIR   enmIncDir = ScmMaybeParseCIncludeLine(pState, pchLine, cchLine, &pchFilename, &cchFilename);
+                if (   enmIncDir == kScmIncludeDir_Bracketed
+                    || enmIncDir == kScmIncludeDir_Quoted)
+                {
+                    unsigned i = RT_ELEMENTS(s_aHeaders);
+                    while (i-- > 0)
+                        if (   s_aHeaders[i].cchHeader == cchFilename
+                            && RTStrNICmpAscii(pchFilename, s_aHeaders[i].pszHeader, cchFilename) == 0)
+                        {
+                            ScmStreamWrite(pOut, pchLine, pchFilename - pchLine - 1);
+                            ScmStreamWrite(pOut, RT_STR_TUPLE("<iprt/errcore.h>"));
+                            size_t cchTrailing = &pchLine[cchLine] - &pchFilename[cchFilename + 1];
+                            if (cchTrailing > 0)
+                                ScmStreamWrite(pOut, &pchFilename[cchFilename + 1], cchTrailing);
+                            ScmStreamPutEol(pOut, enmEol);
+                            cChanges++;
+                            pchLine = NULL;
+                            break;
+                        }
+                    if (!pchLine)
+                        continue;
+                }
+            }
+        }
+
+        int rc = ScmStreamPutLine(pOut, pchLine, cchLine, enmEol);
+        if (RT_FAILURE(rc))
+            return false;
+    }
+    ScmVerbose(pState, 2, " * Converted %zu err.h/errcore.h include statements.\n", cChanges);
+    return true;
+}
 
 /**
  * Rewrite a C/C++ source or header file.
