@@ -32,6 +32,7 @@
 
 #include "vfsmod.h"
 #include <iprt/asm.h>
+#include <iprt/err.h>
 #include <linux/nfs_fs.h>
 #include <linux/vfs.h>
 

@@ -30,6 +30,7 @@
  */
 
 #include "vfsmod.h"
+#include <iprt/err.h>
 
 /**
  * Open a directory. Read the complete content into a buffer.
