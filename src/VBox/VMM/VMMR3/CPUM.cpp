@@ -1728,6 +1728,12 @@ void cpumR3InitVmxGuestFeaturesAndMsrs(PVM pVM, PCVMXMSRS pHostVmxMsrs, PVMXMSRS
 }
 
 
+/**
+ * Gets the host hardware-virtualization MSRs.
+ *
+ * @returns VBox status code.
+ * @param   pMsrs       Where to store the MSRs.
+ */
 static int cpumR3GetHostHwvirtMsrs(PCPUMMSRS pMsrs)
 {
     Assert(pMsrs);
