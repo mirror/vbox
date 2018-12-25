@@ -101,6 +101,9 @@
 # include <VBox/vmm/em.h>
 # include <VBox/vmm/hm_svm.h>
 #endif
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
+# include <VBox/vmm/hmvmxinline.h>
+#endif
 #include <VBox/vmm/tm.h>
 #include <VBox/vmm/dbgf.h>
 #include <VBox/vmm/dbgftrace.h>
