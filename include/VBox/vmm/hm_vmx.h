@@ -3595,7 +3595,8 @@ typedef struct
     RTUINT64U       au64Reserved4[32];
     /** @} */
 
-    /** @name Natural-width Read-only Data fields. */
+    /** @name Natural-width Read-only Data fields
+     * @{ */
     /** 0x610 - Exit qualification. */
     RTUINT64U       u64RoExitQual;
     /** 0x618 - I/O RCX. */
