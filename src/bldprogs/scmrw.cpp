@@ -2698,7 +2698,8 @@ bool rewrite_Fix_Err_H(PSCMRWSTATE pState, PSCMSTREAM pIn, PSCMSTREAM pOut, PCSC
     /*
      * Second pass: Change err.h to errcore.h if we detected a need for change.
      */
-    if (iIncludeLevel <= iUsageLevel)
+    if (   iIncludeLevel <= iUsageLevel
+        || iIncludeLevel <= 1 /* we cannot safely eliminate errcore.h includes atm. */)
         return false;
 
     unsigned cChanges = 0;
