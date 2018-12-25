@@ -50,7 +50,7 @@ typedef struct VRDEImage *HVRDEIMAGE;
  */
 typedef struct VRDEIMAGEFORMATBITMAP
 {
-    uint32_t u32BytesPerPixel; //@todo
+    uint32_t u32BytesPerPixel; /** @todo impl */
 } VRDEIMAGEFORMATBITMAP;
 
 typedef struct VRDEIMAGEBITMAP
