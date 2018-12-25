@@ -38,6 +38,7 @@
 #include <VBox/log.h>
 #include <iprt/asm.h>
 #include <iprt/assert.h>
+#include <iprt/err.h>
 #include <iprt/mem.h>
 
 

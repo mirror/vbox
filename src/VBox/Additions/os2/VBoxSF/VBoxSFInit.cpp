@@ -39,6 +39,7 @@
 #include <VBox/VBoxGuest.h>
 #include <VBox/log.h>
 #include <iprt/assert.h>
+#include <iprt/errcore.h>
 #include <iprt/initterm.h>
 
 
