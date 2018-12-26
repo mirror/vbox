@@ -304,6 +304,7 @@ if (yypcb->pcb_token != 0) {
 			if (isdigit(v[0]) || v[0] == '-' || v[0] == '+') {
 #ifdef VBOX
 				int rc;
+				uint64_t uTmp = 0;
 #endif
 				if (isdigit(v[0]))
 					yyintprefix = 0;
@@ -313,20 +314,15 @@ if (yypcb->pcb_token != 0) {
 #ifndef VBOX
 				errno = 0;
 				yylval.l_int = strtoull(v, &p, 0);
-#else
- 				{
-                                   uint64_t uTmp = 0;
-				    rc = RTStrToUInt64Ex(v, &p, 0, &uTmp);
-				    yylval.l_int = uTmp;
- 				}
-#endif
 				(void) strncpy(yyintsuffix, p,
 				    sizeof (yyintsuffix));
 				yyintdecimal = *v != '0';
-
-#ifndef VBOX
 				if (errno == ERANGE)
 #else
+				rc = RTStrToUInt64Ex(v, &p, 0, &uTmp);
+				yylval.l_int = uTmp;
+				RTStrCopy(yyintsuffix, sizeof(yyintsuffix), p);
+				yyintdecimal = *v != '0';
 				if (rc == VWRN_NUMBER_TOO_BIG || rc == VWRN_NEGATIVE_UNSIGNED)
 #endif
 					xyerror(D_MACRO_OFLOW, "macro argument"
@@ -406,18 +402,17 @@ if (yypcb->pcb_token != 0) {
 #ifndef VBOX
 			errno = 0;
 			yylval.l_int = strtoull(yytext, &p, 0);
+			yyintprefix = 0;
+			(void) strncpy(yyintsuffix, p, sizeof (yyintsuffix));
+			yyintdecimal = yytext[0] != '0';
+			if (errno == ERANGE)
 #else
 			uint64_t uTmp = 0;
 			int rc = RTStrToUInt64Ex(yytext, &p, 0, &uTmp);
 			yylval.l_int = uTmp;
-#endif
 			yyintprefix = 0;
-			(void) strncpy(yyintsuffix, p, sizeof (yyintsuffix));
+			RTStrCopy(yyintsuffix, sizeof(yyintsuffix), p);
 			yyintdecimal = yytext[0] != '0';
-
-#ifndef VBOX
-			if (errno == ERANGE)
-#else
 			if (rc == VWRN_NUMBER_TOO_BIG || rc == VWRN_NEGATIVE_UNSIGNED)
 #endif
 				xyerror(D_INT_OFLOW, "constant %s results in "
