@@ -762,6 +762,8 @@ typedef struct HMCPU
             uint32_t                    u32Cr4Mask;
             /** Current exception bitmap. */
             uint32_t                    u32XcptBitmap;
+            /** Padding. */
+            uint32_t                    au32Alignment0[2];
 
             /** Physical address of the VM control structure (VMCS). */
             RTHCPHYS                    HCPhysVmcs;
@@ -770,10 +772,10 @@ typedef struct HMCPU
             /** Virtual address of the VM control structure (VMCS). */
             R0PTRTYPE(void *)           pvVmcs;
 
-            /** Physical address of the current EPTP. */
-            RTHCPHYS                    HCPhysEPTP;
             /** Physical address of the virtual APIC page for TPR caching. */
             RTHCPHYS                    HCPhysVirtApic;
+            /** Padding. */
+            R0PTRTYPE(void *)           pvAlignment0;
             /** Virtual address of the virtual APIC page for TPR caching. */
             R0PTRTYPE(uint8_t *)        pbVirtApic;
 
@@ -800,6 +802,9 @@ typedef struct HMCPU
             RTR0MEMOBJ                  hMemObjHostMsr;
             /** Virtual address of the VM-exit MSR-load area (used for host MSRs). */
             R0PTRTYPE(void *)           pvHostMsr;
+
+            /** Physical address of the current EPTP. */
+            RTHCPHYS                    HCPhysEPTP;
 
             /** Number of guest/host MSR pairs in the auto-load/store area. */
             uint32_t                    cMsrs;
