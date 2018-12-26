@@ -3091,13 +3091,13 @@ VMMR3_INT_DECL(void) HMR3CheckError(PVM pVM, int iStatusCode)
                 LogRel(("HM: CPU[%u] Instruction error    %#x\n", i, pVCpu->hm.s.vmx.LastError.u32InstrError));
                 LogRel(("HM: CPU[%u] Exit reason          %#x\n", i, pVCpu->hm.s.vmx.LastError.u32ExitReason));
 
-                if (   pVM->aCpus[i].hm.s.vmx.LastError.u32InstrError == VMXINSTRERR_VMLAUNCH_NON_CLEAR_VMCS
-                    || pVM->aCpus[i].hm.s.vmx.LastError.u32InstrError == VMXINSTRERR_VMRESUME_NON_LAUNCHED_VMCS)
+                if (   pVCpu->hm.s.vmx.LastError.u32InstrError == VMXINSTRERR_VMLAUNCH_NON_CLEAR_VMCS
+                    || pVCpu->hm.s.vmx.LastError.u32InstrError == VMXINSTRERR_VMRESUME_NON_LAUNCHED_VMCS)
                 {
                     LogRel(("HM: CPU[%u] Entered Host Cpu     %u\n",  i, pVCpu->hm.s.vmx.LastError.idEnteredCpu));
                     LogRel(("HM: CPU[%u] Current Host Cpu     %u\n",  i, pVCpu->hm.s.vmx.LastError.idCurrentCpu));
                 }
-                else if (pVM->aCpus[i].hm.s.vmx.LastError.u32InstrError == VMXINSTRERR_VMENTRY_INVALID_CTLS)
+                else if (pVCpu->hm.s.vmx.LastError.u32InstrError == VMXINSTRERR_VMENTRY_INVALID_CTLS)
                 {
                     LogRel(("HM: CPU[%u] PinCtls          %#RX32\n", i, pVCpu->hm.s.vmx.u32PinCtls));
                     {

@@ -518,7 +518,7 @@ static void hmR0SvmLogState(PVMCPU pVCpu, PCSVMVMCB pVmcb, const char *pszPrefix
  * Sets up and activates AMD-V on the current CPU.
  *
  * @returns VBox status code.
- * @param   pHostCpu        Pointer to the CPU info struct.
+ * @param   pHostCpu        The HM physical-CPU structure.
  * @param   pVM             The cross context VM structure. Can be
  *                          NULL after a resume!
  * @param   pvCpuPage       Pointer to the global CPU page.
@@ -527,7 +527,7 @@ static void hmR0SvmLogState(PVMCPU pVCpu, PCSVMVMCB pVmcb, const char *pszPrefix
  * @param   pHwvirtMsrs     Pointer to the hardware-virtualization MSRs (currently
  *                          unused).
  */
-VMMR0DECL(int) SVMR0EnableCpu(PHMGLOBALCPUINFO pHostCpu, PVM pVM, void *pvCpuPage, RTHCPHYS HCPhysCpuPage, bool fEnabledByHost,
+VMMR0DECL(int) SVMR0EnableCpu(PHMPHYSCPU pHostCpu, PVM pVM, void *pvCpuPage, RTHCPHYS HCPhysCpuPage, bool fEnabledByHost,
                               PCSUPHWVIRTMSRS pHwvirtMsrs)
 {
     Assert(!fEnabledByHost);
@@ -589,17 +589,15 @@ VMMR0DECL(int) SVMR0EnableCpu(PHMGLOBALCPUINFO pHostCpu, PVM pVM, void *pvCpuPag
  * Deactivates AMD-V on the current CPU.
  *
  * @returns VBox status code.
- * @param   pHostCpu        Pointer to the CPU info struct.
  * @param   pvCpuPage       Pointer to the global CPU page.
  * @param   HCPhysCpuPage   Physical address of the global CPU page.
  */
-VMMR0DECL(int) SVMR0DisableCpu(PHMGLOBALCPUINFO pHostCpu, void *pvCpuPage, RTHCPHYS HCPhysCpuPage)
+VMMR0DECL(int) SVMR0DisableCpu(void *pvCpuPage, RTHCPHYS HCPhysCpuPage)
 {
     Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
     AssertReturn(   HCPhysCpuPage
                  && HCPhysCpuPage != NIL_RTHCPHYS, VERR_INVALID_PARAMETER);
     AssertReturn(pvCpuPage, VERR_INVALID_PARAMETER);
-    RT_NOREF(pHostCpu);
 
     /* Paranoid: Disable interrupts as, in theory, interrupt handlers might mess with EFER. */
     RTCCUINTREG const fEFlags = ASMIntDisableFlags();
@@ -1191,11 +1189,11 @@ VMMR0DECL(int) SVMR0InvalidatePage(PVMCPU pVCpu, RTGCPTR GCVirt)
 /**
  * Flushes the appropriate tagged-TLB entries.
  *
+ * @param   pHostCpu    The HM physical-CPU structure.
  * @param   pVCpu       The cross context virtual CPU structure.
  * @param   pVmcb       Pointer to the VM control block.
- * @param   pHostCpu    Pointer to the HM host-CPU info.
  */
-static void hmR0SvmFlushTaggedTlb(PVMCPU pVCpu, PSVMVMCB pVmcb, PHMGLOBALCPUINFO pHostCpu)
+static void hmR0SvmFlushTaggedTlb(PHMPHYSCPU pHostCpu, PVMCPU pVCpu, PSVMVMCB pVmcb)
 {
     /*
      * Force a TLB flush for the first world switch if the current CPU differs from the one
@@ -2320,14 +2318,12 @@ static int hmR0SvmSelectVMRunHandler(PVMCPU pVCpu)
  *
  * @returns VBox status code.
  * @param   pVCpu       The cross context virtual CPU structure.
- * @param   pHostCpu    Pointer to the CPU info struct.
  */
-VMMR0DECL(int) SVMR0Enter(PVMCPU pVCpu, PHMGLOBALCPUINFO pHostCpu)
+VMMR0DECL(int) SVMR0Enter(PVMCPU pVCpu)
 {
     AssertPtr(pVCpu);
     Assert(pVCpu->CTX_SUFF(pVM)->hm.s.svm.fSupported);
     Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
-    RT_NOREF(pHostCpu);
 
     LogFlowFunc(("pVCpu=%p\n", pVCpu));
     Assert((pVCpu->hm.s.fCtxChanged & (HM_CHANGED_HOST_CONTEXT | HM_CHANGED_SVM_HOST_GUEST_SHARED_STATE))
@@ -2521,12 +2517,12 @@ static int hmR0SvmExportGuestState(PVMCPU pVCpu)
  * If the guest is intercepting an MSR we need to intercept it regardless of
  * whether the nested-guest is intercepting it or not.
  *
- * @param   pHostCpu        Pointer to the physical CPU HM info. struct.
- * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   pHostCpu    The HM physical-CPU structure.
+ * @param   pVCpu       The cross context virtual CPU structure.
  *
  * @remarks No-long-jmp zone!!!
  */
-DECLINLINE(void) hmR0SvmMergeMsrpmNested(PHMGLOBALCPUINFO pHostCpu, PVMCPU pVCpu)
+DECLINLINE(void) hmR0SvmMergeMsrpmNested(PHMPHYSCPU pHostCpu, PVMCPU pVCpu)
 {
     uint64_t const *pu64GstMsrpm    = (uint64_t const *)pVCpu->hm.s.svm.pvMsrBitmap;
     uint64_t const *pu64NstGstMsrpm = (uint64_t const *)pVCpu->cpum.GstCtx.hwvirt.svm.CTX_SUFF(pvMsrBitmap);
@@ -4557,9 +4553,9 @@ static void hmR0SvmPreRunGuestCommitted(PVMCPU pVCpu, PSVMTRANSIENT pSvmTransien
     pVCpu->hm.s.fCtxChanged &= ~HM_CHANGED_HOST_CONTEXT;        /* Preemption might set this, nothing to do on AMD-V. */
     AssertMsg(!pVCpu->hm.s.fCtxChanged, ("fCtxChanged=%#RX64\n", pVCpu->hm.s.fCtxChanged));
 
-    PHMGLOBALCPUINFO pHostCpu         = hmR0GetCurrentCpu();
-    RTCPUID const    idHostCpu        = pHostCpu->idCpu;
-    bool const       fMigratedHostCpu = idHostCpu != pVCpu->hm.s.idLastCpu;
+    PHMPHYSCPU    pHostCpu         = hmR0GetCurrentCpu();
+    RTCPUID const idHostCpu        = pHostCpu->idCpu;
+    bool const    fMigratedHostCpu = idHostCpu != pVCpu->hm.s.idLastCpu;
 
     /* Setup TSC offsetting. */
     if (   pSvmTransient->fUpdateTscOffsetting
@@ -4605,7 +4601,7 @@ static void hmR0SvmPreRunGuestCommitted(PVMCPU pVCpu, PSVMTRANSIENT pSvmTransien
 
     ASMAtomicWriteBool(&pVCpu->hm.s.fCheckedTLBFlush, true);    /* Used for TLB flushing, set this across the world switch. */
     /* Flush the appropriate tagged-TLB entries. */
-    hmR0SvmFlushTaggedTlb(pVCpu, pVmcb, pHostCpu);
+    hmR0SvmFlushTaggedTlb(pHostCpu,  pVCpu, pVmcb);
     Assert(pVCpu->hm.s.idLastCpu == idHostCpu);
 
     STAM_PROFILE_ADV_STOP_START(&pVCpu->hm.s.StatEntry, &pVCpu->hm.s.StatInGC, x);

@@ -1118,7 +1118,7 @@ VMMR0DECL(void) VMXR0GlobalTerm()
  * Sets up and activates VT-x on the current CPU.
  *
  * @returns VBox status code.
- * @param   pHostCpu        Pointer to the global CPU info struct.
+ * @param   pHostCpu        The HM physical-CPU structure.
  * @param   pVM             The cross context VM structure.  Can be
  *                          NULL after a host resume operation.
  * @param   pvCpuPage       Pointer to the VMXON region (can be NULL if @a
@@ -1129,7 +1129,7 @@ VMMR0DECL(void) VMXR0GlobalTerm()
  *                          enable VT-x on the host.
  * @param   pHwvirtMsrs     Pointer to the hardware-virtualization MSRs.
  */
-VMMR0DECL(int) VMXR0EnableCpu(PHMGLOBALCPUINFO pHostCpu, PVM pVM, void *pvCpuPage, RTHCPHYS HCPhysCpuPage, bool fEnabledByHost,
+VMMR0DECL(int) VMXR0EnableCpu(PHMPHYSCPU pHostCpu, PVM pVM, void *pvCpuPage, RTHCPHYS HCPhysCpuPage, bool fEnabledByHost,
                               PCSUPHWVIRTMSRS pHwvirtMsrs)
 {
     Assert(pHostCpu);
@@ -1168,16 +1168,15 @@ VMMR0DECL(int) VMXR0EnableCpu(PHMGLOBALCPUINFO pHostCpu, PVM pVM, void *pvCpuPag
  * Deactivates VT-x on the current CPU.
  *
  * @returns VBox status code.
- * @param   pHostCpu        Pointer to the global CPU info struct.
  * @param   pvCpuPage       Pointer to the VMXON region.
  * @param   HCPhysCpuPage   Physical address of the VMXON region.
  *
  * @remarks This function should never be called when SUPR0EnableVTx() or
  *          similar was used to enable VT-x on the host.
  */
-VMMR0DECL(int) VMXR0DisableCpu(PHMGLOBALCPUINFO pHostCpu, void *pvCpuPage, RTHCPHYS HCPhysCpuPage)
+VMMR0DECL(int) VMXR0DisableCpu(void *pvCpuPage, RTHCPHYS HCPhysCpuPage)
 {
-    RT_NOREF3(pHostCpu, pvCpuPage, HCPhysCpuPage);
+    RT_NOREF2(pvCpuPage, HCPhysCpuPage);
 
     Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
     return hmR0VmxLeaveRootMode();
@@ -1410,8 +1409,8 @@ static int hmR0VmxRemoveAutoLoadStoreMsr(PVMCPU pVCpu, uint32_t uMsr)
  */
 static bool hmR0VmxIsAutoLoadStoreGuestMsr(PVMCPU pVCpu, uint32_t uMsr)
 {
-    PVMXAUTOMSR pGuestMsr = (PVMXAUTOMSR)pVCpu->hm.s.vmx.pvGuestMsr;
-    uint32_t    cMsrs     = pVCpu->hm.s.vmx.cMsrs;
+    PVMXAUTOMSR    pGuestMsr = (PVMXAUTOMSR)pVCpu->hm.s.vmx.pvGuestMsr;
+    uint32_t const cMsrs     = pVCpu->hm.s.vmx.cMsrs;
 
     for (uint32_t i = 0; i < cMsrs; i++, pGuestMsr++)
     {
@@ -1434,7 +1433,7 @@ static void hmR0VmxUpdateAutoLoadStoreHostMsrs(PVMCPU pVCpu)
     Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
     PVMXAUTOMSR pHostMsr  = (PVMXAUTOMSR)pVCpu->hm.s.vmx.pvHostMsr;
     PVMXAUTOMSR pGuestMsr = (PVMXAUTOMSR)pVCpu->hm.s.vmx.pvGuestMsr;
-    uint32_t    cMsrs    = pVCpu->hm.s.vmx.cMsrs;
+    uint32_t const cMsrs  = pVCpu->hm.s.vmx.cMsrs;
 
     for (uint32_t i = 0; i < cMsrs; i++, pHostMsr++, pGuestMsr++)
     {
@@ -1893,21 +1892,21 @@ VMMR0DECL(int) VMXR0InvalidatePage(PVMCPU pVCpu, RTGCPTR GCVirt)
  * Dummy placeholder for tagged-TLB flush handling before VM-entry. Used in the
  * case where neither EPT nor VPID is supported by the CPU.
  *
- * @param   pVCpu           The cross context virtual CPU structure.
- * @param   pCpu            Pointer to the global HM struct.
+ * @param   pHostCpu    The HM physical-CPU structure.
+ * @param   pVCpu       The cross context virtual CPU structure.
  *
  * @remarks Called with interrupts disabled.
  */
-static void hmR0VmxFlushTaggedTlbNone(PVMCPU pVCpu, PHMGLOBALCPUINFO pCpu)
+static void hmR0VmxFlushTaggedTlbNone(PHMPHYSCPU pHostCpu, PVMCPU pVCpu)
 {
     AssertPtr(pVCpu);
-    AssertPtr(pCpu);
+    AssertPtr(pHostCpu);
 
     VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_TLB_FLUSH);
 
-    Assert(pCpu->idCpu != NIL_RTCPUID);
-    pVCpu->hm.s.idLastCpu           = pCpu->idCpu;
-    pVCpu->hm.s.cTlbFlushes         = pCpu->cTlbFlushes;
+    Assert(pHostCpu->idCpu != NIL_RTCPUID);
+    pVCpu->hm.s.idLastCpu           = pHostCpu->idCpu;
+    pVCpu->hm.s.cTlbFlushes         = pHostCpu->cTlbFlushes;
     pVCpu->hm.s.fForceTLBFlush      = false;
     return;
 }
@@ -1916,8 +1915,8 @@ static void hmR0VmxFlushTaggedTlbNone(PVMCPU pVCpu, PHMGLOBALCPUINFO pCpu)
 /**
  * Flushes the tagged-TLB entries for EPT+VPID CPUs as necessary.
  *
- * @param    pVCpu          The cross context virtual CPU structure.
- * @param    pCpu           Pointer to the global HM CPU struct.
+ * @param   pHostCpu    The HM physical-CPU structure.
+ * @param   pVCpu       The cross context virtual CPU structure.
  *
  * @remarks  All references to "ASID" in this function pertains to "VPID" in Intel's
  *           nomenclature. The reason is, to avoid confusion in compare statements
@@ -1925,7 +1924,7 @@ static void hmR0VmxFlushTaggedTlbNone(PVMCPU pVCpu, PHMGLOBALCPUINFO pCpu)
  *
  * @remarks  Called with interrupts disabled.
  */
-static void hmR0VmxFlushTaggedTlbBoth(PVMCPU pVCpu, PHMGLOBALCPUINFO pCpu)
+static void hmR0VmxFlushTaggedTlbBoth(PHMPHYSCPU pHostCpu, PVMCPU pVCpu)
 {
 #ifdef VBOX_WITH_STATISTICS
     bool fTlbFlushed = false;
@@ -1939,9 +1938,9 @@ static void hmR0VmxFlushTaggedTlbBoth(PVMCPU pVCpu, PHMGLOBALCPUINFO pCpu)
 # define HMVMX_UPDATE_FLUSH_SKIPPED_STAT()    do { } while (0)
 #endif
 
-    AssertPtr(pCpu);
     AssertPtr(pVCpu);
-    Assert(pCpu->idCpu != NIL_RTCPUID);
+    AssertPtr(pHostCpu);
+    Assert(pHostCpu->idCpu != NIL_RTCPUID);
 
     PVM pVM = pVCpu->CTX_SUFF(pVM);
     AssertMsg(pVM->hm.s.fNestedPaging && pVM->hm.s.vmx.fVpid,
@@ -1954,20 +1953,20 @@ static void hmR0VmxFlushTaggedTlbBoth(PVMCPU pVCpu, PHMGLOBALCPUINFO pCpu)
      * limit while flushing the TLB or the host CPU is online after a suspend/resume, so we
      * cannot reuse the current ASID anymore.
      */
-    if (   pVCpu->hm.s.idLastCpu   != pCpu->idCpu
-        || pVCpu->hm.s.cTlbFlushes != pCpu->cTlbFlushes)
+    if (   pVCpu->hm.s.idLastCpu   != pHostCpu->idCpu
+        || pVCpu->hm.s.cTlbFlushes != pHostCpu->cTlbFlushes)
     {
-        ++pCpu->uCurrentAsid;
-        if (pCpu->uCurrentAsid >= pVM->hm.s.uMaxAsid)
+        ++pHostCpu->uCurrentAsid;
+        if (pHostCpu->uCurrentAsid >= pVM->hm.s.uMaxAsid)
         {
-            pCpu->uCurrentAsid = 1;              /* Wraparound to 1; host uses 0. */
-            pCpu->cTlbFlushes++;                 /* All VCPUs that run on this host CPU must use a new VPID. */
-            pCpu->fFlushAsidBeforeUse = true;    /* All VCPUs that run on this host CPU must flush their new VPID before use. */
+            pHostCpu->uCurrentAsid = 1;            /* Wraparound to 1; host uses 0. */
+            pHostCpu->cTlbFlushes++;               /* All VCPUs that run on this host CPU must use a new VPID. */
+            pHostCpu->fFlushAsidBeforeUse = true;  /* All VCPUs that run on this host CPU must flush their new VPID before use. */
         }
 
-        pVCpu->hm.s.uCurrentAsid = pCpu->uCurrentAsid;
-        pVCpu->hm.s.idLastCpu    = pCpu->idCpu;
-        pVCpu->hm.s.cTlbFlushes  = pCpu->cTlbFlushes;
+        pVCpu->hm.s.uCurrentAsid = pHostCpu->uCurrentAsid;
+        pVCpu->hm.s.idLastCpu    = pHostCpu->idCpu;
+        pVCpu->hm.s.cTlbFlushes  = pHostCpu->cTlbFlushes;
 
         /*
          * Flush by EPT when we get rescheduled to a new host CPU to ensure EPT-only tagged mappings are also
@@ -1997,15 +1996,15 @@ static void hmR0VmxFlushTaggedTlbBoth(PVMCPU pVCpu, PHMGLOBALCPUINFO pCpu)
     pVCpu->hm.s.fForceTLBFlush = false;
     HMVMX_UPDATE_FLUSH_SKIPPED_STAT();
 
-    Assert(pVCpu->hm.s.idLastCpu == pCpu->idCpu);
-    Assert(pVCpu->hm.s.cTlbFlushes == pCpu->cTlbFlushes);
-    AssertMsg(pVCpu->hm.s.cTlbFlushes == pCpu->cTlbFlushes,
-              ("Flush count mismatch for cpu %d (%u vs %u)\n", pCpu->idCpu, pVCpu->hm.s.cTlbFlushes, pCpu->cTlbFlushes));
-    AssertMsg(pCpu->uCurrentAsid >= 1 && pCpu->uCurrentAsid < pVM->hm.s.uMaxAsid,
-              ("Cpu[%u] uCurrentAsid=%u cTlbFlushes=%u pVCpu->idLastCpu=%u pVCpu->cTlbFlushes=%u\n", pCpu->idCpu,
-               pCpu->uCurrentAsid, pCpu->cTlbFlushes, pVCpu->hm.s.idLastCpu, pVCpu->hm.s.cTlbFlushes));
+    Assert(pVCpu->hm.s.idLastCpu == pHostCpu->idCpu);
+    Assert(pVCpu->hm.s.cTlbFlushes == pHostCpu->cTlbFlushes);
+    AssertMsg(pVCpu->hm.s.cTlbFlushes == pHostCpu->cTlbFlushes,
+              ("Flush count mismatch for cpu %d (%u vs %u)\n", pHostCpu->idCpu, pVCpu->hm.s.cTlbFlushes, pHostCpu->cTlbFlushes));
+    AssertMsg(pHostCpu->uCurrentAsid >= 1 && pHostCpu->uCurrentAsid < pVM->hm.s.uMaxAsid,
+              ("Cpu[%u] uCurrentAsid=%u cTlbFlushes=%u pVCpu->idLastCpu=%u pVCpu->cTlbFlushes=%u\n", pHostCpu->idCpu,
+               pHostCpu->uCurrentAsid, pHostCpu->cTlbFlushes, pVCpu->hm.s.idLastCpu, pVCpu->hm.s.cTlbFlushes));
     AssertMsg(pVCpu->hm.s.uCurrentAsid >= 1 && pVCpu->hm.s.uCurrentAsid < pVM->hm.s.uMaxAsid,
-              ("Cpu[%u] pVCpu->uCurrentAsid=%u\n", pCpu->idCpu, pVCpu->hm.s.uCurrentAsid));
+              ("Cpu[%u] pVCpu->uCurrentAsid=%u\n", pHostCpu->idCpu, pVCpu->hm.s.uCurrentAsid));
 
     /* Update VMCS with the VPID. */
     int rc  = VMXWriteVmcs32(VMX_VMCS16_VPID, pVCpu->hm.s.uCurrentAsid);
@@ -2018,17 +2017,16 @@ static void hmR0VmxFlushTaggedTlbBoth(PVMCPU pVCpu, PHMGLOBALCPUINFO pCpu)
 /**
  * Flushes the tagged-TLB entries for EPT CPUs as necessary.
  *
- * @returns VBox status code.
+ * @param   pHostCpu    The HM physical-CPU structure.
  * @param   pVCpu       The cross context virtual CPU structure.
- * @param   pCpu        Pointer to the global HM CPU struct.
  *
  * @remarks Called with interrupts disabled.
  */
-static void hmR0VmxFlushTaggedTlbEpt(PVMCPU pVCpu, PHMGLOBALCPUINFO pCpu)
+static void hmR0VmxFlushTaggedTlbEpt(PHMPHYSCPU pHostCpu, PVMCPU pVCpu)
 {
     AssertPtr(pVCpu);
-    AssertPtr(pCpu);
-    Assert(pCpu->idCpu != NIL_RTCPUID);
+    AssertPtr(pHostCpu);
+    Assert(pHostCpu->idCpu != NIL_RTCPUID);
     AssertMsg(pVCpu->CTX_SUFF(pVM)->hm.s.fNestedPaging, ("hmR0VmxFlushTaggedTlbEpt cannot be invoked without NestedPaging."));
     AssertMsg(!pVCpu->CTX_SUFF(pVM)->hm.s.vmx.fVpid, ("hmR0VmxFlushTaggedTlbEpt cannot be invoked with VPID."));
 
@@ -2036,8 +2034,8 @@ static void hmR0VmxFlushTaggedTlbEpt(PVMCPU pVCpu, PHMGLOBALCPUINFO pCpu)
      * Force a TLB flush for the first world-switch if the current CPU differs from the one we ran on last.
      * A change in the TLB flush count implies the host CPU is online after a suspend/resume.
      */
-    if (   pVCpu->hm.s.idLastCpu   != pCpu->idCpu
-        || pVCpu->hm.s.cTlbFlushes != pCpu->cTlbFlushes)
+    if (   pVCpu->hm.s.idLastCpu   != pHostCpu->idCpu
+        || pVCpu->hm.s.cTlbFlushes != pHostCpu->cTlbFlushes)
     {
         pVCpu->hm.s.fForceTLBFlush = true;
         STAM_COUNTER_INC(&pVCpu->hm.s.StatFlushTlbWorldSwitch);
@@ -2050,8 +2048,8 @@ static void hmR0VmxFlushTaggedTlbEpt(PVMCPU pVCpu, PHMGLOBALCPUINFO pCpu)
         STAM_COUNTER_INC(&pVCpu->hm.s.StatFlushTlb);
     }
 
-    pVCpu->hm.s.idLastCpu   = pCpu->idCpu;
-    pVCpu->hm.s.cTlbFlushes = pCpu->cTlbFlushes;
+    pVCpu->hm.s.idLastCpu   = pHostCpu->idCpu;
+    pVCpu->hm.s.cTlbFlushes = pHostCpu->cTlbFlushes;
 
     if (pVCpu->hm.s.fForceTLBFlush)
     {
@@ -2064,17 +2062,16 @@ static void hmR0VmxFlushTaggedTlbEpt(PVMCPU pVCpu, PHMGLOBALCPUINFO pCpu)
 /**
  * Flushes the tagged-TLB entries for VPID CPUs as necessary.
  *
- * @returns VBox status code.
+ * @param   pHostCpu    The HM physical-CPU structure.
  * @param   pVCpu       The cross context virtual CPU structure.
- * @param   pCpu        Pointer to the global HM CPU struct.
  *
  * @remarks Called with interrupts disabled.
  */
-static void hmR0VmxFlushTaggedTlbVpid(PVMCPU pVCpu, PHMGLOBALCPUINFO pCpu)
+static void hmR0VmxFlushTaggedTlbVpid(PHMPHYSCPU pHostCpu, PVMCPU pVCpu)
 {
     AssertPtr(pVCpu);
-    AssertPtr(pCpu);
-    Assert(pCpu->idCpu != NIL_RTCPUID);
+    AssertPtr(pHostCpu);
+    Assert(pHostCpu->idCpu != NIL_RTCPUID);
     AssertMsg(pVCpu->CTX_SUFF(pVM)->hm.s.vmx.fVpid, ("hmR0VmxFlushTlbVpid cannot be invoked without VPID."));
     AssertMsg(!pVCpu->CTX_SUFF(pVM)->hm.s.fNestedPaging, ("hmR0VmxFlushTlbVpid cannot be invoked with NestedPaging"));
 
@@ -2084,8 +2081,8 @@ static void hmR0VmxFlushTaggedTlbVpid(PVMCPU pVCpu, PHMGLOBALCPUINFO pCpu)
      * limit while flushing the TLB or the host CPU is online after a suspend/resume, so we
      * cannot reuse the current ASID anymore.
      */
-    if (   pVCpu->hm.s.idLastCpu   != pCpu->idCpu
-        || pVCpu->hm.s.cTlbFlushes != pCpu->cTlbFlushes)
+    if (   pVCpu->hm.s.idLastCpu   != pHostCpu->idCpu
+        || pVCpu->hm.s.cTlbFlushes != pHostCpu->cTlbFlushes)
     {
         pVCpu->hm.s.fForceTLBFlush = true;
         STAM_COUNTER_INC(&pVCpu->hm.s.StatFlushTlbWorldSwitch);
@@ -2097,7 +2094,7 @@ static void hmR0VmxFlushTaggedTlbVpid(PVMCPU pVCpu, PHMGLOBALCPUINFO pCpu)
         /*
          * If we ever support VPID flush combinations other than ALL or SINGLE-context (see
          * hmR0VmxSetupTaggedTlb()) we would need to explicitly flush in this case (add an
-         * fExplicitFlush = true here and change the pCpu->fFlushAsidBeforeUse check below to
+         * fExplicitFlush = true here and change the pHostCpu->fFlushAsidBeforeUse check below to
          * include fExplicitFlush's too) - an obscure corner case.
          */
         pVCpu->hm.s.fForceTLBFlush = true;
@@ -2105,28 +2102,28 @@ static void hmR0VmxFlushTaggedTlbVpid(PVMCPU pVCpu, PHMGLOBALCPUINFO pCpu)
     }
 
     PVM pVM = pVCpu->CTX_SUFF(pVM);
-    pVCpu->hm.s.idLastCpu = pCpu->idCpu;
+    pVCpu->hm.s.idLastCpu = pHostCpu->idCpu;
     if (pVCpu->hm.s.fForceTLBFlush)
     {
-        ++pCpu->uCurrentAsid;
-        if (pCpu->uCurrentAsid >= pVM->hm.s.uMaxAsid)
+        ++pHostCpu->uCurrentAsid;
+        if (pHostCpu->uCurrentAsid >= pVM->hm.s.uMaxAsid)
         {
-            pCpu->uCurrentAsid        = 1;       /* Wraparound to 1; host uses 0 */
-            pCpu->cTlbFlushes++;                 /* All VCPUs that run on this host CPU must use a new VPID. */
-            pCpu->fFlushAsidBeforeUse = true;    /* All VCPUs that run on this host CPU must flush their new VPID before use. */
+            pHostCpu->uCurrentAsid        = 1;     /* Wraparound to 1; host uses 0 */
+            pHostCpu->cTlbFlushes++;               /* All VCPUs that run on this host CPU must use a new VPID. */
+            pHostCpu->fFlushAsidBeforeUse = true;  /* All VCPUs that run on this host CPU must flush their new VPID before use. */
         }
 
         pVCpu->hm.s.fForceTLBFlush = false;
-        pVCpu->hm.s.cTlbFlushes    = pCpu->cTlbFlushes;
-        pVCpu->hm.s.uCurrentAsid   = pCpu->uCurrentAsid;
-        if (pCpu->fFlushAsidBeforeUse)
+        pVCpu->hm.s.cTlbFlushes    = pHostCpu->cTlbFlushes;
+        pVCpu->hm.s.uCurrentAsid   = pHostCpu->uCurrentAsid;
+        if (pHostCpu->fFlushAsidBeforeUse)
         {
             if (pVM->hm.s.vmx.enmTlbFlushVpid == VMXTLBFLUSHVPID_SINGLE_CONTEXT)
                 hmR0VmxFlushVpid(pVCpu, VMXTLBFLUSHVPID_SINGLE_CONTEXT, 0 /* GCPtr */);
             else if (pVM->hm.s.vmx.enmTlbFlushVpid == VMXTLBFLUSHVPID_ALL_CONTEXTS)
             {
                 hmR0VmxFlushVpid(pVCpu, VMXTLBFLUSHVPID_ALL_CONTEXTS, 0 /* GCPtr */);
-                pCpu->fFlushAsidBeforeUse = false;
+                pHostCpu->fFlushAsidBeforeUse = false;
             }
             else
             {
@@ -2136,13 +2133,13 @@ static void hmR0VmxFlushTaggedTlbVpid(PVMCPU pVCpu, PHMGLOBALCPUINFO pCpu)
         }
     }
 
-    AssertMsg(pVCpu->hm.s.cTlbFlushes == pCpu->cTlbFlushes,
-              ("Flush count mismatch for cpu %d (%u vs %u)\n", pCpu->idCpu, pVCpu->hm.s.cTlbFlushes, pCpu->cTlbFlushes));
-    AssertMsg(pCpu->uCurrentAsid >= 1 && pCpu->uCurrentAsid < pVM->hm.s.uMaxAsid,
-              ("Cpu[%u] uCurrentAsid=%u cTlbFlushes=%u pVCpu->idLastCpu=%u pVCpu->cTlbFlushes=%u\n", pCpu->idCpu,
-               pCpu->uCurrentAsid, pCpu->cTlbFlushes, pVCpu->hm.s.idLastCpu, pVCpu->hm.s.cTlbFlushes));
+    AssertMsg(pVCpu->hm.s.cTlbFlushes == pHostCpu->cTlbFlushes,
+              ("Flush count mismatch for cpu %d (%u vs %u)\n", pHostCpu->idCpu, pVCpu->hm.s.cTlbFlushes, pHostCpu->cTlbFlushes));
+    AssertMsg(pHostCpu->uCurrentAsid >= 1 && pHostCpu->uCurrentAsid < pVM->hm.s.uMaxAsid,
+              ("Cpu[%u] uCurrentAsid=%u cTlbFlushes=%u pVCpu->idLastCpu=%u pVCpu->cTlbFlushes=%u\n", pHostCpu->idCpu,
+               pHostCpu->uCurrentAsid, pHostCpu->cTlbFlushes, pVCpu->hm.s.idLastCpu, pVCpu->hm.s.cTlbFlushes));
     AssertMsg(pVCpu->hm.s.uCurrentAsid >= 1 && pVCpu->hm.s.uCurrentAsid < pVM->hm.s.uMaxAsid,
-              ("Cpu[%u] pVCpu->uCurrentAsid=%u\n", pCpu->idCpu, pVCpu->hm.s.uCurrentAsid));
+              ("Cpu[%u] pVCpu->uCurrentAsid=%u\n", pHostCpu->idCpu, pVCpu->hm.s.uCurrentAsid));
 
     int rc  = VMXWriteVmcs32(VMX_VMCS16_VPID, pVCpu->hm.s.uCurrentAsid);
     AssertRC(rc);
@@ -2152,10 +2149,12 @@ static void hmR0VmxFlushTaggedTlbVpid(PVMCPU pVCpu, PHMGLOBALCPUINFO pCpu)
 /**
  * Flushes the guest TLB entry based on CPU capabilities.
  *
- * @param   pVCpu     The cross context virtual CPU structure.
- * @param   pCpu      Pointer to the global HM CPU struct.
+ * @param   pHostCpu    The HM physical-CPU structure.
+ * @param   pVCpu       The cross context virtual CPU structure.
+ *
+ * @remarks Called with interrupts disabled.
  */
-DECLINLINE(void) hmR0VmxFlushTaggedTlb(PVMCPU pVCpu, PHMGLOBALCPUINFO pCpu)
+DECLINLINE(void) hmR0VmxFlushTaggedTlb(PHMPHYSCPU pHostCpu, PVMCPU pVCpu)
 {
 #ifdef HMVMX_ALWAYS_FLUSH_TLB
     VMCPU_FF_SET(pVCpu, VMCPU_FF_TLB_FLUSH);
@@ -2163,10 +2162,10 @@ DECLINLINE(void) hmR0VmxFlushTaggedTlb(PVMCPU pVCpu, PHMGLOBALCPUINFO pCpu)
     PVM pVM = pVCpu->CTX_SUFF(pVM);
     switch (pVM->hm.s.vmx.enmTlbFlushType)
     {
-        case VMXTLBFLUSHTYPE_EPT_VPID: hmR0VmxFlushTaggedTlbBoth(pVCpu, pCpu); break;
-        case VMXTLBFLUSHTYPE_EPT:      hmR0VmxFlushTaggedTlbEpt(pVCpu, pCpu);  break;
-        case VMXTLBFLUSHTYPE_VPID:     hmR0VmxFlushTaggedTlbVpid(pVCpu, pCpu); break;
-        case VMXTLBFLUSHTYPE_NONE:     hmR0VmxFlushTaggedTlbNone(pVCpu, pCpu); break;
+        case VMXTLBFLUSHTYPE_EPT_VPID: hmR0VmxFlushTaggedTlbBoth(pHostCpu, pVCpu); break;
+        case VMXTLBFLUSHTYPE_EPT:      hmR0VmxFlushTaggedTlbEpt(pHostCpu, pVCpu);  break;
+        case VMXTLBFLUSHTYPE_VPID:     hmR0VmxFlushTaggedTlbVpid(pHostCpu, pVCpu); break;
+        case VMXTLBFLUSHTYPE_NONE:     hmR0VmxFlushTaggedTlbNone(pHostCpu, pVCpu); break;
         default:
             AssertMsgFailed(("Invalid flush-tag function identifier\n"));
             break;
@@ -2820,7 +2819,7 @@ VMMR0DECL(int) VMXR0SetupVM(PVM pVM)
         AssertLogRelMsgRCReturnStmt(rc, ("VMXR0SetupVM: VMXClearVmcs(2) failed! rc=%Rrc\n", rc),
                                     hmR0VmxUpdateErrorRecord(pVCpu, rc), rc);
 
-        pVCpu->hm.s.vmx.uVmcsState = HMVMX_VMCS_STATE_CLEAR;
+        pVCpu->hm.s.vmx.fVmcsState = HMVMX_VMCS_STATE_CLEAR;
 
         hmR0VmxUpdateErrorRecord(pVCpu, rc);
     }
@@ -4981,7 +4980,7 @@ DECLINLINE(int) hmR0VmxRunGuest(PVMCPU pVCpu)
      *
      * See MSDN "Configuring Programs for 64-bit/x64 Software Conventions / Register Usage".
      */
-    bool const fResumeVM = RT_BOOL(pVCpu->hm.s.vmx.uVmcsState & HMVMX_VMCS_STATE_LAUNCHED);
+    bool const fResumeVM = RT_BOOL(pVCpu->hm.s.vmx.fVmcsState & HMVMX_VMCS_STATE_LAUNCHED);
     /** @todo Add stats for resume vs launch. */
     PVM pVM = pVCpu->CTX_SUFF(pVM);
 #ifdef VBOX_WITH_KERNEL_USING_XMM
@@ -5283,12 +5282,12 @@ VMMR0DECL(int) VMXR0Execute64BitsHandler(PVMCPU pVCpu, HM64ON32OP enmOp, uint32_
     CPUMR0SetLApic(pVCpu, idHostCpu);
 #endif
 
-    PHMGLOBALCPUINFO pCpu = hmR0GetCurrentCpu();
-    RTHCPHYS HCPhysCpuPage = pCpu->HCPhysMemObj;
+    PCHMPHYSCPU pHostCpu = hmR0GetCurrentCpu();
+    RTHCPHYS HCPhysCpuPage = pHostCpu->HCPhysMemObj;
 
     /* Clear VMCS. Marking it inactive, clearing implementation-specific data and writing VMCS data back to memory. */
     VMXClearVmcs(pVCpu->hm.s.vmx.HCPhysVmcs);
-    pVCpu->hm.s.vmx.uVmcsState = HMVMX_VMCS_STATE_CLEAR;
+    pVCpu->hm.s.vmx.fVmcsState = HMVMX_VMCS_STATE_CLEAR;
 
     /* Leave VMX Root Mode. */
     VMXDisable();
@@ -5322,7 +5321,7 @@ VMMR0DECL(int) VMXR0Execute64BitsHandler(PVMCPU pVCpu, HM64ON32OP enmOp, uint32_
 
     rc2 = VMXActivateVmcs(pVCpu->hm.s.vmx.HCPhysVmcs);
     AssertRC(rc2);
-    pVCpu->hm.s.vmx.uVmcsState = HMVMX_VMCS_STATE_ACTIVE;
+    pVCpu->hm.s.vmx.fVmcsState = HMVMX_VMCS_STATE_ACTIVE;
     Assert(!(ASMGetFlags() & X86_EFL_IF));
     ASMSetFlags(fOldEFlags);
     return rc;
@@ -5344,8 +5343,8 @@ DECLASM(int) VMXR0SwitcherStartVM64(RTHCUINT fResume, PCPUMCTX pCtx, PVMCSCACHE 
 {
     NOREF(fResume);
 
-    PHMGLOBALCPUINFO pCpu = hmR0GetCurrentCpu();
-    RTHCPHYS HCPhysCpuPage = pCpu->HCPhysMemObj;
+    PCHMPHYSCPU    pHostCpu      = hmR0GetCurrentCpu();
+    RTHCPHYS const HCPhysCpuPage = pHostCpu->HCPhysMemObj;
 
 #ifdef VBOX_WITH_CRASHDUMP_MAGIC
     pCache->uPos = 1;
@@ -7210,15 +7209,15 @@ static int hmR0VmxLeave(PVMCPU pVCpu, bool fImportState)
      *  lasts until the EMT is about to be destroyed not everytime while leaving HM
      *  context.
      */
-    if (pVCpu->hm.s.vmx.uVmcsState & HMVMX_VMCS_STATE_ACTIVE)
+    if (pVCpu->hm.s.vmx.fVmcsState & HMVMX_VMCS_STATE_ACTIVE)
     {
         int rc = VMXClearVmcs(pVCpu->hm.s.vmx.HCPhysVmcs);
         AssertRCReturn(rc, rc);
 
-        pVCpu->hm.s.vmx.uVmcsState = HMVMX_VMCS_STATE_CLEAR;
+        pVCpu->hm.s.vmx.fVmcsState = HMVMX_VMCS_STATE_CLEAR;
         Log4Func(("Cleared Vmcs. HostCpuId=%u\n", idCpu));
     }
-    Assert(!(pVCpu->hm.s.vmx.uVmcsState & HMVMX_VMCS_STATE_LAUNCHED));
+    Assert(!(pVCpu->hm.s.vmx.fVmcsState & HMVMX_VMCS_STATE_LAUNCHED));
     NOREF(idCpu);
 
     return VINF_SUCCESS;
@@ -7412,10 +7411,10 @@ static DECLCALLBACK(int) hmR0VmxCallRing3Callback(PVMCPU pVCpu, VMMCALLRING3 enm
         /* Update auto-load/store host MSRs values when we re-enter VT-x (as we could be on a different CPU). */
         pVCpu->hm.s.vmx.fUpdatedHostMsrs = false;
         VMCPU_CMPXCHG_STATE(pVCpu, VMCPUSTATE_STARTED_HM, VMCPUSTATE_STARTED_EXEC);
-        if (pVCpu->hm.s.vmx.uVmcsState & HMVMX_VMCS_STATE_ACTIVE)
+        if (pVCpu->hm.s.vmx.fVmcsState & HMVMX_VMCS_STATE_ACTIVE)
         {
             VMXClearVmcs(pVCpu->hm.s.vmx.HCPhysVmcs);
-            pVCpu->hm.s.vmx.uVmcsState = HMVMX_VMCS_STATE_CLEAR;
+            pVCpu->hm.s.vmx.fVmcsState = HMVMX_VMCS_STATE_CLEAR;
         }
 
         /** @todo eliminate the need for calling VMMR0ThreadCtxHookDisable here!  */
@@ -8026,14 +8025,12 @@ static void hmR0VmxClearIntNmiWindowsVmcs(PVMCPU pVCpu)
  *
  * @returns VBox status code.
  * @param   pVCpu       The cross context virtual CPU structure.
- * @param   pHostCpu    Pointer to the global CPU info struct.
  */
-VMMR0DECL(int) VMXR0Enter(PVMCPU pVCpu, PHMGLOBALCPUINFO pHostCpu)
+VMMR0DECL(int) VMXR0Enter(PVMCPU pVCpu)
 {
     AssertPtr(pVCpu);
     Assert(pVCpu->CTX_SUFF(pVM)->hm.s.vmx.fSupported);
     Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
-    RT_NOREF(pHostCpu);
 
     LogFlowFunc(("pVCpu=%p\n", pVCpu));
     Assert((pVCpu->hm.s.fCtxChanged &  (HM_CHANGED_HOST_CONTEXT | HM_CHANGED_VMX_HOST_GUEST_SHARED_STATE))
@@ -8052,16 +8049,15 @@ VMMR0DECL(int) VMXR0Enter(PVMCPU pVCpu, PHMGLOBALCPUINFO pHostCpu)
     /*
      * Load the VCPU's VMCS as the current (and active) one.
      */
-    Assert(pVCpu->hm.s.vmx.uVmcsState & HMVMX_VMCS_STATE_CLEAR);
+    Assert(pVCpu->hm.s.vmx.fVmcsState & HMVMX_VMCS_STATE_CLEAR);
     int rc = VMXActivateVmcs(pVCpu->hm.s.vmx.HCPhysVmcs);
-    if (RT_FAILURE(rc))
-        return rc;
-
-    pVCpu->hm.s.vmx.uVmcsState = HMVMX_VMCS_STATE_ACTIVE;
-    pVCpu->hm.s.fLeaveDone = false;
-    Log4Func(("Activated Vmcs. HostCpuId=%u\n", RTMpCpuId()));
-
-    return VINF_SUCCESS;
+    if (RT_SUCCESS(rc))
+    {
+        pVCpu->hm.s.vmx.fVmcsState = HMVMX_VMCS_STATE_ACTIVE;
+        pVCpu->hm.s.fLeaveDone = false;
+        Log4Func(("Activated Vmcs. HostCpuId=%u\n", RTMpCpuId()));
+    }
+    return rc;
 }
 
 
@@ -8130,11 +8126,11 @@ VMMR0DECL(void) VMXR0ThreadCtxCallback(RTTHREADCTXEVENT enmEvent, PVMCPU pVCpu, 
                                             == (HM_CHANGED_HOST_CONTEXT | HM_CHANGED_VMX_HOST_GUEST_SHARED_STATE));
 
             /* Load the active VMCS as the current one. */
-            if (pVCpu->hm.s.vmx.uVmcsState & HMVMX_VMCS_STATE_CLEAR)
+            if (pVCpu->hm.s.vmx.fVmcsState & HMVMX_VMCS_STATE_CLEAR)
             {
                 rc = VMXActivateVmcs(pVCpu->hm.s.vmx.HCPhysVmcs);
                 AssertRC(rc); NOREF(rc);
-                pVCpu->hm.s.vmx.uVmcsState = HMVMX_VMCS_STATE_ACTIVE;
+                pVCpu->hm.s.vmx.fVmcsState = HMVMX_VMCS_STATE_ACTIVE;
                 Log4Func(("Resumed: Activated Vmcs. HostCpuId=%u\n", RTMpCpuId()));
             }
             pVCpu->hm.s.fLeaveDone = false;
@@ -8692,8 +8688,8 @@ static void hmR0VmxPreRunGuestCommitted(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransien
     if (pVCpu->hm.s.vmx.u32ProcCtls & VMX_PROC_CTLS_USE_TPR_SHADOW)
         pVmxTransient->u8GuestTpr = pVCpu->hm.s.vmx.pbVirtApic[XAPIC_OFF_TPR];
 
-    PHMGLOBALCPUINFO pCpu = hmR0GetCurrentCpu();
-    RTCPUID  idCurrentCpu = pCpu->idCpu;
+    PHMPHYSCPU pHostCpu     = hmR0GetCurrentCpu();
+    RTCPUID    idCurrentCpu = pHostCpu->idCpu;
     if (   pVmxTransient->fUpdateTscOffsettingAndPreemptTimer
         || idCurrentCpu != pVCpu->hm.s.idLastCpu)
     {
@@ -8702,7 +8698,7 @@ static void hmR0VmxPreRunGuestCommitted(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransien
     }
 
     ASMAtomicWriteBool(&pVCpu->hm.s.fCheckedTLBFlush, true);    /* Used for TLB flushing, set this across the world switch. */
-    hmR0VmxFlushTaggedTlb(pVCpu, pCpu);                         /* Invalidate the appropriate guest entries from the TLB. */
+    hmR0VmxFlushTaggedTlb(pHostCpu, pVCpu);                     /* Invalidate the appropriate guest entries from the TLB. */
     Assert(idCurrentCpu == pVCpu->hm.s.idLastCpu);
     pVCpu->hm.s.vmx.LastError.idCurrentCpu = idCurrentCpu;      /* Update the error reporting info. with the current host CPU. */
 
@@ -8799,11 +8795,11 @@ static void hmR0VmxPostRunGuest(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient, int r
     pVCpu->hm.s.vmx.fRestoreHostFlags |= VMX_RESTORE_HOST_REQUIRED;   /* Host state messed up by VT-x, we must restore. */
 #endif
 #if HC_ARCH_BITS == 32 && defined(VBOX_ENABLE_64_BITS_GUESTS)
-    /* The 64-on-32 switcher maintains uVmcsState on its own and we need to leave it alone here. */
+    /* The 64-on-32 switcher maintains fVmcsState on its own and we need to leave it alone here. */
     if (pVCpu->hm.s.vmx.pfnStartVM != VMXR0SwitcherStartVM64)
-        pVCpu->hm.s.vmx.uVmcsState |= HMVMX_VMCS_STATE_LAUNCHED;      /* Use VMRESUME instead of VMLAUNCH in the next run. */
+        pVCpu->hm.s.vmx.fVmcsState |= HMVMX_VMCS_STATE_LAUNCHED;      /* Use VMRESUME instead of VMLAUNCH in the next run. */
 #else
-    pVCpu->hm.s.vmx.uVmcsState |= HMVMX_VMCS_STATE_LAUNCHED;          /* Use VMRESUME instead of VMLAUNCH in the next run. */
+    pVCpu->hm.s.vmx.fVmcsState |= HMVMX_VMCS_STATE_LAUNCHED;          /* Use VMRESUME instead of VMLAUNCH in the next run. */
 #endif
 #ifdef VBOX_STRICT
     hmR0VmxCheckHostEferMsr(pVCpu);                                   /* Verify that VMRUN/VMLAUNCH didn't modify host EFER. */
@@ -9273,19 +9269,19 @@ static void hmR0VmxPreRunGuestDebugStateUpdate(PVMCPU pVCpu, PVMXRUNDBGSTATE pDb
             ASMBitSet((pDbgState)->bmExitsToCheck, a_uExit); \
         } else do { } while (0)
 
-    SET_ONLY_XBM_IF_EITHER_EN(EXIT_TASK_SWITCH,         VMX_EXIT_TASK_SWITCH);      /* unconditional */
-    SET_ONLY_XBM_IF_EITHER_EN(EXIT_VMX_EPT_VIOLATION,   VMX_EXIT_EPT_VIOLATION);    /* unconditional */
-    SET_ONLY_XBM_IF_EITHER_EN(EXIT_VMX_EPT_MISCONFIG,   VMX_EXIT_EPT_MISCONFIG);    /* unconditional (unless #VE) */
-    SET_ONLY_XBM_IF_EITHER_EN(EXIT_VMX_VAPIC_ACCESS,    VMX_EXIT_APIC_ACCESS);      /* feature dependent, nothing to enable here */
-    SET_ONLY_XBM_IF_EITHER_EN(EXIT_VMX_VAPIC_WRITE,     VMX_EXIT_APIC_WRITE);       /* feature dependent, nothing to enable here */
+    SET_ONLY_XBM_IF_EITHER_EN(EXIT_TASK_SWITCH,         VMX_EXIT_TASK_SWITCH);   /* unconditional */
+    SET_ONLY_XBM_IF_EITHER_EN(EXIT_VMX_EPT_VIOLATION,   VMX_EXIT_EPT_VIOLATION); /* unconditional */
+    SET_ONLY_XBM_IF_EITHER_EN(EXIT_VMX_EPT_MISCONFIG,   VMX_EXIT_EPT_MISCONFIG); /* unconditional (unless #VE) */
+    SET_ONLY_XBM_IF_EITHER_EN(EXIT_VMX_VAPIC_ACCESS,    VMX_EXIT_APIC_ACCESS);   /* feature dependent, nothing to enable here */
+    SET_ONLY_XBM_IF_EITHER_EN(EXIT_VMX_VAPIC_WRITE,     VMX_EXIT_APIC_WRITE);    /* feature dependent, nothing to enable here */
 
-    SET_ONLY_XBM_IF_EITHER_EN(INSTR_CPUID,              VMX_EXIT_CPUID);            /* unconditional */
+    SET_ONLY_XBM_IF_EITHER_EN(INSTR_CPUID,              VMX_EXIT_CPUID);         /* unconditional */
     SET_ONLY_XBM_IF_EITHER_EN( EXIT_CPUID,              VMX_EXIT_CPUID);
-    SET_ONLY_XBM_IF_EITHER_EN(INSTR_GETSEC,             VMX_EXIT_GETSEC);           /* unconditional */
+    SET_ONLY_XBM_IF_EITHER_EN(INSTR_GETSEC,             VMX_EXIT_GETSEC);        /* unconditional */
     SET_ONLY_XBM_IF_EITHER_EN( EXIT_GETSEC,             VMX_EXIT_GETSEC);
     SET_CPE1_XBM_IF_EITHER_EN(INSTR_HALT,               VMX_EXIT_HLT,      VMX_PROC_CTLS_HLT_EXIT); /* paranoia */
     SET_ONLY_XBM_IF_EITHER_EN( EXIT_HALT,               VMX_EXIT_HLT);
-    SET_ONLY_XBM_IF_EITHER_EN(INSTR_INVD,               VMX_EXIT_INVD);             /* unconditional */
+    SET_ONLY_XBM_IF_EITHER_EN(INSTR_INVD,               VMX_EXIT_INVD);          /* unconditional */
     SET_ONLY_XBM_IF_EITHER_EN( EXIT_INVD,               VMX_EXIT_INVD);
     SET_CPE1_XBM_IF_EITHER_EN(INSTR_INVLPG,             VMX_EXIT_INVLPG,   VMX_PROC_CTLS_INVLPG_EXIT);
     SET_ONLY_XBM_IF_EITHER_EN( EXIT_INVLPG,             VMX_EXIT_INVLPG);
@@ -9293,27 +9289,27 @@ static void hmR0VmxPreRunGuestDebugStateUpdate(PVMCPU pVCpu, PVMXRUNDBGSTATE pDb
     SET_ONLY_XBM_IF_EITHER_EN( EXIT_RDPMC,              VMX_EXIT_RDPMC);
     SET_CPE1_XBM_IF_EITHER_EN(INSTR_RDTSC,              VMX_EXIT_RDTSC,    VMX_PROC_CTLS_RDTSC_EXIT);
     SET_ONLY_XBM_IF_EITHER_EN( EXIT_RDTSC,              VMX_EXIT_RDTSC);
-    SET_ONLY_XBM_IF_EITHER_EN(INSTR_RSM,                VMX_EXIT_RSM);              /* unconditional */
+    SET_ONLY_XBM_IF_EITHER_EN(INSTR_RSM,                VMX_EXIT_RSM);           /* unconditional */
     SET_ONLY_XBM_IF_EITHER_EN( EXIT_RSM,                VMX_EXIT_RSM);
-    SET_ONLY_XBM_IF_EITHER_EN(INSTR_VMM_CALL,           VMX_EXIT_VMCALL);           /* unconditional */
+    SET_ONLY_XBM_IF_EITHER_EN(INSTR_VMM_CALL,           VMX_EXIT_VMCALL);        /* unconditional */
     SET_ONLY_XBM_IF_EITHER_EN( EXIT_VMM_CALL,           VMX_EXIT_VMCALL);
-    SET_ONLY_XBM_IF_EITHER_EN(INSTR_VMX_VMCLEAR,        VMX_EXIT_VMCLEAR);          /* unconditional */
+    SET_ONLY_XBM_IF_EITHER_EN(INSTR_VMX_VMCLEAR,        VMX_EXIT_VMCLEAR);       /* unconditional */
     SET_ONLY_XBM_IF_EITHER_EN( EXIT_VMX_VMCLEAR,        VMX_EXIT_VMCLEAR);
-    SET_ONLY_XBM_IF_EITHER_EN(INSTR_VMX_VMLAUNCH,       VMX_EXIT_VMLAUNCH);         /* unconditional */
+    SET_ONLY_XBM_IF_EITHER_EN(INSTR_VMX_VMLAUNCH,       VMX_EXIT_VMLAUNCH);      /* unconditional */
     SET_ONLY_XBM_IF_EITHER_EN( EXIT_VMX_VMLAUNCH,       VMX_EXIT_VMLAUNCH);
-    SET_ONLY_XBM_IF_EITHER_EN(INSTR_VMX_VMPTRLD,        VMX_EXIT_VMPTRLD);          /* unconditional */
+    SET_ONLY_XBM_IF_EITHER_EN(INSTR_VMX_VMPTRLD,        VMX_EXIT_VMPTRLD);       /* unconditional */
     SET_ONLY_XBM_IF_EITHER_EN( EXIT_VMX_VMPTRLD,        VMX_EXIT_VMPTRLD);
-    SET_ONLY_XBM_IF_EITHER_EN(INSTR_VMX_VMPTRST,        VMX_EXIT_VMPTRST);          /* unconditional */
+    SET_ONLY_XBM_IF_EITHER_EN(INSTR_VMX_VMPTRST,        VMX_EXIT_VMPTRST);       /* unconditional */
     SET_ONLY_XBM_IF_EITHER_EN( EXIT_VMX_VMPTRST,        VMX_EXIT_VMPTRST);
-    SET_ONLY_XBM_IF_EITHER_EN(INSTR_VMX_VMREAD,         VMX_EXIT_VMREAD);           /* unconditional */
+    SET_ONLY_XBM_IF_EITHER_EN(INSTR_VMX_VMREAD,         VMX_EXIT_VMREAD);        /* unconditional */
     SET_ONLY_XBM_IF_EITHER_EN( EXIT_VMX_VMREAD,         VMX_EXIT_VMREAD);
-    SET_ONLY_XBM_IF_EITHER_EN(INSTR_VMX_VMRESUME,       VMX_EXIT_VMRESUME);         /* unconditional */
+    SET_ONLY_XBM_IF_EITHER_EN(INSTR_VMX_VMRESUME,       VMX_EXIT_VMRESUME);      /* unconditional */
     SET_ONLY_XBM_IF_EITHER_EN( EXIT_VMX_VMRESUME,       VMX_EXIT_VMRESUME);
-    SET_ONLY_XBM_IF_EITHER_EN(INSTR_VMX_VMWRITE,        VMX_EXIT_VMWRITE);          /* unconditional */
+    SET_ONLY_XBM_IF_EITHER_EN(INSTR_VMX_VMWRITE,        VMX_EXIT_VMWRITE);       /* unconditional */
     SET_ONLY_XBM_IF_EITHER_EN( EXIT_VMX_VMWRITE,        VMX_EXIT_VMWRITE);
-    SET_ONLY_XBM_IF_EITHER_EN(INSTR_VMX_VMXOFF,         VMX_EXIT_VMXOFF);           /* unconditional */
+    SET_ONLY_XBM_IF_EITHER_EN(INSTR_VMX_VMXOFF,         VMX_EXIT_VMXOFF);        /* unconditional */
     SET_ONLY_XBM_IF_EITHER_EN( EXIT_VMX_VMXOFF,         VMX_EXIT_VMXOFF);
-    SET_ONLY_XBM_IF_EITHER_EN(INSTR_VMX_VMXON,          VMX_EXIT_VMXON);            /* unconditional */
+    SET_ONLY_XBM_IF_EITHER_EN(INSTR_VMX_VMXON,          VMX_EXIT_VMXON);         /* unconditional */
     SET_ONLY_XBM_IF_EITHER_EN( EXIT_VMX_VMXON,          VMX_EXIT_VMXON);
 
     if (   IS_EITHER_ENABLED(pVM, INSTR_CRX_READ)
@@ -9399,27 +9395,27 @@ static void hmR0VmxPreRunGuestDebugStateUpdate(PVMCPU pVCpu, PVMXRUNDBGSTATE pDb
     SET_ONLY_XBM_IF_EITHER_EN( EXIT_LLDT,               VMX_EXIT_LDTR_TR_ACCESS);
     SET_ONLY_XBM_IF_EITHER_EN( EXIT_LTR,                VMX_EXIT_LDTR_TR_ACCESS);
 
-    SET_ONLY_XBM_IF_EITHER_EN(INSTR_VMX_INVEPT,         VMX_EXIT_INVEPT);           /* unconditional */
+    SET_ONLY_XBM_IF_EITHER_EN(INSTR_VMX_INVEPT,         VMX_EXIT_INVEPT);        /* unconditional */
     SET_ONLY_XBM_IF_EITHER_EN( EXIT_VMX_INVEPT,         VMX_EXIT_INVEPT);
     SET_CPE1_XBM_IF_EITHER_EN(INSTR_RDTSCP,             VMX_EXIT_RDTSCP,   VMX_PROC_CTLS_RDTSC_EXIT);
     SET_ONLY_XBM_IF_EITHER_EN( EXIT_RDTSCP,             VMX_EXIT_RDTSCP);
-    SET_ONLY_XBM_IF_EITHER_EN(INSTR_VMX_INVVPID,        VMX_EXIT_INVVPID);          /* unconditional */
+    SET_ONLY_XBM_IF_EITHER_EN(INSTR_VMX_INVVPID,        VMX_EXIT_INVVPID);       /* unconditional */
     SET_ONLY_XBM_IF_EITHER_EN( EXIT_VMX_INVVPID,        VMX_EXIT_INVVPID);
     SET_CPE2_XBM_IF_EITHER_EN(INSTR_WBINVD,             VMX_EXIT_WBINVD,   VMX_PROC_CTLS2_WBINVD_EXIT);
     SET_ONLY_XBM_IF_EITHER_EN( EXIT_WBINVD,             VMX_EXIT_WBINVD);
-    SET_ONLY_XBM_IF_EITHER_EN(INSTR_XSETBV,             VMX_EXIT_XSETBV);           /* unconditional */
+    SET_ONLY_XBM_IF_EITHER_EN(INSTR_XSETBV,             VMX_EXIT_XSETBV);        /* unconditional */
     SET_ONLY_XBM_IF_EITHER_EN( EXIT_XSETBV,             VMX_EXIT_XSETBV);
     SET_CPE2_XBM_IF_EITHER_EN(INSTR_RDRAND,             VMX_EXIT_RDRAND,   VMX_PROC_CTLS2_RDRAND_EXIT);
     SET_ONLY_XBM_IF_EITHER_EN( EXIT_RDRAND,             VMX_EXIT_RDRAND);
     SET_CPE1_XBM_IF_EITHER_EN(INSTR_VMX_INVPCID,        VMX_EXIT_INVPCID,  VMX_PROC_CTLS_INVLPG_EXIT);
     SET_ONLY_XBM_IF_EITHER_EN( EXIT_VMX_INVPCID,        VMX_EXIT_INVPCID);
-    SET_ONLY_XBM_IF_EITHER_EN(INSTR_VMX_VMFUNC,         VMX_EXIT_VMFUNC);           /* unconditional for the current setup */
+    SET_ONLY_XBM_IF_EITHER_EN(INSTR_VMX_VMFUNC,         VMX_EXIT_VMFUNC);        /* unconditional for the current setup */
     SET_ONLY_XBM_IF_EITHER_EN( EXIT_VMX_VMFUNC,         VMX_EXIT_VMFUNC);
     SET_CPE2_XBM_IF_EITHER_EN(INSTR_RDSEED,             VMX_EXIT_RDSEED,   VMX_PROC_CTLS2_RDSEED_EXIT);
     SET_ONLY_XBM_IF_EITHER_EN( EXIT_RDSEED,             VMX_EXIT_RDSEED);
-    SET_ONLY_XBM_IF_EITHER_EN(INSTR_XSAVES,             VMX_EXIT_XSAVES);           /* unconditional (enabled by host, guest cfg) */
+    SET_ONLY_XBM_IF_EITHER_EN(INSTR_XSAVES,             VMX_EXIT_XSAVES);        /* unconditional (enabled by host, guest cfg) */
     SET_ONLY_XBM_IF_EITHER_EN(EXIT_XSAVES,              VMX_EXIT_XSAVES);
-    SET_ONLY_XBM_IF_EITHER_EN(INSTR_XRSTORS,            VMX_EXIT_XRSTORS);          /* unconditional (enabled by host, guest cfg) */
+    SET_ONLY_XBM_IF_EITHER_EN(INSTR_XRSTORS,            VMX_EXIT_XRSTORS);       /* unconditional (enabled by host, guest cfg) */
     SET_ONLY_XBM_IF_EITHER_EN( EXIT_XRSTORS,            VMX_EXIT_XRSTORS);
 
 #undef IS_EITHER_ENABLED
@@ -11966,7 +11962,7 @@ HMVMX_EXIT_DECL hmR0VmxExitRdmsr(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
         rcStrict = VINF_SUCCESS;
     }
     else
-        AssertMsg(rcStrict == VINF_CPUM_R3_MSR_READ, ("Unexpected IEMExecDecodedRdmsr status: %Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
+        AssertMsg(rcStrict == VINF_CPUM_R3_MSR_READ, ("Unexpected IEMExecDecodedRdmsr rc (%Rrc)\n", VBOXSTRICTRC_VAL(rcStrict)));
 
     return rcStrict;
 }
@@ -12109,7 +12105,7 @@ HMVMX_EXIT_DECL hmR0VmxExitWrmsr(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
         rcStrict = VINF_SUCCESS;
     }
     else
-        AssertMsg(rcStrict == VINF_CPUM_R3_MSR_WRITE, ("Unexpected IEMExecDecodedWrmsr status: %Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
+        AssertMsg(rcStrict == VINF_CPUM_R3_MSR_WRITE, ("Unexpected IEMExecDecodedWrmsr rc (%Rrc)\n", VBOXSTRICTRC_VAL(rcStrict)));
 
     return rcStrict;
 }
@@ -13231,8 +13227,8 @@ static int hmR0VmxExitXcptGP(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 
         if (   !pVCpu->hm.s.fTrapXcptGpForLovelyMesaDrv
             || !hmR0VmxIsMesaDrvGp(pVCpu, pVmxTransient, pCtx))
-            hmR0VmxSetPendingEvent(pVCpu, VMX_ENTRY_INT_INFO_FROM_EXIT_INT_INFO(pVmxTransient->uExitIntInfo), pVmxTransient->cbInstr,
-                                   pVmxTransient->uExitIntErrorCode, 0 /* GCPtrFaultAddress */);
+            hmR0VmxSetPendingEvent(pVCpu, VMX_ENTRY_INT_INFO_FROM_EXIT_INT_INFO(pVmxTransient->uExitIntInfo),
+                                   pVmxTransient->cbInstr, pVmxTransient->uExitIntErrorCode, 0 /* GCPtrFaultAddress */);
         else
             rc = hmR0VmxHandleMesaDrvGp(pVCpu, pVmxTransient, pCtx);
         return rc;

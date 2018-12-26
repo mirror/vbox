@@ -82,17 +82,17 @@ typedef HMR0FIRSTRC *PHMR0FIRSTRC;
 static struct
 {
     /** Per CPU globals. */
-    HMGLOBALCPUINFO                 aCpuInfo[RTCPUSET_MAX_CPUS];
+    HMPHYSCPU                       aCpuInfo[RTCPUSET_MAX_CPUS];
 
     /** @name Ring-0 method table for AMD-V and VT-x specific operations.
      * @{ */
-    DECLR0CALLBACKMEMBER(int,  pfnEnterSession, (PVMCPU pVCpu, PHMGLOBALCPUINFO pHostCpu));
+    DECLR0CALLBACKMEMBER(int,  pfnEnterSession, (PVMCPU pVCpu));
     DECLR0CALLBACKMEMBER(void, pfnThreadCtxCallback, (RTTHREADCTXEVENT enmEvent, PVMCPU pVCpu, bool fGlobalInit));
     DECLR0CALLBACKMEMBER(int,  pfnExportHostState, (PVMCPU pVCpu));
     DECLR0CALLBACKMEMBER(VBOXSTRICTRC, pfnRunGuestCode, (PVMCPU pVCpu));
-    DECLR0CALLBACKMEMBER(int,  pfnEnableCpu, (PHMGLOBALCPUINFO pHostCpu, PVM pVM, void *pvCpuPage, RTHCPHYS HCPhysCpuPage,
+    DECLR0CALLBACKMEMBER(int,  pfnEnableCpu, (PHMPHYSCPU pHostCpu, PVM pVM, void *pvCpuPage, RTHCPHYS HCPhysCpuPage,
                                               bool fEnabledByHost, PCSUPHWVIRTMSRS pHwvirtMsrs));
-    DECLR0CALLBACKMEMBER(int,  pfnDisableCpu, (PHMGLOBALCPUINFO pHostCpu, void *pvCpuPage, RTHCPHYS HCPhysCpuPage));
+    DECLR0CALLBACKMEMBER(int,  pfnDisableCpu, (void *pvCpuPage, RTHCPHYS HCPhysCpuPage));
     DECLR0CALLBACKMEMBER(int,  pfnInitVM, (PVM pVM));
     DECLR0CALLBACKMEMBER(int,  pfnTermVM, (PVM pVM));
     DECLR0CALLBACKMEMBER(int,  pfnSetupVM, (PVM pVM));
@@ -226,9 +226,9 @@ static RTCPUID hmR0FirstRcGetCpuId(PHMR0FIRSTRC pFirstRc)
 /** @name Dummy callback handlers.
  * @{ */
 
-static DECLCALLBACK(int) hmR0DummyEnter(PVMCPU pVCpu, PHMGLOBALCPUINFO pHostCpu)
+static DECLCALLBACK(int) hmR0DummyEnter(PVMCPU pVCpu)
 {
-    RT_NOREF2(pVCpu, pHostCpu);
+    RT_NOREF1(pVCpu);
     return VINF_SUCCESS;
 }
 
@@ -237,16 +237,16 @@ static DECLCALLBACK(void) hmR0DummyThreadCtxCallback(RTTHREADCTXEVENT enmEvent, 
     RT_NOREF3(enmEvent, pVCpu, fGlobalInit);
 }
 
-static DECLCALLBACK(int) hmR0DummyEnableCpu(PHMGLOBALCPUINFO pHostCpu, PVM pVM, void *pvCpuPage, RTHCPHYS HCPhysCpuPage,
+static DECLCALLBACK(int) hmR0DummyEnableCpu(PHMPHYSCPU pHostCpu, PVM pVM, void *pvCpuPage, RTHCPHYS HCPhysCpuPage,
                                             bool fEnabledBySystem, PCSUPHWVIRTMSRS pHwvirtMsrs)
 {
     RT_NOREF6(pHostCpu, pVM, pvCpuPage, HCPhysCpuPage, fEnabledBySystem, pHwvirtMsrs);
     return VINF_SUCCESS;
 }
 
-static DECLCALLBACK(int) hmR0DummyDisableCpu(PHMGLOBALCPUINFO pHostCpu, void *pvCpuPage, RTHCPHYS HCPhysCpuPage)
+static DECLCALLBACK(int) hmR0DummyDisableCpu(void *pvCpuPage, RTHCPHYS HCPhysCpuPage)
 {
-    RT_NOREF3(pHostCpu, pvCpuPage, HCPhysCpuPage);
+    RT_NOREF2(pvCpuPage, HCPhysCpuPage);
     return VINF_SUCCESS;
 }
 
@@ -788,7 +788,7 @@ static DECLCALLBACK(void) hmR0InitAmdCpu(RTCPUID idCpu, void *pvUser1, void *pvU
  */
 static int hmR0EnableCpu(PVM pVM, RTCPUID idCpu)
 {
-    PHMGLOBALCPUINFO pHostCpu = &g_HmR0.aCpuInfo[idCpu];
+    PHMPHYSCPU pHostCpu = &g_HmR0.aCpuInfo[idCpu];
 
     Assert(idCpu == (RTCPUID)RTMpCpuIdToSetIndex(idCpu)); /** @todo fix idCpu == index assumption (rainy day) */
     Assert(idCpu < RT_ELEMENTS(g_HmR0.aCpuInfo));
@@ -974,7 +974,7 @@ VMMR0_INT_DECL(int) HMR0EnableAllCpus(PVM pVM)
  */
 static int hmR0DisableCpu(RTCPUID idCpu)
 {
-    PHMGLOBALCPUINFO pHostCpu = &g_HmR0.aCpuInfo[idCpu];
+    PHMPHYSCPU pHostCpu = &g_HmR0.aCpuInfo[idCpu];
 
     Assert(!g_HmR0.hwvirt.u.vmx.fSupported || !g_HmR0.hwvirt.u.vmx.fUsingSUPR0EnableVTx);
     Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
@@ -991,7 +991,7 @@ static int hmR0DisableCpu(RTCPUID idCpu)
     int rc;
     if (pHostCpu->fConfigured)
     {
-        rc = g_HmR0.pfnDisableCpu(pHostCpu, pHostCpu->pvMemObj, pHostCpu->HCPhysMemObj);
+        rc = g_HmR0.pfnDisableCpu(pHostCpu->pvMemObj, pHostCpu->HCPhysMemObj);
         AssertRCReturn(rc, rc);
 
         pHostCpu->fConfigured = false;
@@ -1322,7 +1322,7 @@ VMMR0_INT_DECL(int) hmR0EnterCpu(PVMCPU pVCpu)
 
     int              rc       = VINF_SUCCESS;
     RTCPUID const    idCpu    = RTMpCpuId();
-    PHMGLOBALCPUINFO pHostCpu = &g_HmR0.aCpuInfo[idCpu];
+    PHMPHYSCPU       pHostCpu = &g_HmR0.aCpuInfo[idCpu];
     AssertPtr(pHostCpu);
 
     /* Enable VT-x or AMD-V if local init is required, or enable if it's a freshly onlined CPU. */
@@ -1357,43 +1357,38 @@ VMMR0_INT_DECL(int) HMR0Enter(PVMCPU pVCpu)
 
     /* Load the bare minimum state required for entering HM. */
     int rc = hmR0EnterCpu(pVCpu);
-    AssertRCReturn(rc, rc);
+    if (RT_SUCCESS(rc))
+    {
+        if (g_HmR0.hwvirt.u.vmx.fSupported)
+        {
+            Assert((pVCpu->hm.s.fCtxChanged & (HM_CHANGED_HOST_CONTEXT | HM_CHANGED_VMX_HOST_GUEST_SHARED_STATE))
+                                           == (HM_CHANGED_HOST_CONTEXT | HM_CHANGED_VMX_HOST_GUEST_SHARED_STATE));
+        }
+        else
+        {
+            Assert((pVCpu->hm.s.fCtxChanged & (HM_CHANGED_HOST_CONTEXT | HM_CHANGED_SVM_HOST_GUEST_SHARED_STATE))
+                                           == (HM_CHANGED_HOST_CONTEXT | HM_CHANGED_SVM_HOST_GUEST_SHARED_STATE));
+        }
 
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
-    AssertReturn(!VMMR0ThreadCtxHookIsEnabled(pVCpu), VERR_HM_IPE_5);
-    bool fStartedSet = PGMR0DynMapStartOrMigrateAutoSet(pVCpu);
+        AssertReturn(!VMMR0ThreadCtxHookIsEnabled(pVCpu), VERR_HM_IPE_5);
+        bool const fStartedSet = PGMR0DynMapStartOrMigrateAutoSet(pVCpu);
 #endif
 
-    RTCPUID const    idCpu    = RTMpCpuId();
-    PHMGLOBALCPUINFO pHostCpu = &g_HmR0.aCpuInfo[idCpu];
-    Assert(pHostCpu);
-    if (g_HmR0.hwvirt.u.vmx.fSupported)
-    {
-        Assert((pVCpu->hm.s.fCtxChanged & (HM_CHANGED_HOST_CONTEXT | HM_CHANGED_VMX_HOST_GUEST_SHARED_STATE))
-                                       == (HM_CHANGED_HOST_CONTEXT | HM_CHANGED_VMX_HOST_GUEST_SHARED_STATE));
-    }
-    else
-    {
-        Assert((pVCpu->hm.s.fCtxChanged & (HM_CHANGED_HOST_CONTEXT | HM_CHANGED_SVM_HOST_GUEST_SHARED_STATE))
-                                       == (HM_CHANGED_HOST_CONTEXT | HM_CHANGED_SVM_HOST_GUEST_SHARED_STATE));
-    }
+        /* Keep track of the CPU owning the VMCS for debugging scheduling weirdness and ring-3 calls. */
+        rc = g_HmR0.pfnEnterSession(pVCpu);
+        AssertMsgRCReturnStmt(rc, ("rc=%Rrc pVCpu=%p\n", rc, pVCpu),  pVCpu->hm.s.idEnteredCpu = NIL_RTCPUID, rc);
 
-    rc = g_HmR0.pfnEnterSession(pVCpu, pHostCpu);
-    AssertMsgRCReturn(rc, ("rc=%Rrc pVCpu=%p HostCpuId=%u\n", rc, pVCpu, idCpu), rc);
-
-    /* Exports the host-state as we may be resuming code after a longjmp and quite
-       possibly now be scheduled on a different CPU. */
-    rc = g_HmR0.pfnExportHostState(pVCpu);
-    AssertMsgRCReturn(rc, ("rc=%Rrc pVCpu=%p HostCpuId=%u\n", rc, pVCpu, idCpu), rc);
+        /* Exports the host-state as we may be resuming code after a longjmp and quite
+           possibly now be scheduled on a different CPU. */
+        rc = g_HmR0.pfnExportHostState(pVCpu);
+        AssertMsgRCReturnStmt(rc, ("rc=%Rrc pVCpu=%p\n", rc, pVCpu),  pVCpu->hm.s.idEnteredCpu = NIL_RTCPUID, rc);
 
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
-    if (fStartedSet)
-        PGMRZDynMapReleaseAutoSet(pVCpu);
+        if (fStartedSet)
+            PGMRZDynMapReleaseAutoSet(pVCpu);
 #endif
-
-    /* Keep track of the CPU owning the VMCS for debugging scheduling weirdness and ring-3 calls. */
-    if (RT_FAILURE(rc))
-        pVCpu->hm.s.idEnteredCpu = NIL_RTCPUID;
+    }
     return rc;
 }
 
@@ -1412,8 +1407,8 @@ VMMR0_INT_DECL(int) HMR0LeaveCpu(PVMCPU pVCpu)
     Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
     VMCPU_ASSERT_EMT_RETURN(pVCpu, VERR_HM_WRONG_CPU);
 
-    RTCPUID const    idCpu    = RTMpCpuId();
-    PHMGLOBALCPUINFO pHostCpu = &g_HmR0.aCpuInfo[idCpu];
+    RTCPUID const idCpu    = RTMpCpuId();
+    PCHMPHYSCPU   pHostCpu = &g_HmR0.aCpuInfo[idCpu];
 
     if (   !g_HmR0.fGlobalInit
         && pHostCpu->fConfigured)
@@ -1469,7 +1464,7 @@ VMMR0_INT_DECL(int) HMR0RunGuestCode(PVM pVM, PVMCPU pVCpu)
     /* With thread-context hooks we would be running this code with preemption enabled. */
     if (!RTThreadPreemptIsEnabled(NIL_RTTHREAD))
     {
-        PHMGLOBALCPUINFO pHostCpu = &g_HmR0.aCpuInfo[RTMpCpuId()];
+        PCHMPHYSCPU pHostCpu = &g_HmR0.aCpuInfo[RTMpCpuId()];
         Assert(!VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3 | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL));
         Assert(pHostCpu->fConfigured);
         AssertReturn(!ASMAtomicReadBool(&g_HmR0.fSuspended), VERR_HM_SUSPEND_PENDING);
@@ -1608,7 +1603,7 @@ VMMR0_INT_DECL(int) HMR0InvalidatePage(PVMCPU pVCpu, RTGCPTR GCVirt)
  *
  * @returns The cpu structure pointer.
  */
-VMMR0_INT_DECL(PHMGLOBALCPUINFO) hmR0GetCurrentCpu(void)
+VMMR0_INT_DECL(PHMPHYSCPU) hmR0GetCurrentCpu(void)
 {
     Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
     RTCPUID const idCpu = RTMpCpuId();
@@ -1691,7 +1686,7 @@ VMMR0_INT_DECL(int) HMR0EnterSwitcher(PVM pVM, VMMSWITCHER enmSwitcher, bool *pf
         return VINF_SUCCESS;
 
     /* Ok, disable VT-x. */
-    PHMGLOBALCPUINFO pHostCpu = hmR0GetCurrentCpu();
+    PCHMPHYSCPU pHostCpu = hmR0GetCurrentCpu();
     AssertReturn(   pHostCpu
                  && pHostCpu->hMemObj != NIL_RTR0MEMOBJ
                  && pHostCpu->pvMemObj
@@ -1699,7 +1694,7 @@ VMMR0_INT_DECL(int) HMR0EnterSwitcher(PVM pVM, VMMSWITCHER enmSwitcher, bool *pf
                  VERR_HM_IPE_2);
 
     *pfVTxDisabled = true;
-    return VMXR0DisableCpu(pHostCpu, pHostCpu->pvMemObj, pHostCpu->HCPhysMemObj);
+    return VMXR0DisableCpu(pHostCpu->pvMemObj, pHostCpu->HCPhysMemObj);
 }
 
 
@@ -1725,7 +1720,7 @@ VMMR0_INT_DECL(void) HMR0LeaveSwitcher(PVM pVM, bool fVTxDisabled)
         Assert(g_HmR0.fEnabled);
         Assert(g_HmR0.fGlobalInit);
 
-        PHMGLOBALCPUINFO pHostCpu = hmR0GetCurrentCpu();
+        PHMPHYSCPU pHostCpu = hmR0GetCurrentCpu();
         AssertReturnVoid(   pHostCpu
                          && pHostCpu->hMemObj != NIL_RTR0MEMOBJ
                          && pHostCpu->pvMemObj
