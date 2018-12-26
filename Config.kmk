@@ -4560,6 +4560,7 @@ $$(PATH_TARGET)/tst$(1)$(subst /,_,$(KERN_DIR))_mod.run: \
    endif
 	+ $(QUIET)$(REDIRECT_EXT) -d2=1 -w1 "$$(PATH_TARGET)/tst$(1)_mod/make.err" -- \
 		make KBUILD_VERBOSE=$(KBUILD_VERBOSE) KERN_DIR=$(KERN_DIR) $(if-expr $(KMK_OPTS_JOBS) != 0,JOBS=$(KMK_OPTS_JOBS),) -C $$(PATH_TARGET)/tst$(1)_mod
+	$(CAT) "$$(PATH_TARGET)/tst$(1)_mod/make.err"
 	$(QUIET)! grep "^WARNING: .* undefined!$$$$" "$$(PATH_TARGET)/tst$(1)_mod/make.err"
    if1of ($(USERNAME), bird)
 	- nm -u "$$(PATH_TARGET)/tst$(1)_mod/"*.ko | sort
