@@ -3804,6 +3804,7 @@ void UIMachineSettingsStorage::addAttachmentWrapper(KDeviceType enmDevice)
     const QString strMachineFolder(QFileInfo(m_strMachineSettingsFilePath).absolutePath());
 
     bool fCancelled = false;
+    bool fCreateEmpty = false;
     QUuid uMediumId;
     switch (enmDevice)
     {
@@ -3825,6 +3826,9 @@ void UIMachineSettingsStorage::addAttachmentWrapper(KDeviceType enmDevice)
             if (iAnswer == AlertButton_Choice2)
                 uMediumId = vboxGlobal().openMediumSelectorDialog(this, UIMediumDeviceType_DVD,
                                                                   m_strMachineName, m_strMachineSettingsFilePath);
+            /* For optical medium we allow creating an empty drive: */
+            else if (iAnswer == AlertButton_Choice1)
+                fCreateEmpty = true;
             else if (iAnswer == AlertButton_Cancel)
                 fCancelled = true;
             break;
@@ -3842,7 +3846,7 @@ void UIMachineSettingsStorage::addAttachmentWrapper(KDeviceType enmDevice)
         default: break; /* Shut up, MSC! */
     }
 
-    if (!fCancelled && !uMediumId.isNull())
+    if (!fCancelled && (!uMediumId.isNull() || fCreateEmpty))
     {
         m_pModelStorage->addAttachment(QUuid(m_pModelStorage->data(index, StorageModel::R_ItemId).toString()), enmDevice, uMediumId);
         m_pModelStorage->sort();
