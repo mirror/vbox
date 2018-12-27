@@ -532,11 +532,11 @@ bool UICustomFileSystemModel::showHumanReadableSizes() const
 
 void UICustomFileSystemModel::initializeTree()
 {
-    m_pRootItem = new UICustomFileSystemItem(QApplication::tr("UIFileManager", "Name"), 0, KFsObjType_Directory);
-    m_pRootItem->setData(QApplication::tr("UIFileManager", "Size"), UICustomFileSystemModelColumn_Size);
-    m_pRootItem->setData(QApplication::tr("UIFileManager", "Change Time"), UICustomFileSystemModelColumn_ChangeTime);
-    m_pRootItem->setData(QApplication::tr("UIFileManager", "Owner"), UICustomFileSystemModelColumn_Owner);
-    m_pRootItem->setData(QApplication::tr("UIFileManager", "Permissions"), UICustomFileSystemModelColumn_Permissions);
-    m_pRootItem->setData(QApplication::tr("UIFileManager", "LocalPath"), UICustomFileSystemModelColumn_LocalPath);
-    m_pRootItem->setData(QApplication::tr("UIFileManager", "Path"), UICustomFileSystemModelColumn_Path);
+    m_pRootItem = new UICustomFileSystemItem(UICustomFileSystemModel::tr("Name"), 0, KFsObjType_Directory);
+    m_pRootItem->setData(UICustomFileSystemModel::tr("Size"), UICustomFileSystemModelColumn_Size);
+    m_pRootItem->setData(UICustomFileSystemModel::tr("Change Time"), UICustomFileSystemModelColumn_ChangeTime);
+    m_pRootItem->setData(UICustomFileSystemModel::tr("Owner"), UICustomFileSystemModelColumn_Owner);
+    m_pRootItem->setData(UICustomFileSystemModel::tr("Permissions"), UICustomFileSystemModelColumn_Permissions);
+    m_pRootItem->setData(UICustomFileSystemModel::tr("LocalPath"), UICustomFileSystemModelColumn_LocalPath);
+    m_pRootItem->setData(UICustomFileSystemModel::tr("Path"), UICustomFileSystemModelColumn_Path);
 }

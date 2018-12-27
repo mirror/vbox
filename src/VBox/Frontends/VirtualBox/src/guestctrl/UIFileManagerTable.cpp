@@ -484,6 +484,7 @@ void UIFileManagerTable::prepareObjects()
         connect(m_pView, &UIGuestControlFileView::customContextMenuRequested,
                 this, &UIFileManagerTable::sltCreateFileViewContextMenu);
         m_pView->hideColumn(UICustomFileSystemModelColumn_Path);
+        m_pView->hideColumn(UICustomFileSystemModelColumn_LocalPath);
     }
     m_pWarningLabel = new QILabel(this);
     if (m_pWarningLabel)
@@ -967,11 +968,11 @@ void UIFileManagerTable::retranslateUi()
     UICustomFileSystemItem *pRootItem = rootItem();
     if (pRootItem)
     {
-        pRootItem->setData(UIFileManager::tr("Name"), UICustomFileSystemModelColumn_Name);
-        pRootItem->setData(UIFileManager::tr("Size"), UICustomFileSystemModelColumn_Size);
-        pRootItem->setData(UIFileManager::tr("Change Time"), UICustomFileSystemModelColumn_ChangeTime);
-        pRootItem->setData(UIFileManager::tr("Owner"), UICustomFileSystemModelColumn_Owner);
-        pRootItem->setData(UIFileManager::tr("Permissions"), UICustomFileSystemModelColumn_Permissions);
+        pRootItem->setData(UICustomFileSystemModel::tr("Name"), UICustomFileSystemModelColumn_Name);
+        pRootItem->setData(UICustomFileSystemModel::tr("Size"), UICustomFileSystemModelColumn_Size);
+        pRootItem->setData(UICustomFileSystemModel::tr("Change Time"), UICustomFileSystemModelColumn_ChangeTime);
+        pRootItem->setData(UICustomFileSystemModel::tr("Owner"), UICustomFileSystemModelColumn_Owner);
+        pRootItem->setData(UICustomFileSystemModel::tr("Permissions"), UICustomFileSystemModelColumn_Permissions);
     }
     if (m_pWarningLabel)
         m_pWarningLabel->setText(UIFileManager::tr("No Guest Session"));
