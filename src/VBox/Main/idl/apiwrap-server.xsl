@@ -111,6 +111,9 @@ templates for file headers/footers
     <xsl:value-of select="concat('#ifndef ', substring(@name, 2), 'Wrap_H_', $G_sNewLine)"/>
     <xsl:value-of select="concat('#define ', substring(@name, 2), 'Wrap_H_')"/>
     <xsl:text>
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include "VirtualBoxBase.h"
 #include "Wrapper.h"
