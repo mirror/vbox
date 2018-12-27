@@ -3915,7 +3915,7 @@ VMMR3DECL(int) CPUMR3InitCompleted(PVM pVM, VMINITCOMPLETED enmWhat)
  *
  * @param   pVM                 The cross context VM structure.
  */
-VMMR3DECL(void) CPUMR3LogCpuIds(PVM pVM)
+VMMR3DECL(void) CPUMR3LogCpuIdAndMsrFeatures(PVM pVM)
 {
     /*
      * Log the cpuid.

@@ -2212,7 +2212,7 @@ VMM_INT_DECL(CPUMINTERRUPTIBILITY) CPUMGetGuestInterruptibility(PVMCPU pVCpu);
 
 VMMR3DECL(int)          CPUMR3Init(PVM pVM);
 VMMR3DECL(int)          CPUMR3InitCompleted(PVM pVM, VMINITCOMPLETED enmWhat);
-VMMR3DECL(void)         CPUMR3LogCpuIds(PVM pVM);
+VMMR3DECL(void)         CPUMR3LogCpuIdAndMsrFeatures(PVM pVM);
 VMMR3DECL(void)         CPUMR3Relocate(PVM pVM);
 VMMR3DECL(int)          CPUMR3Term(PVM pVM);
 VMMR3DECL(void)         CPUMR3Reset(PVM pVM);

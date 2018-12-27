@@ -866,7 +866,7 @@ VMMR3_INT_DECL(int) VMMR3InitCompleted(PVM pVM, VMINITCOMPLETED enmWhat)
             /*
              * CPUM's post-initialization (print CPUIDs).
              */
-            CPUMR3LogCpuIds(pVM);
+            CPUMR3LogCpuIdAndMsrFeatures(pVM);
             break;
         }
 
