@@ -17,6 +17,9 @@
 
 #ifndef ____H_PCIRAWDEV
 #define ____H_PCIRAWDEV
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include "VirtualBoxBase.h"
 #include <VBox/vmm/pdmdrv.h>

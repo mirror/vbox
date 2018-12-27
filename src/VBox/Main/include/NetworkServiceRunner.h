@@ -15,6 +15,12 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#ifndef ____H_NETWORKSERVICERUNNER
+#define ____H_NETWORKSERVICERUNNER
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
+
 #include <iprt/err.h>
 #include <iprt/types.h>
 #include <iprt/string.h>
@@ -55,3 +61,6 @@ private:
     struct Data;
     Data *m;
 };
+
+#endif
+

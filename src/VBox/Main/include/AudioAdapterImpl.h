@@ -19,6 +19,9 @@
 
 #ifndef ____H_AUDIOADAPTER
 #define ____H_AUDIOADAPTER
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include "AudioAdapterWrap.h"
 namespace settings

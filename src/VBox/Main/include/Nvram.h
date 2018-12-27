@@ -18,6 +18,9 @@
 
 #ifndef ____H_NVRAM
 #define ____H_NVRAM
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <VBox/com/ptr.h>
 #include <VBox/vmm/pdmdrv.h>

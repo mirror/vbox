@@ -19,7 +19,10 @@
  */
 
 #ifndef ____H_HOSTHARDWARELINUX
-# define ____H_HOSTHARDWARELINUX
+#define ____H_HOSTHARDWARELINUX
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <iprt/err.h>
 #include <iprt/cpp/ministring.h>

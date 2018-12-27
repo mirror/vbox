@@ -20,6 +20,9 @@
 
 #ifndef ____H_REMOTEUSBDEVICEIMPL
 #define ____H_REMOTEUSBDEVICEIMPL
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include "HostUSBDeviceWrap.h"
 

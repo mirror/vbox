@@ -15,8 +15,11 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ____H_GUESTSESSIONIMPL_TASKS
-#define ____H_GUESTSESSIONIMPL_TASKS
+#ifndef ____H_GUESTSESSIONIMPLTASKS
+#define ____H_GUESTSESSIONIMPLTASKS
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include "GuestSessionWrap.h"
 #include "EventImpl.h"
@@ -374,4 +377,4 @@ protected:
     /** Update flags. */
     uint32_t                    mFlags;
 };
-#endif /* !____H_GUESTSESSIONIMPL_TASKS */
+#endif /* !____H_GUESTSESSIONIMPLTASKS */

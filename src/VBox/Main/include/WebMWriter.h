@@ -17,6 +17,9 @@
 
 #ifndef ____WEBMWRITER
 #define ____WEBMWRITER
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include "EBMLWriter.h"
 

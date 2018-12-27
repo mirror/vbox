@@ -17,6 +17,9 @@
 
 #ifndef ____H_RecordSettings
 #define ____H_RecordSettings
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include "RecordingSettingsWrap.h"
 

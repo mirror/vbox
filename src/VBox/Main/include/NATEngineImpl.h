@@ -19,6 +19,9 @@
 
 #ifndef ____H_NATENGINE
 #define ____H_NATENGINE
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include "NATEngineWrap.h"
 

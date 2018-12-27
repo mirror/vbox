@@ -18,6 +18,9 @@
 
 #ifndef ____H_OBJECTSTATE
 #define ____H_OBJECTSTATE
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include "VBox/com/defs.h"
 #include "VBox/com/AutoLock.h"

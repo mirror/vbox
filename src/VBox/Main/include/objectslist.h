@@ -18,6 +18,9 @@
 
 #ifndef ____H_OBJECTSLIST
 #define ____H_OBJECTSLIST
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <list>
 #include <VBox/com/ptr.h>

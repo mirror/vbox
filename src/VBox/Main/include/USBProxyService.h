@@ -18,6 +18,9 @@
 
 #ifndef ____H_USBPROXYSERVICE
 #define ____H_USBPROXYSERVICE
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <VBox/usb.h>
 #include <VBox/usbfilter.h>

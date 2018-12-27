@@ -18,6 +18,9 @@
 
 #ifndef ____H_REMOTEUSBBACKEND
 #define ____H_REMOTEUSBBACKEND
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include "RemoteUSBDeviceImpl.h"
 

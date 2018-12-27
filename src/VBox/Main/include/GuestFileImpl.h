@@ -17,6 +17,9 @@
 
 #ifndef ____H_GUESTFILEIMPL
 #define ____H_GUESTFILEIMPL
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include "VirtualBoxBase.h"
 #include "EventImpl.h"

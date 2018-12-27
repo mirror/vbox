@@ -18,6 +18,9 @@
 
 #ifndef ____H_GUESTOSTYPEIMPL
 #define ____H_GUESTOSTYPEIMPL
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include "Global.h"
 #include "GuestOSTypeWrap.h"

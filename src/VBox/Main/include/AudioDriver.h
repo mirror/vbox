@@ -17,6 +17,9 @@
 
 #ifndef ____H_AUDIODRIVER
 #define ____H_AUDIODRIVER
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <VBox/com/ptr.h>
 #include <VBox/com/string.h>

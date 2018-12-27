@@ -17,6 +17,9 @@
 
 #ifndef ____H_CONSOLEIMPL
 #define ____H_CONSOLEIMPL
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include "VirtualBoxBase.h"
 #include "VBox/com/array.h"

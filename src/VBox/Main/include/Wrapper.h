@@ -17,6 +17,9 @@
 
 #ifndef ____H_WRAPPER
 #define ____H_WRAPPER
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <vector>
 #include <VBox/com/ptr.h>

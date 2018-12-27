@@ -17,6 +17,9 @@
 
 #ifndef ____H_RECORDING
 #define ____H_RECORDING
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <VBox/com/array.h>
 #include <VBox/com/string.h>

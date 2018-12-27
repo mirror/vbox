@@ -15,8 +15,11 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ____H_RECORDING_UTILS
-#define ____H_RECORDING_UTILS
+#ifndef ____H_RECORDINGUTILS
+#define ____H_RECORDINGUTILS
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <iprt/asm.h>
 #include <iprt/assert.h>
@@ -201,5 +204,5 @@ int RecordingUtilsRGBToYUV(uint32_t uPixelFormat,
                            uint8_t *paDst, uint32_t uDstWidth, uint32_t uDstHeight,
                            uint8_t *paSrc, uint32_t uSrcWidth, uint32_t uSrcHeight);
 
-#endif /* ____H_RECORDING_UTILS */
+#endif
 

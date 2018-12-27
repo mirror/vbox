@@ -18,6 +18,9 @@
 
 #ifndef ____H_BANDWIDTHGROUPIMPL
 #define ____H_BANDWIDTHGROUPIMPL
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <VBox/settings.h>
 #include "BandwidthControlImpl.h"

@@ -18,6 +18,9 @@
 
 #ifndef ____H_HOSTPOWER
 #define ____H_HOSTPOWER
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #ifdef RT_OS_DARWIN /* first, so we can undef pVM in iprt/cdefs.h */
 # include <IOKit/pwr_mgt/IOPMLib.h>

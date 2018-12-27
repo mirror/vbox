@@ -1,8 +1,6 @@
 /* $Id$ */
-
 /** @file
- *
- * Token COM class implementations: MachineToken and MediumLockToken
+ * Token COM class implementations - MachineToken and MediumLockToken
  */
 
 /*
@@ -17,8 +15,11 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef TOKEN_IMPL_H_
-#define TOKEN_IMPL_H_
+#ifndef ____H_TOKENIMPL
+#define ____H_TOKENIMPL
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include "TokenWrap.h"
 #include "MachineImpl.h"
@@ -102,6 +103,6 @@ private:
 };
 
 
-#endif // TOKEN_IMPL_H_
+#endif
 
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */

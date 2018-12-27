@@ -15,8 +15,11 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___HashedPw_h___
-#define ___HashedPw_h___
+#ifndef ____H_HASHEDPW
+#define ____H_HASHEDPW
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <iprt/cpp/ministring.h>
 

@@ -17,6 +17,9 @@
 
 #ifndef ____H_EVENTIMPL
 #define ____H_EVENTIMPL
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include "EventWrap.h"
 #include "EventSourceWrap.h"

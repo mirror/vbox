@@ -19,6 +19,9 @@
 
 #ifndef ____H_STORAGECONTROLLERIMPL
 #define ____H_STORAGECONTROLLERIMPL
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 #include "StorageControllerWrap.h"
 
 class ATL_NO_VTABLE StorageController :

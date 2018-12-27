@@ -17,6 +17,9 @@
 
 #ifndef ____H_CERTIFICATEIMPL
 #define ____H_CERTIFICATEIMPL
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /* VBox includes */
 #include <iprt/crypto/x509.h>

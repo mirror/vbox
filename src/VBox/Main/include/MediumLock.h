@@ -19,6 +19,9 @@
 
 #ifndef ____H_MEDIUMLOCK
 #define ____H_MEDIUMLOCK
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /* interface definitions */
 #include "VBox/com/VirtualBox.h"

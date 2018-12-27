@@ -19,6 +19,9 @@
 
 #ifndef ____H_CLIENTTOKENHOLDER
 #define ____H_CLIENTTOKENHOLDER
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include "SessionImpl.h"
 

@@ -17,6 +17,9 @@
 
 #ifndef ____H_DRVAUDIOVRDE
 #define ____H_DRVAUDIOVRDE
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <VBox/com/ptr.h>
 #include <VBox/com/string.h>

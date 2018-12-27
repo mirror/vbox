@@ -15,8 +15,11 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ____EBMLWRITER
-#define ____EBMLWRITER
+#ifndef ____H_EBMLWRITER
+#define ____H_EBMLWRITER
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <iprt/file.h>
 #include <VBox/com/string.h> /* For Utf8Str. */
@@ -134,4 +137,5 @@ private:
     void operator=(const EBMLWriter &);
 };
 
-#endif /* !____EBMLWRITER */
+#endif
+

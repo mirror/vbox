@@ -15,8 +15,12 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ____H_H_NATNETWORKIMPL
-#define ____H_H_NATNETWORKIMPL
+#ifndef ____H_NATNETWORKIMPL
+#define ____H_NATNETWORKIMPL
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
+
 #include "VBoxEvents.h"
 #include "NATNetworkWrap.h"
 

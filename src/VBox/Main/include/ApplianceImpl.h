@@ -17,6 +17,9 @@
 
 #ifndef ____H_APPLIANCEIMPL
 #define ____H_APPLIANCEIMPL
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /* VBox includes */
 #include "VirtualSystemDescriptionWrap.h"

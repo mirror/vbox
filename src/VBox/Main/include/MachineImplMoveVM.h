@@ -17,6 +17,9 @@
 
 #ifndef ____H_MACHINEIMPLMOVEVM
 #define ____H_MACHINEIMPLMOVEVM
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include "MachineImpl.h"
 #include "ProgressImpl.h"

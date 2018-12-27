@@ -18,6 +18,9 @@
 
 #ifndef ____H_PROGRESSIMPL
 #define ____H_PROGRESSIMPL
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include "ProgressWrap.h"
 #include "VirtualBoxBase.h"

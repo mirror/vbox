@@ -18,6 +18,9 @@
 
 #ifndef ____H_PARALLELPORTIMPL
 #define ____H_PARALLELPORTIMPL
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include "ParallelPortWrap.h"
 

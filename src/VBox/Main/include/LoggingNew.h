@@ -17,6 +17,9 @@
 
 #ifndef ____H_LOGGINGNEW
 #define ____H_LOGGINGNEW
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #ifdef ____H_LOGGING
 # error "You must include LoggingNew.h as the first include!"

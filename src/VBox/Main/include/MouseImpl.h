@@ -17,6 +17,9 @@
 
 #ifndef ____H_MOUSEIMPL
 #define ____H_MOUSEIMPL
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include "MouseWrap.h"
 #include "ConsoleImpl.h"

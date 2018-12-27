@@ -18,6 +18,9 @@
 
 #ifndef ____H_AUTOCALLER
 #define ____H_AUTOCALLER
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include "ObjectState.h"
 

@@ -17,6 +17,9 @@
 
 #ifndef ____H_UNATTENDED
 #define ____H_UNATTENDED
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <VBox/ostypes.h>
 #include <iprt/time.h>

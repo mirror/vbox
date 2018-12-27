@@ -19,6 +19,9 @@
 
 #ifndef ____H_PERFORMANCEIMPL
 #define ____H_PERFORMANCEIMPL
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include "PerformanceCollectorWrap.h"
 #include "PerformanceMetricWrap.h"

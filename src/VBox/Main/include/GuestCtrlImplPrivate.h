@@ -17,6 +17,9 @@
 
 #ifndef ____H_GUESTIMPLPRIVATE
 #define ____H_GUESTIMPLPRIVATE
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include "ConsoleImpl.h"
 #include "Global.h"

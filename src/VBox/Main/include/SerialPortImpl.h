@@ -19,6 +19,9 @@
 
 #ifndef ____H_SERIALPORTIMPL
 #define ____H_SERIALPORTIMPL
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include "SerialPortWrap.h"
 

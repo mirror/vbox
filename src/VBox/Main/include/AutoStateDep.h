@@ -1,6 +1,9 @@
 /* $Id$ */
 #ifndef ____H_AUTOSTATEDEP
 #define ____H_AUTOSTATEDEP
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /** @file
  *

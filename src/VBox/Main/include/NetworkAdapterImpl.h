@@ -1,7 +1,5 @@
 /* $Id$ */
-
 /** @file
- *
  * VirtualBox COM class implementation
  */
 
@@ -19,6 +17,9 @@
 
 #ifndef ____H_NETWORKADAPTER
 #define ____H_NETWORKADAPTER
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include "NetworkAdapterWrap.h"
 

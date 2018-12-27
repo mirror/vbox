@@ -19,6 +19,9 @@
 
 #ifndef ____H_PCIDEVICEATTACHMENTIMPL
 #define ____H_PCIDEVICEATTACHMENTIMPL
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include "PCIDeviceAttachmentWrap.h"
 

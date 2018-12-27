@@ -17,6 +17,9 @@
 
 #ifndef ____H_HOSTUSBDEVICEIMPL
 #define ____H_HOSTUSBDEVICEIMPL
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include "VirtualBoxBase.h"
 #include "USBDeviceFilterImpl.h"

@@ -18,6 +18,9 @@
 
 #ifndef ____H_MATCHING
 #define ____H_MATCHING
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <VBox/com/string.h>
 

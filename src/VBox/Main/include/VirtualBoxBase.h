@@ -17,6 +17,9 @@
 
 #ifndef ____H_VIRTUALBOXBASEIMPL
 #define ____H_VIRTUALBOXBASEIMPL
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <iprt/cdefs.h>
 #include <iprt/thread.h>

@@ -17,6 +17,9 @@
 
 #ifndef ____H_PROGRESSPROXYIMPL
 #define ____H_PROGRESSPROXYIMPL
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include "ProgressImpl.h"
 #include "AutoCaller.h"

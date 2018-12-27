@@ -17,6 +17,9 @@
 
 #ifndef ____H_MACHINEDEBUGGER
 #define ____H_MACHINEDEBUGGER
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include "MachineDebuggerWrap.h"
 #include <iprt/log.h>

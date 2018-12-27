@@ -17,6 +17,9 @@
 
 #ifndef ___USBIdDatabase_h
 #define ___USBIdDatabase_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <iprt/assert.h>
 #include <iprt/stdint.h>

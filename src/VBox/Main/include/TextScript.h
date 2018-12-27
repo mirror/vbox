@@ -17,6 +17,9 @@
 
 #ifndef ____H_TEXTSCRIPT
 #define ____H_TEXTSCRIPT
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include "VirtualBoxBase.h"
 #include <iprt/cpp/utils.h>

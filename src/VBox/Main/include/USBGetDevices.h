@@ -17,6 +17,9 @@
 
 #ifndef ___USBGetDevices_h
 #define ___USBGetDevices_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <VBox/usb.h>
 #include <iprt/mem.h>

@@ -17,6 +17,9 @@
 
 #ifndef ____H_UNATTENDEDSCRIPT
 #define ____H_UNATTENDEDSCRIPT
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include "TextScript.h"
 

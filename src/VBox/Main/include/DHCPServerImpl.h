@@ -1,7 +1,5 @@
 /* $Id$ */
-
 /** @file
- *
  * VirtualBox COM class implementation
  */
 
@@ -17,8 +15,11 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ____H_H_DHCPSERVERIMPL
-#define ____H_H_DHCPSERVERIMPL
+#ifndef ____H_DHCPSERVERIMPL
+#define ____H_DHCPSERVERIMPL
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include "DHCPServerWrap.h"
 

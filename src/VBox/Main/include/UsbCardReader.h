@@ -18,6 +18,9 @@
 
 #ifndef ____H_USBCARDREADER
 #define ____H_USBCARDREADER
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <VBox/vmm/pdmcardreaderinfs.h>
 #include <VBox/vmm/pdmdrv.h>

@@ -18,6 +18,9 @@
 
 #ifndef ____H_MEDIUMIMPL
 #define ____H_MEDIUMIMPL
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <VBox/vd.h>
 #include "MediumWrap.h"

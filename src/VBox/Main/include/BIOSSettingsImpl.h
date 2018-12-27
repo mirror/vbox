@@ -19,6 +19,9 @@
 
 #ifndef ____H_BIOSSETTINGS
 #define ____H_BIOSSETTINGS
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include "BIOSSettingsWrap.h"
 

@@ -15,8 +15,11 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ____H_RECORDING_INTERNALS
-#define ____H_RECORDING_INTERNALS
+#ifndef ____H_RECORDINGINTERNALS
+#define ____H_RECORDINGINTERNALS
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <iprt/assert.h>
 #include <iprt/types.h> /* drag in stdint.h before vpx does it. */
@@ -181,5 +184,5 @@ struct RecordingBlock
 /** List for keeping video recording (data) blocks. */
 typedef std::list<RecordingBlock *> RecordingBlockList;
 
-#endif /* !____H_RECORDING_INTERNALS */
+#endif
 

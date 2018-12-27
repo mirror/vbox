@@ -17,6 +17,9 @@
 
 #ifndef ___autostart_h
 #define ___autostart_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <iprt/cdefs.h>
 #include <iprt/types.h>

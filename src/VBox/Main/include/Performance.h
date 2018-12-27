@@ -16,6 +16,9 @@
  */
 #ifndef ___performance_h
 #define ___performance_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <VBox/com/defs.h>
 #include <VBox/com/ptr.h>

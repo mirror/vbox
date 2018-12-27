@@ -17,6 +17,9 @@
 
 #ifndef ____H_MACHINEIMPL
 #define ____H_MACHINEIMPL
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include "AuthLibrary.h"
 #include "VirtualBoxBase.h"

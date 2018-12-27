@@ -19,6 +19,9 @@
 
 #ifndef ____H_SYSTEMPROPERTIESIMPL
 #define ____H_SYSTEMPROPERTIESIMPL
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include "MediumFormatImpl.h"
 #include "SystemPropertiesWrap.h"

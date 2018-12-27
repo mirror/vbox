@@ -19,6 +19,9 @@
 
 #ifndef ____H_RecordingScreenSettings
 #define ____H_RecordingScreenSettings
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include "RecordingScreenSettingsWrap.h"
 

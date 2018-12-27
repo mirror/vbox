@@ -19,6 +19,9 @@
 
 #ifndef ____H_CLIENTTOKEN
 #define ____H_CLIENTTOKEN
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <VBox/com/ptr.h>
 #include <VBox/com/AutoLock.h>

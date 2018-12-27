@@ -17,6 +17,9 @@
 
 #ifndef ____H_VIRTUALBOXSDSIMPL
 #define ____H_VIRTUALBOXSDSIMPL
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include "VirtualBoxBase.h"
 

@@ -17,6 +17,9 @@
 
 #ifndef ____H_GUESTFSOBJINFOIMPL
 #define ____H_GUESTFSOBJINFOIMPL
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include "GuestFsObjInfoWrap.h"
 #include "GuestCtrlImplPrivate.h"

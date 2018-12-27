@@ -17,6 +17,9 @@
 
 #ifndef ____H_DISPLAYIMPL
 #define ____H_DISPLAYIMPL
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include "SchemaDefs.h"
 

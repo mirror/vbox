@@ -17,6 +17,9 @@
 
 #ifndef ____H_KEYBOARDIMPL
 #define ____H_KEYBOARDIMPL
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include "KeyboardWrap.h"
 #include "EventImpl.h"

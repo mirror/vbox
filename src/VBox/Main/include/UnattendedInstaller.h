@@ -17,6 +17,9 @@
 
 #ifndef ____H_UNATTENDEDINSTALLER
 #define ____H_UNATTENDEDINSTALLER
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include "UnattendedScript.h"
 

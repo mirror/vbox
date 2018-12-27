@@ -17,6 +17,9 @@
 
 #ifndef ____H_GUESTDNDSOURCEIMPL
 #define ____H_GUESTDNDSOURCEIMPL
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <VBox/GuestHost/DragAndDrop.h>
 #include <VBox/HostServices/DragAndDropSvc.h>

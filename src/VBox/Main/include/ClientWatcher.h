@@ -17,6 +17,9 @@
 
 #ifndef ____H_CLIENTWATCHER
 #define ____H_CLIENTWATCHER
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 
 #include <list>

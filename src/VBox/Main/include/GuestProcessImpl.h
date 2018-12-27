@@ -17,6 +17,9 @@
 
 #ifndef ____H_GUESTPROCESSIMPL
 #define ____H_GUESTPROCESSIMPL
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include "GuestCtrlImplPrivate.h"
 #include "GuestProcessWrap.h"

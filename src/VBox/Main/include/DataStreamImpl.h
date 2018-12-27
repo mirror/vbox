@@ -18,6 +18,9 @@
 
 #ifndef ____H_DATASTREAMIMPL
 #define ____H_DATASTREAMIMPL
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include "DataStreamWrap.h"
 

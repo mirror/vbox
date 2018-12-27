@@ -17,6 +17,9 @@
 
 #ifndef ____H_GUESTSESSIONIMPL
 #define ____H_GUESTSESSIONIMPL
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include "GuestSessionWrap.h"
 #include "EventImpl.h"

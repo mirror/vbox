@@ -17,6 +17,9 @@
 
 #ifndef ____H_GUESTDIRECTORYIMPL
 #define ____H_GUESTDIRECTORYIMPL
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include "GuestDirectoryWrap.h"
 #include "GuestFsObjInfoImpl.h"

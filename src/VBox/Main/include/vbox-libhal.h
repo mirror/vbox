@@ -19,6 +19,9 @@
 
 #ifndef ____H_VBOX_LIBHAL
 #define ____H_VBOX_LIBHAL
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <stdint.h>
 

@@ -17,6 +17,9 @@
 
 #ifndef ____H_SNAPSHOTIMPL
 #define ____H_SNAPSHOTIMPL
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include "SnapshotWrap.h"
 

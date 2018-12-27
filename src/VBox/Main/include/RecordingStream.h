@@ -15,8 +15,11 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ____H_RECORDING_STREAM
-#define ____H_RECORDING_STREAM
+#ifndef ____H_RECORDINGSTREAM
+#define ____H_RECORDINGSTREAM
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <map>
 #include <vector>
@@ -215,5 +218,5 @@ protected:
 /** Vector of recording streams. */
 typedef std::vector <RecordingStream *> RecordingStreams;
 
-#endif /* !____H_RECORDING_STREAM */
+#endif
 

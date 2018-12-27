@@ -17,6 +17,9 @@
 
 #ifndef ____H_APPLIANCEIMPLPRIVATE
 #define ____H_APPLIANCEIMPLPRIVATE
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 
 class VirtualSystemDescription;

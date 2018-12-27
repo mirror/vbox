@@ -15,6 +15,12 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#ifndef ____H_DISPLAYUTILS
+#define ____H_DISPLAYUTILS
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
+
 #include "VBox/com/string.h"
 
 using namespace com;
@@ -32,4 +38,6 @@ int readSavedGuestScreenInfo(const Utf8Str &strStateFilePath, uint32_t u32Screen
 
 int readSavedDisplayScreenshot(const Utf8Str &strStateFilePath, uint32_t u32Type, uint8_t **ppu8Data, uint32_t *pcbData, uint32_t *pu32Width, uint32_t *pu32Height);
 void freeSavedDisplayScreenshot(uint8_t *pu8Data);
+
+#endif
 

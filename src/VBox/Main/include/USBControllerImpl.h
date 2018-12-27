@@ -19,6 +19,9 @@
 
 #ifndef ____H_USBCONTROLLERIMPL
 #define ____H_USBCONTROLLERIMPL
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include "USBControllerWrap.h"
 

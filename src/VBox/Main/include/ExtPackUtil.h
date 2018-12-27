@@ -17,6 +17,9 @@
 
 #ifndef ____H_EXTPACKUTIL
 #define ____H_EXTPACKUTIL
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #ifdef __cplusplus
 # include <iprt/cpp/ministring.h>

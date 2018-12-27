@@ -17,6 +17,9 @@
 
 #ifndef ____H_EXTPACKMANAGERIMPL
 #define ____H_EXTPACKMANAGERIMPL
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include "VirtualBoxBase.h"
 #include <VBox/ExtPack/ExtPack.h>

@@ -17,6 +17,9 @@
 
 #ifndef ____H_AUTHLIBRARY
 #define ____H_AUTHLIBRARY
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <VBox/VBoxAuth.h>
 #include <iprt/types.h>

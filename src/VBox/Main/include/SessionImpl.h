@@ -17,6 +17,9 @@
 
 #ifndef ____H_SESSIONIMPL
 #define ____H_SESSIONIMPL
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include "SessionWrap.h"
 #include "ConsoleImpl.h"

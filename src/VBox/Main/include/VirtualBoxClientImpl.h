@@ -1,5 +1,4 @@
 /* $Id$ */
-
 /** @file
  * Header file for the VirtualBoxClient (IVirtualBoxClient) class, VBoxC.
  */
@@ -18,6 +17,9 @@
 
 #ifndef ____H_VIRTUALBOXCLIENTIMPL
 #define ____H_VIRTUALBOXCLIENTIMPL
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include "VirtualBoxClientWrap.h"
 #include "EventImpl.h"

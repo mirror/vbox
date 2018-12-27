@@ -17,6 +17,9 @@
 
 #ifndef ____H_GLOBAL
 #define ____H_GLOBAL
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /* interface definitions */
 #include "VBox/com/VirtualBox.h"

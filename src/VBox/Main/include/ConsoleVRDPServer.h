@@ -17,6 +17,9 @@
 
 #ifndef ____H_CONSOLEVRDPSERVER
 #define ____H_CONSOLEVRDPSERVER
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include "VRDEServerInfoWrap.h"
 #include "RemoteUSBBackend.h"

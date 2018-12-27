@@ -17,6 +17,9 @@
 
 #ifndef ____H_HOSTIMPL
 #define ____H_HOSTIMPL
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include "HostWrap.h"
 

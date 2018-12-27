@@ -1,5 +1,4 @@
 /* $Id$ */
-
 /** @file
  * Header file for the OUSBDevice (IUSBDevice) class, VBoxC.
  */
@@ -18,6 +17,9 @@
 
 #ifndef ____H_USBDEVICEIMPL
 #define ____H_USBDEVICEIMPL
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include "USBDeviceWrap.h"
 

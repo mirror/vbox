@@ -19,6 +19,9 @@
 
 #ifndef ____H_VRDPSERVER
 #define ____H_VRDPSERVER
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include "VRDEServerWrap.h"
 

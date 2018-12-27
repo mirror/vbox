@@ -1,7 +1,5 @@
 /* $Id$ */
-
 /** @file
- *
  * Emulated USB devices manager.
  */
 
@@ -17,8 +15,11 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef EMULATEDUSB_IMPL_H_
-#define EMULATEDUSB_IMPL_H_
+#ifndef ____H_EMULATEDUSBIMPL
+#define ____H_EMULATEDUSBIMPL
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include "EmulatedUSBWrap.h"
 
@@ -80,6 +81,6 @@ private:
     Data m;
 };
 
-#endif // EMULATEDUSB_IMPL_H_
+#endif
 
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */

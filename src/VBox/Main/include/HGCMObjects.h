@@ -15,8 +15,11 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___HGCMOBJECTS__H
-#define ___HGCMOBJECTS__H
+#ifndef ____H_HGCMOBJECTS
+#define ____H_HGCMOBJECTS
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <iprt/assert.h>
 #include <iprt/avl.h>
@@ -122,4 +125,4 @@ uint32_t    hgcmObjQueryHandleCount();
 void        hgcmObjSetHandleCount(uint32_t u32HandleCount);
 
 
-#endif /* !___HGCMOBJECTS__H */
+#endif

@@ -18,6 +18,9 @@
 
 #ifndef ____H_MEDIUMATTACHMENTIMPL
 #define ____H_MEDIUMATTACHMENTIMPL
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include "MediumAttachmentWrap.h"
 

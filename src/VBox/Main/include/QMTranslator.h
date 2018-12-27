@@ -17,6 +17,9 @@
 
 #ifndef ____H_QMTRANSLATOR
 #define ____H_QMTRANSLATOR
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 class QMTranslator_Impl;
 

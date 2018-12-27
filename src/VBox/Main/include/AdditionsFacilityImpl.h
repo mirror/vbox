@@ -17,6 +17,9 @@
 
 #ifndef ____H_ADDITIONSFACILITYIMPL
 #define ____H_ADDITIONSFACILITYIMPL
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <vector>
 #include <iprt/time.h>

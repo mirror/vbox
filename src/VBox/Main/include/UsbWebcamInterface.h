@@ -17,6 +17,9 @@
 
 #ifndef ____H_USBWEBCAMINTERFACE
 #define ____H_USBWEBCAMINTERFACE
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <VBox/vmm/pdmdrv.h>
 #define VRDE_VIDEOIN_WITH_VRDEINTERFACE /* Get the VRDE interface definitions. */

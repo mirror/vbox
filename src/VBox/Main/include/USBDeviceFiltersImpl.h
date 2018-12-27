@@ -1,7 +1,5 @@
 /* $Id$ */
-
 /** @file
- *
  * VBox USBDeviceFilters COM Class declaration.
  */
 
@@ -19,6 +17,9 @@
 
 #ifndef ____H_USBDEVICEFILTERSIMPL
 #define ____H_USBDEVICEFILTERSIMPL
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include "USBDeviceFiltersWrap.h"
 

@@ -15,6 +15,13 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#ifndef ____H_EBMLMKV
+#define ____H_EBMLMKV
+
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
+
 /** Matroska EBML Class IDs supported by WebM.
  *
  *  Keep the structure clean and group elements where it makes sense
@@ -84,4 +91,6 @@ enum MkvElem
     MkvElem_CueTrack                = 0xF7,
     MkvElem_CueClusterPosition      = 0xF1
 };
+
+#endif
 

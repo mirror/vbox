@@ -19,6 +19,9 @@
 
 #ifndef ____H_HOSTNETWORKINTERFACEIMPL
 #define ____H_HOSTNETWORKINTERFACEIMPL
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include "HostNetworkInterfaceWrap.h"
 

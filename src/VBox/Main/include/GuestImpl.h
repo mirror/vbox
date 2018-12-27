@@ -17,6 +17,9 @@
 
 #ifndef ____H_GUESTIMPL
 #define ____H_GUESTIMPL
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include "GuestWrap.h"
 #include "VirtualBoxBase.h"

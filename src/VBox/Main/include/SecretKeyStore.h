@@ -17,6 +17,9 @@
 
 #ifndef ____H_SECRETKEYSTORE
 #define ____H_SECRETKEYSTORE
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include "VirtualBoxBase.h"
 #include "VBox/com/array.h"

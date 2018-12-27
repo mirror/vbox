@@ -1,7 +1,5 @@
 /* $Id$ */
-
 /** @file
- *
  * A host video capture device description.
  */
 
@@ -17,8 +15,11 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef HOSTVIDEOINPUTDEVICE_IMPL_H_
-#define HOSTVIDEOINPUTDEVICE_IMPL_H_
+#ifndef ____H_HOSTVIDEOINPUTDEVICEIMPL
+#define ____H_HOSTVIDEOINPUTDEVICEIMPL
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include "HostVideoInputDeviceWrap.h"
 
@@ -66,6 +67,6 @@ private:
     Data m;
 };
 
-#endif // HOSTVIDEOINPUTDEVICE_IMPL_H_
+#endif
 
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */

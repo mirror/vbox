@@ -17,6 +17,9 @@
 
 #ifndef ____H_VFSEXPLORERIMPL
 #define ____H_VFSEXPLORERIMPL
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include "VFSExplorerWrap.h"
 

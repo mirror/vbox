@@ -1,7 +1,5 @@
 /* $Id$ */
-
 /** @file
- *
  * MediumFormat COM class implementation
  */
 
@@ -17,8 +15,11 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef MEDIUMFORMAT_IMPL_H_
-#define MEDIUMFORMAT_IMPL_H_
+#ifndef ____H_MEDIUMFORMATIMPL
+#define ____H_MEDIUMFORMATIMPL
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include "MediumFormatWrap.h"
 
@@ -109,6 +110,6 @@ private:
     Data m;
 };
 
-#endif // MEDIUMFORMAT_IMPL_H_
+#endif
 
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */

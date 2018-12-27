@@ -17,6 +17,9 @@
 
 #ifndef ____H_SHAREDFOLDERIMPL
 #define ____H_SHAREDFOLDERIMPL
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include "SharedFolderWrap.h"
 #include <VBox/shflsvc.h>

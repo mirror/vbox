@@ -17,6 +17,9 @@
 
 #ifndef ____H_GUESTDNDTARGETIMPL
 #define ____H_GUESTDNDTARGETIMPL
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include "GuestDnDTargetWrap.h"
 #include "GuestDnDPrivate.h"

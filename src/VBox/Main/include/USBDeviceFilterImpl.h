@@ -17,6 +17,9 @@
 
 #ifndef ____H_USBDEVICEFILTERIMPL
 #define ____H_USBDEVICEFILTERIMPL
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <VBox/settings.h>
 #include "Matching.h"

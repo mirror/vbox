@@ -19,6 +19,9 @@
 
 #ifndef ____H_OVFREADER
 #define ____H_OVFREADER
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include "iprt/cpp/xml.h"
 #include <map>

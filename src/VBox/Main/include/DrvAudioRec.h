@@ -17,6 +17,9 @@
 
 #ifndef ____H_DRVAUDIORECORDING
 #define ____H_DRVAUDIORECORDING
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <VBox/com/ptr.h>
 #include <VBox/settings.h>

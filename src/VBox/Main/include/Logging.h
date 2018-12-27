@@ -17,6 +17,9 @@
 
 #ifndef ____H_LOGGING
 #define ____H_LOGGING
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /* @def LOG_GROUP_MAIN_OVERRIDE
  *

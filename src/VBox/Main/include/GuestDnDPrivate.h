@@ -18,6 +18,9 @@
 
 #ifndef ____H_GUESTDNDPRIVATE
 #define ____H_GUESTDNDPRIVATE
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <iprt/dir.h>
 #include <iprt/file.h>

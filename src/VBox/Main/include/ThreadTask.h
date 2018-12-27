@@ -16,6 +16,9 @@
 
 #ifndef ____H_THREADTASK
 #define ____H_THREADTASK
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include "VBox/com/string.h"
 
