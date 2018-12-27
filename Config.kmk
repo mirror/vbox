@@ -4251,6 +4251,9 @@ ifdef VBOX_WITH_RAW_MODE
  TEMPLATE_VBoxRc_TOOL                = $(VBOX_GCC32_TOOL)
  TEMPLATE_VBoxRc_CXXFLAGS            = -fno-pie -nostdinc -g $(VBOX_GCC_pipe) $(VBOX_GCC_WERR) $(VBOX_GCC_PEDANTIC_CXX) $(VBOX_GCC32_Wno-variadic-macros) -fno-exceptions $(VBOX_GCC_GC_OPT) $(VBOX_GCC_GC_FP) -mno-sse -mno-mmx -mno-sse2 -mno-3dnow -fno-strict-aliasing $(VBOX_GCC_fno-stack-protector) $(VBOX_GCC_fvisibility-hidden) $(VBOX_GCC_fvisibility-inlines-hidden) -fno-rtti $(VBOX_GCC_IPRT_FMT_CHECK)
  TEMPLATE_VBoxRc_CFLAGS              = -fno-pie -nostdinc -g $(VBOX_GCC_pipe) $(VBOX_GCC_WERR) $(VBOX_GCC_PEDANTIC_C)   $(VBOX_GCC32_Wno-variadic-macros) -fno-exceptions $(VBOX_GCC_GC_OPT) $(VBOX_GCC_GC_FP) -mno-sse -mno-mmx -mno-sse2 -mno-3dnow -fno-strict-aliasing $(VBOX_GCC_fno-stack-protector) $(VBOX_GCC_fvisibility-hidden) $(VBOX_GCC_IPRT_FMT_CHECK)
+  if $(VBOX_GCC32_VERSION_CC) < 30400
+   TEMPLATE_VBoxRc_DEFS             += RT_WITHOUT_PRAGMA_ONCE
+  endif
   ifeq ($(KBUILD_TARGET),solaris)
    TEMPLATE_VBoxRc_LDFLAGS           = -r
   else
@@ -4278,6 +4281,9 @@ ifdef VBOX_WITH_RAW_MODE
 
  ifeq ($(VBOX_LDR_FMT32),lx)
  TEMPLATE_VBoxRc_TOOL                = GXX3OMF
+  if $(VBOX_GCC_VERSION_CC) < 30400
+   TEMPLATE_VBoxRc_DEFS             += RT_WITHOUT_PRAGMA_ONCE
+  endif
  TEMPLATE_VBoxRc_CXXFLAGS            = -nostdinc -g $(VBOX_GCC_pipe) $(VBOX_GCC_WERR) $(VBOX_GCC_PEDANTIC_CXX) $(VBOX_GCC32_Wno-variadic-macros) $(VBOX_GCC_GC_OPT) $(VBOX_GCC_GC_FP) -fno-strict-aliasing -fno-exceptions -fno-rtti
  TEMPLATE_VBoxRc_CFLAGS              = -nostdinc -g $(VBOX_GCC_pipe) $(VBOX_GCC_WERR) $(VBOX_GCC_PEDANTIC_C)   $(VBOX_GCC32_Wno-variadic-macros) $(VBOX_GCC_GC_OPT) $(VBOX_GCC_GC_FP) -fno-strict-aliasing -fno-exceptions
  TEMPLATE_VBoxRc_LDFLAGS             = -Zdll -nostdlib
@@ -4394,6 +4400,9 @@ TEMPLATE_VBoxR0_CFLAGS              = -fno-pie -nostdinc -g $(VBOX_GCC_pipe) $(V
 TEMPLATE_VBoxR0_CXXFLAGS            = -fno-pie -nostdinc -g $(VBOX_GCC_pipe) $(VBOX_GCC_WERR) $(VBOX_GCC_PEDANTIC_CXX) $(VBOX_GCC_Wno-variadic-macros) $(VBOX_GCC_R0_OPT) $(VBOX_GCC_R0_FP) -fno-strict-aliasing -fno-exceptions $(VBOX_GCC_fno-stack-protector) -fno-common $(VBOX_GCC_fvisibility-inlines-hidden) $(VBOX_GCC_fvisibility-hidden) -fno-rtti $(VBOX_GCC_IPRT_FMT_CHECK)
 TEMPLATE_VBoxR0_CFLAGS.amd64        = -m64 -mno-red-zone -mcmodel=kernel -mno-sse -mno-mmx -mno-sse2 -mno-3dnow -fasynchronous-unwind-tables -ffreestanding
 TEMPLATE_VBoxR0_CXXFLAGS.amd64      = -m64 -mno-red-zone -mcmodel=kernel -mno-sse -mno-mmx -mno-sse2 -mno-3dnow -fasynchronous-unwind-tables
+ if $(VBOX_GCC_VERSION_CC) < 30400
+  TEMPLATE_VBoxR0_DEFS             += RT_WITHOUT_PRAGMA_ONCE
+ endif
 ifeq ($(KBUILD_TARGET),solaris)
  TEMPLATE_VBoxR0_LDFLAGS            = -r
  TEMPLATE_VBoxR0_LDFLAGS.solaris    = -u _init -u _info
@@ -4445,6 +4454,9 @@ ifeq ($(VBOX_LDR_FMT),lx)
 TEMPLATE_VBoxR0_TOOL                = GXX3OMF
 TEMPLATE_VBoxR0_CFLAGS              = -nostdinc -g $(VBOX_GCC_pipe) $(VBOX_GCC_WERR) $(VBOX_GCC_PEDANTIC_C)   $(VBOX_GCC_Wno-variadic-macros) $(VBOX_GCC_R0_OPT) $(VBOX_GCC_R0_FP) -fno-strict-aliasing -fno-exceptions -fno-common
 TEMPLATE_VBoxR0_CXXFLAGS            = -nostdinc -g $(VBOX_GCC_pipe) $(VBOX_GCC_WERR) $(VBOX_GCC_PEDANTIC_CXX) $(VBOX_GCC_Wno-variadic-macros) $(VBOX_GCC_R0_OPT) $(VBOX_GCC_R0_FP) -fno-strict-aliasing -fno-exceptions -fno-common -fno-rtti
+ if $(VBOX_GCC_VERSION_CC) < 30400
+TEMPLATE_VBoxR0_DEFS               += RT_WITHOUT_PRAGMA_ONCE
+ endif
 TEMPLATE_VBoxR0_LDFLAGS             = -nostdlib -Zdll
 TEMPLATE_VBoxR0_LIBS                = \
 	$(VBOX_GCC_LIBGCC) \
@@ -4697,6 +4709,9 @@ VBOX_SOLARIS_SYS_INCS ?= /usr/platform/i86pc/include /usr/include
 
 TEMPLATE_VBOXR0DRV_TOOL                = $(VBOX_GCC_TOOL)
 TEMPLATE_VBOXR0DRV_DEFS               += _MACHDEP _KERNEL _STRICT_STDC
+ if $(VBOX_GCC_VERSION_CC) < 30400
+TEMPLATE_VBOXR0DRV_DEFS               += RT_WITHOUT_PRAGMA_ONCE
+ endif
 TEMPLATE_VBOXR0DRV_INCS                = $(VBOX_SOLARIS_SYS_INCS)
 TEMPLATE_VBOXR0DRV_LDFLAGS             = -r -dy
 TEMPLATE_VBOXR0DRV_LDFLAGS.amd64       = $(if $(eq $(KBUILD_HOST),solaris),-64,-m elf_x86_64)
@@ -4753,6 +4768,9 @@ VBOX_FREEBSD_SYS_INCS ?= /usr/include
 TEMPLATE_VBOXR0DRV_TOOL                = $(VBOX_GCC_TOOL)
 TEMPLATE_VBOXR0DRV_LDTOOL              = FREEBSDKMODLD
 TEMPLATE_VBOXR0DRV_DEFS               += _KERNEL KLD_MODULE
+ if $(VBOX_GCC_VERSION_CC) < 30400
+TEMPLATE_VBOXR0DRV_DEFS               += RT_WITHOUT_PRAGMA_ONCE
+ endif
 TEMPLATE_VBOXR0DRV_INCS                = \
 	$(VBOX_FREEBSD_SRC) \
 	$(VBOX_FREEBSD_SRC)/contrib/altq \
@@ -4835,6 +4853,9 @@ VBOX_NETBSD_TARGET_SRC=$(VBOX_NETBSD_SRC)/sys/arch/$(VBOX_NETBSD_TARGET_ARCH)
 
 TEMPLATE_VBOXR0DRV_TOOL                = $(VBOX_GCC_TOOL)
 TEMPLATE_VBOXR0DRV_DEFS               += _KERNEL _MODULE
+ if $(VBOX_GCC_VERSION_CC) < 30400
+TEMPLATE_VBOXR0DRV_DEFS               += RT_WITHOUT_PRAGMA_ONCE
+ endif
 TEMPLATE_VBOXR0DRV_INCS                = \
 	$(VBOX_NETBSD_SRC)/sys \
 	$(VBOX_NETBSD_SRC)/common/include \
@@ -4894,6 +4915,9 @@ VBOX_HAIKU_SYS_INCS ?= /boot/develop/headers/os/kernel /boot/develop/headers/os/
 TEMPLATE_VBOXR0DRV_TOOL                = $(VBOX_GCC_TOOL)
 TEMPLATE_VBOXR0DRV_LDTOOL              = $(VBOX_GCC_TOOL)
 TEMPLATE_VBOXR0DRV_DEFS                = _KERNEL_MODE=1 _STRICT_STDC IN_RING0 IN_RT_R0
+ if $(VBOX_GCC_VERSION_CC) < 30400
+TEMPLATE_VBOXR0DRV_DEFS               += RT_WITHOUT_PRAGMA_ONCE
+ endif
 TEMPLATE_VBOXR0DRV_INCS                = $(VBOX_HAIKU_SYS_INCS)
 #TODO: sort this out
 TEMPLATE_VBOXR0DRV_LDFLAGS             = -shared $(VBOX_GCC_NO_UNDEFINED_R0) -dc -dy -lroot -rpath-link /boot/system/develop/lib/x86 --no-add-needed /boot/system/develop/lib/_KERNEL_ --no-add-needed /boot/system/develop/lib/haiku_version_glue.o
@@ -5036,6 +5060,9 @@ ifeq ($(KBUILD_TARGET),win)
 
 else # the gcc guys
 TEMPLATE_VBOXR3EXE_TOOL                = $(VBOX_GCC_TOOL)
+ if $(VBOX_GCC_VERSION_CC) < 30400
+TEMPLATE_VBOXR3EXE_DEFS               += RT_WITHOUT_PRAGMA_ONCE
+ endif
 TEMPLATE_VBOXR3EXE_CXXFLAGS            = -g $(VBOX_GCC_pipe) $(VBOX_GCC_PEDANTIC_CXX) $(VBOX_GCC_Wno-variadic-macros) $(VBOX_GCC_OPT) \
  	$(VBOX_GCC_FP) -fno-strict-aliasing $(VBOX_GCC_fvisibility-hidden) $(VBOX_GCC_fvisibility-inlines-hidden) $(VBOX_GCC_IPRT_FMT_CHECK)
  ifdef VBOX_WITH_NO_GCC_WARNING_POLICY
@@ -5781,12 +5808,12 @@ TEMPLATE_VBoxNoCrtGccLib_CFLAGS.release    = -O2 -fno-strict-aliasing
 TEMPLATE_VBoxNoCrtGccLib_CFLAGS.profile    = $(TEMPLATE_VBoxNoCrtGccLib_CFLAGS.release)
 TEMPLATE_VBoxNoCrtGccLib_CFLAGS.kprofile   = $(TEMPLATE_VBoxNoCrtGccLib_CFLAGS.release)
 TEMPLATE_VBoxNoCrtGccLib_CFLAGS.darwin     = -static
-TEMPLATE_VBoxNoCrtGccLib_CXXFLAGS          = $(filter-out -Werror-implicit-function-declaration,$(TEMPLATE_VBoxNoCrtGccLib_CXXFLAGS))
-TEMPLATE_VBoxNoCrtGccLib_CXXFLAGS.$(KBUILD_TARGET) = $(TEMPLATE_VBoxNoCrtGccLib_CXXFLAGS.$(KBUILD_TARGET))
-TEMPLATE_VBoxNoCrtGccLib_CXXFLAGS.$(KBUILD_TARGET_ARCH) = $(TEMPLATE_VBoxNoCrtGccLib_CXXFLAGS.$(KBUILD_TARGET_ARCH))
-TEMPLATE_VBoxNoCrtGccLib_PCHFLAGS          = $(filter-out -Werror-implicit-function-declaration,$(TEMPLATE_VBoxNoCrtGccLib_PCHFLAGS))
-TEMPLATE_VBoxNoCrtGccLib_PCHFLAGS.$(KBUILD_TARGET) = $(TEMPLATE_VBoxNoCrtGccLib_PCHFLAGS.$(KBUILD_TARGET))
-TEMPLATE_VBoxNoCrtGccLib_PCHFLAGS.$(KBUILD_TARGET_ARCH) = $(TEMPLATE_VBoxNoCrtGccLib_PCHFLAGS.$(KBUILD_TARGET_ARCH))
+TEMPLATE_VBoxNoCrtGccLib_CXXFLAGS          = $(filter-out -Werror-implicit-function-declaration,$(TEMPLATE_VBoxNoCrtGccLib_CFLAGS))
+TEMPLATE_VBoxNoCrtGccLib_CXXFLAGS.$(KBUILD_TARGET) = $(TEMPLATE_VBoxNoCrtGccLib_CFLAGS.$(KBUILD_TARGET))
+TEMPLATE_VBoxNoCrtGccLib_CXXFLAGS.$(KBUILD_TARGET_ARCH) = $(TEMPLATE_VBoxNoCrtGccLib_CFLAGS.$(KBUILD_TARGET_ARCH))
+TEMPLATE_VBoxNoCrtGccLib_PCHFLAGS          = $(TEMPLATE_VBoxNoCrtGccLib_CXXFLAGS)
+TEMPLATE_VBoxNoCrtGccLib_PCHFLAGS.$(KBUILD_TARGET) = $(TEMPLATE_VBoxNoCrtGccLib_CXXFLAGS.$(KBUILD_TARGET))
+TEMPLATE_VBoxNoCrtGccLib_PCHFLAGS.$(KBUILD_TARGET_ARCH) =  $(TEMPLATE_VBoxNoCrtGccLib_CXXFLAGS.$(KBUILD_TARGET_ARCH))
 TEMPLATE_VBoxNoCrtGccLib_INCS              = $(PATH_ROOT)/include/iprt/nocrt
 
 ifeq (disabled-by-mingw-w64 $(KBUILD_TARGET).$(KBUILD_TARGET_ARCH),win.amd64)
@@ -5801,6 +5828,9 @@ else if1of ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH), win.x86 win.amd64)
  # Use the default GCC (MinGW) with the Microsoft linker.
  # (Drop all '-g' options as we're unable to strip the debug info.)
  TEMPLATE_VBoxNoCrtGccLib_TOOL             = $(VBOX_GCC_TOOL)
+ if $(VBOX_GCC_VERSION_CC) < 30400
+  TEMPLATE_VBoxNoCrtGccLib_DEFS           += RT_WITHOUT_PRAGMA_ONCE
+ endif
  TEMPLATE_VBoxNoCrtGccLib_ASTOOL           = $(VBOX_ASTOOL)
  TEMPLATE_VBoxNoCrtGccLib_ASFLAGS          = $(VBOX_ASFLAGS)
  TEMPLATE_VBoxNoCrtGccLib_LDTOOL           = $(VBOX_VCC_TOOL)
@@ -5814,6 +5844,9 @@ else
  # Use the default GCC.
  # The use of --exclude-libs ALL is to avoid confusing the linux ld.so.
  TEMPLATE_VBoxNoCrtGccLib_TOOL             = $(VBOX_GCC_TOOL)
+ if $(VBOX_GCC_VERSION_CC) < 30400
+  TEMPLATE_VBoxNoCrtGccLib_DEFS           += RT_WITHOUT_PRAGMA_ONCE
+ endif
  TEMPLATE_VBoxNoCrtGccLib_ASTOOL           = $(VBOX_ASTOOL)
  TEMPLATE_VBoxNoCrtGccLib_ASFLAGS          = $(VBOX_ASFLAGS)
  TEMPLATE_VBoxNoCrtGccLib_CFLAGS          += $(VBOX_GCC_fno-stack-protector)
@@ -5933,6 +5966,9 @@ ifeq ($(KBUILD_TARGET),win)
 else # the GCC guys:
 
 TEMPLATE_VBOXMAINEXE_TOOL                = $(VBOX_GCC_TOOL)
+ if $(VBOX_GCC_VERSION_CC) < 30400
+  TEMPLATE_VBOXMAINEXE_DEFS             += RT_WITHOUT_PRAGMA_ONCE
+ endif
 TEMPLATE_VBOXMAINEXE_CXXFLAGS            = -g $(VBOX_GCC_pipe) \
 	$(VBOX_GCC_PEDANTIC_CXX) $(VBOX_GCC_Wno-variadic-macros) $(VBOX_GCC_Wno-multistatement-macros) $(VBOX_GCC_Wno-class-memaccess) -Wshadow \
 	-fshort-wchar -fpermissive -fexceptions -frtti $(VBOX_GCC_OPT) $(VBOX_GCC_FP) -fno-strict-aliasing \
@@ -6505,8 +6541,10 @@ ifdef VBOX_WITH_QTGUI
 
  else # the gcc guys:
   TEMPLATE_VBOXQTGUIEXE_TOOL = $(VBOX_GCC_TOOL)
+  if $(VBOX_GCC_VERSION_CC) < 30400
+   TEMPLATE_VBOXQTGUIEXE_DEFS += RT_WITHOUT_PRAGMA_ONCE
+  endif
   TEMPLATE_VBOXQTGUIEXE_DEFS.linux = _REENTRANT
-
   TEMPLATE_VBOXQTGUIEXE_DEFS.solaris = _REENTRANT
 
   ## @todo Use VBOX_GCC_PEDANTIC_CXX?
@@ -6720,6 +6758,9 @@ ifeq ($(KBUILD_HOST),win)
 else
 # (gcc of some kind )
 TEMPLATE_VBoxBldProg_TOOL                = GXX3
+ if $(VBOX_GCC_VERSION_CC) < 30400
+TEMPLATE_VBoxBldProg_DEFS               += RT_WITHOUT_PRAGMA_ONCE
+ endif
 TEMPLATE_VBoxBldProg_CFLAGS              = -g $(VBOX_GCC_pipe) $(VBOX_GCC_PEDANTIC_C) $(VBOX_GCC_Wno-variadic-macros)
  ifdef VBOX_WITH_NO_GCC_WARNING_POLICY
   TEMPLATE_VBoxBldProg_CFLAGS           += $(VBOX_GCC_WERR)
