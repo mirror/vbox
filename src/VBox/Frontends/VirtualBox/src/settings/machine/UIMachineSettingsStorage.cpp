@@ -3839,6 +3839,9 @@ void UIMachineSettingsStorage::addAttachmentWrapper(KDeviceType enmDevice)
             if (iAnswer == AlertButton_Choice2)
                 uMediumId = vboxGlobal().openMediumSelectorDialog(this, UIMediumDeviceType_Floppy,
                                                                   m_strMachineName, m_strMachineSettingsFilePath);
+            /* We allow creating an empty floppy drive: */
+            else if (iAnswer == AlertButton_Choice1)
+                fCreateEmpty = true;
             else if (iAnswer == AlertButton_Cancel)
                 fCancelled = true;
             break;
