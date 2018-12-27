@@ -1233,14 +1233,14 @@ DECLCALLBACK(void) cpumR3InfoVmxFeatures(PVM pVM, PCDBGFINFOHLP pHlp, const char
 
 
 /**
- * Checks whether VMX nested-guest may be executed using hardware-assisted VMX (e.g,
- * using HM or NEM).
+ * Checks whether nested-guest execution using hardware-assisted VMX (e.g, using HM
+ * or NEM) is allowed.
  *
- * @returns @c true if hardware-assisted VMX nested-guest is allowed, @c false
- *        otherwise.
+ * @returns @c true if hardware-assisted nested-guest execution is allowed, @c false
+ *          otherwise.
  * @param   pVM     The cross context VM structure.
  */
-static bool cpumR3IsHwAssistVmxNstGstExecAllowed(PVM pVM)
+static bool cpumR3IsHwAssistNstGstExecAllowed(PVM pVM)
 {
     AssertMsg(pVM->bMainExecutionEngine != VM_EXEC_ENGINE_NOT_SET, ("Calling this function too early!\n"));
 #ifndef VBOX_WITH_NESTED_HWVIRT_ONLY_IN_IEM
@@ -1269,7 +1269,9 @@ static bool cpumR3IsHwAssistVmxNstGstExecAllowed(PVM pVM)
  */
 static void cpumR3InitVmxGuestMsrs(PVM pVM, PCVMXMSRS pHostVmxMsrs, PCCPUMFEATURES pGuestFeatures, PVMXMSRS pGuestVmxMsrs)
 {
-    Assert(!cpumR3IsHwAssistVmxNstGstExecAllowed(pVM) || pHostVmxMsrs);
+    bool const fIsNstGstHwExecAllowed = cpumR3IsHwAssistNstGstExecAllowed(pVM);
+
+    Assert(!fIsNstGstHwExecAllowed || pHostVmxMsrs);
     Assert(pGuestFeatures->fVmx);
 
     /*
@@ -1401,7 +1403,7 @@ static void cpumR3InitVmxGuestMsrs(PVM pVM, PCVMXMSRS pHostVmxMsrs, PCCPUMFEATUR
 
     /* Miscellaneous data. */
     {
-        uint64_t const uHostMsr = cpumR3IsHwAssistVmxNstGstExecAllowed(pVM) ? pHostVmxMsrs->u64Misc : 0;
+        uint64_t const uHostMsr = fIsNstGstHwExecAllowed ? pHostVmxMsrs->u64Misc : 0;
 
         uint8_t const  cMaxMsrs       = RT_MIN(RT_BF_GET(uHostMsr, VMX_BF_MISC_MAX_MSRS), VMX_V_AUTOMSR_COUNT_MAX);
         uint8_t const  fActivityState = RT_BF_GET(uHostMsr, VMX_BF_MISC_ACTIVITY_STATES) & VMX_V_GUEST_ACTIVITY_STATE_MASK;
@@ -1423,7 +1425,7 @@ static void cpumR3InitVmxGuestMsrs(PVM pVM, PCVMXMSRS pHostVmxMsrs, PCCPUMFEATUR
 
     /* CR0 Fixed-1. */
     {
-        uint64_t const uHostMsr = cpumR3IsHwAssistVmxNstGstExecAllowed(pVM) ? pHostVmxMsrs->u64Cr0Fixed1 : 0;
+        uint64_t const uHostMsr = fIsNstGstHwExecAllowed ? pHostVmxMsrs->u64Cr0Fixed1 : 0;
         pGuestVmxMsrs->u64Cr0Fixed1 = uHostMsr | VMX_V_CR0_FIXED0;   /* Make sure the CR0 MB1 bits are not clear. */
     }
 
@@ -1432,7 +1434,7 @@ static void cpumR3InitVmxGuestMsrs(PVM pVM, PCVMXMSRS pHostVmxMsrs, PCCPUMFEATUR
 
     /* CR4 Fixed-1. */
     {
-        uint64_t const uHostMsr = cpumR3IsHwAssistVmxNstGstExecAllowed(pVM) ? pHostVmxMsrs->u64Cr4Fixed1 : 0;
+        uint64_t const uHostMsr = fIsNstGstHwExecAllowed ? pHostVmxMsrs->u64Cr4Fixed1 : 0;
         pGuestVmxMsrs->u64Cr4Fixed1 = uHostMsr | VMX_V_CR4_FIXED0;   /* Make sure the CR4 MB1 bits are not clear. */
     }
 
@@ -1629,7 +1631,7 @@ void cpumR3InitVmxGuestFeaturesAndMsrs(PVM pVM, PCVMXMSRS pHostVmxMsrs, PVMXMSRS
      * When hardware-assisted VMX may be used, any feature we emulate must also be supported
      * by the hardware, hence we merge our emulated features with the host features below.
      */
-    PCCPUMFEATURES pBaseFeat  = cpumR3IsHwAssistVmxNstGstExecAllowed(pVM) ? &pVM->cpum.s.HostFeatures : &EmuFeat;
+    PCCPUMFEATURES pBaseFeat  = cpumR3IsHwAssistNstGstExecAllowed(pVM) ? &pVM->cpum.s.HostFeatures : &EmuFeat;
     PCPUMFEATURES  pGuestFeat = &pVM->cpum.s.GuestFeatures;
     Assert(pBaseFeat->fVmx);
     pGuestFeat->fVmxInsOutInfo            = (pBaseFeat->fVmxInsOutInfo            & EmuFeat.fVmxInsOutInfo           );
