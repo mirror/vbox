@@ -33,6 +33,7 @@ enum UICustomFileSystemModelColumn
     UICustomFileSystemModelColumn_Owner,
     UICustomFileSystemModelColumn_Permissions,
     UICustomFileSystemModelColumn_Path,
+    UICustomFileSystemModelColumn_LocalPath,
     UICustomFileSystemModelColumn_Max
 };
 

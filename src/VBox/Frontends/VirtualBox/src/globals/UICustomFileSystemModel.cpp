@@ -537,4 +537,6 @@ void UICustomFileSystemModel::initializeTree()
     m_pRootItem->setData(QApplication::tr("UIFileManager", "Change Time"), UICustomFileSystemModelColumn_ChangeTime);
     m_pRootItem->setData(QApplication::tr("UIFileManager", "Owner"), UICustomFileSystemModelColumn_Owner);
     m_pRootItem->setData(QApplication::tr("UIFileManager", "Permissions"), UICustomFileSystemModelColumn_Permissions);
+    m_pRootItem->setData(QApplication::tr("UIFileManager", "LocalPath"), UICustomFileSystemModelColumn_LocalPath);
+    m_pRootItem->setData(QApplication::tr("UIFileManager", "Path"), UICustomFileSystemModelColumn_Path);
 }
