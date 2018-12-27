@@ -204,17 +204,19 @@ void UIFileManagerGuestTable::readDirectory(const QString& strPath,
                 QVector<QVariant> data;
                 QDateTime changeTime = QDateTime::fromMSecsSinceEpoch(fsInfo.GetChangeTime()/RT_NS_1MS);
 
-                data << fsInfo.GetName() << static_cast<qulonglong>(fsInfo.GetObjectSize())
-                     << changeTime << fsInfo.GetUserName() << permissionString(fsInfo);
-
                 KFsObjType fsObjectType = fileType(fsInfo);
-                UICustomFileSystemItem *item = new UICustomFileSystemItem(data, parent, fsObjectType);
+                UICustomFileSystemItem *item = new UICustomFileSystemItem(fsInfo.GetName(), parent, fsObjectType);
 
                 if (!item)
                     continue;
+
+                item->setData(static_cast<qulonglong>(fsInfo.GetObjectSize()), UICustomFileSystemModelColumn_Size);
+                item->setData(changeTime, UICustomFileSystemModelColumn_ChangeTime);
+                item->setData(fsInfo.GetUserName(), UICustomFileSystemModelColumn_Owner);
+                item->setData(permissionString(fsInfo), UICustomFileSystemModelColumn_Permissions);
                 item->setPath(UIPathOperations::mergePaths(strPath, fsInfo.GetName()));
-                fileObjects.insert(fsInfo.GetName(), item);
                 item->setIsOpened(false);
+                fileObjects.insert(fsInfo.GetName(), item);
                 /* @todo. We will need to wait a fully implemented SymlinkRead function
                  * to be able to handle sym links properly: */
                 // QString path = UIPathOperations::mergePaths(strPath, fsInfo.GetName());

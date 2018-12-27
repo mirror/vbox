@@ -147,24 +147,23 @@ UIFileManagerHostTable::UIFileManagerHostTable(UIActionPool *pActionPool, QWidge
     if (!directory.exists())
         return;
     QFileInfoList entries = directory.entryInfoList();
-
-
     for (int i = 0; i < entries.size(); ++i)
     {
-
-
         const QFileInfo &fileInfo = entries.at(i);
-        QVector<QVariant> itemData = UICustomFileSystemItem::createTreeItemData(fileInfo.fileName(), fileInfo.size(),
-                                                                                fileInfo.lastModified(), fileInfo.owner(),
-                                                                                permissionString(fileInfo.permissions()));
+
         if (fileInfo.fileName() == ".")
             continue;
         if (fileInfo.fileName() == "..")
             continue;
 
-        UICustomFileSystemItem *item = new UICustomFileSystemItem(itemData, parent, fileType(fileInfo));
+        UICustomFileSystemItem *item = new UICustomFileSystemItem(fileInfo.fileName(), parent, fileType(fileInfo));
         if (!item)
             continue;
+
+        item->setData(fileInfo.size(),         UICustomFileSystemModelColumn_Size);
+        item->setData(fileInfo.lastModified(), UICustomFileSystemModelColumn_ChangeTime);
+        item->setData(fileInfo.owner(),        UICustomFileSystemModelColumn_Owner);
+        item->setData(permissionString(fileInfo.permissions()),  UICustomFileSystemModelColumn_Permissions);
         item->setPath(fileInfo.absoluteFilePath());
         /* if the item is a symlink set the target path and
            check the target if it is a directory: */

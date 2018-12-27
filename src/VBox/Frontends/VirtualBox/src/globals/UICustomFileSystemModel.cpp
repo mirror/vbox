@@ -20,6 +20,7 @@
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 /* Qt includes: */
+# include <QApplication>
 # include <QDateTime>
 # include <QHeaderView>
 
@@ -38,15 +39,17 @@ const char* UICustomFileSystemModel::strUpDirectoryString = "..";
 *   UICustomFileSystemItem implementation.                                                                                       *
 *********************************************************************************************************************************/
 
-UICustomFileSystemItem::UICustomFileSystemItem(const QVector<QVariant> &data,
-                                 UICustomFileSystemItem *parent, KFsObjType type)
-    : m_itemData(data)
-    , m_parentItem(parent)
+UICustomFileSystemItem::UICustomFileSystemItem(const QString &strName, UICustomFileSystemItem *parent, KFsObjType type)
+    : m_parentItem(parent)
     , m_bIsOpened(false)
     , m_isTargetADirectory(false)
     , m_type(type)
     , m_isDriveItem(false)
 {
+    for (int i = static_cast<int>(UICustomFileSystemModelColumn_Name);
+         i < static_cast<int>(UICustomFileSystemModelColumn_Max); ++i)
+        m_itemData[static_cast<UICustomFileSystemModelColumn>(i)] = QVariant();
+    m_itemData[UICustomFileSystemModelColumn_Name] = strName;
     if (parent)
         parent->appendChild(this);
 }
@@ -94,25 +97,30 @@ int UICustomFileSystemItem::childCount() const
 int UICustomFileSystemItem::columnCount() const
 {
     return m_itemData.count();
+
 }
 
 QVariant UICustomFileSystemItem::data(int column) const
 {
-    return m_itemData.value(column);
+    return m_itemData.value(static_cast<UICustomFileSystemModelColumn>(column), QVariant());
 }
 
 QString UICustomFileSystemItem::name() const
 {
-    if (m_itemData.isEmpty() || !m_itemData[0].canConvert(QMetaType::QString))
+    QVariant data = m_itemData.value(UICustomFileSystemModelColumn_Name, QVariant());
+    if (!data.canConvert(QMetaType::QString))
         return QString();
-    return m_itemData[0].toString();
+    return data.toString();
 }
 
 void UICustomFileSystemItem::setData(const QVariant &data, int index)
 {
-    if (index >= m_itemData.length())
-        return;
-    m_itemData[index] = data;
+    m_itemData[static_cast<UICustomFileSystemModelColumn>(index)] = data;
+}
+
+void UICustomFileSystemItem::setData(const QVariant &data, UICustomFileSystemModelColumn enmColumn)
+{
+    m_itemData[enmColumn] = data;
 }
 
 UICustomFileSystemItem *UICustomFileSystemItem::parentItem()
@@ -219,20 +227,6 @@ void UICustomFileSystemItem::setIsDriveItem(bool flag)
 bool UICustomFileSystemItem::isDriveItem() const
 {
     return m_isDriveItem;
-}
-
-/* static */QVector<QVariant> UICustomFileSystemItem::createTreeItemData(const QString &strName, unsigned long long size,
-                                                                         const QDateTime &changeTime,
-                                                                         const QString &strOwner, const QString &strPermissions)
-{
-    QVector<QVariant> data;
-    data.resize(UICustomFileSystemModelColumn_Max);
-    data[UICustomFileSystemModelColumn_Name]        = strName;
-    data[UICustomFileSystemModelColumn_Size]        = (qulonglong)size;
-    data[UICustomFileSystemModelColumn_ChangeTime]  = changeTime;
-    data[UICustomFileSystemModelColumn_Owner]       = strOwner;
-    data[UICustomFileSystemModelColumn_Permissions] = strPermissions;
-    return data;
 }
 
 
@@ -478,7 +472,7 @@ QModelIndex UICustomFileSystemModel::parent(const QModelIndex &index) const
     UICustomFileSystemItem *childItem = static_cast<UICustomFileSystemItem*>(index.internalPointer());
     UICustomFileSystemItem *parentItem = childItem->parentItem();
 
-    if (parentItem == rootItem())
+    if (!parentItem || parentItem == rootItem())
         return QModelIndex();
 
     return createIndex(parentItem->row(), 0, parentItem);
@@ -538,7 +532,9 @@ bool UICustomFileSystemModel::showHumanReadableSizes() const
 
 void UICustomFileSystemModel::initializeTree()
 {
-    QVector<QVariant> headData;
-    headData.resize(UICustomFileSystemModelColumn_Max);
-    m_pRootItem = new UICustomFileSystemItem(headData, 0, KFsObjType_Directory);
+    m_pRootItem = new UICustomFileSystemItem(QApplication::tr("UIFileManager", "Name"), 0, KFsObjType_Directory);
+    m_pRootItem->setData(QApplication::tr("UIFileManager", "Size"), UICustomFileSystemModelColumn_Size);
+    m_pRootItem->setData(QApplication::tr("UIFileManager", "Change Time"), UICustomFileSystemModelColumn_ChangeTime);
+    m_pRootItem->setData(QApplication::tr("UIFileManager", "Owner"), UICustomFileSystemModelColumn_Owner);
+    m_pRootItem->setData(QApplication::tr("UIFileManager", "Permissions"), UICustomFileSystemModelColumn_Permissions);
 }

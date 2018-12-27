@@ -41,14 +41,10 @@ class UICustomFileSystemItem
 {
 public:
 
-    /** @p data contains values to be shown in table view's colums. data[0] is assumed to be
-     *  the name of the file object which is the file name including extension or name of the
-     *  directory */
-    explicit UICustomFileSystemItem(const QVector<QVariant> &data,
-                             UICustomFileSystemItem *parentItem, KFsObjType type);
+    /** @p strName contains file object name which is assumed to be unique among a parent object's children. */
+    explicit UICustomFileSystemItem(const QString &strName, UICustomFileSystemItem *parentItem, KFsObjType type);
     ~UICustomFileSystemItem();
 
-    void appendChild(UICustomFileSystemItem *child);
     void reset();
     UICustomFileSystemItem *child(int row) const;
     /** Searches for the child by path and returns it if found. */
@@ -57,6 +53,7 @@ public:
     int columnCount() const;
     QVariant data(int column) const;
     void setData(const QVariant &data, int index);
+    void setData(const QVariant &data, UICustomFileSystemModelColumn enmColumn);
     int row() const;
     UICustomFileSystemItem *parentItem();
 
@@ -92,16 +89,13 @@ public:
     void setIsDriveItem(bool flag);
     bool isDriveItem() const;
 
-    static QVector<QVariant> createTreeItemData(const QString &strName, unsigned long long size, const QDateTime &changeTime,
-                                                const QString &strOwner, const QString &strPermissions);
-
 private:
+    void appendChild(UICustomFileSystemItem *child);
 
     QList<UICustomFileSystemItem*>         m_childItems;
     /** Used to find children by name */
     QMap<QString, UICustomFileSystemItem*> m_childMap;
-    /** It is required that m_itemData[0] is name (QString) of the file object */
-    QVector<QVariant>  m_itemData;
+    QMap<UICustomFileSystemModelColumn, QVariant>  m_itemData;
     UICustomFileSystemItem *m_parentItem;
     bool             m_bIsOpened;
     /** Full absolute path of the item. Without the trailing '/' */

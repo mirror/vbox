@@ -550,11 +550,8 @@ void UIFileManagerTable::initializeFileTree()
         return;
 
     const QString startPath("/");
-    QVector<QVariant> itemData = UICustomFileSystemItem::createTreeItemData(startPath, 4096, QDateTime(),
-                                                                            "" /* owner */, "" /* permissions */);
-    UICustomFileSystemItem* startItem = new UICustomFileSystemItem(itemData, rootItem(), KFsObjType_Directory);
+    UICustomFileSystemItem* startItem = new UICustomFileSystemItem(startPath, rootItem(), KFsObjType_Directory);
     startItem->setPath(startPath);
-    rootItem()->appendChild(startItem);
     startItem->setIsOpened(false);
     populateStartDirectory(startItem);
 
@@ -575,11 +572,8 @@ void UIFileManagerTable::populateStartDirectory(UICustomFileSystemItem *startIte
     {
         for (int i = 0; i < m_driveLetterList.size(); ++i)
         {
-            QVector<QVariant> itemData = UICustomFileSystemItem::createTreeItemData(m_driveLetterList[i], 4096,
-                                                                                    QDateTime(), QString(), QString());
-            UICustomFileSystemItem* driveItem = new UICustomFileSystemItem(itemData, startItem, KFsObjType_Directory);
+            UICustomFileSystemItem* driveItem = new UICustomFileSystemItem(m_driveLetterList[i], startItem, KFsObjType_Directory);
             driveItem->setPath(m_driveLetterList[i]);
-            startItem->appendChild(driveItem);
             driveItem->setIsOpened(false);
             driveItem->setIsDriveItem(true);
             startItem->setIsOpened(true);
@@ -595,10 +589,8 @@ void UIFileManagerTable::checkDotDot(QMap<QString,UICustomFileSystemItem*> &map,
     /* Make sure we have an item representing up directory, and make sure it is not there for the start dir: */
     if (!map.contains(UICustomFileSystemModel::strUpDirectoryString)  && !isStartDir)
     {
-        QVector<QVariant> data = UICustomFileSystemItem::createTreeItemData(UICustomFileSystemModel::strUpDirectoryString,
-                                                                            4096, QDateTime(), QString(), QString());
-
-        UICustomFileSystemItem *item = new UICustomFileSystemItem(data, parent, KFsObjType_Directory);
+        UICustomFileSystemItem *item = new UICustomFileSystemItem(UICustomFileSystemModel::strUpDirectoryString,
+                                                                  parent, KFsObjType_Directory);
         item->setIsOpened(false);
         map.insert(UICustomFileSystemModel::strUpDirectoryString, item);
     }
