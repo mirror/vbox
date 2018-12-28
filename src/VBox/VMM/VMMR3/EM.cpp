@@ -2173,7 +2173,6 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
                 if (rc2 == VINF_SUCCESS)
                 {
                     VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INTERRUPT_NMI);
-                    VMCPU_FF_SET(pVCpu, VMCPU_FF_BLOCK_NMIS);
                     fWakeupPending = true;
                     if (pVM->em.s.fIemExecutesAll)
                         rc2 = VINF_EM_RESCHEDULE;
