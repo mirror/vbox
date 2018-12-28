@@ -2594,7 +2594,7 @@ l_fresh_context:
                                 ULONG ulErr = RtlGetLastWin32Error();
                                 fNoSignedCatalogFound = ulErr == ERROR_NOT_FOUND && fNoSignedCatalogFound != 0;
                                 if (iCat == 0)
-                                    SUP_DPRINTF(("supR3HardNtViCallWinVerifyTrustCatFile: CryptCATAdminEnumCatalogFromHash failed ERRROR_NOT_FOUND (%u)\n", ulErr));
+                                    SUP_DPRINTF(("supR3HardNtViCallWinVerifyTrustCatFile: CryptCATAdminEnumCatalogFromHash failed ERROR_NOT_FOUND (%u)\n", ulErr));
                                 else if (iCat == 0)
                                     SUP_DPRINTF(("supR3HardNtViCallWinVerifyTrustCatFile: CryptCATAdminEnumCatalogFromHash failed %u\n", ulErr));
                                 break;
