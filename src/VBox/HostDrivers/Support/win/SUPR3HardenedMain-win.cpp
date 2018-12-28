@@ -4233,7 +4233,7 @@ static DECL_NO_RETURN(void) supR3HardenedWinDoReSpawn(int iWhich)
     PRTUTF16 pwszCmdLine = supR3HardNtChildConstructCmdLine(NULL, iWhich);
 
     supR3HardenedWinEnableThreadCreation();
-    PROCESS_INFORMATION ProcessInfoW32;
+    PROCESS_INFORMATION ProcessInfoW32 = { NULL, NULL, 0, 0 };
     if (!CreateProcessW(g_wszSupLibHardenedExePath,
                         pwszCmdLine,
                         &ProcessSecAttrs,
