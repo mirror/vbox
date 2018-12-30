@@ -1,7 +1,5 @@
 /** @file
- *
- * Module to dynamically load libvdeplug and load all symbols
- * which are needed by VirtualBox - header file.
+ * libvdeplug header and dynamic symbol loader.
  */
 
 /*
@@ -32,6 +30,22 @@
 
 #define vde_open(vde_switch, descr, open_args) \
     vde_open_real((vde_switch), (descr), LIBVDEPLUG_INTERFACE_VERSION, (open_args))
+
+/** Opaque connection type */
+struct vdeconn;
+typedef struct vdeconn VDECONN;
+
+/** Structure to be passed to the open function describing the connection.
+ * All members can be left zero to use the default values. */
+struct vde_open_args
+{
+    /** The port of the switch to connect to. */
+    int port;
+    /** The group to set ownership of the port socket to. */
+    char *group;
+    /** The file mode to set the port socket to. */
+    mode_t mode;
+};
 
 /* Declarations of the functions that we need from the library */
 #define VDEPLUG_GENERATE_HEADER

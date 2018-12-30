@@ -26,22 +26,6 @@
 #include <stddef.h>
 #include <sys/types.h>
 
-/** Opaque connection type */
-struct vdeconn;
-typedef struct vdeconn VDECONN;
-
-/** Structure to be passed to the open function describing the connection.
- * All members can be left zero to use the default values. */
-struct vde_open_args
-{
-    /** The port of the switch to connect to. */
-    int port;
-    /** The group to set ownership of the port socket to. */
-    char *group;
-    /** The file mode to set the port socket to. */
-    mode_t mode;
-};
-
 /** The file name of the DBus library */
 #define VBOX_LIB_VDE_PLUG_NAME "libvdeplug.so"
 #define RT_RUNTIME_LOADER_LIB_NAME VBOX_LIB_VDE_PLUG_NAME
