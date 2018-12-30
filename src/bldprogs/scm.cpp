@@ -178,7 +178,7 @@ static SCMSETTINGSBASE const g_Defaults =
     /* .fStripTrailingLines = */                    true,
     /* .fFixFlowerBoxMarkers = */                   true,
     /* .cMinBlankLinesBeforeFlowerBoxMakers = */    2,
-    /* .fFixHeaderGuards = */                       false, /** @todo fFixHeaderGuards = true */
+    /* .fFixHeaderGuards = */                       true,
     /* .fPragmaOnce = */                            true,
     /* .fFixTodos = */                              true,
     /* .fFixErrH = */                               true,
