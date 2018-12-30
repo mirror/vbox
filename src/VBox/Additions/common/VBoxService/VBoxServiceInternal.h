@@ -17,6 +17,9 @@
 
 #ifndef ___VBoxServiceInternal_h
 #define ___VBoxServiceInternal_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <stdio.h>
 #ifdef RT_OS_WINDOWS

@@ -17,6 +17,9 @@
 
 #ifndef ___VBoxServiceToolBox_h
 #define ___VBoxServiceToolBox_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <VBox/GuestHost/GuestControl.h>
 

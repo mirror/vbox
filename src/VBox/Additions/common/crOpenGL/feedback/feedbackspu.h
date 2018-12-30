@@ -6,6 +6,9 @@
 
 #ifndef FEEDBACK_SPU_H
 #define FEEDBACK_SPU_H
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #ifdef WINDOWS
 #define FEEDBACKSPU_APIENTRY __stdcall

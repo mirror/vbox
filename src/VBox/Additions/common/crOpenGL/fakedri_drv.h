@@ -17,6 +17,9 @@
 
 #ifndef ___CROPENGL_FAKEDRIDRV_H
 #define ___CROPENGL_FAKEDRIDRV_H
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include "src/mesa/main/mtypes.h"
 #include "src/mesa/main/dd.h"

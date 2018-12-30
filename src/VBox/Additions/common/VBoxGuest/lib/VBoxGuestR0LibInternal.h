@@ -30,6 +30,9 @@
 
 #ifndef ___VBoxGuestLib_VBoxGuestR0LibInternal_h
 #define ___VBoxGuestLib_VBoxGuestR0LibInternal_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /*
  * Define the private IDC handle structure before we include the VBoxGuestLib.h header.

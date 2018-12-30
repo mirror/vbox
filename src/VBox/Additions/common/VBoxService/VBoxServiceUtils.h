@@ -17,6 +17,9 @@
 
 #ifndef ___VBoxServiceUtils_h
 #define ___VBoxServiceUtils_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include "VBoxServiceInternal.h"
 

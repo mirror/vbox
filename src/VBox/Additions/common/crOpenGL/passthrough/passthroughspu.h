@@ -5,7 +5,10 @@
  */
 
 #ifndef PASSTHROUGH_SPU_H
-#define PASSTHROUGH_SPU_H 1
+#define PASSTHROUGH_SPU_H
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 
 #include "cr_spu.h"

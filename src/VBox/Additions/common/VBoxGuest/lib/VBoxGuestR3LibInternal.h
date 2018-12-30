@@ -26,6 +26,9 @@
 
 #ifndef ___VBoxGuestR3LibInternal_h
 #define ___VBoxGuestR3LibInternal_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <VBox/VMMDev.h>
 #include <VBox/VBoxGuest.h>

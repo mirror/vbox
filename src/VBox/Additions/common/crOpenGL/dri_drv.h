@@ -19,6 +19,9 @@
 
 #ifndef ___CROPENGL_DRIDRV_H
 #define ___CROPENGL_DRIDRV_H
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include "src/mesa/main/mtypes.h"
 #include "src/mesa/drivers/dri/common/dri_util.h"

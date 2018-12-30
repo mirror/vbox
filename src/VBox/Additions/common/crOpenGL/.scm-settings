@@ -38,8 +38,8 @@
 /egl.c:                         --no-external-copyright --convert-tabs
 /fakedri_drv.c:                 --no-external-copyright --convert-tabs
 /fakedri_drv.h:                 --no-external-copyright --convert-tabs
-/fakedri_glfuncsList.h:         --no-external-copyright --convert-tabs
-/fakedri_glxfuncsList.h:        --no-external-copyright --convert-tabs
+/fakedri_glfuncsList.h:         --no-external-copyright --convert-tabs --no-fix-header-guards
+/fakedri_glxfuncsList.h:        --no-external-copyright --convert-tabs --no-fix-header-guards
 /glx.c:                         --no-external-copyright --convert-tabs
 /glx_c_exports.c:               --no-external-copyright --convert-tabs
 /glx_proto.h:                   --no-external-copyright --convert-tabs
@@ -51,7 +51,7 @@
 /SunOS_i386_exports_dri.py:     --no-external-copyright --convert-tabs
 /SunOS_i386_glxapi_exports.py:  --no-external-copyright --convert-tabs
 /VBoxCROGL.rc:                  --no-external-copyright --convert-tabs
-/VBoxICDList.h:                 --no-external-copyright
+/VBoxICDList.h:                 --no-external-copyright --no-fix-header-guards
 
 *_special: --treat-as Makefile
 

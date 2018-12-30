@@ -19,6 +19,9 @@
 
 #ifndef ___CROPENGL_DRI_GLX_H
 #define ___CROPENGL_DRI_GLX_H
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include "chromium.h"
 #include "stub.h"

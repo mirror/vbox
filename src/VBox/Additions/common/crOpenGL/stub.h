@@ -27,9 +27,11 @@
  *
  */
 
-
 #ifndef CR_STUB_H
 #define CR_STUB_H
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include "chromium.h"
 #include "cr_version.h"

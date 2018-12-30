@@ -6,6 +6,9 @@
 
 #ifndef CR_PACKSPU_H
 #define CR_PACKSPU_H
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #ifdef WINDOWS
 #define PACKSPU_APIENTRY __stdcall

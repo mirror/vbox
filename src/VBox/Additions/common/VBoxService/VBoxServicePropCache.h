@@ -17,6 +17,9 @@
 
 #ifndef ___VBoxServicePropCache_h
 #define ___VBoxServicePropCache_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include "VBoxServiceInternal.h"
 

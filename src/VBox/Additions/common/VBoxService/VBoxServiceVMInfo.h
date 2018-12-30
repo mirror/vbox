@@ -17,6 +17,9 @@
 
 #ifndef ___VBoxServiceVMInfo_h
 #define ___VBoxServiceVMInfo_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 
 extern int VGSvcUserUpdateF(PVBOXSERVICEVEPROPCACHE pCache, const char *pszUser, const char *pszDomain,

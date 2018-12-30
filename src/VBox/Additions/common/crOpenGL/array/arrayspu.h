@@ -6,6 +6,9 @@
 
 #ifndef ARRAY_SPU_H
 #define ARRAY_SPU_H
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #ifdef WINDOWS
 #define ARRAYSPU_APIENTRY __stdcall

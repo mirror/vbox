@@ -26,6 +26,9 @@
 
 #ifndef ___VBoxGuestInternal_h
 #define ___VBoxGuestInternal_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <iprt/types.h>
 #include <iprt/list.h>

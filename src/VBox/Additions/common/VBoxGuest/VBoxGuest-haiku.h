@@ -53,9 +53,11 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-
 #ifndef ___VBoxGuest_haiku_h
 #define ___VBoxGuest_haiku_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <OS.h>
 #include <Drivers.h>
