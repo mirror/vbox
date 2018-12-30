@@ -17,6 +17,9 @@
 
 #ifndef ___VBoxInstallHelper_Common_h
 #define ___VBoxInstallHelper_Common_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #if (_MSC_VER < 1400) /* Provide _stprintf_s to VC < 8.0. */
 int swprintf_s(WCHAR *buffer, size_t cbBuffer, const WCHAR *format, ...);

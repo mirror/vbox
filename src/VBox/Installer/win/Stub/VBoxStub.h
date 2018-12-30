@@ -15,10 +15,16 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#pragma once
+#ifndef VBOX_INCLUDED_win_Stub_VBoxStub_h
+#define VBOX_INCLUDED_win_Stub_VBoxStub_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #define VBOX_STUB_TITLE "VirtualBox Installer"
 
 typedef BOOL (WINAPI *LPFN_ISWOW64PROCESS) (HANDLE, PBOOL);
 LPFN_ISWOW64PROCESS fnIsWow64Process;
+
+#endif
 

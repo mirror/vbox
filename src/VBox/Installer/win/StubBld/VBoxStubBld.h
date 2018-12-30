@@ -17,6 +17,9 @@
 
 #ifndef ___VBoxStubBld_h___
 #define ___VBoxStubBld_h___
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #define VBOXSTUB_MAX_PACKAGES 128
 

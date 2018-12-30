@@ -15,6 +15,11 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#ifndef VBOX_INCLUDED_win_Stub_resource_h
+#define VBOX_INCLUDED_win_Stub_resource_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #define IDI_VIRTUALBOX 101
 
@@ -22,4 +27,6 @@
 # define RT_MANIFEST 24
 #endif
 #define APP_MANIFEST 1
+
+#endif
 

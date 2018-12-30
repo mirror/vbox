@@ -15,6 +15,13 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#pragma once
+#ifndef VBOX_INCLUDED_win_Stub_VBoxStubCertUtil_h
+#define VBOX_INCLUDED_win_Stub_VBoxStubCertUtil_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 extern bool addCertToStore(DWORD dwDst, const char *pszStoreNm, const unsigned char kpCertBuf[], DWORD cbCertBuf);
+
+#endif
+

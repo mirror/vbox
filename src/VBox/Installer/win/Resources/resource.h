@@ -15,6 +15,12 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#ifndef VBOX_INCLUDED_win_Resources_resource_h
+#define VBOX_INCLUDED_win_Resources_resource_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
+
 #define IDI_VIRTUALBOX              101
 
 #define IDI_FILETYPE_VBOX           201
@@ -26,3 +32,5 @@
 #define IDI_FILETYPE_VBOX_VMDK      304
 #define IDI_FILETYPE_VBOX_VHD       305
 #define IDI_FILETYPE_VBOX_HDD       306
+
+#endif
