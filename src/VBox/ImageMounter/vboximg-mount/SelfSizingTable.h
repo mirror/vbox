@@ -67,6 +67,9 @@
 
 #ifndef ___SELFSIZINGTABLE_H
 #define ___SELFSIZINGTABLE_H
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <iprt/types.h>
 #include <iprt/string.h>

@@ -19,6 +19,9 @@
 
 #ifndef ___vboximgopts_h
 #define ___vboximgopts_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 
 typedef struct vboximgOpts {

@@ -17,6 +17,9 @@
 
 #ifndef ___vboximg_mount_h
 #define ___vboximg_mount_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #define BOOTSTRAP_CODE_AREA_SIZE    446         /** Impl. specific MBR & EBR block not relevant for our use */
 #define GPT_PARTITION_ENTRY_NAME_SIZE 36        /** 72 bytes for GPT partition entry name, but treated as 36 UTF-16 */

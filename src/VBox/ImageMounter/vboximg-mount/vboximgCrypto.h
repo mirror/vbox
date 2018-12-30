@@ -18,6 +18,9 @@
 
 #ifndef ____H_VBOXIMGCRYPTO
 #define ____H_VBOXIMGCRYPTO
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <map>
 

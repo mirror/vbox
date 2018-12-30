@@ -18,6 +18,9 @@
 
 #ifndef ____H_VBOXIMGMEDIA
 #define ____H_VBOXIMGMEDIA
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 typedef struct MEDIUMINFO
 {
