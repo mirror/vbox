@@ -19,6 +19,9 @@
 
 #ifndef __VBOXTRAYIPCSERVER__H
 #define __VBOXTRAYIPCSERVER__H
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 int                VBoxIPCInit    (const VBOXSERVICEENV *pEnv, void **ppInstance, bool *pfStartThread);
 unsigned __stdcall VBoxIPCWorker  (void *pInstance);

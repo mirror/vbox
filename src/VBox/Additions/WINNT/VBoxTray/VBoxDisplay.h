@@ -17,6 +17,9 @@
 
 #ifndef __VBOXSERVICEDISPLAY__H
 #define __VBOXSERVICEDISPLAY__H
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 DWORD VBoxDisplayGetCount();
 DWORD VBoxDisplayGetConfig(const DWORD NumDevices, DWORD *pDevPrimaryNum, DWORD *pNumDevices, DISPLAY_DEVICE *paDisplayDevices, DEVMODE *paDeviceModes);

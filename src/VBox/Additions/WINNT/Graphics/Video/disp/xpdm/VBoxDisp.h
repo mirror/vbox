@@ -17,6 +17,9 @@
 
 #ifndef VBOXDISP_H
 #define VBOXDISP_H
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include "VBoxDispInternal.h"
 #include "VBoxDispVrdpBmp.h"

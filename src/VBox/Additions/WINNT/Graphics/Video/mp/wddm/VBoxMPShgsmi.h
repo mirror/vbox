@@ -17,6 +17,9 @@
 
 #ifndef ___VBoxMPShgsmi_h___
 #define ___VBoxMPShgsmi_h___
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <iprt/cdefs.h>
 #include <VBoxVideo.h>

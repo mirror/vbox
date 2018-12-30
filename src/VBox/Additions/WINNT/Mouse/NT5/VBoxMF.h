@@ -17,6 +17,9 @@
 
 #ifndef VBOXMF_H
 #define VBOXMF_H
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <iprt/cdefs.h>
 #define LOG_GROUP LOG_GROUP_DRV_MOUSE

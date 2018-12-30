@@ -17,6 +17,9 @@
 
 #ifndef ___VBOXTRAY_H
 #define ___VBOXTRAY_H
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #       define _InterlockedExchange           _InterlockedExchange_StupidDDKVsCompilerCrap
 #       define _InterlockedExchangeAdd        _InterlockedExchangeAdd_StupidDDKVsCompilerCrap

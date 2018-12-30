@@ -17,6 +17,9 @@
 
 #ifndef ___VBoxMPVbva_h___
 #define ___VBoxMPVbva_h___
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <VBox/cdefs.h>  /* for VBOXCALL */
 

@@ -17,6 +17,9 @@
 
 #ifndef ___VBoxDispCm_h___
 #define ___VBoxDispCm_h___
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 typedef struct VBOXWDDMDISP_DEVICE *PVBOXWDDMDISP_DEVICE;
 typedef struct VBOXWDDMDISP_CONTEXT *PVBOXWDDMDISP_CONTEXT;

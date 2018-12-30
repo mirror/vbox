@@ -17,6 +17,9 @@
 
 #ifndef ___Svga_h__
 #define ___Svga_h__
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include "VBoxMPGaUtils.h"
 

@@ -17,6 +17,9 @@
 
 #ifndef ___H_GINADIALOG
 #define ___H_GINADIALOG
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 void hookDialogBoxes(PVOID pWinlogonFunctions, DWORD dwWlxVersion);
 

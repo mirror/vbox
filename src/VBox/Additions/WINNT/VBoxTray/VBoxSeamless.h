@@ -17,6 +17,9 @@
 
 #ifndef __VBOXSERVICESEAMLESS__H
 #define __VBOXSERVICESEAMLESS__H
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 void VBoxSeamlessEnable();
 void VBoxSeamlessDisable();

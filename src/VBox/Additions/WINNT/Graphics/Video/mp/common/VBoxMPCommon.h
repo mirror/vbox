@@ -17,6 +17,9 @@
 
 #ifndef VBOXMPCOMMON_H
 #define VBOXMPCOMMON_H
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include "VBoxMPDevExt.h"
 

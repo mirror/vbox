@@ -17,6 +17,9 @@
 
 #ifndef ___VBoxDispProfile_h__
 #define ___VBoxDispProfile_h__
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 #include "VBoxDispD3DCmn.h"
 
 #include <iprt/ctype.h>

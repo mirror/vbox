@@ -17,6 +17,9 @@
 
 #ifndef ___H_GINAHELPER
 #define ___H_GINAHELPER
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <VBox/VBoxGuestLib.h>
 

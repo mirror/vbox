@@ -17,6 +17,9 @@
 
 #ifndef ___VBOX_CREDPROV_FACTORY_H___
 #define ___VBOX_CREDPROV_FACTORY_H___
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <iprt/win/windows.h>
 

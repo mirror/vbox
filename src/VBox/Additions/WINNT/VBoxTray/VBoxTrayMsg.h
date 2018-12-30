@@ -17,6 +17,9 @@
 
 #ifndef ___VBOXTRAY_MSG_H
 #define ___VBOXTRAY_MSG_H
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /** The IPC pipe's prefix (native).
  * Will be followed by the username VBoxTray runs under. */

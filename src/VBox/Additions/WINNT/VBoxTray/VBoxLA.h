@@ -17,6 +17,9 @@
 
 #ifndef __VBOXSERVICELA__H
 #define __VBOXSERVICELA__H
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #endif /* !__VBOXSERVICELA__H */
 

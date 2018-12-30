@@ -22,6 +22,9 @@
 
 #ifndef ___VBoxDispMpLogger_h__
 #define ___VBoxDispMpLogger_h__
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <iprt/cdefs.h>
 

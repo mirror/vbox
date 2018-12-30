@@ -17,6 +17,9 @@
 
 #ifndef ___SvgaCmd_h__
 #define ___SvgaCmd_h__
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include "SvgaHw.h"
 

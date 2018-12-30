@@ -17,6 +17,9 @@
 
 #ifndef ___VBoxMPWddm_h___
 #define ___VBoxMPWddm_h___
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #define VBOX_WDDM_DRIVERNAME L"VBoxWddm"
 

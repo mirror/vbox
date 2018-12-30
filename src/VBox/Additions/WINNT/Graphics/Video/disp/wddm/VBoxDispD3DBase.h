@@ -17,6 +17,9 @@
 
 #ifndef ___VBoxDispD3DBase_h
 #define ___VBoxDispD3DBase_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /* Include nt-and-windows.h here so we get NT_SUCCESS, but don't try if
    something windowsy is already included because that'll cause conflicts. */

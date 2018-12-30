@@ -24,6 +24,9 @@
 
 #ifndef ___VBoxMPIf_h___
 #define ___VBoxMPIf_h___
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <VBoxVideo.h>
 #include "../../../../include/VBoxDisplay.h"

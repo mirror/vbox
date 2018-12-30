@@ -17,6 +17,9 @@
 
 #ifndef ___VBoxMPVdma_h___
 #define ___VBoxMPVdma_h___
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <iprt/cdefs.h>
 #include <iprt/asm.h>

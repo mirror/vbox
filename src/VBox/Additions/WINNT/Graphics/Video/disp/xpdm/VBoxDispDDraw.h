@@ -17,6 +17,9 @@
 
 #ifndef VBOXDISPDDRAW_H
 #define VBOXDISPDDRAW_H
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <winddi.h>
 

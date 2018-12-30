@@ -20,6 +20,9 @@
 
 #ifndef _EXDLL_H_
 #define _EXDLL_H_
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <iprt/win/windows.h>
 

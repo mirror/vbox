@@ -17,6 +17,9 @@
 
 #ifndef ___VBoxMPVidPn_h___
 #define ___VBoxMPVidPn_h___
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #define VBOXVDPN_C_DISPLAY_HBLANK_SIZE 200
 #define VBOXVDPN_C_DISPLAY_VBLANK_SIZE 180

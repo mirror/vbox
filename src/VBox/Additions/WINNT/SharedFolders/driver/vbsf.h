@@ -17,6 +17,9 @@
 
 #ifndef VBSF_H
 #define VBSF_H
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /*
  * This must be defined before including RX headers.

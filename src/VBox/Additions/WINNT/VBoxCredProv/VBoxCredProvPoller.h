@@ -17,6 +17,9 @@
 
 #ifndef ___VBOX_CREDPROV_POLLER_H___
 #define ___VBOX_CREDPROV_POLLER_H___
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <iprt/critsect.h>
 #include <iprt/thread.h>

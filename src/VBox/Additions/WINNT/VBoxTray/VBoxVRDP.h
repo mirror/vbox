@@ -17,6 +17,9 @@
 
 #ifndef __VBOXSERVICEVRDP__H
 #define __VBOXSERVICEVRDP__H
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /* The restore service prototypes. */
 int                VBoxVRDPInit    (const VBOXSERVICEENV *pEnv, void **ppInstance, bool *pfStartThread);

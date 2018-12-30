@@ -17,6 +17,9 @@
 
 #ifndef __VBOXGINA_H__
 #define __VBOXGINA_H__
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /** Handle to Winlogon service */
 extern HANDLE hGinaWlx;

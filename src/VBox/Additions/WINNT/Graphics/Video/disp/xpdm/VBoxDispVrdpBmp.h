@@ -17,6 +17,9 @@
 
 #ifndef VBOXDISPVRDPBMP_H
 #define VBOXDISPVRDPBMP_H
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /* RDP cache holds about 350 tiles 64x64. Therefore
  * the driver does not have to cache more then the

@@ -17,6 +17,9 @@
 
 #ifndef __VBSFHLP__H
 #define __VBSFHLP__H
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <iprt/nt/nt.h> /* includes ntifs.h and wdm.h */
 #include <iprt/win/ntverp.h>

@@ -17,6 +17,9 @@
 
 #ifndef VBOXMOUSELOG_H
 #define VBOXMOUSELOG_H
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <VBox/log.h>
 #include <iprt/assert.h>

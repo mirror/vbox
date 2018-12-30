@@ -17,6 +17,9 @@
 
 #ifndef ___VBoxMPTypes_h___
 #define ___VBoxMPTypes_h___
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 typedef struct _VBOXMP_DEVEXT *PVBOXMP_DEVEXT;
 #ifdef VBOX_WITH_CROGL

@@ -16,6 +16,9 @@
 
 #ifndef ___VBOX_CREDPROV_UTILS_H___
 #define ___VBOX_CREDPROV_UTILS_H___
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <VBox/VBoxGuestLib.h>
 

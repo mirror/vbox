@@ -17,6 +17,9 @@
 
 #ifndef ___VBoxMPCr_h__
 #define ___VBoxMPCr_h__
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #ifdef VBOX_WITH_CROGL
 

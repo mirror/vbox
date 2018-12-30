@@ -18,6 +18,9 @@
 
 #ifndef ___VBoxHostVersion_h
 #define ___VBoxHostVersion_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 int VBoxCheckHostVersion();
 

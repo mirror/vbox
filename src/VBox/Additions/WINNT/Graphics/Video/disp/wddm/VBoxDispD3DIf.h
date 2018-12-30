@@ -17,6 +17,9 @@
 
 #ifndef ___VBoxDispD3DIf_h___
 #define ___VBoxDispD3DIf_h___
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #ifdef VBOX_WITH_MESA3D
 #include "gallium/VBoxGallium.h"

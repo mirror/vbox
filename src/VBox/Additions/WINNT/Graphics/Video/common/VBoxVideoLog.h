@@ -17,6 +17,9 @@
 
 #ifndef VBOXVIDEOLOG_H
 #define VBOXVIDEOLOG_H
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #ifndef VBOX_VIDEO_LOG_NAME
 # error VBOX_VIDEO_LOG_NAME should be defined!

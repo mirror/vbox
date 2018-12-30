@@ -17,6 +17,9 @@
 
 #ifndef ___VBoxMPCm_h___
 #define ___VBoxMPCm_h___
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 typedef struct VBOXVIDEOCM_MGR
 {

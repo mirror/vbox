@@ -17,6 +17,9 @@
 
 #ifndef ___VBoxDispD3DCmn_h___
 #define ___VBoxDispD3DCmn_h___
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include "VBoxDispD3DBase.h"
 

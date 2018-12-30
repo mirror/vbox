@@ -17,6 +17,9 @@
 
 #ifndef ___VBoxUhgsmiDisp_h__
 #define ___VBoxUhgsmiDisp_h__
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include "VBoxUhgsmiBase.h"
 #include "VBoxDispD3DCmn.h"

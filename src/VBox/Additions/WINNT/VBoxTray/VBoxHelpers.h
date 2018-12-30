@@ -17,6 +17,9 @@
 
 #ifndef ___VBOXTRAY_HELPERS_H
 #define ___VBOXTRAY_HELPERS_H
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 // #define DEBUG_DISPLAY_CHANGE
 

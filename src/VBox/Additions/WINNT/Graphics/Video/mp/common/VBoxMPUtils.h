@@ -17,6 +17,9 @@
 
 #ifndef VBOXMPUTILS_H
 #define VBOXMPUTILS_H
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /*Sanity check*/
 #if defined(VBOX_XPDM_MINIPORT) == defined(VBOX_WDDM_MINIPORT)

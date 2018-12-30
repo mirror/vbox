@@ -15,6 +15,12 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#ifndef VBOX_INCLUDED_VBoxTray_VBoxDispIf_h
+#define VBOX_INCLUDED_VBoxTray_VBoxDispIf_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
+
 #include <iprt/cdefs.h>
 
 #ifdef VBOX_WITH_WDDM
@@ -111,4 +117,6 @@ DECLINLINE(bool) VBoxDispIfSeamlesIsValid(VBOXDISPIF_SEAMLESS *pSeamless)
 DWORD VBoxDispIfSeamlessCreate(PCVBOXDISPIF const pIf, VBOXDISPIF_SEAMLESS *pSeamless, HANDLE hEvent);
 DWORD VBoxDispIfSeamlessTerm(VBOXDISPIF_SEAMLESS *pSeamless);
 DWORD VBoxDispIfSeamlessSubmit(VBOXDISPIF_SEAMLESS *pSeamless, VBOXDISPIFESCAPE *pData, int cbData);
+
+#endif
 

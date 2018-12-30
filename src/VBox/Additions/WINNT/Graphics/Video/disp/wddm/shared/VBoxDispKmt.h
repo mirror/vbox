@@ -17,6 +17,9 @@
 
 #ifndef ___VBoxDispKmt_h__
 #define ___VBoxDispKmt_h__
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <D3dkmthk.h>
 

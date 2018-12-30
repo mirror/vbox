@@ -20,6 +20,9 @@
 
 #ifndef VBSFSHARED_H
 #define VBSFSHARED_H
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /* The network provider name for shared folders. */
 #define MRX_VBOX_PROVIDER_NAME_U L"VirtualBox Shared Folders"

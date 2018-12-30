@@ -17,6 +17,9 @@
 
 #ifndef ___VBoxSharedFolders_h
 #define ___VBoxSharedFolders_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 int VBoxSharedFoldersAutoUnmount(void);
 int VBoxSharedFoldersAutoMount(void);

@@ -17,6 +17,9 @@
 
 #ifndef VBOXVIDEOIOCTL_H
 #define VBOXVIDEOIOCTL_H
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <VBox/VMMDev.h> /* VBVAMEMORY */
 #include <HGSMI.h>

@@ -17,9 +17,11 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-
 #ifndef ___VBoxGaD3DDevice9Ex_h__
 #define ___VBoxGaD3DDevice9Ex_h__
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include "VBoxPresent.h"
 #include "VBoxGallium.h"

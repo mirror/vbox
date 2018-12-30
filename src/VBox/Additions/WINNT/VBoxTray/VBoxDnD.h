@@ -17,6 +17,9 @@
 
 #ifndef __VBOXTRAYDND__H
 #define __VBOXTRAYDND__H
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <iprt/critsect.h>
 

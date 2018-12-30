@@ -17,6 +17,9 @@
 
 #ifndef __D3D9RENDER__H
 #define __D3D9RENDER__H
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include "d3dhlp.h"
 

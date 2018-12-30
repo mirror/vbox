@@ -17,6 +17,9 @@
 
 #ifndef ___VBoxDispDbg_h__
 #define ___VBoxDispDbg_h__
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #define VBOX_VIDEO_LOG_NAME "VBoxD3D"
 #define VBOX_VIDEO_LOG_LOGGER vboxVDbgInternalLogLogger

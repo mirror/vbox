@@ -17,6 +17,9 @@
 
 #ifndef VBOXDISPDRAWCMD_H
 #define VBOXDISPDRAWCMD_H
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #define VBVA_DECL_OP(__fn, __args) \
     void vbvaDrv##__fn __args;     \

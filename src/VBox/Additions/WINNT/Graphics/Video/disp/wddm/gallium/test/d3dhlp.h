@@ -17,6 +17,9 @@
 
 #ifndef __D3DHLP__H
 #define __D3DHLP__H
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #ifdef VBOX
 #include <iprt/win/d3d9.h>

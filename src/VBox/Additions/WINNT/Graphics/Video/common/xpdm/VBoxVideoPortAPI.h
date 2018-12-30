@@ -17,6 +17,9 @@
 
 #ifndef VBOXVIDEOPORTAPI_H
 #define VBOXVIDEOPORTAPI_H
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /* To maintain binary backward compatibility with older windows versions
  * we query at runtime for video port functions which are not present in NT 4.0

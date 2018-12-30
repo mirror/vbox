@@ -19,6 +19,9 @@
 
 #ifndef ___VBoxD3DAdapter9_h__
 #define ___VBoxD3DAdapter9_h__
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include "VBoxPresent.h"
 

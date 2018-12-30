@@ -17,6 +17,9 @@
 
 #ifndef ___VBoxMPGaUtils_h__
 #define ___VBoxMPGaUtils_h__
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <iprt/nt/ntddk.h>
 #include <iprt/nt/dispmprt.h>

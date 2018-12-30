@@ -17,6 +17,9 @@
 
 #ifndef ___VBoxMPVModes_h__
 #define ___VBoxMPVModes_h__
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 //#include "../../common/VBoxVideoTools.h"
 
