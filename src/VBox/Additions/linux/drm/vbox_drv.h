@@ -32,8 +32,12 @@
  *          Michael Thayer <michael.thayer@oracle.com,
  *          Hans de Goede <hdegoede@redhat.com>
  */
+
 #ifndef __VBOX_DRV_H__
 #define __VBOX_DRV_H__
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <linux/version.h>
 #if LINUX_VERSION_CODE < KERNEL_VERSION(4, 5, 0)

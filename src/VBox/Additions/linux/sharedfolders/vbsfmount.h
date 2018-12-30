@@ -29,6 +29,9 @@
 
 #ifndef VBFS_MOUNT_H
 #define VBFS_MOUNT_H
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /* Linux constraints the size of data mount argument to PAGE_SIZE - 1. */
 #define MAX_HOST_NAME  256

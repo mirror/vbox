@@ -16,5 +16,5 @@
 #
 
 
-/liblightdm-gobject-*/*.c|/liblightdm-gobject-*/*.h: --external-copyright --no-strip-trailing-blanks --no-convert-tabs --lgpl-disclaimer
+/liblightdm-gobject-*/*.c|/liblightdm-gobject-*/*.h: --external-copyright --no-strip-trailing-blanks --no-convert-tabs --lgpl-disclaimer --no-fix-header-guards
 

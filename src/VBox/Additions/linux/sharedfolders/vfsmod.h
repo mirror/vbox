@@ -29,6 +29,9 @@
 
 #ifndef VFSMOD_H
 #define VFSMOD_H
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #define LOG_GROUP LOG_GROUP_SHARED_FOLDERS
 #include "the-linux-kernel.h"
