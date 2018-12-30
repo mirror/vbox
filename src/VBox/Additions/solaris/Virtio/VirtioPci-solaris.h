@@ -26,6 +26,9 @@
 
 #ifndef ___VirtioPCI_solaris_h
 #define ___VirtioPCI_solaris_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include "Virtio-solaris.h"
 

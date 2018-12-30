@@ -24,8 +24,11 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
-#ifndef	___VBoxFS_vfs_Solaris_h
-#define	___VBoxFS_vfs_Solaris_h
+#ifndef ___VBoxFS_vfs_Solaris_h
+#define ___VBoxFS_vfs_Solaris_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #ifdef	__cplusplus
 extern "C" {

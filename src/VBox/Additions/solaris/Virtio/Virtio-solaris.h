@@ -26,6 +26,9 @@
 
 #ifndef ___Virtio_solaris_h
 #define ___Virtio_solaris_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <sys/sunddi.h>
 

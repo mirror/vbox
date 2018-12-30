@@ -26,6 +26,9 @@
 
 #ifndef ___VBoxGuestTestCaseSolaris_h
 #define ___VBoxGuestTestCaseSolaris_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <iprt/assert.h>
 #include <iprt/string.h>  /* RT_ZERO */

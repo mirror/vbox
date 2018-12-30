@@ -26,6 +26,9 @@
 
 #ifndef ___VBoxVFS_Solaris_h
 #define ___VBoxVFS_Solaris_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #ifdef __cplusplus
 extern "C" {

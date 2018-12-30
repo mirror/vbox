@@ -25,7 +25,10 @@
  */
 
 #ifndef ___VBoxFS_node_Solaris_h
-#define	___VBoxFS_node_Solaris_h
+#define ___VBoxFS_node_Solaris_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <sys/t_lock.h>
 #include <sys/avl.h>
