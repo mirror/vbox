@@ -72,4 +72,5 @@
 /iprt/asn1-generator-init.h:            --no-fix-header-guards
 /iprt/runtime-loader.h:                 --no-fix-header-guards
 /iprt/bldprog-strtab-template.cpp.h:    --no-fix-header-guards
+/iprt/asm*watcom*.h:                    --no-pragma-once
 

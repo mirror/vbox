@@ -3018,24 +3018,28 @@ bool rewrite_FixHeaderGuards(PSCMRWSTATE pState, PSCMSTREAM pIn, PSCMSTREAM pOut
                             "%u: Expected '#endif' to follow '#ifndef RT_WITHOUT_PRAGMA_ONCE' and '# pragma once'! %s (%.*s)\n",
                             iPragmaOnce + 3, ErrInfo.Core.pszMsg, cchLine, pchLine);
         ScmVerbose(pState, 3, "Found pragma once\n");
+        fRet |= !pSettings->fPragmaOnce;
     }
     else
     {
         rc = ScmStreamSeekByLine(pIn, iPragmaOnce);
         if (RT_FAILURE(rc))
             return ScmError(pState, rc, "seek error\n");
-        fRet = true;
+        fRet = pSettings->fPragmaOnce;
         ScmVerbose(pState, 2, "Missing #pragma once\n");
     }
 
     /*
      * Write the pragma once stuff.
      */
-    ScmStreamPutLine(pOut, RT_STR_TUPLE("#ifndef RT_WITHOUT_PRAGMA_ONCE"), enmEol);
-    ScmStreamPutLine(pOut, RT_STR_TUPLE("# pragma once"), enmEol);
-    rc = ScmStreamPutLine(pOut, RT_STR_TUPLE("#endif"), enmEol);
-    if (RT_FAILURE(rc))
-        return false;
+    if (pSettings->fPragmaOnce)
+    {
+        ScmStreamPutLine(pOut, RT_STR_TUPLE("#ifndef RT_WITHOUT_PRAGMA_ONCE"), enmEol);
+        ScmStreamPutLine(pOut, RT_STR_TUPLE("# pragma once"), enmEol);
+        rc = ScmStreamPutLine(pOut, RT_STR_TUPLE("#endif"), enmEol);
+        if (RT_FAILURE(rc))
+            return false;
+    }
 
     /*
      * Copy the rest of the file and remove pragma once statements, while

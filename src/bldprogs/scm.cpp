@@ -76,6 +76,8 @@ typedef enum SCMOPT
     SCMOPT_NO_FIX_FLOWER_BOX_MARKERS,
     SCMOPT_FIX_HEADER_GUARDS,
     SCMOPT_NO_FIX_HEADER_GUARDS,
+    SCMOPT_PRAGMA_ONCE,
+    SCMOPT_NO_PRAGMA_ONCE,
     SCMOPT_FIX_TODOS,
     SCMOPT_NO_FIX_TODOS,
     SCMOPT_FIX_ERR_H,
@@ -177,6 +179,7 @@ static SCMSETTINGSBASE const g_Defaults =
     /* .fFixFlowerBoxMarkers = */                   true,
     /* .cMinBlankLinesBeforeFlowerBoxMakers = */    2,
     /* .fFixHeaderGuards = */                       false, /** @todo fFixHeaderGuards = true */
+    /* .fPragmaOnce = */                            true,
     /* .fFixTodos = */                              true,
     /* .fFixErrH = */                               true,
     /* .fUpdateCopyrightYear = */                   false,
@@ -219,6 +222,8 @@ static RTGETOPTDEF  g_aScmOpts[] =
     { "--no-fix-flower-box-markers",        SCMOPT_NO_FIX_FLOWER_BOX_MARKERS,       RTGETOPT_REQ_NOTHING },
     { "--fix-header-guards",                SCMOPT_FIX_HEADER_GUARDS,               RTGETOPT_REQ_NOTHING },
     { "--no-fix-header-guards",             SCMOPT_NO_FIX_HEADER_GUARDS,            RTGETOPT_REQ_NOTHING },
+    { "--pragma-once",                      SCMOPT_PRAGMA_ONCE,                     RTGETOPT_REQ_NOTHING },
+    { "--no-pragma-once",                   SCMOPT_NO_PRAGMA_ONCE,                  RTGETOPT_REQ_NOTHING },
     { "--fix-todos",                        SCMOPT_FIX_TODOS,                       RTGETOPT_REQ_NOTHING },
     { "--no-fix-todos",                     SCMOPT_NO_FIX_TODOS,                    RTGETOPT_REQ_NOTHING },
     { "--fix-err-h",                        SCMOPT_FIX_ERR_H,                       RTGETOPT_REQ_NOTHING },
@@ -1019,6 +1024,13 @@ static int scmSettingsBaseHandleOpt(PSCMSETTINGSBASE pSettings, int rc, PRTGETOP
             return VINF_SUCCESS;
         case SCMOPT_NO_FIX_HEADER_GUARDS:
             pSettings->fFixHeaderGuards = false;
+            return VINF_SUCCESS;
+
+        case SCMOPT_PRAGMA_ONCE:
+            pSettings->fPragmaOnce = true;
+            return VINF_SUCCESS;
+        case SCMOPT_NO_PRAGMA_ONCE:
+            pSettings->fPragmaOnce = false;
             return VINF_SUCCESS;
 
         case SCMOPT_FIX_TODOS:
@@ -2691,6 +2703,9 @@ static int scmHelp(PCRTGETOPTDEF paOpts, size_t cOpts)
 
             case SCMOPT_FIX_HEADER_GUARDS:
                 RTPrintf("      Fix header guards and #pragma once.  Default: %RTbool\n", g_Defaults.fFixHeaderGuards);
+                break;
+            case SCMOPT_PRAGMA_ONCE:
+                RTPrintf("      Whether to include #pragma once with the header guard.  Default: %RTbool\n", g_Defaults.fPragmaOnce);
                 break;
             case SCMOPT_FIX_TODOS:
                 RTPrintf("      Fix @todo statements so doxygen sees them.  Default: %RTbool\n", g_Defaults.fFixTodos);

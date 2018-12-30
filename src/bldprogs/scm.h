@@ -333,6 +333,8 @@ typedef struct SCMSETTINGSBASE
 
     /** Whether to fix C/C++ header guards and \#pragma once directives. */
     bool            fFixHeaderGuards;
+    /** Whether to include a pragma once statement with the header guard. */
+    bool            fPragmaOnce;
 
     /** Whether to fix C/C++ todos. */
     bool            fFixTodos;
