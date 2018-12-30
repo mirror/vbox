@@ -17,6 +17,9 @@
 
 #ifndef ___VBOXCLIPBOARD_H
 #define ___VBOXCLIPBOARD_H
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <VBox/hgcmsvc.h>
 #include <VBox/log.h>

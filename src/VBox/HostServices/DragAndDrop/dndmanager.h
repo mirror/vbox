@@ -16,6 +16,9 @@
 
 #ifndef ___VBox_HostService_DnD_dndmanager_h
 #define ___VBox_HostService_DnD_dndmanager_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <VBox/GuestHost/DragAndDrop.h>
 #include <VBox/HostServices/Service.h>

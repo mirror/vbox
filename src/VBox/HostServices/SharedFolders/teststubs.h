@@ -22,6 +22,9 @@
 
 #ifndef __VBSF_TEST_STUBS__H
 #define __VBSF_TEST_STUBS__H
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <iprt/dir.h>
 #include <iprt/time.h>

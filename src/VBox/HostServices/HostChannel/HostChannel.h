@@ -17,6 +17,9 @@
 
 #ifndef __VBOXHOSTCHANNEL__H
 #define __VBOXHOSTCHANNEL__H
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <iprt/list.h>
 

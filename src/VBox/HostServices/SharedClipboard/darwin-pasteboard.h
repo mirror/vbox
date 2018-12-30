@@ -17,6 +17,9 @@
 
 #ifndef ___DARWIN_PASTEBOARD_H
 #define ___DARWIN_PASTEBOARD_H
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 typedef struct OpaquePasteboardRef *PasteboardRef;
 

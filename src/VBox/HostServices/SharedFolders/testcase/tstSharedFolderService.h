@@ -16,6 +16,9 @@
 
 #ifndef __VBSF_TEST_SHARED_FOLDER_SERVICE__H
 #define __VBSF_TEST_SHARED_FOLDER_SERVICE__H
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /* Grumble... if the coding style let us use the anonymous "struct RTTESTINT *"
  * instead of "PRTTEST" here we wouldn't need to unnecessarily include this. */

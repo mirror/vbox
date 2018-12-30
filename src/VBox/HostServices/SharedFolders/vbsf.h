@@ -17,6 +17,9 @@
 
 #ifndef ___vbsf_h___
 #define ___vbsf_h___
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include "shfl.h"
 #include <VBox/shflsvc.h>

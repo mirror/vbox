@@ -16,6 +16,9 @@
 
 #ifndef ___SHFL_H
 #define ___SHFL_H
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <VBox/err.h>
 #include <VBox/hgcmsvc.h>
