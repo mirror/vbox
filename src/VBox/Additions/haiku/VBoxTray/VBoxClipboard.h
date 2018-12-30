@@ -46,6 +46,9 @@
 
 #ifndef __VBOXSERVICESHAREDCLIPLBOARD__H
 #define __VBOXSERVICESHAREDCLIPLBOARD__H
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <Handler.h>
 

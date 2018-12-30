@@ -46,6 +46,9 @@
 
 #ifndef __VBOXDISPLAY__H
 #define __VBOXDISPLAY__H
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <Handler.h>
 #include <Screen.h>

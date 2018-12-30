@@ -26,6 +26,9 @@
 
 #ifndef KERNEL_CPP_H
 #define KERNEL_CPP_H
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #ifdef __cplusplus
 

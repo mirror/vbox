@@ -26,6 +26,9 @@
 
 #ifndef _KERNEL_UTIL_OPEN_HASH_TABLE_H
 #define _KERNEL_UTIL_OPEN_HASH_TABLE_H
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 
 #include <OS.h>

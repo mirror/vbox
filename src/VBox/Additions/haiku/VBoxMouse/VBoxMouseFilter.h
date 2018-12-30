@@ -46,6 +46,9 @@
 
 #ifndef __VBOXMOUSE_FILTER__H
 #define __VBOXMOUSE_FILTER__H
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <InputServerFilter.h>
 

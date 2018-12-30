@@ -45,6 +45,9 @@
 
 #ifndef ___vboxsf_h
 #define ___vboxsf_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <malloc.h>
 #include <dirent.h>

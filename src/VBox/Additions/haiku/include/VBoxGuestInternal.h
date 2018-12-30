@@ -46,6 +46,9 @@
 
 #ifndef ___VBoxGuestInternal_h_
 #define ___VBoxGuestInternal_h_
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /** The MIME signature of the VBoxGuest application. */
 #define VBOX_GUEST_APP_SIG                       "application/x-vnd.Oracle-VBoxGuest"

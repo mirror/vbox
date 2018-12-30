@@ -31,6 +31,9 @@
 
 #ifndef _KERNEL_LOCK_H
 #define _KERNEL_LOCK_H
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <OS.h>
 

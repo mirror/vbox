@@ -17,6 +17,9 @@
 
 #ifndef ___VBOXVFS_H___
 #define ___VBOXVFS_H___
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #define VBOXVFS_VFSNAME "vboxvfs"
 #define VBOXVFS_VERSION 1

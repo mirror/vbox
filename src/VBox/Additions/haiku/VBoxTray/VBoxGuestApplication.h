@@ -46,6 +46,9 @@
 
 #ifndef ___VBOXGUESTAPPLICATION__H
 #define ___VBOXGUESTAPPLICATION__H
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /** @todo r=ramshankar; why are we including all the headers here!?? Do it in
  *        the .cpp please. */

@@ -46,6 +46,9 @@
 
 #ifndef __VBOXMOUSE__H
 #define __VBOXMOUSE__H
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <InputServerDevice.h>
 

@@ -30,6 +30,9 @@
 
 #ifndef ___VBoxSFInternal_h___
 #define ___VBoxSFInternal_h___
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 
 #define INCL_BASE

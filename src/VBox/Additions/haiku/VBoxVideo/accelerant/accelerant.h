@@ -46,6 +46,9 @@
 
 #ifndef ___VBOX_ACCELERANT_H
 #define ___VBOX_ACCELERANT_H
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <Accelerant.h>
 #include "../common/VBoxVideo_common.h"

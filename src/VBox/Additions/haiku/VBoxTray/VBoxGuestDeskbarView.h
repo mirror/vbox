@@ -46,6 +46,9 @@
 
 #ifndef ___VBOXGUESTTRAYVIEW__H
 #define ___VBOXGUESTTRAYVIEW__H
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <Bitmap.h>
 #include <View.h>
