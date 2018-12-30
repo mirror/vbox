@@ -20,6 +20,9 @@
 
 #ifndef ___VBoxDTraceTypes_h___
 #define ___VBoxDTraceTypes_h___
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <iprt/types.h>
 #include <iprt/stdarg.h>

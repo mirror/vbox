@@ -19,6 +19,9 @@
 
 #ifndef ___VBoxDTraceLibCWrappers_h___
 #define ___VBoxDTraceLibCWrappers_h___
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <assert.h>
 #include <stdlib.h>
