@@ -26,6 +26,9 @@
 
 #ifndef ___internal_assert_h
 #define ___internal_assert_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <iprt/types.h>
 

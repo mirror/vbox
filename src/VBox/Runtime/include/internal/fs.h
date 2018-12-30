@@ -26,6 +26,9 @@
 
 #ifndef ___internal_fs_h
 #define ___internal_fs_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <iprt/types.h>
 #ifndef RT_OS_WINDOWS

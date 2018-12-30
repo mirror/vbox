@@ -26,6 +26,9 @@
 
 #ifndef ___internal_rand_h
 #define ___internal_rand_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <iprt/types.h>
 #include <iprt/critsect.h>

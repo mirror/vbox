@@ -26,6 +26,9 @@
 
 #ifndef ___the_linux_kernel_h
 #define ___the_linux_kernel_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /*
  * Include iprt/types.h to install the bool wrappers.

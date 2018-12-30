@@ -24,6 +24,12 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
+#ifndef RT_INCLUDED_common_misc_handletable_h
+#define RT_INCLUDED_common_misc_handletable_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
+
 
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
@@ -236,4 +242,6 @@ DECLINLINE(void) rtHandleTableUnlock(PRTHANDLETABLEINT pThis)
     if (pThis->hSpinlock != NIL_RTSPINLOCK)
         RTSpinlockRelease(pThis->hSpinlock);
 }
+
+#endif
 

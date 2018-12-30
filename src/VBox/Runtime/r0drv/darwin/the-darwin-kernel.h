@@ -26,6 +26,9 @@
 
 #ifndef ___the_darwin_kernel_h
 #define ___the_darwin_kernel_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /* Problematic header(s) containing conflicts with IPRT first. (FreeBSD has fixed these ages ago.) */
 #define __STDC_CONSTANT_MACROS

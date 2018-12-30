@@ -26,6 +26,9 @@
 
 #ifndef ___alloc_ef_h
 #define ___alloc_ef_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /*******************************************************************************
 *   Defined Constants And Macros                                               *

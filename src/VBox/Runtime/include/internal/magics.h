@@ -26,6 +26,9 @@
 
 #ifndef ___internal_magics_h
 #define ___internal_magics_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /** @name Magic Numbers.
  * @{ */

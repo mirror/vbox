@@ -26,6 +26,9 @@
 
 #ifndef ___internal_r0drv_h
 #define ___internal_r0drv_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <iprt/cpuset.h>
 #include <iprt/nt/nt.h>

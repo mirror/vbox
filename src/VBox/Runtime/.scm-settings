@@ -104,3 +104,13 @@
 /common/math/gcc/*                             : --external-copyright --no-convert-tabs --dont-set-svn-keywords
 /common/math/gcc/udivmoddi4.c                  : --no-external-copyright --convert-tabs --set-svn-keywords
 
+# No header guard for these:
+/testcase/tstRTBigNum-uint128-div-test-data.h  : --no-fix-header-guards
+/testcase/tstRTBigNum-div-test-data.h          : --no-fix-header-guards
+/common/time/timesupref.h                      : --no-fix-header-guards
+/common/asn1/*-template.h                      : --no-fix-header-guards
+/common/asn1/*-template2.h                     : --no-fix-header-guards
+/common/crypto/*-template.h                    : --no-fix-header-guards
+/common/math/gcc/quad.h                        : --no-fix-header-guards
+/common/misc/sanity.h                          : --no-fix-header-guards
+/r3/win/vcc100-kernel32-fakes.h                : --no-fix-header-guards

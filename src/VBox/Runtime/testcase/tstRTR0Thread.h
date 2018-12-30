@@ -24,6 +24,12 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
+#ifndef RT_INCLUDED_testcase_tstRTR0Thread_h
+#define RT_INCLUDED_testcase_tstRTR0Thread_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
+
 #include "tstRTR0CommonReq.h"
 
 #ifdef IN_RING0
@@ -40,3 +46,4 @@ typedef enum TSTR0THREAD
     TSTRTR0THREAD_BASIC
 } TSTR0THREAD;
 
+#endif

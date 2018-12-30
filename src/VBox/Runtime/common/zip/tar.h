@@ -26,6 +26,9 @@
 
 #ifndef __common_zip_tar_h
 #define __common_zip_tar_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <iprt/assert.h>
 

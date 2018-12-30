@@ -26,6 +26,9 @@
 
 #ifndef ___internal_process_h
 #define ___internal_process_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <iprt/process.h>
 #include <iprt/param.h>

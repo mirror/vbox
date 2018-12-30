@@ -26,6 +26,9 @@
 
 #ifndef ___iprt_internal_lockvalidator_h
 #define ___iprt_internal_lockvalidator_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <iprt/types.h>
 #include <iprt/lockvalidator.h>

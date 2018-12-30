@@ -26,6 +26,9 @@
 
 #ifndef ___vcc100_fakes_h___
 #define ___vcc100_fakes_h___
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #ifdef RT_STRICT
 # include <stdio.h> /* _snprintf */

@@ -24,9 +24,11 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
-
 #ifndef ___common_crypto_rsa_internal_h
 #define ___common_crypto_rsa_internal_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /** The max number of bits we support in the modulus. */
 #define RTCRRSA_MAX_MODULUS_BITS        16384

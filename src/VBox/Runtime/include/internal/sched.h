@@ -26,6 +26,9 @@
 
 #ifndef ___internal_sched_h
 #define ___internal_sched_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <iprt/thread.h>
 #include "internal/process.h"

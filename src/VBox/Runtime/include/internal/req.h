@@ -26,6 +26,9 @@
 
 #ifndef ___internal_req_h
 #define ___internal_req_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <iprt/types.h>
 

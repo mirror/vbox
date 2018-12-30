@@ -26,6 +26,9 @@
 
 #ifndef ___internal_pipe_h
 #define ___internal_pipe_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <iprt/pipe.h>
 

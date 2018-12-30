@@ -26,6 +26,9 @@
 
 #ifndef ___internal_path_h
 #define ___internal_path_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <iprt/cdefs.h>
 #include <iprt/param.h>

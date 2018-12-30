@@ -24,9 +24,11 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
-
 #ifndef ___internal_alignmentchecks_h
 #define ___internal_alignmentchecks_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /** @def IPRT_WITH_ALIGNMENT_CHECKS
  * Enables or disables the alignment check feature and related hacks. */

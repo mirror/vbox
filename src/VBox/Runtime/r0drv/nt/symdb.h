@@ -26,6 +26,9 @@
 
 #ifndef ___internal_r0drv_nt_symdb_h
 #define ___internal_r0drv_nt_symdb_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <iprt/types.h>
 

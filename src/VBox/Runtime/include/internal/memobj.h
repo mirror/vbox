@@ -26,6 +26,9 @@
 
 #ifndef ___internal_memobj_h
 #define ___internal_memobj_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <iprt/memobj.h>
 #include <iprt/assert.h>

@@ -24,6 +24,12 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
+#ifndef RT_INCLUDED_testcase_tstRTR0ThreadPreemption_h
+#define RT_INCLUDED_testcase_tstRTR0ThreadPreemption_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
+
 #ifdef IN_RING0
 RT_C_DECLS_BEGIN
 DECLEXPORT(int) TSTRTR0ThreadPreemptionSrvReqHandler(PSUPDRVSESSION pSession, uint32_t uOperation,
@@ -41,4 +47,6 @@ typedef enum TSTRTR0THREADPREEMPTION
     TSTRTR0THREADPREEMPTION_NESTED,
     TSTRTR0THREADPREEMPTION_CTXHOOKS
 } TSTRTR0THREADPREEMPTION;
+
+#endif
 

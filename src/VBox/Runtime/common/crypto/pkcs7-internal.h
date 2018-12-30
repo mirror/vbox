@@ -24,9 +24,11 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
-
 #ifndef ___common_crypto_pkcs7_internal_h
 #define ___common_crypto_pkcs7_internal_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #define RTASN1TMPL_TEMPLATE_FILE "../common/crypto/pkcs7-template.h"
 #include <iprt/asn1-generator-internal-header.h>

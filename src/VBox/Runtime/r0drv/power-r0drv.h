@@ -26,6 +26,9 @@
 
 #ifndef ___r0drv_powermgt_r0drv_h
 #define ___r0drv_powermgt_r0drv_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <iprt/power.h>
 

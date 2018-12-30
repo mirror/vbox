@@ -26,6 +26,9 @@
 
 #ifndef ___internal_strict_h
 #define ___internal_strict_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /** @name Strictness Indicators
  * @{ */

@@ -24,9 +24,11 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
-
 #ifndef ___r0drv_nt_symdbdata_h
 #define ___r0drv_nt_symdbdata_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include "r0drv/nt/symdb.h"
 

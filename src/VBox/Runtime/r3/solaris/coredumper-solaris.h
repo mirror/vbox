@@ -24,6 +24,12 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
+#ifndef RT_INCLUDED_r3_solaris_coredumper_solaris_h
+#define RT_INCLUDED_r3_solaris_coredumper_solaris_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
+
 #include <iprt/types.h>
 
 #ifdef RT_OS_SOLARIS
@@ -156,4 +162,6 @@ typedef RTSOLCORE *PRTSOLCORE;
 
 typedef int (*PFNRTSOLCOREACCUMULATOR)(PRTSOLCORE pSolCore);
 typedef int (*PFNRTSOLCORETHREADWORKER)(PRTSOLCORE pSolCore, void *pvThreadInfo);
+
+#endif
 

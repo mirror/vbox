@@ -26,6 +26,9 @@
 
 #ifndef ___internal_string_h
 #define ___internal_string_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <iprt/string.h>
 

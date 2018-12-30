@@ -25,6 +25,12 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
+#ifndef RT_INCLUDED_testcase_72kb_random_h
+#define RT_INCLUDED_testcase_72kb_random_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
+
 #include <iprt/cdefs.h>
 
 const unsigned char g_abRandom72KB[] =
@@ -4640,5 +4646,6 @@ const unsigned char g_abRandom72KB[] =
 };
 
 const unsigned g_cbRandom72KB = sizeof(g_abRandom72KB);
-/* end of file */
+
+#endif
 

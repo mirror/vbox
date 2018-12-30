@@ -26,6 +26,9 @@
 
 #ifndef ___internal_file_h
 #define ___internal_file_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <iprt/file.h>
 

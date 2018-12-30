@@ -26,6 +26,9 @@
 
 #ifndef ___thread_h
 #define ___thread_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <iprt/types.h>
 #include <iprt/thread.h>

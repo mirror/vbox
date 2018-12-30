@@ -30,6 +30,9 @@
 
 #ifndef ___the_netbsd_kernel_h
 #define ___the_netbsd_kernel_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <iprt/types.h>
 

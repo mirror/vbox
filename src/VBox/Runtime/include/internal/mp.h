@@ -26,6 +26,9 @@
 
 #ifndef ___internal_mp_h
 #define ___internal_mp_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <iprt/assert.h>
 #include <iprt/mp.h>
