@@ -29,7 +29,9 @@
 --filter-out-files /client-*/README
 
 /client-*/*.c: --external-copyright --lgpl-disclaimer --no-convert-tabs --no-fix-todos --no-strip-trailing-blanks
-/client-*/*.h: --external-copyright --lgpl-disclaimer --no-convert-tabs --no-fix-todos --no-strip-trailing-blanks
+/client-*/*.h: --external-copyright --lgpl-disclaimer --no-convert-tabs --no-fix-todos --no-strip-trailing-blanks --no-fix-header-guards
 /client-*/configure: --external-copyright --lgpl-disclaimer --no-convert-tabs --no-fix-todos --no-strip-trailing-blanks
 /client-*/vrdp/*: --no-external-copyright --no-lgpl-disclaimer --fix-todos --strip-trailing-blanks
+
+/server/mixeng/*_template.h: --no-fix-header-guards
 
