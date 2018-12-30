@@ -20,6 +20,9 @@
 
 #ifndef ___Debugger_DBGPlugIns_h
 #define ___Debugger_DBGPlugIns_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <VBox/vmm/dbgf.h>
 

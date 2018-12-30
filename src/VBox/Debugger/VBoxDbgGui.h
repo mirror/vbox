@@ -17,6 +17,9 @@
 
 #ifndef ___Debugger_VBoxDbgGui_h
 #define ___Debugger_VBoxDbgGui_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 // VirtualBox COM interfaces declarations (generated header)
 #ifdef VBOX_WITH_XPCOM

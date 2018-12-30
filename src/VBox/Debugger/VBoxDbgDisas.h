@@ -17,6 +17,9 @@
 
 #ifndef ___Debugger_VBoxDbgDisas_h
 #define ___Debugger_VBoxDbgDisas_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /**
  * Feature list:

@@ -17,6 +17,9 @@
 
 #ifndef ___Debugger_VBoxDbgConsole_h
 #define ___Debugger_VBoxDbgConsole_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include "VBoxDbgBase.h"
 

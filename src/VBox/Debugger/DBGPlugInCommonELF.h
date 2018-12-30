@@ -17,6 +17,9 @@
 
 #ifndef ___Debugger_DBGPlugInCommonELF_h
 #define ___Debugger_DBGPlugInCommonELF_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <VBox/types.h>
 #include <iprt/formats/elf32.h>
