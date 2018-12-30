@@ -23,11 +23,12 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
+#ifndef ___iprt_asm_amd64_x86_watcom_16_h
+#define ___iprt_asm_amd64_x86_watcom_16_h
+
 #ifndef ___iprt_asm_amd64_x86_h
 # error "Don't include this header directly."
 #endif
-#ifndef ___iprt_asm_amd64_x86_watcom_16_h
-#define ___iprt_asm_amd64_x86_watcom_16_h
 
 /*
  * Turns out we cannot use 'ds' for segment stuff here because the compiler

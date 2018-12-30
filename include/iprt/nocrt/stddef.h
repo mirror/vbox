@@ -23,5 +23,9 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
+#ifndef ___iprt_nocrt_stddef_h
+#define ___iprt_nocrt_stddef_h
+
 #include <iprt/types.h>
 
+#endif

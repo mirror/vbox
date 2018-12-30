@@ -23,11 +23,12 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
+#ifndef ___iprt_asm_amd64_x86_watcom_32_h
+#define ___iprt_asm_amd64_x86_watcom_32_h
+
 #ifndef ___iprt_asm_amd64_x86_h
 # error "Don't include this header directly."
 #endif
-#ifndef ___iprt_asm_amd64_x86_watcom_32_h
-#define ___iprt_asm_amd64_x86_watcom_32_h
 
 #ifndef __FLAT__
 # error "Only works with flat pointers! (-mf)"
