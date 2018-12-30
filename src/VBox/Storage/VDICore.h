@@ -16,6 +16,10 @@
  */
 
 #ifndef ___VDICore_h___
+#define ___VDICore_h___
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 
 /*******************************************************************************

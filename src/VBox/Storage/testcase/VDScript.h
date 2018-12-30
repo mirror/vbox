@@ -14,8 +14,12 @@
  * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
+
 #ifndef _VDScript_h__
 #define _VDScript_h__
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /** Handle to the scripting context. */
 typedef struct VDSCRIPTCTXINT *VDSCRIPTCTX;

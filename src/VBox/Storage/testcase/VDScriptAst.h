@@ -16,6 +16,9 @@
 
 #ifndef ___VDScriptAst_h___
 #define ___VDScriptAst_h___
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <iprt/list.h>
 
