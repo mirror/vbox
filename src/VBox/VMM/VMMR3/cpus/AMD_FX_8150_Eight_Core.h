@@ -18,6 +18,9 @@
 
 #ifndef VBOX_CPUDB_AMD_FX_8150_Eight_Core
 #define VBOX_CPUDB_AMD_FX_8150_Eight_Core
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 
 #ifndef CPUM_DB_STANDALONE

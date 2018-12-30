@@ -17,6 +17,9 @@
 
 #ifndef ___tstMicro_h
 #define ___tstMicro_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /**
  * The testcase identifier.

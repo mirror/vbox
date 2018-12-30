@@ -18,6 +18,9 @@
 
 #ifndef VBOX_CPUDB_Intel_Xeon_X5482_3_20GHz
 #define VBOX_CPUDB_Intel_Xeon_X5482_3_20GHz
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 
 #ifndef CPUM_DB_STANDALONE

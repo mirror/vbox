@@ -17,6 +17,9 @@
 
 #ifndef ___IOMInternal_h
 #define ___IOMInternal_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #define IOM_WITH_CRIT_SECT_RW
 

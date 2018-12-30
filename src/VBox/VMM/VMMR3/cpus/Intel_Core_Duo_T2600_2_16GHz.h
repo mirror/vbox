@@ -18,6 +18,9 @@
 
 #ifndef VBOX_CPUDB_Intel_Core_Duo_T2600_2_16GHz
 #define VBOX_CPUDB_Intel_Core_Duo_T2600_2_16GHz
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 
 #ifndef CPUM_DB_STANDALONE

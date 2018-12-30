@@ -18,6 +18,9 @@
 
 #ifndef VBOX_CPUDB_AMD_Phenom_II_X6_1100T
 #define VBOX_CPUDB_AMD_Phenom_II_X6_1100T
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 
 #ifndef CPUM_DB_STANDALONE

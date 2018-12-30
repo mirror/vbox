@@ -17,6 +17,9 @@
 
 #ifndef ___VMMSwitcher_h
 #define ___VMMSwitcher_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <VBox/vmm/vmm.h>
 

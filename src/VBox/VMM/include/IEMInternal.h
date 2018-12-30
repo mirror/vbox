@@ -17,6 +17,9 @@
 
 #ifndef ___IEMInternal_h
 #define ___IEMInternal_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <VBox/vmm/cpum.h>
 #include <VBox/vmm/iem.h>

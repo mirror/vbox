@@ -18,6 +18,9 @@
 
 #ifndef VBOX_CPUDB_Quad_Core_AMD_Opteron_2384
 #define VBOX_CPUDB_Quad_Core_AMD_Opteron_2384
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 
 #ifndef CPUM_DB_STANDALONE

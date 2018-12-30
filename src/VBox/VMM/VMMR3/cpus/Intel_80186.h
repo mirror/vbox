@@ -18,6 +18,9 @@
 
 #ifndef VBOX_CPUDB_Intel_80186
 #define VBOX_CPUDB_Intel_80186
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #ifndef CPUM_DB_STANDALONE
 /**

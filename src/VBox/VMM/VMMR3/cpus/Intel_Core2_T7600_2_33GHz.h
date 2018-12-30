@@ -18,6 +18,9 @@
 
 #ifndef VBOX_CPUDB_Intel_Core2_T7600_2_33GHz
 #define VBOX_CPUDB_Intel_Core2_T7600_2_33GHz
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 
 #ifndef CPUM_DB_STANDALONE

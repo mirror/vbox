@@ -15,7 +15,11 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-
+#ifndef VBOX_INCLUDED_PDMInline_h
+#define VBOX_INCLUDED_PDMInline_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 
 /**
@@ -33,4 +37,6 @@ DECLINLINE(uint32_t) pdmCalcIrqTag(PVM pVM, uint32_t idTracer)
     pVM->pdm.s.uIrqTag = uTag |= (idTracer << 16);
     return uTag;
 }
+
+#endif
 

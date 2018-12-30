@@ -17,6 +17,9 @@
 
 #ifndef ___PDMBlkCacheInternal_h
 #define ___PDMBlkCacheInternal_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <VBox/vmm/cfgm.h>
 #include <VBox/vmm/stam.h>

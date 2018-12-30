@@ -17,6 +17,9 @@
 
 #ifndef ___IOMInline_h
 #define ___IOMInline_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <iprt/errcore.h>
 

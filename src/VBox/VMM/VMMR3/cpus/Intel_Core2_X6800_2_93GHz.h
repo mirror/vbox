@@ -18,6 +18,9 @@
 
 #ifndef VBOX_CPUDB_Intel_Core2_X6800_2_93GHz
 #define VBOX_CPUDB_Intel_Core2_X6800_2_93GHz
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 
 #ifndef CPUM_DB_STANDALONE

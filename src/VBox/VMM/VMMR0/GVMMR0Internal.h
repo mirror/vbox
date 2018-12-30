@@ -17,6 +17,9 @@
 
 #ifndef ___GVMMR0Internal_h
 #define ___GVMMR0Internal_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <iprt/mem.h>
 

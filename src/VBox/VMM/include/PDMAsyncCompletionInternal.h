@@ -17,6 +17,9 @@
 
 #ifndef ___PDMAsyncCompletionInternal_h
 #define ___PDMAsyncCompletionInternal_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <iprt/critsect.h>
 #include <iprt/memcache.h>

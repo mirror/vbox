@@ -17,6 +17,9 @@
 
 #ifndef ___DBGFInternal_h
 #define ___DBGFInternal_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <VBox/cdefs.h>
 #ifdef IN_RING3

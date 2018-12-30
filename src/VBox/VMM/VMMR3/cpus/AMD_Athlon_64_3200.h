@@ -18,6 +18,9 @@
 
 #ifndef VBOX_CPUDB_AMD_Athlon_64_3200
 #define VBOX_CPUDB_AMD_Athlon_64_3200
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 
 #ifndef CPUM_DB_STANDALONE

@@ -17,6 +17,9 @@
 
 #ifndef ___REMInternal_h
 #define ___REMInternal_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <VBox/types.h>
 #include <VBox/vmm/cpum.h>

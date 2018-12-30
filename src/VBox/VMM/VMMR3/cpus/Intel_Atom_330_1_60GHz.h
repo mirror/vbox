@@ -18,6 +18,9 @@
 
 #ifndef VBOX_CPUDB_Intel_Atom_330_1_60GHz
 #define VBOX_CPUDB_Intel_Atom_330_1_60GHz
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 
 #ifndef CPUM_DB_STANDALONE

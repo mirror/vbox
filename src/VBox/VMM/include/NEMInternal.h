@@ -17,6 +17,9 @@
 
 #ifndef ___NEMInternal_h
 #define ___NEMInternal_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <VBox/cdefs.h>
 #include <VBox/types.h>

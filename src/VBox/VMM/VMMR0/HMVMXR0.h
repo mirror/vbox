@@ -17,6 +17,9 @@
 
 #ifndef ___HMVMXR0_h
 #define ___HMVMXR0_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 RT_C_DECLS_BEGIN
 

@@ -17,6 +17,9 @@
 
 #ifndef ___HMInternal_h
 #define ___HMInternal_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <VBox/cdefs.h>
 #include <VBox/types.h>

@@ -17,6 +17,9 @@
 
 #ifndef ___GIMMinimalInternal_h
 #define ___GIMMinimalInternal_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <iprt/cdefs.h>
 #include <VBox/types.h>

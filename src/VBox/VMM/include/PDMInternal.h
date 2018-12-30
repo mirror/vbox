@@ -17,6 +17,9 @@
 
 #ifndef ___PDMInternal_h
 #define ___PDMInternal_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <VBox/types.h>
 #include <VBox/param.h>

@@ -17,6 +17,9 @@
 
 #ifndef ___tstHelp_h
 #define ___tstHelp_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <VBox/cdefs.h>
 #include <VBox/vmm/cpum.h>

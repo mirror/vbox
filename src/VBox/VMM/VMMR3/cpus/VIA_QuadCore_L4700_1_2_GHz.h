@@ -18,6 +18,9 @@
 
 #ifndef VBOX_CPUDB_VIA_QuadCore_L4700_1_2_GHz
 #define VBOX_CPUDB_VIA_QuadCore_L4700_1_2_GHz
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 
 #ifndef CPUM_DB_STANDALONE

@@ -17,6 +17,9 @@
 
 #ifndef ___APICInternal_h
 #define ___APICInternal_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <VBox/sup.h>
 #include <VBox/types.h>

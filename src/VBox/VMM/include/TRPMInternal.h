@@ -17,6 +17,9 @@
 
 #ifndef ___TRPMInternal_h
 #define ___TRPMInternal_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <VBox/cdefs.h>
 #include <VBox/types.h>

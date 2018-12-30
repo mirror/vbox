@@ -15,6 +15,12 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#ifndef VBOX_INCLUDED_PDMNetShaperInternal_h
+#define VBOX_INCLUDED_PDMNetShaperInternal_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
+
 /**
  * Bandwidth group instance data
  */
@@ -43,4 +49,6 @@ typedef struct PDMNSBWGROUP
 } PDMNSBWGROUP;
 /** Pointer to a bandwidth group. */
 typedef PDMNSBWGROUP *PPDMNSBWGROUP;
+
+#endif
 

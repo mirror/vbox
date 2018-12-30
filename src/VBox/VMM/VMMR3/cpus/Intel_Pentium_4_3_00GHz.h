@@ -18,6 +18,9 @@
 
 #ifndef VBOX_CPUDB_Intel_Pentium_4_3_00GHz
 #define VBOX_CPUDB_Intel_Pentium_4_3_00GHz
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 
 #ifndef CPUM_DB_STANDALONE

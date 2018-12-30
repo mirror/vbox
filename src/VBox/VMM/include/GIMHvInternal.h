@@ -17,6 +17,9 @@
 
 #ifndef ___GIMHvInternal_h
 #define ___GIMHvInternal_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <VBox/vmm/gim.h>
 #include <VBox/vmm/cpum.h>

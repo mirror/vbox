@@ -17,6 +17,9 @@
 
 #ifndef ___VMInternal_h
 #define ___VMInternal_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <VBox/cdefs.h>
 #include <VBox/vmm/vmapi.h>

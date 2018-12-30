@@ -18,6 +18,9 @@
 
 #ifndef VBOX_CPUDB_Intel_Core_i7_3820QM
 #define VBOX_CPUDB_Intel_Core_i7_3820QM
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 
 #ifndef CPUM_DB_STANDALONE

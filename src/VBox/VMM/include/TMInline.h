@@ -17,6 +17,9 @@
 
 #ifndef ___TMInline_h
 #define ___TMInline_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 
 /**
