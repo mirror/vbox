@@ -1,3 +1,6 @@
+#ifndef VBOX_INCLUDED_Graphics_vgadefs_h
+#define VBOX_INCLUDED_Graphics_vgadefs_h
+
 /*
  *
  * BIOS Memory
@@ -66,4 +69,6 @@
 #define VGAREG_MDA_MODECTL             0x3b8
 #define VGAREG_CGA_MODECTL             0x3d8
 #define VGAREG_CGA_PALETTE             0x3d9
+
+#endif
 

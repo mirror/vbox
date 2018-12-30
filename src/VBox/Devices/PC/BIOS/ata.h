@@ -52,6 +52,8 @@
  * of the LGPL is applied is otherwise unspecified.
  */
 
+#ifndef VBOX_INCLUDED_PC_BIOS_ata_h
+#define VBOX_INCLUDED_PC_BIOS_ata_h
 
 #define ATA_DATA_NO      0x00
 #define ATA_DATA_IN      0x01
@@ -180,3 +182,6 @@
 #define ATA_CMD_WRITE_VERIFY                 0x3C
 
 extern void     ata_reset(uint16_t device);
+
+#endif
+

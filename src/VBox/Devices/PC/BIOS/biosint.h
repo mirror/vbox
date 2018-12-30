@@ -52,6 +52,8 @@
  * of the LGPL is applied is otherwise unspecified.
  */
 
+#ifndef VBOX_INCLUDED_BIOS_biosint_h
+#define VBOX_INCLUDED_BIOS_biosint_h
 
 /* Compile-time assertion macro. */
 #define ct_assert(a)    extern int ct_ass_arr[!!(a) == 1];
@@ -301,3 +303,6 @@ extern  bx_bool     set_enable_a20(bx_bool val);
 #define PIC_CMD_EOI         0x20
 #define PIC_CMD_RD_ISR      0x0B
 #define PIC_CMD_INIT        0x11
+
+#endif
+

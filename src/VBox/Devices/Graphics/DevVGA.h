@@ -40,6 +40,9 @@
  * THE SOFTWARE.
  */
 
+#ifndef VBOX_INCLUDED_Graphics_DevVGA_h
+#define VBOX_INCLUDED_Graphics_DevVGA_h
+
 /** Use VBE bytewise I/O. Only needed for Windows Longhorn/Vista betas and backwards compatibility. */
 #define VBE_BYTEWISE_IO
 
@@ -624,4 +627,6 @@ void vga_draw_cursor_line_32(uint8_t *d1, const uint8_t *src1,
 extern const uint8_t sr_mask[8];
 extern const uint8_t gr_mask[16];
 #endif /* !VBOX */
+
+#endif
 

@@ -15,6 +15,9 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#ifndef VBOX_INCLUDED_Network_DevE1000_h
+#define VBOX_INCLUDED_Network_DevE1000_h
+
 #include <VBox/types.h>
 
 #define PHY_EPID_M881000 0xC50
@@ -105,7 +108,8 @@ typedef struct Phy::Phy_st PHY;
 typedef PHY *PPHY;
 
 /* Interface *****************************************************************/
-namespace Phy {
+namespace Phy
+{
     /** Initialize PHY. */
     void     init(PPHY pPhy, int iNICInstance, uint16_t u16EPid);
     /** Read PHY register at specified address. */
@@ -127,4 +131,6 @@ namespace Phy {
     /** Restore previously saved PHY state. */
     int      loadState(PSSMHANDLE pSSMHandle, PPHY pPhy);
 }
+
+#endif
 

@@ -55,7 +55,7 @@
 # PXE
 /PXE/*.asm:     --external-copyright --no-convert-tabs --no-strip-trailing-blanks
 /PXE/*.c:       --external-copyright --no-convert-tabs --no-strip-trailing-blanks
-/PXE/*.h:       --external-copyright --no-convert-tabs --no-strip-trailing-blanks --dont-set-svn-keywords
+/PXE/*.h:       --external-copyright --no-convert-tabs --no-strip-trailing-blanks --dont-set-svn-keywords --no-fix-header-guards
 /PXE/*.inc:     --external-copyright --no-convert-tabs --no-strip-trailing-blanks
 /PXE/*.i:       --external-copyright --no-convert-tabs --no-strip-trailing-blanks --strip-no-trailing-lines --treat-as .inc
 /PXE/*.r:       --external-copyright --no-convert-tabs --no-strip-trailing-blanks --strip-no-trailing-lines --treat-as .inc
@@ -81,6 +81,7 @@
 /ipxe/src/util/get-pci-ids:      --treat-as .sh
 /ipxe/contrib/vm/cow:            --treat-as .sh
 /ipxe/contrib/vm/serial-console: --treat-as .pl
+/ipxe/*:                         --no-fix-header-guards
 
 --filter-out-files /ipxe/*.txt
 --filter-out-files /ipxe/COPYING

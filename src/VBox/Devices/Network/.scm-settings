@@ -36,6 +36,7 @@
 /slirp/dnsproxy/hash.c:     --external-copyright --no-convert-tabs
 /slirp/libalias/*:          --external-copyright --no-convert-tabs
 /slirp/bsd/*:               --external-copyright --no-convert-tabs --dont-set-svn-keywords
+/slirp/*:                   --no-fix-header-guards
 
 # well...
 /lwipopts.h: --external-copyright

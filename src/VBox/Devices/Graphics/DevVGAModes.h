@@ -18,9 +18,15 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#ifndef VBOX_INCLUDED_Graphics_DevVGAModes_h
+#define VBOX_INCLUDED_Graphics_DevVGAModes_h
+
 #include <VBoxVideoVBE.h>
 #include <VBoxVideoVBEPrivate.h>
 
 #include "vbetables.h"
 
 #define MODE_INFO_SIZE ( sizeof(mode_info_list) / sizeof(ModeInfoListItem) )
+
+#endif
+

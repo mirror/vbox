@@ -15,7 +15,9 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-/* Interface */
+#ifndef VBOX_INCLUDED_Network_DevEEPROM_h
+#define VBOX_INCLUDED_Network_DevEEPROM_h
+
 #include <iprt/types.h>
 
 /** The current Saved state version. */
@@ -132,3 +134,5 @@ struct EEPROM93C46
     void storeWord(uint32_t u32Addr, uint16_t u16Value);
 #endif /* IN_RING3 */
 };
+
+#endif

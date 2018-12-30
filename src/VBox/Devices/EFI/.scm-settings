@@ -19,7 +19,7 @@
 /DevEFI.h: --license-ose-dual
 
 /Firmware/*:     --external-copyright --dont-set-svn-keywords --no-convert-tabs --no-strip-trailing-blanks \
-                 --strip-no-trailing-lines --no-force-final-eol --no-fix-todos
+                 --strip-no-trailing-lines --no-force-final-eol --no-fix-todos --no-fix-header-guards
 /Firmware/*.kmk: --no-external-copyright --set-svn-keywords --convert-tabs --strip-trailing-blanks --strip-trailing-lines \
                  --force-final-eol --fix-todos --license-ose-dual
 

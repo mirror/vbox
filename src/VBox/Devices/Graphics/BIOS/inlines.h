@@ -14,6 +14,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#ifndef VBOX_INCLUDED_Graphics_BIOS_inlines_h
+#define VBOX_INCLUDED_Graphics_BIOS_inlines_h
 
 extern unsigned inp(unsigned port);
 extern unsigned outp(unsigned port, unsigned value);
@@ -141,4 +143,6 @@ extern void memcpyw(uint16_t dseg, uint16_t doffset, uint16_t sseg, uint16_t sof
     "pop    ds"         \
     "no_copy:"          \
     parm [es] [di] [dx] [si] [cx];
+
+#endif
 
