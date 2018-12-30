@@ -17,9 +17,6 @@
 
 #ifndef ___VBoxAPIWrap_precomp_gcc_h___
 #define ___VBoxAPIWrap_precomp_gcc_h___
-#ifndef RT_WITHOUT_PRAGMA_ONCE
-# pragma once
-#endif
 
 #include <iprt/cdefs.h>
 #include <VBox/cdefs.h>
