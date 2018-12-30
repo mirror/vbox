@@ -17,6 +17,9 @@
 
 #ifndef __SHARED_PTR_H__
 #define __SHARED_PTR_H__
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #ifdef __cplusplus
 template<typename T>

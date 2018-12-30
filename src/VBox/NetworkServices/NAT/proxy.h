@@ -17,6 +17,9 @@
 
 #ifndef ___nat_proxy_h___
 #define ___nat_proxy_h___
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #if !defined(VBOX)
 #include "vbox-compat.h"

@@ -14,8 +14,12 @@
  * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
+
 #ifndef _DHCP_MESSAGE_H_
 #define _DHCP_MESSAGE_H_
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include "Defs.h"
 #include <iprt/net.h>

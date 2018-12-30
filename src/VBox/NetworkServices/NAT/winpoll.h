@@ -17,6 +17,9 @@
 
 #ifndef _WINPOLL_H_
 #define _WINPOLL_H_
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 # include <iprt/cdefs.h>
 /**
  * WinSock2 has definition for POLL* and pollfd, but it defined for _WIN32_WINNT > 0x0600

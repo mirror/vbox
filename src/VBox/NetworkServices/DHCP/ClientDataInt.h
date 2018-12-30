@@ -17,6 +17,9 @@
 
 #ifndef __CLIENT_DATA_INT_H__
 #define __CLIENT_DATA_INT_H__
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 class ClientData
 {

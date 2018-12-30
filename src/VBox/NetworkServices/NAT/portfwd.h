@@ -17,6 +17,9 @@
 
 #ifndef _portfwd_h_
 #define _portfwd_h_
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #ifndef RT_OS_WINDOWS
 #include <sys/types.h>

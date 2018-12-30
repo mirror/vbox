@@ -17,6 +17,9 @@
 
 #ifndef _pxtcp_h_
 #define _pxtcp_h_
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include "lwip/err.h"
 #include "lwip/ip_addr.h"

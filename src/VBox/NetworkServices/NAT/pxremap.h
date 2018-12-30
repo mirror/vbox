@@ -17,6 +17,9 @@
 
 #ifndef _pxremap_h_
 #define _pxremap_h_
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include "lwip/err.h"
 #include "lwip/ip_addr.h"

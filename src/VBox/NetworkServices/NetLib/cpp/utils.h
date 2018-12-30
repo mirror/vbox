@@ -17,6 +17,9 @@
 
 #ifndef ___NETLIB_CPP_UTILS_H___
 #define ___NETLIB_CPP_UTILS_H___
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <iprt/types.h>
 

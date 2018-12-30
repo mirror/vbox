@@ -17,6 +17,9 @@
 
 #ifndef _DHCPD_DHCPD_H_
 #define _DHCPD_DHCPD_H_
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include "Defs.h"
 #include "Config.h"

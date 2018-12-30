@@ -17,6 +17,9 @@
 
 #ifndef _VBOX_NETNAT_LWIP_OPTS_H_
 #define _VBOX_NETNAT_LWIP_OPTS_H_
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <VBox/cdefs.h>     /* For VBOX_STRICT. */
 #include <iprt/mem.h>

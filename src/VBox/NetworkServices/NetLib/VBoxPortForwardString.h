@@ -17,6 +17,9 @@
 
 #ifndef ___VBoxPortForwardString_h___
 #define ___VBoxPortForwardString_h___
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <iprt/net.h>
 #include <VBox/intnet.h>

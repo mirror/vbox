@@ -17,6 +17,9 @@
 
 #ifndef _TFTP_H_
 #define _TFTP_H_
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #define TFTP_SERVER_PORT 69
 

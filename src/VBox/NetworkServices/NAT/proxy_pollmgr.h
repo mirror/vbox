@@ -17,6 +17,9 @@
 
 #ifndef _PROXY_POLLMGR_H_
 #define _PROXY_POLLMGR_H_
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #ifndef RT_OS_WINDOWS
 # include <unistd.h>             /* for ssize_t */

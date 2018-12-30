@@ -18,8 +18,12 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
+
 #ifndef _NETLIB_UTILS_H_
 #define _NETLIB_UTILS_H_
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include "cpp/utils.h"
 

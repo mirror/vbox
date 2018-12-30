@@ -17,6 +17,9 @@
 
 #ifndef _DHCPD_IPV4_POOL_H_
 #define _DHCPD_IPV4_POOL_H_
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <iprt/asm.h>
 #include <iprt/stdint.h>

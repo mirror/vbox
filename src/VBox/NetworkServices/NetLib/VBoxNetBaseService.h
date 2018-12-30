@@ -17,6 +17,9 @@
 
 #ifndef ___VBoxNetBaseService_h___
 #define ___VBoxNetBaseService_h___
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <iprt/critsect.h>
 

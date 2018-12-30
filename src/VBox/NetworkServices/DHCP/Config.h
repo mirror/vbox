@@ -17,6 +17,9 @@
 
 #ifndef _CONFIG_H_
 #define _CONFIG_H_
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <iprt/asm-math.h>
 #include <iprt/cpp/utils.h>

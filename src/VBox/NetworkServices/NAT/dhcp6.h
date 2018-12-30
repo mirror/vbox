@@ -17,6 +17,9 @@
 
 #ifndef _DHCP6_H_
 #define _DHCP6_H_
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /* UDP ports */
 #define DHCP6_CLIENT_PORT       546

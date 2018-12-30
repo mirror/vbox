@@ -17,6 +17,9 @@
 
 #ifndef _DHCP_OPTIONS_H_
 #define _DHCP_OPTIONS_H_
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include "Defs.h"
 

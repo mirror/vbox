@@ -17,6 +17,9 @@
 
 #ifndef _DHCPD_DB_H_
 #define _DHCPD_DB_H_
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <iprt/net.h>
 
