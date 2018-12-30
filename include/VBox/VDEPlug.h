@@ -29,6 +29,9 @@
 # pragma once
 #endif
 
+#include <stddef.h>
+#include <sys/types.h>
+
 #define LIBVDEPLUG_INTERFACE_VERSION 1
 
 #define vde_open(vde_switch, descr, open_args) \

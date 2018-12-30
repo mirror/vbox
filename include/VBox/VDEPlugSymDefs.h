@@ -23,9 +23,6 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
-#include <stddef.h>
-#include <sys/types.h>
-
 /** The file name of the DBus library */
 #define VBOX_LIB_VDE_PLUG_NAME "libvdeplug.so"
 #define RT_RUNTIME_LOADER_LIB_NAME VBOX_LIB_VDE_PLUG_NAME
