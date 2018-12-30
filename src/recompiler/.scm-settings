@@ -26,6 +26,8 @@
 
 *.com:                  --treat-as binary
 
+*.h:                    --no-fix-header-guards
+
 /tests/linux-test.c:    --lgpl-disclaimer
 /tests/test-i386.c:     --lgpl-disclaimer
 /tests/test-mmap.c:     --lgpl-disclaimer
