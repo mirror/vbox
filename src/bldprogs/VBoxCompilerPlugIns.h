@@ -17,6 +17,9 @@
 
 #ifndef ___VBoxCompilerPlugIns_h__
 #define ___VBoxCompilerPlugIns_h__
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <iprt/types.h>
 #include <stdio.h>

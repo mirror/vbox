@@ -17,6 +17,9 @@
 
 #ifndef ___scmdiff_h___
 #define ___scmdiff_h___
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <iprt/stream.h>
 #include "scmstream.h"

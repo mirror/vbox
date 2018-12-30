@@ -15,5 +15,5 @@
 # hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
 #
 
-/config/*: --external-copyright
+/config/*: --external-copyright --no-fix-header-guards
 
