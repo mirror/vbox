@@ -2855,6 +2855,12 @@ bool rewrite_FixHeaderGuards(PSCMRWSTATE pState, PSCMSTREAM pIn, PSCMSTREAM pOut
     if (!pSettings->fFixHeaderGuards)
         return false;
 
+    /* always skip .cpp.h files */
+    size_t cchFilename = strlen(pState->pszFilename);
+    if (   cchFilename > sizeof(".cpp.h")
+        && RTStrICmpAscii(&pState->pszFilename[cchFilename - sizeof(".cpp.h") + 1], ".cpp.h") == 0)
+        return false;
+
     int rc;
     bool fRet = false;
     RTERRINFOSTATIC ErrInfo;
@@ -2960,7 +2966,7 @@ bool rewrite_FixHeaderGuards(PSCMRWSTATE pState, PSCMSTREAM pIn, PSCMSTREAM pOut
     static const SCMMATCHWORD s_aPragmaOnce[] =
     {
         { RT_STR_TUPLE("#"),                        0, true, false },
-        { RT_STR_TUPLE("pragma"),                   0, true, false },
+        { RT_STR_TUPLE("pragma"),                   1, true, false },
         { RT_STR_TUPLE("once"),                     1, true, false},
         { RT_STR_TUPLE(""),                         0, true, false },
     };
