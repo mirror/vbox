@@ -17,6 +17,9 @@
 
 #ifndef ___PATMA_H
 #define ___PATMA_H
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /** @name Patch Fixup Types
  * @remarks These fixups types are part of the saved state.

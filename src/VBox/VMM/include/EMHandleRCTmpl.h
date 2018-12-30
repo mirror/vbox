@@ -17,6 +17,9 @@
 
 #ifndef ___EMHandleRCTmpl_h
 #define ___EMHandleRCTmpl_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #if defined(EMHANDLERC_WITH_PATM) + defined(EMHANDLERC_WITH_HM) + defined(EMHANDLERC_WITH_NEM) != 1
 # error "Exactly one of these must be defined: EMHANDLERC_WITH_PATM, EMHANDLERC_WITH_HM, EMHANDLERC_WITH_NEM"

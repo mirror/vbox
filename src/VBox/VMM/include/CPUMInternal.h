@@ -17,6 +17,9 @@
 
 #ifndef ___CPUMInternal_h
 #define ___CPUMInternal_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #ifndef VBOX_FOR_DTRACE_LIB
 # include <VBox/cdefs.h>
