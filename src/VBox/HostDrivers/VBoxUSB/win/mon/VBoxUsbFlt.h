@@ -26,6 +26,9 @@
 
 #ifndef ___win_mon_VBoxUsbFlt_h___
 #define ___win_mon_VBoxUsbFlt_h___
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include "VBoxUsbMon.h"
 #include <VBoxUSBFilterMgr.h>

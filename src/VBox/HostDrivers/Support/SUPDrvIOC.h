@@ -26,6 +26,9 @@
 
 #ifndef ___SUPDrvIOC_h___
 #define ___SUPDrvIOC_h___
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <iprt/types.h>
 #include <VBox/sup.h>

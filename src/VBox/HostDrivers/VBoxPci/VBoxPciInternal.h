@@ -26,6 +26,9 @@
 
 #ifndef ___VBoxPciInternal_h___
 #define ___VBoxPciInternal_h___
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <VBox/sup.h>
 #include <VBox/rawpci.h>

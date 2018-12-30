@@ -26,6 +26,9 @@
 
 #ifndef ___SUPLibInternal_h___
 #define ___SUPLibInternal_h___
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <VBox/cdefs.h>
 #include <VBox/types.h>

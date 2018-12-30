@@ -1,8 +1,6 @@
 /* $Id$ */
 /** @file
- * VBoxNetFltNobjT.idl - Notify Object for Bridged Networking Driver.
-
- * Type lib definition
+ * VBoxNetFltNobjT.idl - Notify Object for Bridged Networking Driver, typelib definition.
  */
 
 /*

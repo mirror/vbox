@@ -26,6 +26,9 @@
 
 #ifndef ___VBoxUSBInterface_h
 #define ___VBoxUSBInterface_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <VBox/usbfilter.h>
 

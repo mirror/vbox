@@ -26,6 +26,9 @@
 
 #ifndef ___VBoxDrvTool_win_h___
 #define ___VBoxDrvTool_win_h___
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <VBox/cdefs.h>
 #include <iprt/stdint.h>

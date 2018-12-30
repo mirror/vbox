@@ -26,6 +26,9 @@
 
 #ifndef ___VBoxNetFltInternal_h___
 #define ___VBoxNetFltInternal_h___
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <VBox/sup.h>
 #include <VBox/intnet.h>

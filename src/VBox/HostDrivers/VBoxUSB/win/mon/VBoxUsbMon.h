@@ -22,8 +22,12 @@
  * You may elect to license modified versions of this file under the
  * terms and conditions of either the GPL or the CDDL or both.
  */
+
 #ifndef ___VBoxUsbMon_h___
 #define ___VBoxUsbMon_h___
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <VBox/cdefs.h>
 #include <VBox/types.h>

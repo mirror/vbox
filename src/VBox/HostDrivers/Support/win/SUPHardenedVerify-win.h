@@ -26,6 +26,9 @@
 
 #ifndef ___win_SUPHardenedVerify_win_h
 #define ___win_SUPHardenedVerify_win_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <iprt/types.h>
 #include <iprt/crypto/x509.h>

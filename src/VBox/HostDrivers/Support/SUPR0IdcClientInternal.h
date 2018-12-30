@@ -26,6 +26,9 @@
 
 #ifndef ___SUPR0IdcClientInternal_h__
 #define ___SUPR0IdcClientInternal_h__
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <VBox/types.h>
 #include <iprt/assert.h>

@@ -25,6 +25,9 @@
 
 #ifndef ___VBoxUsbHook_h___
 #define ___VBoxUsbHook_h___
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include "VBoxUsbMon.h"
 

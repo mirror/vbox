@@ -26,6 +26,9 @@
 
 #ifndef ___VBoxUsbPnP_h___
 #define ___VBoxUsbPnP_h___
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 #include "VBoxUsbCmn.h"
 
 DECLHIDDEN(NTSTATUS) vboxUsbDispatchPnP(IN PDEVICE_OBJECT pDeviceObject, IN PIRP pIrp);

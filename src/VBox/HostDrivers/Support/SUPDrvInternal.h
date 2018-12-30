@@ -26,6 +26,9 @@
 
 #ifndef ___SUPDrvInternal_h
 #define ___SUPDrvInternal_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 
 /*******************************************************************************

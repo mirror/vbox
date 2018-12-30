@@ -26,6 +26,9 @@
 
 #ifndef ___VBoxUsbDev_h___
 #define ___VBoxUsbDev_h___
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include "VBoxUsbCmn.h"
 #include <VBox/cdefs.h>

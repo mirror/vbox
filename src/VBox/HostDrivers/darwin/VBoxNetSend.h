@@ -25,8 +25,12 @@
  */
 
 /** @todo move this to src/VBox/HostDrivers/darwin as a .cpp file. */
+
 #ifndef ___VBox_VBoxNetSend_h
 #define ___VBox_VBoxNetSend_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #if defined(RT_OS_DARWIN)
 

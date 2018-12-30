@@ -23,8 +23,12 @@
  * You may elect to license modified versions of this file under the
  * terms and conditions of either the GPL or the CDDL or both.
  */
+
 #ifndef ___VBoxNetFltNobj_h___
 #define ___VBoxNetFltNobj_h___
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <iprt/win/windows.h>
 

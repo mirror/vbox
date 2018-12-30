@@ -27,6 +27,9 @@
 
 #ifndef ___VBoxNetFltCmn_win_h___
 #define ___VBoxNetFltCmn_win_h___
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #define LOG_GROUP LOG_GROUP_NET_FLT_DRV
 

@@ -26,6 +26,9 @@
 
 #ifndef ___VBoxNetFltM_win_h___
 #define ___VBoxNetFltM_win_h___
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 DECLHIDDEN(NDIS_STATUS) vboxNetFltWinMpRegister(PVBOXNETFLTGLOBALS_MP pGlobalsMp, PDRIVER_OBJECT pDriverObject, PUNICODE_STRING pRegistryPathStr);
 DECLHIDDEN(VOID) vboxNetFltWinMpDeregister(PVBOXNETFLTGLOBALS_MP pGlobalsMp);

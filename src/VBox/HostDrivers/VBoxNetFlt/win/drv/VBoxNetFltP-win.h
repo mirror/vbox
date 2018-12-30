@@ -23,8 +23,12 @@
  * You may elect to license modified versions of this file under the
  * terms and conditions of either the GPL or the CDDL or both.
  */
+
 #ifndef ___VBoxNetFltP_win_h___
 #define ___VBoxNetFltP_win_h___
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #ifdef VBOXNETADP
 # error "No protocol edge"

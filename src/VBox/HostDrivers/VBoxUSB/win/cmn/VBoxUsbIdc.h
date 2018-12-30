@@ -23,8 +23,12 @@
  * You may elect to license modified versions of this file under the
  * terms and conditions of either the GPL or the CDDL or both.
  */
+
 #ifndef ___VBoxUsbIdc_h___
 #define ___VBoxUsbIdc_h___
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #define VBOXUSBIDC_VERSION_MAJOR 1
 #define VBOXUSBIDC_VERSION_MINOR 0

@@ -43,8 +43,8 @@
 /VBoxUSB/os2/usbcalls.h:                        --external-copyright --no-convert-tabs
 
 # Trivial dual C and assembly include files which cannot have comments.
-/Support/win/import-template-kernel32.h: --no-update-copyright-year --no-update-license
-/Support/win/import-template-ntdll.h:    --no-update-copyright-year --no-update-license
+/Support/win/import-template-kernel32.h: --no-update-copyright-year --no-update-license --no-fix-header-guards
+/Support/win/import-template-ntdll.h:    --no-update-copyright-year --no-update-license --no-fix-header-guards
 
 # Ignore binary files
 --filter-out-files /Support/Certificates/*.taf
@@ -55,6 +55,6 @@
 /*/solaris/*.conf: --treat-as .sh
 --filter-out-files /VBoxNetAdp/solaris/hostname.vboxnet0
 --filter-out-files /VBoxNetFlt/win/nobj/VBoxNetFltNobj.rgs
-/VBoxNetFlt/win/nobj/VBoxNetFltNobjT.idl: --treat-as .h
+/VBoxNetFlt/win/nobj/VBoxNetFltNobjT.idl: --treat-as .h --no-fix-header-guards
 /Support/solaris/mod.sh: --no-convert-tabs
 /Support/linux/SUPDrv-linux.mod.c: --no-convert-tabs

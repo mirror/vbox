@@ -25,6 +25,9 @@
 
 #ifndef ___VBoxUsbPwr_h___
 #define ___VBoxUsbPwr_h___
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 typedef struct VBOXUSB_PWRSTATE
 {

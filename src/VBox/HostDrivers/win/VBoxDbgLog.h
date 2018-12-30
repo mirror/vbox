@@ -26,6 +26,9 @@
 
 #ifndef ___VBoxDbgLog_h___
 #define ___VBoxDbgLog_h___
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #ifndef VBOX_DBG_LOG_NAME
 # error VBOX_DBG_LOG_NAME should be defined!

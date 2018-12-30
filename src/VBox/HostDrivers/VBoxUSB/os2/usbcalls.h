@@ -1,5 +1,9 @@
-#ifndef _usbcalls_h__
+
+#ifndef _usbcalls_h_
 #define _usbcalls_h_
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #ifdef __cplusplus
   extern "C" {

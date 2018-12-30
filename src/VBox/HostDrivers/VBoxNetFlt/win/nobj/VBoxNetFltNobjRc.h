@@ -23,8 +23,12 @@
  * You may elect to license modified versions of this file under the
  * terms and conditions of either the GPL or the CDDL or both.
  */
+
 #ifndef ___VBoxNetFltNobjRc_h___
 #define ___VBoxNetFltNobjRc_h___
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /* registry script rc ID */
 #define IDR_VBOXNETFLT_NOBJ 101

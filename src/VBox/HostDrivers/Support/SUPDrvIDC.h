@@ -26,6 +26,9 @@
 
 #ifndef ___SUPDrvIDC_h___
 #define ___SUPDrvIDC_h___
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <VBox/types.h>
 

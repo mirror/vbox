@@ -22,8 +22,12 @@
  * You may elect to license modified versions of this file under the
  * terms and conditions of either the GPL or the CDDL or both.
  */
+
 #ifndef ___VBoxNetAdp_win_h___
 #define ___VBoxNetAdp_win_h___
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #define VBOXNETADP_VERSION_NDIS_MAJOR        6
 #define VBOXNETADP_VERSION_NDIS_MINOR        0
