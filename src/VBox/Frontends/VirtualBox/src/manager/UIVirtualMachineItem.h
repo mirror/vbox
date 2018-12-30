@@ -17,6 +17,9 @@
 
 #ifndef __UIVirtualMachineItem_h__
 #define __UIVirtualMachineItem_h__
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /* Qt includes: */
 #include <QDateTime>

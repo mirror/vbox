@@ -17,6 +17,9 @@
 
 #ifndef ___UIWelcomePane_h___
 #define ___UIWelcomePane_h___
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /* Qt includes: */
 #include <QIcon>

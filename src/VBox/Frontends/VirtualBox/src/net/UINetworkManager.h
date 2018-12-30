@@ -17,6 +17,9 @@
 
 #ifndef ___UINetworkManager_h___
 #define ___UINetworkManager_h___
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /* Qt includes: */
 #include <QObject>

@@ -17,6 +17,9 @@
 
 #ifndef __UIWizardNewVM_h__
 #define __UIWizardNewVM_h__
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /* GUI includes: */
 #include "UIWizard.h"

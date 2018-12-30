@@ -17,6 +17,9 @@
 
 #ifndef __UIDetailsView_h__
 #define __UIDetailsView_h__
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /* GUI includes: */
 #include "QIGraphicsView.h"

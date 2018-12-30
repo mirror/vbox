@@ -17,6 +17,9 @@
 
 #ifndef ___UIMachineSettingsSFDetails_h___
 #define ___UIMachineSettingsSFDetails_h___
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /* Includes */
 #include "UIMachineSettingsSFDetails.gen.h"

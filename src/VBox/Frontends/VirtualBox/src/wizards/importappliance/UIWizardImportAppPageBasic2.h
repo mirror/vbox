@@ -17,6 +17,9 @@
 
 #ifndef ___UIWizardImportAppPageBasic2_h___
 #define ___UIWizardImportAppPageBasic2_h___
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /* GUI includes: */
 #include "QIDialog.h"

@@ -15,7 +15,7 @@
 # hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
 #
 
-/VBoxSDLMain-darwin.h: --external-copyright
+/VBoxSDLMain-darwin.h: --external-copyright --no-fix-header-guards
 /VBoxSDLMain-darwin.m: --external-copyright
 
 --filter-out-files /diff_SDL13_svn

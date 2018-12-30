@@ -17,6 +17,9 @@
 
 #ifndef __UIMachineSettingsUSBFilterDetails_h__
 #define __UIMachineSettingsUSBFilterDetails_h__
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include "UIMachineSettingsUSBFilterDetails.gen.h"
 #include "QIWithRetranslateUI.h"

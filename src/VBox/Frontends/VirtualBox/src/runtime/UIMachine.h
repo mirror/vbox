@@ -17,6 +17,9 @@
 
 #ifndef ___UIMachine_h___
 #define ___UIMachine_h___
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /* Qt includes: */
 #include <QObject>

@@ -17,6 +17,9 @@
 
 #ifndef ___UIMachineSettingsDisplay_h___
 #define ___UIMachineSettingsDisplay_h___
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /* GUI includes: */
 #include "UISettingsPage.h"

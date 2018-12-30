@@ -17,6 +17,9 @@
 
 #ifndef ___UIUpdateDefs_h___
 #define ___UIUpdateDefs_h___
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /* Qt includes: */
 #include <QDate>

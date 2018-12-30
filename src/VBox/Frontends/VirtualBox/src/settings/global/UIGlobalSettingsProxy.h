@@ -17,6 +17,9 @@
 
 #ifndef ___UIGlobalSettingsProxy_h___
 #define ___UIGlobalSettingsProxy_h___
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /* GUI includes: */
 #include "UISettingsPage.h"

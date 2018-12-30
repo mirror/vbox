@@ -17,6 +17,9 @@
 
 #ifndef ___UIDesktopServices_h___
 #define ___UIDesktopServices_h___
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /* Qt includes */
 #include <QUuid>

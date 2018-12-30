@@ -17,6 +17,9 @@
 
 #ifndef ___UIScaleFactorEditor_h___
 #define ___UIScaleFactorEditor_h___
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /* GUI includes: */
 #include "QIWithRetranslateUI.h"

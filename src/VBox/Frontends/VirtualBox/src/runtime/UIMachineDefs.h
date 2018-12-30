@@ -17,6 +17,9 @@
 
 #ifndef ___UIMachineDefs_h___
 #define ___UIMachineDefs_h___
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /* Other VBox includes: */
 #include <iprt/cdefs.h>

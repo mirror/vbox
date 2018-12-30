@@ -17,6 +17,9 @@
 
 #ifndef ___UIConverter_h___
 #define ___UIConverter_h___
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /* GUI includes: */
 #include "UIConverterBackend.h"

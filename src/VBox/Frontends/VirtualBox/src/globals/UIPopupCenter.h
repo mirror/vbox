@@ -17,6 +17,9 @@
 
 #ifndef ___UIPopupCenter_h___
 #define ___UIPopupCenter_h___
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /* Qt includes: */
 #include <QMap>

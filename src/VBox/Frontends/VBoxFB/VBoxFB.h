@@ -18,6 +18,9 @@
 
 #ifndef __H_VBOXFB
 #define __H_VBOXFB
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <stdlib.h>
 #include <stdio.h>

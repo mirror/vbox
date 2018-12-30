@@ -17,6 +17,9 @@
 
 #ifndef ___UISlidingAnimation_h___
 #define ___UISlidingAnimation_h___
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /* Qt includes: */
 #include <QWidget>

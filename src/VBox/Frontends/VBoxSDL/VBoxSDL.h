@@ -19,6 +19,9 @@
 
 #ifndef __H_VBOXSDL
 #define __H_VBOXSDL
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <iprt/cdefs.h>
 #ifdef RT_OS_WINDOWS /** @todo check why we need to do this on windows. */

@@ -19,6 +19,9 @@
 
 #ifndef __H_FRAMEBUFFER
 #define __H_FRAMEBUFFER
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include "VBoxSDL.h"
 #include <iprt/thread.h>

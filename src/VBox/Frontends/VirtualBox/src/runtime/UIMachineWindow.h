@@ -17,6 +17,9 @@
 
 #ifndef __UIMachineWindow_h__
 #define __UIMachineWindow_h__
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /* Qt includes: */
 #include <QMainWindow>

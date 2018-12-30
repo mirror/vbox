@@ -17,6 +17,9 @@
 
 #ifndef ___UISlidingToolBar_h___
 #define ___UISlidingToolBar_h___
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /* Qt includes: */
 #include <QWidget>

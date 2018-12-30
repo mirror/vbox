@@ -17,6 +17,9 @@
 
 #ifndef ___UIInformationDataItem_h___
 #define ___UIInformationDataItem_h___
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /* Qt includes: */
 #include <QIcon>

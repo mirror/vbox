@@ -17,6 +17,9 @@
 
 #ifndef ___UIProgressEventHandler_h___
 #define ___UIProgressEventHandler_h___
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /* GUI includes: */
  #include "UIMainEventListener.h"

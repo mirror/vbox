@@ -17,6 +17,9 @@
 
 #ifndef ___UIDnDEnumFormat_win_h___
 #define ___UIDnDEnumFormat_win_h___
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 
 class UIDnDEnumFormatEtc : public IEnumFORMATETC

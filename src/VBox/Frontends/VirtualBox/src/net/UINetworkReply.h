@@ -17,6 +17,9 @@
 
 #ifndef ___UINetworkReply_h___
 #define ___UINetworkReply_h___
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /* Qt includes: */
 #include <QPointer>

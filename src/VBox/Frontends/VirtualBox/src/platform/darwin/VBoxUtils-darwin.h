@@ -17,6 +17,9 @@
 
 #ifndef ___VBoxUtils_darwin_h___
 #define ___VBoxUtils_darwin_h___
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /* Qt includes: */
 #include <QRect>

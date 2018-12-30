@@ -17,6 +17,9 @@
 
 #ifndef __UIGlobalSettingsPortForwardingDlg_h__
 #define __UIGlobalSettingsPortForwardingDlg_h__
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /* GUI includes: */
 #include "QIWithRetranslateUI.h"

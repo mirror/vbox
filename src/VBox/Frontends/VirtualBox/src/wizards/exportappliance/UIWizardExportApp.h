@@ -17,6 +17,9 @@
 
 #ifndef ___UIWizardExportApp_h___
 #define ___UIWizardExportApp_h___
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /* GUI includes: */
 #include "UIWizard.h"

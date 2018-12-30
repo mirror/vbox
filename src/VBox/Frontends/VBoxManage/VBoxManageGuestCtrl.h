@@ -17,6 +17,9 @@
 
 #ifndef ___H_VBOXMANAGE_GUESTCTRL
 #define ___H_VBOXMANAGE_GUESTCTRL
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #ifndef VBOX_ONLY_DOCS
 

@@ -17,6 +17,9 @@
 
 #ifndef __UIGlobalSettingsNetworkDetailsNAT_h__
 #define __UIGlobalSettingsNetworkDetailsNAT_h__
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /* GUI includes: */
 #include "QIDialog.h"

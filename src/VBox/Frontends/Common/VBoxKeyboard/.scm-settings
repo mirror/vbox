@@ -17,5 +17,5 @@
 
 
 # These are LGPL and generally external.
-/keyboard*|/xkbtoscan.h: --external-copyright
+/keyboard*|/xkbtoscan.h: --external-copyright --no-fix-header-guards
 

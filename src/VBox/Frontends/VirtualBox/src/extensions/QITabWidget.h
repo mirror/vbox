@@ -17,6 +17,9 @@
 
 #ifndef ___QITabWidget_h___
 #define ___QITabWidget_h___
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /* Qt includes: */
 #include <QTabWidget>

@@ -17,6 +17,9 @@
 
 #ifndef ___UIMediumItem_h___
 #define ___UIMediumItem_h___
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /* GUI includes: */
 #include "UIMedium.h"

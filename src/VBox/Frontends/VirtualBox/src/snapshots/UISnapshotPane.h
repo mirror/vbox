@@ -17,6 +17,9 @@
 
 #ifndef ___UISnapshotPane_h___
 #define ___UISnapshotPane_h___
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /* GUI includes: */
 #include "QIWithRetranslateUI.h"

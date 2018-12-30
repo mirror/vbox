@@ -17,6 +17,9 @@
 
 #ifndef ___UIInformationConfiguration_h___
 #define ___UIInformationConfiguration_h___
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /* Qt includes: */
 #include <QWidget>

@@ -17,6 +17,9 @@
 
 #ifndef ___UIMachineLogicSeamless_h___
 #define ___UIMachineLogicSeamless_h___
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /* Local includes: */
 #include "UIMachineLogic.h"

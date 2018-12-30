@@ -17,6 +17,9 @@
 
 #ifndef ___UIMachineSettingsStorage_h___
 #define ___UIMachineSettingsStorage_h___
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /* Qt includes: */
 #ifdef VBOX_WS_MAC

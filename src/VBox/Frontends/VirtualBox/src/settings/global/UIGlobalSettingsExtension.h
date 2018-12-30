@@ -17,6 +17,9 @@
 
 #ifndef ___UIGlobalSettingsExtension_h___
 #define ___UIGlobalSettingsExtension_h___
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /* GUI includes: */
 #include "UISettingsPage.h"

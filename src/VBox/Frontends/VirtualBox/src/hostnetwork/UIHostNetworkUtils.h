@@ -17,6 +17,9 @@
 
 #ifndef ___UIHostNetworkUtils_h___
 #define ___UIHostNetworkUtils_h___
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /* Qt includes: */
 #include <QStringList>

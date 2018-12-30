@@ -17,6 +17,9 @@
 
 #ifndef __UIWizardImportAppDefs_h__
 #define __UIWizardImportAppDefs_h__
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /* Global includes: */
 #include <QMetaType>

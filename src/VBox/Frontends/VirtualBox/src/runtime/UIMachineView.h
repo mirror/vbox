@@ -17,6 +17,9 @@
 
 #ifndef ___UIMachineView_h___
 #define ___UIMachineView_h___
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /* Qt includes: */
 #include <QAbstractScrollArea>

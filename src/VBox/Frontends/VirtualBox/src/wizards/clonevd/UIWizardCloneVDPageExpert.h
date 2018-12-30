@@ -17,6 +17,9 @@
 
 #ifndef ___UIWizardCloneVDPageExpert_h___
 #define ___UIWizardCloneVDPageExpert_h___
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /* GUI includes: */
 #include "UIWizardCloneVDPageBasic1.h"

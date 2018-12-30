@@ -14,8 +14,12 @@
  * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
+
 #ifndef __VBoxFBOverlayCommon_h__
 #define __VBoxFBOverlayCommon_h__
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #if 0 //defined(DEBUG_misha)
 DECLINLINE(VOID) vboxDbgPrintF(LPCSTR szString, ...)

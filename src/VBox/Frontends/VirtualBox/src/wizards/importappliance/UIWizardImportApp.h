@@ -17,6 +17,9 @@
 
 #ifndef __UIWizardImportApp_h__
 #define __UIWizardImportApp_h__
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /* Local includes */
 #include "UIWizard.h"

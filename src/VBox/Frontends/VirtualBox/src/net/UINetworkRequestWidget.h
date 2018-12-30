@@ -17,6 +17,9 @@
 
 #ifndef ___UINetworkRequestWidget_h___
 #define ___UINetworkRequestWidget_h___
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /* GUI inludes: */
 #include "QIWithRetranslateUI.h"

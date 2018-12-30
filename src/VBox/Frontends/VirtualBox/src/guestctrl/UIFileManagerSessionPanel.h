@@ -17,6 +17,9 @@
 
 #ifndef ___UIFileManagerSessionPanel_h___
 #define ___UIFileManagerSessionPanel_h___
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /* GUI includes: */
 #include "UIFileManagerPanel.h"

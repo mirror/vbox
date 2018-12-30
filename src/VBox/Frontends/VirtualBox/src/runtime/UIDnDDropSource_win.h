@@ -17,6 +17,9 @@
 
 #ifndef ___UIDnDDropSource_win_h___
 #define ___UIDnDDropSource_win_h___
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /* COM includes: */
 #include "COMEnums.h"

@@ -17,6 +17,9 @@
 
 #ifndef ___UIDetailsElements_h___
 #define ___UIDetailsElements_h___
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /* GUI includes: */
 #include "UIThreadPool.h"

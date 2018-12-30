@@ -17,6 +17,9 @@
 
 #ifndef ___UIGuestProcessControlDialog_h___
 #define ___UIGuestProcessControlDialog_h___
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /* Qt includes: */
 #include <QString>

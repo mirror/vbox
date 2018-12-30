@@ -19,6 +19,9 @@
 
 #ifndef __H_HELPER
 #define __H_HELPER
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #if defined(VBOX_WITH_XPCOM) && !defined(RT_OS_DARWIN) && !defined(RT_OS_OS2)
 

@@ -17,6 +17,9 @@
 
 #ifndef ___UIWizardExportAppPageExpert_h___
 #define ___UIWizardExportAppPageExpert_h___
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /* GUI includes: */
 #include "UIWizardExportAppPageBasic1.h"

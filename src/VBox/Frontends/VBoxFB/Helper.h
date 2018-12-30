@@ -18,6 +18,9 @@
 
 #ifndef __H_HELPER
 #define __H_HELPER
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #define MAX_VIDEOMODES 64
 struct videoMode

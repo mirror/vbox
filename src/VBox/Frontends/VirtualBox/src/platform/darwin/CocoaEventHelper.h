@@ -17,6 +17,9 @@
 
 #ifndef ___CocoaEventHelper_h
 #define ___CocoaEventHelper_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /* GUI includes: */
 #include "UILibraryDefs.h"

@@ -17,6 +17,9 @@
 
 #ifndef __UIMultiScreenLayout_h__
 #define __UIMultiScreenLayout_h__
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /* Qt includes: */
 #include <QObject>

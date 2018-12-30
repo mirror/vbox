@@ -17,6 +17,9 @@
 
 #ifndef ___H_VBOXWATCHDOG
 #define ___H_VBOXWATCHDOG
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #ifndef VBOX_ONLY_DOCS
 # include <iprt/getopt.h>

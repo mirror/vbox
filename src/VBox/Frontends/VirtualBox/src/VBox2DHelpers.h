@@ -17,6 +17,9 @@
 
 #ifndef ___VBox2DHelpers_h___
 #define ___VBox2DHelpers_h___
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #if defined(VBOX_GUI_USE_QGL) || defined(VBOX_WITH_VIDEOHWACCEL)
 

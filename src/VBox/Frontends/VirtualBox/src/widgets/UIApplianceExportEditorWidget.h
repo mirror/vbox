@@ -17,6 +17,9 @@
 
 #ifndef __UIApplianceExportEditorWidget_h__
 #define __UIApplianceExportEditorWidget_h__
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /* GUI includes: */
 #include "UIApplianceEditorWidget.h"

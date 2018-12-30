@@ -17,6 +17,9 @@
 
 #ifndef ___UIMachineViewSeamless_h___
 #define ___UIMachineViewSeamless_h___
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /* Local includes */
 #include "UIMachineView.h"

@@ -17,6 +17,9 @@
 
 #ifndef __UIWizardNewVDPageBasic3_h__
 #define __UIWizardNewVDPageBasic3_h__
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /* GUI includes: */
 #include "UIWizardPage.h"

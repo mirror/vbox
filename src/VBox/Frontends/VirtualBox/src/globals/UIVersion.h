@@ -17,6 +17,9 @@
 
 #ifndef ___UIVersion_h___
 #define ___UIVersion_h___
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /* Qt includes: */
 #include <QString>

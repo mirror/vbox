@@ -17,6 +17,9 @@
 
 #ifndef __UIChooserHandlerMouse_h__
 #define __UIChooserHandlerMouse_h__
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /* Qt includes: */
 #include <QObject>

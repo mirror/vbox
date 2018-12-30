@@ -17,6 +17,9 @@
 
 #ifndef ___UIDownloader_h___
 #define ___UIDownloader_h___
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /* Qt includes: */
 #include <QUrl>

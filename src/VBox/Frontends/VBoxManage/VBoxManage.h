@@ -17,6 +17,9 @@
 
 #ifndef ___H_VBOXMANAGE
 #define ___H_VBOXMANAGE
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #ifndef VBOX_ONLY_DOCS
 #include <VBox/com/com.h>

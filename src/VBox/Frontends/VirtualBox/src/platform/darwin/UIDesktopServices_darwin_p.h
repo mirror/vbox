@@ -17,6 +17,9 @@
 
 #ifndef ___UIDesktopServices_p_h___
 #define ___UIDesktopServices_p_h___
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <VBox/VBoxCocoa.h>
 #include <iprt/cdefs.h> /* for RT_C_DECLS_BEGIN/RT_C_DECLS_END & stuff */

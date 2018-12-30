@@ -17,6 +17,9 @@
 
 #ifndef ___UIAnimationFramework_h___
 #define ___UIAnimationFramework_h___
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /* Qt includes: */
 #include <QObject>

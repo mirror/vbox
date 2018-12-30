@@ -17,6 +17,9 @@
 
 #ifndef ___UIConverterBackend_h___
 #define ___UIConverterBackend_h___
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /* Qt includes: */
 #include <QColor>

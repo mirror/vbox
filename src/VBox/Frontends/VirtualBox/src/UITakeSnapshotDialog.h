@@ -17,6 +17,9 @@
 
 #ifndef ___UITakeSnapshotDialog_h___
 #define ___UITakeSnapshotDialog_h___
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /* Qt includes: */
 #include <QIcon>

@@ -17,6 +17,9 @@
 
 #ifndef ___WinKeyboard_h___
 #define ___WinKeyboard_h___
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /* GUI includes: */
 #include "UILibraryDefs.h"

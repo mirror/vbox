@@ -17,6 +17,9 @@
 
 #ifndef ___QIFlowLayout_h___
 #define ___QIFlowLayout_h___
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /* Qt includes: */
 #include <QLayout>

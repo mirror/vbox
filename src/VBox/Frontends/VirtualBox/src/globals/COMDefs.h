@@ -21,6 +21,9 @@
 
 #ifndef __COMDefs_h__
 #define __COMDefs_h__
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /** @defgroup   grp_QT_COM  Qt-COM Support Layer
  * @{

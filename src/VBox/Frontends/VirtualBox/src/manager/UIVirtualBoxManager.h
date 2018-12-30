@@ -17,6 +17,9 @@
 
 #ifndef ___UIVirtualBoxManager_h___
 #define ___UIVirtualBoxManager_h___
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /* Qt includes: */
 #include <QUrl>

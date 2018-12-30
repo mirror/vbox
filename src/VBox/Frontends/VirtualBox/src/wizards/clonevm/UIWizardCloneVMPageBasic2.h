@@ -17,6 +17,9 @@
 
 #ifndef __UIWizardCloneVMPageBasic2_h__
 #define __UIWizardCloneVMPageBasic2_h__
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /* Local includes: */
 #include "UIWizardPage.h"

@@ -17,6 +17,9 @@
 
 #ifndef ___UIAddDiskEncryptionPasswordDialog_h___
 #define ___UIAddDiskEncryptionPasswordDialog_h___
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /* Qt includes: */
 #include <QDialog>

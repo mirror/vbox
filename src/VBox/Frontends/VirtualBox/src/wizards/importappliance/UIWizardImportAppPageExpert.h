@@ -17,6 +17,9 @@
 
 #ifndef __UIWizardImportAppPageExpert_h__
 #define __UIWizardImportAppPageExpert_h__
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /* Local includes: */
 #include "UIWizardImportAppPageBasic1.h"

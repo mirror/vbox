@@ -17,6 +17,9 @@
 
 #ifndef __UIWizardFirstRunPageBasic_h__
 #define __UIWizardFirstRunPageBasic_h__
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /* Qt includes: */
 #include <QUuid>

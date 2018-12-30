@@ -17,6 +17,9 @@
 
 #ifndef ___UIKeyboardHandlerNormal_h___
 #define ___UIKeyboardHandlerNormal_h___
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /* GUI includes: */
 #include "UIKeyboardHandler.h"

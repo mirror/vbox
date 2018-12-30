@@ -17,6 +17,9 @@
 
 #ifndef ___UIDnDDataObject_win_h___
 #define ___UIDnDDataObject_win_h___
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <iprt/critsect.h>
 

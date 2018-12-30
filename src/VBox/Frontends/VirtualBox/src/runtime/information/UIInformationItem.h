@@ -17,6 +17,9 @@
 
 #ifndef ___UIInformationItem_h___
 #define ___UIInformationItem_h___
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /* Qt includes: */
 #include <QStyledItemDelegate>

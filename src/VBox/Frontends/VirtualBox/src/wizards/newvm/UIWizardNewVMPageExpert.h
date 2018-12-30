@@ -17,6 +17,9 @@
 
 #ifndef __UIWizardNewVMPageExpert_h__
 #define __UIWizardNewVMPageExpert_h__
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /* Local includes: */
 #include "UIWizardNewVMPageBasic1.h"

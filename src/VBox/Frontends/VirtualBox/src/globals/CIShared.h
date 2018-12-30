@@ -17,6 +17,9 @@
 
 #ifndef __CIShared_h__
 #define __CIShared_h__
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #ifdef VBOX_CHECK_STATE
 #include <stdio.h>

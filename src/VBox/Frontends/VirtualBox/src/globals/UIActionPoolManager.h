@@ -17,6 +17,9 @@
 
 #ifndef ___UIActionPoolManager_h___
 #define ___UIActionPoolManager_h___
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /* Qt includes: */
 #include <QList>

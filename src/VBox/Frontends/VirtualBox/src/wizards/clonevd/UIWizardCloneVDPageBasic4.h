@@ -17,6 +17,9 @@
 
 #ifndef ___UIWizardCloneVDPageBasic4_h___
 #define ___UIWizardCloneVDPageBasic4_h___
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /* Qt includes: */
 #include <QVariant>

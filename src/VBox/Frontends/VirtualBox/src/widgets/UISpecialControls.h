@@ -17,6 +17,9 @@
 
 #ifndef ___VBoxSpecialControls_h__
 #define ___VBoxSpecialControls_h__
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /* Qt includes: */
 #include <QPushButton>

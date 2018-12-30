@@ -17,6 +17,9 @@
 
 #ifndef __UIWizardNewVMPageBasic3_h__
 #define __UIWizardNewVMPageBasic3_h__
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /* Qt includes: */
 #include <QVariant>

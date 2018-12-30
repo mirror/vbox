@@ -17,6 +17,9 @@
 
 #ifndef __VBoxAutostart_h__
 #define __VBoxAutostart_h__
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /*******************************************************************************
 *   Header Files                                                               *

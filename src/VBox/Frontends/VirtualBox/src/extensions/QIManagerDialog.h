@@ -17,6 +17,9 @@
 
 #ifndef ___QIManagerDialog_h___
 #define ___QIManagerDialog_h___
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /* Qt includes: */
 #include <QMainWindow>

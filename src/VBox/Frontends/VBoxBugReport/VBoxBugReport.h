@@ -17,6 +17,9 @@
 
 #ifndef ___H_VBOXBUGREPORT
 #define ___H_VBOXBUGREPORT
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /*
  * Introduction.

@@ -17,6 +17,9 @@
 
 #ifndef __UIGraphicsRotatorButton_h__
 #define __UIGraphicsRotatorButton_h__
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /* GUI includes: */
 #include "UIGraphicsButton.h"

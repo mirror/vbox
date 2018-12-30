@@ -17,6 +17,9 @@
 
 #ifndef __UIMachinePreview_h__
 #define __UIMachinePreview_h__
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /* Qt includes: */
 #include <QHash>

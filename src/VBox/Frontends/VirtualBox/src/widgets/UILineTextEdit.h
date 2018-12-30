@@ -17,6 +17,9 @@
 
 #ifndef __UILineTextEdit_h__
 #define __UILineTextEdit_h__
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /* VBox includes */
 #include "QIDialog.h"

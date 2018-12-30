@@ -17,6 +17,9 @@
 
 #ifndef ___UIDnDHandler_h___
 #define ___UIDnDHandler_h___
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /* Qt includes: */
 #include <QMimeData>

@@ -17,6 +17,9 @@
 
 #ifndef ___UIChooserItemGlobal_h___
 #define ___UIChooserItemGlobal_h___
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /* GUI includes: */
 #include "UIChooserItem.h"

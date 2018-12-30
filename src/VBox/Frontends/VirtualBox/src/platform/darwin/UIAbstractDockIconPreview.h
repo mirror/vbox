@@ -17,6 +17,9 @@
 
 #ifndef ___UIAbstractDockIconPreview_h___
 #define ___UIAbstractDockIconPreview_h___
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /* System includes */
 #include <ApplicationServices/ApplicationServices.h>

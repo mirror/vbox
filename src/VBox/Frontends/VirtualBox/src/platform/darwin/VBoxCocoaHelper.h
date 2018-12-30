@@ -17,6 +17,9 @@
 
 #ifndef ___darwin_VBoxCocoaHelper_h
 #define ___darwin_VBoxCocoaHelper_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /* Global includes */
 #include <VBox/VBoxCocoa.h>

@@ -17,6 +17,9 @@
 
 #ifndef ___UIVMLogViewerTextEdit_h___
 #define ___UIVMLogViewerTextEdit_h___
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /* GUI includes: */
 #include "QIWithRetranslateUI.h"
