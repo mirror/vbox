@@ -30,6 +30,9 @@
 
 #ifndef ___VBoxCAPIGlue_h
 #define ___VBoxCAPIGlue_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #undef VBOX_WITH_GLUE
 #define VBOX_WITH_GLUE

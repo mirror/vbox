@@ -31,6 +31,9 @@
 --filter-out-files /src-server/custom.ids
 --filter-out-files /src-server/usb.ids
 /src-all/win/VBoxAPIWrap-precomp_gcc.h: --no-pragma-once
+/src-all/win/VBoxAPIWrap-precomp_vcc.h: --no-fix-header-guards
+/src-client/win/precomp_vcc.h:          --no-fix-header-guards
+/src-server/win/precomp_vcc.h:          --no-fix-header-guards
 
 # IDL and XML
 /idl/VirtualBox.xidl:                   --treat-as .xml

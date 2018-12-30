@@ -41,6 +41,9 @@
 
 #ifndef ___VirtualBox_CAPI_h
 #define ___VirtualBox_CAPI_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #ifdef _WIN32
 # undef COBJMACROS

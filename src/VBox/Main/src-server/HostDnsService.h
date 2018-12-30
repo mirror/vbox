@@ -17,6 +17,9 @@
 
 #ifndef ___H_DNSHOSTSERVICE
 #define ___H_DNSHOSTSERVICE
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 #include "VirtualBoxBase.h"
 
 #include <iprt/err.h> /* VERR_IGNORED */

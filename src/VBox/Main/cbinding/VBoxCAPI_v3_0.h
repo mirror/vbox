@@ -40,6 +40,9 @@
 
 #ifndef ___VirtualBox_CXPCOM_h
 #define ___VirtualBox_CXPCOM_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #ifdef __cplusplus
 # include "VirtualBox_XPCOM.h"

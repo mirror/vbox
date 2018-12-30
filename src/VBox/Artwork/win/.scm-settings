@@ -27,3 +27,5 @@
 # These files are included into lots of different things, so dual licensed.
 --license-ose-dual
 
+/TemplateRsrcDefs.h: --no-fix-header-guards
+

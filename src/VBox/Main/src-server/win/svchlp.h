@@ -17,6 +17,9 @@
 
 #ifndef ___VBox_svchlp_h___
 #define ___VBox_svchlp_h___
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include "VBox/com/string.h"
 #include "VBox/com/guid.h"

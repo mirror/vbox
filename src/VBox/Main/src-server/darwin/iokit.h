@@ -17,6 +17,9 @@
 
 #ifndef ___darwin_iokit_h___
 #define ___darwin_iokit_h___
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <iprt/cdefs.h>
 #include <iprt/types.h>

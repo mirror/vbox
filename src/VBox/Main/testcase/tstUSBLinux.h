@@ -15,9 +15,11 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-
 #ifndef ____H_TSTUSBLINUX
 #define ____H_TSTUSBLINUX
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 typedef int HRESULT;
 enum { S_OK = 0, E_NOTIMPL = 1 };
