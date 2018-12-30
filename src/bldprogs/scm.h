@@ -186,7 +186,7 @@ DECLINLINE(bool) ScmIsCIdentifierLeadChar(char ch)
  * @param   ch                  The character to inspect.
  * @sa      vbcppIsCIdentifierChar
  */
-DECLINLINE(bool) scmIsCIdentifierChar(char ch)
+DECLINLINE(bool) ScmIsCIdentifierChar(char ch)
 {
     return RT_C_IS_ALNUM(ch)
         || ch == '_';
@@ -259,6 +259,7 @@ FNSCMREWRITER rewrite_Makefile_kmk;
 FNSCMREWRITER rewrite_FixFlowerBoxMarkers;
 FNSCMREWRITER rewrite_Fix_C_and_CPP_Todos;
 FNSCMREWRITER rewrite_Fix_Err_H;
+FNSCMREWRITER rewrite_FixHeaderGuards;
 FNSCMREWRITER rewrite_C_and_CPP;
 
 /**
@@ -329,6 +330,9 @@ typedef struct SCMSETTINGSBASE
     bool            fFixFlowerBoxMarkers;
     /** The minimum number of blank lines we want before flowerbox markers. */
     uint8_t         cMinBlankLinesBeforeFlowerBoxMakers;
+
+    /** Whether to fix C/C++ header guards and \#pragma once directives. */
+    bool            fFixHeaderGuards;
 
     /** Whether to fix C/C++ todos. */
     bool            fFixTodos;

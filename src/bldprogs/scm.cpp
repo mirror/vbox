@@ -74,6 +74,8 @@ typedef enum SCMOPT
     SCMOPT_NO_STRIP_TRAILING_LINES,
     SCMOPT_FIX_FLOWER_BOX_MARKERS,
     SCMOPT_NO_FIX_FLOWER_BOX_MARKERS,
+    SCMOPT_FIX_HEADER_GUARDS,
+    SCMOPT_NO_FIX_HEADER_GUARDS,
     SCMOPT_FIX_TODOS,
     SCMOPT_NO_FIX_TODOS,
     SCMOPT_FIX_ERR_H,
@@ -174,6 +176,7 @@ static SCMSETTINGSBASE const g_Defaults =
     /* .fStripTrailingLines = */                    true,
     /* .fFixFlowerBoxMarkers = */                   true,
     /* .cMinBlankLinesBeforeFlowerBoxMakers = */    2,
+    /* .fFixHeaderGuards = */                       false, /** @todo fFixHeaderGuards = true */
     /* .fFixTodos = */                              true,
     /* .fFixErrH = */                               true,
     /* .fUpdateCopyrightYear = */                   false,
@@ -214,6 +217,8 @@ static RTGETOPTDEF  g_aScmOpts[] =
     { "--min-blank-lines-before-flower-box-makers", SCMOPT_MIN_BLANK_LINES_BEFORE_FLOWER_BOX_MARKERS,  RTGETOPT_REQ_UINT8 },
     { "--fix-flower-box-markers",           SCMOPT_FIX_FLOWER_BOX_MARKERS,          RTGETOPT_REQ_NOTHING },
     { "--no-fix-flower-box-markers",        SCMOPT_NO_FIX_FLOWER_BOX_MARKERS,       RTGETOPT_REQ_NOTHING },
+    { "--fix-header-guards",                SCMOPT_FIX_HEADER_GUARDS,               RTGETOPT_REQ_NOTHING },
+    { "--no-fix-header-guards",             SCMOPT_NO_FIX_HEADER_GUARDS,            RTGETOPT_REQ_NOTHING },
     { "--fix-todos",                        SCMOPT_FIX_TODOS,                       RTGETOPT_REQ_NOTHING },
     { "--no-fix-todos",                     SCMOPT_NO_FIX_TODOS,                    RTGETOPT_REQ_NOTHING },
     { "--fix-err-h",                        SCMOPT_FIX_ERR_H,                       RTGETOPT_REQ_NOTHING },
@@ -288,6 +293,7 @@ SCM_REWRITER_CFG(g_Copyright_TickComment,           "copyright-tick-style",     
 SCM_REWRITER_CFG(g_Makefile_kup,                    "makefile-kup",                 rewrite_Makefile_kup);
 SCM_REWRITER_CFG(g_Makefile_kmk,                    "makefile-kmk",                 rewrite_Makefile_kmk);
 SCM_REWRITER_CFG(g_FixFlowerBoxMarkers,             "fix-flower-boxes",             rewrite_FixFlowerBoxMarkers);
+SCM_REWRITER_CFG(g_FixHeaderGuards,                 "fix-header-guard",             rewrite_FixHeaderGuards);
 SCM_REWRITER_CFG(g_Fix_C_and_CPP_Todos,             "fix-c-todos",                  rewrite_Fix_C_and_CPP_Todos);
 SCM_REWRITER_CFG(g_Fix_Err_H,                       "fix-err-h",                    rewrite_Fix_Err_H);
 SCM_REWRITER_CFG(g_C_and_CPP,                       "c-and-cpp",                    rewrite_C_and_CPP);
@@ -317,6 +323,7 @@ static PCSCMREWRITERCFG const g_papRewriterActions[] =
     &g_Makefile_kup,
     &g_Makefile_kmk,
     &g_FixFlowerBoxMarkers,
+    &g_FixHeaderGuards,
     &g_Fix_C_and_CPP_Todos,
     &g_Fix_Err_H,
     &g_C_and_CPP,
@@ -379,6 +386,8 @@ static PCSCMREWRITERCFG const g_apRewritersFor_H_and_HPP[] =
     &g_SvnKeywords,
     &g_SvnSyncProcess,
     &g_Copyright_CstyleComment,
+    /// @todo &g_FixFlowerBoxMarkers,
+    &g_FixHeaderGuards,
     &g_C_and_CPP
 };
 
@@ -1003,6 +1012,13 @@ static int scmSettingsBaseHandleOpt(PSCMSETTINGSBASE pSettings, int rc, PRTGETOP
             return VINF_SUCCESS;
         case SCMOPT_NO_FIX_FLOWER_BOX_MARKERS:
             pSettings->fFixFlowerBoxMarkers = false;
+            return VINF_SUCCESS;
+
+        case SCMOPT_FIX_HEADER_GUARDS:
+            pSettings->fFixHeaderGuards = true;
+            return VINF_SUCCESS;
+        case SCMOPT_NO_FIX_HEADER_GUARDS:
+            pSettings->fFixHeaderGuards = false;
             return VINF_SUCCESS;
 
         case SCMOPT_FIX_TODOS:
@@ -2673,6 +2689,9 @@ static int scmHelp(PCRTGETOPTDEF paOpts, size_t cOpts)
             case SCMOPT_FIX_FLOWER_BOX_MARKERS: RTPrintf("      Default: %RTbool\n", g_Defaults.fFixFlowerBoxMarkers); break;
             case SCMOPT_MIN_BLANK_LINES_BEFORE_FLOWER_BOX_MARKERS: RTPrintf("      Default: %u\n", g_Defaults.cMinBlankLinesBeforeFlowerBoxMakers); break;
 
+            case SCMOPT_FIX_HEADER_GUARDS:
+                RTPrintf("      Fix header guards and #pragma once.  Default: %RTbool\n", g_Defaults.fFixHeaderGuards);
+                break;
             case SCMOPT_FIX_TODOS:
                 RTPrintf("      Fix @todo statements so doxygen sees them.  Default: %RTbool\n", g_Defaults.fFixTodos);
                 break;

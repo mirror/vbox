@@ -240,6 +240,16 @@ void ScmStreamRewindForWriting(PSCMSTREAM pStream)
     pStream->fWriteOrRead   = true;
     pStream->fFullyLineated = true;
     pStream->rc             = VINF_SUCCESS;
+
+    /* Initialize the first line with a zero length so ScmStreamWrite won't misbehave. */
+    if (pStream->cLinesAllocated == 0)
+        scmStreamGrowLines(pStream, 1);
+    if (pStream->cLinesAllocated > 0)
+    {
+        pStream->paLines[0].off    = 0;
+        pStream->paLines[0].cch    = 0;
+        pStream->paLines[0].enmEol = SCMEOL_NONE;
+    }
 }
 
 /**

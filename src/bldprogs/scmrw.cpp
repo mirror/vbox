@@ -2405,7 +2405,6 @@ bool rewrite_Fix_C_and_CPP_Todos(PSCMRWSTATE pState, PSCMSTREAM pIn, PSCMSTREAM 
 }
 
 
-
 /**
  * Tries to parse a C/C++ preprocessor include directive.
  *
@@ -2468,7 +2467,7 @@ SCMINCLUDEDIR ScmMaybeParseCIncludeLine(PSCMRWSTATE pState, const char *pchLine,
                             *pcchFilename = pchEnd - pchLine;
                         return chFirst == '"' ? kScmIncludeDir_Quoted : kScmIncludeDir_Bracketed;
                     }
-                    ScmError(pState,  VERR_PARSE_ERROR, "Unbalanced #include filename %s: %.*s\n",
+                    ScmError(pState, VERR_PARSE_ERROR, "Unbalanced #include filename %s: %.*s\n",
                              chFirst == '"' ? "quotes" : "brackets" , cchLine, pchLine);
                 }
                 /* C prepreprocessor macro? */
@@ -2476,7 +2475,7 @@ SCMINCLUDEDIR ScmMaybeParseCIncludeLine(PSCMRWSTATE pState, const char *pchLine,
                 {
                     size_t cchFilename = 1;
                     while (   cchFilename < cchLine
-                           && scmIsCIdentifierChar(pchLine[cchFilename]))
+                           && ScmIsCIdentifierChar(pchLine[cchFilename]))
                         cchFilename++;
                     if (ppchFilename)
                         *ppchFilename = pchLine;
@@ -2485,10 +2484,10 @@ SCMINCLUDEDIR ScmMaybeParseCIncludeLine(PSCMRWSTATE pState, const char *pchLine,
                     return kScmIncludeDir_Macro;
                 }
                 else
-                    ScmError(pState,  VERR_PARSE_ERROR, "Malformed #include filename part: %.*s\n", cchLine, pchLine);
+                    ScmError(pState, VERR_PARSE_ERROR, "Malformed #include filename part: %.*s\n", cchLine, pchLine);
             }
             else
-                ScmError(pState,  VERR_PARSE_ERROR, "Missing #include filename!\n");
+                ScmError(pState, VERR_PARSE_ERROR, "Missing #include filename!\n");
         }
     }
 
@@ -2658,13 +2657,13 @@ bool rewrite_Fix_Err_H(PSCMRWSTATE pState, PSCMSTREAM pIn, PSCMSTREAM pOut, PCSC
                     break;
                 if (    pchHit[4] == '_'
                     && (   pchHit == pchLine
-                        || !scmIsCIdentifierChar(pchHit[-1]))
+                        || !ScmIsCIdentifierChar(pchHit[-1]))
                     && (   (pchHit[1] == 'E' && pchHit[2] == 'R' && pchHit[3] == 'R')
                         || (pchHit[1] == 'W' && pchHit[2] == 'R' && pchHit[3] == 'N')
                         || (pchHit[1] == 'I' && pchHit[2] == 'N' && pchHit[3] == 'F') ) )
                 {
                     size_t cchIdentifier = 5;
-                    while (cchIdentifier < cchLeftHit && scmIsCIdentifierChar(pchHit[cchIdentifier]))
+                    while (cchIdentifier < cchLeftHit && ScmIsCIdentifierChar(pchHit[cchIdentifier]))
                         cchIdentifier++;
                     ScmVerbose(pState, 4, "--- status code at %u col %zu: %.*s\n",
                                iLine, pchHit - pchLine, cchIdentifier, pchHit);
@@ -2749,6 +2748,336 @@ bool rewrite_Fix_Err_H(PSCMRWSTATE pState, PSCMSTREAM pIn, PSCMSTREAM pOut, PCSC
     ScmVerbose(pState, 2, " * Converted %zu err.h/errcore.h include statements.\n", cChanges);
     return true;
 }
+
+typedef struct
+{
+    const char     *pch;
+    uint8_t         cch;
+    uint8_t         cchSpaces;          /**< Number of expected spaces before the word. */
+    bool            fSpacesBefore : 1;  /**< Whether there may be spaces or tabs before the word. */
+    bool            fIdentifier   : 1;  /**< Whether we're to expect a C/C++ identifier rather than pch/cch. */
+} SCMMATCHWORD;
+
+
+int ScmMatchWords(const char *pchLine, size_t cchLine, SCMMATCHWORD const *paWords, size_t cWords,
+                  size_t *poffNext, PRTSTRTUPLE paIdentifiers, PRTERRINFO pErrInfo)
+{
+    int rc = VINF_SUCCESS;
+
+    size_t offLine = 0;
+    for (size_t i = 0; i < cWords; i++)
+    {
+        SCMMATCHWORD const *pWord = &paWords[i];
+
+        /*
+         * Deal with spaces preceeding the word first:
+         */
+        if (pWord->fSpacesBefore)
+        {
+            size_t cchSpaces = 0;
+            size_t cchTabs   = 0;
+            while (offLine < cchLine)
+            {
+                const char ch = pchLine[offLine];
+                if (ch == ' ')
+                    cchSpaces++;
+                else if (ch == '\t')
+                    cchTabs++;
+                else
+                    break;
+                offLine++;
+            }
+
+            if (cchSpaces == pWord->cchSpaces && cchTabs == 0)
+            { /* likely */ }
+            else if (cchSpaces == 0 && cchTabs == 0)
+                return RTErrInfoSetF(pErrInfo, VERR_PARSE_ERROR, "expected space at offset %u", offLine);
+            else
+                rc = VWRN_TRAILING_SPACES;
+        }
+        else
+            Assert(pWord->cchSpaces == 0);
+
+        /*
+         * C/C++ identifier?
+         */
+        if (pWord->fIdentifier)
+        {
+            if (offLine >= cchLine)
+                return RTErrInfoSetF(pErrInfo, VERR_END_OF_STRING,
+                                     "expected '%.*s' (C/C++ identifier) at offset %u, not end of string",
+                                     pWord->cch, pWord->pch, offLine);
+            if (!ScmIsCIdentifierLeadChar(pchLine[offLine]))
+                return RTErrInfoSetF(pErrInfo, VERR_MISMATCH, "expected '%.*s' (C/C++ identifier) at offset %u",
+                                     pWord->cch, pWord->pch, offLine);
+            size_t const offStart = offLine++;
+            while (offLine < cchLine && ScmIsCIdentifierChar(pchLine[offLine]))
+                offLine++;
+            if (paIdentifiers)
+            {
+                paIdentifiers->cch = offLine - offStart;
+                paIdentifiers->psz = &pchLine[offStart];
+                paIdentifiers++;
+            }
+        }
+        /*
+         * Match the exact word.
+         */
+        else if (   pWord->cch == 0
+                 || (   pWord->cch <= cchLine - offLine
+                     && !memcmp(pWord->pch, &pchLine[offLine], pWord->cch)))
+            offLine += pWord->cch;
+        else
+            return RTErrInfoSetF(pErrInfo, VERR_MISMATCH, "expected '%.*s' at offset %u", pWord->cch, pWord->pch, offLine);
+    }
+
+    /*
+     * Check for trailing characters/whatnot.
+     */
+    if (poffNext)
+        *poffNext = offLine;
+    else if (offLine != cchLine)
+        rc = RTErrInfoSetF(pErrInfo, VERR_TRAILING_CHARS, "unexpected trailing characters at offset %u", offLine);
+    return rc;
+}
+
+
+/**
+ * Fix header file include guards and \#pragma once.
+ *
+ * @returns true if modifications were made, false if not.
+ * @param   pIn                 The input stream.
+ * @param   pOut                The output stream.
+ * @param   pSettings           The settings.
+ */
+bool rewrite_FixHeaderGuards(PSCMRWSTATE pState, PSCMSTREAM pIn, PSCMSTREAM pOut, PCSCMSETTINGSBASE pSettings)
+{
+    if (!pSettings->fFixHeaderGuards)
+        return false;
+
+    int rc;
+    bool fRet = false;
+    RTERRINFOSTATIC ErrInfo;
+
+    /*
+     * First part looks for the #ifndef xxxx paired with #define xxxx.
+     *
+     * We blindly assume the first preprocessor directive in the file is the guard
+     * and will be upset if this isn't the case.
+     */
+    uint32_t    cBlankLines = 0;
+    SCMEOL      enmEol;
+    size_t      cchLine;
+    const char *pchLine;
+    for (;;)
+    {
+        pchLine = ScmStreamGetLine(pIn, &cchLine, &enmEol);
+        if (pchLine == NULL)
+            return ScmError(pState, VERR_PARSE_ERROR, "Did not find any include guards!\n");
+        if (cchLine >= 2)
+        {
+            const char *pchHash = (const char *)memchr(pchLine, '#', cchLine);
+            if (    pchHash
+                && isSpanOfBlanks(pchLine, pchHash - pchLine))
+            {
+                /* #ifndef xxxx */
+                static const SCMMATCHWORD s_aIfndefGuard[] =
+                {
+                    { RT_STR_TUPLE("#"),                0, true, false },
+                    { RT_STR_TUPLE("ifndef"),           0, true, false },
+                    { RT_STR_TUPLE("IDENTIFIER"),       1, true, true },
+                    { RT_STR_TUPLE(""),                 0, true, false },
+                };
+                RTSTRTUPLE Guard;
+                rc = ScmMatchWords(pchLine, cchLine, s_aIfndefGuard, RT_ELEMENTS(s_aIfndefGuard),
+                                   NULL /*poffNext*/, &Guard, RTErrInfoInitStatic(&ErrInfo));
+                if (RT_FAILURE(rc))
+                    return ScmError(pState, rc, "%u: Expected first preprocessor directive to be '#ifndef xxxx'. %s (%.*s)\n",
+                                    ScmStreamTellLine(pIn) - 1, ErrInfo.Core.pszMsg, cchLine, pchLine);
+                fRet |= rc != VINF_SUCCESS;
+                ScmVerbose(pState, 2, "line %u: #ifndef %.*s\n", ScmStreamTellLine(pIn) - 1, Guard.cch, Guard.psz);
+
+                /* #define xxxx */
+                pchLine = ScmStreamGetLine(pIn, &cchLine, &enmEol);
+                if (!pchLine)
+                    return ScmError(pState, VERR_PARSE_ERROR, "%u: Unexpected end of file after '#ifndef %.*s'\n",
+                                    ScmStreamTellLine(pIn) - 1, Guard.cch, Guard.psz);
+                const SCMMATCHWORD aDefineGuard[] =
+                {
+                    { RT_STR_TUPLE("#"),                0, true, false },
+                    { RT_STR_TUPLE("define"),           0, true, false },
+                    { Guard.psz, (uint8_t)Guard.cch,    1, true, false },
+                    { RT_STR_TUPLE(""),                 0, true, false },
+                };
+                rc = ScmMatchWords(pchLine, cchLine, aDefineGuard, RT_ELEMENTS(aDefineGuard),
+                                   NULL /*poffNext*/, NULL /*paIdentifiers*/, RTErrInfoInitStatic(&ErrInfo));
+                if (RT_FAILURE(rc))
+                    return ScmError(pState, rc, "%u: Expected '#define %.*s' to follow '#ifndef %.*s'. %s (%.*s)\n",
+                                    ScmStreamTellLine(pIn) - 1, Guard.cch, Guard.psz, Guard.cch, Guard.psz,
+                                    ErrInfo.Core.pszMsg, cchLine, pchLine);
+                fRet |= rc != VINF_SUCCESS;
+
+                /*
+                 * Write guard, making sure we've got a single blank line preceeding it.
+                 */
+                ScmStreamPutEol(pOut, enmEol);
+                ScmStreamWrite(pOut, RT_STR_TUPLE("#ifndef "));
+                ScmStreamWrite(pOut, Guard.psz, Guard.cch);
+                ScmStreamPutEol(pOut, enmEol);
+                ScmStreamWrite(pOut, RT_STR_TUPLE("#define "));
+                ScmStreamWrite(pOut, Guard.psz, Guard.cch);
+                rc = ScmStreamPutEol(pOut, enmEol);
+                if (RT_FAILURE(rc))
+                    return false;
+                break;
+            }
+        }
+
+        if (!isBlankLine(pchLine, cchLine))
+        {
+            while (cBlankLines-- > 0)
+                ScmStreamPutEol(pOut, enmEol);
+            cBlankLines = 0;
+            rc = ScmStreamPutLine(pOut, pchLine, cchLine, enmEol);
+            if (RT_FAILURE(rc))
+                return false;
+        }
+        else
+            cBlankLines++;
+    }
+
+    /*
+     * Look for pragma once wrapped in #ifndef RT_WITHOUT_PRAGMA_ONCE.
+     */
+    size_t const iPragmaOnce = ScmStreamTellLine(pIn);
+    static const SCMMATCHWORD s_aIfndefRtWithoutPragmaOnce[] =
+    {
+        { RT_STR_TUPLE("#"),                        0, true, false },
+        { RT_STR_TUPLE("ifndef"),                   0, true, false },
+        { RT_STR_TUPLE("RT_WITHOUT_PRAGMA_ONCE"),   1, true, false },
+        { RT_STR_TUPLE(""),                         0, true, false },
+    };
+    static const SCMMATCHWORD s_aPragmaOnce[] =
+    {
+        { RT_STR_TUPLE("#"),                        0, true, false },
+        { RT_STR_TUPLE("pragma"),                   0, true, false },
+        { RT_STR_TUPLE("once"),                     1, true, false},
+        { RT_STR_TUPLE(""),                         0, true, false },
+    };
+    static const SCMMATCHWORD s_aEndif[] =
+    {
+        { RT_STR_TUPLE("#"),                        0, true, false },
+        { RT_STR_TUPLE("endif"),                    0, true, false },
+        { RT_STR_TUPLE(""),                         0, true, false },
+    };
+
+    /* #ifndef RT_WITHOUT_PRAGMA_ONCE */
+    pchLine = ScmStreamGetLine(pIn, &cchLine, &enmEol);
+    if (!pchLine)
+        return ScmError(pState, VERR_PARSE_ERROR, "%u: Unexpected end of file after header guard!\n", iPragmaOnce + 1);
+    size_t offNext;
+    rc = ScmMatchWords(pchLine, cchLine, s_aIfndefRtWithoutPragmaOnce, RT_ELEMENTS(s_aIfndefRtWithoutPragmaOnce),
+                       &offNext, NULL /*paIdentifiers*/, RTErrInfoInitStatic(&ErrInfo));
+    if (RT_SUCCESS(rc))
+    {
+        fRet |= rc != VINF_SUCCESS;
+        if (offNext != cchLine)
+            return ScmError(pState, VERR_PARSE_ERROR, "%u: Characters trailing '#ifndef RT_WITHOUT_PRAGMA_ONCE' (%.*s)\n",
+                            iPragmaOnce + 1, cchLine, pchLine);
+
+        /* # pragma once */
+        pchLine = ScmStreamGetLine(pIn, &cchLine, &enmEol);
+        if (!pchLine)
+            return ScmError(pState, VERR_PARSE_ERROR, "%u: Unexpected end of file after '#ifndef RT_WITHOUT_PRAGMA_ONCE'\n",
+                            iPragmaOnce + 2);
+        rc = ScmMatchWords(pchLine, cchLine, s_aPragmaOnce, RT_ELEMENTS(s_aPragmaOnce),
+                           NULL /*poffNext*/, NULL /*paIdentifiers*/, RTErrInfoInitStatic(&ErrInfo));
+        if (RT_SUCCESS(rc))
+            fRet |= rc != VINF_SUCCESS;
+        else
+            return ScmError(pState, rc, "%u: Expected '# pragma once' to follow '#ifndef RT_WITHOUT_PRAGMA_ONCE'! %s (%.*s)\n",
+                            iPragmaOnce + 2, ErrInfo.Core.pszMsg, cchLine, pchLine);
+
+        /* #endif */
+        pchLine = ScmStreamGetLine(pIn, &cchLine, &enmEol);
+        if (!pchLine)
+            return ScmError(pState, VERR_PARSE_ERROR, "%u: Unexpected end of file after '#ifndef RT_WITHOUT_PRAGMA_ONCE' and '#pragma once'\n",
+                            iPragmaOnce + 3);
+        rc = ScmMatchWords(pchLine, cchLine, s_aEndif, RT_ELEMENTS(s_aEndif),
+                           NULL /*poffNext*/, NULL /*paIdentifiers*/, RTErrInfoInitStatic(&ErrInfo));
+        if (RT_SUCCESS(rc))
+            fRet |= rc != VINF_SUCCESS;
+        else
+            return ScmError(pState, rc,
+                            "%u: Expected '#endif' to follow '#ifndef RT_WITHOUT_PRAGMA_ONCE' and '# pragma once'! %s (%.*s)\n",
+                            iPragmaOnce + 3, ErrInfo.Core.pszMsg, cchLine, pchLine);
+        ScmVerbose(pState, 3, "Found pragma once\n");
+    }
+    else
+    {
+        rc = ScmStreamSeekByLine(pIn, iPragmaOnce);
+        if (RT_FAILURE(rc))
+            return ScmError(pState, rc, "seek error\n");
+        fRet = true;
+        ScmVerbose(pState, 2, "Missing #pragma once\n");
+    }
+
+    /*
+     * Write the pragma once stuff.
+     */
+    ScmStreamPutLine(pOut, RT_STR_TUPLE("#ifndef RT_WITHOUT_PRAGMA_ONCE"), enmEol);
+    ScmStreamPutLine(pOut, RT_STR_TUPLE("# pragma once"), enmEol);
+    rc = ScmStreamPutLine(pOut, RT_STR_TUPLE("#endif"), enmEol);
+    if (RT_FAILURE(rc))
+        return false;
+
+    /*
+     * Copy the rest of the file and remove pragma once statements, while
+     * looking for the last #endif in the file.
+     */
+    size_t iEndIf = 0;
+    while ((pchLine = ScmStreamGetLine(pIn, &cchLine, &enmEol)) != NULL)
+    {
+        if (cchLine > 2)
+        {
+            const char *pchHash = (const char *)memchr(pchLine, '#', cchLine);
+            if (    pchHash
+                && isSpanOfBlanks(pchLine, pchHash - pchLine))
+            {
+                size_t off = pchHash - pchLine + 1;
+                while (off < cchLine && RT_C_IS_BLANK(pchLine[off]))
+                    off++;
+                /* #pragma once */
+                if (off + sizeof("pragma") < cchLine && !memcmp(&pchLine[off], RT_STR_TUPLE("pragma")))
+                {
+                    rc = ScmMatchWords(pchLine, cchLine, s_aPragmaOnce, RT_ELEMENTS(s_aPragmaOnce),
+                                       &offNext, NULL /*paIdentifiers*/, RTErrInfoInitStatic(&ErrInfo));
+                    if (RT_SUCCESS(rc))
+                    {
+                        fRet = true;
+                        continue;
+                    }
+                }
+                /* #endif */
+                else if (off + sizeof("endif") < cchLine && !memcmp(&pchLine[off], RT_STR_TUPLE("endif")))
+                    iEndIf = ScmStreamTellLine(pOut);
+            }
+        }
+
+        rc = ScmStreamPutLine(pOut, pchLine, cchLine, enmEol);
+        if (RT_FAILURE(rc))
+            return false;
+    }
+
+    /*
+     * Check out the last endif, making sure it's well formed and make sure it has the
+     * right kind of comment following it.
+     */
+    /** @todo \#endif */
+
+    return fRet;
+}
+
 
 /**
  * Rewrite a C/C++ source or header file.
