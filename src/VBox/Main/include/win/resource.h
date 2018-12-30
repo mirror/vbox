@@ -18,6 +18,9 @@
 
 #ifndef __H_RESOURCEVBOXCOM
 #define __H_RESOURCEVBOXCOM
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 
 // registry script resource ID

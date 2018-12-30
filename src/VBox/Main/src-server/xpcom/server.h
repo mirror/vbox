@@ -18,6 +18,9 @@
 
 #ifndef ____H_LINUX_SERVER
 #define ____H_LINUX_SERVER
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <VBox/com/com.h>
 

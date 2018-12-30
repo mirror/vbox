@@ -17,6 +17,9 @@
 
 #ifndef ____H_DYN_LOAD_LIB_SOLARIS
 #define ____H_DYN_LOAD_LIB_SOLARIS
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #define LIB_DLPI "libdlpi.so.1"
 #ifdef RT_OS_SOLARIS_10
