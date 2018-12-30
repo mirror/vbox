@@ -26,6 +26,9 @@
 
 #ifndef ___bs3kit_h
 #define ___bs3kit_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #ifndef DOXYGEN_RUNNING
 # undef  IN_RING0

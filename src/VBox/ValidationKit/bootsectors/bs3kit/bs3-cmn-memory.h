@@ -26,6 +26,9 @@
 
 #ifndef ___bs3_cmn_memory_h
 #define ___bs3_cmn_memory_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include "bs3kit.h"
 #include <iprt/asm.h>

@@ -26,6 +26,9 @@
 
 #ifndef ___UsbTestServicePlatform_h___
 #define ___UsbTestServicePlatform_h___
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <iprt/cdefs.h>
 #include <iprt/types.h>

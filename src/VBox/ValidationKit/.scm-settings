@@ -32,8 +32,8 @@
 *.c32:                                  --treat-as .c
 *.c64:                                  --treat-as .c
 
-*.css:                                  --treat-as .h
-*.js:                                   --treat-as .h
+*.css:                                  --treat-as .h --no-fix-header-guards
+*.js:                                   --treat-as .h --no-fix-header-guards
 
 /testdriver/*.ps1:                      --treat-as Makefile
 /testmanager/apache-template-*.conf:    --treat-as Makefile
@@ -57,4 +57,12 @@
 --filter-out-files /utils/TestExecServ/linux/vboxtxs.service
 --filter-out-files /utils/TestExecServ/win/*.reg
 --filter-out-files /utils/usb/linux/usbtest.service
+
+# misc
+/bootsectors/bs3kit/bs3kit-mangling-code.h:        --no-fix-header-guards
+/bootsectors/bs3kit/bs3kit-mangling-code-define.h: --no-fix-header-guards
+/bootsectors/bs3kit/bs3kit-mangling-code-undef.h:  --no-fix-header-guards
+/bootsectors/bs3kit/bs3kit-template-header.h:      --no-fix-header-guards
+/bootsectors/bs3kit/bs3kit-template-footer.h:      --no-fix-header-guards
+/bootsectors/bs3kit/bs3-cmn-instantiate-common.h:  --no-fix-header-guards
 

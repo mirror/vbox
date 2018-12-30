@@ -28,8 +28,12 @@
 /*
  * First part is only applied once.  It concerns itself with data symbols.
  */
+
 #ifndef ___bs3kit_mangling_data_h
 #define ___bs3kit_mangling_data_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #if 0 /* the object converter deals with this now  */
 #if ARCH_BITS == 64

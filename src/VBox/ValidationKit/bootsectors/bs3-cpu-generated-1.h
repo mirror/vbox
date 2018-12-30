@@ -24,9 +24,11 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
-
 #ifndef ___bs3_cpu_generated_1_h___
 #define ___bs3_cpu_generated_1_h___
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <bs3kit.h>
 #include <iprt/assert.h>

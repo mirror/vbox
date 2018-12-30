@@ -26,6 +26,9 @@
 
 #ifndef ___TestExecServiceInternal_h___
 #define ___TestExecServiceInternal_h___
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <iprt/getopt.h>
 #include <iprt/stream.h>

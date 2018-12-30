@@ -26,6 +26,9 @@
 
 #ifndef ___bs3_mode_TestDoModes_h
 #define ___bs3_mode_TestDoModes_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include "bs3kit.h"
 
