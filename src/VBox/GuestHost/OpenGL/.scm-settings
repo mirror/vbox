@@ -16,7 +16,7 @@
 #
 
 # The basic config here is external copyright, however there are lots of exceptions
-/*.h:                                      --external-copyright --no-convert-tabs --no-strip-trailing-blanks
+/*.h:                                      --external-copyright --no-convert-tabs --no-strip-trailing-blanks --no-fix-header-guards
 /include/cr_blitter.h:                     --no-external-copyright --convert-tabs --strip-trailing-blanks
 /include/cr_compositor.h:                  --no-external-copyright --convert-tabs --strip-trailing-blanks
 /include/cr_dump.h:                        --no-external-copyright --convert-tabs --strip-trailing-blanks
