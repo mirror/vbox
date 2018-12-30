@@ -30,6 +30,9 @@
 
 #ifndef ___iprt_formats_lx_h___
 #define ___iprt_formats_lx_h___
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <iprt/types.h>
 #include <iprt/assertcompile.h>

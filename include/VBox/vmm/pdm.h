@@ -25,6 +25,9 @@
 
 #ifndef ___VBox_vmm_pdm_h
 #define ___VBox_vmm_pdm_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <VBox/vmm/pdmapi.h>
 #include <VBox/vmm/pdmqueue.h>

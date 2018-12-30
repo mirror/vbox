@@ -35,6 +35,9 @@
 
 #ifndef ___VBox_com_VirtualBox_h
 #define ___VBox_com_VirtualBox_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /* For XPCOM/C++ enum hack checks. */
 #include <iprt/assertcompile.h>

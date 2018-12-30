@@ -25,6 +25,9 @@
 
 #ifndef ___iprt_asm_watcom_x86_16_h
 #define ___iprt_asm_watcom_x86_16_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #ifndef ___iprt_asm_h
 # error "Don't include this header directly."

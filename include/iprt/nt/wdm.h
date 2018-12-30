@@ -23,9 +23,11 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
-
 #ifndef ___iprt_nt_wdm_h___
 #define ___iprt_nt_wdm_h___
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /* Make sure we get the right prototypes. */
 #pragma warning(push)

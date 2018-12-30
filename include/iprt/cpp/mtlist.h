@@ -25,6 +25,9 @@
 
 #ifndef ___iprt_cpp_mtlist_h
 #define ___iprt_cpp_mtlist_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <iprt/cpp/list.h>
 #include <iprt/semaphore.h>

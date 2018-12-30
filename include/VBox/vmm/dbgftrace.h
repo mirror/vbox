@@ -25,6 +25,9 @@
 
 #ifndef ___VBox_vmm_dbgftrace_h
 #define ___VBox_vmm_dbgftrace_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <iprt/trace.h>
 #include <VBox/types.h>

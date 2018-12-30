@@ -23,9 +23,11 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
-
 #ifndef ___iprt_win_ntverp_h___
 #define ___iprt_win_ntverp_h___
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #pragma warning(push)
 #pragma warning(disable:4668) /*ntverp.h(126) : warning C4668: 'OFFICIAL_BUILD' is not defined as a preprocessor macro, replacing with '0' for '#if/#elif' */

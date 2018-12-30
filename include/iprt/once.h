@@ -25,6 +25,9 @@
 
 #ifndef ___iprt_once_h
 #define ___iprt_once_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <iprt/cdefs.h>
 #include <iprt/types.h>

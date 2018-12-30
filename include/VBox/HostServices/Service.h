@@ -25,6 +25,9 @@
 
 #ifndef ___VBox_HostService_Service_h
 #define ___VBox_HostService_Service_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <memory>  /* for auto_ptr */
 

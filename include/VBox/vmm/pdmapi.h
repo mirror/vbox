@@ -29,6 +29,9 @@
 
 #ifndef ___VBox_vmm_pdmapi_h
 #define ___VBox_vmm_pdmapi_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <VBox/vmm/pdmcommon.h>
 #ifdef IN_RING3

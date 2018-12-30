@@ -29,6 +29,9 @@
 
 #ifndef ___VBox_com_errorprint_h
 #define ___VBox_com_errorprint_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <VBox/com/ErrorInfo.h>
 

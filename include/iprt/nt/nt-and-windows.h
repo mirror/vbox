@@ -26,6 +26,9 @@
 
 #ifndef ___iprt_nt_nt_and_windows_h
 #define ___iprt_nt_nt_and_windows_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #define _PEB    IncompleteWindows__PEB
 #define PEB     IncompleteWindows_PEB

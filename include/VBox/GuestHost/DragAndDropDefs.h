@@ -25,6 +25,9 @@
 
 #ifndef ___VBox_DnDDefs_h
 #define ___VBox_DnDDefs_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <iprt/types.h>
 

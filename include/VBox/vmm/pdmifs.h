@@ -25,6 +25,9 @@
 
 #ifndef ___VBox_vmm_pdmifs_h
 #define ___VBox_vmm_pdmifs_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <iprt/sg.h>
 #include <VBox/types.h>

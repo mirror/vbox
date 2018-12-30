@@ -25,6 +25,9 @@
 
 #ifndef ___iprt_cpp_lock_h
 #define ___iprt_cpp_lock_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <iprt/critsect.h>
 #ifdef RT_LOCK_STRICT

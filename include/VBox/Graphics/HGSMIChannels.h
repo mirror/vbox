@@ -31,9 +31,11 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-
 #ifndef __HGSMIChannels_h__
 #define __HGSMIChannels_h__
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 
 /*

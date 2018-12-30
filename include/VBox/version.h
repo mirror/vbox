@@ -25,6 +25,9 @@
 
 #ifndef ___VBox_version_h
 #define ___VBox_version_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /* Product info. */
 #include <product-generated.h>

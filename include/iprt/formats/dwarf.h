@@ -27,6 +27,9 @@
 
 #ifndef ___iprt_format_dwarf_h
 #define ___iprt_format_dwarf_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 
 /** @name Standard DWARF Line Number Opcodes

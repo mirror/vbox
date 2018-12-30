@@ -25,6 +25,9 @@
 
 #ifndef ___iprt_crypto_key_h
 #define ___iprt_crypto_key_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <iprt/crypto/x509.h>
 #include <iprt/crypto/taf.h>

@@ -26,6 +26,9 @@
 
 #ifndef ___VBox_vmm_pdmpcidevint_h
 #define ___VBox_vmm_pdmpcidevint_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <VBox/vmm/pdmdev.h>
 

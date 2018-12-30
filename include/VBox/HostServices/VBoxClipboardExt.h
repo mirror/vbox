@@ -25,6 +25,9 @@
 
 #ifndef ___VBox_HostService_VBoxClipboardExt_h
 #define ___VBox_HostService_VBoxClipboardExt_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <VBox/types.h>
 

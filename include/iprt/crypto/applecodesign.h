@@ -23,9 +23,11 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
-
 #ifndef ___iprt_crypto_applecodesign_h
 #define ___iprt_crypto_applecodesign_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <iprt/types.h>
 #include <iprt/assertcompile.h>

@@ -25,6 +25,9 @@
 
 #ifndef ___iprt_tracelog_h
 #define ___iprt_tracelog_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <iprt/sg.h>
 #include <iprt/types.h>

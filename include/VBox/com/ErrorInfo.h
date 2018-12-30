@@ -25,6 +25,9 @@
 
 #ifndef ___VBox_com_ErrorInfo_h
 #define ___VBox_com_ErrorInfo_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include "VBox/com/ptr.h"
 #include "VBox/com/string.h"

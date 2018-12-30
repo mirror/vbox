@@ -25,6 +25,9 @@
 
 #ifndef ___VBox_HostService_GuestPropertyService_h
 #define ___VBox_HostService_GuestPropertyService_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <VBox/VMMDevCoreTypes.h>
 #include <VBox/VBoxGuestCoreTypes.h>

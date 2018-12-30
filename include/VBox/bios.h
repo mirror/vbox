@@ -27,6 +27,9 @@
 
 #ifndef ___VBox_bios_h
 #define ___VBox_bios_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /** The BIOS shutdown port.
  * You write "Shutdown" byte by byte to shutdown the VM.

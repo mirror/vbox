@@ -25,6 +25,9 @@
 
 #ifndef ___VBox_vmm_pdmstorageifs_h
 #define ___VBox_vmm_pdmstorageifs_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <iprt/sg.h>
 #include <VBox/types.h>

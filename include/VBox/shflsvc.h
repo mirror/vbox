@@ -29,6 +29,9 @@
 
 #ifndef ___VBox_shflsvc_h
 #define ___VBox_shflsvc_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #ifndef IN_MODULE
 # include <VBox/VMMDevCoreTypes.h>

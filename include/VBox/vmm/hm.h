@@ -25,6 +25,9 @@
 
 #ifndef ___VBox_vmm_hm_h
 #define ___VBox_vmm_hm_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <VBox/vmm/pgm.h>
 #include <VBox/vmm/cpum.h>

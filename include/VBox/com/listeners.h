@@ -26,6 +26,9 @@
 
 #ifndef ___VBox_com_listeners_h
 #define ___VBox_com_listeners_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <VBox/com/com.h>
 #include <VBox/com/VirtualBox.h>

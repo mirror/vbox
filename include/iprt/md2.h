@@ -25,6 +25,9 @@
 
 #ifndef ___iprt_md2_h
 #define ___iprt_md2_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <iprt/types.h>
 

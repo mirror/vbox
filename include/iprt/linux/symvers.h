@@ -29,6 +29,9 @@
 
 #ifndef ___iprt_linux_symvers_h
 #define ___iprt_linux_symvers_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /* Please use -fno-stack-protector on the command line to avoid stack check
  * functions which are not available in EL3 for 32-bit builds. */

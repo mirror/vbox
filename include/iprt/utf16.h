@@ -25,6 +25,9 @@
 
 #ifndef ___iprt_utf16_h
 #define ___iprt_utf16_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <iprt/string.h>
 

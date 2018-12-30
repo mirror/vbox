@@ -25,6 +25,9 @@
 
 #ifndef ___VBox_log_h
 #define ___VBox_log_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /*
  * Set the default loggroup.

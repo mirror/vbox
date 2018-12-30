@@ -23,9 +23,11 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
-
 #ifndef ___iprt_win_intsafe_h___
 #define ___iprt_win_intsafe_h___
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /* There's a conflict between the Visual C++ 2010 stdint.h and wDK 7.1 intsafe.h
    that we must to mediate here.  Current approach is to use the stuff from

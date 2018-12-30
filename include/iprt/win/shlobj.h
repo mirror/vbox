@@ -23,9 +23,11 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
-
 #ifndef ___iprt_win_shlobj_h___
 #define ___iprt_win_shlobj_h___
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #ifdef _MSC_VER
 # pragma warning(push)

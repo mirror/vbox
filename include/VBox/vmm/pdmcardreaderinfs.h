@@ -26,6 +26,9 @@
 
 #ifndef ___VBox_vmm_pdmcardreaderinfs_h
 #define ___VBox_vmm_pdmcardreaderinfs_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <VBox/types.h>
 

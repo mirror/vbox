@@ -25,6 +25,9 @@
 
 #ifndef ___VBox_vmm_pdmnvram_h_
 #define ___VBox_vmm_pdmnvram_h_
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <VBox/types.h>
 

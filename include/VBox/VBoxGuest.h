@@ -31,6 +31,9 @@
 
 #ifndef ___VBox_VBoxGuest_h
 #define ___VBox_VBoxGuest_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <VBox/types.h>
 #include <iprt/assertcompile.h>

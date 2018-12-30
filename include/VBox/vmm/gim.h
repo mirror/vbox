@@ -25,6 +25,9 @@
 
 #ifndef ___VBox_vmm_gim_h
 #define ___VBox_vmm_gim_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <VBox/cdefs.h>
 #include <VBox/types.h>

@@ -25,6 +25,9 @@
 
 #ifndef ___iprt_uni_h
 #define ___iprt_uni_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /** @defgroup grp_rt_uni    RTUniCp - Unicode Code Points
  * @ingroup grp_rt

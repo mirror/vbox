@@ -25,6 +25,9 @@
 
 #ifndef ___VBox_vmm_hmvmxinline_h
 #define ___VBox_vmm_hmvmxinline_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <VBox/vmm/hm_vmx.h>
 #include <VBox/err.h>

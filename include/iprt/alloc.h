@@ -25,6 +25,9 @@
 
 #ifndef ___iprt_alloc_h
 #define ___iprt_alloc_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /* Forwarding to the canonical header. */
 #include <iprt/mem.h>

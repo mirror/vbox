@@ -25,6 +25,9 @@
 
 #ifndef ___iprt_cpp_reststringmap_h
 #define ___iprt_cpp_reststringmap_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <iprt/list.h>
 #include <iprt/string.h>

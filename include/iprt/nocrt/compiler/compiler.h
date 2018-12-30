@@ -25,6 +25,9 @@
 
 #ifndef ___iprt_nocrt_compiler_compiler_h
 #define ___iprt_nocrt_compiler_compiler_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #ifdef __GNUC__
 # include <iprt/nocrt/compiler/gcc.h>

@@ -26,6 +26,9 @@
 
 #ifndef ___VBox_dbus_h
 #define ___VBox_dbus_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <iprt/types.h>
 #include <iprt/stdarg.h>

@@ -26,6 +26,9 @@
 
 #ifndef ___iprt_formats_elf_amd64_h
 #define ___iprt_formats_elf_amd64_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /*
  * ELF definitions for the AMD64 architecture.

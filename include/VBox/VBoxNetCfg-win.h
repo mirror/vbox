@@ -26,6 +26,9 @@
 
 #ifndef ___VBox_VBoxNetCfg_win_h
 #define ___VBox_VBoxNetCfg_win_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /*
  * Defining VBOXNETCFG_DELAYEDRENAME postpones renaming of host-only adapter

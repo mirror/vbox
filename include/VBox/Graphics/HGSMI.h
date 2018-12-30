@@ -28,9 +28,11 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-
 #ifndef ___VBox_Graphics_HGSMI_h
 #define ___VBox_Graphics_HGSMI_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include "VBoxVideoIPRT.h"
 

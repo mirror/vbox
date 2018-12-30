@@ -27,6 +27,9 @@
 
 #ifndef ___VBox_apic_h
 #define ___VBox_apic_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <iprt/types.h>
 

@@ -29,6 +29,9 @@
 
 #ifndef ___VBox_VBoxGuestLib_h
 #define ___VBox_VBoxGuestLib_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <VBox/types.h>
 #include <VBox/VMMDev.h>

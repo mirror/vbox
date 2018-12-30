@@ -25,6 +25,9 @@
 
 #ifndef ___VBox_hgcm_h
 #define ___VBox_hgcm_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <iprt/assert.h>
 #include <iprt/stdarg.h>

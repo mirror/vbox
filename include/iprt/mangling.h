@@ -32,6 +32,9 @@
 
 #ifndef ___iprt_mangling_h
 #define ___iprt_mangling_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #ifndef RT_MANGLER
 # error "RT_MANGLER is not defined."

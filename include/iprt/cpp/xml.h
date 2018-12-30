@@ -25,6 +25,9 @@
 
 #ifndef ___iprt_xml_h
 #define ___iprt_xml_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #ifndef IN_RING3
 # error "There are no XML APIs available in Ring-0 Context!"

@@ -26,6 +26,9 @@
 
 #ifndef ___VBox_com_string_h
 #define ___VBox_com_string_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /* Make sure all the stdint.h macros are included - must come first! */
 #ifndef __STDC_LIMIT_MACROS

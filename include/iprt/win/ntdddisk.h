@@ -23,9 +23,11 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
-
 #ifndef ___iprt_win_ntdddisk_h___
 #define ___iprt_win_ntdddisk_h___
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #pragma warning(push)
 #pragma warning(disable:4668) /* ntdddisk.h(137) : warning C4668: 'NTDDI_WIN2003' is not defined as a preprocessor macro, replacing with '0' for '#if/#elif' */

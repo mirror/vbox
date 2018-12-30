@@ -25,6 +25,9 @@
 
 #ifndef ___VBox_vmm_pdmins_h
 #define ___VBox_vmm_pdmins_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 
 /** @defgroup grp_pdm_ins       Common PDM Instance Macros

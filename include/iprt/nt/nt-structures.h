@@ -26,6 +26,9 @@
 
 #ifndef ___iprt_nt_nt_structures_h___
 #define ___iprt_nt_nt_structures_h___
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 
 #include <iprt/types.h>

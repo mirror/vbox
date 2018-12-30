@@ -62,6 +62,9 @@
 
 #ifndef ___VBox_HostService_DragAndDropSvc_h
 #define ___VBox_HostService_DragAndDropSvc_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <VBox/hgcmsvc.h>
 #include <VBox/VMMDevCoreTypes.h>

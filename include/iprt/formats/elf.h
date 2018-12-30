@@ -24,9 +24,11 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
-
 #ifndef ___iprt_formats_elf_h
 #define ___iprt_formats_elf_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #if defined(RT_ARCH_AMD64)
 # include "elf64.h"

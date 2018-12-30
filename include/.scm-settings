@@ -61,3 +61,14 @@
 /VBox/HostServices/glxext.h:            --external-copyright --no-convert-tabs --no-strip-trailing-blanks
 /VBox/HostServices/wglext.h:            --external-copyright --no-convert-tabs --no-strip-trailing-blanks
 
+# Some headers actually shouldn't have include guards:
+/VBox/dbus-calls.h:                     --no-fix-header-guards
+/VBox/VDEPlugSymDefs.h:                 --no-fix-header-guards
+/iprt/asn1-generator-core.h:            --no-fix-header-guards
+/iprt/asn1-generator-sanity.h:          --no-fix-header-guards
+/iprt/asn1-generator-internal-header.h: --no-fix-header-guards
+/iprt/asn1-generator-asn1-decoder.h:    --no-fix-header-guards
+/iprt/asn1-generator-init.h:            --no-fix-header-guards
+/iprt/runtime-loader.h:                 --no-fix-header-guards
+/iprt/bldprog-strtab-template.cpp.h:    --no-fix-header-guards
+

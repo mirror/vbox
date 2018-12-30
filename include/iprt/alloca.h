@@ -25,6 +25,9 @@
 
 #ifndef ___iprt_alloca_h
 #define ___iprt_alloca_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #if defined(IN_RC) || defined(IN_RING0_AGNOSTIC)
 # error "No alloca() in raw-mode and agnostic ring-0 context as it may have external dependencies like libgcc."

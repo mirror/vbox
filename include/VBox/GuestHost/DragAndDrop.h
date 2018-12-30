@@ -26,6 +26,9 @@
 
 #ifndef ___VBox_GuestHost_DragAndDrop_h
 #define ___VBox_GuestHost_DragAndDrop_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <iprt/assert.h>
 #include <iprt/fs.h>

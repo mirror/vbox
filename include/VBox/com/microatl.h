@@ -25,6 +25,9 @@
 
 #ifndef ___VBox_com_microatl_h
 #define ___VBox_com_microatl_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <VBox/cdefs.h>   /* VBOX_STRICT */
 #include <iprt/assert.h>

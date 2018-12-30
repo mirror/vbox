@@ -25,6 +25,9 @@
 
 #ifndef ___VBox_vd_ifs_internal_h
 #define ___VBox_vd_ifs_internal_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <iprt/sg.h>
 #include <VBox/vd-ifs.h>

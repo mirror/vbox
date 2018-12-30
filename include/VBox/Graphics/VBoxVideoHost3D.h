@@ -26,6 +26,9 @@
 
 #ifndef ___VBox_Graphics_VBoxVideoHost3D_h
 #define ___VBox_Graphics_VBoxVideoHost3D_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <iprt/cdefs.h>
 #include "VBoxVideo.h"

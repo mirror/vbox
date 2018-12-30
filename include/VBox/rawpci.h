@@ -25,6 +25,9 @@
 
 #ifndef ___VBox_rawpci_h
 #define ___VBox_rawpci_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <VBox/types.h>
 #include <VBox/sup.h>

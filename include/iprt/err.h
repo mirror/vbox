@@ -25,6 +25,9 @@
 
 #ifndef ___iprt_err_h
 #define ___iprt_err_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <iprt/errcore.h>
 

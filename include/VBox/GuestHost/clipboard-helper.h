@@ -26,6 +26,9 @@
 
 #ifndef ___VBox_GuestHost_clipboard_helper_h
 #define ___VBox_GuestHost_clipboard_helper_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <iprt/string.h>
 

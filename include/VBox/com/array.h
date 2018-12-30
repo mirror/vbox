@@ -25,6 +25,9 @@
 
 #ifndef ___VBox_com_array_h
 #define ___VBox_com_array_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 
 /** @defgroup   grp_com_arrays    COM/XPCOM Arrays

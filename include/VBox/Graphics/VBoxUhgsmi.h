@@ -26,6 +26,9 @@
 
 #ifndef ___VBox_VBoxUhgsmi_h
 #define ___VBox_VBoxUhgsmi_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <iprt/cdefs.h>
 #include <iprt/types.h>

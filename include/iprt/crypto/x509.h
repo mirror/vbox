@@ -25,6 +25,9 @@
 
 #ifndef ___iprt_crypto_x509_h
 #define ___iprt_crypto_x509_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <iprt/asn1.h>
 #include <iprt/crypto/pem.h>

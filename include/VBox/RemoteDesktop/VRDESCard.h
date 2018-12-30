@@ -25,6 +25,9 @@
 
 #ifndef ___VBox_RemoteDesktop_VRDESCard_h
 #define ___VBox_RemoteDesktop_VRDESCard_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <VBox/RemoteDesktop/VRDE.h>
 

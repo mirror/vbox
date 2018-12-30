@@ -25,6 +25,9 @@
 
 #ifndef ___iprt_cpp_restanyobject_h
 #define ___iprt_cpp_restanyobject_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <iprt/cpp/restbase.h>
 #include <iprt/cpp/restarray.h>

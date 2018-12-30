@@ -26,6 +26,9 @@
 
 #ifndef ___iprt_formats_elf_i386_h
 #define ___iprt_formats_elf_i386_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #if 0  /* later */
 

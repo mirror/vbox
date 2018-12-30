@@ -25,6 +25,9 @@
 
 #ifndef ___VBox_vmm_cpum_h
 #define ___VBox_vmm_cpum_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <iprt/x86.h>
 #include <VBox/types.h>

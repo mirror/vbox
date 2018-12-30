@@ -41,6 +41,9 @@
 
 #ifndef ___iprt_nocrt_math_h
 #define ___iprt_nocrt_math_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #if !defined(__GNUC__) /* && !defined(__YOUR_COMPILER__) */
 # error "IPRT: Adjust this header for your compiler"

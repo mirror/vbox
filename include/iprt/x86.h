@@ -27,6 +27,9 @@
 
 #ifndef ___iprt_x86_h
 #define ___iprt_x86_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #ifndef VBOX_FOR_DTRACE_LIB
 # include <iprt/types.h>

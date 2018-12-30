@@ -25,6 +25,9 @@
 
 #ifndef __vd_common_h__
 #define __vd_common_h__
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <VBox/types.h>
 

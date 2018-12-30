@@ -25,6 +25,9 @@
 
 #ifndef ___VBox_RemoteDesktop_VRDEVideoIn_h
 #define ___VBox_RemoteDesktop_VRDEVideoIn_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 
 /* Define VRDE_VIDEOIN_WITH_VRDEINTERFACE to include the server VRDE interface parts. */

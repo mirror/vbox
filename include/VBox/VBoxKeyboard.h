@@ -29,6 +29,9 @@
 
 #ifndef ___VBox_VBoxKeyboard_h
 #define ___VBox_VBoxKeyboard_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <X11/Xlib.h>
 

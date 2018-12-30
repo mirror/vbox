@@ -30,6 +30,9 @@
 
 #ifndef ___VBox_Graphics_VBoxVideoVBE_h
 #define ___VBox_Graphics_VBoxVideoVBE_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /* GUEST <-> HOST Communication API */
 

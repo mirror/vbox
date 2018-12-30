@@ -66,6 +66,9 @@
 
 #ifndef ___iprt_vector_h
 #define ___iprt_vector_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /*******************************************************************************
 *   Header Files                                                               *

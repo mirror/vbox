@@ -25,6 +25,9 @@
 
 #ifndef ___iprt_queueatomic_h
 #define ___iprt_queueatomic_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <iprt/types.h>
 #include <iprt/asm.h>

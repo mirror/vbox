@@ -26,6 +26,9 @@
 
 #ifndef ___VBox_vboxpktdmp_h
 #define ___VBox_vboxpktdmp_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <iprt/net.h>
 #include <iprt/log.h>

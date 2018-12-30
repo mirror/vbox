@@ -28,9 +28,11 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-
 #ifndef ___VBox_Graphics_HGSMIContext_h___
 #define ___VBox_Graphics_HGSMIContext_h___
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include "HGSMI.h"
 #include "HGSMIChSetup.h"

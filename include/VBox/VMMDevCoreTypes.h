@@ -32,6 +32,9 @@
 
 #ifndef ___VBox_VMMDevCoreTypes_h
 #define ___VBox_VMMDevCoreTypes_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <iprt/assertcompile.h>
 #include <iprt/types.h>

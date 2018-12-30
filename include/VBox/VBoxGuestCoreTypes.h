@@ -31,9 +31,11 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-
 #ifndef ___VBoxGuestCoreTypes_h
 #define ___VBoxGuestCoreTypes_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <iprt/types.h>
 #include <iprt/assertcompile.h>

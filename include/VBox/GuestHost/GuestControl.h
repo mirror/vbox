@@ -28,6 +28,9 @@
 
 #ifndef ___VBox_GuestHost_GuestControl_h
 #define ___VBox_GuestHost_GuestControl_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <iprt/types.h>
 

@@ -25,6 +25,9 @@
 
 #ifndef ___iprt_cdrom_h
 #define ___iprt_cdrom_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <iprt/types.h>
 

@@ -26,6 +26,9 @@
 
 #ifndef ___VBox_com_EventQueue_h
 #define ___VBox_com_EventQueue_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <list>
 

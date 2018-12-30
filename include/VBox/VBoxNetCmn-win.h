@@ -26,6 +26,9 @@
 
 #ifndef ___VBox_VBoxNetCmn_win_h
 #define ___VBox_VBoxNetCmn_win_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <iprt/log.h> /* for LOG_ENABLED */
 

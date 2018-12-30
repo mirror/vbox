@@ -25,6 +25,9 @@
 
 #ifndef ___iprt_cpp_exception_h
 #define ___iprt_cpp_exception_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <iprt/cpp/ministring.h>
 #include <exception>

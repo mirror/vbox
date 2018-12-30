@@ -25,6 +25,9 @@
 
 #ifndef ___VBox_vmm_patm_h
 #define ___VBox_vmm_patm_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <VBox/types.h>
 #include <VBox/dis.h>

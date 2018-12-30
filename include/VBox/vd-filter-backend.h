@@ -25,6 +25,9 @@
 
 #ifndef ___VBox_vd_filter_backend_h
 #define ___VBox_vd_filter_backend_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <VBox/vd.h>
 #include <VBox/vd-common.h>

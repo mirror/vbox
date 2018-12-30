@@ -26,6 +26,9 @@
 
 #ifndef ___VBox_ata_h
 #define ___VBox_ata_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 
 /* Bits of HD_STATUS */

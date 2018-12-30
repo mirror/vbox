@@ -29,6 +29,9 @@
 
 #ifndef ___iprt_nocrt_compiler_gcc_h
 #define ___iprt_nocrt_compiler_gcc_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 
 /* stddef.h */

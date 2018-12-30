@@ -25,6 +25,9 @@
 
 #ifndef ___iprt_cdefs_h
 #define ___iprt_cdefs_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 
 /** @defgroup grp_rt_cdefs  IPRT Common Definitions and Macros

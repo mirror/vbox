@@ -25,6 +25,9 @@
 
 #ifndef ___VBox_vmm_vmcpuset_h
 #define ___VBox_vmm_vmcpuset_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <VBox/types.h>
 #include <iprt/asm.h>

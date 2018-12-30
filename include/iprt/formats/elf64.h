@@ -26,6 +26,9 @@
 
 #ifndef ___iprt_formats_elf64_h
 #define ___iprt_formats_elf64_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <iprt/assertcompile.h>
 #include "elf-common.h"

@@ -25,6 +25,9 @@
 
 #ifndef ___iprt_nocrt_fenv_h
 #define ___iprt_nocrt_fenv_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <iprt/cdefs.h>
 #ifdef RT_ARCH_AMD64

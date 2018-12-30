@@ -26,6 +26,9 @@
 
 #ifndef ___iprt_nt_nt_h___
 #define ___iprt_nt_nt_h___
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /** @def IPRT_NT_MAP_TO_ZW
  * Map Nt calls to Zw calls.  In ring-0 the Zw calls let you pass kernel memory

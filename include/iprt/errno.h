@@ -23,9 +23,11 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
-
 #ifndef ___iprt_errno_h___
 #define ___iprt_errno_h___
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #ifndef IPRT_NO_CRT
 # if defined(RT_OS_DARWIN) && defined(KERNEL)

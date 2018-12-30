@@ -26,6 +26,9 @@
 
 #ifndef ___VBox_BiosLogo_h
 #define ___VBox_BiosLogo_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #ifndef VBOX_PC_BIOS
 # include <iprt/types.h>

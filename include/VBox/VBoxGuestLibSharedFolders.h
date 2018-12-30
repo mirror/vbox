@@ -30,6 +30,9 @@
 
 #ifndef ___VBox_VBoxGuestLibSharedFolders_h_
 #define ___VBox_VBoxGuestLibSharedFolders_h_
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <VBox/VBoxGuestLib.h>
 #include <VBox/shflsvc.h>

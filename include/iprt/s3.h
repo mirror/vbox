@@ -26,6 +26,9 @@
 
 #ifndef ___iprt_s3_h
 #define ___iprt_s3_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <iprt/types.h>
 

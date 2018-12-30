@@ -24,9 +24,11 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
-
 #ifndef ___VBox_Graphics_HGSMIHostCmd_h___
 #define ___VBox_Graphics_HGSMIHostCmd_h___
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include "HGSMI.h"
 #include "HGSMIContext.h"

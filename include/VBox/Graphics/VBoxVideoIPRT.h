@@ -26,6 +26,9 @@
 
 #ifndef ___VBox_Graphics_VBoxVideoIPRT_h
 #define ___VBox_Graphics_VBoxVideoIPRT_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #ifndef RT_OS_OS2
 # include <iprt/asm.h>

@@ -25,6 +25,9 @@
 
 #ifndef ___iprt_latin1_h
 #define ___iprt_latin1_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <iprt/assert.h>
 #include <iprt/errcore.h> /* VERR_END_OF_STRING */

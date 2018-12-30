@@ -23,9 +23,11 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
-
 #ifndef ___iprt_asn1_generator_pass_h
 #define ___iprt_asn1_generator_pass_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <iprt/formats/asn1.h>
 #include <iprt/err.h>

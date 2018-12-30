@@ -25,6 +25,9 @@
 
 #ifndef ___VBox_VBoxCocoa_h
 #define ___VBox_VBoxCocoa_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /** Macro which add a typedef of the given Cocoa class in an appropriate form
  * for the current context. This means void* in the C/CPP context and

@@ -25,6 +25,9 @@
 
 #ifndef ___VBox_AssertGuest_h
 #define ___VBox_AssertGuest_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <VBox/cdefs.h>
 #include <iprt/assert.h>

@@ -29,6 +29,9 @@
 
 #ifndef ___VBox_Graphics_VBoxVideoVBEPrivate_h
 #define ___VBox_Graphics_VBoxVideoVBEPrivate_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #ifdef VBE
 # include <stdint.h>

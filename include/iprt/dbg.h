@@ -26,6 +26,9 @@
 
 #ifndef ___iprt_dbg_h
 #define ___iprt_dbg_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <iprt/types.h>
 #include <iprt/stdarg.h>

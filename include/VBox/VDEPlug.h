@@ -25,6 +25,9 @@
 
 #ifndef ___VBox_VDEPlug_h
 #define ___VBox_VDEPlug_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #define LIBVDEPLUG_INTERFACE_VERSION 1
 

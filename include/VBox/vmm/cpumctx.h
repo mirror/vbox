@@ -25,6 +25,9 @@
 
 #ifndef ___VBox_vmm_cpumctx_h
 #define ___VBox_vmm_cpumctx_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #ifndef VBOX_FOR_DTRACE_LIB
 # include <iprt/x86.h>

@@ -25,6 +25,9 @@
 
 #ifndef ___iprt_mem_h
 #define ___iprt_mem_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 
 #include <iprt/cdefs.h>

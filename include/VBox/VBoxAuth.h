@@ -25,6 +25,9 @@
 
 #ifndef ___VBox_vboxauth_h
 #define ___VBox_vboxauth_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /** @defgroup grp_vboxauth VirtualBox External Authentication Library Interface
  * @{

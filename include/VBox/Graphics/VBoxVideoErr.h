@@ -31,6 +31,9 @@
 
 #ifndef __VBOX_ERR_H__
 #define __VBOX_ERR_H__
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /** @name VirtualBox error macros
  * @{ */

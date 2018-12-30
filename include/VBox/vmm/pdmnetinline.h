@@ -28,6 +28,9 @@
 
 #ifndef ___VBox_vmm_pdmnetinline_h_
 #define ___VBox_vmm_pdmnetinline_h_
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 
 /*******************************************************************************

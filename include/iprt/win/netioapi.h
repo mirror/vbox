@@ -23,9 +23,11 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
-
 #ifndef ___iprt_win_netioapi_h___
 #define ___iprt_win_netioapi_h___
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <iprt/win/ntddndis.h> /* this one has problems with -Wall */
 #include <netioapi.h>

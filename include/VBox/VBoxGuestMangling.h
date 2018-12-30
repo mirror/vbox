@@ -28,6 +28,9 @@
 
 #ifndef ___VBox_VBoxGuestMangling_h
 #define ___VBox_VBoxGuestMangling_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #define RT_MANGLER(symbol)   VBoxGuest_##symbol
 #include <iprt/mangling.h>

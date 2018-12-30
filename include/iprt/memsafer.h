@@ -25,6 +25,9 @@
 
 #ifndef ___iprt_memsafer_h
 #define ___iprt_memsafer_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <iprt/mem.h> /* RTMEM_TAG */
 

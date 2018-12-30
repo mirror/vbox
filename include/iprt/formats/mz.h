@@ -26,6 +26,9 @@
 
 #ifndef ___iprt_formats_mz_h
 #define ___iprt_formats_mz_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <iprt/types.h>
 #include <iprt/assertcompile.h>

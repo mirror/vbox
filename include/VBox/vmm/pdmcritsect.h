@@ -25,6 +25,9 @@
 
 #ifndef ___VBox_vmm_pdmcritsect_h
 #define ___VBox_vmm_pdmcritsect_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <VBox/types.h>
 #include <iprt/critsect.h>

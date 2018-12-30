@@ -27,6 +27,9 @@
 
 #ifndef ___VBox_vmm_pdmsrv_h
 #define ___VBox_vmm_pdmsrv_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <VBox/vmm/pdmifs.h>
 #include <VBox/vmm/ssm.h>

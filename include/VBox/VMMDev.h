@@ -29,6 +29,9 @@
 
 #ifndef ___VBox_VMMDev_h
 #define ___VBox_VMMDev_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <VBox/cdefs.h>
 #include <VBox/param.h>                 /* for the PCI IDs. */
