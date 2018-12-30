@@ -17,6 +17,9 @@
 
 #ifndef VBOX_INCLUDED_Network_DevEEPROM_h
 #define VBOX_INCLUDED_Network_DevEEPROM_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <iprt/types.h>
 

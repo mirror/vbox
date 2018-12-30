@@ -17,6 +17,9 @@
 
 #ifndef AUDIO_PULSE_STUBS_H
 #define AUDIO_PULSE_STUBS_H
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 extern int audioLoadPulseLib(void);
 #endif
 

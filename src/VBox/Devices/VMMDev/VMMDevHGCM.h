@@ -17,6 +17,9 @@
 
 #ifndef ___VMMDev_VMMDevHGCM_h
 #define ___VMMDev_VMMDevHGCM_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include "VMMDevState.h"
 

@@ -17,6 +17,9 @@
 
 #ifndef VBOX_INCLUDED_BIOS_vds_h
 #define VBOX_INCLUDED_BIOS_vds_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /* Virtual DMA Services (VDS) */
 

@@ -19,6 +19,9 @@
 
 #ifndef ___build_VBoxDD2_h
 #define ___build_VBoxDD2_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <VBox/vmm/pdm.h>
 

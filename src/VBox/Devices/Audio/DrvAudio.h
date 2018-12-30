@@ -17,6 +17,9 @@
 
 #ifndef DRV_AUDIO_H
 #define DRV_AUDIO_H
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <limits.h>
 

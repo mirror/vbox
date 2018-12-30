@@ -1,5 +1,9 @@
+
 #ifndef vbe_h_included
 #define vbe_h_included
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include "vgabios.h"
 

@@ -54,6 +54,9 @@
 
 #ifndef VBOX_INCLUDED_BIOS_biosint_h
 #define VBOX_INCLUDED_BIOS_biosint_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /* Compile-time assertion macro. */
 #define ct_assert(a)    extern int ct_ass_arr[!!(a) == 1];

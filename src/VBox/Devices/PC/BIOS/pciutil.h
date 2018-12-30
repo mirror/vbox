@@ -17,6 +17,9 @@
 
 #ifndef VBOX_INCLUDED_BIOS_pciutils_h
 #define VBOX_INCLUDED_BIOS_pciutils_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 extern  uint16_t    pci_find_device(uint16_t v_id, uint16_t d_id);
 /* Warning: pci_find_classcode destroys the high bits of ECX. */

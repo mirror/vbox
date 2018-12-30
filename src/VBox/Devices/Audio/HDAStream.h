@@ -17,6 +17,9 @@
 
 #ifndef HDA_STREAM_H
 #define HDA_STREAM_H
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include "DevHDACommon.h"
 

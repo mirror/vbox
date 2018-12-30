@@ -17,6 +17,9 @@
 
 #ifndef DEV_HDA_COMMON_H
 #define DEV_HDA_COMMON_H
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include "AudioMixer.h"
 #include <VBox/log.h> /* LOG_ENABLED */

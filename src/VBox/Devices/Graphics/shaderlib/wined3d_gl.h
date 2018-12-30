@@ -54,6 +54,9 @@
 
 #ifndef __WINE_WINED3D_GL_H
 #define __WINE_WINED3D_GL_H
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #ifdef USE_WIN32_OPENGL
 #define WINE_GLAPI __stdcall

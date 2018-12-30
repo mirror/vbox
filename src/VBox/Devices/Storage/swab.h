@@ -28,6 +28,9 @@
 
 #ifndef _VBOX_LINUX_SWAB_H
 #define _VBOX_LINUX_SWAB_H
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #define _LINUX_BYTEORDER_SWAB_H
 #define _LINUX_BYTEORDER_SWABB_H

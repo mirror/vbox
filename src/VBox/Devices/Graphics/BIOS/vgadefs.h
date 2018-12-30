@@ -1,5 +1,9 @@
+
 #ifndef VBOX_INCLUDED_Graphics_vgadefs_h
 #define VBOX_INCLUDED_Graphics_vgadefs_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /*
  *

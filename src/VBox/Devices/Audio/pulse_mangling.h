@@ -19,6 +19,9 @@
 
 #ifndef AUDIO_PULSE_MANGLING_H
 #define AUDIO_PULSE_MANGLING_H
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #define PULSE_MANGLER(symbol) VBox_##symbol
 

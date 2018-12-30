@@ -37,6 +37,9 @@
 
 #ifndef __SVGA3D_SHADER_DEFS__
 #define __SVGA3D_SHADER_DEFS__
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /* SVGA3D shader hardware limits. */
 

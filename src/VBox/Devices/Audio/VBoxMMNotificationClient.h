@@ -18,6 +18,9 @@
 
 #ifndef ___VBOX_MMNOTIFICATIONCLIENT_H___
 #define ___VBOX_MMNOTIFICATIONCLIENT_H___
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <iprt/critsect.h>
 #include <iprt/win/windows.h>

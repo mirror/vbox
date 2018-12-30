@@ -17,6 +17,9 @@
 
 #ifndef ___Bus_DevPciInternal_h___
 #define ___Bus_DevPciInternal_h___
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #ifndef PDMPCIDEV_INCLUDE_PRIVATE
 # define PDMPCIDEV_INCLUDE_PRIVATE /* Hack to get pdmpcidevint.h included at the right point. */

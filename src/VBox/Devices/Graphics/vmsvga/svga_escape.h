@@ -31,6 +31,9 @@
 
 #ifndef _SVGA_ESCAPE_H_
 #define _SVGA_ESCAPE_H_
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 
 /*

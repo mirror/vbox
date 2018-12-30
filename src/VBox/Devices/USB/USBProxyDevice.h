@@ -17,6 +17,9 @@
 
 #ifndef ___USBProxyDevice_h
 #define ___USBProxyDevice_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <VBox/cdefs.h>
 #include <VBox/vusb.h>

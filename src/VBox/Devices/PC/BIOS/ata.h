@@ -54,6 +54,9 @@
 
 #ifndef VBOX_INCLUDED_PC_BIOS_ata_h
 #define VBOX_INCLUDED_PC_BIOS_ata_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #define ATA_DATA_NO      0x00
 #define ATA_DATA_IN      0x01

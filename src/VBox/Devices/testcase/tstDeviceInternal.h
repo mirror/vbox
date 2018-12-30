@@ -16,6 +16,9 @@
 
 #ifndef ___tstDeviceInternal_h
 #define ___tstDeviceInternal_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <VBox/types.h>
 #include <iprt/assert.h>

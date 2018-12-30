@@ -17,6 +17,9 @@
 
 #ifndef ___SHGSMIHost_h___
 #define ___SHGSMIHost_h___
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include "HGSMIHost.h"
 

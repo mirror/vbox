@@ -16,6 +16,9 @@
 
 #ifndef ___tstDevicePlugin_h
 #define ___tstDevicePlugin_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <VBox/types.h>
 

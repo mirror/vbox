@@ -17,6 +17,9 @@
 
 #ifndef ___DEVVMWARE3D_H___
 #define ___DEVVMWARE3D_H___
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include "vmsvga/svga3d_reg.h"
 #include "vmsvga/svga_escape.h"

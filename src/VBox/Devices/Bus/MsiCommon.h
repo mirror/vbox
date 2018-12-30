@@ -17,6 +17,9 @@
 
 #ifndef ___MSI_COMMON_H___
 #define ___MSI_COMMON_H___
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 typedef CTX_SUFF(PCPDMPCIHLP) PCPDMPCIHLP;
 

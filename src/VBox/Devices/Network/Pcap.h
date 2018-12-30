@@ -17,6 +17,9 @@
 
 #ifndef ___VBox_Pcap_h
 #define ___VBox_Pcap_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <iprt/stream.h>
 #include <VBox/types.h>

@@ -17,6 +17,9 @@
 
 #ifndef ___VMMDev_VMMDevState_h
 #define ___VMMDev_VMMDevState_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <VBoxVideo.h>  /* For VBVA definitions. */
 #include <VBox/VMMDev.h>

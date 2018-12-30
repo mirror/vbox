@@ -17,6 +17,9 @@
 
 #ifndef HDA_STREAMPERIOD_H
 #define HDA_STREAMPERIOD_H
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <iprt/critsect.h>
 #ifdef DEBUG

@@ -6,6 +6,9 @@
 
 #ifndef VBOX_INCLUDED_Graphics_vgafonts_h
 #define VBOX_INCLUDED_Graphics_vgafonts_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 static uint8_t vgafont8[256*8]=
 {

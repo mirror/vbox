@@ -17,6 +17,9 @@
 
 #ifndef __HostDrvBase_h__
 #define __HostDrvBase_h__
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <iprt/assert.h>
 #include <iprt/err.h>

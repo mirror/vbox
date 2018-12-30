@@ -17,6 +17,9 @@
 
 #ifndef ___DevVGA_SVGA3d_internal_h
 #define ___DevVGA_SVGA3d_internal_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /*
  * Assert sane compilation environment.

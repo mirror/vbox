@@ -17,6 +17,9 @@
 
 #ifndef DEV_PCBIOS_H
 #define DEV_PCBIOS_H
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /** @def VBOX_DMI_TABLE_BASE */
 #define VBOX_DMI_TABLE_BASE         0xe1000

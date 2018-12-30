@@ -32,6 +32,9 @@
 
 #ifndef _VMMOUSE_DEFS_H_
 #define _VMMOUSE_DEFS_H_
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /*
  * Command related defines

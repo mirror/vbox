@@ -17,6 +17,9 @@
 
 #ifndef ___VBoxWineEx_h__
 #define ___VBoxWineEx_h__
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 typedef enum
 {

@@ -64,6 +64,9 @@
 
 #ifndef ___Storage_VBoxSCSI_h
 #define ___Storage_VBoxSCSI_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /*******************************************************************************
 *   Header Files                                                               *

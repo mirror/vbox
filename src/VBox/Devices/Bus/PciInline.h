@@ -17,6 +17,9 @@
 
 #ifndef ___Bus_PciInline_h
 #define ___Bus_PciInline_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 DECLINLINE(void) pciDevSetPci2PciBridge(PPDMPCIDEV pDev)
 {

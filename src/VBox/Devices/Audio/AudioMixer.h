@@ -20,6 +20,9 @@
 
 #ifndef AUDIO_MIXER_H
 #define AUDIO_MIXER_H
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <iprt/cdefs.h>
 #include <iprt/critsect.h>

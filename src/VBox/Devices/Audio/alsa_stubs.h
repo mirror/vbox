@@ -16,7 +16,10 @@
  */
 
 #ifndef AUDIO_ALSA_STUBS_H
-# define AUDIO_ALSA_STUBS_H
+#define AUDIO_ALSA_STUBS_H
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 extern int audioLoadAlsaLib(void);
 #endif
 

@@ -17,6 +17,9 @@
 
 #ifndef ___VBox_Virtio_h
 #define ___VBox_Virtio_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <iprt/ctype.h>
 

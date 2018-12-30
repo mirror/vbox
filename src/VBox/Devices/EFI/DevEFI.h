@@ -30,6 +30,9 @@
 
 #ifndef ___EFI_VBoxEFI_h
 #define ___EFI_VBoxEFI_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /** @defgroup grp_devefi    DevEFI <-> Firmware Interfaces
  * @{

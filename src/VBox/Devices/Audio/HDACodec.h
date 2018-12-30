@@ -17,6 +17,9 @@
 
 #ifndef DEV_HDA_CODEC_H
 #define DEV_HDA_CODEC_H
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <iprt/list.h>
 

@@ -17,6 +17,9 @@
 
 #ifndef __DevVGA_SVGA3d_cocoa_h
 #define __DevVGA_SVGA3d_cocoa_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <VBox/types.h>
 #include <VBox/VBoxCocoa.h>

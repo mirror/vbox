@@ -19,6 +19,9 @@
 
 #ifndef AUDIO_ALSA_MANGLING_H
 #define AUDIO_ALSA_MANGLING_H
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #define ALSA_MANGLER(symbol) VBox_##symbol
 

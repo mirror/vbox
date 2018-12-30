@@ -1,5 +1,9 @@
+
 #ifndef vgabios_h_included
 #define vgabios_h_included
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /* Types */
 //typedef unsigned char  Bit8u;

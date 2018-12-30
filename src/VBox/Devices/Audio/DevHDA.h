@@ -17,6 +17,9 @@
 
 #ifndef DEV_HDA_H
 #define DEV_HDA_H
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <iprt/path.h>
 

@@ -1,5 +1,9 @@
+
 #ifndef VBOX_INCLUDED_Graphics_vgatables_h
 #define VBOX_INCLUDED_Graphics_vgatables_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /* Video memory */
 #define VGAMEM_GRAPH 0xA000

@@ -16,6 +16,9 @@
 
 #ifndef ___DevVGA_SVGA_h___
 #define ___DevVGA_SVGA_h___
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #ifndef VBOX_WITH_VMSVGA
 # error "VBOX_WITH_VMSVGA is not defined"

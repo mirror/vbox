@@ -17,6 +17,9 @@
 
 #ifndef PS2DEV_H
 #define PS2DEV_H
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /** The size of the PS2K/PS2M structure fillers.
  * @note Must be at least as big as the real struct. Compile time assert

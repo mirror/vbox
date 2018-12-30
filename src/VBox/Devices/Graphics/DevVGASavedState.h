@@ -18,9 +18,11 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-
 #ifndef ___Graphics_DevVGASavedState_h
 #define ___Graphics_DevVGASavedState_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /** Creates an eyecatching marker in the VGA saved state ("<uSub>Marker\n"). */
 #define VGA_SAVED_STATE_MAKE_MARKER(uSub) (UINT64_C(0x0a72656b72614d30) + (uint64_t)(uSub))

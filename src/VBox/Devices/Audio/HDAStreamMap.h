@@ -17,6 +17,9 @@
 
 #ifndef HDA_STREAMMAP_H
 #define HDA_STREAMMAP_H
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /**
  * Structure for keeping an audio stream data mapping.

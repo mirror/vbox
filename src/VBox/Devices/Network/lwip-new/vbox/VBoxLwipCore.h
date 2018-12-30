@@ -15,8 +15,12 @@
  * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
+
 #ifndef __VBOXLWIPCORE_H__
 #define __VBOXLWIPCORE_H__
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 
 typedef DECLCALLBACKPTR(void, PFNRT1)(void *);

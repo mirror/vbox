@@ -17,6 +17,9 @@
 
 #ifndef ___VBoxDbgGl_h__
 #define ___VBoxDbgGl_h__
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 //#include <windows.h>
 //#include "../wined3d/wined3d_gl.h"

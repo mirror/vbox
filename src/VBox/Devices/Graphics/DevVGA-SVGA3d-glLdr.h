@@ -17,6 +17,9 @@
 
 #ifndef ___DevVGA_SVGA3d_gl_h
 #define ___DevVGA_SVGA3d_gl_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #ifndef VMSVGA3D_OPENGL
 # error "This include file is for VMSVGA3D_OPENGL."

@@ -54,6 +54,9 @@
 
 #ifndef VBOX_INCLUDED_BIOS_ebda_h
 #define VBOX_INCLUDED_BIOS_ebda_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <stdint.h>
 

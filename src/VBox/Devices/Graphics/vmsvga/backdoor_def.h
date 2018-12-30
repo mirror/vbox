@@ -30,9 +30,11 @@
  *    simple hypercall mechanism that is used by VMware Tools.
  */
 
-
 #ifndef _BACKDOOR_DEF_H_
 #define _BACKDOOR_DEF_H_
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #define BDOOR_MAGIC 0x564D5868
 

@@ -17,6 +17,9 @@
 
 #ifndef __WINOVERRIDE_H__
 #define __WINOVERRIDE_H__
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #define GetProcessHeap()    ((HANDLE)0)
 #define HeapAlloc           VBoxHeapAlloc

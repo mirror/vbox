@@ -1,5 +1,9 @@
+
 #ifndef __glxext_h_
 #define __glxext_h_
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #ifdef __cplusplus
 extern "C" {

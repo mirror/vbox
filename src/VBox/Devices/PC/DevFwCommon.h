@@ -17,6 +17,9 @@
 
 #ifndef ___PC_FwCommon_h
 #define ___PC_FwCommon_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include "DevPcBios.h"
 

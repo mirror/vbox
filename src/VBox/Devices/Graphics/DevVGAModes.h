@@ -20,6 +20,9 @@
 
 #ifndef VBOX_INCLUDED_Graphics_DevVGAModes_h
 #define VBOX_INCLUDED_Graphics_DevVGAModes_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <VBoxVideoVBE.h>
 #include <VBoxVideoVBEPrivate.h>

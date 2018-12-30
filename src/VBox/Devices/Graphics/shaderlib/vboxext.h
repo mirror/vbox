@@ -17,6 +17,9 @@
 
 #ifndef ___VBOXEXT_H___
 #define ___VBOXEXT_H___
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #ifdef VBOX_WINE_WITHOUT_LIBWINE
 # ifdef _MSC_VER

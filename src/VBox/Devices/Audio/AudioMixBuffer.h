@@ -17,6 +17,9 @@
 
 #ifndef AUDIO_MIXBUF_H
 #define AUDIO_MIXBUF_H
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <iprt/cdefs.h>
 #include <VBox/vmm/pdmaudioifs.h>
