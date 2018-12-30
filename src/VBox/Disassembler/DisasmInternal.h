@@ -17,6 +17,9 @@
 
 #ifndef ___DisasmInternal_h___
 #define ___DisasmInternal_h___
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <VBox/types.h>
 #include <VBox/dis.h>
