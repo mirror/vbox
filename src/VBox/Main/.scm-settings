@@ -30,6 +30,7 @@
 --filter-out-files /src-client/README.testing
 --filter-out-files /src-server/custom.ids
 --filter-out-files /src-server/usb.ids
+/src-all/win/VBoxAPIWrap-precomp_gcc.h: --no-pragma-once
 
 # IDL and XML
 /idl/VirtualBox.xidl:                   --treat-as .xml
