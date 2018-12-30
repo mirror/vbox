@@ -17,7 +17,10 @@
  */
 
 #ifndef ___vboxclient_vboxclient_h
-# define ___vboxclient_vboxclient_h
+#define ___vboxclient_vboxclient_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <VBox/log.h>
 #include <iprt/cpp/utils.h>

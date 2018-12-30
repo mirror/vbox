@@ -18,7 +18,10 @@
  */
 
 #ifndef __Additions_linux_seamless_x11_h
-# define __Additions_linux_seamless_x11_h
+#define __Additions_linux_seamless_x11_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <VBox/log.h>
 #include <iprt/avl.h>

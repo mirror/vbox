@@ -28,8 +28,12 @@
 /* In builds inside of the VirtualBox source tree we override the default
  * HGSMIMemAlloc.h using -include, therefore this define must match the one
  * there. */
+
 #ifndef ___VBox_Graphics_HGSMIMemAlloc_h
 #define ___VBox_Graphics_HGSMIMemAlloc_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include "HGSMIDefs.h"
 #include "VBoxVideoIPRT.h"

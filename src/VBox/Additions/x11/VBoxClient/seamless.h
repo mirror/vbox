@@ -17,7 +17,10 @@
  */
 
 #ifndef __Additions_client_seamless_host_h
-# define __Additions_client_seamless_host_h
+#define __Additions_client_seamless_host_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <iprt/thread.h>
 

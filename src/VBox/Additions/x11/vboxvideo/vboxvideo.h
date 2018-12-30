@@ -39,6 +39,9 @@
 
 #ifndef _VBOXVIDEO_H_
 #define _VBOXVIDEO_H_
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <VBoxVideoGuest.h>
 #include <VBoxVideo.h>
