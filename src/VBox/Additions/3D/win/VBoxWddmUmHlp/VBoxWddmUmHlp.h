@@ -17,6 +17,9 @@
 
 #ifndef ___VBoxWddmUmHlp_h__
 #define ___VBoxWddmUmHlp_h__
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <iprt/win/d3d9.h>
 #include <d3dumddi.h>

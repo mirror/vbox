@@ -17,6 +17,9 @@
 
 #ifndef ___UmHlpInternal_h__
 #define ___UmHlpInternal_h__
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include "VBoxWddmUmHlp.h"
 

@@ -19,6 +19,9 @@
 
 #ifndef ___VBox_Mesa_git_sha1_h__
 #define ___VBox_Mesa_git_sha1_h__
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 /* Nothing. */
 

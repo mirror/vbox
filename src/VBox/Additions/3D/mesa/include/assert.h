@@ -21,6 +21,9 @@
 
 #ifndef ___VBox_Mesa_Assert_h__
 #define ___VBox_Mesa_Assert_h__
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <iprt/asm.h>
 

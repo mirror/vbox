@@ -17,6 +17,9 @@
 
 #ifndef ___VBoxGaHwSVGA_h__
 #define ___VBoxGaHwSVGA_h__
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <iprt/types.h>
 

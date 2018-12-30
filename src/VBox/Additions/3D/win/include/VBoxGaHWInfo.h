@@ -17,6 +17,9 @@
 
 #ifndef ___VBoxGaHWInfo_h__
 #define ___VBoxGaHWInfo_h__
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <iprt/assert.h>
 

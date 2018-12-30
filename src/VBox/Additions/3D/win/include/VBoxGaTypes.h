@@ -17,6 +17,9 @@
 
 #ifndef ___VBoxGaTypes_h__
 #define ___VBoxGaTypes_h__
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <iprt/types.h>
 

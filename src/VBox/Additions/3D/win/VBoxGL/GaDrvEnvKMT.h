@@ -17,6 +17,9 @@
 
 #ifndef ___GaDrvEnvKMT_h__
 #define ___GaDrvEnvKMT_h__
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <VBoxGaDriver.h>
 #include <VBoxWddmUmHlp.h>

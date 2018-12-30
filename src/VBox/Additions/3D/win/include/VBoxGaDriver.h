@@ -17,6 +17,9 @@
 
 #ifndef ___VBoxGaDriver_h__
 #define ___VBoxGaDriver_h__
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 #include <VBoxGaHWInfo.h>
 #include <VBoxGaTypes.h>
