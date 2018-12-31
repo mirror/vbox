@@ -3060,3 +3060,32 @@ VMM_INT_DECL(int) CPUMImportGuestStateOnDemand(PVMCPU pVCpu, uint64_t fExtrnImpo
     return VINF_SUCCESS;
 }
 
+
+/**
+ * Gets valid CR4 bits for the guest.
+ *
+ * @returns Valid CR4 bits.
+ * @param   pVM     The cross context VM structure.
+ */
+VMM_INT_DECL(uint64_t) CPUMGetGuestCR4ValidMask(PVM pVM)
+{
+    PCCPUMFEATURES pGuestFeatures = &pVM->cpum.s.GuestFeatures;
+    uint64_t fMask = X86_CR4_VME | X86_CR4_PVI
+                   | X86_CR4_TSD | X86_CR4_DE
+                   | X86_CR4_PSE | X86_CR4_PAE
+                   | X86_CR4_MCE | X86_CR4_PGE
+                   | X86_CR4_PCE
+                   | X86_CR4_OSXMMEEXCPT;  /** @todo r=ramshankar: Introduced in Pentium III along with SSE. Check fSse here? */
+    if (pGuestFeatures->fFxSaveRstor)
+        fMask |= X86_CR4_OSFXSR;
+    if (pGuestFeatures->fVmx)
+        fMask |= X86_CR4_VMXE;
+    if (pGuestFeatures->fXSaveRstor)
+        fMask |= X86_CR4_OSXSAVE;
+    if (pGuestFeatures->fPcid)
+        fMask |= X86_CR4_PCIDE;
+    if (pGuestFeatures->fFsGsBase)
+        fMask |= X86_CR4_FSGSBASE;
+    return fMask;
+}
+

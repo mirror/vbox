@@ -1413,6 +1413,7 @@ VMM_INT_DECL(void)     CPUMSetGuestTscAux(PVMCPU pVCpu, uint64_t uValue);
 VMM_INT_DECL(uint64_t) CPUMGetGuestTscAux(PVMCPU pVCpu);
 VMM_INT_DECL(void)     CPUMSetGuestSpecCtrl(PVMCPU pVCpu, uint64_t uValue);
 VMM_INT_DECL(uint64_t) CPUMGetGuestSpecCtrl(PVMCPU pVCpu);
+VMM_INT_DECL(uint64_t) CPUMGetGuestCR4ValidMask(PVM pVM);
 /** @} */
 
 
@@ -1513,6 +1514,18 @@ VMM_INT_DECL(int) CPUMImportGuestStateOnDemand(PVMCPU pVCpu, uint64_t fExtrnImpo
 /** @} */
 
 #ifndef IPRT_WITHOUT_NAMED_UNIONS_AND_STRUCTS
+
+/**
+ * Gets valid CR0 bits for the guest.
+ *
+ * @returns Valid CR0 bits.
+ */
+DECLINLINE(uint64_t) CPUMGetGuestCR0ValidMask(void)
+{
+    return (  X86_CR0_PE | X86_CR0_MP | X86_CR0_EM | X86_CR0_TS
+            | X86_CR0_ET | X86_CR0_NE | X86_CR0_WP | X86_CR0_AM
+            | X86_CR0_NW | X86_CR0_CD | X86_CR0_PG);
+}
 
 /**
  * Tests if the guest is running in real mode or not.
