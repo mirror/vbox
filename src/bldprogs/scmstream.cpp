@@ -628,13 +628,13 @@ int ScmStreamSeekRelative(PSCMSTREAM pStream, ssize_t offRelative)
  */
 int ScmStreamSeekByLine(PSCMSTREAM pStream, size_t iLine)
 {
-    AssertReturn(!pStream->fWriteOrRead, VERR_ACCESS_DENIED);
     if (RT_FAILURE(pStream->rc))
         return pStream->rc;
 
     /* Must be fully delineated. (lazy bird) */
     if (RT_UNLIKELY(!pStream->fFullyLineated))
     {
+        AssertReturn(!pStream->fWriteOrRead, VERR_ACCESS_DENIED);
         int rc = scmStreamLineate(pStream);
         if (RT_FAILURE(rc))
             return rc;
@@ -643,11 +643,19 @@ int ScmStreamSeekByLine(PSCMSTREAM pStream, size_t iLine)
     /* Ok, do the job. */
     if (iLine < pStream->cLines)
     {
-        pStream->off   = pStream->paLines[iLine].off;
         pStream->iLine = iLine;
+        pStream->off   = pStream->paLines[iLine].off;
+        if (pStream->fWriteOrRead)
+        {
+            pStream->cb     = pStream->paLines[iLine].off;
+            pStream->cLines = iLine;
+            pStream->paLines[iLine].cch    = 0;
+            pStream->paLines[iLine].enmEol = SCMEOL_NONE;
+        }
     }
     else
     {
+        AssertReturn(!pStream->fWriteOrRead, VERR_ACCESS_DENIED);
         pStream->off   = pStream->cb;
         pStream->iLine = pStream->cLines;
     }

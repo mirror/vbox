@@ -337,6 +337,13 @@ typedef struct SCMSETTINGSBASE
     bool            fFixHeaderGuards;
     /** Whether to include a pragma once statement with the header guard. */
     bool            fPragmaOnce;
+    /** Whether to add a comment on the \#endif part of the header guard. */
+    bool            fEndifGuardComment;
+    /** The guard name prefix.   */
+    char           *pszGuardPrefix;
+    /** Header guards should be normalized using prefix and this directory.
+     * When NULL the guard identifiers found in the header is preserved. */
+    char           *pszGuardRelativeToDir;
 
     /** Whether to fix C/C++ todos. */
     bool            fFixTodos;

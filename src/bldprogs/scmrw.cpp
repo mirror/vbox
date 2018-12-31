@@ -2861,9 +2861,35 @@ bool rewrite_FixHeaderGuards(PSCMRWSTATE pState, PSCMSTREAM pIn, PSCMSTREAM pOut
         && RTStrICmpAscii(&pState->pszFilename[cchFilename - sizeof(".cpp.h") + 1], ".cpp.h") == 0)
         return false;
 
-    int rc;
-    bool fRet = false;
     RTERRINFOSTATIC ErrInfo;
+    char            szNormalized[168];
+    size_t          cchNormalized;
+    int             rc;
+    bool            fRet = false;
+
+    /*
+     * Calculate the expected guard for this file, if so tasked.
+     * ASSUMES pState->pszFilename is absolute as is pSettings->pszGuardRelativeToDir.
+     */
+    szNormalized[0] = '\0';
+    if (pSettings->pszGuardRelativeToDir)
+    {
+        rc = RTStrCopy(szNormalized, sizeof(szNormalized), pSettings->pszGuardPrefix);
+        if (RT_FAILURE(rc))
+            return ScmError(pState, rc, "Guard prefix too long (or something): %s\n", pSettings->pszGuardPrefix);
+        cchNormalized = strlen(szNormalized);
+        rc = RTPathCalcRelative(&szNormalized[cchNormalized], sizeof(szNormalized) - cchNormalized,
+                                pSettings->pszGuardRelativeToDir, pState->pszFilename);
+        if (RT_FAILURE(rc))
+            return ScmError(pState, rc, "Error calculating guard prefix (RTPathCalcRelative): %Rrc\n", rc);
+        char ch;
+        while ((ch = szNormalized[cchNormalized]) != '\0')
+        {
+            if (!ScmIsCIdentifierChar(ch))
+                szNormalized[cchNormalized] = '_';
+            cchNormalized++;
+        }
+    }
 
     /*
      * First part looks for the #ifndef xxxx paired with #define xxxx.
@@ -2871,6 +2897,7 @@ bool rewrite_FixHeaderGuards(PSCMRWSTATE pState, PSCMSTREAM pIn, PSCMSTREAM pOut
      * We blindly assume the first preprocessor directive in the file is the guard
      * and will be upset if this isn't the case.
      */
+    RTSTRTUPLE  Guard       = { NULL, 0 };
     uint32_t    cBlankLines = 0;
     SCMEOL      enmEol;
     size_t      cchLine;
@@ -2894,14 +2921,14 @@ bool rewrite_FixHeaderGuards(PSCMRWSTATE pState, PSCMSTREAM pIn, PSCMSTREAM pOut
                     { RT_STR_TUPLE("IDENTIFIER"),       1, true, true },
                     { RT_STR_TUPLE(""),                 0, true, false },
                 };
-                RTSTRTUPLE Guard;
                 rc = ScmMatchWords(pchLine, cchLine, s_aIfndefGuard, RT_ELEMENTS(s_aIfndefGuard),
                                    NULL /*poffNext*/, &Guard, RTErrInfoInitStatic(&ErrInfo));
                 if (RT_FAILURE(rc))
                     return ScmError(pState, rc, "%u: Expected first preprocessor directive to be '#ifndef xxxx'. %s (%.*s)\n",
                                     ScmStreamTellLine(pIn) - 1, ErrInfo.Core.pszMsg, cchLine, pchLine);
                 fRet |= rc != VINF_SUCCESS;
-                ScmVerbose(pState, 2, "line %u: #ifndef %.*s\n", ScmStreamTellLine(pIn) - 1, Guard.cch, Guard.psz);
+                ScmVerbose(pState, 3, "line %u in %s: #ifndef %.*s\n",
+                           ScmStreamTellLine(pIn) - 1, pState->pszFilename, Guard.cch, Guard.psz);
 
                 /* #define xxxx */
                 pchLine = ScmStreamGetLine(pIn, &cchLine, &enmEol);
@@ -2922,6 +2949,17 @@ bool rewrite_FixHeaderGuards(PSCMRWSTATE pState, PSCMSTREAM pIn, PSCMSTREAM pOut
                                     ScmStreamTellLine(pIn) - 1, Guard.cch, Guard.psz, Guard.cch, Guard.psz,
                                     ErrInfo.Core.pszMsg, cchLine, pchLine);
                 fRet |= rc != VINF_SUCCESS;
+
+                if (Guard.cch >= sizeof(szNormalized))
+                    return ScmError(pState, VERR_BUFFER_OVERFLOW, "%u: Guard macro too long! %.*s\n",
+                                    ScmStreamTellLine(pIn) - 2, Guard.cch, Guard.psz);
+
+                if (szNormalized[0] != '\0')
+                {
+                    fRet = Guard.cch != cchNormalized || memcmp(Guard.psz, szNormalized, cchNormalized) != 0;
+                    Guard.psz = szNormalized;
+                    Guard.cch = cchNormalized;
+                }
 
                 /*
                  * Write guard, making sure we've got a single blank line preceeding it.
@@ -3045,7 +3083,8 @@ bool rewrite_FixHeaderGuards(PSCMRWSTATE pState, PSCMSTREAM pIn, PSCMSTREAM pOut
      * Copy the rest of the file and remove pragma once statements, while
      * looking for the last #endif in the file.
      */
-    size_t iEndIf = 0;
+    size_t iEndIfIn = 0;
+    size_t iEndIfOut = 0;
     while ((pchLine = ScmStreamGetLine(pIn, &cchLine, &enmEol)) != NULL)
     {
         if (cchLine > 2)
@@ -3058,7 +3097,8 @@ bool rewrite_FixHeaderGuards(PSCMRWSTATE pState, PSCMSTREAM pIn, PSCMSTREAM pOut
                 while (off < cchLine && RT_C_IS_BLANK(pchLine[off]))
                     off++;
                 /* #pragma once */
-                if (off + sizeof("pragma") < cchLine && !memcmp(&pchLine[off], RT_STR_TUPLE("pragma")))
+                if (   off + sizeof("pragma") - 1 <= cchLine
+                    && !memcmp(&pchLine[off], RT_STR_TUPLE("pragma")))
                 {
                     rc = ScmMatchWords(pchLine, cchLine, s_aPragmaOnce, RT_ELEMENTS(s_aPragmaOnce),
                                        &offNext, NULL /*paIdentifiers*/, RTErrInfoInitStatic(&ErrInfo));
@@ -3069,8 +3109,12 @@ bool rewrite_FixHeaderGuards(PSCMRWSTATE pState, PSCMSTREAM pIn, PSCMSTREAM pOut
                     }
                 }
                 /* #endif */
-                else if (off + sizeof("endif") < cchLine && !memcmp(&pchLine[off], RT_STR_TUPLE("endif")))
-                    iEndIf = ScmStreamTellLine(pOut);
+                else if (   off + sizeof("endif") - 1 <= cchLine
+                         && !memcmp(&pchLine[off], RT_STR_TUPLE("endif")))
+                {
+                    iEndIfIn  = ScmStreamTellLine(pIn) - 1;
+                    iEndIfOut = ScmStreamTellLine(pOut);
+                }
             }
         }
 
@@ -3083,7 +3127,41 @@ bool rewrite_FixHeaderGuards(PSCMRWSTATE pState, PSCMSTREAM pIn, PSCMSTREAM pOut
      * Check out the last endif, making sure it's well formed and make sure it has the
      * right kind of comment following it.
      */
-    /** @todo \#endif */
+#if 0
+    if (iEndIfOut == 0)
+        return ScmError(pState, VERR_PARSE_ERROR, "Expected '#endif' at the end of the file...\n");
+    rc = ScmStreamSeekByLine(pIn, iEndIfIn);
+    if (RT_FAILURE(rc))
+        return false;
+    rc = ScmStreamSeekByLine(pOut, iEndIfOut);
+    if (RT_FAILURE(rc))
+        return false;
+
+    pchLine = ScmStreamGetLine(pIn, &cchLine, &enmEol);
+    if (!pchLine)
+        return ScmError(pState, VERR_INTERNAL_ERROR, "ScmStreamGetLine failed re-reading #endif!\n");
+
+    char   szTmp[64 + sizeof(szNormalized)];
+    size_t cchTmp;
+    if (pSettings->fEndifGuardComment)
+        cchTmp = RTStrPrintf(szTmp, sizeof(szTmp), "#endif /* !%.*s */", Guard.cch, Guard.psz);
+    else
+        cchTmp = RTStrPrintf(szTmp, sizeof(szTmp), "#endif"); /* lazy bird */
+    fRet |= cchTmp != cchLine || memcmp(szTmp, pchLine, cchTmp) != 0;
+    rc = ScmStreamPutLine(pOut, szTmp, cchTmp, enmEol);
+    if (RT_FAILURE(rc))
+        return false;
+
+    /* Copy out the remaining lines (assumes no #pragma once here). */
+    while ((pchLine = ScmStreamGetLine(pIn, &cchLine, &enmEol)) != NULL)
+    {
+        rc = ScmStreamPutLine(pOut, pchLine, cchLine, enmEol);
+        if (RT_FAILURE(rc))
+            return false;
+    }
+#else
+    RT_NOREF(iEndIfOut, iEndIfIn);
+#endif
 
     return fRet;
 }

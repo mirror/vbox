@@ -78,6 +78,10 @@ typedef enum SCMOPT
     SCMOPT_NO_FIX_HEADER_GUARDS,
     SCMOPT_PRAGMA_ONCE,
     SCMOPT_NO_PRAGMA_ONCE,
+    SCMOPT_ENDIF_GUARD_COMMENT,
+    SCMOPT_NO_ENDIF_GUARD_COMMENT,
+    SCMOPT_GUARD_PREFIX,
+    SCMOPT_GUARD_RELATIVE_TO_DIR,
     SCMOPT_FIX_TODOS,
     SCMOPT_NO_FIX_TODOS,
     SCMOPT_FIX_ERR_H,
@@ -180,6 +184,9 @@ static SCMSETTINGSBASE const g_Defaults =
     /* .cMinBlankLinesBeforeFlowerBoxMakers = */    2,
     /* .fFixHeaderGuards = */                       true,
     /* .fPragmaOnce = */                            true,
+    /* .fEndifGuardComment = */                     true,
+    /* .pszGuardPrefix = */                         (char *)"VBOX_INCLUDED_",
+    /* .pszGuardRelativeToDir = */                  NULL,
     /* .fFixTodos = */                              true,
     /* .fFixErrH = */                               true,
     /* .fUpdateCopyrightYear = */                   false,
@@ -224,6 +231,10 @@ static RTGETOPTDEF  g_aScmOpts[] =
     { "--no-fix-header-guards",             SCMOPT_NO_FIX_HEADER_GUARDS,            RTGETOPT_REQ_NOTHING },
     { "--pragma-once",                      SCMOPT_PRAGMA_ONCE,                     RTGETOPT_REQ_NOTHING },
     { "--no-pragma-once",                   SCMOPT_NO_PRAGMA_ONCE,                  RTGETOPT_REQ_NOTHING },
+    { "--endif-guard-comment",              SCMOPT_ENDIF_GUARD_COMMENT,             RTGETOPT_REQ_NOTHING },
+    { "--no-endif-guard-comment",           SCMOPT_NO_ENDIF_GUARD_COMMENT,          RTGETOPT_REQ_NOTHING },
+    { "--guard-prefix",                     SCMOPT_GUARD_PREFIX,                    RTGETOPT_REQ_STRING },
+    { "--guard-relative-to-dir",            SCMOPT_GUARD_RELATIVE_TO_DIR,           RTGETOPT_REQ_STRING },
     { "--fix-todos",                        SCMOPT_FIX_TODOS,                       RTGETOPT_REQ_NOTHING },
     { "--no-fix-todos",                     SCMOPT_NO_FIX_TODOS,                    RTGETOPT_REQ_NOTHING },
     { "--fix-err-h",                        SCMOPT_FIX_ERR_H,                       RTGETOPT_REQ_NOTHING },
@@ -885,20 +896,33 @@ static int scmSettingsBaseInitAndCopy(PSCMSETTINGSBASE pSettings, PCSCMSETTINGSB
             rc = RTStrDupEx(&pSettings->pszFilterOutDirs, pSrc->pszFilterOutDirs);
             if (RT_SUCCESS(rc))
             {
-                if (!pSrc->fFreeTreatAs)
-                    return VINF_SUCCESS;
+                rc = RTStrDupEx(&pSettings->pszGuardPrefix, pSrc->pszGuardPrefix);
+                if (RT_SUCCESS(rc))
+                {
+                    if (pSrc->pszGuardRelativeToDir)
+                        rc = RTStrDupEx(&pSettings->pszGuardRelativeToDir, pSrc->pszGuardRelativeToDir);
+                    if (RT_SUCCESS(rc))
+                    {
 
-                pSettings->pTreatAs = scmCfgEntryDup(pSrc->pTreatAs);
-                if (pSettings->pTreatAs)
-                    return VINF_SUCCESS;
+                        if (!pSrc->fFreeTreatAs)
+                            return VINF_SUCCESS;
 
-                RTStrFree(pSettings->pszFilterOutDirs);
+                        pSettings->pTreatAs = scmCfgEntryDup(pSrc->pTreatAs);
+                        if (pSettings->pTreatAs)
+                            return VINF_SUCCESS;
+
+                        RTStrFree(pSettings->pszGuardRelativeToDir);
+                    }
+                    RTStrFree(pSettings->pszGuardPrefix);
+                }
             }
             RTStrFree(pSettings->pszFilterOutFiles);
         }
         RTStrFree(pSettings->pszFilterFiles);
     }
 
+    pSettings->pszGuardRelativeToDir = NULL;
+    pSettings->pszGuardPrefix = NULL;
     pSettings->pszFilterFiles = NULL;
     pSettings->pszFilterOutFiles = NULL;
     pSettings->pszFilterOutDirs = NULL;
@@ -929,12 +953,16 @@ static void scmSettingsBaseDelete(PSCMSETTINGSBASE pSettings)
         Assert(pSettings->cchTab != UINT8_MAX);
         pSettings->cchTab = UINT8_MAX;
 
+        RTStrFree(pSettings->pszGuardPrefix);
+        RTStrFree(pSettings->pszGuardRelativeToDir);
         RTStrFree(pSettings->pszFilterFiles);
         RTStrFree(pSettings->pszFilterOutFiles);
         RTStrFree(pSettings->pszFilterOutDirs);
         if (pSettings->fFreeTreatAs)
             scmCfgEntryDelete((PSCMCFGENTRY)pSettings->pTreatAs);
 
+        pSettings->pszGuardPrefix = NULL;
+        pSettings->pszGuardRelativeToDir = NULL;
         pSettings->pszFilterOutDirs = NULL;
         pSettings->pszFilterOutFiles = NULL;
         pSettings->pszFilterFiles = NULL;
@@ -1031,6 +1059,45 @@ static int scmSettingsBaseHandleOpt(PSCMSETTINGSBASE pSettings, int rc, PRTGETOP
             return VINF_SUCCESS;
         case SCMOPT_NO_PRAGMA_ONCE:
             pSettings->fPragmaOnce = false;
+            return VINF_SUCCESS;
+
+        case SCMOPT_ENDIF_GUARD_COMMENT:
+            pSettings->fEndifGuardComment = true;
+            return VINF_SUCCESS;
+        case SCMOPT_NO_ENDIF_GUARD_COMMENT:
+            pSettings->fEndifGuardComment = false;
+            return VINF_SUCCESS;
+
+        case SCMOPT_GUARD_PREFIX:
+            RTStrFree(pSettings->pszGuardPrefix);
+            pSettings->pszGuardPrefix = NULL;
+            return RTStrDupEx(&pSettings->pszGuardPrefix, pValueUnion->psz);
+
+        case SCMOPT_GUARD_RELATIVE_TO_DIR:
+            RTStrFree(pSettings->pszGuardRelativeToDir);
+            pSettings->pszGuardRelativeToDir = NULL;
+            if (*pValueUnion->psz != '\0')
+            {
+                if (cchDir == 1 && *pchDir == '/')
+                {
+                    pSettings->pszGuardRelativeToDir = RTPathAbsDup(pValueUnion->psz);
+                    if (pSettings->pszGuardRelativeToDir)
+                        return VINF_SUCCESS;
+                }
+                else
+                {
+                    char *pszDir = RTStrDupN(pchDir, cchDir);
+                    if (pszDir)
+                    {
+                        pSettings->pszGuardRelativeToDir = RTPathAbsExDup(pszDir, pValueUnion->psz);
+                        RTStrFree(pszDir);
+                        if (pSettings->pszGuardRelativeToDir)
+                            return VINF_SUCCESS;
+                    }
+                }
+                RTMsgError("Failed to abspath --guard-relative-to-dir value '%s' - probably out of memory\n", pValueUnion->psz);
+                return VERR_NO_STR_MEMORY;
+            }
             return VINF_SUCCESS;
 
         case SCMOPT_FIX_TODOS:
@@ -2706,6 +2773,16 @@ static int scmHelp(PCRTGETOPTDEF paOpts, size_t cOpts)
                 break;
             case SCMOPT_PRAGMA_ONCE:
                 RTPrintf("      Whether to include #pragma once with the header guard.  Default: %RTbool\n", g_Defaults.fPragmaOnce);
+                break;
+            case SCMOPT_ENDIF_GUARD_COMMENT:
+                RTPrintf("      Put a comment on the header guard #endif or not.  Default: %RTbool\n", g_Defaults.fEndifGuardComment);
+                break;
+            case SCMOPT_GUARD_RELATIVE_TO_DIR:
+                RTPrintf("      Header guard should be normalized relative to given dir.\n"
+                         "      If empty no normalization takes place.  Default: '%s'\n", g_Defaults.pszGuardRelativeToDir);
+                break;
+            case SCMOPT_GUARD_PREFIX:
+                RTPrintf("      Prefix to use with --guard-relative-to-dir.  Default: %s\n", g_Defaults.pszGuardPrefix);
                 break;
             case SCMOPT_FIX_TODOS:
                 RTPrintf("      Fix @todo statements so doxygen sees them.  Default: %RTbool\n", g_Defaults.fFixTodos);
