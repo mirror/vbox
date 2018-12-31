@@ -1143,25 +1143,45 @@ typedef const VMXCTLSMSR *PCVMXCTLSMSR;
  */
 typedef struct VMXMSRS
 {
+    /** VMX/SMX Feature control. */
     uint64_t        u64FeatCtrl;
+    /** Basic information. */
     uint64_t        u64Basic;
+    /** Pin-based VM-execution controls. */
     VMXCTLSMSR      PinCtls;
+    /** Processor-based VM-execution controls. */
     VMXCTLSMSR      ProcCtls;
+    /** Secondary processor-based VM-execution controls. */
     VMXCTLSMSR      ProcCtls2;
+    /** VM-exit controls. */
     VMXCTLSMSR      ExitCtls;
+    /** VM-entry controls. */
     VMXCTLSMSR      EntryCtls;
+    /** True pin-based VM-execution controls. */
     VMXCTLSMSR      TruePinCtls;
+    /** True processor-based VM-execution controls. */
     VMXCTLSMSR      TrueProcCtls;
+    /** True VM-entry controls. */
     VMXCTLSMSR      TrueEntryCtls;
+    /** True VM-exit controls. */
     VMXCTLSMSR      TrueExitCtls;
+    /** Miscellaneous data. */
     uint64_t        u64Misc;
+    /** CR0 fixed-0 - bits set here must be set in VMX operation. */
     uint64_t        u64Cr0Fixed0;
+    /** CR0 fixed-1 - bits clear here must be clear in VMX operation. */
     uint64_t        u64Cr0Fixed1;
+    /** CR4 fixed-0 - bits set here must be set in VMX operation. */
     uint64_t        u64Cr4Fixed0;
+    /** CR4 fixed-1 - bits clear here must be clear in VMX operation. */
     uint64_t        u64Cr4Fixed1;
+    /** VMCS enumeration. */
     uint64_t        u64VmcsEnum;
+    /** VM Functions. */
     uint64_t        u64VmFunc;
+    /** EPT, VPID capabilities. */
     uint64_t        u64EptVpidCaps;
+    /** Reserved for future. */
     uint64_t        a_u64Reserved[9];
 } VMXMSRS;
 AssertCompileSizeAlignment(VMXMSRS, 8);
