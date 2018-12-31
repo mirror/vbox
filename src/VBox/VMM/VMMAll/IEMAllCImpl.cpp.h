@@ -5554,9 +5554,7 @@ IEM_CIMPL_DEF_4(iemCImpl_load_CrX, uint8_t, iCrReg, uint64_t, uNewCrX, IEMACCESS
             IEM_CTX_ASSERT(pVCpu, CPUMCTX_EXTRN_CR0);
 
             uint64_t const uOldCrX = pVCpu->cpum.GstCtx.cr0;
-            uint32_t const fValid  = X86_CR0_PE | X86_CR0_MP | X86_CR0_EM | X86_CR0_TS
-                                   | X86_CR0_ET | X86_CR0_NE | X86_CR0_WP | X86_CR0_AM
-                                   | X86_CR0_NW | X86_CR0_CD | X86_CR0_PG;
+            uint32_t const fValid  = CPUMGetGuestCR0ValidMask();
 
             /* ET is hardcoded on 486 and later. */
             if (IEM_GET_TARGET_CPU(pVCpu) > IEMTARGETCPU_486)
@@ -5798,24 +5796,8 @@ IEM_CIMPL_DEF_4(iemCImpl_load_CrX, uint8_t, iCrReg, uint64_t, uNewCrX, IEMACCESS
             IEM_CTX_ASSERT(pVCpu, CPUMCTX_EXTRN_CR4);
             uint64_t const uOldCrX = pVCpu->cpum.GstCtx.cr4;
 
-            /** @todo Shouldn't this look at the guest CPUID bits to determine
-             *        valid bits? e.g. if guest CPUID doesn't allow X86_CR4_OSXMMEEXCPT, we
-             *        should #GP(0). */
-            /* reserved bits */
-            uint32_t fValid = X86_CR4_VME | X86_CR4_PVI
-                            | X86_CR4_TSD | X86_CR4_DE
-                            | X86_CR4_PSE | X86_CR4_PAE
-                            | X86_CR4_MCE | X86_CR4_PGE
-                            | X86_CR4_PCE | X86_CR4_OSFXSR
-                            | X86_CR4_OSXMMEEXCPT;
-            if (IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fVmx)
-                fValid |= X86_CR4_VMXE;
-            if (IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fXSaveRstor)
-                fValid |= X86_CR4_OSXSAVE;
-            if (IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fPcid)
-                fValid |= X86_CR4_PCIDE;
-            if (IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fFsGsBase)
-                fValid |= X86_CR4_FSGSBASE;
+            /* Reserved bits. */
+            uint32_t const fValid = CPUMGetGuestCR4ValidMask(pVCpu->CTX_SUFF(pVM));
             if (uNewCrX & ~(uint64_t)fValid)
             {
                 Log(("Trying to set reserved CR4 bits: NewCR4=%#llx InvalidBits=%#llx\n", uNewCrX, uNewCrX & ~(uint64_t)fValid));
