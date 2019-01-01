@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __WINUTILS_H_
-#define __WINUTILS_H_
+#ifndef VBOX_INCLUDED_SRC_NAT_winutils_h
+#define VBOX_INCLUDED_SRC_NAT_winutils_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -207,4 +207,4 @@ proxy_error_is_transient(int error)
 # endif
 }
 
-#endif
+#endif /* !VBOX_INCLUDED_SRC_NAT_winutils_h */

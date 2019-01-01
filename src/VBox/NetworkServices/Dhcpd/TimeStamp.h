@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef _DHCPD_TIMESTAMP_H_
-#define _DHCPD_TIMESTAMP_H_
+#ifndef VBOX_INCLUDED_SRC_Dhcpd_TimeStamp_h
+#define VBOX_INCLUDED_SRC_Dhcpd_TimeStamp_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -98,4 +98,4 @@ inline bool operator>(const TimeStamp &l, const TimeStamp &r) { return l.m_ns > 
 inline bool operator<=(const TimeStamp &l, const TimeStamp &r) { return l.m_ns <= r.m_ns; }
 inline bool operator>=(const TimeStamp &l, const TimeStamp &r) { return l.m_ns >= r.m_ns; }
 
-#endif /* _DHCPD_TIMESTAMP_H_ */
+#endif /* !VBOX_INCLUDED_SRC_Dhcpd_TimeStamp_h */

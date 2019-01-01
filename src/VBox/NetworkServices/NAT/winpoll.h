@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef _WINPOLL_H_
-#define _WINPOLL_H_
+#ifndef VBOX_INCLUDED_SRC_NAT_winpoll_h
+#define VBOX_INCLUDED_SRC_NAT_winpoll_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -50,4 +50,4 @@ struct pollfd {
 RT_C_DECLS_BEGIN
 int RTWinPoll(struct pollfd *pFds, unsigned int nfds, int timeout, int *pNready);
 RT_C_DECLS_END
-#endif
+#endif /* !VBOX_INCLUDED_SRC_NAT_winpoll_h */

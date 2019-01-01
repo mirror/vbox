@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef _DHCP_MESSAGE_H_
-#define _DHCP_MESSAGE_H_
+#ifndef VBOX_INCLUDED_SRC_Dhcpd_DhcpMessage_h
+#define VBOX_INCLUDED_SRC_Dhcpd_DhcpMessage_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -135,4 +135,4 @@ public:
     int encode(octets_t &data);
 };
 
-#endif /* _DHCP_MESSAGE_H_ */
+#endif /* !VBOX_INCLUDED_SRC_Dhcpd_DhcpMessage_h */

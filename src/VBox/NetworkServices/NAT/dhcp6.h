@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef _DHCP6_H_
-#define _DHCP6_H_
+#ifndef VBOX_INCLUDED_SRC_NAT_dhcp6_h
+#define VBOX_INCLUDED_SRC_NAT_dhcp6_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -48,4 +48,4 @@
 #define DHCP6_OPTION_DNS_SERVERS        23 /* RFC 3646 */
 #define DHCP6_OPTION_DOMAIN_LIST        24 /* RFC 3646 */
 
-#endif  /* _DHCP6_H_ */
+#endif /* !VBOX_INCLUDED_SRC_NAT_dhcp6_h */

@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef _DHCPD_DB_H_
-#define _DHCPD_DB_H_
+#ifndef VBOX_INCLUDED_SRC_Dhcpd_Db_h
+#define VBOX_INCLUDED_SRC_Dhcpd_Db_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -159,4 +159,4 @@ private:
     int addBinding(Binding *b);
 };
 
-#endif  /* _DHCPD_DB_H_ */
+#endif /* !VBOX_INCLUDED_SRC_Dhcpd_Db_h */

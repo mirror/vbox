@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___VBoxNetUDP_h___
-#define ___VBoxNetUDP_h___
+#ifndef VBOX_INCLUDED_SRC_NetLib_VBoxNetLib_h
+#define VBOX_INCLUDED_SRC_NetLib_VBoxNetLib_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -68,5 +68,5 @@ int     VBoxNetIntIfSend(PSUPDRVSESSION pSession, INTNETIFHANDLE hIf, PINTNETBUF
 
 RT_C_DECLS_END
 
-#endif
+#endif /* !VBOX_INCLUDED_SRC_NetLib_VBoxNetLib_h */
 

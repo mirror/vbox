@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef _VBOX_NETNAT_LWIP_OPTS_H_
-#define _VBOX_NETNAT_LWIP_OPTS_H_
+#ifndef VBOX_INCLUDED_SRC_NAT_lwipopts_h
+#define VBOX_INCLUDED_SRC_NAT_lwipopts_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -202,4 +202,4 @@
 # define LWIP_NOASSERT 1
 #endif
 
-#endif /* _VBOX_NETNAT_LWIP_OPTS_H_ */
+#endif /* !VBOX_INCLUDED_SRC_NAT_lwipopts_h */

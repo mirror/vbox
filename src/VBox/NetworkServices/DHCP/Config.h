@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef _CONFIG_H_
-#define _CONFIG_H_
+#ifndef VBOX_INCLUDED_SRC_DHCP_Config_h
+#define VBOX_INCLUDED_SRC_DHCP_Config_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -842,4 +842,4 @@ public:
     }
 };
 
-#endif
+#endif /* !VBOX_INCLUDED_SRC_DHCP_Config_h */

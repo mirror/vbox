@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___nat_proxy_h___
-#define ___nat_proxy_h___
+#ifndef VBOX_INCLUDED_SRC_NAT_proxy_h
+#define VBOX_INCLUDED_SRC_NAT_proxy_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -117,5 +117,5 @@ err_t pxping_init(struct netif *, SOCKET, SOCKET);
 #define DPRINTF1(a) Log2(a)
 #define DPRINTF2(a) Log3(a)
 
-#endif /* !___nat_proxy_h___ */
+#endif /* !VBOX_INCLUDED_SRC_NAT_proxy_h */
 

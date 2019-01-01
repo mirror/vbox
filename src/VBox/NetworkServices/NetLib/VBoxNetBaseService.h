@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___VBoxNetBaseService_h___
-#define ___VBoxNetBaseService_h___
+#ifndef VBOX_INCLUDED_SRC_NetLib_VBoxNetBaseService_h
+#define VBOX_INCLUDED_SRC_NetLib_VBoxNetBaseService_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -145,4 +145,4 @@ protected:
     PRTGETOPTDEF getOptionsPtr();
 };
 # endif
-#endif
+#endif /* !VBOX_INCLUDED_SRC_NetLib_VBoxNetBaseService_h */

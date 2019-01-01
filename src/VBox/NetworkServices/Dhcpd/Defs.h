@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef _DHCPD_DEFS_H_
-#define _DHCPD_DEFS_H_
+#ifndef VBOX_INCLUDED_SRC_Dhcpd_Defs_h
+#define VBOX_INCLUDED_SRC_Dhcpd_Defs_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -59,4 +59,4 @@ inline bool operator<(const RTMAC &l, const RTMAC &r)
 #define LogDHCP(args) RTPrintf args
 #endif
 
-#endif /* _DHCPD_DEFS_H_ */
+#endif /* !VBOX_INCLUDED_SRC_Dhcpd_Defs_h */

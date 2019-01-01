@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef _TFTP_H_
-#define _TFTP_H_
+#ifndef VBOX_INCLUDED_SRC_NAT_tftp_h
+#define VBOX_INCLUDED_SRC_NAT_tftp_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -46,4 +46,4 @@
 #define TFTP_EONAK      8 /* Option refused. */
 
 
-#endif  /* _TFTP_H_ */
+#endif /* !VBOX_INCLUDED_SRC_NAT_tftp_h */
