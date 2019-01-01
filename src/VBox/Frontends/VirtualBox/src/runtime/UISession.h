@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___UISession_h___
-#define ___UISession_h___
+#ifndef FEQT_INCLUDED_SRC_runtime_UISession_h
+#define FEQT_INCLUDED_SRC_runtime_UISession_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -564,4 +564,4 @@ private:
     KParavirtProvider m_paraVirtProvider;
 };
 
-#endif /* !___UISession_h___ */
+#endif /* !FEQT_INCLUDED_SRC_runtime_UISession_h */

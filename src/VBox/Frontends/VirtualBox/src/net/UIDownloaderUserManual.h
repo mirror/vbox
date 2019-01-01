@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___UIDownloaderUserManual_h___
-#define ___UIDownloaderUserManual_h___
+#ifndef FEQT_INCLUDED_SRC_net_UIDownloaderUserManual_h
+#define FEQT_INCLUDED_SRC_net_UIDownloaderUserManual_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -61,5 +61,5 @@ private:
     static UIDownloaderUserManual *s_pInstance;
 };
 
-#endif /* !___UIDownloaderUserManual_h___ */
+#endif /* !FEQT_INCLUDED_SRC_net_UIDownloaderUserManual_h */
 

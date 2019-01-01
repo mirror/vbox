@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___UIMediumDetailsWidget_h___
-#define ___UIMediumDetailsWidget_h___
+#ifndef FEQT_INCLUDED_SRC_medium_UIMediumDetailsWidget_h
+#define FEQT_INCLUDED_SRC_medium_UIMediumDetailsWidget_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -353,5 +353,5 @@ private:
     /** @} */
 };
 
-#endif /* !___UIMediumDetailsWidget_h___ */
+#endif /* !FEQT_INCLUDED_SRC_medium_UIMediumDetailsWidget_h */
 

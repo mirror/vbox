@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___UIVMLogViewerFilterPanel_h___
-#define ___UIVMLogViewerFilterPanel_h___
+#ifndef FEQT_INCLUDED_SRC_logviewer_UIVMLogViewerFilterPanel_h
+#define FEQT_INCLUDED_SRC_logviewer_UIVMLogViewerFilterPanel_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -111,5 +111,5 @@ private:
     int                  m_iFilteredLineCount;
 };
 
-#endif /* !___UIVMLogViewerFilterPanel_h___ */
+#endif /* !FEQT_INCLUDED_SRC_logviewer_UIVMLogViewerFilterPanel_h */
 

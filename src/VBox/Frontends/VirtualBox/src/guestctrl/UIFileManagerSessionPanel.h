@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___UIFileManagerSessionPanel_h___
-#define ___UIFileManagerSessionPanel_h___
+#ifndef FEQT_INCLUDED_SRC_guestctrl_UIFileManagerSessionPanel_h
+#define FEQT_INCLUDED_SRC_guestctrl_UIFileManagerSessionPanel_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -60,4 +60,4 @@ private:
     UIGuestSessionCreateWidget *m_pSessionCreateWidget;
 };
 
-#endif /* !___UIFileManagerSessionPanel_h___ */
+#endif /* !FEQT_INCLUDED_SRC_guestctrl_UIFileManagerSessionPanel_h */

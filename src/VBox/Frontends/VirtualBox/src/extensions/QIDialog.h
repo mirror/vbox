@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___QIDialog_h___
-#define ___QIDialog_h___
+#ifndef FEQT_INCLUDED_SRC_extensions_QIDialog_h
+#define FEQT_INCLUDED_SRC_extensions_QIDialog_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -76,4 +76,4 @@ private:
 /** Safe pointer to the QIDialog class. */
 typedef QPointer<QIDialog> UISafePointerDialog;
 
-#endif /* !___QIDialog_h___ */
+#endif /* !FEQT_INCLUDED_SRC_extensions_QIDialog_h */

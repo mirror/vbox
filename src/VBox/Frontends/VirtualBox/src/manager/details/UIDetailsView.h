@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __UIDetailsView_h__
-#define __UIDetailsView_h__
+#ifndef FEQT_INCLUDED_SRC_manager_details_UIDetailsView_h
+#define FEQT_INCLUDED_SRC_manager_details_UIDetailsView_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -72,5 +72,5 @@ private:
     int m_iMinimumHeightHint;
 };
 
-#endif /* __UIDetailsView_h__ */
+#endif /* !FEQT_INCLUDED_SRC_manager_details_UIDetailsView_h */
 

@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___UIGuestOSTypeSelectionButton_h___
-#define ___UIGuestOSTypeSelectionButton_h___
+#ifndef FEQT_INCLUDED_SRC_widgets_UIGuestOSTypeSelectionButton_h
+#define FEQT_INCLUDED_SRC_widgets_UIGuestOSTypeSelectionButton_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -71,4 +71,4 @@ private:
     QSignalMapper *m_pSignalMapper;
 };
 
-#endif /* !___UIGuestOSTypeSelectionButton_h___ */
+#endif /* !FEQT_INCLUDED_SRC_widgets_UIGuestOSTypeSelectionButton_h */

@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __UIGraphicsButton_h__
-#define __UIGraphicsButton_h__
+#ifndef FEQT_INCLUDED_SRC_widgets_graphics_UIGraphicsButton_h
+#define FEQT_INCLUDED_SRC_widgets_graphics_UIGraphicsButton_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -83,5 +83,5 @@ private:
     bool m_fParentSelected;
 };
 
-#endif /* __UIGraphicsButton_h__ */
+#endif /* !FEQT_INCLUDED_SRC_widgets_graphics_UIGraphicsButton_h */
 

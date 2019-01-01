@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___UIMachineLogicFullscreen_h___
-#define ___UIMachineLogicFullscreen_h___
+#ifndef FEQT_INCLUDED_SRC_runtime_fullscreen_UIMachineLogicFullscreen_h
+#define FEQT_INCLUDED_SRC_runtime_fullscreen_UIMachineLogicFullscreen_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -168,5 +168,5 @@ private:
     friend class UIMachineViewFullscreen;
 };
 
-#endif /* !___UIMachineLogicFullscreen_h___ */
+#endif /* !FEQT_INCLUDED_SRC_runtime_fullscreen_UIMachineLogicFullscreen_h */
 

@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___UIGuestControlConsole_h___
-#define ___UIGuestControlConsole_h___
+#ifndef FEQT_INCLUDED_SRC_guestctrl_UIGuestControlConsole_h
+#define FEQT_INCLUDED_SRC_guestctrl_UIGuestControlConsole_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -75,5 +75,5 @@ private:
     unsigned       m_uCommandHistoryIndex;
 };
 
-#endif /* !___UIGuestControlConsole_h___ */
+#endif /* !FEQT_INCLUDED_SRC_guestctrl_UIGuestControlConsole_h */
 

@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __UIFDCreationDialog_h__
-#define __UIFDCreationDialog_h__
+#ifndef FEQT_INCLUDED_SRC_medium_UIFDCreationDialog_h
+#define FEQT_INCLUDED_SRC_medium_UIFDCreationDialog_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -82,4 +82,4 @@ private:
     QUuid               m_uMediumID;
 };
 
-#endif // __UIFDCreationDialog_h__
+#endif /* !FEQT_INCLUDED_SRC_medium_UIFDCreationDialog_h */

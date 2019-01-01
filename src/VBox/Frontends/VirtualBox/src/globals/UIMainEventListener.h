@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___UIMainEventListener_h___
-#define ___UIMainEventListener_h___
+#ifndef FEQT_INCLUDED_SRC_globals_UIMainEventListener_h
+#define FEQT_INCLUDED_SRC_globals_UIMainEventListener_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -194,5 +194,5 @@ public:
 /** Wraps the IListener interface around our implementation class. */
 typedef ListenerImpl<UIMainEventListener, QObject*> UIMainEventListenerImpl;
 
-#endif /* !___UIMainEventListener_h___ */
+#endif /* !FEQT_INCLUDED_SRC_globals_UIMainEventListener_h */
 

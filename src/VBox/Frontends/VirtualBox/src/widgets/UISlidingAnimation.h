@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___UISlidingAnimation_h___
-#define ___UISlidingAnimation_h___
+#ifndef FEQT_INCLUDED_SRC_widgets_UISlidingAnimation_h
+#define FEQT_INCLUDED_SRC_widgets_UISlidingAnimation_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -118,4 +118,4 @@ private:
     QWidget     *m_pWidget2;
 };
 
-#endif /* !___UISlidingAnimation_h___ */
+#endif /* !FEQT_INCLUDED_SRC_widgets_UISlidingAnimation_h */

@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___UIVMLogViewerWidget_h___
-#define ___UIVMLogViewerWidget_h___
+#ifndef FEQT_INCLUDED_SRC_logviewer_UIVMLogViewerWidget_h
+#define FEQT_INCLUDED_SRC_logviewer_UIVMLogViewerWidget_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -237,4 +237,4 @@ private:
     friend class UIVMLogViewerDialog;
 };
 
-#endif /* !___UIVMLogViewerWidget_h___ */
+#endif /* !FEQT_INCLUDED_SRC_logviewer_UIVMLogViewerWidget_h */

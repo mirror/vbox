@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___UIDnDDataObject_win_h___
-#define ___UIDnDDataObject_win_h___
+#ifndef FEQT_INCLUDED_SRC_runtime_UIDnDDataObject_win_h
+#define FEQT_INCLUDED_SRC_runtime_UIDnDDataObject_win_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -112,5 +112,5 @@ protected:
     uint32_t                m_cbData;
 };
 
-#endif /* !___UIDnDDataObject_win_h___ */
+#endif /* !FEQT_INCLUDED_SRC_runtime_UIDnDDataObject_win_h */
 

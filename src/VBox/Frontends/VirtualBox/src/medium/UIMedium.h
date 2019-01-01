@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___UIMedium_h___
-#define ___UIMedium_h___
+#ifndef FEQT_INCLUDED_SRC_medium_UIMedium_h
+#define FEQT_INCLUDED_SRC_medium_UIMedium_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -431,4 +431,4 @@ Q_DECLARE_METATYPE(UIMedium);
 
 typedef QMap<QUuid, UIMedium> UIMediumMap;
 
-#endif /* !___UIMedium_h___ */
+#endif /* !FEQT_INCLUDED_SRC_medium_UIMedium_h */

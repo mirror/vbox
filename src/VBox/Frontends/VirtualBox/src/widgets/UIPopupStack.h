@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___UIPopupStack_h___
-#define ___UIPopupStack_h___
+#ifndef FEQT_INCLUDED_SRC_widgets_UIPopupStack_h
+#define FEQT_INCLUDED_SRC_widgets_UIPopupStack_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -130,5 +130,5 @@ private:
     int m_iParentStatusBarHeight;
 };
 
-#endif /* !___UIPopupStack_h___ */
+#endif /* !FEQT_INCLUDED_SRC_widgets_UIPopupStack_h */
 

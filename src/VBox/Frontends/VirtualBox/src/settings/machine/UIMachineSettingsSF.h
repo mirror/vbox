@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___UIMachineSettingsSF_h___
-#define ___UIMachineSettingsSF_h___
+#ifndef FEQT_INCLUDED_SRC_settings_machine_UIMachineSettingsSF_h
+#define FEQT_INCLUDED_SRC_settings_machine_UIMachineSettingsSF_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -154,4 +154,4 @@ private:
     UISettingsCacheSharedFolders *m_pCache;
 };
 
-#endif /* !___UIMachineSettingsSF_h___ */
+#endif /* !FEQT_INCLUDED_SRC_settings_machine_UIMachineSettingsSF_h */

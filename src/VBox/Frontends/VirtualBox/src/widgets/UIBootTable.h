@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___UIBootTable_h___
-#define ___UIBootTable_h___
+#ifndef FEQT_INCLUDED_SRC_widgets_UIBootTable_h
+#define FEQT_INCLUDED_SRC_widgets_UIBootTable_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -103,4 +103,4 @@ private:
 };
 
 
-#endif /* !___UIBootTable_h___ */
+#endif /* !FEQT_INCLUDED_SRC_widgets_UIBootTable_h */

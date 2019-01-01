@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___CocoaEventHelper_h
-#define ___CocoaEventHelper_h
+#ifndef FEQT_INCLUDED_SRC_platform_darwin_CocoaEventHelper_h
+#define FEQT_INCLUDED_SRC_platform_darwin_CocoaEventHelper_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -51,5 +51,5 @@ SHARED_LIBRARY_STUFF void darwinPostStrippedMouseEvent(ConstNativeNSEventRef pEv
 RT_C_DECLS_END
 
 
-#endif /* !___CocoaEventHelper_h */
+#endif /* !FEQT_INCLUDED_SRC_platform_darwin_CocoaEventHelper_h */
 

@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___UIGlobalSettingsLanguage_h___
-#define ___UIGlobalSettingsLanguage_h___
+#ifndef FEQT_INCLUDED_SRC_settings_global_UIGlobalSettingsLanguage_h
+#define FEQT_INCLUDED_SRC_settings_global_UIGlobalSettingsLanguage_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -94,4 +94,4 @@ private:
     UISettingsCacheGlobalLanguage *m_pCache;
 };
 
-#endif /* !___UIGlobalSettingsLanguage_h___ */
+#endif /* !FEQT_INCLUDED_SRC_settings_global_UIGlobalSettingsLanguage_h */

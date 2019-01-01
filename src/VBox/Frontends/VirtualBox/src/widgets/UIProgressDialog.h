@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___UIProgressDialog_h___
-#define ___UIProgressDialog_h___
+#ifndef FEQT_INCLUDED_SRC_widgets_UIProgressDialog_h
+#define FEQT_INCLUDED_SRC_widgets_UIProgressDialog_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -218,5 +218,5 @@ private:
 };
 
 
-#endif /* !___UIProgressDialog_h___ */
+#endif /* !FEQT_INCLUDED_SRC_widgets_UIProgressDialog_h */
 

@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___VBox2DHelpers_h___
-#define ___VBox2DHelpers_h___
+#ifndef FEQT_INCLUDED_SRC_VBox2DHelpers_h
+#define FEQT_INCLUDED_SRC_VBox2DHelpers_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -38,4 +38,4 @@ namespace VBox2DHelpers
 
 #endif /* VBOX_GUI_USE_QGL || VBOX_WITH_VIDEOHWACCEL */
 
-#endif /* !___VBox2DHelpers_h___ */
+#endif /* !FEQT_INCLUDED_SRC_VBox2DHelpers_h */

@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___UIVMLogViewerBookmarksPanel_h___
-#define ___UIVMLogViewerBookmarksPanel_h___
+#ifndef FEQT_INCLUDED_SRC_logviewer_UIVMLogViewerBookmarksPanel_h
+#define FEQT_INCLUDED_SRC_logviewer_UIVMLogViewerBookmarksPanel_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -87,4 +87,4 @@ private:
     QIToolButton *m_pPreviousButton;
 };
 
-#endif /* !___UIVMLogViewerBookmarksPanel_h___ */
+#endif /* !FEQT_INCLUDED_SRC_logviewer_UIVMLogViewerBookmarksPanel_h */

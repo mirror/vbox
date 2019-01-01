@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___UIHostNetworkManager_h___
-#define ___UIHostNetworkManager_h___
+#ifndef FEQT_INCLUDED_SRC_hostnetwork_UIHostNetworkManager_h
+#define FEQT_INCLUDED_SRC_hostnetwork_UIHostNetworkManager_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -264,5 +264,5 @@ private:
     friend class UIHostNetworkManagerFactory;
 };
 
-#endif /* !___UIHostNetworkManager_h___ */
+#endif /* !FEQT_INCLUDED_SRC_hostnetwork_UIHostNetworkManager_h */
 

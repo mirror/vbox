@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___VBoxSpecialControls_h__
-#define ___VBoxSpecialControls_h__
+#ifndef FEQT_INCLUDED_SRC_widgets_UISpecialControls_h
+#define FEQT_INCLUDED_SRC_widgets_UISpecialControls_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -185,5 +185,5 @@ private:
 #endif /* !VBOX_DARWIN_USE_NATIVE_CONTROLS */
 
 
-#endif /* !___UISpecialControls_h___ */
+#endif /* !FEQT_INCLUDED_SRC_widgets_UISpecialControls_h */
 

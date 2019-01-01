@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___UIKeyboardHandlerSeamless_h___
-#define ___UIKeyboardHandlerSeamless_h___
+#ifndef FEQT_INCLUDED_SRC_runtime_seamless_UIKeyboardHandlerSeamless_h
+#define FEQT_INCLUDED_SRC_runtime_seamless_UIKeyboardHandlerSeamless_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -48,4 +48,4 @@ private:
     friend class UIKeyboardHandler;
 };
 
-#endif /* !___UIKeyboardHandlerSeamless_h___ */
+#endif /* !FEQT_INCLUDED_SRC_runtime_seamless_UIKeyboardHandlerSeamless_h */

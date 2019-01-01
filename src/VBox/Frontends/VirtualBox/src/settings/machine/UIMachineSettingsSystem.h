@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___UIMachineSettingsSystem_h___
-#define ___UIMachineSettingsSystem_h___
+#ifndef FEQT_INCLUDED_SRC_settings_machine_UIMachineSettingsSystem_h
+#define FEQT_INCLUDED_SRC_settings_machine_UIMachineSettingsSystem_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -180,4 +180,4 @@ private:
     UISettingsCacheMachineSystem *m_pCache;
 };
 
-#endif /* !___UIMachineSettingsSystem_h___ */
+#endif /* !FEQT_INCLUDED_SRC_settings_machine_UIMachineSettingsSystem_h */

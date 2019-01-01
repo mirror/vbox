@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___UIGlobalSettingsExtension_h___
-#define ___UIGlobalSettingsExtension_h___
+#ifndef FEQT_INCLUDED_SRC_settings_global_UIGlobalSettingsExtension_h
+#define FEQT_INCLUDED_SRC_settings_global_UIGlobalSettingsExtension_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -93,4 +93,4 @@ private:
     UISettingsCacheGlobalExtension *m_pCache;
 };
 
-#endif /* !___UIGlobalSettingsExtension_h___ */
+#endif /* !FEQT_INCLUDED_SRC_settings_global_UIGlobalSettingsExtension_h */

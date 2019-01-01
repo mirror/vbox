@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___QIRichTextLabel_h___
-#define ___QIRichTextLabel_h___
+#ifndef FEQT_INCLUDED_SRC_extensions_QIRichTextLabel_h
+#define FEQT_INCLUDED_SRC_extensions_QIRichTextLabel_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -70,4 +70,4 @@ private:
     int m_iMinimumTextWidth;
 };
 
-#endif /* !___QIRichTextLabel_h___ */
+#endif /* !FEQT_INCLUDED_SRC_extensions_QIRichTextLabel_h */

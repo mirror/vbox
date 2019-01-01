@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___UIActionPool_h___
-#define ___UIActionPool_h___
+#ifndef FEQT_INCLUDED_SRC_globals_UIActionPool_h
+#define FEQT_INCLUDED_SRC_globals_UIActionPool_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -661,4 +661,4 @@ protected:
 };
 
 
-#endif /* !___UIActionPool_h___ */
+#endif /* !FEQT_INCLUDED_SRC_globals_UIActionPool_h */

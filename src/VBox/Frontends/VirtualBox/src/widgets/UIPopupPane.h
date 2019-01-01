@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___UIPopupPane_h___
-#define ___UIPopupPane_h___
+#ifndef FEQT_INCLUDED_SRC_widgets_UIPopupPane_h
+#define FEQT_INCLUDED_SRC_widgets_UIPopupPane_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -242,5 +242,5 @@ private:
     UIPopupPaneButtonPane *m_pButtonPane;
 };
 
-#endif /* !___UIPopupPane_h___ */
+#endif /* !FEQT_INCLUDED_SRC_widgets_UIPopupPane_h */
 

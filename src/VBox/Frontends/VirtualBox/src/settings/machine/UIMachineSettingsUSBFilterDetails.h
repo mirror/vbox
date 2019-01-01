@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __UIMachineSettingsUSBFilterDetails_h__
-#define __UIMachineSettingsUSBFilterDetails_h__
+#ifndef FEQT_INCLUDED_SRC_settings_machine_UIMachineSettingsUSBFilterDetails_h
+#define FEQT_INCLUDED_SRC_settings_machine_UIMachineSettingsUSBFilterDetails_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -40,4 +40,4 @@ private:
     void retranslateUi();
 };
 
-#endif /* __UIMachineSettingsUSBFilterDetails_h__ */
+#endif /* !FEQT_INCLUDED_SRC_settings_machine_UIMachineSettingsUSBFilterDetails_h */

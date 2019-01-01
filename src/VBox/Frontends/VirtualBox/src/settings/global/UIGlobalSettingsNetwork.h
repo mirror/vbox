@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___UIGlobalSettingsNetwork_h___
-#define ___UIGlobalSettingsNetwork_h___
+#ifndef FEQT_INCLUDED_SRC_settings_global_UIGlobalSettingsNetwork_h
+#define FEQT_INCLUDED_SRC_settings_global_UIGlobalSettingsNetwork_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -133,4 +133,4 @@ private:
     UISettingsCacheGlobalNetwork *m_pCache;
 };
 
-#endif /* !___UIGlobalSettingsNetwork_h___ */
+#endif /* !FEQT_INCLUDED_SRC_settings_global_UIGlobalSettingsNetwork_h */

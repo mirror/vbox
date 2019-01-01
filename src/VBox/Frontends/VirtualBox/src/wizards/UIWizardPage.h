@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___UIWizardPage_h___
-#define ___UIWizardPage_h___
+#ifndef FEQT_INCLUDED_SRC_wizards_UIWizardPage_h
+#define FEQT_INCLUDED_SRC_wizards_UIWizardPage_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -93,4 +93,4 @@ protected:
 };
 
 
-#endif
+#endif /* !FEQT_INCLUDED_SRC_wizards_UIWizardPage_h */

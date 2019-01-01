@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___QITreeWidget_h___
-#define ___QITreeWidget_h___
+#ifndef FEQT_INCLUDED_SRC_extensions_QITreeWidget_h
+#define FEQT_INCLUDED_SRC_extensions_QITreeWidget_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -107,4 +107,4 @@ protected:
 };
 
 
-#endif /* !___QITreeWidget_h___ */
+#endif /* !FEQT_INCLUDED_SRC_extensions_QITreeWidget_h */

@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___UIWelcomePane_h___
-#define ___UIWelcomePane_h___
+#ifndef FEQT_INCLUDED_SRC_manager_UIWelcomePane_h
+#define FEQT_INCLUDED_SRC_manager_UIWelcomePane_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -66,4 +66,4 @@ private:
     QLabel *m_pLabelIcon;
 };
 
-#endif /* !___UIWelcomePane_h___ */
+#endif /* !FEQT_INCLUDED_SRC_manager_UIWelcomePane_h */

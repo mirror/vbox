@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___QISplitter_h___
-#define ___QISplitter_h___
+#ifndef FEQT_INCLUDED_SRC_extensions_QISplitter_h
+#define FEQT_INCLUDED_SRC_extensions_QISplitter_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -85,4 +85,4 @@ private:
     QColor m_color2;
 };
 
-#endif /* !___QISplitter_h___ */
+#endif /* !FEQT_INCLUDED_SRC_extensions_QISplitter_h */

@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___UISnapshotDetailsWidget_h___
-#define ___UISnapshotDetailsWidget_h___
+#ifndef FEQT_INCLUDED_SRC_snapshots_UISnapshotDetailsWidget_h
+#define FEQT_INCLUDED_SRC_snapshots_UISnapshotDetailsWidget_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -234,5 +234,5 @@ private:
     QMap<DetailsElementType, UISnapshotDetailsElement*> m_details;
 };
 
-#endif /* !___UISnapshotDetailsWidget_h___ */
+#endif /* !FEQT_INCLUDED_SRC_snapshots_UISnapshotDetailsWidget_h */
 

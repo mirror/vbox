@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___VBoxUtils_darwin_h___
-#define ___VBoxUtils_darwin_h___
+#ifndef FEQT_INCLUDED_SRC_platform_darwin_VBoxUtils_darwin_h
+#define FEQT_INCLUDED_SRC_platform_darwin_VBoxUtils_darwin_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -303,5 +303,5 @@ SHARED_LIBRARY_STUFF void darwinMouseRelease(QWidget *pWidget);
 
 SHARED_LIBRARY_STUFF void *darwinCocoaToCarbonEvent(void *pvCocoaEvent);
 
-#endif /* !___VBoxUtils_darwin_h___ */
+#endif /* !FEQT_INCLUDED_SRC_platform_darwin_VBoxUtils_darwin_h */
 

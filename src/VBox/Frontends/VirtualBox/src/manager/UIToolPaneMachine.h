@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___UIToolPaneMachine_h___
-#define ___UIToolPaneMachine_h___
+#ifndef FEQT_INCLUDED_SRC_manager_UIToolPaneMachine_h
+#define FEQT_INCLUDED_SRC_manager_UIToolPaneMachine_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -125,5 +125,5 @@ private:
     CMachine                      m_comMachine;
 };
 
-#endif /* !___UIToolPaneMachine_h___ */
+#endif /* !FEQT_INCLUDED_SRC_manager_UIToolPaneMachine_h */
 

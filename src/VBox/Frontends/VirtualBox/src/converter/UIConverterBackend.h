@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___UIConverterBackend_h___
-#define ___UIConverterBackend_h___
+#ifndef FEQT_INCLUDED_SRC_converter_UIConverterBackend_h
+#define FEQT_INCLUDED_SRC_converter_UIConverterBackend_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -303,4 +303,4 @@ template<> SHARED_LIBRARY_STUFF QString toInternalString(const KNATProtocol &pro
 template<> SHARED_LIBRARY_STUFF KNATProtocol fromInternalString<KNATProtocol>(const QString &strProtocol);
 
 
-#endif /* !___UIConverterBackend_h___ */
+#endif /* !FEQT_INCLUDED_SRC_converter_UIConverterBackend_h */

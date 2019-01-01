@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___UIAnimationFramework_h___
-#define ___UIAnimationFramework_h___
+#ifndef FEQT_INCLUDED_SRC_globals_UIAnimationFramework_h
+#define FEQT_INCLUDED_SRC_globals_UIAnimationFramework_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -171,5 +171,5 @@ private:
 };
 
 
-#endif /* !___UIAnimationFramework_h___ */
+#endif /* !FEQT_INCLUDED_SRC_globals_UIAnimationFramework_h */
 

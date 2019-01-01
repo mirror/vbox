@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___UIFileManagerHostTable_h___
-#define ___UIFileManagerHostTable_h___
+#ifndef FEQT_INCLUDED_SRC_guestctrl_UIFileManagerHostTable_h
+#define FEQT_INCLUDED_SRC_guestctrl_UIFileManagerHostTable_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -71,4 +71,4 @@ private:
 
 };
 
-#endif /* !___UIFileManagerHostTable_h___ */
+#endif /* !FEQT_INCLUDED_SRC_guestctrl_UIFileManagerHostTable_h */

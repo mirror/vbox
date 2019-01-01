@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___QIWithRetranslateUI_h___
-#define ___QIWithRetranslateUI_h___
+#ifndef FEQT_INCLUDED_SRC_globals_QIWithRetranslateUI_h
+#define FEQT_INCLUDED_SRC_globals_QIWithRetranslateUI_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -182,5 +182,5 @@ protected:
 };
 
 
-#endif /* !___QIWithRetranslateUI_h___ */
+#endif /* !FEQT_INCLUDED_SRC_globals_QIWithRetranslateUI_h */
 

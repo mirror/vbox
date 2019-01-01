@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___UIMachineSettingsUSB_h___
-#define ___UIMachineSettingsUSB_h___
+#ifndef FEQT_INCLUDED_SRC_settings_machine_UIMachineSettingsUSB_h
+#define FEQT_INCLUDED_SRC_settings_machine_UIMachineSettingsUSB_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -161,4 +161,4 @@ private:
     UISettingsCacheMachineUSB *m_pCache;
 };
 
-#endif /* !___UIMachineSettingsUSB_h___ */
+#endif /* !FEQT_INCLUDED_SRC_settings_machine_UIMachineSettingsUSB_h */

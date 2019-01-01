@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___UIMiniToolBar_h___
-#define ___UIMiniToolBar_h___
+#ifndef FEQT_INCLUDED_SRC_widgets_UIMiniToolBar_h
+#define FEQT_INCLUDED_SRC_widgets_UIMiniToolBar_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -199,5 +199,5 @@ private:
 #endif
 };
 
-#endif /* !___UIMiniToolBar_h___ */
+#endif /* !FEQT_INCLUDED_SRC_widgets_UIMiniToolBar_h */
 

@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___VBoxHlp_h
-#define ___VBoxHlp_h
+#ifndef FEQT_INCLUDED_SRC_platform_os2_VBoxHlp_h
+#define FEQT_INCLUDED_SRC_platform_os2_VBoxHlp_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -35,5 +35,5 @@ VBOXHLPDECL(bool) VBoxHlpInstallKbdHook (HAB aHab, HWND aHwnd,
 VBOXHLPDECL(bool) VBoxHlpUninstallKbdHook (HAB aHab, HWND aHwnd,
                                            unsigned long aMsg);
 
-#endif /* !___VBoxHlp_h */
+#endif /* !FEQT_INCLUDED_SRC_platform_os2_VBoxHlp_h */
 

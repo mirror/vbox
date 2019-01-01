@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___QITreeView_h___
-#define ___QITreeView_h___
+#ifndef FEQT_INCLUDED_SRC_extensions_QITreeView_h
+#define FEQT_INCLUDED_SRC_extensions_QITreeView_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -142,4 +142,4 @@ private:
 };
 
 
-#endif /* !___QITreeView_h___ */
+#endif /* !FEQT_INCLUDED_SRC_extensions_QITreeView_h */

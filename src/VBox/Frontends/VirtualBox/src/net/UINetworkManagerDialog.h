@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___UINetworkManagerDialog_h___
-#define ___UINetworkManagerDialog_h___
+#ifndef FEQT_INCLUDED_SRC_net_UINetworkManagerDialog_h
+#define FEQT_INCLUDED_SRC_net_UINetworkManagerDialog_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -93,5 +93,5 @@ private:
     QMap<QUuid, UINetworkRequestWidget*>  m_widgets;
 };
 
-#endif /* !___UINetworkManagerDialog_h___ */
+#endif /* !FEQT_INCLUDED_SRC_net_UINetworkManagerDialog_h */
 

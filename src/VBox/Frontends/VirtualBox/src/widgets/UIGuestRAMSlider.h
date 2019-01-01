@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___UIGuestRAMSlider_h___
-#define ___UIGuestRAMSlider_h___
+#ifndef FEQT_INCLUDED_SRC_widgets_UIGuestRAMSlider_h
+#define FEQT_INCLUDED_SRC_widgets_UIGuestRAMSlider_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -64,4 +64,4 @@ private:
     uint m_uMaxRAM;
 };
 
-#endif /* !___UIGuestRAMSlider_h___ */
+#endif /* !FEQT_INCLUDED_SRC_widgets_UIGuestRAMSlider_h */

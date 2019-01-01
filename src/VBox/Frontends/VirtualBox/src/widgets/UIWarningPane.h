@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___UIWarningPane_h___
-#define ___UIWarningPane_h___
+#ifndef FEQT_INCLUDED_SRC_widgets_UIWarningPane_h
+#define FEQT_INCLUDED_SRC_widgets_UIWarningPane_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -95,4 +95,4 @@ private:
     int     m_iHoveredIconLabelPosition;
 };
 
-#endif /* !___UIWarningPane_h___ */
+#endif /* !FEQT_INCLUDED_SRC_widgets_UIWarningPane_h */

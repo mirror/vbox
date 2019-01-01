@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___UIHotKeyEditor_h___
-#define ___UIHotKeyEditor_h___
+#ifndef FEQT_INCLUDED_SRC_widgets_UIHotKeyEditor_h
+#define FEQT_INCLUDED_SRC_widgets_UIHotKeyEditor_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -188,4 +188,4 @@ private:
 };
 
 
-#endif /* !___UIHotKeyEditor_h___ */
+#endif /* !FEQT_INCLUDED_SRC_widgets_UIHotKeyEditor_h */

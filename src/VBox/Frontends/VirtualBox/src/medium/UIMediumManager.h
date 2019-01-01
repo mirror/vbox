@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___UIMediumManager_h___
-#define ___UIMediumManager_h___
+#ifndef FEQT_INCLUDED_SRC_medium_UIMediumManager_h
+#define FEQT_INCLUDED_SRC_medium_UIMediumManager_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -440,4 +440,4 @@ private:
     friend class UIMediumManagerFactory;
 };
 
-#endif /* !___UIMediumManager_h___ */
+#endif /* !FEQT_INCLUDED_SRC_medium_UIMediumManager_h */

@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___UIGuestControlTreeItem_h___
-#define ___UIGuestControlTreeItem_h___
+#ifndef FEQT_INCLUDED_SRC_guestctrl_UIGuestControlTreeItem_h
+#define FEQT_INCLUDED_SRC_guestctrl_UIGuestControlTreeItem_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -149,5 +149,5 @@ private:
     CGuestProcess m_comGuestProcess;
 };
 
-#endif /* !___UIGuestControlTreeItem_h___ */
+#endif /* !FEQT_INCLUDED_SRC_guestctrl_UIGuestControlTreeItem_h */
 

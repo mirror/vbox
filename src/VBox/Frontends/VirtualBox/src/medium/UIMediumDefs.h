@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___UIMediumDefs_h___
-#define ___UIMediumDefs_h___
+#ifndef FEQT_INCLUDED_SRC_medium_UIMediumDefs_h
+#define FEQT_INCLUDED_SRC_medium_UIMediumDefs_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -124,4 +124,4 @@ struct UIMediumTarget
 Q_DECLARE_METATYPE(UIMediumDeviceType);
 Q_DECLARE_METATYPE(UIMediumTarget);
 
-#endif /* !___UIMediumDefs_h___ */
+#endif /* !FEQT_INCLUDED_SRC_medium_UIMediumDefs_h */

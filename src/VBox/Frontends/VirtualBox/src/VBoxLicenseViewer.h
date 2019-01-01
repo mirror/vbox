@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___VBoxLicenseViewer___
-#define ___VBoxLicenseViewer___
+#ifndef FEQT_INCLUDED_SRC_VBoxLicenseViewer_h
+#define FEQT_INCLUDED_SRC_VBoxLicenseViewer_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -80,5 +80,5 @@ private:
     QPushButton *m_pButtonDisagree;
 };
 
-#endif /* !___VBoxLicenseViewer___ */
+#endif /* !FEQT_INCLUDED_SRC_VBoxLicenseViewer_h */
 

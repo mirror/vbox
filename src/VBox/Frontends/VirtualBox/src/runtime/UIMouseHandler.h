@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___UIMouseHandler_h___
-#define ___UIMouseHandler_h___
+#ifndef FEQT_INCLUDED_SRC_runtime_UIMouseHandler_h
+#define FEQT_INCLUDED_SRC_runtime_UIMouseHandler_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -149,5 +149,5 @@ protected:
 #endif
 };
 
-#endif // !___UIMouseHandler_h___
+#endif /* !FEQT_INCLUDED_SRC_runtime_UIMouseHandler_h */
 

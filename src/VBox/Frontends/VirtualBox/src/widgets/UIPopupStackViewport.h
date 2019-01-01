@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___UIPopupStackViewport_h___
-#define ___UIPopupStackViewport_h___
+#ifndef FEQT_INCLUDED_SRC_widgets_UIPopupStackViewport_h
+#define FEQT_INCLUDED_SRC_widgets_UIPopupStackViewport_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -105,5 +105,5 @@ private:
     QMap<QString, UIPopupPane*> m_panes;
 };
 
-#endif /* !___UIPopupStackViewport_h___ */
+#endif /* !FEQT_INCLUDED_SRC_widgets_UIPopupStackViewport_h */
 

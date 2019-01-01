@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___UIKeyboardHandler_h___
-#define ___UIKeyboardHandler_h___
+#ifndef FEQT_INCLUDED_SRC_runtime_UIKeyboardHandler_h
+#define FEQT_INCLUDED_SRC_runtime_UIKeyboardHandler_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -235,4 +235,4 @@ protected:
     ULONG m_cMonitors;
 };
 
-#endif // !___UIKeyboardHandler_h___
+#endif /* !FEQT_INCLUDED_SRC_runtime_UIKeyboardHandler_h */

@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___QIMainWindow_h___
-#define ___QIMainWindow_h___
+#ifndef FEQT_INCLUDED_SRC_extensions_QIMainWindow_h
+#define FEQT_INCLUDED_SRC_extensions_QIMainWindow_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -54,4 +54,4 @@ protected:
     QRect m_geometry;
 };
 
-#endif /* !___QIMainWindow_h___ */
+#endif /* !FEQT_INCLUDED_SRC_extensions_QIMainWindow_h */

@@ -19,8 +19,8 @@
  * This class is based on the original QLabel implementation.
  */
 
-#ifndef ___QILabel_h___
-#define ___QILabel_h___
+#ifndef FEQT_INCLUDED_SRC_extensions_QILabel_h
+#define FEQT_INCLUDED_SRC_extensions_QILabel_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -132,4 +132,4 @@ private:
     static QRegExp       s_regExpElide;
 };
 
-#endif /* !___QILabel_h___ */
+#endif /* !FEQT_INCLUDED_SRC_extensions_QILabel_h */

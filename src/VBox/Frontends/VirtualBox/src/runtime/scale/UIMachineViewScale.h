@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___UIMachineViewScale_h___
-#define ___UIMachineViewScale_h___
+#ifndef FEQT_INCLUDED_SRC_runtime_scale_UIMachineViewScale_h
+#define FEQT_INCLUDED_SRC_runtime_scale_UIMachineViewScale_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -66,5 +66,5 @@ private:
     friend class UIMachineView;
 };
 
-#endif // !___UIMachineViewScale_h___
+#endif /* !FEQT_INCLUDED_SRC_runtime_scale_UIMachineViewScale_h */
 

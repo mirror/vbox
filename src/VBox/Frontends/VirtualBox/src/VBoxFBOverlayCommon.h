@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __VBoxFBOverlayCommon_h__
-#define __VBoxFBOverlayCommon_h__
+#ifndef FEQT_INCLUDED_SRC_VBoxFBOverlayCommon_h
+#define FEQT_INCLUDED_SRC_VBoxFBOverlayCommon_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -117,5 +117,5 @@ private:
     VBOXQGLLOG((_p " l(0x%x), u(0x%x)" _s, (_pck)->lower(), (_pck)->upper()));\
     }while(0)
 
-#endif /* #ifndef __VBoxFBOverlayCommon_h__ */
+#endif /* !FEQT_INCLUDED_SRC_VBoxFBOverlayCommon_h */
 

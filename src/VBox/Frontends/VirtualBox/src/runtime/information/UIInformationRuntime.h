@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___UIInformationRuntime_h___
-#define ___UIInformationRuntime_h___
+#ifndef FEQT_INCLUDED_SRC_runtime_information_UIInformationRuntime_h
+#define FEQT_INCLUDED_SRC_runtime_information_UIInformationRuntime_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -72,5 +72,5 @@ private:
     UIInformationView *m_pView;
 };
 
-#endif /* !___UIInformationRuntime_h___ */
+#endif /* !FEQT_INCLUDED_SRC_runtime_information_UIInformationRuntime_h */
 

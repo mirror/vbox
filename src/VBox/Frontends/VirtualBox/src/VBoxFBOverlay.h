@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __VBoxFBOverlay_h__
-#define __VBoxFBOverlay_h__
+#ifndef FEQT_INCLUDED_SRC_VBoxFBOverlay_h
+#define FEQT_INCLUDED_SRC_VBoxFBOverlay_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -1855,4 +1855,4 @@ private:
 
 #endif /* defined(VBOX_GUI_USE_QGL) || defined(VBOX_WITH_VIDEOHWACCEL) */
 
-#endif /* #ifndef __VBoxFBOverlay_h__ */
+#endif /* !FEQT_INCLUDED_SRC_VBoxFBOverlay_h */

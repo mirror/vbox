@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___UIChooserItemGlobal_h___
-#define ___UIChooserItemGlobal_h___
+#ifndef FEQT_INCLUDED_SRC_manager_chooser_UIChooserItemGlobal_h
+#define FEQT_INCLUDED_SRC_manager_chooser_UIChooserItemGlobal_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -276,4 +276,4 @@ private:
     /** @} */
 };
 
-#endif /* !___UIChooserItemGlobal_h___ */
+#endif /* !FEQT_INCLUDED_SRC_manager_chooser_UIChooserItemGlobal_h */

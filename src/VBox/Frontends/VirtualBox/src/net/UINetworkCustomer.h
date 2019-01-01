@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___UINetworkCustomer_h___
-#define ___UINetworkCustomer_h___
+#ifndef FEQT_INCLUDED_SRC_net_UINetworkCustomer_h
+#define FEQT_INCLUDED_SRC_net_UINetworkCustomer_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -68,5 +68,5 @@ private:
     bool m_fForceCall;
 };
 
-#endif /* !___UINetworkCustomer_h___ */
+#endif /* !FEQT_INCLUDED_SRC_net_UINetworkCustomer_h */
 

@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___QITabWidget_h___
-#define ___QITabWidget_h___
+#ifndef FEQT_INCLUDED_SRC_extensions_QITabWidget_h
+#define FEQT_INCLUDED_SRC_extensions_QITabWidget_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -38,4 +38,4 @@ public:
     QITabWidget(QWidget *pParent = 0);
 };
 
-#endif /* !___QITabWidget_h___ */
+#endif /* !FEQT_INCLUDED_SRC_extensions_QITabWidget_h */

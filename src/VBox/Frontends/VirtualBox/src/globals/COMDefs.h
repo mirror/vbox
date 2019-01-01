@@ -19,8 +19,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __COMDefs_h__
-#define __COMDefs_h__
+#ifndef FEQT_INCLUDED_SRC_globals_COMDefs_h
+#define FEQT_INCLUDED_SRC_globals_COMDefs_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -1147,5 +1147,5 @@ public:
 
 /** @} */
 
-#endif // !__COMDefs_h__
+#endif /* !FEQT_INCLUDED_SRC_globals_COMDefs_h */
 

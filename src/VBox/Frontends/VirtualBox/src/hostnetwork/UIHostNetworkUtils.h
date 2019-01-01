@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___UIHostNetworkUtils_h___
-#define ___UIHostNetworkUtils_h___
+#ifndef FEQT_INCLUDED_SRC_hostnetwork_UIHostNetworkUtils_h
+#define FEQT_INCLUDED_SRC_hostnetwork_UIHostNetworkUtils_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -49,5 +49,5 @@ namespace UIHostNetworkUtils
 /* Using this namespace where included: */
 using namespace UIHostNetworkUtils;
 
-#endif /* !___UIHostNetworkUtils_h___ */
+#endif /* !FEQT_INCLUDED_SRC_hostnetwork_UIHostNetworkUtils_h */
 

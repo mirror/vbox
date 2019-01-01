@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___UIDetailsElements_h___
-#define ___UIDetailsElements_h___
+#ifndef FEQT_INCLUDED_SRC_manager_details_UIDetailsElements_h
+#define FEQT_INCLUDED_SRC_manager_details_UIDetailsElements_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -546,5 +546,5 @@ private:
     virtual UITask *createUpdateTask() /* override */;
 };
 
-#endif /* !___UIDetailsElements_h___ */
+#endif /* !FEQT_INCLUDED_SRC_manager_details_UIDetailsElements_h */
 

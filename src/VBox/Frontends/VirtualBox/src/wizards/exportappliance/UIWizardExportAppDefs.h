@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___UIWizardExportAppDefs_h___
-#define ___UIWizardExportAppDefs_h___
+#ifndef FEQT_INCLUDED_SRC_wizards_exportappliance_UIWizardExportAppDefs_h
+#define FEQT_INCLUDED_SRC_wizards_exportappliance_UIWizardExportAppDefs_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -66,4 +66,4 @@ private:
     bool     m_fInSaveState;
 };
 
-#endif /* !___UIWizardExportAppDefs_h___ */
+#endif /* !FEQT_INCLUDED_SRC_wizards_exportappliance_UIWizardExportAppDefs_h */

@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___UINetworkRequest_h___
-#define ___UINetworkRequest_h___
+#ifndef FEQT_INCLUDED_SRC_net_UINetworkRequest_h
+#define FEQT_INCLUDED_SRC_net_UINetworkRequest_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -144,5 +144,5 @@ private:
     QPointer<UINetworkReply> m_pReply;
 };
 
-#endif /* !___UINetworkRequest_h___ */
+#endif /* !FEQT_INCLUDED_SRC_net_UINetworkRequest_h */
 

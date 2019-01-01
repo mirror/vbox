@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___UIFrameBuffer_h___
-#define ___UIFrameBuffer_h___
+#ifndef FEQT_INCLUDED_SRC_runtime_UIFrameBuffer_h
+#define FEQT_INCLUDED_SRC_runtime_UIFrameBuffer_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -154,4 +154,4 @@ private:
     ComObjPtr<UIFrameBufferPrivate> m_pFrameBuffer;
 };
 
-#endif /* !___UIFrameBuffer_h___ */
+#endif /* !FEQT_INCLUDED_SRC_runtime_UIFrameBuffer_h */

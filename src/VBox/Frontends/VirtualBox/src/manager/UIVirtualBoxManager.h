@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___UIVirtualBoxManager_h___
-#define ___UIVirtualBoxManager_h___
+#ifndef FEQT_INCLUDED_SRC_manager_UIVirtualBoxManager_h
+#define FEQT_INCLUDED_SRC_manager_UIVirtualBoxManager_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -354,4 +354,4 @@ private:
 
 #define gpManager UIVirtualBoxManager::instance()
 
-#endif /* !___UIVirtualBoxManager_h___ */
+#endif /* !FEQT_INCLUDED_SRC_manager_UIVirtualBoxManager_h */

@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __UIMachineWindow_h__
-#define __UIMachineWindow_h__
+#ifndef FEQT_INCLUDED_SRC_runtime_UIMachineWindow_h
+#define FEQT_INCLUDED_SRC_runtime_UIMachineWindow_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -212,5 +212,5 @@ protected:
     friend class UIMachineLogicSeamless;
 };
 
-#endif // __UIMachineWindow_h__
+#endif /* !FEQT_INCLUDED_SRC_runtime_UIMachineWindow_h */
 

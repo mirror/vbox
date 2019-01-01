@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___UIInformationModel_h___
-#define ___UIInformationModel_h___
+#ifndef FEQT_INCLUDED_SRC_runtime_information_UIInformationModel_h
+#define FEQT_INCLUDED_SRC_runtime_information_UIInformationModel_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -83,5 +83,5 @@ private:
     QList<UIInformationDataItem*> m_list;
 };
 
-#endif /* !___UIInformationModel_h___ */
+#endif /* !FEQT_INCLUDED_SRC_runtime_information_UIInformationModel_h */
 

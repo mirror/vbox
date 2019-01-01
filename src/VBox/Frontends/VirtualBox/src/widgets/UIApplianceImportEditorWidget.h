@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __UIApplianceImportEditorWidget_h__
-#define __UIApplianceImportEditorWidget_h__
+#ifndef FEQT_INCLUDED_SRC_widgets_UIApplianceImportEditorWidget_h
+#define FEQT_INCLUDED_SRC_widgets_UIApplianceImportEditorWidget_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -79,4 +79,4 @@ private:
     QLabel             *m_pAdditionalOptionsLabel;
 };
 
-#endif /* __UIApplianceImportEditorWidget_h__ */
+#endif /* !FEQT_INCLUDED_SRC_widgets_UIApplianceImportEditorWidget_h */

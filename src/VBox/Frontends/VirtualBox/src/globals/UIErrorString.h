@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___UIErrorString_h___
-#define ___UIErrorString_h___
+#ifndef FEQT_INCLUDED_SRC_globals_UIErrorString_h
+#define FEQT_INCLUDED_SRC_globals_UIErrorString_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -63,5 +63,5 @@ private:
     static QString errorInfoToString(const COMErrorInfo &comInfo, HRESULT wrapperRC = S_OK);
 };
 
-#endif /* !___UIErrorString_h___ */
+#endif /* !FEQT_INCLUDED_SRC_globals_UIErrorString_h */
 

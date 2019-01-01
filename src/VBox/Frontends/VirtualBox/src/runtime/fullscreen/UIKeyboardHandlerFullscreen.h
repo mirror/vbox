@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___UIKeyboardHandlerFullscreen_h___
-#define ___UIKeyboardHandlerFullscreen_h___
+#ifndef FEQT_INCLUDED_SRC_runtime_fullscreen_UIKeyboardHandlerFullscreen_h
+#define FEQT_INCLUDED_SRC_runtime_fullscreen_UIKeyboardHandlerFullscreen_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -46,4 +46,4 @@ private:
     friend class UIKeyboardHandler;
 };
 
-#endif /* !___UIKeyboardHandlerFullscreen_h___ */
+#endif /* !FEQT_INCLUDED_SRC_runtime_fullscreen_UIKeyboardHandlerFullscreen_h */

@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___UIWizardExportAppPageBasic3_h___
-#define ___UIWizardExportAppPageBasic3_h___
+#ifndef FEQT_INCLUDED_SRC_wizards_exportappliance_UIWizardExportAppPageBasic3_h
+#define FEQT_INCLUDED_SRC_wizards_exportappliance_UIWizardExportAppPageBasic3_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -91,4 +91,4 @@ private:
     QIRichTextLabel *m_pLabel;
 };
 
-#endif /* !___UIWizardExportAppPageBasic3_h___ */
+#endif /* !FEQT_INCLUDED_SRC_wizards_exportappliance_UIWizardExportAppPageBasic3_h */

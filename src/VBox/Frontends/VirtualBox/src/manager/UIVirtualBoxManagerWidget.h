@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___UIVirtualBoxManagerWidget_h___
-#define ___UIVirtualBoxManagerWidget_h___
+#ifndef FEQT_INCLUDED_SRC_manager_UIVirtualBoxManagerWidget_h
+#define FEQT_INCLUDED_SRC_manager_UIVirtualBoxManagerWidget_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -213,4 +213,4 @@ private:
     UITools            *m_pPaneTools;
 };
 
-#endif /* !___UIVirtualBoxManagerWidget_h___ */
+#endif /* !FEQT_INCLUDED_SRC_manager_UIVirtualBoxManagerWidget_h */

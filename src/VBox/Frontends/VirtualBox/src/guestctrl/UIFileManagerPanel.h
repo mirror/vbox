@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___UIFileManagerPanel_h___
-#define ___UIFileManagerPanel_h___
+#ifndef FEQT_INCLUDED_SRC_guestctrl_UIFileManagerPanel_h
+#define FEQT_INCLUDED_SRC_guestctrl_UIFileManagerPanel_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -75,4 +75,4 @@ private:
     UIFileManager *m_pFileManager;
 };
 
-#endif /* !___UIFileManagerPanel!_h___ */
+#endif /* !FEQT_INCLUDED_SRC_guestctrl_UIFileManagerPanel_h */

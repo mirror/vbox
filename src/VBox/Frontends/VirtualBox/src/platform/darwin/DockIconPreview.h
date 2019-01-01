@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___UIDockIconPreview_h___
-#define ___UIDockIconPreview_h___
+#ifndef FEQT_INCLUDED_SRC_platform_darwin_DockIconPreview_h
+#define FEQT_INCLUDED_SRC_platform_darwin_DockIconPreview_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -35,5 +35,5 @@ public:
         : UICocoaDockIconPreview(pSession, overlayImage) {}
 };
 
-#endif /* !___UIDockIconPreview_h___ */
+#endif /* !FEQT_INCLUDED_SRC_platform_darwin_DockIconPreview_h */
 

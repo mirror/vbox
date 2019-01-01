@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___UIFileManager_h___
-#define ___UIFileManager_h___
+#ifndef FEQT_INCLUDED_SRC_guestctrl_UIFileManager_h
+#define FEQT_INCLUDED_SRC_guestctrl_UIFileManager_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -201,4 +201,4 @@ private:
     friend class UIFileManagerDialog;
 };
 
-#endif /* !___UIFileManager_h___ */
+#endif /* !FEQT_INCLUDED_SRC_guestctrl_UIFileManager_h */

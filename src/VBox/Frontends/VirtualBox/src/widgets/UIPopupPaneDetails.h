@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___UIPopupPaneDetails_h___
-#define ___UIPopupPaneDetails_h___
+#ifndef FEQT_INCLUDED_SRC_widgets_UIPopupPaneDetails_h
+#define FEQT_INCLUDED_SRC_widgets_UIPopupPaneDetails_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -136,5 +136,5 @@ private:
     UIAnimation *m_pAnimation;
 };
 
-#endif /* !___UIPopupPaneDetails_h___ */
+#endif /* !FEQT_INCLUDED_SRC_widgets_UIPopupPaneDetails_h */
 

@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __UIWizardNewVMPageExpert_h__
-#define __UIWizardNewVMPageExpert_h__
+#ifndef FEQT_INCLUDED_SRC_wizards_newvm_UIWizardNewVMPageExpert_h
+#define FEQT_INCLUDED_SRC_wizards_newvm_UIWizardNewVMPageExpert_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -87,4 +87,4 @@ private:
     QGroupBox *m_pDiskCnt;
 };
 
-#endif // __UIWizardNewVMPageExpert_h__
+#endif /* !FEQT_INCLUDED_SRC_wizards_newvm_UIWizardNewVMPageExpert_h */

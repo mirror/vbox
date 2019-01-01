@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___UIMachineView_h___
-#define ___UIMachineView_h___
+#ifndef FEQT_INCLUDED_SRC_runtime_UIMachineView_h
+#define FEQT_INCLUDED_SRC_runtime_UIMachineView_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -440,4 +440,4 @@ protected:
     int m_iTimerId;
 };
 
-#endif // !___UIMachineView_h___
+#endif /* !FEQT_INCLUDED_SRC_runtime_UIMachineView_h */

@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___VBoxUtils_h___
-#define ___VBoxUtils_h___
+#ifndef FEQT_INCLUDED_SRC_globals_VBoxUtils_h
+#define FEQT_INCLUDED_SRC_globals_VBoxUtils_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -64,5 +64,5 @@ private:
 };
 
 
-#endif /* !___VBoxUtils_h___ */
+#endif /* !FEQT_INCLUDED_SRC_globals_VBoxUtils_h */
 

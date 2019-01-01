@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___UIMenuBarEditorWindow_h___
-#define ___UIMenuBarEditorWindow_h___
+#ifndef FEQT_INCLUDED_SRC_widgets_UIMenuBarEditorWindow_h
+#define FEQT_INCLUDED_SRC_widgets_UIMenuBarEditorWindow_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -262,4 +262,4 @@ private:
 };
 
 
-#endif /* !___UIMenuBarEditorWindow_h___ */
+#endif /* !FEQT_INCLUDED_SRC_widgets_UIMenuBarEditorWindow_h */

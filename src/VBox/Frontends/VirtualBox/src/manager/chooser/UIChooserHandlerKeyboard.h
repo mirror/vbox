@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __UIChooserHandlerKeyboard_h__
-#define __UIChooserHandlerKeyboard_h__
+#ifndef FEQT_INCLUDED_SRC_manager_chooser_UIChooserHandlerKeyboard_h
+#define FEQT_INCLUDED_SRC_manager_chooser_UIChooserHandlerKeyboard_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -80,5 +80,5 @@ private:
     QMap<int, UIItemShiftSize> m_shiftMap;
 };
 
-#endif /* __UIChooserHandlerKeyboard_h__ */
+#endif /* !FEQT_INCLUDED_SRC_manager_chooser_UIChooserHandlerKeyboard_h */
 

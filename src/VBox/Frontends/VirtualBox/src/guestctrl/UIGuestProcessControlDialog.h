@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___UIGuestProcessControlDialog_h___
-#define ___UIGuestProcessControlDialog_h___
+#ifndef FEQT_INCLUDED_SRC_guestctrl_UIGuestProcessControlDialog_h
+#define FEQT_INCLUDED_SRC_guestctrl_UIGuestProcessControlDialog_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -113,4 +113,4 @@ private:
 };
 
 
-#endif /* !___UIGuestProcessControlDialog_h___ */
+#endif /* !FEQT_INCLUDED_SRC_guestctrl_UIGuestProcessControlDialog_h */

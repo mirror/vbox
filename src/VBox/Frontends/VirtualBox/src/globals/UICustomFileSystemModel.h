@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___UICustomFileSystemModel_h___
-#define ___UICustomFileSystemModel_h___
+#ifndef FEQT_INCLUDED_SRC_globals_UICustomFileSystemModel_h
+#define FEQT_INCLUDED_SRC_globals_UICustomFileSystemModel_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -186,4 +186,4 @@ private:
 };
 
 
-#endif /* !___UICustomFileSystemModel_h___ */
+#endif /* !FEQT_INCLUDED_SRC_globals_UICustomFileSystemModel_h */

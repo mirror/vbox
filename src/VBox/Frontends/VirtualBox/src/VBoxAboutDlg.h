@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___VBoxAboutDlg_h___
-#define ___VBoxAboutDlg_h___
+#ifndef FEQT_INCLUDED_SRC_VBoxAboutDlg_h
+#define FEQT_INCLUDED_SRC_VBoxAboutDlg_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -87,5 +87,5 @@ private:
     QLabel      *m_pLabel;
 };
 
-#endif /* !___VBoxAboutDlg_h___ */
+#endif /* !FEQT_INCLUDED_SRC_VBoxAboutDlg_h */
 

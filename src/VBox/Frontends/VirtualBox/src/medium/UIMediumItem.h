@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___UIMediumItem_h___
-#define ___UIMediumItem_h___
+#ifndef FEQT_INCLUDED_SRC_medium_UIMediumItem_h
+#define FEQT_INCLUDED_SRC_medium_UIMediumItem_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -200,4 +200,4 @@ protected:
     virtual bool releaseFrom(CMachine comMachine) /* override */;
 };
 
-#endif /* !___UIMediumItem_h___ */
+#endif /* !FEQT_INCLUDED_SRC_medium_UIMediumItem_h */

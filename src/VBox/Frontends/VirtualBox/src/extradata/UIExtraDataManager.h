@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___UIExtraDataManager_h___
-#define ___UIExtraDataManager_h___
+#ifndef FEQT_INCLUDED_SRC_extradata_UIExtraDataManager_h
+#define FEQT_INCLUDED_SRC_extradata_UIExtraDataManager_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -804,4 +804,4 @@ private:
 /** Singleton Extra-data Manager 'official' name. */
 #define gEDataManager UIExtraDataManager::instance()
 
-#endif /* !___UIExtraDataManager_h___ */
+#endif /* !FEQT_INCLUDED_SRC_extradata_UIExtraDataManager_h */

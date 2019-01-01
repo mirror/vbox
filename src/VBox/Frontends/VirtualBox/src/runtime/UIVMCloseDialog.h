@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___UIVMCloseDialog_h___
-#define ___UIVMCloseDialog_h___
+#ifndef FEQT_INCLUDED_SRC_runtime_UIVMCloseDialog_h
+#define FEQT_INCLUDED_SRC_runtime_UIVMCloseDialog_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -181,4 +181,4 @@ private:
     MachineCloseAction  m_enmLastCloseAction;
 };
 
-#endif /* !___UIVMCloseDialog_h___ */
+#endif /* !FEQT_INCLUDED_SRC_runtime_UIVMCloseDialog_h */

@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___UIWizard_h___
-#define ___UIWizard_h___
+#ifndef FEQT_INCLUDED_SRC_wizards_UIWizard_h
+#define FEQT_INCLUDED_SRC_wizards_UIWizard_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -119,4 +119,4 @@ private:
 /** Wizard interface safe-pointer. */
 typedef QPointer<UIWizard> UISafePointerWizard;
 
-#endif /* !___UIWizard_h___ */
+#endif /* !FEQT_INCLUDED_SRC_wizards_UIWizard_h */

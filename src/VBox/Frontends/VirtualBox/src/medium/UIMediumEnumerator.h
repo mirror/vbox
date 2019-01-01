@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___UIMediumEnumerator_h___
-#define ___UIMediumEnumerator_h___
+#ifndef FEQT_INCLUDED_SRC_medium_UIMediumEnumerator_h
+#define FEQT_INCLUDED_SRC_medium_UIMediumEnumerator_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -106,4 +106,4 @@ private:
     UIMediumMap m_media;
 };
 
-#endif /* !___UIMediumEnumerator_h___ */
+#endif /* !FEQT_INCLUDED_SRC_medium_UIMediumEnumerator_h */

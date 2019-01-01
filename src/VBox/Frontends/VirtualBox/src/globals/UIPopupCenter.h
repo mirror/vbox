@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___UIPopupCenter_h___
-#define ___UIPopupCenter_h___
+#ifndef FEQT_INCLUDED_SRC_globals_UIPopupCenter_h
+#define FEQT_INCLUDED_SRC_globals_UIPopupCenter_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -241,5 +241,5 @@ private:
 inline UIPopupCenter &popupCenter() { return *UIPopupCenter::instance(); }
 
 
-#endif /* !___UIPopupCenter_h___ */
+#endif /* !FEQT_INCLUDED_SRC_globals_UIPopupCenter_h */
 

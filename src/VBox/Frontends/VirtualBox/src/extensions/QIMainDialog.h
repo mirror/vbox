@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___QIMainDialog_h___
-#define ___QIMainDialog_h___
+#ifndef FEQT_INCLUDED_SRC_extensions_QIMainDialog_h
+#define FEQT_INCLUDED_SRC_extensions_QIMainDialog_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -122,4 +122,4 @@ private:
     QPointer<QSizeGrip>    m_pSizeGrip;
 };
 
-#endif /* !___QIMainDialog_h___ */
+#endif /* !FEQT_INCLUDED_SRC_extensions_QIMainDialog_h */

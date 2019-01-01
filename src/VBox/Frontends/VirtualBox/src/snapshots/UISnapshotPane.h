@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___UISnapshotPane_h___
-#define ___UISnapshotPane_h___
+#ifndef FEQT_INCLUDED_SRC_snapshots_UISnapshotPane_h
+#define FEQT_INCLUDED_SRC_snapshots_UISnapshotPane_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -253,5 +253,5 @@ private:
     /** @} */
 };
 
-#endif /* !___UISnapshotPane_h___ */
+#endif /* !FEQT_INCLUDED_SRC_snapshots_UISnapshotPane_h */
 

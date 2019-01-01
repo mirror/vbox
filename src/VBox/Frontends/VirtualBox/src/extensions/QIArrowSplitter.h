@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___QIArrowSplitter_h___
-#define ___QIArrowSplitter_h___
+#ifndef FEQT_INCLUDED_SRC_extensions_QIArrowSplitter_h
+#define FEQT_INCLUDED_SRC_extensions_QIArrowSplitter_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -111,4 +111,4 @@ private:
     int               m_iDetailsIndex;
 };
 
-#endif /* !___QIArrowSplitter_h___ */
+#endif /* !FEQT_INCLUDED_SRC_extensions_QIArrowSplitter_h */

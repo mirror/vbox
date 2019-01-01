@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___UIImageTools_h___
-#define ___UIImageTools_h___
+#ifndef FEQT_INCLUDED_SRC_globals_UIImageTools_h
+#define FEQT_INCLUDED_SRC_globals_UIImageTools_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -49,4 +49,4 @@ namespace UIImageTools
 }
 using namespace UIImageTools /* if header included */;
 
-#endif /* !___UIImageTools_h___ */
+#endif /* !FEQT_INCLUDED_SRC_globals_UIImageTools_h */

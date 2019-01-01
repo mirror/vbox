@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___UINetworkDefs_h___
-#define ___UINetworkDefs_h___
+#ifndef FEQT_INCLUDED_SRC_net_UINetworkDefs_h
+#define FEQT_INCLUDED_SRC_net_UINetworkDefs_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -34,5 +34,5 @@ enum UINetworkRequestType
 /** User dictionary. */
 typedef QMap<QString, QString> UserDictionary;
 
-#endif /* !___UINetworkDefs_h___ */
+#endif /* !FEQT_INCLUDED_SRC_net_UINetworkDefs_h */
 

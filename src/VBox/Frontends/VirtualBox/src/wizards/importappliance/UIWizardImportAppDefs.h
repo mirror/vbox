@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __UIWizardImportAppDefs_h__
-#define __UIWizardImportAppDefs_h__
+#ifndef FEQT_INCLUDED_SRC_wizards_importappliance_UIWizardImportAppDefs_h
+#define FEQT_INCLUDED_SRC_wizards_importappliance_UIWizardImportAppDefs_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -32,5 +32,5 @@
 typedef QPointer<UIApplianceImportEditorWidget> ImportAppliancePointer;
 Q_DECLARE_METATYPE(ImportAppliancePointer);
 
-#endif /* __UIWizardImportAppDefs_h__ */
+#endif /* !FEQT_INCLUDED_SRC_wizards_importappliance_UIWizardImportAppDefs_h */
 

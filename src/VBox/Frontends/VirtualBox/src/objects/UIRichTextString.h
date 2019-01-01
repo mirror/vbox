@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___UIRichTextString_h___
-#define ___UIRichTextString_h___
+#ifndef FEQT_INCLUDED_SRC_objects_UIRichTextString_h
+#define FEQT_INCLUDED_SRC_objects_UIRichTextString_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -117,4 +117,4 @@ private:
     static const QMap<Type, bool>     s_doPatternHasMeta;
 };
 
-#endif /* !___UIRichTextString_h___ */
+#endif /* !FEQT_INCLUDED_SRC_objects_UIRichTextString_h */

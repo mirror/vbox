@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __UIMachinePreview_h__
-#define __UIMachinePreview_h__
+#ifndef FEQT_INCLUDED_SRC_manager_details_UIMachinePreview_h
+#define FEQT_INCLUDED_SRC_manager_details_UIMachinePreview_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -127,5 +127,5 @@ private:
     QString m_strPreviewName;
 };
 
-#endif /* !__UIMachinePreview_h__ */
+#endif /* !FEQT_INCLUDED_SRC_manager_details_UIMachinePreview_h */
 

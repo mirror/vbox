@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___UIWindowMenuManager_h___
-#define ___UIWindowMenuManager_h___
+#ifndef FEQT_INCLUDED_SRC_platform_darwin_UIWindowMenuManager_h
+#define FEQT_INCLUDED_SRC_platform_darwin_UIWindowMenuManager_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -85,4 +85,4 @@ private:
 /** Singleton 'Window' menu Manager 'official' name. */
 #define gpWindowMenuManager UIWindowMenuManager::instance()
 
-#endif /* !___UIWindowMenuManager_h___ */
+#endif /* !FEQT_INCLUDED_SRC_platform_darwin_UIWindowMenuManager_h */

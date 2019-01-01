@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___UIVMLogViewerOptionsPanel_h___
-#define ___UIVMLogViewerOptionsPanel_h___
+#ifndef FEQT_INCLUDED_SRC_logviewer_UIVMLogViewerOptionsPanel_h
+#define FEQT_INCLUDED_SRC_logviewer_UIVMLogViewerOptionsPanel_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -81,4 +81,4 @@ private:
 
 };
 
-#endif /* !___UIVMLogViewerOptionsPanel_h___ */
+#endif /* !FEQT_INCLUDED_SRC_logviewer_UIVMLogViewerOptionsPanel_h */

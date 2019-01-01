@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___QIStatusBar_h___
-#define ___QIStatusBar_h___
+#ifndef FEQT_INCLUDED_SRC_extensions_QIStatusBar_h
+#define FEQT_INCLUDED_SRC_extensions_QIStatusBar_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -48,4 +48,4 @@ protected:
     QString m_strMessage;
 };
 
-#endif /* !___QIStatusBar_h___ */
+#endif /* !FEQT_INCLUDED_SRC_extensions_QIStatusBar_h */

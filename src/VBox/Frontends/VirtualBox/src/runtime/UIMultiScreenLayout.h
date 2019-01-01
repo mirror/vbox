@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __UIMultiScreenLayout_h__
-#define __UIMultiScreenLayout_h__
+#ifndef FEQT_INCLUDED_SRC_runtime_UIMultiScreenLayout_h
+#define FEQT_INCLUDED_SRC_runtime_UIMultiScreenLayout_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -82,5 +82,5 @@ private:
     QList<QMenu*> m_screenMenuList;
 };
 
-#endif /* __UIMultiScreenLayout_h__ */
+#endif /* !FEQT_INCLUDED_SRC_runtime_UIMultiScreenLayout_h */
 

@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___QIMenu_h___
-#define ___QIMenu_h___
+#ifndef FEQT_INCLUDED_SRC_extensions_QIMenu_h
+#define FEQT_INCLUDED_SRC_extensions_QIMenu_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -44,4 +44,4 @@ private slots:
     void sltHighlightFirstAction();
 };
 
-#endif /* !___QIMenu_h___ */
+#endif /* !FEQT_INCLUDED_SRC_extensions_QIMenu_h */

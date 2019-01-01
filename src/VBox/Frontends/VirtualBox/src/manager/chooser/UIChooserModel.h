@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___UIChooserModel_h___
-#define ___UIChooserModel_h___
+#ifndef FEQT_INCLUDED_SRC_manager_chooser_UIChooserModel_h
+#define FEQT_INCLUDED_SRC_manager_chooser_UIChooserModel_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -623,4 +623,4 @@ protected:
 };
 
 
-#endif /* !___UIChooserModel_h___ */
+#endif /* !FEQT_INCLUDED_SRC_manager_chooser_UIChooserModel_h */

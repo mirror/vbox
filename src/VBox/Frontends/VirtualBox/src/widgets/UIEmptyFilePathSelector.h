@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __UIEmptyFilePathSelector_h__
-#define __UIEmptyFilePathSelector_h__
+#ifndef FEQT_INCLUDED_SRC_widgets_UIEmptyFilePathSelector_h
+#define FEQT_INCLUDED_SRC_widgets_UIEmptyFilePathSelector_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -120,5 +120,5 @@ private:
     QString mPath;
 };
 
-#endif /* !___UIEmptyFilePathSelector_h___ */
+#endif /* !FEQT_INCLUDED_SRC_widgets_UIEmptyFilePathSelector_h */
 

@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___UIMachineSettingsDisplay_h___
-#define ___UIMachineSettingsDisplay_h___
+#ifndef FEQT_INCLUDED_SRC_settings_machine_UIMachineSettingsDisplay_h
+#define FEQT_INCLUDED_SRC_settings_machine_UIMachineSettingsDisplay_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -184,4 +184,4 @@ private:
     UISettingsCacheMachineDisplay *m_pCache;
 };
 
-#endif /* !___UIMachineSettingsDisplay_h___ */
+#endif /* !FEQT_INCLUDED_SRC_settings_machine_UIMachineSettingsDisplay_h */

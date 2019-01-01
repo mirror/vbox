@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___QIGraphicsView_h___
-#define ___QIGraphicsView_h___
+#ifndef FEQT_INCLUDED_SRC_extensions_graphics_QIGraphicsView_h
+#define FEQT_INCLUDED_SRC_extensions_graphics_QIGraphicsView_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -52,4 +52,4 @@ private:
     int m_iVerticalScrollBarPosition;
 };
 
-#endif /* !___QIGraphicsView_h___ */
+#endif /* !FEQT_INCLUDED_SRC_extensions_graphics_QIGraphicsView_h */

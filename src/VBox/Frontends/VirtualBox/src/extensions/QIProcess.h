@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___QIProcess_h___
-#define ___QIProcess_h___
+#ifndef FEQT_INCLUDED_SRC_extensions_QIProcess_h
+#define FEQT_INCLUDED_SRC_extensions_QIProcess_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -44,4 +44,4 @@ public:
                                  int iTimeout = 5000);
 };
 
-#endif /* !___QIProcess_h___ */
+#endif /* !FEQT_INCLUDED_SRC_extensions_QIProcess_h */

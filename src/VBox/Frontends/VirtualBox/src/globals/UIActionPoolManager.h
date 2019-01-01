@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___UIActionPoolManager_h___
-#define ___UIActionPoolManager_h___
+#ifndef FEQT_INCLUDED_SRC_globals_UIActionPoolManager_h
+#define FEQT_INCLUDED_SRC_globals_UIActionPoolManager_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -239,5 +239,5 @@ private:
 };
 
 
-#endif /* !___UIActionPoolManager_h___ */
+#endif /* !FEQT_INCLUDED_SRC_globals_UIActionPoolManager_h */
 

@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___UIMachineViewNormal_h___
-#define ___UIMachineViewNormal_h___
+#ifndef FEQT_INCLUDED_SRC_runtime_normal_UIMachineViewNormal_h
+#define FEQT_INCLUDED_SRC_runtime_normal_UIMachineViewNormal_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -83,5 +83,5 @@ private:
     friend class UIMachineView;
 };
 
-#endif // !___UIMachineViewNormal_h___
+#endif /* !FEQT_INCLUDED_SRC_runtime_normal_UIMachineViewNormal_h */
 

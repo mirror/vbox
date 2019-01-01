@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___UIInformationDataItem_h___
-#define ___UIInformationDataItem_h___
+#ifndef FEQT_INCLUDED_SRC_runtime_information_UIInformationDataItem_h
+#define FEQT_INCLUDED_SRC_runtime_information_UIInformationDataItem_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -358,5 +358,5 @@ private:
     QTimer       *m_pTimer;
 };
 
-#endif /* !___UIInformationDataItem_h___ */
+#endif /* !FEQT_INCLUDED_SRC_runtime_information_UIInformationDataItem_h */
 

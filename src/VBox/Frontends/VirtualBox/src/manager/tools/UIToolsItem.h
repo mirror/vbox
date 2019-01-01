@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___UIToolsItem_h___
-#define ___UIToolsItem_h___
+#ifndef FEQT_INCLUDED_SRC_manager_tools_UIToolsItem_h
+#define FEQT_INCLUDED_SRC_manager_tools_UIToolsItem_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -320,4 +320,4 @@ private:
     /** @} */
 };
 
-#endif /* !___UIToolsItem_h___ */
+#endif /* !FEQT_INCLUDED_SRC_manager_tools_UIToolsItem_h */

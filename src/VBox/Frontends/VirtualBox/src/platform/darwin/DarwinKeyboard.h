@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___DarwinKeyboard_h___
-#define ___DarwinKeyboard_h___
+#ifndef FEQT_INCLUDED_SRC_platform_darwin_DarwinKeyboard_h
+#define FEQT_INCLUDED_SRC_platform_darwin_DarwinKeyboard_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -82,5 +82,5 @@ SHARED_LIBRARY_STUFF void     DarwinHidDevicesBroadcastLeds(void *pState, bool f
 RT_C_DECLS_END
 
 
-#endif /* !___DarwinKeyboard_h___ */
+#endif /* !FEQT_INCLUDED_SRC_platform_darwin_DarwinKeyboard_h */
 

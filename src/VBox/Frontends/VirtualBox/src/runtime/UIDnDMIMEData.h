@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___UIDnDMIMEData_h___
-#define ___UIDnDMIMEData_h___
+#ifndef FEQT_INCLUDED_SRC_runtime_UIDnDMIMEData_h
+#define FEQT_INCLUDED_SRC_runtime_UIDnDMIMEData_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -139,5 +139,5 @@ protected:
     mutable State     m_enmState;
 };
 
-#endif /* ___UIDnDMIMEData_h___ */
+#endif /* !FEQT_INCLUDED_SRC_runtime_UIDnDMIMEData_h */
 

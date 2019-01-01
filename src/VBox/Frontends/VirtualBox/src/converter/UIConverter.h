@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___UIConverter_h___
-#define ___UIConverter_h___
+#ifndef FEQT_INCLUDED_SRC_converter_UIConverter_h
+#define FEQT_INCLUDED_SRC_converter_UIConverter_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -127,5 +127,5 @@ private:
 /** Singleton UI converter 'official' name. */
 #define gpConverter UIConverter::instance()
 
-#endif /* !___UIConverter_h___ */
+#endif /* !FEQT_INCLUDED_SRC_converter_UIConverter_h */
 

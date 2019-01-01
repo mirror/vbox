@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___UIMediumSizeEditor_h___
-#define ___UIMediumSizeEditor_h___
+#ifndef FEQT_INCLUDED_SRC_widgets_UIMediumSizeEditor_h
+#define FEQT_INCLUDED_SRC_widgets_UIMediumSizeEditor_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -107,4 +107,4 @@ private:
     QILineEdit *m_pEditor;
 };
 
-#endif /* !___UIMediumSizeEditor_h___ */
+#endif /* !FEQT_INCLUDED_SRC_widgets_UIMediumSizeEditor_h */

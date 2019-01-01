@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___UIMessageCenter_h___
-#define ___UIMessageCenter_h___
+#ifndef FEQT_INCLUDED_SRC_globals_UIMessageCenter_h
+#define FEQT_INCLUDED_SRC_globals_UIMessageCenter_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -562,4 +562,4 @@ private:
 inline UIMessageCenter &msgCenter() { return *UIMessageCenter::instance(); }
 
 
-#endif /* !___UIMessageCenter_h___ */
+#endif /* !FEQT_INCLUDED_SRC_globals_UIMessageCenter_h */

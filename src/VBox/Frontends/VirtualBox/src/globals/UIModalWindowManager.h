@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___UIModalWindowManager_h___
-#define ___UIModalWindowManager_h___
+#ifndef FEQT_INCLUDED_SRC_globals_UIModalWindowManager_h
+#define FEQT_INCLUDED_SRC_globals_UIModalWindowManager_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -101,5 +101,5 @@ private:
 /** Singleton Modal Window Manager 'official' name. */
 inline UIModalWindowManager &windowManager() { return *(UIModalWindowManager::instance()); }
 
-#endif /* !___UIModalWindowManager_h___ */
+#endif /* !FEQT_INCLUDED_SRC_globals_UIModalWindowManager_h */
 

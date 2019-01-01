@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___UIAddDiskEncryptionPasswordDialog_h___
-#define ___UIAddDiskEncryptionPasswordDialog_h___
+#ifndef FEQT_INCLUDED_SRC_widgets_UIAddDiskEncryptionPasswordDialog_h
+#define FEQT_INCLUDED_SRC_widgets_UIAddDiskEncryptionPasswordDialog_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -94,4 +94,4 @@ private:
     QIDialogButtonBox     *m_pButtonBox;
 };
 
-#endif /* !___UIAddDiskEncryptionPasswordDialog_h___ */
+#endif /* !FEQT_INCLUDED_SRC_widgets_UIAddDiskEncryptionPasswordDialog_h */

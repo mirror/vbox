@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___UINetworkManager_h___
-#define ___UINetworkManager_h___
+#ifndef FEQT_INCLUDED_SRC_net_UINetworkManager_h
+#define FEQT_INCLUDED_SRC_net_UINetworkManager_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -135,5 +135,5 @@ private:
 /** Singleton Network Manager 'official' name. */
 #define gNetworkManager UINetworkManager::instance()
 
-#endif /* !___UINetworkManager_h___ */
+#endif /* !FEQT_INCLUDED_SRC_net_UINetworkManager_h */
 

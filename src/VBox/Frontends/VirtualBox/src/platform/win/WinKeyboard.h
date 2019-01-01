@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___WinKeyboard_h___
-#define ___WinKeyboard_h___
+#ifndef FEQT_INCLUDED_SRC_platform_win_WinKeyboard_h
+#define FEQT_INCLUDED_SRC_platform_win_WinKeyboard_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -88,5 +88,5 @@ private:
     LONG m_timeOfLastKeyEvent;
 };
 
-#endif
+#endif /* !FEQT_INCLUDED_SRC_platform_win_WinKeyboard_h */
 

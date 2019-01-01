@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___UISettingsDialog_h___
-#define ___UISettingsDialog_h___
+#ifndef FEQT_INCLUDED_SRC_settings_UISettingsDialog_h
+#define FEQT_INCLUDED_SRC_settings_UISettingsDialog_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -210,4 +210,4 @@ private:
 #endif
 };
 
-#endif /* !___UISettingsDialog_h___ */
+#endif /* !FEQT_INCLUDED_SRC_settings_UISettingsDialog_h */

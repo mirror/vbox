@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___UIWizardCloneVDPageBasic2_h___
-#define ___UIWizardCloneVDPageBasic2_h___
+#ifndef FEQT_INCLUDED_SRC_wizards_clonevd_UIWizardCloneVDPageBasic2_h
+#define FEQT_INCLUDED_SRC_wizards_clonevd_UIWizardCloneVDPageBasic2_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -99,5 +99,5 @@ private:
     QIRichTextLabel *m_pLabel;
 };
 
-#endif /* !___UIWizardCloneVDPageBasic2_h___ */
+#endif /* !FEQT_INCLUDED_SRC_wizards_clonevd_UIWizardCloneVDPageBasic2_h */
 
