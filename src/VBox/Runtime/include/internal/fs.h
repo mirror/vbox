@@ -24,8 +24,8 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
-#ifndef ___internal_fs_h
-#define ___internal_fs_h
+#ifndef IPRT_INCLUDED_INTERNAL_fs_h
+#define IPRT_INCLUDED_INTERNAL_fs_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
