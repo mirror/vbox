@@ -24,8 +24,8 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
-#ifndef ___SUPR0IdcClientInternal_h__
-#define ___SUPR0IdcClientInternal_h__
+#ifndef VBOX_INCLUDED_SRC_Support_SUPR0IdcClientInternal_h
+#define VBOX_INCLUDED_SRC_Support_SUPR0IdcClientInternal_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -66,5 +66,5 @@ int VBOXCALL supR0IdcNativeClose(PSUPDRVIDCHANDLE pHandle, PSUPDRVIDCREQHDR pReq
 int VBOXCALL supR0IdcNativeCall(PSUPDRVIDCHANDLE pHandle, uint32_t iReq, PSUPDRVIDCREQHDR pReq);
 RT_C_DECLS_END
 
-#endif
+#endif /* !VBOX_INCLUDED_SRC_Support_SUPR0IdcClientInternal_h */
 

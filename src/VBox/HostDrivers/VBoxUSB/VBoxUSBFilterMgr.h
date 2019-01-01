@@ -24,8 +24,8 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
-#ifndef ___VBoxUSBFilterMgr_h
-#define ___VBoxUSBFilterMgr_h
+#ifndef VBOX_INCLUDED_SRC_VBoxUSB_VBoxUSBFilterMgr_h
+#define VBOX_INCLUDED_SRC_VBoxUSB_VBoxUSBFilterMgr_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -55,4 +55,4 @@ VBOXUSBFILTER_CONTEXT VBoxUSBFilterGetOwner(uintptr_t uId);
 
 RT_C_DECLS_END
 
-#endif
+#endif /* !VBOX_INCLUDED_SRC_VBoxUSB_VBoxUSBFilterMgr_h */

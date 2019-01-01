@@ -24,8 +24,8 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
-#ifndef ___VBoxNetFltInternal_h___
-#define ___VBoxNetFltInternal_h___
+#ifndef VBOX_INCLUDED_SRC_VBoxNetFlt_VBoxNetFltInternal_h
+#define VBOX_INCLUDED_SRC_VBoxNetFlt_VBoxNetFltInternal_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -486,5 +486,5 @@ DECLHIDDEN(int) vboxNetFltOsPreInitInstance(PVBOXNETFLTINS pThis);
 
 RT_C_DECLS_END
 
-#endif
+#endif /* !VBOX_INCLUDED_SRC_VBoxNetFlt_VBoxNetFltInternal_h */
 

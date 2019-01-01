@@ -24,8 +24,8 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
-#ifndef ___VBoxNetFltNobj_h___
-#define ___VBoxNetFltNobj_h___
+#ifndef VBOX_INCLUDED_SRC_VBoxNetFlt_win_nobj_VBoxNetFltNobj_h
+#define VBOX_INCLUDED_SRC_VBoxNetFlt_win_nobj_VBoxNetFltNobj_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -83,4 +83,4 @@ private:
     BOOL mbInstalling;
 };
 
-#endif /* !___VBoxNetFltNobj_h___ */
+#endif /* !VBOX_INCLUDED_SRC_VBoxNetFlt_win_nobj_VBoxNetFltNobj_h */

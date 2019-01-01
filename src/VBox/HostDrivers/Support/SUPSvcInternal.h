@@ -24,8 +24,8 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
-#ifndef ___SUPSvcInternal_h___
-#define ___SUPSvcInternal_h___
+#ifndef VBOX_INCLUDED_SRC_Support_SUPSvcInternal_h
+#define VBOX_INCLUDED_SRC_Support_SUPSvcInternal_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -90,5 +90,5 @@ DECLCALLBACK(void) supSvcGlobalStopAndDestroy(void *pvInstance, bool fRunning);
 
 RT_C_DECLS_END
 
-#endif
+#endif /* !VBOX_INCLUDED_SRC_Support_SUPSvcInternal_h */
 

@@ -23,8 +23,8 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
-#ifndef ___VBoxUsbMon_h___
-#define ___VBoxUsbMon_h___
+#ifndef VBOX_INCLUDED_SRC_VBoxUSB_win_mon_VBoxUsbMon_h
+#define VBOX_INCLUDED_SRC_VBoxUSB_win_mon_VBoxUsbMon_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -71,4 +71,4 @@ typedef FNVBOXUSBMONDEVWALKER *PFNVBOXUSBMONDEVWALKER;
 
 VOID vboxUsbMonHubDevWalk(PFNVBOXUSBMONDEVWALKER pfnWalker, PVOID pvWalker, ULONG fFlags);
 
-#endif /* #ifndef ___VBoxUsbMon_h___ */
+#endif /* !VBOX_INCLUDED_SRC_VBoxUSB_win_mon_VBoxUsbMon_h */

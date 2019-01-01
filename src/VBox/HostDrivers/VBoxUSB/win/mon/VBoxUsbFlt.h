@@ -24,8 +24,8 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
-#ifndef ___win_mon_VBoxUsbFlt_h___
-#define ___win_mon_VBoxUsbFlt_h___
+#ifndef VBOX_INCLUDED_SRC_VBoxUSB_win_mon_VBoxUsbFlt_h
+#define VBOX_INCLUDED_SRC_VBoxUSB_win_mon_VBoxUsbFlt_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -64,5 +64,5 @@ NTSTATUS VBoxUsbFltPdoAddCompleted(PDEVICE_OBJECT pPdo);
 NTSTATUS VBoxUsbFltPdoRemove(PDEVICE_OBJECT pPdo);
 BOOLEAN VBoxUsbFltPdoIsFiltered(PDEVICE_OBJECT pPdo);
 
-#endif
+#endif /* !VBOX_INCLUDED_SRC_VBoxUSB_win_mon_VBoxUsbFlt_h */
 

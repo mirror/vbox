@@ -24,8 +24,8 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
-#ifndef ___VBoxUsbPnP_h___
-#define ___VBoxUsbPnP_h___
+#ifndef VBOX_INCLUDED_SRC_VBoxUSB_win_dev_VBoxUsbPnP_h
+#define VBOX_INCLUDED_SRC_VBoxUSB_win_dev_VBoxUsbPnP_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -33,4 +33,4 @@
 
 DECLHIDDEN(NTSTATUS) vboxUsbDispatchPnP(IN PDEVICE_OBJECT pDeviceObject, IN PIRP pIrp);
 
-#endif
+#endif /* !VBOX_INCLUDED_SRC_VBoxUSB_win_dev_VBoxUsbPnP_h */

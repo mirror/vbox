@@ -58,3 +58,6 @@
 /VBoxNetFlt/win/nobj/VBoxNetFltNobjT.idl: --treat-as .h --no-fix-header-guards
 /Support/solaris/mod.sh: --no-convert-tabs
 /Support/linux/SUPDrv-linux.mod.c: --no-convert-tabs
+
+/*.h: --guard-relative-to-dir . --guard-prefix VBOX_INCLUDED_SRC_ --fix-header-guard-endif
+

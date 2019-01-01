@@ -24,8 +24,8 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
-#ifndef ___VBoxUsbDev_h___
-#define ___VBoxUsbDev_h___
+#ifndef VBOX_INCLUDED_SRC_VBoxUSB_win_dev_VBoxUsbDev_h
+#define VBOX_INCLUDED_SRC_VBoxUSB_win_dev_VBoxUsbDev_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -205,4 +205,4 @@ DECLINLINE(VOID) vboxUsbDdiStateReleaseAndWaitRemoved(PVBOXUSBDEV_EXT pDevExt)
     VBoxDrvToolRefWaitEqual(&pDevExt->DdiState.Ref, 0);
 }
 
-#endif /* #ifndef ___VBoxUsbDev_h___ */
+#endif /* !VBOX_INCLUDED_SRC_VBoxUSB_win_dev_VBoxUsbDev_h */
