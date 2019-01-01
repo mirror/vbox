@@ -3127,41 +3127,40 @@ bool rewrite_FixHeaderGuards(PSCMRWSTATE pState, PSCMSTREAM pIn, PSCMSTREAM pOut
      * Check out the last endif, making sure it's well formed and make sure it has the
      * right kind of comment following it.
      */
-#if 0
-    if (iEndIfOut == 0)
-        return ScmError(pState, VERR_PARSE_ERROR, "Expected '#endif' at the end of the file...\n");
-    rc = ScmStreamSeekByLine(pIn, iEndIfIn);
-    if (RT_FAILURE(rc))
-        return false;
-    rc = ScmStreamSeekByLine(pOut, iEndIfOut);
-    if (RT_FAILURE(rc))
-        return false;
-
-    pchLine = ScmStreamGetLine(pIn, &cchLine, &enmEol);
-    if (!pchLine)
-        return ScmError(pState, VERR_INTERNAL_ERROR, "ScmStreamGetLine failed re-reading #endif!\n");
-
-    char   szTmp[64 + sizeof(szNormalized)];
-    size_t cchTmp;
-    if (pSettings->fEndifGuardComment)
-        cchTmp = RTStrPrintf(szTmp, sizeof(szTmp), "#endif /* !%.*s */", Guard.cch, Guard.psz);
-    else
-        cchTmp = RTStrPrintf(szTmp, sizeof(szTmp), "#endif"); /* lazy bird */
-    fRet |= cchTmp != cchLine || memcmp(szTmp, pchLine, cchTmp) != 0;
-    rc = ScmStreamPutLine(pOut, szTmp, cchTmp, enmEol);
-    if (RT_FAILURE(rc))
-        return false;
-
-    /* Copy out the remaining lines (assumes no #pragma once here). */
-    while ((pchLine = ScmStreamGetLine(pIn, &cchLine, &enmEol)) != NULL)
+    if (pSettings->fFixHeaderGuardEndif)
     {
-        rc = ScmStreamPutLine(pOut, pchLine, cchLine, enmEol);
+        if (iEndIfOut == 0)
+            return ScmError(pState, VERR_PARSE_ERROR, "Expected '#endif' at the end of the file...\n");
+        rc = ScmStreamSeekByLine(pIn, iEndIfIn);
         if (RT_FAILURE(rc))
             return false;
+        rc = ScmStreamSeekByLine(pOut, iEndIfOut);
+        if (RT_FAILURE(rc))
+            return false;
+
+        pchLine = ScmStreamGetLine(pIn, &cchLine, &enmEol);
+        if (!pchLine)
+            return ScmError(pState, VERR_INTERNAL_ERROR, "ScmStreamGetLine failed re-reading #endif!\n");
+
+        char   szTmp[64 + sizeof(szNormalized)];
+        size_t cchTmp;
+        if (pSettings->fEndifGuardComment)
+            cchTmp = RTStrPrintf(szTmp, sizeof(szTmp), "#endif /* !%.*s */", Guard.cch, Guard.psz);
+        else
+            cchTmp = RTStrPrintf(szTmp, sizeof(szTmp), "#endif"); /* lazy bird */
+        fRet |= cchTmp != cchLine || memcmp(szTmp, pchLine, cchTmp) != 0;
+        rc = ScmStreamPutLine(pOut, szTmp, cchTmp, enmEol);
+        if (RT_FAILURE(rc))
+            return false;
+
+        /* Copy out the remaining lines (assumes no #pragma once here). */
+        while ((pchLine = ScmStreamGetLine(pIn, &cchLine, &enmEol)) != NULL)
+        {
+            rc = ScmStreamPutLine(pOut, pchLine, cchLine, enmEol);
+            if (RT_FAILURE(rc))
+                return false;
+        }
     }
-#else
-    RT_NOREF(iEndIfOut, iEndIfIn);
-#endif
 
     return fRet;
 }

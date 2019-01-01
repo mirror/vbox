@@ -337,6 +337,8 @@ typedef struct SCMSETTINGSBASE
     bool            fFixHeaderGuards;
     /** Whether to include a pragma once statement with the header guard. */
     bool            fPragmaOnce;
+    /** Whether to fix the \#endif part of a header guard. */
+    bool            fFixHeaderGuardEndif;
     /** Whether to add a comment on the \#endif part of the header guard. */
     bool            fEndifGuardComment;
     /** The guard name prefix.   */

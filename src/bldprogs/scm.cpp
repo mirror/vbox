@@ -78,6 +78,8 @@ typedef enum SCMOPT
     SCMOPT_NO_FIX_HEADER_GUARDS,
     SCMOPT_PRAGMA_ONCE,
     SCMOPT_NO_PRAGMA_ONCE,
+    SCMOPT_FIX_HEADER_GUARD_ENDIF,
+    SCMOPT_NO_FIX_HEADER_GUARD_ENDIF,
     SCMOPT_ENDIF_GUARD_COMMENT,
     SCMOPT_NO_ENDIF_GUARD_COMMENT,
     SCMOPT_GUARD_PREFIX,
@@ -184,6 +186,7 @@ static SCMSETTINGSBASE const g_Defaults =
     /* .cMinBlankLinesBeforeFlowerBoxMakers = */    2,
     /* .fFixHeaderGuards = */                       true,
     /* .fPragmaOnce = */                            true,
+    /* .fFixHeaderGuardEndif = */                   false,
     /* .fEndifGuardComment = */                     true,
     /* .pszGuardPrefix = */                         (char *)"VBOX_INCLUDED_",
     /* .pszGuardRelativeToDir = */                  NULL,
@@ -231,6 +234,8 @@ static RTGETOPTDEF  g_aScmOpts[] =
     { "--no-fix-header-guards",             SCMOPT_NO_FIX_HEADER_GUARDS,            RTGETOPT_REQ_NOTHING },
     { "--pragma-once",                      SCMOPT_PRAGMA_ONCE,                     RTGETOPT_REQ_NOTHING },
     { "--no-pragma-once",                   SCMOPT_NO_PRAGMA_ONCE,                  RTGETOPT_REQ_NOTHING },
+    { "--fix-header-guard-endif",           SCMOPT_FIX_HEADER_GUARD_ENDIF,          RTGETOPT_REQ_NOTHING },
+    { "--no-fix-header-guard-endif",        SCMOPT_NO_FIX_HEADER_GUARD_ENDIF,       RTGETOPT_REQ_NOTHING },
     { "--endif-guard-comment",              SCMOPT_ENDIF_GUARD_COMMENT,             RTGETOPT_REQ_NOTHING },
     { "--no-endif-guard-comment",           SCMOPT_NO_ENDIF_GUARD_COMMENT,          RTGETOPT_REQ_NOTHING },
     { "--guard-prefix",                     SCMOPT_GUARD_PREFIX,                    RTGETOPT_REQ_STRING },
@@ -1059,6 +1064,13 @@ static int scmSettingsBaseHandleOpt(PSCMSETTINGSBASE pSettings, int rc, PRTGETOP
             return VINF_SUCCESS;
         case SCMOPT_NO_PRAGMA_ONCE:
             pSettings->fPragmaOnce = false;
+            return VINF_SUCCESS;
+
+        case SCMOPT_FIX_HEADER_GUARD_ENDIF:
+            pSettings->fFixHeaderGuardEndif = true;
+            return VINF_SUCCESS;
+        case SCMOPT_NO_FIX_HEADER_GUARD_ENDIF:
+            pSettings->fFixHeaderGuardEndif = false;
             return VINF_SUCCESS;
 
         case SCMOPT_ENDIF_GUARD_COMMENT:
@@ -2773,6 +2785,9 @@ static int scmHelp(PCRTGETOPTDEF paOpts, size_t cOpts)
                 break;
             case SCMOPT_PRAGMA_ONCE:
                 RTPrintf("      Whether to include #pragma once with the header guard.  Default: %RTbool\n", g_Defaults.fPragmaOnce);
+                break;
+            case SCMOPT_FIX_HEADER_GUARD_ENDIF:
+                RTPrintf("      Whether to fix the #endif of a header guard.  Default: %RTbool\n", g_Defaults.fFixHeaderGuardEndif);
                 break;
             case SCMOPT_ENDIF_GUARD_COMMENT:
                 RTPrintf("      Put a comment on the header guard #endif or not.  Default: %RTbool\n", g_Defaults.fEndifGuardComment);
