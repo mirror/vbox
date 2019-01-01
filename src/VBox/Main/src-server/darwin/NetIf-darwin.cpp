@@ -31,8 +31,6 @@
 #include <sys/param.h>
 #undef PVM
 
-#define LOG_GROUP LOG_GROUP_MAIN
-
 #include <iprt/errcore.h>
 #include <iprt/alloc.h>
 
