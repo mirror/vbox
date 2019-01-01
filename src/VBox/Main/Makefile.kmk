@@ -213,7 +213,7 @@ ifndef VBOX_ONLY_SDK
  ifeq ($(KBUILD_TARGET),win)
   VBoxAPIWrap_USES           = vccprecomp
   VBoxAPIWrap_PCH_HDR       := $(PATH_SUB_CURRENT)/src-all/win/VBoxAPIWrap-precomp_vcc.h
- else if "$(USERNAME)" == "bird" && "$(KBUILD_TARGET)" == "linux" && !defined(KBUILD_USE_KOBJCACHE) && !defined(VBOX_WITHOUT_PRECOMPILED_HEADERS)
+ else if $(KMK_REVISION) >= 3250 && "$(KBUILD_TARGET)" != "darwin" && !defined(VBOX_WITHOUT_PRECOMPILED_HEADERS) && !defined(KBUILD_USE_KOBJCACHE)
   VBoxAPIWrap_USES           = gccprecomp
   VBoxAPIWrap_PCH_HDR       := $(PATH_SUB_CURRENT)/src-all/win/VBoxAPIWrap-precomp_gcc.h
  endif
