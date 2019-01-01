@@ -19,8 +19,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___VBox_Mesa_Assert_h__
-#define ___VBox_Mesa_Assert_h__
+#ifndef GA_INCLUDED_3D_MESA_assert_h
+#define GA_INCLUDED_3D_MESA_assert_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -30,4 +30,4 @@
 #undef assert
 #define assert(_e) (void)( (!!(_e)) || (ASMBreakpoint(), 0) )
 
-#endif
+#endif /* !GA_INCLUDED_3D_MESA_assert_h */

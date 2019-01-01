@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___VBOXTRAY_H
-#define ___VBOXTRAY_H
+#ifndef GA_INCLUDED_SRC_WINNT_VBoxTray_VBoxTray_h
+#define GA_INCLUDED_SRC_WINNT_VBoxTray_VBoxTray_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -192,5 +192,5 @@ extern uint32_t     g_fGuestDisplaysChanged;
 
 RTEXITCODE VBoxTrayShowError(const char *pszFormat, ...);
 
-#endif /* !___VBOXTRAY_H */
+#endif /* !GA_INCLUDED_SRC_WINNT_VBoxTray_VBoxTray_h */
 

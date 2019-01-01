@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___VBOX_CREDPROV_CREDENTIAL_H___
-#define ___VBOX_CREDPROV_CREDENTIAL_H___
+#ifndef GA_INCLUDED_SRC_WINNT_VBoxCredProv_VBoxCredProvCredential_h
+#define GA_INCLUDED_SRC_WINNT_VBoxCredProv_VBoxCredProvCredential_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -123,5 +123,5 @@ private:
     /** Flag indicating wheter a profile (user tile) current is selected or not. */
     bool                                  m_fIsSelected;
 };
-#endif /* !___VBOX_CREDPROV_CREDENTIAL_H___ */
+#endif /* !GA_INCLUDED_SRC_WINNT_VBoxCredProv_VBoxCredProvCredential_h */
 

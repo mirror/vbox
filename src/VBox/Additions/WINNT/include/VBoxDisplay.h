@@ -14,8 +14,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___winnt_include_VBoxDisplay_h___
-#define ___winnt_include_VBoxDisplay_h___
+#ifndef GA_INCLUDED_WINNT_VBoxDisplay_h
+#define GA_INCLUDED_WINNT_VBoxDisplay_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -122,5 +122,5 @@ typedef struct VBOXDISPIFESCAPE_TARGETCONNECTIVITY
 
 #endif /* VBOX_WITH_WDDM */
 
-#endif
+#endif /* !GA_INCLUDED_WINNT_VBoxDisplay_h */
 

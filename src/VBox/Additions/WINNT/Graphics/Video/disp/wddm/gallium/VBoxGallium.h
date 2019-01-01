@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___VBoxGallium_h__
-#define ___VBoxGallium_h__
+#ifndef GA_INCLUDED_SRC_WINNT_Graphics_Video_disp_wddm_gallium_VBoxGallium_h
+#define GA_INCLUDED_SRC_WINNT_Graphics_Video_disp_wddm_gallium_VBoxGallium_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -91,4 +91,4 @@ HRESULT GaD3DIfCreateForRc(struct VBOXWDDMDISP_RESOURCE *pRc);
 IUnknown *GaD3DIfCreateSharedPrimary(struct VBOXWDDMDISP_ALLOCATION *pAlloc);
 HRESULT GaD3DResourceSynchMem(struct VBOXWDDMDISP_RESOURCE *pRc, bool fToBackend);
 
-#endif
+#endif /* !GA_INCLUDED_SRC_WINNT_Graphics_Video_disp_wddm_gallium_VBoxGallium_h */

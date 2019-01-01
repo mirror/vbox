@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___VBOXTRAY_HELPERS_H
-#define ___VBOXTRAY_HELPERS_H
+#ifndef GA_INCLUDED_SRC_WINNT_VBoxTray_VBoxHelpers_h
+#define GA_INCLUDED_SRC_WINNT_VBoxTray_VBoxHelpers_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -34,5 +34,5 @@ extern void hlpReloadCursor(void);
 extern void hlpResizeRect(RECTL *paRects, unsigned nRects, unsigned uPrimary, unsigned uResized, int iNewWidth, int iNewHeight, int iNewPosX, int iNewPosY);
 extern int hlpShowBalloonTip(HINSTANCE hInst, HWND hWnd, UINT uID, const char *pszMsg, const char *pszTitle, UINT uTimeout, DWORD dwInfoFlags);
 
-#endif /* !___VBOXTRAY_HELPERS_H */
+#endif /* !GA_INCLUDED_SRC_WINNT_VBoxTray_VBoxHelpers_h */
 

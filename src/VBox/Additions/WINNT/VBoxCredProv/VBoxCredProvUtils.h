@@ -14,8 +14,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___VBOX_CREDPROV_UTILS_H___
-#define ___VBOX_CREDPROV_UTILS_H___
+#ifndef GA_INCLUDED_SRC_WINNT_VBoxCredProv_VBoxCredProvUtils_h
+#define GA_INCLUDED_SRC_WINNT_VBoxCredProv_VBoxCredProvUtils_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -27,5 +27,5 @@ extern DWORD g_dwVerbosity;
 void VBoxCredProvVerbose(DWORD dwLevel, const char *pszFormat, ...);
 int  VBoxCredProvReportStatus(VBoxGuestFacilityStatus enmStatus);
 
-#endif /* !___VBOX_CREDPROV_UTILS_H___ */
+#endif /* !GA_INCLUDED_SRC_WINNT_VBoxCredProv_VBoxCredProvUtils_h */
 

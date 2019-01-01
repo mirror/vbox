@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___VBoxServiceControl_h
-#define ___VBoxServiceControl_h
+#ifndef GA_INCLUDED_SRC_common_VBoxService_VBoxServiceControl_h
+#define GA_INCLUDED_SRC_common_VBoxService_VBoxServiceControl_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -330,5 +330,5 @@ extern int                      VGSvcGstCtrlProcessWait(const PVBOXSERVICECTRLPR
 
 RT_C_DECLS_END
 
-#endif
+#endif /* !GA_INCLUDED_SRC_common_VBoxService_VBoxServiceControl_h */
 

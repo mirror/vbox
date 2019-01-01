@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___VBoxSFMount_h___
-#define ___VBoxSFMount_h___
+#ifndef GA_INCLUDED_SRC_darwin_VBoxSF_VBoxSFMount_h
+#define GA_INCLUDED_SRC_darwin_VBoxSF_VBoxSFMount_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -40,5 +40,5 @@ typedef VBOXSFDRWNMOUNTINFO *PVBOXSFDRWNMOUNTINFO;
 /** Magic value for VBOXSFDRWNMOUNTINFO::u32Magic.   */
 #define VBOXSFDRWNMOUNTINFO_MAGIC     UINT32_C(0xc001cafe)
 
-#endif
+#endif /* !GA_INCLUDED_SRC_darwin_VBoxSF_VBoxSFMount_h */
 

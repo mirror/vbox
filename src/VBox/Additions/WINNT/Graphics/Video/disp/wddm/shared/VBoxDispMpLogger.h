@@ -20,8 +20,8 @@
  * this is why we use miniport escape functionality to issue backdoor log string to the miniport
  * and submit it to host via standard r0 backdoor logging api accordingly */
 
-#ifndef ___VBoxDispMpLogger_h__
-#define ___VBoxDispMpLogger_h__
+#ifndef GA_INCLUDED_SRC_WINNT_Graphics_Video_disp_wddm_shared_VBoxDispMpLogger_h
+#define GA_INCLUDED_SRC_WINNT_Graphics_Video_disp_wddm_shared_VBoxDispMpLogger_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -54,5 +54,5 @@ DECLCALLBACK(void) VBoxWddmUmLog(const char *pszString);
 
 RT_C_DECLS_END
 
-#endif /* #ifndef ___VBoxDispMpLogger_h__ */
+#endif /* !GA_INCLUDED_SRC_WINNT_Graphics_Video_disp_wddm_shared_VBoxDispMpLogger_h */
 

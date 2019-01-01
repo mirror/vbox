@@ -44,8 +44,8 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef ___VBoxGuestInternal_h_
-#define ___VBoxGuestInternal_h_
+#ifndef GA_INCLUDED_HAIKU_VBoxGuestInternal_h
+#define GA_INCLUDED_HAIKU_VBoxGuestInternal_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -60,5 +60,5 @@
 /** The code used for messages sent by and to the system tray. */
 #define VBOX_GUEST_APP_ACTION                    'vbox'
 
-#endif /* ___VBoxGuestInternal_h_ */
+#endif /* !GA_INCLUDED_HAIKU_VBoxGuestInternal_h */
 

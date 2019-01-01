@@ -17,12 +17,12 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___VBox_Mesa_git_sha1_h__
-#define ___VBox_Mesa_git_sha1_h__
+#ifndef GA_INCLUDED_3D_MESA_git_sha1_h
+#define GA_INCLUDED_3D_MESA_git_sha1_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
 
 /* Nothing. */
 
-#endif
+#endif /* !GA_INCLUDED_3D_MESA_git_sha1_h */

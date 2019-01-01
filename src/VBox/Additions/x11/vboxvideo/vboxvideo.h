@@ -36,8 +36,8 @@
  *          Michael Thayer <michael.thayer@oracle.com>
  */
 
-#ifndef _VBOXVIDEO_H_
-#define _VBOXVIDEO_H_
+#ifndef GA_INCLUDED_SRC_x11_vboxvideo_vboxvideo_h
+#define GA_INCLUDED_SRC_x11_vboxvideo_vboxvideo_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -236,5 +236,5 @@ extern void vbvxCleanUpLinuxACPI(ScreenPtr pScreen);
 extern Bool VBOXEDIDSet(struct _xf86Output *output, DisplayModePtr pmode);
 #endif
 
-#endif /* !_VBOXVIDEO_H_ */
+#endif /* !GA_INCLUDED_SRC_x11_vboxvideo_vboxvideo_h */
 

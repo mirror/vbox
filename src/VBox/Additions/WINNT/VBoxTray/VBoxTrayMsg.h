@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___VBOXTRAY_MSG_H
-#define ___VBOXTRAY_MSG_H
+#ifndef GA_INCLUDED_SRC_WINNT_VBoxTray_VBoxTrayMsg_h
+#define GA_INCLUDED_SRC_WINNT_VBoxTray_VBoxTrayMsg_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -97,5 +97,5 @@ typedef struct VBOXTRAYIPCRES_USERLASTINPUT
     uint32_t uLastInput;
 } VBOXTRAYIPCRES_USERLASTINPUT, *PVBOXTRAYIPCRES_USERLASTINPUT;
 
-#endif /* !___VBOXTRAY_MSG_H */
+#endif /* !GA_INCLUDED_SRC_WINNT_VBoxTray_VBoxTrayMsg_h */
 

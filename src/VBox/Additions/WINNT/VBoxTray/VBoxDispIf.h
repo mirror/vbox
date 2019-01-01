@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef VBOX_INCLUDED_VBoxTray_VBoxDispIf_h
-#define VBOX_INCLUDED_VBoxTray_VBoxDispIf_h
+#ifndef GA_INCLUDED_SRC_WINNT_VBoxTray_VBoxDispIf_h
+#define GA_INCLUDED_SRC_WINNT_VBoxTray_VBoxDispIf_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -118,5 +118,5 @@ DWORD VBoxDispIfSeamlessCreate(PCVBOXDISPIF const pIf, VBOXDISPIF_SEAMLESS *pSea
 DWORD VBoxDispIfSeamlessTerm(VBOXDISPIF_SEAMLESS *pSeamless);
 DWORD VBoxDispIfSeamlessSubmit(VBOXDISPIF_SEAMLESS *pSeamless, VBOXDISPIFESCAPE *pData, int cbData);
 
-#endif
+#endif /* !GA_INCLUDED_SRC_WINNT_VBoxTray_VBoxDispIf_h */
 

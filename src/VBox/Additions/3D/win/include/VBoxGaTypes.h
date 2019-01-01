@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___VBoxGaTypes_h__
-#define ___VBoxGaTypes_h__
+#ifndef GA_INCLUDED_3D_WIN_VBoxGaTypes_h
+#define GA_INCLUDED_3D_WIN_VBoxGaTypes_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -74,5 +74,5 @@ typedef struct GAFENCEQUERY
 }
 #endif
 
-#endif
+#endif /* !GA_INCLUDED_3D_WIN_VBoxGaTypes_h */
 

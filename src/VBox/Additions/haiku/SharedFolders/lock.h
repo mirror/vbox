@@ -26,8 +26,8 @@
  * Distributed under the terms of the MIT License.
  */
 
-#ifndef _KERNEL_LOCK_H
-#define _KERNEL_LOCK_H
+#ifndef GA_INCLUDED_SRC_haiku_SharedFolders_lock_h
+#define GA_INCLUDED_SRC_haiku_SharedFolders_lock_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -302,4 +302,4 @@ extern void lock_debug_init();
 }
 #endif
 
-#endif  /* _KERNEL_LOCK_H */
+#endif /* !GA_INCLUDED_SRC_haiku_SharedFolders_lock_h */

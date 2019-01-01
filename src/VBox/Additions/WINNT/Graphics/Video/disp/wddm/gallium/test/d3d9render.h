@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __D3D9RENDER__H
-#define __D3D9RENDER__H
+#ifndef GA_INCLUDED_SRC_WINNT_Graphics_Video_disp_wddm_gallium_test_d3d9render_h
+#define GA_INCLUDED_SRC_WINNT_Graphics_Video_disp_wddm_gallium_test_d3d9render_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -45,4 +45,4 @@ public:
 D3D9Render *CreateRender(int iRenderId);
 void DeleteRender(D3D9Render *pRender);
 
-#endif
+#endif /* !GA_INCLUDED_SRC_WINNT_Graphics_Video_disp_wddm_gallium_test_d3d9render_h */

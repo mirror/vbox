@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___VBoxServiceUtils_h
-#define ___VBoxServiceUtils_h
+#ifndef GA_INCLUDED_SRC_common_VBoxService_VBoxServiceUtils_h
+#define GA_INCLUDED_SRC_common_VBoxService_VBoxServiceUtils_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -36,5 +36,5 @@ int VGSvcWritePropF(uint32_t u32ClientId, const char *pszName, const char *pszVa
 int VGSvcUtilWinGetFileVersionString(const char *pszPath, const char *pszFileName, char *pszVersion, size_t cbVersion);
 #endif
 
-#endif
+#endif /* !GA_INCLUDED_SRC_common_VBoxService_VBoxServiceUtils_h */
 

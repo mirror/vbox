@@ -24,8 +24,8 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
-#ifndef ___VirtioPCI_solaris_h
-#define ___VirtioPCI_solaris_h
+#ifndef GA_INCLUDED_SRC_solaris_Virtio_VirtioPci_solaris_h
+#define GA_INCLUDED_SRC_solaris_Virtio_VirtioPci_solaris_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -34,5 +34,5 @@
 
 extern VIRTIOHYPEROPS g_VirtioHyperOpsPci;
 
-#endif
+#endif /* !GA_INCLUDED_SRC_solaris_Virtio_VirtioPci_solaris_h */
 

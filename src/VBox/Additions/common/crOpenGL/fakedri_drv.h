@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___CROPENGL_FAKEDRIDRV_H
-#define ___CROPENGL_FAKEDRIDRV_H
+#ifndef GA_INCLUDED_SRC_common_crOpenGL_fakedri_drv_h
+#define GA_INCLUDED_SRC_common_crOpenGL_fakedri_drv_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -119,5 +119,5 @@ extern void VBOXGLXENTRYTAG(glXSelectEvent)(Display *dpy, GLXDrawable draw, unsi
 # undef GLXAPI_ENTRY
 #endif
 
-#endif /* !___CROPENGL_FAKEDRIDRV_H */
+#endif /* !GA_INCLUDED_SRC_common_crOpenGL_fakedri_drv_h */
 

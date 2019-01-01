@@ -44,8 +44,8 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef __VBOXSERVICESHAREDCLIPLBOARD__H
-#define __VBOXSERVICESHAREDCLIPLBOARD__H
+#ifndef GA_INCLUDED_SRC_haiku_VBoxTray_VBoxServiceDescriptor_h
+#define GA_INCLUDED_SRC_haiku_VBoxTray_VBoxServiceDescriptor_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -64,5 +64,5 @@ int VBoxClipboardInit(const VBOXSERVICEENV *pEnv, void **ppInstance, bool *pfSta
 unsigned __stdcall VBoxClipboardThread(void *pInstance);
 void VBoxClipboardDestroy(const VBOXSERVICEENV *pEnv, void *pInstance);
 
-#endif /* __VBOXSERVICESHAREDCLIPLBOARD__H */
+#endif /* !GA_INCLUDED_SRC_haiku_VBoxTray_VBoxServiceDescriptor_h */
 

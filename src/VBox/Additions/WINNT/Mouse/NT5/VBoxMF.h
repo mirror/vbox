@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef VBOXMF_H
-#define VBOXMF_H
+#ifndef GA_INCLUDED_SRC_WINNT_Mouse_NT5_VBoxMF_h
+#define GA_INCLUDED_SRC_WINNT_Mouse_NT5_VBoxMF_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -84,4 +84,4 @@ void VBoxDeviceRemoved(PVBOXMOUSE_DEVEXT pDevExt);
 
 VOID VBoxDrvNotifyServiceCB(PVBOXMOUSE_DEVEXT pDevExt, PMOUSE_INPUT_DATA InputDataStart, PMOUSE_INPUT_DATA InputDataEnd, PULONG  InputDataConsumed);
 
-#endif /*VBOXMF_H*/
+#endif /* !GA_INCLUDED_SRC_WINNT_Mouse_NT5_VBoxMF_h */

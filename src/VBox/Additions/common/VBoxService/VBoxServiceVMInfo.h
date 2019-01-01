@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___VBoxServiceVMInfo_h
-#define ___VBoxServiceVMInfo_h
+#ifndef GA_INCLUDED_SRC_common_VBoxService_VBoxServiceVMInfo_h
+#define GA_INCLUDED_SRC_common_VBoxService_VBoxServiceVMInfo_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -28,5 +28,5 @@ extern int VGSvcUserUpdateF(PVBOXSERVICEVEPROPCACHE pCache, const char *pszUser,
 
 extern uint32_t g_uVMInfoUserIdleThresholdMS;
 
-#endif
+#endif /* !GA_INCLUDED_SRC_common_VBoxService_VBoxServiceVMInfo_h */
 

@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___VBOX_CREDPROV_FACTORY_H___
-#define ___VBOX_CREDPROV_FACTORY_H___
+#ifndef GA_INCLUDED_SRC_WINNT_VBoxCredProv_VBoxCredProvFactory_h
+#define GA_INCLUDED_SRC_WINNT_VBoxCredProv_VBoxCredProvFactory_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -51,5 +51,5 @@ private:
     LONG m_cRefs;
     friend HRESULT VBoxCredentialProviderCreate(REFCLSID classID, REFIID interfaceID, void **ppvInterface);
 };
-#endif /* !___VBOX_CREDPROV_FACTORY_H___ */
+#endif /* !GA_INCLUDED_SRC_WINNT_VBoxCredProv_VBoxCredProvFactory_h */
 

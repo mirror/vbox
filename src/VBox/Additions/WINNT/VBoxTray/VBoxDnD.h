@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __VBOXTRAYDND__H
-#define __VBOXTRAYDND__H
+#ifndef GA_INCLUDED_SRC_WINNT_VBoxTray_VBoxDnD_h
+#define GA_INCLUDED_SRC_WINNT_VBoxTray_VBoxDnD_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -411,5 +411,5 @@ public: /** @todo Make protected! */
     RTCString                  mFormatRequested;
 };
 
-#endif /* !__VBOXTRAYDND__H */
+#endif /* !GA_INCLUDED_SRC_WINNT_VBoxTray_VBoxDnD_h */
 

@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef VBOXMOUSELOG_H
-#define VBOXMOUSELOG_H
+#ifndef GA_INCLUDED_SRC_WINNT_Mouse_common_VBoxMouseLog_h
+#define GA_INCLUDED_SRC_WINNT_Mouse_common_VBoxMouseLog_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -69,5 +69,5 @@
 #define LOGF_ENTER() LOGF(("ENTER"))
 #define LOGF_LEAVE() LOGF(("LEAVE"))
 
-#endif /* !VBOXMOUSELOG_H */
+#endif /* !GA_INCLUDED_SRC_WINNT_Mouse_common_VBoxMouseLog_h */
 

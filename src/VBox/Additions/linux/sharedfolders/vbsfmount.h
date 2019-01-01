@@ -27,8 +27,8 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef VBFS_MOUNT_H
-#define VBFS_MOUNT_H
+#ifndef GA_INCLUDED_SRC_linux_sharedfolders_vbsfmount_h
+#define GA_INCLUDED_SRC_linux_sharedfolders_vbsfmount_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -86,4 +86,4 @@ struct vbsf_mount_opts {
 int vbsfmount_complete(const char *host_name, const char *mount_point,
 		       unsigned long flags, struct vbsf_mount_opts *opts);
 
-#endif				/* vbsfmount.h */
+#endif /* !GA_INCLUDED_SRC_linux_sharedfolders_vbsfmount_h */

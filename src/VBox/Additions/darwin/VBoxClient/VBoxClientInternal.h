@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___VBoxClientInternal_h
-#define ___VBoxClientInternal_h
+#ifndef GA_INCLUDED_SRC_darwin_VBoxClient_VBoxClientInternal_h
+#define GA_INCLUDED_SRC_darwin_VBoxClient_VBoxClientInternal_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -99,4 +99,4 @@ extern int vbclClipboardForwardToGuest(uint32_t u32ClientId, PasteboardRef pPast
  */
 extern int vbclClipboardForwardToHost(uint32_t u32ClientId, PasteboardRef pPasteboard, uint32_t fFormats);
 
-#endif /* ___VBoxClientInternal_h */
+#endif /* !GA_INCLUDED_SRC_darwin_VBoxClient_VBoxClientInternal_h */

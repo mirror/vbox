@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___H_GINAHELPER
-#define ___H_GINAHELPER
+#ifndef GA_INCLUDED_SRC_WINNT_VBoxGINA_Helper_h
+#define GA_INCLUDED_SRC_WINNT_VBoxGINA_Helper_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -33,5 +33,5 @@ int VBoxGINACredentialsPollerTerminate(void);
 
 int VBoxGINAReportStatus(VBoxGuestFacilityStatus enmStatus);
 
-#endif /* !___H_GINAHELPER */
+#endif /* !GA_INCLUDED_SRC_WINNT_VBoxGINA_Helper_h */
 

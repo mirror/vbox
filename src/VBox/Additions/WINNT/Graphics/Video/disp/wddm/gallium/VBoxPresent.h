@@ -17,8 +17,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___VBoxPresent_h__
-#define ___VBoxPresent_h__
+#ifndef GA_INCLUDED_SRC_WINNT_Graphics_Video_disp_wddm_gallium_VBoxPresent_h
+#define GA_INCLUDED_SRC_WINNT_Graphics_Video_disp_wddm_gallium_VBoxPresent_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -81,4 +81,4 @@ typedef struct ID3DPresent ID3DPresent;
 typedef struct ID3DPresentGroup ID3DPresentGroup;
 #endif
 
-#endif
+#endif /* !GA_INCLUDED_SRC_WINNT_Graphics_Video_disp_wddm_gallium_VBoxPresent_h */

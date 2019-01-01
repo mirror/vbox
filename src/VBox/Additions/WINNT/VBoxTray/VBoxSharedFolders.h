@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___VBoxSharedFolders_h
-#define ___VBoxSharedFolders_h
+#ifndef GA_INCLUDED_SRC_WINNT_VBoxTray_VBoxSharedFolders_h
+#define GA_INCLUDED_SRC_WINNT_VBoxTray_VBoxSharedFolders_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -24,4 +24,4 @@
 int VBoxSharedFoldersAutoUnmount(void);
 int VBoxSharedFoldersAutoMount(void);
 
-#endif /* !___VBoxSharedFolders_h */
+#endif /* !GA_INCLUDED_SRC_WINNT_VBoxTray_VBoxSharedFolders_h */

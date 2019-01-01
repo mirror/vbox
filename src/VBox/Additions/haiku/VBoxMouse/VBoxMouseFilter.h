@@ -44,8 +44,8 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef __VBOXMOUSE_FILTER__H
-#define __VBOXMOUSE_FILTER__H
+#ifndef GA_INCLUDED_SRC_haiku_VBoxMouse_VBoxMouseFilter_h
+#define GA_INCLUDED_SRC_haiku_VBoxMouse_VBoxMouseFilter_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -73,5 +73,5 @@ class VBoxMouseFilter : public BInputServerFilter
         int32                       fCurrentButtons;
 };
 
-#endif /* __VBOXMOUSE_FILTER__H */
+#endif /* !GA_INCLUDED_SRC_haiku_VBoxMouse_VBoxMouseFilter_h */
 

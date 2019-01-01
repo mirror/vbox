@@ -28,8 +28,8 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef ___VBoxSFInternal_h___
-#define ___VBoxSFInternal_h___
+#ifndef GA_INCLUDED_SRC_os2_VBoxSF_VBoxSFInternal_h
+#define GA_INCLUDED_SRC_os2_VBoxSF_VBoxSFInternal_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -983,5 +983,5 @@ DECLINLINE(int) vboxSfOs2HostReqWritePgLst(PVBOXSFFOLDER pFolder, VBOXSFWRITEPGL
 
 /** @} */
 
-#endif
+#endif /* !GA_INCLUDED_SRC_os2_VBoxSF_VBoxSFInternal_h */
 

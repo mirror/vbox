@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___VBoxWddmUmHlp_h__
-#define ___VBoxWddmUmHlp_h__
+#ifndef GA_INCLUDED_SRC_3D_win_VBoxWddmUmHlp_VBoxWddmUmHlp_h
+#define GA_INCLUDED_SRC_3D_win_VBoxWddmUmHlp_VBoxWddmUmHlp_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -97,4 +97,4 @@ NTSTATUS vboxDispKmtCloseAdapter(D3DKMT_HANDLE hAdapter);
 
 RT_C_DECLS_END
 
-#endif
+#endif /* !GA_INCLUDED_SRC_3D_win_VBoxWddmUmHlp_VBoxWddmUmHlp_h */

@@ -22,8 +22,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___VBoxMPIf_h___
-#define ___VBoxMPIf_h___
+#ifndef GA_INCLUDED_SRC_WINNT_Graphics_Video_common_wddm_VBoxMPIf_h
+#define GA_INCLUDED_SRC_WINNT_Graphics_Video_common_wddm_VBoxMPIf_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -985,4 +985,4 @@ DECLINLINE(UINT) vboxWddmCalcOffXYrd(UINT x, UINT y, UINT pitch, D3DDDIFORMAT en
 #define VBOXWDDM_ARRAY_MAXELEMENTSU32(_t) ((uint32_t)((UINT32_MAX) / sizeof (_t)))
 #define VBOXWDDM_TRAILARRAY_MAXELEMENTSU32(_t, _af) ((uint32_t)(((~(0UL)) - (uint32_t)RT_OFFSETOF(_t, _af[0])) / RT_SIZEOFMEMB(_t, _af[0])))
 
-#endif /* #ifndef ___VBoxMPIf_h___ */
+#endif /* !GA_INCLUDED_SRC_WINNT_Graphics_Video_common_wddm_VBoxMPIf_h */

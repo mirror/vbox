@@ -53,8 +53,8 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef ___VBoxGuest_haiku_h
-#define ___VBoxGuest_haiku_h
+#ifndef GA_INCLUDED_SRC_common_VBoxGuest_VBoxGuest_haiku_h
+#define GA_INCLUDED_SRC_common_VBoxGuest_VBoxGuest_haiku_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -234,5 +234,5 @@ struct vboxguest_module_info
 extern struct vboxguest_module_info *g_VBoxGuest;
 #endif
 
-#endif /* !___VBoxGuest_haiku_h */
+#endif /* !GA_INCLUDED_SRC_common_VBoxGuest_VBoxGuest_haiku_h */
 

@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___VBoxServicePropCache_h
-#define ___VBoxServicePropCache_h
+#ifndef GA_INCLUDED_SRC_common_VBoxService_VBoxServicePropCache_h
+#define GA_INCLUDED_SRC_common_VBoxService_VBoxServicePropCache_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -52,5 +52,5 @@ int  VGSvcPropCacheFlush(PVBOXSERVICEVEPROPCACHE pCache);
 void VGSvcPropCacheDestroy(PVBOXSERVICEVEPROPCACHE pCache);
 #endif /* VBOX_WITH_GUEST_PROPS */
 
-#endif
+#endif /* !GA_INCLUDED_SRC_common_VBoxService_VBoxServicePropCache_h */
 

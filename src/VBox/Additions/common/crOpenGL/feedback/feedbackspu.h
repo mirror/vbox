@@ -4,8 +4,8 @@
  * See the file LICENSE.txt for information on redistributing this software.
  */
 
-#ifndef FEEDBACK_SPU_H
-#define FEEDBACK_SPU_H
+#ifndef GA_INCLUDED_SRC_common_crOpenGL_feedback_feedbackspu_h
+#define GA_INCLUDED_SRC_common_crOpenGL_feedback_feedbackspu_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -55,4 +55,4 @@ extern SPUOptions feedbackSPUOptions[];
 
 extern void feedbackspuGatherConfiguration( void );
 
-#endif /* FEEDBACK_SPU_H */
+#endif /* !GA_INCLUDED_SRC_common_crOpenGL_feedback_feedbackspu_h */

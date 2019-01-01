@@ -16,12 +16,12 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___VBoxHostVersion_h
-#define ___VBoxHostVersion_h
+#ifndef GA_INCLUDED_SRC_WINNT_VBoxTray_VBoxHostVersion_h
+#define GA_INCLUDED_SRC_WINNT_VBoxTray_VBoxHostVersion_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
 
 int VBoxCheckHostVersion();
 
-#endif /* !___VBoxHostVersion_h */
+#endif /* !GA_INCLUDED_SRC_WINNT_VBoxTray_VBoxHostVersion_h */

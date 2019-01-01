@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___VBoxSFInternal_h___
-#define ___VBoxSFInternal_h___
+#ifndef GA_INCLUDED_SRC_darwin_VBoxSF_VBoxSFInternal_h
+#define GA_INCLUDED_SRC_darwin_VBoxSF_VBoxSFInternal_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -103,5 +103,5 @@ bool    vboxSfDwnConnect(void);
 vnode_t vboxSfDwnVnAlloc(mount_t pMount, enum vtype enmType, vnode_t pParent, uint64_t cbFile);
 
 
-#endif
+#endif /* !GA_INCLUDED_SRC_darwin_VBoxSF_VBoxSFInternal_h */
 

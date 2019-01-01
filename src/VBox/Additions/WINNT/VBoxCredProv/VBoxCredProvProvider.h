@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___VBOX_CREDPROV_PROVIDER_H___
-#define ___VBOX_CREDPROV_PROVIDER_H___
+#ifndef GA_INCLUDED_SRC_WINNT_VBoxCredProv_VBoxCredProvProvider_h
+#define GA_INCLUDED_SRC_WINNT_VBoxCredProv_VBoxCredProvProvider_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -97,5 +97,5 @@ private:
     bool                                     m_fHandleRemoteSessions;
 };
 
-#endif /* !___VBOX_CREDPROV_PROVIDER_H___ */
+#endif /* !GA_INCLUDED_SRC_WINNT_VBoxCredProv_VBoxCredProvProvider_h */
 

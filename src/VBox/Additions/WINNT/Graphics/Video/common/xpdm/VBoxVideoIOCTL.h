@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef VBOXVIDEOIOCTL_H
-#define VBOXVIDEOIOCTL_H
+#ifndef GA_INCLUDED_SRC_WINNT_Graphics_Video_common_xpdm_VBoxVideoIOCTL_h
+#define GA_INCLUDED_SRC_WINNT_Graphics_Video_common_xpdm_VBoxVideoIOCTL_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -158,4 +158,4 @@ typedef struct _VHWAQUERYINFO
 
 #define VBOXVIDEO_REGISTRY_FLAGS_DISABLE_BITMAP_CACHE 0x00000001
 
-#endif /* !VBOXVIDEOIOCTL_H */
+#endif /* !GA_INCLUDED_SRC_WINNT_Graphics_Video_common_xpdm_VBoxVideoIOCTL_h */

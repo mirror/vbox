@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___winnt_include_VBoxHook_h
-#define ___winnt_include_VBoxHook_h
+#ifndef GA_INCLUDED_WINNT_VBoxHook_h
+#define GA_INCLUDED_WINNT_VBoxHook_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -40,5 +40,5 @@ BOOL VBoxHookRemoveActiveDesktopTracker();
 BOOL VBoxHookInstallWindowTracker(HMODULE hDll);
 BOOL VBoxHookRemoveWindowTracker();
 
-#endif
+#endif /* !GA_INCLUDED_WINNT_VBoxHook_h */
 

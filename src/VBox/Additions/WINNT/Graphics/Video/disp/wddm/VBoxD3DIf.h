@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___VBoxDispD3DRcIf_h__
-#define ___VBoxDispD3DRcIf_h__
+#ifndef GA_INCLUDED_SRC_WINNT_Graphics_Video_disp_wddm_VBoxD3DIf_h
+#define GA_INCLUDED_SRC_WINNT_Graphics_Video_disp_wddm_VBoxD3DIf_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -146,4 +146,4 @@ DECLINLINE(IDirect3DDevice9*) VBoxD3DIfDeviceGet(PVBOXWDDMDISP_DEVICE pDevice)
 #define VBOXDISP_D3DEV(_p) VBoxD3DIfDeviceGet(_p)
 #endif
 
-#endif /* ___VBoxDispD3DRcIf_h__ */
+#endif /* !GA_INCLUDED_SRC_WINNT_Graphics_Video_disp_wddm_VBoxD3DIf_h */

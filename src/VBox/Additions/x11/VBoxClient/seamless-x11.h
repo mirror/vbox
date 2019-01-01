@@ -17,8 +17,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __Additions_linux_seamless_x11_h
-#define __Additions_linux_seamless_x11_h
+#ifndef GA_INCLUDED_SRC_x11_VBoxClient_seamless_x11_h
+#define GA_INCLUDED_SRC_x11_VBoxClient_seamless_x11_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -258,4 +258,4 @@ public:
     }
 };
 
-#endif /* __Additions_linux_seamless_x11_h not defined */
+#endif /* !GA_INCLUDED_SRC_x11_VBoxClient_seamless_x11_h */

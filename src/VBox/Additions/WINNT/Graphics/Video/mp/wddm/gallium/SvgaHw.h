@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___SvgaHw_h__
-#define ___SvgaHw_h__
+#ifndef GA_INCLUDED_SRC_WINNT_Graphics_Video_mp_wddm_gallium_SvgaHw_h
+#define GA_INCLUDED_SRC_WINNT_Graphics_Video_mp_wddm_gallium_SvgaHw_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -88,4 +88,4 @@ DECLINLINE(void) SVGAFifoWrite(PVBOXWDDM_EXT_VMSVGA pSvga, uint32_t u32Index, ui
     ASMCompilerBarrier();
 }
 
-#endif
+#endif /* !GA_INCLUDED_SRC_WINNT_Graphics_Video_mp_wddm_gallium_SvgaHw_h */

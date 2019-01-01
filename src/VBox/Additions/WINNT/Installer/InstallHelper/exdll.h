@@ -18,8 +18,8 @@
  *  http://nsis.sourceforge.net/Examples/Plugin/exdll.h
  */
 
-#ifndef _EXDLL_H_
-#define _EXDLL_H_
+#ifndef GA_INCLUDED_SRC_WINNT_Installer_InstallHelper_exdll_h
+#define GA_INCLUDED_SRC_WINNT_Installer_InstallHelper_exdll_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -121,4 +121,4 @@ static void __stdcall setuservariable(const int varnum, const char *var)
     if (var != NULL && varnum >= 0 && varnum < __INST_LAST)
         lstrcpyA(g_variables + varnum*g_stringsize, var);
 }
-#endif//_EXDLL_H_
+#endif /* !GA_INCLUDED_SRC_WINNT_Installer_InstallHelper_exdll_h */

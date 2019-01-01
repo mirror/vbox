@@ -18,8 +18,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef VBSFSHARED_H
-#define VBSFSHARED_H
+#ifndef GA_INCLUDED_SRC_WINNT_SharedFolders_driver_vbsfshared_h
+#define GA_INCLUDED_SRC_WINNT_SharedFolders_driver_vbsfshared_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -55,4 +55,4 @@
 #define IOCTL_MRX_VBOX_START         _MRX_VBOX_CONTROL_CODE(106, METHOD_BUFFERED, FILE_ANY_ACCESS)
 #define IOCTL_MRX_VBOX_STOP          _MRX_VBOX_CONTROL_CODE(107, METHOD_BUFFERED, FILE_ANY_ACCESS)
 
-#endif /* VBSFSHARED_H */
+#endif /* !GA_INCLUDED_SRC_WINNT_SharedFolders_driver_vbsfshared_h */

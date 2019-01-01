@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __VBSFHLP__H
-#define __VBSFHLP__H
+#ifndef GA_INCLUDED_SRC_WINNT_SharedFolders_driver_vbsfhlp_h
+#define GA_INCLUDED_SRC_WINNT_SharedFolders_driver_vbsfhlp_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -68,5 +68,5 @@ PCHAR MajorFunctionString(UCHAR MajorFunction, LONG MinorFunction);
 
 NTSTATUS vbsfShflStringFromUnicodeAlloc(PSHFLSTRING *ppShflString, const WCHAR *pwc, uint16_t cb);
 
-#endif /* !__VBSFHLP__H */
+#endif /* !GA_INCLUDED_SRC_WINNT_SharedFolders_driver_vbsfhlp_h */
 

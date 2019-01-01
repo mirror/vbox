@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___VBoxServiceToolBox_h
-#define ___VBoxServiceToolBox_h
+#ifndef GA_INCLUDED_SRC_common_VBoxService_VBoxServiceToolBox_h
+#define GA_INCLUDED_SRC_common_VBoxService_VBoxServiceToolBox_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -28,5 +28,5 @@ extern bool                     VGSvcToolboxMain(int argc, char **argv, RTEXITCO
 extern int                      VGSvcToolboxExitCodeConvertToRc(const char *pszTool, RTEXITCODE rcExit);
 RT_C_DECLS_END
 
-#endif /* !___VBoxServiceToolBox_h */
+#endif /* !GA_INCLUDED_SRC_common_VBoxService_VBoxServiceToolBox_h */
 

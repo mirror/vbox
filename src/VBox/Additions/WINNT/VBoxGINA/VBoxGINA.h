@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __VBOXGINA_H__
-#define __VBOXGINA_H__
+#ifndef GA_INCLUDED_SRC_WINNT_VBoxGINA_VBoxGINA_h
+#define GA_INCLUDED_SRC_WINNT_VBoxGINA_VBoxGINA_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -57,5 +57,5 @@ typedef VOID (WINAPI *PGWLXRECONNECTNOTIFY)(PVOID);
 typedef VOID (WINAPI *PGWLXDISCONNECTNOTIFY)(PVOID);
 /** @}  */
 
-#endif /* !__VBOXGINA_H__ */
+#endif /* !GA_INCLUDED_SRC_WINNT_VBoxGINA_VBoxGINA_h */
 

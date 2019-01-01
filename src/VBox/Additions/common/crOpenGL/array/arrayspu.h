@@ -4,8 +4,8 @@
  * See the file LICENSE.txt for information on redistributing this software.
  */
 
-#ifndef ARRAY_SPU_H
-#define ARRAY_SPU_H
+#ifndef GA_INCLUDED_SRC_common_crOpenGL_array_arrayspu_h
+#define GA_INCLUDED_SRC_common_crOpenGL_array_arrayspu_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -43,4 +43,4 @@ extern ArraySPU array_spu;
 extern CRmutex _ArrayMutex;
 #endif
 
-#endif /* ARRAY_SPU_H */
+#endif /* !GA_INCLUDED_SRC_common_crOpenGL_array_arrayspu_h */

@@ -15,13 +15,13 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef VBOX_INCLUDED_tools_VBoxCertUtilResource_win_h
-#define VBOX_INCLUDED_tools_VBoxCertUtilResource_win_h
+#ifndef GA_INCLUDED_SRC_WINNT_tools_VBoxCertUtilResource_win_h
+#define GA_INCLUDED_SRC_WINNT_tools_VBoxCertUtilResource_win_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
 
 #define IDI_VIRTUALBOX 101
 
-#endif
+#endif /* !GA_INCLUDED_SRC_WINNT_tools_VBoxCertUtilResource_win_h */
 

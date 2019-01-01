@@ -15,12 +15,12 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___UmHlpInternal_h__
-#define ___UmHlpInternal_h__
+#ifndef GA_INCLUDED_SRC_3D_win_VBoxWddmUmHlp_UmHlpInternal_h
+#define GA_INCLUDED_SRC_3D_win_VBoxWddmUmHlp_UmHlpInternal_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
 
 #include "VBoxWddmUmHlp.h"
 
-#endif
+#endif /* !GA_INCLUDED_SRC_3D_win_VBoxWddmUmHlp_UmHlpInternal_h */

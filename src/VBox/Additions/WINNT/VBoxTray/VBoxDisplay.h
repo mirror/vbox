@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __VBOXSERVICEDISPLAY__H
-#define __VBOXSERVICEDISPLAY__H
+#ifndef GA_INCLUDED_SRC_WINNT_VBoxTray_VBoxDisplay_h
+#define GA_INCLUDED_SRC_WINNT_VBoxTray_VBoxDisplay_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -35,4 +35,4 @@ static bool isVBoxDisplayDriverActive(void);
  * so it is moved to VBoxDisplay.cpp */
 #endif
 
-#endif /* !__VBOXSERVICEDISPLAY__H */
+#endif /* !GA_INCLUDED_SRC_WINNT_VBoxTray_VBoxDisplay_h */

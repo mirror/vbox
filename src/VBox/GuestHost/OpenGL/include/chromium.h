@@ -22,7 +22,7 @@
 
 #ifdef IN_RING0
 
-# ifndef VBOXVIDEOLOG_H
+# ifndef GA_INCLUDED_SRC_WINNT_Graphics_Video_common_VBoxVideoLog_h
 #  undef WARN     /* VBoxMpUtils.h includes common/VBoxVideoLog.h which */
 #  undef LOG      /* uncondtionally redefines these three macros. */
 #  undef LOGREL

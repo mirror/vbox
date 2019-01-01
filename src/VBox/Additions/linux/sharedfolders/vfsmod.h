@@ -27,8 +27,8 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef VFSMOD_H
-#define VFSMOD_H
+#ifndef GA_INCLUDED_SRC_linux_sharedfolders_vfsmod_h
+#define GA_INCLUDED_SRC_linux_sharedfolders_vfsmod_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -177,4 +177,4 @@ int sf_get_volume_info(struct super_block *sb, STRUCT_STATFS * stat);
 #define GET_F_DENTRY(f)        (f->f_dentry)
 #endif
 
-#endif
+#endif /* !GA_INCLUDED_SRC_linux_sharedfolders_vfsmod_h */

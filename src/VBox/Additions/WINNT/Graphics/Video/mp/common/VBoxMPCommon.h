@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef VBOXMPCOMMON_H
-#define VBOXMPCOMMON_H
+#ifndef GA_INCLUDED_SRC_WINNT_Graphics_Video_mp_common_VBoxMPCommon_h
+#define GA_INCLUDED_SRC_WINNT_Graphics_Video_mp_common_VBoxMPCommon_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -58,4 +58,4 @@ bool VBoxMPCmnUpdatePointerShape(PVBOXMP_COMMON pCommon, PVIDEO_POINTER_ATTRIBUT
 
 RT_C_DECLS_END
 
-#endif /*VBOXMPCOMMON_H*/
+#endif /* !GA_INCLUDED_SRC_WINNT_Graphics_Video_mp_common_VBoxMPCommon_h */

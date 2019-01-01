@@ -44,8 +44,8 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef __VBOXDISPLAY__H
-#define __VBOXDISPLAY__H
+#ifndef GA_INCLUDED_SRC_haiku_VBoxTray_VBoxDisplay_h
+#define GA_INCLUDED_SRC_haiku_VBoxTray_VBoxDisplay_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -72,5 +72,5 @@ class VBoxDisplayService : public BHandler
         BScreen             fScreen;
 };
 
-#endif /* __VBOXDISPLAY__H */
+#endif /* !GA_INCLUDED_SRC_haiku_VBoxTray_VBoxDisplay_h */
 

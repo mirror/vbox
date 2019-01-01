@@ -15,13 +15,13 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef VBOX_INCLUDED_Installer_Loader_resource_h
-#define VBOX_INCLUDED_Installer_Loader_resource_h
+#ifndef GA_INCLUDED_SRC_WINNT_Installer_Loader_resource_h
+#define GA_INCLUDED_SRC_WINNT_Installer_Loader_resource_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
 
 #define IDI_VIRTUALBOX 101
 
-#endif
+#endif /* !GA_INCLUDED_SRC_WINNT_Installer_Loader_resource_h */
 

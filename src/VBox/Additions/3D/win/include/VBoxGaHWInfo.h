@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___VBoxGaHWInfo_h__
-#define ___VBoxGaHWInfo_h__
+#ifndef GA_INCLUDED_3D_WIN_VBoxGaHWInfo_h
+#define GA_INCLUDED_3D_WIN_VBoxGaHWInfo_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -51,4 +51,4 @@ typedef struct VBOXGAHWINFO
 
 AssertCompile(RT_SIZEOFMEMB(VBOXGAHWINFO, u) <= RT_SIZEOFMEMB(VBOXGAHWINFO, u.au8Raw));
 
-#endif
+#endif /* !GA_INCLUDED_3D_WIN_VBoxGaHWInfo_h */

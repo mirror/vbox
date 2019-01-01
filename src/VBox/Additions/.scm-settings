@@ -1,0 +1,27 @@
+# $Id$
+## @file
+# Source code massager settings for the Additions.
+#
+
+#
+# Copyright (C) 2019 Oracle Corporation
+#
+# This file is part of VirtualBox Open Source Edition (OSE), as
+# available from http://www.virtualbox.org. This file is free software;
+# you can redistribute it and/or modify it under the terms of the GNU
+# General Public License (GPL) as published by the Free Software
+# Foundation, in version 2 as it comes in the "COPYING" file of the
+# VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+# hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+#
+
+/*.h: --guard-relative-to-dir . --guard-prefix GA_INCLUDED_SRC_ --fix-header-guard-endif
+/3D/mesa/include/*.h:   --guard-relative-to-dir 3D/mesa/include --guard-prefix GA_INCLUDED_3D_MESA_
+/3D/win/include/*.h:    --guard-relative-to-dir 3D/win/include  --guard-prefix GA_INCLUDED_3D_WIN_
+/WINNT/include/*.h:     --guard-relative-to-dir WINNT/include   --guard-prefix GA_INCLUDED_WINNT_
+/haiku/include/*.h:     --guard-relative-to-dir haiku/include   --guard-prefix GA_INCLUDED_HAIKU_
+
+# Some drop in header replacement weirdness:
+/x11/vboxvideo/VBoxVideoIPRT.h|/x11/vboxvideo/HGSMIMemAlloc.h: \
+        --guard-relative-to-dir x11/vboxvideo --guard-prefix VBOX_INCLUDED_Graphics_
+

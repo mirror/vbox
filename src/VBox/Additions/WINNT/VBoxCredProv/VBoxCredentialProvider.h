@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___VBOX_CREDENTIALPROVIDER_H___
-#define ___VBOX_CREDENTIALPROVIDER_H___
+#ifndef GA_INCLUDED_SRC_WINNT_VBoxCredProv_VBoxCredentialProvider_h
+#define GA_INCLUDED_SRC_WINNT_VBoxCredProv_VBoxCredentialProvider_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -101,5 +101,5 @@ LONG VBoxCredentialProviderRefCount(void);
 HRESULT VBoxCredentialProviderCreate(REFCLSID classID,
                                      REFIID interfaceID, void **ppvInterface);
 
-#endif /* !___VBOX_CREDENTIALPROVIDER_H___ */
+#endif /* !GA_INCLUDED_SRC_WINNT_VBoxCredProv_VBoxCredentialProvider_h */
 

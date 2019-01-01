@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef VBSF_H
-#define VBSF_H
+#ifndef GA_INCLUDED_SRC_WINNT_SharedFolders_driver_vbsf_h
+#define GA_INCLUDED_SRC_WINNT_SharedFolders_driver_vbsf_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -208,4 +208,4 @@ NTSTATUS vbsfCloseFileHandle(PMRX_VBOX_DEVICE_EXTENSION pDeviceExtension,
                              PMRX_VBOX_NETROOT_EXTENSION pNetRootExtension,
                              PMRX_VBOX_FOBX pVBoxFobx);
 
-#endif /* VBSF_H */
+#endif /* !GA_INCLUDED_SRC_WINNT_SharedFolders_driver_vbsf_h */

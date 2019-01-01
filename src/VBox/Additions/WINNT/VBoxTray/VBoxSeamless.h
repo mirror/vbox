@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __VBOXSERVICESEAMLESS__H
-#define __VBOXSERVICESEAMLESS__H
+#ifndef GA_INCLUDED_SRC_WINNT_VBoxTray_VBoxSeamless_h
+#define GA_INCLUDED_SRC_WINNT_VBoxTray_VBoxSeamless_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -27,5 +27,5 @@ void VBoxSeamlessCheckWindows(bool fForce);
 
 void VBoxSeamlessSetSupported(BOOL fSupported);
 
-#endif /* !__VBOXSERVICESEAMLESS__H */
+#endif /* !GA_INCLUDED_SRC_WINNT_VBoxTray_VBoxSeamless_h */
 

@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___GaDrvEnvKMT_h__
-#define ___GaDrvEnvKMT_h__
+#ifndef GA_INCLUDED_SRC_3D_win_VBoxGL_GaDrvEnvKMT_h
+#define GA_INCLUDED_SRC_3D_win_VBoxGL_GaDrvEnvKMT_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -45,4 +45,4 @@ void GaDrvEnvKmtRenderCompose(const WDDMGalliumDriverEnv *pEnv,
 
 RT_C_DECLS_END
 
-#endif
+#endif /* !GA_INCLUDED_SRC_3D_win_VBoxGL_GaDrvEnvKMT_h */
