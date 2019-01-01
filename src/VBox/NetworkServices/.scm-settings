@@ -15,5 +15,5 @@
 # hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
 #
 
-/*.h: --guard-relative-to-dir . --fix-header-guard-endif
+/*.h: --guard-relative-to-dir .
 

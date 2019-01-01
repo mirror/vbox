@@ -18,5 +18,5 @@
 
 # The ExtPack.xml files doesn't include any license or copyright.
 */ExtPack.xml: --no-update-copyright-year --no-update-license
-/*.h: --guard-relative-to-dir . --guard-prefix VBOX_INCLUDED_SRC_ --fix-header-guard-endif
+/*.h: --guard-relative-to-dir .
 

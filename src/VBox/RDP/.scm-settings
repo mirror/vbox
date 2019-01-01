@@ -34,5 +34,5 @@
 /client-*/vrdp/*: --no-external-copyright --no-lgpl-disclaimer --fix-todos --strip-trailing-blanks
 
 /server/mixeng/*_template.h: --no-fix-header-guards
-/server/*.h: --guard-relative-to-dir server --guard-prefix VRDP_INCLUDED_SRC_ --fix-header-guard-endif
+/server/*.h: --guard-relative-to-dir server --guard-prefix VRDP_INCLUDED_SRC_
 

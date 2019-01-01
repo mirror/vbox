@@ -15,5 +15,5 @@
 # hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
 #
 
-/*.h: --guard-relative-to-dir . --guard-prefix DEBUGGER_INCLUDED_SRC_ --fix-header-guard-endif
+/*.h: --guard-relative-to-dir . --guard-prefix DEBUGGER_INCLUDED_SRC_
 
