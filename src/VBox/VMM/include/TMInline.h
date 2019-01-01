@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___TMInline_h
-#define ___TMInline_h
+#ifndef VMM_INCLUDED_SRC_include_TMInline_h
+#define VMM_INCLUDED_SRC_include_TMInline_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif

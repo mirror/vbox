@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___FTMInternal_h
-#define ___FTMInternal_h
+#ifndef VMM_INCLUDED_SRC_include_FTMInternal_h
+#define VMM_INCLUDED_SRC_include_FTMInternal_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif

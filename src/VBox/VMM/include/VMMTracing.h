@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___VMMTracing_h___
-#define ___VMMTracing_h___
+#ifndef VMM_INCLUDED_SRC_include_VMMTracing_h
+#define VMM_INCLUDED_SRC_include_VMMTracing_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif

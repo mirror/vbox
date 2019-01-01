@@ -16,8 +16,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef VBOX_CPUDB_Intel_Core_i5_3570
-#define VBOX_CPUDB_Intel_Core_i5_3570
+#ifndef VBOX_CPUDB_Intel_Core_i5_3570_h
+#define VBOX_CPUDB_Intel_Core_i5_3570_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif

@@ -16,8 +16,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef VBOX_CPUDB_AMD_Athlon_64_3200
-#define VBOX_CPUDB_AMD_Athlon_64_3200
+#ifndef VBOX_CPUDB_AMD_Athlon_64_3200_h
+#define VBOX_CPUDB_AMD_Athlon_64_3200_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif

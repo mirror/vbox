@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___GIMKvmInternal_h
-#define ___GIMKvmInternal_h
+#ifndef VMM_INCLUDED_SRC_include_GIMKvmInternal_h
+#define VMM_INCLUDED_SRC_include_GIMKvmInternal_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif

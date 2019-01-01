@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___HMVMXR0_h
-#define ___HMVMXR0_h
+#ifndef VMM_INCLUDED_SRC_VMMR0_HMVMXR0_h
+#define VMM_INCLUDED_SRC_VMMR0_HMVMXR0_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif

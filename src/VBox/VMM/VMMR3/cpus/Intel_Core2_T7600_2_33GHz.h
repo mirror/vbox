@@ -16,8 +16,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef VBOX_CPUDB_Intel_Core2_T7600_2_33GHz
-#define VBOX_CPUDB_Intel_Core2_T7600_2_33GHz
+#ifndef VBOX_CPUDB_Intel_Core2_T7600_2_33GHz_h
+#define VBOX_CPUDB_Intel_Core2_T7600_2_33GHz_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif

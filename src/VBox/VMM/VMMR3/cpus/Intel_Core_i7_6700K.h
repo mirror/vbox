@@ -16,8 +16,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef VBOX_CPUDB_Intel_Core_i7_6700K
-#define VBOX_CPUDB_Intel_Core_i7_6700K
+#ifndef VBOX_CPUDB_Intel_Core_i7_6700K_h
+#define VBOX_CPUDB_Intel_Core_i7_6700K_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif

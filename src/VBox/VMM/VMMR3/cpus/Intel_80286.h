@@ -16,8 +16,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef VBOX_CPUDB_Intel_80286
-#define VBOX_CPUDB_Intel_80286
+#ifndef VBOX_CPUDB_Intel_80286_h
+#define VBOX_CPUDB_Intel_80286_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif

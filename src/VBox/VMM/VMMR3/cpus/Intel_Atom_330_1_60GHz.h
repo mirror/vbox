@@ -16,8 +16,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef VBOX_CPUDB_Intel_Atom_330_1_60GHz
-#define VBOX_CPUDB_Intel_Atom_330_1_60GHz
+#ifndef VBOX_CPUDB_Intel_Atom_330_1_60GHz_h
+#define VBOX_CPUDB_Intel_Atom_330_1_60GHz_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif

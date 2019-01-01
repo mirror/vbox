@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___DBGFInternal_h
-#define ___DBGFInternal_h
+#ifndef VMM_INCLUDED_SRC_include_DBGFInternal_h
+#define VMM_INCLUDED_SRC_include_DBGFInternal_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif

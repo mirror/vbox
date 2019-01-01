@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___PGMInternal_h
-#define ___PGMInternal_h
+#ifndef VMM_INCLUDED_SRC_include_PGMInternal_h
+#define VMM_INCLUDED_SRC_include_PGMInternal_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif

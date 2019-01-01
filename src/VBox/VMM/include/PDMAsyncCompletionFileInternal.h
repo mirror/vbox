@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___PDMAsyncCompletionFileInternal_h
-#define ___PDMAsyncCompletionFileInternal_h
+#ifndef VMM_INCLUDED_SRC_include_PDMAsyncCompletionFileInternal_h
+#define VMM_INCLUDED_SRC_include_PDMAsyncCompletionFileInternal_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif

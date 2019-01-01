@@ -29,6 +29,8 @@
 /VMMAll/PGMAllBth.h: --no-fix-header-guards
 /VMMAll/PGMAllGst.h: --no-fix-header-guards
 /VMMAll/PGMAllShw.h: --no-fix-header-guards
-
 /testcase/tstVMStruct.h: --no-fix-header-guards
+
+/*.h: --guard-relative-to-dir . --guard-prefix VMM_INCLUDED_SRC_
+/VMMR3/cpus/*.h: --guard-relative-to-dir VMMR3/cpus --guard-prefix VBOX_CPUDB_
 

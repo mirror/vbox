@@ -16,8 +16,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef VBOX_CPUDB_VIA_QuadCore_L4700_1_2_GHz
-#define VBOX_CPUDB_VIA_QuadCore_L4700_1_2_GHz
+#ifndef VBOX_CPUDB_VIA_QuadCore_L4700_1_2_GHz_h
+#define VBOX_CPUDB_VIA_QuadCore_L4700_1_2_GHz_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif

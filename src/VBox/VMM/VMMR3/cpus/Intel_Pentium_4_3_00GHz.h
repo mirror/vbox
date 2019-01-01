@@ -16,8 +16,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef VBOX_CPUDB_Intel_Pentium_4_3_00GHz
-#define VBOX_CPUDB_Intel_Pentium_4_3_00GHz
+#ifndef VBOX_CPUDB_Intel_Pentium_4_3_00GHz_h
+#define VBOX_CPUDB_Intel_Pentium_4_3_00GHz_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif

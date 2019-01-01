@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___PATMA_H
-#define ___PATMA_H
+#ifndef VMM_INCLUDED_SRC_include_PATMA_h
+#define VMM_INCLUDED_SRC_include_PATMA_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif

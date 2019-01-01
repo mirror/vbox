@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___SSMInternal_h
-#define ___SSMInternal_h
+#ifndef VMM_INCLUDED_SRC_include_SSMInternal_h
+#define VMM_INCLUDED_SRC_include_SSMInternal_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif

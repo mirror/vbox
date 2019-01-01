@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___SELMInternal_h
-#define ___SELMInternal_h
+#ifndef VMM_INCLUDED_SRC_include_SELMInternal_h
+#define VMM_INCLUDED_SRC_include_SELMInternal_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif

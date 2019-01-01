@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___tstMicro_h
-#define ___tstMicro_h
+#ifndef VMM_INCLUDED_SRC_testcase_tstMicro_h
+#define VMM_INCLUDED_SRC_testcase_tstMicro_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif

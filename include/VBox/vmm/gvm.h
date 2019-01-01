@@ -63,7 +63,7 @@ typedef struct GVMCPU
     /** The GVMM per vcpu data. */
     union
     {
-#ifdef ___GVMMR0Internal_h
+#ifdef VMM_INCLUDED_SRC_VMMR0_GVMMR0Internal_h
         struct GVMMPERVCPU  s;
 #endif
         uint8_t             padding[64];
@@ -73,7 +73,7 @@ typedef struct GVMCPU
     /** The NEM per vcpu data. */
     union
     {
-# ifdef ___NEMInternal_h
+# ifdef VMM_INCLUDED_SRC_include_NEMInternal_h
         struct NEMR0PERVCPU s;
 # endif
         uint8_t             padding[64];
@@ -125,7 +125,7 @@ typedef struct GVM
     /** The GVMM per vm data. */
     union
     {
-#ifdef ___GVMMR0Internal_h
+#ifdef VMM_INCLUDED_SRC_VMMR0_GVMMR0Internal_h
         struct GVMMPERVM    s;
 #endif
         uint8_t             padding[256];
@@ -134,7 +134,7 @@ typedef struct GVM
     /** The GMM per vm data. */
     union
     {
-#ifdef ___GMMR0Internal_h
+#ifdef VMM_INCLUDED_SRC_VMMR0_GMMR0Internal_h
         struct GMMPERVM     s;
 #endif
         uint8_t             padding[512];
@@ -144,7 +144,7 @@ typedef struct GVM
     /** The NEM per vcpu data. */
     union
     {
-# ifdef ___NEMInternal_h
+# ifdef VMM_INCLUDED_SRC_include_NEMInternal_h
         struct NEMR0PERVM   s;
 # endif
         uint8_t             padding[256];

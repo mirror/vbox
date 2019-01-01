@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___APICInternal_h
-#define ___APICInternal_h
+#ifndef VMM_INCLUDED_SRC_include_APICInternal_h
+#define VMM_INCLUDED_SRC_include_APICInternal_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif

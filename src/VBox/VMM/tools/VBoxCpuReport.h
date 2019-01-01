@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___VBoxCpuReport_h___
-#define ___VBoxCpuReport_h___
+#ifndef VMM_INCLUDED_SRC_tools_VBoxCpuReport_h
+#define VMM_INCLUDED_SRC_tools_VBoxCpuReport_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif

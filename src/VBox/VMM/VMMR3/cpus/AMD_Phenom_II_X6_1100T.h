@@ -16,8 +16,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef VBOX_CPUDB_AMD_Phenom_II_X6_1100T
-#define VBOX_CPUDB_AMD_Phenom_II_X6_1100T
+#ifndef VBOX_CPUDB_AMD_Phenom_II_X6_1100T_h
+#define VBOX_CPUDB_AMD_Phenom_II_X6_1100T_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif

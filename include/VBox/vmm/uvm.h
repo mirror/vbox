@@ -55,7 +55,7 @@ typedef struct UVMCPU
     /** The VM internal data. */
     union
     {
-#ifdef ___VMInternal_h
+#ifdef VMM_INCLUDED_SRC_include_VMInternal_h
         struct VMINTUSERPERVMCPU    s;
 #endif
         uint8_t                     padding[512];
@@ -64,7 +64,7 @@ typedef struct UVMCPU
     /** The DBGF data. */
     union
     {
-#ifdef ___DBGFInternal_h
+#ifdef VMM_INCLUDED_SRC_include_DBGFInternal_h
         struct DBGFUSERPERVMCPU     s;
 #endif
         uint8_t                     padding[64];
@@ -108,7 +108,7 @@ typedef struct UVM
     /** The VM internal data. */
     union
     {
-#ifdef ___VMInternal_h
+#ifdef VMM_INCLUDED_SRC_include_VMInternal_h
         struct VMINTUSERPERVM   s;
 #endif
         uint8_t                 padding[512];
@@ -117,7 +117,7 @@ typedef struct UVM
     /** The MM data. */
     union
     {
-#ifdef ___MMInternal_h
+#ifdef VMM_INCLUDED_SRC_include_MMInternal_h
         struct MMUSERPERVM      s;
 #endif
         uint8_t                 padding[32];
@@ -126,7 +126,7 @@ typedef struct UVM
     /** The PDM data. */
     union
     {
-#ifdef ___PDMInternal_h
+#ifdef VMM_INCLUDED_SRC_include_PDMInternal_h
         struct PDMUSERPERVM     s;
 #endif
         uint8_t                 padding[256];
@@ -135,7 +135,7 @@ typedef struct UVM
     /** The STAM data. */
     union
     {
-#ifdef ___STAMInternal_h
+#ifdef VMM_INCLUDED_SRC_include_STAMInternal_h
         struct STAMUSERPERVM    s;
 #endif
         uint8_t                 padding[6880];
@@ -144,7 +144,7 @@ typedef struct UVM
     /** The DBGF data. */
     union
     {
-#ifdef ___DBGFInternal_h
+#ifdef VMM_INCLUDED_SRC_include_DBGFInternal_h
         struct DBGFUSERPERVM    s;
 #endif
         uint8_t                 padding[384];

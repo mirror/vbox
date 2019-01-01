@@ -40,7 +40,7 @@
 #else
 # pragma D depends_on library vbox-types.d
 # pragma D depends_on library CPUMInternal.d
-# define ___CPUMInternal_h
+# define VMM_INCLUDED_SRC_include_CPUMInternal_h
 #endif
 
 
@@ -130,13 +130,13 @@ typedef struct VMCPU
     /** IEM part.
      * @remarks This comes first as it allows the use of 8-bit immediates for the
      *          first 64 bytes of the structure, reducing code size a wee bit. */
-#ifdef ___IEMInternal_h /* For PDB hacking. */
+#ifdef VMM_INCLUDED_SRC_include_IEMInternal_h /* For PDB hacking. */
     union VMCPUUNIONIEMFULL
 #else
     union VMCPUUNIONIEMSTUB
 #endif
     {
-#ifdef ___IEMInternal_h
+#ifdef VMM_INCLUDED_SRC_include_IEMInternal_h
         struct IEMCPU       s;
 #endif
         uint8_t             padding[18496];     /* multiple of 64 */
@@ -174,7 +174,7 @@ typedef struct VMCPU
     /** HM part. */
     union VMCPUUNIONHM
     {
-#ifdef ___HMInternal_h
+#ifdef VMM_INCLUDED_SRC_include_HMInternal_h
         struct HMCPU    s;
 #endif
         uint8_t             padding[5888];      /* multiple of 64 */
@@ -183,7 +183,7 @@ typedef struct VMCPU
     /** NEM part. */
     union VMCPUUNIONNEM
     {
-#ifdef ___NEMInternal_h
+#ifdef VMM_INCLUDED_SRC_include_NEMInternal_h
         struct NEMCPU       s;
 #endif
         uint8_t             padding[512];       /* multiple of 64 */
@@ -192,7 +192,7 @@ typedef struct VMCPU
     /** TRPM part. */
     union VMCPUUNIONTRPM
     {
-#ifdef ___TRPMInternal_h
+#ifdef VMM_INCLUDED_SRC_include_TRPMInternal_h
         struct TRPMCPU      s;
 #endif
         uint8_t             padding[128];       /* multiple of 64 */
@@ -201,7 +201,7 @@ typedef struct VMCPU
     /** TM part. */
     union VMCPUUNIONTM
     {
-#ifdef ___TMInternal_h
+#ifdef VMM_INCLUDED_SRC_include_TMInternal_h
         struct TMCPU        s;
 #endif
         uint8_t             padding[384];       /* multiple of 64 */
@@ -210,7 +210,7 @@ typedef struct VMCPU
     /** VMM part. */
     union VMCPUUNIONVMM
     {
-#ifdef ___VMMInternal_h
+#ifdef VMM_INCLUDED_SRC_include_VMMInternal_h
         struct VMMCPU       s;
 #endif
         uint8_t             padding[896];       /* multiple of 64 */
@@ -219,7 +219,7 @@ typedef struct VMCPU
     /** PDM part. */
     union VMCPUUNIONPDM
     {
-#ifdef ___PDMInternal_h
+#ifdef VMM_INCLUDED_SRC_include_PDMInternal_h
         struct PDMCPU       s;
 #endif
         uint8_t             padding[256];       /* multiple of 64 */
@@ -228,7 +228,7 @@ typedef struct VMCPU
     /** IOM part. */
     union VMCPUUNIONIOM
     {
-#ifdef ___IOMInternal_h
+#ifdef VMM_INCLUDED_SRC_include_IOMInternal_h
         struct IOMCPU       s;
 #endif
         uint8_t             padding[512];       /* multiple of 64 */
@@ -238,7 +238,7 @@ typedef struct VMCPU
      * @todo Combine this with other tiny structures. */
     union VMCPUUNIONDBGF
     {
-#ifdef ___DBGFInternal_h
+#ifdef VMM_INCLUDED_SRC_include_DBGFInternal_h
         struct DBGFCPU      s;
 #endif
         uint8_t             padding[256];       /* multiple of 64 */
@@ -247,7 +247,7 @@ typedef struct VMCPU
     /** GIM part. */
     union VMCPUUNIONGIM
     {
-#ifdef ___GIMInternal_h
+#ifdef VMM_INCLUDED_SRC_include_GIMInternal_h
         struct GIMCPU s;
 #endif
         uint8_t             padding[512];       /* multiple of 64 */
@@ -256,7 +256,7 @@ typedef struct VMCPU
     /** APIC part. */
     union VMCPUUNIONAPIC
     {
-#ifdef ___APICInternal_h
+#ifdef VMM_INCLUDED_SRC_include_APICInternal_h
         struct APICCPU      s;
 #endif
         uint8_t             padding[1792];      /* multiple of 64 */
@@ -280,7 +280,7 @@ typedef struct VMCPU
     /** PGM part. */
     union VMCPUUNIONPGM
     {
-#ifdef ___PGMInternal_h
+#ifdef VMM_INCLUDED_SRC_include_PGMInternal_h
         struct PGMCPU       s;
 #endif
         uint8_t             padding[4096];      /* multiple of 4096 */
@@ -289,7 +289,7 @@ typedef struct VMCPU
     /** CPUM part. */
     union VMCPUUNIONCPUM
     {
-#ifdef ___CPUMInternal_h
+#ifdef VMM_INCLUDED_SRC_include_CPUMInternal_h
         struct CPUMCPU      s;
 #endif
 #ifdef VMCPU_INCL_CPUM_GST_CTX
@@ -304,7 +304,7 @@ typedef struct VMCPU
     /** EM part. */
     union VMCPUUNIONEM
     {
-#ifdef ___EMInternal_h
+#ifdef VMM_INCLUDED_SRC_include_EMInternal_h
         struct EMCPU        s;
 #endif
         uint8_t             padding[40960];      /* multiple of 4096 */
@@ -1322,7 +1322,7 @@ typedef struct VM
     /** CPUM part. */
     union
     {
-#ifdef ___CPUMInternal_h
+#ifdef VMM_INCLUDED_SRC_include_CPUMInternal_h
         struct CPUM s;
 #endif
 #ifdef VBOX_INCLUDED_vmm_cpum_h
@@ -1343,7 +1343,7 @@ typedef struct VM
     /** VMM part. */
     union
     {
-#ifdef ___VMMInternal_h
+#ifdef VMM_INCLUDED_SRC_include_VMMInternal_h
         struct VMM  s;
 #endif
         uint8_t     padding[1600];      /* multiple of 64 */
@@ -1352,7 +1352,7 @@ typedef struct VM
     /** PGM part. */
     union
     {
-#ifdef ___PGMInternal_h
+#ifdef VMM_INCLUDED_SRC_include_PGMInternal_h
         struct PGM  s;
 #endif
         uint8_t     padding[4096*2+6080];      /* multiple of 64 */
@@ -1361,7 +1361,7 @@ typedef struct VM
     /** HM part. */
     union
     {
-#ifdef ___HMInternal_h
+#ifdef VMM_INCLUDED_SRC_include_HMInternal_h
         struct HM s;
 #endif
         uint8_t     padding[5440];      /* multiple of 64 */
@@ -1370,7 +1370,7 @@ typedef struct VM
     /** TRPM part. */
     union
     {
-#ifdef ___TRPMInternal_h
+#ifdef VMM_INCLUDED_SRC_include_TRPMInternal_h
         struct TRPM s;
 #endif
         uint8_t     padding[5248];      /* multiple of 64 */
@@ -1379,7 +1379,7 @@ typedef struct VM
     /** SELM part. */
     union
     {
-#ifdef ___SELMInternal_h
+#ifdef VMM_INCLUDED_SRC_include_SELMInternal_h
         struct SELM s;
 #endif
         uint8_t     padding[768];       /* multiple of 64 */
@@ -1388,7 +1388,7 @@ typedef struct VM
     /** MM part. */
     union
     {
-#ifdef ___MMInternal_h
+#ifdef VMM_INCLUDED_SRC_include_MMInternal_h
         struct MM   s;
 #endif
         uint8_t     padding[192];       /* multiple of 64 */
@@ -1397,7 +1397,7 @@ typedef struct VM
     /** PDM part. */
     union
     {
-#ifdef ___PDMInternal_h
+#ifdef VMM_INCLUDED_SRC_include_PDMInternal_h
         struct PDM s;
 #endif
         uint8_t     padding[1920];      /* multiple of 64 */
@@ -1406,7 +1406,7 @@ typedef struct VM
     /** IOM part. */
     union
     {
-#ifdef ___IOMInternal_h
+#ifdef VMM_INCLUDED_SRC_include_IOMInternal_h
         struct IOM s;
 #endif
         uint8_t     padding[896];       /* multiple of 64 */
@@ -1415,7 +1415,7 @@ typedef struct VM
     /** EM part. */
     union
     {
-#ifdef ___EMInternal_h
+#ifdef VMM_INCLUDED_SRC_include_EMInternal_h
         struct EM   s;
 #endif
         uint8_t     padding[256];       /* multiple of 64 */
@@ -1424,7 +1424,7 @@ typedef struct VM
     /** NEM part. */
     union
     {
-#ifdef ___NEMInternal_h
+#ifdef VMM_INCLUDED_SRC_include_NEMInternal_h
         struct NEM  s;
 #endif
         uint8_t     padding[128];       /* multiple of 64 */
@@ -1433,7 +1433,7 @@ typedef struct VM
     /** TM part. */
     union
     {
-#ifdef ___TMInternal_h
+#ifdef VMM_INCLUDED_SRC_include_TMInternal_h
         struct TM   s;
 #endif
         uint8_t     padding[2496];      /* multiple of 64 */
@@ -1442,7 +1442,7 @@ typedef struct VM
     /** DBGF part. */
     union
     {
-#ifdef ___DBGFInternal_h
+#ifdef VMM_INCLUDED_SRC_include_DBGFInternal_h
         struct DBGF s;
 #endif
 #ifdef VBOX_INCLUDED_vmm_dbgf_h
@@ -1478,7 +1478,7 @@ typedef struct VM
     /** SSM part. */
     union
     {
-#ifdef ___SSMInternal_h
+#ifdef VMM_INCLUDED_SRC_include_SSMInternal_h
         struct SSM  s;
 #endif
         uint8_t     padding[128];       /* multiple of 64 */
@@ -1487,7 +1487,7 @@ typedef struct VM
     /** FTM part. */
     union
     {
-#ifdef ___FTMInternal_h
+#ifdef VMM_INCLUDED_SRC_include_FTMInternal_h
         struct FTM  s;
 #endif
         uint8_t     padding[512];       /* multiple of 64 */
@@ -1497,7 +1497,7 @@ typedef struct VM
     /** PATM part. */
     union
     {
-# ifdef ___PATMInternal_h
+# ifdef VMM_INCLUDED_SRC_include_PATMInternal_h
         struct PATM s;
 # endif
         uint8_t     padding[768];       /* multiple of 64 */
@@ -1506,7 +1506,7 @@ typedef struct VM
     /** CSAM part. */
     union
     {
-# ifdef ___CSAMInternal_h
+# ifdef VMM_INCLUDED_SRC_include_CSAMInternal_h
         struct CSAM s;
 # endif
         uint8_t     padding[1088];      /* multiple of 64 */
@@ -1517,7 +1517,7 @@ typedef struct VM
     /** REM part. */
     union
     {
-# ifdef ___REMInternal_h
+# ifdef VMM_INCLUDED_SRC_include_REMInternal_h
         struct REM  s;
 # endif
         uint8_t     padding[0x11100];   /* multiple of 64 */
@@ -1526,7 +1526,7 @@ typedef struct VM
 
     union
     {
-#ifdef ___GIMInternal_h
+#ifdef VMM_INCLUDED_SRC_include_GIMInternal_h
         struct GIM s;
 #endif
         uint8_t     padding[448];       /* multiple of 64 */
@@ -1534,7 +1534,7 @@ typedef struct VM
 
     union
     {
-#ifdef ___APICInternal_h
+#ifdef VMM_INCLUDED_SRC_include_APICInternal_h
         struct APIC s;
 #endif
         uint8_t     padding[128];       /* multiple of 8 */
@@ -1545,7 +1545,7 @@ typedef struct VM
     /** VM part. */
     union
     {
-#ifdef ___VMInternal_h
+#ifdef VMM_INCLUDED_SRC_include_VMInternal_h
         struct VMINT s;
 #endif
         uint8_t     padding[32];        /* multiple of 8 */
@@ -1554,7 +1554,7 @@ typedef struct VM
     /** CFGM part. */
     union
     {
-#ifdef ___CFGMInternal_h
+#ifdef VMM_INCLUDED_SRC_include_CFGMInternal_h
         struct CFGM s;
 #endif
         uint8_t     padding[8];         /* multiple of 8 */
