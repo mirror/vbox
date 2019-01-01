@@ -4,8 +4,8 @@
  * The individual fonts are public domain
  */
 
-#ifndef VBOX_INCLUDED_Graphics_vgafonts_h
-#define VBOX_INCLUDED_Graphics_vgafonts_h
+#ifndef VBOX_INCLUDED_SRC_Graphics_BIOS_vgafonts_h
+#define VBOX_INCLUDED_SRC_Graphics_BIOS_vgafonts_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -874,5 +874,5 @@ static uint8_t vgafont16alt[19*17+1]=
  0x00
 };
 
-#endif
+#endif /* !VBOX_INCLUDED_SRC_Graphics_BIOS_vgafonts_h */
 

@@ -89,4 +89,4 @@ struct {
    } monitorPosition;
 } SVGAEscapeHintFullscreen;
 
-#endif /* _SVGA_ESCAPE_H_ */
+#endif /* !_SVGA_ESCAPE_H_ */

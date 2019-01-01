@@ -30,8 +30,8 @@
  * of the LGPL is applied is otherwise unspecified.
  */
 
-#ifndef __WINE_WINED3D_PRIVATE_H
-#define __WINE_WINED3D_PRIVATE_H
+#ifndef VBOX_INCLUDED_SRC_Graphics_shaderlib_wined3d_private_h
+#define VBOX_INCLUDED_SRC_Graphics_shaderlib_wined3d_private_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -3475,4 +3475,4 @@ void *MyNSGLGetProcAddress(const char *name);
 # define VBOX_CHECK_GL_CALL(a_Expr) do { a_Expr; } while (0)
 #endif
 
-#endif
+#endif /* !VBOX_INCLUDED_SRC_Graphics_shaderlib_wined3d_private_h */

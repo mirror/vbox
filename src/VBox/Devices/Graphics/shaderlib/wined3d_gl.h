@@ -52,8 +52,8 @@
  * of the LGPL is applied is otherwise unspecified.
  */
 
-#ifndef __WINE_WINED3D_GL_H
-#define __WINE_WINED3D_GL_H
+#ifndef VBOX_INCLUDED_SRC_Graphics_shaderlib_wined3d_gl_h
+#define VBOX_INCLUDED_SRC_Graphics_shaderlib_wined3d_gl_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -4573,4 +4573,4 @@ typedef void (WINE_GLAPI *PGLFNCHROMIUMPARAMETERUCR)(GLenum param, GLint value);
     USE_GL_FUNC(WINED3D_PFNWGLCHOOSEPIXELFORMATARBPROC,         wglChoosePixelFormatARB,        0, NULL) \
     USE_GL_FUNC(WINED3D_PFNWGLSETPIXELFORMATWINE,               wglSetPixelFormatWINE,          0, NULL)
 
-#endif /* __WINE_WINED3D_GL */
+#endif /* !VBOX_INCLUDED_SRC_Graphics_shaderlib_wined3d_gl_h */

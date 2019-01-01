@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __IOBufMgmt_h
-#define __IOBufMgmt_h
+#ifndef VBOX_INCLUDED_SRC_Storage_IOBufMgmt_h
+#define VBOX_INCLUDED_SRC_Storage_IOBufMgmt_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -108,4 +108,4 @@ DECLHIDDEN(void) IOBUFMgrFreeBuf(PIOBUFDESC pIoBufDesc);
 
 RT_C_DECLS_END
 
-#endif /* __HBDMgmt_h */
+#endif /* !VBOX_INCLUDED_SRC_Storage_IOBufMgmt_h */

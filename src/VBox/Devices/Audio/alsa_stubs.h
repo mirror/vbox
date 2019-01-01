@@ -15,11 +15,11 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef AUDIO_ALSA_STUBS_H
-#define AUDIO_ALSA_STUBS_H
+#ifndef VBOX_INCLUDED_SRC_Audio_alsa_stubs_h
+#define VBOX_INCLUDED_SRC_Audio_alsa_stubs_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
 extern int audioLoadAlsaLib(void);
-#endif
+#endif /* !VBOX_INCLUDED_SRC_Audio_alsa_stubs_h */
 

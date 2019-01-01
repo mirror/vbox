@@ -17,8 +17,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___build_VBoxDD2_h
-#define ___build_VBoxDD2_h
+#ifndef VBOX_INCLUDED_SRC_build_VBoxDD2_h
+#define VBOX_INCLUDED_SRC_build_VBoxDD2_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -69,5 +69,5 @@ extern const PDMDEVREG g_DeviceLPC;
 
 RT_C_DECLS_END
 
-#endif
+#endif /* !VBOX_INCLUDED_SRC_build_VBoxDD2_h */
 

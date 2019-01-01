@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __HBDMgmt_h
-#define __HBDMgmt_h
+#ifndef VBOX_INCLUDED_SRC_Storage_HBDMgmt_h
+#define VBOX_INCLUDED_SRC_Storage_HBDMgmt_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -91,4 +91,4 @@ DECLHIDDEN(bool) HBDMgrIsBlockDeviceClaimed(HBDMGR hHbdMgr, const char *pszFilen
 
 RT_C_DECLS_END
 
-#endif /* __HBDMgmt_h */
+#endif /* !VBOX_INCLUDED_SRC_Storage_HBDMgmt_h */

@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___DEVVMWARE3D_H___
-#define ___DEVVMWARE3D_H___
+#ifndef VBOX_INCLUDED_SRC_Graphics_DevVGA_SVGA3d_h
+#define VBOX_INCLUDED_SRC_Graphics_DevVGA_SVGA3d_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -227,5 +227,5 @@ const char *vmsvgaSurfaceType2String(SVGA3dSurfaceFormat format);
 const char *vmsvga3dPrimitiveType2String(SVGA3dPrimitiveType PrimitiveType);
 #endif
 
-#endif  /* !___DEVVMWARE3D_H___ */
+#endif /* !VBOX_INCLUDED_SRC_Graphics_DevVGA_SVGA3d_h */
 

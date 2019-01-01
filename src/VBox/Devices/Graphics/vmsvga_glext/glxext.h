@@ -1029,4 +1029,4 @@ typedef void ( * PFNGLXCOPYIMAGESUBDATANVPROC) (Display *dpy, GLXContext srcCtx,
 }
 #endif
 
-#endif
+#endif /* !__glxext_h_ */

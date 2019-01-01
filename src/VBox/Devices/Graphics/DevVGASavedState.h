@@ -18,8 +18,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___Graphics_DevVGASavedState_h
-#define ___Graphics_DevVGASavedState_h
+#ifndef VBOX_INCLUDED_SRC_Graphics_DevVGASavedState_h
+#define VBOX_INCLUDED_SRC_Graphics_DevVGASavedState_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -69,5 +69,5 @@
 #define VGA_SAVEDSTATE_VERSION_PRE_HGSMI          2
 #define VGA_SAVEDSTATE_VERSION_ANCIENT            1
 
-#endif
+#endif /* !VBOX_INCLUDED_SRC_Graphics_DevVGASavedState_h */
 

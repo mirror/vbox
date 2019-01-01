@@ -28,8 +28,8 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
-#ifndef ___EFI_VBoxEFI_h
-#define ___EFI_VBoxEFI_h
+#ifndef VBOX_INCLUDED_SRC_EFI_DevEFI_h
+#define VBOX_INCLUDED_SRC_EFI_DevEFI_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -253,4 +253,4 @@ typedef enum EFIDBGPOINT
 
 /** @} */
 
-#endif
+#endif /* !VBOX_INCLUDED_SRC_EFI_DevEFI_h */

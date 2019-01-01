@@ -14,8 +14,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___DevVGA_SVGA_h___
-#define ___DevVGA_SVGA_h___
+#ifndef VBOX_INCLUDED_SRC_Graphics_DevVGA_SVGA_h
+#define VBOX_INCLUDED_SRC_Graphics_DevVGA_SVGA_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -389,5 +389,5 @@ void vmsvgaClipBox(const SVGA3dSize *pSize,
 void vmsvgaClipRect(SVGASignedRect const *pBound,
                     SVGASignedRect *pRect);
 
-#endif
+#endif /* !VBOX_INCLUDED_SRC_Graphics_DevVGA_SVGA_h */
 

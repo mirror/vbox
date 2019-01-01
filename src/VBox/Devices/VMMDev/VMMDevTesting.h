@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___VMMDev_VMMDevTesting_h
-#define ___VMMDev_VMMDevTesting_h
+#ifndef VBOX_INCLUDED_SRC_VMMDev_VMMDevTesting_h
+#define VBOX_INCLUDED_SRC_VMMDev_VMMDevTesting_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -31,5 +31,5 @@ void vmmdevTestingTerminate(PPDMDEVINS pDevIns);
 
 RT_C_DECLS_END
 
-#endif
+#endif /* !VBOX_INCLUDED_SRC_VMMDev_VMMDevTesting_h */
 

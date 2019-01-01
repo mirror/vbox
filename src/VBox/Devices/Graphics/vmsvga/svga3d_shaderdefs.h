@@ -522,4 +522,4 @@ SVGA3dShaderGetRegType(uint32_t token)
 }
 #endif
 
-#endif /* __SVGA3D_SHADER_DEFS__ */
+#endif /* !__SVGA3D_SHADER_DEFS__ */

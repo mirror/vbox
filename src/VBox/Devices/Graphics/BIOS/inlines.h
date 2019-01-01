@@ -14,8 +14,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef VBOX_INCLUDED_Graphics_BIOS_inlines_h
-#define VBOX_INCLUDED_Graphics_BIOS_inlines_h
+#ifndef VBOX_INCLUDED_SRC_Graphics_BIOS_inlines_h
+#define VBOX_INCLUDED_SRC_Graphics_BIOS_inlines_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -147,5 +147,5 @@ extern void memcpyw(uint16_t dseg, uint16_t doffset, uint16_t sseg, uint16_t sof
     "no_copy:"          \
     parm [es] [di] [dx] [si] [cx];
 
-#endif
+#endif /* !VBOX_INCLUDED_SRC_Graphics_BIOS_inlines_h */
 

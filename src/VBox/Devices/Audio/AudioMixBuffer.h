@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef AUDIO_MIXBUF_H
-#define AUDIO_MIXBUF_H
+#ifndef VBOX_INCLUDED_SRC_Audio_AudioMixBuffer_h
+#define VBOX_INCLUDED_SRC_Audio_AudioMixBuffer_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -89,5 +89,5 @@ void AudioMixBufDbgPrint(PPDMAUDIOMIXBUF pMixBuf);
 void AudioMixBufDbgPrintChain(PPDMAUDIOMIXBUF pMixBuf);
 #endif
 
-#endif
+#endif /* !VBOX_INCLUDED_SRC_Audio_AudioMixBuffer_h */
 

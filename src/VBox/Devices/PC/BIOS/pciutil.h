@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef VBOX_INCLUDED_BIOS_pciutils_h
-#define VBOX_INCLUDED_BIOS_pciutils_h
+#ifndef VBOX_INCLUDED_SRC_PC_BIOS_pciutil_h
+#define VBOX_INCLUDED_SRC_PC_BIOS_pciutil_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -33,5 +33,5 @@ extern  void        pci_write_config_word(uint8_t bus, uint8_t dev_fn, uint8_t r
 /* Warning: pci_write_config_dword destroys the high bits of ECX. */
 extern  void        pci_write_config_dword(uint8_t bus, uint8_t dev_fn, uint8_t reg, uint32_t val);
 
-#endif
+#endif /* !VBOX_INCLUDED_SRC_PC_BIOS_pciutil_h */
 

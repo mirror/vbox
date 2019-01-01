@@ -13147,4 +13147,4 @@ typedef void (APIENTRYP PFNGLDRAWTEXTURENVPROC) (GLuint texture, GLuint sampler,
 }
 #endif
 
-#endif
+#endif /* !__glext_h_ */

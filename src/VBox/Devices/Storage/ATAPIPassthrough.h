@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __ATAPIPassthrough_h
-#define __ATAPIPassthrough_h
+#ifndef VBOX_INCLUDED_SRC_Storage_ATAPIPassthrough_h
+#define VBOX_INCLUDED_SRC_Storage_ATAPIPassthrough_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -97,4 +97,4 @@ DECLHIDDEN(bool) ATAPIPassthroughParseCdb(const uint8_t *pbCdb, size_t cbCdb, si
 
 RT_C_DECLS_END
 
-#endif /* __ATAPIPassthrough_h */
+#endif /* !VBOX_INCLUDED_SRC_Storage_ATAPIPassthrough_h */

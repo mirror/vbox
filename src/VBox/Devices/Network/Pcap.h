@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___VBox_Pcap_h
-#define ___VBox_Pcap_h
+#ifndef VBOX_INCLUDED_SRC_Network_Pcap_h
+#define VBOX_INCLUDED_SRC_Network_Pcap_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -38,5 +38,5 @@ int PcapFileGsoFrame(RTFILE File, uint64_t StartNanoTS, PCPDMNETWORKGSO pGso,
 
 RT_C_DECLS_END
 
-#endif
+#endif /* !VBOX_INCLUDED_SRC_Network_Pcap_h */
 

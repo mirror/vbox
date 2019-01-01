@@ -40,8 +40,8 @@
  * THE SOFTWARE.
  */
 
-#ifndef VBOX_INCLUDED_Graphics_DevVGA_h
-#define VBOX_INCLUDED_Graphics_DevVGA_h
+#ifndef VBOX_INCLUDED_SRC_Graphics_DevVGA_h
+#define VBOX_INCLUDED_SRC_Graphics_DevVGA_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -631,5 +631,5 @@ extern const uint8_t sr_mask[8];
 extern const uint8_t gr_mask[16];
 #endif /* !VBOX */
 
-#endif
+#endif /* !VBOX_INCLUDED_SRC_Graphics_DevVGA_h */
 

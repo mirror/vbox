@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef DEV_PCBIOS_H
-#define DEV_PCBIOS_H
+#ifndef VBOX_INCLUDED_SRC_PC_DevPcBios_h
+#define VBOX_INCLUDED_SRC_PC_DevPcBios_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -49,4 +49,4 @@
 #define VBOX_SMBIOS_MINOR_VER       5
 #define VBOX_SMBIOS_MAXSS           0xff   /* Not very accurate */
 
-#endif
+#endif /* !VBOX_INCLUDED_SRC_PC_DevPcBios_h */

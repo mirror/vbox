@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef HDA_STREAM_H
-#define HDA_STREAM_H
+#ifndef VBOX_INCLUDED_SRC_Audio_HDAStream_h
+#define VBOX_INCLUDED_SRC_Audio_HDAStream_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -305,5 +305,5 @@ void              hdaR3StreamAsyncIOEnable(PHDASTREAM pStream, bool fEnable);
 /** @} */
 
 #endif /* IN_RING3 */
-#endif /* !HDA_STREAM_H */
+#endif /* !VBOX_INCLUDED_SRC_Audio_HDAStream_h */
 

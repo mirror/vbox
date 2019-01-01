@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __DevVGA_SVGA3d_cocoa_h
-#define __DevVGA_SVGA3d_cocoa_h
+#ifndef VBOX_INCLUDED_SRC_Graphics_DevVGA_SVGA3d_cocoa_h
+#define VBOX_INCLUDED_SRC_Graphics_DevVGA_SVGA3d_cocoa_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -53,5 +53,5 @@ int ExplicitlyLoadVBoxSVGA3DObjC(bool fResolveAllImports, PRTERRINFO pErrInfo);
 
 RT_C_DECLS_END
 
-#endif /* !__DevVGA_SVGA3d_cocoa_h */
+#endif /* !VBOX_INCLUDED_SRC_Graphics_DevVGA_SVGA3d_cocoa_h */
 

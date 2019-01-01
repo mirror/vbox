@@ -1,6 +1,6 @@
 
-#ifndef vgabios_h_included
-#define vgabios_h_included
+#ifndef VBOX_INCLUDED_SRC_Graphics_BIOS_vgabios_h
+#define VBOX_INCLUDED_SRC_Graphics_BIOS_vgabios_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -65,4 +65,4 @@ extern uint16_t biosfn_restore_video_state(uint16_t CX, uint16_t ES, uint16_t BX
 #include <VBox/version.h>
 #endif
 
-#endif
+#endif /* !VBOX_INCLUDED_SRC_Graphics_BIOS_vgabios_h */

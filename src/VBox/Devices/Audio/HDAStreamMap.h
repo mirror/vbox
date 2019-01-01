@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef HDA_STREAMMAP_H
-#define HDA_STREAMMAP_H
+#ifndef VBOX_INCLUDED_SRC_Audio_HDAStreamMap_h
+#define VBOX_INCLUDED_SRC_Audio_HDAStreamMap_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -57,5 +57,5 @@ void hdaR3StreamMapReset(PHDASTREAMMAP pMapping);
 #endif /* IN_RING3 */
 /** @} */
 
-#endif /* !HDA_STREAMMAP_H */
+#endif /* !VBOX_INCLUDED_SRC_Audio_HDAStreamMap_h */
 

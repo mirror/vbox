@@ -16,8 +16,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __VBOXLWIPCORE_H__
-#define __VBOXLWIPCORE_H__
+#ifndef VBOX_INCLUDED_SRC_Network_lwip_new_vbox_VBoxLwipCore_h
+#define VBOX_INCLUDED_SRC_Network_lwip_new_vbox_VBoxLwipCore_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -30,4 +30,4 @@ typedef DECLCALLBACKPTR(void, PFNRT1)(void *);
  */
 int vboxLwipCoreInitialize(PFNRT1 pfnCallback, void * pfnCallbackArg);
 void vboxLwipCoreFinalize(PFNRT1 pfnCallback, void * pfnCallbackArg);
-#endif
+#endif /* !VBOX_INCLUDED_SRC_Network_lwip_new_vbox_VBoxLwipCore_h */

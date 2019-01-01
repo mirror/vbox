@@ -1555,4 +1555,4 @@ struct {
 }
 SVGAFifoCmdRemapGMR2;
 
-#endif
+#endif /* !_SVGA_REG_H_ */

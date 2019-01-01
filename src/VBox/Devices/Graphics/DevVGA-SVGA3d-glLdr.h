@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___DevVGA_SVGA3d_gl_h
-#define ___DevVGA_SVGA3d_gl_h
+#ifndef VBOX_INCLUDED_SRC_Graphics_DevVGA_SVGA3d_glLdr_h
+#define VBOX_INCLUDED_SRC_Graphics_DevVGA_SVGA3d_glLdr_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -372,4 +372,4 @@ GLPFN int (* pfn_XPending)(Display *display);
 
 #endif
 
-#endif
+#endif /* !VBOX_INCLUDED_SRC_Graphics_DevVGA_SVGA3d_glLdr_h */

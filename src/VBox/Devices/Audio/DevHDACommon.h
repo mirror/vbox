@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef DEV_HDA_COMMON_H
-#define DEV_HDA_COMMON_H
+#ifndef VBOX_INCLUDED_SRC_Audio_DevHDACommon_h
+#define VBOX_INCLUDED_SRC_Audio_DevHDACommon_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -654,5 +654,5 @@ bool          hdaR3TimerSet(PHDASTATE pThis, PHDASTREAM pStream, uint64_t u64Exp
 #endif /* IN_RING3 */
 /** @} */
 
-#endif /* !DEV_HDA_H_COMMON */
+#endif /* !VBOX_INCLUDED_SRC_Audio_DevHDACommon_h */
 

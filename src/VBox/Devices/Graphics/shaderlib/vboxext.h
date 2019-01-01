@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___VBOXEXT_H___
-#define ___VBOXEXT_H___
+#ifndef VBOX_INCLUDED_SRC_Graphics_shaderlib_vboxext_h
+#define VBOX_INCLUDED_SRC_Graphics_shaderlib_vboxext_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -163,5 +163,5 @@ DECLINLINE(void) VBoxExtCacheTerm(PVBOXEXT_HASHCACHE pCache)
     VBoxExtCacheCleanup(pCache);
 }
 
-#endif
+#endif /* !VBOX_INCLUDED_SRC_Graphics_shaderlib_vboxext_h */
 

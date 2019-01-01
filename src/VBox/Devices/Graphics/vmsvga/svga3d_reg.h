@@ -1902,4 +1902,4 @@ typedef union {
    float  f;
 } SVGA3dDevCapResult;
 
-#endif /* _SVGA3D_REG_H_ */
+#endif /* !_SVGA3D_REG_H_ */

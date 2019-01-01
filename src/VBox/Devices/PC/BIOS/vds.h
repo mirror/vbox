@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef VBOX_INCLUDED_BIOS_vds_h
-#define VBOX_INCLUDED_BIOS_vds_h
+#ifndef VBOX_INCLUDED_SRC_PC_BIOS_vds_h
+#define VBOX_INCLUDED_SRC_PC_BIOS_vds_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -118,5 +118,5 @@ int vds_free_sg_list( vds_edds __far *edds );
 
 uint32_t vds_real_to_lin( void __far *ptr );
 
-#endif
+#endif /* !VBOX_INCLUDED_SRC_PC_BIOS_vds_h */
 

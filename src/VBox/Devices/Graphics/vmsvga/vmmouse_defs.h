@@ -71,4 +71,4 @@
 #define VMMOUSE_RIGHT_BUTTON            0x10
 #define VMMOUSE_MIDDLE_BUTTON           0x08
 
-#endif
+#endif /* !_VMMOUSE_DEFS_H_ */

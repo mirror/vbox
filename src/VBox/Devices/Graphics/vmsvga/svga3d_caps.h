@@ -139,4 +139,4 @@ SVGA3dCaps_FindRecord(const uint32_t *capsBlock,
 }
 #endif
 
-#endif // _SVGA3D_CAPS_H_
+#endif /* !_SVGA3D_CAPS_H_ */

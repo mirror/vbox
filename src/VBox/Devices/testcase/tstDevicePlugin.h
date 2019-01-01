@@ -14,8 +14,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___tstDevicePlugin_h
-#define ___tstDevicePlugin_h
+#ifndef VBOX_INCLUDED_SRC_testcase_tstDevicePlugin_h
+#define VBOX_INCLUDED_SRC_testcase_tstDevicePlugin_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -125,4 +125,4 @@ typedef DECLCALLBACK(int) FNTSTDEVPLUGINLOAD(void *pvUser, PTSTDEVPLUGINREGISTER
 typedef FNTSTDEVPLUGINLOAD *PFNTSTDEVPLUGINLOAD;
 #define TSTDEV_PLUGIN_LOAD_NAME "TSTDevPluginLoad"
 
-#endif
+#endif /* !VBOX_INCLUDED_SRC_testcase_tstDevicePlugin_h */

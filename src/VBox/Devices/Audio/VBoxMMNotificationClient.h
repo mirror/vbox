@@ -16,8 +16,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___VBOX_MMNOTIFICATIONCLIENT_H___
-#define ___VBOX_MMNOTIFICATIONCLIENT_H___
+#ifndef VBOX_INCLUDED_SRC_Audio_VBoxMMNotificationClient_h
+#define VBOX_INCLUDED_SRC_Audio_VBoxMMNotificationClient_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -87,5 +87,5 @@ private:
     IFACEMETHODIMP_(ULONG) AddRef();
     /** @} */
 };
-#endif /* !___VBOX_MMNOTIFICATIONCLIENT_H___ */
+#endif /* !VBOX_INCLUDED_SRC_Audio_VBoxMMNotificationClient_h */
 

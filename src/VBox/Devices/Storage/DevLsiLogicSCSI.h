@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __DEVLSILOGICSCSI_H__
-#define __DEVLSILOGICSCSI_H__
+#ifndef VBOX_INCLUDED_SRC_Storage_DevLsiLogicSCSI_h
+#define VBOX_INCLUDED_SRC_Storage_DevLsiLogicSCSI_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -3645,4 +3645,4 @@ typedef LSILOGICDOORBELLSTATE *PLSILOGICDOORBELLSTATE;
 #define LSILOGIC_REG_REQUEST_QUEUE     0x40
 #define LSILOGIC_REG_REPLY_QUEUE       0x44
 
-#endif /* __DEVLSILOGICSCSI_H__ */
+#endif /* !VBOX_INCLUDED_SRC_Storage_DevLsiLogicSCSI_h */

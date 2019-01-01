@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___USBProxyDevice_h
-#define ___USBProxyDevice_h
+#ifndef VBOX_INCLUDED_SRC_USB_USBProxyDevice_h
+#define VBOX_INCLUDED_SRC_USB_USBProxyDevice_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -274,5 +274,5 @@ RTDECL(int) USBProxyDeviceLinuxGetFD(PUSBPROXYDEV pProxyDev);
 
 RT_C_DECLS_END
 
-#endif
+#endif /* !VBOX_INCLUDED_SRC_USB_USBProxyDevice_h */
 

@@ -1,6 +1,6 @@
 
-#ifndef VBOX_INCLUDED_Graphics_vgatables_h
-#define VBOX_INCLUDED_Graphics_vgatables_h
+#ifndef VBOX_INCLUDED_SRC_Graphics_BIOS_vgatables_h
+#define VBOX_INCLUDED_SRC_Graphics_BIOS_vgatables_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -562,5 +562,5 @@ static uint8_t static_functionality[0x10]=
  /* f */ 0x00   // reserved
 };
 
-#endif
+#endif /* !VBOX_INCLUDED_SRC_Graphics_BIOS_vgatables_h */
 

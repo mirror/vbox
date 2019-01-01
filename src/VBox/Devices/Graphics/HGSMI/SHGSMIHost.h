@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___SHGSMIHost_h___
-#define ___SHGSMIHost_h___
+#ifndef VBOX_INCLUDED_SRC_Graphics_HGSMI_SHGSMIHost_h
+#define VBOX_INCLUDED_SRC_Graphics_HGSMI_SHGSMIHost_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -26,5 +26,5 @@
 int  VBoxSHGSMICommandComplete(PHGSMIINSTANCE pIns, void RT_UNTRUSTED_VOLATILE_GUEST *pvData);
 void VBoxSHGSMICommandMarkAsynchCompletion(void RT_UNTRUSTED_VOLATILE_GUEST *pvData);
 
-#endif
+#endif /* !VBOX_INCLUDED_SRC_Graphics_HGSMI_SHGSMIHost_h */
 

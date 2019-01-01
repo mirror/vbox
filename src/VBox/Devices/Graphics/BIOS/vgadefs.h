@@ -1,6 +1,6 @@
 
-#ifndef VBOX_INCLUDED_Graphics_vgadefs_h
-#define VBOX_INCLUDED_Graphics_vgadefs_h
+#ifndef VBOX_INCLUDED_SRC_Graphics_BIOS_vgadefs_h
+#define VBOX_INCLUDED_SRC_Graphics_BIOS_vgadefs_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -74,5 +74,5 @@
 #define VGAREG_CGA_MODECTL             0x3d8
 #define VGAREG_CGA_PALETTE             0x3d9
 
-#endif
+#endif /* !VBOX_INCLUDED_SRC_Graphics_BIOS_vgadefs_h */
 

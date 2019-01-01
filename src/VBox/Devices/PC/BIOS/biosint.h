@@ -52,8 +52,8 @@
  * of the LGPL is applied is otherwise unspecified.
  */
 
-#ifndef VBOX_INCLUDED_BIOS_biosint_h
-#define VBOX_INCLUDED_BIOS_biosint_h
+#ifndef VBOX_INCLUDED_SRC_PC_BIOS_biosint_h
+#define VBOX_INCLUDED_SRC_PC_BIOS_biosint_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -307,5 +307,5 @@ extern  bx_bool     set_enable_a20(bx_bool val);
 #define PIC_CMD_RD_ISR      0x0B
 #define PIC_CMD_INIT        0x11
 
-#endif
+#endif /* !VBOX_INCLUDED_SRC_PC_BIOS_biosint_h */
 

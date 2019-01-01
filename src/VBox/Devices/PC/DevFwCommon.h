@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___PC_FwCommon_h
-#define ___PC_FwCommon_h
+#ifndef VBOX_INCLUDED_SRC_PC_DevFwCommon_h
+#define VBOX_INCLUDED_SRC_PC_DevFwCommon_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -31,4 +31,4 @@ void FwCommonPlantSmbiosAndDmiHdrs(PPDMDEVINS pDevIns, uint8_t *pHdr, uint16_t c
 void FwCommonPlantMpsTable(PPDMDEVINS pDevIns, uint8_t *pTable, unsigned cbMax, uint16_t cCpus);
 void FwCommonPlantMpsFloatPtr(PPDMDEVINS pDevIns, uint32_t u32MpTableAddr);
 
-#endif
+#endif /* !VBOX_INCLUDED_SRC_PC_DevFwCommon_h */
