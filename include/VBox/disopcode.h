@@ -23,8 +23,8 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
-#ifndef ___VBox_disopcode_h
-#define ___VBox_disopcode_h
+#ifndef VBOX_INCLUDED_disopcode_h
+#define VBOX_INCLUDED_disopcode_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif

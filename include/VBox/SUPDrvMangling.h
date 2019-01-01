@@ -26,8 +26,8 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
-#ifndef ___VBox_SUPDrvMangling_h
-#define ___VBox_SUPDrvMangling_h
+#ifndef VBOX_INCLUDED_SUPDrvMangling_h
+#define VBOX_INCLUDED_SUPDrvMangling_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif

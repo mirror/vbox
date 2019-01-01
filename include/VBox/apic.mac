@@ -25,8 +25,8 @@
 ; terms and conditions of either the GPL or the CDDL or both.
 ;
 
-%ifndef ___VBox_apic_h
-%define ___VBox_apic_h
+%ifndef VBOX_INCLUDED_apic_h
+%define VBOX_INCLUDED_apic_h
 %define APIC_REG_VERSION                        0x0030
 %define APIC_REG_VERSION_GET_VER(u32)           (u32 & 0xff)
 %define APIC_REG_VERSION_GET_MAX_LVT(u32)       ((u32 & 0xff0000) >> 16)

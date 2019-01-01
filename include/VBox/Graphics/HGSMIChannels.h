@@ -31,8 +31,8 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef __HGSMIChannels_h__
-#define __HGSMIChannels_h__
+#ifndef VBOX_INCLUDED_Graphics_HGSMIChannels_h
+#define VBOX_INCLUDED_Graphics_HGSMIChannels_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif

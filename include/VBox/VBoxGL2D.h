@@ -25,8 +25,8 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
-#ifndef __VBoxGLSupportInfo_h__
-#define __VBoxGLSupportInfo_h__
+#ifndef VBOX_INCLUDED_VBoxGL2D_h
+#define VBOX_INCLUDED_VBoxGL2D_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif

@@ -25,8 +25,8 @@
 ; terms and conditions of either the GPL or the CDDL or both.
 ;
 
-%ifndef ___VBox_bios_h
-%define ___VBox_bios_h
+%ifndef VBOX_INCLUDED_bios_h
+%define VBOX_INCLUDED_bios_h
 %define VBOX_BIOS_SHUTDOWN_PORT                 0x040f
 %define VBOX_BIOS_OLD_SHUTDOWN_PORT             0x8900
 %endif

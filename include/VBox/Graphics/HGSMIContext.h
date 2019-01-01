@@ -28,8 +28,8 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef ___VBox_Graphics_HGSMIContext_h___
-#define ___VBox_Graphics_HGSMIContext_h___
+#ifndef VBOX_INCLUDED_Graphics_HGSMIContext_h
+#define VBOX_INCLUDED_Graphics_HGSMIContext_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif

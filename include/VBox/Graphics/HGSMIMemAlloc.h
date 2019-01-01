@@ -24,8 +24,8 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
-#ifndef ___VBox_Graphics_HGSMIMemAlloc_h
-#define ___VBox_Graphics_HGSMIMemAlloc_h
+#ifndef VBOX_INCLUDED_Graphics_HGSMIMemAlloc_h
+#define VBOX_INCLUDED_Graphics_HGSMIMemAlloc_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif

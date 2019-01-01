@@ -24,8 +24,8 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
-#ifndef ___VBox_vmm_gvm_h
-#define ___VBox_vmm_gvm_h
+#ifndef VBOX_INCLUDED_vmm_gvm_h
+#define VBOX_INCLUDED_vmm_gvm_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -154,7 +154,7 @@ typedef struct GVM
     /** The RAWPCIVM per vm data. */
     union
     {
-#ifdef ___VBox_rawpci_h
+#ifdef VBOX_INCLUDED_rawpci_h
         struct RAWPCIPERVM s;
 #endif
         uint8_t             padding[64];

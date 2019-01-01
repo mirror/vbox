@@ -29,8 +29,8 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef ___VBox_VBoxGuest_h
-#define ___VBox_VBoxGuest_h
+#ifndef VBOX_INCLUDED_VBoxGuest_h
+#define VBOX_INCLUDED_VBoxGuest_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif

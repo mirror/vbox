@@ -75,4 +75,5 @@
 /iprt/asm*watcom*.h:                    --no-pragma-once
 
 /iprt/*.h: --guard-relative-to-dir iprt --guard-prefix IPRT_INCLUDED_
+/VBox/*.h: --guard-relative-to-dir VBox --guard-prefix VBOX_INCLUDED_
 

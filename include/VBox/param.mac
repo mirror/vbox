@@ -25,8 +25,8 @@
 ; terms and conditions of either the GPL or the CDDL or both.
 ;
 
-%ifndef ___VBox_param_h
-%define ___VBox_param_h
+%ifndef VBOX_INCLUDED_param_h
+%define VBOX_INCLUDED_param_h
 %if ARCH_BITS == 64
  %define VBOX_MAX_ALLOC_PAGE_COUNT   (_512M / PAGE_SIZE)
 %else

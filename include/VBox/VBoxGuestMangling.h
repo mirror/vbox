@@ -26,8 +26,8 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
-#ifndef ___VBox_VBoxGuestMangling_h
-#define ___VBox_VBoxGuestMangling_h
+#ifndef VBOX_INCLUDED_VBoxGuestMangling_h
+#define VBOX_INCLUDED_VBoxGuestMangling_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif

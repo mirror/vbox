@@ -27,8 +27,8 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef ___VBox_VBoxGuestLib_h
-#define ___VBox_VBoxGuestLib_h
+#ifndef VBOX_INCLUDED_VBoxGuestLib_h
+#define VBOX_INCLUDED_VBoxGuestLib_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -184,7 +184,7 @@ DECLR0VBGL(int) VbglR0IdcClose(PVBGLIDCHANDLE pHandle);
  * @param   cbReq       Size of memory block required for the request.
  * @param   enmReqType  the generic request type.
  */
-# if defined(___VBox_VMMDev_h) || defined(DOXYGEN_RUNNING)
+# if defined(VBOX_INCLUDED_VMMDev_h) || defined(DOXYGEN_RUNNING)
 DECLR0VBGL(int) VbglR0GRAlloc(struct VMMDevRequestHeader **ppReq, size_t cbReq, VMMDevRequestType enmReqType);
 # else
 DECLR0VBGL(int) VbglR0GRAlloc(struct VMMDevRequestHeader **ppReq, size_t cbReq, int32_t enmReqType);
@@ -632,7 +632,7 @@ VBGLR3DECL(int)     VbglR3VrdpGetChangeRequest(bool *pfActive, uint32_t *puExper
 /** @name VM Statistics
  * @{ */
 VBGLR3DECL(int)     VbglR3StatQueryInterval(uint32_t *pu32Interval);
-# if defined(___VBox_VMMDev_h) || defined(DOXYGEN_RUNNING)
+# if defined(VBOX_INCLUDED_VMMDev_h) || defined(DOXYGEN_RUNNING)
 VBGLR3DECL(int)     VbglR3StatReport(VMMDevReportGuestStats *pReq);
 # endif
 /** @}  */

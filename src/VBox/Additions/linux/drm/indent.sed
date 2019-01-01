@@ -251,7 +251,7 @@ s/\bulValue\b/value/g
 
 # Header file guard:
 s/__HGSMIChannels_h__/__HGSMI_CHANNELS_H__/g
-s/___VBox_Graphics_HGSMIChSetup_h/__HGSMI_CH_SETUP_H__/g
+s/VBOX_INCLUDED_Graphics_HGSMIChSetup_h/__HGSMI_CH_SETUP_H__/g
 
 # And move braces.  This must be the last expression as it jumps to the next
 # line.

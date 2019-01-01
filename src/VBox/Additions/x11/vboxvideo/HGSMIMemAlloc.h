@@ -29,8 +29,8 @@
  * HGSMIMemAlloc.h using -include, therefore this define must match the one
  * there. */
 
-#ifndef ___VBox_Graphics_HGSMIMemAlloc_h
-#define ___VBox_Graphics_HGSMIMemAlloc_h
+#ifndef VBOX_INCLUDED_Graphics_HGSMIMemAlloc_h
+#define VBOX_INCLUDED_Graphics_HGSMIMemAlloc_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -60,4 +60,4 @@ void HGSMIMAFree(HGSMIMADATA *pMA, void RT_UNTRUSTED_VOLATILE_GUEST *pv);
 
 RT_C_DECLS_END
 
-#endif /* !___VBox_Graphics_HGSMIMemAlloc_h */
+#endif /* !VBOX_INCLUDED_Graphics_HGSMIMemAlloc_h */

@@ -27,8 +27,8 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef ___VBox_VMMDev_h
-#define ___VBox_VMMDev_h
+#ifndef VBOX_INCLUDED_VMMDev_h
+#define VBOX_INCLUDED_VMMDev_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif

@@ -27,8 +27,8 @@
  * of the LGPL is applied is otherwise unspecified.
  */
 
-#ifndef ___VBox_VBoxKeyboard_h
-#define ___VBox_VBoxKeyboard_h
+#ifndef VBOX_INCLUDED_VBoxKeyboard_h
+#define VBOX_INCLUDED_VBoxKeyboard_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif

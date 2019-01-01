@@ -1,6 +1,6 @@
 
-#ifndef __glext_h_
-#define __glext_h_
+#ifndef VBOX_INCLUDED_HostServices_glext_h
+#define VBOX_INCLUDED_HostServices_glext_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif

@@ -24,8 +24,8 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
-#ifndef ___VBox_usblib_win_h
-#define ___VBox_usblib_win_h
+#ifndef VBOX_INCLUDED_usblib_win_h
+#define VBOX_INCLUDED_usblib_win_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif

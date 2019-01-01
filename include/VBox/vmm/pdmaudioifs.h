@@ -171,8 +171,8 @@
  *                                                                       +----------------------------------+
  */
 
-#ifndef ___VBox_vmm_pdmaudioifs_h
-#define ___VBox_vmm_pdmaudioifs_h
+#ifndef VBOX_INCLUDED_vmm_pdmaudioifs_h
+#define VBOX_INCLUDED_vmm_pdmaudioifs_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif

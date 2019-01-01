@@ -30,8 +30,8 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef ___VBox_VMMDevCoreTypes_h
-#define ___VBox_VMMDevCoreTypes_h
+#ifndef VBOX_INCLUDED_VMMDevCoreTypes_h
+#define VBOX_INCLUDED_VMMDevCoreTypes_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif

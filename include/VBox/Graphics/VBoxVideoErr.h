@@ -29,8 +29,8 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef __VBOX_ERR_H__
-#define __VBOX_ERR_H__
+#ifndef VBOX_INCLUDED_Graphics_VBoxVideoErr_h
+#define VBOX_INCLUDED_Graphics_VBoxVideoErr_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif

@@ -28,8 +28,8 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef ___VBox_Graphics_VBoxVideo_h
-#define ___VBox_Graphics_VBoxVideo_h
+#ifndef VBOX_INCLUDED_Graphics_VBoxVideo_h
+#define VBOX_INCLUDED_Graphics_VBoxVideo_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif

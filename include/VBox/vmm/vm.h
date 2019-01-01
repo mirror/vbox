@@ -23,8 +23,8 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
-#ifndef ___VBox_vmm_vm_h
-#define ___VBox_vmm_vm_h
+#ifndef VBOX_INCLUDED_vmm_vm_h
+#define VBOX_INCLUDED_vmm_vm_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -1325,7 +1325,7 @@ typedef struct VM
 #ifdef ___CPUMInternal_h
         struct CPUM s;
 #endif
-#ifdef ___VBox_vmm_cpum_h
+#ifdef VBOX_INCLUDED_vmm_cpum_h
         /** Read only info exposed about the host and guest CPUs. */
         struct
         {
@@ -1445,7 +1445,7 @@ typedef struct VM
 #ifdef ___DBGFInternal_h
         struct DBGF s;
 #endif
-#ifdef ___VBox_vmm_dbgf_h
+#ifdef VBOX_INCLUDED_vmm_dbgf_h
         /** Read only info exposed about interrupt breakpoints and selected events. */
         struct
         {

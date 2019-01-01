@@ -28,8 +28,8 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef ___VBox_VBoxGuestLibSharedFolders_h_
-#define ___VBox_VBoxGuestLibSharedFolders_h_
+#ifndef VBOX_INCLUDED_VBoxGuestLibSharedFolders_h
+#define VBOX_INCLUDED_VBoxGuestLibSharedFolders_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
