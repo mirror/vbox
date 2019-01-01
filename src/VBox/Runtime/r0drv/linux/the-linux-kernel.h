@@ -430,7 +430,7 @@ DECLINLINE(unsigned long) msecs_to_jiffies(unsigned int cMillies)
 /*
  * There are some conflicting defines in iprt/param.h, sort them out here.
  */
-#ifndef ___iprt_param_h
+#ifndef IPRT_INCLUDED_param_h
 # undef PAGE_SIZE
 # undef PAGE_OFFSET_MASK
 # include <iprt/param.h>

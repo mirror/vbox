@@ -544,7 +544,7 @@ DECLR0VBGL(int)     VbglR0SetMouseStatus(uint32_t fFeatures);
 VBGLR3DECL(int)     VbglR3Init(void);
 VBGLR3DECL(int)     VbglR3InitUser(void);
 VBGLR3DECL(void)    VbglR3Term(void);
-# ifdef ___iprt_time_h
+# ifdef IPRT_INCLUDED_time_h
 VBGLR3DECL(int)     VbglR3GetHostTime(PRTTIMESPEC pTime);
 # endif
 VBGLR3DECL(int)     VbglR3InterruptEventWaits(void);

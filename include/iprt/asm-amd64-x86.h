@@ -23,8 +23,8 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
-#ifndef ___iprt_asm_amd64_x86_h
-#define ___iprt_asm_amd64_x86_h
+#ifndef IPRT_INCLUDED_asm_amd64_x86_h
+#define IPRT_INCLUDED_asm_amd64_x86_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -3384,11 +3384,11 @@ DECLINLINE(void) ASMSetAC(void)
  */
 #if defined(__WATCOMC__) && ARCH_BITS == 16
 # define IPRT_ASM_AMD64_X86_WATCOM_16_INSTANTIATE
-# undef ___iprt_asm_amd64_x86_watcom_16_h
+# undef IPRT_INCLUDED_asm_amd64_x86_watcom_16_h
 # include "asm-amd64-x86-watcom-16.h"
 #elif defined(__WATCOMC__) && ARCH_BITS == 32
 # define IPRT_ASM_AMD64_X86_WATCOM_32_INSTANTIATE
-# undef ___iprt_asm_amd64_x86_watcom_32_h
+# undef IPRT_INCLUDED_asm_amd64_x86_watcom_32_h
 # include "asm-amd64-x86-watcom-32.h"
 #endif
 

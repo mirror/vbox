@@ -52,8 +52,8 @@
  * $FreeBSD: src/lib/msun/i387/fenv.h,v 1.4 2005/03/17 22:21:46 das Exp $
  */
 
-#ifndef ___iprt_nocrt_x86_fenv_h
-#define ___iprt_nocrt_x86_fenv_h
+#ifndef IPRT_INCLUDED_nocrt_x86_fenv_h
+#define IPRT_INCLUDED_nocrt_x86_fenv_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif

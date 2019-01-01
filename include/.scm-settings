@@ -74,3 +74,5 @@
 /iprt/bldprog-strtab-template.cpp.h:    --no-fix-header-guards
 /iprt/asm*watcom*.h:                    --no-pragma-once
 
+/iprt/*.h: --guard-relative-to-dir iprt --guard-prefix IPRT_INCLUDED_
+

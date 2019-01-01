@@ -427,7 +427,7 @@ DECLINLINE(void) HGCMSvcSetStr(VBOXHGCMSVCPARM *pParm, const char *psz)
 }
 
 #ifdef __cplusplus
-# ifdef ___iprt_cpp_ministring_h
+# ifdef IPRT_INCLUDED_cpp_ministring_h
 /** Set a const string value to an HGCM parameter structure */
 DECLINLINE(void) HGCMSvcSetRTCStr(VBOXHGCMSVCPARM *pParm, const RTCString &rString)
 {

@@ -89,7 +89,7 @@ VMMR3DECL(RCPTRTYPE(PPDMCRITSECT))  PDMR3CritSectGetNopRC(PVM pVM);
 
 /* Strict build: Remap the two enter calls to the debug versions. */
 #ifdef VBOX_STRICT
-# ifdef ___iprt_asm_h
+# ifdef IPRT_INCLUDED_asm_h
 #  define PDMCritSectEnter(pCritSect, rcBusy)   PDMCritSectEnterDebug((pCritSect), (rcBusy), (uintptr_t)ASMReturnAddress(), RT_SRC_POS)
 #  define PDMCritSectTryEnter(pCritSect)        PDMCritSectTryEnterDebug((pCritSect), (uintptr_t)ASMReturnAddress(), RT_SRC_POS)
 # else

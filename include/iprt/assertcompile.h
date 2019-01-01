@@ -23,8 +23,8 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
-#ifndef ___iprt_assertcompile_h
-#define ___iprt_assertcompile_h
+#ifndef IPRT_INCLUDED_assertcompile_h
+#define IPRT_INCLUDED_assertcompile_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif

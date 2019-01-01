@@ -23,8 +23,8 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
-#ifndef ___iprt_cpp_ministring_h
-#define ___iprt_cpp_ministring_h
+#ifndef IPRT_INCLUDED_cpp_ministring_h
+#define IPRT_INCLUDED_cpp_ministring_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif

@@ -64,8 +64,8 @@
  *       (or passing them as anonymously) makes it easier to take care of this.
  */
 
-#ifndef ___iprt_vector_h
-#define ___iprt_vector_h
+#ifndef IPRT_INCLUDED_vector_h
+#define IPRT_INCLUDED_vector_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif

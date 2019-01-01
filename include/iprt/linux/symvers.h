@@ -27,8 +27,8 @@
  * distributions.  This will almost certainly need updating as time
  * goes by. */
 
-#ifndef ___iprt_linux_symvers_h
-#define ___iprt_linux_symvers_h
+#ifndef IPRT_INCLUDED_linux_symvers_h
+#define IPRT_INCLUDED_linux_symvers_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif

@@ -23,8 +23,8 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
-#ifndef ___iprt_semaphore_h
-#define ___iprt_semaphore_h
+#ifndef IPRT_INCLUDED_semaphore_h
+#define IPRT_INCLUDED_semaphore_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -632,7 +632,7 @@ RTDECL(bool) RTSemMutexIsOwned(RTSEMMUTEX hMutexSem);
 
 /* Strict build: Remap the two request calls to the debug versions. */
 #if   defined(RT_STRICT) && !defined(RTSEMMUTEX_WITHOUT_REMAPPING) && !defined(RT_WITH_MANGLING)
-# ifdef ___iprt_asm_h
+# ifdef IPRT_INCLUDED_asm_h
 #  define RTSemMutexRequest(hMutexSem, cMillies)            RTSemMutexRequestDebug((hMutexSem), (cMillies), (uintptr_t)ASMReturnAddress(), RT_SRC_POS)
 #  define RTSemMutexRequestNoResume(hMutexSem, cMillies)    RTSemMutexRequestNoResumeDebug((hMutexSem), (cMillies), (uintptr_t)ASMReturnAddress(), RT_SRC_POS)
 #  define RTSemMutexRequestEx(hMutexSem, fFlags, uTimeout)  RTSemMutexRequestExDebug((hMutexSem), (fFlags), (uTimeout), (uintptr_t)ASMReturnAddress(), RT_SRC_POS)
@@ -1142,7 +1142,7 @@ RTDECL(uint32_t) RTSemRWGetReadCount(RTSEMRW hRWSem);
 
 /* Strict build: Remap the four request calls to the debug versions. */
 #if defined(RT_STRICT) && !defined(RTSEMRW_WITHOUT_REMAPPING) && !defined(RT_WITH_MANGLING)
-# ifdef ___iprt_asm_h
+# ifdef IPRT_INCLUDED_asm_h
 #  define RTSemRWRequestRead(hRWSem, cMillies)              RTSemRWRequestReadDebug((hRWSem), (cMillies), (uintptr_t)ASMReturnAddress(), RT_SRC_POS)
 #  define RTSemRWRequestReadNoResume(hRWSem, cMillies)      RTSemRWRequestReadNoResumeDebug((hRWSem), (cMillies), (uintptr_t)ASMReturnAddress(), RT_SRC_POS)
 #  define RTSemRWRequestWrite(hRWSem, cMillies)             RTSemRWRequestWriteDebug((hRWSem), (cMillies), (uintptr_t)ASMReturnAddress(), RT_SRC_POS)

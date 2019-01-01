@@ -23,8 +23,8 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
-#ifndef ___iprt_fsvfs_h
-#define ___iprt_fsvfs_h
+#ifndef IPRT_INCLUDED_fsvfs_h
+#define IPRT_INCLUDED_fsvfs_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif

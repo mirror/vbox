@@ -25,8 +25,8 @@
 ; terms and conditions of either the GPL or the CDDL or both.
 ;
 
-%ifndef ___iprt_format_dwarf_h
-%define ___iprt_format_dwarf_h
+%ifndef IPRT_INCLUDED_format_dwarf_h
+%define IPRT_INCLUDED_format_dwarf_h
 %define DW_LNS_extended                    0x00
 %define DW_LNS_copy                        0x01
 %define DW_LNS_advance_pc                  0x02

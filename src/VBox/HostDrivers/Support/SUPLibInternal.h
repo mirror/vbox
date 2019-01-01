@@ -465,7 +465,7 @@ DECLHIDDEN(void)    supR3HardenedWinInitAppBin(uint32_t fFlags);
 DECLHIDDEN(void)    supR3HardenedWinInitVersion(bool fEarlyInit);
 DECLHIDDEN(void)    supR3HardenedWinInitImports(void);
 DECLHIDDEN(void)    supR3HardenedWinModifyDllSearchPath(uint32_t fFlags, const char *pszAppBinPath);
-# ifdef ___iprt_nt_nt_h___
+# ifdef IPRT_INCLUDED_nt_nt_h
 DECLHIDDEN(void)    supR3HardenedWinGetVeryEarlyImports(uintptr_t uNtDllAddr,
                                                         PFNNTWAITFORSINGLEOBJECT *ppfnNtWaitForSingleObject,
                                                         PFNNTSETEVENT *ppfnNtSetEvent);

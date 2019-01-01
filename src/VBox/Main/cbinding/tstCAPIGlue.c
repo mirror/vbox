@@ -39,7 +39,7 @@
 # include <unistd.h>
 # include <sys/poll.h>
 #endif
-#ifdef ___iprt_cdefs_h
+#ifdef IPRT_INCLUDED_cdefs_h
 # error "not supposed to involve any IPRT or VBox headers here."
 #endif
 

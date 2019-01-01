@@ -80,7 +80,7 @@ VMMDECL(bool)       PDMCritSectRwIsInitialized(PCPDMCRITSECTRW pCritSect);
 
 /* Lock strict build: Remap the three enter calls to the debug versions. */
 #ifdef VBOX_STRICT
-# ifdef ___iprt_asm_h
+# ifdef IPRT_INCLUDED_asm_h
 #  define PDMCritSectRwEnterExcl(pCritSect, rcBusy)     PDMCritSectRwEnterExclDebug(pCritSect, rcBusy, (uintptr_t)ASMReturnAddress(), RT_SRC_POS)
 #  define PDMCritSectRwTryEnterExcl(pCritSect)          PDMCritSectRwTryEnterExclDebug(pCritSect, (uintptr_t)ASMReturnAddress(), RT_SRC_POS)
 #  define PDMCritSectRwEnterShared(pCritSect, rcBusy)   PDMCritSectRwEnterSharedDebug(pCritSect, rcBusy, (uintptr_t)ASMReturnAddress(), RT_SRC_POS)

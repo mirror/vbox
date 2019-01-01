@@ -63,7 +63,7 @@ DECLINLINE(uint32_t) ApicRegRead(void *pvBase, uint32_t offReg)
 }
 
 
-#ifdef ___iprt_asm_amd64_x86_h
+#ifdef IPRT_INCLUDED_asm_amd64_x86_h
 /**
  * Reads an X2APIC register.
  *

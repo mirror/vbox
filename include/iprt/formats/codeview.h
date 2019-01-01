@@ -23,8 +23,8 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
-#ifndef ___iprt_formats_codeview_h
-#define ___iprt_formats_codeview_h
+#ifndef IPRT_INCLUDED_formats_codeview_h
+#define IPRT_INCLUDED_formats_codeview_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif

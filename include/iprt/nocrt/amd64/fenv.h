@@ -50,8 +50,8 @@
  * SUCH DAMAGE.
  */
 
-#ifndef ___iprt_nocrt_amd64_fenv_h
-#define ___iprt_nocrt_amd64_fenv_h
+#ifndef IPRT_INCLUDED_nocrt_amd64_fenv_h
+#define IPRT_INCLUDED_nocrt_amd64_fenv_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif

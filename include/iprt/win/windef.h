@@ -23,8 +23,8 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
-#ifndef ___iprt_win_windef_h___
-#define ___iprt_win_windef_h___
+#ifndef IPRT_INCLUDED_win_windef_h
+#define IPRT_INCLUDED_win_windef_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif

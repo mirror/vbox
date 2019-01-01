@@ -213,7 +213,7 @@ extern decltype(Module32Next)                  *g_pfnModule32Next;
 # endif
 extern decltype(GetSystemTimeAdjustment)       *g_pfnGetSystemTimeAdjustment;
 extern decltype(SetSystemTimeAdjustment)       *g_pfnSetSystemTimeAdjustment;
-# ifdef ___iprt_nt_nt_h___
+# ifdef IPRT_INCLUDED_nt_nt_h
 extern decltype(ZwQuerySystemInformation)      *g_pfnZwQuerySystemInformation;
 # endif
 extern ULONG (WINAPI *g_pfnGetAdaptersInfo)(struct _IP_ADAPTER_INFO *, PULONG);

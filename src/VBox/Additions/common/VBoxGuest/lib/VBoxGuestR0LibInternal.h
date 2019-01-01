@@ -49,7 +49,7 @@ struct VBGLIDCHANDLEPRIVATE
 {
     /** Pointer to the session handle. */
     void           *pvSession;
-# if defined(RT_OS_WINDOWS) && (defined(___iprt_nt_ntddk_h___) || defined(___iprt_nt_nt_h___))
+# if defined(RT_OS_WINDOWS) && (defined(IPRT_INCLUDED_nt_ntddk_h) || defined(IPRT_INCLUDED_nt_nt_h))
     /** Pointer to the NT device object. */
     PDEVICE_OBJECT  pDeviceObject;
     /** Pointer to the NT file object. */

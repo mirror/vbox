@@ -261,7 +261,7 @@ DECLHIDDEN(void)         rtThreadClearTlsEntry(RTTLS iTls);
 DECLHIDDEN(void)         rtThreadTlsDestruction(PRTTHREADINT pThread); /* in tls-generic.cpp */
 #endif
 
-#ifdef ___iprt_asm_h
+#ifdef IPRT_INCLUDED_asm_h
 
 /**
  * Gets the thread state.

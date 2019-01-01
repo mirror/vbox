@@ -23,8 +23,8 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
-#ifndef ___iprt_critsect_h
-#define ___iprt_critsect_h
+#ifndef IPRT_INCLUDED_critsect_h
+#define IPRT_INCLUDED_critsect_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -352,7 +352,7 @@ DECLINLINE(int32_t) RTCritSectGetWaiters(PCRTCRITSECT pCritSect)
 
 /* Lock strict build: Remap the three enter calls to the debug versions. */
 #if defined(RT_LOCK_STRICT) && !defined(RTCRITSECT_WITHOUT_REMAPPING) && !defined(RT_WITH_MANGLING)
-# ifdef ___iprt_asm_h
+# ifdef IPRT_INCLUDED_asm_h
 #  define RTCritSectEnter(pCritSect)                        RTCritSectEnterDebug(pCritSect, (uintptr_t)ASMReturnAddress(), RT_SRC_POS)
 #  define RTCritSectTryEnter(pCritSect)                     RTCritSectTryEnterDebug(pCritSect, (uintptr_t)ASMReturnAddress(), RT_SRC_POS)
 #  define RTCritSectEnterMultiple(cCritSects, pCritSect)    RTCritSectEnterMultipleDebug((cCritSects), (pCritSect), (uintptr_t)ASMReturnAddress(), RT_SRC_POS)
@@ -718,7 +718,7 @@ DECLINLINE(bool) RTCritSectRwIsInitialized(PCRTCRITSECTRW pThis)
 
 /* Lock strict build: Remap the three enter calls to the debug versions. */
 #if defined(RT_LOCK_STRICT) && !defined(RTCRITSECTRW_WITHOUT_REMAPPING) && !defined(RT_WITH_MANGLING)
-# ifdef ___iprt_asm_h
+# ifdef IPRT_INCLUDED_asm_h
 #  define RTCritSectRwEnterExcl(pThis)      RTCritSectRwEnterExclDebug(pThis, (uintptr_t)ASMReturnAddress(), RT_SRC_POS)
 #  define RTCritSectRwTryEnterExcl(pThis)   RTCritSectRwTryEnterExclDebug(pThis, (uintptr_t)ASMReturnAddress(), RT_SRC_POS)
 #  define RTCritSectRwEnterShared(pThis)    RTCritSectRwEnterSharedDebug(pThis, (uintptr_t)ASMReturnAddress(), RT_SRC_POS)

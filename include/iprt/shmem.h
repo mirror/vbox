@@ -23,8 +23,8 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
-#ifndef ___iprt_shmem_h
-#define ___iprt_shmem_h
+#ifndef IPRT_INCLUDED_shmem_h
+#define IPRT_INCLUDED_shmem_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif

@@ -48,6 +48,6 @@
 %define APIC_REG_LVT_REMOTE_IRR                 RT_BIT(14)
 %define APIC_REG_LVT_LEVEL_TRIGGER              RT_BIT(15)
 %define APIC_REG_LVT_MASKED                     RT_BIT(16)
-%ifdef ___iprt_asm_amd64_x86_h
+%ifdef IPRT_INCLUDED_asm_amd64_x86_h
 %endif
 %endif

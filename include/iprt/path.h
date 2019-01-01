@@ -23,8 +23,8 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
-#ifndef ___iprt_path_h
-#define ___iprt_path_h
+#ifndef IPRT_INCLUDED_path_h
+#define IPRT_INCLUDED_path_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -48,7 +48,7 @@ RT_C_DECLS_BEGIN
  * Host max path (the reasonable value).
  * @remarks defined both by iprt/param.h and iprt/path.h.
  */
-#if !defined(___iprt_param_h) || defined(DOXYGEN_RUNNING)
+#if !defined(IPRT_INCLUDED_param_h) || defined(DOXYGEN_RUNNING)
 # define RTPATH_MAX         (4096 + 4)    /* (PATH_MAX + 1) on linux w/ some alignment */
 #endif
 

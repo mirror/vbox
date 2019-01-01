@@ -23,11 +23,11 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
-#ifndef ___iprt_asm_amd64_x86_watcom_32_h
-#define ___iprt_asm_amd64_x86_watcom_32_h
+#ifndef IPRT_INCLUDED_asm_amd64_x86_watcom_32_h
+#define IPRT_INCLUDED_asm_amd64_x86_watcom_32_h
 /* no pragma once */
 
-#ifndef ___iprt_asm_amd64_x86_h
+#ifndef IPRT_INCLUDED_asm_amd64_x86_h
 # error "Don't include this header directly."
 #endif
 

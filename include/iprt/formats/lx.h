@@ -28,8 +28,8 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef ___iprt_formats_lx_h___
-#define ___iprt_formats_lx_h___
+#ifndef IPRT_INCLUDED_formats_lx_h
+#define IPRT_INCLUDED_formats_lx_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif

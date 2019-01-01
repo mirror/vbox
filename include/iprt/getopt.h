@@ -23,8 +23,8 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
-#ifndef ___iprt_getopt_h
-#define ___iprt_getopt_h
+#ifndef IPRT_INCLUDED_getopt_h
+#define IPRT_INCLUDED_getopt_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -184,7 +184,7 @@ typedef union RTGETOPTUNION
     int64_t         i64;
     /** A RTGETOPT_REQ_UINT64 option argument. */
     uint64_t        u64;
-#ifdef ___iprt_net_h
+#ifdef IPRT_INCLUDED_net_h
     /** A RTGETOPT_REQ_IPV4ADDR option argument. */
     RTNETADDRIPV4   IPv4Addr;
     /** A RTGETOPT_REQ_IPV4CIDR option argument. */
