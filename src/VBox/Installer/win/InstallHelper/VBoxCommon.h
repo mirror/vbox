@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___VBoxInstallHelper_Common_h
-#define ___VBoxInstallHelper_Common_h
+#ifndef VBOX_INCLUDED_SRC_InstallHelper_VBoxCommon_h
+#define VBOX_INCLUDED_SRC_InstallHelper_VBoxCommon_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
