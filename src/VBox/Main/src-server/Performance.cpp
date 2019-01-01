@@ -42,7 +42,7 @@
 
 #include <algorithm>
 
-#include "Logging.h"
+#include "LoggingNew.h"
 
 using namespace pm;
 
