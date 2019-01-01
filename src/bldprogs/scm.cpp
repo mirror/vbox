@@ -1090,6 +1090,9 @@ static int scmSettingsBaseHandleOpt(PSCMSETTINGSBASE pSettings, int rc, PRTGETOP
             pSettings->pszGuardRelativeToDir = NULL;
             if (*pValueUnion->psz != '\0')
             {
+                if (   strcmp(pValueUnion->psz, "{dir}") == 0
+                    || strcmp(pValueUnion->psz, "{parent}") == 0)
+                    return RTStrDupEx(&pSettings->pszGuardRelativeToDir, pValueUnion->psz);
                 if (cchDir == 1 && *pchDir == '/')
                 {
                     pSettings->pszGuardRelativeToDir = RTPathAbsDup(pValueUnion->psz);
@@ -2794,6 +2797,8 @@ static int scmHelp(PCRTGETOPTDEF paOpts, size_t cOpts)
                 break;
             case SCMOPT_GUARD_RELATIVE_TO_DIR:
                 RTPrintf("      Header guard should be normalized relative to given dir.\n"
+                         "      When relative to settings files, no preceeding slash.\n"
+                         "      Header relative directory specification: {dir} and {parent}\n"
                          "      If empty no normalization takes place.  Default: '%s'\n", g_Defaults.pszGuardRelativeToDir);
                 break;
             case SCMOPT_GUARD_PREFIX:

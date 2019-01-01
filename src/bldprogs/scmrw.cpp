@@ -2878,8 +2878,24 @@ bool rewrite_FixHeaderGuards(PSCMRWSTATE pState, PSCMSTREAM pIn, PSCMSTREAM pOut
         if (RT_FAILURE(rc))
             return ScmError(pState, rc, "Guard prefix too long (or something): %s\n", pSettings->pszGuardPrefix);
         cchNormalized = strlen(szNormalized);
-        rc = RTPathCalcRelative(&szNormalized[cchNormalized], sizeof(szNormalized) - cchNormalized,
-                                pSettings->pszGuardRelativeToDir, pState->pszFilename);
+        if (strcmp(pSettings->pszGuardRelativeToDir, "{dir}") == 0)
+            rc = RTStrCopy(&szNormalized[cchNormalized], sizeof(szNormalized) - cchNormalized,
+                           RTPathFilename(pState->pszFilename));
+        else if (strcmp(pSettings->pszGuardRelativeToDir, "{parent}") == 0)
+        {
+            const char *pszSrc = RTPathFilename(pState->pszFilename);
+            if (!pszSrc || (uintptr_t)&pszSrc[-2] < (uintptr_t)pState->pszFilename || !RTPATH_IS_SLASH(pszSrc[-1]))
+                return ScmError(pState, VERR_INTERNAL_ERROR, "Error calculating {parent} header guard!\n");
+            pszSrc -= 2;
+            while (   (uintptr_t)pszSrc > (uintptr_t)pState->pszFilename
+                   && !RTPATH_IS_SLASH(pszSrc[-1])
+                   && !RTPATH_IS_VOLSEP(pszSrc[-1]))
+                pszSrc--;
+            rc = RTStrCopy(&szNormalized[cchNormalized], sizeof(szNormalized) - cchNormalized, pszSrc);
+        }
+        else
+            rc = RTPathCalcRelative(&szNormalized[cchNormalized], sizeof(szNormalized) - cchNormalized,
+                                    pSettings->pszGuardRelativeToDir, pState->pszFilename);
         if (RT_FAILURE(rc))
             return ScmError(pState, rc, "Error calculating guard prefix (RTPathCalcRelative): %Rrc\n", rc);
         char ch;
