@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___Debugger_VBoxDbgStats_h
-#define ___Debugger_VBoxDbgStats_h
+#ifndef DEBUGGER_INCLUDED_SRC_VBoxDbgStatsQt_h
+#define DEBUGGER_INCLUDED_SRC_VBoxDbgStatsQt_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -249,5 +249,5 @@ protected:
 };
 
 
-#endif
+#endif /* !DEBUGGER_INCLUDED_SRC_VBoxDbgStatsQt_h */
 

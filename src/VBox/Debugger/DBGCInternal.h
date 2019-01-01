@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___Debugger_DBGCInternal_h
-#define ___Debugger_DBGCInternal_h
+#ifndef DEBUGGER_INCLUDED_SRC_DBGCInternal_h
+#define DEBUGGER_INCLUDED_SRC_DBGCInternal_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -610,5 +610,5 @@ extern const uint32_t   g_cDbgcSxEvents;
 
 
 
-#endif
+#endif /* !DEBUGGER_INCLUDED_SRC_DBGCInternal_h */
 
