@@ -24,8 +24,8 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
-#ifndef __common_zip_tar_h
-#define __common_zip_tar_h
+#ifndef IPRT_INCLUDED_SRC_common_zip_tar_h
+#define IPRT_INCLUDED_SRC_common_zip_tar_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif

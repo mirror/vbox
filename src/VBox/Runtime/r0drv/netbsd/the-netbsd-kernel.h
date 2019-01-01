@@ -28,8 +28,8 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef ___the_netbsd_kernel_h
-#define ___the_netbsd_kernel_h
+#ifndef IPRT_INCLUDED_SRC_r0drv_netbsd_the_netbsd_kernel_h
+#define IPRT_INCLUDED_SRC_r0drv_netbsd_the_netbsd_kernel_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif

@@ -24,8 +24,8 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
-#ifndef ___testcase_tstRTR0CommonDriver_h
-#define ___testcase_tstRTR0CommonDriver_h
+#ifndef IPRT_INCLUDED_SRC_testcase_tstRTR0CommonDriver_h
+#define IPRT_INCLUDED_SRC_testcase_tstRTR0CommonDriver_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif

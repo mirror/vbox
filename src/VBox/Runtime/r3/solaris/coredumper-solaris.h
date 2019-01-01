@@ -24,8 +24,8 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
-#ifndef RT_INCLUDED_r3_solaris_coredumper_solaris_h
-#define RT_INCLUDED_r3_solaris_coredumper_solaris_h
+#ifndef IPRT_INCLUDED_SRC_r3_solaris_coredumper_solaris_h
+#define IPRT_INCLUDED_SRC_r3_solaris_coredumper_solaris_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif

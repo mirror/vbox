@@ -24,8 +24,8 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
-#ifndef ___r3_allocex_h
-#define ___r3_allocex_h
+#ifndef IPRT_INCLUDED_SRC_r3_allocex_h
+#define IPRT_INCLUDED_SRC_r3_allocex_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif

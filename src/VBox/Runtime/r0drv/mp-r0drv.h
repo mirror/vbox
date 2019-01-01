@@ -24,8 +24,8 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
-#ifndef ___r0drv_mp_r0drv_h
-#define ___r0drv_mp_r0drv_h
+#ifndef IPRT_INCLUDED_SRC_r0drv_mp_r0drv_h
+#define IPRT_INCLUDED_SRC_r0drv_mp_r0drv_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
