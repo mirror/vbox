@@ -18,8 +18,8 @@
  * WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___VBoxDTraceTypes_h___
-#define ___VBoxDTraceTypes_h___
+#ifndef VBOX_INCLUDED_SRC_VBoxDTrace_include_VBoxDTraceTypes_h
+#define VBOX_INCLUDED_SRC_VBoxDTrace_include_VBoxDTraceTypes_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -465,5 +465,5 @@ typedef Elf64_Addr  GElf_Addr;
 #endif /* IN_RING3 */
 
 RT_C_DECLS_END
-#endif
+#endif /* !VBOX_INCLUDED_SRC_VBoxDTrace_include_VBoxDTraceTypes_h */
 

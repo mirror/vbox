@@ -17,8 +17,8 @@
  * WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___VBoxDTraceLibCWrappers_h___
-#define ___VBoxDTraceLibCWrappers_h___
+#ifndef VBOX_INCLUDED_SRC_VBoxDTrace_include_VBoxDTraceLibCWrappers_h
+#define VBOX_INCLUDED_SRC_VBoxDTrace_include_VBoxDTraceLibCWrappers_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -96,5 +96,5 @@
 #undef bcmp
 #define bcmp(a_p1, a_p2, a_cb)      (memcmp(a_p1, a_p2, a_cb))
 
-#endif
+#endif /* !VBOX_INCLUDED_SRC_VBoxDTrace_include_VBoxDTraceLibCWrappers_h */
 
