@@ -40,5 +40,5 @@ DECLHIDDEN(void) rtR0PowerNotificationTerm(void);
 
 RT_C_DECLS_END
 
-#endif
+#endif /* !IPRT_INCLUDED_SRC_r0drv_power_r0drv_h */
 

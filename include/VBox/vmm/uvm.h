@@ -181,5 +181,5 @@ AssertCompileMemberAlignment(UVM, aCpus, 32);
                              RT_VALID_ALIGNED_PTR(a_pUVM, PAGE_SIZE) ? (a_pUVM)->u32Magic : 0))
 
 /** @} */
-#endif
+#endif /* !VBOX_INCLUDED_vmm_uvm_h */
 

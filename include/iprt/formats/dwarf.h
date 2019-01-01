@@ -528,5 +528,5 @@
 #define DWREG_AMD64_FSW     66
 /** @} */
 
-#endif
+#endif /* !IPRT_INCLUDED_formats_dwarf_h */
 

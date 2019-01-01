@@ -458,4 +458,4 @@ DECLHIDDEN(void) rtR0LnxWorkqueuePush(RTR0LNXWORKQUEUEITEM *pWork, void (*pfnWor
 DECLHIDDEN(void) rtR0LnxWorkqueueFlush(void);
 
 
-#endif
+#endif /* !IPRT_INCLUDED_SRC_r0drv_linux_the_linux_kernel_h */

@@ -158,5 +158,5 @@
 
 /** @} */
 
-#endif
+#endif /* !VBOX_INCLUDED_VMMDevTesting_h */
 

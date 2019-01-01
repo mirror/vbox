@@ -182,5 +182,5 @@ DECLINLINE(size_t) USBLibPurgeEncoding(char *psz)
 /** @} */
 RT_C_DECLS_END
 
-#endif
+#endif /* !VBOX_INCLUDED_usblib_h */
 

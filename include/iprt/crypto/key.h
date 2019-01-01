@@ -112,5 +112,5 @@ extern RT_DECL_DATA_CONST(uint32_t const)       g_cRTCrKeyAllMarkers;
 
 RT_C_DECLS_END
 
-#endif
+#endif /* !IPRT_INCLUDED_crypto_key_h */
 

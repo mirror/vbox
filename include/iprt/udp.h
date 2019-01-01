@@ -167,5 +167,5 @@ RTR3DECL(int) RTUdpCreateClientSocket(const char *pszAddress, uint32_t uPort, PR
 /** @} */
 RT_C_DECLS_END
 
-#endif
+#endif /* !IPRT_INCLUDED_udp_h */
 

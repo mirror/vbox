@@ -954,5 +954,5 @@ VMMR3DECL(int)     PGMR3SharedModuleGetPageState(PVM pVM, RTGCPTR GCPtrPage, boo
 RT_C_DECLS_END
 
 /** @} */
-#endif
+#endif /* !VBOX_INCLUDED_vmm_pgm_h */
 

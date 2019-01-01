@@ -135,5 +135,5 @@ inline C *unconst(const C *that)
 
 /** @} */
 
-#endif
+#endif /* !IPRT_INCLUDED_cpp_utils_h */
 

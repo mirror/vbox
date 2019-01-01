@@ -247,5 +247,5 @@ int HGSMIChannelRegister(HGSMICHANNELINFO *pChannelInfo, uint8_t u8Channel, cons
 int HGSMIBufferProcess(const HGSMIAREA *pArea, HGSMICHANNELINFO *pChannelInfo, HGSMIOFFSET offBuffer);
 RT_C_DECLS_END
 
-#endif /* !___VBox_Graphics_HGSMI_h */
+#endif /* !VBOX_INCLUDED_Graphics_HGSMI_h */
 

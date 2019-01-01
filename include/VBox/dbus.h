@@ -123,5 +123,5 @@ typedef void (* DBusFreeFunction) (void *);
 
 #undef VBOX_DBUS_GENERATE_HEADER
 
-#endif /* ___VBox_DBus_h not defined */
+#endif /* !VBOX_INCLUDED_dbus_h */
 

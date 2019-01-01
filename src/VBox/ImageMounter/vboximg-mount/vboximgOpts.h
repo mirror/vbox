@@ -43,4 +43,4 @@ typedef struct vboximgOpts {
 } VBOXIMGOPTS;
 
 
-#endif
+#endif /* !VBOX_INCLUDED_SRC_vboximg_mount_vboximgOpts_h */

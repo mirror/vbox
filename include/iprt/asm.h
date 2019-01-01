@@ -5702,5 +5702,5 @@ DECLINLINE(uint64_t) ASMRotateRightU64(uint64_t u64, uint32_t cShift)
 # include "asm-watcom-x86-32.h"
 #endif
 
-#endif
+#endif /* !IPRT_INCLUDED_asm_h */
 

@@ -124,5 +124,5 @@ typedef struct HGSMIENV
     DECLCALLBACKMEMBER(void, pfnFree)(void *pvEnv, void *pv);
 } HGSMIENV;
 
-#endif /* !___VBox_Graphics_HGSMIDefs_h */
+#endif /* !VBOX_INCLUDED_Graphics_HGSMIDefs_h */
 

@@ -269,5 +269,5 @@ RTR3DECL(int) RTS3PutKey(RTS3 hS3, const char *pszBucketName, const char *pszKey
 
 RT_C_DECLS_END
 
-#endif
+#endif /* !IPRT_INCLUDED_s3_h */
 

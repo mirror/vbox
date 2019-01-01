@@ -603,4 +603,4 @@ DECLCALLBACK(int) genericFileComposeLocation(PVDINTERFACE pConfig, char **pszLoc
 /** @copydoc VDIMAGEBACKEND::pfnComposeName */
 DECLCALLBACK(int) genericFileComposeName(PVDINTERFACE pConfig, char **pszName);
 
-#endif
+#endif /* !VBOX_INCLUDED_vd_image_backend_h */

@@ -164,5 +164,5 @@ RTDECL(uint32_t) RTMemPoolRefCount(void *pv) RT_NO_THROW_PROTO;
 
 RT_C_DECLS_END
 
-#endif
+#endif /* !IPRT_INCLUDED_mempool_h */
 

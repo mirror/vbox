@@ -236,5 +236,5 @@ RTDECL(uint16_t)    RTCrc16CcittFinish(uint16_t uCrc);
 
 RT_C_DECLS_END
 
-#endif
+#endif /* !IPRT_INCLUDED_crc_h */
 

@@ -128,5 +128,5 @@ typedef struct VBOXUHGSMI_BUFFER
 #define VBoxUhgsmiBufferUnlock(_pBuf) ((_pBuf)->pfnUnlock(_pBuf))
 #define VBoxUhgsmiBufferDestroy(_pBuf) ((_pBuf)->pfnDestroy(_pBuf))
 
-#endif
+#endif /* !VBOX_INCLUDED_Graphics_VBoxUhgsmi_h */
 

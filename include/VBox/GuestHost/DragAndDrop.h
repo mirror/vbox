@@ -320,5 +320,5 @@ protected:
     uint64_t                m_cbTotal;
 };
 
-#endif /* !___VBox_GuestHost_DragAndDrop_h */
+#endif /* !VBOX_INCLUDED_GuestHost_DragAndDrop_h */
 

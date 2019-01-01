@@ -193,5 +193,5 @@ RTDECL(int) RTBase64EncodeEx(const void *pvData, size_t cbData, uint32_t fFlags,
 
 RT_C_DECLS_END
 
-#endif
+#endif /* !IPRT_INCLUDED_base64_h */
 

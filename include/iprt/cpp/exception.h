@@ -94,5 +94,5 @@ private:
 
 /** @} */
 
-#endif
+#endif /* !IPRT_INCLUDED_cpp_exception_h */
 

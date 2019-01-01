@@ -208,5 +208,5 @@ typedef struct VBOXCRCMDCTL_DISABLE
 } VBOXCRCMDCTL_DISABLE;
 #pragma pack()
 
-#endif
+#endif /* !VBOX_INCLUDED_Graphics_VBoxVideoHost3D_h */
 

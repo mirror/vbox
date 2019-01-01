@@ -101,5 +101,5 @@ DECLHIDDEN(int) rtStrToIpAddr6Str(const char *psz, char *pszAddrOut, size_t addr
 
 RT_C_DECLS_END
 
-#endif
+#endif /* !IPRT_INCLUDED_INTERNAL_string_h */
 

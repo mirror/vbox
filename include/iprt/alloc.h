@@ -32,5 +32,5 @@
 /* Forwarding to the canonical header. */
 #include <iprt/mem.h>
 
-#endif
+#endif /* !IPRT_INCLUDED_alloc_h */
 

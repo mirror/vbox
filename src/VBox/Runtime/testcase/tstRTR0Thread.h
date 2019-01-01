@@ -46,4 +46,4 @@ typedef enum TSTR0THREAD
     TSTRTR0THREAD_BASIC
 } TSTR0THREAD;
 
-#endif
+#endif /* !IPRT_INCLUDED_SRC_testcase_tstRTR0Thread_h */

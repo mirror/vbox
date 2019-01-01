@@ -138,5 +138,5 @@ VMM_INT_DECL(int) NEMHCResumeCpuTickOnAll(PVM pVM, PVMCPU pVCpu, uint64_t uPause
 RT_C_DECLS_END
 
 
-#endif
+#endif /* !VBOX_INCLUDED_vmm_nem_h */
 

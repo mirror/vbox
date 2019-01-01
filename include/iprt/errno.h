@@ -319,4 +319,4 @@
 /** @todo errno constants {76..}. */
 
 
-#endif
+#endif /* !IPRT_INCLUDED_errno_h */

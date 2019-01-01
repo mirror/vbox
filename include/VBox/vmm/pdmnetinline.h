@@ -674,5 +674,5 @@ DECLINLINE(const char *) PDMNetGsoTypeName(PDMNETWORKGSOTYPE enmType)
 
 /** @} */
 
-#endif
+#endif /* !VBOX_INCLUDED_vmm_pdmnetinline_h */
 

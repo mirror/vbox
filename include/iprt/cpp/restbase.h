@@ -1082,5 +1082,5 @@ protected:
 
 /** @} */
 
-#endif
+#endif /* !IPRT_INCLUDED_cpp_restbase_h */
 

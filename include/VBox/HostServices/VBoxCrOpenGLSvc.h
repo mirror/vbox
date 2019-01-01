@@ -426,4 +426,4 @@ typedef struct
     bool     fUnscaledHiDPI;
 } CRVBOXHGCMSETUNSCALEDHIDPIOUTPUT;
 
-#endif
+#endif /* !VBOX_INCLUDED_HostServices_VBoxCrOpenGLSvc_h */

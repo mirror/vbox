@@ -141,4 +141,4 @@ typedef struct VRDETSMFNOTIFYDATA
     uint32_t cbData; /* How many bytes available. */
 } VRDETSMFNOTIFYDATA;
 
-#endif
+#endif /* !VBOX_INCLUDED_RemoteDesktop_VRDETSMF_h */

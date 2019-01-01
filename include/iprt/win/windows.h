@@ -53,5 +53,5 @@
 # pragma warning(disable:4200)
 #endif
 
-#endif
+#endif /* !IPRT_INCLUDED_win_windows_h */
 

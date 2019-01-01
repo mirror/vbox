@@ -1036,5 +1036,5 @@ public:
 
 /** @} */
 
-#endif /* !___iprt_cpp_list_h */
+#endif /* !IPRT_INCLUDED_cpp_list_h */
 

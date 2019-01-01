@@ -501,5 +501,5 @@ RT_C_DECLS_END
 
 /** @} */
 
-#endif
+#endif /* !IPRT_INCLUDED_list_off32_h */
 

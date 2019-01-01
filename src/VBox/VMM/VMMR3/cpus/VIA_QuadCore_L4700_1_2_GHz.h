@@ -400,5 +400,5 @@ static CPUMDBENTRY const g_Entry_VIA_QuadCore_L4700_1_2_GHz =
     /*.paMsrRanges      = */ NULL_ALONE(g_aMsrRanges_VIA_QuadCore_L4700_1_2_GHz),
 };
 
-#endif /* !VBOX_DB_VIA_QuadCore_L4700_1_2_GHz */
+#endif /* !VBOX_CPUDB_VIA_QuadCore_L4700_1_2_GHz_h */
 

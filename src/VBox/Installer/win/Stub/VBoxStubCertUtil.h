@@ -23,5 +23,5 @@
 
 extern bool addCertToStore(DWORD dwDst, const char *pszStoreNm, const unsigned char kpCertBuf[], DWORD cbCertBuf);
 
-#endif
+#endif /* !VBOX_INCLUDED_SRC_Stub_VBoxStubCertUtil_h */
 

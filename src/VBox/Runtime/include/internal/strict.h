@@ -79,4 +79,4 @@
 
 /** @} */
 
-#endif
+#endif /* !IPRT_INCLUDED_INTERNAL_strict_h */

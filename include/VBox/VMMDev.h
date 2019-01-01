@@ -1985,5 +1985,5 @@ AssertCompileMemberOffset(VMMDevMemory, vbvaMemory, 16);
 RT_C_DECLS_END
 #pragma pack()
 
-#endif
+#endif /* !VBOX_INCLUDED_VMMDev_h */
 

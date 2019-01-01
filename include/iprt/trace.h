@@ -214,5 +214,5 @@ RTDECL(RTTRACEBUF)  RTTraceGetDefaultBuf(void);
 
 RT_C_DECLS_END
 
-#endif
+#endif /* !IPRT_INCLUDED_trace_h */
 

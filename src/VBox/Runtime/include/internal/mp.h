@@ -81,5 +81,5 @@ DECLINLINE(uint8_t) rtMpCpuIdGetGroupMember(RTCPUID idCpu)
 
 RT_C_DECLS_END
 
-#endif
+#endif /* !IPRT_INCLUDED_INTERNAL_mp_h */
 

@@ -225,5 +225,5 @@ typedef const TRACELOGEVT *PCTRACELOGEVT;
 
 /** @} */
 
-#endif
+#endif /* !IPRT_INCLUDED_formats_tracelog_h */
 

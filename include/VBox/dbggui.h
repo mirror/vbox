@@ -174,5 +174,5 @@ DBGDECL(void) DBGGuiSetMenu(PDBGGUI pGui, void *pvMenu);
 
 RT_C_DECLS_END
 
-#endif
+#endif /* !VBOX_INCLUDED_dbggui_h */
 

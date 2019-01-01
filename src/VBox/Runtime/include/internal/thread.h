@@ -290,4 +290,4 @@ DECLINLINE(void) rtThreadSetState(PRTTHREADINT pThread, RTTHREADSTATE enmNewStat
 
 RT_C_DECLS_END
 
-#endif
+#endif /* !IPRT_INCLUDED_INTERNAL_thread_h */

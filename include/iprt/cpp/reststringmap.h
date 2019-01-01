@@ -485,5 +485,5 @@ protected:
 
 /** @} */
 
-#endif
+#endif /* !IPRT_INCLUDED_cpp_reststringmap_h */
 

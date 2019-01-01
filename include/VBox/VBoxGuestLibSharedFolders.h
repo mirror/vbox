@@ -127,5 +127,5 @@ DECLVBGL(int)  VbglR0SfSetSymlinks(PVBGLSFCLIENT pClient);
 
 RT_C_DECLS_END
 
-#endif
+#endif /* !VBOX_INCLUDED_VBoxGuestLibSharedFolders_h */
 

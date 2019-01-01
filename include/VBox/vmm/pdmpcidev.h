@@ -676,4 +676,4 @@ typedef PDMPCIDEV PDMIICH9BRIDGEPDMPCIDEV;
 
 /** @} */
 
-#endif
+#endif /* !VBOX_INCLUDED_vmm_pdmpcidev_h */

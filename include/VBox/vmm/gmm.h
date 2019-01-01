@@ -807,5 +807,5 @@ GMMR3DECL(bool) GMMR3IsDuplicatePage(PVM pVM, uint32_t idPage);
 
 RT_C_DECLS_END
 
-#endif
+#endif /* !VBOX_INCLUDED_vmm_gmm_h */
 

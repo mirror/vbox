@@ -377,5 +377,5 @@ void GlueHandleComErrorProgress(ComPtr<IProgress> progress, const char *pcszCont
 
 /** @} */
 
-#endif
+#endif /* !VBOX_INCLUDED_com_errorprint_h */
 

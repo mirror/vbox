@@ -303,5 +303,5 @@ bool RTR0TestR0HaveErrors(void)
     return ASMAtomicUoReadU32(&g_cErrors) > 0;
 }
 
-#endif
+#endif /* !IPRT_INCLUDED_SRC_testcase_tstRTR0Common_h */
 

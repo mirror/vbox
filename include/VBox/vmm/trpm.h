@@ -152,4 +152,4 @@ VMMR0DECL(void)     TRPMR0SetupInterruptDispatcherFrame(PVM pVM, void *pvRet);
 /** @} */
 RT_C_DECLS_END
 
-#endif
+#endif /* !VBOX_INCLUDED_vmm_trpm_h */

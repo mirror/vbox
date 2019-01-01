@@ -116,5 +116,5 @@ int VBoxLogRelCreate(const char *pcszEntity, const char *pcszLogFile,
 } /* namespace com */
 
 /** @} */
-#endif
+#endif /* !VBOX_INCLUDED_com_com_h */
 

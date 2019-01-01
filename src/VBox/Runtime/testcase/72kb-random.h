@@ -4647,5 +4647,5 @@ const unsigned char g_abRandom72KB[] =
 
 const unsigned g_cbRandom72KB = sizeof(g_abRandom72KB);
 
-#endif
+#endif /* !IPRT_INCLUDED_SRC_testcase_72kb_random_h */
 

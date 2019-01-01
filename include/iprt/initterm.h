@@ -262,5 +262,5 @@ RTDECL(void) RTTermRunCallbacks(RTTERMREASON enmReason, int32_t iStatus);
 RT_C_DECLS_END
 
 
-#endif
+#endif /* !IPRT_INCLUDED_initterm_h */
 

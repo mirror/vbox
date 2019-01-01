@@ -121,4 +121,4 @@ typedef __builtin_va_list   va_list;
 #define va_copy(dst, src)   __builtin_va_copy(dst, src)
 
 
-#endif
+#endif /* !IPRT_INCLUDED_nocrt_compiler_gcc_h */

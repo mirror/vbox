@@ -174,5 +174,5 @@ DECLHIDDEN(DECLCALLBACK(int))       rtRandAdvDefaultDestroy(PRTRANDINT pThis);
 
 RT_C_DECLS_END
 
-#endif
+#endif /* !IPRT_INCLUDED_INTERNAL_rand_h */
 

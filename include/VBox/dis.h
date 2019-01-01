@@ -847,5 +847,5 @@ DISDECL(bool)   DISFormatYasmIsOddEncoding(PDISSTATE pDis);
 
 RT_C_DECLS_END
 
-#endif
+#endif /* !VBOX_INCLUDED_dis_h */
 

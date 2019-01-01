@@ -3213,5 +3213,5 @@ public:
 #endif /* __cplusplus */
 /** @} */
 
-#endif
+#endif /* !IPRT_INCLUDED_types_h */
 

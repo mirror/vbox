@@ -1054,5 +1054,5 @@ DECLINLINE(PRTUINT32U) RTUInt32DivRem(PRTUINT32U pQuotient, PRTUINT32U pRemainde
 
 RT_C_DECLS_END
 
-#endif
+#endif /* !IPRT_INCLUDED_uint32_h */
 

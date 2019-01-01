@@ -1407,5 +1407,5 @@ RTR3DECL(int) RTTestIRestoreAssertions(void);
 
 RT_C_DECLS_END
 
-#endif
+#endif /* !IPRT_INCLUDED_test_h */
 

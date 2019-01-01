@@ -58,5 +58,5 @@ RT_C_DECLS_BEGIN
 
 RT_C_DECLS_END
 
-#endif
+#endif /* !VBOX_INCLUDED_usblib_darwin_h */
 

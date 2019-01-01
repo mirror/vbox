@@ -1175,4 +1175,4 @@ DBGDECL(int)    DBGCTcpTerminate(PUVM pUVM, void *pvData);
 /** @} */
 RT_C_DECLS_END
 
-#endif
+#endif /* !VBOX_INCLUDED_dbg_h */

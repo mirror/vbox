@@ -602,4 +602,4 @@ struct PCIBusAddress
 
 /** @} */
 
-#endif
+#endif /* !VBOX_INCLUDED_pci_h */

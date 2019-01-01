@@ -196,4 +196,4 @@ size_t rtDirNativeGetStructSize(const char *pszPath);
 DECLHIDDEN(int) rtDirOpenRelativeOrHandle(RTDIR *phDir, const char *pszRelativeAndFilter, RTDIRFILTER enmFilter,
                                           uint32_t fFlags, uintptr_t hRelativeDir, void *pvNativeRelative);
 
-#endif
+#endif /* !IPRT_INCLUDED_INTERNAL_dir_h */

@@ -38,5 +38,5 @@ DECLINLINE(uint32_t) pdmCalcIrqTag(PVM pVM, uint32_t idTracer)
     return uTag;
 }
 
-#endif
+#endif /* !VMM_INCLUDED_SRC_include_PDMInline_h */
 

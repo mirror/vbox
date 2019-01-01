@@ -171,4 +171,4 @@ typedef enum VBOXOSFAMILY
 
 RT_C_DECLS_END
 
-#endif
+#endif /* !VBOX_INCLUDED_ostypes_h */

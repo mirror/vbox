@@ -212,5 +212,5 @@ typedef PVDREGIONLIST *PPVDREGIONLIST;
 #define VD_REGION_LIST_F_VALID               (VD_REGION_LIST_F_LOC_SIZE_BLOCKS)
 /** @} */
 
-#endif /* !___VBox_vdmedia_h */
+#endif /* !VBOX_INCLUDED_vdmedia_h */
 

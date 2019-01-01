@@ -273,5 +273,5 @@ GVMMR0DECL(int)     GVMMR0ResetStatisticsReq(PGVM pGVM, PVM pVM, PGVMMRESETSTATI
 
 RT_C_DECLS_END
 
-#endif
+#endif /* !VBOX_INCLUDED_vmm_gvmm_h */
 

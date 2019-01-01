@@ -162,5 +162,5 @@ RTDECL(int) RTAioMgrFileFlush(RTAIOMGRFILE hAioMgrFile, void *pvUser);
 
 RT_C_DECLS_END
 
-#endif
+#endif /* !IPRT_INCLUDED_aiomgr_h */
 

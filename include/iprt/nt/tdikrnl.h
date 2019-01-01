@@ -36,5 +36,5 @@ RT_C_DECLS_BEGIN
 RT_C_DECLS_END
 #pragma warning(pop)
 
-#endif
+#endif /* !IPRT_INCLUDED_nt_tdikrnl_h */
 

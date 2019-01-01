@@ -84,5 +84,5 @@ typedef Elf32_Sym           Elf_Sym;
 # error Unknown arch!
 #endif
 
-#endif
+#endif /* !IPRT_INCLUDED_formats_elf_h */
 

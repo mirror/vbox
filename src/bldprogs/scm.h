@@ -458,5 +458,5 @@ extern uint32_t g_uYear;
 
 RT_C_DECLS_END
 
-#endif
+#endif /* !VBOX_INCLUDED_SRC_bldprogs_scm_h */
 

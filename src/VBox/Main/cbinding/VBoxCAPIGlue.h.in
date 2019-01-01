@@ -64,5 +64,5 @@ void VBoxCGlueTerm(void);
 }
 #endif
 
-#endif
+#endif /* !___VBoxCAPIGlue_h */
 

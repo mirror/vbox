@@ -628,5 +628,5 @@ RTR0DECL(int) RTR0MemObjProtect(RTR0MEMOBJ hMemObj, size_t offSub, size_t cbSub,
 
 RT_C_DECLS_END
 
-#endif
+#endif /* !IPRT_INCLUDED_memobj_h */
 

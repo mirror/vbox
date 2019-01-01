@@ -766,5 +766,5 @@ typedef NTFSIDXENTRYHDR const *PCNTFSIDXENTRYHDR;
 
 /** @} */
 
-#endif
+#endif /* !IPRT_INCLUDED_formats_ntfs_h */
 

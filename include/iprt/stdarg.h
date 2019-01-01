@@ -58,5 +58,5 @@
 # define va_copy(dst, src) do { (dst) = (src); } while (0) /** @todo check AMD64 */
 #endif
 
-#endif
+#endif /* !IPRT_INCLUDED_stdarg_h */
 

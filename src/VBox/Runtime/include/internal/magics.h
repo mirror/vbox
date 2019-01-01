@@ -278,5 +278,5 @@
 
 /** @} */
 
-#endif
+#endif /* !IPRT_INCLUDED_INTERNAL_magics_h */
 

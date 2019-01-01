@@ -676,5 +676,5 @@ AssertCompileSize(JournalInfoBlock, 180);
 
 /** @}  */
 
-#endif
+#endif /* !IPRT_INCLUDED_formats_hfs_h */
 

@@ -115,5 +115,5 @@ DECLHIDDEN(void)    rtLockValidatorSerializeDestructLeave(void);
 
 RT_C_DECLS_END
 
-#endif
+#endif /* !IPRT_INCLUDED_INTERNAL_lockvalidator_h */
 

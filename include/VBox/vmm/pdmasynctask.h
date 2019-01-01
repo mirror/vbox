@@ -60,5 +60,5 @@ typedef PPDMASYNCTASK *PPPDMASYNCTASK;
 
 RT_C_DECLS_END
 
-#endif
+#endif /* !VBOX_INCLUDED_vmm_pdmasynctask_h */
 

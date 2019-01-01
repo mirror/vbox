@@ -507,5 +507,5 @@ RTDECL(int) RTMpNotificationDeregister(PFNRTMPNOTIFICATION pfnCallback, void *pv
 
 RT_C_DECLS_END
 
-#endif
+#endif /* !IPRT_INCLUDED_mp_h */
 

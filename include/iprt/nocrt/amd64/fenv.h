@@ -241,4 +241,4 @@ RT_C_DECLS_END
 # define __fe_dfl_env RT_NOCRT(__fe_dfl_env)
 #endif
 
-#endif  /* !__iprt_nocrt_amd64_fenv_h__ */
+#endif /* !IPRT_INCLUDED_nocrt_amd64_fenv_h */

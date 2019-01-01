@@ -531,5 +531,5 @@ private:
 
 /** @} */
 
-#endif
+#endif /* !VBOX_INCLUDED_com_ErrorInfo_h */
 

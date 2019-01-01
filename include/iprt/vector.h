@@ -375,5 +375,5 @@ DECLINLINE(void *) rtvecReallocDefTag(void *pv, size_t cbNew)
     RTVEC_DECL_ALLOCATOR_DELETE_BY_VALUE(name, type, rtvecReallocDefTag,   \
                                          pfnDelete)
 
-#endif /* !___iprt_vector_h */
+#endif /* !IPRT_INCLUDED_vector_h */
 

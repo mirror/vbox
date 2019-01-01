@@ -39,5 +39,5 @@
 
 #pragma warning(pop)
 
-#endif
+#endif /* !IPRT_INCLUDED_win_shlwapi_h */
 

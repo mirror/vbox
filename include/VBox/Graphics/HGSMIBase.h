@@ -57,4 +57,4 @@ DECLHIDDEN(int)  VBoxHGSMIBufferSubmit(PHGSMIGUESTCOMMANDCONTEXT pCtx, void RT_U
 
 RT_C_DECLS_END
 
-#endif
+#endif /* !VBOX_INCLUDED_Graphics_HGSMIBase_h */

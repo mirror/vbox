@@ -110,5 +110,5 @@ DECLINLINE(int32_t) VMCpuSetFindLastPresentInternal(PCVMCPUSET pSet)
 
 /** @} */
 
-#endif
+#endif /* !VBOX_INCLUDED_vmm_vmcpuset_h */
 

@@ -184,5 +184,5 @@ RTDECL(int)  RTUuidFromUtf16(PRTUUID pUuid, PCRTUTF16 pwszString);
 
 RT_C_DECLS_END
 
-#endif
+#endif /* !IPRT_INCLUDED_uuid_h */
 

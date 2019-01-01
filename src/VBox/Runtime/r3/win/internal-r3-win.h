@@ -208,5 +208,5 @@ extern DECLHIDDEN(PFNWINSOCKGETHOSTBYNAME)         g_pfngethostbyname;
 #endif
 
 
-#endif
+#endif /* !IPRT_INCLUDED_SRC_r3_win_internal_r3_win_h */
 

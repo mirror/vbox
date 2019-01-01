@@ -482,5 +482,5 @@ DECLHIDDEN(void) rtR0MemObjDelete(PRTR0MEMOBJINTERNAL pMem);
 
 RT_C_DECLS_END
 
-#endif
+#endif /* !IPRT_INCLUDED_INTERNAL_memobj_h */
 

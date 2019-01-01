@@ -34,5 +34,5 @@
 
 extern DECLHIDDEN(RTCRPKIXSIGNATUREDESC const) g_rtCrPkixSigningHashWithRsaDesc;
 
-#endif
+#endif /* !IPRT_INCLUDED_SRC_common_crypto_pkix_signature_builtin_h */
 

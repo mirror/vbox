@@ -449,5 +449,5 @@ RTDECL(int) RTLinuxCheckDevicePath(dev_t DevNum, RTFMODE fMode, char *pszBuf, si
 
 RT_C_DECLS_END
 
-#endif
+#endif /* !IPRT_INCLUDED_linux_sysfs_h */
 

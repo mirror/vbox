@@ -221,4 +221,4 @@ typedef struct VRDEINPUT_DISMISS_HOVERING_CONTACT_PDU
 
 #pragma pack()
 
-#endif
+#endif /* !VBOX_INCLUDED_RemoteDesktop_VRDEInput_h */

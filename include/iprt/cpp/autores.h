@@ -202,5 +202,5 @@ public:
 /* include after template definition */
 #include <iprt/mem.h>
 
-#endif
+#endif /* !IPRT_INCLUDED_cpp_autores_h */
 

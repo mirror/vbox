@@ -31,5 +31,5 @@
 
 #include <iprt/stdarg.h>
 
-#endif
+#endif /* !IPRT_INCLUDED_nocrt_stdarg_h */
 

@@ -164,5 +164,5 @@ DECLINLINE(int) RTPathAppendCxx(RTCString &rStrDst, RTCString const &rStrAppend)
 
 /** @} */
 
-#endif
+#endif /* !IPRT_INCLUDED_cpp_path_h */
 

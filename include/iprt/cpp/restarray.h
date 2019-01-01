@@ -449,5 +449,5 @@ protected:
 
 /** @} */
 
-#endif
+#endif /* !IPRT_INCLUDED_cpp_restarray_h */
 

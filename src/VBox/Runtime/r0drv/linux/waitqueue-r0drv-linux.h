@@ -288,5 +288,5 @@ DECLINLINE(uint32_t) rtR0SemLnxWaitGetResolution(void)
 #endif
 }
 
-#endif
+#endif /* !IPRT_INCLUDED_SRC_r0drv_linux_waitqueue_r0drv_linux_h */
 

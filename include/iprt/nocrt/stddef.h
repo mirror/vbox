@@ -31,4 +31,4 @@
 
 #include <iprt/types.h>
 
-#endif
+#endif /* !IPRT_INCLUDED_nocrt_stddef_h */

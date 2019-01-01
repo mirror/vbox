@@ -155,5 +155,5 @@ RTDECL(int) RTKrnlModInfoQueryRefModInfo(RTKRNLMODINFO hKrnlModInfo, uint32_t id
 
 RT_C_DECLS_END
 
-#endif
+#endif /* !IPRT_INCLUDED_krnlmod_h */
 

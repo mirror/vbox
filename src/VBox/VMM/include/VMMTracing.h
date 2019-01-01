@@ -124,5 +124,5 @@
 
 /** @} */
 
-#endif
+#endif /* !VMM_INCLUDED_SRC_include_VMMTracing_h */
 

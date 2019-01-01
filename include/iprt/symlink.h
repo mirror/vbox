@@ -175,5 +175,5 @@ RTDECL(int) RTSymlinkReadA(const char *pszSymlink, char **ppszTarget);
 
 RT_C_DECLS_END
 
-#endif
+#endif /* !IPRT_INCLUDED_symlink_h */
 

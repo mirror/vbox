@@ -121,5 +121,5 @@
 
 /** @} */
 
-#endif // !___VBox_com_assert_h
+#endif /* !VBOX_INCLUDED_com_assert_h */
 

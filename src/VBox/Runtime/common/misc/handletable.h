@@ -243,5 +243,5 @@ DECLINLINE(void) rtHandleTableUnlock(PRTHANDLETABLEINT pThis)
         RTSpinlockRelease(pThis->hSpinlock);
 }
 
-#endif
+#endif /* !IPRT_INCLUDED_SRC_common_misc_handletable_h */
 

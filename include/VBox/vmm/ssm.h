@@ -1301,5 +1301,5 @@ VMMR3DECL(int) SSMR3SetCfgError(PSSMHANDLE pSSM, RT_SRC_POS_DECL, const char *ps
 
 RT_C_DECLS_END
 
-#endif
+#endif /* !VBOX_INCLUDED_vmm_ssm_h */
 

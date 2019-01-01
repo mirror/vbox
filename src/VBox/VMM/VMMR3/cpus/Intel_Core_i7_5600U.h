@@ -364,5 +364,5 @@ static CPUMDBENTRY const g_Entry_Intel_Core_i7_5600U =
     /*.paMsrRanges      = */ NULL_ALONE(g_aMsrRanges_Intel_Core_i7_5600U),
 };
 
-#endif /* !VBOX_DB_Intel_Core_i7_5600U */
+#endif /* !VBOX_CPUDB_Intel_Core_i7_5600U_h */
 

@@ -291,5 +291,5 @@ VMMR3_INT_DECL(bool)    TMR3CpuTickIsFixedRateMonotonic(PVM pVM, bool fWithParav
 
 RT_C_DECLS_END
 
-#endif
+#endif /* !VBOX_INCLUDED_vmm_tm_h */
 

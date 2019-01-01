@@ -44,5 +44,5 @@ typedef enum TSTR0DBGKRNLINFO
     TSTRTR0DBGKRNLINFO_BASIC
 } TSTR0DBGKRNLINFO;
 
-#endif
+#endif /* !IPRT_INCLUDED_SRC_testcase_tstRTR0DbgKrnlInfo_h */
 

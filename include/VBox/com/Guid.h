@@ -495,5 +495,5 @@ private:
 
 /** @} */
 
-#endif /* !___VBox_com_Guid_h */
+#endif /* !VBOX_INCLUDED_com_Guid_h */
 

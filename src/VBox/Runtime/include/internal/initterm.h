@@ -52,5 +52,5 @@ DECLHIDDEN(void) rtR0TermNative(void);
 
 RT_C_DECLS_END
 
-#endif
+#endif /* !IPRT_INCLUDED_INTERNAL_initterm_h */
 

@@ -108,5 +108,5 @@ DECLINLINE(uint32_t) sdbmIncN(const char *psz, size_t cchMax, uint32_t uHash)
 }
 
 
-#endif
+#endif /* !IPRT_INCLUDED_INTERNAL_strhash_h */
 

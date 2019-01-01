@@ -234,5 +234,5 @@ typedef FNVBOXGUESTMOUSENOTIFY *PFNVBOXGUESTMOUSENOTIFY; /**< @todo fix type pre
 
 /** @} */
 
-#endif
+#endif /* !VBOX_INCLUDED_VBoxGuestCoreTypes_h */
 

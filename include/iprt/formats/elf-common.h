@@ -336,5 +336,5 @@ typedef struct {
 /* Special symbol table indexes. */
 #define STN_UNDEF       0       /* Undefined symbol index. */
 
-#endif
+#endif /* !IPRT_INCLUDED_formats_elf_common_h */
 

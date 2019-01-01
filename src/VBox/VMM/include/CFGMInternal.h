@@ -131,4 +131,4 @@ typedef struct CFGM
 
 /** @} */
 
-#endif
+#endif /* !VMM_INCLUDED_SRC_include_CFGMInternal_h */

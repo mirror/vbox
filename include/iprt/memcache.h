@@ -156,5 +156,5 @@ RTDECL(void)    RTMemCacheFree(RTMEMCACHE hMemCache, void *pvObj);
 
 RT_C_DECLS_END
 
-#endif
+#endif /* !IPRT_INCLUDED_memcache_h */
 

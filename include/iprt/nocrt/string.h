@@ -80,4 +80,4 @@ char *  RT_NOCRT(strstr)(const char *psz, const char *pszSub);
 
 RT_C_DECLS_END
 
-#endif
+#endif /* !IPRT_INCLUDED_nocrt_string_h */

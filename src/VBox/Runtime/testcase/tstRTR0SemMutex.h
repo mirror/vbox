@@ -53,5 +53,5 @@ typedef enum TSTRTR0SEMMUTEX
     TSTRTR0SEMMUTEX_TEST4_CLEANUP
 } TSTRTR0SEMMUTEX;
 
-#endif
+#endif /* !IPRT_INCLUDED_SRC_testcase_tstRTR0SemMutex_h */
 

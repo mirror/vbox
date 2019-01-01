@@ -1416,5 +1416,5 @@ RTDECL(int) RTSemXRoadsEWLeave(RTSEMXROADS hXRoads);
 
 RT_C_DECLS_END
 
-#endif
+#endif /* !IPRT_INCLUDED_semaphore_h */
 

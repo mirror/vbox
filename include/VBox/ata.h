@@ -208,5 +208,5 @@ typedef enum ATACMD
 const char * ATACmdText(uint8_t uCmd);
 #endif
 
-#endif /* !___VBox_ata_h */
+#endif /* !VBOX_INCLUDED_ata_h */
 

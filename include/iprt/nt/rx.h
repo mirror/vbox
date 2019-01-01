@@ -47,5 +47,5 @@
 # pragma warning(pop)
 #endif
 
-#endif
+#endif /* !IPRT_INCLUDED_nt_rx_h */
 

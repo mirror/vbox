@@ -1189,5 +1189,5 @@ VMM_INT_DECL(uint16_t) HMGetGuestSvmPauseFilterCount(PVMCPU pVCpu);
 
 /** @} */
 
-#endif
+#endif /* !VBOX_INCLUDED_vmm_hm_svm_h */
 

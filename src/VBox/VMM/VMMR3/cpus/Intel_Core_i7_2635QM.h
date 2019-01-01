@@ -328,5 +328,5 @@ static CPUMDBENTRY const g_Entry_Intel_Core_i7_2635QM =
     /*.paMsrRanges      = */ NULL_ALONE(g_aMsrRanges_Intel_Core_i7_2635QM),
 };
 
-#endif /* !VBOX_DB_Intel_Core_i7_2635QM */
+#endif /* !VBOX_CPUDB_Intel_Core_i7_2635QM_h */
 

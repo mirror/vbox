@@ -100,5 +100,5 @@ DECLINLINE(double) inline_sqrt(double rd)
 
 #endif /* RT_INLINE_ASM_GNU_STYLE */
 
-#endif
+#endif /* !IPRT_INCLUDED_nocrt_x86_math_h */
 

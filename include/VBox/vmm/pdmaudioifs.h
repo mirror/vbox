@@ -1665,5 +1665,5 @@ typedef struct PDMIHOSTAUDIO
 
 /** @} */
 
-#endif /* !___VBox_vmm_pdmaudioifs_h */
+#endif /* !VBOX_INCLUDED_vmm_pdmaudioifs_h */
 

@@ -57,4 +57,4 @@ DECLEXPORT(int) VBoxOglSetScaleFactor(uint32_t idScreen, double dScaleFactorW, d
 
 RT_C_DECLS_END
 
-#endif /* !___VBoxOGL_h */
+#endif /* !VBOX_INCLUDED_VBoxOGL_h */

@@ -283,5 +283,5 @@ typedef uint64_t            uintptr_t;
 # define UINTMAX_MAX        UINT64_MAX
 #endif
 
-#endif
+#endif /* !IPRT_INCLUDED_stdint_h */
 

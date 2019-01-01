@@ -378,5 +378,5 @@ protected:
 };
 
 }
-#endif /* !___VBox_HostService_Service_h */
+#endif /* !VBOX_INCLUDED_HostServices_Service_h */
 

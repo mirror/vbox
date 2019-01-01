@@ -2984,5 +2984,5 @@ const RTNTSDBSET g_artNtSdbSets[] =
 #endif /* !RTNTSDB_NO_DATA */
 
 
-#endif
+#endif /* !IPRT_INCLUDED_SRC_r0drv_nt_symdbdata_h */
 

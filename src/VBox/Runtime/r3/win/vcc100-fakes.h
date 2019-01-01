@@ -127,5 +127,5 @@
     } while (0);
 
 
-#endif
+#endif /* !IPRT_INCLUDED_SRC_r3_win_vcc100_fakes_h */
 

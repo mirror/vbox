@@ -181,5 +181,5 @@ RTDECL(int) RTFsNtfsVolOpen(RTVFSFILE hVfsFileIn, uint32_t fMntFlags, uint32_t f
 
 RT_C_DECLS_END
 
-#endif
+#endif /* !IPRT_INCLUDED_fsvfs_h */
 

@@ -38,4 +38,4 @@
 # error "IPRT: no fenv.h available for this platform, or the platform define is missing!"
 #endif
 
-#endif
+#endif /* !IPRT_INCLUDED_nocrt_fenv_h */

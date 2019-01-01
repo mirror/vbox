@@ -208,5 +208,5 @@ RTDECL(const char *) RTCrPemFindFirstSectionInContent(void const *pvContent, siz
 
 RT_C_DECLS_END
 
-#endif
+#endif /* !IPRT_INCLUDED_crypto_pem_h */
 

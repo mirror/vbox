@@ -2002,5 +2002,5 @@ RTR0DECL(int)       RTR0DbgKrnlInfoQuerySize(RTDBGKRNLINFO hKrnlInfo, const char
 
 RT_C_DECLS_END
 
-#endif
+#endif /* !IPRT_INCLUDED_dbg_h */
 

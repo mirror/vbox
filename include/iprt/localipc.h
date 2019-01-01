@@ -322,5 +322,5 @@ RTDECL(int) RTLocalIpcSessionQueryGroupId(RTLOCALIPCSESSION hSession, PRTGID pGi
 /** @} */
 RT_C_DECLS_END
 
-#endif
+#endif /* !IPRT_INCLUDED_localipc_h */
 

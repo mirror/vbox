@@ -251,5 +251,5 @@ DECLCALLBACK(int)  vboximgVdCryptoKeyStoreReturnParameters(void *pvUser, const c
                                                              const uint8_t *pbDek, size_t cbDek);
 
 
-#endif /* !____H_VBOXIMGCRYPTO */
+#endif /* !VBOX_INCLUDED_SRC_vboximg_mount_vboximgCrypto_h */
 

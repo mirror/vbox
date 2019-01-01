@@ -358,4 +358,4 @@ private:
     bool mInitialized;
 };
 
-#endif /* #ifndef __VBoxGLSupportInfo_h__ */
+#endif /* !VBOX_INCLUDED_VBoxGL2D_h */

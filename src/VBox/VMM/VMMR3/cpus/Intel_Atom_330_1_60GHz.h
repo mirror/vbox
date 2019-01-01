@@ -206,5 +206,5 @@ static CPUMDBENTRY const g_Entry_Intel_Atom_330_1_60GHz =
     /*.paMsrRanges      = */ NULL_ALONE(g_aMsrRanges_Intel_Atom_330_1_60GHz),
 };
 
-#endif /* !VBOX_DB_Intel_Atom_330_1_60GHz */
+#endif /* !VBOX_CPUDB_Intel_Atom_330_1_60GHz_h */
 

@@ -437,5 +437,5 @@ DECLINLINE(uint64_t) ASMMultU64ByU32DivByU32(uint64_t u64A, uint32_t u32B, uint3
 #endif
 
 /** @} */
-#endif
+#endif /* !IPRT_INCLUDED_asm_math_h */
 

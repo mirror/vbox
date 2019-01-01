@@ -153,4 +153,4 @@ int patmPatchGenCheckIF(PVM pVM, PPATCHINFO pPatch, RTRCPTR pCurInstrGC);
  */
 int patmPatchGenGlobalFunctions(PVM pVM, PPATCHINFO pPatch);
 
-#endif
+#endif /* !VMM_INCLUDED_SRC_VMMR3_PATMPatch_h */

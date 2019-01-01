@@ -515,4 +515,4 @@ typedef struct VRDESCARDSETATTRIBRSP
     uint32_t u32ReturnCode;
 } VRDESCARDSETATTRIBRSP;
 
-#endif
+#endif /* !VBOX_INCLUDED_RemoteDesktop_VRDESCard_h */

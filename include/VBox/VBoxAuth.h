@@ -196,4 +196,4 @@ typedef PFNAUTHENTRY3 PAUTHENTRY3;
 
 /** @} */
 
-#endif
+#endif /* !VBOX_INCLUDED_VBoxAuth_h */

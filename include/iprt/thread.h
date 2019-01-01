@@ -968,5 +968,5 @@ RTR3DECL(int) RTTlsSet(RTTLS iTls, void *pvValue);
 
 RT_C_DECLS_END
 
-#endif
+#endif /* !IPRT_INCLUDED_thread_h */
 

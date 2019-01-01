@@ -127,5 +127,5 @@ __ElfType(Auxinfo);
 
 #define R_X86_64_COUNT  24      /* Count of defined relocation types. */
 
-#endif
+#endif /* !IPRT_INCLUDED_formats_elf_amd64_h */
 

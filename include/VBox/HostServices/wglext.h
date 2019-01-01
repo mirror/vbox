@@ -649,4 +649,4 @@ typedef BOOL (WINAPI * PFNWGLQUERYFRAMETRACKINGI3DPROC) (DWORD *pFrameCount, DWO
 }
 #endif
 
-#endif
+#endif /* !VBOX_INCLUDED_HostServices_wglext_h */

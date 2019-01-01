@@ -316,5 +316,5 @@ RTDECL(uint64_t) RTRandAdvU64(RTRAND hRand) RT_NO_THROW_PROTO;
 RT_C_DECLS_END
 
 
-#endif
+#endif /* !IPRT_INCLUDED_rand_h */
 

@@ -69,4 +69,4 @@ typedef struct VRDEMOUSEPTRINTERFACE
 
 } VRDEMOUSEPTRINTERFACE;
 
-#endif
+#endif /* !VBOX_INCLUDED_RemoteDesktop_VRDEMousePtr_h */

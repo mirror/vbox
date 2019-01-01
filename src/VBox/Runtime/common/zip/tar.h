@@ -381,5 +381,5 @@ DECLINLINE(bool) rtZipTarCalcChkSum(PCRTZIPTARHDR pHdr, int32_t *pi32Unsigned, i
 }
 
 
-#endif
+#endif /* !IPRT_INCLUDED_SRC_common_zip_tar_h */
 

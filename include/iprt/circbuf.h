@@ -151,5 +151,5 @@ RT_C_DECLS_END
 
 /** @} */
 
-#endif /* !___iprt_circbuf_h */
+#endif /* !IPRT_INCLUDED_circbuf_h */
 

@@ -166,4 +166,4 @@ RT_C_DECLS_END
     } while (0)
 
 
-#endif
+#endif /* !VMM_INCLUDED_SRC_testcase_tstHelp_h */

@@ -1537,5 +1537,5 @@ RTDECL(void) RTPathWinFree(PRTUTF16 pwszPath);
 
 RT_C_DECLS_END
 
-#endif
+#endif /* !IPRT_INCLUDED_path_h */
 

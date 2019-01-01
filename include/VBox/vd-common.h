@@ -63,4 +63,4 @@
           && ((uVerMagic1) & UINT32_C(0xfffffff0)) == ((uVerMagic2) & UINT32_C(0xfffffff0)) ) \
     )
 
-#endif
+#endif /* !VBOX_INCLUDED_vd_common_h */

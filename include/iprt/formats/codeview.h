@@ -856,5 +856,5 @@ typedef CVPDB70INFO const *PCCVPDB70INFO;
 
 /** @}  */
 
-#endif
+#endif /* !IPRT_INCLUDED_formats_codeview_h */
 

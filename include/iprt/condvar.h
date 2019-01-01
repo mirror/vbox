@@ -283,5 +283,5 @@ RTDECL(void) RTCondVarRemoveSignaller(RTCONDVAR hCondVar, RTTHREAD hThread);
 
 RT_C_DECLS_END
 
-#endif
+#endif /* !IPRT_INCLUDED_condvar_h */
 

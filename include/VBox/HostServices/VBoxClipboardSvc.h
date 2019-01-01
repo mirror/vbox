@@ -135,4 +135,4 @@ typedef struct _VBoxClipboardWriteData
 
 #pragma pack()
 
-#endif
+#endif /* !VBOX_INCLUDED_HostServices_VBoxClipboardSvc_h */

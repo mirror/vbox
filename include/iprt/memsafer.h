@@ -243,5 +243,5 @@ RTDECL(void) RTMemSaferFree(void *pv, size_t cb) RT_NO_THROW_PROTO;
 /** @}  */
 RT_C_DECLS_END
 
-#endif
+#endif /* !IPRT_INCLUDED_memsafer_h */
 

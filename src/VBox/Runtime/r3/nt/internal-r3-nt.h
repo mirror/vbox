@@ -69,7 +69,7 @@ DECLINLINE(bool) rtNtCompWideStrAndAscii(WCHAR const *pwsz1, size_t cch1, const 
     return true;
 }
 
-#endif
+#endif /* !IPRT_INCLUDED_SRC_r3_nt_internal_r3_nt_h */
 
 /**
  * Common worker for RTFileSetMode, RTPathSetMode and RTDirRelPathSetMode.

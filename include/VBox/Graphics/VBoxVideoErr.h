@@ -73,4 +73,4 @@ extern int vbox_assert_var[1];
 
 /** @}  */
 
-#endif
+#endif /* !VBOX_INCLUDED_Graphics_VBoxVideoErr_h */

@@ -278,5 +278,5 @@ bool RTR3TestR0SimpleTest(uint32_t uOperation, const char *pszTestFmt, ...)
     return rtR3TestR0ProcessMessages(&Req);
 }
 
-#endif
+#endif /* !IPRT_INCLUDED_SRC_testcase_tstRTR0CommonDriver_h */
 

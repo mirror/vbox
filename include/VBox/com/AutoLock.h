@@ -687,6 +687,6 @@ private:
 
 /** @} */
 
-#endif
+#endif /* !VBOX_INCLUDED_com_AutoLock_h */
 
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */

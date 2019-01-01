@@ -502,5 +502,5 @@ typedef struct e32_entry
 
 RT_C_DECLS_END
 
-#endif
+#endif /* !IPRT_INCLUDED_formats_lx_h */
 

@@ -111,5 +111,5 @@ struct RTCIfPtr<T*, TrueResult, FalseResult>
 
 /** @} */
 
-#endif /* !___iprt_cpp_meta_h */
+#endif /* !IPRT_INCLUDED_cpp_meta_h */
 

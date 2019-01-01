@@ -183,5 +183,5 @@ RTDECL(int) RTBigNumModExp(PRTBIGNUM pResult, PRTBIGNUM pBase, PRTBIGNUM pExpone
 
 RT_C_DECLS_END
 
-#endif
+#endif /* !IPRT_INCLUDED_bignum_h */
 

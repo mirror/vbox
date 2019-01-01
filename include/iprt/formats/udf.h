@@ -2210,5 +2210,5 @@ typedef UDFEXTVOLDESCBOOT const *PCUDFEXTVOLDESCBOOT;
 
 /** @} */
 
-#endif
+#endif /* !IPRT_INCLUDED_formats_udf_h */
 

@@ -271,5 +271,5 @@ RTDECL(int) RTCrAppleCsQuerySigneddData(PRTCRAPLCS pDesc, PRTCRPKCS7SIGNEDDATA p
 
 /** @} */
 
-#endif
+#endif /* !IPRT_INCLUDED_crypto_applecodesign_h */
 

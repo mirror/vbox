@@ -376,5 +376,5 @@ VMMRCDECL(int)      MMGCRamWrite(PVM pVM, void *pDst, void *pSrc, size_t cb);
 RT_C_DECLS_END
 
 
-#endif
+#endif /* !VBOX_INCLUDED_vmm_mm_h */
 

@@ -453,5 +453,5 @@ VBOXDDU_DECL(int) VSCSIIoReqUnmapParamsGet(VSCSIIOREQ hVScsiIoReq, PCRTRANGE *pp
 /** @}  */
 RT_C_DECLS_END
 
-#endif /* ___VBox_vscsi_h */
+#endif /* !VBOX_INCLUDED_vscsi_h */
 

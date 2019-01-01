@@ -84,5 +84,5 @@ typedef struct REMOTEUSBCALLBACK
 
 /** @} */
 
-#endif
+#endif /* !VBOX_INCLUDED_vrdpusb_h */
 

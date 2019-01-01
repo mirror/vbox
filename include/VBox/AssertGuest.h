@@ -1767,5 +1767,5 @@
 
 /** @} */
 
-#endif
+#endif /* !VBOX_INCLUDED_AssertGuest_h */
 

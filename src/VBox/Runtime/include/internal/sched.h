@@ -47,4 +47,4 @@ DECLHIDDEN(int) rtSchedNativeCalcDefaultPriority(RTTHREADTYPE enmType);
 
 RT_C_DECLS_END
 
-#endif
+#endif /* !IPRT_INCLUDED_INTERNAL_sched_h */

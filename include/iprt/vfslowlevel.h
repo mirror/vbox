@@ -1501,5 +1501,5 @@ RTDECL(int) RTVfsChainValidateOpenFileOrIoStream(PRTVFSCHAINSPEC pSpec, PRTVFSCH
 
 RT_C_DECLS_END
 
-#endif /* !___iprt_vfslowlevel_h */
+#endif /* !IPRT_INCLUDED_vfslowlevel_h */
 

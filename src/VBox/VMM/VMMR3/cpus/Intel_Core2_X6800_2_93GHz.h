@@ -256,5 +256,5 @@ static CPUMDBENTRY const g_Entry_Intel_Core2_X6800_2_93GHz =
     /*.paMsrRanges      = */ NULL_ALONE(g_aMsrRanges_Intel_Core2_X6800_2_93GHz),
 };
 
-#endif /* !VBOX_DB_Intel_Core2_X6800_2_93GHz */
+#endif /* !VBOX_CPUDB_Intel_Core2_X6800_2_93GHz_h */
 

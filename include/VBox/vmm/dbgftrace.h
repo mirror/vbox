@@ -155,4 +155,4 @@ VMMDECL(int) DBGFR3TraceConfig(PVM pVM, const char *pszConfig);
 /** @} */
 RT_C_DECLS_END
 
-#endif
+#endif /* !VBOX_INCLUDED_vmm_dbgftrace_h */

@@ -335,4 +335,4 @@ typedef DECLCALLBACK(int) FNPDMVBOXSERVICESREGISTER(PPDMSRVREGCB pCallbacks, uin
 
 RT_C_DECLS_END
 
-#endif
+#endif /* !VBOX_INCLUDED_vmm_pdmsrv_h */

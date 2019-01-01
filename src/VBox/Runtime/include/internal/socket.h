@@ -73,5 +73,5 @@ DECLHIDDEN(uint32_t)    rtSocketPollDone(RTSOCKET hSocket, uint32_t fEvents, boo
 
 RT_C_DECLS_END
 
-#endif
+#endif /* !IPRT_INCLUDED_INTERNAL_socket_h */
 

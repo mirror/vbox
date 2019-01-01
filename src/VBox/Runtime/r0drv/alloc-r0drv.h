@@ -100,5 +100,5 @@ DECLHIDDEN(int)     rtR0MemAllocEx(size_t cb, uint32_t fFlags, PRTMEMHDR *ppHdr)
 DECLHIDDEN(void)    rtR0MemFree(PRTMEMHDR pHdr);
 
 RT_C_DECLS_END
-#endif
+#endif /* !IPRT_INCLUDED_SRC_r0drv_alloc_r0drv_h */
 

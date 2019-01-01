@@ -170,5 +170,5 @@ int vboxClipboardDibToBmp(const void *pvSrc, size_t cbSrc, void **ppvDst, size_t
 int vboxClipboardBmpGetDib(const void *pvSrc, size_t cbSrc, const void **ppvDst, size_t *pcbDst);
 
 
-#endif
+#endif /* !VBOX_INCLUDED_GuestHost_clipboard_helper_h */
 

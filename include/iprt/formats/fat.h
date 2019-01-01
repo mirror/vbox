@@ -745,5 +745,5 @@ typedef FATDIRENTRYUNION const *PCFATDIRENTRYUNION;
 
 /** @} */
 
-#endif
+#endif /* !IPRT_INCLUDED_formats_fat_h */
 

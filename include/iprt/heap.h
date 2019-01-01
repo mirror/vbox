@@ -355,5 +355,5 @@ RTDECL(void) RTHeapOffsetDump(RTHEAPOFFSET hHeap, PFNRTHEAPOFFSETPRINTF pfnPrint
 /** @}  */
 RT_C_DECLS_END
 
-#endif
+#endif /* !IPRT_INCLUDED_heap_h */
 

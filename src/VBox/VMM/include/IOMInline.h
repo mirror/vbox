@@ -212,5 +212,5 @@ DECLINLINE(PIOMMMIOSTATS) iomMmioGetStats(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys
 
 /** @}  */
 
-#endif
+#endif /* !VMM_INCLUDED_SRC_include_IOMInline_h */
 

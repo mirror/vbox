@@ -723,5 +723,5 @@
     modify exact [];
 #endif
 
-#endif
+#endif /* !IPRT_INCLUDED_asm_amd64_x86_watcom_32_h */
 

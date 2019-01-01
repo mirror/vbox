@@ -251,5 +251,5 @@ DECLINLINE(int) RTPollSetAddSocket(RTPOLLSET hPollSet, RTSOCKET hSocket, uint32_
 
 RT_C_DECLS_END
 
-#endif
+#endif /* !IPRT_INCLUDED_poll_h */
 

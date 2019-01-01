@@ -1302,4 +1302,4 @@ INTNETR0DECL(int)       IntNetR0IfAbortWait(INTNETIFHANDLE hIf, PSUPDRVSESSION p
 
 RT_C_DECLS_END
 
-#endif
+#endif /* !VBOX_INCLUDED_intnet_h */

@@ -93,5 +93,5 @@ RTDECL(int) RTCrCipherDecrypt(RTCRCIPHER hCipher, void const *pvKey, size_t cbKe
 
 RT_C_DECLS_END
 
-#endif
+#endif /* !IPRT_INCLUDED_crypto_cipher_h */
 

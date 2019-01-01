@@ -127,5 +127,5 @@ VMMR3DECL(bool)         SELMR3CheckShadowTR(PVM pVM);
 
 RT_C_DECLS_END
 
-#endif
+#endif /* !VBOX_INCLUDED_vmm_selm_h */
 

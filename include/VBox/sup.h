@@ -2517,5 +2517,5 @@ extern const unsigned               g_cbSUPBuildCert;
 
 RT_C_DECLS_END
 
-#endif
+#endif /* !VBOX_INCLUDED_sup_h */
 

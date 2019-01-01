@@ -1533,5 +1533,5 @@ DECL_FORCE_INLINE(bool) pgmMapAreMappingsFloating(PVM pVM)
 
 /** @} */
 
-#endif
+#endif /* !VMM_INCLUDED_SRC_include_PGMInline_h */
 

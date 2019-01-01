@@ -274,5 +274,5 @@ USBLIB_DECL(int) USBLibRemoveDeviceAlias(PUSBDEVICE pDevice);
 /** @} */
 RT_C_DECLS_END
 
-#endif
+#endif /* !VBOX_INCLUDED_usblib_solaris_h */
 

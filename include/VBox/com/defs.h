@@ -591,5 +591,5 @@ namespace com
 
 /** @} */
 
-#endif /* !___VBox_com_defs_h */
+#endif /* !VBOX_INCLUDED_com_defs_h */
 

@@ -327,5 +327,5 @@ typedef SSM *PSSM;
 
 RT_C_DECLS_END
 
-#endif /* !___SSMInternal_h */
+#endif /* !VMM_INCLUDED_SRC_include_SSMInternal_h */
 

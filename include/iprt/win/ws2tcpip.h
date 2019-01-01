@@ -40,5 +40,5 @@
 
 #pragma warning(pop)
 
-#endif
+#endif /* !IPRT_INCLUDED_win_ws2tcpip_h */
 

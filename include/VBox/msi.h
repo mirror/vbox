@@ -120,4 +120,4 @@
 #define VBOX_MSIX_ENTRY_SIZE                  16
 
 
-#endif
+#endif /* !VBOX_INCLUDED_msi_h */

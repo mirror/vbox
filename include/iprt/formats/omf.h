@@ -246,5 +246,5 @@ typedef OMFRECHDR *PCOMFRECHDR;
 
 
 /** @} */
-#endif
+#endif /* !IPRT_INCLUDED_formats_omf_h */
 

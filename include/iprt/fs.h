@@ -651,5 +651,5 @@ RTR3DECL(RTEXITCODE) RTFsCmdLs(unsigned cArgs, char **papszArgs);
 
 RT_C_DECLS_END
 
-#endif /* !___iprt_fs_h */
+#endif /* !IPRT_INCLUDED_fs_h */
 

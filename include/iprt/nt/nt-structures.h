@@ -132,5 +132,5 @@ typedef KTRAP_FRAME_AMD64 const *PCKTRAP_FRAME_AMD64;
 /** @} */
 
 
-#endif
+#endif /* !IPRT_INCLUDED_nt_nt_structures_h */
 

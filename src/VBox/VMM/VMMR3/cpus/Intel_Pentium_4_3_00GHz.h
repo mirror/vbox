@@ -273,5 +273,5 @@ static CPUMDBENTRY const g_Entry_Intel_Pentium_4_3_00GHz =
     /*.paMsrRanges      = */ NULL_ALONE(g_aMsrRanges_Intel_Pentium_4_3_00GHz),
 };
 
-#endif /* !VBOX_DB_Intel_Pentium_4_3_00GHz */
+#endif /* !VBOX_CPUDB_Intel_Pentium_4_3_00GHz_h */
 

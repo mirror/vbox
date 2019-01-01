@@ -87,4 +87,4 @@ typedef struct HGSMIHOSTFLAGS
 } HGSMIHOSTFLAGS;
 AssertCompileSize(HGSMIHOSTFLAGS, 16);
 
-#endif
+#endif /* !VBOX_INCLUDED_Graphics_HGSMIChSetup_h */

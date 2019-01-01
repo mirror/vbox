@@ -65,5 +65,5 @@ typedef struct GVMMPERVM
 typedef GVMMPERVM *PGVMMPERVM;
 
 
-#endif
+#endif /* !VMM_INCLUDED_SRC_VMMR0_GVMMR0Internal_h */
 

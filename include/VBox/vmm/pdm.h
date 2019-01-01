@@ -40,5 +40,5 @@
 #include <VBox/vmm/pdmusb.h>
 #include <VBox/vmm/pdmsrv.h>
 
-#endif
+#endif /* !VBOX_INCLUDED_vmm_pdm_h */
 

@@ -282,5 +282,5 @@ RT_C_DECLS_END
 # define fedisableexcept RT_NOCRT(fedisableexcept)
 #endif
 
-#endif  /* !__iprt_nocrt_x86_fenv_h__ */
+#endif /* !IPRT_INCLUDED_nocrt_x86_fenv_h */
 

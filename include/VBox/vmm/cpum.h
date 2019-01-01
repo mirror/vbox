@@ -2347,5 +2347,5 @@ VMMRZ_INT_DECL(void)    CPUMRZFpuStateActualizeAvxForRead(PVMCPU pVCpu);
 RT_C_DECLS_END
 
 
-#endif
+#endif /* !VBOX_INCLUDED_vmm_cpum_h */
 

@@ -2294,5 +2294,5 @@ RTDECL(int) RTAsn1QueryObjIdName(PCRTASN1OBJID pObjId, char *pszDst, size_t cbDs
 
 RT_C_DECLS_END
 
-#endif
+#endif /* !IPRT_INCLUDED_asn1_h */
 

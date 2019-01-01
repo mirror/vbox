@@ -788,5 +788,5 @@ protected:
 
 /** @} */
 
-#endif
+#endif /* !IPRT_INCLUDED_cpp_restclient_h */
 

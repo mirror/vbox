@@ -36,5 +36,5 @@
 #define RTASN1TMPL_TEMPLATE_FILE "../common/crypto/rsa-template.h"
 #include <iprt/asn1-generator-internal-header.h>
 
-#endif
+#endif /* !IPRT_INCLUDED_SRC_common_crypto_rsa_internal_h */
 

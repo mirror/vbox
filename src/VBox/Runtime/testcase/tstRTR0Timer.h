@@ -78,4 +78,4 @@ typedef enum TSTRTR0TIMER
      || (uOperation) == TSTRTR0TIMER_LATENCY_OMNI_HIRES \
     )
 
-#endif
+#endif /* !IPRT_INCLUDED_SRC_testcase_tstRTR0Timer_h */

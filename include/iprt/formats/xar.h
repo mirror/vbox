@@ -76,5 +76,5 @@ typedef XARHEADER const *PCXARHEADER;
 
 /** @} */
 
-#endif
+#endif /* !IPRT_INCLUDED_formats_xar_h */
 

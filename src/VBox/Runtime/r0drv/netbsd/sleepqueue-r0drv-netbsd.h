@@ -278,4 +278,4 @@ DECLINLINE(uint32_t) rtR0SemBsdWaitGetResolution(void)
     return 1000000000 / hz; /* ns */
 }
 
-#endif /* ___r0drv_netbsd_sleepqueue_r0drv_netbsd_h */
+#endif /* !IPRT_INCLUDED_SRC_r0drv_netbsd_sleepqueue_r0drv_netbsd_h */

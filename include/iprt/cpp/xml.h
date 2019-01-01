@@ -1105,5 +1105,5 @@ private:
 
 } // end namespace xml
 
-#endif /* !___iprt_xml_h */
+#endif /* !IPRT_INCLUDED_cpp_xml_h */
 

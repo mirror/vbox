@@ -70,5 +70,5 @@ RT_C_DECLS_END
 # define IPRT_ALIGNMENT_CHECKS_ENABLE()  do {} while (0)
 #endif
 
-#endif
+#endif /* !IPRT_INCLUDED_INTERNAL_alignmentchecks_h */
 

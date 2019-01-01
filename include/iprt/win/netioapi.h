@@ -32,5 +32,5 @@
 #include <iprt/win/ntddndis.h> /* this one has problems with -Wall */
 #include <netioapi.h>
 
-#endif
+#endif /* !IPRT_INCLUDED_win_netioapi_h */
 

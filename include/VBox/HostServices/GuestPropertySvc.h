@@ -493,5 +493,5 @@ typedef struct GuestPropMsgGetNotification
 AssertCompileSize(GuestPropMsgGetNotification, 40 + 4 * (ARCH_BITS == 64 ? 16 : 12));
 
 
-#endif  /* !___VBox_HostService_GuestPropertySvc_h */
+#endif /* !VBOX_INCLUDED_HostServices_GuestPropertySvc_h */
 

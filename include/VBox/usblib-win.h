@@ -295,5 +295,5 @@ USBLIB_DECL(int) USBLibRunFilters(void);
 
 RT_C_DECLS_END
 
-#endif
+#endif /* !VBOX_INCLUDED_usblib_win_h */
 

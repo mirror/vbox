@@ -952,5 +952,5 @@ RT_C_DECLS_END
 
 /** @} */
 
-#endif
+#endif /* !IPRT_INCLUDED_errcore_h */
 

@@ -112,5 +112,5 @@ DECLINLINE(int) RTErrConvertFromHaikuKernReturn(status_t rc)
     }
 }
 
-#endif /* ___the_haiku_kernel_h */
+#endif /* !IPRT_INCLUDED_SRC_r0drv_haiku_the_haiku_kernel_h */
 

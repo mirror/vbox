@@ -85,5 +85,5 @@
 /*#define OFF_MAX         __OFF_MAX
 #define OFF_MIN         __OFF_MIN*/
 
-#endif
+#endif /* !IPRT_INCLUDED_nocrt_limits_h */
 

@@ -4389,5 +4389,5 @@ AssertCompile((X86_SIB_SCALE_MASK >> X86_SIB_SCALE_SHIFT) == X86_SIB_SCALE_SMASK
 
 /** @} */
 
-#endif
+#endif /* !IPRT_INCLUDED_x86_h */
 

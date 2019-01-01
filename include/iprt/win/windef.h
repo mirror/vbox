@@ -51,5 +51,5 @@
 # pragma warning(pop)
 #endif
 
-#endif
+#endif /* !IPRT_INCLUDED_win_windef_h */
 

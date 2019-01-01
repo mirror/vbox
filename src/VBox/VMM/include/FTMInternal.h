@@ -125,4 +125,4 @@ AssertCompileMemberAlignment(FTM, CritSect, 8);
 
 /** @} */
 
-#endif
+#endif /* !VMM_INCLUDED_SRC_include_FTMInternal_h */

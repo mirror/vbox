@@ -1110,4 +1110,4 @@ typedef struct VMMDEVSHAREDREGIONDESC
 
 /** @} */
 
-#endif
+#endif /* !VBOX_INCLUDED_types_h */

@@ -88,5 +88,5 @@ typedef struct GMMPERVM
 /** Pointer to the per-VM GMM data. */
 typedef GMMPERVM *PGMMPERVM;
 
-#endif
+#endif /* !VMM_INCLUDED_SRC_VMMR0_GMMR0Internal_h */
 

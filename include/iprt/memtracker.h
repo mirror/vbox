@@ -243,5 +243,5 @@ RTDECL(void) RTMemTrackerDumpStatsToFile(bool fVerbose, const char *pszFilename)
 
 RT_C_DECLS_END
 
-#endif
+#endif /* !IPRT_INCLUDED_memtracker_h */
 

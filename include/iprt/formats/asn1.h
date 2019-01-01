@@ -93,5 +93,5 @@
 
 /** @} */
 
-#endif
+#endif /* !IPRT_INCLUDED_formats_asn1_h */
 

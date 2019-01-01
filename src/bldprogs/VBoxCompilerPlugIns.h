@@ -123,5 +123,5 @@ bool            VFmtChkRequireVaListPtrArg(PVFMTCHKSTATE pState, const char *psz
 void            MyCheckFormatCString(PVFMTCHKSTATE pState, const char *pszFmt);
 
 
-#endif
+#endif /* !VBOX_INCLUDED_SRC_bldprogs_VBoxCompilerPlugIns_h */
 

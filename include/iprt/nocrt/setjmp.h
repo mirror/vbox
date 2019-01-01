@@ -54,5 +54,5 @@ extern DECL_NO_RETURN(int)     RT_NOCRT(longjmp)(RT_NOCRT(jmp_buf), int);
 
 RT_C_DECLS_END
 
-#endif
+#endif /* !IPRT_INCLUDED_nocrt_setjmp_h */
 

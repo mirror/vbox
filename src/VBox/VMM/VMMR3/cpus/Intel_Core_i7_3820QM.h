@@ -382,5 +382,5 @@ static CPUMDBENTRY const g_Entry_Intel_Core_i7_3820QM =
     }
 };
 
-#endif /* !VBOX_DB_Intel_Core_i7_3820QM */
+#endif /* !VBOX_CPUDB_Intel_Core_i7_3820QM_h */
 

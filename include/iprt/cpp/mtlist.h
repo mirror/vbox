@@ -171,5 +171,5 @@ public:
 
 /** @} */
 
-#endif /* !___iprt_cpp_mtlist_h */
+#endif /* !IPRT_INCLUDED_cpp_mtlist_h */
 

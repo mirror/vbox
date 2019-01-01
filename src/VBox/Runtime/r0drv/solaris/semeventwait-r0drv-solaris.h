@@ -492,5 +492,5 @@ DECLINLINE(uint32_t) rtR0SemSolWaitGetResolution(void)
          : cyclic_getres();
 }
 
-#endif /* !___r0drv_solaris_semeventwait_r0drv_solaris_h */
+#endif /* !IPRT_INCLUDED_SRC_r0drv_solaris_semeventwait_r0drv_solaris_h */
 

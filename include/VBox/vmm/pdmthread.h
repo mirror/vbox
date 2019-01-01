@@ -298,4 +298,4 @@ VMMR3DECL(int) PDMR3ThreadResume(PPDMTHREAD pThread);
 
 RT_C_DECLS_END
 
-#endif
+#endif /* !VBOX_INCLUDED_vmm_pdmthread_h */

@@ -420,5 +420,5 @@ RTR3DECL(int)   RTProcQueryUsernameA(RTPROCESS hProcess, char **ppszUser);
 
 RT_C_DECLS_END
 
-#endif
+#endif /* !IPRT_INCLUDED_process_h */
 

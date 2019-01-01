@@ -1080,4 +1080,4 @@ typedef struct VRDEVIDEOINCALLBACKS
 
 #pragma pack()
 
-#endif
+#endif /* !VBOX_INCLUDED_RemoteDesktop_VRDEVideoIn_h */

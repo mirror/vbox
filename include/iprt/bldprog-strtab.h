@@ -141,5 +141,5 @@ DECLINLINE(ssize_t) RTBldProgStrTabQueryString(PCRTBLDPROGSTRTAB pStrTab, uint32
 }
 
 
-#endif
+#endif /* !IPRT_INCLUDED_bldprog_strtab_h */
 

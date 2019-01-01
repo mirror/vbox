@@ -243,4 +243,4 @@ typedef struct VRDEIMAGECALLBACKS
                                                  uint32_t cbData));
 } VRDEIMAGECALLBACKS;
 
-#endif
+#endif /* !VBOX_INCLUDED_RemoteDesktop_VRDEImage_h */

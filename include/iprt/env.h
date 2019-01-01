@@ -411,5 +411,5 @@ RTDECL(int) RTEnvApplyChanges(RTENV hEnvDst, RTENV hEnvChanges);
 
 RT_C_DECLS_END
 
-#endif
+#endif /* !IPRT_INCLUDED_env_h */
 

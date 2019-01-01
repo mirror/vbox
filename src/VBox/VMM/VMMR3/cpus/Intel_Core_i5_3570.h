@@ -335,5 +335,5 @@ static CPUMDBENTRY const g_Entry_Intel_Core_i5_3570 =
     /*.paMsrRanges      = */ NULL_ALONE(g_aMsrRanges_Intel_Core_i5_3570),
 };
 
-#endif /* !VBOX_DB_Intel_Core_i5_3570 */
+#endif /* !VBOX_CPUDB_Intel_Core_i5_3570_h */
 

@@ -107,4 +107,4 @@ DECLHIDDEN(int) rtCrKeyCreateRsaPublic(PRTCRKEY phKey, const void *pvKeyBits, ui
 DECLHIDDEN(int) rtCrKeyCreateRsaPrivate(PRTCRKEY phKey, const void *pvKeyBits, uint32_t cbKeyBits,
                                         PRTERRINFO pErrInfo, const char *pszErrorTag);
 
-#endif
+#endif /* !IPRT_INCLUDED_SRC_common_crypto_key_internal_h */

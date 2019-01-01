@@ -205,5 +205,5 @@ RTDECL(void) RTOnceReset(PRTONCE pOnce);
 
 RT_C_DECLS_END
 
-#endif
+#endif /* !IPRT_INCLUDED_once_h */
 

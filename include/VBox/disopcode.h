@@ -1143,5 +1143,5 @@ enum OP_PARM
 
 /** @} */
 
-#endif
+#endif /* !VBOX_INCLUDED_disopcode_h */
 

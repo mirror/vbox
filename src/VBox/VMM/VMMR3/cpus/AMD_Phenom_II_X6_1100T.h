@@ -268,5 +268,5 @@ static CPUMDBENTRY const g_Entry_AMD_Phenom_II_X6_1100T =
     /*.paMsrRanges      = */ NULL_ALONE(g_aMsrRanges_AMD_Phenom_II_X6_1100T),
 };
 
-#endif /* !VBOX_DB_AMD_Phenom_II_X6_1100T */
+#endif /* !VBOX_CPUDB_AMD_Phenom_II_X6_1100T_h */
 

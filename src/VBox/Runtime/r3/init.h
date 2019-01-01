@@ -36,5 +36,5 @@ DECLHIDDEN(int)  rtR3InitNativeFirst(uint32_t fFlags);
 DECLHIDDEN(int)  rtR3InitNativeFinal(uint32_t fFlags);
 DECLHIDDEN(void) rtR3InitNativeObtrusive(uint32_t fFlags);
 
-#endif
+#endif /* !IPRT_INCLUDED_SRC_r3_init_h */
 

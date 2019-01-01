@@ -179,5 +179,5 @@ AssertCompileMemberOffset(GVM, aCpus,  64 + 256 + 512 + 64);
 
 /** @} */
 
-#endif
+#endif /* !VBOX_INCLUDED_vmm_gvm_h */
 

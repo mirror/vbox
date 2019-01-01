@@ -75,5 +75,5 @@ private:
 
 #endif /* __OBJC__ && __cplusplus */
 
-#endif /* !___VBox_VBoxCocoa_h */
+#endif /* !VBOX_INCLUDED_VBoxCocoa_h */
 

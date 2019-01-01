@@ -134,5 +134,5 @@ RT_C_DECLS_END
 
 /** @} */
 
-#endif
+#endif /* !IPRT_INCLUDED_md5_h */
 

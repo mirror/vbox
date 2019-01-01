@@ -610,5 +610,5 @@ RTDECL(int) RTReqGetStatus(PRTREQ pReq);
 
 RT_C_DECLS_END
 
-#endif
+#endif /* !IPRT_INCLUDED_req_h */
 

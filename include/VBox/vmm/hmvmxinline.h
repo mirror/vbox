@@ -739,5 +739,5 @@ DECLINLINE(uint32_t) VMXGetLastError(void)
 
 /** @} */
 
-#endif
+#endif /* !VBOX_INCLUDED_vmm_hmvmxinline_h */
 

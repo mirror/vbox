@@ -85,5 +85,5 @@
 #endif
 
 
-#endif
+#endif /* !IPRT_INCLUDED_runtime_h */
 

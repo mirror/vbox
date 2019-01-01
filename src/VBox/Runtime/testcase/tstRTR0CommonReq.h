@@ -55,5 +55,5 @@ typedef RTTSTR0REQ *PRTTSTR0REQ;
 #define RTTSTR0REQ_FIRST_USER       10
 /** @}  */
 
-#endif
+#endif /* !IPRT_INCLUDED_SRC_testcase_tstRTR0CommonReq_h */
 

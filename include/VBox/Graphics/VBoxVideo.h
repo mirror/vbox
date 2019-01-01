@@ -2125,5 +2125,5 @@ typedef struct VBOXVDMAVBVACMD
 #pragma pack()
 #endif
 
-#endif
+#endif /* !VBOX_INCLUDED_Graphics_VBoxVideo_h */
 

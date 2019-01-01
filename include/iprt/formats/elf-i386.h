@@ -130,5 +130,5 @@ typedef struct {
 
 #define R_386_COUNT     38      /* Count of defined relocation types. */
 
-#endif
+#endif /* !IPRT_INCLUDED_formats_elf_i386_h */
 

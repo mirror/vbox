@@ -74,4 +74,4 @@
 #define HGSMI_IS_DYNAMIC_CHANNEL(_channel) (((uint8_t)(_channel) & 0xE0) != 0)
 
 
-#endif /* !__HGSMIChannels_h__*/
+#endif /* !VBOX_INCLUDED_Graphics_HGSMIChannels_h */

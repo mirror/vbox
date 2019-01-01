@@ -1925,5 +1925,5 @@ typedef struct VBoxSFParmSetFileSize
 /** @} */
 /** @} */
 
-#endif
+#endif /* !VBOX_INCLUDED_shflsvc_h */
 

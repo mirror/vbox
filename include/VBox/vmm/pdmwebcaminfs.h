@@ -142,5 +142,5 @@ typedef struct PDMIWEBCAMDEV
 
 /** @} */
 
-#endif
+#endif /* !VBOX_INCLUDED_vmm_pdmwebcaminfs_h */
 

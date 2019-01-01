@@ -33,5 +33,5 @@
 #define RTASN1TMPL_TEMPLATE_FILE "../common/crypto/taf-template.h"
 #include <iprt/asn1-generator-internal-header.h>
 
-#endif
+#endif /* !IPRT_INCLUDED_SRC_common_crypto_taf_internal_h */
 

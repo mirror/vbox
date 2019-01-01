@@ -2167,5 +2167,5 @@ typedef IMAGE_RELOCATION const *PCIMAGE_RELOCATION;
 
 /** @} */
 
-#endif
+#endif /* !IPRT_INCLUDED_formats_pecoff_h */
 

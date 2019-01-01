@@ -497,5 +497,5 @@ RTR3DECL(RTEXITCODE) RTFuzzCmdFuzzingClient(unsigned cArgs, char **papszArgs, PF
 
 RT_C_DECLS_END
 
-#endif
+#endif /* !IPRT_INCLUDED_fuzz_h */
 

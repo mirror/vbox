@@ -244,5 +244,5 @@ static CPUMDBENTRY const g_Entry_Intel_Xeon_X5482_3_20GHz =
     /*.paMsrRanges      = */ NULL_ALONE(g_aMsrRanges_Intel_Xeon_X5482_3_20GHz),
 };
 
-#endif /* !VBOX_DB_Intel_Xeon_X5482_3_20GHz */
+#endif /* !VBOX_CPUDB_Intel_Xeon_X5482_3_20GHz_h */
 

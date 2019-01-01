@@ -78,5 +78,5 @@ extern void ClipReportX11Formats(VBOXCLIPBOARDCONTEXT *pCtx,
 extern void ClipCompleteDataRequestFromX11(VBOXCLIPBOARDCONTEXT *pCtx, int rc,
                                            CLIPREADCBREQ *pReq, void *pv,
                                            uint32_t cb);
-#endif
+#endif /* !VBOX_INCLUDED_GuestHost_SharedClipboard_h */
 

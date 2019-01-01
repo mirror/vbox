@@ -156,5 +156,5 @@ RTDECL(int) RTShMemUnmapRegion(RTSHMEM hShMem, void *pv);
 /** @} */
 RT_C_DECLS_END
 
-#endif
+#endif /* !IPRT_INCLUDED_shmem_h */
 

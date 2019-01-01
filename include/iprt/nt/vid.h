@@ -269,5 +269,5 @@ DECLIMPORT(BOOL) VIDAPI VidGetHvMemoryBalance(VID_PARTITION_HANDLE hPartition, u
 RT_C_DECLS_END
 #endif /* IN_RING3 */
 
-#endif
+#endif /* !IPRT_INCLUDED_nt_vid_h */
 

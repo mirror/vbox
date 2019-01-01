@@ -506,5 +506,5 @@ static CPUMDBENTRY const g_Entry_Intel_Core_i7_6700K =
     /*.paMsrRanges      = */ NULL_ALONE(g_aMsrRanges_Intel_Core_i7_6700K),
 };
 
-#endif /* !VBOX_DB_Intel_Core_i7_6700K */
+#endif /* !VBOX_CPUDB_Intel_Core_i7_6700K_h */
 

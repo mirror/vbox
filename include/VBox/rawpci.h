@@ -605,4 +605,4 @@ RT_C_DECLS_END
 
 /* #define VBOX_WITH_SHARED_PCI_INTERRUPTS */
 
-#endif
+#endif /* !VBOX_INCLUDED_rawpci_h */

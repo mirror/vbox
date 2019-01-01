@@ -3918,5 +3918,5 @@
 
 #endif /* !DOXYGEN_RUNNING */
 
-#endif
+#endif /* !IPRT_INCLUDED_mangling_h */
 

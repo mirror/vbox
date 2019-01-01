@@ -719,5 +719,5 @@ DECLHIDDEN(int) rtDwarfUnwind_EhData(void const *pvSection, size_t cbSection, RT
 
 RT_C_DECLS_END
 
-#endif
+#endif /* !IPRT_INCLUDED_INTERNAL_dbgmod_h */
 

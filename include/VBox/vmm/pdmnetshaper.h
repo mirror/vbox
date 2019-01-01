@@ -70,5 +70,5 @@ VMMR3DECL(int)      PDMR3NsBwGroupSetLimit(PUVM pUVM, const char *pszBwGroup, ui
 
 RT_C_DECLS_END
 
-#endif
+#endif /* !VBOX_INCLUDED_vmm_pdmnetshaper_h */
 

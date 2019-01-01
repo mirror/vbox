@@ -3318,5 +3318,5 @@ RTDECL(uint32_t)    RTStrHash1ExNV(size_t cPairs, va_list va);
 
 RT_C_DECLS_END
 
-#endif
+#endif /* !IPRT_INCLUDED_string_h */
 

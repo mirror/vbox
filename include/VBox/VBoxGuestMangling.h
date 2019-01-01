@@ -35,5 +35,5 @@
 #define RT_MANGLER(symbol)   VBoxGuest_##symbol
 #include <iprt/mangling.h>
 
-#endif
+#endif /* !VBOX_INCLUDED_VBoxGuestMangling_h */
 

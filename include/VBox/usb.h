@@ -264,5 +264,5 @@ typedef USBCONFIGDESC *PUSBCONFIGDESC;
 /** @} */
 RT_C_DECLS_END
 
-#endif
+#endif /* !VBOX_INCLUDED_usb_h */
 

@@ -416,5 +416,5 @@ RTR3DECL(int) RTSocketSgWriteLVNB(RTSOCKET hSocket, size_t cSegs, size_t *pcbWri
 /** @} */
 RT_C_DECLS_END
 
-#endif
+#endif /* !IPRT_INCLUDED_socket_h */
 

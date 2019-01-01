@@ -743,5 +743,5 @@ DECLINLINE(bool) RTCritSectRwIsInitialized(PCRTCRITSECTRW pThis)
 
 RT_C_DECLS_END
 
-#endif
+#endif /* !IPRT_INCLUDED_critsect_h */
 

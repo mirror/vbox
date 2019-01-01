@@ -186,5 +186,5 @@ typedef struct
 #define ELF32_R_INFO(sym, type)     (((sym) << 8) + (unsigned char)(type))
 
 
-#endif
+#endif /* !IPRT_INCLUDED_formats_elf32_h */
 

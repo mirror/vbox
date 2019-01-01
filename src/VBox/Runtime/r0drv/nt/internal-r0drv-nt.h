@@ -135,5 +135,5 @@ DECLHIDDEN(int)  rtR0Nt3InitSymbols(RTDBGKRNLINFO hKrnlInfo);
 
 RT_C_DECLS_END
 
-#endif
+#endif /* !IPRT_INCLUDED_SRC_r0drv_nt_internal_r0drv_nt_h */
 

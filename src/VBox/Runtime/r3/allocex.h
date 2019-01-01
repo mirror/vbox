@@ -82,5 +82,5 @@ DECLHIDDEN(int) rtMemAllocEx32BitReach(size_t cbAlloc, uint32_t fFlags, void **p
  */
 DECLHIDDEN(void) rtMemFreeExYyBitReach(void *pv, size_t cb, uint32_t fFlags);
 
-#endif
+#endif /* !IPRT_INCLUDED_SRC_r3_allocex_h */
 

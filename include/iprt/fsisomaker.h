@@ -785,5 +785,5 @@ RTDECL(int) RTFsIsoMakerCmdEx(unsigned cArgs, char **papszArgs, RTVFSDIR hVfsCwd
 
 RT_C_DECLS_END
 
-#endif
+#endif /* !IPRT_INCLUDED_fsisomaker_h */
 

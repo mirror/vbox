@@ -94,5 +94,5 @@ typedef LOGOHDR const *PCLOGOHDR;
 
 /** @} */
 
-#endif
+#endif /* !VBOX_INCLUDED_bioslogo_h */
 

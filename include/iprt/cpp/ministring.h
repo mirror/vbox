@@ -1601,5 +1601,5 @@ protected:
 
 /** @} */
 
-#endif
+#endif /* !IPRT_INCLUDED_cpp_ministring_h */
 

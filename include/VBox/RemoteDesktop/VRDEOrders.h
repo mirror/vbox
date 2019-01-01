@@ -297,4 +297,4 @@ typedef struct _VRDEORDERTEXT
 } VRDEORDERTEXT;
 #pragma pack()
 
-#endif
+#endif /* !VBOX_INCLUDED_RemoteDesktop_VRDEOrders_h */

@@ -366,5 +366,5 @@ RTDECL(int) RTUriFilePathEx(const char *pszUri, uint32_t fPathStyle, char **ppsz
 
 RT_C_DECLS_END
 
-#endif
+#endif /* !IPRT_INCLUDED_uri_h */
 

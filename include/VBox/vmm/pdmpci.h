@@ -393,4 +393,4 @@ typedef enum PCIRAWDEVICEFLAGS
 
 RT_C_DECLS_END
 
-#endif
+#endif /* !VBOX_INCLUDED_vmm_pdmpci_h */

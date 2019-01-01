@@ -662,5 +662,5 @@ RTR3DECL(int) RTHttpRawGetResponseCode(RTHTTP hHttp, long *plCode);
 
 RT_C_DECLS_END
 
-#endif
+#endif /* !IPRT_INCLUDED_http_h */
 

@@ -81,5 +81,5 @@ DECLHIDDEN(void) rtMpNotificationDoCallbacks(RTMPEVENT enmEvent, RTCPUID idCpu);
 
 RT_C_DECLS_END
 
-#endif
+#endif /* !IPRT_INCLUDED_SRC_r0drv_mp_r0drv_h */
 

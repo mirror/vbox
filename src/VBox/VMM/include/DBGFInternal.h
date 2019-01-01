@@ -549,4 +549,4 @@ DECLHIDDEN(int) dbgfR3DisasInstrStateEx(PUVM pUVM, VMCPUID idCpu, PDBGFADDRESS p
 
 /** @} */
 
-#endif
+#endif /* !VMM_INCLUDED_SRC_include_DBGFInternal_h */

@@ -4103,5 +4103,5 @@ VMM_INT_DECL(bool)  HMVmxGetIoBitmapPermission(void const *pvIoBitmapA, void con
 
 /** @} */
 
-#endif
+#endif /* !VBOX_INCLUDED_vmm_hm_vmx_h */
 

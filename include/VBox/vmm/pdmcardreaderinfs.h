@@ -122,5 +122,5 @@ struct PDMICARDREADERUP
 
 /** @} */
 
-#endif
+#endif /* !VBOX_INCLUDED_vmm_pdmcardreaderinfs_h */
 

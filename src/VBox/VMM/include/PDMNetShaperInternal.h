@@ -50,5 +50,5 @@ typedef struct PDMNSBWGROUP
 /** Pointer to a bandwidth group. */
 typedef PDMNSBWGROUP *PPDMNSBWGROUP;
 
-#endif
+#endif /* !VMM_INCLUDED_SRC_include_PDMNetShaperInternal_h */
 

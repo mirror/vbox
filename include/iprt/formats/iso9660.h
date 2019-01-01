@@ -1500,5 +1500,5 @@ typedef ISO9660SUSPUNION *PCISO9660SUSPUNION;
 
 /** @} */
 
-#endif
+#endif /* !IPRT_INCLUDED_formats_iso9660_h */
 

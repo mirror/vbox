@@ -1887,5 +1887,5 @@ RTDECL(RTEXITCODE) RTVfsChainMsgErrorExitFailure(const char *pszFunction, const 
 
 RT_C_DECLS_END
 
-#endif /* !___iprt_vfs_h */
+#endif /* !IPRT_INCLUDED_vfs_h */
 

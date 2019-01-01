@@ -63,5 +63,5 @@ typedef IMAGE_DOS_HEADER *PIMAGE_DOS_HEADER;
 #endif
 
 
-#endif
+#endif /* !IPRT_INCLUDED_formats_mz_h */
 

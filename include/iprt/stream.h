@@ -340,5 +340,5 @@ RTR3DECL(int) RTPrintfV(const char *pszFormat, va_list args) RT_IPRT_FORMAT_ATTR
 
 RT_C_DECLS_END
 
-#endif
+#endif /* !IPRT_INCLUDED_stream_h */
 

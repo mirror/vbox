@@ -852,5 +852,5 @@ RTDECL(int) RTDirRelSymlinkRead(RTDIR hDir, const char *pszSymlink, char *pszTar
 
 RT_C_DECLS_END
 
-#endif
+#endif /* !IPRT_INCLUDED_dir_h */
 

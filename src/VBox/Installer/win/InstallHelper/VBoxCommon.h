@@ -28,5 +28,5 @@ int swprintf_s(WCHAR *buffer, size_t cbBuffer, const WCHAR *format, ...);
 UINT VBoxGetProperty(MSIHANDLE a_hModule, WCHAR *a_pwszName, WCHAR *a_pwszValue, DWORD a_dwSize);
 UINT VBoxSetProperty(MSIHANDLE a_hModule, WCHAR *a_pwszName, WCHAR *a_pwszValue);
 
-#endif /* !___VBoxInstallHelper_Common_h */
+#endif /* !VBOX_INCLUDED_SRC_InstallHelper_VBoxCommon_h */
 

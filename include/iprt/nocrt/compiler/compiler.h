@@ -37,4 +37,4 @@
 # error "Unsupported compiler."
 #endif
 
-#endif
+#endif /* !IPRT_INCLUDED_nocrt_compiler_compiler_h */

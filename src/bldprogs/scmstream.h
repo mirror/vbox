@@ -136,5 +136,5 @@ const char *ScmStreamCGetWordM1(PSCMSTREAM pStream, size_t *pcchWord);
 
 RT_C_DECLS_END
 
-#endif
+#endif /* !VBOX_INCLUDED_SRC_bldprogs_scmstream_h */
 

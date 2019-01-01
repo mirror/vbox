@@ -108,5 +108,5 @@
 
 /** @} */
 
-#endif
+#endif /* !IPRT_INCLUDED_ldrlazy_h */
 

@@ -216,4 +216,4 @@ typedef struct VBOXHOSTCHANNELINTERFACE
 
 #pragma pack()
 
-#endif
+#endif /* !VBOX_INCLUDED_HostServices_VBoxHostChannel_h */

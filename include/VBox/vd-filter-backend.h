@@ -109,4 +109,4 @@ typedef const VDFILTERBACKEND *PCVDFILTERBACKEND;
 /** The current version of the VDFILTERBACKEND structure. */
 #define VD_FLTBACKEND_VERSION                   VD_VERSION_MAKE(0xff02, 1, 0)
 
-#endif
+#endif /* !VBOX_INCLUDED_vd_filter_backend_h */

@@ -726,5 +726,5 @@
     modify exact [eax] nomemory;
 #endif
 
-#endif
+#endif /* !IPRT_INCLUDED_asm_watcom_x86_32_h */
 

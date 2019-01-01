@@ -259,5 +259,5 @@ RTDECL(int) RTPipeQueryInfo(RTPIPE hPipe, PRTFSOBJINFO pObjInfo, RTFSOBJATTRADD 
 
 RT_C_DECLS_END
 
-#endif
+#endif /* !IPRT_INCLUDED_pipe_h */
 

@@ -223,4 +223,4 @@ RT_C_DECLS_END
 
 #endif /* VBOX_WITH_RAW_MODE */
 
-#endif
+#endif /* !VBOX_INCLUDED_vmm_patm_h */

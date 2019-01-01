@@ -412,5 +412,5 @@ int emR3NemHandleRC(PVM pVM, PVMCPU pVCpu, int rc)
     return rc;
 }
 
-#endif
+#endif /* !VMM_INCLUDED_SRC_include_EMHandleRCTmpl_h */
 

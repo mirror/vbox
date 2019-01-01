@@ -55,5 +55,5 @@ DECL_FORCE_INLINE(void) tmTimerQueueUnlinkActive(PTMTIMERQUEUE pQueue, PTMTIMER 
     pTimer->offPrev = 0;
 }
 
-#endif
+#endif /* !VMM_INCLUDED_SRC_include_TMInline_h */
 

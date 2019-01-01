@@ -59,5 +59,5 @@
 # endif
 #endif
 
-#endif
+#endif /* !IPRT_INCLUDED_alloca_h */
 

@@ -102,5 +102,5 @@ VMMR3DECL(int) DBGFR3SelInfoValidateCS(PCDBGFSELINFO pSelInfo, RTSEL SelCPL);
 
 /** @}  */
 
-#endif
+#endif /* !VBOX_INCLUDED_vmm_dbgfsel_h */
 

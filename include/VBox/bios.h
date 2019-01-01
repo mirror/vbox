@@ -42,5 +42,5 @@
 #define VBOX_BIOS_OLD_SHUTDOWN_PORT             0x8900
 
 
-#endif
+#endif /* !VBOX_INCLUDED_bios_h */
 

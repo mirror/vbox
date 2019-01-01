@@ -198,5 +198,5 @@ enum eInputStatus
 
 } /* namespace guestControl */
 
-#endif /* !___VBox_GuestHost_GuestControl_h */
+#endif /* !VBOX_INCLUDED_GuestHost_GuestControl_h */
 

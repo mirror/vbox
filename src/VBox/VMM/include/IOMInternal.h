@@ -505,5 +505,5 @@ RT_C_DECLS_END
 
 /** @} */
 
-#endif /* !___IOMInternal_h */
+#endif /* !VMM_INCLUDED_SRC_include_IOMInternal_h */
 

@@ -245,5 +245,5 @@ RTDECL(void *)  RTHandleTableFreeWithCtx(RTHANDLETABLE hHandleTable, uint32_t h,
 RT_C_DECLS_END
 
 
-#endif
+#endif /* !IPRT_INCLUDED_handletable_h */
 

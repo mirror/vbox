@@ -501,5 +501,5 @@ public:
 
 /** @} */
 
-#endif
+#endif /* !VBOX_INCLUDED_com_ptr_h */
 

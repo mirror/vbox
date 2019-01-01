@@ -99,5 +99,5 @@ RTDECL(int) RTLocaleQueryUserCountryCode(char pszCountryCode[3]);
 
 RT_C_DECLS_END
 
-#endif
+#endif /* !IPRT_INCLUDED_locale_h */
 

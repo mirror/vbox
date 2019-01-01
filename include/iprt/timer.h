@@ -387,4 +387,4 @@ RTDECL(int) RTTimerLRChangeInterval(RTTIMERLR hTimerLR, uint64_t u64NanoInterval
 
 RT_C_DECLS_END
 
-#endif
+#endif /* !IPRT_INCLUDED_timer_h */

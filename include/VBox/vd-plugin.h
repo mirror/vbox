@@ -93,4 +93,4 @@ typedef FNVDPLUGINLOAD *PFNVDPLUGINLOAD;
 /** The size of the prefix excluding the '\\0' terminator. */
 #define VD_PLUGIN_PREFIX_LENGTH (sizeof(VD_PLUGIN_PREFIX)-1)
 
-#endif
+#endif /* !VBOX_INCLUDED_vd_plugin_h */

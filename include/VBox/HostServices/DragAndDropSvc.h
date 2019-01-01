@@ -1109,5 +1109,5 @@ typedef struct VBOXDNDCBEVTERRORDATA
 
 } /* namespace DragAndDropSvc */
 
-#endif  /* !___VBox_HostService_DragAndDropSvc_h */
+#endif /* !VBOX_INCLUDED_HostServices_DragAndDropSvc_h */
 

@@ -823,5 +823,5 @@ DECLINLINE(void) IntNetBufInit(PINTNETBUF pIntBuf, uint32_t cbBuf, uint32_t cbRe
 
 #endif /* __cplusplus */
 
-#endif
+#endif /* !VBOX_INCLUDED_intnetinline_h */
 

@@ -187,5 +187,5 @@ RTDECL(bool) RTStrCacheIsRealImpl(void);
 
 RT_C_DECLS_END
 
-#endif
+#endif /* !IPRT_INCLUDED_strcache_h */
 

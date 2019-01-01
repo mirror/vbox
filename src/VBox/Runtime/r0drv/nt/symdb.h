@@ -84,5 +84,5 @@ DECLINLINE(int) rtNtOsVerInfoCompare(PCRTNTSDBOSVER pInfo1, PCRTNTSDBOSVER pInfo
     return 0;
 }
 
-#endif
+#endif /* !IPRT_INCLUDED_SRC_r0drv_nt_symdb_h */
 

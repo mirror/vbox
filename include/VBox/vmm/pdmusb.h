@@ -1084,4 +1084,4 @@ VMMR3DECL(int)  PDMR3UsbQueryDriverOnLun(PUVM pUVM, const char *pszDevice, unsig
 
 RT_C_DECLS_END
 
-#endif
+#endif /* !VBOX_INCLUDED_vmm_pdmusb_h */

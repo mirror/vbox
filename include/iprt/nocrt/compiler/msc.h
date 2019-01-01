@@ -44,5 +44,5 @@ typedef intptr_t ssize_t;
 /* stdarg.h */
 #include <../include/stdarg.h>
 
-#endif
+#endif /* !IPRT_INCLUDED_nocrt_compiler_msc_h */
 

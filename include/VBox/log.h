@@ -1247,4 +1247,4 @@ typedef enum LOGGROUP
 }
 
 /** @} */
-#endif
+#endif /* !VBOX_INCLUDED_log_h */

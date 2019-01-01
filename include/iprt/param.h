@@ -130,5 +130,5 @@
 
 /** @} */
 
-#endif
+#endif /* !IPRT_INCLUDED_param_h */
 

@@ -41,5 +41,5 @@
 #define PRIu64 "RU64"
 #define PRIo64 huh? anyone using this? great!
 
-#endif
+#endif /* !IPRT_INCLUDED_nocrt_inttypes_h */
 

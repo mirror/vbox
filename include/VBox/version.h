@@ -152,5 +152,5 @@
 #define VBOX_RC_FILE_FLAGS              (VBOX_RC_FILE_FLAGS_DEBUG | VBOX_RC_FILE_FLAGS_PRERELEASE | VBOX_RC_FILE_FLAGS_BUILD)
 /** @} */
 
-#endif
+#endif /* !VBOX_INCLUDED_version_h */
 

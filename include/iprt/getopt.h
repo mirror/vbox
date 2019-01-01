@@ -534,5 +534,5 @@ RTDECL(int) RTGetOptArgvToUtf16String(PRTUTF16 *ppwszCmdLine, const char * const
 
 RT_C_DECLS_END
 
-#endif
+#endif /* !IPRT_INCLUDED_getopt_h */
 

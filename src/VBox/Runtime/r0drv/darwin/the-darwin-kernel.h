@@ -236,5 +236,5 @@ DECLINLINE(int) RTErrConvertFromMachKernReturn(kern_return_t rc)
     }
 }
 
-#endif
+#endif /* !IPRT_INCLUDED_SRC_r0drv_darwin_the_darwin_kernel_h */
 

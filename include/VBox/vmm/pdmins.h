@@ -70,4 +70,4 @@
 
 /** @} */
 
-#endif
+#endif /* !VBOX_INCLUDED_vmm_pdmins_h */

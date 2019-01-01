@@ -50,4 +50,4 @@ typedef struct _VBOXCLIPBOARDEXTPARMS
     uint32_t   cbData;
 } VBOXCLIPBOARDEXTPARMS;
 
-#endif
+#endif /* !VBOX_INCLUDED_HostServices_VBoxClipboardExt_h */

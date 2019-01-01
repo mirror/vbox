@@ -786,4 +786,4 @@ typedef void ( * PFNGLXRELEASETEXIMAGEEXTPROC) (Display *dpy, GLXDrawable drawab
 }
 #endif
 
-#endif
+#endif /* !VBOX_INCLUDED_HostServices_glxext_h */

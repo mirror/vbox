@@ -441,5 +441,5 @@ extern VTGOBJHDR            g_VTGObjHeader;
 
 RT_C_DECLS_END
 
-#endif
+#endif /* !VBOX_INCLUDED_VBoxTpG_h */
 

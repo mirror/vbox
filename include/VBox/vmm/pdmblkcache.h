@@ -418,5 +418,5 @@ VMMR3DECL(int) PDMR3BlkCacheClear(PPDMBLKCACHE pBlkCache);
 
 RT_C_DECLS_END
 
-#endif
+#endif /* !VBOX_INCLUDED_vmm_pdmblkcache_h */
 

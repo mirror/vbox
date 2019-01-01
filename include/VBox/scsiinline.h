@@ -232,5 +232,5 @@ DECLINLINE(void) scsiPadStrS(int8_t *pbDst, const char *pbSrc, uint32_t cbSize)
 
 /** @} */
 
-#endif
+#endif /* !VBOX_INCLUDED_scsiinline_h */
 

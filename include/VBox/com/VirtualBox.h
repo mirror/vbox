@@ -56,5 +56,5 @@
 #include "VBox/com/defs.h"
 #include "VBox/com/ptr.h"
 
-#endif
+#endif /* !VBOX_INCLUDED_com_VirtualBox_h */
 

@@ -373,5 +373,5 @@ RTDECL(uint32_t) RTCrCertCtxRelease(PCRTCRCERTCTX pCertCtx);
 
 RT_C_DECLS_END
 
-#endif
+#endif /* !IPRT_INCLUDED_crypto_store_h */
 

@@ -1263,5 +1263,5 @@ VMMR3DECL(const char *) STAMR3GetUnit(STAMUNIT enmUnit);
 
 RT_C_DECLS_END
 
-#endif
+#endif /* !VBOX_INCLUDED_vmm_stam_h */
 

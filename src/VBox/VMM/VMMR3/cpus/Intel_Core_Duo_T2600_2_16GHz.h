@@ -221,5 +221,5 @@ static CPUMDBENTRY const g_Entry_Intel_Core_Duo_T2600_2_16GHz =
     /*.paMsrRanges      = */ NULL_ALONE(g_aMsrRanges_Intel_Core_Duo_T2600_2_16GHz),
 };
 
-#endif /* !VBOX_DB_Intel_Core_Duo_T2600_2_16GHz */
+#endif /* !VBOX_CPUDB_Intel_Core_Duo_T2600_2_16GHz_h */
 

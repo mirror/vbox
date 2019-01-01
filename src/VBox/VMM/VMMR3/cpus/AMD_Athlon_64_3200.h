@@ -220,5 +220,5 @@ static CPUMDBENTRY const g_Entry_AMD_Athlon_64_3200 =
     /*.paMsrRanges      = */ NULL_ALONE(g_aMsrRanges_AMD_Athlon_64_3200),
 };
 
-#endif /* !VBOX_DB_AMD_Athlon_64_3200 */
+#endif /* !VBOX_CPUDB_AMD_Athlon_64_3200_h */
 

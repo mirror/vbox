@@ -539,5 +539,5 @@ AssertCompileSize(HGCMFunctionParameter, 4+8);
 
 /** @} */
 
-#endif
+#endif /* !VBOX_INCLUDED_VMMDevCoreTypes_h */
 

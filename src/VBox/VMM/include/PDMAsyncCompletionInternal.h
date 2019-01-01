@@ -277,5 +277,5 @@ RT_C_DECLS_END
 
 extern const PDMASYNCCOMPLETIONEPCLASSOPS g_PDMAsyncCompletionEndpointClassFile;
 
-#endif /* !___PDMAsyncCompletionInternal_h */
+#endif /* !VMM_INCLUDED_SRC_include_PDMAsyncCompletionInternal_h */
 

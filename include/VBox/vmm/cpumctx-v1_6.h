@@ -249,5 +249,5 @@ typedef struct CPUMCTX_VER1_6
 
 RT_C_DECLS_END
 
-#endif
+#endif /* !VBOX_INCLUDED_vmm_cpumctx_v1_6_h */
 

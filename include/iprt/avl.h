@@ -1176,5 +1176,5 @@ RTDECL(PAVLRFOFFNODECORE)     RTAvlrFileOffsetGetRight(     PAVLRFOFFNODECORE pN
 
 RT_C_DECLS_END
 
-#endif
+#endif /* !IPRT_INCLUDED_avl_h */
 

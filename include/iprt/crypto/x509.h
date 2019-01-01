@@ -1137,5 +1137,5 @@ RT_C_DECLS_END
 
 /** @} */
 
-#endif
+#endif /* !IPRT_INCLUDED_crypto_x509_h */
 

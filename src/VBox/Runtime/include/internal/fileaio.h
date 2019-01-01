@@ -119,5 +119,5 @@ RT_C_DECLS_BEGIN
 
 RT_C_DECLS_END
 
-#endif
+#endif /* !IPRT_INCLUDED_INTERNAL_fileaio_h */
 

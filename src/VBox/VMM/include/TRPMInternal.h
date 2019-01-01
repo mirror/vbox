@@ -300,4 +300,4 @@ DECLASM(void) trpmR0DispatchHostInterruptSimple(RTUINT uActiveVector);
 
 RT_C_DECLS_END
 
-#endif
+#endif /* !VMM_INCLUDED_SRC_include_TRPMInternal_h */

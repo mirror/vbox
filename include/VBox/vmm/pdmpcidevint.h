@@ -229,5 +229,5 @@ AssertCompileSize(PDMPCIDEVINT, HC_ARCH_BITS == 32 ? 280 : 384);
 
 /** @} */
 
-#endif
+#endif /* !VBOX_INCLUDED_vmm_pdmpcidevint_h */
 

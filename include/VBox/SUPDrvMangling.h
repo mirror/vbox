@@ -35,4 +35,4 @@
 #define RT_MANGLER(symbol)   VBoxHost_##symbol
 #include <iprt/mangling.h>
 
-#endif
+#endif /* !VBOX_INCLUDED_SUPDrvMangling_h */

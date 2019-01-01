@@ -284,5 +284,5 @@ void remR3ProfileStop(int statcode);
 
 /** @} */
 
-#endif
+#endif /* !VMM_INCLUDED_SRC_include_REMInternal_h */
 

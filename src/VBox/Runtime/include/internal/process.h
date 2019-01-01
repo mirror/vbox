@@ -68,5 +68,5 @@ DECLHIDDEN(int) rtProcInitExePath(char *pszPath, size_t cchPath);
 
 RT_C_DECLS_END
 
-#endif
+#endif /* !IPRT_INCLUDED_INTERNAL_process_h */
 

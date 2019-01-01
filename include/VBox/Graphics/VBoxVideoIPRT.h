@@ -100,5 +100,5 @@
 
 /** @}  */
 
-#endif
+#endif /* !VBOX_INCLUDED_Graphics_VBoxVideoIPRT_h */
 

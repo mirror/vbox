@@ -42,4 +42,4 @@ extern DECLHIDDEN(uint64_t) g_u64ProgramStartNanoTS;
 
 RT_C_DECLS_END
 
-#endif
+#endif /* !IPRT_INCLUDED_INTERNAL_time_h */

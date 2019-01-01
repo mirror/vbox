@@ -72,4 +72,4 @@
 # define USE_KMEM_ALLOC_PROT
 #endif
 
-#endif /* ___the_netbsd_kernel_h */
+#endif /* !IPRT_INCLUDED_SRC_r0drv_netbsd_the_netbsd_kernel_h */

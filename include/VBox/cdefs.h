@@ -479,5 +479,5 @@
  * @{ */
 /** @} */
 
-#endif
+#endif /* !VBOX_INCLUDED_cdefs_h */
 

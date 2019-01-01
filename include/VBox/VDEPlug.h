@@ -60,5 +60,5 @@ struct vde_open_args
 
 #undef VDEPLUG_GENERATE_HEADER
 
-#endif /* ___VBox_VDEPlug_h not defined */
+#endif /* !VBOX_INCLUDED_VDEPlug_h */
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */

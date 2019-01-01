@@ -1723,5 +1723,5 @@ typedef HV_MESSAGE *PHV_MESSAGE;
 /** Pointer to const a Hyper-V SynIC message. */
 typedef HV_MESSAGE const *PCHV_MESSAGE;
 
-#endif
+#endif /* !IPRT_INCLUDED_nt_hyperv_h */
 

@@ -147,5 +147,5 @@ private:
 
 /** @} */
 
-#endif
+#endif /* !VBOX_INCLUDED_com_NativeEventQueue_h */
 

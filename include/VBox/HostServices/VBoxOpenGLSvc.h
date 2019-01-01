@@ -200,5 +200,5 @@ typedef struct
 /** @} */
 
 
-#endif
+#endif /* !VBOX_INCLUDED_HostServices_VBoxOpenGLSvc_h */
 

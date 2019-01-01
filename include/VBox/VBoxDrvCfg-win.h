@@ -76,5 +76,5 @@ HRESULT VBoxDrvCfgDrvUpdate(LPCWSTR pcszwHwId, LPCWSTR pcsxwInf, BOOL *pbRebootR
 
 RT_C_DECLS_END
 
-#endif
+#endif /* !VBOX_INCLUDED_VBoxDrvCfg_win_h */
 

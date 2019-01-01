@@ -1317,4 +1317,4 @@ typedef struct VUSBURB
 
 RT_C_DECLS_END
 
-#endif
+#endif /* !VBOX_INCLUDED_vusb_h */

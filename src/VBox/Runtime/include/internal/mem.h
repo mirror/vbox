@@ -73,5 +73,5 @@ DECLHIDDEN(void)    rtR0MemEfTerm(void);
 
 RT_C_DECLS_END
 
-#endif
+#endif /* !IPRT_INCLUDED_INTERNAL_mem_h */
 

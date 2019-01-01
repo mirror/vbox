@@ -158,5 +158,5 @@ VMMDECL(bool)                 PDMQueueFlushIfNecessary(PPDMQUEUE pQueue);
 
 RT_C_DECLS_END
 
-#endif
+#endif /* !VBOX_INCLUDED_vmm_pdmqueue_h */
 

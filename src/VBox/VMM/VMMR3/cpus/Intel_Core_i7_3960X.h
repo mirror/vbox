@@ -365,5 +365,5 @@ static CPUMDBENTRY const g_Entry_Intel_Core_i7_3960X =
     /*.paMsrRanges      = */ NULL_ALONE(g_aMsrRanges_Intel_Core_i7_3960X),
 };
 
-#endif /* !VBOX_DB_Intel_Core_i7_3960X */
+#endif /* !VBOX_CPUDB_Intel_Core_i7_3960X_h */
 

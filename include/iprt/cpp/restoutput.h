@@ -266,5 +266,5 @@ protected:
 
 /** @} */
 
-#endif
+#endif /* !IPRT_INCLUDED_cpp_restoutput_h */
 

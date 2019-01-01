@@ -240,5 +240,5 @@ typedef struct ModeInfoListItem
 } ModeInfoListItem;
 
 
-#endif /* !___VBox_Graphics_VBoxVideoVBEPrivate_h */
+#endif /* !VBOX_INCLUDED_Graphics_VBoxVideoVBEPrivate_h */
 

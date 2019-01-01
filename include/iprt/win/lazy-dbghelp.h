@@ -137,5 +137,5 @@ RTLDRLAZY_FUNC(dbghelp, BOOL, WINAPI, SymGetModuleInfo64, (HANDLE a1, DWORD64 a2
 
 
 
-#endif
+#endif /* !IPRT_INCLUDED_win_lazy_dbghelp_h */
 

@@ -63,5 +63,5 @@
 
 #endif /* !_INTSAFE_H_INCLUDED_ */
 
-#endif
+#endif /* !IPRT_INCLUDED_win_intsafe_h */
 

@@ -294,4 +294,4 @@ GPTPARTITIONTYPE g_gptPartitionTypes[] =
     { "734E5AFE-F61A-11E6-BC64-92361F002671", "Atari TOS", "Basic data (GEM, BGM, F32)" },
 };
 
-#endif
+#endif /* !VBOX_INCLUDED_SRC_vboximg_mount_vboximg_mount_h */

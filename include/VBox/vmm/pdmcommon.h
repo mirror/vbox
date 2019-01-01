@@ -178,5 +178,5 @@ typedef R0PTRTYPE(FNPDMDRVREQHANDLERR0 *) PFNPDMDRVREQHANDLERR0;
 
 /** @} */
 
-#endif
+#endif /* !VBOX_INCLUDED_vmm_pdmcommon_h */
 

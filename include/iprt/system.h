@@ -289,5 +289,5 @@ RTDECL(uint64_t) RTSystemGetNtVersion(void);
 
 RT_C_DECLS_END
 
-#endif
+#endif /* !IPRT_INCLUDED_system_h */
 

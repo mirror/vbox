@@ -28,5 +28,5 @@
 #endif
 #define APP_MANIFEST 1
 
-#endif
+#endif /* !VBOX_INCLUDED_SRC_Stub_resource_h */
 

@@ -125,5 +125,5 @@ RTDECL(int) RTMd2FromString(char const *pszDigest, uint8_t pabDigest[RTMD2_HASH_
 
 RT_C_DECLS_END
 
-#endif
+#endif /* !IPRT_INCLUDED_md2_h */
 

@@ -125,5 +125,5 @@ protected:
 
 /** @} */
 
-#endif
+#endif /* !IPRT_INCLUDED_cpp_restanyobject_h */
 

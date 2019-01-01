@@ -33,5 +33,5 @@
 #define RTASN1TMPL_TEMPLATE_FILE "../common/crypto/spc-template.h"
 #include <iprt/asn1-generator-internal-header.h>
 
-#endif
+#endif /* !IPRT_INCLUDED_SRC_common_crypto_spc_internal_h */
 

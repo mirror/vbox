@@ -150,4 +150,4 @@ DECLHIDDEN(void) vboxNetCmnWinDumpOidRequest(const char *pcszFunction, PNDIS_OID
 # endif
 }
 
-#endif
+#endif /* !VBOX_INCLUDED_VBoxNetCmn_win_h */

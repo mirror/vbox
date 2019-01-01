@@ -185,5 +185,5 @@ typedef struct
 #define ELF64_R_INFO(sym, type)     (((sym) << 32) + (unsigned char)(type))
 
 
-#endif
+#endif /* !IPRT_INCLUDED_formats_elf64_h */
 

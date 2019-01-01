@@ -1365,5 +1365,5 @@ typedef struct CALLBACKDATA_FILE_NOTIFY
 
 } /* namespace guestControl */
 
-#endif  /* !___VBox_HostService_GuestControlService_h */
+#endif /* !VBOX_INCLUDED_HostServices_GuestControlSvc_h */
 

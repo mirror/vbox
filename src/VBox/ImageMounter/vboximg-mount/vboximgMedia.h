@@ -37,4 +37,4 @@ typedef struct MEDIUMINFO
 int vboximgListVMs(IVirtualBox *pVirtualBox);
 char *vboximgScaledSize(size_t size);
 
-#endif /* ____H_VBOXIMGMEDIA */
+#endif /* !VBOX_INCLUDED_SRC_vboximg_mount_vboximgMedia_h */

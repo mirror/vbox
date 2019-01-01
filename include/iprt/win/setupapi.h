@@ -36,5 +36,5 @@
 
 #pragma warning(pop)
 
-#endif
+#endif /* !IPRT_INCLUDED_win_setupapi_h */
 

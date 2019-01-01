@@ -2933,5 +2933,5 @@ RT_C_DECLS_END
 /** @} */
 #endif /* IN_RING3 */
 
-#endif
+#endif /* !IPRT_INCLUDED_nt_nt_h */
 

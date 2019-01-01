@@ -209,5 +209,5 @@ public:
 
 /** @} */
 
-#endif /* !___VBox_com_list_h */
+#endif /* !VBOX_INCLUDED_com_list_h */
 

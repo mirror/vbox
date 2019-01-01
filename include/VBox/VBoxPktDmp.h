@@ -173,4 +173,4 @@ DECLHIDDEN(void) vboxEthPacketDump(const char *pcszInstance, const char *pcszTex
 #endif
 }
 
-#endif
+#endif /* !VBOX_INCLUDED_VBoxPktDmp_h */

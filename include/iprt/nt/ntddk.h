@@ -67,5 +67,5 @@
 #undef  _interlockedbittestandset64
 #undef  _interlockedbittestandreset64
 
-#endif
+#endif /* !IPRT_INCLUDED_nt_ntddk_h */
 

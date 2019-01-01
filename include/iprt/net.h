@@ -1024,5 +1024,5 @@ typedef RTNETARPIPV4 const *PCRTNETARPIPV4;
 
 RT_C_DECLS_END
 
-#endif
+#endif /* !IPRT_INCLUDED_net_h */
 

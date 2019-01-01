@@ -970,4 +970,4 @@
     modify exact [ax dx] nomemory;
 #endif
 
-#endif
+#endif /* !IPRT_INCLUDED_asm_watcom_x86_16_h */

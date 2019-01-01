@@ -181,5 +181,5 @@ RTDECL(int)         RTCdromOpenByOrdinal(unsigned iCdrom, uint32_t fFlags, PRTCD
 
 RT_C_DECLS_END
 
-#endif
+#endif /* !IPRT_INCLUDED_cdrom_h */
 

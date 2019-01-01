@@ -379,5 +379,5 @@ static CPUMDBENTRY const g_Entry_AMD_FX_8150_Eight_Core =
     /*.paMsrRanges      = */ NULL_ALONE(g_aMsrRanges_AMD_FX_8150_Eight_Core),
 };
 
-#endif /* !VBOX_DB_AMD_FX_8150_Eight_Core */
+#endif /* !VBOX_CPUDB_AMD_FX_8150_Eight_Core_h */
 

@@ -73,4 +73,4 @@ __asm__(".symver fcntl64,fcntl@GLIBC_2.2.5");
 __asm__(".symver fcntl64,fcntl@GLIBC_2.0");
 #endif
 
-#endif
+#endif /* !IPRT_INCLUDED_linux_symvers_h */

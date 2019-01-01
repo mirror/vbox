@@ -56,5 +56,5 @@ char *strpbrk(const char *pszStr, const char *pszChars)
 
 RT_C_DECLS_END
 
-#endif
+#endif /* !IPRT_INCLUDED_SRC_r0drv_linux_string_h */
 

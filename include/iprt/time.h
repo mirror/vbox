@@ -1207,5 +1207,5 @@ RTDECL(int) RTTimeZoneGetCurrent(char *pszName, size_t cbName);
 
 RT_C_DECLS_END
 
-#endif
+#endif /* !IPRT_INCLUDED_time_h */
 

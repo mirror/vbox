@@ -1556,5 +1556,5 @@ RTDECL(int) RTFileAioCtxWakeup(RTFILEAIOCTX hAioCtx);
 
 RT_C_DECLS_END
 
-#endif
+#endif /* !IPRT_INCLUDED_file_h */
 

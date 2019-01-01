@@ -266,5 +266,5 @@ static CPUMDBENTRY const g_Entry_Quad_Core_AMD_Opteron_2384 =
     /*.paMsrRanges      = */ NULL_ALONE(g_aMsrRanges_Quad_Core_AMD_Opteron_2384),
 };
 
-#endif /* !VBOX_DB_Quad_Core_AMD_Opteron_2384 */
+#endif /* !VBOX_CPUDB_Quad_Core_AMD_Opteron_2384_h */
 

@@ -100,4 +100,4 @@ DECLINLINE(HGSMIOFFSET) HGSMIMASize2Order(HGSMISIZE cb)
 
 RT_C_DECLS_END
 
-#endif /* !___VBox_Graphics_HGSMIMemAlloc_h */
+#endif /* !VBOX_INCLUDED_Graphics_HGSMIMemAlloc_h */

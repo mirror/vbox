@@ -216,5 +216,5 @@ extern void   (*g_pfnOrgFree)(void *);
 RT_C_DECLS_END
 #endif
 
-#endif
+#endif /* !IPRT_INCLUDED_SRC_r3_alloc_ef_h */
 

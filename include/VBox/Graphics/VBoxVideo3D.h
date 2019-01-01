@@ -147,4 +147,4 @@ struct VBOXTLSREFDATA_DUMMY
 #define VBOX3D_NOTIFY_EVENT_TYPE_3DDATA_HIDDEN   5
 
 
-#endif /* #ifndef ___VBox_Graphics_VBoxVideo3D_h */
+#endif /* !VBOX_INCLUDED_Graphics_VBoxVideo3D_h */

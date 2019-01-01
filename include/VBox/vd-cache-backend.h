@@ -319,4 +319,4 @@ typedef const VDCACHEBACKEND *PCVDCACHEBACKEND;
 /** The current version of the VDCACHEBACKEND structure. */
 #define VD_CACHEBACKEND_VERSION                 VD_VERSION_MAKE(0xff03, 1, 0)
 
-#endif
+#endif /* !VBOX_INCLUDED_vd_cache_backend_h */

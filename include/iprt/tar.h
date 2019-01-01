@@ -170,5 +170,5 @@ RTR3DECL(int) RTTarFileSetSize(RTTARFILE hFile, uint64_t cbSize);
 
 RT_C_DECLS_END
 
-#endif
+#endif /* !IPRT_INCLUDED_tar_h */
 

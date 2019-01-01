@@ -163,5 +163,5 @@ typedef RTSOLCORE *PRTSOLCORE;
 typedef int (*PFNRTSOLCOREACCUMULATOR)(PRTSOLCORE pSolCore);
 typedef int (*PFNRTSOLCORETHREADWORKER)(PRTSOLCORE pSolCore, void *pvThreadInfo);
 
-#endif
+#endif /* !IPRT_INCLUDED_SRC_r3_solaris_coredumper_solaris_h */
 

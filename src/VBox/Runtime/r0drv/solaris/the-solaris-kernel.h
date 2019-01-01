@@ -212,5 +212,5 @@ extern uintptr_t                kernelbase;
 
 RT_C_DECLS_END
 
-#endif /* ___the_solaris_kernel_h */
+#endif /* !IPRT_INCLUDED_SRC_r0drv_solaris_the_solaris_kernel_h */
 

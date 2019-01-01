@@ -689,4 +689,4 @@ void patmR3DbgAddPatch(PVM pVM, PPATMPATCHREC pPatchRec);
 
 PGM_ALL_CB2_PROTO(FNPGMVIRTHANDLER) patmVirtPageHandler;
 
-#endif
+#endif /* !VMM_INCLUDED_SRC_include_PATMInternal_h */

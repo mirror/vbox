@@ -287,5 +287,5 @@ VMMR3DECL(const char *)         HMR3GetSvmExitName(uint32_t uExit);
 RT_C_DECLS_END
 
 
-#endif
+#endif /* !VBOX_INCLUDED_vmm_hm_h */
 

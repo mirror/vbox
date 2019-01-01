@@ -823,5 +823,5 @@ RT_C_DECLS_END
 # include <iprt/nocrt/x86/math.h>
 #endif
 
-#endif
+#endif /* !IPRT_INCLUDED_nocrt_math_h */
 

@@ -189,5 +189,5 @@
 
 /** @} */
 
-#endif
+#endif /* !VBOX_INCLUDED_param_h */
 

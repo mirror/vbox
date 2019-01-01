@@ -363,5 +363,5 @@ RTDECL(int) RTSerialPortQueryStatusLines(RTSERIALPORT hSerialPort, uint32_t *pfS
 
 RT_C_DECLS_END
 
-#endif
+#endif /* !IPRT_INCLUDED_serialport_h */
 

@@ -1897,5 +1897,5 @@ static OPENGL_EXT OpenGLExtensions[] =
 };
 #endif /* VBOX_OGL_WITH_EXTENSION_ARRAY */
 
-#endif
+#endif /* !VBOX_INCLUDED_HostServices_VBoxOGLOp_h */
 

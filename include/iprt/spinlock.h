@@ -91,5 +91,5 @@ RTDECL(void) RTSpinlockRelease(RTSPINLOCK Spinlock);
 
 RT_C_DECLS_END
 
-#endif
+#endif /* !IPRT_INCLUDED_spinlock_h */
 

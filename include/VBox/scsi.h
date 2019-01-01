@@ -322,4 +322,4 @@ int SCSILogCueSheet(char *pszBuf, size_t cchBuffer, uint8_t *pbCueSheet,
                     size_t cbCueSheet);
 #endif
 
-#endif
+#endif /* !VBOX_INCLUDED_scsi_h */

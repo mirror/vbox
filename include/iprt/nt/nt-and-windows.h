@@ -54,5 +54,5 @@
 
 #include <iprt/nt/nt.h>
 
-#endif
+#endif /* !IPRT_INCLUDED_nt_nt_and_windows_h */
 

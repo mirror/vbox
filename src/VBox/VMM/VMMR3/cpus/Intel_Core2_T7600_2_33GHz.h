@@ -191,5 +191,5 @@ static CPUMDBENTRY const g_Entry_Intel_Core2_T7600_2_33GHz =
     /*.paMsrRanges      = */ NULL_ALONE(g_aMsrRanges_Intel_Core2_T7600_2_33GHz),
 };
 
-#endif /* !VBOX_DB_Intel_Core2_T7600_2_33GHz */
+#endif /* !VBOX_CPUDB_Intel_Core2_T7600_2_33GHz_h */
 

@@ -53,4 +53,4 @@ RTDECL(int) RTCidrStrToIPv4(const char *pszAddress, PRTNETADDRIPV4 pNetwork, PRT
 RT_C_DECLS_END
 /** @} */
 
-#endif
+#endif /* !IPRT_INCLUDED_cidr_h */

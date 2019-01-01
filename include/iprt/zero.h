@@ -53,5 +53,5 @@ extern RTDATADECL(uint8_t const)   g_abRTZero64K[_64K];
 
 RT_C_DECLS_END
 
-#endif
+#endif /* !IPRT_INCLUDED_zero_h */
 

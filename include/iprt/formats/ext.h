@@ -984,5 +984,5 @@ typedef const EXTDIRENTRYCHKSUM *PCEXTDIRENTRYCHKSUM;
 
 /** @} */
 
-#endif
+#endif /* !IPRT_INCLUDED_formats_ext_h */
 

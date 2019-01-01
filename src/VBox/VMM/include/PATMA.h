@@ -232,4 +232,4 @@ extern const uint32_t g_fPatmInterruptFlag;
 
 RT_C_DECLS_END
 
-#endif
+#endif /* !VMM_INCLUDED_SRC_include_PATMA_h */

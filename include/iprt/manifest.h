@@ -546,5 +546,5 @@ RTR3DECL(int) RTManifestWriteFilesBuf(void **ppvBuf, size_t *pcbSize, RTDIGESTTY
 
 RT_C_DECLS_END
 
-#endif
+#endif /* !IPRT_INCLUDED_manifest_h */
 

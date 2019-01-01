@@ -46,5 +46,5 @@
 #endif
 
 
-#endif
+#endif /* !IPRT_INCLUDED_win_d3d8_h */
 

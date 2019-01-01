@@ -71,5 +71,5 @@ static CPUMDBENTRY const g_Entry_Intel_80286 =
     /*.paMsrRanges      = */ NULL,
 };
 
-#endif /* !VBOX_CPUDB_Intel_80286 */
+#endif /* !VBOX_CPUDB_Intel_80286_h */
 

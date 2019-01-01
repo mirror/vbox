@@ -1356,5 +1356,5 @@ public:
 
 } /* namespace ATL */
 
-#endif /* !___VBox_com_microatl_h */
+#endif /* !VBOX_INCLUDED_com_microatl_h */
 

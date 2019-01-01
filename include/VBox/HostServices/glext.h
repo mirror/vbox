@@ -7261,4 +7261,4 @@ typedef void (APIENTRYP PFNGLCLEARCOLORIUIEXTPROC) (GLuint red, GLuint green, GL
 }
 #endif
 
-#endif
+#endif /* !VBOX_INCLUDED_HostServices_glext_h */

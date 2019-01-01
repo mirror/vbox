@@ -2730,5 +2730,5 @@ VMMR3DECL(int)               DBGFR3FormatBugCheck(PUVM pUVM, char *pszDetails, s
 
 RT_C_DECLS_END
 
-#endif
+#endif /* !VBOX_INCLUDED_vmm_dbgf_h */
 

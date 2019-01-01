@@ -33,4 +33,4 @@
 #define IDI_FILETYPE_VBOX_VHD       305
 #define IDI_FILETYPE_VBOX_HDD       306
 
-#endif
+#endif /* !VBOX_INCLUDED_SRC_Resources_resource_h */

@@ -102,5 +102,5 @@
 #define VGA_PORT_HGSMI_HOST             0x3b0
 #define VGA_PORT_HGSMI_GUEST            0x3d0
 
-#endif /* !___VBox_Graphics_VBoxVideoVBE_h */
+#endif /* !VBOX_INCLUDED_Graphics_VBoxVideoVBE_h */
 

@@ -310,4 +310,4 @@ void SELFSIZINGTABLE::displayTable()
         pRow = pRow->next;
     }
 }
-#endif
+#endif /* !VBOX_INCLUDED_SRC_vboximg_mount_SelfSizingTable_h */

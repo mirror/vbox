@@ -85,5 +85,5 @@ RT_C_DECLS_END
  */
 #define IPRT_NT_POOL_TAG    'TRPI'
 
-#endif
+#endif /* !IPRT_INCLUDED_SRC_r0drv_nt_the_nt_kernel_h */
 

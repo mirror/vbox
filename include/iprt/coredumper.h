@@ -91,5 +91,5 @@ RTDECL(int) RTCoreDumperDisable(void);
 
 RT_C_DECLS_END
 
-#endif
+#endif /* !IPRT_INCLUDED_coredumper_h */
 

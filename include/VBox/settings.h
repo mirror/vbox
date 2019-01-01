@@ -1284,4 +1284,4 @@ private:
 } // namespace settings
 
 
-#endif /* ___VBox_settings_h */
+#endif /* !VBOX_INCLUDED_settings_h */

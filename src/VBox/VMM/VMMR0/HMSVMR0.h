@@ -95,5 +95,5 @@ DECLASM(void) SVMR0InvlpgA(RTGCPTR pPageGC, uint32_t u32ASID);
 
 RT_C_DECLS_END
 
-#endif /* !___HMSVMR0_h */
+#endif /* !VMM_INCLUDED_SRC_VMMR0_HMSVMR0_h */
 

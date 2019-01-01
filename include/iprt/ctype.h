@@ -239,5 +239,5 @@ DECL_FORCE_INLINE(int) RTLocCToUpper(int ch)
 
 /** @} */
 
-#endif
+#endif /* !IPRT_INCLUDED_ctype_h */
 

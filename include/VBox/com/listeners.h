@@ -179,5 +179,5 @@ public:
 #endif
 
 /** @} */
-#endif
+#endif /* !VBOX_INCLUDED_com_listeners_h */
 

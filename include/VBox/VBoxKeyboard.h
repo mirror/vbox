@@ -52,5 +52,5 @@ extern CCALL unsigned X11DRV_InitKeyboard(Display *dpy, unsigned *byLayoutOK, un
 extern CCALL unsigned X11DRV_KeyEvent(Display *dpy, KeyCode code);
 #endif
 
-#endif
+#endif /* !VBOX_INCLUDED_VBoxKeyboard_h */
 
