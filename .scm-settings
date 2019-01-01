@@ -65,3 +65,11 @@
 --filter-out-files "*/COPYING.CDDL"
 --filter-out-files "*.desktop"
 
+
+#
+# Header guards are by default relative to the parent directory.
+#
+--guard-prefix VBOX_INCLUDED_SRC_
+--guard-relative-to-dir {parent}
+--fix-header-guard-endif
+
