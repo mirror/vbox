@@ -2863,7 +2863,7 @@ bool rewrite_FixHeaderGuards(PSCMRWSTATE pState, PSCMSTREAM pIn, PSCMSTREAM pOut
 
     RTERRINFOSTATIC ErrInfo;
     char            szNormalized[168];
-    size_t          cchNormalized;
+    size_t          cchNormalized = 0;
     int             rc;
     bool            fRet = false;
 
