@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___scmdiff_h___
-#define ___scmdiff_h___
+#ifndef VBOX_INCLUDED_SRC_bldprogs_scmdiff_h
+#define VBOX_INCLUDED_SRC_bldprogs_scmdiff_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif

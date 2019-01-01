@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___VBoxCompilerPlugIns_h__
-#define ___VBoxCompilerPlugIns_h__
+#ifndef VBOX_INCLUDED_SRC_bldprogs_VBoxCompilerPlugIns_h
+#define VBOX_INCLUDED_SRC_bldprogs_VBoxCompilerPlugIns_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
