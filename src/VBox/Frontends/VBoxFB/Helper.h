@@ -16,8 +16,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __H_HELPER
-#define __H_HELPER
+#ifndef VBOX_INCLUDED_SRC_VBoxFB_Helper_h
+#define VBOX_INCLUDED_SRC_VBoxFB_Helper_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -36,4 +36,4 @@ DFBEnumerationResult enumVideoModesHandler(int width, int height, int bpp, void 
 int32_t getBestVideoMode(uint32_t width, uint32_t height, uint32_t bpp);
 
 
-#endif // __H_HELPER
+#endif /* !VBOX_INCLUDED_SRC_VBoxFB_Helper_h */

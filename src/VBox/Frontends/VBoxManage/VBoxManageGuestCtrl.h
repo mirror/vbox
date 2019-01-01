@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___H_VBOXMANAGE_GUESTCTRL
-#define ___H_VBOXMANAGE_GUESTCTRL
+#ifndef VBOX_INCLUDED_SRC_VBoxManage_VBoxManageGuestCtrl_h
+#define VBOX_INCLUDED_SRC_VBoxManage_VBoxManageGuestCtrl_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -232,5 +232,5 @@ protected:
 };
 #endif /* !VBOX_ONLY_DOCS */
 
-#endif /* !___H_VBOXMANAGE_GUESTCTRL */
+#endif /* !VBOX_INCLUDED_SRC_VBoxManage_VBoxManageGuestCtrl_h */
 

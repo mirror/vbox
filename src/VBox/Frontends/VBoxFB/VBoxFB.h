@@ -16,8 +16,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __H_VBOXFB
-#define __H_VBOXFB
+#ifndef VBOX_INCLUDED_SRC_VBoxFB_VBoxFB_h
+#define VBOX_INCLUDED_SRC_VBoxFB_VBoxFB_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -78,4 +78,4 @@ extern uint32_t useFixedVideoMode;
 extern videoMode fixedVideoMode;
 extern int scaleGuest;
 
-#endif // __H_VBOXFB
+#endif /* !VBOX_INCLUDED_SRC_VBoxFB_VBoxFB_h */

@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___H_VBOXWATCHDOG
-#define ___H_VBOXWATCHDOG
+#ifndef VBOX_INCLUDED_SRC_VBoxBalloonCtrl_VBoxWatchdogInternal_h
+#define VBOX_INCLUDED_SRC_VBoxBalloonCtrl_VBoxWatchdogInternal_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -246,5 +246,5 @@ int cfgGetValueU32(const ComPtr<IVirtualBox> &rptrVBox, const ComPtr<IMachine> &
                    const char *pszGlobal, const char *pszVM, uint32_t *puValue, uint32_t uDefault);
 RT_C_DECLS_END
 
-#endif /* !___H_VBOXWATCHDOG */
+#endif /* !VBOX_INCLUDED_SRC_VBoxBalloonCtrl_VBoxWatchdogInternal_h */
 

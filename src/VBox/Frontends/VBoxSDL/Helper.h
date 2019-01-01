@@ -17,8 +17,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __H_HELPER
-#define __H_HELPER
+#ifndef VBOX_INCLUDED_SRC_VBoxSDL_Helper_h
+#define VBOX_INCLUDED_SRC_VBoxSDL_Helper_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -53,5 +53,5 @@ void terminateXPCOMQueueThread(void);
 
 #endif /* defined(VBOX_WITH_XPCOM) && !defined(RT_OS_DARWIN) && !defined(RT_OS_OS2) */
 
-#endif // __H_HELPER
+#endif /* !VBOX_INCLUDED_SRC_VBoxSDL_Helper_h */
 

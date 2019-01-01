@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __VBoxAutostart_h__
-#define __VBoxAutostart_h__
+#ifndef VBOX_INCLUDED_SRC_VBoxAutostart_VBoxAutostart_h
+#define VBOX_INCLUDED_SRC_VBoxAutostart_VBoxAutostart_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -334,5 +334,5 @@ DECLHIDDEN(int) autostartSetup();
 
 DECLHIDDEN(void) autostartShutdown();
 
-#endif /* __VBoxAutostart_h__ */
+#endif /* !VBOX_INCLUDED_SRC_VBoxAutostart_VBoxAutostart_h */
 

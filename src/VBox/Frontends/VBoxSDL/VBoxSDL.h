@@ -17,8 +17,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __H_VBOXSDL
-#define __H_VBOXSDL
+#ifndef VBOX_INCLUDED_SRC_VBoxSDL_VBoxSDL_h
+#define VBOX_INCLUDED_SRC_VBoxSDL_VBoxSDL_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -91,4 +91,4 @@ void *VBoxSDLGetDarwinWindowId(void);
 RT_C_DECLS_END
 #endif
 
-#endif
+#endif /* !VBOX_INCLUDED_SRC_VBoxSDL_VBoxSDL_h */
