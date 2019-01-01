@@ -2895,7 +2895,7 @@ bool rewrite_FixHeaderGuards(PSCMRWSTATE pState, PSCMSTREAM pIn, PSCMSTREAM pOut
         }
         else
             rc = RTPathCalcRelative(&szNormalized[cchNormalized], sizeof(szNormalized) - cchNormalized,
-                                    pSettings->pszGuardRelativeToDir, pState->pszFilename);
+                                    pSettings->pszGuardRelativeToDir, false /*fFromFile*/, pState->pszFilename);
         if (RT_FAILURE(rc))
             return ScmError(pState, rc, "Error calculating guard prefix (RTPathCalcRelative): %Rrc\n", rc);
         char ch;

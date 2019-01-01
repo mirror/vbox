@@ -741,39 +741,50 @@ int main()
     struct
     {
         const char *pszFrom;
+        bool fFromFile;
         const char *pszTo;
         int rc;
         const char *pszExpected;
     } s_aRelPath[] =
     {
-        { "/home/test.ext", "/home/test2.ext", VINF_SUCCESS, "test2.ext"},
-        { "/dir/test.ext", "/dir/dir2/test2.ext", VINF_SUCCESS, "dir2/test2.ext"},
-        { "/dir/dir2/test.ext", "/dir/test2.ext", VINF_SUCCESS, ".." RTPATH_SLASH_STR "test2.ext"},
-        { "/dir/dir2/test.ext", "/dir/dir3/test2.ext", VINF_SUCCESS, ".." RTPATH_SLASH_STR "dir3/test2.ext"},
+        { "/home/test.ext",     true,           "/home/test2.ext",        VINF_SUCCESS, "test2.ext" },
+        { "/dir/test.ext",      true,           "/dir/dir2/test2.ext",    VINF_SUCCESS, "dir2/test2.ext" },
+        { "/dir/dir2/test.ext", true,           "/dir/test2.ext",         VINF_SUCCESS, ".." RTPATH_SLASH_STR "test2.ext" },
+        { "/dir/dir2/test.ext", true,           "/dir/dir3/test2.ext",    VINF_SUCCESS, ".." RTPATH_SLASH_STR "dir3/test2.ext" },
+        { "/dir/dir2",          false,          "/dir/dir3/test2.ext",    VINF_SUCCESS, ".." RTPATH_SLASH_STR "dir3/test2.ext" },
+        { "/dir/dir2",          false,          "/dir/dir3//test2.ext",   VINF_SUCCESS, ".." RTPATH_SLASH_STR "dir3//test2.ext" },
+        { "/dir/dir2/",         false,          "/dir/dir3/test2.ext",    VINF_SUCCESS, ".." RTPATH_SLASH_STR "dir3/test2.ext" },
+        { "/dir/dir2////",      false,          "/dir//dir3/test2.ext",   VINF_SUCCESS, ".." RTPATH_SLASH_STR "dir3/test2.ext" },
+        { "/include/iprt",      false,          "/include/iprt/cdefs.h",  VINF_SUCCESS, "cdefs.h" },
+        { "/include/iprt/",     false,          "/include/iprt/cdefs.h",  VINF_SUCCESS, "cdefs.h" },
+        { "/include/iprt/tt.h", true,           "/include/iprt/cdefs.h",  VINF_SUCCESS, "cdefs.h" },
 #if defined (RT_OS_OS2) || defined (RT_OS_WINDOWS)
-        { "\\\\server\\share\\test.ext", "\\\\server\\share2\\test2.ext", VERR_NOT_SUPPORTED, ""},
-        { "c:\\dir\\test.ext", "f:\\dir\\test.ext", VERR_NOT_SUPPORTED, ""}
+        { "\\\\server\\share\\test.ext", true,  "\\\\server\\share2\\test2.ext", VERR_NOT_SUPPORTED, "" },
+        { "c:\\dir\\test.ext",  true,           "f:\\dir\\test.ext",      VERR_NOT_SUPPORTED, "" },
+        { "F:\\dir\\test.ext",  false,          "f:/dir//test.ext",      VINF_SUCCESS, "." } ,
+        { "F:\\dir\\test.ext",  true,           "f:/dir//test.ext",      VINF_SUCCESS, "test.ext" } ,
 #endif
     };
     for (unsigned i = 0; i < RT_ELEMENTS(s_aRelPath); i++)
     {
-        const char *pszFrom = s_aRelPath[i].pszFrom;
-        const char *pszTo   = s_aRelPath[i].pszTo;
+        const char *pszFrom   = s_aRelPath[i].pszFrom;
+        bool        fFromFile = s_aRelPath[i].fFromFile;
+        const char *pszTo     = s_aRelPath[i].pszTo;
 
-        rc = RTPathCalcRelative(szPath, sizeof(szPath), pszFrom, pszTo);
+        rc = RTPathCalcRelative(szPath, sizeof(szPath), pszFrom, fFromFile, pszTo);
         if (rc != s_aRelPath[i].rc)
-            RTTestIFailed("Unexpected return code\n"
+            RTTestIFailed("Unexpected return code for %s .. %s\n"
                           "     got: %Rrc\n"
                           "expected: %Rrc",
-                          rc, s_aRelPath[i].rc);
+                          pszFrom, pszTo, rc, s_aRelPath[i].rc);
         else if (   RT_SUCCESS(rc)
                  && strcmp(szPath, s_aRelPath[i].pszExpected))
             RTTestIFailed("Unexpected result\n"
-                          "    from: '%s'\n"
+                          "    from: '%s' (%s)\n"
                           "      to: '%s'\n"
                           "  output: '%s'\n"
                           "expected: '%s'",
-                          pszFrom, pszTo, szPath, s_aRelPath[i].pszExpected);
+                          pszFrom, fFromFile ? "file" : "dir", pszTo, szPath, s_aRelPath[i].pszExpected);
     }
 
     testParserAndSplitter(hTest);

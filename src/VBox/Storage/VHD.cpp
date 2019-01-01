@@ -330,8 +330,7 @@ static int vhdLocatorUpdate(PVHDIMAGE pImage, PVHDPLE pLocator, const char *pszF
             {
                 /* Convert to relative path. */
                 char szPath[RTPATH_MAX];
-                rc = RTPathCalcRelative(szPath, sizeof(szPath), pImage->pszFilename,
-                                        pszFilename);
+                rc = RTPathCalcRelative(szPath, sizeof(szPath), pImage->pszFilename, true /*fFromFile*/, pszFilename);
                 if (RT_SUCCESS(rc))
                 {
                     /* Update plain relative name. */
@@ -373,8 +372,7 @@ static int vhdLocatorUpdate(PVHDIMAGE pImage, PVHDPLE pLocator, const char *pszF
             {
                 /* Convert to relative path. */
                 char szPath[RTPATH_MAX];
-                rc = RTPathCalcRelative(szPath, sizeof(szPath), pImage->pszFilename,
-                                        pszFilename);
+                rc = RTPathCalcRelative(szPath, sizeof(szPath), pImage->pszFilename, true /*fFromFile*/, pszFilename);
                 if (RT_SUCCESS(rc))
                     rc = vhdFilenameToUtf16(szPath, (uint16_t *)pvBuf, cbMaxLen, &cb, false);
             }

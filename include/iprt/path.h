@@ -1085,11 +1085,13 @@ RTDECL(int) RTPathTraverseList(const char *pszPathList, char chSep, PFNRTPATHTRA
  * @param   cbPathDst       The size of the buffer pszPathDst points to,
  *                          terminator included.
  * @param   pszPathFrom     The path to start from creating the relative path.
+ * @param   fFromFile       Whether @a pszPathFrom is a file and we should work
+ *                          relative to it's parent directory (@c true), or if
+ *                          we should assume @a pszPathFrom is a directory and
+ *                          work relative to it.
  * @param   pszPathTo       The path to reach with the created relative path.
  */
-RTDECL(int) RTPathCalcRelative(char *pszPathDst, size_t cbPathDst,
-                               const char *pszPathFrom,
-                               const char *pszPathTo);
+RTDECL(int) RTPathCalcRelative(char *pszPathDst, size_t cbPathDst, const char *pszPathFrom, bool fFromFile, const char *pszPathTo);
 
 #ifdef IN_RING3
 
