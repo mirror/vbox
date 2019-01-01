@@ -1,6 +1,6 @@
 # $Id$
 ## @file
-# Source code massager settings for the graphics device.
+# Source code massager settings for the graphics bits of the NT additions.
 #
 
 #
@@ -15,10 +15,29 @@
 # hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
 #
 
-/shaderlib/wine/*.c:                        --external-copyright --lgpl-disclaimer --no-convert-tabs --no-fix-todos
-/shaderlib/wine/*.h:                        --external-copyright --lgpl-disclaimer --no-convert-tabs --no-fix-todos --no-fix-header-guards
-/shaderlib/wine/vbox/VBoxDbgGl.c:           --no-external-copyright --no-lgpl-disclaimer --convert-tabs --fix-todos
-/shaderlib/wine/vbox/VBoxDbgGl.h:           --no-external-copyright --no-lgpl-disclaimer --convert-tabs --fix-todos --no-fix-header-guards
-/shaderlib/wine/vbox/VBoxWineEx.h:          --no-external-copyright --no-lgpl-disclaimer --convert-tabs --fix-todos --no-fix-header-guards
-/shaderlib/wine/vbox/libWineStub/include/config.h: --no-lgpl-disclaimer
+--filter-out-files /Wine*/wined3d/wined3d.spec
+
+/Wine*/*.c:                     --external-copyright --lgpl-disclaimer --no-convert-tabs --no-fix-todos
+/Wine*/*.h:                     --external-copyright --lgpl-disclaimer --no-convert-tabs --no-fix-todos --no-fix-header-guards
+/Wine*/wined3d/wined3d.def:     --external-copyright
+/Wine*/wined3d/wined3dwddm.def: --external-copyright
+/Wine*/d3d8/version.rc:         --external-copyright --lgpl-disclaimer
+/Wine*/d3d9/version.rc:         --external-copyright --lgpl-disclaimer
+/Wine*/wined3d/version.rc:      --external-copyright --lgpl-disclaimer
+
+/Wine_new/switcher/d3d8_main.c: --no-external-copyright --no-lgpl-disclaimer --convert-tabs --fix-todos
+/Wine_new/switcher/d3d9_main.c: --no-external-copyright --no-lgpl-disclaimer --convert-tabs --fix-todos
+/Wine_new/switcher/sw_common.c: --no-external-copyright --no-lgpl-disclaimer --convert-tabs --fix-todos
+/Wine_new/vbox/VBoxDbgGl.c:     --no-external-copyright --no-lgpl-disclaimer --convert-tabs --fix-todos
+/Wine_new/wined3d/vboxext.c:    --no-external-copyright --no-lgpl-disclaimer --convert-tabs --fix-todos
+/Wine*/switcher/switcher.h:     --no-external-copyright --no-lgpl-disclaimer --convert-tabs --fix-todos --no-fix-header-guards
+/Wine*/vbox/VBoxDbgGl.h:        --no-external-copyright --no-lgpl-disclaimer --convert-tabs --fix-todos --no-fix-header-guards
+/Wine*/vbox/VBoxWineEx.h:       --no-external-copyright --no-lgpl-disclaimer --convert-tabs --fix-todos --no-fix-header-guards
+/Wine*/wined3d/vboxext.h:       --no-external-copyright --no-lgpl-disclaimer --convert-tabs --fix-todos --no-fix-header-guards
+/Wine*/wined3d/vboxsharedrc.h:  --no-external-copyright --no-lgpl-disclaimer --convert-tabs --fix-todos --no-fix-header-guards
+
+/Wine*/vbox/libWineStub/include/config.h:          --no-lgpl-disclaimer
+/Wine*/vbox/libWineStub/include/wine/wgl.h:        --no-lgpl-disclaimer
+/Wine*/vbox/libWineStub/include/wine/wglext.h:     --no-lgpl-disclaimer
+/Wine*/vbox/libWineStub/include/wine/wgl_driver.h: --no-lgpl-disclaimer
 
