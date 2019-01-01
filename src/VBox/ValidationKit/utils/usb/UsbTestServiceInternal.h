@@ -24,8 +24,8 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
-#ifndef ___UsbTestServiceInternal_h___
-#define ___UsbTestServiceInternal_h___
+#ifndef VBOX_INCLUDED_SRC_usb_UsbTestServiceInternal_h
+#define VBOX_INCLUDED_SRC_usb_UsbTestServiceInternal_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -212,5 +212,5 @@ extern UTSTRANSPORT const g_TcpTransport;
 
 RT_C_DECLS_END
 
-#endif
+#endif /* !VBOX_INCLUDED_SRC_usb_UsbTestServiceInternal_h */
 

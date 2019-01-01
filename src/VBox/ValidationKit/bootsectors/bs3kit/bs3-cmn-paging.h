@@ -24,8 +24,8 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
-#ifndef ___bs3_cmn_paging_h
-#define ___bs3_cmn_paging_h
+#ifndef BS3KIT_INCLUDED_bs3_cmn_paging_h
+#define BS3KIT_INCLUDED_bs3_cmn_paging_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -55,5 +55,5 @@ RT_C_DECLS_END
 
 #include "bs3kit-mangling-code.h"
 
-#endif
+#endif /* !BS3KIT_INCLUDED_bs3_cmn_paging_h */
 

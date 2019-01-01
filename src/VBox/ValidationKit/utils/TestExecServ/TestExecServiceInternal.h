@@ -24,8 +24,8 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
-#ifndef ___TestExecServiceInternal_h___
-#define ___TestExecServiceInternal_h___
+#ifndef VBOX_INCLUDED_SRC_TestExecServ_TestExecServiceInternal_h
+#define VBOX_INCLUDED_SRC_TestExecServ_TestExecServiceInternal_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -218,5 +218,5 @@ extern uint32_t           g_cVerbose;
 
 RT_C_DECLS_END
 
-#endif
+#endif /* !VBOX_INCLUDED_SRC_TestExecServ_TestExecServiceInternal_h */
 

@@ -24,8 +24,8 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
-#ifndef ___bs3_cpu_generated_1_h___
-#define ___bs3_cpu_generated_1_h___
+#ifndef VBOX_INCLUDED_SRC_bootsectors_bs3_cpu_generated_1_h
+#define VBOX_INCLUDED_SRC_bootsectors_bs3_cpu_generated_1_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -800,5 +800,5 @@ extern const uint8_t BS3_FAR_DATA       g_abBs3Cg1Operands[];
 extern const uint8_t BS3_FAR_DATA       g_abBs3Cg1Tests[];
 
 
-#endif
+#endif /* !VBOX_INCLUDED_SRC_bootsectors_bs3_cpu_generated_1_h */
 

@@ -24,8 +24,8 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
-#ifndef ___bs3_cmn_test_h
-#define ___bs3_cmn_test_h
+#ifndef BS3KIT_INCLUDED_bs3_cmn_test_h
+#define BS3KIT_INCLUDED_bs3_cmn_test_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -165,5 +165,5 @@ typedef struct BS3TESTFAILEDBUF
 /** Pointer to a bs3TestFailedStrOutput buffer.  */
 typedef BS3TESTFAILEDBUF BS3_FAR *PBS3TESTFAILEDBUF;
 
-#endif
+#endif /* !BS3KIT_INCLUDED_bs3_cmn_test_h */
 

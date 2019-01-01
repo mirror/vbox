@@ -24,8 +24,8 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
-#ifndef ___UsbTestServiceGadget_h___
-#define ___UsbTestServiceGadget_h___
+#ifndef VBOX_INCLUDED_SRC_usb_UsbTestServiceGadget_h
+#define VBOX_INCLUDED_SRC_usb_UsbTestServiceGadget_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -532,5 +532,5 @@ DECLHIDDEN(int) utsGadgetDisconnect(UTSGADGET hGadget);
 
 RT_C_DECLS_END
 
-#endif
+#endif /* !VBOX_INCLUDED_SRC_usb_UsbTestServiceGadget_h */
 
