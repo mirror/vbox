@@ -35,7 +35,7 @@
 #if RTPATH_STYLE == RTPATH_STR_F_STYLE_DOS
 # include <iprt/ctype.h>
 #endif
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 #include <iprt/string.h>
 #include "internal/path.h"
 
