@@ -4,8 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2017 Oracle Corporation
- *
+ * Copyright (C) 2006-2019 Oracle Corporation
  * This file is based on the X.Org VESA driver:
  *
  * Copyright (c) 2000 by Conectiva S.A. (http://www.conectiva.com)

@@ -8,7 +8,7 @@ rem part of the first logon.
 rem
 
 rem
-rem Copyright (C) 2017 Oracle Corporation
+rem Copyright (C) 2017-2019 Oracle Corporation
 rem
 rem This file is part of VirtualBox Open Source Edition (OSE), as
 rem available from http://www.virtualbox.org. This file is free software;

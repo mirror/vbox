@@ -3,7 +3,7 @@
  * IPRT - Memory Allocation, Ring-0 Driver, NetBSD.
  */
 /*
- * Copyright (C) 2014-2017 Oracle Corporation
+ * Copyright (C) 2014-2019 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
