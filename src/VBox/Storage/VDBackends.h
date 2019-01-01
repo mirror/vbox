@@ -19,8 +19,8 @@
 *   Header Files                                                               *
 *******************************************************************************/
 
-#ifndef ___VDBackends_h
-#define ___VDBackends_h
+#ifndef VBOX_INCLUDED_SRC_Storage_VDBackends_h
+#define VBOX_INCLUDED_SRC_Storage_VDBackends_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -48,5 +48,5 @@ extern const VDCACHEBACKEND g_VciCacheBackend;
 
 RT_C_DECLS_END
 
-#endif
+#endif /* !VBOX_INCLUDED_SRC_Storage_VDBackends_h */
 

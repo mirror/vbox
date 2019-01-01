@@ -16,8 +16,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __VDDefs_h__
-#define __VDDefs_h__
+#ifndef VBOX_INCLUDED_SRC_testcase_VDDefs_h
+#define VBOX_INCLUDED_SRC_testcase_VDDefs_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -39,4 +39,4 @@ typedef enum VDIOTXDIR
     VDIOTXDIR_INVALID
 } VDIOTXDIR;
 
-#endif /* __VDDefs_h__ */
+#endif /* !VBOX_INCLUDED_SRC_testcase_VDDefs_h */

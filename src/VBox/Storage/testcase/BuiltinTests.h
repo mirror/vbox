@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef _BuiltinTests_h__
-#define _BuiltinTests_h__
+#ifndef VBOX_INCLUDED_SRC_testcase_BuiltinTests_h
+#define VBOX_INCLUDED_SRC_testcase_BuiltinTests_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -44,4 +44,4 @@ extern TSTVDIOTESTENTRY const       g_aVDIoTests[];
 /** Number of entries in g_aVDIoTests. */
 extern unsigned const               g_cVDIoTests;
 
-#endif /* _BuiltinTests_h__ */
+#endif /* !VBOX_INCLUDED_SRC_testcase_BuiltinTests_h */

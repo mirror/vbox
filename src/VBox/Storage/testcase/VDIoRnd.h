@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef _VDIoRnd_h__
-#define _VDIoRnd_h__
+#ifndef VBOX_INCLUDED_SRC_testcase_VDIoRnd_h
+#define VBOX_INCLUDED_SRC_testcase_VDIoRnd_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -56,4 +56,4 @@ void VDIoRndDestroy(PVDIORND pIoRnd);
 int VDIoRndGetBuffer(PVDIORND pIoRnd, void **ppv, size_t cb);
 
 uint32_t VDIoRndGetU32Ex(PVDIORND pIoRnd, uint32_t uMin, uint32_t uMax);
-#endif /* _VDIoRnd_h__ */
+#endif /* !VBOX_INCLUDED_SRC_testcase_VDIoRnd_h */

@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___VDICore_h___
-#define ___VDICore_h___
+#ifndef VBOX_INCLUDED_SRC_Storage_VDICore_h
+#define VBOX_INCLUDED_SRC_Storage_VDICore_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -629,5 +629,5 @@ typedef enum VDIECONV
     VDIECONV_F2H
 } VDIECONV;
 
-#endif
+#endif /* !VBOX_INCLUDED_SRC_Storage_VDICore_h */
 

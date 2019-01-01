@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __VDMemDisk_h__
-#define __VDMemDisk_h__
+#ifndef VBOX_INCLUDED_SRC_testcase_VDMemDisk_h
+#define VBOX_INCLUDED_SRC_testcase_VDMemDisk_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -130,4 +130,4 @@ int VDMemDiskReadFromFile(PVDMEMDISK pMemDisk, const char *pcszFilename);
  */
 int VDMemDiskCmp(PVDMEMDISK pMemDisk, uint64_t off, size_t cbCmp, PRTSGBUF pSgBuf);
 
-#endif /* __VDMemDisk_h__ */
+#endif /* !VBOX_INCLUDED_SRC_testcase_VDMemDisk_h */

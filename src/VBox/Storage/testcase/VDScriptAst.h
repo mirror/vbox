@@ -14,8 +14,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___VDScriptAst_h___
-#define ___VDScriptAst_h___
+#ifndef VBOX_INCLUDED_SRC_testcase_VDScriptAst_h
+#define VBOX_INCLUDED_SRC_testcase_VDScriptAst_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -581,5 +581,5 @@ DECLHIDDEN(PVDSCRIPTASTCORE) vdScriptAstNodeAlloc(VDSCRIPTASTCLASS enmClass);
  */
 DECLHIDDEN(PVDSCRIPTASTIDE) vdScriptAstNodeIdeAlloc(size_t cchIde);
 
-#endif
+#endif /* !VBOX_INCLUDED_SRC_testcase_VDScriptAst_h */
 

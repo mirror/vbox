@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef _VDScript_h__
-#define _VDScript_h__
+#ifndef VBOX_INCLUDED_SRC_testcase_VDScript_h
+#define VBOX_INCLUDED_SRC_testcase_VDScript_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -223,4 +223,4 @@ DECLHIDDEN(int) VDScriptCtxAsRegister(VDSCRIPTCTX hScriptCtx, const char *pszTyp
                                       PFNVDSCRIPTASREAD pfnRead, PFNVDSCRIPTASWRITE pfnWrite, void *pvUser,
                                       uint32_t fFlags);
 
-#endif /* _VDScript_h__ */
+#endif /* !VBOX_INCLUDED_SRC_testcase_VDScript_h */

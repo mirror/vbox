@@ -16,8 +16,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __VDIoBackend_h__
-#define __VDIoBackend_h__
+#ifndef VBOX_INCLUDED_SRC_testcase_VDIoBackend_h
+#define VBOX_INCLUDED_SRC_testcase_VDIoBackend_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -93,4 +93,4 @@ DECLHIDDEN(int) VDIoBackendDumpToFile(PVDIOSTORAGE pIoStorage, const char *pszPa
 int VDIoBackendTransfer(PVDIOSTORAGE pIoStorage, VDIOTXDIR enmTxDir, uint64_t off,
                         size_t cbTransfer, PRTSGBUF pSgBuf, void *pvUser, bool fSync);
 
-#endif /* __VDIoBackendMem_h__ */
+#endif /* !VBOX_INCLUDED_SRC_testcase_VDIoBackend_h */

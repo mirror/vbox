@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef _VDScriptInternal_h__
-#define _VDScriptInternal_h__
+#ifndef VBOX_INCLUDED_SRC_testcase_VDScriptInternal_h
+#define VBOX_INCLUDED_SRC_testcase_VDScriptInternal_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -108,4 +108,4 @@ DECLHIDDEN(int) vdScriptCtxInterprete(PVDSCRIPTCTXINT pThis, const char *pszFn,
                                       PVDSCRIPTARG paArgs, unsigned cArgs,
                                       PVDSCRIPTARG pRet);
 
-#endif /* _VDScriptInternal_h__ */
+#endif /* !VBOX_INCLUDED_SRC_testcase_VDScriptInternal_h */
