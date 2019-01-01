@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ____H_HGCMTHREAD
-#define ____H_HGCMTHREAD
+#ifndef MAIN_INCLUDED_HGCMThread_h
+#define MAIN_INCLUDED_HGCMThread_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -222,5 +222,5 @@ int hgcmMsgGet(HGCMThread *pThread, HGCMMsgCore **ppMsg);
 int hgcmMsgComplete(HGCMMsgCore *pMsg, int32_t result);
 
 
-#endif
+#endif /* !MAIN_INCLUDED_HGCMThread_h */
 

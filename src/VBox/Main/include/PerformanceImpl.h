@@ -17,8 +17,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ____H_PERFORMANCEIMPL
-#define ____H_PERFORMANCEIMPL
+#ifndef MAIN_INCLUDED_PerformanceImpl_h
+#define MAIN_INCLUDED_PerformanceImpl_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -192,5 +192,5 @@ private:
     Data m;
 };
 
-#endif //!____H_PERFORMANCEIMPL
+#endif /* !MAIN_INCLUDED_PerformanceImpl_h */
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */

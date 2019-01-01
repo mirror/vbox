@@ -17,8 +17,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ____H_PCIDEVICEATTACHMENTIMPL
-#define ____H_PCIDEVICEATTACHMENTIMPL
+#ifndef MAIN_INCLUDED_PCIDeviceAttachmentImpl_h
+#define MAIN_INCLUDED_PCIDeviceAttachmentImpl_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -66,4 +66,4 @@ private:
     Data*  m;
 };
 
-#endif // ____H_PCIDEVICEATTACHMENTIMPL
+#endif /* !MAIN_INCLUDED_PCIDeviceAttachmentImpl_h */

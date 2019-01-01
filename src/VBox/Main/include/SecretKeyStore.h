@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ____H_SECRETKEYSTORE
-#define ____H_SECRETKEYSTORE
+#ifndef MAIN_INCLUDED_SecretKeyStore_h
+#define MAIN_INCLUDED_SecretKeyStore_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -190,4 +190,4 @@ class SecretKeyStore
         bool         m_fKeyBufNonPageable;
 };
 
-#endif  /* !____H_SECRETKEYSTORE */
+#endif /* !MAIN_INCLUDED_SecretKeyStore_h */

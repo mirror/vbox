@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ____H_EMULATEDUSBIMPL
-#define ____H_EMULATEDUSBIMPL
+#ifndef MAIN_INCLUDED_EmulatedUSBImpl_h
+#define MAIN_INCLUDED_EmulatedUSBImpl_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -81,6 +81,6 @@ private:
     Data m;
 };
 
-#endif
+#endif /* !MAIN_INCLUDED_EmulatedUSBImpl_h */
 
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */

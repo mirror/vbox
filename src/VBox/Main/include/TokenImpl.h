@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ____H_TOKENIMPL
-#define ____H_TOKENIMPL
+#ifndef MAIN_INCLUDED_TokenImpl_h
+#define MAIN_INCLUDED_TokenImpl_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -103,6 +103,6 @@ private:
 };
 
 
-#endif
+#endif /* !MAIN_INCLUDED_TokenImpl_h */
 
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */

@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ____WEBMWRITER
-#define ____WEBMWRITER
+#ifndef MAIN_INCLUDED_WebMWriter_h
+#define MAIN_INCLUDED_WebMWriter_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -576,4 +576,4 @@ protected:
     typedef std::map <uint8_t, WebMTrack *> WebMTracks;
 };
 
-#endif /* !____WEBMWRITER */
+#endif /* !MAIN_INCLUDED_WebMWriter_h */

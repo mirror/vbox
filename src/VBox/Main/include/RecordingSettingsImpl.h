@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ____H_RecordSettings
-#define ____H_RecordSettings
+#ifndef MAIN_INCLUDED_RecordingSettingsImpl_h
+#define MAIN_INCLUDED_RecordingSettingsImpl_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -87,5 +87,5 @@ private:
     Data *m;
 };
 
-#endif // !____H_RecordSettings
+#endif /* !MAIN_INCLUDED_RecordingSettingsImpl_h */
 

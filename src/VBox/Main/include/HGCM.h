@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ____H_HGCM
-#define ____H_HGCM
+#ifndef MAIN_INCLUDED_HGCM_h
+#define MAIN_INCLUDED_HGCM_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -61,5 +61,5 @@ int HGCMHostLoadState(PSSMHANDLE pSSM, uint32_t uVersion);
 
 RT_C_DECLS_END
 
-#endif
+#endif /* !MAIN_INCLUDED_HGCM_h */
 

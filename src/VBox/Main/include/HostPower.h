@@ -16,8 +16,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ____H_HOSTPOWER
-#define ____H_HOSTPOWER
+#ifndef MAIN_INCLUDED_HostPower_h
+#define MAIN_INCLUDED_HostPower_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -122,5 +122,5 @@ private:
 };
 # endif
 
-#endif /* !____H_HOSTPOWER */
+#endif /* !MAIN_INCLUDED_HostPower_h */
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */

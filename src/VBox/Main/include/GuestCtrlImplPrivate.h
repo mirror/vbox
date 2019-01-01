@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ____H_GUESTIMPLPRIVATE
-#define ____H_GUESTIMPLPRIVATE
+#ifndef MAIN_INCLUDED_GuestCtrlImplPrivate_h
+#define MAIN_INCLUDED_GuestCtrlImplPrivate_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -1211,5 +1211,5 @@ protected:
     uint32_t                 mObjectID;
     /** @} */
 };
-#endif // !____H_GUESTIMPLPRIVATE
+#endif /* !MAIN_INCLUDED_GuestCtrlImplPrivate_h */
 

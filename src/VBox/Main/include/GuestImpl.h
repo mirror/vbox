@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ____H_GUESTIMPL
-#define ____H_GUESTIMPL
+#ifndef MAIN_INCLUDED_GuestImpl_h
+#define MAIN_INCLUDED_GuestImpl_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -247,5 +247,5 @@ private:
 };
 #define GUEST_MAGIC 0xCEED2006u /** @todo r=andy Not very well defined!? */
 
-#endif // ____H_GUESTIMPL
+#endif /* !MAIN_INCLUDED_GuestImpl_h */
 

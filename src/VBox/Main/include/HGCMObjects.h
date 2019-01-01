@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ____H_HGCMOBJECTS
-#define ____H_HGCMOBJECTS
+#ifndef MAIN_INCLUDED_HGCMObjects_h
+#define MAIN_INCLUDED_HGCMObjects_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -125,4 +125,4 @@ uint32_t    hgcmObjQueryHandleCount();
 void        hgcmObjSetHandleCount(uint32_t u32HandleCount);
 
 
-#endif
+#endif /* !MAIN_INCLUDED_HGCMObjects_h */

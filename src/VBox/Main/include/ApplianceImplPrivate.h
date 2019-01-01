@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ____H_APPLIANCEIMPLPRIVATE
-#define ____H_APPLIANCEIMPLPRIVATE
+#ifndef MAIN_INCLUDED_ApplianceImplPrivate_h
+#define MAIN_INCLUDED_ApplianceImplPrivate_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -511,5 +511,5 @@ ovf::CIMOSType_T convertVBoxOSType2CIMOSType(const char *pcszVBox, BOOL fLongMod
 Utf8Str convertNetworkAttachmentTypeToString(NetworkAttachmentType_T type);
 
 
-#endif // !____H_APPLIANCEIMPLPRIVATE
+#endif /* !MAIN_INCLUDED_ApplianceImplPrivate_h */
 

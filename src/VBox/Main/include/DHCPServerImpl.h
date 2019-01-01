@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ____H_DHCPSERVERIMPL
-#define ____H_DHCPSERVERIMPL
+#ifndef MAIN_INCLUDED_DHCPServerImpl_h
+#define MAIN_INCLUDED_DHCPServerImpl_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -141,4 +141,4 @@ private:
     const Utf8Str mName;
 };
 
-#endif // ____H_H_DHCPSERVERIMPL
+#endif /* !MAIN_INCLUDED_DHCPServerImpl_h */

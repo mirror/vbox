@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___netif_h
-#define ___netif_h
+#ifndef MAIN_INCLUDED_netif_h
+#define MAIN_INCLUDED_netif_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -125,5 +125,5 @@ DECLINLINE(Bstr) getDefaultIPv4Address(Bstr bstrIfName)
     return Bstr(addr);
 }
 
-#endif  /* !___netif_h */
+#endif /* !MAIN_INCLUDED_netif_h */
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */

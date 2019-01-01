@@ -24,8 +24,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef MAIN_VECTOR_H
-#define MAIN_VECTOR_H
+#ifndef MAIN_INCLUDED_vector_h
+#define MAIN_INCLUDED_vector_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -351,4 +351,4 @@ DECLINLINE(int) vecPushBackPtr(VECTOR_PTR *pvec, unsigned uTypeHash,
          && pIterator < (type *) (pvec)->mpvaElements + (pvec)->mcElements; \
          ++pIterator)
 
-#endif /* !MAIN_VECTOR_H */
+#endif /* !MAIN_INCLUDED_vector_h */

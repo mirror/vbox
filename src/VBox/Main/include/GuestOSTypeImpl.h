@@ -16,8 +16,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ____H_GUESTOSTYPEIMPL
-#define ____H_GUESTOSTYPEIMPL
+#ifndef MAIN_INCLUDED_GuestOSTypeImpl_h
+#define MAIN_INCLUDED_GuestOSTypeImpl_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -109,5 +109,5 @@ private:
     const AudioCodecType_T mAudioCodecType;
 };
 
-#endif // ____H_GUESTOSTYPEIMPL
+#endif /* !MAIN_INCLUDED_GuestOSTypeImpl_h */
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */

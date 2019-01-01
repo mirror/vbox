@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ____H_VIRTUALBOXERRORINFOIMPL
-#define ____H_VIRTUALBOXERRORINFOIMPL
+#ifndef MAIN_INCLUDED_VirtualBoxErrorInfoImpl_h
+#define MAIN_INCLUDED_VirtualBoxErrorInfoImpl_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -159,6 +159,6 @@ private:
 #endif
 };
 
-#endif // !____H_VIRTUALBOXERRORINFOIMPL
+#endif /* !MAIN_INCLUDED_VirtualBoxErrorInfoImpl_h */
 
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */

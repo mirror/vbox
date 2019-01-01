@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ____H_GUESTSESSIONIMPLTASKS
-#define ____H_GUESTSESSIONIMPLTASKS
+#ifndef MAIN_INCLUDED_GuestSessionImplTasks_h
+#define MAIN_INCLUDED_GuestSessionImplTasks_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -377,4 +377,4 @@ protected:
     /** Update flags. */
     uint32_t                    mFlags;
 };
-#endif /* !____H_GUESTSESSIONIMPLTASKS */
+#endif /* !MAIN_INCLUDED_GuestSessionImplTasks_h */

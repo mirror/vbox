@@ -16,8 +16,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ____H_REMOTEUSBBACKEND
-#define ____H_REMOTEUSBBACKEND
+#ifndef MAIN_INCLUDED_RemoteUSBBackend_h
+#define MAIN_INCLUDED_RemoteUSBBackend_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -139,5 +139,5 @@ class RemoteUSBBackend: public RemoteUSBBackendListable
         bool mfDescExt;
 };
 
-#endif /* ____H_REMOTEUSBBACKEND */
+#endif /* !MAIN_INCLUDED_RemoteUSBBackend_h */
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */

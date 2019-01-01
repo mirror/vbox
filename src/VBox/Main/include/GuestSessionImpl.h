@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ____H_GUESTSESSIONIMPL
-#define ____H_GUESTSESSIONIMPL
+#ifndef MAIN_INCLUDED_GuestSessionImpl_h
+#define MAIN_INCLUDED_GuestSessionImpl_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -428,5 +428,5 @@ private:
     } mData;
 };
 
-#endif /* !____H_GUESTSESSIONIMPL */
+#endif /* !MAIN_INCLUDED_GuestSessionImpl_h */
 

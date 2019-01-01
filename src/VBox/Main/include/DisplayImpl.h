@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ____H_DISPLAYIMPL
-#define ____H_DISPLAYIMPL
+#ifndef MAIN_INCLUDED_DisplayImpl_h
+#define MAIN_INCLUDED_DisplayImpl_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -637,5 +637,5 @@ private:
     ULONG mBitsPerPixel;
 };
 
-#endif // !____H_DISPLAYIMPL
+#endif /* !MAIN_INCLUDED_DisplayImpl_h */
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */

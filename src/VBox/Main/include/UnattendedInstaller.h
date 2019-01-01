@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ____H_UNATTENDEDINSTALLER
-#define ____H_UNATTENDEDINSTALLER
+#ifndef MAIN_INCLUDED_UnattendedInstaller_h
+#define MAIN_INCLUDED_UnattendedInstaller_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -595,5 +595,5 @@ public:
 };
 #endif
 
-#endif // !____H_UNATTENDEDINSTALLER
+#endif /* !MAIN_INCLUDED_UnattendedInstaller_h */
 

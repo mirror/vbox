@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ____H_HOSTIMPL
-#define ____H_HOSTIMPL
+#ifndef MAIN_INCLUDED_HostImpl_h
+#define MAIN_INCLUDED_HostImpl_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -187,5 +187,5 @@ private:
     Data *m;
 };
 
-#endif // !____H_HOSTIMPL
+#endif /* !MAIN_INCLUDED_HostImpl_h */
 

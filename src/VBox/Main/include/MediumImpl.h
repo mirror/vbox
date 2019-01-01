@@ -15,9 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-
-#ifndef ____H_MEDIUMIMPL
-#define ____H_MEDIUMIMPL
+#ifndef MAIN_INCLUDED_MediumImpl_h
+#define MAIN_INCLUDED_MediumImpl_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -465,5 +464,5 @@ struct MediumCryptoFilterSettings
 
 
 
-#endif /* !____H_MEDIUMIMPL */
+#endif /* !MAIN_INCLUDED_MediumImpl_h */
 

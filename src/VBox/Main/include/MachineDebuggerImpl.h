@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ____H_MACHINEDEBUGGER
-#define ____H_MACHINEDEBUGGER
+#ifndef MAIN_INCLUDED_MachineDebuggerImpl_h
+#define MAIN_INCLUDED_MachineDebuggerImpl_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -160,5 +160,5 @@ private:
     /** @}  */
 };
 
-#endif /* !____H_MACHINEDEBUGGER */
+#endif /* !MAIN_INCLUDED_MachineDebuggerImpl_h */
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */

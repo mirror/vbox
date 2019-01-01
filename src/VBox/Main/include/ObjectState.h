@@ -16,8 +16,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ____H_OBJECTSTATE
-#define ____H_OBJECTSTATE
+#ifndef MAIN_INCLUDED_ObjectState_h
+#define MAIN_INCLUDED_ObjectState_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -137,4 +137,4 @@ private:
     DECLARE_CLS_COPY_CTOR_ASSIGN_NOOP(ObjectState); /* Shuts up MSC warning C4625. */
 };
 
-#endif // !____H_OBJECTSTATE
+#endif /* !MAIN_INCLUDED_ObjectState_h */

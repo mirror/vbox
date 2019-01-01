@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___VBox_svchlp_h___
-#define ___VBox_svchlp_h___
+#ifndef MAIN_INCLUDED_SRC_src_server_win_svchlp_h
+#define MAIN_INCLUDED_SRC_src_server_win_svchlp_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -93,5 +93,5 @@ public:
     int run();
 };
 
-#endif /* !___VBox_svchlp_h___ */
+#endif /* !MAIN_INCLUDED_SRC_src_server_win_svchlp_h */
 

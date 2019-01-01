@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ____H_GUESTDNDSOURCEIMPL
-#define ____H_GUESTDNDSOURCEIMPL
+#ifndef MAIN_INCLUDED_GuestDnDSourceImpl_h
+#define MAIN_INCLUDED_GuestDnDSourceImpl_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -117,5 +117,5 @@ protected:
     friend class RecvDataTask;
 };
 
-#endif /* !____H_GUESTDNDSOURCEIMPL */
+#endif /* !MAIN_INCLUDED_GuestDnDSourceImpl_h */
 

@@ -15,9 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-
-#ifndef ____H_DATASTREAMIMPL
-#define ____H_DATASTREAMIMPL
+#ifndef MAIN_INCLUDED_DataStreamImpl_h
+#define MAIN_INCLUDED_DataStreamImpl_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -64,6 +63,6 @@ private:
     bool              m_fEos;
 };
 
-#endif // !____H_DATASTREAMIMPL
+#endif /* !MAIN_INCLUDED_DataStreamImpl_h */
 
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */

@@ -16,8 +16,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ____H_AUTOCALLER
-#define ____H_AUTOCALLER
+#ifndef MAIN_INCLUDED_AutoCaller_h
+#define MAIN_INCLUDED_AutoCaller_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -503,4 +503,4 @@ private:
     bool mUninitFailed : 1;
 };
 
-#endif // !____H_AUTOCALLER
+#endif /* !MAIN_INCLUDED_AutoCaller_h */

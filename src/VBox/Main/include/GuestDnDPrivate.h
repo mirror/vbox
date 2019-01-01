@@ -16,8 +16,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ____H_GUESTDNDPRIVATE
-#define ____H_GUESTDNDPRIVATE
+#ifndef MAIN_INCLUDED_GuestDnDPrivate_h
+#define MAIN_INCLUDED_GuestDnDPrivate_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -1195,5 +1195,5 @@ protected:
         GuestDnDMsgList             m_lstMsgOut;
     } mDataBase;
 };
-#endif /* ____H_GUESTDNDPRIVATE */
+#endif /* !MAIN_INCLUDED_GuestDnDPrivate_h */
 

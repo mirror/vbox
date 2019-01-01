@@ -17,8 +17,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ____H_MEDIUMLOCK
-#define ____H_MEDIUMLOCK
+#ifndef MAIN_INCLUDED_MediumLock_h
+#define MAIN_INCLUDED_MediumLock_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -337,5 +337,5 @@ private:
     bool mIsLocked;
 };
 
-#endif /* !____H_MEDIUMLOCK */
+#endif /* !MAIN_INCLUDED_MediumLock_h */
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */

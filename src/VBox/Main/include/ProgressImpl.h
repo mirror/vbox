@@ -16,8 +16,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ____H_PROGRESSIMPL
-#define ____H_PROGRESSIMPL
+#ifndef MAIN_INCLUDED_ProgressImpl_h
+#define MAIN_INCLUDED_ProgressImpl_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -232,5 +232,5 @@ private:
     DECLARE_CLS_COPY_CTOR_ASSIGN_NOOP(Progress); /* Shuts up MSC warning C4625. */
 };
 
-#endif /* ____H_PROGRESSIMPL */
+#endif /* !MAIN_INCLUDED_ProgressImpl_h */
 

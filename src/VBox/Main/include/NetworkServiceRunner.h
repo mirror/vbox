@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ____H_NETWORKSERVICERUNNER
-#define ____H_NETWORKSERVICERUNNER
+#ifndef MAIN_INCLUDED_NetworkServiceRunner_h
+#define MAIN_INCLUDED_NetworkServiceRunner_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -62,5 +62,5 @@ private:
     Data *m;
 };
 
-#endif
+#endif /* !MAIN_INCLUDED_NetworkServiceRunner_h */
 

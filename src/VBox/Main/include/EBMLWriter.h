@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ____H_EBMLWRITER
-#define ____H_EBMLWRITER
+#ifndef MAIN_INCLUDED_EBMLWriter_h
+#define MAIN_INCLUDED_EBMLWriter_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -137,5 +137,5 @@ private:
     void operator=(const EBMLWriter &);
 };
 
-#endif
+#endif /* !MAIN_INCLUDED_EBMLWriter_h */
 

@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ____H_PCIRAWDEV
-#define ____H_PCIRAWDEV
+#ifndef MAIN_INCLUDED_PCIRawDevImpl_h
+#define MAIN_INCLUDED_PCIRawDevImpl_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -53,4 +53,4 @@ class PCIRawDev
     Console * const mParent;
 };
 
-#endif // !____H_PCIRAWDEV
+#endif /* !MAIN_INCLUDED_PCIRawDevImpl_h */

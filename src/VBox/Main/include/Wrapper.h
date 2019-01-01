@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ____H_WRAPPER
-#define ____H_WRAPPER
+#ifndef MAIN_INCLUDED_Wrapper_h
+#define MAIN_INCLUDED_Wrapper_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -490,5 +490,5 @@ private:
     std::vector<A> mArray;
 };
 
-#endif // !____H_WRAPPER
+#endif /* !MAIN_INCLUDED_Wrapper_h */
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */

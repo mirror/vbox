@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ____H_RECORDING
-#define ____H_RECORDING
+#ifndef MAIN_INCLUDED_Recording_h
+#define MAIN_INCLUDED_Recording_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -137,5 +137,5 @@ protected:
      *  need to have the same audio data at a specific point in time. */
     RecordingBlockMap            mapBlocksCommon;
 };
-#endif /* !____H_RECORDING */
+#endif /* !MAIN_INCLUDED_Recording_h */
 

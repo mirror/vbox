@@ -17,8 +17,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ____H_CLIENTTOKEN
-#define ____H_CLIENTTOKEN
+#ifndef MAIN_INCLUDED_ClientToken_h
+#define MAIN_INCLUDED_ClientToken_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -104,5 +104,5 @@ private:
 #endif
 };
 
-#endif /* !____H_CLIENTTOKEN */
+#endif /* !MAIN_INCLUDED_ClientToken_h */
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */

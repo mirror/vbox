@@ -15,9 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-
-#ifndef ____H_USBPROXYBACKEND
-#define ____H_USBPROXYBACKEND
+#ifndef MAIN_INCLUDED_USBProxyBackend_h
+#define MAIN_INCLUDED_USBProxyBackend_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -442,5 +441,5 @@ private:
     Data *m;
 };
 
-#endif /* !____H_USBPROXYBACKEND */
+#endif /* !MAIN_INCLUDED_USBProxyBackend_h */
 

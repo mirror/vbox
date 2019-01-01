@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ____H_CONSOLEIMPL
-#define ____H_CONSOLEIMPL
+#ifndef MAIN_INCLUDED_ConsoleImpl_h
+#define MAIN_INCLUDED_ConsoleImpl_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -1068,5 +1068,5 @@ private:
     friend class ConsoleVRDPServer;
 };
 
-#endif // !____H_CONSOLEIMPL
+#endif /* !MAIN_INCLUDED_ConsoleImpl_h */
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */

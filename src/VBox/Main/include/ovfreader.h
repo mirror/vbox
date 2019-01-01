@@ -17,8 +17,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ____H_OVFREADER
-#define ____H_OVFREADER
+#ifndef MAIN_INCLUDED_ovfreader_h
+#define MAIN_INCLUDED_ovfreader_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -684,5 +684,5 @@ private:
 
 } // end namespace ovf
 
-#endif // !____H_OVFREADER
+#endif /* !MAIN_INCLUDED_ovfreader_h */
 

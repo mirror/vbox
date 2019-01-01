@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ____H_RECORDINGUTILS
-#define ____H_RECORDINGUTILS
+#ifndef MAIN_INCLUDED_RecordingUtils_h
+#define MAIN_INCLUDED_RecordingUtils_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -204,5 +204,5 @@ int RecordingUtilsRGBToYUV(uint32_t uPixelFormat,
                            uint8_t *paDst, uint32_t uDstWidth, uint32_t uDstHeight,
                            uint8_t *paSrc, uint32_t uSrcWidth, uint32_t uSrcHeight);
 
-#endif
+#endif /* !MAIN_INCLUDED_RecordingUtils_h */
 

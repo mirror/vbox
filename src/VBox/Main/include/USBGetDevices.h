@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___USBGetDevices_h
-#define ___USBGetDevices_h
+#ifndef MAIN_INCLUDED_USBGetDevices_h
+#define MAIN_INCLUDED_USBGetDevices_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -100,5 +100,5 @@ extern PUSBDEVICE USBProxyLinuxGetDevices(const char *pcszDevicesRoot, bool fUse
 
 RT_C_DECLS_END
 
-#endif /* !___USBGetDevices_h */
+#endif /* !MAIN_INCLUDED_USBGetDevices_h */
 

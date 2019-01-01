@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ____H_GUESTPROCESSIMPL
-#define ____H_GUESTPROCESSIMPL
+#ifndef MAIN_INCLUDED_GuestProcessImpl_h
+#define MAIN_INCLUDED_GuestProcessImpl_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -276,5 +276,5 @@ protected:
     GuestProcessStream          mStdErr;
 };
 
-#endif /* !____H_GUESTPROCESSIMPL */
+#endif /* !MAIN_INCLUDED_GuestProcessImpl_h */
 

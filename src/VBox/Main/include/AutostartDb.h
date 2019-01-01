@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___autostart_h
-#define ___autostart_h
+#ifndef MAIN_INCLUDED_AutostartDb_h
+#define MAIN_INCLUDED_AutostartDb_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -95,5 +95,5 @@ class AutostartDb
 #endif
 };
 
-#endif  /* !___autostart_h */
+#endif /* !MAIN_INCLUDED_AutostartDb_h */
 

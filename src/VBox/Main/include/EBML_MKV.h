@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ____H_EBMLMKV
-#define ____H_EBMLMKV
+#ifndef MAIN_INCLUDED_EBML_MKV_h
+#define MAIN_INCLUDED_EBML_MKV_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -92,5 +92,5 @@ enum MkvElem
     MkvElem_CueClusterPosition      = 0xF1
 };
 
-#endif
+#endif /* !MAIN_INCLUDED_EBML_MKV_h */
 

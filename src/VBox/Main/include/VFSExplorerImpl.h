@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ____H_VFSEXPLORERIMPL
-#define ____H_VFSEXPLORERIMPL
+#ifndef MAIN_INCLUDED_VFSExplorerImpl_h
+#define MAIN_INCLUDED_VFSExplorerImpl_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -84,5 +84,5 @@ private:
 
 };
 
-#endif /* !____H_VFSEXPLORERIMPL */
+#endif /* !MAIN_INCLUDED_VFSExplorerImpl_h */
 

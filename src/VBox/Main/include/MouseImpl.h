@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ____H_MOUSEIMPL
-#define ____H_MOUSEIMPL
+#ifndef MAIN_INCLUDED_MouseImpl_h
+#define MAIN_INCLUDED_MouseImpl_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -155,5 +155,5 @@ private:
                                uint32_t u32ScanTime);
 };
 
-#endif // !____H_MOUSEIMPL
+#endif /* !MAIN_INCLUDED_MouseImpl_h */
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */

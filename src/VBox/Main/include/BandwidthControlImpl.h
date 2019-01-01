@@ -16,8 +16,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ____H_BANDWIDTHCONTROLIMPL
-#define ____H_BANDWIDTHCONTROLIMPL
+#ifndef MAIN_INCLUDED_BandwidthControlImpl_h
+#define MAIN_INCLUDED_BandwidthControlImpl_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -97,5 +97,5 @@ private:
     Data *m;
 };
 
-#endif // ____H_BANDWIDTHCONTROLIMPL
+#endif /* !MAIN_INCLUDED_BandwidthControlImpl_h */
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */

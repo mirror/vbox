@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ____H_VIRTUALBOXCLIENTIMPL
-#define ____H_VIRTUALBOXCLIENTIMPL
+#ifndef MAIN_INCLUDED_VirtualBoxClientImpl_h
+#define MAIN_INCLUDED_VirtualBoxClientImpl_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -111,5 +111,5 @@ public:
     static LONG s_cUnnecessaryAtlModuleLocks;
 };
 
-#endif
+#endif /* !MAIN_INCLUDED_VirtualBoxClientImpl_h */
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */

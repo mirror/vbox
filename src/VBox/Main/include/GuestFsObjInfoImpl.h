@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ____H_GUESTFSOBJINFOIMPL
-#define ____H_GUESTFSOBJINFOIMPL
+#ifndef MAIN_INCLUDED_GuestFsObjInfoImpl_h
+#define MAIN_INCLUDED_GuestFsObjInfoImpl_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -71,5 +71,5 @@ private:
     GuestFsObjData mData;
 };
 
-#endif /* !____H_GUESTFSOBJINFOIMPL */
+#endif /* !MAIN_INCLUDED_GuestFsObjInfoImpl_h */
 

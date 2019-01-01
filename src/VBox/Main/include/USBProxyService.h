@@ -15,9 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-
-#ifndef ____H_USBPROXYSERVICE
-#define ____H_USBPROXYSERVICE
+#ifndef MAIN_INCLUDED_USBProxyService_h
+#define MAIN_INCLUDED_USBProxyService_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -132,5 +131,5 @@ private:
     int                 mLastError;
 };
 
-#endif /* !____H_USBPROXYSERVICE */
+#endif /* !MAIN_INCLUDED_USBProxyService_h */
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */

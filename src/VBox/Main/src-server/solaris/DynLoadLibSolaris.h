@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ____H_DYN_LOAD_LIB_SOLARIS
-#define ____H_DYN_LOAD_LIB_SOLARIS
+#ifndef MAIN_INCLUDED_SRC_src_server_solaris_DynLoadLibSolaris_h
+#define MAIN_INCLUDED_SRC_src_server_solaris_DynLoadLibSolaris_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -36,5 +36,5 @@ extern void (*g_pfnLibDlpiClose)(dlpi_handle_t);
 
 extern bool VBoxSolarisLibDlpiFound(void);
 
-#endif /*  ____H_DYN_LOAD_LIB_SOLARIS */
+#endif /* !MAIN_INCLUDED_SRC_src_server_solaris_DynLoadLibSolaris_h */
 

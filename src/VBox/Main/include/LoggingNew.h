@@ -15,16 +15,16 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ____H_LOGGINGNEW
-#define ____H_LOGGINGNEW
+#ifndef MAIN_INCLUDED_LoggingNew_h
+#define MAIN_INCLUDED_LoggingNew_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
 
-#ifdef ____H_LOGGING
+#ifdef MAIN_INCLUDED_Logging_h
 # error "You must include LoggingNew.h as the first include!"
 #endif
-#define ____H_LOGGING /* Prevent Logging.h from being included. */
+#define MAIN_INCLUDED_Logging_h /* Prevent Logging.h from being included. */
 
 #ifndef LOG_GROUP
 # error "You must define LOG_GROUP immediately before including LoggingNew.h!"
@@ -36,6 +36,6 @@
 
 #include <VBox/log.h>
 
-#endif // !____H_LOGGINGNEW
+#endif /* !MAIN_INCLUDED_LoggingNew_h */
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */
 

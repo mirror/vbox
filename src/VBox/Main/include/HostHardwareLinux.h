@@ -18,8 +18,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ____H_HOSTHARDWARELINUX
-#define ____H_HOSTHARDWARELINUX
+#ifndef MAIN_INCLUDED_HostHardwareLinux_h
+#define MAIN_INCLUDED_HostHardwareLinux_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -174,5 +174,5 @@ public:
     }
 };
 
-#endif /* ____H_HOSTHARDWARELINUX */
+#endif /* !MAIN_INCLUDED_HostHardwareLinux_h */
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */

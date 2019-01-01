@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ____H_LOGGING
-#define ____H_LOGGING
+#ifndef MAIN_INCLUDED_Logging_h
+#define MAIN_INCLUDED_Logging_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -59,5 +59,5 @@
 
 #include <VBox/log.h>
 
-#endif // !____H_LOGGING
+#endif /* !MAIN_INCLUDED_Logging_h */
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */

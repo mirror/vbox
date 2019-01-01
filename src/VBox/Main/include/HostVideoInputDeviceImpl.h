@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ____H_HOSTVIDEOINPUTDEVICEIMPL
-#define ____H_HOSTVIDEOINPUTDEVICEIMPL
+#ifndef MAIN_INCLUDED_HostVideoInputDeviceImpl_h
+#define MAIN_INCLUDED_HostVideoInputDeviceImpl_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -67,6 +67,6 @@ private:
     Data m;
 };
 
-#endif
+#endif /* !MAIN_INCLUDED_HostVideoInputDeviceImpl_h */
 
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */

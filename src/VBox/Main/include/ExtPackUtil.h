@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ____H_EXTPACKUTIL
-#define ____H_EXTPACKUTIL
+#ifndef MAIN_INCLUDED_ExtPackUtil_h
+#define MAIN_INCLUDED_ExtPackUtil_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -142,5 +142,5 @@ int                 VBoxExtPackValidateTarball(RTFILE hTarballFile, const char *
                                                PRTMANIFEST phValidManifest, PRTVFSFILE phXmlFile, RTCString *pStrDigest);
 #endif /* __cplusplus */
 
-#endif
+#endif /* !MAIN_INCLUDED_ExtPackUtil_h */
 

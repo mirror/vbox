@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___USBIdDatabase_h
-#define ___USBIdDatabase_h
+#ifndef MAIN_INCLUDED_USBIdDatabase_h
+#define MAIN_INCLUDED_USBIdDatabase_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -212,5 +212,5 @@ public:
 };
 
 
-#endif
+#endif /* !MAIN_INCLUDED_USBIdDatabase_h */
 

@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ____H_VIRTUALBOXBASEIMPL
-#define ____H_VIRTUALBOXBASEIMPL
+#ifndef MAIN_INCLUDED_VirtualBoxBase_h
+#define MAIN_INCLUDED_VirtualBoxBase_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -1117,5 +1117,5 @@ protected:
     D *mBackupData;
 };
 
-#endif // !____H_VIRTUALBOXBASEIMPL
+#endif /* !MAIN_INCLUDED_VirtualBoxBase_h */
 

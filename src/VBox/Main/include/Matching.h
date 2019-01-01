@@ -16,8 +16,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ____H_MATCHING
-#define ____H_MATCHING
+#ifndef MAIN_INCLUDED_Matching_h
+#define MAIN_INCLUDED_Matching_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -526,5 +526,5 @@ private:
 
 } /* namespace matching */
 
-#endif // !____H_MATCHING
+#endif /* !MAIN_INCLUDED_Matching_h */
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */

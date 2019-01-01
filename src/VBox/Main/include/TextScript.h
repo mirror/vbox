@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ____H_TEXTSCRIPT
-#define ____H_TEXTSCRIPT
+#ifndef MAIN_INCLUDED_TextScript_h
+#define MAIN_INCLUDED_TextScript_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -227,5 +227,5 @@ public:
 };
 
 
-#endif // !____H_TEXTSCRIPT
+#endif /* !MAIN_INCLUDED_TextScript_h */
 

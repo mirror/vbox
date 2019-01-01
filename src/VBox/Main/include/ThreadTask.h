@@ -14,8 +14,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ____H_THREADTASK
-#define ____H_THREADTASK
+#ifndef MAIN_INCLUDED_ThreadTask_h
+#define MAIN_INCLUDED_ThreadTask_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -64,5 +64,5 @@ private:
     virtual void handler() = 0;
 };
 
-#endif
+#endif /* !MAIN_INCLUDED_ThreadTask_h */
 

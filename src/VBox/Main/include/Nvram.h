@@ -16,8 +16,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ____H_NVRAM
-#define ____H_NVRAM
+#ifndef MAIN_INCLUDED_Nvram_h
+#define MAIN_INCLUDED_Nvram_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -50,5 +50,5 @@ private:
     struct NVRAM *mpDrv;
 };
 
-#endif /* !____H_NVRAM */
+#endif /* !MAIN_INCLUDED_Nvram_h */
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */

@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ____H_AUTHLIBRARY
-#define ____H_AUTHLIBRARY
+#ifndef MAIN_INCLUDED_AuthLibrary_h
+#define MAIN_INCLUDED_AuthLibrary_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -41,4 +41,4 @@ AuthResult AuthLibAuthenticate(const AUTHLIBRARYCONTEXT *pAuthLibCtx,
                                uint32_t u32ClientId);
 void AuthLibDisconnect(const AUTHLIBRARYCONTEXT *pAuthLibCtx, PCRTUUID pUuid, uint32_t u32ClientId);
 
-#endif  /* !____H_AUTHLIBRARY */
+#endif /* !MAIN_INCLUDED_AuthLibrary_h */

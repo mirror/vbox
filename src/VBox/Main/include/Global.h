@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ____H_GLOBAL
-#define ____H_GLOBAL
+#ifndef MAIN_INCLUDED_Global_h
+#define MAIN_INCLUDED_Global_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -192,5 +192,5 @@ public:
     static HRESULT vboxStatusCodeToCOM(int aVBoxStatus);
 };
 
-#endif /* !____H_GLOBAL */
+#endif /* !MAIN_INCLUDED_Global_h */
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */

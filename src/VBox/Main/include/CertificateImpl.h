@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ____H_CERTIFICATEIMPL
-#define ____H_CERTIFICATEIMPL
+#ifndef MAIN_INCLUDED_CertificateImpl_h
+#define MAIN_INCLUDED_CertificateImpl_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -98,5 +98,5 @@ private:
     Data *m;
 };
 
-#endif // !____H_CERTIFICATEIMPL
+#endif /* !MAIN_INCLUDED_CertificateImpl_h */
 

@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ____H_USBWEBCAMINTERFACE
-#define ____H_USBWEBCAMINTERFACE
+#ifndef MAIN_INCLUDED_UsbWebcamInterface_h
+#define MAIN_INCLUDED_UsbWebcamInterface_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -65,5 +65,5 @@ class EmWebcam
         uint64_t volatile mu64DeviceIdSrc;
 };
 
-#endif /* !____H_USBWEBCAMINTERFACE */
+#endif /* !MAIN_INCLUDED_UsbWebcamInterface_h */
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */

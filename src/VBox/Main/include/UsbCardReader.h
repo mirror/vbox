@@ -16,8 +16,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ____H_USBCARDREADER
-#define ____H_USBCARDREADER
+#ifndef MAIN_INCLUDED_UsbCardReader_h
+#define MAIN_INCLUDED_UsbCardReader_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -71,5 +71,5 @@ class UsbCardReader
         UCRREMOTE *m_pRemote;
 };
 
-#endif /* !____H_USBCARDREADER */
+#endif /* !MAIN_INCLUDED_UsbCardReader_h */
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */

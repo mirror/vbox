@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ____H_AUDIODRIVER
-#define ____H_AUDIODRIVER
+#ifndef MAIN_INCLUDED_AudioDriver_h
+#define MAIN_INCLUDED_AudioDriver_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -111,5 +111,5 @@ protected:
     bool                 mfAttached;
 };
 
-#endif /* !____H_AUDIODRIVER */
+#endif /* !MAIN_INCLUDED_AudioDriver_h */
 

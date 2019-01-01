@@ -17,8 +17,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ____H_HOSTNETWORKINTERFACEIMPL
-#define ____H_HOSTNETWORKINTERFACEIMPL
+#ifndef MAIN_INCLUDED_HostNetworkInterfaceImpl_h
+#define MAIN_INCLUDED_HostNetworkInterfaceImpl_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -118,5 +118,5 @@ private:
 
 typedef std::list<ComObjPtr<HostNetworkInterface> > HostNetworkInterfaceList;
 
-#endif // ____H_H_HOSTNETWORKINTERFACEIMPL
+#endif /* !MAIN_INCLUDED_HostNetworkInterfaceImpl_h */
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */

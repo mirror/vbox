@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ____H_EVENTIMPL
-#define ____H_EVENTIMPL
+#ifndef MAIN_INCLUDED_EventImpl_h
+#define MAIN_INCLUDED_EventImpl_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -179,4 +179,4 @@ private:
 };
 
 
-#endif // ____H_EVENTIMPL
+#endif /* !MAIN_INCLUDED_EventImpl_h */

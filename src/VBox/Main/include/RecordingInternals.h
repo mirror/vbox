@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ____H_RECORDINGINTERNALS
-#define ____H_RECORDINGINTERNALS
+#ifndef MAIN_INCLUDED_RecordingInternals_h
+#define MAIN_INCLUDED_RecordingInternals_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -184,5 +184,5 @@ struct RecordingBlock
 /** List for keeping video recording (data) blocks. */
 typedef std::list<RecordingBlock *> RecordingBlockList;
 
-#endif
+#endif /* !MAIN_INCLUDED_RecordingInternals_h */
 

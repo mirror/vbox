@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ____H_HASHEDPW
-#define ____H_HASHEDPW
+#ifndef MAIN_INCLUDED_HashedPw_h
+#define MAIN_INCLUDED_HashedPw_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -26,5 +26,5 @@
 bool    VBoxIsPasswordHashed(RTCString const *a_pstrPassword);
 void    VBoxHashPassword(RTCString *a_pstrPassword);
 
-#endif
+#endif /* !MAIN_INCLUDED_HashedPw_h */
 

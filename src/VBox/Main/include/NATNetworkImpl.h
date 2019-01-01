@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ____H_NATNETWORKIMPL
-#define ____H_NATNETWORKIMPL
+#ifndef MAIN_INCLUDED_NATNetworkImpl_h
+#define MAIN_INCLUDED_NATNetworkImpl_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -128,4 +128,4 @@ private:
     Data *m;
 };
 
-#endif // !____H_H_NATNETWORKIMPL
+#endif /* !MAIN_INCLUDED_NATNetworkImpl_h */

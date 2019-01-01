@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ____H_DRVAUDIORECORDING
-#define ____H_DRVAUDIORECORDING
+#ifndef MAIN_INCLUDED_DrvAudioRec_h
+#define MAIN_INCLUDED_DrvAudioRec_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -66,5 +66,5 @@ private:
     struct settings::RecordingSettings mVideoRecCfg;
 };
 
-#endif /* !____H_DRVAUDIORECORDING */
+#endif /* !MAIN_INCLUDED_DrvAudioRec_h */
 

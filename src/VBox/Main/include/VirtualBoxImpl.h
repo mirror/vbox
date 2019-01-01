@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ____H_VIRTUALBOXIMPL
-#define ____H_VIRTUALBOXIMPL
+#ifndef MAIN_INCLUDED_VirtualBoxImpl_h
+#define MAIN_INCLUDED_VirtualBoxImpl_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -427,5 +427,5 @@ private:
 
 ////////////////////////////////////////////////////////////////////////////////
 
-#endif // !____H_VIRTUALBOXIMPL
+#endif /* !MAIN_INCLUDED_VirtualBoxImpl_h */
 

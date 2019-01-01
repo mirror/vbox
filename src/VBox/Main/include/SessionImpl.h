@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ____H_SESSIONIMPL
-#define ____H_SESSIONIMPL
+#ifndef MAIN_INCLUDED_SessionImpl_h
+#define MAIN_INCLUDED_SessionImpl_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -168,5 +168,5 @@ private:
     ClientTokenHolder *mClientTokenHolder;
 };
 
-#endif // !____H_SESSIONIMPL
+#endif /* !MAIN_INCLUDED_SessionImpl_h */
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */

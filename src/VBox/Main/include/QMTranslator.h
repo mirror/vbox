@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ____H_QMTRANSLATOR
-#define ____H_QMTRANSLATOR
+#ifndef MAIN_INCLUDED_QMTranslator_h
+#define MAIN_INCLUDED_QMTranslator_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -56,5 +56,5 @@ private:
     QMTranslator(const QMTranslator &);
 };
 
-#endif /* !____H_QMTRANSLATOR */
+#endif /* !MAIN_INCLUDED_QMTranslator_h */
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */

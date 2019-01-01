@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ____H_MACHINEIMPL
-#define ____H_MACHINEIMPL
+#ifndef MAIN_INCLUDED_MachineImpl_h
+#define MAIN_INCLUDED_MachineImpl_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -1589,5 +1589,5 @@ inline const Guid &Machine::i_getSnapshotId() const
 }
 
 
-#endif // ____H_MACHINEIMPL
+#endif /* !MAIN_INCLUDED_MachineImpl_h */
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */
