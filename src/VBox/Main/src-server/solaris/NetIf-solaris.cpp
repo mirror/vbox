@@ -20,7 +20,7 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
-#define LOG_GROUP LOG_GROUP_MAIN
+#define LOG_GROUP LOG_GROUP_MAIN_HOST
 
 #include <iprt/errcore.h>
 #include <iprt/ctype.h>
@@ -28,7 +28,7 @@
 #include <iprt/path.h>
 #include <list>
 
-#include "Logging.h"
+#include "LoggingNew.h"
 #include "HostNetworkInterfaceImpl.h"
 #include "netif.h"
 

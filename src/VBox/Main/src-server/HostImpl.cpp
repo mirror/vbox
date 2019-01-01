@@ -15,6 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#define LOG_GROUP LOG_GROUP_MAIN_HOST
+
 #define __STDC_LIMIT_MACROS
 #define __STDC_CONSTANT_MACROS
 
@@ -41,7 +43,7 @@
 #include "HostVideoInputDeviceImpl.h"
 #include "MachineImpl.h"
 #include "AutoCaller.h"
-#include "Logging.h"
+#include "LoggingNew.h"
 #include "Performance.h"
 
 #include "MediumImpl.h"

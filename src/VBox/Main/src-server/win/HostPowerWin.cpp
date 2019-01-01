@@ -1,6 +1,5 @@
 /* $Id$ */
 /** @file
- *
  * VirtualBox interface to host's power notification service
  */
 
@@ -20,6 +19,7 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
+#define LOG_GROUP LOG_GROUP_MAIN_HOST
 #include <iprt/win/windows.h>
 /* Some SDK versions lack the extern "C" and thus cause linking failures.
  * This workaround isn't pretty, but there are not many options. */
@@ -30,7 +30,7 @@ extern "C" {
 #include <VBox/com/ptr.h>
 #include <iprt/errcore.h>
 #include "HostPower.h"
-#include "Logging.h"
+#include "LoggingNew.h"
 
 
 /*********************************************************************************************************************************

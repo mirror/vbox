@@ -15,6 +15,7 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#define LOG_GROUP LOG_GROUP_MAIN_VIRTUALBOX
 #include <iprt/asm.h>
 #include <iprt/base64.h>
 #include <iprt/buildconfig.h>
@@ -77,11 +78,10 @@
 #endif
 #include "AutostartDb.h"
 #include "ClientWatcher.h"
-
 #include "AutoCaller.h"
-#include "Logging.h"
-
-# include "CloudProviderManagerImpl.h"
+#include "LoggingNew.h"
+#include "CloudProviderManagerImpl.h"
+#include "ThreadTask.h"
 
 #include <QMTranslator.h>
 
@@ -90,7 +90,6 @@
 # include "tchar.h"
 #endif
 
-#include "ThreadTask.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 //

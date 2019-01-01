@@ -15,6 +15,7 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#define LOG_GROUP LOG_GROUP_MAIN_VBOXSVC
 #include <ipcIService.h>
 #include <ipcCID.h>
 
@@ -27,7 +28,7 @@
 
 #include "server.h"
 
-#include "Logging.h"
+#include "LoggingNew.h"
 
 #include <VBox/param.h>
 

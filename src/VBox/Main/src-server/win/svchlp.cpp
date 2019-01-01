@@ -15,15 +15,15 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#define LOG_GROUP LOG_GROUP_MAIN
 #include "svchlp.h"
 
 //#include "HostImpl.h"
-#include "Logging.h"
+#include "LoggingNew.h"
 
 #include <iprt/errcore.h>
 
-int netIfNetworkInterfaceHelperServer (SVCHlpClient *aClient,
-                                        SVCHlpMsg::Code aMsgCode);
+int netIfNetworkInterfaceHelperServer(SVCHlpClient *aClient, SVCHlpMsg::Code aMsgCode);
 
 using namespace com;
 

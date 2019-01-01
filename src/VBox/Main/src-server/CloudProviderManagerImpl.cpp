@@ -16,13 +16,14 @@
  */
 
 
+#define LOG_GROUP LOG_GROUP_MAIN_CLOUDPROVIDERMANAGER
 #include <VBox/com/array.h>
 
 #include "VirtualBoxImpl.h"
 #include "CloudProviderManagerImpl.h"
 #include "ExtPackManagerImpl.h"
 #include "AutoCaller.h"
-#include "Logging.h"
+#include "LoggingNew.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////

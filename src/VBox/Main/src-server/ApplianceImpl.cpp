@@ -15,6 +15,11 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+
+/*********************************************************************************************************************************
+*   Header Files                                                                                                                 *
+*********************************************************************************************************************************/
+#define LOG_GROUP LOG_GROUP_MAIN_APPLIANCE
 #include <iprt/path.h>
 #include <iprt/cpp/utils.h>
 #include <VBox/com/array.h>
@@ -29,7 +34,7 @@
 #include "MachineImpl.h"
 #include "SystemPropertiesImpl.h"
 #include "AutoCaller.h"
-#include "Logging.h"
+#include "LoggingNew.h"
 #include "CertificateImpl.h"
 
 #include "ApplianceImplPrivate.h"

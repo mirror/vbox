@@ -36,6 +36,15 @@
 
 #include <VBox/log.h>
 
+
+#ifndef VBOXSVC_LOG_DEFAULT
+# define VBOXSVC_LOG_DEFAULT "all"
+#endif
+
+#ifndef VBOXSDS_LOG_DEFAULT
+# define VBOXSDS_LOG_DEFAULT "all"
+#endif
+
 #endif /* !MAIN_INCLUDED_LoggingNew_h */
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */
 

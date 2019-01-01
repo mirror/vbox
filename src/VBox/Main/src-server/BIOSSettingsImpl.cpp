@@ -1,6 +1,5 @@
 /* $Id$ */
 /** @file
- *
  * VirtualBox COM class implementation - Machine BIOS settings.
  */
 
@@ -16,6 +15,7 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#define LOG_GROUP LOG_GROUP_MAIN_BIOSSETTINGS
 #include "BIOSSettingsImpl.h"
 #include "MachineImpl.h"
 #include "GuestOSTypeImpl.h"
@@ -25,7 +25,8 @@
 
 #include "AutoStateDep.h"
 #include "AutoCaller.h"
-#include "Logging.h"
+#include "LoggingNew.h"
+
 
 ////////////////////////////////////////////////////////////////////////////////
 //

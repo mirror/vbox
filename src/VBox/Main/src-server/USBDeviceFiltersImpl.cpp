@@ -15,6 +15,7 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#define LOG_GROUP LOG_GROUP_MAIN_USBDEVICEFILTERS
 #include "USBDeviceFiltersImpl.h"
 
 #include "Global.h"
@@ -39,7 +40,7 @@
 
 #include "AutoStateDep.h"
 #include "AutoCaller.h"
-#include "Logging.h"
+#include "LoggingNew.h"
 
 // defines
 /////////////////////////////////////////////////////////////////////////////

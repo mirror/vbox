@@ -19,10 +19,11 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
+#define LOG_GROUP LOG_GROUP_MAIN_USBPROXYBACKEND
 #define INCL_BASE
 #define INCL_ERRORS
 #include "USBProxyBackend.h"
-#include "Logging.h"
+#include "LoggingNew.h"
 
 #include <VBox/usb.h>
 #include <iprt/errcore.h>

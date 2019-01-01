@@ -1,5 +1,4 @@
 /* $Id$ */
-
 /** @file
  * MS COM / XPCOM Abstraction Layer - Initialization and Termination.
  */
@@ -16,6 +15,7 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#define LOG_GROUP LOG_GROUP_MAIN
 #if !defined(VBOX_WITH_XPCOM)
 
 # include <iprt/nt/nt-and-windows.h>
@@ -42,7 +42,7 @@
 #include "VBox/com/NativeEventQueue.h"
 #include "VBox/com/AutoLock.h"
 
-#include "../include/Logging.h"
+#include "../include/LoggingNew.h"
 
 #include <iprt/asm.h>
 #include <iprt/env.h>

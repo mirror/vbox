@@ -15,6 +15,7 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#define LOG_GROUP LOG_GROUP_MAIN_CERTIFICATE
 #include <iprt/err.h>
 #include <iprt/path.h>
 #include <iprt/cpp/utils.h>
@@ -25,7 +26,7 @@
 #include "CertificateImpl.h"
 #include "AutoCaller.h"
 #include "Global.h"
-#include "Logging.h"
+#include "LoggingNew.h"
 
 using namespace std;
 

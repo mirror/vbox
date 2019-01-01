@@ -14,6 +14,8 @@
  * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
+
+#define LOG_GROUP LOG_GROUP_MAIN_MACHINE
 #include <iprt/fs.h>
 #include <iprt/dir.h>
 #include <iprt/file.h>
@@ -25,7 +27,7 @@
 #include "MachineImplMoveVM.h"
 #include "MediumFormatImpl.h"
 #include "VirtualBoxImpl.h"
-#include "Logging.h"
+#include "LoggingNew.h"
 
 /** @todo r=klaus this file is abusing the release log by putting pretty much
  * everything there. Should be adjusted to use debug logging where appropriate

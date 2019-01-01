@@ -1,6 +1,5 @@
 /* $Id$ */
 /** @file
- *
  * MediumFormat COM class implementation
  */
 
@@ -16,9 +15,10 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#define LOG_GROUP LOG_GROUP_MAIN_MEDIUMFORMAT
 #include "MediumFormatImpl.h"
 #include "AutoCaller.h"
-#include "Logging.h"
+#include "LoggingNew.h"
 
 #include <VBox/vd.h>
 

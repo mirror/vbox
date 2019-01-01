@@ -1,7 +1,5 @@
 /* $Id$ */
-
 /** @file
- *
  * PCI attachment information implmentation.
  */
 
@@ -17,10 +15,11 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#define LOG_GROUP LOG_GROUP_MAIN_PCIDEVICEATTACHMENT
 #include "PCIDeviceAttachmentImpl.h"
 #include "AutoCaller.h"
 #include "Global.h"
-#include "Logging.h"
+#include "LoggingNew.h"
 
 #include <VBox/settings.h>
 

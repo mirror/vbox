@@ -1,7 +1,5 @@
 /* $Id$ */
-
 /** @file
- *
  * VBox Linux-specific Performance Classes implementation.
  */
 
@@ -17,6 +15,7 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#define LOG_GROUP LOG_GROUP_MAIN_PERFORMANCECOLLECTOR
 #include <stdio.h>
 #include <unistd.h>
 #include <sys/statvfs.h>
@@ -36,7 +35,7 @@
 #include <map>
 #include <vector>
 
-#include "Logging.h"
+#include "LoggingNew.h"
 #include "Performance.h"
 
 #define VBOXVOLINFO_NAME "VBoxVolInfo"

@@ -19,11 +19,12 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
+#define LOG_GROUP LOG_GROUP_MAIN_VIRTUALBOXSDS
 #include <VBox/com/VirtualBox.h>
 #include "VirtualBoxSDSImpl.h"
 
 #include "AutoCaller.h"
-#include "Logging.h"
+#include "LoggingNew.h"
 
 #include <iprt/errcore.h>
 #include <iprt/asm.h>

@@ -24,7 +24,6 @@
 #include "VirtualBoxBase.h"
 #include "USBDeviceFilterImpl.h"
 #include <VBox/usb.h>
-#include "Logging.h"
 #include "HostUSBDeviceWrap.h"
 
 class SessionMachine;

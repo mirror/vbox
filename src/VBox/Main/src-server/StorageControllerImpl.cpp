@@ -1,7 +1,5 @@
 /* $Id$ */
-
 /** @file
- *
  * Implementation of IStorageController.
  */
 
@@ -17,6 +15,7 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#define LOG_GROUP LOG_GROUP_MAIN_STORAGECONTROLLER
 #include "StorageControllerImpl.h"
 #include "MachineImpl.h"
 #include "VirtualBoxImpl.h"
@@ -32,7 +31,7 @@
 
 #include "AutoStateDep.h"
 #include "AutoCaller.h"
-#include "Logging.h"
+#include "LoggingNew.h"
 
 // defines
 /////////////////////////////////////////////////////////////////////////////

@@ -1,6 +1,5 @@
 /* $Id$ */
 /** @file
- *
  * VirtualBox COM class implementation
  */
 
@@ -16,6 +15,7 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#define LOG_GROUP LOG_GROUP_MAIN_AUDIOADAPTER
 #include "AudioAdapterImpl.h"
 #include "MachineImpl.h"
 
@@ -25,7 +25,7 @@
 
 #include "AutoStateDep.h"
 #include "AutoCaller.h"
-#include "Logging.h"
+#include "LoggingNew.h"
 
 
 // constructor / destructor

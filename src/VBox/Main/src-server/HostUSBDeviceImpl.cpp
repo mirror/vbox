@@ -16,6 +16,7 @@
  */
 
 
+#define LOG_GROUP LOG_GROUP_MAIN_HOSTUSBDEVICE
 #include <iprt/types.h> /* for UINT64_C */
 
 #include "HostUSBDeviceImpl.h"
@@ -24,9 +25,9 @@
 #include "VirtualBoxErrorInfoImpl.h"
 #include "USBProxyBackend.h"
 #include "USBIdDatabase.h"
+#include "LoggingNew.h"
 
 #include "AutoCaller.h"
-#include "Logging.h"
 
 #include <VBox/err.h>
 #include <iprt/cpp/utils.h>

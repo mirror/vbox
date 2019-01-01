@@ -1,7 +1,5 @@
 /* $Id$ */
-
 /** @file
- *
  * VBox Windows-specific Performance Classes implementation.
  */
 
@@ -17,12 +15,13 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#define LOG_GROUP LOG_GROUP_MAIN_PERFORMANCECOLLECTOR
 #ifndef _WIN32_WINNT
-#define _WIN32_WINNT 0x0500
+# define _WIN32_WINNT 0x0500
 #else /* !_WIN32_WINNT */
-#if (_WIN32_WINNT < 0x0500)
-#error Win XP or later required!
-#endif /* _WIN32_WINNT < 0x0500 */
+# if (_WIN32_WINNT < 0x0500)
+#  error Win XP or later required!
+# endif /* _WIN32_WINNT < 0x0500 */
 #endif /* !_WIN32_WINNT */
 
 #include <iprt/win/windows.h>
@@ -40,7 +39,7 @@ extern "C" {
 
 #include <map>
 
-#include "Logging.h"
+#include "LoggingNew.h"
 #include "Performance.h"
 
 #ifndef NT_ERROR

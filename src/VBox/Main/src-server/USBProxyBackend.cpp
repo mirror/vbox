@@ -15,6 +15,7 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#define LOG_GROUP LOG_GROUP_MAIN_USBPROXYBACKEND
 #include "USBProxyBackend.h"
 #include "USBProxyService.h"
 #include "HostUSBDeviceImpl.h"
@@ -23,7 +24,7 @@
 #include "VirtualBoxImpl.h"
 
 #include "AutoCaller.h"
-#include "Logging.h"
+#include "LoggingNew.h"
 
 #include <VBox/com/array.h>
 #include <iprt/errcore.h>

@@ -15,10 +15,11 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#define LOG_GROUP LOG_GROUP_MAIN_NETWORKADAPTER
 #include "NetworkAdapterImpl.h"
 #include "NATEngineImpl.h"
 #include "AutoCaller.h"
-#include "Logging.h"
+#include "LoggingNew.h"
 #include "MachineImpl.h"
 #include "GuestOSTypeImpl.h"
 #include "HostImpl.h"

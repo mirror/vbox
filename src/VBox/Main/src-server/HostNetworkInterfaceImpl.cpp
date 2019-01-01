@@ -1,7 +1,5 @@
 /* $Id$ */
-
 /** @file
- *
  * VirtualBox COM class implementation
  */
 
@@ -16,14 +14,16 @@
  * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
+
+#define LOG_GROUP LOG_GROUP_MAIN_HOSTNETWORKINTERFACE
 #include "HostNetworkInterfaceImpl.h"
 #include "AutoCaller.h"
-#include "Logging.h"
 #include "netif.h"
 #ifdef VBOX_WITH_RESOURCE_USAGE_API
 # include "Performance.h"
 # include "PerformanceImpl.h"
 #endif
+#include "LoggingNew.h"
 
 #include <iprt/cpp/utils.h>
 

@@ -15,12 +15,11 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#include <string>
+#define LOG_GROUP LOG_GROUP_MAIN_NATNETWORK
 #include "NetworkServiceRunner.h"
 #include "DHCPServerImpl.h"
 #include "NATNetworkImpl.h"
 #include "AutoCaller.h"
-#include "Logging.h"
 
 #include <iprt/asm.h>
 #include <iprt/cpp/utils.h>
@@ -31,6 +30,7 @@
 #include <VBox/settings.h>
 
 #include "EventImpl.h"
+#include "LoggingNew.h"
 
 #include "VirtualBoxImpl.h"
 #include <algorithm>

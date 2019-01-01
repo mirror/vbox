@@ -15,11 +15,12 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#define LOG_GROUP LOG_GROUP_MAIN_SNAPSHOT
 #include <set>
 #include <map>
 
-#include "Logging.h"
 #include "SnapshotImpl.h"
+#include "LoggingNew.h"
 
 #include "MachineImpl.h"
 #include "MediumImpl.h"

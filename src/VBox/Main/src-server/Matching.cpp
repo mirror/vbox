@@ -1,5 +1,6 @@
 /* $Id$ */
 /** @file
+ * @todo r=bird: brief description, please.
  *
  * Definition of template classes that provide simple API to
  * do matching between values and value filters constructed from strings.
@@ -17,9 +18,10 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#define LOG_GROUP LOG_GROUP_MAIN
 #include "Matching.h"
 
-#include "Logging.h"
+#include "LoggingNew.h"
 
 #include <stdlib.h>
 

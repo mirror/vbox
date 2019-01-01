@@ -1,7 +1,6 @@
 /* $Id$ */
 /** @file
- *
- * VirtualBox COM class implementation: DataStream
+ * VirtualBox COM class implementation - DataStream
  */
 
 /*
@@ -20,10 +19,11 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
+#define LOG_GROUP LOG_GROUP_MAIN_DATASTREAM
 #include "DataStreamImpl.h"
 
 #include "AutoCaller.h"
-#include "Logging.h"
+#include "LoggingNew.h"
 #include <iprt/errcore.h>
 
 

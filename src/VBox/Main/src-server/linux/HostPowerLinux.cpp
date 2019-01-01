@@ -1,5 +1,5 @@
+/* $Id$ */
 /** @file
- *
  * VirtualBox interface to host's power notification service
  */
 
@@ -15,8 +15,9 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#define LOG_GROUP LOG_GROUP_MAIN_HOST
 #include "HostPower.h"
-#include "Logging.h"
+#include "LoggingNew.h"
 
 #include <iprt/asm.h>
 #include <iprt/power.h>

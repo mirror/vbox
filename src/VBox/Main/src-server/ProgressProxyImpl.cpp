@@ -15,6 +15,7 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#define LOG_GROUP LOG_GROUP_MAIN_PROGRESS
 #include <iprt/types.h>
 
 #include "ProgressProxyImpl.h"
@@ -22,11 +23,10 @@
 #include "VirtualBoxImpl.h"
 #include "VirtualBoxErrorInfoImpl.h"
 
-#include "Logging.h"
+#include "LoggingNew.h"
 
 #include <iprt/time.h>
 #include <iprt/semaphore.h>
-
 #include <iprt/errcore.h>
 
 ////////////////////////////////////////////////////////////////////////////////

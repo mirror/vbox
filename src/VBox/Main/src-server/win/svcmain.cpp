@@ -19,7 +19,8 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
-# include <iprt/win/windows.h>
+#define LOG_GROUP LOG_GROUP_MAIN_VBOXSVC
+#include <iprt/win/windows.h>
 #ifdef DEBUG_bird
 # include <RpcAsync.h>
 #endif
@@ -29,7 +30,7 @@
 #include "VBox/com/VirtualBox.h"
 
 #include "VirtualBoxImpl.h"
-#include "Logging.h"
+#include "LoggingNew.h"
 
 #include "svchlp.h"
 

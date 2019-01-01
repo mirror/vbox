@@ -78,6 +78,7 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
+#define LOG_GROUP LOG_GROUP_MAIN_VIRTUALBOXSDS
 #include <iprt/win/windows.h>
 #include <iprt/win/shlobj.h>
 
@@ -86,7 +87,7 @@
 #include "VBox/com/VirtualBox.h"
 
 #include "VirtualBoxSDSImpl.h"
-#include "Logging.h"
+#include "LoggingNew.h"
 
 #include <iprt/errcore.h>
 #include <iprt/asm.h>

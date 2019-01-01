@@ -69,6 +69,7 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#define LOG_GROUP LOG_GROUP_MAIN
 #include "VBox/com/string.h"
 #include "VBox/settings.h"
 #include <iprt/base64.h>
@@ -85,8 +86,8 @@
 // generated header
 #include "SchemaDefs.h"
 
-#include "Logging.h"
 #include "HashedPw.h"
+#include "LoggingNew.h"
 
 using namespace com;
 using namespace settings;

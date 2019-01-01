@@ -19,9 +19,10 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
+#define LOG_GROUP LOG_GROUP_MAIN_USBPROXYBACKEND
 #include "USBProxyService.h"
 #include "USBGetDevices.h"
-#include "Logging.h"
+#include "LoggingNew.h"
 
 #include <VBox/usb.h>
 #include <VBox/usblib.h>

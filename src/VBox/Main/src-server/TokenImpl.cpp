@@ -1,7 +1,6 @@
 /* $Id$ */
 /** @file
- *
- * Token COM class implementation: MachineToken and MediumLockToken
+ * Token COM class implementation - MachineToken and MediumLockToken
  */
 
 /*
@@ -16,11 +15,12 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#define LOG_GROUP LOG_GROUP_MAIN_TOKEN
 #include "TokenImpl.h"
 #include "MachineImpl.h"
 #include "MediumImpl.h"
 #include "AutoCaller.h"
-#include "Logging.h"
+#include "LoggingNew.h"
 
 // constructor / destructor
 /////////////////////////////////////////////////////////////////////////////

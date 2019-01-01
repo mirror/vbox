@@ -1,6 +1,5 @@
 /* $Id$ */
 /** @file
- *
  * VirtualBox COM class implementation: MediumIO
  */
 
@@ -20,6 +19,7 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
+#define LOG_GROUP LOG_GROUP_MAIN_MEDIUMIO
 #include "MediumIOImpl.h"
 #include "MediumImpl.h"
 #include "MediumLock.h"
@@ -29,7 +29,7 @@
 #include "VirtualBoxImpl.h"
 
 #include "AutoCaller.h"
-#include "Logging.h"
+#include "LoggingNew.h"
 #include "ThreadTask.h"
 
 #include <iprt/fsvfs.h>

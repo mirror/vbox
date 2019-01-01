@@ -1,6 +1,5 @@
 /* $Id$ */
 /** @file
- *
  * XPCOM server process helper module implementation functions
  */
 
@@ -16,6 +15,7 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#define LOG_GROUP LOG_GROUP_MAIN_VBOXSVC
 #ifdef RT_OS_OS2
 # include <prproces.h>
 #endif
@@ -45,7 +45,7 @@
 #include <VBox/com/VirtualBox.h>
 
 #include "server.h"
-#include "Logging.h"
+#include "LoggingNew.h"
 
 #include <iprt/errcore.h>
 

@@ -15,6 +15,7 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#define LOG_GROUP LOG_GROUP_MAIN_SYSTEMPROPERTIES
 #include "SystemPropertiesImpl.h"
 #include "VirtualBoxImpl.h"
 #include "MachineImpl.h"
@@ -23,7 +24,7 @@
 #endif
 #include "AutoCaller.h"
 #include "Global.h"
-#include "Logging.h"
+#include "LoggingNew.h"
 #include "AutostartDb.h"
 
 // generated header

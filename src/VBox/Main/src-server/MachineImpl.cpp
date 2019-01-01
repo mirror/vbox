@@ -15,6 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#define LOG_GROUP LOG_GROUP_MAIN_MACHINE
+
 /* Make sure all the stdint.h macros are included - must come first! */
 #ifndef __STDC_LIMIT_MACROS
 # define __STDC_LIMIT_MACROS
@@ -23,7 +25,7 @@
 # define __STDC_CONSTANT_MACROS
 #endif
 
-#include "Logging.h"
+#include "LoggingNew.h"
 #include "VirtualBoxImpl.h"
 #include "MachineImpl.h"
 #include "ClientToken.h"

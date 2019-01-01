@@ -1,7 +1,5 @@
 /* $Id$ */
-
 /** @file
- *
  * VBox Solaris-specific Performance Classes implementation.
  */
 
@@ -17,6 +15,7 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#define LOG_GROUP LOG_GROUP_MAIN_PERFORMANCECOLLECTOR
 #undef _FILE_OFFSET_BITS
 #include <procfs.h>
 #include <stdio.h>
@@ -37,7 +36,7 @@
 #include <iprt/path.h>
 #include <iprt/system.h>
 
-#include "Logging.h"
+#include "LoggingNew.h"
 #include "Performance.h"
 
 #include <dlfcn.h>

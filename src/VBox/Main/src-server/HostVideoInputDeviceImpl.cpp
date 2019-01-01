@@ -15,9 +15,9 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-
+#define LOG_GROUP LOG_GROUP_MAIN_HOSTVIDEOINPUTDEVICE
 #include "HostVideoInputDeviceImpl.h"
-#include "Logging.h"
+#include "LoggingNew.h"
 #include "VirtualBoxImpl.h"
 #ifdef VBOX_WITH_EXTPACK
 # include "ExtPackManagerImpl.h"

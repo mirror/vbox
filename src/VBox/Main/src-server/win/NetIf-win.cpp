@@ -20,7 +20,7 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
-#define LOG_GROUP LOG_GROUP_MAIN
+#define LOG_GROUP LOG_GROUP_MAIN_HOST
 
 #define NETIF_WITHOUT_NETCFG
 
@@ -41,7 +41,7 @@
 #include <iprt/win/iphlpapi.h>
 #include <iprt/win/ntddndis.h>
 
-#include "Logging.h"
+#include "LoggingNew.h"
 #include "HostNetworkInterfaceImpl.h"
 #include "ProgressImpl.h"
 #include "VirtualBoxImpl.h"

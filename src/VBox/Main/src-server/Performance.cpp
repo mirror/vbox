@@ -15,17 +15,18 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-/*
+/**
  * @todo list:
  *
  * 1) Detection of erroneous metric names
  */
 
+#define LOG_GROUP LOG_GROUP_MAIN_PERFORMANCECOLLECTOR
 #ifndef VBOX_COLLECTOR_TEST_CASE
-#include "VirtualBoxImpl.h"
-#include "MachineImpl.h"
-#include "MediumImpl.h"
-#include "AutoCaller.h"
+# include "VirtualBoxImpl.h"
+# include "MachineImpl.h"
+# include "MediumImpl.h"
+# include "AutoCaller.h"
 #endif
 #include "Performance.h"
 #include "HostNetworkInterfaceImpl.h"
