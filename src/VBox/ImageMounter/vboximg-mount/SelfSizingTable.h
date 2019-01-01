@@ -65,8 +65,8 @@
  *
  */
 
-#ifndef ___SELFSIZINGTABLE_H
-#define ___SELFSIZINGTABLE_H
+#ifndef VBOX_INCLUDED_SRC_vboximg_mount_SelfSizingTable_h
+#define VBOX_INCLUDED_SRC_vboximg_mount_SelfSizingTable_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif

@@ -16,8 +16,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ____H_VBOXIMGMEDIA
-#define ____H_VBOXIMGMEDIA
+#ifndef VBOX_INCLUDED_SRC_vboximg_mount_vboximgMedia_h
+#define VBOX_INCLUDED_SRC_vboximg_mount_vboximgMedia_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif

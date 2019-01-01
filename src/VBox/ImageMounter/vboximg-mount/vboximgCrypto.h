@@ -16,8 +16,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ____H_VBOXIMGCRYPTO
-#define ____H_VBOXIMGCRYPTO
+#ifndef VBOX_INCLUDED_SRC_vboximg_mount_vboximgCrypto_h
+#define VBOX_INCLUDED_SRC_vboximg_mount_vboximgCrypto_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
