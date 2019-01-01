@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __VBOXHOSTCHANNEL__H
-#define __VBOXHOSTCHANNEL__H
+#ifndef VBOX_INCLUDED_SRC_HostChannel_HostChannel_h
+#define VBOX_INCLUDED_SRC_HostChannel_HostChannel_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -134,4 +134,4 @@ void vboxHostChannelReportAsync(VBOXHOSTCHCLIENT *pClient,
                                 const void *pvEvent,
                                 uint32_t cbEvent);
 
-#endif /* __VBOXHOSTCHANNEL__H */
+#endif /* !VBOX_INCLUDED_SRC_HostChannel_HostChannel_h */

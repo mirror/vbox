@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___VBOXCLIPBOARD_H
-#define ___VBOXCLIPBOARD_H
+#ifndef VBOX_INCLUDED_SRC_SharedClipboard_VBoxClipboard_h
+#define VBOX_INCLUDED_SRC_SharedClipboard_VBoxClipboard_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -99,5 +99,5 @@ int vboxClipboardSync (VBOXCLIPBOARDCLIENTDATA *pClient);
 uint32_t TestClipSvcGetMode(void);
 #endif
 
-#endif /* !___VBOXCLIPBOARD_H */
+#endif /* !VBOX_INCLUDED_SRC_SharedClipboard_VBoxClipboard_h */
 

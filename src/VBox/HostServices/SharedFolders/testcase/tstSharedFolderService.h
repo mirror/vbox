@@ -14,8 +14,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __VBSF_TEST_SHARED_FOLDER_SERVICE__H
-#define __VBSF_TEST_SHARED_FOLDER_SERVICE__H
+#ifndef VBOX_INCLUDED_SRC_SharedFolders_testcase_tstSharedFolderService_h
+#define VBOX_INCLUDED_SRC_SharedFolders_testcase_tstSharedFolderService_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -127,4 +127,4 @@ void testSetStatusLed(RTTEST hTest);
 void testSetStatusLedBadParameters(RTTEST hTest);
 #endif
 
-#endif /* __VBSF_TEST_SHARED_FOLDER_SERVICE__H */
+#endif /* !VBOX_INCLUDED_SRC_SharedFolders_testcase_tstSharedFolderService_h */

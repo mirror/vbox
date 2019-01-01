@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___SHFLHANDLE_H
-#define ___SHFLHANDLE_H
+#ifndef VBOX_INCLUDED_SRC_SharedFolders_shflhandle_h
+#define VBOX_INCLUDED_SRC_SharedFolders_shflhandle_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -77,4 +77,4 @@ SHFLFILEHANDLE *vbsfQueryDirHandle(PSHFLCLIENTDATA pClient, SHFLHANDLE handle);
 uint32_t        vbsfQueryHandleType(PSHFLCLIENTDATA pClient,
                                     SHFLHANDLE handle);
 
-#endif /* !___SHFLHANDLE_H */
+#endif /* !VBOX_INCLUDED_SRC_SharedFolders_shflhandle_h */

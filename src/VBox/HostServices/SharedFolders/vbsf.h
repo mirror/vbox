@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___vbsf_h___
-#define ___vbsf_h___
+#ifndef VBOX_INCLUDED_SRC_SharedFolders_vbsf_h
+#define VBOX_INCLUDED_SRC_SharedFolders_vbsf_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -45,5 +45,5 @@ int vbsfQueryFileInfo(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Handle,
 int vbsfReadLink(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING *pPath, uint32_t cbPath, uint8_t *pBuffer, uint32_t cbBuffer);
 int vbsfSymlink(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING *pNewPath, SHFLSTRING *pOldPath, SHFLFSOBJINFO *pInfo);
 
-#endif /* !___vbsf_h___ */
+#endif /* !VBOX_INCLUDED_SRC_SharedFolders_vbsf_h */
 

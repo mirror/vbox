@@ -14,8 +14,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___SHFL_H
-#define ___SHFL_H
+#ifndef VBOX_INCLUDED_SRC_SharedFolders_shfl_h
+#define VBOX_INCLUDED_SRC_SharedFolders_shfl_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -69,5 +69,5 @@ typedef struct _SHFLCLIENTDATA
 /** Pointer to a SHFLCLIENTDATA structure. */
 typedef SHFLCLIENTDATA *PSHFLCLIENTDATA;
 
-#endif /* !___SHFL_H */
+#endif /* !VBOX_INCLUDED_SRC_SharedFolders_shfl_h */
 

@@ -20,8 +20,8 @@
  * to make the service use a file operations structure with function pointers
  * but I'm not sure that would be universally appreciated. */
 
-#ifndef __VBSF_TEST_STUBS__H
-#define __VBSF_TEST_STUBS__H
+#ifndef VBOX_INCLUDED_SRC_SharedFolders_teststubs_h
+#define VBOX_INCLUDED_SRC_SharedFolders_teststubs_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -84,4 +84,4 @@ extern int testRTSymlinkDelete(const char *pszSymlink, uint32_t fDelete);
 #define RTSymlinkRead        testRTSymlinkRead
 extern int testRTSymlinkRead(const char *pszSymlink, char *pszTarget, size_t cbTarget, uint32_t fRead);
 
-#endif /* __VBSF_TEST_STUBS__H */
+#endif /* !VBOX_INCLUDED_SRC_SharedFolders_teststubs_h */

@@ -14,8 +14,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___VBox_HostService_DnD_dndmanager_h
-#define ___VBox_HostService_DnD_dndmanager_h
+#ifndef VBOX_INCLUDED_SRC_DragAndDrop_dndmanager_h
+#define VBOX_INCLUDED_SRC_DragAndDrop_dndmanager_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -109,5 +109,5 @@ protected:
     /** Pointer to progress callback user context. Can be NULL if not used. */
     void                 *m_pvProgressUser;
 };
-#endif /* ___VBox_HostService_DnD_dndmanager_h */
+#endif /* !VBOX_INCLUDED_SRC_DragAndDrop_dndmanager_h */
 
