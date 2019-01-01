@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___DisasmInternal_h___
-#define ___DisasmInternal_h___
+#ifndef VBOX_INCLUDED_SRC_DisasmInternal_h
+#define VBOX_INCLUDED_SRC_DisasmInternal_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -209,5 +209,5 @@ extern const PCDISOPCODE g_apMapX86_FP_High[8];
 size_t disFormatBytes(PCDISSTATE pDis, char *pszDst, size_t cchDst, uint32_t fFlags);
 
 /** @} */
-#endif
+#endif /* !VBOX_INCLUDED_SRC_DisasmInternal_h */
 

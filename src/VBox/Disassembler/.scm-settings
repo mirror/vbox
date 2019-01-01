@@ -16,4 +16,5 @@
 #
 
 --filter-out-files *.bin
+/*.h: --guard-relative-to-dir . --guard-prefix VBOX_INCLUDED_SRC_ --fix-header-guard-endif
 
