@@ -2120,6 +2120,8 @@ static DECLCALLBACK(int) rtFsExtDir_Open(void *pvThis, const char *pszEntry, uin
     PRTFSEXTVOL  pVol  = pThis->pVol;
     int rc = VINF_SUCCESS;
 
+    RT_NOREF(fFlags);
+
     /*
      * We cannot create or replace anything, just open stuff.
      */
