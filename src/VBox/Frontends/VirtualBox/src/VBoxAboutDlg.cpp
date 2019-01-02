@@ -15,32 +15,27 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifdef VBOX_WITH_PRECOMPILED_HEADERS
-# include <precomp.h>
-#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
-
 /* Qt includes: */
-# include <QDialogButtonBox>
-# include <QDir>
-# include <QEvent>
-# include <QLabel>
-# include <QPainter>
-# include <QPushButton>
-# include <QStyle>
-# include <QVBoxLayout>
+#include <QDialogButtonBox>
+#include <QDir>
+#include <QEvent>
+#include <QLabel>
+#include <QPainter>
+#include <QPushButton>
+#include <QStyle>
+#include <QVBoxLayout>
 
 /* GUI includes: */
-# include "UIConverter.h"
-# include "UIExtraDataManager.h"
-# include "UIIconPool.h"
-# include "VBoxAboutDlg.h"
-# include "VBoxGlobal.h"
+#include "UIConverter.h"
+#include "UIExtraDataManager.h"
+#include "UIIconPool.h"
+#include "VBoxAboutDlg.h"
+#include "VBoxGlobal.h"
 
 /* Other VBox includes: */
-# include <iprt/path.h>
-# include <VBox/version.h> /* VBOX_VENDOR */
+#include <iprt/path.h>
+#include <VBox/version.h> /* VBOX_VENDOR */
 
-#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 VBoxAboutDlg::VBoxAboutDlg(QWidget *pParent, const QString &strVersion)
 #ifdef VBOX_WS_MAC

@@ -15,20 +15,14 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifdef VBOX_WITH_PRECOMPILED_HEADERS
-# include <precomp.h>
-#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
-
 /* GUI includes: */
-# include "UIExtraDataManager.h"
-# include "UIMainEventListener.h"
-# include "UIProgressEventHandler.h"
-# include "VBoxGlobal.h"
-# ifdef VBOX_WS_MAC
-#  include "VBoxUtils-darwin.h"
-# endif /* VBOX_WS_MAC */
-
-#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+#include "UIExtraDataManager.h"
+#include "UIMainEventListener.h"
+#include "UIProgressEventHandler.h"
+#include "VBoxGlobal.h"
+#ifdef VBOX_WS_MAC
+# include "VBoxUtils-darwin.h"
+#endif /* VBOX_WS_MAC */
 
 UIProgressEventHandler::UIProgressEventHandler(QObject *pParent, const CProgress &comProgress)
     : QObject(pParent)

@@ -15,31 +15,25 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifdef VBOX_WITH_PRECOMPILED_HEADERS
-# include <precomp.h>
-#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
-
 /* Qt includes: */
-# include <QGraphicsSceneContextMenuEvent>
-# include <QMenu>
-# include <QPainter>
-# include <QStyle>
-# include <QTimer>
+#include <QGraphicsSceneContextMenuEvent>
+#include <QMenu>
+#include <QPainter>
+#include <QStyle>
+#include <QTimer>
 
 /* GUI includes: */
-# include "UIMachinePreview.h"
-# include "UIVirtualBoxEventHandler.h"
-# include "UIExtraDataManager.h"
-# include "UIImageTools.h"
-# include "UIConverter.h"
-# include "UIIconPool.h"
-# include "VBoxGlobal.h"
+#include "UIMachinePreview.h"
+#include "UIVirtualBoxEventHandler.h"
+#include "UIExtraDataManager.h"
+#include "UIImageTools.h"
+#include "UIConverter.h"
+#include "UIIconPool.h"
+#include "VBoxGlobal.h"
 
 /* COM includes: */
-# include "CConsole.h"
-# include "CDisplay.h"
-
-#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+#include "CConsole.h"
+#include "CDisplay.h"
 
 /* VirtualBox interface declarations: */
 #include <VBox/com/VirtualBox.h>

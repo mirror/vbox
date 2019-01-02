@@ -15,36 +15,30 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifdef VBOX_WITH_PRECOMPILED_HEADERS
-# include <precomp.h>
-#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
-
 /* Qt includes: */
-# include <QGraphicsScene>
-# include <QGraphicsSceneMouseEvent>
-# include <QGraphicsView>
-# include <QPainter>
-# include <QStyleOptionGraphicsItem>
-# include <QWindow>
+#include <QGraphicsScene>
+#include <QGraphicsSceneMouseEvent>
+#include <QGraphicsView>
+#include <QPainter>
+#include <QStyleOptionGraphicsItem>
+#include <QWindow>
 
 /* GUI includes: */
-# include "VBoxGlobal.h"
-# include "UIChooserItemGroup.h"
-# include "UIChooserItemMachine.h"
-# include "UIChooserModel.h"
-# include "UIActionPoolManager.h"
-# include "UIIconPool.h"
-# include "UIImageTools.h"
-# include "UIVirtualBoxManager.h"
+#include "VBoxGlobal.h"
+#include "UIChooserItemGroup.h"
+#include "UIChooserItemMachine.h"
+#include "UIChooserModel.h"
+#include "UIActionPoolManager.h"
+#include "UIIconPool.h"
+#include "UIImageTools.h"
+#include "UIVirtualBoxManager.h"
 
 /* COM includes: */
-# include "COMEnums.h"
-# include "CMachine.h"
+#include "COMEnums.h"
+#include "CMachine.h"
 
 /* Other VBox includes: */
 #include "iprt/cpp/utils.h"
-
-#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 
 UIChooserItemMachine::UIChooserItemMachine(UIChooserItem *pParent,

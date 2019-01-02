@@ -15,24 +15,18 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifdef VBOX_WITH_PRECOMPILED_HEADERS
-# include <precomp.h>
-#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
-
 /* Qt includes: */
-# include <QHBoxLayout>
-# include <QEvent>
-# include <QLabel>
-# include <QTimer>
+#include <QHBoxLayout>
+#include <QEvent>
+#include <QLabel>
+#include <QTimer>
 
 /* GUI includes: */
-# include "QIWidgetValidator.h"
-# include "UIWarningPane.h"
+#include "QIWidgetValidator.h"
+#include "UIWarningPane.h"
 
 /* Other VBox includes: */
-# include <VBox/sup.h>
-
-#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+#include <iprt/assert.h>
 
 
 UIWarningPane::UIWarningPane(QWidget *pParent)

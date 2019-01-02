@@ -15,25 +15,19 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifdef VBOX_WITH_PRECOMPILED_HEADERS
-# include <precomp.h>
-#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
-
 /* Qt includes: */
-# include <QHBoxLayout>
-# include <QKeyEvent>
-# include <QLabel>
-# include <QStyleOptionFocusRect>
-# include <QStylePainter>
+#include <QHBoxLayout>
+#include <QKeyEvent>
+#include <QLabel>
+#include <QStyleOptionFocusRect>
+#include <QStylePainter>
 
 /* GUI includes: */
-# include "QIRichToolButton.h"
-# include "QIToolButton.h"
+#include "QIRichToolButton.h"
+#include "QIToolButton.h"
 
 /* Other VBox includes: */
-# include "iprt/assert.h"
-
-#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+#include "iprt/assert.h"
 
 
 QIRichToolButton::QIRichToolButton(QWidget *pParent)

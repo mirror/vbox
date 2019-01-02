@@ -15,30 +15,24 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifdef VBOX_WITH_PRECOMPILED_HEADERS
-# include <precomp.h>
-#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
-
 /* Qt includes: */
-# include <QAccessibleObject>
-# include <QApplication>
-# include <QGraphicsScene>
-# include <QPainter>
-# include <QPropertyAnimation>
-# include <QSignalTransition>
-# include <QStateMachine>
-# include <QStyle>
-# include <QStyleOptionGraphicsItem>
+#include <QAccessibleObject>
+#include <QApplication>
+#include <QGraphicsScene>
+#include <QPainter>
+#include <QPropertyAnimation>
+#include <QSignalTransition>
+#include <QStateMachine>
+#include <QStyle>
+#include <QStyleOptionGraphicsItem>
 
 /* GUI includes: */
-# include "UIImageTools.h"
-# include "UITools.h"
-# include "UIToolsItem.h"
-# include "UIToolsModel.h"
-# include "UIToolsView.h"
-# include "UIVirtualBoxManager.h"
-
-#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+#include "UIImageTools.h"
+#include "UITools.h"
+#include "UIToolsItem.h"
+#include "UIToolsModel.h"
+#include "UIToolsView.h"
+#include "UIVirtualBoxManager.h"
 
 
 /** QAccessibleObject extension used as an accessibility interface for Tools-view items. */

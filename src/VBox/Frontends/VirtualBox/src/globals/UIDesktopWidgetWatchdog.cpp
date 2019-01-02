@@ -15,39 +15,33 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifdef VBOX_WITH_PRECOMPILED_HEADERS
-# include <precomp.h>
-#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
-
 /* Qt includes: */
-# include <QApplication>
-# include <QDesktopWidget>
-# include <QScreen>
-# ifdef VBOX_WS_WIN
-#  include <QLibrary>
-# endif
-# ifdef VBOX_WS_X11
-#  include <QTimer>
-# endif
+#include <QApplication>
+#include <QDesktopWidget>
+#include <QScreen>
+#ifdef VBOX_WS_WIN
+# include <QLibrary>
+#endif
+#ifdef VBOX_WS_X11
+# include <QTimer>
+#endif
 
 /* GUI includes: */
-# include "UIDesktopWidgetWatchdog.h"
-# ifdef VBOX_WS_X11
-#  include "VBoxGlobal.h"
-# endif /* VBOX_WS_X11 */
+#include "UIDesktopWidgetWatchdog.h"
+#ifdef VBOX_WS_X11
+# include "VBoxGlobal.h"
+#endif /* VBOX_WS_X11 */
 
 /* Other VBox includes: */
-# include <iprt/asm.h>
-# include <iprt/assert.h>
-# include <iprt/ldr.h>
-# include <VBox/log.h>
+#include <iprt/asm.h>
+#include <iprt/assert.h>
+#include <iprt/ldr.h>
+#include <VBox/log.h>
 
 /* Platform includes: */
-# ifdef VBOX_WS_WIN
-#  include <iprt/win/windows.h>
-# endif
-
-#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+#ifdef VBOX_WS_WIN
+# include <iprt/win/windows.h>
+#endif
 
 
 #ifdef VBOX_WS_WIN

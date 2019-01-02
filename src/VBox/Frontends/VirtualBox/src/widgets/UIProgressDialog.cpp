@@ -15,39 +15,33 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifdef VBOX_WITH_PRECOMPILED_HEADERS
-# include <precomp.h>
-#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
-
 /* Qt includes: */
-# include <QCloseEvent>
-# include <QEventLoop>
-# include <QProgressBar>
-# include <QTime>
-# include <QTimer>
-# include <QVBoxLayout>
+#include <QCloseEvent>
+#include <QEventLoop>
+#include <QProgressBar>
+#include <QTime>
+#include <QTimer>
+#include <QVBoxLayout>
 
 /* GUI includes: */
-# include "QIDialogButtonBox.h"
-# include "QILabel.h"
-# include "UIErrorString.h"
-# include "UIExtraDataManager.h"
-# include "UIMainEventListener.h"
-# include "UIModalWindowManager.h"
-# include "UIProgressDialog.h"
-# include "UIProgressEventHandler.h"
-# include "UISpecialControls.h"
-# include "VBoxGlobal.h"
-# ifdef VBOX_WS_MAC
-#  include "VBoxUtils-darwin.h"
-# endif /* VBOX_WS_MAC */
+#include "QIDialogButtonBox.h"
+#include "QILabel.h"
+#include "UIErrorString.h"
+#include "UIExtraDataManager.h"
+#include "UIMainEventListener.h"
+#include "UIModalWindowManager.h"
+#include "UIProgressDialog.h"
+#include "UIProgressEventHandler.h"
+#include "UISpecialControls.h"
+#include "VBoxGlobal.h"
+#ifdef VBOX_WS_MAC
+# include "VBoxUtils-darwin.h"
+#endif
 
 /* COM includes: */
-# include "CEventListener.h"
-# include "CEventSource.h"
-# include "CProgress.h"
-
-#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+#include "CEventListener.h"
+#include "CEventSource.h"
+#include "CProgress.h"
 
 
 /*********************************************************************************************************************************

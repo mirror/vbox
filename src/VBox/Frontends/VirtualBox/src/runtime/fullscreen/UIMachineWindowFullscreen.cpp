@@ -15,39 +15,33 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifdef VBOX_WITH_PRECOMPILED_HEADERS
-# include <precomp.h>
-#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
-
 /* Qt includes: */
-# include <QMenu>
-# include <QTimer>
-# ifdef VBOX_WS_WIN
-#  include <QWindow>
-# endif
+#include <QMenu>
+#include <QTimer>
+#ifdef VBOX_WS_WIN
+# include <QWindow>
+#endif
 
 /* GUI includes: */
-# include "VBoxGlobal.h"
-# include "UIDesktopWidgetWatchdog.h"
-# include "UIExtraDataManager.h"
-# include "UISession.h"
-# include "UIActionPoolRuntime.h"
-# include "UIMachineLogicFullscreen.h"
-# include "UIMachineWindowFullscreen.h"
-# include "UIMachineView.h"
-# if   defined(VBOX_WS_WIN) || defined(VBOX_WS_X11)
-#  include "UIMachineDefs.h"
-#  include "UIMiniToolBar.h"
-# elif defined(VBOX_WS_MAC)
-#  include "UIFrameBuffer.h"
-#  include "VBoxUtils-darwin.h"
-#  include "UICocoaApplication.h"
-# endif /* VBOX_WS_MAC */
+#include "VBoxGlobal.h"
+#include "UIDesktopWidgetWatchdog.h"
+#include "UIExtraDataManager.h"
+#include "UISession.h"
+#include "UIActionPoolRuntime.h"
+#include "UIMachineLogicFullscreen.h"
+#include "UIMachineWindowFullscreen.h"
+#include "UIMachineView.h"
+#if   defined(VBOX_WS_WIN) || defined(VBOX_WS_X11)
+# include "UIMachineDefs.h"
+# include "UIMiniToolBar.h"
+#elif defined(VBOX_WS_MAC)
+# include "UIFrameBuffer.h"
+# include "VBoxUtils-darwin.h"
+# include "UICocoaApplication.h"
+#endif /* VBOX_WS_MAC */
 
 /* COM includes: */
-# include "CSnapshot.h"
-
-#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+#include "CSnapshot.h"
 
 
 UIMachineWindowFullscreen::UIMachineWindowFullscreen(UIMachineLogic *pMachineLogic, ulong uScreenId)

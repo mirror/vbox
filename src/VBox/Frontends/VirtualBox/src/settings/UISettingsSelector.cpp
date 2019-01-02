@@ -15,27 +15,21 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifdef VBOX_WITH_PRECOMPILED_HEADERS
-# include <precomp.h>
-#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
-
 /* Qt includes: */
-# include <QAccessibleWidget>
-# include <QAction>
-# include <QHeaderView>
-# include <QLayout>
-# include <QTabWidget>
-# include <QToolButton>
+#include <QAccessibleWidget>
+#include <QAction>
+#include <QHeaderView>
+#include <QLayout>
+#include <QTabWidget>
+#include <QToolButton>
 
 /* GUI includes: */
-# include "QITabWidget.h"
-# include "QITreeWidget.h"
-# include "UISettingsSelector.h"
-# include "UIIconPool.h"
-# include "UISettingsPage.h"
-# include "UIToolBar.h"
-
-#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+#include "QITabWidget.h"
+#include "QITreeWidget.h"
+#include "UISettingsSelector.h"
+#include "UIIconPool.h"
+#include "UISettingsPage.h"
+#include "UIToolBar.h"
 
 
 /** QAccessibleWidget extension used as an accessibility interface for UIToolBar buttons. */

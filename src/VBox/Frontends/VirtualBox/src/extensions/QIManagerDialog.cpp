@@ -15,27 +15,21 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifdef VBOX_WITH_PRECOMPILED_HEADERS
-# include <precomp.h>
-#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
-
 /* Qt includes: */
-# include <QMenuBar>
-# include <QPushButton>
-# include <QStyle>
-# include <QVBoxLayout>
+#include <QMenuBar>
+#include <QPushButton>
+#include <QStyle>
+#include <QVBoxLayout>
 
 /* GUI includes: */
-# include "QIDialogButtonBox.h"
-# include "QIManagerDialog.h"
-# include "VBoxGlobal.h"
-# include "UIDesktopWidgetWatchdog.h"
-# ifdef VBOX_WS_MAC
-#  include "UIToolBar.h"
-#  include "UIWindowMenuManager.h"
-# endif
-
-#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+#include "QIDialogButtonBox.h"
+#include "QIManagerDialog.h"
+#include "VBoxGlobal.h"
+#include "UIDesktopWidgetWatchdog.h"
+#ifdef VBOX_WS_MAC
+# include "UIToolBar.h"
+# include "UIWindowMenuManager.h"
+#endif
 
 
 /*********************************************************************************************************************************

@@ -15,24 +15,18 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifdef VBOX_WITH_PRECOMPILED_HEADERS
-# include <precomp.h>
-#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
-
 /* Qt includes: */
-# include <QHBoxLayout>
-# include <QMenu>
-# include <QSpinBox>
-# include <QTextEdit>
-# include <QTime>
+#include <QHBoxLayout>
+#include <QMenu>
+#include <QSpinBox>
+#include <QTextEdit>
+#include <QTime>
 
 /* GUI includes: */
-# include "QIToolButton.h"
-# include "UIIconPool.h"
-# include "UIFileManager.h"
-# include "UIFileManagerLogPanel.h"
-
-#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+#include "QIToolButton.h"
+#include "UIIconPool.h"
+#include "UIFileManager.h"
+#include "UIFileManagerLogPanel.h"
 
 
 /*********************************************************************************************************************************

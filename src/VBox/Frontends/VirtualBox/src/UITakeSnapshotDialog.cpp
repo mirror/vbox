@@ -15,32 +15,26 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifdef VBOX_WITH_PRECOMPILED_HEADERS
-# include <precomp.h>
-#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
-
 /* Qt includes: */
-# include <QGridLayout>
-# include <QLabel>
-# include <QLineEdit>
-# include <QPushButton>
-# include <QStyle>
+#include <QGridLayout>
+#include <QLabel>
+#include <QLineEdit>
+#include <QPushButton>
+#include <QStyle>
 
 /* GUI includes: */
-# include "QIDialogButtonBox.h"
-# include "QILabel.h"
-# include "VBoxUtils.h"
-# include "UIDesktopWidgetWatchdog.h"
-# include "UIMessageCenter.h"
-# include "UITakeSnapshotDialog.h"
+#include "QIDialogButtonBox.h"
+#include "QILabel.h"
+#include "VBoxUtils.h"
+#include "UIDesktopWidgetWatchdog.h"
+#include "UIMessageCenter.h"
+#include "UITakeSnapshotDialog.h"
 
 /* COM includes: */
-# include "COMEnums.h"
-# include "CMachine.h"
-# include "CMedium.h"
-# include "CMediumAttachment.h"
-
-#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+#include "COMEnums.h"
+#include "CMachine.h"
+#include "CMedium.h"
+#include "CMediumAttachment.h"
 
 
 UITakeSnapshotDialog::UITakeSnapshotDialog(QWidget *pParent, const CMachine &comMachine)

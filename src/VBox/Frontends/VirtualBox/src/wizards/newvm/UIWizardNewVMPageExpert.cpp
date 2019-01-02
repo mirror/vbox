@@ -15,32 +15,26 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifdef VBOX_WITH_PRECOMPILED_HEADERS
-# include <precomp.h>
-#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
-
 /* Qt includes: */
-# include <QGridLayout>
-# include <QGroupBox>
-# include <QHBoxLayout>
-# include <QLabel>
-# include <QLineEdit>
-# include <QRadioButton>
-# include <QSpacerItem>
-# include <QSpinBox>
-# include <QVBoxLayout>
+#include <QGridLayout>
+#include <QGroupBox>
+#include <QHBoxLayout>
+#include <QLabel>
+#include <QLineEdit>
+#include <QRadioButton>
+#include <QSpacerItem>
+#include <QSpinBox>
+#include <QVBoxLayout>
 
 /* GUI includes: */
-# include "QIToolButton.h"
-# include "UIGuestRAMSlider.h"
-# include "UIIconPool.h"
-# include "UIMediaComboBox.h"
-# include "UIMedium.h"
-# include "UINameAndSystemEditor.h"
-# include "UIWizardNewVM.h"
-# include "UIWizardNewVMPageExpert.h"
-
-#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+#include "QIToolButton.h"
+#include "UIGuestRAMSlider.h"
+#include "UIIconPool.h"
+#include "UIMediaComboBox.h"
+#include "UIMedium.h"
+#include "UINameAndSystemEditor.h"
+#include "UIWizardNewVM.h"
+#include "UIWizardNewVMPageExpert.h"
 
 
 UIWizardNewVMPageExpert::UIWizardNewVMPageExpert(const QString &strGroup)

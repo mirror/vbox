@@ -15,46 +15,40 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifdef VBOX_WITH_PRECOMPILED_HEADERS
-# include <precomp.h>
-#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
-
 /* Qt includes: */
-# include <QDateTime>
-# include <QDir>
-# include <QFont>
-# include <QMenu>
-# include <QPainter>
-# include <QPlainTextEdit>
-# include <QScrollBar>
-# include <QStyle>
-# include <QTextBlock>
-# include <QVBoxLayout>
-# ifdef RT_OS_SOLARIS
-#  include <QFontDatabase>
-# endif
+#include <QDateTime>
+#include <QDir>
+#include <QFont>
+#include <QMenu>
+#include <QPainter>
+#include <QPlainTextEdit>
+#include <QScrollBar>
+#include <QStyle>
+#include <QTextBlock>
+#include <QVBoxLayout>
+#ifdef RT_OS_SOLARIS
+# include <QFontDatabase>
+#endif
 
 /* GUI includes: */
-# include "QIFileDialog.h"
-# include "QITabWidget.h"
-# include "UIActionPool.h"
-# include "UIExtraDataManager.h"
-# include "UIIconPool.h"
-# include "UIMessageCenter.h"
-# include "UIVMLogPage.h"
-# include "UIVMLogViewerWidget.h"
-# include "UIVMLogViewerBookmarksPanel.h"
-# include "UIVMLogViewerFilterPanel.h"
-# include "UIVMLogViewerSearchPanel.h"
-# include "UIVMLogViewerOptionsPanel.h"
-# include "UIToolBar.h"
+#include "QIFileDialog.h"
+#include "QITabWidget.h"
+#include "UIActionPool.h"
+#include "UIExtraDataManager.h"
+#include "UIIconPool.h"
+#include "UIMessageCenter.h"
+#include "UIVMLogPage.h"
+#include "UIVMLogViewerWidget.h"
+#include "UIVMLogViewerBookmarksPanel.h"
+#include "UIVMLogViewerFilterPanel.h"
+#include "UIVMLogViewerSearchPanel.h"
+#include "UIVMLogViewerOptionsPanel.h"
+#include "UIToolBar.h"
+#include "VBoxGlobal.h"
 
 /* COM includes: */
-# include "CSystemProperties.h"
+#include "CSystemProperties.h"
 
-# include "VBoxGlobal.h"
-
-#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 
 UIVMLogViewerWidget::UIVMLogViewerWidget(EmbedTo enmEmbedding,

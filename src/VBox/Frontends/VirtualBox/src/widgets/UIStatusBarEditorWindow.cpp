@@ -15,34 +15,28 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifdef VBOX_WITH_PRECOMPILED_HEADERS
-# include <precomp.h>
-#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
-
 /* Qt includes: */
-# include <QAccessibleWidget>
-# include <QCheckBox>
-# include <QDrag>
-# include <QHBoxLayout>
-# include <QMimeData>
-# include <QMouseEvent>
-# include <QPainter>
-# include <QPaintEvent>
-# include <QPixmap>
-# include <QStatusBar>
-# include <QStyleOption>
-# include <QStylePainter>
+#include <QAccessibleWidget>
+#include <QCheckBox>
+#include <QDrag>
+#include <QHBoxLayout>
+#include <QMimeData>
+#include <QMouseEvent>
+#include <QPainter>
+#include <QPaintEvent>
+#include <QPixmap>
+#include <QStatusBar>
+#include <QStyleOption>
+#include <QStylePainter>
 
 /* GUI includes: */
-# include "QIToolButton.h"
-# include "VBoxGlobal.h"
-# include "UIConverter.h"
-# include "UIExtraDataManager.h"
-# include "UIIconPool.h"
-# include "UIMachineWindow.h"
-# include "UIStatusBarEditorWindow.h"
-
-#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+#include "QIToolButton.h"
+#include "VBoxGlobal.h"
+#include "UIConverter.h"
+#include "UIExtraDataManager.h"
+#include "UIIconPool.h"
+#include "UIMachineWindow.h"
+#include "UIStatusBarEditorWindow.h"
 
 /* Forward declarations: */
 class QAccessibleInterface;

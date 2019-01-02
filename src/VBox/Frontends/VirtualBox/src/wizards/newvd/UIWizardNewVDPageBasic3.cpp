@@ -15,37 +15,31 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifdef VBOX_WITH_PRECOMPILED_HEADERS
-# include <precomp.h>
-#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
-
 /* Qt includes: */
-# include <QDir>
-# include <QRegExpValidator>
-# include <QVBoxLayout>
-# include <QHBoxLayout>
-# include <QLineEdit>
-# include <QSlider>
-# include <QLabel>
-# include <QSpacerItem>
+#include <QDir>
+#include <QRegExpValidator>
+#include <QVBoxLayout>
+#include <QHBoxLayout>
+#include <QLineEdit>
+#include <QSlider>
+#include <QLabel>
+#include <QSpacerItem>
 
 /* GUI includes: */
-# include "UIWizardNewVDPageBasic3.h"
-# include "UIWizardNewVD.h"
-# include "VBoxGlobal.h"
-# include "UIMessageCenter.h"
-# include "UIIconPool.h"
-# include "QIFileDialog.h"
-# include "QIRichTextLabel.h"
-# include "QIToolButton.h"
-# include "QILineEdit.h"
-# include "UIMediumSizeEditor.h"
+#include "UIWizardNewVDPageBasic3.h"
+#include "UIWizardNewVD.h"
+#include "VBoxGlobal.h"
+#include "UIMessageCenter.h"
+#include "UIIconPool.h"
+#include "QIFileDialog.h"
+#include "QIRichTextLabel.h"
+#include "QIToolButton.h"
+#include "QILineEdit.h"
+#include "UIMediumSizeEditor.h"
 
 /* COM includes: */
-# include "CSystemProperties.h"
-# include "CMediumFormat.h"
-
-#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+#include "CSystemProperties.h"
+#include "CMediumFormat.h"
 
 /* Other VBox includes: */
 #include <iprt/cdefs.h>

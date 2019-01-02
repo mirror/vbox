@@ -15,23 +15,17 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifdef VBOX_WITH_PRECOMPILED_HEADERS
-# include <precomp.h>
-#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
-
 /* Qt includes: */
-# include <QWidget>
-# include <QUrl>
+#include <QWidget>
+#include <QUrl>
 
 /* GUI includes: */
-# include "VBoxGlobal.h"
-# include "UINetworkCustomer.h"
-# include "UINetworkManager.h"
-# include "UINetworkManagerDialog.h"
-# include "UINetworkManagerIndicator.h"
-# include "UINetworkRequest.h"
-
-#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+#include "VBoxGlobal.h"
+#include "UINetworkCustomer.h"
+#include "UINetworkManager.h"
+#include "UINetworkManagerDialog.h"
+#include "UINetworkManagerIndicator.h"
+#include "UINetworkRequest.h"
 
 
 UINetworkManager* UINetworkManager::s_pInstance = 0;

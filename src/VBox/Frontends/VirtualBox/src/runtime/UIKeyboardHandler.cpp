@@ -30,63 +30,53 @@
  *   (noticeable through strange modifier key and capitals behaviour).
  */
 
-#ifdef VBOX_WITH_PRECOMPILED_HEADERS
-# include <precomp.h>
-#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
-
 /* Qt includes: */
-# include <QKeyEvent>
-# include <QTimer>
-# ifdef VBOX_WS_X11
-#  include <QX11Info>
-# endif
+#include <QKeyEvent>
+#include <QTimer>
+#ifdef VBOX_WS_X11
+# include <QX11Info>
+#endif
 
 /* GUI includes: */
-# include "VBoxGlobal.h"
-# include "UIExtraDataManager.h"
-# include "UIMessageCenter.h"
-# include "UIPopupCenter.h"
-# include "UIActionPool.h"
-# include "UISession.h"
-# include "UIMachineLogic.h"
-# include "UIMachineWindow.h"
-# include "UIMachineView.h"
-# include "UIHostComboEditor.h"
-# include "UIKeyboardHandlerNormal.h"
-# include "UIKeyboardHandlerFullscreen.h"
-# include "UIKeyboardHandlerSeamless.h"
-# include "UIKeyboardHandlerScale.h"
-# include "UIMouseHandler.h"
-# ifdef VBOX_WS_MAC
-#  include "UICocoaApplication.h"
-#  include "VBoxUtils-darwin.h"
-# endif /* VBOX_WS_MAC */
-
-/* COM includes: */
-# include "CKeyboard.h"
-
-/* Other VBox includes: */
-# ifdef VBOX_WS_MAC
-#  include "iprt/cpp/utils.h"
-# endif /* VBOX_WS_MAC */
-
-#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
-
-/* GUI includes: */
+#include "VBoxGlobal.h"
+#include "UIExtraDataManager.h"
+#include "UIMessageCenter.h"
+#include "UIPopupCenter.h"
+#include "UIActionPool.h"
+#include "UISession.h"
+#include "UIMachineLogic.h"
+#include "UIMachineWindow.h"
+#include "UIMachineView.h"
+#include "UIHostComboEditor.h"
+#include "UIKeyboardHandlerNormal.h"
+#include "UIKeyboardHandlerFullscreen.h"
+#include "UIKeyboardHandlerSeamless.h"
+#include "UIKeyboardHandlerScale.h"
+#include "UIMouseHandler.h"
 #ifdef VBOX_WS_MAC
+# include "UICocoaApplication.h"
+# include "VBoxUtils-darwin.h"
 # include "DarwinKeyboard.h"
-#endif /* VBOX_WS_MAC */
+#endif
 #ifdef VBOX_WS_WIN
 # include "WinKeyboard.h"
-#endif /* VBOX_WS_WIN */
+#endif
 #ifdef VBOX_WS_X11
 # include "XKeyboard.h"
-#endif /* VBOX_WS_X11 */
+#endif
+
+/* COM includes: */
+#include "CKeyboard.h"
+
+/* Other VBox includes: */
+#ifdef VBOX_WS_MAC
+# include "iprt/cpp/utils.h"
+#endif
 
 /* External includes: */
 #ifdef VBOX_WS_MAC
 # include <Carbon/Carbon.h>
-#endif /* VBOX_WS_MAC */
+#endif
 #ifdef VBOX_WS_X11
 # include <X11/XKBlib.h>
 # include <X11/keysym.h>
@@ -109,7 +99,7 @@ enum { IsKeyPressed = 0x01, IsExtKeyPressed = 0x02, IsKbdCaptured = 0x80 };
 
 
 #ifdef VBOX_WS_WIN
-UIKeyboardHandler* UIKeyboardHandler::m_spKeyboardHandler = 0;
+UIKeyboardHandler *UIKeyboardHandler::m_spKeyboardHandler = 0;
 #endif /* VBOX_WS_WIN */
 
 /* Factory function to create keyboard-handler: */

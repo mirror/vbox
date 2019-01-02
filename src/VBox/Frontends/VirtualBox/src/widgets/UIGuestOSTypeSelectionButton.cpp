@@ -15,20 +15,14 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifdef VBOX_WITH_PRECOMPILED_HEADERS
-# include <precomp.h>
-#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
-
 /* Qt includes */
-# include <QMenu>
-# include <QSignalMapper>
-# include <QStyle>
+#include <QMenu>
+#include <QSignalMapper>
+#include <QStyle>
 
 /* GUI includes */
-# include "VBoxGlobal.h"
-# include "UIGuestOSTypeSelectionButton.h"
-
-#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+#include "VBoxGlobal.h"
+#include "UIGuestOSTypeSelectionButton.h"
 
 
 UIGuestOSTypeSelectionButton::UIGuestOSTypeSelectionButton(QWidget *pParent)

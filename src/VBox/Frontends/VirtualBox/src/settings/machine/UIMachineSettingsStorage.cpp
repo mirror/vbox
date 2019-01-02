@@ -15,43 +15,36 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifdef VBOX_WITH_PRECOMPILED_HEADERS
-# include <precomp.h>
-#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
-
 /* Qt includes: */
-# include <QHeaderView>
-# include <QItemEditorFactory>
-# include <QMenu>
-# include <QMouseEvent>
-# include <QScrollBar>
-# include <QStylePainter>
-# include <QTimer>
-
-/* GUI includes: */
-# include "QIFileDialog.h"
-# include "QIMessageBox.h"
-# include "QIWidgetValidator.h"
-# include "VBoxGlobal.h"
-# include "UIIconPool.h"
-# include "UIWizardNewVD.h"
-# include "UIErrorString.h"
-# include "UIMessageCenter.h"
-# include "UIMachineSettingsStorage.h"
-# include "UIMediumSelector.h"
-# include "UIConverter.h"
-# include "UIMedium.h"
-# include "UIExtraDataManager.h"
-# include "UIModalWindowManager.h"
-
-/* COM includes: */
-# include "CStorageController.h"
-# include "CMediumAttachment.h"
-
-#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
-
+#include <QHeaderView>
+#include <QItemEditorFactory>
+#include <QMenu>
+#include <QMouseEvent>
+#include <QScrollBar>
+#include <QStylePainter>
+#include <QTimer>
 #include <QCommonStyle>
 #include <QMetaProperty>
+
+/* GUI includes: */
+#include "QIFileDialog.h"
+#include "QIMessageBox.h"
+#include "QIWidgetValidator.h"
+#include "VBoxGlobal.h"
+#include "UIIconPool.h"
+#include "UIWizardNewVD.h"
+#include "UIErrorString.h"
+#include "UIMessageCenter.h"
+#include "UIMachineSettingsStorage.h"
+#include "UIMediumSelector.h"
+#include "UIConverter.h"
+#include "UIMedium.h"
+#include "UIExtraDataManager.h"
+#include "UIModalWindowManager.h"
+
+/* COM includes: */
+#include "CStorageController.h"
+#include "CMediumAttachment.h"
 
 
 QString compressText (const QString &aText)

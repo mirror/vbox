@@ -15,10 +15,6 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifdef VBOX_WITH_PRECOMPILED_HEADERS
-# include <precomp.h>
-#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
-
 /* Qt includes: */
 #include <QLabel>
 #include <QLineEdit>
@@ -26,10 +22,8 @@
 #include <QVBoxLayout>
 
 /* GUI includes: */
-# include "QIDialogButtonBox.h"
-# include "QIInputDialog.h"
-
-#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+#include "QIDialogButtonBox.h"
+#include "QIInputDialog.h"
 
 
 QIInputDialog::QIInputDialog(QWidget *pParent /* = 0 */, Qt::WindowFlags enmFlags /* = 0 */)

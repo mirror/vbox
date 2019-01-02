@@ -15,45 +15,39 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifdef VBOX_WITH_PRECOMPILED_HEADERS
-# include <precomp.h>
-#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
-
 /* Qt includes: */
-# include <QDir>
-# include <QTimer>
-# include <QGraphicsLinearLayout>
+#include <QDir>
+#include <QTimer>
+#include <QGraphicsLinearLayout>
 
 /* GUI includes: */
-# include "UIDetailsElements.h"
-# include "UIDetailsModel.h"
-# include "UIMachinePreview.h"
-# include "UIGraphicsRotatorButton.h"
-# include "VBoxGlobal.h"
-# include "UIIconPool.h"
-# include "UIConverter.h"
-# include "UIGraphicsTextPane.h"
-# include "UIErrorString.h"
+#include "UIDetailsElements.h"
+#include "UIDetailsModel.h"
+#include "UIMachinePreview.h"
+#include "UIGraphicsRotatorButton.h"
+#include "VBoxGlobal.h"
+#include "UIIconPool.h"
+#include "UIConverter.h"
+#include "UIGraphicsTextPane.h"
+#include "UIErrorString.h"
 
 /* COM includes: */
-# include "COMEnums.h"
-# include "CMachine.h"
-# include "CSystemProperties.h"
-# include "CVRDEServer.h"
-# include "CStorageController.h"
-# include "CMediumAttachment.h"
-# include "CAudioAdapter.h"
-# include "CRecordingSettings.h"
-# include "CRecordingScreenSettings.h"
-# include "CNetworkAdapter.h"
-# include "CSerialPort.h"
-# include "CUSBController.h"
-# include "CUSBDeviceFilters.h"
-# include "CUSBDeviceFilter.h"
-# include "CSharedFolder.h"
-# include "CMedium.h"
-
-#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+#include "COMEnums.h"
+#include "CMachine.h"
+#include "CSystemProperties.h"
+#include "CVRDEServer.h"
+#include "CStorageController.h"
+#include "CMediumAttachment.h"
+#include "CAudioAdapter.h"
+#include "CRecordingSettings.h"
+#include "CRecordingScreenSettings.h"
+#include "CNetworkAdapter.h"
+#include "CSerialPort.h"
+#include "CUSBController.h"
+#include "CUSBDeviceFilters.h"
+#include "CUSBDeviceFilter.h"
+#include "CSharedFolder.h"
+#include "CMedium.h"
 
 
 UIDetailsUpdateTask::UIDetailsUpdateTask(const CMachine &machine)

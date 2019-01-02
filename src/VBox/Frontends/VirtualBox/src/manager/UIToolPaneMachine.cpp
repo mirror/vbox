@@ -15,31 +15,25 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifdef VBOX_WITH_PRECOMPILED_HEADERS
-# include <precomp.h>
-#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
-
 /* Qt includes: */
-# include <QStackedLayout>
-# ifndef VBOX_WS_MAC
-#  include <QStyle>
-# endif
-# include <QUuid>
+#include <QStackedLayout>
+#ifndef VBOX_WS_MAC
+# include <QStyle>
+#endif
+#include <QUuid>
 
 /* GUI includes */
-# include "UIActionPoolManager.h"
-# include "UIErrorPane.h"
-# include "UIDetails.h"
-# include "UIIconPool.h"
-# include "UISnapshotPane.h"
-# include "UIToolPaneMachine.h"
-# include "UIVirtualMachineItem.h"
-# include "UIVMLogViewerWidget.h"
+#include "UIActionPoolManager.h"
+#include "UIErrorPane.h"
+#include "UIDetails.h"
+#include "UIIconPool.h"
+#include "UISnapshotPane.h"
+#include "UIToolPaneMachine.h"
+#include "UIVirtualMachineItem.h"
+#include "UIVMLogViewerWidget.h"
 
 /* Other VBox includes: */
-# include <iprt/assert.h>
-
-#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+#include <iprt/assert.h>
 
 
 UIToolPaneMachine::UIToolPaneMachine(UIActionPool *pActionPool, QWidget *pParent /* = 0 */)

@@ -15,24 +15,18 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifdef VBOX_WITH_PRECOMPILED_HEADERS
-# include <precomp.h>
-#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
-
 /* Qt includes: */
-# include <QHeaderView>
-# include <QMenu>
-# include <QTimer>
+#include <QHeaderView>
+#include <QMenu>
+#include <QTimer>
 
 /* GUI includes: */
-# include "UIIconPool.h"
-# include "UIMachineSettingsSF.h"
-# include "UIMachineSettingsSFDetails.h"
-# include "UIErrorString.h"
-# include "VBoxGlobal.h"
-# include "VBoxUtils.h"
-
-#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+#include "UIIconPool.h"
+#include "UIMachineSettingsSF.h"
+#include "UIMachineSettingsSFDetails.h"
+#include "UIErrorString.h"
+#include "VBoxGlobal.h"
+#include "VBoxUtils.h"
 
 
 /** Machine settings: Shared Folder data structure. */

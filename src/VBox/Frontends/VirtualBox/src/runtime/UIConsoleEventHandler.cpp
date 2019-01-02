@@ -15,26 +15,20 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifdef VBOX_WITH_PRECOMPILED_HEADERS
-# include <precomp.h>
-#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
-
 /* GUI includes: */
-# include "UIConsoleEventHandler.h"
-# include "UIMainEventListener.h"
-# include "UIExtraDataManager.h"
-# include "VBoxGlobal.h"
-# include "UISession.h"
-# ifdef VBOX_WS_MAC
-#  include "VBoxUtils.h"
-# endif /* VBOX_WS_MAC */
+#include "UIConsoleEventHandler.h"
+#include "UIMainEventListener.h"
+#include "UIExtraDataManager.h"
+#include "VBoxGlobal.h"
+#include "UISession.h"
+#ifdef VBOX_WS_MAC
+# include "VBoxUtils.h"
+#endif
 
 /* COM includes: */
-# include "CEventListener.h"
-# include "CEventSource.h"
-# include "CConsole.h"
-
-#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+#include "CEventListener.h"
+#include "CEventSource.h"
+#include "CConsole.h"
 
 
 /** Private QObject extension

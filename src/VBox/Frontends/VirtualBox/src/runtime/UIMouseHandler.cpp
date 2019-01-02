@@ -15,55 +15,41 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifdef VBOX_WITH_PRECOMPILED_HEADERS
-# include <precomp.h>
-#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
-
 /* Qt includes: */
-# include <QMouseEvent>
-# include <QTimer>
-# ifdef VBOX_WS_X11
-#  include <QX11Info>
-# endif
-
-/* GUI includes: */
-# include "VBoxGlobal.h"
-# include "UIDesktopWidgetWatchdog.h"
-# include "UIExtraDataManager.h"
-# include "UIMessageCenter.h"
-# include "UIPopupCenter.h"
-# include "UISession.h"
-# include "UIMachineLogic.h"
-# include "UIMachineWindow.h"
-# include "UIMachineView.h"
-# include "UIKeyboardHandler.h"
-# include "UIMouseHandler.h"
-# include "UIFrameBuffer.h"
-# ifdef VBOX_WS_MAC
-#  include "VBoxUtils-darwin.h"
-# endif /* VBOX_WS_MAC */
-# ifdef VBOX_WS_WIN
-#  include "VBoxUtils-win.h"
-# endif /* VBOX_WS_WIN */
-
-/* COM includes: */
-# include "CDisplay.h"
-
-/* Other VBox includes: */
-# include <iprt/time.h>
-
-#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
-
-/* Qt includes: */
+#include <QMouseEvent>
+#include <QTimer>
 #include <QTouchEvent>
+#ifdef VBOX_WS_X11
+# include <QX11Info>
+#endif
 
 /* GUI includes: */
+#include "VBoxGlobal.h"
+#include "UIDesktopWidgetWatchdog.h"
+#include "UIExtraDataManager.h"
+#include "UIMessageCenter.h"
+#include "UIPopupCenter.h"
+#include "UISession.h"
+#include "UIMachineLogic.h"
+#include "UIMachineWindow.h"
+#include "UIMachineView.h"
+#include "UIKeyboardHandler.h"
+#include "UIMouseHandler.h"
+#include "UIFrameBuffer.h"
 #ifdef VBOX_WS_MAC
+# include "VBoxUtils-darwin.h"
 # include "CocoaEventHelper.h"
+#endif
+#ifdef VBOX_WS_WIN
+# include "VBoxUtils-win.h"
 #endif
 
 /* COM includes: */
+#include "CDisplay.h"
 #include "CMouse.h"
+
+/* Other VBox includes: */
+#include <iprt/time.h>
 
 /* External includes: */
 #ifdef VBOX_WS_X11

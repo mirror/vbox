@@ -15,36 +15,30 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifdef VBOX_WITH_PRECOMPILED_HEADERS
-# include <precomp.h>
-#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
-
 /* Qt includes: */
-# include <QCheckBox>
-# include <QGridLayout>
-# include <QHBoxLayout>
-# include <QLabel>
-# include <QPushButton>
-# include <QRadioButton>
-# include <QStyle>
-# include <QVBoxLayout>
+#include <QCheckBox>
+#include <QGridLayout>
+#include <QHBoxLayout>
+#include <QLabel>
+#include <QPushButton>
+#include <QRadioButton>
+#include <QStyle>
+#include <QVBoxLayout>
 
 /* GUI includes: */
-# include "UIIconPool.h"
-# include "UIVMCloseDialog.h"
-# include "UIExtraDataManager.h"
-# include "UIMessageCenter.h"
-# include "UIConverter.h"
-# include "VBoxGlobal.h"
-# include "QIDialogButtonBox.h"
+#include "UIIconPool.h"
+#include "UIVMCloseDialog.h"
+#include "UIExtraDataManager.h"
+#include "UIMessageCenter.h"
+#include "UIConverter.h"
+#include "VBoxGlobal.h"
+#include "QIDialogButtonBox.h"
 
 /* COM includes: */
-# include "CMachine.h"
-# include "CSession.h"
-# include "CConsole.h"
-# include "CSnapshot.h"
-
-#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+#include "CMachine.h"
+#include "CSession.h"
+#include "CConsole.h"
+#include "CSnapshot.h"
 
 
 UIVMCloseDialog::UIVMCloseDialog(QWidget *pParent, CMachine &comMachine,

@@ -15,53 +15,46 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifdef VBOX_WITH_PRECOMPILED_HEADERS
-# include <precomp.h>
-#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
-
 /* Qt includes: */
-# include <QPushButton>
-# include <QScrollBar>
-# include <QVBoxLayout>
+#include <QPushButton>
+#include <QScrollBar>
+#include <QVBoxLayout>
 
 /* GUI includes: */
-# include "UIVMInformationDialog.h"
-# include "UIExtraDataManager.h"
-# include "UISession.h"
-# include "UIMachineLogic.h"
-# include "UIMachineWindow.h"
-# include "UIMachineView.h"
-# include "UIConverter.h"
-# include "UIIconPool.h"
-# include "QITabWidget.h"
-# include "QIDialogButtonBox.h"
-# include "VBoxGlobal.h"
-# include "VBoxUtils.h"
-# include "UIInformationConfiguration.h"
-# include "UIInformationRuntime.h"
-# include "UIMachine.h"
+#include "UIVMInformationDialog.h"
+#include "UIExtraDataManager.h"
+#include "UISession.h"
+#include "UIMachineLogic.h"
+#include "UIMachineWindow.h"
+#include "UIMachineView.h"
+#include "UIConverter.h"
+#include "UIIconPool.h"
+#include "QITabWidget.h"
+#include "QIDialogButtonBox.h"
+#include "VBoxGlobal.h"
+#include "VBoxUtils.h"
+#include "UIInformationConfiguration.h"
+#include "UIInformationRuntime.h"
+#include "UIMachine.h"
 
 /* COM includes: */
-# include "COMEnums.h"
-# include "CMachine.h"
-# include "CConsole.h"
-# include "CSystemProperties.h"
-# include "CMachineDebugger.h"
-# include "CDisplay.h"
-# include "CStorageController.h"
-# include "CMediumAttachment.h"
-# include "CNetworkAdapter.h"
+#include "COMEnums.h"
+#include "CMachine.h"
+#include "CConsole.h"
+#include "CSystemProperties.h"
+#include "CMachineDebugger.h"
+#include "CDisplay.h"
+#include "CStorageController.h"
+#include "CMediumAttachment.h"
+#include "CNetworkAdapter.h"
+#include "CVRDEServerInfo.h"
 
 /* Other VBox includes: */
-# include <iprt/time.h>
-
-#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
-
-#include "CVRDEServerInfo.h"
+#include <iprt/time.h>
 
 
 /* static */
-UIVMInformationDialog* UIVMInformationDialog::s_pInstance = 0;
+UIVMInformationDialog *UIVMInformationDialog::s_pInstance = 0;
 
 void UIVMInformationDialog::invoke(UIMachineWindow *pMachineWindow)
 {

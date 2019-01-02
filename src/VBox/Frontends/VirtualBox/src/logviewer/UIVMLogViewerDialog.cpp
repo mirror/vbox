@@ -15,34 +15,28 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifdef VBOX_WITH_PRECOMPILED_HEADERS
-# include <precomp.h>
-#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
-
 /* Qt includes: */
-# if defined(RT_OS_SOLARIS)
-#  include <QFontDatabase>
-# endif
-# include <QDialogButtonBox>
-# include <QKeyEvent>
-# include <QLabel>
-# include <QPlainTextEdit>
-# include <QPushButton>
-# include <QScrollBar>
-# include <QVBoxLayout>
+#if defined(RT_OS_SOLARIS)
+# include <QFontDatabase>
+#endif
+#include <QDialogButtonBox>
+#include <QKeyEvent>
+#include <QLabel>
+#include <QPlainTextEdit>
+#include <QPushButton>
+#include <QScrollBar>
+#include <QVBoxLayout>
 
 /* GUI includes: */
-# include "UIDesktopWidgetWatchdog.h"
-# include "UIExtraDataManager.h"
-# include "UIIconPool.h"
-# include "UIVMLogViewerDialog.h"
-# include "UIVMLogViewerWidget.h"
-# include "VBoxGlobal.h"
-# ifdef VBOX_WS_MAC
-#  include "VBoxUtils-darwin.h"
-# endif
-
-#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+#include "UIDesktopWidgetWatchdog.h"
+#include "UIExtraDataManager.h"
+#include "UIIconPool.h"
+#include "UIVMLogViewerDialog.h"
+#include "UIVMLogViewerWidget.h"
+#include "VBoxGlobal.h"
+#ifdef VBOX_WS_MAC
+# include "VBoxUtils-darwin.h"
+#endif
 
 
 /*********************************************************************************************************************************

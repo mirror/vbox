@@ -21,49 +21,43 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
-#ifdef VBOX_WITH_PRECOMPILED_HEADERS
-# include <precomp.h>
-#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
-
-# define LOG_GROUP LOG_GROUP_GUI
+#define LOG_GROUP LOG_GROUP_GUI
 
 /* Qt includes: */
-# ifdef RT_OS_WINDOWS
-#  include <iprt/win/windows.h> /* QGLWidget drags in Windows.h; -Wall forces us to use wrapper. */
-#  include <iprt/stdint.h>      /* QGLWidget drags in stdint.h; -Wall forces us to use wrapper. */
-# endif
-# include <QApplication>
-# include <QGLWidget>
-# include <QFile>
-# include <QTextStream>
+#ifdef RT_OS_WINDOWS
+# include <iprt/win/windows.h> /* QGLWidget drags in Windows.h; -Wall forces us to use wrapper. */
+# include <iprt/stdint.h>      /* QGLWidget drags in stdint.h; -Wall forces us to use wrapper. */
+#endif
+#include <QApplication>
+#include <QGLWidget>
+#include <QFile>
+#include <QTextStream>
 
 /* GUI includes: */
-# include "VBoxFBOverlay.h"
-# include "UIDesktopWidgetWatchdog.h"
-# include "UIExtraDataManager.h"
-# include "UIMessageCenter.h"
-# include "UIModalWindowManager.h"
-# include "UIPopupCenter.h"
-# include "VBoxGlobal.h"
+#include "VBoxFBOverlay.h"
+#include "UIDesktopWidgetWatchdog.h"
+#include "UIExtraDataManager.h"
+#include "UIMessageCenter.h"
+#include "UIModalWindowManager.h"
+#include "UIPopupCenter.h"
+#include "VBoxGlobal.h"
 
 /* COM includes: */
-# include "CSession.h"
-# include "CConsole.h"
-# include "CMachine.h"
-# include "CDisplay.h"
+#include "CSession.h"
+#include "CConsole.h"
+#include "CMachine.h"
+#include "CDisplay.h"
 
 /* Other VBox includes: */
-# include <iprt/asm.h>
-# include <iprt/semaphore.h>
-# include <VBox/AssertGuest.h>
+#include <iprt/asm.h>
+#include <iprt/semaphore.h>
+#include <VBox/AssertGuest.h>
 
-# include <VBox/VBoxGL2D.h>
+#include <VBox/VBoxGL2D.h>
 
 #ifdef VBOX_WS_MAC
-# include "VBoxUtils-darwin.h"
-#endif /* VBOX_WS_MAC */
-
-#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+#include "VBoxUtils-darwin.h"
+#endif
 
 /* Other VBox includes: */
 #include <iprt/memcache.h>
@@ -72,7 +66,7 @@
 #ifdef VBOX_WITH_VIDEOHWACCEL
 # include <VBoxVideo.h>
 # include <VBox/vmm/ssm.h>
-#endif /* VBOX_WITH_VIDEOHWACCEL */
+#endif
 
 /* Other includes: */
 #include <math.h>

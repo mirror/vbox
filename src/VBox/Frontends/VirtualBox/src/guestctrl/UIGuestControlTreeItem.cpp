@@ -15,21 +15,17 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifdef VBOX_WITH_PRECOMPILED_HEADERS
-# include <precomp.h>
-#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
-
 /* GUI includes: */
-# include "UIExtraDataManager.h"
-# include "UIGuestControlTreeItem.h"
-# include "VBoxGlobal.h"
+#include "UIExtraDataManager.h"
+#include "UIGuestControlTreeItem.h"
+#include "VBoxGlobal.h"
 
 /* COM includes: */
-# include "CGuest.h"
-# include "CEventSource.h"
-# include "CGuestProcessStateChangedEvent.h"
-# include "CGuestSessionStateChangedEvent.h"
-#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+#include "CGuest.h"
+#include "CEventSource.h"
+#include "CGuestProcessStateChangedEvent.h"
+#include "CGuestSessionStateChangedEvent.h"
+
 
 QString sessionStatusString(KGuestSessionStatus status)
 {

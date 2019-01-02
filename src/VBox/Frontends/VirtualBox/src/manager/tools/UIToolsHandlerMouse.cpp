@@ -15,18 +15,12 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifdef VBOX_WITH_PRECOMPILED_HEADERS
-# include <precomp.h>
-#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
-
 /* Qt includes: */
-# include <QGraphicsSceneMouseEvent>
+#include <QGraphicsSceneMouseEvent>
 
 /* GUI incluedes: */
-# include "UIToolsHandlerMouse.h"
-# include "UIToolsModel.h"
-
-#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+#include "UIToolsHandlerMouse.h"
+#include "UIToolsModel.h"
 
 
 UIToolsHandlerMouse::UIToolsHandlerMouse(UIToolsModel *pParent)

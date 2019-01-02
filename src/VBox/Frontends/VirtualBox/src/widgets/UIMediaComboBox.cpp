@@ -15,20 +15,14 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifdef VBOX_WITH_PRECOMPILED_HEADERS
-# include <precomp.h>
-#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
-
 /* Qt includes: */
-# include <QAbstractItemView>
-# include <QDir>
-# include <QFileInfo>
+#include <QAbstractItemView>
+#include <QDir>
+#include <QFileInfo>
 
 /* GUI includes: */
-# include "UIMediaComboBox.h"
-# include "UIMedium.h"
-
-#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+#include "UIMediaComboBox.h"
+#include "UIMedium.h"
 
 
 UIMediaComboBox::UIMediaComboBox(QWidget *pParent)

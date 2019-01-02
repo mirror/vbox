@@ -15,54 +15,48 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifdef VBOX_WITH_PRECOMPILED_HEADERS
-# include <precomp.h>
-#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
-
 /* Qt includes: */
-# include <QHBoxLayout>
-# include <QDateTime>
-# include <QDir>
-# include <QGridLayout>
-# include <QLabel>
-# include <QLineEdit>
-# include <QPainter>
-# include <QPushButton>
-# include <QScrollArea>
-# include <QTabWidget>
-# include <QTextBrowser>
-# include <QTextEdit>
-# include <QVBoxLayout>
+#include <QHBoxLayout>
+#include <QDateTime>
+#include <QDir>
+#include <QGridLayout>
+#include <QLabel>
+#include <QLineEdit>
+#include <QPainter>
+#include <QPushButton>
+#include <QScrollArea>
+#include <QTabWidget>
+#include <QTextBrowser>
+#include <QTextEdit>
+#include <QVBoxLayout>
 
 /* GUI includes: */
-# include "QIDialogButtonBox.h"
-# include "QIFlowLayout.h"
-# include "UIConverter.h"
-# include "UIDesktopWidgetWatchdog.h"
-# include "UIIconPool.h"
-# include "UISnapshotDetailsWidget.h"
-# include "UIMessageCenter.h"
-# include "VBoxGlobal.h"
-# include "VBoxUtils.h"
+#include "QIDialogButtonBox.h"
+#include "QIFlowLayout.h"
+#include "UIConverter.h"
+#include "UIDesktopWidgetWatchdog.h"
+#include "UIIconPool.h"
+#include "UISnapshotDetailsWidget.h"
+#include "UIMessageCenter.h"
+#include "VBoxGlobal.h"
+#include "VBoxUtils.h"
 
 /* COM includes: */
-# include "CAudioAdapter.h"
-# include "CRecordingSettings.h"
-# include "CRecordingScreenSettings.h"
-# include "CMachine.h"
-# include "CMedium.h"
-# include "CMediumAttachment.h"
-# include "CNetworkAdapter.h"
-# include "CSerialPort.h"
-# include "CSharedFolder.h"
-# include "CStorageController.h"
-# include "CSystemProperties.h"
-# include "CUSBController.h"
-# include "CUSBDeviceFilter.h"
-# include "CUSBDeviceFilters.h"
-# include "CVRDEServer.h"
-
-#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+#include "CAudioAdapter.h"
+#include "CRecordingSettings.h"
+#include "CRecordingScreenSettings.h"
+#include "CMachine.h"
+#include "CMedium.h"
+#include "CMediumAttachment.h"
+#include "CNetworkAdapter.h"
+#include "CSerialPort.h"
+#include "CSharedFolder.h"
+#include "CStorageController.h"
+#include "CSystemProperties.h"
+#include "CUSBController.h"
+#include "CUSBDeviceFilter.h"
+#include "CUSBDeviceFilters.h"
+#include "CVRDEServer.h"
 
 
 /** QWiget extension providing GUI with snapshot details elements. */

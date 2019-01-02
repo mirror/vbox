@@ -15,23 +15,17 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifdef VBOX_WITH_PRECOMPILED_HEADERS
-# include <precomp.h>
-#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
-
 /* Qt includes: */
-# include <QAccessibleWidget>
-# include <QMouseEvent>
-# include <QPainter>
-# include <QSortFilterProxyModel>
+#include <QAccessibleWidget>
+#include <QMouseEvent>
+#include <QPainter>
+#include <QSortFilterProxyModel>
 
 /* GUI includes: */
-# include "QITreeView.h"
+#include "QITreeView.h"
 
 /* Other VBox includes: */
-# include "iprt/assert.h"
-
-#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+#include "iprt/assert.h"
 
 
 /** QAccessibleObject extension used as an accessibility interface for QITreeViewItem. */

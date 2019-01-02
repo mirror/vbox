@@ -15,53 +15,47 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifdef VBOX_WITH_PRECOMPILED_HEADERS
-# include <precomp.h>
-#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
-
 /* Qt includes: */
-# include <QAccessibleWidget>
-# include <QHBoxLayout>
-# include <QPainter>
-# include <QStyle>
-# include <QTimer>
+#include <QAccessibleWidget>
+#include <QHBoxLayout>
+#include <QPainter>
+#include <QStyle>
+#include <QTimer>
 
 /* GUI includes: */
-# include "UIIndicatorsPool.h"
-# include "QIWithRetranslateUI.h"
-# include "UIExtraDataManager.h"
-# include "UIMachineDefs.h"
-# include "UIConverter.h"
-# include "UIAnimationFramework.h"
-# include "UISession.h"
-# include "UIMedium.h"
-# include "UIIconPool.h"
-# include "UIHostComboEditor.h"
-# include "QIStatusBarIndicator.h"
-# include "VBoxGlobal.h"
+#include "UIIndicatorsPool.h"
+#include "QIWithRetranslateUI.h"
+#include "UIExtraDataManager.h"
+#include "UIMachineDefs.h"
+#include "UIConverter.h"
+#include "UIAnimationFramework.h"
+#include "UISession.h"
+#include "UIMedium.h"
+#include "UIIconPool.h"
+#include "UIHostComboEditor.h"
+#include "QIStatusBarIndicator.h"
+#include "VBoxGlobal.h"
 
 /* COM includes: */
-# include "CAudioAdapter.h"
-# include "CRecordingSettings.h"
-# include "CRecordingScreenSettings.h"
-# include "CConsole.h"
-# include "CMachine.h"
-# include "CSystemProperties.h"
-# include "CMachineDebugger.h"
-# include "CGuest.h"
-# include "CStorageController.h"
-# include "CMediumAttachment.h"
-# include "CNetworkAdapter.h"
-# include "CUSBController.h"
-# include "CUSBDeviceFilters.h"
-# include "CUSBDevice.h"
-# include "CSharedFolder.h"
-# include "CVRDEServer.h"
+#include "CAudioAdapter.h"
+#include "CRecordingSettings.h"
+#include "CRecordingScreenSettings.h"
+#include "CConsole.h"
+#include "CMachine.h"
+#include "CSystemProperties.h"
+#include "CMachineDebugger.h"
+#include "CGuest.h"
+#include "CStorageController.h"
+#include "CMediumAttachment.h"
+#include "CNetworkAdapter.h"
+#include "CUSBController.h"
+#include "CUSBDeviceFilters.h"
+#include "CUSBDevice.h"
+#include "CSharedFolder.h"
+#include "CVRDEServer.h"
 
 /* Other VBox includes: */
-# include <iprt/time.h>
-
-#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+#include <iprt/time.h>
 
 
 /** QIStateStatusBarIndicator extension for Runtime UI. */

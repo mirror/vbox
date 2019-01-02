@@ -15,51 +15,46 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifdef VBOX_WITH_PRECOMPILED_HEADERS
-# include <precomp.h>
-#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
-
 /* Qt includes: */
-# include <QAbstractItemModel>
-# include <QCheckBox>
-# include <QHBoxLayout>
-# include <QHeaderView>
-# include <QPushButton>
-# include <QSplitter>
-# include <QTableWidget>
-# include <QTextEdit>
+#include <QAbstractItemModel>
+#include <QCheckBox>
+#include <QHBoxLayout>
+#include <QHeaderView>
+#include <QPushButton>
+#include <QSplitter>
+#include <QTableWidget>
+#include <QTextEdit>
 
 /* GUI includes: */
-# include "QILabel.h"
-# include "QILineEdit.h"
-# include "QITabWidget.h"
-# include "QITreeWidget.h"
-# include "QIWithRetranslateUI.h"
-# include "UIActionPool.h"
-# include "UIErrorString.h"
-# include "UIExtraDataManager.h"
-# include "UIIconPool.h"
-# include "UIGuestControlConsole.h"
-# include "UIFileManager.h"
-# include "UIFileManagerSessionPanel.h"
-# include "UIFileManagerOptionsPanel.h"
-# include "UIFileManagerLogPanel.h"
-# include "UIFileManagerOperationsPanel.h"
-# include "UIFileManagerGuestTable.h"
-# include "UIGuestControlInterface.h"
-# include "UIFileManagerHostTable.h"
-# include "UIToolBar.h"
-# include "VBoxGlobal.h"
+#include "QILabel.h"
+#include "QILineEdit.h"
+#include "QITabWidget.h"
+#include "QITreeWidget.h"
+#include "QIWithRetranslateUI.h"
+#include "UIActionPool.h"
+#include "UIErrorString.h"
+#include "UIExtraDataManager.h"
+#include "UIIconPool.h"
+#include "UIGuestControlConsole.h"
+#include "UIFileManager.h"
+#include "UIFileManagerSessionPanel.h"
+#include "UIFileManagerOptionsPanel.h"
+#include "UIFileManagerLogPanel.h"
+#include "UIFileManagerOperationsPanel.h"
+#include "UIFileManagerGuestTable.h"
+#include "UIGuestControlInterface.h"
+#include "UIFileManagerHostTable.h"
+#include "UIToolBar.h"
+#include "VBoxGlobal.h"
 
 /* COM includes: */
-# include "CFsObjInfo.h"
-# include "CGuest.h"
-# include "CGuestDirectory.h"
-# include "CGuestFsObjInfo.h"
-# include "CGuestProcess.h"
-# include "CGuestSession.h"
-# include "CGuestSessionStateChangedEvent.h"
-#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+#include "CFsObjInfo.h"
+#include "CGuest.h"
+#include "CGuestDirectory.h"
+#include "CGuestFsObjInfo.h"
+#include "CGuestProcess.h"
+#include "CGuestSession.h"
+#include "CGuestSessionStateChangedEvent.h"
 
 
 /*********************************************************************************************************************************

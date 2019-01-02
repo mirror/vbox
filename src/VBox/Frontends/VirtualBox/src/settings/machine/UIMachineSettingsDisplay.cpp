@@ -15,31 +15,27 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifdef VBOX_WITH_PRECOMPILED_HEADERS
-# include <precomp.h>
-#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
-
 /* GUI includes: */
-# include "QIWidgetValidator.h"
-# include "UIConverter.h"
-# include "UIDesktopWidgetWatchdog.h"
-# include "UIExtraDataManager.h"
-# include "UIMachineSettingsDisplay.h"
-# include "UIErrorString.h"
-# include "VBoxGlobal.h"
-# include "VBox2DHelpers.h"
+#include "QIWidgetValidator.h"
+#include "UIConverter.h"
+#include "UIDesktopWidgetWatchdog.h"
+#include "UIExtraDataManager.h"
+#include "UIMachineSettingsDisplay.h"
+#include "UIErrorString.h"
+#include "VBoxGlobal.h"
+#include "VBox2DHelpers.h"
 
 /* COM includes: */
-# include "CRecordingSettings.h"
-# include "CRecordingScreenSettings.h"
-# include "CExtPack.h"
-# include "CExtPackManager.h"
-# include "CVRDEServer.h"
+#include "CRecordingSettings.h"
+#include "CRecordingScreenSettings.h"
+#include "CExtPack.h"
+#include "CExtPackManager.h"
+#include "CVRDEServer.h"
 
-#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 #define VIDEO_CAPTURE_BIT_RATE_MIN 32
 #define VIDEO_CAPTURE_BIT_RATE_MAX 2048
+
 
 /** Machine settings: Display page data structure. */
 struct UIDataSettingsMachineDisplay

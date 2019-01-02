@@ -15,27 +15,21 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifdef VBOX_WITH_PRECOMPILED_HEADERS
-# include <precomp.h>
-#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
-
 /* Qt includes: */
-# if defined(RT_OS_SOLARIS)
-#  include <QFontDatabase>
-# endif
-# include <QMenu>
-# include <QPainter>
-# include <QPlainTextEdit>
-# include <QScrollBar>
-# include <QStyle>
-# include <QTextBlock>
+#if defined(RT_OS_SOLARIS)
+# include <QFontDatabase>
+#endif
+#include <QMenu>
+#include <QPainter>
+#include <QPlainTextEdit>
+#include <QScrollBar>
+#include <QStyle>
+#include <QTextBlock>
 
 /* GUI includes: */
-# include "UIIconPool.h"
-# include "UIVMLogViewerTextEdit.h"
-# include "UIVMLogViewerWidget.h"
-
-#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+#include "UIIconPool.h"
+#include "UIVMLogViewerTextEdit.h"
+#include "UIVMLogViewerWidget.h"
 
 /** We use a modified scrollbar style for our QPlainTextEdits to get the
     markings on the scrollbars correctly. The default scrollbarstyle does not

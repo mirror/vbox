@@ -15,31 +15,25 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifdef VBOX_WITH_PRECOMPILED_HEADERS
-# include <precomp.h>
-#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
-
 /* Qt includes: */
-# include <QDir>
-# include <QLineEdit>
+#include <QDir>
+#include <QLineEdit>
 
 /* GUI includes: */
-# include "QIWidgetValidator.h"
-# include "VBoxGlobal.h"
-# include "UIConverter.h"
-# include "UIErrorString.h"
-# include "UIMachineSettingsGeneral.h"
-# include "UIModalWindowManager.h"
-# include "UIProgressDialog.h"
+#include "QIWidgetValidator.h"
+#include "VBoxGlobal.h"
+#include "UIConverter.h"
+#include "UIErrorString.h"
+#include "UIMachineSettingsGeneral.h"
+#include "UIModalWindowManager.h"
+#include "UIProgressDialog.h"
 
 /* COM includes: */
-# include "CExtPack.h"
-# include "CExtPackManager.h"
-# include "CMedium.h"
-# include "CMediumAttachment.h"
-# include "CProgress.h"
-
-#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+#include "CExtPack.h"
+#include "CExtPackManager.h"
+#include "CMedium.h"
+#include "CMediumAttachment.h"
+#include "CProgress.h"
 
 
 /** Machine settings: General page data structure. */

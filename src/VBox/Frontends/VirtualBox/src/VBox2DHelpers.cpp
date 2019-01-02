@@ -18,29 +18,23 @@
 
 #if defined(VBOX_GUI_USE_QGL) || defined(VBOX_WITH_VIDEOHWACCEL)
 
-#ifdef VBOX_WITH_PRECOMPILED_HEADERS
-# include <precomp.h>
-#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
-
-# define LOG_GROUP LOG_GROUP_GUI
+#define LOG_GROUP LOG_GROUP_GUI
 
 // WORKAROUND:
 // QGLWidget drags in Windows.h and stdint.h
-# ifdef RT_OS_WINDOWS
-#  include <iprt/win/windows.h>
-#  include <iprt/stdint.h>
-# endif
+#ifdef RT_OS_WINDOWS
+# include <iprt/win/windows.h>
+# include <iprt/stdint.h>
+#endif
 
 /* Qt includes: */
-# include <QGLWidget>
+#include <QGLWidget>
 
 /* GUI includes: */
 #include "VBox2DHelpers.h"
 
 /* Other VBox includes: */
-# include <VBox/VBoxGL2D.h>
-
-#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+#include <VBox/VBoxGL2D.h>
 
 
 /*********************************************************************************************************************************

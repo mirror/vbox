@@ -15,10 +15,6 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifdef VBOX_WITH_PRECOMPILED_HEADERS
-# include <precomp.h>
-#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
-
 /* Qt includes: */
 #include <QApplication>
 #include <QDrag>
@@ -32,26 +28,24 @@
 #include <VBox/com/VirtualBox.h>
 
 /* GUI includes: */
-# include "UIDnDHandler.h"
+#include "UIDnDHandler.h"
 #ifdef VBOX_WITH_DRAG_AND_DROP_GH
-# include "CDnDSource.h"
-# ifdef RT_OS_WINDOWS
-#  include "UIDnDDataObject_win.h"
-#  include "UIDnDDropSource_win.h"
-# endif
-# include "UIDnDMIMEData.h"
+#include "CDnDSource.h"
+#ifdef RT_OS_WINDOWS
+# include "UIDnDDataObject_win.h"
+# include "UIDnDDropSource_win.h"
+#endif
+#include "UIDnDMIMEData.h"
 #endif /* VBOX_WITH_DRAG_AND_DROP_GH */
 #include "UIMessageCenter.h"
 #include "UISession.h"
 
 /* COM includes: */
-# include "CConsole.h"
-# include "CGuest.h"
-# include "CGuestDnDSource.h"
-# include "CGuestDnDTarget.h"
-# include "CSession.h"
-
-#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+#include "CConsole.h"
+#include "CGuest.h"
+#include "CGuestDnDSource.h"
+#include "CGuestDnDTarget.h"
+#include "CSession.h"
 
 #ifdef LOG_GROUP
  #undef LOG_GROUP

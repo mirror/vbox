@@ -15,42 +15,36 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifdef VBOX_WITH_PRECOMPILED_HEADERS
-# include <precomp.h>
-#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
-
 /* Qt includes: */
-# include <QGraphicsScene>
-# include <QGraphicsSceneContextMenuEvent>
-# include <QGraphicsSceneMouseEvent>
-# include <QGraphicsView>
-# include <QPropertyAnimation>
-# include <QScrollBar>
-# include <QRegExp>
-# include <QTimer>
+#include <QGraphicsScene>
+#include <QGraphicsSceneContextMenuEvent>
+#include <QGraphicsSceneMouseEvent>
+#include <QGraphicsView>
+#include <QPropertyAnimation>
+#include <QScrollBar>
+#include <QRegExp>
+#include <QTimer>
 
 /* GUI includes: */
-# include "QIMessageBox.h"
-# include "VBoxGlobal.h"
-# include "UIActionPoolManager.h"
-# include "UIIconPool.h"
-# include "UITools.h"
-# include "UIToolsHandlerMouse.h"
-# include "UIToolsHandlerKeyboard.h"
-# include "UIToolsModel.h"
-# include "UIExtraDataDefs.h"
-# include "UIExtraDataManager.h"
-# include "UIMessageCenter.h"
-# include "UIModalWindowManager.h"
-# include "UIVirtualBoxManagerWidget.h"
-# include "UIVirtualBoxEventHandler.h"
-# include "UIWizardNewVM.h"
+#include "QIMessageBox.h"
+#include "VBoxGlobal.h"
+#include "UIActionPoolManager.h"
+#include "UIIconPool.h"
+#include "UITools.h"
+#include "UIToolsHandlerMouse.h"
+#include "UIToolsHandlerKeyboard.h"
+#include "UIToolsModel.h"
+#include "UIExtraDataDefs.h"
+#include "UIExtraDataManager.h"
+#include "UIMessageCenter.h"
+#include "UIModalWindowManager.h"
+#include "UIVirtualBoxManagerWidget.h"
+#include "UIVirtualBoxEventHandler.h"
+#include "UIWizardNewVM.h"
 
 /* COM includes: */
-# include "CExtPack.h"
-# include "CExtPackManager.h"
-
-#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+#include "CExtPack.h"
+#include "CExtPackManager.h"
 
 /* Qt includes: */
 #include <QParallelAnimationGroup>

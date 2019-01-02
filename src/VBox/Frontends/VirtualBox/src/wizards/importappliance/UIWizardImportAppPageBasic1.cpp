@@ -15,23 +15,17 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifdef VBOX_WITH_PRECOMPILED_HEADERS
-# include <precomp.h>
-#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
-
 /* Global includes: */
-# include <QFileInfo>
-# include <QVBoxLayout>
+#include <QFileInfo>
+#include <QVBoxLayout>
 
 /* Local includes: */
-# include "UIWizardImportAppPageBasic1.h"
-# include "UIWizardImportAppPageBasic2.h"
-# include "UIWizardImportApp.h"
-# include "VBoxGlobal.h"
-# include "UIEmptyFilePathSelector.h"
-# include "QIRichTextLabel.h"
-
-#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+#include "UIWizardImportAppPageBasic1.h"
+#include "UIWizardImportAppPageBasic2.h"
+#include "UIWizardImportApp.h"
+#include "VBoxGlobal.h"
+#include "UIEmptyFilePathSelector.h"
+#include "QIRichTextLabel.h"
 
 
 UIWizardImportAppPage1::UIWizardImportAppPage1()

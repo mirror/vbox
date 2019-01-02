@@ -15,34 +15,28 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifdef VBOX_WITH_PRECOMPILED_HEADERS
-# include <precomp.h>
-#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
-
 /* Qt includes: */
-# include <QTimer>
+#include <QTimer>
 
 /* GUI includes: */
-# include "VBoxGlobal.h"
-# include "UIDesktopWidgetWatchdog.h"
-# include "UIMessageCenter.h"
-# include "UISession.h"
-# include "UIActionPoolRuntime.h"
-# include "UIMachineLogicFullscreen.h"
-# include "UIMachineWindowFullscreen.h"
-# include "UIMultiScreenLayout.h"
-# include "UIShortcutPool.h"
-# include "UIMachineView.h"
-# include "QIMenu.h"
-# ifdef VBOX_WS_MAC
-#  include "UICocoaApplication.h"
-#  include "UIExtraDataManager.h"
-#  include "VBoxUtils.h"
-#  include "UIFrameBuffer.h"
-#  include <Carbon/Carbon.h>
-# endif /* VBOX_WS_MAC */
-
-#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+#include "VBoxGlobal.h"
+#include "UIDesktopWidgetWatchdog.h"
+#include "UIMessageCenter.h"
+#include "UISession.h"
+#include "UIActionPoolRuntime.h"
+#include "UIMachineLogicFullscreen.h"
+#include "UIMachineWindowFullscreen.h"
+#include "UIMultiScreenLayout.h"
+#include "UIShortcutPool.h"
+#include "UIMachineView.h"
+#include "QIMenu.h"
+#ifdef VBOX_WS_MAC
+# include "UICocoaApplication.h"
+# include "UIExtraDataManager.h"
+# include "VBoxUtils.h"
+# include "UIFrameBuffer.h"
+# include <Carbon/Carbon.h>
+#endif /* VBOX_WS_MAC */
 
 
 UIMachineLogicFullscreen::UIMachineLogicFullscreen(QObject *pParent, UISession *pSession)

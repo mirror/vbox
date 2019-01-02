@@ -15,67 +15,58 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifdef VBOX_WITH_PRECOMPILED_HEADERS
-# include <precomp.h>
-#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
-
 /* Qt includes: */
-# include <QFontDatabase>
-# include <QMetaEnum>
-# include <QMutex>
-# include <QRegularExpression>
-# ifdef VBOX_GUI_WITH_EXTRADATA_MANAGER_UI
-#  include <QComboBox>
-#  include <QHeaderView>
-#  include <QLabel>
-#  include <QLineEdit>
-#  include <QListView>
-#  include <QMenuBar>
-#  include <QPainter>
-#  include <QPushButton>
-#  include <QSortFilterProxyModel>
-#  include <QStyledItemDelegate>
-#  include <QTableView>
-#  include <QVBoxLayout>
-# endif /* VBOX_GUI_WITH_EXTRADATA_MANAGER_UI */
-
-/* GUI includes: */
-# include "VBoxGlobal.h"
-# include "UIActionPool.h"
-# include "UIConverter.h"
-# include "UIDesktopWidgetWatchdog.h"
-# include "UIExtraDataManager.h"
-# include "UIHostComboEditor.h"
-# include "UIMainEventListener.h"
-# include "UIMessageCenter.h"
-# include "UISettingsDefs.h"
-# ifdef VBOX_GUI_WITH_EXTRADATA_MANAGER_UI
-#  include "QIDialog.h"
-#  include "QIDialogButtonBox.h"
-#  include "QIFileDialog.h"
-#  include "QIMainWindow.h"
-#  include "QISplitter.h"
-#  include "QIWidgetValidator.h"
-#  include "VBoxUtils.h"
-#  include "UIIconPool.h"
-#  include "UIToolBar.h"
-#  include "UIVirtualBoxEventHandler.h"
-# endif /* VBOX_GUI_WITH_EXTRADATA_MANAGER_UI */
-
-/* COM includes: */
-# include "COMEnums.h"
-# include "CEventListener.h"
-# include "CEventSource.h"
-# include "CMachine.h"
-# include "CVirtualBox.h"
-
-#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
-
+#include <QFontDatabase>
+#include <QMetaEnum>
+#include <QMutex>
+#include <QRegularExpression>
 #ifdef VBOX_GUI_WITH_EXTRADATA_MANAGER_UI
+# include <QComboBox>
+# include <QHeaderView>
+# include <QLabel>
+# include <QLineEdit>
+# include <QListView>
+# include <QMenuBar>
+# include <QPainter>
+# include <QPushButton>
+# include <QSortFilterProxyModel>
+# include <QStyledItemDelegate>
+# include <QTableView>
+# include <QVBoxLayout>
 # include <QStandardItemModel>
 # include <QXmlStreamWriter>
 # include <QXmlStreamReader>
 #endif /* VBOX_GUI_WITH_EXTRADATA_MANAGER_UI */
+
+/* GUI includes: */
+#include "VBoxGlobal.h"
+#include "UIActionPool.h"
+#include "UIConverter.h"
+#include "UIDesktopWidgetWatchdog.h"
+#include "UIExtraDataManager.h"
+#include "UIHostComboEditor.h"
+#include "UIMainEventListener.h"
+#include "UIMessageCenter.h"
+#include "UISettingsDefs.h"
+#ifdef VBOX_GUI_WITH_EXTRADATA_MANAGER_UI
+# include "QIDialog.h"
+# include "QIDialogButtonBox.h"
+# include "QIFileDialog.h"
+# include "QIMainWindow.h"
+# include "QISplitter.h"
+# include "QIWidgetValidator.h"
+# include "VBoxUtils.h"
+# include "UIIconPool.h"
+# include "UIToolBar.h"
+# include "UIVirtualBoxEventHandler.h"
+#endif /* VBOX_GUI_WITH_EXTRADATA_MANAGER_UI */
+
+/* COM includes: */
+#include "COMEnums.h"
+#include "CEventListener.h"
+#include "CEventSource.h"
+#include "CMachine.h"
+#include "CVirtualBox.h"
 
 
 /* Namespaces: */

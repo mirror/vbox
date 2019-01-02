@@ -15,36 +15,26 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifdef VBOX_WITH_PRECOMPILED_HEADERS
-# include <precomp.h>
-#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
-
 /* Qt includes: */
-# include <QDir>
-# include <QFile>
-# include <QThread>
-# include <QRegExp>
-# include <QVector>
-# include <QVariant>
+#include <QDir>
+#include <QFile>
+#include <QThread>
+#include <QRegExp>
+#include <QVector>
+#include <QVariant>
 
 /* GUI includes: */
-# include "UINetworkReply.h"
-# include "UINetworkManager.h"
-# include "UIExtraDataManager.h"
-# ifndef VBOX_GUI_IN_TST_SSL_CERT_DOWNLOADS
-#  include "VBoxGlobal.h"
-#  include "VBoxUtils.h"
-#  include "CSystemProperties.h"
-# else /* VBOX_GUI_IN_TST_SSL_CERT_DOWNLOADS */
-#  include <VBox/log.h>
-# endif /* VBOX_GUI_IN_TST_SSL_CERT_DOWNLOADS */
+#include "UINetworkReply.h"
+#include "UINetworkManager.h"
+#include "UIExtraDataManager.h"
+#ifndef VBOX_GUI_IN_TST_SSL_CERT_DOWNLOADS
+# include "VBoxGlobal.h"
+# include "VBoxUtils.h"
+# include "CSystemProperties.h"
+#endif
 
 /* Other VBox includes: */
-# include <iprt/initterm.h>
-
-#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
-
-/* Other VBox includes: */
+#include <iprt/initterm.h>
 #include <iprt/crypto/pem.h>
 #include <iprt/crypto/store.h>
 #include <iprt/err.h>
@@ -53,6 +43,7 @@
 #include <iprt/sha.h>
 #include <iprt/string.h>
 #include <iprt/zip.h>
+#include <VBox/log.h>
 
 
 /** QThread extension

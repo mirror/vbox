@@ -15,17 +15,11 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifdef VBOX_WITH_PRECOMPILED_HEADERS
-# include <precomp.h>
-#else
-
 /* Qt includes: */
-# include <QAccessibleWidget>
+#include <QAccessibleWidget>
 
 /* GUI includes: */
-# include "QIStatusBar.h"
-
-#endif
+#include "QIStatusBar.h"
 
 
 /** QAccessibleWidget extension used as an accessibility interface for QIStatusBar. */

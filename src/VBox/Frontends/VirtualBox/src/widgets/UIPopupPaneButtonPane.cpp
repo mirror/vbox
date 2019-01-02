@@ -15,22 +15,17 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifdef VBOX_WITH_PRECOMPILED_HEADERS
-# include <precomp.h>
-#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 /* Qt includes: */
-# include <QApplication>
-# include <QHBoxLayout>
-# include <QKeyEvent>
-# include <QVBoxLayout>
+#include <QApplication>
+#include <QHBoxLayout>
+#include <QKeyEvent>
+#include <QVBoxLayout>
 
 /* GUI includes: */
-# include "QIMessageBox.h"
-# include "QIToolButton.h"
-# include "UIIconPool.h"
-# include "UIPopupPaneButtonPane.h"
-
-#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+#include "QIMessageBox.h"
+#include "QIToolButton.h"
+#include "UIIconPool.h"
+#include "UIPopupPaneButtonPane.h"
 
 
 UIPopupPaneButtonPane::UIPopupPaneButtonPane(QWidget *pParent /* = 0*/)

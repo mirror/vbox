@@ -15,25 +15,19 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifdef VBOX_WITH_PRECOMPILED_HEADERS
-# include <precomp.h>
-#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
-
 /* Qt includes: */
-# include <QApplication>
-# include <QLabel>
-# include <QPainter>
-# include <QPaintEvent>
-# include <QStyle>
-# include <QVBoxLayout>
+#include <QApplication>
+#include <QLabel>
+#include <QPainter>
+#include <QPaintEvent>
+#include <QStyle>
+#include <QVBoxLayout>
 
 /* GUI includes: */
-# include "UIPopupBox.h"
-# ifdef VBOX_WS_MAC
-#  include "UIImageTools.h"
-# endif /* VBOX_WS_MAC */
-
-#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+#include "UIPopupBox.h"
+#ifdef VBOX_WS_MAC
+# include "UIImageTools.h"
+#endif
 
 
 /*********************************************************************************************************************************

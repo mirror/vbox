@@ -15,44 +15,38 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifdef VBOX_WITH_PRECOMPILED_HEADERS
-# include <precomp.h>
-#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
-
 /* Qt includes: */
-# include <QCheckBox>
-# include <QComboBox>
-# include <QDir>
-# include <QGridLayout>
-# include <QHeaderView>
-# include <QJsonArray>
-# include <QJsonDocument>
-# include <QJsonObject>
-# include <QJsonValue>
-# include <QLabel>
-# include <QLineEdit>
-# include <QStackedWidget>
-# include <QTableWidget>
-# include <QVBoxLayout>
+#include <QCheckBox>
+#include <QComboBox>
+#include <QDir>
+#include <QGridLayout>
+#include <QHeaderView>
+#include <QJsonArray>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QJsonValue>
+#include <QLabel>
+#include <QLineEdit>
+#include <QStackedWidget>
+#include <QTableWidget>
+#include <QVBoxLayout>
 
 /* GUI includes: */
-# include "QIRichTextLabel.h"
-# include "QIToolButton.h"
-# include "VBoxGlobal.h"
-# include "UIConverter.h"
-# include "UIEmptyFilePathSelector.h"
-# include "UIIconPool.h"
-# include "UIMessageCenter.h"
-# include "UIVirtualBoxManager.h"
-# include "UIWizardExportApp.h"
-# include "UIWizardExportAppDefs.h"
-# include "UIWizardExportAppPageBasic2.h"
+#include "QIRichTextLabel.h"
+#include "QIToolButton.h"
+#include "VBoxGlobal.h"
+#include "UIConverter.h"
+#include "UIEmptyFilePathSelector.h"
+#include "UIIconPool.h"
+#include "UIMessageCenter.h"
+#include "UIVirtualBoxManager.h"
+#include "UIWizardExportApp.h"
+#include "UIWizardExportAppDefs.h"
+#include "UIWizardExportAppPageBasic2.h"
 
 /* COM includes: */
-# include "CCloudClient.h"
-# include "CCloudProvider.h"
-
-#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+#include "CCloudClient.h"
+#include "CCloudProvider.h"
 
 
 /*********************************************************************************************************************************

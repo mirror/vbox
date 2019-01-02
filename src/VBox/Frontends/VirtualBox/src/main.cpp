@@ -15,54 +15,44 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifdef VBOX_WITH_PRECOMPILED_HEADERS
-# include <precomp.h>
-#else /* !VBOX_WITH_PRECOMPILED_HEADERS */
-
 /* Qt includes: */
-# include <QApplication>
-# include <QMessageBox>
-
-/* GUI includes: */
-# include "VBoxGlobal.h"
-# include "UIStarter.h"
-# include "UIModalWindowManager.h"
-# ifdef VBOX_WS_MAC
-#  include "VBoxUtils.h"
-#  include "UICocoaApplication.h"
-# endif /* VBOX_WS_MAC */
-
-/* Other VBox includes: */
-# include <iprt/buildconfig.h>
-# include <iprt/stream.h>
-# include <VBox/version.h>
-# ifdef VBOX_WITH_HARDENING
-#  include <VBox/sup.h>
-# endif
-# if !defined(VBOX_WITH_HARDENING) || defined(VBOX_GUI_WITH_SHARED_LIBRARY) && !defined(VBOX_RUNTIME_UI)
-#  include <iprt/initterm.h>
-#  ifdef VBOX_WS_MAC
-#   include <iprt/asm.h>
-#  endif
-# endif
-# ifdef VBOX_WS_X11
-#  include <iprt/env.h>
-# endif
-
-#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
-
-/* Qt includes: */
+#include <QApplication>
+#include <QMessageBox>
 #ifdef VBOX_WS_X11
 # ifndef Q_OS_SOLARIS
 #  include <QFontDatabase>
-# endif /* !Q_OS_SOLARIS */
-#endif /* VBOX_WS_X11 */
+# endif
+#endif
+
+/* GUI includes: */
+#include "VBoxGlobal.h"
+#include "UIStarter.h"
+#include "UIModalWindowManager.h"
+#ifdef VBOX_WS_MAC
+# include "VBoxUtils.h"
+# include "UICocoaApplication.h"
+#endif /* VBOX_WS_MAC */
 
 /* Other VBox includes: */
+#include <iprt/buildconfig.h>
+#include <iprt/stream.h>
+#include <VBox/err.h>
+#include <VBox/version.h>
+#ifdef VBOX_WITH_HARDENING
+# include <VBox/sup.h>
+#endif
+#if !defined(VBOX_WITH_HARDENING) || defined(VBOX_GUI_WITH_SHARED_LIBRARY) && !defined(VBOX_RUNTIME_UI)
+# include <iprt/initterm.h>
+# ifdef VBOX_WS_MAC
+#  include <iprt/asm.h>
+# endif
+#endif
+#ifdef VBOX_WS_X11
+# include <iprt/env.h>
+#endif
 #ifdef VBOX_WITH_HARDENING
 # include <iprt/ctype.h>
 #endif
-#include <VBox/err.h>
 
 /* Other includes: */
 #ifdef VBOX_WS_MAC

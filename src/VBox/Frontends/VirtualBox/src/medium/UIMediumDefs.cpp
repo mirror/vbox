@@ -15,24 +15,18 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifdef VBOX_WITH_PRECOMPILED_HEADERS
-# include <precomp.h>
-#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
-
 /* GUI includes: */
-# include "UIMediumDefs.h"
-# include "VBoxGlobal.h"
+#include "UIMediumDefs.h"
+#include "VBoxGlobal.h"
 
 /* COM includes: */
-# include "CMediumFormat.h"
-# include "CSystemProperties.h"
+#include "CMediumFormat.h"
+#include "CSystemProperties.h"
 
 /* COM includes: */
-# include "CMediumFormat.h"
-# include "CSystemProperties.h"
-# include "CVirtualBox.h"
-
-#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+#include "CMediumFormat.h"
+#include "CSystemProperties.h"
+#include "CVirtualBox.h"
 
 
 /* Convert global medium type (KDeviceType) to local (UIMediumDeviceType): */

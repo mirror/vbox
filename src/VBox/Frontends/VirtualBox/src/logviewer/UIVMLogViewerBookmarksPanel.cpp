@@ -15,26 +15,20 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifdef VBOX_WITH_PRECOMPILED_HEADERS
-# include <precomp.h>
-#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
-
 /* Qt includes: */
-# include <QComboBox>
-# include <QHBoxLayout>
-# include <QLabel>
-# include <QStyle>
-# ifdef RT_OS_SOLARIS
-#  include <QFontDatabase>
-# endif
+#include <QComboBox>
+#include <QHBoxLayout>
+#include <QLabel>
+#include <QStyle>
+#ifdef RT_OS_SOLARIS
+# include <QFontDatabase>
+#endif
 
 /* GUI includes: */
-# include "QIToolButton.h"
-# include "UIIconPool.h"
-# include "UIVMLogViewerBookmarksPanel.h"
-# include "UIVMLogViewerWidget.h"
-
-#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+#include "QIToolButton.h"
+#include "UIIconPool.h"
+#include "UIVMLogViewerBookmarksPanel.h"
+#include "UIVMLogViewerWidget.h"
 
 
 UIVMLogViewerBookmarksPanel::UIVMLogViewerBookmarksPanel(QWidget *pParent, UIVMLogViewerWidget *pViewer)

@@ -15,28 +15,22 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifdef VBOX_WITH_PRECOMPILED_HEADERS
-# include <precomp.h>
-#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
-
 /* GUI includes: */
-# include "VBoxGlobal.h"
-# include "UIWizardNewVM.h"
-# include "UIWizardNewVMPageBasic1.h"
-# include "UIWizardNewVMPageBasic2.h"
-# include "UIWizardNewVMPageBasic3.h"
-# include "UIWizardNewVMPageExpert.h"
-# include "UIMessageCenter.h"
-# include "UIMedium.h"
+#include "VBoxGlobal.h"
+#include "UIWizardNewVM.h"
+#include "UIWizardNewVMPageBasic1.h"
+#include "UIWizardNewVMPageBasic2.h"
+#include "UIWizardNewVMPageBasic3.h"
+#include "UIWizardNewVMPageExpert.h"
+#include "UIMessageCenter.h"
+#include "UIMedium.h"
 
 /* COM includes: */
-# include "CAudioAdapter.h"
-# include "CUSBController.h"
-# include "CUSBDeviceFilters.h"
-# include "CExtPackManager.h"
-# include "CStorageController.h"
-
-#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+#include "CAudioAdapter.h"
+#include "CUSBController.h"
+#include "CUSBDeviceFilters.h"
+#include "CExtPackManager.h"
+#include "CStorageController.h"
 
 /* Namespaces: */
 using namespace UIExtraDataDefs;

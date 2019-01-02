@@ -15,17 +15,11 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifdef VBOX_WITH_PRECOMPILED_HEADERS
-# include <precomp.h>
-#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
-
 /* Qt includes: */
-# include <QKeyEvent>
+#include <QKeyEvent>
 
 /* GUI includes: */
-# include "QIArrowButtonSwitch.h"
-
-#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+#include "QIArrowButtonSwitch.h"
 
 
 QIArrowButtonSwitch::QIArrowButtonSwitch(QWidget *pParent /* = 0 */)

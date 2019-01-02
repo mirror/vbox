@@ -15,23 +15,17 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifdef VBOX_WITH_PRECOMPILED_HEADERS
-# include <precomp.h>
-#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
-
 /* Qt includes: */
-# include <QFile>
-# include <QPushButton>
-# include <QScrollBar>
-# include <QTextBrowser>
-# include <QVBoxLayout>
+#include <QFile>
+#include <QPushButton>
+#include <QScrollBar>
+#include <QTextBrowser>
+#include <QVBoxLayout>
 
 /* GUI includes: */
-# include "QIDialogButtonBox.h"
-# include "VBoxLicenseViewer.h"
-# include "UIMessageCenter.h"
-
-#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+#include "QIDialogButtonBox.h"
+#include "VBoxLicenseViewer.h"
+#include "UIMessageCenter.h"
 
 
 VBoxLicenseViewer::VBoxLicenseViewer(QWidget *pParent /* = 0 */)

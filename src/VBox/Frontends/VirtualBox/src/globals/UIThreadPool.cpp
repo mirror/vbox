@@ -15,22 +15,16 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifdef VBOX_WITH_PRECOMPILED_HEADERS
-# include <precomp.h>
-#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
-
 /* Qt includes: */
-# include <QThread>
+#include <QThread>
 
 /* GUI includes: */
-# include "COMDefs.h"
-# include "UIDefs.h"
-# include "UIThreadPool.h"
+#include "COMDefs.h"
+#include "UIDefs.h"
+#include "UIThreadPool.h"
 
 /* Other VBox includes: */
 #include <iprt/assert.h>
-
-#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 
 /** QThread extension used as worker-thread.

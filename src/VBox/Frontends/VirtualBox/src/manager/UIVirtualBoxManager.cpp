@@ -15,63 +15,57 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifdef VBOX_WITH_PRECOMPILED_HEADERS
-# include <precomp.h>
-#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
-
 /* Qt includes: */
-# include <QMenuBar>
-# include <QResizeEvent>
-# include <QStandardPaths>
-# include <QStatusBar>
+#include <QMenuBar>
+#include <QResizeEvent>
+#include <QStandardPaths>
+#include <QStatusBar>
 //# include <QToolButton>
 
 /* GUI includes: */
-# include "QIFileDialog.h"
-# include "UIActionPoolManager.h"
-# include "UICloudProfileManager.h"
-# include "UIDesktopServices.h"
-# include "UIExtraDataManager.h"
-# include "UIHostNetworkManager.h"
-# include "UIMedium.h"
-# include "UIMediumManager.h"
-# include "UIMessageCenter.h"
-# include "UIModalWindowManager.h"
-# include "UIVirtualBoxManager.h"
-# include "UIVirtualBoxManagerWidget.h"
-# include "UISettingsDialogSpecific.h"
-# include "UIVMLogViewerDialog.h"
-# include "UIVirtualMachineItem.h"
-# ifdef VBOX_GUI_WITH_NETWORK_MANAGER
-#  include "UIUpdateManager.h"
-# endif
-# include "UIVirtualBoxEventHandler.h"
-# include "UIWizardCloneVM.h"
-# include "UIWizardExportApp.h"
-# include "UIWizardImportApp.h"
-# ifdef VBOX_WS_MAC
-#  include "UIImageTools.h"
-#  include "UIWindowMenuManager.h"
-#  include "VBoxUtils.h"
-# endif
-# ifdef VBOX_WS_X11
-#  include "UIDesktopWidgetWatchdog.h"
-# endif
-# ifndef VBOX_WS_MAC
-#  include "UIMenuBar.h"
-# endif
+#include "QIFileDialog.h"
+#include "UIActionPoolManager.h"
+#include "UICloudProfileManager.h"
+#include "UIDesktopServices.h"
+#include "UIExtraDataManager.h"
+#include "UIHostNetworkManager.h"
+#include "UIMedium.h"
+#include "UIMediumManager.h"
+#include "UIMessageCenter.h"
+#include "UIModalWindowManager.h"
+#include "UIVirtualBoxManager.h"
+#include "UIVirtualBoxManagerWidget.h"
+#include "UISettingsDialogSpecific.h"
+#include "UIVMLogViewerDialog.h"
+#include "UIVirtualMachineItem.h"
+#ifdef VBOX_GUI_WITH_NETWORK_MANAGER
+# include "UIUpdateManager.h"
+#endif
+#include "UIVirtualBoxEventHandler.h"
+#include "UIWizardCloneVM.h"
+#include "UIWizardExportApp.h"
+#include "UIWizardImportApp.h"
+#ifdef VBOX_WS_MAC
+# include "UIImageTools.h"
+# include "UIWindowMenuManager.h"
+# include "VBoxUtils.h"
+#endif
+#ifdef VBOX_WS_X11
+# include "UIDesktopWidgetWatchdog.h"
+#endif
+#ifndef VBOX_WS_MAC
+# include "UIMenuBar.h"
+#endif
 
 /* COM includes: */
-# include "CSystemProperties.h"
+#include "CSystemProperties.h"
 
 /* Other VBox stuff: */
-# include <iprt/buildconfig.h>
-# include <VBox/version.h>
-# ifdef VBOX_WS_X11
-#  include <iprt/env.h>
-# endif /* VBOX_WS_X11 */
-
-#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+#include <iprt/buildconfig.h>
+#include <VBox/version.h>
+#ifdef VBOX_WS_X11
+# include <iprt/env.h>
+#endif /* VBOX_WS_X11 */
 
 
 /* static */

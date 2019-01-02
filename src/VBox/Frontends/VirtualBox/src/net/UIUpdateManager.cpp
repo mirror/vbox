@@ -15,43 +15,37 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifdef VBOX_WITH_PRECOMPILED_HEADERS
-# include <precomp.h>
-#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
-
 /* Qt includes: */
-# include <QDir>
-# include <QPointer>
-# include <QTimer>
-# include <QUrl>
-# include <QUrlQuery>
+#include <QDir>
+#include <QPointer>
+#include <QTimer>
+#include <QUrl>
+#include <QUrlQuery>
 
 /* GUI includes: */
-# include "QIProcess.h"
-# include "VBoxGlobal.h"
-# include "VBoxUtils.h"
-# include "UIDownloaderExtensionPack.h"
-# include "UIExtraDataManager.h"
-# include "UIMessageCenter.h"
-# include "UIModalWindowManager.h"
-# include "UINetworkManager.h"
-# include "UINetworkCustomer.h"
-# include "UINetworkRequest.h"
-# include "UIUpdateDefs.h"
-# include "UIUpdateManager.h"
+#include "QIProcess.h"
+#include "VBoxGlobal.h"
+#include "VBoxUtils.h"
+#include "UIDownloaderExtensionPack.h"
+#include "UIExtraDataManager.h"
+#include "UIMessageCenter.h"
+#include "UIModalWindowManager.h"
+#include "UINetworkManager.h"
+#include "UINetworkCustomer.h"
+#include "UINetworkRequest.h"
+#include "UIUpdateDefs.h"
+#include "UIUpdateManager.h"
 
 /* COM includes: */
-# include "CExtPack.h"
-# include "CExtPackManager.h"
-# include "CSystemProperties.h"
+#include "CExtPack.h"
+#include "CExtPackManager.h"
+#include "CSystemProperties.h"
 
 /* Other VBox includes: */
 //# include <iprt/err.h>
-# include <iprt/path.h>
-# include <iprt/system.h>
-# include <VBox/version.h>
-
-#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+#include <iprt/path.h>
+#include <iprt/system.h>
+#include <VBox/version.h>
 
 /* enable to test the version update check */
 //#define VBOX_NEW_VERSION_TEST "5.1.12_0 http://unknown.unknown.org/0.0.0/VirtualBox-0.0.0-0-unknown.pkg"

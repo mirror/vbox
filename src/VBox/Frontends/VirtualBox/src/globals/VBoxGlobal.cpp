@@ -15,140 +15,130 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifdef VBOX_WITH_PRECOMPILED_HEADERS
-# include <precomp.h>
-#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
-
 /* Qt includes: */
-# include <QDesktopServices>
-# include <QDir>
-# include <QFileDialog>
-# include <QGraphicsWidget>
-# include <QLocale>
-# include <QMenu>
-# include <QMutex>
-# include <QPainter>
-# include <QProcess>
-# include <QSpinBox>
-# include <QStandardPaths>
-# include <QThread>
-# include <QTimer>
-# include <QToolButton>
-# include <QToolTip>
-# include <QTranslator>
-# ifdef VBOX_WS_WIN
-#  include <QEventLoop>
-# endif /* VBOX_WS_WIN */
-# ifdef VBOX_WS_X11
-#  include <QScrollBar>
-#  include <QTextBrowser>
-#  include <QX11Info>
-# endif /* VBOX_WS_X11 */
-# ifdef VBOX_GUI_WITH_PIDFILE
-#  include <QTextStream>
-# endif /* VBOX_GUI_WITH_PIDFILE */
-# ifdef VBOX_WS_X11
-#  include <QScreen>
-# endif
-
-/* GUI includes: */
-# include "VBoxGlobal.h"
-# include "VBoxLicenseViewer.h"
-# include "UIMessageCenter.h"
-# include "UIPopupCenter.h"
-# include "QIMessageBox.h"
-# include "QIDialogButtonBox.h"
-# include "UIFDCreationDialog.h"
-# include "UIIconPool.h"
-# include "UIThreadPool.h"
-# include "UIShortcutPool.h"
-# include "UIExtraDataManager.h"
-# include "QIFileDialog.h"
-# ifdef VBOX_GUI_WITH_NETWORK_MANAGER
-#  include "UINetworkManager.h"
-#  include "UIUpdateManager.h"
-# endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
-# include "UIConverter.h"
-# include "UIMediumEnumerator.h"
-# include "UIMedium.h"
-# include "UIMediumSelector.h"
-# include "UIModalWindowManager.h"
-# include "UIIconPool.h"
-# include "UIVirtualBoxEventHandler.h"
-# include "UIDesktopWidgetWatchdog.h"
-# ifdef VBOX_WS_X11
-#  include "UIHostComboEditor.h"
-#  include "VBoxX11Helper.h"
-# endif
-# ifdef VBOX_WS_MAC
-#  include "VBoxUtils-darwin.h"
-#  include "UIMachineWindowFullscreen.h"
-#  include "UIMachineWindowSeamless.h"
-# endif /* VBOX_WS_MAC */
-
-/* COM includes: */
-# include "CExtPack.h"
-# include "CExtPackFile.h"
-# include "CExtPackManager.h"
-# include "CMachine.h"
-# include "CUSBDevice.h"
-# include "CUSBDeviceFilters.h"
-# include "CUSBDeviceFilter.h"
-# include "CBIOSSettings.h"
-# include "CVRDEServer.h"
-# include "CStorageController.h"
-# include "CMediumAttachment.h"
-# include "CAudioAdapter.h"
-# include "CNetworkAdapter.h"
-# include "CSerialPort.h"
-# include "CUSBController.h"
-# include "CHostUSBDevice.h"
-# include "CHostVideoInputDevice.h"
-# include "CSharedFolder.h"
-# include "CConsole.h"
-# include "CSnapshot.h"
-
-/* Other VBox includes: */
-# include <iprt/asm.h>
-# include <iprt/env.h>
-# include <iprt/getopt.h>
-# include <iprt/ldr.h>
-# include <iprt/param.h>
-# include <iprt/path.h>
-# include <iprt/system.h>
-# include <iprt/stream.h>
-# ifdef VBOX_WS_X11
-#  include <iprt/mem.h>
-# endif /* VBOX_WS_X11 */
-# include <VBox/sup.h>
-# include <VBox/com/Guid.h>
-
-/* External includes: */
-# ifdef VBOX_WS_WIN
-#  include <iprt/win/shlobj.h>
-# endif
-# ifdef VBOX_WS_X11
-#  include <xcb/xcb.h>
-# endif
-
-#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
-
-/* VirtualBox interface declarations: */
-#include <VBox/com/VirtualBox.h>
-
-/* Qt includes: */
+#include <QDesktopServices>
+#include <QDir>
+#include <QFileDialog>
+#include <QGraphicsWidget>
+#include <QLocale>
+#include <QMenu>
+#include <QMutex>
+#include <QPainter>
+#include <QProcess>
+#include <QSpinBox>
+#include <QStandardPaths>
+#include <QThread>
+#include <QTimer>
+#include <QToolButton>
+#include <QToolTip>
+#include <QTranslator>
 #include <QLibraryInfo>
 #include <QProgressDialog>
 #include <QSettings>
 #include <QStyleOptionSpinBox>
 #include <QSessionManager>
+#ifdef VBOX_WS_WIN
+# include <QEventLoop>
+#endif /* VBOX_WS_WIN */
+#ifdef VBOX_WS_X11
+# include <QScrollBar>
+# include <QTextBrowser>
+# include <QX11Info>
+#endif /* VBOX_WS_X11 */
+#ifdef VBOX_GUI_WITH_PIDFILE
+# include <QTextStream>
+#endif /* VBOX_GUI_WITH_PIDFILE */
+#ifdef VBOX_WS_X11
+# include <QScreen>
+#endif
+
+/* GUI includes: */
+#include "VBoxGlobal.h"
+#include "VBoxLicenseViewer.h"
+#include "UIMessageCenter.h"
+#include "UIPopupCenter.h"
+#include "QIMessageBox.h"
+#include "QIDialogButtonBox.h"
+#include "UIFDCreationDialog.h"
+#include "UIIconPool.h"
+#include "UIThreadPool.h"
+#include "UIShortcutPool.h"
+#include "UIExtraDataManager.h"
+#include "QIFileDialog.h"
+#ifdef VBOX_GUI_WITH_NETWORK_MANAGER
+# include "UINetworkManager.h"
+# include "UIUpdateManager.h"
+#endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
+#include "UIConverter.h"
+#include "UIMediumEnumerator.h"
+#include "UIMedium.h"
+#include "UIMediumSelector.h"
+#include "UIModalWindowManager.h"
+#include "UIIconPool.h"
+#include "UIVirtualBoxEventHandler.h"
+#include "UIDesktopWidgetWatchdog.h"
+#ifdef VBOX_WS_X11
+# include "UIHostComboEditor.h"
+# include "VBoxX11Helper.h"
+#endif
+#ifdef VBOX_WS_MAC
+# include "VBoxUtils-darwin.h"
+# include "UIMachineWindowFullscreen.h"
+# include "UIMachineWindowSeamless.h"
+#endif /* VBOX_WS_MAC */
+
+/* COM includes: */
+#include "CExtPack.h"
+#include "CExtPackFile.h"
+#include "CExtPackManager.h"
+#include "CMachine.h"
+#include "CUSBDevice.h"
+#include "CUSBDeviceFilters.h"
+#include "CUSBDeviceFilter.h"
+#include "CBIOSSettings.h"
+#include "CVRDEServer.h"
+#include "CStorageController.h"
+#include "CMediumAttachment.h"
+#include "CAudioAdapter.h"
+#include "CNetworkAdapter.h"
+#include "CSerialPort.h"
+#include "CUSBController.h"
+#include "CHostUSBDevice.h"
+#include "CHostVideoInputDevice.h"
+#include "CSharedFolder.h"
+#include "CConsole.h"
+#include "CSnapshot.h"
 
 /* Other VBox includes: */
-#include <VBox/VBoxOGL.h>
-#include <VBox/vd.h>
+#include <iprt/asm.h>
 #include <iprt/ctype.h>
 #include <iprt/err.h>
+#include <iprt/env.h>
 #include <iprt/file.h>
+#include <iprt/getopt.h>
+#include <iprt/ldr.h>
+#include <iprt/param.h>
+#include <iprt/path.h>
+#include <iprt/system.h>
+#include <iprt/stream.h>
+#ifdef VBOX_WS_X11
+# include <iprt/mem.h>
+#endif /* VBOX_WS_X11 */
+#include <VBox/sup.h>
+#include <VBox/VBoxOGL.h>
+#include <VBox/vd.h>
+#include <VBox/com/Guid.h>
+
+/* VirtualBox interface declarations: */
+#include <VBox/com/VirtualBox.h>
+
+/* External includes: */
+#ifdef VBOX_WS_WIN
+# include <iprt/win/shlobj.h>
+#endif
+#ifdef VBOX_WS_X11
+# include <xcb/xcb.h>
+#endif
 
 /* External includes: */
 # include <math.h>

@@ -15,29 +15,23 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifdef VBOX_WITH_PRECOMPILED_HEADERS
-# include <precomp.h>
-#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
-
 /* Qt includes: */
-# include <QDir>
-# include <QLineEdit>
-# include <QHBoxLayout>
-# include <QVBoxLayout>
+#include <QDir>
+#include <QLineEdit>
+#include <QHBoxLayout>
+#include <QVBoxLayout>
 
 /* GUI includes: */
-# include "QIRichTextLabel.h"
-# include "VBoxGlobal.h"
-# include "UIMessageCenter.h"
-# include "UINameAndSystemEditor.h"
-# include "UIWizardNewVMPageBasic1.h"
-# include "UIWizardNewVM.h"
+#include "QIRichTextLabel.h"
+#include "VBoxGlobal.h"
+#include "UIMessageCenter.h"
+#include "UINameAndSystemEditor.h"
+#include "UIWizardNewVMPageBasic1.h"
+#include "UIWizardNewVM.h"
 
 /* COM includes: */
-# include "CHost.h"
-# include "CSystemProperties.h"
-
-#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+#include "CHost.h"
+#include "CSystemProperties.h"
 
 
 /* Defines some patterns to guess the right OS type. Should be in sync with

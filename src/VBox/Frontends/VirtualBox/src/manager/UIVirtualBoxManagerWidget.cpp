@@ -15,33 +15,27 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifdef VBOX_WITH_PRECOMPILED_HEADERS
-# include <precomp.h>
-#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
-
 /* Qt includes: */
-# include <QHBoxLayout>
-# include <QStackedWidget>
-# include <QStyle>
-# include <QVBoxLayout>
+#include <QHBoxLayout>
+#include <QStackedWidget>
+#include <QStyle>
+#include <QVBoxLayout>
 
 /* GUI includes: */
-# include "QISplitter.h"
-# include "UIActionPoolManager.h"
-# include "UIErrorString.h"
-# include "UIExtraDataManager.h"
-# include "UIChooser.h"
-# include "UIVirtualBoxManager.h"
-# include "UIVirtualBoxManagerWidget.h"
-# include "UITabBar.h"
-# include "UIToolBar.h"
-# include "UIVirtualMachineItem.h"
-# include "UITools.h"
-# ifndef VBOX_WS_MAC
-#  include "UIMenuBar.h"
-# endif
-
-#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+#include "QISplitter.h"
+#include "UIActionPoolManager.h"
+#include "UIErrorString.h"
+#include "UIExtraDataManager.h"
+#include "UIChooser.h"
+#include "UIVirtualBoxManager.h"
+#include "UIVirtualBoxManagerWidget.h"
+#include "UITabBar.h"
+#include "UIToolBar.h"
+#include "UIVirtualMachineItem.h"
+#include "UITools.h"
+#ifndef VBOX_WS_MAC
+# include "UIMenuBar.h"
+#endif
 
 
 UIVirtualBoxManagerWidget::UIVirtualBoxManagerWidget(UIVirtualBoxManager *pParent)

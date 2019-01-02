@@ -15,28 +15,22 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifdef VBOX_WITH_PRECOMPILED_HEADERS
-# include <precomp.h>
-#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
-
 /* Qt includes: */
-# include <QDialogButtonBox>
-# include <QLabel>
-# include <QPushButton>
-# include <QTextEdit>
-# include <QTextStream>
-# include <QVBoxLayout>
+#include <QDialogButtonBox>
+#include <QLabel>
+#include <QPushButton>
+#include <QTextEdit>
+#include <QTextStream>
+#include <QVBoxLayout>
 
 /* GUI includes: */
-# include "UIWizardImportApp.h"
-# include "UIWizardImportAppPageBasic1.h"
-# include "UIWizardImportAppPageBasic2.h"
-# include "UIWizardImportAppPageExpert.h"
-# include "VBoxGlobal.h"
-# include "QIDialog.h"
-# include "QIFileDialog.h"
-
-#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+#include "UIWizardImportApp.h"
+#include "UIWizardImportAppPageBasic1.h"
+#include "UIWizardImportAppPageBasic2.h"
+#include "UIWizardImportAppPageExpert.h"
+#include "VBoxGlobal.h"
+#include "QIDialog.h"
+#include "QIFileDialog.h"
 
 #include <QPrintDialog>
 #include <QPrinter>

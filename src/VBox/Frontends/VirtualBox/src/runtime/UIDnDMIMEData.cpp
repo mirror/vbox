@@ -15,23 +15,18 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifdef VBOX_WITH_PRECOMPILED_HEADERS
-# include <precomp.h>
-#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
+#define LOG_GROUP LOG_GROUP_GUEST_DND
 
 /* Qt includes: */
-# include <QFileInfo>
-# include <QMimeData>
-# include <QStringList>
-# include <QUrl>
+#include <QFileInfo>
+#include <QMimeData>
+#include <QStringList>
+#include <QUrl>
 
 /* GUI includes: */
-# include "UIDnDMIMEData.h"
+#include "UIDnDMIMEData.h"
 
-#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
-
-#undef LOG_GROUP
-#define LOG_GROUP LOG_GROUP_GUEST_DND
+/* Other VBox includes: */
 #include <VBox/log.h>
 #include <iprt/errcore.h>
 

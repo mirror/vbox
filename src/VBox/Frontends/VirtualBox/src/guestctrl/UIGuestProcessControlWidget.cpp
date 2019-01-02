@@ -15,34 +15,28 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifdef VBOX_WITH_PRECOMPILED_HEADERS
-# include <precomp.h>
-#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
-
 /* Qt includes: */
-# include <QApplication>
-# include <QMenu>
-# include <QSplitter>
-# include <QVBoxLayout>
-
+#include <QApplication>
+#include <QMenu>
+#include <QSplitter>
+#include <QVBoxLayout>
 
 /* GUI includes: */
-# include "QITreeWidget.h"
-# include "UIActionPool.h"
-# include "UIExtraDataManager.h"
-# include "UIGuestControlConsole.h"
-# include "UIGuestControlInterface.h"
-# include "UIGuestControlTreeItem.h"
-# include "UIGuestProcessControlWidget.h"
-# include "UIToolBar.h"
-# include "UIVMInformationDialog.h"
-# include "VBoxGlobal.h"
+#include "QITreeWidget.h"
+#include "UIActionPool.h"
+#include "UIExtraDataManager.h"
+#include "UIGuestControlConsole.h"
+#include "UIGuestControlInterface.h"
+#include "UIGuestControlTreeItem.h"
+#include "UIGuestProcessControlWidget.h"
+#include "UIToolBar.h"
+#include "UIVMInformationDialog.h"
+#include "VBoxGlobal.h"
 
 /* COM includes: */
-# include "CGuest.h"
-# include "CEventSource.h"
+#include "CGuest.h"
+#include "CEventSource.h"
 
-#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 class UIGuestControlTreeWidget : public QITreeWidget
 {

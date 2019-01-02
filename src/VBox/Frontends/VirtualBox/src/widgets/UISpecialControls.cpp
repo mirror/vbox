@@ -15,24 +15,18 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifdef VBOX_WITH_PRECOMPILED_HEADERS
-# include <precomp.h>
-#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
-
 /* Qt includes: */
-# include <QHBoxLayout>
-# ifndef VBOX_DARWIN_USE_NATIVE_CONTROLS
-#  include <QBitmap>
-#  include <QMouseEvent>
-#  include <QPainter>
-#  include <QSignalMapper>
-# endif
+#include <QHBoxLayout>
+#ifndef VBOX_DARWIN_USE_NATIVE_CONTROLS
+# include <QBitmap>
+# include <QMouseEvent>
+# include <QPainter>
+# include <QSignalMapper>
+#endif
 
 /* GUI includes: */
-# include "UIIconPool.h"
-# include "UISpecialControls.h"
-
-#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+#include "UIIconPool.h"
+#include "UISpecialControls.h"
 
 
 #ifdef VBOX_DARWIN_USE_NATIVE_CONTROLS

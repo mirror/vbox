@@ -15,25 +15,19 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifdef VBOX_WITH_PRECOMPILED_HEADERS
-# include <precomp.h>
-#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
-
 /* Qt includes: */
-# include <QHBoxLayout>
-# include <QLabel>
-# include <QProgressBar>
-# include <QTimer>
-# include <QVBoxLayout>
+#include <QHBoxLayout>
+#include <QLabel>
+#include <QProgressBar>
+#include <QTimer>
+#include <QVBoxLayout>
 
 /* GUI includes: */
-# include "QILabel.h"
-# include "UIIconPool.h"
-# include "UIMessageCenter.h"
-# include "UISettingsPage.h"
-# include "UISettingsSerializer.h"
-
-#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+#include "QILabel.h"
+#include "UIIconPool.h"
+#include "UIMessageCenter.h"
+#include "UISettingsPage.h"
+#include "UISettingsSerializer.h"
 
 
 /*********************************************************************************************************************************

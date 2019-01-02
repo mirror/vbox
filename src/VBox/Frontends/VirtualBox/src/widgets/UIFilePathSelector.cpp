@@ -15,35 +15,29 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifdef VBOX_WITH_PRECOMPILED_HEADERS
-# include <precomp.h>
-#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
-
 /* Qt includes: */
-# include <QAction>
-# include <QApplication>
-# include <QClipboard>
-# include <QDir>
-# include <QFocusEvent>
-# include <QHBoxLayout>
-# include <QLineEdit>
-# ifdef VBOX_WS_WIN
-#  include <QListView>
-# endif
+#include <QAction>
+#include <QApplication>
+#include <QClipboard>
+#include <QDir>
+#include <QFocusEvent>
+#include <QHBoxLayout>
+#include <QLineEdit>
+#ifdef VBOX_WS_WIN
+# include <QListView>
+#endif
 
 /* GUI includes: */
-# include "QIFileDialog.h"
-# include "QILabel.h"
-# include "QILineEdit.h"
-# include "QIToolButton.h"
-# include "VBoxGlobal.h"
-# include "UIIconPool.h"
-# include "UIFilePathSelector.h"
+#include "QIFileDialog.h"
+#include "QILabel.h"
+#include "QILineEdit.h"
+#include "QIToolButton.h"
+#include "VBoxGlobal.h"
+#include "UIIconPool.h"
+#include "UIFilePathSelector.h"
 
 /* Other VBox includes: */
-# include <iprt/assert.h>
-
-#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+#include <iprt/assert.h>
 
 
 /** Returns first position of difference between passed strings. */

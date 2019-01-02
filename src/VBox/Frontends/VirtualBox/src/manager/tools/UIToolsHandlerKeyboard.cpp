@@ -15,19 +15,13 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifdef VBOX_WITH_PRECOMPILED_HEADERS
-# include <precomp.h>
-#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
-
 /* Qt includes: */
-# include <QKeyEvent>
+#include <QKeyEvent>
 
 /* GUI incluedes: */
-# include "UIToolsHandlerKeyboard.h"
-# include "UIToolsModel.h"
-# include "UIToolsItem.h"
-
-#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+#include "UIToolsHandlerKeyboard.h"
+#include "UIToolsModel.h"
+#include "UIToolsItem.h"
 
 
 UIToolsHandlerKeyboard::UIToolsHandlerKeyboard(UIToolsModel *pParent)

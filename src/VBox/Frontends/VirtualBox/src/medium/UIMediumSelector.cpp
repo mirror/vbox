@@ -15,48 +15,42 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifdef VBOX_WITH_PRECOMPILED_HEADERS
-# include <precomp.h>
-#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
-
 /* Qt includes: */
-# include <QAction>
-# include <QHeaderView>
-# include <QVBoxLayout>
-# include <QPushButton>
+#include <QAction>
+#include <QHeaderView>
+#include <QVBoxLayout>
+#include <QPushButton>
 
 /* GUI includes: */
-# include "QIComboBox.h"
-# include "QIDialogButtonBox.h"
-# include "QIFileDialog.h"
-# include "QILineEdit.h"
-# include "QIMessageBox.h"
-# include "QITabWidget.h"
-# include "QIToolButton.h"
-# include "VBoxGlobal.h"
-# include "UIDesktopWidgetWatchdog.h"
-# include "UIExtraDataManager.h"
-# include "UIFDCreationDialog.h"
-# include "UIMediumSelector.h"
-# include "UIMessageCenter.h"
-# include "UIIconPool.h"
-# include "UIMedium.h"
-# include "UIMediumItem.h"
-# include "UIToolBar.h"
+#include "QIComboBox.h"
+#include "QIDialogButtonBox.h"
+#include "QIFileDialog.h"
+#include "QILineEdit.h"
+#include "QIMessageBox.h"
+#include "QITabWidget.h"
+#include "QIToolButton.h"
+#include "VBoxGlobal.h"
+#include "UIDesktopWidgetWatchdog.h"
+#include "UIExtraDataManager.h"
+#include "UIFDCreationDialog.h"
+#include "UIMediumSelector.h"
+#include "UIMessageCenter.h"
+#include "UIIconPool.h"
+#include "UIMedium.h"
+#include "UIMediumItem.h"
+#include "UIToolBar.h"
 
 /* COM includes: */
-# include "COMEnums.h"
-# include "CMachine.h"
-# include "CMediumAttachment.h"
-# include "CMediumFormat.h"
-# include "CStorageController.h"
-# include "CSystemProperties.h"
+#include "COMEnums.h"
+#include "CMachine.h"
+#include "CMediumAttachment.h"
+#include "CMediumFormat.h"
+#include "CStorageController.h"
+#include "CSystemProperties.h"
 
-# ifdef VBOX_WS_MAC
-#  include "UIWindowMenuManager.h"
-# endif /* VBOX_WS_MAC */
-
-#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+#ifdef VBOX_WS_MAC
+# include "UIWindowMenuManager.h"
+#endif /* VBOX_WS_MAC */
 
 
 class UIMediumSearchWidget : public QWidget

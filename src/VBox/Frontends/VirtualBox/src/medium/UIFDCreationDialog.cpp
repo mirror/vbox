@@ -15,31 +15,25 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifdef VBOX_WITH_PRECOMPILED_HEADERS
-# include <precomp.h>
-#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
-
 /* Qt includes */
-# include<QCheckBox>
-# include<QDialogButtonBox>
-# include<QDir>
-# include<QGridLayout>
-# include<QLabel>
-# include<QPushButton>
+#include<QCheckBox>
+#include<QDialogButtonBox>
+#include<QDir>
+#include<QGridLayout>
+#include<QLabel>
+#include<QPushButton>
 
 /* GUI includes */
-# include "UIFDCreationDialog.h"
-# include "UIFilePathSelector.h"
-# include "UIMedium.h"
-# include "UIMessageCenter.h"
-# include "VBoxGlobal.h"
+#include "UIFDCreationDialog.h"
+#include "UIFilePathSelector.h"
+#include "UIMedium.h"
+#include "UIMessageCenter.h"
+#include "VBoxGlobal.h"
 
 /* COM includes: */
-# include "CSystemProperties.h"
-# include "CMedium.h"
-# include "CMediumFormat.h"
-
-#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+#include "CSystemProperties.h"
+#include "CMedium.h"
+#include "CMediumFormat.h"
 
 
 UIFDCreationDialog::UIFDCreationDialog(QWidget *pParent /* = 0 */,

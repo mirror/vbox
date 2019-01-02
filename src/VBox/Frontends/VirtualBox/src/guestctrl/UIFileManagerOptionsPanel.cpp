@@ -15,26 +15,21 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifdef VBOX_WITH_PRECOMPILED_HEADERS
-# include <precomp.h>
-#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
-
 /* Qt includes: */
-# include <QComboBox>
-# include <QHBoxLayout>
-# include <QFontDatabase>
-# include <QFontDialog>
-# include <QCheckBox>
-# include <QLabel>
-# include <QSpinBox>
+#include <QComboBox>
+#include <QHBoxLayout>
+#include <QFontDatabase>
+#include <QFontDialog>
+#include <QCheckBox>
+#include <QLabel>
+#include <QSpinBox>
 
 /* GUI includes: */
-# include "QIToolButton.h"
-# include "UIIconPool.h"
-# include "UIFileManager.h"
-# include "UIFileManagerOptionsPanel.h"
+#include "QIToolButton.h"
+#include "UIIconPool.h"
+#include "UIFileManager.h"
+#include "UIFileManagerOptionsPanel.h"
 
-#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 UIFileManagerOptionsPanel::UIFileManagerOptionsPanel(UIFileManager *pManagerWidget,
                                                                                QWidget *pParent, UIFileManagerOptions *pFileManagerOptions)

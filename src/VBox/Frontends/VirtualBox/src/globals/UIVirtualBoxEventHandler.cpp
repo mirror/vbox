@@ -15,23 +15,17 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifdef VBOX_WITH_PRECOMPILED_HEADERS
-# include <precomp.h>
-#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
-
 /* GUI includes: */
-# include "VBoxGlobal.h"
-# include "UIExtraDataManager.h"
-# include "UIMainEventListener.h"
-# include "UIVirtualBoxEventHandler.h"
+#include "VBoxGlobal.h"
+#include "UIExtraDataManager.h"
+#include "UIMainEventListener.h"
+#include "UIVirtualBoxEventHandler.h"
 
 /* COM includes: */
-# include "CEventListener.h"
-# include "CEventSource.h"
-# include "CVirtualBox.h"
-# include "CVirtualBoxClient.h"
-
-#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+#include "CEventListener.h"
+#include "CEventSource.h"
+#include "CVirtualBox.h"
+#include "CVirtualBoxClient.h"
 
 
 /** Private QObject extension

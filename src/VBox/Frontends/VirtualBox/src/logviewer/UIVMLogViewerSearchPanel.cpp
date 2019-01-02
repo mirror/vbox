@@ -15,34 +15,28 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifdef VBOX_WITH_PRECOMPILED_HEADERS
-# include <precomp.h>
-#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
-
 /* Qt includes: */
-# include <QAction>
-# include <QCheckBox>
-# include <QComboBox>
-# if defined(RT_OS_SOLARIS)
-#  include <QFontDatabase>
-# endif
-# include <QHBoxLayout>
-# include <QLabel>
-# include <QLineEdit>
-# include <QPlainTextEdit>
-# include <QTextBlock>
+#include <QAction>
+#include <QCheckBox>
+#include <QComboBox>
+#if defined(RT_OS_SOLARIS)
+# include <QFontDatabase>
+#endif
+#include <QHBoxLayout>
+#include <QLabel>
+#include <QLineEdit>
+#include <QPlainTextEdit>
+#include <QTextBlock>
 
 /* GUI includes: */
-# include "QIToolButton.h"
-# include "UIIconPool.h"
-# include "UIVMLogPage.h"
-# include "UIVMLogViewerSearchPanel.h"
-# include "UIVMLogViewerWidget.h"
-# ifdef VBOX_WS_MAC
-#  include "VBoxUtils-darwin.h"
-# endif
-
-#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+#include "QIToolButton.h"
+#include "UIIconPool.h"
+#include "UIVMLogPage.h"
+#include "UIVMLogViewerSearchPanel.h"
+#include "UIVMLogViewerWidget.h"
+#ifdef VBOX_WS_MAC
+# include "VBoxUtils-darwin.h"
+#endif
 
 class UIVMLogViewerSearchField: public QLineEdit
 {

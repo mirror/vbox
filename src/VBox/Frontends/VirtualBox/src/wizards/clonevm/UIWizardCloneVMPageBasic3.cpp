@@ -15,20 +15,14 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifdef VBOX_WITH_PRECOMPILED_HEADERS
-# include <precomp.h>
-#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
-
 /* Global includes: */
-# include <QVBoxLayout>
-# include <QRadioButton>
+#include <QVBoxLayout>
+#include <QRadioButton>
 
 /* Local includes: */
-# include "UIWizardCloneVMPageBasic3.h"
-# include "UIWizardCloneVM.h"
-# include "QIRichTextLabel.h"
-
-#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+#include "UIWizardCloneVMPageBasic3.h"
+#include "UIWizardCloneVM.h"
+#include "QIRichTextLabel.h"
 
 
 UIWizardCloneVMPage3::UIWizardCloneVMPage3(bool fShowChildsOption)

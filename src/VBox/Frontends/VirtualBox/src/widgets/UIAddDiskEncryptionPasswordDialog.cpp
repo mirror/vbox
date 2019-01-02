@@ -15,35 +15,29 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifdef VBOX_WITH_PRECOMPILED_HEADERS
-# include <precomp.h>
-#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
-
 /* Qt includes: */
-# include <QAbstractTableModel>
-# include <QHeaderView>
-# include <QItemEditorFactory>
-# include <QLabel>
-# include <QLineEdit>
-# include <QPushButton>
-# include <QStandardItemEditorCreator>
-# include <QTableView>
-# include <QVBoxLayout>
+#include <QAbstractTableModel>
+#include <QHeaderView>
+#include <QItemEditorFactory>
+#include <QLabel>
+#include <QLineEdit>
+#include <QPushButton>
+#include <QStandardItemEditorCreator>
+#include <QTableView>
+#include <QVBoxLayout>
 
 /* GUI includes: */
-# include "QIDialogButtonBox.h"
-# include "QIStyledItemDelegate.h"
-# include "QIWithRetranslateUI.h"
-# include "VBoxGlobal.h"
-# include "UIAddDiskEncryptionPasswordDialog.h"
-# include "UIIconPool.h"
-# include "UIMedium.h"
-# include "UIMessageCenter.h"
+#include "QIDialogButtonBox.h"
+#include "QIStyledItemDelegate.h"
+#include "QIWithRetranslateUI.h"
+#include "VBoxGlobal.h"
+#include "UIAddDiskEncryptionPasswordDialog.h"
+#include "UIIconPool.h"
+#include "UIMedium.h"
+#include "UIMessageCenter.h"
 
 /* Other VBox includes: */
-# include <iprt/assert.h>
-
-#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+#include <iprt/assert.h>
 
 
 /** UIEncryptionDataTable field indexes. */

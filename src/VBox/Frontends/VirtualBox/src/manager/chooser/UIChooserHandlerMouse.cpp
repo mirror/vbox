@@ -15,21 +15,15 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifdef VBOX_WITH_PRECOMPILED_HEADERS
-# include <precomp.h>
-#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
-
 /* Qt includes: */
-# include <QGraphicsSceneMouseEvent>
+#include <QGraphicsSceneMouseEvent>
 
 /* GUI incluedes: */
-# include "UIChooserHandlerMouse.h"
-# include "UIChooserModel.h"
-# include "UIChooserItemGroup.h"
-# include "UIChooserItemGlobal.h"
-# include "UIChooserItemMachine.h"
-
-#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+#include "UIChooserHandlerMouse.h"
+#include "UIChooserModel.h"
+#include "UIChooserItemGroup.h"
+#include "UIChooserItemGlobal.h"
+#include "UIChooserItemMachine.h"
 
 
 UIChooserHandlerMouse::UIChooserHandlerMouse(UIChooserModel *pParent)

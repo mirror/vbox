@@ -15,24 +15,18 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifdef VBOX_WITH_PRECOMPILED_HEADERS
-# include <precomp.h>
-#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
-
 /* Qt includes: */
-# ifndef VBOX_WS_MAC
-#  include <QKeyEvent>
-#  include <QTimer>
-# endif /* !VBOX_WS_MAC */
+#ifndef VBOX_WS_MAC
+# include <QKeyEvent>
+# include <QTimer>
+#endif /* !VBOX_WS_MAC */
 
 /* GUI includes: */
-# include "UIKeyboardHandlerScale.h"
-# ifndef VBOX_WS_MAC
-#  include "UIMachineLogic.h"
-#  include "UIShortcutPool.h"
-# endif /* !VBOX_WS_MAC */
-
-#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+#include "UIKeyboardHandlerScale.h"
+#ifndef VBOX_WS_MAC
+# include "UIMachineLogic.h"
+# include "UIShortcutPool.h"
+#endif /* !VBOX_WS_MAC */
 
 
 #ifndef VBOX_WS_MAC

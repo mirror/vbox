@@ -15,27 +15,21 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifdef VBOX_WITH_PRECOMPILED_HEADERS
-# include <precomp.h>
-#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
-
 /* Qt includes: */
-# include <QApplication>
-# include <QDir>
+#include <QApplication>
+#include <QDir>
 
 /* GUI includes: */
-# include "UIMedium.h"
-# include "VBoxGlobal.h"
-# include "UIConverter.h"
-# include "UIErrorString.h"
-# include "UIExtraDataManager.h"
-# include "UIIconPool.h"
+#include "UIMedium.h"
+#include "VBoxGlobal.h"
+#include "UIConverter.h"
+#include "UIErrorString.h"
+#include "UIExtraDataManager.h"
+#include "UIIconPool.h"
 
 /* COM includes: */
-# include "CMachine.h"
-# include "CSnapshot.h"
-
-#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+#include "CMachine.h"
+#include "CSnapshot.h"
 
 QUuid   UIMedium::m_uNullID;
 QString UIMedium::m_sstrTable = QString("<table>%1</table>");

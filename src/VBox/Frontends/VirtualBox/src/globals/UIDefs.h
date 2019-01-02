@@ -24,7 +24,9 @@
 /* Define GUI log group: */
 // WORKAROUND:
 // This define should go *before* VBox/log.h include!
-#define LOG_GROUP LOG_GROUP_GUI
+#ifndef LOG_GROUP
+# define LOG_GROUP LOG_GROUP_GUI
+#endif
 
 /* Qt includes: */
 #include <QEvent>

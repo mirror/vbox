@@ -15,22 +15,16 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifdef VBOX_WITH_PRECOMPILED_HEADERS
-# include <precomp.h>
-#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
-
 /* VBox includes */
-# include "UIDesktopServices.h"
+#include "UIDesktopServices.h"
 
 /* Qt includes */
-# include <QDir>
-# include <QCoreApplication>
-# include <QUuid>
+#include <QDir>
+#include <QCoreApplication>
+#include <QUuid>
 
 /* System includes */
-# include <iprt/win/shlobj.h>
-
-#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+#include <iprt/win/shlobj.h>
 
 
 bool UIDesktopServices::createMachineShortcut(const QString & /* strSrcFile */, const QString &strDstPath, const QString &strName, const QUuid &uUuid)

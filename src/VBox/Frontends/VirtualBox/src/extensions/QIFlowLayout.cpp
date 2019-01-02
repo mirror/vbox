@@ -15,17 +15,11 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifdef VBOX_WITH_PRECOMPILED_HEADERS
-# include <precomp.h>
-#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
-
 /* Qt includes: */
 #include <QWidget>
 
 /* GUI includes: */
 #include "QIFlowLayout.h"
-
-#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 
 QIFlowLayout::QIFlowLayout(QWidget *pParent, int iMargin /* = -1 */, int iSpacingH /* = -1 */, int iSpacingV /* = -1 */)

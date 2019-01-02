@@ -15,30 +15,24 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifdef VBOX_WITH_PRECOMPILED_HEADERS
-# include <precomp.h>
-#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
-
 /* Qt includes: */
-# include <QVBoxLayout>
-# include <QLabel>
-# include <QPushButton>
-# include <QStatusBar>
-# include <QKeyEvent>
+#include <QVBoxLayout>
+#include <QLabel>
+#include <QPushButton>
+#include <QStatusBar>
+#include <QKeyEvent>
 
 /* GUI includes: */
-# include "QIDialogButtonBox.h"
-# include "VBoxGlobal.h"
-# include "UIIconPool.h"
-# include "UIMessageCenter.h"
-# include "UIModalWindowManager.h"
-# include "UINetworkCustomer.h"
-# include "UINetworkManager.h"
-# include "UINetworkManagerDialog.h"
-# include "UINetworkRequest.h"
-# include "UINetworkRequestWidget.h"
-
-#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+#include "QIDialogButtonBox.h"
+#include "VBoxGlobal.h"
+#include "UIIconPool.h"
+#include "UIMessageCenter.h"
+#include "UIModalWindowManager.h"
+#include "UINetworkCustomer.h"
+#include "UINetworkManager.h"
+#include "UINetworkManagerDialog.h"
+#include "UINetworkRequest.h"
+#include "UINetworkRequestWidget.h"
 
 
 void UINetworkManagerDialog::showNormal()

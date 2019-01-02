@@ -15,28 +15,22 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifdef VBOX_WITH_PRECOMPILED_HEADERS
-# include <precomp.h>
-#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
-
 /* Global includes: */
-# include <QLabel>
-# include <QPointer>
-# include <QPushButton>
-# include <QTextBrowser>
-# include <QVBoxLayout>
+#include <QLabel>
+#include <QPointer>
+#include <QPushButton>
+#include <QTextBrowser>
+#include <QVBoxLayout>
 
 /* Local includes: */
-# include "QIDialogButtonBox.h"
-# include "QIRichTextLabel.h"
-# include "UIWizardImportApp.h"
-# include "UIWizardImportAppPageBasic2.h"
+#include "QIDialogButtonBox.h"
+#include "QIRichTextLabel.h"
+#include "UIWizardImportApp.h"
+#include "UIWizardImportAppPageBasic2.h"
 
 /* COM includes: */
-# include "CAppliance.h"
-# include "CCertificate.h"
-
-#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+#include "CAppliance.h"
+#include "CCertificate.h"
 
 
 /*********************************************************************************************************************************

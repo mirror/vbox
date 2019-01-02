@@ -15,58 +15,52 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifdef VBOX_WITH_PRECOMPILED_HEADERS
-# include <precomp.h>
-#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
-
 /* Qt includes: */
-# include <QMutex>
-# include <QThread>
+#include <QMutex>
+#include <QThread>
 
 /* GUI includes: */
-# include "VBoxGlobal.h"
-# include "UIMainEventListener.h"
+#include "VBoxGlobal.h"
+#include "UIMainEventListener.h"
 
 /* COM includes: */
-# include "COMEnums.h"
-# include "CCanShowWindowEvent.h"
-# include "CCursorPositionChangedEvent.h"
-# include "CEvent.h"
-# include "CEventSource.h"
-# include "CEventListener.h"
-# include "CExtraDataCanChangeEvent.h"
-# include "CExtraDataChangedEvent.h"
-# include "CGuestMonitorChangedEvent.h"
-# include "CGuestProcessIOEvent.h"
-# include "CGuestProcessRegisteredEvent.h"
-# include "CGuestProcessStateChangedEvent.h"
-# include "CGuestSessionRegisteredEvent.h"
-# include "CGuestSessionStateChangedEvent.h"
-# include "CKeyboardLedsChangedEvent.h"
-# include "CMachineDataChangedEvent.h"
-# include "CMachineStateChangedEvent.h"
-# include "CMachineRegisteredEvent.h"
-# include "CMediumChangedEvent.h"
-# include "CMouseCapabilityChangedEvent.h"
-# include "CMousePointerShapeChangedEvent.h"
-# include "CNetworkAdapterChangedEvent.h"
-# include "CProgressPercentageChangedEvent.h"
-# include "CProgressTaskCompletedEvent.h"
-# include "CRuntimeErrorEvent.h"
-# include "CSessionStateChangedEvent.h"
-# include "CShowWindowEvent.h"
-# include "CSnapshotChangedEvent.h"
-# include "CSnapshotDeletedEvent.h"
-# include "CSnapshotRestoredEvent.h"
-# include "CSnapshotTakenEvent.h"
-# include "CStateChangedEvent.h"
-# include "CStorageDeviceChangedEvent.h"
-# include "CUSBDevice.h"
-# include "CUSBDeviceStateChangedEvent.h"
-# include "CVBoxSVCAvailabilityChangedEvent.h"
-# include "CVirtualBoxErrorInfo.h"
-
-#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+#include "COMEnums.h"
+#include "CCanShowWindowEvent.h"
+#include "CCursorPositionChangedEvent.h"
+#include "CEvent.h"
+#include "CEventSource.h"
+#include "CEventListener.h"
+#include "CExtraDataCanChangeEvent.h"
+#include "CExtraDataChangedEvent.h"
+#include "CGuestMonitorChangedEvent.h"
+#include "CGuestProcessIOEvent.h"
+#include "CGuestProcessRegisteredEvent.h"
+#include "CGuestProcessStateChangedEvent.h"
+#include "CGuestSessionRegisteredEvent.h"
+#include "CGuestSessionStateChangedEvent.h"
+#include "CKeyboardLedsChangedEvent.h"
+#include "CMachineDataChangedEvent.h"
+#include "CMachineStateChangedEvent.h"
+#include "CMachineRegisteredEvent.h"
+#include "CMediumChangedEvent.h"
+#include "CMouseCapabilityChangedEvent.h"
+#include "CMousePointerShapeChangedEvent.h"
+#include "CNetworkAdapterChangedEvent.h"
+#include "CProgressPercentageChangedEvent.h"
+#include "CProgressTaskCompletedEvent.h"
+#include "CRuntimeErrorEvent.h"
+#include "CSessionStateChangedEvent.h"
+#include "CShowWindowEvent.h"
+#include "CSnapshotChangedEvent.h"
+#include "CSnapshotDeletedEvent.h"
+#include "CSnapshotRestoredEvent.h"
+#include "CSnapshotTakenEvent.h"
+#include "CStateChangedEvent.h"
+#include "CStorageDeviceChangedEvent.h"
+#include "CUSBDevice.h"
+#include "CUSBDeviceStateChangedEvent.h"
+#include "CVBoxSVCAvailabilityChangedEvent.h"
+#include "CVirtualBoxErrorInfo.h"
 
 
 /** Private QThread extension allowing to listen for Main events in separate thread.

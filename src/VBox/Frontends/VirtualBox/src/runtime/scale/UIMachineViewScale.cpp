@@ -15,33 +15,27 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifdef VBOX_WITH_PRECOMPILED_HEADERS
-# include <precomp.h>
-#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
-
 /* Qt includes: */
-# include <QMainWindow>
-# include <QTimer>
+#include <QMainWindow>
+#include <QTimer>
 
 /* GUI includes */
-# include "VBoxGlobal.h"
-# include "UISession.h"
-# include "UIMachineLogic.h"
-# include "UIMachineWindow.h"
-# include "UIMachineViewScale.h"
-# include "UIFrameBuffer.h"
-# include "UIExtraDataManager.h"
-# include "UIDesktopWidgetWatchdog.h"
+#include "VBoxGlobal.h"
+#include "UISession.h"
+#include "UIMachineLogic.h"
+#include "UIMachineWindow.h"
+#include "UIMachineViewScale.h"
+#include "UIFrameBuffer.h"
+#include "UIExtraDataManager.h"
+#include "UIDesktopWidgetWatchdog.h"
 
 /* COM includes: */
-# include "CConsole.h"
-# include "CDisplay.h"
+#include "CConsole.h"
+#include "CDisplay.h"
 
 /* Other VBox includes: */
-# include "VBox/log.h"
-# include <VBox/VBoxOGL.h>
-
-#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+#include "VBox/log.h"
+#include <VBox/VBoxOGL.h>
 
 
 UIMachineViewScale::UIMachineViewScale(  UIMachineWindow *pMachineWindow

@@ -15,28 +15,22 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifdef VBOX_WITH_PRECOMPILED_HEADERS
-# include <precomp.h>
-#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
-
 /* Qt includes: */
-# include <QApplication>
-# include <QFileInfo>
-# include <QIcon>
+#include <QApplication>
+#include <QFileInfo>
+#include <QIcon>
 
 /* GUI includes: */
-# include "UIVirtualMachineItem.h"
-# include "VBoxGlobal.h"
-# include "UIConverter.h"
-# include "UIExtraDataManager.h"
-# ifdef VBOX_WS_MAC
-#  include <ApplicationServices/ApplicationServices.h>
-# endif /* VBOX_WS_MAC */
+#include "UIVirtualMachineItem.h"
+#include "VBoxGlobal.h"
+#include "UIConverter.h"
+#include "UIExtraDataManager.h"
+#ifdef VBOX_WS_MAC
+# include <ApplicationServices/ApplicationServices.h>
+#endif /* VBOX_WS_MAC */
 
 /* COM includes: */
-# include "CSnapshot.h"
-
-#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+#include "CSnapshot.h"
 
 
 UIVirtualMachineItem::UIVirtualMachineItem(const CMachine &aMachine)

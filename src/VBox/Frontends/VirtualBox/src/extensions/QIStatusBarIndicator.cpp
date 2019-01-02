@@ -15,28 +15,22 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifdef VBOX_WITH_PRECOMPILED_HEADERS
-# include <precomp.h>
-#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
-
 /* Qt includes: */
-# include <QApplication>
-# include <QHBoxLayout>
-# include <QLabel>
-# include <QIcon>
-# include <QPainter>
-# include <QStyle>
-# ifdef VBOX_WS_MAC
-#  include <QContextMenuEvent>
-# endif /* VBOX_WS_MAC */
+#include <QApplication>
+#include <QHBoxLayout>
+#include <QLabel>
+#include <QIcon>
+#include <QPainter>
+#include <QStyle>
+#ifdef VBOX_WS_MAC
+# include <QContextMenuEvent>
+#endif /* VBOX_WS_MAC */
 
 /* GUI includes: */
-# include "QIStatusBarIndicator.h"
+#include "QIStatusBarIndicator.h"
 
 /* Other VBox includes: */
-# include <iprt/assert.h>
-
-#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+#include <iprt/assert.h>
 
 
 /*********************************************************************************************************************************

@@ -15,19 +15,14 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifdef VBOX_WITH_PRECOMPILED_HEADERS
-# include <precomp.h>
-#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
-
 /* Qt includes: */
-# include <QVBoxLayout>
-# include <QApplication>
-# include <QTextBlock>
+#include <QVBoxLayout>
+#include <QApplication>
+#include <QTextBlock>
 
 /* GUI includes: */
-# include "UIGuestControlConsole.h"
+#include "UIGuestControlConsole.h"
 
-#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 UIGuestControlConsole::UIGuestControlConsole(QWidget* parent /* = 0 */)
     :QPlainTextEdit(parent)

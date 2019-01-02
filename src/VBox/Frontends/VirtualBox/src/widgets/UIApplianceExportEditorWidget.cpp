@@ -15,23 +15,17 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifdef VBOX_WITH_PRECOMPILED_HEADERS
-# include <precomp.h>
-#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
-
 /* Qt includes: */
-# include <QTextEdit>
+#include <QTextEdit>
 
 /* GUI includes: */
-# include "QITreeView.h"
-# include "UIApplianceExportEditorWidget.h"
-# include "VBoxGlobal.h"
-# include "UIMessageCenter.h"
+#include "QITreeView.h"
+#include "UIApplianceExportEditorWidget.h"
+#include "VBoxGlobal.h"
+#include "UIMessageCenter.h"
 
 /* COM includes: */
-# include "CAppliance.h"
-
-#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+#include "CAppliance.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////

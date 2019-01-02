@@ -15,22 +15,16 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifdef VBOX_WITH_PRECOMPILED_HEADERS
-# include <precomp.h>
-#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
-
 /* Qt includes: */
-# include <QApplication>
-# include <QPainter>
-# include <QTextDocument>
-# include <QUrl>
+#include <QApplication>
+#include <QPainter>
+#include <QTextDocument>
+#include <QUrl>
 
 /* GUI includes: */
-# include "VBoxGlobal.h"
-# include "UIIconPool.h"
-# include "UIInformationItem.h"
-
-#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+#include "VBoxGlobal.h"
+#include "UIIconPool.h"
+#include "UIInformationItem.h"
 
 
 UIInformationItem::UIInformationItem(QObject *pParent)

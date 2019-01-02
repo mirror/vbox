@@ -15,27 +15,21 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifdef VBOX_WITH_PRECOMPILED_HEADERS
-# include <precomp.h>
-#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
-
 /* Qt includes: */
 #include <QStyle>
 
 /* GUI includes: */
-# include "UIAbstractDockIconPreview.h"
-# include "UIConverter.h"
-# include "UIExtraDataManager.h"
-# include "UIFrameBuffer.h"
-# include "UIMachineLogic.h"
-# include "UIMachineView.h"
-# include "UISession.h"
-# include "VBoxGlobal.h"
+#include "UIAbstractDockIconPreview.h"
+#include "UIConverter.h"
+#include "UIExtraDataManager.h"
+#include "UIFrameBuffer.h"
+#include "UIMachineLogic.h"
+#include "UIMachineView.h"
+#include "UISession.h"
+#include "VBoxGlobal.h"
 
 /* COM includes: */
-# include "COMEnums.h"
-
-#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+#include "COMEnums.h"
 
 
 UIAbstractDockIconPreview::UIAbstractDockIconPreview(UISession * /* pSession */, const QPixmap& /* overlayImage */)

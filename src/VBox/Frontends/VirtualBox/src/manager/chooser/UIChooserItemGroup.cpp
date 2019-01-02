@@ -15,32 +15,25 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifdef VBOX_WITH_PRECOMPILED_HEADERS
-# include <precomp.h>
-#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
-
 /* Qt includes: */
-# include <QGraphicsScene>
-# include <QGraphicsSceneDragDropEvent>
-# include <QHBoxLayout>
-# include <QLineEdit>
-# include <QMenu>
-# include <QPainter>
-# include <QStyleOptionGraphicsItem>
+#include <QGraphicsScene>
+#include <QGraphicsSceneDragDropEvent>
+#include <QHBoxLayout>
+#include <QLineEdit>
+#include <QMenu>
+#include <QPainter>
+#include <QStyleOptionGraphicsItem>
+#include <QGraphicsProxyWidget>
 
 /* GUI includes: */
-# include "UIChooserItemGroup.h"
-# include "UIChooserItemGlobal.h"
-# include "UIChooserItemMachine.h"
-# include "UIChooserModel.h"
-# include "UIChooserView.h"
-# include "UIGraphicsRotatorButton.h"
-# include "UIIconPool.h"
-# include "UIVirtualBoxManager.h"
-
-#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
-
-#include <QGraphicsProxyWidget>
+#include "UIChooserItemGroup.h"
+#include "UIChooserItemGlobal.h"
+#include "UIChooserItemMachine.h"
+#include "UIChooserModel.h"
+#include "UIChooserView.h"
+#include "UIGraphicsRotatorButton.h"
+#include "UIIconPool.h"
+#include "UIVirtualBoxManager.h"
 
 
 /*********************************************************************************************************************************

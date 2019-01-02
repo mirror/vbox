@@ -15,49 +15,42 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifdef VBOX_WITH_PRECOMPILED_HEADERS
-# include <precomp.h>
-#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
-
 /* Qt includes: */
-# include <QAction>
-# include <QComboBox>
-# include <QCheckBox>
-# include <QDateTime>
-# include <QDir>
-# include <QHeaderView>
-# include <QItemDelegate>
-# include <QGridLayout>
-# include <QMenu>
-# include <QSortFilterProxyModel>
-# include <QTextEdit>
-# include <QPushButton>
+#include <QAction>
+#include <QComboBox>
+#include <QCheckBox>
+#include <QDateTime>
+#include <QDir>
+#include <QHeaderView>
+#include <QItemDelegate>
+#include <QGridLayout>
+#include <QMenu>
+#include <QSortFilterProxyModel>
+#include <QTextEdit>
+#include <QPushButton>
 
 /* GUI includes: */
-# include "QIDialog.h"
-# include "QIDialogButtonBox.h"
-# include "QILabel.h"
-# include "QILineEdit.h"
-# include "QIMessageBox.h"
-# include "VBoxGlobal.h"
-# include "UIActionPool.h"
-# include "UICustomFileSystemModel.h"
-# include "UIErrorString.h"
-# include "UIFileManagerGuestTable.h"
-# include "UIFileManagerTable.h"
-# include "UIFileManager.h"
-# include "UIIconPool.h"
-# include "UIPathOperations.h"
-# include "UIToolBar.h"
+#include "QIDialog.h"
+#include "QIDialogButtonBox.h"
+#include "QILabel.h"
+#include "QILineEdit.h"
+#include "QIMessageBox.h"
+#include "VBoxGlobal.h"
+#include "UIActionPool.h"
+#include "UICustomFileSystemModel.h"
+#include "UIErrorString.h"
+#include "UIFileManagerGuestTable.h"
+#include "UIFileManagerTable.h"
+#include "UIFileManager.h"
+#include "UIIconPool.h"
+#include "UIPathOperations.h"
+#include "UIToolBar.h"
 
 /* COM includes: */
-# include "CFsObjInfo.h"
-# include "CGuestFsObjInfo.h"
-# include "CGuestDirectory.h"
-# include "CProgress.h"
-
-#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
-
+#include "CFsObjInfo.h"
+#include "CGuestFsObjInfo.h"
+#include "CGuestDirectory.h"
+#include "CProgress.h"
 
 
 /*********************************************************************************************************************************

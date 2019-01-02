@@ -15,37 +15,31 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifdef VBOX_WITH_PRECOMPILED_HEADERS
-# include <precomp.h>
-#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
-
 /* Qt includes: */
-# include <QApplication>
-# include <QLabel>
-# include <QMenu>
-# include <QMoveEvent>
-# include <QPainter>
-# include <QStateMachine>
-# include <QStyle>
-# include <QTimer>
-# include <QToolButton>
-# include <QVBoxLayout>
-# include <QWindow>
-# ifdef VBOX_WS_X11
-#  include <QWindowStateChangeEvent>
-# endif
+#include <QApplication>
+#include <QLabel>
+#include <QMenu>
+#include <QMoveEvent>
+#include <QPainter>
+#include <QStateMachine>
+#include <QStyle>
+#include <QTimer>
+#include <QToolButton>
+#include <QVBoxLayout>
+#include <QWindow>
+#ifdef VBOX_WS_X11
+# include <QWindowStateChangeEvent>
+#endif
 
 /* GUI includes: */
-# include "UIMiniToolBar.h"
-# include "UIAnimationFramework.h"
-# include "UIIconPool.h"
-# include "UIDesktopWidgetWatchdog.h"
-# include "VBoxGlobal.h"
-# ifdef VBOX_WS_X11
-#  include "UIExtraDataManager.h"
-# endif /* VBOX_WS_X11 */
-
-#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+#include "UIMiniToolBar.h"
+#include "UIAnimationFramework.h"
+#include "UIIconPool.h"
+#include "UIDesktopWidgetWatchdog.h"
+#include "VBoxGlobal.h"
+#ifdef VBOX_WS_X11
+# include "UIExtraDataManager.h"
+#endif
 
 
 /** UIToolBar reimplementation

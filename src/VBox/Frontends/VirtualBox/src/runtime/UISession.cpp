@@ -15,75 +15,69 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifdef VBOX_WITH_PRECOMPILED_HEADERS
-# include <precomp.h>
-#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
-
 /* Qt includes: */
-# include <QApplication>
-# include <QBitmap>
-# include <QMenuBar>
-# include <QWidget>
-# ifdef VBOX_WS_MAC
-#  include <QTimer>
-# endif /* VBOX_WS_MAC */
-
-/* GUI includes: */
-# include "VBoxGlobal.h"
-# include "UIDesktopWidgetWatchdog.h"
-# include "UIExtraDataManager.h"
-# include "UISession.h"
-# include "UIMachine.h"
-# include "UIMedium.h"
-# include "UIActionPoolRuntime.h"
-# include "UIMachineLogic.h"
-# include "UIMachineView.h"
-# include "UIMachineWindow.h"
-# include "UIMessageCenter.h"
-# include "UIPopupCenter.h"
-# include "UIWizardFirstRun.h"
-# include "UIConsoleEventHandler.h"
-# include "UIFrameBuffer.h"
-# include "UISettingsDialogSpecific.h"
-# ifdef VBOX_WITH_VIDEOHWACCEL
-#  include "VBox2DHelpers.h"
-# endif /* VBOX_WITH_VIDEOHWACCEL */
-# ifdef VBOX_WS_MAC
-#  include "VBoxUtils-darwin.h"
-# endif /* VBOX_WS_MAC */
-
-# ifdef VBOX_GUI_WITH_KEYS_RESET_HANDLER
-#  include "UIKeyboardHandler.h"
-#  include <signal.h>
-# endif /* VBOX_GUI_WITH_KEYS_RESET_HANDLER */
-
-/* COM includes: */
-# include "CAudioAdapter.h"
-# include "CRecordingSettings.h"
-# include "CSystemProperties.h"
-# include "CStorageController.h"
-# include "CMediumAttachment.h"
-# include "CNetworkAdapter.h"
-# include "CHostNetworkInterface.h"
-# include "CVRDEServer.h"
-# include "CUSBController.h"
-# include "CUSBDeviceFilters.h"
-# include "CHostVideoInputDevice.h"
-# include "CSnapshot.h"
-# include "CMedium.h"
-
-#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
-
-/* Qt includes: */
+#include <QApplication>
+#include <QBitmap>
+#include <QMenuBar>
+#include <QWidget>
+#ifdef VBOX_WS_MAC
+# include <QTimer>
+#endif
 #ifdef VBOX_WS_WIN
 # include <QtWin>
-#endif /* VBOX_WS_WIN */
-
+#endif
 #ifdef VBOX_WS_X11
 # include <QX11Info>
+#endif
+
+/* GUI includes: */
+#include "VBoxGlobal.h"
+#include "UIDesktopWidgetWatchdog.h"
+#include "UIExtraDataManager.h"
+#include "UISession.h"
+#include "UIMachine.h"
+#include "UIMedium.h"
+#include "UIActionPoolRuntime.h"
+#include "UIMachineLogic.h"
+#include "UIMachineView.h"
+#include "UIMachineWindow.h"
+#include "UIMessageCenter.h"
+#include "UIPopupCenter.h"
+#include "UIWizardFirstRun.h"
+#include "UIConsoleEventHandler.h"
+#include "UIFrameBuffer.h"
+#include "UISettingsDialogSpecific.h"
+#ifdef VBOX_WITH_VIDEOHWACCEL
+# include "VBox2DHelpers.h"
+#endif
+#ifdef VBOX_WS_MAC
+# include "VBoxUtils-darwin.h"
+#endif
+#ifdef VBOX_GUI_WITH_KEYS_RESET_HANDLER
+# include "UIKeyboardHandler.h"
+# include <signal.h>
+#endif
+
+/* COM includes: */
+#include "CAudioAdapter.h"
+#include "CRecordingSettings.h"
+#include "CSystemProperties.h"
+#include "CStorageController.h"
+#include "CMediumAttachment.h"
+#include "CNetworkAdapter.h"
+#include "CHostNetworkInterface.h"
+#include "CVRDEServer.h"
+#include "CUSBController.h"
+#include "CUSBDeviceFilters.h"
+#include "CHostVideoInputDevice.h"
+#include "CSnapshot.h"
+#include "CMedium.h"
+
+/* External includes: */
+#ifdef VBOX_WS_X11
 # include <X11/Xlib.h>
 # include <X11/Xutil.h>
-#endif /* VBOX_WS_X11 */
+#endif
 
 #ifdef VBOX_GUI_WITH_KEYS_RESET_HANDLER
 static void signalHandlerSIGUSR1(int sig, siginfo_t *, void *);

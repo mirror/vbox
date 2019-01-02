@@ -15,23 +15,17 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifdef VBOX_WITH_PRECOMPILED_HEADERS
-# include <precomp.h>
-#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
-
 /* Qt includes: */
-# include <QVBoxLayout>
-# include <QApplication>
+#include <QVBoxLayout>
+#include <QApplication>
 
 /* GUI includes: */
-# include "UIInformationRuntime.h"
-# include "UIInformationDataItem.h"
-# include "UIInformationItem.h"
-# include "UIInformationView.h"
-# include "UIExtraDataManager.h"
-# include "UIInformationModel.h"
-
-#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+#include "UIInformationRuntime.h"
+#include "UIInformationDataItem.h"
+#include "UIInformationItem.h"
+#include "UIInformationView.h"
+#include "UIExtraDataManager.h"
+#include "UIInformationModel.h"
 
 
 UIInformationRuntime::UIInformationRuntime(QWidget *pParent, const CMachine &machine, const CConsole &console)

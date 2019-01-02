@@ -15,77 +15,59 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifdef VBOX_WITH_PRECOMPILED_HEADERS
-# include <precomp.h>
-#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
-
 /* Qt includes: */
-# include <QMainWindow>
-# include <QPainter>
-# include <QScrollBar>
-# include <QTimer>
+#include <QMainWindow>
+#include <QPainter>
+#include <QScrollBar>
+#include <QTimer>
+#include <QAbstractNativeEventFilter>
 
 /* GUI includes: */
-# include "VBoxGlobal.h"
-# include "UIActionPoolRuntime.h"
-# include "UIDesktopWidgetWatchdog.h"
-# include "UIExtraDataManager.h"
-# include "UIMessageCenter.h"
-# include "UISession.h"
-# include "UIMachineLogic.h"
-# include "UIMachineWindow.h"
-# include "UIMachineViewNormal.h"
-# include "UIMachineViewFullscreen.h"
-# include "UIMachineViewSeamless.h"
-# include "UIMachineViewScale.h"
-# include "UIKeyboardHandler.h"
-# include "UIMouseHandler.h"
-# include "UIFrameBuffer.h"
-# include "VBoxFBOverlay.h"
-# ifdef VBOX_WS_MAC
-#  include "UICocoaApplication.h"
-# endif /* VBOX_WS_MAC */
-# ifdef VBOX_WITH_DRAG_AND_DROP
-#  include "UIDnDHandler.h"
-# endif /* VBOX_WITH_DRAG_AND_DROP */
-
-/* VirtualBox interface declarations: */
-# include <VBox/com/VirtualBox.h>
-
-/* COM includes: */
-# include "CConsole.h"
-# include "CDisplay.h"
-# include "CSession.h"
-# ifdef VBOX_WITH_DRAG_AND_DROP
-#  include "CDnDSource.h"
-#  include "CDnDTarget.h"
-#  include "CGuest.h"
-# endif /* VBOX_WITH_DRAG_AND_DROP */
-
-/* Other VBox includes: */
-# include <iprt/asm.h>
-
-#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
-
-/* Qt includes: */
-# include <QAbstractNativeEventFilter>
-
-/* GUI includes: */
+#include "VBoxGlobal.h"
+#include "UIActionPoolRuntime.h"
+#include "UIDesktopWidgetWatchdog.h"
+#include "UIExtraDataManager.h"
+#include "UIMessageCenter.h"
+#include "UISession.h"
+#include "UIMachineLogic.h"
+#include "UIMachineWindow.h"
+#include "UIMachineViewNormal.h"
+#include "UIMachineViewFullscreen.h"
+#include "UIMachineViewSeamless.h"
+#include "UIMachineViewScale.h"
+#include "UIKeyboardHandler.h"
+#include "UIMouseHandler.h"
+#include "UIFrameBuffer.h"
+#include "VBoxFBOverlay.h"
 #ifdef VBOX_WS_MAC
+# include "UICocoaApplication.h"
 # include "DarwinKeyboard.h"
 # include "DockIconPreview.h"
-#endif /* VBOX_WS_MAC */
+#endif
+#ifdef VBOX_WITH_DRAG_AND_DROP
+# include "UIDnDHandler.h"
+#endif
+
+/* VirtualBox interface declarations: */
+#include <VBox/com/VirtualBox.h>
 
 /* COM includes: */
+#include "CConsole.h"
+#include "CDisplay.h"
+#include "CSession.h"
 #include "CFramebuffer.h"
 #ifdef VBOX_WITH_DRAG_AND_DROP
+# include "CDnDSource.h"
+# include "CDnDTarget.h"
+# include "CGuest.h"
 # include "CGuestDnDSource.h"
 # include "CGuestDnDTarget.h"
-#endif /* VBOX_WITH_DRAG_AND_DROP */
+#endif
 
 /* Other VBox includes: */
 #include <VBox/VBoxOGL.h>
 #include <VBoxVideo.h>
+#include <iprt/asm.h>
 #include <iprt/errcore.h>
 
 /* External includes: */

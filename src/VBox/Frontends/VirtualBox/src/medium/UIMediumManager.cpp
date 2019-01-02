@@ -15,50 +15,44 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifdef VBOX_WITH_PRECOMPILED_HEADERS
-# include <precomp.h>
-#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
-
 /* Qt includes: */
-# include <QFrame>
-# include <QHBoxLayout>
-# include <QHeaderView>
-# include <QLabel>
-# include <QMenuBar>
-# include <QProgressBar>
-# include <QPushButton>
+#include <QFrame>
+#include <QHBoxLayout>
+#include <QHeaderView>
+#include <QLabel>
+#include <QMenuBar>
+#include <QProgressBar>
+#include <QPushButton>
 
 /* GUI includes: */
-# include "QIDialogButtonBox.h"
-# include "QIFileDialog.h"
-# include "QILabel.h"
-# include "QIMessageBox.h"
-# include "QITabWidget.h"
-# include "VBoxGlobal.h"
-# include "UIActionPoolManager.h"
-# include "UIExtraDataManager.h"
-# include "UIMediumDetailsWidget.h"
-# include "UIMediumItem.h"
-# include "UIMediumManager.h"
-# include "UIWizardCloneVD.h"
-# include "UIMessageCenter.h"
-# include "UIToolBar.h"
-# include "UIIconPool.h"
-# include "UIMedium.h"
+#include "QIDialogButtonBox.h"
+#include "QIFileDialog.h"
+#include "QILabel.h"
+#include "QIMessageBox.h"
+#include "QITabWidget.h"
+#include "VBoxGlobal.h"
+#include "UIActionPoolManager.h"
+#include "UIExtraDataManager.h"
+#include "UIMediumDetailsWidget.h"
+#include "UIMediumItem.h"
+#include "UIMediumManager.h"
+#include "UIWizardCloneVD.h"
+#include "UIMessageCenter.h"
+#include "UIToolBar.h"
+#include "UIIconPool.h"
+#include "UIMedium.h"
 
 /* COM includes: */
-# include "COMEnums.h"
-# include "CMachine.h"
-# include "CMediumAttachment.h"
-# include "CMediumFormat.h"
-# include "CStorageController.h"
-# include "CSystemProperties.h"
+#include "COMEnums.h"
+#include "CMachine.h"
+#include "CMediumAttachment.h"
+#include "CMediumFormat.h"
+#include "CStorageController.h"
+#include "CSystemProperties.h"
 
-# ifdef VBOX_WS_MAC
-#  include "UIWindowMenuManager.h"
-# endif /* VBOX_WS_MAC */
-
-#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+#ifdef VBOX_WS_MAC
+# include "UIWindowMenuManager.h"
+#endif /* VBOX_WS_MAC */
 
 
 

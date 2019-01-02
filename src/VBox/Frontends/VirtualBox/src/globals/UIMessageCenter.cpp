@@ -15,80 +15,74 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifdef VBOX_WITH_PRECOMPILED_HEADERS
-# include <precomp.h>
-#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
-
 /* Qt includes: */
-# include <QDir>
-# include <QFileInfo>
-# include <QLocale>
-# include <QThread>
-# include <QProcess>
-# ifdef VBOX_WS_MAC
-#  include <QPushButton>
-# endif
+#include <QDir>
+#include <QFileInfo>
+#include <QLocale>
+#include <QThread>
+#include <QProcess>
+#ifdef VBOX_WS_MAC
+# include <QPushButton>
+#endif
 
 /* GUI includes: */
-# include "QIMessageBox.h"
-# include "VBoxGlobal.h"
-# include "UIConverter.h"
-# include "UIMessageCenter.h"
-# include "UIProgressDialog.h"
-# include "UIErrorString.h"
-# ifdef VBOX_GUI_WITH_NETWORK_MANAGER
-#  include "UINetworkManager.h"
-#  include "UINetworkManagerDialog.h"
-# endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
-# include "UIModalWindowManager.h"
-# include "UIExtraDataManager.h"
-# include "UIMedium.h"
-# ifdef VBOX_OSE
-#  include "UIDownloaderUserManual.h"
-# endif /* VBOX_OSE */
-# include "VBoxAboutDlg.h"
-# include "UIHostComboEditor.h"
-# ifdef VBOX_WS_MAC
-#  include "VBoxUtils-darwin.h"
-# endif
-# ifdef VBOX_WS_WIN
-#  include <Htmlhelp.h>
-# endif
+#include "QIMessageBox.h"
+#include "VBoxGlobal.h"
+#include "UIConverter.h"
+#include "UIMessageCenter.h"
+#include "UIProgressDialog.h"
+#include "UIErrorString.h"
+#ifdef VBOX_GUI_WITH_NETWORK_MANAGER
+# include "UINetworkManager.h"
+# include "UINetworkManagerDialog.h"
+#endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
+#include "UIModalWindowManager.h"
+#include "UIExtraDataManager.h"
+#include "UIMedium.h"
+#ifdef VBOX_OSE
+# include "UIDownloaderUserManual.h"
+#endif /* VBOX_OSE */
+#include "VBoxAboutDlg.h"
+#include "UIHostComboEditor.h"
+#ifdef VBOX_WS_MAC
+# include "VBoxUtils-darwin.h"
+#endif
+#ifdef VBOX_WS_WIN
+# include <Htmlhelp.h>
+#endif
 
 /* COM includes: */
-# include "CCloudClient.h"
-# include "CCloudProfile.h"
-# include "CCloudProvider.h"
-# include "CCloudProviderManager.h"
-# include "CNATNetwork.h"
-# include "CDHCPServer.h"
-# include "CNATEngine.h"
-# include "CSerialPort.h"
-# include "CSharedFolder.h"
-# include "CSnapshot.h"
-# include "CStorageController.h"
-# include "CConsole.h"
-# include "CMachine.h"
-# include "CSystemProperties.h"
-# include "CVirtualBoxErrorInfo.h"
-# include "CMediumAttachment.h"
-# include "CMediumFormat.h"
-# include "CAppliance.h"
-# include "CExtPackManager.h"
-# include "CExtPackFile.h"
-# include "CHostNetworkInterface.h"
-# include "CVFSExplorer.h"
-# ifdef VBOX_WITH_DRAG_AND_DROP
-#  include "CGuest.h"
-#  include "CDnDSource.h"
-#  include "CDnDTarget.h"
-# endif /* VBOX_WITH_DRAG_AND_DROP */
+#include "CCloudClient.h"
+#include "CCloudProfile.h"
+#include "CCloudProvider.h"
+#include "CCloudProviderManager.h"
+#include "CNATNetwork.h"
+#include "CDHCPServer.h"
+#include "CNATEngine.h"
+#include "CSerialPort.h"
+#include "CSharedFolder.h"
+#include "CSnapshot.h"
+#include "CStorageController.h"
+#include "CConsole.h"
+#include "CMachine.h"
+#include "CSystemProperties.h"
+#include "CVirtualBoxErrorInfo.h"
+#include "CMediumAttachment.h"
+#include "CMediumFormat.h"
+#include "CAppliance.h"
+#include "CExtPackManager.h"
+#include "CExtPackFile.h"
+#include "CHostNetworkInterface.h"
+#include "CVFSExplorer.h"
+#ifdef VBOX_WITH_DRAG_AND_DROP
+# include "CGuest.h"
+# include "CDnDSource.h"
+# include "CDnDTarget.h"
+#endif /* VBOX_WITH_DRAG_AND_DROP */
 
 /* Other VBox includes: */
-# include <iprt/param.h>
-# include <iprt/path.h>
-
-#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+#include <iprt/param.h>
+#include <iprt/path.h>
 
 #include <iprt/errcore.h>
 

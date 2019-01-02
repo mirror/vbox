@@ -15,32 +15,26 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifdef VBOX_WITH_PRECOMPILED_HEADERS
-# include <precomp.h>
-#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
-
 /* Qt includes: */
-# include <QGraphicsSceneMouseEvent>
-# include <QGraphicsView>
-# include <QPropertyAnimation>
-# include <QSignalTransition>
-# include <QStateMachine>
-# include <QStyleOptionGraphicsItem>
+#include <QGraphicsSceneMouseEvent>
+#include <QGraphicsView>
+#include <QPropertyAnimation>
+#include <QSignalTransition>
+#include <QStateMachine>
+#include <QStyleOptionGraphicsItem>
 
 /* GUI includes: */
-# include "UIActionPool.h"
-# include "UIConverter.h"
-# include "UIDetailsElement.h"
-# include "UIDetailsSet.h"
-# include "UIDetailsModel.h"
-# include "UIExtraDataManager.h"
-# include "UIGraphicsRotatorButton.h"
-# include "UIGraphicsTextPane.h"
-# include "UIIconPool.h"
-# include "UIVirtualBoxManager.h"
-# include "VBoxGlobal.h"
-
-#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+#include "UIActionPool.h"
+#include "UIConverter.h"
+#include "UIDetailsElement.h"
+#include "UIDetailsSet.h"
+#include "UIDetailsModel.h"
+#include "UIExtraDataManager.h"
+#include "UIGraphicsRotatorButton.h"
+#include "UIGraphicsTextPane.h"
+#include "UIIconPool.h"
+#include "UIVirtualBoxManager.h"
+#include "VBoxGlobal.h"
 
 
 UIDetailsElement::UIDetailsElement(UIDetailsSet *pParent, DetailsElementType enmType, bool fOpened)

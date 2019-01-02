@@ -15,28 +15,22 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifdef VBOX_WITH_PRECOMPILED_HEADERS
-# include <precomp.h>
-#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
-
 /* Qt includes: */
-# include <QHeaderView>
+#include <QHeaderView>
 
 /* GUI includes: */
-# include "QIWidgetValidator.h"
-# include "UIConverter.h"
-# include "UIIconPool.h"
-# include "UIMachineSettingsSystem.h"
-# include "UIErrorString.h"
-# include "VBoxGlobal.h"
+#include "QIWidgetValidator.h"
+#include "UIConverter.h"
+#include "UIIconPool.h"
+#include "UIMachineSettingsSystem.h"
+#include "UIErrorString.h"
+#include "VBoxGlobal.h"
 
 /* COM includes: */
-# include "CBIOSSettings.h"
+#include "CBIOSSettings.h"
 
 /* Other VBox includes: */
-# include <iprt/cdefs.h>
-
-#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+#include <iprt/cdefs.h>
 
 
 /** Machine settings: System Boot data structure. */

@@ -15,21 +15,15 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifdef VBOX_WITH_PRECOMPILED_HEADERS
-# include <precomp.h>
-#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
-
 /* Qt includes: */
-# include <QVBoxLayout>
+#include <QVBoxLayout>
 
 /* GUI includes: */
-# include "UITools.h"
-# include "UIToolsModel.h"
-# include "UIToolsView.h"
-# include "UIVirtualBoxManagerWidget.h"
-# include "VBoxGlobal.h"
-
-#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+#include "UITools.h"
+#include "UIToolsModel.h"
+#include "UIToolsView.h"
+#include "UIVirtualBoxManagerWidget.h"
+#include "VBoxGlobal.h"
 
 
 UITools::UITools(UIVirtualBoxManagerWidget *pParent)

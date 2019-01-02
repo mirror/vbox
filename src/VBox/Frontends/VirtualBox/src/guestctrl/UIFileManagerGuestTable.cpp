@@ -15,33 +15,27 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifdef VBOX_WITH_PRECOMPILED_HEADERS
-# include <precomp.h>
-#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
-
 /* Qt includes: */
-# include <QDateTime>
-# include <QFileInfo>
-# include <QUuid>
+#include <QDateTime>
+#include <QFileInfo>
+#include <QUuid>
 
 /* GUI includes: */
-# include "QILabel.h"
-# include "UIActionPool.h"
-# include "UIErrorString.h"
-# include "UICustomFileSystemModel.h"
-# include "UIFileManager.h"
-# include "UIFileManagerGuestTable.h"
-# include "UIMessageCenter.h"
-# include "UIPathOperations.h"
-# include "UIToolBar.h"
+#include "QILabel.h"
+#include "UIActionPool.h"
+#include "UIErrorString.h"
+#include "UICustomFileSystemModel.h"
+#include "UIFileManager.h"
+#include "UIFileManagerGuestTable.h"
+#include "UIMessageCenter.h"
+#include "UIPathOperations.h"
+#include "UIToolBar.h"
 
 /* COM includes: */
-# include "CFsObjInfo.h"
-# include "CGuestFsObjInfo.h"
-# include "CGuestDirectory.h"
-# include "CProgress.h"
-
-#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+#include "CFsObjInfo.h"
+#include "CGuestFsObjInfo.h"
+#include "CGuestDirectory.h"
+#include "CProgress.h"
 
 
 /*********************************************************************************************************************************
