@@ -15,9 +15,6 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef MAIN_INCLUDED_SRC_src_all_win_VBoxAPIWrap_precomp_gcc_h
-#define MAIN_INCLUDED_SRC_src_all_win_VBoxAPIWrap_precomp_gcc_h
-
 #include <iprt/cdefs.h>
 #include <VBox/cdefs.h>
 #include <iprt/types.h>
@@ -42,6 +39,4 @@
 #if defined(Log) || defined(LogIsEnabled)
 # error "Log() from iprt/log.h cannot be defined in the precompiled header!"
 #endif
-
-#endif /* !MAIN_INCLUDED_SRC_src_all_win_VBoxAPIWrap_precomp_gcc_h */
 
