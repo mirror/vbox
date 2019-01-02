@@ -2301,40 +2301,7 @@ ifdef VBOX_WITH_PRECOMPILED_HEADERS
   # GCC precompiled headers seems to work more efficiently when #pragma once is involved.
   # So, we've cooked our own camel cased qt wrapper headers with #pragma once inside.
   VBOX_GUI_INC_DIRS <= precomptricks
-
- else if 0 # Obsolete experiment - non-functional.  Needs to be redone the same way as on windows.
-  VirtualBox_DEFS           += VBOX_WITH_PRECOMPILED_HEADERS
-  VirtualBox_INCS           <= $(VirtualBoxPch_0_OUTDIR)/src
-  VirtualBox_CXXFLAGS      += -Winvalid-pch -fpch-preprocess
-  $(foreach x,$(filter-out include/COMWrappers.cpp, $(filter %.cpp, \
-  	$(VirtualBox_SOURCES) \
-  	$(VirtualBox_SOURCES.$(KBUILD_TARGET)) \
-  	$(VirtualBox_SOURCES.$(KBUILD_TYPE)) \
-  )),$(eval $(abspath $(PATH_OBJ)/VirtualBox/$(basename $(x)).o): $$$$(VirtualBoxPch_0_OUTDIR)/src/precomp.h.gch))
-
-  TOOL_VirtualBoxPchLinker = Linker for VirtualBoxPch
-  define TOOL_VirtualBoxPchLinker_LINK_MISCBIN_CMDS
-	$(APPEND) -t $(out)
-  endef
-
-  MISCBINS += VirtualBoxPch
-  VirtualBoxPch_EXTENDS = VirtualBox
-  VirtualBoxPch_LDTOOL   = VirtualBoxPchLinker
-  VirtualBoxPch_INSTTYPE = none
-  VirtualBoxPch_NAME            = VirtualBoxPch
-  VirtualBoxPch_INTERMEDIATES  = $(filter-out %.h.gch, $(VirtualBox_INTERMEDIATES))
-  VirtualBoxPch_SOURCES        = src/precomp.h
-  VirtualBoxPch_CXXFLAGS       = $(filter-out -Winvalid-pch -fpch-preprocess, $(VirtualBox_CXXFLAGS)) -x c++-header
-  VirtualBoxPch_CXXOBJSUFF     = .h.gch
-  VirtualBoxPch_SRC_HANDLERS   = .h:def_src_handler_cxx
-  VirtualBoxPch_SOURCES.darwin  = $(NO_SUCH_VARIABLE)
-  VirtualBoxPch_SOURCES.solaris = $(NO_SUCH_VARIABLE)
-  VirtualBoxPch_SOURCES.freebsd = $(NO_SUCH_VARIABLE)
-  VirtualBoxPch_SOURCES.linux   = $(NO_SUCH_VARIABLE)
-  VirtualBoxPch_SOURCES.win     = $(NO_SUCH_VARIABLE)
-  VirtualBoxPch_QT_MODULES      = $(VirtualBox_QT_MODULES) # "bug" - not inherited.
-  VirtualBoxPch_INCS            = $(VirtualBox_INCS)       # "bug" - missing qtuic and qtmoc
- endif # obsolete experiment
+ endif
 endif
 
 ifeq ($(KBUILD_TARGET),win)
