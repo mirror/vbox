@@ -918,7 +918,8 @@ ifeq ($(KBUILD_HOST),$(KBUILD_TARGET))
  endif
  .PHONY: scm.check.run
  scm.check.run: $(VBOX_PATH_TOOLS)/scm$(HOSTSUFF_EXE)
-	$(REDIRECT) -E VBOX_LOG_FLAGS="disabled" -E VBOX_LOG_DEST="nofile" -- \
+	$(REDIRECT) -E VBOX_LOG_FLAGS="disabled" -E VBOX_LOG_DEST="nofile" \
+		$(if-expr "$(KBUILD_HOST)" == "darwin",-E DYLD_FALLBACK_LIBRARY_PATH="$(VBOX_PATH_TOOLS)/..",) -- \
 		$(VBOX_PATH_TOOLS)/scm$(HOSTSUFF_EXE) -qvv --check-run $(PATH_ROOT)
 endif
 
