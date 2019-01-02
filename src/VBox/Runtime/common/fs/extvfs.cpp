@@ -686,7 +686,7 @@ static PRTFSEXTBLOCKENTRY rtFsExtVol_BlockGetNew(PRTFSEXTVOL pThis, uint64_t iBl
 {
     PRTFSEXTBLOCKENTRY pBlock = NULL;
     size_t cbAlloc = RT_UOFFSETOF_DYN(RTFSEXTBLOCKENTRY, abData[pThis->cbBlock]);
-    if (pThis->cbBlocks + cbAlloc <= RTFSEXT_MAX_BLOCK_GROUP_CACHE_SIZE)
+    if (pThis->cbBlocks + cbAlloc <= RTFSEXT_MAX_BLOCK_CACHE_SIZE)
         pBlock = rtFsExtVol_BlockAlloc(pThis, cbAlloc, iBlock);
     else
     {
@@ -2119,8 +2119,6 @@ static DECLCALLBACK(int) rtFsExtDir_Open(void *pvThis, const char *pszEntry, uin
     PRTFSEXTDIR  pThis = (PRTFSEXTDIR)pvThis;
     PRTFSEXTVOL  pVol  = pThis->pVol;
     int rc = VINF_SUCCESS;
-
-    RT_NOREF(pThis, pVol, phVfsObj, pszEntry, fFlags);
 
     /*
      * We cannot create or replace anything, just open stuff.
