@@ -73,17 +73,17 @@ TOOLS="gcc make perl"
 TEST=
 UNIT_TEST=
 
-case "${1}" in
+case "$1" in
 "")
     # Return immediately successfully if everything is installed
     type ${TOOLS} >/dev/null 2>&1 && HAVE_TOOLS=yes
     test -d "/lib/modules/`uname -r`/build/include" && HAVE_HEADERS=yes
-    test -n "${HAVE_TOOLS}" && test -n "${HAVE_HEADERS}" && exit 0
+    test -n "$HAVE_TOOLS" && test -n "$HAVE_HEADERS" && exit 0
     UNAME=`uname -r`
     for i in rpm dpkg; do
         for j in /var/lib/${i}/*; do
             test -e "${j}" || break
-            if test -z "${PACKAGE_TYPE}"; then
+            if test -z "$PACKAGE_TYPE"; then
                 PACKAGE_TYPE="${i}"
             else
                 PACKAGE_TYPE=unknown
@@ -93,58 +93,58 @@ case "${1}" in
     done
     ;;
 -h|--help)
-    echo "${USAGE_MESSAGE}"
+    echo "$USAGE_MESSAGE"
     exit 0 ;;
 *)
     ERROR=""
-    UNAME="${2}"
-    PACKAGE_TYPE="${3}"
-    BASE_EXPECTED="${4}"
-    VERSIONED_EXPECTED="${5}"
+    UNAME="$2"
+    PACKAGE_TYPE="$3"
+    BASE_EXPECTED="$4"
+    VERSIONED_EXPECTED="$5"
     test "${1}" = --test || ERROR=yes
-    test -n "${UNAME}" && test -n "${PACKAGE_TYPE}" || test -z "${UNAME}" ||
+    test -n "$UNAME" && test -n "${PACKAGE_TYPE}" || test -z "$UNAME" ||
         ERROR=yes
-    test -n "${BASE_EXPECTED}" && test -n "${VERSIONED_EXPECTED}" ||
-        test -z "${BASE_EXPECTED}" || ERROR=yes
-    case "${ERROR}" in ?*)
-        echo "${USAGE_MESSAGE}" >&2
+    test -n "$BASE_EXPECTED" && test -n "$VERSIONED_EXPECTED" ||
+        test -z "$BASE_EXPECTED" || ERROR=yes
+    case "$ERROR" in ?*)
+        echo "$USAGE_MESSAGE" >&2
         exit 1
     esac
     TEST=yes
     TEST_PARAMS="${2} ${3} ${4} ${5}"
-    test -z "${UNAME}" && UNIT_TEST=yes
+    test -z "$UNAME" && UNIT_TEST=yes
     ;;
 esac
 
-case "${PACKAGE_TYPE}" in
+case "$PACKAGE_TYPE" in
 rpm)
     for i in ${SUSE_FLAVOURS}; do
-        case "${UNAME}" in *-"${i}")
+        case "$UNAME" in *-"${i}")
             BASE_PACKAGE="kernel-${i}-devel"
-            VERSIONED_PACKAGE="kernel-${i}-devel-${UNAME%-${i}}"
+            VERSIONED_PACKAGE="kernel-${i}-devel-$UNAME%-${i}"
             break
         esac
     done
     for i in ${EL_FLAVOURS} ""; do
-        case "${UNAME}" in *.el5"${i}"|*.el*"${i}".i686|*.el*"${i}".x86_64)
+        case "$UNAME" in *.el5"${i}"|*.el*"${i}".i686|*.el*"${i}".x86_64)
             test -n "${i}" && i="${i}-"  # Hack to handle empty flavour.
             BASE_PACKAGE="kernel-${i}devel"
-            VERSIONED_PACKAGE="kernel-${i}devel-${UNAME}"
+            VERSIONED_PACKAGE="kernel-${i}devel-$UNAME"
             break
         esac
     done
-    case "${UNAME}" in *.fc*.i686|*.fc*.x86_64)  # Fedora
+    case "$UNAME" in *.fc*.i686|*.fc*.x86_64)  # Fedora
         BASE_PACKAGE="kernel-devel"
-        VERSIONED_PACKAGE="kernel-devel-${UNAME}"
+        VERSIONED_PACKAGE="kernel-devel-$UNAME"
     esac
     for i in ${MAGEIA_FLAVOURS} ""; do  # Mageia
-        case "${UNAME}" in *-"${i}"*.mga*)
+        case "$UNAME" in *-"${i}"*.mga*)
             if test -z "${i}"; then
                 BASE_PACKAGE="kernel-linus-devel"
-                VERSIONED_PACKAGE="kernel-linus-devel-${UNAME}"
+                VERSIONED_PACKAGE="kernel-linus-devel-$UNAME"
             else
                 BASE_PACKAGE="kernel-${i}-devel"
-                VERSIONED_PACKAGE="kernel-${i}-devel-${UNAME%-${i}*}${UNAME#*${i}}"
+                VERSIONED_PACKAGE="kernel-${i}-devel-$UNAME%-${i}*$UNAME#*${i}"
             fi
             break
         esac
@@ -152,40 +152,40 @@ rpm)
     ;;
 dpkg)
     for i in ${DEBIAN_FLAVOURS}; do  # Debian/Ubuntu
-        case "${UNAME}" in *-${i})
+        case "$UNAME" in *-${i})
             BASE_PACKAGE="linux-headers-${i}"
-            VERSIONED_PACKAGE="linux-headers-${UNAME}"
+            VERSIONED_PACKAGE="linux-headers-$UNAME"
             break
         esac
     done
-    case "${UNAME}" in *-pclos*)  # PCLinuxOS
+    case "$UNAME" in *-pclos*)  # PCLinuxOS
         BASE_PACKAGE="kernel-devel"
-        VERSIONED_PACKAGE="kernel-devel-${UNAME}"
+        VERSIONED_PACKAGE="kernel-devel-$UNAME"
     esac
 esac
 
-case "${UNIT_TEST}${BASE_EXPECTED}" in "")
+case "$UNIT_TEST$BASE_EXPECTED" in "")
     echo "This system is currently not set up to build kernel modules." >&2
-    test -n "${HAVE_TOOLS}" ||
-        echo "Please install the ${TOOLS} packages from your distribution." >&2
-    test -n "${HAVE_HEADERS}" && exit 1
+    test -n "$HAVE_TOOLS" ||
+        echo "Please install the $TOOLS packages from your distribution." >&2
+    test -n "$HAVE_HEADERS" && exit 1
     echo "Please install the Linux kernel \"header\" files matching the current kernel" >&2
     echo "for adding new hardware support to the system." >&2
-    if test -n "${BASE_PACKAGE}${VERSIONED_PACKAGE}"; then
+    if test -n "$BASE_PACKAGE$VERSIONED_PACKAGE"; then
         echo "The distribution packages containing the headers are probably:" >&2
-        echo "    ${BASE_PACKAGE} ${VERSIONED_PACKAGE}" >&2
+        echo "    $BASE_PACKAGE $VERSIONED_PACKAGE" >&2
     fi
-    test -z "${TEST}" && exit 1
+    test -z "$TEST" && exit 1
     exit 0
 esac
 
-case "${BASE_EXPECTED}" in ?*)
-    case "${BASE_EXPECTED} ${VERSIONED_EXPECTED}" in
-        "${BASE_PACKAGE} ${VERSIONED_PACKAGE}")
+case "$BASE_EXPECTED" in ?*)
+    case "$BASE_EXPECTED $VERSIONED_EXPECTED" in
+        "$BASE_PACKAGE $VERSIONED_PACKAGE")
         exit 0
     esac
-    echo "Test: ${TEST_PARAMS}" >&2
-    echo "Result: ${BASE_PACKAGE} ${VERSIONED_PACKAGE}"
+    echo "Test: $TEST_PARAMS" >&2
+    echo "Result: $BASE_PACKAGE $VERSIONED_PACKAGE"
     exit 1
 esac
 
