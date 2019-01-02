@@ -2298,6 +2298,10 @@ ifdef VBOX_WITH_PRECOMPILED_HEADERS
   VirtualBoxVM_PCH_HDR := $(PATH_SUB_CURRENT)/src/precomp_gcc.h
   #VirtualBoxVM_CXXFLAGS.linux += -H
 
+  # GCC precompiled headers seems to work more efficiently when #pragma once is involved.
+  # So, we've cooked our own camel cased qt wrapper headers with #pragma once inside.
+  VBOX_GUI_INC_DIRS <= precomptricks
+
  else if 0 # Obsolete experiment - non-functional.  Needs to be redone the same way as on windows.
   VirtualBox_DEFS           += VBOX_WITH_PRECOMPILED_HEADERS
   VirtualBox_INCS           <= $(VirtualBoxPch_0_OUTDIR)/src

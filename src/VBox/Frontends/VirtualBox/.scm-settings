@@ -23,3 +23,5 @@
 /src/precomp_vcc.h: --no-fix-header-guards
 /src/precomp_gcc.h: --no-fix-header-guards
 
+/precomptricks/*:   --no-fix-header-guards --no-update-license --treat-as .h
+

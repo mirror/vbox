@@ -23,22 +23,10 @@
  *       support selecting different log groups.  So, for now we restrict
  *       ourselves to frequently used QT, compiler, and system headers.
  */
+
+/* Some CRT stuff that's frequently used. */
 #include <new>
 #include <stdlib.h>
-
-#include <QVariant>
-#include <QVarLengthArray>
-#include <QMutex>
-#include <QSysInfo>
-#include <QString>
-#include <QChar>
-
-#include <QApplication>
-
-#include <QGroupBox>
-#include <QPushButton>
-#include <QRadioButton>
-#include <QVBoxLayout>
 
 /* The most frequently used qt headers on a linux hosts based on dependency files. */
 #include <QtCore/qobject.h> /* 1003 */
@@ -123,16 +111,37 @@
 #include <QtGui/qfontmetrics.h> /* 497 */
 #include <QtGui/qfontinfo.h> /* 496 */
 
-/* toplevel headers for which we already include the sub-headers. */
+/* Toplevel headers for which we already include the sub-headers.
+   Note! Must exist in precomptricks so we can apply #pragma once to them (good for GCC). */
+#include <QVariant>
+#include <QVarLengthArray>
+#include <QMutex>
+#include <QSysInfo>
+#include <QString>
+#include <QStringList>
+#include <QChar>
+#include <QApplication>
+#include <QGroupBox>
+#include <QPushButton>
+#include <QRadioButton>
 #include <QObject>
 #include <QVector>
 #include <QMap>
 #include <QMetaType>
 #include <QRect>
-#include <QString>
-#include <QStringList>
 #include <QWidget>
 #include <QPixmap>
+
+/* misc others that we include a bit. */
+#include <QVBoxLayout>
+#include <QHBoxLayout>
+#include <QPainter>
+#include <QTimer>
+#include <QStyle>
+#include <QMenu>
+#include <QDir>
+#include <QUuid>
+#include <QLineEdit>
 
 /* cdefs.h is a little bit of a question since it defines RT_STRICT, which someone
    may want to redefine locally, but it's required by all other IPRT VBox includes. */
@@ -151,6 +160,7 @@
 #include <VBox/com/com.h>
 #include <VBox/com/defs.h>
 
+/* These two are freuqently used internal headers. */
 #include "UILibraryDefs.h"
 #include "QIWithRetranslateUI.h"
 
