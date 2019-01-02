@@ -24,6 +24,7 @@
 # include <QTimer>
 #endif
 #ifdef VBOX_WS_WIN
+# include <iprt/win/windows.h> /* Workaround for compile errors if included directly by QtWin. */
 # include <QtWin>
 #endif
 #ifdef VBOX_WS_X11
@@ -78,6 +79,7 @@
 # include <X11/Xlib.h>
 # include <X11/Xutil.h>
 #endif
+
 
 #ifdef VBOX_GUI_WITH_KEYS_RESET_HANDLER
 static void signalHandlerSIGUSR1(int sig, siginfo_t *, void *);
