@@ -2273,6 +2273,8 @@ $(VBOX_VIRTUALBOX_OUT_DIR)/VirtualBoxBrand.qrc: \
 # Precompiled header
 # 	win.amd64 without:  kmk_time: 3m51.962058s
 # 	win.amd64 with:     kmk_time: 2m23.336252s
+#      linux.amd64 without: time: real 1m03.719s   user 26m26.766s  sys 2m03.526s
+#      linux.amd64 with:    time: real 0m42.650s   user 14m46.332s  sys 1m28.463s
 #
 ifdef VBOX_WITH_PRECOMPILED_HEADERS
  if1of ($(KBUILD_TARGET),win)
