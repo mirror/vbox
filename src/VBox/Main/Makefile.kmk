@@ -215,7 +215,7 @@ ifndef VBOX_ONLY_SDK
   VBoxAPIWrap_PCH_HDR       := $(PATH_SUB_CURRENT)/src-all/win/VBoxAPIWrap-precomp_vcc.h
  else if $(KMK_REVISION) >= 3250 && "$(KBUILD_TARGET)" != "darwin" && !defined(VBOX_WITHOUT_PRECOMPILED_HEADERS) && !defined(KBUILD_USE_KOBJCACHE)
   VBoxAPIWrap_USES           = gccprecomp
-  VBoxAPIWrap_PCH_HDR       := $(PATH_SUB_CURRENT)/src-all/win/VBoxAPIWrap-precomp_gcc.h
+  VBoxAPIWrap_PCH_HDR       := $(PATH_SUB_CURRENT)/src-all/xpcom/VBoxAPIWrap-precomp_gcc.h
  endif
  VBoxAPIWrap_SOURCES         = \
  	$(VBoxAPIWrap_0_OUTDIR)/VBoxAPI.d \
@@ -251,7 +251,7 @@ ifndef VBOX_ONLY_SDK
   VBoxAPIWrap-x86_TEMPLATE = VBoxMainLib-x86
   VBoxAPIWrap-x86_EXTENDS  = VBoxAPIWrap
   VBoxAPIWrap-x86_DTRACE_HDR_FLAGS = -32 # ugly, should be fixed in the tool in Config.kmk
-  ifeq ($(KBUILD_TARGET),win) ## @todo fix inheritance
+  ifeq ($(KBUILD_TARGET),win) ## @todo fix inheritance (fixed in r3253)
    VBoxAPIWrap-x86_USES     = vccprecomp
    VBoxAPIWrap-x86_PCH_HDR := $(PATH_SUB_CURRENT)/src-all/win/VBoxAPIWrap-precomp_vcc.h
   endif
@@ -346,6 +346,9 @@ VBoxSVC_TEMPLATE = VBOXMAINEXE
 if defined(VBOX_WITH_PRECOMPILED_HEADERS) && "$(KBUILD_TARGET)" == "win"
  VBoxSVC_USES    += vccprecomp
  VBoxSVC_PCH_HDR := $(PATH_SUB_CURRENT)/src-server/win/precomp_vcc.h
+else if $(KMK_REVISION) >= 3250 && "$(KBUILD_TARGET)" != "darwin" && !defined(VBOX_WITHOUT_PRECOMPILED_HEADERS) && !defined(KBUILD_USE_KOBJCACHE)
+ VBoxSVC_USES    += gccprecomp
+ VBoxSVC_PCH_HDR := $(PATH_SUB_CURRENT)/src-server/xpcom/precomp_gcc.h
 endif
 ## r=bird: If you really think you might need VBOX_WITH_RECORDING and VBOX_WITH_AUDIO_RECORDING both here and for
 ##         VBoxC, you shall obviously put them in VBOX_MAIN_DEFS!  So, one way or the other they they disappear from here...
@@ -743,6 +746,9 @@ VBoxC_TEMPLATE  = VBOXMAINCOMP
 if defined(VBOX_WITH_PRECOMPILED_HEADERS) && "$(KBUILD_TARGET)" == "win"
  VBoxC_USES     = vccprecomp
  VBoxC_PCH_HDR := $(PATH_SUB_CURRENT)/src-client/win/precomp_vcc.h
+else if $(KMK_REVISION) >= 3250 && "$(KBUILD_TARGET)" != "darwin" && !defined(VBOX_WITHOUT_PRECOMPILED_HEADERS) && !defined(KBUILD_USE_KOBJCACHE)
+ VBoxC_USES    += gccprecomp
+ VBoxC_PCH_HDR := $(PATH_SUB_CURRENT)/src-client/xpcom/precomp_gcc.h
 endif
 VBoxC_DEFS = \
 	IN_RING3 \
@@ -986,7 +992,7 @@ ifdef VBOX_WITH_32_ON_64_MAIN_API
  DLLS += VBoxClient-x86
  VBoxClient-x86_TEMPLATE = VBoxMainComp-x86
  VBoxClient-x86_EXTENDS  = VBoxC
-if defined(VBOX_WITH_PRECOMPILED_HEADERS) && "$(KBUILD_TARGET)" == "win" ## @todo fix inheritance
+if defined(VBOX_WITH_PRECOMPILED_HEADERS) && "$(KBUILD_TARGET)" == "win" ## @todo fix inheritance (fixed in r3253)
  VBoxClient-x86_USES     = vccprecomp
  VBoxClient-x86_PCH_HDR := $(PATH_SUB_CURRENT)/src-client/win/precomp_vcc.h
 endif

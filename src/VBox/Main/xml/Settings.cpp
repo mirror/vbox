@@ -1486,7 +1486,7 @@ bool USBDeviceFilter::operator==(const USBDeviceFilter &u) const
 /**
  * Constructor. Needs to set sane defaults which stand the test of time.
  */
-Medium::Medium() :
+settings::Medium::Medium() :
     fAutoReset(false),
     hdType(MediumType_Normal)
 {
@@ -1497,7 +1497,7 @@ Medium::Medium() :
  * which in turn gets called from Machine::saveSettings to figure out whether
  * machine settings have really changed and thus need to be written out to disk.
  */
-bool Medium::operator==(const Medium &m) const
+bool settings::Medium::operator==(const settings::Medium &m) const
 {
     return (this == &m)
         || (   uuid == m.uuid
@@ -1510,7 +1510,7 @@ bool Medium::operator==(const Medium &m) const
             && llChildren == m.llChildren);         // this is deep and recurses
 }
 
-const struct Medium Medium::Empty; /* default ctor is OK */
+const struct settings::Medium settings::Medium::Empty; /* default ctor is OK */
 
 /**
  * Comparison operator. This gets called from MachineConfigFile::operator==,
