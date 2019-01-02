@@ -403,7 +403,7 @@ void UIKeyboardHandler::releaseAllPressedKeys(bool aReleaseHostKey /* = true */)
      * but this is a real key release code on Brazilian keyboards. Now we send
      * a sequence of all modifier keys contained in the host sequence, hoping
      * that the user will choose something which the guest does not interpret. */
-    for (uint i = 0; i < SIZEOF_ARRAY (m_pressedKeys); i++)
+    for (uint i = 0; i < RT_ELEMENTS(m_pressedKeys); i++)
     {
         if ((m_pressedKeys[i] & IsKeyPressed) || (m_pressedKeys[i] & IsExtKeyPressed))
         {
@@ -1625,13 +1625,13 @@ bool UIKeyboardHandler::keyEvent(int iKey, uint8_t uScan, int fFlags, ulong uScr
             {
                 static LONG PrintMake[] = { 0xE0, 0x2A, 0xE0, 0x37 };
                 pCodes = PrintMake;
-                uCodesCount = SIZEOF_ARRAY(PrintMake);
+                uCodesCount = RT_ELEMENTS(PrintMake);
             }
             else
             {
                 static LONG PrintBreak[] = { 0xE0, 0xB7, 0xE0, 0xAA };
                 pCodes = PrintBreak;
-                uCodesCount = SIZEOF_ARRAY(PrintBreak);
+                uCodesCount = RT_ELEMENTS(PrintBreak);
             }
         }
         /* Special flags handling (KeyPause): */
@@ -1641,7 +1641,7 @@ bool UIKeyboardHandler::keyEvent(int iKey, uint8_t uScan, int fFlags, ulong uScr
             {
                 static LONG Pause[] = { 0xE1, 0x1D, 0x45, 0xE1, 0x9D, 0xC5 };
                 pCodes = Pause;
-                uCodesCount = SIZEOF_ARRAY(Pause);
+                uCodesCount = RT_ELEMENTS(Pause);
             }
             else
             {
@@ -1856,7 +1856,7 @@ void UIKeyboardHandler::saveKeyStates()
 void UIKeyboardHandler::sendChangedKeyStates()
 {
     QVector <LONG> codes(2);
-    for (uint i = 0; i < SIZEOF_ARRAY(m_pressedKeys); ++ i)
+    for (uint i = 0; i < RT_ELEMENTS(m_pressedKeys); ++ i)
     {
         uint8_t os = m_pressedKeysCopy[i];
         uint8_t ns = m_pressedKeys[i];

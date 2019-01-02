@@ -21,6 +21,11 @@
 # pragma once
 #endif
 
+/* Define GUI log group: */
+// WORKAROUND:
+// This define should go *before* VBox/log.h include!
+#define LOG_GROUP LOG_GROUP_GUI
+
 /* Qt includes: */
 #include <QEvent>
 #include <QStringList>
@@ -31,30 +36,17 @@
 /* COM includes: */
 #include "COMEnums.h"
 
-/* Define GUI log group: */
-// WORKAROUND:
-// This define should go *before* VBox/log.h include!
-#ifndef VBOX_WITH_PRECOMPILED_HEADERS
-# define LOG_GROUP LOG_GROUP_GUI
-#endif
-
 /* Other VBox includes: */
 #include <VBox/log.h>
 #include <VBox/com/defs.h>
 
 /* Defines: */
-#ifdef DEBUG
-# define AssertWrapperOk(w)      \
-    AssertMsg (w.isOk(), (#w " is not okay (RC=0x%08X)", w.lastRC()))
-# define AssertWrapperOkMsg(w, m)      \
-    AssertMsg (w.isOk(), (#w ": " m " (RC=0x%08X)", w.lastRC()))
-#else /* !DEBUG */
-# define AssertWrapperOk(w)          do {} while (0)
-# define AssertWrapperOkMsg(w, m)    do {} while (0)
-#endif /* !DEBUG */
-
-#ifndef SIZEOF_ARRAY
-# define SIZEOF_ARRAY(a) (sizeof(a) / sizeof(a[0]))
+#ifdef RT_STRICT
+# define AssertWrapperOk(w)         AssertMsg(w.isOk(), (#w " is not okay (RC=0x%08X)", w.lastRC()))
+# define AssertWrapperOkMsg(w, m)   AssertMsg(w.isOk(), (#w ": " m " (RC=0x%08X)", w.lastRC()))
+#else
+# define AssertWrapperOk(w)         do {} while (0)
+# define AssertWrapperOkMsg(w, m)   do {} while (0)
 #endif
 
 
