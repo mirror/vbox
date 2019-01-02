@@ -43,7 +43,11 @@ technical terms if no non-technical ones are clear enough.
     <itemizedlist>
 
       <listitem>
-        <para>dummy</para>
+        <para>Linux installer: fixed symbolic links to VirtualBoxVM frontend</para>
+      </listitem>
+
+      <listitem>
+        <para>MacOS installer: added CLI wrapper for VirtualBoxVM frontend</para>
       </listitem>
 
     </itemizedlist>
