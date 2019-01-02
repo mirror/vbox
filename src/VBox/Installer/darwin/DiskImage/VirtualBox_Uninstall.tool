@@ -74,6 +74,7 @@ test -d /Library/Extensions/VBoxUSBTiger.kext/     && my_directories+=("/Library
 test -d /Library/Receipts/VBoxKEXTs.pkg/           && my_directories+=("/Library/Receipts/VBoxKEXTs.pkg/")
 
 test -f /usr/bin/VirtualBox                        && my_files+=("/usr/bin/VirtualBox")
+test -f /usr/bin/VirtualBoxVM                      && my_files+=("/usr/bin/VirtualBoxVM")
 test -f /usr/bin/VBoxManage                        && my_files+=("/usr/bin/VBoxManage")
 test -f /usr/bin/VBoxVRDP                          && my_files+=("/usr/bin/VBoxVRDP")
 test -f /usr/bin/VBoxHeadless                      && my_files+=("/usr/bin/VBoxHeadless")
@@ -84,6 +85,7 @@ test -f /usr/bin/VBoxAutostart                     && my_files+=("/usr/bin/VBoxA
 test -f /usr/bin/VBoxDTrace                        && my_files+=("/usr/bin/VBoxDTrace")
 test -f /usr/bin/vbox-img                          && my_files+=("/usr/bin/vbox-img")
 test -f /usr/local/bin/VirtualBox                  && my_files+=("/usr/local/bin/VirtualBox")
+test -f /usr/local/bin/VirtualBoxVM                && my_files+=("/usr/local/bin/VirtualBoxVM")
 test -f /usr/local/bin/VBoxManage                  && my_files+=("/usr/local/bin/VBoxManage")
 test -f /usr/local/bin/VBoxVRDP                    && my_files+=("/usr/local/bin/VBoxVRDP")
 test -f /usr/local/bin/VBoxHeadless                && my_files+=("/usr/local/bin/VBoxHeadless")
