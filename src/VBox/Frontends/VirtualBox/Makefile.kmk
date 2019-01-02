@@ -2285,6 +2285,19 @@ ifdef VBOX_WITH_PRECOMPILED_HEADERS
   VBoxGlobal_USES      += vccprecomp
   VBoxGlobal_PCH_HDR   := $(PATH_SUB_CURRENT)/src/precomp_vcc.h
 
+ else if $(KMK_REVISION) >= 3250 && "$(KBUILD_TARGET)" != "darwin" && !defined(VBOX_WITHOUT_PRECOMPILED_HEADERS) && !defined(KBUILD_USE_KOBJCACHE)
+  VBoxGlobal_USES      += gccprecomp
+  VBoxGlobal_PCH_HDR   := $(PATH_SUB_CURRENT)/src/precomp_gcc.h
+  #VBoxGlobal_CXXFLAGS.linux += -H
+
+  VirtualBox_USES      += gccprecomp
+  VirtualBox_PCH_HDR   := $(PATH_SUB_CURRENT)/src/precomp_gcc.h
+  #VirtualBox_CXXFLAGS.linux += -H
+
+  VirtualBoxVM_USES    += gccprecomp
+  VirtualBoxVM_PCH_HDR := $(PATH_SUB_CURRENT)/src/precomp_gcc.h
+  #VirtualBoxVM_CXXFLAGS.linux += -H
+
  else if 0 # Obsolete experiment - non-functional.  Needs to be redone the same way as on windows.
   VirtualBox_DEFS           += VBOX_WITH_PRECOMPILED_HEADERS
   VirtualBox_INCS           <= $(VirtualBoxPch_0_OUTDIR)/src
@@ -2607,7 +2620,6 @@ docs.qtgui: $(QTGUI_DOXYFILE_OUTPUT)/docs.qtgui
 if !defined(VBOX_ONLY_DOCS) && defined(VBOX_WITH_ALL_DOXYGEN_TARGETS)
 docs: $(QTGUI_DOXYFILE_OUTPUT)/docs.qtgui
 endif
-
 
 
 # Commit the magic.

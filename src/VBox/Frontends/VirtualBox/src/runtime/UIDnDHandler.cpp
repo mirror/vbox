@@ -29,11 +29,7 @@
 #include <QWidget>
 
 /* VirtualBox interface declarations: */
-#ifndef VBOX_WITH_XPCOM
-# include "VirtualBox.h"
-#else
-# include "VirtualBox_XPCOM.h"
-#endif
+#include <VBox/com/VirtualBox.h>
 
 /* GUI includes: */
 # include "UIDnDHandler.h"

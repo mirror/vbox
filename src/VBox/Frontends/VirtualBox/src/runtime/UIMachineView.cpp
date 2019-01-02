@@ -50,11 +50,7 @@
 # endif /* VBOX_WITH_DRAG_AND_DROP */
 
 /* VirtualBox interface declarations: */
-# ifndef VBOX_WITH_XPCOM
-#  include "VirtualBox.h"
-# else /* VBOX_WITH_XPCOM */
-#  include "VirtualBox_XPCOM.h"
-# endif /* VBOX_WITH_XPCOM */
+# include <VBox/com/VirtualBox.h>
 
 /* COM includes: */
 # include "CConsole.h"

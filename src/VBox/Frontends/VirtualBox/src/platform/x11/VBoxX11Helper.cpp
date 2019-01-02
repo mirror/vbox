@@ -30,6 +30,7 @@
 RT_C_DECLS_BEGIN
 #include <X11/Xatom.h>
 #include <X11/Xlib.h>
+#undef BOOL /* VBox/com/defs.h conflict */
 #include <X11/extensions/dpms.h>
 RT_C_DECLS_END
 

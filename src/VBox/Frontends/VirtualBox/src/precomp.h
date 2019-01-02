@@ -259,11 +259,7 @@
 /*
  * VirtualBox COM API
  */
-#ifdef VBOX_WITH_XPCOM
-# include <VirtualBox_XPCOM.h>
-#else
-# include <VirtualBox.h>
-#endif
+#include <VBox/com/VirtualBox.h>
 
 /*
  * VBox headers.

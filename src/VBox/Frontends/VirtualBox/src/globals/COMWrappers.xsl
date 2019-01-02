@@ -303,11 +303,7 @@
     <xsl:text>#include "UILibraryDefs.h"&#x0A;&#x0A;</xsl:text>
     <xsl:text>/* VirtualBox interface declarations: */&#x0A;</xsl:text>
     <xsl:text>#ifndef VBOX_WITH_LESS_VIRTUALBOX_INCLUDING&#x0A;</xsl:text>
-    <xsl:text># ifndef VBOX_WITH_XPCOM&#x0A;</xsl:text>
-    <xsl:text>#  include "VirtualBox.h"&#x0A;</xsl:text>
-    <xsl:text># else /* !VBOX_WITH_XPCOM */&#x0A;</xsl:text>
-    <xsl:text>#  include "VirtualBox_XPCOM.h"&#x0A;</xsl:text>
-    <xsl:text># endif /* VBOX_WITH_XPCOM */&#x0A;</xsl:text>
+    <xsl:text># include &lt;VBox/com/VirtualBox.h&gt;&#x0A;</xsl:text>
     <xsl:text>#else&#x0A;</xsl:text>
     <xsl:text>COM_STRUCT_OR_CLASS(</xsl:text><xsl:value-of select="@name"/><xsl:text>);&#x0A;</xsl:text>
     <xsl:text>#endif&#x0A;</xsl:text>
