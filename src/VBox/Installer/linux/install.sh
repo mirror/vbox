@@ -339,7 +339,7 @@ if [ "$ACTION" = "install" ]; then
     # Convenience symlinks. The creation fails if the FS is not case sensitive
     ln -sf VirtualBox /usr/bin/virtualbox > /dev/null 2>&1
     if [ -f $INSTALLATION_DIR/VirtualBoxVM ]; then
-        ln -sf VirtualBox /usr/bin/virtualboxvm > /dev/null 2>&1
+        ln -sf VirtualBoxVM /usr/bin/virtualboxvm > /dev/null 2>&1
     fi
     ln -sf VBoxManage /usr/bin/vboxmanage > /dev/null 2>&1
     ln -sf VBoxSDL /usr/bin/vboxsdl > /dev/null 2>&1
