@@ -193,9 +193,9 @@ g_ksSmtpHost            = 'internal-mail-router.oracle.com';
 ## SMTP server port number.
 g_kcSmtpPort            = 25;
 ## Default email 'From' for email alert.
-g_ksAlertFrom           = 'vseriff@oracle.com';
+g_ksAlertFrom           = 'vsheriff@oracle.com';
 ## Subject for email alert.
-g_ksAlertSubject        = 'Virtual Sheriff alert';
+g_ksAlertSubject        = 'Virtual Test Sheriff Alert';
 ## List of users to send alerts.
 g_asAlertList           = ['lelik', 'werner'];
 ## iLOM password.
