@@ -50,6 +50,11 @@ technical terms if no non-technical ones are clear enough.
         <para>MacOS installer: added CLI wrapper for VirtualBoxVM frontend</para>
       </listitem>
 
+      <listitem>
+        <para>User interface: fixed creation of desktop shortcuts for starting
+          virtual machines</para>
+      </listitem>
+
     </itemizedlist>
   </sect1>
 
