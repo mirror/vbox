@@ -82,6 +82,8 @@ private:
     void prepareActionConnections();
     bool checkGuestSession();
     QString permissionString(const CFsObjInfo &fsInfo);
+    bool isFileObjectHidden(const CFsObjInfo &fsInfo);
+
     mutable CGuestSession     m_comGuestSession;
 };
 

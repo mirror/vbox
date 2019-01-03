@@ -97,6 +97,9 @@ public:
     void setIsDriveItem(bool flag);
     bool isDriveItem() const;
 
+    void setIsHidden(bool flag);
+    bool isHidden() const;
+
 private:
     void appendChild(UICustomFileSystemItem *child);
 
@@ -109,10 +112,12 @@ private:
     /** If this is a symlink m_targetPath keeps the absolute path of the target */
     QString          m_strTargetPath;
     /** True if this is a symlink and the target is a directory */
-    bool             m_isTargetADirectory;
+    bool             m_fIsTargetADirectory;
     KFsObjType  m_type;
     /** True if only this item represents a DOS style drive letter item */
-    bool             m_isDriveItem;
+    bool             m_fIsDriveItem;
+    /** True if the file object is hidden in the file system. */
+    bool             m_fIsHidden;
 };
 
 /** A QSortFilterProxyModel extension used in file tables. Modifies some
@@ -125,16 +130,23 @@ class SHARED_LIBRARY_STUFF UICustomFileSystemProxyModel : public QSortFilterProx
 public:
 
     UICustomFileSystemProxyModel(QObject *parent = 0);
+
     void setListDirectoriesOnTop(bool fListDirectoriesOnTop);
     bool listDirectoriesOnTop() const;
 
+    void setShowHiddenObjects(bool fShowHiddenObjects);
+    bool showHiddenObjects() const;
+
 protected:
 
-    bool lessThan(const QModelIndex &left, const QModelIndex &right) const /* override */;
+    virtual bool lessThan(const QModelIndex &left, const QModelIndex &right) const /* override */;
+    /** Currently filters out hidden objects if options is set to "not showing them". */
+    virtual bool filterAcceptsRow(int iSourceRow, const QModelIndex &sourceParent) const /* override */;
 
 private:
 
     bool m_fListDirectoriesOnTop;
+    bool m_fShowHiddenObjects;
 };
 
 /** UICustomFileSystemModel serves as the model for a file structure.

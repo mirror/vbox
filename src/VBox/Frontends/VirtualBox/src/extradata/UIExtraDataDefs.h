@@ -373,6 +373,7 @@ namespace UIExtraDataDefs
         extern const char *GUI_GuestControl_FileManagerListDirectoriesFirst;
         extern const char *GUI_GuestControl_FileManagerShowDeleteConfirmation;
         extern const char *GUI_GuestControl_FileManagerShowHumanReadableSizes;
+        extern const char *GUI_GuestControl_FileManagerShowHiddenObjects;
     /** @} */
 
     /** @name Virtual Machine: Close dialog

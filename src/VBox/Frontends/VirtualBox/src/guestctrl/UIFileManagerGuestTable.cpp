@@ -210,6 +210,7 @@ void UIFileManagerGuestTable::readDirectory(const QString& strPath,
                 item->setData(permissionString(fsInfo), UICustomFileSystemModelColumn_Permissions);
                 item->setPath(UIPathOperations::mergePaths(strPath, fsInfo.GetName()));
                 item->setIsOpened(false);
+                item->setIsHidden(isFileObjectHidden(fsInfo));
                 fileObjects.insert(fsInfo.GetName(), item);
                 /* @todo. We will need to wait a fully implemented SymlinkRead function
                  * to be able to handle sym links properly: */
@@ -735,6 +736,23 @@ QString UIFileManagerGuestTable::permissionString(const CFsObjInfo &fsInfo)
     if (offSpace < 0)
         offSpace = strAttributes.length();
     return strAttributes.left(offSpace);
+}
+
+bool UIFileManagerGuestTable::isFileObjectHidden(const CFsObjInfo &fsInfo)
+{
+    QString strAttributes = fsInfo.GetFileAttributes();
+
+    if (strAttributes.isEmpty())
+        return false;
+
+    int offSpace = strAttributes.indexOf(' ');
+    if (offSpace < 0)
+        offSpace = strAttributes.length();
+    QString strRight(strAttributes.mid(offSpace + 1).trimmed());
+
+    if (strRight.indexOf('H', Qt::CaseSensitive) == -1)
+        return false;
+    return true;
 }
 
 #include "UIFileManagerGuestTable.moc"

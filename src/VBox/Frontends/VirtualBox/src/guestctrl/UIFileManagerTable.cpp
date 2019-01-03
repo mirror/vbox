@@ -1159,7 +1159,10 @@ void UIFileManagerTable::optionsUpdated()
     if (pOptions)
     {
         if (m_pProxyModel)
+        {
             m_pProxyModel->setListDirectoriesOnTop(pOptions->bListDirectoriesOnTop);
+            m_pProxyModel->setShowHiddenObjects(pOptions->bShowHiddenObjects);
+        }
         if (m_pModel)
             m_pModel->setShowHumanReadableSizes(pOptions->bShowHumanReadableSizes);
     }

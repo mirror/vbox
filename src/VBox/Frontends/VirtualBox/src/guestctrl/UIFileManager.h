@@ -72,6 +72,7 @@ public:
     bool bListDirectoriesOnTop;
     bool bAskDeleteConfirmation;
     bool bShowHumanReadableSizes;
+    bool bShowHiddenObjects;
 
 private:
 

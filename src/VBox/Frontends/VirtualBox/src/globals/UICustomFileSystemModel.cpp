@@ -36,9 +36,10 @@ const char *UICustomFileSystemModel::strUpDirectoryString = "..";
 UICustomFileSystemItem::UICustomFileSystemItem(const QString &strName, UICustomFileSystemItem *parent, KFsObjType type)
     : m_parentItem(parent)
     , m_bIsOpened(false)
-    , m_isTargetADirectory(false)
+    , m_fIsTargetADirectory(false)
     , m_type(type)
-    , m_isDriveItem(false)
+    , m_fIsDriveItem(false)
+    , m_fIsHidden(false)
 {
     for (int i = static_cast<int>(UICustomFileSystemModelColumn_Name);
          i < static_cast<int>(UICustomFileSystemModelColumn_Max); ++i)
@@ -200,27 +201,37 @@ void UICustomFileSystemItem::setTargetPath(const QString &path)
 
 bool UICustomFileSystemItem::isSymLinkToADirectory() const
 {
-    return m_isTargetADirectory;
+    return m_fIsTargetADirectory;
 }
 
 void UICustomFileSystemItem::setIsSymLinkToADirectory(bool flag)
 {
-    m_isTargetADirectory = flag;
+    m_fIsTargetADirectory = flag;
 }
 
 bool UICustomFileSystemItem::isSymLinkToAFile() const
 {
-    return isSymLink() && !m_isTargetADirectory;
+    return isSymLink() && !m_fIsTargetADirectory;
 }
 
 void UICustomFileSystemItem::setIsDriveItem(bool flag)
 {
-    m_isDriveItem = flag;
+    m_fIsDriveItem = flag;
 }
 
 bool UICustomFileSystemItem::isDriveItem() const
 {
-    return m_isDriveItem;
+    return m_fIsDriveItem;
+}
+
+void UICustomFileSystemItem::setIsHidden(bool flag)
+{
+    m_fIsHidden = flag;
+}
+
+bool UICustomFileSystemItem::isHidden() const
+{
+    return m_fIsHidden;
 }
 
 
@@ -228,9 +239,11 @@ bool UICustomFileSystemItem::isDriveItem() const
 *   UICustomFileSystemProxyModel implementation.                                                                                 *
 *********************************************************************************************************************************/
 
-bool UICustomFileSystemProxyModel::listDirectoriesOnTop() const
+UICustomFileSystemProxyModel::UICustomFileSystemProxyModel(QObject *parent /* = 0 */)
+    :QSortFilterProxyModel(parent)
+    , m_fListDirectoriesOnTop(false)
+    , m_fShowHiddenObjects(true)
 {
-    return m_fListDirectoriesOnTop;
 }
 
 bool UICustomFileSystemProxyModel::lessThan(const QModelIndex &left, const QModelIndex &right) const
@@ -275,15 +288,43 @@ bool UICustomFileSystemProxyModel::lessThan(const QModelIndex &left, const QMode
     return QSortFilterProxyModel::lessThan(left, right);
 }
 
-UICustomFileSystemProxyModel::UICustomFileSystemProxyModel(QObject *parent /* = 0 */)
-    :QSortFilterProxyModel(parent)
-    , m_fListDirectoriesOnTop(false)
+bool UICustomFileSystemProxyModel::filterAcceptsRow(int iSourceRow, const QModelIndex &sourceParent) const
 {
+    if (m_fShowHiddenObjects)
+        return true;
+
+    QModelIndex itemIndex = sourceModel()->index(iSourceRow, 0, sourceParent);
+    if (!itemIndex.isValid())
+        return false;
+
+    UICustomFileSystemItem *item = static_cast<UICustomFileSystemItem*>(itemIndex.internalPointer());
+    if (!item)
+        return false;
+
+    if (item->isHidden())
+        return false;
+
+    return true;
 }
 
 void UICustomFileSystemProxyModel::setListDirectoriesOnTop(bool fListDirectoriesOnTop)
 {
     m_fListDirectoriesOnTop = fListDirectoriesOnTop;
+}
+
+bool UICustomFileSystemProxyModel::listDirectoriesOnTop() const
+{
+    return m_fListDirectoriesOnTop;
+}
+
+void UICustomFileSystemProxyModel::setShowHiddenObjects(bool fShowHiddenObjects)
+{
+    m_fShowHiddenObjects = fShowHiddenObjects;
+}
+
+bool UICustomFileSystemProxyModel::showHiddenObjects() const
+{
+    return m_fShowHiddenObjects;
 }
 
 

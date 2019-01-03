@@ -161,6 +161,7 @@ UIFileManagerHostTable::UIFileManagerHostTable(UIActionPool *pActionPool, QWidge
             item->setTargetPath(fileInfo.symLinkTarget());
             item->setIsSymLinkToADirectory(QFileInfo(fileInfo.symLinkTarget()).isDir());
         }
+        item->setIsHidden(fileInfo.isHidden());
         fileObjects.insert(fileInfo.fileName(), item);
         item->setIsOpened(false);
     }

@@ -63,12 +63,14 @@ private slots:
     void sltListDirectoryCheckBoxToogled(bool bChecked);
     void sltDeleteConfirmationCheckBoxToogled(bool bChecked);
     void sltHumanReabableSizesCheckBoxToogled(bool bChecked);
+    void sltShowHiddenObjectsCheckBoxToggled(bool bChecked);
 
 private:
 
     QCheckBox  *m_pListDirectoriesOnTopCheckBox;
     QCheckBox  *m_pDeleteConfirmationCheckBox;
     QCheckBox  *m_pHumanReabableSizesCheckBox;
+    QCheckBox  *m_pShowHiddenObjectsCheckBox;
     UIFileManagerOptions *m_pFileManagerOptions;
 };
 

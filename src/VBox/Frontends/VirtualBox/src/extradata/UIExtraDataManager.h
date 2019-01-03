@@ -653,10 +653,13 @@ public:
     /** @name File Manager options
       * @{ */
         void setFileManagerOptions(bool fListDirectoriesFirst,
-                                   bool fShowDeleteConfirmation, bool fshowHumanReadableSizes);
+                                   bool fShowDeleteConfirmation,
+                                   bool fshowHumanReadableSizes,
+                                   bool fShowHiddenObjects);
         bool fileManagerListDirectoriesFirst();
         bool fileManagerShowDeleteConfirmation();
         bool fileManagerShowHumanReadableSizes();
+        bool fileManagerShowHiddenObjects();
     /** @} */
 
     /** @name Virtual Machine: Close dialog
