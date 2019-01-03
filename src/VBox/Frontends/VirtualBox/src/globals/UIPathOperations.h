@@ -24,9 +24,11 @@
 /* Qt includes: */
 #include <QString>
 
+/* GUI includes: */
+#include "UILibraryDefs.h"
 
 /** A collection of simple utility functions to manipulate path strings */
-class UIPathOperations
+class SHARED_LIBRARY_STUFF UIPathOperations
 {
 public:
     static QString removeMultipleDelimiters(const QString &path);

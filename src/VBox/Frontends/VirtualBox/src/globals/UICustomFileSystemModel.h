@@ -25,6 +25,8 @@
 #include <QAbstractItemModel>
 #include <QSortFilterProxyModel>
 
+#include "UILibraryDefs.h"
+
 /* COM includes: */
 #include "COMEnums.h"
 
@@ -42,7 +44,7 @@ enum UICustomFileSystemModelColumn
 
 /** A UICustomFileSystemItem instance is a tree node representing a file object (file, directory, etc). The tree contructed
     by these instances is the data source for the UICustomFileSystemModel. */
-class UICustomFileSystemItem
+class SHARED_LIBRARY_STUFF UICustomFileSystemItem
 {
 public:
 
@@ -69,7 +71,8 @@ public:
     bool isOpened() const;
     void setIsOpened(bool flag);
 
-    const QString  &path() const;
+    /** Full absolute path of the item. Without the trailing '/' */
+    QString  path() const;
     void setPath(const QString &path);
 
     /** Returns true if this is directory and name is ".." */
@@ -103,8 +106,6 @@ private:
     QMap<UICustomFileSystemModelColumn, QVariant>  m_itemData;
     UICustomFileSystemItem *m_parentItem;
     bool             m_bIsOpened;
-    /** Full absolute path of the item. Without the trailing '/' */
-    QString          m_strPath;
     /** If this is a symlink m_targetPath keeps the absolute path of the target */
     QString          m_strTargetPath;
     /** True if this is a symlink and the target is a directory */
@@ -116,7 +117,7 @@ private:
 
 /** A QSortFilterProxyModel extension used in file tables. Modifies some
  *  of the base class behavior like lessThan(..) */
-class UICustomFileSystemProxyModel : public QSortFilterProxyModel
+class SHARED_LIBRARY_STUFF UICustomFileSystemProxyModel : public QSortFilterProxyModel
 {
 
     Q_OBJECT;
@@ -139,7 +140,7 @@ private:
 /** UICustomFileSystemModel serves as the model for a file structure.
  *  it supports a tree level hierarchy which can be displayed with
  *  QTableView and/or QTreeView.*/
-class UICustomFileSystemModel : public QAbstractItemModel
+class SHARED_LIBRARY_STUFF UICustomFileSystemModel : public QAbstractItemModel
 {
 
     Q_OBJECT;
