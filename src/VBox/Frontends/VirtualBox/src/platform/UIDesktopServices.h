@@ -24,6 +24,11 @@
 /* Qt includes */
 #include <QUuid>
 
+#ifdef VBOX_GUI_WITH_SHARED_LIBRARY
+/** Name of the executable (image) used to start VMs. */
+# define VBOX_GUI_VMRUNNER_IMAGE "VirtualBoxVM"
+#endif
+
 /* Qt forward declarations */
 class QString;
 

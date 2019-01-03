@@ -31,7 +31,12 @@ bool UIDesktopServices::createMachineShortcut(const QString & /* strSrcFile */, 
 {
     IShellLink *pShl = NULL;
     IPersistFile *pPPF = NULL;
-    QString strVBox = QDir::toNativeSeparators(QCoreApplication::applicationFilePath());
+#ifdef VBOX_GUI_WITH_SHARED_LIBRARY
+    QString strVBox = QDir::toNativeSeparators(QCoreApplication::applicationDirPath() + "/" + VBOX_GUI_VMRUNNER_IMAGE);
+
+#else
+    QString strVBox = QDir::toNativeSeparatorsgg (QCoreApplication::applicationFilePath());
+#endif
     QFileInfo fi(strVBox);
     QString strVBoxDir = QDir::toNativeSeparators(fi.absolutePath());
     HRESULT rc = CoCreateInstance(CLSID_ShellLink, NULL, CLSCTX_INPROC_SERVER, IID_IShellLink, (void**)(&pShl));
