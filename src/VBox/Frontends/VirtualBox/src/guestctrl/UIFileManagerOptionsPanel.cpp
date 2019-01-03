@@ -56,28 +56,28 @@ void UIFileManagerOptionsPanel::update()
     if (m_pListDirectoriesOnTopCheckBox)
     {
         m_pListDirectoriesOnTopCheckBox->blockSignals(true);
-        m_pListDirectoriesOnTopCheckBox->setChecked(m_pFileManagerOptions->bListDirectoriesOnTop);
+        m_pListDirectoriesOnTopCheckBox->setChecked(m_pFileManagerOptions->fListDirectoriesOnTop);
         m_pListDirectoriesOnTopCheckBox->blockSignals(false);
     }
 
     if (m_pDeleteConfirmationCheckBox)
     {
         m_pDeleteConfirmationCheckBox->blockSignals(true);
-        m_pDeleteConfirmationCheckBox->setChecked(m_pFileManagerOptions->bAskDeleteConfirmation);
+        m_pDeleteConfirmationCheckBox->setChecked(m_pFileManagerOptions->fAskDeleteConfirmation);
         m_pDeleteConfirmationCheckBox->blockSignals(false);
     }
 
     if (m_pHumanReabableSizesCheckBox)
     {
         m_pHumanReabableSizesCheckBox->blockSignals(true);
-        m_pHumanReabableSizesCheckBox->setChecked(m_pFileManagerOptions->bShowHumanReadableSizes);
+        m_pHumanReabableSizesCheckBox->setChecked(m_pFileManagerOptions->fShowHumanReadableSizes);
         m_pHumanReabableSizesCheckBox->blockSignals(false);
     }
 
     if (m_pShowHiddenObjectsCheckBox)
     {
         m_pShowHiddenObjectsCheckBox->blockSignals(true);
-        m_pShowHiddenObjectsCheckBox->setChecked(m_pFileManagerOptions->bShowHiddenObjects);
+        m_pShowHiddenObjectsCheckBox->setChecked(m_pFileManagerOptions->fShowHiddenObjects);
         m_pShowHiddenObjectsCheckBox->blockSignals(false);
     }
 }
@@ -115,13 +115,13 @@ void UIFileManagerOptionsPanel::prepareWidgets()
     if (m_pFileManagerOptions)
     {
         if (m_pListDirectoriesOnTopCheckBox)
-            m_pListDirectoriesOnTopCheckBox->setChecked(m_pFileManagerOptions->bListDirectoriesOnTop);
+            m_pListDirectoriesOnTopCheckBox->setChecked(m_pFileManagerOptions->fListDirectoriesOnTop);
         if (m_pDeleteConfirmationCheckBox)
-            m_pDeleteConfirmationCheckBox->setChecked(m_pFileManagerOptions->bAskDeleteConfirmation);
+            m_pDeleteConfirmationCheckBox->setChecked(m_pFileManagerOptions->fAskDeleteConfirmation);
         if (m_pHumanReabableSizesCheckBox)
-            m_pHumanReabableSizesCheckBox->setChecked(m_pFileManagerOptions->bShowHumanReadableSizes);
+            m_pHumanReabableSizesCheckBox->setChecked(m_pFileManagerOptions->fShowHumanReadableSizes);
         if (m_pShowHiddenObjectsCheckBox)
-            m_pShowHiddenObjectsCheckBox->setChecked(m_pFileManagerOptions->bShowHiddenObjects);
+            m_pShowHiddenObjectsCheckBox->setChecked(m_pFileManagerOptions->fShowHiddenObjects);
 
     }
     retranslateUi();
@@ -132,7 +132,7 @@ void UIFileManagerOptionsPanel::sltListDirectoryCheckBoxToogled(bool bChecked)
 {
     if (!m_pFileManagerOptions)
         return;
-    m_pFileManagerOptions->bListDirectoriesOnTop = bChecked;
+    m_pFileManagerOptions->fListDirectoriesOnTop = bChecked;
     emit sigOptionsChanged();
 }
 
@@ -140,7 +140,7 @@ void UIFileManagerOptionsPanel::sltDeleteConfirmationCheckBoxToogled(bool bCheck
 {
     if (!m_pFileManagerOptions)
         return;
-    m_pFileManagerOptions->bAskDeleteConfirmation = bChecked;
+    m_pFileManagerOptions->fAskDeleteConfirmation = bChecked;
     emit sigOptionsChanged();
 }
 
@@ -148,7 +148,7 @@ void UIFileManagerOptionsPanel::sltHumanReabableSizesCheckBoxToogled(bool bCheck
 {
     if (!m_pFileManagerOptions)
         return;
-    m_pFileManagerOptions->bShowHumanReadableSizes = bChecked;
+    m_pFileManagerOptions->fShowHumanReadableSizes = bChecked;
     emit sigOptionsChanged();
 }
 
@@ -156,7 +156,7 @@ void UIFileManagerOptionsPanel::sltShowHiddenObjectsCheckBoxToggled(bool bChecke
 {
     if (!m_pFileManagerOptions)
         return;
-    m_pFileManagerOptions->bShowHiddenObjects = bChecked;
+    m_pFileManagerOptions->fShowHiddenObjects = bChecked;
     emit sigOptionsChanged();
 }
 

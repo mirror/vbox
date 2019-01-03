@@ -69,10 +69,10 @@ public:
     static void create();
     static void destroy();
 
-    bool bListDirectoriesOnTop;
-    bool bAskDeleteConfirmation;
-    bool bShowHumanReadableSizes;
-    bool bShowHiddenObjects;
+    bool fListDirectoriesOnTop;
+    bool fAskDeleteConfirmation;
+    bool fShowHumanReadableSizes;
+    bool fShowHiddenObjects;
 
 private:
 

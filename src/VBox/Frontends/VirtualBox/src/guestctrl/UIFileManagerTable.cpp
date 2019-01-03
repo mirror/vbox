@@ -347,7 +347,7 @@ UIFileDeleteConfirmationDialog::UIFileDeleteConfirmationDialog(QWidget *pParent 
     {
         UIFileManagerOptions *pFileManagerOptions = UIFileManagerOptions::instance();
         if (pFileManagerOptions)
-            m_pAskNextTimeCheckBox->setChecked(pFileManagerOptions->bAskDeleteConfirmation);
+            m_pAskNextTimeCheckBox->setChecked(pFileManagerOptions->fAskDeleteConfirmation);
 
         pLayout->addWidget(m_pAskNextTimeCheckBox);
         m_pAskNextTimeCheckBox->setText(UIFileManager::tr("Ask for this confirmation next time"));
@@ -1160,11 +1160,11 @@ void UIFileManagerTable::optionsUpdated()
     {
         if (m_pProxyModel)
         {
-            m_pProxyModel->setListDirectoriesOnTop(pOptions->bListDirectoriesOnTop);
-            m_pProxyModel->setShowHiddenObjects(pOptions->bShowHiddenObjects);
+            m_pProxyModel->setListDirectoriesOnTop(pOptions->fListDirectoriesOnTop);
+            m_pProxyModel->setShowHiddenObjects(pOptions->fShowHiddenObjects);
         }
         if (m_pModel)
-            m_pModel->setShowHumanReadableSizes(pOptions->bShowHumanReadableSizes);
+            m_pModel->setShowHumanReadableSizes(pOptions->fShowHumanReadableSizes);
     }
     relist();
 }
@@ -1229,7 +1229,7 @@ bool UIFileManagerTable::checkIfDeleteOK()
     UIFileManagerOptions *pFileManagerOptions = UIFileManagerOptions::instance();
     if (!pFileManagerOptions)
         return true;
-    if (!pFileManagerOptions->bAskDeleteConfirmation)
+    if (!pFileManagerOptions->fAskDeleteConfirmation)
         return true;
     UIFileDeleteConfirmationDialog *pDialog =
         new UIFileDeleteConfirmationDialog(this);
@@ -1238,9 +1238,9 @@ bool UIFileManagerTable::checkIfDeleteOK()
     bool bAskNextTime = pDialog->askDeleteConfirmationNextTime();
 
     /* Update the file manager options only if it is necessary: */
-    if (pFileManagerOptions->bAskDeleteConfirmation != bAskNextTime)
+    if (pFileManagerOptions->fAskDeleteConfirmation != bAskNextTime)
     {
-        pFileManagerOptions->bAskDeleteConfirmation = bAskNextTime;
+        pFileManagerOptions->fAskDeleteConfirmation = bAskNextTime;
         /* Notify file manager options panel so that the check box there is updated: */
         emit sigDeleteConfirmationOptionChanged();
     }
