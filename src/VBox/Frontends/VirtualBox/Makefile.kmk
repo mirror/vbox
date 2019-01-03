@@ -808,7 +808,6 @@ ifndef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/globals/UIMainEventListener.h \
 	src/globals/UIMessageCenter.h \
 	src/globals/UIModalWindowManager.h \
-	src/globals/UIPathOperations.h \
 	src/globals/UIPopupCenter.h \
 	src/globals/UIProgressEventHandler.h \
 	src/globals/UIShortcutPool.h \
@@ -983,8 +982,6 @@ ifdef VBOX_GUI_WITH_SHARED_LIBRARY
  # Headers containing definitions of classes that use the Q_OBJECT macro.
  #
  VirtualBoxVM_QT_MOCHDRS = \
-	src/globals/UICustomFileSystemModel.h \
-	src/globals/UIPathOperations.h \
 	src/globals/UIStarter.h \
 	src/runtime/UIConsoleEventHandler.h \
 	src/runtime/UIFrameBuffer.h \
@@ -1097,6 +1094,7 @@ ifdef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/globals/UIActionPoolManager.h \
 	src/globals/UIActionPoolRuntime.h \
 	src/globals/UIAnimationFramework.h \
+	src/globals/UICustomFileSystemModel.h \
 	src/globals/UIDesktopWidgetWatchdog.h \
 	src/globals/UIMainEventListener.h \
 	src/globals/UIMessageCenter.h \
@@ -1737,8 +1735,6 @@ ifdef VBOX_GUI_WITH_SHARED_LIBRARY
  #
  VirtualBoxVM_SOURCES = \
 	src/main.cpp \
-	src/globals/UICustomFileSystemModel.cpp \
-	src/globals/UIPathOperations.cpp \
 	src/globals/UIStarter.cpp \
 	src/runtime/UIConsoleEventHandler.cpp \
 	src/runtime/UIFrameBuffer.cpp \
@@ -1873,6 +1869,7 @@ ifdef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/globals/UIActionPoolManager.cpp \
 	src/globals/UIActionPoolRuntime.cpp \
 	src/globals/UIAnimationFramework.cpp \
+	src/globals/UICustomFileSystemModel.cpp \
 	src/globals/UIDefs.cpp \
 	src/globals/UIDesktopWidgetWatchdog.cpp \
 	src/globals/UIErrorString.cpp \
@@ -1881,6 +1878,7 @@ ifdef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/globals/UIMainEventListener.cpp \
 	src/globals/UIMessageCenter.cpp \
 	src/globals/UIModalWindowManager.cpp \
+	src/globals/UIPathOperations.cpp \
 	src/globals/UIPopupCenter.cpp \
 	src/globals/UIProgressEventHandler.cpp \
 	src/globals/UIShortcutPool.cpp \
