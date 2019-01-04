@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2018 Oracle Corporation
+ * Copyright (C) 2018-2019 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -98,7 +98,7 @@ typedef RTFSXFSAG *PRTFSXFSAG;
 typedef struct RTFSXFSINODE
 {
     /** AVL tree node, indexed by the inode number. */
-    AVLU32NODECORE    Core;
+    AVLU64NODECORE    Core;
     /** List node for the inode LRU list used for eviction. */
     RTLISTNODE        NdLru;
     /** Reference counter. */
@@ -107,7 +107,10 @@ typedef struct RTFSXFSINODE
     uint64_t          offInode;
     /** Inode data. */
     RTFSOBJINFO       ObjInfo;
-    /** @todo */
+    /** Inode data fork format. */
+    uint8_t           enmFormat;
+    /** Inode flags. */
+    uint16_t          fFlags;
 } RTFSXFSINODE;
 /** Pointer to an in-memory inode. */
 typedef RTFSXFSINODE *PRTFSXFSINODE;
@@ -184,12 +187,26 @@ typedef struct RTFSXFSVOL
     /** RTFSXFSVFS_F_XXX (currently none defined). */
     uint32_t            fXfsFlags;
 
+    /** Size of one sector. */
+    size_t              cbSector;
     /** Size of one block. */
     size_t              cbBlock;
     /** Number of bits to shift for converting a block number to byte offset. */
     uint32_t            cBlockShift;
     /** Number of blocks per allocation group. */
     XFSAGNUMBER         cBlocksPerAg;
+    /** Number of blocks per allocation group as log2. */
+    uint32_t            cAgBlocksLog;
+    /** Number of allocation groups for this volume. */
+    uint32_t            cAgs;
+    /** inode of the root directory. */
+    XFSINO              uInodeRoot;
+    /** Inode size in bytes. */
+    size_t              cbInode;
+    /** Number of inodes per block. */
+    uint32_t            cInodesPerBlock;
+    /** Number of inodes per block as log2. */
+    uint32_t            cInodesPerBlockLog;
 
     /** @name Allocation group cache.
      * @{ */
@@ -206,7 +223,7 @@ typedef struct RTFSXFSVOL
     /** LRU list anchor for the inode cache. */
     RTLISTANCHOR        LstInodeLru;
     /** Root of the cached inode tree. */
-    AVLU32TREE          InodeRoot;
+    AVLU64TREE          InodeRoot;
     /** Size of the cached inodes. */
     size_t              cbInodes;
     /** @} */
@@ -234,13 +251,14 @@ static int rtFsXfsVol_OpenDirByInode(PRTFSXFSVOL pThis, uint32_t iInode, PRTVFSD
  * Logs the XFS filesystem superblock.
  *
  * @returns nothing.
+ * @param   iAg                 The allocation group number for the given super block.
  * @param   pSb                 Pointer to the superblock.
  */
-static void rtFsXfsSb_Log(PCXFSSUPERBLOCK pSb)
+static void rtFsXfsSb_Log(uint32_t iAg, PCXFSSUPERBLOCK pSb)
 {
     if (LogIs2Enabled())
     {
-        Log2(("XFS: Superblock:\n"));
+        Log2(("XFS: Superblock %#RX32:\n", iAg));
         Log2(("XFS:   u32Magic                    %#RX32\n", RT_BE2H_U32(pSb->u32Magic)));
         Log2(("XFS:   cbBlock                     %RU32\n", RT_BE2H_U32(pSb->cbBlock)));
         Log2(("XFS:   cBlocks                     %RU64\n", RT_BE2H_U64(pSb->cBlocks)));
@@ -311,7 +329,76 @@ static void rtFsXfsSb_Log(PCXFSSUPERBLOCK pSb)
 }
 
 
-#if 0
+/**
+ * Logs a AG free space block.
+ *
+ * @returns nothing.
+ * @param   iAg                 The allocation group number for the given free space block.
+ * @param   pAgf                The AG free space block.
+ */
+static void rtFsXfsAgf_Log(uint32_t iAg, PCXFSAGF pAgf)
+{
+    if (LogIs2Enabled())
+    {
+        Log2(("XFS: AGF %#RX32:\n", iAg));
+        Log2(("XFS:   u32Magic                    %#RX32\n", RT_BE2H_U32(pAgf->u32Magic)));
+        Log2(("XFS:   uVersion                    %#RX32\n", RT_BE2H_U32(pAgf->uVersion)));
+        Log2(("XFS:   uSeqNo                      %#RX32\n", RT_BE2H_U32(pAgf->uSeqNo)));
+        Log2(("XFS:   cLengthBlocks               %#RX32\n", RT_BE2H_U32(pAgf->cLengthBlocks)));
+        Log2(("XFS:   auRoots[0]                  %#RX32\n", RT_BE2H_U32(pAgf->auRoots[0])));
+        Log2(("XFS:   auRoots[1]                  %#RX32\n", RT_BE2H_U32(pAgf->auRoots[1])));
+        Log2(("XFS:   auRoots[2]                  %#RX32\n", RT_BE2H_U32(pAgf->auRoots[2])));
+        Log2(("XFS:   acLvls[0]                   %RU32\n", RT_BE2H_U32(pAgf->acLvls[0])));
+        Log2(("XFS:   acLvls[1]                   %RU32\n", RT_BE2H_U32(pAgf->acLvls[1])));
+        Log2(("XFS:   acLvls[2]                   %RU32\n", RT_BE2H_U32(pAgf->acLvls[2])));
+        Log2(("XFS:   idxFreeListFirst            %RU32\n", RT_BE2H_U32(pAgf->idxFreeListFirst)));
+        Log2(("XFS:   idxFreeListLast             %RU32\n", RT_BE2H_U32(pAgf->idxFreeListLast)));
+        Log2(("XFS:   cFreeListBlocks             %RU32\n", RT_BE2H_U32(pAgf->cFreeListBlocks)));
+        Log2(("XFS:   cFreeBlocks                 %RU32\n", RT_BE2H_U32(pAgf->cFreeBlocks)));
+        Log2(("XFS:   cFreeBlocksLongest          %RU32\n", RT_BE2H_U32(pAgf->cFreeBlocksLongest)));
+        Log2(("XFS:   cBlocksBTrees               %RU32\n", RT_BE2H_U32(pAgf->cBlocksBTrees)));
+        Log2(("XFS:   abUuid                      <todo>\n"));
+        Log2(("XFS:   cBlocksRevMap               %RU32\n", RT_BE2H_U32(pAgf->cBlocksRevMap)));
+        Log2(("XFS:   cBlocksRefcountBTree        %RU32\n", RT_BE2H_U32(pAgf->cBlocksRefcountBTree)));
+        Log2(("XFS:   uRootRefcount               %#RX32\n", RT_BE2H_U32(pAgf->uRootRefcount)));
+        Log2(("XFS:   cLvlRefcount                %RU32\n", RT_BE2H_U32(pAgf->cLvlRefcount)));
+        Log2(("XFS:   uSeqNoLastWrite             %#RX64\n", RT_BE2H_U64(pAgf->uSeqNoLastWrite)));
+        Log2(("XFS:   uChkSum                     %#RX32\n", RT_BE2H_U32(pAgf->uChkSum)));
+    }
+}
+
+
+/**
+ * Loads an AG inode information block.
+ *
+ * @returns nothing.
+ * @param   iAg                 The allocation group number for the given inode information block.
+ * @param   pAgi                The AG inode information block.
+ */
+static void rtFsXfsAgi_Log(uint32_t iAg, PCXFSAGI pAgi)
+{
+    if (LogIs2Enabled())
+    {
+        Log2(("XFS: AGI %#RX32:\n", iAg));
+        Log2(("XFS:   u32Magic                    %#RX32\n", RT_BE2H_U32(pAgi->u32Magic)));
+        Log2(("XFS:   uVersion                    %#RX32\n", RT_BE2H_U32(pAgi->uVersion)));
+        Log2(("XFS:   uSeqNo                      %#RX32\n", RT_BE2H_U32(pAgi->uSeqNo)));
+        Log2(("XFS:   cLengthBlocks               %#RX32\n", RT_BE2H_U32(pAgi->cLengthBlocks)));
+        Log2(("XFS:   cInodesAlloc                %#RX32\n", RT_BE2H_U32(pAgi->cInodesAlloc)));
+        Log2(("XFS:   uRootInode                  %#RX32\n", RT_BE2H_U32(pAgi->uRootInode)));
+        Log2(("XFS:   cLvlsInode                  %RU32\n", RT_BE2H_U32(pAgi->cLvlsInode)));
+        Log2(("XFS:   uInodeNew                   %#RX32\n", RT_BE2H_U32(pAgi->uInodeNew)));
+        Log2(("XFS:   uInodeDir                   %#RX32\n", RT_BE2H_U32(pAgi->uInodeDir)));
+        Log2(("XFS:   au32HashUnlinked[0..63]     <todo>\n"));
+        Log2(("XFS:   abUuid                      <todo>\n"));
+        Log2(("XFS:   uChkSum                     %#RX32\n", RT_BE2H_U32(pAgi->uChkSum)));
+        Log2(("XFS:   uSeqNoLastWrite             %#RX64\n", RT_BE2H_U64(pAgi->uSeqNoLastWrite)));
+        Log2(("XFS:   uRootFreeInode              %#RX32\n", RT_BE2H_U32(pAgi->uRootFreeInode)));
+        Log2(("XFS:   cLvlsFreeInode              %RU32\n", RT_BE2H_U32(pAgi->cLvlsFreeInode)));
+    }
+}
+
+
 /**
  * Logs a XFS filesystem inode.
  *
@@ -320,15 +407,71 @@ static void rtFsXfsSb_Log(PCXFSSUPERBLOCK pSb)
  * @param   iInode              Inode number.
  * @param   pInode              Pointer to the inode.
  */
-static void rtFsXfsInode_Log(PRTFSXFSVOL pThis, XFSINO iInode, PCXFSINODE pInode)
+static void rtFsXfsInode_Log(PRTFSXFSVOL pThis, XFSINO iInode, PCXFSINODECORE pInode)
 {
+    RT_NOREF(pThis);
+
     if (LogIs2Enabled())
     {
+        RTTIMESPEC Spec;
+        char       sz[80];
 
+        Log2(("XFS: Inode %#RX64:\n", iInode));
+        Log2(("XFS:   u16Magic                    %#RX16\n", RT_BE2H_U16(pInode->u16Magic)));
+        Log2(("XFS:   fMode                       %#RX16\n", RT_BE2H_U16(pInode->fMode)));
+        Log2(("XFS:   iVersion                    %#RX8\n", pInode->iVersion));
+        Log2(("XFS:   enmFormat                   %#RX8\n", pInode->enmFormat));
+        Log2(("XFS:   cOnLinks                    %RU16\n", RT_BE2H_U16(pInode->cOnLinks)));
+        Log2(("XFS:   uUid                        %#RX32\n", RT_BE2H_U32(pInode->uUid)));
+        Log2(("XFS:   uGid                        %#RX32\n", RT_BE2H_U32(pInode->uGid)));
+        Log2(("XFS:   cLinks                      %#RX32\n", RT_BE2H_U32(pInode->cLinks)));
+        Log2(("XFS:   uProjIdLow                  %#RX16\n", RT_BE2H_U16(pInode->uProjIdLow)));
+        Log2(("XFS:   uProjIdHigh                 %#RX16\n", RT_BE2H_U16(pInode->uProjIdHigh)));
+        Log2(("XFS:   cFlush                      %RU16\n", RT_BE2H_U16(pInode->cFlush)));
+        Log2(("XFS:   TsLastAccessed              %#RX32:%#RX32 %s\n", RT_BE2H_U32(pInode->TsLastAccessed.cSecEpoch),
+              RT_BE2H_U32(pInode->TsLastAccessed.cNanoSec),
+              RTTimeSpecToString(RTTimeSpecAddNano(RTTimeSpecSetSeconds(&Spec, RT_BE2H_U32(pInode->TsLastAccessed.cSecEpoch)),
+                                                   RT_BE2H_U32(pInode->TsLastAccessed.cNanoSec)),
+                                 sz, sizeof(sz))));
+        Log2(("XFS:   TsLastModified              %#RX32:%#RX32 %s\n", RT_BE2H_U32(pInode->TsLastModified.cSecEpoch),
+              RT_BE2H_U32(pInode->TsLastModified.cNanoSec),
+              RTTimeSpecToString(RTTimeSpecAddNano(RTTimeSpecSetSeconds(&Spec, RT_BE2H_U32(pInode->TsLastModified.cSecEpoch)),
+                                                   RT_BE2H_U32(pInode->TsLastModified.cNanoSec)),
+                                 sz, sizeof(sz))));
+        Log2(("XFS:   TsCreatedModified           %#RX32:%#RX32 %s\n", RT_BE2H_U32(pInode->TsCreatedModified.cSecEpoch),
+              RT_BE2H_U32(pInode->TsCreatedModified.cNanoSec),
+              RTTimeSpecToString(RTTimeSpecAddNano(RTTimeSpecSetSeconds(&Spec, RT_BE2H_U32(pInode->TsCreatedModified.cSecEpoch)),
+                                                   RT_BE2H_U32(pInode->TsCreatedModified.cNanoSec)),
+                                 sz, sizeof(sz))));
+        Log2(("XFS:   cbInode                     %#RX64\n", RT_BE2H_U64(pInode->cbInode)));
+        Log2(("XFS:   cBlocks                     %#RX64\n", RT_BE2H_U64(pInode->cBlocks)));
+        Log2(("XFS:   cExtentBlocksMin            %#RX32\n", RT_BE2H_U32(pInode->cExtentBlocksMin)));
+        Log2(("XFS:   cExtentsData                %#RX32\n", RT_BE2H_U32(pInode->cExtentsData)));
+        Log2(("XFS:   cExtentsAttr                %#RX16\n", RT_BE2H_U16(pInode->cExtentsAttr)));
+        Log2(("XFS:   offAttrFork                 %#RX8\n", pInode->offAttrFork));
+        Log2(("XFS:   enmFormatAttr               %#RX8\n", pInode->enmFormatAttr));
+        Log2(("XFS:   fEvtMaskDmig                %#RX32\n", RT_BE2H_U32(pInode->fEvtMaskDmig)));
+        Log2(("XFS:   uStateDmig                  %#RX16\n", RT_BE2H_U16(pInode->uStateDmig)));
+        Log2(("XFS:   fFlags                      %#RX16\n", RT_BE2H_U16(pInode->fFlags)));
+        Log2(("XFS:   cGeneration                 %#RX32\n", RT_BE2H_U32(pInode->cGeneration)));
+        Log2(("XFS:   offBlockUnlinkedNext        %#RX32\n", RT_BE2H_U32(pInode->offBlockUnlinkedNext)));
+        Log2(("XFS:   uChkSum                     %#RX32\n", RT_BE2H_U32(pInode->uChkSum)));
+        Log2(("XFS:   cAttrChanges                %#RX64\n", RT_BE2H_U64(pInode->cAttrChanges)));
+        Log2(("XFS:   uFlushSeqNo                 %#RX64\n", RT_BE2H_U64(pInode->uFlushSeqNo)));
+        Log2(("XFS:   fFlags2                     %#RX64\n", RT_BE2H_U64(pInode->fFlags2)));
+        Log2(("XFS:   cExtentCowMin               %#RX32\n", RT_BE2H_U32(pInode->cExtentCowMin)));
+        Log2(("XFS:   TsCreation                  %#RX32:%#RX32 %s\n", RT_BE2H_U32(pInode->TsCreation.cSecEpoch),
+              RT_BE2H_U32(pInode->TsCreation.cNanoSec),
+              RTTimeSpecToString(RTTimeSpecAddNano(RTTimeSpecSetSeconds(&Spec, RT_BE2H_U32(pInode->TsCreation.cSecEpoch)),
+                                                   RT_BE2H_U32(pInode->TsCreation.cNanoSec)),
+                                 sz, sizeof(sz))));
+        Log2(("XFS:   uInode                      %#RX64\n", RT_BE2H_U64(pInode->uInode)));
+        Log2(("XFS:   abUuid                      <todo>\n"));
     }
 }
 
 
+#if 0
 /**
  * Logs a XFS filesystem directory entry.
  *
@@ -370,6 +513,29 @@ DECLINLINE(uint64_t) rtFsXfsBlockIdxToDiskOffset(PRTFSXFSVOL pThis, uint64_t iBl
 DECLINLINE(uint64_t) rtFsXfsDiskOffsetToBlockIdx(PRTFSXFSVOL pThis, uint64_t off)
 {
     return off >> pThis->cBlockShift;
+}
+
+
+/**
+ * Splits the given absolute inode number into the AG number, block inside the AG
+ * and the offset into the block where to find the inode structure.
+ *
+ * @returns nothing.
+ * @param   pThis               The XFS volume instance.
+ * @param   iInode              The inode to split.
+ * @param   piAg                Where to store the AG number.
+ * @param   puBlock             Where to store the block number inside the AG.
+ * @param   poffBlock           Where to store the offset into the block.
+ */
+DECLINLINE(void) rtFsXfsInodeSplitAbs(PRTFSXFSVOL pThis, XFSINO iInode,
+                                      uint32_t *piAg, uint32_t *puBlock,
+                                      uint32_t *poffBlock)
+{
+    *poffBlock = iInode & (pThis->cInodesPerBlock - 1);
+    iInode >>= pThis->cInodesPerBlockLog;
+    *puBlock = iInode & (RT_BIT_32(pThis->cAgBlocksLog) - 1); /* Using the log2 value here as it is rounded. */
+    iInode >>= RT_BIT_32(pThis->cAgBlocksLog) - 1;
+    *piAg = (uint32_t)iInode;
 }
 
 
@@ -627,6 +793,8 @@ static int rtFsXfsAg_Load(PRTFSXFSVOL pThis, uint32_t iAg, PRTFSXFSAG *ppAg)
 {
     int rc = VINF_SUCCESS;
 
+    AssertReturn(iAg < pThis->cAgs, VERR_VFS_BOGUS_FORMAT);
+
     /* Try to fetch the allocation group from the cache first. */
     PRTFSXFSAG pAg = (PRTFSXFSAG)RTAvlU32Get(&pThis->AgRoot, iAg);
     if (!pAg)
@@ -635,37 +803,15 @@ static int rtFsXfsAg_Load(PRTFSXFSVOL pThis, uint32_t iAg, PRTFSXFSAG *ppAg)
         pAg = rtFsXfsAg_GetNew(pThis, iAg);
         if (RT_LIKELY(pAg))
         {
-#if 0 /** @todo */
-            uint64_t          offRead =   rtFsExtBlockIdxToDiskOffset(pThis, pThis->cbBlock == _1K ? 2 : 1)
-                                        + (uint64_t)iBlockGroup * pThis->cbBlkGrpDesc;
-            EXTBLOCKGROUPDESC BlockGroupDesc;
-            rc = RTVfsFileReadAt(pThis->hVfsBacking, offRead, &BlockGroupDesc, pThis->cbBlkGrpDesc, NULL);
+            uint64_t offRead = rtFsXfsBlockIdxToDiskOffset(pThis, iAg * pThis->cBlocksPerAg);
+            XFSSUPERBLOCK Sb;
+            rc = RTVfsFileReadAt(pThis->hVfsBacking, offRead, &Sb, sizeof(Sb), NULL);
             if (RT_SUCCESS(rc))
             {
 #ifdef LOG_ENABLED
-                rtFsExtBlockGroup_Log(pThis, iBlockGroup, &BlockGroupDesc);
+                rtFsXfsSb_Log(iAg, &Sb);
 #endif
-                pBlockGroup->iBlockInodeTbl =   RT_LE2H_U32(BlockGroupDesc.v32.offInodeTableLow)
-                                              | ((pThis->cbBlkGrpDesc == sizeof(EXTBLOCKGROUPDESC64))
-                                              ? (uint64_t)RT_LE2H_U32(BlockGroupDesc.v64.offInodeTableHigh) << 32
-                                              : 0);
-
-                offRead = rtFsExtBlockIdxLowHighToDiskOffset(pThis, RT_LE2H_U32(BlockGroupDesc.v32.offBlockBitmapLow),
-                                                             RT_LE2H_U32(BlockGroupDesc.v64.offBlockBitmapHigh));
-                rc = RTVfsFileReadAt(pThis->hVfsBacking, offRead, &pBlockGroup->abBlockBitmap[0], pThis->cbBlockBitmap, NULL);
-                if (RT_SUCCESS(rc))
-                {
-                    offRead = rtFsExtBlockIdxLowHighToDiskOffset(pThis, RT_LE2H_U32(BlockGroupDesc.v32.offInodeBitmapLow),
-                                                                 RT_LE2H_U32(BlockGroupDesc.v64.offInodeBitmapHigh));
-                    rc = RTVfsFileReadAt(pThis->hVfsBacking, offRead, &pBlockGroup->pabInodeBitmap[0], pThis->cbInodeBitmap, NULL);
-                    if (RT_SUCCESS(rc))
-                    {
-                        bool fIns = RTAvlU32Insert(&pThis->BlockGroupRoot, &pBlockGroup->Core);
-                        Assert(fIns); RT_NOREF(fIns);
-                    }
-                }
             }
-#endif
         }
         else
             rc = VERR_NO_MEMORY;
@@ -749,7 +895,7 @@ static void rtFsXfsInode_Free(PRTFSXFSVOL pThis, PRTFSXFSINODE pInode)
     else
     {
         /* Remove from the tree and free memory. */
-        PAVLU32NODECORE pCore = RTAvlU32Remove(&pThis->InodeRoot, pInode->Core.Key);
+        PAVLU64NODECORE pCore = RTAvlU64Remove(&pThis->InodeRoot, pInode->Core.Key);
         Assert(pCore == &pInode->Core); RT_NOREF(pCore);
         RTMemFree(pInode);
         pThis->cbInodes -= sizeof(RTFSXFSINODE);
@@ -764,7 +910,7 @@ static void rtFsXfsInode_Free(PRTFSXFSVOL pThis, PRTFSXFSINODE pInode)
  * @param   pThis               The XFS volume instance.
  * @param   iInode              Inode number.
  */
-static PRTFSXFSINODE rtFsXfsInode_GetNew(PRTFSXFSVOL pThis, uint32_t iInode)
+static PRTFSXFSINODE rtFsXfsInode_GetNew(PRTFSXFSVOL pThis, XFSINO iInode)
 {
     PRTFSXFSINODE pInode = NULL;
     if (pThis->cbInodes + sizeof(RTFSXFSINODE) <= RTFSXFS_MAX_INODE_CACHE_SIZE)
@@ -777,7 +923,7 @@ static PRTFSXFSINODE rtFsXfsInode_GetNew(PRTFSXFSVOL pThis, uint32_t iInode)
         else
         {
             /* Remove the block group from the tree because it gets a new key. */
-            PAVLU32NODECORE pCore = RTAvlU32Remove(&pThis->InodeRoot, pInode->Core.Key);
+            PAVLU64NODECORE pCore = RTAvlU64Remove(&pThis->InodeRoot, pInode->Core.Key);
             Assert(pCore == &pInode->Core); RT_NOREF(pCore);
         }
     }
@@ -798,121 +944,115 @@ static PRTFSXFSINODE rtFsXfsInode_GetNew(PRTFSXFSVOL pThis, uint32_t iInode)
  * @param   iInode              The inode to load.
  * @param   ppInode             Where to store the inode on success.
  */
-static int rtFsXfsInode_Load(PRTFSXFSVOL pThis, uint32_t iInode, PRTFSXFSINODE *ppInode)
+static int rtFsXfsInode_Load(PRTFSXFSVOL pThis, XFSINO iInode, PRTFSXFSINODE *ppInode)
 {
     int rc = VINF_SUCCESS;
 
     /* Try to fetch the inode from the cache first. */
-    PRTFSXFSINODE pInode = (PRTFSXFSINODE)RTAvlU32Get(&pThis->InodeRoot, iInode);
+    PRTFSXFSINODE pInode = (PRTFSXFSINODE)RTAvlU64Get(&pThis->InodeRoot, iInode);
     if (!pInode)
     {
         /* Slow path, load from disk. */
         pInode = rtFsXfsInode_GetNew(pThis, iInode);
         if (RT_LIKELY(pInode))
         {
-#if 0 /** @todo */
-            /* Calculate the block group and load that one first to get at the inode table location. */
-            PRTFSEXTBLKGRP pBlockGroup = NULL;
-            rc = rtFsEBlockGroupLoad(pThis, (iInode - 1) / pThis->cInodesPerGroup, &pBlockGroup);
+            uint32_t iAg;
+            uint32_t uBlock;
+            uint32_t offBlock;
+
+            rtFsXfsInodeSplitAbs(pThis, iInode, &iAg, &uBlock, &offBlock);
+
+            uint64_t offRead = (iAg * pThis->cBlocksPerAg + uBlock) * pThis->cbBlock + offBlock;
+            XFSINODECORE Inode;
+            rc = RTVfsFileReadAt(pThis->hVfsBacking, offRead, &Inode, RT_MIN(sizeof(Inode), pThis->cbInode), NULL);
             if (RT_SUCCESS(rc))
             {
-                uint32_t idxInodeInTbl = (iInode - 1) % pThis->cInodesPerGroup;
-                uint64_t offRead =   rtFsExtBlockIdxToDiskOffset(pThis, pBlockGroup->iBlockInodeTbl)
-                                   + idxInodeInTbl * pThis->cbInode;
-
-                /* Release block group here already as it is not required. */
-                rtFsExtBlockGroupRelease(pThis, pBlockGroup);
-
-                EXTINODECOMB Inode;
-                rc = RTVfsFileReadAt(pThis->hVfsBacking, offRead, &Inode, RT_MIN(sizeof(Inode), pThis->cbInode), NULL);
-                if (RT_SUCCESS(rc))
-                {
 #ifdef LOG_ENABLED
-                    rtFsExtInode_Log(pThis, iInode, &Inode);
+                rtFsXfsInode_Log(pThis, iInode, &Inode);
 #endif
-                    pInode->offInode            = offRead;
-                    pInode->fFlags              = RT_LE2H_U32(Inode.Core.fFlags);
-                    pInode->ObjInfo.cbObject    =   (uint64_t)RT_LE2H_U32(Inode.Core.cbSizeHigh) << 32
-                                                  | (uint64_t)RT_LE2H_U32(Inode.Core.cbSizeLow);
-                    pInode->ObjInfo.cbAllocated = (  (uint64_t)RT_LE2H_U16(Inode.Core.Osd2.Lnx.cBlocksHigh) << 32
-                                                   | (uint64_t)RT_LE2H_U32(Inode.Core.cBlocksLow)) * pThis->cbBlock;
-                    RTTimeSpecSetSeconds(&pInode->ObjInfo.AccessTime, RT_LE2H_U32(Inode.Core.u32TimeLastAccess));
-                    RTTimeSpecSetSeconds(&pInode->ObjInfo.ModificationTime, RT_LE2H_U32(Inode.Core.u32TimeLastModification));
-                    RTTimeSpecSetSeconds(&pInode->ObjInfo.ChangeTime, RT_LE2H_U32(Inode.Core.u32TimeLastChange));
-                    pInode->ObjInfo.Attr.enmAdditional = RTFSOBJATTRADD_UNIX;
-                    pInode->ObjInfo.Attr.u.Unix.uid    =   (uint32_t)RT_LE2H_U16(Inode.Core.Osd2.Lnx.uUidHigh) << 16
-                                                         | (uint32_t)RT_LE2H_U16(Inode.Core.uUidLow);
-                    pInode->ObjInfo.Attr.u.Unix.gid    =   (uint32_t)RT_LE2H_U16(Inode.Core.Osd2.Lnx.uGidHigh) << 16
-                                                         | (uint32_t)RT_LE2H_U16(Inode.Core.uGidLow);
-                    pInode->ObjInfo.Attr.u.Unix.cHardlinks = RT_LE2H_U16(Inode.Core.cHardLinks);
-                    pInode->ObjInfo.Attr.u.Unix.INodeIdDevice = 0;
-                    pInode->ObjInfo.Attr.u.Unix.INodeId       = iInode;
-                    pInode->ObjInfo.Attr.u.Unix.fFlags        = 0;
-                    pInode->ObjInfo.Attr.u.Unix.GenerationId  = RT_LE2H_U32(Inode.Core.u32Version);
-                    pInode->ObjInfo.Attr.u.Unix.Device        = 0;
-                    if (pThis->cbInode >= sizeof(EXTINODECOMB))
-                        RTTimeSpecSetSeconds(&pInode->ObjInfo.BirthTime, RT_LE2H_U32(Inode.Extra.u32TimeCreation));
-                    else
-                        RTTimeSpecSetSeconds(&pInode->ObjInfo.BirthTime, RT_LE2H_U32(Inode.Core.u32TimeLastChange));
-                    for (unsigned i = 0; i < RT_ELEMENTS(pInode->aiBlocks); i++)
-                        pInode->aiBlocks[i] = RT_LE2H_U32(Inode.Core.au32Block[i]);
 
-                    /* Fill in the mode. */
-                    pInode->ObjInfo.Attr.fMode = 0;
-                    uint32_t fInodeMode = RT_LE2H_U32(Inode.Core.fMode);
-                    switch (EXT_INODE_MODE_TYPE_GET_TYPE(fInodeMode))
-                    {
-                        case EXT_INODE_MODE_TYPE_FIFO:
-                            pInode->ObjInfo.Attr.fMode |= RTFS_TYPE_FIFO;
-                            break;
-                        case EXT_INODE_MODE_TYPE_CHAR:
-                            pInode->ObjInfo.Attr.fMode |= RTFS_TYPE_DEV_CHAR;
-                            break;
-                        case EXT_INODE_MODE_TYPE_DIR:
-                            pInode->ObjInfo.Attr.fMode |= RTFS_TYPE_DIRECTORY;
-                            break;
-                        case EXT_INODE_MODE_TYPE_BLOCK:
-                            pInode->ObjInfo.Attr.fMode |= RTFS_TYPE_DEV_BLOCK;
-                            break;
-                        case EXT_INODE_MODE_TYPE_REGULAR:
-                            pInode->ObjInfo.Attr.fMode |= RTFS_TYPE_FILE;
-                            break;
-                        case EXT_INODE_MODE_TYPE_SYMLINK:
-                            pInode->ObjInfo.Attr.fMode |= RTFS_TYPE_SYMLINK;
-                            break;
-                        case EXT_INODE_MODE_TYPE_SOCKET:
-                            pInode->ObjInfo.Attr.fMode |= RTFS_TYPE_SOCKET;
-                            break;
-                        default:
-                            rc = VERR_VFS_BOGUS_FORMAT;
-                    }
-                    if (fInodeMode & EXT_INODE_MODE_EXEC_OTHER)
-                        pInode->ObjInfo.Attr.fMode |= RTFS_UNIX_IXOTH;
-                    if (fInodeMode & EXT_INODE_MODE_WRITE_OTHER)
-                        pInode->ObjInfo.Attr.fMode |= RTFS_UNIX_IWOTH;
-                    if (fInodeMode & EXT_INODE_MODE_READ_OTHER)
-                        pInode->ObjInfo.Attr.fMode |= RTFS_UNIX_IROTH;
-                    if (fInodeMode & EXT_INODE_MODE_EXEC_GROUP)
-                        pInode->ObjInfo.Attr.fMode |= RTFS_UNIX_IXGRP;
-                    if (fInodeMode & EXT_INODE_MODE_WRITE_GROUP)
-                        pInode->ObjInfo.Attr.fMode |= RTFS_UNIX_IWGRP;
-                    if (fInodeMode & EXT_INODE_MODE_READ_GROUP)
-                        pInode->ObjInfo.Attr.fMode |= RTFS_UNIX_IRGRP;
-                    if (fInodeMode & EXT_INODE_MODE_EXEC_OWNER)
-                        pInode->ObjInfo.Attr.fMode |= RTFS_UNIX_IXUSR;
-                    if (fInodeMode & EXT_INODE_MODE_WRITE_OWNER)
-                        pInode->ObjInfo.Attr.fMode |= RTFS_UNIX_IWUSR;
-                    if (fInodeMode & EXT_INODE_MODE_READ_OWNER)
-                        pInode->ObjInfo.Attr.fMode |= RTFS_UNIX_IRUSR;
-                    if (fInodeMode & EXT_INODE_MODE_STICKY)
-                        pInode->ObjInfo.Attr.fMode |= RTFS_UNIX_ISTXT;
-                    if (fInodeMode & EXT_INODE_MODE_SET_GROUP_ID)
-                        pInode->ObjInfo.Attr.fMode |= RTFS_UNIX_ISGID;
-                    if (fInodeMode & EXT_INODE_MODE_SET_USER_ID)
-                        pInode->ObjInfo.Attr.fMode |= RTFS_UNIX_ISUID;
+                pInode->offInode            = offRead;
+                pInode->fFlags              = RT_BE2H_U16(Inode.fFlags);
+                pInode->enmFormat           = Inode.enmFormat;
+                pInode->ObjInfo.cbObject    = RT_BE2H_U64(Inode.cbInode);
+                pInode->ObjInfo.cbAllocated = RT_BE2H_U64(Inode.cBlocks) * pThis->cbBlock;
+                RTTimeSpecSetSeconds(&pInode->ObjInfo.AccessTime, RT_BE2H_U32(Inode.TsLastAccessed.cSecEpoch));
+                RTTimeSpecAddNano(&pInode->ObjInfo.AccessTime, RT_BE2H_U32(Inode.TsLastAccessed.cNanoSec));
+                RTTimeSpecSetSeconds(&pInode->ObjInfo.ModificationTime, RT_BE2H_U32(Inode.TsLastModified.cSecEpoch));
+                RTTimeSpecAddNano(&pInode->ObjInfo.ModificationTime, RT_BE2H_U32(Inode.TsLastModified.cNanoSec));
+                RTTimeSpecSetSeconds(&pInode->ObjInfo.ChangeTime, RT_BE2H_U32(Inode.TsCreatedModified.cSecEpoch));
+                RTTimeSpecAddNano(&pInode->ObjInfo.ChangeTime, RT_BE2H_U32(Inode.TsCreatedModified.cNanoSec));
+                pInode->ObjInfo.Attr.enmAdditional = RTFSOBJATTRADD_UNIX;
+                pInode->ObjInfo.Attr.u.Unix.uid    = RT_BE2H_U32(Inode.uUid);
+                pInode->ObjInfo.Attr.u.Unix.gid    = RT_BE2H_U32(Inode.uGid);
+                pInode->ObjInfo.Attr.u.Unix.cHardlinks = RT_BE2H_U16(Inode.cOnLinks); /** @todo: v2 inodes. */
+                pInode->ObjInfo.Attr.u.Unix.INodeIdDevice = 0;
+                pInode->ObjInfo.Attr.u.Unix.INodeId       = iInode;
+                pInode->ObjInfo.Attr.u.Unix.fFlags        = 0;
+                pInode->ObjInfo.Attr.u.Unix.GenerationId  = RT_BE2H_U32(Inode.cGeneration);
+                pInode->ObjInfo.Attr.u.Unix.Device        = 0;
+                if (Inode.iVersion >= 3)
+                {
+                    RTTimeSpecSetSeconds(&pInode->ObjInfo.BirthTime, RT_BE2H_U32(Inode.TsCreation.cSecEpoch));
+                    RTTimeSpecAddNano(&pInode->ObjInfo.BirthTime, RT_BE2H_U32(Inode.TsCreation.cNanoSec));
                 }
+                else
+                    pInode->ObjInfo.BirthTime = pInode->ObjInfo.ChangeTime;
+
+                /* Fill in the mode. */
+                pInode->ObjInfo.Attr.fMode = 0;
+                uint16_t fInodeMode = RT_BE2H_U16(Inode.fMode);
+                switch (XFS_INODE_MODE_TYPE_GET_TYPE(fInodeMode))
+                {
+                    case XFS_INODE_MODE_TYPE_FIFO:
+                        pInode->ObjInfo.Attr.fMode |= RTFS_TYPE_FIFO;
+                        break;
+                    case XFS_INODE_MODE_TYPE_CHAR:
+                        pInode->ObjInfo.Attr.fMode |= RTFS_TYPE_DEV_CHAR;
+                        break;
+                    case XFS_INODE_MODE_TYPE_DIR:
+                        pInode->ObjInfo.Attr.fMode |= RTFS_TYPE_DIRECTORY;
+                        break;
+                    case XFS_INODE_MODE_TYPE_BLOCK:
+                        pInode->ObjInfo.Attr.fMode |= RTFS_TYPE_DEV_BLOCK;
+                        break;
+                    case XFS_INODE_MODE_TYPE_REGULAR:
+                        pInode->ObjInfo.Attr.fMode |= RTFS_TYPE_FILE;
+                        break;
+                    case XFS_INODE_MODE_TYPE_SYMLINK:
+                        pInode->ObjInfo.Attr.fMode |= RTFS_TYPE_SYMLINK;
+                        break;
+                    case XFS_INODE_MODE_TYPE_SOCKET:
+                        pInode->ObjInfo.Attr.fMode |= RTFS_TYPE_SOCKET;
+                        break;
+                    default:
+                        rc = VERR_VFS_BOGUS_FORMAT;
+                }
+                if (fInodeMode & XFS_INODE_MODE_EXEC_OTHER)
+                    pInode->ObjInfo.Attr.fMode |= RTFS_UNIX_IXOTH;
+                if (fInodeMode & XFS_INODE_MODE_WRITE_OTHER)
+                    pInode->ObjInfo.Attr.fMode |= RTFS_UNIX_IWOTH;
+                if (fInodeMode & XFS_INODE_MODE_READ_OTHER)
+                    pInode->ObjInfo.Attr.fMode |= RTFS_UNIX_IROTH;
+                if (fInodeMode & XFS_INODE_MODE_EXEC_GROUP)
+                    pInode->ObjInfo.Attr.fMode |= RTFS_UNIX_IXGRP;
+                if (fInodeMode & XFS_INODE_MODE_WRITE_GROUP)
+                    pInode->ObjInfo.Attr.fMode |= RTFS_UNIX_IWGRP;
+                if (fInodeMode & XFS_INODE_MODE_READ_GROUP)
+                    pInode->ObjInfo.Attr.fMode |= RTFS_UNIX_IRGRP;
+                if (fInodeMode & XFS_INODE_MODE_EXEC_OWNER)
+                    pInode->ObjInfo.Attr.fMode |= RTFS_UNIX_IXUSR;
+                if (fInodeMode & XFS_INODE_MODE_WRITE_OWNER)
+                    pInode->ObjInfo.Attr.fMode |= RTFS_UNIX_IWUSR;
+                if (fInodeMode & XFS_INODE_MODE_READ_OWNER)
+                    pInode->ObjInfo.Attr.fMode |= RTFS_UNIX_IRUSR;
+                if (fInodeMode & XFS_INODE_MODE_STICKY)
+                    pInode->ObjInfo.Attr.fMode |= RTFS_UNIX_ISTXT;
+                if (fInodeMode & XFS_INODE_MODE_SET_GROUP_ID)
+                    pInode->ObjInfo.Attr.fMode |= RTFS_UNIX_ISGID;
+                if (fInodeMode & XFS_INODE_MODE_SET_USER_ID)
+                    pInode->ObjInfo.Attr.fMode |= RTFS_UNIX_ISUID;
             }
-#endif
         }
         else
             rc = VERR_NO_MEMORY;
@@ -1134,7 +1274,7 @@ static DECLCALLBACK(int) rtFsXfsFile_Read(void *pvThis, RTFOFF off, PCRTSGBUF pS
         rc = rtFsXfsInode_Read(pThis->pVol, pThis->pInode, (uint64_t)off, pSgBuf->paSegs[0].pvSeg, cbRead, NULL);
         if (RT_SUCCESS(rc))
             pThis->offFile = off + cbRead;
-        Log6(("rtFsExtFile_Read: off=%#RX64 cbSeg=%#x -> %Rrc\n", off, pSgBuf->paSegs[0].cbSeg, rc));
+        Log6(("rtFsXfsFile_Read: off=%#RX64 cbSeg=%#x -> %Rrc\n", off, pSgBuf->paSegs[0].cbSeg, rc));
     }
     else
     {
@@ -1767,7 +1907,7 @@ static DECLCALLBACK(int) rtFsXfsVolAgTreeDestroy(PAVLU32NODECORE pCore, void *pv
 }
 
 
-static DECLCALLBACK(int) rtFsXfsVolInodeTreeDestroy(PAVLU32NODECORE pCore, void *pvUser)
+static DECLCALLBACK(int) rtFsXfsVolInodeTreeDestroy(PAVLU64NODECORE pCore, void *pvUser)
 {
     RT_NOREF(pvUser);
 
@@ -1802,7 +1942,7 @@ static DECLCALLBACK(int) rtFsXfsVol_Close(void *pvThis)
     RTListInit(&pThis->LstAgLru);
 
     /* Destroy the inode tree. */
-    RTAvlU32Destroy(&pThis->InodeRoot, rtFsXfsVolInodeTreeDestroy, pThis);
+    RTAvlU64Destroy(&pThis->InodeRoot, rtFsXfsVolInodeTreeDestroy, pThis);
     pThis->InodeRoot = NULL;
     RTListInit(&pThis->LstInodeLru);
 
@@ -1838,7 +1978,7 @@ static DECLCALLBACK(int) rtFsXfsVol_QueryInfo(void *pvThis, PRTFSOBJINFO pObjInf
 static DECLCALLBACK(int) rtFsXfsVol_OpenRoot(void *pvThis, PRTVFSDIR phVfsDir)
 {
     PRTFSXFSVOL pThis = (PRTFSXFSVOL)pvThis;
-    int rc = rtFsXfsVol_OpenDirByInode(pThis, 0 /** @todo */, phVfsDir);
+    int rc = rtFsXfsVol_OpenDirByInode(pThis, pThis->uInodeRoot, phVfsDir);
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
 }
@@ -1873,6 +2013,30 @@ DECL_HIDDEN_CONST(const RTVFSOPS) g_rtFsXfsVolOps =
 };
 
 
+/**
+ * Loads and parses the AGI block.
+ *
+ * @returns IPRT status code.
+ * @param   pThis               The XFS volume instance.
+ * @param   pErrInfo            Where to return additional error info.
+ */
+static int rtFsXfsVolLoadAgi(PRTFSXFSVOL pThis, PRTERRINFO pErrInfo)
+{
+    XFSAGI Agi;
+    int rc = RTVfsFileReadAt(pThis->hVfsBacking, 2 * pThis->cbSector, &Agi, sizeof(&Agi), NULL);
+    if (RT_SUCCESS(rc))
+    {
+#ifdef LOG_ENABLED
+        rtFsXfsAgi_Log(0, &Agi);
+#endif
+
+        /** @todo: Verification */
+        RT_NOREF(pErrInfo);
+    }
+
+    return rc;
+}
+
 
 /**
  * Loads and parses the superblock of the filesystem.
@@ -1894,10 +2058,20 @@ static int rtFsXfsVolLoadAndParseSuperblock(PRTFSXFSVOL pThis, PRTERRINFO pErrIn
         return RTERRINFO_LOG_SET_F(pErrInfo, VERR_VFS_UNKNOWN_FORMAT, "Not XFS - Signature mismatch: %RX32", RT_BE2H_U32(Sb.u32Magic));
 
 #ifdef LOG_ENABLED
-    rtFsXfsSb_Log(&Sb);
+    rtFsXfsSb_Log(0, &Sb);
 #endif
 
-    /** @todo */
+    /** @todo: More verification */
+    pThis->cbSector           = RT_BE2H_U32(Sb.cbSector);
+    pThis->cbBlock            = RT_BE2H_U32(Sb.cbBlock);
+    pThis->cBlockShift        = Sb.cBlockSzLog;
+    pThis->cBlocksPerAg       = RT_BE2H_U32(Sb.cAgBlocks);
+    pThis->cAgs               = RT_BE2H_U32(Sb.cAg);
+    pThis->uInodeRoot         = RT_BE2H_U64(Sb.uInodeRoot);
+    pThis->cbInode            = RT_BE2H_U16(Sb.cbInode);
+    pThis->cInodesPerBlock    = RT_BE2H_U16(Sb.cInodesPerBlock);
+    pThis->cAgBlocksLog       = Sb.cAgBlocksLog;
+    pThis->cInodesPerBlockLog = Sb.cInodesPerBlockLog;
     return rc;
 }
 
@@ -1912,7 +2086,7 @@ RTDECL(int) RTFsXfsVolOpen(RTVFSFILE hVfsFileIn, uint32_t fMntFlags, uint32_t fX
     AssertReturn(cRefs != UINT32_MAX, VERR_INVALID_HANDLE);
 
     /*
-     * Create a VFS instance and initialize the data so rtFsExtVol_Close works.
+     * Create a VFS instance and initialize the data so rtFsXfsVol_Close works.
      */
     RTVFS       hVfs;
     PRTFSXFSVOL pThis;
@@ -1937,6 +2111,8 @@ RTDECL(int) RTFsXfsVolOpen(RTVFSFILE hVfsFileIn, uint32_t fMntFlags, uint32_t fX
         if (RT_SUCCESS(rc))
         {
             rc = rtFsXfsVolLoadAndParseSuperblock(pThis, pErrInfo);
+            if (RT_SUCCESS(rc))
+                rc = rtFsXfsVolLoadAgi(pThis, pErrInfo);
             if (RT_SUCCESS(rc))
             {
                 *phVfs = hVfs;
