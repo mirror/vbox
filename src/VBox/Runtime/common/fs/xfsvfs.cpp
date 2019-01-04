@@ -985,7 +985,7 @@ static int rtFsXfsInode_Load(PRTFSXFSVOL pThis, XFSINO iInode, PRTFSXFSINODE *pp
                 pInode->ObjInfo.Attr.enmAdditional = RTFSOBJATTRADD_UNIX;
                 pInode->ObjInfo.Attr.u.Unix.uid    = RT_BE2H_U32(Inode.uUid);
                 pInode->ObjInfo.Attr.u.Unix.gid    = RT_BE2H_U32(Inode.uGid);
-                pInode->ObjInfo.Attr.u.Unix.cHardlinks = RT_BE2H_U16(Inode.cOnLinks); /** @todo: v2 inodes. */
+                pInode->ObjInfo.Attr.u.Unix.cHardlinks = RT_BE2H_U16(Inode.cOnLinks); /** @todo v2 inodes. */
                 pInode->ObjInfo.Attr.u.Unix.INodeIdDevice = 0;
                 pInode->ObjInfo.Attr.u.Unix.INodeId       = iInode;
                 pInode->ObjInfo.Attr.u.Unix.fFlags        = 0;
@@ -2030,7 +2030,7 @@ static int rtFsXfsVolLoadAgi(PRTFSXFSVOL pThis, PRTERRINFO pErrInfo)
         rtFsXfsAgi_Log(0, &Agi);
 #endif
 
-        /** @todo: Verification */
+        /** @todo Verification */
         RT_NOREF(pErrInfo);
     }
 
@@ -2061,7 +2061,7 @@ static int rtFsXfsVolLoadAndParseSuperblock(PRTFSXFSVOL pThis, PRTERRINFO pErrIn
     rtFsXfsSb_Log(0, &Sb);
 #endif
 
-    /** @todo: More verification */
+    /** @todo More verification */
     pThis->cbSector           = RT_BE2H_U32(Sb.cbSector);
     pThis->cbBlock            = RT_BE2H_U32(Sb.cbBlock);
     pThis->cBlockShift        = Sb.cBlockSzLog;
