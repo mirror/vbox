@@ -502,7 +502,7 @@ IEM_STATIC bool iemVmxIsVmcsFieldValid(PVMCPU pVCpu, uint64_t u64FieldEnc)
         case VMX_VMCS16_GUEST_FS_SEL:
         case VMX_VMCS16_GUEST_GS_SEL:
         case VMX_VMCS16_GUEST_LDTR_SEL:
-        case VMX_VMCS16_GUEST_TR_SEL:
+        case VMX_VMCS16_GUEST_TR_SEL:                     return true;
         case VMX_VMCS16_GUEST_INTR_STATUS:                return pFeat->fVmxVirtIntDelivery;
         case VMX_VMCS16_GUEST_PML_INDEX:                  return pFeat->fVmxPml;
 
@@ -8107,7 +8107,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmptrld(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEf
 
     /* Finally, cache the new VMCS from guest memory and mark it as the current VMCS. */
     rc = PGMPhysSimpleReadGCPhys(pVCpu->CTX_SUFF(pVM), (void *)pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs), GCPhysVmcs,
-                                     sizeof(VMXVVMCS));
+                                 sizeof(VMXVVMCS));
     if (RT_FAILURE(rc))
     {
         Log(("vmptrld: Failed to read VMCS at %#RGp, rc=%Rrc\n", GCPhysVmcs, rc));
