@@ -10362,6 +10362,28 @@ DECLINLINE(VBOXSTRICTRC) hmR0VmxHandleExit(PVMCPU pVCpu, PVMXTRANSIENT pVmxTrans
         case VMX_EXIT_INVPCID:                 VMEXIT_CALL_RET(0, hmR0VmxExitInvpcid(pVCpu, pVmxTransient));
         case VMX_EXIT_GETSEC:                  VMEXIT_CALL_RET(0, hmR0VmxExitGetsec(pVCpu, pVmxTransient));
         case VMX_EXIT_RDPMC:                   VMEXIT_CALL_RET(0, hmR0VmxExitRdpmc(pVCpu, pVmxTransient));
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
+        case VMX_EXIT_VMCLEAR:                 VMEXIT_CALL_RET(0, hmR0VmxExitVmclear(pVCpu, pVmxTransient));
+        case VMX_EXIT_VMLAUNCH:                VMEXIT_CALL_RET(0, hmR0VmxExitVmlaunch(pVCpu, pVmxTransient));
+        case VMX_EXIT_VMPTRLD:                 VMEXIT_CALL_RET(0, hmR0VmxExitVmptrld(pVCpu, pVmxTransient));
+        case VMX_EXIT_VMPTRST:                 VMEXIT_CALL_RET(0, hmR0VmxExitVmptrst(pVCpu, pVmxTransient));
+        case VMX_EXIT_VMREAD:                  VMEXIT_CALL_RET(0, hmR0VmxExitVmread(pVCpu, pVmxTransient));
+        case VMX_EXIT_VMRESUME:                VMEXIT_CALL_RET(0, hmR0VmxExitVmwrite(pVCpu, pVmxTransient));
+        case VMX_EXIT_VMWRITE:                 VMEXIT_CALL_RET(0, hmR0VmxExitVmresume(pVCpu, pVmxTransient));
+        case VMX_EXIT_VMXOFF:                  VMEXIT_CALL_RET(0, hmR0VmxExitVmxoff(pVCpu, pVmxTransient));
+        case VMX_EXIT_VMXON:                   VMEXIT_CALL_RET(0, hmR0VmxExitVmxon(pVCpu, pVmxTransient));
+#else
+        case VMX_EXIT_VMCLEAR:
+        case VMX_EXIT_VMLAUNCH:
+        case VMX_EXIT_VMPTRLD:
+        case VMX_EXIT_VMPTRST:
+        case VMX_EXIT_VMREAD:
+        case VMX_EXIT_VMRESUME:
+        case VMX_EXIT_VMWRITE:
+        case VMX_EXIT_VMXOFF:
+        case VMX_EXIT_VMXON:
+            return hmR0VmxExitSetPendingXcptUD(pVCpu, pVmxTransient);
+#endif
 
         case VMX_EXIT_TRIPLE_FAULT:            return hmR0VmxExitTripleFault(pVCpu, pVmxTransient);
         case VMX_EXIT_NMI_WINDOW:              return hmR0VmxExitNmiWindow(pVCpu, pVmxTransient);
@@ -10373,15 +10395,6 @@ DECLINLINE(VBOXSTRICTRC) hmR0VmxHandleExit(PVMCPU pVCpu, PVMXTRANSIENT pVmxTrans
         case VMX_EXIT_ERR_INVALID_GUEST_STATE: return hmR0VmxExitErrInvalidGuestState(pVCpu, pVmxTransient);
         case VMX_EXIT_ERR_MACHINE_CHECK:       return hmR0VmxExitErrMachineCheck(pVCpu, pVmxTransient);
 
-        case VMX_EXIT_VMCLEAR:
-        case VMX_EXIT_VMLAUNCH:
-        case VMX_EXIT_VMPTRLD:
-        case VMX_EXIT_VMPTRST:
-        case VMX_EXIT_VMREAD:
-        case VMX_EXIT_VMRESUME:
-        case VMX_EXIT_VMWRITE:
-        case VMX_EXIT_VMXOFF:
-        case VMX_EXIT_VMXON:
         case VMX_EXIT_INVEPT:
         case VMX_EXIT_INVVPID:
         case VMX_EXIT_VMFUNC:
@@ -13419,7 +13432,7 @@ static int hmR0VmxExitXcptPF(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 HMVMX_EXIT_DECL hmR0VmxExitVmclear(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 {
     HMVMX_VALIDATE_EXIT_HANDLER_PARAMS(pVCpu, pVmxTransient);
-
+#ifndef VBOX_WITH_NESTED_HWVIRT_ONLY_IN_IEM
     int rc = hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
     rc    |= HMVMX_CPUMCTX_IMPORT_STATE(pVCpu, CPUMCTX_EXTRN_RSP | CPUMCTX_EXTRN_SREG_MASK
                                              | IEM_CPUMCTX_EXTRN_EXEC_DECODED_MEM_MASK);
@@ -13446,6 +13459,9 @@ HMVMX_EXIT_DECL hmR0VmxExitVmclear(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
         rcStrict = VINF_SUCCESS;
     }
     return rcStrict;
+#else
+    return VERR_EM_INTERPRETER;
+#endif
 }
 
 
@@ -13455,7 +13471,7 @@ HMVMX_EXIT_DECL hmR0VmxExitVmclear(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 HMVMX_EXIT_DECL hmR0VmxExitVmlaunch(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 {
     HMVMX_VALIDATE_EXIT_HANDLER_PARAMS(pVCpu, pVmxTransient);
-
+#ifndef VBOX_WITH_NESTED_HWVIRT_ONLY_IN_IEM
     int rc = hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
     rc    |= HMVMX_CPUMCTX_IMPORT_STATE(pVCpu, IEM_CPUMCTX_EXTRN_VMX_VMENTRY_MASK);
     AssertRCReturn(rc, rc);
@@ -13467,6 +13483,9 @@ HMVMX_EXIT_DECL hmR0VmxExitVmlaunch(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
         ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_ALL_GUEST);
     Assert(rcStrict != VINF_IEM_RAISED_XCPT);
     return rcStrict;
+#else
+    return VERR_EM_INTERPRETER;
+#endif
 }
 
 
@@ -13476,7 +13495,7 @@ HMVMX_EXIT_DECL hmR0VmxExitVmlaunch(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 HMVMX_EXIT_DECL hmR0VmxExitVmptrld(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 {
     HMVMX_VALIDATE_EXIT_HANDLER_PARAMS(pVCpu, pVmxTransient);
-
+#ifndef VBOX_WITH_NESTED_HWVIRT_ONLY_IN_IEM
     int rc = hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
     rc    |= HMVMX_CPUMCTX_IMPORT_STATE(pVCpu, CPUMCTX_EXTRN_RSP | CPUMCTX_EXTRN_SREG_MASK
                                              | IEM_CPUMCTX_EXTRN_EXEC_DECODED_MEM_MASK);
@@ -13503,6 +13522,9 @@ HMVMX_EXIT_DECL hmR0VmxExitVmptrld(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
         rcStrict = VINF_SUCCESS;
     }
     return rcStrict;
+#else
+    return VERR_EM_INTERPRETER;
+#endif
 }
 
 
@@ -13512,7 +13534,7 @@ HMVMX_EXIT_DECL hmR0VmxExitVmptrld(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 HMVMX_EXIT_DECL hmR0VmxExitVmptrst(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 {
     HMVMX_VALIDATE_EXIT_HANDLER_PARAMS(pVCpu, pVmxTransient);
-
+#ifndef VBOX_WITH_NESTED_HWVIRT_ONLY_IN_IEM
     int rc = hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
     rc    |= HMVMX_CPUMCTX_IMPORT_STATE(pVCpu, CPUMCTX_EXTRN_RSP | CPUMCTX_EXTRN_SREG_MASK
                                              | IEM_CPUMCTX_EXTRN_EXEC_DECODED_MEM_MASK);
@@ -13539,6 +13561,9 @@ HMVMX_EXIT_DECL hmR0VmxExitVmptrst(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
         rcStrict = VINF_SUCCESS;
     }
     return rcStrict;
+#else
+    return VERR_EM_INTERPRETER;
+#endif
 }
 
 
@@ -13548,7 +13573,7 @@ HMVMX_EXIT_DECL hmR0VmxExitVmptrst(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 HMVMX_EXIT_DECL hmR0VmxExitVmread(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 {
     HMVMX_VALIDATE_EXIT_HANDLER_PARAMS(pVCpu, pVmxTransient);
-
+#ifndef VBOX_WITH_NESTED_HWVIRT_ONLY_IN_IEM
     int rc = hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
     rc    |= HMVMX_CPUMCTX_IMPORT_STATE(pVCpu, CPUMCTX_EXTRN_RSP | CPUMCTX_EXTRN_SREG_MASK
                                              | IEM_CPUMCTX_EXTRN_EXEC_DECODED_MEM_MASK);
@@ -13576,6 +13601,9 @@ HMVMX_EXIT_DECL hmR0VmxExitVmread(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
         rcStrict = VINF_SUCCESS;
     }
     return rcStrict;
+#else
+    return VERR_EM_INTERPRETER;
+#endif
 }
 
 
@@ -13585,7 +13613,7 @@ HMVMX_EXIT_DECL hmR0VmxExitVmread(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 HMVMX_EXIT_DECL hmR0VmxExitVmresume(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 {
     HMVMX_VALIDATE_EXIT_HANDLER_PARAMS(pVCpu, pVmxTransient);
-
+#ifndef VBOX_WITH_NESTED_HWVIRT_ONLY_IN_IEM
     int rc = hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
     rc    |= HMVMX_CPUMCTX_IMPORT_STATE(pVCpu, IEM_CPUMCTX_EXTRN_VMX_VMENTRY_MASK);
     AssertRCReturn(rc, rc);
@@ -13597,6 +13625,9 @@ HMVMX_EXIT_DECL hmR0VmxExitVmresume(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
         ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_ALL_GUEST);
     Assert(rcStrict != VINF_IEM_RAISED_XCPT);
     return rcStrict;
+#else
+    return VERR_EM_INTERPRETER;
+#endif
 }
 
 
@@ -13606,7 +13637,7 @@ HMVMX_EXIT_DECL hmR0VmxExitVmresume(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 HMVMX_EXIT_DECL hmR0VmxExitVmwrite(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 {
     HMVMX_VALIDATE_EXIT_HANDLER_PARAMS(pVCpu, pVmxTransient);
-
+#ifndef VBOX_WITH_NESTED_HWVIRT_ONLY_IN_IEM
     int rc = hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
     rc    |= HMVMX_CPUMCTX_IMPORT_STATE(pVCpu, CPUMCTX_EXTRN_RSP | CPUMCTX_EXTRN_SREG_MASK
                                              | IEM_CPUMCTX_EXTRN_EXEC_DECODED_MEM_MASK);
@@ -13634,6 +13665,9 @@ HMVMX_EXIT_DECL hmR0VmxExitVmwrite(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
         rcStrict = VINF_SUCCESS;
     }
     return rcStrict;
+#else
+    return VERR_EM_INTERPRETER;
+#endif
 }
 
 
@@ -13643,7 +13677,7 @@ HMVMX_EXIT_DECL hmR0VmxExitVmwrite(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 HMVMX_EXIT_DECL hmR0VmxExitVmxoff(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 {
     HMVMX_VALIDATE_EXIT_HANDLER_PARAMS(pVCpu, pVmxTransient);
-
+#ifndef VBOX_WITH_NESTED_HWVIRT_ONLY_IN_IEM
     int rc = hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
     rc    |= HMVMX_CPUMCTX_IMPORT_STATE(pVCpu, CPUMCTX_EXTRN_CR4 | IEM_CPUMCTX_EXTRN_EXEC_DECODED_NO_MEM_MASK);
     AssertRCReturn(rc, rc);
@@ -13662,6 +13696,9 @@ HMVMX_EXIT_DECL hmR0VmxExitVmxoff(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
         rcStrict = VINF_SUCCESS;
     }
     return rcStrict;
+#else
+    return VERR_EM_INTERPRETER;
+#endif
 }
 
 
@@ -13671,7 +13708,7 @@ HMVMX_EXIT_DECL hmR0VmxExitVmxoff(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 HMVMX_EXIT_DECL hmR0VmxExitVmxon(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 {
     HMVMX_VALIDATE_EXIT_HANDLER_PARAMS(pVCpu, pVmxTransient);
-
+#ifndef VBOX_WITH_NESTED_HWVIRT_ONLY_IN_IEM
     int rc = hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
     rc    |= HMVMX_CPUMCTX_IMPORT_STATE(pVCpu, CPUMCTX_EXTRN_RSP | CPUMCTX_EXTRN_SREG_MASK
                                              | IEM_CPUMCTX_EXTRN_EXEC_DECODED_MEM_MASK);
@@ -13698,6 +13735,9 @@ HMVMX_EXIT_DECL hmR0VmxExitVmxon(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
         rcStrict = VINF_SUCCESS;
     }
     return rcStrict;
+#else
+    return VERR_EM_INTERPRETER;
+#endif
 }
 
 /** @} */
