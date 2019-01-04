@@ -1442,7 +1442,7 @@ $(VBOX_XPIDL): | $(PATH_TARGET)/VBox-xpcom-idl-timestamp
 #
 # Generate linker map file filtering out unwanted global symbols.
 #
-$(PATH_TARGET)/xpcom-namespace-cleanup.map foo.map: $$(VBoxXPCOM_LIBS) $$(VBoxXPCOM_OBJS_)
+$(PATH_TARGET)/xpcom-namespace-cleanup.map foo.map: $$(VBoxXPCOM_LIBS) $$(VBoxXPCOM_2_OBJS)
 	$(call MSG_L1, Creating linker map $@ for scrubbing the symbol namespace)
 	$(QUIET)$(APPEND) -t $@ '{ local: *; global: '
 	$(QUIET)$(VBOX_NM) -p -g $^ \
