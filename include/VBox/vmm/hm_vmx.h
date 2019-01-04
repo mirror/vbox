@@ -3194,7 +3194,7 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_VMCS_ENC_, UINT32_C(0), UINT32_MAX,
 
 /** Virtual VMCS revision ID. Bump this arbitarily chosen identifier if incompatible
  *  changes to the layout of VMXVVMCS is done.  Bit 31 MBZ.  */
-#define VMX_V_VMCS_REVISION_ID                                  UINT32_C(0x1d000001)
+#define VMX_V_VMCS_REVISION_ID                                  UINT32_C(0x40000001)
 AssertCompile(!(VMX_V_VMCS_REVISION_ID & RT_BIT(31)));
 
 /** The size of the virtual VMCS region (we use the maximum allowed size to avoid
