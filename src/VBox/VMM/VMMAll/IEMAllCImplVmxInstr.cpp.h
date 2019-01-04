@@ -7506,20 +7506,21 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmreadCommon(PVMCPU pVCpu, uint8_t cbInstr, uint64
      * Setup reading from the current or shadow VMCS.
      */
     uint8_t *pbVmcs;
-    if (IEM_VMX_IS_NON_ROOT_MODE(pVCpu))
-        pbVmcs = (uint8_t *)pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pShadowVmcs);
-    else
+    if (!IEM_VMX_IS_NON_ROOT_MODE(pVCpu))
         pbVmcs = (uint8_t *)pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
+    else
+        pbVmcs = (uint8_t *)pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pShadowVmcs);
     Assert(pbVmcs);
 
     VMXVMCSFIELDENC FieldEnc;
-    FieldEnc.u = RT_LO_U32(u64FieldEnc);
-    uint8_t  const uWidth     = FieldEnc.n.u2Width;
-    uint8_t  const uType      = FieldEnc.n.u2Type;
+    FieldEnc.u = u64FieldEnc;
+    uint8_t  const uWidth     = RT_BF_GET(FieldEnc.u, VMX_BF_VMCS_ENC_WIDTH);
+    uint8_t  const uType      = RT_BF_GET(FieldEnc.u, VMX_BF_VMCS_ENC_TYPE);
     uint8_t  const uWidthType = (uWidth << 2) | uType;
-    uint8_t  const uIndex     = FieldEnc.n.u8Index;
+    uint8_t  const uIndex     = RT_BF_GET(FieldEnc.u, VMX_BF_VMCS_ENC_INDEX);
     AssertReturn(uIndex <= VMX_V_VMCS_MAX_INDEX, VERR_IEM_IPE_2);
     uint16_t const offField   = g_aoffVmcsMap[uWidthType][uIndex];
+    Assert(offField < VMX_V_VMCS_SIZE);
 
     /*
      * Read the VMCS component based on the field's effective width.
@@ -7764,20 +7765,21 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmwrite(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEf
      * Setup writing to the current or shadow VMCS.
      */
     uint8_t *pbVmcs;
-    if (IEM_VMX_IS_NON_ROOT_MODE(pVCpu))
-        pbVmcs = (uint8_t *)pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pShadowVmcs);
-    else
+    if (!IEM_VMX_IS_NON_ROOT_MODE(pVCpu))
         pbVmcs = (uint8_t *)pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
+    else
+        pbVmcs = (uint8_t *)pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pShadowVmcs);
     Assert(pbVmcs);
 
     VMXVMCSFIELDENC FieldEnc;
-    FieldEnc.u = RT_LO_U32(u64FieldEnc);
-    uint8_t  const uWidth     = FieldEnc.n.u2Width;
-    uint8_t  const uType      = FieldEnc.n.u2Type;
+    FieldEnc.u = u64FieldEnc;
+    uint8_t  const uWidth     = RT_BF_GET(FieldEnc.u, VMX_BF_VMCS_ENC_WIDTH);
+    uint8_t  const uType      = RT_BF_GET(FieldEnc.u, VMX_BF_VMCS_ENC_TYPE);
     uint8_t  const uWidthType = (uWidth << 2) | uType;
-    uint8_t  const uIndex     = FieldEnc.n.u8Index;
+    uint8_t  const uIndex     = RT_BF_GET(FieldEnc.u, VMX_BF_VMCS_ENC_INDEX);
     AssertReturn(uIndex <= VMX_V_VMCS_MAX_INDEX, VERR_IEM_IPE_2);
     uint16_t const offField   = g_aoffVmcsMap[uWidthType][uIndex];
+    Assert(offField < VMX_V_VMCS_SIZE);
 
     /*
      * Write the VMCS component based on the field's effective width.
@@ -8073,8 +8075,8 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmptrld(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEf
     {
         if (VmcsRevId.n.u31RevisionId != VMX_V_VMCS_REVISION_ID)
         {
-            Log(("vmptrld: VMCS revision mismatch, expected %#RX32 got %#RX32 -> VMFail()\n", VMX_V_VMCS_REVISION_ID,
-                 VmcsRevId.n.u31RevisionId));
+            Log(("vmptrld: VMCS revision mismatch, expected %#RX32 got %#RX32. GCPhysVmcs=%#RX64 -> VMFail()\n",
+                 VMX_V_VMCS_REVISION_ID, VmcsRevId.n.u31RevisionId, GCPhysVmcs));
             pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmptrld_VmcsRevId;
             iemVmxVmFail(pVCpu, VMXINSTRERR_VMPTRLD_INCORRECT_VMCS_REV);
             iemRegAddToRipAndClearRF(pVCpu, cbInstr);
