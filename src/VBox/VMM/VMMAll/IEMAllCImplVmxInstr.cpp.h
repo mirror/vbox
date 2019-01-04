@@ -7897,7 +7897,8 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmclear(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEf
      * to 'clear'.
      */
     uint8_t const fVmcsStateClear = VMX_V_VMCS_STATE_CLEAR;
-    if (IEM_VMX_GET_CURRENT_VMCS(pVCpu) == GCPhysVmcs)
+    if (   IEM_VMX_HAS_CURRENT_VMCS(pVCpu)
+        && IEM_VMX_GET_CURRENT_VMCS(pVCpu) == GCPhysVmcs)
     {
         Assert(GCPhysVmcs != NIL_RTGCPHYS);                     /* Paranoia. */
         Assert(pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs));
@@ -8057,26 +8058,28 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmptrld(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEf
         return VINF_SUCCESS;
     }
 
-    /* Read the VMCS revision ID from the VMCS. */
+    /* Read just the VMCS revision from the VMCS. */
     VMXVMCSREVID VmcsRevId;
     int rc = PGMPhysSimpleReadGCPhys(pVCpu->CTX_SUFF(pVM), &VmcsRevId, GCPhysVmcs, sizeof(VmcsRevId));
     if (RT_FAILURE(rc))
     {
-        Log(("vmptrld: Failed to read VMCS at %#RGp, rc=%Rrc\n", GCPhysVmcs, rc));
-        pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmptrld_PtrReadPhys;
+        Log(("vmptrld: Failed to read revision identifier from VMCS at %#RGp, rc=%Rrc\n", GCPhysVmcs, rc));
+        pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmptrld_RevPtrReadPhys;
         return rc;
     }
 
-    /* Verify the VMCS revision specified by the guest matches what we reported to the guest,
-       also check VMCS shadowing feature. */
+    /*
+     * Verify the VMCS revision specified by the guest matches what we reported to the guest.
+     * Verify the VMCS is not a shadow VMCS, if the VMCS shadowing feature is supported.
+     */
     if (   VmcsRevId.n.u31RevisionId != VMX_V_VMCS_REVISION_ID
         || (   VmcsRevId.n.fIsShadowVmcs
             && !IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fVmxVmcsShadowing))
     {
         if (VmcsRevId.n.u31RevisionId != VMX_V_VMCS_REVISION_ID)
         {
-            Log(("vmptrld: VMCS revision mismatch, expected %#RX32 got %#RX32. GCPhysVmcs=%#RX64 -> VMFail()\n",
-                 VMX_V_VMCS_REVISION_ID, VmcsRevId.n.u31RevisionId, GCPhysVmcs));
+            Log(("vmptrld: VMCS revision mismatch, expected %#RX32 got %#RX32, GCPtrVmcs=%#RGv GCPhysVmcs=%#RGp -> VMFail()\n",
+                 VMX_V_VMCS_REVISION_ID, VmcsRevId.n.u31RevisionId, GCPtrVmcs, GCPhysVmcs));
             pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmptrld_VmcsRevId;
             iemVmxVmFail(pVCpu, VMXINSTRERR_VMPTRLD_INCORRECT_VMCS_REV);
             iemRegAddToRipAndClearRF(pVCpu, cbInstr);
@@ -8097,7 +8100,20 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmptrld(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEf
      */
     if (   IEM_VMX_HAS_CURRENT_VMCS(pVCpu)
         && IEM_VMX_GET_CURRENT_VMCS(pVCpu) != GCPhysVmcs)
+    {
         iemVmxCommitCurrentVmcsToMemory(pVCpu);
+        Assert(!IEM_VMX_HAS_CURRENT_VMCS(pVCpu));
+    }
+
+    /* Finally, cache the new VMCS from guest memory and mark it as the current VMCS. */
+    rc = PGMPhysSimpleReadGCPhys(pVCpu->CTX_SUFF(pVM), (void *)pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs), GCPhysVmcs,
+                                     sizeof(VMXVVMCS));
+    if (RT_FAILURE(rc))
+    {
+        Log(("vmptrld: Failed to read VMCS at %#RGp, rc=%Rrc\n", GCPhysVmcs, rc));
+        pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmptrld_PtrReadPhys;
+        return rc;
+    }
 
     IEM_VMX_SET_CURRENT_VMCS(pVCpu, GCPhysVmcs);
 
