@@ -831,7 +831,7 @@ typedef union
 AssertCompileSize(VMXVMCSREVID, 4);
 /** Pointer to the VMXVMCSREVID union. */
 typedef VMXVMCSREVID *PVMXVMCSREVID;
-/** Pointer to a const VMXVVMCSREVID union. */
+/** Pointer to a const VMXVMCSREVID union. */
 typedef const VMXVMCSREVID *PCVMXVMCSREVID;
 
 /**
@@ -3750,8 +3750,7 @@ AssertCompileMemberOffset(VMXVVMCS, u64HostCr0,         0x860);
  * field in its VMCS.
  *
  * @note Members of this enum are used as array indices, so no gaps are allowed.
- *       Please update g_apszVmxInstrDiagDesc when you add new fields to this
- *       enum.
+ *       Please update g_apszVmxVDiagDesc when you add new fields to this enum.
  */
 typedef enum
 {
@@ -3811,6 +3810,7 @@ typedef enum
     kVmxVDiag_Vmptrld_PtrVmxon,
     kVmxVDiag_Vmptrld_PtrWidth,
     kVmxVDiag_Vmptrld_RealOrV86Mode,
+    kVmxVDiag_Vmptrld_RevPtrReadPhys,
     kVmxVDiag_Vmptrld_ShadowVmcs,
     kVmxVDiag_Vmptrld_VmcsRevId,
     kVmxVDiag_Vmptrld_VmxRoot,

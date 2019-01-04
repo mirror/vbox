@@ -90,6 +90,7 @@ static const char * const g_apszVmxVDiagDesc[] =
     VMXV_DIAG_DESC(kVmxVDiag_Vmptrld_PtrVmxon                 , "PtrVmxon"                  ),
     VMXV_DIAG_DESC(kVmxVDiag_Vmptrld_PtrWidth                 , "PtrWidth"                  ),
     VMXV_DIAG_DESC(kVmxVDiag_Vmptrld_RealOrV86Mode            , "RealOrV86Mode"             ),
+    VMXV_DIAG_DESC(kVmxVDiag_Vmptrld_RevPtrReadPhys           , "RevPtrReadPhys"            ),
     VMXV_DIAG_DESC(kVmxVDiag_Vmptrld_ShadowVmcs               , "ShadowVmcs"                ),
     VMXV_DIAG_DESC(kVmxVDiag_Vmptrld_VmcsRevId                , "VmcsRevId"                 ),
     VMXV_DIAG_DESC(kVmxVDiag_Vmptrld_VmxRoot                  , "VmxRoot"                   ),
