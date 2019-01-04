@@ -562,7 +562,7 @@ typedef const XFSINODECORE *PCXFSINODECORE;
 #define XFS_INODE_F_NEWRTBITMAP                      RT_BIT(2)
 /** Inode is immutable. */
 #define XFS_INODE_F_IMMUTABLE                        RT_BIT(3)
-/** Inode is append only.. */
+/** Inode is append only..*/
 #define XFS_INODE_F_APPEND                           RT_BIT(4)
 /** Inode is written synchronously. */
 #define XFS_INODE_F_SYNC                             RT_BIT(5)
