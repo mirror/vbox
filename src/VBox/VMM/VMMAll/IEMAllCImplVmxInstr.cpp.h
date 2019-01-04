@@ -7531,7 +7531,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmreadCommon(PVMCPU pVCpu, uint8_t cbInstr, uint64
      * or memory locations are required. Here we just zero-extend to the largest
      * type (i.e. 64-bits).
      */
-    uint8_t      *pbField = pbVmcs + offField;
+    uint8_t      *pbField   = pbVmcs + offField;
     uint8_t const uEffWidth = HMVmxGetVmcsFieldWidthEff(FieldEnc.u);
     switch (uEffWidth)
     {
@@ -7785,7 +7785,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmwrite(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEf
      * The effective width is 64-bit fields adjusted to 32-bits if the access-type
      * indicates high bits (little endian).
      */
-    uint8_t      *pbField = pbVmcs + offField;
+    uint8_t      *pbField   = pbVmcs + offField;
     uint8_t const uEffWidth = HMVmxGetVmcsFieldWidthEff(FieldEnc.u);
     switch (uEffWidth)
     {
