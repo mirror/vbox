@@ -2853,7 +2853,8 @@ static void vmsvgaR3FifoHandleExtCmd(PVGASTATE pThis)
             AssertLogRelMsgBreak(RT_VALID_PTR(pSSM), ("pSSM=%p\n", pSSM));
             vmsvgaSaveExecFifo(pThis, pSSM);
 # ifdef VBOX_WITH_VMSVGA3D
-            vmsvga3dSaveExec(pThis, pSSM);
+            if (pThis->svga.f3DEnabled)
+                vmsvga3dSaveExec(pThis, pSSM);
 # endif
             break;
         }
@@ -2865,7 +2866,8 @@ static void vmsvgaR3FifoHandleExtCmd(PVGASTATE pThis)
             AssertLogRelMsgBreak(RT_VALID_PTR(pLoadState), ("pLoadState=%p\n", pLoadState));
             vmsvgaLoadExecFifo(pThis, pLoadState->pSSM, pLoadState->uVersion, pLoadState->uPass);
 # ifdef VBOX_WITH_VMSVGA3D
-            vmsvga3dLoadExec(pThis, pLoadState->pSSM, pLoadState->uVersion, pLoadState->uPass);
+            if (pThis->svga.f3DEnabled)
+                vmsvga3dLoadExec(pThis, pLoadState->pSSM, pLoadState->uVersion, pLoadState->uPass);
 # endif
             break;
         }
@@ -5366,21 +5368,16 @@ int vmsvgaLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint3
         }
     }
 
-# ifdef VBOX_WITH_VMSVGA3D
-    if (pThis->svga.f3DEnabled)
-    {
 #  ifdef RT_OS_DARWIN  /** @todo r=bird: this is normally done on the EMT, so for DARWIN we do that when loading saved state too now. See DevVGA-SVGA3d-shared.h. */
-        vmsvga3dPowerOn(pThis);
+    vmsvga3dPowerOn(pThis);
 #  endif
 
-        VMSVGA_STATE_LOAD LoadState;
-        LoadState.pSSM     = pSSM;
-        LoadState.uVersion = uVersion;
-        LoadState.uPass    = uPass;
-        rc = vmsvgaR3RunExtCmdOnFifoThread(pThis, VMSVGA_FIFO_EXTCMD_LOADSTATE, &LoadState, RT_INDEFINITE_WAIT);
-        AssertLogRelRCReturn(rc, rc);
-    }
-# endif
+    VMSVGA_STATE_LOAD LoadState;
+    LoadState.pSSM     = pSSM;
+    LoadState.uVersion = uVersion;
+    LoadState.uPass    = uPass;
+    rc = vmsvgaR3RunExtCmdOnFifoThread(pThis, VMSVGA_FIFO_EXTCMD_LOADSTATE, &LoadState, RT_INDEFINITE_WAIT);
+    AssertLogRelRCReturn(rc, rc);
 
     return VINF_SUCCESS;
 }
@@ -5489,16 +5486,12 @@ int vmsvgaSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
         }
     }
 
-# ifdef VBOX_WITH_VMSVGA3D
     /*
-     * Must save the 3d state in the FIFO thread.
+     * Must save the some state (3D in particular) in the FIFO thread.
      */
-    if (pThis->svga.f3DEnabled)
-    {
-        rc = vmsvgaR3RunExtCmdOnFifoThread(pThis, VMSVGA_FIFO_EXTCMD_SAVESTATE, pSSM, RT_INDEFINITE_WAIT);
-        AssertLogRelRCReturn(rc, rc);
-    }
-# endif
+    rc = vmsvgaR3RunExtCmdOnFifoThread(pThis, VMSVGA_FIFO_EXTCMD_SAVESTATE, pSSM, RT_INDEFINITE_WAIT);
+    AssertLogRelRCReturn(rc, rc);
+
     return VINF_SUCCESS;
 }
 
