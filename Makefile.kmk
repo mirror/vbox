@@ -1213,7 +1213,7 @@ additions-build-linux.rsync-into-vm:
 additions-build-linux.build-it: additions-build-linux.rsync-into-vm
  ifdef VBOX_WITH_LIGHTDM_GREETER_PACKING
 	$(call VBOX_BLD_VM_MSG_BEGIN,Linux/amd64 additions/greeter)
-	$(TIME) -- ssh -v vbox@$(VBOX_BLD_VM_LNX_IP)         'dchroot -c ubuntu-11.10-amd64 "cd /mnt/tinderbox/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME) && tools/env.sh --no-wine kmk $(VBOX_ADDITIONS_BUILD.amd64) PATH_OUT=/mnt/tinderbox/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME)/out/linux.amd64/$(KBUILD_TYPE)/greeter VBOX_WITH_LIGHTDM_GREETER=1 vbox-greeter " '
+	$(TIME) -- ssh -vv vbox@$(VBOX_BLD_VM_LNX_IP)         'dchroot -c ubuntu-11.10-amd64 "cd /mnt/tinderbox/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME) && tools/env.sh --no-wine kmk $(VBOX_ADDITIONS_BUILD.amd64) PATH_OUT=/mnt/tinderbox/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME)/out/linux.amd64/$(KBUILD_TYPE)/greeter VBOX_WITH_LIGHTDM_GREETER=1 vbox-greeter " '
 	$(call VBOX_BLD_VM_MSG_END__,Linux/amd64 additions/greeter)
  endif
 	$(call VBOX_BLD_VM_MSG_BEGIN,Linux/amd64 additions build+pack)
