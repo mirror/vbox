@@ -7493,7 +7493,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmreadCommon(PVMCPU pVCpu, uint8_t cbInstr, uint64
     }
 
     /* Supported VMCS field. */
-    if (iemVmxIsVmcsFieldValid(pVCpu, u64FieldEnc))
+    if (!iemVmxIsVmcsFieldValid(pVCpu, u64FieldEnc))
     {
         Log(("vmread: VMCS field %#RX64 invalid -> VMFail\n", u64FieldEnc));
         pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmread_FieldInvalid;
