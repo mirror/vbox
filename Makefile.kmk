@@ -987,6 +987,9 @@ VBOX_RSYNC_IN_FN = rsync -a -v --delete --delete-excluded --prune-empty-dirs \
 		--exclude=tools/$(os).amd64/ )
 
 ## Overridable ssh alias.
+# On windows build boxes install https://github.com/PowerShell/Win32-OpenSSH/releases
+# and point to it in LocalConfig.  (The cygwin ssh frequently segfaults due to
+# termination race or something along those lines.)
 VBOX_SSH ?= ssh
 
 #
@@ -1138,10 +1141,10 @@ additions-build-solaris.rsync-into-vm:
 
 additions-build-solaris.build-it: additions-build-solaris.rsync-into-vm
 	$(call VBOX_BLD_VM_MSG_BEGIN,Solaris/amd64 additions build+pack)
-	$(TIME) -- $(VBOX_SSH) -v vbox@$(VBOX_BLD_VM_SOLARIS_IP) ' cd /mnt/tinderbox/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME) && tools/env.sh --no-wine kmk $(VBOX_ADDITIONS_BUILD.amd64) all packing '
+	$(TIME) -- $(VBOX_SSH) vbox@$(VBOX_BLD_VM_SOLARIS_IP) ' cd /mnt/tinderbox/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME) && tools/env.sh --no-wine kmk $(VBOX_ADDITIONS_BUILD.amd64) all packing '
 	$(call VBOX_BLD_VM_MSG_END__,Solaris/amd64 additions build+pack)
 	$(call VBOX_BLD_VM_MSG_BEGIN,Solaris/x86 additions build+pack)
-	$(TIME) -- $(VBOX_SSH) -v vbox@$(VBOX_BLD_VM_SOLARIS_IP) ' cd /mnt/tinderbox/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME) && tools/env.sh --no-wine kmk $(VBOX_ADDITIONS_BUILD.x86) all packing VBOX_WITH_COMBINED_SOLARIS_GUEST_PACKAGE=1 '
+	$(TIME) -- $(VBOX_SSH) vbox@$(VBOX_BLD_VM_SOLARIS_IP) ' cd /mnt/tinderbox/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME) && tools/env.sh --no-wine kmk $(VBOX_ADDITIONS_BUILD.x86) all packing VBOX_WITH_COMBINED_SOLARIS_GUEST_PACKAGE=1 '
 	$(call VBOX_BLD_VM_MSG_END__,Solaris/x86 additions build+pack)
 
 additions-build-solaris.rsync-out-of-vm: additions-build-solaris.build-it
@@ -1216,22 +1219,22 @@ additions-build-linux.rsync-into-vm:
 additions-build-linux.build-it: additions-build-linux.rsync-into-vm
  ifdef VBOX_WITH_LIGHTDM_GREETER_PACKING
 	$(call VBOX_BLD_VM_MSG_BEGIN,Linux/amd64 additions/greeter)
-	$(TIME) -- $(VBOX_SSH) -vv vbox@$(VBOX_BLD_VM_LNX_IP)         'dchroot -c ubuntu-11.10-amd64 "cd /mnt/tinderbox/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME) && tools/env.sh --no-wine kmk $(VBOX_ADDITIONS_BUILD.amd64) PATH_OUT=/mnt/tinderbox/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME)/out/linux.amd64/$(KBUILD_TYPE)/greeter VBOX_WITH_LIGHTDM_GREETER=1 vbox-greeter " '
+	$(TIME) -- $(VBOX_SSH) vbox@$(VBOX_BLD_VM_LNX_IP)         'dchroot -c ubuntu-11.10-amd64 "cd /mnt/tinderbox/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME) && tools/env.sh --no-wine kmk $(VBOX_ADDITIONS_BUILD.amd64) PATH_OUT=/mnt/tinderbox/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME)/out/linux.amd64/$(KBUILD_TYPE)/greeter VBOX_WITH_LIGHTDM_GREETER=1 vbox-greeter " '
 	$(call VBOX_BLD_VM_MSG_END__,Linux/amd64 additions/greeter)
  endif
 	$(call VBOX_BLD_VM_MSG_BEGIN,Linux/amd64 additions build+pack)
-	$(TIME) -- $(VBOX_SSH) -v vbox@$(VBOX_BLD_VM_LNX_IP)         'dchroot -c debian-4.0-amd64   "cd /mnt/tinderbox/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME) && tools/env.sh --no-wine kmk $(VBOX_ADDITIONS_BUILD.amd64) all packing VBOX_WITHOUT_LINUX_GUEST_PACKAGE=1 VBOX_WITH_LIGHTDM_GREETER_PACKING=$(VBOX_WITH_LIGHTDM_GREETER_PACKING) " '
+	$(TIME) -- $(VBOX_SSH) vbox@$(VBOX_BLD_VM_LNX_IP)         'dchroot -c debian-4.0-amd64   "cd /mnt/tinderbox/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME) && tools/env.sh --no-wine kmk $(VBOX_ADDITIONS_BUILD.amd64) all packing VBOX_WITHOUT_LINUX_GUEST_PACKAGE=1 VBOX_WITH_LIGHTDM_GREETER_PACKING=$(VBOX_WITH_LIGHTDM_GREETER_PACKING) " '
 	$(call VBOX_BLD_VM_MSG_END__,Linux/amd64 additions build+pack)
  ifdef VBOX_WITH_LIGHTDM_GREETER_PACKING
 	$(call VBOX_BLD_VM_MSG_BEGIN,Linux/x86 additions/greeter)
-	$(TIME) -- $(VBOX_SSH) -v vbox@$(VBOX_BLD_VM_LNX_IP) 'linux32 dchroot -c ubuntu-11.10-i386  "cd /mnt/tinderbox/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME) && BUILD_PLATFORM_ARCH=x86 tools/env.sh --no-wine kmk $(VBOX_ADDITIONS_BUILD.x86) PATH_OUT=/mnt/tinderbox/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME)/out/linux.x86/$(KBUILD_TYPE)/greeter VBOX_WITH_LIGHTDM_GREETER=1 vbox-greeter " '
+	$(TIME) -- $(VBOX_SSH) vbox@$(VBOX_BLD_VM_LNX_IP) 'linux32 dchroot -c ubuntu-11.10-i386  "cd /mnt/tinderbox/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME) && BUILD_PLATFORM_ARCH=x86 tools/env.sh --no-wine kmk $(VBOX_ADDITIONS_BUILD.x86) PATH_OUT=/mnt/tinderbox/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME)/out/linux.x86/$(KBUILD_TYPE)/greeter VBOX_WITH_LIGHTDM_GREETER=1 vbox-greeter " '
 	$(call VBOX_BLD_VM_MSG_END__,Linux/x86 additions/greeter)
  endif
 	$(call VBOX_BLD_VM_MSG_BEGIN,Linux/x86 additions build+pack)
-	$(TIME) -- $(VBOX_SSH) -v vbox@$(VBOX_BLD_VM_LNX_IP) 'linux32 dchroot -c rhel3-i386         "cd /mnt/tinderbox/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME) && tools/env.sh --no-wine kmk $(VBOX_ADDITIONS_BUILD.x86) all packing VBOX_WITHOUT_LINUX_GUEST_PACKAGE=1 VBOX_WITH_LIGHTDM_GREETER_PACKING=$(VBOX_WITH_LIGHTDM_GREETER_PACKING) " '
+	$(TIME) -- $(VBOX_SSH) vbox@$(VBOX_BLD_VM_LNX_IP) 'linux32 dchroot -c rhel3-i386         "cd /mnt/tinderbox/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME) && tools/env.sh --no-wine kmk $(VBOX_ADDITIONS_BUILD.x86) all packing VBOX_WITHOUT_LINUX_GUEST_PACKAGE=1 VBOX_WITH_LIGHTDM_GREETER_PACKING=$(VBOX_WITH_LIGHTDM_GREETER_PACKING) " '
 	$(call VBOX_BLD_VM_MSG_END__,Linux/x86 additions build+pack)
 	$(call VBOX_BLD_VM_MSG_BEGIN,Linux/x86 additions combine)
-	$(TIME) -- $(VBOX_SSH) -v vbox@$(VBOX_BLD_VM_LNX_IP) 'linux32 dchroot -c rhel3-i386         "cd /mnt/tinderbox/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME) && tools/env.sh --no-wine kmk $(VBOX_ADDITIONS_BUILD.x86) all packing VBOX_WITH_COMBINED_LINUX_GUEST_PACKAGE=1 " '
+	$(TIME) -- $(VBOX_SSH) vbox@$(VBOX_BLD_VM_LNX_IP) 'linux32 dchroot -c rhel3-i386         "cd /mnt/tinderbox/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME) && tools/env.sh --no-wine kmk $(VBOX_ADDITIONS_BUILD.x86) all packing VBOX_WITH_COMBINED_LINUX_GUEST_PACKAGE=1 " '
 	$(call VBOX_BLD_VM_MSG_END__,Linux/x86 additions combine)
 
 additions-build-linux.rsync-out-of-vm: additions-build-linux.build-it
