@@ -4342,7 +4342,7 @@ FNIEMOP_DEF(iemOp_vmread_Ey_Gy)
     else
     {
         /*
-         * Register, memory.
+         * Memory, register.
          */
         if (enmEffOpSize == IEMMODE_64BIT)
         {
@@ -4351,9 +4351,9 @@ FNIEMOP_DEF(iemOp_vmread_Ey_Gy)
             IEM_MC_ARG_CONST(IEMMODE, enmEffAddrMode,/*=*/pVCpu->iem.s.enmEffAddrMode,  1);
             IEM_MC_ARG(RTGCPTR,       GCPtrVal,                                         2);
             IEM_MC_ARG(uint64_t,      u64Enc,                                           3);
-            IEM_MC_FETCH_GREG_U64(u64Enc, (bRm & X86_MODRM_RM_MASK) | pVCpu->iem.s.uRexB);
             IEM_MC_CALC_RM_EFF_ADDR(GCPtrVal, bRm, 0);
             IEMOP_HLP_DONE_DECODING_NO_SIZE_OP_REPZ_OR_REPNZ_PREFIXES();
+            IEM_MC_FETCH_GREG_U64(u64Enc, ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK) | pVCpu->iem.s.uRexReg);
             IEM_MC_ASSIGN(iEffSeg, pVCpu->iem.s.iEffSeg);
             IEM_MC_CALL_CIMPL_4(iemCImpl_vmread_mem, iEffSeg, enmEffAddrMode, GCPtrVal, u64Enc);
             IEM_MC_END();
@@ -4365,9 +4365,9 @@ FNIEMOP_DEF(iemOp_vmread_Ey_Gy)
             IEM_MC_ARG_CONST(IEMMODE, enmEffAddrMode,/*=*/pVCpu->iem.s.enmEffAddrMode,  1);
             IEM_MC_ARG(RTGCPTR,       GCPtrVal,                                         2);
             IEM_MC_ARG(uint32_t,      u32Enc,                                           3);
-            IEM_MC_FETCH_GREG_U32(u32Enc, (bRm & X86_MODRM_RM_MASK) | pVCpu->iem.s.uRexB);
             IEM_MC_CALC_RM_EFF_ADDR(GCPtrVal, bRm, 0);
             IEMOP_HLP_DONE_DECODING_NO_SIZE_OP_REPZ_OR_REPNZ_PREFIXES();
+            IEM_MC_FETCH_GREG_U32(u32Enc, ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK) | pVCpu->iem.s.uRexReg);
             IEM_MC_ASSIGN(iEffSeg, pVCpu->iem.s.iEffSeg);
             IEM_MC_CALL_CIMPL_4(iemCImpl_vmread_mem, iEffSeg, enmEffAddrMode, GCPtrVal, u32Enc);
             IEM_MC_END();
