@@ -965,6 +965,16 @@ combined-package-packing:
 # Common rsync bits.
 #
 
+
+## Overridable ssh alias.
+# On windows build boxes install https://github.com/PowerShell/Win32-OpenSSH/releases
+# and point to it in LocalConfig.  (The cygwin ssh frequently segfaults due to
+# termination race or something along those lines.)
+VBOX_SSH ?= ssh
+
+## Overridable rsh alias.
+VBOX_RSYNC ?= rsync --rsh="$(VBOX_SSH)"
+
 ##
 # The basic rsync invocation for syncing the tree into a VM; the source and
 # target specs are missing.
@@ -972,7 +982,7 @@ combined-package-packing:
 # @param    1   os name.
 # @param    2   arch or *.
 #
-VBOX_RSYNC_IN_FN = rsync -a -v --delete --delete-excluded --prune-empty-dirs \
+VBOX_RSYNC_IN_FN = $(VBOX_RSYNC) -a -v --delete --delete-excluded --prune-empty-dirs \
 	--exclude=*.pyc \
 	--exclude=.svn/ \
 	--exclude=doc/Devices/ \
@@ -985,12 +995,6 @@ VBOX_RSYNC_IN_FN = rsync -a -v --delete --delete-excluded --prune-empty-dirs \
 	$(foreach os,$(filter-out $(1), darwin freebsd linux solaris os2 win), \
 		--exclude=tools/$(os).x86/ \
 		--exclude=tools/$(os).amd64/ )
-
-## Overridable ssh alias.
-# On windows build boxes install https://github.com/PowerShell/Win32-OpenSSH/releases
-# and point to it in LocalConfig.  (The cygwin ssh frequently segfaults due to
-# termination race or something along those lines.)
-VBOX_SSH ?= ssh
 
 #
 # VM IP addresses.
@@ -1148,8 +1152,8 @@ additions-build-solaris.build-it: additions-build-solaris.rsync-into-vm
 	$(call VBOX_BLD_VM_MSG_END__,Solaris/x86 additions build+pack)
 
 additions-build-solaris.rsync-out-of-vm: additions-build-solaris.build-it
-	$(TIME) -- rsync -a --delete $(VBOX_BLD_VM_SOLARIS_IP):/mnt/tinderbox/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME)/out/solaris.x86 out/
-	$(TIME) -- rsync -a --delete $(VBOX_BLD_VM_SOLARIS_IP):/mnt/tinderbox/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME)/out/solaris.amd64 out/
+	$(TIME) -- $(VBOX_RSYNC) -a --delete $(VBOX_BLD_VM_SOLARIS_IP):/mnt/tinderbox/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME)/out/solaris.x86 out/
+	$(TIME) -- $(VBOX_RSYNC) -a --delete $(VBOX_BLD_VM_SOLARIS_IP):/mnt/tinderbox/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME)/out/solaris.amd64 out/
 
 .NOTPARALLEL: additions-build-solaris.rsync-into-vm
 .PHONY:       additions-build-solaris.rsync-into-vm additions-build-solaris.rsync-out-of-vm additions-build-solaris.build-it
@@ -1182,7 +1186,7 @@ additions-build-os2.build-it: #additions-build-os2.rsync-into-vm
 
 additions-build-os2.rsync-out-of-vm: additions-build-os2.build-it
 	-$(VBOX_BLD_VM_OS2_KKILL_STUFF)
-	$(TIME) -- rsync -v -a --delete rsync://vbox@$(VBOX_BLD_VM_OS2_IP)/tinderbox/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME)/out/os2.x86 ./out
+	$(TIME) -- $(VBOX_RSYNC) -v -a --delete rsync://vbox@$(VBOX_BLD_VM_OS2_IP)/tinderbox/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME)/out/os2.x86 ./out
 
 .NOTPARALLEL: additions-build-os2.rsync-into-vm
 .PHONY:       additions-build-os2.rsync-into-vm additions-build-os2.rsync-out-of-vm additions-build-os2.build-it
@@ -1238,8 +1242,8 @@ additions-build-linux.build-it: additions-build-linux.rsync-into-vm
 	$(call VBOX_BLD_VM_MSG_END__,Linux/x86 additions combine)
 
 additions-build-linux.rsync-out-of-vm: additions-build-linux.build-it
-	$(TIME) -- rsync -a --delete $(VBOX_BLD_VM_LNX_IP):/mnt/tinderbox/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME)/out/linux.x86 out/
-	$(TIME) -- rsync -a --delete $(VBOX_BLD_VM_LNX_IP):/mnt/tinderbox/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME)/out/linux.amd64 out/
+	$(TIME) -- $(VBOX_RSYNC) -a --delete $(VBOX_BLD_VM_LNX_IP):/mnt/tinderbox/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME)/out/linux.x86 out/
+	$(TIME) -- $(VBOX_RSYNC) -a --delete $(VBOX_BLD_VM_LNX_IP):/mnt/tinderbox/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME)/out/linux.amd64 out/
 
 .NOTPARALLEL: additions-build-linux.rsync-into-vm
 .PHONY:       additions-build-linux.rsync-into-vm additions-build-linux.rsync-out-of-vm additions-build-linux.build-it
@@ -1331,10 +1335,10 @@ additions-build-darwin.x86.build-it: additions-build-darwin.x86.rsync-into-vm
 	$(call VBOX_BLD_VM_MSG_END__,Darwin/x86 Additions)
 
 additions-build-darwin.amd64.rsync-out-of-vm: additions-build-darwin.amd64.build-it
-	$(TIME) -- rsync -a -v --delete $(VBOX_BLD_VM_DARWIN_109_AMD64_IP):/Users/vbox/tinderbox/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME)/out/darwin.amd64 out/
+	$(TIME) -- $(VBOX_RSYNC) -a -v --delete $(VBOX_BLD_VM_DARWIN_109_AMD64_IP):/Users/vbox/tinderbox/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME)/out/darwin.amd64 out/
 
 additions-build-darwin.x86.rsync-out-of-vm: additions-build-darwin.x86.build-it
-	$(TIME) -- rsync -a -v --delete $(VBOX_BLD_VM_DARWIN_X86_IP):/Users/vbox/tinderbox/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME)/out/darwin.x86 out/
+	$(TIME) -- $(VBOX_RSYNC) -a -v --delete $(VBOX_BLD_VM_DARWIN_X86_IP):/Users/vbox/tinderbox/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME)/out/darwin.x86 out/
 
 additions-build-darwin.amd64: additions-build-darwin.amd64.rsync-out-of-vm
 additions-build-darwin.x86: additions-build-darwin.x86.rsync-out-of-vm
@@ -1466,7 +1470,7 @@ extpacks-build-solaris.build-it: extpacks-build-solaris.rsync-into-vm
 	$(call VBOX_BLD_VM_MSG_END__,Solaris/amd64 extension packs)
 
 extpacks-build-solaris.rsync-out-of-vm: extpacks-build-solaris.build-it
-	$(TIME) -- rsync -a --delete $(VBOX_BLD_VM_SOLARIS_IP):/mnt/tinderbox/$(VBOX_EXTPACKS_BUILD_SUBDIRNAME)/out/solaris.amd64 out/
+	$(TIME) -- $(VBOX_RSYNC) -a --delete $(VBOX_BLD_VM_SOLARIS_IP):/mnt/tinderbox/$(VBOX_EXTPACKS_BUILD_SUBDIRNAME)/out/solaris.amd64 out/
 
 #.NOTPARALLEL: extpacks-build-solaris.rsync-into-vm
 .PHONY:       extpacks-build-solaris.rsync-out-of-vm extpacks-build-solaris.rsync-into-vm extpacks-build-solaris.build-it
@@ -1503,8 +1507,8 @@ extpacks-build-linux.build-it: extpacks-build-linux.rsync-into-vm
 	$(call VBOX_BLD_VM_MSG_END__,Linux/x86 extension packs)
 
 extpacks-build-linux.rsync-out-of-vm: extpacks-build-linux.build-it
-	$(TIME) -- rsync -a --delete $(VBOX_BLD_VM_LNX_IP):/mnt/tinderbox/$(VBOX_EXTPACKS_BUILD_SUBDIRNAME)/out/linux.x86 out/
-	$(TIME) -- rsync -a --delete $(VBOX_BLD_VM_LNX_IP):/mnt/tinderbox/$(VBOX_EXTPACKS_BUILD_SUBDIRNAME)/out/linux.amd64 out/
+	$(TIME) -- $(VBOX_RSYNC) -a --delete $(VBOX_BLD_VM_LNX_IP):/mnt/tinderbox/$(VBOX_EXTPACKS_BUILD_SUBDIRNAME)/out/linux.x86 out/
+	$(TIME) -- $(VBOX_RSYNC) -a --delete $(VBOX_BLD_VM_LNX_IP):/mnt/tinderbox/$(VBOX_EXTPACKS_BUILD_SUBDIRNAME)/out/linux.amd64 out/
 
 #.NOTPARALLEL: extpacks-build-linux.rsync-into-vm
 .PHONY:       extpacks-build-linux.rsync-out-of-vm extpacks-build-linux.rsync-into-vm extpacks-build-linux.build-it
@@ -1537,7 +1541,7 @@ else
 	$(call VBOX_BLD_VM_MSG_BEGIN,Darwin/amd64 extension packs)
 	$(TIME) -- $(call VBOX_RSYNC_IN_FN,darwin,amd64) . $(VBOX_BLD_VM_DARWIN_109_AMD64_IP):/Users/vbox/tinderbox/$(VBOX_EXTPACKS_BUILD_SUBDIRNAME)
 	$(TIME) -- $(VBOX_SSH) vbox@$(VBOX_BLD_VM_DARWIN_109_AMD64_IP) 'PATH=$$PATH:/opt/local/bin; cd /Users/vbox/tinderbox/$(VBOX_EXTPACKS_BUILD_SUBDIRNAME) && KBUILD_HOST_ARCH=amd64 tools/env.sh --no-wine kmk $(VBOX_EXTPACKS_BUILD.amd64) all '
-	$(TIME) -- rsync -am -v --delete $(VBOX_BLD_VM_DARWIN_109_AMD64_IP):/Users/vbox/tinderbox/$(VBOX_EXTPACKS_BUILD_SUBDIRNAME)/out/darwin.amd64 out/
+	$(TIME) -- $(VBOX_RSYNC) -am -v --delete $(VBOX_BLD_VM_DARWIN_109_AMD64_IP):/Users/vbox/tinderbox/$(VBOX_EXTPACKS_BUILD_SUBDIRNAME)/out/darwin.amd64 out/
 	$(call VBOX_BLD_VM_MSG_END__,Darwin/amd64 extension packs)
 endif
 
@@ -1668,8 +1672,8 @@ validationkit-build-solaris.build-it: validationkit-build-solaris.rsync-into-vm
 	$(call VBOX_BLD_VM_MSG_END__,Solaris/x86 Validation Kit)
 
 validationkit-build-solaris.rsync-out-of-vm: validationkit-build-solaris.build-it
-	$(TIME) -- rsync -a --delete $(VBOX_BLD_VM_SOLARIS_IP):/mnt/tinderbox/$(VBOX_VALIDATIONKIT_BUILD_SUBDIRNAME)/out/solaris.x86   out/
-	$(TIME) -- rsync -a --delete $(VBOX_BLD_VM_SOLARIS_IP):/mnt/tinderbox/$(VBOX_VALIDATIONKIT_BUILD_SUBDIRNAME)/out/solaris.amd64 out/
+	$(TIME) -- $(VBOX_RSYNC) -a --delete $(VBOX_BLD_VM_SOLARIS_IP):/mnt/tinderbox/$(VBOX_VALIDATIONKIT_BUILD_SUBDIRNAME)/out/solaris.x86   out/
+	$(TIME) -- $(VBOX_RSYNC) -a --delete $(VBOX_BLD_VM_SOLARIS_IP):/mnt/tinderbox/$(VBOX_VALIDATIONKIT_BUILD_SUBDIRNAME)/out/solaris.amd64 out/
 
 .PHONY:       validationkit-build-solaris.rsync-out-of-vm validationkit-build-solaris.rsync-into-vm validationkit-build-solaris.build-it
 
@@ -1698,7 +1702,7 @@ validationkit-build-os2.build-it: validationkit-build-os2.rsync-into-vm
 
 validationkit-build-os2.rsync-out-of-vm: validationkit-build-os2.build-it
 	-$(VBOX_BLD_VM_OS2_KKILL_STUFF)
-	$(TIME) -- rsync -v -a --delete rsync://vbox@$(VBOX_BLD_VM_OS2_IP)/tinderbox/$(VBOX_VALIDATIONKIT_BUILD_SUBDIRNAME)/out/os2.x86 ./out
+	$(TIME) -- $(VBOX_RSYNC) -v -a --delete rsync://vbox@$(VBOX_BLD_VM_OS2_IP)/tinderbox/$(VBOX_VALIDATIONKIT_BUILD_SUBDIRNAME)/out/os2.x86 ./out
 
 .PHONY:       validationkit-build-os2.rsync-into-vm validationkit-build-os2.rsync-out-of-vm validationkit-build-os2.build-it
 
@@ -1730,8 +1734,8 @@ validationkit-build-linux.build-it: validationkit-build-linux.rsync-into-vm
 	$(call VBOX_BLD_VM_MSG_END__,Linux/x86 Validation Kit)
 
 validationkit-build-linux.rsync-out-of-vm: validationkit-build-linux.build-it
-	$(TIME) -- rsync -a --delete $(VBOX_BLD_VM_LNX_IP):/mnt/tinderbox/$(VBOX_VALIDATIONKIT_BUILD_SUBDIRNAME)/out/linux.x86   out/
-	$(TIME) -- rsync -a --delete $(VBOX_BLD_VM_LNX_IP):/mnt/tinderbox/$(VBOX_VALIDATIONKIT_BUILD_SUBDIRNAME)/out/linux.amd64 out/
+	$(TIME) -- $(VBOX_RSYNC) -a --delete $(VBOX_BLD_VM_LNX_IP):/mnt/tinderbox/$(VBOX_VALIDATIONKIT_BUILD_SUBDIRNAME)/out/linux.x86   out/
+	$(TIME) -- $(VBOX_RSYNC) -a --delete $(VBOX_BLD_VM_LNX_IP):/mnt/tinderbox/$(VBOX_VALIDATIONKIT_BUILD_SUBDIRNAME)/out/linux.amd64 out/
 
 .PHONY:       validationkit-build-linux.rsync-out-of-vm validationkit-build-linux.rsync-into-vm validationkit-build-linux.build-it
 
@@ -1763,7 +1767,7 @@ else
 	$(call VBOX_BLD_VM_MSG_BEGIN,Darwin/amd64 Validation Kit)
 	$(TIME) -- $(call VBOX_RSYNC_IN_FN,darwin,amd64) . $(VBOX_BLD_VM_DARWIN_AMD64_IP):/Users/vbox/tinderbox/$(VBOX_VALIDATIONKIT_BUILD_SUBDIRNAME)
 	$(TIME) -- $(VBOX_SSH) vbox@$(VBOX_BLD_VM_DARWIN_AMD64_IP) 'cd /Users/vbox/tinderbox/$(VBOX_VALIDATIONKIT_BUILD_SUBDIRNAME) && tools/env.sh --no-wine kmk $(VBOX_VALIDATIONKIT_BUILD.amd64) all '
-	$(TIME) -- rsync -am -v --delete $(VBOX_BLD_VM_DARWIN_AMD64_IP):/Users/vbox/tinderbox/$(VBOX_VALIDATIONKIT_BUILD_SUBDIRNAME)/out/darwin.amd64 out/
+	$(TIME) -- $(VBOX_RSYNC) -am -v --delete $(VBOX_BLD_VM_DARWIN_AMD64_IP):/Users/vbox/tinderbox/$(VBOX_VALIDATIONKIT_BUILD_SUBDIRNAME)/out/darwin.amd64 out/
 	$(call VBOX_BLD_VM_MSG_END__,Darwin/amd64 Validation Kit)
 endif
 
@@ -1774,7 +1778,7 @@ else
 	$(call VBOX_BLD_VM_MSG_BEGIN,Darwin/x86 Validation Kit)
 	$(TIME) -- $(call VBOX_RSYNC_IN_FN,darwin,x86) . $(VBOX_BLD_VM_DARWIN_X86_IP):/Users/vbox/tinderbox/$(VBOX_VALIDATIONKIT_BUILD_SUBDIRNAME)
 	$(TIME) -- $(VBOX_SSH) vbox@$(VBOX_BLD_VM_DARWIN_X86_IP) 'cd /Users/vbox/tinderbox/$(VBOX_VALIDATIONKIT_BUILD_SUBDIRNAME) && tools/env.sh --no-wine kmk $(VBOX_VALIDATIONKIT_BUILD.x86) all '
-	$(TIME) -- rsync -am -v --delete $(VBOX_BLD_VM_DARWIN_X86_IP):/Users/vbox/tinderbox/$(VBOX_VALIDATIONKIT_BUILD_SUBDIRNAME)/out/darwin.x86 out/
+	$(TIME) -- $(VBOX_RSYNC) -am -v --delete $(VBOX_BLD_VM_DARWIN_X86_IP):/Users/vbox/tinderbox/$(VBOX_VALIDATIONKIT_BUILD_SUBDIRNAME)/out/darwin.x86 out/
 	$(call VBOX_BLD_VM_MSG_END__,Darwin/x86 Validation Kit)
 endif
 
