@@ -7326,7 +7326,11 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmlaunchVmresume(PVMCPU pVCpu, uint8_t cbInstr, VM
                                 /* Now that we've switched page tables, we can inject events if any. */
                                 iemVmxVmentryInjectEvent(pVCpu, pszInstr);
 
-                                return VINF_SUCCESS;
+                                /*
+                                 * We've successfully entered nested-guest execution at this point.
+                                 * Return after setting nested-guest EM execution policy as necessary.
+                                 */
+                                IEM_VMX_R3_EXECPOLICY_IEM_ALL_ENABLE_RET(pVCpu, pszInstr);
                             }
                             return iemVmxVmexit(pVCpu, VMX_EXIT_ERR_MSR_LOAD | VMX_EXIT_REASON_ENTRY_FAILED);
                         }
@@ -7343,7 +7347,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmlaunchVmresume(PVMCPU pVCpu, uint8_t cbInstr, VM
 
     iemVmxVmFail(pVCpu, VMXINSTRERR_VMENTRY_INVALID_CTLS);
     iemRegAddToRipAndClearRF(pVCpu, cbInstr);
-    IEM_VMX_R3_EXECPOLICY_IEM_ALL_ENABLE_RET(pVCpu, pszInstr);
+    return VINF_SUCCESS;
 # endif
 }
 
@@ -8444,29 +8448,38 @@ IEM_CIMPL_DEF_4(iemCImpl_vmwrite_mem, uint8_t, iEffSeg, IEMMODE, enmEffAddrMode,
 
 
 /**
- * Implements 'VMREAD' 64-bit register.
+ * Implements 'VMREAD' register (64-bit).
  */
-IEM_CIMPL_DEF_2(iemCImpl_vmread64_reg, uint64_t *, pu64Dst, uint64_t, u64FieldEnc)
+IEM_CIMPL_DEF_2(iemCImpl_vmread_reg64, uint64_t *, pu64Dst, uint64_t, u64FieldEnc)
 {
     return iemVmxVmreadReg64(pVCpu, cbInstr, pu64Dst, u64FieldEnc, NULL /* pExitInfo */);
 }
 
 
 /**
- * Implements 'VMREAD' 32-bit register.
+ * Implements 'VMREAD' register (32-bit).
  */
-IEM_CIMPL_DEF_2(iemCImpl_vmread32_reg, uint32_t *, pu32Dst, uint32_t, u32FieldEnc)
+IEM_CIMPL_DEF_2(iemCImpl_vmread_reg32, uint32_t *, pu32Dst, uint32_t, u32FieldEnc)
 {
     return iemVmxVmreadReg32(pVCpu, cbInstr, pu32Dst, u32FieldEnc, NULL /* pExitInfo */);
 }
 
 
 /**
- * Implements 'VMREAD' memory.
+ * Implements 'VMREAD' memory, 64-bit register.
  */
-IEM_CIMPL_DEF_4(iemCImpl_vmread_mem, uint8_t, iEffSeg, IEMMODE, enmEffAddrMode, RTGCPTR, GCPtrDst, uint32_t, u64FieldEnc)
+IEM_CIMPL_DEF_4(iemCImpl_vmread_mem_reg64, uint8_t, iEffSeg, IEMMODE, enmEffAddrMode, RTGCPTR, GCPtrDst, uint32_t, u64FieldEnc)
 {
     return iemVmxVmreadMem(pVCpu, cbInstr, iEffSeg, enmEffAddrMode, GCPtrDst, u64FieldEnc, NULL /* pExitInfo */);
+}
+
+
+/**
+ * Implements 'VMREAD' memory, 32-bit register.
+ */
+IEM_CIMPL_DEF_4(iemCImpl_vmread_mem_reg32, uint8_t, iEffSeg, IEMMODE, enmEffAddrMode, RTGCPTR, GCPtrDst, uint32_t, u32FieldEnc)
+{
+    return iemVmxVmreadMem(pVCpu, cbInstr, iEffSeg, enmEffAddrMode, GCPtrDst, u32FieldEnc, NULL /* pExitInfo */);
 }
 
 
