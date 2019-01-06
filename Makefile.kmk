@@ -966,14 +966,15 @@ combined-package-packing:
 #
 
 
-## Overridable ssh alias.
+## Overridable ssh name.
 # On windows build boxes install https://github.com/PowerShell/Win32-OpenSSH/releases
 # and point to it in LocalConfig.  (The cygwin ssh frequently segfaults due to
 # termination race or something along those lines.)
 VBOX_SSH ?= ssh
+VBOX_SSH_FOR_RSYNC ?= $(VBOX_SSH)
 
-## Overridable rsh alias.
-VBOX_RSYNC ?= rsync --rsh="$(VBOX_SSH)"
+## Overridable rsh name.
+VBOX_RSYNC ?= rsync --rsh="$(VBOX_SSH_FOR_RSYNC)"
 
 ##
 # The basic rsync invocation for syncing the tree into a VM; the source and
