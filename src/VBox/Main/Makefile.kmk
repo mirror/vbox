@@ -28,7 +28,7 @@ endif
 #
 # Include sub-makefile(s).
 #
-if 0 #ndef VBOX_ONLY_EXTPACKS
+ifndef VBOX_ONLY_EXTPACKS
  ifdef VBOX_WITH_WEBSERVICES
   include $(PATH_SUB_CURRENT)/webservice/Makefile.kmk
  endif
