@@ -974,7 +974,8 @@ VBOX_SSH ?= ssh
 VBOX_SSH_FOR_RSYNC ?= $(VBOX_SSH)
 
 ## Overridable rsh name.
-VBOX_RSYNC ?= rsync --rsh="$(VBOX_SSH_FOR_RSYNC)"
+VBOX_RSYNC     ?= rsync --rsh="$(VBOX_SSH_FOR_RSYNC)"
+VBOX_RSYNC_RSH ?= rsync
 
 ##
 # The basic rsync invocation for syncing the tree into a VM; the source and
@@ -982,8 +983,10 @@ VBOX_RSYNC ?= rsync --rsh="$(VBOX_SSH_FOR_RSYNC)"
 #
 # @param    1   os name.
 # @param    2   arch or *.
+# @param    3   rsh or empty
 #
-VBOX_RSYNC_IN_FN = $(VBOX_RSYNC) -a -v --delete --delete-excluded --prune-empty-dirs \
+VBOX_RSYNC_IN_FN = $(if-expr "$(3)" != "rsh",$(VBOX_RSYNC),$(VBOX_RSYNC_RSH))\
+	-a -v --delete --delete-excluded --prune-empty-dirs \
 	--exclude=*.pyc \
 	--exclude=.svn/ \
 	--exclude=doc/Devices/ \
@@ -1173,7 +1176,7 @@ additions-build-os2.rsync-into-vm:
  else
 additions-build-os2.rsync-into-vm:
 	-$(VBOX_BLD_VM_OS2_KKILL_STUFF)
-	$(TIME) -- $(call VBOX_RSYNC_IN_FN,os2,*) \
+	$(TIME) -- $(call VBOX_RSYNC_IN_FN,os2,*,rsh)\
 		'--exclude=src/VBox/Additions/x11/**' \
 		'--exclude=src/VBox/Additions/WINNT/**' \
 		'--exclude=src/VBox/Frontends/**' \
@@ -1187,7 +1190,7 @@ additions-build-os2.build-it: #additions-build-os2.rsync-into-vm
 
 additions-build-os2.rsync-out-of-vm: additions-build-os2.build-it
 	-$(VBOX_BLD_VM_OS2_KKILL_STUFF)
-	$(TIME) -- $(VBOX_RSYNC) -v -a --delete rsync://vbox@$(VBOX_BLD_VM_OS2_IP)/tinderbox/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME)/out/os2.x86 ./out
+	$(TIME) -- $(VBOX_RSYNC_RSH) -v -a --delete rsync://vbox@$(VBOX_BLD_VM_OS2_IP)/tinderbox/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME)/out/os2.x86 ./out
 
 .NOTPARALLEL: additions-build-os2.rsync-into-vm
 .PHONY:       additions-build-os2.rsync-into-vm additions-build-os2.rsync-out-of-vm additions-build-os2.build-it
@@ -1689,7 +1692,7 @@ validationkit-build-os2.rsync-into-vm:
 else # !OS/2
 validationkit-build-os2.rsync-into-vm:
 	-$(VBOX_BLD_VM_OS2_KKILL_STUFF)
-	$(TIME) -- $(call VBOX_RSYNC_IN_FN,os2,*) \
+	$(TIME) -- $(call VBOX_RSYNC_IN_FN,os2,*,rsh) \
 		'--exclude=src/VBox/Additions/x11/**' \
 		'--exclude=src/VBox/Additions/WINNT/**' \
 		'--exclude=src/VBox/Frontends/**' \
@@ -1703,7 +1706,7 @@ validationkit-build-os2.build-it: validationkit-build-os2.rsync-into-vm
 
 validationkit-build-os2.rsync-out-of-vm: validationkit-build-os2.build-it
 	-$(VBOX_BLD_VM_OS2_KKILL_STUFF)
-	$(TIME) -- $(VBOX_RSYNC) -v -a --delete rsync://vbox@$(VBOX_BLD_VM_OS2_IP)/tinderbox/$(VBOX_VALIDATIONKIT_BUILD_SUBDIRNAME)/out/os2.x86 ./out
+	$(TIME) -- $(VBOX_RSYNC_RSH) -v -a --delete rsync://vbox@$(VBOX_BLD_VM_OS2_IP)/tinderbox/$(VBOX_VALIDATIONKIT_BUILD_SUBDIRNAME)/out/os2.x86 ./out
 
 .PHONY:       validationkit-build-os2.rsync-into-vm validationkit-build-os2.rsync-out-of-vm validationkit-build-os2.build-it
 
