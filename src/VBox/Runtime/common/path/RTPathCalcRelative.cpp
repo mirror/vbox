@@ -32,13 +32,26 @@
 #include <iprt/path.h>
 
 #include <iprt/assert.h>
-#if RTPATH_STYLE == RTPATH_STR_F_STYLE_DOS
-# include <iprt/ctype.h>
-#endif
 #include <iprt/errcore.h>
 #include <iprt/string.h>
+#if RTPATH_STYLE == RTPATH_STR_F_STYLE_DOS
+# include <iprt/uni.h>
+#endif
 #include "internal/path.h"
 
+
+#if RTPATH_STYLE == RTPATH_STR_F_STYLE_DOS
+/** Helper for doing case insensitive comparison of a mismatching codepoint. */
+DECLINLINE(bool) rtPathCalcRelativeEqualICaseCodepoint(const char *pszPathFromStart, const char *pszPathFrom,
+                                                       const char *pszPathToStart,   const char *pszPathTo)
+{
+    RTUNICP ucFrom = RTStrGetCp(RTStrPrevCp(pszPathFromStart, pszPathFrom));
+    RTUNICP ucTo   = RTStrGetCp(RTStrPrevCp(pszPathToStart,   pszPathTo));
+    return ucFrom == ucTo
+        || RTUniCpToLower(ucFrom) == RTUniCpToLower(ucTo)
+        || RTUniCpToUpper(ucFrom) == RTUniCpToUpper(ucTo);
+}
+#endif
 
 
 RTDECL(int) RTPathCalcRelative(char *pszPathDst, size_t cbPathDst,
@@ -49,6 +62,10 @@ RTDECL(int) RTPathCalcRelative(char *pszPathDst, size_t cbPathDst,
     AssertReturn(cbPathDst, VERR_INVALID_PARAMETER);
     AssertPtrReturn(pszPathFrom, VERR_INVALID_POINTER);
     AssertPtrReturn(pszPathTo, VERR_INVALID_POINTER);
+#if RTPATH_STYLE == RTPATH_STR_F_STYLE_DOS
+    const char * const pszPathFromStart = pszPathFrom;
+    const char * const pszPathToStart   = pszPathTo;
+#endif
 
     /*
      * Check for different root specifiers (drive letters), creating a relative path doesn't work here.
@@ -69,15 +86,25 @@ RTDECL(int) RTPathCalcRelative(char *pszPathDst, size_t cbPathDst,
         return VERR_NOT_SUPPORTED;
 #else
     if (RTStrNICmp(pszPathFrom, pszPathTo, offRootFrom))
-        for (size_t off = 0; off < offRootFrom; off++)
+    {
+        const char *pszFromCursor = pszPathFrom;
+        const char *pszToCursor   = pszPathTo;
+        while ((size_t)(pszFromCursor - pszPathFrom) < offRootFrom)
         {
-            char const chFrom = pszPathFrom[off];
-            char const chTo   = pszPathTo[off];
-            if (   chFrom != chTo
-                && RT_C_TO_LOWER(chFrom) != RT_C_TO_LOWER(chTo) /** @todo proper case insensitivity! */
-                && (!RTPATH_IS_SLASH(chFrom) || !RTPATH_IS_SLASH(chTo)) )
+            RTUNICP ucFrom;
+            int rc = RTStrGetCpEx(&pszFromCursor, &ucFrom);
+            AssertRCReturn(rc, rc);
+
+            RTUNICP ucTo;
+            rc = RTStrGetCpEx(&pszToCursor, &ucTo);
+            AssertRCReturn(rc, rc);
+            if (   ucFrom != ucTo
+                && RTUniCpToLower(ucFrom) != RTUniCpToLower(ucTo)
+                && RTUniCpToUpper(ucFrom) != RTUniCpToUpper(ucTo)
+                && (!RTPATH_IS_SLASH(ucFrom) || !RTPATH_IS_SLASH(ucTo)) )
                 return VERR_NOT_SUPPORTED;
         }
+    }
 #endif
 
     pszPathFrom += offRootFrom;
@@ -119,7 +146,7 @@ RTDECL(int) RTPathCalcRelative(char *pszPathDst, size_t cbPathDst,
                 }
             }
 #if RTPATH_STYLE == RTPATH_STR_F_STYLE_DOS
-            else if (RT_C_TO_LOWER(chFrom) == RT_C_TO_LOWER(chTo))
+            else if (rtPathCalcRelativeEqualICaseCodepoint(pszPathFromStart, pszPathFrom + 1, pszPathToStart, pszPathTo + 1))
             { /* if not likely, then simpler code structure wise. */ }
 #endif
             else if (chFrom != '\0' || !RTPATH_IS_SLASH(chTo) || fFromFile)
