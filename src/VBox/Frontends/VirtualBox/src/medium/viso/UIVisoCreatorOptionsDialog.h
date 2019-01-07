@@ -30,8 +30,6 @@
 class QITabWidget;
 class QVBoxLayout;
 class QIDialogButtonBox;
-class BrowserOptions;
-
 
 class SHARED_LIBRARY_STUFF UIVisoCreatorOptionsDialog : public QIDialog
 {
