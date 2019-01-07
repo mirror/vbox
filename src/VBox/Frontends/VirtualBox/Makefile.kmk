@@ -2286,21 +2286,23 @@ ifdef VBOX_WITH_PRECOMPILED_HEADERS
   VBoxGlobal_PCH_HDR   := $(PATH_SUB_CURRENT)/src/precomp_vcc.h
 
  else if $(KBUILD_KMK_REVISION) >= 3256 && "$(KBUILD_TARGET)" != "darwin" && !defined(VBOX_WITHOUT_PRECOMPILED_HEADERS)
-  VBoxGlobal_USES      += gccprecomp
-  VBoxGlobal_PCH_HDR   := $(PATH_SUB_CURRENT)/src/precomp_gcc.h
-  #VBoxGlobal_CXXFLAGS.linux += -H
+  if $(VBOX_GCC_VERSION_CXX) >= 50000 # GCC 4.x runs into trouble compiling the header.
+   VBoxGlobal_USES      += gccprecomp
+   VBoxGlobal_PCH_HDR   := $(PATH_SUB_CURRENT)/src/precomp_gcc.h
+   #VBoxGlobal_CXXFLAGS.linux += -H
 
-  VirtualBox_USES      += gccprecomp
-  VirtualBox_PCH_HDR   := $(PATH_SUB_CURRENT)/src/precomp_gcc.h
-  #VirtualBox_CXXFLAGS.linux += -H
+   VirtualBox_USES      += gccprecomp
+   VirtualBox_PCH_HDR   := $(PATH_SUB_CURRENT)/src/precomp_gcc.h
+   #VirtualBox_CXXFLAGS.linux += -H
 
-  VirtualBoxVM_USES    += gccprecomp
-  VirtualBoxVM_PCH_HDR := $(PATH_SUB_CURRENT)/src/precomp_gcc.h
-  #VirtualBoxVM_CXXFLAGS.linux += -H
+   VirtualBoxVM_USES    += gccprecomp
+   VirtualBoxVM_PCH_HDR := $(PATH_SUB_CURRENT)/src/precomp_gcc.h
+   #VirtualBoxVM_CXXFLAGS.linux += -H
 
-  # GCC precompiled headers seems to work more efficiently when #pragma once is involved.
-  # So, we've cooked our own camel cased qt wrapper headers with #pragma once inside.
-  VBOX_GUI_INC_DIRS <= precomptricks
+   # GCC precompiled headers seems to work more efficiently when #pragma once is involved.
+   # So, we've cooked our own camel cased qt wrapper headers with #pragma once inside.
+   VBOX_GUI_INC_DIRS <= precomptricks
+  endif
  endif
 endif
 
