@@ -403,6 +403,23 @@ VMM_INT_DECL(const char *) HMVmxGetAbortDesc(VMXABORT enmAbort)
 
 
 /**
+ * Gets the description for a virtual VMCS state.
+ *
+ * @returns The descriptive string.
+ * @param   fVmcsState      The virtual-VMCS state.
+ */
+VMM_INT_DECL(const char *) HMVmxGetVmcsStateDesc(uint8_t fVmcsState)
+{
+    switch (fVmcsState)
+    {
+        case VMX_V_VMCS_STATE_CLEAR:        return "Clear";
+        case VMX_V_VMCS_STATE_LAUNCHED:     return "Launched";
+        default:                            return "Unknown";
+    }
+}
+
+
+/**
  * Checks if a code selector (CS) is suitable for execution using hardware-assisted
  * VMX when unrestricted execution isn't available.
  *

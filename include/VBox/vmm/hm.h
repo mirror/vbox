@@ -139,6 +139,7 @@ VMM_INT_DECL(bool)              HMIsVmxActive(PVM pVM);
 VMM_INT_DECL(bool)              HMIsVmxSupported(PVM pVM);
 VMM_INT_DECL(const char *)      HMVmxGetDiagDesc(VMXVDIAG enmDiag);
 VMM_INT_DECL(const char *)      HMVmxGetAbortDesc(VMXABORT enmAbort);
+VMM_INT_DECL(const char *)      HMVmxGetVmcsStateDesc(uint8_t fVmcsState);
 VMM_INT_DECL(void)              HMHCPagingModeChanged(PVM pVM, PVMCPU pVCpu, PGMMODE enmShadowMode, PGMMODE enmGuestMode);
 VMM_INT_DECL(void)              HMVmxGetVmxMsrsFromHwvirtMsrs(PCSUPHWVIRTMSRS pMsrs, PVMXMSRS pVmxMsrs);
 VMM_INT_DECL(void)              HMVmxGetSvmMsrsFromHwvirtMsrs(PCSUPHWVIRTMSRS pMsrs, PSVMMSRS pSvmMsrs);
