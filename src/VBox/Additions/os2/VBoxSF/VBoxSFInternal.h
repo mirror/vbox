@@ -156,17 +156,31 @@ typedef VBOXSFSYFI *PVBOXSFSYFI;
 #define VBOXSFSYFI_MAGIC         UINT32_C(0x19690520)
 
 
-/**
- * VBoxSF File Search Buffer (header).
- */
-typedef struct VBOXSFFSBUF
+/** Request structure for vboxSfOs2HostReqListDir. */
+typedef struct VBOXSFLISTDIRREQ
 {
+    VBGLIOCIDCHGCMFASTCALL  Hdr;
+    VMMDevHGCMCall          Call;
+    VBoxSFParmList          Parms;
+    HGCMPageListInfo        StrPgLst;
+    HGCMPageListInfo        BufPgLst;
+} VBOXSFLISTDIRREQ;
+
+/**
+ * More file search data (on physical heap).
+ */
+typedef struct VBOXSFFSBUF /**< @todo rename as is no longer buffer. */
+{
+    /** The request (must be first). */
+    VBOXSFLISTDIRREQ    Req;
     /** A magic number (VBOXSFFSBUF_MAGIC). */
     uint32_t            u32Magic;
-    /** Amount of buffer space allocated after this header. */
-    uint32_t            cbBuf;
     /** The filter string (full path), NULL if all files are request. */
     PSHFLSTRING         pFilter;
+    /** Size of the buffer for directory entries. */
+    uint32_t            cbBuf;
+    /** Buffer for directory entries on the physical heap. */
+    PSHFLDIRINFO        pBuf;
     /** Must have attributes (shifted down DOS attributes).  */
     uint8_t             fMustHaveAttribs;
     /** Non-matching attributes (shifted down DOS attributes).  */
@@ -183,17 +197,14 @@ typedef struct VBOXSFFSBUF
     uint32_t            cEntriesLeft;
     /** The next entry. */
     PSHFLDIRINFO        pEntry;
+    //uint32_t            uPadding3;
     /** Staging area for staging a full FILEFINDBUF4L (+ 32 safe bytes). */
     uint8_t             abStaging[RT_ALIGN_32(sizeof(FILEFINDBUF4L) + 32, 8)];
 } VBOXSFFSBUF;
-AssertCompileSizeAlignment(VBOXSFFSBUF, 8);
 /** Pointer to a file search buffer. */
 typedef VBOXSFFSBUF *PVBOXSFFSBUF;
 /** Magic number for VBOXSFFSBUF (Robert Anson Heinlein). */
 #define VBOXSFFSBUF_MAGIC       UINT32_C(0x19070707)
-/** Minimum buffer size. */
-#define VBOXSFFSBUF_MIN_SIZE (  RT_ALIGN_32(sizeof(VBOXSFFSBUF) + sizeof(SHFLDIRINFO) + CCHMAXPATHCOMP * 4 + ALLOC_HDR_SIZE, 64) \
-                              - ALLOC_HDR_SIZE)
 
 
 /**
@@ -877,7 +888,7 @@ DECLINLINE(int) vboxSfOs2HostReqReadPgLst(PVBOXSFFOLDER pFolder, VBOXSFREADPGLST
 
     pReq->Parms.pBuf.type                   = VMMDevHGCMParmType_PageList;
     pReq->Parms.pBuf.u.PageList.size        = cbToRead;
-    pReq->Parms.pBuf.u.PageList.offset      = RT_UOFFSETOF(VBOXSFREADEMBEDDEDREQ, abData[0]) - sizeof(VBGLIOCIDCHGCMFASTCALL);
+    pReq->Parms.pBuf.u.PageList.offset      = RT_UOFFSETOF(VBOXSFREADPGLSTREQ, PgLst) - sizeof(VBGLIOCIDCHGCMFASTCALL);
     pReq->PgLst.flags                       = VBOX_HGCM_F_PARM_DIRECTION_FROM_HOST;
     pReq->PgLst.cPages                      = (uint16_t)cPages;
     AssertReturn(cPages <= UINT16_MAX, VERR_OUT_OF_RANGE);
@@ -959,15 +970,15 @@ DECLINLINE(int) vboxSfOs2HostReqWritePgLst(PVBOXSFFOLDER pFolder, VBOXSFWRITEPGL
     pReq->Parms.u64Handle.type              = VMMDevHGCMParmType_64bit;
     pReq->Parms.u64Handle.u.value64         = hHostFile;
 
-    pReq->Parms.off64Write.type              = VMMDevHGCMParmType_64bit;
-    pReq->Parms.off64Write.u.value64         = offWrite;
+    pReq->Parms.off64Write.type             = VMMDevHGCMParmType_64bit;
+    pReq->Parms.off64Write.u.value64        = offWrite;
 
-    pReq->Parms.cb32Write.type               = VMMDevHGCMParmType_32bit;
-    pReq->Parms.cb32Write.u.value32          = cbToWrite;
+    pReq->Parms.cb32Write.type              = VMMDevHGCMParmType_32bit;
+    pReq->Parms.cb32Write.u.value32         = cbToWrite;
 
     pReq->Parms.pBuf.type                   = VMMDevHGCMParmType_PageList;
     pReq->Parms.pBuf.u.PageList.size        = cbToWrite;
-    pReq->Parms.pBuf.u.PageList.offset      = RT_UOFFSETOF(VBOXSFWRITEEMBEDDEDREQ, abData[0]) - sizeof(VBGLIOCIDCHGCMFASTCALL);
+    pReq->Parms.pBuf.u.PageList.offset      = RT_UOFFSETOF(VBOXSFWRITEPGLSTREQ, PgLst) - sizeof(VBGLIOCIDCHGCMFASTCALL);
     pReq->PgLst.flags                       = VBOX_HGCM_F_PARM_DIRECTION_FROM_HOST;
     pReq->PgLst.cPages                      = (uint16_t)cPages;
     AssertReturn(cPages <= UINT16_MAX, VERR_OUT_OF_RANGE);
@@ -980,6 +991,69 @@ DECLINLINE(int) vboxSfOs2HostReqWritePgLst(PVBOXSFFOLDER pFolder, VBOXSFWRITEPGL
     return vrc;
 }
 
+
+/**
+ * SHFL_FN_LIST request with separate string buffer and buffers for entries,
+ * both allocated on the physical heap.
+ */
+DECLINLINE(int) vboxSfOs2HostReqListDir(PVBOXSFFOLDER pFolder, VBOXSFLISTDIRREQ *pReq, uint64_t hHostDir,
+                                        PSHFLSTRING pFilter, uint32_t fFlags, PSHFLDIRINFO pBuffer, uint32_t cbBuffer)
+{
+    VBGLIOCIDCHGCMFASTCALL_INIT(&pReq->Hdr, VbglR0PhysHeapGetPhysAddr(pReq), &pReq->Call, g_SfClient.idClient,
+                                SHFL_FN_LIST, SHFL_CPARMS_LIST, sizeof(*pReq));
+
+    pReq->Parms.id32Root.type                   = VMMDevHGCMParmType_32bit;
+    pReq->Parms.id32Root.u.value32              = pFolder->hHostFolder.root;
+
+    pReq->Parms.u64Handle.type                  = VMMDevHGCMParmType_64bit;
+    pReq->Parms.u64Handle.u.value64             = hHostDir;
+
+    pReq->Parms.f32Flags.type                   = VMMDevHGCMParmType_32bit;
+    pReq->Parms.f32Flags.u.value32              = fFlags;
+
+    pReq->Parms.cb32Buffer.type                 = VMMDevHGCMParmType_32bit;
+    pReq->Parms.cb32Buffer.u.value32            = cbBuffer;
+
+    pReq->Parms.pStrFilter.type                 = VMMDevHGCMParmType_ContiguousPageList;
+    pReq->Parms.pStrFilter.u.PageList.offset    = RT_UOFFSETOF(VBOXSFLISTDIRREQ, StrPgLst) - sizeof(VBGLIOCIDCHGCMFASTCALL);
+    pReq->StrPgLst.flags                        = VBOX_HGCM_F_PARM_DIRECTION_TO_HOST;
+    pReq->StrPgLst.cPages                       = 1;
+    if (pFilter)
+    {
+        pReq->Parms.pStrFilter.u.PageList.size  = SHFLSTRING_HEADER_SIZE + pFilter->u16Size;
+        RTGCPHYS32 const GCPhys       = VbglR0PhysHeapGetPhysAddr(pFilter);
+        uint32_t const   offFirstPage = GCPhys & PAGE_OFFSET_MASK;
+        pReq->StrPgLst.offFirstPage             = (uint16_t)offFirstPage;
+        pReq->StrPgLst.aPages[0]                = GCPhys - offFirstPage;
+    }
+    else
+    {
+        pReq->Parms.pStrFilter.u.PageList.size  = 0;
+        pReq->StrPgLst.offFirstPage             = 0;
+        pReq->StrPgLst.aPages[0]                = NIL_RTGCPHYS64;
+    }
+
+    pReq->Parms.pBuffer.type                    = VMMDevHGCMParmType_ContiguousPageList;
+    pReq->Parms.pBuffer.u.PageList.offset       = RT_UOFFSETOF(VBOXSFLISTDIRREQ, BufPgLst) - sizeof(VBGLIOCIDCHGCMFASTCALL);
+    pReq->Parms.pBuffer.u.PageList.size         = cbBuffer;
+    pReq->BufPgLst.flags                        = VBOX_HGCM_F_PARM_DIRECTION_FROM_HOST;
+    pReq->BufPgLst.cPages                       = 1;
+    RTGCPHYS32 const GCPhys       = VbglR0PhysHeapGetPhysAddr(pBuffer);
+    uint32_t const   offFirstPage = GCPhys & PAGE_OFFSET_MASK;
+    pReq->BufPgLst.offFirstPage                 = (uint16_t)offFirstPage;
+    pReq->BufPgLst.aPages[0]                    = GCPhys - offFirstPage;
+
+    pReq->Parms.f32Done.type                    = VMMDevHGCMParmType_32bit;
+    pReq->Parms.f32Done.u.value32               = 0;
+
+    pReq->Parms.c32Entries.type                 = VMMDevHGCMParmType_32bit;
+    pReq->Parms.c32Entries.u.value32            = 0;
+
+    int vrc = VbglR0HGCMFastCall(g_SfClient.handle, &pReq->Hdr, sizeof(*pReq));
+    if (RT_SUCCESS(vrc))
+        vrc = pReq->Call.header.result;
+    return vrc;
+}
 
 /** @} */
 

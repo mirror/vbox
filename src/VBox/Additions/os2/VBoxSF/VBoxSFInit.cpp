@@ -101,8 +101,13 @@ DECLASM(void) VBoxSFR0Init(void)
                 rc = VbglR0QueryHostFeatures(&fFeatures);
                 if (RT_FAILURE(rc))
                     RTLogBackdoorPrintf("VBoxSFR0Init: Missing VBoxGuest.sys IDC connection!  Check order in Config.kmk!\n");
-                else if (!(fFeatures & VMMDEV_HVF_HGCM_EMBEDDED_BUFFERS))
-                    RTLogBackdoorPrintf("VBoxSFR0Init: Embedded buffers feature is missing.  Upgrade to latest VirtualBox!\n");
+                else
+                {
+                    if (!(fFeatures & VMMDEV_HVF_HGCM_EMBEDDED_BUFFERS))
+                        RTLogBackdoorPrintf("VBoxSFR0Init: WARNING! Embedded buffers feature is missing.  Upgrade to latest VirtualBox!\n");
+                    if (!(fFeatures & VMMDEV_HVF_HGCM_CONTIGUOUS_PAGE_LIST))
+                        RTLogBackdoorPrintf("VBoxSFR0Init: WARNING! Contiguous page list buffers feature is missing.  Upgrade to latest VirtualBox!\n");
+                }
 
                 /*
                  * Allocate some big buffers for reading and writing.

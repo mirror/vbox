@@ -232,25 +232,29 @@ static APIRET vboxSfOs2ReadDirEntries(PVBOXSFFOLDER pFolder, PVBOXSFFS pFsFsd, P
         if (   pDataBuf->cEntriesLeft == 0
             || pEntry == NULL /* paranoia */)
         {
-            pDataBuf->pEntry  = pEntry = (PSHFLDIRINFO)(pDataBuf + 1);
-            pDataBuf->cbValid = pDataBuf->cbBuf - sizeof(*pDataBuf);
-            int vrc = VbglR0SfDirInfo(&g_SfClient, &pFolder->hHostFolder, pFsFsd->hHostDir, pDataBuf->pFilter,
-                                      cMaxMatches == 1 ? SHFL_LIST_RETURN_ONE : 0, 0 /*index*/, &pDataBuf->cbValid,
-                                      pEntry, &pDataBuf->cEntriesLeft);
+            pDataBuf->pEntry = pEntry = pDataBuf->pBuf;
+            int vrc = vboxSfOs2HostReqListDir(pFolder, &pDataBuf->Req, pFsFsd->hHostDir, pDataBuf->pFilter,
+                                              /*cMaxMatches == 1 ? SHFL_LIST_RETURN_ONE :*/ 0, pDataBuf->pBuf, pDataBuf->cbBuf);
             if (RT_SUCCESS(vrc))
             {
+                pDataBuf->cEntriesLeft = pDataBuf->Req.Parms.c32Entries.u.value32;
+                pDataBuf->cbValid      = pDataBuf->Req.Parms.cb32Buffer.u.value32;
+                //Log(("%.*Rhxd\n", pDataBuf->cbValid, pEntry));
                 AssertReturn(pDataBuf->cbValid >= RT_UOFFSETOF(SHFLDIRINFO, name.String), ERROR_SYS_INTERNAL);
                 AssertReturn(pDataBuf->cbValid >= RT_UOFFSETOF(SHFLDIRINFO, name.String) + pEntry->name.u16Size, ERROR_SYS_INTERNAL);
-                Log4(("vboxSfOs2ReadDirEntries: VbglR0SfDirInfo returned %#x matches in %#x bytes\n", pDataBuf->cEntriesLeft, pDataBuf->cbValid));
+                Log4(("vboxSfOs2ReadDirEntries: vboxSfOs2HostReqListDir returned %#x matches in %#x bytes\n", pDataBuf->cEntriesLeft, pDataBuf->cbValid));
             }
             else
             {
                 if (vrc == VERR_NO_MORE_FILES)
-                    Log(("vboxSfOs2ReadDirEntries: VbglR0SfDirInfo failed %Rrc (%d,%d)\n", vrc, pDataBuf->cEntriesLeft, pDataBuf->cbValid));
+                    Log4(("vboxSfOs2ReadDirEntries: vboxSfOs2HostReqListDir returned VERR_NO_MORE_FILES (%d,%d)\n",
+                          pDataBuf->Req.Parms.c32Entries.u.value32, pDataBuf->Req.Parms.cb32Buffer.u.value32));
                 else
-                    Log4(("vboxSfOs2ReadDirEntries: VbglR0SfDirInfo returned VERR_NO_MORE_FILES (%d,%d)\n", pDataBuf->cEntriesLeft, pDataBuf->cbValid));
+                    Log(("vboxSfOs2ReadDirEntries: vboxSfOs2HostReqListDir failed %Rrc (%d,%d)\n", vrc,
+                         pDataBuf->Req.Parms.c32Entries.u.value32, pDataBuf->Req.Parms.cb32Buffer.u.value32));
                 pDataBuf->pEntry       = NULL;
                 pDataBuf->cEntriesLeft = 0;
+                pDataBuf->cbValid      = 0;
                 if (cMatches == 0)
                 {
                     if (vrc == VERR_NO_MORE_FILES)
@@ -410,14 +414,19 @@ static APIRET vboxSfOs2ReadDirEntries(PVBOXSFFOLDER pFolder, PVBOXSFFS pFsFsd, P
         if (pDataBuf->cEntriesLeft-- > 1)
         {
             pDataBuf->pEntry = pEntry = (PSHFLDIRINFO)&pEntry->name.String.utf8[pEntry->name.u16Size];
-            uintptr_t offEntry = (uintptr_t)pEntry - (uintptr_t)(pDataBuf + 1);
+            uintptr_t offEntry = (uintptr_t)pEntry - (uintptr_t)pDataBuf->pBuf;
             AssertMsgReturn(offEntry + RT_UOFFSETOF(SHFLDIRINFO, name.String) <= pDataBuf->cbValid,
                             ("offEntry=%#x cbValid=%#x\n", offEntry, pDataBuf->cbValid), ERROR_SYS_INTERNAL);
+            //Log(("next entry: %p / %#x: u16Size=%#x => size: %#x\n", pEntry, offEntry, RT_UOFFSETOF(SHFLDIRINFO, name.String) + pEntry->name.u16Size));
             AssertMsgReturn(offEntry + RT_UOFFSETOF(SHFLDIRINFO, name.String) + pEntry->name.u16Size <= pDataBuf->cbValid,
-                            ("offEntry=%#x cbValid=%#x\n", offEntry, pDataBuf->cbValid), ERROR_SYS_INTERNAL);
+                            ("offEntry=%#x + offName=%#x + cbName=%#x => %#x; cbValid=%#x\n",
+                             offEntry, RT_UOFFSETOF(SHFLDIRINFO, name.String), pEntry->name.u16Size,
+                             offEntry + RT_UOFFSETOF(SHFLDIRINFO, name.String) + pEntry->name.u16Size, pDataBuf->cbValid),
+                            ERROR_SYS_INTERNAL);
+            //Log(("%.*Rhxd\n", RT_UOFFSETOF(SHFLDIRINFO, name.String) + pEntry->name.u16Size, pEntry));
         }
         else
-            pDataBuf->pEntry = NULL;
+            pDataBuf->pEntry = pEntry = NULL;
     }
 
     *pcMatches = cMatches;
@@ -560,111 +569,122 @@ FS32_FINDFIRST(PCDFSI pCdFsi, PVBOXSFCD pCdFsd, PCSZ pszPath, LONG offCurDirEnd,
             LogFlow(("FS32_FINDFIRST: Root dir (%ls)\n", pStrFolderPath->String.utf16));
 
         /*
-         * Make sure we've got a buffer for keeping unused search results.
+         * Allocate data/request buffer and another buffer for receiving entries in.
          */
-        /** @todo use phys heap for this too?  */
-        PVBOXSFFSBUF pDataBuf = NULL;
         if (rc == NO_ERROR)
         {
-            pDataBuf = (PVBOXSFFSBUF)RTMemAlloc(cMaxMatches == 1 ? VBOXSFFSBUF_MIN_SIZE : _16K - ALLOC_HDR_SIZE);
+            PVBOXSFFSBUF pDataBuf = (PVBOXSFFSBUF)VbglR0PhysHeapAlloc(sizeof(*pDataBuf));
             if (pDataBuf)
-                pDataBuf->cbBuf = cMaxMatches == 1 ? VBOXSFFSBUF_MIN_SIZE : _16K - ALLOC_HDR_SIZE;
-            else
             {
-                pDataBuf = (PVBOXSFFSBUF)RTMemAlloc(VBOXSFFSBUF_MIN_SIZE);
-                if (pDataBuf)
-                    pDataBuf->cbBuf = VBOXSFFSBUF_MIN_SIZE;
+#define MIN_BUF_SIZE (  RT_ALIGN_32(sizeof(SHFLDIRINFO) + CCHMAXPATHCOMP * sizeof(RTUTF16) + 64 /*fudge*/ + ALLOC_HDR_SIZE, 64) \
+                      - ALLOC_HDR_SIZE)
+                RT_ZERO(*pDataBuf);
+                pDataBuf->cbBuf = cMaxMatches == 1 ? MIN_BUF_SIZE : _16K - ALLOC_HDR_SIZE;
+                pDataBuf->pBuf  = (PSHFLDIRINFO)VbglR0PhysHeapAlloc(pDataBuf->cbBuf);
+                if (pDataBuf->pBuf)
+                { /* likely */ }
                 else
-                    rc = ERROR_NOT_ENOUGH_MEMORY;
-            }
-        }
-        if (rc == NO_ERROR)
-        {
-            /*
-             * Now, try open the directory for reading.
-             */
-            pReq->CreateParms.CreateFlags = SHFL_CF_DIRECTORY   | SHFL_CF_ACT_FAIL_IF_NEW  | SHFL_CF_ACT_OPEN_IF_EXISTS
-                                          | SHFL_CF_ACCESS_READ | SHFL_CF_ACCESS_ATTR_READ | SHFL_CF_ACCESS_DENYNONE;
-
-            int vrc = vboxSfOs2HostReqCreate(pFolder, pReq);
-            LogFlow(("FS32_FINDFIRST: vboxSfOs2HostReqCreate(%ls) -> %Rrc Result=%d fMode=%#x hHandle=%#RX64\n",
-                     pStrFolderPath->String.utf16, vrc, pReq->CreateParms.Result, pReq->CreateParms.Info.Attr.fMode,
-                     pReq->CreateParms.Handle));
-            if (RT_SUCCESS(vrc))
-            {
-                switch (pReq->CreateParms.Result)
                 {
-                    case SHFL_FILE_EXISTS:
-                        if (pReq->CreateParms.Handle != SHFL_HANDLE_NIL)
-                        {
-                            /*
-                             * Initialize the structures.
-                             */
-                            pFsFsd->hHostDir        = pReq->CreateParms.Handle;
-                            pFsFsd->u32Magic        = VBOXSFFS_MAGIC;
-                            pFsFsd->pFolder         = pFolder;
-                            pFsFsd->pBuf            = pDataBuf;
-                            pFsFsd->offLastFile     = 0;
-                            pDataBuf->u32Magic      = VBOXSFFSBUF_MAGIC;
-                            pDataBuf->cbValid       = 0;
-                            pDataBuf->cEntriesLeft  = 0;
-                            pDataBuf->pEntry        = NULL;
-                            pDataBuf->pFilter       = pFilter;
-                            pDataBuf->fMustHaveAttribs   = (uint8_t)((fAttribs >> 8) & (RTFS_DOS_MASK_OS2 >> RTFS_DOS_SHIFT));
-                            pDataBuf->fExcludedAttribs   = (uint8_t)(~fAttribs
-                                                                     & (  (RTFS_DOS_MASK_OS2 & ~(RTFS_DOS_ARCHIVED | RTFS_DOS_READONLY)
-                                                                        >> RTFS_DOS_SHIFT)));
-                            pDataBuf->fLongFilenames     = RT_BOOL(fAttribs & FF_ATTR_LONG_FILENAME);
-                            pDataBuf->cMinLocalTimeDelta = vboxSfOs2GetLocalTimeDelta();
+                    pDataBuf->pBuf = (PSHFLDIRINFO)VbglR0PhysHeapAlloc(MIN_BUF_SIZE);
+                    if (pDataBuf->pBuf)
+                        pDataBuf->cbBuf = MIN_BUF_SIZE;
+                    else
+                        rc = ERROR_NOT_ENOUGH_MEMORY;
+                }
+            }
+            if (rc == NO_ERROR)
+            {
+                /*
+                 * Now, try open the directory for reading.
+                 */
+                pReq->CreateParms.CreateFlags = SHFL_CF_DIRECTORY   | SHFL_CF_ACT_FAIL_IF_NEW  | SHFL_CF_ACT_OPEN_IF_EXISTS
+                                              | SHFL_CF_ACCESS_READ | SHFL_CF_ACCESS_ATTR_READ | SHFL_CF_ACCESS_DENYNONE;
 
-                            rc = vboxSfOs2ReadDirEntries(pFolder, pFsFsd, pDataBuf, uLevel, fFlags,
-                                                         pbData, cbData, cMaxMatches ? cMaxMatches : UINT16_MAX, pcMatches);
-                            if (rc == NO_ERROR)
+                int vrc = vboxSfOs2HostReqCreate(pFolder, pReq);
+                LogFlow(("FS32_FINDFIRST: vboxSfOs2HostReqCreate(%ls) -> %Rrc Result=%d fMode=%#x hHandle=%#RX64\n",
+                         pStrFolderPath->String.utf16, vrc, pReq->CreateParms.Result, pReq->CreateParms.Info.Attr.fMode,
+                         pReq->CreateParms.Handle));
+                if (RT_SUCCESS(vrc))
+                {
+                    switch (pReq->CreateParms.Result)
+                    {
+                        case SHFL_FILE_EXISTS:
+                            if (pReq->CreateParms.Handle != SHFL_HANDLE_NIL)
                             {
-                                uint32_t cRefs = ASMAtomicIncU32(&pFolder->cOpenSearches);
-                                Assert(cRefs < _4K); RT_NOREF(cRefs);
+                                /*
+                                 * Initialize the structures.
+                                 */
+                                pFsFsd->hHostDir        = pReq->CreateParms.Handle;
+                                pFsFsd->u32Magic        = VBOXSFFS_MAGIC;
+                                pFsFsd->pFolder         = pFolder;
+                                pFsFsd->pBuf            = pDataBuf;
+                                pFsFsd->offLastFile     = 0;
+                                pDataBuf->u32Magic      = VBOXSFFSBUF_MAGIC;
+                                pDataBuf->cbValid       = 0;
+                                pDataBuf->cEntriesLeft  = 0;
+                                pDataBuf->pEntry        = NULL;
+                                pDataBuf->pFilter       = pFilter;
+                                pDataBuf->fMustHaveAttribs   = (uint8_t)((fAttribs >> 8) & (RTFS_DOS_MASK_OS2 >> RTFS_DOS_SHIFT));
+                                pDataBuf->fExcludedAttribs   = (uint8_t)(~fAttribs
+                                                                         & (  (RTFS_DOS_MASK_OS2 & ~(RTFS_DOS_ARCHIVED | RTFS_DOS_READONLY)
+                                                                            >> RTFS_DOS_SHIFT)));
+                                pDataBuf->fLongFilenames     = RT_BOOL(fAttribs & FF_ATTR_LONG_FILENAME);
+                                pDataBuf->cMinLocalTimeDelta = vboxSfOs2GetLocalTimeDelta();
 
-                                /* We keep these on success: */
-                                if (pFilter == pStrFolderPath)
-                                    pStrFolderPath = NULL;
-                                pFilter  = NULL;
-                                pDataBuf = NULL;
-                                pFolder  = NULL;
+                                rc = vboxSfOs2ReadDirEntries(pFolder, pFsFsd, pDataBuf, uLevel, fFlags,
+                                                             pbData, cbData, cMaxMatches ? cMaxMatches : UINT16_MAX, pcMatches);
+                                if (rc == NO_ERROR)
+                                {
+                                    uint32_t cRefs = ASMAtomicIncU32(&pFolder->cOpenSearches);
+                                    Assert(cRefs < _4K); RT_NOREF(cRefs);
+
+                                    /* We keep these on success: */
+                                    if (pFilter == pStrFolderPath)
+                                        pStrFolderPath = NULL;
+                                    pFilter  = NULL;
+                                    pDataBuf = NULL;
+                                    pFolder  = NULL;
+                                }
+                                else
+                                {
+                                    AssertCompile(sizeof(VBOXSFCLOSEREQ) < sizeof(*pReq));
+                                    vrc = vboxSfOs2HostReqClose(pFolder, (VBOXSFCLOSEREQ *)pReq, pFsFsd->hHostDir);
+                                    AssertRC(vrc);
+                                    pFsFsd->u32Magic = ~VBOXSFFS_MAGIC;
+                                    pDataBuf->u32Magic = ~VBOXSFFSBUF_MAGIC;
+                                    pFsFsd->pFolder  = NULL;
+                                    pFsFsd->hHostDir = NULL;
+                                }
                             }
                             else
                             {
-                                AssertCompile(sizeof(VBOXSFCLOSEREQ) < sizeof(*pReq));
-                                vrc = vboxSfOs2HostReqClose(pFolder, (VBOXSFCLOSEREQ *)pReq, pFsFsd->hHostDir);
-                                AssertRC(vrc);
-                                pFsFsd->u32Magic = ~VBOXSFFS_MAGIC;
-                                pDataBuf->u32Magic = ~VBOXSFFSBUF_MAGIC;
-                                pFsFsd->pFolder  = NULL;
-                                pFsFsd->hHostDir = NULL;
+                                LogFlow(("FS32_FINDFIRST: vboxSfOs2HostReqCreate returns NIL handle for '%ls'\n",
+                                         pStrFolderPath->String.utf16));
+                                rc = ERROR_PATH_NOT_FOUND;
                             }
-                        }
-                        else
-                        {
-                            LogFlow(("FS32_FINDFIRST: vboxSfOs2HostReqCreate returns NIL handle for '%ls'\n",
-                                     pStrFolderPath->String.utf16));
+                            break;
+
+                        case SHFL_PATH_NOT_FOUND:
                             rc = ERROR_PATH_NOT_FOUND;
-                        }
-                        break;
+                            break;
 
-                    case SHFL_PATH_NOT_FOUND:
-                        rc = ERROR_PATH_NOT_FOUND;
-                        break;
-
-                    default:
-                    case SHFL_FILE_NOT_FOUND:
-                        rc = ERROR_FILE_NOT_FOUND;
-                        break;
+                        default:
+                        case SHFL_FILE_NOT_FOUND:
+                            rc = ERROR_FILE_NOT_FOUND;
+                            break;
+                    }
                 }
+                else
+                    rc = vboxSfOs2ConvertStatusToOs2(vrc, ERROR_GEN_FAILURE);
             }
-            else
-                rc = vboxSfOs2ConvertStatusToOs2(vrc, ERROR_GEN_FAILURE);
-        }
 
-        RTMemFree(pDataBuf);
+            if (pDataBuf)
+            {
+                VbglR0PhysHeapFree(pDataBuf->pBuf);
+                pDataBuf->pBuf = NULL;
+                VbglR0PhysHeapFree(pDataBuf);
+            }
+        }
         vboxSfOs2StrFree(pFilter);
         VbglR0PhysHeapFree(pReq);
         vboxSfOs2ReleaseFolder(pFolder);
@@ -817,7 +837,10 @@ FS32_FINDCLOSE(PFSFSI pFsFsi, PVBOXSFFS pFsFsd)
     pDataBuf->pFilter  = NULL;
     pDataBuf->u32Magic = ~VBOXSFFSBUF_MAGIC;
     pDataBuf->cbBuf    = 0;
-    RTMemFree(pDataBuf);
+
+    VbglR0PhysHeapFree(pDataBuf->pBuf);
+    pDataBuf->pBuf = NULL;
+    VbglR0PhysHeapFree(pDataBuf);
 
     uint32_t cRefs = ASMAtomicDecU32(&pFolder->cOpenSearches);
     Assert(cRefs < _4K); RT_NOREF(cRefs);

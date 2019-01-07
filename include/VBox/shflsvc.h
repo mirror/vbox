@@ -1500,6 +1500,32 @@ typedef struct _VBoxSFFlush
 #define SHFL_LIST_RETURN_ONE    1
 #define SHFL_LIST_RESTART       2
 
+/** SHFL_FN_LIST parameters. */
+typedef struct VBoxSFParmList
+{
+    /** value32, in: SHFLROOT of the mapping the handle belongs to. */
+    HGCMFunctionParameter id32Root;
+    /** value64, in: SHFLHANDLE of the directory. */
+    HGCMFunctionParameter u64Handle;
+    /** value32, in: List flags SHFL_LIST_XXX. */
+    HGCMFunctionParameter f32Flags;
+    /** value32, in/out: Input buffer size / Returned bytes count. */
+    HGCMFunctionParameter cb32Buffer;
+    /** pointer, in[optional]: SHFLSTRING filter string (full path). */
+    HGCMFunctionParameter pStrFilter;
+    /** pointer, out: Buffer to return listing information in (SHFLDIRINFO).
+     * When SHFL_LIST_RETURN_ONE is not specfied, multiple record may be
+     * returned, deriving the entry size using SHFLDIRINFO::name.u16Size.  */
+    HGCMFunctionParameter pBuffer;
+    /** value32, out: Set to 1 if the listing is done, 0 if more entries.
+     * @note Must be set to zero on call as it was declared in/out parameter and
+     *       may be used as such again. */
+    HGCMFunctionParameter f32Done;
+    /** value32, out:  Number of entries returned. */
+    HGCMFunctionParameter c32Entries;
+} VBoxSFParmList;
+
+
 /** Parameters structure. */
 typedef struct _VBoxSFList
 {
