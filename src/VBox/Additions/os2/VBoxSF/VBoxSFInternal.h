@@ -979,7 +979,7 @@ DECLINLINE(int) vboxSfOs2HostReqWritePgLst(PVBOXSFFOLDER pFolder, VBOXSFWRITEPGL
     pReq->Parms.pBuf.type                   = VMMDevHGCMParmType_PageList;
     pReq->Parms.pBuf.u.PageList.size        = cbToWrite;
     pReq->Parms.pBuf.u.PageList.offset      = RT_UOFFSETOF(VBOXSFWRITEPGLSTREQ, PgLst) - sizeof(VBGLIOCIDCHGCMFASTCALL);
-    pReq->PgLst.flags                       = VBOX_HGCM_F_PARM_DIRECTION_FROM_HOST;
+    pReq->PgLst.flags                       = VBOX_HGCM_F_PARM_DIRECTION_TO_HOST;
     pReq->PgLst.cPages                      = (uint16_t)cPages;
     AssertReturn(cPages <= UINT16_MAX, VERR_OUT_OF_RANGE);
     /* caller sets offset */
