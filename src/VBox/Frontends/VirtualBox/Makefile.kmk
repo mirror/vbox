@@ -2285,7 +2285,7 @@ ifdef VBOX_WITH_PRECOMPILED_HEADERS
   VBoxGlobal_USES      += vccprecomp
   VBoxGlobal_PCH_HDR   := $(PATH_SUB_CURRENT)/src/precomp_vcc.h
 
- else if $(KMK_REVISION) >= 3256 && "$(KBUILD_TARGET)" != "darwin" && !defined(VBOX_WITHOUT_PRECOMPILED_HEADERS)
+ else if $(KBUILD_KMK_REVISION) >= 3256 && "$(KBUILD_TARGET)" != "darwin" && !defined(VBOX_WITHOUT_PRECOMPILED_HEADERS)
   VBoxGlobal_USES      += gccprecomp
   VBoxGlobal_PCH_HDR   := $(PATH_SUB_CURRENT)/src/precomp_gcc.h
   #VBoxGlobal_CXXFLAGS.linux += -H
