@@ -3193,70 +3193,66 @@ static void cpumR3InfoSvmVmcbCtrl(PCDBGFINFOHLP pHlp, PCSVMVMCBCTRL pVmcbCtrl, c
     AssertReturnVoid(pHlp);
     AssertReturnVoid(pVmcbCtrl);
 
-    pHlp->pfnPrintf(pHlp, "%su16InterceptRdCRx          = %#RX16\n",    pszPrefix, pVmcbCtrl->u16InterceptRdCRx);
-    pHlp->pfnPrintf(pHlp, "%su16InterceptWrCRx          = %#RX16\n",    pszPrefix, pVmcbCtrl->u16InterceptWrCRx);
-    pHlp->pfnPrintf(pHlp, "%su16InterceptRdDRx          = %#RX16\n",    pszPrefix, pVmcbCtrl->u16InterceptRdDRx);
-    pHlp->pfnPrintf(pHlp, "%su16InterceptWrDRx          = %#RX16\n",    pszPrefix, pVmcbCtrl->u16InterceptWrDRx);
-    pHlp->pfnPrintf(pHlp, "%su32InterceptXcpt           = %#RX32\n",    pszPrefix, pVmcbCtrl->u32InterceptXcpt);
-    pHlp->pfnPrintf(pHlp, "%su64InterceptCtrl           = %#RX64\n",    pszPrefix, pVmcbCtrl->u64InterceptCtrl);
-    pHlp->pfnPrintf(pHlp, "%su16PauseFilterThreshold    = %#RX16\n",    pszPrefix, pVmcbCtrl->u16PauseFilterThreshold);
-    pHlp->pfnPrintf(pHlp, "%su16PauseFilterCount        = %#RX16\n",    pszPrefix, pVmcbCtrl->u16PauseFilterCount);
-    pHlp->pfnPrintf(pHlp, "%su64IOPMPhysAddr            = %#RX64\n",    pszPrefix, pVmcbCtrl->u64IOPMPhysAddr);
-    pHlp->pfnPrintf(pHlp, "%su64MSRPMPhysAddr           = %#RX64\n",    pszPrefix, pVmcbCtrl->u64MSRPMPhysAddr);
-    pHlp->pfnPrintf(pHlp, "%su64TSCOffset               = %#RX64\n",    pszPrefix, pVmcbCtrl->u64TSCOffset);
-    pHlp->pfnPrintf(pHlp, "%sTLBCtrl\n",                                pszPrefix);
-    pHlp->pfnPrintf(pHlp, "%s  u32ASID                    = %#RX32\n",  pszPrefix, pVmcbCtrl->TLBCtrl.n.u32ASID);
-    pHlp->pfnPrintf(pHlp, "%s  u8TLBFlush                 = %u\n",      pszPrefix, pVmcbCtrl->TLBCtrl.n.u8TLBFlush);
-    pHlp->pfnPrintf(pHlp, "%sIntCtrl\n",                                pszPrefix);
-    pHlp->pfnPrintf(pHlp, "%s  u8VTPR                     = %#RX8 (%u)\n",   pszPrefix, pVmcbCtrl->IntCtrl.n.u8VTPR, pVmcbCtrl->IntCtrl.n.u8VTPR);
-    pHlp->pfnPrintf(pHlp, "%s  u1VIrqPending              = %RTbool\n", pszPrefix, pVmcbCtrl->IntCtrl.n.u1VIrqPending);
-    pHlp->pfnPrintf(pHlp, "%s  u1VGif                     = %u\n",      pszPrefix, pVmcbCtrl->IntCtrl.n.u1VGif);
-    pHlp->pfnPrintf(pHlp, "%s  u4VIntrPrio                = %#RX8\n",   pszPrefix, pVmcbCtrl->IntCtrl.n.u4VIntrPrio);
-    pHlp->pfnPrintf(pHlp, "%s  u1IgnoreTPR                = %RTbool\n", pszPrefix, pVmcbCtrl->IntCtrl.n.u1IgnoreTPR);
-    pHlp->pfnPrintf(pHlp, "%s  u1VIntrMasking             = %RTbool\n", pszPrefix, pVmcbCtrl->IntCtrl.n.u1VIntrMasking);
-    pHlp->pfnPrintf(pHlp, "%s  u1VGifEnable               = %RTbool\n", pszPrefix, pVmcbCtrl->IntCtrl.n.u1VGifEnable);
-    pHlp->pfnPrintf(pHlp, "%s  u1AvicEnable               = %RTbool\n", pszPrefix, pVmcbCtrl->IntCtrl.n.u1AvicEnable);
-    pHlp->pfnPrintf(pHlp, "%s  u8VIntrVector              = %#RX8\n",   pszPrefix, pVmcbCtrl->IntCtrl.n.u8VIntrVector);
-    pHlp->pfnPrintf(pHlp, "%sIntShadow\n",                              pszPrefix);
-    pHlp->pfnPrintf(pHlp, "%s  u1IntShadow                = %RTbool\n", pszPrefix, pVmcbCtrl->IntShadow.n.u1IntShadow);
-    pHlp->pfnPrintf(pHlp, "%s  u1GuestIntMask             = %RTbool\n", pszPrefix, pVmcbCtrl->IntShadow.n.u1GuestIntMask);
-    pHlp->pfnPrintf(pHlp, "%su64ExitCode                = %#RX64\n",    pszPrefix, pVmcbCtrl->u64ExitCode);
-    pHlp->pfnPrintf(pHlp, "%su64ExitInfo1               = %#RX64\n",    pszPrefix, pVmcbCtrl->u64ExitInfo1);
-    pHlp->pfnPrintf(pHlp, "%su64ExitInfo2               = %#RX64\n",    pszPrefix, pVmcbCtrl->u64ExitInfo2);
-    pHlp->pfnPrintf(pHlp, "%sExitIntInfo\n",                            pszPrefix);
-    pHlp->pfnPrintf(pHlp, "%s  u8Vector                   = %#RX8 (%u)\n", pszPrefix, pVmcbCtrl->ExitIntInfo.n.u8Vector, pVmcbCtrl->ExitIntInfo.n.u8Vector);
-    pHlp->pfnPrintf(pHlp, "%s  u3Type                     = %u\n",      pszPrefix, pVmcbCtrl->ExitIntInfo.n.u3Type);
-    pHlp->pfnPrintf(pHlp, "%s  u1ErrorCodeValid           = %RTbool\n", pszPrefix, pVmcbCtrl->ExitIntInfo.n.u1ErrorCodeValid);
-    pHlp->pfnPrintf(pHlp, "%s  u1Valid                    = %RTbool\n", pszPrefix, pVmcbCtrl->ExitIntInfo.n.u1Valid);
-    pHlp->pfnPrintf(pHlp, "%s  u32ErrorCode               = %#RX32\n",  pszPrefix, pVmcbCtrl->ExitIntInfo.n.u32ErrorCode);
-    pHlp->pfnPrintf(pHlp, "%sNestedPaging and SEV\n",                   pszPrefix);
-    pHlp->pfnPrintf(pHlp, "%s  u1NestedPaging             = %RTbool\n", pszPrefix, pVmcbCtrl->NestedPagingCtrl.n.u1NestedPaging);
-    pHlp->pfnPrintf(pHlp, "%s  u1Sev                      = %RTbool\n", pszPrefix, pVmcbCtrl->NestedPagingCtrl.n.u1Sev);
-    pHlp->pfnPrintf(pHlp, "%s  u1SevEs                    = %RTbool\n", pszPrefix, pVmcbCtrl->NestedPagingCtrl.n.u1SevEs);
-    pHlp->pfnPrintf(pHlp, "%sAvicBar\n",                                pszPrefix);
-    pHlp->pfnPrintf(pHlp, "%s  u40Addr                    = %#RX64\n",  pszPrefix, pVmcbCtrl->AvicBar.n.u40Addr);
-    pHlp->pfnPrintf(pHlp, "%sEventInject\n",                            pszPrefix);
-    pHlp->pfnPrintf(pHlp, "%s  EventInject\n",                          pszPrefix);
-    pHlp->pfnPrintf(pHlp, "%s  u8Vector                   = %#RX32 (%u)\n", pszPrefix, pVmcbCtrl->EventInject.n.u8Vector, pVmcbCtrl->EventInject.n.u8Vector);
-    pHlp->pfnPrintf(pHlp, "%s  u3Type                     = %u\n",      pszPrefix, pVmcbCtrl->EventInject.n.u3Type);
-    pHlp->pfnPrintf(pHlp, "%s  u1ErrorCodeValid           = %RTbool\n", pszPrefix, pVmcbCtrl->EventInject.n.u1ErrorCodeValid);
-    pHlp->pfnPrintf(pHlp, "%s  u1Valid                    = %RTbool\n", pszPrefix, pVmcbCtrl->EventInject.n.u1Valid);
-    pHlp->pfnPrintf(pHlp, "%s  u32ErrorCode               = %#RX32\n",  pszPrefix, pVmcbCtrl->EventInject.n.u32ErrorCode);
-    pHlp->pfnPrintf(pHlp, "%su64NestedPagingCR3         = %#RX64\n",    pszPrefix, pVmcbCtrl->u64NestedPagingCR3);
-    pHlp->pfnPrintf(pHlp, "%sLBR virtualization\n",                     pszPrefix);
-    pHlp->pfnPrintf(pHlp, "%s  u1LbrVirt                  = %RTbool\n", pszPrefix, pVmcbCtrl->LbrVirt.n.u1LbrVirt);
-    pHlp->pfnPrintf(pHlp, "%s  u1VirtVmsaveVmload         = %RTbool\n", pszPrefix, pVmcbCtrl->LbrVirt.n.u1VirtVmsaveVmload);
-    pHlp->pfnPrintf(pHlp, "%su32VmcbCleanBits           = %#RX32\n",    pszPrefix, pVmcbCtrl->u32VmcbCleanBits);
-    pHlp->pfnPrintf(pHlp, "%su64NextRIP                 = %#RX64\n",    pszPrefix, pVmcbCtrl->u64NextRIP);
-    pHlp->pfnPrintf(pHlp, "%scbInstrFetched             = %u\n",        pszPrefix, pVmcbCtrl->cbInstrFetched);
-    pHlp->pfnPrintf(pHlp, "%sabInstr                    = %.*Rhxs\n",   pszPrefix, sizeof(pVmcbCtrl->abInstr), pVmcbCtrl->abInstr);
-    pHlp->pfnPrintf(pHlp, "%sAvicBackingPagePtr\n",                     pszPrefix);
-    pHlp->pfnPrintf(pHlp, "%s  u40Addr                    = %#RX64\n",  pszPrefix, pVmcbCtrl->AvicBackingPagePtr.n.u40Addr);
-    pHlp->pfnPrintf(pHlp, "%sAvicLogicalTablePtr\n",                    pszPrefix);
-    pHlp->pfnPrintf(pHlp, "%s  u40Addr                    = %#RX64\n",  pszPrefix, pVmcbCtrl->AvicLogicalTablePtr.n.u40Addr);
-    pHlp->pfnPrintf(pHlp, "%sAvicPhysicalTablePtr\n",                   pszPrefix);
-    pHlp->pfnPrintf(pHlp, "%s  u8LastGuestCoreId          = %u\n",      pszPrefix, pVmcbCtrl->AvicPhysicalTablePtr.n.u8LastGuestCoreId);
-    pHlp->pfnPrintf(pHlp, "%s  u40Addr                    = %#RX64\n",  pszPrefix, pVmcbCtrl->AvicPhysicalTablePtr.n.u40Addr);
+    pHlp->pfnPrintf(pHlp, "%sCRX-read intercepts        = %#RX16\n",    pszPrefix, pVmcbCtrl->u16InterceptRdCRx);
+    pHlp->pfnPrintf(pHlp, "%sCRX-write intercepts       = %#RX16\n",    pszPrefix, pVmcbCtrl->u16InterceptWrCRx);
+    pHlp->pfnPrintf(pHlp, "%sDRX-read intercepts        = %#RX16\n",    pszPrefix, pVmcbCtrl->u16InterceptRdDRx);
+    pHlp->pfnPrintf(pHlp, "%sDRX-write intercepts       = %#RX16\n",    pszPrefix, pVmcbCtrl->u16InterceptWrDRx);
+    pHlp->pfnPrintf(pHlp, "%sException intercepts       = %#RX32\n",    pszPrefix, pVmcbCtrl->u32InterceptXcpt);
+    pHlp->pfnPrintf(pHlp, "%sControl intercepts         = %#RX64\n",    pszPrefix, pVmcbCtrl->u64InterceptCtrl);
+    pHlp->pfnPrintf(pHlp, "%sPause-filter threshold     = %#RX16\n",    pszPrefix, pVmcbCtrl->u16PauseFilterThreshold);
+    pHlp->pfnPrintf(pHlp, "%sPause-filter count         = %#RX16\n",    pszPrefix, pVmcbCtrl->u16PauseFilterCount);
+    pHlp->pfnPrintf(pHlp, "%sIOPM bitmap physaddr       = %#RX64\n",    pszPrefix, pVmcbCtrl->u64IOPMPhysAddr);
+    pHlp->pfnPrintf(pHlp, "%sMSRPM bitmap physaddr      = %#RX64\n",    pszPrefix, pVmcbCtrl->u64MSRPMPhysAddr);
+    pHlp->pfnPrintf(pHlp, "%sTSC offset                 = %#RX64\n",    pszPrefix, pVmcbCtrl->u64TSCOffset);
+    pHlp->pfnPrintf(pHlp, "%sTLB Control\n",                            pszPrefix);
+    pHlp->pfnPrintf(pHlp, "%s  ASID                       = %#RX32\n",  pszPrefix, pVmcbCtrl->TLBCtrl.n.u32ASID);
+    pHlp->pfnPrintf(pHlp, "%s  TLB-flush type             = %u\n",      pszPrefix, pVmcbCtrl->TLBCtrl.n.u8TLBFlush);
+    pHlp->pfnPrintf(pHlp, "%sInterrupt Control\n",                      pszPrefix);
+    pHlp->pfnPrintf(pHlp, "%s  VTPR                       = %#RX8 (%u)\n", pszPrefix, pVmcbCtrl->IntCtrl.n.u8VTPR, pVmcbCtrl->IntCtrl.n.u8VTPR);
+    pHlp->pfnPrintf(pHlp, "%s  VIRQ (Pending)             = %RTbool\n", pszPrefix, pVmcbCtrl->IntCtrl.n.u1VIrqPending);
+    pHlp->pfnPrintf(pHlp, "%s  VINTR vector               = %#RX8\n",   pszPrefix, pVmcbCtrl->IntCtrl.n.u8VIntrVector);
+    pHlp->pfnPrintf(pHlp, "%s  VGIF                       = %u\n",      pszPrefix, pVmcbCtrl->IntCtrl.n.u1VGif);
+    pHlp->pfnPrintf(pHlp, "%s  VINTR priority             = %#RX8\n",   pszPrefix, pVmcbCtrl->IntCtrl.n.u4VIntrPrio);
+    pHlp->pfnPrintf(pHlp, "%s  Ignore TPR                 = %RTbool\n", pszPrefix, pVmcbCtrl->IntCtrl.n.u1IgnoreTPR);
+    pHlp->pfnPrintf(pHlp, "%s  VINTR masking              = %RTbool\n", pszPrefix, pVmcbCtrl->IntCtrl.n.u1VIntrMasking);
+    pHlp->pfnPrintf(pHlp, "%s  VGIF enable                = %RTbool\n", pszPrefix, pVmcbCtrl->IntCtrl.n.u1VGifEnable);
+    pHlp->pfnPrintf(pHlp, "%s  AVIC enable                = %RTbool\n", pszPrefix, pVmcbCtrl->IntCtrl.n.u1AvicEnable);
+    pHlp->pfnPrintf(pHlp, "%sInterrupt Shadow\n",                              pszPrefix);
+    pHlp->pfnPrintf(pHlp, "%s  Interrupt shadow           = %RTbool\n", pszPrefix, pVmcbCtrl->IntShadow.n.u1IntShadow);
+    pHlp->pfnPrintf(pHlp, "%s  Guest-interrupt Mask       = %RTbool\n", pszPrefix, pVmcbCtrl->IntShadow.n.u1GuestIntMask);
+    pHlp->pfnPrintf(pHlp, "%sExit Code                  = %#RX64\n",    pszPrefix, pVmcbCtrl->u64ExitCode);
+    pHlp->pfnPrintf(pHlp, "%sEXITINFO1                  = %#RX64\n",    pszPrefix, pVmcbCtrl->u64ExitInfo1);
+    pHlp->pfnPrintf(pHlp, "%sEXITINFO2                  = %#RX64\n",    pszPrefix, pVmcbCtrl->u64ExitInfo2);
+    pHlp->pfnPrintf(pHlp, "%sExit Interrupt Info\n",                    pszPrefix);
+    pHlp->pfnPrintf(pHlp, "%s  Valid                      = %RTbool\n", pszPrefix, pVmcbCtrl->ExitIntInfo.n.u1Valid);
+    pHlp->pfnPrintf(pHlp, "%s  Vector                     = %#RX8 (%u)\n", pszPrefix, pVmcbCtrl->ExitIntInfo.n.u8Vector, pVmcbCtrl->ExitIntInfo.n.u8Vector);
+    pHlp->pfnPrintf(pHlp, "%s  Type                       = %u\n",      pszPrefix, pVmcbCtrl->ExitIntInfo.n.u3Type);
+    pHlp->pfnPrintf(pHlp, "%s  Error-code valid           = %RTbool\n", pszPrefix, pVmcbCtrl->ExitIntInfo.n.u1ErrorCodeValid);
+    pHlp->pfnPrintf(pHlp, "%s  Error-code                 = %#RX32\n",  pszPrefix, pVmcbCtrl->ExitIntInfo.n.u32ErrorCode);
+    pHlp->pfnPrintf(pHlp, "%sNested paging and SEV\n",                   pszPrefix);
+    pHlp->pfnPrintf(pHlp, "%s  Nested paging              = %RTbool\n", pszPrefix, pVmcbCtrl->NestedPagingCtrl.n.u1NestedPaging);
+    pHlp->pfnPrintf(pHlp, "%s  SEV (Secure Encrypted VM)  = %RTbool\n", pszPrefix, pVmcbCtrl->NestedPagingCtrl.n.u1Sev);
+    pHlp->pfnPrintf(pHlp, "%s  SEV-ES (Encrypted State)   = %RTbool\n", pszPrefix, pVmcbCtrl->NestedPagingCtrl.n.u1SevEs);
+    pHlp->pfnPrintf(pHlp, "%sEvent Inject\n",                           pszPrefix);
+    pHlp->pfnPrintf(pHlp, "%s  Valid                      = %RTbool\n", pszPrefix, pVmcbCtrl->EventInject.n.u1Valid);
+    pHlp->pfnPrintf(pHlp, "%s  Vector                     = %#RX32 (%u)\n", pszPrefix, pVmcbCtrl->EventInject.n.u8Vector, pVmcbCtrl->EventInject.n.u8Vector);
+    pHlp->pfnPrintf(pHlp, "%s  Type                       = %u\n",      pszPrefix, pVmcbCtrl->EventInject.n.u3Type);
+    pHlp->pfnPrintf(pHlp, "%s  Error-code valid           = %RTbool\n", pszPrefix, pVmcbCtrl->EventInject.n.u1ErrorCodeValid);
+    pHlp->pfnPrintf(pHlp, "%s  Error-code                 = %#RX32\n",  pszPrefix, pVmcbCtrl->EventInject.n.u32ErrorCode);
+    pHlp->pfnPrintf(pHlp, "%sNested-paging CR3          = %#RX64\n",    pszPrefix, pVmcbCtrl->u64NestedPagingCR3);
+    pHlp->pfnPrintf(pHlp, "%sLBR Virtualization\n",                     pszPrefix);
+    pHlp->pfnPrintf(pHlp, "%s  LBR virt                   = %RTbool\n", pszPrefix, pVmcbCtrl->LbrVirt.n.u1LbrVirt);
+    pHlp->pfnPrintf(pHlp, "%s  Virt. VMSAVE/VMLOAD        = %RTbool\n", pszPrefix, pVmcbCtrl->LbrVirt.n.u1VirtVmsaveVmload);
+    pHlp->pfnPrintf(pHlp, "%sVMCB Clean Bits            = %#RX32\n",    pszPrefix, pVmcbCtrl->u32VmcbCleanBits);
+    pHlp->pfnPrintf(pHlp, "%sNext-RIP                   = %#RX64\n",    pszPrefix, pVmcbCtrl->u64NextRIP);
+    pHlp->pfnPrintf(pHlp, "%sInstruction bytes fetched  = %u\n",        pszPrefix, pVmcbCtrl->cbInstrFetched);
+    pHlp->pfnPrintf(pHlp, "%sInstruction bytes          = %.*Rhxs\n",   pszPrefix, sizeof(pVmcbCtrl->abInstr), pVmcbCtrl->abInstr);
+    pHlp->pfnPrintf(pHlp, "%sAVIC\n",                                   pszPrefix);
+    pHlp->pfnPrintf(pHlp, "%s  Bar addr                   = %#RX64\n",  pszPrefix, pVmcbCtrl->AvicBar.n.u40Addr);
+    pHlp->pfnPrintf(pHlp, "%s  Backing page addr          = %#RX64\n",  pszPrefix, pVmcbCtrl->AvicBackingPagePtr.n.u40Addr);
+    pHlp->pfnPrintf(pHlp, "%s  Logical table addr         = %#RX64\n",  pszPrefix, pVmcbCtrl->AvicLogicalTablePtr.n.u40Addr);
+    pHlp->pfnPrintf(pHlp, "%s  Physical table addr        = %#RX64\n",  pszPrefix, pVmcbCtrl->AvicPhysicalTablePtr.n.u40Addr);
+    pHlp->pfnPrintf(pHlp, "%s  Last guest core Id         = %u\n",      pszPrefix, pVmcbCtrl->AvicPhysicalTablePtr.n.u8LastGuestCoreId);
 }
 
 
@@ -3316,32 +3312,257 @@ static void cpumR3InfoSvmVmcbStateSave(PCDBGFINFOHLP pHlp, PCSVMVMCBSTATESAVE pV
     cpumR3InfoSvmVmcbSelReg(pHlp, &pVmcbStateSave->TR,   "TR",   pszPrefix);
     cpumR3InfoSvmVmcbXdtr(pHlp, &pVmcbStateSave->GDTR,   "GDTR", pszPrefix);
     cpumR3InfoSvmVmcbXdtr(pHlp, &pVmcbStateSave->IDTR,   "IDTR", pszPrefix);
-    pHlp->pfnPrintf(pHlp, "%su8CPL                      = %u\n",     pszPrefix, pVmcbStateSave->u8CPL);
-    pHlp->pfnPrintf(pHlp, "%su64EFER                    = %#RX64\n", pszPrefix, pVmcbStateSave->u64EFER);
-    pHlp->pfnPrintf(pHlp, "%su64CR4                     = %#RX64\n", pszPrefix, pVmcbStateSave->u64CR4);
-    pHlp->pfnPrintf(pHlp, "%su64CR3                     = %#RX64\n", pszPrefix, pVmcbStateSave->u64CR3);
-    pHlp->pfnPrintf(pHlp, "%su64CR0                     = %#RX64\n", pszPrefix, pVmcbStateSave->u64CR0);
-    pHlp->pfnPrintf(pHlp, "%su64DR7                     = %#RX64\n", pszPrefix, pVmcbStateSave->u64DR7);
-    pHlp->pfnPrintf(pHlp, "%su64DR6                     = %#RX64\n", pszPrefix, pVmcbStateSave->u64DR6);
-    pHlp->pfnPrintf(pHlp, "%su64RFlags                  = %#RX64 %31s\n", pszPrefix, pVmcbStateSave->u64RFlags, szEFlags);
-    pHlp->pfnPrintf(pHlp, "%su64RIP                     = %#RX64\n", pszPrefix, pVmcbStateSave->u64RIP);
-    pHlp->pfnPrintf(pHlp, "%su64RSP                     = %#RX64\n", pszPrefix, pVmcbStateSave->u64RSP);
-    pHlp->pfnPrintf(pHlp, "%su64RAX                     = %#RX64\n", pszPrefix, pVmcbStateSave->u64RAX);
-    pHlp->pfnPrintf(pHlp, "%su64STAR                    = %#RX64\n", pszPrefix, pVmcbStateSave->u64STAR);
-    pHlp->pfnPrintf(pHlp, "%su64LSTAR                   = %#RX64\n", pszPrefix, pVmcbStateSave->u64LSTAR);
-    pHlp->pfnPrintf(pHlp, "%su64CSTAR                   = %#RX64\n", pszPrefix, pVmcbStateSave->u64CSTAR);
-    pHlp->pfnPrintf(pHlp, "%su64SFMASK                  = %#RX64\n", pszPrefix, pVmcbStateSave->u64SFMASK);
-    pHlp->pfnPrintf(pHlp, "%su64KernelGSBase            = %#RX64\n", pszPrefix, pVmcbStateSave->u64KernelGSBase);
-    pHlp->pfnPrintf(pHlp, "%su64SysEnterCS              = %#RX64\n", pszPrefix, pVmcbStateSave->u64SysEnterCS);
-    pHlp->pfnPrintf(pHlp, "%su64SysEnterEIP             = %#RX64\n", pszPrefix, pVmcbStateSave->u64SysEnterEIP);
-    pHlp->pfnPrintf(pHlp, "%su64SysEnterESP             = %#RX64\n", pszPrefix, pVmcbStateSave->u64SysEnterESP);
-    pHlp->pfnPrintf(pHlp, "%su64CR2                     = %#RX64\n", pszPrefix, pVmcbStateSave->u64CR2);
-    pHlp->pfnPrintf(pHlp, "%su64PAT                     = %#RX64\n", pszPrefix, pVmcbStateSave->u64PAT);
-    pHlp->pfnPrintf(pHlp, "%su64DBGCTL                  = %#RX64\n", pszPrefix, pVmcbStateSave->u64DBGCTL);
-    pHlp->pfnPrintf(pHlp, "%su64BR_FROM                 = %#RX64\n", pszPrefix, pVmcbStateSave->u64BR_FROM);
-    pHlp->pfnPrintf(pHlp, "%su64BR_TO                   = %#RX64\n", pszPrefix, pVmcbStateSave->u64BR_TO);
-    pHlp->pfnPrintf(pHlp, "%su64LASTEXCPFROM            = %#RX64\n", pszPrefix, pVmcbStateSave->u64LASTEXCPFROM);
-    pHlp->pfnPrintf(pHlp, "%su64LASTEXCPTO              = %#RX64\n", pszPrefix, pVmcbStateSave->u64LASTEXCPTO);
+    pHlp->pfnPrintf(pHlp, "%sCPL                        = %u\n",     pszPrefix, pVmcbStateSave->u8CPL);
+    pHlp->pfnPrintf(pHlp, "%sEFER                       = %#RX64\n", pszPrefix, pVmcbStateSave->u64EFER);
+    pHlp->pfnPrintf(pHlp, "%sCR4                        = %#RX64\n", pszPrefix, pVmcbStateSave->u64CR4);
+    pHlp->pfnPrintf(pHlp, "%sCR3                        = %#RX64\n", pszPrefix, pVmcbStateSave->u64CR3);
+    pHlp->pfnPrintf(pHlp, "%sCR0                        = %#RX64\n", pszPrefix, pVmcbStateSave->u64CR0);
+    pHlp->pfnPrintf(pHlp, "%sDR7                        = %#RX64\n", pszPrefix, pVmcbStateSave->u64DR7);
+    pHlp->pfnPrintf(pHlp, "%sDR6                        = %#RX64\n", pszPrefix, pVmcbStateSave->u64DR6);
+    pHlp->pfnPrintf(pHlp, "%sRFLAGS                     = %#RX64 %31s\n", pszPrefix, pVmcbStateSave->u64RFlags, szEFlags);
+    pHlp->pfnPrintf(pHlp, "%sRIP                        = %#RX64\n", pszPrefix, pVmcbStateSave->u64RIP);
+    pHlp->pfnPrintf(pHlp, "%sRSP                        = %#RX64\n", pszPrefix, pVmcbStateSave->u64RSP);
+    pHlp->pfnPrintf(pHlp, "%sRAX                        = %#RX64\n", pszPrefix, pVmcbStateSave->u64RAX);
+    pHlp->pfnPrintf(pHlp, "%sSTAR                       = %#RX64\n", pszPrefix, pVmcbStateSave->u64STAR);
+    pHlp->pfnPrintf(pHlp, "%sLSTAR                      = %#RX64\n", pszPrefix, pVmcbStateSave->u64LSTAR);
+    pHlp->pfnPrintf(pHlp, "%sCSTAR                      = %#RX64\n", pszPrefix, pVmcbStateSave->u64CSTAR);
+    pHlp->pfnPrintf(pHlp, "%sSFMASK                     = %#RX64\n", pszPrefix, pVmcbStateSave->u64SFMASK);
+    pHlp->pfnPrintf(pHlp, "%sKERNELGSBASE               = %#RX64\n", pszPrefix, pVmcbStateSave->u64KernelGSBase);
+    pHlp->pfnPrintf(pHlp, "%sSysEnter CS                = %#RX64\n", pszPrefix, pVmcbStateSave->u64SysEnterCS);
+    pHlp->pfnPrintf(pHlp, "%sSysEnter EIP               = %#RX64\n", pszPrefix, pVmcbStateSave->u64SysEnterEIP);
+    pHlp->pfnPrintf(pHlp, "%sSysEnter ESP               = %#RX64\n", pszPrefix, pVmcbStateSave->u64SysEnterESP);
+    pHlp->pfnPrintf(pHlp, "%sCR2                        = %#RX64\n", pszPrefix, pVmcbStateSave->u64CR2);
+    pHlp->pfnPrintf(pHlp, "%sPAT                        = %#RX64\n", pszPrefix, pVmcbStateSave->u64PAT);
+    pHlp->pfnPrintf(pHlp, "%sDBGCTL                     = %#RX64\n", pszPrefix, pVmcbStateSave->u64DBGCTL);
+    pHlp->pfnPrintf(pHlp, "%sBR_FROM                    = %#RX64\n", pszPrefix, pVmcbStateSave->u64BR_FROM);
+    pHlp->pfnPrintf(pHlp, "%sBR_TO                      = %#RX64\n", pszPrefix, pVmcbStateSave->u64BR_TO);
+    pHlp->pfnPrintf(pHlp, "%sLASTXCPT_FROM              = %#RX64\n", pszPrefix, pVmcbStateSave->u64LASTEXCPFROM);
+    pHlp->pfnPrintf(pHlp, "%sLASTXCPT_TO                = %#RX64\n", pszPrefix, pVmcbStateSave->u64LASTEXCPTO);
+}
+
+
+/**
+ * Displays a VMX VMCS.
+ *
+ * @param   pHlp        The info helper functions.
+ * @param   pVmcs       Pointer to a VMX VMCS.
+ * @param   pszPrefix   Caller specified string prefix.
+ */
+static void  cpumR3InfoVmxVmcs(PCDBGFINFOHLP pHlp, PCVMXVVMCS pVmcs, const char *pszPrefix)
+{
+    AssertReturnVoid(pHlp);
+    AssertReturnVoid(pVmcs);
+
+    /* The string width of -4 used in the macros below to cover 'LDTR', 'GDTR', 'IDTR. */
+#define CPUMVMX_DUMP_HOST_XDTR(a_pHlp, a_pVmcs, a_Seg, a_SegName, a_pszPrefix) \
+    do { \
+        (a_pHlp)->pfnPrintf((a_pHlp), "  %s%-4s                       = {base=%016RX64}\n", \
+                            (a_pszPrefix), (a_SegName), (a_pVmcs)->u64Host##a_Seg##Base.u); \
+    } while (0)
+
+#define CPUMVMX_DUMP_GUEST_SEGREG(a_pHlp, a_pVmcs, a_Seg, a_SegName, a_pszPrefix) \
+    do { \
+        (a_pHlp)->pfnPrintf((a_pHlp), "  %s%-4s                       = {%04x base=%016RX64 limit=%08x flags=%04x}\n", \
+                            (a_pszPrefix), (a_SegName), (a_pVmcs)->Guest##a_Seg, (a_pVmcs)->u64Guest##a_Seg##Base.u, \
+                            (a_pVmcs)->u32Guest##a_Seg##Limit, (a_pVmcs)->u32Guest##a_Seg##Attr); \
+    } while (0)
+
+#define CPUMVMX_DUMP_GUEST_XDTR(a_pHlp, a_pVmcs, a_Seg, a_SegName, a_pszPrefix) \
+    do { \
+        (a_pHlp)->pfnPrintf((a_pHlp), "  %s%-4s                       = {base=%016RX64 limit=%08x}\n", \
+                            (a_pszPrefix), (a_SegName), (a_pVmcs)->u64Guest##a_Seg##Base.u, (a_pVmcs)->u32Guest##a_Seg##Limit); \
+    } while (0)
+
+    /* Header. */
+    {
+        pHlp->pfnPrintf(pHlp, "%sHeader\n", pszPrefix);
+        pHlp->pfnPrintf(pHlp, "  %sVMCS revision id           = %#RX32\n",   pszPrefix, pVmcs->u32VmcsRevId);
+        pHlp->pfnPrintf(pHlp, "  %sVMX-abort id               = %#RX32\n",   pszPrefix, pVmcs->u32VmxAbortId);
+        pHlp->pfnPrintf(pHlp, "  %sVMCS state                 = %#x (%s)\n", pszPrefix, pVmcs->fVmcsState,
+                        HMVmxGetVmcsStateDesc(pVmcs->fVmcsState));
+    }
+
+    /* Control fields. */
+    {
+        /* 16-bit. */
+        pHlp->pfnPrintf(pHlp, "%sControl\n", pszPrefix);
+        pHlp->pfnPrintf(pHlp, "  %sVPID                       = %#RX16\n",   pszPrefix, pVmcs->u16Vpid);
+        pHlp->pfnPrintf(pHlp, "  %sPosted intr notify vector  = %#RX16\n",   pszPrefix, pVmcs->u16PostIntNotifyVector);
+        pHlp->pfnPrintf(pHlp, "  %sEPTP index                 = %#RX16\n",   pszPrefix, pVmcs->u16EptpIndex);
+
+        /* 32-bit. */
+        pHlp->pfnPrintf(pHlp, "  %sPinCtls                    = %#RX32\n",   pszPrefix, pVmcs->u32PinCtls);
+        pHlp->pfnPrintf(pHlp, "  %sProcCtls                   = %#RX32\n",   pszPrefix, pVmcs->u32ProcCtls);
+        pHlp->pfnPrintf(pHlp, "  %sProcCtls2                  = %#RX32\n",   pszPrefix, pVmcs->u32ProcCtls2);
+        pHlp->pfnPrintf(pHlp, "  %sExitCtls                   = %#RX32\n",   pszPrefix, pVmcs->u32ExitCtls);
+        pHlp->pfnPrintf(pHlp, "  %sEntryCtls                  = %#RX32\n",   pszPrefix, pVmcs->u32EntryCtls);
+        pHlp->pfnPrintf(pHlp, "  %sException bitmap           = %#RX32\n",   pszPrefix, pVmcs->u32XcptBitmap);
+        pHlp->pfnPrintf(pHlp, "  %sPage-fault mask            = %#RX32\n",   pszPrefix, pVmcs->u32XcptPFMask);
+        pHlp->pfnPrintf(pHlp, "  %ssPage-fault match          = %#RX32\n",   pszPrefix, pVmcs->u32XcptPFMatch);
+        pHlp->pfnPrintf(pHlp, "  %sCR3 target count           = %#RX32\n",   pszPrefix, pVmcs->u32Cr3TargetCount);
+        pHlp->pfnPrintf(pHlp, "  %sVM-exit MSR store count    = %#RX32\n",   pszPrefix, pVmcs->u32ExitMsrStoreCount);
+        pHlp->pfnPrintf(pHlp, "  %sVM-exit MSR load count     = %#RX32\n",   pszPrefix, pVmcs->u32ExitMsrLoadCount);
+        pHlp->pfnPrintf(pHlp, "  %sVM-entry MSR load count    = %#RX32\n",   pszPrefix, pVmcs->u32EntryMsrLoadCount);
+        pHlp->pfnPrintf(pHlp, "  %sVM-Entry interruption info = %#RX32\n",   pszPrefix, pVmcs->u32EntryIntInfo);
+        pHlp->pfnPrintf(pHlp, "  %sVM-Entry xcpt error-code   = %#RX32\n",   pszPrefix, pVmcs->u32EntryXcptErrCode);
+        pHlp->pfnPrintf(pHlp, "  %sVM-Entry instruction len   = %#RX32\n",   pszPrefix, pVmcs->u32EntryInstrLen);
+        pHlp->pfnPrintf(pHlp, "  %sTPR threshold              = %#RX32\n",   pszPrefix, pVmcs->u32TprThreshold);
+        pHlp->pfnPrintf(pHlp, "  %sPLE gap                    = %#RX32\n",   pszPrefix, pVmcs->u32PleGap);
+        pHlp->pfnPrintf(pHlp, "  %sPLE window                 = %#RX32\n",   pszPrefix, pVmcs->u32PleWindow);
+
+        /* 64-bit. */
+        pHlp->pfnPrintf(pHlp, "  %sIO-bitmap A addr           = %#RX64\n",   pszPrefix, pVmcs->u64AddrIoBitmapA.u);
+        pHlp->pfnPrintf(pHlp, "  %sIO-bitmap B addr           = %#RX64\n",   pszPrefix, pVmcs->u64AddrIoBitmapB.u);
+        pHlp->pfnPrintf(pHlp, "  %sMSR-bitmap addr            = %#RX64\n",   pszPrefix, pVmcs->u64AddrMsrBitmap.u);
+        pHlp->pfnPrintf(pHlp, "  %sVM-exit MSR store addr     = %#RX64\n",   pszPrefix, pVmcs->u64AddrExitMsrStore.u);
+        pHlp->pfnPrintf(pHlp, "  %sVM-exit MSR load addr      = %#RX64\n",   pszPrefix, pVmcs->u64AddrExitMsrLoad.u);
+        pHlp->pfnPrintf(pHlp, "  %sVM-entry MSR load addr     = %#RX64\n",   pszPrefix, pVmcs->u64AddrEntryMsrLoad.u);
+        pHlp->pfnPrintf(pHlp, "  %sExecutive VMCS ptr         = %#RX64\n",   pszPrefix, pVmcs->u64ExecVmcsPtr.u);
+        pHlp->pfnPrintf(pHlp, "  %sPML addr                   = %#RX64\n",   pszPrefix, pVmcs->u64AddrPml.u);
+        pHlp->pfnPrintf(pHlp, "  %sTSC offset                 = %#RX64\n",   pszPrefix, pVmcs->u64TscOffset.u);
+        pHlp->pfnPrintf(pHlp, "  %sVirtual-APIC addr          = %#RX64\n",   pszPrefix, pVmcs->u64AddrVirtApic.u);
+        pHlp->pfnPrintf(pHlp, "  %sAPIC-access addr           = %#RX64\n",   pszPrefix, pVmcs->u64AddrApicAccess.u);
+        pHlp->pfnPrintf(pHlp, "  %sPosted-intr desc addr      = %#RX64\n",   pszPrefix, pVmcs->u64AddrPostedIntDesc.u);
+        pHlp->pfnPrintf(pHlp, "  %sVM-functions control       = %#RX64\n",   pszPrefix, pVmcs->u64VmFuncCtls.u);
+        pHlp->pfnPrintf(pHlp, "  %sEPTP ptr                   = %#RX64\n",   pszPrefix, pVmcs->u64EptpPtr.u);
+        pHlp->pfnPrintf(pHlp, "  %sEOI-exit bitmap 0 addr     = %#RX64\n",   pszPrefix, pVmcs->u64EoiExitBitmap0.u);
+        pHlp->pfnPrintf(pHlp, "  %sEOI-exit bitmap 1 addr     = %#RX64\n",   pszPrefix, pVmcs->u64EoiExitBitmap1.u);
+        pHlp->pfnPrintf(pHlp, "  %sEOI-exit bitmap 2 addr     = %#RX64\n",   pszPrefix, pVmcs->u64EoiExitBitmap2.u);
+        pHlp->pfnPrintf(pHlp, "  %sEOI-exit bitmap 3 addr     = %#RX64\n",   pszPrefix, pVmcs->u64EoiExitBitmap3.u);
+        pHlp->pfnPrintf(pHlp, "  %sEPTP-list addr             = %#RX64\n",   pszPrefix, pVmcs->u64AddrEptpList.u);
+        pHlp->pfnPrintf(pHlp, "  %sVMREAD-bitmap addr         = %#RX64\n",   pszPrefix, pVmcs->u64AddrVmreadBitmap.u);
+        pHlp->pfnPrintf(pHlp, "  %sVMWRITE-bitmap addr        = %#RX64\n",   pszPrefix, pVmcs->u64AddrVmwriteBitmap.u);
+        pHlp->pfnPrintf(pHlp, "  %sVirt-Xcpt info addr        = %#RX64\n",   pszPrefix, pVmcs->u64AddrXcptVeInfo.u);
+        pHlp->pfnPrintf(pHlp, "  %sXSS-bitmap                 = %#RX64\n",   pszPrefix, pVmcs->u64XssBitmap.u);
+        pHlp->pfnPrintf(pHlp, "  %sENCLS-exiting bitmap addr  = %#RX64\n",   pszPrefix, pVmcs->u64AddrEnclsBitmap.u);
+        pHlp->pfnPrintf(pHlp, "  %sTSC multiplier             = %#RX64\n",   pszPrefix, pVmcs->u64TscMultiplier.u);
+
+        /* Natural width. */
+        pHlp->pfnPrintf(pHlp, "  %sCR0 guest/host mask        = %#RX64\n",   pszPrefix, pVmcs->u64Cr0Mask.u);
+        pHlp->pfnPrintf(pHlp, "  %sCR4 guest/host mask        = %#RX64\n",   pszPrefix, pVmcs->u64Cr4Mask.u);
+        pHlp->pfnPrintf(pHlp, "  %sCR0 read shadow            = %#RX64\n",   pszPrefix, pVmcs->u64Cr0ReadShadow.u);
+        pHlp->pfnPrintf(pHlp, "  %sCR4 read shadow            = %#RX64\n",   pszPrefix, pVmcs->u64Cr4ReadShadow.u);
+        pHlp->pfnPrintf(pHlp, "  %sCR3-target 0               = %#RX64\n",   pszPrefix, pVmcs->u64Cr3Target0.u);
+        pHlp->pfnPrintf(pHlp, "  %sCR3-target 1               = %#RX64\n",   pszPrefix, pVmcs->u64Cr3Target1.u);
+        pHlp->pfnPrintf(pHlp, "  %sCR3-target 2               = %#RX64\n",   pszPrefix, pVmcs->u64Cr3Target2.u);
+        pHlp->pfnPrintf(pHlp, "  %sCR3-target 3               = %#RX64\n",   pszPrefix, pVmcs->u64Cr3Target3.u);
+    }
+
+    /* Guest state. */
+    {
+        char szEFlags[80];
+        cpumR3InfoFormatFlags(&szEFlags[0], pVmcs->u64GuestRFlags.u);
+        pHlp->pfnPrintf(pHlp, "%sGuest state\n", pszPrefix);
+
+        /* 16-bit. */
+        CPUMVMX_DUMP_GUEST_SEGREG(pHlp, pVmcs, Cs,   "cs",   pszPrefix);
+        CPUMVMX_DUMP_GUEST_SEGREG(pHlp, pVmcs, Ss,   "ss",   pszPrefix);
+        CPUMVMX_DUMP_GUEST_SEGREG(pHlp, pVmcs, Es,   "es",   pszPrefix);
+        CPUMVMX_DUMP_GUEST_SEGREG(pHlp, pVmcs, Ds,   "ds",   pszPrefix);
+        CPUMVMX_DUMP_GUEST_SEGREG(pHlp, pVmcs, Fs,   "fs",   pszPrefix);
+        CPUMVMX_DUMP_GUEST_SEGREG(pHlp, pVmcs, Gs,   "gs",   pszPrefix);
+        CPUMVMX_DUMP_GUEST_SEGREG(pHlp, pVmcs, Ldtr, "ldtr", pszPrefix);
+        CPUMVMX_DUMP_GUEST_SEGREG(pHlp, pVmcs, Tr,   "tr",   pszPrefix);
+        CPUMVMX_DUMP_GUEST_XDTR(pHlp,   pVmcs, Gdtr, "gdtr", pszPrefix);
+        CPUMVMX_DUMP_GUEST_XDTR(pHlp,   pVmcs, Idtr, "idtr", pszPrefix);
+        pHlp->pfnPrintf(pHlp, "  %sInterrupt status           = %#RX16\n",   pszPrefix, pVmcs->u16GuestIntStatus);
+        pHlp->pfnPrintf(pHlp, "  %sPML index                  = %#RX16\n",   pszPrefix, pVmcs->u16PmlIndex);
+
+        /* 32-bit. */
+        pHlp->pfnPrintf(pHlp, "  %sInterruptibility state     = %#RX32\n",   pszPrefix, pVmcs->u32GuestIntrState);
+        pHlp->pfnPrintf(pHlp, "  %sActivity state             = %#RX32\n",   pszPrefix, pVmcs->u32GuestActivityState);
+        pHlp->pfnPrintf(pHlp, "  %sSMBASE                     = %#RX32\n",   pszPrefix, pVmcs->u32GuestSmBase);
+        pHlp->pfnPrintf(pHlp, "  %sSysEnter CS                = %#RX32\n",   pszPrefix, pVmcs->u32GuestSysenterCS);
+        pHlp->pfnPrintf(pHlp, "  %sVMX-preemption timer value = %#RX32\n",   pszPrefix, pVmcs->u32PreemptTimer);
+
+        /* 64-bit. */
+        pHlp->pfnPrintf(pHlp, "  %sVMCS link ptr              = %#RX64\n",   pszPrefix, pVmcs->u64VmcsLinkPtr.u);
+        pHlp->pfnPrintf(pHlp, "  %sDBGCTL                     = %#RX64\n",   pszPrefix, pVmcs->u64GuestDebugCtlMsr.u);
+        pHlp->pfnPrintf(pHlp, "  %sPAT                        = %#RX64\n",   pszPrefix, pVmcs->u64GuestPatMsr.u);
+        pHlp->pfnPrintf(pHlp, "  %sEFER                       = %#RX64\n",   pszPrefix, pVmcs->u64GuestEferMsr.u);
+        pHlp->pfnPrintf(pHlp, "  %sPERFGLOBALCTRL             = %#RX64\n",   pszPrefix, pVmcs->u64GuestPerfGlobalCtlMsr.u);
+        pHlp->pfnPrintf(pHlp, "  %sPDPTE 0                    = %#RX64\n",   pszPrefix, pVmcs->u64GuestPdpte0.u);
+        pHlp->pfnPrintf(pHlp, "  %sPDPTE 1                    = %#RX64\n",   pszPrefix, pVmcs->u64GuestPdpte1.u);
+        pHlp->pfnPrintf(pHlp, "  %sPDPTE 2                    = %#RX64\n",   pszPrefix, pVmcs->u64GuestPdpte2.u);
+        pHlp->pfnPrintf(pHlp, "  %sPDPTE 3                    = %#RX64\n",   pszPrefix, pVmcs->u64GuestPdpte3.u);
+        pHlp->pfnPrintf(pHlp, "  %sBNDCFGS                    = %#RX64\n",   pszPrefix, pVmcs->u64GuestBndcfgsMsr.u);
+
+        /* Natural width. */
+        pHlp->pfnPrintf(pHlp, "  %sCR0                        = %#RX64\n",   pszPrefix, pVmcs->u64GuestCr0.u);
+        pHlp->pfnPrintf(pHlp, "  %sCR3                        = %#RX64\n",   pszPrefix, pVmcs->u64GuestCr3.u);
+        pHlp->pfnPrintf(pHlp, "  %sCR4                        = %#RX64\n",   pszPrefix, pVmcs->u64GuestCr4.u);
+        pHlp->pfnPrintf(pHlp, "  %sDR7                        = %#RX64\n",   pszPrefix, pVmcs->u64GuestDr7.u);
+        pHlp->pfnPrintf(pHlp, "  %sRSP                        = %#RX64\n",   pszPrefix, pVmcs->u64GuestRsp.u);
+        pHlp->pfnPrintf(pHlp, "  %sRIP                        = %#RX64\n",   pszPrefix, pVmcs->u64GuestRip.u);
+        pHlp->pfnPrintf(pHlp, "  %sRFLAGS                     = %#RX64 %31s\n",pszPrefix, pVmcs->u64GuestRFlags.u, szEFlags);
+        pHlp->pfnPrintf(pHlp, "  %sPending debug xcpts        = %#RX64\n",   pszPrefix, pVmcs->u64GuestPendingDbgXcpt.u);
+        pHlp->pfnPrintf(pHlp, "  %sSysEnter ESP               = %#RX64\n",   pszPrefix, pVmcs->u64GuestSysenterEsp.u);
+        pHlp->pfnPrintf(pHlp, "  %sSysEnter EIP               = %#RX64\n",   pszPrefix, pVmcs->u64GuestSysenterEip.u);
+    }
+
+    /* Host state. */
+    {
+        pHlp->pfnPrintf(pHlp, "%sHost state\n", pszPrefix);
+
+        /* 16-bit. */
+        pHlp->pfnPrintf(pHlp, "  %scs                         = %#RX32\n",   pszPrefix, pVmcs->HostCs);
+        pHlp->pfnPrintf(pHlp, "  %sss                         = %#RX32\n",   pszPrefix, pVmcs->HostSs);
+        pHlp->pfnPrintf(pHlp, "  %sds                         = %#RX32\n",   pszPrefix, pVmcs->HostDs);
+        pHlp->pfnPrintf(pHlp, "  %ses                         = %#RX32\n",   pszPrefix, pVmcs->HostEs);
+        pHlp->pfnPrintf(pHlp, "  %sfs                         = %#RX32\n",   pszPrefix, pVmcs->HostFs);
+        pHlp->pfnPrintf(pHlp, "  %sgs                         = %#RX32\n",   pszPrefix, pVmcs->HostGs);
+        pHlp->pfnPrintf(pHlp, "  %str                         = %#RX32\n",   pszPrefix, pVmcs->HostTr);
+        CPUMVMX_DUMP_HOST_XDTR(pHlp,   pVmcs, Gdtr, "gdtr", pszPrefix);
+        CPUMVMX_DUMP_HOST_XDTR(pHlp,   pVmcs, Idtr, "idtr", pszPrefix);
+
+        /* 32-bit. */
+        pHlp->pfnPrintf(pHlp, "  %sSysEnter CS                = %#RX32\n",   pszPrefix, pVmcs->u32HostSysenterCs);
+
+        /* 64-bit. */
+        pHlp->pfnPrintf(pHlp, "  %sEFER                       = %#RX64\n",   pszPrefix, pVmcs->u64HostEferMsr.u);
+        pHlp->pfnPrintf(pHlp, "  %sPAT                        = %#RX64\n",   pszPrefix, pVmcs->u64HostPatMsr.u);
+        pHlp->pfnPrintf(pHlp, "  %sPERFGLOBALCTRL             = %#RX64\n",   pszPrefix, pVmcs->u64HostPerfGlobalCtlMsr.u);
+
+        /* Natural width. */
+        pHlp->pfnPrintf(pHlp, "  %sEFER                       = %#RX64\n",   pszPrefix, pVmcs->u64HostEferMsr.u);
+        pHlp->pfnPrintf(pHlp, "  %sEFER                       = %#RX64\n",   pszPrefix, pVmcs->u64HostEferMsr.u);
+        pHlp->pfnPrintf(pHlp, "  %sCR0                        = %#RX64\n",   pszPrefix, pVmcs->u64HostCr0.u);
+        pHlp->pfnPrintf(pHlp, "  %sCR3                        = %#RX64\n",   pszPrefix, pVmcs->u64HostCr3.u);
+        pHlp->pfnPrintf(pHlp, "  %sCR4                        = %#RX64\n",   pszPrefix, pVmcs->u64HostCr4.u);
+        pHlp->pfnPrintf(pHlp, "  %sSysEnter ESP               = %#RX64\n",   pszPrefix, pVmcs->u64HostSysenterEsp.u);
+        pHlp->pfnPrintf(pHlp, "  %sSysEnter EIP               = %#RX64\n",   pszPrefix, pVmcs->u64HostSysenterEip.u);
+        pHlp->pfnPrintf(pHlp, "  %sRSP                        = %#RX64\n",   pszPrefix, pVmcs->u64HostRsp.u);
+        pHlp->pfnPrintf(pHlp, "  %sRIP                        = %#RX64\n",   pszPrefix, pVmcs->u64HostRip.u);
+    }
+
+    /* Read-only fields. */
+    {
+        pHlp->pfnPrintf(pHlp, "%sRead-only data fields\n", pszPrefix);
+
+        /* 16-bit (none currently). */
+        /* 32-bit. */
+        pHlp->pfnPrintf(pHlp, "  %sVM-instruction error       = %#RX32\n",   pszPrefix, pVmcs->u32RoVmInstrError);
+        pHlp->pfnPrintf(pHlp, "  %sExit reason                = %#RX32\n",   pszPrefix, pVmcs->u32RoExitReason);
+        pHlp->pfnPrintf(pHlp, "  %sVM-exit intr info          = %#RX32\n",   pszPrefix, pVmcs->u32RoExitIntInfo);
+        pHlp->pfnPrintf(pHlp, "  %sVM-exit intr error-code    = %#RX32\n",   pszPrefix, pVmcs->u32RoExitIntErrCode);
+        pHlp->pfnPrintf(pHlp, "  %sIDT-vectoring info         = %#RX32\n",   pszPrefix, pVmcs->u32RoIdtVectoringInfo);
+        pHlp->pfnPrintf(pHlp, "  %sIDT-vectoring error-code   = %#RX32\n",   pszPrefix, pVmcs->u32RoIdtVectoringErrCode);
+        pHlp->pfnPrintf(pHlp, "  %sVM-exit instruction length = %u bytes\n", pszPrefix, pVmcs->u32RoExitInstrLen);
+        pHlp->pfnPrintf(pHlp, "  %sVM-exit instruction info   = %#RX64\n",   pszPrefix, pVmcs->u32RoExitInstrInfo);
+        /* 64-bit. */
+        pHlp->pfnPrintf(pHlp, "  %sGuest-physical addr        = %#RX64\n",   pszPrefix, pVmcs->u64RoGuestPhysAddr.u);
+        /* Natural width. */
+        pHlp->pfnPrintf(pHlp, "  %sExit qualification         = %#RX64\n",   pszPrefix, pVmcs->u64RoExitQual.u);
+        pHlp->pfnPrintf(pHlp, "  %sI/O RCX                    = %#RX64\n",   pszPrefix, pVmcs->u64RoIoRcx.u);
+        pHlp->pfnPrintf(pHlp, "  %sI/O RSI                    = %#RX64\n",   pszPrefix, pVmcs->u64RoIoRsi.u);
+        pHlp->pfnPrintf(pHlp, "  %sI/O RDI                    = %#RX64\n",   pszPrefix, pVmcs->u64RoIoRdi.u);
+        pHlp->pfnPrintf(pHlp, "  %sI/O RIP                    = %#RX64\n",   pszPrefix, pVmcs->u64RoIoRip.u);
+        pHlp->pfnPrintf(pHlp, "  %sGuest-linear addr          = %#RX64\n",   pszPrefix, pVmcs->u64RoGuestLinearAddr.u);
+    }
+
+#undef CPUMVMX_DUMP_HOST_XDTR
+#undef CPUMVMX_DUMP_GUEST_SEGREG
+#undef CPUMVMX_DUMP_GUEST_XDTR
 }
 
 
@@ -3457,7 +3678,8 @@ static DECLCALLBACK(void) cpumR3InfoGuestHwvirt(PVM pVM, PCDBGFINFOHLP pHlp, con
         pHlp->pfnPrintf(pHlp, "  uPrevPauseTick             = %RX64\n",     pCtx->hwvirt.vmx.uPrevPauseTick);
         pHlp->pfnPrintf(pHlp, "  uVmentryTick               = %RX64\n",     pCtx->hwvirt.vmx.uVmentryTick);
         pHlp->pfnPrintf(pHlp, "  offVirtApicWrite           = %#RX16\n",    pCtx->hwvirt.vmx.offVirtApicWrite);
-        /** @todo NSTVMX: Dump remaining/new fields. */
+        pHlp->pfnPrintf(pHlp, "  Current VMCS\n");
+        cpumR3InfoVmxVmcs(pHlp, pCtx->hwvirt.vmx.pVmcsR3, "    " /* pszPrefix */);
     }
 
 #undef CPUMHWVIRTDUMP_NONE
