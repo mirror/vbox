@@ -169,10 +169,9 @@ QString  UICustomFileSystemItem::path() const
 
 void UICustomFileSystemItem::setPath(const QString &path)
 {
-    QString strNewPath =     UIPathOperations::removeTrailingDelimiters(path);
-    if (strNewPath.isNull() || strNewPath.isEmpty())
+    if (path.isNull() || path.isEmpty())
         return;
-    m_itemData[UICustomFileSystemModelColumn_Path] = strNewPath;
+    m_itemData[UICustomFileSystemModelColumn_Path] = path;
 }
 
 bool UICustomFileSystemItem::isUpDirectory() const
