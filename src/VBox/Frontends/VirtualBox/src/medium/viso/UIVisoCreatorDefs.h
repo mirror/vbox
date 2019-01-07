@@ -24,20 +24,25 @@
 
 struct VisoOptions
 {
-    QString m_strVisoName = "ad-hoc-viso";
+    VisoOptions()
+        :m_strVisoName("ad-hoc-viso"){}
     bool operator==(const VisoOptions &otherOptions) const
     {
         return m_strVisoName == otherOptions.m_strVisoName;
     }
+
+    QString m_strVisoName;
 };
 
 struct BrowserOptions
 {
-    bool m_bShowHiddenObjects = true;
+    BrowserOptions()
+        :m_bShowHiddenObjects(true){}
     bool operator==(const BrowserOptions &otherOptions) const
     {
         return m_bShowHiddenObjects == otherOptions.m_bShowHiddenObjects;
     }
+    bool m_bShowHiddenObjects = true;
 };
 
 
