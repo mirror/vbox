@@ -880,7 +880,6 @@ void UIFileManagerTable::sltHandleItemRenameAttempt(UICustomFileSystemItem *pIte
     }
 }
 
-
 void UIFileManagerTable::sltCreateFileViewContextMenu(const QPoint &point)
 {
     QWidget *pSender = qobject_cast<QWidget*>(sender());

@@ -57,6 +57,7 @@ public:
     /** Searches for the child by path and returns it if found. */
     UICustomFileSystemItem *child(const QString &path) const;
     int childCount() const;
+    QList<const UICustomFileSystemItem*> children() const;
     int columnCount() const;
     QVariant data(int column) const;
     void setData(const QVariant &data, int index);

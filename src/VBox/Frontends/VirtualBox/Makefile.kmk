@@ -349,6 +349,7 @@ VBOX_GUI_INC_DIRS = \
 	./src/hostnetwork \
 	./src/logviewer \
 	./src/medium \
+	./src/medium/viso \
 	./src/objects \
 	./src/platform \
 	./src/platform/darwin \
@@ -828,6 +829,11 @@ ifndef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/medium/UIMediumEnumerator.h \
 	src/medium/UIMediumItem.h \
 	src/medium/UIMediumSelector.h \
+	src/medium/viso/UIVisoBrowserBase.h \
+	src/medium/viso/UIVisoContentBrowser.h \
+	src/medium/viso/UIVisoCreator.h \
+	src/medium/viso/UIVisoCreatorOptionsDialog.h \
+	src/medium/viso/UIVisoHostBrowser.h \
 	src/runtime/UIConsoleEventHandler.h \
 	src/runtime/UIFrameBuffer.h \
 	src/runtime/UIIndicatorsPool.h \
@@ -1099,6 +1105,7 @@ ifdef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/globals/UIMainEventListener.h \
 	src/globals/UIMessageCenter.h \
 	src/globals/UIModalWindowManager.h \
+	src/globals/UIPathOperations.h \
 	src/globals/UIPopupCenter.h \
 	src/globals/UIProgressEventHandler.h \
 	src/globals/UIShortcutPool.h \
@@ -1119,6 +1126,11 @@ ifdef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/medium/UIMediumEnumerator.h \
 	src/medium/UIMediumItem.h \
 	src/medium/UIMediumSelector.h \
+	src/medium/viso/UIVisoBrowserBase.h \
+	src/medium/viso/UIVisoContentBrowser.h \
+	src/medium/viso/UIVisoCreator.h \
+	src/medium/viso/UIVisoCreatorOptionsDialog.h \
+	src/medium/viso/UIVisoHostBrowser.h \
 	src/settings/UISettingsDialog.h \
 	src/settings/UISettingsDialogSpecific.h \
 	src/settings/UISettingsPage.h \
@@ -1238,6 +1250,8 @@ ifndef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/logviewer/UIVMLogViewerTextEdit.cpp \
 	src/medium/UIMediumEnumerator.cpp \
 	src/medium/UIMediumSelector.cpp \
+	src/medium/viso/UIVisoContentBrowser.cpp \
+	src/medium/viso/UIVisoHostBrowser.cpp \
 	src/runtime/UIConsoleEventHandler.cpp \
 	src/runtime/UIFrameBuffer.cpp \
 	src/runtime/UIIndicatorsPool.cpp \
@@ -1327,6 +1341,8 @@ ifdef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/logviewer/UIVMLogViewerTextEdit.cpp \
 	src/medium/UIMediumEnumerator.cpp \
 	src/medium/UIMediumSelector.cpp \
+	src/medium/viso/UIVisoContentBrowser.cpp \
+	src/medium/viso/UIVisoHostBrowser.cpp \
 	src/settings/global/UIGlobalSettingsExtension.cpp \
 	src/settings/global/UIGlobalSettingsInput.cpp \
 	src/settings/global/UIGlobalSettingsLanguage.cpp \
@@ -1557,6 +1573,11 @@ ifndef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/medium/UIMediumEnumerator.cpp \
 	src/medium/UIMediumItem.cpp \
 	src/medium/UIMediumSelector.cpp \
+	src/medium/viso/UIVisoBrowserBase.cpp \
+	src/medium/viso/UIVisoContentBrowser.cpp \
+	src/medium/viso/UIVisoCreator.cpp \
+	src/medium/viso/UIVisoCreatorOptionsDialog.cpp \
+	src/medium/viso/UIVisoHostBrowser.cpp \
 	src/objects/UIRichTextString.cpp \
 	src/runtime/UIConsoleEventHandler.cpp \
 	src/runtime/UIFrameBuffer.cpp \
@@ -1901,6 +1922,11 @@ ifdef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/medium/UIMediumEnumerator.cpp \
 	src/medium/UIMediumItem.cpp \
 	src/medium/UIMediumSelector.cpp \
+	src/medium/viso/UIVisoBrowserBase.cpp \
+	src/medium/viso/UIVisoContentBrowser.cpp \
+	src/medium/viso/UIVisoCreator.cpp \
+	src/medium/viso/UIVisoCreatorOptionsDialog.cpp \
+	src/medium/viso/UIVisoHostBrowser.cpp \
 	src/objects/UIRichTextString.cpp \
 	src/settings/UISettingsDefs.cpp \
 	src/settings/UISettingsDialog.cpp \
