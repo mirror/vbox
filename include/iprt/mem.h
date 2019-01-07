@@ -33,6 +33,9 @@
 #include <iprt/cdefs.h>
 #include <iprt/types.h>
 
+#ifdef IPRT_WITH_GCC_SANITIZER
+# include <sanitizer/lsan_interface.h>
+#endif
 
 #ifdef IN_RC
 # error "There are no RTMem APIs available Guest Context!"

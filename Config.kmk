@@ -3043,7 +3043,6 @@ ifdef VBOX_WITH_GCC_SANITIZER
  	-fno-sanitize=alignment \
  	-fno-sanitize=vptr \
  	-fno-common \
-  	-include sanitizer/lsan_interface.h \
  	-DIPRT_WITH_GCC_SANITIZER \
  	-DVBOX_WITH_GCC_SANITIZER
 else
