@@ -126,7 +126,7 @@ void UIVisoContentBrowser::addObjectsToViso(QStringList pathList)
             continue;
 
         UICustomFileSystemItem* pAddedItem = new UICustomFileSystemItem(fileInfo.fileName(), pParentItem,
-                                                                       fileType(fileInfo));
+                                                                        fileType(fileInfo));
         pAddedItem->setData(strPath, UICustomFileSystemModelColumn_LocalPath);
         pAddedItem->setData(UIPathOperations::mergePaths(pParentItem->path(), fileInfo.fileName()),
                            UICustomFileSystemModelColumn_Path);
@@ -136,7 +136,7 @@ void UIVisoContentBrowser::addObjectsToViso(QStringList pathList)
             pAddedItem->setTargetPath(fileInfo.symLinkTarget());
             pAddedItem->setIsSymLinkToADirectory(QFileInfo(fileInfo.symLinkTarget()).isDir());
         }
-
+        m_entryList << createAnIsoEntry(pAddedItem);
     }
     if (m_pTableProxyModel)
         m_pTableProxyModel->invalidate();
@@ -147,26 +147,23 @@ void UIVisoContentBrowser::addObjectsToViso(QStringList pathList)
     }
 }
 
-QStringList UIVisoContentBrowser::pathList()
+QString UIVisoContentBrowser::createAnIsoEntry(UICustomFileSystemItem *pItem)
 {
-    if (!rootItem())
-        return QStringList();
-
-    UICustomFileSystemItem *pRoot = rootItem()->child(0);
-
-    if (!pRoot)
-        return QStringList();
-
-    QStringList pathList;
-    for (int i = 0; i < pRoot->childCount(); ++i)
-    {
-        QString strEntry = QString("%1=%2").arg(pRoot->child(i)->data(UICustomFileSystemModelColumn_Path).toString()).
-            arg(pRoot->child(i)->data(UICustomFileSystemModelColumn_LocalPath).toString());
-        pathList << strEntry;
-    }
-    return pathList;
+    QString strEntry;
+    if (!pItem)
+        return strEntry;
+    if (pItem->data(UICustomFileSystemModelColumn_Path).toString().isEmpty() ||
+        pItem->data(UICustomFileSystemModelColumn_LocalPath).toString().isEmpty())
+        return strEntry;
+    strEntry = QString("%1=%2").arg(pItem->data(UICustomFileSystemModelColumn_Path).toString()).
+        arg(pItem->data(UICustomFileSystemModelColumn_LocalPath).toString());
+    return strEntry;
 }
 
+QStringList UIVisoContentBrowser::entryList()
+{
+    return m_entryList;
+}
 
 void UIVisoContentBrowser::retranslateUi()
 {
@@ -239,6 +236,7 @@ void UIVisoContentBrowser::sltHandleCreateNewDirectory()
 
     UICustomFileSystemItem* pAddedItem = new UICustomFileSystemItem(strNewDirectoryName, pParentItem,
                                                                     KFsObjType_Directory);
+    pAddedItem->setData(UIPathOperations::mergePaths(pParentItem->path(), strNewDirectoryName), UICustomFileSystemModelColumn_Path);
 
     pAddedItem->setIsOpened(false);
     if (m_pTableProxyModel)
@@ -481,7 +479,7 @@ void UIVisoContentBrowser::scanHostDirectory(UICustomFileSystemItem *directoryIt
                 continue;
             UICustomFileSystemItem *newItem = new UICustomFileSystemItem(fileInfo.fileName(),
                                                                          directoryItem,
-                                                                         fileType(fileInfo));
+                                                                       fileType(fileInfo));
             newItem->setData(fileInfo.filePath(), UICustomFileSystemModelColumn_LocalPath);
 
             newItem->setData(UIPathOperations::mergePaths(directoryItem->path(), fileInfo.fileName()),
@@ -546,8 +544,16 @@ void UIVisoContentBrowser::sltHandleItemRenameAttempt(UICustomFileSystemItem *pI
         pItem->setData(strOldName, static_cast<int>(UICustomFileSystemModelColumn_Name));
     }
 
+    pItem->setData(UIPathOperations::mergePaths(pItem->parentItem()->path(), pItem->name()), UICustomFileSystemModelColumn_Path);
+
+
+
     if (m_pTableProxyModel)
         m_pTableProxyModel->invalidate();
 }
 
+void UIVisoContentBrowser::reset()
+{
+    m_entryList.clear();
+}
 #include "UIVisoContentBrowser.moc"

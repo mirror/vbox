@@ -51,11 +51,11 @@ UIVisoCreator::~UIVisoCreator()
 {
 }
 
-QStringList UIVisoCreator::pathList()
+QStringList UIVisoCreator::entryList()
 {
     if (!m_pVisoBrowser)
         return QStringList();
-    return m_pVisoBrowser->pathList();
+    return m_pVisoBrowser->entryList();
 }
 
 void UIVisoCreator::retranslateUi()

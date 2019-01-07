@@ -2723,7 +2723,7 @@ QUuid VBoxGlobal::createVisoMediumWithVisoCreator(QWidget *pParent, const QStrin
 
     if (pVisoCreator->execute(true, false))
     {
-        QStringList files = pVisoCreator->pathList();
+        QStringList files = pVisoCreator->entryList();
         if (files.empty() || files[0].isEmpty())
             return QUuid();
 

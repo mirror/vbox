@@ -540,6 +540,8 @@ QModelIndex UICustomFileSystemModel::rootIndex() const
 {
     if (!rootItem())
         return QModelIndex();
+    if (!rootItem()->child(0))
+        return QModelIndex();
     return createIndex(rootItem()->child(0)->row(), 0,
                        rootItem()->child(0));
 }

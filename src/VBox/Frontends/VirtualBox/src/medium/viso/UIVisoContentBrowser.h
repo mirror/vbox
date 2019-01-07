@@ -37,10 +37,11 @@
 
 
 /* Forward declarations: */
-class UICustomFileSystemModel;
 class UICustomFileSystemItem;
+class UICustomFileSystemModel;
 class UICustomFileSystemProxyModel;
 class UIVisoContentTreeProxyModel;
+class UICustomFileSystemItem;
 
 class SHARED_LIBRARY_STUFF UIVisoContentBrowser : public QIWithRetranslateUI<UIVisoBrowserBase>
 {
@@ -52,7 +53,7 @@ public:
     ~UIVisoContentBrowser();
     /** Adds file objests from the host file system. @p pathList consists of list of paths to there objects. */
     void addObjectsToViso(QStringList pathList);
-    QStringList pathList();
+    QStringList entryList();
     virtual void showHideHiddenObjects(bool bShow) /* override */;
 
     void setVisoName(const QString &strName);
@@ -81,19 +82,22 @@ private:
     void                    prepareObjects();
     void                    prepareConnections();
     void                    initializeModel();
-    UICustomFileSystemItem* rootItem();
+    UICustomFileSystemItem *rootItem();
     QModelIndex             convertIndexToTableIndex(const QModelIndex &index);
     QModelIndex             convertIndexToTreeIndex(const QModelIndex &index);
     void                    scanHostDirectory(UICustomFileSystemItem *directory);
     KFsObjType              fileType(const QFileInfo &fsInfo);
     void                    updateStartItemName();
     void                    renameFileObject(UICustomFileSystemItem *pItem);
+    QString                 createAnIsoEntry(UICustomFileSystemItem *pItem);
+    void                    reset();
 
     UICustomFileSystemModel      *m_pModel;
     UICustomFileSystemProxyModel *m_pTableProxyModel;
     UIVisoContentTreeProxyModel  *m_pTreeProxyModel;
     QIToolButton                 *m_pNewDirectoryButton;
     QString                       m_strVisoName;
+    QStringList                   m_entryList;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_medium_viso_UIVisoContentBrowser_h */
