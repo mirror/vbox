@@ -30,7 +30,6 @@ struct VisoOptions
     {
         return m_strVisoName == otherOptions.m_strVisoName;
     }
-
     QString m_strVisoName;
 };
 
@@ -42,7 +41,7 @@ struct BrowserOptions
     {
         return m_bShowHiddenObjects == otherOptions.m_bShowHiddenObjects;
     }
-    bool m_bShowHiddenObjects = true;
+    bool m_bShowHiddenObjects;
 };
 
 
