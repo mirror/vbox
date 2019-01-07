@@ -49,6 +49,7 @@
 #if LINUX_VERSION_CODE < KERNEL_VERSION(3, 3, 0)
 # include <linux/mount.h>
 #endif
+#include <linux/seq_file.h>
 
 MODULE_DESCRIPTION(VBOX_PRODUCT " VFS Module for Host File System Access");
 MODULE_AUTHOR(VBOX_VENDOR);
