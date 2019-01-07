@@ -1235,6 +1235,9 @@ int vusbDevDetach(PVUSBDEV pDev)
     if (pRh->pDefaultAddress == pDev)
         pRh->pDefaultAddress = NULL;
 
+    pDev->pHub->pOps->pfnDetach(pDev->pHub, pDev);
+    pDev->i16Port = -1;
+
     /*
      * Destroy I/O thread and request queue last because they might still be used
      * when cancelling URBs.
@@ -1245,8 +1248,6 @@ int vusbDevDetach(PVUSBDEV pDev)
     AssertRC(rc);
     pDev->hReqQueueSync = NIL_RTREQQUEUE;
 
-    pDev->pHub->pOps->pfnDetach(pDev->pHub, pDev);
-    pDev->i16Port = -1;
     vusbDevSetState(pDev, VUSB_DEVICE_STATE_DETACHED);
     pDev->pHub = NULL;
 
