@@ -1142,7 +1142,20 @@ static int paEnumerate(PDRVHOSTPULSEAUDIO pThis, PPDMAUDIOBACKENDCFG pCfg, uint3
     pa_threaded_mainloop_lock(pThis->pMainLoop);
 
     pThis->fEnumOpSuccess = false;
-    int rc = paWaitFor(pThis, pa_context_get_server_info(pThis->pContext, paEnumServerCb, &CbCtx));
+
+    LogRel(("PulseAudio: Retrieving server information ...\n"));
+
+    /* Check if server information is available and bail out early if it isn't. */
+    pa_operation *paOpServerInfo = pa_context_get_server_info(pThis->pContext, paEnumServerCb, &CbCtx);
+    if (!paOpServerInfo)
+    {
+        pa_threaded_mainloop_unlock(pThis->pMainLoop);
+
+        LogRel(("PulseAudio: Server information not available, skipping enumeration\n"));
+        return VINF_SUCCESS;
+    }
+
+    int rc = paWaitFor(pThis, paOpServerInfo);
     if (RT_SUCCESS(rc) && !pThis->fEnumOpSuccess)
         rc = VERR_AUDIO_BACKEND_INIT_FAILED; /* error code does not matter */
     if (RT_SUCCESS(rc))
