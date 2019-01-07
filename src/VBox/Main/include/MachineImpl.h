@@ -287,6 +287,8 @@ public:
         BOOL                mIBPBOnVMEntry;
         BOOL                mSpecCtrl;
         BOOL                mSpecCtrlByHost;
+        BOOL                mL1DFlushOnSched;
+        BOOL                mL1DFlushOnVMEntry;
         BOOL                mNestedHWVirt;
         ULONG               mCPUCount;
         BOOL                mCPUHotPlugEnabled;

@@ -3067,6 +3067,8 @@ Hardware::Hardware() :
     fIBPBOnVMEntry(false),
     fSpecCtrl(false),
     fSpecCtrlByHost(false),
+    fL1DFlushOnSched(true),
+    fL1DFlushOnVMEntry(false),
     fNestedHWVirt(false),
     enmLongMode(HC_ARCH_BITS == 64 ? Hardware::LongMode_Enabled : Hardware::LongMode_Disabled),
     cCPUs(1),
@@ -3200,6 +3202,8 @@ bool Hardware::operator==(const Hardware& h) const
             && fIBPBOnVMEntry            == h.fIBPBOnVMEntry
             && fSpecCtrl                 == h.fSpecCtrl
             && fSpecCtrlByHost           == h.fSpecCtrlByHost
+            && fL1DFlushOnSched          == h.fL1DFlushOnSched
+            && fL1DFlushOnVMEntry        == h.fL1DFlushOnVMEntry
             && fNestedHWVirt             == h.fNestedHWVirt
             && cCPUs                     == h.cCPUs
             && fCpuHotPlug               == h.fCpuHotPlug
@@ -4220,6 +4224,12 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
             pelmCPUChild = pelmHwChild->findChildElement("SpecCtrlByHost");
             if (pelmCPUChild)
                 pelmCPUChild->getAttributeValue("enabled", hw.fSpecCtrlByHost);
+            pelmCPUChild = pelmHwChild->findChildElement("L1DFlushOn");
+            if (pelmCPUChild)
+            {
+                pelmCPUChild->getAttributeValue("scheduling", hw.fL1DFlushOnSched);
+                pelmCPUChild->getAttributeValue("vmentry", hw.fL1DFlushOnVMEntry);
+            }
             pelmCPUChild = pelmHwChild->findChildElement("NestedHWVirt");
             if (pelmCPUChild)
                 pelmCPUChild->getAttributeValue("enabled", hw.fNestedHWVirt);
@@ -5580,11 +5590,19 @@ void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
             if (hw.fIBPBOnVMEntry)
                 pelmChild->setAttribute("vmentry", hw.fIBPBOnVMEntry);
         }
+        if (hw.fSpecCtrl)
+            pelmCPU->createChild("SpecCtrl")->setAttribute("enabled", hw.fSpecCtrl);
+        if (hw.fSpecCtrlByHost)
+            pelmCPU->createChild("SpecCtrlByHost")->setAttribute("enabled", hw.fSpecCtrlByHost);
+        if (!hw.fL1DFlushOnSched || hw.fL1DFlushOnVMEntry)
+        {
+            xml::ElementNode *pelmChild = pelmCPU->createChild("L1DFlushOn");
+            if (!hw.fL1DFlushOnSched)
+                pelmChild->setAttribute("scheduling", hw.fL1DFlushOnSched);
+            if (hw.fL1DFlushOnVMEntry)
+                pelmChild->setAttribute("vmentry", hw.fL1DFlushOnVMEntry);
+        }
     }
-    if (m->sv >= SettingsVersion_v1_16 && hw.fSpecCtrl)
-        pelmCPU->createChild("SpecCtrl")->setAttribute("enabled", hw.fSpecCtrl);
-    if (m->sv >= SettingsVersion_v1_16 && hw.fSpecCtrlByHost)
-        pelmCPU->createChild("SpecCtrlByHost")->setAttribute("enabled", hw.fSpecCtrlByHost);
     if (m->sv >= SettingsVersion_v1_17 && hw.fNestedHWVirt)
         pelmCPU->createChild("NestedHWVirt")->setAttribute("enabled", hw.fNestedHWVirt);
 
@@ -7345,7 +7363,9 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
             || hardwareMachine.fIBPBOnVMExit
             || hardwareMachine.fIBPBOnVMEntry
             || hardwareMachine.fSpecCtrl
-            || hardwareMachine.fSpecCtrlByHost)
+            || hardwareMachine.fSpecCtrlByHost
+            || !hardwareMachine.fL1DFlushOnSched
+            || hardwareMachine.fL1DFlushOnVMEntry)
         {
             m->sv = SettingsVersion_v1_16;
             return;

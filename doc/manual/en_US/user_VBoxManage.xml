@@ -1003,7 +1003,7 @@ UUID="457af700-bc0a-4258-aa3c-13b03da171f2"
             enables or disables the use of the nested paging feature in
             the processor of your host system. See
             <xref
-            linkend="hwvirt" />.
+            linkend="hwvirt" /> and <xref linkend="sec-rec-cve-2018-3646" />.
           </para>
         </listitem>
 

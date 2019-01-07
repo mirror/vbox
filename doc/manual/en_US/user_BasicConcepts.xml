@@ -1489,6 +1489,8 @@
                 significant performance increase by enabling nested
                 paging in addition to hardware virtualization. For
                 technical details, see <xref linkend="nestedpaging" />.
+                For Intel EPT security recommendations, see
+                <xref linkend="sec-rec-cve-2018-3646" />.
               </para>
             </listitem>
 

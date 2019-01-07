@@ -2528,11 +2528,14 @@ static int hmR0VmxSetupProcCtls(PVMCPU pVCpu)
         }
 #endif
         /*
-         * The IA32_PRED_CMD MSR is write-only and has no state associated with it. We never need to intercept
-         * access (writes need to be executed without exiting, reds will #GP-fault anyway).
+         * The IA32_PRED_CMD and IA32_FLUSH_CMD MSRs are write-only and has no state
+         * associated with then. We never need to intercept access (writes need to
+         * be executed without exiting, reads will #GP-fault anyway).
          */
         if (pVM->cpum.ro.GuestFeatures.fIbpb)
             hmR0VmxSetMsrPermission(pVCpu, MSR_IA32_PRED_CMD,     VMXMSREXIT_PASSTHRU_READ, VMXMSREXIT_PASSTHRU_WRITE);
+        if (pVM->cpum.ro.GuestFeatures.fFlushCmd)
+            hmR0VmxSetMsrPermission(pVCpu, MSR_IA32_FLUSH_CMD,    VMXMSREXIT_PASSTHRU_READ, VMXMSREXIT_PASSTHRU_WRITE);
 
         /* Though MSR_IA32_PERF_GLOBAL_CTRL is saved/restored lazily, we want intercept reads/write to it for now. */
     }
@@ -8056,6 +8059,12 @@ VMMR0DECL(int) VMXR0Enter(PVMCPU pVCpu)
         pVCpu->hm.s.vmx.fVmcsState = HMVMX_VMCS_STATE_ACTIVE;
         pVCpu->hm.s.fLeaveDone = false;
         Log4Func(("Activated Vmcs. HostCpuId=%u\n", RTMpCpuId()));
+
+        /*
+         * Do the EMT scheduled L1D flush here if needed.
+         */
+        if (pVCpu->CTX_SUFF(pVM)->hm.s.fL1dFlushOnSched)
+            ASMWrMsr(MSR_IA32_FLUSH_CMD, MSR_IA32_FLUSH_CMD_F_L1D);
     }
     return rc;
 }
@@ -8134,6 +8143,10 @@ VMMR0DECL(void) VMXR0ThreadCtxCallback(RTTHREADCTXEVENT enmEvent, PVMCPU pVCpu, 
                 Log4Func(("Resumed: Activated Vmcs. HostCpuId=%u\n", RTMpCpuId()));
             }
             pVCpu->hm.s.fLeaveDone = false;
+
+            /* Do the EMT scheduled L1D flush if needed. */
+            if (pVCpu->CTX_SUFF(pVM)->hm.s.fL1dFlushOnSched)
+                ASMWrMsr(MSR_IA32_FLUSH_CMD, MSR_IA32_FLUSH_CMD_F_L1D);
 
             /* Restore longjmp state. */
             VMMRZCallRing3Enable(pVCpu);
