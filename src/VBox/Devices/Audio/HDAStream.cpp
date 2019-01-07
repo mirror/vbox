@@ -336,6 +336,10 @@ int hdaR3StreamInit(PHDASTREAM pStream, uint8_t uSD)
             break;
     }
 
+    /* Set scheduling hint (if available). */
+    if (pStream->State.uTimerHz)
+        pCfg->Device.uSchedulingHintMs = 1000 /* ms */ / pStream->State.uTimerHz;
+
     LogFunc(("[SD%RU8] DMA @ 0x%x (%RU32 bytes), LVI=%RU16, FIFOS=%RU16\n",
              pStream->u8SD, pStream->u64BDLBase, pStream->u32CBL, pStream->u16LVI, pStream->u16FIFOS));
 
