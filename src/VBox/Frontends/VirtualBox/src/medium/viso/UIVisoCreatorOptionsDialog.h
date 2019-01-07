@@ -27,12 +27,9 @@
 #include "UIVisoCreatorDefs.h"
 
 /* Forward declarations: */
-// class QILabel;
-// class QILineEdit;
 class QITabWidget;
 class QVBoxLayout;
 class QIDialogButtonBox;
-class VisoOptions;
 class BrowserOptions;
 
 

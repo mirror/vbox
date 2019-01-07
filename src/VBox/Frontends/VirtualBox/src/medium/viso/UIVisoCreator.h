@@ -43,8 +43,6 @@ class UIActionPool;
 class UIToolBar;
 class UIVisoHostBrowser;
 class UIVisoContentBrowser;
-class VisoOptions;
-class BrowserOptions;
 
 class SHARED_LIBRARY_STUFF UIVisoCreator : public QIWithRetranslateUI<QIDialog>
 {
