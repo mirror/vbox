@@ -213,9 +213,7 @@ typedef struct USBPROXYDEV
     /** Ignore one or two SET_CONFIGURATION operation.
      * See usbProxyDevSetCfg for details. */
     int                 cIgnoreSetConfigs;
-    /** Mask of the interfaces that the guest shall doesn't see.
-     * This is experimental!
-     */
+    /** Mask of the interfaces that the guest shall not see. */
     uint32_t            fMaskedIfs;
     /** Whether we've opened the device or not.
      * For dealing with failed construction (the destruct method is always called). */
