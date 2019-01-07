@@ -46,6 +46,9 @@
 #include "revision-generated.h"
 #include "product-generated.h"
 #include "VBoxGuestR0LibInternal.h"
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 3, 0)
+# include <linux/mount.h>
+#endif
 
 MODULE_DESCRIPTION(VBOX_PRODUCT " VFS Module for Host File System Access");
 MODULE_AUTHOR(VBOX_VENDOR);
