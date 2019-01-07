@@ -54,6 +54,7 @@ static int drvAudioStreamUninitInternal(PDRVAUDIO pThis, PPDMAUDIOSTREAM pStream
 static int drvAudioStreamInitInternal(PDRVAUDIO pThis, PPDMAUDIOSTREAM pStream, PPDMAUDIOSTREAMCFG pCfgHost, PPDMAUDIOSTREAMCFG pCfgGuest);
 static int drvAudioStreamIterateInternal(PDRVAUDIO pThis, PPDMAUDIOSTREAM pStream);
 static int drvAudioStreamReInitInternal(PDRVAUDIO pThis, PPDMAUDIOSTREAM pStream);
+static void drvAudioStreamDropInternal(PDRVAUDIO pThis, PPDMAUDIOSTREAM pStream);
 static void drvAudioStreamResetInternal(PDRVAUDIO pThis, PPDMAUDIOSTREAM pStream);
 
 #ifndef VBOX_AUDIO_TESTCASE
@@ -375,7 +376,7 @@ static int drvAudioStreamControlInternal(PDRVAUDIO pThis, PPDMAUDIOSTREAM pStrea
                 {
                     rc = drvAudioStreamControlInternalBackend(pThis, pStream, PDMAUDIOSTREAMCMD_DISABLE);
                     if (RT_SUCCESS(rc))
-                        pStream->fStatus &= ~PDMAUDIOSTREAMSTS_FLAG_ENABLED;
+                        drvAudioStreamResetInternal(pThis, pStream);
                 }
             }
             break;
@@ -408,7 +409,7 @@ static int drvAudioStreamControlInternal(PDRVAUDIO pThis, PPDMAUDIOSTREAM pStrea
             rc = drvAudioStreamControlInternalBackend(pThis, pStream, PDMAUDIOSTREAMCMD_DROP);
             if (RT_SUCCESS(rc))
             {
-                drvAudioStreamResetInternal(pThis, pStream);
+                drvAudioStreamDropInternal(pThis, pStream);
             }
             break;
         }
@@ -463,11 +464,7 @@ static int drvAudioStreamControlInternalBackend(PDRVAUDIO pThis, PPDMAUDIOSTREAM
         case PDMAUDIOSTREAMCMD_DISABLE:
         {
             if (pStream->fStatus & PDMAUDIOSTREAMSTS_FLAG_ENABLED)
-            {
                 rc = pThis->pHostDrvAudio->pfnStreamControl(pThis->pHostDrvAudio, pStream->pvBackend, PDMAUDIOSTREAMCMD_DISABLE);
-                if (RT_SUCCESS(rc))
-                    AudioMixBufReset(&pStream->Host.MixBuf);
-            }
             break;
         }
 
@@ -811,8 +808,8 @@ static int drvAudioStreamReInitInternal(PDRVAUDIO pThis, PPDMAUDIOSTREAM pStream
         }
     }
 
-    /* Do the internal reset. */
-    drvAudioStreamResetInternal(pThis, pStream);
+    /* Drop all old data. */
+    drvAudioStreamDropInternal(pThis, pStream);
 
     /*
      * Restore previous stream state.
@@ -827,12 +824,41 @@ static int drvAudioStreamReInitInternal(PDRVAUDIO pThis, PPDMAUDIOSTREAM pStream
     return rc;
 }
 
-static void drvAudioStreamResetInternal(PDRVAUDIO pThis, PPDMAUDIOSTREAM pStream)
+/**
+ * Drops all audio data (and associated state) of a stream.
+ *
+ * @param   pThis               Pointer to driver instance.
+ * @param   pStream             Stream to drop data for.
+ */
+static void drvAudioStreamDropInternal(PDRVAUDIO pThis, PPDMAUDIOSTREAM pStream)
 {
     RT_NOREF(pThis);
 
+    LogFunc(("[%s]\n", pStream->szName));
+
     AudioMixBufReset(&pStream->Guest.MixBuf);
     AudioMixBufReset(&pStream->Host.MixBuf);
+
+    pStream->tsLastIteratedNs       = 0;
+    pStream->tsLastPlayedCapturedNs = 0;
+    pStream->tsLastReadWrittenNs    = 0;
+
+    pStream->fThresholdReached = false;
+}
+
+/**
+ * Resets a given audio stream.
+ *
+ * @param   pThis               Pointer to driver instance.
+ * @param   pStream             Stream to reset.
+ */
+static void drvAudioStreamResetInternal(PDRVAUDIO pThis, PPDMAUDIOSTREAM pStream)
+{
+    drvAudioStreamDropInternal(pThis, pStream);
+
+    LogFunc(("[%s]\n", pStream->szName));
+
+    pStream->fStatus = PDMAUDIOSTREAMSTS_FLAG_INITIALIZED;
 
 #ifdef VBOX_WITH_STATISTICS
     /*
@@ -1167,6 +1193,7 @@ static int drvAudioStreamIterateInternal(PDRVAUDIO pThis, PPDMAUDIOSTREAM pStrea
                     if (RT_SUCCESS(rc))
                     {
                         pStream->fStatus &= ~(PDMAUDIOSTREAMSTS_FLAG_ENABLED | PDMAUDIOSTREAMSTS_FLAG_PENDING_DISABLE);
+                        drvAudioStreamDropInternal(pThis, pStream);
                     }
                     else
                        LogFunc(("[%s] Backend vetoed against closing pending input stream, rc=%Rrc\n", pStream->szName, rc));
