@@ -285,7 +285,7 @@ static void vboxSfOs2DestroyFolder(PVBOXSFFOLDER pFolder)
 {
     /* Note! We won't get there while the folder is on the list. */
     LogRel(("vboxSfOs2ReleaseFolder: Destroying %p [%s]\n", pFolder, pFolder->szName));
-    vboxSfOs2HostReqUnmapFolderSimple(pFolder->idHostRoot);
+    VbglR0SfHostReqUnmapFolderSimple(pFolder->idHostRoot);
     RT_ZERO(pFolder);
     RTMemFree(pFolder);
 }
@@ -394,7 +394,7 @@ static int vboxSfOs2MapFolder(PSHFLSTRING pName, const char *pszTag, PVBOXSFFOLD
         VBOXSFMAPFOLDERWITHBUFREQ *pReq = (VBOXSFMAPFOLDERWITHBUFREQ *)VbglR0PhysHeapAlloc(sizeof(*pReq));
         if (pReq)
         {
-            rc = vboxSfOs2HostReqMapFolderWithBuf(pReq, pName, RTPATH_DELIMITER, false /*fCaseSensitive*/);
+            rc = VbglR0SfHostReqMapFolderWithBuf(pReq, pName, RTPATH_DELIMITER, false /*fCaseSensitive*/);
             if (RT_SUCCESS(rc))
             {
                 pNew->idHostRoot = pReq->Parms.id32Root.u.value32;
@@ -407,7 +407,7 @@ static int vboxSfOs2MapFolder(PSHFLSTRING pName, const char *pszTag, PVBOXSFFOLD
                 pNew = NULL;
             }
             else
-                LogRel(("vboxSfOs2MapFolder: vboxSfOs2HostReqMapFolderWithBuf(,%s,) -> %Rrc\n", pNew->szName, rc));
+                LogRel(("vboxSfOs2MapFolder: VbglR0SfHostReqMapFolderWithBuf(,%s,) -> %Rrc\n", pNew->szName, rc));
             VbglR0PhysHeapFree(pReq);
         }
         else
@@ -1363,8 +1363,8 @@ FS32_FSINFO(ULONG fFlags, USHORT hVpb, PBYTE pbData, ULONG cbData, ULONG uLevel)
         pu->Open.Req.StrPath.String.utf16[1] = '.';
         pu->Open.Req.StrPath.String.utf16[2] = '\0';
 
-        int vrc = vboxSfOs2HostReqCreate(pFolder->idHostRoot, &pu->Open.Req);
-        LogFlow(("FS32_FSINFO: vboxSfOs2HostReqCreate -> %Rrc Result=%d Handle=%#RX64\n",
+        int vrc = VbglR0SfHostReqCreate(pFolder->idHostRoot, &pu->Open.Req);
+        LogFlow(("FS32_FSINFO: VbglR0SfHostReqCreate -> %Rrc Result=%d Handle=%#RX64\n",
                  vrc, pu->Open.Req.CreateParms.Result, pu->Open.Req.CreateParms.Handle));
         if (   RT_SUCCESS(vrc)
             && pu->Open.Req.CreateParms.Handle != SHFL_HANDLE_NIL)
@@ -1372,7 +1372,7 @@ FS32_FSINFO(ULONG fFlags, USHORT hVpb, PBYTE pbData, ULONG cbData, ULONG uLevel)
             SHFLHANDLE volatile hHandle = pu->Open.Req.CreateParms.Handle;
 
             RT_ZERO(pu->Info.Req);
-            vrc = vboxSfOs2HostReqQueryVolInfo(pFolder->idHostRoot, &pu->Info.Req, hHandle);
+            vrc = VbglR0SfHostReqQueryVolInfo(pFolder->idHostRoot, &pu->Info.Req, hHandle);
             if (RT_SUCCESS(vrc))
             {
                 /*
@@ -1399,11 +1399,11 @@ FS32_FSINFO(ULONG fFlags, USHORT hVpb, PBYTE pbData, ULONG cbData, ULONG uLevel)
             }
             else
             {
-                LogRel(("FS32_FSINFO: vboxSfOs2HostReqQueryVolInfo failed: %Rrc\n", vrc));
+                LogRel(("FS32_FSINFO: VbglR0SfHostReqQueryVolInfo failed: %Rrc\n", vrc));
                 rc = ERROR_GEN_FAILURE;
             }
 
-            vrc = vboxSfOs2HostReqClose(pFolder->idHostRoot, &pu->Close, hHandle);
+            vrc = VbglR0SfHostReqClose(pFolder->idHostRoot, &pu->Close, hHandle);
             AssertRC(vrc);
         }
         else
@@ -1479,8 +1479,8 @@ FS32_CHDIR(ULONG fFlags, PCDFSI pCdFsi, PVBOXSFCD pCdFsd, PCSZ pszDir, LONG offC
         {
             pReq->CreateParms.CreateFlags = SHFL_CF_LOOKUP;
 
-            int vrc = vboxSfOs2HostReqCreate(pFolder->idHostRoot, pReq);
-            LogFlow(("FS32_CHDIR: vboxSfOs2HostReqCreate -> %Rrc Result=%d fMode=%#x\n",
+            int vrc = VbglR0SfHostReqCreate(pFolder->idHostRoot, pReq);
+            LogFlow(("FS32_CHDIR: VbglR0SfHostReqCreate -> %Rrc Result=%d fMode=%#x\n",
                      vrc, pReq->CreateParms.Result, pReq->CreateParms.Info.Attr.fMode));
             if (RT_SUCCESS(vrc))
             {
@@ -1553,8 +1553,8 @@ FS32_MKDIR(PCDFSI pCdFsi, PVBOXSFCD pCdFsd, PCSZ pszDir, LONG offCurDirEnd, PEAO
             pReq->CreateParms.CreateFlags = SHFL_CF_DIRECTORY | SHFL_CF_ACT_CREATE_IF_NEW | SHFL_CF_ACT_FAIL_IF_EXISTS
                                           | SHFL_CF_ACCESS_READ | SHFL_CF_ACCESS_DENYNONE;
 
-            int vrc = vboxSfOs2HostReqCreate(pFolder->idHostRoot, pReq);
-            LogFlow(("FS32_MKDIR: vboxSfOs2HostReqCreate -> %Rrc Result=%d fMode=%#x\n",
+            int vrc = VbglR0SfHostReqCreate(pFolder->idHostRoot, pReq);
+            LogFlow(("FS32_MKDIR: VbglR0SfHostReqCreate -> %Rrc Result=%d fMode=%#x\n",
                      vrc, pReq->CreateParms.Result, pReq->CreateParms.Info.Attr.fMode));
             if (RT_SUCCESS(vrc))
             {
@@ -1564,7 +1564,7 @@ FS32_MKDIR(PCDFSI pCdFsi, PVBOXSFCD pCdFsd, PCSZ pszDir, LONG offCurDirEnd, PEAO
                         if (pReq->CreateParms.Handle != SHFL_HANDLE_NIL)
                         {
                             AssertCompile(RTASSERT_OFFSET_OF(VBOXSFCREATEREQ, CreateParms.Handle) > sizeof(VBOXSFCLOSEREQ)); /* no aliasing issues */
-                            vrc = vboxSfOs2HostReqClose(pFolder->idHostRoot, (VBOXSFCLOSEREQ *)pReq, pReq->CreateParms.Handle);
+                            vrc = VbglR0SfHostReqClose(pFolder->idHostRoot, (VBOXSFCLOSEREQ *)pReq, pReq->CreateParms.Handle);
                             AssertRC(vrc);
                         }
                         rc = NO_ERROR;
@@ -1619,8 +1619,8 @@ FS32_RMDIR(PCDFSI pCdFsi, PVBOXSFCD pCdFsd, PCSZ pszDir, LONG offCurDirEnd)
                                        &pFolder, (void **)&pReq);
     if (rc == NO_ERROR)
     {
-        int vrc = vboxSfOs2HostReqRemove(pFolder->idHostRoot, pReq, SHFL_REMOVE_DIR);
-        LogFlow(("FS32_RMDIR: vboxSfOs2HostReqRemove -> %Rrc\n", rc));
+        int vrc = VbglR0SfHostReqRemove(pFolder->idHostRoot, pReq, SHFL_REMOVE_DIR);
+        LogFlow(("FS32_RMDIR: VbglR0SfHostReqRemove -> %Rrc\n", rc));
         if (RT_SUCCESS(vrc))
             rc = NO_ERROR;
         else
@@ -1677,13 +1677,13 @@ FS32_MOVE(PCDFSI pCdFsi, PVBOXSFCD pCdFsd, PCSZ pszSrc, LONG offSrcCurDirEnd, PC
                  * Do the renaming.
                  * Note! Requires 6.0.0beta2+ or 5.2.24+ host for renaming files.
                  */
-                int vrc = vboxSfOs2HostReqRenameWithSrcBuf(pSrcFolder->idHostRoot, pReq, pSrcFolderPath,
-                                                           SHFL_RENAME_FILE | SHFL_RENAME_DIR);
+                int vrc = VbglR0SfHostReqRenameWithSrcBuf(pSrcFolder->idHostRoot, pReq, pSrcFolderPath,
+                                                          SHFL_RENAME_FILE | SHFL_RENAME_DIR);
                 if (RT_SUCCESS(vrc))
                     rc = NO_ERROR;
                 else
                 {
-                    Log(("FS32_MOVE: vboxSfOs2HostReqRenameWithSrcBuf failed: %Rrc\n", rc));
+                    Log(("FS32_MOVE: VbglR0SfHostReqRenameWithSrcBuf failed: %Rrc\n", rc));
                     rc = vboxSfOs2ConvertStatusToOs2(vrc, ERROR_ACCESS_DENIED);
                 }
             }
@@ -1717,8 +1717,8 @@ FS32_DELETE(PCDFSI pCdFsi, PVBOXSFCD pCdFsd, PCSZ pszFile, LONG offCurDirEnd)
                                        &pFolder, (void **)&pReq);
     if (rc == NO_ERROR)
     {
-        int vrc = vboxSfOs2HostReqRemove(pFolder->idHostRoot, pReq, SHFL_REMOVE_FILE);
-        LogFlow(("FS32_DELETE: vboxSfOs2HostReqRemove -> %Rrc\n", rc));
+        int vrc = VbglR0SfHostReqRemove(pFolder->idHostRoot, pReq, SHFL_REMOVE_FILE);
+        LogFlow(("FS32_DELETE: VbglR0SfHostReqRemove -> %Rrc\n", rc));
         if (RT_SUCCESS(vrc))
             rc = NO_ERROR;
         else
@@ -1797,8 +1797,8 @@ APIRET vboxSfOs2SetInfoCommonWorker(PVBOXSFFOLDER pFolder, SHFLHANDLE hHostFile,
     VBOXSFOBJINFOWITHBUFREQ *pReq = (VBOXSFOBJINFOWITHBUFREQ *)VbglR0PhysHeapAlloc(sizeof(*pReq));
     if (pReq)
     {
-        int vrc = vboxSfOs2HostReqSetObjInfoWithBuf(pFolder->idHostRoot, pReq, hHostFile, pObjInfoBuf, offObjInfoInAlloc);
-        LogFlow(("vboxSfOs2SetFileInfo: vboxSfOs2HostReqSetObjInfoWithBuf -> %Rrc\n", vrc));
+        int vrc = VbglR0SfHostReqSetObjInfoWithBuf(pFolder->idHostRoot, pReq, hHostFile, pObjInfoBuf, offObjInfoInAlloc);
+        LogFlow(("vboxSfOs2SetFileInfo: VbglR0SfHostReqSetObjInfoWithBuf -> %Rrc\n", vrc));
 
         VbglR0PhysHeapFree(pReq);
         if (RT_SUCCESS(vrc))
@@ -1828,8 +1828,8 @@ static APIRET vboxSfOs2SetPathInfoWorker(PVBOXSFFOLDER pFolder, VBOXSFCREATEREQ 
     pReq->CreateParms.CreateFlags = SHFL_CF_ACT_OPEN_IF_EXISTS | SHFL_CF_ACT_FAIL_IF_NEW
                                   | SHFL_CF_ACCESS_ATTR_READWRITE | SHFL_CF_ACCESS_DENYNONE | SHFL_CF_ACCESS_NONE;
 
-    int vrc = vboxSfOs2HostReqCreate(pFolder->idHostRoot, pReq);
-    LogFlow(("vboxSfOs2SetPathInfoWorker: vboxSfOs2HostReqCreate -> %Rrc Result=%d Handle=%#RX64 fMode=%#x\n",
+    int vrc = VbglR0SfHostReqCreate(pFolder->idHostRoot, pReq);
+    LogFlow(("vboxSfOs2SetPathInfoWorker: VbglR0SfHostReqCreate -> %Rrc Result=%d Handle=%#RX64 fMode=%#x\n",
              vrc, pReq->CreateParms.Result, pReq->CreateParms.Handle, pReq->CreateParms.Info.Attr.fMode));
     if (   vrc == VERR_IS_A_DIRECTORY
         || (   RT_SUCCESS(vrc)
@@ -1839,8 +1839,8 @@ static APIRET vboxSfOs2SetPathInfoWorker(PVBOXSFFOLDER pFolder, VBOXSFCREATEREQ 
         RT_ZERO(pReq->CreateParms);
         pReq->CreateParms.CreateFlags = SHFL_CF_DIRECTORY | SHFL_CF_ACT_OPEN_IF_EXISTS | SHFL_CF_ACT_FAIL_IF_NEW
                                       | SHFL_CF_ACCESS_ATTR_READWRITE | SHFL_CF_ACCESS_DENYNONE | SHFL_CF_ACCESS_NONE;
-        vrc = vboxSfOs2HostReqCreate(pFolder->idHostRoot, pReq);
-        LogFlow(("vboxSfOs2SetPathInfoWorker: vboxSfOs2HostReqCreate#2 -> %Rrc Result=%d Handle=%#RX64 fMode=%#x\n",
+        vrc = VbglR0SfHostReqCreate(pFolder->idHostRoot, pReq);
+        LogFlow(("vboxSfOs2SetPathInfoWorker: VbglR0SfHostReqCreate#2 -> %Rrc Result=%d Handle=%#RX64 fMode=%#x\n",
                  vrc, pReq->CreateParms.Result, pReq->CreateParms.Handle, pReq->CreateParms.Info.Attr.fMode));
     }
     if (RT_SUCCESS(vrc))
@@ -1857,7 +1857,7 @@ static APIRET vboxSfOs2SetPathInfoWorker(PVBOXSFFOLDER pFolder, VBOXSFCREATEREQ 
                                                       &pReq->CreateParms.Info, RT_UOFFSETOF(VBOXSFCREATEREQ, CreateParms.Info));
 
                     AssertCompile(RTASSERT_OFFSET_OF(VBOXSFCREATEREQ, CreateParms.Handle) > sizeof(VBOXSFCLOSEREQ)); /* no aliasing issues */
-                    vrc = vboxSfOs2HostReqClose(pFolder->idHostRoot, (VBOXSFCLOSEREQ *)pReq, pReq->CreateParms.Handle);
+                    vrc = VbglR0SfHostReqClose(pFolder->idHostRoot, (VBOXSFCLOSEREQ *)pReq, pReq->CreateParms.Handle);
                     AssertRC(vrc);
                 }
                 else
@@ -1908,8 +1908,8 @@ FS32_FILEATTRIBUTE(ULONG fFlags, PCDFSI pCdFsi, PVBOXSFCD pCdFsd, PCSZ pszName, 
                  */
                 pReq->CreateParms.CreateFlags = SHFL_CF_LOOKUP;
 
-                int vrc = vboxSfOs2HostReqCreate(pFolder->idHostRoot, pReq);
-                LogFlow(("FS32_FILEATTRIBUTE: vboxSfOs2HostReqCreate -> %Rrc Result=%d fMode=%#x\n",
+                int vrc = VbglR0SfHostReqCreate(pFolder->idHostRoot, pReq);
+                LogFlow(("FS32_FILEATTRIBUTE: VbglR0SfHostReqCreate -> %Rrc Result=%d fMode=%#x\n",
                          vrc, pReq->CreateParms.Result, pReq->CreateParms.Info.Attr.fMode));
                 if (RT_SUCCESS(vrc))
                 {
@@ -2213,8 +2213,8 @@ static APIRET vboxSfOs2QueryPathInfo(PVBOXSFFOLDER pFolder, VBOXSFCREATEREQ *pRe
     APIRET rc;
     pReq->CreateParms.CreateFlags = SHFL_CF_LOOKUP;
 
-    int vrc = vboxSfOs2HostReqCreate(pFolder->idHostRoot, pReq);
-    LogFlow(("FS32_PATHINFO: vboxSfOs2HostReqCreate -> %Rrc Result=%d fMode=%#x\n",
+    int vrc = VbglR0SfHostReqCreate(pFolder->idHostRoot, pReq);
+    LogFlow(("FS32_PATHINFO: VbglR0SfHostReqCreate -> %Rrc Result=%d fMode=%#x\n",
              vrc, pReq->CreateParms.Result, pReq->CreateParms.Info.Attr.fMode));
     if (RT_SUCCESS(vrc))
     {

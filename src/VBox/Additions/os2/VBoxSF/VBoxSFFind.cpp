@@ -233,8 +233,8 @@ static APIRET vboxSfOs2ReadDirEntries(PVBOXSFFOLDER pFolder, PVBOXSFFS pFsFsd, P
             || pEntry == NULL /* paranoia */)
         {
             pDataBuf->pEntry = pEntry = pDataBuf->pBuf;
-            int vrc = vboxSfOs2HostReqListDir(pFolder->idHostRoot, &pDataBuf->Req, pFsFsd->hHostDir, pDataBuf->pFilter,
-                                              /*cMaxMatches == 1 ? SHFL_LIST_RETURN_ONE :*/ 0, pDataBuf->pBuf, pDataBuf->cbBuf);
+            int vrc = VbglR0SfHostReqListDir(pFolder->idHostRoot, &pDataBuf->Req, pFsFsd->hHostDir, pDataBuf->pFilter,
+                                             /*cMaxMatches == 1 ? SHFL_LIST_RETURN_ONE :*/ 0, pDataBuf->pBuf, pDataBuf->cbBuf);
             if (RT_SUCCESS(vrc))
             {
                 pDataBuf->cEntriesLeft = pDataBuf->Req.Parms.c32Entries.u.value32;
@@ -242,15 +242,15 @@ static APIRET vboxSfOs2ReadDirEntries(PVBOXSFFOLDER pFolder, PVBOXSFFS pFsFsd, P
                 //Log(("%.*Rhxd\n", pDataBuf->cbValid, pEntry));
                 AssertReturn(pDataBuf->cbValid >= RT_UOFFSETOF(SHFLDIRINFO, name.String), ERROR_SYS_INTERNAL);
                 AssertReturn(pDataBuf->cbValid >= RT_UOFFSETOF(SHFLDIRINFO, name.String) + pEntry->name.u16Size, ERROR_SYS_INTERNAL);
-                Log4(("vboxSfOs2ReadDirEntries: vboxSfOs2HostReqListDir returned %#x matches in %#x bytes\n", pDataBuf->cEntriesLeft, pDataBuf->cbValid));
+                Log4(("vboxSfOs2ReadDirEntries: VbglR0SfHostReqListDir returned %#x matches in %#x bytes\n", pDataBuf->cEntriesLeft, pDataBuf->cbValid));
             }
             else
             {
                 if (vrc == VERR_NO_MORE_FILES)
-                    Log4(("vboxSfOs2ReadDirEntries: vboxSfOs2HostReqListDir returned VERR_NO_MORE_FILES (%d,%d)\n",
+                    Log4(("vboxSfOs2ReadDirEntries: VbglR0SfHostReqListDir returned VERR_NO_MORE_FILES (%d,%d)\n",
                           pDataBuf->Req.Parms.c32Entries.u.value32, pDataBuf->Req.Parms.cb32Buffer.u.value32));
                 else
-                    Log(("vboxSfOs2ReadDirEntries: vboxSfOs2HostReqListDir failed %Rrc (%d,%d)\n", vrc,
+                    Log(("vboxSfOs2ReadDirEntries: VbglR0SfHostReqListDir failed %Rrc (%d,%d)\n", vrc,
                          pDataBuf->Req.Parms.c32Entries.u.value32, pDataBuf->Req.Parms.cb32Buffer.u.value32));
                 pDataBuf->pEntry       = NULL;
                 pDataBuf->cEntriesLeft = 0;
@@ -600,8 +600,8 @@ FS32_FINDFIRST(PCDFSI pCdFsi, PVBOXSFCD pCdFsd, PCSZ pszPath, LONG offCurDirEnd,
                 pReq->CreateParms.CreateFlags = SHFL_CF_DIRECTORY   | SHFL_CF_ACT_FAIL_IF_NEW  | SHFL_CF_ACT_OPEN_IF_EXISTS
                                               | SHFL_CF_ACCESS_READ | SHFL_CF_ACCESS_ATTR_READ | SHFL_CF_ACCESS_DENYNONE;
 
-                int vrc = vboxSfOs2HostReqCreate(pFolder->idHostRoot, pReq);
-                LogFlow(("FS32_FINDFIRST: vboxSfOs2HostReqCreate(%ls) -> %Rrc Result=%d fMode=%#x hHandle=%#RX64\n",
+                int vrc = VbglR0SfHostReqCreate(pFolder->idHostRoot, pReq);
+                LogFlow(("FS32_FINDFIRST: VbglR0SfHostReqCreate(%ls) -> %Rrc Result=%d fMode=%#x hHandle=%#RX64\n",
                          pStrFolderPath->String.utf16, vrc, pReq->CreateParms.Result, pReq->CreateParms.Info.Attr.fMode,
                          pReq->CreateParms.Handle));
                 if (RT_SUCCESS(vrc))
@@ -648,7 +648,7 @@ FS32_FINDFIRST(PCDFSI pCdFsi, PVBOXSFCD pCdFsd, PCSZ pszPath, LONG offCurDirEnd,
                                 else
                                 {
                                     AssertCompile(sizeof(VBOXSFCLOSEREQ) < sizeof(*pReq));
-                                    vrc = vboxSfOs2HostReqClose(pFolder->idHostRoot, (VBOXSFCLOSEREQ *)pReq, pFsFsd->hHostDir);
+                                    vrc = VbglR0SfHostReqClose(pFolder->idHostRoot, (VBOXSFCLOSEREQ *)pReq, pFsFsd->hHostDir);
                                     AssertRC(vrc);
                                     pFsFsd->u32Magic = ~VBOXSFFS_MAGIC;
                                     pDataBuf->u32Magic = ~VBOXSFFSBUF_MAGIC;
@@ -658,7 +658,7 @@ FS32_FINDFIRST(PCDFSI pCdFsi, PVBOXSFCD pCdFsd, PCSZ pszPath, LONG offCurDirEnd,
                             }
                             else
                             {
-                                LogFlow(("FS32_FINDFIRST: vboxSfOs2HostReqCreate returns NIL handle for '%ls'\n",
+                                LogFlow(("FS32_FINDFIRST: VbglR0SfHostReqCreate returns NIL handle for '%ls'\n",
                                          pStrFolderPath->String.utf16));
                                 rc = ERROR_PATH_NOT_FOUND;
                             }
@@ -825,7 +825,7 @@ FS32_FINDCLOSE(PFSFSI pFsFsi, PVBOXSFFS pFsFsd)
      */
     if (pFsFsd->hHostDir != SHFL_HANDLE_NIL)
     {
-        int vrc = vboxSfOs2HostReqCloseSimple(pFolder->idHostRoot, pFsFsd->hHostDir);
+        int vrc = VbglR0SfHostReqCloseSimple(pFolder->idHostRoot, pFsFsd->hHostDir);
         AssertRC(vrc);
     }
 

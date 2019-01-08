@@ -232,8 +232,8 @@ FS32_OPENCREATE(PCDFSI pCdFsi, PVBOXSFCD pCdFsd, PCSZ pszName, LONG offCurDirEnd
     /*
      * Try open the file.
      */
-    int vrc = vboxSfOs2HostReqCreate(pFolder->idHostRoot, pReq);
-    LogFlow(("FS32_OPENCREATE: vboxSfOs2HostReqCreate -> %Rrc Result=%d fMode=%#x\n",
+    int vrc = VbglR0SfHostReqCreate(pFolder->idHostRoot, pReq);
+    LogFlow(("FS32_OPENCREATE: VbglR0SfHostReqCreate -> %Rrc Result=%d fMode=%#x\n",
              vrc, pReq->CreateParms.Result, pReq->CreateParms.Info.Attr.fMode));
     if (RT_SUCCESS(vrc))
     {
@@ -281,7 +281,7 @@ FS32_OPENCREATE(PCDFSI pCdFsi, PVBOXSFCD pCdFsd, PCSZ pszName, LONG offCurDirEnd
                 {
                     LogRel(("FS32_OPENCREATE: cbObject=%#RX64 no OPEN_FLAGS_LARGEFILE (%s)\n", pReq->CreateParms.Info.cbObject, pszName));
                     AssertCompile(RTASSERT_OFFSET_OF(VBOXSFCREATEREQ, CreateParms.Handle) > sizeof(VBOXSFCLOSEREQ)); /* no aliasing issues */
-                    vboxSfOs2HostReqClose(pFolder->idHostRoot, (VBOXSFCLOSEREQ *)pReq, pReq->CreateParms.Handle);
+                    VbglR0SfHostReqClose(pFolder->idHostRoot, (VBOXSFCLOSEREQ *)pReq, pReq->CreateParms.Handle);
                     rc = ERROR_ACCESS_DENIED;
                 }
                 break;
@@ -334,7 +334,7 @@ FS32_CLOSE(ULONG uType, ULONG fIoFlags, PSFFSI pSfFsi, PVBOXSFSYFI pSfFsd)
     /** @todo flush file if fIoFlags says so? */
     RT_NOREF(fIoFlags);
 
-    int vrc = vboxSfOs2HostReqCloseSimple(pFolder->idHostRoot, pSfFsd->hHostFile);
+    int vrc = VbglR0SfHostReqCloseSimple(pFolder->idHostRoot, pSfFsd->hHostFile);
     AssertRC(vrc);
 
     pSfFsd->hHostFile = SHFL_HANDLE_NIL;
@@ -373,10 +373,10 @@ FS32_COMMIT(ULONG uType, ULONG fIoFlags, PSFFSI pSfFsi, PVBOXSFSYFI pSfFsd)
     if (   (pSfFsi->sfi_mode & SFMODE_OPEN_ACCESS) == SFMODE_OPEN_WRITEONLY
         || (pSfFsi->sfi_mode & SFMODE_OPEN_ACCESS) == SFMODE_OPEN_READWRITE)
     {
-        int vrc = vboxSfOs2HostReqFlushSimple(pFolder->idHostRoot, pSfFsd->hHostFile);
+        int vrc = VbglR0SfHostReqFlushSimple(pFolder->idHostRoot, pSfFsd->hHostFile);
         if (RT_FAILURE(vrc))
         {
-            LogRel(("FS32_COMMIT: vboxSfOs2HostReqFlushSimple failed: %Rrc\n", vrc));
+            LogRel(("FS32_COMMIT: VbglR0SfHostReqFlushSimple failed: %Rrc\n", vrc));
             return ERROR_FLUSHBUF_FAILED;
         }
     }
@@ -434,7 +434,7 @@ FS32_CHGFILEPTRL(PSFFSI pSfFsi, PVBOXSFSYFI pSfFsd, LONGLONG off, ULONG uMethod,
             else
                 return ERROR_NOT_ENOUGH_MEMORY;
 
-            int vrc = vboxSfOs2HostReqQueryObjInfo(pFolder->idHostRoot, pReq, pSfFsd->hHostFile);
+            int vrc = VbglR0SfHostReqQueryObjInfo(pFolder->idHostRoot, pReq, pSfFsd->hHostFile);
             if (RT_SUCCESS(vrc))
             {
                 if (pSfFsi->sfi_mode & SFMODE_LARGE_FILE)
@@ -857,7 +857,7 @@ vboxSfOs2QueryFileInfo(PVBOXSFFOLDER pFolder, PSFFSI pSfFsi, PVBOXSFSYFI pSfFsd,
     VBOXSFOBJINFOREQ *pReq = (VBOXSFOBJINFOREQ *)VbglR0PhysHeapAlloc(sizeof(*pReq));
     if (pReq)
     {
-        int vrc = vboxSfOs2HostReqQueryObjInfo(pFolder->idHostRoot, pReq, pSfFsd->hHostFile);
+        int vrc = VbglR0SfHostReqQueryObjInfo(pFolder->idHostRoot, pReq, pSfFsd->hHostFile);
         if (RT_SUCCESS(vrc))
         {
             rc = vboxSfOs2FileStatusFromObjInfo(pbData, cbData, uLevel, &pReq->ObjInfo);
@@ -875,7 +875,7 @@ vboxSfOs2QueryFileInfo(PVBOXSFFOLDER pFolder, PSFFSI pSfFsi, PVBOXSFSYFI pSfFsd,
         }
         else
         {
-            Log(("vboxSfOs2QueryFileInfo: vboxSfOs2HostReqQueryObjInfo failed: %Rrc\n", vrc));
+            Log(("vboxSfOs2QueryFileInfo: VbglR0SfHostReqQueryObjInfo failed: %Rrc\n", vrc));
             rc = vboxSfOs2ConvertStatusToOs2(vrc, ERROR_GEN_FAILURE);
         }
 
@@ -1046,7 +1046,7 @@ FS32_NEWSIZEL(PSFFSI pSfFsi, PVBOXSFSYFI pSfFsd, LONGLONG cbFile, ULONG fIoFlags
         /*
          * Call the host.
          */
-        int vrc = vboxSfOs2HostReqSetFileSizeSimple(pFolder->idHostRoot, pSfFsd->hHostFile, cbFile);
+        int vrc = VbglR0SfHostReqSetFileSizeSimple(pFolder->idHostRoot, pSfFsd->hHostFile, cbFile);
         if (RT_SUCCESS(vrc))
         {
             pSfFsi->sfi_sizel = cbFile;
@@ -1165,7 +1165,7 @@ FS32_READ(PSFFSI pSfFsi, PVBOXSFSYFI pSfFsd, PVOID pvData, PULONG pcb, ULONG fIo
                 || cbToRead == 0))
         {
             APIRET rc;
-            int vrc = vboxSfOs2HostReqReadEmbedded(pFolder->idHostRoot, pReq, pSfFsd->hHostFile, offRead, cbToRead);
+            int vrc = VbglR0SfHostReqReadEmbedded(pFolder->idHostRoot, pReq, pSfFsd->hHostFile, offRead, cbToRead);
             if (RT_SUCCESS(vrc))
             {
                 cbActual = pReq->Parms.cb32Read.u.value32;
@@ -1179,7 +1179,7 @@ FS32_READ(PSFFSI pSfFsi, PVBOXSFSYFI pSfFsd, PVOID pvData, PULONG pcb, ULONG fIo
             }
             else
             {
-                Log(("FS32_READ: vboxSfOs2HostReqReadEmbedded(off=%#RU64,cb=%#x) -> %Rrc [embedded]\n", offRead, cbToRead, vrc));
+                Log(("FS32_READ: VbglR0SfHostReqReadEmbedded(off=%#RU64,cb=%#x) -> %Rrc [embedded]\n", offRead, cbToRead, vrc));
                 rc = ERROR_BAD_NET_RESP;
             }
             VbglR0PhysHeapFree(pReq);
@@ -1222,8 +1222,7 @@ FS32_READ(PSFFSI pSfFsi, PVBOXSFSYFI pSfFsd, PVOID pvData, PULONG pcb, ULONG fIo
         if (pvBuf)
         {
             APIRET rc;
-            int vrc = vboxSfOs2HostReqReadContig(pFolder->idHostRoot, pReq, pSfFsd->hHostFile,
-                                                 offRead, cbToRead, pvBuf, GCPhys);
+            int vrc = VbglR0SfHostReqReadContig(pFolder->idHostRoot, pReq, pSfFsd->hHostFile, offRead, cbToRead, pvBuf, GCPhys);
             if (RT_SUCCESS(vrc))
             {
                 cbActual = pReq->Parms.cb32Read.u.value32;
@@ -1237,7 +1236,7 @@ FS32_READ(PSFFSI pSfFsi, PVBOXSFSYFI pSfFsd, PVOID pvData, PULONG pcb, ULONG fIo
             }
             else
             {
-                Log(("FS32_READ: vboxSfOs2HostReqReadEmbedded(off=%#RU64,cb=%#x) -> %Rrc [bounced]\n", offRead, cbToRead, vrc));
+                Log(("FS32_READ: VbglR0SfHostReqReadEmbedded(off=%#RU64,cb=%#x) -> %Rrc [bounced]\n", offRead, cbToRead, vrc));
                 rc = ERROR_BAD_NET_RESP;
             }
 
@@ -1265,7 +1264,7 @@ FS32_READ(PSFFSI pSfFsi, PVBOXSFSYFI pSfFsd, PVOID pvData, PULONG pcb, ULONG fIo
         vboxSfOs2ConvertPageList((KernPageList_t volatile *)&pReq->PgLst.aPages[0], &pReq->PgLst.aPages[0], cPagesRet, cPages);
 
         APIRET rc;
-        int vrc = vboxSfOs2HostReqReadPgLst(pFolder->idHostRoot, pReq, pSfFsd->hHostFile, offRead, cbToRead, cPages);
+        int vrc = VbglR0SfHostReqReadPgLst(pFolder->idHostRoot, pReq, pSfFsd->hHostFile, offRead, cbToRead, cPages);
         if (RT_SUCCESS(vrc))
         {
             cbActual = pReq->Parms.cb32Read.u.value32;
@@ -1275,7 +1274,7 @@ FS32_READ(PSFFSI pSfFsi, PVBOXSFSYFI pSfFsd, PVOID pvData, PULONG pcb, ULONG fIo
         }
         else
         {
-            Log(("FS32_READ: vboxSfOs2HostReqReadEmbedded(off=%#RU64,cb=%#x) -> %Rrc [locked]\n", offRead, cbToRead, vrc));
+            Log(("FS32_READ: VbglR0SfHostReqReadEmbedded(off=%#RU64,cb=%#x) -> %Rrc [locked]\n", offRead, cbToRead, vrc));
             rc = ERROR_BAD_NET_RESP;
         }
 
@@ -1336,7 +1335,7 @@ FS32_WRITE(PSFFSI pSfFsi, PVBOXSFSYFI pSfFsd, void const *pvData, PULONG pcb, UL
             APIRET rc = KernCopyIn(&pReq->abData[0], pvData, cbToWrite);
             if (rc == NO_ERROR)
             {
-                int vrc = vboxSfOs2HostReqWriteEmbedded(pFolder->idHostRoot, pReq, pSfFsd->hHostFile, offWrite, cbToWrite);
+                int vrc = VbglR0SfHostReqWriteEmbedded(pFolder->idHostRoot, pReq, pSfFsd->hHostFile, offWrite, cbToWrite);
                 if (RT_SUCCESS(vrc))
                 {
                     cbActual = pReq->Parms.cb32Write.u.value32;
@@ -1346,7 +1345,7 @@ FS32_WRITE(PSFFSI pSfFsi, PVBOXSFSYFI pSfFsd, void const *pvData, PULONG pcb, UL
                 }
                 else
                 {
-                    Log(("FS32_WRITE: vboxSfOs2HostReqWriteEmbedded(off=%#RU64,cb=%#x) -> %Rrc [embedded]\n", offWrite, cbToWrite, vrc));
+                    Log(("FS32_WRITE: VbglR0SfHostReqWriteEmbedded(off=%#RU64,cb=%#x) -> %Rrc [embedded]\n", offWrite, cbToWrite, vrc));
                     rc = ERROR_BAD_NET_RESP;
                 }
             }
@@ -1393,8 +1392,8 @@ FS32_WRITE(PSFFSI pSfFsi, PVBOXSFSYFI pSfFsd, void const *pvData, PULONG pcb, UL
             if (rc == NO_ERROR)
             {
                 APIRET rc;
-                int vrc = vboxSfOs2HostReqWriteContig(pFolder->idHostRoot, pReq, pSfFsd->hHostFile,
-                                                      offWrite, cbToWrite, pvBuf, GCPhys);
+                int vrc = VbglR0SfHostReqWriteContig(pFolder->idHostRoot, pReq, pSfFsd->hHostFile,
+                                                     offWrite, cbToWrite, pvBuf, GCPhys);
                 if (RT_SUCCESS(vrc))
                 {
                     cbActual = pReq->Parms.cb32Write.u.value32;
@@ -1404,7 +1403,7 @@ FS32_WRITE(PSFFSI pSfFsi, PVBOXSFSYFI pSfFsd, void const *pvData, PULONG pcb, UL
                 }
                 else
                 {
-                    Log(("FS32_WRITE: vboxSfOs2HostReqWriteEmbedded(off=%#RU64,cb=%#x) -> %Rrc [bounced]\n", offWrite, cbToWrite, vrc));
+                    Log(("FS32_WRITE: VbglR0SfHostReqWriteEmbedded(off=%#RU64,cb=%#x) -> %Rrc [bounced]\n", offWrite, cbToWrite, vrc));
                     rc = ERROR_BAD_NET_RESP;
                 }
             }
@@ -1432,7 +1431,7 @@ FS32_WRITE(PSFFSI pSfFsi, PVBOXSFSYFI pSfFsd, void const *pvData, PULONG pcb, UL
         vboxSfOs2ConvertPageList((KernPageList_t volatile *)&pReq->PgLst.aPages[0], &pReq->PgLst.aPages[0], cPagesRet, cPages);
 
         APIRET rc;
-        int vrc = vboxSfOs2HostReqWritePgLst(pFolder->idHostRoot, pReq, pSfFsd->hHostFile, offWrite, cbToWrite, cPages);
+        int vrc = VbglR0SfHostReqWritePgLst(pFolder->idHostRoot, pReq, pSfFsd->hHostFile, offWrite, cbToWrite, cPages);
         if (RT_SUCCESS(vrc))
         {
             cbActual = pReq->Parms.cb32Write.u.value32;
@@ -1442,7 +1441,7 @@ FS32_WRITE(PSFFSI pSfFsi, PVBOXSFSYFI pSfFsd, void const *pvData, PULONG pcb, UL
         }
         else
         {
-            Log(("FS32_WRITE: vboxSfOs2HostReqWriteEmbedded(off=%#RU64,cb=%#x) -> %Rrc [locked]\n", offWrite, cbToWrite, vrc));
+            Log(("FS32_WRITE: VbglR0SfHostReqWriteEmbedded(off=%#RU64,cb=%#x) -> %Rrc [locked]\n", offWrite, cbToWrite, vrc));
             rc = ERROR_BAD_NET_RESP;
         }
 
