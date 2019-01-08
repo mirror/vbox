@@ -873,7 +873,7 @@ static void dbgdiggerOS2ProcessModule(PUVM pUVM, PDBGDIGGEROS2 pThis, DBGDIGGERO
      */
     if ((Mte.mte_flags1 & MTE1_CLASS_MASK) == MTE1_CLASS_PROGRAM)
     {
-        LogRel(("DbgDiggerOs2: Program module, skipping.\n", Mte.mte_flags1));
+        LogRel(("DbgDiggerOs2: Program module, skipping.\n"));
         return;
     }
 
