@@ -53,6 +53,9 @@ typedef enum DBGDIGGEROS2VER
  */
 typedef struct DBGDIGGEROS2
 {
+    /** The user-mode VM handle for use in info handlers. */
+    PUVM                pUVM;
+
     /** Whether the information is valid or not.
      * (For fending off illegal interface method calls.) */
     bool                fValid;
@@ -65,7 +68,14 @@ typedef struct DBGDIGGEROS2
     uint8_t             OS2MinorVersion;
 
     /** Guest's Global Info Segment selector. */
-    uint16_t            selGIS;
+    uint16_t            selGis;
+    /** The 16:16 address of the LIS. */
+    RTFAR32             Lis;
+
+    /** The kernel virtual address (excluding DOSMVDMINSTDATA & DOSSWAPINSTDATA). */
+    uint32_t            uKernelAddr;
+    /** The kernel size. */
+    uint32_t            cbKernel;
 
 } DBGDIGGEROS2;
 /** Pointer to the OS/2 guest OS digger instance data. */
@@ -311,7 +321,7 @@ typedef struct SASFILE
 typedef struct SASINFO
 {
     uint16_t    SAS_info_global;    /**< GIS selector. */
-    uint32_t    SAS_info_local;     /**< Flat address of LIS for current task. */
+    uint32_t    SAS_info_local;     /**< 16:16 address of LIS for current task. */
     uint32_t    SAS_info_localRM;
     uint16_t    SAS_info_CDIB;      /**< Selector. */
 } SASINFO;
@@ -330,6 +340,64 @@ typedef struct SASMP
 } SASMP;
 
 
+typedef struct OS2GIS
+{
+    uint32_t    time;
+    uint32_t    msecs;
+    uint8_t     hour;
+    uint8_t     minutes;
+    uint8_t     seconds;
+    uint8_t     hundredths;
+    int16_t     timezone;
+    uint16_t    cusecTimerInterval;
+    uint8_t     day;
+    uint8_t     month;
+    uint16_t    year;
+    uint8_t     weekday;
+    uint8_t     uchMajorVersion;
+    uint8_t     uchMinorVersion;
+    uint8_t     chRevisionLetter;
+    uint8_t     sgCurrent;
+    uint8_t     sgMax;
+    uint8_t     cHugeShift;
+    uint8_t     fProtectModeOnly;
+    uint16_t    pidForeground;
+    uint8_t     fDynamicSched;
+    uint8_t     csecMaxWait;
+    uint16_t    cmsecMinSlice;
+    uint16_t    cmsecMaxSlice;
+    uint16_t    bootdrive;
+    uint8_t     amecRAS[32];
+    uint8_t     csgWindowableVioMax;
+    uint8_t     csgPMMax;
+    uint16_t    SIS_Syslog;
+    uint16_t    SIS_MMIOBase;
+    uint16_t    SIS_MMIOAddr;
+    uint8_t     SIS_MaxVDMs;
+    uint8_t     SIS_Reserved;
+} OS2GIS;
+
+typedef struct OS2LIS
+{
+    uint16_t    pidCurrent;
+    uint16_t    pidParent;
+    uint16_t    prtyCurrent;
+    uint16_t    tidCurrent;
+    uint16_t    sgCurrent;
+    uint8_t     rfProcStatus;
+    uint8_t     bReserved1;
+    uint16_t    fForeground;
+    uint8_t     typeProcess;
+    uint8_t     bReserved2;
+    uint16_t    selEnvironment;
+    uint16_t    offCmdLine;
+    uint16_t    cbDataSegment;
+    uint16_t    cbStack;
+    uint16_t    cbHeap;
+    uint16_t    hmod;
+    uint16_t    selDS;
+} OS2LIS;
+
 
 /*********************************************************************************************************************************
 *   Defined Constants And Macros                                                                                                 *
@@ -347,30 +415,271 @@ typedef struct SASMP
 static DECLCALLBACK(int)  dbgDiggerOS2Init(PUVM pUVM, void *pvData);
 
 
-
-#if 0 /* unused */
-/**
- * Process a PE image found in guest memory.
- *
- * @param   pThis           The instance data.
- * @param   pUVM            The user mode VM handle.
- * @param   pszName         The image name.
- * @param   pImageAddr      The image address.
- * @param   cbImage         The size of the image.
- * @param   pbBuf           Scratch buffer containing the first
- *                          RT_MIN(cbBuf, cbImage) bytes of the image.
- * @param   cbBuf           The scratch buffer size.
- */
-static void dbgDiggerOS2ProcessImage(PDBGDIGGEROS2 pThis, PUVM pUVM, const char *pszName,
-                                     PCDBGFADDRESS pImageAddr, uint32_t cbImage,
-                                     uint8_t *pbBuf, size_t cbBuf)
+static int dbgDiggerOS2DisplaySelectorAndInfoEx(PDBGDIGGEROS2 pThis, PCDBGFINFOHLP pHlp, uint16_t uSel, uint32_t off,
+                                                int cchWidth, const char *pszMessage, PDBGFSELINFO pSelInfo)
 {
-    RT_NOREF7(pThis, pUVM, pszName, pImageAddr, cbImage, pbBuf, cbBuf);
-    LogFlow(("DigOS2: %RGp %#x %s\n", pImageAddr->FlatPtr, cbImage, pszName));
-
-    /* To be implemented.*/
+    RT_ZERO(*pSelInfo);
+    int rc = DBGFR3SelQueryInfo(pThis->pUVM, 0 /*idCpu*/, uSel, DBGFSELQI_FLAGS_DT_GUEST, pSelInfo);
+    if (RT_SUCCESS(rc))
+    {
+        if (off == UINT32_MAX)
+            pHlp->pfnPrintf(pHlp, "%*s: %#06x (%RGv LB %#RX64 flags=%#x)\n",
+                            cchWidth, pszMessage, uSel, pSelInfo->GCPtrBase, pSelInfo->cbLimit, pSelInfo->fFlags);
+        else
+            pHlp->pfnPrintf(pHlp, "%*s: %04x:%04x (%RGv LB %#RX64 flags=%#x)\n",
+                            cchWidth, pszMessage, uSel, off, pSelInfo->GCPtrBase + off, pSelInfo->cbLimit - off, pSelInfo->fFlags);
+    }
+    else if (off == UINT32_MAX)
+        pHlp->pfnPrintf(pHlp, "%*s: %#06x (%Rrc)\n", cchWidth, pszMessage, uSel, rc);
+    else
+        pHlp->pfnPrintf(pHlp, "%*s: %04x:%04x (%Rrc)\n", cchWidth, pszMessage, uSel, off, rc);
+    return rc;
 }
-#endif
+
+DECLINLINE(int) dbgDiggerOS2DisplaySelectorAndInfo(PDBGDIGGEROS2 pThis, PCDBGFINFOHLP pHlp, uint16_t uSel, uint32_t off,
+                                                   int cchWidth, const char *pszMessage)
+{
+    DBGFSELINFO SelInfo;
+    return dbgDiggerOS2DisplaySelectorAndInfoEx(pThis, pHlp, uSel, off, cchWidth, pszMessage, &SelInfo);
+}
+
+
+/**
+ * @callback_method_impl{FNDBGFHANDLEREXT,
+ *  Display the OS/2 system anchor segment}
+ */
+static DECLCALLBACK(void) dbgDiggerOS2InfoSas(void *pvUser, PCDBGFINFOHLP pHlp, const char *pszArgs)
+{
+    RT_NOREF(pszArgs);
+    PDBGDIGGEROS2 pThis = (PDBGDIGGEROS2)pvUser;
+    DBGFSELINFO   SelInfo;
+    int rc = DBGFR3SelQueryInfo(pThis->pUVM, 0 /*idCpu*/, 0x70, DBGFSELQI_FLAGS_DT_GUEST, &SelInfo);
+    if (RT_FAILURE(rc))
+    {
+        pHlp->pfnPrintf(pHlp, "DBGFR3SelQueryInfo failed on selector 0x70: %Rrc\n", rc);
+        return;
+    }
+    pHlp->pfnPrintf(pHlp, "Selector 0x70: %RGv LB %#RX64 (flags %#x)\n",
+                    SelInfo.GCPtrBase, (uint64_t)SelInfo.cbLimit, SelInfo.fFlags);
+
+    /*
+     * The SAS header.
+     */
+    union
+    {
+        SAS Sas;
+        uint16_t au16Sas[sizeof(SAS) / sizeof(uint16_t)];
+    };
+    DBGFADDRESS Addr;
+    rc = DBGFR3MemRead(pThis->pUVM, 0 /*idCpu*/, DBGFR3AddrFromFlat(pThis->pUVM, &Addr, SelInfo.GCPtrBase), &Sas, sizeof(Sas));
+    if (RT_FAILURE(rc))
+    {
+        pHlp->pfnPrintf(pHlp, "Failed to read SAS header: %Rrc\n", rc);
+        return;
+    }
+    if (memcmp(&Sas.SAS_signature[0], SAS_SIGNATURE, sizeof(Sas.SAS_signature)) != 0)
+    {
+        pHlp->pfnPrintf(pHlp, "Invalid SAS signature: %#x %#x %#x %#x (expected %#x %#x %#x %#x)\n",
+                        Sas.SAS_signature[0], Sas.SAS_signature[1], Sas.SAS_signature[2], Sas.SAS_signature[3],
+                        SAS_SIGNATURE[0], SAS_SIGNATURE[1], SAS_SIGNATURE[2], SAS_SIGNATURE[3]);
+        return;
+    }
+    pHlp->pfnPrintf(pHlp, " Flat kernel DS: %#06x\n",         Sas.SAS_flat_sel);
+    pHlp->pfnPrintf(pHlp, "SAS_tables_data: %#06x (%#RGv)\n", Sas.SAS_tables_data, SelInfo.GCPtrBase + Sas.SAS_tables_data);
+    pHlp->pfnPrintf(pHlp, "SAS_config_data: %#06x (%#RGv)\n", Sas.SAS_config_data, SelInfo.GCPtrBase + Sas.SAS_config_data);
+    pHlp->pfnPrintf(pHlp, "    SAS_dd_data: %#06x (%#RGv)\n", Sas.SAS_dd_data,     SelInfo.GCPtrBase + Sas.SAS_dd_data);
+    pHlp->pfnPrintf(pHlp, "    SAS_vm_data: %#06x (%#RGv)\n", Sas.SAS_vm_data,     SelInfo.GCPtrBase + Sas.SAS_vm_data);
+    pHlp->pfnPrintf(pHlp, "  SAS_task_data: %#06x (%#RGv)\n", Sas.SAS_task_data,   SelInfo.GCPtrBase + Sas.SAS_task_data);
+    pHlp->pfnPrintf(pHlp, "   SAS_RAS_data: %#06x (%#RGv)\n", Sas.SAS_RAS_data,    SelInfo.GCPtrBase + Sas.SAS_RAS_data);
+    pHlp->pfnPrintf(pHlp, "  SAS_file_data: %#06x (%#RGv)\n", Sas.SAS_file_data,   SelInfo.GCPtrBase + Sas.SAS_file_data);
+    pHlp->pfnPrintf(pHlp, "  SAS_info_data: %#06x (%#RGv)\n", Sas.SAS_info_data,   SelInfo.GCPtrBase + Sas.SAS_info_data);
+    bool fIncludeMP = true;
+    if (Sas.SAS_mp_data < sizeof(Sas))
+        fIncludeMP = false;
+    else
+        for (unsigned i = 2; i < RT_ELEMENTS(au16Sas) - 1; i++)
+            if (au16Sas[i] < sizeof(SAS))
+            {
+                fIncludeMP = false;
+                break;
+            }
+    if (fIncludeMP)
+        pHlp->pfnPrintf(pHlp, "    SAS_mp_data: %#06x (%#RGv)\n", Sas.SAS_mp_data, SelInfo.GCPtrBase + Sas.SAS_mp_data);
+
+    /* shared databuf */
+    union
+    {
+        SASINFO Info;
+    } u;
+
+    /*
+     * Info data.
+     */
+    rc = DBGFR3MemRead(pThis->pUVM, 0 /*idCpu*/, DBGFR3AddrFromFlat(pThis->pUVM, &Addr, SelInfo.GCPtrBase + Sas.SAS_info_data),
+                       &u.Info, sizeof(u.Info));
+    if (RT_SUCCESS(rc))
+    {
+        pHlp->pfnPrintf(pHlp, "SASINFO:\n");
+        dbgDiggerOS2DisplaySelectorAndInfo(pThis, pHlp, u.Info.SAS_info_global, UINT32_MAX, 28, "Global info segment");
+        pHlp->pfnPrintf(pHlp, "%28s: %#010x\n", "Local info segment", u.Info.SAS_info_local);
+        pHlp->pfnPrintf(pHlp, "%28s: %#010x\n", "Local info segment (RM)", u.Info.SAS_info_localRM);
+        dbgDiggerOS2DisplaySelectorAndInfo(pThis, pHlp, u.Info.SAS_info_CDIB, UINT32_MAX, 28, "SAS_info_CDIB");
+    }
+    else
+        pHlp->pfnPrintf(pHlp, "Failed to read SAS info data: %Rrc\n", rc);
+
+    /** @todo more    */
+}
+
+
+/**
+ * @callback_method_impl{FNDBGFHANDLEREXT,
+ *  Display the OS/2 global info segment}
+ */
+static DECLCALLBACK(void) dbgDiggerOS2InfoGis(void *pvUser, PCDBGFINFOHLP pHlp, const char *pszArgs)
+{
+    RT_NOREF(pszArgs);
+    PDBGDIGGEROS2 pThis = (PDBGDIGGEROS2)pvUser;
+    DBGFSELINFO   SelInfo;
+    int rc = dbgDiggerOS2DisplaySelectorAndInfoEx(pThis, pHlp, pThis->selGis, UINT32_MAX, 0, "Global info segment", &SelInfo);
+    if (RT_FAILURE(rc))
+        return;
+
+    /*
+     * Read the GIS.
+     */
+    DBGFADDRESS Addr;
+    OS2GIS      Gis;
+    RT_ZERO(Gis);
+    rc = DBGFR3MemRead(pThis->pUVM, 0 /*idCpu*/, DBGFR3AddrFromFlat(pThis->pUVM, &Addr, SelInfo.GCPtrBase), &Gis,
+                       RT_MIN(sizeof(Gis), SelInfo.cbLimit + 1));
+    if (RT_FAILURE(rc))
+    {
+        pHlp->pfnPrintf(pHlp, "Failed to read GIS: %Rrc\n", rc);
+        return;
+    }
+    pHlp->pfnPrintf(pHlp, "               time: %#010x\n", Gis.time);
+    pHlp->pfnPrintf(pHlp, "              msecs: %#010x\n", Gis.msecs);
+    pHlp->pfnPrintf(pHlp, "          timestamp: %04u-%02u-%02u %02u:%02u:%02u.%02u\n",
+                    Gis.year, Gis.month, Gis.day, Gis.hour, Gis.minutes, Gis.seconds, Gis.hundredths);
+    pHlp->pfnPrintf(pHlp, "           timezone: %+2d (min delta)\n", (int)Gis.timezone);
+    pHlp->pfnPrintf(pHlp, "            weekday: %u\n", Gis.weekday);
+    pHlp->pfnPrintf(pHlp, " cusecTimerInterval: %u\n", Gis.cusecTimerInterval);
+    pHlp->pfnPrintf(pHlp, "            version: %u.%u\n", Gis.uchMajorVersion, Gis.uchMinorVersion);
+    pHlp->pfnPrintf(pHlp, "           revision: %#04x (%c)\n", Gis.chRevisionLetter, Gis.chRevisionLetter);
+    pHlp->pfnPrintf(pHlp, " current screen grp: %#04x (%u)\n", Gis.sgCurrent, Gis.sgCurrent);
+    pHlp->pfnPrintf(pHlp, "  max screen groups: %#04x (%u)\n", Gis.sgMax, Gis.sgMax);
+    pHlp->pfnPrintf(pHlp, "csgWindowableVioMax: %#x (%u)\n", Gis.csgWindowableVioMax, Gis.csgWindowableVioMax);
+    pHlp->pfnPrintf(pHlp, "           csgPMMax: %#x (%u)\n", Gis.csgPMMax, Gis.csgPMMax);
+    pHlp->pfnPrintf(pHlp, "         cHugeShift: %#04x\n", Gis.cHugeShift);
+    pHlp->pfnPrintf(pHlp, "   fProtectModeOnly: %d\n", Gis.fProtectModeOnly);
+    pHlp->pfnPrintf(pHlp, "      pidForeground: %#04x (%u)\n", Gis.pidForeground, Gis.pidForeground);
+    pHlp->pfnPrintf(pHlp, "      fDynamicSched: %u\n", Gis.fDynamicSched);
+    pHlp->pfnPrintf(pHlp, "        csecMaxWait: %u\n", Gis.csecMaxWait);
+    pHlp->pfnPrintf(pHlp, "      cmsecMinSlice: %u\n", Gis.cmsecMinSlice);
+    pHlp->pfnPrintf(pHlp, "      cmsecMaxSlice: %u\n", Gis.cmsecMaxSlice);
+    pHlp->pfnPrintf(pHlp, "          bootdrive: %#x\n", Gis.bootdrive);
+    pHlp->pfnPrintf(pHlp, "            amecRAS: %.32Rhxs\n", &Gis.amecRAS[0]);
+    pHlp->pfnPrintf(pHlp, "         SIS_Syslog: %#06x (%u)\n", Gis.SIS_Syslog, Gis.SIS_Syslog);
+    pHlp->pfnPrintf(pHlp, "       SIS_MMIOBase: %#06x\n", Gis.SIS_MMIOBase);
+    pHlp->pfnPrintf(pHlp, "       SIS_MMIOAddr: %#06x\n", Gis.SIS_MMIOAddr);
+    pHlp->pfnPrintf(pHlp, "        SIS_MaxVDMs: %#04x (%u)\n", Gis.SIS_MaxVDMs, Gis.SIS_MaxVDMs);
+    pHlp->pfnPrintf(pHlp, "       SIS_Reserved: %#04x\n", Gis.SIS_Reserved);
+}
+
+
+/**
+ * @callback_method_impl{FNDBGFHANDLEREXT,
+ *  Display the OS/2 local info segment}
+ */
+static DECLCALLBACK(void) dbgDiggerOS2InfoLis(void *pvUser, PCDBGFINFOHLP pHlp, const char *pszArgs)
+{
+    RT_NOREF(pszArgs);
+    PDBGDIGGEROS2 pThis = (PDBGDIGGEROS2)pvUser;
+    DBGFSELINFO   SelInfo;
+    int rc = dbgDiggerOS2DisplaySelectorAndInfoEx(pThis, pHlp, pThis->Lis.sel, pThis->Lis.off, 19, "Local info segment", &SelInfo);
+    if (RT_FAILURE(rc))
+        return;
+
+    /*
+     * Read the LIS.
+     */
+    DBGFADDRESS Addr;
+    OS2LIS      Lis;
+    RT_ZERO(Lis);
+    rc = DBGFR3MemRead(pThis->pUVM, 0 /*idCpu*/, DBGFR3AddrFromFlat(pThis->pUVM, &Addr, SelInfo.GCPtrBase + pThis->Lis.off),
+                       &Lis, sizeof(Lis));
+    if (RT_FAILURE(rc))
+    {
+        pHlp->pfnPrintf(pHlp, "Failed to read LIS: %Rrc\n", rc);
+        return;
+    }
+    pHlp->pfnPrintf(pHlp, "         pidCurrent: %#06x (%u)\n", Lis.pidCurrent, Lis.pidCurrent);
+    pHlp->pfnPrintf(pHlp, "          pidParent: %#06x (%u)\n", Lis.pidParent, Lis.pidParent);
+    pHlp->pfnPrintf(pHlp, "        prtyCurrent: %#06x (%u)\n", Lis.prtyCurrent, Lis.prtyCurrent);
+    pHlp->pfnPrintf(pHlp, "         tidCurrent: %#06x (%u)\n", Lis.tidCurrent, Lis.tidCurrent);
+    pHlp->pfnPrintf(pHlp, "          sgCurrent: %#06x (%u)\n", Lis.sgCurrent, Lis.sgCurrent);
+    pHlp->pfnPrintf(pHlp, "       rfProcStatus: %#04x\n", Lis.rfProcStatus);
+    if (Lis.bReserved1)
+        pHlp->pfnPrintf(pHlp, "         bReserved1: %#04x\n", Lis.bReserved1);
+    pHlp->pfnPrintf(pHlp, "        fForeground: %#04x (%u)\n", Lis.fForeground, Lis.fForeground);
+    pHlp->pfnPrintf(pHlp, "        typeProcess: %#04x (%u)\n", Lis.typeProcess, Lis.typeProcess);
+    if (Lis.bReserved2)
+        pHlp->pfnPrintf(pHlp, "         bReserved2: %#04x\n", Lis.bReserved2);
+    dbgDiggerOS2DisplaySelectorAndInfo(pThis, pHlp, Lis.selEnvironment, UINT32_MAX, 19, "selEnvironment");
+    pHlp->pfnPrintf(pHlp, "         offCmdLine: %#06x (%u)\n", Lis.offCmdLine, Lis.offCmdLine);
+    pHlp->pfnPrintf(pHlp, "      cbDataSegment: %#06x (%u)\n", Lis.cbDataSegment, Lis.cbDataSegment);
+    pHlp->pfnPrintf(pHlp, "            cbStack: %#06x (%u)\n", Lis.cbStack, Lis.cbStack);
+    pHlp->pfnPrintf(pHlp, "             cbHeap: %#06x (%u)\n", Lis.cbHeap, Lis.cbHeap);
+    pHlp->pfnPrintf(pHlp, "               hmod: %#06x\n", Lis.hmod); /** @todo look up the name*/
+    dbgDiggerOS2DisplaySelectorAndInfo(pThis, pHlp, Lis.selDS, UINT32_MAX, 19, "selDS");
+}
+
+
+/**
+ * @callback_method_impl{FNDBGFHANDLEREXT,
+ *  Display the OS/2 panic message}
+ */
+static DECLCALLBACK(void) dbgDiggerOS2InfoPanic(void *pvUser, PCDBGFINFOHLP pHlp, const char *pszArgs)
+{
+    RT_NOREF(pszArgs);
+    PDBGDIGGEROS2 pThis = (PDBGDIGGEROS2)pvUser;
+    DBGFADDRESS   HitAddr;
+    int rc = DBGFR3MemScan(pThis->pUVM, 0 /*idCpu*/, DBGFR3AddrFromFlat(pThis->pUVM, &HitAddr, pThis->uKernelAddr),
+                           pThis->cbKernel, 1, RT_STR_TUPLE("Exception in module:"), &HitAddr);
+    if (RT_FAILURE(rc))
+        rc = DBGFR3MemScan(pThis->pUVM, 0 /*idCpu&*/, DBGFR3AddrFromFlat(pThis->pUVM, &HitAddr, pThis->uKernelAddr),
+                           pThis->cbKernel, 1, RT_STR_TUPLE("Exception in device driver:"), &HitAddr);
+    /** @todo support pre-2001 kernels w/o the module/drivce name.   */
+    if (RT_SUCCESS(rc))
+    {
+        char szMsg[728 + 1];
+        RT_ZERO(szMsg);
+        rc = DBGFR3MemRead(pThis->pUVM, 0, &HitAddr, szMsg, sizeof(szMsg) - 1);
+        if (szMsg[0] != '\0')
+        {
+            RTStrPurgeEncoding(szMsg);
+            char *psz = szMsg;
+            while (*psz != '\0')
+            {
+                char *pszEol = strchr(psz, '\r');
+                if (pszEol)
+                    *pszEol = '\0';
+                pHlp->pfnPrintf(pHlp, "%s\n", psz);
+                if (!pszEol)
+                    break;
+                psz = ++pszEol;
+                if (*psz == '\n')
+                    psz++;
+            }
+        }
+        else
+            pHlp->pfnPrintf(pHlp, "DBGFR3MemRead -> %Rrc\n", rc);
+    }
+    else
+        pHlp->pfnPrintf(pHlp, "Unable to locate OS/2 panic message. (%Rrc)\n", rc);
+}
+
 
 
 /**
@@ -449,6 +758,11 @@ static DECLCALLBACK(void)  dbgDiggerOS2Term(PUVM pUVM, void *pvData)
     PDBGDIGGEROS2 pThis = (PDBGDIGGEROS2)pvData;
     Assert(pThis->fValid);
 
+    DBGFR3InfoDeregisterExternal(pUVM, "sas");
+    DBGFR3InfoDeregisterExternal(pUVM, "gis");
+    DBGFR3InfoDeregisterExternal(pUVM, "lis");
+    DBGFR3InfoDeregisterExternal(pUVM, "panic");
+
     pThis->fValid = false;
 }
 
@@ -488,6 +802,7 @@ static DECLCALLBACK(int)  dbgDiggerOS2Refresh(PUVM pUVM, void *pvData)
     dbgDiggerOS2Term(pUVM, pvData);
     return dbgDiggerOS2Init(pUVM, pvData);
 }
+
 
 /** Buffer shared by dbgdiggerOS2ProcessModule and dbgDiggerOS2Init.*/
 typedef union DBGDIGGEROS2BUF
@@ -554,6 +869,15 @@ static void dbgdiggerOS2ProcessModule(PUVM pUVM, PDBGDIGGEROS2 pThis, DBGDIGGERO
     }
 
     /*
+     * Don't load program modules into the global address spaces.
+     */
+    if ((Mte.mte_flags1 & MTE1_CLASS_MASK) == MTE1_CLASS_PROGRAM)
+    {
+        LogRel(("DbgDiggerOs2: Program module, skipping.\n", Mte.mte_flags1));
+        return;
+    }
+
+    /*
      * Try read the swappable MTE.  Save it too.
      */
     DBGFADDRESS     Addr;
@@ -616,7 +940,34 @@ static void dbgdiggerOS2ProcessModule(PUVM pUVM, PDBGDIGGEROS2 pThis, DBGDIGGERO
         /** @todo validate it. */
     }
 
-    /* No need to continue without an address space (shouldn't happen). */
+    /*
+     * If it is the kernel, take down the general address range so we can easily search
+     * it all in one go when looking for panic messages and such.
+     */
+    if (Mte.mte_flags1 & MTE1_DOSMOD)
+    {
+        uint32_t uMax = 0;
+        uint32_t uMin = UINT32_MAX;
+        for (uint32_t i = 0; i < SwapMte.smte_objcnt; i++)
+            if (pBuf->aOtes[i].ote_base > _512M)
+            {
+                if (pBuf->aOtes[i].ote_base < uMin)
+                    uMin = pBuf->aOtes[i].ote_base;
+                uint32_t uTmp = pBuf->aOtes[i].ote_base + pBuf->aOtes[i].ote_size;
+                if (uTmp > uMax)
+                    uMax = uTmp;
+            }
+        if (uMax != 0)
+        {
+            pThis->uKernelAddr = uMin;
+            pThis->cbKernel    = uMax - uMin;
+            LogRel(("DbgDiggerOs2: High kernel range: %#RX32 LB %#RX32 (%#RX32)\n", uMin, pThis->cbKernel, uMax));
+        }
+    }
+
+    /*
+     * No need to continue without an address space (shouldn't happen).
+     */
     if (hAs == NIL_RTDBGAS)
         return;
 
@@ -672,12 +1023,13 @@ static void dbgdiggerOS2ProcessModule(PUVM pUVM, PDBGDIGGEROS2 pThis, DBGDIGGERO
     if (RT_SUCCESS(rc))
     {
         for (uint32_t i = 0; i < SwapMte.smte_objcnt; i++)
-        {
-            rc = RTDbgAsModuleLinkSeg(hAs, hDbgMod, i, pBuf->aOtes[i].ote_base, RTDBGASLINK_FLAGS_REPLACE /*fFlags*/);
-            if (RT_FAILURE(rc))
-                LogRel(("DbgDiggerOs2: RTDbgAsModuleLinkSeg failed (i=%u, ote_base=%#x): %Rrc\n",
-                        i, pBuf->aOtes[i].ote_base, rc));
-        }
+            if (pBuf->aOtes[i].ote_base != 0)
+            {
+                rc = RTDbgAsModuleLinkSeg(hAs, hDbgMod, i, pBuf->aOtes[i].ote_base, RTDBGASLINK_FLAGS_REPLACE /*fFlags*/);
+                if (RT_FAILURE(rc))
+                    LogRel(("DbgDiggerOs2: RTDbgAsModuleLinkSeg failed (i=%u, ote_base=%#x): %Rrc\n",
+                            i, pBuf->aOtes[i].ote_base, rc));
+            }
     }
     else
         LogRel(("DbgDiggerOs2: RTDbgModSetTag failed: %Rrc\n", rc));
@@ -701,7 +1053,7 @@ static DECLCALLBACK(int)  dbgDiggerOS2Init(PUVM pUVM, void *pvData)
      * Determine the OS/2 version.
      */
     /* Version info is at GIS:15h (major/minor/revision). */
-    rc = DBGFR3AddrFromSelOff(pUVM, 0 /*idCpu*/, &Addr, pThis->selGIS, 0x15);
+    rc = DBGFR3AddrFromSelOff(pUVM, 0 /*idCpu*/, &Addr, pThis->selGis, 0x15);
     if (RT_FAILURE(rc))
         return VERR_NOT_SUPPORTED;
     rc = DBGFR3MemRead(pUVM, 0 /*idCpu*/, &Addr, uBuf.au32, sizeof(uint32_t));
@@ -776,6 +1128,14 @@ static DECLCALLBACK(int)  dbgDiggerOS2Init(PUVM pUVM, void *pvData)
         }
     }
 
+    /*
+     * Register info handlers.
+     */
+    DBGFR3InfoRegisterExternal(pUVM, "sas",   "Dumps the OS/2 system anchor block (SAS)", dbgDiggerOS2InfoSas, pThis);
+    DBGFR3InfoRegisterExternal(pUVM, "gis",   "Dumps the OS/2 global info segment (GIS)", dbgDiggerOS2InfoGis, pThis);
+    DBGFR3InfoRegisterExternal(pUVM, "lis",   "Dumps the OS/2 local info segment (current process)", dbgDiggerOS2InfoLis, pThis);
+    DBGFR3InfoRegisterExternal(pUVM, "panic", "Dumps the OS/2 system panic message",      dbgDiggerOS2InfoPanic, pThis);
+
     return VINF_SUCCESS;
 }
 
@@ -830,7 +1190,10 @@ static DECLCALLBACK(bool)  dbgDiggerOS2Probe(PUVM pUVM, void *pvData)
             offInfo = u.au16[0x16/2];
 
         /* The global infoseg selector is the first entry in the info table. */
-        pThis->selGIS = u.au16[offInfo/2];
+        SASINFO const *pInfo = (SASINFO const *)&u.au8[offInfo];
+        pThis->selGis   = pInfo->SAS_info_global;
+        pThis->Lis.sel  = RT_HI_U16(pInfo->SAS_info_local);
+        pThis->Lis.off  = RT_LO_U16(pInfo->SAS_info_local);
         return true;
     } while (0);
 
@@ -857,6 +1220,7 @@ static DECLCALLBACK(int)  dbgDiggerOS2Construct(PUVM pUVM, void *pvData)
     pThis->fValid = false;
     pThis->f32Bit = false;
     pThis->enmVer = DBGDIGGEROS2VER_UNKNOWN;
+    pThis->pUVM   = pUVM;
     return VINF_SUCCESS;
 }
 

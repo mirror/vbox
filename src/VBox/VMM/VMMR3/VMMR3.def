@@ -177,6 +177,7 @@ EXPORTS
     DBGFR3PlugInUnload
     DBGFR3PlugInLoadAll
     DBGFR3PlugInUnloadAll
+    DBGFR3SelQueryInfo
     DBGFR3StackWalkBegin
     DBGFR3StackWalkNext
     DBGFR3StackWalkEnd
