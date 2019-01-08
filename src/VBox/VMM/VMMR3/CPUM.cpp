@@ -3342,10 +3342,10 @@ static void cpumR3InfoSvmVmcbStateSave(PCDBGFINFOHLP pHlp, PCSVMVMCBSTATESAVE pV
 
 
 /**
- * Displays a VMX VMCS.
+ * Displays a virtual-VMCS.
  *
  * @param   pHlp        The info helper functions.
- * @param   pVmcs       Pointer to a VMX VMCS.
+ * @param   pVmcs       Pointer to a virtual VMCS.
  * @param   pszPrefix   Caller specified string prefix.
  */
 static void  cpumR3InfoVmxVmcs(PCDBGFINFOHLP pHlp, PCVMXVVMCS pVmcs, const char *pszPrefix)
@@ -3358,6 +3358,12 @@ static void  cpumR3InfoVmxVmcs(PCDBGFINFOHLP pHlp, PCVMXVVMCS pVmcs, const char 
     do { \
         (a_pHlp)->pfnPrintf((a_pHlp), "  %s%-4s                       = {base=%016RX64}\n", \
                             (a_pszPrefix), (a_SegName), (a_pVmcs)->u64Host##a_Seg##Base.u); \
+    } while (0)
+
+#define CPUMVMX_DUMP_HOST_FS_GS_TR(a_pHlp, a_pVmcs, a_Seg, a_SegName, a_pszPrefix) \
+    do { \
+        (a_pHlp)->pfnPrintf((a_pHlp), "  %s%-4s                       = {%04x base=%016RX64}\n", \
+                            (a_pszPrefix), (a_SegName), (a_pVmcs)->Host##a_Seg, (a_pVmcs)->u64Host##a_Seg##Base.u); \
     } while (0)
 
 #define CPUMVMX_DUMP_GUEST_SEGREG(a_pHlp, a_pVmcs, a_Seg, a_SegName, a_pszPrefix) \
@@ -3404,8 +3410,17 @@ static void  cpumR3InfoVmxVmcs(PCDBGFINFOHLP pHlp, PCVMXVVMCS pVmcs, const char 
         pHlp->pfnPrintf(pHlp, "  %sVM-exit MSR load count     = %#RX32\n",   pszPrefix, pVmcs->u32ExitMsrLoadCount);
         pHlp->pfnPrintf(pHlp, "  %sVM-entry MSR load count    = %#RX32\n",   pszPrefix, pVmcs->u32EntryMsrLoadCount);
         pHlp->pfnPrintf(pHlp, "  %sVM-Entry interruption info = %#RX32\n",   pszPrefix, pVmcs->u32EntryIntInfo);
+        {
+            uint32_t const fInfo = pVmcs->u32EntryIntInfo;
+            uint8_t  const uType = VMX_ENTRY_INT_INFO_TYPE(fInfo);
+            pHlp->pfnPrintf(pHlp, "    %sValid                      = %RTbool\n", pszPrefix, VMX_ENTRY_INT_INFO_IS_VALID(fInfo));
+            pHlp->pfnPrintf(pHlp, "    %sType                       = %#x\n",     pszPrefix, uType, HMVmxGetEntryIntInfoTypeDesc(uType));
+            pHlp->pfnPrintf(pHlp, "    %sVector                     = %#x\n",     pszPrefix, VMX_ENTRY_INT_INFO_VECTOR(fInfo));
+            pHlp->pfnPrintf(pHlp, "    %sNMI-unblocking-IRET        = %RTbool\n", pszPrefix, VMX_ENTRY_INT_INFO_IS_NMI_UNBLOCK_IRET(fInfo));
+            pHlp->pfnPrintf(pHlp, "    %sError-code valid           = %RTbool\n", pszPrefix, VMX_ENTRY_INT_INFO_IS_ERROR_CODE_VALID(fInfo));
+        }
         pHlp->pfnPrintf(pHlp, "  %sVM-Entry xcpt error-code   = %#RX32\n",   pszPrefix, pVmcs->u32EntryXcptErrCode);
-        pHlp->pfnPrintf(pHlp, "  %sVM-Entry instruction len   = %#RX32\n",   pszPrefix, pVmcs->u32EntryInstrLen);
+        pHlp->pfnPrintf(pHlp, "  %sVM-Entry instruction len   = %u bytes\n", pszPrefix, pVmcs->u32EntryInstrLen);
         pHlp->pfnPrintf(pHlp, "  %sTPR threshold              = %#RX32\n",   pszPrefix, pVmcs->u32TprThreshold);
         pHlp->pfnPrintf(pHlp, "  %sPLE gap                    = %#RX32\n",   pszPrefix, pVmcs->u32PleGap);
         pHlp->pfnPrintf(pHlp, "  %sPLE window                 = %#RX32\n",   pszPrefix, pVmcs->u32PleWindow);
@@ -3505,13 +3520,13 @@ static void  cpumR3InfoVmxVmcs(PCDBGFINFOHLP pHlp, PCVMXVVMCS pVmcs, const char 
         pHlp->pfnPrintf(pHlp, "%sHost state\n", pszPrefix);
 
         /* 16-bit. */
-        pHlp->pfnPrintf(pHlp, "  %scs                         = %#RX32\n",   pszPrefix, pVmcs->HostCs);
-        pHlp->pfnPrintf(pHlp, "  %sss                         = %#RX32\n",   pszPrefix, pVmcs->HostSs);
-        pHlp->pfnPrintf(pHlp, "  %sds                         = %#RX32\n",   pszPrefix, pVmcs->HostDs);
-        pHlp->pfnPrintf(pHlp, "  %ses                         = %#RX32\n",   pszPrefix, pVmcs->HostEs);
-        pHlp->pfnPrintf(pHlp, "  %sfs                         = %#RX32\n",   pszPrefix, pVmcs->HostFs);
-        pHlp->pfnPrintf(pHlp, "  %sgs                         = %#RX32\n",   pszPrefix, pVmcs->HostGs);
-        pHlp->pfnPrintf(pHlp, "  %str                         = %#RX32\n",   pszPrefix, pVmcs->HostTr);
+        pHlp->pfnPrintf(pHlp, "  %scs                         = %#RX16\n",   pszPrefix, pVmcs->HostCs);
+        pHlp->pfnPrintf(pHlp, "  %sss                         = %#RX16\n",   pszPrefix, pVmcs->HostSs);
+        pHlp->pfnPrintf(pHlp, "  %sds                         = %#RX16\n",   pszPrefix, pVmcs->HostDs);
+        pHlp->pfnPrintf(pHlp, "  %ses                         = %#RX16\n",   pszPrefix, pVmcs->HostEs);
+        CPUMVMX_DUMP_HOST_FS_GS_TR(pHlp, pVmcs, Fs, "fs", pszPrefix);
+        CPUMVMX_DUMP_HOST_FS_GS_TR(pHlp, pVmcs, Gs, "gs", pszPrefix);
+        CPUMVMX_DUMP_HOST_FS_GS_TR(pHlp, pVmcs, Tr, "tr", pszPrefix);
         CPUMVMX_DUMP_HOST_XDTR(pHlp,   pVmcs, Gdtr, "gdtr", pszPrefix);
         CPUMVMX_DUMP_HOST_XDTR(pHlp,   pVmcs, Idtr, "idtr", pszPrefix);
 
@@ -3524,8 +3539,6 @@ static void  cpumR3InfoVmxVmcs(PCDBGFINFOHLP pHlp, PCVMXVVMCS pVmcs, const char 
         pHlp->pfnPrintf(pHlp, "  %sPERFGLOBALCTRL             = %#RX64\n",   pszPrefix, pVmcs->u64HostPerfGlobalCtlMsr.u);
 
         /* Natural width. */
-        pHlp->pfnPrintf(pHlp, "  %sEFER                       = %#RX64\n",   pszPrefix, pVmcs->u64HostEferMsr.u);
-        pHlp->pfnPrintf(pHlp, "  %sEFER                       = %#RX64\n",   pszPrefix, pVmcs->u64HostEferMsr.u);
         pHlp->pfnPrintf(pHlp, "  %sCR0                        = %#RX64\n",   pszPrefix, pVmcs->u64HostCr0.u);
         pHlp->pfnPrintf(pHlp, "  %sCR3                        = %#RX64\n",   pszPrefix, pVmcs->u64HostCr3.u);
         pHlp->pfnPrintf(pHlp, "  %sCR4                        = %#RX64\n",   pszPrefix, pVmcs->u64HostCr4.u);
@@ -3540,19 +3553,39 @@ static void  cpumR3InfoVmxVmcs(PCDBGFINFOHLP pHlp, PCVMXVVMCS pVmcs, const char 
         pHlp->pfnPrintf(pHlp, "%sRead-only data fields\n", pszPrefix);
 
         /* 16-bit (none currently). */
+
         /* 32-bit. */
-        pHlp->pfnPrintf(pHlp, "  %sVM-instruction error       = %#RX32\n",   pszPrefix, pVmcs->u32RoVmInstrError);
         pHlp->pfnPrintf(pHlp, "  %sExit reason                = %#RX32\n",   pszPrefix, pVmcs->u32RoExitReason);
+        pHlp->pfnPrintf(pHlp, "  %sExit qualification         = %#RX64\n",   pszPrefix, pVmcs->u64RoExitQual.u);
+        pHlp->pfnPrintf(pHlp, "  %sVM-instruction error       = %#RX32\n",   pszPrefix, pVmcs->u32RoVmInstrError);
         pHlp->pfnPrintf(pHlp, "  %sVM-exit intr info          = %#RX32\n",   pszPrefix, pVmcs->u32RoExitIntInfo);
+        {
+            uint32_t const fInfo = pVmcs->u32RoExitIntInfo;
+            uint8_t  const uType = VMX_EXIT_INT_INFO_TYPE(fInfo);
+            pHlp->pfnPrintf(pHlp, "    %sValid                      = %RTbool\n", pszPrefix, VMX_EXIT_INT_INFO_IS_VALID(fInfo));
+            pHlp->pfnPrintf(pHlp, "    %sType                       = %#x\n",     pszPrefix, uType, HMVmxGetExitIntInfoTypeDesc(uType));
+            pHlp->pfnPrintf(pHlp, "    %sVector                     = %#x\n",     pszPrefix, VMX_EXIT_INT_INFO_VECTOR(fInfo));
+            pHlp->pfnPrintf(pHlp, "    %sNMI-unblocking-IRET        = %RTbool\n", pszPrefix, VMX_EXIT_INT_INFO_IS_NMI_UNBLOCK_IRET(fInfo));
+            pHlp->pfnPrintf(pHlp, "    %sError-code valid           = %RTbool\n", pszPrefix, VMX_EXIT_INT_INFO_IS_ERROR_CODE_VALID(fInfo));
+        }
         pHlp->pfnPrintf(pHlp, "  %sVM-exit intr error-code    = %#RX32\n",   pszPrefix, pVmcs->u32RoExitIntErrCode);
         pHlp->pfnPrintf(pHlp, "  %sIDT-vectoring info         = %#RX32\n",   pszPrefix, pVmcs->u32RoIdtVectoringInfo);
+        {
+            uint32_t const fInfo = pVmcs->u32RoIdtVectoringInfo;
+            uint8_t  const uType = VMX_IDT_VECTORING_INFO_TYPE(fInfo);
+            pHlp->pfnPrintf(pHlp, "    %sValid                      = %RTbool\n", pszPrefix, VMX_IDT_VECTORING_INFO_IS_VALID(fInfo));
+            pHlp->pfnPrintf(pHlp, "    %sType                       = %#x\n",     pszPrefix, uType, HMVmxGetIdtVectoringInfoTypeDesc(uType));
+            pHlp->pfnPrintf(pHlp, "    %sVector                     = %#x\n",     pszPrefix, VMX_IDT_VECTORING_INFO_VECTOR(fInfo));
+            pHlp->pfnPrintf(pHlp, "    %sError-code valid           = %RTbool\n", pszPrefix, VMX_IDT_VECTORING_INFO_IS_ERROR_CODE_VALID(fInfo));
+        }
         pHlp->pfnPrintf(pHlp, "  %sIDT-vectoring error-code   = %#RX32\n",   pszPrefix, pVmcs->u32RoIdtVectoringErrCode);
         pHlp->pfnPrintf(pHlp, "  %sVM-exit instruction length = %u bytes\n", pszPrefix, pVmcs->u32RoExitInstrLen);
         pHlp->pfnPrintf(pHlp, "  %sVM-exit instruction info   = %#RX64\n",   pszPrefix, pVmcs->u32RoExitInstrInfo);
+
         /* 64-bit. */
         pHlp->pfnPrintf(pHlp, "  %sGuest-physical addr        = %#RX64\n",   pszPrefix, pVmcs->u64RoGuestPhysAddr.u);
+
         /* Natural width. */
-        pHlp->pfnPrintf(pHlp, "  %sExit qualification         = %#RX64\n",   pszPrefix, pVmcs->u64RoExitQual.u);
         pHlp->pfnPrintf(pHlp, "  %sI/O RCX                    = %#RX64\n",   pszPrefix, pVmcs->u64RoIoRcx.u);
         pHlp->pfnPrintf(pHlp, "  %sI/O RSI                    = %#RX64\n",   pszPrefix, pVmcs->u64RoIoRsi.u);
         pHlp->pfnPrintf(pHlp, "  %sI/O RDI                    = %#RX64\n",   pszPrefix, pVmcs->u64RoIoRdi.u);
@@ -3561,6 +3594,7 @@ static void  cpumR3InfoVmxVmcs(PCDBGFINFOHLP pHlp, PCVMXVVMCS pVmcs, const char 
     }
 
 #undef CPUMVMX_DUMP_HOST_XDTR
+#undef CPUMVMX_DUMP_HOST_FS_GS_TR
 #undef CPUMVMX_DUMP_GUEST_SEGREG
 #undef CPUMVMX_DUMP_GUEST_XDTR
 }
@@ -3678,8 +3712,8 @@ static DECLCALLBACK(void) cpumR3InfoGuestHwvirt(PVM pVM, PCDBGFINFOHLP pHlp, con
         pHlp->pfnPrintf(pHlp, "  uPrevPauseTick             = %RX64\n",     pCtx->hwvirt.vmx.uPrevPauseTick);
         pHlp->pfnPrintf(pHlp, "  uVmentryTick               = %RX64\n",     pCtx->hwvirt.vmx.uVmentryTick);
         pHlp->pfnPrintf(pHlp, "  offVirtApicWrite           = %#RX16\n",    pCtx->hwvirt.vmx.offVirtApicWrite);
-        pHlp->pfnPrintf(pHlp, "  Current VMCS\n");
-        cpumR3InfoVmxVmcs(pHlp, pCtx->hwvirt.vmx.pVmcsR3, "    " /* pszPrefix */);
+        pHlp->pfnPrintf(pHlp, "  Current VMCS:\n");
+        cpumR3InfoVmxVmcs(pHlp, pCtx->hwvirt.vmx.pVmcsR3, "  " /* pszPrefix */);
     }
 
 #undef CPUMHWVIRTDUMP_NONE
