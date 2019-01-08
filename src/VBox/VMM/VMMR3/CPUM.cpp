@@ -3414,7 +3414,7 @@ static void  cpumR3InfoVmxVmcs(PCDBGFINFOHLP pHlp, PCVMXVVMCS pVmcs, const char 
             uint32_t const fInfo = pVmcs->u32EntryIntInfo;
             uint8_t  const uType = VMX_ENTRY_INT_INFO_TYPE(fInfo);
             pHlp->pfnPrintf(pHlp, "    %sValid                      = %RTbool\n", pszPrefix, VMX_ENTRY_INT_INFO_IS_VALID(fInfo));
-            pHlp->pfnPrintf(pHlp, "    %sType                       = %#x\n",     pszPrefix, uType, HMVmxGetEntryIntInfoTypeDesc(uType));
+            pHlp->pfnPrintf(pHlp, "    %sType                       = %#x (%s)\n", pszPrefix, uType, HMVmxGetEntryIntInfoTypeDesc(uType));
             pHlp->pfnPrintf(pHlp, "    %sVector                     = %#x\n",     pszPrefix, VMX_ENTRY_INT_INFO_VECTOR(fInfo));
             pHlp->pfnPrintf(pHlp, "    %sNMI-unblocking-IRET        = %RTbool\n", pszPrefix, VMX_ENTRY_INT_INFO_IS_NMI_UNBLOCK_IRET(fInfo));
             pHlp->pfnPrintf(pHlp, "    %sError-code valid           = %RTbool\n", pszPrefix, VMX_ENTRY_INT_INFO_IS_ERROR_CODE_VALID(fInfo));
@@ -3563,7 +3563,7 @@ static void  cpumR3InfoVmxVmcs(PCDBGFINFOHLP pHlp, PCVMXVVMCS pVmcs, const char 
             uint32_t const fInfo = pVmcs->u32RoExitIntInfo;
             uint8_t  const uType = VMX_EXIT_INT_INFO_TYPE(fInfo);
             pHlp->pfnPrintf(pHlp, "    %sValid                      = %RTbool\n", pszPrefix, VMX_EXIT_INT_INFO_IS_VALID(fInfo));
-            pHlp->pfnPrintf(pHlp, "    %sType                       = %#x\n",     pszPrefix, uType, HMVmxGetExitIntInfoTypeDesc(uType));
+            pHlp->pfnPrintf(pHlp, "    %sType                       = %#x (%s)\n",     pszPrefix, uType, HMVmxGetExitIntInfoTypeDesc(uType));
             pHlp->pfnPrintf(pHlp, "    %sVector                     = %#x\n",     pszPrefix, VMX_EXIT_INT_INFO_VECTOR(fInfo));
             pHlp->pfnPrintf(pHlp, "    %sNMI-unblocking-IRET        = %RTbool\n", pszPrefix, VMX_EXIT_INT_INFO_IS_NMI_UNBLOCK_IRET(fInfo));
             pHlp->pfnPrintf(pHlp, "    %sError-code valid           = %RTbool\n", pszPrefix, VMX_EXIT_INT_INFO_IS_ERROR_CODE_VALID(fInfo));
@@ -3574,7 +3574,7 @@ static void  cpumR3InfoVmxVmcs(PCDBGFINFOHLP pHlp, PCVMXVVMCS pVmcs, const char 
             uint32_t const fInfo = pVmcs->u32RoIdtVectoringInfo;
             uint8_t  const uType = VMX_IDT_VECTORING_INFO_TYPE(fInfo);
             pHlp->pfnPrintf(pHlp, "    %sValid                      = %RTbool\n", pszPrefix, VMX_IDT_VECTORING_INFO_IS_VALID(fInfo));
-            pHlp->pfnPrintf(pHlp, "    %sType                       = %#x\n",     pszPrefix, uType, HMVmxGetIdtVectoringInfoTypeDesc(uType));
+            pHlp->pfnPrintf(pHlp, "    %sType                       = %#x (%s)\n",     pszPrefix, uType, HMVmxGetIdtVectoringInfoTypeDesc(uType));
             pHlp->pfnPrintf(pHlp, "    %sVector                     = %#x\n",     pszPrefix, VMX_IDT_VECTORING_INFO_VECTOR(fInfo));
             pHlp->pfnPrintf(pHlp, "    %sError-code valid           = %RTbool\n", pszPrefix, VMX_IDT_VECTORING_INFO_IS_ERROR_CODE_VALID(fInfo));
         }
