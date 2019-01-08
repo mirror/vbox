@@ -5,7 +5,7 @@
   <!ENTITY % all.entities SYSTEM "all-entities.ent">
   %all.entities;
 ]>
-<chapter id="user-preface" role="frontmatter">
+<preface id="user-preface" role="frontmatter">
 
   <title>Preface</title>
 
@@ -105,4 +105,4 @@
 
   </sect1>
 
-</chapter>
+</preface>

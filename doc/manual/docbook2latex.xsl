@@ -331,6 +331,11 @@
       <xsl:when test="name(..)='chapter'">
         <xsl:call-template name="title-wrapper"/>
       </xsl:when>
+      <xsl:when test="name(..)='preface'">
+        <xsl:call-template name="title-wrapper">
+          <xsl:with-param name="texcmd">\chapter</xsl:with-param>
+        </xsl:call-template>
+      </xsl:when>
       <xsl:when test="name(..)='sect1' and ../../@role='frontmatter'">
         <xsl:call-template name="title-wrapper">
           <xsl:with-param name="texcmd">\section*</xsl:with-param>

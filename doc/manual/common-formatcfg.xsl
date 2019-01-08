@@ -71,6 +71,18 @@
 <xsl:variable name="cmdsynopsis.hanging.indent">4pi</xsl:variable>
 
 <!--
+  Make sure that sections inside the Preface are not numbered.
+  -->
+<xsl:template match="preface/sect1" mode="object.title.template">
+  <xsl:call-template name="gentext.template">
+    <xsl:with-param name="context" select="'title-unnumbered'"/>
+    <xsl:with-param name="name">
+      <xsl:call-template name="xpath.location"/>
+    </xsl:with-param>
+  </xsl:call-template>
+</xsl:template>
+
+<!--
   refentry related layout tweaks.
 
   Note! While we could save us all this work by using refsect1..3 and
