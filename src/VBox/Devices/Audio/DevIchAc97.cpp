@@ -2022,22 +2022,6 @@ static int ichac97R3StreamOpen(PAC97STATE pThis, PAC97STREAM pStream)
             {
                 Assert(Cfg.enmDir != PDMAUDIODIR_UNKNOWN);
 
-                if (pStream->State.pCircBuf)
-                {
-                    RTCircBufDestroy(pStream->State.pCircBuf);
-                    pStream->State.pCircBuf = NULL;
-                }
-
-                rc = RTCircBufCreate(&pStream->State.pCircBuf, DrvAudioHlpMilliToBytes(100 /* ms */, &Cfg.Props)); /** @todo Make this configurable. */
-                if (RT_SUCCESS(rc))
-                {
-                    ichac97R3MixerRemoveDrvStreams(pThis, pMixSink, Cfg.enmDir, Cfg.DestSource);
-
-                    rc = ichac97R3MixerAddDrvStreams(pThis, pMixSink, &Cfg);
-                    if (RT_SUCCESS(rc))
-                        rc = DrvAudioHlpStreamCfgCopy(&pStream->State.Cfg, &Cfg);
-                }
-
                 /*
                  * Set the stream's timer Hz rate, based on the PCM properties Hz rate.
                  */
@@ -2054,6 +2038,22 @@ static int ichac97R3StreamOpen(PAC97STATE pThis, PAC97STREAM pStream)
                 /* Set scheduling hint (if available). */
                 if (pStream->State.uTimerHz)
                     Cfg.Device.uSchedulingHintMs = 1000 /* ms */ / pStream->State.uTimerHz;
+
+                if (pStream->State.pCircBuf)
+                {
+                    RTCircBufDestroy(pStream->State.pCircBuf);
+                    pStream->State.pCircBuf = NULL;
+                }
+
+                rc = RTCircBufCreate(&pStream->State.pCircBuf, DrvAudioHlpMilliToBytes(100 /* ms */, &Cfg.Props)); /** @todo Make this configurable. */
+                if (RT_SUCCESS(rc))
+                {
+                    ichac97R3MixerRemoveDrvStreams(pThis, pMixSink, Cfg.enmDir, Cfg.DestSource);
+
+                    rc = ichac97R3MixerAddDrvStreams(pThis, pMixSink, &Cfg);
+                    if (RT_SUCCESS(rc))
+                        rc = DrvAudioHlpStreamCfgCopy(&pStream->State.Cfg, &Cfg);
+                }
 
                 /*
                  * Set up data transfer stuff.
