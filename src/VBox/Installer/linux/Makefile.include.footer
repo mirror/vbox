@@ -35,7 +35,7 @@ ifndef INCL
  INCL    += $(MOD_INCL)
  export INCL
 endif
-KFLAGS   := -D__KERNEL__ -DMODULE $(MOD_DEFS)
+KFLAGS   := -D__KERNEL__ -DMODULE -DRT_WITHOUT_PRAGMA_ONCE $(MOD_DEFS)
 ifeq ($(BUILD_TYPE),debug)
 # The -Wno-array-bounds is because of a bug in gcc 4.something, see
 # https://sourceware.org/bugzilla/show_bug.cgi?id=10001
