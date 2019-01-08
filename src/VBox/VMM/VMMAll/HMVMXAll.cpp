@@ -420,6 +420,76 @@ VMM_INT_DECL(const char *) HMVmxGetVmcsStateDesc(uint8_t fVmcsState)
 
 
 /**
+ * Gets the description for a VM-entry interruption information event type.
+ *
+ * @returns The descriptive string.
+ * @param   uType    The event type.
+ */
+VMM_INT_DECL(const char *) HMVmxGetEntryIntInfoTypeDesc(uint8_t uType)
+{
+    switch (uType)
+    {
+        case VMX_ENTRY_INT_INFO_TYPE_EXT_INT:       return "External Interrupt";
+        case VMX_ENTRY_INT_INFO_TYPE_NMI:           return "NMI";
+        case VMX_ENTRY_INT_INFO_TYPE_HW_XCPT:       return "Hardware Exception";
+        case VMX_ENTRY_INT_INFO_TYPE_SW_INT:        return "Software Interrupt";
+        case VMX_ENTRY_INT_INFO_TYPE_PRIV_SW_XCPT:  return "Priv. Software Exception";
+        case VMX_ENTRY_INT_INFO_TYPE_SW_XCPT:       return "Software Exception";
+        case VMX_ENTRY_INT_INFO_TYPE_OTHER_EVENT:   return "Other Event";
+        default:
+            break;
+    }
+    return "Unknown/invalid";
+}
+
+
+/**
+ * Gets the description for a VM-exit interruption information event type.
+ *
+ * @returns The descriptive string.
+ * @param   uType    The event type.
+ */
+VMM_INT_DECL(const char *) HMVmxGetExitIntInfoTypeDesc(uint8_t uType)
+{
+    switch (uType)
+    {
+        case VMX_EXIT_INT_INFO_TYPE_EXT_INT:       return "External Interrupt";
+        case VMX_EXIT_INT_INFO_TYPE_NMI:           return "NMI";
+        case VMX_EXIT_INT_INFO_TYPE_HW_XCPT:       return "Hardware Exception";
+        case VMX_EXIT_INT_INFO_TYPE_SW_INT:        return "Software Interrupt";
+        case VMX_EXIT_INT_INFO_TYPE_PRIV_SW_XCPT:  return "Priv. Software Exception";
+        case VMX_EXIT_INT_INFO_TYPE_SW_XCPT:       return "Software Exception";
+        default:
+            break;
+    }
+    return "Unknown/invalid";
+}
+
+
+/**
+ * Gets the description for an IDT-vectoring information event type.
+ *
+ * @returns The descriptive string.
+ * @param   uType    The event type.
+ */
+VMM_INT_DECL(const char *) HMVmxGetIdtVectoringInfoTypeDesc(uint8_t uType)
+{
+    switch (uType)
+    {
+        case VMX_IDT_VECTORING_INFO_TYPE_EXT_INT:       return "External Interrupt";
+        case VMX_IDT_VECTORING_INFO_TYPE_NMI:           return "NMI";
+        case VMX_IDT_VECTORING_INFO_TYPE_HW_XCPT:       return "Hardware Exception";
+        case VMX_IDT_VECTORING_INFO_TYPE_SW_INT:        return "Software Interrupt";
+        case VMX_IDT_VECTORING_INFO_TYPE_PRIV_SW_XCPT:  return "Priv. Software Exception";
+        case VMX_IDT_VECTORING_INFO_TYPE_SW_XCPT:       return "Software Exception";
+        default:
+            break;
+    }
+    return "Unknown/invalid";
+}
+
+
+/**
  * Checks if a code selector (CS) is suitable for execution using hardware-assisted
  * VMX when unrestricted execution isn't available.
  *
