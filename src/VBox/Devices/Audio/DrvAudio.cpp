@@ -628,6 +628,13 @@ static int drvAudioStreamInitInternal(PDRVAUDIO pThis,
     LogRel2(("Audio: Period size of stream '%s' is %RU64ms (%RU32 frames)\n",
              pStream->szName, msPeriod, CfgHostAcq.Backend.cfPeriod));
 
+    if (   pCfgGuest->Device.uSchedulingHintMs             /* Any scheduling hint set? */
+        && pCfgGuest->Device.uSchedulingHintMs > msPeriod) /* This might lead to buffer underflows. */
+    {
+        LogRel(("Audio: Warning: Scheduling hint of stream '%s' is bigger (%RU64ms) than used period size (%RU64ms)\n",
+                pStream->szName, pCfgGuest->Device.uSchedulingHintMs, msPeriod));
+    }
+
     /* Destroy any former mixing buffer. */
     AudioMixBufDestroy(&pStream->Host.MixBuf);
 
