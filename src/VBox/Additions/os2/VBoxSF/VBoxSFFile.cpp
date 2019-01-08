@@ -232,7 +232,7 @@ FS32_OPENCREATE(PCDFSI pCdFsi, PVBOXSFCD pCdFsd, PCSZ pszName, LONG offCurDirEnd
     /*
      * Try open the file.
      */
-    int vrc = vboxSfOs2HostReqCreate(pFolder, pReq);
+    int vrc = vboxSfOs2HostReqCreate(pFolder->idHostRoot, pReq);
     LogFlow(("FS32_OPENCREATE: vboxSfOs2HostReqCreate -> %Rrc Result=%d fMode=%#x\n",
              vrc, pReq->CreateParms.Result, pReq->CreateParms.Info.Attr.fMode));
     if (RT_SUCCESS(vrc))
@@ -281,7 +281,7 @@ FS32_OPENCREATE(PCDFSI pCdFsi, PVBOXSFCD pCdFsd, PCSZ pszName, LONG offCurDirEnd
                 {
                     LogRel(("FS32_OPENCREATE: cbObject=%#RX64 no OPEN_FLAGS_LARGEFILE (%s)\n", pReq->CreateParms.Info.cbObject, pszName));
                     AssertCompile(RTASSERT_OFFSET_OF(VBOXSFCREATEREQ, CreateParms.Handle) > sizeof(VBOXSFCLOSEREQ)); /* no aliasing issues */
-                    vboxSfOs2HostReqClose(pFolder, (VBOXSFCLOSEREQ *)pReq, pReq->CreateParms.Handle);
+                    vboxSfOs2HostReqClose(pFolder->idHostRoot, (VBOXSFCLOSEREQ *)pReq, pReq->CreateParms.Handle);
                     rc = ERROR_ACCESS_DENIED;
                 }
                 break;
@@ -334,7 +334,7 @@ FS32_CLOSE(ULONG uType, ULONG fIoFlags, PSFFSI pSfFsi, PVBOXSFSYFI pSfFsd)
     /** @todo flush file if fIoFlags says so? */
     RT_NOREF(fIoFlags);
 
-    int vrc = vboxSfOs2HostReqCloseSimple(pFolder, pSfFsd->hHostFile);
+    int vrc = vboxSfOs2HostReqCloseSimple(pFolder->idHostRoot, pSfFsd->hHostFile);
     AssertRC(vrc);
 
     pSfFsd->hHostFile = SHFL_HANDLE_NIL;
@@ -373,7 +373,7 @@ FS32_COMMIT(ULONG uType, ULONG fIoFlags, PSFFSI pSfFsi, PVBOXSFSYFI pSfFsd)
     if (   (pSfFsi->sfi_mode & SFMODE_OPEN_ACCESS) == SFMODE_OPEN_WRITEONLY
         || (pSfFsi->sfi_mode & SFMODE_OPEN_ACCESS) == SFMODE_OPEN_READWRITE)
     {
-        int vrc = vboxSfOs2HostReqFlushSimple(pFolder, pSfFsd->hHostFile);
+        int vrc = vboxSfOs2HostReqFlushSimple(pFolder->idHostRoot, pSfFsd->hHostFile);
         if (RT_FAILURE(vrc))
         {
             LogRel(("FS32_COMMIT: vboxSfOs2HostReqFlushSimple failed: %Rrc\n", vrc));
@@ -434,7 +434,7 @@ FS32_CHGFILEPTRL(PSFFSI pSfFsi, PVBOXSFSYFI pSfFsd, LONGLONG off, ULONG uMethod,
             else
                 return ERROR_NOT_ENOUGH_MEMORY;
 
-            int vrc = vboxSfOs2HostReqQueryObjInfo(pFolder, pReq, pSfFsd->hHostFile);
+            int vrc = vboxSfOs2HostReqQueryObjInfo(pFolder->idHostRoot, pReq, pSfFsd->hHostFile);
             if (RT_SUCCESS(vrc))
             {
                 if (pSfFsi->sfi_mode & SFMODE_LARGE_FILE)
@@ -812,7 +812,7 @@ vboxSfOs2QueryFileInfo(PVBOXSFFOLDER pFolder, PSFFSI pSfFsi, PVBOXSFSYFI pSfFsd,
         VBGLIOCIDCHGCMFASTCALL_INIT(&pReq->Hdr, VbglR0PhysHeapGetPhysAddr(pReq), &pReq->Call, g_SfClient.idClient,
                                     SHFL_FN_INFORMATION, SHFL_CPARMS_INFORMATION, sizeof(*pReq));
         pReq->Parms.id32Root.type               = VMMDevHGCMParmType_32bit;
-        pReq->Parms.id32Root.u.value32          = pFolder->hHostFolder.root;
+        pReq->Parms.id32Root.u.value32          = pFolder->idHostRoot;
         pReq->Parms.u64Handle.type              = VMMDevHGCMParmType_64bit;
         pReq->Parms.u64Handle.u.value64         = pSfFsd->hHostFile;
         pReq->Parms.f32Flags.type               = VMMDevHGCMParmType_32bit;
@@ -857,7 +857,7 @@ vboxSfOs2QueryFileInfo(PVBOXSFFOLDER pFolder, PSFFSI pSfFsi, PVBOXSFSYFI pSfFsd,
     VBOXSFOBJINFOREQ *pReq = (VBOXSFOBJINFOREQ *)VbglR0PhysHeapAlloc(sizeof(*pReq));
     if (pReq)
     {
-        int vrc = vboxSfOs2HostReqQueryObjInfo(pFolder, pReq, pSfFsd->hHostFile);
+        int vrc = vboxSfOs2HostReqQueryObjInfo(pFolder->idHostRoot, pReq, pSfFsd->hHostFile);
         if (RT_SUCCESS(vrc))
         {
             rc = vboxSfOs2FileStatusFromObjInfo(pbData, cbData, uLevel, &pReq->ObjInfo);
@@ -1046,7 +1046,7 @@ FS32_NEWSIZEL(PSFFSI pSfFsi, PVBOXSFSYFI pSfFsd, LONGLONG cbFile, ULONG fIoFlags
         /*
          * Call the host.
          */
-        int vrc = vboxSfOs2HostReqSetFileSizeSimple(pFolder, pSfFsd->hHostFile, cbFile);
+        int vrc = vboxSfOs2HostReqSetFileSizeSimple(pFolder->idHostRoot, pSfFsd->hHostFile, cbFile);
         if (RT_SUCCESS(vrc))
         {
             pSfFsi->sfi_sizel = cbFile;
@@ -1165,7 +1165,7 @@ FS32_READ(PSFFSI pSfFsi, PVBOXSFSYFI pSfFsd, PVOID pvData, PULONG pcb, ULONG fIo
                 || cbToRead == 0))
         {
             APIRET rc;
-            int vrc = vboxSfOs2HostReqReadEmbedded(pFolder, pReq, pSfFsd->hHostFile, offRead, cbToRead);
+            int vrc = vboxSfOs2HostReqReadEmbedded(pFolder->idHostRoot, pReq, pSfFsd->hHostFile, offRead, cbToRead);
             if (RT_SUCCESS(vrc))
             {
                 cbActual = pReq->Parms.cb32Read.u.value32;
@@ -1222,7 +1222,8 @@ FS32_READ(PSFFSI pSfFsi, PVBOXSFSYFI pSfFsd, PVOID pvData, PULONG pcb, ULONG fIo
         if (pvBuf)
         {
             APIRET rc;
-            int vrc = vboxSfOs2HostReqReadContig(pFolder, pReq, pSfFsd->hHostFile, offRead, cbToRead, pvBuf, GCPhys);
+            int vrc = vboxSfOs2HostReqReadContig(pFolder->idHostRoot, pReq, pSfFsd->hHostFile,
+                                                 offRead, cbToRead, pvBuf, GCPhys);
             if (RT_SUCCESS(vrc))
             {
                 cbActual = pReq->Parms.cb32Read.u.value32;
@@ -1264,7 +1265,7 @@ FS32_READ(PSFFSI pSfFsi, PVBOXSFSYFI pSfFsd, PVOID pvData, PULONG pcb, ULONG fIo
         vboxSfOs2ConvertPageList((KernPageList_t volatile *)&pReq->PgLst.aPages[0], &pReq->PgLst.aPages[0], cPagesRet, cPages);
 
         APIRET rc;
-        int vrc = vboxSfOs2HostReqReadPgLst(pFolder, pReq, pSfFsd->hHostFile, offRead, cbToRead, cPages);
+        int vrc = vboxSfOs2HostReqReadPgLst(pFolder->idHostRoot, pReq, pSfFsd->hHostFile, offRead, cbToRead, cPages);
         if (RT_SUCCESS(vrc))
         {
             cbActual = pReq->Parms.cb32Read.u.value32;
@@ -1335,7 +1336,7 @@ FS32_WRITE(PSFFSI pSfFsi, PVBOXSFSYFI pSfFsd, void const *pvData, PULONG pcb, UL
             APIRET rc = KernCopyIn(&pReq->abData[0], pvData, cbToWrite);
             if (rc == NO_ERROR)
             {
-                int vrc = vboxSfOs2HostReqWriteEmbedded(pFolder, pReq, pSfFsd->hHostFile, offWrite, cbToWrite);
+                int vrc = vboxSfOs2HostReqWriteEmbedded(pFolder->idHostRoot, pReq, pSfFsd->hHostFile, offWrite, cbToWrite);
                 if (RT_SUCCESS(vrc))
                 {
                     cbActual = pReq->Parms.cb32Write.u.value32;
@@ -1392,7 +1393,8 @@ FS32_WRITE(PSFFSI pSfFsi, PVBOXSFSYFI pSfFsd, void const *pvData, PULONG pcb, UL
             if (rc == NO_ERROR)
             {
                 APIRET rc;
-                int vrc = vboxSfOs2HostReqWriteContig(pFolder, pReq, pSfFsd->hHostFile, offWrite, cbToWrite, pvBuf, GCPhys);
+                int vrc = vboxSfOs2HostReqWriteContig(pFolder->idHostRoot, pReq, pSfFsd->hHostFile,
+                                                      offWrite, cbToWrite, pvBuf, GCPhys);
                 if (RT_SUCCESS(vrc))
                 {
                     cbActual = pReq->Parms.cb32Write.u.value32;
@@ -1430,7 +1432,7 @@ FS32_WRITE(PSFFSI pSfFsi, PVBOXSFSYFI pSfFsd, void const *pvData, PULONG pcb, UL
         vboxSfOs2ConvertPageList((KernPageList_t volatile *)&pReq->PgLst.aPages[0], &pReq->PgLst.aPages[0], cPagesRet, cPages);
 
         APIRET rc;
-        int vrc = vboxSfOs2HostReqWritePgLst(pFolder, pReq, pSfFsd->hHostFile, offWrite, cbToWrite, cPages);
+        int vrc = vboxSfOs2HostReqWritePgLst(pFolder->idHostRoot, pReq, pSfFsd->hHostFile, offWrite, cbToWrite, cPages);
         if (RT_SUCCESS(vrc))
         {
             cbActual = pReq->Parms.cb32Write.u.value32;

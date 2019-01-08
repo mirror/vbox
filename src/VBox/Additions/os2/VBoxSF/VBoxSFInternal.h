@@ -76,7 +76,7 @@ typedef struct VBOXSFFOLDER
     uint8_t volatile    cDrives;
 
     /** The host folder handle. */
-    VBGLSFMAP           hHostFolder;
+    SHFLROOT            idHostRoot;
 
     /** OS/2 volume handle. */
     USHORT              hVpb;
@@ -368,7 +368,7 @@ typedef struct VBOXSFCREATEREQ
 /**
  * SHFL_FN_CREATE request.
  */
-DECLINLINE(int) vboxSfOs2HostReqCreate(PVBOXSFFOLDER pFolder, VBOXSFCREATEREQ *pReq)
+DECLINLINE(int) vboxSfOs2HostReqCreate(SHFLROOT idRoot, VBOXSFCREATEREQ *pReq)
 {
     uint32_t const cbReq = g_fHostFeatures & VMMDEV_HVF_HGCM_EMBEDDED_BUFFERS
                          ? RT_UOFFSETOF(VBOXSFCREATEREQ, StrPath.String) + pReq->StrPath.u16Size
@@ -376,8 +376,8 @@ DECLINLINE(int) vboxSfOs2HostReqCreate(PVBOXSFFOLDER pFolder, VBOXSFCREATEREQ *p
     VBGLIOCIDCHGCMFASTCALL_INIT(&pReq->Hdr, VbglR0PhysHeapGetPhysAddr(pReq), &pReq->Call, g_SfClient.idClient,
                                 SHFL_FN_CREATE, SHFL_CPARMS_CREATE, cbReq);
 
-    pReq->Parms.id32Root.type                   = VMMDevHGCMParmType_32bit;
-    pReq->Parms.id32Root.u.value32              = pFolder->hHostFolder.root;
+    pReq->Parms.id32Root.type                       = VMMDevHGCMParmType_32bit;
+    pReq->Parms.id32Root.u.value32                  = idRoot;
 
     if (g_fHostFeatures & VMMDEV_HVF_HGCM_EMBEDDED_BUFFERS)
     {
@@ -420,16 +420,16 @@ typedef struct VBOXSFCLOSEREQ
 /**
  * SHFL_FN_CLOSE request.
  */
-DECLINLINE(int) vboxSfOs2HostReqClose(PVBOXSFFOLDER pFolder, VBOXSFCLOSEREQ *pReq, uint64_t hHostFile)
+DECLINLINE(int) vboxSfOs2HostReqClose(SHFLROOT idRoot, VBOXSFCLOSEREQ *pReq, uint64_t hHostFile)
 {
     VBGLIOCIDCHGCMFASTCALL_INIT(&pReq->Hdr, VbglR0PhysHeapGetPhysAddr(pReq), &pReq->Call, g_SfClient.idClient,
                                 SHFL_FN_CLOSE, SHFL_CPARMS_CLOSE, sizeof(*pReq));
 
-    pReq->Parms.id32Root.type                   = VMMDevHGCMParmType_32bit;
-    pReq->Parms.id32Root.u.value32              = pFolder->hHostFolder.root;
+    pReq->Parms.id32Root.type       = VMMDevHGCMParmType_32bit;
+    pReq->Parms.id32Root.u.value32  = idRoot;
 
-    pReq->Parms.u64Handle.type                  = VMMDevHGCMParmType_64bit;
-    pReq->Parms.u64Handle.u.value64             = hHostFile;
+    pReq->Parms.u64Handle.type      = VMMDevHGCMParmType_64bit;
+    pReq->Parms.u64Handle.u.value64 = hHostFile;
 
     int vrc = VbglR0HGCMFastCall(g_SfClient.handle, &pReq->Hdr, sizeof(*pReq));
     if (RT_SUCCESS(vrc))
@@ -440,12 +440,12 @@ DECLINLINE(int) vboxSfOs2HostReqClose(PVBOXSFFOLDER pFolder, VBOXSFCLOSEREQ *pRe
 /**
  * SHFL_FN_CLOSE request, allocate request buffer.
  */
-DECLINLINE(int) vboxSfOs2HostReqCloseSimple(PVBOXSFFOLDER pFolder, uint64_t hHostFile)
+DECLINLINE(int) vboxSfOs2HostReqCloseSimple(SHFLROOT idRoot, uint64_t hHostFile)
 {
     VBOXSFCLOSEREQ *pReq = (VBOXSFCLOSEREQ *)VbglR0PhysHeapAlloc(sizeof(*pReq));
     if (pReq)
     {
-        int vrc = vboxSfOs2HostReqClose(pFolder, pReq, hHostFile);
+        int vrc = vboxSfOs2HostReqClose(idRoot, pReq, hHostFile);
         VbglR0PhysHeapFree(pReq);
         return vrc;
     }
@@ -465,7 +465,7 @@ typedef struct VBOXSFVOLINFOREQ
 /**
  * SHFL_FN_INFORMATION[SHFL_INFO_VOLUME | SHFL_INFO_GET] request.
  */
-DECLINLINE(int) vboxSfOs2HostReqQueryVolInfo(PVBOXSFFOLDER pFolder, VBOXSFVOLINFOREQ *pReq, uint64_t hHostFile)
+DECLINLINE(int) vboxSfOs2HostReqQueryVolInfo(SHFLROOT idRoot, VBOXSFVOLINFOREQ *pReq, uint64_t hHostFile)
 {
     uint32_t const cbReq = g_fHostFeatures & VMMDEV_HVF_HGCM_EMBEDDED_BUFFERS
                          ? sizeof(*pReq) : RT_UOFFSETOF(VBOXSFVOLINFOREQ, VolInfo);
@@ -473,7 +473,7 @@ DECLINLINE(int) vboxSfOs2HostReqQueryVolInfo(PVBOXSFFOLDER pFolder, VBOXSFVOLINF
                                 SHFL_FN_INFORMATION, SHFL_CPARMS_INFORMATION, cbReq);
 
     pReq->Parms.id32Root.type                   = VMMDevHGCMParmType_32bit;
-    pReq->Parms.id32Root.u.value32              = pFolder->hHostFolder.root;
+    pReq->Parms.id32Root.u.value32              = idRoot;
 
     pReq->Parms.u64Handle.type                  = VMMDevHGCMParmType_64bit;
     pReq->Parms.u64Handle.u.value64             = hHostFile;
@@ -517,7 +517,7 @@ typedef struct VBOXSFOBJINFOREQ
 /**
  * SHFL_FN_INFORMATION[SHFL_INFO_GET | SHFL_INFO_FILE] request.
  */
-DECLINLINE(int) vboxSfOs2HostReqQueryObjInfo(PVBOXSFFOLDER pFolder, VBOXSFOBJINFOREQ *pReq, uint64_t hHostFile)
+DECLINLINE(int) vboxSfOs2HostReqQueryObjInfo(SHFLROOT idRoot, VBOXSFOBJINFOREQ *pReq, uint64_t hHostFile)
 {
     uint32_t const cbReq = g_fHostFeatures & VMMDEV_HVF_HGCM_EMBEDDED_BUFFERS
                          ? sizeof(*pReq) : RT_UOFFSETOF(VBOXSFOBJINFOREQ, ObjInfo);
@@ -525,7 +525,7 @@ DECLINLINE(int) vboxSfOs2HostReqQueryObjInfo(PVBOXSFFOLDER pFolder, VBOXSFOBJINF
                                 SHFL_FN_INFORMATION, SHFL_CPARMS_INFORMATION, cbReq);
 
     pReq->Parms.id32Root.type                   = VMMDevHGCMParmType_32bit;
-    pReq->Parms.id32Root.u.value32              = pFolder->hHostFolder.root;
+    pReq->Parms.id32Root.u.value32              = idRoot;
 
     pReq->Parms.u64Handle.type                  = VMMDevHGCMParmType_64bit;
     pReq->Parms.u64Handle.u.value64             = hHostFile;
@@ -560,7 +560,7 @@ DECLINLINE(int) vboxSfOs2HostReqQueryObjInfo(PVBOXSFFOLDER pFolder, VBOXSFOBJINF
 /**
  * SHFL_FN_INFORMATION[SHFL_INFO_SET | SHFL_INFO_FILE] request.
  */
-DECLINLINE(int) vboxSfOs2HostReqSetObjInfo(PVBOXSFFOLDER pFolder, VBOXSFOBJINFOREQ *pReq, uint64_t hHostFile)
+DECLINLINE(int) vboxSfOs2HostReqSetObjInfo(SHFLROOT idRoot, VBOXSFOBJINFOREQ *pReq, uint64_t hHostFile)
 {
     uint32_t const cbReq = g_fHostFeatures & VMMDEV_HVF_HGCM_EMBEDDED_BUFFERS
                          ? sizeof(*pReq) : RT_UOFFSETOF(VBOXSFOBJINFOREQ, ObjInfo);
@@ -568,7 +568,7 @@ DECLINLINE(int) vboxSfOs2HostReqSetObjInfo(PVBOXSFFOLDER pFolder, VBOXSFOBJINFOR
                                 SHFL_FN_INFORMATION, SHFL_CPARMS_INFORMATION, cbReq);
 
     pReq->Parms.id32Root.type                   = VMMDevHGCMParmType_32bit;
-    pReq->Parms.id32Root.u.value32              = pFolder->hHostFolder.root;
+    pReq->Parms.id32Root.u.value32              = idRoot;
 
     pReq->Parms.u64Handle.type                  = VMMDevHGCMParmType_64bit;
     pReq->Parms.u64Handle.u.value64             = hHostFile;
@@ -613,14 +613,14 @@ typedef struct VBOXSFOBJINFOWITHBUFREQ
  * SHFL_FN_INFORMATION[SHFL_INFO_SET | SHFL_INFO_FILE] request, with separate
  * buffer (on the physical heap).
  */
-DECLINLINE(int) vboxSfOs2HostReqSetObjInfoWithBuf(PVBOXSFFOLDER pFolder, VBOXSFOBJINFOWITHBUFREQ *pReq, uint64_t hHostFile,
+DECLINLINE(int) vboxSfOs2HostReqSetObjInfoWithBuf(SHFLROOT idRoot, VBOXSFOBJINFOWITHBUFREQ *pReq, uint64_t hHostFile,
                                                   PSHFLFSOBJINFO pObjInfo, uint32_t offObjInfoInAlloc)
 {
     VBGLIOCIDCHGCMFASTCALL_INIT(&pReq->Hdr, VbglR0PhysHeapGetPhysAddr(pReq), &pReq->Call, g_SfClient.idClient,
                                 SHFL_FN_INFORMATION, SHFL_CPARMS_INFORMATION, sizeof(*pReq));
 
     pReq->Parms.id32Root.type               = VMMDevHGCMParmType_32bit;
-    pReq->Parms.id32Root.u.value32          = pFolder->hHostFolder.root;
+    pReq->Parms.id32Root.u.value32          = idRoot;
 
     pReq->Parms.u64Handle.type              = VMMDevHGCMParmType_64bit;
     pReq->Parms.u64Handle.u.value64         = hHostFile;
@@ -668,7 +668,7 @@ typedef struct VBOXSFREMOVEREQ
 /**
  * SHFL_FN_REMOVE request.
  */
-DECLINLINE(int) vboxSfOs2HostReqRemove(PVBOXSFFOLDER pFolder, VBOXSFREMOVEREQ *pReq, uint32_t fFlags)
+DECLINLINE(int) vboxSfOs2HostReqRemove(SHFLROOT idRoot, VBOXSFREMOVEREQ *pReq, uint32_t fFlags)
 {
     uint32_t const cbReq = RT_UOFFSETOF(VBOXSFREMOVEREQ, StrPath.String)
                          + (g_fHostFeatures & VMMDEV_HVF_HGCM_EMBEDDED_BUFFERS ? pReq->StrPath.u16Size : 0);
@@ -676,7 +676,7 @@ DECLINLINE(int) vboxSfOs2HostReqRemove(PVBOXSFFOLDER pFolder, VBOXSFREMOVEREQ *p
                                 SHFL_FN_REMOVE, SHFL_CPARMS_REMOVE, cbReq);
 
     pReq->Parms.id32Root.type                   = VMMDevHGCMParmType_32bit;
-    pReq->Parms.id32Root.u.value32              = pFolder->hHostFolder.root;
+    pReq->Parms.id32Root.u.value32              = idRoot;
 
     if (g_fHostFeatures & VMMDEV_HVF_HGCM_EMBEDDED_BUFFERS)
     {
@@ -715,7 +715,7 @@ typedef struct VBOXSFRENAMEWITHSRCBUFREQ
 /**
  * SHFL_FN_REMOVE request.
  */
-DECLINLINE(int) vboxSfOs2HostReqRenameWithSrcBuf(PVBOXSFFOLDER pFolder, VBOXSFRENAMEWITHSRCBUFREQ *pReq,
+DECLINLINE(int) vboxSfOs2HostReqRenameWithSrcBuf(SHFLROOT idRoot, VBOXSFRENAMEWITHSRCBUFREQ *pReq,
                                                  PSHFLSTRING pSrcStr, uint32_t fFlags)
 {
     uint32_t const cbReq = RT_UOFFSETOF(VBOXSFRENAMEWITHSRCBUFREQ, StrDstPath.String)
@@ -724,7 +724,7 @@ DECLINLINE(int) vboxSfOs2HostReqRenameWithSrcBuf(PVBOXSFFOLDER pFolder, VBOXSFRE
                                 SHFL_FN_RENAME, SHFL_CPARMS_RENAME, cbReq);
 
     pReq->Parms.id32Root.type                       = VMMDevHGCMParmType_32bit;
-    pReq->Parms.id32Root.u.value32                  = pFolder->hHostFolder.root;
+    pReq->Parms.id32Root.u.value32                  = idRoot;
 
     if (g_fHostFeatures & VMMDEV_HVF_HGCM_CONTIGUOUS_PAGE_LIST)
     {
@@ -781,16 +781,16 @@ typedef struct VBOXSFFLUSHREQ
 /**
  * SHFL_FN_FLUSH request.
  */
-DECLINLINE(int) vboxSfOs2HostReqFlush(PVBOXSFFOLDER pFolder, VBOXSFFLUSHREQ *pReq, uint64_t hHostFile)
+DECLINLINE(int) vboxSfOs2HostReqFlush(SHFLROOT idRoot, VBOXSFFLUSHREQ *pReq, uint64_t hHostFile)
 {
     VBGLIOCIDCHGCMFASTCALL_INIT(&pReq->Hdr, VbglR0PhysHeapGetPhysAddr(pReq), &pReq->Call, g_SfClient.idClient,
                                 SHFL_FN_FLUSH, SHFL_CPARMS_FLUSH, sizeof(*pReq));
 
-    pReq->Parms.id32Root.type                   = VMMDevHGCMParmType_32bit;
-    pReq->Parms.id32Root.u.value32              = pFolder->hHostFolder.root;
+    pReq->Parms.id32Root.type       = VMMDevHGCMParmType_32bit;
+    pReq->Parms.id32Root.u.value32  = idRoot;
 
-    pReq->Parms.u64Handle.type                  = VMMDevHGCMParmType_64bit;
-    pReq->Parms.u64Handle.u.value64             = hHostFile;
+    pReq->Parms.u64Handle.type      = VMMDevHGCMParmType_64bit;
+    pReq->Parms.u64Handle.u.value64 = hHostFile;
 
     int vrc = VbglR0HGCMFastCall(g_SfClient.handle, &pReq->Hdr, sizeof(*pReq));
     if (RT_SUCCESS(vrc))
@@ -801,12 +801,12 @@ DECLINLINE(int) vboxSfOs2HostReqFlush(PVBOXSFFOLDER pFolder, VBOXSFFLUSHREQ *pRe
 /**
  * SHFL_FN_FLUSH request, allocate request buffer.
  */
-DECLINLINE(int) vboxSfOs2HostReqFlushSimple(PVBOXSFFOLDER pFolder, uint64_t hHostFile)
+DECLINLINE(int) vboxSfOs2HostReqFlushSimple(SHFLROOT idRoot, uint64_t hHostFile)
 {
     VBOXSFFLUSHREQ *pReq = (VBOXSFFLUSHREQ *)VbglR0PhysHeapAlloc(sizeof(*pReq));
     if (pReq)
     {
-        int vrc = vboxSfOs2HostReqFlush(pFolder, pReq, hHostFile);
+        int vrc = vboxSfOs2HostReqFlush(idRoot, pReq, hHostFile);
         VbglR0PhysHeapFree(pReq);
         return vrc;
     }
@@ -825,20 +825,20 @@ typedef struct VBOXSFSETFILESIZEREQ
 /**
  * SHFL_FN_SET_FILE_SIZE request.
  */
-DECLINLINE(int) vboxSfOs2HostReqSetFileSize(PVBOXSFFOLDER pFolder, VBOXSFSETFILESIZEREQ *pReq,
+DECLINLINE(int) vboxSfOs2HostReqSetFileSize(SHFLROOT idRoot, VBOXSFSETFILESIZEREQ *pReq,
                                             uint64_t hHostFile, uint64_t cbNewSize)
 {
     VBGLIOCIDCHGCMFASTCALL_INIT(&pReq->Hdr, VbglR0PhysHeapGetPhysAddr(pReq), &pReq->Call, g_SfClient.idClient,
                                 SHFL_FN_SET_FILE_SIZE, SHFL_CPARMS_SET_FILE_SIZE, sizeof(*pReq));
 
-    pReq->Parms.id32Root.type                   = VMMDevHGCMParmType_32bit;
-    pReq->Parms.id32Root.u.value32              = pFolder->hHostFolder.root;
+    pReq->Parms.id32Root.type           = VMMDevHGCMParmType_32bit;
+    pReq->Parms.id32Root.u.value32      = idRoot;
 
-    pReq->Parms.u64Handle.type                  = VMMDevHGCMParmType_64bit;
-    pReq->Parms.u64Handle.u.value64             = hHostFile;
+    pReq->Parms.u64Handle.type          = VMMDevHGCMParmType_64bit;
+    pReq->Parms.u64Handle.u.value64     = hHostFile;
 
-    pReq->Parms.cb64NewSize.type                = VMMDevHGCMParmType_64bit;
-    pReq->Parms.cb64NewSize.u.value64           = cbNewSize;
+    pReq->Parms.cb64NewSize.type        = VMMDevHGCMParmType_64bit;
+    pReq->Parms.cb64NewSize.u.value64   = cbNewSize;
 
     int vrc = VbglR0HGCMFastCall(g_SfClient.handle, &pReq->Hdr, sizeof(*pReq));
     if (RT_SUCCESS(vrc))
@@ -849,12 +849,12 @@ DECLINLINE(int) vboxSfOs2HostReqSetFileSize(PVBOXSFFOLDER pFolder, VBOXSFSETFILE
 /**
  * SHFL_FN_SET_FILE_SIZE request, allocate request buffer.
  */
-DECLINLINE(int) vboxSfOs2HostReqSetFileSizeSimple(PVBOXSFFOLDER pFolder, uint64_t hHostFile, uint64_t cbNewSize)
+DECLINLINE(int) vboxSfOs2HostReqSetFileSizeSimple(SHFLROOT idRoot, uint64_t hHostFile, uint64_t cbNewSize)
 {
     VBOXSFSETFILESIZEREQ *pReq = (VBOXSFSETFILESIZEREQ *)VbglR0PhysHeapAlloc(sizeof(*pReq));
     if (pReq)
     {
-        int vrc = vboxSfOs2HostReqSetFileSize(pFolder, pReq, hHostFile, cbNewSize);
+        int vrc = vboxSfOs2HostReqSetFileSize(idRoot, pReq, hHostFile, cbNewSize);
         VbglR0PhysHeapFree(pReq);
         return vrc;
     }
@@ -874,7 +874,7 @@ typedef struct VBOXSFREADEMBEDDEDREQ
 /**
  * SHFL_FN_READ request using embedded data buffer.
  */
-DECLINLINE(int) vboxSfOs2HostReqReadEmbedded(PVBOXSFFOLDER pFolder, VBOXSFREADEMBEDDEDREQ *pReq, uint64_t hHostFile,
+DECLINLINE(int) vboxSfOs2HostReqReadEmbedded(SHFLROOT idRoot, VBOXSFREADEMBEDDEDREQ *pReq, uint64_t hHostFile,
                                              uint64_t offRead, uint32_t cbToRead)
 {
     uint32_t const cbReq = RT_UOFFSETOF(VBOXSFREADEMBEDDEDREQ, abData[0])
@@ -883,7 +883,7 @@ DECLINLINE(int) vboxSfOs2HostReqReadEmbedded(PVBOXSFFOLDER pFolder, VBOXSFREADEM
                                 SHFL_FN_READ, SHFL_CPARMS_READ, cbReq);
 
     pReq->Parms.id32Root.type               = VMMDevHGCMParmType_32bit;
-    pReq->Parms.id32Root.u.value32          = pFolder->hHostFolder.root;
+    pReq->Parms.id32Root.u.value32          = idRoot;
 
     pReq->Parms.u64Handle.type              = VMMDevHGCMParmType_64bit;
     pReq->Parms.u64Handle.u.value64         = hHostFile;
@@ -927,7 +927,7 @@ typedef struct VBOXSFREADPGLSTREQ
 /**
  * SHFL_FN_READ request using page list for data buffer (caller populated).
  */
-DECLINLINE(int) vboxSfOs2HostReqReadPgLst(PVBOXSFFOLDER pFolder, VBOXSFREADPGLSTREQ *pReq, uint64_t hHostFile,
+DECLINLINE(int) vboxSfOs2HostReqReadPgLst(SHFLROOT idRoot, VBOXSFREADPGLSTREQ *pReq, uint64_t hHostFile,
                                           uint64_t offRead, uint32_t cbToRead, uint32_t cPages)
 {
     VBGLIOCIDCHGCMFASTCALL_INIT(&pReq->Hdr, VbglR0PhysHeapGetPhysAddr(pReq), &pReq->Call, g_SfClient.idClient,
@@ -935,7 +935,7 @@ DECLINLINE(int) vboxSfOs2HostReqReadPgLst(PVBOXSFFOLDER pFolder, VBOXSFREADPGLST
                                 RT_UOFFSETOF_DYN(VBOXSFREADPGLSTREQ, PgLst.aPages[cPages]));
 
     pReq->Parms.id32Root.type               = VMMDevHGCMParmType_32bit;
-    pReq->Parms.id32Root.u.value32          = pFolder->hHostFolder.root;
+    pReq->Parms.id32Root.u.value32          = idRoot;
 
     pReq->Parms.u64Handle.type              = VMMDevHGCMParmType_64bit;
     pReq->Parms.u64Handle.u.value64         = hHostFile;
@@ -965,14 +965,14 @@ DECLINLINE(int) vboxSfOs2HostReqReadPgLst(PVBOXSFFOLDER pFolder, VBOXSFREADPGLST
 /**
  * SHFL_FN_READ request using a physically contiguous buffer.
  */
-DECLINLINE(int) vboxSfOs2HostReqReadContig(PVBOXSFFOLDER pFolder, VBOXSFREADPGLSTREQ *pReq, uint64_t hHostFile,
+DECLINLINE(int) vboxSfOs2HostReqReadContig(SHFLROOT idRoot, VBOXSFREADPGLSTREQ *pReq, uint64_t hHostFile,
                                           uint64_t offRead, uint32_t cbToRead, void *pvBuffer, RTGCPHYS64 PhysBuffer)
 {
     VBGLIOCIDCHGCMFASTCALL_INIT(&pReq->Hdr, VbglR0PhysHeapGetPhysAddr(pReq), &pReq->Call, g_SfClient.idClient,
                                 SHFL_FN_READ, SHFL_CPARMS_READ, RT_UOFFSETOF_DYN(VBOXSFREADPGLSTREQ, PgLst.aPages[1]));
 
     pReq->Parms.id32Root.type               = VMMDevHGCMParmType_32bit;
-    pReq->Parms.id32Root.u.value32          = pFolder->hHostFolder.root;
+    pReq->Parms.id32Root.u.value32          = idRoot;
 
     pReq->Parms.u64Handle.type              = VMMDevHGCMParmType_64bit;
     pReq->Parms.u64Handle.u.value64         = hHostFile;
@@ -1020,7 +1020,7 @@ typedef struct VBOXSFWRITEEMBEDDEDREQ
 /**
  * SHFL_FN_WRITE request using embedded data buffer.
  */
-DECLINLINE(int) vboxSfOs2HostReqWriteEmbedded(PVBOXSFFOLDER pFolder, VBOXSFWRITEEMBEDDEDREQ *pReq, uint64_t hHostFile,
+DECLINLINE(int) vboxSfOs2HostReqWriteEmbedded(SHFLROOT idRoot, VBOXSFWRITEEMBEDDEDREQ *pReq, uint64_t hHostFile,
                                               uint64_t offWrite, uint32_t cbToWrite)
 {
     uint32_t const cbReq = RT_UOFFSETOF(VBOXSFWRITEEMBEDDEDREQ, abData[0])
@@ -1029,7 +1029,7 @@ DECLINLINE(int) vboxSfOs2HostReqWriteEmbedded(PVBOXSFFOLDER pFolder, VBOXSFWRITE
                                 SHFL_FN_WRITE, SHFL_CPARMS_WRITE, cbReq);
 
     pReq->Parms.id32Root.type               = VMMDevHGCMParmType_32bit;
-    pReq->Parms.id32Root.u.value32          = pFolder->hHostFolder.root;
+    pReq->Parms.id32Root.u.value32          = idRoot;
 
     pReq->Parms.u64Handle.type              = VMMDevHGCMParmType_64bit;
     pReq->Parms.u64Handle.u.value64         = hHostFile;
@@ -1073,7 +1073,7 @@ typedef struct VBOXSFWRITEPGLSTREQ
 /**
  * SHFL_FN_WRITE request using page list for data buffer (caller populated).
  */
-DECLINLINE(int) vboxSfOs2HostReqWritePgLst(PVBOXSFFOLDER pFolder, VBOXSFWRITEPGLSTREQ *pReq, uint64_t hHostFile,
+DECLINLINE(int) vboxSfOs2HostReqWritePgLst(SHFLROOT idRoot, VBOXSFWRITEPGLSTREQ *pReq, uint64_t hHostFile,
                                            uint64_t offWrite, uint32_t cbToWrite, uint32_t cPages)
 {
     VBGLIOCIDCHGCMFASTCALL_INIT(&pReq->Hdr, VbglR0PhysHeapGetPhysAddr(pReq), &pReq->Call, g_SfClient.idClient,
@@ -1081,7 +1081,7 @@ DECLINLINE(int) vboxSfOs2HostReqWritePgLst(PVBOXSFFOLDER pFolder, VBOXSFWRITEPGL
                                 RT_UOFFSETOF_DYN(VBOXSFWRITEPGLSTREQ, PgLst.aPages[cPages]));
 
     pReq->Parms.id32Root.type               = VMMDevHGCMParmType_32bit;
-    pReq->Parms.id32Root.u.value32          = pFolder->hHostFolder.root;
+    pReq->Parms.id32Root.u.value32          = idRoot;
 
     pReq->Parms.u64Handle.type              = VMMDevHGCMParmType_64bit;
     pReq->Parms.u64Handle.u.value64         = hHostFile;
@@ -1111,14 +1111,14 @@ DECLINLINE(int) vboxSfOs2HostReqWritePgLst(PVBOXSFFOLDER pFolder, VBOXSFWRITEPGL
 /**
  * SHFL_FN_WRITE request using a physically contiguous buffer.
  */
-DECLINLINE(int) vboxSfOs2HostReqWriteContig(PVBOXSFFOLDER pFolder, VBOXSFWRITEPGLSTREQ *pReq, uint64_t hHostFile,
+DECLINLINE(int) vboxSfOs2HostReqWriteContig(SHFLROOT idRoot, VBOXSFWRITEPGLSTREQ *pReq, uint64_t hHostFile,
                                             uint64_t offWrite, uint32_t cbToWrite, void const *pvBuffer, RTGCPHYS64 PhysBuffer)
 {
     VBGLIOCIDCHGCMFASTCALL_INIT(&pReq->Hdr, VbglR0PhysHeapGetPhysAddr(pReq), &pReq->Call, g_SfClient.idClient,
                                 SHFL_FN_WRITE, SHFL_CPARMS_WRITE, RT_UOFFSETOF_DYN(VBOXSFWRITEPGLSTREQ, PgLst.aPages[1]));
 
     pReq->Parms.id32Root.type               = VMMDevHGCMParmType_32bit;
-    pReq->Parms.id32Root.u.value32          = pFolder->hHostFolder.root;
+    pReq->Parms.id32Root.u.value32          = idRoot;
 
     pReq->Parms.u64Handle.type              = VMMDevHGCMParmType_64bit;
     pReq->Parms.u64Handle.u.value64         = hHostFile;
@@ -1157,14 +1157,14 @@ DECLINLINE(int) vboxSfOs2HostReqWriteContig(PVBOXSFFOLDER pFolder, VBOXSFWRITEPG
  * SHFL_FN_LIST request with separate string buffer and buffers for entries,
  * both allocated on the physical heap.
  */
-DECLINLINE(int) vboxSfOs2HostReqListDir(PVBOXSFFOLDER pFolder, VBOXSFLISTDIRREQ *pReq, uint64_t hHostDir,
+DECLINLINE(int) vboxSfOs2HostReqListDir(SHFLROOT idRoot, VBOXSFLISTDIRREQ *pReq, uint64_t hHostDir,
                                         PSHFLSTRING pFilter, uint32_t fFlags, PSHFLDIRINFO pBuffer, uint32_t cbBuffer)
 {
     VBGLIOCIDCHGCMFASTCALL_INIT(&pReq->Hdr, VbglR0PhysHeapGetPhysAddr(pReq), &pReq->Call, g_SfClient.idClient,
                                 SHFL_FN_LIST, SHFL_CPARMS_LIST, sizeof(*pReq));
 
     pReq->Parms.id32Root.type                       = VMMDevHGCMParmType_32bit;
-    pReq->Parms.id32Root.u.value32                  = pFolder->hHostFolder.root;
+    pReq->Parms.id32Root.u.value32                  = idRoot;
 
     pReq->Parms.u64Handle.type                      = VMMDevHGCMParmType_64bit;
     pReq->Parms.u64Handle.u.value64                 = hHostDir;

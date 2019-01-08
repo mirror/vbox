@@ -233,7 +233,7 @@ static APIRET vboxSfOs2ReadDirEntries(PVBOXSFFOLDER pFolder, PVBOXSFFS pFsFsd, P
             || pEntry == NULL /* paranoia */)
         {
             pDataBuf->pEntry = pEntry = pDataBuf->pBuf;
-            int vrc = vboxSfOs2HostReqListDir(pFolder, &pDataBuf->Req, pFsFsd->hHostDir, pDataBuf->pFilter,
+            int vrc = vboxSfOs2HostReqListDir(pFolder->idHostRoot, &pDataBuf->Req, pFsFsd->hHostDir, pDataBuf->pFilter,
                                               /*cMaxMatches == 1 ? SHFL_LIST_RETURN_ONE :*/ 0, pDataBuf->pBuf, pDataBuf->cbBuf);
             if (RT_SUCCESS(vrc))
             {
@@ -600,7 +600,7 @@ FS32_FINDFIRST(PCDFSI pCdFsi, PVBOXSFCD pCdFsd, PCSZ pszPath, LONG offCurDirEnd,
                 pReq->CreateParms.CreateFlags = SHFL_CF_DIRECTORY   | SHFL_CF_ACT_FAIL_IF_NEW  | SHFL_CF_ACT_OPEN_IF_EXISTS
                                               | SHFL_CF_ACCESS_READ | SHFL_CF_ACCESS_ATTR_READ | SHFL_CF_ACCESS_DENYNONE;
 
-                int vrc = vboxSfOs2HostReqCreate(pFolder, pReq);
+                int vrc = vboxSfOs2HostReqCreate(pFolder->idHostRoot, pReq);
                 LogFlow(("FS32_FINDFIRST: vboxSfOs2HostReqCreate(%ls) -> %Rrc Result=%d fMode=%#x hHandle=%#RX64\n",
                          pStrFolderPath->String.utf16, vrc, pReq->CreateParms.Result, pReq->CreateParms.Info.Attr.fMode,
                          pReq->CreateParms.Handle));
@@ -648,7 +648,7 @@ FS32_FINDFIRST(PCDFSI pCdFsi, PVBOXSFCD pCdFsd, PCSZ pszPath, LONG offCurDirEnd,
                                 else
                                 {
                                     AssertCompile(sizeof(VBOXSFCLOSEREQ) < sizeof(*pReq));
-                                    vrc = vboxSfOs2HostReqClose(pFolder, (VBOXSFCLOSEREQ *)pReq, pFsFsd->hHostDir);
+                                    vrc = vboxSfOs2HostReqClose(pFolder->idHostRoot, (VBOXSFCLOSEREQ *)pReq, pFsFsd->hHostDir);
                                     AssertRC(vrc);
                                     pFsFsd->u32Magic = ~VBOXSFFS_MAGIC;
                                     pDataBuf->u32Magic = ~VBOXSFFSBUF_MAGIC;
@@ -825,7 +825,7 @@ FS32_FINDCLOSE(PFSFSI pFsFsi, PVBOXSFFS pFsFsd)
      */
     if (pFsFsd->hHostDir != SHFL_HANDLE_NIL)
     {
-        int vrc = vboxSfOs2HostReqCloseSimple(pFolder, pFsFsd->hHostDir);
+        int vrc = vboxSfOs2HostReqCloseSimple(pFolder->idHostRoot, pFsFsd->hHostDir);
         AssertRC(vrc);
     }
 
