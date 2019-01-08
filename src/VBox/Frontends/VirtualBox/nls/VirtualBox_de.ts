@@ -2254,6 +2254,37 @@
     </message>
 </context>
 <context>
+    <name>UICustomFileSystemModel</name>
+    <message>
+        <source>Name</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Size</source>
+        <translation type="unfinished">Größe</translation>
+    </message>
+    <message>
+        <source>Change Time</source>
+        <translation type="unfinished">Änderungsdatum</translation>
+    </message>
+    <message>
+        <source>Owner</source>
+        <translation type="unfinished">Eigentümer</translation>
+    </message>
+    <message>
+        <source>Permissions</source>
+        <translation type="unfinished">Zugriffsrechte</translation>
+    </message>
+    <message>
+        <source>LocalPath</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Path</source>
+        <translation type="unfinished">Pfad</translation>
+    </message>
+</context>
+<context>
     <name>UIDesktopPane</name>
     <message>
         <source>&amp;Details</source>
@@ -2989,23 +3020,23 @@
     </message>
     <message>
         <source>Name</source>
-        <translation>Name</translation>
+        <translation type="vanished">Name</translation>
     </message>
     <message>
         <source>Size</source>
-        <translation>Größe</translation>
+        <translation type="vanished">Größe</translation>
     </message>
     <message>
         <source>Change Time</source>
-        <translation>Änderungsdatum</translation>
+        <translation type="vanished">Änderungsdatum</translation>
     </message>
     <message>
         <source>Owner</source>
-        <translation>Eigentümer</translation>
+        <translation type="vanished">Eigentümer</translation>
     </message>
     <message>
         <source>Permissions</source>
-        <translation>Zugriffsrechte</translation>
+        <translation type="vanished">Zugriffsrechte</translation>
     </message>
     <message>
         <source>No Guest Session</source>
@@ -3029,7 +3060,7 @@
     </message>
     <message>
         <source>Other</source>
-        <translation>Andere</translation>
+        <translation type="vanished">Andere</translation>
     </message>
     <message>
         <source>Guest System</source>
@@ -3162,6 +3193,14 @@
     <message>
         <source>&lt;b&gt;Owner:&lt;/b&gt; %1</source>
         <translation>&lt;b&gt;Eigentümer:&lt;/b&gt; %1&lt;br/&gt;</translation>
+    </message>
+    <message>
+        <source>Show hidden objects</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show hidden files/directories</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -11239,6 +11278,89 @@
     <message>
         <source>Show Toolbar Text</source>
         <translation type="obsolete">Toolbar-Text zeigen</translation>
+    </message>
+</context>
+<context>
+    <name>UIVisoCreator</name>
+    <message>
+        <source>VISO content</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove selected file objects from VISO</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Create a new directory under the current directory</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Name</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Size</source>
+        <translation type="unfinished">Größe</translation>
+    </message>
+    <message>
+        <source>Change Time</source>
+        <translation type="unfinished">Änderungsdatum</translation>
+    </message>
+    <message>
+        <source>Owner</source>
+        <translation type="unfinished">Eigentümer</translation>
+    </message>
+    <message>
+        <source>Permissions</source>
+        <translation type="unfinished">Zugriffsrechte</translation>
+    </message>
+    <message>
+        <source>Local Path</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>ISO Path</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Options...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>VISO Options</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Manage VISO Options</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Browser Options</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Change VISO options</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Change Browser options</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>VISO Name</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show Hidden Objects</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Host file system</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add selected file objects to VISO</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

@@ -3001,6 +3001,37 @@
     </message>
 </context>
 <context>
+    <name>UICustomFileSystemModel</name>
+    <message>
+        <source>Name</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Size</source>
+        <translation type="unfinished">Boyut</translation>
+    </message>
+    <message>
+        <source>Change Time</source>
+        <translation type="unfinished">Saati Değiştir</translation>
+    </message>
+    <message>
+        <source>Owner</source>
+        <translation type="unfinished">Sahibi</translation>
+    </message>
+    <message>
+        <source>Permissions</source>
+        <translation type="unfinished">İzinler</translation>
+    </message>
+    <message>
+        <source>LocalPath</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Path</source>
+        <translation type="unfinished">Yol</translation>
+    </message>
+</context>
+<context>
     <name>UIDescriptionPagePrivate</name>
     <message>
         <source>No description. Press the Edit button below to add it.</source>
@@ -4270,23 +4301,23 @@
     </message>
     <message>
         <source>Name</source>
-        <translation>Adı</translation>
+        <translation type="vanished">Adı</translation>
     </message>
     <message>
         <source>Size</source>
-        <translation>Boyut</translation>
+        <translation type="vanished">Boyut</translation>
     </message>
     <message>
         <source>Change Time</source>
-        <translation>Saati Değiştir</translation>
+        <translation type="vanished">Saati Değiştir</translation>
     </message>
     <message>
         <source>Owner</source>
-        <translation>Sahibi</translation>
+        <translation type="vanished">Sahibi</translation>
     </message>
     <message>
         <source>Permissions</source>
-        <translation>İzinler</translation>
+        <translation type="vanished">İzinler</translation>
     </message>
     <message>
         <source>No Guest Session</source>
@@ -4310,7 +4341,7 @@
     </message>
     <message>
         <source>Other</source>
-        <translation>Diğer</translation>
+        <translation type="vanished">Diğer</translation>
     </message>
     <message>
         <source>Guest System</source>
@@ -4443,6 +4474,14 @@
     <message>
         <source>&lt;b&gt;Owner:&lt;/b&gt; %1</source>
         <translation>&lt;b&gt;Sahibi:&lt;/b&gt; %1</translation>
+    </message>
+    <message>
+        <source>Show hidden objects</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show hidden files/directories</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -16542,6 +16581,89 @@ bu basamağı atlayarak sabit diskleri Sanal Makine Ayarları penceresinden ekle
     <message>
         <source>Show Toolbar Text</source>
         <translation type="vanished">Araç Çubuğu Metnini Göster</translation>
+    </message>
+</context>
+<context>
+    <name>UIVisoCreator</name>
+    <message>
+        <source>VISO content</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove selected file objects from VISO</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Create a new directory under the current directory</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Name</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Size</source>
+        <translation type="unfinished">Boyut</translation>
+    </message>
+    <message>
+        <source>Change Time</source>
+        <translation type="unfinished">Saati Değiştir</translation>
+    </message>
+    <message>
+        <source>Owner</source>
+        <translation type="unfinished">Sahibi</translation>
+    </message>
+    <message>
+        <source>Permissions</source>
+        <translation type="unfinished">İzinler</translation>
+    </message>
+    <message>
+        <source>Local Path</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>ISO Path</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Options...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>VISO Options</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Manage VISO Options</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Browser Options</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Change VISO options</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Change Browser options</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>VISO Name</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show Hidden Objects</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Host file system</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add selected file objects to VISO</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

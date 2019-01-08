@@ -2284,6 +2284,37 @@
     </message>
 </context>
 <context>
+    <name>UICustomFileSystemModel</name>
+    <message>
+        <source>Name</source>
+        <translation type="unfinished">Όνομα</translation>
+    </message>
+    <message>
+        <source>Size</source>
+        <translation type="unfinished">Μέγεθος</translation>
+    </message>
+    <message>
+        <source>Change Time</source>
+        <translation type="unfinished">Ώρα τροποποίησης</translation>
+    </message>
+    <message>
+        <source>Owner</source>
+        <translation type="unfinished">Ιδιοκτήτης</translation>
+    </message>
+    <message>
+        <source>Permissions</source>
+        <translation type="unfinished">Δικαιώματα</translation>
+    </message>
+    <message>
+        <source>LocalPath</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Path</source>
+        <translation type="unfinished">Διαδρομή</translation>
+    </message>
+</context>
+<context>
     <name>UIDetails</name>
     <message>
         <source>Name</source>
@@ -3003,23 +3034,23 @@
     </message>
     <message>
         <source>Name</source>
-        <translation>Όνομα</translation>
+        <translation type="vanished">Όνομα</translation>
     </message>
     <message>
         <source>Size</source>
-        <translation>Μέγεθος</translation>
+        <translation type="vanished">Μέγεθος</translation>
     </message>
     <message>
         <source>Change Time</source>
-        <translation>Ώρα τροποποίησης</translation>
+        <translation type="vanished">Ώρα τροποποίησης</translation>
     </message>
     <message>
         <source>Owner</source>
-        <translation>Ιδιοκτήτης</translation>
+        <translation type="vanished">Ιδιοκτήτης</translation>
     </message>
     <message>
         <source>Permissions</source>
-        <translation>Δικαιώματα</translation>
+        <translation type="vanished">Δικαιώματα</translation>
     </message>
     <message>
         <source>No Guest Session</source>
@@ -3043,7 +3074,7 @@
     </message>
     <message>
         <source>Other</source>
-        <translation>Άλλο</translation>
+        <translation type="vanished">Άλλο</translation>
     </message>
     <message>
         <source>Guest System</source>
@@ -3176,6 +3207,14 @@
     <message>
         <source>&lt;b&gt;Owner:&lt;/b&gt; %1</source>
         <translation>&lt;b&gt;Ιδιοκτήτης:&lt;/b&gt; %1</translation>
+    </message>
+    <message>
+        <source>Show hidden objects</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show hidden files/directories</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -11237,6 +11276,89 @@
     <message>
         <source>Show Toolbar Text</source>
         <translation type="obsolete">Εμφάνιση Κειμένου Γραμμής Εργαλείων</translation>
+    </message>
+</context>
+<context>
+    <name>UIVisoCreator</name>
+    <message>
+        <source>VISO content</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove selected file objects from VISO</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Create a new directory under the current directory</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Name</source>
+        <translation type="unfinished">Όνομα</translation>
+    </message>
+    <message>
+        <source>Size</source>
+        <translation type="unfinished">Μέγεθος</translation>
+    </message>
+    <message>
+        <source>Change Time</source>
+        <translation type="unfinished">Ώρα τροποποίησης</translation>
+    </message>
+    <message>
+        <source>Owner</source>
+        <translation type="unfinished">Ιδιοκτήτης</translation>
+    </message>
+    <message>
+        <source>Permissions</source>
+        <translation type="unfinished">Δικαιώματα</translation>
+    </message>
+    <message>
+        <source>Local Path</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>ISO Path</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Options...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>VISO Options</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Manage VISO Options</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Browser Options</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Change VISO options</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Change Browser options</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>VISO Name</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show Hidden Objects</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Host file system</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add selected file objects to VISO</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

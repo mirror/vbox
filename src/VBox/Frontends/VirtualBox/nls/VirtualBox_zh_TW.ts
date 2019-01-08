@@ -2157,6 +2157,37 @@
     </message>
 </context>
 <context>
+    <name>UICustomFileSystemModel</name>
+    <message>
+        <source>Name</source>
+        <translation type="unfinished">名稱</translation>
+    </message>
+    <message>
+        <source>Size</source>
+        <translation type="unfinished">大小</translation>
+    </message>
+    <message>
+        <source>Change Time</source>
+        <translation type="unfinished">變更時間</translation>
+    </message>
+    <message>
+        <source>Owner</source>
+        <translation type="unfinished">擁有者</translation>
+    </message>
+    <message>
+        <source>Permissions</source>
+        <translation type="unfinished">權限</translation>
+    </message>
+    <message>
+        <source>LocalPath</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Path</source>
+        <translation type="unfinished">路徑</translation>
+    </message>
+</context>
+<context>
     <name>UIDetails</name>
     <message>
         <source>Name</source>
@@ -2854,23 +2885,23 @@
     </message>
     <message>
         <source>Name</source>
-        <translation>名稱</translation>
+        <translation type="vanished">名稱</translation>
     </message>
     <message>
         <source>Size</source>
-        <translation>大小</translation>
+        <translation type="vanished">大小</translation>
     </message>
     <message>
         <source>Change Time</source>
-        <translation>變更時間</translation>
+        <translation type="vanished">變更時間</translation>
     </message>
     <message>
         <source>Owner</source>
-        <translation>擁有者</translation>
+        <translation type="vanished">擁有者</translation>
     </message>
     <message>
         <source>Permissions</source>
-        <translation>權限</translation>
+        <translation type="vanished">權限</translation>
     </message>
     <message>
         <source>No Guest Session</source>
@@ -2894,7 +2925,7 @@
     </message>
     <message>
         <source>Other</source>
-        <translation>其它</translation>
+        <translation type="vanished">其它</translation>
     </message>
     <message>
         <source>Guest System</source>
@@ -3027,6 +3058,14 @@
     <message>
         <source>&lt;b&gt;Owner:&lt;/b&gt; %1</source>
         <translation>&lt;b&gt;擁有者:&lt;/b&gt; %1</translation>
+    </message>
+    <message>
+        <source>Show hidden objects</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show hidden files/directories</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -8855,6 +8894,89 @@
     <message>
         <source>Show Toolbar Text</source>
         <translation>顯示工具列文字</translation>
+    </message>
+</context>
+<context>
+    <name>UIVisoCreator</name>
+    <message>
+        <source>VISO content</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove selected file objects from VISO</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Create a new directory under the current directory</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Name</source>
+        <translation type="unfinished">名稱</translation>
+    </message>
+    <message>
+        <source>Size</source>
+        <translation type="unfinished">大小</translation>
+    </message>
+    <message>
+        <source>Change Time</source>
+        <translation type="unfinished">變更時間</translation>
+    </message>
+    <message>
+        <source>Owner</source>
+        <translation type="unfinished">擁有者</translation>
+    </message>
+    <message>
+        <source>Permissions</source>
+        <translation type="unfinished">權限</translation>
+    </message>
+    <message>
+        <source>Local Path</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>ISO Path</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Options...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>VISO Options</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Manage VISO Options</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Browser Options</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Change VISO options</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Change Browser options</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>VISO Name</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show Hidden Objects</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Host file system</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add selected file objects to VISO</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
