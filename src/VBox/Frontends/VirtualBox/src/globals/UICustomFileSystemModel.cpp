@@ -97,6 +97,17 @@ QList<const UICustomFileSystemItem*> UICustomFileSystemItem::children() const
     return childList;
 }
 
+void UICustomFileSystemItem::removeChild(UICustomFileSystemItem *pItem)
+{
+    int iIndex = m_childItems.indexOf(pItem);
+    if (iIndex == -1 || iIndex > m_childItems.size())
+        return;
+    m_childItems.removeAt(iIndex);
+    m_childMap.remove(pItem->name());
+    delete pItem;
+    pItem = 0;
+}
+
 int UICustomFileSystemItem::columnCount() const
 {
     return m_itemData.count();
@@ -571,6 +582,15 @@ void UICustomFileSystemModel::setShowHumanReadableSizes(bool fShowHumanReadableS
 bool UICustomFileSystemModel::showHumanReadableSizes() const
 {
     return m_fShowHumanReadableSizes;
+}
+
+void UICustomFileSystemModel::deleteItem(UICustomFileSystemItem* pItem)
+{
+    if (!pItem)
+        return;
+    UICustomFileSystemItem *pParent = pItem->parentItem();
+    if (pParent)
+        pParent->removeChild(pItem);
 }
 
 void UICustomFileSystemModel::initializeTree()

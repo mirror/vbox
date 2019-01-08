@@ -159,8 +159,8 @@ void UIVisoHostBrowser::prepareConnections()
 void UIVisoHostBrowser::sltHandleTableSelectionChanged(const QItemSelection &selected, const QItemSelection &deselected)
 {
     Q_UNUSED(deselected);
-    Q_UNUSED(selected);
-    m_pAddRemoveButton->setEnabled(!selected.isEmpty());
+    if (m_pAddRemoveButton)
+        m_pAddRemoveButton->setEnabled(!selected.isEmpty());
 }
 
 void UIVisoHostBrowser::tableViewItemDoubleClick(const QModelIndex &index)

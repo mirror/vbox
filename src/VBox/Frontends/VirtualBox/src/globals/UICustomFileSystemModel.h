@@ -58,6 +58,8 @@ public:
     UICustomFileSystemItem *child(const QString &path) const;
     int childCount() const;
     QList<const UICustomFileSystemItem*> children() const;
+    /** Removes the item from the list of children and !!DELETES!! the item. */
+    void removeChild(UICustomFileSystemItem *pItem);
     int columnCount() const;
     QVariant data(int column) const;
     void setData(const QVariant &data, int index);
@@ -187,6 +189,7 @@ public:
 
     void           setShowHumanReadableSizes(bool fShowHumanReadableSizes);
     bool           showHumanReadableSizes() const;
+    void           deleteItem(UICustomFileSystemItem* pItem);
     UICustomFileSystemItem* rootItem();
     const UICustomFileSystemItem* rootItem() const;
 

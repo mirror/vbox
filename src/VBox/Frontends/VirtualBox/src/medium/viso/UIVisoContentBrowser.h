@@ -75,7 +75,8 @@ private slots:
 
     void sltHandleCreateNewDirectory();
     void sltHandleItemRenameAttempt(UICustomFileSystemItem *pItem, QString strOldName, QString strNewName);
-
+    void sltHandleRemoveItems();
+    void sltHandleTableSelectionChanged(const QItemSelection &selected, const QItemSelection &deselected);
 
 private:
 
@@ -89,15 +90,24 @@ private:
     KFsObjType              fileType(const QFileInfo &fsInfo);
     void                    updateStartItemName();
     void                    renameFileObject(UICustomFileSystemItem *pItem);
-    QString                 createAnIsoEntry(UICustomFileSystemItem *pItem);
+    /** Creates and entry for pItem consisting of a map item (key is iso path and value is host file system path)
+     *  if @p bRemove is true then the value is the string ":remove:" which effectively removes the file object
+     *  from the iso image. */
+    void                    createAnIsoEntry(UICustomFileSystemItem *pItem, bool bRemove = false);
     void                    reset();
-
+    /** Returns a list of items which are currecntly selected
+     *  in the table view. */
+    QVector<UICustomFileSystemItem*> tableSelectedItems();
     UICustomFileSystemModel      *m_pModel;
     UICustomFileSystemProxyModel *m_pTableProxyModel;
     UIVisoContentTreeProxyModel  *m_pTreeProxyModel;
     QIToolButton                 *m_pNewDirectoryButton;
+    QIToolButton                 *m_pRenameButton;
     QString                       m_strVisoName;
-    QStringList                   m_entryList;
+    /** keys of m_entryMap are iso locations and values are
+     *  local location of file objects. these keys and values are
+     *  concatenated and passed to the client to create ad-hoc.viso entries. */
+    QMap<QString, QString>        m_entryMap;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_medium_viso_UIVisoContentBrowser_h */

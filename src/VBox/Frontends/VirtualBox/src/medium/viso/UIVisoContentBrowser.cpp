@@ -136,7 +136,7 @@ void UIVisoContentBrowser::addObjectsToViso(QStringList pathList)
             pAddedItem->setTargetPath(fileInfo.symLinkTarget());
             pAddedItem->setIsSymLinkToADirectory(QFileInfo(fileInfo.symLinkTarget()).isDir());
         }
-        m_entryList << createAnIsoEntry(pAddedItem);
+        createAnIsoEntry(pAddedItem);
     }
     if (m_pTableProxyModel)
         m_pTableProxyModel->invalidate();
@@ -147,22 +147,32 @@ void UIVisoContentBrowser::addObjectsToViso(QStringList pathList)
     }
 }
 
-QString UIVisoContentBrowser::createAnIsoEntry(UICustomFileSystemItem *pItem)
+void UIVisoContentBrowser::createAnIsoEntry(UICustomFileSystemItem *pItem, bool bRemove /* = false */)
 {
-    QString strEntry;
     if (!pItem)
-        return strEntry;
-    if (pItem->data(UICustomFileSystemModelColumn_Path).toString().isEmpty() ||
-        pItem->data(UICustomFileSystemModelColumn_LocalPath).toString().isEmpty())
-        return strEntry;
-    strEntry = QString("%1=%2").arg(pItem->data(UICustomFileSystemModelColumn_Path).toString()).
-        arg(pItem->data(UICustomFileSystemModelColumn_LocalPath).toString());
-    return strEntry;
+        return;
+    if (pItem->data(UICustomFileSystemModelColumn_Path).toString().isEmpty())
+        return;
+
+    if (!bRemove && pItem->data(UICustomFileSystemModelColumn_LocalPath).toString().isEmpty())
+        return;
+    if (!bRemove)
+        m_entryMap.insert(pItem->data(UICustomFileSystemModelColumn_Path).toString(),
+                          pItem->data(UICustomFileSystemModelColumn_LocalPath).toString());
+    else
+        m_entryMap.insert(pItem->data(UICustomFileSystemModelColumn_Path).toString(),
+                          ":remove:");
 }
 
 QStringList UIVisoContentBrowser::entryList()
 {
-    return m_entryList;
+    QStringList entryList;
+    for (QMap<QString, QString>::const_iterator iterator = m_entryMap.begin(); iterator != m_entryMap.end(); ++iterator)
+    {
+        QString strEntry = QString("%1=%2").arg(iterator.key()).arg(iterator.value());
+        entryList << strEntry;
+    }
+    return entryList;
 }
 
 void UIVisoContentBrowser::retranslateUi()
@@ -233,7 +243,6 @@ void UIVisoContentBrowser::sltHandleCreateNewDirectory()
             return;
     }
 
-
     UICustomFileSystemItem* pAddedItem = new UICustomFileSystemItem(strNewDirectoryName, pParentItem,
                                                                     KFsObjType_Directory);
     pAddedItem->setData(UIPathOperations::mergePaths(pParentItem->path(), strNewDirectoryName), UICustomFileSystemModelColumn_Path);
@@ -243,6 +252,47 @@ void UIVisoContentBrowser::sltHandleCreateNewDirectory()
         m_pTableProxyModel->invalidate();
 
     renameFileObject(pAddedItem);
+}
+
+void UIVisoContentBrowser::sltHandleRemoveItems()
+{
+    QVector<UICustomFileSystemItem*> selectedItems = tableSelectedItems();
+    foreach(UICustomFileSystemItem *pItem, selectedItems)
+    {
+        if (!pItem)
+            continue;
+        /* If the item is a directory the remove the item from iso entry list: */
+        if (pItem->type() == KFsObjType_Directory)
+        {
+            for (QMap<QString, QString>::iterator iterator = m_entryMap.begin(); iterator != m_entryMap.end(); )
+            {
+                QString strIsoPath = pItem->data(UICustomFileSystemModelColumn_Path).toString();
+                if (strIsoPath.isEmpty())
+                    continue;
+                if (iterator.key().startsWith(strIsoPath, Qt::CaseInsensitive))
+                    iterator = m_entryMap.erase(iterator);
+                else
+                    ++iterator;
+            }
+        }
+        /* Else mark it as "removed" in the viso file entry list: */
+        else
+        {
+            createAnIsoEntry(pItem, true /* bool bRemove */);
+        }
+    }
+    foreach(UICustomFileSystemItem *pItem, selectedItems)
+    {
+        if (!pItem)
+            continue;
+        /* Remove the item from the m_pModel: */
+        if (m_pModel)
+            m_pModel->deleteItem(pItem);
+        if (m_pTreeProxyModel)
+            m_pTreeProxyModel->invalidate();
+        if (m_pTableProxyModel)
+            m_pTableProxyModel->invalidate();
+    }
 }
 
 void UIVisoContentBrowser::prepareObjects()
@@ -268,9 +318,8 @@ void UIVisoContentBrowser::prepareObjects()
     if (m_pTreeView)
     {
         m_pTreeView->setModel(m_pTreeProxyModel);
-        // m_pTreeView->setRootIndex(m_pProxyModel->mapFromSource(m_pModel->rootIndex()));
         m_pTreeView->setCurrentIndex(m_pTreeProxyModel->mapFromSource(m_pModel->rootIndex()));
-
+        m_pTreeView->setEditTriggers(QAbstractItemView::NoEditTriggers);
         /* Show only the 0th column that is "name': */
         m_pTreeView->hideColumn(UICustomFileSystemModelColumn_Owner);
         m_pTreeView->hideColumn(UICustomFileSystemModelColumn_Permissions);
@@ -316,6 +365,13 @@ void UIVisoContentBrowser::prepareConnections()
     if (m_pModel)
         connect(m_pModel, &UICustomFileSystemModel::sigItemRenamed,
                 this, &UIVisoContentBrowser::sltHandleItemRenameAttempt);
+    if (m_pAddRemoveButton)
+        connect(m_pAddRemoveButton, &QIToolButton::clicked,
+                this, &UIVisoContentBrowser::sltHandleRemoveItems);
+    if (m_pTableView->selectionModel())
+        connect(m_pTableView->selectionModel(), &QItemSelectionModel::selectionChanged,
+                this, &UIVisoContentBrowser::sltHandleTableSelectionChanged);
+
 }
 
 UICustomFileSystemItem* UIVisoContentBrowser::rootItem()
@@ -552,8 +608,35 @@ void UIVisoContentBrowser::sltHandleItemRenameAttempt(UICustomFileSystemItem *pI
         m_pTableProxyModel->invalidate();
 }
 
+void UIVisoContentBrowser::sltHandleTableSelectionChanged(const QItemSelection &selected, const QItemSelection &deselected)
+{
+    Q_UNUSED(deselected);
+    if (m_pAddRemoveButton)
+        m_pAddRemoveButton->setEnabled(!selected.isEmpty());
+}
+
 void UIVisoContentBrowser::reset()
 {
-    m_entryList.clear();
+    m_entryMap.clear();
 }
+
+QVector<UICustomFileSystemItem*> UIVisoContentBrowser::tableSelectedItems()
+{
+    QVector<UICustomFileSystemItem*> selectedItems;
+    if (!m_pTableProxyModel)
+        return selectedItems;
+    QItemSelectionModel *selectionModel = m_pTableView->selectionModel();
+    if (!selectionModel || selectionModel->selectedIndexes().isEmpty())
+        return selectedItems;
+    QModelIndexList list = selectionModel->selectedIndexes();
+    foreach (QModelIndex index, list)
+    {
+        UICustomFileSystemItem *pItem =
+            static_cast<UICustomFileSystemItem*>(m_pTableProxyModel->mapToSource(index).internalPointer());
+        if (pItem)
+            selectedItems << pItem;
+    }
+    return selectedItems;
+}
+
 #include "UIVisoContentBrowser.moc"
