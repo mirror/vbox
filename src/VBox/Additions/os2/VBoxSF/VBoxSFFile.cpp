@@ -1190,8 +1190,8 @@ FS32_READ(PSFFSI pSfFsi, PVBOXSFSYFI pSfFsd, PVOID pvData, PULONG pcb, ULONG fIo
     }
 
     /*
-     * Whatever we do now we're going to use a page list request.
-     * So, allocate one with sufficient space to cover the whole buffer.
+     * Whatever we do now we're going to use a page list request structure.
+     * So, we do one allocation large enough for both code paths below.
      */
     uint32_t cPages = ((cbToRead + PAGE_SIZE - 1) >> PAGE_SHIFT) + 1;
     VBOXSFREADPGLSTREQ *pReq = (VBOXSFREADPGLSTREQ *)VbglR0PhysHeapAlloc(RT_UOFFSETOF_DYN(VBOXSFREADPGLSTREQ, PgLst.aPages[cPages]));
@@ -1221,14 +1221,8 @@ FS32_READ(PSFFSI pSfFsi, PVBOXSFSYFI pSfFsd, PVOID pvData, PULONG pcb, ULONG fIo
             pvBuf = vboxSfOs2AllocBigBuffer(&GCPhys);
         if (pvBuf)
         {
-            pReq->PgLst.offFirstPage = (uint16_t)GCPhys & (uint16_t)PAGE_OFFSET_MASK;
-            cPages = (cbToRead + ((uint16_t)GCPhys & (uint16_t)PAGE_OFFSET_MASK) + PAGE_SIZE - 1) >> PAGE_SHIFT;
-            GCPhys &= ~(RTGCPHYS)PAGE_OFFSET_MASK;
-            for (uint32_t i = 0; i < cPages; i++, GCPhys += PAGE_SIZE)
-                pReq->PgLst.aPages[i] = GCPhys;
-
             APIRET rc;
-            int vrc = vboxSfOs2HostReqReadPgLst(pFolder, pReq, pSfFsd->hHostFile, offRead, cbToRead, cPages);
+            int vrc = vboxSfOs2HostReqReadContig(pFolder, pReq, pSfFsd->hHostFile, offRead, cbToRead, pvBuf, GCPhys);
             if (RT_SUCCESS(vrc))
             {
                 cbActual = pReq->Parms.cb32Read.u.value32;
@@ -1363,8 +1357,8 @@ FS32_WRITE(PSFFSI pSfFsi, PVBOXSFSYFI pSfFsd, void const *pvData, PULONG pcb, UL
     }
 
     /*
-     * Whatever we do now we're going to use a page list request.
-     * So, allocate one with sufficient space to cover the whole buffer.
+     * Whatever we do now we're going to use a page list request structure.
+     * So, we do one allocation large enough for both code paths below.
      */
     uint32_t cPages = ((cbToWrite + PAGE_SIZE - 1) >> PAGE_SHIFT) + 1;
     VBOXSFWRITEPGLSTREQ *pReq = (VBOXSFWRITEPGLSTREQ *)VbglR0PhysHeapAlloc(RT_UOFFSETOF_DYN(VBOXSFWRITEPGLSTREQ, PgLst.aPages[cPages]));
@@ -1397,14 +1391,8 @@ FS32_WRITE(PSFFSI pSfFsi, PVBOXSFSYFI pSfFsd, void const *pvData, PULONG pcb, UL
             APIRET rc = KernCopyIn(pvBuf, pvData, cbToWrite);
             if (rc == NO_ERROR)
             {
-                pReq->PgLst.offFirstPage = (uint16_t)GCPhys & (uint16_t)PAGE_OFFSET_MASK;
-                cPages = (cbToWrite + ((uint16_t)GCPhys & (uint16_t)PAGE_OFFSET_MASK) + PAGE_SIZE - 1) >> PAGE_SHIFT;
-                GCPhys &= ~(RTGCPHYS)PAGE_OFFSET_MASK;
-                for (uint32_t i = 0; i < cPages; i++, GCPhys += PAGE_SIZE)
-                    pReq->PgLst.aPages[i] = GCPhys;
-
                 APIRET rc;
-                int vrc = vboxSfOs2HostReqWritePgLst(pFolder, pReq, pSfFsd->hHostFile, offWrite, cbToWrite, cPages);
+                int vrc = vboxSfOs2HostReqWriteContig(pFolder, pReq, pSfFsd->hHostFile, offWrite, cbToWrite, pvBuf, GCPhys);
                 if (RT_SUCCESS(vrc))
                 {
                     cbActual = pReq->Parms.cb32Write.u.value32;

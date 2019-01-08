@@ -103,6 +103,7 @@ DECLASM(void) VBoxSFR0Init(void)
                     RTLogBackdoorPrintf("VBoxSFR0Init: Missing VBoxGuest.sys IDC connection!  Check order in Config.kmk!\n");
                 else
                 {
+                    g_fHostFeatures = fFeatures;
                     if (!(fFeatures & VMMDEV_HVF_HGCM_EMBEDDED_BUFFERS))
                         RTLogBackdoorPrintf("VBoxSFR0Init: WARNING! Embedded buffers feature is missing.  Upgrade to latest VirtualBox!\n");
                     if (!(fFeatures & VMMDEV_HVF_HGCM_CONTIGUOUS_PAGE_LIST))

@@ -57,6 +57,8 @@
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
+/** VMMDEV_HVF_XXX (set during init). */
+uint32_t            g_fHostFeatures = 0;
 /** The shared mutex protecting folders list, drives and the connection. */
 MutexLock_t         g_MtxFolders;
 /** The shared folder service client structure. */
