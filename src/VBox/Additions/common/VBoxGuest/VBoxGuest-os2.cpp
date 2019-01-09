@@ -144,9 +144,26 @@ DECLASM(int) vgdrvOS2Init(const char *pszArgs)
     if (RT_SUCCESS(rc))
     {
         /*
-         * Process the commandline. Later.
+         * Process the command line.
          */
         bool fVerbose = true;
+        if (pszArgs)
+        {
+            char ch;
+            while ((ch = *pszArgs++) != '\0')
+                if (ch == '-' || ch == '/')
+                {
+                    ch = *pszArgs++;
+                    if (ch == 'Q' || ch == 'q')
+                        fVerbose = false;
+                    else if (ch == 'V' || ch == 'v')
+                        fVerbose = true;
+                    else if (ch == '\0')
+                        break;
+                    /*else: ignore stuff we don't know what is */
+                }
+                /* else: skip spaces and unknown stuff */
+        }
 
         /*
          * Map the MMIO memory if found.
