@@ -278,11 +278,11 @@ static int sf_read_super_aux(struct super_block *sb, void *data, int flags)
 	 * of 'loff_t max' in fs/read_write.c / do_sendfile(). I don't know the
 	 * correct limit but MAX_LFS_FILESIZE (8TB-1 on 32-bit boxes) takes the
 	 * page cache into account and is the suggested limit. */
-#if defined MAX_LFS_FILESIZE
+# if defined MAX_LFS_FILESIZE
 	sb->s_maxbytes = MAX_LFS_FILESIZE;
-#else
+# else
 	sb->s_maxbytes = 0x7fffffffffffffffULL;
-#endif
+# endif
 #endif
 	sb->s_op = &sf_super_ops;
 
@@ -383,18 +383,18 @@ static void sf_clear_inode(struct inode *inode)
 	kfree(sf_i);
 	SET_INODE_INFO(inode, NULL);
 }
-#else
+#else  /* LINUX_VERSION_CODE >= 2.6.36 */
 static void sf_evict_inode(struct inode *inode)
 {
 	struct sf_inode_info *sf_i;
 
 	TRACE();
 	truncate_inode_pages(&inode->i_data, 0);
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 5, 0)
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 5, 0)
 	clear_inode(inode);
-#else
+# else
 	end_writeback(inode);
-#endif
+# endif
 
 	sf_i = GET_INODE_INFO(inode);
 	if (!sf_i)
@@ -405,7 +405,7 @@ static void sf_evict_inode(struct inode *inode)
 	kfree(sf_i);
 	SET_INODE_INFO(inode, NULL);
 }
-#endif
+#endif /* LINUX_VERSION_CODE >= 2.6.36 */
 
 /* this is called by vfs when it wants to populate [inode] with data.
    the only thing that is known about inode at this point is its index
@@ -491,9 +491,9 @@ static int sf_remount_fs(struct super_block *sb, int *flags, char *data)
 	sf_init_inode(sf_g, iroot, &fsinfo);
 	/*unlock_new_inode(iroot); */
 	return 0;
-#else
+#else  /* LINUX_VERSION_CODE < 2.4.23 */
 	return -ENOSYS;
-#endif
+#endif /* LINUX_VERSION_CODE < 2.4.23 */
 }
 
 /** Show mount options. */
@@ -551,7 +551,7 @@ static int sf_read_super_26(struct super_block *sb, void *data, int flags)
 	return err;
 }
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 18)
+# if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 18)
 static struct super_block *sf_get_sb(struct file_system_type *fs_type,
 				     int flags, const char *dev_name,
 				     void *data)
@@ -559,33 +559,34 @@ static struct super_block *sf_get_sb(struct file_system_type *fs_type,
 	TRACE();
 	return get_sb_nodev(fs_type, flags, data, sf_read_super_26);
 }
-#elif LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 39)
+# elif LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 39)
 static int sf_get_sb(struct file_system_type *fs_type, int flags,
 		     const char *dev_name, void *data, struct vfsmount *mnt)
 {
 	TRACE();
 	return get_sb_nodev(fs_type, flags, data, sf_read_super_26, mnt);
 }
-#else
+# else /* LINUX_VERSION_CODE >= 2.6.39 */
 static struct dentry *sf_mount(struct file_system_type *fs_type, int flags,
 			       const char *dev_name, void *data)
 {
 	TRACE();
 	return mount_nodev(fs_type, flags, data, sf_read_super_26);
 }
-#endif
+# endif /* LINUX_VERSION_CODE >= 2.6.39 */
 
 static struct file_system_type vboxsf_fs_type = {
 	.owner = THIS_MODULE,
 	.name = "vboxsf",
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 39)
+# if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 39)
 	.get_sb = sf_get_sb,
-#else
+# else
 	.mount = sf_mount,
-#endif
+# endif
 	.kill_sb = kill_anon_super
 };
-#endif
+
+#endif /* LINUX_VERSION_CODE >= 2.6.0 */
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
 static int follow_symlinks = 0;

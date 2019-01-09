@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * vboxsf - VBox Linux Shared Folders VFS, Regular file inode and file operations.
+ * vboxsf - VBox Linux Shared Folders VFS, regular file inode and file operations.
  */
 
 /*
@@ -101,8 +101,8 @@ static int sf_reg_write_aux(const char *caller, struct sf_glob_info *sf_g,
 	return 0;
 }
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 23) && \
-    LINUX_VERSION_CODE <  KERNEL_VERSION(2, 6, 31)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 23) \
+ && LINUX_VERSION_CODE <  KERNEL_VERSION(2, 6, 31)
 
 void free_pipebuf(struct page *kpage)
 {
@@ -253,7 +253,7 @@ sf_splice_read(struct file *in, loff_t * poffset,
 	return retval;
 }
 
-#endif
+#endif /* 2.6.23 <= LINUX_VERSION_CODE < 2.6.31 */
 
 /**
  * Read from a regular file.
@@ -595,11 +595,11 @@ static int sf_reg_fault(struct vm_area_struct *vma, struct vm_fault *vmf)
 #elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
 static struct page *sf_reg_nopage(struct vm_area_struct *vma,
 				  unsigned long vaddr, int *type)
-#define SET_TYPE(t) *type = (t)
-#else				/* LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 0) */
+# define SET_TYPE(t) *type = (t)
+#else  /* LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 0) */
 static struct page *sf_reg_nopage(struct vm_area_struct *vma,
 				  unsigned long vaddr, int unused)
-#define SET_TYPE(t)
+# define SET_TYPE(t)
 #endif
 {
 	struct page *page;
@@ -708,22 +708,22 @@ struct file_operations sf_reg_fops = {
 	.release = sf_reg_release,
 	.mmap = sf_reg_mmap,
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 31)
+# if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 31)
 /** @todo This code is known to cause caching of data which should not be
  * cached.  Investigate. */
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 23)
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 23)
 	.splice_read = sf_splice_read,
-#else
+# else
 	.sendfile = generic_file_sendfile,
-#endif
+# endif
 	.aio_read = generic_file_aio_read,
 	.aio_write = generic_file_aio_write,
-#endif
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 35)
+# endif
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 35)
 	.fsync = noop_fsync,
-#else
+# else
 	.fsync = simple_sync_file,
-#endif
+# endif
 	.llseek = generic_file_llseek,
 #endif
 };
@@ -738,6 +738,7 @@ struct inode_operations sf_reg_iops = {
 };
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
+
 static int sf_readpage(struct file *file, struct page *page)
 {
 	struct inode *inode = GET_F_DENTRY(file)->d_inode;
@@ -808,7 +809,8 @@ static int sf_writepage(struct page *page, struct writeback_control *wbc)
 	return err;
 }
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24)
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24)
+
 int sf_write_begin(struct file *file, struct address_space *mapping, loff_t pos,
 		   unsigned len, unsigned flags, struct page **pagep,
 		   void **fsdata)
@@ -847,26 +849,28 @@ int sf_write_end(struct file *file, struct address_space *mapping, loff_t pos,
 	}
 
 	unlock_page(page);
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 6, 0)
+#  if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 6, 0)
 	put_page(page);
-#else
+#  else
 	page_cache_release(page);
-#endif
+#  endif
 
 	return nwritten;
 }
 
-#endif				/* KERNEL_VERSION >= 2.6.24 */
+# endif	/* KERNEL_VERSION >= 2.6.24 */
 
 struct address_space_operations sf_reg_aops = {
 	.readpage = sf_readpage,
 	.writepage = sf_writepage,
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24)
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24)
 	.write_begin = sf_write_begin,
 	.write_end = sf_write_end,
-#else
+# else
 	.prepare_write = simple_prepare_write,
 	.commit_write = simple_commit_write,
-#endif
+# endif
 };
-#endif
+
+#endif /* LINUX_VERSION_CODE >= 2.6.0 */
+
