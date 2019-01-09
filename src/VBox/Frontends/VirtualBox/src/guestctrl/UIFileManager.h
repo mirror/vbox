@@ -124,9 +124,6 @@ private slots:
     /** Performs whatever necessary when some signal about option change has been receieved. */
     void sltHandleOptionsUpdated();
 
-    void sltTestCopy();
-    void sltTestSession();
-
 private:
 
     void prepareObjects();
