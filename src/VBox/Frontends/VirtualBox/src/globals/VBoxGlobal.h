@@ -513,11 +513,6 @@ public:
         QUuid openMediumWithFileOpenDialog(UIMediumDeviceType enmMediumType, QWidget *pParent = 0,
                                              const QString &strDefaultFolder = QString(), bool fUseLastFolder = true);
 
-        /** Creates a VISO using the file-open dialog.
-          * @param  pParent    Brings the dialog parent.
-          * @param  strFolder  Brings the folder to browse for VISO file contents. */
-        QUuid createVisoMediumWithFileOpenDialog(QWidget *pParent, const QString &strFolder);
-
         /** Creates a VISO by using the VISO creator dialog.
           * @param  pParent    Brings the dialog parent.
           * @param  strFolder  Brings the folder to browse for VISO file contents. */

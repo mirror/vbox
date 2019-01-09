@@ -2639,78 +2639,6 @@ QUuid VBoxGlobal::openMediumWithFileOpenDialog(UIMediumDeviceType enmMediumType,
     return QUuid();
 }
 
-QUuid VBoxGlobal::createVisoMediumWithFileOpenDialog(QWidget *pParent, const QString &strFolder)
-{
-    AssertReturn(!strFolder.isEmpty(), QString());
-
-    /* Figure out where to start browsing for content. */
-    QString strDirectory = gEDataManager->recentFolderForVISOContent();
-    if (strDirectory.isEmpty())
-        strDirectory = QDir::homePath();
-    if (strDirectory.isEmpty())
-        strDirectory = homeFolder();
-
-    /* Execute the open file dialog, getting a list of files & dirs back. */
-    /** @todo make it possible to select directories... */
-    QStringList files = QIFileDialog::getOpenFileNames(strDirectory, tr("All files (*)"), pParent,
-                                                       /// @todo tr("Please select files and directories to be on the VISO"),
-                                                       tr("Please select files to be on the VISO"),
-                                                       0, true /* resolve symlinks? */, false /* single file? */);
-
-    /* Return if no result. */
-    if (files.empty() || files[0].isEmpty())
-        return QUuid();
-
-    /* Remember folder for the next time. */
-    gEDataManager->setRecentFolderForVISOContent(QFileInfo(files[0]).absolutePath());
-
-    /* Produce the VISO. */
-    char szVisoPath[RTPATH_MAX];
-    int vrc = RTPathJoin(szVisoPath, sizeof(szVisoPath), strFolder.toUtf8().constData(), "ad-hoc.viso");
-    if (RT_SUCCESS(vrc))
-    {
-        PRTSTREAM pStrmViso;
-        vrc = RTStrmOpen(szVisoPath, "w", &pStrmViso);
-        if (RT_SUCCESS(vrc))
-        {
-            RTUUID Uuid;
-            vrc = RTUuidCreate(&Uuid);
-            if (RT_SUCCESS(vrc))
-            {
-                RTStrmPrintf(pStrmViso, "--iprt-iso-maker-file-marker-bourne-sh %RTuuid\n", &Uuid);
-
-                for (int iFile = 0; iFile < files.size(); iFile++)
-                {
-                    QByteArray const utf8Name = files[iFile].toUtf8();
-                    const char *apszArgv[2] = { utf8Name.constData(), NULL };
-                    char *pszQuoted;
-                    vrc = RTGetOptArgvToString(&pszQuoted, apszArgv, RTGETOPTARGV_CNV_QUOTE_BOURNE_SH);
-                    if (RT_SUCCESS(vrc))
-                    {
-                        RTStrmPrintf(pStrmViso, "%s\n", pszQuoted);
-                        RTStrFree(pszQuoted);
-                    }
-                    else
-                        break;
-                }
-
-                RTStrmFlush(pStrmViso);
-                if (RT_SUCCESS(vrc))
-                    vrc = RTStrmError(pStrmViso);
-            }
-
-            RTStrmClose(pStrmViso);
-        }
-    }
-
-    /* Done. */
-    if (RT_SUCCESS(vrc))
-        return openMedium(UIMediumDeviceType_DVD, QString(szVisoPath), pParent);
-
-    /** @todo error message. */
-    return QUuid();
-}
-
 QUuid VBoxGlobal::createVisoMediumWithVisoCreator(QWidget *pParent, const QString &strFolder)
 {
 
@@ -2774,6 +2702,12 @@ QUuid VBoxGlobal::createVisoMediumWithVisoCreator(QWidget *pParent, const QStrin
         {
             delete pVisoCreator;
             return openMedium(UIMediumDeviceType_DVD, QString(szVisoPath), pParent);
+        }
+        /** @todo error message. */
+        else
+        {
+            delete pVisoCreator;
+            return QUuid();
         }
     }
     delete pVisoCreator;
@@ -3028,10 +2962,8 @@ void VBoxGlobal::updateMachineStorage(const CMachine &comConstMachine, const UIM
                 if (target.type == UIMediumTarget::UIMediumTargetType_WithID)
                     uMediumID = openMediumWithFileOpenDialog(target.mediumType, windowManager().mainWindowShown(), strMachineFolder);
                 else if(target.type == UIMediumTarget::UIMediumTargetType_CreateAdHocVISO)
-                {
-                    //uMediumID = createVisoMediumWithFileOpenDialog(windowManager().mainWindowShown(), strMachineFolder);
                     uMediumID = createVisoMediumWithVisoCreator(windowManager().mainWindowShown(), strMachineFolder);
-                }
+
                 else if(target.type == UIMediumTarget::UIMediumTargetType_CreateFloppyDisk)
                     uMediumID = showCreateFloppyDiskDialog(windowManager().mainWindowShown(), comConstMachine.GetName(), strMachineFolder);
 
