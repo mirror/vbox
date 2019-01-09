@@ -2994,7 +2994,7 @@ static int drvAudioStreamCreateInternalBackend(PDRVAUDIO pThis,
     if (pDrvCfg->uPeriodSizeMs)
         pCfgReq->Backend.cfPeriod = DrvAudioHlpMilliToFrames(pDrvCfg->uPeriodSizeMs, &pCfgReq->Props);
     else /* Set default period size. */
-        pCfgReq->Backend.cfPeriod = DrvAudioHlpMilliToFrames(20 /* ms */, &pCfgReq->Props);
+        pCfgReq->Backend.cfPeriod = DrvAudioHlpMilliToFrames(50 /* ms */, &pCfgReq->Props);
 
     LogRel2(("Audio: Using %s period size (%RU64ms, %RU32 frames) for stream '%s'\n",
              pDrvCfg->uPeriodSizeMs ? "custom" : "default", DrvAudioHlpFramesToMilli(pCfgReq->Backend.cfPeriod, &pCfgReq->Props),
@@ -3006,7 +3006,7 @@ static int drvAudioStreamCreateInternalBackend(PDRVAUDIO pThis,
     if (pDrvCfg->uBufferSizeMs)
         pCfgReq->Backend.cfBufferSize = DrvAudioHlpMilliToFrames(pDrvCfg->uBufferSizeMs, &pCfgReq->Props);
     else /* Set default buffer size. */
-        pCfgReq->Backend.cfBufferSize = DrvAudioHlpMilliToFrames(100 /* ms */, &pCfgReq->Props);
+        pCfgReq->Backend.cfBufferSize = DrvAudioHlpMilliToFrames(250 /* ms */, &pCfgReq->Props);
 
     LogRel2(("Audio: Using %s buffer size (%RU64ms, %RU32 frames) for stream '%s'\n",
              pDrvCfg->uBufferSizeMs ? "custom" : "default", DrvAudioHlpFramesToMilli(pCfgReq->Backend.cfBufferSize, &pCfgReq->Props),
@@ -3022,7 +3022,10 @@ static int drvAudioStreamCreateInternalBackend(PDRVAUDIO pThis,
         pCfgReq->Backend.cfPreBuf = DrvAudioHlpMilliToFrames(pDrvCfg->uPreBufSizeMs, &pCfgReq->Props);
     }
     else /* Set default pre-buffering size. */
-        pCfgReq->Backend.cfPreBuf = pCfgReq->Backend.cfPeriod * 2;
+    {
+        /* For pre-buffering to finish the buffer at least must be full one time. */
+        pCfgReq->Backend.cfPreBuf = pCfgReq->Backend.cfBufferSize;
+    }
 
     LogRel2(("Audio: Using %s pre-buffering size (%RU64ms, %RU32 frames) for stream '%s'\n",
              pDrvCfg->uPreBufSizeMs != UINT32_MAX ? "custom" : "default", DrvAudioHlpFramesToMilli(pCfgReq->Backend.cfPreBuf, &pCfgReq->Props),
@@ -3098,8 +3101,8 @@ static int drvAudioStreamCreateInternalBackend(PDRVAUDIO pThis,
     AssertMsgReturn(pCfgAcq->Backend.cfPeriod < pCfgAcq->Backend.cfBufferSize,
                     ("Acquired period size must be smaller than buffer size\n"),
                     VERR_INVALID_PARAMETER);
-    AssertMsgReturn(pCfgAcq->Backend.cfPreBuf < pCfgAcq->Backend.cfBufferSize,
-                    ("Acquired pre-buffering size must be smaller than buffer size -- this otherwise will lead to buffer overruns\n"),
+    AssertMsgReturn(pCfgAcq->Backend.cfPreBuf <= pCfgAcq->Backend.cfBufferSize,
+                    ("Acquired pre-buffering size must be smaller or as big as the buffer size\n"),
                     VERR_INVALID_PARAMETER);
 
     pStream->fStatus |= PDMAUDIOSTREAMSTS_FLAG_INITIALIZED;
