@@ -47,24 +47,6 @@
 # include <linux/compiler.h>
 #endif
 #include <linux/usbdevice_fs.h>
-/*
- * Backlevel 2.4 headers doesn't have these two defines.
- * They were added some time between 2.4.21 and 2.4.26, probably in 2.4.23.
- */
-#ifndef USBDEVFS_DISCONNECT
-# define USBDEVFS_DISCONNECT        _IO('U', 22)
-# define USBDEVFS_CONNECT           _IO('U', 23)
-#endif
-
-#ifndef USBDEVFS_URB_SHORT_NOT_OK
-# define USBDEVFS_URB_SHORT_NOT_OK  0 /* rhel3 doesn't have this. darn! */
-#endif
-
-
-/* FedoraCore 4 does not have the bit defined by default. */
-#ifndef POLLWRNORM
-# define POLLWRNORM 0x0100
-#endif
 
 #ifndef RDESKTOP
 # include <VBox/vmm/pdm.h>
