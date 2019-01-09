@@ -823,10 +823,10 @@ static DECLCALLBACK(void) usbProxyLinuxClose(PUSBPROXYDEV pProxyDev)
 
 
 /** @interface_method_impl{USBPROXYBACK,pfnReset} */
-static DECLCALLBACK(int) usbProxyLinuxReset(PUSBPROXYDEV pProxyDev, bool fRootHubReset)
+static DECLCALLBACK(int) usbProxyLinuxReset(PUSBPROXYDEV pProxyDev, bool fResetOnLinux)
 {
     PUSBPROXYDEVLNX pDevLnx = USBPROXYDEV_2_DATA(pProxyDev, PUSBPROXYDEVLNX);
-    RT_NOREF(fRootHubReset);
+    RT_NOREF(fResetOnLinux);
     Assert(!pProxyDev->fMaskedIfs);
     LogFlow(("usbProxyLinuxReset: pProxyDev=%s\n", usbProxyGetName(pProxyDev)));
 
