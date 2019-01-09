@@ -744,7 +744,7 @@ DECLINLINE(RTSEL) iemVmxVmcsGetHostSelReg(PCVMXVVMCS pVmcs, uint8_t iSegReg)
     uint8_t  const  uWidth     = VMX_VMCS_ENC_WIDTH_16BIT;
     uint8_t  const  uType      = VMX_VMCS_ENC_TYPE_HOST_STATE;
     uint8_t  const  uWidthType = (uWidth << 2) | uType;
-    uint8_t  const  uIndex     = (iSegReg << 1) + RT_BF_GET(VMX_VMCS16_GUEST_ES_SEL, VMX_BF_VMCS_ENC_INDEX);
+    uint8_t  const  uIndex     = iSegReg + RT_BF_GET(VMX_VMCS16_HOST_ES_SEL, VMX_BF_VMCS_ENC_INDEX);
     Assert(uIndex <= VMX_V_VMCS_MAX_INDEX);
     uint16_t const  offField   = g_aoffVmcsMap[uWidthType][uIndex];
     uint8_t  const *pbVmcs     = (uint8_t *)pVmcs;
@@ -771,7 +771,7 @@ IEM_STATIC void iemVmxVmcsSetGuestSegReg(PCVMXVVMCS pVmcs, uint8_t iSegReg, PCCP
         uint8_t  const  uWidth     = VMX_VMCS_ENC_WIDTH_16BIT;
         uint8_t  const  uType      = VMX_VMCS_ENC_TYPE_GUEST_STATE;
         uint8_t  const  uWidthType = (uWidth << 2) | uType;
-        uint8_t  const  uIndex     = (iSegReg << 1) + RT_BF_GET(VMX_VMCS16_GUEST_ES_SEL, VMX_BF_VMCS_ENC_INDEX);
+        uint8_t  const  uIndex     = iSegReg + RT_BF_GET(VMX_VMCS16_GUEST_ES_SEL, VMX_BF_VMCS_ENC_INDEX);
         Assert(uIndex <= VMX_V_VMCS_MAX_INDEX);
         uint16_t const  offField   = g_aoffVmcsMap[uWidthType][uIndex];
         uint8_t        *pbVmcs     = (uint8_t *)pVmcs;
@@ -784,7 +784,7 @@ IEM_STATIC void iemVmxVmcsSetGuestSegReg(PCVMXVVMCS pVmcs, uint8_t iSegReg, PCCP
         uint8_t  const  uWidth     = VMX_VMCS_ENC_WIDTH_32BIT;
         uint8_t  const  uType      = VMX_VMCS_ENC_TYPE_GUEST_STATE;
         uint8_t  const  uWidthType = (uWidth << 2) | uType;
-        uint8_t  const  uIndex     = (iSegReg << 1) + RT_BF_GET(VMX_VMCS32_GUEST_ES_LIMIT, VMX_BF_VMCS_ENC_INDEX);
+        uint8_t  const  uIndex     = iSegReg + RT_BF_GET(VMX_VMCS32_GUEST_ES_LIMIT, VMX_BF_VMCS_ENC_INDEX);
         Assert(uIndex <= VMX_V_VMCS_MAX_INDEX);
         uint16_t const  offField   = g_aoffVmcsMap[uWidthType][uIndex];
         uint8_t        *pbVmcs     = (uint8_t *)pVmcs;
@@ -797,7 +797,7 @@ IEM_STATIC void iemVmxVmcsSetGuestSegReg(PCVMXVVMCS pVmcs, uint8_t iSegReg, PCCP
         uint8_t  const  uWidth     = VMX_VMCS_ENC_WIDTH_NATURAL;
         uint8_t  const  uType      = VMX_VMCS_ENC_TYPE_GUEST_STATE;
         uint8_t  const  uWidthType = (uWidth << 2) | uType;
-        uint8_t  const  uIndex     = (iSegReg << 1) + RT_BF_GET(VMX_VMCS_GUEST_ES_BASE, VMX_BF_VMCS_ENC_INDEX);
+        uint8_t  const  uIndex     = iSegReg + RT_BF_GET(VMX_VMCS_GUEST_ES_BASE, VMX_BF_VMCS_ENC_INDEX);
         Assert(uIndex <= VMX_V_VMCS_MAX_INDEX);
         uint16_t const  offField   = g_aoffVmcsMap[uWidthType][uIndex];
         uint8_t  const *pbVmcs     = (uint8_t *)pVmcs;
@@ -813,7 +813,7 @@ IEM_STATIC void iemVmxVmcsSetGuestSegReg(PCVMXVVMCS pVmcs, uint8_t iSegReg, PCCP
         uint8_t  const  uWidth     = VMX_VMCS_ENC_WIDTH_32BIT;
         uint8_t  const  uType      = VMX_VMCS_ENC_TYPE_GUEST_STATE;
         uint8_t  const  uWidthType = (uWidth << 2) | uType;
-        uint8_t  const  uIndex     = (iSegReg << 1) + RT_BF_GET(VMX_VMCS32_GUEST_ES_ACCESS_RIGHTS, VMX_BF_VMCS_ENC_INDEX);
+        uint8_t  const  uIndex     = iSegReg + RT_BF_GET(VMX_VMCS32_GUEST_ES_ACCESS_RIGHTS, VMX_BF_VMCS_ENC_INDEX);
         Assert(uIndex <= VMX_V_VMCS_MAX_INDEX);
         uint16_t const  offField   = g_aoffVmcsMap[uWidthType][uIndex];
         uint8_t        *pbVmcs     = (uint8_t *)pVmcs;
@@ -846,7 +846,7 @@ IEM_STATIC int iemVmxVmcsGetGuestSegReg(PCVMXVVMCS pVmcs, uint8_t iSegReg, PCPUM
         uint8_t  const  uWidth     = VMX_VMCS_ENC_WIDTH_16BIT;
         uint8_t  const  uType      = VMX_VMCS_ENC_TYPE_GUEST_STATE;
         uint8_t  const  uWidthType = (uWidth << 2) | uType;
-        uint8_t  const  uIndex     = (iSegReg << 1) + RT_BF_GET(VMX_VMCS16_GUEST_ES_SEL, VMX_BF_VMCS_ENC_INDEX);
+        uint8_t  const  uIndex     = iSegReg + RT_BF_GET(VMX_VMCS16_GUEST_ES_SEL, VMX_BF_VMCS_ENC_INDEX);
         AssertReturn(uIndex <= VMX_V_VMCS_MAX_INDEX, VERR_IEM_IPE_3);
         uint16_t const  offField   = g_aoffVmcsMap[uWidthType][uIndex];
         uint8_t  const *pbVmcs     = (uint8_t *)pVmcs;
@@ -860,7 +860,7 @@ IEM_STATIC int iemVmxVmcsGetGuestSegReg(PCVMXVVMCS pVmcs, uint8_t iSegReg, PCPUM
         uint8_t  const  uWidth     = VMX_VMCS_ENC_WIDTH_32BIT;
         uint8_t  const  uType      = VMX_VMCS_ENC_TYPE_GUEST_STATE;
         uint8_t  const  uWidthType = (uWidth << 2) | uType;
-        uint8_t  const  uIndex     = (iSegReg << 1) + RT_BF_GET(VMX_VMCS32_GUEST_ES_LIMIT, VMX_BF_VMCS_ENC_INDEX);
+        uint8_t  const  uIndex     = iSegReg + RT_BF_GET(VMX_VMCS32_GUEST_ES_LIMIT, VMX_BF_VMCS_ENC_INDEX);
         AssertReturn(uIndex <= VMX_V_VMCS_MAX_INDEX, VERR_IEM_IPE_3);
         uint16_t const  offField   = g_aoffVmcsMap[uWidthType][uIndex];
         uint8_t  const *pbVmcs     = (uint8_t *)pVmcs;
@@ -874,7 +874,7 @@ IEM_STATIC int iemVmxVmcsGetGuestSegReg(PCVMXVVMCS pVmcs, uint8_t iSegReg, PCPUM
         uint8_t  const  uWidth     = VMX_VMCS_ENC_WIDTH_NATURAL;
         uint8_t  const  uType      = VMX_VMCS_ENC_TYPE_GUEST_STATE;
         uint8_t  const  uWidthType = (uWidth << 2) | uType;
-        uint8_t  const  uIndex     = (iSegReg << 1) + RT_BF_GET(VMX_VMCS_GUEST_ES_BASE, VMX_BF_VMCS_ENC_INDEX);
+        uint8_t  const  uIndex     = iSegReg + RT_BF_GET(VMX_VMCS_GUEST_ES_BASE, VMX_BF_VMCS_ENC_INDEX);
         AssertReturn(uIndex <= VMX_V_VMCS_MAX_INDEX, VERR_IEM_IPE_3);
         uint16_t const  offField   = g_aoffVmcsMap[uWidthType][uIndex];
         uint8_t  const *pbVmcs     = (uint8_t *)pVmcs;
@@ -889,7 +889,7 @@ IEM_STATIC int iemVmxVmcsGetGuestSegReg(PCVMXVVMCS pVmcs, uint8_t iSegReg, PCPUM
         uint8_t  const  uWidth     = VMX_VMCS_ENC_WIDTH_32BIT;
         uint8_t  const  uType      = VMX_VMCS_ENC_TYPE_GUEST_STATE;
         uint8_t  const  uWidthType = (uWidth << 2) | uType;
-        uint8_t  const  uIndex     = (iSegReg << 1) + RT_BF_GET(VMX_VMCS32_GUEST_ES_ACCESS_RIGHTS, VMX_BF_VMCS_ENC_INDEX);
+        uint8_t  const  uIndex     = iSegReg + RT_BF_GET(VMX_VMCS32_GUEST_ES_ACCESS_RIGHTS, VMX_BF_VMCS_ENC_INDEX);
         AssertReturn(uIndex <= VMX_V_VMCS_MAX_INDEX, VERR_IEM_IPE_3);
         uint16_t const  offField   = g_aoffVmcsMap[uWidthType][uIndex];
         uint8_t  const *pbVmcs     = (uint8_t *)pVmcs;
@@ -921,7 +921,7 @@ DECLINLINE(uint64_t) iemVmxVmcsGetCr3TargetValue(PCVMXVVMCS pVmcs, uint8_t idxCr
     uint8_t  const  uWidth         = VMX_VMCS_ENC_WIDTH_NATURAL;
     uint8_t  const  uType          = VMX_VMCS_ENC_TYPE_CONTROL;
     uint8_t  const  uWidthType     = (uWidth << 2) | uType;
-    uint8_t  const  uIndex         = (idxCr3Target << 1) + RT_BF_GET(VMX_VMCS_CTRL_CR3_TARGET_VAL0, VMX_BF_VMCS_ENC_INDEX);
+    uint8_t  const  uIndex         = idxCr3Target + RT_BF_GET(VMX_VMCS_CTRL_CR3_TARGET_VAL0, VMX_BF_VMCS_ENC_INDEX);
     Assert(uIndex <= VMX_V_VMCS_MAX_INDEX);
     uint16_t const  offField       = g_aoffVmcsMap[uWidthType][uIndex];
     uint8_t  const *pbVmcs         = (uint8_t *)pVmcs;
