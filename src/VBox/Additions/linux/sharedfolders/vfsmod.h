@@ -1,5 +1,6 @@
+/* $Id$ */
 /** @file
- * vboxsf - VirtualBox Guest Additions for Linux.
+ * vboxsf - Linux Shared Folders VFS, internal header.
  */
 
 /*

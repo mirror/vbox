@@ -1,7 +1,6 @@
+/* $Id$ */
 /** @file
- *
- * vboxsf -- VirtualBox Guest Additions for Linux:
- * Directory inode and file operations
+ * vboxsf - VBox Linux Shared Folders VFS, directory inode and file operations
  */
 
 /*

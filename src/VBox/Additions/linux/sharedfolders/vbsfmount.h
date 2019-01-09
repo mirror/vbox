@@ -1,5 +1,6 @@
+/* $Id$ */
 /** @file
- * vboxsf -- VirtualBox Guest Additions for Linux: mount(2) parameter structure.
+ * vboxsf - VBox Linux Shared Folders VFS, mount(2) parameter structure.
  */
 
 /*

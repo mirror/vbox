@@ -1,7 +1,6 @@
+/* $Id$ */
 /** @file
- *
- * vboxsf -- VirtualBox Guest Additions for Linux:
- * Operations for symbolic links.
+ * vboxsf - VBox Linux Shared Folders VFS, operations for symbolic links.
  */
 
 /*

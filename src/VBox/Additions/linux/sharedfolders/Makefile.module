@@ -1,6 +1,6 @@
 # $Id$
 ## @file
-# VirtualBox Guest Additions Module Makefile.
+# VBox Linux Shared Folders VFS Module Makefile.
 #
 # (For 2.6.x this file must be 'Makefile'!)
 #

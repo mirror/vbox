@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * vboxsf - VBox Linux Shared Folders, Regular file inode and file operations.
+ * vboxsf - VBox Linux Shared Folders VFS, Regular file inode and file operations.
  */
 
 /*

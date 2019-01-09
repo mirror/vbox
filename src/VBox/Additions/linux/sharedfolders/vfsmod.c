@@ -1,12 +1,6 @@
+/* $Id$ */
 /** @file
- *
- * vboxsf -- VirtualBox Guest Additions for Linux:
- * Virtual File System for VirtualBox Shared Folders
- *
- * Module initialization/finalization
- * File system registration/deregistration
- * Superblock reading
- * Few utility functions
+ * vboxsf - VBox Linux Shared Folders VFS, module init/term, super block management.
  */
 
 /*
@@ -527,8 +521,6 @@ static int sf_show_options(struct seq_file *m, struct dentry *root)
     return 0;
 }
 
-/** @todo Implement show_options (forever) or maybe set s_options (2.6.25+).
- *        Necessary for the automounter tagging.  */
 static struct super_operations sf_super_ops = {
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 36)
 	.clear_inode = sf_clear_inode,
