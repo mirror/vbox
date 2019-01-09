@@ -366,27 +366,26 @@ uint16_t const g_aoffVmcsMap[16][VMX_V_VMCS_MAX_INDEX + 1] =
         /*     1 */ RT_UOFFSETOF(VMXVVMCS, u32GuestCsLimit),
         /*     2 */ RT_UOFFSETOF(VMXVVMCS, u32GuestSsLimit),
         /*     3 */ RT_UOFFSETOF(VMXVVMCS, u32GuestDsLimit),
-        /*     4 */ RT_UOFFSETOF(VMXVVMCS, u32GuestEsLimit),
-        /*     5 */ RT_UOFFSETOF(VMXVVMCS, u32GuestFsLimit),
-        /*     6 */ RT_UOFFSETOF(VMXVVMCS, u32GuestGsLimit),
-        /*     7 */ RT_UOFFSETOF(VMXVVMCS, u32GuestLdtrLimit),
-        /*     8 */ RT_UOFFSETOF(VMXVVMCS, u32GuestTrLimit),
-        /*     9 */ RT_UOFFSETOF(VMXVVMCS, u32GuestGdtrLimit),
-        /*    10 */ RT_UOFFSETOF(VMXVVMCS, u32GuestIdtrLimit),
-        /*    11 */ RT_UOFFSETOF(VMXVVMCS, u32GuestEsAttr),
-        /*    12 */ RT_UOFFSETOF(VMXVVMCS, u32GuestCsAttr),
-        /*    13 */ RT_UOFFSETOF(VMXVVMCS, u32GuestSsAttr),
-        /*    14 */ RT_UOFFSETOF(VMXVVMCS, u32GuestDsAttr),
-        /*    15 */ RT_UOFFSETOF(VMXVVMCS, u32GuestFsAttr),
-        /*    16 */ RT_UOFFSETOF(VMXVVMCS, u32GuestGsAttr),
-        /*    17 */ RT_UOFFSETOF(VMXVVMCS, u32GuestLdtrAttr),
-        /*    18 */ RT_UOFFSETOF(VMXVVMCS, u32GuestTrAttr),
-        /*    19 */ RT_UOFFSETOF(VMXVVMCS, u32GuestIntrState),
-        /*    20 */ RT_UOFFSETOF(VMXVVMCS, u32GuestActivityState),
-        /*    21 */ RT_UOFFSETOF(VMXVVMCS, u32GuestSmBase),
-        /*    22 */ RT_UOFFSETOF(VMXVVMCS, u32GuestSysenterCS),
-        /*    23 */ RT_UOFFSETOF(VMXVVMCS, u32PreemptTimer),
-        /* 24-25 */ UINT16_MAX, UINT16_MAX
+        /*     4 */ RT_UOFFSETOF(VMXVVMCS, u32GuestFsLimit),
+        /*     5 */ RT_UOFFSETOF(VMXVVMCS, u32GuestGsLimit),
+        /*     6 */ RT_UOFFSETOF(VMXVVMCS, u32GuestLdtrLimit),
+        /*     7 */ RT_UOFFSETOF(VMXVVMCS, u32GuestTrLimit),
+        /*     8 */ RT_UOFFSETOF(VMXVVMCS, u32GuestGdtrLimit),
+        /*     9 */ RT_UOFFSETOF(VMXVVMCS, u32GuestIdtrLimit),
+        /*    10 */ RT_UOFFSETOF(VMXVVMCS, u32GuestEsAttr),
+        /*    11 */ RT_UOFFSETOF(VMXVVMCS, u32GuestCsAttr),
+        /*    12 */ RT_UOFFSETOF(VMXVVMCS, u32GuestSsAttr),
+        /*    13 */ RT_UOFFSETOF(VMXVVMCS, u32GuestDsAttr),
+        /*    14 */ RT_UOFFSETOF(VMXVVMCS, u32GuestFsAttr),
+        /*    15 */ RT_UOFFSETOF(VMXVVMCS, u32GuestGsAttr),
+        /*    16 */ RT_UOFFSETOF(VMXVVMCS, u32GuestLdtrAttr),
+        /*    17 */ RT_UOFFSETOF(VMXVVMCS, u32GuestTrAttr),
+        /*    18 */ RT_UOFFSETOF(VMXVVMCS, u32GuestIntrState),
+        /*    19 */ RT_UOFFSETOF(VMXVVMCS, u32GuestActivityState),
+        /*    20 */ RT_UOFFSETOF(VMXVVMCS, u32GuestSmBase),
+        /*    21 */ RT_UOFFSETOF(VMXVVMCS, u32GuestSysenterCS),
+        /*    22 */ RT_UOFFSETOF(VMXVVMCS, u32PreemptTimer),
+        /* 23-25 */ UINT16_MAX, UINT16_MAX, UINT16_MAX
     },
     /* VMX_VMCS_ENC_WIDTH_32BIT | VMX_VMCS_ENC_TYPE_HOST_STATE: */
     {
@@ -2011,7 +2010,7 @@ IEM_STATIC int iemVmxVmexitSaveGuestAutoMsrs(PVMCPU pVCpu, uint32_t uExitReason)
 
     RTGCPHYS const GCPhysAutoMsrArea = pVmcs->u64AddrExitMsrStore.u;
     int rc = PGMPhysSimpleWriteGCPhys(pVCpu->CTX_SUFF(pVM), GCPhysAutoMsrArea,
-                                      pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pAutoMsrArea), VMX_V_AUTOMSR_AREA_SIZE);
+                                      pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pAutoMsrArea), cMsrs * sizeof(VMXAUTOMSR));
     if (RT_SUCCESS(rc))
     { /* likely */ }
     else
@@ -2340,9 +2339,10 @@ IEM_STATIC int iemVmxVmexitLoadHostAutoMsrs(PVMCPU pVCpu, uint32_t uExitReason)
     else
         IEM_VMX_VMEXIT_FAILED_RET(pVCpu, uExitReason, pszFailure, kVmxVDiag_Vmexit_MsrLoadCount);
 
+    Assert(pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pAutoMsrArea));
     RTGCPHYS const GCPhysAutoMsrArea = pVmcs->u64AddrExitMsrLoad.u;
-    int rc = PGMPhysSimpleReadGCPhys(pVCpu->CTX_SUFF(pVM), (void *)&pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pAutoMsrArea),
-                                     GCPhysAutoMsrArea, VMX_V_AUTOMSR_AREA_SIZE);
+    int rc = PGMPhysSimpleReadGCPhys(pVCpu->CTX_SUFF(pVM), (void *)pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pAutoMsrArea),
+                                     GCPhysAutoMsrArea, cMsrs * sizeof(VMXAUTOMSR));
     if (RT_SUCCESS(rc))
     {
         PCVMXAUTOMSR pMsr = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pAutoMsrArea);
@@ -5421,7 +5421,7 @@ IEM_STATIC int iemVmxVmentryCheckGuestSegRegs(PVMCPU pVCpu, const char *pszInstr
         Ldtr.Sel      = pVmcs->GuestLdtr;
         Ldtr.u32Limit = pVmcs->u32GuestLdtrLimit;
         Ldtr.u64Base  = pVmcs->u64GuestLdtrBase.u;
-        Ldtr.Attr.u   = pVmcs->u32GuestLdtrLimit;
+        Ldtr.Attr.u   = pVmcs->u32GuestLdtrAttr;
 
         if (!Ldtr.Attr.n.u1Unusable)
         {
@@ -5478,7 +5478,7 @@ IEM_STATIC int iemVmxVmentryCheckGuestSegRegs(PVMCPU pVCpu, const char *pszInstr
         Tr.Sel      = pVmcs->GuestTr;
         Tr.u32Limit = pVmcs->u32GuestTrLimit;
         Tr.u64Base  = pVmcs->u64GuestTrBase.u;
-        Tr.Attr.u   = pVmcs->u32GuestTrLimit;
+        Tr.Attr.u   = pVmcs->u32GuestTrAttr;
 
         /* Selector. */
         if (!(Tr.Sel & X86_SEL_LDT))
@@ -6822,11 +6822,11 @@ IEM_STATIC int iemVmxVmentryLoadGuestAutoMsrs(PVMCPU pVCpu, const char *pszInstr
     }
 
     RTGCPHYS const GCPhysAutoMsrArea = pVmcs->u64AddrEntryMsrLoad.u;
-    int rc = PGMPhysSimpleReadGCPhys(pVCpu->CTX_SUFF(pVM), (void *)&pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pAutoMsrArea),
-                                     GCPhysAutoMsrArea, VMX_V_AUTOMSR_AREA_SIZE);
+    int rc = PGMPhysSimpleReadGCPhys(pVCpu->CTX_SUFF(pVM), (void *)pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pAutoMsrArea),
+                                     GCPhysAutoMsrArea, cMsrs * sizeof(VMXAUTOMSR));
     if (RT_SUCCESS(rc))
     {
-        PVMXAUTOMSR pMsr = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pAutoMsrArea);
+        PCVMXAUTOMSR pMsr = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pAutoMsrArea);
         Assert(pMsr);
         for (uint32_t idxMsr = 0; idxMsr < cMsrs; idxMsr++, pMsr++)
         {
