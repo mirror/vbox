@@ -515,7 +515,7 @@ public:
 
         /** Creates a VISO by using the VISO creator dialog.
           * @param  pParent    Brings the dialog parent.
-          * @param  strFolder  Brings the folder to browse for VISO file contents. */
+          * @param  strFolder  Brings the folder to save the VISO file. */
         QUuid createVisoMediumWithVisoCreator(QWidget *pParent, const QString &strFolder);
 
         /** Creates and shows a dialog thru which user can create a new floppy disk a VISO using the file-open dialog.
