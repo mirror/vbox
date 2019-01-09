@@ -54,6 +54,7 @@
 /VBox/VBoxGuestCoreTypes.h:             --license-mit
 /VBox/VBoxGuestLib.h:                   --license-mit
 /VBox/VBoxGuestLibSharedFolders.h:      --license-mit
+/VBox/VBoxGuestLibSharedFoldersInline.h: --license-mit
 /VBox/VMMDev.h:                         --license-mit
 /VBox/VMMDevCoreTypes.h:                --license-mit
 
