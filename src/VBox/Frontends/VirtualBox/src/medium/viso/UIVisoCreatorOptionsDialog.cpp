@@ -28,21 +28,13 @@
 #include "QILabel.h"
 #include "QILineEdit.h"
 #include "QITabWidget.h"
-#include "UIIconPool.h"
-#include "UIToolBar.h"
-#include "UIVisoHostBrowser.h"
 #include "UIVisoCreator.h"
 #include "UIVisoCreatorOptionsDialog.h"
-#include "UIVisoContentBrowser.h"
 
-UIVisoCreatorOptionsDialog::UIVisoCreatorOptionsDialog(const VisoOptions &visoOptions,
-                                                       const BrowserOptions &browserOptions,
-                                                       QWidget *pParent /* =0 */)
+UIVisoCreatorOptionsDialog::UIVisoCreatorOptionsDialog(const BrowserOptions &browserOptions, QWidget *pParent /* =0 */)
     : QIDialog(pParent)
     , m_pMainLayout(0)
     , m_pButtonBox(0)
-    , m_pTab(0)
-    , m_visoOptions(visoOptions)
     , m_browserOptions(browserOptions)
 {
     prepareObjects();
@@ -58,11 +50,6 @@ const BrowserOptions &UIVisoCreatorOptionsDialog::browserOptions() const
     return m_browserOptions;
 }
 
-const VisoOptions &UIVisoCreatorOptionsDialog::visoOptions() const
-{
-    return m_visoOptions;
-}
-
 void UIVisoCreatorOptionsDialog::sltHandlShowHiddenObjectsChange(int iState)
 {
     if (iState == static_cast<int>(Qt::Checked))
@@ -71,40 +58,27 @@ void UIVisoCreatorOptionsDialog::sltHandlShowHiddenObjectsChange(int iState)
         m_browserOptions.m_bShowHiddenObjects = false;
 }
 
-void UIVisoCreatorOptionsDialog::sltHandleVisoNameChange(const QString &strText)
-{
-    m_visoOptions.m_strVisoName = strText;
-}
-
 void UIVisoCreatorOptionsDialog::prepareObjects()
 {
-    m_pMainLayout = new QVBoxLayout;
+    m_pMainLayout = new QGridLayout;
     if (!m_pMainLayout)
         return;
 
-    m_pTab = new QITabWidget;
-    if (m_pTab)
-    {
-        m_pMainLayout->addWidget(m_pTab);
-        m_pTab->insertTab(static_cast<int>(TabPage_VISO_Options), new QWidget, UIVisoCreator::tr("VISO Options"));
-        m_pTab->insertTab(static_cast<int>(TabPage_Browser_Options), new QWidget, UIVisoCreator::tr("Browser Options"));
-
-        m_pTab->setTabToolTip(static_cast<int>(TabPage_VISO_Options), UIVisoCreator::tr("Change VISO options"));
-        m_pTab->setTabWhatsThis(static_cast<int>(TabPage_VISO_Options), UIVisoCreator::tr("Change VISO options"));
-
-        m_pTab->setTabToolTip(static_cast<int>(TabPage_Browser_Options), UIVisoCreator::tr("Change Browser options"));
-        m_pTab->setTabWhatsThis(static_cast<int>(TabPage_Browser_Options), UIVisoCreator::tr("Change Browser options"));
-
-
-    }
-    prepareTabWidget();
+    QCheckBox *pShowHiddenObjectsCheckBox = new QCheckBox;
+    pShowHiddenObjectsCheckBox->setChecked(m_browserOptions.m_bShowHiddenObjects);
+    QILabel *pShowHiddenObjectsLabel = new QILabel(UIVisoCreator::tr("Show Hidden Objects"));
+    pShowHiddenObjectsLabel->setBuddy(pShowHiddenObjectsCheckBox);
+    m_pMainLayout->addWidget(pShowHiddenObjectsLabel, 0, 0);
+    m_pMainLayout->addWidget(pShowHiddenObjectsCheckBox, 0, 1);
+    connect(pShowHiddenObjectsCheckBox, &QCheckBox::stateChanged,
+            this, &UIVisoCreatorOptionsDialog::sltHandlShowHiddenObjectsChange);
 
     m_pButtonBox = new QIDialogButtonBox;
     if (m_pButtonBox)
     {
         m_pButtonBox->setStandardButtons(QDialogButtonBox::Cancel | QDialogButtonBox::Ok);
         m_pButtonBox->button(QDialogButtonBox::Cancel)->setShortcut(Qt::Key_Escape);
-        m_pMainLayout->addWidget(m_pButtonBox);
+        m_pMainLayout->addWidget(m_pButtonBox, 1, 0, 1, 2);
     }
     setLayout(m_pMainLayout);
 }
@@ -116,44 +90,4 @@ void UIVisoCreatorOptionsDialog::prepareConnections()
         connect(m_pButtonBox, &QIDialogButtonBox::rejected, this, &UIVisoCreatorOptionsDialog::close);
         connect(m_pButtonBox, &QIDialogButtonBox::accepted, this, &UIVisoCreatorOptionsDialog::accept);
     }
-}
-
-void UIVisoCreatorOptionsDialog::prepareTabWidget()
-{
-    if (!m_pTab)
-        return;
-    QWidget *pVisoPage = m_pTab->widget(static_cast<int>(TabPage_VISO_Options));
-    if (pVisoPage)
-    {
-        QGridLayout *pLayout = new QGridLayout;
-
-        QILineEdit *pVisoNameLineEdit = new QILineEdit;
-        connect(pVisoNameLineEdit, &QILineEdit::textChanged,
-                this, &UIVisoCreatorOptionsDialog::sltHandleVisoNameChange);
-        pVisoNameLineEdit->setText(m_visoOptions.m_strVisoName);
-        QILabel *pVisoNameLabel = new QILabel(UIVisoCreator::tr("VISO Name"));
-        pVisoNameLabel->setBuddy(pVisoNameLineEdit);
-
-        pLayout->addWidget(pVisoNameLabel, 0, 0, Qt::AlignTop);
-        pLayout->addWidget(pVisoNameLineEdit, 0, 1, Qt::AlignTop);
-
-        pVisoPage->setLayout(pLayout);
-    }
-
-    QWidget *pBrowserPage = m_pTab->widget(static_cast<int>(TabPage_Browser_Options));
-    if (pBrowserPage)
-    {
-        QGridLayout *pLayout = new QGridLayout;
-
-        QCheckBox *pShowHiddenObjectsCheckBox = new QCheckBox;
-        pShowHiddenObjectsCheckBox->setChecked(m_browserOptions.m_bShowHiddenObjects);
-        QILabel *pShowHiddenObjectsLabel = new QILabel(UIVisoCreator::tr("Show Hidden Objects"));
-        pShowHiddenObjectsLabel->setBuddy(pShowHiddenObjectsCheckBox);
-        pLayout->addWidget(pShowHiddenObjectsLabel, 0, 0, Qt::AlignTop);
-        pLayout->addWidget(pShowHiddenObjectsCheckBox, 0, 1, Qt::AlignTop);
-        connect(pShowHiddenObjectsCheckBox, &QCheckBox::stateChanged,
-                this, &UIVisoCreatorOptionsDialog::sltHandlShowHiddenObjectsChange);
-        pBrowserPage->setLayout(pLayout);
-    }
-
 }

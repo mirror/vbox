@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIVisoCreatorOptionsDialog class declaration.
+ * VBox Qt GUI - UIVisoConfigurationDialog class declaration.
  */
 
 /*
@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef FEQT_INCLUDED_SRC_medium_viso_UIVisoCreatorOptionsDialog_h
-#define FEQT_INCLUDED_SRC_medium_viso_UIVisoCreatorOptionsDialog_h
+#ifndef FEQT_INCLUDED_SRC_medium_viso_UIVisoConfigurationDialog_h
+#define FEQT_INCLUDED_SRC_medium_viso_UIVisoConfigurationDialog_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -27,32 +27,34 @@
 #include "UIVisoCreatorDefs.h"
 
 /* Forward declarations: */
+class QITabWidget;
 class QGridLayout;
 class QIDialogButtonBox;
 
-class SHARED_LIBRARY_STUFF UIVisoCreatorOptionsDialog : public QIDialog
+class SHARED_LIBRARY_STUFF UIVisoConfigurationDialog : public QIDialog
 {
     Q_OBJECT;
 
 public:
 
-    UIVisoCreatorOptionsDialog(const BrowserOptions &browserOptions,
-                               QWidget *pParent = 0);
-    ~UIVisoCreatorOptionsDialog();
-    const BrowserOptions &browserOptions() const;
+    UIVisoConfigurationDialog(const VisoOptions &visoOptions,
+                              QWidget *pParent = 0);
+    ~UIVisoConfigurationDialog();
+    const VisoOptions &visoOptions() const;
 
 private slots:
 
-    void sltHandlShowHiddenObjectsChange(int iState);
+    void sltHandleVisoNameChange(const QString &strText);
 
 private:
 
     void prepareObjects();
     void prepareConnections();
+
     QGridLayout          *m_pMainLayout;
     QIDialogButtonBox    *m_pButtonBox;
-    BrowserOptions       m_browserOptions;
+    VisoOptions          m_visoOptions;
     friend class UIVisoCreator;
 };
 
-#endif /* !FEQT_INCLUDED_SRC_medium_viso_UIVisoCreatorOptionsDialog_h */
+#endif /* !FEQT_INCLUDED_SRC_medium_viso_UIVisoConfigurationDialog_h */

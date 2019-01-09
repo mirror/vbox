@@ -68,8 +68,9 @@ private slots:
 
     void sltHandleAddObjectsToViso(QStringList pathList);
     void sltHandleOptionsAction();
+    void sltHandleConfigurationAction();
 
-private:
+ private:
 
     void prepareObjects();
     void prepareConnections();
@@ -86,9 +87,10 @@ private:
     UIVisoContentBrowser *m_pVisoBrowser;
     QIDialogButtonBox    *m_pButtonBox;
     UIToolBar            *m_pToolBar;
+    QAction              *m_pActionConfiguration;
     QAction              *m_pActionOptions;
-    VisoOptions          m_visoOptions;
-    BrowserOptions       m_browserOptions;
+    VisoOptions           m_visoOptions;
+    BrowserOptions        m_browserOptions;
 
 };
 

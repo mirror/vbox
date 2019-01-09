@@ -27,6 +27,7 @@
 #include "UIToolBar.h"
 #include "UIVisoHostBrowser.h"
 #include "UIVisoCreator.h"
+#include "UIVisoConfigurationDialog.h"
 #include "UIVisoCreatorOptionsDialog.h"
 #include "UIVisoContentBrowser.h"
 
@@ -39,6 +40,7 @@ UIVisoCreator::UIVisoCreator(QWidget *pParent /* =0 */)
     , m_pVisoBrowser(0)
     , m_pButtonBox(0)
     , m_pToolBar(0)
+    , m_pActionConfiguration(0)
     , m_pActionOptions(0)
 {
 
@@ -65,11 +67,17 @@ const QString &UIVisoCreator::visoName() const
 
 void UIVisoCreator::retranslateUi()
 {
+    if (m_pActionConfiguration)
+    {
+        m_pActionConfiguration->setText(tr("&Configuration..."));
+        m_pActionConfiguration->setToolTip(tr("VISO Configuration"));
+        m_pActionConfiguration->setStatusTip(tr("Manage VISO Configuration"));
+    }
     if (m_pActionOptions)
     {
         m_pActionOptions->setText(tr("&Options..."));
-        m_pActionOptions->setToolTip(tr("VISO Options"));
-        m_pActionOptions->setStatusTip(tr("Manage VISO Options"));
+        m_pActionOptions->setToolTip(tr("Dialog Options"));
+        m_pActionOptions->setStatusTip(tr("Manage Dialog Options"));
     }
 }
 
@@ -81,7 +89,7 @@ void UIVisoCreator::sltHandleAddObjectsToViso(QStringList pathList)
 
 void UIVisoCreator::sltHandleOptionsAction()
 {
-    UIVisoCreatorOptionsDialog *pDialog = new UIVisoCreatorOptionsDialog(m_visoOptions, m_browserOptions, this);
+    UIVisoCreatorOptionsDialog *pDialog = new UIVisoCreatorOptionsDialog(m_browserOptions, this);
 
     if(!pDialog)
         return;
@@ -89,11 +97,23 @@ void UIVisoCreator::sltHandleOptionsAction()
     {
         /** Check if any of the options has been modified: */
         checkBrowserOptions(pDialog->browserOptions());
-        checkVisoOptions(pDialog->visoOptions());
     }
     delete pDialog;
 }
 
+void UIVisoCreator::sltHandleConfigurationAction()
+{
+    UIVisoConfigurationDialog *pDialog = new UIVisoConfigurationDialog(m_visoOptions, this);
+
+    if(!pDialog)
+        return;
+    if (pDialog->execute(true, false))
+    {
+        /** Check if any of the options has been modified: */
+        checkVisoOptions(pDialog->visoOptions());
+    }
+    delete pDialog;
+}
 
 void UIVisoCreator::prepareObjects()
 {
@@ -109,8 +129,11 @@ void UIVisoCreator::prepareObjects()
         m_pToolBar->setIconSize(QSize(iIconMetric, iIconMetric));
         m_pToolBar->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
         /* Add toolbar actions: */
+        if (m_pActionConfiguration)
+            m_pToolBar->addAction(m_pActionConfiguration);
         if (m_pActionOptions)
             m_pToolBar->addAction(m_pActionOptions);
+
         m_pMainLayout->addWidget(m_pToolBar);
     }
 
@@ -153,15 +176,23 @@ void UIVisoCreator::prepareConnections()
         connect(m_pButtonBox, &QIDialogButtonBox::rejected, this, &UIVisoCreator::close);
         connect(m_pButtonBox, &QIDialogButtonBox::accepted, this, &UIVisoCreator::accept);
     }
+    if (m_pActionConfiguration)
+        connect(m_pActionConfiguration, &QAction::triggered, this, &UIVisoCreator::sltHandleConfigurationAction);
     if (m_pActionOptions)
-    {
         connect(m_pActionOptions, &QAction::triggered, this, &UIVisoCreator::sltHandleOptionsAction);
-
-    }
 }
 
 void UIVisoCreator::prepareActions()
 {
+    m_pActionConfiguration = new QAction(this);
+    if (m_pActionConfiguration)
+    {
+        m_pActionConfiguration->setIcon(UIIconPool::iconSetFull(":/file_manager_options_32px.png",
+                                                          ":/%file_manager_options_16px.png",
+                                                          ":/file_manager_options_disabled_32px.png",
+                                                          ":/file_manager_options_disabled_16px.png"));
+    }
+
     m_pActionOptions = new QAction(this);
     if (m_pActionOptions)
     {

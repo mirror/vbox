@@ -832,6 +832,7 @@ ifndef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/medium/viso/UIVisoBrowserBase.h \
 	src/medium/viso/UIVisoContentBrowser.h \
 	src/medium/viso/UIVisoCreator.h \
+	src/medium/viso/UIVisoConfigurationDialog.h \
 	src/medium/viso/UIVisoCreatorOptionsDialog.h \
 	src/medium/viso/UIVisoHostBrowser.h \
 	src/runtime/UIConsoleEventHandler.h \
@@ -1129,6 +1130,7 @@ ifdef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/medium/viso/UIVisoBrowserBase.h \
 	src/medium/viso/UIVisoContentBrowser.h \
 	src/medium/viso/UIVisoCreator.h \
+	src/medium/viso/UIVisoConfigurationDialog.h \
 	src/medium/viso/UIVisoCreatorOptionsDialog.h \
 	src/medium/viso/UIVisoHostBrowser.h \
 	src/settings/UISettingsDialog.h \
@@ -1576,6 +1578,7 @@ ifndef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/medium/viso/UIVisoBrowserBase.cpp \
 	src/medium/viso/UIVisoContentBrowser.cpp \
 	src/medium/viso/UIVisoCreator.cpp \
+	src/medium/viso/UIVisoConfigurationDialog.cpp \
 	src/medium/viso/UIVisoCreatorOptionsDialog.cpp \
 	src/medium/viso/UIVisoHostBrowser.cpp \
 	src/objects/UIRichTextString.cpp \
@@ -1925,6 +1928,7 @@ ifdef VBOX_GUI_WITH_SHARED_LIBRARY
 	src/medium/viso/UIVisoBrowserBase.cpp \
 	src/medium/viso/UIVisoContentBrowser.cpp \
 	src/medium/viso/UIVisoCreator.cpp \
+	src/medium/viso/UIVisoConfigurationDialog.cpp \
 	src/medium/viso/UIVisoCreatorOptionsDialog.cpp \
 	src/medium/viso/UIVisoHostBrowser.cpp \
 	src/objects/UIRichTextString.cpp \
