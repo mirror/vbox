@@ -100,7 +100,7 @@ void UIVisoHostBrowser::retranslateUi()
     if (m_pTitleLabel)
         m_pTitleLabel->setText(QApplication::translate("UIVisoCreator", "Host file system"));
     if (m_pAddAction)
-        m_pAddAction->setToolTip(QApplication::translate("UIVisoCreator", "Add selected file objects to VISO"));
+        m_pAddAction->setToolTip(QApplication::translate("UIVisoCreator", "Add selected file objects to ISO"));
 }
 
 void UIVisoHostBrowser::prepareObjects()
@@ -192,13 +192,13 @@ void UIVisoHostBrowser::showHideHiddenObjects(bool bShow)
 {
     if (bShow)
     {
-        m_pTableModel->setFilter(QDir::AllDirs | QDir::NoDotAndDotDot | QDir::Hidden);
         m_pTreeModel->setFilter(QDir::AllDirs | QDir::NoDotAndDotDot | QDir::Hidden);
+        m_pTableModel->setFilter(QDir::AllEntries | QDir::NoDot | QDir::Hidden | QDir::System);
     }
     else
     {
-        m_pTableModel->setFilter(QDir::AllDirs | QDir::NoDotAndDotDot);
         m_pTreeModel->setFilter(QDir::AllDirs | QDir::NoDotAndDotDot);
+        m_pTableModel->setFilter(QDir::AllEntries | QDir::NoDot);
     }
 }
 
@@ -213,7 +213,10 @@ void UIVisoHostBrowser::sltHandleAddAction()
     QStringList pathList;
     for (int i = 0; i < selectedIndices.size(); ++i)
     {
-        pathList << m_pTableModel->filePath(selectedIndices[i]);
+        QString strPath = m_pTableModel->filePath(selectedIndices[i]);
+        if (strPath.contains(".."))
+            continue;
+        pathList << strPath;
     }
     emit sigAddObjectsToViso(pathList);
 }

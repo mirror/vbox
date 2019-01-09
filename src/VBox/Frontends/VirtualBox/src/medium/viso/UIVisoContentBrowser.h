@@ -77,6 +77,7 @@ private slots:
     void sltHandleItemRenameAttempt(UICustomFileSystemItem *pItem, QString strOldName, QString strNewName);
     void sltHandleRemoveItems();
     void sltHandleTableSelectionChanged(const QItemSelection &selected, const QItemSelection &deselected);
+    void sltHandleResetAction();
 
 private:
 
@@ -90,6 +91,7 @@ private:
     KFsObjType              fileType(const QFileInfo &fsInfo);
     void                    updateStartItemName();
     void                    renameFileObject(UICustomFileSystemItem *pItem);
+    void                    removeItems(const QList<UICustomFileSystemItem*> itemList);
     /** Creates and entry for pItem consisting of a map item (key is iso path and value is host file system path)
      *  if @p bRemove is true then the value is the string ":remove:" which effectively removes the file object
      *  from the iso image. */
@@ -97,7 +99,8 @@ private:
     void                    reset();
     /** Returns a list of items which are currecntly selected
      *  in the table view. */
-    QVector<UICustomFileSystemItem*> tableSelectedItems();
+    QList<UICustomFileSystemItem*> tableSelectedItems();
+
     UICustomFileSystemModel      *m_pModel;
     UICustomFileSystemProxyModel *m_pTableProxyModel;
     UIVisoContentTreeProxyModel  *m_pTreeProxyModel;

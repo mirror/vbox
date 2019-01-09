@@ -108,6 +108,11 @@ void UICustomFileSystemItem::removeChild(UICustomFileSystemItem *pItem)
     pItem = 0;
 }
 
+void UICustomFileSystemItem::removeChildren()
+{
+    reset();
+}
+
 int UICustomFileSystemItem::columnCount() const
 {
     return m_itemData.count();

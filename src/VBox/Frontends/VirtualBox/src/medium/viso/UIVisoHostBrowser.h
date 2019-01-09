@@ -54,7 +54,6 @@ protected:
     virtual void tableViewItemDoubleClick(const QModelIndex &index) /* override */;
     virtual void setTableRootIndex(QModelIndex index = QModelIndex()) /* override */;
     virtual void setTreeCurrentIndex(QModelIndex index = QModelIndex()) /* override */;
-
     virtual void treeSelectionChanged(const QModelIndex &selectedTreeIndex) /* override */;
 
 private slots:
