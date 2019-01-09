@@ -992,12 +992,18 @@ static DECLCALLBACK(int) drvAudioStreamWrite(PPDMIAUDIOCONNECTOR pInterface, PPD
             }
             else
             {
-                Log3Func(("[%s] Writing %RU32 frames (%RU64ms), now filled with %RU64ms -- %RU8%%\n",
-                          pStream->szName, cfGstWritten, DrvAudioHlpFramesToMilli(cfGstWritten, &pStream->Guest.Cfg.Props),
+                const uint64_t tsNowNs = RTTimeNanoTS();
+
+                Log3Func(("[%s] Writing %RU32 frames (%RU64ms)\n",
+                          pStream->szName, cfGstWritten, DrvAudioHlpFramesToMilli(cfGstWritten, &pStream->Guest.Cfg.Props)));
+
+                Log3Func(("[%s] Last written %RU64ns (%RU64ms), now filled with %RU64ms -- %RU8%%\n",
+                          pStream->szName, tsNowNs - pStream->tsLastReadWrittenNs,
+                          (tsNowNs - pStream->tsLastReadWrittenNs) / RT_NS_1MS,
                           DrvAudioHlpFramesToMilli(AudioMixBufUsed(&pStream->Host.MixBuf), &pStream->Host.Cfg.Props),
                           AudioMixBufUsed(&pStream->Host.MixBuf) * 100 / AudioMixBufSize(&pStream->Host.MixBuf)));
 
-                pStream->tsLastReadWrittenNs = RTTimeNanoTS();
+                pStream->tsLastReadWrittenNs = tsNowNs;
                 /* Keep going. */
             }
 
