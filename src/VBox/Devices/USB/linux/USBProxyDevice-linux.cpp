@@ -19,11 +19,6 @@
 /*********************************************************************************************************************************
 *   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
-/** Define NO_PORT_RESET to skip the slow and broken linux port reset.
- * Resetting will break PalmOne. */
-#define NO_PORT_RESET
-/** Define NO_LOGICAL_RECONNECT to skip the broken logical reconnect handling. */
-#define NO_LOGICAL_RECONNECT
 
 
 /*********************************************************************************************************************************
@@ -94,9 +89,6 @@ static inline bool rtcsTrue() { return true; }
 #include <iprt/stream.h>
 #include <iprt/string.h>
 #include <iprt/list.h>
-#if defined(NO_PORT_RESET) && !defined(NO_LOGICAL_RECONNECT)
-# include <iprt/thread.h>
-#endif
 #include <iprt/time.h>
 #include "../USBProxyDevice.h"
 
@@ -162,20 +154,17 @@ typedef struct USBPROXYDEVLNX
     /** The device node/sysfs path of the device.
      * Used to figure out the configuration after a reset. */
     char                *pszPath;
+    /** Mask of claimed interfaces. */
+    uint32_t            fClaimedIfsMask;
 } USBPROXYDEVLNX, *PUSBPROXYDEVLNX;
 
 
 /*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
-static int usbProxyLinuxDoIoCtl(PUSBPROXYDEV pProxyDev, unsigned long iCmd, void *pvArg, bool fHandleNoDev, uint32_t cTries);
 static void usbProxLinuxUrbUnplugged(PUSBPROXYDEV pProxyDev);
-static void usbProxyLinuxSetConnected(PUSBPROXYDEV pProyxDev, int iIf, bool fConnect, bool fQuiet);
-static PUSBPROXYURBLNX usbProxyLinuxUrbAlloc(PUSBPROXYDEV pProxyDev, PUSBPROXYURBLNX pSplitHead);
-static void usbProxyLinuxUrbFree(PUSBPROXYDEV pProxyDev, PUSBPROXYURBLNX pUrbLnx);
-static void usbProxyLinuxUrbFreeSplitList(PUSBPROXYDEV pProxyDev, PUSBPROXYURBLNX pUrbLnx);
-static int usbProxyLinuxFindActiveConfig(PUSBPROXYDEV pProxyDev, const char *pszPath, int *piFirstCfg);
-
+static DECLCALLBACK(int) usbProxyLinuxClaimInterface(PUSBPROXYDEV pProxyDev, int iIf);
+static DECLCALLBACK(int) usbProxyLinuxReleaseInterface(PUSBPROXYDEV pProxyDev, int iIf);
 
 
 /**
@@ -675,6 +664,7 @@ static DECLCALLBACK(int) usbProxyLinuxOpen(PUSBPROXYDEV pProxyDev, const char *p
             {
                 pDevLnx->fUsingSysfs = fUsingSysfs;
                 pDevLnx->hFile = hFile;
+                pDevLnx->fClaimedIfsMask = 0;
                 rc = RTCritSectInit(&pDevLnx->CritSect);
                 if (RT_SUCCESS(rc))
                 {
@@ -774,7 +764,7 @@ static DECLCALLBACK(void) usbProxyLinuxClose(PUSBPROXYDEV pProxyDev)
         }
         else if (errno != ENODEV)
             LogRel(("USB: Reset failed, errno=%d, pProxyDev=%s.\n", errno, usbProxyGetName(pProxyDev)));
-        else
+        else    /* This will happen if device was detached. */
             Log(("USB: Reset failed, errno=%d (ENODEV), pProxyDev=%s.\n", errno, usbProxyGetName(pProxyDev)));
     }
 
@@ -832,278 +822,55 @@ static DECLCALLBACK(void) usbProxyLinuxClose(PUSBPROXYDEV pProxyDev)
 }
 
 
-#if defined(NO_PORT_RESET) && !defined(NO_LOGICAL_RECONNECT)
-/**
- * Look for the logically reconnected device.
- * After 5 seconds we'll give up.
- *
- * @returns VBox status code.
- * @thread  Reset thread or EMT.
- */
-static int usb_reset_logical_reconnect(PUSBPROXYDEV pDev)
-{
-    FILE *          pFile;
-    uint64_t        u64StartTS = RTTimeMilliTS();
-
-    Log2(("usb_reset_logical_reconnect: pDev=%p:{.bBus=%#x, .bDevNum=%#x, .idVendor=%#x, .idProduct=%#x, .bcdDevice=%#x, .u64SerialHash=%#llx .bDevNumParent=%#x .bPort=%#x .bLevel=%#x}\n",
-          pDev, pDev->Info.bBus, pDev->Info.bDevNum, pDev->Info.idVendor, pDev->Info.idProduct, pDev->Info.bcdDevice,
-          pDev->Info.u64SerialHash, pDev->Info.bDevNumParent, pDev->Info.bPort, pDev->Info.bLevel));
-
-    /* First, let hubd get a chance to logically reconnect the device. */
-    if (!RTThreadYield())
-        RTThreadSleep(1);
-
-    /*
-     * Search for the new device address.
-     */
-    pFile = get_devices_file();
-    if (!pFile)
-        return VERR_FILE_NOT_FOUND;
-
-    /*
-     * Loop until found or 5seconds have elapsed.
-     */
-    for (;;) {
-        struct pollfd   pfd;
-        uint8_t     tmp;
-        int         rc;
-        char        buf[512];
-        uint64_t    u64Elapsed;
-        int         got = 0;
-        struct usb_dev_entry id = {0};
-
-        /*
-         * Since this is kernel ABI we don't need to be too fussy about
-         * the parsing.
-         */
-        while (fgets(buf, sizeof(buf), pFile)) {
-            char *psz = strchr(buf, '\n');
-            if ( psz == NULL ) {
-                AssertMsgFailed(("usb_reset_logical_reconnect: Line to long!!\n"));
-                break;
-            }
-            *psz = '\0';
-
-            switch ( buf[0] ) {
-            case 'T': /* topology */
-                /* Check if we've got enough for a device. */
-                if (got >= 2) {
-                    Log2(("usb_reset_logical_reconnect: {.bBus=%#x, .bDevNum=%#x, .idVendor=%#x, .idProduct=%#x, .bcdDevice=%#x, .u64SerialHash=%#llx, .bDevNumParent=%#x, .bPort=%#x, .bLevel=%#x}\n",
-                          id.bBus, id.bDevNum, id.idVendor, id.idProduct, id.bcdDevice, id.u64SerialHash, id.bDevNumParent, id.bPort, id.bLevel));
-                    if (    id.bDevNumParent == pDev->Info.bDevNumParent
-                        &&  id.idVendor == pDev->Info.idVendor
-                        &&  id.idProduct == pDev->Info.idProduct
-                        &&  id.bcdDevice == pDev->Info.bcdDevice
-                        &&  id.u64SerialHash == pDev->Info.u64SerialHash
-                        &&  id.bBus == pDev->Info.bBus
-                        &&  id.bPort == pDev->Info.bPort
-                        &&  id.bLevel == pDev->Info.bLevel) {
-                        goto l_found;
-                    }
-                }
-
-                /* restart */
-                got = 0;
-                memset(&id, 0, sizeof(id));
-
-                /*T:  Bus=04 Lev=02 Prnt=02 Port=00 Cnt=01 Dev#=  3 Spd=1.5 MxCh= 0*/
-                Log2(("usb_reset_logical_reconnect: %s\n", buf));
-                buf[10] = '\0';
-                if ( !get_u8(buf + 8, &id.bBus) )
-                    break;
-                buf[49] = '\0';
-                psz = buf + 46;
-                while ( *psz == ' ' )
-                    psz++;
-                if ( !get_u8(psz, &id.bDevNum) )
-                    break;
-
-                buf[17] = '\0';
-                if ( !get_u8(buf + 15, &id.bLevel) )
-                    break;
-                buf[25] = '\0';
-                if ( !get_u8(buf + 23, &id.bDevNumParent) )
-                    break;
-                buf[33] = '\0';
-                if ( !get_u8(buf + 31, &id.bPort) )
-                    break;
-                got++;
-                break;
-
-            case 'P': /* product */
-                Log2(("usb_reset_logical_reconnect: %s\n", buf));
-                buf[15] = '\0';
-                if ( !get_x16(buf + 11, &id.idVendor) )
-                    break;
-                buf[27] = '\0';
-                if ( !get_x16(buf + 23, &id.idProduct) )
-                    break;
-                buf[34] = '\0';
-                if ( buf[32] == ' ' )
-                    buf[32] = '0';
-                id.bcdDevice = 0;
-                if ( !get_x8(buf + 32, &tmp) )
-                    break;
-                id.bcdDevice = tmp << 8;
-                if ( !get_x8(buf + 35, &tmp) )
-                    break;
-                id.bcdDevice |= tmp;
-                got++;
-                break;
-
-            case 'S': /* String descriptor */
-                /* Skip past "S:" and then the whitespace */
-                for(psz = buf + 2; *psz != '\0'; psz++)
-                    if ( !RT_C_IS_SPACE(*psz) )
-                        break;
-
-                /* If it is a serial number string, skip past
-                 * "SerialNumber="
-                 */
-                if (strncmp(psz, RT_STR_TUPLE("SerialNumber=")))
-                    break;
-
-                Log2(("usb_reset_logical_reconnect: %s\n", buf));
-                psz += sizeof("SerialNumber=") - 1;
-
-                usb_serial_hash(psz, &id.u64SerialHash);
-                break;
-            }
-        }
-
-        /*
-         * Check last.
-         */
-        if (    got >= 2
-            &&  id.bDevNumParent == pDev->Info.bDevNumParent
-            &&  id.idVendor == pDev->Info.idVendor
-            &&  id.idProduct == pDev->Info.idProduct
-            &&  id.bcdDevice == pDev->Info.bcdDevice
-            &&  id.u64SerialHash == pDev->Info.u64SerialHash
-            &&  id.bBus == pDev->Info.bBus
-            &&  id.bPort == pDev->Info.bPort
-            &&  id.bLevel == pDev->Info.bLevel) {
-        l_found:
-            /* close the existing file descriptor. */
-            RTFileClose(pDevLnx->File);
-            pDevLnx->File = NIL_RTFILE;
-
-            /* open stuff at the new address. */
-            pDev->Info = id;
-            if (usbProxyLinuxOpen(pDev, &id))
-                return VINF_SUCCESS;
-            break;
-        }
-
-        /*
-         * Wait for a while and then check the file again.
-         */
-        u64Elapsed = RTTimeMilliTS() - u64StartTS;
-        if (u64Elapsed >= 5000/*ms*/)
-            break; /* done */
-
-        pfd.fd = fileno(pFile);
-        pfd.events = POLLIN;
-        rc = poll(&pfd, 1, 5000 - u64Elapsed);
-        if (rc < 0) {
-            AssertMsg(errno == EINTR, ("errno=%d\n", errno));
-            RTThreadSleep(32); /* paranoia: don't eat cpu on failure */
-        }
-
-        rewind(pFile);
-    } /* for loop */
-
-    return VERR_GENERAL_FAILURE;
-}
-#endif /* !NO_PORT_RESET && !NO_LOGICAL_RECONNECT */
-
-
 /** @interface_method_impl{USBPROXYBACK,pfnReset} */
-static DECLCALLBACK(int) usbProxyLinuxReset(PUSBPROXYDEV pProxyDev, bool fResetOnLinux)
+static DECLCALLBACK(int) usbProxyLinuxReset(PUSBPROXYDEV pProxyDev, bool fRootHubReset)
 {
-#ifdef NO_PORT_RESET
     PUSBPROXYDEVLNX pDevLnx = USBPROXYDEV_2_DATA(pProxyDev, PUSBPROXYDEVLNX);
-
-    /*
-     * Specific device resets are NOPs.
-     * Root hub resets that affects all devices are executed.
-     *
-     * The reasoning is that when a root hub reset is done, the guest shouldn't
-     * will have to re enumerate the devices after doing this kind of reset.
-     * So, it doesn't really matter if a device is 'logically disconnected'.
-     */
-    if (    !fResetOnLinux
-        ||  pProxyDev->fMaskedIfs)
-        LogFlow(("usbProxyLinuxReset: pProxyDev=%s - NO_PORT_RESET\n", usbProxyGetName(pProxyDev)));
-    else
-    {
-        LogFlow(("usbProxyLinuxReset: pProxyDev=%s - Real Reset!\n", usbProxyGetName(pProxyDev)));
-        if (usbProxyLinuxDoIoCtl(pProxyDev, USBDEVFS_RESET, NULL, false, 10))
-        {
-            int rc = errno;
-            Log(("usb-linux: Reset failed, rc=%s errno=%d.\n",
-                 RTErrGetShort(RTErrConvertFromErrno(rc)), rc));
-            pProxyDev->iActiveCfg = -1;
-            return RTErrConvertFromErrno(rc);
-        }
-
-        /* find the active config - damn annoying. */
-        pProxyDev->iActiveCfg = usbProxyLinuxFindActiveConfig(pProxyDev, pDevLnx->pszPath, NULL);
-        LogFlow(("usbProxyLinuxReset: returns successfully iActiveCfg=%d\n", pProxyDev->iActiveCfg));
-    }
-    pProxyDev->cIgnoreSetConfigs = 2;
-
-#else /* !NO_PORT_RESET */
-
-    /*
-     * This is the alternative, we will always reset when asked to do so.
-     *
-     * The problem we're facing here is that on reset failure linux will do
-     * a 'logical reconnect' on the device. This will invalidate the current
-     * handle and we'll have to reopen the device. This is problematic to say
-     * the least, especially since it happens pretty often.
-     */
+    RT_NOREF(fRootHubReset);
+    Assert(!pProxyDev->fMaskedIfs);
     LogFlow(("usbProxyLinuxReset: pProxyDev=%s\n", usbProxyGetName(pProxyDev)));
-# ifndef NO_LOGICAL_RECONNECT
-    ASMAtomicIncU32(&g_cResetActive);
-# endif
+
+    uint32_t fActiveIfsMask = pDevLnx->fClaimedIfsMask;
+    unsigned i;
+
+    /*
+     * Before reset, release claimed interfaces. This less than obvious move
+     * prevents Linux from rebinding in-kernel drivers to the device after reset.
+     */
+    for (i = 0; i < (sizeof(fActiveIfsMask) * 8); ++i)
+    {
+        if (fActiveIfsMask & RT_BIT(i))
+        {
+            usbProxyLinuxReleaseInterface(pProxyDev, i);
+        }
+    }
 
     if (usbProxyLinuxDoIoCtl(pProxyDev, USBDEVFS_RESET, NULL, false, 10))
     {
         int rc = errno;
-# ifndef NO_LOGICAL_RECONNECT
-        if (rc == ENODEV)
-        {
-            /*
-             * This usually happens because of a 'logical disconnection'.
-             * So, we're in for a real treat from our excellent OS now...
-             */
-            rc2 = usb_reset_logical_reconnect(pProxyDev);
-            if (RT_FAILURE(rc2))
-                usbProxLinuxUrbUnplugged(pProxyDev);
-            if (RT_SUCCESS(rc2))
-            {
-                ASMAtomicDecU32(&g_cResetActive);
-                LogFlow(("usbProxyLinuxReset: returns success (after recovering disconnected device!)\n"));
-                return VINF_SUCCESS;
-            }
-        }
-        ASMAtomicDecU32(&g_cResetActive);
-# endif /* NO_LOGICAL_RECONNECT */
-
-        Log(("usb-linux: Reset failed, rc=%s errno=%d.\n",
-             RTErrGetShort(RTErrConvertFromErrno(rc)), rc));
+        LogRel(("usb-linux: Reset failed, rc=%s errno=%d.\n",
+               RTErrGetShort(RTErrConvertFromErrno(rc)), rc));
         pProxyDev->iActiveCfg = -1;
         return RTErrConvertFromErrno(rc);
     }
 
-# ifndef NO_LOGICAL_RECONNECT
-    ASMAtomicDecU32(&g_cResetActive);
-# endif
+    /*
+     * Now reclaim previously claimed interfaces. If that doesn't work, let's hope
+     * the guest/VUSB can recover from that. Can happen if reset changes configuration.
+     */
+    for (i = 0; i < (sizeof(fActiveIfsMask) * 8); ++i)
+    {
+        if (fActiveIfsMask & RT_BIT(i))
+        {
+            usbProxyLinuxClaimInterface(pProxyDev, i);
+        }
+    }
+
+    /* find the active config - damn annoying. */
+    pProxyDev->iActiveCfg = usbProxyLinuxFindActiveConfig(pProxyDev, pDevLnx->pszPath, NULL);
+    LogFlow(("usbProxyLinuxReset: returns successfully iActiveCfg=%d\n", pProxyDev->iActiveCfg));
 
     pProxyDev->cIgnoreSetConfigs = 2;
-    LogFlow(("usbProxyLinuxReset: returns success\n"));
-#endif /* !NO_PORT_RESET */
     return VINF_SUCCESS;
 }
 
@@ -1138,14 +905,18 @@ static DECLCALLBACK(int) usbProxyLinuxSetConfig(PUSBPROXYDEV pProxyDev, int iCfg
  */
 static DECLCALLBACK(int) usbProxyLinuxClaimInterface(PUSBPROXYDEV pProxyDev, int iIf)
 {
+    PUSBPROXYDEVLNX pDevLnx = USBPROXYDEV_2_DATA(pProxyDev, PUSBPROXYDEVLNX);
+
     LogFlow(("usbProxyLinuxClaimInterface: pProxyDev=%s ifnum=%#x\n", usbProxyGetName(pProxyDev), iIf));
     usbProxyLinuxSetConnected(pProxyDev, iIf, false, false);
 
     if (usbProxyLinuxDoIoCtl(pProxyDev, USBDEVFS_CLAIMINTERFACE, &iIf, true, UINT32_MAX))
     {
-        Log(("usb-linux: Claim interface. errno=%d pProxyDev=%s\n", errno, usbProxyGetName(pProxyDev)));
+        pDevLnx->fClaimedIfsMask &= ~RT_BIT(iIf);
+        LogRel(("usb-linux: Claim interface. errno=%d pProxyDev=%s\n", errno, usbProxyGetName(pProxyDev)));
         return RTErrConvertFromErrno(errno);
     }
+    pDevLnx->fClaimedIfsMask |= RT_BIT(iIf);
     return VINF_SUCCESS;
 }
 
@@ -1156,13 +927,16 @@ static DECLCALLBACK(int) usbProxyLinuxClaimInterface(PUSBPROXYDEV pProxyDev, int
  */
 static DECLCALLBACK(int) usbProxyLinuxReleaseInterface(PUSBPROXYDEV pProxyDev, int iIf)
 {
+    PUSBPROXYDEVLNX pDevLnx = USBPROXYDEV_2_DATA(pProxyDev, PUSBPROXYDEVLNX);
+
     LogFlow(("usbProxyLinuxReleaseInterface: pProxyDev=%s ifnum=%#x\n", usbProxyGetName(pProxyDev), iIf));
 
     if (usbProxyLinuxDoIoCtl(pProxyDev, USBDEVFS_RELEASEINTERFACE, &iIf, true, UINT32_MAX))
     {
-        Log(("usb-linux: Release interface, errno=%d. pProxyDev=%s\n", errno, usbProxyGetName(pProxyDev)));
+        LogRel(("usb-linux: Release interface, errno=%d. pProxyDev=%s\n", errno, usbProxyGetName(pProxyDev)));
         return RTErrConvertFromErrno(errno);
     }
+    pDevLnx->fClaimedIfsMask &= ~RT_BIT(iIf);
     return VINF_SUCCESS;
 }
 
