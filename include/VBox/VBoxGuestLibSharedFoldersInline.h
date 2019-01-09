@@ -36,11 +36,11 @@
 
 #include <iprt/types.h>
 #include <iprt/assert.h>
-#include <VBox/shflsvc.h>
 #include <VBox/VBoxGuest.h>
 #include <VBox/VBoxGuestLib.h>
 #include <VBox/VBoxGuestLibSharedFolders.h>
 #include <VBox/VMMDev.h>
+#include <VBox/shflsvc.h>
 #include <iprt/errcore.h>
 
 
