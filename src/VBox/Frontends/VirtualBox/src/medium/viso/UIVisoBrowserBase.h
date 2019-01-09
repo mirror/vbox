@@ -33,7 +33,7 @@ class QSplitter;
 class QVBoxLayout;
 class QTableView;
 class QTreeView;
-class QIToolButton;
+class UIToolBar;
 
 class UIVisoBrowserBase : public QWidget
 {
@@ -59,9 +59,9 @@ protected:
     QTreeView          *m_pTreeView;
     QTableView         *m_pTableView;
     QLabel             *m_pTitleLabel;
-    QIToolButton       *m_pAddRemoveButton;
     QWidget            *m_pRightContainerWidget;
     QGridLayout        *m_pRightContainerLayout;
+    UIToolBar          *m_pVerticalToolBar;
 
 private:
     QGridLayout    *m_pMainLayout;

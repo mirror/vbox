@@ -15,6 +15,7 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 /* Qt includes: */
+#include <QAction>
 #include <QAbstractItemModel>
 #include <QDir>
 #include <QFileSystemModel>
@@ -25,9 +26,11 @@
 #include <QTreeView>
 
 /* GUI includes: */
-#include "UIIconPool.h"
-#include "UIVisoHostBrowser.h"
 #include "QIToolButton.h"
+#include "UIIconPool.h"
+#include "UIToolBar.h"
+#include "UIVisoHostBrowser.h"
+
 
 /*********************************************************************************************************************************
 *   UIVisoHostBrowserModel definition.                                                                                   *
@@ -82,14 +85,10 @@ UIVisoHostBrowser::UIVisoHostBrowser(QWidget *pParent)
     : QIWithRetranslateUI<UIVisoBrowserBase>(pParent)
     , m_pTreeModel(0)
     , m_pTableModel(0)
+    , m_pAddAction(0)
 {
-    // loadOptions();
-    // prepareGuestListener();
     prepareObjects();
     prepareConnections();
-    // retranslateUi();
-    // restorePanelVisibility();
-    // UIVisoHostBrowserOptions::create();
 }
 
 UIVisoHostBrowser::~UIVisoHostBrowser()
@@ -100,8 +99,8 @@ void UIVisoHostBrowser::retranslateUi()
 {
     if (m_pTitleLabel)
         m_pTitleLabel->setText(QApplication::translate("UIVisoCreator", "Host file system"));
-    if (m_pAddRemoveButton)
-        m_pAddRemoveButton->setToolTip(QApplication::translate("UIVisoCreator", "Add selected file objects to VISO"));
+    if (m_pAddAction)
+        m_pAddAction->setToolTip(QApplication::translate("UIVisoCreator", "Add selected file objects to VISO"));
 }
 
 void UIVisoHostBrowser::prepareObjects()
@@ -128,7 +127,6 @@ void UIVisoHostBrowser::prepareObjects()
         m_pTreeView->hideColumn(3);
     }
 
-
     if (m_pTableView)
     {
         m_pTableView->setModel(m_pTableModel);
@@ -137,9 +135,16 @@ void UIVisoHostBrowser::prepareObjects()
         m_pTableView->hideColumn(2);
     }
 
-    if (m_pAddRemoveButton)
+    m_pAddAction = new QAction(this);
+    if (m_pAddAction)
     {
-        m_pAddRemoveButton->setIcon(UIIconPool::iconSet(":/attachment_add_16px.png", ":/attachment_add_disabled_16px.png"));
+        m_pVerticalToolBar->addAction(m_pAddAction);
+        m_pAddAction->setIcon(UIIconPool::iconSetFull(":/file_manager_copy_to_guest_24px.png",
+                                                      ":/file_manager_copy_to_guest_16px.png",
+                                                      ":/file_manager_copy_to_guest_disabled_24px.png",
+                                                      ":/file_manager_copy_to_guest_disabled_16px.png"));
+
+        m_pAddAction->setEnabled(false);
     }
 
     retranslateUi();
@@ -151,16 +156,16 @@ void UIVisoHostBrowser::prepareConnections()
     if (m_pTableView->selectionModel())
         connect(m_pTableView->selectionModel(), &QItemSelectionModel::selectionChanged,
                 this, &UIVisoHostBrowser::sltHandleTableSelectionChanged);
-    if (m_pAddRemoveButton)
-        connect(m_pAddRemoveButton, &QIToolButton::clicked,
-                this, &UIVisoHostBrowser::sltHandleAddButtonClicked);
+    if (m_pAddAction)
+        connect(m_pAddAction, &QAction::triggered,
+                this, &UIVisoHostBrowser::sltHandleAddAction);
 }
 
 void UIVisoHostBrowser::sltHandleTableSelectionChanged(const QItemSelection &selected, const QItemSelection &deselected)
 {
     Q_UNUSED(deselected);
-    if (m_pAddRemoveButton)
-        m_pAddRemoveButton->setEnabled(!selected.isEmpty());
+    if (m_pAddAction)
+        m_pAddAction->setEnabled(!selected.isEmpty());
 }
 
 void UIVisoHostBrowser::tableViewItemDoubleClick(const QModelIndex &index)
@@ -197,7 +202,7 @@ void UIVisoHostBrowser::showHideHiddenObjects(bool bShow)
     }
 }
 
-void UIVisoHostBrowser::sltHandleAddButtonClicked()
+void UIVisoHostBrowser::sltHandleAddAction()
 {
     if (!m_pTableView || !m_pTableModel)
         return;

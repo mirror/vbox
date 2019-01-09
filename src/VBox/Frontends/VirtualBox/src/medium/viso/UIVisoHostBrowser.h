@@ -60,7 +60,7 @@ protected:
 private slots:
 
     void sltHandleTableSelectionChanged(const QItemSelection &selected, const QItemSelection &deselected);
-    void sltHandleAddButtonClicked();
+    void sltHandleAddAction();
 
 private:
 
@@ -70,6 +70,7 @@ private:
     /** We have two file system models (one for each item view) since we set different filter on each of these models. */
     UIVisoHostBrowserModel *m_pTreeModel;
     UIVisoHostBrowserModel *m_pTableModel;
+    QAction                *m_pAddAction;
 };
 
 

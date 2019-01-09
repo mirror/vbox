@@ -160,9 +160,6 @@ void UIVisoCreator::prepareActions()
     m_pActionOptions = new QAction(this);
     if (m_pActionOptions)
     {
-        /* Configure add-action: */
-        m_pActionOptions->setShortcut(QKeySequence("Ctrl+A"));
-
         m_pActionOptions->setIcon(UIIconPool::iconSetFull(":/file_manager_options_32px.png",
                                                           ":/%file_manager_options_16px.png",
                                                           ":/file_manager_options_disabled_32px.png",

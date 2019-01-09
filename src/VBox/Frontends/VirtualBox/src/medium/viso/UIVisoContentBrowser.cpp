@@ -17,6 +17,7 @@
 
 
 /* Qt includes: */
+#include <QAction>
 #include <QAbstractItemModel>
 #include <QDateTime>
 #include <QDir>
@@ -30,10 +31,10 @@
 #include <QTreeView>
 
 /* GUI includes: */
-#include "QIToolButton.h"
 #include "UICustomFileSystemModel.h"
 #include "UIIconPool.h"
 #include "UIPathOperations.h"
+#include "UIToolBar.h"
 #include "UIVisoContentBrowser.h"
 
 
@@ -95,7 +96,10 @@ UIVisoContentBrowser::UIVisoContentBrowser(QWidget *pParent)
     , m_pModel(0)
     , m_pTableProxyModel(0)
     , m_pTreeProxyModel(0)
-    , m_pNewDirectoryButton(0)
+    , m_pRemoveAction(0)
+    , m_pNewDirectoryAction(0)
+    , m_pRenameAction(0)
+    , m_pResetAction(0)
 {
     prepareObjects();
     prepareConnections();
@@ -179,10 +183,15 @@ void UIVisoContentBrowser::retranslateUi()
 {
     if (m_pTitleLabel)
         m_pTitleLabel->setText(QApplication::translate("UIVisoCreator", "VISO content"));
-    if (m_pAddRemoveButton)
-        m_pAddRemoveButton->setToolTip(QApplication::translate("UIVisoCreator", "Remove selected file objects from VISO"));
-    if (m_pNewDirectoryButton)
-        m_pNewDirectoryButton->setToolTip(QApplication::translate("UIVisoCreator", "Create a new directory under the current directory"));
+    if (m_pRemoveAction)
+        m_pRemoveAction->setToolTip(QApplication::translate("UIVisoCreator", "Remove selected file objects from VISO"));
+    if (m_pNewDirectoryAction)
+        m_pNewDirectoryAction->setToolTip(QApplication::translate("UIVisoCreator", "Create a new directory under the current location"));
+    if (m_pResetAction)
+        m_pResetAction->setToolTip(QApplication::translate("UIVisoCreator", "Remove the whole content"));
+    if (m_pRenameAction)
+        m_pRenameAction->setToolTip(QApplication::translate("UIVisoCreator", "Rename the selected object"));
+
 
     UICustomFileSystemItem *pRootItem = rootItem();
     if (pRootItem)
@@ -281,6 +290,7 @@ void UIVisoContentBrowser::sltHandleRemoveItems()
             createAnIsoEntry(pItem, true /* bool bRemove */);
         }
     }
+
     foreach(UICustomFileSystemItem *pItem, selectedItems)
     {
         if (!pItem)
@@ -288,11 +298,12 @@ void UIVisoContentBrowser::sltHandleRemoveItems()
         /* Remove the item from the m_pModel: */
         if (m_pModel)
             m_pModel->deleteItem(pItem);
-        if (m_pTreeProxyModel)
-            m_pTreeProxyModel->invalidate();
-        if (m_pTableProxyModel)
-            m_pTableProxyModel->invalidate();
     }
+    if (m_pTreeProxyModel)
+        m_pTreeProxyModel->invalidate();
+    if (m_pTableProxyModel)
+        m_pTableProxyModel->invalidate();
+
 }
 
 void UIVisoContentBrowser::prepareObjects()
@@ -342,15 +353,38 @@ void UIVisoContentBrowser::prepareObjects()
         m_pTableView->sortByColumn(0, Qt::AscendingOrder);
     }
 
-    if (m_pAddRemoveButton)
-        m_pAddRemoveButton->setIcon(UIIconPool::iconSet(":/attachment_remove_16px.png", ":/attachment_remove_disabled_16px.png"));
-
-    m_pNewDirectoryButton = new QIToolButton;
-    if (m_pNewDirectoryButton)
+    m_pRemoveAction = new QAction(this);
+    if (m_pRemoveAction)
     {
-        m_pRightContainerLayout->addWidget(m_pNewDirectoryButton, 1, 5, 1, 1);
-        m_pNewDirectoryButton->setIcon(UIIconPool::iconSet(":/attachment_add_16px.png", ":/attachment_add_disabled_16px.png"));
-        m_pNewDirectoryButton->setEnabled(true);
+        m_pVerticalToolBar->addAction(m_pRemoveAction);
+        m_pRemoveAction->setIcon(UIIconPool::iconSetFull(":/file_manager_delete_24px.png", ":/file_manager_delete_16px.png",
+                                                     ":/file_manager_delete_disabled_24px.png", ":/file_manager_delete_disabled_16px.png"));
+        m_pRemoveAction->setEnabled(true);
+    }
+
+    m_pNewDirectoryAction = new QAction(this);
+    if (m_pNewDirectoryAction)
+    {
+        m_pVerticalToolBar->addAction(m_pNewDirectoryAction);
+        m_pNewDirectoryAction->setIcon(UIIconPool::iconSetFull(":/file_manager_new_directory_24px.png", ":/file_manager_new_directory_16px.png",
+                                                           ":/file_manager_new_directory_disabled_24px.png", ":/file_manager_new_directory_disabled_16px.png"));
+        m_pNewDirectoryAction->setEnabled(true);
+    }
+
+    m_pResetAction = new QAction(this);
+    if (m_pResetAction)
+    {
+        m_pVerticalToolBar->addAction(m_pResetAction);
+        m_pResetAction->setIcon(UIIconPool::iconSet(":/file_manager_delete_16px.png", ":/file_manager_delete_disabled_16px.png"));
+        m_pResetAction->setEnabled(true);
+    }
+
+    m_pRenameAction = new QAction(this);
+    if (m_pRenameAction)
+    {
+        m_pVerticalToolBar->addAction(m_pRenameAction);
+        m_pRenameAction->setIcon(UIIconPool::iconSet(":/file_manager_rename_16px.png", ":/file_manager_rename_disabled_16px.png"));
+        m_pRenameAction->setEnabled(false);
     }
 
     retranslateUi();
@@ -359,14 +393,14 @@ void UIVisoContentBrowser::prepareObjects()
 void UIVisoContentBrowser::prepareConnections()
 {
     UIVisoBrowserBase::prepareConnections();
-    if (m_pNewDirectoryButton)
-        connect(m_pNewDirectoryButton, &QIToolButton::clicked,
+    if (m_pNewDirectoryAction)
+        connect(m_pNewDirectoryAction, &QAction::triggered,
                 this, &UIVisoContentBrowser::sltHandleCreateNewDirectory);
     if (m_pModel)
         connect(m_pModel, &UICustomFileSystemModel::sigItemRenamed,
                 this, &UIVisoContentBrowser::sltHandleItemRenameAttempt);
-    if (m_pAddRemoveButton)
-        connect(m_pAddRemoveButton, &QIToolButton::clicked,
+    if (m_pRemoveAction)
+        connect(m_pRemoveAction, &QAction::triggered,
                 this, &UIVisoContentBrowser::sltHandleRemoveItems);
     if (m_pTableView->selectionModel())
         connect(m_pTableView->selectionModel(), &QItemSelectionModel::selectionChanged,
@@ -611,8 +645,10 @@ void UIVisoContentBrowser::sltHandleItemRenameAttempt(UICustomFileSystemItem *pI
 void UIVisoContentBrowser::sltHandleTableSelectionChanged(const QItemSelection &selected, const QItemSelection &deselected)
 {
     Q_UNUSED(deselected);
-    if (m_pAddRemoveButton)
-        m_pAddRemoveButton->setEnabled(!selected.isEmpty());
+    if (m_pRemoveAction)
+        m_pRemoveAction->setEnabled(!selected.isEmpty());
+    if (m_pRenameAction)
+        m_pRenameAction->setEnabled(!selected.isEmpty());
 }
 
 void UIVisoContentBrowser::reset()
