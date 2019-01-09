@@ -30,10 +30,11 @@ VBOX_HDRS_CPP_FEATURES := \
 	VBox/HostServices/Service.h \
 	VBox/GuestHost/GuestControl.h \
 	VBox/GuestHost/DragAndDrop.h \
-	VBox/VBoxCrHgsmi.h \
-	VBox/VBoxUhgsmi.h \
        VBox/dbus.h \
+	VBox/VBoxCrHgsmi.h \
+	VBox/VBoxGuestLibSharedFoldersInline.h \
        VBox/VBoxPktDmp.h \
+	VBox/VBoxUhgsmi.h \
        iprt/cpp/%
 
 # Omit headers that are C++ and ring-3.
@@ -81,6 +82,7 @@ VBOX_HDRS_R3_ONLY := \
        iprt/linux/symvers.h
 
 # Ring-0 only headers.
+## @todo this is actually ring-0 driver headers, not agnostic ones.
 VBOX_HDRS_R0_ONLY := \
 	VBox/VBoxGuestLibSharedFolders.h
 
@@ -111,6 +113,7 @@ VBOX_HDRS_OMIT := \
 	VBox/dbus-calls.h \
 	VBox/VBoxKeyboard.h \
 	VBox/vmm/pdmpcidevint.h \
+	VBox/VBoxGuestLibSharedFoldersInline.h \
 	iprt/runtime-loader.h \
 	iprt/mangling.h \
        $(subst $(PATH_SUB_CURRENT)/,,$(wildcard $(PATH_SUB_CURRENT)/iprt/asm*watcom*.h)) \
