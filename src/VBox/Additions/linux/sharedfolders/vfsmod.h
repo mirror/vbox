@@ -39,7 +39,7 @@
 #include <VBox/log.h>
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
-#include <linux/backing-dev.h>
+# include <linux/backing-dev.h>
 #endif
 
 #include <VBox/VBoxGuestLibSharedFolders.h>
@@ -113,13 +113,13 @@ extern int sf_stat(const char *caller, struct sf_glob_info *sf_g,
 		   SHFLSTRING * path, PSHFLFSOBJINFO result, int ok_to_fail);
 extern int sf_inode_revalidate(struct dentry *dentry);
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0)
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0)
 extern int sf_getattr(const struct path *path, struct kstat *kstat,
 		      u32 request_mask, unsigned int query_flags);
-#else
+# else
 extern int sf_getattr(struct vfsmount *mnt, struct dentry *dentry,
 		      struct kstat *kstat);
-#endif
+# endif
 extern int sf_setattr(struct dentry *dentry, struct iattr *iattr);
 #endif
 extern int sf_path_from_dentry(const char *caller, struct sf_glob_info *sf_g,
@@ -138,16 +138,16 @@ extern int sf_init_backing_dev(struct sf_glob_info *sf_g);
 extern void sf_done_backing_dev(struct sf_glob_info *sf_g);
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 0)
-#define STRUCT_STATFS  struct statfs
+# define STRUCT_STATFS  struct statfs
 #else
-#define STRUCT_STATFS  struct kstatfs
+# define STRUCT_STATFS  struct kstatfs
 #endif
 int sf_get_volume_info(struct super_block *sb, STRUCT_STATFS * stat);
 
 #ifdef __cplusplus
-#define CMC_API __attribute__ ((cdecl, regparm (0)))
+# define CMC_API __attribute__ ((cdecl, regparm (0)))
 #else
-#define CMC_API __attribute__ ((regparm (0)))
+# define CMC_API __attribute__ ((regparm (0)))
 #endif
 
 #define TRACE() LogFunc(("tracepoint\n"))
@@ -155,27 +155,27 @@ int sf_get_volume_info(struct super_block *sb, STRUCT_STATFS * stat);
 /* Following casts are here to prevent assignment of void * to
    pointers of arbitrary type */
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 0)
-#define GET_GLOB_INFO(sb)       ((struct sf_glob_info *) (sb)->u.generic_sbp)
-#define SET_GLOB_INFO(sb, sf_g) (sb)->u.generic_sbp = sf_g
+# define GET_GLOB_INFO(sb)       ((struct sf_glob_info *) (sb)->u.generic_sbp)
+# define SET_GLOB_INFO(sb, sf_g) (sb)->u.generic_sbp = sf_g
 #else
-#define GET_GLOB_INFO(sb)       ((struct sf_glob_info *) (sb)->s_fs_info)
-#define SET_GLOB_INFO(sb, sf_g) (sb)->s_fs_info = sf_g
+# define GET_GLOB_INFO(sb)       ((struct sf_glob_info *) (sb)->s_fs_info)
+# define SET_GLOB_INFO(sb, sf_g) (sb)->s_fs_info = sf_g
 #endif
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 19) || defined(KERNEL_FC6)
 /* FC6 kernel 2.6.18, vanilla kernel 2.6.19+ */
-#define GET_INODE_INFO(i)       ((struct sf_inode_info *) (i)->i_private)
-#define SET_INODE_INFO(i, sf_i) (i)->i_private = sf_i
+# define GET_INODE_INFO(i)       ((struct sf_inode_info *) (i)->i_private)
+# define SET_INODE_INFO(i, sf_i) (i)->i_private = sf_i
 #else
 /* vanilla kernel up to 2.6.18 */
-#define GET_INODE_INFO(i)       ((struct sf_inode_info *) (i)->u.generic_ip)
-#define SET_INODE_INFO(i, sf_i) (i)->u.generic_ip = sf_i
+# define GET_INODE_INFO(i)       ((struct sf_inode_info *) (i)->u.generic_ip)
+# define SET_INODE_INFO(i, sf_i) (i)->u.generic_ip = sf_i
 #endif
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 19, 0)
-#define GET_F_DENTRY(f)        (f->f_path.dentry)
+# define GET_F_DENTRY(f)        (f->f_path.dentry)
 #else
-#define GET_F_DENTRY(f)        (f->f_dentry)
+# define GET_F_DENTRY(f)        (f->f_dentry)
 #endif
 
 #endif /* !GA_INCLUDED_SRC_linux_sharedfolders_vfsmod_h */
