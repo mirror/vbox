@@ -7219,19 +7219,6 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmlaunchVmresume(PVMCPU pVCpu, uint8_t cbInstr, VM
     }
 
     /*
-     * Load the current VMCS.
-     */
-    Assert(pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs));
-    int rc = PGMPhysSimpleReadGCPhys(pVCpu->CTX_SUFF(pVM), pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs),
-                                     IEM_VMX_GET_CURRENT_VMCS(pVCpu), VMX_V_VMCS_SIZE);
-    if (RT_FAILURE(rc))
-    {
-        Log(("%s: Failed to read VMCS at %#RGp, rc=%Rrc\n", pszInstr, IEM_VMX_GET_CURRENT_VMCS(pVCpu), rc));
-        pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmentry_PtrReadPhys;
-        return rc;
-    }
-
-    /*
      * We are allowed to cache VMCS related data structures (such as I/O bitmaps, MSR bitmaps)
      * while entering VMX non-root mode. We do some of this while checking VM-execution
      * controls. The guest hypervisor should not make assumptions and cannot expect
@@ -7241,7 +7228,9 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmlaunchVmresume(PVMCPU pVCpu, uint8_t cbInstr, VM
      *
      * See Intel spec. 24.11.4 "Software Access to Related Structures".
      */
-    rc = iemVmxVmentryCheckExecCtls(pVCpu, pszInstr);
+    Assert(pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs));
+    Assert(IEM_VMX_HAS_CURRENT_VMCS(pVCpu));
+    int rc = iemVmxVmentryCheckExecCtls(pVCpu, pszInstr);
     if (RT_SUCCESS(rc))
     {
         rc = iemVmxVmentryCheckExitCtls(pVCpu, pszInstr);
@@ -8098,29 +8087,40 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmptrld(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEf
     }
 
     /*
-     * We maintain only the cache of the current VMCS in CPUMCTX. Therefore, VMPTRLD shall
-     * always flush the cache contents of any existing, current VMCS back to guest memory
-     * before loading a new VMCS as current.
+     * We cache only the current VMCS in CPUMCTX. Therefore, VMPTRLD should always flush
+     * the cache of an existing, current VMCS back to guest memory before loading a new,
+     * different current VMCS.
      */
-    if (   IEM_VMX_HAS_CURRENT_VMCS(pVCpu)
-        && IEM_VMX_GET_CURRENT_VMCS(pVCpu) != GCPhysVmcs)
+    bool fLoadVmcsFromMem;
+    if (IEM_VMX_HAS_CURRENT_VMCS(pVCpu))
     {
-        iemVmxCommitCurrentVmcsToMemory(pVCpu);
-        Assert(!IEM_VMX_HAS_CURRENT_VMCS(pVCpu));
+        if (IEM_VMX_GET_CURRENT_VMCS(pVCpu) != GCPhysVmcs)
+        {
+            iemVmxCommitCurrentVmcsToMemory(pVCpu);
+            Assert(!IEM_VMX_HAS_CURRENT_VMCS(pVCpu));
+            fLoadVmcsFromMem = true;
+        }
+        else
+            fLoadVmcsFromMem = false;
+    }
+    else
+        fLoadVmcsFromMem = true;
+
+    if (fLoadVmcsFromMem)
+    {
+        /* Finally, cache the new VMCS from guest memory and mark it as the current VMCS. */
+        rc = PGMPhysSimpleReadGCPhys(pVCpu->CTX_SUFF(pVM), (void *)pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs), GCPhysVmcs,
+                                     sizeof(VMXVVMCS));
+        if (RT_FAILURE(rc))
+        {
+            Log(("vmptrld: Failed to read VMCS at %#RGp, rc=%Rrc\n", GCPhysVmcs, rc));
+            pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmptrld_PtrReadPhys;
+            return rc;
+        }
+        IEM_VMX_SET_CURRENT_VMCS(pVCpu, GCPhysVmcs);
     }
 
-    /* Finally, cache the new VMCS from guest memory and mark it as the current VMCS. */
-    rc = PGMPhysSimpleReadGCPhys(pVCpu->CTX_SUFF(pVM), (void *)pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs), GCPhysVmcs,
-                                 sizeof(VMXVVMCS));
-    if (RT_FAILURE(rc))
-    {
-        Log(("vmptrld: Failed to read VMCS at %#RGp, rc=%Rrc\n", GCPhysVmcs, rc));
-        pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmptrld_PtrReadPhys;
-        return rc;
-    }
-
-    IEM_VMX_SET_CURRENT_VMCS(pVCpu, GCPhysVmcs);
-
+    Assert(IEM_VMX_HAS_CURRENT_VMCS(pVCpu));
     iemVmxVmSucceed(pVCpu);
     iemRegAddToRipAndClearRF(pVCpu, cbInstr);
     return VINF_SUCCESS;
