@@ -3348,9 +3348,16 @@ static void pcnetR3HardReset(PPCNETSTATE pThis)
     Assert(sizeof(pThis->MacConfigured) == 6);
     memcpy(pThis->aPROM, &pThis->MacConfigured, sizeof(pThis->MacConfigured));
     pThis->aPROM[ 8] = 0x00;
-    pThis->aPROM[ 9] = 0x00;    /* 0x00/0xFF=ISA, 0x01=PnP, 0x10=VLB, 0x11=PCI */
     pThis->aPROM[12] = pThis->aPROM[13] = 0x00;
-    pThis->aPROM[14] = pThis->aPROM[15] = 0x57;
+    pThis->aPROM[14] = pThis->aPROM[15] = 0x57; /* NE2100 'WW' signature. */
+    /* 0x00/0xFF=ISA, 0x01=PnP, 0x10=VLB, 0x11=PCI */
+    switch (pThis->uDevType)
+    {
+    default:
+    case DEV_AM79C970A:
+    case DEV_AM79C973:  pThis->aPROM[ 9] = 0x11;    break;
+    case DEV_AM79C960:  pThis->aPROM[ 9] = 0x00;    break;
+    }
 
     for (i = 0, checksum = 0; i < 16; i++)
         checksum += pThis->aPROM[i];
