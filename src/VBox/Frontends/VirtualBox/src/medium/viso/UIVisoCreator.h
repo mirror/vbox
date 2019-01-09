@@ -52,7 +52,8 @@ public:
 
     UIVisoCreator(QWidget *pParent = 0);
     ~UIVisoCreator();
-    QStringList entryList();
+    QStringList entryList() const;
+    const QString &visoName() const;
 
 #ifdef VBOX_WS_MAC
     /** Returns the toolbar. */

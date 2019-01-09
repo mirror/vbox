@@ -51,11 +51,16 @@ UIVisoCreator::~UIVisoCreator()
 {
 }
 
-QStringList UIVisoCreator::entryList()
+QStringList UIVisoCreator::entryList() const
 {
     if (!m_pVisoBrowser)
         return QStringList();
     return m_pVisoBrowser->entryList();
+}
+
+const QString &UIVisoCreator::visoName() const
+{
+    return m_visoOptions.m_strVisoName;
 }
 
 void UIVisoCreator::retranslateUi()
