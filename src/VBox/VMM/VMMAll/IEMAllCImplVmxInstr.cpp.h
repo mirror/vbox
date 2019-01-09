@@ -742,7 +742,7 @@ DECLINLINE(RTSEL) iemVmxVmcsGetHostSelReg(PCVMXVVMCS pVmcs, uint8_t iSegReg)
     Assert(iSegReg < X86_SREG_COUNT);
     RTSEL HostSel;
     uint8_t  const  uWidth     = VMX_VMCS_ENC_WIDTH_16BIT;
-    uint8_t  const  uType      = VMX_VMCS_ENC_TYPE_GUEST_STATE;
+    uint8_t  const  uType      = VMX_VMCS_ENC_TYPE_HOST_STATE;
     uint8_t  const  uWidthType = (uWidth << 2) | uType;
     uint8_t  const  uIndex     = (iSegReg << 1) + RT_BF_GET(VMX_VMCS16_GUEST_ES_SEL, VMX_BF_VMCS_ENC_INDEX);
     Assert(uIndex <= VMX_V_VMCS_MAX_INDEX);
@@ -2149,7 +2149,7 @@ IEM_STATIC void iemVmxVmexitLoadHostSegRegs(PVMCPU pVCpu)
     /* CS, SS, ES, DS, FS, GS. */
     for (unsigned iSegReg = 0; iSegReg < X86_SREG_COUNT; iSegReg++)
     {
-        RTSEL const HostSel  = iemVmxVmcsGetHostSelReg(pVmcs, iSegReg);
+        RTSEL const HostSel   = iemVmxVmcsGetHostSelReg(pVmcs, iSegReg);
         bool const  fUnusable = RT_BOOL(HostSel == 0);
 
         /* Selector. */
@@ -2848,6 +2848,15 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexit(PVMCPU pVCpu, uint32_t uExitReason)
     bool const fVmentryFailed = VMX_EXIT_REASON_HAS_ENTRY_FAILED(uExitReason);
     if (!fVmentryFailed)
     {
+        /*
+         * The rest of the high bits of the VM-exit reason are only relevant when the VM-exit
+         * occurs in enclave mode/SMM which we don't support yet.
+         *
+         * If we ever add support for it, we can pass just the lower bits, till then an assert
+         * should suffice.
+         */
+        Assert(!RT_HI_U16(uExitReason));
+
         iemVmxVmexitSaveGuestState(pVCpu, uExitReason);
         int rc = iemVmxVmexitSaveGuestAutoMsrs(pVCpu, uExitReason);
         if (RT_SUCCESS(rc))
@@ -2863,13 +2872,6 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexit(PVMCPU pVCpu, uint32_t uExitReason)
         /* Restore force-flags that may or may not have been cleared as part of the failed VM-entry. */
         iemVmxVmexitRestoreForceFlags(pVCpu);
     }
-
-    /*
-     * The high bits of the VM-exit reason are only relevant when the VM-exit occurs in
-     * enclave mode/SMM which we don't support yet. If we ever add support for it, we can
-     * pass just the lower bits, till then an assert should suffice.
-     */
-    Assert(!RT_HI_U16(uExitReason));
 
     VBOXSTRICTRC rcStrict = iemVmxVmexitLoadHostState(pVCpu, uExitReason);
     if (RT_FAILURE(rcStrict))
