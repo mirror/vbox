@@ -1008,9 +1008,12 @@ typedef struct PDMAUDIOSTREAMIN
 #ifdef VBOX_WITH_STATISTICS
     struct
     {
-        STAMCOUNTER BytesElapsed;
-        STAMCOUNTER BytesTotalRead;
-        STAMCOUNTER FramesCaptured;
+        STAMCOUNTER TotalFramesCaptured;
+        STAMCOUNTER AvgFramesCaptured;
+        STAMCOUNTER TotalTimesCaptured;
+        STAMCOUNTER TotalFramesRead;
+        STAMCOUNTER AvgFramesRead;
+        STAMCOUNTER TotalTimesRead;
     } Stats;
 #endif
     struct
@@ -1031,18 +1034,16 @@ typedef struct PDMAUDIOSTREAMOUT
 #ifdef VBOX_WITH_STATISTICS
     struct
     {
-        STAMCOUNTER BytesElapsed;
-        STAMCOUNTER BytesTotalWritten;
-        STAMCOUNTER FramesPlayed;
+        STAMCOUNTER TotalFramesPlayed;
+        STAMCOUNTER AvgFramesPlayed;
+        STAMCOUNTER TotalTimesPlayed;
+        STAMCOUNTER TotalFramesWritten;
+        STAMCOUNTER AvgFramesWritten;
+        STAMCOUNTER TotalTimesWritten;
     } Stats;
 #endif
     struct
     {
-#ifdef DEBUG
-        /** Number of audio frames written since the last playback (transfer)
-         *  to the backend. */
-        uint64_t                cfWrittenSinceLastPlay;
-#endif
         /** File for writing stream writes. */
         PPDMAUDIOFILE           pFileStreamWrite;
         /** File for writing stream playback. */
