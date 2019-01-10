@@ -3381,7 +3381,7 @@ static void  cpumR3InfoVmxVmcs(PCDBGFINFOHLP pHlp, PCVMXVVMCS pVmcs, const char 
 
     /* Header. */
     {
-        pHlp->pfnPrintf(pHlp, "%sHeader\n", pszPrefix);
+        pHlp->pfnPrintf(pHlp, "%sHeader:\n", pszPrefix);
         pHlp->pfnPrintf(pHlp, "  %sVMCS revision id           = %#RX32\n",   pszPrefix, pVmcs->u32VmcsRevId);
         pHlp->pfnPrintf(pHlp, "  %sVMX-abort id               = %#RX32\n",   pszPrefix, pVmcs->u32VmxAbortId);
         pHlp->pfnPrintf(pHlp, "  %sVMCS state                 = %#x (%s)\n", pszPrefix, pVmcs->fVmcsState,
@@ -3391,7 +3391,7 @@ static void  cpumR3InfoVmxVmcs(PCDBGFINFOHLP pHlp, PCVMXVVMCS pVmcs, const char 
     /* Control fields. */
     {
         /* 16-bit. */
-        pHlp->pfnPrintf(pHlp, "%sControl\n", pszPrefix);
+        pHlp->pfnPrintf(pHlp, "%sControl:\n", pszPrefix);
         pHlp->pfnPrintf(pHlp, "  %sVPID                       = %#RX16\n",   pszPrefix, pVmcs->u16Vpid);
         pHlp->pfnPrintf(pHlp, "  %sPosted intr notify vector  = %#RX16\n",   pszPrefix, pVmcs->u16PostIntNotifyVector);
         pHlp->pfnPrintf(pHlp, "  %sEPTP index                 = %#RX16\n",   pszPrefix, pVmcs->u16EptpIndex);
@@ -3467,7 +3467,7 @@ static void  cpumR3InfoVmxVmcs(PCDBGFINFOHLP pHlp, PCVMXVVMCS pVmcs, const char 
     {
         char szEFlags[80];
         cpumR3InfoFormatFlags(&szEFlags[0], pVmcs->u64GuestRFlags.u);
-        pHlp->pfnPrintf(pHlp, "%sGuest state\n", pszPrefix);
+        pHlp->pfnPrintf(pHlp, "%sGuest state:\n", pszPrefix);
 
         /* 16-bit. */
         CPUMVMX_DUMP_GUEST_SEGREG(pHlp, pVmcs, Cs,   "cs",   pszPrefix);
@@ -3517,7 +3517,7 @@ static void  cpumR3InfoVmxVmcs(PCDBGFINFOHLP pHlp, PCVMXVVMCS pVmcs, const char 
 
     /* Host state. */
     {
-        pHlp->pfnPrintf(pHlp, "%sHost state\n", pszPrefix);
+        pHlp->pfnPrintf(pHlp, "%sHost state:\n", pszPrefix);
 
         /* 16-bit. */
         pHlp->pfnPrintf(pHlp, "  %scs                         = %#RX16\n",   pszPrefix, pVmcs->HostCs);
@@ -3550,12 +3550,12 @@ static void  cpumR3InfoVmxVmcs(PCDBGFINFOHLP pHlp, PCVMXVVMCS pVmcs, const char 
 
     /* Read-only fields. */
     {
-        pHlp->pfnPrintf(pHlp, "%sRead-only data fields\n", pszPrefix);
+        pHlp->pfnPrintf(pHlp, "%sRead-only data fields:\n", pszPrefix);
 
         /* 16-bit (none currently). */
 
         /* 32-bit. */
-        pHlp->pfnPrintf(pHlp, "  %sExit reason                = %#RX32\n",   pszPrefix, pVmcs->u32RoExitReason);
+        pHlp->pfnPrintf(pHlp, "  %sExit reason                = %u (%s)\n",  pszPrefix, pVmcs->u32RoExitReason, HMR3GetVmxExitName(pVmcs->u32RoExitReason));
         pHlp->pfnPrintf(pHlp, "  %sExit qualification         = %#RX64\n",   pszPrefix, pVmcs->u64RoExitQual.u);
         pHlp->pfnPrintf(pHlp, "  %sVM-instruction error       = %#RX32\n",   pszPrefix, pVmcs->u32RoVmInstrError);
         pHlp->pfnPrintf(pHlp, "  %sVM-exit intr info          = %#RX32\n",   pszPrefix, pVmcs->u32RoExitIntInfo);
@@ -3712,7 +3712,7 @@ static DECLCALLBACK(void) cpumR3InfoGuestHwvirt(PVM pVM, PCDBGFINFOHLP pHlp, con
         pHlp->pfnPrintf(pHlp, "  uPrevPauseTick             = %RX64\n",     pCtx->hwvirt.vmx.uPrevPauseTick);
         pHlp->pfnPrintf(pHlp, "  uVmentryTick               = %RX64\n",     pCtx->hwvirt.vmx.uVmentryTick);
         pHlp->pfnPrintf(pHlp, "  offVirtApicWrite           = %#RX16\n",    pCtx->hwvirt.vmx.offVirtApicWrite);
-        pHlp->pfnPrintf(pHlp, "  Current VMCS:\n");
+        pHlp->pfnPrintf(pHlp, "  VMCS cache:\n");
         cpumR3InfoVmxVmcs(pHlp, pCtx->hwvirt.vmx.pVmcsR3, "  " /* pszPrefix */);
     }
 
