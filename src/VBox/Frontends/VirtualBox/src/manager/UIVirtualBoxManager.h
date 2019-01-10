@@ -222,6 +222,13 @@ private slots:
         /** Handles call to power machine off. */
         void sltPerformPowerOffMachine();
 
+        /** Handles call to show machine Details tool. */
+        void sltPerformShowMachineToolDetails();
+        /** Handles call to show machine Snapshots tool. */
+        void sltPerformShowMachineToolSnapshots();
+        /** Handles call to show machine Logs tool. */
+        void sltPerformShowMachineToolLogs();
+
         /** Handles call to open machine Log Viewer window. */
         void sltOpenLogViewerWindow();
         /** Handles call to close machine Log Viewer window. */
