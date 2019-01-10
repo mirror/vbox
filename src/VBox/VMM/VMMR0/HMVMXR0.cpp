@@ -3512,7 +3512,7 @@ static int hmR0VmxExportGuestXcptIntercepts(PVMCPU pVCpu)
     {
         uint32_t uXcptBitmap = pVCpu->hm.s.vmx.u32XcptBitmap;
 
-        /* The remaining exception intercepts are handled elsewhere, e.g. in hmR0VmxExportSharedCR0(). */
+        /* The remaining exception intercepts are handled elsewhere, e.g. in hmR0VmxExportGuestCR0(). */
         if (pVCpu->hm.s.fGIMTrapXcptUD)
             uXcptBitmap |= RT_BIT(X86_XCPT_UD);
 #ifndef HMVMX_ALWAYS_TRAP_ALL_XCPTS
