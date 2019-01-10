@@ -616,6 +616,11 @@ void SoapThread::process()
         // keepalive, otherwise stale connections tie up worker threads.
         m_soap->send_timeout = 60;
         m_soap->recv_timeout = 60;
+        // Limit the maximum SOAP request size to a generous amount, just to
+        // be on the safe side (SOAP is quite wordy when representing arrays,
+        // and some API uses need to deal with large arrays). Good that binary
+        // data is no longer represented by byte arrays...
+        m_soap->recv_maxlength = _16M;
         // process the request; this goes into the COM code in methodmaps.cpp
         do {
 #ifdef WITH_OPENSSL
@@ -1928,7 +1933,17 @@ int WebServiceSession::authenticate(const char *pcszUsername,
         }
     }
 
-    if (pfnAuthEntry3 || pfnAuthEntry2 || pfnAuthEntry)
+    if (strlen(pcszUsername) >= _1K)
+    {
+        LogRel(("Access denied, excessive username length: %zu\n", strlen(pcszUsername)));
+        rc = VERR_WEB_NOT_AUTHENTICATED;
+    }
+    else if (strlen(pcszPassword) >= _1K)
+    {
+        LogRel(("Access denied, excessive password length: %zu\n", strlen(pcszPassword)));
+        rc = VERR_WEB_NOT_AUTHENTICATED;
+    }
+    else if (pfnAuthEntry3 || pfnAuthEntry2 || pfnAuthEntry)
     {
         const char *pszFn;
         AuthResult result;
