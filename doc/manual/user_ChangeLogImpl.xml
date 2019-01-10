@@ -44,7 +44,7 @@ technical terms if no non-technical ones are clear enough.
 
       <listitem>
         <para>PCnet: fixed a regression which caused some PCnet PCI guest drivers
-        (notably NetWare drivers) to not detect the emulated hardware</para>
+        to not detect the emulated hardware (bug #18286)</para>
       </listitem>
 
       <listitem>
