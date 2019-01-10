@@ -223,6 +223,7 @@ void UIVMLogViewerTextEdit::prepareWidgets()
     /* Configure this' wrap mode: */
     setWrapLines(false);
     setReadOnly(true);
+    setBackground();
 }
 
 void UIVMLogViewerTextEdit::setCurrentFont(QFont font)
@@ -296,7 +297,11 @@ void UIVMLogViewerTextEdit::retranslateUi()
 
 void UIVMLogViewerTextEdit::setBackground()
 {
-    QPalette mPalette = palette();
+    /* Prepare modified standard palette: */
+    QPalette pal = style() ? style()->standardPalette() : palette(); // fallback if no style exist.
+    pal.setColor(QPalette::Inactive, QPalette::Highlight, pal.color(QPalette::Active, QPalette::Highlight));
+    pal.setColor(QPalette::Inactive, QPalette::HighlightedText, pal.color(QPalette::Active, QPalette::HighlightedText));
+
     /* Paint a string to the background of the text edit to indicate that
        the text has been filtered */
     if (m_bShownTextIsFiltered)
@@ -324,15 +329,11 @@ void UIVMLogViewerTextEdit::setBackground()
         QRect textRect(- 0.5 * imageW, - 0.5 * imageH, imageW, imageH);
         painter.drawText(textRect, Qt::AlignCenter | Qt::AlignVCenter, m_strBackgroungText);
 
-        mPalette.setBrush(QPalette::Base, QBrush(image));
-        setPalette(mPalette);
+        pal.setBrush(QPalette::Base, QBrush(image));
     }
-    else
-    {
-        /* Reset this->palette back to standard one. */
-        if (style())
-            setPalette(style()->standardPalette());
-    }
+
+    /* Apply palette changes finally: */
+    setPalette(pal);
 }
 
 void UIVMLogViewerTextEdit::contextMenuEvent(QContextMenuEvent *pEvent)
