@@ -43,6 +43,13 @@ Requires:  %INITSCRIPTS% %LIBASOUND% %NETTOOLS%
 # our Qt5 libs are built on EL5 with ld 2.17 which does not provide --link-id=
 %undefine _missing_build_ids_terminate_build
 
+# Remove source code from debuginfo package, needed for Fedora 27 and later
+# as we build the binaries before creating the RPMs.
+
+%if 0%{?fedora} >= 27
+%undefine _debugsource_packages
+%undefine _debuginfo_subpackages
+%endif
 
 %description
 VirtualBox is a powerful PC virtualization solution allowing
