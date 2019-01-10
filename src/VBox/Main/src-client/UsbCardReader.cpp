@@ -28,6 +28,7 @@
 
 #include <VBox/vmm/pdmdrv.h>
 #include <VBox/vmm/pdmcardreaderinfs.h>
+#include <VBox/err.h>
 
 #include <iprt/req.h>
 

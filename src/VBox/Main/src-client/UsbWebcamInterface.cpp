@@ -25,6 +25,7 @@
 #include "EmulatedUSBImpl.h"
 
 #include <VBox/vmm/pdmwebcaminfs.h>
+#include <VBox/err.h>
 
 
 typedef struct EMWEBCAMREMOTE

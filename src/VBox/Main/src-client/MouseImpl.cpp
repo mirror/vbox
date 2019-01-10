@@ -25,12 +25,10 @@
 #include "VMMDev.h"
 #include "MousePointerShapeWrap.h"
 
-#include "AutoCaller.h"
-
 #include <VBox/vmm/pdmdrv.h>
 #include <VBox/VMMDev.h>
+#include <VBox/err.h>
 
-#include <iprt/asm.h>
 
 class ATL_NO_VTABLE MousePointerShape:
     public MousePointerShapeWrap

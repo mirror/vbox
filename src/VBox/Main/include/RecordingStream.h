@@ -26,9 +26,6 @@
 
 #include <iprt/critsect.h>
 
-#include <VBox/com/array.h>
-#include <VBox/com/VirtualBox.h>
-#include <VBox/err.h>
 #include <VBox/settings.h>
 
 #include "RecordingInternals.h"

@@ -23,6 +23,12 @@
 
 #include "EBMLWriter.h"
 
+#include <queue>
+#include <map>
+#include <list>
+
+#include <iprt/rand.h>
+
 #ifdef VBOX_WITH_LIBVPX
 # ifdef _MSC_VER
 #  pragma warning(push)
@@ -86,7 +92,6 @@
 # pragma pack(pop)
 #endif /* VBOX_WITH_LIBOPUS */
 
-using namespace com;
 
 class WebMWriter : public EBMLWriter
 {
@@ -539,7 +544,7 @@ public:
 
     int WriteBlock(uint8_t uTrack, const void *pvData, size_t cbData);
 
-    const Utf8Str& GetFileName(void);
+    const com::Utf8Str& GetFileName(void);
 
     uint64_t GetFileSize(void);
 

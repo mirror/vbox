@@ -25,6 +25,9 @@
 // generated header for events
 #include "VBoxEvents.h"
 
+#include <VBox/err.h>
+
+
 /**
  * PCI raw driver instance data.
  */

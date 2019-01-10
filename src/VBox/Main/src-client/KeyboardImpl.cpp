@@ -25,9 +25,10 @@
 
 #include <VBox/com/array.h>
 #include <VBox/vmm/pdmdrv.h>
+#include <VBox/err.h>
 
-#include <iprt/asm.h>
 #include <iprt/cpp/utils.h>
+
 
 // defines
 ////////////////////////////////////////////////////////////////////////////////

@@ -24,21 +24,11 @@
 #define LOG_GROUP LOG_GROUP_MAIN_DISPLAY
 #include "LoggingNew.h"
 
-#include <list>
-#include <map>
-#include <queue>
-#include <stack>
-
-#include <math.h> /* For lround.h. */
-
-#include <iprt/asm.h>
-#include <iprt/buildconfig.h>
 #include <iprt/cdefs.h>
 #include <iprt/critsect.h>
 #include <iprt/errcore.h>
 #include <iprt/file.h>
-#include <iprt/rand.h>
-#include <iprt/string.h>
+#include <iprt/buildconfig.h>
 
 #include <VBox/log.h>
 #include <VBox/version.h>
@@ -161,7 +151,7 @@ int WebMWriter::Close(void)
     Assert(CurSeg.queueBlocks.Map.size() == 0);
     Assert(CurSeg.mapTracks.size() == 0);
 
-    Utf8Str strFileName = getFileName().c_str();
+    com::Utf8Str strFileName = getFileName().c_str();
 
     close();
 
@@ -307,7 +297,7 @@ int WebMWriter::AddVideoTrack(uint16_t uWidth, uint16_t uHeight, uint32_t uFPS, 
  *
  * @returns File name as UTF-8 string.
  */
-const Utf8Str& WebMWriter::GetFileName(void)
+const com::Utf8Str& WebMWriter::GetFileName(void)
 {
     return getFileName();
 }
