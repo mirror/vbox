@@ -288,6 +288,8 @@ endif
 	dh_link \
 	    $(if $(NOQT),,usr/bin/VBox          usr/bin/VirtualBox) \
 	    $(if $(NOQT),,usr/bin/VBox          usr/bin/virtualbox) \
+	    $(if $(NOQT),,usr/bin/VBox          usr/bin/VirtualBoxVM) \
+	    $(if $(NOQT),,usr/bin/VBox          usr/bin/virtualboxvm) \
 	    usr/bin/VBox                        usr/bin/VBoxManage \
 	    usr/bin/VBox                        usr/bin/vboxmanage \
 	    $(if $(HEADLESS),,usr/bin/VBox      usr/bin/VBoxSDL) \

@@ -141,6 +141,8 @@ for i in additions/VBoxGuestAdditions.iso; do
   mv $i $RPM_BUILD_ROOT/usr/share/virtualbox; done
 ln -s VBox $RPM_BUILD_ROOT/usr/bin/VirtualBox
 ln -s VBox $RPM_BUILD_ROOT/usr/bin/virtualbox
+ln -s VBox $RPM_BUILD_ROOT/usr/bin/VirtualBoxVM
+ln -s VBox $RPM_BUILD_ROOT/usr/bin/virtualboxvm
 ln -s VBox $RPM_BUILD_ROOT/usr/bin/VBoxManage
 ln -s VBox $RPM_BUILD_ROOT/usr/bin/vboxmanage
 test -f VBoxSDL && ln -s VBox $RPM_BUILD_ROOT/usr/bin/VBoxSDL
