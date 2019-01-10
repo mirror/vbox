@@ -43,6 +43,11 @@ technical terms if no non-technical ones are clear enough.
     <itemizedlist>
 
       <listitem>
+        <para>PCnet: fixed a regression which caused some PCnet PCI guest drivers
+        (notably NetWare drivers) to not detect the emulated hardware</para>
+      </listitem>
+
+      <listitem>
         <para>Linux installer: fixed symbolic links to VirtualBoxVM frontend</para>
       </listitem>
 
