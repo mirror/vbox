@@ -19,9 +19,11 @@
 #include <QAbstractItemModel>
 #include <QDir>
 #include <QFileSystemModel>
+#include <QGridLayout>
 #include <QHeaderView>
 #include <QLabel>
 #include <QListView>
+#include <QMimeData>
 #include <QTableView>
 #include <QTreeView>
 
@@ -43,6 +45,10 @@ class UIVisoHostBrowserModel : public QFileSystemModel
 public:
     virtual QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const /* override */;
     UIVisoHostBrowserModel(QObject *pParent);
+
+    virtual QStringList mimeTypes() const /* override */;
+    /** Prepares the mime data  as a list of text consisting of dragged objects full file path. */
+    QMimeData *mimeData(const QModelIndexList &indexes) const /* override */;
 
 protected:
 
@@ -77,6 +83,33 @@ QVariant UIVisoHostBrowserModel::data(const QModelIndex &index, int enmRole /* =
     return QFileSystemModel::data(index, enmRole);
 }
 
+QStringList UIVisoHostBrowserModel::mimeTypes() const
+{
+    QStringList types;
+    types << "application/vnd.text.list";
+    return types;
+}
+
+QMimeData *UIVisoHostBrowserModel::mimeData(const QModelIndexList &indexes) const
+{
+    QMimeData *mimeData = new QMimeData();
+    QByteArray encodedData;
+
+    QDataStream stream(&encodedData, QIODevice::WriteOnly);
+
+    foreach (const QModelIndex &index, indexes) {
+        if (index.isValid() && index.column() == 0)
+        {
+            QString strPath = fileInfo(index).filePath();
+            if (!strPath.contains(".."))
+                stream << fileInfo(index).filePath();
+        }
+    }
+
+    mimeData->setData("application/vnd.text.list", encodedData);
+    return mimeData;
+}
+
 /*********************************************************************************************************************************
 *   UIVisoHostBrowser implementation.                                                                                   *
 *********************************************************************************************************************************/
@@ -86,6 +119,7 @@ UIVisoHostBrowser::UIVisoHostBrowser(QWidget *pParent)
     , m_pTreeModel(0)
     , m_pTableModel(0)
     , m_pAddAction(0)
+    , m_pTableView(0)
 {
     prepareObjects();
     prepareConnections();
@@ -127,12 +161,36 @@ void UIVisoHostBrowser::prepareObjects()
         m_pTreeView->hideColumn(3);
     }
 
+    m_pTableView = new QTableView;
     if (m_pTableView)
     {
+        m_pRightContainerLayout->addWidget(m_pTableView, 0, 0, 6, 4);
+        m_pTableView->setSelectionMode(QAbstractItemView::ContiguousSelection);
+        m_pTableView->setShowGrid(false);
+        m_pTableView->setSelectionBehavior(QAbstractItemView::SelectRows);
+        m_pTableView->setEditTriggers(QAbstractItemView::NoEditTriggers);
+        m_pTableView->setAlternatingRowColors(true);
+        QHeaderView *pVerticalHeader = m_pTableView->verticalHeader();
+        if (pVerticalHeader)
+        {
+            m_pTableView->verticalHeader()->setVisible(false);
+            /* Minimize the row height: */
+            m_pTableView->verticalHeader()->setDefaultSectionSize(m_pTableView->verticalHeader()->minimumSectionSize());
+        }
+        QHeaderView *pHorizontalHeader = m_pTableView->horizontalHeader();
+        if (pHorizontalHeader)
+        {
+            pHorizontalHeader->setHighlightSections(false);
+            pHorizontalHeader->setSectionResizeMode(QHeaderView::Stretch);
+        }
+
         m_pTableView->setModel(m_pTableModel);
         setTableRootIndex();
         /* Hide the "type" column: */
         m_pTableView->hideColumn(2);
+
+        m_pTableView->setSelectionMode(QAbstractItemView::ExtendedSelection);
+        m_pTableView->setDragDropMode(QAbstractItemView::DragOnly);
     }
 
     m_pAddAction = new QAction(this);
@@ -153,6 +211,10 @@ void UIVisoHostBrowser::prepareObjects()
 void UIVisoHostBrowser::prepareConnections()
 {
     UIVisoBrowserBase::prepareConnections();
+    if (m_pTableView)
+        connect(m_pTableView, &QTableView::doubleClicked,
+                this, &UIVisoBrowserBase::sltHandleTableViewItemDoubleClick);
+
     if (m_pTableView->selectionModel())
         connect(m_pTableView->selectionModel(), &QItemSelectionModel::selectionChanged,
                 this, &UIVisoHostBrowser::sltHandleTableSelectionChanged);

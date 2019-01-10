@@ -70,6 +70,8 @@ private:
     UIVisoHostBrowserModel *m_pTreeModel;
     UIVisoHostBrowserModel *m_pTableModel;
     QAction                *m_pAddAction;
+    QTableView             *m_pTableView;
+
 };
 
 

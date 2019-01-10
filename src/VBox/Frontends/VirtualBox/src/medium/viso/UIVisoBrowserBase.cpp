@@ -31,7 +31,6 @@
 UIVisoBrowserBase::UIVisoBrowserBase(QWidget *pParent)
     : QWidget(pParent)
     , m_pTreeView(0)
-    , m_pTableView(0)
     , m_pTitleLabel(0)
     , m_pRightContainerWidget(0)
     , m_pRightContainerLayout(0)
@@ -93,29 +92,6 @@ void UIVisoBrowserBase::prepareObjects()
         m_pTreeView->header()->setSectionResizeMode(QHeaderView::ResizeToContents);
     }
 
-    m_pTableView = new QTableView;
-    if (m_pTableView)
-    {
-        m_pRightContainerLayout->addWidget(m_pTableView, 0, 0, 6, 4);
-        m_pTableView->setSelectionMode(QAbstractItemView::ContiguousSelection);
-        m_pTableView->setShowGrid(false);
-        m_pTableView->setSelectionBehavior(QAbstractItemView::SelectRows);
-        m_pTableView->setEditTriggers(QAbstractItemView::NoEditTriggers);
-        m_pTableView->setAlternatingRowColors(true);
-        QHeaderView *pVerticalHeader = m_pTableView->verticalHeader();
-        if (pVerticalHeader)
-        {
-            m_pTableView->verticalHeader()->setVisible(false);
-            /* Minimize the row height: */
-            m_pTableView->verticalHeader()->setDefaultSectionSize(m_pTableView->verticalHeader()->minimumSectionSize());
-        }
-        QHeaderView *pHorizontalHeader = m_pTableView->horizontalHeader();
-        if (pHorizontalHeader)
-        {
-            pHorizontalHeader->setHighlightSections(false);
-            pHorizontalHeader->setSectionResizeMode(QHeaderView::Stretch);
-        }
-    }
 
     m_pVerticalToolBar = new UIToolBar;
     if (m_pVerticalToolBar)
@@ -134,9 +110,6 @@ void UIVisoBrowserBase::prepareObjects()
 
 void UIVisoBrowserBase::prepareConnections()
 {
-    if (m_pTableView)
-        connect(m_pTableView, &QTableView::doubleClicked,
-                this, &UIVisoBrowserBase::sltHandleTableViewItemDoubleClick);
     if (m_pTreeView)
     {
         connect(m_pTreeView->selectionModel(), &QItemSelectionModel::selectionChanged,
@@ -153,8 +126,6 @@ void UIVisoBrowserBase::sltHandleTableViewItemDoubleClick(const QModelIndex &ind
 
 void UIVisoBrowserBase::sltHandleTreeSelectionChanged(const QItemSelection &selected, const QItemSelection &deselected)
 {
-    if (!m_pTableView)
-        return;
     Q_UNUSED(deselected);
     QModelIndexList indices = selected.indexes();
     if (indices.empty())
@@ -162,6 +133,7 @@ void UIVisoBrowserBase::sltHandleTreeSelectionChanged(const QItemSelection &sele
     QModelIndex selectedIndex = indices[0];
     treeSelectionChanged(selectedIndex);
 }
+
 
 void UIVisoBrowserBase::sltHandleTreeItemClicked(const QModelIndex &modelIndex)
 {

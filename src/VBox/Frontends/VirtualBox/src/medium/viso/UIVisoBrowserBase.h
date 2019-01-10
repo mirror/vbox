@@ -45,6 +45,10 @@ public:
     ~UIVisoBrowserBase();
     virtual void showHideHiddenObjects(bool bShow) = 0;
 
+public slots:
+
+    void sltHandleTableViewItemDoubleClick(const QModelIndex &index);
+
 protected:
 
     void prepareObjects();
@@ -57,7 +61,6 @@ protected:
 
 
     QTreeView          *m_pTreeView;
-    QTableView         *m_pTableView;
     QLabel             *m_pTitleLabel;
     QWidget            *m_pRightContainerWidget;
     QGridLayout        *m_pRightContainerLayout;
@@ -68,7 +71,7 @@ private:
     QSplitter      *m_pHorizontalSplitter;
 
 private slots:
-    void sltHandleTableViewItemDoubleClick(const QModelIndex &index);
+
     void sltHandleTreeSelectionChanged(const QItemSelection &selected, const QItemSelection &deselected);
     void sltHandleTreeItemClicked(const QModelIndex &modelIndex);
 

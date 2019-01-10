@@ -26,6 +26,7 @@
 #include <QHeaderView>
 #include <QLabel>
 #include <QListView>
+#include <QMimeData>
 #include <QSplitter>
 #include <QTableView>
 #include <QTreeView>
@@ -36,6 +37,28 @@
 #include "UIPathOperations.h"
 #include "UIToolBar.h"
 #include "UIVisoContentBrowser.h"
+
+
+
+/*********************************************************************************************************************************
+*   UIVisoContentTableView definition.                                                                                      *
+*********************************************************************************************************************************/
+/** An QTableView extension mainly used to handle dropeed file objects from the host browser. */
+class UIVisoContentTableView : public QTableView
+{
+    Q_OBJECT;
+
+signals:
+
+    void sigNewItemsDropped(QStringList pathList);
+
+public:
+
+    UIVisoContentTableView(QWidget *pParent = 0);
+    void dragEnterEvent(QDragEnterEvent *event);
+    void dropEvent(QDropEvent *event);
+    void dragMoveEvent(QDragMoveEvent *event);
+};
 
 
 /*********************************************************************************************************************************
@@ -55,8 +78,47 @@ protected:
 
     /** Used to filter-out files and show only directories. */
     virtual bool filterAcceptsRow(int source_row, const QModelIndex &source_parent) const /* override */;
-
 };
+
+
+/*********************************************************************************************************************************
+*   UIVisoContentTableView implementation.                                                                                       *
+*********************************************************************************************************************************/
+UIVisoContentTableView::UIVisoContentTableView(QWidget *pParent /* = 0 */)
+    :QTableView(pParent)
+{
+}
+
+void UIVisoContentTableView::dragMoveEvent(QDragMoveEvent *event)
+{
+    event->acceptProposedAction();
+
+}
+
+void UIVisoContentTableView::dragEnterEvent(QDragEnterEvent *pEvent)
+{
+    if (pEvent->mimeData()->hasFormat("application/vnd.text.list"))
+        pEvent->accept();
+    else
+        pEvent->ignore();
+}
+
+void UIVisoContentTableView::dropEvent(QDropEvent *pEvent)
+{
+    if (pEvent->mimeData()->hasFormat("application/vnd.text.list"))
+    {
+        QByteArray itemData = pEvent->mimeData()->data("application/vnd.text.list");
+        QDataStream stream(&itemData, QIODevice::ReadOnly);
+        QStringList pathList;
+
+        while (!stream.atEnd()) {
+            QString text;
+            stream >> text;
+            pathList << text;
+        }
+        emit sigNewItemsDropped(pathList);
+    }
+}
 
 
 /*********************************************************************************************************************************
@@ -93,6 +155,7 @@ bool UIVisoContentTreeProxyModel::filterAcceptsRow(int iSourceRow, const QModelI
 
 UIVisoContentBrowser::UIVisoContentBrowser(QWidget *pParent)
     : QIWithRetranslateUI<UIVisoBrowserBase>(pParent)
+    , m_pTableView(0)
     , m_pModel(0)
     , m_pTableProxyModel(0)
     , m_pTreeProxyModel(0)
@@ -341,8 +404,29 @@ void UIVisoContentBrowser::prepareObjects()
         m_pTreeView->hideColumn(UICustomFileSystemModelColumn_LocalPath);
     }
 
+    m_pTableView = new UIVisoContentTableView;
     if (m_pTableView)
     {
+        m_pRightContainerLayout->addWidget(m_pTableView, 0, 0, 6, 4);
+        m_pTableView->setSelectionMode(QAbstractItemView::ContiguousSelection);
+        m_pTableView->setShowGrid(false);
+        m_pTableView->setSelectionBehavior(QAbstractItemView::SelectRows);
+        m_pTableView->setEditTriggers(QAbstractItemView::NoEditTriggers);
+        m_pTableView->setAlternatingRowColors(true);
+        QHeaderView *pVerticalHeader = m_pTableView->verticalHeader();
+        if (pVerticalHeader)
+        {
+            m_pTableView->verticalHeader()->setVisible(false);
+            /* Minimize the row height: */
+            m_pTableView->verticalHeader()->setDefaultSectionSize(m_pTableView->verticalHeader()->minimumSectionSize());
+        }
+        QHeaderView *pHorizontalHeader = m_pTableView->horizontalHeader();
+        if (pHorizontalHeader)
+        {
+            pHorizontalHeader->setHighlightSections(false);
+            pHorizontalHeader->setSectionResizeMode(QHeaderView::Stretch);
+        }
+
         m_pTableView->setModel(m_pTableProxyModel);
         setTableRootIndex();
         m_pTableView->hideColumn(UICustomFileSystemModelColumn_Owner);
@@ -352,6 +436,11 @@ void UIVisoContentBrowser::prepareObjects()
 
         m_pTableView->setSortingEnabled(true);
         m_pTableView->sortByColumn(0, Qt::AscendingOrder);
+
+        m_pTableView->setDragEnabled(false);
+        m_pTableView->setAcceptDrops(true);
+        m_pTableView->setDropIndicatorShown(true);
+        m_pTableView->setDragDropMode(QAbstractItemView::DropOnly);
     }
 
     m_pRemoveAction = new QAction(this);
@@ -396,6 +485,15 @@ void UIVisoContentBrowser::prepareObjects()
 void UIVisoContentBrowser::prepareConnections()
 {
     UIVisoBrowserBase::prepareConnections();
+
+    if (m_pTableView)
+    {
+        connect(m_pTableView, &UIVisoContentTableView::doubleClicked,
+                this, &UIVisoBrowserBase::sltHandleTableViewItemDoubleClick);
+        connect(m_pTableView, &UIVisoContentTableView::sigNewItemsDropped,
+                this, &UIVisoContentBrowser::sltHandleDroppedItems);
+    }
+
     if (m_pNewDirectoryAction)
         connect(m_pNewDirectoryAction, &QAction::triggered,
                 this, &UIVisoContentBrowser::sltHandleCreateNewDirectory);
@@ -665,6 +763,11 @@ void UIVisoContentBrowser::sltHandleResetAction()
         m_pTableProxyModel->invalidate();
     if (m_pTreeProxyModel)
         m_pTreeProxyModel->invalidate();
+}
+
+void UIVisoContentBrowser::sltHandleDroppedItems(QStringList pathList)
+{
+    addObjectsToViso(pathList);
 }
 
 void UIVisoContentBrowser::reset()
