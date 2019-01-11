@@ -34,7 +34,7 @@ void crUnpackMap2d(void)
     }
 
     cbMax = (ustride * uorder + vstride * vorder) * sizeof(double);
-    if (!DATA_POINTER_CHECK(cbMax - 1))
+    if (!DATA_POINTER_CHECK(cbMax))
     {
         crError("crUnpackMap2d: parameters out of range");
         return;
@@ -69,7 +69,7 @@ void crUnpackMap2f(void)
     }
 
     cbMax = (ustride * uorder + vstride * vorder) * sizeof(float);
-    if (!DATA_POINTER_CHECK(cbMax - 1))
+    if (!DATA_POINTER_CHECK(cbMax))
     {
         crError("crUnpackMap2f: parameters out of range");
         return;
@@ -98,7 +98,7 @@ void crUnpackMap1d(void)
     }
 
     cbMax = stride * order * sizeof(double);
-    if (!DATA_POINTER_CHECK(cbMax - 1))
+    if (!DATA_POINTER_CHECK(cbMax))
     {
         crError("crUnpackMap1d: parameters out of range");
         return;
@@ -127,7 +127,7 @@ void crUnpackMap1f(void)
     }
 
     cbMax = stride * order * sizeof(float);
-    if (!DATA_POINTER_CHECK(cbMax - 1))
+    if (!DATA_POINTER_CHECK(cbMax))
     {
         crError("crUnpackMap1f: parameters out of range");
         return;

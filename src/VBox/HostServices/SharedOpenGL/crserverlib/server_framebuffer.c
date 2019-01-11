@@ -28,7 +28,7 @@ crServerDispatchGenFramebuffersEXT(GLsizei n, GLuint *framebuffers)
     GLuint *local_buffers;
     (void) framebuffers;
 
-    if (n >= INT32_MAX / sizeof(GLuint))
+    if (n <= 0 || n >= INT32_MAX / sizeof(GLuint))
     {
         crError("crServerDispatchGenFramebuffersEXT: parameter 'n' is out of range");
         return;
@@ -48,7 +48,7 @@ crServerDispatchGenRenderbuffersEXT(GLsizei n, GLuint *renderbuffers)
     GLuint *local_buffers;
     (void) renderbuffers;
 
-    if (n >= INT32_MAX / sizeof(GLuint))
+    if (n <= 0 || n >= INT32_MAX / sizeof(GLuint))
     {
         crError("crServerDispatchGenRenderbuffersEXT: parameter 'n' is out of range");
         return;

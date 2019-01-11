@@ -366,7 +366,8 @@ static CRVBOXSVCBUFFER_t* svcGetBuffer(uint32_t iBuffer, uint32_t cbBufferSize)
         pBuffer = (CRVBOXSVCBUFFER_t*) RTMemAlloc(sizeof(CRVBOXSVCBUFFER_t));
         if (pBuffer)
         {
-            pBuffer->pData = RTMemAlloc(cbBufferSize);
+            /* Filling host buffer with zeroes to prevent possible host->guest memory disclosure */
+            pBuffer->pData = RTMemAllocZ(cbBufferSize);
             if (!pBuffer->pData)
             {
                 LogRel(("OpenGL: svcGetBuffer: Not enough memory (%d)\n", cbBufferSize));

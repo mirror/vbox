@@ -168,7 +168,7 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchTexEnviv( GLenum target, GLenum pn
 
 void SERVER_DISPATCH_APIENTRY crServerDispatchGetTexEnvfv( GLenum target, GLenum pname, GLfloat * params )
 {
-    GLfloat local_params[4];
+    GLfloat local_params[4] = {0};
     (void) params;
     if (GL_POINT_SPRITE != target && pname != GL_COORD_REPLACE)
         cr_server.head_spu->dispatch_table.GetTexEnvfv( target, pname, local_params );
@@ -180,7 +180,7 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchGetTexEnvfv( GLenum target, GLenum
 
 void SERVER_DISPATCH_APIENTRY crServerDispatchGetTexEnviv( GLenum target, GLenum pname, GLint * params )
 {
-    GLint local_params[4];
+    GLint local_params[4] = {0};
     (void) params;
     if (GL_POINT_SPRITE != target && pname != GL_COORD_REPLACE)
         cr_server.head_spu->dispatch_table.GetTexEnviv( target, pname, local_params );
@@ -202,7 +202,7 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchDeleteTextures( GLsizei n, const G
     GLuint *newTextures;
     GLint i;
 
-    if (n >= UINT32_MAX / sizeof(GLuint))
+    if (n <= 0 || n >= INT32_MAX / sizeof(GLuint))
     {
         crError("crServerDispatchDeleteTextures: parameter 'n' is out of range");
         return;
@@ -238,7 +238,7 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchPrioritizeTextures( GLsizei n, con
     GLuint *newTextures;
     GLint i;
 
-    if (n >= INT32_MAX / sizeof(GLuint))
+    if (n <= 0 || n >= INT32_MAX / sizeof(GLuint))
     {
         crError("crServerDispatchPrioritizeTextures: parameter 'n' is out of range");
         return;
@@ -284,7 +284,7 @@ crServerDispatchAreTexturesResident(GLsizei n, const GLuint *textures,
     GLuint *textures2;
     (void) residences;
 
-    if (n >= INT32_MAX / sizeof(GLuint))
+    if (n <= 0 || n >= INT32_MAX / sizeof(GLuint))
     {
         crError("crServerDispatchAreTexturesResident: parameter 'n' is out of range");
         return GL_FALSE;

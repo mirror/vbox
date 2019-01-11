@@ -16,7 +16,7 @@ crServerDispatchGenQueriesARB(GLsizei n, GLuint *queries)
     GLuint *local_queries;
     (void) queries;
 
-    if (n >= INT32_MAX / sizeof(GLuint))
+    if (n <= 0 || n >= INT32_MAX / sizeof(GLuint))
     {
         crError("crServerDispatchGenQueriesARB: parameter 'n' is out of range");
         return;

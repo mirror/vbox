@@ -48,7 +48,7 @@ crServerDispatchReadPixels(GLint x, GLint y, GLsizei width, GLsizei height,
         CRMessageReadPixels *rp;
         uint32_t msg_len;
 
-        if (bytes_per_row < 0 || bytes_per_row > UINT32_MAX / 8 || height > UINT32_MAX / 8)
+        if (bytes_per_row <= 0 || height <= 0 || bytes_per_row > INT32_MAX / height)
         {
             crError("crServerDispatchReadPixels: parameters out of range");
             return;

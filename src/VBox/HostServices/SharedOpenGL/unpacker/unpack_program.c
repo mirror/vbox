@@ -44,7 +44,7 @@ void crUnpackExtendProgramParameters4dvNV(void)
 	GLuint num = READ_DATA(16, GLuint);
     GLdouble *params;
 
-    if (num >= UINT32_MAX / (4 * sizeof(GLdouble)))
+    if (num <= 0 || num >= INT32_MAX / (4 * sizeof(GLdouble)))
     {
         crError("crUnpackExtendProgramParameters4dvNV: parameter 'num' is out of range");
         return;
@@ -70,7 +70,7 @@ void crUnpackExtendProgramParameters4fvNV(void)
 	GLuint num = READ_DATA(16, GLuint);
     GLfloat *params;
 
-    if (num >= UINT32_MAX / (4 * sizeof(GLfloat)))
+    if (num <= 0 || num >= INT32_MAX / (4 * sizeof(GLfloat)))
     {
         crError("crUnpackExtendProgramParameters4fvNV: parameter 'num' is out of range");
         return;
@@ -94,7 +94,7 @@ void crUnpackExtendAreProgramsResidentNV(void)
     GLsizei n = READ_DATA(8, GLsizei);
     const GLuint *programs = DATA_POINTER(12, const GLuint);
 
-    if (n > UINT32_MAX / sizeof(GLuint) / 4 || !DATA_POINTER_CHECK(20 + n * sizeof(GLuint)))
+    if (n <= 0 || n >= INT32_MAX / sizeof(GLuint) / 4 || !DATA_POINTER_CHECK(20 + n * sizeof(GLuint)))
     {
         crError("crUnpackExtendAreProgramsResidentNV: %d is out of range", n);
         return;
@@ -225,7 +225,7 @@ void crUnpackExtendGetProgramNamedParameterdvNV(void)
     GLsizei len = READ_DATA(12, GLsizei);
     const GLubyte *name = DATA_POINTER(16, GLubyte);
 
-    if (len > UINT32_MAX / 4 || !DATA_POINTER_CHECK(16 + len + 8))
+    if (len <= 0 || len >= INT32_MAX / 4 || !DATA_POINTER_CHECK(16 + len + 8))
     {
         crError("crUnpackExtendGetProgramNamedParameterdvNV: len %d is out of range", len);
         return;
@@ -242,7 +242,7 @@ void crUnpackExtendGetProgramNamedParameterfvNV(void)
     GLsizei len = READ_DATA(12, GLsizei);
     const GLubyte *name = DATA_POINTER(16, GLubyte);
 
-    if (len > UINT32_MAX / 4 || !DATA_POINTER_CHECK(16 + len + 8))
+    if (len <= 0 || len >= INT32_MAX / 4 || !DATA_POINTER_CHECK(16 + len + 8))
     {
         crError("crUnpackExtendGetProgramNamedParameterfvNV: len %d is out of range", len);
         return;

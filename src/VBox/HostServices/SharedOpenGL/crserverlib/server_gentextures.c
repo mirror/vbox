@@ -16,7 +16,7 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchGenTextures( GLsizei n, GLuint *te
     GLuint *local_textures;
     (void) textures;
 
-    if (n >= INT32_MAX / sizeof(GLuint))
+    if (n <= 0 || n >= INT32_MAX / sizeof(GLuint))
     {
         crError("crServerDispatchGenTextures: parameter 'n' is out of range");
         return;
@@ -41,7 +41,7 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchGenProgramsNV( GLsizei n, GLuint *
     GLuint *local_progs;
     (void) ids;
 
-    if (n >= INT32_MAX / sizeof(GLuint))
+    if (n <= 0 || n >= INT32_MAX / sizeof(GLuint))
     {
         crError("crServerDispatchGenProgramsNV: parameter 'n' is out of range");
         return;
@@ -66,7 +66,7 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchGenFencesNV( GLsizei n, GLuint * i
     GLuint *local_fences;
     (void) ids;
 
-    if (n >= INT32_MAX / sizeof(GLuint))
+    if (n <= 0 || n >= INT32_MAX / sizeof(GLuint))
     {
         crError("crServerDispatchGenFencesNV: parameter 'n' is out of range");
         return;
@@ -87,11 +87,11 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchGenFencesNV( GLsizei n, GLuint * i
 
 void SERVER_DISPATCH_APIENTRY crServerDispatchGenProgramsARB( GLsizei n, GLuint * ids )
 {
-    GLuint *local_progs = (GLuint *) crAlloc( n*sizeof( *local_progs) );
+    GLuint *local_progs;
     GLsizei i;
     (void) ids;
 
-    if (n >= INT32_MAX / sizeof(GLuint))
+    if (n <= 0 || n >= INT32_MAX / sizeof(GLuint))
     {
         crError("crServerDispatchGenProgramsARB: parameter 'n' is out of range");
         return;
@@ -101,7 +101,7 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchGenProgramsARB( GLsizei n, GLuint 
 
     if (!local_progs)
     {
-        crError("crServerDispatchGenProgramsARB: out of memory");
+        crError("crServerDispatchGenProgramsARB: out of money");
         return;
     }
 
@@ -119,7 +119,7 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchGenProgramsARB( GLsizei n, GLuint 
         }
     }
 
-    crServerReturnValue( local_progs, n*sizeof( *local_progs ) );
+    crServerReturnValue( local_progs, n * sizeof( *local_progs ) );
     crFree( local_progs );
 }
 

@@ -38,7 +38,7 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchGetActiveAttrib(GLuint program, GL
 {
     crGetActive_t *pLocal = NULL;
 
-    if (bufSize < INT32_MAX / 2)
+    if (bufSize > 0 && bufSize < INT32_MAX / 2)
         pLocal = (crGetActive_t*)crCalloc(bufSize + sizeof(crGetActive_t));
 
     if (!pLocal)
@@ -58,7 +58,7 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchGetActiveUniform(GLuint program, G
 {
     crGetActive_t *pLocal = NULL;
 
-    if (bufSize < INT32_MAX / 2)
+    if (bufSize > 0 && bufSize < INT32_MAX / 2)
         pLocal = (crGetActive_t*) crCalloc(bufSize + sizeof(crGetActive_t));
 
     if (!pLocal)
@@ -78,7 +78,7 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchGetAttachedShaders(GLuint program,
 {
     GLsizei *pLocal = NULL;
 
-    if (maxCount < INT32_MAX / sizeof(GLuint) / 2)
+    if (maxCount > 0 && maxCount < INT32_MAX / sizeof(GLuint) / 2)
         pLocal = (GLsizei*) crCalloc(maxCount * sizeof(GLuint) + sizeof(GLsizei));
 
     if (!pLocal)
@@ -107,7 +107,7 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchGetAttachedObjectsARB(VBoxGLhandle
 {
     GLsizei *pLocal = NULL;
 
-    if (maxCount < INT32_MAX / sizeof(VBoxGLhandleARB) / 2)
+    if (maxCount > 0 && maxCount < INT32_MAX / sizeof(VBoxGLhandleARB) / 2)
         pLocal = (GLsizei*) crCalloc(maxCount * sizeof(VBoxGLhandleARB) + sizeof(GLsizei));
 
     if (!pLocal)
@@ -139,7 +139,7 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchGetInfoLogARB(VBoxGLhandleARB obj,
     GLsizei *pLocal = NULL;
     GLuint hwid;
 
-    if (maxLength < INT32_MAX / 2)
+    if (maxLength > 0 && maxLength < INT32_MAX / 2)
         pLocal = (GLsizei*) crCalloc(maxLength + sizeof(GLsizei));
 
     if (!pLocal)
@@ -163,7 +163,7 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchGetShaderInfoLog(GLuint shader, GL
 {
     GLsizei *pLocal = NULL;
 
-    if (bufSize < INT32_MAX / 2)
+    if (bufSize > 0 && bufSize < INT32_MAX / 2)
         pLocal = (GLsizei*) crCalloc(bufSize + sizeof(GLsizei));
 
     if (!pLocal)
@@ -183,7 +183,7 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchGetProgramInfoLog(GLuint program, 
 {
     GLsizei *pLocal = NULL;
 
-    if (bufSize < INT32_MAX / 2)
+    if (bufSize > 0 && bufSize < INT32_MAX / 2)
         pLocal = (GLsizei*) crCalloc(bufSize + sizeof(GLsizei));
 
     if (!pLocal)
@@ -204,7 +204,7 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchGetShaderSource(GLuint shader, GLs
 {
     GLsizei *pLocal = NULL;
 
-    if (bufSize < INT32_MAX / 2)
+    if (bufSize > 0 && bufSize < INT32_MAX / 2)
         pLocal = (GLsizei*) crCalloc(bufSize + sizeof(GLsizei));
 
     if (!pLocal)
@@ -229,7 +229,7 @@ crServerDispatchGetUniformsLocations(GLuint program, GLsizei maxcbData, GLsizei 
     (void) cbData;
     (void) pData;
 
-    if (maxcbData < INT32_MAX / 2)
+    if (maxcbData > 0 && maxcbData < INT32_MAX / 2)
         pLocal = (GLsizei*) crCalloc(maxcbData + sizeof(GLsizei));
 
     if (!pLocal)
@@ -255,7 +255,7 @@ crServerDispatchGetAttribsLocations(GLuint program, GLsizei maxcbData, GLsizei *
     (void) cbData;
     (void) pData;
 
-    if (maxcbData < INT32_MAX / 2)
+    if (maxcbData > 0 && maxcbData < INT32_MAX / 2)
         pLocal = (GLsizei*) crCalloc(maxcbData + sizeof(GLsizei));
 
     if (!pLocal)

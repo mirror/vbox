@@ -28,7 +28,7 @@ crServerDispatchGenBuffersARB(GLsizei n, GLuint *buffers)
     GLuint *local_buffers;
     (void) buffers;
 
-    if (n >= INT32_MAX / sizeof(GLuint))
+    if (n <= 0 || n >= INT32_MAX / sizeof(GLuint))
     {
         crError("crServerDispatchGenBuffersARB: parameter 'n' is out of range");
         return;
@@ -67,7 +67,14 @@ crServerDispatchGetBufferSubDataARB(GLenum target, GLintptrARB offset, GLsizeipt
 {
     void *b;
 
+    if (size <= 0 || size >= INT32_MAX / 2)
+    {
+        crError("crServerDispatchGetBufferSubDataARB: size is out of range");
+        return;
+    }
+
     b = crCalloc(size);
+
     if (b) {
         cr_server.head_spu->dispatch_table.GetBufferSubDataARB( target, offset, size, b );
 
