@@ -5058,8 +5058,7 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
          */
         if (memcmp(&pThis->MacConfigured, "\x02\x07\x01", 3))
             return PDMDevHlpVMSetError(pDevIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES, RT_SRC_POS,
-                                       N_("Configuration error: MAC address OUI for EtherBlaster must be 02 07 01"),
-                                       szChipType);
+                                       N_("Configuration error: MAC address OUI for EtherBlaster must be 02 07 01"));
     }
     else
     {
