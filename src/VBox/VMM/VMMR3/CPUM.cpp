@@ -3404,7 +3404,7 @@ static void  cpumR3InfoVmxVmcs(PCDBGFINFOHLP pHlp, PCVMXVVMCS pVmcs, const char 
         pHlp->pfnPrintf(pHlp, "  %sEntryCtls                  = %#RX32\n",   pszPrefix, pVmcs->u32EntryCtls);
         pHlp->pfnPrintf(pHlp, "  %sException bitmap           = %#RX32\n",   pszPrefix, pVmcs->u32XcptBitmap);
         pHlp->pfnPrintf(pHlp, "  %sPage-fault mask            = %#RX32\n",   pszPrefix, pVmcs->u32XcptPFMask);
-        pHlp->pfnPrintf(pHlp, "  %ssPage-fault match          = %#RX32\n",   pszPrefix, pVmcs->u32XcptPFMatch);
+        pHlp->pfnPrintf(pHlp, "  %sPage-fault match           = %#RX32\n",   pszPrefix, pVmcs->u32XcptPFMatch);
         pHlp->pfnPrintf(pHlp, "  %sCR3 target count           = %#RX32\n",   pszPrefix, pVmcs->u32Cr3TargetCount);
         pHlp->pfnPrintf(pHlp, "  %sVM-exit MSR store count    = %#RX32\n",   pszPrefix, pVmcs->u32ExitMsrStoreCount);
         pHlp->pfnPrintf(pHlp, "  %sVM-exit MSR load count     = %#RX32\n",   pszPrefix, pVmcs->u32ExitMsrLoadCount);
