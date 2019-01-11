@@ -1670,7 +1670,7 @@ VBoxManage storageattach "VM name" --storagectl "SATA" --port 1 --device 0 --typ
             Create a mount point on the host OS. For example:
           </para>
 
-<screen>$ mkdir macOS_sysdisk</screen>
+<screen>$ mkdir macos_sysdisk</screen>
         </listitem>
 
         <listitem>
@@ -1713,8 +1713,8 @@ VBoxManage storageattach "VM name" --storagectl "SATA" --port 1 --device 0 --typ
             FUSE-mounted device node represents the virtual disk image.
           </para>
 
-<screen>$ ls macOS_sysdisk
-   macOS High Sierra 10.13.vdi	vhdd
+<screen>$ ls macos_sysdisk
+   macOS High Sierra 10.13.vdi  vhdd
 $ sudo mount macos_sysdisk/vhdd /mnt</screen>
         </listitem>
 
