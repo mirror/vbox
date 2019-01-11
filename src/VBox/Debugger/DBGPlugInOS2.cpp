@@ -484,7 +484,7 @@ static DECLCALLBACK(void) dbgDiggerOS2InfoSas(void *pvUser, PCDBGFINFOHLP pHlp, 
                         SAS_SIGNATURE[0], SAS_SIGNATURE[1], SAS_SIGNATURE[2], SAS_SIGNATURE[3]);
         return;
     }
-    pHlp->pfnPrintf(pHlp, " Flat kernel DS: %#06x\n",         Sas.SAS_flat_sel);
+    dbgDiggerOS2DisplaySelectorAndInfo(pThis, pHlp, Sas.SAS_flat_sel, UINT32_MAX, 15, "Flat kernel DS");
     pHlp->pfnPrintf(pHlp, "SAS_tables_data: %#06x (%#RGv)\n", Sas.SAS_tables_data, SelInfo.GCPtrBase + Sas.SAS_tables_data);
     pHlp->pfnPrintf(pHlp, "SAS_config_data: %#06x (%#RGv)\n", Sas.SAS_config_data, SelInfo.GCPtrBase + Sas.SAS_config_data);
     pHlp->pfnPrintf(pHlp, "    SAS_dd_data: %#06x (%#RGv)\n", Sas.SAS_dd_data,     SelInfo.GCPtrBase + Sas.SAS_dd_data);
@@ -1131,10 +1131,10 @@ static DECLCALLBACK(int)  dbgDiggerOS2Init(PUVM pUVM, void *pvData)
     /*
      * Register info handlers.
      */
-    DBGFR3InfoRegisterExternal(pUVM, "sas",   "Dumps the OS/2 system anchor block (SAS)", dbgDiggerOS2InfoSas, pThis);
-    DBGFR3InfoRegisterExternal(pUVM, "gis",   "Dumps the OS/2 global info segment (GIS)", dbgDiggerOS2InfoGis, pThis);
-    DBGFR3InfoRegisterExternal(pUVM, "lis",   "Dumps the OS/2 local info segment (current process)", dbgDiggerOS2InfoLis, pThis);
-    DBGFR3InfoRegisterExternal(pUVM, "panic", "Dumps the OS/2 system panic message",      dbgDiggerOS2InfoPanic, pThis);
+    DBGFR3InfoRegisterExternal(pUVM, "sas",   "Dumps the OS/2 system anchor block (SAS).", dbgDiggerOS2InfoSas, pThis);
+    DBGFR3InfoRegisterExternal(pUVM, "gis",   "Dumps the OS/2 global info segment (GIS).", dbgDiggerOS2InfoGis, pThis);
+    DBGFR3InfoRegisterExternal(pUVM, "lis",   "Dumps the OS/2 local info segment (current process).", dbgDiggerOS2InfoLis, pThis);
+    DBGFR3InfoRegisterExternal(pUVM, "panic", "Dumps the OS/2 system panic message.",      dbgDiggerOS2InfoPanic, pThis);
 
     return VINF_SUCCESS;
 }
