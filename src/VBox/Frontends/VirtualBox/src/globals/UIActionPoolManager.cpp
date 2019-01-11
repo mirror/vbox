@@ -1293,18 +1293,21 @@ protected:
 };
 
 /** Simple action extension, used as 'Show Machine Details' action class. */
-class UIActionSimpleSelectorToolsMachineShowDetails : public UIActionSimple
+class UIActionToggleSelectorToolsMachineShowDetails : public UIActionToggle
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionSimpleSelectorToolsMachineShowDetails(UIActionPool *pParent)
-        : UIActionSimple(pParent,
-                         ":/machine_details_manager_24px.png", ":/machine_details_manager_16px.png",
-                         ":/machine_details_manager_disabled_24px.png", ":/machine_details_manager_disabled_16px.png")
-    {}
+    UIActionToggleSelectorToolsMachineShowDetails(UIActionPool *pParent)
+        : UIActionToggle(pParent)
+    {
+        setProperty("UIToolType", QVariant::fromValue(UIToolType_Details));
+        /// @todo use icons with check-boxes
+        setIcon(UIIconPool::iconSetFull(":/machine_details_manager_24px.png", ":/machine_details_manager_16px.png",
+                                        ":/machine_details_manager_disabled_24px.png", ":/machine_details_manager_disabled_16px.png"));
+    }
 
 protected:
 
@@ -1323,18 +1326,21 @@ protected:
 };
 
 /** Simple action extension, used as 'Show Machine Snapshots' action class. */
-class UIActionSimpleSelectorToolsMachineShowSnapshots : public UIActionSimple
+class UIActionToggleSelectorToolsMachineShowSnapshots : public UIActionToggle
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionSimpleSelectorToolsMachineShowSnapshots(UIActionPool *pParent)
-        : UIActionSimple(pParent,
-                         ":/snapshot_manager_24px.png", ":/snapshot_manager_16px.png",
-                         ":/snapshot_manager_disabled_24px.png", ":/snapshot_manager_disabled_16px.png")
-    {}
+    UIActionToggleSelectorToolsMachineShowSnapshots(UIActionPool *pParent)
+        : UIActionToggle(pParent)
+    {
+        setProperty("UIToolType", QVariant::fromValue(UIToolType_Snapshots));
+        /// @todo use icons with check-boxes
+        setIcon(UIIconPool::iconSetFull(":/snapshot_manager_24px.png", ":/snapshot_manager_16px.png",
+                                        ":/snapshot_manager_disabled_24px.png", ":/snapshot_manager_disabled_16px.png"));
+    }
 
 protected:
 
@@ -1353,18 +1359,21 @@ protected:
 };
 
 /** Simple action extension, used as 'Show Machine Logs' action class. */
-class UIActionSimpleSelectorToolsMachineShowLogs : public UIActionSimple
+class UIActionToggleSelectorToolsMachineShowLogs : public UIActionToggle
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionSimpleSelectorToolsMachineShowLogs(UIActionPool *pParent)
-        : UIActionSimple(pParent,
-                         ":/vm_show_logs_32px.png", ":/vm_show_logs_16px.png",
-                         ":/vm_show_logs_disabled_32px.png", ":/vm_show_logs_disabled_16px.png")
-    {}
+    UIActionToggleSelectorToolsMachineShowLogs(UIActionPool *pParent)
+        : UIActionToggle(pParent)
+    {
+        setProperty("UIToolType", QVariant::fromValue(UIToolType_Logs));
+        /// @todo use icons with check-boxes
+        setIcon(UIIconPool::iconSetFull(":/vm_show_logs_32px.png", ":/vm_show_logs_16px.png",
+                                        ":/vm_show_logs_disabled_32px.png", ":/vm_show_logs_disabled_16px.png"));
+    }
 
 protected:
 
@@ -2533,9 +2542,9 @@ void UIActionPoolManager::preparePool()
     m_pool[UIActionIndexST_M_Group_M_Close_S_Shutdown] = new UIActionSimpleSelectorClosePerformShutdown(this);
     m_pool[UIActionIndexST_M_Group_M_Close_S_PowerOff] = new UIActionSimpleSelectorClosePerformPowerOff(this);
     m_pool[UIActionIndexST_M_Group_M_Tools] = new UIActionMenuSelectorToolsMachine(this);
-    m_pool[UIActionIndexST_M_Group_M_Tools_S_Details] = new UIActionSimpleSelectorToolsMachineShowDetails(this);
-    m_pool[UIActionIndexST_M_Group_M_Tools_S_Snapshots] = new UIActionSimpleSelectorToolsMachineShowSnapshots(this);
-    m_pool[UIActionIndexST_M_Group_M_Tools_S_Logs] = new UIActionSimpleSelectorToolsMachineShowLogs(this);
+    m_pool[UIActionIndexST_M_Group_M_Tools_T_Details] = new UIActionToggleSelectorToolsMachineShowDetails(this);
+    m_pool[UIActionIndexST_M_Group_M_Tools_T_Snapshots] = new UIActionToggleSelectorToolsMachineShowSnapshots(this);
+    m_pool[UIActionIndexST_M_Group_M_Tools_T_Logs] = new UIActionToggleSelectorToolsMachineShowLogs(this);
     m_pool[UIActionIndexST_M_Group_S_Discard] = new UIActionSimpleSelectorCommonPerformDiscard(this);
     m_pool[UIActionIndexST_M_Group_S_ShowLogDialog] = new UIActionSimpleSelectorCommonShowMachineLogs(this);
     m_pool[UIActionIndexST_M_Group_S_Refresh] = new UIActionSimpleSelectorCommonPerformRefresh(this);
@@ -2564,9 +2573,9 @@ void UIActionPoolManager::preparePool()
     m_pool[UIActionIndexST_M_Machine_M_Close_S_Shutdown] = new UIActionSimpleSelectorClosePerformShutdown(this);
     m_pool[UIActionIndexST_M_Machine_M_Close_S_PowerOff] = new UIActionSimpleSelectorClosePerformPowerOff(this);
     m_pool[UIActionIndexST_M_Machine_M_Tools] = new UIActionMenuSelectorToolsMachine(this);
-    m_pool[UIActionIndexST_M_Machine_M_Tools_S_Details] = new UIActionSimpleSelectorToolsMachineShowDetails(this);
-    m_pool[UIActionIndexST_M_Machine_M_Tools_S_Snapshots] = new UIActionSimpleSelectorToolsMachineShowSnapshots(this);
-    m_pool[UIActionIndexST_M_Machine_M_Tools_S_Logs] = new UIActionSimpleSelectorToolsMachineShowLogs(this);
+    m_pool[UIActionIndexST_M_Machine_M_Tools_T_Details] = new UIActionToggleSelectorToolsMachineShowDetails(this);
+    m_pool[UIActionIndexST_M_Machine_M_Tools_T_Snapshots] = new UIActionToggleSelectorToolsMachineShowSnapshots(this);
+    m_pool[UIActionIndexST_M_Machine_M_Tools_T_Logs] = new UIActionToggleSelectorToolsMachineShowLogs(this);
     m_pool[UIActionIndexST_M_Machine_S_Discard] = new UIActionSimpleSelectorCommonPerformDiscard(this);
     m_pool[UIActionIndexST_M_Machine_S_ShowLogDialog] = new UIActionSimpleSelectorCommonShowMachineLogs(this);
     m_pool[UIActionIndexST_M_Machine_S_Refresh] = new UIActionSimpleSelectorCommonPerformRefresh(this);
@@ -2615,6 +2624,18 @@ void UIActionPoolManager::preparePool()
     m_pool[UIActionIndexST_M_Cloud_S_Remove] = new UIActionMenuSelectorCloudPerformRemove(this);
     m_pool[UIActionIndexST_M_Cloud_T_Details] = new UIActionMenuSelectorCloudToggleProperties(this);
     m_pool[UIActionIndexST_M_Cloud_S_Help] = new UIActionMenuSelectorCloudShowHelp(this);
+
+    /* 'Group' action groups: */
+    m_groupPool[UIActionIndexST_M_Group_M_Tools] = new QActionGroup(m_pool.value(UIActionIndexST_M_Group_M_Tools));
+    m_groupPool[UIActionIndexST_M_Group_M_Tools]->addAction(m_pool.value(UIActionIndexST_M_Group_M_Tools_T_Details));
+    m_groupPool[UIActionIndexST_M_Group_M_Tools]->addAction(m_pool.value(UIActionIndexST_M_Group_M_Tools_T_Snapshots));
+    m_groupPool[UIActionIndexST_M_Group_M_Tools]->addAction(m_pool.value(UIActionIndexST_M_Group_M_Tools_T_Logs));
+
+    /* 'Machine' action groups: */
+    m_groupPool[UIActionIndexST_M_Machine_M_Tools] = new QActionGroup(m_pool.value(UIActionIndexST_M_Machine_M_Tools));
+    m_groupPool[UIActionIndexST_M_Machine_M_Tools]->addAction(m_pool.value(UIActionIndexST_M_Machine_M_Tools_T_Details));
+    m_groupPool[UIActionIndexST_M_Machine_M_Tools]->addAction(m_pool.value(UIActionIndexST_M_Machine_M_Tools_T_Snapshots));
+    m_groupPool[UIActionIndexST_M_Machine_M_Tools]->addAction(m_pool.value(UIActionIndexST_M_Machine_M_Tools_T_Logs));
 
     /* Prepare update-handlers for known menus: */
     m_menuUpdateHandlers[UIActionIndexST_M_File].ptfm =                  &UIActionPoolManager::updateMenuFile;
@@ -2982,9 +3003,9 @@ void UIActionPoolManager::updateMenuGroupTools()
     pMenu->clear();
 
     /* Populate 'Group' / 'Tools' menu: */
-    pMenu->addAction(action(UIActionIndexST_M_Group_M_Tools_S_Details));
-    pMenu->addAction(action(UIActionIndexST_M_Group_M_Tools_S_Snapshots));
-    pMenu->addAction(action(UIActionIndexST_M_Group_M_Tools_S_Logs));
+    pMenu->addAction(action(UIActionIndexST_M_Group_M_Tools_T_Details));
+    pMenu->addAction(action(UIActionIndexST_M_Group_M_Tools_T_Snapshots));
+    pMenu->addAction(action(UIActionIndexST_M_Group_M_Tools_T_Logs));
 
     /* Mark menu as valid: */
     m_invalidations.remove(UIActionIndexST_M_Group_M_Tools);
@@ -2999,9 +3020,9 @@ void UIActionPoolManager::updateMenuMachineTools()
     pMenu->clear();
 
     /* Populate 'Machine' / 'Tools' menu: */
-    pMenu->addAction(action(UIActionIndexST_M_Machine_M_Tools_S_Details));
-    pMenu->addAction(action(UIActionIndexST_M_Machine_M_Tools_S_Snapshots));
-    pMenu->addAction(action(UIActionIndexST_M_Machine_M_Tools_S_Logs));
+    pMenu->addAction(action(UIActionIndexST_M_Machine_M_Tools_T_Details));
+    pMenu->addAction(action(UIActionIndexST_M_Machine_M_Tools_T_Snapshots));
+    pMenu->addAction(action(UIActionIndexST_M_Machine_M_Tools_T_Logs));
 
     /* Mark menu as valid: */
     m_invalidations.remove(UIActionIndexST_M_Machine_M_Tools);
@@ -3235,9 +3256,9 @@ void UIActionPoolManager::setShortcutsVisible(int iIndex, bool fVisible)
                     << action(UIActionIndexST_M_Group_M_Close_S_SaveState)
                     << action(UIActionIndexST_M_Group_M_Close_S_Shutdown)
                     << action(UIActionIndexST_M_Group_M_Close_S_PowerOff)
-                    << action(UIActionIndexST_M_Group_M_Tools_S_Details)
-                    << action(UIActionIndexST_M_Group_M_Tools_S_Snapshots)
-                    << action(UIActionIndexST_M_Group_M_Tools_S_Logs);
+                    << action(UIActionIndexST_M_Group_M_Tools_T_Details)
+                    << action(UIActionIndexST_M_Group_M_Tools_T_Snapshots)
+                    << action(UIActionIndexST_M_Group_M_Tools_T_Logs);
             break;
         }
         case UIActionIndexST_M_Machine:
@@ -3266,9 +3287,9 @@ void UIActionPoolManager::setShortcutsVisible(int iIndex, bool fVisible)
                     << action(UIActionIndexST_M_Machine_M_Close_S_SaveState)
                     << action(UIActionIndexST_M_Machine_M_Close_S_Shutdown)
                     << action(UIActionIndexST_M_Machine_M_Close_S_PowerOff)
-                    << action(UIActionIndexST_M_Machine_M_Tools_S_Details)
-                    << action(UIActionIndexST_M_Machine_M_Tools_S_Snapshots)
-                    << action(UIActionIndexST_M_Machine_M_Tools_S_Logs);
+                    << action(UIActionIndexST_M_Machine_M_Tools_T_Details)
+                    << action(UIActionIndexST_M_Machine_M_Tools_T_Snapshots)
+                    << action(UIActionIndexST_M_Machine_M_Tools_T_Logs);
             break;
         }
         default:

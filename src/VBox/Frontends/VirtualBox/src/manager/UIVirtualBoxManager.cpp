@@ -1047,19 +1047,11 @@ void UIVirtualBoxManager::sltPerformPowerOffMachine()
     }
 }
 
-void UIVirtualBoxManager::sltPerformShowMachineToolDetails()
+void UIVirtualBoxManager::sltPerformShowMachineTool(QAction *pAction)
 {
-    m_pWidget->setToolsType(UIToolType_Details);
-}
-
-void UIVirtualBoxManager::sltPerformShowMachineToolSnapshots()
-{
-    m_pWidget->setToolsType(UIToolType_Snapshots);
-}
-
-void UIVirtualBoxManager::sltPerformShowMachineToolLogs()
-{
-    m_pWidget->setToolsType(UIToolType_Logs);
+    AssertPtrReturnVoid(pAction);
+    AssertPtrReturnVoid(m_pWidget);
+    m_pWidget->setToolsType(pAction->property("UIToolType").value<UIToolType>());
 }
 
 void UIVirtualBoxManager::sltOpenLogViewerWindow()
@@ -1460,20 +1452,12 @@ void UIVirtualBoxManager::prepareConnections()
             this, &UIVirtualBoxManager::sltPerformPowerOffMachine);
 
     /* 'Group/Tools' menu connections: */
-    connect(actionPool()->action(UIActionIndexST_M_Group_M_Tools_S_Details), &UIAction::triggered,
-            this, &UIVirtualBoxManager::sltPerformShowMachineToolDetails);
-    connect(actionPool()->action(UIActionIndexST_M_Group_M_Tools_S_Snapshots), &UIAction::triggered,
-            this, &UIVirtualBoxManager::sltPerformShowMachineToolSnapshots);
-    connect(actionPool()->action(UIActionIndexST_M_Group_M_Tools_S_Logs), &UIAction::triggered,
-            this, &UIVirtualBoxManager::sltPerformShowMachineToolLogs);
+    connect(actionPool()->actionGroup(UIActionIndexST_M_Group_M_Tools), &QActionGroup::triggered,
+            this, &UIVirtualBoxManager::sltPerformShowMachineTool);
 
     /* 'Machine/Tools' menu connections: */
-    connect(actionPool()->action(UIActionIndexST_M_Machine_M_Tools_S_Details), &UIAction::triggered,
-            this, &UIVirtualBoxManager::sltPerformShowMachineToolDetails);
-    connect(actionPool()->action(UIActionIndexST_M_Machine_M_Tools_S_Snapshots), &UIAction::triggered,
-            this, &UIVirtualBoxManager::sltPerformShowMachineToolSnapshots);
-    connect(actionPool()->action(UIActionIndexST_M_Machine_M_Tools_S_Logs), &UIAction::triggered,
-            this, &UIVirtualBoxManager::sltPerformShowMachineToolLogs);
+    connect(actionPool()->actionGroup(UIActionIndexST_M_Machine_M_Tools), &QActionGroup::triggered,
+            this, &UIVirtualBoxManager::sltPerformShowMachineTool);
 }
 
 void UIVirtualBoxManager::loadSettings()
@@ -1757,6 +1741,34 @@ void UIVirtualBoxManager::updateActionsAppearance()
     actionPool()->action(UIActionIndexST_M_Machine_T_Pause)->setChecked(pFirstStartedAction && UIVirtualMachineItem::isItemPaused(pFirstStartedAction));
     actionPool()->action(UIActionIndexST_M_Machine_T_Pause)->retranslateUi();
     actionPool()->action(UIActionIndexST_M_Machine_T_Pause)->blockSignals(false);
+
+    /* Update action toggle states: */
+    if (m_pWidget)
+    {
+        switch (m_pWidget->currentMachineTool())
+        {
+            case UIToolType_Details:
+            {
+                actionPool()->action(UIActionIndexST_M_Group_M_Tools_T_Details)->setChecked(true);
+                actionPool()->action(UIActionIndexST_M_Machine_M_Tools_T_Details)->setChecked(true);
+                break;
+            }
+            case UIToolType_Snapshots:
+            {
+                actionPool()->action(UIActionIndexST_M_Group_M_Tools_T_Snapshots)->setChecked(true);
+                actionPool()->action(UIActionIndexST_M_Machine_M_Tools_T_Snapshots)->setChecked(true);
+                break;
+            }
+            case UIToolType_Logs:
+            {
+                actionPool()->action(UIActionIndexST_M_Group_M_Tools_T_Logs)->setChecked(true);
+                actionPool()->action(UIActionIndexST_M_Machine_M_Tools_T_Logs)->setChecked(true);
+                break;
+            }
+            default:
+                break;
+        }
+    }
 }
 
 bool UIVirtualBoxManager::isActionEnabled(int iActionIndex, const QList<UIVirtualMachineItem*> &items)
