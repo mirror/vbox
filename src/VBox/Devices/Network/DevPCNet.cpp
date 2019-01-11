@@ -237,7 +237,7 @@
  * @{ */
 #define CSR_VERSION_LOW_79C973  0x5003  /* the lower two bits are always 11b for AMD (JEDEC) */
 #define CSR_VERSION_LOW_79C970A 0x1003
-#define CSR_VERSION_LOW_79C960  0x0003
+#define CSR_VERSION_LOW_79C960  0x3003
 #define CSR_VERSION_HIGH        0x0262
 /** @}  */
 
@@ -256,11 +256,12 @@ enum PCNET_DEVICE_TYPE
 {
     DEV_AM79C970A   = 0,    /* PCnet-PCI II (PCI, 10 Mbps). */
     DEV_AM79C973    = 1,    /* PCnet-FAST III (PCI, 10/100 Mbps). */
-    DEV_AM79C960    = 2     /* PCnet-ISA (ISA, 10 Mbps, NE2100/NE1500T compatible) */
+    DEV_AM79C960    = 2,    /* PCnet-ISA (ISA, 10 Mbps, NE2100/NE1500T compatible) */
+    DEV_AM79C960_EB = 3     /* PCnet-ISA (ISA, 10 Mbps, Racal InterLan EtherBlaster compatible) */
 };
 
 #define PCNET_IS_PCI(pcnet) ((pcnet->uDevType == DEV_AM79C970A) || (pcnet->uDevType == DEV_AM79C973))
-#define PCNET_IS_ISA(pcnet) (pcnet->uDevType == DEV_AM79C960)
+#define PCNET_IS_ISA(pcnet) ((pcnet->uDevType == DEV_AM79C960) || (pcnet->uDevType == DEV_AM79C960_EB))
 
 /*
  *  Note: Old adapters, including the original NE2100/NE1500T, used the LANCE (Am7990) or
@@ -291,6 +292,13 @@ enum PCNET_DEVICE_TYPE
  *
  * There were also non-busmastering LANCE adapters, such as the BICC 4110-1, DEC DEPCA,
  * or NTI 16. Those are uninteresting.
+ * 
+ * Newer adapters based on the integrated PCnet-ISA (Am79C960) and later have a fixed
+ * register layout compatible with the NE2100. However, they may still require different
+ * drivers. At least two different incompatible drivers exist for PCnet-based cards:
+ * Those from AMD and those from Racal InterLan for their EtherBlaster cards. The PROM
+ * on EtherBlaster cards uses a different signature ('RD' instead of 'WW') and Racal's
+ * drivers insist on the MAC address having the Racal-Datacom OUI (02 07 01).
  */
 
 /**
@@ -405,7 +413,7 @@ typedef struct PCNETSTATE
     /** Base address of the MMIO region. */
     RTGCPHYS32                          MMIOBase;
 
-    /** Base port of the I/O space region (PCI). */
+    /** Base port of the I/O space region. */
     RTIOPORT                            IOPortBase;
     /** If set the link is currently up. */
     bool                                fLinkUp;
@@ -416,8 +424,8 @@ typedef struct PCNETSTATE
     RTUINT                              cLinkDownReported;
     /** The configured MAC address. */
     RTMAC                               MacConfigured;
-    /** Base port of the I/O space region (ISA). */
-    RTIOPORT                            IOPortBaseISA;
+    /** Alignment padding. */
+    uint8_t                             Alignment3[2];
 
     /** The LED. */
     PDMLED                              Led;
@@ -1306,6 +1314,7 @@ static void pcnetSoftReset(PPCNETSTATE pThis)
         pThis->aCSR[89] = CSR_VERSION_HIGH;
         break;
     case DEV_AM79C960:
+    case DEV_AM79C960_EB:
         pThis->aCSR[88] = CSR_VERSION_LOW_79C960;
         pThis->aCSR[89] = 0x0000;
         break;
@@ -3349,15 +3358,19 @@ static void pcnetR3HardReset(PPCNETSTATE pThis)
     memcpy(pThis->aPROM, &pThis->MacConfigured, sizeof(pThis->MacConfigured));
     pThis->aPROM[ 8] = 0x00;
     pThis->aPROM[12] = pThis->aPROM[13] = 0x00;
-    pThis->aPROM[14] = pThis->aPROM[15] = 0x57; /* NE2100 'WW' signature. */
-    /* 0x00/0xFF=ISA, 0x01=PnP, 0x10=VLB, 0x11=PCI */
-    switch (pThis->uDevType)
+    if (pThis->uDevType == DEV_AM79C960_EB)
     {
-    default:
-    case DEV_AM79C970A:
-    case DEV_AM79C973:  pThis->aPROM[ 9] = 0x11;    break;
-    case DEV_AM79C960:  pThis->aPROM[ 9] = 0x00;    break;
+        pThis->aPROM[14] = 0x52;
+        pThis->aPROM[15] = 0x44; /* NI6510 EtherBlaster 'RD' signature. */
     }
+    else
+        pThis->aPROM[14] = pThis->aPROM[15] = 0x57; /* NE2100 'WW' signature. */
+
+    /* 0x00/0xFF=ISA, 0x01=PnP, 0x10=VLB, 0x11=PCI */
+    if (PCNET_IS_PCI(pThis))
+        pThis->aPROM[ 9] = 0x11;
+    else
+        pThis->aPROM[ 9] = 0x00;
 
     for (i = 0, checksum = 0; i < 16; i++)
         checksum += pThis->aPROM[i];
@@ -4058,6 +4071,7 @@ static DECLCALLBACK(void) pcnetInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, cons
     PPCNETSTATE pThis = PDMINS_2_DATA(pDevIns, PPCNETSTATE);
     bool        fRcvRing = false;
     bool        fXmtRing = false;
+    bool        fAPROM   = false;
 
     /*
      * Parse args.
@@ -4066,6 +4080,7 @@ static DECLCALLBACK(void) pcnetInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, cons
     {
         fRcvRing = strstr(pszArgs, "verbose") || strstr(pszArgs, "rcv");
         fXmtRing = strstr(pszArgs, "verbose") || strstr(pszArgs, "xmt");
+        fAPROM   = strstr(pszArgs, "verbose") || strstr(pszArgs, "aprom");
     }
 
     /*
@@ -4074,10 +4089,11 @@ static DECLCALLBACK(void) pcnetInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, cons
     const char *pcszModel;
     switch (pThis->uDevType)
     {
-    case DEV_AM79C970A: pcszModel = "AM79C970A";    break;
-    case DEV_AM79C973:  pcszModel = "AM79C973";     break;
-    case DEV_AM79C960:  pcszModel = "AM79C960";     break;
-    default:            pcszModel = "Unknown";      break;
+    case DEV_AM79C970A:     pcszModel = "AM79C970A";                break;
+    case DEV_AM79C973:      pcszModel = "AM79C973";                 break;
+    case DEV_AM79C960:      pcszModel = "AM79C960/NE2100";          break;
+    case DEV_AM79C960_EB:   pcszModel = "AM79C960/EtherBlaster";    break;
+    default:                pcszModel = "Unknown";                  break;
     }
     pHlp->pfnPrintf(pHlp,
                     "pcnet #%d: port=%RTiop mmio=%RX32 mac-cfg=%RTmac %s%s%s\n",
@@ -4277,6 +4293,15 @@ static DECLCALLBACK(void) pcnetInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, cons
 
             GCPhys += cb;
         }
+    }
+
+    /* Dump the Addres PROM (APROM). */
+    if (fAPROM)
+    {
+        pHlp->pfnPrintf(pHlp,
+                        "Address PROM:\n  %Rhxs\n", pThis->aPROM);
+
+
     }
 
     PDMCritSectLeave(&pThis->CritSect);
@@ -5025,6 +5050,17 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
         pThis->uDevType = DEV_AM79C973;     /* 10/100 Mbps PCnet-FAST III. */
     else if (!strcmp(szChipType, "Am79C960"))
         pThis->uDevType = DEV_AM79C960;     /* 10 Mbps PCnet-ISA, NE2100/Am2100 compatible. */
+    else if (!strcmp(szChipType, "Am79C960_EB"))
+    {
+        pThis->uDevType = DEV_AM79C960_EB;  /* 10 Mbps PCnet-ISA, Racal InterLink NI6510 EtherBlaster compatible. */
+        /* NI6510 drivers (at least Racal's and Linux) require the OUI to be InterLan's (Racal-Datacom).
+         * Refuse loading if OUI doesn't match, because otherwise drivers won't load in the guest.
+         */
+        if (memcmp(&pThis->MacConfigured, "\x02\x07\x01", 3))
+            return PDMDevHlpVMSetError(pDevIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES, RT_SRC_POS,
+                                       N_("Configuration error: MAC address OUI for EtherBlaster must be 02 07 01"),
+                                       szChipType);
+    }
     else
     {
         return PDMDevHlpVMSetError(pDevIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES, RT_SRC_POS,
@@ -5047,7 +5083,7 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     /*
      * Process ISA configuration options. The defaults are chosen to be NE2100/Am2100 compatible.
      */
-    rc = CFGMR3QueryPortDef(pCfg, "Port", &pThis->IOPortBaseISA, 0x300);
+    rc = CFGMR3QueryPortDef(pCfg, "Port", &pThis->IOPortBase, 0x300);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to get the \"Port\" value"));
@@ -5175,33 +5211,33 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
      */
     if (PCNET_IS_ISA(pThis))
     {
-        rc = PDMDevHlpIOPortRegister(pDevIns, pThis->IOPortBaseISA, 0x10, 0, pcnetIOPortAPromWrite,
+        rc = PDMDevHlpIOPortRegister(pDevIns, pThis->IOPortBase, 0x10, 0, pcnetIOPortAPromWrite,
                                      pcnetIOPortAPromRead, NULL, NULL, "PCnet APROM");
         if (RT_FAILURE(rc))
             return rc;
-        rc = PDMDevHlpIOPortRegister(pDevIns, pThis->IOPortBaseISA + 0x10, 0x10, 0, pcnetIOPortWrite,
+        rc = PDMDevHlpIOPortRegister(pDevIns, pThis->IOPortBase + 0x10, 0x10, 0, pcnetIOPortWrite,
                                      pcnetIOPortRead, NULL, NULL, "PCnet");
         if (RT_FAILURE(rc))
             return rc;
 
         if (pThis->fGCEnabled)
         {
-            rc = PDMDevHlpIOPortRegisterRC(pDevIns, pThis->IOPortBaseISA, 0x10, 0, "pcnetIOPortAPromWrite",
+            rc = PDMDevHlpIOPortRegisterRC(pDevIns, pThis->IOPortBase, 0x10, 0, "pcnetIOPortAPromWrite",
                                            "pcnetIOPortAPromRead", NULL, NULL, "PCnet APROM");
             if (RT_FAILURE(rc))
                 return rc;
-            rc = PDMDevHlpIOPortRegisterRC(pDevIns, pThis->IOPortBaseISA + 0x10, 0x10, 0, "pcnetIOPortWrite",
+            rc = PDMDevHlpIOPortRegisterRC(pDevIns, pThis->IOPortBase + 0x10, 0x10, 0, "pcnetIOPortWrite",
                                            "pcnetIOPortRead", NULL, NULL, "PCnet");
             if (RT_FAILURE(rc))
                 return rc;
         }
         if (pThis->fR0Enabled)
         {
-            rc = PDMDevHlpIOPortRegisterR0(pDevIns, pThis->IOPortBaseISA, 0x10, 0, "pcnetIOPortAPromWrite",
+            rc = PDMDevHlpIOPortRegisterR0(pDevIns, pThis->IOPortBase, 0x10, 0, "pcnetIOPortAPromWrite",
                                            "pcnetIOPortAPromRead", NULL, NULL, "PCnet APROM");
             if (RT_FAILURE(rc))
                 return rc;
-            rc = PDMDevHlpIOPortRegisterR0(pDevIns, pThis->IOPortBaseISA + 0x10, 0x10, 0, "pcnetIOPortWrite",
+            rc = PDMDevHlpIOPortRegisterR0(pDevIns, pThis->IOPortBase + 0x10, 0x10, 0, "pcnetIOPortWrite",
                                            "pcnetIOPortRead", NULL, NULL, "PCnet");
             if (RT_FAILURE(rc))
                 return rc;
