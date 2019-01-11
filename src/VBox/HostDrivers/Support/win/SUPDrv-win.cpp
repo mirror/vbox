@@ -1571,32 +1571,36 @@ NTSTATUS _stdcall VBoxDrvNtRead(PDEVICE_OBJECT pDevObj, PIRP pIrp)
             int rc = RTSemMutexRequestNoResume(g_hErrorInfoLock, RT_INDEFINITE_WAIT);
             if (RT_SUCCESS(rc))
             {
-                PSUPDRVNTERRORINFO  pCur;
+                PSUPDRVNTERRORINFO pMatch = NULL;
+                PSUPDRVNTERRORINFO pCur;
                 RTListForEach(&g_ErrorInfoHead, pCur, SUPDRVNTERRORINFO, ListEntry)
                 {
                     if (   pCur->hProcessId == hCurProcessId
                         && pCur->hThreadId  == hCurThreadId)
+                    {
+                        pMatch = pCur;
                         break;
+                    }
                 }
 
                 /*
                  * Did we find error info and is the caller requesting data within it?
                  * If so, check the destination buffer and copy the data into it.
                  */
-                if (   pCur
-                    && pStack->Parameters.Read.ByteOffset.QuadPart < pCur->cchErrorInfo
+                if (   pMatch
+                    && pStack->Parameters.Read.ByteOffset.QuadPart < pMatch->cchErrorInfo
                     && pStack->Parameters.Read.ByteOffset.QuadPart >= 0)
                 {
                     PVOID pvDstBuf = pIrp->AssociatedIrp.SystemBuffer;
                     if (pvDstBuf)
                     {
                         uint32_t offRead  = (uint32_t)pStack->Parameters.Read.ByteOffset.QuadPart;
-                        uint32_t cbToRead = pCur->cchErrorInfo - offRead;
+                        uint32_t cbToRead = pMatch->cchErrorInfo - offRead;
                         if (cbToRead < pStack->Parameters.Read.Length)
                             RT_BZERO((uint8_t *)pvDstBuf + cbToRead, pStack->Parameters.Read.Length - cbToRead);
                         else
                             cbToRead = pStack->Parameters.Read.Length;
-                        memcpy(pvDstBuf, &pCur->szErrorInfo[offRead], cbToRead);
+                        memcpy(pvDstBuf, &pMatch->szErrorInfo[offRead], cbToRead);
                         pIrp->IoStatus.Information = cbToRead;
 
                         rcNt = STATUS_SUCCESS;
@@ -1607,10 +1611,10 @@ NTSTATUS _stdcall VBoxDrvNtRead(PDEVICE_OBJECT pDevObj, PIRP pIrp)
                 /*
                  * End of file. Free the info.
                  */
-                else if (pCur)
+                else if (pMatch)
                 {
-                    RTListNodeRemove(&pCur->ListEntry);
-                    RTMemFree(pCur);
+                    RTListNodeRemove(&pMatch->ListEntry);
+                    RTMemFree(pMatch);
                     rcNt = STATUS_END_OF_FILE;
                 }
                 /*
