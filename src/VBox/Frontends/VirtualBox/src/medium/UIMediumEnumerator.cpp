@@ -158,7 +158,11 @@ void UIMediumEnumerator::enumerateMedia(const CMediumVector &mediaList /* = CMed
         addMediaToMap(vboxGlobal().virtualBox().GetFloppyImages(), media);
     }
     else
+    {
+        addMediaToMap(vboxGlobal().host().GetDVDDrives(), media);
+        addMediaToMap(vboxGlobal().virtualBox().GetDVDImages(), media);
         addMediaToMap(mediaList, media);
+    }
     if (VBoxGlobal::isCleaningUp())
         return; /* VBoxGlobal is cleaning up, abort immediately. */
     m_media = media;
