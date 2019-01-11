@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * DevEEPROM - Microware-compatible 64x16-bit 93C46 EEPROM Emulation.
+ * DevEEPROM - Microwire-compatible 64x16-bit 93C46 EEPROM Emulation.
  */
 
 /*
