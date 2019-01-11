@@ -29,9 +29,6 @@
 
 #include <VBox/vmm/pdmaudioifs.h>
 
-/* Use a mixer sink's mixing buffer for multiplexing. */
-#define VBOX_AUDIO_MIXER_WITH_MIXBUF
-
 /**
  * Structure for maintaining an audio mixer instance.
  */
@@ -170,11 +167,9 @@ typedef struct AUDMIXSINK
     AUDMIXSINKDIR           enmDir;
     /** The sink's critical section. */
     RTCRITSECT              CritSect;
-#ifdef VBOX_AUDIO_MIXER_WITH_MIXBUF
     /** This sink's mixing buffer, acting as
      * a parent buffer for all streams this sink owns. */
     PDMAUDIOMIXBUF          MixBuf;
-#endif
     /** Union for input/output specifics. */
     union
     {

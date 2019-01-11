@@ -769,9 +769,8 @@ int AudioMixerSinkCtl(PAUDMIXSINK pSink, AUDMIXSINKCMD enmSinkCmd)
 
         case AUDMIXSINKCMD_DROP:
         {
-#ifdef VBOX_AUDIO_MIXER_WITH_MIXBUF
             AudioMixBufReset(&pSink->MixBuf);
-#endif
+
             /* Clear dirty bit, keep others. */
             pSink->fStatus &= ~AUDMIXSINK_STS_DIRTY;
             break;
@@ -954,12 +953,7 @@ uint32_t AudioMixerSinkGetWritable(PAUDMIXSINK pSink)
     if (    (pSink->fStatus & AUDMIXSINK_STS_RUNNING)
         && !(pSink->fStatus & AUDMIXSINK_STS_PENDING_DISABLE))
     {
-#ifdef VBOX_AUDIO_MIXER_WITH_MIXBUF
         cbWritable = AudioMixBufFreeBytes(&pSink->MixBuf);
-#else
-        /* Return how much data we expect since the last write. */
-        cbWritable = DrvAudioHlpMilliToBytes(10 /* ms */, &pSink->PCMProps); /** @todo Make this configurable! */
-#endif
     }
 
     Log3Func(("[%s] cbWritable=%RU32 (%RU64ms)\n",
@@ -1313,9 +1307,7 @@ static void audioMixerSinkReset(PAUDMIXSINK pSink)
 
     LogFunc(("[%s]\n", pSink->pszName));
 
-#ifdef VBOX_AUDIO_MIXER_WITH_MIXBUF
     AudioMixBufReset(&pSink->MixBuf);
-#endif
 
     /* Update last updated timestamp. */
     pSink->tsLastUpdatedMs = 0;
@@ -1421,7 +1413,6 @@ int AudioMixerSinkSetFormat(PAUDMIXSINK pSink, PPDMAUDIOPCMPROPS pPCMProps)
     LogFlowFunc(("[%s] New format %RU8 bit, %RU8 channels, %RU32Hz\n",
                  pSink->pszName, pSink->PCMProps.cBytes * 8, pSink->PCMProps.cChannels, pSink->PCMProps.uHz));
 
-#ifdef VBOX_AUDIO_MIXER_WITH_MIXBUF
     /* Also update the sink's mixing buffer format. */
     AudioMixBufDestroy(&pSink->MixBuf);
     rc = AudioMixBufInit(&pSink->MixBuf, pSink->pszName, &pSink->PCMProps,
@@ -1434,7 +1425,6 @@ int AudioMixerSinkSetFormat(PAUDMIXSINK pSink, PPDMAUDIOPCMPROPS pPCMProps)
             /** @todo Invalidate mix buffers! */
         }
     }
-#endif /* VBOX_AUDIO_MIXER_WITH_MIXBUF */
 
 #ifdef VBOX_AUDIO_MIXER_DEBUG
     if (RT_SUCCESS(rc))
@@ -1967,6 +1957,8 @@ static int audioMixerSinkMultiplexSync(PAUDMIXSINK pSink, AUDMIXOP enmOp, const 
 
             if (cbWrittenBuf) /* Update the mixer stream's last written time stamp. */
                 pMixStream->tsLastReadWrittenNs = RTTimeNanoTS();
+
+            Log3Func(("[%s] Mixer stream '%s' -> cbWrittenBuf=%RU32\n", pSink->pszName, pMixStream->pszName, cbWrittenBuf));
         }
     }
 
