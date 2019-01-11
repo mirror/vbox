@@ -55,7 +55,9 @@ UIToolPaneGlobal::~UIToolPaneGlobal()
 
 UIToolType UIToolPaneGlobal::currentTool() const
 {
-    return m_pLayout->currentWidget()->property("ToolType").value<UIToolType>();
+    return   m_pLayout && m_pLayout->currentWidget()
+           ? m_pLayout->currentWidget()->property("ToolType").value<UIToolType>()
+           : UIToolType_Invalid;
 }
 
 bool UIToolPaneGlobal::isToolOpened(UIToolType enmType) const

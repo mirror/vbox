@@ -58,7 +58,9 @@ UIToolPaneMachine::~UIToolPaneMachine()
 
 UIToolType UIToolPaneMachine::currentTool() const
 {
-    return m_pLayout->currentWidget()->property("ToolType").value<UIToolType>();
+    return   m_pLayout && m_pLayout->currentWidget()
+           ? m_pLayout->currentWidget()->property("ToolType").value<UIToolType>()
+           : UIToolType_Invalid;
 }
 
 bool UIToolPaneMachine::isToolOpened(UIToolType enmType) const
