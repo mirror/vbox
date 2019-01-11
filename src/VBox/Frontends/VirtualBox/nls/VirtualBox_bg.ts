@@ -1868,10 +1868,6 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&amp;Machine Tools Menu</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Open the machine tools menu</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2316,6 +2312,10 @@
     </message>
     <message>
         <source>Display the virtual machine file manager window</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Tools</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -16606,10 +16606,6 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Create a new directory under the current directory</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Name</source>
         <translation type="unfinished">Име</translation>
     </message>
@@ -16642,30 +16638,6 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>VISO Options</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Manage VISO Options</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Browser Options</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Change VISO options</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Change Browser options</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>VISO Name</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Show Hidden Objects</source>
         <translation type="unfinished"></translation>
     </message>
@@ -16674,7 +16646,43 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Add selected file objects to VISO</source>
+        <source>Create a new directory under the current location</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Reset ISO content.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Rename the selected object</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Configuration...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>VISO Configuration</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Manage VISO Configuration</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Dialog Options</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Manage Dialog Options</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>VISO Name:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add selected file objects to ISO</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -20789,10 +20797,6 @@ p, li { white-space: pre-wrap; }
         <source>QCOW (QEMU Copy-On-Write)</source>
         <comment>UIMediumFormat</comment>
         <translation type="unfinished">QCOW (QEMU Копиране-При-Запис)</translation>
-    </message>
-    <message>
-        <source>Please select files to be on the VISO</source>
-        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>None</source>

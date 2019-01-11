@@ -1035,7 +1035,7 @@
     </message>
     <message>
         <source>&amp;Machine Tools Menu</source>
-        <translation>Κατάλογος Εργαλείων Μηχανής</translation>
+        <translation type="vanished">Κατάλογος Εργαλείων Μηχανής</translation>
     </message>
     <message>
         <source>Open the machine tools menu</source>
@@ -1779,6 +1779,10 @@
     <message>
         <source>Display the virtual machine file manager window</source>
         <translation>Εμφάνιση του παραθύρου του διαχειριστή αρχείων της εικονικής μηχανής</translation>
+    </message>
+    <message>
+        <source>Tools</source>
+        <translation type="unfinished">Εργαλεία</translation>
     </message>
 </context>
 <context>
@@ -11289,10 +11293,6 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Create a new directory under the current directory</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Name</source>
         <translation type="unfinished">Όνομα</translation>
     </message>
@@ -11325,30 +11325,6 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>VISO Options</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Manage VISO Options</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Browser Options</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Change VISO options</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Change Browser options</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>VISO Name</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Show Hidden Objects</source>
         <translation type="unfinished"></translation>
     </message>
@@ -11357,7 +11333,43 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Add selected file objects to VISO</source>
+        <source>Create a new directory under the current location</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Reset ISO content.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Rename the selected object</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Configuration...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>VISO Configuration</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Manage VISO Configuration</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Dialog Options</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Manage Dialog Options</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>VISO Name:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add selected file objects to ISO</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -14171,7 +14183,7 @@
     </message>
     <message>
         <source>Please select files to be on the VISO</source>
-        <translation>Παρακαλώ επιλέξτε τα αρχεία που θα είναι στο VISO</translation>
+        <translation type="vanished">Παρακαλώ επιλέξτε τα αρχεία που θα είναι στο VISO</translation>
     </message>
     <message>
         <source>None</source>

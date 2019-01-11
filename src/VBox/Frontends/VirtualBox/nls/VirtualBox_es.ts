@@ -1633,7 +1633,7 @@
     </message>
     <message>
         <source>&amp;Machine Tools Menu</source>
-        <translation>Menú de herramientas de &amp;máquina</translation>
+        <translation type="vanished">Menú de herramientas de &amp;máquina</translation>
     </message>
     <message>
         <source>Open the machine tools menu</source>
@@ -2373,6 +2373,10 @@
     <message>
         <source>Display the virtual machine file manager window</source>
         <translation>Mostra la ventana de administrador de archivos virtuales</translation>
+    </message>
+    <message>
+        <source>Tools</source>
+        <translation type="unfinished">Herramientas</translation>
     </message>
 </context>
 <context>
@@ -17683,10 +17687,6 @@ este paso y luego conectar los Discos Duros desde el diálogo de Configuración 
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Create a new directory under the current directory</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Name</source>
         <translation type="unfinished">Nombre</translation>
     </message>
@@ -17719,30 +17719,6 @@ este paso y luego conectar los Discos Duros desde el diálogo de Configuración 
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>VISO Options</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Manage VISO Options</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Browser Options</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Change VISO options</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Change Browser options</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>VISO Name</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Show Hidden Objects</source>
         <translation type="unfinished"></translation>
     </message>
@@ -17751,7 +17727,43 @@ este paso y luego conectar los Discos Duros desde el diálogo de Configuración 
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Add selected file objects to VISO</source>
+        <source>Create a new directory under the current location</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Reset ISO content.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Rename the selected object</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Configuration...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>VISO Configuration</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Manage VISO Configuration</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Dialog Options</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Manage Dialog Options</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>VISO Name:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add selected file objects to ISO</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -22720,7 +22732,7 @@ Versión %1</translation>
     </message>
     <message>
         <source>Please select files to be on the VISO</source>
-        <translation>Seleccione archivos para estar en VISO</translation>
+        <translation type="vanished">Seleccione archivos para estar en VISO</translation>
     </message>
     <message>
         <source>None</source>

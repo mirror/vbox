@@ -1759,12 +1759,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+112"/>
-        <source>&amp;Machine Tools Menu</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+1"/>
+        <location line="+113"/>
         <source>Open the machine tools menu</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1845,7 +1840,12 @@
         <translation>&amp;Erakutsi</translation>
     </message>
     <message>
-        <location line="+543"/>
+        <location line="+482"/>
+        <source>Tools</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+61"/>
         <source>Open the machine snapshots pane</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3233,7 +3233,7 @@
     <name>UICustomFileSystemModel</name>
     <message>
         <location filename="../src/guestctrl/UIFileManagerTable.cpp" line="+963"/>
-        <location filename="../src/globals/UICustomFileSystemModel.cpp" line="+578"/>
+        <location filename="../src/globals/UICustomFileSystemModel.cpp" line="+603"/>
         <source>Name</source>
         <translation type="unfinished">Izena</translation>
     </message>
@@ -5469,7 +5469,7 @@
         <translation>Hedapen pakete agiriak (%1)</translation>
     </message>
     <message>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="+2827"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="+2762"/>
         <location filename="../src/settings/global/UIGlobalSettingsExtension.cpp" line="+88"/>
         <source>Extensions</source>
         <translation>Hedapenak</translation>
@@ -10244,7 +10244,7 @@
         <translation type="obsolete">Hautatu CD/DVD birtual diska agiri bat...</translation>
     </message>
     <message>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="-618"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="-616"/>
         <source>Choose disk image...</source>
         <comment>This is used for hard disks, optical media and floppies</comment>
         <translation>Hautatu diska irudia...</translation>
@@ -15108,7 +15108,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/logviewer/UIVMLogViewerTextEdit.cpp" line="+294"/>
+        <location filename="../src/logviewer/UIVMLogViewerTextEdit.cpp" line="+295"/>
         <source>Filtered</source>
         <translation type="unfinished"></translation>
     </message>
@@ -15196,7 +15196,7 @@
 <context>
     <name>UIVisoCreator</name>
     <message>
-        <location filename="../src/medium/viso/UIVisoContentBrowser.cpp" line="+171"/>
+        <location filename="../src/medium/viso/UIVisoContentBrowser.cpp" line="+185"/>
         <source>VISO content</source>
         <translation type="unfinished"></translation>
     </message>
@@ -15207,11 +15207,21 @@
     </message>
     <message>
         <location line="+2"/>
-        <source>Create a new directory under the current directory</source>
+        <source>Create a new directory under the current location</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+5"/>
+        <location line="+2"/>
+        <source>Reset ISO content.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Rename the selected object</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+6"/>
         <source>Name</source>
         <translation type="unfinished">Izena</translation>
     </message>
@@ -15246,56 +15256,53 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/medium/viso/UIVisoCreator.cpp" line="+65"/>
+        <location filename="../src/medium/viso/UIVisoCreator.cpp" line="+72"/>
+        <source>&amp;Configuration...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>VISO Configuration</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Manage VISO Configuration</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+4"/>
         <source>&amp;Options...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+1"/>
-        <location filename="../src/medium/viso/UIVisoCreatorOptionsDialog.cpp" line="+89"/>
-        <source>VISO Options</source>
+        <source>Dialog Options</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+1"/>
-        <source>Manage VISO Options</source>
+        <source>Manage Dialog Options</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/medium/viso/UIVisoCreatorOptionsDialog.cpp" line="+1"/>
-        <source>Browser Options</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+2"/>
-        <location line="+1"/>
-        <source>Change VISO options</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+2"/>
-        <location line="+1"/>
-        <source>Change Browser options</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+38"/>
-        <source>VISO Name</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+16"/>
+        <location filename="../src/medium/viso/UIVisoCreatorOptionsDialog.cpp" line="+69"/>
         <source>Show Hidden Objects</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/medium/viso/UIVisoHostBrowser.cpp" line="+102"/>
+        <location filename="../src/medium/viso/UIVisoHostBrowser.cpp" line="+101"/>
         <source>Host file system</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+2"/>
-        <source>Add selected file objects to VISO</source>
+        <source>Add selected file objects to ISO</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/medium/viso/UIVisoConfigurationDialog.cpp" line="+69"/>
+        <source>VISO Name:</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -16701,7 +16708,7 @@
 <context>
     <name>VBoxGlobal</name>
     <message>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="+300"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="+298"/>
         <source>Unknown device %1:%2</source>
         <comment>USB device details</comment>
         <translation>Gailu ezezaguna %1:%2</translation>
@@ -17391,12 +17398,7 @@
         <translation>Intel PRO/1000 T Zerbitzaria (82543GC)</translation>
     </message>
     <message>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="-1135"/>
-        <source>Please select files to be on the VISO</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+670"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="-465"/>
         <source>&lt;nobr&gt;Vendor ID: %1&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
         <translation>&lt;nobr&gt;Saltzaile ID-a: %1&lt;/nobr&gt;</translation>
@@ -17817,7 +17819,7 @@
         <translation>Ohinarriko diska gogor hau zeharka erantsita dago hurrengo ezberdinketa diska gogorra erabiliz:</translation>
     </message>
     <message numerus="yes">
-        <location filename="../src/globals/VBoxGlobal.cpp" line="-2511"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="-2446"/>
         <source>%n year(s)</source>
         <translation>
             <numerusform>%n urte</numerusform>
@@ -17969,7 +17971,7 @@
         <translation>Mugagabeko Exekuzioa</translation>
     </message>
     <message>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="+2314"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="+2249"/>
         <source>Unknown device</source>
         <comment>USB device details</comment>
         <translation>Gailu ezezaguna</translation>
@@ -17990,7 +17992,7 @@
         <translation type="vanished">Ezgaituta</translation>
     </message>
     <message>
-        <location line="-681"/>
+        <location line="-616"/>
         <source>Please choose a virtual hard disk file</source>
         <translation>Mesedez hautatu diska gogor agiri birtual bat</translation>
     </message>
@@ -18001,7 +18003,6 @@
     </message>
     <message>
         <location line="+50"/>
-        <location line="+26"/>
         <source>All files (*)</source>
         <translation>Agiri guztiak (*)</translation>
     </message>
@@ -18997,7 +18998,7 @@
         <translation type="obsolete">Diska gogor birtual agiri guztiak (%1)</translation>
     </message>
     <message>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="-65"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="-39"/>
         <source>Please choose a virtual optical disk file</source>
         <translation>Mesedez hautatu diska optiko birtual agiri bat</translation>
     </message>

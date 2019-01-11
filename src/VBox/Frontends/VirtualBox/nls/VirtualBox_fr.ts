@@ -1520,7 +1520,7 @@
     </message>
     <message>
         <source>&amp;Machine Tools Menu</source>
-        <translation>Menu des outils &amp;machines</translation>
+        <translation type="vanished">Menu des outils &amp;machines</translation>
     </message>
     <message>
         <source>Open the machine tools menu</source>
@@ -2259,6 +2259,10 @@
         <source>Scale to %1% (autoscaled output)</source>
         <comment>scale-factor</comment>
         <translation>Redimensionner à %1% (affichage automatiquement mis à l&apos;échelle)</translation>
+    </message>
+    <message>
+        <source>Tools</source>
+        <translation type="unfinished">Outils</translation>
     </message>
 </context>
 <context>
@@ -15507,10 +15511,6 @@ And the size is not necessarily &quot;in megabytes&quot;, the slider chooses the
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Create a new directory under the current directory</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Name</source>
         <translation type="unfinished"></translation>
     </message>
@@ -15543,30 +15543,6 @@ And the size is not necessarily &quot;in megabytes&quot;, the slider chooses the
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>VISO Options</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Manage VISO Options</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Browser Options</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Change VISO options</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Change Browser options</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>VISO Name</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Show Hidden Objects</source>
         <translation type="unfinished"></translation>
     </message>
@@ -15575,7 +15551,43 @@ And the size is not necessarily &quot;in megabytes&quot;, the slider chooses the
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Add selected file objects to VISO</source>
+        <source>Create a new directory under the current location</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Reset ISO content.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Rename the selected object</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Configuration...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>VISO Configuration</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Manage VISO Configuration</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Dialog Options</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Manage Dialog Options</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>VISO Name:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add selected file objects to ISO</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -19055,7 +19067,7 @@ And the size is not necessarily &quot;in megabytes&quot;, the slider chooses the
     </message>
     <message>
         <source>Please select files to be on the VISO</source>
-        <translation>Veuillez sélectionner les fichiers à inclure sur le VISO</translation>
+        <translation type="vanished">Veuillez sélectionner les fichiers à inclure sur le VISO</translation>
     </message>
 </context>
 <context>
