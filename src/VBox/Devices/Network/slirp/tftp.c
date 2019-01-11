@@ -438,6 +438,7 @@ DECLINLINE(int) tftpSessionEvaluateOptions(PNATState pData, PTFTPSESSION pTftpSe
     int rc;
     RTFILE hSessionFile;
     uint64_t cbSessionFile = 0;
+    int cOptions;
     LogFlowFunc(("pTftpSession:%p\n", pTftpSession));
 
     rc = pftpSessionOpenFile(pData, pTftpSession, true /*fVerbose*/, &hSessionFile);
@@ -455,7 +456,7 @@ DECLINLINE(int) tftpSessionEvaluateOptions(PNATState pData, PTFTPSESSION pTftpSe
         return rc;
     }
 
-    int cOptions = 0;
+    cOptions = 0;
 
     if (pTftpSession->OptionTSize.fRequested)
     {
